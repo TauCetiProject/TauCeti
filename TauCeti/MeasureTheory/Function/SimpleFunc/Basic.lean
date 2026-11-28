@@ -31,6 +31,11 @@ simple functions defined piecewise on a measurable set (`MeasureTheory.SimpleFun
 and how products and stars act on constant simple functions
 (`MeasureTheory.SimpleFunc.const_mul_const`, `MeasureTheory.SimpleFunc.star_const`).
 
+Evaluating a family of strongly measurable functions at the values of a simple function gives a
+jointly strongly measurable function (`MeasureTheory.SimpleFunc.stronglyMeasurable_uncurry_comp`);
+this is how a simple function with values in a space of functions, such as `Lᵖ`, yields a jointly
+measurable function of two variables.
+
 A finite family of simple functions is one simple function into the product,
 `MeasureTheory.SimpleFunc.pi`.
 -/
@@ -66,6 +71,23 @@ theorem eq_sum_restrict_const [AddCommMonoid β] (u : SimpleFunc α β) :
     u = ∑ c ∈ u.range, (const α c).restrict (u ⁻¹' {c}) :=
   -- `u.map id` is `u` by definition of `SimpleFunc.map`.
   map_eq_sum_restrict_const u id
+
+/-- Evaluating a family of strongly measurable functions `φ c` at the values `c = u x` of a simple
+function `u` gives a jointly strongly measurable function `(x, y) ↦ φ (u x) y`. No measurable
+structure on the values of `u` is needed: `u` factors through its finite range, with the discrete
+measurable structure. -/
+theorem stronglyMeasurable_uncurry_comp {γ E : Type*} [MeasurableSpace γ] [TopologicalSpace E]
+    (u : SimpleFunc α β) {φ : β → γ → E} (hφ : ∀ c, StronglyMeasurable (φ c)) :
+    StronglyMeasurable (Function.uncurry (φ ∘ u)) := by
+  let : MeasurableSpace u.range := ⊤
+  have : MeasurableSingletonClass u.range := ⟨fun _ ↦ trivial⟩
+  have hu : Measurable fun x ↦ (⟨u x, u.mem_range_self x⟩ : u.range) :=
+    measurable_to_countable' fun c ↦ by
+      convert u.measurableSet_fiber c.val using 1
+      ext x
+      simp [Subtype.ext_iff]
+  exact (stronglyMeasurable_uncurry_of_countable (ι := u.range) fun c ↦ hφ c).comp_measurable
+    (hu.prodMap measurable_id)
 
 /-- If a simple function `u` lies in `Lᵖ` for some `0 < p < ∞`, the constant `c` restricted to the
 fibre `u ⁻¹' {c}` lies in every `L^q`. The codomain only needs a zero of extended norm `0`. -/

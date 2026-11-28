@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.RepresentationTheory.Subrepresentation
-import TauCeti.Order.ModularLattice
+import TauCeti.Order.ModularLattice.Basic
 
 /-!
 # Invariant splittings of a Lie algebra along a compact subgroup
