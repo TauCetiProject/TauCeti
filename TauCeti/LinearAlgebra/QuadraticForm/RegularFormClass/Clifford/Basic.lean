@@ -65,7 +65,10 @@ that the version of this formula published by C. T. C. Wall is incorrect.
 On such a class `x` the Clifford invariant is additive: `c(x ⊥ y) = c(x) · c(y)` for every class
 `y`. This follows by induction on the rank of `y` from the two recurrences, since rescaling `x`
 does not change `c(x)`. In particular adding a hyperbolic plane does not change the Clifford
-invariant, so it depends only on the Witt class.
+invariant, so it depends only on the Witt class. Over any semireal field `K`, even adjoining the
+Clifford invariant to `(rank, discr, hasseInvariant)` does not classify regular forms:
+`⟨1, 1, 1, 1⟩` and `⟨-1, -1, -1, -1⟩` share all four invariants `(4, 0, 1, [(-1, -1)])` while
+remaining non-isometric.
 
 ## Main definitions
 
@@ -113,6 +116,10 @@ invariant, so it depends only on the Witt class.
   does not change the Clifford invariant.
 * `TauCeti.RegularFormClass.cliffordInvariant_baseChange`: the Clifford invariant of a scalar
   extension is the scalar extension of the Clifford invariant.
+* `TauCeti.RegularFormClass.cliffordInvariant_four_nsmul_mk_rankOne`: any four-fold multiple
+  `4 • ⟨a⟩ = ⟨a, a, a, a⟩` has Clifford invariant `[(-1, -1)]`, so `⟨1, 1, 1, 1⟩` and
+  `⟨-1, -1, -1, -1⟩` also share their Clifford invariant (cf.
+  `TauCeti.RegularFormClass.four_nsmul_one_ne_four_nsmul_mk_rankOne_neg_one`).
 
 ## References
 
@@ -767,6 +774,27 @@ theorem cliffordInvariant_baseChange (x : RegularFormClass K) :
   simp [RingHom.squareClassMap_apply]
 
 end BaseChange
+
+/-! ### Four-fold multiples of a line -/
+
+/-- Any four-fold multiple `4 • ⟨a⟩ = ⟨a, a, a, a⟩` of a rank-one class has Clifford invariant
+`[(-1, -1)]`: `4 = ⟨1, 1, 1, 1⟩` has trivial signed discriminant (`C(4, 2) = 6` is even), so scaling
+it by `⟨a⟩` preserves its Clifford invariant `[(-1, -1)]^C(5, 4) = [(-1, -1)]`.
+
+In particular, `4 • 1 = ⟨1, 1, 1, 1⟩` (`a = 1`, via `mk_rankOne_one`) and
+`4 • ⟨-1⟩ = ⟨-1, -1, -1, -1⟩` (`a = -1`) share their Clifford invariant `[(-1, -1)]`; combined with
+`TauCeti.RegularFormClass.four_nsmul_one_ne_four_nsmul_mk_rankOne_neg_one`, this shows that over
+any semireal field, `(rank, discr, hasseInvariant, cliffordInvariant)` does not classify regular
+forms. -/
+theorem cliffordInvariant_four_nsmul_mk_rankOne (a : Kˣ) :
+    cliffordInvariant (4 • Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) =
+      BrauerGroup.quaternionClass (-1 : Kˣ) (-1) := by
+  have hsd : signedDiscr ((4 : ℕ) : RegularFormClass K) = 0 := by
+    rw [signedDiscr_natCast, ← squareClass_pow, squareClass_eq_zero_iff]
+    exact (by decide : Even (Nat.choose 4 2)).isSquare_pow _
+  rw [nsmul_eq_mul, mul_comm, cliffordInvariant_mk_rankOne_mul_of_signedDiscr_eq_zero a hsd,
+    cliffordInvariant_natCast, BrauerGroup.quaternionClass_pow,
+    ite_eq_right (by decide : ¬Even (Nat.choose 5 4))]
 
 end RegularFormClass
 

@@ -57,8 +57,9 @@ The action interacts with the rest of the structure as follows.
   semilinearity.
 * `TauCeti.modularFunctionCoeffAction_frickeMeromorphicFunction`: the action on Fricke functions.
 * `TauCeti.mem_coeffSubfield_iff_forall_modularFunctionCoeffAction_eq`: descent of coefficients.
-* `TauCeti.modularFunctionCoeffAction_unop_modularFunctionActionZMod`: the twisted commutation
-  with the action of `SL(2, ℤ/Nℤ)`.
+* `TauCeti.modularFunctionCoeffAction_unop_modularFunctionActionZMod`,
+  `TauCeti.modularFunctionCoeffAction_unop_modularFunctionAction`: the twisted commutation
+  with the actions of `SL(2, ℤ/Nℤ)` and of `SL(2, ℤ)`.
 
 ## References
 
@@ -184,6 +185,14 @@ theorem modularFunctionCoeffAction_apply_eq_iff {σ : ℂ ≃+* ℂ}
   rw [← laurentQExpansion_modularFunctionCoeffAction, (laurentQExpansion_injective _).eq_iff,
     eq_comm]
 
+/-- Conjugating the coefficients by `σ⁻¹` undoes conjugating them by `σ`. -/
+@[simp]
+theorem modularFunctionCoeffAction_symm_apply_apply (σ : ℂ ≃+* ℂ)
+    (F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) :
+    modularFunctionCoeffAction N σ.symm (modularFunctionCoeffAction N σ F) = F := by
+  have hσ : σ.symm = σ⁻¹ := RingEquiv.ext fun x ↦ (RingAut.inv_apply σ x).symm
+  rw [hσ, map_inv, RingAut.inv_apply, RingEquiv.symm_apply_apply]
+
 /-- The conjugate of a constant function is the conjugate constant. -/
 @[simp]
 theorem modularFunctionCoeffAction_algebraMap (σ : ℂ ≃+* ℂ) (c : ℂ) :
@@ -278,5 +287,19 @@ theorem modularFunctionCoeffAction_unop_modularFunctionActionZMod {σ : ℂ ≃+
         unop_modularFunctionActionZMod_frickeMeromorphicFunction, ← hd₁, ← hd₁,
         Matrix.vecMul_vecMul, Matrix.vecMul_vecMul, hg]
   exact (h.symm ▸ Subfield.mem_top F : F ∈ φ.eqLocusField ψ)
+
+/-- **Twisted commutation with `SL(2, ℤ)`.** Let `σ (ζ_N) = ζ_N ^ d`. If `γ, γ' ∈ SL(2, ℤ)`
+satisfy `γ' diag(1, d) = diag(1, d) γ` modulo `N`, then `(F ∘ γ')^σ = F^σ ∘ γ` for every
+meromorphic function `F` on `X(N)`. -/
+theorem modularFunctionCoeffAction_unop_modularFunctionAction {σ : ℂ ≃+* ℂ} {d : (ZMod N)ˣ}
+    (hσ : σ (ZMod.stdAddChar (1 : ZMod N)) = ZMod.stdAddChar (d : ZMod N)) {γ γ' : SL(2, ℤ)}
+    (hγ : ((γ' : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) *
+        Matrix.diagonal ![1, (d : ZMod N)] =
+      Matrix.diagonal ![1, (d : ZMod N)] * (γ : SL(2, ZMod N)))
+    (F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) :
+    modularFunctionCoeffAction N σ (unop (modularFunctionAction N γ') F) =
+      unop (modularFunctionAction N γ) (modularFunctionCoeffAction N σ F) := by
+  rw [← modularFunctionActionZMod_map, ← modularFunctionActionZMod_map]
+  exact modularFunctionCoeffAction_unop_modularFunctionActionZMod hσ hγ F
 
 end TauCeti

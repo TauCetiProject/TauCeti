@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.Algebra.Polynomial.Eval.Defs
 public import Mathlib.RingTheory.Jacobson.Ideal
 import Mathlib.Algebra.Polynomial.FieldDivision
+import Mathlib.RingTheory.LocalRing.RingHom.Basic
 import TauCeti.Algebra.Polynomial.Derivative
 import TauCeti.RingTheory.Jacobson.Basic
 
@@ -26,6 +28,8 @@ is a unit multiple of `b - a`, and therefore lies in an ideal `K` exactly when `
 
 * `Polynomial.isUnit_eval_of_isUnit_coeff_zero_of_mem_jacobson`: a polynomial with unit constant
   term takes unit values on the Jacobson radical.
+* `Polynomial.isUnit_aeval_iff_isUnit_coeff_zero_of_mem_jacobson`: evaluation at an element of
+  the Jacobson radical detects unit constant coefficients when the scalar map is local.
 * `Polynomial.eval_sub_eval_mem_iff_sub_mem`: if `b - a` lies in the Jacobson radical and `f'(a)`
   is a unit, then `f(b) - f(a) ∈ K ↔ b - a ∈ K` for every ideal `K`.
 -/
@@ -34,13 +38,27 @@ public section
 
 namespace Polynomial
 
+/-- Evaluation at an element of the Jacobson radical is a unit exactly when the polynomial's
+constant coefficient is a unit, provided the scalar map reflects units. -/
+theorem isUnit_aeval_iff_isUnit_coeff_zero_of_mem_jacobson
+    {R S : Type*} [CommRing R] [Ring S] [Algebra R S] [IsLocalHom (algebraMap R S)]
+    (f : R[X]) {x : S} (hx : x ∈ Ring.jacobson S) :
+    IsUnit (aeval x f) ↔ IsUnit (f.coeff 0) := by
+  obtain ⟨q, hq⟩ := X_dvd_sub_C (p := f)
+  have hf : aeval x f = algebraMap R S (f.coeff 0) + x * aeval x q := by
+    have h := congrArg (aeval x) hq
+    simp only [map_sub, aeval_C, map_mul, aeval_X] at h
+    exact (sub_eq_iff_eq_add.mp h).trans (add_comm _ _)
+  rw [hf, TauCeti.Ring.isUnit_add_iff_of_mem_jacobson (Ideal.mul_mem_right _ _ hx),
+    isUnit_map_iff]
+
 /-- A polynomial whose constant term is a unit takes unit values on the Jacobson radical. -/
 theorem isUnit_eval_of_isUnit_coeff_zero_of_mem_jacobson {R : Type*} [CommRing R] {P : R[X]}
     (hP : IsUnit (P.coeff 0)) {x : R} (hx : x ∈ Ring.jacobson R) : IsUnit (P.eval x) := by
-  obtain ⟨r, hr⟩ := sub_dvd_eval_sub x 0 P
-  rw [← coeff_zero_eq_eval_zero, sub_zero, sub_eq_iff_eq_add, add_comm] at hr
-  rw [hr, TauCeti.Ring.isUnit_add_iff_of_mem_jacobson (Ideal.mul_mem_right _ _ hx)]
-  exact hP
+  have : IsLocalHom (algebraMap R R) := by
+    simpa only [Algebra.algebraMap_self] using isLocalHom_id R
+  simpa only [coe_aeval_eq_eval] using
+    (isUnit_aeval_iff_isUnit_coeff_zero_of_mem_jacobson P hx).2 hP
 
 /-- If `b - a` lies in the Jacobson radical of `R` and `f'(a)` is a unit, then `f(b) - f(a)` lies
 in an ideal `K` exactly when `b - a` does: by monic division,

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues.Basic
+public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.HermitianForm
 
 /-!
@@ -30,6 +31,13 @@ frame.
   for an orthonormal basis `b` of `E`.
 * `ContinuousAlternatingMap.sum_relEigenvalues_hermitianSesqForm_of_orthonormal`: the same for an
   orthonormal family `u` indexed by `Fin n`, `n = dim E`.
+* `ContinuousAlternatingMap.apply_relEigenvectorBasis_eq_zero`,
+  `ContinuousAlternatingMap.apply_relEigenvectorBasis_I_smul`: on the eigenbasis `u` of `H_α`,
+  `α(uᵢ, uⱼ) = 0` and `α(uᵢ, i uⱼ) = λᵢ[α] δᵢⱼ`, so `α` is diagonal on the real frame `(uᵢ, i uᵢ)`.
+* `ContinuousAlternatingMap.relEigenvalues_hermitianSesqForm_nonneg`: a positive (1,1)-form,
+  `α(u, i u) ≥ 0`, has nonnegative eigenvalues.
+* `ContinuousAlternatingMap.apply_relEigenvectorBasis_ofComplexModule`: the same diagonal values
+  with the complex structure `TauCeti.AlmostComplexStructure.ofComplexModule E` in place of `i`.
 
 ## References
 
@@ -67,5 +75,42 @@ theorem sum_relEigenvalues_hermitianSesqForm_of_orthonormal (hn : finrank ℂ E 
     (OrthonormalBasis.mk hu (hu.linearIndependent.span_eq_top_of_card_eq_finrank'
       (by simp [hn])).ge)]
   simp
+
+/-- **A (1,1)-form vanishes on its eigenbasis.** On the orthonormal eigenbasis `u` of `H_α`
+relative to the inner product, `α(uᵢ, uⱼ) = Im H_α(uᵢ, uⱼ) = 0`. -/
+theorem apply_relEigenvectorBasis_eq_zero (hn : finrank ℂ E = n) (i j : Fin n) :
+    α ![(isSymm_hermitianSesqForm hα).relEigenvectorBasis hn i,
+      (isSymm_hermitianSesqForm hα).relEigenvectorBasis hn j] = 0 := by
+  have h := congrArg Complex.im ((isSymm_hermitianSesqForm hα).apply_relEigenvectorBasis hn i j)
+  simpa [hermitianSesqForm_apply, im_hermitianForm, apply_ite] using h
+
+/-- **A (1,1)-form is diagonal on its eigenbasis.** On the orthonormal eigenbasis `u` of `H_α`
+relative to the inner product, `α(uᵢ, i uⱼ) = Re H_α(uᵢ, uⱼ) = λᵢ[α] δᵢⱼ`. -/
+theorem apply_relEigenvectorBasis_I_smul (hn : finrank ℂ E = n) (i j : Fin n) :
+    α ![(isSymm_hermitianSesqForm hα).relEigenvectorBasis hn i,
+      I • (isSymm_hermitianSesqForm hα).relEigenvectorBasis hn j] =
+      if i = j then (isSymm_hermitianSesqForm hα).relEigenvalues hn i else 0 := by
+  have h := congrArg Complex.re ((isSymm_hermitianSesqForm hα).apply_relEigenvectorBasis hn i j)
+  simpa [hermitianSesqForm_apply, re_hermitianForm, apply_ite] using h
+
+/-- **A positive (1,1)-form has nonnegative eigenvalues.** If `α(u, i u) ≥ 0` for every `u`, the
+eigenvalues of `H_α` relative to the inner product are nonnegative: `λⱼ[α] = α(uⱼ, i uⱼ)` on the
+eigenbasis `u`. -/
+theorem relEigenvalues_hermitianSesqForm_nonneg (hn : finrank ℂ E = n)
+    (hpos : ∀ u : E, 0 ≤ α ![u, I • u]) (j : Fin n) :
+    0 ≤ (isSymm_hermitianSesqForm hα).relEigenvalues hn j := by
+  have h := apply_relEigenvectorBasis_I_smul hα hn j j
+  simp only [↓reduceIte] at h
+  exact h ▸ hpos _
+
+/-- **A (1,1)-form is diagonal on its eigenbasis**, with the complex structure
+`J = TauCeti.AlmostComplexStructure.ofComplexModule E` of multiplication by `i`: on the
+orthonormal eigenbasis `u` of `H_α`, `α(uᵢ, J uⱼ) = λᵢ[α] δᵢⱼ`. -/
+theorem apply_relEigenvectorBasis_ofComplexModule (hn : finrank ℂ E = n) (i j : Fin n) :
+    α ![(isSymm_hermitianSesqForm hα).relEigenvectorBasis hn i,
+      TauCeti.AlmostComplexStructure.ofComplexModule E
+        ((isSymm_hermitianSesqForm hα).relEigenvectorBasis hn j)] =
+      if i = j then (isSymm_hermitianSesqForm hα).relEigenvalues hn i else 0 := by
+  simpa using apply_relEigenvectorBasis_I_smul hα hn i j
 
 end ContinuousAlternatingMap

@@ -45,6 +45,9 @@ All declarations are in the `TauCeti.MeasureTheory` namespace.
 * `setLIntegral_closedBall_le_morreyNormPow`: the Morrey norm also controls the balls centred
   outside `Ω`, at the cost of a factor `2^λ` for `λ ≥ 0`. So the Morrey norms defined with all
   centres in the ambient space, as in Rosales' paper, and with centres in `Ω` are equivalent.
+* `setLIntegral_closedBall_indicator_le`, `morreyNormPow_univ_indicator_le`: the extension by
+  zero of a function in `L^{p,λ}(Ω)`, `p > 0`, lies in the Morrey space of the whole space, with
+  norm at most `2^λ` times its norm on `Ω`.
 * `integrable_of_hasCompactSupport_of_morreyNormPow_ne_top`: a compactly supported function of
   finite Morrey norm `‖f‖_{L^{1,λ}}` is integrable.
 * `morreyNormPow_mono_set`, `morreyNormPow_smul`, `morreyNormPow_add_rpow_le`: monotonicity in the
@@ -169,6 +172,46 @@ theorem setLIntegral_closedBall_le_morreyNormPow [OpensMeasurableSpace X] (hr : 
     linarith
   calc _ ≤ ∫⁻ z in closedBall y (2 * r), ‖f z‖ₑ ^ p ∂μ.restrict Ω := lintegral_mono_set hsub
     _ ≤ _ := setLIntegral_closedBall_le_morreyNormPow_of_mem hyΩ (by positivity)
+
+/-- The factor by which the mass bound on balls centred outside `Ω` exceeds `r^λ` times the Morrey
+norm: `r^(-λ) (2 r)^λ = 2^λ`. -/
+private theorem ofReal_rpow_neg_mul_ofReal_two_mul_rpow (hr : 0 < r) :
+    ENNReal.ofReal (r ^ (-lam)) * ENNReal.ofReal ((2 * r) ^ lam) = ENNReal.ofReal (2 ^ lam) := by
+  rw [Real.mul_rpow zero_le_two hr.le, ENNReal.ofReal_mul (by positivity), mul_left_comm,
+    ← ENNReal.ofReal_rpow_add hr]
+  simp
+
+/-- **Mass of the extension by zero.** For `p > 0`, the `p`-th power mass of the extension of `f`
+by zero off `Ω` on any closed ball `B(x, r)`, for the full measure, is at most `(2 r)^λ` times the
+Morrey norm of `f` on `Ω`. -/
+theorem setLIntegral_closedBall_indicator_le [OpensMeasurableSpace X] (hp : 0 < p) (hr : 0 < r) :
+    ∫⁻ y in closedBall x r, ‖Ω.indicator f y‖ₑ ^ p ∂μ ≤
+      ENNReal.ofReal ((2 * r) ^ lam) * morreyNormPow μ Ω p lam f := by
+  have hind : (fun y ↦ ‖Ω.indicator f y‖ₑ ^ p) = Ω.indicator fun y ↦ ‖f y‖ₑ ^ p := by
+    ext y
+    by_cases hy : y ∈ Ω
+    · simp [hy]
+    · simp [hy, ENNReal.zero_rpow_of_pos hp]
+  rw [hind]
+  refine ((lintegral_indicator_le _ _).trans_eq ?_).trans
+    (setLIntegral_closedBall_le_morreyNormPow (x := x) hr)
+  rw [Measure.restrict_restrict' measurableSet_closedBall,
+    Measure.restrict_restrict measurableSet_closedBall, inter_comm]
+
+/-- **Extension by zero.** For `p > 0`, the Morrey norm on the whole space of the extension of `f`
+by zero off `Ω` is at most `2^λ` times the Morrey norm of `f` on `Ω`. So the extension by zero
+maps `L^{p,λ}(Ω)` into the Morrey space `L^{p,λ}` of the whole space, the one in which data are
+given to the potential estimates. -/
+theorem morreyNormPow_univ_indicator_le [OpensMeasurableSpace X] (hp : 0 < p) :
+    morreyNormPow μ univ p lam (Ω.indicator f) ≤
+      ENNReal.ofReal (2 ^ lam) * morreyNormPow μ Ω p lam f := by
+  refine morreyNormPow_le_iff.2 fun x _ r hr ↦ ?_
+  rw [Measure.restrict_univ]
+  calc _ ≤ ENNReal.ofReal (r ^ (-lam)) *
+        (ENNReal.ofReal ((2 * r) ^ lam) * morreyNormPow μ Ω p lam f) := by
+        gcongr
+        exact setLIntegral_closedBall_indicator_le hp hr
+    _ = _ := by rw [← mul_assoc, ofReal_rpow_neg_mul_ofReal_two_mul_rpow hr]
 
 /-- **Compactly supported Morrey functions are integrable.** An a.e.-strongly measurable,
 compactly supported `f` whose Morrey norm `‖f‖_{L^{1,λ}}` on the whole space is finite is
@@ -360,15 +403,10 @@ private theorem setLIntegral_closedBall_indicator_sub_le (x t : E) {r : ℝ} (hr
         rw [← hpre]
         exact (measurePreserving_sub_right μ t).setLIntegral_comp_preimage_emb
           (measurableEmbedding_subRight t) (fun z ↦ ‖Ω.indicator f z‖ₑ) _
-    _ ≤ ∫⁻ z in closedBall (x - t) r, ‖f z‖ₑ ∂μ.restrict Ω := by
-        simp only [eNorm_indicator_eq_indicator_eNorm]
-        refine (lintegral_indicator_le _ _).trans_eq ?_
-        rw [Measure.restrict_restrict' measurableSet_closedBall,
-          Measure.restrict_restrict measurableSet_closedBall, inter_comm]
     _ ≤ _ := by
         simpa only [ENNReal.rpow_one] using
-          setLIntegral_closedBall_le_morreyNormPow (μ := μ) (Ω := Ω) (p := 1) (lam := lam)
-            (f := f) (x := x - t) hr
+          setLIntegral_closedBall_indicator_le (μ := μ) (Ω := Ω) (lam := lam) (f := f)
+            (x := x - t) one_pos hr
 
 /-- **Convolution stays in `L^{1,λ}`.** For a kernel `v` and the extension `Ω.indicator f` of `f`
 by zero, the Morrey norm of the convolution `v ⋆ Ω.indicator f` on any set `V` is at most
@@ -406,16 +444,11 @@ theorem morreyNormPow_one_convolution_le [NormedSpace ℝ F] (V : Set E) {v : E 
           lintegral_mono fun t ↦ by gcongr; exact setLIntegral_closedBall_indicator_sub_le x t hr
       _ = _ := by
           rw [lintegral_mul_const'' _ hv.eNorm, eLpNorm_one_eq_lintegral_eNorm hv]
-  have hfac : ENNReal.ofReal (r ^ (-lam)) * ENNReal.ofReal ((2 * r) ^ lam) =
-      ENNReal.ofReal (2 ^ lam) := by
-    rw [Real.mul_rpow zero_le_two hr.le, ENNReal.ofReal_mul (by positivity), mul_left_comm,
-      ← ENNReal.ofReal_rpow_add hr]
-    simp
   calc _ ≤ ENNReal.ofReal (r ^ (-lam)) *
         (eLpNorm v 1 μ * (ENNReal.ofReal ((2 * r) ^ lam) * M)) := by gcongr
     _ = eLpNorm v 1 μ * (ENNReal.ofReal (r ^ (-lam)) * ENNReal.ofReal ((2 * r) ^ lam)) * M := by
         ring
-    _ = _ := by rw [hfac]; ring
+    _ = _ := by rw [ofReal_rpow_neg_mul_ofReal_two_mul_rpow hr]; ring
 
 end Haar
 

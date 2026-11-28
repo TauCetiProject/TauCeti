@@ -82,7 +82,8 @@ compactness of `M` is needed.
   `λ`.
 * `TauCeti.IsMorse.finiteCWType` and `TauCeti.FiniteCWType.of_isManifold`: compact boundaryless
   smooth manifolds have finite CW type.
-* `TauCeti.finite_singularHomology_int_of_isManifold`: the integral homology of a compact
+* `TauCeti.finite_singularHomology_int_of_isManifold`,
+  `TauCeti.addGroup_fg_singularHomology_of_isManifold`: the integral homology of a compact
   boundaryless manifold is finitely generated.
 
 ## References
@@ -413,5 +414,21 @@ theorem finite_singularHomology_int_of_isManifold [CompactSpace M] (j : ℕ) :
       (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of M)) := by
   have := FiniteCWType.of_isManifold M I
   exact finite_singularHomology_int_of_finiteCWType M j
+
+omit [FiniteDimensional ℝ E] in
+variable (I) in
+include I in
+/-- **The integral homology of a compact manifold is a finitely generated group.** For a compact
+boundaryless smooth manifold `X` in `Type`, the integral homology `Hⱼ(X; ℤ)` with coefficients
+`ℤ` is a finitely generated abelian group in every degree. -/
+theorem addGroup_fg_singularHomology_of_isManifold {X : Type} [TopologicalSpace X]
+    [ChartedSpace H X] [IsManifold I ∞ X] [T2Space X] [CompactSpace X] (j : ℕ) :
+    AddGroup.FG (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) j).obj
+      (ModuleCat.of ℤ ℤ)).obj (TopCat.of X)) := by
+  have := FiniteCWType.of_isManifold X I
+  have := finite_singularHomology_of_finiteCWType X (ModuleCat.of ℤ ℤ) j
+  -- The `ℤ`-module structure of a `ModuleCat ℤ` object is not syntactically the canonical one of
+  -- an additive group, so `convert` identifies the two, `ℤ`-module structures being unique.
+  exact Module.Finite.iff_addGroup_fg.1 (by convert this; exact Subsingleton.elim _ _)
 
 end TauCeti

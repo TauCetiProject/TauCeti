@@ -39,6 +39,7 @@ evaluates `φ` on the front `p`-face of a singular simplex and keeps its back `q
 
 * `TauCeti.ChainComplex.capChain`: the cap product of a chain and a cochain.
 * `TauCeti.ChainComplex.capChain_comp_d`: the boundary formula.
+* `TauCeti.ChainComplex.capChain_d_comp`: the cap product with a coboundary.
 * `TauCeti.ChainComplex.capChain_comp_d_of_cycles`: the boundary formula for a cocycle.
 * `TauCeti.ChainComplex.capChain_naturality`: naturality along maps of diagonals and actions.
 * `TauCeti.ChainComplex.capCycles`: the cap product of a cycle and a cocycle.
@@ -112,6 +113,16 @@ lemma capChain_comp_d (p q n : ℕ) (h : p + q = n) (φ : A.X p ⟶ M) :
       Preadditive.comp_add, Preadditive.comp_zsmul]
   rw [hd, hL, add_sub_cancel_left]
   simp [smul_smul, ← mul_pow]
+
+/-- **The cap product with a coboundary**: `x ⌢ (η ∘ ∂) = ∂x ⌢ η - (-1)^r ∂(x ⌢ η)` for a
+cochain `η` of degree `r`, the boundary formula `TauCeti.ChainComplex.capChain_comp_d` solved for
+the coboundary term. -/
+lemma capChain_d_comp (r q n : ℕ) (h : r + q = n) (η : A.X r ⟶ M) :
+    capChain k D a (r + 1) q (n + 1) (by omega) (A.d (r + 1) r ≫ η) =
+      E.d (n + 1) n ≫ capChain k D a r q n h η -
+        ((-1 : ℤ) ^ r) • (capChain k D a r (q + 1) (n + 1) (by omega) η ≫ B'.d (q + 1) q) := by
+  rw [capChain_comp_d D a r q n h η, smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul,
+    sub_sub_cancel]
 
 /-- **Naturality of the cap product of chains and cochains** along maps of diagonals and actions:
 if chain maps `e : E' ⟶ E`, `f : A' ⟶ A`, `g : B₁ ⟶ B` and `g' : B₁' ⟶ B'` satisfy
