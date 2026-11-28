@@ -72,7 +72,7 @@ noncomputable section
 namespace TauCeti.ClassFieldTheory
 
 open IsDedekindDomain _root_.NumberField _root_.NumberField.InfinitePlace
-  TauCeti.GlobalNumberFields Polynomial
+  TauCeti.GlobalNumberFields _root_.Polynomial
 
 /-! ### Abelian extensions of `ℚ` -/
 
