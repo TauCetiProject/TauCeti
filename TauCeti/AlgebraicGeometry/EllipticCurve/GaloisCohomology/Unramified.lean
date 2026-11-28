@@ -211,7 +211,7 @@ theorem ker_explicitCoeff1_torsionCoeffIncl_eq_unramifiedTorsionCohomology
 
 /-- **When `W` is integral over `𝒪[K]` with unit discriminant away from `m`, the local Kummer image
 equals unramified cohomology** over any nonarchimedean local field `K`. -/
-theorem range_kummerMap_eq_unramifiedTorsionCohomology_of_localField [DecidableEq K]
+theorem range_kummerMap_eq_unramifiedTorsionCohomology [DecidableEq K]
     (hmres : (m : 𝓀[K]) ≠ 0) :
     (W.kummerMap m (natCast_ne_zero_of_residueField_natCast_ne_zero hmres).isUnit).range =
       W.unramifiedTorsionCohomology m := by
