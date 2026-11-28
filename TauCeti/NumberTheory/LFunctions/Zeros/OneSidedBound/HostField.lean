@@ -11,7 +11,10 @@ public import TauCeti.NumberTheory.NumberField.Quadratic.EmbeddingBound
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 import TauCeti.FieldTheory.IntermediateField.Quadratic
+import TauCeti.NumberTheory.Cyclotomic.Irreducible
 import TauCeti.NumberTheory.Multiquadratic.Cyclotomic.FundamentalDiscriminant
+import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Field
+import TauCeti.NumberTheory.NumberField.Cyclotomic.Finrank
 import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
 import Mathlib.RingTheory.RootsOfUnity.Complex
 
@@ -67,6 +70,18 @@ theorem finrank_baseField : Module.finrank ℚ P.baseField = 2 := by
 /-- The base is a number field. -/
 instance instNumberFieldBaseField : NumberField P.baseField where
   to_finiteDimensional := Module.finite_of_finrank_pos (by rw [P.finrank_baseField]; decide)
+
+/-- The discriminant of the quadratic base in the host construction is `-d`. -/
+@[simp] theorem discr_baseField : discr P.baseField = -(P.d : ℤ) := by
+  have h₄ : P.d % 4 = 3 := by have := P.d_mod_eight; omega
+  have hD := Multiquadratic.oddPrimeDiscriminant_of_mod_four_eq_three h₄
+  have hs : QuadraticAlgebra.sqrtRadicand (-(P.d : ℚ)) ^ 2 =
+      algebraMap ℤ ℂ (Multiquadratic.primeDiscriminantRadicand
+        (Multiquadratic.oddPrimeDiscriminant P.d)) := by
+    rw [Multiquadratic.primeDiscriminantRadicand_oddPrimeDiscriminant P.odd_d, hD]
+    simp [sq]
+  exact (Multiquadratic.discr_adjoin_singleton_eq_primeDiscriminant
+    (Multiquadratic.isPrimeDiscriminant_oddPrimeDiscriminant P.prime_d P.odd_d) hs).trans hD
 
 /-- The host field `ℚ(√-d)(ζ)` inside `ℂ`, with `ζ` of order `q₁(s)`. -/
 def hostField (s : ℕ) : IntermediateField P.baseField ℂ :=
@@ -143,6 +158,14 @@ theorem hostField_le_cyclotomic (s : ℕ) {ξ : ℂ} (hξ : IsPrimitiveRoot ξ (
 /-- The host is a number field. -/
 instance instNumberFieldHostField (s : ℕ) : NumberField (P.hostField s) :=
   IsCyclotomicExtension.numberField {P.q₁ s} P.baseField (P.hostField s)
+
+/-- The cyclotomic polynomial of the tower level stays irreducible over the quadratic base. -/
+theorem irreducible_cyclotomic_baseField (s : ℕ) :
+    Irreducible (Polynomial.cyclotomic (P.q₁ s) P.baseField) := by
+  apply IsCyclotomicExtension.irreducible_cyclotomic_of_totient_le_finrank
+    P.baseField (P.hostField s)
+  exact (IsCyclotomicExtension.finrank_eq_totient P.baseField (P.hostField s) (P.q₁ s)
+    (by simpa using (P.coprime_q₁_d s).symm)).ge
 
 /-- The host is abelian Galois over the rationals. -/
 instance instIsAbelianGaloisHostFieldRat (s : ℕ) : IsAbelianGalois ℚ (P.hostField s) := by
