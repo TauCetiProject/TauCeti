@@ -148,4 +148,26 @@ theorem exists_finite_restrict_factorization {X : Type*} [TopologicalSpace X]
   rw [← restrictRealizationHomeomorph_apply]
   exact congrArg Subtype.val (e.apply_symm_apply (h x))
 
+/-- Relabeling `L.restrictToVertices` along `Subtype.val` identifies its realization with the
+polyhedron `{x : Realization K | x.val.support ∈ L}` inside any containing complex `K`. -/
+def _root_.PreAbstractSimplicialComplex.restrictToVerticesRealizationHomeomorph
+    {K : AbstractSimplicialComplex ι} {L : PreAbstractSimplicialComplex ι}
+    (hL : L ≤ K.toPreAbstractSimplicialComplex) :
+    Realization L.restrictToVertices ≃ₜ {x : Realization K // x.val.support ∈ L} :=
+  L.restrictToVertices.toPreAbstractSimplicialComplex.realizationRelabelingHomeomorph
+    (Function.Embedding.subtype _)
+    (by rw [Function.Embedding.coe_subtype, L.map_val_restrictToVertices])
+    rfl hL
+
+/-- The relabeling homeomorphism from `Realization L.restrictToVertices` pushes forward barycentric
+coordinates along `Subtype.val`. -/
+@[simp]
+theorem _root_.PreAbstractSimplicialComplex.restrictToVerticesRealizationHomeomorph_val
+    {K : AbstractSimplicialComplex ι} {L : PreAbstractSimplicialComplex ι}
+    (hL : L ≤ K.toPreAbstractSimplicialComplex) (x : Realization L.restrictToVertices) :
+    (L.restrictToVerticesRealizationHomeomorph hL x).val.val =
+      Finsupp.mapDomain Subtype.val x.val :=
+  PreAbstractSimplicialComplex.realizationRelabelingHomeomorph_val _
+    (Function.Embedding.subtype _) _ rfl hL x
+
 end AbstractSimplicialComplex

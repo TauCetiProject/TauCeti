@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Triangulable.Basic
+public import TauCeti.Topology.Triangulable.FiniteCWType
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.Basic
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Stellar.VertexPlacement
 
 /-!
 # Combinatorially triangulable spaces
@@ -30,6 +32,11 @@ same convention as `PreAbstractSimplicialComplex.IsCombinatorialManifold`.
 * `isCombinatoriallyTriangulable_iff`: the defining witness characterization.
 * `AbstractSimplicialComplex.isCombinatoriallyTriangulable_realization`: realizations of
   combinatorial manifolds are combinatorially triangulable.
+* `IsCombinatoriallyTriangulable.exists_vertex_image_of_compactSpace`: every finite subset of a
+  compact combinatorially triangulable space is a vertex image in a finite combinatorial
+  triangulation of the same dimension.
+* `IsCombinatoriallyTriangulable.finiteCWType_compl`: removing any finite subset from a compact
+  combinatorially triangulable space preserves `FiniteCWType`.
 * `Homeomorph.isCombinatoriallyTriangulable_iff`: invariance under homeomorphism.
 -/
 
@@ -76,6 +83,33 @@ theorem _root_.AbstractSimplicialComplex.isCombinatoriallyTriangulable_realizati
   exact ⟨ι, K, (by
     exact hK),
     ⟨Homeomorph.refl _⟩⟩
+
+/-- Every finite subset of a compact combinatorially triangulable space is a vertex image in a
+finite combinatorial triangulation of the same dimension. -/
+theorem IsCombinatoriallyTriangulable.exists_vertex_image_of_compactSpace
+    [CompactSpace X] {n : ℕ}
+    (htri : IsCombinatoriallyTriangulable.{w} X n) {S : Set X} (hS : S.Finite) :
+    ∃ (ι : Type w) (K : AbstractSimplicialComplex ι)
+      (e : AbstractSimplicialComplex.Realization K ≃ₜ X) (V : Set ι),
+      Finite ι ∧ K.toPreAbstractSimplicialComplex.IsCombinatorialManifold n ∧
+      e '' (K.vertex '' V) = S := by
+  obtain ⟨ι, K, hK, ⟨e⟩⟩ := isCombinatoriallyTriangulable_iff.mp htri
+  have := e.symm.compactSpace
+  have hfin : Finite ι := (K.compactSpace_realization_iff_finite).mp inferInstance
+  obtain ⟨ι', inst', K', e', V, hfin', hman', hV⟩ :=
+    K.exists_homeomorph_vertex_image_of_homeomorph e hS
+  exact ⟨ι', K', e', V, hfin' hfin,
+    (K'.toPreAbstractSimplicialComplex.isCombinatorialManifold_congr_decidableEq
+      inst' (Classical.decEq ι')).mp (hman' n hK),
+    hV⟩
+
+/-- Removing any finite subset from a compact combinatorially triangulable space leaves a space
+of finite CW type. -/
+theorem IsCombinatoriallyTriangulable.finiteCWType_compl
+    [CompactSpace X] {n : ℕ}
+    (htri : IsCombinatoriallyTriangulable.{w} X n) {S : Set X} (hS : S.Finite) :
+    FiniteCWType ↥Sᶜ :=
+  htri.isTriangulable.finiteCWType_compl hS
 
 end
 
