@@ -5,17 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Choose
-public import TauCeti.NumberTheory.PrimeCounting.Asymptotics
-public import TauCeti.NumberTheory.PrimeCounting.MediumPrimeProducts
+public import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+public import TauCeti.NumberTheory.PrimeCounting.MediumPrimeProducts.Basic
+import Mathlib.Analysis.SpecialFunctions.Choose
 import TauCeti.Analysis.SpecialFunctions.Log.Asymptotics
+import TauCeti.NumberTheory.PrimeCounting.Asymptotics
 
 /-!
 # The number of products of `m` primes in `[x / 2, x]`
 
-By the prime number theorem, the number of primes in `[x / 2, x]` is asymptotic to
-`x / (2 log x)`. Since the set `N_m(x)` of products of `m` distinct such primes has
-`(#primes).choose m` elements, and `n.choose m ∼ n ^ m / m!` for fixed `m`, it follows that
+Let `k(x)` be the number of primes in `[x / 2, x]`. It differs from `π(x) - π(x / 2)` by at most
+one (`TauCeti.primeCounting_le_card_mediumPrimes_add_primeCounting` and
+`TauCeti.card_mediumPrimes_add_primeCounting_le_primeCounting_add_one`), and the prime number
+theorem at the two scales `x` and `x / 2`, in the form
+`TauCeti.tendsto_primeCounting_mul_sub_mul_div`, gives `(π(x) - π(x / 2)) / (x / log x) → 1 / 2`.
+Hence `k(x) ∼ x / (2 log x)`.
+
+The set `N_m(x)` of products of `m` distinct primes of `[x / 2, x]` has `k(x).choose m` elements
+(`TauCeti.card_mediumPrimeProducts`), and Mathlib's `isEquivalent_choose` gives
+`n.choose m ∼ n ^ m / m!` for fixed `m`. Composing with `k(x) → ∞`, it follows that
 
   `#N_m(x) ∼ (x / log x) ^ m / (2 ^ m * m!)`
 
@@ -23,9 +32,6 @@ as `x → ∞`, for each fixed `m`.
 
 ## Main results
 
-* `TauCeti.primeCounting_natFloor_le_card_mediumPrimes_add`,
-  `TauCeti.card_mediumPrimes_add_primeCounting_le`: the number `k(x)` of primes in `[x / 2, x]`
-  satisfies `π(x) ≤ k(x) + π(x / 2) ≤ π(x) + 1`.
 * `TauCeti.tendsto_card_mediumPrimes_div_div_log`, `TauCeti.isEquivalent_card_mediumPrimes`:
   `k(x) / (x / log x) → 1 / 2`, that is `k(x) ∼ x / (2 log x)`.
 * `TauCeti.tendsto_card_mediumPrimes_atTop`: `k(x)` tends to infinity.
@@ -44,38 +50,6 @@ open scoped Topology
 
 namespace TauCeti
 
-/-- Every prime `p ≤ x` is either at most `⌊x / 2⌋₊` or lies in `[x / 2, x]`, so
-`π(x) ≤ #{p prime : x / 2 ≤ p ≤ x} + π(x / 2)`. -/
-theorem primeCounting_natFloor_le_card_mediumPrimes_add (x : ℝ) :
-    primeCounting ⌊x⌋₊ ≤ #(mediumPrimes x) + primeCounting ⌊x / 2⌋₊ := by
-  rw [← primesLE_card_eq_primeCounting, ← primesLE_card_eq_primeCounting]
-  refine (card_le_card fun p hp ↦ ?_).trans (card_union_le _ _)
-  obtain ⟨hpx, hp⟩ := mem_primesLE.1 hp
-  rw [mem_union, mem_mediumPrimes, mem_primesLE]
-  by_cases h : p ≤ ⌊x / 2⌋₊
-  · exact Or.inr ⟨h, hp⟩
-  · exact Or.inl ⟨hp, (lt_of_floor_lt (not_le.1 h)).le, (le_floor_iff' hp.ne_zero).1 hpx⟩
-
-/-- The primes in `[x / 2, x]` and the primes up to `⌊x / 2⌋₊` are all at most `x`, and only
-`x / 2` itself can be in both sets, so `#{p prime : x / 2 ≤ p ≤ x} + π(x / 2) ≤ π(x) + 1`. -/
-theorem card_mediumPrimes_add_primeCounting_le (x : ℝ) :
-    #(mediumPrimes x) + primeCounting ⌊x / 2⌋₊ ≤ primeCounting ⌊x⌋₊ + 1 := by
-  rw [← primesLE_card_eq_primeCounting, ← primesLE_card_eq_primeCounting,
-    ← card_union_add_card_inter]
-  refine Nat.add_le_add (card_le_card fun p hp ↦ ?_) (card_le_one.2 fun a ha b hb ↦ ?_)
-  · rw [mem_primesLE]
-    rcases mem_union.1 hp with hp | hp
-    · exact ⟨le_floor (mem_mediumPrimes.1 hp).2.2, (mem_mediumPrimes.1 hp).1⟩
-    · obtain ⟨hp2, hp⟩ := mem_primesLE.1 hp
-      have h := (le_floor_iff' hp.ne_zero).1 hp2
-      have hp0 : (0 : ℝ) < p := mod_cast hp.pos
-      exact ⟨le_floor (by linarith), hp⟩
-  · have key : ∀ c ∈ mediumPrimes x ∩ primesLE ⌊x / 2⌋₊, (c : ℝ) = x / 2 := fun c hc ↦ by
-      obtain ⟨hc1, hc2⟩ := mem_inter.1 hc
-      obtain ⟨hc2, hcp⟩ := mem_primesLE.1 hc2
-      exact le_antisymm ((le_floor_iff' hcp.ne_zero).1 hc2) (mem_mediumPrimes.1 hc1).2.1
-    exact Nat.cast_injective (R := ℝ) ((key a ha).trans (key b hb).symm)
-
 /-- The number of primes in `[x / 2, x]`, divided by `x / log x`, tends to `1 / 2`. -/
 theorem tendsto_card_mediumPrimes_div_div_log :
     Tendsto (fun x : ℝ ↦ (#(mediumPrimes x) : ℝ) / (x / Real.log x)) atTop (𝓝 (1 / 2)) := by
@@ -92,11 +66,11 @@ theorem tendsto_card_mediumPrimes_div_div_log :
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' hD hD1 ?_ ?_
   · filter_upwards [hden.eventually_gt_atTop 0] with x hx
     have h : (primeCounting ⌊x⌋₊ : ℝ) ≤ #(mediumPrimes x) + primeCounting ⌊x / 2⌋₊ :=
-      mod_cast primeCounting_natFloor_le_card_mediumPrimes_add x
+      mod_cast primeCounting_le_card_mediumPrimes_add_primeCounting x
     exact div_le_div_of_nonneg_right (by linarith) hx.le
   · filter_upwards [hden.eventually_gt_atTop 0] with x hx
     have h : (#(mediumPrimes x) : ℝ) + primeCounting ⌊x / 2⌋₊ ≤ primeCounting ⌊x⌋₊ + 1 :=
-      mod_cast card_mediumPrimes_add_primeCounting_le x
+      mod_cast card_mediumPrimes_add_primeCounting_le_primeCounting_add_one x
     rw [← one_div, ← add_div]
     exact div_le_div_of_nonneg_right (by linarith) hx.le
 
@@ -104,18 +78,11 @@ theorem tendsto_card_mediumPrimes_div_div_log :
 asymptotic to `x / (2 log x)`. -/
 theorem isEquivalent_card_mediumPrimes :
     (fun x : ℝ ↦ (#(mediumPrimes x) : ℝ)) ~[atTop] fun x ↦ x / (2 * Real.log x) := by
-  have hne : ∀ᶠ x : ℝ in atTop, x / (2 * Real.log x) ≠ 0 := by
-    filter_upwards [TauCeti.Real.tendsto_div_log_atTop.eventually_gt_atTop 0] with x hx
-    have hx' : x / (2 * Real.log x) = x / Real.log x / 2 := by
-      rw [div_div, mul_comm]
-    rw [hx']
-    positivity
-  rw [isEquivalent_iff_tendsto_one hne]
   have h2 : Tendsto (fun x : ℝ ↦ 2 * ((#(mediumPrimes x) : ℝ) / (x / Real.log x))) atTop
       (𝓝 1) := by
     simpa using tendsto_card_mediumPrimes_div_div_log.const_mul 2
-  refine h2.congr fun x ↦ ?_
-  rw [Pi.div_apply, div_div_eq_mul_div, div_div_eq_mul_div]
+  refine isEquivalent_of_tendsto_one (h2.congr fun x ↦ ?_)
+  simp only [Pi.div_apply, div_eq_mul_inv, mul_inv, inv_inv]
   ring
 
 /-- The number of primes in `[x / 2, x]` tends to infinity with `x`. -/
@@ -139,8 +106,7 @@ theorem isEquivalent_card_mediumPrimeProducts (m : ℕ) :
   · exact Eventually.of_forall fun x ↦ by
       simp only [Function.comp_apply, card_mediumPrimeProducts]
   · exact Eventually.of_forall fun x ↦ by
-      simp only [Pi.div_apply, Pi.pow_apply]
-      rw [div_pow, div_pow, mul_pow, div_div, div_div]
+      simp only [Pi.div_apply, Pi.pow_apply, div_eq_mul_inv, mul_pow, mul_inv, inv_pow]
       ring
 
 end TauCeti
