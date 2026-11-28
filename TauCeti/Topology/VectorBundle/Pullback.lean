@@ -24,7 +24,7 @@ so Mathlib's `FiberBundle.pullback` and `VectorBundle.pullback` apply to stateme
 fibre topology from the norm, such as those about smooth sections with fibre inner products over an
 open subset. A pulled-back
 linear trivialization also induces the original fibre equivalence at the image point
-(`Bundle.Trivialization.linearEquivAt_pullback`,
+(`Bundle.Trivialization.linearEquivAt_pullback`, `Bundle.Trivialization.linearMapAt_pullback`,
 `Bundle.Trivialization.continuousLinearEquivAt_pullback` and
 `Bundle.Trivialization.continuousLinearMapAt_pullback`), and reads coordinates back into the fibre
 as the original one does (`Bundle.Trivialization.symm_pullback`,
@@ -119,6 +119,17 @@ theorem linearEquivAt_pullback (e : Trivialization F (π F E)) [e.IsLinear 𝕜]
   apply LinearEquiv.ext
   intro v
   exact congrArg Prod.snd (e.pullback_apply f ⟨b, v⟩)
+
+/-- A pulled-back linear chart, extended by zero off the base set, is the original one at the
+image point. -/
+@[simp]
+theorem linearMapAt_pullback (e : Trivialization F (π F E)) [e.IsLinear 𝕜] (f : K) (b : B') :
+    (e.pullback f).linearMapAt 𝕜 b = e.linearMapAt 𝕜 (f b) := by
+  ext v
+  -- `v : (f *ᵖ E) b` is `E (f b)` only after unfolding, so the unfolding of the right side is
+  -- applied as a term at type `E (f b)`.
+  simp only [linearMapAt_apply, pullback_baseSet, Set.mem_preimage, pullback_apply]
+  exact (e.linearMapAt_apply v).symm
 
 /-- A pulled-back chart reads coordinates back into the fibre as the original chart does at the
 image point. -/

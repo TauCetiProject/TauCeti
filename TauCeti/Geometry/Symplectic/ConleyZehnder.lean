@@ -13,7 +13,9 @@ public import TauCeti.Topology.Algebra.SymplecticGroup
 
 import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder.Normalization
 import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder.Zero
+import TauCeti.Analysis.Matrix.SymplecticGroup.L2OpNorm
 import TauCeti.Analysis.Normed.Operator.Exponential
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.LinearAlgebra.Eigenspace.Det
@@ -72,14 +74,16 @@ identity to `1`, compositions to products and inverses, or left inverses, to inv
   (`TauCeti.SymplecticForm.conleyZehnderIndex_eq_zero_of_finrank_eigenspace_eq`), for instance a
   path through linear maps none of which has the eigenvalue `1`.
 * **Normalization.** If `L` is related to a nondegenerate symmetric bilinear form `Q` by
-  `ω(L w, u) = Q(w, u)`, so that `L` is infinitesimally symplectic, then for small `ε > 0` the path
-  `t ↦ exp (t ε L)` has index `ind(Q) - n`, where `ind(Q)` is the negative index of inertia of `Q`
-  and `2n` is the dimension of `V`
+  `ω(L w, u) = Q(w, u)`, so that `L` is infinitesimally symplectic, and the matrix of `L` in some
+  symplectic basis has `ℓ²` operator norm less than `2π`, then the path `t ↦ exp (t L)` has index
+  `ind(Q) - n`, where `ind(Q)` is the negative index of inertia of `Q` and `2n` is the dimension
+  of `V` (`TauCeti.SymplecticForm.conleyZehnderIndex_eq_sigNeg_sub`); in particular
+  `t ↦ exp (t ε L)` has this index for every small `ε > 0`
   (`TauCeti.SymplecticForm.eventually_conleyZehnderIndex_eq_sigNeg_sub`). This is the signature
-  axiom `TauCeti.GLSymplectic.eventually_conleyZehnderIndex_eq_neg_signature_div_two` without
-  coordinates: in a symplectic basis the matrix of `L` is `J S` for the matrix `S` of `Q`. It
-  computes the index of the linearized flow at a nondegenerate rest point of a small autonomous
-  Hamiltonian, where `Q` is the Hessian.
+  axiom `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_signature_div_two` without coordinates: in
+  a symplectic basis the matrix of `L` is `J S` for the matrix `S` of `Q`, and `‖J S‖ = ‖S‖`. It
+  computes the index of the linearized flow at a nondegenerate rest point of an autonomous
+  Hamiltonian whose linearized vector field is small, where `Q` is the Hessian.
 
 ## References
 
@@ -536,24 +540,29 @@ theorem conleyZehnderIndex_map_conj (e : V ≃L[ℝ] W)
 
 /-! ### Normalization -/
 
+open scoped Matrix.Norms.L2Operator in
 /-- **The normalization of the Conley–Zehnder index without coordinates.** Let `L` be an
 endomorphism of a symplectic vector space `(V, ω)` of dimension `2n` with `ω(L w, u) = Q(w, u)` for
-a nondegenerate symmetric bilinear form `Q`. For every small `ε > 0`, a path of linear symplectic
-maps equal to `exp (t ε L)` at the times `t ∈ [0, 1]` has Conley–Zehnder index `ind(Q) - n`, where
-`ind(Q)` is the negative index of inertia of `Q`. -/
-theorem eventually_conleyZehnderIndex_eq_sigNeg_sub {L : V →L[ℝ] V}
-    {Q : LinearMap.BilinForm ℝ V} (hLQ : ∀ w u, ω (L w) u = Q w u) (hQ : Q.IsSymm)
-    (hQnd : Q.Nondegenerate) :
-    ∀ᶠ ε in nhdsWithin 0 (Set.Ioi 0), ∀ {A B : V →L[ℝ] V} (Ψ : Path A B)
-      (hΨ : ∀ t u v, ω (Ψ t u) (Ψ t v) = ω u v),
-      (∀ t : I, Ψ t = NormedSpace.exp (((t : ℝ) * ε) • L)) →
-      ω.conleyZehnderIndex Ψ hΨ = sigNeg Q.toQuadraticMap - (finrank ℝ V : ℝ) / 2 := by
-  obtain ⟨m, b, hb⟩ := ω.isAlt.exists_basis_toMatrix_eq_J ω.nondegenerate
+a nondegenerate symmetric bilinear form `Q`, and let `b` be a symplectic basis in which the matrix
+of `L` has `ℓ²` operator norm less than `2π`. Then a path of linear symplectic maps equal to
+`exp (t L)` at the times `t ∈ [0, 1]` has Conley–Zehnder index `ind(Q) - n`, where `ind(Q)` is the
+negative index of inertia of `Q`. -/
+theorem conleyZehnderIndex_eq_sigNeg_sub {L : V →L[ℝ] V} {Q : LinearMap.BilinForm ℝ V}
+    (hLQ : ∀ w u, ω (L w) u = Q w u) (hQ : Q.IsSymm) (hQnd : Q.Nondegenerate) {m : ℕ}
+    {b : Basis (Fin m ⊕ Fin m) ℝ V}
+    (hb : LinearMap.BilinForm.toMatrix b ω.toBilinForm = J (Fin m) ℝ)
+    (hL : ‖LinearMap.toMatrix b b L‖ < 2 * Real.pi) {A B : V →L[ℝ] V} (Ψ : Path A B)
+    (hΨ : ∀ t u v, ω (Ψ t u) (Ψ t v) = ω u v)
+    (hΨt : ∀ t : I, Ψ t = NormedSpace.exp ((t : ℝ) • L)) :
+    ω.conleyZehnderIndex Ψ hΨ = sigNeg Q.toQuadraticMap - (finrank ℝ V : ℝ) / 2 := by
   set S := LinearMap.BilinForm.toMatrix b Q
   have hS : S.IsHermitian :=
     isHermitian_iff_isSymm.2 ((LinearMap.BilinForm.isSymm_toMatrix_iff_isSymm b).2 hQ)
   have hSdet : IsUnit S.det :=
     isUnit_iff_ne_zero.2 ((LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b).1 hQnd)
+  -- In `b` the matrix of `L` is `J S`, and `J` is unitary, so `‖S‖ = ‖J S‖ < 2π`.
+  have hLS := ω.toMatrix_eq_J_mul_toMatrix_of_apply_eq (L := L) hLQ hQ hb
+  have hS2π : ‖S‖ < 2 * Real.pi := by rwa [← l2_opNorm_J_mul, ← hLS]
   -- The signature of `S` is `sigPos Q - sigNeg Q = 2n - 2 ind(Q)`.
   have hsig : (signature S : ℝ) = finrank ℝ V - 2 * sigNeg Q.toQuadraticMap := by
     have hsum := QuadraticForm.sigPos_add_sigNeg_of_nondegenerate Q.toQuadraticMap
@@ -563,15 +572,44 @@ theorem eventually_conleyZehnderIndex_eq_sigNeg_sub {L : V →L[ℝ] V}
     rw [← hsum]
     push_cast
     ring
-  filter_upwards [GLSymplectic.eventually_conleyZehnderIndex_exp_smul_eq_neg_signature_div_two hS
-    hSdet] with ε hε A B Ψ hΨ hΨt
-  -- In `b`, the matrix of `Ψ t` is `exp (t J (ε S))`.
+  -- In `b`, the matrix of `Ψ t` is `exp (t J S)`.
   have hmat (t : I) : ((ω.matrixPath hb Ψ hΨ t : GL (Fin m ⊕ Fin m) ℝ) : Matrix _ _ ℝ) =
-      NormedSpace.exp ((t : ℝ) • (J (Fin m) ℝ * (ε • S))) := by
+      NormedSpace.exp ((t : ℝ) • (J (Fin m) ℝ * S)) := by
     rw [matrixPath_apply, coe_toGLSymplectic, hΨt t, ContinuousLinearMap.toMatrix_exp,
-      ContinuousLinearMap.toLinearMap_smul, LinearEquiv.map_smul,
-      ω.toMatrix_eq_J_mul_toMatrix_of_apply_eq (L := L) hLQ hQ hb, Matrix.mul_smul, smul_smul]
-  rw [ω.conleyZehnderIndex_eq hb, hε _ hmat, hsig]
+      ContinuousLinearMap.toLinearMap_smul, LinearEquiv.map_smul, hLS]
+  rw [ω.conleyZehnderIndex_eq hb,
+    GLSymplectic.conleyZehnderIndex_eq_neg_signature_div_two hS hSdet hS2π _ hmat, hsig]
   ring
+
+open scoped Matrix.Norms.L2Operator in
+/-- **The normalization of the Conley–Zehnder index for small multiples.** Let `L` be an
+endomorphism of a symplectic vector space `(V, ω)` of dimension `2n` with `ω(L w, u) = Q(w, u)` for
+a nondegenerate symmetric bilinear form `Q`. For every small `ε > 0`, a path of linear symplectic
+maps equal to `exp (t ε L)` at the times `t ∈ [0, 1]` has Conley–Zehnder index `ind(Q) - n`, where
+`ind(Q)` is the negative index of inertia of `Q`. The explicit bound on `ε` is that of
+`TauCeti.SymplecticForm.conleyZehnderIndex_eq_sigNeg_sub`. -/
+theorem eventually_conleyZehnderIndex_eq_sigNeg_sub {L : V →L[ℝ] V}
+    {Q : LinearMap.BilinForm ℝ V} (hLQ : ∀ w u, ω (L w) u = Q w u) (hQ : Q.IsSymm)
+    (hQnd : Q.Nondegenerate) :
+    ∀ᶠ ε in nhdsWithin 0 (Set.Ioi 0), ∀ {A B : V →L[ℝ] V} (Ψ : Path A B)
+      (hΨ : ∀ t u v, ω (Ψ t u) (Ψ t v) = ω u v),
+      (∀ t : I, Ψ t = NormedSpace.exp (((t : ℝ) * ε) • L)) →
+      ω.conleyZehnderIndex Ψ hΨ = sigNeg Q.toQuadraticMap - (finrank ℝ V : ℝ) / 2 := by
+  obtain ⟨m, b, hb⟩ := ω.isAlt.exists_basis_toMatrix_eq_J ω.nondegenerate
+  -- In `b` the matrix of `ε L` has norm `ε` times that of `L`, less than `2π` for small `ε`.
+  have hsmall : ∀ᶠ ε in nhdsWithin (0 : ℝ) (Set.Ioi 0),
+      ‖LinearMap.toMatrix b b ((ε • L : V →L[ℝ] V) : V →ₗ[ℝ] V)‖ < 2 * Real.pi := by
+    have ht : Filter.Tendsto
+        (fun ε : ℝ ↦ ‖LinearMap.toMatrix b b ((ε • L : V →L[ℝ] V) : V →ₗ[ℝ] V)‖)
+        (nhdsWithin 0 (Set.Ioi 0)) (nhds 0) := by
+      simp only [ContinuousLinearMap.toLinearMap_smul, LinearEquiv.map_smul, norm_smul]
+      simpa using ((continuous_norm.tendsto (0 : ℝ)).mul_const _).mono_left nhdsWithin_le_nhds
+    exact ht.eventually (gt_mem_nhds Real.two_pi_pos)
+  -- The form of `ε L` is `ε Q`, which has the negative index of `Q`.
+  filter_upwards [hsmall, self_mem_nhdsWithin] with ε hε hε0 A B Ψ hΨ hΨt
+  rw [ω.conleyZehnderIndex_eq_sigNeg_sub (L := ε • L) (Q := ε • Q) (fun w u ↦ by simp [hLQ])
+      (hQ.smul ε) ((TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero hε0.ne')).2 hQnd)
+      hb hε Ψ hΨ (fun t ↦ by rw [hΨt t, mul_smul]),
+    LinearMap.BilinMap.toQuadraticMap_smul, QuadraticForm.sigNeg_smul_of_pos _ hε0]
 
 end TauCeti.SymplecticForm

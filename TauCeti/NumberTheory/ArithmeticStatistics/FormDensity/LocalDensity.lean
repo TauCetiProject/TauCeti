@@ -29,6 +29,8 @@ The definitions are made over an arbitrary finite commutative ring `R`, normaliz
 
 * `FormDensity.primitiveZeros a`, the primitive zeros of `f_a`;
 * `FormDensity.localDensity a`, the local density `σ(a; R)`;
+* `FormDensity.isUnimodular_veronese`: the Veronese vector `ν(b)` of a primitive point `b`, the
+  vector of its monomials with `f_a(b) = a ⬝ᵥ ν(b)`, is again primitive;
 * `FormDensity.localDensity_pos_iff`: `σ(a; R) > 0` exactly when `f_a` has a primitive zero;
 * `FormDensity.localDensity_le_card`: `σ(a; R) ≤ #R`;
 * `FormDensity.localDensity_smul_of_isUnit`: scaling `a` by a unit does not change `σ`, so `σ` is
@@ -47,6 +49,22 @@ public section
 open Finset MvPolynomial
 
 namespace TauCeti.FormDensity
+
+section Veronese
+
+variable {σ R : Type*} [Fintype σ] [DecidableEq σ] [CommSemiring R] {d : ℕ}
+
+/-- The Veronese vector of a primitive vector is primitive: among its coordinates are the powers
+`xᵢ ^ d`, and these generate the unit ideal whenever the coordinates `xᵢ` do. -/
+theorem isUnimodular_veronese {x : σ → R} (hx : Module.IsUnimodular R x) :
+    Module.IsUnimodular R (veronese x : Monomials σ d → R) := by
+  rw [TauCeti.Module.isUnimodular_pi_iff_span_range_eq_top] at hx ⊢
+  refine top_unique ((Ideal.span_pow_eq_top _ hx d).ge.trans (Ideal.span_le.mpr ?_))
+  rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩
+  refine Ideal.subset_span ⟨⟨Finsupp.single i d, by simp⟩, ?_⟩
+  simp [Finsupp.single_apply, pow_ite]
+
+end Veronese
 
 variable {σ R S : Type*} [Fintype σ] [DecidableEq σ] [CommRing R] [Fintype R] [CommRing S]
   [Fintype S] {d n : ℕ}

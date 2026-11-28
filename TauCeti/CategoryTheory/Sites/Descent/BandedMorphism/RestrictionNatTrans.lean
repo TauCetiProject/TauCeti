@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Sites.Descent.BandedMorphism.FiberAction
+public import TauCeti.CategoryTheory.Sites.Descent.BandedMorphism.Fiber.Action
 public import TauCeti.CategoryTheory.Sites.Descent.BandedMorphism.Restriction
 
 /-!

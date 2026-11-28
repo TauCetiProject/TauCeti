@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ThetaLift.FrobeniusCycle.Root.Basic
 public import TauCeti.RingTheory.MvPolynomial.GaussFiltration
 import Mathlib.Algebra.CharP.Lemmas
+import Mathlib.Algebra.MvPolynomial.CommRing
 import Mathlib.Algebra.MvPolynomial.Equiv
 import Mathlib.Data.Finsupp.Weight
 import Mathlib.RingTheory.Ideal.Quotient.Operations
@@ -20,9 +21,9 @@ import TauCeti.RingTheory.MvPolynomial.OrderAt
 Let `T` be a Frobenius cycle (`TauCeti.FrobeniusCycle`): ring maps `ι s : W →+* R` for the letters
 `s : ZMod N`, alternately even and odd, with `ι (s + 1) ≡ ι s ^ P` modulo a prime `p`, where `W`
 has `q = P ^ N` residue classes, and a square root `w` of `p` in `R`. The group `GL_k(W)` acts on
-polynomials over `R` in the variables `x (b, s)`, `b : Fin k`, by the twisted action: `g` acts
-through the block diagonal matrix of its letter matrices `T.letterMatrix s g`, by Tau Ceti's
-substitution of standard vectors `TauCeti.polynomialAction`. This file shows which monomials can
+polynomials over `R` in the variables `x (b, s)`, `b : Fin k`, by the twisted action
+`TauCeti.FrobeniusCycle.twistedAction`: `g` acts through the block diagonal matrix of its letter
+matrices `T.letterMatrix s g`. This file shows which monomials can
 carry the least `w`-adic order plus weight among all translates of a polynomial by `SL₂(W)`, placed
 in two rows and columns `a`, `a'` (`TauCeti.rootSL`): their exponents have defect at most `0`, which
 is one of Pieri's inequalities.
@@ -190,18 +191,18 @@ on the variable `z` by `D.swapTransvection r`, substitute `D.mainSubst - D.cross
 `D.moveSign z` the result is the polynomial substituted for `D.swapVar z`, plus errors
 `T.frobeniusError i r n` that occur only for `z = Y_s`: with `d = (s - i) mod N`, the error for
 `n = N + d` multiplies `X_s`, and `-ε_s` times the error for `n = d` multiplies `Y_s`. -/
-private theorem mapAlgHom_taylor_aeval_swapTransvection_X [NeZero N] (r : W)
+private theorem mapAlgHom_taylor_aeval_swapTransvection_X (r : W)
     (z : Fin k × ZMod N) :
     mapAlgHom (MvPolynomial.taylor fun _ : Unit ↦ T.ι D.letter r)
         (aeval (D.mainSubst - D.crossSubst)
-          (polynomialAction (blockDiagonal (T.letterMatrix · (D.swapTransvection r))) (X z))) -
+          (T.twistedAction (D.swapTransvection r) (X z))) -
       D.moveSign z • (D.mainSubst - D.crossSubst) (D.swapVar z) =
     D.moveSign z •
       (C (T.frobeniusError D.letter (|D.sign z| * r) (N + (z.2 - D.letter).val)) *
           X (D.swapVar z) -
         D.sign z • (C (T.frobeniusError D.letter r (z.2 - D.letter).val) * X z)) := by
   have := T.neZero
-  rw [D.polynomialAction_swapTransvection_X, map_zsmul, map_zsmul, ← smul_sub]
+  rw [D.twistedAction_swapTransvection_X, map_zsmul, map_zsmul, ← smul_sub]
   simp only [frobeniusError]
   congr 1
   rcases D.var_cases z with rfl | rfl | ⟨s, hs, rfl | rfl⟩ | hz
@@ -268,9 +269,9 @@ amounts in `[1 / 2, 1]`, and let each term of the translate of `f` by `(D.swapTr
 have `w`-adic order plus `c`-weight at least `b`. Substitute `D.mainSubst - D.crossSubst` in `f`,
 then replace `t` by `t + ι_i(r)` in the coefficients. The result has level `b` when `w` weighs `1`,
 `t` weighs `ρ = D.slope c` and a variable `z` weighs `c z - D.zeroOrder z * ρ`. -/
-private theorem HasBoundedIncrements.mapAlgHom_taylor_aeval_mem [NeZero N]
+private theorem HasBoundedIncrements.mapAlgHom_taylor_aeval_mem
     (hc : D.HasBoundedIncrements c) (r : W) {f : MvPolynomial (Fin k × ZMod N) R}
-    (hf : polynomialAction (blockDiagonal (T.letterMatrix · (D.swapTransvection r)⁻¹)) f ∈
+    (hf : T.twistedAction (D.swapTransvection r)⁻¹ f ∈
       gaussFiltration (adicFiltration T.w) c b) :
     mapAlgHom (MvPolynomial.taylor fun _ : Unit ↦ T.ι D.letter r)
         (aeval (D.mainSubst - D.crossSubst) f) ∈
@@ -281,7 +282,7 @@ private theorem HasBoundedIncrements.mapAlgHom_taylor_aeval_mem [NeZero N]
     MvPolynomial (Fin k × ZMod N) (MvPolynomial Unit R)
   let ψ : E := (mapAlgHom (MvPolynomial.taylor fun _ : Unit ↦ T.ι D.letter r)).comp
     (.comp (aeval (D.mainSubst - D.crossSubst))
-      (polynomialAction (blockDiagonal (T.letterMatrix · (D.swapTransvection r)))))
+      (T.twistedAction (D.swapTransvection r)))
   let θ : E := aeval fun z ↦ D.moveSign z • (D.mainSubst - D.crossSubst) (D.swapVar z)
   have h_main (z : Fin k × ZMod N) :
       θ (X z) ∈ T.iteratedGaussFiltration c (D.slope c) D.zeroOrder (c z) := by
@@ -295,13 +296,13 @@ private theorem HasBoundedIncrements.mapAlgHom_taylor_aeval_mem [NeZero N]
       (zsmul_mem (antitone_iteratedGaussFiltration _ _ _ _ h_self ?_) _)) _
     all_goals apply frobeniusError_mul_X_mem hc.slope_pos.le
   have h_level :
-      ψ (polynomialAction (blockDiagonal (T.letterMatrix · (D.swapTransvection r)⁻¹)) f) ∈
+      ψ (T.twistedAction (D.swapTransvection r)⁻¹ f) ∈
       T.iteratedGaussFiltration c (D.slope c) D.zeroOrder b :=
     (algHom_sub_mem_of_mem_gaussFiltration θ _ (antitone_iteratedGaussFiltration ..) hf h_main ψ
       (by norm_num) h_error algebraMap_mem_iteratedGaussFiltration).left
-  have h_cancel : polynomialAction (blockDiagonal (T.letterMatrix · (D.swapTransvection r)))
-      (polynomialAction (blockDiagonal (T.letterMatrix · (D.swapTransvection r)⁻¹)) f) = f := by
-    rw [← polynomialAction_letterMatrix_mul, mul_inv_cancel, polynomialAction_letterMatrix_one]
+  have h_cancel : T.twistedAction (D.swapTransvection r)
+      (T.twistedAction (D.swapTransvection r)⁻¹ f) = f := by
+    rw [← AlgHom.mul_apply, ← map_mul, mul_inv_cancel, map_one, AlgHom.one_apply]
   rwa [AlgHom.comp_apply, AlgHom.comp_apply, h_cancel] at h_level
 
 variable (D) in
@@ -405,11 +406,11 @@ private theorem coeff_mergedCoeff_aeval_mainSubst (α : Fin k × ZMod N →₀ �
 `a`, `a'` each term has `w`-adic order plus `c`-weight at least `l + c · α`, and that `w ^ (l + 1)`
 does not divide the coefficient of `x ^ α` in `f`. Let `ν` be the weight of `α` for
 `D.zeroOrder` and `q ν'` its weight for `D.poleOrder`. Then `ν q ≤ q ν'`. -/
-private theorem HasBoundedIncrements.weight_zeroOrder_mul_q_le [NeZero N]
+private theorem HasBoundedIncrements.weight_zeroOrder_mul_q_le
     (hc : D.HasBoundedIncrements c) {f : MvPolynomial (Fin k × ZMod N) R}
     {α : Fin k × ZMod N →₀ ℕ} {l : ℕ}
     (h_least : ∀ g ∈ rootSL W D.fst D.snd,
-      polynomialAction (blockDiagonal (T.letterMatrix · g)) f ∈
+      T.twistedAction g f ∈
         gaussFiltration (adicFiltration T.w) c (l + weight c α))
     (h_not_dvd : ¬T.w ^ (l + 1) ∣ f.coeff α) :
     weight D.zeroOrder α * T.q ≤ weight D.poleOrder α := by
@@ -469,18 +470,19 @@ Gauss level `l + c · α` for the `w`-adic filtration, and that `w ^ (l + 1)` do
 coefficient of `x ^ α` in `f`. Then the defect of `α` at any letter `i` along `(a, a')` is at most
 `0`. These bounds along the roots are Pieri's inequalities for the exponent of a term that is least
 among all translates. -/
-theorem defect_nonpos_of_extreme_term [NeZero N] (T : FrobeniusCycle W R N) {a a' : Fin k}
+theorem defect_nonpos_of_extreme_term (T : FrobeniusCycle W R N) {a a' : Fin k}
     (i : ZMod N) {c : Fin k × ZMod N → ℝ}
     (hc : ∀ s, c (T.posIndex a a' s, s) - c (T.negIndex a a' s, s) ∈ Set.Icc 2⁻¹ 1)
     {f : MvPolynomial (Fin k × ZMod N) R} {α : Fin k × ZMod N →₀ ℕ} {l : ℕ}
-    (h_least : ∀ g ∈ rootSL W a a', polynomialAction (blockDiagonal (T.letterMatrix · g)) f ∈
+    (h_least : ∀ g ∈ rootSL W a a', T.twistedAction g f ∈
       gaussFiltration (adicFiltration T.w) c (l + weight c α))
     (h_not_dvd : ¬T.w ^ (l + 1) ∣ f.coeff α) :
     T.defect a a' i α ≤ 0 := by
+  have := T.neZero
   -- For `a = a'` the weights would not rise from `ū_s = u_s` to `u_s`.
   have ha : a ≠ a' := by
     rintro rfl
-    have h_idx : T.negIndex a a i = T.posIndex a a i := by simp [negIndex_eq_ite, posIndex_eq_ite]
+    have h_idx : T.negIndex a a i = T.posIndex a a i := T.negIndex_eq_posIndex_iff.mpr rfl
     have := (hc i).1
     rw [h_idx, sub_self] at this
     norm_num at this
@@ -520,15 +522,15 @@ theorem sub_defectWeight_div_three_mem_Icc (T : FrobeniusCycle W R N) {a a' : Fi
 /-- Let `t ≤ v₀`, and suppose that whenever some translate of `f` by `SL₂^{a,a'}(W)` has a
 coefficient at `x ^ α` not divisible by `w ^ (l + 1)` and `l + ω · α < v₀`, then
 `t ≤ l + ω · α`. Then every such translate lies in Gauss level `t` for the weights `ω`. -/
-private theorem polynomialAction_mem_of_forall_low [NeZero N] (T : FrobeniusCycle W R N)
+private theorem twistedAction_mem_of_forall_low (T : FrobeniusCycle W R N)
     {a a' : Fin k} {ω : Fin k × ZMod N → ℝ} {f : MvPolynomial (Fin k × ZMod N) R} {v₀ t : ℝ}
     (ht : t ≤ v₀)
     (h_low : ∀ (α : Fin k × ZMod N →₀ ℕ) (l : ℕ), l + weight ω α < v₀ →
       (∃ g ∈ rootSL W a a',
-        ¬T.w ^ (l + 1) ∣ (polynomialAction (blockDiagonal (T.letterMatrix · g)) f).coeff α) →
+        ¬T.w ^ (l + 1) ∣ (T.twistedAction g f).coeff α) →
         t ≤ l + weight ω α)
     {g : GL (Fin k) W} (hg : g ∈ rootSL W a a') :
-    polynomialAction (blockDiagonal (T.letterMatrix · g)) f ∈
+    T.twistedAction g f ∈
       gaussFiltration (adicFiltration T.w) ω t := by
   refine mem_gaussFiltration_iff.2 fun α ↦ ?_
   by_contra h_not
@@ -542,13 +544,14 @@ the weights `δ` rise by `1` from `ū_s` to `u_s` in each letter (so that `a ≠
 translate of `f` by `SL₂^{a,a'}(W)` lies in Gauss level `v₀` for `δ`, then `f` lies in Gauss level
 `v₀` for the weights `δ - (defect weights at i along (a, a')) / 3`: each term has order plus
 `δ`-weight at least `v₀` plus a third of its defect. -/
-theorem mem_gaussFiltration_sub_defect_div_three [NeZero N] (T : FrobeniusCycle W R N)
+theorem mem_gaussFiltration_sub_defect_div_three (T : FrobeniusCycle W R N)
     {a a' : Fin k} (i : ZMod N) {δ : Fin k × ZMod N → ℝ}
     (h_step : ∀ s, δ (T.posIndex a a' s, s) - δ (T.negIndex a a' s, s) = 1)
     {v₀ : ℝ} {f : MvPolynomial (Fin k × ZMod N) R}
-    (hf : ∀ g ∈ rootSL W a a', polynomialAction (blockDiagonal (T.letterMatrix · g)) f ∈
+    (hf : ∀ g ∈ rootSL W a a', T.twistedAction g f ∈
       gaussFiltration (adicFiltration T.w) δ v₀) :
     f ∈ gaussFiltration (adicFiltration T.w) (fun x ↦ δ x - T.defectWeight a a' i x / 3) v₀ := by
+  have := T.neZero
   -- Let `ω` be `δ` minus a third of the defect weight. Suppose that some translate has a term
   -- whose order plus `ω`-weight is below `v₀`, and take a least such term. By
   -- `defect_nonpos_of_extreme_term` its defect is at most `0`, so its order plus `δ`-weight is
@@ -557,9 +560,9 @@ theorem mem_gaussFiltration_sub_defect_div_three [NeZero N] (T : FrobeniusCycle 
   -- `(α, l) ∈ low`: in some translate the term at `α` has order at most `l`, and `l + ω · α < v₀`.
   let low : Set ((Fin k × ZMod N →₀ ℕ) × ℕ) := {x | x.2 + weight ω x.1 < v₀ ∧
     ∃ g ∈ rootSL W a a',
-      ¬T.w ^ (x.2 + 1) ∣ (polynomialAction (blockDiagonal (T.letterMatrix · g)) f).coeff x.1}
+      ¬T.w ^ (x.2 + 1) ∣ (T.twistedAction g f).coeff x.1}
   suffices h_empty : ¬low.Nonempty by
-    simpa using T.polynomialAction_mem_of_forall_low le_rfl
+    simpa using T.twistedAction_mem_of_forall_low le_rfl
       (fun α l h_lt h_g ↦ absurd ⟨(α, l), h_lt, h_g⟩ h_empty) (one_mem _)
   intro h_ne
   -- The degree of `f` bounds `α`, and `v₀` bounds `l`.
@@ -569,16 +572,16 @@ theorem mem_gaussFiltration_sub_defect_div_three [NeZero N] (T : FrobeniusCycle 
     rintro ⟨α, l⟩ ⟨h_lt, g, -, h_not⟩
     have h_degree : α.degree ≤ f.totalDegree :=
       (le_totalDegree (MvPolynomial.mem_support_iff.2 fun h_zero ↦ h_not (by simp [h_zero]))).trans
-        (totalDegree_polynomialAction_le (blockDiagonal (T.letterMatrix · g)) f)
+        (T.totalDegree_twistedAction_le g f)
     exact Set.mem_biUnion h_degree ⟨rfl, lt_ceil.2 (by linarith)⟩
   obtain ⟨⟨α, l⟩, ⟨h_lt, g₀, hg₀, h_not⟩, h_min⟩ :
       ∃ x ∈ low, ∀ y ∈ low, x.2 + weight ω x.1 ≤ y.2 + weight ω y.1 :=
     Set.exists_min_image low _ h_finite h_ne
   have h_defect : T.defect a a' i α ≤ 0 :=
-    T.defect_nonpos_of_extreme_term i (T.sub_defectWeight_div_three_mem_Icc i h_step)
+    T.defect_nonpos_of_extreme_term i (c := ω) (T.sub_defectWeight_div_three_mem_Icc i h_step)
       (fun g hg ↦ by
-        have h_mul := T.polynomialAction_letterMatrix_mul g g₀ f
-        simpa [← h_mul] using T.polynomialAction_mem_of_forall_low h_lt.le
+        rw [← AlgHom.mul_apply, ← map_mul]
+        exact T.twistedAction_mem_of_forall_low h_lt.le
           (fun β m h_lt' h_g ↦ h_min (β, m) ⟨h_lt', h_g⟩) (mul_mem hg hg₀)) h_not
   have h_weight : weight ω α = weight δ α - T.defect a a' i α / 3 :=
     T.weight_sub_defectWeight_div_three a a' i δ α
@@ -591,12 +594,12 @@ theorem mem_gaussFiltration_sub_defect_div_three [NeZero N] (T : FrobeniusCycle 
 that `a ≠ a'`). If `x ^ α` occurs in `f` and every term of every translate of `f` by
 `SL₂^{a,a'}(W)` has `δ`-weight at least `δ · α`, then the defect of `α` at any letter `i` along
 `(a, a')` is at most `0`. -/
-theorem defect_nonpos_of_least [NeZero N] {K : Type*} [Field K] (T : FrobeniusCycle W K N)
+theorem defect_nonpos_of_least {K : Type*} [Field K] (T : FrobeniusCycle W K N)
     [CharP K T.p] {a a' : Fin k} (i : ZMod N) {δ : Fin k × ZMod N → ℝ}
     (h_step : ∀ s, δ (T.posIndex a a' s, s) - δ (T.negIndex a a' s, s) = 1)
     {f : MvPolynomial (Fin k × ZMod N) K} {α : Fin k × ZMod N →₀ ℕ}
     (h_least : ∀ g ∈ rootSL W a a', ∀ β,
-      (polynomialAction (blockDiagonal (T.letterMatrix · g)) f).coeff β ≠ 0 →
+      (T.twistedAction g f).coeff β ≠ 0 →
         weight δ α ≤ weight δ β)
     (hα : f.coeff α ≠ 0) : T.defect a a' i α ≤ 0 := by
   have w_zero : T.w = 0 := (pow_eq_zero_iff two_ne_zero).1 (T.w_sq.trans (CharP.cast_eq_zero K _))

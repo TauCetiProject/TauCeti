@@ -41,10 +41,29 @@ the type of the point as the type of this family
   of the family of Hessians of the functions `ℓ ∘ F` on `E`
   (`TauCeti.SymplecticForm.hasWilliamsonTypeAt_iff_of_fderiv_eq_zero`), with
   `k_e + k_h + 2 k_f = n`
-  (`TauCeti.SymplecticForm.HasWilliamsonTypeAt.two_mul_add_add_eq_finrank_of_fderiv_eq_zero`).
+  (`TauCeti.SymplecticForm.HasWilliamsonTypeAt.two_mul_add_add_eq_finrank_of_fderiv_eq_zero`);
+* the type does not depend on the choice of symplectic coordinates on the source either: if
+  `φ : E' → E` is `C²` at `y` and its differential there is a linear symplectomorphism, for
+  instance a canonical transformation, then `y` has type `(k_e, k_h, k_f)` for `F ∘ φ` exactly when
+  `φ y` has this type for `F`
+  (`TauCeti.SymplecticForm.hasWilliamsonTypeAt_comp_right_iff_of_isSymplectomorphism`).
+
+The type is a property of the differential `dF_x` and of the Hessians of the functions `ℓ ∘ F`
+alone. This unbundled content
+(`TauCeti.SymplecticForm.HasTransversalWilliamsonType ω T Q k_e k_h k_f`, for a linear map `T` and
+a family `Q` of quadratic forms) is shared with the Williamson type of a point of a map on a
+symplectic manifold (`TauCeti.SmoothTwoForm.IsNondegenerate.HasWilliamsonTypeAt`), and it is
+transported along linear symplectomorphisms
+(`TauCeti.SymplecticForm.hasTransversalWilliamsonType_comp_iff`): a linear symplectomorphism
+`e` carries `ker (T ∘ e)` onto `ker T` and induces a symplectomorphism of the reduced spaces through
+which the reduced forms correspond, and the Williamson type of a family is invariant under
+symplectomorphisms (`TauCeti.SymplecticForm.hasWilliamsonType_comp_iff`).
 
 ## Main definitions
 
+* `TauCeti.SymplecticForm.HasTransversalWilliamsonType ω T Q k_e k_h k_f`: the forms `Q ℓ` with
+  `ℓ ∘ T = 0` descend to the reduced space of `ker T` and have Williamson type `(k_e, k_h, k_f)`
+  there.
 * `TauCeti.SymplecticForm.HasWilliamsonTypeAt ω F x k_e k_h k_f`: `x` is a nondegenerate point of
   `F` with `k_e` elliptic, `k_h` hyperbolic and `k_f` focus-focus components.
 
@@ -64,6 +83,74 @@ noncomputable section
 open Module
 
 namespace TauCeti.SymplecticForm
+
+/-! ### The Williamson type of transversal data -/
+
+section Transversal
+
+variable {V V' G : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+  [FiniteDimensional ℝ V] [AddCommGroup V'] [Module ℝ V'] [TopologicalSpace V']
+  [FiniteDimensional ℝ V'] [NormedAddCommGroup G] [NormedSpace ℝ G] {kₑ kₕ k_f : ℕ}
+
+/-- The common content of the linear and the manifold notion of the Williamson type of a point,
+for the differential `T` of the map and the Hessians `Q ℓ` of the functions `ℓ ∘ F`: `(T, Q)` is
+transversally nondegenerate, and the forms `Q ℓ` with `ℓ ∘ T = 0`, descended to the reduced space
+of `ker T`, have Williamson type `(kₑ, kₕ, k_f)`. -/
+def HasTransversalWilliamsonType (ω₁ : SymplecticForm V) (T : V →L[ℝ] G)
+    (Q : (G →L[ℝ] ℝ) → QuadraticForm ℝ V) (kₑ kₕ k_f : ℕ) : Prop :=
+  ∃ h : IsTransversallyNondegenerate ω₁ T Q,
+    (ω₁.reduction T.ker).HasWilliamsonType
+      (fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp T = 0} ↦
+        ω₁.reducedQuadraticForm _ (Q ℓ.val) (h.polar_eq_zero ℓ.val ℓ.property)) kₑ kₕ k_f
+
+/-- Unfolding `HasTransversalWilliamsonType`. -/
+theorem hasTransversalWilliamsonType_iff {ω₁ : SymplecticForm V} {T : V →L[ℝ] G}
+    {Q : (G →L[ℝ] ℝ) → QuadraticForm ℝ V} :
+    HasTransversalWilliamsonType ω₁ T Q kₑ kₕ k_f ↔ ∃ h : IsTransversallyNondegenerate ω₁ T Q,
+      (ω₁.reduction T.ker).HasWilliamsonType
+        (fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp T = 0} ↦
+          ω₁.reducedQuadraticForm _ (Q ℓ.val) (h.polar_eq_zero ℓ.val ℓ.property)) kₑ kₕ k_f :=
+  Iff.rfl
+
+/-- Transversal data with a Williamson type are transversally nondegenerate. -/
+theorem HasTransversalWilliamsonType.isTransversallyNondegenerate {ω₁ : SymplecticForm V}
+    {T : V →L[ℝ] G} {Q : (G →L[ℝ] ℝ) → QuadraticForm ℝ V}
+    (h : HasTransversalWilliamsonType ω₁ T Q kₑ kₕ k_f) : IsTransversallyNondegenerate ω₁ T Q :=
+  h.1
+
+/-- **Transport of the transversal Williamson type along a linear symplectomorphism.** Let
+`e : V ≃ V'` carry `ω₁` to `ω₂` and let `T : V' → G` be linear. If the forms `Q' ℓ` on `V` are the
+pullbacks along `e` of the forms `Q ℓ` on `V'` whenever `ℓ ∘ T = 0`, then `(T ∘ e, Q')` has
+Williamson type `(kₑ, kₕ, k_f)` for `ω₁` exactly when `(T, Q)` has this type for `ω₂`: `e`
+induces a symplectomorphism of the reduced spaces of `ker (T ∘ e)` and `ker T` through which the
+reduced forms correspond. -/
+theorem hasTransversalWilliamsonType_comp_iff {ω₁ : SymplecticForm V} {ω₂ : SymplecticForm V'}
+    (e : V ≃L[ℝ] V') (he : IsSymplectomorphism ω₁ ω₂ e.toLinearEquiv) (T : V' →L[ℝ] G)
+    {Q : (G →L[ℝ] ℝ) → QuadraticForm ℝ V'} {Q' : (G →L[ℝ] ℝ) → QuadraticForm ℝ V}
+    (hQ : ∀ ℓ : G →L[ℝ] ℝ, ℓ.comp T = 0 → Q' ℓ = (Q ℓ).comp (e.toLinearEquiv : V →ₗ[ℝ] V')) :
+    HasTransversalWilliamsonType ω₁ (T.comp (e : V →L[ℝ] V')) Q' kₑ kₕ k_f ↔
+      HasTransversalWilliamsonType ω₂ T Q kₑ kₕ k_f := by
+  have hnd := isTransversallyNondegenerate_comp_iff e he T hQ
+  -- Once both families descend, they agree up to a symplectomorphism of the reduced spaces.
+  have key (h' : IsTransversallyNondegenerate ω₁ (T.comp (e : V →L[ℝ] V')) Q')
+      (h : IsTransversallyNondegenerate ω₂ T Q) :
+      (ω₁.reduction (T.comp (e : V →L[ℝ] V')).ker).HasWilliamsonType
+          (fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp (T.comp (e : V →L[ℝ] V')) = 0} ↦
+            ω₁.reducedQuadraticForm _ (Q' ℓ.val) (h'.polar_eq_zero ℓ.val ℓ.property))
+          kₑ kₕ k_f ↔
+        (ω₂.reduction T.ker).HasWilliamsonType
+          (fun ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp T = 0} ↦
+            ω₂.reducedQuadraticForm _ (Q ℓ.val) (h.polar_eq_zero ℓ.val ℓ.property)) kₑ kₕ k_f := by
+    obtain ⟨c, hc, hr⟩ := exists_isSymplectomorphism_range_reducedQuadraticForm_eq e he T hQ
+      h.polar_eq_zero h'.polar_eq_zero
+    rw [← hasWilliamsonType_comp_iff hc]
+    exact hasWilliamsonType_iff_of_span_eq (congrArg _ hr)
+  exact ⟨fun ⟨h', ht⟩ ↦ ⟨hnd.1 h', (key h' (hnd.1 h')).1 ht⟩,
+    fun ⟨h, ht⟩ ↦ ⟨hnd.2 h, (key (hnd.2 h) h).2 ht⟩⟩
+
+end Transversal
+
+/-! ### The Williamson type of a point -/
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup G] [NormedSpace ℝ G] {ι : Type*} {kₑ kₕ k_f : ℕ}
@@ -168,6 +255,18 @@ private theorem hasWilliamsonTypeAt_iff_of_ker_eq {U : Submodule ℝ E}
   subst hU
   exact ⟨fun ⟨h, ht⟩ ↦ ⟨h, h.polar_hessianQuadraticForm_eq_zero, ht⟩, fun ⟨h, _, ht⟩ ↦ ⟨h, ht⟩⟩
 
+/-- Unbundled form of `HasWilliamsonTypeAt`, with the derivative `dF_x` replaced by any `T` equal
+to it: `F` is `C²` at `x` and `(T, Q)` has Williamson type `(kₑ, kₕ, k_f)` for the Hessians `Q ℓ`
+of the functions `ℓ ∘ F`. -/
+theorem hasWilliamsonTypeAt_iff_of_fderiv_eq {T : E →L[ℝ] G} (hT : fderiv ℝ F x = T) :
+    ω.HasWilliamsonTypeAt F x kₑ kₕ k_f ↔ ContDiffAt ℝ 2 F x ∧
+      HasTransversalWilliamsonType ω T (fun ℓ : G →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ F) x)
+        kₑ kₕ k_f := by
+  subst hT
+  exact ⟨fun ⟨h, ht⟩ ↦ ⟨h.contDiffAt,
+      ⟨h.polar_hessianQuadraticForm_eq_zero, h.isNondegenerateQuadraticFamily⟩, ht⟩,
+    fun ⟨h₁, ⟨h₂, h₃⟩, ht⟩ ↦ ⟨⟨h₁, h₂, h₃⟩, ht⟩⟩
+
 /-- **Invariance of the Williamson type under reparametrization of the values.** Composing `F` with
 a `C²` map `g` whose differential `Dg` at `F x` has a continuous linear left inverse does not change
 the Williamson type of a point: the kernel of the differential, and hence the transversal space, is
@@ -198,5 +297,26 @@ theorem hasWilliamsonTypeAt_continuousLinearEquiv_comp_iff {G' : Type*} [NormedA
       (A.hasLeftInverse.congr A.fderiv) hF
   exact iff_of_false (fun h ↦ hF (A.comp_contDiffAt_iff.1 h.isNondegeneratePoint.contDiffAt))
     fun h ↦ hF h.isNondegeneratePoint.contDiffAt
+
+/-- **Invariance of the Williamson type under canonical transformations.** Let `φ : E' → E` be
+`C²` at `y`, with differential at `y` a linear symplectomorphism `e` from `(E', ω')` to `(E, ω)`.
+Then `y` has Williamson type `(kₑ, kₕ, k_f)` for `F ∘ φ` and `ω'` exactly when `φ y` has this type
+for `F` and `ω`: `e` carries the kernel of the differential of `F ∘ φ` onto that of `F`, and the
+induced symplectomorphism of transversal spaces carries the transversal Hessians of `F` to those
+of `F ∘ φ`. Only the differential of `φ` at `y` enters, so this applies in particular to a `C²`
+canonical transformation `φ`, and to a linear change of symplectic coordinates. -/
+theorem hasWilliamsonTypeAt_comp_right_iff_of_isSymplectomorphism {E' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] {ω' : SymplecticForm E'}
+    {φ : E' → E} {y : E'} {e : E' ≃ₗ[ℝ] E} (he : IsSymplectomorphism ω' ω e)
+    (hφ : ContDiffAt ℝ 2 φ y) (hφe : ∀ v, fderiv ℝ φ y v = e v) :
+    ω'.HasWilliamsonTypeAt (F ∘ φ) y kₑ kₕ k_f ↔ ω.HasWilliamsonTypeAt F (φ y) kₑ kₕ k_f := by
+  by_cases hF : ContDiffAt ℝ 2 F (φ y)
+  swap
+  · exact iff_of_false (fun h ↦ hF ((isNondegeneratePoint_comp_right_iff_of_isSymplectomorphism
+      he hφ hφe).1 h.isNondegeneratePoint).contDiffAt) fun h ↦ hF h.isNondegeneratePoint.contDiffAt
+  obtain ⟨e', he', hT, hQ⟩ := exists_isSymplectomorphism_of_comp_right he hφ hφe hF
+  rw [hasWilliamsonTypeAt_iff_of_fderiv_eq hT, hasWilliamsonTypeAt_iff_of_fderiv_eq rfl,
+    hasTransversalWilliamsonType_comp_iff e' he' _ hQ]
+  exact and_congr_left' (iff_of_true (hF.comp y hφ) hF)
 
 end TauCeti.SymplecticForm
