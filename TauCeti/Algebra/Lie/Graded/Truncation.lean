@@ -189,9 +189,9 @@ noncomputable instance instGradedLieAlgebraTruncatedGrading (k : ℕ) :
 
 /-- Truncating a positive grading preserves positivity. -/
 instance truncatedGrading_isPositiveGrading (k : ℕ) :
-    IsPositiveGrading d (d.truncatedGrading ℒ k) where
-  eq_bot n hn := by
-    rw [truncatedGrading_eq, IsPositiveGrading.eq_bot (d := d) (ℒ := ℒ) n hn, Submodule.map_bot]
+    IsPositiveGrading d (d.truncatedGrading ℒ k) := by
+  rw [funext (d.truncatedGrading_eq ℒ k)]
+  exact IsPositiveGrading.map (d.degreeIdeal ℒ k).toSubmodule.mkQ
 
 /-- Homogeneous projection in the truncation commutes with the quotient map. -/
 @[simp]
@@ -252,9 +252,8 @@ theorem ker_truncationMap_eq_iSup {k l : ℕ} (h : k ≤ l) :
       ⨆ n : {n : N // (k : ℤ) < d.degree n}, d.truncatedGrading ℒ l n := by
     rw [hlift, LieIdeal.ker_liftQ_mkQ,
       LieIdeal.coe_map_of_surjective (d.degreeIdeal ℒ l).surjective_mkQ,
-      degreeIdeal_toSubmodule, degreeSubmodule_def, Submodule.map_iSup]
-    simp only [truncatedGrading_eq]
-    exact iSup_congr fun n => by rw [LieIdeal.coe_mkQ]
+      degreeIdeal_toSubmodule, LieIdeal.coe_mkQ, ← d.degreeSubmodule_map,
+      ← funext (d.truncatedGrading_eq ℒ l), degreeSubmodule_def]
   rw [hpieces]
   apply le_antisymm
   · refine iSup_le fun n => ?_

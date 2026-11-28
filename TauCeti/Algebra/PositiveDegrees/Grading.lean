@@ -24,6 +24,9 @@ Adapted from `Mei/Algebra/PositiveDegrees/Grading.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
 `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` and
 `a79c57178cc83666fc244ca6e6eeaa722e9b8bc7`, released under Apache 2.0.
+The linear image and injective preimage constructions also draw on
+`Mei/Algebra/PositiveDegrees/Subquotient.lean` at
+`bf3986029ff4d3eb4025d4067489511b0724374e`.
 -/
 
 public section
@@ -37,6 +40,29 @@ class IsPositiveGrading (d : PositiveDegrees N) (ℒ : N → Submodule R M) : Pr
   /-- The only possibly nonzero pieces have nonzero allowed degree. -/
   eq_bot : ∀ n, n ∉ d.monoid ∨ n = 0 → ℒ n = ⊥
 
+section LinearMap
+
+variable {M' : Type*} [AddCommMonoid M'] [Module R M']
+  {d : PositiveDegrees N} {ℳ : N → Submodule R M}
+
+namespace IsPositiveGrading
+
+/-- Taking linear images of the homogeneous pieces preserves positive support. -/
+instance map [IsPositiveGrading d ℳ] (f : M →ₗ[R] M') :
+    IsPositiveGrading d (fun i => (ℳ i).map f) where
+  eq_bot i hi := by rw [eq_bot (d := d) (ℒ := ℳ) i hi, Submodule.map_bot]
+
+/-- Taking preimages under an injective linear map preserves positive support. -/
+theorem comap [IsPositiveGrading d ℳ] (f : M' →ₗ[R] M) (hf : Function.Injective f) :
+    IsPositiveGrading d (fun i => (ℳ i).comap f) where
+  eq_bot i hi := by
+    rw [eq_bot (d := d) (ℒ := ℳ) i hi, Submodule.comap_bot,
+      LinearMap.ker_eq_bot_of_injective hf]
+
+end IsPositiveGrading
+
+end LinearMap
+
 namespace PositiveDegrees
 
 variable (d : PositiveDegrees N) (ℒ : N → Submodule R M)
@@ -45,11 +71,23 @@ variable (d : PositiveDegrees N) (ℒ : N → Submodule R M)
 def degreeSubmodule (k : ℕ) : Submodule R M :=
   DirectSum.degreeTail ℒ d.degree (k + 1)
 
+/-- The degree submodule is the degree tail starting at the successor cutoff. -/
+theorem degreeSubmodule_eq_degreeTail (k : ℕ) :
+    d.degreeSubmodule ℒ k = DirectSum.degreeTail ℒ d.degree (k + 1) :=
+  (rfl)
+
 /-- The defining sum for the degree submodule. -/
 theorem degreeSubmodule_def (k : ℕ) :
     d.degreeSubmodule ℒ k = ⨆ n : {n : N // (k : ℤ) < d.degree n}, ℒ n := by
-  rw [degreeSubmodule, DirectSum.degreeTail_def, iSup_subtype]
+  rw [degreeSubmodule_eq_degreeTail, DirectSum.degreeTail_def, iSup_subtype]
   congr 1
+
+/-- Taking linear images of the pieces commutes with forming a degree submodule. -/
+@[simp]
+theorem degreeSubmodule_map {M' : Type*} [AddCommMonoid M'] [Module R M']
+    (f : M →ₗ[R] M') (k : ℕ) :
+    d.degreeSubmodule (fun i => (ℒ i).map f) k = (d.degreeSubmodule ℒ k).map f := by
+  rw [degreeSubmodule_def, degreeSubmodule_def, Submodule.map_iSup]
 
 /-- A homogeneous piece above the cutoff lies in the degree submodule. -/
 theorem le_degreeSubmodule {n : N} {k : ℕ} (hn : (k : ℤ) < d.degree n) :
