@@ -7,11 +7,8 @@ module
 
 public import Mathlib.CategoryTheory.EssentiallySmall
 public import Mathlib.CategoryTheory.Linear.FunctorCategory
-public import Mathlib.CategoryTheory.Preadditive.Biproducts
-public import Mathlib.Data.Fintype.BigOperators
+public import Mathlib.CategoryTheory.Linear.LinearFunctor
 public import Mathlib.LinearAlgebra.TensorProduct.Map
-public import TauCeti.CategoryTheory.Linear.Endomorphism
-import Mathlib.LinearAlgebra.TensorProduct.Associator
 
 /-!
 # The tensor product of linear categories
@@ -41,22 +38,18 @@ with a `Linear k` structure. It is the linear tensor product of Mitchell,
 * `TauCeti.LinearTensor`: the `k`-linear tensor product of `C` and `D`, with its `Preadditive`
   and `Linear k` instances, the pure tensors `LinearTensor.tmul`, the composition rule
   `LinearTensor.tmul_comp_tmul` and the induction principle `LinearTensor.hom_induction_on`;
-* `TauCeti.LinearTensor.bijective_algebraMap_mk`: a pair of objects with scalar endomorphisms has
-  scalar endomorphisms;
 * `TauCeti.LinearTensor.bifunctor`, `TauCeti.LinearTensor.lift`,
   `TauCeti.LinearTensor.bifunctorCompLiftIso`, `TauCeti.LinearTensor.ext` and
   `TauCeti.LinearTensor.liftUnique`: the universal property, with
   `TauCeti.LinearTensor.naturality_of_tmul` reducing naturality to the pure tensors `f ⊗ 𝟙` and
-  `𝟙 ⊗ g`;
-* `TauCeti.LinearTensor.biconeTmul` and `TauCeti.LinearTensor.isBilimitBiconeTmul`: the pair of
-  two biproducts is the biproduct of the pairs.
+  `𝟙 ⊗ g`.
 -/
 
 @[expose] public section
 
 noncomputable section
 
-open CategoryTheory Limits TensorProduct
+open CategoryTheory TensorProduct
 
 universe w v₁ v₂ v₃ u₁ u₂ u₃ s
 
@@ -290,32 +283,6 @@ instance {P Q : LinearTensor k C D} [Subsingleton (P.fst ⟶ Q.fst)] : Subsingle
 instance {P Q : LinearTensor k C D} [Subsingleton (P.snd ⟶ Q.snd)] : Subsingleton (P ⟶ Q) :=
   inferInstanceAs <| Subsingleton ((P.fst ⟶ Q.fst) ⊗[k] (P.snd ⟶ Q.snd))
 
-/-- If `X` and `Y` have scalar endomorphisms, so does the pair `(X, Y)`: its endomorphisms are
-`End X ⊗[k] End Y = k ⊗[k] k = k`. -/
-theorem bijective_algebraMap_mk {X : C} {Y : D} (hX : Function.Bijective (algebraMap k (End X)))
-    (hY : Function.Bijective (algebraMap k (End Y))) :
-    Function.Bijective (algebraMap k (End (⟨X, Y⟩ : LinearTensor k C D))) := by
-  let eX : k ≃ₗ[k] (X ⟶ X) := LinearEquiv.ofBijective
-    ((End.linearEquiv (R := k)).toLinearMap ∘ₗ Algebra.linearMap k (End X))
-      ((End.linearEquiv (R := k)).bijective.comp hX)
-  let eY : k ≃ₗ[k] (Y ⟶ Y) := LinearEquiv.ofBijective
-    ((End.linearEquiv (R := k)).toLinearMap ∘ₗ Algebra.linearMap k (End Y))
-      ((End.linearEquiv (R := k)).bijective.comp hY)
-  let e : k ≃ₗ[k] End (⟨X, Y⟩ : LinearTensor k C D) := (TensorProduct.lid k k).symm ≪≫ₗ
-    TensorProduct.congr eX eY ≪≫ₗ (homEquiv (⟨X, Y⟩ : LinearTensor k C D) ⟨X, Y⟩).symm ≪≫ₗ
-      (End.linearEquiv (R := k)).symm
-  convert e.bijective
-  ext r : 2
-  -- Both sides reduce to `r • 𝟙 (X, Y)`: the right-hand side to `r` times the identity written
-  -- through `homEquiv`, which `homEquiv_symm_tmul` and `tmul_id_id` turn into `𝟙 (X, Y)`.
-  simp only [e, eX, eY, End.algebraMap_asHom, LinearEquiv.trans_apply, lid_symm_apply, congr_tmul,
-    LinearEquiv.ofBijective_apply, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
-    Algebra.linearMap_apply, map_one, End.linearEquiv_apply, AddEquiv.toEquiv_eq_coe,
-    Equiv.toFun_as_coe, EquivLike.coe_coe, End.addEquiv_apply, End.one_asHom,
-    TensorProduct.tmul_smul, map_smul, End.linearEquiv_symm_apply, Equiv.invFun_as_coe,
-    AddEquiv.coe_toEquiv_symm, End.smul_asHom, End.addEquiv_symm_apply_asHom]
-  rw [homEquiv_symm_tmul, tmul_id_id]
-
 end Category
 
 section Universal
@@ -489,53 +456,6 @@ def liftUnique [Linear k E] (F : C ⥤ D ⥤ E) [F.Additive] [F.Linear k] [∀ X
   ext (α ≪≫ (bifunctorCompLiftIso k F).symm)
 
 end Universal
-
-section Biproduct
-
-variable {k : Type w} [CommSemiring k]
-  {C : Type u₁} [Category.{v₁} C] [Preadditive C] [Linear k C]
-  {D : Type u₂} [Category.{v₂} D] [Preadditive D] [Linear k D]
-  {J : Type*} {J' : Type*} {f : J → C} {g : J' → D}
-
-/-- The bicone on the family of pairs `(f j, g j')` with cone point `(b.pt, c.pt)`, built from
-bicones `b` on `f` and `c` on `g`: its projections and inclusions are the pure tensors of those of
-`b` and `c`. -/
-@[simps π ι]
-def biconeTmul (b : Bicone f) (c : Bicone g) :
-    Bicone (fun p : J × J' ↦ (⟨f p.1, g p.2⟩ : LinearTensor k C D)) where
-  pt := ⟨b.pt, c.pt⟩
-  π p := tmul (b.π p.1) (c.π p.2)
-  ι p := tmul (b.ι p.1) (c.ι p.2)
-  ι_π p q := by
-    obtain ⟨p₁, p₂⟩ := p
-    obtain ⟨q₁, q₂⟩ := q
-    by_cases h₁ : p₁ = q₁
-    · subst h₁
-      by_cases h₂ : p₂ = q₂
-      · subst h₂
-        simp
-      · simp [bicone_ι_π_ne _ h₂, h₂]
-    · simp [bicone_ι_π_ne _ h₁, h₁]
-
-@[simp]
-theorem biconeTmul_pt (b : Bicone f) (c : Bicone g) :
-    (biconeTmul (k := k) b c).pt = ⟨b.pt, c.pt⟩ :=
-  rfl
-
-/-- **The pair of two biproducts is the biproduct of the pairs**: if `b` and `c` are bilimit
-bicones over finite index types, so is `biconeTmul b c`. -/
-def isBilimitBiconeTmul [Fintype J] [Fintype J'] {b : Bicone f} {c : Bicone g} (hb : b.IsBilimit)
-    (hc : c.IsBilimit) : (biconeTmul (k := k) b c).IsBilimit :=
-  isBilimitOfTotal _ <| by
-    simp only [biconeTmul_π, biconeTmul_ι]
-    -- Restate the goal with the cone point `(biconeTmul b c).pt` written as `⟨b.pt, c.pt⟩`
-    -- (`biconeTmul_pt`).
-    change ∑ p : J × J', tmul (k := k) (b.π p.1) (c.π p.2) ≫ tmul (b.ι p.1) (c.ι p.2) =
-      𝟙 (⟨b.pt, c.pt⟩ : LinearTensor k C D)
-    rw [← tmul_id_id, ← IsBilimit.total hb, ← IsBilimit.total hc, sum_tmul, Fintype.sum_prod_type]
-    simp only [tmul_sum, tmul_comp_tmul]
-
-end Biproduct
 
 end LinearTensor
 

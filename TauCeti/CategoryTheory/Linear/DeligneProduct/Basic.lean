@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Linear.LinearTensor.Basic
+public import TauCeti.CategoryTheory.Linear.LinearTensor.Biproduct
+public import TauCeti.CategoryTheory.Linear.LinearTensor.Endomorphism
 public import TauCeti.CategoryTheory.Linear.Mat
 public import TauCeti.CategoryTheory.Linear.SplitSimpleFamily
 public import TauCeti.CategoryTheory.Preadditive.Mat
