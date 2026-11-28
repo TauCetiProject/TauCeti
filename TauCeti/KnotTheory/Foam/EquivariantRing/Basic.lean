@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
-public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.PositiveWeight
+public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.OrderedWeight
 import TauCeti.Data.Finsupp.Weight
-import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Basic
 
 /-!
 # The equivariant coefficient ring of `gl(N)` foams

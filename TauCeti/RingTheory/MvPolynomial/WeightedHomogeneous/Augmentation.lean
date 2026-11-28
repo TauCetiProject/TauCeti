@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 public import TauCeti.RingTheory.GradedAlgebra.Connected
-import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.PositiveWeight
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.OrderedWeight
 
 /-!
 # Connected augmentation of positively weighted polynomial rings

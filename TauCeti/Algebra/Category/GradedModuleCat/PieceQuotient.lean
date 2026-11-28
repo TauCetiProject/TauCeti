@@ -5,34 +5,31 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.Basic
-public import TauCeti.Algebra.Module.GradedModule.PositiveAction
+public import TauCeti.Algebra.Module.GradedModule.PieceQuotient
 import Mathlib.LinearAlgebra.Quotient.Basic
 
 /-!
-# Degreewise quotients of graded modules by the positive-degree action
+# Functoriality of degreewise quotients by the positive-degree action
 
-For a graded `𝒜`-module `M` over a `ℤ`-graded `k`-algebra `A`, the degree-`p` piece `Mₚ` and the
-positive-degree action `A₊ M` are submodules over the degree-zero subalgebra
-`SetLike.GradeZero.subalgebra 𝒜`. Their quotient `PieceQuotient M p := (M / A₊ M)ₚ` is functorial
-with respect to morphisms in `GradedModuleCat 𝒜` via `Submodule.mapQ`.
+For a graded `𝒜`-module `M`, `M.grading.PieceQuotient 𝒜 p := (M / A₊ M)ₚ` is functorial in
+`M : GradedModuleCat 𝒜` into `ModuleCat A₀` via `Submodule.mapQ`, where
+`A₀ = SetLike.GradeZero.subalgebra 𝒜`.
 
 ## Main definitions
 
-* `TauCeti.GradedModuleCat.pieceSubmodule`: the homogeneous piece `Mₚ` as an `A₀`-submodule of `M`.
-* `TauCeti.GradedModuleCat.pieceSubmoduleEquiv`: `k`-linear identification of `pieceSubmodule M p`
-  with `M.grading.piece p`.
-* `TauCeti.GradedModuleCat.positiveSubmodule`: the positive-degree action `A₊ M` as an
-  `A₀`-submodule of `M`.
-* `TauCeti.GradedModuleCat.PieceQuotient`: the degree-`p` quotient `(M / A₊ M)ₚ` as an
-  `A₀`-module.
-* `TauCeti.GradedModuleCat.pieceQuotientMap`: the `A₀`-linear projection
-  `M →ₗ[A₀] PieceQuotient M p`.
 * `TauCeti.GradedModuleCat.pieceQuotientHom`: the `A₀`-linear map on `PieceQuotient` induced by a
   morphism in `GradedModuleCat 𝒜`.
-* `TauCeti.GradedModuleCat.pieceQuotientFunctor`: functoriality of `PieceQuotient (-, p)` into
-  `ModuleCat A₀`.
+* `TauCeti.GradedModuleCat.pieceQuotientFunctor`: functoriality of `M.grading.PieceQuotient 𝒜 p`
+  into `ModuleCat A₀`.
+
+## Main results
+
+* `TauCeti.GradedModuleCat.pieceQuotientHom_apply`,
+  `TauCeti.GradedModuleCat.pieceQuotientHom_pieceQuotientMap`: evaluation and naturality of
+  `pieceQuotientHom`.
+* `TauCeti.GradedModuleCat.mem_positive_smul_top_of_injective_pieceQuotientHom`: a morphism
+  inducing an injective map on `PieceQuotient` in every degree has kernel contained in `A₊ M`.
 -/
 
 public section
@@ -46,128 +43,43 @@ open CategoryTheory _root_.DirectSum
 universe uk uA v
 
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
-  {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
-
-/-- The homogeneous piece `Mₚ`, as a module over the degree-zero subalgebra. -/
-def pieceSubmodule (M : GradedModuleCat.{v} 𝒜) (p : ℤ) :
-    Submodule (SetLike.GradeZero.subalgebra 𝒜) M where
-  __ := M.grading.piece p
-  smul_mem' c x hx := by
-    have hx : x ∈ M.grading.piece p := hx
-    rw [Subalgebra.smul_def]
-    simpa using SetLike.GradedSMul.smul_mem (A := 𝒜) c.property hx
-
-/-- Membership in `pieceSubmodule M p` is membership in `M.grading.piece p`. -/
-@[simp]
-theorem mem_pieceSubmodule {M : GradedModuleCat.{v} 𝒜} {p : ℤ} {x : M} :
-    x ∈ pieceSubmodule M p ↔ x ∈ M.grading.piece p :=
-  Iff.rfl
-
-/-- Viewing `pieceSubmodule M p` over `k` recovers the degree-`p` piece `M.grading.piece p`. -/
-def pieceSubmoduleEquiv (M : GradedModuleCat.{v} 𝒜) (p : ℤ) :
-    pieceSubmodule M p ≃ₗ[k] M.grading.piece p where
-  toFun x := ⟨x.val, mem_pieceSubmodule.mp x.property⟩
-  invFun x := ⟨x.val, mem_pieceSubmodule.mpr x.property⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-
-/-- Applying `pieceSubmoduleEquiv` extracts the element of `M.grading.piece p`. -/
-@[simp]
-theorem pieceSubmoduleEquiv_apply (M : GradedModuleCat.{v} 𝒜) (p : ℤ)
-    (x : pieceSubmodule M p) :
-    pieceSubmoduleEquiv M p x = ⟨x.val, mem_pieceSubmodule.mp x.property⟩ := by
-  rfl
-
-/-- Applying `(pieceSubmoduleEquiv M p).symm` packages an element of `M.grading.piece p` as a
-term of `pieceSubmodule M p`. -/
-@[simp]
-theorem pieceSubmoduleEquiv_symm_apply (M : GradedModuleCat.{v} 𝒜) (p : ℤ)
-    (x : M.grading.piece p) :
-    (pieceSubmoduleEquiv M p).symm x = ⟨x.val, mem_pieceSubmodule.mpr x.property⟩ := by
-  rfl
-
-/-- The positive-degree action `A₊ M`, as a module over the degree-zero subalgebra. -/
-def positiveSubmodule (M : GradedModuleCat.{v} 𝒜) :
-    Submodule (SetLike.GradeZero.subalgebra 𝒜) M where
-  __ := (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)
-  smul_mem' c x hx := by
-    rw [Subalgebra.smul_def]
-    exact InternalGrading.smul_mem_positive_smul_top c.property hx
-
-/-- Membership in `positiveSubmodule M` is membership in `A₊ M`. -/
-@[simp]
-theorem mem_positiveSubmodule {M : GradedModuleCat.{v} 𝒜} {x : M} :
-    x ∈ positiveSubmodule M ↔ x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) :=
-  Iff.rfl
-
-/-- The homogeneous piece `(M / A₊ M)ₚ`, as a module over the degree-zero subalgebra. -/
-abbrev PieceQuotient (M : GradedModuleCat.{v} 𝒜) (p : ℤ) :=
-  pieceSubmodule M p ⧸ (positiveSubmodule M).comap (pieceSubmodule M p).subtype
-
-/-- Projection to the degree-`p` piece of `M / A₊ M`. -/
-def pieceQuotientMap (M : GradedModuleCat.{v} 𝒜) (p : ℤ) :
-    M →ₗ[SetLike.GradeZero.subalgebra 𝒜] PieceQuotient M p :=
-  Submodule.mkQ _ ∘ₗ
-    { toFun x := ⟨decompose M.grading.piece x p, (decompose M.grading.piece x p).property⟩
-      map_add' x y := by ext; simp
-      map_smul' c x := by
-        ext
-        -- Multiplication by a degree-zero scalar is homogeneous of degree zero.
-        have hf : LinearMap.IsHomogeneous (Algebra.lsmul k k M (c : A))
-            M.grading.piece M.grading.piece 0 :=
-          LinearMap.isHomogeneous_def.mpr fun q z hz => by
-            simpa [add_comm] using SetLike.GradedSMul.smul_mem (A := 𝒜) c.property hz
-        have h := hf.map_decompose p x
-        rw [add_zero] at h
-        simpa [Subalgebra.smul_def] using h.symm }
-
-/-- On a degree-`p` element, `pieceQuotientMap M p` is the quotient class in `PieceQuotient M p`. -/
-theorem pieceQuotientMap_of_mem {M : GradedModuleCat.{v} 𝒜} {p : ℤ} {x : M}
-    (hx : x ∈ M.grading.piece p) :
-    pieceQuotientMap M p x = Submodule.Quotient.mk ⟨x, mem_pieceSubmodule.mpr hx⟩ := by
-  simp [pieceQuotientMap, decompose_of_mem_same _ hx]
-
-/-- On an element homogeneous of degree `q ≠ p`, `pieceQuotientMap M p` vanishes. -/
-theorem pieceQuotientMap_of_mem_ne {M : GradedModuleCat.{v} 𝒜} {p q : ℤ} {x : M}
-    (hx : x ∈ M.grading.piece q) (hqp : q ≠ p) : pieceQuotientMap M p x = 0 := by
-  simp [pieceQuotientMap, decompose_of_mem_ne _ hx hqp]
-
-/-- Elements of `A₊ M` map to zero under `pieceQuotientMap M p`. -/
-theorem pieceQuotientMap_eq_zero {M : GradedModuleCat.{v} 𝒜} {p : ℤ} {x : M}
-    (hx : x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) :
-    pieceQuotientMap M p x = 0 := by
-  simp only [pieceQuotientMap, LinearMap.coe_comp, Function.comp_apply, Submodule.mkQ_apply,
-    Submodule.Quotient.mk_eq_zero, Submodule.mem_comap]
-  exact InternalGrading.isHomogeneous_positive_smul_top 𝒜 p hx
+  {𝒜 : ℤ → Submodule k A} [SetLike.GradedMonoid 𝒜]
 
 private def pieceMap {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) (p : ℤ) :
-    pieceSubmodule M p →ₗ[SetLike.GradeZero.subalgebra 𝒜] pieceSubmodule N p :=
-  (f.hom.restrictScalars (SetLike.GradeZero.subalgebra 𝒜)).restrict fun _ hx ↦ map_mem f hx
+    M.grading.pieceSubmodule 𝒜 p →ₗ[SetLike.GradeZero.subalgebra 𝒜]
+      N.grading.pieceSubmodule 𝒜 p :=
+  (f.hom.restrictScalars (SetLike.GradeZero.subalgebra 𝒜)).restrict fun _ hx ↦
+    InternalGrading.mem_pieceSubmodule.mpr (map_mem f (InternalGrading.mem_pieceSubmodule.mp hx))
 
-/-- The `A₀`-linear map `PieceQuotient M p →ₗ[A₀] PieceQuotient N p` induced by a graded
-morphism `f : M ⟶ N`. -/
+/-- The `A₀`-linear map `M.grading.PieceQuotient 𝒜 p →ₗ[A₀] N.grading.PieceQuotient 𝒜 p` induced
+by a graded morphism `f : M ⟶ N`. -/
 def pieceQuotientHom {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) (p : ℤ) :
-    PieceQuotient M p →ₗ[SetLike.GradeZero.subalgebra 𝒜] PieceQuotient N p :=
-  Submodule.mapQ _ _ (pieceMap f p) (fun _ hx ↦ InternalGrading.map_mem_positive_smul_top f.hom hx)
+    M.grading.PieceQuotient 𝒜 p →ₗ[SetLike.GradeZero.subalgebra 𝒜]
+      N.grading.PieceQuotient 𝒜 p :=
+  Submodule.mapQ _ _ (pieceMap f p) fun _ hx ↦
+    InternalGrading.mem_positiveSubmodule.mpr <|
+      InternalGrading.map_mem_positive_smul_top f.hom <|
+        InternalGrading.mem_positiveSubmodule.mp hx
 
 /-- `pieceQuotientHom f p` acts on quotient classes by applying `f.hom`. -/
 @[simp]
 theorem pieceQuotientHom_apply {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) (p : ℤ)
-    (x : pieceSubmodule M p) :
+    (x : M.grading.pieceSubmodule 𝒜 p) :
     pieceQuotientHom f p (Submodule.Quotient.mk x) =
       Submodule.Quotient.mk
-        ⟨f.hom x.val, mem_pieceSubmodule.mpr (map_mem f (mem_pieceSubmodule.mp x.property))⟩ :=
-  Submodule.mapQ_apply _ _ _ _
+        ⟨f.hom x.val, InternalGrading.mem_pieceSubmodule.mpr
+          (map_mem f (InternalGrading.mem_pieceSubmodule.mp x.property))⟩ := by
+  rw [pieceQuotientHom, Submodule.mapQ_apply]
+  rfl
 
 /-- `pieceQuotientHom f p` commutes with the quotient projections `pieceQuotientMap`. -/
 @[simp]
 theorem pieceQuotientHom_pieceQuotientMap {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) (p : ℤ)
     (x : M) :
-    pieceQuotientHom f p (pieceQuotientMap M p x) = pieceQuotientMap N p (f.hom x) := by
-  simp only [pieceQuotientMap, LinearMap.coe_comp, LinearMap.coe_mk, AddHom.coe_mk,
-    Function.comp_apply, Submodule.mkQ_apply, pieceQuotientHom_apply]
+    pieceQuotientHom f p (M.grading.pieceQuotientMap 𝒜 p x) =
+      N.grading.pieceQuotientMap 𝒜 p (f.hom x) := by
+  rw [InternalGrading.pieceQuotientMap_apply, InternalGrading.pieceQuotientMap_apply,
+    pieceQuotientHom_apply]
   congr 1
   ext
   have h := f.isHomogeneous.map_decompose p x
@@ -177,26 +89,42 @@ theorem pieceQuotientHom_pieceQuotientMap {M N : GradedModuleCat.{v} 𝒜} (f : 
 /-- `pieceQuotientHom` sends the identity morphism to the identity linear map. -/
 @[simp]
 theorem pieceQuotientHom_id (M : GradedModuleCat.{v} 𝒜) (p : ℤ) :
-    pieceQuotientHom (𝟙 M) p = LinearMap.id :=
-  Submodule.mapQ_id _
+    pieceQuotientHom (𝟙 M) p = LinearMap.id := by
+  refine Submodule.linearMap_qext _ (LinearMap.ext fun x ↦ ?_)
+  simp [Submodule.mkQ_apply]
 
 /-- `pieceQuotientHom` respects composition of graded morphisms. -/
 @[simp]
 theorem pieceQuotientHom_comp {M N P : GradedModuleCat.{v} 𝒜} (f : M ⟶ N) (g : N ⟶ P) (p : ℤ) :
     pieceQuotientHom (f ≫ g) p = (pieceQuotientHom g p).comp (pieceQuotientHom f p) := by
-  have hcomp : pieceMap (f ≫ g) p = (pieceMap g p).comp (pieceMap f p) := by ext x; rfl
-  refine Eq.trans ?_ (Submodule.mapQ_comp _ _ _ (pieceMap f p) (pieceMap g p)
-    (fun _ hx ↦ InternalGrading.map_mem_positive_smul_top f.hom hx)
-    (fun _ hx ↦ InternalGrading.map_mem_positive_smul_top g.hom hx))
-  dsimp only [pieceQuotientHom]
-  congr 1
+  refine Submodule.linearMap_qext _ (LinearMap.ext fun x ↦ ?_)
+  simp [Submodule.mkQ_apply]
+
+/-- If a graded morphism `f : M ⟶ N` induces an injective map on `PieceQuotient` in every degree,
+then `LinearMap.ker f.hom` lies in the positive-degree action `A₊ M`. -/
+theorem mem_positive_smul_top_of_injective_pieceQuotientHom
+    {M N : GradedModuleCat.{v} 𝒜} (f : M ⟶ N)
+    (hinj : ∀ q : ℤ, Function.Injective (pieceQuotientHom f q))
+    {z : M} (hz : f.hom z = 0) :
+    z ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) := by
+  classical
+  rw [← DirectSum.sum_support_decompose M.grading.piece z]
+  refine Submodule.sum_mem _ fun q _ ↦ ?_
+  have hcomp : f.hom (DirectSum.decompose M.grading.piece z q : M) = 0 := by
+    have := f.isHomogeneous.isHomogeneous_ker q hz
+    simpa [LinearMap.mem_ker] using this
+  have hmap : M.grading.pieceQuotientMap 𝒜 q
+      (DirectSum.decompose M.grading.piece z q : M) = 0 :=
+    hinj q <| by rw [pieceQuotientHom_pieceQuotientMap, hcomp, map_zero, map_zero]
+  exact (InternalGrading.pieceQuotientMap_eq_zero_iff_of_mem
+    (DirectSum.decompose M.grading.piece z q).property).mp hmap
 
 /-- The degree-`p` quotient `(M / A₊ M)ₚ` as a functor from graded `𝒜`-modules to
 `A₀`-modules. -/
 @[expose, simps]
 def pieceQuotientFunctor (p : ℤ) :
     GradedModuleCat.{v} 𝒜 ⥤ ModuleCat.{v} (SetLike.GradeZero.subalgebra 𝒜) where
-  obj M := ModuleCat.of (SetLike.GradeZero.subalgebra 𝒜) (PieceQuotient M p)
+  obj M := ModuleCat.of (SetLike.GradeZero.subalgebra 𝒜) (M.grading.PieceQuotient 𝒜 p)
   map f := ModuleCat.ofHom (pieceQuotientHom f p)
   map_id M := ModuleCat.hom_ext (pieceQuotientHom_id M p)
   map_comp f g := ModuleCat.hom_ext (pieceQuotientHom_comp f g p)

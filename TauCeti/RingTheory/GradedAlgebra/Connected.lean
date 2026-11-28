@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.GradedAlgebra.Basic
+public import TauCeti.RingTheory.GradedAlgebra.PositivePart
 import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 
 /-!
@@ -28,7 +29,7 @@ augmentation `connectedAugmentation : A →ₐ[R] R` annihilating positive degre
 ## Main results
 
 * `TauCeti.GradedAlgebra.connectedAugmentation_eq_zero_iff`: the kernel of `connectedAugmentation`
-  is `⨆ i > 0, 𝒜 i`.
+  is `TauCeti.positivePart 𝒜`.
 
 ## References
 
@@ -107,10 +108,10 @@ theorem connectedAugmentation_eq_zero_of_mem_pos [FaithfulSMul R A] (hneg : ∀ 
     {a : A} (ha : a ∈ 𝒜 i) : connectedAugmentation hneg hzero a = 0 := by
   simp only [connectedAugmentation_apply, projZeroAlgHom_eq_zero_of_mem_pos hneg hi ha, map_zero]
 
-/-- The kernel of `connectedAugmentation` is the positive-degree submodule `⨆ i > 0, 𝒜 i`. -/
+/-- The kernel of `connectedAugmentation` is the positive part `TauCeti.positivePart 𝒜`. -/
 theorem connectedAugmentation_eq_zero_iff [FaithfulSMul R A] (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap R A)) {a : A} :
-    connectedAugmentation hneg hzero a = 0 ↔ a ∈ ⨆ (i : ℤ) (_ : 0 < i), 𝒜 i := by
+    connectedAugmentation hneg hzero a = 0 ↔ a ∈ positivePart 𝒜 := by
   simp only [connectedAugmentation_apply,
     _root_.map_eq_zero_iff _ (gradeZeroAlgEquiv hzero).symm.injective,
     projZeroAlgHom_eq_zero_iff]

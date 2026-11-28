@@ -9,12 +9,18 @@ public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
 import TauCeti.Data.Finsupp.Weight
 
 /-!
-# Positively weighted polynomial rings over ordered additive monoids
+# Nonnegatively and positively weighted polynomial rings over ordered additive monoids
 
-For a weight function `w : σ → M` taking values in an ordered additive commutative monoid `M`,
-if `0 < w i` for every variable `i`, then `d.weight w = 0 ↔ d = 0`, so the degree-zero weighted
-homogeneous component of `φ : MvPolynomial σ R` is `C (φ.coeff 0)` and the degree-zero weighted
-homogeneous submodule is the image of `algebraMap R (MvPolynomial σ R)`.
+For a weight function `w : σ → M` taking values in an ordered additive commutative monoid `M`:
+
+* if `0 ≤ w i` for every variable `i`, then every weighted homogeneous polynomial of negative
+  weight vanishes (`MvPolynomial.IsWeightedHomogeneous.eq_zero_of_neg`,
+  `MvPolynomial.weightedHomogeneousSubmodule_eq_bot_of_neg`);
+* if `0 < w i` for every variable `i`, then `d.weight w = 0 ↔ d = 0`, so every weighted homogeneous
+  polynomial of weight zero is constant (`MvPolynomial.IsWeightedHomogeneous.eq_C_coeff_zero`), the
+  degree-zero weighted homogeneous component of `φ : MvPolynomial σ R` is `C (φ.coeff 0)`, and the
+  degree-zero weighted homogeneous submodule is the image of
+  `algebraMap R (MvPolynomial σ R)`.
 
 Note that Mathlib's `MvPolynomial.weightedHomogeneousComponent_zero` and
 `Finsupp.weight_eq_zero_iff_eq_zero` assume `[CanonicallyOrderedAdd M]`, which holds for `ℕ` but not
@@ -22,6 +28,12 @@ for `ℤ`.
 
 ## Main results
 
+* `MvPolynomial.IsWeightedHomogeneous.eq_zero_of_neg`: for nonnegative weights, weighted homogeneous
+  polynomials of negative weight vanish.
+* `MvPolynomial.weightedHomogeneousSubmodule_eq_bot_of_neg`: for nonnegative weights, the weighted
+  homogeneous submodules of negative weight vanish.
+* `MvPolynomial.IsWeightedHomogeneous.eq_C_coeff_zero`: for positive weights, a weighted
+  homogeneous polynomial of weight zero is constant.
 * `MvPolynomial.weightedHomogeneousComponent_zero_of_pos`: degree-zero weighted homogeneous
   component for strictly positive weights in an ordered additive monoid.
 * `MvPolynomial.weightedHomogeneousSubmodule_zero_eq_range`: degree-zero characterization of
@@ -39,6 +51,35 @@ section OrderedAddMonoid
 
 variable {σ R M : Type*} [CommSemiring R] [AddCommMonoid M] [PartialOrder M]
   [IsOrderedAddMonoid M]
+
+/-- For nonnegative weights, a weighted homogeneous polynomial of negative weight vanishes. -/
+theorem IsWeightedHomogeneous.eq_zero_of_neg {w : σ → M} {φ : MvPolynomial σ R} {n : M}
+    (hφ : φ.IsWeightedHomogeneous w n) (hw : ∀ i, 0 ≤ w i) (hn : n < 0) : φ = 0 := by
+  ext d
+  by_contra hd
+  have h0 : 0 ≤ Finsupp.weight w d := by
+    rw [Finsupp.weight_apply]
+    exact Finsupp.sum_nonneg fun i _ ↦ nsmul_nonneg (hw i) _
+  exact (hφ hd ▸ h0).not_gt hn
+
+/-- For positive weights, a weighted homogeneous polynomial of weight zero is a constant. -/
+theorem IsWeightedHomogeneous.eq_C_coeff_zero {w : σ → M} {φ : MvPolynomial σ R}
+    (hφ : φ.IsWeightedHomogeneous w 0) (hw : ∀ i, 0 < w i) : φ = C (φ.coeff 0) := by
+  classical
+  ext d
+  rw [coeff_C]
+  split_ifs with hd
+  · rw [hd]
+  by_contra hcoeff
+  obtain ⟨i, hi⟩ := Finsupp.ne_iff.1 (Ne.symm hd)
+  have := Finsupp.le_weight_of_ne_zero (fun j ↦ (hw j).le) hi
+  rw [hφ hcoeff] at this
+  exact (hw i).not_ge this
+
+/-- For nonnegative weights, the weighted homogeneous submodules of negative weight vanish. -/
+theorem weightedHomogeneousSubmodule_eq_bot_of_neg {w : σ → M} (hw : ∀ i, 0 ≤ w i) {n : M}
+    (hn : n < 0) : weightedHomogeneousSubmodule R w n = ⊥ :=
+  (Submodule.eq_bot_iff _).2 fun _ hφ ↦ IsWeightedHomogeneous.eq_zero_of_neg hφ hw hn
 
 /-- If every variable has strictly positive weight in an ordered additive commutative monoid `M`,
 the degree-zero weighted homogeneous component of `φ` is `C (φ.coeff 0)`. -/

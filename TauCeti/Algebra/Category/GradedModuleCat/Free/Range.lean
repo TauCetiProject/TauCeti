@@ -23,6 +23,8 @@ and the graded head-coordinate theory of `TauCeti.Algebra.Category.GradedModuleC
 this file proves PID-free uniqueness of shift multisets for homogeneous bases of ranges of
 degree-zero endomorphisms on `I → A`:
 
+* `TauCeti.GradedModuleCat.basisOfApplyEqSmul`: the canonical `Fin 1`-indexed `A`-basis of the
+  range of a rank-one endomorphism `p v = v i₀ • w` (`w i₀ = 1`), with sole vector `w`.
 * `TauCeti.GradedModuleCat.multiset_map_eq_of_homogeneous_basis_range`: over a nontrivial
   commutative base ring `k`, any two finite homogeneous `A`-bases of `LinearMap.range p` have
   the same multiset of shifts.
@@ -43,6 +45,37 @@ open CategoryTheory _root_.DirectSum
 namespace TauCeti.GradedModuleCat
 
 universe uk uA uI
+
+section RankOne
+
+/-- Given a rank-one `A`-linear endomorphism `p v = v i₀ • w` on `I → A` with `w i₀ = 1`, the
+canonical `Fin 1`-indexed `A`-basis of `LinearMap.range p` whose sole basis vector is `w`. -/
+noncomputable def basisOfApplyEqSmul {A : Type uA} [Semiring A] {I : Type uI}
+    {p : (I → A) →ₗ[A] (I → A)} (i₀ : I) {w : I → A}
+    (hp : ∀ v, p v = v i₀ • w) (hw₀ : w i₀ = 1) :
+    Module.Basis (Fin 1) A (LinearMap.range p) :=
+  have hleft : Function.LeftInverse (LinearMap.proj i₀ : (I → A) →ₗ[A] A)
+      (LinearMap.toSpanSingleton A (I → A) w) := fun a ↦ by simp [hw₀]
+  have hrange : LinearMap.range (LinearMap.toSpanSingleton A (I → A) w) = LinearMap.range p := by
+    ext y
+    constructor
+    · rintro ⟨a, rfl⟩
+      exact ⟨fun _ ↦ a, by simp [hp]⟩
+    · rintro ⟨v, rfl⟩
+      exact ⟨v i₀, by simp [hp]⟩
+  (Module.Basis.singleton (Fin 1) A).map
+    ((LinearEquiv.ofLeftInverse hleft).trans (LinearEquiv.ofEq _ _ hrange))
+
+@[simp]
+theorem coe_basisOfApplyEqSmul_apply {A : Type uA} [Semiring A] {I : Type uI}
+    {p : (I → A) →ₗ[A] (I → A)} (i₀ : I) {w : I → A}
+    (hp : ∀ v, p v = v i₀ • w) (hw₀ : w i₀ = 1) (i : Fin 1) :
+    (basisOfApplyEqSmul i₀ hp hw₀ i : I → A) = w := by
+  rw [basisOfApplyEqSmul, Module.Basis.map_apply, Module.Basis.singleton_apply,
+    LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply,
+    LinearEquiv.ofLeftInverse_apply, LinearMap.toSpanSingleton_apply, one_smul]
+
+end RankOne
 
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
@@ -95,22 +128,9 @@ theorem multiset_map_eq_singleton_of_homogeneous_basis_range
     {n : ℕ} (b : Module.Basis (Fin n) A (LinearMap.range p))
     (d : Fin n → ℤ) (hb : ∀ i j, (b i).val j ∈ 𝒜 (d i - s j)) :
     Multiset.map d Finset.univ.val = {s i₀} := by
-  have hp_eq : p = (LinearMap.proj i₀).smulRight w := LinearMap.ext fun v ↦ hp v
-  have hleft : Function.LeftInverse (LinearMap.proj i₀ : (I → A) →ₗ[A] A)
-      (LinearMap.toSpanSingleton A (I → A) w) := fun a ↦ by simp [hw₀]
-  have hrange : LinearMap.range (LinearMap.toSpanSingleton A (I → A) w) = LinearMap.range p := by
-    rw [LinearMap.range_toSpanSingleton, hp_eq,
-      LinearMap.range_smulRight_apply_of_surjective (LinearMap.proj_surjective i₀)]
-  let e₁ : A ≃ₗ[A] LinearMap.range p :=
-    (LinearEquiv.ofLeftInverse hleft).trans (LinearEquiv.ofEq _ _ hrange)
-  let b₀ : Module.Basis (Fin 1) A (LinearMap.range p) := (Module.Basis.singleton (Fin 1) A).map e₁
+  let b₀ := basisOfApplyEqSmul i₀ hp hw₀
   have hb₀ : ∀ (i : Fin 1) (j : I), (b₀ i).val j ∈ 𝒜 (s i₀ - s j) := fun i j ↦ by
-    have hval : (b₀ i).val = w := by
-      rw [Module.Basis.map_apply, Module.Basis.singleton_apply]
-      dsimp only [e₁]
-      rw [LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply,
-        LinearEquiv.ofLeftInverse_apply, LinearMap.toSpanSingleton_apply, one_smul]
-    rw [hval]
+    rw [coe_basisOfApplyEqSmul_apply]
     exact hw j
   have h := multiset_map_eq_of_homogeneous_basis_range hneg hzero s p
     (homogeneous_of_apply_eq_smul s i₀ hp hw) b d hb b₀ (fun _ ↦ s i₀) hb₀

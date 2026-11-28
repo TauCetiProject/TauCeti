@@ -14,8 +14,7 @@ import TauCeti.Algebra.DirectSum.Supported
 For a `ℤ`-graded algebra concentrated in nonnegative degrees, the degree-zero component of a
 product is the product of the degree-zero components, as for gradings by a canonically ordered
 monoid (`GradedRing.projZeroRingHom`). Bundling `a ↦ decompose 𝒜 a 0` therefore gives an
-`R`-algebra homomorphism `projZeroAlgHom : A →ₐ[R] 𝒜 0` whose kernel is the positive-degree part
-`⨆ i > 0, 𝒜 i`, which is closed under right multiplication by arbitrary elements of `A`.
+`R`-algebra homomorphism `projZeroAlgHom : A →ₐ[R] 𝒜 0` vanishing on positive-degree elements.
 Consequently an idempotent with no degree-zero component vanishes: its powers have no components
 below any given degree.
 
@@ -38,10 +37,6 @@ of degree `i` with `i + l = d`.
   contained in the component indexed by the sum of their degrees.
 * `TauCeti.GradedAlgebra.coe_decompose_mul_zero_of_nonneg`: in nonnegative degrees, the degree-zero
   component is multiplicative.
-* `TauCeti.GradedAlgebra.projZeroAlgHom_eq_zero_iff`: `projZeroAlgHom hneg a = 0` iff
-  `a ∈ ⨆ i > 0, 𝒜 i`.
-* `TauCeti.GradedAlgebra.mul_mem_positive_of_left`: `⨆ i > 0, 𝒜 i` is closed under right
-  multiplication by arbitrary elements of `A`.
 * `TauCeti.GradedAlgebra.eq_zero_of_isIdempotentElem_of_decompose_zero`: in nonnegative degrees,
   an idempotent with zero degree-zero component is zero.
 * `TauCeti.GradedAlgebra.mem_of_mul_mem_add_of_isLeftRegular`: if `a ∈ 𝒜 i` is left regular and
@@ -146,27 +141,6 @@ theorem projZeroAlgHom_apply_coe (hneg : ∀ i < 0, 𝒜 i = ⊥) (a : 𝒜 0) :
 theorem projZeroAlgHom_eq_zero_of_mem_pos (hneg : ∀ i < 0, 𝒜 i = ⊥) {i : ℤ} (hi : 0 < i)
     {a : A} (ha : a ∈ 𝒜 i) : projZeroAlgHom hneg a = 0 :=
   Subtype.ext (decompose_of_mem_ne 𝒜 ha (ne_of_gt hi))
-
-/-- In a nonnegatively graded algebra, an element has vanishing degree-zero projection if and only
-if it lies in the positive-degree submodule `⨆ i > 0, 𝒜 i`. -/
-theorem projZeroAlgHom_eq_zero_iff (hneg : ∀ i < 0, 𝒜 i = ⊥) {a : A} :
-    projZeroAlgHom hneg a = 0 ↔ a ∈ ⨆ (i : ℤ) (_ : 0 < i), 𝒜 i := by
-  classical
-  have hiSup : (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) = ⨆ i : {i : ℤ | 0 < i}, 𝒜 i :=
-    (iSup_subtype'' {i : ℤ | 0 < i} 𝒜).symm
-  rw [hiSup, TauCeti.DirectSum.mem_iSup_iff_decompose_eq_zero]
-  refine ⟨fun ha0 i hi ↦ ?_, fun h ↦ Subtype.ext (h 0 (by simp))⟩
-  rcases lt_or_eq_of_le (not_lt.mp (Set.notMem_ofPred_iff.mp hi)) with hi' | rfl
-  · simpa [hneg i hi'] using (decompose 𝒜 a i).property
-  · exact congrArg Subtype.val ha0
-
-/-- In a nonnegatively graded algebra, the positive-degree part `⨆ i > 0, 𝒜 i` is closed under
-right multiplication by arbitrary elements of `A`. -/
-theorem mul_mem_positive_of_left (hneg : ∀ i < 0, 𝒜 i = ⊥) {a : A}
-    (ha : a ∈ ⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) (b : A) :
-    a * b ∈ ⨆ (i : ℤ) (_ : 0 < i), 𝒜 i := by
-  rw [← projZeroAlgHom_eq_zero_iff hneg] at ha ⊢
-  simp [map_mul, ha]
 
 /-- **An idempotent with no degree-zero component vanishes** in nonnegative degrees. -/
 theorem eq_zero_of_isIdempotentElem_of_decompose_zero (hneg : ∀ p < 0, 𝒜 p = ⊥) {f : A}

@@ -69,6 +69,11 @@ The abbreviation retains the concrete direct-sum carrier for computations with g
 abbrev free : GradedModuleCat.{max uA uI} 𝒜 :=
   directSumObj fun i => (regular (𝒜 := 𝒜)).shiftObj (d i)
 
+/-- The canonical graded scalar action on `(free 𝒜 d).grading.piece`, exposed as an instance so
+typeclass synthesis finds it after `free` and `directSumObj` unfold. -/
+instance instGradedSMulFree : SetLike.GradedSMul 𝒜 (free 𝒜 d).grading.piece :=
+  (free 𝒜 d).gradedSMul
+
 /-- `x` lies in the degree-`p` piece exactly when its `i`-th coordinate lies in `𝒜 (p - d i)`.
 This is not a simp lemma: the direct-sum and shift simp lemmas already simplify its left side. -/
 theorem mem_free_piece_iff (p : ℤ) (x : free 𝒜 d) :

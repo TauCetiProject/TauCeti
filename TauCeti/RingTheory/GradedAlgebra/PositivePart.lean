@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Algebra.Operations
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.GradedAlgebra.AlgHom
-public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import TauCeti.RingTheory.GradedAlgebra.Basic
 import TauCeti.Algebra.Module.GradedModule.Quotient
 
 /-!
@@ -55,7 +55,9 @@ a canonically ordered monoid such as `ℕ`, and its cotangent space `Ideal.Cotan
 ## Main results
 
 * `TauCeti.positivePart_le_iff`: `A⁺` is the least submodule containing every `Aᵖ`, `p > 0`;
-  `TauCeti.mem_positivePart_iff`: its elements are those with no component of degree `≤ 0`.
+  `TauCeti.mem_positivePart_iff`: its elements are those with no component of degree `≤ 0`;
+  `TauCeti.GradedAlgebra.projZeroAlgHom_eq_zero_iff`: in nonnegative degrees, `A⁺` is the kernel
+  of `projZeroAlgHom`.
 * `TauCeti.map_positivePart_le`, `TauCeti.map_positivePart_mul_positivePart_le`: maps raising
   degrees carry `A⁺` into `B⁺`, and algebra maps carrying `A⁺` into `B⁺` carry `A⁺ · A⁺` into
   `B⁺ · B⁺`, the two hypotheses of `TauCeti.Indecomposables.map`.
@@ -214,6 +216,24 @@ theorem mul_mem_positivePart_mul_positivePart_of_right (h𝒜 : ∀ p < 0, 𝒜 
   · rw [← mul_assoc]
     exact Submodule.mul_mem_mul (mul_mem_positivePart_of_right h𝒜 a hb) hb'
   · simpa [mul_add] using add_mem hb hb'
+
+end GradedAlgebra
+
+namespace GradedAlgebra
+
+/-- In a nonnegatively graded algebra, an element has vanishing degree-zero projection if and only
+if it lies in the positive part `TauCeti.positivePart 𝒜`. -/
+theorem projZeroAlgHom_eq_zero_iff {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] (hneg : ∀ i < 0, 𝒜 i = ⊥) {a : A} :
+    projZeroAlgHom hneg a = 0 ↔ a ∈ positivePart 𝒜 := by
+  rw [mem_positivePart_iff]
+  refine ⟨fun ha0 p hp ↦ ?_, fun h ↦ Subtype.ext ?_⟩
+  · rcases lt_or_eq_of_le hp with hp' | rfl
+    · simpa [hneg p hp'] using (DirectSum.decompose 𝒜 a p).property
+    · rw [← coe_projZeroAlgHom_apply hneg]
+      exact congrArg Subtype.val ha0
+  · rw [coe_projZeroAlgHom_apply]
+    exact h 0 le_rfl
 
 end GradedAlgebra
 

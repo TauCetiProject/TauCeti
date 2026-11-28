@@ -43,10 +43,8 @@ noncomputable def retractRangeOfPiIdempotent {I : Type uI} [Fintype I] (s : I �
     rw [hom_freeEndOfPiEnd]
     exact IsIdempotentElem.map hp_idem eF.symm.conjRingEquiv
   { i := submoduleι (free 𝒜 s) (LinearMap.range p'.hom) p'.isHomogeneous.isHomogeneous_range
-    r := ofHom p'.hom.rangeRestrict
-      (LinearMap.isHomogeneous_def.mpr fun q x hx ↦ by
-        rw [add_zero]
-        exact (mem_rangeObjOfPiEnd_piece_iff s p hhom).mpr (map_mem p' hx))
+    r := submoduleCodRestrict (LinearMap.range p'.hom) p'.isHomogeneous.isHomogeneous_range p'
+      (LinearMap.mem_range_self p'.hom)
     retract := hom_ext <| LinearMap.ext fun z ↦
       Subtype.ext ((LinearMap.IsIdempotentElem.mem_range_iff hp').mp z.property) }
 
@@ -78,6 +76,6 @@ theorem retractRangeOfPiIdempotent_r_comp_i {I : Type uI} [Fintype I] (s : I →
     (hhom : ∀ (d : ℤ) (v : I → A), (∀ j, v j ∈ 𝒜 (d - s j)) → ∀ j, p v j ∈ 𝒜 (d - s j)) :
     (retractRangeOfPiIdempotent s p hp hhom).r ≫ (retractRangeOfPiIdempotent s p hp hhom).i =
       freeEndOfPiEnd s p hhom :=
-  hom_ext (LinearMap.subtype_comp_rangeRestrict _)
+  submoduleCodRestrict_comp_submoduleι ..
 
 end TauCeti.GradedModuleCat

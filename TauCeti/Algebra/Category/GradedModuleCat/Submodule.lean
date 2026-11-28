@@ -20,17 +20,26 @@ as an object `TauCeti.GradedModuleCat.submoduleObj M U hU` of `GradedModuleCat �
 * `TauCeti.GradedModuleCat.submoduleObj`: a homogeneous `A`-submodule packaged as a graded
   `𝒜`-module.
 * `TauCeti.GradedModuleCat.submoduleι`: the canonical inclusion morphism `M.submoduleObj U hU ⟶ M`.
+* `TauCeti.GradedModuleCat.submoduleCodRestrict`: the graded codomain restriction of a morphism
+  whose values lie in `U`.
 
 ## Main results
 
 * `TauCeti.GradedModuleCat.mem_submoduleObj_piece_iff`: degree-`p` membership in
   `M.submoduleObj U hU` is ambient degree-`p` membership in `M`.
 * `TauCeti.GradedModuleCat.hom_submoduleι`: `(submoduleι M U hU).hom = U.subtype`.
+* `TauCeti.GradedModuleCat.submoduleCodRestrict_comp_submoduleι`: composing the codomain
+  restriction with `submoduleι` recovers the original morphism.
+* `TauCeti.GradedModuleCat.mono_submoduleι` and
+  `TauCeti.GradedModuleCat.eq_submoduleCodRestrict_of_comp_submoduleι`: monicity of `submoduleι`
+  and uniqueness of the factorization through `M.submoduleObj U hU`.
 -/
 
 public section
 
 namespace TauCeti.GradedModuleCat
+
+open CategoryTheory
 
 universe v uk uA
 
@@ -72,5 +81,51 @@ theorem hom_submoduleι (M : GradedModuleCat.{v} 𝒜) (U : Submodule A M)
     (hU : _root_.DirectSum.SetLike.IsHomogeneous M.grading.piece U) :
     (submoduleι M U hU).hom = U.subtype :=
   rfl
+
+/-- The inclusion `submoduleι` of a homogeneous submodule is a monomorphism in
+`GradedModuleCat 𝒜`. -/
+instance mono_submoduleι (M : GradedModuleCat.{v} 𝒜) (U : Submodule A M)
+    (hU : _root_.DirectSum.SetLike.IsHomogeneous M.grading.piece U) :
+    Mono (submoduleι M U hU) where
+  right_cancellation _ _ hgh := hom_ext <| LinearMap.ext fun x ↦ Subtype.ext <|
+    LinearMap.congr_fun (congrArg Hom.hom hgh) x
+
+/-- Graded codomain restriction of a morphism `f : N ⟶ M` whose range lies in a homogeneous
+submodule `U`. -/
+@[expose]
+noncomputable def submoduleCodRestrict {N M : GradedModuleCat.{v} 𝒜} (U : Submodule A M)
+    (hU : _root_.DirectSum.SetLike.IsHomogeneous M.grading.piece U)
+    (f : N ⟶ M) (hf : ∀ x, f.hom x ∈ U) :
+    N ⟶ M.submoduleObj U hU :=
+  ofHom (LinearMap.codRestrict U f.hom hf)
+    (LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ by
+      rw [add_zero, mem_submoduleObj_piece_iff]
+      exact map_mem f hx)
+
+/-- The underlying linear map of `submoduleCodRestrict` is `LinearMap.codRestrict`. -/
+@[simp]
+theorem hom_submoduleCodRestrict {N M : GradedModuleCat.{v} 𝒜} (U : Submodule A M)
+    (hU : _root_.DirectSum.SetLike.IsHomogeneous M.grading.piece U)
+    (f : N ⟶ M) (hf : ∀ x, f.hom x ∈ U) :
+    (submoduleCodRestrict U hU f hf).hom = LinearMap.codRestrict U f.hom hf :=
+  rfl
+
+/-- Composing `submoduleCodRestrict` with the submodule inclusion `submoduleι` recovers `f`. -/
+@[reassoc (attr := simp)]
+theorem submoduleCodRestrict_comp_submoduleι {N M : GradedModuleCat.{v} 𝒜} (U : Submodule A M)
+    (hU : _root_.DirectSum.SetLike.IsHomogeneous M.grading.piece U)
+    (f : N ⟶ M) (hf : ∀ x, f.hom x ∈ U) :
+    submoduleCodRestrict U hU f hf ≫ submoduleι M U hU = f :=
+  hom_ext (by simp [LinearMap.subtype_comp_codRestrict])
+
+/-- Any morphism into `M.submoduleObj U hU` whose composite with `submoduleι` is `f` equals
+`submoduleCodRestrict U hU f hf`. -/
+theorem eq_submoduleCodRestrict_of_comp_submoduleι {N M : GradedModuleCat.{v} 𝒜}
+    (U : Submodule A M) (hU : _root_.DirectSum.SetLike.IsHomogeneous M.grading.piece U)
+    {f : N ⟶ M} (hf : ∀ x, f.hom x ∈ U) {g : N ⟶ M.submoduleObj U hU}
+    (hg : g ≫ submoduleι M U hU = f) :
+    g = submoduleCodRestrict U hU f hf :=
+  (cancel_mono (submoduleι M U hU)).mp
+    (hg.trans (submoduleCodRestrict_comp_submoduleι U hU f hf).symm)
 
 end TauCeti.GradedModuleCat

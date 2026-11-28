@@ -117,12 +117,10 @@ theorem mem_kernelCone_pt_piece_iff {p : ℤ} {z : (kernelCone f).pt} :
 /-- The kernel of a morphism of graded modules is a limit. -/
 noncomputable def kernelIsLimit : IsLimit (kernelCone f) :=
   KernelFork.IsLimit.ofι (kernelι f) (kernelι_comp f)
-    (fun g hg ↦ ofHom (N := kernelObj f)
-      (LinearMap.codRestrict _ g.hom fun x ↦
-        LinearMap.mem_ker.2 (by simpa using LinearMap.congr_fun (congr_arg Hom.hom hg) x))
-      (LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
-        simpa [kernelObj] using map_mem g hx))
-    (fun _ _ ↦ rfl) fun g hg m hm ↦ by subst hm; rfl
+    (fun g hg ↦ submoduleCodRestrict (LinearMap.ker f.hom) f.isHomogeneous.isHomogeneous_ker g
+      fun x ↦ LinearMap.mem_ker.2 (by simpa using LinearMap.congr_fun (congr_arg Hom.hom hg) x))
+    (fun _ _ ↦ submoduleCodRestrict_comp_submoduleι ..)
+    fun _ _ _ hm ↦ eq_submoduleCodRestrict_of_comp_submoduleι _ _ _ hm
 
 instance : HasKernels (GradedModuleCat.{v} 𝒜) :=
   ⟨fun f ↦ HasLimit.mk ⟨_, kernelIsLimit f⟩⟩

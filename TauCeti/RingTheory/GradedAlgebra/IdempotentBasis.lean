@@ -11,8 +11,7 @@ import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 import TauCeti.LinearAlgebra.LinearIndependent.BaseChange
 import TauCeti.LinearAlgebra.Matrix.Idempotent.Basic
 import TauCeti.LinearAlgebra.Matrix.Triangular
-import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Basic
-import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.PositiveWeight
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.OrderedWeight
 
 /-!
 # Homogeneous bases of images of graded idempotents

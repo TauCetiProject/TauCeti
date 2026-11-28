@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.GradedModuleCat.Free.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.PieceQuotient
 public import TauCeti.RingTheory.GradedAlgebra.Connected
+public import TauCeti.RingTheory.GradedAlgebra.PositivePart
 import Mathlib.LinearAlgebra.InvariantBasisNumber
 import TauCeti.Data.Fintype.Fiber
 
@@ -20,7 +21,7 @@ canonical augmentation `GradedAlgebra.connectedAugmentation : A →ₐ[k] k` ind
 head-coordinate map `TauCeti.GradedModuleCat.freeHeadCoord` on each degree-`q` piece of a shifted
 free graded module `free 𝒜 s`.
 
-This file identifies `PieceQuotient (free 𝒜 s) q` with the shift-`q` coordinate space
+This file identifies `(free 𝒜 s).grading.PieceQuotient 𝒜 q` with the shift-`q` coordinate space
 `{j : I // s j = q} → k` via `TauCeti.GradedModuleCat.freePieceQuotientEquiv`, and deduces
 shift-multiset and rank invariance of finite shifted free graded modules up to graded isomorphism
 without requiring any PID or retract hypotheses:
@@ -30,7 +31,7 @@ without requiring any PID or retract hypotheses:
   `free 𝒜 s`, whose kernel is `A₊ (free 𝒜 s) ∩ (free 𝒜 s) q` and which is surjective whenever the
   shift-`q` fiber is finite.
 * `TauCeti.GradedModuleCat.freePieceQuotientEquiv`: `k`-linear identification of
-  `PieceQuotient (free 𝒜 s) q` with `{j : I // s j = q} → k`.
+  `(free 𝒜 s).grading.PieceQuotient 𝒜 q` with `{j : I // s j = q} → k`.
 * `TauCeti.GradedModuleCat.card_fiber_eq_of_iso_free`,
   `TauCeti.GradedModuleCat.multiset_map_eq_of_iso_free`,
   `TauCeti.GradedModuleCat.card_eq_of_iso_free`: over a nontrivial commutative base ring `k`,
@@ -82,15 +83,16 @@ theorem freeHeadCoord_apply (hneg : ∀ i < 0, 𝒜 i = ⊥)
   (rfl)
 
 omit [FaithfulSMul k A] in
-/-- An element of `A₊ (free 𝒜 s)` has every coordinate in the positive-degree ideal `A₊`. -/
+/-- An element of `A₊ (free 𝒜 s)` has every coordinate in `positivePart 𝒜`. -/
 private theorem coord_mem_positive_of_mem_positive_smul_top (hneg : ∀ i < 0, 𝒜 i = ⊥)
     {I : Type uI} (s : I → ℤ) {x : free 𝒜 s}
     (hx : x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (free 𝒜 s))) (j : I) :
-    x j ∈ ⨆ (i : ℤ) (_ : 0 < i), 𝒜 i := by
+    x j ∈ positivePart 𝒜 := by
   rw [DirectSum.apply_eq_component (R := k), ← Submodule.mem_comap]
   refine Submodule.smul_le.mpr (fun a ha y _ ↦ ?_) hx
   rw [Submodule.mem_comap, ← DirectSum.apply_eq_component, DirectSum.smul_apply, smul_eq_mul]
-  exact mul_mem_positive_of_left hneg ha (y j)
+  exact mul_mem_positivePart_of_left hneg
+    ((iSup₂_le fun _ hp _ hpa ↦ mem_positivePart_of_mem hp hpa : _ ≤ positivePart 𝒜) ha) (y j)
 
 /-- A degree-`q` element of `free 𝒜 s` has vanishing head coordinates in degree `q` if and only if
 it lies in `A₊ (free 𝒜 s)`. -/
@@ -157,23 +159,24 @@ theorem freeHeadCoord_surjective (hneg : ∀ i < 0, 𝒜 i = ⊥)
   cases nonempty_fintype {j : I // s j = q}
   exact fun c ↦ ⟨freeHeadLift s q c, freeHeadCoord_freeHeadLift hneg hzero s q c⟩
 
-/-- Descending `freeHeadCoord` identifies `PieceQuotient (free 𝒜 s) q` with the shift-`q`
-coordinate space `{j : I // s j = q} → k`. -/
+/-- Descending `freeHeadCoord` identifies `(free 𝒜 s).grading.PieceQuotient 𝒜 q` with the
+shift-`q` coordinate space `{j : I // s j = q} → k`. -/
 def freePieceQuotientEquiv (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap k A))
     {I : Type uI} (s : I → ℤ) (q : ℤ) [Finite {j : I // s j = q}] :
-    PieceQuotient (free 𝒜 s) q ≃ₗ[k] ({j : I // s j = q} → k) :=
-  let P := (positiveSubmodule (free 𝒜 s)).comap (pieceSubmodule (free 𝒜 s) q).subtype
-  let ePiece := pieceSubmoduleEquiv (free 𝒜 s) q
-  let f : pieceSubmodule (free 𝒜 s) q →ₗ[k] ({j : I // s j = q} → k) :=
+    (free 𝒜 s).grading.PieceQuotient 𝒜 q ≃ₗ[k] ({j : I // s j = q} → k) :=
+  let P := (InternalGrading.positiveSubmodule (free 𝒜 s) 𝒜).comap
+    ((free 𝒜 s).grading.pieceSubmodule 𝒜 q).subtype
+  let ePiece := (free 𝒜 s).grading.pieceSubmoduleEquiv 𝒜 q
+  let f : (free 𝒜 s).grading.pieceSubmodule 𝒜 q →ₗ[k] ({j : I // s j = q} → k) :=
     (freeHeadCoord hneg hzero s q).comp ePiece.toLinearMap
   have hker : P.restrictScalars k = LinearMap.ker f := by
     ext x
     rw [Submodule.restrictScalars_mem, LinearMap.mem_ker, LinearMap.comp_apply,
       LinearEquiv.coe_coe, freeHeadCoord_eq_zero_iff]
     dsimp only [P, ePiece]
-    rw [Submodule.mem_comap, Submodule.coe_subtype, mem_positiveSubmodule,
-      pieceSubmoduleEquiv_apply]
+    rw [Submodule.mem_comap, Submodule.coe_subtype, InternalGrading.mem_positiveSubmodule,
+      InternalGrading.pieceSubmoduleEquiv_apply]
   have hsurj : Function.Surjective f :=
     (freeHeadCoord_surjective hneg hzero s q).comp ePiece.surjective
   (Submodule.Quotient.restrictScalarsEquiv k P).symm.trans
@@ -184,11 +187,10 @@ def freePieceQuotientEquiv (hneg : ∀ i < 0, 𝒜 i = ⊥)
 theorem freePieceQuotientEquiv_mk (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (hzero : ∀ a ∈ 𝒜 0, a ∈ LinearMap.range (Algebra.linearMap k A))
     {I : Type uI} (s : I → ℤ) (q : ℤ) [Finite {j : I // s j = q}]
-    (x : pieceSubmodule (free 𝒜 s) q) :
+    (x : (free 𝒜 s).grading.pieceSubmodule 𝒜 q) :
     freePieceQuotientEquiv hneg hzero s q (Submodule.Quotient.mk x) =
-      freeHeadCoord hneg hzero s q ⟨x.val, mem_pieceSubmodule.mp x.property⟩ := by
-  simpa [freePieceQuotientEquiv] using
-    congrArg (freeHeadCoord hneg hzero s q) (pieceSubmoduleEquiv_apply (free 𝒜 s) q x)
+      freeHeadCoord hneg hzero s q ⟨x.val, InternalGrading.mem_pieceSubmodule.mp x.property⟩ := by
+  simp [freePieceQuotientEquiv]
 
 /-- Applying `(freePieceQuotientEquiv hneg hzero s q).symm` to `Pi.single u c` gives the
 `c`-multiple of the quotient class of the `u`-th free generator. -/
@@ -200,8 +202,9 @@ theorem freePieceQuotientEquiv_symm_single (hneg : ∀ i < 0, 𝒜 i = ⊥)
     (freePieceQuotientEquiv hneg hzero s q).symm (Pi.single u c) =
       c • Submodule.Quotient.mk
         (⟨freeGenerator u.val,
-            mem_pieceSubmodule.mpr (freeGenerator_mem_free_piece_of_eq u.property)⟩ :
-          pieceSubmodule (free 𝒜 s) q) := by
+            InternalGrading.mem_pieceSubmodule.mpr
+              (freeGenerator_mem_free_piece_of_eq u.property)⟩ :
+          (free 𝒜 s).grading.pieceSubmodule 𝒜 q) := by
   cases nonempty_fintype {j : I // s j = q}
   rw [LinearEquiv.symm_apply_eq, map_smul, freePieceQuotientEquiv_mk]
   have hsingle : freeHeadLift (𝒜 := 𝒜) s q (Pi.single u c) =
@@ -219,10 +222,11 @@ theorem card_fiber_eq_of_iso_free [Nontrivial k] (hneg : ∀ i < 0, 𝒜 i = ⊥
     {I₁ I₂ : Type uI} [Fintype I₁] [Fintype I₂] {d₁ : I₁ → ℤ} {d₂ : I₂ → ℤ}
     (Φ : free 𝒜 d₁ ≅ free 𝒜 d₂) (q : ℤ) :
     Fintype.card {i : I₁ // d₁ i = q} = Fintype.card {i : I₂ // d₂ i = q} := by
-  let ePQ₀ : PieceQuotient (free 𝒜 d₁) q ≃ₗ[SetLike.GradeZero.subalgebra 𝒜]
-      PieceQuotient (free 𝒜 d₂) q :=
+  let ePQ₀ : (free 𝒜 d₁).grading.PieceQuotient 𝒜 q ≃ₗ[SetLike.GradeZero.subalgebra 𝒜]
+      (free 𝒜 d₂).grading.PieceQuotient 𝒜 q :=
     ((pieceQuotientFunctor (𝒜 := 𝒜) q).mapIso Φ).toLinearEquiv
-  let ePQ : PieceQuotient (free 𝒜 d₁) q ≃ₗ[k] PieceQuotient (free 𝒜 d₂) q :=
+  let ePQ : (free 𝒜 d₁).grading.PieceQuotient 𝒜 q ≃ₗ[k]
+      (free 𝒜 d₂).grading.PieceQuotient 𝒜 q :=
     ePQ₀.restrictScalars k
   let e : ({i : I₁ // d₁ i = q} → k) ≃ₗ[k] ({i : I₂ // d₂ i = q} → k) :=
     (freePieceQuotientEquiv hneg hzero d₁ q).symm.trans
