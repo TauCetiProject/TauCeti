@@ -33,6 +33,8 @@ the Gram matrix of Jiang–Zhang.
 * `TauCeti.OrthogonalBesselDatum Q ℓ`: an orthogonal Bessel datum of index `ℓ` for `Q`.
 * `TauCeti.OrthogonalBesselDatum.flag`: the isotropic flag `⟨e₁, …, e_j⟩`.
 * `TauCeti.OrthogonalBesselDatum.middleSpace`: the middle space `V_ℓ`.
+* `TauCeti.OrthogonalBesselDatum.besselSpace`: the Bessel space `V_ℓ ∩ w^⊥`, on which the Bessel
+  subgroup acts.
 * `TauCeti.OrthogonalBesselDatum.map`: transport along an isometry.
 * `TauCeti.OrthogonalBesselDatum.baseChange`: extension of scalars.
 
@@ -49,11 +51,23 @@ the Gram matrix of Jiang–Zhang.
 * `TauCeti.OrthogonalBesselDatum.nonempty_iff`: over a field of characteristic not two, a regular
   quadratic space of dimension `d` and Witt index `r` carries a Bessel datum of index `ℓ` exactly
   when `ℓ ≤ r` and `2ℓ + 1 ≤ d`.
+* `TauCeti.OrthogonalBesselDatum.isCompl_span_besselSpace`,
+  `TauCeti.OrthogonalBesselDatum.finrank_besselSpace`: `V` is the direct sum of the span of the
+  `e±ᵢ` and `w` and the Bessel space, which has codimension `2ℓ + 1`.
+* `OrthogonalBesselDatum.formClass_eq_nsmul_hyperbolicClass_add_formClass_restrict_middleSpace`,
+  `TauCeti.OrthogonalBesselDatum.formClass_restrict_middleSpace`: the isometry classes split as
+  `V ≅ ℓ ℍ ⊥ V_ℓ` and `V_ℓ ≅ ⟨Q w⟩ ⊥ (V_ℓ ∩ w^⊥)`.
+* `TauCeti.OrthogonalBesselDatum.add_wittIndex_formClass_restrict_besselSpace_eq_iff`,
+  `TauCeti.OrthogonalBesselDatum.add_wittIndex_formClass_restrict_besselSpace_add_one_eq_iff`:
+  in a regular space of Witt index `r`, the Bessel space has Witt index `r - ℓ` when the
+  anisotropic part of `V` represents `Q w`, and `r - ℓ - 1` otherwise.
 
 ## References
 
 * D. Jiang, L. Zhang, *Arthur parameters and cuspidal automorphic modules of classical groups*,
-  Ann. of Math. 191 (2020), §2.1 (the basis (2.1) and Gram matrix (2.2)) and §2.4.
+  Ann. of Math. 191 (2020), §2.1 (the basis (2.1) and Gram matrix (2.2)) and §2.4 (the Bessel
+  subgroup (2.13)–(2.14) and its Witt index, Proposition 2.5).
+* T. Y. Lam, *Introduction to Quadratic Forms over Fields* (2005), Chapter I, §4.
 -/
 
 public section
@@ -223,6 +237,37 @@ theorem nondegenerate_restrict_middleSpace (hQ : Q.Nondegenerate) :
   exact LinearMap.BilinForm.nondegenerate_restrict_orthogonal_of_isCompl
     (QuadraticForm.associated_isSymm R Q).isRefl hQ D.isCompl_span_middleSpace
 
+/-- The middle space is also the orthogonal complement of the `e±ᵢ` for the polar form
+`polar Q = 2 B`, since `2` is invertible. -/
+theorem middleSpace_eq_orthogonal_polarBilin :
+    D.middleSpace = LinearMap.BilinForm.orthogonal Q.polarBilin
+      (Submodule.span R (Set.range D.e ∪ Set.range D.f)) := by
+  ext x
+  simp only [mem_middleSpace_iff, LinearMap.BilinForm.orthogonal,
+    Submodule.mem_orthogonalBilin_span, Set.forall_mem_union, Set.forall_mem_range,
+    polarBilin_apply_apply, polar_eq_two_nsmul_associated, two_nsmul, ← two_mul,
+    (isUnit_of_invertible (2 : R)).mul_right_eq_zero]
+
+/-- The *Bessel space* `V_ℓ ∩ w^⊥` of a Bessel datum: the orthogonal complement of the vectors
+`e₋ℓ, …, e₋₁, e₁, …, e_ℓ` and `w`. Its special orthogonal group is the Bessel subgroup of the
+datum. -/
+def besselSpace : Submodule R M :=
+  LinearMap.BilinForm.orthogonal (associated Q)
+    (Submodule.span R (Set.range D.e ∪ Set.range D.f ∪ {D.w}))
+
+/-- A vector lies in the Bessel space exactly when it lies in the middle space and is orthogonal
+to `w`. -/
+@[simp]
+theorem mem_besselSpace_iff {x : M} :
+    x ∈ D.besselSpace ↔ x ∈ D.middleSpace ∧ associated Q D.w x = 0 := by
+  simp only [besselSpace, LinearMap.BilinForm.orthogonal, Submodule.mem_orthogonalBilin_span,
+    Set.forall_mem_union, Set.forall_mem_range, Set.mem_singleton_iff, forall_eq,
+    mem_middleSpace_iff]
+
+/-- The Bessel space lies in the middle space. -/
+theorem besselSpace_le_middleSpace : D.besselSpace ≤ D.middleSpace :=
+  fun _ hx ↦ (D.mem_besselSpace_iff.mp hx).1
+
 /-! ### Transport along isometries -/
 
 /-- An isometry carries a Bessel datum of index `ℓ` to a Bessel datum of index `ℓ`. -/
@@ -337,13 +382,54 @@ include D in
 theorem two_mul_add_one_le_finrank [FiniteDimensional K V] : 2 * ℓ + 1 ≤ finrank K V := by
   simpa [two_mul] using D.linearIndependent.fintype_card_le_finrank
 
+/-- The vectors `e₋ℓ, …, e₋₁, e₁, …, e_ℓ` of a Bessel datum span a space of dimension `2ℓ`. -/
+theorem finrank_span_e_f :
+    finrank K (Submodule.span K (Set.range D.e ∪ Set.range D.f)) = 2 * ℓ := by
+  rw [← Set.Sum.elim_range, finrank_span_eq_card D.linearIndependent_e_f]
+  simp [two_mul]
+
 /-- The middle space of a Bessel datum of index `ℓ` has codimension `2ℓ`. -/
 theorem finrank_middleSpace [FiniteDimensional K V] :
     finrank K D.middleSpace + 2 * ℓ = finrank K V := by
-  have hspan : finrank K (Submodule.span K (Set.range D.e ∪ Set.range D.f)) = 2 * ℓ := by
-    rw [← Set.Sum.elim_range, finrank_span_eq_card D.linearIndependent_e_f]
+  rw [← D.finrank_span_e_f, add_comm,
+    Submodule.finrank_add_eq_of_isCompl D.isCompl_span_middleSpace]
+
+/-- The span of the vectors `e₋ℓ, …, e₋₁, e₁, …, e_ℓ` and `w` of a Bessel datum and its Bessel
+space are complementary. -/
+theorem isCompl_span_besselSpace :
+    IsCompl (Submodule.span K (Set.range D.e ∪ Set.range D.f ∪ {D.w})) D.besselSpace := by
+  classical
+  -- Pairing with `e₋ₖ`, with `eₖ` and with `w / Q w` gives forms biorthogonal to `eᵢ`, `e₋ᵢ`, `w`.
+  have h := Submodule.isCompl_span_range_iInf_ker_of_apply_eq_ite
+    (v := Sum.elim (Sum.elim D.e D.f) fun _ : Unit ↦ D.w)
+    (f := Sum.elim (Sum.elim (fun k ↦ associated Q (D.f k)) fun k ↦ associated Q (D.e k))
+      fun _ ↦ (Q D.w)⁻¹ • associated Q D.w)
+    (by
+      rintro ((i | i) | -) ((k | k) | -) <;>
+        simp [eq_comm, associated_isSymm K Q D.w, associated_eq_self_apply,
+          inv_mul_cancel₀ D.apply_w_ne_zero])
+  rw [Set.Sum.elim_range, Set.Sum.elim_range, Set.range_const] at h
+  convert h using 1
+  ext x
+  simp [Submodule.mem_iInf, Sum.forall, D.apply_w_ne_zero, and_comm]
+
+/-- The Bessel space of a Bessel datum in a regular quadratic space is regular. -/
+theorem nondegenerate_restrict_besselSpace (hQ : Q.Nondegenerate) :
+    (Q.restrict D.besselSpace).Nondegenerate := by
+  rw [← nondegenerate_associated_iff] at hQ ⊢
+  -- `associated (Q.restrict W)` is definitionally `(associated Q).restrict W`.
+  exact LinearMap.BilinForm.nondegenerate_restrict_orthogonal_of_isCompl
+    (QuadraticForm.associated_isSymm K Q).isRefl hQ D.isCompl_span_besselSpace
+
+/-- The Bessel space of a Bessel datum of index `ℓ` has codimension `2ℓ + 1`. -/
+theorem finrank_besselSpace [FiniteDimensional K V] :
+    finrank K D.besselSpace + (2 * ℓ + 1) = finrank K V := by
+  have hspan : finrank K (Submodule.span K (Set.range D.e ∪ Set.range D.f ∪ {D.w})) =
+      2 * ℓ + 1 := by
+    rw [← Set.range_const (c := D.w) (ι := Unit), ← Set.Sum.elim_range, ← Set.Sum.elim_range,
+      finrank_span_eq_card D.linearIndependent]
     simp [two_mul]
-  rw [← hspan, add_comm, Submodule.finrank_add_eq_of_isCompl D.isCompl_span_middleSpace]
+  rw [← hspan, add_comm, Submodule.finrank_add_eq_of_isCompl D.isCompl_span_besselSpace]
 
 end Field
 
@@ -433,6 +519,127 @@ theorem nonempty_iff {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimension
     fun h ↦ nonempty_of_le ℓ Q hQ h.1 h.2⟩
 
 end Existence
+
+/-! ### The Witt index of the Bessel space -/
+
+section WittIndex
+
+open RegularFormClass
+
+variable {K : Type u} {V : Type v} [Field K] [Invertible (2 : K)] [AddCommGroup V] [Module K V]
+  [FiniteDimensional K V] {Q : QuadraticForm K V} {ℓ : ℕ} (D : OrthogonalBesselDatum Q ℓ)
+  (hQ : Q.Nondegenerate)
+
+/-- A Bessel datum of index `ℓ` splits `ℓ` hyperbolic planes off a regular space:
+`V ≅ ℓ ℍ ⊥ V_ℓ`. -/
+theorem formClass_eq_nsmul_hyperbolicClass_add_formClass_restrict_middleSpace :
+    formClass Q hQ = ℓ • hyperbolicClass K +
+      formClass (Q.restrict D.middleSpace) (D.nondegenerate_restrict_middleSpace hQ) := by
+  set S := Submodule.span K (Set.range D.e ∪ Set.range D.f)
+  have hS : (Q.restrict S).Nondegenerate := by
+    rw [← nondegenerate_associated_iff]
+    -- `associated (Q.restrict S)` is definitionally `(associated Q).restrict S`.
+    exact (LinearMap.BilinForm.restrict_nondegenerate_iff_isCompl_orthogonal
+      (QuadraticForm.associated_isSymm K Q).isRefl).mpr D.isCompl_span_middleSpace
+  -- The span `S` of the `e±ᵢ` has dimension `2ℓ` and contains the totally isotropic flag of
+  -- dimension `ℓ`, so it is `ℓ` hyperbolic planes.
+  have hle : D.flag ℓ ≤ S := by
+    rw [D.flag_of_le le_rfl]
+    exact Submodule.span_mono Set.subset_union_left
+  have hdim : finrank K ((D.flag ℓ).comap S.subtype) = ℓ :=
+    (Submodule.comapSubtypeEquivOfLe hle).finrank_eq.trans (D.finrank_flag le_rfl)
+  have hSclass : formClass (Q.restrict S) hS = ℓ • hyperbolicClass K := by
+    rw [((D.isTotallyIsotropic_flag ℓ).restrict S).formClass_eq_nsmul_hyperbolicClass hS
+      (by rw [hdim, D.finrank_span_e_f]), hdim]
+  -- `LinearEquiv.ofEq` is the identity on underlying vectors, so it preserves `Q`.
+  have hmid : (Q.restrict D.middleSpace).Equivalent
+      (Q.restrict (LinearMap.BilinForm.orthogonal Q.polarBilin S)) :=
+    ⟨{ toLinearEquiv := LinearEquiv.ofEq _ _ D.middleSpace_eq_orthogonal_polarBilin
+       map_app' := fun _ ↦ rfl }⟩
+  rw [(formClass_eq_iff _ _ _ (hQ.nondegenerate_restrict_orthogonal hS)).mpr hmid, ← hSclass,
+    formClass_restrict_add_formClass_restrict_orthogonal]
+
+/-- The anisotropic vector `w` splits its line off the middle space: `V_ℓ ≅ ⟨Q w⟩ ⊥ (V_ℓ ∩ w^⊥)`,
+where `V_ℓ ∩ w^⊥` is the Bessel space. -/
+theorem formClass_restrict_middleSpace :
+    formClass (Q.restrict D.middleSpace) (D.nondegenerate_restrict_middleSpace hQ) =
+      Quotient.mk (regularFormSetoid K) ⟨1, fun _ => Units.mk0 (Q D.w) D.apply_w_ne_zero⟩ +
+        formClass (Q.restrict D.besselSpace) (D.nondegenerate_restrict_besselSpace hQ) := by
+  let w' : D.middleSpace := ⟨D.w, D.w_mem_middleSpace⟩
+  rw [formClass_eq_mk_rankOne_add _ (D.nondegenerate_restrict_middleSpace hQ) (v := w')
+    D.apply_w_ne_zero]
+  congr 1
+  rw [formClass_eq_iff]
+  -- The orthogonal complement of `w` inside `V_ℓ`, viewed in `V`, is the Bessel space.
+  let ι : Q.restrict D.middleSpace →qᵢ Q := ⟨D.middleSpace.subtype, fun _ ↦ rfl⟩
+  -- As above, `LinearEquiv.ofEq` is the identity on underlying vectors.
+  refine (ι.equivalent_restrict_map Subtype.val_injective _).trans
+    ⟨{ toLinearEquiv := LinearEquiv.ofEq _ _ ?_, map_app' := fun _ ↦ rfl }⟩
+  have key (y : D.middleSpace) : y ∈ LinearMap.BilinForm.orthogonal
+      (Q.restrict D.middleSpace).polarBilin (K ∙ w') ↔ associated Q D.w y = 0 := by
+    simp only [LinearMap.BilinForm.orthogonal, Submodule.mem_orthogonalBilin_span,
+      Set.mem_singleton_iff, forall_eq, polarBilin_restrict, LinearMap.domRestrict₁₂_apply,
+      polarBilin_apply_apply, polar_eq_two_nsmul_associated, two_nsmul, ← two_mul,
+      (isUnit_of_invertible (2 : K)).mul_right_eq_zero, w']
+  ext x
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    exact D.mem_besselSpace_iff.mpr ⟨y.property, (key y).mp hy⟩
+  · intro hx
+    obtain ⟨hxM, hxw⟩ := D.mem_besselSpace_iff.mp hx
+    exact ⟨⟨x, hxM⟩, (key _).mpr hxw, rfl⟩
+
+/-- The middle space of a Bessel datum of index `ℓ` has Witt index `r - ℓ`, where `r` is the Witt
+index of the ambient regular space. -/
+theorem add_wittIndex_formClass_restrict_middleSpace :
+    ℓ + wittIndex (formClass (Q.restrict D.middleSpace) (D.nondegenerate_restrict_middleSpace hQ)) =
+      wittIndex (formClass Q hQ) := by
+  rw [D.formClass_eq_nsmul_hyperbolicClass_add_formClass_restrict_middleSpace hQ,
+    wittIndex_nsmul_hyperbolicClass_add]
+
+/-- The middle space of a Bessel datum has the same anisotropic part as the ambient regular
+space. -/
+theorem anisotropicPart_formClass_restrict_middleSpace :
+    anisotropicPart
+        (formClass (Q.restrict D.middleSpace) (D.nondegenerate_restrict_middleSpace hQ)) =
+      anisotropicPart (formClass Q hQ) := by
+  rw [D.formClass_eq_nsmul_hyperbolicClass_add_formClass_restrict_middleSpace hQ,
+    anisotropicPart_nsmul_hyperbolicClass_add]
+
+/-- **Witt index of the Bessel space**, first case. For a Bessel datum of index `ℓ` in a regular
+space of Witt index `r` and anisotropic part `V_an`, the Bessel space `V_ℓ ∩ w^⊥` has Witt index
+`r - ℓ` exactly when `V_an` contains the line `⟨Q w⟩`, that is, represents `Q w`. -/
+theorem add_wittIndex_formClass_restrict_besselSpace_eq_iff :
+    ℓ + wittIndex
+        (formClass (Q.restrict D.besselSpace) (D.nondegenerate_restrict_besselSpace hQ)) =
+      wittIndex (formClass Q hQ) ↔
+      ∃ y, anisotropicPart (formClass Q hQ) =
+        Quotient.mk (regularFormSetoid K) ⟨1, fun _ => Units.mk0 (Q D.w) D.apply_w_ne_zero⟩ +
+          y := by
+  rw [← D.add_wittIndex_formClass_restrict_middleSpace hQ,
+    ← D.anisotropicPart_formClass_restrict_middleSpace hQ, D.formClass_restrict_middleSpace hQ,
+    Nat.add_left_cancel_iff, eq_comm, wittIndex_mk_rankOne_add_eq_wittIndex_iff]
+
+/-- **Witt index of the Bessel space**, second case. For a Bessel datum of index `ℓ` in a regular
+space of Witt index `r` and anisotropic part `V_an`, the Bessel space `V_ℓ ∩ w^⊥` has Witt index
+`r - ℓ - 1` exactly when `V_an` does not represent `Q w`. -/
+theorem add_wittIndex_formClass_restrict_besselSpace_add_one_eq_iff :
+    ℓ + wittIndex
+        (formClass (Q.restrict D.besselSpace) (D.nondegenerate_restrict_besselSpace hQ)) + 1 =
+      wittIndex (formClass Q hQ) ↔
+      ¬∃ y, anisotropicPart (formClass Q hQ) =
+        Quotient.mk (regularFormSetoid K) ⟨1, fun _ => Units.mk0 (Q D.w) D.apply_w_ne_zero⟩ +
+          y := by
+  rw [← D.add_wittIndex_formClass_restrict_besselSpace_eq_iff hQ]
+  have h := D.add_wittIndex_formClass_restrict_middleSpace hQ
+  rw [D.formClass_restrict_middleSpace hQ] at h
+  have h₁ := wittIndex_le_wittIndex_mk_rankOne_add (Units.mk0 (Q D.w) D.apply_w_ne_zero)
+    (formClass (Q.restrict D.besselSpace) (D.nondegenerate_restrict_besselSpace hQ))
+  have h₂ := wittIndex_mk_rankOne_add_le_add_one (Units.mk0 (Q D.w) D.apply_w_ne_zero)
+    (formClass (Q.restrict D.besselSpace) (D.nondegenerate_restrict_besselSpace hQ))
+  omega
+
+end WittIndex
 
 end OrthogonalBesselDatum
 

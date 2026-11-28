@@ -52,6 +52,12 @@ decomposition follows from the regular one.
   class of rank two is the hyperbolic class.
 * `TauCeti.RegularFormClass.eq_hyperbolicClass_iff_not_anisotropic_of_rank_eq_two`: a class of
   rank two is the hyperbolic class exactly when it is isotropic.
+* `TauCeti.RegularFormClass.Anisotropic.of_add`: the orthogonal summands of an anisotropic class
+  are anisotropic.
+* `TauCeti.RegularFormClass.wittIndex_mk_rankOne_add`,
+  `TauCeti.RegularFormClass.wittIndex_mk_rankOne_add_eq_wittIndex_iff`: adjoining a line raises
+  the Witt index by at most one, and leaves it unchanged exactly when the anisotropic part of the
+  result represents the value of the line.
 * `TauCeti.RegularFormClass.wittIndex_mk_binary_of_isSquare`,
   `TauCeti.RegularFormClass.anisotropicPart_mk_binary_of_isSquare`: the Witt index and the
   anisotropic part of `⟨a, b⟩` when it is hyperbolic.
@@ -159,6 +165,18 @@ theorem RegularFormClass.anisotropic_mk_binary_iff (a b : Kˣ) :
       ¬IsSquare (-(a * b)) := by
   rw [RegularFormClass.anisotropic_mk, presentedForm_two, ← Units.isSquare_coe_iff]
   simpa using anisotropic_binary_iff (a : K) (b : K)
+
+/-- The orthogonal summands of an anisotropic class are anisotropic. -/
+theorem RegularFormClass.Anisotropic.of_add {c d : RegularFormClass K}
+    (h : RegularFormClass.Anisotropic (c + d)) :
+    RegularFormClass.Anisotropic c ∧ RegularFormClass.Anisotropic d := by
+  induction c using Quotient.inductionOn with
+  | h p =>
+    induction d using Quotient.inductionOn with
+    | h q =>
+      rw [RegularFormClass.mk_add_mk, RegularFormClass.anisotropic_mk,
+        (equivalent_presentedForm_append_prod p q).anisotropic_iff] at h
+      simpa only [RegularFormClass.anisotropic_mk] using QuadraticMap.anisotropic_of_prod h
 
 section Hyperbolic
 
@@ -406,6 +424,76 @@ theorem RegularFormClass.anisotropicPart_mk_binary_of_isSquare {a b : Kˣ}
     RegularFormClass.anisotropicPart (Quotient.mk (regularFormSetoid K) ⟨2, ![a, b]⟩) = 0 := by
   rw [(RegularFormClass.mk_binary_eq_hyperbolicClass_iff a b).mpr h,
     RegularFormClass.anisotropicPart_hyperbolicClass]
+
+/-- Adjoining a line `⟨a⟩` to an anisotropic class produces at most one hyperbolic plane. -/
+theorem RegularFormClass.Anisotropic.wittIndex_mk_rankOne_add_le_one {c : RegularFormClass K}
+    (hc : RegularFormClass.Anisotropic c) (a : Kˣ) :
+    RegularFormClass.wittIndex (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ + c) ≤ 1 := by
+  set x := Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ + c with hxdef
+  by_contra! h
+  obtain ⟨m, hm⟩ : ∃ m, RegularFormClass.wittIndex x = m + 1 + 1 :=
+    ⟨RegularFormClass.wittIndex x - 2, by omega⟩
+  have hx := RegularFormClass.wittDecomposition x
+  generalize RegularFormClass.anisotropicPart x = b at hx
+  rw [hm, hxdef] at hx
+  -- Two hyperbolic planes in `⟨a⟩ ⊥ c` leave, after cancelling `⟨a⟩` against one of them, a
+  -- hyperbolic plane inside `c`.
+  have hc' : c = Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -a⟩ +
+      ((m + 1) • hyperbolicClass K + b) := by
+    refine add_left_cancel (a := Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) ?_
+    rw [hx, ← add_assoc, RegularFormClass.mk_rankOne_add_mk_rankOne_neg,
+      succ_nsmul' (hyperbolicClass K) (m + 1), add_assoc]
+  exact not_anisotropic_succ_nsmul_hyperbolicClass_add m b (hc' ▸ hc).of_add.2
+
+/-- Adjoining a line `⟨a⟩` to a class `c` raises its Witt index by the Witt index of `⟨a⟩` plus
+the anisotropic part of `c`, which is `0` or `1`. -/
+theorem RegularFormClass.wittIndex_mk_rankOne_add (a : Kˣ) (c : RegularFormClass K) :
+    RegularFormClass.wittIndex (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ + c) =
+      RegularFormClass.wittIndex c + RegularFormClass.wittIndex
+        (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ +
+          RegularFormClass.anisotropicPart c) := by
+  conv_lhs => rw [RegularFormClass.wittDecomposition c, add_left_comm,
+    RegularFormClass.wittIndex_nsmul_hyperbolicClass_add]
+
+/-- Adjoining a line does not lower the Witt index. -/
+theorem RegularFormClass.wittIndex_le_wittIndex_mk_rankOne_add (a : Kˣ) (c : RegularFormClass K) :
+    RegularFormClass.wittIndex c ≤
+      RegularFormClass.wittIndex (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ + c) := by
+  rw [RegularFormClass.wittIndex_mk_rankOne_add]
+  exact Nat.le_add_right _ _
+
+/-- Adjoining a line raises the Witt index by at most one. -/
+theorem RegularFormClass.wittIndex_mk_rankOne_add_le_add_one (a : Kˣ) (c : RegularFormClass K) :
+    RegularFormClass.wittIndex (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ + c) ≤
+      RegularFormClass.wittIndex c + 1 := by
+  rw [RegularFormClass.wittIndex_mk_rankOne_add]
+  exact Nat.add_le_add_left
+    ((RegularFormClass.anisotropic_anisotropicPart c).wittIndex_mk_rankOne_add_le_one a) _
+
+/-- Adjoining a line `⟨a⟩` to a class `c` leaves its Witt index unchanged exactly when the
+anisotropic part of `⟨a⟩ + c` contains the line `⟨a⟩`, that is, represents `a`. -/
+theorem RegularFormClass.wittIndex_mk_rankOne_add_eq_wittIndex_iff (a : Kˣ)
+    (c : RegularFormClass K) :
+    RegularFormClass.wittIndex (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ + c) =
+      RegularFormClass.wittIndex c ↔
+      ∃ y, RegularFormClass.anisotropicPart
+        (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ + c) =
+          Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ + y := by
+  constructor
+  · intro h
+    rw [RegularFormClass.wittIndex_mk_rankOne_add, Nat.add_eq_left,
+      RegularFormClass.wittIndex_eq_zero_iff] at h
+    refine ⟨RegularFormClass.anisotropicPart c,
+      RegularFormClass.anisotropicPart_eq (m := RegularFormClass.wittIndex c) h ?_⟩
+    conv_lhs => rw [RegularFormClass.wittDecomposition c, add_left_comm]
+  · rintro ⟨y, hy⟩
+    have hx := RegularFormClass.wittDecomposition
+      (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ + c)
+    rw [hy, add_left_comm] at hx
+    have hya : RegularFormClass.Anisotropic y :=
+      (hy ▸ RegularFormClass.anisotropic_anisotropicPart _ : RegularFormClass.Anisotropic
+        (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ + y)).of_add.2
+    rw [RegularFormClass.wittIndex_eq hya (add_left_cancel hx)]
 
 end Decomposition
 

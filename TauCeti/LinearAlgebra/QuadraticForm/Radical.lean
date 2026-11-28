@@ -15,6 +15,7 @@ import Mathlib.LinearAlgebra.Projection
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.QuadraticForm.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
 
 /-!
@@ -62,6 +63,8 @@ regular case.
 * `QuadraticMap.Nondegenerate.nondegenerate_restrict_orthogonal`: in a regular quadratic space,
   the orthogonal complement of a finite-dimensional regular subspace is regular.
 * `QuadraticMap.Nondegenerate.prod`: nondegeneracy passes to an orthogonal product.
+* `TauCeti.nondegenerate_restrict_span_singleton`: a form restricts nondegenerately to the line
+  spanned by a vector of nonzero value.
 * `QuadraticMap.Nondegenerate.ne_zero`: a nondegenerate quadratic map on a nontrivial module is
   nonzero.
 * `QuadraticMap.Nondegenerate.polarBilin_ne_zero`: a nonzero vector has nonzero polar functional
@@ -834,6 +837,16 @@ theorem _root_.QuadraticMap.nondegenerate_smul_sq {a : R} (ha : a ≠ 0) :
   refine ⟨eq_bot_iff.mpr fun x hx ↦ ?_, (Submodule.rank_le _).trans_eq (by simp)⟩
   have h := hx.1
   simpa [ha] using h
+
+/-- A quadratic form restricts nondegenerately to the line spanned by a vector of nonzero value:
+on that line it is the form `t ↦ Q v * t²`. -/
+theorem nondegenerate_restrict_span_singleton {K W : Type*} [Field K] [AddCommGroup W]
+    [Module K W] {Q : QuadraticForm K W} {v : W} (hv : Q v ≠ 0) :
+    (Q.restrict (K ∙ v)).Nondegenerate :=
+  (QuadraticMap.IsometryEquiv.nondegenerate_iff
+    { toLinearEquiv := LinearEquiv.toSpanNonzeroSingleton K W v fun h ↦ hv (by rw [h, map_zero])
+      map_app' := fun t ↦ by simp [QuadraticMap.map_smul, mul_comm] }).mp
+    (QuadraticMap.nondegenerate_smul_sq hv)
 
 end TauCeti
 

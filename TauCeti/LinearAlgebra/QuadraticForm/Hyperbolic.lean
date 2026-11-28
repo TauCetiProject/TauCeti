@@ -64,6 +64,8 @@ hypothesis and is proved directly in `TauCeti/LinearAlgebra/QuadraticForm/Repres
   `TauCeti.hyperbolicClass`.
 * `TauCeti.RegularFormClass.mk_binary_eq_hyperbolicClass_iff`: the plane `⟨a, b⟩` is hyperbolic
   exactly when `-ab` is a square.
+* `TauCeti.RegularFormClass.mk_rankOne_add_mk_rankOne_neg`: `⟨a⟩ ⊥ ⟨-a⟩` is the hyperbolic
+  plane.
 
 ## References
 
@@ -263,6 +265,17 @@ theorem RegularFormClass.mk_binary_eq_hyperbolicClass_iff (a b : Kˣ) :
   refine ⟨fun h ↦ ((equivalent_binary_iff a b 1 (-1)).mp (h.trans ?_)).1,
     equivalent_weightedSumSquares_hyperbolicPlane_of_isSquare⟩
   exact (equivalent_weightedSumSquares_hyperbolicPlane_of_isSquare ⟨1, by simp⟩).symm
+
+/-- The orthogonal sum of the lines `⟨a⟩` and `⟨-a⟩` is the hyperbolic plane. -/
+theorem RegularFormClass.mk_rankOne_add_mk_rankOne_neg (a : Kˣ) :
+    Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩ +
+      Quotient.mk (regularFormSetoid K) ⟨1, fun _ => -a⟩ = hyperbolicClass K := by
+  rw [← (RegularFormClass.mk_binary_eq_hyperbolicClass_iff a (-a)).mpr ⟨a, by simp⟩]
+  refine Eq.trans ?_ (RegularFormClass.mk_succ_eq_mk_rankOne_add ![a, -a]).symm
+  congr 3
+  funext i
+  fin_cases i
+  rfl
 
 end HyperbolicClass
 
