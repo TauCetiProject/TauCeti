@@ -14,6 +14,7 @@ import TauCeti.Geometry.Manifold.Immersion.Diffeomorph
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Pi
 import TauCeti.Geometry.Manifold.PullbackGroupoid
+import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
 import TauCeti.Geometry.Manifold.Submersion.Composition
 import TauCeti.Geometry.Manifold.Submersion.Split
 
@@ -52,13 +53,16 @@ With this atlas:
   (`TauCeti.exists_submersionCharts_iteratedFiberProduct`), yielding a local product normal form
   over maximal-atlas factor charts `φ i` and linear splittings `L i` identifying `baseProj` with
   `extChartAt IM (baseProj y₀)` on the first coordinate and reading the factor coordinates via
-  `L i ∘ (φ i).extend IY ∘ eval i` (`TauCeti.exists_localNormalForm_iteratedFiberProduct`);
+  `Prod.snd ∘ L i ∘ (φ i).extend IY ∘ eval i`
+  (`TauCeti.exists_localNormalForm_iteratedFiberProduct`);
 * the smooth structure is independent of the order of iteration: splitting `k₁ + k₂` factors
   (`k₁ = m₁ + 1`, `k₂ = m₂ + 1`) gives a canonical `C^n` diffeomorphism with the transverse fibre
   product of `Y^[k₁]` and `Y^[k₂]` over `M`
   (`TauCeti.iteratedFiberProductSplitDiffeomorph`), and peeling off the last or first coordinate
   gives `TauCeti.iteratedFiberProductSuccRightDiffeomorph` and
   `TauCeti.iteratedFiberProductSuccLeftDiffeomorph`;
+* the diagonal inclusion `IteratedFiberProduct.const (m + 1) : Y → Y^[m + 1]` is a `C^n` smooth
+  embedding (`TauCeti.contMDiff_const`, `TauCeti.isSmoothEmbedding_const`);
 * the common projection `IteratedFiberProduct.baseProj` to `M` is a `C^n` submersion (surjective
   if and only if `π` is surjective), and every factor projection `IteratedFiberProduct.eval i` to
   `Y` is a surjective `C^n` submersion (`TauCeti.isSubmersion_baseProj`,
@@ -598,8 +602,8 @@ theorem contMDiffOn_iteratedFiberProduct_iff {EX HX X : Type*}
       ∀ i : Fin (m + 1),
         ContMDiffOn IX IY m' (fun x ↦ IteratedFiberProduct.eval i (f x)) s := by
   let := iteratedFiberProductChartedSpace hn hπ m
-  rw [((isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m).of_le hm').contMDiffOn_iff_comp]
-  rw [contMDiffOn_pi_iff]; simp only [Function.comp_apply, IteratedFiberProduct.eval_apply]
+  rw [((isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m).of_le hm').contMDiffOn_iff_comp,
+    contMDiffOn_pi_iff]; simp only [Function.comp_apply, IteratedFiberProduct.eval_apply]
 
 /-- **Within-set pointwise smooth universal property of `IteratedFiberProduct`.** For `m' ≤ n`,
 a map into `IteratedFiberProduct π (m + 1)` is `C^{m'}` within `s` at `x` if and only if each
@@ -615,8 +619,8 @@ theorem contMDiffWithinAt_iteratedFiberProduct_iff {EX HX X : Type*}
       ∀ i : Fin (m + 1),
         ContMDiffWithinAt IX IY m' (fun x ↦ IteratedFiberProduct.eval i (f x)) s x := by
   let := iteratedFiberProductChartedSpace hn hπ m
-  rw [((isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m).of_le hm').contMDiffWithinAt_iff_comp]
-  rw [contMDiffWithinAt_pi_iff]; simp only [Function.comp_apply, IteratedFiberProduct.eval_apply]
+  rw [((isSmoothEmbedding_coe_iteratedFiberProduct hn hπ m).of_le hm').contMDiffWithinAt_iff_comp,
+    contMDiffWithinAt_pi_iff]; simp only [Function.comp_apply, IteratedFiberProduct.eval_apply]
 
 /-- Every factor projection `eval i : Y^[m + 1] → Y` is `C^{m'}` for `m' ≤ n`. -/
 theorem contMDiff_eval {m : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) (i : Fin (m + 1)) :
@@ -633,6 +637,17 @@ theorem contMDiff_const {m : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) :
     ContMDiff IY 𝓘(ℝ, Fin ((m + 1) * finrank ℝ EY - m * finrank ℝ EM) → ℝ) m'
       (IteratedFiberProduct.const (π := π) (m + 1)) :=
   (contMDiff_iteratedFiberProduct_iff hn hπ hm').2 fun _ ↦ contMDiff_id
+
+/-- For `m : ℕ`, the constant-tuple map `IteratedFiberProduct.const (m + 1)` is a `C^n` smooth
+embedding into `IteratedFiberProduct π (m + 1)`, with `eval 0` as a `C^n` left inverse. -/
+theorem isSmoothEmbedding_const (m : ℕ) :
+    letI := iteratedFiberProductChartedSpace hn hπ m
+    Manifold.IsSmoothEmbedding IY
+      𝓘(ℝ, Fin ((m + 1) * finrank ℝ EY - m * finrank ℝ EM) → ℝ) n
+      (IteratedFiberProduct.const (π := π) (m + 1)) := by
+  let := iteratedFiberProductChartedSpace hn hπ m; have := isManifold_iteratedFiberProduct hn hπ m
+  exact (contMDiff_const hn hπ le_rfl).isSmoothEmbedding_of_leftInverse hn
+    (contMDiff_eval hn hπ hn 0) fun y ↦ IteratedFiberProduct.eval_const 0 y
 
 /-- The base projection `baseProj : Y^[m + 1] → M` is `C^{m'}` for `m' ≤ n`. -/
 theorem contMDiff_baseProj {m : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) :
@@ -1231,9 +1246,8 @@ theorem coe_iteratedFiberProductSuccLeftDiffeomorph_symm_apply (m : ℕ)
   let := iteratedFiberProductChartedSpace hn hπ 0; let := iteratedFiberProductChartedSpace hn hπ m
   have := isManifold_iteratedFiberProduct hn hπ 0; have := isManifold_iteratedFiberProduct hn hπ m
   let := iteratedFiberProductChartedSpace hn hπ (m + 1); let := splitZeroCS m; let := succLeftCS m
-  have hcongr : (succLeftCongr hn hπ m).symm p =
-      ⟨(IteratedFiberProduct.const 1 p.val.fst, p.val.snd),
-        (IteratedFiberProduct.baseProj_const 0 p.val.fst).trans p.property⟩ :=
+  have hcongr : (succLeftCongr hn hπ m).symm p = ⟨(IteratedFiberProduct.const 1 p.val.fst,
+      p.val.snd), (IteratedFiberProduct.baseProj_const 0 p.val.fst).trans p.property⟩ :=
     Subtype.ext (coe_transverseFiberProductCongr_symm_apply hn _ _ _ _ _ _ _ _ _ p)
   rw [iteratedFiberProductSuccLeftDiffeomorph, Diffeomorph.symm_trans', Diffeomorph.coe_trans,
     Function.comp_apply, hcongr, (splitZeroLeft_spec hn hπ m).2.2]; simp
@@ -1285,8 +1299,7 @@ private theorem exists_aligned_submersion_product_rect {m : ℕ}
     have heq : ψ.extend IM (π (((φ i).extend IY).symm w)) = (L i w).fst := by
       have h := hφ_eq i _ hz_src; rwa [((φ i).extend IY).right_inv hw] at h
     exact ⟨by rw [← heq, (ψ.extend IM).left_inv (by simpa using hφ_sub i hz_src)], heq⟩
-  let u₀ : EM := ψ.extend IM x₀
-  let v₀ : Fin (m + 1) → F := fun i ↦ (L i ((φ i).extend IY (y₀.val i))).snd
+  let u₀ : EM := ψ.extend IM x₀; let v₀ i : F := (L i ((φ i).extend IY (y₀.val i))).snd
   have hmem_W (i : Fin (m + 1)) : (L i).symm (u₀, v₀ i) ∈ ((φ i).extend IY).target := by
     have hsrc := (φ i).extend_source (I := IY) ▸ hy₀_src i
     have hw₀ := ((φ i).extend IY).map_source hsrc
@@ -1305,23 +1318,17 @@ private theorem exists_aligned_submersion_product_rect {m : ℕ}
 
 omit [ChartedSpace HY Y] [ChartedSpace HM M] [IY.Boundaryless] [FiniteDimensional ℝ EY]
   [FiniteDimensional ℝ EM] [IM.Boundaryless] in
-/-- Local inverse construction for `exists_localNormalForm_iteratedFiberProduct`: builds `invFun`
-on `EM × (Fin (m + 1) → F)` landing in `IteratedFiberProduct π (m + 1)`, together with its
-coordinate evaluation, `baseProj` action, `map_target`, and left/right inverse identities on
-`U ×ˢ Set.pi univ V`. -/
-private theorem exists_localNormalForm_inv {m : ℕ}
-    (y₀ : IteratedFiberProduct π (m + 1)) (ψ : OpenPartialHomeomorph M HM)
-    (φ : Fin (m + 1) → OpenPartialHomeomorph Y HY)
-    (L : Fin (m + 1) → (EY ≃L[ℝ] EM × (Fin (finrank ℝ EY - finrank ℝ EM) → ℝ)))
-    (U : Set EM) (V : Fin (m + 1) → Set (Fin (finrank ℝ EY - finrank ℝ EM) → ℝ))
+/-- Local inverse construction for `exists_localNormalForm_iteratedFiberProduct`. -/
+private theorem exists_localNormalForm_inv {m : ℕ} {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (y₀ : IteratedFiberProduct π (m + 1)) (ψ : OpenPartialHomeomorph M HM)
+    (φ : Fin (m + 1) → OpenPartialHomeomorph Y HY) (L : Fin (m + 1) → (EY ≃L[ℝ] EM × F))
+    (U : Set EM) (V : Fin (m + 1) → Set F)
     (hφ_eq : ∀ i, ∀ w ∈ ((φ i).extend IY).target,
       π (((φ i).extend IY).symm w) = (ψ.extend IM).symm (L i w).fst ∧
       ψ.extend IM (π (((φ i).extend IY).symm w)) = (L i w).fst)
     (hU_sub : U ⊆ (ψ.extend IM).target)
-    (hp_mem_tgt : ∀ {p : EM × (Fin (m + 1) → Fin (finrank ℝ EY - finrank ℝ EM) → ℝ)},
-      p ∈ U ×ˢ Set.pi univ V → ∀ i, (L i).symm (p.fst, p.snd i) ∈ ((φ i).extend IY).target) :
-    let F := Fin (finrank ℝ EY - finrank ℝ EM) → ℝ
-    let T : Set (EM × (Fin (m + 1) → F)) := U ×ˢ Set.pi univ V
+    (hp_mem_tgt : ∀ {p : EM × (Fin (m + 1) → F)}, p ∈ U ×ˢ Set.pi univ V →
+      ∀ i, (L i).symm (p.fst, p.snd i) ∈ ((φ i).extend IY).target) :
     let Ω : Set (IteratedFiberProduct π (m + 1)) :=
       {y | IteratedFiberProduct.baseProj y ∈ ψ.source ∧
         ψ.extend IM (IteratedFiberProduct.baseProj y) ∈ U ∧
@@ -1330,23 +1337,20 @@ private theorem exists_localNormalForm_inv {m : ℕ}
       (ψ.extend IM (IteratedFiberProduct.baseProj y),
         fun i ↦ (L i ((φ i).extend IY (y.val i))).snd)
     ∃ invFun : EM × (Fin (m + 1) → F) → IteratedFiberProduct π (m + 1),
-      (∀ {p}, p ∈ T → ∀ i : Fin (m + 1),
+      (∀ {p}, p ∈ U ×ˢ Set.pi univ V → ∀ i : Fin (m + 1),
         (invFun p).val i = ((φ i).extend IY).symm ((L i).symm (p.fst, p.snd i))) ∧
-      (∀ {p}, p ∈ T → IteratedFiberProduct.baseProj (invFun p) = (ψ.extend IM).symm p.fst) ∧
-      (∀ p ∈ T, invFun p ∈ Ω) ∧ (∀ y ∈ Ω, invFun (toFun y) = y) ∧
-      (∀ p ∈ T, toFun (invFun p) = p) := by
+      (∀ {p}, p ∈ U ×ˢ Set.pi univ V → (invFun p).baseProj = (ψ.extend IM).symm p.fst) ∧
+      (∀ p ∈ U ×ˢ Set.pi univ V, invFun p ∈ Ω) ∧ (∀ y ∈ Ω, invFun (toFun y) = y) ∧
+      (∀ p ∈ U ×ˢ Set.pi univ V, toFun (invFun p) = p) := by
   classical
-  let F := Fin (finrank ℝ EY - finrank ℝ EM) → ℝ
-  let raw : EM × (Fin (m + 1) → F) → Fin (m + 1) → Y := fun p i ↦
+  let raw (p : EM × (Fin (m + 1) → F)) (i : Fin (m + 1)) : Y :=
     ((φ i).extend IY).symm ((L i).symm (p.fst, p.snd i))
-  have hraw_mem {p} (hp : p ∈ U ×ˢ Set.pi univ V) (i j : Fin (m + 1)) :
-      π (raw p i) = π (raw p j) := by
-    simp only [raw, (hφ_eq _ _ (hp_mem_tgt hp _)).left, ContinuousLinearEquiv.apply_symm_apply]
+  have hraw_mem {p} (hp : p ∈ U ×ˢ Set.pi univ V) (i j : Fin (m + 1)) : π (raw p i) = π (raw p j) :=
+    by simp only [raw, (hφ_eq _ _ (hp_mem_tgt hp _)).left, ContinuousLinearEquiv.apply_symm_apply]
   let invFun : EM × (Fin (m + 1) → F) → IteratedFiberProduct π (m + 1) := fun p ↦
     if hp : p ∈ U ×ˢ Set.pi univ V then ⟨raw p, hraw_mem hp⟩ else y₀
   have hinv_val {p} (hp : p ∈ U ×ˢ Set.pi univ V) (i : Fin (m + 1)) :
-      (invFun p).val i = raw p i := by
-    dsimp only [invFun]; rw [dite_eq_left_of_eq_true (eq_true hp)]
+      (invFun p).val i = raw p i := by dsimp [invFun]; rw [dite_eq_left_of_eq_true (eq_true hp)]
   have hinv_base {p} (hp : p ∈ U ×ˢ Set.pi univ V) :
       IteratedFiberProduct.baseProj (invFun p) = (ψ.extend IM).symm p.fst := by
     rw [IteratedFiberProduct.baseProj_eq_apply (invFun p) 0, hinv_val hp 0]
@@ -1355,14 +1359,12 @@ private theorem exists_localNormalForm_inv {m : ℕ}
   · refine ⟨by rw [hinv_base hp]; simpa using (ψ.extend IM).map_target (hU_sub hp.left),
       by rw [hinv_base hp, (ψ.extend IM).right_inv (hU_sub hp.left)]; exact hp.left, fun i ↦
         ⟨by rw [hinv_val hp i]; simpa [raw] using ((φ i).extend IY).map_target (hp_mem_tgt hp i),
-          by rw [hinv_val hp i]; dsimp only [raw]
-             rw [((φ i).extend IY).right_inv (hp_mem_tgt hp i)]
-             simpa using hp.right i (mem_univ i)⟩⟩
+          by rw [hinv_val hp i]; dsimp only [raw]; rw [((φ i).extend IY).right_inv
+            (hp_mem_tgt hp i)]; simpa using hp.right i (mem_univ i)⟩⟩
   · refine Subtype.ext <| funext fun i ↦ ?_
     rw [hinv_val ⟨hy.right.left, fun j _ ↦ (hy.right.right j).right⟩ i]
     have hsrc : y.val i ∈ ((φ i).extend IY).source := by simpa using (hy.right.right i).left
-    have hfst : (L i ((φ i).extend IY (y.val i))).fst =
-        ψ.extend IM (IteratedFiberProduct.baseProj y) := by
+    have hfst : (L i ((φ i).extend IY (y.val i))).fst = ψ.extend IM y.baseProj := by
       rw [← (hφ_eq i _ (((φ i).extend IY).map_source hsrc)).right, ((φ i).extend IY).left_inv hsrc]
       exact congrArg (ψ.extend IM) (IteratedFiberProduct.baseProj_eq_apply y i).symm
     dsimp only [raw]; rw [← hfst, Prod.mk.eta, ContinuousLinearEquiv.symm_apply_apply,
@@ -1438,9 +1440,8 @@ theorem exists_localNormalForm_iteratedFiberProduct (m : ℕ)
     toFun := fun y ↦ (ψ.extend IM (IteratedFiberProduct.baseProj y),
       fun i ↦ (L i ((φ i).extend IY (y.val i))).snd)
     invFun := invFun, source := Ω, target := U ×ˢ Set.pi univ V
-    map_source' := fun _ hy ↦ ⟨hy.right.left, fun i _ ↦ (hy.right.right i).right⟩
-    map_target' := hmap_target, left_inv' := hleft_inv, right_inv' := hright_inv
-    open_source := hΩ_open
+    map_source' := fun _ hy ↦ ⟨hy.2.1, fun i _ ↦ (hy.2.2 i).2⟩, map_target' := hmap_target
+    left_inv' := hleft_inv, right_inv' := hright_inv, open_source := hΩ_open
     open_target := hU_open.prod (isOpen_set_pi finite_univ fun i _ ↦ hV_open i)
     contMDiffOn_toFun :=
       ((ψ.contMDiffOn_extend hψ_max).comp (contMDiff_baseProj hn hπ le_rfl).contMDiffOn
@@ -1451,11 +1452,10 @@ theorem exists_localNormalForm_iteratedFiberProduct (m : ℕ)
               (s := Ω) fun _ hy ↦ (hy.right.right i).left
     contMDiffOn_invFun := (contMDiffOn_iteratedFiberProduct_iff hn hπ le_rfl).mpr fun i ↦
       ((((φ i).extend_target' (I := IY)).symm ▸ contMDiffOn_extend_symm (hφ_max i)).comp
-        ((let Q : (EM × (Fin (m + 1) → F)) →L[ℝ] EY := (L i).symm.toContinuousLinearMap.comp <|
-          (ContinuousLinearMap.fst ℝ EM (Fin (m + 1) → F)).prod
-            ((ContinuousLinearMap.proj i).comp (ContinuousLinearMap.snd ℝ EM (Fin (m + 1) → F)))
-          Q.contDiff.contMDiff.contMDiffOn)) fun _ hp ↦ hp_mem_tgt hp i).congr
-        fun _ hp ↦ hinv_val hp i },
+        (((L i).symm.toContinuousLinearMap.comp <|
+          (ContinuousLinearMap.fst ℝ EM (Fin (m + 1) → F)).prod ((ContinuousLinearMap.proj i).comp
+            (ContinuousLinearMap.snd ℝ EM (Fin (m + 1) → F)))).contDiff.contMDiff.contMDiffOn)
+        fun _ hp ↦ hp_mem_tgt hp i).congr fun _ hp ↦ hinv_val hp i },
     hφ_max, hU_open, hV_open, hU_sub, ⟨mem_chart_source HM x₀, hu₀_U, fun i ↦ ⟨hy₀_src i, hv₀_V i⟩⟩,
     rfl, fun _ hy ↦ ⟨hy.left, rfl, fun i ↦ ⟨(hy.right.right i).left, rfl⟩⟩,
     fun _ hp ↦ ⟨hinv_base hp, fun i ↦ ⟨hp_mem_tgt hp i, hinv_val hp i⟩⟩⟩

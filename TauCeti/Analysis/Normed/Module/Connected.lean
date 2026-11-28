@@ -141,17 +141,6 @@ end TauCeti
 
 namespace TauCeti
 
-/-- Auxiliary preconnectedness transport for `not_homeomorph_of_punctured_nhds_splits`: pulls a
-preconnected subset `S ⊆ V` back through the target subtype `V`, the inverse homeomorphism
-`e.symm`, and the source subtype `U`. -/
-private theorem isPreconnected_image_symm_preimage {X E' : Type*}
-    [TopologicalSpace X] [TopologicalSpace E'] {U : Set X} {V : Set E'} (hV : IsOpen V)
-    (e : U ≃ₜ V) {S : Set E'} (hSV : S ⊆ V) (hS : IsPreconnected S) :
-    IsPreconnected (Subtype.val '' (e.symm '' (Subtype.val ⁻¹' S : Set V))) :=
-  ((hS.preimage_of_isOpenMap Subtype.val_injective hV.isOpenMap_subtypeVal
-    (Subtype.range_coe_subtype ▸ hSV)).image _ e.symm.continuous.continuousOn).image _
-    continuous_subtypeVal.continuousOn
-
 /-- Auxiliary dimension-`1` step for `not_homeomorph_of_punctured_nhds_splits`: removing the centre
 splits an open interval in `Fin 1 → ℝ` into two connected pieces, which cannot meet `m ≥ 3`
 pairwise disjoint open sets covering the punctured neighbourhood. -/

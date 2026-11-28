@@ -34,10 +34,11 @@ when the model `I` itself has a boundary.
   from a manifold to `E` that is `C^n` with `C^n` inverse, followed by the inverse of
   `I.interiorChart`, is a chart of the `C^n` maximal atlas.
 * `OpenPartialHomeomorph.extend_trans_interiorChart_symm_eq`,
+  `OpenPartialHomeomorph.trans_interiorChart_symm_source`,
   `OpenPartialHomeomorph.extend_trans_interiorChart_symm_target`,
   `OpenPartialHomeomorph.extend_trans_interiorChart_symm_symm`: for boundaryless `I`, extending
   `e.trans I.interiorChart.symm` by `I` recovers `e.toPartialEquiv` (and in particular preserves
-  `e.target` and `e.symm`).
+  `e.source`, `e.target`, and `e.symm`).
 * `PartialDiffeomorph.trans_trans_interiorChart_symm_mem_maximalAtlas`: a partial diffeomorphism
   from a manifold to `E`, followed by a chart of the maximal atlas of `E` and by the inverse of
   `I.interiorChart`, is a chart of the `C^n` maximal atlas.
@@ -148,6 +149,14 @@ theorem OpenPartialHomeomorph.extend_trans_interiorChart_symm_eq [I.Boundaryless
   · exact hIw (e x)
   · exact congrArg e.symm (hIw x)
   · simp [I.range_eq_univ]
+
+omit [ChartedSpace H M] in
+/-- When `I` is boundaryless, `e.trans I.interiorChart.symm` has the same source as `e`. -/
+theorem OpenPartialHomeomorph.trans_interiorChart_symm_source [I.Boundaryless]
+    (e : OpenPartialHomeomorph M E) :
+    (e.trans I.interiorChart.symm).source = e.source := by
+  rw [← OpenPartialHomeomorph.extend_source (I := I)]
+  exact congrArg PartialEquiv.source (OpenPartialHomeomorph.extend_trans_interiorChart_symm_eq e)
 
 omit [ChartedSpace H M] in
 /-- When `I` is boundaryless, extending `e.trans I.interiorChart.symm` by `I` preserves

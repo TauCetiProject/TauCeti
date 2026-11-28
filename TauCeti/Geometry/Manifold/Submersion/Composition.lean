@@ -112,13 +112,12 @@ theorem IsSubmersionAtOfComplement.exists_domChart_of_codChart
     have hxΘ : x ∈ Θ.source := by
       rw [transHomeomorph_source, trans_source, mem_inter_iff, mem_preimage]
       exact ⟨hxΦ₁, hτF_mem⟩
-    rw [trans_source, symm_source, ModelWithCorners.interiorChart_target, I.range_eq_univ,
-      interior_univ, preimage_univ, inter_univ]
+    rw [OpenPartialHomeomorph.trans_interiorChart_symm_source]
     exact hxΘ
   -- Membership in `(φ.extend I).target` steps through `Θ`, `Φ₁.trans τF`, `τF`, `τ`, and `Φ₁`,
   -- while `(φ.extend I).symm` unwinds the same transitions in reverse.
   have hτF_symm (u : E' × F₁) : τF.symm u = (τ.symm u.1, u.2) := by
-    rw [prod_symm, refl_symm]; rfl
+    simp only [τF, prod_symm, refl_symm, OpenPartialHomeomorph.prod_apply, refl_apply, id_eq]
   have hΘ_target : ∀ {w}, w ∈ (φ.extend I).target →
       ((hf.equiv w).1 ∈ Φ₂.target ∧ Φ₂.symm (hf.equiv w).1 ∈ Ψ₁.source) ∧
       hf.equiv.symm (τ.symm (hf.equiv w).1, (hf.equiv w).2) ∈ (d₁.extend I).target := by
@@ -133,18 +132,24 @@ theorem IsSubmersionAtOfComplement.exists_domChart_of_codChart
       rw [prod_target, refl_target, mem_prod] at hw_τF
       exact hw_τF.1
     rw [trans_target, OpenPartialHomeomorph.symm_target, mem_inter_iff, mem_preimage] at hw_τ
-    have hw_Φ₁ : (τ.symm (hf.equiv w).1, (hf.equiv w).2) ∈ Φ₁.target := by
-      simpa only [hτF_symm] using hw_comp.2
-    rw [extendTrans_target, mem_preimage] at hw_Φ₁
-    refine ⟨hw_τ, ?_⟩
-    rw [extend_target, I.range_eq_univ, inter_univ]
-    exact hw_Φ₁
+    have hw_Φ₁ : hf.equiv.symm (τ.symm (hf.equiv w).1, (hf.equiv w).2) ∈ (d₁.extend I).target := by
+      have hw_Φ₁' := hw_comp.2
+      rwa [hτF_symm, d₁.mem_extendTrans_target_iff I hf.equiv.toHomeomorph,
+        ContinuousLinearEquiv.coe_symm_toHomeomorph] at hw_Φ₁'
+    exact ⟨hw_τ, hw_Φ₁⟩
   have hφ_symm (w : E) : (φ.extend I).symm w =
       (d₁.extend I).symm (hf.equiv.symm (τ.symm (hf.equiv w).1, (hf.equiv w).2)) := by
     have h1 : (φ.extend I).symm w = Θ.symm w :=
       congrFun (OpenPartialHomeomorph.extend_trans_interiorChart_symm_symm (I := I) Θ) w
-    have h2 : Θ.symm w = (Φ₁.trans τF).symm (hf.equiv w) := rfl
-    have h3 : (Φ₁.trans τF).symm (hf.equiv w) = Φ₁.symm (τF.symm (hf.equiv w)) := rfl
+    have h2 : Θ.symm w = (Φ₁.trans τF).symm (hf.equiv w) := by
+      dsimp only [Θ]
+      rw [OpenPartialHomeomorph.transHomeomorph_eq_trans,
+        OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
+        OpenPartialHomeomorph.trans_apply, Homeomorph.toOpenPartialHomeomorph_symm_apply]
+      simp only [ContinuousLinearEquiv.toHomeomorph_symm, Homeomorph.symm_symm,
+        ContinuousLinearEquiv.coe_toHomeomorph]
+    have h3 : (Φ₁.trans τF).symm (hf.equiv w) = Φ₁.symm (τF.symm (hf.equiv w)) := by
+      rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.trans_apply]
     rw [h1, h2, h3, hτF_symm]
     exact d₁.extendTrans_symm_apply I hf.equiv.toHomeomorph _
   have hmain : ∀ w ∈ (φ.extend I).target,
@@ -160,12 +165,15 @@ theorem IsSubmersionAtOfComplement.exists_domChart_of_codChart
       rw [extend_source]
       exact hf.source_subset_preimage_source <|
         by rw [← d₁.extend_source (I := I)]; exact (d₁.extend I).map_target hzΦ₁
+    have hτ_symm : τ.symm u' = Ψ₁ (Φ₂.symm u') := by
+      rw [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.trans_apply,
+        OpenPartialHomeomorph.symm_symm]
     have hf_val : f ((φ.extend I).symm w) = (ψ.extend J).symm u' := by
-      rw [hφ_symm, ← (c₁.extend J).left_inv hfz_mem, hf_eq]
-      exact (by simp [Ψ₁] : (c₁.extend J).symm (τ.symm u') = Ψ₁.symm (τ.symm u')).trans
-        ((Ψ₁.left_inv hu'τ.2).trans (by simp [Φ₂]))
+      rw [hφ_symm, ← (c₁.extend J).left_inv hfz_mem, hf_eq, hτ_symm,
+        ← c₁.coe_symm_extendTrans_refl J, Ψ₁.left_inv hu'τ.2, ψ.coe_symm_extendTrans_refl J]
     have hu'ψ : u' ∈ (ψ.extend J).target := by
-      simpa [Φ₂, extend_target, J.range_eq_univ] using hu'τ.1
+      simpa only [Homeomorph.refl_symm, Homeomorph.refl_apply, id_eq] using
+        (ψ.mem_extendTrans_target_iff J (Homeomorph.refl E') u').1 hu'τ.1
     exact ⟨hu'ψ, hf_val, by rw [hf_val]; exact (ψ.extend J).right_inv hu'ψ⟩
   refine ⟨φ, hxφ, hφ, fun y hy ↦ ?_, hmain⟩
   have hy' : y ∈ (φ.extend I).source := by rwa [φ.extend_source]

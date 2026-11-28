@@ -245,42 +245,37 @@ theorem IsLocalDiffeomorphAt.isSubmersionAtOfComplement {f : M → N} {x : M}
   have hφ := Ξ.trans_interiorChart_symm_mem_maximalAtlas hΞ hΞs
   have hxφ : x ∈ φ.source := by
     have hxΨ : Θ.toOpenPartialHomeomorph x ∈ Ψ.source := by
-      rw [ψ.extendTrans_source]
-      change Θ x ∈ ψ.source
-      rw [← hfΘ hxΘ]
+      rw [ψ.extendTrans_source, ← OpenPartialHomeomorph.coe_toPartialEquiv,
+        Θ.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv, ← hfΘ hxΘ]
       exact mem_chart_source G (f x)
     have hxΞ : x ∈ Ξ.source := by
-      rw [trans_source, mem_inter_iff, mem_preimage]
+      rw [trans_source, mem_inter_iff, mem_preimage, Θ.toOpenPartialHomeomorph_source]
       exact ⟨hxΘ, hxΨ⟩
-    rw [trans_source, OpenPartialHomeomorph.symm_source, ModelWithCorners.interiorChart_target,
-      I.range_eq_univ, interior_univ, preimage_univ, inter_univ]
-    exact hxΞ
+    rwa [OpenPartialHomeomorph.trans_interiorChart_symm_source]
   let L : E ≃L[𝕜] E' × PUnit.{1} := L₀.trans (ContinuousLinearEquiv.prodUnique 𝕜 E' PUnit.{1}).symm
   refine .mk_of_continuousAt hcont L φ ψ hxφ (mem_chart_source G (f x)) hφ hψ fun u hu ↦ ?_
   have huΞ : u ∈ Ξ.target := by
     rwa [OpenPartialHomeomorph.extend_trans_interiorChart_symm_target] at hu
   rw [trans_target, mem_inter_iff, mem_preimage] at huΞ
   have huΨ : L₀ u ∈ (ψ.extend J).target := by
-    have hu' := huΞ.1
-    rw [extendTrans_target, mem_preimage, ContinuousLinearEquiv.toHomeomorph_symm,
-      Homeomorph.symm_symm, ContinuousLinearEquiv.coe_toHomeomorph] at hu'
-    rw [extend_target, J.range_eq_univ, inter_univ]
-    exact hu'
-  have hyΘ : (ψ.extend J).symm (L₀ u) ∈ Θ.target := by
-    have hmem := huΞ.2
+    simpa only [ContinuousLinearEquiv.toHomeomorph_symm, Homeomorph.symm_symm,
+      ContinuousLinearEquiv.coe_toHomeomorph] using
+      (ψ.mem_extendTrans_target_iff J L₀.symm.toHomeomorph u).1 huΞ.1
+  have hΨsymm : Ψ.symm u = (ψ.extend J).symm (L₀ u) := by
     rw [ψ.extendTrans_symm_apply J L₀.symm.toHomeomorph u,
-      PartialDiffeomorph.toOpenPartialHomeomorph_target] at hmem
-    simp only [ContinuousLinearEquiv.toHomeomorph_symm, Homeomorph.symm_symm,
-      ContinuousLinearEquiv.coe_toHomeomorph] at hmem
-    exact hmem
-  have hsymm : (φ.extend I).symm u = Θ.toPartialEquiv.symm ((ψ.extend J).symm (L₀ u)) := by
-    have h1 : (φ.extend I).symm u = Ξ.symm u :=
-      congrFun (OpenPartialHomeomorph.extend_trans_interiorChart_symm_symm (I := I) Ξ) u
-    have h2 : Ξ.symm u = Θ.toOpenPartialHomeomorph.symm (Ψ.symm u) := rfl
-    rw [h1, h2, ψ.extendTrans_symm_apply J L₀.symm.toHomeomorph u]
-    rfl
+      ← ContinuousLinearEquiv.toHomeomorph_symm, L₀.symm_symm,
+      ContinuousLinearEquiv.coe_toHomeomorph, ψ.extend_coe_symm, Function.comp_apply]
+  have hyΘ : (ψ.extend J).symm (L₀ u) ∈ Θ.toOpenPartialHomeomorph.target := hΨsymm ▸ huΞ.2
+  have hsymm :
+      (φ.extend I).symm u = Θ.toOpenPartialHomeomorph.symm ((ψ.extend J).symm (L₀ u)) := by
+    rw [congrFun (OpenPartialHomeomorph.extend_trans_interiorChart_symm_symm (I := I) Ξ) u,
+      OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm, OpenPartialHomeomorph.trans_apply,
+      hΨsymm]
   dsimp only [comp_apply]
-  rw [hsymm, hfΘ (Θ.toPartialEquiv.map_target hyΘ), Θ.toPartialEquiv.right_inv hyΘ]
+  rw [hsymm, hfΘ (by simpa only [Θ.toOpenPartialHomeomorph_source] using
+    Θ.toOpenPartialHomeomorph.map_target hyΘ),
+    ← Θ.toOpenPartialHomeomorph_toPartialHomeomorph_toPartialEquiv,
+    OpenPartialHomeomorph.coe_toPartialEquiv, Θ.toOpenPartialHomeomorph.right_inv hyΘ]
   exact (ψ.extend J).right_inv huΨ
 
 /-- A `C^n` local diffeomorphism at `x` (`n ≠ 0`) between boundaryless manifolds is a submersion at

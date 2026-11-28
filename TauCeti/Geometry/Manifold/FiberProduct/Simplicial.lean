@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.FiberProduct.IteratedSubmersion
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Pi
-import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
 
 /-!
 # Simplicial structure of iterated submersion fibre products
@@ -33,7 +32,8 @@ coface and codegeneracy maps `Fin.succAbove` and `Fin.predAbove` gives the Čech
   `face_succ_comp_degeneracy`, `face_succ_comp_degeneracy_castSucc_of_gt`, and
   `degeneracy_castSucc_comp_degeneracy`), transferred from `SimplexCategory` via contravariant
   functoriality `reindex (β ∘ α) = reindex α ∘ reindex β`, packaged as the `SimplexCategory`
-  action `TauCeti.IteratedFiberProduct.mapSimplex`.
+  action `TauCeti.IteratedFiberProduct.mapSimplex` (continuous by
+  `TauCeti.IteratedFiberProduct.continuous_mapSimplex`).
 
 When `π` is a `C^n` submersion (`1 ≤ n`) between finite-dimensional boundaryless real manifolds and
 each `IteratedFiberProduct π (m + 1)` carries `TauCeti.iteratedFiberProductChartedSpace`:
@@ -50,9 +50,7 @@ each `IteratedFiberProduct π (m + 1)` carries `TauCeti.iteratedFiberProductChar
   `TauCeti.isSmoothEmbedding_degeneracy`), and a closed topological embedding when `Y` is
   Hausdorff (`TauCeti.IteratedFiberProduct.isClosedEmbedding_degeneracy`);
 * for a section `s` of `π`, prepending `s (baseProj y)` to `y` is `C^{m'}` at every `y` where `s`
-  is `C^{m'}` at `baseProj y` (`TauCeti.contMDiffAt_cons_section`);
-* the diagonal inclusion `IteratedFiberProduct.const (m + 1) : Y → Y^[m + 1]` is a `C^n` smooth
-  embedding (`TauCeti.isSmoothEmbedding_const`).
+  is `C^{m'}` at `baseProj y` (`TauCeti.contMDiffAt_cons_section`).
 
 ## References
 
@@ -517,6 +515,19 @@ theorem continuous_reindex {k₁ k₂ : ℕ} (α : Fin k₁ → Fin k₂) :
   Continuous.subtype_mk
     (continuous_pi fun i ↦ (continuous_eval (π := π) (α i)).congr fun a ↦ eval_apply (α i) a) _
 
+section SimplexCategory
+
+open CategoryTheory
+open scoped Simplicial
+
+/-- Every Čech-nerve map `mapSimplex θ : Y^[b + 1] → Y^[a + 1]` is continuous. -/
+theorem continuous_mapSimplex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) :
+    Continuous (mapSimplex (π := π) θ) := by
+  rw [mapSimplex_eq_reindex]
+  exact continuous_reindex θ.toOrderHom
+
+end SimplexCategory
+
 /-- Every face map `face i : Y^[m + 2] → Y^[m + 1]` is continuous. -/
 theorem continuous_face {m : ℕ} (i : Fin (m + 2)) :
     Continuous (face (π := π) i) :=
@@ -801,18 +812,6 @@ theorem isSmoothEmbedding_degeneracy {m : ℕ} (i : Fin (m + 1)) :
   let := iteratedFiberProductChartedSpace hn hπ m
   let := iteratedFiberProductChartedSpace hn hπ (m + 1)
   exact ⟨isImmersion_degeneracy hn hπ i, IteratedFiberProduct.isEmbedding_degeneracy i⟩
-
-/-- For `m : ℕ`, the constant-tuple map `IteratedFiberProduct.const (m + 1)` is a `C^n` smooth
-embedding into `IteratedFiberProduct π (m + 1)`, with `eval 0` as a `C^n` left inverse. -/
-theorem isSmoothEmbedding_const (m : ℕ) :
-    letI := iteratedFiberProductChartedSpace hn hπ m
-    Manifold.IsSmoothEmbedding IY
-      𝓘(ℝ, Fin ((m + 1) * finrank ℝ EY - m * finrank ℝ EM) → ℝ) n
-      (IteratedFiberProduct.const (π := π) (m + 1)) := by
-  let := iteratedFiberProductChartedSpace hn hπ m
-  have := isManifold_iteratedFiberProduct hn hπ m
-  exact (contMDiff_const hn hπ le_rfl).isSmoothEmbedding_of_leftInverse hn
-    (contMDiff_eval hn hπ hn 0) fun y ↦ IteratedFiberProduct.eval_const 0 y
 
 end Manifold
 

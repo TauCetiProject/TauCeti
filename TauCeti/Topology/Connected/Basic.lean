@@ -51,6 +51,9 @@ In a `T₁` space, the connected component `connectedComponentIn s x` of a point
 the point itself (`TauCeti.connectedComponentIn_eq_singleton`): the component is covered by the
 open sets `{x}ᶜ` and a neighbourhood of `x` meeting `s` only at `x`, whose intersection misses `s`.
 
+A preconnected subset of an open subspace pulls back to a preconnected subset of the ambient domain
+along a homeomorphism between subspaces (`TauCeti.isPreconnected_image_symm_preimage`).
+
 ## Attribution
 
 The closure lemma is adapted from `Mei/Topology/Connected/Basic.lean` in
@@ -271,5 +274,15 @@ theorem isPreconnected_inter_preimage_singleton_of_forall_mem_image {β : Type*}
       not_and]
     rintro hxV rfl
     exact hv (mem_image_of_mem f hxV)
+
+/-- Transporting a preconnected subset `S ⊆ V` back through a homeomorphism `e : U ≃ₜ V` between
+subspaces, with `V` open, yields a preconnected subset of the ambient space of `U`. -/
+theorem isPreconnected_image_symm_preimage {X E' : Type*}
+    [TopologicalSpace X] [TopologicalSpace E'] {U : Set X} {V : Set E'} (hV : IsOpen V)
+    (e : U ≃ₜ V) {S : Set E'} (hSV : S ⊆ V) (hS : IsPreconnected S) :
+    IsPreconnected (Subtype.val '' (e.symm '' (Subtype.val ⁻¹' S : Set V))) :=
+  ((hS.preimage_of_isOpenMap Subtype.val_injective hV.isOpenMap_subtypeVal
+    (Subtype.range_coe_subtype ▸ hSV)).image _ e.symm.continuous.continuousOn).image _
+    continuous_subtypeVal.continuousOn
 
 end TauCeti
