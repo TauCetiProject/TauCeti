@@ -156,7 +156,7 @@ theorem exists_finset_forall_exists_smul_mem_approxDomain (S₀ : Finset (Finite
   have hNpos : (0 : ℝ) < N := (div_nonneg (by positivity) hε.le).trans_lt hN
   classical
   -- the exponent families on the grid `ℤ / N`, with entries in `[-2, 2]` on `P` and `0` off `P`
-  obtain ⟨T₀, hT₀⟩ := exists_finset_forall_exists_le_lt_add (κ := P × ι) (one_div_pos.mpr hNpos)
+  obtain ⟨T₀, -, hT₀⟩ := exists_finset_forall_exists_le_lt_add (κ := P × ι) (one_div_pos.mpr hNpos)
     (2 : ℝ)
   set ext : (P × ι → ℝ) → AbsoluteValue K ℝ → ι → ℝ :=
     fun c v i ↦ if h : v ∈ P then c (⟨v, h⟩, i) else 0
