@@ -223,29 +223,6 @@ theorem exists_simpleHolding_simpleGains_eq_sub [OrderBot ι] {mΩ : MeasurableS
     · simp [hτ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
     · simp [hσ (mem_range.mp hj).le (mem_range.mp hj) (Nat.le_succ j)]
 
-private theorem indicator_Ioc_projIcc_mul {s t l r : ι} (hst : s ≤ t)
-    (ξ c : ℝ) (u : ι) :
-    (Set.Ioc (Set.projIcc s t hst l : ι) (Set.projIcc s t hst r : ι)).indicator
-        (fun _ ↦ if l ≤ t then ξ * c else 0) u =
-      (Set.Ioc s t).indicator (fun _ ↦ ξ * (Set.Ioc l r).indicator (fun _ ↦ c) u) u := by
-  rw [Set.indicator_Ioc_projIcc]
-  by_cases hlt : l ≤ t
-  · by_cases hus : u ∈ Set.Ioc s t <;> by_cases hul : u ∈ Set.Ioc l r <;>
-      simp [hlt, hus, hul]
-  · by_cases hus : u ∈ Set.Ioc s t
-    · have hul : u ∉ Set.Ioc l r := fun h ↦ hlt (h.1.trans_le hus.2).le
-      simp [hlt, hus, hul]
-    · simp [hlt, hus]
-
-private theorem single_clip_Ioc_gain {s t l r T : ι} (hst : s ≤ t) (hlr : l ≤ r)
-    (ξ c : ℝ) (f : ι → ℝ) :
-    (if l ≤ t then ξ * c else 0) *
-        (f (min (Set.projIcc s t hst r : ι) T) - f (min (Set.projIcc s t hst l : ι) T)) =
-      ξ * (c * (f (min r (min T t)) - f (min l (min T t))) -
-        c * (f (min r (min T s)) - f (min l (min T s)))) := by
-  rw [← mul_sub, ← Set.ite_le_sub_min_coe_projIcc hst hlr f]
-  by_cases hlt : l ≤ t <;> simp [hlt, mul_assoc]
-
 /-- Clipping left-measurable heights to `(s, t]` via `Set.projIcc s t hst ∘ τ` and multiplying by
 an `ℱ s`-measurable function `ξ` preserves left-measurability at the clipped dates. -/
 theorem stronglyMeasurable_clip_Ioc_mul {mΩ : MeasurableSpace Ω} (ℱ : Filtration ι mΩ)
@@ -272,10 +249,12 @@ theorem simpleHolding_clip_Ioc_mul {τ : ℕ → ι} {n : ℕ} {a : ℕ → Ω �
     simpleHolding (fun j ↦ (Set.projIcc s t hst (τ j) : ι)) n
         (fun j ω ↦ if τ j ≤ t then ξ ω * a j ω else 0) u ω =
       (Set.Ioc s t).indicator (fun _ ↦ ξ ω * simpleHolding τ n a u ω) u := by
-  rw [simpleHolding_def, simpleHolding_def, sum_congr rfl fun j _ ↦
-    indicator_Ioc_projIcc_mul hst (ξ ω) (a j ω) u]
+  rw [simpleHolding_def, simpleHolding_def]
+  simp_rw [Set.indicator_Ioc_projIcc_ite_le hst (fun _ ↦ ξ ω * _)]
   by_cases hu : u ∈ Set.Ioc s t
   · simp only [Set.indicator_of_mem hu, mul_sum]
+    refine sum_congr rfl fun j _ ↦ ?_
+    by_cases hju : u ∈ Set.Ioc (τ j) (τ (j + 1)) <;> simp [hju]
   · simp [Set.indicator_of_notMem hu]
 
 /-- Clipping a simple holding `(τ, n, a)` on a monotone grid to `(s, t]` via
@@ -290,7 +269,8 @@ theorem simpleGains_clip_Ioc_mul {τ : ℕ → ι} {n : ℕ} {a : ℕ → Ω →
   rw [simpleGains_def, simpleGains_def, simpleGains_def, ← sum_sub_distrib, mul_sum]
   refine sum_congr rfl fun j hj ↦ ?_
   have hj' : j < n := mem_range.mp hj
-  exact single_clip_Ioc_gain hst (hτ hj'.le hj' (Nat.le_succ j)) (ξ ω) (a j ω) (X · ω)
+  rw [← mul_sub, ← Set.ite_le_sub_min_coe_projIcc hst (hτ hj'.le hj' (Nat.le_succ j)) (X · ω)]
+  by_cases hlt : τ j ≤ t <;> simp [hlt, mul_assoc]
 
 end TauCeti.Finance
 

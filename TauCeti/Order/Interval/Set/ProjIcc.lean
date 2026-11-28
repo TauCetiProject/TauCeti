@@ -14,9 +14,10 @@ public import Mathlib.Order.Interval.Set.ProjIcc
 The projection `Set.projIcc a b h` of a linear order onto `[a, b]` sends every point outside
 `[a, b]` to an endpoint. So a point whose projection lies in the open interval `(a, b)` is its own
 projection (`Set.eq_of_coe_projIcc_eq`), half-open intervals of projections intersect `[a, b]`
-(`Set.Ioc_projIcc_eq_Ioc_inter`, `Set.indicator_Ioc_projIcc`), and taking a minimum with
-an upper bound commutes with clamping (`Set.min_coe_projIcc_eq`, `Set.sub_min_coe_projIcc_eq`,
-`Set.sub_min_coe_projIcc_sub`, `Set.ite_le_sub_min_coe_projIcc`).
+(`Set.Ioc_projIcc_eq_Ioc_inter`, `Set.indicator_Ioc_projIcc`,
+`Set.indicator_Ioc_projIcc_ite_le`), and taking a minimum with an upper bound commutes with clamping
+(`Set.min_coe_projIcc_eq`, `Set.sub_min_coe_projIcc_eq`, `Set.sub_min_coe_projIcc_sub`,
+`Set.ite_le_sub_min_coe_projIcc`).
 -/
 
 public section
@@ -65,6 +66,22 @@ theorem indicator_Ioc_projIcc {M : Type*} [Zero M] {l r : α} (hst : s ≤ t)
       (Ioc s t).indicator (fun _ ↦ (Ioc l r).indicator f u) u := by
   rw [Ioc_projIcc_eq_Ioc_inter hst]
   by_cases hu : u ∈ Ioc s t <;> simp [hu, indicator_apply]
+
+/-- Indicator of a projected half-open interval `(projIcc s t l, projIcc s t r]` with an `l ≤ t`
+guard equals the nested indicator over `(s, t]` and `(l, r]`, because any point in
+`(l, r] ∩ (s, t]` satisfies `l ≤ t`. -/
+theorem indicator_Ioc_projIcc_ite_le {M : Type*} [Zero M] {l r : α} (hst : s ≤ t)
+    (f : α → M) (u : α) :
+    (Ioc (projIcc s t hst l : α) (projIcc s t hst r : α)).indicator
+        (fun x ↦ if l ≤ t then f x else 0) u =
+      (Ioc s t).indicator (fun _ ↦ (Ioc l r).indicator f u) u := by
+  rw [indicator_Ioc_projIcc]
+  by_cases hlt : l ≤ t
+  · simp [hlt]
+  · by_cases hus : u ∈ Ioc s t
+    · have hul : u ∉ Ioc l r := fun h ↦ hlt (h.1.trans_le hus.2).le
+      simp [hlt, hus, hul]
+    · simp [hlt, hus]
 
 /-- Truncating the projection onto `[s, t]` at `T ≥ s` equals clamping `min r (min T t)` below at
 `s`. -/
