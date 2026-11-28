@@ -36,7 +36,7 @@ theorem contDiffOn_forwardSemiflow_time {m : ℕ∞} {S : Set E} {X : E → E}
       (forwardSemiflowInterval X S x) := by
   intro t ht
   obtain ⟨b, htb, hsub⟩ := exists_Ico_subset_of_mem_forwardSemiflowInterval ht
-  exact (contDiffOn_succ_of_hasDerivWithinAt_comp (uniqueDiffOn_Ico 0 b) hX
+  exact (contDiffOn_succ_of_hasDerivWithinAt_comp hX
     (fun _ hs ↦ forwardSemiflow_mem (hsub hs))
     (fun _ hs ↦ hX_lip.hasDerivWithinAt_forwardSemiflow_Ico hsub hs) t
     ⟨nonneg_of_mem_forwardSemiflowInterval ht, htb⟩).mono_of_mem_nhdsWithin

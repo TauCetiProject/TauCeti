@@ -23,6 +23,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
 * `NormedSpace.fromTangentSpace_apply`, `NormedSpace.fromTangentSpace_symm_apply`: the canonical
   tangent-space identification of a normed space preserves the underlying vector, as an explicit
   equation.
+* `TauCeti.tangentSpaceCastModel_modelWithCornersSelf_apply`: the cast to the model space
+  preserves the vector for the identity model with corners.
 * `TauCeti.mvfderiv_eq_fderiv_apply`: on normed spaces, `mvfderiv` applied to a tangent vector is
   `fderiv` applied to it.
 * `HasFDerivAt.mfderiv_apply`: on normed spaces, the manifold derivative of a map with Fréchet
@@ -115,6 +117,11 @@ Use this equation explicitly: automatic simplification can change an equality's 
 from the tangent fibre to the model, whose normed-space instances are distinct. -/
 theorem _root_.NormedSpace.fromTangentSpace_apply (x : E) (v : TangentSpace 𝓘(𝕜, E) x) :
     NormedSpace.fromTangentSpace (𝕜 := 𝕜) x v = v := rfl
+
+/-- Casting a tangent vector to the model space of a normed space preserves the vector. -/
+theorem tangentSpaceCastModel_modelWithCornersSelf_apply (x : E)
+    (v : TangentSpace 𝓘(𝕜, E) x) : tangentSpaceCastModel 𝓘(𝕜, E) x v = v :=
+  NormedSpace.fromTangentSpace_apply x v
 
 /-- The inverse model-space tangent identification preserves the underlying vector.
 As with `fromTangentSpace_apply`, this equation is for explicit tangent/model conversions. -/

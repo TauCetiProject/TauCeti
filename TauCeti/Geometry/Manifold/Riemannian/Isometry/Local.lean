@@ -28,6 +28,8 @@ from Riccardo Brasca's `ForTauCeti` formalization.
 
 * `TauCeti.IsLocalRiemannianIsometry`: a smooth map with invertible differentials preserving the
   inner product.
+* `TauCeti.IsLocalRiemannianIsometry.contDiffOn_comp`: composing with a local isometry from a
+  model space preserves regularity on the preimage of the domain.
 * `TauCeti.IsLocalRiemannianIsometry.exists_linearIsometryEquiv_eq_mfderiv`: the differential at
   each point is a linear isometric equivalence of tangent spaces.
 * `TauCeti.IsLocalRiemannianIsometry.mfderiv_apply_mpullback`: the differential sends a pulled-back
@@ -96,6 +98,16 @@ variable {f : M → N}
 protected theorem mdifferentiableAt (hf : IsLocalRiemannianIsometry I J f) (x : M) :
     MDifferentiableAt I J f x :=
   hf.contMDiff.mdifferentiableAt (by simp) (x := x)
+
+/-- Composing a `C^n` map with a local Riemannian isometry from the model space
+preserves `C^n` regularity on the preimage of its domain. -/
+theorem contDiffOn_comp [RiemannianBundle (fun z : E ↦ TangentSpace 𝓘(ℝ, E) z)]
+    {f : E → M} (hf : IsLocalRiemannianIsometry 𝓘(ℝ, E) I f)
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {U : Set M} {φ : M → G} {n : ℕ∞} (hφ : ContMDiffOn I 𝓘(ℝ, G) n φ U) :
+    ContDiffOn ℝ n (φ ∘ f) (f ⁻¹' U) :=
+  (hφ.comp (hf.contMDiff.of_le (by exact_mod_cast le_top)).contMDiffOn
+    (fun _ hz ↦ hz)).contDiffOn
 
 /-- A local Riemannian isometry preserves inner products of tangent vectors at equal
 base points, including the native explicit equal-fibre transports. -/

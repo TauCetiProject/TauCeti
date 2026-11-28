@@ -16,8 +16,9 @@ import TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction
 An interior point of a smooth finite-dimensional Riemannian manifold has an open
 neighbourhood diffeomorphic to the model space. Pulling the metric back along this
 parametrization makes it a local Riemannian isometry. The model space carries the pulled-back
-metric, which need not be its constant Euclidean metric. On a Hausdorff manifold, this
-parametrization also transports vector-valued `C^n` germs to global `C^n` maps.
+metric, which need not be its constant Euclidean metric. Model-space smoothness of a scalar
+function transfers back to interior points through these local isometries. On a Hausdorff
+manifold, this parametrization also transports vector-valued `C^n` germs to global `C^n` maps.
 -/
 
 public section
@@ -27,10 +28,11 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [FiniteDimensional ℝ E] [IsManifold I ∞ M]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
 /-- An interior point has a parametrization by the model space which is a local Riemannian
@@ -67,6 +69,33 @@ theorem exists_localRiemannianIsometry_parametrization {x : M} (hx : I.IsInterio
     cases hinner
     rfl
   exact hgM ▸ gM.isLocalRiemannianIsometry_pullback_of_isInvertible hfs hinv
+
+/-- If `C^n` regularity of a scalar function `u` gives smoothness along every smooth model
+metric and local Riemannian isometry, then `u` is smooth at each interior point of its open
+domain. Coefficient regularity can be pulled back separately using
+`IsLocalRiemannianIsometry.contDiffOn_comp`. -/
+theorem contMDiffAt_of_contDiffOn_localRiemannianIsometry {U : Set M} (hU : IsOpen U)
+    {u : M → ℝ} {x : M} (hx : x ∈ U) (hxi : I.IsInteriorPoint x) {n : ℕ∞}
+    (hu : ContMDiffOn I 𝓘(ℝ) n u U)
+    (hmodel : ∀
+      (gE : ContMDiffRiemannianMetric 𝓘(ℝ, E) ∞ E (fun z : E ↦ TangentSpace 𝓘(ℝ, E) z))
+      (f : E → M),
+      letI : RiemannianBundle (fun z : E ↦ TangentSpace 𝓘(ℝ, E) z) := ⟨gE.toRiemannianMetric⟩
+      IsLocalRiemannianIsometry 𝓘(ℝ, E) I f → IsOpen (f ⁻¹' U) →
+        ContDiffOn ℝ n (u ∘ f) (f ⁻¹' U) → ContDiffOn ℝ ∞ (u ∘ f) (f ⁻¹' U)) :
+    ContMDiffAt I 𝓘(ℝ) ∞ u x := by
+  obtain ⟨O, hxO, Φ, gE, hfiso⟩ := exists_localRiemannianIsometry_parametrization hxi
+  let _ : RiemannianBundle (fun z : E ↦ TangentSpace 𝓘(ℝ, E) z) := ⟨gE.toRiemannianMetric⟩
+  let f : E → M := (Subtype.val : O → M) ∘ Φ.symm
+  have hfs : ContMDiff 𝓘(ℝ, E) I ∞ f := hfiso.contMDiff
+  have hS : IsOpen (f ⁻¹' U) := hU.preimage hfs.continuous
+  have hreg := hmodel gE f hfiso hS (hfiso.contDiffOn_comp hu)
+  have hz : f (Φ ⟨x, hxO⟩) ∈ U := by simpa [f] using hx
+  have hsmooth : ContMDiffAt I 𝓘(ℝ) ∞ (fun y : O ↦ u y) ⟨x, hxO⟩ := by
+    have h := ((hreg.contDiffAt (hS.mem_nhds hz)).contMDiffAt).comp ⟨x, hxO⟩
+      Φ.contMDiff.contMDiffAt
+    simpa only [Function.comp_def, f, Φ.symm_apply_apply] using h
+  exact contMDiffAt_subtype_iff.mp hsmooth
 
 /-- An interior point has an open model-space parametrization which is a local Riemannian
 isometry for a smooth pulled-back metric and transports each vector-valued `C^n` germ to

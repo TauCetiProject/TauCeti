@@ -243,6 +243,7 @@ theorem ext {g h : RiemannianMetric E} (heq : ∀ b v w, g.inner b v w = h.inner
   exact heq b v w
 
 /-- The inner product induced by `[RiemannianBundle E]` is given by `RiemannianBundle.g.inner`. -/
+@[simp ←]
 theorem inner_riemannianBundle [RiemannianBundle E]
     [∀ b, IsTopologicalAddGroup (E b)] [∀ b, ContinuousConstSMul ℝ (E b)]
     (b : B) (v w : E b) :
