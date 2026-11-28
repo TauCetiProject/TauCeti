@@ -164,7 +164,7 @@ theorem eventually_abs_norm_mfderiv_sub_norm_le (h : IsAsymptoticallyEuclideanEn
 
 /-! ### The lower bound -/
 
-variable [IsManifold I ∞ M]
+variable [IsManifold I 1 M]
 
 /-- A path from `φ x` that stays in the image of the closed annulus `b ≤ ‖y‖ ≤ 2 ‖x‖ - b`, on which
 the differential of `φ` stretches vectors by at least `c > 0`, and that is shorter than
@@ -181,14 +181,14 @@ private theorem mem_image_annulus_of_pathELength_lt (h : IsAsymptoticallyEuclide
   set S : Set (EuclideanSpace ℝ (Fin n)) := closedBall 0 (2 * ‖x‖ - b) \ ball 0 b
   have hSR : S ⊆ (closedBall 0 R)ᶜ :=
     (sdiff_subset_compl _ _).trans (compl_subset_compl.2 (closedBall_subset_ball hb))
-  -- Read the path in the coordinates of the end, through the inverse `ψ` of the end.
-  set ψ := (h.toPartialDiffeomorph ∞ (by simp) le_rfl).symm
+  -- Read the path in the coordinates of the end, through the `C¹` inverse `ψ` of the end.
+  set ψ := (h.toPartialDiffeomorph 1 le_rfl (by simp)).symm
   have hmem {r} (hr : r ∈ Icc 0 s) : ψ (γ r) ∈ S ∧ φ (ψ (γ r)) = γ r := by
     obtain ⟨y, hy, hyr⟩ := hsub hr
-    rw [← hyr, h.toPartialDiffeomorph_symm_apply_apply ∞ (by simp) le_rfl (hSR hy)]
+    rw [← hyr, h.toPartialDiffeomorph_symm_apply_apply 1 le_rfl (by simp) (hSR hy)]
     exact ⟨hy, rfl⟩
   have hy : ContDiffOn ℝ 1 (ψ ∘ γ) (Icc 0 s) :=
-    contMDiffOn_iff_contDiffOn.1 ((ψ.contMDiffOn.of_le (by simp)).comp hγ fun r hr ↦ by
+    contMDiffOn_iff_contDiffOn.1 (ψ.contMDiffOn.comp hγ fun r hr ↦ by
       rw [mem_preimage, ← (hmem hr).2, PartialDiffeomorph.symm_toPartialEquiv,
         PartialEquiv.symm_source, toPartialDiffeomorph_target]
       exact mem_image_of_mem φ (hSR (hmem hr).1))
@@ -199,7 +199,7 @@ private theorem mem_image_annulus_of_pathELength_lt (h : IsAsymptoticallyEuclide
   have hlen := Manifold.ofReal_mul_eNorm_sub_le_pathELength_comp hs hy hdiff
     fun r hr ↦ hc _ (hmem hr).1
   have hx : ψ (φ x) = x :=
-    h.toPartialDiffeomorph_symm_apply_apply ∞ (by simp) le_rfl (by simpa using hb.trans hbx)
+    h.toPartialDiffeomorph_symm_apply_apply 1 le_rfl (by simp) (by simpa using hb.trans hbx)
   rw [pathELength_congr (γ := φ ∘ ψ ∘ γ) (γ' := γ) fun r hr ↦ (hmem hr).2,
     Function.comp_apply, Function.comp_apply, hγ0, hx] at hlen
   -- The coordinates have moved by less than `‖x‖ - b`.
@@ -236,7 +236,6 @@ private theorem ofReal_mul_sub_le_riemannianEDist_of_lt [T2Space M]
   have hTc : IsClosed (φ '' S) :=
     (((isCompact_closedBall 0 _).diff isOpen_ball).image_of_continuousOn
       (h.contMDiffOn.continuousOn.mono hSR)).isClosed
-  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
   have hVo : IsOpen (φ '' U) :=
     h.isOpen_image_of_subset (isOpen_ball.sdiff isClosed_closedBall) (hUS.trans hSR)
   have hxS : x ∈ S := by

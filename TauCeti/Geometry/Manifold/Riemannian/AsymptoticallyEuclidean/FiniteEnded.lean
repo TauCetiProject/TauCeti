@@ -168,21 +168,36 @@ theorem mono_radius_of_completeSpace {M : Type*} [PseudoEMetricSpace M] [Charted
           (R' a)).closure, isClosed_closure.isComplete⟩,
       subset_closure⟩
 
-/-- For a positive-order end `φ` on a Riemannian manifold, the closure of the exterior image at
-radius `r + (k + 1)` is contained in the exterior image at radius `r + k`. -/
+/-- For a positive-order end `φ` on a Hausdorff `C¹` Riemannian manifold, the closure of the
+exterior image at radius `r + (k + 1)` is contained in the exterior image at radius `r + k`. -/
 private theorem closure_image_compl_closedBall_succ_subset
-    {M : Type*} [MetricSpace M] [ChartedSpace H M]
+    {M : Type*} [PseudoEMetricSpace M] [T2Space M] [ChartedSpace H M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
-    [IsManifold I ∞ M] {r : ℝ} {φ : EuclideanSpace ℝ (Fin n) → M}
+    [IsManifold I 1 M] {r : ℝ} {φ : EuclideanSpace ℝ (Fin n) → M}
     (h : IsAsymptoticallyEuclideanEnd I t r φ) (ht : 0 < t) (k : ℕ) :
     closure (φ '' (closedBall (0 : EuclideanSpace ℝ (Fin n)) (r + ((k + 1 : ℕ) : ℝ)))ᶜ) ⊆
       φ '' (closedBall (0 : EuclideanSpace ℝ (Fin n)) (r + k))ᶜ := by
   intro p hp
-  -- Since `φ` tends to infinity, preimages of `ball p 1` are bounded within some `closedBall 0 R₀`.
-  have hpre : φ⁻¹' (ball p 1)ᶜ ∈ cobounded (EuclideanSpace ℝ (Fin n)) :=
-    (h.tendsto_cobounded ht) (isBounded_def.1 isBounded_ball)
-  obtain ⟨R₀, -, hR₀⟩ :=
-    (hasBasis_cobounded_compl_closedBall (0 : EuclideanSpace ℝ (Fin n))).mem_iff.1 hpre
+  -- Choose `a ≥ r` so `‖dφ_z v‖ ≥ (1 / 2) ‖v‖` for `‖z‖ > a` and `p ∉ φ '' (closedBall 0 a)ᶜ`.
+  obtain ⟨r₀, -, hr₀⟩ :=
+    (hasBasis_cobounded_compl_closedBall (0 : EuclideanSpace ℝ (Fin n))).eventually_iff.1
+      (h.eventually_abs_norm_mfderiv_sub_norm_le ht (by norm_num : (0 : ℝ) < 1 / 2))
+  obtain ⟨a, ha, hpa⟩ := ((eventually_ge_atTop (max r₀ r)).and
+    (h.eventually_notMem_image_compl_closedBall p)).exists
+  have hc (z) (hz : z ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) a)ᶜ)
+      (v : EuclideanSpace ℝ (Fin n)) :
+      (1 / 2 : ℝ) * ‖v‖ ≤ ‖mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I φ z v‖ := by
+    have hz₀ := hr₀ (compl_subset_compl.2 (closedBall_subset_closedBall
+      ((le_max_left r₀ r).trans ha)) hz) v
+    linarith [neg_abs_le (‖mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) I φ z v‖ - ‖v‖)]
+  -- By the extended-distance lower bound, any `φ z ∈ eball p 1` has `‖z‖ ≤ a + 2`.
+  let R₀ : ℝ := a + 2
+  have hR₀ {z : EuclideanSpace ℝ (Fin n)} (hzb : φ z ∈ eball p 1) : ‖z‖ ≤ R₀ := by
+    have hed := (h.ofReal_mul_sub_le_riemannianEDist ((le_max_right r₀ r).trans ha)
+      (by norm_num) hc hpa z).trans_eq (IsRiemannianManifold.out (I := I) (φ z) p).symm
+    have hlt : ENNReal.ofReal ((1 / 2 : ℝ) * (‖z‖ - a)) < ENNReal.ofReal 1 := by
+      simpa only [ENNReal.ofReal_one] using hed.trans_lt (mem_eball.1 hzb)
+    linarith [(ENNReal.ofReal_lt_ofReal_iff one_pos).1 hlt]
   -- Restrict to the compact annulus `A = {z | r + (k + 1) ≤ ‖z‖ ≤ R₀}`.
   let A : Set (EuclideanSpace ℝ (Fin n)) :=
     {z | r + ((k + 1 : ℕ) : ℝ) ≤ ‖z‖ ∧ ‖z‖ ≤ R₀}
@@ -199,31 +214,27 @@ private theorem closure_image_compl_closedBall_succ_subset
   -- Because `A` is compact and `φ` is continuous on `(closedBall 0 r)ᶜ`, `φ '' A` is closed.
   have hφA_closed : IsClosed (φ '' A) :=
     (hA_comp.image_of_continuousOn (h.contMDiffOn.continuousOn.mono hAR)).isClosed
-  -- Every neighbourhood of `p` meets `φ '' (closedBall 0 (r + k + 1))ᶜ` inside `ball p 1`,
+  -- Every neighbourhood of `p` meets `φ '' (closedBall 0 (r + k + 1))ᶜ` inside `eball p 1`,
   -- whose preimages lie in `A`; hence `p ∈ closure (φ '' A) = φ '' A`.
   have hp_cl : p ∈ closure (φ '' A) := by
     rw [mem_closure_iff_nhds]
     intro U hU
     obtain ⟨q, ⟨hqU, hqb⟩, z, hz, rfl⟩ :=
-      mem_closure_iff_nhds.1 hp (U ∩ ball p 1) (inter_mem hU (ball_mem_nhds p one_pos))
-    have hzR₀ : ‖z‖ ≤ R₀ := by
-      by_contra hlt
-      rw [not_le] at hlt
-      exact hR₀ (by simpa using hlt) hqb
+      mem_closure_iff_nhds.1 hp (U ∩ eball p 1) (inter_mem hU (eball_mem_nhds p one_pos))
     have hz_gt : r + ((k + 1 : ℕ) : ℝ) < ‖z‖ := by simpa using hz
-    exact ⟨φ z, hqU, z, ⟨hz_gt.le, hzR₀⟩, rfl⟩
+    exact ⟨φ z, hqU, z, ⟨hz_gt.le, hR₀ hqb⟩, rfl⟩
   rw [hφA_closed.closure_eq] at hp_cl
   exact image_mono hAk hp_cl
 
-/-- A complete finite-ended asymptotically Euclidean manifold of positive order admits a compact
-exhaustion whose `k`-th stage is the complement of the end exteriors at radii `R a + k`. -/
-def compactExhaustion {M : Type*} [MetricSpace M] [ChartedSpace H M]
+/-- A complete Hausdorff `C¹` finite-ended asymptotically Euclidean manifold (with extended
+Riemannian distance) of positive order admits a compact exhaustion whose `k`-th stage is the
+complement of the end exteriors at radii `R a + k`. -/
+def compactExhaustion {M : Type*} [PseudoEMetricSpace M] [T2Space M] [ChartedSpace H M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
-    [CompleteSpace M] [IsManifold I ∞ M] {φ : ι → EuclideanSpace ℝ (Fin n) → M}
+    [CompleteSpace M] [IsManifold I 1 M] {φ : ι → EuclideanSpace ℝ (Fin n) → M}
     (h : IsFiniteEndedAsymptoticallyEuclidean I t R φ) (ht : 0 < t) : CompactExhaustion M where
   toFun k := (⋃ a, φ a '' (closedBall (0 : EuclideanSpace ℝ (Fin n)) (R a + k))ᶜ)ᶜ
   isCompact' k :=
-    have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
     (h.mono_radius_of_completeSpace fun a ↦ le_add_of_nonneg_right
       (Nat.cast_nonneg k)).isCompact_compl_iUnion
   subset_interior_succ' k := by
@@ -250,9 +261,9 @@ def compactExhaustion {M : Type*} [MetricSpace M] [ChartedSpace H M]
 /-- The `k`-th stage of `IsFiniteEndedAsymptoticallyEuclidean.compactExhaustion` is the
 complement of the union of the end exteriors at radii `R a + k`. -/
 @[simp]
-theorem compactExhaustion_apply {M : Type*} [MetricSpace M] [ChartedSpace H M]
+theorem compactExhaustion_apply {M : Type*} [PseudoEMetricSpace M] [T2Space M] [ChartedSpace H M]
     [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
-    [CompleteSpace M] [IsManifold I ∞ M] {φ : ι → EuclideanSpace ℝ (Fin n) → M}
+    [CompleteSpace M] [IsManifold I 1 M] {φ : ι → EuclideanSpace ℝ (Fin n) → M}
     (h : IsFiniteEndedAsymptoticallyEuclidean I t R φ) (ht : 0 < t) (k : ℕ) :
     h.compactExhaustion ht k =
       (⋃ a, φ a '' (closedBall (0 : EuclideanSpace ℝ (Fin n)) (R a + k))ᶜ)ᶜ := by
