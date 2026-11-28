@@ -39,6 +39,8 @@ kernel masses of the vertical sections.
   and projecting onto the first coordinate gives `μ.withDensity (fun x ↦ κ x (Prod.mk x ⁻¹' A))`.
 * `MeasureTheory.Measure.quasiMeasurePreserving_fst_compProd` — `Prod.fst` is quasi-measure
   preserving from `μ ⊗ₘ κ` to `μ` without finiteness or Markov hypotheses.
+* `MeasureTheory.Measure.ae_compProd_measure_singleton_ne_zero` — on a countable space with
+  measurable singletons, `μ ⊗ₘ κ`-almost every `(x, z)` has `κ x {z} ≠ 0`.
 * `ProbabilityTheory.Kernel.fst_const` — the first marginal of a constant kernel is the constant
   kernel of the first marginal.
 * `ProbabilityTheory.Kernel.const_compProd_prodMkLeft` and
@@ -174,6 +176,14 @@ theorem map_fst_restrict_compProd_eq_withDensity (μ : Measure W) [SFinite μ]
     withDensity_apply _ hs, ← lintegral_indicator hs]
   refine lintegral_congr fun x ↦ ?_
   by_cases hx : x ∈ s <;> simp [Set.preimage_preimage, hx]
+
+/-- On a countable space with measurable singletons, almost every point `(x, z)` of a
+composition-product `μ ⊗ₘ κ` is an atom of the kernel row `κ x`: `κ x {z} ≠ 0`. -/
+theorem ae_compProd_measure_singleton_ne_zero [Countable Z] [MeasurableSingletonClass Z]
+    (μ : Measure W) (κ : Kernel W Z) : ∀ᵐ p ∂(μ ⊗ₘ κ), κ p.1 {p.2} ≠ 0 := by
+  refine ae_compProd_of_ae_ae ?_ (ae_of_all _ fun _ ↦ ae_iff_of_countable.2 fun _ ↦ id)
+  exact (measurableSet_eq_fun (measurable_from_prod_countable_left fun z ↦
+    κ.measurable_coe (measurableSet_singleton z)) measurable_const).compl
 
 end MeasureTheory.Measure
 
