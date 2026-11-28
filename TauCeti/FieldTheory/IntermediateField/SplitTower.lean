@@ -87,8 +87,9 @@ noncomputable def IsTowerSplitting.tensorProductAlgEquiv (h : E.IsTowerSplitting
 theorem IsTowerSplitting.tensorProductAlgEquiv_tmul (h : E.IsTowerSplitting M)
     (halg : Algebra.IsAlgebraic K E ∨ Algebra.IsAlgebraic K M) (x : E) (y : M) :
     h.tensorProductAlgEquiv halg (x ⊗ₜ[K] y) = (x : L) * (y : L) := by
-  rw [tensorProductAlgEquiv, AlgEquiv.trans_apply, commRight_symm_tmul,
-    Subalgebra.LinearDisjoint.mulMapLeftOfSupEqTop_tmul, mul_comm]
+  simp [tensorProductAlgEquiv,
+    Subalgebra.LinearDisjoint.mulMapLeftOfSupEqTop_tmul
+      (A := M.toSubalgebra) (B := E.toSubalgebra), mul_comm]
 
 /-- Restricting the multiplication isomorphism to the left factor gives its inclusion. -/
 @[simp]
@@ -103,22 +104,24 @@ exhibits that factor as a splitting. -/
 theorem IsTowerSplitting.of_tensorProductAlgEquiv (e : E ⊗[K] M ≃ₐ[M] L)
     (he : (e.toAlgHom.restrictScalars K).comp includeLeft = E.val) :
     E.IsTowerSplitting M := by
+  have he_range : (e.toAlgHom.restrictScalars K).range = ⊤ := by
+    apply (AlgHom.range_eq_top _).mpr
+    simpa only [Function.Surjective, AlgHom.restrictScalars_apply,
+      AlgEquiv.toAlgHom_apply] using e.surjective
   have hmul : e.toAlgHom.restrictScalars K = productMap E.val M.val := by
-    apply Algebra.TensorProduct.ext'
-    intro x y
-    have hx : e (x ⊗ₜ[K] (1 : M)) = (x : L) := AlgHom.congr_fun he x
-    have hy : e ((1 : E) ⊗ₜ[K] y) = (y : L) := by
-      rw [← Algebra.TensorProduct.right_algebraMap_apply, e.commutes,
-        IntermediateField.algebraMap_apply]
-    calc
-      e (x ⊗ₜ[K] y) = e ((x ⊗ₜ[K] 1) * (1 ⊗ₜ[K] y)) := by simp
-      _ = _ := by
-        rw [map_mul, hx, hy, productMap_apply_tmul, coe_val, coe_val]
+    apply Algebra.TensorProduct.ext
+    · rw [productMap_left]
+      exact he
+    · apply AlgHom.ext
+      intro y
+      simp only [AlgHom.comp_apply, AlgHom.restrictScalars_apply,
+        AlgEquiv.toAlgHom_apply, includeRight_apply, productMap_right_apply, coe_val]
+      simpa only [right_algebraMap_apply, IntermediateField.algebraMap_apply] using e.commutes y
   refine ⟨.of_isField (e.toMulEquiv.isField (Field.toIsField L)), ?_⟩
   have hrange : E.toSubalgebra ⊔ M.toSubalgebra = ⊤ := by
-    rw [← E.range_val, ← M.range_val, ← productMap_range, ← hmul, AlgHom.range_eq_top]
-    exact e.surjective
+    simpa only [hmul, productMap_range, E.range_val, M.range_val] using he_range
   apply toSubalgebra_injective
+  rw [top_toSubalgebra]
   exact top_unique (hrange ▸ le_sup_toSubalgebra E M)
 
 /-- If the middle field is algebraic over the base, the tower splits exactly when the tensor
