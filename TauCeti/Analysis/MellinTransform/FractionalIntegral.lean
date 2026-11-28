@@ -12,7 +12,6 @@ import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Integral.Asymptotics
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.RingTheory.Binomial
-import TauCeti.Analysis.MellinTransform.Stieltjes
 import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
@@ -58,6 +57,10 @@ The case `α = 1` (DLMF 2.6.46), where logarithms appear, is not treated here.
 * `TauCeti.repeatedIntegralAtTop_succ_eq_neg_integral`, `TauCeti.hasDerivAt_repeatedIntegralAtTop`:
   Cauchy's formula for repeated integration from `+∞` and the derivatives of the repeated
   integrals.
+* `TauCeti.integral_Ioi_integral_Ioi_pow_smul`: the Fubini step behind Cauchy's formula,
+  `∫_t^∞ ∫_s^∞ (τ - s)^j g(τ) dτ ds = (j + 1)⁻¹ ∫_t^∞ (τ - t)^(j + 1) g(τ) dτ`.
+* `TauCeti.integrableOn_Ioi_sub_pow_smul`: the integrability of `(τ - u)^i g(τ)` on `(s, ∞)` for
+  `g = O(τ^(-b))`, `i + 1 < b`, which makes the repeated integrals converge.
 * `TauCeti.fractionalIntegral_rpow`: the Beta integral
   `I^μ(t^β)(x) = Γ(β + 1) / Γ(β + μ + 1) x^(β + μ)`.
 
@@ -124,7 +127,7 @@ theorem repeatedIntegralAtTop_succ (g : ℝ → E) (j : ℕ) (t : ℝ) :
   (rfl)
 
 /-- `∫_t^τ (τ - s)^j ds = (τ - t)^(j + 1) / (j + 1)`, written over `(t, ∞)`. -/
-private theorem integral_Ioi_indicator_Iio_pow {t τ : ℝ} (h : t < τ) (j : ℕ) :
+theorem integral_Ioi_indicator_Iio_pow {t τ : ℝ} (h : t < τ) (j : ℕ) :
     ∫ s in Ioi t, (Iio τ).indicator (fun s ↦ (τ - s) ^ j) s = (τ - t) ^ (j + 1) / (j + 1) := by
   rw [integral_indicator measurableSet_Iio, Measure.restrict_restrict measurableSet_Iio,
     Iio_inter_Ioi, ← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le h.le,
@@ -132,7 +135,7 @@ private theorem integral_Ioi_indicator_Iio_pow {t τ : ℝ} (h : t < τ) (j : �
   simp
 
 /-- If `(τ - t)^(j + 1) g(τ)` is integrable on `(t, ∞)`, so is `g`, up to measurability. -/
-private theorem aestronglyMeasurable_of_integrableOn_pow_smul {g : ℝ → E} {t : ℝ} {j : ℕ}
+theorem aestronglyMeasurable_of_integrableOn_pow_smul {g : ℝ → E} {t : ℝ} {j : ℕ}
     (hg : IntegrableOn (fun τ ↦ (τ - t) ^ j • g τ) (Ioi t)) :
     AEStronglyMeasurable g (volume.restrict (Ioi t)) := by
   refine ((((measurable_id.sub_const t).pow_const j).inv).aestronglyMeasurable.smul
@@ -142,7 +145,7 @@ private theorem aestronglyMeasurable_of_integrableOn_pow_smul {g : ℝ → E} {t
 
 /-- The integrand `1_{s < τ} (τ - s)^j g(τ)` of `TauCeti.integral_Ioi_integral_Ioi_pow_smul` is
 integrable on `(t, ∞)²` when `(τ - t)^(j + 1) g(τ)` is integrable on `(t, ∞)`. -/
-private theorem integrable_indicator_lt_pow_smul {g : ℝ → E} {t : ℝ} {j : ℕ}
+theorem integrable_indicator_lt_pow_smul {g : ℝ → E} {t : ℝ} {j : ℕ}
     (hg : IntegrableOn (fun τ ↦ (τ - t) ^ (j + 1) • g τ) (Ioi t)) :
     Integrable ({q : ℝ × ℝ | q.1 < q.2}.indicator fun q ↦ (q.2 - q.1) ^ j • g q.2)
       ((volume.restrict (Ioi t)).prod (volume.restrict (Ioi t))) := by
@@ -167,7 +170,7 @@ private theorem integrable_indicator_lt_pow_smul {g : ℝ → E} {t : ℝ} {j : 
     filter_upwards [ae_restrict_mem measurableSet_Ioi] with τ (hτ : t < τ)
     have h : (fun s ↦ ‖F (s, τ)‖) = fun s ↦ (Iio τ).indicator (fun s ↦ (τ - s) ^ j) s * ‖g τ‖ := by
       ext s
-      rw [show F (s, τ) = _ from congrFun (hsec τ) s]
+      rw [congrFun (hsec τ) s]
       by_cases hs : s < τ
       · simp [indicator, hs, norm_smul, abs_of_pos (sub_pos.mpr hs)]
       · simp [indicator, hs]
@@ -178,7 +181,7 @@ private theorem integrable_indicator_lt_pow_smul {g : ℝ → E} {t : ℝ} {j : 
 /-- Fubini on the region `t < s < τ`: if `(τ - t)^(j + 1) g(τ)` is integrable on `(t, ∞)`, then
 `s ↦ ∫_s^∞ (τ - s)^j g(τ) dτ` is integrable on `(t, ∞)`, with integral
 `(j + 1)⁻¹ ∫_t^∞ (τ - t)^(j + 1) g(τ) dτ`. -/
-private theorem integral_Ioi_integral_Ioi_pow_smul [CompleteSpace E] {g : ℝ → E} {t : ℝ} {j : ℕ}
+theorem integral_Ioi_integral_Ioi_pow_smul [CompleteSpace E] {g : ℝ → E} {t : ℝ} {j : ℕ}
     (hg : IntegrableOn (fun τ ↦ (τ - t) ^ (j + 1) • g τ) (Ioi t)) :
     IntegrableOn (fun s ↦ ∫ τ in Ioi s, (τ - s) ^ j • g τ) (Ioi t) ∧
       ∫ s in Ioi t, ∫ τ in Ioi s, (τ - s) ^ j • g τ =
@@ -318,6 +321,26 @@ theorem continuousWithinAt_pow_smul_repeatedIntegralAtTop {g : ℝ → E} {k j :
     · exact (by fun_prop : Continuous fun t : ℝ ↦ (t ^ k * (τ - t) ^ j) • g τ).continuousWithinAt
     · simp [F, indicator, hτ]
 
+/-- A function continuous on `(0, ∞)` and `O(t^(-b))` at `+∞`, times `(τ - u)^i` with
+`i + 1 < b`, is integrable on `(s, ∞)` for `s > 0`. -/
+theorem integrableOn_Ioi_sub_pow_smul {h : ℝ → E} (hc : ContinuousOn h (Ioi 0)) {b : ℝ}
+    (hO : h =O[atTop] fun t ↦ t ^ (-b)) {i : ℕ} (hib : (i : ℝ) + 1 < b) {s : ℝ} (hs : 0 < s)
+    (u : ℝ) : IntegrableOn (fun τ ↦ (τ - u) ^ i • h τ) (Ioi s) := by
+  refine (LocallyIntegrableOn.integrableOn_of_isBigO_atTop (g := fun τ ↦ τ ^ ((i : ℝ) - b))
+    ?_ ?_ (integrableAtFilter_rpow_atTop_iff.mpr (by linarith))).mono_set Ioi_subset_Ici_self
+  · have hsub : Ici s ⊆ Ioi 0 := fun _ hτ ↦ hs.trans_le hτ
+    exact ((continuous_id.sub continuous_const).pow i).continuousOn.smul (hc.mono hsub)
+      |>.locallyIntegrableOn measurableSet_Ici
+  · have hlin : (fun τ : ℝ ↦ (τ - u) ^ i) =O[atTop] fun τ ↦ τ ^ i := by
+      refine IsBigO.pow (IsBigO.of_bound 2 ?_) i
+      filter_upwards [eventually_ge_atTop |u|, eventually_ge_atTop 0] with τ hτ hτ0
+      rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg hτ0]
+      calc |τ - u| ≤ |τ| + |u| := abs_sub _ _
+        _ ≤ 2 * τ := by rw [abs_of_nonneg hτ0]; linarith
+    refine (hlin.smul hO).congr' (Eventually.of_forall fun _ ↦ rfl) ?_
+    filter_upwards [eventually_gt_atTop 0] with τ hτ
+    rw [smul_eq_mul, sub_eq_add_neg, Real.rpow_add hτ, Real.rpow_natCast]
+
 /-! ### Integration by parts along a chain of antiderivatives -/
 
 open Polynomial in
@@ -334,13 +357,15 @@ private theorem chain_coeff_eq {m k : ℕ} (hk : k < m) (μ x s u : ℝ) :
       ↑((m + 1).choose (k + 1)) * eval μ (descPochhammer ℝ (k + 1)) *
         (u * s ^ (m + 1 - (k + 1))) := by
   obtain ⟨r, rfl⟩ : ∃ r, m = k + 1 + r := ⟨m - (k + 1), by omega⟩
-  rw [show k + 1 + r - (k + 1) = r by omega, show k + 1 + r - k = r + 1 by omega,
-    Nat.add_sub_cancel, show k + 1 + r + 1 - (k + 1) = r + 1 by omega, Nat.choose_succ_succ']
+  have e₁ : k + 1 + r - (k + 1) = r := by omega
+  have e₂ : k + 1 + r - k = r + 1 := by omega
+  have e₃ : k + 1 + r + 1 - (k + 1) = r + 1 := by omega
+  rw [e₁, e₂, Nat.add_sub_cancel, e₃, Nat.choose_succ_succ']
   have hA := descPochhammer_succ_eval_add_one (R := ℝ) k (μ - 1)
   rw [sub_add_cancel] at hA
   rw [hA, descPochhammer_succ_eval]
   have h3 := Nat.choose_succ_right_eq (k + 1 + r) k
-  rw [show k + 1 + r - k = r + 1 by omega] at h3
+  rw [e₂] at h3
   have h3' : ((k + 1 + r).choose (k + 1) : ℝ) * (k + 1) = ((k + 1 + r).choose k : ℝ) * (r + 1) := by
     exact_mod_cast h3
   push_cast
@@ -430,21 +455,6 @@ private theorem hasDerivAt_neg_sum_rpow_sub_smul_pow_smul {μ x s : ℝ} (hs : s
   simp only [hv]
   rw [sum_deriv_eq_sub_sum m μ x s ((x - s) ^ (μ - 1)) (fun j ↦ G j s), neg_sub]
 
-/-- A finite linear combination of interval integrable functions is interval integrable, with the
-corresponding integral. -/
-private theorem intervalIntegrable_sum_smul {ι : Type*} (s : Finset ι) (c : ι → ℝ)
-    {F : ι → ℝ → E} {x : ℝ} (h : ∀ j ∈ s, IntervalIntegrable (F j) volume 0 x) :
-    IntervalIntegrable (fun y ↦ ∑ j ∈ s, c j • F j y) volume 0 x ∧
-      ∫ y in (0 : ℝ)..x, ∑ j ∈ s, c j • F j y = ∑ j ∈ s, c j • ∫ y in (0 : ℝ)..x, F j y := by
-  have h' (j : ι) (hj : j ∈ s) : IntervalIntegrable (fun y ↦ c j • F j y) volume 0 x :=
-    (h j hj).smul (c j)
-  refine ⟨?_, ?_⟩
-  · convert IntervalIntegrable.sum s h' using 1
-    ext y
-    simp [Finset.sum_apply]
-  · rw [intervalIntegral.integral_finsetSum h']
-    simp only [intervalIntegral.integral_smul]
-
 /-- **Integration by parts along a chain of antiderivatives.** Let `G 0, …, G (m + 1)` satisfy
 `(G (j + 1))' = G j` on `(0, x)`, with every `t^(m - j) G (j + 1)(t)` continuous on `[0, x]`, and
 let the fractional integrals below converge absolutely. Then, for `μ > 0`,
@@ -485,11 +495,19 @@ theorem sum_choose_mul_descPochhammer_smul_fractionalIntegral_succ [CompleteSpac
       fun _ _ ↦ Or.inr hμ.le)).smul (hcont j (hmem hj))
   have hWd : ∀ s ∈ Ioo 0 x, HasDerivAt W (D₁ s - x • D₂ s) s := fun s hs ↦
     hasDerivAt_neg_sum_rpow_sub_smul_pow_smul hs.2 fun j hj ↦ hderiv j hj s hs
-  obtain ⟨hD₁, hI₁⟩ := intervalIntegrable_sum_smul (Finset.range (m + 2)) c₁
-    (F := fun j t ↦ (x - t) ^ (μ - 1) • t ^ (m + 1 - j) • G j t)
-    fun j hj ↦ hint₁ j (Nat.lt_succ_iff.mp (Finset.mem_range.mp hj))
-  obtain ⟨hD₂, hI₂⟩ := intervalIntegrable_sum_smul (Finset.range (m + 1)) c₂
-    (F := fun j t ↦ (x - t) ^ (μ - 1) • t ^ (m - j) • G j t) fun j hj ↦ hint₂ j (hmem hj)
+  have hD₁' (j : ℕ) (hj : j ∈ Finset.range (m + 2)) : IntervalIntegrable
+      (fun t ↦ c₁ j • ((x - t) ^ (μ - 1) • t ^ (m + 1 - j) • G j t)) volume 0 x :=
+    (hint₁ j (Nat.lt_succ_iff.mp (Finset.mem_range.mp hj))).smul (c₁ j)
+  have hD₂' (j : ℕ) (hj : j ∈ Finset.range (m + 1)) : IntervalIntegrable
+      (fun t ↦ c₂ j • ((x - t) ^ (μ - 1) • t ^ (m - j) • G j t)) volume 0 x :=
+    (hint₂ j (hmem hj)).smul (c₂ j)
+  have hD₁ : IntervalIntegrable D₁ volume 0 x := by
+    simpa only [Finset.sum_fn] using IntervalIntegrable.sum _ hD₁'
+  have hD₂ : IntervalIntegrable D₂ volume 0 x := by
+    simpa only [Finset.sum_fn] using IntervalIntegrable.sum _ hD₂'
+  have hI₁ := intervalIntegral.integral_finsetSum hD₁'
+  have hI₂ := intervalIntegral.integral_finsetSum hD₂'
+  simp only [intervalIntegral.integral_smul] at hI₁ hI₂
   have hDi : IntervalIntegrable (fun s ↦ D₁ s - x • D₂ s) volume 0 x := hD₁.sub (hD₂.smul x)
   have hftc := intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le hx.le hWc hWd hDi
   -- the endpoint values of `W`
@@ -549,16 +567,18 @@ theorem fractionalIntegral_rpow {μ β : ℝ} (hμ : 0 < μ) (hβ : -1 < β) {x 
     refine intervalIntegral.integral_congr fun u hu ↦ ?_
     rw [uIcc_of_le zero_le_one] at hu
     simp only [smul_eq_mul, add_sub_cancel_right]
-    rw [show x - x * u = x * (1 - u) by ring, Real.mul_rpow hx.le (by linarith [hu.2]),
+    have hxu : x - x * u = x * (1 - u) := by ring
+    rw [hxu, Real.mul_rpow hx.le (by linarith [hu.2]),
       Real.mul_rpow hx.le hu.1, Real.rpow_add hx, Real.rpow_sub_one hx.ne']
     field_simp
+  have hβμ : β + 1 + μ = β + μ + 1 := by ring
   rw [fractionalIntegral_def, smul_eq_mul, hsub, integral_rpow_mul_one_sub_rpow (by linarith) hμ,
-    ProbabilityTheory.beta, show β + 1 + μ = β + μ + 1 by ring]
+    ProbabilityTheory.beta, hβμ]
   have hΓ : Real.Gamma μ ≠ 0 := (Real.Gamma_pos_of_pos hμ).ne'
   field_simp
 
 /-- A kernel `(x - t)^(μ - 1)` against a function integrable near `0` and continuous up to `x`. -/
-private theorem intervalIntegrable_rpow_sub_smul {h : ℝ → E} {μ x c : ℝ} (hμ : 0 < μ)
+theorem intervalIntegrable_rpow_sub_smul {h : ℝ → E} {μ x c : ℝ} (hμ : 0 < μ)
     (hc : 0 < c) (hcx : c < x) (h₀ : IntegrableOn h (Ioc 0 c)) (h₁ : ContinuousOn h (Icc c x)) :
     IntervalIntegrable (fun t ↦ (x - t) ^ (μ - 1) • h t) volume 0 x := by
   refine IntervalIntegrable.trans (b := c) ?_ ?_
@@ -595,33 +615,10 @@ private theorem rem_succ (m : ℕ) (t : ℝ) :
   simp only [rem, Finset.sum_range_succ]
   abel
 
-private theorem continuousOn_rpow_neg_smul (b : ℝ) (c : E) :
-    ContinuousOn (fun t : ℝ ↦ t ^ (-b) • c) (Ioi 0) :=
-  (continuousOn_id.rpow_const fun _ ht ↦ Or.inl (ne_of_gt ht)).smul continuousOn_const
-
 private theorem continuousOn_rem (hfc : ContinuousOn f (Ioi 0)) (m : ℕ) :
     ContinuousOn (rem f a α m) (Ioi 0) :=
-  hfc.sub (continuousOn_finsetSum _ fun k _ ↦ continuousOn_rpow_neg_smul _ (a k))
-
-/-- A function continuous on `(0, ∞)` and `O(t^(-b))` at `+∞`, times `(τ - u)^i` with
-`i + 1 < b`, is integrable on `(s, ∞)` for `s > 0`. -/
-private theorem integrableOn_Ioi_sub_pow_smul {h : ℝ → E} (hc : ContinuousOn h (Ioi 0)) {b : ℝ}
-    (hO : h =O[atTop] fun t ↦ t ^ (-b)) {i : ℕ} (hib : (i : ℝ) + 1 < b) {s : ℝ} (hs : 0 < s)
-    (u : ℝ) : IntegrableOn (fun τ ↦ (τ - u) ^ i • h τ) (Ioi s) := by
-  refine (LocallyIntegrableOn.integrableOn_of_isBigO_atTop (g := fun τ ↦ τ ^ ((i : ℝ) - b))
-    ?_ ?_ (integrableAtFilter_rpow_atTop_iff.mpr (by linarith))).mono_set Ioi_subset_Ici_self
-  · exact ((continuous_id.sub continuous_const).pow i).continuousOn.smul
-      (hc.mono (show Ici s ⊆ Ioi 0 from fun _ hτ ↦ hs.trans_le hτ)) |>.locallyIntegrableOn
-        measurableSet_Ici
-  · have hlin : (fun τ : ℝ ↦ (τ - u) ^ i) =O[atTop] fun τ ↦ τ ^ i := by
-      refine IsBigO.pow (IsBigO.of_bound 2 ?_) i
-      filter_upwards [eventually_ge_atTop |u|, eventually_ge_atTop 0] with τ hτ hτ0
-      rw [Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg hτ0]
-      calc |τ - u| ≤ |τ| + |u| := abs_sub _ _
-        _ ≤ 2 * τ := by rw [abs_of_nonneg hτ0]; linarith
-    refine (hlin.smul hO).congr' (Eventually.of_forall fun _ ↦ rfl) ?_
-    filter_upwards [eventually_gt_atTop 0] with τ hτ
-    rw [smul_eq_mul, sub_eq_add_neg, Real.rpow_add hτ, Real.rpow_natCast]
+  hfc.sub (continuousOn_finsetSum _ fun _ _ ↦
+    (continuousOn_id.rpow_const fun _ ht ↦ Or.inl (ne_of_gt ht)).smul continuousOn_const)
 
 /-- Near `0`, `t^k f_m(t)` is integrable on `(0, 1]` for `m ≤ k + 1`. -/
 private theorem integrableOn_Ioc_pow_smul_rem (hα₁ : α < 1) (hf : LocallyIntegrableOn f (Ici 0))
@@ -714,35 +711,15 @@ private theorem intervalIntegrable_rpow_sub_smul_pow_smul_rem [CompleteSpace E] 
 
 /-! ### The repeated integrals of a power -/
 
-/-- `(Γ(s - n))⁻¹ = (s - 1)^{(n)} (Γ s)⁻¹` for every real `s`, the poles included. -/
-private theorem inv_Gamma_sub_natCast (s : ℝ) (n : ℕ) :
-    (Real.Gamma (s - n))⁻¹ = (descPochhammer ℝ n).eval (s - 1) * (Real.Gamma s)⁻¹ := by
-  rw [Real.inv_Gamma_eq_ascPochhammer_mul_inv_Gamma_add, sub_add_cancel,
-    descPochhammer_eval_eq_ascPochhammer, show s - 1 - n + 1 = s - n by ring]
-
-/-- The Chu–Vandermonde identity for falling factorials, evaluated in `ℝ`. -/
-private theorem sum_choose_mul_descPochhammer_eval (n : ℕ) (u v : ℝ) :
-    ∑ j ∈ Finset.range (n + 1), (n.choose j : ℝ) * (descPochhammer ℝ j).eval u *
-      (descPochhammer ℝ (n - j)).eval v = (descPochhammer ℝ n).eval (u + v) := by
-  have hbridge (k : ℕ) (r : ℝ) : (descPochhammer ℝ k).eval r = (descPochhammer ℤ k).smeval r := by
-    rw [Polynomial.descPochhammer_smeval_eq_ascPochhammer,
-      Polynomial.ascPochhammer_smeval_eq_eval, descPochhammer_eval_eq_ascPochhammer]
-  rw [hbridge, Ring.descPochhammer_smeval_add n (Commute.all u v),
-    Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [hbridge, hbridge, mul_assoc]
-
-private theorem descPochhammer_eval_neg_ne_zero (hα₀ : 0 < α) (n : ℕ) :
-    (descPochhammer ℝ n).eval (-α) ≠ 0 := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [descPochhammer_succ_eval]
-    exact mul_ne_zero ih (by have : (0 : ℝ) ≤ n := n.cast_nonneg; linarith)
-
-private theorem isBigO_rpow_neg_smul (b : ℝ) (c : E) :
-    (fun τ : ℝ ↦ τ ^ (-b) • c) =O[atTop] fun τ ↦ τ ^ (-b) :=
-  IsBigO.of_bound ‖c‖ (Eventually.of_forall fun τ ↦ by rw [norm_smul, mul_comm])
+/-- The power `τ^(-(n + α)) c` times `(τ - u)^i`, `i < n`, is integrable on `(s, ∞)`, `s > 0`. -/
+private theorem integrableOn_Ioi_sub_pow_smul_rpow_smul (hα₀ : 0 < α) (n : ℕ) (c : E) {i : ℕ}
+    (hi : i < n) {s : ℝ} (hs : 0 < s) (u : ℝ) :
+    IntegrableOn (fun τ ↦ (τ - u) ^ i • τ ^ (-((n : ℝ) + α)) • c) (Ioi s) := by
+  have hin : (i : ℝ) + 1 ≤ n := by exact_mod_cast hi
+  exact integrableOn_Ioi_sub_pow_smul (h := fun τ ↦ τ ^ (-((n : ℝ) + α)) • c)
+    ((continuousOn_id.rpow_const fun _ ht ↦ Or.inl (ne_of_gt ht)).smul continuousOn_const)
+    (IsBigO.of_bound ‖c‖ (Eventually.of_forall fun τ ↦ by rw [norm_smul, mul_comm]))
+    (by linarith) hs u
 
 /-- The repeated integrals of `τ ↦ τ^(-(n + α)) c` of order `j ≤ n` are
 `(-α)^{(n-j)} / (-α)^{(n)} t^(j - n - α) c`. -/
@@ -751,7 +728,8 @@ private theorem repeatedIntegralAtTop_rpow_smul [CompleteSpace E] (hα₀ : 0 < 
     repeatedIntegralAtTop (fun τ ↦ τ ^ (-((n : ℝ) + α)) • c) j t =
       ((descPochhammer ℝ (n - j)).eval (-α) / (descPochhammer ℝ n).eval (-α) *
         t ^ ((j : ℝ) - n - α)) • c := by
-  have hd := descPochhammer_eval_neg_ne_zero hα₀ n
+  have hd : (descPochhammer ℝ n).eval (-α) ≠ 0 :=
+    descPochhammer_eval_ne_zero (fun m hm ↦ by linarith [(Nat.cast_nonneg m : (0 : ℝ) ≤ m)]) n
   induction j generalizing t with
   | zero =>
     rw [repeatedIntegralAtTop_zero, Nat.sub_zero, div_self hd, one_mul]
@@ -761,14 +739,15 @@ private theorem repeatedIntegralAtTop_rpow_smul [CompleteSpace E] (hα₀ : 0 < 
   | succ j ih =>
     have hjn : j < n := hj
     have hj' : (j : ℝ) + 1 ≤ n := by exact_mod_cast hjn
-    rw [repeatedIntegralAtTop_succ_eq_neg_integral (integrableOn_Ioi_sub_pow_smul
-      (continuousOn_rpow_neg_smul _ c) (isBigO_rpow_neg_smul _ c) (i := j) (by linarith) ht t),
+    rw [repeatedIntegralAtTop_succ_eq_neg_integral
+      (integrableOn_Ioi_sub_pow_smul_rpow_smul hα₀ n c hjn ht t),
       setIntegral_congr_fun measurableSet_Ioi (fun τ (hτ : t < τ) ↦ ih hjn.le (ht.trans hτ)),
       integral_smul_const, integral_const_mul,
       integral_Ioi_rpow_of_lt (by linarith) ht, ← neg_smul]
     congr 1
-    rw [show n - j = n - (j + 1) + 1 by omega, descPochhammer_succ_eval,
-      Nat.cast_sub hjn, show (j : ℝ) - n - α + 1 = ((j + 1 : ℕ) : ℝ) - n - α by push_cast; ring]
+    have hnj : n - j = n - (j + 1) + 1 := by omega
+    have hexp : (j : ℝ) - n - α + 1 = ((j + 1 : ℕ) : ℝ) - n - α := by push_cast; ring
+    rw [hnj, descPochhammer_succ_eval, Nat.cast_sub hjn, hexp]
     have hne : ((j + 1 : ℕ) : ℝ) - n - α ≠ 0 := by push_cast; linarith
     field_simp
     push_cast
@@ -787,9 +766,7 @@ private theorem repeatedIntegralAtTop_rem_succ (hα₀ : 0 < α)
   | succ j =>
     simp only [repeatedIntegralAtTop_succ, ← smul_sub]
     rw [← integral_sub (integrableOn_Ioi_sub_pow_smul_rem hfc hn hα₀ (by omega) ht t)
-      (integrableOn_Ioi_sub_pow_smul (continuousOn_rpow_neg_smul _ _) (isBigO_rpow_neg_smul _ _)
-        (i := j) (by have : (j : ℝ) + 1 ≤ n := by exact_mod_cast hj
-                     linarith) ht t)]
+      (integrableOn_Ioi_sub_pow_smul_rpow_smul hα₀ n (a n) (by omega) ht t)]
     congr 1
     refine setIntegral_congr_fun measurableSet_Ioi fun τ _ ↦ ?_
     simp only [rem_succ, smul_sub]
@@ -811,11 +788,13 @@ private theorem intervalIntegrable_rpow_sub_smul_pow_smul_repeatedIntegralAtTop_
     IntervalIntegrable (fun t ↦ (x - t) ^ (μ - 1) • t ^ (n - j) •
       repeatedIntegralAtTop (fun τ ↦ τ ^ (-((n : ℝ) + α)) • c) j t) volume 0 x := by
   set e := ((descPochhammer ℝ (n - j)).eval (-α) / (descPochhammer ℝ n).eval (-α)) • c
+  have he : ContinuousOn (fun t : ℝ ↦ t ^ (-α) • e) (Ioi 0) :=
+    (continuousOn_id.rpow_const fun _ ht ↦ Or.inl (ne_of_gt ht)).smul continuousOn_const
   have h := intervalIntegrable_rpow_sub_smul (h := fun t ↦ t ^ (-α) • e) (x := x) (c := x / 2) hμ
     (half_pos hx)
     (by linarith) ((intervalIntegral.intervalIntegrable_rpow' (a := 0) (b := x / 2)
       (by linarith : (-1 : ℝ) < -α)).1.smul_const e)
-    ((continuousOn_rpow_neg_smul α e).mono fun t ht ↦ (half_pos hx).trans_le ht.1)
+    (he.mono fun t ht ↦ (half_pos hx).trans_le ht.1)
   refine h.congr_ae ((ae_restrict_mem measurableSet_uIoc).mono fun t ht ↦ ?_)
   rw [uIoc_of_le hx.le] at ht
   simp only [pow_smul_repeatedIntegralAtTop_rpow_smul hα₀ n c hj ht.1, e]
@@ -843,14 +822,19 @@ private theorem sum_smul_fractionalIntegral_rpow_smul [CompleteSpace E] {μ : �
   simp only [smul_smul, ← Finset.sum_smul]
   congr 1
   have hV := sum_choose_mul_descPochhammer_eval n μ (-α)
-  have h₁ := inv_Gamma_sub_natCast (1 - α) n
-  have h₂ := inv_Gamma_sub_natCast (μ + 1 - α) n
-  rw [show 1 - α - (n : ℝ) = 1 - n - α by ring, show 1 - α - 1 = -α by ring] at h₁
-  rw [show μ + 1 - α - (n : ℝ) = μ + 1 - n - α by ring, show μ + 1 - α - 1 = μ + -α by ring] at h₂
+  have h₁ := Real.inv_Gamma_sub_natCast (1 - α) n
+  have h₂ := Real.inv_Gamma_sub_natCast (μ + 1 - α) n
+  have e₁ : 1 - α - (n : ℝ) = 1 - n - α := by ring
+  have e₂ : (1 : ℝ) - α - 1 = -α := by ring
+  have e₃ : μ + 1 - α - (n : ℝ) = μ + 1 - n - α := by ring
+  have e₄ : μ + 1 - α - 1 = μ + -α := by ring
+  rw [e₁, e₂] at h₁
+  rw [e₃, e₄] at h₂
   rw [h₂, ← inv_inv (Real.Gamma (1 - n - α)), h₁, ← hV, Finset.sum_mul, Finset.mul_sum,
     Finset.sum_mul]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  have hd := descPochhammer_eval_neg_ne_zero hα₀ n
+  have hd : (descPochhammer ℝ n).eval (-α) ≠ 0 :=
+    descPochhammer_eval_ne_zero (fun m hm ↦ by linarith [(Nat.cast_nonneg m : (0 : ℝ) ≤ m)]) n
   field_simp
 
 /-! ### The induction step -/
@@ -903,7 +887,8 @@ private theorem delta_succ [CompleteSpace E] {μ : ℝ} (hμ : 0 < μ) (hα₀ :
     have hjn : j ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
     rw [← smul_sub, fractionalIntegral_congr hx.le (hdecomp hjn),
       fractionalIntegral_sub (by simpa only [smul_sub] using hint hjn) (hPint hjn)]
-  rw [delta, show n + 1 + 1 = n + 2 from rfl, hchain, hsplit,
+  have hidx : n + 1 + 1 = n + 2 := by omega
+  rw [delta, hidx, hchain, hsplit,
     sum_smul_fractionalIntegral_rpow_smul hμ hα₀ hα₁ n (a n) hx]
 
 end Real
@@ -992,6 +977,8 @@ private theorem fractionalIntegral_eq_aux [CompleteSpace E] {μ : ℝ} (hμ : 0 
     exact fractionalIntegral_congr hx.le fun t _ ↦ by simp [rem]
   | succ n ih =>
     have hn' := isBigO_sub_sum_of_succ hn
+    have e₁ : μ - (n : ℝ) - α = μ - α - n := by ring
+    have e₂ : μ - (n : ℝ) - 1 = μ - ((n + 1 : ℕ) : ℝ) := by push_cast; ring
     have hM : ∑ s ∈ Finset.range n,
         ((-1) ^ s / (s ! : ℝ) * (Real.Gamma (μ - s))⁻¹ * x ^ (μ - s - 1)) •
           mellinContAtTop f a (fun k ↦ (k : ℂ) + α) (n + 1) ((s : ℂ) + 1) =
@@ -1003,9 +990,7 @@ private theorem fractionalIntegral_eq_aux [CompleteSpace E] {μ : ℝ} (hμ : 0 
     rw [ih hn', Finset.sum_range_succ, Finset.sum_range_succ, hM,
       delta_succ hμ hα₀ hα₁ hf hfc (isBigO_rem hn) (isBigO_rem hn') hx, repeatedIntegralAtTop_succ,
       ← mellinContAtTop_natCast_add_one_eq_integral_rem hα₀ hα₁ hf hn,
-      inv_Gamma_sub_natCast μ n,
-      show μ - (n : ℝ) - α = μ - α - n by ring, Real.rpow_sub hx (μ - α) n, Real.rpow_natCast,
-      show μ - (n : ℝ) - 1 = μ - ((n + 1 : ℕ) : ℝ) by push_cast; ring,
+      Real.inv_Gamma_sub_natCast μ n, e₁, Real.rpow_sub hx (μ - α) n, Real.rpow_natCast, e₂,
       Real.rpow_sub hx μ ((n + 1 : ℕ) : ℝ), Real.rpow_natCast]
     match_scalars <;> field_simp <;> ring
 
@@ -1045,7 +1030,7 @@ theorem fractionalIntegral_eq [CompleteSpace E] {μ : ℝ} (hμ : 0 < μ) (hα�
   congr 2
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   have hΓ : Real.Gamma (μ + 1) ≠ 0 := (Real.Gamma_pos_of_pos (by linarith)).ne'
-  rw [inv_Gamma_sub_natCast (μ + 1) j, add_sub_cancel_right,
+  rw [Real.inv_Gamma_sub_natCast (μ + 1) j, add_sub_cancel_right,
     fractionalIntegral_congr hx.le (g₁ := fun t ↦ t ^ (n - j) • repeatedIntegralAtTop
       (fun t ↦ f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-((k : ℂ) + α)) • a k) j t)
       (g₂ := fun t ↦ t ^ (n - j) • repeatedIntegralAtTop (rem f a α n) j t)

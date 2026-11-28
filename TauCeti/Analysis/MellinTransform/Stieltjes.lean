@@ -67,51 +67,6 @@ variable {α : ℝ} {f : ℝ → E} {a : ℕ → E}
 
 /-! ### Integrability of the remainders -/
 
-/-- Near `0`, `t ^ m f(t)` is integrable on `(0, 1]`. -/
-private theorem integrableOn_Ioc_pow_smul (hf : LocallyIntegrableOn f (Ici 0)) (m : ℕ) :
-    IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ m • f t) (Ioc 0 1) := by
-  refine ((hf.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set
-    Ioc_subset_Icc_self).bdd_smul 1
-    (by fun_prop : Continuous fun t : ℝ ↦ (t : ℂ) ^ m).aestronglyMeasurable ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
-  rw [norm_pow, norm_real, Real.norm_of_nonneg ht.1.le]
-  exact pow_le_one₀ ht.1.le ht.2
-
-/-- Near `0`, `t ^ m t ^ (-k-α) c` is integrable on `(0, 1]` for `k ≤ m`. -/
-private theorem integrableOn_Ioc_pow_smul_cpow_smul (hα₁ : α < 1) {m k : ℕ} (hk : k ≤ m)
-    (c : E) :
-    IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ m • ((t : ℂ) ^ (-((k : ℂ) + α)) • c)) (Ioc 0 1) := by
-  have hk' : (k : ℝ) ≤ m := by exact_mod_cast hk
-  refine (integrableOn_Ioc_cpow_smul_cpow_smul (z := (m : ℂ) + 1) (w := -((k : ℂ) + α))
-    (by simp only [add_re, neg_re, natCast_re, ofReal_re, one_re]; linarith) c).congr_fun
-    (fun t _ ↦ ?_) measurableSet_Ioc
-  simp only [add_sub_cancel_right, cpow_natCast]
-
-/-- Near `0`, `t ^ m` times the remainder after `j ≤ m + 1` terms is integrable on `(0, 1]`. -/
-private theorem integrableOn_Ioc_pow_smul_sub_sum (hα₁ : α < 1)
-    (hf : LocallyIntegrableOn f (Ici 0)) {m j : ℕ} (hj : j ≤ m + 1) :
-    IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ m •
-      (f t - ∑ k ∈ Finset.range j, (t : ℂ) ^ (-((k : ℂ) + α)) • a k)) (Ioc 0 1) := by
-  simp_rw [smul_sub, Finset.smul_sum]
-  exact (integrableOn_Ioc_pow_smul hf m).sub (integrable_finsetSum _ fun k hk ↦
-    integrableOn_Ioc_pow_smul_cpow_smul hα₁
-      (Nat.lt_succ_iff.mp ((Finset.mem_range.mp hk).trans_le hj)) (a k))
-
-/-- At `+∞`, `t ^ (w - 1)` times the remainder after `j ≥ Re w` terms is integrable on
-`(1, ∞)`. -/
-private theorem integrableOn_Ioi_cpow_smul_sub_sum (hα₀ : 0 < α)
-    (hf : LocallyIntegrableOn f (Ici 0)) {j : ℕ}
-    (hj : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range j, (t : ℂ) ^ (-((k : ℂ) + α)) • a k) =O[atTop]
-      fun t ↦ (t : ℂ) ^ (-((j : ℂ) + α)))
-    {w : ℂ} (hw : w.re ≤ j) :
-    IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (w - 1) •
-      (f t - ∑ k ∈ Finset.range j, (t : ℂ) ^ (-((k : ℂ) + α)) • a k)) (Ioi 1) := by
-  refine integrableOn_Ioi_cpow_smul_of_isBigO
-    ((hf.mono_set Ioi_subset_Ici_self).sub (locallyIntegrableOn_sum_cpow_smul _ a j))
-    (a := j + α) ?_ (by linarith)
-  have h := hj.trans (isBigO_ofReal_cpow_rpow (eventually_gt_atTop 0) (-((j : ℂ) + α)))
-  rwa [show (-((j : ℂ) + α)).re = -((j : ℝ) + α) by simp] at h
-
 /-- `t ^ m (t + z)⁻¹` times the remainder after `j` terms, `m ≤ j ≤ m + 1`, is integrable on
 `(0, ∞)` for `z` in the slit plane. -/
 private theorem integrableOn_pow_mul_inv_add_smul_sub_sum (hα₀ : 0 < α) (hα₁ : α < 1)
@@ -151,83 +106,7 @@ private theorem integrableOn_pow_mul_inv_add_smul_sub_sum (hα₀ : 0 < α) (hα
       _ ≤ t ^ m * (c⁻¹ * t⁻¹) := by gcongr; linarith
       _ = c⁻¹ * (t ^ m / t) := by ring
 
-/-- `tⁿ` times the remainder after `n + 1` terms is integrable on `(0, ∞)`. -/
-private theorem integrableOn_pow_smul_sub_sum_succ (hα₀ : 0 < α) (hα₁ : α < 1)
-    (hf : LocallyIntegrableOn f (Ici 0)) {n : ℕ}
-    (hn : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range (n + 1), (t : ℂ) ^ (-((k : ℂ) + α)) • a k)
-      =O[atTop] fun t ↦ (t : ℂ) ^ (-(((n + 1 : ℕ) : ℂ) + α))) :
-    IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ n •
-      (f t - ∑ k ∈ Finset.range (n + 1), (t : ℂ) ^ (-((k : ℂ) + α)) • a k)) (Ioi 0) := by
-  rw [← Ioc_union_Ioi_eq_Ioi zero_le_one]
-  refine (integrableOn_Ioc_pow_smul_sub_sum hα₁ hf le_rfl).union ?_
-  simpa only [add_sub_cancel_right, cpow_natCast] using
-    integrableOn_Ioi_cpow_smul_sub_sum hα₀ hf hn (w := (n : ℂ) + 1) (by simp)
-
 /-! ### The expansion -/
-
-/-- An expansion at `+∞` through `n + 1` terms gives one through `n` terms. -/
-theorem isBigO_sub_sum_of_succ {n : ℕ}
-    (hn : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range (n + 1), (t : ℂ) ^ (-((k : ℂ) + α)) • a k)
-      =O[atTop] fun t ↦ (t : ℂ) ^ (-(((n + 1 : ℕ) : ℂ) + α))) :
-    (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-((k : ℂ) + α)) • a k) =O[atTop]
-      fun t ↦ (t : ℂ) ^ (-((n : ℂ) + α)) := by
-  have hle : (fun t : ℝ ↦ (t : ℂ) ^ (-(((n + 1 : ℕ) : ℂ) + α))) =O[atTop]
-      fun t ↦ (t : ℂ) ^ (-((n : ℂ) + α)) := by
-    refine IsBigO.of_bound 1 ?_
-    filter_upwards [eventually_ge_atTop 1] with t ht
-    rw [norm_cpow_eq_rpow_re_of_pos (one_pos.trans_le ht),
-      norm_cpow_eq_rpow_re_of_pos (one_pos.trans_le ht), one_mul]
-    exact Real.rpow_le_rpow_of_exponent_le ht
-      (by simp only [neg_re, add_re, natCast_re, ofReal_re, one_re, Nat.cast_add_one]; linarith)
-  have hterm : (fun t : ℝ ↦ (t : ℂ) ^ (-((n : ℂ) + α)) • a n) =O[atTop]
-      fun t ↦ (t : ℂ) ^ (-((n : ℂ) + α)) :=
-    IsBigO.of_bound ‖a n‖ (Eventually.of_forall fun t ↦ by rw [norm_smul, mul_comm])
-  refine ((hn.trans hle).add hterm).congr_left fun t ↦ ?_
-  rw [Finset.sum_range_succ]
-  abel
-
-/-- Subtracting the term `k = n` does not change the continued Mellin transform at `s + 1`,
-`s < n`. -/
-theorem mellinContAtTop_succ_natCast_add_one [CompleteSpace E] (hα₀ : 0 < α)
-    (hf : LocallyIntegrableOn f (Ici 0)) {n : ℕ}
-    (hn : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-((k : ℂ) + α)) • a k) =O[atTop]
-      fun t ↦ (t : ℂ) ^ (-((n : ℂ) + α)))
-    {s : ℕ} (hs : s < n) :
-    mellinContAtTop f a (fun k ↦ (k : ℂ) + α) (n + 1) ((s : ℂ) + 1) =
-      mellinContAtTop f a (fun k ↦ (k : ℂ) + α) n ((s : ℂ) + 1) := by
-  have hs' : (s : ℝ) + 1 ≤ n := by exact_mod_cast hs
-  exact mellinContAtTop_succ (integrableOn_Ioi_cpow_smul_sub_sum hα₀ hf hn (by simpa using hs'))
-    (Or.inr (by simp only [add_re, natCast_re, ofReal_re, one_re]; linarith))
-
-/-- At `n + 1`, the continued Mellin transform through `n + 1` terms is the absolutely convergent
-Mellin integral of the remainder `f_{n+1}`. -/
-theorem mellinContAtTop_natCast_add_one_eq_integral [CompleteSpace E] (hα₀ : 0 < α)
-    (hα₁ : α < 1) (hf : LocallyIntegrableOn f (Ici 0)) {n : ℕ}
-    (hn : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range (n + 1), (t : ℂ) ^ (-((k : ℂ) + α)) • a k)
-      =O[atTop] fun t ↦ (t : ℂ) ^ (-(((n + 1 : ℕ) : ℂ) + α))) :
-    mellinContAtTop f a (fun k ↦ (k : ℂ) + α) (n + 1) ((n : ℂ) + 1) =
-      ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ n •
-        (f t - ∑ k ∈ Finset.range (n + 1), (t : ℂ) ^ (-((k : ℂ) + α)) • a k) := by
-  have h := integrableOn_pow_smul_sub_sum_succ hα₀ hα₁ hf hn
-  rw [← Ioc_union_Ioi_eq_Ioi zero_le_one, setIntegral_union (Ioc_disjoint_Ioi le_rfl)
-    measurableSet_Ioi (h.mono_set Ioc_subset_Ioi_self) (h.mono_set (Ioi_subset_Ioi zero_le_one)),
-    mellinContAtTop_def]
-  simp only [add_sub_cancel_right, cpow_natCast]
-  -- on `(0, 1]` the subtracted terms integrate to the principal parts
-  have hterm (k : ℕ) (hk : k ∈ Finset.range (n + 1)) :
-      ∫ t in Ioc (0 : ℝ) 1, (t : ℂ) ^ n • ((t : ℂ) ^ (-((k : ℂ) + α)) • a k) =
-        ((n : ℂ) + 1 - ((k : ℂ) + α))⁻¹ • a k := by
-    have hk' : (k : ℝ) ≤ n := by exact_mod_cast Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
-    have h := integral_Ioc_cpow_smul_cpow_smul (z := (n : ℂ) + 1) (w := -((k : ℂ) + α))
-      (by simp only [add_re, neg_re, natCast_re, ofReal_re, one_re]; linarith) (a k)
-    simpa only [add_sub_cancel_right, cpow_natCast, ← sub_eq_add_neg] using h
-  have hint (k : ℕ) (hk : k ∈ Finset.range (n + 1)) :=
-    integrableOn_Ioc_pow_smul_cpow_smul hα₁ (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)) (a k)
-  rw [← Finset.sum_congr rfl hterm]
-  simp_rw [smul_sub (_ : ℂ) (f _), Finset.smul_sum]
-  rw [integral_sub (integrableOn_Ioc_pow_smul hf n) (integrable_finsetSum _ hint),
-    integral_finsetSum _ hint]
-  abel
 
 /-- Splitting `tⁿ⁺¹ / (t + z) = tⁿ - z tⁿ / (t + z)` in the remainder integral: the first part is
 a Mellin integral, the second the remainder integral of one order lower. -/
