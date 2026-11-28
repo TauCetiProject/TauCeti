@@ -62,13 +62,14 @@ namespace CategoryTheory.Functor
 variable {C : Type u} [Category.{v} C]
 
 /-- Every functor `N : C ⥤ AddCommGrpCat` on an essentially small category is a quotient of the
-free abelian functor `ℤ[⊔ⱼ h_{cⱼ}]` on a disjoint union of corepresentable functors. The family
-`c` has one member for each element of each value of `N`, up to isomorphism of the objects of `C`,
-and the summand of an element `x ∈ N(c)` is sent to `N` by the morphism `ℤ[h_c] ⟶ N` corresponding
-to `x`. -/
+free abelian functor `ℤ[⊔ⱼ h_{cⱼ}]` on the disjoint union of the corepresentable functors of some
+family `c : J → C` of objects indexed by a type `J : Type w`. -/
 theorem exists_epi_free_sigma_shrinkCoyoneda [EssentiallySmall.{w} C] (N : C ⥤ AddCommGrpCat.{w}) :
     ∃ (J : Type w) (c : J → C)
       (p : (∐ fun j ↦ shrinkCoyoneda.{w}.obj (op (c j))) ⋙ AddCommGrpCat.free ⟶ N), Epi p := by
+  -- The family `c` has one member for each element of each value of `N`, up to isomorphism of the
+  -- objects of `C` (through a small model of `C`), and the summand of an element `x ∈ N(c)` is sent
+  -- to `N` by the morphism `ℤ[h_c] ⟶ N` corresponding to `x`.
   let e := equivSmallModel.{w} C
   let c : (Σ c : SmallModel.{w} C, N.obj (e.inverse.obj c)) → C := fun j ↦ e.inverse.obj j.fst
   let R := fun j ↦ shrinkCoyoneda.{w}.obj (op (c j))
