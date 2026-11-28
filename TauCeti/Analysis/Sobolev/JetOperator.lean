@@ -109,6 +109,16 @@ theorem coeFn_jetOperator {μ : Measure (ℝ × ℝ)} {M : ℝ × ℝ → V × V
   filter_upwards [Lp.operatorMultiplication_ae (hM.toLp M) f, hM.coeFn_toLp] with z h₁ h₂
   rw [h₁, h₂]
 
+/-- The first-order operator only depends on the class of its coefficient field almost everywhere:
+coefficient fields that agree `μ`-almost everywhere have the same first-order operator. -/
+theorem jetOperator_congr_ae {μ : Measure (ℝ × ℝ)} {M M' : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (h : M =ᵐ[μ] M') : jetOperator p μ M = jetOperator p μ M' := by
+  by_cases hM : MemLp M ∞ μ
+  · rw [jetOperator_of_memLp hM, jetOperator_of_memLp (hM.ae_eq h),
+      MemLp.toLp_congr hM (hM.ae_eq h) h]
+  · rw [jetOperator_of_not_memLp hM,
+      jetOperator_of_not_memLp fun hM' ↦ hM ((memLp_congr_ae h).2 hM')]
+
 /-- The first-order operator is additive in its coefficient field. -/
 theorem jetOperator_add {μ : Measure (ℝ × ℝ)} {M N : ℝ × ℝ → V × V × V →L[ℝ] W}
     (hM : MemLp M ∞ μ) (hN : MemLp N ∞ μ) :
