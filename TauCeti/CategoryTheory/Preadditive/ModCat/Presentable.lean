@@ -10,9 +10,10 @@ public import Mathlib.Algebra.Category.Grp.FilteredColimits
 public import Mathlib.CategoryTheory.Presentable.Finite
 public import Mathlib.CategoryTheory.Presentable.StrongGenerator
 public import TauCeti.CategoryTheory.Functor.LocallySmall
-public import TauCeti.CategoryTheory.Limits.Preserves.Shapes.Kernels
 public import TauCeti.CategoryTheory.Preadditive.ModCat.Basic
 public import TauCeti.SetTheory.Cardinal.AlephOne
+
+import TauCeti.CategoryTheory.Preadditive.ModCat.FiniteFree
 
 /-!
 # Presentability of modules over a preadditive category
@@ -370,7 +371,7 @@ presentation by representables. -/
 theorem isFinitelyPresentable_iff_isFinitelyPresentedFunctor [EssentiallySmall.{v} C]
     (F : ModCat.{v} C) : IsFinitelyPresentable.{v} F ↔ IsFinitelyPresentedFunctor F.obj := by
   have := Cardinal.fact_isRegular_aleph0.{v}
-  simp only [IsFinitelyPresentable, isFinitelyPresentedFunctor_iff_exists_isColimit,
+  simp only [IsFinitelyPresentable, isFinitelyPresentedFunctor_iff_exists_finiteFree_presentation,
     isCardinalPresentable_iff_cokernel_of_representables Cardinal.aleph0]
   constructor
   · rintro ⟨I, J, hI, hJ, X, Y, d, ⟨e⟩⟩
@@ -378,25 +379,21 @@ theorem isFinitelyPresentable_iff_isFinitelyPresentedFunctor [EssentiallySmall.{
     have := (hasCardinalLT_aleph0_iff J).1 hJ
     obtain ⟨n, ⟨i⟩⟩ := Finite.exists_equiv_fin I
     obtain ⟨m, ⟨j⟩⟩ := Finite.exists_equiv_fin J
-    obtain ⟨f, ⟨e'⟩⟩ := (exists_cokernel_iso_iff_of_fullyFaithful
-      (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι
-      (ιSigmaYonedaIso Y ≪≫ (Sigma.reindex j.symm (fun k ↦ preadditiveYoneda.obj (Y k))).symm)
-      (ιSigmaYonedaIso X ≪≫ (Sigma.reindex i.symm (fun k ↦ preadditiveYoneda.obj (X k))).symm)
-      F).1 ⟨d, ⟨e⟩⟩
-    let q := cokernel.π f ≫ e'.hom
-    exact ⟨m, n, Y ∘ j.symm, X ∘ i.symm, f, q, by simp [q],
-      ⟨cokernel.cokernelIso f q e' rfl⟩⟩
-  · rintro ⟨m, n, Y, X, d, p, hp, ⟨hc⟩⟩
-    let e := (cokernelIsCokernel d).coconePointUniqueUpToIso hc
-    obtain ⟨g, hg⟩ := (exists_cokernel_iso_iff_of_fullyFaithful
-      (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι
-      (ιSigmaYonedaIso (Y ∘ ULift.down) ≪≫ Sigma.reindex
-        (Equiv.ulift : ULift.{v} (Fin m) ≃ Fin m) (fun k ↦ preadditiveYoneda.obj (Y k)))
-      (ιSigmaYonedaIso (X ∘ ULift.down) ≪≫ Sigma.reindex
-        (Equiv.ulift : ULift.{v} (Fin n) ≃ Fin n) (fun k ↦ preadditiveYoneda.obj (X k)))
-      F).2 ⟨d, ⟨e⟩⟩
+    let p := cokernel.π d ≫ e.hom
+    exact ⟨_, _, isFiniteFree_def.2
+      ⟨m, Y ∘ j.symm, ⟨(Sigma.reindex j.symm _).symm⟩⟩, isFiniteFree_def.2
+      ⟨n, X ∘ i.symm, ⟨(Sigma.reindex i.symm _).symm⟩⟩, d, p, by simp [p],
+      ⟨cokernel.cokernelIso d p e rfl⟩⟩
+  · rintro ⟨U, V, hU, hV, d, p, hp, ⟨hc⟩⟩
+    obtain ⟨m, Y, ⟨eU⟩⟩ := isFiniteFree_def.1 hU
+    obtain ⟨n, X, ⟨eV⟩⟩ := isFiniteFree_def.1 hV
+    let eY := eU ≪≫ (Sigma.reindex (Equiv.ulift : ULift.{v} (Fin m) ≃ Fin m) _).symm
+    let eX := eV ≪≫ (Sigma.reindex (Equiv.ulift : ULift.{v} (Fin n) ≃ Fin n) _).symm
+    let g := eY.inv ≫ d ≫ eX.hom
+    let e := cokernel.mapIso d g eY eX (by simp [g])
     exact ⟨ULift.{v} (Fin n), ULift.{v} (Fin m), (hasCardinalLT_aleph0_iff _).2 inferInstance,
-      (hasCardinalLT_aleph0_iff _).2 inferInstance, _, _, g, hg⟩
+      (hasCardinalLT_aleph0_iff _).2 inferInstance, X ∘ ULift.down, Y ∘ ULift.down, g,
+      ⟨e.symm ≪≫ (cokernelIsCokernel d).coconePointUniqueUpToIso hc⟩⟩
 
 end Cardinal
 

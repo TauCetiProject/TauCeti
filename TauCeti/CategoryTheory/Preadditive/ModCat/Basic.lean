@@ -147,6 +147,23 @@ noncomputable def ιSigmaYonedaIso {I : Type*} [Small.{v} I] (X : I → C) :
     Sigma.mapIso fun i ↦ ((additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).liftCompιIso preadditiveYoneda
       fun _ ↦ (additiveFunctor_iff _).2 inferInstance).app (X i)
 
+variable {C} in
+/-- The coproduct comparison sends each module coproduct injection to the corresponding
+representable functor coproduct injection. -/
+@[reassoc (attr := simp↓)]
+lemma map_ι_comp_ιSigmaYonedaIso_hom {I : Type*} [Small.{v} I] (X : I → C) (i : I) :
+    (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι.map
+        (Sigma.ι (fun j ↦ (yoneda C).obj (X j)) i) ≫ (ιSigmaYonedaIso X).hom =
+      Sigma.ι (fun j ↦ preadditiveYoneda.obj (X j)) i := by
+  let G := (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι
+  let Y := fun j ↦ (yoneda C).obj (X j)
+  have hι : G.map (Sigma.ι Y i) ≫ (PreservesCoproduct.iso G Y).hom =
+      Sigma.ι (G.obj ∘ Y) i := by
+    rw [← Iso.eq_comp_inv, PreservesCoproduct.iso_inv]
+    exact (ι_comp_sigmaComparison G Y i).symm
+  rw [ιSigmaYonedaIso, Iso.trans_hom, ← Category.assoc, hι, Sigma.ι_mapIso_hom]
+  exact Category.id_comp _
+
 end ModCat
 
 section Linear
