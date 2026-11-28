@@ -12,6 +12,7 @@ import TauCeti.Algebra.Category.ModuleCat.Ext.FiniteLength
 import TauCeti.Algebra.Category.ModuleCat.ULift
 import TauCeti.CategoryTheory.AlmostSplit.Equivalence
 import TauCeti.CategoryTheory.AlmostSplit.Minimal
+import TauCeti.CategoryTheory.AlmostSplit.Uniqueness
 
 /-!
 # Existence of almost-split sequences over an Artin algebra
@@ -192,6 +193,15 @@ theorem exists_isAlmostSplit_arTranslate (M : ModuleCat.{max u v w} A) [Module.F
   obtain ⟨Y, i, p, h, hY, hS, hi⟩ := exists_isLeftAlmostSplit_arTranslate R E hE M
     fun h ↦ hpM ((injective_arTranslate_iff hE M).mp h)
   exact ⟨Y, i, p, h, hY, hS.isAlmostSplit_iff_isLeftAlmostSplit.mpr hi⟩
+
+/-- The initial term of an almost-split sequence is the Auslander–Reiten translate of its
+finitely generated final term, up to isomorphism. -/
+theorem _root_.CategoryTheory.ShortComplex.IsAlmostSplit.nonempty_iso_X₁_arTranslate
+    {S : ShortComplex (ModuleCat.{max u v w} A)} (hS : S.IsAlmostSplit) [Module.Finite A S.X₃] :
+    Nonempty (S.X₁ ≅ ModuleCat.arTranslate R E S.X₃) := by
+  obtain ⟨_, _, _, _, _, h⟩ := exists_isAlmostSplit_arTranslate R E hE S.X₃
+    hS.isRightAlmostSplit_g.indecomposable hS.not_projective_X₃
+  exact hS.nonempty_iso_X₁ h (Iso.refl _)
 
 end Translate
 

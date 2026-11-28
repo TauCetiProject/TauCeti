@@ -20,7 +20,10 @@ Let `A` be a subspace of a topological space `X`. Restriction of functions from 
 `A^{n+1}` extends by zero to `X^{n+1}`. Its kernel is the **relative Alexander–Spanier cochain
 complex** `C^*(X, A; M)` (`TauCeti.AlexanderSpanier.relativeCochainComplex`): in degree `n` it
 consists of the classes of the functions `φ : X^{n+1} → M` whose restriction to `A^{n+1}` is
-locally zero on `A` (`TauCeti.AlexanderSpanier.mem_range_relativeCochainComplexι_f_iff`). Its
+locally zero on `A` (`TauCeti.AlexanderSpanier.mem_range_relativeCochainComplexι_f_iff`). When
+`A` is closed, every relative cochain is the class of a function vanishing on all tuples of points
+of `A`
+(`TauCeti.AlexanderSpanier.exists_relativeCochainComplexι_f_eq_cochainClass_of_isClosed`). Its
 cohomology is the **relative Alexander–Spanier cohomology** `H^n(X, A; M)`
 (`TauCeti.AlexanderSpanier.relativeCohomology`).
 
@@ -133,6 +136,35 @@ lemma mem_range_relativeCochainComplexι_f_iff {n : ℕ} {φ : (Fin (n + 1) → 
       IsLocallyZero fun y : Fin (n + 1) → A ↦ φ (Subtype.val ∘ y) := by
   rw [range_relativeCochainComplexι_f, LinearMap.mem_ker, restriction_f_cochainClass,
     cochainClass_eq_zero_iff]
+
+variable {R M A} in
+/-- For a closed subspace `A`, every relative cochain of `(X, A)` is the class of a function that
+vanishes on all tuples of points of `A`. -/
+lemma exists_relativeCochainComplexι_f_eq_cochainClass_of_isClosed (hA : IsClosed A) {n : ℕ}
+    (c : (relativeCochainComplex R M A).X n) :
+    ∃ φ : (Fin (n + 1) → X) → M,
+      ((relativeCochainComplexι R M A).f n).hom c = cochainClass R X M n φ ∧
+        ∀ x : Fin (n + 1) → X, (∀ i, x i ∈ A) → φ x = 0 := by
+  classical
+  obtain ⟨φ, hφ⟩ := cochainClass_surjective (R := R) (M := M) n
+    (((relativeCochainComplexι R M A).f n).hom c)
+  have hloc : IsLocallyZero fun y : Fin (n + 1) → A ↦ φ (Subtype.val ∘ y) :=
+    mem_range_relativeCochainComplexι_f_iff.1 (hφ ▸ LinearMap.mem_range_self _ c)
+  refine ⟨fun x ↦ if ∀ i, x i ∈ A then 0 else φ x, ?_,
+    fun x hx ↦ ite_eq_left_iff.2 fun h ↦ (h hx).elim⟩
+  rw [← hφ, cochainClass_eq_cochainClass_iff]
+  -- The difference is `φ` on tuples of points of `A` and zero elsewhere. Near a point of `A` it
+  -- vanishes because `φ` is locally zero on `A`, and off `A` because `A` is closed.
+  refine isLocallyZero_iff.2 fun y ↦ ?_
+  by_cases hy : y ∈ A
+  · obtain ⟨U, hU, hφU⟩ := isLocallyZero_iff.1 hloc ⟨y, hy⟩
+    obtain ⟨V, hV, hVU⟩ := (mem_nhds_subtype A ⟨y, hy⟩ U).1 hU
+    refine ⟨V, hV, fun x hx ↦ ?_⟩
+    by_cases hxA : ∀ i, x i ∈ A
+    · simpa [hxA, Function.comp_def] using hφU (fun i ↦ ⟨x i, hxA i⟩) fun i ↦ hVU (hx i)
+    · simp [hxA]
+  · refine ⟨Aᶜ, hA.isOpen_compl.mem_nhds hy, fun x hx ↦ ?_⟩
+    simp [show ¬∀ i, x i ∈ A from fun h ↦ hx 0 (h 0)]
 
 /-- The relative cochain inclusion is injective in every degree. -/
 lemma relativeCochainComplexι_f_injective (n : ℕ) :

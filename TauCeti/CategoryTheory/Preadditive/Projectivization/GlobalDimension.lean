@@ -71,7 +71,7 @@ theorem projective_preadditiveCoyonedaObj_obj_kernel
   -- at most two.
   have := (finiteProjectiveModules_iff.1 (finiteProjectiveModules_preadditiveCoyonedaObj_obj h₀)).2
   have := (finiteProjectiveModules_iff.1 (finiteProjectiveModules_preadditiveCoyonedaObj_obj h₁)).2
-  have hC := (globalDimension_le_iff_hasProjectiveDimensionLE _ 2).1 hgl
+  have hC := (Abelian.globalDimension_le_iff_hasProjectiveDimensionLE _ 2).1 hgl
     (cokernel ((preadditiveCoyonedaObj M).map d))
   have := (hasProjectiveDimensionLT_cokernel_iff_kernel ((preadditiveCoyonedaObj M).map d) 0).1 hC
   exact Projective.of_iso (PreservesKernel.iso (preadditiveCoyonedaObj M) d).symm

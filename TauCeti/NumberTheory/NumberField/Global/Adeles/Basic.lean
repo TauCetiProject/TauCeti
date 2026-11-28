@@ -16,10 +16,13 @@ infinite places, and `NumberField.AdeleRing R K` is the product of the infinite 
 finite adele ring of `R`.  Both are defined as type synonyms, so the Hausdorff property of the
 underlying products is not found by instance search.  This file records it, so that closedness of
 discrete subgroups and separation of quotients apply to the adele ring.  For the same reason
-`Prod.fst_mul` does not apply to adeles, so the file also records that the infinite component of a
-product of adeles is the product of the infinite components (`NumberField.AdeleRing.fst_mul`),
-and that the embeddings of a completion at an infinite place into the infinite adele ring and into
-the adele ring are continuous (`NumberField.InfiniteAdeleRing.continuous_ofCompletion`,
+`Prod.fst_mul` does not apply to adeles, so the file also records that the components of sums,
+products, and differences of adeles are the corresponding sums, products, and differences of
+components (`NumberField.AdeleRing.fst_mul`, `NumberField.AdeleRing.snd_mul`,
+`NumberField.AdeleRing.fst_add`, `NumberField.AdeleRing.snd_add`, `NumberField.AdeleRing.fst_sub`,
+`NumberField.AdeleRing.snd_sub`), and that the embeddings of a completion at an infinite place into
+the infinite adele ring and into the adele ring are continuous
+(`NumberField.InfiniteAdeleRing.continuous_ofCompletion`,
 `NumberField.AdeleRing.continuous_ofCompletion`), as is the embedding of a completion at a finite
 place into the adele ring (`NumberField.AdeleRing.continuous_ofAdicCompletion`).
 
@@ -91,6 +94,29 @@ theorem InfiniteAdeleRing.add_apply (x y : InfiniteAdeleRing K) (w : InfinitePla
     (x + y) w = x w + y w :=
   rfl
 
+/-- Infinite adeles are multiplied place by place: the ring structure of `InfiniteAdeleRing K` is
+that of the product of the completions. -/
+@[simp]
+theorem InfiniteAdeleRing.mul_apply (x y : InfiniteAdeleRing K) (w : InfinitePlace K) :
+    (x * y) w = x w * y w :=
+  rfl
+
+/-- A numeral of the infinite adeles is that numeral at every infinite place: the ring structure
+of `InfiniteAdeleRing K` is that of the product of the completions. -/
+@[simp]
+theorem InfiniteAdeleRing.ofNat_apply (n : ℕ) [n.AtLeastTwo] (w : InfinitePlace K) :
+    (ofNat(n) : InfiniteAdeleRing K) w = ofNat(n) :=
+  rfl
+
+variable {K} in
+/-- The norm at an infinite place `w` of the diagonal image of `x : K` in the infinite adeles is
+`w x`. It is not a `simp` lemma: `simp` first rewrites the coordinate with
+`InfiniteAdeleRing.algebraMap_apply`. -/
+theorem InfiniteAdeleRing.norm_algebraMap_apply (x : K) (w : InfinitePlace K) :
+    ‖algebraMap K (InfiniteAdeleRing K) x w‖ = w x := by
+  simp only [InfiniteAdeleRing.algebraMap_apply, AbsoluteValue.Completion.norm_coe,
+    InfinitePlace.coe_apply]
+
 @[simp]
 theorem InfiniteAdeleRing.homeomorphMixedSpace_apply
     (x : InfiniteAdeleRing K) :
@@ -141,37 +167,6 @@ theorem InfiniteAdeleRing.continuous_ringEquiv_mixedSpace_symm :
   (InfiniteAdeleRing.homeomorphMixedSpace K).symm.continuous.congr fun x ↦
     InfiniteAdeleRing.homeomorphMixedSpace_symm_apply K x
 
-/-- Every infinite adele can be translated by the image of an algebraic integer into the closed
-fundamental parallelepiped of the Minkowski lattice. -/
-theorem InfiniteAdeleRing.exists_sub_algebraMap_integer_mem_parallelepiped [NumberField K]
-    (z : InfiniteAdeleRing K) :
-    ∃ y : 𝓞 K, InfiniteAdeleRing.ringEquiv_mixedSpace K
-      (z - algebraMap K (InfiniteAdeleRing K) (algebraMap (𝓞 K) K y))
-      ∈ parallelepiped (mixedEmbedding.latticeBasis K) := by
-  classical
-  let b := mixedEmbedding.latticeBasis K
-  let e := InfiniteAdeleRing.ringEquiv_mixedSpace K
-  -- The lattice correction is the Minkowski embedding of an algebraic integer `y`.
-  have hfloor : ((ZSpan.floor b (e z) :
-      Submodule.span ℤ (Set.range b)) : mixedEmbedding.mixedSpace K) ∈
-      mixedEmbedding.integerLattice K := by
-    rw [← mixedEmbedding.span_latticeBasis K]
-    exact (ZSpan.floor b (e z)).property
-  obtain ⟨y, hy⟩ := hfloor
-  have hy' : mixedEmbedding K (algebraMap (𝓞 K) K y) =
-      ((ZSpan.floor b (e z) : Submodule.span ℤ (Set.range b)) :
-        mixedEmbedding.mixedSpace K) := by
-    simpa using hy
-  have hey : e (algebraMap K (InfiniteAdeleRing K) (algebraMap (𝓞 K) K y)) =
-      ((ZSpan.floor b (e z) : Submodule.span ℤ (Set.range b)) :
-        mixedEmbedding.mixedSpace K) :=
-    (InfiniteAdeleRing.mixedEmbedding_eq_algebraMap_comp
-      (K := K) (x := algebraMap (𝓞 K) K y)).symm.trans hy'
-  refine ⟨y, ?_⟩
-  rw [map_sub, hey, ← ZSpan.fract_apply]
-  exact ZSpan.fundamentalDomain_subset_parallelepiped b
-    (ZSpan.fract_mem_fundamentalDomain b (e z))
-
 /-- The norm of the Minkowski mixed-space image of an infinite adele is its norm: the product over
 the infinite places of the local absolute values, squared at the complex places.
 
@@ -206,6 +201,38 @@ variable {R K} in
 /-- The infinite component of a product of adeles is the product of their infinite components. -/
 @[simp]
 theorem AdeleRing.fst_mul (a b : AdeleRing R K) : (a * b).1 = a.1 * b.1 :=
+  rfl
+
+variable {R K} in
+/-- The infinite component of a difference of adeles is the difference of their infinite
+components. -/
+@[simp]
+theorem AdeleRing.fst_sub (a b : AdeleRing R K) : (a - b).1 = a.1 - b.1 :=
+  rfl
+
+variable {R K} in
+/-- The finite component of a difference of adeles is the difference of their finite
+components. -/
+@[simp]
+theorem AdeleRing.snd_sub (a b : AdeleRing R K) : (a - b).2 = a.2 - b.2 :=
+  rfl
+
+variable {R K} in
+/-- The finite component of a product of adeles is the product of their finite components. -/
+@[simp]
+theorem AdeleRing.snd_mul (a b : AdeleRing R K) : (a * b).2 = a.2 * b.2 :=
+  rfl
+
+variable {R K} in
+/-- The infinite component of a sum of adeles is the sum of their infinite components. -/
+@[simp]
+theorem AdeleRing.fst_add (a b : AdeleRing R K) : (a + b).1 = a.1 + b.1 :=
+  rfl
+
+variable {R K} in
+/-- The finite component of a sum of adeles is the sum of their finite components. -/
+@[simp]
+theorem AdeleRing.snd_add (a b : AdeleRing R K) : (a + b).2 = a.2 + b.2 :=
   rfl
 
 /-- The embedding of the completion at an infinite place into the infinite adele ring is

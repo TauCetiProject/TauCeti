@@ -122,8 +122,10 @@ lemma coe_cyclesPullback_id {m : ℤ} (α : cyclesOfDimension X m) :
 
 /-- Pullback of cycles is functorial along flat morphisms: for `f : X ⟶ Y` flat of pure relative
 dimension `n`, `g : Y ⟶ Z` of pure relative dimension `n'` and `f ≫ g` of pure relative dimension
-`d` (necessarily `n + n'` when `X` is nonempty), `(g ∘ f)^* α = f^* (g^* α)` as cycles on `X`, for
-every `m`-cycle `α` on `Z`. This is the functoriality `(g f)^* = f^* g^*` of flat pullback of
+`d` (necessarily `n + n'` when `X` is nonempty; `f ≫ g` has pure relative dimension `n + n'` by
+`TauCeti.AlgebraicGeometry.PureRelativeDimension.comp_of_generalizingMap`),
+`(g ∘ f)^* α = f^* (g^* α)` as cycles on `X`, for every `m`-cycle `α` on `Z`. This is the
+functoriality `(g f)^* = f^* g^*` of flat pullback of
 [Stacks, Section 42.14](https://stacks.math.columbia.edu/tag/02RA) and Fulton, *Intersection
 Theory*, §1.7, at the level of cycles. -/
 lemma coe_cyclesPullback_comp {Z : Scheme.{u}} [Z.Over (Spec (.of k))]

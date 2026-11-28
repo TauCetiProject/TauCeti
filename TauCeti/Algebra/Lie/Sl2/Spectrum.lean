@@ -8,10 +8,10 @@ module
 public import Mathlib.Algebra.Lie.Weights.Basic
 public import TauCeti.Algebra.Lie.Sl2.CompleteReducibility
 public import TauCeti.LinearAlgebra.Eigenspace.Semisimple
-import Mathlib.Algebra.Lie.BaseChange
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.Order.Int.LeastGreatest
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
+import TauCeti.Algebra.Lie.Sl2.BaseChange
 import TauCeti.LinearAlgebra.Eigenspace.BaseChange
 import TauCeti.LinearAlgebra.Eigenspace.Separation
 
@@ -51,11 +51,10 @@ itself need not generate the ambient `L`.
 
 ## Main results
 
-* `TauCeti.exists_hasPrimitiveVectorWith_pow_toEnd_e`: **raising an eigenvector to a primitive
-  vector.** Some power of the raising operator carries an `h`-eigenvector of weight `μ` to a
-  primitive vector of weight `μ + 2k`.
 * `TauCeti.exists_int_of_hasEigenvalue`: **the integer spectrum.** Every eigenvalue of the Cartan
-  element of an `sl₂` triple on a finite-dimensional module is an integer. Its refinement
+  element of an `sl₂` triple on a finite-dimensional module is an integer (via
+  `IsSl2Triple.exists_hasPrimitiveVectorWith_pow_toEnd_e` in
+  `TauCeti/Algebra/Lie/Sl2/WeightString.lean`). Its refinement
   `TauCeti.exists_nat_sub_two_mul_of_lie_h_eq_smul` exhibits the eigenvalue as `n - 2k` with
   `n k : ℕ`.
 * `TauCeti.eigenspace_toEnd_eq_bot_of_forall_ne_intCast`: the eigenspaces at non-integer scalars
@@ -81,11 +80,6 @@ itself need not generate the ambient `L`.
 
 * [J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*][humphreys1972],
   §7.2.
-
-The raising argument in `TauCeti.exists_hasPrimitiveVectorWith_pow_toEnd_e` follows the proof of
-Mathlib's `IsSl2Triple.exists_hasPrimitiveVectorWith`, which runs it from an eigenvector produced by
-triangularizability; the version here starts from an eigenvector supplied by the caller, which is
-what makes the eigenvalue statements below available without a triangularizability hypothesis.
 -/
 
 public section
@@ -94,7 +88,7 @@ namespace TauCeti
 
 open LieModule Module
 
-/-! ### Raising an eigenvector to a primitive vector -/
+/-! ### Integrality of eigenvalues -/
 
 section Raising
 
@@ -104,37 +98,6 @@ variable {M : Type*} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModul
   [IsTorsionFree K M] [IsNoetherian K M]
 variable {h e f : L} {m : M} {μ : K}
 
-/-- **Raising an eigenvector to a primitive vector.** If `m ≠ 0` is an `h`-eigenvector of weight
-`μ`, then some power `eᵏ • m` is a primitive vector, of weight `μ + 2k`.
-
-The raising operator shifts the weight by `2`, so if no power of `e` killed `m` the vectors
-`m, e • m, e² • m, …` would be eigenvectors for the pairwise distinct weights `μ, μ + 2, μ + 4, …`,
-hence linearly independent — impossible in a Noetherian module. The last nonzero vector of the
-string is therefore killed by `e`, which is precisely primitivity.
-
-Mathlib's `IsSl2Triple.exists_hasPrimitiveVectorWith` is this argument started from an eigenvector
-obtained from `LieModule.IsTriangularizable`; taking the eigenvector as input instead is what lets
-the integrality statements below dispense with that hypothesis. -/
-theorem exists_hasPrimitiveVectorWith_pow_toEnd_e (t : IsSl2Triple h e f)
-    (hm : ⁅h, m⁆ = μ • m) (hm0 : m ≠ 0) :
-    ∃ k : ℕ, t.HasPrimitiveVectorWith ((toEnd K L M e ^ k) m) (μ + 2 * k) := by
-  have hlie : ∀ n : ℕ, ⁅h, (toEnd K L M e ^ n) m⁆ = (μ + 2 * (n : K)) • (toEnd K L M e ^ n) m :=
-    fun n ↦ t.lie_h_pow_toEnd_e hm n
-  have hzero : ∃ k : ℕ, (toEnd K L M e ^ k) m = 0 := by
-    by_contra! hne
-    have hinj : Function.Injective fun n : ℕ ↦ μ + 2 * (n : K) := fun a b hab ↦ by
-      simpa [add_right_inj, mul_eq_mul_left_iff, Nat.cast_inj] using hab
-    have haux (n : ℕ) :
-        (toEnd K L M h).HasEigenvector (μ + 2 * (n : K)) ((toEnd K L M e ^ n) m) :=
-      ⟨Module.End.mem_eigenspace_iff.2 (by simpa using hlie n), hne n⟩
-    have _i : Finite ℕ :=
-      ((toEnd K L M h).eigenvectors_linearIndependent' _ hinj _ haux).finite
-    exact not_finite ℕ
-  obtain ⟨k, hk_ne, hk_zero⟩ := Nat.exists_not_and_succ_of_not_zero_of_exists hm0 hzero
-  exact ⟨k, { ne_zero := hk_ne
-              lie_h := hlie k
-              lie_e := by rw [IsSl2Triple.lie_e_pow_toEnd_e k]; exact hk_zero }⟩
-
 /-- **The eigenvalues of the Cartan element are integers, explicitly.** An `h`-eigenvector of weight
 `μ` in a finite-dimensional module raises to a primitive vector of weight `μ + 2k`, and the weight
 of a primitive vector is a natural number `n` (`IsSl2Triple.HasPrimitiveVectorWith.exists_nat`), so
@@ -142,7 +105,7 @@ of a primitive vector is a natural number `n` (`IsSl2Triple.HasPrimitiveVectorWi
 theorem exists_nat_sub_two_mul_of_lie_h_eq_smul (t : IsSl2Triple h e f)
     (hm : ⁅h, m⁆ = μ • m) (hm0 : m ≠ 0) :
     ∃ n k : ℕ, μ = (n : K) - 2 * k := by
-  obtain ⟨k, P⟩ := exists_hasPrimitiveVectorWith_pow_toEnd_e t hm hm0
+  obtain ⟨k, P⟩ := t.exists_hasPrimitiveVectorWith_pow_toEnd_e hm hm0
   obtain ⟨n, hn⟩ := P.exists_nat
   exact ⟨n, k, by rw [← hn]; ring⟩
 
@@ -309,13 +272,7 @@ in the ground field. -/
 theorem iSup_eigenspace_toEnd_eq_top (t : IsSl2Triple h e f) :
     ⨆ μ : K, (toEnd K L M h).eigenspace μ = ⊤ := by
   let A := AlgebraicClosure K
-  let tA : IsSl2Triple ((1 : A) ⊗ₜ[K] h) ((1 : A) ⊗ₜ[K] e) ((1 : A) ⊗ₜ[K] f) := {
-    h_ne_zero := by simpa using t.h_ne_zero
-    lie_e_f := by simp [t.lie_e_f]
-    lie_h_e_nsmul := by simp [t.lie_h_e_nsmul]
-    lie_h_f_nsmul := by
-      simp only [LieAlgebra.ExtendScalars.bracket_tmul, one_mul, t.lie_h_f_nsmul,
-        TensorProduct.tmul_neg, TensorProduct.tmul_smul] }
+  let tA := t.baseChange (R := K) (A := A) (by simpa using t.h_ne_zero)
   -- It suffices to span after scalar extension; every nonzero eigenspace there has an
   -- integral eigenvalue and is the scalar extension of its ground-field eigenspace.
   apply Submodule.baseChange_injective (A := A)

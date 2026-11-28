@@ -28,6 +28,15 @@ The proof combines Mathlib's path-conjugation isomorphism for fundamental groups
 path-lifting and monodromy API, packaged for recovered subgroups in
 `TauCeti.Topology.Homotopy.Monodromy.Basic`. The convention is the usual one from Hatcher,
 *Algebraic Topology*, Section 1.3.
+
+For a quotient covering map `p : E → X` by a group `G`, Mathlib reads a loop class at `x₀` as
+an element of `Gᵐᵒᵖ` through a lift `e₀` of `x₀`
+(`IsQuotientCoveringMap.fundamentalGroupToMulOpposite`, and
+`IsQuotientCoveringMap.fundamentalGroupEquiv` for simply connected `E`). Changing the basepoint
+along `γ` and the lift to `hp.isCoveringMap.monodromy ⟦γ⟧ e₀` does not change this element
+(`IsQuotientCoveringMap.fundamentalGroupEquiv_fundamentalGroupMulEquivOfPath`, with additive
+versions). When `G` is commutative the lift does not matter, so this gives the basepoint
+independence of the winding number of the circle and of the lattice of a torus.
 -/
 
 public section
@@ -99,3 +108,68 @@ theorem range_mapOfEq_monodromy_path (hp : IsCoveringMap p) (γ : Path x₀ x₁
   exact hp.monodromy_eq_self_iff_fundamentalGroupMulEquivOfPath_symm_apply γ e₀ g
 
 end IsCoveringMap
+
+namespace IsQuotientCoveringMap
+
+variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X]
+  {p : E → X} {x₀ x₁ : X} {G : Type*} [Group G] [MulAction G E]
+
+/-- **Basepoint change for the deck-group reading of loops.** Reading a loop class `g` at `x₀`
+through the lift `e₀`, or its basepoint change along `γ` through the transported lift
+`hp.isCoveringMap.monodromy ⟦γ⟧ e₀`, gives the same group element. -/
+theorem fundamentalGroupToMulOpposite_fundamentalGroupMulEquivOfPath
+    (hp : IsQuotientCoveringMap p G) (γ : Path x₀ x₁) (e₀ : p ⁻¹' {x₀})
+    (g : FundamentalGroup X x₀) :
+    hp.fundamentalGroupToMulOpposite (hp.isCoveringMap.monodromy (.mk γ) e₀)
+        (FundamentalGroup.fundamentalGroupMulEquivOfPath γ g) =
+      hp.fundamentalGroupToMulOpposite e₀ g := by
+  rw [fundamentalGroupToMulOpposite_apply_eq_iff]
+  have h := hp.isCoveringMap.monodromy_fundamentalGroupMulEquivOfPath_symm_apply γ
+    (FundamentalGroup.fundamentalGroupMulEquivOfPath γ g) e₀
+  rw [MulEquiv.symm_apply_apply, Equiv.eq_symm_apply, TauCeti.coveringFiberEquiv_apply] at h
+  -- The loop `g` moves `e₀` by the fibre action of its group element, which commutes with
+  -- monodromy along `γ`.
+  have he : hp.isCoveringMap.monodromy g.asHom e₀ =
+      hp.toPermFiber x₀ (hp.fundamentalGroupToMulOpposite e₀ g).unop e₀ :=
+    Subtype.ext (hp.unop_fundamentalGroupToMulOpposite_smul).symm
+  rw [← h, he, hp.monodromy_toPermFiber, toPermFiber_apply_apply_coe]
+
+/-- **Basepoint change for the fundamental group of the base.** For a simply connected cover, the
+identification `π₁(X, x) ≃* Gᵐᵒᵖ` through a lift is compatible with changing the basepoint along
+a path `γ` and transporting the lift along `γ`. -/
+theorem fundamentalGroupEquiv_fundamentalGroupMulEquivOfPath [SimplyConnectedSpace E]
+    (hp : IsQuotientCoveringMap p G) (γ : Path x₀ x₁) (e₀ : p ⁻¹' {x₀})
+    (g : FundamentalGroup X x₀) :
+    hp.fundamentalGroupEquiv (hp.isCoveringMap.monodromy (.mk γ) e₀)
+        (FundamentalGroup.fundamentalGroupMulEquivOfPath γ g) =
+      hp.fundamentalGroupEquiv e₀ g :=
+  hp.fundamentalGroupToMulOpposite_fundamentalGroupMulEquivOfPath γ e₀ g
+
+end IsQuotientCoveringMap
+
+namespace IsAddQuotientCoveringMap
+
+variable {E X : Type*} [TopologicalSpace E] [TopologicalSpace X]
+  {p : E → X} {x₀ x₁ : X} {G : Type*} [AddGroup G] [AddAction G E]
+
+/-- **Basepoint change for the deck-group reading of loops**, additive version of
+`IsQuotientCoveringMap.fundamentalGroupToMulOpposite_fundamentalGroupMulEquivOfPath`. -/
+theorem fundamentalGroupToMulOpposite_fundamentalGroupMulEquivOfPath
+    (hp : IsAddQuotientCoveringMap p G) (γ : Path x₀ x₁) (e₀ : p ⁻¹' {x₀})
+    (g : FundamentalGroup X x₀) :
+    hp.fundamentalGroupToMulOpposite (hp.isCoveringMap.monodromy (.mk γ) e₀)
+        (FundamentalGroup.fundamentalGroupMulEquivOfPath γ g) =
+      hp.fundamentalGroupToMulOpposite e₀ g :=
+  hp.toMultiplicative.fundamentalGroupToMulOpposite_fundamentalGroupMulEquivOfPath γ e₀ g
+
+/-- **Basepoint change for the fundamental group of the base**, additive version of
+`IsQuotientCoveringMap.fundamentalGroupEquiv_fundamentalGroupMulEquivOfPath`. -/
+theorem fundamentalGroupEquiv_fundamentalGroupMulEquivOfPath [SimplyConnectedSpace E]
+    (hp : IsAddQuotientCoveringMap p G) (γ : Path x₀ x₁) (e₀ : p ⁻¹' {x₀})
+    (g : FundamentalGroup X x₀) :
+    hp.fundamentalGroupEquiv (hp.isCoveringMap.monodromy (.mk γ) e₀)
+        (FundamentalGroup.fundamentalGroupMulEquivOfPath γ g) =
+      hp.fundamentalGroupEquiv e₀ g :=
+  hp.toMultiplicative.fundamentalGroupEquiv_fundamentalGroupMulEquivOfPath γ e₀ g
+
+end IsAddQuotientCoveringMap

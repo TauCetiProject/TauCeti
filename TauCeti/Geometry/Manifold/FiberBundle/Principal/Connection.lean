@@ -60,6 +60,8 @@ connection forms take values in `EG`, as the Maurer–Cartan form does.
 ## Main results
 
 * `TauCeti.PrincipalBundle.exists_isConnectionForm`: existence of connection forms.
+* `TauCeti.PrincipalBundle.IsConnectionForm.mpullback_op_smul`: equivariance as the pullback
+  identity `R_g^* A = Ad(g⁻¹) ∘ A`.
 * `TauCeti.PrincipalBundle.IsConnectionForm.apply_sub_rightFundamentalVectorField_eq_zero`:
   the horizontal part `v - A(v)♯` of a tangent vector.
 * `TauCeti.PrincipalBundle.IsConnectionForm.smul_add_smul`: affine combinations of connection
@@ -138,6 +140,18 @@ theorem sub_apply_rightFundamentalVectorField_eq_zero (hA : IsConnectionForm A)
   rw [Submodule.coe_sub, Pi.sub_apply, ContinuousAlternatingMap.sub_apply,
     hA.apply_rightFundamentalVectorField, hA'.apply_rightFundamentalVectorField]
   exact sub_self _
+
+/-- **Equivariance of a connection form as a pullback identity**: right translation by `g` pulls
+a connection form back to its image under `Ad(g⁻¹)`, `R_g^* A = Ad(g⁻¹) ∘ A`. -/
+theorem mpullback_op_smul [PrincipalBundle G P] (hA : IsConnectionForm A) (g : G) :
+    SmoothForm.mpullback (fun x : ManifoldTotalSpace G P ↦ op g • x) (contMDiff_const_smul (op g))
+        A =
+      SmoothForm.mapCoeff (F := EG) (G := EG) (Lie.adjointContinuousLinearMap (I := IG) g⁻¹) A := by
+  refine SmoothBundleForm.ext_eval₁ fun x w ↦ ?_
+  rw [SmoothForm.mpullback_apply_one, hA.apply_mfderiv_op_smul,
+    SmoothForm.coe_mapCoeff (F := EG) (G := EG) (Lie.adjointContinuousLinearMap (I := IG) g⁻¹)]
+  exact (RoughForm.mapCoeff_apply (F := EG) (G := EG) (Lie.adjointContinuousLinearMap (I := IG) g⁻¹)
+    A.val x ![w]).symm
 
 /-- **Affine combinations of connection forms.** A combination `c • A + c' • A'` of connection
 forms with `c + c' = 1` is a connection form. -/

@@ -69,6 +69,7 @@ A derivation over any scalars `S` which vanishes on the image of `R` is `R`-line
 * `Derivation.exists_iterate_smul_eq_zero`: scalar multiples preserve local nilpotence.
 * `Derivation.smulIterCoeff`: the coefficients of the expansion of `(b • D)^[n]`, `b : A`.
 * `Derivation.iterate_smul_apply_eq_sum`: `(b • D)^[n]` as a combination of the `D^[k]`.
+* `Derivation.iterate_smul_apply_eq_add_sum`: the split expansion of `(b • D)^[n]` for `2 ≤ n`.
 * `Derivation.smulIterCoeff_succ_one`: the coefficient of `D` in `(b • D)^[n + 1]`.
 * `Derivation.map_smulIterCoeff`: the coefficients are natural in the ring.
 * `Derivation.leibniz_ringInverse`: the derivative of `Ring.inverse a`.
@@ -300,6 +301,19 @@ theorem iterate_smul_apply_eq_sum (D : Derivation R A A) (b y : A) (n : ℕ) :
     rw [mul_add, Finset.mul_sum, Finset.mul_sum, hshift]
     simp only [mul_assoc]
     ring
+
+/-- The expansion `iterate_smul_apply_eq_sum` for `n ≥ 2`, with its extreme coefficients
+`smulIterCoeff D b n 0 = 0` and `smulIterCoeff D b n n = b ^ n` made explicit. -/
+theorem iterate_smul_apply_eq_add_sum (D : Derivation R A A) (b y : A) {n : ℕ}
+    (hn : 2 ≤ n) : (b • D)^[n] y = b ^ n * D^[n] y + smulIterCoeff D b n 1 * D y +
+      ∑ k ∈ Finset.Ico 2 n, smulIterCoeff D b n k * D^[k] y := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' (by omega : 1 ≤ n)
+  -- Split off the top term `k = n`, then the bottom terms `k = 0` and `k = 1`.
+  rw [iterate_smul_apply_eq_sum, Finset.sum_range_succ, Finset.range_eq_Ico,
+    Finset.sum_eq_sum_Ico_succ_bot (by omega), Finset.sum_eq_sum_Ico_succ_bot (by omega)]
+  simp only [smulIterCoeff_self, smulIterCoeff_succ_zero, zero_mul, zero_add,
+    Function.iterate_one]
+  ring
 
 /-- An element whose derivative is a unit is squarefree: if `a = x * x * y`, then `x` divides
 `D a = x * D (x * y) + x * y * D x`. -/

@@ -32,7 +32,7 @@ translates of that image, and Mathlib's `MeasureTheory.AddSubgroup.index_mul_mea
 into the measure identity. On a translate of a scaled box — that is, on a ball of `ι → K` — the
 same identity holds for every left-invariant measure, with no regularity hypothesis. For a general
 set and an additive Haar measure the scaling law follows from the Haar character of `GL_n`
-(`MeasureTheory.Measure.addHaar_image_mulVec` in `TauCeti.NumberTheory.LocalField.HaarCharacter`).
+(`MeasureTheory.Measure.addHaar_image_mulVec` in `TauCeti.NumberTheory.LocalField.Haar.Character`).
 
 Specializing to diagonal matrices gives the volume of a box of ideals: the box whose `i`-th factor
 is `𝓂[K] ^ e i` is the image of the integer box under the diagonal matrix with entries `ϖ ^ e i`,
