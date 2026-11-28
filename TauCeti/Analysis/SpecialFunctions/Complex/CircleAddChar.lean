@@ -144,9 +144,8 @@ private theorem stdAddChar_intCast_natCast_mul_of_eq {N m n : ℕ} [NeZero N] [N
   exact stdAddChar_intCast_natCast_mul x
 
 /-- **The standard character at an integer, for coprime moduli.** If `u n + v m = 1`, then
-`e(k / (m n)) = e(u k / m) e(v k / n)`, where `e(t) = exp (2πi t)`. This splitting comes from the
-earlier proof of `Matrix.sum_stdAddChar_dotProduct_mulVec_mul`, the coprime case of the quadratic
-Gauss sum, which now uses this lemma. -/
+`e(k / (m n)) = e(u k / m) e(v k / n)`, where `e(t) = exp (2πi t)`. The computation is adapted
+from the coprime case of the quadratic Gauss sum, `Matrix.sum_stdAddChar_dotProduct_mulVec_mul`. -/
 theorem stdAddChar_intCast_eq_mul_of_add_eq_one {m n : ℕ} [NeZero m] [NeZero n] {u v : ℤ}
     (huv : u * n + v * m = 1) (k : ℤ) :
     stdAddChar (k : ZMod (m * n)) =
