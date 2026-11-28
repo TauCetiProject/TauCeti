@@ -75,9 +75,9 @@ theorem dvd_of_C_pow_mul_eq_mul {σ R : Type*} [CommRing R] {r : R} (hr : IsLeft
     have hker : ∀ r' : R, π r' = 0 ↔ r ∣ r' := fun r' ↦
       (Ideal.Quotient.eq_zero_iff_mem (I := I)).trans Ideal.mem_span_singleton
     obtain ⟨q', hq_eq⟩ := (C_dvd_iff_map_hom_eq_zero π r hker q).mpr hmapq
-    have hCr : IsLeftRegular (C (σ := σ) r) := fun {a b} hab ↦ by
-      ext d
-      exact hr (by simpa [coeff_C_mul] using congrArg (fun f : MvPolynomial σ R ↦ f.coeff d) hab)
+    have hCr : IsLeftRegular (C (σ := σ) r) := by
+      simpa only [MvPolynomial.C_apply] using
+        (isLeftRegular_iff_isRegular.mp hr).monomial (m := 0) |>.left
     have hnext : C (r ^ k) * x = p * q' := hCr <| by
       calc C r * (C (r ^ k) * x)
           = C (r ^ (k + 1)) * x := by rw [pow_succ', map_mul, mul_assoc]

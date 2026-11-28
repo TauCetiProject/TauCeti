@@ -112,10 +112,10 @@ private theorem depressedDiscr_eq_single_of_le (hm : 3 ≤ m) {d : Fin (m - 1) �
     have hwtj : 2 ≤ depressedWeight m j := two_le_depressedWeight j
     have hdj_pos : (1 : ℤ) ≤ d j := by exact_mod_cast Nat.pos_of_ne_zero hdj
     nlinarith
-  ext j
-  by_cases hj : j = i₀
-  · subst hj; simp [hdi₀]
-  · simp [hzero j hj, hj]
+  refine Finsupp.eq_single_iff.mpr ⟨fun j hj ↦ ?_, hdi₀⟩
+  rw [Finset.mem_singleton]
+  by_contra hne
+  exact Finsupp.mem_support_iff.mp hj (hzero j hne)
 
 /-- A monomial in the support of `depressedDiscr R m` supported solely on `aₘ₋₁` must be
 `aₘ₋₁ ^ m`. -/
@@ -125,14 +125,12 @@ private theorem depressedDiscr_eq_single_of_support_subset (hm : 3 ≤ m)
     d = Finsupp.single ⟨m - 3, by omega⟩ m := by
   let i₀ : Fin (m - 1) := ⟨m - 3, by omega⟩
   have hwt := weight_eq_of_mem_support_depressedDiscr hd
-  have hsum : Finsupp.weight (depressedWeight m) d = (d i₀ : ℤ) * ((m : ℤ) - 1) := by
-    rw [Finsupp.weight_apply, Finsupp.sum, Finset.sum_eq_single i₀]
-    · rw [depressedWeight_last hm, nsmul_eq_mul]
-    · intro j _ hj
-      rw [hsupp j hj, zero_smul]
-    · intro hi0
-      rw [Finsupp.notMem_support_iff.mp hi0, zero_smul]
-  rw [hsum] at hwt
+  have hsingle : d = Finsupp.single i₀ (d i₀) :=
+    Finsupp.support_subset_singleton.mp fun j hj ↦ by
+      rw [Finset.mem_singleton]
+      by_contra hne
+      exact Finsupp.mem_support_iff.mp hj (hsupp j hne)
+  rw [hsingle, Finsupp.weight_single, nsmul_eq_mul, depressedWeight_last hm] at hwt
   have hdi₀ : d i₀ = m := by
     have : (d i₀ : ℤ) = (m : ℤ) := mul_right_cancel₀ (by omega) hwt
     omega
@@ -187,9 +185,13 @@ private theorem eval_single_one_depressedDiscr_eq_discr (R : Type*) [CommRing R]
   rw [coeff_add, coeff_X_pow, coeff_X]
   by_cases hj : j = ⟨m - 3, by omega⟩
   · subst hj
-    simp [show m - 2 - (m - 3) = 1 by omega, show 1 ≠ m by omega]
+    have hsub : m - 2 - (m - 3) = 1 := by omega
+    have hne : 1 ≠ m := by omega
+    simp [hsub, hne]
   · have hj' : (j : ℕ) ≠ m - 3 := fun h ↦ hj (Fin.ext h)
-    simp [hj, show m - 2 - (j : ℕ) ≠ m by omega, show 1 ≠ m - 2 - (j : ℕ) by omega]
+    have hne_m : m - 2 - (j : ℕ) ≠ m := by omega
+    have hne_one : 1 ≠ m - 2 - (j : ℕ) := by omega
+    simp [hj, hne_m, hne_one]
 
 /-- Extract the coefficient of `aₘ₋₁ ^ m` in `depressedDiscr R m` by evaluating at
 `Pi.single i₀ 1` (corresponding to `X ^ m + X`). -/
@@ -237,8 +239,9 @@ private theorem isUnit_leadingCoeff_optionSubtypeNeEquiv_depressedDiscr (A : Typ
       Nat.cast_sub (by omega), hmA, Nat.cast_one, zero_sub, ← pow_add]
     exact (isUnit_one.neg.pow _).map MvPolynomial.C
   have hle : (e (depressedDiscr A m)).natDegree ≤ m := by
-    rw [MvPolynomial.natDegree_optionSubtypeNeEquiv, MvPolynomial.degreeOf_eq_sup,
-      Finset.sup_le_iff]
+    dsimp only [e]
+    rw [MvPolynomial.optionSubtypeNeEquiv, AlgEquiv.trans_apply, MvPolynomial.renameEquiv_apply,
+      ← MvPolynomial.degreeOf_eq_natDegree, MvPolynomial.degreeOf_eq_sup, Finset.sup_le_iff]
     exact fun d hd ↦ depressedDiscr_support_le hm hd
   have hdeg : (e (depressedDiscr A m)).natDegree = m :=
     natDegree_eq_of_le_of_coeff_ne_zero hle hunit.ne_zero
@@ -295,9 +298,10 @@ private theorem depressedDiscr_prime_of_isUnit [IsDomain R] (h2 : (2 : R) ≠ 0)
   have hεψ : ε.comp ψ = AlgHom.id R _ := by
     refine MvPolynomial.algHom_ext fun j ↦ ?_
     have hc : ε c = 0 := by
+      have hne : m - 1 ≠ m := by omega
+      have hnot : ¬m - 1 + 2 ≤ m := by omega
       simp only [c, ε, map_mul, MvPolynomial.aeval_C, MvPolynomial.aeval_X, coeff_genericDepressed,
-        ite_eq_right (show m - 1 ≠ m by omega), dite_eq_right (show ¬m - 1 + 2 ≤ m by omega),
-        mul_zero]
+        ite_eq_right hne, dite_eq_right hnot, mul_zero]
     have hTε : T.map ε.toRingHom = genericDepressed R m := by
       rw [map_taylor, hεF, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, map_neg, hc, neg_zero,
         taylor_zero]
@@ -336,18 +340,20 @@ theorem depressedDiscr_prime [IsDomain R] (h2 : (2 : R) ≠ 0) (hmR : (m : R) �
       rw [map_depressedDiscr]
       exact isLeftRegular_depressedDiscr_of_natCast_eq_zero hm3 hm_mod
     have hm_reg : IsLeftRegular (m : R) := (IsRegular.of_ne_zero hmR).left
-    refine ⟨fun h0 ↦ hprime_Rm.ne_zero (by rw [← hmap_eq, h0, map_zero]),
-      fun hu ↦ hprime_Rm.not_isUnit (hmap_eq ▸ hu.map _), ?_⟩
-    intro f g hfg
-    have hfg_Rm : depressedDiscr Rm m ∣
-        MvPolynomial.map (algebraMap R Rm) f * MvPolynomial.map (algebraMap R Rm) g := by
-      have h1 := map_dvd (MvPolynomial.map (σ := Fin (m - 1)) (algebraMap R Rm)) hfg
-      rwa [map_mul, hmap_eq] at h1
-    rcases hprime_Rm.dvd_or_dvd hfg_Rm with hf | hg
-    · exact Or.inl (MvPolynomial.dvd_of_map_localization_away (m : R) hm_reg hreg_mod
-        (hmap_eq ▸ hf))
-    · exact Or.inr (MvPolynomial.dvd_of_map_localization_away (m : R) hm_reg hreg_mod
-        (hmap_eq ▸ hg))
+    have hne0 : depressedDiscr R m ≠ 0 :=
+      fun h0 ↦ hprime_Rm.ne_zero (by rw [← hmap_eq, h0, map_zero])
+    have hspan : Ideal.span {depressedDiscr R m} =
+        (Ideal.span {depressedDiscr Rm m}).comap (MvPolynomial.map (algebraMap R Rm)) := by
+      ext x
+      rw [Ideal.mem_comap, Ideal.mem_span_singleton, Ideal.mem_span_singleton, ← hmap_eq]
+      exact ⟨fun h ↦ map_dvd (MvPolynomial.map (algebraMap R Rm)) h,
+        fun h ↦ MvPolynomial.dvd_of_map_localization_away (m : R) hm_reg hreg_mod h⟩
+    have : (Ideal.span {depressedDiscr Rm m}).IsPrime :=
+      (Ideal.span_singleton_prime hprime_Rm.ne_zero).mpr hprime_Rm
+    have hprime_span : (Ideal.span {depressedDiscr R m}).IsPrime := by
+      rw [hspan]
+      exact Ideal.comap_isPrime _ _
+    exact (Ideal.span_singleton_prime hne0).mp hprime_span
 
 /-- Over any integral domain `R` in which `(2 : R) ≠ 0` and `(3 : R) ≠ 0`, the negative of the
 cubic depressed discriminant, `4 * X 0 ^ 3 + 27 * X 1 ^ 2` (the short Weierstrass discriminant
