@@ -10,7 +10,7 @@ public import TauCeti.GroupTheory.Commensurable
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ProjGenLinGroup.Determinant
 
 /-!
-# In even dimension, `PSL(n, ℝ)` has index two in `PGL(n, ℝ)`
+# In even positive dimension, `PSL(n, ℝ)` has index two in `PGL(n, ℝ)`
 
 In even dimension the sign of the determinant is well defined on `PGL(n, ℝ)`, since scaling a
 matrix by `λ` multiplies its determinant by the positive number `λⁿ`. This is Mathlib's

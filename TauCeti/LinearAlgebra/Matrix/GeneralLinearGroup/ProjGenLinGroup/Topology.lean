@@ -26,14 +26,16 @@ in `GL n R`.
 
 Over `ℝ` in even dimension this map is an open embedding: a homeomorphism of `PSL(n, ℝ)` onto the
 open subgroup of `PGL(n, ℝ)` of classes of positive determinant, which is the kernel of the sign of
-the determinant and has index two (`Matrix.ProjGenLinGroup.ker_signDet`). The inverse is induced by
+the determinant (`Matrix.ProjGenLinGroup.ker_signDet`) and, for `n` nonempty, has index two
+(`Matrix.ProjGenLinGroup.index_range_toPGL`). The inverse is induced by
 `g ↦ |det g|^(-1/n) g`, continuous on the matrices of positive determinant. In dimension two this
 compares discrete subgroups of the orientation-preserving isometry group `PSL(2, ℝ)` of the
 hyperbolic plane with discrete subgroups of the full isometry group `PGL(2, ℝ)`. In particular, for
 a subgroup `Γ` of `PSL(n, ℝ)`, if the commensurator of `Γ` in `PSL(n, ℝ)` is discrete, or contains
 `Γ` with finite index, then the same holds for the commensurator in `PGL(n, ℝ)` of the image of
 `Γ`: the latter meets the image of `PSL(n, ℝ)` in the image of the former
-(`Subgroup.Commensurable.map_commensurator`), an open subgroup of index two.
+(`Subgroup.Commensurable.map_commensurator`), a subgroup of the latter that is open and has index
+at most two in it.
 
 ## Main definitions
 
