@@ -112,24 +112,24 @@ theorem truncatedVonMangoldt_eq_evenVonMangoldt_of_natAbs_le (hn : n ≠ 0)
     (Nat.cast_le.2 (Nat.le_of_dvd (Int.natAbs_pos.2 hn) (Nat.dvd_of_mem_divisors hd))).trans hz,
     hsum, neg_neg, evenVonMangoldt_def]
 
-/-- At a prime `p ≤ z`, the truncated von Mangoldt function is `log p`. -/
-theorem truncatedVonMangoldt_apply_prime_eq_log_of_le {p : ℕ} (hp : p.Prime) (hz : (p : ℝ) ≤ z) :
-    truncatedVonMangoldt z p = Real.log p := by
-  rw [truncatedVonMangoldt_eq_evenVonMangoldt_of_natAbs_le (Int.natCast_ne_zero.2 hp.ne_zero)
-    (by rwa [Int.natAbs_natCast]), evenVonMangoldt_natCast, vonMangoldt_apply_prime hp]
+/-- At a prime `p` of `ℤ` with `|p| ≤ z`, the truncated von Mangoldt function is `log |p|`,
+written `Real.log p`. -/
+theorem truncatedVonMangoldt_apply_prime_eq_log_of_le {p : ℤ} (hp : Prime p)
+    (hz : (p.natAbs : ℝ) ≤ z) : truncatedVonMangoldt z p = Real.log p := by
+  rw [truncatedVonMangoldt_eq_evenVonMangoldt_of_natAbs_le hp.ne_zero hz,
+    evenVonMangoldt_apply_prime hp]
 
-/-- At a prime `p > z`, the only divisor of `p` up to `z` is `1`, so the truncated von Mangoldt
-function vanishes. -/
-theorem truncatedVonMangoldt_apply_prime_eq_zero_of_lt {p : ℕ} (hp : p.Prime) (hz : z < p) :
-    truncatedVonMangoldt z p = 0 := by
-  rw [truncatedVonMangoldt_def, neg_eq_zero]
+/-- At a prime `p` of `ℤ` with `|p| > z`, the only divisor of `|p|` up to `z` is `1`, so the
+truncated von Mangoldt function vanishes. -/
+theorem truncatedVonMangoldt_apply_prime_eq_zero_of_lt {p : ℤ} (hp : Prime p)
+    (hz : z < p.natAbs) : truncatedVonMangoldt z p = 0 := by
+  rw [truncatedVonMangoldt_eq_neg_sum_divisors z hp.ne_zero, neg_eq_zero]
   refine sum_eq_zero fun d hd ↦ ?_
-  obtain ⟨hd, hdvd⟩ := mem_filter.1 hd
-  have hdp : d < p := Nat.cast_lt.1 (((Nat.le_floor_iff' (mem_Ioc.1 hd).1.ne').1
-    (mem_Ioc.1 hd).2).trans_lt hz)
-  obtain rfl : d = 1 := ((Nat.dvd_prime hp).1 (Int.natCast_dvd_natCast.1 hdvd)).resolve_right
-    hdp.ne
-  simp
+  obtain ⟨hd, hdz⟩ := mem_filter.1 hd
+  rcases (Nat.dvd_prime (Int.prime_iff_natAbs_prime.1 hp)).1 (Nat.dvd_of_mem_divisors hd) with
+    rfl | rfl
+  · simp
+  · exact absurd hdz (not_le.2 hz)
 
 /-- The truncation error `E_z(n) = Λ(|n|) - Λ_z(n)` of the von Mangoldt function. -/
 noncomputable def vonMangoldtTruncationError (z : ℝ) (n : ℤ) : ℝ :=
@@ -172,13 +172,26 @@ theorem vonMangoldtTruncationError_eq_zero_of_natAbs_le (hn : n ≠ 0) (hz : (n.
   rw [vonMangoldtTruncationError_def, truncatedVonMangoldt_eq_evenVonMangoldt_of_natAbs_le hn hz,
     sub_self]
 
-/-- At a prime `p > z` the truncation error is `log p`. -/
-theorem vonMangoldtTruncationError_apply_prime_eq_log_of_lt {p : ℕ} (hp : p.Prime) (hz : z < p) :
-    vonMangoldtTruncationError z p = Real.log p := by
+/-- At a prime `p` of `ℤ` with `|p| > z`, the truncation error is `log |p|`, written
+`Real.log p`. -/
+theorem vonMangoldtTruncationError_apply_prime_eq_log_of_lt {p : ℤ} (hp : Prime p)
+    (hz : z < p.natAbs) : vonMangoldtTruncationError z p = Real.log p := by
   rw [vonMangoldtTruncationError_def, truncatedVonMangoldt_apply_prime_eq_zero_of_lt hp hz,
-    sub_zero, evenVonMangoldt_natCast, vonMangoldt_apply_prime hp]
+    sub_zero, evenVonMangoldt_apply_prime hp]
 
 /-! ### Examples -/
+
+/-- The prime evaluations at a natural prime `p ≤ z`. -/
+example {p : ℕ} (hp : p.Prime) (hz : (p : ℝ) ≤ z) : truncatedVonMangoldt z p = Real.log p := by
+  simpa using truncatedVonMangoldt_apply_prime_eq_log_of_le (Nat.prime_iff_prime_int.1 hp)
+    (by simpa using hz)
+
+/-- The prime evaluations at a natural prime `p > z`. -/
+example {p : ℕ} (hp : p.Prime) (hz : z < p) :
+    truncatedVonMangoldt z p = 0 ∧ vonMangoldtTruncationError z p = Real.log p := by
+  have hp' := Nat.prime_iff_prime_int.1 hp
+  exact ⟨truncatedVonMangoldt_apply_prime_eq_zero_of_lt hp' (by simpa using hz),
+    by simpa using vonMangoldtTruncationError_apply_prime_eq_log_of_lt hp' (by simpa using hz)⟩
 
 example (n : ℤ) : truncatedVonMangoldt 1 n = 0 :=
   truncatedVonMangoldt_eq_zero_of_lt_two one_lt_two n
