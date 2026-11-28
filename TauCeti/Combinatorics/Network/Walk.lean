@@ -66,6 +66,8 @@ capacity; for residual capacities these are augmenting walks.
   cycles traverse every arrow at most once.
 * `TauCeti.ArrowWalk.exists_isPath_arrows_subset`: every walk contains a path with the same
   endpoints.
+* `TauCeti.ArrowWalk.exists_eq_comp_comp_of_not_isPath`: a walk that is not a path runs around a
+  closed walk of positive length.
 * `TauCeti.ArrowWalk.exists_isPath_interior_notMem`: every walk from a vertex of `A` to a vertex
   of `B` contains a path from a vertex of `A` to a vertex of `B` with no other vertex in `A` or
   `B`, traversing only arrows of the walk.
@@ -366,6 +368,12 @@ theorem IsPath.of_cons {s t x : V} {p : ArrowWalk Q s t} {e : Q t x} (hp : (p.co
   rw [isPath_def, vertices_cons, List.concat_eq_append] at hp
   exact hp.sublist (List.sublist_append_left _ _)
 
+/-- A path followed by an arrow to a vertex that the path does not visit is a path. -/
+theorem IsPath.cons {s t x : V} {p : ArrowWalk Q s t} (hp : p.IsPath) (hx : x ∉ p.vertices)
+    (e : Q t x) : (p.cons e).IsPath := by
+  rw [isPath_def, vertices_cons]
+  exact hp.concat hx
+
 /-- The last vertex of a path is not a vertex of the walk before its last arrow. -/
 theorem IsPath.target_notMem_vertices_of_cons {s t x : V} {p : ArrowWalk Q s t} {e : Q t x}
     (hp : (p.cons e).IsPath) : x ∉ p.vertices := by
@@ -468,12 +476,26 @@ theorem exists_isPath_arrows_subset {s t : V} (p : ArrowWalk Q s t) :
       rw [arrows_comp]
       exact List.mem_append_left _ ha
     · -- `y` is new: extend `p'` by `e`
-      have hv : (p'.cons e).vertices = p'.vertices.concat y :=
-        @Quiver.Path.vertices_cons V ⟨Q⟩ _ _ _ p' e
-      refine ⟨p'.cons e, by rw [isPath_def, hv]; exact hp'.concat hy, ?_⟩
+      refine ⟨p'.cons e, hp'.cons hy e, ?_⟩
       rw [arrows_cons]
       exact List.append_subset.2
         ⟨List.subset_append_of_subset_left _ hsub, List.subset_append_right _ _⟩
+
+/-- A walk that is not a path runs around a closed walk of positive length: it is
+`p₁.comp (c.comp p₂)` for some closed walk `c` with `0 < c.length`. -/
+theorem exists_eq_comp_comp_of_not_isPath {s t : V} {p : ArrowWalk Q s t} (hp : ¬p.IsPath) :
+    ∃ (v : V) (p₁ : ArrowWalk Q s v) (c : ArrowWalk Q v v) (p₂ : ArrowWalk Q v t),
+      0 < c.length ∧ p = p₁.comp (c.comp p₂) := by
+  induction p with
+  | nil => exact absurd (isPath_nil s) hp
+  | @cons x y p e ih =>
+    by_cases hpath : IsPath (Q := Q) p
+    · -- `p` is a path, so the last arrow returns to a vertex `y` of `p`
+      have hy : y ∈ vertices (Q := Q) p := by_contra fun hy ↦ hp (hpath.cons hy e)
+      obtain ⟨p₁, p₂, rfl⟩ := @Quiver.Path.exists_eq_comp_of_mem_vertices V ⟨Q⟩ _ _ p _ hy
+      exact ⟨y, p₁, cons (Q := Q) p₂ e, nil y, by simp, by simp [comp]⟩
+    · obtain ⟨v, p₁, c, p₂, hc, rfl⟩ := ih hpath
+      exact ⟨v, p₁, c, cons (Q := Q) p₂ e, hc, by simp [comp]⟩
 
 /-- A walk traversing only arrows of another walk from the same vertex visits only vertices of that
 walk. -/
