@@ -25,7 +25,8 @@ The series calculation for the probability-generating function follows the calcu
 its value at `exp t`. The same series, together with the factorial-moment series
 `∑ k, exp (-r) r ^ k / k! * k.descFactorial n = r ^ n`, is also stated as a `HasSum`, the form in
 which Poisson mixtures consume it. The moment formulas are then obtained by differentiating the
-moment-generating function.
+moment-generating function. The results in `ProbabilityTheory.HasLaw` transfer the native
+probability-generating function and the cast law's moment and transform theory to random variables.
 -/
 
 public section
@@ -205,13 +206,21 @@ theorem variance_id_map_cast_poissonMeasure (r : ℝ≥0) :
     integral_id_map_cast_poissonMeasure]
   ring
 
-/-- Every nonnegative real power of the native Poisson count is integrable. -/
-theorem integrable_natCast_rpow_poissonMeasure (r : ℝ≥0) {p : ℝ} (hp : 0 ≤ p) :
+/-- Every real power of the native Poisson count is integrable. For negative exponents this uses
+Lean's totalized `Real.rpow`, which assigns zero to a zero base. -/
+theorem integrable_natCast_rpow_poissonMeasure (r : ℝ≥0) (p : ℝ) :
     Integrable (fun n : ℕ ↦ (n : ℝ) ^ p) (poissonMeasure r) := by
-  have h := integrable_rpow_of_mem_interior_integrableExpSet
-    (X := fun x : ℝ ↦ x) (μ := Po(ℝ, r)) (by simp) hp
-  simpa only [Function.comp_def] using
-    (integrable_map_measure (f := (Nat.cast : ℕ → ℝ)) (by fun_prop) (by fun_prop)).1 h
+  rcases le_total 0 p with hp | hp
+  · have h := integrable_rpow_of_mem_interior_integrableExpSet
+      (X := fun x : ℝ ↦ x) (μ := Po(ℝ, r)) (by simp) hp
+    simpa only [Function.comp_def] using
+      (integrable_map_measure (f := (Nat.cast : ℕ → ℝ)) (by fun_prop) (by fun_prop)).1 h
+  · refine (integrable_const (1 : ℝ)).mono
+      (measurable_of_countable _).aestronglyMeasurable (ae_of_all _ fun n ↦ ?_)
+    rw [Real.norm_rpow_of_nonneg (Nat.cast_nonneg n), norm_one]
+    rcases n.eq_zero_or_pos with rfl | hn
+    · simpa only [Nat.cast_zero, norm_zero] using Real.zero_rpow_le_one p
+    · exact Real.rpow_le_one_of_one_le_of_nonpos (by exact_mod_cast hn) hp
 
 /-- The mean of the native Poisson count is its rate. -/
 @[simp]
@@ -244,6 +253,59 @@ theorem variance_of_hasLaw_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace
 end TauCeti.Probability
 
 namespace ProbabilityTheory.HasLaw
+
+open MeasureTheory TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} {r : ℝ≥0}
+
+/-- The probability-generating function of a Poisson random variable. -/
+theorem pgf_poissonMeasure {N : Ω → ℕ} (hN : HasLaw N (poissonMeasure r) P) (t : ℝ) :
+    pgf N P t = Real.exp ((r : ℝ) * (t - 1)) :=
+  (TauCeti.Probability.HasLaw.pgf_eq hN t).trans
+    (TauCeti.Probability.pgf_poissonMeasure r t)
+
+/-- Every real exponential moment of a Poisson random variable is integrable. -/
+theorem integrable_exp_mul_map_cast_poissonMeasure
+    (hX : HasLaw X Po(ℝ, r) P) (t : ℝ) :
+    Integrable (fun ω ↦ Real.exp (t * X ω)) P :=
+  hX.integrable_fun_comp (integrable_exp_mul_id_map_cast_poissonMeasure r t)
+
+/-- The exact exponential-integrability domain of a Poisson random variable is all of `ℝ`. -/
+theorem integrableExpSet_map_cast_poissonMeasure (hX : HasLaw X Po(ℝ, r) P) :
+    integrableExpSet X P = Set.univ := by
+  ext t
+  simpa [integrableExpSet] using hX.integrable_exp_mul_map_cast_poissonMeasure t
+
+/-- Every real power of a Poisson random variable is integrable. For a negative exponent this uses
+Lean's totalized `Real.rpow`, so the integrand is zero wherever the random variable is zero. -/
+theorem integrable_rpow_map_cast_poissonMeasure (hX : HasLaw X Po(ℝ, r) P) (p : ℝ) :
+    Integrable (fun ω ↦ X ω ^ p) P := by
+  apply hX.integrable_fun_comp (f := fun x : ℝ ↦ x ^ p)
+  apply (integrable_map_measure (f := (Nat.cast : ℕ → ℝ)) (by fun_prop) (by fun_prop)).2
+  simpa only [Function.comp_def] using integrable_natCast_rpow_poissonMeasure r p
+
+/-- A Poisson random variable belongs to every finite `Lᵖ` space. -/
+theorem memLp_map_cast_poissonMeasure (hX : HasLaw X Po(ℝ, r) P) (p : ℝ≥0) :
+    MemLp X p P :=
+  hX.memLp (memLp_id_map_cast_poissonMeasure r p)
+
+/-- The second raw moment of a Poisson random variable is `r² + r`. -/
+theorem integral_sq_map_cast_poissonMeasure (hX : HasLaw X Po(ℝ, r) P) :
+    ∫ ω, X ω ^ 2 ∂P = (r : ℝ) ^ 2 + r := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ x ^ 2), hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_sq_map_cast_poissonMeasure]
+
+/-- The moment-generating function of a Poisson random variable. -/
+theorem mgf_map_cast_poissonMeasure (hX : HasLaw X Po(ℝ, r) P) (t : ℝ) :
+    mgf X P t = Real.exp ((r : ℝ) * (Real.exp t - 1)) := by
+  rw [← mgf_id_map hX.aemeasurable, hX.map_eq]
+  exact congrFun (TauCeti.Probability.mgf_id_map_cast_poissonMeasure r) t
+
+/-- The cumulant-generating function of a Poisson random variable. -/
+theorem cgf_map_cast_poissonMeasure (hX : HasLaw X Po(ℝ, r) P) (t : ℝ) :
+    cgf X P t = (r : ℝ) * (Real.exp t - 1) := by
+  rw [cgf, ← mgf_id_map hX.aemeasurable, hX.map_eq]
+  exact congrFun (TauCeti.Probability.cgf_id_map_cast_poissonMeasure r) t
 
 /-- A real random variable with Poisson law has centered second moment equal to the rate. -/
 theorem integral_sub_sq_map_cast_poissonMeasure {Ω : Type*} [MeasurableSpace Ω]

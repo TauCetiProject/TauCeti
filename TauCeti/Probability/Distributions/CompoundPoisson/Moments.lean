@@ -69,9 +69,8 @@ theorem memLp_id_compoundPoissonMeasure {p : ℝ≥0∞} (hp_top : p ≠ ∞)
       (μ.memLp_id_convolutionPower hμ n).integrable_norm_rpow'
   · have hmoment : 0 ≤ ∫ x, ‖x‖ ^ p.toReal ∂μ :=
       integral_nonneg fun _ ↦ Real.rpow_nonneg (norm_nonneg _) _
-    apply (((integrable_natCast_rpow_poissonMeasure r (p := p.toReal)
-      hp_real.le).add (by simpa using
-        integrable_natCast_rpow_poissonMeasure r (p := 1) zero_le_one)).mul_const
+    apply (((integrable_natCast_rpow_poissonMeasure r p.toReal).add
+      (by simpa using (integrable_natCast_rpow_poissonMeasure r (1 : ℝ)))).mul_const
       (∫ x, ‖x‖ ^ p.toReal ∂μ)).mono' (by fun_prop)
     filter_upwards [] with n
     rw [Real.norm_of_nonneg (integral_nonneg fun _ ↦ Real.rpow_nonneg (norm_nonneg _) _)]
