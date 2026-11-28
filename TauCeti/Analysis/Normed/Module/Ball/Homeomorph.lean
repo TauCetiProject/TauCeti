@@ -318,6 +318,13 @@ theorem coe_closedBallHomeomorphOfFinrankEq_apply
       (ContinuousLinearEquiv.ofFinrankEq hEF).unitBallHomeomorph x :=
   (rfl)
 
+/-- `TauCeti.closedBallHomeomorphOfFinrankEq` preserves the unit sphere. -/
+theorem norm_closedBallHomeomorphOfFinrankEq_eq_one_iff
+    (hEF : Module.finrank ℝ E = Module.finrank ℝ F) (x : closedBall (0 : E) 1) :
+    ‖(closedBallHomeomorphOfFinrankEq hEF x : F)‖ = 1 ↔ ‖(x : E)‖ = 1 := by
+  rw [coe_closedBallHomeomorphOfFinrankEq_apply,
+    ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff]
+
 omit [FiniteDimensional ℝ E] in
 /-- **Convex bodies are balls.** A compact convex set with nonempty interior in a real normed space
 (which is then finite-dimensional, by Riesz's theorem) is homeomorphic to the closed unit ball of

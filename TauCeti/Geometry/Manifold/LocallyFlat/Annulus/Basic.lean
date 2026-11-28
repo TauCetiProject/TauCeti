@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Normed.Module.FilledHull
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 import Mathlib.Analysis.SpecialFunctions.Exp
 import TauCeti.Analysis.Normed.Module.Ball
-import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Equiv
 
 /-!
@@ -39,7 +38,8 @@ conjecture itself, `TauCeti.AnnulusConjecture n`, is recorded as a dimension-ind
 the manner of `TauCeti.BrownBicollaring`, with the same indexing: `n` is the dimension of the
 spheres, which sit in `EuclideanSpace ℝ (Fin (n + 1))`, and local flatness is read in the split
 model `EuclideanSpace ℝ (Fin n) × ℝ`. Kirby's theorem is the case `n + 1 ≥ 5`, and Quinn's the case
-`n + 1 = 4`.
+`n + 1 = 4`. The low-dimensional cases `n = 0` and `n = 1` are proved in
+`TauCeti.Geometry.Manifold.LocallyFlat.Annulus.LowDimension`.
 
 The round case is proved here, which shows that the hypotheses of the conjecture can hold and that
 its conclusion is attained: scaling the unit sphere by `c ≠ 0` is locally flat
@@ -53,12 +53,6 @@ an embedding with Lipschitz inverse. For concentric spheres the annulus is `{r �
 `TauCeti.range_smul_coe_sphere_subset_filledHull_sdiff` in the filled-hull API. These round-sphere
 results hold in any real seminormed space: the seminorm need not separate points.
 
-In dimension zero the conjecture holds (`TauCeti.annulusConjecture_zero`). On a line every pair of
-distinct points is a round sphere, so any two maps of the unit sphere `{±u}` of a
-one-dimensional real normed space, the inner one injective, with nested images, cobound an annulus
-(`TauCeti.coboundAnnulus_of_finrank_eq_one`): a pair of closed intervals. Local flatness enters only
-through the injectivity of the inner sphere there.
-
 ## Main definitions
 
 * `TauCeti.CoboundAnnulus`: two maps cobound an annulus.
@@ -66,13 +60,19 @@ through the injectivity of the inner sphere there.
 
 ## Main results
 
+* `TauCeti.coboundAnnulus_iff`, `TauCeti.coboundAnnulus_iff_exists_homeomorph`,
+  `TauCeti.coboundAnnulus_congr`, `TauCeti.annulusConjecture_iff`:
+  unfolding, homeomorphism characterization, and congruence lemmas for `TauCeti.CoboundAnnulus` and
+  `TauCeti.AnnulusConjecture`.
+* `TauCeti.CoboundAnnulus.comp_homeomorph`, `TauCeti.coboundAnnulus_comp_homeomorph_iff`:
+  cobounding an annulus is invariant under precomposition by a homeomorphism of the domain.
+* `TauCeti.CoboundAnnulus.homeomorph_comp`, `TauCeti.coboundAnnulus_homeomorph_comp_iff`:
+  cobounding an annulus is invariant under postcomposition by a boundedness-preserving
+  homeomorphism of the ambient space.
 * `TauCeti.isLocallyFlat_smul_coe_sphere`: a rescaled unit sphere is locally flat, with
   one-dimensional complementary model.
 * `TauCeti.coboundAnnulus_of_range_eq_sphere`: two nested round spheres cobound an annulus.
 * `TauCeti.coboundAnnulus_smul_coe_sphere`: two concentric round spheres cobound an annulus.
-* `TauCeti.coboundAnnulus_of_finrank_eq_one`: on a line, two nested pairs of points cobound an
-  annulus.
-* `TauCeti.annulusConjecture_zero`: the annulus conjecture for `0`-spheres.
 
 ## References
 
@@ -106,6 +106,83 @@ def CoboundAnnulus (f g : X → E) : Prop :=
     range h = filledHull (range f) \ (filledHull (range g) \ range g) ∧
     h '' (univ ×ˢ {0}) = range f ∧ h '' (univ ×ˢ {1}) = range g
 
+/-- `TauCeti.CoboundAnnulus` spelled out: there is an embedding `X × [0, 1] → E` onto
+`filledHull (range f) \ (filledHull (range g) \ range g)` carrying `X × {0}` onto `range f` and
+`X × {1}` onto `range g`. Because the module system does not expose the body of
+`TauCeti.CoboundAnnulus`, downstream modules introduce and eliminate it via this lemma. -/
+theorem coboundAnnulus_iff {f g : X → E} :
+    CoboundAnnulus f g ↔
+      ∃ h : X × I → E, IsEmbedding h ∧
+        range h = filledHull (range f) \ (filledHull (range g) \ range g) ∧
+        h '' (univ ×ˢ {0}) = range f ∧ h '' (univ ×ˢ {1}) = range g :=
+  Iff.rfl
+
+/-- `TauCeti.CoboundAnnulus` in terms of a homeomorphism from `X × [0, 1]` onto the annular region
+`filledHull (range f) \ (filledHull (range g) \ range g)` carrying `X × {0}` onto `range f` and
+`X × {1}` onto `range g`. -/
+theorem coboundAnnulus_iff_exists_homeomorph {f g : X → E} :
+    CoboundAnnulus f g ↔
+      ∃ Φ : X × I ≃ₜ ↥(filledHull (range f) \ (filledHull (range g) \ range g)),
+        (fun p => (Φ p : E)) '' (univ ×ˢ {0}) = range f ∧
+        (fun p => (Φ p : E)) '' (univ ×ˢ {1}) = range g := by
+  rw [coboundAnnulus_iff]
+  refine ⟨?_, ?_⟩
+  · rintro ⟨h, hemb, hrange, h0, h1⟩
+    exact ⟨hemb.toHomeomorph.trans (Homeomorph.setCongr hrange), h0, h1⟩
+  · rintro ⟨Φ, h0, h1⟩
+    refine ⟨Subtype.val ∘ Φ, IsEmbedding.subtypeVal.comp Φ.isEmbedding, ?_, h0, h1⟩
+    rw [Φ.surjective.range_comp, Subtype.range_coe]
+
+/-- Cobounding an annulus depends on the two maps only through their ranges. -/
+theorem coboundAnnulus_congr {f f' g g' : X → E} (hf : range f = range f')
+    (hg : range g = range g') : CoboundAnnulus f g ↔ CoboundAnnulus f' g' := by
+  simp only [coboundAnnulus_iff, hf, hg]
+
+/-- Cobounding an annulus is preserved by precomposing both maps with a homeomorphism of the
+domain. -/
+theorem CoboundAnnulus.comp_homeomorph {Y : Type*} [TopologicalSpace Y] {f g : X → E}
+    (h : CoboundAnnulus f g) (e : Y ≃ₜ X) : CoboundAnnulus (f ∘ e) (g ∘ e) := by
+  rw [coboundAnnulus_iff] at h ⊢
+  obtain ⟨φ, hφ, hrange, h0, h1⟩ := h
+  let ψ : Y × I ≃ₜ X × I := e.prodCongr (Homeomorph.refl I)
+  have himg (t : I) : ψ '' (univ ×ˢ {t}) = univ ×ˢ {t} := by
+    rw [Homeomorph.coe_prodCongr, Set.prodMap_image_prod, Set.image_univ, e.surjective.range_eq]
+    simp
+  refine ⟨φ ∘ ψ, hφ.comp ψ.isEmbedding, ?_, ?_, ?_⟩
+  · rw [ψ.surjective.range_comp, e.surjective.range_comp, e.surjective.range_comp, hrange]
+  · rw [image_comp, himg, h0, e.surjective.range_comp]
+  · rw [image_comp, himg, h1, e.surjective.range_comp]
+
+/-- Cobounding an annulus is invariant under precomposition by a homeomorphism of the domain. -/
+theorem coboundAnnulus_comp_homeomorph_iff {Y : Type*} [TopologicalSpace Y] {f g : X → E}
+    (e : Y ≃ₜ X) : CoboundAnnulus (f ∘ e) (g ∘ e) ↔ CoboundAnnulus f g := by
+  refine ⟨fun h => ?_, fun h => h.comp_homeomorph e⟩
+  simpa [Function.comp_assoc] using h.comp_homeomorph e.symm
+
+/-- Cobounding an annulus is preserved by postcomposing both maps with a homeomorphism of the
+ambient space that preserves boundedness. -/
+theorem CoboundAnnulus.homeomorph_comp {F : Type*} [TopologicalSpace F] [Bornology F]
+    {f g : X → E} (h : CoboundAnnulus f g) (e : E ≃ₜ F)
+    (he : ∀ s : Set E, IsBounded (e '' s) ↔ IsBounded s) :
+    CoboundAnnulus (e ∘ f) (e ∘ g) := by
+  rw [coboundAnnulus_iff] at h ⊢
+  obtain ⟨φ, hφ, hrange, h0, h1⟩ := h
+  refine ⟨e ∘ φ, e.isEmbedding.comp hφ, ?_, ?_, ?_⟩
+  · rw [range_comp, hrange, Set.image_sdiff e.injective, e.image_filledHull he,
+      e.image_filledHull_sdiff he, range_comp, range_comp]
+  · rw [image_comp, h0, range_comp]
+  · rw [image_comp, h1, range_comp]
+
+/-- Cobounding an annulus is invariant under postcomposition by a boundedness-preserving
+homeomorphism of the ambient space. -/
+theorem coboundAnnulus_homeomorph_comp_iff {F : Type*} [TopologicalSpace F] [Bornology F]
+    {f g : X → E} (e : E ≃ₜ F) (he : ∀ s : Set E, IsBounded (e '' s) ↔ IsBounded s) :
+    CoboundAnnulus (e ∘ f) (e ∘ g) ↔ CoboundAnnulus f g := by
+  refine ⟨fun h => ?_, fun h => h.homeomorph_comp e he⟩
+  have he' : ∀ s : Set F, IsBounded (e.symm '' s) ↔ IsBounded s := fun s => by
+    simpa [image_image] using (he (e.symm '' s)).symm
+  simpa [← Function.comp_assoc] using h.homeomorph_comp e.symm he'
+
 end CoboundAnnulus
 
 /-- **The annulus conjecture for `n`-spheres in `ℝⁿ⁺¹`:** if `f` and `g` are locally flat
@@ -119,6 +196,17 @@ def AnnulusConjecture (n : ℕ) : Prop :=
   ∀ f g : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 → EuclideanSpace ℝ (Fin (n + 1)),
     IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ f → IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ g →
       range g ⊆ filledHull (range f) \ range f → CoboundAnnulus f g
+
+/-- `TauCeti.AnnulusConjecture` spelled out: every pair of nested locally flat `n`-spheres in
+`ℝⁿ⁺¹` cobound an annulus. Because the module system does not expose the body of
+`TauCeti.AnnulusConjecture`, downstream modules introduce and eliminate it via this lemma. -/
+theorem annulusConjecture_iff {n : ℕ} :
+    AnnulusConjecture n ↔
+      ∀ f g : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1 → EuclideanSpace ℝ (Fin (n + 1)),
+        IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ f →
+          IsLocallyFlat (EuclideanSpace ℝ (Fin n)) ℝ g →
+          range g ⊆ filledHull (range f) \ range f → CoboundAnnulus f g :=
+  Iff.rfl
 
 /-! ### Round spheres -/
 
@@ -314,98 +402,12 @@ theorem coboundAnnulus_of_range_eq_sphere {f g : sphere (0 : E) 1 → E}
 
 /-- **Two concentric round spheres in a real seminormed space cobound an annulus:** for
 `0 < r < R`, the spheres of radii `R` and `r` cobound the closed annulus `{x | r ≤ ‖x‖ ≤ R}`,
-parametrized by
-`(u, t) ↦ (R - (R - r) * t) • u`. -/
+parametrized by `(u, t) ↦ (R - (R - r) * t) • u`. -/
 theorem coboundAnnulus_smul_coe_sphere {r R : ℝ} (hr : 0 < r) (hrR : r < R) :
     CoboundAnnulus (fun u : sphere (0 : E) 1 => R • (u : E)) (fun u => r • (u : E)) :=
   coboundAnnulus_of_range_eq_sphere (c := 0) (c' := 0) (range_smul_coe_sphere (hr.trans hrR))
     (range_smul_coe_sphere hr) hr (by simpa using hrR)
 
 end Round
-
-/-! ### Spheres of dimension zero -/
-
-section DimensionZero
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- In a line, identified with `ℝ` by `φ`, the image of any map of the unit sphere `{±φ 1}` is a
-round sphere, of positive radius when the map is injective. -/
-private theorem exists_range_eq_sphere (hE : Module.finrank ℝ E = 1) (φ : ℝ ≃ₗᵢ[ℝ] E)
-    (f : sphere (0 : E) 1 → E) :
-    ∃ μ ρ : ℝ, 0 ≤ ρ ∧ (Function.Injective f → 0 < ρ) ∧ range f = sphere (φ μ) ρ := by
-  have hu : φ 1 ∈ sphere (0 : E) 1 := by simp
-  have hv : φ (-1) ∈ sphere (0 : E) 1 := by simp
-  have hsph : ∀ x : sphere (0 : E) 1, x = ⟨φ 1, hu⟩ ∨ x = ⟨φ (-1), hv⟩ := fun x => by
-    simpa [Subtype.ext_iff] using
-      eq_or_eq_neg_of_norm_eq_of_finrank_eq_one hE (x := (x : E)) (y := φ 1) (by simp)
-  set α := φ.symm (f ⟨φ 1, hu⟩)
-  set β := φ.symm (f ⟨φ (-1), hv⟩)
-  refine ⟨(α + β) / 2, |α - β| / 2, by positivity, fun hf => ?_, ?_⟩
-  · have hαβ : α ≠ β := fun h => by
-      have := hf (φ.symm.injective h)
-      simp only [Subtype.mk.injEq, φ.injective.eq_iff] at this
-      norm_num at this
-    exact half_pos (abs_pos.2 (sub_ne_zero.2 hαβ))
-  ext y
-  obtain ⟨s, rfl⟩ := φ.surjective y
-  have hα : f ⟨φ 1, hu⟩ = φ α := (φ.apply_symm_apply _).symm
-  have hβ : f ⟨φ (-1), hv⟩ = φ β := (φ.apply_symm_apply _).symm
-  have hmem : φ s ∈ range f ↔ s = α ∨ s = β := by
-    constructor
-    · rintro ⟨x, hx⟩
-      rcases hsph x with rfl | rfl
-      · exact .inl (φ.injective (hx.symm.trans hα))
-      · exact .inr (φ.injective (hx.symm.trans hβ))
-    · rintro (rfl | rfl)
-      · exact ⟨_, hα⟩
-      · exact ⟨_, hβ⟩
-  rw [hmem, mem_sphere, φ.dist_map, Real.dist_eq,
-    show |α - β| / 2 = |(α - β) / 2| by rw [abs_div, abs_two], abs_eq_abs]
-  constructor
-  · rintro (rfl | rfl)
-    · exact .inl (by ring)
-    · exact .inr (by ring)
-  · rintro (h | h)
-    · exact .inl (by linarith)
-    · exact .inr (by linarith)
-
-/-- **The annulus theorem on a line:** in a one-dimensional real normed space, two maps `f` and `g`
-of the unit sphere `{±u}`, with `g` injective and the image of `g` in the open region bounded by the
-image of `f`, cobound an annulus. The two pairs of points are the endpoints of nested intervals,
-and the annulus is the pair of closed intervals between them. Injectivity of `f` is not assumed: a
-map with a single value bounds no region. -/
-theorem coboundAnnulus_of_finrank_eq_one (hE : Module.finrank ℝ E = 1) {f g : sphere (0 : E) 1 → E}
-    (hg : Function.Injective g) (hfg : range g ⊆ filledHull (range f) \ range f) :
-    CoboundAnnulus f g := by
-  -- identify the line with `ℝ` isometrically
-  obtain ⟨φ⟩ := nonempty_linearIsometryEquiv_of_finrank_eq_one hE
-  obtain ⟨μ, R, hR, -, hfR⟩ := exists_range_eq_sphere hE φ f
-  obtain ⟨γ, r, -, hr, hgr⟩ := exists_range_eq_sphere hE φ g
-  have hr := hr hg
-  refine coboundAnnulus_of_range_eq_sphere hfR hgr hr ?_
-  rw [hfR, hgr, filledHull_sphere _ hR] at hfg
-  -- both points of the inner sphere lie strictly inside the outer one
-  have hlt : ∀ s, |s - γ| = r → |s - μ| < R := fun s hs => by
-    have hs' : φ s ∈ sphere (φ γ) r := by rwa [mem_sphere, φ.dist_map, Real.dist_eq]
-    obtain ⟨h₁, h₂⟩ := hfg hs'
-    rw [mem_closedBall, φ.dist_map, Real.dist_eq] at h₁
-    rw [mem_sphere, φ.dist_map, Real.dist_eq] at h₂
-    exact lt_of_le_of_ne h₁ h₂
-  have h₁ := hlt (γ + r) (by rw [add_sub_cancel_left, abs_of_pos hr])
-  have h₂ := hlt (γ - r) (by rw [sub_sub_cancel_left, abs_neg, abs_of_pos hr])
-  rw [φ.dist_map, Real.dist_eq]
-  rw [abs_lt] at h₁ h₂
-  rcases le_total γ μ with h | h
-  · rw [abs_of_nonpos (by linarith)]; linarith
-  · rw [abs_of_nonneg (by linarith)]; linarith
-
-/-- **The annulus theorem for `0`-spheres:** two nested pairs of points on the real line cobound
-an annulus, a pair of closed intervals. Local flatness enters only through the injectivity of the
-inner pair. -/
-theorem annulusConjecture_zero : AnnulusConjecture 0 := fun _ _ _ hg hfg =>
-  coboundAnnulus_of_finrank_eq_one (finrank_euclideanSpace_fin (𝕜 := ℝ)) hg.injective hfg
-
-end DimensionZero
 
 end TauCeti
