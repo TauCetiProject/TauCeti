@@ -25,6 +25,10 @@ same additive character, the product is `χ (-1) * N`. For a quadratic character
 the familiar square formula
 `gaussSum χ e ^ 2 = χ (-1) * N`.
 
+`DirichletCharacter.IsPrimitive.apply_eq_inv_gaussSum_mul_sum_erase_zero` gives the pointwise
+expansion of a primitive nonprincipal character over nonzero additive frequencies for any
+primitive additive character into a field, using Mathlib's `gaussSum_mulShift_of_isPrimitive`.
+
 The characteristic-zero specialization `gaussSumOfPrimitiveRoot χ hζ` uses the additive
 character defined by a primitive root of unity `ζ`. Its Galois action is χ⁻¹ applied to the
 cyclotomic character, so its stabilizer is the kernel of χ. This is the form needed to identify
@@ -108,6 +112,27 @@ theorem gaussSum_inv_ne_zero_of_isPrimitive
     {e : AddChar (ZMod n) R} (he : e.IsPrimitive) :
     gaussSum χ⁻¹ e ≠ 0 :=
   gaussSum_ne_zero_of_isPrimitive hχ.inv he
+
+/-- For a primitive additive character `e`, a primitive nonprincipal Dirichlet character at a
+single residue is the sum over nonzero additive frequencies weighted by the inverse character and
+divided by its Gauss sum against `e`. See Pomerance, *Remarks on the Pólya–Vinogradov inequality*,
+(7) for the complex case. -/
+theorem IsPrimitive.apply_eq_inv_gaussSum_mul_sum_erase_zero
+    {R : Type*} [Field R] {q : ℕ} [NeZero q] {χ : DirichletCharacter R q}
+    (hχ : χ.IsPrimitive) (hχ₀ : χ ≠ 1) {e : AddChar (ZMod q) R} (he : e.IsPrimitive)
+    (x : ZMod q) :
+    χ x = (gaussSum χ⁻¹ e)⁻¹ *
+      ∑ k ∈ Finset.univ.erase (0 : ZMod q), χ⁻¹ k * e (k * x) := by
+  have hτ := gaussSum_inv_ne_zero_of_isPrimitive hχ he
+  have hzero := χ⁻¹.map_zero' (mt hχ.eq_one_iff.mpr hχ₀)
+  rw [eq_inv_mul_iff_mul_eq₀ hτ]
+  calc
+    gaussSum χ⁻¹ e * χ x = gaussSum χ⁻¹ (e.mulShift x) := by
+      simpa only [inv_inv, mul_comm (χ x)] using
+        (gaussSum_mulShift_of_isPrimitive e hχ.inv x).symm
+    _ = _ := by
+      rw [gaussSum, ← Finset.sum_erase_add _ _ (Finset.mem_univ (0 : ZMod q))]
+      simp only [hzero, zero_mul, add_zero, AddChar.mulShift_apply, mul_comm x]
 
 /-- The square of the Gauss sum of a primitive quadratic Dirichlet character is its value at
 `-1` times the level. -/

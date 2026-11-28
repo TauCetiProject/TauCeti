@@ -34,6 +34,8 @@ logarithmic estimate, after summing over nonzero frequencies.
   a `ZMod (2n)` shift inside `stdAddChar`.
 * `ZMod.stdAddChar_sum_add_ite_eq_prod_pow_mul_stdAddChar`: expanding a sum of conditional `n`
   shifts inside `stdAddChar` into a product of `{±1}` powers.
+* `ZMod.norm_stdAddChar_sub_one_eq_two_mul_sin`: the exact distance to `1`, using Mathlib's
+  `Complex.norm_exp_I_mul_ofReal_sub_one`.
 * `ZMod.le_norm_stdAddChar_sub_one`: a lower bound for the distance to `1`.
 * `ZMod.map_stdAddChar_of_map_stdAddChar_one`: a multiplicative map of `ℂ` sending `ζ_N` to
   `ζ_N^d` sends every character value `stdAddChar j` to `stdAddChar (d * j)`.
@@ -42,6 +44,7 @@ logarithmic estimate, after summing over nonzero frequencies.
   a unit `d` of `ZMod N`.
 * `ZMod.two_div_norm_stdAddChar_sub_one_le`: an upper bound for the reciprocal chord length.
 * `ZMod.norm_sum_range_stdAddChar_mul_add_le`: a geometric-sum bound at nonzero frequency.
+* `ZMod.norm_sum_range_stdAddChar_mul_add_le_min_inv_sin`: the length and cosecant bound.
 * `ZMod.sum_norm_sum_range_stdAddChar_mul_add_le_harmonic`: the summed geometric-sum bound,
   in terms of the harmonic number `H_{N-1}`.
 * `ZMod.sum_norm_sum_range_stdAddChar_mul_add_le`: the summed geometric-sum bound, in terms of
@@ -63,6 +66,28 @@ theorem coe_toCircle_natCast_self (n : ℕ) [NeZero n] :
   have : 2 * π * Complex.I * n / (2 * n) = π * Complex.I := by
     field_simp
   rw [this, Complex.exp_pi_mul_I]
+
+/-- The chord from `1` to the standard character at `k` has length `2 * sin (π * k.val / N)`,
+where `k.val` is the least nonnegative representative modulo the nonzero modulus `N`. -/
+theorem norm_stdAddChar_sub_one_eq_two_mul_sin {N : ℕ} [NeZero N] (k : ZMod N) :
+    ‖stdAddChar k - 1‖ = 2 * Real.sin (π * k.val / N) := by
+  have hchar : stdAddChar k = Complex.exp (Complex.I * (↑(2 * (π * k.val / N)) : ℂ)) := by
+    calc
+      stdAddChar k = stdAddChar ((k.val : ℤ) : ZMod N) := by
+        rw [Int.cast_natCast, natCast_zmod_val]
+      _ = _ := by
+        rw [stdAddChar_coe]
+        push_cast
+        congr 1
+        ring
+  have hval : (k.val : ℝ) ≤ N := Nat.cast_le.mpr (val_lt k).le
+  have hangle : π * k.val / N ≤ π :=
+    (div_le_iff₀ (Nat.cast_pos.mpr (NeZero.pos N))).mpr (by gcongr)
+  have hsin := Real.sin_nonneg_of_nonneg_of_le_pi (by positivity) hangle
+  have hhalf : 2 * (π * k.val / N) / 2 = π * k.val / N :=
+    mul_div_cancel_left₀ _ two_ne_zero
+  simp only [hchar, Complex.norm_exp_I_mul_ofReal_sub_one, hhalf,
+    Real.norm_eq_abs, abs_of_nonneg (mul_nonneg two_pos.le hsin)]
 
 /-- The standard additive character of `ZMod (2 * n)` sends `n` to `-1`. -/
 @[simp]
@@ -213,6 +238,18 @@ theorem norm_sum_range_stdAddChar_mul_add_le (a k : ZMod N) (H : ℕ)
       (stdAddChar (N := N)).map_nsmul_eq_pow j k
   rw [heq, norm_mul, ZMod.stdAddChar_apply, Circle.norm_coe, one_mul]
   exact TauCeti.norm_geom_sum_le (by simp [ZMod.stdAddChar_apply]) hz H
+
+/-- An interval sum at a nonzero additive frequency is bounded both by its length and by
+`1 / sin (π * k.val / N)`, where `k.val` is the least nonnegative representative. -/
+theorem norm_sum_range_stdAddChar_mul_add_le_min_inv_sin (a k : ZMod N) (H : ℕ)
+    (hk : k ≠ 0) :
+    ‖∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod N)))‖ ≤
+      min (H : ℝ) (Real.sin (π * k.val / N))⁻¹ := by
+  have hlength : ‖∑ j ∈ range H, stdAddChar (k * (a + (j : ZMod N)))‖ ≤ H := by
+    refine (norm_sum_le _ _).trans_eq ?_
+    simp only [stdAddChar_apply, Circle.norm_coe, sum_const, card_range, nsmul_eq_mul, mul_one]
+  refine le_min hlength ((norm_sum_range_stdAddChar_mul_add_le a k H hk).trans ?_)
+  rw [k.norm_stdAddChar_sub_one_eq_two_mul_sin, div_mul_cancel_left₀ two_ne_zero]
 
 /-- Summing the norms of interval sums of the standard additive character over nonzero
 frequencies is bounded by the modulus times the harmonic number `H_{N-1}`. -/

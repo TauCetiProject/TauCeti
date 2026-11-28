@@ -21,6 +21,7 @@ classical sums `∑_{k=1}^{p-1} f(k)` modulo `p` into sums over the multiplicati
 ## Main results
 
 * `ZMod.natCast_ne_zero_of_mem_Ico`: `(k : ZMod n) ≠ 0` for `k ∈ Ico 1 n`.
+* `ZMod.sum_val_erase_zero_eq_sum_Ico`: sums over the nonzero representatives in `Ico 1 n`.
 * `ZMod.sum_Ico_one_natCast_eq_sum_units`: `∑ k ∈ Ico 1 p, f k = ∑ u : (ZMod p)ˣ, f u`.
 -/
 
@@ -35,6 +36,16 @@ theorem natCast_ne_zero_of_mem_Ico {n k : ℕ} (hk : k ∈ Ico 1 n) : (k : ZMod 
   rw [mem_Ico] at hk
   rw [Ne, natCast_eq_zero_iff]
   exact Nat.not_dvd_of_pos_of_lt hk.1 hk.2
+
+/-- Summing a function of the nonzero representatives modulo `n` gives its sum over
+`1, …, n - 1`. -/
+theorem sum_val_erase_zero_eq_sum_Ico {n : ℕ} [NeZero n] {M : Type*} [AddCommMonoid M]
+    (f : ℕ → M) : ∑ k ∈ univ.erase (0 : ZMod n), f k.val = ∑ k ∈ Ico 1 n, f k := by
+  refine sum_bij' (fun k _ ↦ k.val) (fun j _ ↦ (j : ZMod n)) ?_ ?_ ?_ ?_ (fun _ _ ↦ rfl)
+  · exact fun k hk ↦ mem_Ico.mpr ⟨val_pos.mpr (mem_erase.mp hk).1, val_lt k⟩
+  · exact fun j hj ↦ mem_erase.mpr ⟨natCast_ne_zero_of_mem_Ico hj, mem_univ _⟩
+  · exact fun k _ ↦ natCast_zmod_val k
+  · exact fun j hj ↦ (val_natCast n j).trans (Nat.mod_eq_of_lt (mem_Ico.mp hj).2)
 
 /-- A sum over the residues `1, …, p - 1` is a sum over the units of `ZMod p`. -/
 theorem sum_Ico_one_natCast_eq_sum_units {p : ℕ} [Fact p.Prime] {M : Type*} [AddCommMonoid M]
