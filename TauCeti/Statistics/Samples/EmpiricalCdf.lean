@@ -28,11 +28,11 @@ For a nonempty sample these are the distribution function and the quantile funct
 empirical distribution, so the general theory of `ProbabilityTheory.cdf` and
 `MeasureTheory.Measure.quantile` applies to them; for an empty sample both are the junk value `0`.
 The statements below are what is specific to a finite sample. The empirical distribution function
-takes the values `k / card κ` and vanishes below every observation; for a nonempty sample it is
-equal to `1` above every observation. For a nonempty sample and a level `p ∈ (0, 1]`, the sample
-quantile is a sample point, namely an explicit order statistic, and the Galois inequality
-`sampleQuantile x p ≤ t ↔ p ≤ empiricalCdf x t` holds, at the endpoint level `p = 1` as well,
-which is not the case for an arbitrary law on `ℝ`.
+takes its values in the grid `{k / card κ}` and vanishes below every observation; for a nonempty
+sample it is equal to `1` above every observation. For a nonempty sample and a level
+`p ∈ (0, 1]`, the sample quantile is a sample point, namely an explicit order statistic, and the
+Galois inequality `sampleQuantile x p ≤ t ↔ p ≤ empiricalCdf x t` holds, at the endpoint level
+`p = 1` as well, which is not the case for an arbitrary law on `ℝ`.
 
 These are the objects through which asymptotic statements about empirical processes and sample
 quantiles (Glivenko–Cantelli, Donsker, the Bahadur representation) are formulated: a statistic
@@ -233,17 +233,22 @@ theorem measurable_uncurry_empiricalCdf :
   -- The empirical distribution of the sample, as a kernel from (sample, point) pairs, evaluated
   -- on the moving section `Iic t` of a measurable set.
   let η : Kernel ((κ → ℝ) × ℝ) ℝ :=
-    ⟨fun q ↦ (empiricalFiniteMeasure q.1 : Measure ℝ),
-      (measurable_subtypeVal.comp Probability.measurable_empiricalFiniteMeasure).comp
-        measurable_fst⟩
+    Kernel.mk (fun q ↦ (empiricalFiniteMeasure q.1 : Measure ℝ))
+      ((measurable_subtypeVal.comp Probability.measurable_empiricalFiniteMeasure).comp
+        measurable_fst)
+  have hηq (q : (κ → ℝ) × ℝ) : η q = (empiricalFiniteMeasure q.1 : Measure ℝ) :=
+    congrFun (Kernel.coe_mk _ _) q
+  have hsec (q : (κ → ℝ) × ℝ) :
+      Prod.mk q ⁻¹' {r : ((κ → ℝ) × ℝ) × ℝ | r.2 ≤ r.1.2} = Iic q.2 := by
+    ext r
+    simp
   have hη := Kernel.measurable_kernel_prodMk_left_of_finite (κ := η)
     (measurableSet_le measurable_snd (measurable_snd.comp measurable_fst))
-    fun q ↦ (inferInstance : IsFiniteMeasure (empiricalFiniteMeasure q.1 : Measure ℝ))
+    fun q ↦ hηq q ▸ inferInstance
   have h : Function.uncurry (empiricalCdf : (κ → ℝ) → ℝ → ℝ) =
       fun q ↦ (η q (Prod.mk q ⁻¹' {r : ((κ → ℝ) × ℝ) × ℝ | r.2 ≤ r.1.2})).toReal := by
     ext ⟨x, t⟩
-    rw [Function.uncurry_apply_pair, empiricalCdf_def, measureReal_def]
-    rfl
+    rw [Function.uncurry_apply_pair, empiricalCdf_def, measureReal_def, hηq, hsec]
   rw [h]
   exact hη.ennreal_toReal
 
@@ -262,8 +267,13 @@ function reaches `p` (`TauCeti.sampleQuantile_eq_sInf`).
 
 For a nonempty sample at levels `p ∈ (0, 1]` this infimum is attained, so the sample quantile is
 the least such point, and it is a sample point (`TauCeti.sampleQuantile_mem_range`). At levels
-`p ≤ 0` and `1 < p`, and for an empty sample, the defining infimum ranges over all of `ℝ` or over
-the empty set, and the value is the junk value `0`. -/
+`p ≤ 0` and `1 < p` the value is the junk value `0` of `MeasureTheory.Measure.quantile`. For an
+empty sample the empirical distribution is the zero measure, whose quantile is the junk value `0`
+at every level (`MeasureTheory.Measure.quantile_zero`), even though the cumulative distribution
+function of the zero measure reaches every level `p ∈ (0, 1]` exactly on `Ici 0`. In the formula
+of `TauCeti.sampleQuantile_eq_sInf` for an empty sample, the level set
+`{t | p ≤ empiricalCdf x t}` is all of `ℝ` for `p ≤ 0` and empty otherwise, and its infimum is `0`
+as well. -/
 def sampleQuantile (x : κ → ℝ) (p : ℝ) : ℝ :=
   (empiricalFiniteMeasure x : Measure ℝ).quantile p
 
@@ -358,13 +368,17 @@ theorem le_empiricalCdf_sampleQuantile [Nonempty κ] (x : κ → ℝ) {p : ℝ} 
   · exact (sampleQuantile_le_iff x hp0 hp1).1 le_rfl
 
 /-- The sample quantile is monotone in the level on `(0, 1]`, the endpoint level `1` included.
-`MeasureTheory.Measure.monotoneOn_quantile` for an arbitrary law only covers `(0, 1)`. -/
+`MeasureTheory.Measure.monotoneOn_quantile` for an arbitrary law only covers `(0, 1)`; this is the
+case of `MeasureTheory.Measure.monotoneOn_quantile_of_nonempty` for a law carried by a finite
+set. -/
 theorem monotoneOn_sampleQuantile (x : κ → ℝ) : MonotoneOn (sampleQuantile x) (Ioc 0 1) := by
   rcases isEmpty_or_nonempty κ with hκ | hκ
   · intro p _ q _ _
     simp
-  · intro p hp q hq hpq
-    exact (sampleQuantile_le_iff x hp.1 hp.2).2 (hpq.trans (le_empiricalCdf_sampleQuantile x hq.2))
+  · rw [funext (sampleQuantile_eq_quantile x)]
+    exact (Measure.monotoneOn_quantile_of_nonempty _).mono fun p hp ↦
+      ⟨hp.1, Measure.nonempty_setOf_le_cdf_of_ae_mem_finset _
+        (Probability.ae_mem_image_empiricalFiniteMeasure x) hp.2⟩
 
 /-- At a level `p ∈ (0, 1]` the sample quantile of a nonempty sample is one of the
 observations. -/
@@ -395,45 +409,18 @@ theorem measurable_uncurry_sampleQuantile :
       simp
     rw [h]
     exact measurable_const
-  -- At the endpoint level `1`, the Galois inequality cuts out each sublevel set.
-  have hone : Measurable fun x : κ → ℝ ↦ sampleQuantile x 1 := by
-    refine measurable_of_Iic fun t ↦ ?_
-    have h : (fun x : κ → ℝ ↦ sampleQuantile x 1) ⁻¹' Iic t = {x | 1 ≤ empiricalCdf x t} :=
-      Set.ext fun x ↦ sampleQuantile_le_iff x one_pos le_rfl
-    rw [h]
-    exact measurableSet_le measurable_const (measurable_empiricalCdf t)
-  set S : Set ((κ → ℝ) × ℝ) := {q | q.2 ∈ Set.Ioo 0 1}
-  have hS : MeasurableSet S := measurable_snd measurableSet_Ioo
-  refine measurable_of_restrict_of_restrict_compl hS ?_ ?_
-  · -- At the interior levels, this is the quantile of a measurable family of laws.
-    have hμ : Measurable fun x : κ → ℝ ↦ (empiricalFiniteMeasure x : Measure ℝ) :=
-      measurable_subtypeVal.comp Probability.measurable_empiricalFiniteMeasure
-    have h : S.domRestrict (Function.uncurry sampleQuantile) =
-        (fun q : (κ → ℝ) × Set.Ioo (0 : ℝ) 1 ↦
-          (empiricalFiniteMeasure q.1 : Measure ℝ).quantile q.2) ∘
-          fun q : S ↦ ((q : (κ → ℝ) × ℝ).1, ⟨(q : (κ → ℝ) × ℝ).2, q.property⟩) := by
-      ext q
-      exact sampleQuantile_eq_quantile _ _
-    rw [h]
-    exact (Measure.measurable_quantile_cdf_family _ hμ fun _ ↦ inferInstance).comp
-      ((measurable_fst.comp measurable_subtypeVal).prodMk
-        (measurable_snd.comp measurable_subtypeVal).subtype_mk)
-  · -- At the other levels, this is the endpoint level `1` or the junk value `0`.
-    have h : Sᶜ.domRestrict (Function.uncurry sampleQuantile) =
-        fun q : ↥Sᶜ ↦ if (q : (κ → ℝ) × ℝ).2 = 1 then sampleQuantile (q : (κ → ℝ) × ℝ).1 1
-          else 0 := by
-      ext ⟨⟨x, p⟩, hp⟩
-      simp only [Set.domRestrict_apply, Function.uncurry_apply_pair]
-      split_ifs with h1
-      · rw [h1]
-      · rcases le_or_gt p 0 with hp0 | hp0
-        · exact sampleQuantile_of_nonpos x hp0
-        · exact sampleQuantile_of_one_lt x
-            (lt_of_le_of_ne (not_lt.1 fun hp1 ↦ hp ⟨hp0, hp1⟩) (Ne.symm h1))
-    rw [h]
-    exact Measurable.ite
-      (measurableSet_eq_fun (measurable_snd.comp measurable_subtypeVal) measurable_const)
-      (hone.comp (measurable_fst.comp measurable_subtypeVal)) measurable_const
+  -- This is the quantile of the empirical probability measure, measurable in the sample.
+  have h : Function.uncurry (sampleQuantile : (κ → ℝ) → ℝ → ℝ) =
+      Function.uncurry (fun (P : ProbabilityMeasure ℝ) (p : ℝ) ↦ (P : Measure ℝ).quantile p) ∘
+        Prod.map Probability.empiricalMeasureOfFintype id := by
+    ext ⟨x, p⟩
+    rw [Function.comp_apply, Prod.map_apply, Function.uncurry_apply_pair,
+      Function.uncurry_apply_pair, sampleQuantile_eq_quantile,
+      ← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
+      Probability.toFiniteMeasure_empiricalMeasureOfFintype, id]
+  rw [h]
+  exact Measure.measurable_uncurry_quantile_probabilityMeasure.comp
+    (Probability.measurable_empiricalMeasureOfFintype.prodMap measurable_id)
 
 /-- At each level, the sample quantile is a measurable function of the sample. -/
 @[fun_prop]

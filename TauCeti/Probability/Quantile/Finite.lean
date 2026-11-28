@@ -18,19 +18,20 @@ and at a proposed label. The characterization automatically sorts the distinct l
 aggregates outcomes carrying equal labels.
 
 For any real probability law carried by a finite set, a quantile at a level in `(0, 1]`
-belongs to that set, and an interior quantile is its least cumulative crossing. A finite minimum
-therefore computes it. The lower (upper) endpoint limit is the smallest (largest) candidate
-whenever that candidate has positive mass.
+belongs to that set and is its least cumulative crossing, the endpoint level `1` included. A
+finite minimum therefore computes it. The lower (upper) endpoint limit is the smallest (largest)
+candidate whenever that candidate has positive mass.
 
 ## Main results
 
 * `MeasureTheory.Measure.quantile_mem_finset` places a quantile at a level in `(0, 1]` in a
-  carrying set, and `MeasureTheory.Measure.quantile_eq_min'_of_ae_mem_finset` computes an interior
-  quantile by a finite minimum over it;
+  carrying set, and `MeasureTheory.Measure.quantile_eq_min'_of_ae_mem_finset` computes it by a
+  finite minimum over that set;
 * `MeasureTheory.Measure.tendsto_quantile_nhdsGT_zero_of_ae_mem_finset` and
   `MeasureTheory.Measure.tendsto_quantile_nhdsLT_one_of_ae_mem_finset` give its endpoint limits;
 
-* `MeasureTheory.Measure.quantile_map_finite_eq_iff` characterizes the quantile by the strict
+* `MeasureTheory.Measure.quantile_map_finite_eq_iff` characterizes the quantile at a level in
+  `(0, 1]` by the strict
   cumulative crossing below a label and the weak crossing at it;
 * `MeasureTheory.Measure.tendsto_quantile_map_finite_nhdsGT_zero` and
   `MeasureTheory.Measure.tendsto_quantile_map_finite_nhdsLT_one` give the endpoint limits at the
@@ -53,17 +54,9 @@ variable (μ : Measure ℝ) [IsProbabilityMeasure μ] {s : Finset ℝ} {u x : �
 so every level at most `1` is reached. -/
 theorem nonempty_setOf_le_cdf_of_ae_mem_finset (hs : ∀ᵐ y ∂μ, y ∈ s) (hu : u ≤ 1) :
     {x : ℝ | u ≤ cdf μ x}.Nonempty := by
-  have hne : s.Nonempty := by
-    by_contra h
-    rw [Finset.not_nonempty_iff_eq_empty] at h
-    subst h
-    simp only [Finset.notMem_empty, Filter.eventually_false_iff_eq_bot, ae_eq_bot] at hs
-    exact IsProbabilityMeasure.ne_zero μ hs
-  refine ⟨s.max' hne, hu.trans_eq ?_⟩
-  rw [cdf_eq_real, ← probReal_univ (μ := μ)]
-  apply measureReal_congr
-  filter_upwards [hs] with y hy
-  simpa using s.le_max' y hy
+  obtain ⟨y, hy⟩ := hs.exists
+  exact μ.nonempty_setOf_le_cdf_of_ae_le (b := s.max' ⟨y, hy⟩)
+    (hs.mono fun z hz ↦ s.le_max' z hz) hu
 
 /-- A quantile at a level in `(0, 1]` of a law carried by a finite set belongs to that set,
 including the endpoint level `1`. The set may include points of zero mass. -/
@@ -95,28 +88,31 @@ theorem quantile_mem_finset (hs : ∀ᵐ y ∂μ, y ∈ s) (hu : u ∈ Ioc 0 1) 
   rw [hq]
   exact (Finset.mem_filter.mp (t.max'_mem ht)).1
 
-/-- The quantile is characterized by the least cumulative crossing among a finite set carrying
-the law, including levels equal to a cumulative mass. -/
-theorem quantile_eq_iff_of_ae_mem_finset (hs : ∀ᵐ y ∂μ, y ∈ s) (hu : u ∈ Ioo 0 1) :
+/-- At a level in `(0, 1]`, the endpoint level `1` included, the quantile is characterized by the
+least cumulative crossing among a finite set carrying the law, including levels equal to a
+cumulative mass. -/
+theorem quantile_eq_iff_of_ae_mem_finset (hs : ∀ᵐ y ∂μ, y ∈ s) (hu : u ∈ Ioc 0 1) :
     μ.quantile u = x ↔ IsLeast {y | y ∈ s ∧ u ≤ cdf μ y} x := by
+  have hreach := μ.nonempty_setOf_le_cdf_of_ae_mem_finset hs hu.2
   constructor
   · rintro rfl
-    exact ⟨⟨μ.quantile_mem_finset hs (Ioo_subset_Ioc_self hu), le_cdf_quantile μ hu.2⟩,
-      fun _ hy ↦ (μ.quantile_le_iff hu.1 hu.2).2 hy.2⟩
+    exact ⟨⟨μ.quantile_mem_finset hs hu, le_cdf_quantile_of_nonempty μ hreach⟩,
+      fun _ hy ↦ (μ.quantile_le_iff_of_nonempty hu.1 hreach).2 hy.2⟩
   · intro hx
-    exact le_antisymm ((μ.quantile_le_iff hu.1 hu.2).2 hx.1.2)
-      (hx.2 ⟨μ.quantile_mem_finset hs (Ioo_subset_Ioc_self hu), le_cdf_quantile μ hu.2⟩)
+    exact le_antisymm ((μ.quantile_le_iff_of_nonempty hu.1 hreach).2 hx.1.2)
+      (hx.2 ⟨μ.quantile_mem_finset hs hu, le_cdf_quantile_of_nonempty μ hreach⟩)
 
 open Classical in
-/-- The finite set of cumulative crossings at an interior level is nonempty. -/
-theorem nonempty_filter_le_cdf (hs : ∀ᵐ y ∂μ, y ∈ s) (hu : u ∈ Ioo 0 1) :
+/-- The finite set of cumulative crossings at a level in `(0, 1]` is nonempty. -/
+theorem nonempty_filter_le_cdf (hs : ∀ᵐ y ∂μ, y ∈ s) (hu : u ∈ Ioc 0 1) :
     (s.filter fun y ↦ u ≤ cdf μ y).Nonempty :=
-  ⟨μ.quantile u, Finset.mem_filter.mpr
-    ⟨μ.quantile_mem_finset hs (Ioo_subset_Ioc_self hu), le_cdf_quantile μ hu.2⟩⟩
+  ⟨μ.quantile u, Finset.mem_filter.mpr ⟨μ.quantile_mem_finset hs hu,
+    le_cdf_quantile_of_nonempty μ (μ.nonempty_setOf_le_cdf_of_ae_mem_finset hs hu.2)⟩⟩
 
 open Classical in
-/-- A finite minimum computes an interior quantile. -/
-theorem quantile_eq_min'_of_ae_mem_finset (hs : ∀ᵐ y ∂μ, y ∈ s) (hu : u ∈ Ioo 0 1) :
+/-- A finite minimum computes the quantile at a level in `(0, 1]`, the endpoint level `1`
+included. -/
+theorem quantile_eq_min'_of_ae_mem_finset (hs : ∀ᵐ y ∂μ, y ∈ s) (hu : u ∈ Ioc 0 1) :
     μ.quantile u = (s.filter fun y ↦ u ≤ cdf μ y).min'
       (μ.nonempty_filter_le_cdf hs hu) := by
   apply (μ.quantile_eq_iff_of_ae_mem_finset hs hu).2
@@ -155,17 +151,21 @@ end FiniteSupport
 
 variable {I : Type*} [Finite I] [MeasurableSpace I] [MeasurableSingletonClass I]
 
-/-- A real number is the interior quantile of a probability measure on a finite labelled type
-exactly when the level lies strictly above the mass below that label and at most the mass at or
-below it. In particular, the strict inequality forces the answer to be one of the supplied
-labels with positive total mass. -/
+/-- A real number is the quantile at a level in `(0, 1]` of a probability measure on a finite
+labelled type exactly when the level lies strictly above the mass below that label and at most the
+mass at or below it. The endpoint level `1` is included. In particular, the strict inequality
+forces the answer to be one of the supplied labels with positive total mass. -/
 @[simp]
 theorem quantile_map_finite_eq_iff (μ : Measure I) [IsProbabilityMeasure μ] (label : I → ℝ)
-    {u x : ℝ} (hu : u ∈ Ioo 0 1) :
+    {u x : ℝ} (hu : u ∈ Ioc 0 1) :
     (μ.map label).quantile u = x ↔
       μ.real (label ⁻¹' Iio x) < u ∧ u ≤ μ.real (label ⁻¹' Iic x) := by
   classical
   let _ := Fintype.ofFinite I
+  have hreach := (μ.map label).nonempty_setOf_le_cdf_of_ae_mem_finset
+    (s := Finset.univ.image label) ((ae_map_iff (measurable_of_finite label).aemeasurable
+      (Finset.univ.image label).measurableSet).2
+        (ae_of_all _ fun i ↦ Finset.mem_image_of_mem label (Finset.mem_univ i))) hu.2
   constructor
   · intro hquantile
     subst x
@@ -194,16 +194,17 @@ theorem quantile_map_finite_eq_iff (μ : Measure I) [IsProbabilityMeasure μ] (l
         rw [cdf_map _ label (measurable_of_finite label).aemeasurable, hpreimage]
         exact hleft
       have hquantile_le : (μ.map label).quantile u ≤ y :=
-        (quantile_le_iff _ hu.1 hu.2).2 hlevel
+        (quantile_le_iff_of_nonempty _ hu.1 hreach).2 hlevel
       exact (not_lt_of_ge hquantile_le) hylt
-    · have hlevel := le_cdf_quantile (μ.map label) hu.2
+    · have hlevel := le_cdf_quantile_of_nonempty (μ.map label) hreach
       rwa [cdf_map _ label (measurable_of_finite label).aemeasurable] at hlevel
   · rintro ⟨hleft, hright⟩
     apply le_antisymm
-    · rw [quantile_le_iff _ hu.1 hu.2, cdf_map _ label (measurable_of_finite label).aemeasurable]
+    · rw [quantile_le_iff_of_nonempty _ hu.1 hreach,
+        cdf_map _ label (measurable_of_finite label).aemeasurable]
       exact hright
     · by_contra! hquantile_lt
-      have hcdf := le_cdf_quantile (μ.map label) hu.2
+      have hcdf := le_cdf_quantile_of_nonempty (μ.map label) hreach
       have hmono : cdf (μ.map label) ((μ.map label).quantile u) ≤
           μ.real (label ⁻¹' Iio x) := by
         rw [cdf_map _ label (measurable_of_finite label).aemeasurable]
@@ -232,7 +233,7 @@ theorem tendsto_quantile_map_finite_nhdsGT_zero (μ : Measure I) [IsProbabilityM
   refine tendsto_const_nhds.congr' ?_
   filter_upwards [Ioo_mem_nhdsGT (lt_min hi one_pos)] with u hu
   symm
-  apply (quantile_map_finite_eq_iff μ label ⟨hu.1, hu.2.trans_le (min_le_right _ _)⟩).2
+  apply (quantile_map_finite_eq_iff μ label ⟨hu.1, (hu.2.trans_le (min_le_right _ _)).le⟩).2
   constructor
   · rw [hleft_zero]
     exact hu.1
@@ -277,7 +278,7 @@ theorem tendsto_quantile_map_finite_nhdsLT_one (μ : Measure I) [IsProbabilityMe
   filter_upwards [Ioo_mem_nhdsLT (sub_lt_self 1 hi)] with u hu
   have hu_pos : 0 < u := (sub_nonneg.mpr hi_le_one).trans_lt hu.1
   symm
-  apply (quantile_map_finite_eq_iff μ label ⟨hu_pos, hu.2⟩).2
+  apply (quantile_map_finite_eq_iff μ label ⟨hu_pos, hu.2.le⟩).2
   constructor
   · calc
       μ.real (label ⁻¹' Iio (label i)) ≤ μ.real ({i} : Set I)ᶜ :=

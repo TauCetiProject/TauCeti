@@ -41,7 +41,7 @@ theorem quantile_map_categoricalMeasure_eq_iff (p : StdSimplex NNReal I) (label 
     ((categoricalMeasure p).map label).quantile u = x ↔
       (∑ i with label i < x, (p.weights i : ℝ)) < u ∧
         u ≤ ∑ i with label i ≤ x, (p.weights i : ℝ) := by
-  rw [Measure.quantile_map_finite_eq_iff _ label hu,
+  rw [Measure.quantile_map_finite_eq_iff _ label (Ioo_subset_Ioc_self hu),
     ← map_measureReal_apply (measurable_of_finite label) measurableSet_Iio,
     p.map_categoricalMeasure_real_Iio,
     ← Measure.cdf_map _ label (measurable_of_finite label).aemeasurable,
@@ -79,9 +79,9 @@ theorem quantile_map_categoricalMeasure (p : StdSimplex ℝ≥0 I) (f : I → �
         u ≤ ∑ i with f i ≤ y, (p.weights i : ℝ)).min' (by
           simpa only [cdf_map_categoricalMeasure] using
             ((categoricalMeasure p).map f).nonempty_filter_le_cdf
-              (ae_mem_image_support_map_categoricalMeasure p f) hu) := by
+              (ae_mem_image_support_map_categoricalMeasure p f) (Ioo_subset_Ioc_self hu)) := by
   simpa only [cdf_map_categoricalMeasure] using
     ((categoricalMeasure p).map f).quantile_eq_min'_of_ae_mem_finset
-      (ae_mem_image_support_map_categoricalMeasure p f) hu
+      (ae_mem_image_support_map_categoricalMeasure p f) (Ioo_subset_Ioc_self hu)
 
 end Convexity.StdSimplex

@@ -108,7 +108,7 @@ theorem quantile_map_uniformOn_univ_eq_iff [Fintype α] [Nonempty α] (label : �
     ((uniformOn (Set.univ : Set α)).map label).quantile u = x ↔
       ((Finset.univ.filter fun i ↦ label i < x).card : ℝ) / Fintype.card α < u ∧
         u ≤ ((Finset.univ.filter fun i ↦ label i ≤ x).card : ℝ) / Fintype.card α := by
-  rw [Measure.quantile_map_finite_eq_iff _ label hu]
+  rw [Measure.quantile_map_finite_eq_iff _ label (Ioo_subset_Ioc_self hu)]
   have hpreimage_lt : label ⁻¹' Set.Iio x =
       (Finset.univ.filter fun i ↦ label i < x : Finset α) := by
     ext i
@@ -167,7 +167,7 @@ theorem quantile_map_uniformOn_finset_eq_iff (s : Finset α) (hs : s.Nonempty) (
   let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
   simpa only [s.cdf_map_uniformOn_finset hs] using
     ((uniformOn (s : Set α)).map f).quantile_eq_iff_of_ae_mem_finset
-      (s.ae_mem_image_map_uniformOn_finset f) hu
+      (s.ae_mem_image_map_uniformOn_finset f) (Set.Ioo_subset_Ioc_self hu)
 
 open Classical in
 /-- Compute a finite uniform quantile by a minimum over distinct labels, with cumulative counts
@@ -180,11 +180,11 @@ theorem quantile_map_uniformOn_finset (s : Finset α) (hs : s.Nonempty) (f : α 
           let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
           simpa only [s.cdf_map_uniformOn_finset hs] using
             ((uniformOn (s : Set α)).map f).nonempty_filter_le_cdf
-              (s.ae_mem_image_map_uniformOn_finset f) hu) := by
+              (s.ae_mem_image_map_uniformOn_finset f) (Set.Ioo_subset_Ioc_self hu)) := by
   let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
   simpa only [s.cdf_map_uniformOn_finset hs] using
     ((uniformOn (s : Set α)).map f).quantile_eq_min'_of_ae_mem_finset
-      (s.ae_mem_image_map_uniformOn_finset f) hu
+      (s.ae_mem_image_map_uniformOn_finset f) (Set.Ioo_subset_Ioc_self hu)
 
 open Filter Topology in
 /-- Uniform quantiles tend to the smallest attained label as the level decreases to zero. -/

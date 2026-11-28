@@ -366,19 +366,15 @@ theorem empiricalMeasureOfFintype_eq_map_uniformOn [MeasurableSpace κ] [Measura
     (empiricalMeasureOfFintype x : Measure α) =
       (ProbabilityTheory.uniformOn (Set.univ : Set κ)).map x := by
   ext s hs
-  rw [empiricalMeasureOfFintype_apply hs, Measure.map_apply (measurable_of_countable x) hs,
-    ProbabilityTheory.uniformOn_univ]
   classical
   have hpreimage :
       x ⁻¹' s = (Finset.univ.filter fun i => x i ∈ s : Finset κ) := by
     ext i
     simp
-  rw [hpreimage, Measure.count_apply_finset]
-  simp only [Set.indicator_apply, Pi.one_apply]
-  rw [← ENNReal.div_eq_inv_mul]
-  congr 1
-  norm_cast
-  simp
+  rw [← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
+    toFiniteMeasure_empiricalMeasureOfFintype, empiricalFiniteMeasure_apply_eq_card_filter hs,
+    Measure.map_apply (measurable_of_countable x) hs, ProbabilityTheory.uniformOn_univ,
+    hpreimage, Measure.count_apply_finset, ENNReal.div_eq_inv_mul]
 
 /-- Integrating against a finite empirical population is averaging over its values. -/
 theorem integral_empiricalMeasureOfFintype [NormedAddCommGroup E] [NormedSpace ℝ E]

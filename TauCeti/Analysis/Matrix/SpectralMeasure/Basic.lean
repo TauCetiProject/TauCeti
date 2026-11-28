@@ -207,11 +207,10 @@ theorem IsHermitian.spectralMeasure_real_Iic {A : Matrix n n 𝕜} (hA : A.IsHer
     (A.spectralMeasure hA : Measure ℝ).real (Set.Iic t) =
       (#{i | hA.eigenvalues₀ i ≤ t} : ℝ) / Fintype.card n := by
   classical
-  have hsum : ∑ i, (Set.Iic t).indicator (1 : ℝ → ℝ≥0∞) (hA.eigenvalues₀ i) =
-      (#{i | hA.eigenvalues₀ i ≤ t} : ℝ≥0∞) := by
-    simp [Set.indicator_apply]
   rw [Measure.real, spectralMeasure_eq_empiricalMeasureOfFintype_eigenvalues₀,
-    empiricalMeasureOfFintype_apply measurableSet_Iic, Fintype.card_fin, hsum]
+    ← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
+    toFiniteMeasure_empiricalMeasureOfFintype,
+    empiricalFiniteMeasure_apply_eq_card_filter measurableSet_Iic, Fintype.card_fin]
   simp [div_eq_inv_mul]
 
 /-- The spectral measure's atom at zero is the proportion of zero eigenvalues, expressed in terms
