@@ -20,7 +20,8 @@ Sending the two generators of the transcribed presentation to `McL.a⁻¹` and `
 satisfies all fifteen relators. Inversion corrects the source's left-to-right composition
 to Mathlib's right-to-left composition. The assigned permutations generate exactly `McL`,
 so `exists_surjective_McL` gives a surjection from the presented group onto this model.
-In particular both groups are nontrivial. No order or simplicity assertion is made here.
+In particular both groups are nontrivial. The fourth relator gives `(McL.a * McL.b) ^ 11 = 1`
+(`McL.a_mul_b_pow_eleven`). No order or simplicity assertion is made here.
 
 The lift and range arguments use `GroupPresentation.homEquiv` and
 `GroupPresentation.exists_surjective_of_closure_range_eq`.
@@ -217,6 +218,14 @@ private theorem relator11 :
 private theorem relator12 : ⁅x⁻¹, (y ^ 2 * s₂ * t₁ * s₂)⁻¹⁆ ^ 2 = 1 := by decide +kernel
 private theorem relator13 : ⁅x⁻¹, (y ^ 2 * s₁)⁻¹⁆ ^ 4 = 1 := by decide +kernel
 private theorem relator14 : ⁅x⁻¹, (y ^ 2 * s₂)⁻¹⁆ ^ 4 = 1 := by decide +kernel
+
+/-- The product of the two file generators has order dividing `11`: the inverse of `b * a` is
+the word `a⁻¹ * b⁻¹` of the fourth relator, and `a * b` is conjugate to `b * a`. -/
+theorem a_mul_b_pow_eleven : (a * b) ^ 11 = 1 := by
+  have h : (b * a) ^ 11 = 1 := by
+    rw [← inv_eq_one, ← inv_pow, mul_inv_rev]
+    exact relator3
+  simpa [h] using mul_pow_mul a b 11
 
 /-- All fifteen transcribed McLaughlin relators hold on the inverse file generators. -/
 theorem lift_presentationImage_toFreeGroup_eq_one :

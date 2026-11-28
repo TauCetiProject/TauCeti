@@ -52,14 +52,7 @@ namespace TauCeti.Sporadic
 
 /-- The canonical 100-point permutation model of the Higman--Sims group is simple. -/
 instance isSimpleGroup_HS : IsSimpleGroup HS := by
-  have hgen : Subgroup.closure ({⟨HS.a, HS.a_mem⟩, ⟨HS.b, HS.b_mem⟩} : Set HS) = ⊤ := by
-    have h : Subgroup.closure (HS.subtype ⁻¹' {HS.a, HS.b}) = ⊤ := by
-      rw [HS_def]
-      exact Subgroup.closure_preimage_eq_top _
-    rw [← h]
-    congr 1
-    ext x
-    simp [Subtype.ext_iff]
+  have hgen := Subgroup.closure_pair_eq_top_of_eq_closure HS.a_mem HS.b_mem HS_def
   have : MulAction.IsPreprimitive (MulAction.stabilizer HS (0 : Fin 100))
       (MulAction.orbit (MulAction.stabilizer HS (0 : Fin 100)) (4 : Fin 100)) :=
     MulAction.isPreprimitive_of_is_two_pretransitive HS.isMultiplyPretransitive_stabilizer_orbit
