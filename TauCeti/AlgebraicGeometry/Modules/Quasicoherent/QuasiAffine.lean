@@ -57,16 +57,10 @@ theorem exists_finite_generatingSections_of_isQuasiAffine (M : X.Modules)
   have : Epi ((restrictFunctor j).map π) := Functor.map_epi _ _
   let p : F ⟶ M := eF.inv ≫ (restrictFunctor j).map π ≫ eN.hom
   have : Epi p := epi_comp _ _
-  -- The free-hom equivalence is stated in the sheaf category.
+  -- Transport the standard generators in the sheaf-of-modules category.
   let q : Quiver.Hom (V := SheafOfModules X.ringCatSheaf) (SheafOfModules.free ι) M := p
-  have hq : Epi q := ‹Epi p›
-  let s : M.GeneratingSections :=
-    { I := ι
-      s := M.freeHomEquiv q
-      epi := by
-        rw [Equiv.symm_apply_apply]
-        exact hq }
-  exact ⟨s, ⟨‹Finite ι›⟩⟩
+  have : Epi q := ‹Epi p›
+  exact ⟨(SheafOfModules.free.generatingSections ι).ofEpi q, ⟨‹Finite ι›⟩⟩
 
 /-- On a quasi-affine scheme, a finitely presented module admits a presentation by finitely
 many global generators and finitely many global relations. -/
