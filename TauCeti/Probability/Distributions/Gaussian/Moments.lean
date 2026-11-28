@@ -38,7 +38,8 @@ The formulas follow the standard calculation in, for example, Johnson, Kotz, and
   the even centered moments.
 * `integral_sub_pow_two_mul_add_one_gaussianReal` and
   `centralMoment_id_two_mul_add_one_gaussianReal` say that every odd centered moment vanishes.
-* `integral_sq_gaussianReal` evaluates the second raw moment.
+* `integral_sq_gaussianReal` evaluates the second raw moment, and
+  `lintegral_ofReal_sq_gaussianReal` gives it as a lower Lebesgue integral.
 * `setIntegral_sq_tail_gaussianReal_le` and `sqrt_setIntegral_sq_tail_gaussianReal_le` bound the
   quadratic tail integral of `gaussianReal 0 1` by `3 / t²` and its square root by `√3 / t`.
 * `integrable_abs_gaussianReal` and `integrable_abs_add_abs_gaussianReal` give absolute
@@ -132,6 +133,15 @@ theorem integral_sq_gaussianReal (m : ℝ) (v : ℝ≥0) :
   rw [variance_id_gaussianReal] at h
   simp only [id_eq, Pi.pow_apply, integral_id_gaussianReal] at h
   linarith
+
+/-- The second moment of a real Gaussian distribution, as a lower Lebesgue integral, is its
+variance plus its squared mean. -/
+theorem lintegral_ofReal_sq_gaussianReal (m : ℝ) (v : ℝ≥0) :
+    ∫⁻ x, ENNReal.ofReal (x ^ 2) ∂gaussianReal m v = ENNReal.ofReal (v + m ^ 2) := by
+  have hint : Integrable (fun x : ℝ ↦ x ^ 2) (gaussianReal m v) :=
+    (memLp_id_gaussianReal 2).integrable_sq
+  rw [← integral_sq_gaussianReal,
+    ofReal_integral_eq_lintegral_ofReal hint (ae_of_all _ fun x ↦ sq_nonneg x)]
 
 /-- The fourth centered moment of a real Gaussian distribution is three times its
 squared variance. -/
