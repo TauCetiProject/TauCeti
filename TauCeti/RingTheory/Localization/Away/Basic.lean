@@ -18,7 +18,8 @@ A localisation `S` of `A` away from `s` inverts `s`, so it contains `t/s` for ev
 Mathlib names the inverse itself — `IsLocalization.Away.invSelf s` is `1/s` — but not the general
 fraction; this file names it and gives the identities that manipulating it needs: scaling `1/s`
 by `t`, and clearing the denominator on either side. It also records, over commutative rings,
-when the image of an element is a nonzerodivisor in a localisation away from another element.
+when the image of an element is a nonzerodivisor in a localisation away from another element, and
+lifts ring homomorphisms into possibly non-commutative semirings along an away localisation.
 
 Nothing here is topological or Huber-specific — it is `IsLocalization` algebra over an arbitrary
 commutative semiring, for an arbitrary localisation away from `s` — so it is stated outside the
@@ -27,6 +28,8 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
 ## Main definitions
 
 * `TauCeti.Localization.divBy`: the element `t/s` of a localisation away from `s`.
+* `IsLocalization.Away.liftNoncomm`: lift a ring homomorphism into a possibly non-commutative
+  semiring along an away localisation.
 
 ## Main results
 
@@ -72,6 +75,10 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   induced by `f : A →+* B` sends `[a]` to `[f a]` and the fraction `a / s` to `f a / f s`.
 * `IsLocalization.Away.isSMulRegular_algebraMap`: an element whose annihilator is killed by `r`
   becomes a nonzerodivisor after inverting `r`.
+* `IsLocalization.Away.liftNoncomm_eq`, `IsLocalization.Away.liftNoncomm_comp`,
+  `IsLocalization.Away.liftNoncomm_mk'_pow`, `IsLocalization.Away.liftNoncomm_divBy`: the lifted
+  ring homomorphism into a possibly non-commutative semiring extends the given map along
+  `algebraMap` and computes on localized fractions.
 * `RingHom.map_comp_algebraMap_eq_algebraMap_comp_awayMap`: localization maps commute with away maps
   through compatible algebra towers.
 * `Localization.isScalarTower_awayMap`: the algebra structure on `B_z` over `A_z` given by
@@ -552,6 +559,70 @@ theorem isSMulRegular_algebraMap {r a : A} [IsLocalization.Away r B]
   refine ⟨⟨r ^ (n + 1), n + 1, rfl⟩, ?_⟩
   have := h (r ^ n * c) (by linear_combination hn)
   linear_combination this
+
+section LiftNoncomm
+
+variable {R S K : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+  (x : R) [IsLocalization.Away x S] [Semiring K]
+
+/-- Lift a ring homomorphism `g : R →+* K` (into a possibly non-commutative semiring `K`) along
+`IsLocalization.Away x S` when `g x` is a unit, via `OreLocalization.universalHom` on
+`Submonoid.powers x` transported along `IsLocalization.algEquiv`. -/
+noncomputable def liftNoncomm (g : R →+* K) (hg : IsUnit (g x)) : S →+* K :=
+  (OreLocalization.universalHom g
+    (IsUnit.liftRight (g.toMonoidHom.domRestrict (Submonoid.powers x))
+      fun ⟨_, n, hn⟩ ↦ by subst hn; simpa using hg.pow n)
+    (fun _ ↦ rfl)).comp
+    (IsLocalization.algEquiv (Submonoid.powers x) S
+      (Localization (Submonoid.powers x))).toRingHom
+
+/-- The lifted ring homomorphism `liftNoncomm x g hg` restricts to `g` along `algebraMap R S`. -/
+@[simp]
+theorem liftNoncomm_eq (g : R →+* K) (hg : IsUnit (g x)) (a : R) :
+    liftNoncomm x g hg (algebraMap R S a) = g a := by
+  rw [liftNoncomm, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+    AlgEquiv.coe_toRingEquiv, AlgEquiv.commutes]
+  exact OreLocalization.universalHom_commutes g _ _
+
+/-- Bundled form of `liftNoncomm_eq`: `(liftNoncomm x g hg).comp (algebraMap R S) = g`. -/
+@[simp]
+theorem liftNoncomm_comp (g : R →+* K) (hg : IsUnit (g x)) :
+    (liftNoncomm (S := S) x g hg).comp (algebraMap R S) = g :=
+  RingHom.ext fun a ↦ liftNoncomm_eq (S := S) x g hg a
+
+/-- Evaluating `liftNoncomm x g hg` on a fraction `a / x ^ n` gives `g a * (g x)⁻¹ ^ n`. -/
+@[simp]
+theorem liftNoncomm_mk'_pow (g : R →+* K) (hg : IsUnit (g x)) (a : R) (n : ℕ) :
+    liftNoncomm x g hg (IsLocalization.mk' S a (⟨x ^ n, n, rfl⟩ : Submonoid.powers x)) =
+      g a * (↑hg.unit⁻¹ : K) ^ n := by
+  have hmul :
+      IsLocalization.mk' S a (⟨x ^ n, n, rfl⟩ : Submonoid.powers x) * algebraMap R S (x ^ n) =
+        algebraMap R S a :=
+    IsLocalization.mk'_spec S a (⟨x ^ n, n, rfl⟩ : Submonoid.powers x)
+  have hmap := congr_arg (liftNoncomm x g hg) hmul
+  rw [map_mul, liftNoncomm_eq, liftNoncomm_eq, map_pow] at hmap
+  rw [← Units.val_pow_eq_pow_val, inv_pow]
+  refine (Units.eq_mul_inv_iff_mul_eq (hg.unit ^ n)).2 ?_
+  simpa only [Units.val_pow_eq_pow_val, hg.unit_spec] using hmap
+
+/-- Evaluating `liftNoncomm x g hg` on the distinguished fraction `a / x` gives `g a * (g x)⁻¹`. -/
+@[simp]
+theorem liftNoncomm_divBy (g : R →+* K) (hg : IsUnit (g x)) (a : R) :
+    liftNoncomm x g hg (TauCeti.Localization.divBy a x : S) = g a * ↑hg.unit⁻¹ := by
+  rw [TauCeti.Localization.divBy_def]
+  have h1 : (⟨x, Submonoid.mem_powers x⟩ : Submonoid.powers x) = ⟨x ^ 1, 1, rfl⟩ :=
+    Subtype.ext (pow_one x).symm
+  rw [h1, liftNoncomm_mk'_pow, pow_one]
+
+/-- Uniqueness of the non-commutative localization lift: any ring homomorphism `S →+* K` agreeing
+with `g` on `algebraMap R S` equals `liftNoncomm x g hg`. -/
+theorem liftNoncomm_unique (g : R →+* K) (hg : IsUnit (g x)) {j : S →+* K}
+    (hj : ∀ a, j (algebraMap R S a) = g a) : liftNoncomm x g hg = j :=
+  IsLocalization.ringHom_ext (Submonoid.powers x) <| by
+    ext a
+    simp [hj]
+
+end LiftNoncomm
 
 end IsLocalization.Away
 

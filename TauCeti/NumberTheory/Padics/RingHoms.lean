@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Ring.CompTypeclasses
 public import Mathlib.Data.ZMod.Units
 public import Mathlib.GroupTheory.OrderOfElement
 public import Mathlib.NumberTheory.Padics.RingHoms
+public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Clopen
@@ -114,6 +115,10 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   finite of cardinality `p`.
 * `PadicInt.ringHom_eq_id`, `PadicInt.RingHom.unique`: the identity is the unique ring
   endomorphism of `ℤ_[p]`.
+* `PadicInt.ringHom_eq_of_isHausdorff`: any `p`-adically separated commutative ring admits at most
+  one ring homomorphism from `ℤ_[p]`.
+* `PadicInt.commute_ringHom_of_continuous`: every continuous ring homomorphism from `ℤ_[p]` into a
+  Hausdorff topological semiring takes values in the center.
 -/
 
 public section
@@ -632,20 +637,42 @@ theorem unitsToZModPow_zero_apply (u : ℤ_[p]ˣ) : unitsToZModPow 0 u = 1 := by
   have : Subsingleton (ZMod (p ^ 0)) := by rw [pow_zero]; infer_instance
   exact Subsingleton.elim _ _
 
-/-- Every ring endomorphism of `ℤ_[p]` is the identity: any ring homomorphism preserves natural
-numbers and divisibility by `p ^ n`, so it preserves truncations in `ZMod (p ^ n)` for all `n`. -/
+/-- Every `p`-adically separated commutative ring admits at most one ring homomorphism from `ℤ_[p]`:
+any two ring homomorphisms agree modulo `p ^ n` because every `c : ℤ_[p]` is congruent modulo
+`p ^ n` to a natural number `c.appr n`. -/
+theorem ringHom_eq_of_isHausdorff {S : Type*} [CommRing S] [IsHausdorff (Ideal.span {(p : S)}) S]
+    (f g : ℤ_[p] →+* S) : f = g := by
+  ext c
+  refine (IsHausdorff.eq_iff_smodEq (I := Ideal.span {(p : S)})).mpr fun n ↦ ?_
+  rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top, Ideal.span_singleton_pow,
+    Ideal.mem_span_singleton]
+  obtain ⟨r, hr⟩ := Ideal.mem_span_singleton.mp (appr_spec n c)
+  have hc : c = (c.appr n : ℤ_[p]) + (p : ℤ_[p]) ^ n * r := eq_add_of_sub_eq' hr
+  refine ⟨f r - g r, ?_⟩
+  conv_lhs => rw [hc]
+  simp only [map_add, map_natCast, map_mul, map_pow]
+  ring
+
+/-- Every ring endomorphism of `ℤ_[p]` is the identity, as a specialization of
+`PadicInt.ringHom_eq_of_isHausdorff`. -/
 theorem ringHom_eq_id (φ : ℤ_[p] →+* ℤ_[p]) : φ = RingHom.id ℤ_[p] := by
-  refine toZModPow_eq_iff_ext.mp fun n ↦ ?_
-  ext x
-  simp only [RingHom.comp_apply, RingHom.id_apply, toZModPow_eq_iff_dvd_sub]
-  have h1 : (p : ℤ_[p]) ^ n ∣ x - x.appr n := dvd_sub_appr x n
-  have h2 : (p : ℤ_[p]) ^ n ∣ φ x - x.appr n := by simpa using map_dvd φ h1
-  simpa using dvd_sub h1 h2
+  have : IsHausdorff (Ideal.span {(p : ℤ_[p])}) ℤ_[p] := by
+    rw [← maximalIdeal_eq_span_p]
+    infer_instance
+  exact ringHom_eq_of_isHausdorff φ (RingHom.id ℤ_[p])
 
 /-- The identity is the unique ring endomorphism of `ℤ_[p]`. -/
 noncomputable instance RingHom.unique : Unique (ℤ_[p] →+* ℤ_[p]) where
   default := RingHom.id ℤ_[p]
   uniq := ringHom_eq_id
+
+/-- Every continuous ring homomorphism `ℤ_[p] →+* K` into a Hausdorff topological semiring takes
+values in the center of `K`, because `ℕ` is dense in `ℤ_[p]` and central in `K`. -/
+theorem commute_ringHom_of_continuous {K : Type*} [Semiring K] [TopologicalSpace K] [T2Space K]
+    [SeparatelyContinuousMul K] {f : ℤ_[p] →+* K} (hf : Continuous f) (a : ℤ_[p]) (y : K) :
+    Commute (f a) y :=
+  congrFun (denseRange_natCast.equalizer (hf.mul_const y) (hf.const_mul y)
+    (funext fun n ↦ by simp [map_natCast, Nat.cast_comm])) a
 
 variable {M : Type*} [Monoid M] {g : M} {n : ℕ}
 
