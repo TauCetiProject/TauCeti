@@ -30,7 +30,7 @@ This file identifies them with linear-algebra data on the finite free `R`-module
 `M_N = X ^ (-N) R⟦X⟧^ι / X ^ N R⟦X⟧^ι` (`TauCeti.LaurentSeries.boundedLatticeQuotient`),
 
 whose coordinates are the Laurent coefficients at the exponents `-N ≤ n < N`
-(`TauCeti.LaurentSeries.boundedLatticeQuotientEquiv`, built from
+(`TauCeti.LaurentSeries.piLatticeQuotientEquiv`, built from
 `TauCeti.LaurentSeries.latticeQuotientEquiv`), so that it is free of rank `2 N · #ι`.
 
 `TauCeti.ProjectiveLattice.boundedEquiv` is a bijection between the lattices bounded by `N` and
@@ -55,7 +55,7 @@ form a scalar tower `R → R⟦X⟧ → R⸨X⸩` by an instance of `TauCeti.Rin
 * `TauCeti.LaurentSeries.boundedLatticeQuotient R ι N`: the `R⟦X⟧`-module `M_N`.
 * `TauCeti.LaurentSeries.piLatticeQuotientHahnEquiv`: the power-series-linear comparison of
   coordinate jets and vector-valued Hahn jets on any interval `[a,b)` for finite `ι`.
-* `TauCeti.LaurentSeries.boundedLatticeQuotientEquiv`: the coefficients of `M_N`.
+* `TauCeti.LaurentSeries.piLatticeQuotientEquiv`: coefficients of coordinate jets on `[a,b)`.
 * `TauCeti.ProjectiveLattice.boundedEquiv`: lattices bounded by `N` correspond to the
   `X`-stable `R`-submodules of `M_N` with finite projective quotient.
 * `TauCeti.LaurentSeries.fg_and_projective_iff_projective_quotient`: a submodule
@@ -118,7 +118,7 @@ theorem piLattice_antitone :
 variable (R ι) in
 /-- The finite-jet module `M_N = X ^ (-N) R⟦X⟧^ι / X ^ N R⟦X⟧^ι` over `R⟦X⟧`. As an `R`-module its
 coordinates are the Laurent coefficients at the exponents `-N ≤ n < N`
-(`TauCeti.LaurentSeries.boundedLatticeQuotientEquiv`); for finite `ι` it is free of rank
+(`TauCeti.LaurentSeries.piLatticeQuotientEquiv`); for finite `ι` it is free of rank
 `2 N · #ι`. -/
 abbrev boundedLatticeQuotient (N : ℕ) :=
   piLattice R ι (-N : ℤ) ⧸
@@ -274,57 +274,44 @@ theorem piLatticeQuotientHahnEquiv_mk [Finite ι] (a b : ℤ) (v : piLattice R �
             (piLatticeHahnEquiv a v).property⟩ : TauCeti.HahnModule.lattice R (ι → R) a) := by
   simp [piLatticeQuotientHahnEquiv, Submodule.Quotient.equiv_apply]
 
-variable (R ι) in
-/-- The coefficients of a bounded coordinate jet, valid for arbitrary coordinate types. -/
-noncomputable def boundedLatticeQuotientEquiv (N : ℕ) :
-    boundedLatticeQuotient R ι N ≃ₗ[R] (ι → Finset.Ico (-N : ℤ) N → R) :=
-  piLatticeQuotientEquiv R ι (-N : ℤ) N
-
-/-- The coordinates of the class of `v` are the coefficients of the coordinates of `v`. -/
-@[simp]
-theorem boundedLatticeQuotientEquiv_mk (N : ℕ)
-    (v : piLattice R ι (-N : ℤ)) (i : ι) (m : Finset.Ico (-N : ℤ) N) :
-    boundedLatticeQuotientEquiv R ι N (Submodule.Quotient.mk v) i m =
-      ((v : ι → R⸨X⸩) i).coeff m :=
-  piLatticeQuotientEquiv_mk _ _ _ _ _
-
 /-- `M_N` is free over `R`, with the basis of its coefficients. -/
 instance [Finite ι] (N : ℕ) : Module.Free R (boundedLatticeQuotient R ι N) :=
-  .of_equiv (boundedLatticeQuotientEquiv R ι N).symm
+  .of_equiv (piLatticeQuotientEquiv R ι (-N : ℤ) N).symm
 
 /-- `M_N` is finite over `R`. -/
 instance [Finite ι] (N : ℕ) : Module.Finite R (boundedLatticeQuotient R ι N) :=
-  .equiv (boundedLatticeQuotientEquiv R ι N).symm
+  .equiv (piLatticeQuotientEquiv R ι (-N : ℤ) N).symm
 
 /-- `M_N` is free of rank `2 N · #ι`. -/
 theorem finrank_boundedLatticeQuotient [Fintype ι] [StrongRankCondition R] (N : ℕ) :
     Module.finrank R (boundedLatticeQuotient R ι N) = 2 * N * Fintype.card ι := by
-  rw [(boundedLatticeQuotientEquiv R ι N).finrank_eq, ← (LinearEquiv.curry R R ι _).finrank_eq,
+  rw [(piLatticeQuotientEquiv R ι (-N : ℤ) N).finrank_eq, ← (LinearEquiv.curry R R ι _).finrank_eq,
     Module.finrank_fintype_fun_eq_card, Fintype.card_prod, Fintype.card_coe, Int.card_Ico]
   rw [mul_comm]
   congr 1
   omega
 
-/-- Multiplication by `X ^ (2 N)` carries `X ^ (-N) R⟦X⟧^ι` into `X ^ N R⟦X⟧^ι`. -/
-theorem X_pow_smul_mem_piLattice (N : ℕ) {v : ι → R⸨X⸩}
-    (hv : v ∈ piLattice R ι (-N : ℤ)) :
-    (PowerSeries.X ^ (2 * N) : R⟦X⟧) • v ∈
-      piLattice R ι (N : ℤ) := by
+/-- Multiplication by `X ^ m` shifts the coordinate lattice at `a` to that at `a + m`. -/
+theorem X_pow_smul_mem_piLattice (a : ℤ) (m : ℕ) {v : ι → R⸨X⸩}
+    (hv : v ∈ piLattice R ι a) :
+    (PowerSeries.X ^ m : R⟦X⟧) • v ∈ piLattice R ι (a + m) := by
   rw [piLattice, pow_smul_mem_diagonalLattice_iff]
-  convert hv using 1
-  congr 1
-  funext i
-  push_cast
-  ring
+  simpa using hv
 
-/-- `M_N` is killed by `X ^ (2 N)`. -/
-theorem X_pow_smul_boundedLatticeQuotient (N : ℕ) (q : boundedLatticeQuotient R ι N) :
-    (PowerSeries.X ^ (2 * N) : R⟦X⟧) • q = 0 := by
+/-- A coordinate jet on `[a,b)` is killed by `X ^ m` whenever `b ≤ a + m`. -/
+theorem X_pow_smul_piLatticeQuotient (a b : ℤ) (m : ℕ) (h : b ≤ a + m)
+    (q : piLattice R ι a ⧸ (piLattice R ι b).comap (piLattice R ι a).subtype) :
+    (PowerSeries.X ^ m : R⟦X⟧) • q = 0 := by
   induction q using Submodule.Quotient.induction_on with
   | _ v =>
     rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, Submodule.mem_comap,
       Submodule.subtype_apply, Submodule.coe_smul]
-    exact X_pow_smul_mem_piLattice N v.property
+    exact piLattice_antitone h (X_pow_smul_mem_piLattice a m v.property)
+
+/-- `M_N` is killed by `X ^ (2 N)`. -/
+theorem X_pow_smul_boundedLatticeQuotient (N : ℕ) (q : boundedLatticeQuotient R ι N) :
+    (PowerSeries.X ^ (2 * N) : R⟦X⟧) • q = 0 :=
+  X_pow_smul_piLatticeQuotient (-N : ℤ) N (2 * N) (by omega) q
 
 variable (N : ℕ)
 
@@ -434,7 +421,9 @@ theorem fg_and_projective_iff_projective_quotient
   let e := quotientJetEquiv h₀
   let eΛ : Λ' ≃ₗ[R⟦X⟧] Λ := Submodule.comapSubtypeEquivOfLe h₁
   have hk (f : F) : (PowerSeries.X ^ (2 * N) : R⟦X⟧) • f ∈ Λ' :=
-    h₀ (X_pow_smul_mem_piLattice N f.property)
+    h₀ (by
+      convert X_pow_smul_mem_piLattice (-N : ℤ) (2 * N) f.property using 1 <;>
+        congr 1; omega)
   have hW : W = Λ'.map Λ₀.mkQ := rfl
   constructor
   · rintro ⟨hfg, hproj⟩
@@ -592,15 +581,12 @@ theorem exists_isBounded (Λ : ProjectiveLattice R⟦X⟧ R⸨X⸩ (ι → R⸨X
   have ha' : -((max a b : ℕ) : ℤ) ≤ 0 - a := by omega
   refine ⟨max a b, isBounded_iff.mpr ⟨fun v hv ↦ ?_, fun v hv ↦ ?_⟩⟩
   · -- `v = X ^ b • w` with `w = X ^ (-b) • v` in the standard lattice.
-    set w : ι → R⸨X⸩ := (hX.unit ^ (-(b : ℤ))) • v
-    have hwi (i : ι) : w i = single (-(b : ℤ)) 1 * v i := by
-      simp only [w]
-      rw [Pi.smul_apply, Units.smul_def, isUnit_unit_eq_unitX, val_unitX_zpow, smul_eq_mul]
+    let u := hX.unit ^ b
+    let w : ι → R⸨X⸩ := u⁻¹ • v
     have hw : (PowerSeries.X ^ b : R⟦X⟧) • w = v := by
-      funext i
-      rw [Pi.smul_apply, Algebra.smul_def, hwi, ← mul_assoc, LaurentSeries.coe_algebraMap,
-        ofPowerSeries_X_pow, single_mul_single]
-      simp
+      rw [← algebraMap_smul R⸨X⸩, map_pow, ← hX.unit_spec, ← Units.val_pow_eq_pow_val,
+        ← Units.smul_def]
+      exact smul_inv_smul u v
     rw [← hw]
     refine hb w (mem_toSubmodule.mp (hstd ▸ ?_))
     have hv' := piLattice_antitone hb' hv

@@ -185,7 +185,8 @@ coordinate vector `e_i`. -/
 theorem span_diagonalLattice [Finite n] (k : n → ℤ) (hξ : IsUnit (algebraMap B K ξ)) :
     Submodule.span K (diagonalLattice k hξ : Set (n → K)) = ⊤ := by
   classical
-  refine eq_top_iff.mpr ((Pi.basisFun K n).span_eq.ge.trans (Submodule.span_le.mpr ?_))
+  refine eq_top_iff.mpr (((Pi.basisFun K n).unitsSMul fun i ↦ hξ.unit ^ k i).span_eq.ge.trans
+    (Submodule.span_le.mpr ?_))
   rintro _ ⟨i, rfl⟩
   have hmem : Pi.single i ((hξ.unit ^ k i : Kˣ) : K) ∈ diagonalLattice k hξ := by
     rw [mem_diagonalLattice]
@@ -193,11 +194,9 @@ theorem span_diagonalLattice [Finite n] (k : n → ℤ) (hξ : IsUnit (algebraMa
     rcases eq_or_ne j i with rfl | hj
     · exact ⟨1, by simp⟩
     · exact ⟨0, by simp [hj]⟩
-  have he : Pi.basisFun K n i =
-      (((hξ.unit ^ k i)⁻¹ : Kˣ) : K) • Pi.single i ((hξ.unit ^ k i : Kˣ) : K) := by
-    rw [Pi.basisFun_apply, ← Pi.single_smul, smul_eq_mul, Units.inv_mul]
-  rw [he]
-  exact Submodule.smul_mem _ _ (Submodule.subset_span hmem)
+  rw [Module.Basis.unitsSMul_apply, Pi.basisFun_apply, ← Pi.single_smul,
+    Units.smul_def, smul_eq_mul, mul_one]
+  exact Submodule.subset_span hmem
 
 section Diagonal
 

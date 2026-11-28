@@ -122,7 +122,8 @@ end Ideal
 
 section XStable
 
-variable {M : Type*} [AddCommGroup M] [Module R⟦X⟧ M] [Module R M] [IsScalarTower R R⟦X⟧ M]
+variable {R : Type*} [CommSemiring R]
+  {M : Type*} [AddCommMonoid M] [Module R⟦X⟧ M] [Module R M] [IsScalarTower R R⟦X⟧ M]
   {k : ℕ}
 
 /-- In a module killed by `X ^ k`, an `R`-submodule stable under `X` is stable under every power
