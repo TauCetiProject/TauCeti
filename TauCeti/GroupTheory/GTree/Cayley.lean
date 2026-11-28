@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Graph.Serre.Cayley
 public import TauCeti.GroupTheory.FreeGroup.Conjugacy.Basic
 public import TauCeti.GroupTheory.FreeGroup.Nielsen
+public import TauCeti.GroupTheory.GTree.Axis
 public import TauCeti.GroupTheory.GTree.JSJ
 public import TauCeti.GroupTheory.GTree.Restrict
 
@@ -47,6 +48,9 @@ JSJ deformation space (`GTree.IsJSJ.sameDeformationSpace`).
 * `TauCeti.GTree.cayley_isHyperbolic_iff`: the hyperbolic elements are the nontrivial ones.
 * `TauCeti.GTree.cayley_translationLength`: the translation length is the length of the cyclic
   reduction.
+* `TauCeti.GTree.cayley_axis_of`, `TauCeti.GTree.cayley_axis_of_inter_axis_of`: the axis of a basis
+  element `a` consists of the powers of `a`, and the axes of two distinct basis elements meet only
+  in the identity.
 * `TauCeti.GTree.cayley_isJSJ`: the Cayley tree is a JSJ tree of the free group, over a family
   containing the trivial subgroup and relative to trivial subgroups.
 * `TauCeti.GTree.isJSJ_iff_forall_stabilizer_eq_bot_freeGroup`: over the same families, the JSJ
@@ -191,6 +195,36 @@ theorem cayley_translationLength_of_mul_of (a b : α) :
 theorem cayley_translationLength_of_mul_of_mul_inv_of (a b : α) :
     (cayley α).translationLength (FreeGroup.of a * FreeGroup.of b * (FreeGroup.of a)⁻¹) = 1 := by
   rw [translationLength_conj, cayley_translationLength_of]
+
+/-! ### Axes of basis elements -/
+
+/-- The axis of a basis element `a` in the Cayley tree consists of the powers of `a`. -/
+theorem cayley_axis_of (a : α) : (cayley α).axis (FreeGroup.of a) =
+    {v : (cayley α).V | cayleyVertexEquiv v ∈ Subgroup.zpowers (FreeGroup.of a)} := by
+  classical
+  obtain ⟨c, hc⟩ : ∃ c : ℤ → (cayley α).V, ∀ n, cayleyVertexEquiv (c n) = FreeGroup.of a ^ n :=
+    ⟨fun n => cayleyVertexEquiv.symm _, fun n => Equiv.apply_symm_apply _ _⟩
+  -- The powers of `a` form a geodesic line, translated by one step by `a`.
+  have hdist (m n : ℤ) : (cayley α).dist (c m) (c n) = (m - n).natAbs := by
+    refine (SerreGraph.cayley_dist _ _).trans ?_
+    rw [hc, hc, ← zpow_neg, ← zpow_add, FreeGroup.norm_of_zpow]
+    lia
+  rw [axis_eq_range_of_smul_eq_add hdist one_ne_zero fun n => cayleyVertexEquiv.injective (by
+    rw [cayleyVertexEquiv_cayley_smul, hc, hc, mul_self_zpow])]
+  ext v
+  simp only [Set.mem_range, Set.mem_ofPred_eq, Subgroup.mem_zpowers_iff, ← hc]
+  exact exists_congr fun n => cayleyVertexEquiv.injective.eq_iff.symm
+
+/-- The axes of two distinct basis elements in the Cayley tree meet in exactly one vertex, the
+identity. -/
+theorem cayley_axis_of_inter_axis_of {a b : α} (hab : a ≠ b) :
+    (cayley α).axis (FreeGroup.of a) ∩ (cayley α).axis (FreeGroup.of b) =
+      {v : (cayley α).V | cayleyVertexEquiv v = 1} := by
+  ext v
+  simp only [cayley_axis_of, Set.mem_inter_iff, Set.mem_ofPred_eq, Subgroup.mem_zpowers_iff]
+  refine ⟨fun ⟨⟨n, hn⟩, m, hm⟩ => ?_, fun h => ⟨⟨0, by rw [h, zpow_zero]⟩, 0, by rw [h, zpow_zero]⟩⟩
+  obtain ⟨rfl, -⟩ := FreeGroup.eq_of_of_zpow_eq_of_zpow hab (hn.trans hm.symm)
+  rw [← hn, zpow_zero]
 
 /-! ### The Cayley tree is a JSJ tree -/
 
