@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.Polynomial.ScaleRoots
+import Mathlib.Algebra.Polynomial.AlgebraMap
 
 /-!
 # Root scaling of finite products, derivatives and separability
@@ -99,5 +100,29 @@ theorem Separable.scaleRoots {p : R[X]} (hp : p.Separable) {s : R} (hs : IsUnit 
     (p.scaleRoots s).Separable := by
   rw [Separable, derivative_scaleRoots, isCoprime_mul_unit_left_right (isUnit_C.mpr (hs.pow _))]
   exact isCoprime_scaleRoots _ _ s hs hp
+
+/-- Scaling the roots of an irreducible polynomial over an integral domain `R` by a unit `a : Rˣ`
+yields an irreducible polynomial. -/
+theorem irreducible_scaleRoots {R : Type*} [CommRing R] [IsDomain R] {p : R[X]}
+    (hp : Irreducible p) (a : Rˣ) : Irreducible (p.scaleRoots (a : R)) := by
+  let _ : Invertible ((a⁻¹ : Rˣ) : R) := a⁻¹.invertible
+  let e : R[X] ≃ₐ[R] R[X] := algEquivCMulXAddC ((a⁻¹ : Rˣ) : R) 0
+  have he : e p = p.comp (C ((a⁻¹ : Rˣ) : R) * X) := by
+    simp [e, algEquivCMulXAddC, comp_eq_aeval]
+  have h_eq : p.scaleRoots (a : R) = C ((a : R) ^ p.natDegree) * e p := by
+    ext n
+    rw [coeff_C_mul, he, comp_C_mul_X_coeff]
+    by_cases hn : n ≤ p.natDegree
+    · rw [coeff_scaleRoots, ← Nat.sub_add_cancel hn, pow_add, Nat.add_sub_cancel]
+      calc p.coeff n * (a : R) ^ (p.natDegree - n)
+          = (a : R) ^ (p.natDegree - n) * p.coeff n * (((a : R) * ((a⁻¹ : Rˣ) : R)) ^ n) := by
+            simp [mul_comm]
+        _ = (a : R) ^ (p.natDegree - n) * (a : R) ^ n * (p.coeff n * ((a⁻¹ : Rˣ) : R) ^ n) := by
+            rw [mul_pow]; ring
+    · rw [coeff_eq_zero_of_natDegree_lt (by rw [natDegree_scaleRoots]; exact Nat.lt_of_not_le hn),
+        coeff_eq_zero_of_natDegree_lt (Nat.lt_of_not_le hn), zero_mul, mul_zero]
+  rw [h_eq]
+  exact (associated_unit_mul_left (e p) _ (isUnit_C.mpr (a ^ p.natDegree).isUnit))
+    |>.irreducible_iff.mpr (hp.map e.toRingEquiv)
 
 end Polynomial

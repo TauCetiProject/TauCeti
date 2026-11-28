@@ -11,6 +11,7 @@ public import TauCeti.FieldTheory.Finite.PrimitivePolynomial
 import Mathlib.Algebra.Ring.GeomSum
 import Mathlib.GroupTheory.OrderOfElement
 import Mathlib.RingTheory.Polynomial.Basic
+import TauCeti.RingTheory.Polynomial.ScaleRoots
 
 /-!
 # Scaling roots and root products of primitive polynomials
@@ -24,17 +25,22 @@ This file proves two properties of primitive polynomials over finite fields:
 * Scaling the roots of `p` by an `M`-th root of unity `a : Kˣ` with `M ^ 2 ∣ q - 1` preserves
   primitivity (`Polynomial.IsPrimitivePolynomial.scaleRoots`), because every prime dividing the
   order of `a` divides `(orderOf a) ^ 2 ∣ M ^ 2 ∣ q - 1 ∣ q ^ r - 1`.
-* In any nontrivial integral domain `L` over `K` containing a root `ξ` of `p`, the product of the
-  roots of `p` is `ξ ^ (∑ i ∈ Finset.range p.natDegree, q ^ i)`
-  (`Polynomial.IsPrimitivePolynomial.pow_geom_sum_eq_prod_aroots`), and this product is a primitive
-  `(q - 1)`-th root of unity (`Polynomial.IsPrimitivePolynomial.isPrimitiveRoot_prod_aroots`).
+* For any irreducible polynomial `p : K[X]` and root `ξ` in a nontrivial `K`-algebra integral
+  domain `L`, the product of the roots of `p` is `ξ ^ (∑ i ∈ Finset.range p.natDegree, q ^ i)`
+  (`Polynomial.pow_geom_sum_eq_prod_aroots_of_irreducible`, specialized to primitive polynomials as
+  `Polynomial.IsPrimitivePolynomial.pow_geom_sum_eq_prod_aroots`), and when `p` is primitive this
+  product is a primitive `(q - 1)`-th root of unity
+  (`Polynomial.IsPrimitivePolynomial.isPrimitiveRoot_prod_aroots`).
 
 ## Main results
 
 * `Polynomial.IsPrimitivePolynomial.scaleRoots`: scaling roots by an `M`-th root of unity with
   `M ^ 2 ∣ Nat.card K - 1` preserves `Polynomial.IsPrimitivePolynomial`.
-* `Polynomial.IsPrimitivePolynomial.pow_geom_sum_eq_prod_aroots`: the root product equals the
-  Frobenius norm power `ξ ^ (∑ i ∈ Finset.range p.natDegree, Nat.card K ^ i)`.
+* `Polynomial.pow_geom_sum_eq_prod_aroots_of_irreducible`: for an irreducible polynomial over a
+  finite field, the root product equals the Frobenius norm power
+  `ξ ^ (∑ i ∈ Finset.range p.natDegree, Nat.card K ^ i)`.
+* `Polynomial.IsPrimitivePolynomial.pow_geom_sum_eq_prod_aroots`: primitive-polynomial
+  specialization.
 * `Polynomial.IsPrimitivePolynomial.isPrimitiveRoot_prod_aroots`: the root product is a primitive
   `(Nat.card K - 1)`-th root of unity.
 
@@ -54,34 +60,6 @@ open Finset
 namespace Polynomial
 
 variable {K : Type*} [Field K]
-
-/-- Scaling the roots of an irreducible polynomial over a field `K` by a unit `a : Kˣ` yields
-an irreducible polynomial. -/
-theorem irreducible_scaleRoots {p : K[X]} (hp : Irreducible p) (a : Kˣ) :
-    Irreducible (p.scaleRoots (a : K)) := by
-  let e : K[X] ≃ₐ[K] K[X] := AlgEquiv.ofAlgHom
-    (aeval (C (a⁻¹ : K) * X)) (aeval (C (a : K) * X)) (by ext; simp) (by ext; simp)
-  have h_eq : p.scaleRoots (a : K) = C ((a : K) ^ p.natDegree) * e p := by
-    ext n
-    rw [coeff_C_mul]
-    change (p.scaleRoots (a : K)).coeff n =
-      (a : K) ^ p.natDegree * (p.comp (C (a⁻¹ : K) * X)).coeff n
-    by_cases hn : n ≤ p.natDegree
-    · rw [coeff_scaleRoots, comp, eval₂_eq_sum_range]
-      have hsum := map_sum (lcoeff K n)
-        (fun i ↦ C (p.coeff i) * (C ((a : K)⁻¹) * X) ^ i) (range (p.natDegree + 1))
-      simp only [lcoeff_apply] at hsum; rw [hsum]
-      simp only [mul_pow, ← C_pow, ← mul_assoc, ← C_mul, coeff_C_mul, coeff_X_pow, mul_ite,
-        mul_one, mul_zero, Finset.sum_ite_eq, mem_range, Nat.lt_succ_of_le hn, ↓reduceIte]
-      rw [inv_pow, ← div_eq_mul_inv, eq_div_iff (pow_ne_zero n a.ne_zero),
-        mul_assoc, ← pow_add, Nat.sub_add_cancel hn, mul_comm]
-    · rw [coeff_eq_zero_of_natDegree_lt (by rw [natDegree_scaleRoots]; exact Nat.lt_of_not_le hn),
-        coeff_eq_zero_of_natDegree_lt, mul_zero]
-      rw [natDegree_comp, natDegree_C_mul_X _ (inv_ne_zero a.ne_zero), mul_one]
-      exact Nat.lt_of_not_le hn
-  rw [h_eq]
-  exact (associated_unit_mul_left (e p) _ (isUnit_C.mpr (a ^ p.natDegree).isUnit))
-    |>.irreducible_iff.mpr (hp.map e.toRingEquiv)
 
 /-- Scaling the roots of a primitive polynomial `p` over a finite field `K` by an `M`-th root of
 unity `a : Kˣ` with `M ^ 2 ∣ Nat.card K - 1` yields a primitive polynomial. -/
@@ -109,16 +87,25 @@ theorem IsPrimitivePolynomial.scaleRoots [Finite K] {p : K[X]} (hp : p.IsPrimiti
     _ ∣ Nat.card K ^ p.natDegree - 1 := Nat.sub_one_dvd_pow_sub_one _ _
     _ = orderOf ξ := h_ord_p.symm
 
+/-- For an irreducible polynomial `p` over a finite field `K` and any root `ξ` in a `K`-algebra
+integral domain `L`, the product of the roots of `p` in `L` equals
+`ξ ^ (∑ i ∈ Finset.range p.natDegree, Nat.card K ^ i)`. -/
+theorem pow_geom_sum_eq_prod_aroots_of_irreducible [Finite K] {L : Type*} [CommRing L]
+    [IsDomain L] [Algebra K L] {p : K[X]} (hp : Irreducible p) {ξ : L}
+    (hξ : aeval ξ p = 0) :
+    ξ ^ ∑ i ∈ range p.natDegree, Nat.card K ^ i = (p.aroots L).prod := by
+  cases nonempty_fintype K
+  rw [TauCeti.FiniteField.aroots_eq_map_pow_card_pow hp hξ, ← prod_pow_eq_pow_sum,
+    Nat.card_eq_fintype_card, Finset.prod_eq_multiset_prod, range_val]
+
 /-- For a primitive polynomial `p` over a finite field `K` and any root `ξ` in a `K`-algebra
 integral domain `L`, the product of the roots of `p` in `L` equals
 `ξ ^ (∑ i ∈ Finset.range p.natDegree, Nat.card K ^ i)`. -/
 theorem IsPrimitivePolynomial.pow_geom_sum_eq_prod_aroots [Finite K] {L : Type*} [CommRing L]
     [IsDomain L] [Algebra K L] {p : K[X]} (hp : p.IsPrimitivePolynomial) {ξ : L}
     (hξ : aeval ξ p = 0) :
-    ξ ^ ∑ i ∈ range p.natDegree, Nat.card K ^ i = (p.aroots L).prod := by
-  cases nonempty_fintype K
-  rw [TauCeti.FiniteField.aroots_eq_map_pow_card_pow hp.irreducible hξ, ← prod_pow_eq_pow_sum,
-    Nat.card_eq_fintype_card, Finset.prod_eq_multiset_prod, range_val]
+    ξ ^ ∑ i ∈ range p.natDegree, Nat.card K ^ i = (p.aroots L).prod :=
+  pow_geom_sum_eq_prod_aroots_of_irreducible hp.irreducible hξ
 
 /-- The product of the roots of a primitive polynomial `p` over a finite field `K` in any
 `K`-algebra integral domain `L` containing a root of `p` is a primitive `(Nat.card K - 1)`-th
