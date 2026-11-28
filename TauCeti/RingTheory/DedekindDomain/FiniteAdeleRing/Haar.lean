@@ -13,9 +13,15 @@ public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.BorelSpace
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.CompletedIdeal
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.LocalUnits
+public import Mathlib.NumberTheory.NumberField.Basic
+public import Mathlib.RingTheory.FractionalIdeal.Norm
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.MeasureTheory.Group.Measure
+import TauCeti.NumberTheory.NumberField.Countable
+import TauCeti.NumberTheory.NumberField.Global.Places.PowerClasses
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
+import TauCeti.RingTheory.FractionalIdeal.Norm
 
 /-!
 # The normalized Haar measure on the finite adeles
@@ -77,6 +83,9 @@ place, `μ_f` is not finite: multiplication by a uniformizer at one place scales
   nonzero ideal `N` has `#(R ⧸ N)⁻¹` times the measure of `Ô`, hence mass `#(R ⧸ N)⁻¹`.
 * `IsDedekindDomain.FiniteAdeleRing.addHaar_univ_eq_top`: an additive Haar measure on the finite
   adele ring is infinite as soon as `R` has a place.
+* `IsDedekindDomain.FiniteAdeleRing.coe_distribHaarChar_eq_inv_absNorm`: for a number field, the
+  Haar character of a finite idele, its idele norm, is the inverse of the absolute norm of its
+  fractional ideal.
 
 ## References
 
@@ -356,5 +365,42 @@ theorem addHaarMeasure_image_completedIdeal [∀ v : HeightOneSpectrum R, Finite
   exact ENNReal.eq_inv_of_mul_eq_one_left h
 
 end CompletedIdeal
+
+/-! ### The idele norm of a finite idele of a number field -/
+
+section NumberField
+
+open NumberField
+open scoped nonZeroDivisors
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- **The idele norm of a finite idele is the inverse norm of its ideal.** Multiplication by a
+finite idele `x` of a number field scales additive Haar measure on the finite adeles by
+`|x| = ∏_v |x_v|_v = N(x)⁻¹`, where `N(x)` is the absolute norm of the fractional ideal of `x`. -/
+theorem coe_distribHaarChar_eq_inv_absNorm (x : (FiniteAdeleRing (𝓞 K) K)ˣ) :
+    (distribHaarChar (FiniteAdeleRing (𝓞 K) K) x : ℝ) =
+      (FractionalIdeal.absNorm (toFractionalIdeal x : FractionalIdeal (𝓞 K)⁰ K) : ℝ)⁻¹ := by
+  -- the component of `x` at `v` has norm `N(v) ^ (-ord_v(x))`
+  have hnorm (v : HeightOneSpectrum (𝓞 K)) :
+      ‖(x : FiniteAdeleRing (𝓞 K) K) v‖ = (Ideal.absNorm v.asIdeal : ℝ) ^ (-adicOrd x v) := by
+    rw [FinitePlace.norm_def, WithZeroMulInt.toNNReal_neg_apply _
+      (valued_coe_units_apply_ne_zero x v), adicOrd_def, neg_neg, NNReal.coe_zpow,
+      NNReal.coe_natCast]
+  have hQ (f : HeightOneSpectrum (𝓞 K) → ℚ) : ((∏ᶠ v, f v : ℚ) : ℝ) = ∏ᶠ v, (f v : ℝ) :=
+    (Rat.castHom ℝ : ℚ →* ℝ).map_finprod_of_injective Rat.cast_injective f
+  have hN (f : HeightOneSpectrum (𝓞 K) → NNReal) :
+      ((∏ᶠ v, f v : NNReal) : ℝ) = ∏ᶠ v, (f v : ℝ) :=
+    (NNReal.toRealHom : NNReal →* ℝ).map_finprod_of_injective NNReal.coe_injective f
+  rw [distribHaarChar_eq_finprod, ← FractionalIdeal.finprod_zpow_count_units_eq_absNorm, hQ, hN,
+    ← finprod_inv_distrib]
+  refine finprod_congr fun v ↦ ?_
+  rw [count_coe_toFractionalIdeal, Rat.cast_zpow, Rat.cast_natCast, ← zpow_neg,
+    ← Submodule.cardQuot_apply, ← Ideal.absNorm_apply, ← hnorm,
+    ← v.coe_normalizedAbsoluteValue_adicCompletion]
+  exact Nonneg.coe_nnratCast _
+
+
+end NumberField
 
 end IsDedekindDomain.FiniteAdeleRing
