@@ -47,6 +47,8 @@ the full faithfulness of `f`.
   `SSet.QCat.isCategoricalEquivalence_iff_exists_equivalence` identifying them with the
   `1`-morphisms underlying equivalences in the bicategory. They contain the isomorphisms and are
   closed under composition.
+* `SSet.QCat.IsCategoricalEquivalence.of_rlp_monomorphisms`: a trivial fibration between
+  quasicategories is a categorical equivalence.
 * `SSet.QCat.IsCategoricalEquivalence.isEquivalence_mapHomotopyCategory`: a categorical
   equivalence induces an equivalence of homotopy categories.
 * `SSet.QCat.IsCategoricalEquivalence.exists_isEquivalence`: a categorical equivalence is
@@ -68,8 +70,9 @@ the full faithfulness of `f`.
 
 ## References
 
-* J. Lurie, *Higher Topos Theory*, §1.2.10.
-* J. Lurie, *Kerodon*, §4.6.2 (fully faithful and essentially surjective functors).
+* J. Lurie, *Higher Topos Theory*, §1.2.10 and §2.4.6.
+* J. Lurie, *Kerodon*, §4.5 (equivalences of ∞-categories) and §4.6.2 (fully faithful and
+  essentially surjective functors).
 * E. Riehl and D. Verity, *The 2-category theory of quasi-categories*, Adv. Math. 280 (2015).
 -/
 
@@ -210,6 +213,39 @@ lemma comp {f : X ⟶ Y} {g : Y ⟶ Z} (hf : IsCategoricalEquivalence f)
 /-- An isomorphism of quasicategories is a categorical equivalence. -/
 lemma of_isIso (f : X ⟶ Y) [IsIso f] : IsCategoricalEquivalence f :=
   ⟨inv f, ⟨eqToIso (IsIso.hom_inv_id f).symm⟩, ⟨eqToIso (IsIso.inv_hom_id f)⟩⟩
+
+open MorphismProperty Limits in
+/-- **A trivial fibration between quasicategories is a categorical equivalence.** -/
+theorem of_rlp_monomorphisms {p : X ⟶ Y}
+    (hp : (monomorphisms SSet.{u}).rlp p.hom) : IsCategoricalEquivalence p := by
+  -- A section `s` of `p` is a quasi-inverse: `s ≫ p` is the identity, and a homotopy over `Y` from
+  -- the identity of `X` to `p ≫ s` is an equivalence of `Fun(X, X)`, since its components lie over
+  -- identities.
+  have := X.property
+  have := (rlp_monomorphisms_iff.1 hp).1
+  have := isSplitEpi_of_rlp_monomorphisms hp
+  have hs : section_ p.hom ≫ p.hom = 𝟙 _ := IsSplitEpi.id p.hom
+  let s : Y ⟶ X := ObjectProperty.homMk (section_ p.hom)
+  obtain ⟨H, hH⟩ := exists_homotopy_of_rlp_monomorphisms hp (𝟙 X.obj) (p.hom ≫ section_ p.hom)
+    (by simp [hs])
+  -- The component of `H` at `x` lies over the degenerate edge at `p x`, so it is an equivalence.
+  have hα : ((ihomEdgeEquiv _ _).symm H).IsEquivalence := by
+    refine (Edge.isEquivalence_iff_forall_isEquivalence_map_evalAt _).2 fun x ↦ ?_
+    rw [← Edge.isEquivalence_map_iff_of_rightFibration p.hom]
+    refine (Edge.isEquivalence_iff_of_edge_eq ?_).1 (Edge.isEquivalence_id (p.hom.app _ x))
+    rw [Edge.id_edge, σ_zero_eq_yonedaEquiv_const]
+    simp [← yonedaEquiv_comp, hH]
+  -- The identities and composites of `1`-morphisms in the bicategory of quasicategories are those
+  -- of the full subcategory `QCat` of `SSet` only up to unfolding, so `simp` does not see them:
+  -- the maps underlying `𝟙 X` and `p ≫ s` are `𝟙 X.obj` and `p.hom ≫ section_ p.hom` by `rfl`.
+  obtain ⟨η⟩ := nonempty_iso_of_isEquivalence (f := 𝟙 X) (g := p ≫ s)
+    ((Edge.isEquivalence_ofEq_iff (e := (ihomEdgeEquiv _ _).symm H) rfl rfl).2 hα)
+  have hε : s ≫ p = 𝟙 Y := by
+    -- As above, the map underlying `s ≫ p` is `section_ p.hom ≫ p.hom` by definition.
+    ext : 1
+    exact hs
+  exact (isCategoricalEquivalence_iff_exists_equivalence p).2
+    ⟨.mkOfAdjointifyCounit η (eqToIso hε), rfl⟩
 
 /-- A categorical equivalence of quasicategories induces an equivalence of homotopy
 categories. -/
