@@ -14,6 +14,7 @@ import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 import TauCeti.NumberTheory.NumberField.Frobenius
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
+import TauCeti.NumberTheory.RamificationInertia.Tower
 import TauCeti.RingTheory.Frobenius
 import TauCeti.RingTheory.Ideal.LiesOver
 
@@ -38,10 +39,11 @@ open Ideal NumberField NumberField.IsCMField
 
 namespace IsPrimitiveRoot
 
-variable {K E : Type*} [Field K] [NumberField K] [IsCMField K] [Algebra.IsQuadraticExtension ℚ K]
+variable {K E : Type*} [Field K] [CharZero K] [IsCMField K] [Algebra.IsQuadraticExtension ℚ K]
   [Field E] [NumberField E] [IsCMField E] [Algebra K E] [IsScalarTower ℚ K E]
   {m p : ℕ} [NeZero m] [IsCyclotomicExtension {m} K E] [Fact p.Prime]
 
+open TauCeti.RamificationInertia in
 /-- If `p` is inert in `K`, then for odd `n` the conjugate of an algebraic integer followed by
 the `K`-automorphism of exponent `−p ^ n` is congruent to its `p ^ n`th power modulo the rational
 prime `p`. Inertness is expressed by the residue degree of the ideal `(p)` in `𝓞 K`.
@@ -51,6 +53,7 @@ theorem natCast_dvd_pow_sub_smul_complexConj_of_inert {ζ : E} (hζ : IsPrimitiv
     (σ : E ≃ₐ[K] E) (hσ : σ ζ = (ζ ^ (p ^ n))⁻¹) (x : 𝓞 E) :
     (p : 𝓞 E) ∣ x ^ (p ^ n) -
       ((σ.restrictScalars ℚ * (complexConj E).restrictScalars ℚ) • x) := by
+  have : NumberField K := ⟨⟩
   let τ := σ.restrictScalars ℚ * (complexConj E).restrictScalars ℚ
   have hτK : τ.restrictNormal K = (complexConj K).restrictScalars ℚ := by
     ext a
@@ -58,27 +61,34 @@ theorem natCast_dvd_pow_sub_smul_complexConj_of_inert {ζ : E} (hζ : IsPrimitiv
     rw [τ.restrictNormal_commutes, AlgEquiv.mul_apply]
     simp [complexConj_algebraMap]
   have hτζ : τ ζ = ζ ^ (p ^ n) := by
-    have hconj : complexConj E ζ = ζ⁻¹ := by
-      apply eq_inv_of_mul_eq_one_left
-      rw [mul_comm]
-      exact mul_complexConj_eq_one_of_pow_eq (NeZero.ne m) hζ.pow_eq_one (by simp)
+    have hconj := eq_inv_of_mul_eq_one_right
+      (mul_complexConj_eq_one_of_pow_eq (NeZero.ne m) hζ.pow_eq_one (by simp))
     simp [τ, AlgEquiv.mul_apply, hconj, hσ]
-  have hn0 : 0 < n := by obtain ⟨k, hk⟩ := hn; omega
   have hp : ¬ p ∣ m := by
     have hprim := hζ.map_of_injective τ.injective
-    rw [hτζ, hζ.pow_iff_coprime (NeZero.pos m), Nat.coprime_pow_left_iff hn0] at hprim
+    rw [hτζ, hζ.pow_iff_coprime (NeZero.pos m), Nat.coprime_pow_left_iff hn.pos] at hprim
     exact (Fact.out : p.Prime).coprime_iff_not_dvd.mp hprim
-  have : IsGalois ℚ E :=
-    IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension ℚ K E {m}
-  refine (TauCeti.NumberField.natCast_dvd_iff_forall_mem_primesOver
-    (fun Q ↦ Q.isUnramifiedAt_of_inertiaDeg_span_natCast_eq_two hf hp) _).mpr fun Q ⟨hQ, hQo⟩ ↦ ?_
-  have hP := Q.under_eq_span_natCast_of_inertiaDeg_ne_zero (hf.trans_ne (by decide))
+  have hm (Q : Ideal (𝓞 E)) [Q.LiesOver (span {(p : ℤ)})] : (m : 𝓞 E) ∉ Q := by
+    simpa using (Q.algebraMap_mem_iff_dvd_of_liesOver (m : ℤ)).not.mpr
+      (Int.natCast_dvd_natCast.not.mpr hp)
+  have hfQ (Q : Ideal (𝓞 E)) [Q.LiesOver (span {(p : ℤ)})] :
+      (Q.under (𝓞 K)).inertiaDeg ℤ = 2 := by
+    rwa [Q.under_eq_span_natCast_of_inertiaDeg_ne_zero (hf.trans_ne (by decide))]
+  have hun (Q : Ideal (𝓞 E)) [Q.IsPrime] [Q.LiesOver (span {(p : ℤ)})] :
+      Algebra.IsUnramifiedAt (𝓞 ℚ) Q := by
+    have : Algebra.IsUnramifiedAt ℤ (Q.under (𝓞 K)) := by
+      apply Ideal.ramificationIdx_eq_one_iff.mp
+      have hb := ramificationIdx_mul_inertiaDeg_le_finrank ℤ (Q.under (𝓞 K))
+      rw [hfQ Q, RingOfIntegers.rank, Algebra.IsQuadraticExtension.finrank_eq_two] at hb
+      have hpos := Ideal.ramificationIdx_pos ℤ (Q.under (𝓞 K))
+      omega
+    have := Q.isUnramifiedAt_int_of_isCyclotomicExtension (K := K) (hm Q)
+    exact Algebra.IsUnramifiedAt.of_restrictScalars ℤ Q
+  have := IsCyclotomicExtension.isGalois_of_isGalois_of_isCyclotomicExtension ℚ K E {m}
+  refine (TauCeti.NumberField.natCast_dvd_iff_forall_mem_primesOver hun _).mpr fun Q ⟨hQ, hQo⟩ ↦ ?_
   obtain ⟨φ, hφ⟩ := NumberField.exists_isArithFrobAt_int_of_liesOver Q (p := p)
   have hφζ : φ ζ = ζ ^ p := by
-    have hm : (m : 𝓞 E) ∉ Q := by
-      simpa using (Ideal.algebraMap_mem_iff_dvd_of_liesOver Q (m : ℤ)).not.mpr
-        (Int.natCast_dvd_natCast.not.mpr hp)
-    have hi := hφ.apply_of_pow_eq_one hζ.toInteger_isPrimitiveRoot.pow_eq_one hm
+    have hi := hφ.apply_of_pow_eq_one hζ.toInteger_isPrimitiveRoot.pow_eq_one (hm Q)
     rw [Q.natCard_quotient_under_of_liesOver (n := p)] at hi
     simpa [MulSemiringAction.toAlgHom_apply, NumberField.algebraMap_smul_eq_apply,
       ← RingOfIntegers.coe_eq_algebraMap, hζ.coe_toInteger] using
@@ -88,7 +98,7 @@ theorem natCast_dvd_pow_sub_smul_complexConj_of_inert {ζ : E} (hζ : IsPrimitiv
     | zero => simp
     | succ j ih => rw [pow_succ', AlgEquiv.mul_apply, ih, map_pow, hφζ, ← pow_mul, pow_succ']
   have heq : φ ^ n = τ := hζ.algEquiv_eq_of_restrictNormal_eq_of_apply_eq
-    ((hφ.restrictNormal_pow_eq_complexConj (hP.symm ▸ hf) hn).trans hτK.symm)
+    ((hφ.restrictNormal_pow_eq_complexConj (hfQ Q) hn).trans hτK.symm)
     ((hpw n).trans hτζ.symm)
   have h := hφ.mk_pow_smul n x
   rw [Q.natCard_quotient_under_of_liesOver (n := p), heq, ← map_pow] at h

@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.NumberField.CMField
 public import Mathlib.RingTheory.Frobenius
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 import TauCeti.FieldTheory.Galois.Basic
+import TauCeti.FieldTheory.Galois.Restriction
 import TauCeti.NumberTheory.NumberField.Frobenius.Restriction
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
@@ -28,11 +29,12 @@ namespace IsArithFrobAt
 
 /-- At a prime whose contraction to an imaginary quadratic subfield has residue degree two
 over `ℤ`, odd powers of arithmetic Frobenius restrict to complex conjugation on that subfield. -/
-theorem restrictNormal_pow_eq_complexConj {K E : Type*} [Field K] [NumberField K] [IsCMField K]
+theorem restrictNormal_pow_eq_complexConj {K E : Type*} [Field K] [CharZero K] [IsCMField K]
     [Algebra.IsQuadraticExtension ℚ K] [Field E] [CharZero E] [Algebra K E] [IsScalarTower ℚ K E]
     {Q : Ideal (𝓞 E)} [Q.IsPrime] {φ : E ≃ₐ[ℚ] E} (hφ : IsArithFrobAt ℤ φ Q)
     (hf : (Q.under (𝓞 K)).inertiaDeg ℤ = 2) {n : ℕ} (hn : Odd n) :
     (φ ^ n).restrictNormal K = (complexConj K).restrictScalars ℚ := by
+  have : NumberField K := ⟨⟩
   have hφK := (Ideal.isArithFrobAt_ringOfIntegers_rat_iff (φ.restrictNormal K) (Q.under (𝓞 K))).mp
     ((Ideal.isArithFrobAt_ringOfIntegers_rat_iff φ Q).mpr hφ).restrictNormal
   have hdiv := Ideal.inertiaDeg_dvd_orderOf (Q.under (𝓞 K)) hφK
@@ -41,9 +43,8 @@ theorem restrictNormal_pow_eq_complexConj {K E : Type*} [Field K] [NumberField K
     complexConj_ne_one K (AlgEquiv.restrictScalars_injective ℚ h)
   refine (Algebra.IsQuadraticExtension.algEquiv_eq_one_or_eq ℚ K hc _).resolve_left ?_
   intro h
-  let r : (E ≃ₐ[ℚ] E) →* (K ≃ₐ[ℚ] K) := AlgEquiv.restrictNormalHom K
-  have hpow : r (φ ^ n) = 1 := h
-  rw [map_pow] at hpow
-  exact hn.not_two_dvd_nat (hdiv.trans (orderOf_dvd_iff_pow_eq_one.mpr hpow))
+  rw [← AlgEquiv.restrictNormalHom_apply_eq_restrictNormal ℚ K E, map_pow,
+    AlgEquiv.restrictNormalHom_apply_eq_restrictNormal] at h
+  exact hn.not_two_dvd_nat (hdiv.trans (orderOf_dvd_iff_pow_eq_one.mpr h))
 
 end IsArithFrobAt
