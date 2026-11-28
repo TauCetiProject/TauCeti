@@ -12,7 +12,8 @@ import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
 /-!
 # Orders of roots of unity in rational cyclotomic extensions
 
-Over `ℚ`, a cyclotomic field of even order `n` has no roots of unity of order not dividing `n`.
+Over `ℚ`, a cyclotomic field of even positive level contains a root of unity exactly when
+its order divides the level (`IsPrimitiveRoot.mem_iff_dvd_of_isCyclotomicExtension_even`).
 If the order is `np` for a prime `p`, a proper subfield containing a primitive `n`-th root
 has no roots of unity of order not dividing `n`.
 
@@ -37,6 +38,24 @@ theorem dvd_of_isCyclotomicExtension_even {F : Type*} [Field F] [CharZero F]
   have : NumberField F := IsCyclotomicExtension.numberField {n} ℚ F
   have h := NumberField.Units.dvd_torsionOrder_of_isPrimitiveRoot hz
   rwa [IsCyclotomicExtension.Rat.torsionOrder_eq (n := n), ite_eq_left hn] at h
+
+/-- A primitive `n`-th root in an ambient field lies in its rational cyclotomic subfield of
+even positive level `m` exactly when `n ∣ m`. -/
+theorem mem_iff_dvd_of_isCyclotomicExtension_even {L : Type*} [Field L] [CharZero L]
+    {ζ : L} {n m : ℕ} [NeZero n] [NeZero m] (hζ : IsPrimitiveRoot ζ n)
+    (F : IntermediateField ℚ L) [IsCyclotomicExtension {m} ℚ F] (hm : Even m) :
+    ζ ∈ F ↔ n ∣ m := by
+  constructor
+  · intro hz
+    have h : IsPrimitiveRoot (⟨ζ, hz⟩ : F) n := IsPrimitiveRoot.coe_submonoidClass_iff.mp hζ
+    exact h.dvd_of_isCyclotomicExtension_even (NeZero.ne n) hm
+  · intro hnm
+    have hζm : ζ ^ m = 1 := (hζ.pow_eq_one_iff_dvd _).mpr hnm
+    have hgen : IsPrimitiveRoot (IsCyclotomicExtension.zeta m ℚ F : L) m := by
+      simpa only [IntermediateField.coe_val] using
+        (IsCyclotomicExtension.zeta_spec m ℚ F).map_of_injective (f := F.val) F.val.injective
+    obtain ⟨k, -, rfl⟩ := hgen.eq_pow_of_pow_eq_one hζm
+    exact pow_mem (IsCyclotomicExtension.zeta m ℚ F).property k
 
 /-- Let `p` be prime with `np` even. If a field embeds in the `np`-th rational cyclotomic
 extension but has degree less than `φ(np)`, then every root of unity in it has order dividing `n`,
