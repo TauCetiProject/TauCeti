@@ -65,7 +65,7 @@ universe u
 
 namespace TauCeti.DeRham
 
-open CategoryTheory _root_.KaehlerDifferential exteriorPower
+open CategoryTheory _root_.KaehlerDifferential _root_.exteriorPower
 
 section Pullback
 

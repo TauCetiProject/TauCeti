@@ -198,6 +198,18 @@ theorem W1p.morreyRepresentative_eq_of_ae_eq (u : W1p mu ⊤ (p : ℝ≥0∞))
   (Continuous.ae_eq_iff_eq mu (W1p.continuous_morreyRepresentative u hp) hw).1
     ((W1p.value_ae_eq_morreyRepresentative u hp).symm.trans h)
 
+/-- The canonical Morrey representative of a test function is the test function itself. This
+rule runs before simplification of subterms: otherwise the coercion of `⊤ : Opens E` in the
+Sobolev space is simplified before the test function is recognized. -/
+@[simp↓]
+theorem W1p.morreyRepresentative_ofTestFunctionₗ (hp : (finrank ℝ E : ℝ≥0) < p)
+    (phi : 𝓓((⊤ : Opens E), ℝ)) :
+    W1p.morreyRepresentative (W1p.ofTestFunctionₗ mu ⊤ (p : ℝ≥0∞) phi) hp = phi := by
+  refine W1p.morreyRepresentative_eq_of_ae_eq _ hp phi.contDiff.continuous ?_
+  rw [W1p.value_ofTestFunctionₗ]
+  exact (testFunctionLp_apply_ae (mu := mu) (p : ℝ≥0∞) phi).filter_mono
+    (ae_mono (by rw [Opens.coe_top, Measure.restrict_univ]))
+
 /-- The canonical Morrey representative of zero is zero. -/
 @[simp]
 theorem W1p.morreyRepresentative_zero (hp : (finrank ℝ E : ℝ≥0) < p) :

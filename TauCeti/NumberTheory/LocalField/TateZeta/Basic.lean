@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.MeasureTheory.Group.Integral
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+import TauCeti.Analysis.Complex.ParametricIntegralHolomorphy
 
 /-!
 # The local Tate zeta integral
@@ -23,6 +25,8 @@ Mathlib's totalized Bochner integral, and proves the identities that only use th
 integrand:
 
 * it is linear in the test function;
+* it is holomorphic in `s` on every half-plane `α < re s` on which `‖f χ‖ a ^ σ` is integrable
+  for all `σ > α`;
 * rescaling the measure by `c` rescales the integral by `c`;
 * twisting `χ` by the norm power `a ^ t` translates `s` by `t`: `z(s, χ a^t; f) = z(s + t, χ; f)`;
 * for a left-invariant `ν` and a multiplicative positive `a`, translating the test function by
@@ -42,12 +46,14 @@ local field are in `TauCeti.NumberTheory.LocalField.TateZeta.Nonarchimedean`.
 
 * `TauCeti.TateZeta.localZetaIntegral_add`, `TauCeti.TateZeta.localZetaIntegral_const_mul`:
   linearity in the test function.
+* `TauCeti.TateZeta.differentiableOn_localZetaIntegral_of_integrable`: holomorphy on a
+  half-plane of absolute convergence.
 * `TauCeti.TateZeta.localZetaIntegral_smul_measure`: `z_{c ν} = c z_ν`.
 * `TauCeti.TateZeta.localZetaIntegral_of_twist`: `z(s, χ a^t; f) = z(s + t, χ; f)`.
 * `TauCeti.TateZeta.localZetaIntegral_comp_mul_left`:
   `z(s, χ; f(b ·)) = χ(b)⁻¹ a(b)^(-s) z(s, χ; f)`.
-* `TauCeti.TateZeta.localZetaIntegral_eq_zero_of_comp_mul_left`: if `f(b ·) = f` and
-  `χ(b) a(b) ^ s ≠ 1`, then `z(s, χ; f) = 0`.
+* `TauCeti.TateZeta.localZetaIntegral_eq_zero_of_comp_mul_left`: if `f(b ·) = c f` and
+  `c χ(b) a(b) ^ s ≠ 1`, then `z(s, χ; f) = 0`.
 
 ## References
 
@@ -101,6 +107,16 @@ theorem localZetaIntegral_const_mul (c : ℂ) (f : F → ℂ) (s : ℂ) :
   rw [localZetaIntegral_def, localZetaIntegral_def, ← integral_const_mul]
   simp only [mul_assoc]
 
+/-- **Holomorphy on a half-plane of absolute convergence.** If `a` is positive and measurable
+on `Fˣ`, `f χ` is almost everywhere strongly measurable and `‖f(x) χ(x)‖ a(x) ^ σ` is integrable
+for every `σ > α`, then `s ↦ z(s, χ; f)` is holomorphic on the half-plane `α < re s`. -/
+theorem differentiableOn_localZetaIntegral_of_integrable {f : F → ℂ} (ha : ∀ x : Fˣ, 0 < a x)
+    (ham : Measurable fun x : Fˣ ↦ a x)
+    (hf : AEStronglyMeasurable (fun x : Fˣ ↦ f x * (χ x : ℂ)) ν) {α : ℝ}
+    (hint : ∀ σ : ℝ, α < σ → Integrable (fun x : Fˣ ↦ ‖f x * (χ x : ℂ)‖ * a x ^ σ) ν) :
+    DifferentiableOn ℂ (localZetaIntegral ν a χ f) {s | α < s.re} :=
+  differentiableOn_integral_mul_cpow ν ha hf ham hint
+
 /-- Rescaling the multiplicative measure by `c` rescales the local zeta integral by `c`. -/
 theorem localZetaIntegral_smul_measure (c : ENNReal) (f : F → ℂ) (s : ℂ) :
     localZetaIntegral (c • ν) a χ f s = c.toReal • localZetaIntegral ν a χ f s := by
@@ -150,20 +166,26 @@ theorem localZetaIntegral_comp_mul_left [MeasurableMul Fˣ] [ν.IsMulLeftInvaria
   · rw [Complex.arg_ofReal_of_nonneg (ha b).le]
     exact Real.pi_ne_zero.symm
 
-/-- **Vanishing by an invariance**: for a left-invariant measure and a positive multiplicative
-`a`, if the test function is invariant under `b ∈ Fˣ` and `(χ a ^ s)(b) ≠ 1`, then
-`z(s, χ; f) = 0`. -/
+/-- **Vanishing by an eigenfunction**: for a left-invariant measure and a positive multiplicative
+`a`, if translating the test function by `b ∈ Fˣ` multiplies it by `c`, that is `f(b ·) = c f`,
+and `c (χ a ^ s)(b) ≠ 1`, then `z(s, χ; f) = 0`. The invariant case is `c = 1`. -/
 theorem localZetaIntegral_eq_zero_of_comp_mul_left [MeasurableMul Fˣ] [ν.IsMulLeftInvariant]
     (ha : ∀ x : Fˣ, 0 < a x) (hmul : ∀ x y : Fˣ, a ((x * y : Fˣ) : F) = a x * a y)
-    {f : F → ℂ} {b : Fˣ} (hb : ∀ x, f (b * x) = f x) {s : ℂ}
-    (hχ : (χ b : ℂ) * (a b : ℂ) ^ s ≠ 1) :
+    {f : F → ℂ} {b : Fˣ} {c : ℂ} (hb : ∀ x, f (b * x) = c * f x) {s : ℂ}
+    (hχ : c * (χ b : ℂ) * (a b : ℂ) ^ s ≠ 1) :
     localZetaIntegral ν a χ f s = 0 := by
   have h := localZetaIntegral_comp_mul_left ν a χ ha hmul f b s
-  simp only [hb] at h
-  rw [cpow_neg, ← mul_inv] at h
-  have hc : ((χ b : ℂ) * (a b : ℂ) ^ s)⁻¹ ≠ 1 := fun h' ↦ hχ (inv_eq_one.1 h')
-  have h0 : (1 - ((χ b : ℂ) * (a b : ℂ) ^ s)⁻¹) * localZetaIntegral ν a χ f s = 0 := by
-    linear_combination h
-  exact (mul_eq_zero.1 h0).resolve_left (sub_ne_zero.2 hc.symm)
+  simp only [hb, localZetaIntegral_const_mul] at h
+  have hs : (a b : ℂ) ^ s ≠ 0 := by
+    rw [cpow_def_of_ne_zero (ofReal_ne_zero.2 (ha b).ne')]
+    exact exp_ne_zero _
+  have h1 : (χ b : ℂ) * (a b : ℂ) ^ s * ((χ b : ℂ)⁻¹ * (a b : ℂ) ^ (-s)) = 1 := by
+    have := (χ b).ne_zero
+    rw [cpow_neg]
+    field_simp
+  -- `(c (χ a ^ s)(b) - 1) z = (χ a ^ s)(b) (c z - (χ a ^ s)(b)⁻¹ z)`.
+  have h0 : (c * (χ b : ℂ) * (a b : ℂ) ^ s - 1) * localZetaIntegral ν a χ f s = 0 := by
+    linear_combination ((χ b : ℂ) * (a b : ℂ) ^ s) * h + localZetaIntegral ν a χ f s * h1
+  exact (mul_eq_zero.1 h0).resolve_left (sub_ne_zero.2 hχ)
 
 end TauCeti.TateZeta

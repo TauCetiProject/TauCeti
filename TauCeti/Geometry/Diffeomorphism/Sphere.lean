@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Diffeomorphism.Topology
 public import TauCeti.Geometry.Sphere.LinearIsometry
 public import TauCeti.Analysis.Matrix.EuclideanLin
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.Normed.Affine.MazurUlam
 import TauCeti.Topology.Algebra.UnitaryGroup
 
 /-!
@@ -47,7 +48,9 @@ continuity proved here.
 
 * `LinearIsometryEquiv.contMDiff_unitSphereEquiv`: the restriction to the unit sphere is
   `C^m` for every smoothness exponent, so the linear isometry group acts on the unit sphere by
-  `C^m` maps (a `ContMDiffConstSMul` instance).
+  `C^m` maps (a `ContMDiffConstSMul` instance). So does the group of linear isometries over any
+  scalar ring, such as the unitary group of a complex inner product space, since by the
+  Mazur–Ulam theorem they are real linear.
 * `LinearIsometryEquiv.mvfderiv_coe_sphere_unitSphereEquiv`: the differential of the restriction,
   read in the ambient spaces through the sphere inclusions, is the linear isometry itself.
 * `LinearIsometryEquiv.isometry_unitSphereEquiv`: it is an isometry for the distance the
@@ -188,10 +191,14 @@ theorem unitSphereDiffHom_injective :
   refine TauCeti.LinearMap.eq_of_eqOn_unitSphere fun x hx => ?_
   simpa using congrArg Subtype.val (DFunLike.congr_fun h ⟨x, hx⟩)
 
-/-- The linear isometry group of `E` acts on the unit sphere by `C^m` maps, for every smoothness
-exponent `m`. -/
-instance : ContMDiffConstSMul (𝓡 n) m (E ≃ₗᵢ[ℝ] E) (sphere (0 : E) 1) :=
-  ⟨contMDiff_unitSphereEquiv⟩
+/-- The linear isometry group of `E` over any scalar ring `R`, for instance the unitary group of a
+complex inner product space, acts on the unit sphere by `C^m` maps, for every smoothness exponent
+`m`. By the Mazur–Ulam theorem a linear isometry is real linear, so its restriction to the sphere
+is that of a real linear isometry. -/
+instance {R : Type*} [Semiring R] [Module R E] :
+    ContMDiffConstSMul (𝓡 n) m (E ≃ₗᵢ[R] E) (sphere (0 : E) 1) :=
+  ⟨fun e ↦ (contMDiff_unitSphereEquiv e.toIsometryEquiv.toRealLinearIsometryEquiv).congr
+    fun x ↦ Subtype.ext (by simp)⟩
 
 end InnerProduct
 
@@ -294,13 +301,45 @@ noncomputable def orthogonalToDiffSphere (n : ℕ) (m : ℕ∞ω) :
     Matrix.UnitaryGroup.toLinearIsometryEquiv.toMonoidHom
 
 /-- The reference inclusion `O(n + 1) → Diff(Sⁿ)` sends an orthogonal transformation to its
-restriction to the unit sphere. -/
-@[simp]
+restriction to the unit sphere. Not a simp lemma, so that `simp` keeps the reference inclusion
+folded and can apply its equations, such as those with the orthogonal retraction in
+`TauCeti.Geometry.Diffeomorphism.Sphere.OrthogonalRetraction`. -/
 theorem orthogonalToDiffSphere_apply (n : ℕ) (m : ℕ∞ω)
     (A : Matrix.orthogonalGroup (Fin (n + 1)) ℝ) :
     orthogonalToDiffSphere n m A =
       LinearIsometryEquiv.unitSphereDiffHom m (Matrix.UnitaryGroup.toLinearIsometryEquiv A) :=
   (rfl)
+
+/-- The diffeomorphism induced by an orthogonal matrix `A` is the restriction of the linear
+isometry of `A` to the unit sphere. Not a simp lemma, for the same reason as
+`TauCeti.orthogonalToDiffSphere_apply`. -/
+theorem coe_orthogonalToDiffSphere (n : ℕ) (m : ℕ∞ω)
+    (A : Matrix.orthogonalGroup (Fin (n + 1)) ℝ) :
+    ⇑(orthogonalToDiffSphere n m A) =
+      (Matrix.UnitaryGroup.toLinearIsometryEquiv A).unitSphereEquiv := by
+  rw [orthogonalToDiffSphere_apply, LinearIsometryEquiv.unitSphereDiffHom_apply,
+    LinearIsometryEquiv.coe_unitSphereDiffeomorph]
+
+/-- The diffeomorphism induced by an orthogonal matrix `A` acts on a point of the sphere, read in
+`ℝⁿ⁺¹`, by the linear isometry of `A`. -/
+@[simp]
+theorem coe_orthogonalToDiffSphere_apply (n : ℕ) (m : ℕ∞ω)
+    (A : Matrix.orthogonalGroup (Fin (n + 1)) ℝ)
+    (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
+    (orthogonalToDiffSphere n m A x : EuclideanSpace ℝ (Fin (n + 1))) =
+      Matrix.UnitaryGroup.toLinearIsometryEquiv A x := by
+  rw [coe_orthogonalToDiffSphere, LinearIsometryEquiv.coe_unitSphereEquiv_apply]
+
+open _root_.Matrix in
+/-- In Euclidean coordinates, the diffeomorphism induced by an orthogonal matrix `A` multiplies a
+point of the sphere by `A`. -/
+theorem ofLp_orthogonalToDiffSphere_apply (n : ℕ) (m : ℕ∞ω)
+    (A : Matrix.orthogonalGroup (Fin (n + 1)) ℝ)
+    (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
+    (orthogonalToDiffSphere n m A x : EuclideanSpace ℝ (Fin (n + 1))).ofLp =
+      (A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) *ᵥ (x : EuclideanSpace ℝ (Fin (n + 1))).ofLp := by
+  rw [coe_orthogonalToDiffSphere, LinearIsometryEquiv.coe_unitSphereEquiv_apply,
+    Matrix.UnitaryGroup.toLinearIsometryEquiv_apply, WithLp.ofLp_toLp]
 
 /-- The reference inclusion `O(n + 1) → Diff(Sⁿ)` is injective, so `O(n + 1)` is realised as a
 subgroup of `Diff(Sⁿ)`. -/

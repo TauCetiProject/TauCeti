@@ -70,7 +70,10 @@ bounds.
 * `LipschitzWith.tendsto_integral_norm_sub_sq`: if `∫ ‖f i - g‖² → 0` with eventually integrable
   integrands, then the Bochner integrals `∫ ‖T (f i) - T g‖²` tend to `0` for Lipschitz `T`.
 * `MeasureTheory.Lp.dist_le_of_ae_dist_le_top`: an almost everywhere bound of the pointwise
-  distance of two `L∞` classes bounds their `L∞` distance.
+  distance of two `L∞` classes bounds their `L∞` distance; conversely, their `L∞` distance bounds
+  the pointwise distance almost everywhere (`MeasureTheory.Lp.ae_dist_le_dist_top`).
+* `ContinuousLinearMap.ae_dist_le_opNorm_top`: a bounded operator `T` into `L∞` satisfies
+  `dist (T a x) (T b x) ≤ ‖T‖ * dist a b` for almost every `x`.
 * `MeasureTheory.lpNorm_congr_ae`: the `Lᵖ` norm of a function depends only on its almost
   everywhere class.
 * `MeasureTheory.Lp.norm_eq_lpNorm_of_ae_eq`: the norm of an element of `Lᵖ(ν)` is the `Lᵖ` norm of
@@ -228,6 +231,18 @@ theorem normLp_smul {𝕜 : Type*} [NormedRing 𝕜] [NormedAddCommGroup E] [Mod
   filter_upwards [coeFn_normLp (c • f), Lp.coeFn_smul c f,
     Lp.coeFn_smul ‖c‖ (normLp f), coeFn_normLp f] with x h₁ h₂ h₃ h₄
   simp [h₁, h₂, h₃, h₄, norm_smul]
+
+/-- `Lp.normLp` of `hf.toLp f` is `hf.norm.toLp (fun x ↦ ‖f x‖)`. -/
+theorem normLp_toLp [NormedAddCommGroup E] {f : α → E} (hf : MemLp f p μ) :
+    normLp (hf.toLp f) = hf.norm.toLp fun x ↦ ‖f x‖ := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_normLp (hf.toLp f), hf.norm.coeFn_toLp, hf.coeFn_toLp] with x h₁ h₂ h₃
+  rw [h₁, h₂, h₃]
+
+/-- `Lp.normLp` of `hf.toL1 f` is `hf.norm.toL1 (fun x ↦ ‖f x‖)`. -/
+theorem normLp_toL1 [NormedAddCommGroup E] {f : α → E} (hf : Integrable f μ) :
+    normLp (hf.toL1 f) = hf.norm.toL1 fun x ↦ ‖f x‖ :=
+  normLp_toLp (memLp_one_iff_integrable.2 hf)
 
 end MeasureTheory.Lp
 
@@ -391,6 +406,21 @@ theorem Lp.dist_le_of_ae_dist_le_top {alpha F : Type*} [MeasurableSpace alpha]
   refine Lp.norm_le_of_ae_bound_top hδ ?_
   filter_upwards [Lp.coeFn_sub f g, h] with x hx h
   rwa [hx, Pi.sub_apply, ← _root_.dist_eq_norm]
+
+/-- Almost everywhere, the pointwise distance of two `L∞` classes is at most their `L∞` distance.
+The converse bound is `MeasureTheory.Lp.dist_le_of_ae_dist_le_top`. -/
+theorem Lp.ae_dist_le_dist_top {alpha F : Type*} [MeasurableSpace alpha] [NormedAddCommGroup F]
+    {m : Measure alpha} (f g : Lp F ∞ m) : ∀ᵐ x ∂m, dist (f x) (g x) ≤ dist f g := by
+  filter_upwards [Lp.coeFn_sub f g, Lp.ae_norm_le_norm_top (f - g)] with x hx h
+  rwa [hx, Pi.sub_apply, ← _root_.dist_eq_norm, ← _root_.dist_eq_norm] at h
+
+/-- A bounded operator `T` into `L∞` moves values, almost everywhere, by at most
+`‖T‖ * dist a b`: the almost everywhere form of `ContinuousLinearMap.dist_le_opNorm`. -/
+theorem _root_.ContinuousLinearMap.ae_dist_le_opNorm_top {alpha 𝕜 E F : Type*}
+    [MeasurableSpace alpha] {m : Measure alpha} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (T : F →L[𝕜] Lp E ∞ m) (a b : F) : ∀ᵐ x ∂m, dist (T a x) (T b x) ≤ ‖T‖ * dist a b :=
+  (Lp.ae_dist_le_dist_top (T a) (T b)).mono fun _ h => h.trans (T.dist_le_opNorm a b)
 
 /-- A representative `g` of a real `L∞` class `f` agrees almost everywhere with its truncation to
 `[-‖f‖, ‖f‖]`. The truncation is bounded everywhere by `‖f‖` (`TauCeti.abs_max_min_le`). -/

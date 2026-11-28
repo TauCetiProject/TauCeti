@@ -130,17 +130,14 @@ private theorem diffCongr_mem_range_orthogonalToDiffSphere_iff
   set b := Complex.orthonormalBasisOneI.repr
   have hψ (θ : AddCircle (1 : ℝ)) : (ψ θ : EuclideanSpace ℝ (Fin 2)) = b θ.toCircle :=
     AddCircle.coe_diffeomorphSphere_apply 1 n θ
-  have hι (A : Matrix.orthogonalGroup (Fin 2) ℝ) (x : sphere (0 : EuclideanSpace ℝ (Fin 2)) 1) :
-      (orthogonalToDiffSphere 1 n A x : EuclideanSpace ℝ (Fin 2)) =
-        Matrix.UnitaryGroup.toLinearIsometryEquiv A x := by
-    simp [LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply]
   rw [AddCircle.mem_isometryDiffeomorphs_iff_exists_linearIsometryEquiv]
   constructor
   · -- An orthogonal `A` gives the linear isometry `b⁻¹ ∘ A ∘ b` of `ℂ`.
     rintro ⟨A, hA⟩
     refine ⟨b.trans ((Matrix.UnitaryGroup.toLinearIsometryEquiv A).trans b.symm), fun θ ↦ ?_⟩
     have h := congrArg (fun φ ↦ (φ (ψ θ) : EuclideanSpace ℝ (Fin 2))) hA
-    simp only [hι, Diffeomorph.diffCongr_apply_apply, Diffeomorph.symm_apply_apply, hψ] at h
+    simp only [coe_orthogonalToDiffSphere_apply, Diffeomorph.diffCongr_apply_apply,
+      Diffeomorph.symm_apply_apply, hψ] at h
     simp [h]
   · -- A linear isometry `L` of `ℂ` gives the orthogonal matrix of `b ∘ L ∘ b⁻¹`.
     rintro ⟨L, hL⟩
