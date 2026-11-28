@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.MeasureTheory.Function.Holder
-import TauCeti.Analysis.Sobolev.Mollification.Basic
+import TauCeti.Analysis.Sobolev.Mollification.Interior
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -231,18 +231,6 @@ section Endpoint
 
 open scoped Distributions LineDeriv
 
-/-- Interior directional derivative of a normalized mollification of a zero-extended weakly
-differentiable function, in left-kernel convolution form. -/
-private theorem hasLineDerivAt_normed_convolution_indicator {M : Type*} [NormedAddCommGroup M]
-    [NormedSpace ℝ M] {W : Opens E} {g g' : E → M} (hg : HasWeakLineDerivOn μ Ω g g' v)
-    (hWΩ : (W : Set E) ⊆ Ω) (hg_int : LocallyIntegrable ((W : Set E).indicator g) μ)
-    (ρ : ContDiffBump (0 : E)) {x : E} (hx : ∀ y ∈ tsupport (ρ.normed μ), x - y ∈ W) :
-    HasLineDerivAt ℝ (ρ.normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] (W : Set E).indicator g)
-      ((ρ.normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] (W : Set E).indicator g') x) x v := by
-  have hgd := ((hg.mono hWΩ).indicator).hasLineDerivAt_convolution_right hg_int _
-    ρ.contDiff_normed ρ.hasCompactSupport_normed x hx
-  rwa [convolution_flip, convolution_flip] at hgd
-
 /-- **Endpoint directional weak Leibniz rule for a classically differentiable left factor.** If `f₀`
 is continuous on `Ω` and has continuous directional derivative `f'₀` along `v` at every point of
 `Ω`, and `g` has weak directional derivative `g'` along `v` on `Ω`, then `B(f₀, g)` has weak
@@ -284,7 +272,7 @@ theorem HasWeakLineDerivOn.bilin_of_hasLineDerivAt_left (B : F →L[ℝ] G →L[
         (B.continuous₂.comp_continuousOn (hf₀W₀.prodMk (hg'm_cont m).continuousOn))
         ).locallyIntegrableOn W₀.isOpen.measurableSet)
       fun x hx => (hfd x (hW₀Ω' hx)).clm_bilin B
-        (hasLineDerivAt_normed_convolution_indicator hg (subset_closure.trans hWΩ)
+        ((hg.mono (subset_closure.trans hWΩ)).hasLineDerivAt_normed_convolution_indicator
           hg_int.locallyIntegrable (ρ m) (hball m x hx))
   -- Local integrability of the limit functions and `L¹(W₀)` convergence of `B(f₀, g_m)` and
   -- `B(f'₀, g_m) + B(f₀, g'_m)`.
@@ -375,7 +363,7 @@ theorem HasWeakLineDerivOn.bilin_of_continuousOn (B : F →L[ℝ] G →L[ℝ] H)
       (fun x => B (f'_n n x) (g x) + B (f_n n x) (g' x)) v :=
     (hg.mono hW₀Ω).bilin_of_hasLineDerivAt_left B (hfn_cont n).continuousOn
       (hf'n_cont n).continuousOn fun x hx =>
-        hasLineDerivAt_normed_convolution_indicator hf (subset_closure.trans hWΩ)
+        (hf.mono (subset_closure.trans hWΩ)).hasLineDerivAt_normed_convolution_indicator
           hf_int.locallyIntegrable (ρ n) (hball n x hx)
   -- Stage 2: test against `φ` and pass `n → ∞` using `f_n → f` uniformly on `tsupport φ` (`ht1`,
   -- `ht3`) and `f'_n → f'` weakly in `Lᵖ(W)` against `φ • g ∈ L^{p'}` (`ht2`).
