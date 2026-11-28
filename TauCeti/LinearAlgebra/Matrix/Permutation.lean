@@ -12,9 +12,9 @@ public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 # Permutation matrices: multiplication, basis action, and nonnegative sums
 
 Multiplying a matrix on the left by `Matrix.permMatrixHom σ` permutes its rows by `σ.symm`, and
-multiplying on the right permutes its columns by `σ`; similarly, `Matrix.permMatrix_mul_apply`
-evaluates left multiplication by `σ.permMatrix R`. In the standard basis `Finsupp.basisSingleOne`,
-`Matrix.permMatrixHom σ` is the matrix of the permutation endomorphism `Finsupp.lmapDomain R R σ`.
+multiplying on the right permutes its columns by `σ`. In the standard basis
+`Finsupp.basisSingleOne`, `Matrix.permMatrixHom σ` is the matrix of the permutation endomorphism
+`Finsupp.lmapDomain R R σ`.
 
 Each permutation's weight bounds the entries on its diagonal in a nonnegative weighted
 sum of permutation matrices. This lets support arguments recover a whole permutation
@@ -24,7 +24,6 @@ lying in the support of a matrix `K` and together covering it, has the zero patt
 ## Main results
 
 * `Equiv.Perm.permMatrix_nonneg`: every entry of a permutation matrix is nonnegative.
-* `Matrix.permMatrix_mul_apply`: multiplying on the left by `σ.permMatrix R` permutes rows by `σ`.
 * `Matrix.permMatrixHom_mul`, `Matrix.permMatrixHom_mul_apply`: multiplying on the left by
   `permMatrixHom σ` permutes rows by `σ.symm`.
 * `Matrix.mul_permMatrixHom`, `Matrix.mul_permMatrixHom_apply`: multiplying on the right by
@@ -51,14 +50,6 @@ theorem permMatrix_nonneg {n R : Type*} [DecidableEq n]
 end Equiv.Perm
 
 namespace Matrix
-
-/-- Left multiplication by `σ.permMatrix R` permutes the rows: the `(i, j)` entry of
-`σ.permMatrix R * M` is `M (σ i) j`. -/
-@[simp]
-theorem permMatrix_mul_apply {R : Type*} [NonAssocSemiring R] {ι κ : Type*}
-    [Fintype ι] [DecidableEq ι] {σ : Equiv.Perm ι} (M : Matrix ι κ R) (i : ι) (j : κ) :
-    (σ.permMatrix R * M) i j = M (σ i) j := by
-  rw [Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul, Matrix.submatrix_apply, id]
 
 /-- Multiplying a matrix on the left by `permMatrixHom σ` permutes its rows by `σ.symm`. -/
 theorem permMatrixHom_mul {m k R : Type*} [Fintype m] [DecidableEq m] [NonAssocSemiring R]

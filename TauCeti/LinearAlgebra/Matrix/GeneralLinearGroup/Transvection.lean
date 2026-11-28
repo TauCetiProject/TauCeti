@@ -16,10 +16,8 @@ public import Mathlib.GroupTheory.NoncommCoprod
 -- `Matrix.GeneralLinearGroup.transvection` occurs in the bridge statement below.
 public import Mathlib.LinearAlgebra.Matrix.ElementaryRowOperations
 -- Non-public: the diagonal-matrix-unit product law is used only in a proof below.
-import TauCeti.Data.Matrix.Basis
 import TauCeti.GroupTheory.Commutator
 import TauCeti.LinearAlgebra.Matrix.Diagonal
-import TauCeti.LinearAlgebra.Matrix.Permutation
 
 /-!
 # Transvections in the general linear group
@@ -76,8 +74,6 @@ the elementary matrices against the diagonal torus.
 
 * `TauCeti.toGL_transvection_eq_transvectionUnit`: over a commutative ring,
   `TauCeti.transvectionUnit` is Mathlib's special-linear transvection viewed in `GL n A`.
-* `TauCeti.transvectionUnit_mul_apply`: left multiplication by a transvection adds a scalar
-  multiple of one row to another.
 * `TauCeti.transvectionUnit_mem_of_adjacent`: a subgroup containing the adjacent transvections
   in both orientations contains every transvection.
 * `TauCeti.commute_transvectionUnit`: transvections at index pairs that do not chain commute.
@@ -178,32 +174,6 @@ higher-priority `TauCeti.coe_transvectionUnit` fires first and rewrites to Mathl
 theorem coe_transvectionUnit_eq_one_add_single (hij : i ≠ j) (c : A) :
     (transvectionUnit hij c : Matrix n n A) = 1 + single i j c :=
   (rfl)
-
-/-- Left multiplication by `transvectionUnit hij c` adds `c` times row `j` to row `i`. -/
-theorem transvectionUnit_mul_apply (hij : i ≠ j) (c : A) (g : GL n A) (r s : n) :
-    (transvectionUnit hij c * g : GL n A) r s =
-      g r s + if r = i then c * g j s else 0 := by
-  have hmat : ((transvectionUnit hij c * g : GL n A) : Matrix n n A) =
-      (1 + single i j c) * (g : Matrix n n A) := by
-    rw [Units.val_mul, coe_transvectionUnit_eq_one_add_single]
-  exact (congrFun (congrFun hmat r) s).trans (one_add_single_mul_apply i j c g r s)
-
-/-- Left multiplication by `transvectionUnit hij c` preserves rows `r ≠ i`. -/
-theorem transvectionUnit_mul_apply_of_ne (hij : i ≠ j) (c : A) (g : GL n A) {r : n} (hr : r ≠ i)
-    (s : n) :
-    (transvectionUnit hij c * g : GL n A) r s = g r s := by
-  simp [transvectionUnit_mul_apply, hr]
-
-/-- Left multiplication by `transvectionUnit hij c` adds `c * g j s` to row `i`. -/
-theorem transvectionUnit_mul_apply_self (hij : i ≠ j) (c : A) (g : GL n A) (s : n) :
-    (transvectionUnit hij c * g : GL n A) i s = g i s + c * g j s := by
-  simp [transvectionUnit_mul_apply]
-
-/-- Left multiplication by `transvectionUnit hij c` preserves `(i, s)` when `g j s = 0`. -/
-theorem transvectionUnit_mul_apply_self_of_eq_zero (hij : i ≠ j) (c : A) (g : GL n A) {s : n}
-    (hjs : g j s = 0) :
-    (transvectionUnit hij c * g : GL n A) i s = g i s := by
-  rw [transvectionUnit_mul_apply_self, hjs, mul_zero, add_zero]
 
 /-- A transvection acts on column vectors by the elementary row operation adding `c` times the
 `j`-th coordinate to the `i`-th one. -/
@@ -716,7 +686,7 @@ theorem map_transvectionWeylElement (f : A →+* B) (hij : i ≠ j) :
 
 end Map
 
-/-! ## Conjugation of the diagonal torus by Weyl elements -/
+/-! ## Conjugation by the diagonal torus -/
 
 section Torus
 

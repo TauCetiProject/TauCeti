@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Dieudonne.GaussJordan
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DieudonneDeterminant
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability.Surjective
 
 /-!
 # Further properties of the Dieudonné determinant over a division ring
@@ -14,8 +14,8 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DieudonneDetermina
 Extending `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DieudonneDeterminant`, this file proves
 further formulas and corollaries for `TauCeti.dieudonneDet : GL n D →* Group.Abelianization Dˣ`:
 membership in the elementary subgroup, scalar and block-unipotent matrices, commutator-kernel
-vanishing for nontrivial `Dˣ`, naturality under `Matrix.GeneralLinearGroup.map`, and the
-finite-rank quotient isomorphism
+vanishing for nontrivial `Dˣ`, normality of `TauCeti.elementarySubgroup n D` at every finite
+matrix size, and the finite-rank quotient isomorphism
 `GL n D ⧸ TauCeti.elementarySubgroup n D ≃* Group.Abelianization Dˣ`.
 
 For stabilization invariance and further properties on `AlgebraicK₁`, see
@@ -28,13 +28,12 @@ For stabilization invariance and further properties on `AlgebraicK₁`, see
 
 ## Main results
 
-* `TauCeti.dieudonneDet_of_mem_elementarySubgroup`,
-  `TauCeti.dieudonneDet_eq_one_iff`: membership in `elementarySubgroup n D` vs. `dieudonneDet = 1`.
+* `TauCeti.elementarySubgroup_normal`: `TauCeti.elementarySubgroup n D` is normal in `GL n D`.
+* `TauCeti.dieudonneDet_eq_one_iff`: membership in `elementarySubgroup n D` vs. `dieudonneDet = 1`.
 * `TauCeti.dieudonneDet_scalar`, `TauCeti.dieudonneDet_upperBlockGL`,
   `TauCeti.dieudonneDet_lowerBlockGL`: values on scalar and block-unipotent matrices.
 * `TauCeti.elementarySubgroup_le_ker_of_nontrivial`: when `Dˣ` is nontrivial, every homomorphism
   from `GL n D` to a commutative group vanishes on `elementarySubgroup n D`.
-* `TauCeti.dieudonneDet_map`: naturality under `Matrix.GeneralLinearGroup.map` over fields.
 
 ## References
 
@@ -57,11 +56,6 @@ namespace TauCeti
 section DivisionRing
 
 variable {n : Type*} [Fintype n] [DecidableEq n] {D : Type*} [DivisionRing D]
-
-/-- Every matrix in the elementary subgroup has Dieudonné determinant `1`. -/
-theorem dieudonneDet_of_mem_elementarySubgroup {g : GL n D}
-    (hg : g ∈ elementarySubgroup n D) : dieudonneDet n D g = 1 :=
-  elementarySubgroup_le_ker_dieudonneDet hg
 
 /-- In rank at least two, an invertible matrix over a division ring has Dieudonné determinant `1`
 if and only if it belongs to the elementary subgroup. -/
@@ -91,30 +85,29 @@ theorem elementarySubgroup_le_ker_of_nontrivial [Nontrivial Dˣ] {G : Type*} [Co
 @[simp]
 theorem dieudonneDet_upperBlockGL {m : Type*} [Fintype m] [DecidableEq m] (X : Matrix n m D) :
     dieudonneDet (n ⊕ m) D (Matrix.upperBlockGL X) = 1 :=
-  dieudonneDet_of_mem_elementarySubgroup (Matrix.upperBlockGL_mem_elementarySubgroup X)
+  elementarySubgroup_le_ker_dieudonneDet (Matrix.upperBlockGL_mem_elementarySubgroup X)
 
 /-- Every lower block-unipotent matrix has Dieudonné determinant `1`. -/
 @[simp]
 theorem dieudonneDet_lowerBlockGL {m : Type*} [Fintype m] [DecidableEq m] (Y : Matrix m n D) :
     dieudonneDet (n ⊕ m) D (Matrix.lowerBlockGL Y) = 1 :=
-  dieudonneDet_of_mem_elementarySubgroup (Matrix.lowerBlockGL_mem_elementarySubgroup Y)
+  elementarySubgroup_le_ker_dieudonneDet (Matrix.lowerBlockGL_mem_elementarySubgroup Y)
 
 end DivisionRing
 
-section Field
-
-variable {n : Type*} [Fintype n] [DecidableEq n]
-
-/-- Naturality of the Dieudonné determinant under `Matrix.GeneralLinearGroup.map` over fields. -/
-@[simp]
-theorem dieudonneDet_map {F K : Type*} [Field F] [Field K] (f : F →+* K) (g : GL n F) :
-    dieudonneDet n K (Matrix.GeneralLinearGroup.map f g) =
-      Group.Abelianization.map (Units.map (f : F →* K)) (dieudonneDet n F g) :=
-  dieudonneDet_unitsMap_mapMatrix f g
-
-end Field
-
 /-! ## Finite-rank quotient by the elementary subgroup -/
+
+/-- **The elementary subgroup is normal over a division ring**, already at every finite matrix
+size. -/
+instance elementarySubgroup_normal {n : Type*} [Fintype n] [DecidableEq n]
+    {D : Type*} [DivisionRing D] : (elementarySubgroup n D).Normal := by
+  by_cases hn : 2 ≤ Fintype.card n
+  · exact elementarySubgroup_normal_of_hasStableRangeLE (hasStableRangeLE_one_of_isLocalRing D) hn
+  · have : Subsingleton n := Fintype.card_le_one_iff_subsingleton.mp (by omega)
+    have hbot : elementarySubgroup n D = ⊥ :=
+      le_bot_iff.mp (elementarySubgroup_le_iff.2 fun i j hij _ ↦ absurd (Subsingleton.elim i j) hij)
+    rw [hbot]
+    infer_instance
 
 /-- In rank at least two, the Dieudonné determinant descends to a canonical isomorphism
 `GL n D ⧸ elementarySubgroup n D ≃* Group.Abelianization Dˣ`. -/
