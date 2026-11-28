@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.LinearRecurrence
 public import Mathlib.Algebra.Polynomial.Splits
 public import Mathlib.RingTheory.Polynomial.Basic
+public import TauCeti.Algebra.LinearRecurrence.Basic
 public import TauCeti.Algebra.LinearRecurrence.ExponentialPolynomial
 
 /-!
@@ -32,9 +32,10 @@ distinct roots are distinct monoid homomorphisms `Multiplicative ℕ →* K`, he
 independent (`linearIndependent_monoidHom`), and there are `E.order` of them. This is the form in
 which the zeros of a solution are studied through unit equations.
 
-The proof is a dimension count. The characteristic polynomial evaluated at the forward shift
-annihilates exactly the solutions (`LinearRecurrence.isSolution_iff_aeval_charPoly_apply`), so
-each `n ↦ p.eval n * θ ^ n` with `deg p` below the multiplicity of `θ` is a solution
+For the polynomial-coefficient closed form, the proof is a dimension count. The characteristic
+polynomial evaluated at the forward shift annihilates exactly the solutions
+(`LinearRecurrence.isSolution_iff_aeval_charPoly_apply`), so each `n ↦ p.eval n * θ ^ n` with
+`deg p` below the multiplicity of `θ` is a solution
 (`LinearRecurrence.isSolution_eval_mul_pow`). These sequences form a space of dimension
 `∑ θ, mult θ = E.order`, mapped injectively into the solution space by the uniqueness theorem
 `TauCeti.eq_zero_of_sum_eval_mul_pow_eq_zero`. Since the solution space also has dimension
@@ -101,50 +102,35 @@ theorem isSolution_eval_mul_pow {p : R[X]} {θ : R}
 
 end CommRing
 
-section Domain
-
-variable {R : Type*} [CommRing R] [IsDomain R] [DecidableEq R] (E : LinearRecurrence R)
-
-/-- Every combination `∑ θ, g θ * θ ^ n` of powers of the distinct characteristic roots `θ`
-solves `E`. -/
-theorem isSolution_sum_mul_pow (g : R → R) :
-    E.IsSolution fun n ↦ ∑ θ ∈ E.charPoly.roots.toFinset, g θ * θ ^ n := by
-  have : (fun n ↦ ∑ θ ∈ E.charPoly.roots.toFinset, g θ * θ ^ n) =
-      ∑ θ ∈ E.charPoly.roots.toFinset, g θ • fun n : ℕ ↦ θ ^ n := by
-    ext n
-    simp [Finset.sum_apply]
-  rw [this, E.is_sol_iff_mem_solSpace]
-  refine Submodule.sum_mem _ fun θ hθ ↦ Submodule.smul_mem _ _ ?_
-  rw [← E.is_sol_iff_mem_solSpace, geom_sol_iff_root_charPoly]
-  exact (mem_roots E.charPoly_monic.ne_zero).mp (Multiset.mem_toFinset.mp hθ)
-
-end Domain
-
 section Field
 
 variable {K : Type*} [Field K] (E : LinearRecurrence K)
-
-/-- The solution space has dimension equal to the degree of the characteristic polynomial. -/
-private theorem finrank_solSpace_eq_natDegree_charPoly :
-    Module.finrank K E.solSpace = E.charPoly.natDegree := by
-  rw [Module.finrank_eq_of_rank_eq E.solSpace_rank,
-    natDegree_eq_of_degree_eq_some E.charPoly_degree_eq_order]
 
 /-! ### Simple recurrences -/
 
 /-- **Closed form of a simple recurrence.** If the characteristic polynomial of `E` splits with
 distinct roots, every solution of `E` is `∑ θ, g θ * θ ^ n` over the characteristic roots `θ`,
-with constant coefficients `g θ`. A root `θ = 0` contributes the sequence `0 ^ n`. -/
+with constant coefficients `g θ` that vanish off the root set. A root `θ = 0` contributes the
+sequence `0 ^ n`. -/
 theorem exists_eq_sum_mul_pow [DecidableEq K] (hsplit : E.charPoly.Splits)
     (hnodup : E.charPoly.roots.Nodup) {u : ℕ → K} (hu : E.IsSolution u) :
-    ∃ g : K → K, ∀ n : ℕ, u n = ∑ θ ∈ E.charPoly.roots.toFinset, g θ * θ ^ n := by
+    ∃ g : K → K, (∀ θ ∉ E.charPoly.roots, g θ = 0) ∧
+      ∀ n : ℕ, u n = ∑ θ ∈ E.charPoly.roots.toFinset, g θ * θ ^ n := by
   set s := E.charPoly.roots.toFinset
   -- The geometric sequences of the distinct characteristic roots are solutions.
-  let v (θ : s) : E.solSpace := ⟨fun n ↦ (θ : K) ^ n, (E.is_sol_iff_mem_solSpace _).mp <|
-    (E.geom_sol_iff_root_charPoly _).mpr (mem_roots'.mp (Multiset.mem_toFinset.mp θ.property)).2⟩
+  let v (θ : s) : E.solSpace :=
+    ⟨fun n ↦ (θ : K) ^ n, (E.is_sol_iff_mem_solSpace _).mp <|
+      (E.geom_sol_iff_root_charPoly _).mpr (isRoot_of_mem_roots (Multiset.mem_toFinset.mp θ.prop))⟩
   -- They are independent, being distinct monoid homomorphisms `Multiplicative ℕ →* K`.
-  have hli : LinearIndependent K v :=
-    .of_comp E.solSpace.subtype <| (linearIndependent_monoidHom (Multiplicative ℕ) K).comp
+  have hli : LinearIndependent K v := by
+    let reindex := (LinearMap.funLeft K K Multiplicative.toAdd).comp E.solSpace.subtype
+    have heq : reindex ∘ v = fun (θ : s) (n : Multiplicative ℕ) ↦ powersHom K θ n := by
+      funext θ n
+      rw [Function.comp_apply, LinearMap.comp_apply, LinearMap.funLeft_apply, powersHom_apply]
+      rfl
+    apply LinearIndependent.of_comp reindex
+    rw [heq]
+    exact (linearIndependent_monoidHom (Multiplicative ℕ) K).comp
       (fun θ : s ↦ powersHom K θ) ((powersHom K).injective.comp Subtype.val_injective)
   -- Their number is `E.order`, the dimension of the solution space, so they span it.
   have hcard : Fintype.card s = Module.finrank K E.solSpace := by
@@ -154,22 +140,26 @@ theorem exists_eq_sum_mul_pow [DecidableEq K] (hsplit : E.charPoly.Splits)
   obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun K).mp <|
     (hli.span_eq_top_of_card_eq_finrank' hcard).symm ▸
       (Submodule.mem_top : (⟨u, (E.is_sol_iff_mem_solSpace u).mp hu⟩ : E.solSpace) ∈ ⊤)
-  refine ⟨fun θ ↦ if h : θ ∈ s then c ⟨θ, h⟩ else 0, fun n ↦ ?_⟩
-  have := congrArg (fun w : E.solSpace ↦ (w : ℕ → K) n) hc
-  simp only [Submodule.coe_sum, Submodule.coe_smul, Finset.sum_apply, Pi.smul_apply, v,
-    smul_eq_mul] at this
-  rw [← this, ← Finset.sum_coe_sort s]
-  exact Finset.sum_congr rfl fun θ _ ↦ by simp [θ.property]
+  refine ⟨fun θ ↦ if h : θ ∈ s then c ⟨θ, h⟩ else 0, ?_, fun n ↦ ?_⟩
+  · intro θ hθ
+    exact dite_eq_right (hθ ∘ Multiset.mem_toFinset.mp)
+  · have := congrArg (fun w : E.solSpace ↦ (w : ℕ → K) n) hc
+    simp only [Submodule.coe_sum, Submodule.coe_smul, Finset.sum_apply, Pi.smul_apply, v,
+      smul_eq_mul] at this
+    rw [← this, ← Finset.sum_coe_sort s]
+    exact Finset.sum_congr rfl fun θ _ ↦ by simp [θ.property]
 
 /-- The solutions of a linear recurrence whose characteristic polynomial splits with distinct
-roots are exactly the sums `∑ θ, g θ * θ ^ n` over the characteristic roots `θ`. -/
+roots are exactly the sums `∑ θ, g θ * θ ^ n` over the characteristic roots `θ`, with
+coefficients extended by zero off the root set. -/
 theorem isSolution_iff_exists_eq_sum_mul_pow [DecidableEq K] (hsplit : E.charPoly.Splits)
     (hnodup : E.charPoly.roots.Nodup) {u : ℕ → K} :
-    E.IsSolution u ↔ ∃ g : K → K, ∀ n : ℕ, u n = ∑ θ ∈ E.charPoly.roots.toFinset, g θ * θ ^ n := by
+    E.IsSolution u ↔ ∃ g : K → K, (∀ θ ∉ E.charPoly.roots, g θ = 0) ∧
+      ∀ n : ℕ, u n = ∑ θ ∈ E.charPoly.roots.toFinset, g θ * θ ^ n := by
   refine ⟨E.exists_eq_sum_mul_pow hsplit hnodup, ?_⟩
-  rintro ⟨g, hu⟩
+  rintro ⟨g, -, hu⟩
   rw [funext hu]
-  exact E.isSolution_sum_mul_pow g
+  exact E.isSolution_sum_mul_pow _ (fun _ hθ ↦ isRoot_of_mem_roots (Multiset.mem_toFinset.mp hθ)) g
 
 /-! ### Repeated roots -/
 
@@ -233,9 +223,9 @@ theorem exists_eq_sum_eval_mul_pow (hsplit : E.charPoly.Splits) (h0 : E.charPoly
   let Φ := (expPolyMap s m).codRestrict E.solSpace hmem
   -- They are independent, since the characteristic roots are nonzero.
   have hinj : Function.Injective Φ := by
-    refine fun g g' h ↦ expPolyMap_injective m (fun θ hθ h0' ↦ h0 ?_) (congrArg Subtype.val h)
-    subst h0'
-    exact coeff_zero_eq_eval_zero E.charPoly ▸ (mem_roots'.mp (Multiset.mem_toFinset.mp hθ)).2
+    exact fun g g' h ↦ expPolyMap_injective m
+      (fun _ hθ ↦ E.ne_zero_of_mem_charPoly_roots (Multiset.mem_toFinset.mp hθ) h0)
+      (congrArg Subtype.val h)
   -- Both spaces have dimension `E.order = ∑ θ, mult θ`, so every solution is attained.
   have := Module.Finite.of_basis E.basis
   have (θ : s) : Module.Finite K (degreeLT K (m θ)) := .equiv (degreeLTEquiv K (m θ)).symm

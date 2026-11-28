@@ -92,9 +92,11 @@ theorem IsNondegenerate.not_isOfFinOrder_div_of_mem_roots (h : E.IsNondegenerate
   let f := algebraMap K (AlgebraicClosure K)
   have hroot {x : K} (hx : x ∈ E.charPoly.roots) :
       f x ∈ E.charPoly.rootSet (AlgebraicClosure K) := by
-    refine rootSet_mapsTo (Algebra.ofId K (AlgebraicClosure K)) ?_
-    rw [E.charPoly_monic.mem_rootSet, coe_aeval_eq_eval]
-    exact (mem_roots'.mp hx).2
+    have hx' : x ∈ E.charPoly.rootSet K := by
+      rw [E.charPoly_monic.mem_rootSet, coe_aeval_eq_eval]
+      exact isRoot_of_mem_roots hx
+    simpa only [f, Algebra.ofId_apply] using
+      rootSet_mapsTo (Algebra.ofId K (AlgebraicClosure K)) hx'
   intro hfin
   apply h.2 (hroot hθ) (hroot hθ') (f.injective.ne hne)
   simpa [map_div₀] using (f : K →* AlgebraicClosure K).isOfFinOrder hfin

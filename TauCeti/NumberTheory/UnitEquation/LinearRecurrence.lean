@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.LinearRecurrence.ClosedForm
 public import TauCeti.NumberTheory.UnitEquation.ExponentialSum
+import Mathlib.Algebra.GroupWithZero.Units.Equiv
 
 /-!
 # Zeros of simple linear recurrences as unit-equation solutions
@@ -54,50 +55,50 @@ there are a root `θ₀` and a set `J` of roots other than `θ₀`, all viewed a
 that `g` does not vanish on `θ₀` and `J` and the powers `(θ / θ₀) ^ m`, `θ ∈ J`, form a
 nondegenerate solution of the unit equation `∑_{θ ∈ J} (-g θ / g θ₀) x_θ = 1`.
 
-The coefficients `g` do not depend on `m`, so every zero gives a solution of one of the finitely
-many equations indexed by `θ₀` and `J`. -/
+The coefficients `g` vanish off the root set and do not depend on `m`, so every zero gives a
+solution of one of the finitely many equations indexed by `θ₀` and `J`. -/
 theorem exists_eq_sum_mul_pow_and_forall_exists_isNondegenerateSolution_of_eq_zero
     (E : LinearRecurrence K) (hsplit : E.charPoly.Splits) (h0 : E.charPoly.coeff 0 ≠ 0)
     (hnodup : E.charPoly.roots.Nodup) {u : ℕ → K} (hu : E.IsSolution u) (hu0 : u ≠ 0) :
-    ∃ g : K → K, (∀ n : ℕ, u n = ∑ θ ∈ E.charPoly.roots.toFinset, g θ * θ ^ n) ∧
+    ∃ g : K → K, (∀ θ ∉ E.charPoly.roots, g θ = 0) ∧
+      (∀ n : ℕ, u n = ∑ θ ∈ E.charPoly.roots.toFinset, g θ * θ ^ n) ∧
       ∀ m : ℕ, u m = 0 → ∃ θ₀ : Kˣ, (θ₀ : K) ∈ E.charPoly.roots ∧ g θ₀ ≠ 0 ∧
         ∃ J : Finset Kˣ, (∀ θ ∈ J, (θ : K) ∈ E.charPoly.roots ∧ θ ≠ θ₀ ∧ g θ ≠ 0) ∧
           TauCeti.IsNondegenerateSolution (fun θ : J ↦ -g (θ : Kˣ) / g θ₀)
             fun θ ↦ ((((θ : Kˣ) / θ₀) ^ m : Kˣ) : K) := by
-  obtain ⟨g, hg⟩ := E.exists_eq_sum_mul_pow hsplit hnodup hu
-  refine ⟨g, hg, fun m hm ↦ ?_⟩
+  obtain ⟨g, hgs, hg⟩ := E.exists_eq_sum_mul_pow hsplit hnodup hu
+  refine ⟨g, hgs, hg, fun m hm ↦ ?_⟩
   set s := E.charPoly.roots.toFinset
-  have hs0 (θ : s) : (θ : K) ≠ 0 := fun hθ ↦ h0 <| coeff_zero_eq_zero_of_zero_isRoot <|
-    hθ ▸ (mem_roots'.mp (Multiset.mem_toFinset.mp θ.property)).2
   -- `u` is the simple exponential sum with the characteristic roots as units.
-  let α (θ : s) : Kˣ := Units.mk0 θ (hs0 θ)
-  have hα : Function.Injective α := fun θ θ' h ↦ Subtype.ext (congrArg Units.val h)
+  let α : s ↪ Kˣ := (Subtype.impEmbedding (· ∈ s) (· ≠ 0) fun _ hθ ↦
+    E.ne_zero_of_mem_charPoly_roots (Multiset.mem_toFinset.mp hθ) h0).trans
+      unitsEquivNeZero.symm.toEmbedding
+  have hα (θ : s) : (α θ : K) = θ := rfl
   have hsum (n : ℕ) : u n = ∑ θ : s, g θ * (α θ : K) ^ (n : ℤ) := by
     rw [hg n, ← Finset.sum_coe_sort s]
-    simp [α]
+    simp [hα]
   have hg0 : (fun θ : s ↦ g θ) ≠ 0 := fun hg0 ↦ hu0 <| funext fun n ↦ by
     have hgθ (θ : s) : g θ = 0 := by simpa only [Pi.zero_apply] using congrFun hg0 θ
     simp [hsum n, hgθ]
   obtain ⟨θ₀, J, hJ⟩ :=
     TauCeti.exists_isNondegenerateSolution_of_sum_mul_zpow_eq_zero hg0 ((hsum m).symm.trans hm)
   -- Transport the index set `J` of roots other than `θ₀` into `Kˣ`.
-  let f : {θ : s // θ ≠ θ₀} ↪ Kˣ := ⟨fun θ ↦ α θ, fun θ θ' h ↦ Subtype.ext (hα h)⟩
+  let f : {θ : s // θ ≠ θ₀} ↪ Kˣ := (Function.Embedding.subtype _).trans α
   have hf (θ : J.map f) : α ((J.equivMap f).symm θ : {θ : s // θ ≠ θ₀}) = θ := by
     exact congrArg Subtype.val ((J.equivMap f).apply_symm_apply θ)
   have hsol : TauCeti.IsNondegenerateSolution (fun θ : J.map f ↦ -g (θ : Kˣ) / g (α θ₀))
       fun θ ↦ ((((θ : Kˣ) / α θ₀) ^ m : Kˣ) : K) := by
     convert hJ.comp_equiv (J.equivMap f).symm using 1 <;> funext θ
-    · simp [← hf θ, α]
+    · simp [← hf θ, hα]
     · simp [← hf θ]
-  -- A nondegenerate solution has nonzero coefficients and, summing to `1`, at least one term.
+  -- Each term is nonzero, and the sum equaling `1` supplies at least one term.
   have hcoef (θ : J.map f) : g (θ : Kˣ) ≠ 0 ∧ g (α θ₀) ≠ 0 := by
     simpa only [neg_div, neg_ne_zero, div_ne_zero_iff] using left_ne_zero_of_mul (hsol.ne_zero θ)
-  obtain ⟨θ⟩ := hsol.nonempty
-  refine ⟨α θ₀, Multiset.mem_toFinset.mp θ₀.property, (hcoef θ).2, J.map f,
-    fun x hx ↦ ⟨?_, ?_, (hcoef ⟨x, hx⟩).1⟩, hsol⟩
-  · obtain ⟨θ, -, rfl⟩ := Finset.mem_map.mp hx
-    exact Multiset.mem_toFinset.mp θ.val.property
-  · obtain ⟨θ, -, rfl⟩ := Finset.mem_map.mp hx
-    exact hα.ne θ.property
+  obtain ⟨θ⟩ := Finset.univ_nonempty_iff.mp
+    (Finset.nonempty_of_sum_ne_zero (hsol.sum_eq_one.trans_ne one_ne_zero))
+  refine ⟨α θ₀, hα θ₀ ▸ Multiset.mem_toFinset.mp θ₀.property, (hcoef θ).2, J.map f,
+    Finset.forall_mem_map.mpr ?_, hsol⟩
+  exact fun i hi ↦ ⟨hα i ▸ Multiset.mem_toFinset.mp i.val.property, α.injective.ne i.property,
+    (hcoef ⟨f i, Finset.mem_map_of_mem f hi⟩).1⟩
 
 end LinearRecurrence
