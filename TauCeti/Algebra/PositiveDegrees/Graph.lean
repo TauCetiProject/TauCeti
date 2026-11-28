@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Group.Submonoid.NSMulSaturation
 public import TauCeti.Algebra.PositiveDegrees.Map
+import TauCeti.Algebra.Group.Submonoid.Membership
 import TauCeti.Data.Set.Prod
 
 /-!

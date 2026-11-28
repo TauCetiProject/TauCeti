@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.GroupTheory.Subgroup.Saturated
 public import TauCeti.Algebra.Group.Submonoid.GroupCompletion
-import TauCeti.Data.Set.Prod
+import TauCeti.Algebra.Group.Submonoid.Membership
 
 /-!
 # Saturation of a submonoid by positive powers
@@ -34,8 +34,6 @@ compatibility lemmas with `AddSubmonoid.toGroupClosure`).
 
 ## Main results
 
-* `Submonoid.mem_map_prod_id_iff`: membership in the graph image records membership of the
-  second coordinate and equality of the first coordinate with its image.
 * `Submonoid.powSaturated_map_prod_id`: the image under `n ↦ (f n, n)` is saturated exactly when
   the source submonoid is saturated, provided positive powers are injective on the target.
 * `Submonoid.PowSaturated.comap` and `Submonoid.PowSaturated.inf`: `PowSaturated` is preserved by
@@ -63,17 +61,6 @@ namespace Submonoid
 section Monoid
 
 variable {M N : Type*} [Monoid M] [Monoid N]
-
-/-- A point of the graph image is determined by its second coordinate in the source monoid. -/
-@[to_additive AddSubmonoid.mem_map_prod_id_iff]
-theorem mem_map_prod_id_iff {N M : Type*} [Monoid N] [Monoid M]
-    (s : Submonoid N) (f : N →* M) (x : M × N) :
-    x ∈ s.map (f.prod (MonoidHom.id N)) ↔ x.2 ∈ s ∧ x.1 = f x.2 := by
-  have hf : ⇑(f.prod (MonoidHom.id N)) = fun n => (f n, n) := by
-    funext n
-    simp only [MonoidHom.prod_apply, MonoidHom.id_apply]
-  rw [← SetLike.mem_coe, Submonoid.coe_map, hf]
-  simpa only [SetLike.mem_coe] using Set.mem_image_prodMk_self_snd_iff f (s : Set N) x
 
 /-- The image of `s` under `n ↦ (f n, n)` is `PowSaturated` exactly when `s` is,
 provided nonzero powers are injective on the first coordinate `M`. -/
