@@ -14,6 +14,7 @@ import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.OddSymmetric
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Integrals and bounds against normalized smooth bumps
@@ -44,6 +45,8 @@ infinity, since its integral is one over a ball of vanishing measure.
   radius `f.rOut` are integrals over the whole space.
 * `ContDiffBump.integral_closedBall_normed_smul_const`: over that closed ball, the normalized bump
   averages a constant to itself.
+* `ContDiffBump.normed_le_div_measureReal_ball_rOut`: pointwise upper bound on a normalized bump
+  in terms of the open-ball measure.
 * `ContDiffBump.normedMeasure`: the probability measure with density `f.normed μ`, with
   `ContDiffBump.integral_normedMeasure`, `ContDiffBump.integrable_normedMeasure_iff` and
   `ContDiffBump.ae_mem_closedBall_normedMeasure`.
@@ -111,6 +114,20 @@ theorem integrable_closedBall_normed_smul_const (z : G) :
 theorem integral_closedBall_normed_smul_const [CompleteSpace G] (z : G) :
     ∫ x : closedBall c f.rOut, f.normed μ x • z ∂(μ.comap (↑)) = z := by
   rw [integral_smul_const, f.integral_closedBall_normed, one_smul]
+
+section AddHaar
+
+omit [HasContDiffBump E] [NormedAddCommGroup G] [NormedSpace ℝ G] [IsLocallyFiniteMeasure μ]
+  [μ.IsOpenPosMeasure]
+
+/-- Pointwise upper bound on a normalized bump in terms of the open-ball measure. -/
+theorem normed_le_div_measureReal_ball_rOut [HasContDiffBump E] [μ.IsAddHaarMeasure]
+    (K : ℝ) (h : f.rOut ≤ K * f.rIn) (x : E) :
+    f.normed μ x ≤ K ^ Module.finrank ℝ E / μ.real (ball c f.rOut) := by
+  rw [← measureReal_congr (μ.addHaar_closedBall_ae_eq_ball_of_ne_zero c _ f.rOut_pos.ne')]
+  exact f.normed_le_div_measure_closedBall_rOut μ K h x
+
+end AddHaar
 
 /-- The probability measure with density `f.normed μ` against `μ`. -/
 noncomputable def normedMeasure : Measure E :=

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
 public import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Interior mollification of domain Sobolev functions
@@ -23,8 +24,13 @@ the support condition ensures that no boundary term enters the identity.
 `HasWeakFDerivOn.hasFDerivAt_indicator_convolution_right` states this for arbitrary kernels.
 `HasWeakFDerivOn.hasFDerivAt_indicator_convolution_normed` specializes to normalized smooth bumps,
 with the geometric condition that the closed ball of the outer radius lies inside the domain.
-`HasWeakFDerivOn.fderiv_normed_convolution_indicator_apply` restates the derivative identity in a
-fixed direction, with the bump as the left factor of the convolution.
+`HasWeakFDerivOn.fderiv_normed_convolution_indicator_apply` restates this identity with the bump
+as the left factor of the convolution, `Lᵖ` hypotheses on `Ω`, zero extension from `Ω`, and
+evaluation in a fixed direction.
+`HasWeakFDerivOn.hasFDerivAt_normed_convolution_indicator` and
+`HasWeakFDerivOn.fderiv_normed_convolution_indicator` place the bump on the left factor for the
+zero extension from an open set `V` with compact closure in `Ω`, with no extra integrability
+assumption.
 The vector-valued formulation applies to successive weak derivative fields when constructing
 smooth local approximations in higher-order Sobolev spaces.
 
@@ -187,5 +193,38 @@ theorem HasWeakFDerivOn.fderiv_normed_convolution_indicator_apply
   by_cases hy : x - y ∈ (Omega : Set E)
   · simp [Set.indicator_of_mem hy]
   · simp [Set.indicator_of_notMem hy]
+
+omit [SFinite mu] [IsLocallyFiniteMeasure mu] in
+/-- **Interior derivative of a normalized-bump mollification.** If `u` has weak Fréchet derivative
+`U` on `Omega`, `V` has compact closure in `Omega`, and `closedBall x phi.rOut ⊆ V`, then
+`phi.normed mu ⋆ V.indicator u` is Fréchet differentiable at `x` with derivative
+`(phi.normed mu ⋆ V.indicator U) x`. -/
+theorem HasWeakFDerivOn.hasFDerivAt_normed_convolution_indicator
+    [FiniteDimensional ℝ E] [HasContDiffBump E] [mu.IsAddHaarMeasure]
+    (h : HasWeakFDerivOn mu Omega u U) {V : Opens E}
+    (hVc : IsCompact (closure (V : Set E))) (hVΩ : closure (V : Set E) ⊆ Omega)
+    (phi : ContDiffBump (0 : E)) {x : E} (hx : Metric.closedBall x phi.rOut ⊆ V) :
+    HasFDerivAt (phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] (V : Set E).indicator u)
+      ((phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] (V : Set E).indicator U) x) x := by
+  have huV : MemLp u 1 (mu.restrict V) := memLp_one_iff_integrable.2
+    (h.locallyIntegrableOn.integrableOn_of_isCompact_closure hVc hVΩ)
+  have hUV : MemLp U 1 (mu.restrict V) := memLp_one_iff_integrable.2
+    (h.locallyIntegrableOn_deriv.integrableOn_of_isCompact_closure hVc hVΩ)
+  have h' := (h.mono (subset_closure.trans hVΩ)).hasFDerivAt_indicator_convolution_normed
+    huV hUV le_rfl le_rfl phi x hx
+  simpa only [convolution_flip] using h'
+
+omit [SFinite mu] [IsLocallyFiniteMeasure mu] in
+/-- **Interior derivative identity for a normalized-bump mollification.** If `u` has weak Fréchet
+derivative `U` on `Omega`, `V` has compact closure in `Omega`, and `closedBall x phi.rOut ⊆ V`, then
+`fderiv ℝ (phi.normed mu ⋆ V.indicator u) x = (phi.normed mu ⋆ V.indicator U) x`. -/
+theorem HasWeakFDerivOn.fderiv_normed_convolution_indicator
+    [FiniteDimensional ℝ E] [HasContDiffBump E] [mu.IsAddHaarMeasure]
+    (h : HasWeakFDerivOn mu Omega u U) {V : Opens E}
+    (hVc : IsCompact (closure (V : Set E))) (hVΩ : closure (V : Set E) ⊆ Omega)
+    (phi : ContDiffBump (0 : E)) {x : E} (hx : Metric.closedBall x phi.rOut ⊆ V) :
+    fderiv ℝ (phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] (V : Set E).indicator u) x =
+      (phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] (V : Set E).indicator U) x :=
+  (h.hasFDerivAt_normed_convolution_indicator hVc hVΩ phi hx).fderiv
 
 end TauCeti

@@ -446,11 +446,11 @@ private theorem memLp_value_and_memLp_gradient_ball_of_holderOnWith
   rw [hx]
   exact hMv _ (mem_image_of_mem _ hxB)
 
-/-- **Mollified data.** A field `G ∈ Lᵖ(B(x₀, R))`, `2 ≤ p < ∞`, cut off outside the ball and
+/-- **Mollified data.** A field `G ∈ Lᵖ(B(x₀, R))`, `2 ≤ p ≤ ∞`, cut off outside the ball and
 mollified, gives fields `Gₖ ∈ L²`, Hölder on the ball, with `‖Gₖ‖_{Lᵖ} ≤ ‖G‖_{Lᵖ(B(x₀, R))}` and
 `Gₖ → G` in `L²(B(x₀, R))`. -/
 private theorem exists_holderOnWith_eLpNorm_le_tendsto_eLpNorm_sub {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (hp : 2 ≤ p) (hp_top : p ≠ ⊤) {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ}
+    (hp : 2 ≤ p) {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {R : ℝ}
     {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
     (hG : MemLp G p (volume.restrict (ball x₀ R))) :
     ∃ Gk : ℕ → EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)),
@@ -468,9 +468,10 @@ private theorem exists_holderOnWith_eLpNorm_le_tendsto_eLpNorm_sub {p : ℝ≥0�
   set φ : ℕ → ContDiffBump (0 : EuclideanSpace ℝ (Fin (n + 1))) :=
     fun k => ContDiffBump.shrinking one_pos k
   refine ⟨fun k => (φ k).normed volume ⋆[lsmul ℝ ℝ, volume] Gt, fun k => ?_,
-    fun k => (eLpNorm_normed_convolution_le hp_top (φ k) hGtp).trans_eq
+    fun k => ((φ k).eLpNorm_normed_convolution_le hGtp.aestronglyMeasurable).trans_eq
       (eLpNorm_indicator_eq_eLpNorm_restrict measurableSet_ball.nullMeasurableSet),
-    fun k => (eLpNorm_normed_convolution_le ENNReal.ofNat_ne_top (φ k) hGt2).trans_lt hGt2, ?_⟩
+    fun k => ((φ k).eLpNorm_normed_convolution_le hGt2.aestronglyMeasurable).trans_lt
+      hGt2.eLpNorm_lt_top, ?_⟩
   · -- The mollifications are smooth, hence Hölder on the ball.
     have hsmooth : ContDiff ℝ 1 ((φ k).normed volume ⋆[lsmul ℝ ℝ, volume] Gt) :=
       (φ k).contDiff_normed_convolution (hGt2.locallyIntegrable one_le_two)
@@ -689,8 +690,8 @@ theorem exists_memLp_gradient_ball_and_eLpNorm_le_of_vmoModulus_le {p : ℝ≥0�
     (ContDiffBump.rOut_shrinking_eq_two_mul_rIn hr₀ k).le
   have hellk (k : ℕ) := uniformlyEllipticOn_mollifiedCoeff ha hell (φ k)
   have hakm (k : ℕ) := aestronglyMeasurable_mollifiedCoeff ha hell (φ k)
-  obtain ⟨Gk, hGkc, hGkp, hGk2, hGlim⟩ := exists_holderOnWith_eLpNorm_le_tendsto_eLpNorm_sub hp.le
-    hp_top hG
+  obtain ⟨Gk, hGkc, hGkp, hGk2, hGlim⟩ :=
+    exists_holderOnWith_eLpNorm_le_tendsto_eLpNorm_sub hp.le hG
   obtain ⟨uk, hukφ, hconv⟩ := exists_forall_energyFormH1_eq_and_tendsto ha hell hellk hakm
     (ae_tendsto_mollifiedCoeff ha hell (ContDiffBump.tendsto_rOut_shrinking hr₀) hφ2) hball hu
     (hG.mono_exponent hp.le) hGk2 hGlim

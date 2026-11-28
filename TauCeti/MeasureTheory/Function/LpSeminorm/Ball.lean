@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.MeasureTheory.Measure.InterBall
 
 /-!
 # `Lᵖ` seminorms on all balls of one radius
@@ -61,6 +62,12 @@ exact form of the bounded-overlap count.
   give a global estimate without that term.
 * `TauCeti.measure_ball_rpow_mul_eLpNorm_restrict_ball_le`: Hölder's inequality on a ball, scaled
   by the volume of a concentric smaller ball.
+* `TauCeti.tendsto_iSup_eLpNorm_restrict_ball_nhds_zero_of_tendsto_measure`,
+  `TauCeti.tendsto_iSup_eLpNorm_restrict_ball_nhds_zero`, and
+  `TauCeti.tendsto_zero_of_eventually_le_mul_iSup_eLpNorm_restrict_ball`: for `0 < p < ∞` and
+  `eLpNorm f p μ ≠ ∞`, the supremum over all centres `x` of `‖f‖_{Lᵖ(B(x, r))}` (and any quantity
+  eventually bounded by a finite multiple of it) tends to `0` as the ball measure (or radius, in a
+  nontrivial finite-dimensional space) tends to `0`.
 -/
 
 public section
@@ -154,6 +161,28 @@ theorem eLpNorm_le_of_ae_eLpNorm_restrict_ball_le (hp0 : p ≠ 0) (hp : p ≠ �
     _ = (μ (ball (0 : E) R) / μ (ball (0 : E) r)) ^ p.toReal⁻¹ * eLpNorm h p μ := by
         rw [ENNReal.mul_rpow_of_nonneg _ _ (inv_nonneg.2 hq.le), ← ENNReal.rpow_mul,
           mul_inv_cancel₀ hq.ne', ENNReal.rpow_one]
+
+omit [ProperSpace E] in
+/-- **Uniform vanishing of `Lᵖ` seminorms on shrinking balls.** For `0 < p < ∞` and `f` with finite
+`Lᵖ` seminorm, if the Haar measure of the centred balls `B(0, r i)` tends to `0`, then
+`sup_x ‖f‖_{Lᵖ(B(x, r i))} → 0` uniformly in the centre `x`. -/
+theorem tendsto_iSup_eLpNorm_restrict_ball_nhds_zero_of_tendsto_measure {ι : Type*} {l : Filter ι}
+    {r : ι → ℝ} (hp0 : p ≠ 0) (hp : p ≠ ∞) {f : E → F} (hf : eLpNorm f p μ ≠ ∞)
+    (hr : Tendsto (fun i => μ (ball (0 : E) (r i))) l (𝓝 0)) :
+    Tendsto (fun i => ⨆ x : E, eLpNorm f p (μ.restrict (ball x (r i)))) l (𝓝 0) := by
+  have hq : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  have hfm : AEStronglyMeasurable f μ := aestronglyMeasurable_of_eLpNorm_ne_top hf
+  have hint : ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ ≠ ∞ :=
+    (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hp0 hp (lt_top_iff_ne_top.2 hf)).ne
+  refine ENNReal.tendsto_nhds_zero.2 fun ε hε => ?_
+  have hεp : 0 < ε ^ p.toReal := ENNReal.rpow_pos_of_nonneg hε hq.le
+  obtain ⟨δ, hδ, hδint⟩ := exists_pos_setLIntegral_lt_of_measure_lt hint hεp.ne'
+  filter_upwards [hr.eventually (gt_mem_nhds hδ)] with i hi
+  refine iSup_le fun x => ?_
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hfm.restrict, one_div,
+    ENNReal.rpow_inv_le_iff hq]
+  have hx : μ (ball x (r i)) < δ := by rwa [Measure.addHaar_ball_center]
+  exact (hδint (ball x (r i)) hx).le
 
 /-- **Global estimates from local reverse Hölder inequalities on balls of one radius.** Let
 `0 < t ≤ p` and `0 < r`, and let `g`, `k` be nonnegative functions such that at every centre `y`
@@ -447,6 +476,39 @@ theorem lpNorm_le_of_ae_lpNorm_restrict_ball_le_add (hp1 : 1 ≤ p) (hp : p ≠ 
   have hreal := ENNReal.toReal_mono (by finiteness) hglobal
   simpa [ENNReal.toReal_ofReal lpNorm_nonneg, pow_succ', ENNReal.toReal_ofReal
     (add_nonneg (mul_nonneg hc₁ lpNorm_nonneg) (mul_nonneg hc₂ lpNorm_nonneg))] using hreal
+
+omit [ProperSpace E] in
+/-- **Uniform vanishing of `Lᵖ` seminorms on shrinking balls in positive dimension.** In a
+nontrivial finite-dimensional real normed space, for `0 < p < ∞` and `f` with finite `Lᵖ` seminorm,
+`sup_x ‖f‖_{Lᵖ(B(x, r i))} → 0` whenever `r i → 0`. -/
+theorem tendsto_iSup_eLpNorm_restrict_ball_nhds_zero [Nontrivial E] {ι : Type*} {l : Filter ι}
+    {r : ι → ℝ} (hp0 : p ≠ 0) (hp : p ≠ ∞) {f : E → F} (hf : eLpNorm f p μ ≠ ∞)
+    (hr : Tendsto r l (𝓝 0)) :
+    Tendsto (fun i => ⨆ x : E, eLpNorm f p (μ.restrict (ball x (r i)))) l (𝓝 0) := by
+  refine tendsto_iSup_eLpNorm_restrict_ball_nhds_zero_of_tendsto_measure hp0 hp hf ?_
+  have hpos : Tendsto (fun t => μ (ball (0 : E) t)) (𝓝[>] 0) (𝓝 0) := by
+    simpa using tendsto_measure_ball_nhdsGT_zero (μ := μ) (z := (0 : E))
+      ⟨1, one_pos, measure_ball_lt_top.ne⟩
+  have hnonpos : Tendsto (fun t => μ (ball (0 : E) t)) (𝓝[≤] 0) (𝓝 0) :=
+    tendsto_const_nhds.congr' <| eventually_nhdsWithin_of_forall fun t ht => by
+      simp [ball_eq_empty.2 ht]
+  exact ((hnonpos.sup hpos).mono_left (nhdsLE_sup_nhdsGT 0).ge).comp hr
+
+omit [ProperSpace E] in
+/-- **Vanishing of quantities controlled by shrinking-ball `Lᵖ` seminorms.** In a nontrivial
+finite-dimensional real normed space, if `0 < p < ∞`, `‖f‖_{Lᵖ} ≠ ∞`, `r i → 0`, and `a i` is
+eventually bounded by `C * ⨆ x, ‖f‖_{Lᵖ(B(x, r i))}` for a finite constant `C`, then `a i → 0`. -/
+theorem tendsto_zero_of_eventually_le_mul_iSup_eLpNorm_restrict_ball [Nontrivial E]
+    {ι : Type*} {l : Filter ι} {r : ι → ℝ} (hp0 : p ≠ 0) (hp : p ≠ ∞) {f : E → F}
+    (hf : eLpNorm f p μ ≠ ∞) (hr : Tendsto r l (𝓝 0)) {C : ℝ≥0∞} {a : ι → ℝ≥0∞}
+    (ha : ∀ᶠ i in l, a i ≤ C * ⨆ x : E, eLpNorm f p (μ.restrict (ball x (r i))))
+    (hC : C ≠ ∞) :
+    Tendsto a l (𝓝 0) := by
+  have hrhs := ENNReal.Tendsto.const_mul
+    (tendsto_iSup_eLpNorm_restrict_ball_nhds_zero hp0 hp hf hr) (Or.inr hC)
+  rw [mul_zero] at hrhs
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hrhs
+    (.of_forall fun _ => zero_le) ha
 
 end FiniteDimensional
 

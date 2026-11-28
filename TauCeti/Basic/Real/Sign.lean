@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Notation.Indicator
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Basic.Real.Sign
+public import Mathlib.Basic.Sign.Defs
 
 /-!
 # Signs of real numbers
@@ -16,7 +17,8 @@ For `a < b`, the function `t ↦ (sign (b - t) - sign (a - t)) / 2` is the indic
 interval `(a, b)` with half weight at each endpoint (`Real.sign_sub_sub_sign_sub_div_two`). The
 sign itself is bounded by one in absolute value (`Real.abs_sign_le_one`), as are its powers
 (`Real.abs_sign_pow_le_one`), with absolute value one away from zero (`Real.abs_sign_of_ne_zero`),
-and `|r| sign r = r` (`Real.abs_mul_sign`).
+`|r| sign r = r` (`Real.abs_mul_sign`), and coercing `SignType.sign r` to `ℝ` agrees with
+`Real.sign r` (`Real.coe_sign_eq_sign`).
 
 For `|x| < c`, the sign of `x` is the count `⌊x / c⌋ + ⌈x / c⌉`
 (`TauCeti.floor_add_ceil_div_eq_sign_of_abs_lt`).
@@ -27,6 +29,13 @@ public section
 open Set
 
 namespace Real
+
+/-- Coercing `SignType.sign r` to `ℝ` agrees with `Real.sign r`. -/
+theorem coe_sign_eq_sign (r : ℝ) : (SignType.sign r : ℝ) = sign r := by
+  rcases lt_trichotomy r 0 with hr | rfl | hr
+  · simp [_root_.sign_neg hr, sign_of_neg hr]
+  · simp
+  · simp [_root_.sign_pos hr, sign_of_pos hr]
 
 /-- The real sign function is bounded by one in absolute value. -/
 theorem abs_sign_le_one (r : ℝ) : |sign r| ≤ 1 := by

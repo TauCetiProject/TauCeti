@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Real
+public import Mathlib.Basic.Sign.Defs
 
 /-!
 # Norms of real numbers
@@ -14,6 +15,7 @@ public import Mathlib.Analysis.Normed.Group.Real
 real square embedded in `ℝ≥0∞`, for use in lower-integral energy identities, and
 `Real.coe_nnNorm_sq` and `Real.nnNorm_sq` write a squared nonnegative norm as the square, in `ℝ`
 and in `ℝ≥0`.
+`SignType.norm_coe_le_one` bounds the norm of a coerced `SignType` by `1`.
 `Filter.Eventually.norm_inv_le_inv` bounds the reciprocal of a real function that is eventually
 bounded below by a positive constant.
 -/
@@ -38,6 +40,14 @@ theorem nnNorm_sq (x : ℝ) : ‖x‖₊ ^ 2 = ⟨x ^ 2, sq_nonneg x⟩ :=
   NNReal.eq (coe_nnNorm_sq x)
 
 end Real
+
+namespace SignType
+
+/-- Coercing a `SignType` to `ℝ` has norm at most one. -/
+theorem norm_coe_le_one (s : SignType) : ‖(s : ℝ)‖ ≤ 1 := by
+  cases s <;> simp
+
+end SignType
 
 namespace Filter.Eventually
 

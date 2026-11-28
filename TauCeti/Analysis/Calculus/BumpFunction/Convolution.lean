@@ -14,6 +14,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Normed
 import TauCeti.Analysis.Calculus.BumpFunction.Rescale
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Convolution.Holder
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
@@ -45,10 +46,15 @@ Along an arbitrary filter of bump indices, convolution with normalized bumps als
 uniformly on a neighbourhood filter of a point of continuity of the function.
 
 The file also bounds the topological support of `ρ.normed μ ⋆ g` by the Minkowski sum
-`closedBall 0 ρ.rOut + tsupport g`, and provides the standard shrinking sequence of bumps
-`ContDiffBump.shrinking`, of radii `R / (n + 1)` and `R / (2 * (n + 1))`. These bumps are all
-rescalings of the first one (`ContDiffBump.shrinking_apply_eq`), so integrals against their
-normalized forms reduce to one kernel (`ContDiffBump.integral_shrinking_normed_mul`).
+`closedBall 0 ρ.rOut + tsupport g`, shows that zero-extending `g` outside a set containing
+`ball x ρ.rOut` leaves `(ρ.normed μ ⋆ g) x` unchanged
+(`ContDiffBump.normed_convolution_indicator_eq_of_ball_subset`), proves smoothness
+(`MeasureTheory.LocallyIntegrableOn.contDiff_normed_convolution_indicator`) and uniform interior
+convergence (`ContDiffBump.tendstoUniformlyOn_normed_convolution_indicator`) for zero-extended
+mollifications, and provides the standard shrinking sequence of bumps `ContDiffBump.shrinking`, of
+radii `R / (n + 1)` and `R / (2 * (n + 1))`. These bumps are all rescalings of the first one
+(`ContDiffBump.shrinking_apply_eq`), so integrals against their normalized forms reduce to one
+kernel (`ContDiffBump.integral_shrinking_normed_mul`).
 Integrating a function `H` on a product `X × G` against these bumps in the second variable
 tends to the integral of `H (·, 0)` when `H` is continuous near `X × {0}` and vanishes for the
 first variable outside a compact set (`ContDiffBump.tendsto_integral_shrinking_normed_smul`).
@@ -364,7 +370,55 @@ theorem tendstoUniformlyOn_convolution_indicator_ball {ι : Type*} {l : Filter �
   exact ((tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact
     (isCompact_closedBall x (r / 2))).1 (hlocal.mono hsub)).mono ball_subset_closedBall
 
+omit [CompleteSpace F] in
+/-- Replacing `g` by its indicator on a set `s` containing `ball x φ.rOut` does not change
+`(φ.normed μ ⋆ g) x`. -/
+theorem normed_convolution_indicator_eq_of_ball_subset (φ : ContDiffBump (0 : G)) {s : Set G}
+    {x : G} (hs : ball x φ.rOut ⊆ s) :
+    (φ.normed μ ⋆[lsmul ℝ ℝ, μ] s.indicator g) x = (φ.normed μ ⋆[lsmul ℝ ℝ, μ] g) x :=
+  convolution_indicator_eq_of_forall_sub_mem (lsmul ℝ ℝ) fun t ht =>
+    hs (by simpa [mem_ball, dist_eq_norm] using φ.support_normed_eq.subset ht)
+
+/-- **Uniform convergence of zero-extended interior mollifications.** If `V` is a null-measurable
+set with compact closure, such that `g` is continuous on `closure V`, and `thickening δ s ⊆ V` with
+`0 < δ`, then the mollifications `φᵢ.normed μ ⋆ V.indicator g` converge uniformly to `g` on `s` as
+`(φᵢ).rOut → 0`. -/
+theorem tendstoUniformlyOn_normed_convolution_indicator {V : Set G} (hV : NullMeasurableSet V μ)
+    (hVc : IsCompact (closure V)) (hgc : ContinuousOn g (closure V))
+    {s : Set G} {δ : ℝ} (hδ : 0 < δ) (hsV : thickening δ s ⊆ V)
+    {ι : Type*} {l : Filter ι} {φ : ι → ContDiffBump (0 : G)}
+    (hφ : Tendsto (fun i => (φ i).rOut) l (𝓝 0)) :
+    TendstoUniformlyOn (fun i => (φ i).normed μ ⋆[lsmul ℝ ℝ, μ] V.indicator g) g l s := by
+  have hUC : UniformContinuousOn (V.indicator g) (thickening δ s) := by
+    refine Metric.uniformContinuousOn_iff.2 fun ε hε =>
+      (Metric.uniformContinuousOn_iff.1 (hVc.uniformContinuousOn_of_continuous hgc)
+        ε hε).imp fun η ⟨hη, h⟩ => ⟨hη, fun x hx y hy hxy => ?_⟩
+    simpa only [Set.indicator_of_mem (hsV hx), Set.indicator_of_mem (hsV hy)] using
+      h x (subset_closure (hsV hx)) y (subset_closure (hsV hy)) hxy
+  have hmeas : AEStronglyMeasurable (V.indicator g) μ :=
+    (aestronglyMeasurable_indicator_iff₀ hV).2
+      ((hgc.aestronglyMeasurable isClosed_closure.measurableSet).mono_measure
+        (Measure.restrict_mono subset_closure le_rfl))
+  refine (tendstoUniformlyOn_normed_convolution hφ hδ hUC hmeas).congr_right fun x hx => ?_
+  exact Set.indicator_of_mem (hsV (self_subset_thickening hδ s hx)) g
+
 end ContDiffBump
+
+/-- **Smoothness of the interior mollification.** If `u` is locally integrable on `Ω` and `V` is a
+null-measurable set with compact closure in `Ω`, then convolving the zero extension of `u` from `V`
+with a normalized smooth bump yields a globally smooth function. -/
+theorem MeasureTheory.LocallyIntegrableOn.contDiff_normed_convolution_indicator
+    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {Ω : Set E} {u : E → F} (hu : LocallyIntegrableOn u Ω μ) {V : Set E}
+    (hV : NullMeasurableSet V μ) (hVc : IsCompact (closure V)) (hVΩ : closure V ⊆ Ω)
+    (φ : ContDiffBump (0 : E)) :
+    ContDiff ℝ ∞ (φ.normed μ ⋆[lsmul ℝ ℝ, μ] V.indicator u) := by
+  have huV : Integrable (V.indicator u) μ :=
+    (hu.integrableOn_of_isCompact_closure hVc hVΩ).integrable_indicator₀ hV
+  exact φ.hasCompactSupport_normed.contDiff_convolution_left (lsmul ℝ ℝ) φ.contDiff_normed
+    huV.locallyIntegrable
 
 /-- Every available Fréchet derivative of compactly supported finite-regularity data commutes
 with normalized-bump convolution. -/
