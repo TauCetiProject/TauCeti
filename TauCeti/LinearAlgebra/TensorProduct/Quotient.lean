@@ -449,10 +449,12 @@ namespace TensorProduct.AlgebraTensorModule
 
 /-! ### Naturality of `tensorQuotientEquiv` -/
 
-variable {R : Type*} (A B : Type*) [CommRing R] [CommRing A] [Algebra R A] [CommRing B]
-  [Algebra R B] (M : Type*) [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
-  {N N' : Type*} [AddCommGroup N] [Module R N] [Module B N] [IsScalarTower R B N]
-  [AddCommGroup N'] [Module R N'] [Module B N'] [IsScalarTower R B N']
+section Semiring
+
+variable {R : Type*} (A B : Type*) [CommSemiring R] [Semiring A] [Algebra R A] [Semiring B]
+  [Algebra R B] (M : Type*) [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M]
+  {N N' : Type*} [AddCommMonoid N] [Module R N] [Module B N] [IsScalarTower R B N]
+  [AddCommMonoid N'] [Module R N'] [Module B N'] [IsScalarTower R B N']
 
 /-- A map `f : N → N'` sending `n` into `n'` sends the image of `M ⊗[R] n` in `M ⊗[R] N` into the
 image of `M ⊗[R] n'` in `M ⊗[R] N'`. These images are the submodules by which
@@ -469,6 +471,13 @@ theorem range_lTensor_subtype_le_comap {n : Submodule B N} {n' : Submodule B N'}
   rintro _ ⟨x, rfl⟩
   exact ⟨lTensor A M ((f.restrict h).restrictScalars R) x, by
     simp only [← LinearMap.comp_apply, ← lTensor_comp, hf]⟩
+
+end Semiring
+
+variable {R : Type*} (A B : Type*) [CommRing R] [CommRing A] [Algebra R A] [CommRing B]
+  [Algebra R B] (M : Type*) [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
+  {N N' : Type*} [AddCommGroup N] [Module R N] [Module B N] [IsScalarTower R B N]
+  [AddCommGroup N'] [Module R N'] [Module B N'] [IsScalarTower R B N']
 
 /-- **Naturality of `tensorQuotientEquiv`.** For a map `f : N → N'` sending `n` into `n'`, the
 identification `M ⊗[R] (N ⧸ n) ≃ (M ⊗[R] N) ⧸ (M ⊗ n)` intertwines `M ⊗ (N ⧸ n) → M ⊗ (N' ⧸ n')`,

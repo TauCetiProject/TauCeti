@@ -117,16 +117,11 @@ theorem quotient_annihilator_flat_baseChange [Module.Flat R S] (Q : Submodule R 
     [Module.Finite R (M ⧸ Q)] :
     Module.annihilator S ((S ⊗[R] M) ⧸ Q.baseChange S) =
       (Module.annihilator R (M ⧸ Q)).map (algebraMap R S) := by
-  -- Mathlib's `tensorQuotientEquiv` identifies `S ⊗[R] (M ⧸ Q)` with the quotient of `S ⊗[R] M`
-  -- by the range of `S ⊗ Q → S ⊗ M`, which is `Q.baseChange S`.
-  have hQ : range (AlgebraTensorModule.lTensor S S (Q.subtype.restrictScalars R)) =
-      Q.baseChange S := by
-    rw [baseChange]
-    exact congrArg range <| AlgebraTensorModule.ext fun s q ↦ by simp
-  calc
-    _ = Module.annihilator S (S ⊗[R] (M ⧸ Q)) :=
-      ((AlgebraTensorModule.tensorQuotientEquiv S R S Q).trans
-        (quotEquivOfEq _ _ hQ)).annihilator_eq.symm
-    _ = _ := TauCeti.annihilator_flat_baseChange
+  -- `Q.baseChange S` is by definition the range of `Q.subtype.baseChange S`, so this is the
+  -- cokernel statement for `Q.subtype`, whose range is `Q`.
+  have : Module.Finite R (M ⧸ range Q.subtype) := by rwa [Submodule.range_subtype]
+  rw [baseChange]
+  have h := cokernel_annihilator_flat_baseChange (S := S) Q.subtype
+  rwa [Submodule.range_subtype] at h
 
 end Submodule
