@@ -14,7 +14,7 @@ public import TauCeti.LinearAlgebra.Matrix.Minor
 import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
-# Determinant estimates for matrices over ultrametric seminormed rings
+# Matrix estimates over ultrametric seminormed rings
 
 Over an ultrametric seminormed commutative ring `R` with `‖1‖ = 1`, the Leibniz expansion of a
 determinant is a sum of signed products, so the ultrametric inequality bounds the determinant by
@@ -47,7 +47,13 @@ lower bound for the sums
 The bound depends only on the differences `w i - w' i` along the diagonal, although the entry
 bounds compare a row weight with an unrelated column weight.
 
+The row bounds also control the image of a vector under a coefficient-mapped matrix
+(`Matrix.norm_map_mulVec_le`).
+
 ## Main results
+
+* `Matrix.norm_map_mulVec_le`: a coefficient-mapped matrix sends an entrywise bounded vector
+  into the polydisc specified by its row bounds.
 
 * `Matrix.norm_det_le_prod_mul_prod`, `Matrix.norm_det_le_prod_of_norm_le`,
   `Matrix.norm_principalMinor_le`, `Matrix.norm_principalMinor_le_prod_mul`,
@@ -96,6 +102,20 @@ theorem norm_coeff_charpolyRev_le_of_principalMinor_le {ι R : Type*}
 end TauCeti
 
 namespace Matrix
+
+/-- The mapped matrix sends an `s`-bounded vector into the polydisc of radii `r`. -/
+theorem norm_map_mulVec_le {ι κ R S : Type*} [Fintype κ]
+    [SeminormedRing R] [SeminormedRing S] [IsUltrametricDist S]
+    {r : ι → ℝ} {s : κ → ℝ} [∀ i, Fact (0 ≤ r i)]
+    (A : Matrix ι κ R) (φ : R →+* S)
+    (hA : ∀ i j, ‖A i j‖ * s j ≤ r i) (x : κ → S)
+    (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (hx : ∀ j, ‖x j‖ ≤ s j) (i : ι) :
+    ‖(A.map φ *ᵥ x) i‖ ≤ r i := by
+  rw [mulVec_apply_eq_sum]
+  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (Fact.out : 0 ≤ r i)
+    fun j _ ↦ ?_
+  exact (norm_mul_le _ _).trans <| (mul_le_mul (hφ _) (hx j)
+    (norm_nonneg _) (norm_nonneg _)).trans (hA i j)
 
 variable {ι R : Type*} [Fintype ι] [DecidableEq ι]
   [SeminormedCommRing R] [NormOneClass R] [IsUltrametricDist R]

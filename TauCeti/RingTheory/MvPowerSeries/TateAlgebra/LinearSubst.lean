@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Matrix.Ultra
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.AnalyticSubst
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
 
@@ -74,19 +75,6 @@ theorem coe_restrictedLinearSubst (A : Matrix (Fin k) (Fin m) R)
     (hasSubst_of_constantCoeff_zero (fun i ↦ by simp))]
   simp
 
-omit [IsUltrametricDist R] [∀ j, Fact (0 < s j)] [CompleteSpace R] in
-/-- The mapped matrix sends an `s`-bounded vector into the polydisc of radii `r`. -/
-theorem norm_map_mulVec_le {S : Type*} [NormedCommRing S] [IsUltrametricDist S]
-    (φ : R →+* S) (A : Matrix (Fin k) (Fin m) R)
-    (hA : ∀ i j, ‖A i j‖ * s j ≤ r i) (x : Fin m → S)
-    (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (hx : ∀ j, ‖x j‖ ≤ s j) (i : Fin k) :
-    ‖(A.map φ *ᵥ x) i‖ ≤ r i := by
-  rw [mulVec_apply_eq_sum]
-  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (Fact.out : 0 ≤ r i)
-    fun j _ ↦ ?_
-  exact (norm_mul_le _ _).trans <| (mul_le_mul (hφ _) (hx j)
-    (norm_nonneg _) (norm_nonneg _)).trans (hA i j)
-
 /-- Evaluating a linear pullback in a complete ultrametric ring is evaluating the original
 series at the image under the coefficient-mapped matrix. -/
 theorem restrictedEval₂_restrictedLinearSubst {S : Type*} [NormedCommRing S]
@@ -95,7 +83,7 @@ theorem restrictedEval₂_restrictedLinearSubst {S : Type*} [NormedCommRing S]
     (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (hx : ∀ j, ‖x j‖ ≤ s j)
     (f : IsRestricted.subring (R := R) r) :
     restrictedEval₂ φ x hφ hx (restrictedLinearSubst A hA f) =
-      restrictedEval₂ φ (A.map φ *ᵥ x) hφ (norm_map_mulVec_le φ A hA x hφ hx) f := by
+      restrictedEval₂ φ (A.map φ *ᵥ x) hφ (A.norm_map_mulVec_le φ hA x hφ hx) f := by
   let g : Fin k → IsRestricted.subring (R := R) s := fun i ↦
     polynomialToRestricted s (∑ j, MvPolynomial.C (A i j) * MvPolynomial.X j)
   have hg : ∀ i, ‖g i‖ ≤ r i := fun i ↦
@@ -109,13 +97,12 @@ theorem restrictedEval₂_restrictedLinearSubst {S : Type*} [NormedCommRing S]
       rw [mulVec_apply_eq_sum]
       rfl
     rw [hp]
-    change (MvPolynomial.eval₂Hom φ x) _ = _
-    rw [RingHom.map_mulVec]
+    rw [← MvPolynomial.coe_eval₂Hom, RingHom.map_mulVec]
     simp [Function.comp_def]
   have hs := (hasSum_restrictedAnalyticSubst g hg f).map (restrictedEval₂ φ x hφ hx)
     (continuous_restrictedEval₂ φ x hφ hx)
   have ht := hasSum_restrictedEval₂ φ (A.map φ *ᵥ x) hφ
-    (norm_map_mulVec_le φ A hA x hφ hx) f
+    (A.norm_map_mulVec_le φ hA x hφ hx) f
   apply HasSum.unique hs
   convert ht using 1
   funext t

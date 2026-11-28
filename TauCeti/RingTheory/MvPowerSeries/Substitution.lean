@@ -155,7 +155,6 @@ theorem subst_matrix_mulVec {R ι κ τ : Type*} [CommRing R] [Fintype κ] [Fint
     hasSubst_of_constantCoeff_zero fun j ↦ by simp [mulVec, dotProduct]
   rw [← coe_substAlgHom hb]
   rw [← AlgHom.coe_toRingHom]
-  change (substAlgHom hb).toRingHom ((A.map C *ᵥ X) i) = _
   rw [RingHom.map_mulVec]
   have hA : (A.map C).map (substAlgHom hb).toRingHom = A.map C := by
     ext j l
@@ -165,6 +164,7 @@ theorem subst_matrix_mulVec {R ι κ τ : Type*} [CommRing R] [Fintype κ] [Fint
     funext j
     simpa only [Function.comp_apply, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] using
       substAlgHom_X hb j
+  rw [AlgHom.toRingHom_eq_coe] at hA hX
   rw [hA, hX, mulVec_mulVec, ← Matrix.map_mul]
 
 variable {σ τ : Type*}
