@@ -107,6 +107,12 @@ theorem coe_projectionₐ (k : ℕ) :
 theorem projectionₐ_apply (k : ℕ) (x : F.completion) :
     F.projectionₐ (R := R) k x = F.projection k x := (rfl)
 
+/-- Finite-order projections preserve the scalar action on the completion. -/
+@[simp]
+theorem projection_smul (k : ℕ) (r : R) (x : F.completion) :
+    F.projection k (r • x) = r • F.projection k x := by
+  simpa only [projectionₐ_apply] using map_smul (F.projectionₐ (R := R) k) r x
+
 /-- The canonical map into the completion as an algebra homomorphism. -/
 def toCompletionₐ : A →ₐ[R] F.completion where
   __ := F.toCompletion
