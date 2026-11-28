@@ -72,6 +72,16 @@ abbrev forget : C(finiteOrientedGrassmannian r N, finiteGrassmannian ℝ r N) :=
 theorem forget_apply (p : finiteOrientedGrassmannian r N) : forget p = p.proj :=
   (rfl)
 
+/-- Forgetting the orientation of a finite real plane is a covering map. -/
+theorem isCoveringMap_forget :
+    IsCoveringMap (forget : finiteOrientedGrassmannian r N → finiteGrassmannian ℝ r N) :=
+  VectorBundleOrientationCover.isCoveringMap_proj (by simp)
+
+/-- Each finite real plane has exactly two preimages under orientation forgetting. -/
+theorem encard_preimage_forget_singleton (P : finiteGrassmannian ℝ r N) :
+    ((forget : finiteOrientedGrassmannian r N → finiteGrassmannian ℝ r N) ⁻¹' {P}).encard = 2 :=
+  VectorBundleOrientationCover.encard_preimage_proj_singleton (by simp) P
+
 /-- Finite oriented Grassmannians are compact. -/
 instance : CompactSpace (finiteOrientedGrassmannian r N) :=
   VectorBundleOrientationCover.compactSpace (by simp)
@@ -90,12 +100,12 @@ theorem encard_univ_fullRank :
     ext p
     simp [Subsingleton.elim p.proj V]
   rw [← h]
-  exact VectorBundleOrientationCover.encard_preimage_proj_singleton (by simp) V
+  exact encard_preimage_forget_singleton V
 
 /-- The finite oriented Grassmannians are Hausdorff, being covering spaces of Hausdorff
 spaces. -/
 instance : T2Space (finiteOrientedGrassmannian r N) :=
-  (VectorBundleOrientationCover.isCoveringMap_proj (by simp)).t2Space
+  isCoveringMap_forget.t2Space
 
 open finiteGrassmannian
 

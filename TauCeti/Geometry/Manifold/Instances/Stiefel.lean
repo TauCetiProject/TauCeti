@@ -307,11 +307,14 @@ namespace stiefel
 instance instCompactSpace [FiniteDimensional ℝ E] : CompactSpace (stiefel E k) :=
   isCompact_iff_compactSpace.1 (isCompact_stiefel E k)
 
+/-- The vector space modelling the Stiefel manifold of orthonormal `k`-frames. -/
+abbrev Model := Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ
+
 /-- The atlas of the Stiefel manifold, by the implicit-function charts of the regular level set
 `TauCeti.stiefel E k` of the Gram map. The model has dimension `k n - (k + 1).choose 2`, where
 `n = finrank ℝ E`. -/
 instance instChartedSpace [FiniteDimensional ℝ E] :
-    ChartedSpace (Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) (stiefel E k) :=
+    ChartedSpace (stiefel.Model E k) (stiefel E k) :=
   levelSetChartedSpace (fun v _ ↦ hasStrictFDerivAt_gramSym2 E k v)
     (fun _ _ ↦ ContinuousLinearMap.isFredholm_of_finiteDimensional _)
     (fun _ hv ↦ gramSym2Deriv_surjective (mem_stiefel_iff.1 hv))
@@ -320,14 +323,14 @@ instance instChartedSpace [FiniteDimensional ℝ E] :
 /-- **The Stiefel manifold is a smooth manifold**, indeed a `C^r` manifold for every `r`,
 including the analytic case `r = ω`. -/
 instance instIsManifold [FiniteDimensional ℝ E] (r : ℕ∞ω) :
-    IsManifold 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) r (stiefel E k) :=
+    IsManifold 𝓘(ℝ, stiefel.Model E k) r (stiefel E k) :=
   isManifold_levelSet _ _ _ _ fun _ _ ↦ (contDiff_gramSym2 E k).contDiffAt
 
 end stiefel
 
 /-- The inclusion of the Stiefel manifold into the space of `k`-families is smooth. -/
 theorem contMDiff_coe_stiefel [FiniteDimensional ℝ E] {r : ℕ∞ω} :
-    ContMDiff 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) 𝓘(ℝ, Fin k → E) r
+    ContMDiff 𝓘(ℝ, stiefel.Model E k) 𝓘(ℝ, Fin k → E) r
       ((↑) : stiefel E k → Fin k → E) :=
   contMDiff_coe_levelSet _ _ _ _ fun _ _ ↦ (contDiff_gramSym2 E k).contDiffAt
 
@@ -368,7 +371,7 @@ theorem _root_.ContMDiff.codRestrict_stiefel [FiniteDimensional ℝ E] {E' H M :
     [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H] {I : ModelWithCorners ℝ E' H}
     [TopologicalSpace M] [ChartedSpace H M] {r : ℕ∞ω} {g : M → Fin k → E}
     (hg : ContMDiff I 𝓘(ℝ, Fin k → E) r g) (hgk : ∀ x, g x ∈ stiefel E k) :
-    ContMDiff I 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) r
+    ContMDiff I 𝓘(ℝ, stiefel.Model E k) r
       (fun x ↦ (⟨g x, hgk x⟩ : stiefel E k)) :=
   ContMDiff.codRestrict_levelSet _ _ _ _ hg hgk
 
@@ -459,5 +462,37 @@ theorem contMDiff_stiefelTwoReflection [FiniteDimensional ℝ E] {r : ℕ∞ω} 
   · exact h (-ContinuousLinearMap.proj 1)
 
 end
+
+namespace stiefel
+
+open Submodule
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {k : ℕ}
+
+/-- An orthonormal frame gives an orthonormal basis of its span. A specified equality of spans
+lets two such bases be compared in the same subspace. -/
+noncomputable def orthonormalBasisOfSpanEq (v : stiefel E k) {P : Submodule ℝ E}
+    (hP : span ℝ (range v.val) = P) : OrthonormalBasis (Fin k) ℝ P := by
+  subst P
+  let hv := mem_stiefel_iff.1 v.property
+  exact (Module.Basis.span hv.linearIndependent).toOrthonormalBasis <|
+    (span ℝ (range v.val)).subtypeₗᵢ.orthonormal_comp_iff.1 <| by
+      simpa [Function.comp_def] using hv
+
+/-- The basis of the span has the vectors of the original frame. -/
+@[simp]
+theorem coe_orthonormalBasisOfSpanEq_apply (v : stiefel E k) {P : Submodule ℝ E}
+    (hP : span ℝ (range v.val) = P) (j : Fin k) :
+    (orthonormalBasisOfSpanEq v hP j : E) = v.val j := by
+  subst P
+  simp [orthonormalBasisOfSpanEq]
+
+/-- The span of an orthonormal frame has dimension equal to the number of its vectors. -/
+@[simp]
+theorem finrank_span_range (v : stiefel E k) :
+    finrank ℝ (span ℝ (range v.val)) = k := by
+  simpa using finrank_span_eq_card (mem_stiefel_iff.1 v.property).linearIndependent
+
+end stiefel
 
 end TauCeti

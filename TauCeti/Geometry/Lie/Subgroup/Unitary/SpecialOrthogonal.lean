@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.Instances.Unitary.Special
 public import TauCeti.Algebra.Lie.Orthogonal.CrossProduct
 public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Orbit
 
+import TauCeti.Algebra.Lie.Orthogonal.Dimension
 import TauCeti.Geometry.Lie.Adjoint.Units.Basic
 import TauCeti.Geometry.Lie.Functor
 import TauCeti.Geometry.Manifold.IsManifold.Basic
@@ -245,6 +246,14 @@ theorem coe_specialOrthogonalLieAlgebraEquiv_apply
   rw [specialOrthogonalLieAlgebraEquiv, ← LieEquiv.coe_toLinearEquiv,
     LieEquiv.toLinearEquiv_ofBijective, LinearEquiv.ofBijective_apply,
     coe_specialOrthogonalLieAlgebraMap_apply]
+
+/-- The dimension of the real special orthogonal Lie algebra counts the strictly
+upper-triangular entries of a skew-symmetric matrix. -/
+theorem finrank_specialOrthogonalLieAlgebra :
+    Module.finrank ℝ (GroupLieAlgebra (Matrix.specialUnitaryGroup.model n ℝ)
+      (Matrix.specialOrthogonalGroup n ℝ)) = (Fintype.card n).choose 2 :=
+  (specialOrthogonalLieAlgebraEquiv n).toLinearEquiv.finrank_eq.trans
+    finrank_so
 
 /-! ### The dual of the Lie algebra of `SO(3)` -/
 
