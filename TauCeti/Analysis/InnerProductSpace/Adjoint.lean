@@ -12,6 +12,7 @@ public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Normed.Operator.Basic
 import Mathlib.Analysis.Normed.Affine.MazurUlam
 import TauCeti.Analysis.Normed.Operator.ClosedRange
+import TauCeti.LinearAlgebra.LinearMap.Range
 
 /-!
 # Adjoints of linear maps
@@ -108,9 +109,20 @@ Passing a finite-dimensional operator to continuous linear maps and back preserv
 (`LinearMap.toContinuousLinearMap_star`, `ContinuousLinearMap.toLinearMap_star`) and the first
 passage preserves its normality
 (the instance `LinearMap.isStarNormal_toContinuousLinearMap`).
+
+For a family of bounded operators,
+`ContinuousLinearMap.orthogonal_iInf_ker_eq_closure_iSup_range_adjoint` identifies
+the orthogonal complement of the joint kernel with the closure of the sum of the adjoint ranges,
+by Mathlib's adjoint and orthogonal complement identities.
+`LinearMap.orthogonal_iInf_ker_eq_iSup_range_of_isStarNormal` gives the sum of the original ranges
+for finite-dimensional normal operators. The linear-map commuting-square range lemmas then give
+transport into the target complement (`LinearMap.orthogonal_iInf_ker_le_comap_of_isStarNormal`)
+and onto it for surjective intertwiners (`LinearMap.map_orthogonal_iInf_ker_eq_of_isStarNormal`).
+
 The symmetric part `(A + A†) / 2` of an operator `A` on a Hilbert space is symmetric
 (`ContinuousLinearMap.isSymmetric_two_inv_smul_add_adjoint`) and has the real quadratic form of
 `A` (`ContinuousLinearMap.re_inner_two_inv_smul_add_adjoint_apply`).
+
 Unitary operators on a Hilbert space act by isometries (`Unitary.instIsIsometricSMul`), and
 conjugation by an isometric isomorphism of Hilbert spaces commutes with adjoints
 (`LinearIsometryEquiv.adjoint_conjContinuousAlgEquiv`). The adjoint of the inverse of such an
@@ -126,7 +138,17 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 
 namespace ContinuousLinearMap
 
-open scoped InnerProduct
+open scoped InnerProduct InnerProductSpace
+
+/-- The orthogonal complement of the joint kernel of bounded maps between Hilbert spaces is the
+closure of the sum of their adjoint ranges. -/
+theorem orthogonal_iInf_ker_eq_closure_iSup_range_adjoint {ι : Type*} {G : ι → Type*}
+    [CompleteSpace E] [∀ i, NormedAddCommGroup (G i)] [∀ i, InnerProductSpace 𝕜 (G i)]
+    [∀ i, CompleteSpace (G i)] (A : ∀ i, E →L[𝕜] G i) :
+    (⨅ i, (A i).ker)ᗮ = (⨆ i, (A i).adjoint.range).topologicalClosure := by
+  have hker (i : ι) : (A i).adjoint.rangeᗮ = (A i).ker := by
+    rw [orthogonal_range, adjoint_adjoint]
+  simp only [← hker, Submodule.iInf_orthogonal, Submodule.orthogonal_orthogonal_eq_closure]
 
 /-- An operator and its adjoint have the same real quadratic form. -/
 @[simp] theorem re_inner_star_apply_self [CompleteSpace E] (T : E →L[𝕜] E) (x : E) :
@@ -901,6 +923,67 @@ instance isStarNormal_toContinuousLinearMap {𝕜 E : Type*} [RCLike 𝕜]
     exact (star_comm_self (x := T)).map (Module.End.toContinuousLinearMap (𝕜 := 𝕜) E)
 
 end LinearMap
+
+section NormalKernels
+
+open scoped InnerProductSpace
+
+namespace LinearMap
+
+/-- For a family of normal operators on a finite-dimensional inner product space, the
+orthogonal complement of the joint kernel is the sum of their ranges. -/
+theorem orthogonal_iInf_ker_eq_iSup_range_of_isStarNormal {𝕜 E ι : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+    {A : ι → E →ₗ[𝕜] E} (hA : ∀ i, IsStarNormal (A i)) :
+    (⨅ i, (A i).ker)ᗮ = ⨆ i, (A i).range := by
+  have := FiniteDimensional.completeSpace 𝕜 E
+  have hker (i : ι) : (A i).toContinuousLinearMap.adjoint.ker = (A i).ker := by
+    have : IsStarNormal (A i) := hA i
+    simpa only [coe_toContinuousLinearMap] using
+      (ContinuousLinearMap.IsStarNormal.ker_adjoint_eq_ker
+        (T := (A i).toContinuousLinearMap) inferInstance)
+  have hjoint := ContinuousLinearMap.orthogonal_iInf_ker_eq_closure_iSup_range_adjoint
+    (fun i ↦ (A i).toContinuousLinearMap.adjoint)
+  have hclosed : (⨆ i, (A i).range : Submodule 𝕜 E).topologicalClosure = ⨆ i, (A i).range :=
+    (Submodule.isClosed_of_finiteDimensional _).submodule_topologicalClosure_eq
+  simpa only [hker, ContinuousLinearMap.adjoint_adjoint, coe_toContinuousLinearMap, hclosed]
+    using hjoint
+
+variable {𝕜 𝕝 E F ι : Type*} [RCLike 𝕜] [RCLike 𝕝]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕝 F] [FiniteDimensional 𝕝 F]
+  {σ : 𝕜 →+* 𝕝}
+  (f : E →ₛₗ[σ] F) {A : ι → E →ₗ[𝕜] E} {B : ι → F →ₗ[𝕝] F}
+
+/-- A semilinear map intertwining two families of normal operators sends the orthogonal
+complement of the source joint kernel into the orthogonal complement of the target joint kernel. -/
+theorem orthogonal_iInf_ker_le_comap_of_isStarNormal
+    (hA : ∀ i, IsStarNormal (A i)) (hB : ∀ i, IsStarNormal (B i))
+    (hintertwine : ∀ i x, f (A i x) = B i (f x)) :
+    (⨅ i, (A i).ker)ᗮ ≤ ((⨅ i, (B i).ker)ᗮ).comap f := by
+  rw [orthogonal_iInf_ker_eq_iSup_range_of_isStarNormal hA,
+    orthogonal_iInf_ker_eq_iSup_range_of_isStarNormal hB]
+  refine iSup_le fun i ↦ ?_
+  have hcomp : f.comp (A i) = (B i).comp f := LinearMap.ext (hintertwine i)
+  exact (range_le_comap_range_of_comp_eq hcomp).trans
+    (Submodule.comap_mono (le_iSup (fun j ↦ (B j).range) i))
+
+/-- A surjective semilinear map intertwining two families of normal operators maps the orthogonal
+complement of the source joint kernel onto the orthogonal complement of the target joint kernel. -/
+theorem map_orthogonal_iInf_ker_eq_of_isStarNormal [RingHomSurjective σ]
+    (hf : Function.Surjective f)
+    (hA : ∀ i, IsStarNormal (A i)) (hB : ∀ i, IsStarNormal (B i))
+    (hintertwine : ∀ i x, f (A i x) = B i (f x)) :
+    ((⨅ i, (A i).ker)ᗮ).map f = (⨅ i, (B i).ker)ᗮ := by
+  rw [orthogonal_iInf_ker_eq_iSup_range_of_isStarNormal hA,
+    orthogonal_iInf_ker_eq_iSup_range_of_isStarNormal hB, Submodule.map_iSup]
+  refine congrArg iSup (funext fun i ↦ ?_)
+  have hcomp : f.comp (A i) = (B i).comp f := LinearMap.ext (hintertwine i)
+  exact (A i).map_range_eq_range_of_comp_eq hf hcomp.symm
+
+end LinearMap
+
+end NormalKernels
 
 namespace ContinuousLinearEquiv
 
