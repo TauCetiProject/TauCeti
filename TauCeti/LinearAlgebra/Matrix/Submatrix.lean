@@ -7,7 +7,8 @@ module
 
 -- `Matrix.submatrix` and `Matrix.submatrix_submatrix` occur in the statements and proofs below.
 public import Mathlib.LinearAlgebra.Matrix.Defs
--- `Matrix.submatrix_mul` is used by `Matrix.submatrix_one_mul_submatrix_one`.
+-- `Matrix.submatrix_mul` is used by `Matrix.submatrix_one_mul_submatrix_one` and
+-- `Matrix.submatrix_mul_submatrix_eq_one`.
 public import Mathlib.Data.Matrix.Mul
 -- `Subgroup` and the group structure on `Equiv.Perm` are used by `TauCeti.matrixSymmetryGroup`.
 public import Mathlib.Algebra.Group.Subgroup.Defs
@@ -22,7 +23,9 @@ A permutation `σ` of the index set of a square matrix `M` *preserves* `M` when
 and packages them as the subgroup `TauCeti.matrixSymmetryGroup` of `Equiv.Perm`. It also reads
 off the entries of a reindexed matrix: `A.reindex eₘ eₙ = A'` gives `A' (eₘ a) (eₙ b) = A a b`
 (`Matrix.apply_apply_of_reindex_eq`), and shows that the `n × m` matrix of an injection
-`f : m ↪ n` has a left inverse, its transpose (`Matrix.submatrix_one_mul_submatrix_one`).
+`f : m ↪ n` has a left inverse, its transpose (`Matrix.submatrix_one_mul_submatrix_one`). A left
+inverse of a matrix restricts to a left inverse of any injectively indexed family of its columns
+(`Matrix.submatrix_mul_submatrix_eq_one`).
 
 For the Cartan matrix of a Dynkin diagram these permutations are the diagram symmetries.
 
@@ -88,5 +91,12 @@ theorem submatrix_one_mul_submatrix_one {m n α : Type*} [Fintype n] [DecidableE
     [DecidableEq n] [NonAssocSemiring α] (f : m ↪ n) :
     (1 : Matrix n n α).submatrix f id * (1 : Matrix n n α).submatrix id f = 1 := by
   rw [← submatrix_mul _ _ _ _ _ Function.bijective_id, Matrix.one_mul, submatrix_one_embedding]
+
+/-- A left inverse `T` of `v` restricts to a left inverse of the columns of `v` indexed by an
+injective `e`. -/
+theorem submatrix_mul_submatrix_eq_one {l m n α : Type*} [Fintype n] [DecidableEq l]
+    [DecidableEq m] [NonAssocSemiring α] {T : Matrix m n α} {v : Matrix n m α} {e : l → m}
+    (he : Function.Injective e) (hT : T * v = 1) : T.submatrix e id * v.submatrix id e = 1 := by
+  rw [← submatrix_mul _ _ _ _ _ Function.bijective_id, hT, submatrix_one _ he]
 
 end Matrix

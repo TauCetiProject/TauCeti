@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
 import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 
@@ -35,9 +36,21 @@ element `g` of `Matrix.unitaryGroupOf J` is `formAdjoint J J g` (`Matrix.val_inv
 * `Matrix.dotProduct_mulVec_formAdjoint`: the adjunction `⟨x, T† y⟩_J = ⟨T x, y⟩_J'`.
 * `Matrix.formAdjoint_eq_iff_forall_dotProduct`: the adjunction characterises the form adjoint.
 * `Matrix.formAdjoint_mul`: `(S * T)† = T† * S†` when the middle Gram matrix is invertible.
+* `Matrix.formAdjoint_add`, `Matrix.formAdjoint_sub`: the form adjoint is additive.
+* `Matrix.formAdjoint_formAdjoint`: `(T†)† = T` for invertible Hermitian Gram matrices.
+* `Matrix.trace_formAdjoint`: `trace T† = star (trace T)` for an invertible Gram matrix.
 * `Matrix.formAdjoint_one_one`: for `J = J' = 1` the form adjoint is the conjugate transpose.
 * `Matrix.val_inv_eq_formAdjoint`: for invertible `J`, the inverse of `g ∈ unitaryGroupOf J` is
   its form adjoint `formAdjoint J J g`.
+
+## References
+
+* The shorter formal proof of the Riemann hypothesis for Dirichlet `L`-functions,
+  <https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7a407964a13dc0cf9d977207/grh>
+  (Apache 2.0): `Matrix.formAdjoint_sub`, `Matrix.formAdjoint_one`, `Matrix.trace_formAdjoint`
+  and `Matrix.formAdjoint_formAdjoint` follow the lemmas of the same names about
+  `New.DiscreteSeries.formAdjoint` in `src/New/Appendix/DiscreteSeries/Positions.lean`, stated
+  there for diagonal matrices of signs.
 -/
 
 public section
@@ -91,6 +104,49 @@ theorem formAdjoint_eq_iff_forall_dotProduct (hJ : IsUnit J.det) {S : Matrix n m
   have hij := h (Pi.single i 1) (Pi.single j 1)
   rw [mulVec_mulVec, star_mulVec, ← dotProduct_mulVec, mulVec_mulVec] at hij
   simpa [mulVec_single_one, Pi.star_single, single_one_dotProduct] using hij
+
+/-- The form adjoint of `0` is `0`. -/
+@[simp]
+theorem formAdjoint_zero (J : Matrix n n R) (J' : Matrix m m R) :
+    formAdjoint J J' (0 : Matrix m n R) = 0 := by
+  simp only [formAdjoint_def, conjTranspose_zero, Matrix.mul_zero, Matrix.zero_mul]
+
+/-- The form adjoint is additive: `(S + T)† = S† + T†`. -/
+@[simp]
+theorem formAdjoint_add (J : Matrix n n R) (J' : Matrix m m R) (S T : Matrix m n R) :
+    formAdjoint J J' (S + T) = formAdjoint J J' S + formAdjoint J J' T := by
+  simp only [formAdjoint_def, conjTranspose_add, Matrix.mul_add, Matrix.add_mul]
+
+/-- The form adjoint commutes with negation: `(-T)† = -T†`. -/
+@[simp]
+theorem formAdjoint_neg (J : Matrix n n R) (J' : Matrix m m R) (T : Matrix m n R) :
+    formAdjoint J J' (-T) = -formAdjoint J J' T := by
+  simp only [formAdjoint_def, conjTranspose_neg, Matrix.mul_neg, Matrix.neg_mul]
+
+/-- The form adjoint commutes with subtraction: `(S - T)† = S† - T†`. -/
+@[simp]
+theorem formAdjoint_sub (J : Matrix n n R) (J' : Matrix m m R) (S T : Matrix m n R) :
+    formAdjoint J J' (S - T) = formAdjoint J J' S - formAdjoint J J' T := by
+  simp only [formAdjoint_def, conjTranspose_sub, Matrix.mul_sub, Matrix.sub_mul]
+
+/-- For an invertible Gram matrix `J`, the identity is its own form adjoint. -/
+@[simp]
+theorem formAdjoint_one (hJ : IsUnit J.det) : formAdjoint J J (1 : Matrix n n R) = 1 := by
+  rw [formAdjoint_def, conjTranspose_one, Matrix.mul_one, nonsing_inv_mul _ hJ]
+
+/-- For an invertible Gram matrix `J`, the trace of the form adjoint of an endomorphism `T` is
+`star (trace T)`. -/
+theorem trace_formAdjoint (hJ : IsUnit J.det) (T : Matrix n n R) :
+    (formAdjoint J J T).trace = star T.trace := by
+  rw [formAdjoint_def, trace_mul_cycle, mul_nonsing_inv _ hJ, Matrix.one_mul, trace_conjTranspose]
+
+/-- **The form adjoint is an involution** for invertible Hermitian Gram matrices:
+`(T†)† = T`. -/
+theorem formAdjoint_formAdjoint [DecidableEq m] (hJ : J.IsHermitian) (hJ' : J'.IsHermitian)
+    (hJu : IsUnit J.det) (hJ'u : IsUnit J'.det) (T : Matrix m n R) :
+    formAdjoint J' J (formAdjoint J J' T) = T := by
+  simp [formAdjoint_def, conjTranspose_nonsing_inv, hJ.eq, hJ'.eq, Matrix.mul_assoc,
+    nonsing_inv_mul_cancel_left _ _ hJ'u, nonsing_inv_mul _ hJu]
 
 /-- **The form adjoint of a product** is the product of the form adjoints in reverse order, when
 the Gram matrix `J'` of the middle space is invertible. -/

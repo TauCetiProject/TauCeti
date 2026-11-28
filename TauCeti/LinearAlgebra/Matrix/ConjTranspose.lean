@@ -13,14 +13,18 @@ public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 Over a commutative star ring, conjugating the entries of a matrix is mapping it through the ring
 homomorphism `starRingEnd`, so lemmas about ring homomorphisms apply to it. The entries of an
 integral matrix are fixed by conjugation, so over any star ring its conjugate transpose is its
-transpose. Over any star semiring, a matrix `x` pulling the sesquilinear form of Gram matrix `A`
-back to that of `B` (`star x * A * x = B`) carries pairings for `B` to pairings for `A`.
+transpose. The products `(v.submatrix id t)ᴴ * J * M` with a family of columns of `v` are the
+corresponding rows of `vᴴ * J * M`. Over any star semiring, a matrix `x` pulling the sesquilinear
+form of Gram matrix `A` back to that of `B` (`star x * A * x = B`) carries pairings for `B` to
+pairings for `A`.
 
 ## Main results
 
 * `Matrix.map_star_eq_map_starRingEnd`: `M.map star = M.map (starRingEnd α)`.
 * `Matrix.conjTranspose_map_intCast`: an integral matrix, viewed as a matrix over a star ring
   such as `ℂ`, has `Xᴴ = Xᵀ`.
+* `Matrix.submatrix_conjTranspose_mul_mul_eq_submatrix`: `(v.submatrix id t)ᴴ * J * M` is the
+  submatrix of the rows `t` of `vᴴ * J * M`.
 * `Matrix.conjTranspose_mul_mul_mul_of_star_mul_mul_eq`: if `star x * A * x = B`, then
   `(x F)ᴴ A (x F') = Fᴴ B F'`.
 -/
@@ -44,6 +48,14 @@ theorem conjTranspose_map_intCast {R : Type*} [Ring R] [StarRing R] (X : Matrix 
     (X.map ((↑) : ℤ → R))ᴴ = (X.map ((↑) : ℤ → R))ᵀ := by
   ext i j
   simp
+
+/-- The products `(v.submatrix id t)ᴴ * J * M` of the columns `v_{t a}` of `v` are the rows `t a`
+of `vᴴ * J * M`. -/
+theorem submatrix_conjTranspose_mul_mul_eq_submatrix {k n p R : Type*} [Fintype n]
+    [NonUnitalSemiring R] [StarRing R] (v : Matrix n k R) (t : l → k) (J : Matrix n n R)
+    (M : Matrix n p R) : (v.submatrix id t)ᴴ * J * M = (vᴴ * J * M).submatrix t id := by
+  rw [conjTranspose_submatrix, Matrix.mul_assoc, Matrix.mul_assoc,
+    submatrix_mul _ _ _ _ _ Function.bijective_id, submatrix_id_id]
 
 section NonUnitalSemiring
 
