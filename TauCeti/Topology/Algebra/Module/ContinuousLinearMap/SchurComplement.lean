@@ -18,7 +18,7 @@ A continuous linear map `M : E₁ × E₂ → F₁ × F₂` is a `2 × 2` block 
 written `((A.coprod B).prod (C.coprod D))`. When the block `A : E₁ ≃L[R] F₁` is invertible, the
 equation `M x = y` can be solved for `x₁ = A⁻¹ (y₁ - B x₂)`, and what remains is an equation for
 `x₂` alone, governed by the **Schur complement** `S = D - C A⁻¹ B : E₂ → F₂`
-(`ContinuousLinearEquiv.schurComplement`):
+(`ContinuousLinearMap.schurComplement`):
 
 `S x₂ = y₂ - C A⁻¹ y₁`
 
@@ -66,6 +66,39 @@ public section
 
 open ContinuousLinearMap
 
+namespace ContinuousLinearMap
+
+section SchurComplement
+
+variable {R E₁ E₂ F₁ F₂ : Type*} [Ring R]
+  [TopologicalSpace E₁] [AddCommGroup E₁] [Module R E₁]
+  [TopologicalSpace E₂] [AddCommGroup E₂] [Module R E₂]
+  [TopologicalSpace F₁] [AddCommGroup F₁] [Module R F₁]
+  [TopologicalSpace F₂] [AddCommGroup F₂] [Module R F₂] [IsTopologicalAddGroup F₂]
+
+variable (A : E₁ →L[R] F₁) (B : E₂ →L[R] F₁) (C : E₁ →L[R] F₂) (D : E₂ →L[R] F₂)
+
+/-- The **Schur complement** `D - C A⁻¹ B : E₂ → F₂` of the block `A` in the block operator
+`(A B; C D) : E₁ × E₂ → F₁ × F₂`, using `ContinuousLinearMap.inverse` (which is `0` when `A` is
+not invertible). -/
+noncomputable def schurComplement : E₂ →L[R] F₂ :=
+  D - C ∘L A.inverse ∘L B
+
+/-- Defining formula for `ContinuousLinearMap.schurComplement`. -/
+theorem schurComplement_def :
+    A.schurComplement B C D = D - C ∘L A.inverse ∘L B :=
+  (rfl)
+
+/-- Pointwise formula for `ContinuousLinearMap.schurComplement`. -/
+@[simp]
+theorem schurComplement_apply (x : E₂) :
+    A.schurComplement B C D x = D x - C (A.inverse (B x)) :=
+  (rfl)
+
+end SchurComplement
+
+end ContinuousLinearMap
+
 namespace ContinuousLinearEquiv
 
 variable {R E₁ E₂ F₁ F₂ : Type*} [Ring R]
@@ -76,27 +109,6 @@ variable {R E₁ E₂ F₁ F₂ : Type*} [Ring R]
 
 variable (A : E₁ ≃L[R] F₁) (B : E₂ →L[R] F₁) (C : E₁ →L[R] F₂) (D : E₂ →L[R] F₂)
 
-/-- The **Schur complement** `D - C A⁻¹ B : E₂ → F₂` of the invertible block `A` in the block
-operator `(A B; C D) : E₁ × E₂ → F₁ × F₂`. -/
-def schurComplement : E₂ →L[R] F₂ :=
-  D - C ∘L (A.symm : F₁ →L[R] E₁) ∘L B
-
-theorem schurComplement_def :
-    A.schurComplement B C D = D - C ∘L (A.symm : F₁ →L[R] E₁) ∘L B :=
-  (rfl)
-
-@[simp]
-theorem schurComplement_apply (x : E₂) :
-    A.schurComplement B C D x = D x - C (A.symm (B x)) :=
-  (rfl)
-
-/-- The Schur complement written with the inverse `ContinuousLinearMap.inverse` of the block `A`
-viewed as a continuous linear map. This is the form taken by the Schur complement of a family of
-block operators whose upper left block is invertible at the points of interest. -/
-theorem schurComplement_eq_sub_comp_inverse :
-    A.schurComplement B C D = D - C ∘L (A : E₁ →L[R] F₁).inverse ∘L B := by
-  rw [inverse_equiv, schurComplement_def]
-
 variable [ContinuousAdd F₁]
 
 /-- **Solving a block system.** With `A` invertible, `M (x₁, x₂) = (y₁, y₂)` determines
@@ -105,11 +117,11 @@ complement `S = D - C A⁻¹ B`. -/
 theorem coprod_prod_coprod_apply_eq_iff {x : E₁ × E₂} {y : F₁ × F₂} :
     ((A : E₁ →L[R] F₁).coprod B).prod (C.coprod D) x = y ↔
       x.1 = A.symm (y.1 - B x.2) ∧
-        (A.schurComplement B C D) x.2 = y.2 - C (A.symm y.1) := by
+        ((A : E₁ →L[R] F₁).schurComplement B C D) x.2 = y.2 - C (A.symm y.1) := by
   obtain ⟨x₁, x₂⟩ := x
   obtain ⟨y₁, y₂⟩ := y
   simp only [ContinuousLinearMap.prod_apply, coprod_apply, coe_coe, Prod.mk.injEq,
-    schurComplement_apply]
+    schurComplement_apply, inverse_equiv]
   constructor
   · rintro ⟨rfl, rfl⟩
     refine ⟨by simp, ?_⟩
@@ -125,7 +137,7 @@ when its second component `x₂` lies in the kernel of the Schur complement `D -
 first component is `-A⁻¹ B x₂`. -/
 theorem mem_ker_coprod_prod_coprod_iff {x : E₁ × E₂} :
     x ∈ (((A : E₁ →L[R] F₁).coprod B).prod (C.coprod D)).ker ↔
-      x.1 = -A.symm (B x.2) ∧ x.2 ∈ (A.schurComplement B C D).ker := by
+      x.1 = -A.symm (B x.2) ∧ x.2 ∈ ((A : E₁ →L[R] F₁).schurComplement B C D).ker := by
   rw [LinearMap.mem_ker, LinearMap.mem_ker]
   exact (coprod_prod_coprod_apply_eq_iff A B C D (y := 0)).trans (by simp)
 
@@ -133,7 +145,7 @@ theorem mem_ker_coprod_prod_coprod_iff {x : E₁ × E₂} :
 complement `D - C A⁻¹ B` is. -/
 theorem injective_coprod_prod_coprod_iff :
     Function.Injective (((A : E₁ →L[R] F₁).coprod B).prod (C.coprod D)) ↔
-      Function.Injective (A.schurComplement B C D) := by
+      Function.Injective ((A : E₁ →L[R] F₁).schurComplement B C D) := by
   simp only [injective_iff_map_eq_zero]
   constructor
   · intro h z hz
@@ -148,7 +160,7 @@ theorem injective_coprod_prod_coprod_iff :
 exactly when `y₂ - C A⁻¹ y₁` lies in the range of its Schur complement `D - C A⁻¹ B`. -/
 theorem mem_range_coprod_prod_coprod_iff {y : F₁ × F₂} :
     y ∈ (((A : E₁ →L[R] F₁).coprod B).prod (C.coprod D)).range ↔
-      y.2 - C (A.symm y.1) ∈ (A.schurComplement B C D).range := by
+      y.2 - C (A.symm y.1) ∈ ((A : E₁ →L[R] F₁).schurComplement B C D).range := by
   simp only [LinearMap.mem_range]
   constructor
   · rintro ⟨x, hx⟩
@@ -160,7 +172,7 @@ theorem mem_range_coprod_prod_coprod_iff {y : F₁ × F₂} :
 complement `D - C A⁻¹ B` is. -/
 theorem surjective_coprod_prod_coprod_iff :
     Function.Surjective (((A : E₁ →L[R] F₁).coprod B).prod (C.coprod D)) ↔
-      Function.Surjective (A.schurComplement B C D) := by
+      Function.Surjective ((A : E₁ →L[R] F₁).schurComplement B C D) := by
   constructor
   · intro h z
     obtain ⟨x₂, hx₂⟩ := (mem_range_coprod_prod_coprod_iff A B C D (y := (0, z))).1 (h _)
@@ -183,10 +195,10 @@ theorem coprod_prod_coprod_eq_comp :
     ((A : E₁ →L[R] F₁).coprod B).prod (C.coprod D) =
       (((ContinuousLinearMap.id R F₁).coprod 0).prod
           ((C ∘L (A.symm : F₁ →L[R] E₁)).coprod (.id R F₂))) ∘L
-        ((A : E₁ →L[R] F₁).prodMap (A.schurComplement B C D)) ∘L
+        ((A : E₁ →L[R] F₁).prodMap ((A : E₁ →L[R] F₁).schurComplement B C D)) ∘L
           (((ContinuousLinearMap.id R E₁).coprod ((A.symm : F₁ →L[R] E₁) ∘L B)).prod
             ((0 : E₁ →L[R] E₂).coprod (.id R E₂))) := by
-  ext x <;> simp
+  ext x <;> simp [inverse_equiv]
 
 end ContinuousAdd
 
@@ -200,7 +212,7 @@ theorem exists_coprod_prod_coprod_eq_comp_prodMap_comp :
     ∃ (L : (F₁ × F₂) ≃L[R] F₁ × F₂) (U : (E₁ × E₂) ≃L[R] E₁ × E₂),
       ((A : E₁ →L[R] F₁).coprod B).prod (C.coprod D) =
         (L : F₁ × F₂ →L[R] F₁ × F₂) ∘L
-          ((A : E₁ →L[R] F₁).prodMap (A.schurComplement B C D)) ∘L
+          ((A : E₁ →L[R] F₁).prodMap ((A : E₁ →L[R] F₁).schurComplement B C D)) ∘L
             (U : E₁ × E₂ →L[R] E₁ × E₂) := by
   let T : E₂ →L[R] E₁ := (A.symm : F₁ →L[R] E₁) ∘L B
   refine ⟨(ContinuousLinearEquiv.refl R F₁).skewProd (.refl R F₂) (C ∘L (A.symm : F₁ →L[R] E₁)),
@@ -209,13 +221,13 @@ theorem exists_coprod_prod_coprod_eq_comp_prodMap_comp :
   · ext x <;> simp
   · ext x <;> simp
   · rw [coprod_prod_coprod_eq_comp]
-    ext x <;> simp [T, add_comm]
+    ext x <;> simp [T, add_comm, inverse_equiv]
 
 /-- A block operator with invertible upper left block `A` is invertible exactly when its Schur
 complement `D - C A⁻¹ B` is. -/
 theorem isInvertible_coprod_prod_coprod_iff :
     (((A : E₁ →L[R] F₁).coprod B).prod (C.coprod D)).IsInvertible ↔
-      (A.schurComplement B C D).IsInvertible := by
+      ((A : E₁ →L[R] F₁).schurComplement B C D).IsInvertible := by
   obtain ⟨L, U, h⟩ := exists_coprod_prod_coprod_eq_comp_prodMap_comp A B C D
   rw [h, isInvertible_equiv_comp, isInvertible_comp_equiv, isInvertible_prodMap_iff]
   simp
@@ -237,14 +249,14 @@ Each term on the right contains one difference of blocks, so the Schur complemen
 blocks as long as the inverse `A⁻¹` stays bounded. -/
 theorem schurComplement_sub_schurComplement (A' : E₁ ≃L[R] F₁) (B' : E₂ →L[R] F₁)
     (C' : E₁ →L[R] F₂) (D' : E₂ →L[R] F₂) :
-    A.schurComplement B C D - A'.schurComplement B' C' D' =
+    (A : E₁ →L[R] F₁).schurComplement B C D - (A' : E₁ →L[R] F₁).schurComplement B' C' D' =
       D - D' - (C - C') ∘L (A.symm : F₁ →L[R] E₁) ∘L B +
         C' ∘L (A'.symm : F₁ →L[R] E₁) ∘L ((A : E₁ →L[R] F₁) - (A' : E₁ →L[R] F₁)) ∘L
           (A.symm : F₁ →L[R] E₁) ∘L B -
         C' ∘L (A'.symm : F₁ →L[R] E₁) ∘L (B - B') := by
   ext x
-  simp only [sub_apply, add_apply, comp_apply, schurComplement_apply, coe_coe, map_sub,
-    apply_symm_apply, symm_apply_apply]
+  simp only [sub_apply, add_apply, comp_apply, schurComplement_apply, inverse_equiv, coe_coe,
+    map_sub, apply_symm_apply, symm_apply_apply]
   rw [C'.map_sub, C'.map_sub]
   abel
 

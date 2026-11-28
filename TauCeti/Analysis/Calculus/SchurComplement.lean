@@ -20,11 +20,11 @@ complement
 
 `S y = D y - C y (A y)⁻¹ B y : E₂ →L[𝕜] F₂`,
 
-which is `ContinuousLinearEquiv.schurComplement` of any equivalence with underlying map `A y`
-(`ContinuousLinearEquiv.schurComplement_eq_sub_comp_inverse`). This is the slow operator of a
-Lyapunov–Schmidt or adiabatic reduction, whose fast block `A y` is inverted directly; when the
-blocks depend on parameters (the moduli of the reduction, or a coordinate along the base of an
-adiabatic limit), so does the slow operator. This file differentiates it in the parameter.
+which is `ContinuousLinearMap.schurComplement` (`ContinuousLinearMap.schurComplement_def`). This is
+the slow operator of a Lyapunov–Schmidt or adiabatic reduction, whose fast block `A y` is inverted
+directly; when the blocks depend on parameters (the moduli of the reduction, or a coordinate along
+the base of an adiabatic limit), so does the slow operator. This file differentiates it in the
+parameter.
 
 * **Derivative.** If the blocks are differentiable at `x` and `A x` is invertible, then `S` is
   differentiable at `x`, with derivative along `v`

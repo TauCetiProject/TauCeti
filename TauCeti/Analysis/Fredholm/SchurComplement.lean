@@ -52,10 +52,10 @@ variable (A : E₁ ≃L[K] F₁) (B : E₂ →L[K] F₁) (C : E₁ →L[K] F₂)
 complement `D - C A⁻¹ B` is. -/
 theorem isFredholm_coprod_prod_coprod_iff :
     (((A : E₁ →L[K] F₁).coprod B).prod (C.coprod D)).IsFredholm ↔
-      (A.schurComplement B C D).IsFredholm := by
+      ((A : E₁ →L[K] F₁).schurComplement B C D).IsFredholm := by
   obtain ⟨L, U, h⟩ := exists_coprod_prod_coprod_eq_comp_prodMap_comp A B C D
   have hL : (L.symm : F₁ × F₂ →L[K] F₁ × F₂) ∘L ((A : E₁ →L[K] F₁).coprod B).prod (C.coprod D) =
-      ((A : E₁ →L[K] F₁).prodMap (A.schurComplement B C D)) ∘L
+      ((A : E₁ →L[K] F₁).prodMap ((A : E₁ →L[K] F₁).schurComplement B C D)) ∘L
         (U : E₁ × E₂ →L[K] E₁ × E₂) := by
     rw [h]
     ext x <;> simp
@@ -63,9 +63,9 @@ theorem isFredholm_coprod_prod_coprod_iff :
 
 /-- The index of a block operator with invertible upper left block `A` is the index of its Schur
 complement `D - C A⁻¹ B`, when the latter is Fredholm. -/
-theorem index_coprod_prod_coprod (hS : (A.schurComplement B C D).IsFredholm) :
+theorem index_coprod_prod_coprod (hS : ((A : E₁ →L[K] F₁).schurComplement B C D).IsFredholm) :
     (((A : E₁ →L[K] F₁).coprod B).prod (C.coprod D)).index =
-      (A.schurComplement B C D).index := by
+      ((A : E₁ →L[K] F₁).schurComplement B C D).index := by
   obtain ⟨L, U, h⟩ := exists_coprod_prod_coprod_eq_comp_prodMap_comp A B C D
   rw [h, index_equiv_comp, index_comp_equiv, A.isFredholm.index_prodMap hS,
     A.index_eq_zero, zero_add]
@@ -98,10 +98,10 @@ theorem isFredholm_coprod_iff_of_isInvertible_comp (h : (P ∘L L).IsInvertible)
         (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L
           B)) := by
     ext x <;> simp [hA, snd_equivOfRightInverse_eq_projectionOntoL h]
-  have hschur : A.schurComplement (P ∘L B) 0
+  have hschur : (A : E →L[K] Y).schurComplement (P ∘L B) 0
       (P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L B) =
       P.ker.projectionOntoL L.range (isTopCompl_range_ker_of_isInvertible_comp h).symm ∘L B := by
-    simp [ContinuousLinearEquiv.schurComplement_def]
+    simp [ContinuousLinearMap.schurComplement_def]
   rw [isFredholm_iff_of_comp_eq (.refl K (E × G)) (.equivOfRightInverse P _ hr)
     (hblock.trans (comp_id _).symm), ContinuousLinearEquiv.isFredholm_coprod_prod_coprod_iff,
     hschur]

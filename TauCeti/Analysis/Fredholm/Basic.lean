@@ -65,9 +65,12 @@ intended throughout.
   cokernel over `𝕜'`.
 * `ContinuousLinearMap.FredholmPackage.range_quasiInverse`,
   `ContinuousLinearMap.FredholmPackage.ker_quasiInverse`,
+  `ContinuousLinearMap.FredholmPackage.quasiInverse_comp_self`,
+  `ContinuousLinearMap.FredholmPackage.self_comp_quasiInverse`,
   `ContinuousLinearMap.FredholmPackage.isFredholm_quasiInverse`, and
-  `ContinuousLinearMap.FredholmPackage.index_quasiInverse`: range, kernel, Fredholmness, and
-  negated index of the canonical quasi-inverse of an arbitrary Fredholm package.
+  `ContinuousLinearMap.FredholmPackage.index_quasiInverse`: range, kernel, projection
+  products, Fredholmness, and negated index of the canonical quasi-inverse of an arbitrary
+  Fredholm package.
 
 The Fredholm index and its elementary API live in
 `TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index`.
@@ -306,6 +309,30 @@ summand `pkg.decCodom.X₀`. -/
 theorem FredholmPackage.ker_quasiInverse {T : E →L[𝕜] F} (pkg : T.FredholmPackage) :
     pkg.quasiInverse.ker = pkg.decCodom.X₀ := by
   simp [FredholmPackage.quasiInverse, LinearMap.ker_comp]
+
+/-- Composing a Fredholm operator on the left with its package quasi-inverse gives the essential
+domain projection followed by inclusion. -/
+theorem FredholmPackage.quasiInverse_comp_self {T : E →L[𝕜] F} (pkg : T.FredholmPackage) :
+    pkg.quasiInverse ∘L T = pkg.decDom.X₁.subtypeL ∘L pkg.decDom.proj := by
+  ext x
+  have hT : T x = (pkg.equiv (pkg.decDom.proj x) : F) := by
+    simpa using DFunLike.congr_fun pkg.eq_equiv x
+  change ((pkg.equiv.symm (pkg.decCodom.proj (T x)) : pkg.decDom.X₁) : E) =
+    (pkg.decDom.proj x : pkg.decDom.X₁)
+  rw [hT]
+  simp
+
+/-- Composing a Fredholm operator on the right with its package quasi-inverse gives the essential
+codomain projection followed by inclusion. -/
+theorem FredholmPackage.self_comp_quasiInverse {T : E →L[𝕜] F} (pkg : T.FredholmPackage) :
+    T ∘L pkg.quasiInverse = pkg.decCodom.X₁.subtypeL ∘L pkg.decCodom.proj := by
+  ext y
+  have hT (x : E) : T x = (pkg.equiv (pkg.decDom.proj x) : F) := by
+    simpa using DFunLike.congr_fun pkg.eq_equiv x
+  change T ((pkg.equiv.symm (pkg.decCodom.proj y) : pkg.decDom.X₁) : E) =
+    (pkg.decCodom.proj y : pkg.decCodom.X₁)
+  rw [hT]
+  simp
 
 /-- The canonical quasi-inverse of a Fredholm package has opposite Fredholm index. -/
 @[simp]

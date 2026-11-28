@@ -201,21 +201,10 @@ theorem IsFredholm.orthogonalFredholmPackage_quasiInverse_apply_mem_orthogonal_k
 @[simp]
 theorem IsFredholm.orthogonalFredholmPackage_quasiInverse_comp_self (hT : T.IsFredholm) :
     hT.orthogonalFredholmPackage.quasiInverse ∘L T = (T.ker)ᗮ.starProjection := by
-  have : T.range.HasOrthogonalProjection := hT.hasOrthogonalProjection_range
-  ext x
-  have hmem : T x ∈ T.range := LinearMap.mem_range_self _ x
-  have hproj : T.range.orthogonalProjectionOnto (T x) = ⟨T x, hmem⟩ :=
-    T.range.orthogonalProjectionOnto_mem_subspace_eq_self ⟨T x, hmem⟩
-  have hsub : T ((T.ker)ᗮ.orthogonalProjectionOnto x : E) = T x :=
-    congr($T.comp_starProjection_orthogonal_ker x)
-  have heq : (T.orthogonalKerEquivRange hT.isClosed_range).symm ⟨T x, hmem⟩ =
-      (T.ker)ᗮ.orthogonalProjectionOnto x := by
-    apply (T.orthogonalKerEquivRange hT.isClosed_range).injective
-    apply Subtype.ext
-    rw [(T.orthogonalKerEquivRange hT.isClosed_range).apply_symm_apply,
-      T.orthogonalKerEquivRange_apply, hsub]
-  rw [hT.orthogonalFredholmPackage_quasiInverse_eq]
-  simp [hproj, heq]
+  rw [hT.orthogonalFredholmPackage.quasiInverse_comp_self,
+    hT.orthogonalFredholmPackage_decDom_proj]
+  change (T.ker)ᗮ.subtypeL ∘L (T.ker)ᗮ.orthogonalProjectionOnto = _
+  rw [← Submodule.starProjection]
 
 /-- Pointwise form of `orthogonalFredholmPackage_quasiInverse_comp_self`. -/
 @[simp]
@@ -236,9 +225,10 @@ theorem IsFredholm.id_sub_orthogonalFredholmPackage_quasiInverse_comp_self (hT :
 theorem IsFredholm.self_comp_orthogonalFredholmPackage_quasiInverse (hT : T.IsFredholm)
     [T.range.HasOrthogonalProjection] :
     T ∘L hT.orthogonalFredholmPackage.quasiInverse = T.range.starProjection := by
-  rw [hT.orthogonalFredholmPackage_quasiInverse_eq]
-  ext y
-  simp
+  rw [hT.orthogonalFredholmPackage.self_comp_quasiInverse,
+    hT.orthogonalFredholmPackage_decCodom_proj]
+  change T.range.subtypeL ∘L T.range.orthogonalProjectionOnto = _
+  rw [← Submodule.starProjection]
 
 /-- Pointwise form of `self_comp_orthogonalFredholmPackage_quasiInverse`. -/
 @[simp]
