@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Riesz.Remainder
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.FiniteDifference
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.VonMangoldt
 
 /-!
 # Truncation of a Dirichlet logarithmic derivative at one
