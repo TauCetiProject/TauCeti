@@ -295,8 +295,9 @@ theorem epi_homMk_biproductObjIsoPi_comp {J : Type} [Finite J] {f : J → S.Full
   have : Epi (ModuleCat.ofHom φ : ModuleCat.of R (∀ j, (f j).obj) ⟶ X.obj) :=
     (ModuleCat.epi_iff_surjective _).mpr hφ
   have : Epi (S.ι.map (ObjectProperty.homMk
-      ((S.biproductObjIsoPi f).hom ≫ ModuleCat.ofHom φ) : (⨁ f) ⟶ X)) :=
-    epi_comp _ _
+      ((S.biproductObjIsoPi f).hom ≫ ModuleCat.ofHom φ) : (⨁ f) ⟶ X)) := by
+    rw [ι_map, homMk_hom]
+    exact epi_comp _ _
   exact S.ι.epi_of_epi_map ‹_›
 
 /-- When `S.ι` preserves epimorphisms, an epimorphism `π : (⨁ f) ⟶ X` in `S.FullSubcategory`
@@ -306,7 +307,8 @@ theorem surjective_biproductObjIsoPi_inv_comp [S.ι.PreservesEpimorphisms] {J : 
     [Epi π] :
     Function.Surjective ((S.biproductObjIsoPi f).inv ≫ π.hom).hom := by
   have : Epi (S.ι.map π) := inferInstance
-  exact (ModuleCat.epi_iff_surjective _).mp (epi_comp (S.biproductObjIsoPi f).inv (S.ι.map π))
+  rw [ι_map] at this
+  exact (ModuleCat.epi_iff_surjective _).mp (epi_comp (S.biproductObjIsoPi f).inv π.hom)
 
 end CategoryTheory.ObjectProperty
 
