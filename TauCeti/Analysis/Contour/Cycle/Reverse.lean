@@ -26,7 +26,8 @@ contour integral (`Cycle.integral_of_symm`), negates its winding number off its 
 
 ## Main results
 
-* `TauCeti.Contour.AbsolutelyContinuousClosedCurve.coe_symm`, `symm_symm`, `of_symm`, `image_symm`
+* `TauCeti.Contour.AbsolutelyContinuousClosedCurve.coe_symm`, `symm_symm`, `of_symm`, `image_symm`,
+  `lt_and_injOn_or_symm_lt_and_injOn_of_ne`, `induction_on_lt`
 * `TauCeti.Contour.Cycle.trace_of_symm`, `isIn_of_symm_iff`, `integral_of_symm`,
   `windingNumber_of_symm`, `windingNumber_of_symm_eq_zero_iff`, `isNullHomologous_of_symm_iff`
 -/
@@ -88,6 +89,31 @@ theorem of_symm {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInte
 theorem image_symm (γ : AbsolutelyContinuousClosedCurve) :
     γ.symm '' uIcc γ.symm.a γ.symm.b = γ '' uIcc γ.a γ.b := by
   simp [uIcc_comm]
+
+/-- Every simple closed absolutely continuous curve (`γ.a ≠ γ.b`,
+`InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))`) has either `γ` or `γ.symm` with increasing
+endpoints `a < b` and `InjOn` on `Ico a b`. -/
+theorem lt_and_injOn_or_symm_lt_and_injOn_of_ne {γ : AbsolutelyContinuousClosedCurve}
+    (hab : γ.a ≠ γ.b) (hinj : InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))) :
+    (γ.a < γ.b ∧ InjOn γ (Ico γ.a γ.b)) ∨
+      (γ.symm.a < γ.symm.b ∧ InjOn γ.symm (Ico γ.symm.a γ.symm.b)) := by
+  rcases lt_or_gt_of_ne hab with hlt | hlt
+  · rw [min_eq_left hlt.le, max_eq_right hlt.le] at hinj
+    exact Or.inl ⟨hlt, hinj⟩
+  · rw [min_eq_right hlt.le, max_eq_left hlt.le] at hinj
+    exact Or.inr ⟨by simpa using hlt, by simpa using hinj⟩
+
+/-- Reduce a property of a simple closed absolutely continuous curve (`γ.a ≠ γ.b`,
+`InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))`) to the increasing-endpoint case `η.a < η.b` with
+`InjOn η (Ico η.a η.b)`, provided the property passes from `γ.symm` to `γ`. -/
+theorem induction_on_lt {P : AbsolutelyContinuousClosedCurve → Prop}
+    {γ : AbsolutelyContinuousClosedCurve} (hab : γ.a ≠ γ.b)
+    (hinj : InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b)))
+    (hlt : ∀ {η : AbsolutelyContinuousClosedCurve}, η.a < η.b → InjOn η (Ico η.a η.b) → P η)
+    (hsymm : P γ.symm → P γ) : P γ := by
+  rcases lt_and_injOn_or_symm_lt_and_injOn_of_ne hab hinj with ⟨h, h'⟩ | ⟨h, h'⟩
+  · exact hlt h h'
+  · exact hsymm (hlt h h')
 
 end AbsolutelyContinuousClosedCurve
 

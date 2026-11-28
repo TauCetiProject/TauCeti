@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Green.FiniteSum
 public import TauCeti.Analysis.Green.WindingWeight.Cycle
-public import TauCeti.Analysis.Contour.Cycle.Winding
 public import TauCeti.Analysis.Contour.Cycle.Trace
 import TauCeti.Analysis.Green.AbsolutelyContinuous
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Reparam

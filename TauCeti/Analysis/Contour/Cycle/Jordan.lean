@@ -33,16 +33,15 @@ and null-homology adapters.
 ## Main results
 
 * `TauCeti.Contour.AbsolutelyContinuousClosedCurve.positivelyOrient_positivelyOrient`,
-  `positivelyOrient_symm`, `uIcc_positivelyOrient`, `lt_and_injOn_or_symm_lt_and_injOn_of_ne`,
-  `induction_on_lt`, `jordanSign_ne_zero_of_ne`, `jordanSign_positivelyOrient`: algebraic and
-  orientation properties of `positivelyOrient`.
+  `positivelyOrient_symm`, `uIcc_positivelyOrient`, `jordanSign_ne_zero_of_ne`,
+  `jordanSign_positivelyOrient`: algebraic and orientation properties of `positivelyOrient`.
 * `TauCeti.Contour.Cycle.windingNumber_of_positivelyOrient_eq_one_of_mem_filledHull_sdiff`: a
   closed absolutely continuous curve with nonzero `jordanSign` has winding number `1` on its
   inside after `positivelyOrient`.
 * `TauCeti.Contour.jordanRegion_def`, `TauCeti.Contour.mem_jordanRegion_iff`,
-  `TauCeti.Contour.jordanRegion_empty`, `TauCeti.Contour.isOpen_jordanRegion`,
-  `TauCeti.Contour.isBounded_jordanRegion`, `TauCeti.Contour.closure_jordanRegion`,
-  `TauCeti.Contour.Cycle.trace_jordanBoundaryCycle`,
+  `TauCeti.Contour.jordanRegion_empty`, `TauCeti.Contour.jordanRegion_insert`,
+  `TauCeti.Contour.isOpen_jordanRegion`, `TauCeti.Contour.isBounded_jordanRegion`,
+  `TauCeti.Contour.closure_jordanRegion`, `TauCeti.Contour.Cycle.trace_jordanBoundaryCycle`,
   `notMem_trace_jordanBoundaryCycle_of_mem`, `windingNumber_jordanBoundaryCycle`,
   `windingWeight_jordanBoundaryCycle`, `isIn_jordanBoundaryCycle`,
   `isNullHomologous_jordanBoundaryCycle`: region, openness, boundedness, closure, trace, winding,
@@ -144,31 +143,6 @@ theorem image_positivelyOrient (γ : AbsolutelyContinuousClosedCurve) :
     γ.positivelyOrient '' uIcc γ.positivelyOrient.a γ.positivelyOrient.b =
       γ '' uIcc γ.a γ.b := by
   simp
-
-/-- Every simple closed absolutely continuous curve (`γ.a ≠ γ.b`,
-`InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))`) has either `γ` or `γ.symm` with increasing
-endpoints `a < b` and `InjOn` on `Ico a b`. -/
-theorem lt_and_injOn_or_symm_lt_and_injOn_of_ne {γ : AbsolutelyContinuousClosedCurve}
-    (hab : γ.a ≠ γ.b) (hinj : InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))) :
-    (γ.a < γ.b ∧ InjOn γ (Ico γ.a γ.b)) ∨
-      (γ.symm.a < γ.symm.b ∧ InjOn γ.symm (Ico γ.symm.a γ.symm.b)) := by
-  rcases lt_or_gt_of_ne hab with hlt | hlt
-  · rw [min_eq_left hlt.le, max_eq_right hlt.le] at hinj
-    exact Or.inl ⟨hlt, hinj⟩
-  · rw [min_eq_right hlt.le, max_eq_left hlt.le] at hinj
-    exact Or.inr ⟨by simpa using hlt, by simpa using hinj⟩
-
-/-- Reduce a property of a simple closed absolutely continuous curve (`γ.a ≠ γ.b`,
-`InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))`) to the increasing-endpoint case `η.a < η.b` with
-`InjOn η (Ico η.a η.b)`, provided the property passes from `γ.symm` to `γ`. -/
-theorem induction_on_lt {P : AbsolutelyContinuousClosedCurve → Prop}
-    {γ : AbsolutelyContinuousClosedCurve} (hab : γ.a ≠ γ.b)
-    (hinj : InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b)))
-    (hlt : ∀ {η : AbsolutelyContinuousClosedCurve}, η.a < η.b → InjOn η (Ico η.a η.b) → P η)
-    (hsymm : P γ.symm → P γ) : P γ := by
-  rcases lt_and_injOn_or_symm_lt_and_injOn_of_ne hab hinj with ⟨h, h'⟩ | ⟨h, h'⟩
-  · exact hlt h h'
-  · exact hsymm (hlt h h')
 
 /-- Every simple closed absolutely continuous curve (`γ.a ≠ γ.b`,
 `InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))`) has nonzero `jordanSign`. -/
@@ -352,6 +326,16 @@ theorem jordanRegion_empty (γ₀ : AbsolutelyContinuousClosedCurve)
     (γ : ι → AbsolutelyContinuousClosedCurve) :
     jordanRegion γ₀ ∅ γ = filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b) := by
   simp [jordanRegion]
+
+/-- Inserting a hole removes its filled hull from `jordanRegion`. -/
+@[simp]
+theorem jordanRegion_insert [DecidableEq ι] (γ₀ : AbsolutelyContinuousClosedCurve) (i : ι)
+    (s : Finset ι) (γ : ι → AbsolutelyContinuousClosedCurve) :
+    jordanRegion γ₀ (insert i s) γ =
+      jordanRegion γ₀ s γ \ filledHull (γ i '' uIcc (γ i).a (γ i).b) := by
+  ext z
+  simp only [Set.mem_sdiff, mem_jordanRegion_iff, Finset.mem_insert, forall_eq_or_imp]
+  tauto
 
 /-- The region `jordanRegion γ₀ s γ` determined by closed absolutely continuous curves `γ₀` and
 `γ i` (`i ∈ s`) is open. -/

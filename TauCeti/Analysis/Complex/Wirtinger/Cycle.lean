@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
+public import TauCeti.Analysis.Complex.Wirtinger.WindingWeight
 public import TauCeti.Analysis.Green.Cycle
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Normed.Module.Dual
-import TauCeti.Analysis.Green.WindingWeight.Cycle
+import TauCeti.Analysis.Complex.Wirtinger.Curl
+import TauCeti.Analysis.Contour.Cycle.Circle
 
 /-!
 # Complex Green–Stokes formulas on contour cycles
@@ -27,18 +30,16 @@ convention (`MeasureTheory.integral_of_not_completeSpace`).
 
 Applying the scalar `dz` formula to `conj ∘ F` and conjugating yields the dual `F dbar z`
 circulation formula on contour cycles (under the same `U`, `C.IsIn U`, `C.IsNullHomologous U`, and
-`ContDiffOn ℝ 1 F U` hypotheses).
+`ContDiffOn ℝ 1 F U` hypotheses), and specializing to `Contour.circleCycle c R` yields the
+complex circle Stokes formula for `F dbar z` on any ball `ball c |R|`.
 
 ## Main results
 
-* `TauCeti.curl_re_neg_im_eq_neg_two_mul_im_conjWirtingerDeriv`,
-  `curl_im_re_eq_two_mul_re_conjWirtingerDeriv`
-* `TauCeti.Contour.Cycle.integrableOn_windingWeight_smul_conjWirtingerDeriv`,
-  `TauCeti.Contour.Cycle.integrableOn_windingWeight_smul_wirtingerDeriv`
 * `TauCeti.Contour.Cycle.integral_eq_two_mul_I_mul_integral_windingWeight_conjWirtingerDeriv`,
   `TauCeti.Contour.Cycle.integral_eq_two_mul_I_smul_integral_windingWeight_conjWirtingerDeriv`
-* `Contour.Cycle.conj_integral_conj_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv`,
-  `Contour.Cycle.circulation_dzBar_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv`
+* `Contour.Cycle.conj_integral_conj_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv`
+* `Contour.Cycle.circulation_dzBar_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv`
+* `TauCeti.integral_mul_conj_deriv_circleMap_eq_neg_two_mul_I_mul_integral_ball_wirtingerDeriv`
 
 ## References
 
@@ -52,69 +53,14 @@ public section
 
 noncomputable section
 
-open Complex ComplexConjugate Filter MeasureTheory Metric Set
-open scoped Interval Real Topology
+open Complex ComplexConjugate MeasureTheory Metric Set
+open scoped Interval Real
 
 namespace TauCeti
-
-/-! ### Planar curls of the `dz` and `dbar z` coordinate pairs -/
-
-section CurlWirtinger
-
-/-- For real-differentiable `F = u + i v`, the curl of `(u, -v)` is `-2 Im (\bar∂ F)`. -/
-theorem curl_re_neg_im_eq_neg_two_mul_im_conjWirtingerDeriv {F : ℂ → ℂ} {z : ℂ}
-    (hF : DifferentiableAt ℝ F z) :
-    Green.curl (fun w ↦ (F w).re) (fun w ↦ -(F w).im) z =
-      -2 * (conjWirtingerDeriv F z 1).im := by
-  rw [Green.curl, fderiv_fun_neg]
-  simp_rw [← Complex.reCLM_apply, ← Complex.imCLM_apply]
-  rw [fderiv_fun_comp z Complex.imCLM.differentiableAt hF,
-    fderiv_fun_comp z Complex.reCLM.differentiableAt hF,
-    Complex.imCLM.fderiv, Complex.reCLM.fderiv, conjWirtingerDeriv_apply]
-  simp only [neg_apply, ContinuousLinearMap.comp_apply, Complex.imCLM_apply,
-    Complex.reCLM_apply, smul_eq_mul, add_im, mul_im, inv_im, re_ofNat, im_ofNat, neg_zero,
-    zero_div, zero_mul, inv_re, normSq_ofNat, div_self_mul_self', add_zero, I_re, I_im, one_mul,
-    mul_one]
-  ring
-
-/-- For real-differentiable `F = u + i v`, the curl of `(v, u)` is `2 Re (\bar∂ F)`. -/
-theorem curl_im_re_eq_two_mul_re_conjWirtingerDeriv {F : ℂ → ℂ} {z : ℂ}
-    (hF : DifferentiableAt ℝ F z) :
-    Green.curl (fun w ↦ (F w).im) (fun w ↦ (F w).re) z =
-      2 * (conjWirtingerDeriv F z 1).re := by
-  rw [Green.curl]
-  simp_rw [← Complex.reCLM_apply, ← Complex.imCLM_apply]
-  rw [fderiv_fun_comp z Complex.reCLM.differentiableAt hF,
-    fderiv_fun_comp z Complex.imCLM.differentiableAt hF,
-    Complex.reCLM.fderiv, Complex.imCLM.fderiv, conjWirtingerDeriv_apply]
-  simp only [ContinuousLinearMap.comp_apply, Complex.reCLM_apply, Complex.imCLM_apply,
-    smul_eq_mul, add_re, mul_re, inv_re, re_ofNat, normSq_ofNat, inv_im, im_ofNat, neg_zero,
-    zero_div, zero_mul, sub_zero, I_re, I_im, one_mul, mul_one]
-  ring
-
-end CurlWirtinger
 
 /-! ### Complex Green–Stokes formulas on contour cycles -/
 
 namespace Contour.Cycle
-
-/-- For `C` in an open set `U` and null-homologous in `U`, `z ↦ C.windingWeight z • \bar∂ F(z)` is
-integrable on `U` whenever `F` is real `C¹` on `U`. -/
-theorem integrableOn_windingWeight_smul_conjWirtingerDeriv {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] (C : Cycle) {U : Set ℂ} {F : ℂ → E} (hU : IsOpen U) (htrace : C.IsIn U)
-    (hnull : C.IsNullHomologous U) (hF : ContDiffOn ℝ 1 F U) :
-    IntegrableOn (fun z ↦ C.windingWeight z • conjWirtingerDeriv F z 1) U :=
-  C.integrableOn_windingWeight_smul htrace hnull
-    (hF.conjWirtingerDeriv_apply_of_isOpen hU (m := 0) (by simp) 1).continuousOn
-
-/-- For `C` in an open set `U` and null-homologous in `U`, `z ↦ C.windingWeight z • ∂ F(z)` is
-integrable on `U` whenever `F` is real `C¹` on `U`. -/
-theorem integrableOn_windingWeight_smul_wirtingerDeriv {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] (C : Cycle) {U : Set ℂ} {F : ℂ → E} (hU : IsOpen U) (htrace : C.IsIn U)
-    (hnull : C.IsNullHomologous U) (hF : ContDiffOn ℝ 1 F U) :
-    IntegrableOn (fun z ↦ C.windingWeight z • wirtingerDeriv F z 1) U :=
-  C.integrableOn_windingWeight_smul htrace hnull
-    (hF.wirtingerDeriv_apply_of_isOpen hU (m := 0) (by simp) 1).continuousOn
 
 private theorem setIntegral_windingWeight_mul_curl_eq (C : Cycle) {U : Set ℂ} {P Q : ℂ → ℝ}
     {g : ℂ → ℂ} (hU : IsOpen U) (c : ℝ) (L : ℂ →L[ℝ] ℝ)
@@ -247,6 +193,43 @@ theorem circulation_dzBar_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerD
   apply Complex.ext <;> simp
 
 end Contour.Cycle
+
+/-- **Complex circle Stokes formula for `F dbar z`.** For `F` real `C¹` on an open neighborhood `U`
+of `closedBall c |R|`,
+`∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ) =`
+`  (-2 * I) * ∫ z in ball c |R|, wirtingerDeriv F z 1`. -/
+theorem integral_mul_conj_deriv_circleMap_eq_neg_two_mul_I_mul_integral_ball_wirtingerDeriv
+    {c : ℂ} {R : ℝ} {U : Set ℂ} {F : ℂ → ℂ} (hU : IsOpen U)
+    (hball : closedBall c |R| ⊆ U) (hF : ContDiffOn ℝ 1 F U) :
+    (∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ)) =
+      (-2 * I) * ∫ z in ball c |R|, wirtingerDeriv F z 1 := by
+  set S := Contour.circleCycle c R
+  have htrace : S.IsIn U := by
+    rw [Contour.Cycle.isIn_iff, Contour.Cycle.trace_circleCycle]
+    exact sphere_subset_closedBall.trans hball
+  have hnull : S.IsNullHomologous U := by
+    rw [Contour.Cycle.isNullHomologous_iff]
+    intro z hzU
+    exact Contour.Cycle.windingNumber_circleCycle_eq_zero_of_abs_lt_dist
+      (lt_of_not_ge fun hle ↦ hzU (hball (mem_closedBall.mpr hle)))
+  have hS := S.conj_integral_conj_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv
+    hU htrace hnull hF
+  rw [Contour.Cycle.integral_circleCycle, circleIntegral,
+    ← intervalIntegral.intervalIntegral_conj] at hS
+  have h_lhs : (∫ θ in 0..2 * π, conj (deriv (circleMap c R) θ • conj (F (circleMap c R θ)))) =
+      ∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ) :=
+    intervalIntegral.integral_congr fun θ _ ↦ by
+      rw [smul_eq_mul, map_mul, starRingEnd_self_apply, mul_comm]
+  have h_rhs : (∫ z in U, (S.windingWeight z : ℂ) * wirtingerDeriv F z 1) =
+      ∫ z in ball c |R|, wirtingerDeriv F z 1 := by
+    have hwt : (fun z ↦ (S.windingWeight z : ℂ) * wirtingerDeriv F z 1) =
+        (ball c |R|).indicator fun z ↦ wirtingerDeriv F z 1 := by
+      ext z
+      rw [Contour.Cycle.windingWeight_circleCycle c R]
+      by_cases hz : z ∈ ball c |R| <;> simp [hz]
+    rw [hwt, setIntegral_indicator measurableSet_ball,
+      inter_eq_right.mpr (ball_subset_closedBall.trans hball)]
+  rwa [h_lhs, h_rhs] at hS
 
 end TauCeti
 

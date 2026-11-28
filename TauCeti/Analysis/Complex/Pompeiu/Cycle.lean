@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Cycle
-public import TauCeti.Analysis.Contour.Cycle.Jordan
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Analysis.Complex.Pompeiu.Basic
@@ -25,14 +24,13 @@ complex Green formula to `(z - ξ)⁻¹ • f z` on `C - circleCycle ξ ε` (for
 
 `f ξ = (2πi)⁻¹ • C.integral (fun z ↦ (z - ξ)⁻¹ • f z) - π⁻¹ • ∫ z in Δ, (z - ξ)⁻¹ • \bar∂ f(z)`,
 
-together with its specialization to finitely connected Jordan regions via
-`TauCeti.Contour.jordanRegion` and `TauCeti.Contour.jordanBoundaryCycle`.
+together with its frontier-based specializations when `C.trace ⊆ frontier Δ`.
 
 ## Main results
 
 * `TauCeti.Contour.Cycle.integral_sub_circleIntegral_sub_inv_smul_eq`
-* `TauCeti.cauchyPompeiu_smul`, `TauCeti.cauchyPompeiu`
-* `TauCeti.cauchyPompeiu_jordanBoundaryCycle_smul`, `TauCeti.cauchyPompeiu_jordanBoundaryCycle`
+* `TauCeti.cauchyPompeiu_smul`, `TauCeti.cauchyPompeiu_smul_of_trace_subset_frontier`
+* `TauCeti.cauchyPompeiu`, `TauCeti.cauchyPompeiu_of_trace_subset_frontier`
 
 ## References
 
@@ -165,6 +163,21 @@ theorem cauchyPompeiu_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E
           rw [heq, smul_sub, smul_smul, hcoeff]
 
 open scoped Classical in
+/-- **Frontier-based full-boundary Cauchy–Pompeiu formula (Banach-valued).** When
+`C.trace ⊆ frontier Δ` and `closure Δ ⊆ Ω` with `Δ` open, `C.IsIn Ω` and `ξ ∉ C.trace` for
+`ξ ∈ Δ` follow automatically from `cauchyPompeiu_smul`. -/
+theorem cauchyPompeiu_smul_of_trace_subset_frontier {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [CompleteSpace E] {Ω Δ : Set ℂ} (hΩ : IsOpen Ω) (hΔ : IsOpen Δ)
+    (hclosure : closure Δ ⊆ Ω) (C : Contour.Cycle) (htrace : C.trace ⊆ frontier Δ)
+    (hindex : ∀ z ∉ C.trace, C.windingNumber z = if z ∈ Δ then 1 else 0)
+    (f : ℂ → E) (hf : ContDiffOn ℝ 1 f Ω) {ξ : ℂ} (hξ : ξ ∈ Δ) :
+    f ξ = (2 * (Real.pi : ℂ) * I)⁻¹ • C.integral (fun z ↦ (z - ξ)⁻¹ • f z) -
+      (Real.pi : ℂ)⁻¹ • ∫ z in Δ, (z - ξ)⁻¹ • conjWirtingerDeriv f z 1 :=
+  cauchyPompeiu_smul hΩ hΔ hclosure C
+    (Contour.Cycle.isIn_iff.mpr (htrace.trans (frontier_subset_closure.trans hclosure)))
+    hindex f hf hξ fun h ↦ (htrace h).2 (by rwa [hΔ.interior_eq])
+
+open scoped Classical in
 /-- **Full-boundary Cauchy–Pompeiu formula** for an open set `Ω`, an open region `Δ`
 (`closure Δ ⊆ Ω`), a native contour cycle `C` in `Ω` (`C.IsIn Ω`) whose winding number off
 `C.trace` is `1` inside `Δ` and `0` outside `Δ`, and a real `C¹` function `f : ℂ → ℂ` on `Ω`,
@@ -194,69 +207,23 @@ theorem cauchyPompeiu {Ω Δ : Set ℂ} (hΩ : IsOpen Ω) (hΔ : IsOpen Δ) (hcl
   have hpi : (Real.pi : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr Real.pi_ne_zero
   congr 2; field_simp [hpi]
 
-/-! ### Cauchy–Pompeiu on finitely connected Jordan regions -/
-
-section JordanRegion
-
-variable {ι : Type*}
-
-/-- **Cauchy–Pompeiu formula on a finitely connected Jordan region (Banach-valued).** Given an
-outer simple closed absolutely continuous curve `γ₀` and simple closed absolutely continuous hole
-curves `(γ i)_{i ∈ s}` whose filled hulls are pairwise disjoint and contained in the inside of `γ₀`,
-let `Δ := Contour.jordanRegion γ₀ s γ` be the resulting finitely connected Jordan region. For any
-real `C¹` map `f : ℂ → E` on an open neighborhood `Ω` of `closure Δ` into a complex Banach space `E`
-and any `ξ ∈ Δ`, `f ξ` is represented by integrating over `Contour.jordanBoundaryCycle γ₀ s γ` and
-over `Δ`. -/
-theorem cauchyPompeiu_jordanBoundaryCycle_smul {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] [CompleteSpace E] {γ₀ : Contour.AbsolutelyContinuousClosedCurve}
-    {s : Finset ι} {γ : ι → Contour.AbsolutelyContinuousClosedCurve} {Ω : Set ℂ}
-    (hab₀ : γ₀.a ≠ γ₀.b) (hinj₀ : InjOn γ₀ (Ico (min γ₀.a γ₀.b) (max γ₀.a γ₀.b)))
-    (hab : ∀ i ∈ s, (γ i).a ≠ (γ i).b)
-    (hinj : ∀ i ∈ s, InjOn (γ i) (Ico (min (γ i).a (γ i).b) (max (γ i).a (γ i).b)))
-    (hsub : ∀ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b) ⊆
-      filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b))
-    (hdisj : (s : Set ι).PairwiseDisjoint fun i ↦ filledHull (γ i '' uIcc (γ i).a (γ i).b))
-    (hΩ : IsOpen Ω) (hclosure : closure (Contour.jordanRegion γ₀ s γ) ⊆ Ω)
-    (f : ℂ → E) (hf : ContDiffOn ℝ 1 f Ω) {ξ : ℂ} (hξ : ξ ∈ Contour.jordanRegion γ₀ s γ) :
-    f ξ = (2 * (Real.pi : ℂ) * I)⁻¹ •
-        (Contour.jordanBoundaryCycle γ₀ s γ).integral (fun z ↦ (z - ξ)⁻¹ • f z) -
-      (Real.pi : ℂ)⁻¹ • ∫ z in Contour.jordanRegion γ₀ s γ,
-        (z - ξ)⁻¹ • conjWirtingerDeriv f z 1 :=
-  cauchyPompeiu_smul hΩ Contour.isOpen_jordanRegion hclosure
-    (Contour.jordanBoundaryCycle γ₀ s γ)
-    (Contour.Cycle.isIn_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj hclosure)
-    (fun _ hz ↦ Contour.Cycle.windingNumber_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj hz)
-    f hf hξ (Contour.Cycle.notMem_trace_jordanBoundaryCycle_of_mem hξ)
-
-/-- **Cauchy–Pompeiu formula on a finitely connected Jordan region.** Given an outer simple closed
-absolutely continuous curve `γ₀` and simple closed absolutely continuous hole curves
-`(γ i)_{i ∈ s}` whose filled hulls are pairwise disjoint and contained in the inside of `γ₀`, let
-`Δ := Contour.jordanRegion γ₀ s γ` be the resulting finitely connected Jordan region. For any real
-`C¹` function `f : ℂ → ℂ` on an open neighborhood `Ω` of `closure Δ` and any `ξ ∈ Δ`, `f ξ` is
-represented by integrating over `Contour.jordanBoundaryCycle γ₀ s γ` and over `Δ`, written with the
-real directional derivatives `f_x + i f_y = 2 \bar∂ f`. -/
-theorem cauchyPompeiu_jordanBoundaryCycle {γ₀ : Contour.AbsolutelyContinuousClosedCurve}
-    {s : Finset ι} {γ : ι → Contour.AbsolutelyContinuousClosedCurve} {Ω : Set ℂ}
-    (hab₀ : γ₀.a ≠ γ₀.b) (hinj₀ : InjOn γ₀ (Ico (min γ₀.a γ₀.b) (max γ₀.a γ₀.b)))
-    (hab : ∀ i ∈ s, (γ i).a ≠ (γ i).b)
-    (hinj : ∀ i ∈ s, InjOn (γ i) (Ico (min (γ i).a (γ i).b) (max (γ i).a (γ i).b)))
-    (hsub : ∀ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b) ⊆
-      filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b))
-    (hdisj : (s : Set ι).PairwiseDisjoint fun i ↦ filledHull (γ i '' uIcc (γ i).a (γ i).b))
-    (hΩ : IsOpen Ω) (hclosure : closure (Contour.jordanRegion γ₀ s γ) ⊆ Ω)
-    (f : ℂ → ℂ) (hf : ContDiffOn ℝ 1 f Ω) {ξ : ℂ} (hξ : ξ ∈ Contour.jordanRegion γ₀ s γ) :
+open scoped Classical in
+/-- **Frontier-based full-boundary Cauchy–Pompeiu formula** for an open set `Ω`, an open region `Δ`
+(`closure Δ ⊆ Ω`), a native contour cycle `C` with `C.trace ⊆ frontier Δ` whose winding number off
+`C.trace` is `1` inside `Δ` and `0` outside `Δ`, and a real `C¹` function `f : ℂ → ℂ` on `Ω`,
+at any point `ξ ∈ Δ`, written with the real directional derivatives `f_x + i f_y = 2 \bar∂ f`. -/
+theorem cauchyPompeiu_of_trace_subset_frontier {Ω Δ : Set ℂ} (hΩ : IsOpen Ω) (hΔ : IsOpen Δ)
+    (hclosure : closure Δ ⊆ Ω) (C : TauCeti.Contour.Cycle) (htrace : C.trace ⊆ frontier Δ)
+    (hindex : ∀ z ∉ C.trace,
+      TauCeti.Contour.Cycle.windingNumber z C = if z ∈ Δ then 1 else 0)
+    (f : ℂ → ℂ) (hf : ContDiffOn ℝ 1 f Ω) {ξ : ℂ} (hξ : ξ ∈ Δ) :
     f ξ = (2 * (Real.pi : ℂ) * Complex.I)⁻¹ *
-        (Contour.jordanBoundaryCycle γ₀ s γ).integral (fun z ↦ f z / (z - ξ)) -
+        TauCeti.Contour.Cycle.integral (fun z => f z / (z - ξ)) C -
       (2 * (Real.pi : ℂ))⁻¹ *
-        ∫ z in Contour.jordanRegion γ₀ s γ,
-          (fderiv ℝ f z 1 + Complex.I * fderiv ℝ f z Complex.I) / (z - ξ) :=
-  cauchyPompeiu hΩ Contour.isOpen_jordanRegion hclosure
-    (Contour.jordanBoundaryCycle γ₀ s γ)
-    (Contour.Cycle.isIn_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj hclosure)
-    (fun _ hz ↦ Contour.Cycle.windingNumber_jordanBoundaryCycle hab₀ hinj₀ hab hinj hsub hdisj hz)
-    f hf hξ (Contour.Cycle.notMem_trace_jordanBoundaryCycle_of_mem hξ)
-
-end JordanRegion
+        ∫ z in Δ, (fderiv ℝ f z 1 + Complex.I * fderiv ℝ f z Complex.I) / (z - ξ) :=
+  cauchyPompeiu hΩ hΔ hclosure C
+    (Contour.Cycle.isIn_iff.mpr (htrace.trans (frontier_subset_closure.trans hclosure)))
+    hindex f hf hξ fun h ↦ (htrace h).2 (by rwa [hΔ.interior_eq])
 
 end TauCeti
 

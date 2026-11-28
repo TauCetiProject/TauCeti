@@ -145,17 +145,17 @@ theorem TauCeti.norm_circleIntegral_sub_inv_smul_sub_le [CompleteSpace E] {f : �
     (Real.norm_circleAverage_le_circleAverage_norm.trans ?_) (by positivity)
   exact Real.circleAverage_mono_on_of_le_circle (hf.sub hconst).norm hM
 
-/-- **Supremum oscillation bound for the Cauchy integral over a circle.** For `R ≠ 0` and `f`
-continuous on `sphere c |R|`, `‖(∮ z in C(c, R), (z - c)⁻¹ • f z) - (2 * π * I) • y‖` is bounded
-by `2 * π` times the supremum of `‖f z - y‖` over `sphere c |R|`. -/
+/-- **Supremum oscillation bound for the Cauchy integral over a circle.** For `R ≠ 0`, if `f` is
+circle-integrable on `|z - c| = |R|` and `z ↦ ‖f z - y‖` is bounded above on `sphere c |R|`, then
+`‖(∮ z in C(c, R), (z - c)⁻¹ • f z) - (2 * π * I) • y‖` is bounded by `2 * π` times the supremum
+of `‖f z - y‖` over `sphere c |R|`. -/
 theorem TauCeti.norm_circleIntegral_sub_inv_smul_sub_le_sSup [CompleteSpace E] {f : ℂ → E}
-    {c : ℂ} {y : E} {R : ℝ} (hR : R ≠ 0) (hf : ContinuousOn f (sphere c |R|)) :
+    {c : ℂ} {y : E} {R : ℝ} (hR : R ≠ 0) (hf : CircleIntegrable f c R)
+    (hbdd : BddAbove ((fun z ↦ ‖f z - y‖) '' sphere c |R|)) :
     ‖(∮ z in C(c, R), (z - c)⁻¹ • f z) - (2 * π * I : ℂ) • y‖ ≤
-      2 * π * sSup ((fun z ↦ ‖f z - y‖) '' sphere c |R|) := by
-  have hbdd : BddAbove ((fun z ↦ ‖f z - y‖) '' sphere c |R|) :=
-    ((isCompact_sphere c |R|).image_of_continuousOn (hf.sub continuousOn_const).norm).bddAbove
-  exact TauCeti.norm_circleIntegral_sub_inv_smul_sub_le hR hf.circleIntegrable'
-    fun z hz ↦ le_csSup hbdd (mem_image_of_mem _ hz)
+      2 * π * sSup ((fun z ↦ ‖f z - y‖) '' sphere c |R|) :=
+  TauCeti.norm_circleIntegral_sub_inv_smul_sub_le hR hf
+    fun _ hz ↦ le_csSup hbdd (mem_image_of_mem _ hz)
 
 /-- **Small-circle limit of the Cauchy integral from a punctured limit.** If `f z → y` along the
 punctured neighborhood `𝓝[≠] c` and `f` is circle-integrable on small positive circles centered at

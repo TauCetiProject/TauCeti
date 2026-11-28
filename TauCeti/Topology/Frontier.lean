@@ -424,16 +424,12 @@ theorem _root_.IsOpen.frontier_sdiff_of_isClosed {U K : Set X} (hU : IsOpen U) (
     · have hxK : x ∈ K := hK.closure_eq ▸ hxKcl
       exact ⟨⟨subset_closure (hKU hxK), hxKint⟩, fun h ↦ h.2 hxK⟩
 
-/-- **Frontier of an open set with finitely many pairwise-disjoint closed holes.** For an open set
-`U` and finitely many pairwise-disjoint closed subsets `K i ⊆ U` (`i ∈ s`), the frontier of
-`U \ ⋃ i ∈ s, K i` is `frontier U ∪ ⋃ i ∈ s, frontier (K i)`. -/
-theorem _root_.IsOpen.frontier_sdiff_biUnion {U : Set X} (hU : IsOpen U) (s : Finset ι)
-    {K : ι → Set X} (hK : ∀ i ∈ s, IsClosed (K i)) (hsub : ∀ i ∈ s, K i ⊆ U)
-    (hdisj : (s : Set ι).PairwiseDisjoint K) :
-    frontier (U \ ⋃ i ∈ s, K i) = frontier U ∪ ⋃ i ∈ s, frontier (K i) := by
-  have hK_star : IsClosed (⋃ i ∈ s, K i) := s.finite_toSet.isClosed_biUnion hK
-  rw [hU.frontier_sdiff_of_isClosed hK_star (iUnion₂_subset hsub)]
-  refine congrArg (frontier U ∪ ·) (Subset.antisymm (s.frontier_biUnion_subset K) ?_)
+/-- The frontier of a finite union of pairwise-disjoint closed sets is the union of their
+frontiers. -/
+theorem frontier_biUnion_of_isClosed_of_pairwiseDisjoint {s : Finset ι} {K : ι → Set X}
+    (hK : ∀ i ∈ s, IsClosed (K i)) (hdisj : (s : Set ι).PairwiseDisjoint K) :
+    frontier (⋃ i ∈ s, K i) = ⋃ i ∈ s, frontier (K i) := by
+  refine Subset.antisymm (s.frontier_biUnion_subset K) ?_
   intro x hxfr
   obtain ⟨i, hi, hxi_fr⟩ := mem_iUnion₂.mp hxfr
   rw [frontier] at hxi_fr ⊢
@@ -445,6 +441,17 @@ theorem _root_.IsOpen.frontier_sdiff_biUnion {U : Set X} (hU : IsOpen U) (s : Fi
   by_cases hji : j = i
   · exact hxiint (hji ▸ hxjint)
   · exact Set.disjoint_left.mp (hdisj hi hj (Ne.symm hji)) hxi (interior_subset hxjint)
+
+/-- **Frontier of an open set with finitely many pairwise-disjoint closed holes.** For an open set
+`U` and finitely many pairwise-disjoint closed subsets `K i ⊆ U` (`i ∈ s`), the frontier of
+`U \ ⋃ i ∈ s, K i` is `frontier U ∪ ⋃ i ∈ s, frontier (K i)`. -/
+theorem _root_.IsOpen.frontier_sdiff_biUnion {U : Set X} (hU : IsOpen U) (s : Finset ι)
+    {K : ι → Set X} (hK : ∀ i ∈ s, IsClosed (K i)) (hsub : ∀ i ∈ s, K i ⊆ U)
+    (hdisj : (s : Set ι).PairwiseDisjoint K) :
+    frontier (U \ ⋃ i ∈ s, K i) = frontier U ∪ ⋃ i ∈ s, frontier (K i) := by
+  have hcl : IsClosed (⋃ i ∈ s, K i) := s.finite_toSet.isClosed_biUnion hK
+  rw [hU.frontier_sdiff_of_isClosed hcl (iUnion₂_subset hsub),
+    frontier_biUnion_of_isClosed_of_pairwiseDisjoint hK hdisj]
 
 end FiniteHoles
 

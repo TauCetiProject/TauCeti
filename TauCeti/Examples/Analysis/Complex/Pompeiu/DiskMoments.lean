@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Wirtinger.Green
+public import TauCeti.Analysis.Complex.Wirtinger.Cycle
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Probability.Distributions.CircularLaw
 
 /-!
@@ -80,7 +81,8 @@ theorem integral_unitBall_pow_mul_conj_pow (m n : ℕ) :
     contDiff_const.mul ((contDiff_id.pow (m + 1)).mul (Complex.conjCLE.contDiff.pow n))
   have hstokes :=
     integral_mul_conj_deriv_circleMap_eq_neg_two_mul_I_mul_integral_ball_wirtingerDeriv (c := 0)
-      zero_le_one isOpen_univ (subset_univ _) hF.contDiffOn
+      (R := 1) isOpen_univ (subset_univ _) hF.contDiffOn
+  rw [abs_one] at hstokes
   simp_rw [F, wirtingerDeriv_monomial_div, integral_unitCircle_monomial_conj_deriv] at hstokes
   apply mul_left_cancel₀ (mul_ne_zero (by norm_num) I_ne_zero : (-2 * I : ℂ) ≠ 0)
   rw [← hstokes]

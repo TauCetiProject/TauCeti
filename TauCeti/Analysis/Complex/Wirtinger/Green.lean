@@ -9,8 +9,6 @@ public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import Mathlib.Analysis.Calculus.DiffContOnCl
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
-import TauCeti.Analysis.Complex.Wirtinger.Cycle
-import TauCeti.Analysis.Contour.Cycle.Circle
 import TauCeti.MeasureTheory.Integral.Circle.Integral
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.InterBall
@@ -43,10 +41,6 @@ vanishes, and a limit `r → R` removes the need for regularity of `g` on the bo
 * `TauCeti.integral_ball_conjWirtingerDeriv_eq_circleIntegral`:
   `∫_{|z - c| < r} \bar∂h dA = (2 i)⁻¹ ∮_{|z - c| = r} h dz` for `h` real `C¹` near the closed
   disc.
-* `TauCeti.integral_mul_conj_deriv_circleMap_eq_neg_two_mul_I_mul_integral_ball_wirtingerDeriv`:
-  dual `F dbar z` circle Stokes formula
-  `∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ) =`
-  `  (-2 * I) * ∫ z in ball c R, ∂F z 1`.
 * `TauCeti.integral_ball_smul_conjWirtingerDeriv_add_eq_circleIntegral`: Green's formula for the
   product `g ξ`.
 * `TauCeti.integral_ball_re_mul_conjWirtingerDeriv_eq`: its real form for complex-valued `ξ`,
@@ -64,7 +58,7 @@ public section
 
 namespace TauCeti
 
-open Complex ComplexConjugate Metric MeasureTheory Set Filter Topology
+open Complex Metric MeasureTheory Set Filter Topology
 open scoped Real
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
@@ -102,43 +96,6 @@ theorem integral_ball_conjWirtingerDeriv_eq_circleIntegral {h : ℂ → E} {c : 
   simp only [dzForm_apply] at hs
   rw [integral_neg_pi_pi_eq_circleIntegral] at hs
   rw [← hs, smul_smul, inv_mul_cancel₀ (mul_ne_zero two_ne_zero I_ne_zero), one_smul]
-
-/-- **Complex circle Stokes formula for `F dbar z`.** For `R ≥ 0` and `F` real `C¹` on an open
-neighborhood `U` of `closedBall c R`,
-`∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ) =
-  (-2 * I) * ∫ z in ball c R, wirtingerDeriv F z 1`. -/
-theorem integral_mul_conj_deriv_circleMap_eq_neg_two_mul_I_mul_integral_ball_wirtingerDeriv
-    {c : ℂ} {R : ℝ} {U : Set ℂ} {F : ℂ → ℂ} (hR : 0 ≤ R) (hU : IsOpen U)
-    (hball : closedBall c R ⊆ U) (hF : ContDiffOn ℝ 1 F U) :
-    (∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ)) =
-      (-2 * I) * ∫ z in ball c R, wirtingerDeriv F z 1 := by
-  set S := Contour.circleCycle c R
-  have htrace : S.IsIn U := by
-    rw [Contour.Cycle.isIn_iff, Contour.Cycle.trace_circleCycle, abs_of_nonneg hR]
-    exact sphere_subset_closedBall.trans hball
-  have hnull : S.IsNullHomologous U := by
-    rw [Contour.Cycle.isNullHomologous_iff]
-    intro z hzU
-    exact Contour.Cycle.windingNumber_circleCycle_eq_zero_of_lt_dist hR
-      (lt_of_not_ge fun hle ↦ hzU (hball (mem_closedBall.mpr hle)))
-  have hS := S.conj_integral_conj_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv
-    hU htrace hnull hF
-  rw [Contour.Cycle.integral_circleCycle, circleIntegral,
-    ← intervalIntegral.intervalIntegral_conj] at hS
-  have h_lhs : (∫ θ in 0..2 * π, conj (deriv (circleMap c R) θ • conj (F (circleMap c R θ)))) =
-      ∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ) :=
-    intervalIntegral.integral_congr fun θ _ ↦ by
-      rw [smul_eq_mul, map_mul, starRingEnd_self_apply, mul_comm]
-  have h_rhs : (∫ z in U, (S.windingWeight z : ℂ) * wirtingerDeriv F z 1) =
-      ∫ z in ball c R, wirtingerDeriv F z 1 := by
-    have hwt : (fun z ↦ (S.windingWeight z : ℂ) * wirtingerDeriv F z 1) =
-        (ball c R).indicator fun z ↦ wirtingerDeriv F z 1 := by
-      ext z
-      rw [Contour.Cycle.windingWeight_circleCycle c hR]
-      by_cases hz : z ∈ ball c R <;> simp [hz]
-    rw [hwt, setIntegral_indicator measurableSet_ball,
-      inter_eq_right.mpr (ball_subset_closedBall.trans hball)]
-  rwa [h_lhs, h_rhs] at hS
 
 section Product
 
