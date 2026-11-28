@@ -62,6 +62,29 @@ variable {Ω ι : Type*} {β : ι → Type*} [MeasurableSpace Ω]
   [∀ i, MeasurableSpace (β i)] {μ : Measure Ω}
 
 open scoped Classical in
+/-- If the intersection of `A` with any `q` distinct events in a row has mass at most `c`,
+the mass of `A` occurring together with at least `q` successes in some row is at most `c`
+times the total number of `q`-subsets of the rows. -/
+theorem measure_inter_exists_le_card_filter_mem_le {κ : ι → Type*} [Fintype ι]
+    [∀ i, Fintype (κ i)] (A : Set Ω) (E : (i : ι) → κ i → Set Ω) (q : ℕ) {c : ℝ≥0∞}
+    (hc : ∀ i (S : Finset (κ i)), S.card = q → μ (A ∩ ⋂ j ∈ S, E i j) ≤ c) :
+    μ (A ∩ {ω | ∃ i, q ≤ (Finset.univ.filter fun j ↦ ω ∈ E i j).card}) ≤
+      ∑ i, ((Fintype.card (κ i)).choose q : ℝ≥0∞) * c := by
+  let U (i : ι) := ⋃ S ∈ (Finset.univ : Finset (κ i)).powersetCard q, A ∩ ⋂ j ∈ S, E i j
+  have hcover : A ∩ {ω | ∃ i, q ≤ (Finset.univ.filter fun j ↦ ω ∈ E i j).card} ⊆ ⋃ i, U i := by
+    rintro ω ⟨hA, i, hi⟩
+    obtain ⟨S, hsub, hcard⟩ := Finset.exists_subset_card_eq hi
+    refine mem_iUnion.2 ⟨i, mem_iUnion₂.2 ⟨S, Finset.mem_powersetCard.2 ⟨
+      Finset.subset_univ _, hcard⟩, hA, ?_⟩⟩
+    exact mem_iInter₂.2 fun j hj ↦ (Finset.mem_filter.1 (hsub hj)).2
+  refine ((measure_mono hcover).trans (measure_iUnion_fintype_le μ U)).trans ?_
+  refine Finset.sum_le_sum fun i _ ↦ (measure_biUnion_finset_le _ _).trans ?_
+  calc
+    _ ≤ ∑ _S ∈ (Finset.univ : Finset (κ i)).powersetCard q, c :=
+      Finset.sum_le_sum fun S hS ↦ hc i S (Finset.mem_powersetCard.1 hS).2
+    _ = _ := by simp [Finset.card_powersetCard, nsmul_eq_mul]
+
+open scoped Classical in
 /-- For a finite array of events, each row consisting of independent events with measures at
 most `p`, the measure that some row contains at least `q` occurring events is bounded by
 `p ^ q` times the sum, over rows, of the number of `q`-element subsets of entry indices
@@ -71,21 +94,10 @@ theorem measure_exists_le_card_filter_mem_le {κ : ι → Type*} [Fintype ι]
     {p : ℝ≥0∞} (hp : ∀ i j, μ (E i j) ≤ p) (q : ℕ) :
     μ {ω | ∃ i, q ≤ (Finset.univ.filter fun j ↦ ω ∈ E i j).card} ≤
       ∑ i, ((Fintype.card (κ i)).choose q : ℝ≥0∞) * p ^ q := by
-  let U (i : ι) := ⋃ S ∈ (Finset.univ : Finset (κ i)).powersetCard q, ⋂ j ∈ S, E i j
-  have hcover : {ω | ∃ i, q ≤ (Finset.univ.filter fun j ↦ ω ∈ E i j).card} ⊆ ⋃ i, U i := by
-    rintro ω ⟨i, hi⟩
-    obtain ⟨S, hsub, hcard⟩ := Finset.exists_subset_card_eq hi
-    refine mem_iUnion.2 ⟨i, mem_iUnion₂.2 ⟨S, Finset.mem_powersetCard.2 ⟨
-      Finset.subset_univ _, hcard⟩, ?_⟩⟩
-    exact mem_iInter₂.2 fun j hj ↦ (Finset.mem_filter.1 (hsub hj)).2
-  refine ((measure_mono hcover).trans (measure_iUnion_fintype_le μ U)).trans ?_
-  refine Finset.sum_le_sum fun i _ ↦ (measure_biUnion_finset_le _ _).trans ?_
-  calc
-    _ ≤ ∑ _S ∈ (Finset.univ : Finset (κ i)).powersetCard q, p ^ q := by
-      refine Finset.sum_le_sum fun S hS ↦ ?_
-      rw [(hE i).meas_biInter, ← (Finset.mem_powersetCard.1 hS).2, ← Finset.prod_const]
-      exact Finset.prod_le_prod fun j _ ↦ hp i j
-    _ = _ := by simp [Finset.card_powersetCard, nsmul_eq_mul]
+  simpa only [univ_inter] using
+    (measure_inter_exists_le_card_filter_mem_le univ E q fun i S hS ↦ by
+      rw [univ_inter, (hE i).meas_biInter, ← hS, ← Finset.prod_const]
+      exact Finset.prod_le_prod fun j _ ↦ hp i j)
 
 variable [IsProbabilityMeasure μ]
 
