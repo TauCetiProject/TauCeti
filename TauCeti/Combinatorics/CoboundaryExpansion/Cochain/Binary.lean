@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.SimpleGraph
-public import TauCeti.GroupTheory.Perm.Basic
 public import TauCeti.GroupTheory.Perm.Fin
 import TauCeti.Data.Fin.Basic
 

@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
 public import TauCeti.GroupTheory.Perm.MovedNorm
-import TauCeti.Combinatorics.CoboundaryExpansion.GraphCochain
 import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
+import TauCeti.Combinatorics.CoboundaryExpansion.Swap.Gauge
 import TauCeti.Combinatorics.SimpleGraph.Staircase
 import Mathlib.Data.Nat.Factors
 import Mathlib.Tactic.Positivity
@@ -18,8 +18,8 @@ import Mathlib.Tactic.Positivity
 
 Kozlov's staircase graph `SimpleGraph.staircase q t` on `q (2 t + 1)` vertices is cut-minimal
 (`SimpleGraph.isCutMinimal_staircase`) and satisfies
-`#oddTriangleFinset = q (2 t + 1) / 3 * #edgeFinset`
-(`SimpleGraph.card_oddTriangleFinset_staircase`). Its cochain, a transposition on the
+`#oddTripleFinset = q (2 t + 1) / 3 * #edgeFinset`
+(`SimpleGraph.card_oddTripleFinset_staircase`). Its cochain, a transposition on the
 edges and `1` elsewhere, therefore has ratio `q (2 t + 1) / 3`
 (`SimpleGraph.h1_complete_movedNorm_le_of_isCutMinimal`), which gives
 
@@ -81,7 +81,7 @@ theorem h1_complete_movedNorm_le_of_card_eq_mul {q t : ℕ} (ht : 0 < t)
   refine (SimpleGraph.h1_complete_movedNorm_le_of_isCutMinimal _
     (SimpleGraph.isCutMinimal_staircase q t) hE).trans_eq ?_
   have hE' : (#(SimpleGraph.staircase q t).edgeFinset : ℝ) ≠ 0 := by positivity
-  rw [SimpleGraph.card_oddTriangleFinset_staircase, mul_div_cancel_right₀ _ hE', hV]
+  rw [SimpleGraph.card_oddTripleFinset_staircase, mul_div_cancel_right₀ _ hE', hV]
   push_cast
   ring
 

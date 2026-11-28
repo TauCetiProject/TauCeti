@@ -17,7 +17,6 @@ import Mathlib.Tactic.Ring
 import TauCeti.Algebra.BigOperators.Finset.Filter
 import TauCeti.Algebra.Group.Basic
 import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree.Basic
-import TauCeti.Combinatorics.SimpleGraph.OddTriple
 import TauCeti.Combinatorics.SimpleGraph.OrderedEdges
 import TauCeti.Data.Fin.Basic
 import TauCeti.GroupTheory.Perm.DistErr.Invariance

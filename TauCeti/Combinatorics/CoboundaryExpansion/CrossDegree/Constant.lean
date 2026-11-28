@@ -17,7 +17,7 @@ import Mathlib.Tactic.Positivity
 import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Replication
 import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree.Basic
 import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
-import TauCeti.Combinatorics.CoboundaryExpansion.GraphCochain
+import TauCeti.Combinatorics.CoboundaryExpansion.Swap.Gauge
 import TauCeti.Combinatorics.SimpleGraph.Staircase
 import TauCeti.GroupTheory.Perm.DistErr.Invariance
 
@@ -243,19 +243,20 @@ private theorem h1Err_complete_le_of_card_eq_mul {q t : ℕ} (hq : 0 < q) (ht : 
     ring
   rw [h1Err_complete_eq_of_card_eq (hV.trans hW.symm)]
   set G := SimpleGraph.staircase q t
-  set α := Cochain.ofLt (complete W) fun u v => if G.Adj u v then (swap 0 1 : Perm (Fin 3)) else 1
+  have ht' : (swap (0 : Fin 3) 1).IsSwap := ⟨0, 1, by decide, rfl⟩
+  set α := G.toCochain ht'.mul_self_eq_one
   have hE2 := SimpleGraph.two_mul_card_edgeFinset_staircase q t
   have hD : (2 * #G.edgeFinset : ℝ) / 3 ≤ α.gaugeDistErr := by
     refine α.le_gaugeDistErr_iff.mpr fun m β => ?_
     rcases eq_or_ne m 1 with rfl | hm
     · rw [Cochain.costErr_eq_cost_div]
-      exact div_le_div_of_nonneg_right
-        (G.two_mul_card_edgeFinset_le_cost ⟨0, 1, by decide, rfl⟩
-          (SimpleGraph.isCutMinimal_staircase q t) β)
-        (Nat.cast_nonneg _)
-    · rw [Cochain.costErr_ofLt_complete]
+      refine div_le_div_of_nonneg_right ?_ (Nat.cast_nonneg _)
+      have hgd := (G.isCutMinimal_iff_gaugeDist_movedNorm_toCochain_eq (α := Fin 3) ht').mp
+        (SimpleGraph.isCutMinimal_staircase q t)
+      exact hgd.symm.trans_le (α.gaugeDist_le_cost _ β)
+    · rw [Cochain.costErr_complete]
       refine le_trans ?_ (card_div_four_le_sum_distErr_three_of_ne _
-        (fun p : W × W => if G.Adj p.1 p.2 then swap 0 1 else 1)
+        (fun p : W × W => α p.1 p.2)
         (fun p : W × W => β p.1 * (β p.2)⁻¹) (by omega))
       rw [Fintype.card_product_filter_lt, hW]
       exact two_mul_div_three_le_choose_two_div_four hq ht hE2
@@ -266,8 +267,7 @@ private theorem h1Err_complete_le_of_card_eq_mul {q t : ℕ} (hq : 0 < q) (ht : 
   refine (h1Err_le_div (n := 1) (hpos.trans_le hD)).trans ?_
   refine (div_le_div_of_nonneg_left (div_nonneg (α.defect_nonneg _) (Nat.cast_nonneg _)) hpos
     hD).trans_eq ?_
-  rw [SimpleGraph.defect_ofLt_ite_adj _ _ (swap_mul_self 0 1),
-    Perm.IsSwap.movedNorm ⟨0, 1, by decide, rfl⟩, SimpleGraph.card_oddTriangleFinset_staircase, hV]
+  rw [G.defect_movedNorm_toCochain ht', SimpleGraph.card_oddTripleFinset_staircase, hV]
   have hE' : (#G.edgeFinset : ℝ) ≠ 0 := by linarith
   push_cast
   field_simp

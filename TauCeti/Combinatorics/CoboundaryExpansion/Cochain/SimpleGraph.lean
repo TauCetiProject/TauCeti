@@ -5,27 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.CoboundaryExpansion.GraphCochain
-public import TauCeti.Combinatorics.SimpleGraph.EdgeLabel
+public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Invariance
 public import TauCeti.Combinatorics.SimpleGraph.OddTriple
+import TauCeti.Algebra.Group.Basic
 import TauCeti.Algebra.Group.Subgroup.ZPowers
+import TauCeti.Combinatorics.SimpleGraph.Basic
 import TauCeti.Combinatorics.SimpleGraph.Finite
 import TauCeti.Combinatorics.SimpleGraph.OrderedEdges
 
 /-!
 # Graph cochains and support graphs
 
-Every `1`-cochain `α : TauCeti.Cochain X Γ` has a support graph `α.supportGraph` (defined in
-`TauCeti.Combinatorics.CoboundaryExpansion.GraphCochain`) whose edges are the vertex pairs where
-`α u v ≠ 1`. Conversely, a simple graph `G` on a finite vertex type `V` and an involution `c : Γ`
-(`c * c = 1`) define a `1`-cochain `G.toCochain hc` on `TauCeti.TwoComplex.complete V` assigning `c`
-to adjacent pairs and `1` to non-adjacent pairs.
+Every `1`-cochain `α : TauCeti.Cochain X Γ` has a support graph `α.supportGraph` whose edges are
+the vertex pairs where `α u v ≠ 1`. Conversely, a simple graph `G` on a finite vertex type `V` and
+an involution `c : Γ` (`c * c = 1`) define a `1`-cochain `G.toCochain hc` on
+`TauCeti.TwoComplex.complete V` assigning `c` to adjacent pairs and `1` to non-adjacent pairs.
 
 ## Main definitions and results
 
-* `TauCeti.Cochain.supportGraph_one`, `TauCeti.Cochain.supportGraph_comapComplete`,
-  `TauCeti.Cochain.supportGraph_map`: normal form of `α.supportGraph` on `1` and compatibility with
-  vertex pullback and injective coefficient maps.
+* `TauCeti.Cochain.supportGraph`, `TauCeti.Cochain.supportGraph_one`,
+  `TauCeti.Cochain.supportGraph_comapComplete`, `TauCeti.Cochain.supportGraph_map`: the support
+  graph of a `1`-cochain, its value on `1`, and compatibility with vertex pullback and injective
+  coefficient maps.
 * `SimpleGraph.toCochain`: the `{1, c}`-valued `1`-cochain on `TwoComplex.complete V` supported
   on `G` for an element `c * c = 1`.
 * `SimpleGraph.smul_ite_mem_toCochain`, `SimpleGraph.cost_toCochain_ite_mem`: acting by the
@@ -47,6 +48,23 @@ open scoped symmDiff
 namespace TauCeti
 
 namespace Cochain
+
+/-- The support graph of a cochain: two vertices are adjacent when the cochain is not `1` on the
+pair. -/
+def supportGraph {V Γ : Type*} [Group Γ] {X : TwoComplex V} (α : Cochain X Γ) : SimpleGraph V where
+  Adj u v := α u v ≠ 1
+  symm := ⟨fun u v h => by rwa [α.apply_swap, Ne, inv_eq_one]⟩
+  loopless := ⟨fun u h => h (α.apply_self u)⟩
+
+/-- Two vertices are adjacent in `α.supportGraph` if and only if `α u v ≠ 1`. -/
+@[simp]
+theorem supportGraph_adj {V Γ : Type*} [Group Γ] {X : TwoComplex V} (α : Cochain X Γ) {u v : V} :
+    α.supportGraph.Adj u v ↔ α u v ≠ 1 :=
+  Iff.rfl
+
+instance {V Γ : Type*} [Group Γ] {X : TwoComplex V} [DecidableEq Γ] (α : Cochain X Γ) :
+    DecidableRel α.supportGraph.Adj :=
+  fun u v => inferInstanceAs (Decidable (α u v ≠ 1))
 
 /-- The trivial `1`-cochain has the empty support graph. -/
 @[simp]
@@ -90,7 +108,7 @@ noncomputable def toCochain [Fintype V] [Group Γ] (G : SimpleGraph V) {c : Γ} 
   open Classical in
   TauCeti.Cochain.ofFn (TauCeti.TwoComplex.complete V)
     (fun u v ↦ if G.Adj u v then c else 1)
-    fun u v _ ↦ G.ite_adj_eq_inv_of_mul_self_eq_one hc u v
+    fun u v _ ↦ by rw [G.adj_comm v u, TauCeti.ite_inv_of_mul_self hc]
 
 /-- `G.toCochain hc` takes the value `c` on adjacent vertices. -/
 @[simp, grind =]
@@ -184,6 +202,17 @@ theorem comapComplete_toCochain {W : Type*} [Fintype V] [Fintype W] [Group Γ]
   ext u v _
   by_cases h : G.Adj (f u) (f v) <;> simp [h]
 
+/-- Conjugating an involution edge labelling of `G` by the `{1, c}`-valued indicator of `S` switches
+`G` by the complete-graph cut `(⊤ : SimpleGraph V).between S Sᶜ`. -/
+theorem ite_mem_inv_mul_ite_adj_mul [DecidableEq V] [Group Γ]
+    (G : SimpleGraph V) [DecidableRel G.Adj]
+    {c : Γ} (hc : c * c = 1) (S : Set V) [DecidablePred (· ∈ S)] (u v : V) :
+    (if u ∈ S then c else 1)⁻¹ * (if G.Adj u v then c else 1) * (if v ∈ S then c else 1) =
+      if (G ∆ (⊤ : SimpleGraph V).between S Sᶜ).Adj u v then c else 1 := by
+  simp only [symmDiff_adj, top_between_compl_adj]
+  by_cases hu : u ∈ S <;> by_cases hv : v ∈ S <;> by_cases hadj : G.Adj u v <;>
+    simp [hu, hv, hadj, hc, inv_eq_of_mul_eq_one_right hc]
+
 /-- Acting on `G.toCochain hc` by the `{1, c}`-valued indicator gauge of `S` switches `G` by the
 complete-graph cut `(⊤ : SimpleGraph V).between S Sᶜ`. -/
 theorem smul_ite_mem_toCochain [Fintype V] [Group Γ] (G : SimpleGraph V)
@@ -203,7 +232,7 @@ theorem holonomy_toCochain [Fintype V] [Group Γ] (G : SimpleGraph V) [Decidable
     (G.toCochain hc).holonomy u v w =
       if Xor (G.Adj u v) (Xor (G.Adj v w) (G.Adj w u)) then c else 1 := by
   simp only [TauCeti.Cochain.holonomy_def, G.toCochain_apply hc]
-  exact G.ite_adj_mul_ite_adj_mul_ite_adj hc u v w
+  exact TauCeti.ite_mul_ite_mul_ite_of_mul_self hc (G.Adj u v) (G.Adj v w) (G.Adj w u)
 
 /-- Under the trivial gauge `1`, the cost of `G.toCochain hc` equals `#G.edgeFinset * ℓ c`. -/
 theorem cost_toCochain_one [Fintype V] [LinearOrder V] [Group Γ] (G : SimpleGraph V)

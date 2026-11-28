@@ -10,11 +10,8 @@ public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.SimpleGraph
 public import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
-import TauCeti.Combinatorics.CoboundaryExpansion.SwapGauge
+import TauCeti.Combinatorics.CoboundaryExpansion.Swap.Gauge
 import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Complete
-import TauCeti.Combinatorics.SimpleGraph.CutMinimal
-import TauCeti.Combinatorics.SimpleGraph.OddTriple
-import TauCeti.GroupTheory.Perm.Fin
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.ZMod.QuotientGroup
 import Mathlib.GroupTheory.SpecificGroups.Cyclic

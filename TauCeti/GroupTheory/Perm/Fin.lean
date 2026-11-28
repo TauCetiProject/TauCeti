@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Group.Subgroup.Lattice
-public import Mathlib.Data.Fin.VecNotation
 public import Mathlib.Data.Finset.Sort
 public import Mathlib.GroupTheory.Perm.Fin
 public import TauCeti.GroupTheory.Perm.Basic

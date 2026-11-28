@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Binary
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.ParityRetract
 public import TauCeti.Combinatorics.SimpleGraph.CutMinimal
 import TauCeti.Combinatorics.SimpleGraph.Finite
-import TauCeti.GroupTheory.Perm.Fin
 
 /-!
 # Parity-retracted gauges and cut-minimality
@@ -26,7 +26,9 @@ permutation gauges to cut-minimality and binary cochains via `Equiv.Perm.parityR
     (G.toCochain ht.mul_self_eq_one).cost (Equiv.Perm.movedNorm α) β`
   (`SimpleGraph.two_mul_card_symmDiff_le_cost_movedNorm_toCochain`);
 * `SimpleGraph.isCutMinimal_iff_gaugeDist_movedNorm_toCochain_eq` characterizes cut-minimality by
-  `(G.toCochain ht.mul_self_eq_one).gaugeDist (Equiv.Perm.movedNorm α) = 2 * #G.edgeFinset`, and via
+  `(G.toCochain ht.mul_self_eq_one).gaugeDist (Equiv.Perm.movedNorm α) = 2 * #G.edgeFinset`, so
+  any cut-minimal graph with an edge bounds the permutation Cheeger constant
+  (`SimpleGraph.h1_complete_movedNorm_le_of_isCutMinimal`), and via
   `TauCeti.simpleGraphEquivPermFinTwo` (from `Cochain.Binary`) transports `Cochain.cost`,
   `Cochain.defect`, and `Cochain.gaugeDist` to cut-switched edge counts, `#G.oddTripleFinset`,
   and cut-minimality (`TauCeti.Cochain.cost_movedNorm_fin_two`,
@@ -178,6 +180,25 @@ theorem gaugeDist_movedNorm_toCochain_eq_zero_iff [Fintype V] [LinearOrder V]
       ∃ S : Set V, G = (⊤ : SimpleGraph V).between S Sᶜ :=
   ((G.toCochain ht.mul_self_eq_one).gaugeDist_eq_zero_iff_isCoboundary _).trans
     (G.isCoboundary_toCochain_iff ht.mul_self_eq_one ht.isCycle.ne_one)
+
+/-- **Cut-minimal graphs bound the permutation constant.** For a cut-minimal graph `G` on `V` with
+at least one edge,
+`h1 (complete V) (movedNorm α) ≤ #G.oddTripleFinset / #G.edgeFinset`. -/
+theorem h1_complete_movedNorm_le_of_isCutMinimal [Fintype V] [LinearOrder V]
+    (G : SimpleGraph V) [DecidableRel G.Adj] (hG : G.IsCutMinimal) (hE : 0 < #G.edgeFinset) :
+    TauCeti.h1 (TauCeti.TwoComplex.complete V) (Equiv.Perm.movedNorm α) ≤
+      (#G.oddTripleFinset : ℝ) / #G.edgeFinset := by
+  rcases subsingleton_or_nontrivial α with hα | ⟨a, b, hab⟩
+  · rw [TauCeti.h1_subsingleton]
+    positivity
+  have ht : (Equiv.swap a b).IsSwap := ⟨a, b, hab, rfl⟩
+  have hE' : (0 : ℝ) < 2 * #G.edgeFinset := by positivity
+  have hgd :
+      (G.toCochain ht.mul_self_eq_one).gaugeDist (Equiv.Perm.movedNorm α) = 2 * #G.edgeFinset :=
+    (G.isCutMinimal_iff_gaugeDist_movedNorm_toCochain_eq ht).mp hG
+  refine (TauCeti.h1_le_div (hgd ▸ hE')).trans_eq ?_
+  rw [hgd, G.defect_movedNorm_toCochain ht]
+  exact mul_div_mul_left _ _ two_ne_zero
 
 end SwapGauge
 
