@@ -21,7 +21,8 @@ For a commutative monoid object the sections form a commutative ring. Restrictio
 presheaf of commutative rings under the structure presheaf of `X`, and this presheaf is a sheaf.
 The commutative restriction maps, algebra homomorphisms and isomorphisms on sections
 (`CategoryTheory.CommMon.sectionsAlgHom`, `CategoryTheory.CommMon.sectionsAlgEquiv`) are those of
-the underlying monoid objects.
+the underlying monoid objects. A morphism of commutative algebras induces a morphism of section
+presheaves under the structure presheaf (`CategoryTheory.CommMon.sectionsPresheafMap`).
 
 Conversely, a morphism of presheaves of section rings compatible with the structure maps is a
 morphism of commutative `𝒪ₓ`-algebras (`CategoryTheory.CommMon.homOfSectionsPresheaf`). This
@@ -390,6 +391,40 @@ lemma _root_.CategoryTheory.CommMon.sectionsAlgHom_comp {A B C : CommMon X.Modul
       (CommMon.sectionsAlgHom g U).comp (CommMon.sectionsAlgHom f U) :=
   Mon.sectionsAlgHom_comp f.hom g.hom U
 
+/-- A morphism of commutative sheaf algebras induces a morphism of their presheaves of rings. -/
+def _root_.CategoryTheory.CommMon.sectionsPresheafMap {A B : CommMon X.Modules}
+    (f : A ⟶ B) : A.sectionsPresheaf ⟶ B.sectionsPresheaf where
+  app U := CommRingCat.ofHom (CommMon.sectionsAlgHom f U.unop).toRingHom
+  naturality _ _ i :=
+    CommRingCat.hom_ext (RingHom.ext fun x ↦ CommMon.sectionsAlgHom_restrictSections f i.unop x)
+
+@[simp]
+lemma _root_.CategoryTheory.CommMon.sectionsPresheafMap_app {A B : CommMon X.Modules}
+    (f : A ⟶ B) (U : X.Opensᵒᵖ) :
+    (CommMon.sectionsPresheafMap f).app U =
+      CommRingCat.ofHom (CommMon.sectionsAlgHom f U.unop).toRingHom :=
+  (rfl)
+
+@[simp]
+lemma _root_.CategoryTheory.CommMon.sectionsPresheafMap_id (A : CommMon X.Modules) :
+    CommMon.sectionsPresheafMap (𝟙 A) = 𝟙 A.sectionsPresheaf :=
+  (rfl)
+
+@[simp]
+lemma _root_.CategoryTheory.CommMon.sectionsPresheafMap_comp {A B C : CommMon X.Modules}
+    (f : A ⟶ B) (g : B ⟶ C) :
+    CommMon.sectionsPresheafMap (f ≫ g) =
+      CommMon.sectionsPresheafMap f ≫ CommMon.sectionsPresheafMap g :=
+  (rfl)
+
+/-- Algebra morphisms commute with the structure map from the structure presheaf. -/
+@[reassoc (attr := simp)]
+lemma _root_.CategoryTheory.CommMon.toSectionsPresheaf_comp_sectionsPresheafMap
+    {A B : CommMon X.Modules} (f : A ⟶ B) :
+    A.toSectionsPresheaf ≫ CommMon.sectionsPresheafMap f = B.toSectionsPresheaf := by
+  ext U r
+  exact (CommMon.sectionsAlgHom f U).commutes r
+
 /-- The `Γ(X, U)`-algebra isomorphism of sections over `U` induced by an isomorphism of
 commutative `𝒪ₓ`-algebras: that of the underlying isomorphism of monoid objects. -/
 def _root_.CategoryTheory.CommMon.sectionsAlgEquiv {A B : CommMon X.Modules} (e : A ≅ B)
@@ -517,6 +552,26 @@ lemma _root_.CategoryTheory.CommMon.homOfSectionsPresheaf_hom_hom_app_apply
     (h : A.toSectionsPresheaf ≫ φ = B.toSectionsPresheaf) (U : X.Opens) (x : Γ(A.X, U)) :
     (CommMon.homOfSectionsPresheaf φ h).hom.hom.app U x = φ.app (op U) x :=
   (rfl)
+
+/-- The algebra morphism built from a morphism of section rings induces that morphism. -/
+@[simp]
+lemma _root_.CategoryTheory.CommMon.sectionsPresheafMap_homOfSectionsPresheaf
+    {A B : CommMon X.Modules} (φ : A.sectionsPresheaf ⟶ B.sectionsPresheaf)
+    (h : A.toSectionsPresheaf ≫ φ = B.toSectionsPresheaf) :
+    CommMon.sectionsPresheafMap (CommMon.homOfSectionsPresheaf φ h) = φ := by
+  ext U x
+  exact (CommMon.sectionsAlgHom_apply _ U.unop x).trans
+    (CommMon.homOfSectionsPresheaf_hom_hom_app_apply φ h U.unop x)
+
+/-- An algebra morphism is recovered from the morphism of section rings it induces. -/
+@[simp]
+lemma _root_.CategoryTheory.CommMon.homOfSectionsPresheaf_sectionsPresheafMap
+    {A B : CommMon X.Modules} (f : A ⟶ B) :
+    CommMon.homOfSectionsPresheaf (CommMon.sectionsPresheafMap f)
+      (CommMon.toSectionsPresheaf_comp_sectionsPresheafMap f) = f :=
+  CommMon.hom_ext_of_sectionsAlgHom fun U ↦ AlgHom.ext fun x ↦
+    (CommMon.sectionsAlgHom_apply _ U x).trans
+      (CommMon.homOfSectionsPresheaf_hom_hom_app_apply _ _ U x)
 
 /-- An isomorphism of presheaves of section rings compatible with the structure maps from the
 structure presheaf is an isomorphism of commutative `𝒪ₓ`-algebras. -/

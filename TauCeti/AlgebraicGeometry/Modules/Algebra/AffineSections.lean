@@ -5,14 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.RelativeSpec.Basic
+public import Mathlib.AlgebraicGeometry.Sites.SmallAffineZariski
+public import TauCeti.AlgebraicGeometry.Modules.Algebra.Sections
 
 /-!
 # Extending the sections of a commutative algebra from the affine site
 
 `AlgebraicGeometry.Scheme.sectionsSheafFunctor` sends a commutative algebra in scheme modules
 to its sheaf of section rings under the structure sheaf. The restriction of its structure map
-to the small affine Zariski site is the map used in `CommMon.coequifibered_toSectionsPresheaf`.
+to the small affine Zariski site is the restriction of `CommMon.toSectionsPresheaf`.
 
 `AlgebraicGeometry.Scheme.sectionsPresheafIso` identifies the extension of that restriction with
 the original sheaf of algebras, naturally in the algebra. It uses Mathlib's
