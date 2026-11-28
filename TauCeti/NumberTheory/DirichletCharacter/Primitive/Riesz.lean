@@ -205,6 +205,16 @@ theorem continuous_rieszRemainder (χ : PrimitiveDirichletCharacter) :
       (Complex.continuous_ofReal.mul_const (logDeriv χ.character.LFunction 1))).congr
         fun y ↦ (rieszRemainder_of_ne_one hχ y).symm
 
+/-- For a bundle equal to its inverse, the logarithmic derivative of its L-function commutes
+with conjugation; in particular it is real at real arguments. -/
+theorem logDeriv_LFunction_conj_of_inv_eq {χ : PrimitiveDirichletCharacter} (hχ : χ⁻¹ = χ)
+    (s : ℂ) :
+    logDeriv χ.character.LFunction (conj s) = conj (logDeriv χ.character.LFunction s) := by
+  -- Compare the characters through their bundles, so no level transport is needed.
+  obtain ⟨hd, he⟩ := of_eq_iff.1 (show of χ.character⁻¹ = χ by rw [of_inv, of_character, hχ])
+  exact DirichletCharacter.logDeriv_LFunction_conj_of_inv_eq
+    (by rw [← he, DirichletCharacter.changeLevel_self]) s
+
 /-- The inverse character's first Riesz remainder is the complex conjugate of the original. -/
 @[simp] theorem rieszRemainder_inv (χ : PrimitiveDirichletCharacter) (y : ℝ) :
     χ⁻¹.rieszRemainder y = conj (χ.rieszRemainder y) := by

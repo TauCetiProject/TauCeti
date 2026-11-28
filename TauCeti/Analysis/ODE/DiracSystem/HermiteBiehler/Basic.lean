@@ -25,7 +25,9 @@ literature), built from the Neumann column `(A, C)` and the Dirichlet column `(B
   (`TauCeti.differentiable_diracHermiteBiehler`,
   `TauCeti.differentiable_diracHermiteBiehlerDirichlet`).
 * `t ↦ E(t, z)` and `t ↦ E~(t, z)` are continuous on `[0, T]` when `q` is integrable there
-  (`TauCeti.continuousOn_diracHermiteBiehler`, `TauCeti.continuousOn_diracHermiteBiehlerDirichlet`).
+  (`TauCeti.continuousOn_diracHermiteBiehler`, `TauCeti.continuousOn_diracHermiteBiehlerDirichlet`),
+  and `E(t, z)` is jointly continuous in `(t, z)` on `[0, T] × ℂ`
+  (`TauCeti.continuousOn_diracHermiteBiehler_prod`).
 * For `q` integrable on `[0, t]` and `t ≥ 0`, the entrywise bound on `M_q(t, z)`
   (`TauCeti.norm_diracFundamentalMatrix_apply_le`) gives
   `|E(t, z)|, |E~(t, z)| ≤ 2 exp(t|z| + ∫₀ᵗ |q|)` (`TauCeti.norm_diracHermiteBiehler_le`,
@@ -118,6 +120,14 @@ theorem continuousOn_diracHermiteBiehlerDirichlet {T : ℝ} (hq : IntegrableOn q
   simp_rw [diracHermiteBiehlerDirichlet_def]
   exact (continuousOn_diracFundamentalMatrix_apply hq z 0 _).sub
     (continuousOn_const.mul (continuousOn_diracFundamentalMatrix_apply hq z 1 _))
+
+/-- **Joint continuity of `E`.** If `q` is integrable on `[0, T]`, `E(t, z)` is continuous in
+`(t, z)` on `[0, T] × ℂ`. -/
+theorem continuousOn_diracHermiteBiehler_prod {T : ℝ} (hq : IntegrableOn q (Icc 0 T)) :
+    ContinuousOn (fun p : ℝ × ℂ ↦ diracHermiteBiehler q p.1 p.2) (Icc 0 T ×ˢ univ) := by
+  simp_rw [diracHermiteBiehler_def]
+  exact (continuousOn_diracFundamentalMatrix_apply_prod hq 0 0).sub
+    (continuousOn_const.mul (continuousOn_diracFundamentalMatrix_apply_prod hq 1 0))
 
 /-- **Growth of `E`.** If `q` is integrable on `[0, t]` and `t ≥ 0`, then
 `|E(t, z)| ≤ 2 exp(t|z| + ∫₀ᵗ |q|)`. -/

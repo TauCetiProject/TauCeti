@@ -54,9 +54,10 @@ particular the inverses of a `C^n` family of equivalences are `C^n`
 bilinear pairing between trivial bundles is a smooth hom-bundle section
 (`TauCeti.contMDiff_const_bundlePairing`). A hom-bundle section whose coordinate expressions are
 constant on the common frame domains is smooth
-(`TauCeti.contMDiff_hom_bundle_of_inCoordinates_eq_const`). A fibrewise map whose expressions in
-the preferred trivializations are `C^n` families of continuous linear maps of the model fibres is
-`C^n` on total spaces (`TauCeti.contMDiff_bundleMap_of_contMDiffOn_coordinates`, and
+(`TauCeti.contMDiff_hom_bundle_of_inCoordinates_eq_const`); in particular so is a constant linear
+map between trivial bundles (`TauCeti.contMDiff_const_trivialHom`). A fibrewise map whose
+expressions in the preferred trivializations are `C^n` families of continuous linear maps of the
+model fibres is `C^n` on total spaces (`TauCeti.contMDiff_bundleMap_of_contMDiffOn_coordinates`, and
 `TauCeti.contMDiff_bundleMap_of_contMDiffOn_symm` with the expressions read through the inverse
 trivializations).
 
@@ -342,6 +343,16 @@ theorem contMDiff_id_endomorphism
   contMDiff_hom_bundle_of_inCoordinates_eq_const
     (c := fun _ ↦ ContinuousLinearMap.id 𝕜 F₁)
     fun _ _ hx _ ↦ ContinuousLinearMap.inCoordinates_id hx
+
+/-- A constant linear map between the model fibres is a smooth section of the hom bundle between
+the two trivial bundles. -/
+theorem contMDiff_const_trivialHom (L : F₁ →L[𝕜] F₂) :
+    ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n fun x : M ↦
+      TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun x ↦ Trivial M F₁ x →L[𝕜] Trivial M F₂ x) x L :=
+  contMDiff_hom_bundle_of_inCoordinates_eq_const (c := fun _ ↦ L) fun _ _ _ _ ↦ by
+    simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
+      Trivial.continuousLinearMapAt_trivialization, Trivial.symmL_trivialization,
+      ContinuousLinearMap.comp_id, ContinuousLinearMap.id_comp]
 
 end ConstantCoordinates
 

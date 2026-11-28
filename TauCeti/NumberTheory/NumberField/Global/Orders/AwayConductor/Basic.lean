@@ -75,18 +75,16 @@ variable {K : Type*} [Field K] [NumberField K] (O : NumberFieldOrder K)
 
 /-- The conductor of an order as a modulus of `K`, with no real places. Its integral prime-to
 monoid consists of the nonzero ideals of `𝓞 K` coprime to the conductor. -/
-def conductorModulus : Modulus K where
-  finitePart := O.conductor
-  finitePart_ne_bot := O.conductor_ne_bot
-  infinitePart := ∅
+def conductorModulus : Modulus K :=
+  Modulus.ofIdeal O.conductor O.conductor_ne_bot
 
 @[simp]
 theorem conductorModulus_finitePart : O.conductorModulus.finitePart = O.conductor :=
-  (rfl)
+  Modulus.ofIdeal_finitePart O.conductor O.conductor_ne_bot
 
 @[simp]
 theorem conductorModulus_infinitePart : O.conductorModulus.infinitePart = ∅ :=
-  (rfl)
+  Modulus.ofIdeal_infinitePart O.conductor O.conductor_ne_bot
 
 /-- The conductor modulus of the maximal order is the trivial modulus. -/
 @[simp]

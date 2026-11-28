@@ -38,6 +38,8 @@ finite, and `p ≠ ∞`, the orbit maps `g ↦ π(g) f` are continuous
 
 ## Main results
 
+* `TauCeti.lpKoopman_eq_one_of_forall_smul_eq`: if `g` fixes every point then `π(g)` is the
+  identity; in particular, for a trivial action every `π(g)` is the identity.
 * `TauCeti.mem_invariants_lpKoopman_iff`: the invariant vectors are the classes `f` with
   `f (g • x) = f x` almost everywhere, for every `g`.
 -/
@@ -98,6 +100,19 @@ theorem mem_invariants_lpKoopman_iff {f : Lp E p μ} :
 @[simp]
 theorem norm_lpKoopman_apply (g : G) (f : Lp E p μ) : ‖lpKoopman 𝕜 E p μ hμ g f‖ = ‖f‖ :=
   Lp.norm_compMeasurePreserving f (hμ g⁻¹)
+
+/-- `π(g⁻¹)` moves `f` as far as `π(g)` does: `‖π(g⁻¹) f - f‖ = ‖π(g) f - f‖`. -/
+theorem norm_lpKoopman_inv_apply_sub (g : G) (f : Lp E p μ) :
+    ‖lpKoopman 𝕜 E p μ hμ g⁻¹ f - f‖ = ‖lpKoopman 𝕜 E p μ hμ g f - f‖ := by
+  rw [← norm_lpKoopman_apply (𝕜 := 𝕜) (hμ := hμ) g, map_sub, ← mul_apply_eq_comp, ← map_mul,
+    mul_inv_cancel, map_one, one_apply_eq_self, norm_sub_rev]
+
+/-- If `g` fixes every point, then `π(g)` is the identity. -/
+theorem lpKoopman_eq_one_of_forall_smul_eq {g : G} (h : ∀ x : X, g • x = x) :
+    lpKoopman 𝕜 E p μ hμ g = 1 := by
+  ext f : 1
+  refine Lp.ext ((coeFn_lpKoopman g f).trans (.of_forall fun x ↦ ?_))
+  simp [inv_smul_eq_iff.2 (h x).symm]
 
 /-- The `L²` pullback representation of a measure-preserving action is unitary. -/
 theorem isUnitary_lpKoopman {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]

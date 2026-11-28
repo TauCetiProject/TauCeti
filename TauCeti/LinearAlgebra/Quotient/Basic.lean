@@ -14,7 +14,10 @@ public import Mathlib.RingTheory.Regular.IsSMulRegular
 A surjective linear map `f : M → M₂` sending `p` into `q` induces a surjective map
 `M ⧸ p → M₂ ⧸ q`, and the induced map is injective exactly when `f⁻¹(q) ≤ p`. The quotient by a
 submodule is torsion-free exactly when the submodule is saturated, that is, contains every element
-of which it contains a multiple by a regular scalar.
+of which it contains a multiple by a regular scalar. A linear map that vanishes at every `v` with
+`Φ v ∈ N` vanishes on the inverse image `Φ⁻¹(N)`, and so descends through the quotient by that
+inverse image. A scalar `p` kills the quotient of `V` by `Φ⁻¹(N)` as soon as `Φ` sends every
+multiple `p • v` into `N`.
 
 ## Main results
 
@@ -25,6 +28,10 @@ of which it contains a multiple by a regular scalar.
   it is saturated.
 * `Submodule.surjective_mkQ_comp_comp_subtype_of_map_sup_eq_top`: a linear map restricted to `W`,
   followed by the quotient by `S`, is onto when the image of `W` and `S` span the target.
+* `Submodule.comap_le_ker`: a linear map vanishing at the `v` with `Φ v ∈ N` vanishes on
+  `Φ⁻¹(N)`.
+* `Submodule.smul_quotient_comap_eq_zero`: if `Φ (p • v) ∈ N` for all `v`, then `p` kills
+  `V ⧸ Φ⁻¹(N)`.
 -/
 
 public section
@@ -62,5 +69,25 @@ theorem surjective_mkQ_comp_comp_subtype_of_map_sup_eq_top {N : Type*} [AddCommG
     Function.Surjective (S.mkQ ∘ₗ d ∘ₗ W.subtype) :=
   LinearMap.range_eq_top.1 <| by
     simpa [LinearMap.range_comp, map_mkQ_eq_top, sup_comm] using h
+
+end Submodule
+
+namespace Submodule
+
+variable {O R F V : Type*} [CommRing O] [Semiring R] [AddCommMonoid F] [Module O F] [Module R F]
+  [SMul O R] [IsScalarTower O R F] [AddCommGroup V] [Module O V] {N : Submodule R F}
+  {Φ : V →ₗ[O] F}
+
+/-- A linear map vanishing at the `v` with `Φ v ∈ N` vanishes on `Φ⁻¹(N)`. -/
+theorem comap_le_ker {M : Type*} [AddCommGroup M] [Module O M] {Ψ : V →ₗ[O] M}
+    (hΨ : ∀ v, Φ v ∈ N → Ψ v = 0) : (N.restrictScalars O).comap Φ ≤ LinearMap.ker Ψ :=
+  fun v hv ↦ LinearMap.mem_ker.2 (hΨ v (by simpa using hv))
+
+/-- If `Φ (p • v) ∈ N` for all `v`, then `p` kills `V ⧸ Φ⁻¹(N)`. -/
+theorem smul_quotient_comap_eq_zero {p : O} (hpN : ∀ v, Φ (p • v) ∈ N)
+    (q : V ⧸ (N.restrictScalars O).comap Φ) : p • q = 0 := by
+  obtain ⟨v, rfl⟩ := ((N.restrictScalars O).comap Φ).mkQ_surjective q
+  rw [← map_smul, mkQ_apply, Quotient.mk_eq_zero]
+  simpa using hpN v
 
 end Submodule

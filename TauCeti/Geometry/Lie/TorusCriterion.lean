@@ -54,8 +54,8 @@ modelled without boundary on a finite-dimensional space in the lowest universe, 
 about `SU(2) → G` carries these hypotheses. The later statements hold for every model with
 corners on such a space: a Lie group is also a Lie group modelled on the vector space itself,
 with the same topology, group and Lie algebra (`TauCeti.BoundarylessModel.interiorLieEquiv`). As
-for `TauCeti.SU2.embeddedLieSubgroupData`, `GL(2, ℂ)` carries the operator-norm topology of
-matrices.
+for `TauCeti.GLSpecialUnitary.embeddedLieSubgroupData`, `GL(2, ℂ)` carries the operator-norm
+topology of matrices.
 
 ## Main results
 

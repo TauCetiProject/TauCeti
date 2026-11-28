@@ -27,6 +27,8 @@ normality of `H` in the ambient group (`SemidirectProduct.mulEquivSup`).
   the action of `g.right` and conjugation by `g.left`.
 * `SemidirectProduct.inr_mul_inl`: moving the acting group past the normal factor applies the
   action.
+* `SemidirectProduct.mul_inl_mul_inv_of_comm`: when the normal factor is commutative, conjugating
+  a translation applies the action of the acting component.
 * `SemidirectProduct.instFinite`, `SemidirectProduct.instFintype`: a semidirect product of finite
   groups is finite.
 * `SemidirectProduct.lift_apply`: the external lift evaluates a pair by multiplying the
@@ -100,6 +102,12 @@ with `inr g` moved to the right. -/
 theorem inr_mul_inl {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N} (g : Q) (n : N) :
     (inr g * inl n : N ⋊[φ] Q) = inl (φ g n) * inr g := by
   rw [inl_aut, map_inv, inv_mul_cancel_right]
+
+/-- When the normal factor is commutative, conjugating `inl n` by `x` applies the action of the
+acting component of `x` to `n`: `x * inl n * x⁻¹ = inl (φ x.right n)`. -/
+theorem mul_inl_mul_inv_of_comm {N Q : Type*} [CommGroup N] [Group Q] {φ : Q →* MulAut N}
+    (x : N ⋊[φ] Q) (n : N) : x * inl n * x⁻¹ = inl (φ x.right n) := by
+  rw [mul_inl_mul_inv, mul_inv_cancel_comm]
 
 /-- A semidirect product of finite groups is finite. -/
 instance instFinite {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N} [Finite N]

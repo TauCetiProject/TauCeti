@@ -77,8 +77,6 @@ theorem coe_criticalPointsEquivOfComp_symm_apply (p' : criticalPoints 𝓘(ℝ, 
     ((criticalPointsEquivOfComp hf).symm p' : M) = σ.symm p' :=
   rfl
 
-variable [IsManifold 𝓘(ℝ, E) ∞ M] [IsManifold 𝓘(ℝ, E) ∞ M']
-
 include hf in
 /-- **The bijection of critical points preserves Morse indices.** If `f' ∘ σ = f` and `f'` is `C²`
 at a critical point `q` of `f'`, then the Morse index of `f` at `σ⁻¹ q` is the Morse index of `f'`
@@ -116,6 +114,18 @@ theorem manifoldMorseIndex_criticalPointsEquivOfComp_symm {q : criticalPoints �
   obtain ⟨p, rfl⟩ := (criticalPointsEquivOfComp hf).surjective q
   rw [Equiv.symm_apply_apply]
   exact φ.manifoldMorseIndex_eq_of_comp hf
+
+include hf in
+/-- The Morse indices of `f'` at `σ p` and `σ q`, centres of Morse charts, differ by one when
+those of `f` at `p` and `q` do. -/
+theorem manifoldMorseIndex_eq_add_one_of_comp {p q : M} (φp : MorseChart E f' (σ p))
+    (φq : MorseChart E f' (σ q))
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) :
+    manifoldMorseIndex 𝓘(ℝ, E) f' (σ p) = manifoldMorseIndex 𝓘(ℝ, E) f' (σ q) + 1 := by
+  rw [← φp.manifoldMorseIndex_eq_of_comp hf, ← φq.manifoldMorseIndex_eq_of_comp hf]
+  exact hpq
+
+variable [IsManifold 𝓘(ℝ, E) ∞ M]
 
 /-- **The pullback of a Morse chart along a diffeomorphism.** If `f' ∘ σ = f`, a Morse chart `φ`
 for `f'` at `σ x` gives the Morse chart `φ ∘ σ` for `f` at `x`, with the same coordinates and
@@ -163,16 +173,6 @@ theorem pullback_coord : (φ.pullback hf).coord = φ.coord :=
 @[simp]
 theorem pullback_weight : (φ.pullback hf).weight = φ.weight :=
   rfl
-
-include hf in
-/-- The Morse indices of `f'` at `σ p` and `σ q`, centres of Morse charts, differ by one when
-those of `f` at `p` and `q` do. -/
-theorem manifoldMorseIndex_eq_add_one_of_comp {p q : M} (φp : MorseChart E f' (σ p))
-    (φq : MorseChart E f' (σ q))
-    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) :
-    manifoldMorseIndex 𝓘(ℝ, E) f' (σ p) = manifoldMorseIndex 𝓘(ℝ, E) f' (σ q) + 1 := by
-  rw [← φp.manifoldMorseIndex_eq_of_comp hf, ← φq.manifoldMorseIndex_eq_of_comp hf]
-  exact hpq
 
 variable {φ}
 
