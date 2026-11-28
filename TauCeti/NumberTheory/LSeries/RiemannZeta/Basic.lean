@@ -51,6 +51,8 @@ Siegel's theorem on real zeros.
   vanishing term `0 ^ (-s)`;
 * `TauCeti.hasSum_pnat_rpow_neg_inv_sub_one_add_riemannZeta₀_re`: the same series over the
   positive integers, with the pole at `s = 1` split off as `(s - 1)⁻¹ + Re ζ₀(s)`;
+* `TauCeti.hasSum_one_div_natCast_add_one_pow`: the complex series `∑ 1 / (n + 1) ^ k` sums to
+  `ζ(k)` for natural `k > 1`;
 * `TauCeti.norm_riemannZeta_le`, `TauCeti.norm_riemannZeta_le_two`, and
   `TauCeti.riemannZeta_re_le_two`: `‖ζ(s)‖ ≤ Re ζ(Re s)` for `Re s > 1`, and `‖ζ(s)‖ ≤ 2` and
   `Re ζ(s) ≤ 2` for `Re s ≥ 2`;
@@ -118,6 +120,14 @@ theorem hasSum_pnat_rpow_neg_inv_sub_one_add_riemannZeta₀_re {s : ℝ} (hs : 1
   rw [riemannZeta_eq_inv_sub_add (by exact_mod_cast hs.ne'), add_re, ← ofReal_one, ← ofReal_sub,
     ← ofReal_inv, ofReal_re] at h
   exact Equiv.pnatEquivNat.symm.hasSum_iff.mp (by simpa [Function.comp_def] using h)
+
+/-- For a natural number `k > 1`, the complex series `∑_{n ≥ 0} 1 / (n + 1) ^ k` sums to `ζ(k)`. -/
+theorem hasSum_one_div_natCast_add_one_pow {k : ℕ} (hk : 1 < k) :
+    HasSum (fun n : ℕ ↦ 1 / ((n : ℂ) + 1) ^ k) (riemannZeta k) := by
+  have hs : Summable fun n : ℕ ↦ 1 / ((n : ℂ) + 1) ^ k := by
+    simpa using (summable_pow_div_add (1 : ℂ) k 1 hk).of_norm
+  rw [zeta_eq_tsum_one_div_nat_add_one_cpow (by simpa using hk)]
+  simpa [cpow_natCast] using hs.hasSum
 
 /-- On `Re s > 1`, `‖ζ(s)‖` is bounded by `Re ζ(Re s)`. -/
 theorem norm_riemannZeta_le {s : ℂ} (hs : 1 < s.re) :

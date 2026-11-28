@@ -121,18 +121,8 @@ private theorem summable_uncurry_digamma_double {z : ℂ} (hz : ‖z‖ < 1) :
 private theorem hasSum_zeta_pow_term (z : ℂ) (k : ℕ) :
     HasSum (fun n : ℕ ↦ (-1) ^ k * z ^ (k + 1) / ((n : ℂ) + 1) ^ (k + 2))
       ((-1) ^ k * riemannZeta (k + 2) * z ^ (k + 1)) := by
-  have hsum_real : Summable fun n : ℕ ↦ 1 / ((n : ℝ) + 1) ^ (k + 2) := by
-    simpa using (summable_nat_add_iff 1).mpr (Real.summable_one_div_nat_pow.mpr (by omega))
-  have hsum : Summable fun n : ℕ ↦ 1 / ((n : ℂ) + 1) ^ (k + 2) := by
-    simpa using Complex.summable_ofReal.mpr hsum_real
-  have hzeta : riemannZeta (k + 2) = ∑' n : ℕ, 1 / ((n : ℂ) + 1) ^ (k + 2) := by
-    rw [zeta_eq_tsum_one_div_nat_add_one_cpow (by simp; linarith)]
-    refine tsum_congr fun n ↦ ?_
-    have hcast : ((k : ℂ) + 2) = ((k + 2 : ℕ) : ℂ) := by norm_cast
-    rw [hcast, cpow_natCast]
-  have h1 : HasSum (fun n : ℕ ↦ 1 / ((n : ℂ) + 1) ^ (k + 2)) (riemannZeta (k + 2)) := by
-    rw [hzeta]
-    exact hsum.hasSum
+  have h1 := TauCeti.hasSum_one_div_natCast_add_one_pow (k := k + 2) (by omega)
+  push_cast at h1
   simpa [mul_assoc, mul_comm, mul_left_comm, div_eq_mul_inv] using
     h1.mul_left ((-1) ^ k * z ^ (k + 1))
 
