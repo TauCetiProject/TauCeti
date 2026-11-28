@@ -57,6 +57,23 @@ namespace Matrix
 variable {p q 𝕜 : Type*} [Fintype p] [Fintype q] [DecidableEq p] [DecidableEq q] [RCLike 𝕜]
   {n : ℕ} {F F' : Matrix (p ⊕ q) (Fin (n + 1)) 𝕜} {T T' : ℝ}
 
+/-- A frame whose Gram matrix has just one nonpositive diagonal entry spans a nonpositive
+subspace. -/
+theorem re_star_dotProduct_mulVec_nonpos_of_frame (hT : 0 ≤ T)
+    (hF : Fᴴ * indefiniteDiagonal p q 𝕜 * F = single (last n) (last n) (-(T : 𝕜)))
+    (c : Fin (n + 1) → 𝕜) :
+    RCLike.re (star c ⬝ᵥ (Fᴴ * indefiniteDiagonal p q 𝕜 * F) *ᵥ c) ≤ 0 := by
+  have h_val : star c ⬝ᵥ single (last n) (last n) (-(T : 𝕜)) *ᵥ c =
+      ((-T * ‖c (last n)‖ ^ 2 : ℝ) : 𝕜) := by
+    suffices h : star (c (last n)) * (-(T : 𝕜) * c (last n)) =
+        ((-T * ‖c (last n)‖ ^ 2 : ℝ) : 𝕜) by
+      simpa [dotProduct, single_mulVec, Function.update_apply] using h
+    rw [RCLike.star_def, mul_left_comm, RCLike.conj_mul]
+    push_cast
+    ring
+  rw [hF, h_val, RCLike.ofReal_re]
+  exact mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.mpr hT) (sq_nonneg _)
+
 /-- The form of the Gram matrix of `fromCols F F'` is nonpositive on the span of the first
 frame `F`, the image of `fromRows 1 0`: at `fromRows 1 0 *ᵥ c` it is `-T * ‖c (last n)‖ ^ 2`. -/
 private theorem re_star_dotProduct_fromCols_mulVec_fromRows_one_zero_nonpos (hT : 0 ≤ T)
@@ -71,18 +88,8 @@ private theorem re_star_dotProduct_fromCols_mulVec_fromRows_one_zero_nonpos (hT 
   have hPE : P * E = F := by simp [P, E, fromCols_mul_fromRows]
   rw [← star_dotProduct_conjTranspose_mul_mul_mulVec,
     show Eᴴ * (Pᴴ * J * P) * E = (P * E)ᴴ * J * (P * E) by
-      simp only [conjTranspose_mul, Matrix.mul_assoc], hPE, hF]
-  -- the form of `single (last n) (last n) (-T)` at `c` is `-T * ‖c (last n)‖ ^ 2`
-  have h_val : star c ⬝ᵥ single (last n) (last n) (-(T : 𝕜)) *ᵥ c =
-      ((-T * ‖c (last n)‖ ^ 2 : ℝ) : 𝕜) := by
-    suffices h : star (c (last n)) * (-(T : 𝕜) * c (last n)) =
-        ((-T * ‖c (last n)‖ ^ 2 : ℝ) : 𝕜) by
-      simpa [dotProduct, single_mulVec, Function.update_apply] using h
-    rw [RCLike.star_def, mul_left_comm, RCLike.conj_mul]
-    push_cast
-    ring
-  rw [h_val, RCLike.ofReal_re, neg_mul, neg_nonpos]
-  positivity
+      simp only [conjTranspose_mul, Matrix.mul_assoc], hPE]
+  exact re_star_dotProduct_mulVec_nonpos_of_frame hT hF c
 
 /-- The form of the Gram matrix `Pᴴ * J * P` is nonnegative at the vectors `v` whose image
 `P v` has vanishing `q` coordinates. -/
