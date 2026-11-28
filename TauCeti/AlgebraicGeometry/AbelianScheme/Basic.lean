@@ -191,7 +191,7 @@ instance isMonHom_mulBy (A : AbelianScheme S) [IsCommMonObj A.toOver] (n : ℤ) 
 
 /-- Construct an abelian scheme from a group object in `Over S` whose structure morphism is proper
 and smooth with geometrically connected fibres. -/
-@[expose] noncomputable def ofGroupScheme (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
+noncomputable def ofGroupScheme (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
     [GeometricallyConnected G.hom] : AbelianScheme S where
   toOver := G
   grpObj := inferInstance
@@ -203,6 +203,25 @@ and smooth with geometrically connected fibres. -/
 lemma ofGroupScheme_toOver (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
     [GeometricallyConnected G.hom] : (ofGroupScheme G).toOver = G :=
   (rfl)
+
+/-- The underlying scheme of `ofGroupScheme G` is `G.left`. -/
+lemma ofGroupScheme_toScheme (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
+    [GeometricallyConnected G.hom] : (ofGroupScheme G).toScheme = G.left :=
+  (rfl)
+
+/-- The group object underlying `ofGroupScheme G` is `Grp.mk G`. -/
+lemma grpMk_ofGroupScheme_toOver (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
+    [GeometricallyConnected G.hom] :
+    Grp.mk (ofGroupScheme G).toOver = Grp.mk G :=
+  (rfl)
+
+/-- The zero section of `ofGroupScheme G` is the unit section `η[G].left` of `G`, after
+transporting its codomain along `ofGroupScheme_toScheme G`. -/
+@[reassoc (attr := simp)]
+lemma zeroSection_ofGroupScheme (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
+    [GeometricallyConnected G.hom] :
+    (ofGroupScheme G).zeroSection ≫ eqToHom (ofGroupScheme_toScheme G) = η[G].left :=
+  Category.comp_id η[G].left
 
 /-! ### Base change -/
 
