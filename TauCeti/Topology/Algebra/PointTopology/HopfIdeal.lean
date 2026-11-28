@@ -40,12 +40,9 @@ open Topology in
 evaluation topology, for any topology on the coefficient ring. -/
 theorem isEmbedding_quotientPointsHom (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
     IsEmbedding (quotientPointsHom H I (CommAlgCat.of R A)) := by
-  let q := CommHopfAlgCat.mkQuotient H I
-  have heq : ⇑(quotientPointsHom H I (CommAlgCat.of R A)) = BialgHom.mapDomain (A := A) q.hom := by
-    funext x
-    rw [quotientPointsHom_apply, BialgHom.mapDomain_apply]
-  rw [heq]
-  exact q.hom.isEmbedding_mapDomain_of_surjective (CommHopfAlgCat.mkQuotient_surjective H I)
+  rw [coe_quotientPointsHom]
+  exact (CommHopfAlgCat.mkQuotient H I).hom.isEmbedding_mapDomain_of_surjective
+    (CommHopfAlgCat.mkQuotient_surjective H I)
 
 variable [T1Space A]
 

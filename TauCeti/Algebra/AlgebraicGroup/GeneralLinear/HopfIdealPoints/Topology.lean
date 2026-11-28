@@ -15,9 +15,9 @@ import TauCeti.Topology.Algebra.PointTopology.HopfIdeal
 Let `I` be a Hopf ideal of the coordinate Hopf algebra of `GL_n` over `k`, cutting out a closed
 subgroup scheme. Over a T1 topological ring `R`, its points
 `TauCeti.GeneralLinear.hopfIdealPointsSubgroup n I R` form a closed subgroup of
-`GL (Fin n) R`: the homeomorphism `TauCeti.GeneralLinear.pointsContinuousMulEquiv` carries them
-onto the points vanishing on `I`, which are closed in the point topology
-(`TauCeti.PointTopology.isClosed_quotientPointsSubgroup`).
+`GL (Fin n) R`. The homeomorphism `TauCeti.GeneralLinear.pointsContinuousMulEquiv` carries the
+points vanishing on `I` onto this matrix subgroup. The vanishing locus is closed in the point
+topology (`TauCeti.PointTopology.isClosed_quotientPointsSubgroup`).
 
 The identification of the points of the quotient coordinate ring with this matrix subgroup is a
 homeomorphism for the subspace topology.

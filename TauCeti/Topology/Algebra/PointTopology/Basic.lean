@@ -47,6 +47,8 @@ schemes over `k` and their convolution groups of points are set up.
   `WithConv (A →ₐ[k] R)`, with `TauCeti.PointTopology.isHomeomorph_ofConv`,
   `TauCeti.PointTopology.continuous_withConv_iff` and
   `TauCeti.PointTopology.continuous_eval_ofConv`.
+* `TauCeti.PointTopology.instFiniteConnectedComponentsWithConvPoints`: component finiteness
+  transfers from the point space to its convolution type.
 * `TauCeti.PointTopology.isEmbedding_coeFn`, `TauCeti.PointTopology.continuous_eval` and
   `TauCeti.PointTopology.continuous_iff`: the characterization by evaluations.
 * `TauCeti.PointTopology.polynomialHomeomorph` and
@@ -120,6 +122,14 @@ theorem isHomeomorph_ofConv :
     IsHomeomorph (WithConv.ofConv : WithConv (A →ₐ[k] R) → A →ₐ[k] R) :=
   isHomeomorph_iff_isEmbedding_surjective.2
     ⟨⟨⟨rfl⟩, WithConv.ofConv_injective⟩, WithConv.ofConv_surjective⟩
+
+variable (k A R) in
+/-- The convolution type has finitely many connected components whenever the underlying point
+space does. -/
+instance instFiniteConnectedComponentsWithConvPoints [Finite (ConnectedComponents (A →ₐ[k] R))] :
+    Finite (ConnectedComponents (WithConv (A →ₐ[k] R))) :=
+  let e := (isHomeomorph_ofConv (k := k) (A := A) (R := R)).homeomorph.symm
+  Finite.of_surjective _ (e.continuous.connectedComponentsMap_surjective e.surjective)
 
 /-- A map into `WithConv (A →ₐ[k] R)` is continuous exactly when its composite with every
 evaluation is. -/

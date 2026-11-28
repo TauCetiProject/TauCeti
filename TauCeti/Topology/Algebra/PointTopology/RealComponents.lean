@@ -51,14 +51,4 @@ instance instFiniteConnectedComponentsRealPoints
   let e := P.pointsHomeomorphZeroSet.symm.trans (baseChangeHomeomorph k ℝ A ℝ)
   exact e.continuous.finite_connectedComponents_of_surjective e.surjective
 
-/-- The convolution type has finitely many connected components whenever the underlying point
-space does. No Hopf structure is required. For real points, finite type after base change to
-`ℝ` suffices by `instFiniteConnectedComponentsRealPoints`. -/
-instance instFiniteConnectedComponentsWithConvPoints
-    (k A R : Type*) [CommSemiring k] [Semiring A] [Algebra k A] [Semiring R] [Algebra k R]
-    [TopologicalSpace R] [Finite (ConnectedComponents (A →ₐ[k] R))] :
-    Finite (ConnectedComponents (WithConv (A →ₐ[k] R))) :=
-  let e := (isHomeomorph_ofConv (k := k) (A := A) (R := R)).homeomorph.symm
-  e.continuous.finite_connectedComponents_of_surjective e.surjective
-
 end TauCeti.PointTopology
