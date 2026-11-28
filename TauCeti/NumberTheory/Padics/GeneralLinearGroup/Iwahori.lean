@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Iwahori.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Iwahori
 -- `PadicInt.finite_residueField` and `PadicInt.card_residueField`: the residue field of `ℤ_[p]`
 -- has `p` elements.
 public import TauCeti.NumberTheory.Padics.RingHoms

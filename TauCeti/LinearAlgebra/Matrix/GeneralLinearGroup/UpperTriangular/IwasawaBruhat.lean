@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Valuation.ValuationSubring
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Iwahori.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Iwahori
 public import TauCeti.LinearAlgebra.Matrix.Permutation
 
 import TauCeti.RingTheory.Valuation.Basic

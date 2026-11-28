@@ -82,6 +82,19 @@ variable {m R}
 theorem iwahoriOne_le_iwahori : iwahoriOne m R ≤ iwahori m R :=
   upperUnitriangularCongruenceSubgroup_le_upperTriangularCongruenceSubgroup
 
+/-- For any antitone labelling `τ : m → α`, the Iwahori subgroup `iwahori m R` is contained in
+`parahoricSubgroup τ (maximalIdeal R)`. -/
+theorem iwahori_le_parahoricSubgroup {α : Type*} [LinearOrder α] {τ : m → α} (hτ : Antitone τ) :
+    iwahori m R ≤ parahoricSubgroup τ (maximalIdeal R) :=
+  upperTriangularCongruenceSubgroup_le_parahoricSubgroup hτ (maximalIdeal R)
+
+/-- For any antitone labelling `τ : m → α`, the pro-`p` Iwahori subgroup `iwahoriOne m R` is
+contained in `parahoricSubgroup τ (maximalIdeal R)`. -/
+theorem iwahoriOne_le_parahoricSubgroup {α : Type*} [LinearOrder α] {τ : m → α}
+    (hτ : Antitone τ) :
+    iwahoriOne m R ≤ parahoricSubgroup τ (maximalIdeal R) :=
+  iwahoriOne_le_iwahori.trans (iwahori_le_parahoricSubgroup hτ)
+
 /-- The Iwahori subgroup is the preimage of the upper-triangular subgroup of `GL_m` of the residue
 field. -/
 theorem comap_generalLinearGroupMap_residue_upperTriangularGroup :
