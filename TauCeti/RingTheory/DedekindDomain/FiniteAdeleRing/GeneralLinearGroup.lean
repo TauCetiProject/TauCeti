@@ -100,12 +100,6 @@ theorem commute_of_forall_map_proj_eq_one_or {x y : GL ι (FiniteAdeleRing R K)}
 
 /-! ### Matrices placed at a single place -/
 
-omit [DecidableEq ι] in
-/-- The projection to the component at a place is multiplicative on matrices. -/
-private theorem map_proj_mul (u : HeightOneSpectrum R) (X Y : Matrix ι ι (FiniteAdeleRing R K)) :
-    (X * Y).map (proj K u) = X.map (proj K u) * Y.map (proj K u) :=
-  Matrix.map_mul (f := (proj K u).toRingHom)
-
 omit [Fintype ι] in
 /-- The component at a place `u` of the matrix `(A - 1).map (single K v) + 1`. -/
 private theorem map_proj_sub_one_map_single_add_one (u v : HeightOneSpectrum R)
@@ -139,7 +133,7 @@ def ofAdicCompletionMatrix (v : HeightOneSpectrum R) :
   toFun A := (A - 1).map (single K v) + 1
   map_one' := by simp
   map_mul' A B := matrix_ext fun u ↦ by
-    rw [map_proj_mul]
+    rw [← RingHom.coe_coe (proj K u), Matrix.map_mul, RingHom.coe_coe]
     rcases eq_or_ne u v with rfl | hu
     · simp only [map_proj_sub_one_map_single_add_one_self]
     · simp only [map_proj_sub_one_map_single_add_one_of_ne hu, one_mul]
