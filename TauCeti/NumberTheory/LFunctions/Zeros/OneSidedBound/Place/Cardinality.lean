@@ -32,16 +32,17 @@ namespace TauCeti.OneSidedBound.Parameters
 /-- The total number of unit labels at level `q₁ s` is `towerDeg s` times the number at `q₀`. -/
 @[simp] theorem totient_q₁ (P : Parameters) (s : ℕ) :
     (P.q₁ s).totient = towerDeg s * P.q₀.totient := by
-  have hdvd : towerDeg s ∣ P.q₁ s := (P.q₁_def s).symm ▸ dvd_mul_left _ _
-  have hs : (towerDeg s).primeFactors ⊆ P.q₀.primeFactors :=
-    P.primeFactors_q₁ s ▸ Nat.primeFactors_mono hdvd (P.q₁_pos s).ne'
-  exact (P.q₁_def s).symm ▸ Nat.totient_mul_of_primeFactors_subset hs
+  rw [P.q₁_def]
+  apply Nat.totient_mul_of_primeFactors_subset
+  rw [← P.primeFactors_q₁ s]
+  exact Nat.primeFactors_mono (by rw [P.q₁_def]; exact dvd_mul_left _ _) (P.q₁_pos s).ne'
 
 /-- Every unit class modulo `q₀` labels exactly `towerDeg s` units at level `q₁ s`. -/
 @[simp] theorem card_unitsMap_q₁_fiber (P : Parameters) (s : ℕ) (u : (ZMod P.q₀)ˣ) :
     Fintype.card {v : (ZMod (P.q₁ s))ˣ // ZMod.unitsMap (P.q₀_dvd_q₁ s) v = u} = towerDeg s := by
   rw [← Nat.card_eq_fintype_card,
-    ZMod.card_unitsMap_fiber_of_primeFactors_subset (P.q₀_dvd_q₁ s) (P.primeFactors_q₁ s).le u,
+    ZMod.card_unitsMap_fiber_of_primeFactors_subset (P.q₀_dvd_q₁ s)
+      (Finset.subset_of_eq (P.primeFactors_q₁ s)) u,
     P.q₁_def, Nat.mul_div_cancel_left _ P.q₀_pos]
 
 end TauCeti.OneSidedBound.Parameters
