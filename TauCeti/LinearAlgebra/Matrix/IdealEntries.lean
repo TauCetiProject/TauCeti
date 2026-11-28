@@ -50,6 +50,8 @@ closure proof performs when it propagates a relation through a matrix identity.
   homomorphism exactly when its image under that homomorphism is zero.
 * `Matrix.mem_ideal_smul_top_iff`: a square matrix lies in `I • M_n(R)` exactly when its entries
   lie in the ideal `I`.
+* `Matrix.exists_eq_smul_of_map_eq_zero`: if the kernel of `f` is contained in `(r)`, a
+  rectangular matrix that vanishes under `f` is `r` times another matrix.
 * `Matrix.scalar_dvd_of_map_eq_zero`: if the kernel of `f` is contained in `(r)`, a square
   matrix that vanishes under `f` is divisible by the scalar matrix `r`.
 * `Matrix.exists_map_eq_and_apply_eq_zero`: along a surjection, a matrix lifts to one vanishing
@@ -191,35 +193,37 @@ theorem map_mk_eq_map_mk_iff [CommRing S] {r : S} {A A' : Matrix m n S} :
     ext i j
     simp [Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self r)]
 
+/-- If the kernel of `f` is contained in `(r)`, a matrix that vanishes under `f` is `r` times
+another matrix of the same shape. -/
+theorem exists_eq_smul_of_map_eq_zero [CommSemiring S] {T F : Type*} [Semiring T]
+    [FunLike F S T] [RingHomClass F S T] {f : F} {r : S} (hf : RingHom.ker f ≤ Ideal.span {r})
+    {M : Matrix m n S} (hM : M.map f = 0) : ∃ C : Matrix m n S, M = r • C := by
+  have hdvd (i : m) (j : n) : ∃ c, M i j = r * c :=
+    Ideal.mem_span_singleton.mp (hf (forall_mem_ker_iff_map_eq_zero.mpr hM i j))
+  choose C hC using hdvd
+  refine ⟨of C, ext fun i j ↦ ?_⟩
+  rw [Matrix.smul_apply, of_apply, smul_eq_mul]
+  exact hC i j
+
 /-- **A matrix killed by a ring homomorphism with principal kernel.** If `ker f = (r)`, a matrix
 vanishes under `f` exactly when it is `r` times a matrix. -/
 theorem map_eq_zero_iff_exists_eq_smul [CommSemiring S] {T F : Type*} [Semiring T] [FunLike F S T]
     [RingHomClass F S T] {f : F} {r : S} (hf : RingHom.ker f = Ideal.span {r})
     {M : Matrix m n S} : M.map f = 0 ↔ ∃ C : Matrix m n S, M = r • C := by
-  refine ⟨fun h ↦ ?_, ?_⟩
-  · have hdvd (i : m) (j : n) : ∃ c, M i j = r * c := by
-      have := forall_mem_ker_iff_map_eq_zero.mpr h i j
-      rw [hf] at this
-      exact Ideal.mem_span_singleton.mp this
-    choose C hC using hdvd
-    exact ⟨of C, ext fun i j ↦ by simp [hC]⟩
-  · rintro ⟨C, rfl⟩
-    refine forall_mem_ker_iff_map_eq_zero.mp fun i j ↦ ?_
-    rw [hf, Matrix.smul_apply, smul_eq_mul]
-    exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self r)
+  refine ⟨exists_eq_smul_of_map_eq_zero hf.le, ?_⟩
+  rintro ⟨C, rfl⟩
+  refine forall_mem_ker_iff_map_eq_zero.mp fun i j ↦ ?_
+  rw [hf, Matrix.smul_apply, smul_eq_mul]
+  exact Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self r)
 
-open scoped Pointwise in
 /-- If the kernel of `f` is contained in `(r)` and `M` vanishes under `f`, then the scalar
 matrix `r` divides `M`. -/
 theorem scalar_dvd_of_map_eq_zero [CommSemiring S] [Fintype n] [DecidableEq n]
     {T F : Type*} [Semiring T] [FunLike F S T] [RingHomClass F S T] {f : F} {r : S}
     (hf : RingHom.ker f ≤ Ideal.span {r}) {M : Matrix n n S} (hM : M.map f = 0) :
     scalar n r ∣ M := by
-  have hmem : M ∈ Ideal.span {r} • (⊤ : Submodule S (Matrix n n S)) :=
-    (mem_ideal_smul_top_iff _).mpr fun i j ↦ hf (forall_mem_ker_iff_map_eq_zero.mpr hM i j)
-  rw [Submodule.ideal_span_singleton_smul] at hmem
-  obtain ⟨C, -, hC⟩ := (Submodule.mem_smul_pointwise_iff_exists M r ⊤).mp hmem
-  exact ⟨C, by simpa only [scalar_apply, ← smul_eq_diagonal_mul] using hC.symm⟩
+  obtain ⟨C, hC⟩ := exists_eq_smul_of_map_eq_zero hf hM
+  exact ⟨C, by simpa only [scalar_apply, ← smul_eq_diagonal_mul] using hC⟩
 
 /-- **The powers of a matrix with entries in an ideal.** If every entry of a square matrix `M`
 lies in `I`, then every entry of `M ^ k` lies in `I ^ k`. -/

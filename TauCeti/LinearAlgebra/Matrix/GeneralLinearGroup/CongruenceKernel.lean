@@ -13,8 +13,11 @@ import Mathlib.RingTheory.AdicCompletion.Noetherian
 import Mathlib.RingTheory.ZMod
 import TauCeti.Data.Nat.Pow
 import TauCeti.GroupTheory.Torsion
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.LinearAlgebra.Matrix.IdealEntries
+import TauCeti.NumberTheory.Padics.FractionField
 import TauCeti.NumberTheory.Padics.PadicIntegers
+import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.RingTheory.AdicCompletion.Pi
 import TauCeti.RingTheory.RootsOfUnity.Congruence
 
@@ -59,7 +62,7 @@ Torsion-freeness of the congruence kernel is Serre's lemma
 `TauCeti.eq_one_of_isOfFinOrder_of_pow_dvd_sub_one`, applied in the matrix ring `Matrix n n R`
 with `ℓ ^ k ≥ 3`. The integer case uses `ZMod.ker_intCastRingHom` and
 `Nat.exists_prime_pow_dvd_of_three_le`. The p-adic case uses `PadicInt.ker_toZModPow` and
-`PadicInt.ker_toZMod`.
+identifies `PadicInt.toZMod` with `PadicInt.toZModPow 1` after changing the modulus by `pow_one`.
 
 ## References
 
@@ -108,13 +111,12 @@ theorem isMulTorsionFree_ker_map {ℓ k : ℕ} (hℓ : ℓ.Prime) (hk : 3 ≤ �
   refine IsMulTorsionFree.of_not_isOfFinOrder ?_
   rintro ⟨g, hg⟩ hne hfin
   refine hne ?_
-  have hgφ : (g : Matrix n n R).map φ = 1 := by
-    simpa only [Units.ext_iff, ← Matrix.ext_iff, Matrix.map_apply,
-      Matrix.GeneralLinearGroup.map_apply, Units.val_one]
-      using MonoidHom.mem_ker.mp hg
+  have hgφ : φ.mapMatrix (g : Matrix n n R) = 1 := by
+    simpa only [Matrix.GeneralLinearGroup.map, Units.coe_map, RingHom.toMonoidHom_eq_coe,
+      MonoidHom.coe_ofClass, Units.val_one] using congrArg
+      (Units.val : GL n S → Matrix n n S) (MonoidHom.mem_ker.mp hg)
   have hgφ' : ((g : Matrix n n R) - 1).map φ = 0 := by
-    rw [← RingHom.mapMatrix_apply, map_sub, map_one]
-    exact sub_eq_zero.mpr ((RingHom.mapMatrix_apply _ _).trans hgφ)
+    rw [← RingHom.mapMatrix_apply, map_sub, map_one, hgφ, sub_self]
   have hg1 : (ℓ : Matrix n n R) ^ k ∣ (g : Matrix n n R) - 1 := by
     simpa only [map_pow, map_natCast] using Matrix.scalar_dvd_of_map_eq_zero hφ hgφ'
   refine Subtype.ext (Units.ext (TauCeti.eq_one_of_isOfFinOrder_of_pow_dvd_sub_one hℓ ?_ ?_ hk
@@ -168,9 +170,13 @@ theorem isMulTorsionFree_ker_map_toZMod (hp : Odd p) :
     IsMulTorsionFree (map (n := n) (PadicInt.toZMod : ℤ_[p] →+* ZMod p)).ker := by
   have hprime : p.Prime := Fact.out
   have hlevel : 3 ≤ p ^ 1 := by simpa only [pow_one] using hprime.odd_iff.mp hp
-  refine isMulTorsionFree_ker_map hprime hlevel
-    (.of_ne_zero (by exact_mod_cast hprime.ne_zero)) inferInstance _ ?_
-  rw [pow_one, PadicInt.ker_toZMod, PadicInt.maximalIdeal_eq_span_p]
+  let e := ZMod.ringEquivCongr (pow_one p)
+  have he : Continuous e := continuous_of_discreteTopology
+  have hcomp : PadicInt.toZMod = e.toRingHom.comp (PadicInt.toZModPow 1) :=
+    PadicInt.ringHom_ext_of_continuous PadicInt.continuous_toZMod
+      (he.comp (PadicInt.continuous_toZModPow 1))
+  rw [hcomp, map_comp, MonoidHom.ker_comp_of_injective _ _ (map_injective e.injective)]
+  exact isMulTorsionFree_ker_map_toZModPow hlevel
 
 /-- For an odd prime `p`, reduction `GL n ℤ_[p] → GL n (ZMod p)` is injective on every
 torsion subgroup. -/
@@ -202,11 +208,7 @@ theorem eq_one_of_isOfFinOrder_of_map_intCast_eq_one {m : ℕ} (hm : 3 ≤ m)
     {g : GL n ℤ} (hg : IsOfFinOrder g) (h : map (Int.castRingHom (ZMod m)) g = 1) :
     g = 1 := by
   have := isMulTorsionFree_ker_map_intCast (n := n) hm
-  let K := (map (n := n) (Int.castRingHom (ZMod m))).ker
-  let x : K := ⟨g, MonoidHom.mem_ker.mpr h⟩
-  have hxg : K.subtype x = g := by simp only [Subgroup.coe_subtype, x]
-  have hx : IsOfFinOrder x := K.subtype_injective.isOfFinOrder_iff.mp (hxg.symm ▸ hg)
-  exact hxg.symm.trans ((congrArg K.subtype hx.eq_one').trans (map_one K.subtype))
+  exact (map _).eq_one_of_isOfFinOrder_of_map_eq_one hg h
 
 /-- Reduction modulo `m ≥ 3` is injective on every torsion subgroup of `GL n ℤ`. -/
 theorem domRestrict_map_intCast_injective {m : ℕ} (hm : 3 ≤ m)
