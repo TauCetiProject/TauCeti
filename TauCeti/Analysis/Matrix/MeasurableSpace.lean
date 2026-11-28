@@ -28,6 +28,8 @@ of scalars is measurable even at zero.
 
 * `TauCeti.measurable_matrix_vec` — vectorization is measurable.
 * `TauCeti.matrixVecMeasurableEquiv` — vectorization as a measurable equivalence.
+* `TauCeti.matrixRowMeasurableEquiv` — row-indexed coordinates as a measurable equivalence with
+  matrices.
 * `TauCeti.instMeasurableAddMatrix` — entrywise addition of matrices is measurable.
 * `TauCeti.measurable_matrix_mul` — matrix multiplication is measurable, and the
   `MeasurableMul₂` instance it supplies for square matrices.
@@ -74,6 +76,25 @@ theorem matrixVecMeasurableEquiv_apply {m n α : Type*} [MeasurableSpace α] (p 
 theorem matrixVecMeasurableEquiv_symm_apply {m n α : Type*} [MeasurableSpace α] (p : ENNReal)
     (x : WithLp p (n × m → α)) :
     (matrixVecMeasurableEquiv p).symm x = Matrix.of fun i j => x.ofLp (j, i) :=
+  (rfl)
+
+/-- Row-indexed `L^p` coordinates as a measurable equivalence with matrices. Coordinate `(i, j)`
+becomes matrix entry `(i, j)`. -/
+def matrixRowMeasurableEquiv {m n α : Type*} [MeasurableSpace α] (p : ENNReal) :
+    WithLp p (m × n → α) ≃ᵐ Matrix m n α :=
+  (MeasurableEquiv.toLp p (m × n → α)).symm.trans <|
+    (MeasurableEquiv.curry m n α).trans (Matrix.ofMeasurableEquiv m n α)
+
+@[simp]
+theorem matrixRowMeasurableEquiv_apply {m n α : Type*} [MeasurableSpace α] (p : ENNReal)
+    (x : WithLp p (m × n → α)) :
+    matrixRowMeasurableEquiv p x = Matrix.of fun i j => x.ofLp (i, j) :=
+  (rfl)
+
+@[simp]
+theorem matrixRowMeasurableEquiv_symm_apply {m n α : Type*} [MeasurableSpace α] (p : ENNReal)
+    (A : Matrix m n α) :
+    (matrixRowMeasurableEquiv p).symm A = WithLp.toLp p fun ij => A ij.1 ij.2 :=
   (rfl)
 
 section Triangular
