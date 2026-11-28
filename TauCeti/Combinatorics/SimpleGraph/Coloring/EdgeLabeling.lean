@@ -6,15 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Coloring.EdgeLabeling
+import Mathlib.Data.Set.Finite.Lattice
 
 /-!
-# Colour graphs of edge labellings under pullback and relabelling
+# Colour graphs of edge labellings
 
 For an edge labelling `C` of a graph and a label `k`, Mathlib's `C.labelGraph k` is the graph of
-the edges labelled `k`. This file computes that graph for two operations on labellings:
-pulling a labelling back along a graph homomorphism (`SimpleGraph.EdgeLabeling.pullback`), which
-gives the pulled-back graph intersected with the source graph, with the special cases of a graph
-embedding and of restricting a labelling of the complete graph along an injection of vertices
+the edges labelled `k`. The degrees of these graphs at a vertex sum to its degree in the original
+graph (`SimpleGraph.EdgeLabeling.sum_degree_labelGraph`); for a labelling of a complete graph this
+gives `Fintype.card V - 1` (`SimpleGraph.TopEdgeLabeling.sum_degree_labelGraph`).
+
+This file also computes colour graphs for two operations on labellings: pulling a labelling back
+along a graph homomorphism (`SimpleGraph.EdgeLabeling.pullback`), which gives the pulled-back graph
+intersected with the source graph, with the special cases of a graph embedding and of restricting
+a labelling of the complete graph along an injection of vertices
 (`SimpleGraph.TopEdgeLabeling.pullback`); and composing with an injective map of labels
 (`SimpleGraph.EdgeLabeling.compRight`), which keeps the graph of each label. These are the facts
 needed to move monochromatic cliques between colourings, as in Ramsey theory.
@@ -22,9 +27,34 @@ needed to move monochromatic cliques between colourings, as in Ramsey theory.
 
 public section
 
+open Finset
+
 namespace SimpleGraph
 
 variable {V V' : Type*} {G : SimpleGraph V} {G' : SimpleGraph V'} {K K' : Type*}
+
+/-- The degrees at a vertex of all colour graphs of an edge labelling sum to its degree in the
+original graph. -/
+@[simp]
+theorem EdgeLabeling.sum_degree_labelGraph [Fintype K] (C : EdgeLabeling G K) (v : V)
+    [Fintype (G.neighborSet v)] [∀ k, Fintype ((C.labelGraph k).neighborSet v)] :
+    ∑ k, (C.labelGraph k).degree v = G.degree v := by
+  classical
+  simp only [← card_neighborFinset_eq_degree]
+  rw [← card_biUnion fun k _ l _ hkl ↦ Finset.disjoint_coe.1 <| by
+    rw [coe_neighborFinset, coe_neighborFinset]
+    exact SimpleGraph.disjoint_neighborSet.2 (EdgeLabeling.pairwise_disjoint_labelGraph hkl) v]
+  congr 1
+  simp only [neighborFinset_def, ← Set.toFinset_iUnion, ← SimpleGraph.neighborSet_iSup,
+    C.iSup_labelGraph]
+
+/-- The degrees at a vertex of all colour graphs of a complete-graph edge labelling sum to one less
+than the number of vertices. -/
+theorem TopEdgeLabeling.sum_degree_labelGraph [Fintype V] [Fintype K]
+    (C : TopEdgeLabeling V K) (v : V) [∀ k, Fintype ((C.labelGraph k).neighborSet v)] :
+    ∑ k, (C.labelGraph k).degree v = Fintype.card V - 1 := by
+  classical
+  simp [complete_graph_degree]
 
 /-- Relabelling the edges along an injective map of labels does not change the graph of the edges
 of a given label. -/

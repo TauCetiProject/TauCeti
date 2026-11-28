@@ -33,6 +33,8 @@ definition: for finitely many colours the number is `0` exactly when some demand
 * `TauCeti.RamseyProp.exists_isNClique_subset`: the property on `m` vertices gives a monochromatic
   clique inside every set of at least `m` vertices of a coloured complete graph, on any vertex
   type; in particular the property is upward closed (`TauCeti.RamseyProp.mono`).
+* `TauCeti.RamseyProp.exists_isNClique_of_le_degree`: a large enough neighbourhood in colour `k`
+  for the lowered Ramsey property yields a clique for the original demand.
 * `TauCeti.ramseyProp_succ_of_sum_lt`: the recursive step of Greenwood and Gleason, stated for the
   property: if `RamseyProp (f − eₖ) (n k)` for each colour `k`, then `RamseyProp f (N + 1)` as soon
   as `∑ₖ (n k − 1) < N`.
@@ -110,6 +112,26 @@ theorem RamseyProp.exists_isNClique {V : Type*} [Fintype V] (h : RamseyProp f m)
   let ⟨k, s, _, hs⟩ := h.exists_isNClique_subset C (A := univ) (by simpa using hV)
   ⟨k, s, hs⟩
 
+/-- If the lowered Ramsey property holds on `m` vertices and the `k`-coloured neighbourhood of `v`
+has at least `m` vertices, then the colouring contains a monochromatic clique meeting `f`. -/
+theorem RamseyProp.exists_isNClique_of_le_degree {V : Type*} [DecidableEq K]
+    {k : K} (h : RamseyProp (Function.update f k (f k - 1)) m)
+    (C : TopEdgeLabeling V K) {v : V} [Fintype ((C.labelGraph k).neighborSet v)]
+    (hv : m ≤ (C.labelGraph k).degree v) :
+    ∃ j s, (C.labelGraph j).IsNClique (f j) s := by
+  classical
+  rw [← card_neighborFinset_eq_degree] at hv
+  obtain ⟨j, s, hsA, hs⟩ := h.exists_isNClique_subset C (A := (C.labelGraph k).neighborFinset v) hv
+  obtain rfl | hjk := eq_or_ne j k
+  · obtain hj | hj := eq_or_ne (f j) 0
+    · exact ⟨j, ∅, by simp [hj]⟩
+    rw [Function.update_self] at hs
+    refine ⟨j, insert v s, ?_⟩
+    rw [← Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hj)]
+    exact hs.insert fun w hw ↦ by simpa using hsA hw
+  · rw [Function.update_of_ne hjk] at hs
+    exact ⟨j, s, hs⟩
+
 /-- The Ramsey property is upward closed in the number of vertices. -/
 theorem RamseyProp.mono (h : RamseyProp f m) (hmn : m ≤ n) : RamseyProp f n := fun C ↦
   h.exists_isNClique C (by simpa using hmn)
@@ -145,29 +167,11 @@ theorem ramseyProp_succ_of_sum_lt [Fintype K] [DecidableEq K] {n : K → ℕ} {N
     (h : ∀ k, RamseyProp (Function.update f k (f k - 1)) (n k)) (hN : ∑ k, (n k - 1) < N) :
     RamseyProp f (N + 1) := by
   intro C
-  -- The vertex `0` has `N` neighbours, so by the pigeonhole principle at least `n k` of them along
-  -- edges of some colour `k`. Among those there is a set of `f j` vertices of a colour `j ≠ k`, or
-  -- a set of `f k - 1` vertices of colour `k`, which the vertex `0` extends.
-  set A : K → Finset (Fin (N + 1)) := fun k ↦ {w | (C.labelGraph k).Adj 0 w} with hA
-  have hunion : univ.biUnion A = univ.erase 0 := by
-    ext w
-    simp [hA, eq_comm]
-  have hcard : ∑ k, #(A k) = N := by
-    rw [← card_biUnion (t := A) fun k _ l _ hkl ↦ disjoint_filter.2 fun w _ hk hl ↦
-      SimpleGraph.disjoint_left.1 (EdgeLabeling.pairwise_disjoint_labelGraph hkl) _ _ hk hl,
-      hunion]
+  have hcard : ∑ k, (C.labelGraph k).degree 0 = N := by
+    rw [TopEdgeLabeling.sum_degree_labelGraph]
     simp
   obtain ⟨k, -, hk⟩ := exists_lt_of_sum_lt (hN.trans_eq hcard.symm)
-  obtain ⟨j, s, hsA, hs⟩ := (h k).exists_isNClique_subset C (A := A k) (by omega)
-  obtain rfl | hjk := eq_or_ne j k
-  · obtain hj | hj := eq_or_ne (f j) 0
-    · exact ⟨j, ∅, by simp [hj]⟩
-    rw [Function.update_self] at hs
-    refine ⟨j, insert 0 s, ?_⟩
-    rw [← Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.2 hj)]
-    exact hs.insert fun w hw ↦ by simpa [hA] using hsA hw
-  · rw [Function.update_of_ne hjk] at hs
-    exact ⟨j, s, hs⟩
+  exact (h k).exists_isNClique_of_le_degree (v := 0) C (by omega)
 
 /-- **Ramsey's theorem** for complete graphs, in finitely many colours: for every demand, the
 Ramsey property holds on some number of vertices. -/
@@ -216,6 +220,12 @@ theorem exists_isNClique_of_ramseyNumber_le [Finite K] {V : Type*} [Fintype V]
 /-- For finitely many colours, the Ramsey number is `0` exactly when some demand is `0`. -/
 theorem ramseyNumber_eq_zero_iff [Finite K] : ramseyNumber f = 0 ↔ ∃ k, f k = 0 := by
   rw [← Nat.le_zero, ← ramseyProp_iff_ramseyNumber_le, ramseyProp_zero_iff]
+
+/-- For finitely many colours, the Ramsey number is positive exactly when every demand is
+positive. -/
+theorem ramseyNumber_pos_iff [Finite K] : 0 < ramseyNumber f ↔ ∀ k, 0 < f k := by
+  rw [Nat.pos_iff_ne_zero, ne_eq, ramseyNumber_eq_zero_iff]
+  simp only [not_exists, Nat.pos_iff_ne_zero]
 
 /-- For finitely many colours, the Ramsey number is at most `1` exactly when some demand is at
 most `1`. -/

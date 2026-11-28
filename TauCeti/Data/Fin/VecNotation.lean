@@ -10,20 +10,23 @@ import Mathlib.Data.Fin.Tuple.Reflection
 import Mathlib.Tactic.FinCases
 
 /-!
-# Postcomposing a pair with a function, and updating a four-tuple
+# Postcomposing a pair with a function, and updating small tuples
 
 Postcomposing the pair `![a₀, a₁]` with a function `f` applies `f` to both entries
 (`Matrix.comp_vec2`), in the style of `Matrix.smul_vec2` and `Matrix.vec2_add`. This is the form in
 which a pair of vectors meets a pullback, for instance `Prod.fst ∘ ![u, u'] = ![u.1, u'.1]` when
 a form on a factor is pulled back to a product.
 
-Replacing the entry in slot `i` of a four-tuple `![a₀, a₁, a₂, a₃]` by `p` gives the four-tuple
-with `p` in slot `i` (`Matrix.update_vec4_zero` to `Matrix.update_vec4_three`). This is the form
-in which a multilinear map in four arguments is used as a linear map in a single slot.
+Replacing the entry in slot `i` of a pair `![a₀, a₁]` or four-tuple `![a₀, a₁, a₂, a₃]` by `p`
+gives the tuple with `p` in slot `i` (`Matrix.update_vec2_zero`, `Matrix.update_vec2_one`, and
+`Matrix.update_vec4_zero` to `Matrix.update_vec4_three`). This is the form in which a pair of
+demands or a multilinear map in four arguments is updated in a single slot.
 
 ## Main results
 
 * `Matrix.comp_vec2`: `f ∘ ![a₀, a₁] = ![f a₀, f a₁]`.
+* `Matrix.update_vec2_zero`, `Matrix.update_vec2_one`: `Function.update ![a₀, a₁] i p` for each
+  slot `i`.
 * `Matrix.update_vec4_zero`, `Matrix.update_vec4_one`, `Matrix.update_vec4_two`,
   `Matrix.update_vec4_three`: `Function.update ![a₀, a₁, a₂, a₃] i p` for each slot `i`.
 -/
@@ -39,6 +42,20 @@ theorem comp_vec2 {α β : Type*} (f : α → β) (a₀ a₁ : α) : f ∘ ![a�
 section Update
 
 variable {α : Type*} (a₀ a₁ a₂ a₃ p : α)
+
+/-- Replacing the first entry of a pair. -/
+@[simp]
+theorem update_vec2_zero : Function.update ![a₀, a₁] 0 p = ![p, a₁] := by
+  ext i
+  revert i
+  exact Fin.forall_fin_two.2 (by simp)
+
+/-- Replacing the second entry of a pair. -/
+@[simp]
+theorem update_vec2_one : Function.update ![a₀, a₁] 1 p = ![a₀, p] := by
+  ext i
+  revert i
+  exact Fin.forall_fin_two.2 (by simp)
 
 /-- Replacing the first entry of a four-tuple. -/
 @[simp]
