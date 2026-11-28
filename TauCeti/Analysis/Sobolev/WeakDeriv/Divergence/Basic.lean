@@ -21,6 +21,10 @@ restriction and changes of representative, and agrees with the trace when the fi
 Fréchet derivative. Against an additive Haar measure it therefore recovers classical divergence
 for a continuously differentiable field. In particular, the kernel of divergence on test
 fields consists exactly of the weakly solenoidal test fields.
+
+A field `u • e` pointing in a fixed direction `e` has as weak divergence the weak derivative of `u`
+in the direction `e`. So it is solenoidal as soon as `u` is constant along the lines parallel to
+`e`, with no regularity of `u` across them, as for the shear `(g(x₂), 0)` of the plane.
 -/
 
 public section
@@ -214,6 +218,19 @@ theorem sum [OpensMeasurableSpace E] {ι : Type*} {w : ι → E → E} (s : Fins
 
 end IsSolenoidalOn
 
+/-- If the scalar field `u` has weak derivative `u'` in the direction `e`, then the vector field
+`u • e` has weak divergence `u'`. -/
+theorem HasWeakLineDerivOn.hasWeakDivergenceOn_smul_const {u u' : E → ℝ} {e : E}
+    (hu : HasWeakLineDerivOn μ Ω u u' e) :
+    HasWeakDivergenceOn μ Ω (fun x ↦ u x • e) u' := by
+  have hfield : LocallyIntegrableOn (fun x ↦ u x • e) Ω μ := by
+    simpa only [Function.comp_def, ContinuousLinearMap.toSpanSingleton_apply] using
+      (ContinuousLinearMap.toSpanSingleton ℝ e).locallyIntegrableOn_comp hu.locallyIntegrableOn
+  refine ⟨hfield, hu.locallyIntegrableOn_deriv, fun φ ↦ ?_⟩
+  have hφ : Differentiable ℝ (φ : E → ℝ) := φ.contDiff.differentiable (by simp)
+  simpa [real_inner_smul_left, inner_gradient_right, (hφ _).lineDeriv_eq_fderiv, mul_comm] using
+    hu.integral_lineDeriv_smul_eq_neg_integral_smul φ
+
 end Basic
 
 variable [FiniteDimensional ℝ E]
@@ -262,6 +279,17 @@ theorem _root_.ContDiffOn.isSolenoidalOn_iff (hu : ContDiffOn ℝ 1 u Ω) :
         (hu.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl)
   · intro hzero
     exact hdiv.congr_ae .rfl (ae_restrict_of_forall_mem Ω.isOpen.measurableSet hzero)
+
+/-- A locally integrable scalar `f` that is constant along the lines in the direction `e` makes
+`f • e` solenoidal, with no regularity of `f` across these lines. -/
+theorem isSolenoidalOn_smul_const_of_forall_add_smul_eq {f : E → ℝ} {e : E}
+    (hf : LocallyIntegrableOn f Ω μ) (hfe : ∀ x (t : ℝ), f (x + t • e) = f x) :
+    IsSolenoidalOn μ Ω (fun x ↦ f x • e) := by
+  refine HasWeakLineDerivOn.hasWeakDivergenceOn_smul_const
+    (hasWeakLineDerivOn_of_hasLineDerivAt hf locallyIntegrableOn_zero fun x _ ↦ ?_)
+  have hline : (fun t : ℝ ↦ f (x + t • e)) = fun _ ↦ f x := funext (hfe x)
+  rw [HasLineDerivAt, hline]
+  exact hasDerivAt_const _ _
 
 end TauCeti
 
