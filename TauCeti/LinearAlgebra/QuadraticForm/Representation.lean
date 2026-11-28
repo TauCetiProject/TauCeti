@@ -78,11 +78,7 @@ image. -/
 theorem Isometry.equivalent_restrict_range {M' : Type*} [AddCommMonoid M'] [Module R M']
     {Q : QuadraticMap R M N} {Q' : QuadraticMap R M' N} (f : Q →qᵢ Q')
     (hf : Function.Injective f) : Q.Equivalent (Q'.restrict (LinearMap.range f.toLinearMap)) :=
-  ⟨{ toLinearEquiv := LinearEquiv.ofInjective f.toLinearMap hf
-     map_app' x := by
-       simpa only [QuadraticMap.restrict_apply, LinearEquiv.coe_toLinearMap,
-         LinearMap.toFun_eq_coe, LinearEquiv.ofInjective_apply, Isometry.coe_toLinearMap] using
-         f.map_app x }⟩
+  ⟨f.equivRestrictRange hf⟩
 
 /-- The left factor of an orthogonal product is represented by the product. -/
 theorem isRepresentedBy_prod_left (Q₁ : QuadraticMap R M N)

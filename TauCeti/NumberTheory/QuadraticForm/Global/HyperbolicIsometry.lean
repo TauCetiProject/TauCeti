@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.QuadraticForm.Global.FormInvariants
 public import TauCeti.NumberTheory.QuadraticForm.Global.Ternary.Obstruction
-import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
+import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic.Basic
 
 /-!
 # An isometry of ternary forms over `ℚ` through the hyperbolic plane

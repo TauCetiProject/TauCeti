@@ -15,19 +15,25 @@ import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.RingTheory.Flat.Basic
 import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 import TauCeti.LinearAlgebra.TensorProduct.Basis
+import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
 # Base change of quadratic forms
 
 This file supplies the functorial API for extending quadratic spaces along a commutative algebra.
 The pure-tensor map also restricts to the polar kernel of a vector, so orthogonal parameters can
-be extended before passing to quotient spaces.
+be extended before passing to quotient spaces. Over a ring in which two is invertible, free
+scalar extension commutes with taking the polar orthogonal complement of any submodule
+(`QuadraticForm.orthogonal_baseChange`) or the range of any isometric embedding
+(`QuadraticMap.Isometry.orthogonal_range_baseChange`), and flat scalar extension commutes with
+restriction to a submodule (`QuadraticForm.baseChangeRestrict`).
 It lifts isometries and isometric equivalences by extending their underlying linear maps, records
 the interaction with the additive operations on forms, compares direct and successive extension
 through a scalar tower, and proves that, over a ring in which `2` is invertible, nondegenerate
 forms remain nondegenerate under any free scalar extension (in particular over a field extension in
 characteristic not two), with no finiteness assumption. It also
-identifies the base change of a diagonal form with the diagonal form obtained by mapping its
+identifies the base change of a diagonal form (and in particular of a rank-one form
+`QuadraticForm.baseChangeLine`) with the diagonal form obtained by mapping its
 coefficients into the target algebra, extends orthogonal and special orthogonal automorphisms so a
 quadratic space's rational symmetries act on each scalar extension, and shows that extending scalars
 carries the reflection in a vector `v` to the reflection in `1 ⊗ₜ v`, so that a reflection
@@ -304,6 +310,26 @@ theorem baseChangeWeightedSumSquares_apply (w : ι → R) (x : A ⊗[R] (ι → 
 
 end Diagonal
 
+/-- Base change carries a rank-one diagonal form `c • sq` to `algebraMap R A c • sq`. -/
+def baseChangeLine (c : R) (A : Type uA) [CommRing A] [Algebra R A] :
+    (QuadraticForm.baseChange A (c • (QuadraticMap.sq : QuadraticForm R R))).IsometryEquiv
+      (algebraMap R A c • (QuadraticMap.sq : QuadraticForm A A)) where
+  toLinearEquiv := TensorProduct.AlgebraTensorModule.rid R A A
+  map_app' x := by
+    have h : (algebraMap R A c • (QuadraticMap.sq : QuadraticForm A A)).comp
+          (TensorProduct.AlgebraTensorModule.rid R A A).toLinearMap =
+        QuadraticForm.baseChange A (c • (QuadraticMap.sq : QuadraticForm R R)) := by
+      apply baseChange_ext
+      intro r
+      simp [TensorProduct.AlgebraTensorModule.rid_tmul, Algebra.smul_def]
+    exact DFunLike.congr_fun h x
+
+/-- On pure tensors, `baseChangeLine` scales the algebra element by the base scalar. -/
+@[simp]
+theorem baseChangeLine_tmul (c : R) (A : Type uA) [CommRing A] [Algebra R A] (a : A) (r : R) :
+    baseChangeLine c A (a ⊗ₜ r) = r • a :=
+  TensorProduct.AlgebraTensorModule.rid_tmul A r a
+
 /-- The canonical equivalence distributing tensor product over a product identifies the base
 change of an orthogonal sum with the orthogonal sum of the base changes. -/
 def baseChangeProd (Q : QuadraticForm R M) (Q' : QuadraticForm R N) :
@@ -334,6 +360,30 @@ theorem baseChangeProd_symm_tmul (Q : QuadraticForm R M)
     (Q' : QuadraticForm R N) (a : A) (m : M) (n : N) :
     (baseChangeProd (A := A) Q Q').symm (a ⊗ₜ m, a ⊗ₜ n) = a ⊗ₜ (m, n) :=
   TensorProduct.prodRight_symm_tmul R A A M N a m n
+
+/-- For a flat scalar extension, extending scalars of a restricted quadratic form identifies
+with restricting the extended quadratic form to the extended submodule. -/
+def baseChangeRestrict (Q : QuadraticForm R M) (A : Type uA) [CommRing A] [Algebra R A]
+    [Module.Flat R A] (S : Submodule R M) :
+    (QuadraticForm.baseChange A (Q.restrict S)).IsometryEquiv
+      ((Q.baseChange A).restrict (S.baseChange A)) where
+  toLinearEquiv := Submodule.toBaseChange.toLinearEquiv A S
+  map_app' x := by
+    have h : ((Q.baseChange A).restrict (S.baseChange A)).comp
+          (Submodule.toBaseChange.toLinearEquiv A S).toLinearMap =
+        QuadraticForm.baseChange A (Q.restrict S) := by
+      apply baseChange_ext
+      intro s
+      simp
+    exact DFunLike.congr_fun h x
+
+/-- On pure tensors, `baseChangeRestrict` maps `a ⊗ₜ s` to the element of `S.baseChange A` with
+ambient vector `a ⊗ₜ (s : M)`. -/
+@[simp]
+theorem coe_baseChangeRestrict_tmul (Q : QuadraticForm R M) (A : Type uA) [CommRing A]
+    [Algebra R A] [Module.Flat R A] (S : Submodule R M) (a : A) (s : S) :
+    (Q.baseChangeRestrict A S (a ⊗ₜ s) : A ⊗[R] M) = a ⊗ₜ (s : M) :=
+  Submodule.coe_toBaseChange_tmul A S a s
 
 end QuadraticForm
 
@@ -429,7 +479,29 @@ theorem Nondegenerate.baseChange [Module.Free R A] {Q : QuadraticForm R M}
   exact LinearMap.BilinForm.Nondegenerate.baseChange A
     (QuadraticMap.nondegenerate_associated_iff.mpr hQ)
 
+/-- Extending scalars along a free algebra commutes with taking the polar orthogonal complement of
+any submodule, with no finiteness or nondegeneracy assumptions. -/
+theorem orthogonal_baseChange (Q : QuadraticForm R M) (A : Type uA) [CommRing A] [Algebra R A]
+    [Module.Free R A] (S : Submodule R M) :
+    (LinearMap.BilinForm.orthogonal Q.polarBilin S).baseChange A =
+      LinearMap.BilinForm.orthogonal (Q.baseChange A).polarBilin (S.baseChange A) := by
+  let : Invertible (2 : A) :=
+    (Invertible.map (algebraMap R A) 2).copy 2 (map_ofNat _ _).symm
+  rw [polarBilin_baseChange, LinearMap.BilinForm.orthogonal_baseChange]
+
 end QuadraticForm
+
+/-- Extending scalars along a free algebra commutes with taking the polar orthogonal complement of
+the range of any quadratic isometry, with no finiteness, nondegeneracy, or injectivity
+assumptions. -/
+theorem _root_.QuadraticMap.Isometry.orthogonal_range_baseChange
+    {Q₁ : QuadraticForm R M} {Q₂ : QuadraticForm R N} (f : Q₁ →qᵢ Q₂)
+    (A : Type uA) [CommRing A] [Algebra R A] [Module.Free R A] :
+    (LinearMap.BilinForm.orthogonal Q₂.polarBilin (LinearMap.range f.toLinearMap)).baseChange A =
+      LinearMap.BilinForm.orthogonal (Q₂.baseChange A).polarBilin
+        (LinearMap.range (f.baseChange A).toLinearMap) := by
+  rw [QuadraticForm.orthogonal_baseChange, LinearMap.baseChange_range,
+    ← QuadraticMap.Isometry.baseChange_toLinearMap]
 
 /-- Representation of one quadratic form by another is preserved by flat base change. -/
 theorem QuadraticMap.IsRepresentedBy.baseChange [Module.Flat R A]

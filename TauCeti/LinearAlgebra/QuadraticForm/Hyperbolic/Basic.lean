@@ -30,6 +30,7 @@ hypothesis and is proved directly in `TauCeti/LinearAlgebra/QuadraticForm/Repres
 
 * `TauCeti.hyperbolicPlane`: the diagonal form `⟨1, -1⟩`, over a commutative ring in which two is
   invertible.
+* `TauCeti.hyperbolicSum`: the orthogonal sum of `j` copies of the hyperbolic plane.
 * `TauCeti.hyperbolicClass`: the isometry class of the hyperbolic plane.
 
 ## Main results
@@ -37,6 +38,9 @@ hypothesis and is proved directly in `TauCeti/LinearAlgebra/QuadraticForm/Repres
 * `TauCeti.represents_hyperbolicPlane`: the hyperbolic plane represents every scalar.
 * `TauCeti.equivalent_hyperbolicPlane_dualProd`: the hyperbolic plane is isometric to the
   `xy`-form `QuadraticForm.dualProd`.
+* `TauCeti.nondegenerate_hyperbolicSum`: `hyperbolicSum R j` is nondegenerate.
+* `TauCeti.hyperbolicSumSuccIsometryEquiv`, `TauCeti.hyperbolicSumEquivWeightedSumSquares`:
+  splitting and diagonal coordinate equivalences for `hyperbolicSum`.
 * `TauCeti.equivalent_weightedSumSquares_hyperbolicPlane_of_isSquare`: a binary diagonal form
   whose discriminant differs from that of the hyperbolic plane by a square is hyperbolic.
 * `TauCeti.equivalent_weightedSumSquares_self_neg_hyperbolicPlane`: in characteristic not two, every
@@ -60,8 +64,8 @@ hypothesis and is proved directly in `TauCeti/LinearAlgebra/QuadraticForm/Repres
   hyperbolic plane has codimension two.
 * `TauCeti.exists_hyperbolicPlane_prod_equivalent`: in characteristic not two, every
   finite-dimensional nondegenerate isotropic form splits off a hyperbolic plane.
-* `TauCeti.formClass_hyperbolicPlane`: the regular-form class of the hyperbolic plane is
-  `TauCeti.hyperbolicClass`.
+* `TauCeti.formClass_hyperbolicPlane`, `TauCeti.formClass_hyperbolicSum`: the regular-form
+  classes of the hyperbolic plane and of `hyperbolicSum`.
 * `TauCeti.RegularFormClass.mk_binary_eq_hyperbolicClass_iff`: the plane `⟨a, b⟩` is hyperbolic
   exactly when `-ab` is a square.
 
@@ -178,6 +182,87 @@ theorem equivalent_hyperbolicPlane_dualProd [Invertible (2 : R)] :
     ⟨{ toLinearEquiv := LinearEquiv.ofBijective _ hbij
        map_app' p := (QuadraticForm.toDualProd (QuadraticMap.sq : QuadraticForm R R)).map_app p }⟩
 
+/-! ### Split hyperbolic sums -/
+
+section HyperbolicSum
+
+variable [Invertible (2 : R)]
+
+/-- The orthogonal sum of `j` copies of the hyperbolic plane `⟨1, -1⟩` over a commutative ring
+in which two is invertible. -/
+def hyperbolicSum (R : Type u) [CommRing R] [_i2 : Invertible (2 : R)] (j : ℕ) :
+    QuadraticForm R (Fin j → Fin 2 → R) :=
+  QuadraticMap.pi fun _ : Fin j ↦ hyperbolicPlane R
+
+/-- Evaluation of `hyperbolicSum` in its coordinate pairs. -/
+@[simp]
+theorem hyperbolicSum_apply (j : ℕ) (x : Fin j → Fin 2 → R) :
+    hyperbolicSum R j x = ∑ i : Fin j, (x i 0 ^ 2 - x i 1 ^ 2) := by
+  simp [hyperbolicSum]
+
+/-- The polar form of `hyperbolicSum` in its coordinate pairs. -/
+@[simp]
+theorem polar_hyperbolicSum (j : ℕ) (x y : Fin j → Fin 2 → R) :
+    polar (hyperbolicSum R j) x y = 2 * ∑ i : Fin j, (x i 0 * y i 0 - x i 1 * y i 1) := by
+  simp only [hyperbolicSum, QuadraticMap.Ring.polar_pi, polar_hyperbolicPlane, Finset.mul_sum]
+
+/-- The zero-fold hyperbolic sum is the zero quadratic form. -/
+@[simp]
+theorem hyperbolicSum_zero : hyperbolicSum R 0 = 0 := by
+  ext x
+  simp
+
+/-- The split hyperbolic sum `hyperbolicSum R j` is nondegenerate when two is invertible. -/
+theorem nondegenerate_hyperbolicSum (j : ℕ) : (hyperbolicSum R j).Nondegenerate :=
+  nondegenerate_polar_iff.mp <|
+    QuadraticMap.nondegenerate_polarBilin_pi_iff.mpr fun _ ↦
+      nondegenerate_polar_iff.mpr nondegenerate_hyperbolicPlane
+
+/-- Peeling off the first hyperbolic plane from `hyperbolicSum R (j + 1)`. -/
+def hyperbolicSumSuccIsometryEquiv (j : ℕ) :
+    ((hyperbolicPlane R).prod (hyperbolicSum R j)).IsometryEquiv (hyperbolicSum R (j + 1)) :=
+  QuadraticMap.IsometryEquiv.consPi fun _ : Fin (j + 1) ↦ hyperbolicPlane R
+
+/-- Evaluation of `hyperbolicSumSuccIsometryEquiv` on a plane and a tail sum. -/
+@[simp]
+theorem hyperbolicSumSuccIsometryEquiv_apply (j : ℕ) (x : Fin 2 → R)
+    (y : Fin j → Fin 2 → R) :
+    hyperbolicSumSuccIsometryEquiv (R := R) j (x, y) = Fin.cons x y := by
+  dsimp only [hyperbolicSumSuccIsometryEquiv]
+  exact QuadraticMap.IsometryEquiv.consPi_apply (fun _ : Fin (j + 1) ↦ hyperbolicPlane R) x y
+
+/-- Identifying `hyperbolicSum R j` with a diagonal weighted sum of squares on `Fin j × Fin 2`. -/
+def hyperbolicSumEquivWeightedSumSquares (j : ℕ) :
+    (hyperbolicSum R j).IsometryEquiv
+      (weightedSumSquares R fun p : Fin j × Fin 2 ↦ if p.2 = 0 then (1 : R) else -1) where
+  toLinearEquiv :=
+    (LinearEquiv.piCurry R fun _ _ ↦ R).symm.trans
+      (LinearEquiv.piCongrLeft' R (fun _ : Σ _ : Fin j, Fin 2 ↦ R)
+        (Equiv.sigmaEquivProd (Fin j) (Fin 2)))
+  map_app' x := by
+    rw [weightedSumSquares_apply, hyperbolicSum_apply, Fintype.sum_prod_type]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    simp [Fin.sum_univ_two, pow_two, sub_eq_add_neg, Sigma.uncurry]
+
+/-- Evaluation of `hyperbolicSumEquivWeightedSumSquares`. -/
+@[simp]
+theorem hyperbolicSumEquivWeightedSumSquares_apply (j : ℕ)
+    (x : Fin j → Fin 2 → R) (p : Fin j × Fin 2) :
+    hyperbolicSumEquivWeightedSumSquares (R := R) j x p = x p.1 p.2 := by
+  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+  simp [hyperbolicSumEquivWeightedSumSquares, Sigma.uncurry]
+
+/-- Evaluation of the inverse of `hyperbolicSumEquivWeightedSumSquares`. -/
+@[simp]
+theorem hyperbolicSumEquivWeightedSumSquares_symm_apply (j : ℕ)
+    (y : Fin j × Fin 2 → R) (i : Fin j) (k : Fin 2) :
+    (hyperbolicSumEquivWeightedSumSquares (R := R) j).symm y i k = y (i, k) := by
+  rw [← QuadraticMap.IsometryEquiv.coe_toLinearEquiv]
+  simp [hyperbolicSumEquivWeightedSumSquares, QuadraticMap.IsometryEquiv.symm, Sigma.curry,
+    Equiv.sigmaEquivProd]
+
+end HyperbolicSum
+
 end CommRing
 
 variable {K : Type u} [Field K]
@@ -251,6 +336,25 @@ theorem formClass_hyperbolicPlane :
   refine formClass_mk _ _ _ ?_
   rw [presentedForm_one_neg_one]
   exact QuadraticMap.Equivalent.refl _
+
+/-- Over a field of characteristic not two, `hyperbolicSum K j` has class
+`j • hyperbolicClass K`. -/
+@[simp]
+theorem formClass_hyperbolicSum (j : ℕ) :
+    formClass (hyperbolicSum K j) (nondegenerate_hyperbolicSum j) = j • hyperbolicClass K := by
+  induction j with
+  | zero =>
+    rw [zero_nsmul, formClass_eq_zero_iff]
+    exact Module.finrank_zero_of_subsingleton
+  | succ j ih =>
+    have heq :=
+      (formClass_eq_iff (hyperbolicSum K (j + 1)) (nondegenerate_hyperbolicSum (j + 1))
+        ((hyperbolicPlane K).prod (hyperbolicSum K j))
+        (nondegenerate_hyperbolicPlane.prod (nondegenerate_hyperbolicSum j))).mpr
+        ⟨(hyperbolicSumSuccIsometryEquiv (R := K) j).symm⟩
+    rw [heq,
+      formClass_prod _ nondegenerate_hyperbolicPlane _ (nondegenerate_hyperbolicSum j),
+      formClass_hyperbolicPlane, ih, succ_nsmul']
 
 /-- **Hyperbolicity of a diagonal plane.** The class of `⟨a, b⟩` is the hyperbolic class exactly
 when `-ab` is a square. -/

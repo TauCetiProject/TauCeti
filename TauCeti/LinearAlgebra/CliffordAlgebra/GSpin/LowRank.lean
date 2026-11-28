@@ -12,7 +12,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.VectorNormalizer.Zero
 import TauCeti.LinearAlgebra.CliffordAlgebra.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.LowRank.One
 import TauCeti.LinearAlgebra.CliffordAlgebra.LowRank.Two
-import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
+import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic.Basic
 
 /-!
 # The general spin group in ranks zero, one and two

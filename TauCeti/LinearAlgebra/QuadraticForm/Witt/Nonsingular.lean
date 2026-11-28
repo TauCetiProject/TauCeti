@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Binary
 import Mathlib.LinearAlgebra.Prod
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.QuadraticForm.CharTwo
-import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
+import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 import TauCeti.LinearAlgebra.QuadraticForm.Prod
 import TauCeti.LinearAlgebra.QuadraticForm.Radical
@@ -32,7 +32,7 @@ nondegenerate; and decomposition of every finite-dimensional form with trivial r
 The basic object is a *hyperbolic pair* `e, f`: isotropic vectors with `polar Q e f = 1`. Its span
 is a copy of `ℍ` and splits off orthogonally, with no hypothesis on the ambient form
 (`QuadraticForm.equivalent_binaryQuadraticForm_zero_prod_restrict_orthogonal`, in
-`TauCeti/LinearAlgebra/QuadraticForm/Hyperbolic.lean`). The orthogonal
+`TauCeti/LinearAlgebra/QuadraticForm/Hyperbolic/Basic.lean`). The orthogonal
 complement of the span depends, up to isometry, only on `Q`
 (`QuadraticForm.equivalent_restrict_orthogonal_span_pair`). For pairs `e, f` and `e, f'` sharing
 their first vector, `u ↦ u - polar Q f' u • e` maps one complement isometrically onto the other. If

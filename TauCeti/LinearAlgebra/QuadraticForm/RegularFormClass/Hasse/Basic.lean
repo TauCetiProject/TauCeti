@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Quaternion.Subgroup
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Chain.Induction
-public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
+public import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Descent
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Discriminant
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.TensorProduct

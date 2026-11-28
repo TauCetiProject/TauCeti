@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Binary
 public import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
 import Mathlib.Algebra.Field.ZMod
-import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic
+import TauCeti.LinearAlgebra.QuadraticForm.Hyperbolic.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.LinearAlgebra.QuadraticForm.Representation
 
