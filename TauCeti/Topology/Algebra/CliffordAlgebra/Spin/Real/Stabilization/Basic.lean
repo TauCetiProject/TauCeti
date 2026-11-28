@@ -453,5 +453,3 @@ theorem realCliffordSpinToSpecialOrthogonalRange_comp_blockSum (p q : ℕ) :
 end
 
 end TauCeti
-
-end
