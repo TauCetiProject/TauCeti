@@ -33,7 +33,10 @@ The total values at poles are zero by Mathlib's convention. The zero-order chara
 therefore use nonzero total values, while the negative-order characterizations identify the
 pole lattices. `Complex.gammaPolesRightOf` packages the finite set of poles of `t ↦ Γ(a + t)`
 strictly to the right of a vertical line `Re t = σ` (together with `mem_gammaPolesRightOf`,
-`gammaPolesRightOf_eq_empty_iff`, `gammaPolesRightOf_sdiff`, and `mem_gammaPolesRightOf_union`).
+`gammaPolesRightOf_eq_empty_iff`, `gammaPolesRightOf_sdiff`, `mem_gammaPolesRightOf_union`,
+and the vertical-strip lemmas `re_ne_of_eq_neg_sub_natCast`,
+`re_mem_Ioo_of_mem_gammaPolesRightOf_union_sdiff`, and
+`add_ne_neg_natCast_of_notMem_gammaPolesRightOf_union_sdiff`).
 These formulas supply the local orders and pole sets from which shifted products and archimedean
 divisors of L-function records are assembled.
 
@@ -324,11 +327,8 @@ theorem gammaPolesRightOf_sdiff (a : ℂ) (σ₁ σ₂ : ℝ) :
       (Finset.Ico ⌈-a.re - σ₂⌉₊ ⌈-a.re - σ₁⌉₊).image fun k : ℕ ↦ -a - k := by
   have hinj : Function.Injective (fun k : ℕ ↦ -a - k) := fun _ _ h ↦
     Nat.cast_injective (by linear_combination -h)
-  rw [gammaPolesRightOf, gammaPolesRightOf, ← Finset.image_sdiff _ _ hinj]
-  congr 1
-  ext k
-  simp only [Finset.mem_sdiff, Finset.mem_range, Finset.mem_Ico]
-  omega
+  rw [gammaPolesRightOf, gammaPolesRightOf, ← Finset.image_sdiff _ _ hinj,
+    ← Nat.Ico_zero_eq_range, ← Nat.Ico_zero_eq_range, Finset.Ico_sdiff_Ico_left, Nat.zero_max]
 
 /-- The poles of `t ↦ Γ(a + t) Γ(b + t)` to the right of the line `Re t = σ`. -/
 theorem mem_gammaPolesRightOf_union {a b t : ℂ} {σ : ℝ} :
@@ -336,5 +336,51 @@ theorem mem_gammaPolesRightOf_union {a b t : ℂ} {σ : ℝ} :
       σ < t.re ∧ ∃ k : ℕ, t = -a - k ∨ t = -b - k := by
   simp only [Finset.mem_union, mem_gammaPolesRightOf]
   grind
+
+/-- A pole `t = -a - k` (`k : ℕ`) of `t ↦ Γ(a + t)` does not lie on a vertical line `Re t = σ`
+that avoids those poles. -/
+theorem re_ne_of_eq_neg_sub_natCast {a t : ℂ} {σ : ℝ} (ha : ∀ n : ℕ, a.re + σ ≠ -n)
+    {k : ℕ} (ht : t = -a - k) : t.re ≠ σ := by
+  subst ht
+  exact fun h ↦ ha k (by simp at h; linarith)
+
+/-- Every pole in `(gammaPolesRightOf a σ₁ ∪ gammaPolesRightOf b σ₁) \
+(gammaPolesRightOf a σ₂ ∪ gammaPolesRightOf b σ₂)` lies in the open strip `σ₁ < Re t < σ₂`
+whenever `Re t = σ₂` avoids the poles of `t ↦ Γ(a + t) Γ(b + t)`. -/
+theorem re_mem_Ioo_of_mem_gammaPolesRightOf_union_sdiff {a b t : ℂ} {σ₁ σ₂ : ℝ}
+    (ha₂ : ∀ n : ℕ, a.re + σ₂ ≠ -n) (hb₂ : ∀ n : ℕ, b.re + σ₂ ≠ -n)
+    (ht : t ∈ (gammaPolesRightOf a σ₁ ∪ gammaPolesRightOf b σ₁) \
+      (gammaPolesRightOf a σ₂ ∪ gammaPolesRightOf b σ₂)) :
+    t.re ∈ Set.Ioo σ₁ σ₂ := by
+  rw [Finset.mem_sdiff, mem_gammaPolesRightOf_union, mem_gammaPolesRightOf_union] at ht
+  obtain ⟨⟨h₁, k, hkt⟩, h₂⟩ := ht
+  have hne : t.re ≠ σ₂ := by
+    rcases hkt with rfl | rfl
+    · exact re_ne_of_eq_neg_sub_natCast ha₂ rfl
+    · exact re_ne_of_eq_neg_sub_natCast hb₂ rfl
+  exact ⟨h₁, lt_of_le_of_ne (not_lt.mp fun h ↦ h₂ ⟨h, k, hkt⟩) hne⟩
+
+/-- If `t` lies in the closed strip `σ₁ ≤ Re t ≤ σ₂` outside
+`(gammaPolesRightOf a σ₁ ∪ gammaPolesRightOf b σ₁) \
+(gammaPolesRightOf a σ₂ ∪ gammaPolesRightOf b σ₂)` and `Re t = σ₁` avoids the poles of
+`t ↦ Γ(a + t) Γ(b + t)`, then neither `a + t` nor `b + t` is a nonpositive integer. -/
+theorem add_ne_neg_natCast_of_notMem_gammaPolesRightOf_union_sdiff {a b t : ℂ} {σ₁ σ₂ : ℝ}
+    (ha₁ : ∀ n : ℕ, a.re + σ₁ ≠ -n) (hb₁ : ∀ n : ℕ, b.re + σ₁ ≠ -n)
+    (h₁ : σ₁ ≤ t.re) (h₂ : t.re ≤ σ₂)
+    (ht : t ∉ (gammaPolesRightOf a σ₁ ∪ gammaPolesRightOf b σ₁) \
+      (gammaPolesRightOf a σ₂ ∪ gammaPolesRightOf b σ₂)) :
+    (∀ m : ℕ, a + t ≠ -m) ∧ (∀ m : ℕ, b + t ≠ -m) := by
+  have hpole {w : ℂ} (hw : ∀ m : ℕ, w + t = -m → ∃ k : ℕ, t = -a - k ∨ t = -b - k) :
+      ∀ m : ℕ, w + t ≠ -m := fun m hm ↦ by
+    obtain ⟨k, hkt⟩ := hw m hm
+    have hne : t.re ≠ σ₁ := by
+      rcases hkt with rfl | rfl
+      · exact re_ne_of_eq_neg_sub_natCast ha₁ rfl
+      · exact re_ne_of_eq_neg_sub_natCast hb₁ rfl
+    refine ht (Finset.mem_sdiff.mpr ⟨mem_gammaPolesRightOf_union.mpr
+      ⟨lt_of_le_of_ne h₁ hne.symm, k, hkt⟩, fun h ↦ ?_⟩)
+    exact absurd (mem_gammaPolesRightOf_union.mp h).1 (not_lt.mpr h₂)
+  exact ⟨hpole fun m hm ↦ ⟨m, .inl (by linear_combination hm)⟩,
+    hpole fun m hm ↦ ⟨m, .inr (by linear_combination hm)⟩⟩
 
 end Complex

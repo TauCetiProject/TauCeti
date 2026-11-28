@@ -470,12 +470,12 @@ theorem neg_one_pow_div_factorial_mul_Gamma_sub_natCast {c : ℝ}
     (hc : sin (π * c) ≠ 0) (k : ℕ) :
     (-1) ^ k / (k ! : ℝ) * Gamma (c - k) =
       π / sin (π * c) / (k ! * Gamma (1 - c + k)) := by
-  have h := Complex.neg_one_pow_div_factorial_mul_Gamma_sub_natCast (c := (c : ℂ))
-    (by rw [← Complex.ofReal_mul, ← Complex.ofReal_sin]; exact Complex.ofReal_ne_zero.mpr hc) k
-  rw [← Complex.ofReal_natCast k, ← Complex.ofReal_sub, ← Complex.ofReal_one, ← Complex.ofReal_sub,
-    ← Complex.ofReal_add, Complex.Gamma_ofReal, Complex.Gamma_ofReal, ← Complex.ofReal_mul,
-    ← Complex.ofReal_sin] at h
-  exact_mod_cast h
+  apply Complex.ofReal_injective
+  push_cast
+  rw [← Complex.Gamma_ofReal, ← Complex.Gamma_ofReal]
+  push_cast
+  exact Complex.neg_one_pow_div_factorial_mul_Gamma_sub_natCast (c := (c : ℂ))
+    (by exact_mod_cast hc) k
 
 /-- The reflection formula between consecutive poles:
 `(-1)ᵏ Γ s = π / sin(π(s + k)) / Γ(1 - s)` for `s ∈ (-k, -k + 1)`, where `0 < π(s + k) < π`. -/

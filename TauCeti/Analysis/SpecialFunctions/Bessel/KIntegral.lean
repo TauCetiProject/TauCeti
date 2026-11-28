@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes.ShiftedProduct
 import TauCeti.Analysis.SpecialFunctions.MacdonaldIntegral
 
@@ -66,11 +67,8 @@ theorem integral_cpow_mul_exp_neg_add_div_Ioi {p x : ℝ} (hp0 : 0 < p) (hp1 : p
     ∫ s in Ioi (0 : ℝ), (s : ℂ) ^ ((p : ℂ) - 1) * Real.exp (-(s + x / s)) =
       ((π / Real.sin (π * p) : ℝ) : ℂ) * (regularizedHGFun 0 {1 - (p : ℂ)} x -
         (x : ℂ) ^ (p : ℂ) * regularizedHGFun 0 {1 + (p : ℂ)} x) := by
-  have hp : ∀ m : ℤ, (p : ℂ) ≠ m := fun m h ↦ by
-    have hre : p = m := by simpa using congrArg re h
-    have h1 : (0 : ℤ) < m := by exact_mod_cast hre ▸ hp0
-    have h2 : m < (1 : ℤ) := by exact_mod_cast hre ▸ hp1
-    omega
+  have hp : ∀ m : ℤ, (p : ℂ) ≠ m := fun m h ↦
+    TauCeti.ne_intCast_of_mem_Ioo_zero_one ⟨hp0, hp1⟩ m (by simpa using congrArg re h)
   have h := (mellinInv_Gamma_mul_Gamma_add (a := (p : ℂ)) one_pos
     (by rw [ofReal_re]; linarith) hx).symm.trans
     (mellinInv_Gamma_mul_Gamma_add_eq_regularizedHGFun hp one_pos

@@ -238,13 +238,6 @@ theorem integrable_hypergeometricMellinBarnesIntegrand (a b c : ℂ) {z : ℂ}
   simp only [hypergeometricMellinBarnesIntegrand_def]
   exact integrable_Gamma_mul_Gamma_mul_Gamma_mul_inv_Gamma_mul_neg_cpow c hz ha hb hσ
 
-/-- A pole of `Γ(a + t) Γ(b + t)` does not lie on a line `Re t = σ` that avoids the poles. -/
-private theorem re_ne_of_pole {a b t : ℂ} {σ : ℝ} (ha : ∀ n : ℕ, a.re + σ ≠ -n)
-    (hb : ∀ n : ℕ, b.re + σ ≠ -n) (ht : ∃ k : ℕ, t = -a - k ∨ t = -b - k) : t.re ≠ σ := by
-  obtain ⟨k, rfl | rfl⟩ := ht
-  · exact fun h ↦ ha k (by simp at h; linarith)
-  · exact fun h ↦ hb k (by simp at h; linarith)
-
 /-- For `σ₂ < 0`, with the line `Re t = σ₁` avoiding the poles of `Γ(a + t) Γ(b + t)`, the
 integrand of Barnes's integral is holomorphic at every point of the strip `σ₁ ≤ Re t ≤ σ₂` other
 than the poles of `Γ(a + t) Γ(b + t)` with `σ₁ < Re t`, `Re t ≤ σ₂`. -/
@@ -254,15 +247,9 @@ private theorem differentiableAt_hypergeometricMellinBarnesIntegrand_of_mem_stri
     (hP : t ∉ (gammaPolesRightOf a σ₁ ∪ gammaPolesRightOf b σ₁) \
       (gammaPolesRightOf a σ₂ ∪ gammaPolesRightOf b σ₂)) :
     DifferentiableAt ℂ (hypergeometricMellinBarnesIntegrand a b c z) t := by
-  have hpole {w : ℂ} (hw : ∀ m : ℕ, w + t = -m → ∃ k : ℕ, t = -a - k ∨ t = -b - k) :
-      ∀ m : ℕ, w + t ≠ -m := fun m hm ↦ by
-    have hk := hw m hm
-    refine hP (Finset.mem_sdiff.mpr ⟨mem_gammaPolesRightOf_union.mpr
-      ⟨lt_of_le_of_ne h₁ (re_ne_of_pole ha₁ hb₁ hk).symm, hk⟩, fun h ↦ ?_⟩)
-    exact absurd (mem_gammaPolesRightOf_union.mp h).1 (not_lt.mpr h₂)
-  refine differentiableAt_hypergeometricMellinBarnesIntegrand hz
-    (hpole fun m hm ↦ ⟨m, .inl (by linear_combination hm)⟩)
-    (hpole fun m hm ↦ ⟨m, .inr (by linear_combination hm)⟩) fun m hm ↦ ?_
+  obtain ⟨ha, hb⟩ :=
+    add_ne_neg_natCast_of_notMem_gammaPolesRightOf_union_sdiff ha₁ hb₁ h₁ h₂ hP
+  refine differentiableAt_hypergeometricMellinBarnesIntegrand hz ha hb fun m hm ↦ ?_
   have : t.re = m := by simpa using congrArg re (neg_injective hm)
   linarith [m.cast_nonneg' (α := ℝ)]
 
@@ -279,10 +266,8 @@ private theorem hypergeometricMellinBarnes_eq_of_le (a b c : ℂ) {z : ℂ} (hz 
   -- The poles strictly between the two lines.
   set P := (gammaPolesRightOf a σ₁ ∪ gammaPolesRightOf b σ₁) \
     (gammaPolesRightOf a σ₂ ∪ gammaPolesRightOf b σ₂)
-  have hP : ∀ p ∈ P, σ₁ < p.re ∧ p.re < σ₂ := fun p hp ↦ by
-    rw [Finset.mem_sdiff, mem_gammaPolesRightOf_union, mem_gammaPolesRightOf_union] at hp
-    obtain ⟨⟨h₁, hk⟩, h₂⟩ := hp
-    exact ⟨h₁, lt_of_le_of_ne (not_lt.mp fun h ↦ h₂ ⟨h, hk⟩) (re_ne_of_pole ha₂ hb₂ hk)⟩
+  have hP : ∀ p ∈ P, σ₁ < p.re ∧ p.re < σ₂ := fun p hp ↦
+    re_mem_Ioo_of_mem_gammaPolesRightOf_union_sdiff ha₂ hb₂ hp
   have hF {t : ℂ} (h₁ : σ₁ ≤ t.re) (h₂ : t.re ≤ σ₂) (ht : t ∉ P) :=
     differentiableAt_hypergeometricMellinBarnesIntegrand_of_mem_strip a b c
       (by simpa using slitPlane_ne_zero hz) hσ₂ ha₁ hb₁ h₁ h₂ ht

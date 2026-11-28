@@ -812,12 +812,8 @@ private lemma norm_inv_Gamma_one_sub_sub_natCast_le {σ K : ℝ} (hK : 0 ≤ K) 
   have hsplit : 1 - ((σ : ℂ) - N + t * I) = ((a : ℂ) + (-t : ℝ) * I) + ((N - M : ℕ) : ℂ) := by
     simp only [a, Nat.cast_sub hMN]; push_cast; ring
   rw [hsplit]
-  have hre : ((a : ℂ) + (-t : ℝ) * I).re = a := by
-    simp only [add_re, ofReal_re, mul_re, ofReal_im, I_re, I_im]
-    ring
-  have him : ((a : ℂ) + (-t : ℝ) * I).im = -t := by
-    simp only [add_im, ofReal_im, mul_im, ofReal_re, I_re, I_im]
-    ring
+  have hre : ((a : ℂ) + (-t : ℝ) * I).re = a := by simp
+  have him : ((a : ℂ) + (-t : ℝ) * I).im = -t := by simp
   have hinv_t : ‖(Complex.Gamma ((a : ℂ) + (-t : ℝ) * I))⁻¹‖ ≤ K * Real.exp (π * |t| / 2) := by
     have hb := hinv ((a : ℂ) + (-t : ℝ) * I) (by simp only [mem_Icc, hre, le_refl, and_self])
     rw [hre, him, abs_neg] at hb
@@ -844,22 +840,16 @@ theorem exists_norm_Gamma_sub_natCast_le {σ : ℝ} (hσ : ∀ m : ℤ, σ ≠ m
     exact hσ m (mul_left_cancel₀ pi_ne_zero (by linarith))
   refine ⟨π * (2 / |Real.sin (π * σ)|) * K, by positivity, fun N hMN t ↦ ?_⟩
   set z : ℂ := (σ : ℂ) - N + t * I
-  have hz_re : z.re = σ - N := by
-    simp only [z, add_re, sub_re, ofReal_re, natCast_re, mul_re, ofReal_im, I_re, I_im]
-    ring
-  have hz_im : z.im = t := by
-    simp only [z, add_im, sub_im, ofReal_im, natCast_im, mul_im, ofReal_re, I_re, I_im]
-    ring
+  have hz_re : z.re = σ - N := by simp [z]
+  have hz_im : z.im = t := by simp [z]
   -- Bound `(sin (π z))⁻¹` via periodicity of `Real.sin (π * ·)` and `Complex.norm_inv_sin_le`.
   have hinv_sin : ‖(sin (π * z))⁻¹‖ ≤ 2 / |Real.sin (π * σ)| * Real.exp (-(π * |t|)) := by
     have hre : (π * z).re = π * σ - (N : ℕ) * π := by
-      simp only [mul_re, ofReal_re, ofReal_im, hz_re]
-      ring
+      rw [re_ofReal_mul, hz_re]; ring
     have hsin_eq : |Real.sin (π * z).re| = |Real.sin (π * σ)| := by
       rw [hre, Real.sin_sub_nat_mul_pi, abs_mul, abs_pow, abs_neg, abs_one, one_pow, one_mul]
     have him : |(π * z).im| = π * |t| := by
-      simp only [mul_im, ofReal_re, ofReal_im, hz_im, zero_mul, add_zero, abs_mul,
-        abs_of_pos pi_pos]
+      rw [im_ofReal_mul, hz_im, abs_mul, abs_of_pos pi_pos]
     refine (norm_inv_sin_le (abs_pos.mp (by rw [hsin_eq]; exact abs_pos.mpr hsin))).trans_eq ?_
     rw [hsin_eq, him]
   -- Reflect `Γ(z) = π (sin (π z))⁻¹ (Γ(1 - z))⁻¹` and apply the reflected reciprocal bound.

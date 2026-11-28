@@ -536,24 +536,6 @@ theorem div_one_add_eq_zero_iff {α : Type*} [Semifield α] [LinearOrder α] [Is
     {t : α} (ht : 0 ≤ t) : t / (1 + t) = 0 ↔ t = 0 :=
   div_eq_zero_iff.trans (or_iff_left (add_pos_of_pos_of_nonneg zero_lt_one ht).ne')
 
-/-- For any element `r` of a linearly ordered field, there exists `δ ∈ (0, 1)` such that
-`r - δ` is not an integer. -/
-theorem exists_mem_Ioo_zero_one_sub_ne_intCast {K : Type*} [Field K] [LinearOrder K]
-    [IsStrictOrderedRing K] (r : K) :
-    ∃ δ ∈ Set.Ioo (0 : K) 1, ∀ m : ℤ, r - δ ≠ m := by
-  by_cases h : ∃ m : ℤ, r = (m : K) + 1 / 2
-  · obtain ⟨m₀, hm₀⟩ := h
-    have h14 : (1 / 4 : K) < 1 := by linarith [zero_lt_one' K]
-    refine ⟨1 / 4, ⟨by positivity, h14⟩, fun m hm ↦ ?_⟩
-    have hdiff : ((m - m₀ : ℤ) : K) = 1 / 4 := by push_cast; linarith
-    have h1 : (0 : ℤ) < m - m₀ :=
-      Int.cast_lt (R := K).mp (by rw [Int.cast_zero, hdiff]; positivity)
-    have h2 : m - m₀ < (1 : ℤ) :=
-      Int.cast_lt (R := K).mp (by rw [Int.cast_one, hdiff]; exact h14)
-    omega
-  · have h12 : (1 / 2 : K) < 1 := by linarith [zero_lt_one' K]
-    exact ⟨1 / 2, ⟨by positivity, h12⟩, fun m hm ↦ h ⟨m, by linarith⟩⟩
-
 /-- An element of `(0, 1)` is never an integer. -/
 theorem ne_intCast_of_mem_Ioo_zero_one {R : Type*} [AddCommGroupWithOne R] [PartialOrder R]
     [AddLeftMono R] [ZeroLEOneClass R] [NeZero (1 : R)] {δ : R} (hδ : δ ∈ Set.Ioo (0 : R) 1)
@@ -567,6 +549,19 @@ theorem neg_ne_intCast_of_mem_Ioo_zero_one {R : Type*} [AddCommGroupWithOne R] [
     [AddLeftMono R] [ZeroLEOneClass R] [NeZero (1 : R)] {δ : R} (hδ : δ ∈ Set.Ioo (0 : R) 1)
     (m : ℤ) : -δ ≠ m := fun hm ↦
   ne_intCast_of_mem_Ioo_zero_one hδ (-m) (by rw [Int.cast_neg, ← hm, neg_neg])
+
+/-- For any element `r` of a linearly ordered field, there exists `δ ∈ (0, 1)` such that
+`r - δ` is not an integer. -/
+theorem exists_mem_Ioo_zero_one_sub_ne_intCast {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] (r : K) :
+    ∃ δ ∈ Set.Ioo (0 : K) 1, ∀ m : ℤ, r - δ ≠ m := by
+  by_cases h : ∃ m : ℤ, r = (m : K) + 1 / 2
+  · obtain ⟨m₀, hm₀⟩ := h
+    have h14 : (1 / 4 : K) < 1 := by linarith [zero_lt_one' K]
+    refine ⟨1 / 4, ⟨by positivity, h14⟩, fun m hm ↦ ?_⟩
+    exact ne_intCast_of_mem_Ioo_zero_one ⟨by positivity, h14⟩ (m - m₀) (by push_cast; linarith)
+  · have h12 : (1 / 2 : K) < 1 := by linarith [zero_lt_one' K]
+    exact ⟨1 / 2, ⟨by positivity, h12⟩, fun m hm ↦ h ⟨m, by linarith⟩⟩
 
 /-- For `0 < t` with `m ≤ t ≤ M`, `t + m * M / t ≤ m + M`: this is `(t - m) * (t - M) ≤ 0`
 divided by `t`. -/
