@@ -48,6 +48,8 @@ by `ℕ`, and the positions of `Fin n` form the initial segment of length `n.cho
   on the diagonal, as a sum over the increasing pairs of the term plus its transpose.
 * `TauCeti.sum_offDiag_eq_sum_lt_add_swap`: the same fold for a sum over the off-diagonal pairs
   of a finite set, with arbitrary values on the diagonal.
+* `TauCeti.sum_sum_filter_ne_max_eq`: the sum of `g (max a₁ a₂)` over the ordered pairs of
+  distinct elements of `s` is `2 • ∑ a ∈ s, #{b ∈ s | b < a} • g a`.
 * `TauCeti.sum_mul_sum_erase_eq_sum_sum_Ioi`: an off-diagonal pairing against an antisymmetric
   kernel, folded onto the strictly increasing pairs `i < j`.
 * `TauCeti.prod_prod_Ioi_comp_perm`: a product of a symmetric function over the increasing pairs is
@@ -354,6 +356,31 @@ theorem sum_offDiag_eq_sum_lt_add_swap {ι M : Type*} [LinearOrder ι] [AddCommM
   congr 1
   exact sum_nbij' Prod.swap Prod.swap (by simp +contextual) (by simp +contextual) (by simp)
     (by simp) (by simp)
+
+/-- The sum of `g (max a₁ a₂)` over the ordered pairs of distinct elements of a finite set `s` in a
+linear order is twice the sum over `a ∈ s` of `g a`, taken once for each element of `s` below
+`a`. -/
+theorem sum_sum_filter_ne_max_eq {ι M : Type*} [LinearOrder ι] [AddCommMonoid M]
+    (s : Finset ι) (g : ι → M) :
+    ∑ a₁ ∈ s, ∑ a₂ ∈ s with a₂ ≠ a₁, g (max a₁ a₂) = 2 • ∑ a ∈ s, #{b ∈ s | b < a} • g a := by
+  have hoff : s.offDiag = {p ∈ s ×ˢ s | p.2 ≠ p.1} := by
+    ext ⟨a, b⟩
+    simp only [mem_offDiag, mem_filter, mem_product]
+    exact ⟨fun ⟨ha, hb, h⟩ ↦ ⟨⟨ha, hb⟩, h.symm⟩, fun ⟨⟨ha, hb⟩, h⟩ ↦ ⟨ha, hb, h.symm⟩⟩
+  calc ∑ a₁ ∈ s, ∑ a₂ ∈ s with a₂ ≠ a₁, g (max a₁ a₂)
+      = ∑ p ∈ s.offDiag, g (max p.1 p.2) := by
+        rw [hoff, sum_filter, sum_product]
+        simp_rw [sum_filter]
+    _ = ∑ p ∈ s ×ˢ s with p.1 < p.2, 2 • g p.2 := by
+        rw [sum_offDiag_eq_sum_lt_add_swap]
+        refine sum_congr rfl fun p hp ↦ ?_
+        have h := (mem_filter.1 hp).2
+        simp only [Prod.fst_swap, Prod.snd_swap, max_eq_right h.le, max_eq_left h.le, two_nsmul]
+    _ = 2 • ∑ a ∈ s, #{b ∈ s | b < a} • g a := by
+        rw [sum_nsmul, sum_filter, sum_product_right]
+        refine congr_arg _ (sum_congr rfl fun a _ ↦ ?_)
+        dsimp only
+        rw [← sum_filter, sum_const]
 
 /-- **A sum over all ordered pairs, folded onto the increasing ones.** A function vanishing on the
 diagonal sums over `l × l` to the sum over the increasing pairs of its value together with its
