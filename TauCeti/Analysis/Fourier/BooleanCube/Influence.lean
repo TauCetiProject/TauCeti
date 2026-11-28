@@ -31,8 +31,8 @@ most one) follow immediately.
 
 * `TauCeti.influence_eq_dens_ne`: for a sign-valued function, `influence i f` is the density of the
   points where flipping coordinate `i` changes `f`.
-* `TauCeti.walshCoeff_sub_add_single_div_two`, `TauCeti.expect_mul_sub_add_single_div_two`: the
-  Walsh coefficients of the directional Laplacian and its inner product with `f`.
+* `TauCeti.expect_mul_sub_add_single_div_two_eq_influence`: the inner product of `f` with its
+  directional Laplacian equals its influence.
 * `TauCeti.influence_eq_sum_sq_walshCoeff`: the spectral formula
   `influence i f = ∑ S with i ∈ S, walshCoeff f S ^ 2`.
 * `TauCeti.totalInfluence_eq_sum_card_mul_sq`: the spectral formula
@@ -40,8 +40,9 @@ most one) follow immediately.
 * `TauCeti.influence_le_variance`: every coordinate's influence is at most `variance f`.
 * `TauCeti.mul_variance_le_totalInfluence`: if `walshCoeff f S = 0` for all `0 < S.card < k`, then
   `k * variance f ≤ totalInfluence f`.
-* `TauCeti.variance_le_totalInfluence`: the Poincaré inequality `variance f ≤ totalInfluence f`,
-  with equality if and only if `walshCoeff f S = 0` whenever `2 ≤ S.card`.
+* `TauCeti.variance_le_totalInfluence`: the Poincaré inequality `variance f ≤ totalInfluence f`.
+* `TauCeti.variance_eq_totalInfluence_iff`: equality holds if and only if `walshCoeff f S = 0`
+  whenever `2 ≤ S.card`.
 
 ## References
 
@@ -75,6 +76,14 @@ lemma influence_def (i : ι) (f : (ι → ZMod 2) → ℝ) :
 lemma influence_nonneg (i : ι) (f : (ι → ZMod 2) → ℝ) : 0 ≤ influence i f :=
   expect_nonneg fun _ _ ↦ sq_nonneg _
 
+/-- A coordinate has zero influence exactly when flipping it leaves the function unchanged. -/
+lemma influence_eq_zero_iff (i : ι) (f : (ι → ZMod 2) → ℝ) :
+    influence i f = 0 ↔ ∀ x, f (x + Pi.single i 1) = f x := by
+  rw [influence_def, expect_eq_zero_iff_of_nonneg (fun _ _ ↦ sq_nonneg _)]
+  simp only [mem_univ, forall_const, sq_eq_zero_iff, div_eq_zero_iff,
+    OfNat.ofNat_ne_zero, or_false, sub_eq_zero]
+  exact forall_congr' fun _ ↦ eq_comm
+
 @[simp] lemma influence_zero (i : ι) : influence i (0 : (ι → ZMod 2) → ℝ) = 0 := by
   simp [influence_def]
 
@@ -106,6 +115,12 @@ lemma totalInfluence_def (f : (ι → ZMod 2) → ℝ) : totalInfluence f = ∑ 
 lemma totalInfluence_nonneg (f : (ι → ZMod 2) → ℝ) : 0 ≤ totalInfluence f :=
   sum_nonneg fun i _ ↦ influence_nonneg i f
 
+/-- Total influence vanishes exactly when every coordinate influence vanishes. -/
+lemma totalInfluence_eq_zero_iff (f : (ι → ZMod 2) → ℝ) :
+    totalInfluence f = 0 ↔ ∀ i, influence i f = 0 := by
+  rw [totalInfluence_def, sum_eq_zero_iff_of_nonneg (fun i _ ↦ influence_nonneg i f)]
+  simp
+
 @[simp] lemma totalInfluence_zero : totalInfluence (0 : (ι → ZMod 2) → ℝ) = 0 := by
   simp [totalInfluence_def]
 
@@ -136,24 +151,6 @@ theorem influence_eq_dens_ne (i : ι) {f : (ι → ZMod 2) → ℝ} (hf : ∀ x,
 
 /-! ### Directional Laplacian and spectral formulas -/
 
-/-- The Walsh coefficient at `S` of the directional Laplacian
-`x ↦ (f x - f (x + Pi.single i 1)) / 2` is `walshCoeff f S` if `i ∈ S` and `0` otherwise. -/
-theorem walshCoeff_sub_add_single_div_two (i : ι) (f : (ι → ZMod 2) → ℝ) (S : Finset ι) :
-    walshCoeff (fun x ↦ (f x - f (x + Pi.single i 1)) / 2) S =
-      if i ∈ S then walshCoeff f S else 0 := by
-  have hflip : walshCoeff (fun x ↦ f (x + Pi.single i 1)) S =
-      (if i ∈ S then -1 else 1) * walshCoeff f S := by
-    rw [walshCoeff_def, walshCoeff_def, mul_expect, ← walsh_single_one]
-    refine Fintype.expect_equiv (Equiv.addRight (Pi.single i 1)) _ _ fun x ↦ ?_
-    simp only [Equiv.coe_addRight, walsh_add]
-    linear_combination -(f (x + Pi.single i 1) * walsh S x) * walsh_mul_self S (Pi.single i 1)
-  have hL : (fun x ↦ (f x - f (x + Pi.single i 1)) / 2) =
-      (1 / 2 : ℝ) • (f - fun x ↦ f (x + Pi.single i 1)) := by
-    ext x
-    simp [div_eq_inv_mul]
-  rw [hL, walshCoeff_smul, walshCoeff_sub, hflip]
-  split_ifs <;> ring
-
 /-- **Spectral formula for the influence:** the influence of coordinate `i` is the sum of the
 squared Walsh coefficients on the sets containing `i`. -/
 theorem influence_eq_sum_sq_walshCoeff (i : ι) (f : (ι → ZMod 2) → ℝ) :
@@ -164,7 +161,8 @@ theorem influence_eq_sum_sq_walshCoeff (i : ι) (f : (ι → ZMod 2) → ℝ) :
   exact sum_congr rfl fun S _ ↦ by split_ifs <;> simp
 
 /-- The average of `f` against its directional Laplacian in direction `i` equals `influence i f`. -/
-theorem expect_mul_sub_add_single_div_two (i : ι) (f : (ι → ZMod 2) → ℝ) :
+@[simp] theorem expect_mul_sub_add_single_div_two_eq_influence (i : ι)
+    (f : (ι → ZMod 2) → ℝ) :
     𝔼 x, f x * ((f x - f (x + Pi.single i 1)) / 2) = influence i f := by
   rw [expect_mul_eq_sum_walshCoeff, influence_eq_sum_sq_walshCoeff]
   simp_rw [walshCoeff_sub_add_single_div_two, mul_ite, mul_zero, ← sq, sum_filter]
@@ -173,10 +171,9 @@ theorem expect_mul_sub_add_single_div_two (i : ι) (f : (ι → ZMod 2) → ℝ)
 Walsh coefficients weighted by the sizes of the sets. -/
 theorem totalInfluence_eq_sum_card_mul_sq (f : (ι → ZMod 2) → ℝ) :
     totalInfluence f = ∑ S, (S.card : ℝ) * walshCoeff f S ^ 2 := by
-  simp_rw [totalInfluence_def, influence_eq_sum_sq_walshCoeff, sum_filter]
-  rw [sum_comm]
-  refine sum_congr rfl fun S _ ↦ ?_
-  rw [← sum_filter, sum_const, filter_mem_eq_inter, univ_inter, nsmul_eq_mul]
+  simp_rw [totalInfluence_def, influence_eq_sum_sq_walshCoeff]
+  rw [sum_comm' (s' := fun S ↦ S) (t' := univ) (by simp)]
+  simp [sum_const, nsmul_eq_mul]
 
 /-- Every coordinate's influence is at most the variance of `f`. -/
 theorem influence_le_variance (i : ι) (f : (ι → ZMod 2) → ℝ) :
@@ -206,27 +203,25 @@ theorem mul_variance_le_totalInfluence (k : ℕ) {f : (ι → ZMod 2) → ℝ}
   · simp [hf S hpos hk]
   · exact mul_le_mul_of_nonneg_right (Nat.cast_le.2 (not_lt.1 hk)) (sq_nonneg _)
 
-/-- **The Poincaré inequality on the Boolean cube**, with its equality case: the variance is at
-most the total influence, with equality if and only if `f` has degree at most one. -/
+/-- **The Poincaré inequality on the Boolean cube:** variance is at most total influence. -/
 theorem variance_le_totalInfluence (f : (ι → ZMod 2) → ℝ) :
-    variance f ≤ totalInfluence f ∧
-      (variance f = totalInfluence f ↔ ∀ S : Finset ι, 2 ≤ S.card → walshCoeff f S = 0) := by
-  have hdiff : totalInfluence f - variance f =
-      ∑ S with S.Nonempty, ((S.card : ℝ) - 1) * walshCoeff f S ^ 2 := by
-    rw [totalInfluence_eq_sum_nonempty, variance_eq_sum_sq_walshCoeff, ← sum_sub_distrib]
-    exact sum_congr rfl fun S _ ↦ by ring
-  have hnonneg : ∀ S ∈ univ.filter Finset.Nonempty,
-      0 ≤ ((S.card : ℝ) - 1) * walshCoeff f S ^ 2 := fun S hS ↦ by
+    variance f ≤ totalInfluence f := by
+  simpa using mul_variance_le_totalInfluence 1 (f := f) (fun S hpos hlt ↦ by omega)
+
+/-- Equality in the Poincaré inequality holds exactly when `f` has degree at most one. -/
+theorem variance_eq_totalInfluence_iff (f : (ι → ZMod 2) → ℝ) :
+    variance f = totalInfluence f ↔ ∀ S : Finset ι, 2 ≤ S.card → walshCoeff f S = 0 := by
+  rw [variance_eq_sum_sq_walshCoeff, totalInfluence_eq_sum_nonempty]
+  have hle : ∀ S ∈ univ.filter Finset.Nonempty,
+      walshCoeff f S ^ 2 ≤ (S.card : ℝ) * walshCoeff f S ^ 2 := fun S hS ↦ by
     have h1 : (1 : ℝ) ≤ S.card := Nat.one_le_cast.2 (mem_filter.1 hS).2.card_pos
-    exact mul_nonneg (sub_nonneg.2 h1) (sq_nonneg _)
-  refine ⟨sub_nonneg.1 (hdiff ▸ sum_nonneg hnonneg), ?_⟩
-  rw [eq_comm, ← sub_eq_zero, hdiff, sum_eq_zero_iff_of_nonneg hnonneg]
+    simpa using mul_le_mul_of_nonneg_right h1 (sq_nonneg (walshCoeff f S))
+  rw [sum_eq_sum_iff_of_le hle]
   refine ⟨fun h S hS ↦ ?_, fun h S hS ↦ ?_⟩
   · have hzero := h S (mem_filter.2 ⟨mem_univ _, card_pos.1 (by omega)⟩)
-    have hne : (S.card : ℝ) - 1 ≠ 0 := by
-      have : (2 : ℝ) ≤ S.card := by exact_mod_cast hS
-      linarith
-    exact sq_eq_zero_iff.1 ((mul_eq_zero.1 hzero).resolve_left hne)
+    have htwo : (2 : ℝ) ≤ S.card := by exact_mod_cast hS
+    have : 0 ≤ walshCoeff f S ^ 2 := sq_nonneg _
+    exact sq_eq_zero_iff.1 (by nlinarith)
   · have hpos : 1 ≤ S.card := (mem_filter.1 hS).2.card_pos
     by_cases h2 : 2 ≤ S.card
     · simp [h S h2]
