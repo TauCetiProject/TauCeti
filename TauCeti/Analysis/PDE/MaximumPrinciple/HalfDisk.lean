@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Regularity.MeyersExample
+public import TauCeti.Analysis.PDE.Regularity.Meyers.Example
 
 /-!
 # Hopf's lemma fails for measurable divergence-form coefficients

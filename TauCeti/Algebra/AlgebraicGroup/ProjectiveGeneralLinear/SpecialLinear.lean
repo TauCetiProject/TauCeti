@@ -22,7 +22,10 @@ center can be nonreduced.
 
 The construction applies `centerQuotientIsoOfIsCentralIsogeny` to the central isogeny
 proved in `SpecialLinear.CentralIsogeny` and the centerless target from
-`ProjectiveGeneralLinear.Center`.
+`ProjectiveGeneralLinear.Center`. Specializing the faithfully-flat quotient universal property
+(`CommHopfAlgCat.existsUnique_comp_iff_kernelHopfIdeal_le_of_faithfullyFlat`) shows that an
+affine-group morphism out of `SLₙ` factors uniquely through `SLₙ ⟶ PGLₙ` iff its scheme-theoretic
+kernel contains `Z(SLₙ)` (`existsUnique_comp_conjugationMap_iff`).
 
 ## References
 
@@ -80,5 +83,17 @@ theorem specialLinearCenterQuotientIso_inv_comp :
         eqToHom (SpecialLinear.finiteTypeCoordinateHopfAlgebra_obj k n) :=
   (specialLinearCenterQuotientIso n k).inv_comp_eq.mpr
     (specialLinearCenterQuotientIso_hom_comp n k).symm
+
+/-- Over any field and in every rank `n`, an affine-group morphism out of `SLₙ` factors (uniquely)
+through `SLₙ ⟶ PGLₙ` (`SpecialLinear.conjugationMap n k`) iff its kernel contains `Z(SLₙ)`. -/
+theorem existsUnique_comp_conjugationMap_iff {n : ℕ} {k : Type u} [Field k]
+    {K : _root_.CommHopfAlgCat.{u} k} (g : K ⟶ SpecialLinear.coordinateHopfAlgebra k n) :
+    (∃! ψ : K ⟶ coordinateHopfAlgebra n k, ψ ≫ SpecialLinear.conjugationMap n k = g) ↔
+      CommHopfAlgCat.kernelHopfIdeal g ≤
+        CommHopfAlgCat.centerDefiningIdeal (SpecialLinear.coordinateHopfAlgebra k n) := by
+  rw [← SpecialLinear.kernelHopfIdeal_conjugationMap (n := n) (k := k)]
+  exact CommHopfAlgCat.existsUnique_comp_iff_kernelHopfIdeal_le_of_faithfullyFlat
+    (SpecialLinear.conjugationMap n k) g
+    (SpecialLinear.isCentralIsogeny_conjugationMap n k).faithfullyFlat
 
 end TauCeti.ProjectiveGeneralLinear

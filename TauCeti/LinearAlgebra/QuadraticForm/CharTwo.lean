@@ -14,7 +14,7 @@ import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.CharP.Two
-import TauCeti.LinearAlgebra.BilinearForm.LagrangianBasis
+import TauCeti.LinearAlgebra.BilinearForm.Lagrangian.Basis
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.LinearAlgebra.Dimension.Basis
@@ -95,6 +95,8 @@ that underpins the Arf invariant:
 * `QuadraticMap.equivalent_pi_binaryQuadraticForm_zero_iff_exists_isTotallyIsotropic_orthogonal_eq`:
   over a field of characteristic two, splitting into hyperbolic planes is equivalent to the
   existence of a `Q`-totally-isotropic subspace equal to its polar orthogonal complement.
+* `QuadraticMap.equivalent_prod_self_pi_binaryQuadraticForm_zero`: over a field of characteristic
+  two, `Q ⊥ Q` is hyperbolic when `Q` has nondegenerate polar form.
 * `TauCeti.not_anisotropic_binaryQuadraticForm_one_iff`: in characteristic two, `[1, a]` is
   isotropic if and only if `a = x ^ 2 + x` for some `x`.
 * `QuadraticMap.nondegenerate_polar_iff_of_even_finrank`: on an even-dimensional space over any
@@ -513,6 +515,19 @@ theorem equivalent_pi_binaryQuadraticForm_zero_iff_exists_isTotallyIsotropic_two
         2 * Module.finrank K U = Module.finrank K V := by
   rw [equivalent_pi_binaryQuadraticForm_zero_iff_exists_isTotallyIsotropic_finrank_eq hQ hdim]
   exact ⟨fun ⟨U, hU, hUm⟩ ↦ ⟨U, hU, by omega⟩, fun ⟨U, hU, hU2⟩ ↦ ⟨U, hU, by omega⟩⟩
+
+/-- Over a field of characteristic two, the orthogonal sum `Q ⊥ Q` of a finite-dimensional
+quadratic form with nondegenerate polar form with itself is hyperbolic: the diagonal is a
+totally isotropic subspace equal to its own polar orthogonal complement. -/
+theorem equivalent_prod_self_pi_binaryQuadraticForm_zero {Q : QuadraticForm K V}
+    (hQ : Q.polarBilin.Nondegenerate) :
+    (Q.prod Q).Equivalent
+      (QuadraticMap.pi fun _ : Fin (Module.finrank K V) ↦ binaryQuadraticForm K 0 0) :=
+  (equivalent_pi_binaryQuadraticForm_zero_iff_exists_isTotallyIsotropic_orthogonal_eq
+    (nondegenerate_polarBilin_prod_iff.mpr ⟨hQ, hQ⟩)
+    (by rw [Module.finrank_prod, two_mul])).mpr
+    ⟨_, Q.isTotallyIsotropic_range_inl_add_inr_prod_self,
+      orthogonal_range_inl_add_inr_prod_self hQ.1⟩
 
 end CharTwoField
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Haar.DistribChar
 public import TauCeti.MeasureTheory.Measure.Haar.RestrictedProduct.Basic
-public import TauCeti.NumberTheory.LocalField.HaarCharacter
+public import TauCeti.NumberTheory.LocalField.Haar.Character
 public import TauCeti.NumberTheory.LocalField.Topology
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.BorelSpace
@@ -263,8 +263,7 @@ theorem natCard_mul_measure_image_completedIdeal (μ : Measure (FiniteAdeleRing 
   have hemb : MeasurableEmbedding ((↑) : integralAdeles R K → FiniteAdeleRing R K) :=
     MeasurableEmbedding.subtypeVal (isOpen_integralAdeles R K).measurableSet
   have hindex : (completedIdeal K N).toAddSubgroup.index = Nat.card (R ⧸ N) :=
-    (Submodule.cardQuot_apply _).trans
-      (Nat.card_congr (quotientEquivQuotientCompletedIdeal K hN).toEquiv).symm
+    (cardQuot_completedIdeal K hN).trans (Submodule.cardQuot_apply N)
   have _ : (completedIdeal K N).toAddSubgroup.FiniteIndex := ⟨hindex ▸ Nat.card_pos.ne'⟩
   have h := (completedIdeal K N).toAddSubgroup.index_mul_measure
     (isOpen_completedIdeal K hN).measurableSet

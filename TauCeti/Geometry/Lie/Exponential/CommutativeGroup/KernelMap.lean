@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.ContinuousFunctor
 public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
+import TauCeti.Algebra.Module.ZLattice.BaseChange
 
 /-!
 # Homomorphisms of commutative Lie groups and the kernels of their exponentials
@@ -19,7 +20,11 @@ identifications `𝔤 / Λ ≃ G` of preconnected groups.
 
 Conversely, for preconnected `G` every real-linear map `φ : 𝔤 → 𝔤'` with `φ(Λ) ⊆ Λ'` is the Lie
 map of a unique continuous homomorphism, so continuous homomorphisms `G → G'` correspond exactly
-to linear maps carrying `Λ` into `Λ'` (`ContinuousMonoidHom.lieMapKerEquiv`).
+to linear maps carrying `Λ` into `Λ'` (`ContinuousMonoidHom.lieMapKerEquiv`). When `G` is
+moreover compact, `Λ` is a full lattice, so every additive map `Λ → Λ'` extends uniquely to a
+real-linear map, and the continuous homomorphisms `G → G'` are exactly the additive maps `Λ → Λ'`
+(`TauCeti.existsUnique_continuousMonoidHom_lieMap_ker`). This is the full faithfulness of
+`T ↦ ker(exp_T)` on compact connected commutative Lie groups.
 
 The converse direction uses that the Lie map is characterized by the identity
 `f ∘ exp = exp ∘ φ` (`ContinuousMonoidHom.lieMap_apply_eq_of_lieExp`). As examples, the Lie map
@@ -42,11 +47,16 @@ the exponential it acts as `λ ↦ n λ`.
 * `ContinuousMonoidHom.lieExpQuotientKerContinuousAddEquiv_lieMapQuotient`: the induced map of
   quotients is `f` under the exponential identifications.
 * `ContinuousMonoidHom.lieMap_ofLieLinearMap`: the Lie map of `ofLieLinearMap φ hφ` is `φ`.
+* `TauCeti.existsUnique_continuousMonoidHom_lieMap_ker`: for compact connected `G`, every
+  additive map `ker(exp) → ker(exp')` is the restriction of the Lie map of exactly one continuous
+  homomorphism `G → G'`.
 * `ContinuousMonoidHom.lieMap_id_pow`, `ContinuousMonoidHom.lieMapKer_id_pow`: the `n`-th power
   map `ContinuousMonoidHom.id G ^ n` differentiates to multiplication by `n`, on `𝔤` and on `Λ`.
 
 ## References
 
+* A. W. Knapp, *Lie Groups Beyond an Introduction*, 2nd ed., Birkhäuser (2002), Cor. 1.103(c)
+  and Prop. 4.58, for continuous homomorphisms of tori as maps of exponential lattices.
 * T. Bröcker and T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
   Chapter I, § 3 (The Exponential Map).
 * *Complex theory of abelian varieties*, Stanford VIGRE seminar notes (2004), Theorem 1.8 and
@@ -236,6 +246,54 @@ theorem lieMapKerEquiv_symm_apply
 
 end ContinuousMonoidHom
 
+namespace TauCeti
+
+open ContinuousMonoidHom
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {G' : Type*} [TopologicalSpace G'] [ChartedSpace H' G'] [Group G']
+  [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [LieGroup I ∞ G] [LieGroup I' ∞ G']
+  [T2Space G] [BoundarylessManifold I G] [T2Space G'] [BoundarylessManifold I' G']
+  [IsMulCommutative G] [IsMulCommutative G'] [CompactSpace G] [PreconnectedSpace G]
+
+/-- **Tori and their exponential lattices** (full faithfulness): for a compact connected
+commutative Lie group `G` and a commutative Lie group `G'`, every additive map between the kernels
+of their exponentials is the restriction of the Lie map of exactly one continuous homomorphism
+`G →ₜ* G'`. For `Circle` the kernel is `2πℤ`, and `z ↦ z²` restricts to multiplication by `2`. -/
+theorem existsUnique_continuousMonoidHom_lieMap_ker
+    (g : (lieExpAddMonoidHom (I := I) (G := G)).ker →+
+      (lieExpAddMonoidHom (I := I') (G := G')).ker) :
+    ∃! f : G →ₜ* G', ∀ X : (lieExpAddMonoidHom (I := I) (G := G)).ker,
+      lieMap (I := I) (I' := I') f X = g X := by
+  have := topologicalGroup_of_lieGroup I ∞ (G := G)
+  -- The real-linear extension of `g` along the full lattice `ker(exp)`, whose inclusion exhibits
+  -- the Lie algebra as its base change to `ℝ`.
+  set φ := (ZLattice.isBaseChange_subtype ℝ (lieExpLattice (I := I) (G := G))).lift
+    ((lieExpAddMonoidHom (I := I') (G := G')).ker.subtype.comp g).toIntLinearMap
+  have hφ (X : (lieExpAddMonoidHom (I := I) (G := G)).ker) : φ X = g X := by
+    -- `lieExpLattice` is `ker(exp)` as a `ℤ`-submodule, with the same elements.
+    exact (ZLattice.isBaseChange_subtype ℝ (lieExpLattice (I := I) (G := G))).lift_eq
+      ((lieExpAddMonoidHom (I := I') (G := G')).ker.subtype.comp g).toIntLinearMap
+      ⟨X.val, X.property⟩
+  have hL (X) (hX : X ∈ (lieExpAddMonoidHom (I := I) (G := G)).ker) :
+      φ X ∈ (lieExpAddMonoidHom (I := I') (G := G')).ker := by
+    rw [hφ ⟨X, hX⟩]
+    exact (g ⟨X, hX⟩).property
+  refine ⟨ofLieLinearMap φ hL, fun X ↦ ?_, fun f hf ↦ ?_⟩
+  · rw [lieMap_ofLieLinearMap, hφ]
+  · refine (lieMapKerEquiv (I := I) (I' := I')).injective (Subtype.ext ?_)
+    -- Both Lie maps agree with `φ` on the kernel, a full lattice in the Lie algebra.
+    refine LinearMap.ext_on (IsZLattice.span_top (K := ℝ) (L := lieExpLattice (I := I) (G := G)))
+      fun X hX ↦ ?_
+    simp only [coe_lieMapKerEquiv_apply, lieMap_ofLieLinearMap]
+    rw [hφ ⟨X, hX⟩]
+    exact hf ⟨X, hX⟩
+
+end TauCeti
 /-! ### Multiplication by `n` -/
 
 namespace ContinuousMonoidHom

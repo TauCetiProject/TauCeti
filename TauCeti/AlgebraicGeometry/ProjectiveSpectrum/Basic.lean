@@ -50,6 +50,8 @@ of the structure sheaf of `Spec` over basic opens
 * `AlgebraicGeometry.Proj.map_congr`: `Proj.map f` depends only on `f`.
 * `AlgebraicGeometry.Proj.SpecMap_awayLift_awayι_eq`: the point of `Proj A` defined by `φ` on the
   chart `D₊(f)` agrees with the one defined on the chart `D₊(g)`.
+* `AlgebraicGeometry.Proj.SpecMap_awayLift_awayι_comp_map`: `Proj.map f` sends the point defined
+  by `φ` on the chart `D₊(f s)` to the point defined by `φ ∘ f` on the chart `D₊(s)`.
 * `AlgebraicGeometry.Proj.pullback_fst_awayι_comp_eq_snd_comp`: morphisms out of two standard
   charts agree on their overlap if they agree on the chart of the product.
 * `AlgebraicGeometry.Proj.map_toSpecZero`: `Proj.map f` lies over `Spec` of the degree-zero part
@@ -63,6 +65,10 @@ of the structure sheaf of `Spec` over basic opens
 * `AlgebraicGeometry.Proj.toSpecZero_appLE_basicOpen`: on `D₊(f)`, the functions pulled back
   along `Proj A ⟶ Spec A₀` are the fractions `a / 1`; globally, their values in the localizations
   are given by `AlgebraicGeometry.Proj.val_toSpecZero_appTop_apply`.
+* `AlgebraicGeometry.Proj.toSpecCoeff`: the structural morphism `Proj A ⟶ Spec R` to the
+  coefficient ring, with `AlgebraicGeometry.Proj.val_toSpecCoeff_appTop_apply`,
+  `AlgebraicGeometry.Proj.val_appLE_apply`, `AlgebraicGeometry.Proj.awayι_toSpecCoeff`, and
+  `AlgebraicGeometry.Proj.map_toSpecCoeff`.
 * `AlgebraicGeometry.Proj.iSup_basicOpen_eq_top_of_adjoin_eq_top`: if `A` is generated in degree
   one over `A₀`, the standard opens of degree-one elements cover `Proj A`.
 * `ProjectiveSpectrum.exists_le_mem_notMem`: a projective point misses homogeneous elements of
@@ -109,6 +115,19 @@ theorem SpecMap_awayLift_awayι_eq {R : Type u} [CommRing R] (φ : A →+* R) {f
   -- the two charts `D₊(fg)` differ only in the order of the degree `m + m'` of `fg`
   congr 2
   exact add_comm m m'
+
+/-- The `R`-point of `Proj ℬ` with homogeneous coordinates `φ : B →+* R`, read on the standard
+chart `D₊(t)` for `t = f s`, followed by `Proj.map f`, is the point of `Proj 𝒜` with homogeneous
+coordinates `φ ∘ f`, read on the standard chart `D₊(s)`. -/
+theorem SpecMap_awayLift_awayι_comp_map {R : Type u} [CommRing R] (f : 𝒜 →+*ᵍ ℬ)
+    (hf : HomogeneousIdeal.irrelevant ℬ ≤ (HomogeneousIdeal.irrelevant 𝒜).map f) {s : A} {d : ℕ}
+    (hs : s ∈ 𝒜 d) (hd : 0 < d) {t : B} (ht : t ∈ ℬ d) (hst : f s = t) (φ : B →+* R)
+    (hφt : IsUnit (φ t)) (hφs : IsUnit ((φ.comp f.toRingHom) s)) :
+    Spec.map (CommRingCat.ofHom (Away.lift ℬ φ hφt)) ≫ awayι ℬ t ht hd ≫ map f hf =
+      Spec.map (CommRingCat.ofHom (Away.lift 𝒜 (φ.comp f.toRingHom) hφs)) ≫ awayι 𝒜 s hs hd := by
+  subst hst
+  rw [awayι_comp_map _ _ hd _ hs, ← Spec.map_comp_assoc, ← CommRingCat.ofHom_comp,
+    Away.lift_comp_map]
 
 /-- `Proj.map f` lies over `Spec` of the ring homomorphism `𝒜 0 →+* ℬ 0` induced by `f` on the
 degree-zero parts. -/
@@ -330,6 +349,68 @@ theorem basicOpen_awayToSection_mk {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) (n : �
     exact fun h ↦ hp ((Proj 𝒜).basicOpen_le _ h)
 
 end
+
+section Coeff
+
+variable {R A : Type u} [CommRing R] [CommRing A] [Algebra R A]
+  (𝒜 : ℕ → Submodule R A) [GradedAlgebra 𝒜]
+
+/-- The structural morphism to the spectrum of the coefficient ring of a graded algebra. -/
+noncomputable def toSpecCoeff : Proj 𝒜 ⟶ Spec (.of R) :=
+  toSpecZero 𝒜 ≫ Spec.map (CommRingCat.ofHom (algebraMap R (𝒜 0)))
+
+/-- The coefficient structure map factors through the degree-zero spectrum. -/
+theorem toSpecCoeff_def :
+    toSpecCoeff 𝒜 = toSpecZero 𝒜 ≫
+      Spec.map (CommRingCat.ofHom (algebraMap R (𝒜 0))) := (rfl)
+
+/-- **Coefficients are the fractions `r / 1`.** The global function on `Proj A` pulled back from
+`r ∈ R` along `Proj A ⟶ Spec R` takes the value `r / 1` in the localization at every point. -/
+theorem val_toSpecCoeff_appTop_apply (r : R) (x : (⊤ : (Proj 𝒜).Opens)) :
+    (((toSpecCoeff 𝒜).appTop ((Scheme.ΓSpecIso (.of R)).inv r)).val x).val =
+      Localization.mk (algebraMap R A r) 1 := by
+  rw [toSpecCoeff_def, Scheme.Hom.comp_appTop, ← ConcreteCategory.comp_apply, ← Category.assoc,
+    ← Scheme.ΓSpecIso_inv_naturality]
+  exact (val_toSpecZero_appTop_apply (algebraMap R (𝒜 0) r) x).trans
+    (congrArg (Localization.mk · 1) (SetLike.GradeZero.coe_algebraMap 𝒜 r))
+
+/-- A function `r` on an affine open `U` of a scheme `X`, pulled back along a morphism
+`g = Proj ℬ ⟶ Spec Γ(X, U) ⟶ X` to an open `V ≤ g⁻¹ U`, takes the value `r / 1` at every
+point. -/
+theorem val_appLE_apply {X : Scheme.{u}} {U : X.Opens} (hU : IsAffineOpen U) {B : Type u}
+    [CommRing B] [Algebra Γ(X, U) B] (ℬ : ℕ → Submodule Γ(X, U) B) [GradedAlgebra ℬ]
+    (g : Proj ℬ ⟶ X) (hg : g = toSpecCoeff ℬ ≫ hU.fromSpec) {V : (Proj ℬ).Opens}
+    (e : V ≤ g ⁻¹ᵁ U) (r : Γ(X, U)) (x : V) :
+    ((g.appLE U V e r).val x).val = Localization.mk (algebraMap Γ(X, U) B r) 1 := by
+  subst hg
+  rw [Scheme.Hom.comp_appLE, hU.fromSpec_app_self, Category.assoc]
+  -- `toSpecCoeff ℬ` lands in `Spec (.of Γ(X, U))`, which is `Spec Γ(X, U)` only up to
+  -- unfolding `CommRingCat.of`, so the rewrite must see through it
+  erw [Scheme.Hom.map_appLE]
+  rw [Scheme.Hom.appLE, ← Category.assoc, ConcreteCategory.comp_apply]
+  -- restriction of functions on `Proj ℬ` keeps their values
+  exact val_toSpecCoeff_appTop_apply ℬ r ⟨x.val, trivial⟩
+
+/-- The coefficient morphism on a standard affine chart is the chart's coefficient map. -/
+@[reassoc (attr := simp)]
+theorem awayι_toSpecCoeff {f : A} {n : ℕ} (hf : f ∈ 𝒜 n) (hn : 0 < n) :
+    awayι 𝒜 f hf hn ≫ toSpecCoeff 𝒜 =
+      Spec.map (CommRingCat.ofHom (algebraMap R (Away 𝒜 f))) := by
+  rw [toSpecCoeff, awayι_toSpecZero_assoc, ← Spec.map_comp,
+    ← CommRingCat.ofHom_comp, ← algebraMap_eq_comp]
+
+/-- `Proj.map f` lies over the coefficient ring when `f` preserves the scalars in degree zero. -/
+@[reassoc]
+theorem map_toSpecCoeff {B : Type u} [CommRing B] [Algebra R B] {ℬ : ℕ → Submodule R B}
+    [GradedAlgebra ℬ] (f : 𝒜 →+*ᵍ ℬ)
+    (hf : HomogeneousIdeal.irrelevant ℬ ≤ (HomogeneousIdeal.irrelevant 𝒜).map f)
+    (hR : ∀ r : R, f.gradedZeroRingHom (algebraMap R (𝒜 0) r) = algebraMap R (ℬ 0) r) :
+    map f hf ≫ toSpecCoeff 𝒜 = toSpecCoeff ℬ := by
+  rw [toSpecCoeff, map_toSpecZero_assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp, toSpecCoeff]
+  congr 3
+  exact RingHom.ext hR
+
+end Coeff
 
 end AlgebraicGeometry.Proj
 
