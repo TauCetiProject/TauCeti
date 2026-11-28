@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Instances.Matrix
-public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Subalgebra
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
@@ -48,6 +48,10 @@ These are the cases `Ô ⊆ 𝔸_f` of the general statements for a subalgebra
   determinant `1` whose entries are integral at every finite place comes from `SL_n(R)`.
 * `IsDedekindDomain.FiniteAdeleRing.mem_map_integralGL_iff`: entrywise membership in the image of
   a subgroup of `GL_n(Ô)`.
+* `IsDedekindDomain.FiniteAdeleRing.generalLinearGroup_ext`: a matrix of `GL_n(𝔸_f)` is determined
+  by its components at the finite places.
+* `IsDedekindDomain.FiniteAdeleRing.eventually_map_proj_mem_range`: the component at `v` of a
+  matrix of `GL_n(𝔸_f)` lies in `GL_n(𝒪_v)` for all but finitely many finite places `v`.
 * `IsDedekindDomain.FiniteAdeleRing.det_integralGL`,
   `IsDedekindDomain.FiniteAdeleRing.map_det_map_integralGL`: compatibility with determinants.
 -/
@@ -166,5 +170,33 @@ theorem mem_map_integralGL_iff {H : Subgroup (GL ι (integralAdeles R K))}
         (∀ i j, (↑g⁻¹ : Matrix ι ι 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K) ∧
           P (Matrix.of fun i j ↦ ⟨_, hg i j⟩) :=
   Matrix.GeneralLinearGroup.mem_map_map_val_iff hH
+
+/-! ### Components at the finite places -/
+
+/-- A matrix of `GL_n(𝔸_f)` is determined by its components at the finite places. -/
+theorem generalLinearGroup_ext {g h : GL ι 𝔸ᶠ[R, K]}
+    (H : ∀ v : HeightOneSpectrum R, Matrix.GeneralLinearGroup.map (proj K v).toRingHom g =
+      Matrix.GeneralLinearGroup.map (proj K v).toRingHom h) : g = h := by
+  refine Units.ext <| Matrix.ext fun i j ↦ ext K fun v ↦ ?_
+  simpa using congrArg (fun x : GL ι (v.adicCompletion K) ↦ x.val i j) (H v)
+
+/-- **Almost all components are integral.** The component at `v` of a matrix of `GL_n(𝔸_f)` lies
+in the image `GL_n(𝒪_v)` of the general linear group over the local integers for all but finitely
+many finite places `v`: the entries of the matrix and of its inverse are integral there. -/
+theorem eventually_map_proj_mem_range (g : GL ι 𝔸ᶠ[R, K]) :
+    ∀ᶠ v in Filter.cofinite, Matrix.GeneralLinearGroup.map (proj K v).toRingHom g ∈
+      (Matrix.GeneralLinearGroup.map (n := ι) (v.adicCompletionIntegers K).subtype).range := by
+  have hS (v : HeightOneSpectrum R) (x : v.adicCompletion K) :
+      x ∈ (v.adicCompletionIntegers K).subtype.range ↔ x ∈ v.adicCompletionIntegers K :=
+    ⟨fun ⟨y, hy⟩ ↦ hy ▸ y.property, fun h ↦ ⟨⟨x, h⟩, rfl⟩⟩
+  have hent (A : Matrix ι ι 𝔸ᶠ[R, K]) :
+      ∀ᶠ v in Filter.cofinite, ∀ i j, A i j v ∈ v.adicCompletionIntegers K :=
+    Filter.eventually_all.2 fun i ↦ Filter.eventually_all.2 fun j ↦
+      (A i j).cofinite_mem_adicCompletionIntegers
+  filter_upwards [hent g, hent ↑g⁻¹] with v h₁ h₂
+  simpa only [Matrix.GeneralLinearGroup.mem_range_map_iff_of_injective
+    (ValuationSubring.subtype_injective _), hS, ← map_inv, Matrix.GeneralLinearGroup.map_apply,
+    Matrix.map_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ContinuousAlgHom.coe_coe,
+    proj_apply] using And.intro h₁ h₂
 
 end IsDedekindDomain.FiniteAdeleRing

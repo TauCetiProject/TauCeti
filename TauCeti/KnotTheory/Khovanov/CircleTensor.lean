@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
-public import TauCeti.KnotTheory.Khovanov.EnhancedState
+public import TauCeti.KnotTheory.Khovanov.EnhancedState.Basic
 public import TauCeti.KnotTheory.Khovanov.QuantumGrading
 public import TauCeti.RingTheory.PiTensorProduct.Equiv
 public import TauCeti.RingTheory.PiTensorProduct.FiberwiseMul

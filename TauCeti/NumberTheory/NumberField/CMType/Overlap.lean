@@ -170,6 +170,13 @@ theorem averageOverlap_def (Φ : CMType E) (σ : RingAut ℂ) :
       (∑ᶠ Ψ ∈ orbit (RingAut ℂ) Φ, (overlap Ψ σ : ℚ)) / (orbit (RingAut ℂ) Φ).ncard :=
   (rfl)
 
+/-- An automorphism fixing all complex embeddings of the algebra is a right period
+of the averaged overlap. -/
+theorem averageOverlap_mul_of_forall_comp_eq (Φ : CMType E) (σ : RingAut ℂ) {τ : RingAut ℂ}
+    (hτ : ∀ φ : E →+* ℂ, (τ : ℂ →+* ℂ).comp φ = φ) :
+    Φ.averageOverlap (σ * τ) = Φ.averageOverlap σ := by
+  simp only [averageOverlap_def, overlap_def, mul_smul, smul_eq_self_of_forall_comp_eq hτ]
+
 /-- The averaged overlap depends only on the orbit of the type: `a⁰_{τΦ} = a⁰_Φ`. -/
 @[simp]
 theorem averageOverlap_smul (τ : RingAut ℂ) (Φ : CMType E) (σ : RingAut ℂ) :

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Matrix.Block
 public import Mathlib.RingTheory.MvPolynomial.WeightedHomogeneous
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Block.Triangular
 public import TauCeti.NumberTheory.ThetaLift.FrobeniusCycle.Basic
 public import TauCeti.RingTheory.MvPolynomial.LinearSubst
 
@@ -39,7 +40,9 @@ forms are two instances.
 
 ## Main results
 
-* `TauCeti.FrobeniusCycle.twistedAction_X`: the action on a variable.
+* `TauCeti.FrobeniusCycle.twistedAction_X`, `TauCeti.FrobeniusCycle.twistedAction_X_eq_sum_C_mul`:
+  the action on a variable, the second through `g` at even and its inverse transpose at odd
+  letters.
 * `TauCeti.FrobeniusCycle.isWeightedHomogeneous_twistedAction`: the action preserves the degree
   in each letter.
 * `TauCeti.FrobeniusCycle.isWeightedHomogeneous_formToMvPolynomial`,
@@ -47,6 +50,8 @@ forms are two instances.
   forms are exactly the polynomials of degree `n` in each letter.
 * `TauCeti.FrobeniusCycle.twistedAction_formToMvPolynomial`: `letterRep n g` is the matrix of
   the twisted action on forms of degree `n` in each letter.
+* `TauCeti.FrobeniusCycle.map_twistedAction`, `TauCeti.FrobeniusCycle.map_letterRep`: changing
+  the coefficients along `f : R →+* S` takes the action of the cycle to that of `T.map f`.
 * `TauCeti.FrobeniusCycle.letterRep_mulVec_mem_translatesIn`: the conditions on translates by
   the Levi subgroup of `τ` are stable under that subgroup.
 * `TauCeti.FrobeniusCycle.translatesIn_mono`, `TauCeti.FrobeniusCycle.defectConditions_mono`,
@@ -60,6 +65,9 @@ forms are two instances.
   `New/UpperBound/ElementaryDivisors/TwistingData.lean`; the definitions here correspond to
   `New.FrobeniusCycle.letterRep`, `New.FrobeniusCycle.translatesIn`,
   `New.FrobeniusCycle.defectConditions` and `New.FrobeniusCycle.deepForms` there.
+  `TauCeti.FrobeniusCycle.twistedAction_X_eq_sum_C_mul` is adapted from the file
+  `New/UpperBound/ElementaryDivisors/RootLemma.lean` there (Apache 2.0, Copyright 2026 Anthropic,
+  PBC).
 -/
 
 public section
@@ -105,6 +113,22 @@ theorem twistedAction_X (g : GL (Fin k) W) (c : Fin k) (s : ZMod N) :
   have := T.neZero
   simp [twistedAction_apply, blockDiagonal_apply, Fintype.sum_prod_type, smul_eq_C_mul,
     apply_ite C, ite_mul]
+
+/-- The action on a variable, through `g` at even and its inverse transpose at odd letters. -/
+theorem twistedAction_X_eq_sum_C_mul (g : GL (Fin k) W) (z : Fin k × ZMod N) :
+    T.twistedAction g (X z) = ∑ b, C (T.ι z.2
+      ((if T.isEven z.2 then g else GeneralLinearGroup.inverseTranspose g : GL (Fin k) W) b z.1)) *
+        X (b, z.2) := by
+  obtain ⟨c, s⟩ := z
+  rw [twistedAction_X]
+  cases h : T.isEven s <;> simp [h, GeneralLinearGroup.coe_inverseTranspose, smul_eq_C_mul]
+
+/-- The twisted action does not raise the total degree. -/
+theorem totalDegree_twistedAction_le (g : GL (Fin k) W) (f : MvPolynomial (Fin k × ZMod N) R) :
+    (T.twistedAction g f).totalDegree ≤ f.totalDegree := by
+  have := T.neZero
+  rw [twistedAction_apply]
+  exact totalDegree_polynomialAction_le _ f
 
 /-! ### Forms of degree `n` in each letter -/
 
@@ -307,13 +331,39 @@ theorem twistedAction_formToMvPolynomial (g : GL (Fin k) W) (F : Exponent N k n 
     T.twistedAction g (formToMvPolynomial F) = formToMvPolynomial (T.letterRep n g *ᵥ F) :=
   T.twistedAction_formToMvPolynomial_aux g F
 
+section Map
+
+variable {S : Type*} [CommRing S] (f : R →+* S)
+
+/-- Changing the coefficients along `f` takes the twisted action of the cycle to that of
+`T.map f`. -/
+theorem map_twistedAction (g : GL (Fin k) W) (φ : MvPolynomial (Fin k × ZMod N) R) :
+    MvPolynomial.map f (T.twistedAction g φ) =
+      (T.map f).twistedAction g (MvPolynomial.map f φ) := by
+  have := T.neZero
+  rw [twistedAction_apply, twistedAction_apply, polynomialAction_eq_linearSubst_transpose,
+    polynomialAction_eq_linearSubst_transpose, map_linearSubst, Matrix.transpose_map,
+    blockDiagonal_map _ _ (map_zero f)]
+  simp only [map_letterMatrix]
+
+/-- The matrix of the twisted action of `T.map f` on forms is that of the cycle with `f` applied
+entrywise. -/
+@[simp]
+theorem map_letterRep (g : GL (Fin k) W) :
+    (T.map f).letterRep n g = (T.letterRep n g).map f := by
+  ext α β
+  rw [letterRep_apply, Matrix.map_apply, letterRep_apply, ← coeff_map, map_twistedAction,
+    map_monomial, map_one f]
+
+end Map
+
 /-! ### Conditions on translates -/
 
 /-- `translatesIn τ I B`: the forms `F` of degree `n` in each letter such that every translate
 `ρ_n(g) F` by the Levi subgroup of `τ` has its coefficients at the exponents in `B` in `I`. -/
 def translatesIn (τ : Fin k → ℕ) (I : Ideal R) (B : Set (Exponent N k n)) :
     Submodule R (Exponent N k n → R) where
-  carrier := {F | ∀ g ∈ leviSubgroup W τ, ∀ β ∈ B, (T.letterRep n g *ᵥ F) β ∈ I}
+  carrier := {F | ∀ g ∈ leviSubgroup τ W, ∀ β ∈ B, (T.letterRep n g *ᵥ F) β ∈ I}
   add_mem' hF hG g hg β hβ := by
     rw [Matrix.mulVec_add, Pi.add_apply]
     exact I.add_mem (hF g hg β hβ) (hG g hg β hβ)
@@ -325,7 +375,7 @@ def translatesIn (τ : Fin k → ℕ) (I : Ideal R) (B : Set (Exponent N k n)) :
 /-- Unfolding `translatesIn`. -/
 theorem mem_translatesIn_iff {τ : Fin k → ℕ} {I : Ideal R} {B : Set (Exponent N k n)}
     {F : Exponent N k n → R} :
-    F ∈ T.translatesIn τ I B ↔ ∀ g ∈ leviSubgroup W τ, ∀ β ∈ B, (T.letterRep n g *ᵥ F) β ∈ I :=
+    F ∈ T.translatesIn τ I B ↔ ∀ g ∈ leviSubgroup τ W, ∀ β ∈ B, (T.letterRep n g *ᵥ F) β ∈ I :=
   Iff.rfl
 
 /-- The translate `g = 1`: a form satisfying the conditions on translates has its own
@@ -333,15 +383,15 @@ coefficients at the exponents in `B` in `I`. -/
 theorem apply_mem_of_mem_translatesIn {τ : Fin k → ℕ} {I : Ideal R} {B : Set (Exponent N k n)}
     {F : Exponent N k n → R} (hF : F ∈ T.translatesIn τ I B) {β : Exponent N k n} (hβ : β ∈ B) :
     F β ∈ I := by
-  simpa using hF 1 (leviSubgroup W τ).one_mem β hβ
+  simpa using hF 1 (leviSubgroup τ W).one_mem β hβ
 
 /-- The conditions on translates by the Levi subgroup of `τ` are stable under that subgroup. -/
 theorem letterRep_mulVec_mem_translatesIn {τ : Fin k → ℕ} {I : Ideal R}
     {B : Set (Exponent N k n)} {F : Exponent N k n → R} (hF : F ∈ T.translatesIn τ I B)
-    {h : GL (Fin k) W} (hh : h ∈ leviSubgroup W τ) :
+    {h : GL (Fin k) W} (hh : h ∈ leviSubgroup τ W) :
     T.letterRep n h *ᵥ F ∈ T.translatesIn τ I B := fun g hg β hβ ↦ by
   rw [mulVec_mulVec, ← map_mul]
-  exact hF (g * h) ((leviSubgroup W τ).mul_mem hg hh) β hβ
+  exact hF (g * h) ((leviSubgroup τ W).mul_mem hg hh) β hβ
 
 /-- The conditions on translates are monotone in the ideal and antitone in the set of
 exponents. -/
@@ -373,7 +423,7 @@ noncomputable def defectConditions (a a' : Fin k) (I : Ideal R) (h : ℝ) :
 /-- Unfolding `defectConditions`. -/
 theorem mem_defectConditions_iff {a a' : Fin k} {I : Ideal R} {h : ℝ}
     {F : Exponent N k n → R} :
-    F ∈ T.defectConditions k n a a' I h ↔ ∀ g ∈ leviSubgroup W (twoBlockLabel a'),
+    F ∈ T.defectConditions k n a a' I h ↔ ∀ g ∈ leviSubgroup (twoBlockLabel a') W,
       ∀ β : Exponent N k n, (∃ i, h < T.defect a a' i β.val) → (T.letterRep n g *ᵥ F) β ∈ I :=
   Iff.rfl
 

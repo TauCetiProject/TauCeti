@@ -1,0 +1,67 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.KnotTheory.Khovanov.EnhancedState.Basic
+import TauCeti.KnotTheory.PDCode.ResolvedCircle.Planar
+import TauCeti.KnotTheory.PDCode.VertexResolution
+
+/-!
+# Planar evaluations of the enhanced state sum
+
+For every planar oriented PD-code `D` with `c` link components, the PD-code normalization-sign
+parity `TauCeti.OrientedPDCode.neg_one_pow_card_false_add_negativeCrossingCount` shows that each
+state `s` with `k(s)` resolution circles contributes `(-1) ^ (n + c) (-2) ^ k(s)` to the
+normalized enhanced-state Euler sum `E(D) = TauCeti.OrientedPDCode.enhancedStateEulerSum D`.
+Together with the unoriented state sum `∑ₛ (-2) ^ k(s) = (-1) ^ (n + c) 2 ^ c`
+(`TauCeti.PDCode.sum_neg_two_pow_stateLoopCount`), this yields `E(D) = 2 ^ c` and the `q = 1`
+evaluation of `D.enhancedStateSum`.
+
+## Main results
+
+* `TauCeti.OrientedPDCode.enhancedStateEulerSum_eq_two_pow_componentCount`: `E(D) = 2 ^ c` for
+  every planar oriented PD-code `D` with `c` components.
+* `TauCeti.OrientedPDCode.eval₂_one_enhancedStateSum_eq_two_pow`: evaluating `D.enhancedStateSum`
+  at `q = 1` yields `2 ^ c`.
+
+## References
+
+* M. Khovanov, *A categorification of the Jones polynomial*, Duke Math. J. 101 (2000), 359–426.
+* D. Bar-Natan, *On Khovanov's categorification of the Jones polynomial*, Algebr. Geom. Topol. 2
+  (2002), 337–370.
+-/
+
+public section
+
+open Finset LaurentPolynomial
+
+namespace TauCeti.OrientedPDCode
+
+variable {n : ℕ}
+
+/-- **For every planar oriented PD-code `D` with `c` link components, `E(D) = 2 ^ c`.** Every state
+contributes `(-1) ^ (n + c) (-2) ^ k(s)` by the PD-code normalization-sign parity, and the
+unoriented state sum `∑ₛ (-2) ^ k(s)` is `(-1) ^ (n + c) 2 ^ c`
+(`TauCeti.PDCode.sum_neg_two_pow_stateLoopCount`). -/
+theorem enhancedStateEulerSum_eq_two_pow_componentCount (D : OrientedPDCode n)
+    (hD : D.toPDCode.IsPlanar) : D.enhancedStateEulerSum = (2 : ℤ) ^ D.componentCount := by
+  rw [enhancedStateEulerSum_def]
+  have hterm (s : Fin n → Bool) :
+      (-1 : ℤ) ^ (#{i | s i = false} + D.negativeCrossingCount) *
+          2 ^ D.toPDCode.stateLoopCount s =
+        (-1) ^ (n + D.componentCount) * (-2) ^ D.toPDCode.stateLoopCount s := by
+    rw [D.neg_one_pow_card_false_add_negativeCrossingCount hD s, pow_add, neg_pow (2 : ℤ)]
+    ring
+  simp_rw [hterm]
+  rw [← Finset.mul_sum, D.toPDCode.sum_neg_two_pow_stateLoopCount, ← mul_assoc, ← pow_add,
+    Even.neg_one_pow ⟨_, rfl⟩, one_mul]
+
+/-- **Evaluating the enhanced state sum of a planar diagram at `q = 1` gives `2 ^ c`.** -/
+theorem eval₂_one_enhancedStateSum_eq_two_pow (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar) :
+    eval₂ (RingHom.id ℤ) 1 D.enhancedStateSum = (2 : ℤ) ^ D.componentCount := by
+  rw [D.eval₂_one_enhancedStateSum, D.enhancedStateEulerSum_eq_two_pow_componentCount hD]
+
+end TauCeti.OrientedPDCode
