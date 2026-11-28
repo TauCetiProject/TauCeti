@@ -333,6 +333,7 @@ theorem rankInner_eq_zero_of_right {n : ℕ} (F : HallAlgebra k) {H : HallAlgebr
 
 /-- The rank-`n` inner product with `H|_m` on the right is `⟨F, H⟩_n` if `n = m` and `0`
 otherwise. -/
+@[simp]
 theorem rankInner_rankPart_right (n m : ℕ) (F H : HallAlgebra k) :
     rankInner n F (rankPart m H) = if n = m then rankInner n F H else 0 := by
   split_ifs with h
@@ -342,10 +343,10 @@ theorem rankInner_rankPart_right (n m : ℕ) (F H : HallAlgebra k) :
 
 /-- The rank-`n` inner product with `F|_m` on the left is `⟨F, H⟩_n` if `n = m` and `0`
 otherwise. -/
+@[simp]
 theorem rankInner_rankPart_left (n m : ℕ) (F H : HallAlgebra k) :
     rankInner n (rankPart m F) H = if n = m then rankInner n F H else 0 := by
-  have h := congrArg conj (rankInner_rankPart_right n m H F)
-  simpa [conj_rankInner, apply_ite conj] using h
+  rw [← conj_rankInner, rankInner_rankPart_right, apply_ite conj, conj_rankInner, map_zero]
 
 /-- Elements supported in distinct ranks are orthogonal for `rankInner n` for every `n`. -/
 @[simp]

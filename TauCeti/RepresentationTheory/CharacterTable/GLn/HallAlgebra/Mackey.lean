@@ -123,14 +123,6 @@ theorem blockAverage_smul (c : ℂ) (F : HallAlgebra k) (a : SimilarityClass k) 
 variable {V W : Type*} [AddCommGroup V] [Module k V] [Module.Finite k V]
   [AddCommGroup W] [Module k W] [Module.Finite k W]
 
-omit [Fintype k] in
-/-- The similarity class of a block-triangular endomorphism has dimension equal to the sum of the
-dimensions of its diagonal blocks. -/
-@[simp]
-theorem dim_ofEnd_blockTriangular (a : Module.End k V) (b : Module.End k W) (x : W →ₗ[k] V) :
-    (ofEnd (blockTriangular a b x)).dim = (ofEnd a).dim + (ofEnd b).dim := by
-  simp [dim_ofEnd, Module.finrank_prod]
-
 /-- The block average at the classes of `a` and `b` is the mean of `A` over the block maps
 `blockTriangular a b x` for all `x : W →ₗ[k] V`. -/
 theorem blockAverage_ofEnd (F : HallAlgebra k) (a : Module.End k V) (b : Module.End k W)
@@ -197,6 +189,7 @@ theorem blockAverage_one_ofEnd (a : Module.End k V) (b : Module.End k W) :
 
 /-- The block average of `F|_n` at `(a, b)` equals the block average of `F` when `a.dim + b.dim = n`
 and vanishes otherwise. -/
+@[simp]
 theorem blockAverage_rankPart (n : ℕ) (F : HallAlgebra k) (a b : SimilarityClass k) :
     blockAverage (rankPart n F) a b = if a.dim + b.dim = n then blockAverage F a b else 0 := by
   simp only [blockAverage, rankPart_apply, dim_ofEnd_blockTriangular, ofEnd_rep]
