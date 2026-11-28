@@ -27,7 +27,7 @@ and shows that isogenies contain the isomorphisms and are closed under compositi
 -/
 
 -- The property-level isogeny API is adapted from
--- `TauCeti.AlgebraicGeometry.AbelianVariety.Isogeny`.
+-- `TauCeti.AlgebraicGeometry.AbelianVariety.Isogeny.Basic`.
 
 public section
 

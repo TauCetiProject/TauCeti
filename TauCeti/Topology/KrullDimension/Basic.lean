@@ -45,6 +45,8 @@ closed, since a proper specialization of such a point would have codimension at 
   Krull dimension at least one.
 * `TauCeti.topologicalKrullDim_eq_iSup_coheight`: on a quasi-sober space, the Krull dimension is
   the supremum of the codimensions of the points for the specialization preorder.
+* `StrictMono.topologicalKrullDim_le_range`: a map from a quasi-sober space that is strictly
+  monotone for the specialization preorders has range of dimension at least that of its source.
 * `TauCeti.topologicalKrullDim_le_of_forall_coheight_le`: on a quasi-sober space all of whose
   points have codimension at most `n`, the Krull dimension is at most `n`.
 * `TauCeti.height_eq_topologicalKrullDim_closure_singleton`: on a quasi-sober space, the height
@@ -157,6 +159,17 @@ theorem topologicalKrullDim_eq_iSup_coheight (α : Type*) [TopologicalSpace α] 
         specializes_iff_closure_subset.mp h)
   rw [← krullDim_eq_iSup_coheight]
   exact krullDim_le_of_strictMono g hmono
+
+attribute [local instance] specializationPreorder in
+/-- A map from a quasi-sober space that is strictly monotone for the specialization preorders
+has range of Krull dimension at least that of its source. -/
+theorem _root_.StrictMono.topologicalKrullDim_le_range {X Y : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] [QuasiSober X] {f : X → Y}
+    (hf : StrictMono f) : topologicalKrullDim X ≤ topologicalKrullDim (Set.range f) := by
+  rw [topologicalKrullDim_eq_iSup_coheight, ← krullDim_eq_iSup_coheight]
+  refine le_trans ?_ (krullDim_le_topologicalKrullDim (Set.range f))
+  rw [specializationPreorder_subtype]
+  exact krullDim_le_of_strictMono (Set.rangeFactorization f) (fun _ _ h ↦ hf h)
 
 attribute [local instance] specializationPreorder in
 /-- On a quasi-sober topological space all of whose points have codimension at most `n` for the

@@ -13,6 +13,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.Normal
 public import TauCeti.RingTheory.QuasiFinite.Height
 
 import TauCeti.Topology.KrullDimension.Basic
+import TauCeti.Topology.KrullDimension.Irreducible
 
 /-!
 # Locally quasi-finite morphisms
@@ -46,6 +47,11 @@ of the chart is mapped into a hypersurface.
   morphism has dimension at most that of its target.
 * `AlgebraicGeometry.Scheme.Hom.topologicalKrullDim_eq_of_isClosedMap_of_surjective`:
   a closed, surjective, locally quasi-finite morphism preserves dimension.
+* `AlgebraicGeometry.Scheme.Hom.surjective_of_isClosed_range_of_topologicalKrullDim_le`:
+  a locally quasi-finite morphism with closed range is surjective when the target is irreducible
+  and finite-dimensional and the source has dimension at least that of the target.
+* `AlgebraicGeometry.LocallyQuasiFinite.of_comp_surjective`: local quasi-finiteness descends
+  along a surjection on the source when the descended morphism is locally of finite type.
 * `AlgebraicGeometry.Scheme.Hom.exists_ne_zero_image_subset_zeroLocus`: a locally quasi-finite
   morphism from an integral affine scheme to `Spec R` maps a proper closed subset into the zero
   locus of a nonzero element of `R`.
@@ -145,13 +151,10 @@ theorem Scheme.Hom.coheight_le_coheight_apply {X Y : Scheme.{u}} (f : X ⟶ Y)
     [LocallyQuasiFinite f] (x : X) : Order.coheight x ≤ Order.coheight (f x) :=
   Order.coheight_le_coheight_apply_of_strictMono _ f.strictMono x
 
-/-- The source of a locally quasi-finite morphism has dimension at most that of its target: the
-dimension of a scheme is the supremum of the coheights of its points. -/
+/-- The source of a locally quasi-finite morphism has dimension at most that of its target. -/
 theorem Scheme.Hom.topologicalKrullDim_le {X Y : Scheme.{u}} (f : X ⟶ Y)
-    [LocallyQuasiFinite f] : topologicalKrullDim X ≤ topologicalKrullDim Y := by
-  rw [TauCeti.topologicalKrullDim_eq_iSup_coheight, TauCeti.topologicalKrullDim_eq_iSup_coheight]
-  exact iSup_le fun x ↦ (WithBot.coe_le_coe.mpr (f.coheight_le_coheight_apply x)).trans
-    (le_iSup (fun y : Y ↦ (Order.coheight y : WithBot ℕ∞)) (f x))
+    [LocallyQuasiFinite f] : topologicalKrullDim X ≤ topologicalKrullDim Y :=
+  f.strictMono.topologicalKrullDim_le_range.trans (topologicalKrullDim_subspace_le Y _)
 
 /-- A closed, surjective, locally quasi-finite morphism preserves Krull dimension.
 The two inequalities use incomparability of its fibers and lifting of specialization chains.
@@ -161,6 +164,58 @@ theorem Scheme.Hom.topologicalKrullDim_eq_of_isClosedMap_of_surjective
     (hf : IsClosedMap f) : topologicalKrullDim X = topologicalKrullDim Y :=
   le_antisymm f.topologicalKrullDim_le
     (hf.specializingMap.topologicalKrullDim_le_of_surjective f.surjective)
+
+/-- A locally quasi-finite morphism with closed range in an irreducible scheme of finite Krull
+dimension is surjective if the source has dimension at least that of the target. -/
+theorem Scheme.Hom.surjective_of_isClosed_range_of_topologicalKrullDim_le
+    {X Y : Scheme.{u}} (f : X ⟶ Y) [LocallyQuasiFinite f] [IrreducibleSpace Y]
+    (hrange : IsClosed (Set.range f)) (hY : topologicalKrullDim Y ≠ ⊤)
+    (hdim : topologicalKrullDim Y ≤ topologicalKrullDim X) : Surjective f := by
+  rw [surjective_iff, ← Set.range_eq_univ]
+  by_contra hne
+  exact (hrange.topologicalKrullDim_lt hne
+    (ne_top_of_le_ne_top hY (topologicalKrullDim_subspace_le Y _))).not_ge
+      (hdim.trans f.strictMono.topologicalKrullDim_le_range)
+
+/-- A morphism locally of finite type is locally quasi-finite if it becomes locally quasi-finite
+after precomposition by a surjection. -/
+theorem LocallyQuasiFinite.of_comp_surjective {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
+    [Surjective f] [LocallyOfFiniteType g] [LocallyQuasiFinite (f ≫ g)] :
+    LocallyQuasiFinite g := by
+  have hclosed (y : Y) : IsClosed ({g.asFiber y} : Set (g.fiber (g y))) := by
+    obtain ⟨x, rfl⟩ := f.surjective y
+    -- The lift gives a point over the fibre base with finite residue field extension.
+    let i := Spec.map (f.residueFieldMap x) ≫ g.asFiberHom (f x)
+    have hi_comp : i ≫ g.fiberToSpecResidueField (g (f x)) =
+        Spec.map ((f ≫ g).residueFieldMap x) := by simp [i, ← Spec.map_comp]
+    have hi_fin : IsFinite (Spec.map ((f ≫ g).residueFieldMap x)) := by
+      let := ((f ≫ g).residueFieldMap x).hom.toAlgebra
+      exact (IsFinite.SpecMap_iff _).mpr
+        (RingHom.finite_algebraMap.mpr ((f ≫ g).finite_residueField x))
+    have : IsFinite (i ≫ g.fiberToSpecResidueField (g (f x))) :=
+      (congrArg IsFinite hi_comp).mpr hi_fin
+    have : LocallyOfFiniteType i := locallyOfFiniteType_of_comp i (g.fiberToSpecResidueField _)
+    have hi : IsClosed ({i (IsLocalRing.closedPoint (X.residueField x))} : Set _) :=
+      i.closedPoints_subset_preimage_closedPoints
+        (IsLocalRing.isClosed_singleton_closedPoint (X.residueField x))
+    have hi_apply : i (IsLocalRing.closedPoint (X.residueField x)) = g.asFiber (f x) :=
+      (Scheme.Hom.comp_apply _ _ _).trans (g.asFiberHom_apply _ _)
+    rwa [hi_apply] at hi
+  refine .of_fiberToSpecResidueField g fun z ↦ ?_
+  have : T1Space (g.fiber z) := ⟨fun y ↦ by
+    obtain ⟨⟨y, hy⟩, rfl⟩ := (g.fiberHomeo z).symm.surjective y
+    have hy : g y = z := hy
+    subst z
+    exact hclosed y⟩
+  have : LocallyOfFiniteType (g.fiberToSpecResidueField z) :=
+    inferInstanceAs (LocallyOfFiniteType (Limits.pullback.snd _ _))
+  have : IsLocallyNoetherian (g.fiber z) :=
+    LocallyOfFiniteType.isLocallyNoetherian (g.fiberToSpecResidueField z)
+  -- A locally Noetherian scheme with all points closed is locally Artinian and discrete.
+  have : IsLocallyArtinian (g.fiber z) := .of_topologicalKrullDim_le_zero <|
+    TauCeti.topologicalKrullDim_le_of_forall_coheight_le fun x ↦
+      (Order.IsMax.coheight_eq_zero (fun y hxy ↦ (specializes_iff_eq.mp hxy) ▸ le_rfl)).le
+  exact locallyQuasiFinite_iff_isDiscrete_preimage_singleton.mpr fun _ ↦ ⟨inferInstance⟩
 
 /-- **Quasi-finite morphisms over a normal base preserve the dimension of local rings.** Let
 `f : X ⟶ Y` be a dominant morphism of integral schemes, locally of finite type. If `f` is

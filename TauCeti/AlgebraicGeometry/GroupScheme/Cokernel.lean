@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel
+public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel.Basic
 import TauCeti.CategoryTheory.Monoidal.Grp.Cokernel
 import TauCeti.CategoryTheory.EffectiveEpi.Over
 import TauCeti.CategoryTheory.Monoidal.Grp.KernelPair

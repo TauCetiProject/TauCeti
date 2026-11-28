@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel
+public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
 import TauCeti.CategoryTheory.Monoidal.Grp.KernelPair
 

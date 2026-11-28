@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AbelianVariety.Isogeny
+public import TauCeti.AlgebraicGeometry.AbelianVariety.Isogeny.Basic
 public import TauCeti.AlgebraicGeometry.AbelianVariety.Trivial
 public import TauCeti.Topology.KrullDimension.Irreducible
 
