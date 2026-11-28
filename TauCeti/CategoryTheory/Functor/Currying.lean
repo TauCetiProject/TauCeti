@@ -15,6 +15,9 @@ restricted along a functor `J ⥤ B × C` whose first coordinate is constant at 
 restriction of `H.obj b` along the second coordinate
 (`CategoryTheory.Functor.const_obj_prod'_comp_uncurry_obj`). Uncurrying also commutes with
 postcomposition (`CategoryTheory.Functor.uncurryObjCompIso`), with identity components.
+`bifunctorCompIsoOfIsoId` transports any bifunctor through a functor isomorphic to the identity.
+The identity transport follows the whiskering construction in
+[Tau Ceti PR #47483](https://github.com/TauCetiProject/TauCeti/pull/47483).
 -/
 
 public section
@@ -43,5 +46,34 @@ lemma uncurryObjCompIso_hom_app (H : B ⥤ C ⥤ D) (F : D ⥤ E) (X : B × C) :
 @[simp]
 lemma uncurryObjCompIso_inv_app (H : B ⥤ C ⥤ D) (F : D ⥤ E) (X : B × C) :
     (uncurryObjCompIso H F).inv.app X = 𝟙 _ := (rfl)
+
+
+variable {A : Type*} [Category* A] (T : A ⥤ A ⥤ A) {G : A ⥤ A} (e : G ≅ 𝟭 A)
+
+/-- A functor isomorphic to the identity commutes with every bifunctor. The forward map
+applies the identity comparison to each input and its inverse to the output. -/
+def bifunctorCompIsoOfIsoId :
+    (((whiskeringLeft₂ A).obj G).obj G).obj T ≅
+      T ⋙ (whiskeringRight _ _ _).obj G := by
+  let W := whiskeringLeft₂ (C₁ := A) (C₂ := A) (D₁ := A) (D₂ := A) A
+  exact (((W.mapIso e).app G).app T) ≪≫
+    (((W.obj (𝟭 A)).mapIso e).app T) ≪≫
+    (isoWhiskerLeft T ((whiskeringRight _ _ _).mapIso e) ≪≫ rightUnitor T).symm
+
+/-- Component formula for the comparison induced by an isomorphism to the identity. -/
+@[simp]
+lemma bifunctorCompIsoOfIsoId_hom_app_app (X Y : A) :
+    (((T.bifunctorCompIsoOfIsoId e).hom.app X).app Y) =
+      (T.map (e.hom.app X)).app (G.obj Y) ≫
+        (T.obj X).map (e.hom.app Y) ≫ e.inv.app ((T.obj X).obj Y) := by
+  simp [bifunctorCompIsoOfIsoId]
+
+/-- Inverse component formula for the comparison induced by an isomorphism to the identity. -/
+@[simp]
+lemma bifunctorCompIsoOfIsoId_inv_app_app (X Y : A) :
+    (((T.bifunctorCompIsoOfIsoId e).inv.app X).app Y) =
+      e.hom.app ((T.obj X).obj Y) ≫ (T.obj X).map (e.inv.app Y) ≫
+        (T.map (e.inv.app X)).app (G.obj Y) := by
+  simp [bifunctorCompIsoOfIsoId]
 
 end CategoryTheory.Functor
