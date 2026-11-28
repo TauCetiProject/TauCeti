@@ -37,8 +37,7 @@ stays at `L^∞(B(0, r))` distance at least `1` from `sign`.
 * `ContDiffBump.fderiv_normed_convolution_abs_apply`: derivative of `φ.normed volume ⋆ |·|`.
 * `TauCeti.tendsto_eLpNorm_fderiv_normed_convolution_abs_sub_sign`: `Lᵖ(K)` convergence to
   `sign` for `1 ≤ p < ∞`.
-* `TauCeti.one_le_eLpNorm_top_sub_sign_of_continuousAt` and
-  `TauCeti.one_le_eLpNorm_top_fderiv_normed_convolution_abs_sub_sign`: `L^∞` convergence fails near
+* `TauCeti.one_le_eLpNorm_top_fderiv_normed_convolution_abs_sub_sign`: `L^∞` convergence fails near
   `0`.
 
 ## References
@@ -149,55 +148,6 @@ theorem tendsto_eLpNorm_fderiv_normed_convolution_abs_sub_sign {K : Set ℝ} (hK
   congr 1
   ext x
   rw [(φ i).fderiv_normed_convolution_abs_apply x, Pi.sub_apply]
-
-/-- Any real function continuous at `0` stays at `L^∞(B(0, r))` distance at least `1` from `sign`
-for every `r > 0`. -/
-theorem one_le_eLpNorm_top_sub_sign_of_continuousAt {g : ℝ → ℝ} (hg : ContinuousAt g 0)
-    {r : ℝ} (hr : 0 < r) :
-    1 ≤ eLpNorm (fun x : ℝ => g x - (SignType.sign x : ℝ)) ∞ (volume.restrict (ball 0 r)) := by
-  refine ENNReal.le_of_forall_pos_le_add fun ε hε _ => ?_
-  have hε0 : 0 < (ε : ℝ) := NNReal.coe_pos.2 hε
-  obtain ⟨δ, hδ, hδg⟩ := Metric.continuousAt_iff.1 hg (ε : ℝ) hε0
-  set η := min δ r
-  have hη : 0 < η := lt_min hδ hr
-  set c : ℝ≥0∞ := eLpNorm (fun x => g x - (SignType.sign x : ℝ)) ∞ (volume.restrict (ball 0 r))
-  have hae : ∀ᵐ x ∂volume.restrict (ball (0 : ℝ) r), ‖g x - (SignType.sign x : ℝ)‖ₑ ≤ c :=
-    ae_le_eLpNormEssSup.mono fun x hx => hx.trans eLpNormEssSup_le_eLpNorm_top
-  have hstep {a b s : ℝ} (hab : a < b) (hsub : Ioo a b ⊆ ball (0 : ℝ) r)
-      (hsign : ∀ x ∈ Ioo a b, (SignType.sign x : ℝ) = s)
-      (hclose : ∀ x ∈ Ioo a b, |g x - g 0| < ε) (hgap : (1 : ℝ) ≤ |g 0 - s|) :
-      (1 : ℝ≥0∞) ≤ c + ε := by
-    have hpos : volume (Ioo a b) ≠ 0 := by simp [Real.volume_Ioo, hab]
-    obtain ⟨x, hxIoo, hxc⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae hpos
-      (ae_restrict_of_ae_restrict_of_subset hsub hae)
-    have h1 : (1 : ℝ) ≤ |g x - (SignType.sign x : ℝ)| + ε := by
-      have htri : |g 0 - s| ≤ |g 0 - g x| + |g x - s| := abs_sub_le _ _ _
-      rw [abs_sub_comm (g 0) (g x)] at htri
-      rw [hsign x hxIoo]
-      linarith [hclose x hxIoo]
-    calc (1 : ℝ≥0∞) = ENNReal.ofReal 1 := by simp
-      _ ≤ ENNReal.ofReal (|g x - (SignType.sign x : ℝ)| + ε) := ENNReal.ofReal_le_ofReal h1
-      _ = ‖g x - (SignType.sign x : ℝ)‖ₑ + ε := by
-          rw [ENNReal.ofReal_add (abs_nonneg _) hε0.le, ← Real.norm_eq_abs, ofReal_norm,
-            ENNReal.ofReal_coe_nnreal]
-      _ ≤ c + ε := by gcongr
-  rcases le_or_gt (g 0) 0 with hg0 | hg0
-  · refine hstep hη (fun x hx => by
-        rw [mem_ball_zero_iff, Real.norm_eq_abs, abs_of_pos hx.1]
-        exact hx.2.trans_le (min_le_right _ _))
-      (fun x hx => by rw [sign_pos hx.1, SignType.coe_one])
-      (fun x hx => hδg <| by
-        rw [Real.dist_eq, sub_zero, abs_of_pos hx.1]
-        exact hx.2.trans_le (min_le_left _ _))
-      (by linarith [neg_le_abs (g 0 - 1)])
-  · refine hstep (neg_lt_zero.2 hη) (fun x hx => by
-        rw [mem_ball_zero_iff, Real.norm_eq_abs, abs_of_neg hx.2]
-        linarith [hx.1, min_le_right δ r])
-      (fun x hx => by rw [sign_neg hx.2, SignType.coe_neg, SignType.coe_one])
-      (fun x hx => hδg <| by
-        rw [Real.dist_eq, sub_zero, abs_of_neg hx.2]
-        linarith [hx.1, min_le_left δ r])
-      (by linarith [le_abs_self (g 0 - (-1))])
 
 /-- The derivatives of the mollifications of `|·|` do not converge to `sign` in `L^∞` near `0`:
 they stay at `L^∞(B(0, r))` distance at least `1` from `sign` for every `r > 0`. -/
