@@ -979,11 +979,8 @@ theorem coe_torusFamilyLogGaugeHomeomorph
   let _ := periodAddAction P
   let _ := periodAddAction (powPullbackPeriod m r P)
   let _ := logTranslationMulAction P l
-  change ((torusFamilyBallNonzeroOpensEquiv P).symm
-      (torusFamilyLogGaugeEquiv P l hr
-        (logTranslationQuotientNonzeroOpensEquiv P l q)) :
-      AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) (r ^ m) × E)) = _
-  rw [coe_torusFamilyBallNonzeroOpensEquiv_symm]
+  simp only [torusFamilyLogGaugeHomeomorph, Homeomorph.homeomorph_mk_coe, Equiv.trans_apply,
+    coe_torusFamilyBallNonzeroOpensEquiv_symm]
   have hq : logTranslationQuotientNonzeroOpensEquiv P l q =
       ⟨q.val, (mem_logTranslationQuotientNonzeroOpens P l q.val).1
         (SetLike.mem_coe.1 q.property)⟩ :=
@@ -1009,12 +1006,8 @@ theorem coe_torusFamilyLogGaugeHomeomorph_symm
   let _ := periodAddAction P
   let _ := periodAddAction (powPullbackPeriod m r P)
   let _ := logTranslationMulAction P l
-  change (((logTranslationQuotientNonzeroOpensEquiv P l).symm
-      ((torusFamilyLogGaugeEquiv P l hr).symm
-        (torusFamilyBallNonzeroOpensEquiv P y)) :
-        orbitRel.Quotient (rootsOfUnity m ℂ)
-          (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))) = _
-  rw [coe_logTranslationQuotientNonzeroOpensEquiv_symm]
+  simp only [torusFamilyLogGaugeHomeomorph, Homeomorph.homeomorph_mk_coe_symm,
+    Equiv.symm_trans_apply, Equiv.symm_symm, coe_logTranslationQuotientNonzeroOpensEquiv_symm]
   have hy : torusFamilyBallNonzeroOpensEquiv P y =
       ⟨y.val, (mem_torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal y.val).1
         (SetLike.mem_coe.1 y.property)⟩ :=

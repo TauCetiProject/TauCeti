@@ -212,8 +212,9 @@ theorem coe_torusFamilyLogTwistDiffeomorph_eq_torusFamilyLogTwistEquiv (μ : Λ)
   let _ := Opens.instChartedSpace (H := ModelProd H E)
     (torusFamilyNonzeroOpens φ P hφ.continuous)
   refine Diffeomorph.ext fun y ↦ Subtype.ext ?_
-  change (torusFamilyLogTwistMap φ P μ).symm y.val = torusFamilyLogTwistMap φ P (-μ) y.val
-  rw [torusFamilyLogTwistMap_symm]
+  rw [coe_torusFamilyLogTwistDiffeomorph, ← Diffeomorph.coe_toEquiv, Diffeomorph.symm_toEquiv]
+  simp only [torusFamilyLogTwistDiffeomorph, Equiv.subtypeEquiv_symm, Equiv.subtypeEquiv_apply,
+    torusFamilyLogTwistMap_symm]
 
 /-- Coercing `(torusFamilyLogTwistDiffeomorph).symm` to the ambient torus family agrees with
 `(torusFamilyLogTwistEquiv).symm`. -/
