@@ -376,8 +376,7 @@ theorem essSurj_functor [HasFiniteBiproducts C] [IsKrullSchmidt C]
     intro k
     by_cases hinj : E.isInjective (P k)
     · exact ⟨0, ⟨(D.translate.map_isZero (isZero_zero C)).iso
-        ((MorphismIdeal.isZero_quotientFunctor_obj_iff _ _).mpr
-          ((id_mem_injectivelyTrivialIdeal_iff _).mpr hinj))⟩⟩
+        ((E.isZero_injectivelyTrivialIdeal_quotientFunctor_obj_iff _).mpr hinj)⟩⟩
     · obtain ⟨Z, e, he⟩ := hleft (P k)
         ((IsKrullSchmidt.indecomposable_iff_isLocalRing_end _).mpr (hP k)) hinj
       obtain ⟨φ, hφ⟩ :=
@@ -510,6 +509,22 @@ noncomputable def isoTranslateOfIsAlmostSplit {Z T : C} (hZ : ∀ X, IsFiniteLen
         (nontrivial_linearMap_of_isMaximal hQ) e he).choose_spec (hZ X)).1)
     fun X ↦ A.bijective_costablePairing_form hQ (hZ X)
 
+/-- Suppose `Q` gives a dual of length one for each simple `R`-module, and every `Ext¹_E(Z, Y)`
+has finite length. If `Z` and `X` have local endomorphism rings and `X` is noninjective, then an
+isomorphism `τ Z ≅ X` in `E/ℐ` gives an almost-split conflation with left end `X` and right end `Z`.
+-/
+theorem exists_isAlmostSplit_of_iso_translateObj {Z X : C}
+    [IsLocalRing (End Z)] [IsLocalRing (End X)] (hXi : ¬ E.isInjective X)
+    (hfin : ∀ Y, IsFiniteLength R (E.Ext1 Z Y))
+    (i : E.injectivelyTrivialIdeal.quotientFunctor.obj (A.translateObj Z) ≅
+      E.injectivelyTrivialIdeal.quotientFunctor.obj X) :
+    ∃ e : E.Extension Z X, e.shortComplex.IsAlmostSplit := by
+  obtain ⟨b, hb⟩ := E.injectivelyTrivialIdeal.quotientFunctor.map_surjective
+    (X := X) (Y := A.translateObj Z) i.inv
+  have hb' : IsIso (E.injectivelyTrivialIdeal.quotientFunctor.map b) := hb ▸ inferInstance
+  exact exists_isAlmostSplit_of_bijective_costablePairing hQ hXi (hfin X) fun Y ↦
+    bijective_costablePairing_comp_pushout (A.bijective_costablePairing_form hQ (hfin Y)) hb'
+
 variable [HasFiniteBiproducts C] [IsKrullSchmidt C]
 
 /-- **An Auslander–Reiten duality gives almost-split conflations ending at every indecomposable
@@ -523,21 +538,16 @@ theorem exists_isAlmostSplit_of_indecomposable_of_not_isProjective {Z : C}
   -- local endomorphism ring, which then represents `D Ext¹_E(Z, -)` on `E/ℐ`.
   have := (IsKrullSchmidt.indecomposable_iff_isLocalRing_end Z).mp hZ
   have := E.projectivelyTrivialIdeal.quotientFunctor.isLocalRing_end_obj
-    ((MorphismIdeal.isZero_quotientFunctor_obj_iff _ Z).not.mpr
-      ((id_mem_projectivelyTrivialIdeal_iff Z).not.mpr hZp))
+    ((E.isZero_projectivelyTrivialIdeal_quotientFunctor_obj_iff Z).not.mpr hZp)
   have : IsLocalRing (End (E.injectivelyTrivialIdeal.quotientFunctor.obj (A.translateObj Z))) :=
     (A.functor.isLocalRing_end_obj_iff _).mpr this
   obtain ⟨T, hT, ⟨i⟩⟩ := IsKrullSchmidt.exists_isLocalRing_end_iso_obj
     E.injectivelyTrivialIdeal.quotientFunctor (A.translateObj Z)
-  obtain ⟨b, hb⟩ := E.injectivelyTrivialIdeal.quotientFunctor.map_surjective i.inv
-  have hb' : IsIso (E.injectivelyTrivialIdeal.quotientFunctor.map b) := hb ▸ inferInstance
-  refine ⟨T, exists_isAlmostSplit_of_bijective_costablePairing hQ ?_ (hZX T) fun X ↦
-    bijective_costablePairing_comp_pushout (A.bijective_costablePairing_form hQ (hZX X)) hb'⟩
+  refine ⟨T, A.exists_isAlmostSplit_of_iso_translateObj hQ ?_ hZX i⟩
   -- `T` is not injective: in `E/ℐ` it is isomorphic to `τ Z`, which is nonzero.
   intro hTi
-  rw [← id_mem_injectivelyTrivialIdeal_iff, ← MorphismIdeal.isZero_quotientFunctor_obj_iff] at hTi
-  exact one_ne_zero (α := End (E.injectivelyTrivialIdeal.quotientFunctor.obj (A.translateObj Z)))
-    (End.ext ((hTi.of_iso i).eq_of_src _ _))
+  rw [← E.isZero_injectivelyTrivialIdeal_quotientFunctor_obj_iff] at hTi
+  exact not_isZero_of_nontrivial_end (hTi.of_iso i)
 
 /-- **An Auslander–Reiten duality gives almost-split conflations starting at every indecomposable
 non-injective object `X`** of a Krull–Schmidt category, when every `Ext¹` has finite length. -/
@@ -550,19 +560,15 @@ theorem exists_isAlmostSplit_of_indecomposable_of_not_isInjective
   -- `D Ext¹_E(Z, -)` on `E/ℐ`.
   have := (IsKrullSchmidt.indecomposable_iff_isLocalRing_end X).mp hX
   have := E.injectivelyTrivialIdeal.quotientFunctor.isLocalRing_end_obj
-    ((MorphismIdeal.isZero_quotientFunctor_obj_iff _ X).not.mpr
-      ((id_mem_injectivelyTrivialIdeal_iff X).not.mpr hXi))
+    ((E.isZero_injectivelyTrivialIdeal_quotientFunctor_obj_iff X).not.mpr hXi)
   set W := A.functor.objPreimage (E.injectivelyTrivialIdeal.quotientFunctor.obj X)
   let w := A.functor.objObjPreimageIso (E.injectivelyTrivialIdeal.quotientFunctor.obj X)
   have : IsLocalRing (End (E.projectivelyTrivialIdeal.quotientFunctor.obj W.as)) :=
     (A.functor.isLocalRing_end_obj_iff W).mp w.symm.endRingEquiv.isLocalRing
   obtain ⟨Z, hZ, ⟨i⟩⟩ := IsKrullSchmidt.exists_isLocalRing_end_iso_obj
     E.projectivelyTrivialIdeal.quotientFunctor W.as
-  obtain ⟨b, hb⟩ := E.injectivelyTrivialIdeal.quotientFunctor.map_surjective (X := X)
-    (Y := A.translateObj Z) (A.functor.mapIso i.symm ≪≫ w).inv
-  have hb' : IsIso (E.injectivelyTrivialIdeal.quotientFunctor.map b) := hb ▸ inferInstance
-  exact ⟨Z, exists_isAlmostSplit_of_bijective_costablePairing hQ hXi (hfin Z X) fun X' ↦
-    bijective_costablePairing_comp_pushout (A.bijective_costablePairing_form hQ (hfin Z X')) hb'⟩
+  exact ⟨Z, A.exists_isAlmostSplit_of_iso_translateObj hQ hXi (hfin Z)
+    (A.functor.mapIso i.symm ≪≫ w)⟩
 
 end Converse
 

@@ -162,6 +162,14 @@ theorem id_mem_projectivelyTrivialIdeal_iff (X : C) :
     rw [mem_projectiveStableIdeal_iff, ObjectProperty.factorsThrough_iff]
     exact ⟨X, hX, 𝟙 X, 𝟙 X, by simp⟩
 
+variable (E) in
+/-- An object is zero modulo projectively trivial morphisms exactly when it is relatively
+projective. -/
+theorem isZero_projectivelyTrivialIdeal_quotientFunctor_obj_iff (X : C) :
+    IsZero (E.projectivelyTrivialIdeal.quotientFunctor.obj X) ↔ E.isProjective X :=
+  (E.projectivelyTrivialIdeal.isZero_quotientFunctor_obj_iff X).trans
+    (E.id_mem_projectivelyTrivialIdeal_iff X)
+
 /-- **An object `X` is relatively projective exactly when `Ext¹_E(X, -)` vanishes.** -/
 theorem isProjective_iff_forall_ext1_eq_zero (X : C) :
     E.isProjective X ↔ ∀ (W : C) (ξ : E.Ext1 X W), ξ = 0 := by
@@ -246,6 +254,14 @@ theorem id_mem_injectivelyTrivialIdeal_iff (X : C) :
   · refine MorphismIdeal.le_def.mp injectiveStableIdeal_le_injectivelyTrivialIdeal _ ?_
     rw [mem_injectiveStableIdeal_iff, ObjectProperty.factorsThrough_iff]
     exact ⟨X, hX, 𝟙 X, 𝟙 X, by simp⟩
+
+variable (E) in
+/-- An object is zero modulo injectively trivial morphisms exactly when it is relatively
+injective. -/
+theorem isZero_injectivelyTrivialIdeal_quotientFunctor_obj_iff (X : C) :
+    IsZero (E.injectivelyTrivialIdeal.quotientFunctor.obj X) ↔ E.isInjective X :=
+  (E.injectivelyTrivialIdeal.isZero_quotientFunctor_obj_iff X).trans
+    (E.id_mem_injectivelyTrivialIdeal_iff X)
 
 /-- **An object `X` is relatively injective exactly when `Ext¹_E(-, X)` vanishes.** -/
 theorem isInjective_iff_forall_ext1_eq_zero (X : C) :

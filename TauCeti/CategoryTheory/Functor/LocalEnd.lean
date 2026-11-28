@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Functor.RingEquivEnd
 public import TauCeti.CategoryTheory.Preadditive.Endomorphism
 public import TauCeti.CategoryTheory.Preadditive.Indecomposable
+import Mathlib.CategoryTheory.ObjectProperty.Equivalence
 import TauCeti.RingTheory.LocalRing.Basic
 
 /-!
@@ -25,9 +26,23 @@ already rules out nontrivial biproduct decompositions.
 A full additive functor preserves local endomorphism rings of objects it does not send to zero
 (`CategoryTheory.Functor.isLocalRing_end_obj`), and a fully faithful one both preserves and
 reflects them (`CategoryTheory.Functor.isLocalRing_end_obj_iff`).
+Having a local endomorphism ring is invariant under isomorphism, and an additive equivalence
+restricts to the full subcategories of such objects
+(`CategoryTheory.Equivalence.congrLocalEndFullSubcategory`).
 -/
 
 public section
+
+namespace TauCeti
+
+open CategoryTheory CategoryTheory.Limits
+
+/-- An object with more than one endomorphism is nonzero. -/
+theorem not_isZero_of_nontrivial_end {C : Type*} [Category* C] {X : C} [Nontrivial (End X)] :
+    ¬ IsZero X :=
+  fun hX ↦ not_subsingleton (End X) ⟨fun f g ↦ End.ext (hX.eq_of_src f.asHom g.asHom)⟩
+
+end TauCeti
 
 namespace CategoryTheory.Functor
 
@@ -118,3 +133,31 @@ theorem isLocalRing_end_obj_iff [F.Full] [F.Faithful] (X : C) :
   ⟨fun _ ↦ e.symm.isLocalRing, fun _ ↦ e.isLocalRing⟩
 
 end CategoryTheory.Functor
+
+namespace CategoryTheory
+
+variable {C D : Type*} [Category* C] [Category* D] [Preadditive C] [Preadditive D]
+
+/-- Having a local endomorphism ring is invariant under isomorphism. -/
+instance ObjectProperty.isClosedUnderIsomorphisms_isLocalRing_end :
+    IsClosedUnderIsomorphisms (fun X : C ↦ IsLocalRing (End X)) where
+  of_iso e h :=
+    let : IsLocalRing (End _) := h
+    e.endRingEquiv.isLocalRing
+
+/-- An additive equivalence restricts to an equivalence between the full subcategories of
+objects with local endomorphism rings. -/
+def Equivalence.congrLocalEndFullSubcategory (e : C ≌ D) [e.functor.Additive] :
+    (ObjectProperty.FullSubcategory fun X : C ↦ IsLocalRing (End X)) ≌
+      (ObjectProperty.FullSubcategory fun Y : D ↦ IsLocalRing (End Y)) :=
+  e.congrFullSubcategory (Q := fun Y ↦ IsLocalRing (End Y))
+    (funext fun X ↦ propext (e.functor.isLocalRing_end_obj_iff X))
+
+/-- The restricted equivalence acts on underlying objects by the original equivalence. -/
+@[simp]
+theorem Equivalence.congrLocalEndFullSubcategory_functor_obj_obj (e : C ≌ D) [e.functor.Additive]
+    (X : ObjectProperty.FullSubcategory fun X : C ↦ IsLocalRing (End X)) :
+    (e.congrLocalEndFullSubcategory.functor.obj X).obj = e.functor.obj X.obj :=
+  (rfl)
+
+end CategoryTheory
