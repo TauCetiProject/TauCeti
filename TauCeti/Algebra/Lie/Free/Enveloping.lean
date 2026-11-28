@@ -38,9 +38,8 @@ every commutative `ℚ`-algebra `R` via PBW symmetrization
 
 ## Main results
 
-* `TauCeti.FreeLieAlgebra.degreeFiltration_eq_augmentation_pow` and
-  `TauCeti.FreeLieAlgebra.naturals_degreeFiltration_eq_augmentation_pow`: the word-length
-  filtration of `U(F)` is the filtration by powers of the augmentation ideal.
+* `TauCeti.FreeLieAlgebra.degreeFiltration_eq_augmentation_pow`: the word-length filtration of
+  `U(F)` is the filtration by powers of the augmentation ideal.
 * `TauCeti.FreeLieAlgebra.quotientEquivAlgOfEq_truncatedLieToU`: comparison between
   `truncatedLieToU` and `lowerCentralQuotientι`.
 * `TauCeti.FreeLieAlgebra.mem_augmentation_pow_iff`: membership in `J ^ N` is the vanishing of
@@ -77,42 +76,24 @@ local notation "F" => _root_.FreeLieAlgebra R S
 local notation "U" => _root_.UniversalEnvelopingAlgebra R F
 local notation "J" => HopfIdeal.toIdeal (HopfIdeal.augmentation R U)
 local notation "ℒ" => homogeneousSubmodule R S
-local notation "δ" => Nat.castAddMonoidHom ℤ
-local notation "𝓕" => UniversalEnvelopingAlgebra.degreeFiltration ℒ δ
-  (fun n hn => absurd hn (not_lt.mpr (Int.natCast_nonneg n)))
+local notation "𝓕" => UniversalEnvelopingAlgebra.degreeFiltration ℒ
+  PositiveDegrees.naturals.degree (PositiveDegrees.naturals.eq_bot_of_degree_neg ℒ)
 
 /-- The word-length filtration of the enveloping algebra of a free Lie algebra is the filtration
 by powers of the augmentation ideal. -/
 theorem degreeFiltration_eq_augmentation_pow (k : ℕ) : (𝓕).ideal k = J ^ k :=
-  UniversalEnvelopingAlgebra.degreeFiltration_eq_augmentation_pow ℒ δ
-    (fun n hn => by
-      obtain rfl : n = 0 := by simpa using hn
-      exact homogeneousSubmodule_zero R S)
+  UniversalEnvelopingAlgebra.degreeFiltration_eq_augmentation_pow ℒ
+    PositiveDegrees.naturals.degree (PositiveDegrees.naturals.eq_bot_of_degree_nonpos ℒ)
     (_root_.FreeLieAlgebra.of R) (fun _ => 1) (lieSpan_range_of_eq_top R S)
-    (fun s => by simpa using word_mem_homogeneousSubmodule R (FreeMagma.of s)) (fun _ => by simp) k
-
-/-- On `U(FreeLieAlgebra R S)`, the degree filtration for `PositiveDegrees.naturals` coincides with
-powers of the augmentation ideal. -/
--- Neither `PositiveDegrees.naturals` nor `degreeFiltration` is `@[expose]`d, so `naturals.degree`
--- is not definitionally equal to `δ` here; generalize over `d` and `hneg` before `rfl`
--- substitution because `hneg`'s type depends on `d`.
-theorem naturals_degreeFiltration_eq_augmentation_pow (k : ℕ) :
-    (UniversalEnvelopingAlgebra.degreeFiltration ℒ
-      PositiveDegrees.naturals.degree
-      (PositiveDegrees.naturals.eq_bot_of_degree_neg ℒ)).ideal k =
-    J ^ k := by
-  have h : ∀ (d : ℕ →+ ℤ) (hneg : ∀ n, d n < 0 → ℒ n = ⊥),
-      d = δ → (UniversalEnvelopingAlgebra.degreeFiltration ℒ d hneg).ideal k = J ^ k := by
-    rintro _ _ rfl
-    exact degreeFiltration_eq_augmentation_pow R S k
-  exact h _ _ (AddMonoidHom.ext fun n => PositiveDegrees.naturals_degree n)
+    (fun s => by simpa using word_mem_homogeneousSubmodule R (FreeMagma.of s))
+    (fun _ => by simp [PositiveDegrees.naturals_degree]) k
 
 /-- `truncatedLieToU` for `PositiveDegrees.naturals` agrees with `lowerCentralQuotientι` across the
 identifications of degree ideals with lower central terms and filtration ideals with augmentation
 powers. -/
 theorem quotientEquivAlgOfEq_truncatedLieToU (c : ℕ)
     (z : PositiveDegrees.naturals.truncatedLie ℒ c) :
-    Ideal.quotientEquivAlgOfEq R (naturals_degreeFiltration_eq_augmentation_pow R S (c + 1))
+    Ideal.quotientEquivAlgOfEq R (degreeFiltration_eq_augmentation_pow R S (c + 1))
         (UniversalEnvelopingAlgebra.truncatedLieToU PositiveDegrees.naturals ℒ c z) =
       UniversalEnvelopingAlgebra.lowerCentralQuotientι R F c
         (((PositiveDegrees.naturals.degreeIdeal ℒ c).quotEquivOfEq _
@@ -127,7 +108,7 @@ theorem mem_augmentation_pow_iff {a : U} {N : ℕ} :
       (DirectSum.decompose (UniversalEnvelopingAlgebra.homogeneousSubmodule ℒ) a n : U) = 0 := by
   rw [← degreeFiltration_eq_augmentation_pow,
     UniversalEnvelopingAlgebra.mem_degreeFiltration_ideal_iff]
-  simp
+  simp [PositiveDegrees.naturals_degree]
 
 /-- If the canonical map into the enveloping algebra is injective, the Lie elements it sends into
 the `(c + 1)`-st power of the augmentation ideal are exactly the `c`-th term of the lower central
@@ -138,8 +119,10 @@ theorem comap_augmentation_pow_ι
         (_root_.UniversalEnvelopingAlgebra.ι R : F →ₗ⁅R⁆ U).toLinearMap =
       (LieModule.lowerCentralSeries R F F c).toSubmodule := by
   rw [← degreeFiltration_eq_augmentation_pow,
-    UniversalEnvelopingAlgebra.comap_degreeFiltration_ι ℒ δ _ hι,
-    degreeTail_eq_lowerCentralSeries]
+    UniversalEnvelopingAlgebra.comap_degreeFiltration_ι ℒ _ _ hι,
+    ← PositiveDegrees.degreeSubmodule_eq_degreeTail,
+    ← PositiveDegrees.degreeIdeal_toSubmodule,
+    naturals_degreeIdeal_eq_lowerCentralSeries]
 
 /-- If the canonical map into the enveloping algebra is injective, the free nilpotent Lie algebra
 of class at most `c` embeds in the truncated enveloping algebra `U(F) ⧸ J ^ (c + 1)`. -/

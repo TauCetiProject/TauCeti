@@ -135,10 +135,10 @@ theorem naturals_degreeIdeal_eq_lowerCentralSeries (S : Type*) (c : ℕ) :
       LieModule.lowerCentralSeries R (_root_.FreeLieAlgebra R S)
         (_root_.FreeLieAlgebra R S) c := by
   apply LieSubmodule.toSubmodule_injective
-  rw [PositiveDegrees.degreeIdeal_toSubmodule, PositiveDegrees.degreeSubmodule_def,
-    lowerCentralSeries_toSubmodule_eq_iSup, iSup_subtype]
-  refine iSup_congr fun n => iSup_congr_Prop ?_ fun _ => rfl
-  simp [Nat.cast_lt]
+  rw [PositiveDegrees.degreeIdeal_toSubmodule, PositiveDegrees.degreeSubmodule_eq_degreeTail,
+    show PositiveDegrees.naturals.degree = Nat.castAddMonoidHom ℤ from
+      AddMonoidHom.ext PositiveDegrees.naturals_degree,
+    degreeTail_eq_lowerCentralSeries]
 
 section ClassTwo
 

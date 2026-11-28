@@ -74,30 +74,19 @@ private theorem isPrimitiveElem_envelopingComponent_of_mem_monoid {u : Û}
   classical
   let k := (d.degree n).toNat
   let s := (d.finite_cutoff k).toFinset
-  let _ : _root_.DirectSum.Decomposition (tensorGrading ℒ) :=
-    (isInternal_tensorGrading ℒ).chooseDecomposition
-  have hmem := hu.comul_sub_mem_tensorProduct_ideal (mk_sum_envelopingComponent d ℒ k u)
-  let δ : U →ₗ[R] U ⊗[R] U :=
-    Coalgebra.comul - ((TensorProduct.mk R U U 1) + (TensorProduct.mk R U U).flip 1)
-  have hδ (b : U) : δ b = Coalgebra.comul (R := R) b - (1 ⊗ₜ[R] b + b ⊗ₜ[R] 1) := by simp [δ]
-  refine Bialgebra.isPrimitiveElem_iff_comul_eq_tmul_add_tmul.mpr (sub_eq_zero.mp ?_)
-  apply (decomposeLinearEquiv (tensorGrading ℒ)).injective; rw [map_zero]; ext p
-  simp only [_root_.DirectSum.decomposeLinearEquiv_apply, _root_.DirectSum.zero_apply,
-    ZeroMemClass.coe_zero]
-  by_cases hpn : p.1 + p.2 = n
-  · have hpk : d.degree p.1 + d.degree p.2 < (k + 1 : ℕ) := by
-      rw [← map_add, hpn]; have := Int.self_le_toNat (d.degree n); omega
-    have h0 := decompose_eq_zero_of_mem_tensorProduct_ideal ℒ d.degree _ hmem hpk
-    rw [← hδ _, map_sum δ _ s, decompose_sum, _root_.DirectSum.sum_apply, Submodule.coe_sum,
-      Finset.sum_eq_single n] at h0
-    · rwa [hδ] at h0
-    · intro m _ hmn; rw [hδ]
-      exact decompose_eq_zero_of_mem_tensorTotalDegree ℒ
-        (comul_sub_tmul_add_tmul_mem_tensorTotalDegree ℒ (envelopingComponent d ℒ m u).property)
-        (hpn.trans_ne hmn.symm)
-    · exact fun hns => (hns (by simp [s, k, hnP])).elim
-  · exact decompose_eq_zero_of_mem_tensorTotalDegree ℒ
-      (comul_sub_tmul_add_tmul_mem_tensorTotalDegree ℒ (envelopingComponent d ℒ n u).property) hpn
+  let a : U := ∑ m ∈ s, (envelopingComponent d ℒ m u : U)
+  have hprim := isPrimitiveElem_proj_of_comul_sub_mem ℒ d.degree (d.eq_bot_of_degree_neg ℒ)
+    (hu.comul_sub_mem_tensorProduct_ideal (mk_sum_envelopingComponent d ℒ k u)) (n := n)
+    (by have := Int.self_le_toNat (d.degree n); omega)
+  have hproj : _root_.GradedAlgebra.proj (homogeneousSubmodule ℒ) n a =
+      (envelopingComponent d ℒ n u : U) := by
+    rw [map_sum, Finset.sum_eq_single n]
+    · exact TauCeti.GradedAlgebra.proj_of_mem_same (envelopingComponent d ℒ n u).property
+    · intro m _ hmn
+      exact TauCeti.GradedAlgebra.proj_of_mem_ne (envelopingComponent d ℒ m u).property hmn
+    · intro hns
+      exact (hns (by simp [s, k, hnP])).elim
+  rwa [hproj] at hprim
 
 /-- Every homogeneous enveloping component of a completed primitive element is an ordinary
 primitive element of `U(L)`. -/

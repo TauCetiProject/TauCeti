@@ -45,6 +45,11 @@ variable (d : PositiveDegrees N) (ℒ : N → Submodule R M)
 def degreeSubmodule (k : ℕ) : Submodule R M :=
   DirectSum.degreeTail ℒ d.degree (k + 1)
 
+/-- The degree submodule is the degree tail above `k + 1`. -/
+theorem degreeSubmodule_eq_degreeTail (k : ℕ) :
+    d.degreeSubmodule ℒ k = DirectSum.degreeTail ℒ d.degree (k + 1) :=
+  (rfl)
+
 /-- The defining sum for the degree submodule. -/
 theorem degreeSubmodule_def (k : ℕ) :
     d.degreeSubmodule ℒ k = ⨆ n : {n : N // (k : ℤ) < d.degree n}, ℒ n := by

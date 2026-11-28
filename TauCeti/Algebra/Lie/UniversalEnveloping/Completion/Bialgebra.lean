@@ -12,7 +12,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.FilteredBialgebra
 import Mathlib.RingTheory.Bialgebra.TensorProduct
 
 /-!
-# Completed bialgebra structure on graded universal enveloping algebras
+# Completed coproduct, counit, and primitive and grouplike elements
 
 For a Lie algebra `L` over `R` graded by `Γ` with degree functional `d : Γ →+ ℤ` and no
 negative-degree components, the bialgebra comultiplication extends to `completedCoproduct` into the
@@ -126,6 +126,32 @@ theorem completedTensorCounit_of_representative (hneg : ∀ n, d n < 0 → ℒ n
     ← Ideal.Quotient.mkₐ_eq_mk R, ← AlgHom.comp_apply, Ideal.Quotient.liftₐ_comp,
     Bialgebra.counitAlgHom_apply]
 
+/-- The completed tensor counit is multiplicative on completed pure tensors. -/
+theorem completedTensorCounit_completedTensor (hneg : ∀ n, d n < 0 → ℒ n = ⊥)
+    (x y : completedEnveloping ℒ d hneg) :
+    completedTensorCounit ℒ d hneg ((𝓕 hneg).completedTensor R (𝓕 hneg) x y) =
+      completedCounit ℒ d hneg x * completedCounit ℒ d hneg y := by
+  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective ((𝓕 hneg).projection 0 x)
+  obtain ⟨b, hb⟩ := Ideal.Quotient.mk_surjective ((𝓕 hneg).projection 0 y)
+  rw [completedTensorCounit_of_representative ℒ d hneg _ _
+      ((𝓕 hneg).projection_completedTensor_of_representatives R (𝓕 hneg) 0 x y a b ha hb).symm,
+    TensorProduct.counit_tmul, smul_eq_mul, mul_comm,
+    completedCounit_of_representative ℒ d hneg x a ha,
+    completedCounit_of_representative ℒ d hneg y b hb]
+
+/-- The completed counit is left-invariant under the completed coproduct. -/
+@[simp]
+theorem completedTensorCounit_completedCoproduct (hneg : ∀ n, d n < 0 → ℒ n = ⊥)
+    (x : completedEnveloping ℒ d hneg) :
+    completedTensorCounit ℒ d hneg (completedCoproduct ℒ d hneg x) =
+      completedCounit ℒ d hneg x := by
+  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective ((𝓕 hneg).projection 0 x)
+  rw [completedTensorCounit_of_representative ℒ d hneg _ _ (by
+    rw [projection_completedCoproduct, ← ha, Ideal.quotient_map_mkₐ,
+      Ideal.Quotient.mkₐ_eq_mk, Bialgebra.comulAlgHom_apply])]
+  exact (CoalgHomClass.counit_comp_apply (Coalgebra.comulCoalgHom R U) a).trans
+    (completedCounit_of_representative ℒ d hneg x a ha).symm
+
 /-- Elements of the first completion ideal have completed counit zero. -/
 theorem completedCounit_eq_zero_of_mem_completionIdeal_one (hneg : ∀ n, d n < 0 → ℒ n = ⊥)
     {x : completedEnveloping ℒ d hneg} (hx : x ∈ (𝓕 hneg).completionIdeal 1) :
@@ -180,30 +206,10 @@ variable {ℒ d} in
 theorem IsCompletedPrimitive.completedCounit_eq_zero {hneg : ∀ n, d n < 0 → ℒ n = ⊥}
     {x : completedEnveloping ℒ d hneg} (hx : IsCompletedPrimitive ℒ d hneg x) :
     completedCounit ℒ d hneg x = 0 := by
-  obtain ⟨a, ha⟩ := Ideal.Quotient.mk_surjective ((𝓕 hneg).projection 0 x)
-  have hL : completedTensorCounit ℒ d hneg ((𝓕 hneg).completedTensor R (𝓕 hneg) x 1) =
-      completedCounit ℒ d hneg x := by
-    rw [completedTensorCounit_of_representative ℒ d hneg _ _
-        ((𝓕 hneg).projection_completedTensor_of_representatives R (𝓕 hneg) 0 x 1 a 1 ha
-          (map_one _).symm).symm,
-      TensorProduct.counit_tmul, Bialgebra.counit_one, one_smul,
-      completedCounit_of_representative ℒ d hneg x a ha]
-  have hR : completedTensorCounit ℒ d hneg ((𝓕 hneg).completedTensor R (𝓕 hneg) 1 x) =
-      completedCounit ℒ d hneg x := by
-    rw [completedTensorCounit_of_representative ℒ d hneg _ _
-        ((𝓕 hneg).projection_completedTensor_of_representatives R (𝓕 hneg) 0 1 x 1 a
-          (map_one _).symm ha).symm,
-      TensorProduct.counit_tmul, Bialgebra.counit_one, smul_eq_mul, mul_one,
-      completedCounit_of_representative ℒ d hneg x a ha]
-  have hΔ : completedTensorCounit ℒ d hneg (completedCoproduct ℒ d hneg x) =
-      completedCounit ℒ d hneg x := by
-    rw [completedTensorCounit_of_representative ℒ d hneg _ _ (by
-      rw [projection_completedCoproduct, ← ha, Ideal.quotient_map_mkₐ,
-        Ideal.Quotient.mkₐ_eq_mk, Bialgebra.comulAlgHom_apply])]
-    exact (CoalgHomClass.counit_comp_apply (Coalgebra.comulCoalgHom R U) a).trans
-      (completedCounit_of_representative ℒ d hneg x a ha).symm
   have hε := congrArg (completedTensorCounit ℒ d hneg) hx
-  rw [hΔ, map_add, hL, hR] at hε
+  rw [completedTensorCounit_completedCoproduct, map_add,
+    completedTensorCounit_completedTensor, completedTensorCounit_completedTensor] at hε
+  simp only [map_one, mul_one, one_mul] at hε
   exact left_eq_add.mp hε
 
 variable {ℒ d} in
