@@ -1070,6 +1070,26 @@ noncomputable def mapBaseChangeHopfIdeal
         EquivLike.surjective
           (TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k K₁ H K₂).symm)
 
+/-- When `K₂` already carries a compatible `K₁`-algebra structure agreeing with `e : K₁ ≃ₐ[k] K₂`,
+`mapBaseChangeHopfIdeal e I` is the pullback of `baseChangeHopfIdeal I` along the inverse
+bialgebra tower comparison. -/
+theorem mapBaseChangeHopfIdeal_eq_comapOfSurjective_baseChangeTowerBialgEquiv
+    {K₁ : Type w} {K₂ : Type x} [CommRing K₁] [CommRing K₂]
+    [Algebra k K₁] [Algebra k K₂] [alg : Algebra K₁ K₂] [IsScalarTower k K₁ K₂]
+    (e : K₁ ≃ₐ[k] K₂) (he : ∀ s : K₁, algebraMap K₁ K₂ s = e s)
+    (I : HopfIdeal K₁ (baseChange (K := K₁) H)) :
+    mapBaseChangeHopfIdeal e I =
+      (baseChangeHopfIdeal (K := K₂) I).comapOfSurjective
+        (TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k K₁ H K₂).symm.toBialgHom
+        (by
+          simpa only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom] using
+            EquivLike.surjective
+              (TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k K₁ H K₂).symm) := by
+  have halg : alg = e.toRingHom.toAlgebra := Algebra.algebra_ext _ _ he
+  subst halg
+  ext y
+  rfl
+
 /-- The underlying ideal of `mapBaseChangeHopfIdeal e I` is the ideal-theoretic image of `I`
 under `e ⊗ id`. -/
 @[simp]
@@ -1083,45 +1103,42 @@ theorem mapBaseChangeHopfIdeal_toIdeal
   let _ : IsScalarTower k K₁ K₂ :=
     IsScalarTower.of_algebraMap_eq fun c ↦ (e.commutes c).symm
   let t := TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k K₁ H K₂
-  have hmap_eq :
-      Algebra.TensorProduct.map (IsScalarTower.toAlgHom k K₁ K₂) (AlgHom.id k H) =
-        Algebra.TensorProduct.map e.toAlgHom (AlgHom.id k H) := by
-    ext x
-    · rfl
-    · rfl
-  have ht_include (x : K₁ ⊗[k] H) :
-      t (Algebra.TensorProduct.includeRight (R := K₁) (A := K₂) x) =
-        Algebra.TensorProduct.congr e (AlgEquiv.refl (R := k) (A₁ := H)) x := by
-    rw [Algebra.TensorProduct.includeRight_apply,
-      _root_.TensorProduct.baseChangeTowerBialgEquiv_one_tmul, hmap_eq,
-      Algebra.TensorProduct.congr_apply, AlgEquiv.refl_toAlgHom]
-  refine le_antisymm ?_ ?_
-  · intro y hy
-    rw [HopfIdeal.mem_toIdeal, mapBaseChangeHopfIdeal, HopfIdeal.mem_comapOfSurjective,
-      ← HopfIdeal.mem_toIdeal, baseChangeHopfIdeal_toIdeal,
-      BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom] at hy
-    have hle :
-        I.toIdeal.map (Algebra.TensorProduct.includeRight :
-            K₁ ⊗[k] H →ₐ[K₁] K₂ ⊗[K₁] (K₁ ⊗[k] H)) ≤
-          (I.toIdeal.map (Algebra.TensorProduct.congr e (AlgEquiv.refl (R := k) (A₁ := H)) :
-            K₁ ⊗[k] H →ₐ[k] K₂ ⊗[k] H)).comap
-            (t.toBialgHom : K₂ ⊗[K₁] (K₁ ⊗[k] H) →+* K₂ ⊗[k] H) := by
-      rw [Ideal.map_le_iff_le_comap]
-      intro x hx
-      rw [Ideal.mem_comap, Ideal.mem_comap, RingHom.coe_coe,
-        BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom, ht_include]
-      exact Ideal.mem_map_of_mem _ hx
-    have hmem := hle hy
-    rw [Ideal.mem_comap, BialgEquiv.toBialgHom_eq_coe, RingHom.coe_coe,
-      BialgEquiv.coe_toBialgHom, BialgEquiv.apply_symm_apply] at hmem
-    exact hmem
-  · rw [Ideal.map_le_iff_le_comap]
-    intro x hx
-    rw [Ideal.mem_comap, HopfIdeal.mem_toIdeal, mapBaseChangeHopfIdeal,
-      HopfIdeal.mem_comapOfSurjective, ← HopfIdeal.mem_toIdeal, baseChangeHopfIdeal_toIdeal,
-      BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom, AlgEquiv.coe_toAlgHom,
-      ← ht_include, BialgEquiv.symm_apply_apply]
-    exact Ideal.mem_map_of_mem _ hx
+  let f : baseChange (K := K₂) (baseChange (K := K₁) H) ≃+* baseChange (K := K₂) H :=
+    t.toAlgEquiv.toRingEquiv
+  have hsymm :
+      (t.symm.toBialgHom :
+          baseChange (K := K₂) H →+* baseChange (K := K₂) (baseChange (K := K₁) H)) =
+        (f.symm :
+          baseChange (K := K₂) H →+* baseChange (K := K₂) (baseChange (K := K₁) H)) :=
+    RingHom.ext fun _ ↦ rfl
+  have hcomp :
+      (f : baseChange (K := K₂) (baseChange (K := K₁) H) →+* baseChange (K := K₂) H).comp
+          ((Algebra.TensorProduct.includeRight :
+            K₁ ⊗[k] H →ₐ[K₁] K₂ ⊗[K₁] (K₁ ⊗[k] H)) :
+            K₁ ⊗[k] H →+* K₂ ⊗[K₁] (K₁ ⊗[k] H)) =
+        ((Algebra.TensorProduct.congr e (AlgEquiv.refl (R := k) (A₁ := H)) :
+          K₁ ⊗[k] H →ₐ[k] K₂ ⊗[k] H) : K₁ ⊗[k] H →+* K₂ ⊗[k] H) := by
+    refine RingHom.ext fun x ↦ ?_
+    induction x using TensorProduct.inductionOn with
+    | tmul a b => simp [f, t, Algebra.smul_def, RingHom.algebraMap_toAlgebra]
+    | add x y hx hy =>
+      simpa only [RingHom.comp_apply, RingHom.coe_coe, map_add] using
+        congrArg₂ (· + ·) hx hy
+  calc
+    (mapBaseChangeHopfIdeal e I).toIdeal
+        = Ideal.map f (baseChangeHopfIdeal (K := K₂) I).toIdeal := by
+          rw [mapBaseChangeHopfIdeal_eq_comapOfSurjective_baseChangeTowerBialgEquiv e
+              (fun _ ↦ rfl),
+            HopfIdeal.comapOfSurjective_toIdeal, hsymm, Ideal.comap_coe, Ideal.comap_symm]
+    _ = I.toIdeal.map (Algebra.TensorProduct.congr e (AlgEquiv.refl (R := k) (A₁ := H)) :
+          K₁ ⊗[k] H →ₐ[k] K₂ ⊗[k] H) := by
+          rw [baseChangeHopfIdeal_toIdeal]
+          simpa only [RingEquiv.toRingHom_eq_coe, AlgHom.toRingHom_eq_coe, Ideal.map_coe,
+            hcomp] using
+            I.toIdeal.map_map
+              (Algebra.TensorProduct.includeRight :
+                K₁ ⊗[k] H →ₐ[K₁] K₂ ⊗[K₁] (K₁ ⊗[k] H)).toRingHom
+              f.toRingHom
 
 /-- An element `e ⊗ id` applied to `x ∈ K₁ ⊗[k] H` lies in `mapBaseChangeHopfIdeal e I` exactly
 when `x ∈ I`. -/
@@ -1146,26 +1163,6 @@ theorem mem_mapBaseChangeHopfIdeal_iff
   exact (Ideal.symm_apply_mem_of_equiv_iff
     (f := (Algebra.TensorProduct.congr e
       (AlgEquiv.refl (R := k) (A₁ := H))).toRingEquiv)).symm
-
-/-- When `K₂` already carries a compatible `K₁`-algebra structure agreeing with `e : K₁ ≃ₐ[k] K₂`,
-`mapBaseChangeHopfIdeal e I` is the pullback of `baseChangeHopfIdeal I` along the inverse
-bialgebra tower comparison. -/
-theorem mapBaseChangeHopfIdeal_eq_comapOfSurjective_baseChangeTowerBialgEquiv
-    {K₁ : Type w} {K₂ : Type x} [CommRing K₁] [CommRing K₂]
-    [Algebra k K₁] [Algebra k K₂] [alg : Algebra K₁ K₂] [IsScalarTower k K₁ K₂]
-    (e : K₁ ≃ₐ[k] K₂) (he : ∀ s : K₁, algebraMap K₁ K₂ s = e s)
-    (I : HopfIdeal K₁ (baseChange (K := K₁) H)) :
-    mapBaseChangeHopfIdeal e I =
-      (baseChangeHopfIdeal (K := K₂) I).comapOfSurjective
-        (TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k K₁ H K₂).symm.toBialgHom
-        (by
-          simpa only [BialgEquiv.toBialgHom_eq_coe, BialgEquiv.coe_toBialgHom] using
-            EquivLike.surjective
-              (TauCeti.Bialgebra.TensorProduct.baseChangeTowerBialgEquiv k K₁ H K₂).symm) := by
-  have halg : alg = e.toRingHom.toAlgebra := Algebra.algebra_ext _ _ he
-  subst halg
-  ext y
-  rfl
 
 /-- When `K₂` already carries a compatible `K₁`-algebra structure agreeing with `e : K₁ ≃ₐ[k] K₂`,
 `mapBaseChangeHopfIdeal e I` is the pullback of `baseChangeHopfIdeal I` along the inverse
