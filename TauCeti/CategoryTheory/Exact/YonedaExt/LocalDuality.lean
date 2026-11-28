@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Injective.Cogenerator
+public import TauCeti.Algebra.Module.Injective.Cogenerator.Basic
 public import TauCeti.CategoryTheory.Exact.YonedaExt.AlmostSplit
 public import TauCeti.CategoryTheory.Exact.YonedaExt.BaerSum
 public import TauCeti.CategoryTheory.Exact.YonedaExt.TrivialIdeal

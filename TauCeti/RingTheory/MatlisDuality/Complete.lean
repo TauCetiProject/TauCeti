@@ -29,9 +29,10 @@ so no nonzero functional vanishes on that image, and evaluation on `M` is surjec
   finitely generated.
 * `TauCeti.IsInjectiveEnvelope.bijective_applyₗ_of_isArtinian` and
   `TauCeti.IsInjectiveEnvelope.evalEquivOfIsArtinian`: biduality for Artinian modules.
-* `TauCeti.IsInjectiveEnvelope.isArtinian_iff_finite_linearMap` and
-  `TauCeti.IsInjectiveEnvelope.finite_iff_isArtinian_linearMap`: the dual exchanges Artinian and
-  finitely generated modules.
+* `TauCeti.IsInjectiveEnvelope.isArtinian_iff_finite_linearMap`: over a complete local ring,
+  `M` is Artinian exactly when `D(M)` is finitely generated (the dual characterization
+  `finite_iff_isArtinian_linearMap` holds without completeness in
+  `TauCeti/RingTheory/MatlisDuality/Finite.lean`).
 
 ## References
 
@@ -107,14 +108,5 @@ theorem isArtinian_iff_finite_linearMap : IsArtinian R M ↔ Module.Finite R (M 
   have := hι.moduleInjective
   exact ⟨fun _ ↦ hι.finite_linearMap_of_isArtinian M,
     fun _ ↦ isArtinian_of_isNoetherian_linearMap R hι.injective⟩
-
-/-- Over a complete Noetherian local ring, a module is finitely generated exactly when its Matlis
-dual is Artinian. -/
-theorem finite_iff_isArtinian_linearMap : Module.Finite R M ↔ IsArtinian R (M →ₗ[R] E) := by
-  have := hι.moduleInjective
-  refine ⟨fun _ ↦ hι.isArtinian_linearMap_of_finite M, fun _ ↦ ?_⟩
-  -- `M` embeds by evaluation into its double dual, which is finitely generated.
-  have := hι.finite_linearMap_of_isArtinian (M →ₗ[R] E)
-  exact Module.Finite.of_injective _ (injective_applyₗ_of_injective (M := M) hι.injective)
 
 end TauCeti.IsInjectiveEnvelope

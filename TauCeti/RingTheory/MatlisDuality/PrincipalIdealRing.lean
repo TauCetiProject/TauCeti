@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.PrincipalIdealDomain
-public import TauCeti.Algebra.Module.Injective.Cogenerator
+public import TauCeti.Algebra.Module.Injective.Cogenerator.Basic
 import TauCeti.Algebra.Module.Injective.PrincipalIdealRing
 import TauCeti.Algebra.Module.Submodule.LinearMap
 

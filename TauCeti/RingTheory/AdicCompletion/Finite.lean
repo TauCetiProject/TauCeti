@@ -31,8 +31,8 @@ This is what makes a finite algebra over a complete Noetherian ring Henselian al
 ideal, the input for lifting idempotents in such an algebra.
 
 Over any commutative ring, the completion of a finite module is generated over the completed ring
-by the image of the module, so linear maps over the completed ring out of it are determined by
-their restrictions to the module.
+by the image of the module, so it is a finite module over the completed ring and linear maps out of
+it are determined by their restrictions to the module.
 
 ## Main results
 
@@ -53,6 +53,8 @@ their restrictions to the module.
 * `AdicCompletion.linearMap_ext_of_finite`: a linear map over the completion out of the completion
   of a finite module is determined on the image of the module, since
   `AdicCompletion.ofTensorProduct` is surjective.
+* `TauCeti.AdicCompletion.instFinite`: the adic completion of a finite `R`-module is finite over
+  `AdicCompletion I R`.
 
 ## References
 
@@ -61,7 +63,7 @@ their restrictions to the module.
 
 public section
 
-open AdicCompletion
+open AdicCompletion TensorProduct
 
 variable {R : Type*} [CommRing R] (I : Ideal R) {M N : Type*} [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N]
@@ -162,3 +164,13 @@ theorem AdicCompletion.linearMap_ext_of_finite [Module.Finite R M] {P : Type*} [
   induction t using TensorProduct.inductionOn with
   | tmul a x => simp [ofTensorProduct_tmul, h]
   | add s t hs ht => simp [hs, ht]
+
+namespace TauCeti.AdicCompletion
+
+/-- The adic completion of a finitely generated `R`-module is finitely generated over
+`AdicCompletion I R`, as a quotient of `AdicCompletion I R ⊗[R] M`. -/
+instance instFinite [Module.Finite R M] :
+    Module.Finite (_root_.AdicCompletion I R) (_root_.AdicCompletion I M) :=
+  .of_surjective (ofTensorProduct I M) (ofTensorProduct_surjective_of_finite I M)
+
+end TauCeti.AdicCompletion

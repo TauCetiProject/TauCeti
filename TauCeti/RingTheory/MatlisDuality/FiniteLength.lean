@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Injective.Cogenerator
+public import TauCeti.Algebra.Module.Injective.Cogenerator.LocalRing
 public import TauCeti.Algebra.Module.Injective.Envelope.Basic
-public import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
 # Matlis duality for modules of finite length
@@ -19,22 +18,17 @@ the finite-length case of Matlis duality: `D` preserves length, and the evaluati
 needed. These are the base cases from which the duality between Artinian modules and finite
 modules over the completion is built, by passing to the submodules killed by powers of the
 maximal ideal. Length preservation and biduality are the cogenerator criteria of
-`TauCeti/Algebra/Module/Injective/Cogenerator.lean`, applied to the computation of `D(κ)`.
+`TauCeti/Algebra/Module/Injective/Cogenerator/Basic.lean`, applied to the computation of `D(κ)`.
 
 ## Main declarations
 
 * `TauCeti.residueFieldLinearMapEquiv`: `D(κ) ≅ κ`. Every linear map `κ → E` is `ι` composed
   with multiplication by a residue, because the image of `ι` is the only simple submodule of an
   essential extension of `κ`. Injectivity of `E` is not used.
-* `TauCeti.injective_applyₗ_of_injective`: as soon as `E` is injective and contains a copy of
-  `κ`, the evaluation map `M → D(D(M))` is injective for every `M`, so `E` is a cogenerator.
-  Equivalently, `E` separates points (`TauCeti.exists_apply_ne_zero_of_injective`).
 * `TauCeti.IsInjectiveEnvelope.length_linearMap`: `length D(M) = length M` for every module `M`,
   of finite length or not.
 * `TauCeti.IsInjectiveEnvelope.bijective_applyₗ` and `TauCeti.IsInjectiveEnvelope.evalEquiv`:
   biduality for modules of finite length.
-* `TauCeti.annihilator_torsionBySet_of_injective`: if `E` is injective and contains a copy of
-  `κ`, then the annihilator of `E[J]` is `J`, for every ideal `J`.
 * `TauCeti.IsInjectiveEnvelope.exists_eq_smul_subtype`: for an ideal `J` with `R ⧸ J` of finite
   length, every linear map `E[J] → E` is the inclusion multiplied by a scalar.
 
@@ -93,43 +87,7 @@ private theorem length_quotient_linearMap (hι : Function.Injective ι)
     ← (residueFieldLinearMapEquiv hι hess).length_eq]
   exact length_residueField_eq_one
 
-/-- If `E` contains a copy of the residue field, then `R ⧸ 𝔪` has a nonzero linear map to `E` for
-the maximal ideal `𝔪`: the hypothesis of the cogenerator test
-`TauCeti.injective_applyₗ_of_forall_isMaximal`. -/
-theorem nontrivial_quotient_linearMap_of_injective (hι : Function.Injective ι) (𝔪 : Ideal R)
-    (h𝔪 : 𝔪.IsMaximal) : Nontrivial (R ⧸ 𝔪 →ₗ[R] E) :=
-  ⟨ι ∘ₗ (quotientEquivResidueField h𝔪).toLinearMap, 0, fun h => one_ne_zero <| hι <| by
-    simpa using LinearMap.congr_fun h ((quotientEquivResidueField h𝔪).symm 1)⟩
-
 variable [Small.{v} R]
-
-/-- If `E` is injective and contains a copy of the residue field, then `E` is a cogenerator: the
-evaluation map `M → Hom_R(Hom_R(M, E), E)` is injective for every module `M`. -/
-theorem injective_applyₗ_of_injective [Module.Injective R E] (hι : Function.Injective ι)
-    {M : Type w} [AddCommGroup M] [Module R M] :
-    Function.Injective (LinearMap.applyₗ : M →ₗ[R] (M →ₗ[R] E) →ₗ[R] E) :=
-  injective_applyₗ_of_forall_isMaximal (nontrivial_quotient_linearMap_of_injective hι)
-
-/-- If `E` is injective and contains a copy of the residue field, then `E` separates points: every
-nonzero element of a module is detected by a linear map to `E`. -/
-theorem exists_apply_ne_zero_of_injective [Module.Injective R E] (hι : Function.Injective ι)
-    {M : Type w} [AddCommGroup M] [Module R M] {m : M} (hm : m ≠ 0) :
-    ∃ f : M →ₗ[R] E, f m ≠ 0 :=
-  exists_apply_ne_zero_of_forall_isMaximal (nontrivial_quotient_linearMap_of_injective hι) hm
-
-/-- If `E` is injective and contains a copy of the residue field, then the elements of `E`
-killed by an ideal `J` have annihilator exactly `J`. -/
-theorem annihilator_torsionBySet_of_injective [Module.Injective R E]
-    (hι : Function.Injective ι) (J : Ideal R) : (Submodule.torsionBySet R E J).annihilator = J := by
-  refine le_antisymm (fun r hr => ?_) fun r hr => Submodule.mem_annihilator.mpr fun x hx =>
-    (Submodule.mem_torsionBySet_iff _ _).mp hx ⟨r, hr⟩
-  -- `E` cogenerates `R ⧸ J`, so the class of `r` is detected by a map `R ⧸ J → E`; that map
-  -- sends `1` into `E[J]`, which `r` kills.
-  rw [← Ideal.Quotient.eq_zero_iff_mem]
-  refine (injective_iff_map_eq_zero _).mp
-    (injective_applyₗ_of_injective (M := R ⧸ J) hι) _ (LinearMap.ext fun f => ?_)
-  simpa [f.apply_quotient_mk_eq_smul_apply_one] using
-    Submodule.mem_annihilator.mp hr _ (J.quotientLinearMapEquivTorsionBySet E f).prop
 
 /-- **Matlis duality preserves length.** For an injective envelope `E` of the residue field of a
 local ring, `Hom_R(M, E)` has the same length as `M`, for every module `M`. In particular `M` has

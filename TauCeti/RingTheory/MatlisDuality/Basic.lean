@@ -9,7 +9,7 @@ import TauCeti.Algebra.Module.Dual.ProjectiveInjective
 import TauCeti.Algebra.Module.Opposite
 import TauCeti.RingTheory.Noetherian.LinearMap
 public import TauCeti.LinearAlgebra.Dual.RightAction
-public import TauCeti.Algebra.Module.Injective.Cogenerator
+public import TauCeti.Algebra.Module.Injective.Cogenerator.Basic
 
 /-!
 # The Matlis dual of a module over an algebra
