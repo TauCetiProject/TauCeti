@@ -42,13 +42,13 @@ noncomputable abbrev latticeGaugeNormedRing : NormedRing A :=
 
 /-- The norm projection of `latticeGaugeNormedRing` is the scalar lattice gauge. This equation
 lets callers compute the ring norm without unfolding its construction from the additive norm. -/
-theorem latticeGaugeNormedRing_norm (a : A) :
+@[simp] theorem latticeGaugeNormedRing_norm (a : A) :
     @Norm.norm A (latticeGaugeNormedRing hAb hAa hAn hAu hAm).toNorm a =
       latticeGauge K A₀ a :=
   latticeGaugeNormedAddCommGroup_norm hAb hAa hAn hAu a
 
 /-- The lattice gauge ring norm induces the original uniformity. -/
-theorem latticeGaugeNormedRing_toUniformSpace :
+@[simp] theorem latticeGaugeNormedRing_toUniformSpace :
     (latticeGaugeNormedRing hAb hAa hAn hAu hAm).toMetricSpace.toUniformSpace =
       ‹UniformSpace A› :=
   (rfl)
