@@ -13,6 +13,7 @@ public import TauCeti.Topology.Category.TopCat.Compact
 public import TauCeti.Topology.Category.TopCat.Normal
 public import TauCeti.Topology.Compactness.Paracompact
 import TauCeti.Topology.Compactness.Lindelof
+import TauCeti.Topology.Convenient.CompactlyGenerated
 
 /-!
 # Normal form, skeletal filtration, and point-set topology of thin geometric realization

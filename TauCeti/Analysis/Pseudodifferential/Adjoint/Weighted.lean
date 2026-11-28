@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Adjoint.Classical
+public import TauCeti.Analysis.Pseudodifferential.Adjoint.Continuity
 public import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 
 /-!
@@ -49,6 +50,16 @@ the weight `k`:
 the weighted adjoint can differ from the flat one already at order `m - 1`, through the term
 `(∂_{ξⱼ} a)† ∂ⱼ k`.
 
+For fixed weights, the weighted adjoint symbol, the terms and the remainders of its expansion are
+additive and conjugate-linear in `a`. The remainders satisfy the continuity estimates of the
+unweighted expansion: for compact sets `K` and `L`, each seminorm `p_{L,α,β}` of the remainder
+`R_N^♯(a)` after `N` terms, in the class of order `m - N`, is at most a constant times finitely
+many seminorms of `a` on `K`, for all `a` vanishing at positions outside `K`
+(`TauCeti.Symbol.exists_seminorm_weightedAdjointRemainder_le`). The constant depends on the
+weights. So a continuous family of symbols vanishing outside one compact set has continuous
+families of weighted adjoint symbols and of remainders, the latter in the class of order `m - N`
+(`Continuous.symbol_weightedAdjoint`, `Continuous.symbol_weightedAdjointRemainder`).
+
 For a classical symbol `a` the weighted adjoint symbol is classical, with principal symbol
 `g(x)⁻¹ a_m(x, ξ)† k(x)`, and it is elliptic exactly when `a` is, if `k(x)` is invertible.
 
@@ -64,6 +75,13 @@ For a classical symbol `a` the weighted adjoint symbol is classical, with princi
   `TauCeti.Symbol.isAsymptoticSum_weightedAdjoint`.
 * `TauCeti.Symbol.coefficient_weightedAdjointTerm_zero`,
   `TauCeti.Symbol.coefficient_weightedAdjointTerm_one`: the first two terms.
+* `TauCeti.Symbol.weightedAdjoint_add`, `TauCeti.Symbol.weightedAdjoint_smul` and their analogues
+  for the terms and remainders: additivity and conjugate-linearity in the symbol.
+* `TauCeti.Symbol.exists_seminorm_weightedAdjointRemainder_le`,
+  `TauCeti.Symbol.exists_seminorm_weightedAdjoint_le`: the seminorm estimates of the remainders and
+  of the weighted adjoint symbol.
+* `Continuous.symbol_weightedAdjoint`, `Continuous.symbol_weightedAdjointRemainder`: continuity in
+  the symbol.
 * `TauCeti.ClassicalSymbol.weightedAdjoint`: the weighted adjoint of a classical symbol, with
   `TauCeti.ClassicalSymbol.coefficient_principal_weightedAdjoint` and
   `TauCeti.ClassicalSymbol.isElliptic_weightedAdjoint_iff`.
@@ -79,6 +97,7 @@ public section
 noncomputable section
 
 open MeasureTheory Real FourierTransform Finset
+open TopologicalSpace (Compacts)
 open scoped RealInnerProductSpace ContDiff SchwartzMap
 
 namespace TauCeti
@@ -294,6 +313,238 @@ theorem isAsymptoticSum_weightedAdjoint :
   simp
 
 end Remainder
+
+/-! ### Linearity of the weighted adjoint expansion -/
+
+section Linearity
+
+variable (c : ℂ) (a b : Symbol n V W m) (ha : a.HasCompactSpatialSupport)
+  (hb : b.HasCompactSpatialSupport) (hg : ContDiff ℝ ∞ g) (hgi : ∀ x, (g x).IsInvertible)
+  (hk : ContDiff ℝ ∞ k)
+
+omit [CompleteSpace V] in
+private theorem weightComp_add : weightComp hk (a + b) = weightComp hk a + weightComp hk b :=
+  comp_add _ a b
+
+omit [CompleteSpace V] in
+private theorem weightComp_smul : weightComp hk (c • a) = c • weightComp hk a :=
+  comp_smul c _ a
+
+/-- The weighted adjoint symbol is additive: `(a + b)^♯ = a^♯ + b^♯`. -/
+@[simp]
+theorem weightedAdjoint_add :
+    weightedAdjoint (a + b) (ha.add hb) hg hgi hk =
+      weightedAdjoint a ha hg hgi hk + weightedAdjoint b hb hg hgi hk := by
+  have h : adjoint (weightComp hk (a + b)) ((ha.add hb).weightComp hk) =
+      adjoint (weightComp hk a) (ha.weightComp hk) +
+        adjoint (weightComp hk b) (hb.weightComp hk) := by
+    rw [← adjoint_add]
+    congr 1
+    exact weightComp_add a b hk
+  rw [weightedAdjoint, h, comp_add, map_add, weightedAdjoint, weightedAdjoint]
+
+/-- The weighted adjoint symbol is conjugate-linear: `(c • a)^♯ = conj c • a^♯`. -/
+@[simp]
+theorem weightedAdjoint_smul :
+    weightedAdjoint (c • a) (ha.smul c) hg hgi hk =
+      (starRingEnd ℂ) c • weightedAdjoint a ha hg hgi hk := by
+  have h : adjoint (weightComp hk (c • a)) ((ha.smul c).weightComp hk) =
+      (starRingEnd ℂ) c • adjoint (weightComp hk a) (ha.weightComp hk) := by
+    rw [← adjoint_smul]
+    congr 1
+    exact weightComp_smul c a hk
+  rw [weightedAdjoint, h, comp_smul, map_smul, weightedAdjoint]
+
+/-- The weighted adjoint symbol of a difference is the difference of the weighted adjoint
+symbols. -/
+@[simp]
+theorem weightedAdjoint_sub :
+    weightedAdjoint (a - b) (ha.sub hb) hg hgi hk =
+      weightedAdjoint a ha hg hgi hk - weightedAdjoint b hb hg hgi hk := by
+  rw [eq_sub_iff_add_eq, ← weightedAdjoint_add]
+  congr 1
+  exact sub_add_cancel a b
+
+/-- The terms of the weighted adjoint expansion are additive in the symbol. -/
+@[simp]
+theorem weightedAdjointTerm_add (j : ℕ) :
+    weightedAdjointTerm (a + b) hg hgi hk j =
+      weightedAdjointTerm a hg hgi hk j + weightedAdjointTerm b hg hgi hk j := by
+  rw [weightedAdjointTerm, weightComp_add, adjointTerm_add, comp_add, map_add, weightedAdjointTerm,
+    weightedAdjointTerm]
+
+/-- The terms of the weighted adjoint expansion are conjugate-linear in the symbol. -/
+@[simp]
+theorem weightedAdjointTerm_smul (j : ℕ) :
+    weightedAdjointTerm (c • a) hg hgi hk j =
+      (starRingEnd ℂ) c • weightedAdjointTerm a hg hgi hk j := by
+  rw [weightedAdjointTerm, weightComp_smul, adjointTerm_smul, comp_smul, map_smul,
+    weightedAdjointTerm]
+
+/-- The terms of the weighted adjoint expansion of a difference are the differences of the
+terms. -/
+@[simp]
+theorem weightedAdjointTerm_sub (j : ℕ) :
+    weightedAdjointTerm (a - b) hg hgi hk j =
+      weightedAdjointTerm a hg hgi hk j - weightedAdjointTerm b hg hgi hk j := by
+  rw [eq_sub_iff_add_eq, ← weightedAdjointTerm_add, sub_add_cancel]
+
+/-- The remainders of the weighted adjoint expansion are additive in the symbol. -/
+@[simp]
+theorem weightedAdjointRemainder_add (N : ℕ) :
+    weightedAdjointRemainder (a + b) (ha.add hb) hg hgi hk N =
+      weightedAdjointRemainder a ha hg hgi hk N + weightedAdjointRemainder b hb hg hgi hk N := by
+  have h : (weightComp hk (a + b)).adjointRemainder ((ha.add hb).weightComp hk) N =
+      (weightComp hk a).adjointRemainder (ha.weightComp hk) N +
+        (weightComp hk b).adjointRemainder (hb.weightComp hk) N := by
+    rw [← adjointRemainder_add]
+    congr 1
+    exact weightComp_add a b hk
+  rw [weightedAdjointRemainder, h, comp_add, map_add, weightedAdjointRemainder,
+    weightedAdjointRemainder]
+
+/-- The remainders of the weighted adjoint expansion are conjugate-linear in the symbol. -/
+@[simp]
+theorem weightedAdjointRemainder_smul (N : ℕ) :
+    weightedAdjointRemainder (c • a) (ha.smul c) hg hgi hk N =
+      (starRingEnd ℂ) c • weightedAdjointRemainder a ha hg hgi hk N := by
+  have h : (weightComp hk (c • a)).adjointRemainder ((ha.smul c).weightComp hk) N =
+      (starRingEnd ℂ) c • (weightComp hk a).adjointRemainder (ha.weightComp hk) N := by
+    rw [← adjointRemainder_smul]
+    congr 1
+    exact weightComp_smul c a hk
+  rw [weightedAdjointRemainder, h, comp_smul, map_smul, weightedAdjointRemainder]
+
+/-- The remainders of the weighted adjoint expansion of a difference are the differences of the
+remainders. -/
+@[simp]
+theorem weightedAdjointRemainder_sub (N : ℕ) :
+    weightedAdjointRemainder (a - b) (ha.sub hb) hg hgi hk N =
+      weightedAdjointRemainder a ha hg hgi hk N - weightedAdjointRemainder b hb hg hgi hk N := by
+  rw [eq_sub_iff_add_eq, ← weightedAdjointRemainder_add]
+  congr 1
+  exact sub_add_cancel a b
+
+end Linearity
+
+/-! ### Seminorm estimates and continuity -/
+
+section Continuity
+
+variable (hg : ContDiff ℝ ∞ g) (hgi : ∀ x, (g x).IsInvertible) (hk : ContDiff ℝ ∞ k)
+
+/-- Seminorm estimates pass from an operation `F` on symbols of order `0 + m` to
+`a ↦ g⁻¹ F(k† a)`: if each seminorm on `L` of `F(b)` is at most a constant times finitely many
+seminorms of `b` on `K`, for `b` vanishing outside `K`, then the same holds for `g⁻¹ F(k† a)`. -/
+private theorem exists_seminorm_inverseWeight_comp_le {m₁ : ℝ} (K : Compacts (CoordinateSpace n))
+    (F : (b : Symbol n V W (0 + m)) → b.HasCompactSpatialSupport → Symbol n W V m₁)
+    (hF : ∀ (L : Compacts (CoordinateSpace n)) (γ δ : List (Fin n)),
+      ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
+        ∀ (b : Symbol n V W (0 + m)) (hb : b.HasCompactSpatialSupport),
+          (∀ x ∉ K, ∀ ξ, b.coefficient (x, ξ) = 0) →
+            Symbol.seminorm L γ δ (F b hb) ≤ C * ∑ i ∈ s, Symbol.seminorm K i.1 i.2 b)
+    (L : Compacts (CoordinateSpace n)) (α β : List (Fin n)) :
+    ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
+      ∀ (a : Symbol n V W m) (ha : a.HasCompactSpatialSupport),
+        (∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0) →
+          Symbol.seminorm L α β
+              ((inverseWeight hg hgi).comp (F (weightComp hk a) (ha.weightComp hk))) ≤
+            C * ∑ i ∈ s, Symbol.seminorm K i.1 i.2 a := by
+  -- `k† a` vanishes outside `K` together with `a`.
+  have hvan (a : {a : Symbol n V W m // ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0}) :
+      ∀ x ∉ K, ∀ ξ, (weightComp hk a.val).coefficient (x, ξ) = 0 := fun x hx ξ ↦ by
+    simp [coefficient_weightComp, a.property x hx ξ]
+  have hsupp (a : {a : Symbol n V W m // ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0}) :
+      a.val.HasCompactSpatialSupport :=
+    hasCompactSpatialSupport_iff.2 ⟨K, K.isCompact, a.property⟩
+  -- The seminorms of `k† a` on `K` are controlled by those of `a`.
+  have hw := exists_seminorm_comp_le_sum_seminorm K K (ofSpatial _ hk.clm_adjoint)
+    (fun a : {a : Symbol n V W m // ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0} ↦ a.val) Subtype.val
+    fun γ δ ↦ ⟨{(γ, δ)}, 1, zero_le_one, fun a ↦ by simp⟩
+  -- Hence so are the seminorms of `F(k† a)`.
+  have hFw (γ δ : List (Fin n)) : ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
+      ∀ a, Symbol.seminorm L γ δ (F (weightComp hk a.val) ((hsupp a).weightComp hk)) ≤
+        C * ∑ i ∈ s, Symbol.seminorm K i.1 i.2 a.val := by
+    obtain ⟨s, C, hC0, hC⟩ := hF L γ δ
+    obtain ⟨t, D, hD0, hD⟩ := exists_listSum_le_sum_seminorm K Subtype.val s.toList (fun _ ↦ C)
+      (fun _ _ ↦ hC0) (fun i a ↦ Symbol.seminorm K i.1 i.2 (weightComp hk a.val))
+      fun i _ ↦ hw i.1 i.2
+    refine ⟨t, D, hD0, fun a ↦ (hC _ _ (hvan a)).trans ?_⟩
+    simpa [Finset.mul_sum, Finset.sum_toList] using hD a
+  obtain ⟨s, C, hC0, hC⟩ := exists_seminorm_comp_le_sum_seminorm K L (inverseWeight hg hgi)
+    (fun a : {a : Symbol n V W m // ∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0} ↦
+      F (weightComp hk a.val) ((hsupp a).weightComp hk)) Subtype.val hFw α β
+  exact ⟨s, C, hC0, fun a _ haK ↦ hC ⟨a, haK⟩⟩
+
+/-- **Seminorm estimate for the remainder of the weighted adjoint expansion.** For smooth weights
+`g` and `k`, with `g(x)` invertible, compact sets `K` and `L` of positions, every `N` and words
+`α`, `β`, there are finitely many pairs of words and a constant `C` such that the remainder
+`R_N^♯(a) = a^♯ - ∑_{j < N} weightedAdjointTerm a j`, a symbol of order `m - N`, satisfies
+
+`p_{L,α,β}(R_N^♯(a)) ≤ C ∑ᵢ p_{K,αᵢ,βᵢ}(a)`
+
+for every symbol `a` of order `m` vanishing at positions outside `K`. With
+`TauCeti.Symbol.weightedAdjointRemainder_sub` this bounds `R_N^♯(a) - R_N^♯(b)` by the seminorms
+of `a - b`. -/
+theorem exists_seminorm_weightedAdjointRemainder_le (K L : Compacts (CoordinateSpace n)) (N : ℕ)
+    (α β : List (Fin n)) :
+    ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
+      ∀ (a : Symbol n V W m) (ha : a.HasCompactSpatialSupport),
+        (∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0) →
+          Symbol.seminorm L α β (weightedAdjointRemainder a ha hg hgi hk N) ≤
+            C * ∑ i ∈ s, Symbol.seminorm K i.1 i.2 a := by
+  obtain ⟨s, C, hC0, hC⟩ := exists_seminorm_inverseWeight_comp_le hg hgi hk K
+    (fun b hb ↦ b.adjointRemainder hb N)
+    (fun L γ δ ↦ exists_seminorm_adjointRemainder_le K L N γ δ) L α β
+  exact ⟨s, C, hC0, fun a ha haK ↦ (seminorm_inclusion_le _ L α β _).trans (hC a ha haK)⟩
+
+/-- **Seminorm estimate for the weighted adjoint symbol.** For smooth weights `g` and `k`, with
+`g(x)` invertible, compact sets `K` and `L` of positions and words `α`, `β`, there are finitely
+many pairs of words and a constant `C` such that
+
+`p_{L,α,β}(a^♯) ≤ C ∑ᵢ p_{K,αᵢ,βᵢ}(a)`
+
+for every symbol `a` of order `m` vanishing at positions outside `K`. -/
+theorem exists_seminorm_weightedAdjoint_le (K L : Compacts (CoordinateSpace n))
+    (α β : List (Fin n)) :
+    ∃ (s : Finset (List (Fin n) × List (Fin n))) (C : ℝ), 0 ≤ C ∧
+      ∀ (a : Symbol n V W m) (ha : a.HasCompactSpatialSupport),
+        (∀ x ∉ K, ∀ ξ, a.coefficient (x, ξ) = 0) →
+          Symbol.seminorm L α β (weightedAdjoint a ha hg hgi hk) ≤
+            C * ∑ i ∈ s, Symbol.seminorm K i.1 i.2 a := by
+  obtain ⟨s, C, hC0, hC⟩ := exists_seminorm_inverseWeight_comp_le hg hgi hk K adjoint
+    (fun L γ δ ↦ exists_seminorm_adjoint_le K L γ δ) L α β
+  exact ⟨s, C, hC0, fun a ha haK ↦ (seminorm_inclusion_le _ L α β _).trans (hC a ha haK)⟩
+
+/-- **Continuity of the weighted adjoint symbol.** If `t ↦ a t` is a continuous family of symbols
+of order `m`, all vanishing at positions outside one compact set `K`, then `t ↦ (a t)^♯` is a
+continuous family of symbols of order `m`, for fixed smooth weights `g` and `k` with `g(x)`
+invertible. -/
+theorem _root_.Continuous.symbol_weightedAdjoint {X : Type*} [TopologicalSpace X]
+    {a : X → Symbol n V W m} (ha : Continuous a) {K : Set (CoordinateSpace n)} (hK : IsCompact K)
+    (haK : ∀ t, ∀ x ∉ K, ∀ ξ, (a t).coefficient (x, ξ) = 0) :
+    Continuous fun t ↦
+      weightedAdjoint (a t) (hasCompactSpatialSupport_iff.2 ⟨K, hK, haK t⟩) hg hgi hk := by
+  have hw : Continuous fun t ↦ weightComp hk (a t) := continuous_const.symbol_comp ha
+  exact (continuous_inclusion _).comp (continuous_const.symbol_comp
+    (hw.symbol_adjoint hK fun t x hx ξ ↦ by simp [coefficient_weightComp, haK t x hx ξ]))
+
+/-- **Continuity of the remainders of the weighted adjoint expansion.** If `t ↦ a t` is a
+continuous family of symbols of order `m`, all vanishing at positions outside one compact set `K`,
+then for every `N` the remainders `t ↦ (a t)^♯ - ∑_{j < N} weightedAdjointTerm (a t) j` form a
+continuous family of symbols of order `m - N`, for fixed smooth weights `g` and `k` with `g(x)`
+invertible. -/
+theorem _root_.Continuous.symbol_weightedAdjointRemainder {X : Type*} [TopologicalSpace X]
+    {a : X → Symbol n V W m} (ha : Continuous a) {K : Set (CoordinateSpace n)} (hK : IsCompact K)
+    (haK : ∀ t, ∀ x ∉ K, ∀ ξ, (a t).coefficient (x, ξ) = 0) (N : ℕ) :
+    Continuous fun t ↦ weightedAdjointRemainder (a t)
+      (hasCompactSpatialSupport_iff.2 ⟨K, hK, haK t⟩) hg hgi hk N := by
+  have hw : Continuous fun t ↦ weightComp hk (a t) := continuous_const.symbol_comp ha
+  exact (continuous_inclusion _).comp (continuous_const.symbol_comp
+    (hw.symbol_adjointRemainder hK (fun t x hx ξ ↦ by simp [coefficient_weightComp, haK t x hx ξ])
+      N))
+
+end Continuity
 
 end Symbol
 

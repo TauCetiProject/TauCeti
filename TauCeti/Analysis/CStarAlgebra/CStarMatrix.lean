@@ -12,20 +12,21 @@ public import Mathlib.Data.Matrix.Basis
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import Mathlib.RingTheory.SimpleRing.Matrix
 import Mathlib.Algebra.GroupWithZero.Pi
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
+import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+import Mathlib.Analysis.CStarAlgebra.Hom
+import Mathlib.Data.Matrix.Composition
 import Mathlib.LinearAlgebra.Matrix.ConjTranspose
+import Mathlib.LinearAlgebra.Matrix.DotProduct
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Module
 import Mathlib.Topology.Instances.Matrix
 import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.CStarAlgebra.Compression
-import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Instances
-import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-import Mathlib.Analysis.CStarAlgebra.Hom
-import Mathlib.LinearAlgebra.Matrix.DotProduct
-import Mathlib.Data.Matrix.Composition
 import TauCeti.LinearAlgebra.Matrix.PartialIsometry
+public import TauCeti.LinearAlgebra.Matrix.MurrayVonNeumann
 import TauCeti.LinearAlgebra.Trace.Idempotent
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Module
 
 /-!
 # Rectangular matrix operations and positivity by quadratic forms
@@ -110,6 +111,8 @@ embeddings into block-diagonal matrices.
 * `CStarMatrix.diagonalNonUnitalStarAlgHom`: the diagonal embedding `b ↦ diag(b, …, b)` of `B`
   in `M_n(B)`, with `CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le` and
   `CStarMatrix.norm_map_toSpanSingleton_le`: `‖[xᵢⱼ • a]‖ ≤ ‖x‖ ‖a‖` for a scalar matrix `x`.
+* `CStarMatrix.diagonalStarAlgHom`: the diagonal embedding `d ↦ diag(d₁, …, dₙ)` of `n → A` in
+  `M_n(A)`, as a star algebra homomorphism.
 * `CStarMatrix.blockDiagonalSingle`: the corner embedding of `M_{n i}(B)` as the `i`-th diagonal
   block of `M_{Σ i, n i}(B)`, with `CStarMatrix.sum_blockDiagonalSingle`: a block-diagonal matrix
   is the sum of its corner embeddings.
@@ -268,6 +271,27 @@ theorem diagonalNonUnitalStarAlgHom_apply (b : B) (i j : n) :
 
 end Diagonal
 
+section DiagonalStarAlgHom
+
+variable (R n A : Type*) [Fintype n] [DecidableEq n] [CommSemiring R] [Semiring A] [StarRing A]
+  [Algebra R A]
+
+/-- The diagonal embedding `d ↦ diag(d₁, …, dₙ)` of `n → A` in `CStarMatrix n n A`, as a star
+algebra homomorphism: `Matrix.diagonalAlgHom` commutes with `star` by
+`Matrix.diagonal_conjTranspose`. -/
+def diagonalStarAlgHom : (n → A) →⋆ₐ[R] CStarMatrix n n A where
+  toAlgHom := Matrix.diagonalAlgHom R
+  map_star' d := congrArg ofMatrix (Matrix.diagonal_conjTranspose d).symm
+
+variable {R n A}
+
+@[simp]
+theorem diagonalStarAlgHom_apply (d : n → A) (i j : n) :
+    diagonalStarAlgHom R n A d i j = if i = j then d i else 0 :=
+  Matrix.diagonal_apply ..
+
+end DiagonalStarAlgHom
+
 section Algebraic
 
 variable {n R A : Type*}
@@ -332,7 +356,7 @@ lemma ofMatrix_symm_sub [Sub A] (M N : CStarMatrix n n A) :
 
 /-- Reading a C⋆-matrix as an ordinary matrix respects scalar multiplication. -/
 @[simp]
-lemma ofMatrix_symm_smul [SMul R A] (r : R) (M : CStarMatrix n n A) :
+lemma ofMatrix_symm_smul {m : Type*} [SMul R A] (r : R) (M : CStarMatrix m n A) :
     ofMatrix.symm (r • M) = r • ofMatrix.symm M := (rfl)
 
 /-- Reading the entrywise nonunital star-algebra homomorphism as an ordinary matrix applies
@@ -399,6 +423,16 @@ lemma isStarProjection_ofMatrix_symm_iff [Fintype n] [NonUnitalSemiring A] [Star
 lemma isStarProjection_ofMatrix_iff [Fintype n] [NonUnitalSemiring A] [StarRing A]
     {M : Matrix n n A} : IsStarProjection (ofMatrix M) ↔ IsStarProjection M := by
   rw [← isStarProjection_ofMatrix_symm_iff, Equiv.symm_apply_apply]
+
+/-- An element `v` of `CStarMatrix n n A` with `v⋆v = p` and `vv⋆ = q` makes the underlying
+matrices of the projections `p` and `q` Murray–von Neumann equivalent. -/
+theorem isMurrayVonNeumannEquivalent_of_star_mul_self_eq [Fintype n] [NonUnitalSemiring A]
+    [StarRing A] {p q v : CStarMatrix n n A} (hp : IsStarProjection p) (hq : IsStarProjection q)
+    (h₁ : star v * v = p) (h₂ : v * star v = q) :
+    Matrix.IsMurrayVonNeumannEquivalent (ofMatrix.symm p) (ofMatrix.symm q) :=
+  ⟨isStarProjection_ofMatrix_symm_iff.2 hp, isStarProjection_ofMatrix_symm_iff.2 hq,
+    ofMatrix.symm v, by rw [← ofMatrix_symm_star, ← ofMatrix_symm_mul, h₁],
+    by rw [← ofMatrix_symm_star, ← ofMatrix_symm_mul, h₂]⟩
 
 /-- A matrix is self-adjoint exactly when it is self-adjoint as a C⋆-matrix. -/
 @[simp]

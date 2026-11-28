@@ -33,6 +33,8 @@ This file compares `ContinuousMapGeneratedBy G Y Z` with the compact-open mappin
   compactly generated spaces*, Topology Appl. 143 (2004), 105–145.
 * R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Arch. Math.
   (Basel) 22 (1971), 545–555.
+* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
+  Appendix, Propositions A.14–A.15.
 -/
 
 public section
@@ -66,6 +68,10 @@ theorem continuous_toContinuousMapGeneratedBy :
 end ContinuousMap
 
 namespace Topology.ContinuousMapGeneratedBy
+
+@[simp]
+theorem coe_mk (f : Y → Z) (hf : ContinuousGeneratedBy G f) :
+    ⇑(ContinuousMapGeneratedBy.mk f hf) = f := (rfl)
 
 /-- When the source `Y` is `G`-generated, every `G`-continuous map `Y → Z` is continuous. -/
 @[expose]

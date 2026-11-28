@@ -140,10 +140,8 @@ theorem isIso_serreSpectralSequenceProj_hom_two_f (hp : serreFibrations p)
       obtain rfl : q = 0 := by lia
       have := hconn _ (closedCell_subset_complex n j ⟨0, Metric.mem_closedBall_self zero_le_one,
         rfl⟩)
-      -- The fibre of the identity is a point, so the map of fibres is one between path-connected
-      -- spaces, an isomorphism on `H₀` since both augmentations are.
-      have : Unique ((𝟙 B : B ⟶ B).fiber ((𝟙 B) (map n j 0))) :=
-        ⟨⟨⟨map n j 0, rfl⟩⟩, fun x ↦ Subtype.ext x.property⟩
+      -- The fibre of the identity is a point (`TopCat.Hom.uniqueFiberId`), so the map of fibres is
+      -- one between path-connected spaces, an isomorphism on `H₀` since both augmentations are.
       exact (ObjectProperty.isoModSerre_isZero_iff _).2 (IsIso.of_isIso_fac_right
         (singularHomologyMap_singularHomology₀ε (ModuleCat.of R R) _))
   have hb : (pq.2 + 1).toNat = n := by lia

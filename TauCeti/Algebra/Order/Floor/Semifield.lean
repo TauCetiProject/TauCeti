@@ -28,6 +28,8 @@ Dually, for `B > 0` and any natural degree bound `n`, multiplying `B < ⌊B⌋�
 `n / B < ⌊n / B⌋₊ + 1` gives `n < (⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)`, and in particular
 `n < (2 * ⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)`. This includes `n = 0` and `B < 1`, and counts the available
 jet conditions on an integer interval of radius `B`.
+Rounding a dyadic rescaling down, `⌊a * 2 ^ k⌋₊ + 1 ≤ (⌊a⌋₊ + 1) * 2 ^ max k 0` for every
+integer `k`, which bounds counts of points in dyadic dilates of a box.
 
 For closed intervals `[0, W]` subdivided into `n > 0` equal cells of step `W / n`, clamping the
 floor index `⌊x / (W / n)⌋₊` at `n - 1` keeps the right endpoint `W` inside the last cell while
@@ -56,6 +58,8 @@ lying under a line above a block lower polygon.
 * `TauCeti.lt_floor_add_one_mul_floor_div_add_one`: `n < (⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` for `B > 0`.
 * `TauCeti.lt_two_mul_floor_add_one_mul_floor_div_add_one`:
   `n < (2 * ⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` for `B > 0`.
+* `TauCeti.floor_mul_two_zpow_add_one_le`: `⌊a * 2 ^ k⌋₊ + 1 ≤ (⌊a⌋₊ + 1) * 2 ^ max k 0` for
+  `k : ℤ`.
 * `TauCeti.mem_Icc_min_sub_one_natFloor_div`: for `0 ≤ W` and `0 < n`, every `x ∈ [0, W]` lies in
   the closed cell of step `W / n` indexed by `min (n - 1) ⌊x / (W / n)⌋₊`.
 * `TauCeti.natCast_max_one_ceil_lt_add_one` and `TauCeti.natCast_max_one_ceil_le_add_one`:
@@ -66,6 +70,9 @@ lying under a line above a block lower polygon.
   number at most `y - z + 1`, for `z ≤ y` with `0 ≤ y`.
 * `TauCeti.lt_mul_floor_add_two_of_mul_sum_range_div_le`: if `c > 0` and
   `c ∑ i < n, ⌊i / H⌋ ≤ n x`, then `n < H (⌊2 x / c⌋₊ + 2)`.
+* `TauCeti.natFloor_one_div_pos`: `0 < ⌊1 / δ⌋₊` for `0 < δ ≤ 1`.
+* `TauCeti.natFloor_one_div_add_div_le`: `⌊1 / δ⌋₊ + (c / δ ^ 2) / ⌊1 / δ⌋₊ ≤ 2 / δ` for
+  `0 < δ ≤ 1 / 2` and `c ≤ 8 / 9`.
 -/
 
 public section
@@ -166,6 +173,27 @@ theorem lt_two_mul_floor_add_one_mul_floor_div_add_one (hB : 0 < B) (n : ℕ) :
     n < (2 * ⌊B⌋₊ + 1) * (⌊(n : K) / B⌋₊ + 1) :=
   (lt_floor_add_one_mul_floor_div_add_one hB n).trans_le (Nat.mul_le_mul_right _ (by omega))
 
+/-- Rounding `a * 2 ^ k` down and adding one costs at most the factor `2 ^ max k 0` over
+`⌊a⌋₊ + 1`, for any `a` (the left side is `1` when `a ≤ 0`) and any integer `k`. -/
+theorem floor_mul_two_zpow_add_one_le (a : K) (k : ℤ) :
+    ⌊a * 2 ^ k⌋₊ + 1 ≤ (⌊a⌋₊ + 1) * 2 ^ k.toNat := by
+  rcases lt_or_ge a 0 with ha | ha
+  · -- for negative `a` the left side is `1`
+    rw [Nat.floor_of_nonpos (mul_nonpos_of_nonpos_of_nonneg ha.le (zpow_nonneg zero_le_two k)),
+      zero_add]
+    exact Nat.one_le_iff_ne_zero.mpr (by positivity)
+  have h₁ : a * 2 ^ k ≤ a * 2 ^ k.toNat := by
+    gcongr
+    rw [← zpow_natCast]
+    exact zpow_le_zpow_right₀ one_le_two (Int.self_le_toNat k)
+  have h₂ : a * 2 ^ k.toNat < (⌊a⌋₊ + 1) * 2 ^ k.toNat :=
+    mul_lt_mul_of_pos_right (Nat.lt_floor_add_one a) (by positivity)
+  have h₃ : ⌊a * 2 ^ k⌋₊ < (⌊a⌋₊ + 1) * 2 ^ k.toNat := by
+    rw [Nat.floor_lt (mul_nonneg ha (zpow_nonneg zero_le_two k))]
+    push_cast
+    exact h₁.trans_lt h₂
+  omega
+
 /-- For a nonnegative `t` and positive `a`, some positive multiple `N a` lies in `(t, t + a]`. -/
 theorem exists_pos_nat_mul_bounds {t a : K} (ht : 0 ≤ t) (ha : 0 < a) :
     ∃ N : ℕ, 1 ≤ N ∧ t < N * a ∧ N * a ≤ t + a := by
@@ -176,6 +204,10 @@ theorem exists_pos_nat_mul_bounds {t a : K} (ht : 0 ≤ t) (ha : 0 < a) :
   · push_cast
     rw [add_mul, one_mul]
     exact add_le_add_left ((le_div_iff₀ ha).mp (Nat.floor_le htdiv)) a
+
+/-- For `0 < δ ≤ 1`, the integer floor `⌊1 / δ⌋₊` is positive. -/
+theorem natFloor_one_div_pos {δ : K} (hδ : 0 < δ) (hδ' : δ ≤ 1) : 0 < ⌊1 / δ⌋₊ :=
+  Nat.floor_pos.mpr ((le_div_iff₀ hδ).mpr (by simpa using hδ'))
 
 /-- For `n = 3` and `B = 1 / 2`, `⌊B⌋₊ = 0` and `⌊n / B⌋₊ = 6`, giving `1 * 7 > 3`; for `n = 2`
 and `B = 3`, `⌊B⌋₊ = 3` and `⌊n / B⌋₊ = 0`, giving `7 * 1 > 2`. -/
@@ -301,6 +333,33 @@ theorem lt_mul_floor_add_two_of_mul_sum_range_div_le {H n : ℕ} (hH : 0 < H) {c
   calc n = H * q + ρ := hn.symm
     _ < H * (q + 1) := by nlinarith
     _ ≤ H * (⌊2 * x / c⌋₊ + 2) := Nat.mul_le_mul_left _ (by omega)
+
+/-- For `0 < δ ≤ 1 / 2` and `c ≤ 8 / 9`, setting `L = ⌊1 / δ⌋₊` gives
+`L + (c / δ ^ 2) / L ≤ 2 / δ`. -/
+theorem natFloor_one_div_add_div_le {δ c : K} (hδ : 0 < δ) (hδ' : δ ≤ 1 / 2) (hc : c ≤ 8 / 9) :
+    (⌊1 / δ⌋₊ : K) + (c / δ ^ 2) / (⌊1 / δ⌋₊ : K) ≤ 2 / δ := by
+  let L : ℕ := ⌊1 / δ⌋₊
+  have hL_ge_two : 2 ≤ L := Nat.le_floor (by rw [Nat.cast_ofNat, le_div_iff₀ hδ]; linarith)
+  have hL_pos : (0 : K) < (L : K) := Nat.cast_pos.mpr (by omega)
+  have hr_le : (L : K) * δ ≤ 1 := (le_div_iff₀ hδ).mp (Nat.floor_le (by positivity))
+  have hr_ge : 2 / 3 ≤ (L : K) * δ := by
+    have h1 : (1 : K) < ((L : K) + 1) * δ := (div_lt_iff₀ hδ).mp (Nat.lt_floor_add_one (1 / δ))
+    have h2 : (2 : K) ≤ (L : K) := by exact_mod_cast hL_ge_two
+    nlinarith [mul_nonneg (sub_nonneg.mpr h2) hδ.le]
+  have hsq : (1 - (L : K) * δ) ^ 2 ≤ (1 / 3 : K) ^ 2 := by
+    nlinarith [hr_le, hr_ge]
+  have hquad : ((L : K) * δ) ^ 2 + c ≤ 2 * ((L : K) * δ) := by
+    linarith [hsq, hc]
+  have hmul :
+      ((L : K) + (c / δ ^ 2) / (L : K)) * ((L : K) * δ ^ 2) ≤ (2 / δ) * ((L : K) * δ ^ 2) := by
+    have hLHS :
+        ((L : K) + (c / δ ^ 2) / (L : K)) * ((L : K) * δ ^ 2) = ((L : K) * δ) ^ 2 + c := by
+      field_simp [hL_pos.ne', hδ.ne']
+    have hRHS : (2 / δ) * ((L : K) * δ ^ 2) = 2 * ((L : K) * δ) := by
+      field_simp [hδ.ne']
+    rw [hLHS, hRHS]
+    exact hquad
+  exact le_of_mul_le_mul_right hmul (by positivity)
 
 end Field
 

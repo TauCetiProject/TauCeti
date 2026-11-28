@@ -12,7 +12,7 @@ public import Mathlib.Topology.ContinuousMap.Polynomial
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
 import Mathlib.RingTheory.PowerSeries.Binomial
 import TauCeti.RingTheory.Binomial
-import Mathlib.RingTheory.PowerSeries.Order
+import TauCeti.RingTheory.PowerSeries.Order
 
 /-!
 # The Mahler basis on the p-adic integers
@@ -207,8 +207,7 @@ theorem mahler_natCast_mul (m n : ℕ) (x : ℤ_[p]) :
   have hsub₂ : ∑ k ∈ Finset.range (n + 1), coeff n (G ^ k) * (l.choose k : ℤ) =
       ∑ k ∈ Finset.range (n + l + 1), coeff n (G ^ k) * (l.choose k : ℤ) :=
     Finset.sum_subset (Finset.range_subset_range.mpr (by lia)) fun k _ hk ↦ by
-      rw [coeff_of_lt_order _ ((Nat.cast_lt.mpr (by simpa using hk)).trans_le
-        (le_order_pow_of_constantCoeff_eq_zero k hG)), zero_mul]
+      rw [coeff_pow_eq_zero_of_lt hG (by simpa using hk), zero_mul]
   have hint : ((m * l).choose n : ℤ) =
       ∑ k ∈ Finset.range (n + 1), coeff n (G ^ k) * (l.choose k : ℤ) := by
     rw [hnat, hsub₁, hsub₂]

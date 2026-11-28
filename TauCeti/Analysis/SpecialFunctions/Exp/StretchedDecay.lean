@@ -32,11 +32,12 @@ rescaling the coefficient from `c` to `c / N ^ α`.
 
 On the complex side, for `c ≥ 0` and `|α| ≤ 1` the principal power satisfies
 `c cos (α π) ‖z‖ ^ α ≤ Re (c z ^ α)` on the whole plane, which gives the pointwise bound
-`TauCeti.norm_cexp_neg_mul_cpow_le`. For `c > 0` and `0 < α < 1/2` the constant `cos (α π)` is
-positive, so `exp (-c z ^ α)` is little-o of every real power of `‖z‖` along `cobounded ℂ`:
-`TauCeti.isLittleO_cexp_neg_mul_cpow_cobounded`. At `α = 1/2` this decay fails along
-`cobounded ℂ`, because `exp (-c z ^ (1/2))` has norm one on the negative real axis. The
-function `exp (-c z ^ α)` is holomorphic on the slit plane:
+`TauCeti.norm_cexp_neg_mul_cpow_le`. In any closed sector `|α * arg z| ≤ θ` with `θ < π / 2`,
+`exp (-c z ^ α)` is little-o of every real power of `‖z‖` for any `α > 0`:
+`TauCeti.isLittleO_cexp_neg_mul_cpow_sector`. Specializing to `θ = α π` for `0 < α < 1/2`
+yields decay along `cobounded ℂ`: `TauCeti.isLittleO_cexp_neg_mul_cpow_cobounded`. At `α = 1/2`
+this whole-plane decay fails along `cobounded ℂ`, because `exp (-c z ^ (1/2))` has norm one on the
+negative real axis. The function `exp (-c z ^ α)` is holomorphic on the slit plane:
 `TauCeti.differentiableAt_cexp_neg_mul_cpow`. These estimates generalize the
 fourth-root case of the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
 `DLMF/AsymptoticApproximations/Basics/OrderSymbols.lean`.
@@ -119,17 +120,47 @@ theorem norm_cexp_neg_mul_cpow_le {c α : ℝ} (hc : 0 ≤ c) (hα : |α| ≤ 1)
   rw [neg_mul, mul_assoc]
   exact neg_le_neg h
 
+/-- For `c > 0`, `α > 0`, and `θ < π / 2`, the function `exp (-c z ^ α)` is little-o of every
+real power of `‖z‖` along `cobounded ℂ ⊓ 𝓟 {z : ℂ | |α * z.arg| ≤ θ}`. -/
+theorem isLittleO_cexp_neg_mul_cpow_sector {c α θ : ℝ} (hc : 0 < c) (hα : 0 < α)
+    (hθ : θ < π / 2) (r : ℝ) :
+    (fun z : ℂ => cexp (-(c * z ^ (α : ℂ)))) =o[
+      cobounded ℂ ⊓ 𝓟 {z : ℂ | |α * z.arg| ≤ θ}] fun z => ‖z‖ ^ r := by
+  by_cases hθ0 : 0 ≤ θ
+  · have hcos : 0 < Real.cos θ :=
+      Real.cos_pos_of_mem_Ioo ⟨by linarith [Real.pi_pos], hθ⟩
+    have h : (fun z : ℂ => Real.exp (-(c * Real.cos θ) * ‖z‖ ^ α)) =o[
+        cobounded ℂ ⊓ 𝓟 {z : ℂ | |α * z.arg| ≤ θ}] fun z => ‖z‖ ^ r :=
+      (isLittleO_exp_neg_mul_rpow_rpow_atTop (mul_pos hc hcos) hα r).comp_tendsto
+        ((tendsto_norm_cobounded_atTop (E := ℂ)).mono_left inf_le_left)
+    have hbd : (fun z : ℂ => cexp (-(c * z ^ (α : ℂ)))) =O[
+        cobounded ℂ ⊓ 𝓟 {z : ℂ | |α * z.arg| ≤ θ}]
+        fun z : ℂ => Real.exp (-(c * Real.cos θ) * ‖z‖ ^ α) := by
+      refine IsBigO.of_bound 1 ?_
+      filter_upwards [Filter.mem_inf_of_right (mem_principal_self _)] with z hz
+      have hcone := cos_mul_norm_rpow_le_re_exp_mul_cpow (z := z) (y := α) (φ := 0) (δ := θ)
+        (by simpa [sub_zero, mul_comm] using hz) (by linarith [Real.pi_pos])
+      simp only [neg_zero, ofReal_zero, zero_mul, Complex.exp_zero, one_mul] at hcone
+      rw [one_mul, Complex.norm_exp, neg_re, re_ofReal_mul,
+        Real.norm_of_nonneg (Real.exp_nonneg _)]
+      exact Real.exp_le_exp.mpr (by nlinarith)
+    exact hbd.trans_isLittleO h
+  · have hemp : {z : ℂ | |α * z.arg| ≤ θ} = ∅ := by
+      ext z
+      simp only [mem_ofPred_eq, mem_empty_iff_false, iff_false, not_le]
+      exact lt_of_lt_of_le (not_le.mp hθ0) (abs_nonneg _)
+    rw [hemp, principal_empty, inf_bot_eq]
+    exact isLittleO_bot _ _
+
 /-- For `c > 0` and `0 < α < 1/2`, the function `exp (-c z ^ α)` is little-o of every real power
 of `‖z‖` along `cobounded ℂ`. -/
 theorem isLittleO_cexp_neg_mul_cpow_cobounded {c α : ℝ} (hc : 0 < c) (hα : 0 < α)
     (hα2 : α < 1 / 2) (r : ℝ) :
     (fun z : ℂ => cexp (-(c * z ^ (α : ℂ)))) =o[cobounded ℂ] fun z => ‖z‖ ^ r := by
-  have hcos : 0 < Real.cos (α * π) :=
-    Real.cos_pos_of_mem_Ioo ⟨by nlinarith [pi_pos], by nlinarith [pi_pos]⟩
-  have h := (isLittleO_exp_neg_mul_rpow_rpow_atTop (mul_pos hc hcos) hα r).comp_tendsto
-    (tendsto_norm_cobounded_atTop (E := ℂ))
-  have hα₁ : |α| ≤ 1 := abs_le.2 ⟨by linarith, by linarith⟩
-  exact (IsBigO.of_norm_le fun z => norm_cexp_neg_mul_cpow_le hc.le hα₁ z).trans_isLittleO h
+  have h := isLittleO_cexp_neg_mul_cpow_sector (θ := α * π) hc hα (by nlinarith [pi_pos]) r
+  refine h.mono (le_inf le_rfl (le_principal_iff.mpr (Eventually.of_forall fun z => ?_)))
+  rw [abs_mul, abs_of_pos hα]
+  exact mul_le_mul_of_nonneg_left (abs_arg_le_pi z) hα.le
 
 /-- The damping exponential `exp (-b z ^ α)` is holomorphic on the slit plane, for all complex
 `b` and `α`. -/

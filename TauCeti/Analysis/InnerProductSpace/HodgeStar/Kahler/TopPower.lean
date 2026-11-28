@@ -42,6 +42,9 @@ eigenvalue of `ω` is `1`.
 * `TauCeti.AlmostComplexStructure.wedgePow_apply_complexRealFrame_relEigenvectorBasis`: the value
   `n! ∏ⱼ λⱼ[α]` of `α ^ n` on the real frame of the eigenbasis.
 * `TauCeti.AlmostComplexStructure.wedgePow_ofComplexModule`: `α ^ n = (∏ⱼ λⱼ[α]) ω ^ n`.
+* `TauCeti.AlmostComplexStructure.exists_wedgePow_kahlerForm_apply_ne_zero`: `ω ^ n` does not
+  vanish, so `TauCeti.AlmostComplexStructure.eq_of_forall_mul_wedgePow_kahlerForm` compares
+  scalars through it.
 
 ## References
 
@@ -129,5 +132,25 @@ theorem wedgePow_ofComplexModule {n : ℕ} (hn : finrank ℂ E = n) :
   field_simp
 
 end
+
+/-- The top power `ω ^ n` of the Kähler form does not vanish: it takes the value `n!` on the real
+frame of an orthonormal basis. -/
+theorem exists_wedgePow_kahlerForm_apply_ne_zero {n : ℕ} (hn : finrank ℂ E = n) :
+    ∃ v : Fin (2 * n) → E,
+      (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow n v ≠ 0 := by
+  let u : OrthonormalBasis (Fin n) ℂ E := (stdOrthonormalBasis ℂ E).reindex (finCongr hn)
+  refine ⟨(ofComplexModule E).complexRealFrame u, ?_⟩
+  rw [wedgePow_kahlerForm_apply_complexRealFrame real_inner_ofComplexModule_ofComplexModule
+    u.orthonormal.real u.orthonormal.real_inner_ofComplexModule_eq_zero]
+  positivity
+
+/-- Two scalars agree if they agree after multiplying the top power of the Kähler form. -/
+theorem eq_of_forall_mul_wedgePow_kahlerForm {n : ℕ} (hn : finrank ℂ E = n) {a b : ℝ}
+    (h : ∀ v : Fin (2 * n) → E,
+      a * (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow n v =
+        b * (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow n v) :
+    a = b := by
+  obtain ⟨v, hv⟩ := exists_wedgePow_kahlerForm_apply_ne_zero hn
+  exact mul_right_cancel₀ hv (h v)
 
 end TauCeti.AlmostComplexStructure

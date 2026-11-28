@@ -12,7 +12,8 @@ public import TauCeti.RingTheory.Huber.Normed
 public import Mathlib.Topology.Algebra.Valued.NormedValued
 public import Mathlib.Topology.Algebra.Valued.ValuedField
 
-import TauCeti.RingTheory.WittVector.Frobenius
+import TauCeti.RingTheory.Huber.ValuedField
+import TauCeti.RingTheory.WittVector.Frobenius.Basic
 import TauCeti.RingTheory.WittVector.Units
 
 /-!
@@ -23,7 +24,9 @@ are defined in Witt vectors without division. When the sharp of `ε^(1/p)` is a 
 `p`-th root of unity, `ξ` generates Fontaine's kernel on perfectoid integer rings.
 
 Frobenius acts on `μ` and `xiTilde` by replacing `ε` with `ε ^ p`, and the zeroth Witt coordinate
-of `μ` is `ε - 1`, so `μ ≠ 0` for `ε ≠ 1`.
+of `μ` is `ε - 1`, so for `ε ≠ 1` neither `μ` nor `τ = φ^(-1)(μ)` is divisible by `p`. Fontaine's
+map sends `τ` to `ζ - 1`, where `ζ` is the sharp of `ε^(1/p)`; this is nonzero when `ζ ≠ 1`. When
+`ζ` is a primitive `p`-th root of unity, Fontaine's map kills `μ` but not `τ`.
 
 ## Main results
 
@@ -32,11 +35,26 @@ of `μ` is `ε - 1`, so `μ ≠ 0` for `ε ≠ 1`.
 * `TauCeti.Perfectoid.iterate_frobeniusEquiv_xiTilde`: `φ^j(xiTilde(ε)) = xiTilde(ε ^ p ^ j)`.
 * `TauCeti.Perfectoid.coeff_zero_mu`: the zeroth Witt coordinate of `μ` is `ε - 1`.
 * `TauCeti.Perfectoid.mu_ne_zero`: for `ε ≠ 1`, `μ ≠ 0`.
+* `TauCeti.Perfectoid.not_natCast_dvd_mu`,
+  `TauCeti.Perfectoid.not_natCast_dvd_frobeniusEquiv_symm_mu`: for `ε ≠ 1`, `p` divides neither
+  `μ` nor `φ^(-1)(μ)`.
 * `TauCeti.Perfectoid.map_xi`: base change of `ξ` between perfect rings.
 * `PreTilt.fontaineTheta_iterate_frobeniusEquiv_mu_eq_zero`,
   `PreTilt.fontaineTheta_iterate_frobeniusEquiv_succ_xi`: values of `θ ∘ φ^j` on `μ` and `ξ`.
+* `PreTilt.fontaineTheta_frobeniusEquiv_symm_mu_ne_zero`: `θ(φ^(-1)(μ)) ≠ 0` when the sharp `ζ`
+  of `ε^(1/p)` is not `1`, since `θ(φ^(-1)(μ)) = ζ - 1` by `PreTilt.fontaineThetaShifted_mu`.
 * `PreTilt.ker_fontaineTheta_eq_span_xi`: `ξ` generates Fontaine's kernel on the valuation ring
-  of a complete perfectoid field.
+  of a complete perfectoid field, and `PreTilt.ker_fontaineTheta_eq_span_iff_associated_xi`: the
+  generators of that kernel are the unit multiples of `ξ`.
+
+## Provenance
+
+`TauCeti.Perfectoid.not_natCast_dvd_frobeniusEquiv_symm_mu` and
+`PreTilt.fontaineTheta_frobeniusEquiv_symm_mu_ne_zero` are adapted from `New.Period.not_p_dvd_tau`
+and `New.Period.theta_tau_ne_zero` in `src/Lib/PadicHodge/PeriodRings/Ainf.lean` of grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC). Here `p ∤ τ` is
+read off the zeroth Witt coordinate via `TauCeti.Perfectoid.not_natCast_dvd_mu`, over any perfect
+ring of characteristic `p`.
 
 ## References
 
@@ -139,6 +157,20 @@ omit [CharP S p] [PerfectRing S p] in
 theorem mu_ne_zero {ε : S} (hε : ε ≠ 1) : mu p ε ≠ 0 :=
   fun h ↦ coeff_zero_mu_ne_zero p hε (by rw [h, zero_coeff])
 
+omit [PerfectRing S p] in
+/-- For `ε ≠ 1`, `p` does not divide `μ`: its zeroth Witt coordinate `ε - 1` is nonzero, while
+every multiple of `p` has zeroth coordinate `0` in characteristic `p`. -/
+theorem not_natCast_dvd_mu {ε : S} (hε : ε ≠ 1) : ¬(p : WittVector p S) ∣ mu p ε := by
+  rintro ⟨b, hb⟩
+  apply coeff_zero_mu_ne_zero p hε
+  rw [hb, mul_comm, mul_charP_coeff_zero]
+
+/-- For `ε ≠ 1`, `p` does not divide `τ = φ^(-1)(μ)`. -/
+theorem not_natCast_dvd_frobeniusEquiv_symm_mu {ε : S} (hε : ε ≠ 1) :
+    ¬(p : WittVector p S) ∣ (frobeniusEquiv p S).symm (mu p ε) := by
+  rw [← map_dvd_iff (frobeniusEquiv p S), map_natCast, RingEquiv.apply_symm_apply]
+  exact not_natCast_dvd_mu p hε
+
 end Periods
 
 section Naturality
@@ -235,6 +267,14 @@ theorem fontaineThetaShifted_xiTilde_eq_zero [IsDomain A] (ε : PreTilt A p)
     fontaineThetaShifted A p (xiTilde p ε) = 0 := by
   rw [fontaineThetaShifted_xiTilde, fontaineTheta_xi_eq_zero ε hε]
 
+/-- If the sharp `ζ` of `ε ^ (1 / p)` is not `1`, for instance if it is a primitive `p`-th root
+of unity, then Fontaine's map does not kill `τ = φ^(-1)(μ)`. Here `θ(τ) = ζ - 1`; see
+`fontaineThetaShifted_mu`. -/
+theorem fontaineTheta_frobeniusEquiv_symm_mu_ne_zero (ε : PreTilt A p)
+    (hε : PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε) ≠ 1) :
+    fontaineTheta A p ((frobeniusEquiv p (PreTilt A p)).symm (mu p ε)) ≠ 0 := by
+  rwa [← fontaineThetaShifted_apply, fontaineThetaShifted_mu, sub_ne_zero]
+
 /-- If `ε♯ = 1`, then Fontaine's map kills every Frobenius iterate of `μ`. -/
 theorem fontaineTheta_iterate_frobeniusEquiv_mu_eq_zero (ε : PreTilt A p) (hε : ε.untilt = 1)
     (j : ℕ) : fontaineTheta A p (((frobeniusEquiv p (PreTilt A p))^[j]) (mu p ε)) = 0 := by
@@ -323,12 +363,18 @@ trivial root system. -/
 theorem ker_fontaineTheta_eq_span_xi (ε : PreTilt (𝒪[C]) p)
     (hε : IsPrimitiveRoot
       (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt (𝒪[C]) p) p).symm ε)) p) :
-    RingHom.ker (fontaineTheta (𝒪[C]) p) = Ideal.span {xi p ε} := by
-  have hO := Huber.powerBoundedSubring_eq_integer (K := C)
-  have hplus : Huber.IsRingOfIntegralElements (𝒪[C]) := by
-    rw [← hO]
-    exact Huber.isRingOfIntegralElements_powerBoundedSubring C
-  exact ker_fontaineTheta_eq_span_xi_of_isRingOfIntegralElements hplus ε hε
+    RingHom.ker (fontaineTheta (𝒪[C]) p) = Ideal.span {xi p ε} :=
+  ker_fontaineTheta_eq_span_xi_of_isRingOfIntegralElements
+    (Huber.isRingOfIntegralElements_integer C) ε hε
+
+/-- On the valuation ring of a complete perfectoid nonarchimedean field, an element of `W(O_C♭)`
+generates the Fontaine kernel exactly when it is a unit multiple of `ξ`. -/
+theorem ker_fontaineTheta_eq_span_iff_associated_xi (ε : PreTilt (𝒪[C]) p)
+    (hε : IsPrimitiveRoot
+      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt (𝒪[C]) p) p).symm ε)) p)
+    {y : WittVector p (PreTilt (𝒪[C]) p)} :
+    RingHom.ker (fontaineTheta (𝒪[C]) p) = Ideal.span {y} ↔ Associated y (xi p ε) := by
+  rw [ker_fontaineTheta_eq_span_xi ε hε, eq_comm, Ideal.span_singleton_eq_span_singleton]
 
 /-- On the valuation ring of a complete perfectoid nonarchimedean field,
 `xiTilde` generates the shifted Fontaine kernel. -/

@@ -170,11 +170,11 @@ noncomputable def limitPagePresentation (pq : κ) [E.HasLimitPageAt pq] :
 
 @[simp]
 lemma limitPagePresentation_B (pq : κ) [E.HasLimitPageAt pq] :
-    (E.limitPagePresentation pq).B = E.infBoundariesSubobject pq := rfl
+    (E.limitPagePresentation pq).B = E.infBoundariesSubobject pq := (rfl)
 
 @[simp]
 lemma limitPagePresentation_Z (pq : κ) [E.HasLimitPageAt pq] :
-    (E.limitPagePresentation pq).Z = E.infCyclesSubobject pq := rfl
+    (E.limitPagePresentation pq).Z = E.infCyclesSubobject pq := (rfl)
 
 end Defs
 
