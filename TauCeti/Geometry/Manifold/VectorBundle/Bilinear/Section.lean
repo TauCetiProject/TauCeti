@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.LinearAlgebra.Projection
+public import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 /-!
 # `C^n` bilinear fields
@@ -60,6 +61,22 @@ variable {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
   [FiberBundle F₂ V₂] [VectorBundle 𝕜 F₂ V₂]
   {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
   {n : ℕ∞ω} {b : M → B} {s : Set M} {x : M}
+
+/-- Pairing two differentiable sections with a differentiable bilinear field, over a base map,
+gives a differentiable function with values in the trivial target bundle. -/
+theorem MDifferentiableAt.clm_bundle_apply₂_trivial
+    {β : ∀ x : M, V₁ (b x) →L[𝕜] V₂ (b x) →L[𝕜] G} {U : ∀ x : M, V₁ (b x)}
+    {W : ∀ x : M, V₂ (b x)}
+    (hβ : MDifferentiableAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂ →L[𝕜] G))
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂ →L[𝕜] G)
+        (E := fun z ↦ V₁ z →L[𝕜] V₂ z →L[𝕜] G) (b y) (β y)) x)
+    (hU : MDifferentiableAt IM (IB.prod 𝓘(𝕜, F₁))
+      (fun y ↦ TotalSpace.mk' F₁ (b y) (U y)) x)
+    (hW : MDifferentiableAt IM (IB.prod 𝓘(𝕜, F₂))
+      (fun y ↦ TotalSpace.mk' F₂ (b y) (W y)) x) :
+    MDifferentiableAt IM 𝓘(𝕜, G) (fun y ↦ β y (U y) (W y)) x :=
+  (Bundle.Trivial.mdifferentiableAt_mk_iff.mp
+    ((hβ.clm_bundle_apply hU).clm_bundle_apply hW)).2
 
 /-- Pairing two `C^n` sections with a `C^n` bilinear field, over a base map `b`, gives a `C^n`
 function, within a set at a point. -/

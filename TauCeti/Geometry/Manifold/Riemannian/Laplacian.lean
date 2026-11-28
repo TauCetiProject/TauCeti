@@ -306,6 +306,22 @@ theorem hessian_apply_eq_mvfderiv_sub [IsManifold I 2 M]
   rw [I.hessian_eq_inner_leviCivitaConnection_mgradient]
   linarith
 
+/-- The scalar Hessian may use any Levi-Civita connection for the installed metric. -/
+theorem hessian_apply_eq_mvfderiv_sub_of_isLeviCivitaConnection
+    [IsManifold I 2 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {cov : CovariantDerivative I E (TangentSpace I : M → Type _)}
+    (hcov : cov.IsLeviCivitaConnection) {f : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (a : TangentSpace I x)
+    (Y : Π y : M, TangentSpace I y) (hY : MDiffAt (T% Y) x) :
+    hessian I f x a (Y x) =
+      mvfderiv I (fun y ↦ mvfderiv I f y (Y y)) x a -
+        mvfderiv I f x (cov Y x a) := by
+  have hc := CovariantDerivative.IsLeviCivitaConnection.uniqueness I hcov
+    (CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection I) hY a
+  rw [hc]
+  exact hessian_apply_eq_mvfderiv_sub x hf (fun _ ↦ a) Y hY
+
 /-- The Hessian of a twice continuously differentiable function is symmetric for the
 Levi–Civita connection. -/
 theorem hessian_symm [IsManifold I 2 M]

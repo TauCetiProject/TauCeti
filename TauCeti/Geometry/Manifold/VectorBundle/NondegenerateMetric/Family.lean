@@ -8,6 +8,9 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.NondegenerateMetric.Signature
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
+import TauCeti.LinearAlgebra.QuadraticForm.Signature
+import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Geometry.Manifold.Riemannian.Section
 
 /-!
 # Smooth families of nondegenerate metrics
@@ -39,6 +42,10 @@ varying, possibly indefinite, metric and for its first variation.
   along a smooth parameter map.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.contMDiffAt_comp`: a family restricted
   along a `C^n` parameter map is jointly `C^n`.
+* `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.pos_of_pos`: positivity persists over
+  a preconnected parameter space, independently in each tangent fibre.
+* `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.exists_riemannianMetric_of_pos` constructs
+  Riemannian presentations of every slice from positivity of one slice.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.isLocallyConstant_signature_metric`: the
   signature is locally constant on `P × M`.
 
@@ -321,6 +328,67 @@ theorem isLocallyConstant_signature_metric :
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) q.2 (g q))
     g.contMDiff.continuous
     (fun q ↦ g.symm q) (fun q ↦ g.nondegenerate q)
+
+/-- Over a preconnected parameter space, positivity of a nondegenerate metric family at one
+parameter persists at every parameter. This is a fixed-fibre statement and needs no
+connectedness assumption on the base manifold. -/
+theorem pos_of_pos [FiniteDimensional ℝ E] [PreconnectedSpace P]
+    (p₀ p : P) (x : M)
+    (hpos : ∀ v : TangentSpace I x, v ≠ 0 → 0 < g (p₀, x) v v)
+    (v : TangentSpace I x) (hv : v ≠ 0) : 0 < g (p, x) v v := by
+  have : FiniteDimensional ℝ (TangentSpace I x) :=
+    VectorBundle.finiteDimensional ℝ E (TangentSpace I : M → Type _) x
+  have hconst := g.isLocallyConstant_signature_metric.comp_continuous
+    (continuous_id.prodMk continuous_const : Continuous fun p : P ↦ (p, x))
+  have hsig := hconst.apply_eq_of_preconnectedSpace p p₀
+  have hneg : sigNeg (g (p, x)).toBilinForm.toQuadraticMap =
+      sigNeg (g (p₀, x)).toBilinForm.toQuadraticMap := by
+    simpa only [Function.comp_def, id_eq, ContMDiffNondegenerateMetric.signature_snd, metric_apply]
+      using congrArg Prod.snd hsig
+  have hp₀ : (g (p₀, x)).toBilinForm.toQuadraticMap.PosDef := by
+    intro w hw
+    simpa only [LinearMap.BilinMap.toQuadraticMap_apply,
+      ContinuousLinearMap.toBilinForm_apply] using hpos w hw
+  have hsemi := ((g (p, x)).toBilinForm.isPosSemidef_iff_sigNeg_eq_zero
+    (g.symm (p, x))).mpr
+      (hneg.trans ((QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero _).mp hp₀.nonneg))
+  have hp := ((g (p, x)).toBilinForm.posDef_toQuadraticMap_iff_isPosSemidef_and_nondegenerate
+    (g.symm (p, x))).mpr ⟨hsemi, g.nondegenerate (p, x)⟩
+  simpa only [LinearMap.BilinMap.toQuadraticMap_apply,
+    ContinuousLinearMap.toBilinForm_apply] using hp v hv
+
+/-- A smooth nondegenerate family over a preconnected parameter space which is positive
+at one parameter `p₀` admits Riemannian presentations of all its slices, with the same pairings. -/
+theorem exists_riemannianMetric_of_pos [FiniteDimensional ℝ E] [PreconnectedSpace P]
+    (p₀ : P) (hpos : ∀ x (v : TangentSpace I x), v ≠ 0 → 0 < g (p₀, x) v v) :
+    ∃ r : P → ContMDiffRiemannianMetric I ∞ E (TangentSpace I : M → Type _),
+      ∀ p, g.metric p = (r p).toNondegenerateMetric := by
+  have hp (p : P) (x : M) (v : TangentSpace I x) (hv : v ≠ 0) :
+      0 < g.metric p x v v := g.pos_of_pos p₀ p x (hpos x) v hv
+  let r (p : P) : ContMDiffRiemannianMetric I ∞ E (TangentSpace I : M → Type _) :=
+    ContMDiffRiemannianMetric.ofPositiveDefiniteSection
+      (⟨g.metric p, (g.metric p).contMDiff⟩ :
+        BilinearSection I E (TangentSpace I : M → Type _) ℝ ∞)
+      ((mem_positiveDefiniteBilinearSections _).2
+        ⟨(mem_symmetricBilinearSections _).2 (g.metric p).apply_comm, hp p⟩)
+  refine ⟨r, fun p ↦ ?_⟩
+  ext x u v
+  rw [ContMDiffRiemannianMetric.toNondegenerateMetric_apply,
+    ContMDiffRiemannianMetric.ofPositiveDefiniteSection_inner]
+  -- The positive-definite section was built from this very metric slice.
+  rfl
+
+/-- A Riemannian presentation of a metric slice identifies its evaluation with the inner product
+of the bundle induced by that presentation. -/
+theorem apply_eq_inner_of_riemannianMetric
+    {p : P} (r : ContMDiffRiemannianMetric I ∞ E (TangentSpace I : M → Type _))
+    (hr : g.metric p = r.toNondegenerateMetric) :
+    let _ : RiemannianBundle (TangentSpace I : M → Type _) := ⟨r.toRiemannianMetric⟩
+    ∀ y (u v : TangentSpace I y), g (p, y) u v = inner ℝ u v := by
+  dsimp only
+  intro y u v
+  rw [← metric_apply, hr, ContMDiffRiemannianMetric.toNondegenerateMetric_apply]
+  rfl
 
 /-- A smooth nondegenerate metric family has one fixed signature on each connected component of
 `P × M`. -/
