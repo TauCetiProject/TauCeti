@@ -390,13 +390,9 @@ private theorem integrable_slice_measureReal {n : ℕ} (μ : Fin (n + 1) → Mea
     [∀ i, IsFiniteMeasure (μ i)] {A : Set (Euclidean (n + 1))} (hA : MeasurableSet A) :
     Integrable (fun t ↦ (Measure.pi fun i : Fin n ↦ μ i.succ).real
       (WithLp.toLp 2 ⁻¹' slice A t)) (μ 0) := by
-  let ν := Measure.pi (fun i : Fin n ↦ μ i.succ)
-  refine .of_bound ?_ (ν.real univ) (ae_of_all _ fun t ↦ ?_)
-  · simp_rw [preimage_slice_eq, measureReal_def]
-    exact (measurable_measure_prodMk_left ((finConsEquiv n).measurable
-      (WithLp.measurable_toLp 2 (Fin (n + 1) → ℝ) hA))).ennreal_toReal.aestronglyMeasurable
-  · rw [Real.norm_eq_abs, abs_of_nonneg measureReal_nonneg]
-    exact measureReal_mono (subset_univ _)
+  simp_rw [preimage_slice_eq]
+  exact Measure.integrable_measure_prodMk_left ((finConsEquiv n).measurable
+    (WithLp.measurable_toLp 2 (Fin (n + 1) → ℝ) hA)) (measure_ne_top _ _)
 
 private theorem integrable_expSqInfDist_cons {n : ℕ} {μ : Fin (n + 1) → Measure ℝ}
     [∀ i, IsFiniteMeasure (μ i)] {a b : Fin (n + 1) → ℝ}
@@ -784,13 +780,6 @@ namespace ProbabilityTheory.iIndepFun
 variable {ι Ω : Type*} [Fintype ι] [MeasurableSpace Ω] {P : Measure Ω}
   {X : ι → Ω → ℝ} {a b : ι → ℝ} {L : ℝ≥0} {f : EuclideanSpace ℝ ι → ℝ}
 
-private theorem hasLaw_pi_and_ae_mem_Icc (hi : iIndepFun X P)
-    (hX : ∀ i, AEMeasurable (X i) P) (hbox : ∀ i, ∀ᵐ ω ∂P, X i ω ∈ Icc (a i) (b i)) :
-    HasLaw (fun ω i ↦ X i ω) (Measure.pi fun i ↦ P.map (X i)) P ∧
-      ∀ i, ∀ᵐ x ∂P.map (X i), x ∈ Icc (a i) (b i) :=
-  ⟨hi.hasLaw_pi (fun i ↦ hasLaw_map (hX i)),
-    fun i ↦ (ae_map_iff (hX i) measurableSet_Icc).2 (hbox i)⟩
-
 /-- Talagrand's two-sided median bound for a quasiconvex Lipschitz function of independent real
 coordinates, each almost surely in an interval of length at most one. -/
 theorem measureReal_abs_sub_median_ge_le_of_quasiconvexOn_lipschitzWith (hi : iIndepFun X P)
@@ -802,7 +791,7 @@ theorem measureReal_abs_sub_median_ge_le_of_quasiconvexOn_lipschitzWith (hi : iI
     P.real {ω | t ≤ |f (WithLp.toLp 2 (fun i ↦ X i ω)) - m|} ≤
       4 * Real.exp (-(t / (L : ℝ)) ^ 2 / 4) := by
   have := hi.isProbabilityMeasure
-  obtain ⟨h, hμ⟩ := hasLaw_pi_and_ae_mem_Icc hi hX hbox
+  have h := hi.hasLaw_pi (fun i ↦ hasLaw_map (hX i))
   have hf : Measurable (fun x : ι → ℝ ↦ f (WithLp.toLp 2 x)) :=
     hL.continuous.measurable.comp (WithLp.measurable_toLp 2 _)
   have hmap := hf.aemeasurable.map_map_of_aemeasurable h.aemeasurable
@@ -812,7 +801,7 @@ theorem measureReal_abs_sub_median_ge_le_of_quasiconvexOn_lipschitzWith (hi : iI
     continuous_abs.measurable.comp (hf.sub_const m)
   rw [h.measureReal_eq (measurableSet_le measurable_const hg)]
   exact TauCeti.Probability.measureReal_abs_sub_median_ge_le_of_quasiconvexOn_lipschitzWith
-    hwidth hμ hconv hL hm ht
+    hwidth (fun i ↦ (ae_map_iff (hX i) measurableSet_Icc).2 (hbox i)) hconv hL hm ht
 
 /-- Talagrand's two-sided mean bound for a quasiconvex Lipschitz function of independent real
 coordinates, each almost surely in an interval of length at most one. -/
@@ -823,7 +812,7 @@ theorem measureReal_abs_sub_integral_ge_le_of_quasiconvexOn_lipschitzWith (hi : 
     P.real {ω | t ≤ |f (WithLp.toLp 2 (fun i ↦ X i ω)) -
       ∫ ω', f (WithLp.toLp 2 (fun i ↦ X i ω')) ∂P|} ≤ 4 * Real.exp (-(t / (L : ℝ)) ^ 2 / 256) := by
   have := hi.isProbabilityMeasure
-  obtain ⟨h, hμ⟩ := hasLaw_pi_and_ae_mem_Icc hi hX hbox
+  have h := hi.hasLaw_pi (fun i ↦ hasLaw_map (hX i))
   have hf : Measurable (fun x : ι → ℝ ↦ f (WithLp.toLp 2 x)) :=
     hL.continuous.measurable.comp (WithLp.measurable_toLp 2 _)
   let m := ∫ x, f (WithLp.toLp 2 x) ∂Measure.pi (fun i ↦ P.map (X i))
@@ -833,6 +822,6 @@ theorem measureReal_abs_sub_integral_ge_le_of_quasiconvexOn_lipschitzWith (hi : 
     continuous_abs.measurable.comp (hf.sub_const m)
   rw [heq, h.measureReal_eq (measurableSet_le measurable_const hg)]
   exact TauCeti.Probability.measureReal_abs_sub_integral_ge_le_of_quasiconvexOn_lipschitzWith
-    hwidth hμ hconv hL ht
+    hwidth (fun i ↦ (ae_map_iff (hX i) measurableSet_Icc).2 (hbox i)) hconv hL ht
 
 end ProbabilityTheory.iIndepFun
