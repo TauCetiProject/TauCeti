@@ -126,9 +126,7 @@ theorem bigradedUnblockedHomologyPieceFinrank_unknot_zero :
   rw [bigradedUnblockedHomologyPieceFinrank_unknot_eq_twoByTwo]
   have hvmem : GridDiagram.twoByTwo.XMarkingClass K ∈
       OddComponentGridDiagram.twoByTwo.bigradedUnblockedHomologyPiece K (0, 0) := by
-    have hm :=
-      OddComponentGridDiagram.twoByTwo.XMarkingClass_mem_bigradedUnblockedHomologyPiece K
-    rwa [OddComponentGridDiagram.bidegree_twoByTwo_X] at hm
+    simpa using OddComponentGridDiagram.twoByTwo.XMarkingClass_mem_bigradedUnblockedHomologyPiece K
   refine Module.finrank_of_bijective_toSpanSingleton
     (x := ⟨GridDiagram.twoByTwo.XMarkingClass K, hvmem⟩)
     ⟨?_, fun w ↦ ?_⟩
@@ -160,8 +158,7 @@ theorem bigradedUnblockedHomologyPieceFinrank_unknot_neg_two_mul_neg_pos (k : �
       (2 * ((Finsupp.single (0 : Fin 2) k).degree : ℤ),
         ((Finsupp.single (0 : Fin 2) k).degree : ℤ)) =
       (-2 * (k : ℤ), -(k : ℤ)) := by
-    rw [OddComponentGridDiagram.bidegree_twoByTwo_X, Finsupp.degree_single]
-    exact Prod.ext (by simp) (by simp)
+    simp
   rwa [hb] at h
 
 end CommRing

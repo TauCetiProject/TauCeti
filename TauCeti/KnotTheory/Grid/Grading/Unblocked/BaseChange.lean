@@ -26,13 +26,13 @@ supported submodule (`GridChainMinus.baseChangeSupportedEquiv`), independently o
 ## Main results
 
 * `TauCeti.GridChainMinus.baseChangeChainEquiv_tmul`,
-  `TauCeti.GridChainMinus.baseChangeChainEquiv_symm_monomialChainBasis`: evaluation of
-  `baseChangeChainEquiv` on pure tensors and monomial basis elements.
+  `TauCeti.GridChainMinus.baseChangeChainEquiv_symm_single_monomial`: evaluation of
+  `baseChangeChainEquiv` on pure tensors and of its inverse on monomial generators.
 * `TauCeti.GridChainMinus.baseChangeSupportedEquiv_tmul_basis`,
-  `TauCeti.GridChainMinus.coe_baseChangeSupportedEquiv_apply`,
-  `TauCeti.GridChainMinus.coe_baseChangeSupportedEquiv_tmul`: evaluation of
-  `baseChangeSupportedEquiv` on basis tensors and compatibility with `baseChangeChainEquiv` under
-  coercion to `GC⁻`.
+  `TauCeti.GridChainMinus.baseChangeSupportedEquiv_symm_basis`,
+  `TauCeti.GridChainMinus.coe_baseChangeSupportedEquiv_apply`: evaluation of
+  `baseChangeSupportedEquiv` and its inverse on basis elements, and compatibility with
+  `baseChangeChainEquiv` under coercion to `GC⁻`.
 * `TauCeti.GridDiagram.baseChangeChainEquiv_comp_baseChange_unblockedDifferential`: scalar
   extension on `GC⁻` intertwines the unblocked differentials.
 -/
@@ -67,14 +67,6 @@ theorem baseChangeChainEquiv_tmul {n : ℕ} {F R : Type*} [CommSemiring F] [Comm
   ext x
   simp [baseChangeChainEquiv]
 
-/-- Scalar extension on `GC⁻` sends `1 ⊗ₜ[F] monomialChainBasis F ix` to
-`monomialChainBasis R ix`. -/
-theorem baseChangeChainEquiv_one_tmul_monomialChainBasis {n : ℕ} {F R : Type*}
-    [CommSemiring F] [CommSemiring R] [Algebra F R] (ix : Σ _ : GridState n, Fin n →₀ ℕ) :
-    baseChangeChainEquiv n F R (1 ⊗ₜ[F] monomialChainBasis (n := n) F ix) =
-      monomialChainBasis (n := n) R ix := by
-  simp
-
 /-- The inverse scalar extension on `GC⁻` sends a monomial generator `V^e · x` over `R` to
 `1 ⊗ₜ[F]` of the same generator over `F`. -/
 @[simp]
@@ -83,14 +75,6 @@ theorem baseChangeChainEquiv_symm_single_monomial {n : ℕ} {F R : Type*} [CommS
     (baseChangeChainEquiv n F R).symm (Finsupp.single x (monomial e 1) : GridChainMinus R n) =
       1 ⊗ₜ[F] (Finsupp.single x (monomial e 1) : GridChainMinus F n) := by
   simp [LinearEquiv.symm_apply_eq]
-
-/-- The inverse scalar extension on `GC⁻` sends a monomial basis element over `R` to
-`1 ⊗ₜ[F]` of the same monomial basis element over `F`. -/
-theorem baseChangeChainEquiv_symm_monomialChainBasis {n : ℕ} {F R : Type*}
-    [CommSemiring F] [CommSemiring R] [Algebra F R] (ix : Σ _ : GridState n, Fin n →₀ ℕ) :
-    (baseChangeChainEquiv n F R).symm (monomialChainBasis (n := n) R ix) =
-      1 ⊗ₜ[F] monomialChainBasis (n := n) F ix := by
-  rw [LinearEquiv.symm_apply_eq, baseChangeChainEquiv_one_tmul_monomialChainBasis]
 
 /-- Scalar extension of the supported submodule `monomialDegreeSupported F deg S` along an
 algebra map `F →+* R`, sending each monomial basis element to the corresponding basis element over
@@ -116,6 +100,17 @@ theorem baseChangeSupportedEquiv_tmul_basis {n : ℕ} {F R : Type*}
     map_smul, baseChangeSupportedEquiv, ← Module.Basis.baseChange_apply,
     Module.Basis.equiv_apply, Equiv.refl_apply]
 
+/-- The inverse scalar extension of a supported submodule sends a supported basis element over `R`
+to `1 ⊗ₜ[F]` of the corresponding supported basis element over `F`. -/
+@[simp]
+theorem baseChangeSupportedEquiv_symm_basis {n : ℕ} {F R : Type*}
+    [CommSemiring F] [CommSemiring R] [Algebra F R] {ι : Type*}
+    (deg : GridState n → (Fin n →₀ ℕ) → ι) (S : Set ι)
+    (i : {ix : Σ _ : GridState n, Fin n →₀ ℕ // deg ix.fst ix.snd ∈ S}) :
+    (baseChangeSupportedEquiv F R deg S).symm (monomialDegreeSupportedBasis R deg S i) =
+      1 ⊗ₜ[F] monomialDegreeSupportedBasis F deg S i := by
+  simp [LinearEquiv.symm_apply_eq]
+
 /-- Extending scalars on a supported submodule agrees with extending scalars on `GC⁻` under the
 submodule inclusion. -/
 theorem coe_baseChangeSupportedEquiv_comp_eq {n : ℕ} (F R : Type*) [CommSemiring F]
@@ -138,16 +133,6 @@ theorem coe_baseChangeSupportedEquiv_apply {n : ℕ} {F R : Type*} [CommSemiring
         GridChainMinus R n) =
       baseChangeChainEquiv n F R (((monomialDegreeSupported F deg S).subtype.baseChange R) x) :=
   LinearMap.congr_fun (coe_baseChangeSupportedEquiv_comp_eq F R deg S) x
-
-/-- Coercing `baseChangeSupportedEquiv F R deg S (r ⊗ₜ[F] c)` into `GC⁻` gives `r` times the
-coefficient-mapped underlying chain of `c`. -/
-theorem coe_baseChangeSupportedEquiv_tmul {n : ℕ} {F R : Type*} [CommSemiring F]
-    [CommSemiring R] [Algebra F R] {ι : Type*} (deg : GridState n → (Fin n →₀ ℕ) → ι)
-    (S : Set ι) (r : R) (c : monomialDegreeSupported F deg S) :
-    ((baseChangeSupportedEquiv F R deg S (r ⊗ₜ[F] c) : monomialDegreeSupported R deg S) :
-        GridChainMinus R n) =
-      r • (c : GridChainMinus F n).mapRange (MvPolynomial.map (algebraMap F R)) (map_zero _) := by
-  simp
 
 end Semiring
 

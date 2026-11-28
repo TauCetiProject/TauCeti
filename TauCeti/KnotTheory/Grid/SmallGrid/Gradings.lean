@@ -262,11 +262,6 @@ theorem bidegree_twoByTwo_twoByTwoSwap :
       omega
     simpa only [bidegree_snd] using hA
 
-/-- The `X`-marking generator in the standard two-by-two diagram has bidegree `(0, 0)`. -/
-theorem bidegree_twoByTwo_X :
-    twoByTwo.bidegree GridDiagram.twoByTwo.X = (0, 0) := by
-  rw [GridDiagram.twoByTwo_X, bidegree_twoByTwo_twoByTwoSwap]
-
 end OddComponentGridDiagram
 
 end TauCeti
