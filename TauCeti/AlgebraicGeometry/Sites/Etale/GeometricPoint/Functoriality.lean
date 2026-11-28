@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Sites.Etale.GeometricPoint.Galois
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Pullback
 public import TauCeti.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.FieldTheory.IsSepClosed
 public import TauCeti.FieldTheory.RatFunc.PowerTower
@@ -18,7 +19,9 @@ This file extends `TauCeti.AlgebraicGeometry.Scheme.GeometricPoint` with:
 * **Pushforward along scheme morphisms**: the fully faithful slice embedding `toOver`, lifting
   `Over.map`, `Over.mapId`, `Over.mapComp`, and `Over.mapCongr` via `mapCompToOver` to
   `GeometricPoint.map f`, `mapId`, `mapComp`, and `mapCongr`, together with the associativity and
-  unit coherence laws (`mapComp_assoc`, `mapId_comp`, `comp_mapId`).
+  unit coherence laws (`mapComp_assoc`, `mapId_comp`, `comp_mapId`), and naturality of the
+  pullback–stalk comparison `smallEtalePullbackCompSheafFiberIso` with respect to morphisms of
+  geometric points.
 * **Algebraic vs. separable closures**: `fromAlgClosure` and `algClosureToSepClosure`, showing that
   `Spec kbar ⟶ Spec ksep` is an isomorphism in `GeometricPoint S` if and only if the base field is
   perfect, while always inducing an isomorphism of points and étale stalks
@@ -34,7 +37,7 @@ public section
 
 universe u
 
-open CategoryTheory Opposite AlgebraicGeometry Scheme
+open CategoryTheory Limits Opposite AlgebraicGeometry Scheme
 
 namespace TauCeti.AlgebraicGeometry.Scheme.GeometricPoint
 
@@ -106,19 +109,19 @@ noncomputable def mapId (X : Scheme.{u}) : map (𝟙 X) ≅ 𝟭 (GeometricPoint
 @[simp]
 theorem mapId_hom_app_hom {X : Scheme.{u}} (s : GeometricPoint X) :
     ((mapId X).hom.app s).hom = 𝟙 (Spec (.of s.Ω)) := by
-  simp only [mapId, Functor.fullyFaithfulCancelRight_hom_app, toOver_preimage_hom, Iso.trans_hom,
-    NatTrans.comp_app, Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Over.comp_left,
-    mapCompToOver_hom_app_left, Over.mapId_hom_app_left]
-  exact Category.id_comp _
+  rw [mapId, Functor.fullyFaithfulCancelRight_hom_app, toOver_preimage_hom]
+  simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app,
+    Over.comp_left, mapCompToOver_hom_app_left, Over.mapId_hom_app_left]
+  rfl
 
 /-- The inverse component of `mapId X` at `s` has the identity as underlying scheme morphism. -/
 @[simp]
 theorem mapId_inv_app_hom {X : Scheme.{u}} (s : GeometricPoint X) :
     ((mapId X).inv.app s).hom = 𝟙 (Spec (.of s.Ω)) := by
-  simp only [mapId, Functor.fullyFaithfulCancelRight_inv_app, toOver_preimage_hom, Iso.trans_inv,
-    NatTrans.comp_app, Functor.isoWhiskerLeft_inv, Functor.whiskerLeft_app, Over.comp_left,
-    mapCompToOver_inv_app_left, Over.mapId_inv_app_left]
-  exact Category.id_comp _
+  rw [mapId, Functor.fullyFaithfulCancelRight_inv_app, toOver_preimage_hom]
+  simp only [Iso.trans_inv, NatTrans.comp_app, Functor.isoWhiskerLeft_inv, Functor.whiskerLeft_app,
+    Over.comp_left, Over.mapId_inv_app_left, mapCompToOver_inv_app_left]
+  rfl
 
 /-- Pushforward along a composite `f ≫ g` is naturally isomorphic to the composite of the
 pushforwards, lifted from `Over.mapComp f g`. -/
@@ -138,13 +141,13 @@ noncomputable def mapComp {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
 theorem mapComp_hom_app_hom {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
     (s : GeometricPoint X) :
     ((mapComp f g).hom.app s).hom = 𝟙 (Spec (.of s.Ω)) := by
-  simp only [mapComp, Functor.fullyFaithfulCancelRight_hom_app, toOver_preimage_hom, Iso.trans_hom,
-    NatTrans.comp_app, Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app,
-    Functor.isoWhiskerRight_hom, Functor.whiskerRight_app, Iso.symm_hom, Functor.associator,
-    Over.comp_left, Over.id_left, mapCompToOver_hom_app_left, mapCompToOver_inv_app_left,
-    Over.mapComp_hom_app_left, Over.map_map_left]
-  exact (Category.id_comp _).trans <| (Category.id_comp _).trans <| (Category.id_comp _).trans <|
-    (Category.id_comp _).trans <| (Category.id_comp _).trans (Category.id_comp _)
+  rw [mapComp, Functor.fullyFaithfulCancelRight_hom_app, toOver_preimage_hom]
+  simp only [Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom,
+    Functor.isoWhiskerRight_hom, Functor.whiskerLeft_app, Functor.whiskerRight_app,
+    Functor.associator_hom_app, Functor.associator_inv_app, Over.comp_left, Over.id_left,
+    Over.map_map_left, mapCompToOver_hom_app_left, mapCompToOver_inv_app_left,
+    Over.mapComp_hom_app_left, Category.id_comp]
+  rfl
 
 /-- The inverse component of `mapComp f g` at `s` has the identity as underlying scheme
 morphism. -/
@@ -152,13 +155,13 @@ morphism. -/
 theorem mapComp_inv_app_hom {X Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
     (s : GeometricPoint X) :
     ((mapComp f g).inv.app s).hom = 𝟙 (Spec (.of s.Ω)) := by
-  simp only [mapComp, Functor.fullyFaithfulCancelRight_inv_app, toOver_preimage_hom, Iso.trans_inv,
-    NatTrans.comp_app, Functor.isoWhiskerLeft_inv, Functor.whiskerLeft_app,
-    Functor.isoWhiskerRight_inv, Functor.whiskerRight_app, Iso.symm_inv, Functor.associator,
-    Over.comp_left, Over.id_left, mapCompToOver_hom_app_left, mapCompToOver_inv_app_left,
-    Over.mapComp_inv_app_left, Over.map_map_left]
-  exact (Category.comp_id _).trans <| (Category.comp_id _).trans <| (Category.comp_id _).trans <|
-    (Category.comp_id _).trans <| (Category.comp_id _).trans (Category.comp_id _)
+  rw [mapComp, Functor.fullyFaithfulCancelRight_inv_app, toOver_preimage_hom]
+  simp only [Iso.trans_inv, Iso.symm_inv, NatTrans.comp_app, Functor.isoWhiskerLeft_inv,
+    Functor.isoWhiskerRight_inv, Functor.whiskerLeft_app, Functor.whiskerRight_app,
+    Functor.associator_hom_app, Functor.associator_inv_app, Over.comp_left, Over.id_left,
+    Over.map_map_left, mapCompToOver_hom_app_left, mapCompToOver_inv_app_left,
+    Over.mapComp_inv_app_left, Category.comp_id]
+  rfl
 
 /-- Equal scheme morphisms induce naturally isomorphic pushforward functors, lifted from
 `Over.mapCongr`. -/
@@ -173,22 +176,22 @@ noncomputable def mapCongr {X Y : Scheme.{u}} {f g : X ⟶ Y} (h : f = g) : map 
 theorem mapCongr_hom_app_hom {X Y : Scheme.{u}} {f g : X ⟶ Y} (h : f = g)
     (s : GeometricPoint X) :
     ((mapCongr h).hom.app s).hom = 𝟙 (Spec (.of s.Ω)) := by
-  simp only [mapCongr, Functor.fullyFaithfulCancelRight_hom_app, toOver_preimage_hom, Iso.trans_hom,
-    NatTrans.comp_app, Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app, Iso.symm_hom,
-    Over.comp_left, mapCompToOver_hom_app_left, mapCompToOver_inv_app_left,
-    Over.mapCongr_hom_app_left]
-  exact (Category.id_comp _).trans (Category.id_comp _)
+  rw [mapCongr, Functor.fullyFaithfulCancelRight_hom_app, toOver_preimage_hom]
+  simp only [Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom,
+    Functor.whiskerLeft_app, Over.comp_left, mapCompToOver_hom_app_left,
+    Over.mapCongr_hom_app_left, mapCompToOver_inv_app_left]
+  rfl
 
 /-- The inverse component of `mapCongr h` at `s` has the identity as underlying scheme morphism. -/
 @[simp]
 theorem mapCongr_inv_app_hom {X Y : Scheme.{u}} {f g : X ⟶ Y} (h : f = g)
     (s : GeometricPoint X) :
     ((mapCongr h).inv.app s).hom = 𝟙 (Spec (.of s.Ω)) := by
-  simp only [mapCongr, Functor.fullyFaithfulCancelRight_inv_app, toOver_preimage_hom, Iso.trans_inv,
-    NatTrans.comp_app, Functor.isoWhiskerLeft_inv, Functor.whiskerLeft_app, Iso.symm_inv,
-    Over.comp_left, mapCompToOver_hom_app_left, mapCompToOver_inv_app_left,
-    Over.mapCongr_inv_app_left]
-  exact Category.id_comp _
+  rw [mapCongr, Functor.fullyFaithfulCancelRight_inv_app, toOver_preimage_hom]
+  simp only [Iso.trans_inv, Iso.symm_inv, NatTrans.comp_app, Functor.isoWhiskerLeft_inv,
+    Functor.whiskerLeft_app, Over.comp_left, mapCompToOver_hom_app_left,
+    Over.mapCongr_inv_app_left, mapCompToOver_inv_app_left]
+  rfl
 
 /-- Associativity coherence for `mapComp`. -/
 theorem mapComp_assoc {W X Y Z : Scheme.{u}} (f : W ⟶ X) (g : X ⟶ Y) (h : Y ⟶ Z)
@@ -205,13 +208,11 @@ theorem mapComp_assoc {W X Y Z : Scheme.{u}} (f : W ⟶ X) (g : X ⟶ Y) (h : Y 
 theorem mapId_comp {X Y : Scheme.{u}} (f : X ⟶ Y) (s : GeometricPoint X) :
     (mapComp (𝟙 X) f).hom.app s ≫ (map f).map ((mapId X).hom.app s) =
       (mapCongr (Category.id_comp f)).hom.app s := by
-  apply Hom.ext
-  calc
-    ((mapComp (𝟙 X) f).hom.app s ≫ (map f).map ((mapId X).hom.app s)).hom
-      = ((mapComp (𝟙 X) f).hom.app s).hom ≫ ((map f).map ((mapId X).hom.app s)).hom := rfl
-    _ = ((mapCongr (Category.id_comp f)).hom.app s).hom := by
-      rw [map_map_hom, mapComp_hom_app_hom, mapId_hom_app_hom, mapCongr_hom_app_hom]
-      exact Category.comp_id _
+  ext : 1
+  exact (comp_hom _ _).trans <|
+    (congrArg₂ (· ≫ ·) (mapComp_hom_app_hom (𝟙 X) f s)
+      ((map_map_hom f ((mapId X).hom.app s)).trans (mapId_hom_app_hom s))).trans <|
+    (Category.comp_id _).trans (mapCongr_hom_app_hom (Category.id_comp f) s).symm
 
 /-- Right unit coherence for `mapComp` and `mapId`. -/
 theorem comp_mapId {X Y : Scheme.{u}} (f : X ⟶ Y) (s : GeometricPoint X) :
@@ -221,6 +222,125 @@ theorem comp_mapId {X Y : Scheme.{u}} (f : X ⟶ Y) (s : GeometricPoint X) :
   simp only [comp_hom, mapComp_hom_app_hom, mapId_hom_app_hom, mapCongr_hom_app_hom]
   -- `((map f).obj s).Ω` is definitionally `s.Ω` in the implicit target object of `𝟙`.
   rfl
+
+section Pullback
+
+variable {X Y : Scheme.{u}} (f : X ⟶ Y)
+variable (A : Type*) [Category* A] [HasProducts.{u} A] [HasColimitsOfSize.{u, u} A]
+  [(f.smallEtalePushforward A).IsRightAdjoint]
+
+private theorem smallEtalePullbackCompSheafFiberIso_inv_comp_stalkIso_hom
+    {s₁ s₂ : GeometricPoint X} (φ : s₁ ⟶ s₂) :
+    (f.smallEtalePullbackCompSheafFiberIso A s₂.hom).inv ≫
+        Functor.whiskerLeft (f.smallEtalePullback A) (stalkIso φ (A := A)).hom =
+      (stalkIso ((map f).map φ) (A := A)).hom ≫
+        (f.smallEtalePullbackCompSheafFiberIso A s₁.hom).inv := by
+  ext G
+  refine (pointSmallEtale (s₂.hom ≫ f)).presheafFiber_hom_ext fun V y ↦ ?_
+  have h1 := congrArg (· ≫ (stalkIso φ (A := A)).hom.app ((f.smallEtalePullback A).obj G))
+    ((pointSmallEtale s₂.hom).toPresheafFiber_sheafPullbackCompSheafFiberIso_inv_app
+      f.smallEtaleBaseChange (f.pointSmallEtaleFiberCompIso s₂.hom) A G V y)
+  have h2 := toPresheafFiber_toPointFunctor_map_sheafFiber_app φ
+    ((f.smallEtalePullback A).obj G) (f.smallEtaleBaseChange.obj V)
+    ((f.pointSmallEtaleFiberCompIso s₂.hom).inv.app V y)
+  have h3 := toPresheafFiber_toPointFunctor_map_sheafFiber_app ((map f).map φ) G V y
+  rw [← stalkIso_hom] at h2 h3
+  have h4 := (pointSmallEtale s₁.hom).toPresheafFiber_sheafPullbackCompSheafFiberIso_inv_app
+    f.smallEtaleBaseChange (f.pointSmallEtaleFiberCompIso s₁.hom) A G V
+    ((Over.homMk ((map f).map φ).hom ((map f).map φ).w :
+      Over.mk (s₁.hom ≫ f) ⟶ Over.mk (s₂.hom ≫ f)) ≫ y)
+  have h5 :
+      (Over.homMk φ.hom φ.w : Over.mk s₁.hom ⟶ Over.mk s₂.hom) ≫
+          (f.pointSmallEtaleFiberCompIso s₂.hom).inv.app V y =
+        (f.pointSmallEtaleFiberCompIso s₁.hom).inv.app V
+          ((Over.homMk ((map f).map φ).hom ((map f).map φ).w :
+            Over.mk (s₁.hom ≫ f) ⟶ Over.mk (s₂.hom ≫ f)) ≫ y) := by
+    apply Over.OverMorphism.ext
+    refine Eq.trans (congrArg (φ.hom ≫ ·)
+      (Hom.pointSmallEtaleFiberCompIso_inv_app_left f s₂.hom V y)) ?_
+    refine Eq.trans ?_ (Hom.pointSmallEtaleFiberCompIso_inv_app_left f s₁.hom V _).symm
+    apply pullback.hom_ext
+    · exact (Category.assoc _ _ _).trans <|
+        (congrArg (φ.hom ≫ ·) (pullback.lift_fst _ _ _)).trans <|
+          (pullback.lift_fst _ _ _).symm
+    · exact (Category.assoc _ _ _).trans <|
+        (congrArg (φ.hom ≫ ·) (pullback.lift_snd _ _ _)).trans <|
+          φ.w.trans (pullback.lift_snd _ _ _).symm
+  let unitV := ((f.smallEtaleBaseChange.sheafAdjunctionContinuous A
+    (smallEtaleTopology Y) (smallEtaleTopology X)).unit.app G).hom.app (op V)
+  let stalkMap := (stalkIso ((map f).map φ) (A := A)).hom.app G
+  let inv₁ := (f.smallEtalePullbackCompSheafFiberIso A s₁.hom).inv.app G
+  refine ((Category.assoc _ _ _).symm).trans ?_
+  refine h1.trans ?_
+  refine (Category.assoc _ _ _).trans ?_
+  refine (congrArg (unitV ≫ ·) h2).trans ?_
+  refine (congrArg (fun x ↦ unitV ≫ (pointSmallEtale s₁.hom).toPresheafFiber
+    (f.smallEtaleBaseChange.obj V) x ((f.smallEtalePullback A).obj G).obj) h5).trans ?_
+  refine h4.symm.trans ?_
+  exact (congrArg (· ≫ inv₁) h3.symm).trans (Category.assoc _ stalkMap inv₁)
+
+/-- **Naturality of the pullback–stalk comparison in morphisms of geometric points.** For
+`f : X ⟶ Y` and `φ : s₁ ⟶ s₂` in `GeometricPoint X`, pulling back and applying `stalkIso φ`
+agrees, under the two stalk comparisons `smallEtalePullbackCompSheafFiberIso`, with applying
+`stalkIso ((map f).map φ)`. -/
+theorem isoWhiskerLeft_smallEtalePullback_stalkIso_trans_smallEtalePullbackCompSheafFiberIso
+    {s₁ s₂ : GeometricPoint X} (φ : s₁ ⟶ s₂) :
+    Functor.isoWhiskerLeft (f.smallEtalePullback A) (stalkIso φ (A := A)) ≪≫
+        f.smallEtalePullbackCompSheafFiberIso A s₁.hom =
+      f.smallEtalePullbackCompSheafFiberIso A s₂.hom ≪≫
+        stalkIso ((map f).map φ) (A := A) := by
+  refine Iso.ext (NatTrans.ext (funext fun G ↦ ?_))
+  let hom₁ := (f.smallEtalePullbackCompSheafFiberIso A s₁.hom).hom.app G
+  let hom₂ := (f.smallEtalePullbackCompSheafFiberIso A s₂.hom).hom.app G
+  let inv₁ := (f.smallEtalePullbackCompSheafFiberIso A s₁.hom).inv.app G
+  let stalkφ := (stalkIso φ (A := A)).hom.app ((f.smallEtalePullback A).obj G)
+  let stalkMap := (stalkIso ((map f).map φ) (A := A)).hom.app G
+  have hinv := NatTrans.congr_app
+    (smallEtalePullbackCompSheafFiberIso_inv_comp_stalkIso_hom f A φ) G
+  have h0 :
+      stalkφ ≫ hom₁ =
+        (hom₂ ≫ ((f.smallEtalePullbackCompSheafFiberIso A s₂.hom).inv ≫
+          Functor.whiskerLeft (f.smallEtalePullback A) (stalkIso φ (A := A)).hom).app G) ≫ hom₁ :=
+    (Category.id_comp (stalkφ ≫ hom₁)).symm.trans <|
+      (congrArg (· ≫ (stalkφ ≫ hom₁))
+        (Iso.hom_inv_id_app (f.smallEtalePullbackCompSheafFiberIso A s₂.hom) G).symm).trans <|
+          (Category.assoc _ _ _).trans <|
+            (congrArg (hom₂ ≫ ·) (Category.assoc _ _ _).symm).trans <|
+              (Category.assoc _ _ _).symm
+  refine h0.trans ?_
+  refine (congrArg (fun x ↦ (hom₂ ≫ x) ≫ hom₁) hinv).trans ?_
+  refine (Category.assoc _ _ _).trans ?_
+  refine (congrArg (hom₂ ≫ ·) (Category.assoc stalkMap inv₁ hom₁)).trans ?_
+  exact (congrArg (fun x ↦ hom₂ ≫ (stalkMap ≫ x))
+    (Iso.inv_hom_id_app (f.smallEtalePullbackCompSheafFiberIso A s₁.hom) G)).trans
+      (congrArg (hom₂ ≫ ·) (Category.comp_id stalkMap))
+
+/-- Natural-transformation form of
+`isoWhiskerLeft_smallEtalePullback_stalkIso_trans_smallEtalePullbackCompSheafFiberIso`. -/
+@[reassoc]
+theorem whiskerLeft_smallEtalePullback_stalkIso_hom_comp_smallEtalePullbackCompSheafFiberIso_hom
+    {s₁ s₂ : GeometricPoint X} (φ : s₁ ⟶ s₂) :
+    Functor.whiskerLeft (f.smallEtalePullback A) (stalkIso φ (A := A)).hom ≫
+        (f.smallEtalePullbackCompSheafFiberIso A s₁.hom).hom =
+      (f.smallEtalePullbackCompSheafFiberIso A s₂.hom).hom ≫
+        (stalkIso ((map f).map φ) (A := A)).hom :=
+  congrArg Iso.hom
+    (isoWhiskerLeft_smallEtalePullback_stalkIso_trans_smallEtalePullbackCompSheafFiberIso f A φ)
+
+/-- Component form at an étale sheaf `F` of
+`whiskerLeft_smallEtalePullback_stalkIso_hom_comp_smallEtalePullbackCompSheafFiberIso_hom`. -/
+@[reassoc]
+theorem stalkIso_hom_app_smallEtalePullback_comp_smallEtalePullbackCompSheafFiberIso_hom_app
+    {s₁ s₂ : GeometricPoint X} (φ : s₁ ⟶ s₂) (F : Sheaf (Scheme.smallEtaleTopology Y) A) :
+    (stalkIso φ (A := A)).hom.app ((f.smallEtalePullback A).obj F) ≫
+        (f.smallEtalePullbackCompSheafFiberIso A s₁.hom).hom.app F =
+      (f.smallEtalePullbackCompSheafFiberIso A s₂.hom).hom.app F ≫
+        (stalkIso ((map f).map φ) (A := A)).hom.app F :=
+  NatTrans.congr_app
+    (whiskerLeft_smallEtalePullback_stalkIso_hom_comp_smallEtalePullbackCompSheafFiberIso_hom
+      f A φ) F
+
+end Pullback
 
 end Map
 

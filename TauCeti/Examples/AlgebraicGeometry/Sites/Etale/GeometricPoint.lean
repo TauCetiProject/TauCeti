@@ -10,6 +10,7 @@ public import Mathlib.FieldTheory.Finite.GaloisField
 public import TauCeti.AlgebraicGeometry.Sites.Etale.GeometricPoint.Frobenius
 public import TauCeti.AlgebraicGeometry.Sites.Etale.GeometricPoint.Functoriality
 import TauCeti.CategoryTheory.Aut.Basic
+import TauCeti.FieldTheory.Galois.Complex
 
 /-!
 # Worked examples of geometric points and stalk Frobenius
@@ -60,7 +61,7 @@ theorem natCard_specComplex_stalk :
   (natCard_toSheafSpecStalk_fieldExt_eq_finrank ℝ ℂ ℂ).trans Complex.finrank_real_complex
 
 /-- Complex conjugation has no fixed points on the stalk of `Spec ℂ ⟶ Spec ℝ` at `Spec ℂ`
-(using Mathlib's classification `Complex.real_algHom_eq_id_or_conj`). -/
+(by `TauCeti.conjAe_ne_one`). -/
 theorem conjAe_specComplex_stalk_ne_self
     (z : (Scheme.pointSmallEtale (ofOver (𝟙 (Spec (.of ℝ))) ℂ).hom).sheafFiber.obj
       ((FiniteEtaleScheme.toSheaf (Spec (.of ℝ))).obj
@@ -74,16 +75,16 @@ theorem conjAe_specComplex_stalk_ne_self
   let B := CommAlgCat.FiniteEtale.ofSeparableFieldExt ℝ ℂ
   intro h
   let φ : ℂ →ₐ[ℝ] ℂ := toSheafSpecStalkEquiv ℝ ℂ B z
-  have hφ : φ = Complex.conjAe.toAlgHom.comp φ :=
-    (congrArg (toSheafSpecStalkEquiv ℝ ℂ B) h).symm.trans
-      (toSheafSpecStalkEquiv_ofOverGaloisStalkAction ℝ ℂ B Complex.conjAe z)
-  have hv := DFunLike.congr_fun hφ Complex.I
-  rw [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, Complex.conjAe_coe] at hv
-  rcases Complex.real_algHom_eq_id_or_conj φ with hid | hconj
-  · have hI : Complex.I = -Complex.I := by simpa [hid, Complex.conj_I] using hv
-    exact absurd (congrArg Complex.im hI) (by norm_num)
-  · have hI : -Complex.I = Complex.I := by simpa [hconj, Complex.conj_I] using hv
-    exact absurd (congrArg Complex.im hI) (by norm_num)
+  have hφ : Complex.conjAe.toAlgHom.comp φ = (AlgHom.id ℝ ℂ).comp φ :=
+    (toSheafSpecStalkEquiv_ofOverGaloisStalkAction ℝ ℂ B Complex.conjAe z).symm.trans
+      ((congrArg (toSheafSpecStalkEquiv ℝ ℂ B) h).trans (AlgHom.id_comp φ).symm)
+  have hsurj : Function.Surjective φ :=
+    φ.toLinearMap.surjective_of_injective φ.toRingHom.injective
+  have hconj : (Complex.conjAe : Gal(ℂ/ℝ)) = 1 :=
+    (AlgEquiv.coe_toAlgHom_injective
+      (((AlgHom.cancel_right hsurj).mp hφ).trans AlgEquiv.refl_toAlgHom.symm)).trans
+      AlgEquiv.aut_one.symm
+  exact TauCeti.conjAe_ne_one hconj
 
 /-- Complex conjugation acts as an involution on the stalk of `Spec ℂ ⟶ Spec ℝ` at `Spec ℂ`. -/
 theorem conjAe_specComplex_stalk_involutive :
@@ -115,8 +116,6 @@ theorem natCard_galoisField_two_stalk :
       2 :=
   (natCard_toSheafSpecStalk_fieldExt_eq_finrank (ZMod p) (GaloisField p 2) kbar).trans
     (GaloisField.finrank p (by decide))
-
-variable [PerfectField kbar]
 
 /-- On the two-element stalk of `Spec 𝔽_{p²} ⟶ Spec 𝔽_p`, `stalkGeometricFrobenius` has no fixed
 points. -/
@@ -165,7 +164,7 @@ end QuadraticFiniteField
 
 section FifthRootsOverF2
 
-variable (kbar : Type) [Field kbar] [Algebra (ZMod 2) kbar] [PerfectField kbar] [IsSepClosed kbar]
+variable (kbar : Type) [Field kbar] [Algebra (ZMod 2) kbar] [IsSepClosed kbar]
 
 /-- **Stalk Frobenius on `μ_5` over `Spec 𝔽_2`.** Under the identification of the stalk of the
 degree-`5` Kummer cover over `1` with `rootsOfUnity 5 kbar`, `stalkGeometricFrobenius` acts by

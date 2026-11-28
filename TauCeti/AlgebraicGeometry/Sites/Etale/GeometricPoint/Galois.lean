@@ -173,6 +173,22 @@ theorem homOfAlgHom_homEquivAlgHom [Mono a] (f : ofOver a Ω₁ ⟶ ofOver a Ω�
     homOfAlgHom a (homEquivAlgHom a f) = f :=
   (homEquivAlgHom a).left_inv f
 
+/-- `homEquivAlgHom a` sends the identity morphism to `AlgHom.id R Ω₁`. -/
+@[simp]
+theorem homEquivAlgHom_id [Mono a] :
+    homEquivAlgHom a (𝟙 (ofOver a Ω₁)) = AlgHom.id R Ω₁ := by
+  ext x
+  exact DFunLike.congr_fun (Hom.ringHom_id (ofOver a Ω₁)) x
+
+/-- `homEquivAlgHom a` reverses composition: `f ≫ g` maps to
+`(homEquivAlgHom a f).comp (homEquivAlgHom a g)`. -/
+@[simp]
+theorem homEquivAlgHom_comp [Mono a] (f : ofOver a Ω₁ ⟶ ofOver a Ω₂)
+    (g : ofOver a Ω₂ ⟶ ofOver a Ω₃) :
+    homEquivAlgHom a (f ≫ g) = (homEquivAlgHom a f).comp (homEquivAlgHom a g) := by
+  ext x
+  exact DFunLike.congr_fun (Hom.ringHom_comp f g) x
+
 end Maps
 
 variable (Ω : Type u) [Field Ω] [IsSepClosed Ω] [Algebra R Ω]

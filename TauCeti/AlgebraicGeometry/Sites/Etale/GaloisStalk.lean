@@ -83,16 +83,15 @@ noncomputable def galoisStalk :
   obj F :=
     { V := (pointSmallEtale (GeometricPoint.ofOver (𝟙 (Spec (.of K))) Ω).hom).sheafFiber.obj F
       ρ := Aut.toEnd.comp
-        ((Functor.mapAut
-            (X := (pointSmallEtale (GeometricPoint.ofOver (𝟙 (Spec (.of K))) Ω).hom).sheafFiber)
-            ((CategoryTheory.evaluation (Sheaf (smallEtaleTopology (Spec (.of K))) A) A).obj
-              F)).comp
-          (GeometricPoint.ofOverGaloisStalkAction (𝟙 (Spec (.of K))) Ω (A := A))) }
+        ((GeometricPoint.stalkActionApp A
+            (GeometricPoint.ofOver (𝟙 (Spec (.of K))) Ω) F).comp
+          (GeometricPoint.autOfAlgEquiv (𝟙 (Spec (.of K))) Ω)) }
   map f :=
     { hom := (pointSmallEtale (GeometricPoint.ofOver (𝟙 (Spec (.of K))) Ω).hom).sheafFiber.map f
       comm σ :=
-        ((GeometricPoint.ofOverGaloisStalkAction (𝟙 (Spec (.of K))) Ω
-          (A := A) σ).asIso.hom.naturality f).symm }
+        GeometricPoint.stalkActionApp_naturality A
+          (GeometricPoint.ofOver (𝟙 (Spec (.of K))) Ω) f
+          (GeometricPoint.autOfAlgEquiv (𝟙 (Spec (.of K))) Ω σ) }
 
 /-- The underlying object of the stalk with its Galois action is the stalk. -/
 theorem galoisStalk_obj_V (F : Sheaf (smallEtaleTopology (Spec (.of K))) A) :
@@ -105,8 +104,15 @@ theorem galoisStalk_obj_V (F : Sheaf (smallEtaleTopology (Spec (.of K))) A) :
 theorem galoisStalk_obj_ρ_asHom (F : Sheaf (smallEtaleTopology (Spec (.of K))) A)
     (σ : Gal(Ω/K)) :
     (((galoisStalk K Ω A).obj F).ρ σ).asHom =
-      (GeometricPoint.ofOverGaloisStalkAction (𝟙 (Spec (.of K))) Ω (A := A) σ).asIso.hom.app F :=
-  (rfl)
+      (GeometricPoint.ofOverGaloisStalkAction (𝟙 (Spec (.of K))) Ω (A := A) σ).asIso.hom.app F := by
+  have h :
+      (GeometricPoint.autOfAlgEquiv (𝟙 (Spec (.of K))) Ω σ).unop.asIso.hom =
+        GeometricPoint.homOfAlgHom (𝟙 (Spec (.of K))) σ.toAlgHom := by
+    simp
+  change (GeometricPoint.stalkActionApp A (GeometricPoint.ofOver (𝟙 (Spec (.of K))) Ω) F
+      (GeometricPoint.autOfAlgEquiv (𝟙 (Spec (.of K))) Ω σ)).asIso.hom = _
+  rw [← MulOpposite.op_unop (GeometricPoint.autOfAlgEquiv (𝟙 (Spec (.of K))) Ω σ),
+    GeometricPoint.stalkActionApp_asIso_hom, GeometricPoint.ofOverGaloisStalkAction_asIso_hom, h]
 
 /-- The equivariant map of stalks induced by a morphism of sheaves is the map of stalks. -/
 @[simp]
