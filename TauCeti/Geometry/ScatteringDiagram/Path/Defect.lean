@@ -28,7 +28,7 @@ noncomputable section
 namespace TauCeti.WallComplement
 
 variable {V ι G K : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [Finite ι]
-  [Group G] [Group K] {W : ι → Set V}
+  [Group G] [MulOneClass K] {W : ι → Set V}
   (ν : ι → V →ₗ[ℝ] ℝ) (labels : ι → G)
   (hc : ∀ i j, affineSpan ℝ (W i) = affineSpan ℝ (W j) → Commute (labels i) (labels j))
   (f : G →* K) (t : WallComplement W → G)
@@ -39,7 +39,8 @@ def segmentDefect
     {x y : WallComplement W} (e : x ⟶ y)
     (ht : f (segmentPathProduct ν labels hc e) * f (t x) = f (t y)) : f.ker :=
   ⟨(t y)⁻¹ * segmentPathProduct ν labels hc e * t x, by
-    rw [MonoidHom.mem_ker, map_mul, map_mul, map_inv, mul_assoc, ht, inv_mul_cancel]⟩
+    rw [← map_mul] at ht
+    simpa only [mul_assoc] using (f.eq_iff.mp ht)⟩
 
 /-- The underlying corrected transport is obtained by inserting the two endpoint lifts. -/
 @[simp]
@@ -56,7 +57,7 @@ namespace Quiver.Path
 open TauCeti WallComplement
 
 variable {V ι G K : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [Finite ι]
-  [Group G] [Group K] {W : ι → Set V}
+  [Group G] [MulOneClass K] {W : ι → Set V}
   (ν : ι → V →ₗ[ℝ] ℝ) (labels : ι → G)
   (hc : ∀ i j, affineSpan ℝ (W i) = affineSpan ℝ (W j) → Commute (labels i) (labels j))
   (f : G →* K) (t : WallComplement W → G)
@@ -147,7 +148,8 @@ theorem log_wallPathDefect_eq_addWeight {A : Type*} [AddCommMonoid A]
     _ = p.weight (fun e => evaluate (MulOpposite.op (segmentDefect ν labels hc f t e (ht e)))) :=
       p.map_weight evaluate _
     _ = Multiplicative.ofAdd (p.addWeight fun e =>
-        (log (segmentDefect ν labels hc f t e (ht e))).toAdd) :=
-      p.weight_ofAdd (M := A) fun e => (log (segmentDefect ν labels hc f t e (ht e))).toAdd
+        (log (segmentDefect ν labels hc f t e (ht e))).toAdd) := by
+      simpa [evaluate, MonoidHom.op_apply_apply] using
+        p.weight_ofAdd (M := A) (fun e => (log (segmentDefect ν labels hc f t e (ht e))).toAdd)
 
 end Quiver.Path
