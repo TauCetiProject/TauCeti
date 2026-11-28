@@ -53,6 +53,14 @@ instance instAddCommGroup (b : B) : AddCommGroup (AssociatedBundle G P F b) :=
 instance instModule (b : B) : Module 𝕜 (AssociatedBundle G P F b) :=
   inferInstanceAs (Module 𝕜 F)
 
+/-- A scalar tower on the model descends to the associated fibres. For a complex model with its
+real structure, each fibre is a complex vector space whose real structure is the restriction of
+scalars, as complex line bundles require. -/
+instance instIsScalarTower {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedSpace 𝕜' F]
+    [SMul 𝕜 𝕜'] [IsScalarTower 𝕜 𝕜' F] (b : B) :
+    IsScalarTower 𝕜 𝕜' (AssociatedBundle G P F b) :=
+  inferInstanceAs (IsScalarTower 𝕜 𝕜' F)
+
 /-- Addition is continuous for the existing associated-fibre topology. This delegate keeps
 native bundle-metric constructions from having to unfold the fibre presentation. -/
 instance instIsTopologicalAddGroup (b : B) : IsTopologicalAddGroup (AssociatedBundle G P F b) :=

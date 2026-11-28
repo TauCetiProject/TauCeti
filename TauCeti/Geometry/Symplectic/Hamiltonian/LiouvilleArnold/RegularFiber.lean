@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.ZLattice.Cylinder.Manifold
 public import TauCeti.Geometry.Manifold.RegularValue.Component
 public import TauCeti.Geometry.Symplectic.Hamiltonian.LiouvilleArnold.Torus
 
@@ -33,6 +34,13 @@ It is obtained from the Lagrangian embedding `[v] ↦ v • x` of `(ι → ℝ) 
 a smooth embedding onto `L` is a diffeomorphism onto this open submanifold of the regular fibre
 (`Manifold.IsSmoothEmbedding.regularFiberComponentDiffeomorph`).
 
+Without any compactness, the discrete stabilizer `Λ` has some rank `r ≤ n`, and a real basis of
+`ι → ℝ` adapted to `Λ` identifies `(ι → ℝ) / Λ` with the cylinder `(ℝ / ℤ)ʳ × ℝⁿ⁻ʳ` as manifolds
+(`Module.Basis.orbitRelQuotientCylinderDiffeomorph`). So a regular component of a level of a system
+with complete Hamiltonian vector fields is diffeomorphic to such a cylinder
+(`TauCeti.SmoothTwoForm.IsSymplectic.nonempty_diffeomorph_regularFiberComponent_unitAddTorus_prod`),
+the smooth form of `TauCeti.SmoothTwoForm.IsSymplectic.nonempty_homeomorph_unitAddTorus_prod`.
+
 When `L` is compact no completeness is needed: then `Λ` is a full lattice and `L` is
 diffeomorphic to the torus `(ι → ℝ) / Λ`, by a diffeomorphism whose composite with the inclusion
 of `L` is a Lagrangian embedding
@@ -49,6 +57,9 @@ a level, for the smooth structure that `L` has as a submanifold of `M`.
 
 * `TauCeti.SmoothTwoForm.IsSymplectic.coe_quotientHamiltonianFlowStabilizerDiffeomorph_apply`: the
   diffeomorphism is the descended orbit map, sending the class of `v` to `v • x`.
+* `TauCeti.SmoothTwoForm.IsSymplectic.nonempty_diffeomorph_regularFiberComponent_unitAddTorus_prod`:
+  for complete Hamiltonian vector fields, a regular component of a level whose stabilizer has rank
+  `r` is diffeomorphic to the cylinder `(ℝ / ℤ)ʳ × ℝⁿ⁻ʳ`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.exists_diffeomorph_regularFiberComponent_of_isCompact`: a
   compact regular component of a level is diffeomorphic to a torus `(ι → ℝ) / Λ` for a full
   lattice `Λ`, with no completeness hypothesis.
@@ -138,6 +149,47 @@ theorem ofQuotientHamiltonianFlowStabilizer_quotientHamiltonianFlowStabilizerDif
         ((hσ.quotientHamiltonianFlowStabilizerDiffeomorph hF hcomm hc hU hdim hLU).symm z) =
       (((z : {y : U // F y = F x}) : U) : M) :=
   Manifold.IsSmoothEmbedding.apply_regularFiberComponentDiffeomorph_symm_apply _ hF _ hU hLU _ _ z
+
+/-- **Regular components of a level are cylinders `Tʳ × ℝⁿ⁻ʳ`.** On a manifold of dimension
+`2n`, `n = |ι|`, let the Hamiltonian vector fields of `F` be complete, and let the connected
+component `L` of `x` in its level `F⁻¹(F x)` lie in an open set `U` of regular points of `F`. If the
+stabilizer `Λ` of `x` in the Hamiltonian flow action has rank `r`, then `L`, with its structure of
+an open submanifold of the regular fibre over `F x` of the restriction of `F` to `U`
+(`TauCeti.regularFiberComponent`), is diffeomorphic to the cylinder `(ℝ / ℤ)ʳ × ℝⁿ⁻ʳ`. No
+compactness is assumed. -/
+theorem nonempty_diffeomorph_regularFiberComponent_unitAddTorus_prod
+    (hdim : 2 * Fintype.card ι = finrank ℝ E) {x : M}
+    (hLU : connectedComponentIn (F ⁻¹' {F x}) x ⊆ U) :
+    letI := regularFiberComponentChartedSpace (x := x) (by simp) hF
+      BoundarylessManifold.isInteriorPoint hU
+    Nonempty (regularFiberComponent (by simp) hF BoundarylessManifold.isInteriorPoint hU hLU
+      ≃ₘ⟮𝓘(ℝ, Fib), (ModelWithCorners.pi fun _ : Fin (finrank ℤ
+          (hσ.hamiltonianFlowStabilizer hF hcomm hc x).toIntSubmodule) ↦ 𝓘(ℝ)).prod
+        𝓘(ℝ, Fin (Fintype.card ι -
+          finrank ℤ (hσ.hamiltonianFlowStabilizer hF hcomm hc x).toIntSubmodule) → ℝ)⟯
+      UnitAddTorus (Fin (finrank ℤ (hσ.hamiltonianFlowStabilizer hF hcomm hc x).toIntSubmodule)) ×
+        (Fin (Fintype.card ι -
+          finrank ℤ (hσ.hamiltonianFlowStabilizer hF hcomm hc x).toIntSubmodule) → ℝ)) := by
+  let := regularFiberComponentChartedSpace (x := x) (by simp) hF
+    BoundarylessManifold.isInteriorPoint hU
+  have : DiscreteTopology (hσ.hamiltonianFlowStabilizer hF hcomm hc x) :=
+    hσ.discreteTopology_hamiltonianFlowStabilizer hF hcomm hc
+      (hU ⟨x, hLU (mem_connectedComponentIn (by simp))⟩)
+  -- A real basis of `ι → ℝ` whose first `r` vectors span `Λ` over `ℤ`, reindexed so that its
+  -- complementary vectors are indexed by `Fin (|ι| - r)`.
+  obtain ⟨B, hB⟩ :=
+    (hσ.hamiltonianFlowStabilizer hF hcomm hc x).exists_basis_span_range_comp_inl_eq
+  let B' := B.reindex (Equiv.sumCongr (Equiv.refl _)
+    (finCongr (by rw [finrank_fintype_fun_eq_card])))
+  have hL : (hσ.hamiltonianFlowStabilizer hF hcomm hc x).toIntSubmodule =
+      Submodule.span ℤ (range (B' ∘ Sum.inl)) := by
+    have hB' : B' ∘ Sum.inl = B ∘ Sum.inl := by
+      funext i
+      simp [B']
+    rw [hB']
+    exact (congrArg AddSubgroup.toIntSubmodule hB).symm
+  exact ⟨(hσ.quotientHamiltonianFlowStabilizerDiffeomorph hF hcomm hc hU hdim hLU).symm.trans
+    (B'.orbitRelQuotientCylinderDiffeomorph hL ∞)⟩
 
 omit hc
 

@@ -39,10 +39,11 @@ the value `1` on the cycle `1 ⊗ π`
 cycle on which it vanishes is a boundary
 (`TauCeti.IsAdaptedPseudoGradient.exists_twistedDifferential_eq_circleCos`). For `Y` the circle
 itself and `θ` homotopic to the identity, such as the collapse of one of the two arcs between the
-critical points, this would give the case `n = 1` of the computation
+critical points, this gives the case `n = 1` of the computation
 `H_*(Sⁿ; C_*(ΩSⁿ)) ≅ H_*(pt)` for the path-loop fibration, where the trivial action would give
-`H_*(Sⁿ) ⊗ H_*(ΩSⁿ)` (not formalized here: the asphericity, generator and infinite-order
-hypotheses are not yet instantiated for `Y = S¹`).
+`H_*(Sⁿ) ⊗ H_*(ΩSⁿ)`
+(`TauCeti.IsAdaptedPseudoGradient.exists_twistedDifferential_eq_circleCos_of_homotopicRel`, in
+`TauCeti.Geometry.Manifold.Morse.DG.Circle.PathLoop`).
 
 The proof reads the complex in the group ring `R[π₁(Y, y₀)]`. The image of `x` there is
 `r g - r t g = (1 - t) g r`, where `g` is the class of the loop traced along the upper half-circle

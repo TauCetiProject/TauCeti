@@ -221,12 +221,6 @@ same class the first Chern number of the tangent bundle is `n + 2`
 (`TauCeti.ComplexProjectiveSpace.clutchingNumber_tangentSpace_lineSquare`). -/
 theorem sphereIntegral_fubiniStudyForm_lineSquare :
     sphereIntegral (fubiniStudyForm (n + 1)).val (affineParam 1 0) ⟦lineSquare n⟧ = 1 := by
-  -- The line sphere is the image of the standard sphere of the Riemann sphere.
-  have hmap : (⟦lineSquare n⟧ : HomotopyGroup (Fin 2) (ComplexProjectiveSpace (n + 1))
-      (affineParam 1 0)) =
-        HomotopyGroup.map (coordinateLine n) coordinateLine_infty ⟦riemannSphereSquare⟧ := by
-    rw [HomotopyGroup.map_mk]
-    exact congrArg _ (GenLoop.ext _ _ fun y ↦ by simp [lineSquare_apply])
   -- Naturality of the integral, with the base point `coordinateLine n ∞ = affineParam 1 0`.
   have hnat : ∀ y (hy : coordinateLine n ∞ = y),
       sphereIntegral (fubiniStudyForm (n + 1)).val y
@@ -237,7 +231,8 @@ theorem sphereIntegral_fubiniStudyForm_lineSquare :
     rw [SmoothForm.coe_mpullback]
     exact (sphereIntegral_mpullback contMDiff_coordinateLine_real
       (isSmoothForm_fubiniStudyForm (n + 1)) (mextDeriv_fubiniStudyForm (n + 1)) _).symm
-  rw [hmap, hnat _ coordinateLine_infty, mpullback_coordinateLine_fubiniStudyForm,
+  -- The line sphere is the image of the standard sphere of the Riemann sphere.
+  rw [mk_lineSquare_eq_map, hnat _ coordinateLine_infty, mpullback_coordinateLine_fubiniStudyForm,
     OnePoint.sphereIntegral_fubiniStudyForm_riemannSphereSquare]
 
 /-- **The generator of `π₂(CPⁿ⁺¹)` has Fubini–Study area `1`**: it is the class of the coordinate

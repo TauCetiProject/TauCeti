@@ -31,10 +31,17 @@ determinant is continuous in the operator-norm topology, the special orthogonal 
 closed, and hence clopen in the orthogonal group (`TauCeti.isOpen_specialOrthogonalGroup`,
 `TauCeti.isClosed_specialOrthogonalGroup`, `TauCeti.isClopen_specialOrthogonalGroup`). In positive
 dimension the reflection in a hyperplane is an orthogonal transformation of determinant `-1`
-(`Unitary.exists_det_eq_neg_one`). The reflection in the hyperplane orthogonal to a nonzero vector
-`v` is not special orthogonal
+(`Unitary.exists_det_eq_neg_one`); in dimension at least two it can be chosen to fix a given
+vector (`Unitary.exists_det_eq_neg_one_apply_eq_self`). The reflection in the hyperplane orthogonal
+to a nonzero vector `v` is not special orthogonal
 (`TauCeti.reflection_orthogonal_singleton_notMem_specialOrthogonalGroup`), and it fixes every
 vector orthogonal to `v` (`TauCeti.reflection_orthogonal_singleton_mem_stabilizer`).
+
+The special orthogonal stabilizer `TauCeti.specialOrthogonalStabilizer V v₀` of a vector `v₀` is
+the subgroup of special orthogonal transformations fixing `v₀`
+(`TauCeti.mem_specialOrthogonalStabilizer_iff`): for a unit vector it is `SO(N - 1)`, and in an
+oriented three-dimensional space it is the circle group of rotations about the axis `ℝ v₀`. It is
+the structure group of the frames adapted to an oriented plane field.
 -/
 
 public section
@@ -79,6 +86,15 @@ theorem det_inv_eq_det (g : unitary (V →L[ℝ] V)) :
     rw [← detMonoidHom_apply, ← detMonoidHom_apply, ← map_mul, inv_mul_cancel, map_one]
   rcases det_eq_one_or_eq_neg_one g with hg | hg <;> rw [hg] at h ⊢ <;> linarith
 
+/-- The orthogonal transformation corresponding to a linear isometry `r` has the determinant of
+`r`. -/
+theorem det_coe_symm_linearIsometryEquiv (r : V ≃ₗᵢ[ℝ] V) :
+    ((linearIsometryEquiv.symm r : unitary (V →L[ℝ] V)) : V →L[ℝ] V).det =
+      LinearEquiv.det r.toLinearEquiv := by
+  rw [coe_symm_linearIsometryEquiv_apply, ContinuousLinearMap.det, LinearEquiv.coe_det]
+  -- Both sides are the determinant of the linear map underlying `r`, by definition.
+  rfl
+
 /-- In positive dimension there is an orthogonal transformation of determinant `-1`: the
 reflection in a hyperplane. -/
 theorem exists_det_eq_neg_one (hV : 0 < Module.finrank ℝ V) :
@@ -86,9 +102,16 @@ theorem exists_det_eq_neg_one (hV : 0 < Module.finrank ℝ V) :
   have := Module.finite_of_finrank_pos hV
   have := Module.nontrivial_of_finrank_pos hV
   obtain ⟨r, hr⟩ := TauCeti.exists_det_eq_neg_one (F := V)
-  refine ⟨linearIsometryEquiv.symm r, ?_⟩
-  rw [coe_symm_linearIsometryEquiv_apply, ContinuousLinearMap.det, ← hr, LinearEquiv.coe_det]
-  rfl
+  exact ⟨linearIsometryEquiv.symm r, by rw [det_coe_symm_linearIsometryEquiv, hr]⟩
+
+/-- In dimension at least two, every vector `v` is fixed by an orthogonal transformation of
+determinant `-1`: the reflection in the hyperplane orthogonal to a nonzero vector orthogonal to
+`v`. -/
+theorem exists_det_eq_neg_one_apply_eq_self (hV : 2 ≤ Module.finrank ℝ V) (v : V) :
+    ∃ r : unitary (V →L[ℝ] V), (r : V →L[ℝ] V).det = -1 ∧ (r : V →L[ℝ] V) v = v := by
+  obtain ⟨r, hr, hrv⟩ := TauCeti.exists_det_eq_neg_one_apply_eq_self hV v
+  exact ⟨linearIsometryEquiv.symm r, by rw [det_coe_symm_linearIsometryEquiv, hr],
+    by simpa using hrv⟩
 
 end Unitary
 
@@ -165,5 +188,27 @@ theorem reflection_orthogonal_singleton_mem_stabilizer {v w : V} (h : inner ℝ 
     Unitary.linearIsometryEquiv.symm (ℝ ∙ v)ᗮ.reflection ∈
       MulAction.stabilizer (unitary (V →L[ℝ] V)) w :=
   MulAction.mem_stabilizer_iff.2 (reflection_orthogonal_singleton_eq_self_of_inner_eq_zero h)
+
+variable (V) in
+/-- The special orthogonal transformations of `V` fixing a vector `v₀`. For a unit vector of an
+oriented three-dimensional space this is the circle group of rotations about the axis `ℝ v₀`; it
+is the structure group of the frames adapted to an oriented plane field. -/
+def specialOrthogonalStabilizer (v₀ : V) : Subgroup (unitary (V →L[ℝ] V)) :=
+  MulAction.stabilizer (unitary (V →L[ℝ] V)) v₀ ⊓ specialOrthogonalGroup V
+
+variable (V) in
+/-- The special orthogonal stabilizer of `v₀` is the stabilizer of `v₀` in the special orthogonal
+group. -/
+theorem specialOrthogonalStabilizer_def (v₀ : V) :
+    specialOrthogonalStabilizer V v₀ =
+      MulAction.stabilizer (unitary (V →L[ℝ] V)) v₀ ⊓ specialOrthogonalGroup V :=
+  (rfl)
+
+/-- An orthogonal transformation lies in the special orthogonal stabilizer of `v₀` exactly when it
+fixes `v₀` and has determinant `1`. -/
+@[simp]
+theorem mem_specialOrthogonalStabilizer_iff {v₀ : V} {g : unitary (V →L[ℝ] V)} :
+    g ∈ specialOrthogonalStabilizer V v₀ ↔ (g : V →L[ℝ] V) v₀ = v₀ ∧ (g : V →L[ℝ] V).det = 1 :=
+  Subgroup.mem_inf.trans (and_congr Iff.rfl mem_specialOrthogonalGroup_iff)
 
 end TauCeti

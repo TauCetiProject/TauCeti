@@ -379,7 +379,7 @@ theorem exists_sq_sub_mul_sq_infinitePlaceCompletion_equivOfRingEquiv (e : K ≃
         algebraMap K w.Completion a =
           x ^ 2 - algebraMap K w.Completion d * y ^ 2 :=
   TauCeti.exists_sq_sub_mul_sq_infinitePlaceCompletion_iff_of_apply_eq
-    (eq_equivOfRingEquiv_iff.mp rfl) d a
+    (InfinitePlace.eq_equivOfRingEquiv_iff.mp rfl) d a
 
 /-- Solvability of `a = x² - d y²` in every archimedean completion is preserved under a ring
 isomorphism `e : K ≃+* L` of fields. -/
