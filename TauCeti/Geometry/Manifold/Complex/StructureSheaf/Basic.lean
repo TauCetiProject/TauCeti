@@ -19,6 +19,7 @@ public import TauCeti.Geometry.Manifold.Sheaf.ContMDiff
 public import TauCeti.Geometry.Manifold.Complex.Analytic
 public import TauCeti.Geometry.Manifold.Complex.Chart
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 -- Supplies `exists_germ_eq` for stalks of ring-valued presheaves.
 import Mathlib.Algebra.Category.Ring.FilteredColimits
 
@@ -167,6 +168,17 @@ theorem map_apply {U V : (Opens (TopCat.of X))ᵒᵖ} (h : U ⟶ V)
 @[simp]
 theorem algebraMap_apply (U : (Opens (TopCat.of X))ᵒᵖ) (c : ℂ) (x : ↥(unop U)) :
     algebraMap ℂ ((holomorphicStructureSheaf I X).obj.obj U) c x = c := (rfl)
+
+/-- Evaluation of a holomorphic section at a point of its domain, as a complex algebra map. -/
+def evalAlgHom {U : (Opens (TopCat.of X))ᵒᵖ} (x : ↥(unop U)) :
+    (holomorphicStructureSheaf I X).obj.obj U →ₐ[ℂ] ℂ :=
+  ContMDiffMap.evalAlgHom x
+
+/-- The evaluation algebra map computes the value of the underlying function. -/
+@[simp]
+theorem evalAlgHom_apply {U : (Opens (TopCat.of X))ᵒᵖ} (x : ↥(unop U))
+    (f : (holomorphicStructureSheaf I X).obj.obj U) : evalAlgHom x f = f x :=
+  ContMDiffMap.evalAlgHom_apply ℂ x f
 
 variable (I) in
 /-- Restriction of holomorphic sections along an inclusion `V ≤ U` of open subsets, bundled as a

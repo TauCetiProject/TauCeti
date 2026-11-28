@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.ComplexAnalyticSpace.Basic
-public import Mathlib.RingTheory.Polynomial.Basic
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Polynomial.ClosedSubspace
+import Mathlib.RingTheory.Polynomial.Basic
 import Mathlib.RingTheory.Finiteness.Ideal
 
 /-!
@@ -15,17 +16,22 @@ import Mathlib.RingTheory.Finiteness.Ideal
 For an ideal of multivariate complex polynomials, `Ideal.toComplexAnalyticSpace`
 extends the ideal to holomorphic functions and takes the associated closed analytic subspace.
 The comparison `Ideal.toSpecQuotient` is induced by polynomial evaluation on
-global sections, via Mathlib's `LocallyRingedSpace.toΓSpec`. It is a morphism over
+global sections, via Mathlib's `LocallyRingedSpace.toΓSpec`. It follows the lifted construction
+in `TauCeti.closedAnalyticSubspace.toOver` using the polynomial-quotient section map
+in place of the constant-section map. It is a morphism over
 `Spec (ULift ℂ)` in every universe. The analytic structure sheaf uses the extended ideal,
 so the construction retains the equations of nonreduced schemes.
+`Ideal.toSpecQuotient_mem_asIdeal_iff` computes the image prime by vanishing, and
+`Ideal.toSpecQuotient_Γ` computes the pullback on global sections.
 
 See SGA 1, Exposé XII, Theorem and Definition 1.1, for the affine construction.
 -/
 
 public noncomputable section
 
-open AlgebraicGeometry CategoryTheory Opposite TauCeti TopCat.Presheaf TopologicalSpace
-open scoped ContDiff Manifold
+open AlgebraicGeometry CategoryTheory Opposite TauCeti TauCeti.ComplexAnalyticSpace
+open TopCat.Presheaf TopologicalSpace
+open scoped Manifold
 
 universe u
 
@@ -35,73 +41,15 @@ local notation "𝒫" => MvPolynomial (Fin n) ℂ
 local notation "𝒰" => (⊤ : Opens (Fin n → ℂ))
 local notation "𝓕" => TopCat.Sheaf.presheaf (C := CommRingCat)
   (holomorphicStructureSheaf 𝓘(ℂ, Fin n → ℂ) 𝒰)
-local notation "𝓗" => Functor.obj (D := CommRingCat) 𝓕 (op ⊤)
-
-namespace TauCeti.ComplexAnalyticSpace
-
-/-- Polynomial evaluation as global holomorphic functions on complex affine space. -/
-def polynomialToHolomorphic (n : ℕ) :
-    MvPolynomial (Fin n) ℂ →ₐ[ℂ]
-      (holomorphicStructureSheaf 𝓘(ℂ, Fin n → ℂ) (⊤ : Opens (Fin n → ℂ))).presheaf.obj (op ⊤) :=
-  MvPolynomial.aeval fun i ↦
-    holomorphicStructureSheaf.ofContMDiff (fun x ↦ x.val.val i)
-      (((ContinuousLinearMap.proj (R := ℂ) i : (Fin n → ℂ) →L[ℂ] ℂ).contDiff.contMDiff).comp
-        (contMDiff_subtypeVal.comp contMDiff_subtypeVal))
-
-/-- The holomorphic section attached to a polynomial evaluates to its value at each point. -/
--- Index on evaluation across the unexposed section carrier and its dependent opens.
-@[simp]
-theorem polynomialToHolomorphic_apply (p : 𝒫) (x : 𝒰) :
-    holomorphicStructureSheaf.toFun (no_index 𝓘(ℂ, Fin n → ℂ)) (no_index 𝒰) (no_index (op ⊤))
-      (no_index (polynomialToHolomorphic n p)) (no_index ⟨x, trivial⟩) =
-        MvPolynomial.eval x.val p := by
-  let evaluation : 𝓗 →+* ℂ :=
-    (holomorphicStructureSheaf.eval _ _ x).comp ((𝓕).germ ⊤ x (Opens.mem_top x)).hom
-  have heval (f : 𝓗) : evaluation f = f ⟨x, trivial⟩ :=
-    holomorphicStructureSheaf.eval_germ _ _ _ _ (Opens.mem_top x) f
-  have hconst : evaluation.comp (algebraMap ℂ 𝓗) = RingHom.id ℂ := by
-    ext c
-    exact (heval _).trans (holomorphicStructureSheaf.algebraMap_apply _ _ _)
-  rw [← heval, polynomialToHolomorphic, MvPolynomial.map_aeval, hconst]
-  congr 3
-  ext i
-  exact (heval _).trans (holomorphicStructureSheaf.ofContMDiff_apply _ _ _)
-
-end TauCeti.ComplexAnalyticSpace
-
-open TauCeti.ComplexAnalyticSpace
 
 namespace Ideal
 
-/-- Extend the polynomial ideal to the global holomorphic functions on complex affine space. -/
-def toHolomorphic (I : Ideal 𝒫) : Ideal 𝓗 :=
-  I.map (polynomialToHolomorphic n).toRingHom
-
-/-- The defining ideal of the affine model is the image ideal under polynomial evaluation. -/
-@[simp]
-theorem toHolomorphic_def (I : Ideal 𝒫) :
-    toHolomorphic I = I.map (polynomialToHolomorphic n).toRingHom :=
-  (rfl)
-
-/-- The extended ideal cuts out the common zeros of the original polynomial equations. -/
--- The generic zero-locus membership simp lemma already rewrites the left-hand side.
-theorem mem_zeroLocus_toHolomorphic {I : Ideal 𝒫} {x : 𝒰} :
-    x ∈ closedAnalyticSubspace.zeroLocus (toHolomorphic I) ↔
-      ∀ p ∈ I, MvPolynomial.eval x.val p = 0 := by
-  have hspan : toHolomorphic I =
-      Ideal.span ((polynomialToHolomorphic n).toRingHom '' (I : Set 𝒫)) := by
-    rw [toHolomorphic_def]
-    simpa only [Ideal.span_eq] using
-      Ideal.map_span (polynomialToHolomorphic n).toRingHom (I : Set 𝒫)
-  rw [hspan, closedAnalyticSubspace.zeroLocus_span]
-  simp only [Set.mem_ofPred_eq, Set.forall_mem_image]
-  exact forall₂_congr fun p _ ↦ (congrArg (· = 0) (polynomialToHolomorphic_apply p x)).to_iff
-
 /-- The affine analytic space cut out by all equations in the polynomial ideal `I`. -/
 def toComplexAnalyticSpace (I : Ideal 𝒫) : ComplexAnalyticSpace.{u} :=
-  ⟨closedAnalyticSubspace.toOver (toHolomorphic I),
-    isComplexAnalyticSpace_toOver
-      (Ideal.FG.map (IsNoetherian.noetherian I) (polynomialToHolomorphic n).toRingHom)⟩
+  ComplexAnalyticSpace.ofClosedAnalyticSubspace (toHolomorphic I)
+    (by
+      rw [toHolomorphic_def]
+      exact Ideal.FG.map (IsNoetherian.noetherian I) (polynomialToHolomorphic n).toRingHom)
 
 /-- The underlying locally ringed space over `Spec (ULift ℂ)` is the closed analytic model of
 the extended polynomial ideal. -/
@@ -109,44 +57,15 @@ the extended polynomial ideal. -/
 theorem toComplexAnalyticSpace_obj (I : Ideal 𝒫) :
     (toComplexAnalyticSpace.{u} I).obj =
       closedAnalyticSubspace.toOver.{u} (toHolomorphic I) :=
-  (rfl)
+  ComplexAnalyticSpace.ofClosedAnalyticSubspace_obj _ _
 
-/-- The map from the polynomial quotient to the global sections of the closed analytic model. -/
-def polynomialQuotientToSections (I : Ideal 𝒫) :
-    (𝒫 ⧸ I) →+* (closedAnalyticSubspace (toHolomorphic I)).presheaf.obj (op ⊤) :=
-  Ideal.Quotient.lift I
-    ((TopCat.Presheaf.quotientIdealSheaf.restrictRingHom 𝓕 (toHolomorphic I)
-      (closedAnalyticSubspace.zeroLocus (toHolomorphic I)) ⊤).comp
-      (polynomialToHolomorphic n).toRingHom)
-    (by
-      intro p hp
-      let Z := closedAnalyticSubspace.zeroLocus (toHolomorphic I)
-      let W : Opens (TopCat.of Z) := Opens.comap ⟨Subtype.val, continuous_subtypeVal⟩ ⊤
-      refine quotientIdealSheaf.ext (F := 𝓕) (J := toHolomorphic I) (Z := Z) (W := W) fun z ↦ ?_
-      have h := quotientIdealSheaf.sectionsEquiv_restrictRingHom_apply
-        (F := 𝓕) (J := toHolomorphic I) (Z := Z) ⊤ (polynomialToHolomorphic n p) z
-      have hz : _ = (0 : _ ⧸ _) := Ideal.Quotient.eq_zero_iff_mem.mpr
-        (germ_mem_stalkIdeal (Ideal.mem_map_of_mem (polynomialToHolomorphic n).toRingHom hp)
-          z.val.val)
-      have hzero := map_zero (quotientIdealSheaf.sectionsEquiv 𝓕 (toHolomorphic I) Z W)
-      exact h.trans (hz.trans (congrArg (fun a ↦ a.val z) hzero).symm))
-
-/-- On a polynomial class the section is the restriction of the associated holomorphic function. -/
-@[simp]
-theorem polynomialQuotientToSections_mk (I : Ideal 𝒫) (p : 𝒫) :
-    polynomialQuotientToSections I (Ideal.Quotient.mk I p) =
-      TopCat.Presheaf.quotientIdealSheaf.restrictRingHom 𝓕 (toHolomorphic I)
-        (closedAnalyticSubspace.zeroLocus (toHolomorphic I)) ⊤
-        (polynomialToHolomorphic n p) :=
-  Ideal.Quotient.lift_mk _ _ _
-
-/-- Polynomial classes of constants restrict to the constant sections. -/
-@[simp]
-theorem polynomialQuotientToSections_algebraMap (I : Ideal 𝒫) (c : ℂ) :
-    polynomialQuotientToSections I (algebraMap ℂ (𝒫 ⧸ I) c) =
-      closedAnalyticSubspace.constRingHom (toHolomorphic I) c := by
-  rw [← Ideal.Quotient.mk_algebraMap, polynomialQuotientToSections_mk, AlgHom.commutes,
-    closedAnalyticSubspace.constRingHom_apply]
+/-- The locally ringed space of the affine analytic model is the universe-lifted closed
+subspace cut out by the extended ideal. -/
+theorem toComplexAnalyticSpace_left (I : Ideal 𝒫) :
+    (toComplexAnalyticSpace.{u} I).obj.left =
+      (closedAnalyticSubspace (toHolomorphic I)).ulift.{u} :=
+  (congrArg Over.left (toComplexAnalyticSpace_obj.{u} I)).trans
+    (closedAnalyticSubspace.toOver_left _)
 
 /-- The canonical map from the analytic model to the spectrum of the polynomial quotient, over
 `Spec (ULift ℂ)`. The map is induced by restriction of polynomial functions to the analytic
@@ -158,14 +77,15 @@ def toSpecQuotient (I : Ideal 𝒫) :
   let A := closedAnalyticSubspace (toHolomorphic I)
   let f : CommRingCat.of (ULift.{u} (𝒫 ⧸ I)) ⟶ LocallyRingedSpace.Γ.obj (op A.ulift.{u}) :=
     CommRingCat.ofHom (polynomialQuotientToSections I).ulift ≫ A.uliftΓIso.{u}.inv
+  eqToHom (toComplexAnalyticSpace_obj.{u} I) ≫
   Over.homMk (A.ulift.{u}.toΓSpec ≫ Spec.locallyRingedSpaceMap f) (by
-    have h : CommRingCat.ofHom (algebraMap ℂ (𝒫 ⧸ I)).ulift ≫
-          CommRingCat.ofHom (polynomialQuotientToSections I).ulift =
-        CommRingCat.ofHom (closedAnalyticSubspace.constRingHom
-          (toHolomorphic I)).ulift := by
+    have h₀ : CommRingCat.ofHom (algebraMap ℂ (𝒫 ⧸ I)) ≫
+        CommRingCat.ofHom (polynomialQuotientToSections I) =
+          CommRingCat.ofHom (closedAnalyticSubspace.constRingHom (toHolomorphic I)) := by
       ext c
-      simp only [CommRingCat.hom_comp, CommRingCat.hom_ofHom, RingHom.comp_apply,
-        RingHom.ulift_apply, polynomialQuotientToSections_algebraMap]
+      exact polynomialQuotientToSections_algebraMap I c
+    have h := congrArg (CommRingCat.uliftFunctor.{u}.map) h₀
+    rw [Functor.map_comp] at h
     have hcomp : CommRingCat.ofHom (algebraMap ℂ (𝒫 ⧸ I)).ulift ≫ f =
         CommRingCat.ofHom (closedAnalyticSubspace.constRingHom
           (toHolomorphic I)).ulift ≫ A.uliftΓIso.{u}.inv :=
@@ -176,19 +96,109 @@ def toSpecQuotient (I : Ideal 𝒫) :
         (Category.assoc _ _ _).trans
           (congrArg (A.ulift.{u}.toΓSpec ≫ ·) (Spec.locallyRingedSpaceMap_comp _ _).symm)
       _ = _ := by
-        rw [hcomp]
-        exact (closedAnalyticSubspace.toOver_hom _).symm)
+        rw [hcomp, closedAnalyticSubspace.toOver_hom])
 
 /-- The comparison morphism is induced by the map from the polynomial quotient to global
 sections of the analytic model. -/
-@[simp]
 theorem toSpecQuotient_left (I : Ideal 𝒫) :
     (toSpecQuotient.{u} I).left =
-      eqToHom (congrArg Over.left (toComplexAnalyticSpace_obj.{u} I)) ≫
+      eqToHom (toComplexAnalyticSpace_left.{u} I) ≫
         (closedAnalyticSubspace (toHolomorphic I)).ulift.{u}.toΓSpec ≫
         Spec.locallyRingedSpaceMap
           (CommRingCat.ofHom (polynomialQuotientToSections I).ulift ≫
-            (closedAnalyticSubspace (toHolomorphic I)).uliftΓIso.{u}.inv) :=
-  (Category.id_comp _).symm
+            (closedAnalyticSubspace (toHolomorphic I)).uliftΓIso.{u}.inv) := by
+  rw [toSpecQuotient, Over.comp_left, Over.eqToHom_left]
+  exact congrArg (eqToHom (toComplexAnalyticSpace_left.{u} I) ≫ ·)
+    (Over.homMk_left _ _)
+
+/-- The points of the affine analytic model are the universe lift of its complex zero locus. -/
+def toComplexAnalyticSpaceHomeomorph (I : Ideal 𝒫) :
+    (toComplexAnalyticSpace.{u} I).obj.left ≃ₜ ULift.{u} (closedAnalyticSubspace.zeroLocus
+      (toHolomorphic I)) :=
+  TopCat.homeoOfIso (LocallyRingedSpace.forgetToTop.mapIso
+    (eqToIso (toComplexAnalyticSpace_left.{u} I)))
+
+/-- The zero-locus homeomorphism acts by the canonical transport on the carrier.
+Use this equation explicitly when working with the transport. -/
+theorem toComplexAnalyticSpaceHomeomorph_apply (I : Ideal 𝒫)
+    (x : (toComplexAnalyticSpace.{u} I).obj.left) :
+    toComplexAnalyticSpaceHomeomorph I x =
+      (eqToHom (toComplexAnalyticSpace_left.{u} I)).base x :=
+  (rfl)
+
+/-- A polynomial class belongs to the comparison point's prime ideal exactly when the
+polynomial vanishes at the analytic point. This is an explicit rewrite for the image prime. -/
+theorem toSpecQuotient_mem_asIdeal_iff (I : Ideal 𝒫)
+    (x : (toComplexAnalyticSpace.{u} I).obj.left) (p : 𝒫) :
+    ULift.up (Ideal.Quotient.mk I p) ∈ ((toSpecQuotient I).left.base x).asIdeal ↔
+      MvPolynomial.eval (toComplexAnalyticSpaceHomeomorph I x).down.val.val p = 0 := by
+  let A := closedAnalyticSubspace (toHolomorphic I)
+  let z := (toComplexAnalyticSpaceHomeomorph I x).down
+  let f : CommRingCat.of (ULift.{u} (𝒫 ⧸ I)) ⟶ LocallyRingedSpace.Γ.obj (op A.ulift.{u}) :=
+    CommRingCat.ofHom (polynomialQuotientToSections I).ulift ≫ A.uliftΓIso.{u}.inv
+  rw [toSpecQuotient_left, LocallyRingedSpace.comp_base]
+  -- The spectrum map is comap, and the source transport is the homeomorphism on points.
+  change f (ULift.up (Ideal.Quotient.mk I p)) ∈
+    (A.ulift.{u}.toΓSpecFun (ULift.up z)).asIdeal ↔ MvPolynomial.eval z.val.val p = 0
+  refine not_iff_not.mp ((A.ulift.{u}.notMem_prime_iff_unit_in_stalk _ (ULift.up z)).trans ?_)
+  refine (isUnit_map_iff
+    (closedAnalyticSubspace.toOverStalkEquiv (toHolomorphic I) z) _).symm.trans ?_
+  let J := stalkIdeal 𝓕 (toHolomorphic I) z.val
+  have : Nontrivial ((𝓕).stalk z.val ⧸ J) :=
+    Ideal.Quotient.nontrivial_iff.mpr (closedAnalyticSubspace.stalkIdeal_ne_top_iff.mpr z.property)
+  have : IsLocalHom (Ideal.Quotient.mk J) :=
+    IsLocalHom.of_surjective _ Ideal.Quotient.mk_surjective
+  let g := polynomialQuotientToSections I (Ideal.Quotient.mk I p)
+  have hfg : f (ULift.up (Ideal.Quotient.mk I p)) = ULift.up g := by
+    exact (CommRingCat.comp_apply _ _ _).trans (A.uliftΓIso_inv_apply _)
+  have hg := closedAnalyticSubspace.toOverStalkEquiv_germ
+    (J := toHolomorphic I) (z := z) (W := ⊤) (Opens.mem_top _) (ULift.up g)
+  have hclass : (quotientIdealSheaf.sectionsEquiv 𝓕 (toHolomorphic I) _ ⊤ g).val
+      ⟨z, Opens.mem_top _⟩ = Ideal.Quotient.mk _ ((𝓕).germ ⊤ z.val (Opens.mem_top _)
+        (polynomialToHolomorphic n p)) :=
+    (congrArg (fun s ↦ (quotientIdealSheaf.sectionsEquiv 𝓕 (toHolomorphic I) _ ⊤ s).val
+      ⟨z, Opens.mem_top _⟩) (polynomialQuotientToSections_mk I p)).trans
+      (quotientIdealSheaf.sectionsEquiv_restrictRingHom_apply (F := 𝓕)
+        (J := toHolomorphic I) (Z := closedAnalyticSubspace.zeroLocus (toHolomorphic I))
+        ⊤ (polynomialToHolomorphic n p) ⟨z, trivial⟩)
+  have hclass' := (congrArg (fun s ↦ closedAnalyticSubspace.toOverStalkEquiv
+    (toHolomorphic I) z (A.ulift.{u}.presheaf.Γgerm (ULift.up z) s)) hfg).trans (hg.trans hclass)
+  refine (congrArg IsUnit hclass').to_iff.trans ((isUnit_map_iff (Ideal.Quotient.mk J) _).trans ?_)
+  exact (holomorphicStructureSheaf.isUnit_stalk_iff _ _ _).trans (not_congr
+    (congrArg (· = 0) ((holomorphicStructureSheaf.eval_germ _ _ _ _ (Opens.mem_top _) _).trans
+      (p.polynomialToHolomorphic_apply z.val))).to_iff)
+
+/-- After the spectrum and universe-lift identifications, pullback on global sections is
+restriction of polynomial classes to the affine analytic model. -/
+theorem toSpecQuotient_Γ (I : Ideal 𝒫) :
+    Scheme.SpecΓIdentity.inv.app (CommRingCat.of (ULift.{u} (𝒫 ⧸ I))) ≫
+      LocallyRingedSpace.Γ.map
+        (eqToHom ((toComplexAnalyticSpace_left.{u} I).symm) ≫
+          (toSpecQuotient.{u} I).left).op ≫
+      (closedAnalyticSubspace (toHolomorphic I)).uliftΓIso.{u}.hom =
+        CommRingCat.ofHom (polynomialQuotientToSections I).ulift := by
+  let A := closedAnalyticSubspace (toHolomorphic I)
+  let f : CommRingCat.of (ULift.{u} (𝒫 ⧸ I)) ⟶ LocallyRingedSpace.Γ.obj (op A.ulift.{u}) :=
+    CommRingCat.ofHom (polynomialQuotientToSections I).ulift ≫ A.uliftΓIso.{u}.inv
+  have hleft : eqToHom ((toComplexAnalyticSpace_left.{u} I).symm) ≫
+      (toSpecQuotient.{u} I).left = A.ulift.{u}.toΓSpec ≫ Spec.locallyRingedSpaceMap f := by
+    rw [toSpecQuotient_left]
+    simp only [← Category.assoc, eqToHom_trans, eqToHom_refl, Category.id_comp, f, A]
+  rw [hleft]
+  let adj := ΓSpec.locallyRingedSpaceAdjunction.{u}
+  have hform := ΓSpec.locallyRingedSpaceAdjunction_homEquiv_apply' f
+  have h := (congrArg (adj.homEquiv _ _).symm hform).symm.trans
+    ((adj.homEquiv _ _).symm_apply_apply f.op)
+  have hΓ : Scheme.SpecΓIdentity.inv.app _ ≫
+      LocallyRingedSpace.Γ.map (A.ulift.{u}.toΓSpec ≫ Spec.locallyRingedSpaceMap f).op = f :=
+    congrArg Quiver.Hom.unop ((adj.homEquiv_symm_apply _ _ _).symm.trans h)
+  have hend : f ≫ A.uliftΓIso.{u}.hom =
+      CommRingCat.ofHom (polynomialQuotientToSections I).ulift :=
+    (Category.assoc (CommRingCat.ofHom (polynomialQuotientToSections I).ulift)
+      A.uliftΓIso.{u}.inv A.uliftΓIso.{u}.hom).trans
+      ((congrArg (CommRingCat.ofHom (polynomialQuotientToSections I).ulift ≫ ·)
+        A.uliftΓIso.{u}.inv_hom_id).trans (Category.comp_id _))
+  exact (Category.assoc _ _ _).symm.trans
+    ((congrArg (· ≫ A.uliftΓIso.{u}.hom) hΓ).trans hend)
 
 end Ideal

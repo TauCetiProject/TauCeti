@@ -38,7 +38,8 @@ at all nearby points `w` lie in `J_w` (`TopCat.Presheaf.exists_germ_eq_forall_ge
 * `TopCat.Presheaf.quotientIdealSheaf F J Z`: the sheaf of rings `(F ⧸ J F)|_Z` on `Z`, with
   `TopCat.Presheaf.quotientIdealSheaf.sectionsEquiv` reading its sections as families of classes.
 * `TopCat.Presheaf.quotientIdealSheaf.restrictRingHom F J Z U`: restriction of sections of `F`
-  over `U` to sections over `U ∩ Z`.
+  over `U` to sections over `U ∩ Z`. At `⊤`, the kernel contains `J` by
+  `TopCat.Presheaf.quotientIdealSheaf.le_ker_restrictRingHom`.
 
 ## Main results
 
@@ -302,6 +303,15 @@ theorem restrictRingHom_map {U V : Opens X} (h : V ≤ U) (g : F.obj (op U)) :
     rw [sectionsEquiv_restrictRingHom_apply, sectionsEquiv_map_apply,
       sectionsEquiv_restrictRingHom_apply]
     exact congrArg (Ideal.Quotient.mk _) (F.germ_res_apply (homOfLE h) w.val.val w.property g)
+
+/-- The defining ideal of global sections vanishes upon restriction to the quotient sheaf. -/
+theorem le_ker_restrictRingHom : J ≤ RingHom.ker (restrictRingHom F J Z ⊤) := by
+  intro f hf
+  rw [RingHom.mem_ker]
+  apply ext
+  intro z
+  rw [sectionsEquiv_restrictRingHom_apply, map_zero]
+  exact Ideal.Quotient.eq_zero_iff_mem.mpr (germ_mem_stalkIdeal hf z.val.val)
 
 /-! ### Stalks -/
 
