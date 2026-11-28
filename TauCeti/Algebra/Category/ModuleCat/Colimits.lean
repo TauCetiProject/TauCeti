@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Products
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.CategoryTheory.Functor.OfSequence
 public import Mathlib.RingTheory.Finiteness.Basic
+public import TauCeti.Algebra.DirectSum.Telescope
 public import TauCeti.LinearAlgebra.FreeModule.Filtration
 
 /-!
@@ -189,46 +190,49 @@ variable {R : Type u} [Ring R] (F : ℕ ⥤ ModuleCat.{v} R)
 of `⨁ₙ Fₙ` sending `x` in the summand `Fₙ` to `x - φₙ(x)`, where `φₙ(x)` lies in the summand
 `Fₙ₊₁`. -/
 noncomputable def telescopeDiff : (⨁ n, F.obj n) →ₗ[R] ⨁ n, F.obj n :=
-  toModule R ℕ _ fun n ↦ lof R ℕ (fun n ↦ F.obj n) n -
-    lof R ℕ (fun n ↦ F.obj n) (n + 1) ∘ₗ (F.map (homOfLE (n.le_add_right 1))).hom
+  let f := TauCeti.telescopeDiff fun n ↦ (F.map (homOfLE (n.le_add_right 1))).hom.toAddMonoidHom
+  { toAddHom := f.toAddHom
+    map_smul' r a := by
+      refine DirectSum.induction_on a (by simp) (fun n x ↦ ?_) fun u v hu hv ↦ ?_
+      · dsimp [f]
+        rw [← of_smul, TauCeti.telescopeDiff_of, TauCeti.telescopeDiff_of,
+          LinearMap.toAddMonoidHom_coe, LinearMap.map_smul, of_smul, of_smul, smul_sub]
+      · dsimp [f] at hu hv ⊢
+        rw [smul_add, map_add, map_add, smul_add, hu, hv] }
+
+/-- The underlying additive homomorphism of `ModuleCat.telescopeDiff F` is the direct-sum
+telescope difference map of its transition morphisms. -/
+theorem toAddMonoidHom_telescopeDiff :
+    (telescopeDiff F).toAddMonoidHom =
+      TauCeti.telescopeDiff fun n ↦ (F.map (homOfLE (n.le_add_right 1))).hom.toAddMonoidHom :=
+  (rfl)
 
 @[simp]
 theorem telescopeDiff_lof (n : ℕ) (x : F.obj n) :
     telescopeDiff F (lof R ℕ (fun n ↦ F.obj n) n x) =
       lof R ℕ (fun n ↦ F.obj n) n x -
         lof R ℕ (fun n ↦ F.obj n) (n + 1) (F.map (homOfLE (n.le_add_right 1)) x) := by
-  simp [telescopeDiff]
+  rw [← LinearMap.toAddMonoidHom_coe, toAddMonoidHom_telescopeDiff, lof_eq_of,
+    TauCeti.telescopeDiff_of]
+  rfl
 
 @[simp]
 theorem telescopeDiff_apply_zero (a : ⨁ n, F.obj n) : telescopeDiff F a 0 = a 0 := by
-  induction a using DirectSum.induction_on with
-  | zero => simp
-  | of n x =>
-    rw [← lof_eq_of R, telescopeDiff_lof, DFinsupp.sub_apply]
-    rcases n with _ | n <;> simp [lof_eq_of, of_eq_of_ne]
-  | add a b ha hb => simp [ha, hb]
+  rw [← LinearMap.toAddMonoidHom_coe, toAddMonoidHom_telescopeDiff]
+  exact TauCeti.telescopeDiff_apply_zero _ a
 
 @[simp]
 theorem telescopeDiff_apply_succ (a : ⨁ n, F.obj n) (n : ℕ) :
     telescopeDiff F a (n + 1) = a (n + 1) - F.map (homOfLE (n.le_add_right 1)) (a n) := by
-  induction a using DirectSum.induction_on with
-  | zero => simp
-  | of m x =>
-    rw [← lof_eq_of R, telescopeDiff_lof, DFinsupp.sub_apply]
-    rcases eq_or_ne m n with rfl | hmn
-    · simp [lof_eq_of, of_eq_of_ne]
-    · rcases eq_or_ne m (n + 1) with rfl | -
-      · simp [lof_eq_of, of_eq_of_ne]
-      · simp [lof_eq_of, of_eq_of_ne, Ne.symm hmn]
-  | add a b ha hb => simp [ha, hb, sub_add_sub_comm]
+  rw [← LinearMap.toAddMonoidHom_coe, toAddMonoidHom_telescopeDiff]
+  exact TauCeti.telescopeDiff_apply_succ _ a n
 
 /-- The difference map of the telescope is injective: the component of `a` in degree `n` is
 recovered from the components of `telescopeDiff F a` in degrees `≤ n`. -/
-theorem telescopeDiff_injective : Function.Injective (telescopeDiff F) := by
-  refine (injective_iff_map_eq_zero _).2 fun a ha ↦ DFinsupp.ext fun n ↦ ?_
-  induction n with
-  | zero => simpa using congr($ha 0)
-  | succ n ih => simpa [ih] using congr($ha (n + 1))
+theorem telescopeDiff_injective : Function.Injective (telescopeDiff F) := fun _ _ h ↦
+  TauCeti.telescopeDiff_injective
+    (fun n ↦ (F.map (homOfLE (n.le_add_right 1))).hom.toAddMonoidHom) <| by
+    rwa [← LinearMap.toAddMonoidHom_coe, toAddMonoidHom_telescopeDiff] at h
 
 /-- The telescope sequence `⨁ₙ Fₙ → ⨁ₙ Fₙ → c.pt` of a cocone `c` over a sequence of modules
 `F`: the first map is `telescopeDiff F`, the second is induced by the legs of `c`. It is short
@@ -319,20 +323,11 @@ theorem injective_ι_app_of_isColimit {c : Cocone F} (hc : IsColimit c)
         change toModule R ℕ c.pt (fun n ↦ (c.ι.app n).hom) (lof R ℕ (fun n ↦ F.obj n) n x) = 0
         rw [toModule_lof]
         exact hx)
-  have hlt (m : ℕ) (hm : m < n) : a m = 0 := by
-    induction m with
-    | zero => simpa [lof_eq_of, of_eq_of_ne _ _ _ hm.ne] using congr($ha' 0)
-    | succ m ih =>
-      simpa [lof_eq_of, of_eq_of_ne _ _ _ hm.ne, ih (by lia)] using congr($ha' (m + 1))
-  have hn : a n = x := by
-    rcases n with _ | n
-    · simpa [lof_eq_of] using congr($ha' 0)
-    · simpa [lof_eq_of, hlt n (by lia)] using congr($ha' (n + 1))
+  rw [← LinearMap.toAddMonoidHom_coe, toAddMonoidHom_telescopeDiff, lof_eq_of] at ha'
+  have hn : a n = x := TauCeti.apply_eq_of_telescopeDiff_eq_of ha'
   have hsucc (m : ℕ) (hm : n ≤ m) :
-      a (m + 1) = F.map (homOfLE (m.le_add_right 1)) (a m) := by
-    have := congr($ha' (m + 1))
-    simp only [telescopeDiff_apply_succ, lof_eq_of, of_eq_of_ne _ _ _ (by lia : m + 1 ≠ n)] at this
-    exact sub_eq_zero.1 this
+      a (m + 1) = F.map (homOfLE (m.le_add_right 1)) (a m) :=
+    TauCeti.apply_succ_eq_of_telescopeDiff_eq_of_ne ha' (by lia)
   -- Far out the component of `a` vanishes, and by injectivity so do all the earlier ones.
   have hzero (m : ℕ) (hm : n ≤ m) (h : a m = 0) : x = 0 := by
     induction m, hm using Nat.le_induction with
