@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
-public import TauCeti.Algebra.Module.Primitive
+public import TauCeti.Algebra.Module.Primitive.Basic
 
 /-!
 # Primitive images of root vectors and Weyl transport

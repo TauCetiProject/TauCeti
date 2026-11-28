@@ -15,6 +15,7 @@ public import Mathlib.RingTheory.Polynomial.Hermite.Basic
 public import TauCeti.Probability.Distributions.Gaussian.Basic
 public import TauCeti.Probability.Distributions.Gaussian.PolynomialMemLp
 public import TauCeti.RingTheory.Polynomial.Hermite.Derivative
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 
 /-!
 # The Gaussian orthogonality relation for the probabilists' Hermite polynomials
@@ -91,13 +92,8 @@ theorem integral_aeval_mul_hermite_succ (p : ℤ[X]) (n : ℕ) :
       (aeval x (derivative p) * aeval x (hermite n) * Real.exp (-(x ^ 2 / 2))
         - aeval x p * aeval x (hermite (n + 1)) * Real.exp (-(x ^ 2 / 2))) x := by
     intro x
-    have hsq : HasDerivAt (fun y : ℝ => y ^ 2) (2 * x) x := by simpa using hasDerivAt_pow 2 x
-    have h1 : HasDerivAt (fun y : ℝ => -(y ^ 2 / 2)) (-x) x := by
-      have h2 : HasDerivAt (fun y : ℝ => -(y ^ 2 / 2)) (-(2 * x / 2)) x := (hsq.div_const 2).neg
-      rwa [show -(2 * x / 2) = -x from by ring] at h2
-    have hw' : HasDerivAt (fun y : ℝ => Real.exp (-(y ^ 2 / 2))) (Real.exp (-(x ^ 2 / 2)) * -x) x :=
-      h1.exp
-    have hbase := ((p.hasDerivAt_aeval x).mul ((hermite n).hasDerivAt_aeval x)).mul hw'
+    have hbase := ((p.hasDerivAt_aeval x).mul ((hermite n).hasDerivAt_aeval x)).mul
+      (hasDerivAt_exp_neg_sq_div_two x)
     have hval : aeval x (derivative p) * aeval x (hermite n) * Real.exp (-(x ^ 2 / 2))
         - aeval x p * aeval x (hermite (n + 1)) * Real.exp (-(x ^ 2 / 2))
         = (aeval x (derivative p) * aeval x (hermite n)

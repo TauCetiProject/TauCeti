@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Microlocality
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Distribution.WaveFrontSet.SingularSupport
 import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.Pseudodifferential.Composition.Parametrix
@@ -24,7 +25,11 @@ open cone `Γ` containing `ξ₀` and a radius `R`, the value `a(x, ξ)` is inve
 `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)` whenever `x ∈ U`, `ξ ∈ Γ` and `‖ξ‖ ≥ R`, with `C` uniform for `x` in
 compact sets (`TauCeti.Symbol.IsEllipticOn`). The other points `(x₀, ξ₀)` with `ξ₀ ≠ 0` form the
 **characteristic set** `Char(a)` (`TauCeti.Symbol.characteristicSet`). It is conic, and empty for a
-symbol elliptic above some radius.
+symbol elliptic above some radius. Terms of lower order do not change it
+(`TauCeti.Symbol.characteristicSet_add_inclusion`): at large frequencies they are small relative
+to the inverse bound, so a Neumann series keeps the perturbed symbol invertible. In particular
+symbols differing by a smoothing symbol have the same characteristic set
+(`TauCeti.Symbol.characteristicSet_eq_of_isSmoothing_sub`).
 
 For a classical symbol `a` the characteristic set is read off the principal symbol: it consists of
 the points `(x, ξ)`, `ξ ≠ 0`, at which `a_m(x, ξ)` is not invertible
@@ -99,6 +104,9 @@ identity on every component, and the argument above runs on the component `ℓ v
 ## Main results
 
 * `TauCeti.Symbol.characteristicSet`: the characteristic set of a symbol.
+* `TauCeti.Symbol.characteristicSet_add_inclusion`,
+  `TauCeti.Symbol.characteristicSet_eq_of_isSmoothing_sub`: adding a symbol of lower order, or a
+  smoothing symbol, does not change the characteristic set.
 * `TauCeti.Symbol.subset_union_characteristicSet`,
   `TauCeti.Symbol.sdiff_characteristicSet_eq_of_subset`: from inclusions `S ∩ (U × Γ) ⊆ S'` on the
   conic regions where `a` is elliptic to `S ⊆ S' ∪ Char(a)`, and to `S' \ Char(a) = S \ Char(a)`
@@ -201,6 +209,84 @@ theorem notMem_characteristicSet_of_eq_id {c : Symbol n V V 0} {x₀ ξ₀ : Coo
     rw [hcΓ p.1 hp.1 p.2 hp.2.1 hp.2.2, ContinuousLinearMap.inverse_id]
     exact ⟨⟨ContinuousLinearEquiv.refl ℂ V, rfl⟩, by
       simpa using ContinuousLinearMap.norm_id_le (𝕜 := ℂ) (E := V)⟩⟩⟩
+
+/-- A symbol elliptic in a conic neighbourhood of `(x₀, ξ₀)` stays elliptic there, at larger
+frequencies, after adding a symbol of lower order: over a compact ball of positions the
+perturbation is `O(⟨ξ⟩^(m' - m))` relative to the inverse bound, so it is small at large
+frequencies and the Neumann series applies. -/
+private theorem notMem_characteristicSet_add_inclusion [CompleteSpace V] {m' : ℝ} (h : m' < m)
+    {a : Symbol n V W m} (d : Symbol n V W m') {x₀ ξ₀ : CoordinateSpace n}
+    (ha : (x₀, ξ₀) ∉ a.characteristicSet) :
+    (x₀, ξ₀) ∉ (a + inclusion h.le d).characteristicSet := by
+  rintro ⟨hξ₀, hn⟩
+  obtain ⟨U, hU, Γ, hΓ, hξ₀Γ, hcone, R, hell⟩ := not_not.1 (not_and.1 ha hξ₀)
+  obtain ⟨δ, hδ, hδU⟩ := Metric.nhds_basis_closedBall.mem_iff.1 hU
+  have hK := isCompact_closedBall x₀ δ
+  obtain ⟨C₀, hC₀⟩ := isEllipticOn_iff.1 hell _ hK
+  obtain ⟨C₁, hC₁, hd⟩ := d.exists_bound _ hK [] []
+  set C := max C₀ 0 * C₁
+  -- A radius `t ≥ 1` with `C t^(m' - m) ≤ 1 / 2`.
+  obtain ⟨t, ht, ht1⟩ := (((tendsto_rpow_neg_atTop (y := m - m') (by linarith)).eventually
+    (gt_mem_nhds (inv_pos.2 (by positivity : (0 : ℝ) < 2 * C + 1)))).and
+      (eventually_ge_atTop 1)).exists
+  rw [neg_sub] at ht
+  have ht0 : 0 < t := one_pos.trans_le ht1
+  refine hn ⟨closedBall x₀ δ, closedBall_mem_nhds x₀ hδ, Γ, hΓ, hξ₀Γ, hcone, max R t,
+    isEllipticOn_iff.2 fun _ _ ↦ ⟨2 * max C₀ 0, fun p hp _ ↦ ?_⟩⟩
+  obtain ⟨hA, hAinv⟩ := hC₀ p ⟨hδU hp.1, hp.2.1, (le_max_left _ _).trans hp.2.2⟩ hp.1
+  set w := (1 + ‖p.2‖ ^ 2) ^ (-m / 2)
+  have hw : 0 < w := rpow_weight_pos p.2 (-m)
+  set A := a.coefficient p
+  set M := max C₀ 0 * w
+  have hAM : ‖A.inverse‖ ≤ M := hAinv.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hw.le)
+  -- `M ‖d(p)‖ ≤ C ⟨ξ⟩^(m' - m) ≤ C t^(m' - m) ≤ 1 / 2`.
+  have hdp : ‖d.coefficient p‖ ≤ C₁ * (1 + ‖p.2‖ ^ 2) ^ (m' / 2) := by
+    simpa using hd p.1 hp.1 p.2
+  have hwt : (1 + ‖p.2‖ ^ 2) ^ ((m' - m) / 2) ≤ t ^ (m' - m) := by
+    simpa using rpow_weight_le_rpow_mul_rpow_weight (s := m' - m) (s' := 0) ht0
+      ((le_max_right _ _).trans hp.2.2) (by linarith)
+  have hsmall : M * ‖(a + inclusion h.le d).coefficient p - A‖ ≤ 1 / 2 := by
+    rw [coefficient_add, coefficient_inclusion, Pi.add_apply, add_sub_cancel_left]
+    calc M * ‖d.coefficient p‖ ≤ M * (C₁ * (1 + ‖p.2‖ ^ 2) ^ (m' / 2)) := by
+          gcongr
+      _ = C * (1 + ‖p.2‖ ^ 2) ^ ((m' - m) / 2) := by
+          rw [show (m' - m) / 2 = -m / 2 + m' / 2 by ring, Real.rpow_add (by positivity)]
+          ring
+      _ ≤ C * (2 * C + 1)⁻¹ := by gcongr; exact hwt.trans ht.le
+      _ ≤ 1 / 2 := by
+          rw [← div_eq_mul_inv, div_le_iff₀ (by positivity)]
+          linarith
+  have hlt := hsmall.trans_lt (by norm_num : (1 / 2 : ℝ) < 1)
+  refine ⟨ContinuousLinearMap.IsInvertible.of_mul_norm_sub_lt hA hAM hlt,
+    (ContinuousLinearMap.IsInvertible.norm_inverse_le_of_mul_norm_sub_lt hA hAM hlt).trans ?_⟩
+  rw [div_le_iff₀ (sub_pos.2 hlt)]
+  nlinarith [mul_nonneg (le_max_right C₀ 0) hw.le]
+
+/-- **Lower-order terms do not change the characteristic set.** Adding a symbol of order
+`m' < m` to a symbol of order `m` leaves its characteristic set unchanged. -/
+theorem characteristicSet_add_inclusion [CompleteSpace V] {m' : ℝ} (h : m' < m)
+    (a : Symbol n V W m) (d : Symbol n V W m') :
+    (a + inclusion h.le d).characteristicSet = a.characteristicSet := by
+  refine Subset.antisymm (by
+    rintro ⟨x, ξ⟩ hp
+    by_contra ha
+    exact notMem_characteristicSet_add_inclusion h d ha hp) ?_
+  rintro ⟨x, ξ⟩ hp
+  by_contra ha
+  refine notMem_characteristicSet_add_inclusion h (-d) ha ?_
+  convert hp using 2
+  ext
+  simp
+
+/-- **Smoothing perturbations do not change the characteristic set.** Two symbols differing by a
+smoothing symbol have the same characteristic set. -/
+theorem characteristicSet_eq_of_isSmoothing_sub [CompleteSpace V] {a b : Symbol n V W m}
+    (h : (a - b).IsSmoothing) : a.characteristicSet = b.characteristicSet := by
+  obtain ⟨d, hd⟩ := isSmoothing_iff.1 h (m - 1)
+  have hab : a = b + inclusion (sub_one_lt m).le d := by
+    ext
+    simp [hd]
+  rw [hab, characteristicSet_add_inclusion (sub_one_lt m)]
 
 /-- **Elliptic regularity from its conic form.** Let `S` be a set of points `(x, ξ)` with `ξ ≠ 0`,
 such as a wave front set, with `S ∩ (U × Γ) ⊆ S'` whenever `a` is elliptic on the points `(x, ξ)`

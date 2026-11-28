@@ -21,8 +21,9 @@ increase spectral radii: it can only shrink quasispectra.
 Finally, in a normed algebra with summable geometric series, such as a complete one, a closed set
 avoiding the spectrum of an element also avoids the spectra of all nearby elements
 (`spectrum.eventually_disjoint_of_isClosed`), a consequence of the upper hemicontinuity of the
-spectrum. We also record injectivity and zero-character characterizations for
-`NonUnitalAlgHom.toStrongDual`.
+spectrum, and the spectrum of an element `k` lies within `‖k - 1‖` of `1`
+(`spectrum.norm_sub_one_le_of_mem`). We also record injectivity and zero-character
+characterizations for `NonUnitalAlgHom.toStrongDual`.
 -/
 
 public section
@@ -96,3 +97,14 @@ theorem spectrum.eventually_disjoint_of_isClosed {𝕜 A : Type*} [NormedField �
   have hmem : Fᶜ ∈ 𝓝ˢ (spectrum 𝕜 a) := hF.isOpen_compl.mem_nhdsSet.2 h.subset_compl_left
   filter_upwards [(upperHemicontinuous_spectrum 𝕜 A).upperHemicontinuousAt a _ hmem] with b hb
   exact Set.subset_compl_iff_disjoint_left.mp (subset_of_mem_nhdsSet hb)
+
+/-- The spectrum of an element `k` of a normed algebra with summable geometric series (for instance
+a complete one) lies within `‖k - 1‖` of `1`. -/
+theorem spectrum.norm_sub_one_le_of_mem {𝕜 A : Type*} [NormedField 𝕜] [NormedRing A]
+    [NormedAlgebra 𝕜 A] [HasSummableGeomSeries A] {k : A} {t : 𝕜} (ht : t ∈ spectrum 𝕜 k) :
+    ‖t - 1‖ ≤ ‖k - 1‖ := by
+  have h : t - 1 ∈ spectrum 𝕜 (k - algebraMap 𝕜 A 1) := by
+    rw [← spectrum.sub_singleton_eq]
+    exact Set.sub_mem_sub ht rfl
+  rw [map_one] at h
+  exact spectrum.norm_le_norm_of_mem h
