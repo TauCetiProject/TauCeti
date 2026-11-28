@@ -318,6 +318,13 @@ noncomputable def contraction (n : ℕ) :
     rfl
   rel := by ext _ ⟨⟨_, ⟨⟩⟩, _⟩
 
+/-- Vertexwise evaluation of the standard simplex contraction. -/
+@[simp]
+lemma contraction_h_app_apply {n m : ℕ} (σ : Δ[n] _⦋m⦌) (e : Δ[1] _⦋m⦌)
+    (i : Fin (m + 1)) :
+    dsimp% (contraction n).h.app (op ⦋m⦌) (σ, e) i = if e i = 0 then 0 else σ i :=
+  (rfl)
+
 /-- The contraction of `Δ[n]` onto its initial vertex fixes that vertex. -/
 @[reassoc]
 lemma lift_const_zero_contraction_h {Z : SSet.{u}} (n : ℕ) (f : Z ⟶ Δ[1]) :
@@ -356,6 +363,13 @@ noncomputable def contractionLast (n : ℕ) :
     rfl
   rel := by ext _ ⟨⟨_, ⟨⟩⟩, _⟩
 
+/-- Vertexwise evaluation of the standard simplex contraction. -/
+@[simp]
+lemma contractionLast_h_app_apply {n m : ℕ} (σ : Δ[n] _⦋m⦌) (e : Δ[1] _⦋m⦌)
+    (i : Fin (m + 1)) :
+    dsimp% (contractionLast n).h.app (op ⦋m⦌) (σ, e) i = if e i = 0 then σ i else Fin.last n :=
+  (rfl)
+
 /-- The contraction of `Δ[n]` onto its last vertex fixes that vertex. -/
 @[reassoc]
 lemma lift_const_last_contractionLast_h {Z : SSet.{u}} (n : ℕ) (f : Z ⟶ Δ[1]) :
@@ -367,16 +381,75 @@ lemma lift_const_last_contractionLast_h {Z : SSet.{u}} (n : ℕ) (f : Z ⟶ Δ[1
   split_ifs <;> rfl
 
 /-- The `m`-simplex of `Δ[1]` taking `0` times the value `0` is constant at `1`. -/
+@[simp]
 lemma objEquiv_objMk₁_zero (m : ℕ) :
-    objEquiv (objMk₁.{u} (0 : Fin (m + 2))) = SimplexCategory.const ⦋m⦌ ⦋1⦌ 1 := by
+    dsimp% objEquiv (objMk₁.{u} (0 : Fin (m + 2))) = SimplexCategory.const ⦋m⦌ ⦋1⦌ 1 := by
   ext i : 3
   exact (objMk₁_apply_eq_one_iff.{u} (0 : Fin (m + 2)) i).2 (Fin.zero_le _)
 
 /-- The `m`-simplex of `Δ[1]` taking `m + 1` times the value `0` is constant at `0`. -/
+@[simp]
 lemma objEquiv_objMk₁_last (m : ℕ) :
-    objEquiv (objMk₁.{u} (Fin.last (m + 1))) = SimplexCategory.const ⦋m⦌ ⦋1⦌ 0 := by
+    dsimp% objEquiv (objMk₁.{u} (Fin.last (m + 1))) = SimplexCategory.const ⦋m⦌ ⦋1⦌ 0 := by
   ext i : 3
   exact (objMk₁_apply_eq_zero_iff.{u} (Fin.last (m + 1)) i).2 (Fin.castSucc_lt_last i)
+
+open SimplexCategory in
+/-- The join collapse of a cut simplex is unchanged by restriction to its uncollapsed segment. -/
+lemma joinVertexCollapse_comp_joinVertex_map_minRetraction {n : ℕ} (j : Fin (n + 1)) :
+    joinVertexCollapse (stdSimplex.objEquiv (stdSimplex.objMk₁.{u} j.succ)) ≫
+        joinVertex.map (minRetraction j) =
+      joinVertexCollapse (stdSimplex.objEquiv (stdSimplex.objMk₁.{u} j.succ)) := by
+  refine hom_ext_castSucc_last (m := ⦋n⦌) (fun i ↦ ?_) ?_
+  · -- Normalize the join object to the finite ordinal expected by the vertex extensionality
+    -- lemma; rewriting `comp_toOrderHom` alone cannot match these dependent source types.
+    change (joinVertex.map (minRetraction j)).toOrderHom ((joinVertexCollapse _).toOrderHom
+      i.castSucc) =
+      (joinVertexCollapse _).toOrderHom i.castSucc
+    rw [joinVertexCollapse_castSucc]
+    simp only [stdSimplex.objEquiv_toOrderHom_apply (stdSimplex.objMk₁.{u} j.succ) i]
+    by_cases h : stdSimplex.objMk₁.{u} j.succ i = 0
+    · simp only [h, ↓reduceIte]
+      refine (joinVertex_map_castSucc _ i).trans
+        (congrArg Fin.castSucc ((minRetraction_apply j i).trans (min_eq_left ?_)))
+      rwa [stdSimplex.objMk₁_apply_eq_zero_iff, Fin.castSucc_lt_succ_iff] at h
+    · simp only [h, ↓reduceIte]
+      exact joinVertex_map_last _
+  · -- Normalize the join object to the finite ordinal expected by the vertex extensionality
+    -- lemma; rewriting `comp_toOrderHom` alone cannot match these dependent source types.
+    change (joinVertex.map (minRetraction j)).toOrderHom ((joinVertexCollapse _).toOrderHom
+      (Fin.last (n + 1))) =
+      (joinVertexCollapse _).toOrderHom (Fin.last (n + 1))
+    rw [joinVertexCollapse_last]
+    exact joinVertex_map_last _
+
+open SimplexCategory in
+/-- The join collapse of a cut simplex is unchanged by restriction to its uncollapsed segment. -/
+lemma vertexJoinCollapse_comp_vertexJoin_map_maxRetraction {n : ℕ} (j : Fin (n + 1)) :
+    vertexJoinCollapse (stdSimplex.objEquiv (stdSimplex.objMk₁.{u} j.castSucc)) ≫
+        vertexJoin.map (maxRetraction j) =
+      vertexJoinCollapse (stdSimplex.objEquiv (stdSimplex.objMk₁.{u} j.castSucc)) := by
+  refine hom_ext_zero_succ (m := ⦋n⦌) ?_ (fun i ↦ ?_)
+  · -- Normalize the join object to the finite ordinal expected by the vertex extensionality
+    -- lemma; rewriting `comp_toOrderHom` alone cannot match these dependent source types.
+    change (vertexJoin.map (maxRetraction j)).toOrderHom ((vertexJoinCollapse _).toOrderHom 0) =
+      (vertexJoinCollapse _).toOrderHom 0
+    rw [vertexJoinCollapse_zero]
+    exact vertexJoin_map_zero _
+  · -- Normalize the join object to the finite ordinal expected by the vertex extensionality
+    -- lemma; rewriting `comp_toOrderHom` alone cannot match these dependent source types.
+    change (vertexJoin.map (maxRetraction j)).toOrderHom ((vertexJoinCollapse _).toOrderHom
+      i.succ) =
+      (vertexJoinCollapse _).toOrderHom i.succ
+    rw [vertexJoinCollapse_succ]
+    simp only [stdSimplex.objEquiv_toOrderHom_apply (stdSimplex.objMk₁.{u} j.castSucc) i]
+    by_cases h : stdSimplex.objMk₁.{u} j.castSucc i = 1
+    · simp only [h, ↓reduceIte]
+      refine (vertexJoin_map_succ _ i).trans
+        (congrArg Fin.succ ((maxRetraction_apply j i).trans (max_eq_left ?_)))
+      rwa [stdSimplex.objMk₁_apply_eq_one_iff, Fin.castSucc_le_castSucc_iff] at h
+    · simp only [h, ↓reduceIte]
+      exact vertexJoin_map_zero _
 
 /-- The standard simplex functor `SimplexCategory ⥤ SSet` is dense. -/
 instance isDense : stdSimplex.{u}.IsDense := inferInstanceAs uliftYoneda.{u}.IsDense

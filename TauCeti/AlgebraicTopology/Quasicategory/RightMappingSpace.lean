@@ -20,6 +20,8 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Slice
 public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal
 public import TauCeti.AlgebraicTopology.SimplicialSet.ULift
 import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
+public import TauCeti.AlgebraicTopology.SimplicialSet.Join.Contraction
+public import TauCeti.AlgebraicTopology.Quasicategory.Slice
 import TauCeti.AlgebraicTopology.SimplicialSet.Vertex
 
 /-!
@@ -780,6 +782,8 @@ end prod
 
 section sliceFiber
 
+open MonoidalCategory CartesianMonoidalCategory
+
 variable (y)
 
 variable (X) in
@@ -877,31 +881,172 @@ lemma sliceIso_hom_coneπ : (sliceIso y).hom ≫ coneπ X y = slice.π _ := by
   rw [coneπ_app, sliceIso_hom_app_val, slice.π_app, yonedaEquiv_naturality,
     join.joinVertexInl_comp_joinVertexIso_inv_assoc]
 
-private lemma sliceEquiv_coneπ {m : SimplexCategory}
-    (s : (slice (yonedaEquiv.symm y)).obj (op m)) :
-    X.map (joinVertexInl m).op (sliceEquiv y m s).val = (slice.π _).app _ s :=
-  congrArg (fun f ↦ f.app _ s) (sliceIso_hom_coneπ y)
+/-- The contraction maps the simplices with last vertex `y` to simplices with last vertex `y`. -/
+noncomputable def coneContraction :
+    (coneSpace X y : SSet.{u}) ⊗ Δ[1] ⟶ (coneSpace X y : SSet.{u}) :=
+  Subcomplex.lift ((coneSpace X y).ι ▷ Δ[1] ≫ joinVertexContraction X) (by
+    rintro ⟨⟨n⟩⟩ _ ⟨⟨⟨σ, hσ⟩, e⟩, rfl⟩
+    rw [mem_coneSpace_obj_iff]
+    -- Whiskering the inclusion applies it to the first coordinate; expose that pair so the
+    -- contraction evaluation lemma applies without unfolding the contraction.
+    change X.map (joinVertexInr ⦋n⦌).op ((joinVertexContraction X).app _ (σ, e)) = y
+    calc
+      _ = X.map (joinVertexInr ⦋n⦌).op
+          (X.map (joinVertexCollapse (stdSimplex.objEquiv e)).op σ) :=
+        congrArg _ (joinVertexContraction_app_apply (X := X) (n := n) (σ, e))
+      _ = y := by
+        rw [← Functor.map_comp_apply, ← op_comp, joinVertexInr_comp_joinVertexCollapse]
+        exact (mem_coneSpace_obj_iff y σ).1 hσ)
 
-variable (x)
+/-- Evaluation of the pointed cone contraction. -/
+@[simp]
+lemma coneContraction_app_val {n : ℕ}
+    (z : ((coneSpace X y : SSet.{u}) ⊗ Δ[1]).obj (op ⦋n⦌)) :
+    dsimp% ((coneContraction y).app _ z).val =
+      X.map (joinVertexCollapse (stdSimplex.objEquiv z.2)).op z.1.val :=
+  joinVertexContraction_app_apply (X := X) (n := n) (z.1.val, z.2)
 
-/-- The `n`-simplices of the fibre over `x` of `X_{/y} ⟶ X` are those of `Hom^R_X(x, y)`, through
-`Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`. -/
-private noncomputable def sliceFiberEquiv (m : SimplexCategory) :
-    (fiber (slice.π (yonedaEquiv.symm y)) x : SSet.{u}).obj (op m) ≃
-      (X.rightMappingSpace x y : SSet.{u}).obj (op m) where
-  toFun s := ⟨(sliceEquiv y m s.val).val, (mem_rightMappingSpace_obj_iff _).2
-    ⟨(sliceEquiv_coneπ y s.val).trans ((mem_fiber_iff _ _ _).1 s.property),
-      (sliceEquiv y m s.val).property⟩⟩
-  invFun t := ⟨(sliceEquiv y m).symm
-      ⟨t.val, ((mem_rightMappingSpace_obj_iff _).1 t.property).2⟩, by
-    rw [mem_fiber_iff, ← sliceEquiv_coneπ, Equiv.apply_symm_apply]
-    exact ((mem_rightMappingSpace_obj_iff _).1 t.property).1⟩
-  left_inv s := Subtype.ext ((sliceEquiv y m).symm_apply_apply s.val)
-  right_inv t := by
-    apply Subtype.ext
-    exact congrArg (fun s : (coneSpace X y : SSet.{u}).obj (op m) ↦ s.val)
-      ((sliceEquiv y m).apply_symm_apply
-        ⟨t.val, ((mem_rightMappingSpace_obj_iff _).1 t.property).2⟩)
+/-- The pointed cone contraction is the restriction of the join contraction. -/
+@[reassoc]
+lemma coneContraction_ι :
+    coneContraction y ≫ (coneSpace X y).ι = (coneSpace X y).ι ▷ Δ[1] ≫ joinVertexContraction X :=
+  (rfl)
+
+/-- The initial endpoint of the pointed cone contraction. -/
+@[reassoc]
+lemma ι₀_coneContraction : ι₀ ≫ coneContraction y = 𝟙 _ := by
+  rw [← cancel_mono (coneSpace X y).ι, Category.assoc, coneContraction_ι, ι₀_comp_assoc,
+    ι₀_joinVertexContraction, Category.comp_id, Category.id_comp]
+
+/-- The last vertex `y`, as the vertex of `joinVertex.op ⋙ X` given by the identity edge of `y`. -/
+noncomputable def coneVertex : (coneSpace X y : SSet.{u}) _⦋0⦌ :=
+  ⟨X.map (SimplexCategory.const (joinVertex.obj ⦋0⦌) ⦋0⦌ 0).op y, by
+    rw [mem_coneSpace_obj_iff, map_map_const_zero, SimplexCategory.const_eq_id,
+      op_id, CategoryTheory.Functor.map_id, types_id_apply]⟩
+
+/-- The distinguished cone vertex is the degenerate edge. -/
+@[simp]
+lemma coneVertex_val :
+    (coneVertex y).val = X.map (SimplexCategory.const (joinVertex.obj ⦋0⦌) ⦋0⦌ 0).op y :=
+  (rfl)
+
+/-- A constant family at the distinguished cone vertex consists of degenerate simplices. -/
+lemma const_coneVertex_app_val {Z : SSet.{u}} {n : ℕ} (z : Z _⦋n⦌) :
+    dsimp% ((SSet.const (coneVertex y)).app _ z).val =
+      X.map (SimplexCategory.const (joinVertex.obj ⦋n⦌) ⦋0⦌ 0).op y := by
+  simp only [const_app, Subfunctor.toFunctor_map, Functor.comp_map, Functor.op_map,
+    TypeCat.hom_ofHom, TypeCat.Fun.coe_mk, coneVertex_val]
+  exact map_map_const_zero X _ y
+
+/-- The final endpoint of the pointed cone contraction. -/
+@[reassoc]
+lemma ι₁_coneContraction : ι₁ ≫ coneContraction y = SSet.const (coneVertex y) := by
+  apply NatTrans.ext
+  funext ⟨⟨n⟩⟩
+  apply ConcreteCategory.hom_ext
+  intro s
+  apply Subtype.ext
+  -- Record the cylinder endpoint as a product before using the normalized evaluation API.
+  let z : (coneSpace X y : SSet.{u}) _⦋n⦌ × Δ[1] _⦋n⦌ := ι₁.app _ s
+  have hz : z.1 = s := ι₁_app_fst s
+  have he : stdSimplex.objEquiv z.2 = SimplexCategory.const ⦋n⦌ ⦋1⦌ 1 := by
+    ext i : 3
+    exact ι₁_app_snd_apply s i
+  refine (coneContraction_app_val y (n := n) z).trans ?_
+  rw [he, hz, const_coneVertex_app_val, joinVertexCollapse_const_one,
+    op_comp, Functor.map_comp_apply]
+  exact congrArg _ ((mem_coneSpace_obj_iff y s.val).1 s.property)
+
+/-- The cone projection inherits the right fibration structure of the slice. -/
+instance rightFibration_coneπ [X.Quasicategory] : RightFibration (coneπ X y) := by
+  rw [← Iso.inv_hom_id_assoc (sliceIso y) (coneπ X y), sliceIso_hom_coneπ]
+  infer_instance
+
+/-- Contracting the constant family at the identity of `y` gives the constant family. -/
+@[reassoc]
+lemma lift_const_coneVertex_coneContraction {Z : SSet.{u}} (f : Z ⟶ Δ[1]) :
+    lift (SSet.const (coneVertex y)) f ≫ coneContraction y = SSet.const (coneVertex y) := by
+  ext ⟨⟨n⟩⟩ z : 4
+  apply Subtype.ext
+  -- Evaluate the pairing before applying the component formula for the contraction.
+  change ((coneContraction y).app _ ((SSet.const (coneVertex y)).app _ z, f.app _ z)).val =
+    ((SSet.const (coneVertex y)).app _ z).val
+  refine (coneContraction_app_val y (n := n)
+    ((SSet.const (coneVertex y)).app _ z, f.app _ z)).trans ?_
+  rw [const_coneVertex_app_val, map_map_const_zero]
+
+variable {y}
+
+/-- The distinguished cone point projects to its defining vertex. -/
+@[reassoc]
+lemma const_coneVertex_coneπ {Z : SSet.{u}} : SSet.const (coneVertex y) ≫ coneπ X y =
+    (SSet.const y : Z ⟶ X) := by
+  rw [const_comp, coneπ_app, coneVertex_val, map_map_const_zero,
+    SimplexCategory.const_eq_id, op_id, CategoryTheory.Functor.map_id, types_id_apply]
+
+variable (x y) in
+private lemma rightMappingSpace_le_coneSpace : X.rightMappingSpace x y ≤ coneSpace X y :=
+  fun _ σ hσ ↦ (mem_coneSpace_obj_iff y σ).2 ((mem_rightMappingSpace_obj_iff _).1 hσ).2
+
+variable (x y) in
+/-- The inclusion of `Hom^R_X(x, y)` into `coneSpace X y`. -/
+noncomputable def toConeSpace :
+    (X.rightMappingSpace x y : SSet.{u}) ⟶ (coneSpace X y : SSet.{u}) :=
+  Subcomplex.homOfLE (rightMappingSpace_le_coneSpace x y)
+
+/-- Inclusion into the cone model preserves the underlying simplex. -/
+@[simp]
+lemma toConeSpace_app_val {m : SimplexCategoryᵒᵖ}
+    (s : (X.rightMappingSpace x y : SSet.{u}).obj m) :
+    dsimp% ((toConeSpace x y).app m s).val = s.val :=
+  (rfl)
+
+/-- The inclusion of a mapping space into its cone model is a monomorphism. -/
+instance mono_toConeSpace : Mono (toConeSpace x y) :=
+  inferInstanceAs (Mono (Subcomplex.homOfLE (rightMappingSpace_le_coneSpace x y)))
+
+/-- The mapping space inclusion lies over its fixed endpoint. -/
+@[reassoc]
+lemma toConeSpace_coneπ : toConeSpace x y ≫ coneπ X y = SSet.const x := by
+  ext ⟨⟨n⟩⟩ s
+  dsimp only [TypeCat.Fun.toFun_apply]
+  rw [NatTrans.comp_app_apply, coneπ_app]
+  exact ((mem_rightMappingSpace_obj_iff _).1 s.property).1
+
+variable (x y)
+
+/-- The fibre of the cone projection is the right mapping space. -/
+noncomputable def coneFiberIso :
+    (fiber (coneπ X y) x : SSet.{u}) ≅ (X.rightMappingSpace x y : SSet.{u}) where
+  hom := Subcomplex.lift ((fiber (coneπ X y) x).ι ≫ (coneSpace X y).ι) (by
+    rintro ⟨⟨n⟩⟩ _ ⟨s, rfl⟩
+    have hs := (mem_fiber_iff _ _ _).1 s.property
+    rw [coneπ_app] at hs
+    exact (mem_rightMappingSpace_obj_iff _).2
+      ⟨hs, s.val.property⟩)
+  inv := fiber.lift (toConeSpace x y) (coneπ X y) x toConeSpace_coneπ
+  -- Both maps only package the same underlying simplex in the fibre and mapping subtypes.
+  hom_inv_id := by
+    rw [← cancel_mono (fiber (coneπ X y) x).ι, Category.assoc, fiber.lift_ι,
+      Category.id_comp, ← cancel_mono (coneSpace X y).ι, Category.assoc,
+      toConeSpace, Subcomplex.homOfLE_ι, Subcomplex.lift_ι]
+  inv_hom_id := by
+    rw [← cancel_mono (X.rightMappingSpace x y).ι, Category.assoc, Subcomplex.lift_ι,
+      ← Category.assoc, fiber.lift_ι, toConeSpace, Subcomplex.homOfLE_ι, Category.id_comp]
+
+/-- The cone fibre isomorphism commutes with the inclusions into the cone model. -/
+@[reassoc (attr := simp)]
+lemma coneFiberIso_hom_toConeSpace :
+    (coneFiberIso x y).hom ≫ toConeSpace x y = (fiber (coneπ X y) x).ι := by
+  -- The two maps forget the same subtype membership proofs.
+  ext m s
+  rfl
+
+/-- The inverse cone fibre isomorphism commutes with the inclusions. -/
+@[reassoc (attr := simp)]
+lemma coneFiberIso_inv_ι :
+    (coneFiberIso x y).inv ≫ (fiber (coneπ X y) x).ι = toConeSpace x y :=
+  fiber.lift_ι _ _ _ _
 
 /-- **The right mapping space `Hom^R_X(x, y)` is the fibre over `x` of the projection
 `X_{/y} ⟶ X`** of the slice over `y`. Through `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`, an `n`-simplex
@@ -909,11 +1054,19 @@ private noncomputable def sliceFiberEquiv (m : SimplexCategory) :
 over `x` exactly when its face opposite to the last vertex is constant at `x`. -/
 noncomputable def sliceFiberIso :
     (fiber (slice.π (yonedaEquiv.symm y)) x : SSet.{u}) ≅ (X.rightMappingSpace x y : SSet.{u}) :=
-  NatIso.ofComponents (fun m ↦ (sliceFiberEquiv x y m.unop).toIso) (fun {m m'} f ↦ by
-    ext s : 3
-    apply Subtype.ext
-    exact congrArg (fun t : (coneSpace X y : SSet.{u}).obj m' ↦ t.val)
-      ((sliceIso y).hom.naturality_apply f s.val))
+  let e := sliceIso y
+  let hp := sliceIso_hom_coneπ y
+  let hi : e.inv ≫ slice.π (yonedaEquiv.symm y) = coneπ X y := by
+    rw [← hp, e.inv_hom_id_assoc]
+  { hom := fiber.map e.hom hp x ≫ (coneFiberIso x y).hom
+    inv := (coneFiberIso x y).inv ≫ fiber.map e.inv hi x
+    hom_inv_id := by
+      simp only [Category.assoc, Iso.hom_inv_id_assoc]
+      simp only [← fiber.map_comp, e.hom_inv_id, fiber.map_id]
+    inv_hom_id := by
+      rw [Category.assoc, ← Category.assoc (fiber.map e.inv hi x)]
+      simp only [← fiber.map_comp, e.inv_hom_id, fiber.map_id, Category.id_comp,
+        Iso.inv_hom_id] }
 
 /-- The simplex of `Hom^R_X(x, y)` attached to a simplex `Δ[n] ⋆ Δ[0] ⟶ X` of the fibre of
 `X_{/y} ⟶ X` is its composite with `Δ[n + 1] ≅ Δ[n] ⋆ Δ[0]`. -/
@@ -922,7 +1075,11 @@ theorem sliceFiberIso_hom_app_coe {m : SimplexCategory}
     ((sliceFiberIso x y).hom.app (op m) s).val =
       (yonedaEquiv ((join.joinVertexIso m).inv ≫ (slice.objEquiv s.val).val) :
         X.obj (op (joinVertex.obj m))) :=
-  (rfl)
+by
+  have h : (sliceFiberIso x y).hom ≫ toConeSpace x y =
+      (fiber (slice.π (yonedaEquiv.symm y)) x).ι ≫ (sliceIso y).hom := by
+    simp only [sliceFiberIso, Category.assoc, coneFiberIso_hom_toConeSpace, fiber.map_ι]
+  exact (congrArg (fun f ↦ (f.app _ s).val) h).trans (sliceIso_hom_app_val y s.val)
 
 /-- The simplex `Δ[n] ⋆ Δ[0] ⟶ X` of the fibre of `X_{/y} ⟶ X` attached to a simplex of
 `Hom^R_X(x, y)` is its composite with `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`. -/
@@ -930,7 +1087,12 @@ theorem sliceFiberIso_inv_app_coe {m : SimplexCategory}
     (t : (X.rightMappingSpace x y : SSet.{u}).obj (op m)) :
     (slice.objEquiv ((sliceFiberIso x y).inv.app (op m) t).val).val =
       (join.joinVertexIso m).hom ≫ yonedaEquiv.symm t.val :=
-  congrArg Subtype.val (slice.objEquiv.apply_symm_apply _)
+by
+  have h : (sliceFiberIso x y).inv ≫ (fiber (slice.π (yonedaEquiv.symm y)) x).ι =
+      toConeSpace x y ≫ (sliceIso y).inv := by
+    simp only [sliceFiberIso, Category.assoc, fiber.map_ι, coneFiberIso_inv_ι_assoc]
+  exact (congrArg (fun f ↦ (slice.objEquiv (f.app _ t)).val) h).trans
+    (sliceIso_inv_app_val y ((toConeSpace x y).app _ t))
 
 /-- Under `SSet.rightMappingSpace.sliceFiberIso`, the map `Hom^R_X(x, y) ⟶ Hom^R_Y(f x, f y)`
 induced by `f : X ⟶ Y` is the pushforward of cones `X_{/y} ⟶ Y_{/f y}` along `f`. -/
