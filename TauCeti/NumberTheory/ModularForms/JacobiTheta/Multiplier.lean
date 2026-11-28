@@ -5,46 +5,43 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
-public import Mathlib.Analysis.RCLike.Sqrt
-public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
 public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
-public import TauCeti.NumberTheory.ModularForms.DedekindEta.Quotient
+public import TauCeti.NumberTheory.ModularForms.JacobiTheta.EtaQuotient
 import TauCeti.Algebra.Ring.Int.Parity
 import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.NumberTheory.LegendreSymbol.ZModChar
 import TauCeti.NumberTheory.ModularForms.DedekindEta.Quotient.Kronecker
+import TauCeti.NumberTheory.ModularForms.JacobiTheta.Manifold
 import TauCeti.NumberTheory.ModularForms.JacobiTheta.OneVariable
 import TauCeti.NumberTheory.ModularForms.JacobiTheta.Product
 
 /-!
 # Shimura's theta multiplier and automorphy factor on `Γ₀(4)`
 
-Using the eta-quotient identity `TauCeti.jacobiTheta_two_mul_eq_eta_pow_div` in
-`TauCeti.NumberTheory.ModularForms.JacobiTheta.Product` (derived from
-`TauCeti.ModularForm.eta_two_mul`), this file identifies `θ(2 τ)` with the level-`4` eta quotient
-`etaQuotient 4 thetaExpVec τ` (`TauCeti.jacobiTheta_two_mul_eq_etaQuotient`) and derives Shimura's
-weight-`1/2` automorphy factor `j(γ, z) = θ(2 · γ z) / θ(2 z)` for `γ ∈ Γ₀(4)` via
+Starting from the level-`4` eta-quotient identity `TauCeti.jacobiTheta_two_mul_eq_etaQuotient` in
+`TauCeti.NumberTheory.ModularForms.JacobiTheta.EtaQuotient`, this file evaluates the scalar
+multiplier `etaQuotientMultiplier 4 thetaExpVec` on `Γ₀(4)` via
 `TauCeti.ModularForm.etaQuotient_smul` and
-`TauCeti.ModularForm.etaQuotientMultiplier_eq_prod_kroneckerSym_mul_e24_of_odd`.
+`TauCeti.ModularForm.etaQuotientMultiplier_eq_prod_kroneckerSym_mul_e24_of_odd_d`, and derives
+Shimura's weight-`1/2` automorphy factor `j(γ, z) = θ(2 · γ z) / θ(2 z)`.
 
 ## Main definitions
 
 * `TauCeti.thetaMultiplierPhase`: Shimura's fourth-root-of-unity phase `ε_d` for odd `d`, equal to
   `1` for `d ≡ 1 (mod 4)` and `I` for `d ≡ 3 (mod 4)`, extended by `0` for even `d`.
-* `TauCeti.thetaExpVec`: the level-`4` eta-quotient exponent vector (`1 ↦ -2`, `2 ↦ 5`, `4 ↦ -2`)
-  representing `τ ↦ θ(2 τ)`.
 * `TauCeti.thetaAutomorphyFactor`: the theta automorphy factor
   `j(γ, z) = jacobiTheta (2 * (γ • z)) / jacobiTheta (2 * z)` for `γ ∈ SL(2, ℤ)` and `z ∈ ℍ`.
 
 ## Main results
 
-* `TauCeti.thetaMultiplierPhase_sq`:
-  `thetaMultiplierPhase d ^ 2 = (ZMod.χ₄ d : ℂ)` for every `d : ℤ`.
+* `TauCeti.thetaMultiplierPhase_sq`, `TauCeti.thetaMultiplierPhase_pow_four`:
+  `thetaMultiplierPhase d ^ 2 = (ZMod.χ₄ d : ℂ)` for every `d : ℤ`, and
+  `thetaMultiplierPhase d ^ 4 = 1` for odd `d`.
 * `TauCeti.I_mul_thetaMultiplierPhase_neg_inv_mul_χ₄`:
   `I * (thetaMultiplierPhase (-d))⁻¹ * (ZMod.χ₄ d : ℂ) = (thetaMultiplierPhase d)⁻¹` for `d : ℤ`.
-* `TauCeti.jacobiTheta_two_mul_eq_etaQuotient`:
-  `jacobiTheta (2 * τ) = etaQuotient 4 thetaExpVec τ` on `0 < τ.im`.
+* `TauCeti.etaQuotientMultiplier_thetaExpVec`,
+  `TauCeti.etaQuotientMultiplier_thetaExpVec_pow_four`: evaluation of
+  `etaQuotientMultiplier 4 thetaExpVec γ` on `Γ₀(4)` and the fourth-power-one identity.
 * `TauCeti.thetaAutomorphyFactor_mul`: the cocycle law
   `j(γ₁ * γ₂, z) = j(γ₁, γ₂ • z) * j(γ₂, z)` for all `γ₁, γ₂ ∈ SL(2, ℤ)`.
 * `TauCeti.mdifferentiable_thetaAutomorphyFactor`: `thetaAutomorphyFactor γ` is holomorphic on `ℍ`
@@ -148,6 +145,13 @@ theorem thetaMultiplierPhase_sq (d : ℤ) : thetaMultiplierPhase d ^ 2 = (ZMod.�
     · rw [thetaMultiplierPhase_three_mod_four hm, ite_eq_right (by omega)]
       norm_num
 
+/-- For odd `d`, `thetaMultiplierPhase d ^ 4 = 1`. -/
+theorem thetaMultiplierPhase_pow_four {d : ℤ} (hd : Odd d) :
+    thetaMultiplierPhase d ^ 4 = 1 := by
+  calc thetaMultiplierPhase d ^ 4
+      = (thetaMultiplierPhase d ^ 2) ^ 2 := by ring
+    _ = 1 := by rw [thetaMultiplierPhase_sq]; exact_mod_cast ZMod.χ₄_intCast_sq hd
+
 /-- For odd `d`, `‖thetaMultiplierPhase d‖ = 1`. -/
 theorem norm_thetaMultiplierPhase {d : ℤ} (hd : Odd d) : ‖thetaMultiplierPhase d‖ = 1 := by
   rcases Int.emod_four_eq_one_or_three_of_odd hd with hm | hm
@@ -203,47 +207,9 @@ theorem I_mul_thetaMultiplierPhase_neg_inv_mul_χ₄ (d : ℤ) :
   have hinv_neg : I * (thetaMultiplierPhase (-d))⁻¹ = thetaMultiplierPhase d := by
     rw [← hmul, mul_assoc, mul_inv_cancel₀ hneg_ne, mul_one]
   rw [hinv_neg, ← thetaMultiplierPhase_sq]
-  have hpow4 : thetaMultiplierPhase d ^ 4 = 1 := by
-    calc thetaMultiplierPhase d ^ 4
-        = (thetaMultiplierPhase d ^ 2) ^ 2 := by ring
-      _ = 1 := by rw [thetaMultiplierPhase_sq]; exact_mod_cast ZMod.χ₄_intCast_sq hd
-  exact eq_inv_of_mul_eq_one_left (by rw [← hpow4]; ring)
+  exact eq_inv_of_mul_eq_one_left (by rw [← thetaMultiplierPhase_pow_four hd]; ring)
 
 /-! ### Evaluation of the level-`4` theta eta-quotient multiplier on `Γ₀(4)` -/
-
-/-- The exponent vector of the level-`4` eta quotient representing `τ ↦ θ(2 τ)`, sending
-`1 ↦ -2`, `2 ↦ 5`, `4 ↦ -2`, and all other natural numbers to `0`. -/
-def thetaExpVec : ℕ → ℤ :=
-  fun δ ↦ if δ = 2 then 5 else if δ = 1 ∨ δ = 4 then -2 else 0
-
-/-- Defining formula for `thetaExpVec`. -/
-theorem thetaExpVec_def (δ : ℕ) :
-    thetaExpVec δ = if δ = 2 then 5 else if δ = 1 ∨ δ = 4 then -2 else 0 :=
-  (rfl)
-
-@[simp]
-theorem thetaExpVec_one : thetaExpVec 1 = -2 := by decide
-
-@[simp]
-theorem thetaExpVec_two : thetaExpVec 2 = 5 := by decide
-
-@[simp]
-theorem thetaExpVec_four : thetaExpVec 4 = -2 := by decide
-
-/-- The exponents of `thetaExpVec` over the divisors of `4` sum to `1` (weight `1/2`). -/
-theorem sum_divisors_four_thetaExpVec : ∑ δ ∈ (4 : ℕ).divisors, thetaExpVec δ = 1 := by
-  decide
-
-/-- **Eta-quotient form of `jacobiTheta (2 * τ)`**: on `0 < τ.im`, `jacobiTheta (2 * τ)` equals
-the level-`4` eta quotient `etaQuotient 4 thetaExpVec τ`. -/
-theorem jacobiTheta_two_mul_eq_etaQuotient {τ : ℂ} (hτ : 0 < τ.im) :
-    jacobiTheta (2 * τ) = etaQuotient 4 thetaExpVec τ := by
-  have hdiv : (4 : ℕ).divisors = {1, 2, 4} := by decide
-  rw [jacobiTheta_two_mul_eq_eta_pow_div hτ, etaQuotient_apply, hdiv,
-    Finset.prod_insert (by decide : (1 : ℕ) ∉ ({2, 4} : Finset ℕ)),
-    Finset.prod_insert (by decide : (2 : ℕ) ∉ ({4} : Finset ℕ)),
-    Finset.prod_singleton, thetaExpVec_one, thetaExpVec_two, thetaExpVec_four]
-  norm_num [div_eq_mul_inv, mul_assoc, mul_left_comm, mul_comm]
 
 private lemma kroneckerSym_two_mul_e24_three_mul_sub_three {d : ℤ} (hd : Odd d) :
     (kroneckerSym 2 d : ℂ) * e24 (3 * d - 3) = (thetaMultiplierPhase d)⁻¹ := by
@@ -290,28 +256,44 @@ private lemma prod_kroneckerSym_thetaExpVec {γ : SL(2, ℤ)} {t : ℤ} (ht : γ
     · have h4t : (4 * t : ℤ) = t * 2 ^ 2 := by ring
       rw [kroneckerSym_mul_left two_ne_zero ht_ne, h4t,
         kroneckerSym_mul_sq two_ne_zero (hcop_dvd ⟨2 * t, by omega⟩)]
-  have hdiv : (4 : ℕ).divisors = {1, 2, 4} := by decide
   have h4t_eq : (4 * t : ℤ) = γ 1 0 := by simpa using ht.symm
-  rw [hdiv, Finset.prod_insert (by decide : (1 : ℕ) ∉ ({2, 4} : Finset ℕ)),
-    Finset.prod_insert (by decide : (2 : ℕ) ∉ ({4} : Finset ℕ)), Finset.prod_singleton,
-    thetaExpVec_one, thetaExpVec_two, thetaExpVec_four]
+  rw [prod_divisors_four_thetaExpVec (fun δ ↦ (kroneckerSym ((4 / δ : ℕ) * t) (γ 1 1) : ℂ))]
   norm_num only [Nat.reduceDiv, Nat.cast_one, one_mul, Nat.cast_ofNat]
   rw [hpow_neg_two ⟨1, by omega⟩, hpow_neg_two ⟨4, by omega⟩, hk_2t, hk_eq, h4t_eq,
     one_mul, mul_one, Int.cast_mul]
 
-private lemma etaQuotientMultiplier_thetaExpVec (γ : Gamma0 4) :
+/-- Evaluating the level-`4` theta eta-quotient multiplier on `Γ₀(4)`:
+`etaQuotientMultiplier 4 thetaExpVec γ = (thetaMultiplierPhase d)⁻¹ * kroneckerSym c d`. -/
+theorem etaQuotientMultiplier_thetaExpVec (γ : Gamma0 4) :
     etaQuotientMultiplier 4 thetaExpVec γ =
       (thetaMultiplierPhase ((γ : SL(2, ℤ)) 1 1))⁻¹ *
         kroneckerSym ((γ : SL(2, ℤ)) 1 0) ((γ : SL(2, ℤ)) 1 1) := by
   obtain ⟨t, ht⟩ := mem_Gamma0_iff_dvd.mp γ.property
   have hdo : Odd ((γ : SL(2, ℤ)) 1 1) :=
     odd_apply_one_one_of_mem_Gamma0 (by decide : Even 4) γ.property
-  have h1 : ∑ δ ∈ (4 : ℕ).divisors, ((4 / δ : ℕ) : ℤ) * thetaExpVec δ = 0 := by decide
-  have h2 : ∑ δ ∈ (4 : ℕ).divisors, (δ : ℤ) * thetaExpVec δ = 0 := by decide
-  rw [etaQuotientMultiplier_eq_prod_kroneckerSym_mul_e24_of_odd thetaExpVec γ.property ht hdo,
+  have h1 : ∑ δ ∈ (4 : ℕ).divisors, ((4 / δ : ℕ) : ℤ) * thetaExpVec δ = 0 := by
+    simp only [thetaExpVec_def]; decide
+  have h2 : ∑ δ ∈ (4 : ℕ).divisors, (δ : ℤ) * thetaExpVec δ = 0 := by
+    simp only [thetaExpVec_def]; decide
+  rw [etaQuotientMultiplier_eq_prod_kroneckerSym_mul_e24_of_odd_d thetaExpVec γ.property ht hdo,
     h1, h2, sum_divisors_four_thetaExpVec, zero_mul, zero_mul, zero_add, zero_add, one_mul,
     prod_kroneckerSym_thetaExpVec ht, mul_right_comm,
     kroneckerSym_two_mul_e24_three_mul_sub_three hdo]
+
+/-- On `Γ₀(4)`, the scalar theta multiplier `etaQuotientMultiplier 4 thetaExpVec γ` has fourth
+power `1`. -/
+theorem etaQuotientMultiplier_thetaExpVec_pow_four (γ : Gamma0 4) :
+    etaQuotientMultiplier 4 thetaExpVec γ ^ 4 = 1 := by
+  have hdo : Odd ((γ : SL(2, ℤ)) 1 1) :=
+    odd_apply_one_one_of_mem_Gamma0 (by decide : Even 4) γ.property
+  have hcop : ((γ : SL(2, ℤ)) 1 0).gcd ((γ : SL(2, ℤ)) 1 1) = 1 :=
+    Int.isCoprime_iff_gcd_eq_one.mp ((γ : SL(2, ℤ)).isCoprime_row 1)
+  have hpow4 : (kroneckerSym ((γ : SL(2, ℤ)) 1 0) ((γ : SL(2, ℤ)) 1 1) : ℂ) ^ 4 = 1 := by
+    calc (kroneckerSym ((γ : SL(2, ℤ)) 1 0) ((γ : SL(2, ℤ)) 1 1) : ℂ) ^ 4
+        = ((kroneckerSym ((γ : SL(2, ℤ)) 1 0) ((γ : SL(2, ℤ)) 1 1) : ℂ) ^ 2) ^ 2 := by ring
+      _ = 1 := by rw [sq_intCast_kroneckerSym_eq_one hcop, one_pow]
+  rw [etaQuotientMultiplier_thetaExpVec, mul_pow, inv_pow, thetaMultiplierPhase_pow_four hdo,
+    inv_one, one_mul, hpow4]
 
 /-! ### The theta automorphy factor `j(γ, z)` on `SL(2, ℤ)` and `Γ₀(4)` -/
 
@@ -339,20 +321,23 @@ theorem mdifferentiable_thetaAutomorphyFactor (γ : SL(2, ℤ)) :
     simpa using mdifferentiable_jacobiTheta_natCast_mul 2
   have hne : ∀ w : ℍ, jacobiTheta (2 * (w : ℂ)) ≠ 0 := fun w ↦ by
     simpa using jacobiTheta_natCast_mul_ne_zero 2 w
+  rw [funext (thetaAutomorphyFactor_def γ)]
   exact ((hθ.comp hsmul) z).div (hθ z) (hne z)
 
 /-- The theta automorphy factor never vanishes on the upper half-plane. -/
 @[simp]
 theorem thetaAutomorphyFactor_ne_zero (γ : SL(2, ℤ)) (z : ℍ) :
-    thetaAutomorphyFactor γ z ≠ 0 :=
-  div_ne_zero (by simpa using jacobiTheta_natCast_mul_ne_zero 2 (γ • z))
+    thetaAutomorphyFactor γ z ≠ 0 := by
+  rw [thetaAutomorphyFactor_def]
+  exact div_ne_zero (by simpa using jacobiTheta_natCast_mul_ne_zero 2 (γ • z))
     (by simpa using jacobiTheta_natCast_mul_ne_zero 2 z)
 
 /-- Rewriting `θ(2 · γ z)` in terms of `thetaAutomorphyFactor γ z` and `θ(2 z)`. -/
 theorem jacobiTheta_two_mul_smul_eq_thetaAutomorphyFactor_mul (γ : SL(2, ℤ)) (z : ℍ) :
     jacobiTheta (2 * ((γ • z : ℍ) : ℂ)) =
-      thetaAutomorphyFactor γ z * jacobiTheta (2 * (z : ℂ)) :=
-  (div_mul_cancel₀ _ (by simpa using jacobiTheta_natCast_mul_ne_zero 2 z)).symm
+      thetaAutomorphyFactor γ z * jacobiTheta (2 * (z : ℂ)) := by
+  rw [thetaAutomorphyFactor_def]
+  exact (div_mul_cancel₀ _ (by simpa using jacobiTheta_natCast_mul_ne_zero 2 z)).symm
 
 /-- **Cocycle law** for `thetaAutomorphyFactor` on all of `SL(2, ℤ)`:
 `j(γ₁ * γ₂, z) = j(γ₁, γ₂ • z) * j(γ₂, z)`. -/

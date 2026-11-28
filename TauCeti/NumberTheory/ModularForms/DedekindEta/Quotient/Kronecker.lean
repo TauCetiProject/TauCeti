@@ -17,7 +17,7 @@ Combines `TauCeti.ModularForm.etaQuotientMultiplier_eq_prod` with the odd-`d` Kr
 
 ## Main results
 
-* `TauCeti.ModularForm.etaQuotientMultiplier_eq_prod_kroneckerSym_mul_e24_of_odd`: factors
+* `TauCeti.ModularForm.etaQuotientMultiplier_eq_prod_kroneckerSym_mul_e24_of_odd_d`: factors
   `etaQuotientMultiplier N r ⟨γ, hγ⟩` into `∏ δ ∈ N.divisors, (kroneckerSym ((N / δ) * t) d) ^ r δ`
   times a single `e24` root of unity grouped along `∑ (N / δ) * r δ`, `∑ δ * r δ`, and `∑ r δ`.
 -/
@@ -49,7 +49,7 @@ private theorem sum_mul_etaMultiplierExpEvenC (N : ℕ) (r : ℕ → ℤ) (a b d
 /-- Evaluating the eta-quotient multiplier when `γ 1 0 = N * t` and `γ 1 1` is odd: each factor
 `ε(γ_δ)` is given by the odd-`d` Kronecker form, factoring the multiplier into the product of
 `(kroneckerSym ((N / δ : ℕ) * t) (γ 1 1)) ^ r δ` and `e24` of the regrouped exponent sum. -/
-theorem etaQuotientMultiplier_eq_prod_kroneckerSym_mul_e24_of_odd {N : ℕ}
+theorem etaQuotientMultiplier_eq_prod_kroneckerSym_mul_e24_of_odd_d {N : ℕ}
     (r : ℕ → ℤ) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N) {t : ℤ} (ht : γ 1 0 = N * t)
     (hdo : Odd (γ 1 1)) :
     etaQuotientMultiplier N r ⟨γ, hγ⟩ =

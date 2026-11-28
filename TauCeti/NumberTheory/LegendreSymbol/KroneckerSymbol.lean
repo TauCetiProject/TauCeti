@@ -57,7 +57,8 @@ The character need not be primitive: `(-12 / ·)` is induced from `(-3 / ·)`.
   `TauCeti.kroneckerSym_pow_left`, `TauCeti.kroneckerSym_eq_one_of_isSquare`: multiplicativity in
   the numerator, over nonzero factors and without restriction when the denominator is not `-1`,
   unrestricted power law, and value `1` on squares coprime to the denominator.
-* `TauCeti.kroneckerSym_eq_zero_iff`: `(a / b) = 0` exactly when `gcd (a, b) ≠ 1`.
+* `TauCeti.kroneckerSym_eq_zero_iff`, `TauCeti.kroneckerSym_eq_zero_of_dvd`: `(a / b) = 0`
+  exactly when `gcd (a, b) ≠ 1`, in particular when `a` and `b` share a non-unit divisor.
 * `TauCeti.kroneckerSym_eq_jacobiSym_natAbs`: `(D / n) = J(n | |D|)` for `D ≡ 1 (mod 4)`.
 * `TauCeti.kroneckerSym_neg_one_left_of_odd`, `TauCeti.kroneckerSym_two_left`,
   `TauCeti.kroneckerSym_neg_left`, `TauCeti.kroneckerSym_neg_right`,
@@ -229,6 +230,12 @@ theorem kroneckerSym_eq_zero_iff {a b : ℤ} : kroneckerSym a b = 0 ↔ a.gcd b 
     jacobiSym.eq_zero_iff, Ne, hm, not_false_eq_true, true_and, Int.gcd_eq_natAbs_gcd_natAbs,
     Int.natAbs_natCast, not_and_or, not_imp, Nat.coprime_iff_gcd_eq_one, ← Int.natCast_dvd,
     Nat.cast_ofNat]
+
+/-- If `d` is a non-unit common divisor of `a` and `b`, then `(a / b) = 0`. -/
+theorem kroneckerSym_eq_zero_of_dvd {a b d : ℤ} (hd : ¬ IsUnit d) (ha : d ∣ a) (hb : d ∣ b) :
+    kroneckerSym a b = 0 :=
+  kroneckerSym_eq_zero_iff.mpr fun h ↦ hd <| Int.isUnit_iff_natAbs_eq.mpr <|
+    Nat.dvd_one.mp (h ▸ Int.dvd_gcd (Int.natAbs_dvd.mpr ha) (Int.natAbs_dvd.mpr hb))
 
 /-- `(0 / b)` is `1` for `b = ±1` and `0` otherwise. -/
 @[simp]
@@ -405,13 +412,6 @@ theorem kroneckerSym_neg_one_left_of_odd {b : ℤ} (hb : Odd b) : kroneckerSym (
     simp only [h, neg_lt_zero, zero_lt_one, and_self, ite_true]
     split_ifs <;> omega
 
-private theorem kroneckerSym_eq_zero_of_two_dvd {D m : ℤ} (hD : 2 ∣ D) (hm : 2 ∣ m) :
-    kroneckerSym D m = 0 :=
-  kroneckerSym_eq_zero_iff.mpr fun h ↦ by
-    have := Int.dvd_gcd hD hm
-    rw [h] at this
-    norm_num at this
-
 /-- The second supplementary law for all integer denominators: `(2 / b) = χ₈ b`. For even `b`
 both sides vanish, and for odd `b` it reduces to `jacobiSym.at_two` on `|b|`. -/
 theorem kroneckerSym_two_left (b : ℤ) : kroneckerSym 2 b = χ₈ b := by
@@ -422,7 +422,7 @@ theorem kroneckerSym_two_left (b : ℤ) : kroneckerSym 2 b = χ₈ b := by
     · rw [h, Int.natAbs_natCast, Int.cast_natCast]
     · rw [h, Int.natAbs_neg, Int.natAbs_natCast, Int.cast_neg, Int.cast_natCast, χ₈_neg]
   · have h2 : (2 : ℤ) ∣ b := even_iff_two_dvd.mp (Int.not_odd_iff_even.mp hb)
-    rw [kroneckerSym_eq_zero_of_two_dvd (dvd_refl 2) h2, (χ₈_intCast_eq_zero_iff b).mpr h2]
+    rw [kroneckerSym_eq_zero_of_dvd (by decide) (dvd_refl 2) h2, (χ₈_intCast_eq_zero_iff b).mpr h2]
 
 /-- Negating the numerator: `(-a / b) = (-1 / b) · (a / b)` whenever `a ≠ 0 ∨ b ≠ -1`. The
 hypothesis is needed at `a = 0, b = -1`, where `(0 / -1) = 1` and `(-1 / -1) = -1`. -/
@@ -525,7 +525,8 @@ theorem kroneckerSym_mod_right' {D : ℤ} (hD : D ≡ 0 [ZMOD 4] ∨ D ≡ 1 [ZM
       rw [kroneckerSym_eq_jacobiSym_emod hD4 hD₀ hm, kroneckerSym_eq_jacobiSym_emod hD4 hD₀ hn, h]
     · have hm' : 2 ∣ m := even_iff_two_dvd.mp (Int.not_odd_iff_even.mp hm)
       have hn' : 2 ∣ n := Int.dvd_iff_emod_eq_zero.mpr (hmn ▸ Int.emod_eq_zero_of_dvd hm')
-      rw [kroneckerSym_eq_zero_of_two_dvd h2 hm', kroneckerSym_eq_zero_of_two_dvd h2 hn']
+      rw [kroneckerSym_eq_zero_of_dvd (by decide) h2 hm',
+        kroneckerSym_eq_zero_of_dvd (by decide) h2 hn']
   · rw [kroneckerSym_eq_jacobiSym_natAbs hD, kroneckerSym_eq_jacobiSym_natAbs hD]
     exact jacobiSym.mod_left' (by rwa [Int.natCast_natAbs, Int.emod_abs, Int.emod_abs])
 

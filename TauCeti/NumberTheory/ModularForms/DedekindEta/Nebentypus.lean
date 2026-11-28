@@ -199,7 +199,7 @@ private theorem etaQuotientMultiplier_eq_symb_of_odd {N : ℕ} {r : ℕ → ℤ}
       3 * t * γ 1 1) + A * (γ 0 1 * γ 1 1)), ?_⟩
     rw [hA, hB, hk, hv]
     ring
-  rw [etaQuotientMultiplier_eq_prod_kroneckerSym_mul_e24_of_odd r hγ ht ⟨v, hv⟩,
+  rw [etaQuotientMultiplier_eq_prod_kroneckerSym_mul_e24_of_odd_d r hγ ht ⟨v, hv⟩,
     e24_congr hsum, e24_mul, e24_twelve_mul_eq_χ₄, prod_kroneckerSym_div_left hk γ ht ht0, symb,
     kroneckerSym_neg_one_left_of_odd ⟨v, hv⟩, hv, mul_comm]
 
@@ -256,11 +256,9 @@ private theorem etaQuotientMultiplier_eq_symb_of_nonneg {N : ℕ} {r : ℕ → �
 private theorem symb_neg (N : ℕ) (r : ℕ → ℤ) (k : ℤ) {d : ℤ} (hd : d ≠ 0) :
     symb N r k (-d) = (-1) ^ k * symb N r k d := by
   have h1 : kroneckerSym (-1) (-d) = -kroneckerSym (-1) d := by
-    rw [neg_eq_neg_one_mul d, kroneckerSym_mul_right _ (by norm_num) hd]
-    simp
+    rw [kroneckerSym_neg_right (-1) (.inl hd), ite_eq_left (by decide), neg_one_mul]
   have h2 (δ : ℕ) : kroneckerSym δ (-d) = kroneckerSym δ d := by
-    rw [neg_eq_neg_one_mul d, kroneckerSym_mul_right _ (by norm_num) hd]
-    simp
+    rw [kroneckerSym_neg_right δ (.inl hd), ite_eq_right (by omega), one_mul]
   simp only [symb, h1, h2, Int.cast_neg]
   rw [neg_eq_neg_one_mul (kroneckerSym (-1) d : ℂ), mul_zpow]
   ring

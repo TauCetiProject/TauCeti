@@ -59,11 +59,9 @@ theorem χ₄_two_mul_add_one (v : ℕ) : χ₄ ((2 * v + 1 : ℕ) : ZMod 4) = (
 /-- For odd `a : ℤ`, `χ₄ a ^ 2 = 1`. -/
 theorem χ₄_intCast_sq {a : ℤ} (ha : Odd a) : χ₄ a ^ 2 = 1 := by
   have ha_sq : (a : ZMod 4) * (a : ZMod 4) = 1 := by
-    obtain ⟨k, rfl⟩ := ha
-    push_cast
-    calc ((2 : ZMod 4) * k + 1) * (2 * k + 1)
-        = ((4 : ℕ) : ZMod 4) * (k ^ 2 + k) + 1 := by push_cast; ring
-      _ = 1 := by rw [ZMod.natCast_self, zero_mul, zero_add]
+    have h := congrArg (Int.cast : ℤ → ZMod 4) (Int.sq_emod_four_eq_one_of_odd ha)
+    simpa only [pow_two, Int.cast_mul, Int.cast_one] using
+      (ZMod.intCast_mod (a ^ 2) 4).symm.trans h
   have hu : IsUnit (a : ZMod 4) := ⟨⟨a, a, ha_sq, ha_sq⟩, rfl⟩
   rw [← χ₄.pow_apply' two_ne_zero, isQuadratic_χ₄.sq_eq_one, MulChar.one_apply hu]
 
