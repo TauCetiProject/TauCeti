@@ -51,10 +51,8 @@ theorem isOpen_regularLocus_of_isJ2 (f : X ⟶ Y) [LocallyOfFiniteType f]
   obtain ⟨V, hV, hxV, hVU⟩ :=
     exists_isAffineOpen_mem_and_subset (f.mem_preimage.mpr hxU)
   let := (f.appLE U V hVU).hom.toAlgebra
-  have : Algebra.FiniteType Γ(Y, U) Γ(X, V) := by
-    apply RingHom.finiteType_algebraMap.mp
-    rw [RingHom.algebraMap_toAlgebra]
-    exact f.finiteType_appLE hU hV hVU
+  -- `RingHom.FiniteType` uses this same `toAlgebra` instance.
+  have : Algebra.FiniteType Γ(Y, U) Γ(X, V) := f.finiteType_appLE hU hV hVU
   have hOpen : IsOpen (hV.fromSpec ⁻¹' X.regularLocus) := by
     rw [hV.fromSpec.preimage_regularLocus, Scheme.regularLocus_Spec]
     exact IsJ2.isOpen_regularLocus_of_finiteType (R := Γ(Y, U))
