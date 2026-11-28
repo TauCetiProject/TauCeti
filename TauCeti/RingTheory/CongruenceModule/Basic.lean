@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.RingTheory.Ideal.Maps
+import TauCeti.Algebra.Algebra.Hom
 
 /-!
 # Congruence modules of augmented algebras
@@ -64,10 +65,6 @@ namespace AlgHom
 
 variable {O A : Type*} [CommRing O] [CommRing A] [Algebra O A] (φ : A →ₐ[O] O)
 
-/-- An augmentation `φ : A →ₐ[O] O` is surjective, since `φ (algebraMap O A x) = x`. -/
-theorem augmentation_surjective : Function.Surjective φ :=
-  Function.LeftInverse.surjective φ.commutes
-
 /-- The *congruence ideal* `η_φ = φ (Ann_A (ker φ))` of an augmentation `φ : A →ₐ[O] O`. -/
 def congruenceIdeal : Ideal O :=
   (RingHom.ker φ).annihilator.map φ
@@ -76,7 +73,7 @@ def congruenceIdeal : Ideal O :=
 `A` killed by `ker φ`. -/
 theorem mem_congruenceIdeal {x : O} :
     x ∈ φ.congruenceIdeal ↔ ∃ a : A, (∀ b ∈ RingHom.ker φ, b * a = 0) ∧ φ a = x := by
-  rw [congruenceIdeal, Ideal.mem_map_iff_of_surjective _ φ.augmentation_surjective]
+  rw [congruenceIdeal, Ideal.mem_map_iff_of_surjective _ φ.surjective_to_ring]
   simp [Submodule.mem_annihilator, mul_comm]
 
 variable (M : Type*) [AddCommGroup M] [Module A M] [Module O M] [IsScalarTower O A M]
@@ -354,7 +351,7 @@ noncomputable def congruenceModuleSelfEquiv : φ.congruenceModule A ≃ₗ[O] O 
       ext a
       simp [congruenceModuleMk_self_eq_zero_iff, Ideal.Quotient.eq_zero_iff_mem]) ≪≫ₗ
     ((φ.congruenceIdeal.mkQ ∘ₗ φ.toLinearMap).quotKerEquivOfSurjective
-      ((mkQ_surjective _).comp φ.augmentation_surjective))
+      ((mkQ_surjective _).comp φ.surjective_to_ring))
 
 @[simp]
 theorem congruenceModuleSelfEquiv_congruenceModuleMk (a : A) :
