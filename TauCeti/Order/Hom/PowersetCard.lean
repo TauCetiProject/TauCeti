@@ -97,6 +97,18 @@ theorem val_ofLtTriple (t : {t : I × I × I // t.1 < t.2.1 ∧ t.2.1 < t.2.2}) 
   ext a
   simp [ofLtTriple_apply, val_ofFinEmb, ltTripleEmb_apply, Fin.exists_fin_succ, eq_comm]
 
+/-- An increasing triple in a linear order is determined by the three-element finset `{a, b, c}`
+it spans. -/
+theorem eq_of_lt_lt_triple_eq {a₁ b₁ c₁ a₂ b₂ c₂ : I} (hab₁ : a₁ < b₁) (hbc₁ : b₁ < c₁)
+    (hab₂ : a₂ < b₂) (hbc₂ : b₂ < c₂)
+    (h : ({a₁, b₁, c₁} : Finset I) = {a₂, b₂, c₂}) :
+    (a₁, b₁, c₁) = (a₂, b₂, c₂) :=
+  congrArg Subtype.val
+    (ofLtTriple.injective
+      (a₁ := ⟨(a₁, b₁, c₁), hab₁, hbc₁⟩) (a₂ := ⟨(a₂, b₂, c₂), hab₂, hbc₂⟩)
+      (Subtype.ext <| (val_ofLtTriple ⟨(a₁, b₁, c₁), hab₁, hbc₁⟩).trans
+        (h.trans (val_ofLtTriple ⟨(a₂, b₂, c₂), hab₂, hbc₂⟩).symm)))
+
 /-- Every three-element set of a linear order is `{a, b, c}` for some `a < b < c`. -/
 theorem exists_lt_lt_val_eq (s : powersetCard I 3) :
     ∃ a b c, a < b ∧ b < c ∧ s.val = {a, b, c} := by
@@ -108,6 +120,42 @@ theorem card_lt_triple [Fintype I] :
     Fintype.card {t : I × I × I // t.1 < t.2.1 ∧ t.2.1 < t.2.2} = (Fintype.card I).choose 3 := by
   rw [← Nat.card_eq_fintype_card, Nat.card_congr ofLtTriple, Set.powersetCard.card,
     Nat.card_eq_fintype_card]
+
+/-- Multiplying over a finset `s` of `3`-element subsets of a finite linear order `I` equals
+multiplying over the increasing triples `a < b < c` whose `{a, b, c}` lies in `s`. -/
+@[to_additive /-- Summing over a finset `s` of `3`-element subsets of a finite linear order `I`
+equals summing over the increasing triples `a < b < c` whose `{a, b, c}` lies in `s`. -/]
+theorem prod_filter_lt_triple_eq_prod_of_card_eq_three [Fintype I] {M : Type*} [CommMonoid M]
+    (s : Finset (Finset I)) (hs : ∀ t ∈ s, #t = 3)
+    (g : I × I × I → M) (f : Finset I → M)
+    (hfg : ∀ ⦃a b c : I⦄, a < b → b < c → ({a, b, c} : Finset I) ∈ s →
+      g (a, b, c) = f {a, b, c}) :
+    ∏ p : I × I × I with
+        p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧ ({p.1, p.2.1, p.2.2} : Finset I) ∈ s, g p =
+      ∏ t ∈ s, f t := by
+  classical
+  refine Finset.prod_bij (fun p _ ↦ ({p.1, p.2.1, p.2.2} : Finset I)) ?_ ?_ ?_ ?_
+  · intro p hp
+    exact (mem_filter.mp hp).2.2.2
+  · rintro ⟨a₁, b₁, c₁⟩ hp₁ ⟨a₂, b₂, c₂⟩ hp₂ h
+    obtain ⟨hab₁, hbc₁, _⟩ := (mem_filter.mp hp₁).2
+    obtain ⟨hab₂, hbc₂, _⟩ := (mem_filter.mp hp₂).2
+    exact eq_of_lt_lt_triple_eq hab₁ hbc₁ hab₂ hbc₂ h
+  · intro t ht
+    obtain ⟨a, b, c, hab, hbc, hval⟩ := exists_lt_lt_val_eq ⟨t, hs t ht⟩
+    exact ⟨(a, b, c), mem_filter.mpr ⟨Finset.mem_univ _, hab, hbc, hval ▸ ht⟩, hval.symm⟩
+  · rintro ⟨a, b, c⟩ hp
+    obtain ⟨hab, hbc, hmem⟩ := (mem_filter.mp hp).2
+    exact hfg hab hbc hmem
+
+/-- The number of increasing triples `a < b < c` spanning a set in `s` equals `#s`, when every
+element of `s` has cardinality `3`. -/
+theorem card_filter_lt_triple_eq_card_of_card_eq_three [Fintype I]
+    (s : Finset (Finset I)) (hs : ∀ t ∈ s, #t = 3) :
+    #{p : I × I × I | p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧ ({p.1, p.2.1, p.2.2} : Finset I) ∈ s} =
+      #s := by
+  simpa using sum_filter_lt_triple_eq_sum_of_card_eq_three s hs (fun _ ↦ (1 : ℕ)) (fun _ ↦ 1)
+    fun _ _ _ _ _ _ ↦ rfl
 
 /-- The shuffle of two disjoint fixed-cardinality subsets `u` and `t` lists the increasing
 enumeration of `u`, followed by the increasing enumeration of `t`, inside the increasing

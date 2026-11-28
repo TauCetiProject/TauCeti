@@ -51,6 +51,9 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
 * `TauCeti.sum_sign_smul_eq_sum_consFin`: reindex a signed permutation sum through ordered
   first-coordinate insertion, including dimension zero.
 * `Equiv.Perm.card_filter_val_lt`: a permutation of `Fin n` maps `min n m` indices below `m`.
+* `Equiv.Perm.eq_ite_ne_one_fin_two`: every permutation of `Fin 2` equals `Equiv.swap 0 1` when
+  non-identity and `1` otherwise.
+* `Equiv.Perm.isSwap_swap_zero_one_fin_two`: `Equiv.swap (0 : Fin 2) 1` is a transposition.
 * `Equiv.Perm.IsSwap.two_le`: if `Fin n` admits a transposition, then `2 ≤ n`.
 -/
 
@@ -224,6 +227,16 @@ theorem card_filter_val_lt {n m : ℕ} (σ : Perm (Fin n)) :
   (card_equiv σ fun _ => by simp).trans Fin.card_filter_val_lt
 
 end
+
+/-- Every permutation of `Fin 2` equals `Equiv.swap 0 1` when non-identity and `1` otherwise. -/
+theorem eq_ite_ne_one_fin_two (σ : Equiv.Perm (Fin 2)) :
+    σ = if σ ≠ 1 then Equiv.swap 0 1 else 1 := by
+  revert σ
+  decide
+
+/-- The swap `(0 1)` on `Fin 2` is a transposition. -/
+theorem isSwap_swap_zero_one_fin_two : (Equiv.swap (0 : Fin 2) 1).IsSwap :=
+  swap_isSwap_iff.mpr Fin.zero_ne_one
 
 /-- If `Fin n` admits a transposition, then `2 ≤ n`. -/
 theorem IsSwap.two_le {n : ℕ} {τ : Perm (Fin n)} (hτ : τ.IsSwap) : 2 ≤ n := by

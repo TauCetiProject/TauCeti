@@ -7,7 +7,11 @@ module
 
 public import Mathlib.GroupTheory.SpecificGroups.Alternating
 public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
+public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.SimpleGraph
+public import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.ParityRetract
 import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
+import TauCeti.Combinatorics.CoboundaryExpansion.Swap.Gauge
 import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Complete
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.ZMod.QuotientGroup
@@ -16,13 +20,27 @@ import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
 
 /-!
-# Coboundary constants of the complete complex on four vertices
+# Coboundary constants of the complete complex on at most four vertices
+
+On `complete V` with `Fintype.card V ≤ 4`, cut-switching invariance of `oddTripleFinset` combined
+with the degree-`1` bound on cut-minimal graphs gives `defect = (Fintype.card V - 2) * gaugeDist`
+for transposition graph cochains
+(`SimpleGraph.defect_movedNorm_toCochain_eq_card_sub_two_mul_gaugeDist_of_card_le_four`),
+`Subgroup.zpowers t` cochains
+(`TauCeti.Cochain.defect_zpowers_swap_eq_card_sub_two_mul_gaugeDist_of_card_le_four`), and
+`Equiv.Perm (Fin 2)` cochains
+(`TauCeti.Cochain.defect_movedNorm_fin_two_eq_card_sub_two_mul_gaugeDist_of_card_le_four`).
+Consequently, both the binary Cheeger constant
+`TauCeti.h1 (TwoComplex.complete V) (Equiv.Perm.movedNorm (Fin 2))` and the Cheeger constant of
+any transposition subgroup `Subgroup.zpowers t` equal `(Fintype.card V - 2 : ℕ)`
+(`TauCeti.h1_complete_movedNorm_fin_two_of_card_le_four`,
+`TauCeti.h1_complete_zpowers_swap_of_card_le_four`), and in particular equal `2` when
+`Fintype.card V = 4` (`TauCeti.h1_complete_movedNorm_fin_two_of_card_eq_four`,
+`TauCeti.h1_complete_zpowers_swap_of_card_eq_four`).
 
 On `complete (Fin 4)` there are six edges and four triangles, so the cost of a gauge and the
 defect of a cochain are explicit finite sums (`TauCeti.Cochain.cost_complete_fin_four`,
-`TauCeti.Cochain.defect_complete_fin_four`). With binary coefficients `Equiv.Perm (Fin 2)` and the
-moved-point norm, every cochain has a gauge of cost at most half its defect, and the cochain with
-a single transposition edge has defect `4` and gauge distance `2`. Hence:
+`TauCeti.Cochain.defect_complete_fin_four`). Hence:
 
 * `TauCeti.h1_complete_fin_four_movedNorm_fin_two`: `h1 (complete (Fin 4)) (movedNorm (Fin 2)) = 2`;
 * `TauCeti.h1Sym_complete_fin_four_lt_h1_movedNorm_fin_two`: the same-degree permutation constant
@@ -47,10 +65,12 @@ on the order of the group:
 
 ## References
 
+* D. N. Kozlov, *The first Cheeger constant of a simplex*, arXiv:1610.07136v2, Section 2.
 * Jeromie Beasley, *The Permutation Coboundary Constant of the Complete Complex Is k/3 for Every
-  k≥4*, version 7, Zenodo, doi:10.5281/zenodo.23245792, Proposition 5 (the binary, `Sym(3)` and
-  coefficient-subgroup constants on four vertices) and §3.1 (the cyclic-subgroup witness; its
-  defect and gauge distance are `9` and `6`, not the printed `6` and `4`, with the same ratio).
+  k≥4*, version 7, Zenodo, doi:10.5281/zenodo.23245792, Corollary 7, Theorem 8, Proposition 5 (the
+  binary, `Sym(3)` and coefficient-subgroup constants on four vertices) and §3.1 (the
+  cyclic-subgroup witness; its defect and gauge distance are `9` and `6`, not the printed `6` and
+  `4`, with the same ratio).
 * M. Chapman and A. Lubotzky, *Stability of homomorphisms, coverings and cocycles II: examples,
   applications and open problems*, arXiv:2311.06706v3, Adv. Math. 463 (2025), 110117,
   footnote 2 (the comparison with `𝔽₂` coefficients).
@@ -59,6 +79,28 @@ on the order of the group:
 public section
 
 open Finset Equiv Equiv.Perm
+open scoped symmDiff
+
+namespace SimpleGraph
+
+/-- **Transposition exactness on at most four vertices**: on a vertex type of size at most four,
+every graph `G` and every transposition `t` satisfy
+`(G.toCochain ht.mul_self_eq_one).defect (Equiv.Perm.movedNorm α) = ((Fintype.card V - 2 : ℕ) : ℝ)
+* (G.toCochain ht.mul_self_eq_one).gaugeDist (Equiv.Perm.movedNorm α)`. -/
+theorem defect_movedNorm_toCochain_eq_card_sub_two_mul_gaugeDist_of_card_le_four
+    {V α : Type*} [Fintype V] [LinearOrder V] [Fintype α] [DecidableEq α]
+    (G : SimpleGraph V) (hV : Fintype.card V ≤ 4) {t : Equiv.Perm α} (ht : t.IsSwap) :
+    (G.toCochain ht.mul_self_eq_one).defect (Equiv.Perm.movedNorm α) =
+      ((Fintype.card V - 2 : ℕ) : ℝ) *
+        (G.toCochain ht.mul_self_eq_one).gaugeDist (Equiv.Perm.movedNorm α) := by
+  classical
+  obtain ⟨s, hs, hval⟩ := G.exists_finset_isCutMinimal_and_gaugeDist_movedNorm_toCochain_eq ht
+  rw [G.defect_movedNorm_toCochain ht, hval, ← G.oddTripleFinset_symmDiff_top_between (s : Set V),
+    hs.card_oddTripleFinset_of_card_le_four hV]
+  push_cast
+  ring
+
+end SimpleGraph
 
 namespace TauCeti
 
@@ -86,58 +128,80 @@ theorem defect_complete_fin_four (ℓ : GroupNorm G) (α : Cochain (complete (Fi
   rw [defect_complete, sum_filter, Fintype.sum_prod_type]
   simp [Fintype.sum_prod_type, Fin.sum_univ_four]
 
+/-- **Subgroup cochain exactness on at most four vertices**: on a vertex type of size at most four,
+every `Subgroup.zpowers t`-valued `1`-cochain `γ` on `TwoComplex.complete V` for a transposition `t`
+satisfies `γ.defect ℓ = ((Fintype.card V - 2 : ℕ) : ℝ) * γ.gaugeDist ℓ` under the restricted
+moved-point norm `ℓ := (Equiv.Perm.movedNorm α).comp (Subgroup.zpowers t).subtype_injective`. -/
+theorem defect_zpowers_swap_eq_card_sub_two_mul_gaugeDist_of_card_le_four
+    {V α : Type*} [Fintype V] [LinearOrder V] [Fintype α] [DecidableEq α]
+    (hV : Fintype.card V ≤ 4) {t : Equiv.Perm α} (ht : t.IsSwap)
+    (γ : Cochain (TwoComplex.complete V) (Subgroup.zpowers t)) :
+    γ.defect ((Equiv.Perm.movedNorm α).comp (Subgroup.zpowers t).subtype_injective) =
+      ((Fintype.card V - 2 : ℕ) : ℝ) *
+        γ.gaugeDist ((Equiv.Perm.movedNorm α).comp (Subgroup.zpowers t).subtype_injective) := by
+  obtain ⟨G, hmap⟩ := γ.exists_map_zpowers_subtype_eq_toCochain ht.mul_self_eq_one
+  rw [← γ.defect_map_subtype (Equiv.Perm.movedNorm α) (Subgroup.zpowers t),
+    ← γ.gaugeDist_map_zpowers_subtype ht, hmap]
+  exact G.defect_movedNorm_toCochain_eq_card_sub_two_mul_gaugeDist_of_card_le_four hV ht
+
+/-- **Binary cochain exactness on at most four vertices**: on a vertex type of size at most four,
+every `α : Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))` satisfies
+`α.defect (Equiv.Perm.movedNorm (Fin 2)) =
+  ((Fintype.card V - 2 : ℕ) : ℝ) * α.gaugeDist (Equiv.Perm.movedNorm (Fin 2))`. -/
+theorem defect_movedNorm_fin_two_eq_card_sub_two_mul_gaugeDist_of_card_le_four
+    {V : Type*} [Fintype V] [LinearOrder V] (hV : Fintype.card V ≤ 4)
+    (α : Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))) :
+    α.defect (Equiv.Perm.movedNorm (Fin 2)) =
+      ((Fintype.card V - 2 : ℕ) : ℝ) * α.gaugeDist (Equiv.Perm.movedNorm (Fin 2)) := by
+  rw [← α.toCochain_supportGraph]
+  exact α.supportGraph.defect_movedNorm_toCochain_eq_card_sub_two_mul_gaugeDist_of_card_le_four hV
+    Equiv.Perm.isSwap_swap_zero_one_fin_two
+
 end Cochain
 
-/-- Every binary cochain on `complete (Fin 4)` has a gauge costing at most half its defect. -/
-private theorem Cochain.exists_two_mul_cost_le_defect_fin_four
-    (α : Cochain (complete (Fin 4)) (Perm (Fin 2))) :
-    ∃ β : Fin 4 → Perm (Fin 2),
-      2 * α.cost (movedNorm (Fin 2)) β ≤ α.defect (movedNorm (Fin 2)) := by
-  -- the claim only depends on the six edge values `α u v`, `u < v`, so it is a finite check
-  have key : ∀ a₀₁ a₀₂ a₀₃ a₁₂ a₁₃ a₂₃ : Perm (Fin 2), ∃ b₀ b₁ b₂ b₃ : Perm (Fin 2),
-      2 * (#(b₀⁻¹ * a₀₁ * b₁).support + #(b₀⁻¹ * a₀₂ * b₂).support +
-        #(b₀⁻¹ * a₀₃ * b₃).support + #(b₁⁻¹ * a₁₂ * b₂).support + #(b₁⁻¹ * a₁₃ * b₃).support +
-        #(b₂⁻¹ * a₂₃ * b₃).support) ≤
-      #(a₀₁ * a₁₂ * a₀₂⁻¹).support + #(a₀₁ * a₁₃ * a₀₃⁻¹).support +
-        #(a₀₂ * a₂₃ * a₀₃⁻¹).support + #(a₁₂ * a₂₃ * a₁₃⁻¹).support := by
-    decide +kernel
-  obtain ⟨b₀, b₁, b₂, b₃, h⟩ := key (α 0 1) (α 0 2) (α 0 3) (α 1 2) (α 1 3) (α 2 3)
-  refine ⟨![b₀, b₁, b₂, b₃], ?_⟩
-  rw [Cochain.cost_complete_fin_four, Cochain.defect_complete_fin_four]
-  simp only [Cochain.holonomy_def, α.apply_swap 0 2, α.apply_swap 0 3, α.apply_swap 1 3,
-    movedNorm_apply, Matrix.cons_val]
-  exact_mod_cast h
+/-- On `TwoComplex.complete V` with `Fintype.card V ≤ 4`, the binary Cheeger constant
+`h1 (TwoComplex.complete V) (Equiv.Perm.movedNorm (Fin 2))` equals `(Fintype.card V - 2 : ℕ)`. -/
+theorem h1_complete_movedNorm_fin_two_of_card_le_four {V : Type*} [Fintype V] [LinearOrder V]
+    (hV : Fintype.card V ≤ 4) :
+    h1 (TwoComplex.complete V) (Equiv.Perm.movedNorm (Fin 2)) = (Fintype.card V - 2 : ℕ) :=
+  have : Nontrivial (Equiv.Perm (Fin 2)) := ⟨⟨1, Equiv.swap 0 1, by decide⟩⟩
+  h1_complete_eq_card_sub_two_of_forall_defect_eq_mul_gaugeDist (Equiv.Perm.movedNorm (Fin 2))
+    fun α ↦ α.defect_movedNorm_fin_two_eq_card_sub_two_mul_gaugeDist_of_card_le_four hV
 
-/-- The binary cochain on `complete (Fin 4)` carrying the transposition on the edge `(0, 1)`. -/
-private noncomputable def oneEdge : Cochain (complete (Fin 4)) (Perm (Fin 2)) :=
-  Cochain.singleEdge _ 0 1 (swap 0 1)
+/-- **Four-vertex binary Cheeger constant**: when `Fintype.card V = 4`,
+`h1 (TwoComplex.complete V) (Equiv.Perm.movedNorm (Fin 2)) = 2`. -/
+theorem h1_complete_movedNorm_fin_two_of_card_eq_four {V : Type*} [Fintype V] [LinearOrder V]
+    (hV : Fintype.card V = 4) :
+    h1 (TwoComplex.complete V) (Equiv.Perm.movedNorm (Fin 2)) = 2 := by
+  rw [h1_complete_movedNorm_fin_two_of_card_le_four hV.le, hV]
+  norm_cast
 
-private theorem defect_oneEdge : oneEdge.defect (movedNorm (Fin 2)) = 4 := by
-  rw [Cochain.defect_complete_fin_four]
-  norm_num [oneEdge, Cochain.holonomy_def, movedNorm_apply]
+/-- On `TwoComplex.complete V` with `Fintype.card V ≤ 4`, the Cheeger constant of the two-element
+subgroup `Subgroup.zpowers t` generated by a transposition `t` under the restricted moved-point norm
+equals `(Fintype.card V - 2 : ℕ)`. -/
+theorem h1_complete_zpowers_swap_of_card_le_four {V α : Type*} [Fintype V] [LinearOrder V]
+    [Fintype α] [DecidableEq α] (hV : Fintype.card V ≤ 4) {t : Equiv.Perm α} (ht : t.IsSwap) :
+    h1 (TwoComplex.complete V)
+        ((Equiv.Perm.movedNorm α).comp (Subgroup.zpowers t).subtype_injective) =
+      (Fintype.card V - 2 : ℕ) :=
+  have : Nontrivial (Subgroup.zpowers t) :=
+    ⟨⟨1, ⟨t, Subgroup.mem_zpowers t⟩, fun h ↦ ht.isCycle.ne_one (congrArg Subtype.val h).symm⟩⟩
+  h1_complete_eq_card_sub_two_of_forall_defect_eq_mul_gaugeDist _
+    fun γ ↦ γ.defect_zpowers_swap_eq_card_sub_two_mul_gaugeDist_of_card_le_four hV ht
 
-private theorem two_le_cost_oneEdge (β : Fin 4 → Perm (Fin 2)) :
-    2 ≤ oneEdge.cost (movedNorm (Fin 2)) β := by
-  rw [Cochain.cost_complete_fin_four]
-  have key : ∀ b₀ b₁ b₂ b₃ : Perm (Fin 2), 2 ≤ #(b₀⁻¹ * swap 0 1 * b₁).support +
-      #(b₀⁻¹ * b₂).support + #(b₀⁻¹ * b₃).support + #(b₁⁻¹ * b₂).support + #(b₁⁻¹ * b₃).support +
-      #(b₂⁻¹ * b₃).support := by
-    decide
-  simpa [oneEdge, movedNorm_apply] using (Nat.cast_le (α := ℝ)).mpr (key (β 0) (β 1) (β 2) (β 3))
+/-- **Four-vertex transposition-subgroup Cheeger constant**: when `Fintype.card V = 4`, the Cheeger
+constant of `Subgroup.zpowers t` under the restricted moved-point norm equals `2`. -/
+theorem h1_complete_zpowers_swap_of_card_eq_four {V α : Type*} [Fintype V] [LinearOrder V]
+    [Fintype α] [DecidableEq α] (hV : Fintype.card V = 4) {t : Equiv.Perm α} (ht : t.IsSwap) :
+    h1 (TwoComplex.complete V)
+        ((Equiv.Perm.movedNorm α).comp (Subgroup.zpowers t).subtype_injective) = 2 := by
+  rw [h1_complete_zpowers_swap_of_card_le_four hV.le ht, hV]
+  norm_cast
 
-/-- The binary coboundary constant of the complete complex on four vertices is `2`, attained by
-a single transposition edge, with defect `4` and gauge distance `2`. -/
+/-- The binary coboundary constant of the complete complex on four vertices is `2`. -/
 theorem h1_complete_fin_four_movedNorm_fin_two :
-    h1 (complete (Fin 4)) (movedNorm (Fin 2)) = 2 := by
-  have hD : (2 : ℝ) ≤ oneEdge.gaugeDist (movedNorm (Fin 2)) :=
-    (oneEdge.le_gaugeDist_iff _).mpr two_le_cost_oneEdge
-  have hpos : 0 < oneEdge.gaugeDist (movedNorm (Fin 2)) := two_pos.trans_le hD
-  refine le_antisymm ((h1_le_div hpos).trans ?_) (le_h1_of_forall ⟨oneEdge, hpos⟩ fun α hα => ?_)
-  · rw [defect_oneEdge, div_le_iff₀ hpos]
-    linarith
-  · obtain ⟨β, hβ⟩ := α.exists_two_mul_cost_le_defect_fin_four
-    rw [le_div_iff₀ hα]
-    linarith [α.gaugeDist_le_cost (movedNorm (Fin 2)) β]
+    h1 (complete (Fin 4)) (movedNorm (Fin 2)) = 2 :=
+  h1_complete_movedNorm_fin_two_of_card_eq_four (by simp)
 
 /-- On four vertices the same-degree permutation constant `h1Sym (complete (Fin 4)) = 4 / 3` lies
 strictly below the binary constant `h1 (complete (Fin 4)) (movedNorm (Fin 2)) = 2`. -/

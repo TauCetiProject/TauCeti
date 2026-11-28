@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.Perm.Basic
 public import TauCeti.GroupTheory.Perm.MovedNorm
-import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # A nonexpanding parity retraction
@@ -53,6 +53,11 @@ theorem parityRetract_of_sign_eq_one (ht : t.IsSwap) {σ : Perm α} (hσ : sign 
 theorem parityRetract_of_sign_eq_neg_one (ht : t.IsSwap) {σ : Perm α}
     (hσ : sign σ = -1) : parityRetract ht σ = t := by
   simp [parityRetract_apply, hσ, Units.ext_iff]
+
+/-- The parity retraction chooses `t` on odd permutations and `1` on even permutations. -/
+theorem parityRetract_eq_ite_sign_eq_neg_one (ht : t.IsSwap) (σ : Perm α) :
+    parityRetract ht σ = if sign σ = -1 then t else 1 := by
+  rcases Int.units_eq_one_or (sign σ) with hσ | hσ <;> simp [hσ, Units.ext_iff]
 
 /-- The parity retraction fixes its chosen transposition. -/
 @[simp]

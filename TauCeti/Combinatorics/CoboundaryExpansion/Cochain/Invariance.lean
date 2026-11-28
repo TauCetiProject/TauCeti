@@ -30,10 +30,11 @@ once `X.triangles` is nonempty. Moreover, `Cochain.defect` equals an unoriented 
 `X.triangles`, is independent of the vertex `LinearOrder`, and is preserved by vertex relabellings.
 
 Pushing a cochain forward along a norm-nonincreasing homomorphism `φ : G →* H` (`Cochain.map φ`)
-does not increase `defect` or `gaugeDist`, and along a norm-preserving isomorphism both are
-unchanged (`Cochain.gaugeDist_map_mulEquiv`). Specializing `φ` to `L.subtype` for a subgroup `L ≤ G`
-shows that embedding `L`-valued cochains into `G` preserves `defect` and `cost` (on embedded gauges)
-and can only decrease `gaugeDist`.
+does not increase `defect` or `gaugeDist`, preserves `gaugeDist` when `φ` admits a
+norm-nonincreasing retraction (`Cochain.gaugeDist_map_eq_of_comp_eq_id`), and along a
+norm-preserving isomorphism leaves both unchanged (`Cochain.gaugeDist_map_mulEquiv`). Specializing
+`φ` to `L.subtype` for a subgroup `L ≤ G` shows that embedding `L`-valued cochains into `G`
+preserves `defect` and `cost` (on embedded gauges) and can only decrease `gaugeDist`.
 
 ## References
 
@@ -278,21 +279,12 @@ unoriented triangles `X.triangles`. -/
 theorem defect_eq_sum_triangles [Fintype V] [LinearOrder V] {ℓ : GroupNorm G}
     (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) (α : Cochain X G) :
     α.defect ℓ = ∑ t ∈ X.triangles, α.triangleDefect ℓ t := by
+  classical
   rw [defect_def]
-  refine sum_bij (fun p _ => ({p.1, p.2.1, p.2.2} : Finset V))
-    (fun p hp => (mem_filter.mp hp).2.2.2) ?_ ?_
-    (fun p hp => (α.triangleDefect_triple hℓ (mem_filter.mp hp).2.2.2).symm)
-  · rintro ⟨u₁, v₁, w₁⟩ hp₁ ⟨u₂, v₂, w₂⟩ hp₂ htri
-    obtain ⟨huv₁, hvw₁, _⟩ := (mem_filter.mp hp₁).2
-    obtain ⟨huv₂, hvw₂, _⟩ := (mem_filter.mp hp₂).2
-    exact congrArg Subtype.val
-      (Set.powersetCard.ofLtTriple.injective
-        (a₁ := ⟨(u₁, v₁, w₁), huv₁, hvw₁⟩) (a₂ := ⟨(u₂, v₂, w₂), huv₂, hvw₂⟩)
-        (Subtype.ext <| (Set.powersetCard.val_ofLtTriple ⟨(u₁, v₁, w₁), huv₁, hvw₁⟩).trans
-          (htri.trans (Set.powersetCard.val_ofLtTriple ⟨(u₂, v₂, w₂), huv₂, hvw₂⟩).symm)))
-  · intro t ht
-    obtain ⟨u, v, w, huv, hvw, hset⟩ := X.exists_increasing_of_mem_triangles ht
-    exact ⟨(u, v, w), mem_filter.mpr ⟨mem_univ _, huv, hvw, hset ▸ ht⟩, hset⟩
+  exact Set.powersetCard.sum_filter_lt_triple_eq_sum_of_card_eq_three X.triangles
+    (fun t ht => X.triangle_card t ht)
+    (fun p => ℓ (α.holonomy p.1 p.2.1 p.2.2)) (α.triangleDefect ℓ)
+    (fun _ _ _ _ _ ht => α.triangleDefect_triple hℓ ht |>.symm)
 
 /-! ### Independence of the vertex linear order -/
 
@@ -624,6 +616,17 @@ theorem gaugeDist_map_le {φ : G →* H} {ℓ_G : GroupNorm G} {ℓ_H : GroupNor
     (α.map φ).gaugeDist ℓ_H ≤ α.gaugeDist ℓ_G :=
   (α.le_gaugeDist_iff ℓ_G).mpr fun β =>
     ((α.map φ).gaugeDist_le_cost ℓ_H (φ ∘ β)).trans (α.cost_map_le hφ β)
+
+/-- Pushing a cochain forward along a norm-nonincreasing homomorphism `i : G →* H` that admits a
+norm-nonincreasing retraction `r : H →* G` (`r.comp i = MonoidHom.id G`) preserves `gaugeDist`. -/
+theorem gaugeDist_map_eq_of_comp_eq_id {i : G →* H} {r : H →* G}
+    {ℓ_G : GroupNorm G} {ℓ_H : GroupNorm H}
+    (hi : ∀ g, ℓ_H (i g) ≤ ℓ_G g) (hr : ∀ h, ℓ_G (r h) ≤ ℓ_H h)
+    (hri : r.comp i = MonoidHom.id G) (α : Cochain X G) :
+    (α.map i).gaugeDist ℓ_H = α.gaugeDist ℓ_G := by
+  refine le_antisymm (α.gaugeDist_map_le hi) ?_
+  have hmap : (α.map i).map r = α := by rw [map_map, hri, map_id]
+  simpa only [hmap] using (α.map i).gaugeDist_map_le hr
 
 /-- Along a norm-preserving homomorphism, `defect` is unchanged. -/
 theorem defect_map_eq {φ : G →* H} {ℓ_G : GroupNorm G} {ℓ_H : GroupNorm H}
