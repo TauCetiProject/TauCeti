@@ -11,14 +11,14 @@ import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 /-!
 # Weighted products of conditional factors
 
-`Fintype.prod_prod_ite_mul_pow` splits a weighted double product of two singleton-supported
+`TauCeti.prod_prod_ite_mul_pow` splits a weighted double product of two singleton-supported
 factors into one product per selected index. The indices may coincide, so overlapping
 contributions can be collected without a case split.
 -/
 
 public section
 
-namespace Fintype
+namespace TauCeti
 
 /-- If each of two factors is `1` off its selected index, the double product of their
 weighted powers splits into two products at the selected indices, even if they coincide. -/
@@ -29,4 +29,4 @@ theorem prod_prod_ite_mul_pow {M ι κ : Type*} [CommMonoid M] [Fintype ι]
   rw [Finset.prod_comm]
   simp_rw [mul_pow, Finset.prod_mul_distrib, ite_pow, one_pow, Fintype.prod_ite_eq']
 
-end Fintype
+end TauCeti

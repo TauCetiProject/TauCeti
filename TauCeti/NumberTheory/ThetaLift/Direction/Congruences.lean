@@ -15,17 +15,20 @@ A block of directions of height one is distinguished at each end of a pairing. T
 Frobenius-twisted pairings vanish modulo a scalar, one can scale a whole block or impose one
 linear congruence against a distinguished direction. These options have different costs on
 the two sides: the Frobenius allows the left modulus to be a root of the right modulus.
-The colengths record these costs before passing to valuations and allow constraints from
-several partners to be imposed on the same directions.
-`TauCeti.exists_colengthDvd_frobenius_pairing` uses `Submodule.colengthDvd_inf_comap_span`
-for linear tests and `Submodule.colengthDvd_top_smul_top` for whole-block scaling.
+`TauCeti.exists_colengthDvd_frobenius_pairing` gives coefficient submodules that enforce
+every nonexempt pairing with a weighted colength cost. The submodules can be intersected
+to impose constraints from several partners on the same directions before passing to valuations.
 `TauCeti.DirectionPairExempt` and `TauCeti.directionDeductionCost` describe which pairs
 are exempt and the resulting cost in powers of the source modulus.
+`TauCeti.directionDeductionCost_eq_unmarked` expresses marking as deletion of
+distinguished columns in the cost formula.
 
 The allocation follows `New.exists_congruenceChoice_cost_eq_and_covers` and
 `New.exists_newDirection_dvd` in `grh/src/New/Derivatives/Divisibility/NullFrames.lean`.
-The exemption and cost follow `New.IsExemptPair` and `New.deductionTerm` in the same file
-of grh-lean (https://github.com/lsernau/grh-lean) at commit
+The exemption and cost follow `New.IsExemptPair` and `New.deductionTerm` in the same file,
+and the marked cost identity follows `New.deductionTerm_eraseHeightOne` in
+`grh/src/New/Derivatives/Divisibility/Count.lean` of grh-lean
+(https://github.com/lsernau/grh-lean) at commit
 `72fead102f663d5c7a407964a13dc0cf9d977207`.
 -/
 
@@ -119,7 +122,7 @@ def DirectionPairExempt (markL markR : Bool) (h j : Option ι) : Prop :=
 
 /-- For arbitrary block labels, exemption requires a distinguished source and either a marked
 source place or a marked partner place with a distinguished partner block. -/
-theorem directionPairExempt_def (markL markR : Bool) (h j : Option ι) :
+@[grind =] theorem directionPairExempt_def (markL markR : Bool) (h j : Option ι) :
     DirectionPairExempt markL markR h j ↔ h = none ∧ (markL = true ∨ j = none ∧ markR = true) :=
   Iff.rfl
 
@@ -138,7 +141,9 @@ theorem directionPairExempt_def (markL markR : Bool) (h j : Option ι) :
   simp [directionPairExempt_def]
 
 /-- The deduction in powers of the source modulus, where the partner modulus is its
-`q`-th power. The two minima choose between covering the source and covering the partner. -/
+`q`-th power. The functions `a` and `b` give the per-block column multiplicities at the
+source and partner, while `height` gives the size of each ordinary (`some`) block.
+The two minima choose between covering the source and covering the partner. -/
 def directionDeductionCost [Fintype ι] (height : ι → ℕ) (a b : Option ι → ℕ) (q : ℕ)
     (markL markR : Bool) : ℕ :=
   min (if markL then 0 else a none)
@@ -154,6 +159,17 @@ theorem directionDeductionCost_def [Fintype ι] (height : ι → ℕ) (a b : Opt
         (q * ((∑ i, b (some i)) + if markR then 0 else b none)) +
       (∑ i, a (some i)) + min (∑ i, a (some i) * height i) (q * (∑ i, b (some i) * height i)) :=
   (rfl)
+
+/-- The marked deduction equals the unmarked deduction after deleting the distinguished columns
+at marked endpoints. The multiplicities in ordinary blocks are unchanged. -/
+theorem directionDeductionCost_eq_unmarked [Fintype ι] (height : ι → ℕ) (a b : Option ι → ℕ)
+    (q : ℕ) (markL markR : Bool) :
+    directionDeductionCost height a b q markL markR =
+      directionDeductionCost height
+        (fun h ↦ h.elim (if markL then 0 else a none) (fun i ↦ a (some i)))
+        (fun h ↦ h.elim (if markR then 0 else b none) (fun i ↦ b (some i))) q false false := by
+  simp only [directionDeductionCost_def, Option.elim_some, Option.elim_none, Bool.false_eq_true,
+    ite_false]
 
 /-- Choosing the cheaper side for the two variable costs pays the deduction exactly. -/
 private theorem pairedDirection_cost [Fintype ι] (a b : Option ι → ℕ) (q : ℕ)
@@ -206,7 +222,8 @@ private theorem directionChoices_cover (markL markR leftOne leftTall : Bool) (h 
 
 /-- For two families of theta directions at a place and its partner, impose coefficient
 submodules that make all nonexempt pairings divisible by `d^(p^e)`. The `none` blocks have
-height one, and `some i` has height `height i`. A pair is exempt only when its left block is
+size one, and `some i` has size `height i`. The functions `a` and `b` count columns per block
+at the source and partner, respectively. A pair is exempt only when its left block is
 `none` and either its left place is marked or its right block is `none` at a marked place.
 
 The partner's distinguished coordinates admit roots modulo `d^(p^e)`. The weighted sum

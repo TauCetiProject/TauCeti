@@ -37,10 +37,10 @@ namespace TauCeti
 matrix per place and block label suffices to make all nonexempt pairings divisible by `π`.
 The label `none` denotes the distinguished size-one block. A `some` block of size one
 follows the same exemption rule as any other `some` block. The function `a` gives column
-multiplicities. The modulus `π` divides `p`. For each `i ∈ s`, `d i` is a `p ^ e i`-th root
-of `π`, and each coordinate of the partner's distinguished direction `Y (partner i t) none 1`
-admits a `p ^ e i`-th root modulo `π`. The weighted product of matrix determinants divides
-the product of the local congruence costs expressed in the modulus roots. -/
+multiplicities. The modulus `π` divides `p`. For each `i ∈ s`, the power `d i ^ (p ^ e i)` is
+associated to `π`, and each coordinate of the partner's distinguished direction
+`Y (partner i t) none 1` admits a `p ^ e i`-th root modulo `π`. The weighted product of matrix
+determinants divides the product of the local congruence costs expressed in the modulus roots. -/
 theorem exists_direction_matrices_with_dvd_frobenius_pairings
     {R ι n τ I : Type*} [CommRing R] [PreValuationRing R]
     [Fintype ι] [Fintype n] [Fintype τ] {height : ι → ℕ}
@@ -48,7 +48,7 @@ theorem exists_direction_matrices_with_dvd_frobenius_pairings
     (s : Finset I) (e : I → ℕ) (partner : I → τ → τ) (mark : τ → Bool)
     (a : τ → Option ι → ℕ)
     (Y : ∀ (_ : τ) (h : Option ι), (Fin (h.elim 1 height) → R) →ₗ[R] (n → R))
-    (d : I → R) (hd : ∀ i ∈ s, d i ^ (p ^ e i) = π)
+    (d : I → R) (hd : ∀ i ∈ s, Associated (d i ^ (p ^ e i)) π)
     (hroot : ∀ i ∈ s, ∀ t j, ∃ x : R, π ∣ Y (partner i t) none 1 j - x ^ (p ^ e i)) :
     ∃ g : ∀ (_ : τ) (h : Option ι), Matrix (Fin (h.elim 1 height)) (Fin (h.elim 1 height)) R,
       (∀ i ∈ s, ∀ t h j, ¬DirectionPairExempt (mark t) (mark (partner i t)) h j →
@@ -61,8 +61,8 @@ theorem exists_direction_matrices_with_dvd_frobenius_pairings
   choose root hroot using hroot
   have hlocal (i : s) (t : τ) :=
     exists_colengthDvd_frobenius_pairing (e := e i) (d := d i) hp
-      ((hd i i.property).symm ▸ hπ) (Y t) (Y (partner i t)) (root i i.property t)
-      (by rw [hd i i.property]; exact hroot i i.property t)
+      ((hd i i.property).dvd.trans hπ) (Y t) (Y (partner i t)) (root i i.property t)
+      (fun j ↦ (hd i i.property).dvd_iff_dvd_left.mpr (hroot i i.property t j))
       (a t) (a (partner i t)) (mark t) (mark (partner i t))
   choose L M l r hL hM hcost hpair using hlocal
   let A (t : τ) (h : Option ι) (i : s) (u : τ) : Submodule R (Fin (h.elim 1 height) → R) :=
@@ -82,8 +82,7 @@ theorem exists_direction_matrices_with_dvd_frobenius_pairings
   · intro i hi t h j hj k k'
     have hmem (v) (b) (k) : g v b k ∈ A v b ⟨i, hi⟩ t :=
       (Submodule.mem_iInf _).mp ((Submodule.mem_iInf _).mp (hrow v b k) ⟨i, hi⟩) t
-    rw [← hd i hi]
-    refine hpair ⟨i, hi⟩ t h j hj _ ?_ _ ?_
+    refine (hd i hi).dvd_iff_dvd_left.mp (hpair ⟨i, hi⟩ t h j hj _ ?_ _ ?_)
     · simpa only [A, ite_true] using (Submodule.mem_inf.mp (hmem t h k)).1
     · simpa only [A, ite_true] using (Submodule.mem_inf.mp (hmem (partner i t) j k')).2
   refine (Finset.prod_dvd_prod_of_dvd _ _ fun t _ ↦ Finset.prod_dvd_prod_of_dvd _ _
@@ -99,7 +98,7 @@ theorem exists_direction_matrices_with_dvd_frobenius_pairings
           (f := fun th iu ↦ B th.1 th.2 iu.1 iu.2 ^ a th.1 th.2))
     _ = _ := by
       refine Finset.prod_congr rfl fun i _ ↦ Finset.prod_congr rfl fun u _ ↦ ?_
-      rw [← hcost i u, Fintype.prod_prod_ite_mul_pow]
+      rw [← hcost i u, prod_prod_ite_mul_pow]
       simp_rw [← pow_mul (d i ^ (p ^ e i)), Nat.mul_comm (r i u _) (a (partner i u) _),
         Finset.prod_pow_eq_pow_sum]
       simp_rw [← pow_mul, Nat.mul_comm (l i u _) (a u _), Finset.prod_pow_eq_pow_sum, ← pow_add]
@@ -112,7 +111,8 @@ open TauCeti (DirectionPairExempt directionDeductionCost
   exists_direction_matrices_with_dvd_frobenius_pairings)
 
 /-- The direction changes satisfying all nonexempt congruences for `s` can be chosen
-with total weighted determinant valuation at most `v π` times the normalized deduction. -/
+with total weighted determinant valuation at most `v π` times the normalized deduction.
+The power `d i ^ (p ^ e i)` need only be associated to `π` for each `i ∈ s`. -/
 theorem exists_direction_matrices_with_det_valuation_le_frobenius_budget
     {R ι n τ I : Type*} [CommRing R] [PreValuationRing R]
     [Fintype ι] [Fintype n] [Fintype τ] {height : ι → ℕ}
@@ -120,7 +120,7 @@ theorem exists_direction_matrices_with_det_valuation_le_frobenius_budget
     (s : Finset I) (e : I → ℕ) (partner : I → τ → τ) (mark : τ → Bool)
     (a : τ → Option ι → ℕ)
     (Y : ∀ (_ : τ) (h : Option ι), (Fin (h.elim 1 height) → R) →ₗ[R] (n → R))
-    (d : I → R) (hd : ∀ i ∈ s, d i ^ (p ^ e i) = π)
+    (d : I → R) (hd : ∀ i ∈ s, Associated (d i ^ (p ^ e i)) π)
     (hroot : ∀ i ∈ s, ∀ t j, ∃ x : R, π ∣ Y (partner i t) none 1 j - x ^ (p ^ e i)) :
     ∃ g : ∀ (_ : τ) (h : Option ι), Matrix (Fin (h.elim 1 height)) (Fin (h.elim 1 height)) R,
       (∀ i ∈ s, ∀ t h j, ¬DirectionPairExempt (mark t) (mark (partner i t)) h j →
@@ -132,13 +132,17 @@ theorem exists_direction_matrices_with_det_valuation_le_frobenius_budget
   obtain ⟨g, hg, hdvd⟩ :=
     exists_direction_matrices_with_dvd_frobenius_pairings hp hπ s e partner mark a Y d hd hroot
   refine ⟨g, hg, ?_⟩
-  have hle := AddValuation.map_le_map_of_dvd (v := v) (fun _ ↦ zero_le) hdvd
+  have hnonneg (x : R) : 0 ≤ v x := zero_le
+  have hle := AddValuation.map_le_map_of_dvd hnonneg hdvd
   simp only [v.map_prod, v.map_pow] at hle
   refine hle.trans_eq ?_
   simp only [Finset.mul_sum, nsmul_eq_mul]
   refine Finset.sum_congr rfl fun i hi ↦ Finset.sum_congr rfl fun t _ ↦ ?_
   have hq : ((p ^ e i : ℕ) : ℝ≥0∞) ≠ 0 := by exact_mod_cast pow_ne_zero _ hp.ne_zero
-  rw [← hd i hi, v.map_pow, nsmul_eq_mul, mul_right_comm _ (v (d i)),
+  have hv : v (d i ^ (p ^ e i)) = v π := le_antisymm
+    (AddValuation.map_le_map_of_dvd hnonneg (hd i hi).dvd)
+    (AddValuation.map_le_map_of_dvd hnonneg (hd i hi).dvd')
+  rw [← hv, v.map_pow, nsmul_eq_mul, mul_right_comm _ (v (d i)),
     mul_comm (↑(p ^ e i) : ℝ≥0∞),
     ENNReal.div_mul_cancel hq (ENNReal.natCast_ne_top _)]
 
