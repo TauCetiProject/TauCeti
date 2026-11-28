@@ -105,6 +105,16 @@ theorem of_congr {X Y : C} {a : X ≅ X} {b : Y ≅ Y} (e : X ≅ Y)
   apply eq_neg_of_add_eq_zero_left
   simpa using (of_trans a.symm a).symm
 
+/-- The class homomorphism from the automorphism group of `X` to the Bass group. -/
+def ofAut (X : C) : Aut X →* Multiplicative (BassK1 C) where
+  toFun a := Multiplicative.ofAdd (of a.asIso)
+  map_one' := by simp only [Aut.one_asIso, of_refl, ofAdd_zero]
+  map_mul' a b := by
+    simp only [Aut.mul_asIso, of_trans, add_comm (of b.asIso), ofAdd_add]
+
+@[simp] theorem ofAut_apply {X : C} (a : Aut X) :
+    ofAut X a = Multiplicative.ofAdd (of a.asIso) := (rfl)
+
 /-- Homomorphisms out of the Bass group agree if they agree on automorphism classes. -/
 @[ext] theorem hom_ext {G : Type*} [AddCommGroup G] {f g : BassK1 C →+ G}
     (h : ∀ {X : C} (a : X ≅ X), f (of a) = g (of a)) : f = g := by
