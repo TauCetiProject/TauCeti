@@ -223,10 +223,6 @@ theorem weylWeight_multiplierWeight (w : WreathProduct (Equiv.Perm Bool) (Fin g)
 
 /-! ### Pair permutations and pair flips -/
 
-private theorem pairedWeight_eq_sub (i : Fin g) :
-    pairedWeight i = multiplierWeight g - standardWeight i :=
-  eq_sub_of_add_eq' (standardWeight_add_pairedWeight i)
-
 /-- **The permutation of the pairs** by `σ`: `(m, u) ↦ (m, u ∘ σ⁻¹)`, sending `zᵢ` to `z_{σ i}`. -/
 def permWeight (σ : Equiv.Perm (Fin g)) : Weight g ≃+ Weight g :=
   weylWeight (SemidirectProduct.inr σ)
@@ -279,7 +275,8 @@ theorem permWeight_standardWeight (σ : Equiv.Perm (Fin g)) (i : Fin g) :
 @[simp]
 theorem permWeight_pairedWeight (σ : Equiv.Perm (Fin g)) (i : Fin g) :
     permWeight σ (pairedWeight i) = pairedWeight (σ i) := by
-  rw [pairedWeight_eq_sub, map_sub, permWeight_standardWeight, pairedWeight_eq_sub, permWeight,
+  rw [eq_sub_of_add_eq' (standardWeight_add_pairedWeight i), map_sub, permWeight_standardWeight,
+    eq_sub_of_add_eq' (standardWeight_add_pairedWeight (σ i)), permWeight,
     weylWeight_multiplierWeight]
 
 /-- The flip of pair `i` sends `zᵢ` to `t/zᵢ`. -/
@@ -307,6 +304,7 @@ theorem flipWeight_pairedWeight (i : Fin g) :
   rw [← flipWeight_standardWeight i, flipWeight_flipWeight]
 
 /-- The flip of pair `i` fixes `zⱼ` for `j ≠ i`. -/
+@[simp]
 theorem flipWeight_standardWeight_of_ne {i j : Fin g} (h : j ≠ i) :
     flipWeight i (standardWeight j) = standardWeight j := by
   ext k
@@ -317,10 +315,11 @@ theorem flipWeight_standardWeight_of_ne {i j : Fin g} (h : j ≠ i) :
     · simp [hk]
 
 /-- The flip of pair `i` fixes `t/zⱼ` for `j ≠ i`. -/
+@[simp]
 theorem flipWeight_pairedWeight_of_ne {i j : Fin g} (h : j ≠ i) :
     flipWeight i (pairedWeight j) = pairedWeight j := by
-  rw [pairedWeight_eq_sub, map_sub, flipWeight_standardWeight_of_ne h, flipWeight,
-    weylWeight_multiplierWeight]
+  rw [eq_sub_of_add_eq' (standardWeight_add_pairedWeight j), map_sub,
+    flipWeight_standardWeight_of_ne h, flipWeight, weylWeight_multiplierWeight]
 
 /-- Pair flips commute with one another. -/
 theorem flipWeight_comm (i j : Fin g) (wt : Weight g) :
