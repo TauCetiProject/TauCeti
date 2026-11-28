@@ -173,6 +173,7 @@ theorem neg_limSmul (x : (quotients J hJ).lim) (m : M) :
   eq_neg_of_add_eq_zero_left (by rw [← add_limSmul, neg_add_cancel, zero_limSmul])
 
 /-- Subtraction in the completion distributes over the action on every smooth module. -/
+@[simp]
 theorem sub_limSmul (x y : (quotients J hJ).lim) (m : M) :
     limSmul hM (x - y) m = limSmul hM x m - limSmul hM y m :=
   eq_sub_of_add_eq (by rw [← add_limSmul, sub_add_cancel])
