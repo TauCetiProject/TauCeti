@@ -168,15 +168,16 @@ theorem IsTopRegularOverPolyad.nonneg [Nonempty κ] (h : H.IsTopRegularOverPolya
   exact (abs_nonneg _).not_gt ((h (Classical.arbitrary κ) _ hQ).trans_lt hδ)
 
 variable (H) in
-/-- **Count-to-density reduction for top regularity.** If `0 < δ`, `ε ≤ δ²`, and for every top
-color `c` and every family of `r` subpolyads of `P` the count-scaled discrepancy of `c` on
-`unionSupport U` is at most `ε * #P.support`, then `H` is `(δ, r)`-top-regular over `P`. -/
+/-- **Count-to-density reduction for top regularity.** If `0 < δ`, `ε ≤ δ²`, and whenever `δ < 1`
+and `P.support.Nonempty` the count-scaled discrepancy of each top color `c` on `unionSupport U` is
+at most `ε * #P.support` for every family of `r` subpolyads of `P`, then `H` is `(δ, r)`-top-regular
+over `P`. -/
 theorem isTopRegularOverPolyad_of_count_le {ε : ℝ} (hδ : 0 < δ) (hεδ : ε ≤ δ ^ 2)
-    (hcount : ∀ (c : κ) (U : Fin r → Subpolyad3 P),
+    (hcount : δ < 1 → P.support.Nonempty → ∀ (c : κ) (U : Fin r → Subpolyad3 P),
       |(H.relDensityOn c (unionSupport U) : ℝ) - H.relativeDensity c P| * #(unionSupport U) ≤
         ε * #P.support) :
     H.IsTopRegularOverPolyad P δ r := by
-  obtain hδ₁ | _ := le_or_gt 1 δ
+  obtain hδ₁ | hδ₁ := le_or_gt 1 δ
   · exact isTopRegularOverPolyad_of_one_le (H := H) (P := P) (r := r) hδ₁
   rw [isTopRegularOverPolyad_iff]
   intro c U hU
@@ -188,11 +189,12 @@ theorem isTopRegularOverPolyad_of_count_le {ε : ℝ} (hδ : 0 < δ) (hεδ : ε
       exact card_eq_zero.1 (by exact_mod_cast this.antisymm (Nat.cast_nonneg _))
     rw [hW', relDensityOn_empty, H.relativeDensity_of_support_eq_empty c hP']
     simpa using hδ.le
-  have hPpos : (0 : ℝ) < #P.support :=
-    hW.trans_le (Nat.cast_le.2 (card_le_card (unionSupport_subset U)))
+  have hPne : P.support.Nonempty :=
+    card_pos.1 (Nat.cast_pos.1 (hW.trans_le (Nat.cast_le.2 (card_le_card (unionSupport_subset U)))))
+  have hPpos : (0 : ℝ) < #P.support := Nat.cast_pos.2 hPne.card_pos
   refine le_of_mul_le_mul_right ?_ hW
   calc |(H.relDensityOn c W : ℝ) - H.relativeDensity c P| * #W
-      ≤ ε * #P.support := hcount c U
+      ≤ ε * #P.support := hcount hδ₁ hPne c U
     _ ≤ δ ^ 2 * #P.support := mul_le_mul_of_nonneg_right hεδ hPpos.le
     _ = δ * (δ * #P.support) := by rw [sq, mul_assoc]
     _ ≤ δ * #W := mul_le_mul_of_nonneg_left hU hδ.le

@@ -278,18 +278,12 @@ theorem two_mul_two_pow_mul_two_pow_add_mul_exp_lt {α β : Type*} [Fintype κ] 
   have ht1 : (1 : ℝ) ≤ #t := Nat.one_le_cast.2 (Nat.cast_pos.1 ht_pos)
   have hK1 : (1 : ℝ) ≤ Fintype.card κ := Nat.one_le_cast.2 Fintype.card_pos
   have hI : 2 ^ #s * 2 ^ #t + r ≤ 2 ^ (#s + #t + r) := by
-    have hpow_pos : 1 ≤ 2 ^ (#s + #t) := Nat.one_le_pow (#s + #t) 2 two_pos
-    have hr : r + 1 ≤ 2 ^ r := by
-      rcases r with _ | r
-      · norm_num
-      · exact Nat.lt_two_pow_self
     calc 2 ^ #s * 2 ^ #t + r = 2 ^ (#s + #t) + r := by rw [pow_add]
-      _ ≤ 2 ^ (#s + #t) + (2 ^ r - 1) * 2 ^ (#s + #t) :=
-          Nat.add_le_add_left (Nat.le_trans (by omega) (Nat.le_mul_of_pos_right _ hpow_pos)) _
-      _ = 2 ^ r * 2 ^ (#s + #t) := by
-          have := Nat.one_le_pow r 2 two_pos
-          zify [this]; ring
-      _ = 2 ^ (#s + #t + r) := by rw [← pow_add, add_comm r]
+      _ ≤ 2 ^ (#s + #t) + 2 ^ (#s + #t) * r :=
+          Nat.add_le_add_left (Nat.le_mul_of_pos_left r (Nat.two_pow_pos _)) _
+      _ = 2 ^ (#s + #t) * (r + 1) := by rw [Nat.mul_add_one, Nat.add_comm]
+      _ ≤ 2 ^ (#s + #t) * 2 ^ r := Nat.mul_le_mul_left _ Nat.lt_two_pow_self
+      _ = 2 ^ (#s + #t + r) := by rw [← pow_add]
   have hN : ((#s + #t + r : ℕ) : ℝ) + Fintype.card κ + 1 ≤
       2 * η ^ 2 * ((#s * #t : ℕ) : ℝ) := by
     have hmul :

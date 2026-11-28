@@ -70,10 +70,11 @@ private theorem abs_relDensityOn_sub_coarse_mul_card_le_of_good_children
     (mod_cast H.relativeDensity_le_one c P)
   simp only [Polyad3.coarsen_ofTriple hV f hf, ne_eq, not_true_eq_false, filter_false,
     empty_inter, card_empty, Nat.cast_zero, add_zero] at hagg
+  rw [← Finset.filter_congr_decidable] at hagg
   calc |((H'.relDensityOn c U.support : ℝ) - H.relativeDensity c P) * #U.support|
       ≤ ∑ Q : Polyad3 D.skeleton with Q.coarsen hV f = P,
           |((H'.relDensityOn c (U.support ∩ Q.support) : ℝ) - H.relativeDensity c P) *
-            #(U.support ∩ Q.support)| := by convert hagg
+            #(U.support ∩ Q.support)| := hagg
     _ ≤ ∑ Q : Polyad3 D.skeleton with Q.coarsen hV f = P,
           (τ * #Q.support + if ¬Good Q then (#Q.support : ℝ) else 0) := by
         refine sum_le_sum fun Q hQ ↦ ?_
@@ -115,7 +116,7 @@ private theorem isTopRegularOverPolyad_of_good_children
         (#Q.support : ℝ) ≤ θ * #P.support) :
     H'.IsTopRegularOverPolyad P δ 1 := by
   have hsub := abs_relDensityOn_sub_coarse_mul_card_le_of_good_children H H' hV f hf hτ0 hgood hbad
-  refine H'.isTopRegularOverPolyad_of_count_le hδ htol fun c U ↦ ?_
+  refine H'.isTopRegularOverPolyad_of_count_le hδ htol fun _ _ c U ↦ ?_
   rw [Subpolyad3.unionSupport_unique]
   set U₀ := U default
   have hUP : (#U₀.support : ℝ) ≤ #P.support := by exact_mod_cast card_le_card U₀.support_subset
@@ -134,6 +135,24 @@ private theorem isTopRegularOverPolyad_of_good_children
   rw [add_mul] at hmul
   linarith
 
+open Classical in
+/-- Fiberwise aggregation of `¬Good` fine child supports over `Keep` coarse polyads. -/
+private theorem sum_filter_coarsen_bad_eq {C D : TriadicComplex3 V}
+    (hV : D.skeleton.vertexPart ≤ C.skeleton.vertexPart)
+    (f : Fin D.pairColorCount → Fin C.pairColorCount)
+    (Keep : Polyad3 C.skeleton → Prop) (Good : Polyad3 D.skeleton → Prop) :
+    ∑ P : Polyad3 C.skeleton with Keep P,
+        ∑ Q : Polyad3 D.skeleton with Q.coarsen hV f = P ∧ ¬Good Q, (#Q.support : ℝ) =
+      ∑ Q : Polyad3 D.skeleton with Keep (Q.coarsen hV f) ∧ ¬Good Q, (#Q.support : ℝ) := by
+  rw [← sum_fiberwise_of_maps_to (g := fun Q : Polyad3 D.skeleton ↦ Q.coarsen hV f)
+    (fun Q hQ ↦ mem_filter.2 ⟨mem_univ _, (mem_filter.1 hQ).2.1⟩)]
+  refine sum_congr rfl fun P hP ↦ sum_congr ?_ fun _ _ ↦ rfl
+  ext Q
+  have hKP : Keep P := (mem_filter.1 hP).2
+  simp only [mem_filter, mem_univ, true_and]
+  constructor <;> intro h <;> simp_all
+
+open Classical in
 /-- If `H'` tracks `H.relativeDensity c P` within `τ * #Q.support` on subpolyads of `Good`
 fine children `Q` of `Keep` coarse polyads `P`, non-kept coarse mass is at most `repMass`,
 `Keep`-parent `¬Good` child mass is at most `badMass`, `2 * (τ + θ) ≤ δ ^ 2`, and
@@ -145,7 +164,6 @@ theorem topRegularOverMostPolyads_of_good_children
     (f : Fin D.pairColorCount → Fin C.pairColorCount)
     (hf : ∀ p, C.skeleton.pairColors.color p = f (D.skeleton.pairColors.color p))
     (Keep : Polyad3 C.skeleton → Prop) (Good : Polyad3 D.skeleton → Prop)
-    [DecidablePred Keep] [DecidablePred Good]
     {τ θ δ ε' : ℝ} (hδ : 0 < δ) (hτ0 : 0 ≤ τ) (hθ : 0 < θ) (hε' : 0 ≤ ε')
     (htol : 2 * (τ + θ) ≤ δ ^ 2)
     (hgood : ∀ (P : Polyad3 C.skeleton) (Q : Polyad3 D.skeleton),
@@ -160,9 +178,9 @@ theorem topRegularOverMostPolyads_of_good_children
     (hbudget : 0 < (Fintype.card V).descFactorial 3 →
       repMass + badMass / θ ≤ ε' * (Fintype.card V).descFactorial 3) :
     H'.TopRegularOverMostPolyads C δ ε' 1 := by
-  classical
   let badChild (P : Polyad3 C.skeleton) : ℝ :=
     ∑ Q : Polyad3 D.skeleton with Q.coarsen hV f = P ∧ ¬Good Q, (#Q.support : ℝ)
+  -- Charge each irregular `P` either to `¬Keep P` or via `θ⁻¹` to its `¬Good` fine children.
   have hcharge (P : Polyad3 C.skeleton) :
       (if ¬H'.IsTopRegularOverPolyad P δ 1 then (#P.support : ℝ) else 0) ≤
         (if ¬Keep P then (#P.support : ℝ) else 0) +
@@ -178,24 +196,9 @@ theorem topRegularOverMostPolyads_of_good_children
         rw [le_div_iff₀ hθ, mul_comm]
         by_contra! hlt
         exact hP (isTopRegularOverPolyad_of_good_children H H' hV f hf hδ hτ0 htol
-          (fun Q hQP hGQ ↦ hgood P Q hK hQP hGQ) (by convert hlt.le))
+          (fun Q hQP hGQ ↦ hgood P Q hK hQP hGQ) hlt.le)
       · simp only [hK, not_false_eq_true, ↓reduceIte, add_zero, le_refl]
-  have hfib : ∑ P : Polyad3 C.skeleton with Keep P, badChild P =
-      ∑ Q : Polyad3 D.skeleton with Keep (Q.coarsen hV f) ∧ ¬Good Q, (#Q.support : ℝ) := by
-    rw [← sum_fiberwise_of_maps_to (g := fun Q : Polyad3 D.skeleton ↦ Q.coarsen hV f)
-      (fun Q hQ ↦ mem_filter.2 ⟨mem_univ _, (mem_filter.1 hQ).2.1⟩)]
-    refine sum_congr rfl fun P hP ↦ sum_congr ?_ fun _ _ ↦ rfl
-    ext Q
-    simp only [mem_filter, mem_univ, true_and]
-    have hKP : Keep P := (mem_filter.1 hP).2
-    exact ⟨by rintro ⟨rfl, hng⟩; exact ⟨⟨hKP, hng⟩, rfl⟩,
-      by rintro ⟨⟨_, hng⟩, rfl⟩; exact ⟨rfl, hng⟩⟩
-  have hrep' : ∑ P ∈ univ.filter (fun P : Polyad3 C.skeleton ↦ ¬Keep P), (#P.support : ℝ) ≤
-      repMass := by
-    convert hrep using 2
-  have hbad' : ∑ Q ∈ univ.filter (fun Q : Polyad3 D.skeleton ↦ Keep (Q.coarsen hV f) ∧ ¬Good Q),
-      (#Q.support : ℝ) ≤ badMass := by
-    convert hbad using 2
+  -- Sum the pointwise charge over all coarse polyads and aggregate the fiberwise `¬Good` mass.
   have hsum_irr : ∑ P : Polyad3 C.skeleton with ¬H'.IsTopRegularOverPolyad P δ 1,
       (#P.support : ℝ) ≤ repMass + badMass / θ := by
     calc ∑ P : Polyad3 C.skeleton with ¬H'.IsTopRegularOverPolyad P δ 1, (#P.support : ℝ)
@@ -209,8 +212,10 @@ theorem topRegularOverMostPolyads_of_good_children
           rw [sum_add_distrib, ← sum_filter, ← sum_filter, sum_div]
       _ = (∑ P : Polyad3 C.skeleton with ¬Keep P, (#P.support : ℝ)) +
             (∑ Q : Polyad3 D.skeleton with Keep (Q.coarsen hV f) ∧ ¬Good Q,
-              (#Q.support : ℝ)) / θ := by rw [hfib]
-      _ ≤ repMass + badMass / θ := add_le_add hrep' (div_le_div_of_nonneg_right hbad' hθ.le)
+              (#Q.support : ℝ)) / θ := by
+          rw [sum_filter_coarsen_bad_eq hV f Keep Good]
+      _ ≤ repMass + badMass / θ := add_le_add hrep (div_le_div_of_nonneg_right hbad hθ.le)
+  -- Normalize by the total number of injective triples `(|V|)₃`.
   rw [topRegularOverMostPolyads_iff, exceptionalPolyadMass_eq_sum_div hC]
   rcases Nat.eq_zero_or_pos ((Fintype.card V).descFactorial 3) with hdesc0 | hdesc
   · rw [hdesc0, Nat.cast_zero, div_zero]

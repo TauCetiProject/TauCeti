@@ -684,6 +684,7 @@ private theorem recolored_child_dev_le [Fintype κ]
     _ = Fintype.card κ * (η + β) * #Q.support := by
         rw [sum_const, card_univ, nsmul_eq_mul]; ring
 
+open Classical in
 /-- **Coupled triple recoloring across a small polyad energy gap.** Let `D` refine `C` along a
 pair-color projection `f` recovering `C.skeleton.pairColors.color`, with both complexes selecting
 polyad decompositions, and suppose `H` is `(η, 1)`-top-regular over all polyads of `D` outside a
@@ -709,7 +710,6 @@ theorem TopRegularOverMostPolyads.exists_approximates3_of_polyadEnergy_sub_le [F
       H'.TopRegularOverMostPolyads C δ
         ((μ + Fintype.card (Polyad3 D.skeleton) * N₀ /
           (Fintype.card V).descFactorial 3) / θ) 1 := by
-  classical
   have hN₀_pos : 0 < N₀ := pos_of_support_lower_bound hN₀
   obtain ⟨H', M, hbig, hsmall⟩ :=
     exists_coupled_recoloring (H := H) (C := C) (D := D) hV f hf hβ hN₀
@@ -717,11 +717,11 @@ theorem TopRegularOverMostPolyads.exists_approximates3_of_polyadEnergy_sub_le [F
     (fun Q hQ ↦ (hbig Q hQ).2.2.1) (fun Q hQ ↦ (hbig Q hQ).2.2.2) hsmall, ?_⟩
   let Good : Polyad3 D.skeleton → Prop := fun Q ↦
     N₀ ≤ (#Q.support : ℝ) ∧ H.IsTopRegularOverPolyad Q η 1
-  have hbad : ∑ Q : Polyad3 D.skeleton with True ∧ ¬Good Q, (#Q.support : ℝ) ≤
+  have hbad : ∑ Q : Polyad3 D.skeleton with ¬Good Q, (#Q.support : ℝ) ≤
       μ * (Fintype.card V).descFactorial 3 + Fintype.card (Polyad3 D.skeleton) * N₀ := by
     let s₁ := univ.filter fun Q : Polyad3 D.skeleton ↦ ¬N₀ ≤ (#Q.support : ℝ)
     let s₂ := univ.filter fun Q : Polyad3 D.skeleton ↦ ¬H.IsTopRegularOverPolyad Q η 1
-    have hunion : (univ.filter fun Q : Polyad3 D.skeleton ↦ True ∧ ¬Good Q) = s₁ ∪ s₂ := by
+    have hunion : (univ.filter fun Q : Polyad3 D.skeleton ↦ ¬Good Q) = s₁ ∪ s₂ := by
       ext Q; simp only [Good, s₁, s₂, mem_union, mem_filter, mem_univ, true_and, not_and]
       tauto
     have hsmall_sum : ∑ Q ∈ s₁, (#Q.support : ℝ) ≤ Fintype.card (Polyad3 D.skeleton) * N₀ := by
@@ -741,7 +741,8 @@ theorem TopRegularOverMostPolyads.exists_approximates3_of_polyadEnergy_sub_le [F
   refine topRegularOverMostPolyads_of_good_children (H := H) hC hV f hf (fun _ ↦ True) Good
     (τ := Fintype.card κ * (η + β)) (repMass := 0)
     (badMass := μ * (Fintype.card V).descFactorial 3 + Fintype.card (Polyad3 D.skeleton) * N₀)
-    hδ (by positivity) hθ hε' htol ?_ (by simp) (by convert hbad) (fun hdesc ↦ ?_)
+    hδ (by positivity) hθ hε' htol ?_ (by simp)
+    (by simpa only [true_and, Finset.filter_congr_decidable] using hbad) (fun hdesc ↦ ?_)
   · intro P Q _ hQP hGQ c S'
     have hQ_ne : Q.support.Nonempty := card_pos.1 (by exact_mod_cast hN₀_pos.trans_le hGQ.1)
     obtain ⟨hMmem, hMpush, -, hsub⟩ := hbig Q hGQ.1

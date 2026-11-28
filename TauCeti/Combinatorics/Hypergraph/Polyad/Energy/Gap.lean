@@ -166,20 +166,13 @@ theorem isTopRegularOverPolyad_of_sum_polyadMap_le [Fintype κ₂']
         #(({x | Polyad3.ofTriple S x ≠ π (Polyad3.ofTriple T x)} : Finset _) ∩ P.support) ≤
       θ * #P.support) :
     H.IsTopRegularOverPolyad P δ r := by
-  obtain hδ₁ | hδ₁ := le_or_gt 1 δ
-  · exact isTopRegularOverPolyad_of_one_le (H := H) (P := P) (r := r) hδ₁
-  refine H.isTopRegularOverPolyad_of_count_le hδ hηθ fun c U ↦ ?_
-  obtain hP0 | hPpos := P.support.eq_empty_or_nonempty
-  · have hU0 : unionSupport U = ∅ := subset_empty.1 (hP0 ▸ unionSupport_subset U)
-    simp [hP0, hU0]
+  refine H.isTopRegularOverPolyad_of_count_le hδ hηθ fun hδ₁ hPpos c U ↦ ?_
   have hθ₀ : 0 ≤ θ := nonneg_of_mul_nonneg_left
     ((add_nonneg (add_nonneg (add_nonneg (sum_nonneg fun _ _ ↦ Nat.cast_nonneg _)
       (sum_nonneg fun _ _ ↦ mul_nonneg (Nat.cast_nonneg _) (abs_nonneg _)))
       (sum_nonneg fun _ _ ↦ Nat.cast_nonneg _)) (Nat.cast_nonneg _)).trans (hP c))
     (Nat.cast_pos.2 hPpos.card_pos)
-  have hη₁ : η ≤ 1 := by
-    have hδ₂ : δ ^ 2 < 1 := by nlinarith [hδ₁]
-    linarith [hηθ]
+  have hη₁ : η ≤ 1 := by nlinarith
   have h₁ := abs_relDensityOn_unionSupport_sub_ref_mul_card_le H π hη hη₁ U c
     (a := (H.relativeDensity c P : ℝ))
     (mod_cast H.relativeDensity_nonneg c P) (mod_cast H.relativeDensity_le_one c P)
@@ -203,21 +196,14 @@ theorem isTopRegularOverPolyad_of_sum_abs_relativeDensity_sub_le [Fintype κ₂'
         2 * #(({x | Polyad3.ofTriple S x ≠ π (Polyad3.ofTriple T x)} : Finset _) ∩ P.support) ≤
       θ * #P.support) :
     H.IsTopRegularOverPolyad P δ r := by
-  obtain hδ₁ | hδ₁ := le_or_gt 1 δ
-  · exact isTopRegularOverPolyad_of_one_le (H := H) (P := P) (r := r) hδ₁
-  refine H.isTopRegularOverPolyad_of_count_le hδ hηθ fun c U ↦ ?_
-  obtain hP0 | hPpos := P.support.eq_empty_or_nonempty
-  · have hU0 : unionSupport U = ∅ := subset_empty.1 (hP0 ▸ unionSupport_subset U)
-    simp [hP0, hU0]
+  refine H.isTopRegularOverPolyad_of_count_le hδ hηθ fun hδ₁ hPpos c U ↦ ?_
   have hθ₀ : 0 ≤ θ := nonneg_of_mul_nonneg_left
     ((add_nonneg (add_nonneg (add_nonneg (sum_nonneg fun _ _ ↦ Nat.cast_nonneg _)
       (mul_nonneg zero_le_two (sum_nonneg fun _ _ ↦ mul_nonneg (Nat.cast_nonneg _) (abs_nonneg _))))
       (mul_nonneg zero_le_two (sum_nonneg fun _ _ ↦ Nat.cast_nonneg _)))
       (mul_nonneg zero_le_two (Nat.cast_nonneg _))).trans (hP c))
     (Nat.cast_pos.2 hPpos.card_pos)
-  have hη₁ : η ≤ 1 := by
-    have hδ₂ : δ ^ 2 < 1 := by nlinarith [hδ₁]
-    linarith [hηθ]
+  have hη₁ : η ≤ 1 := by nlinarith
   set W := unionSupport U
   set a' := Set.projIcc 0 1 zero_le_one (a c)
   have hclamp : ∑ Q : Polyad3 T with π Q = P, #Q.support * |(H.relativeDensity c Q : ℝ) - a'| ≤
