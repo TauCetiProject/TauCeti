@@ -26,6 +26,8 @@ scalars restricted to the ambient ring.
 
 The grading uses the dimension of the closure of a point in the ambient spectrum,
 `dim (R ⧸ p)`. The module and the ring may have different dimensions.
+`Submonoid.moduleCycle_apply_comap` retains this grading under localization and uses
+`Submonoid.length_localizedModule_under` to compute the new coefficients.
 
 ## References
 
@@ -77,6 +79,30 @@ theorem moduleCycle_apply (hM : Module.supportDim R M ≤ d) {p : PrimeSpectrum 
   let q : pointsOfDimension (Spec (.of R)) d := ⟨p, mem_pointsOfDimension_spec_iff.2 hp⟩
   unfold moduleCycle
   exact cyclesOfDimensionEquivFinsupp_symm_apply (Spec (.of R)) d _ q
+
+open TensorProduct in
+/-- Localizing the module cycle at any submonoid keeps the localized length at each surviving
+prime. The dimension test is taken in the original spectrum, not in the localized spectrum.
+See [Stacks, Section 42.10](https://stacks.math.columbia.edu/tag/02QV). -/
+theorem _root_.Submonoid.moduleCycle_apply_comap {S : Type*} [CommRing S] [Algebra R S]
+    (U : Submonoid R) [IsLocalization U S] (hM : Module.supportDim R M ≤ d)
+    (q : PrimeSpectrum S) :
+    (moduleCycle M hM : AlgebraicCycle (Spec (.of R)) ℤ)
+        (PrimeSpectrum.comap (algebraMap R S) q) =
+      if ringKrullDim (R ⧸ q.asIdeal.under R) = d then
+        (Module.length (Localization.AtPrime q.asIdeal)
+          (LocalizedModule.AtPrime q.asIdeal (S ⊗[R] M))).toNat
+      else 0 := by
+  let p := PrimeSpectrum.comap (algebraMap R S) q
+  have hp : p.asIdeal = q.asIdeal.under R := PrimeSpectrum.comap_asIdeal _ _
+  by_cases hd : ringKrullDim (R ⧸ q.asIdeal.under R) = d
+  · have hpd : ringKrullDim (R ⧸ p.asIdeal) = d := by rwa [hp]
+    rw [ite_eq_left hd, moduleCycle_apply M hM hpd]
+    exact congrArg (fun n : ℕ∞ ↦ (n.toNat : ℤ))
+      (U.length_localizedModule_under M q.asIdeal)
+  · rw [ite_eq_right hd]
+    refine apply_eq_zero_of_notMem_pointsOfDimension (moduleCycle M hM).property ?_
+    exact fun h ↦ hd (hp ▸ mem_pointsOfDimension_spec_iff.mp h)
 
 /-- For a finite module with zero-dimensional or empty support over a local ring, the
 coefficient at the closed point is its length over the original ring. -/
