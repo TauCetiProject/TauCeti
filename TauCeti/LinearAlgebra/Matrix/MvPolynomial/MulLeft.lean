@@ -126,7 +126,7 @@ theorem mvPolynomialMulLeft_mvPolynomialMinor {R : Type*} [CommRing R] [Decidabl
     (g : Matrix m m R) (c : m → n) :
     mvPolynomialMulLeft g (mvPolynomialMinor R id c) = C g.det * mvPolynomialMinor R id c := by
   rw [mvPolynomialMulLeft_def, aeval_mvPolynomialMinor,
-    submatrix_mul _ _ _ id _ Function.bijective_id, det_mul, mvPolynomialMinor_eq_det_submatrix,
-    RingHom.map_det, RingHom.mapMatrix_apply, submatrix_id_id]
+    submatrix_mul _ _ _ id _ Function.bijective_id, det_mul]
+  simp [mvPolynomialMinor_eq_det_submatrix, RingHom.map_det]
 
 end Matrix

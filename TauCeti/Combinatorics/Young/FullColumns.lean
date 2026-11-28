@@ -115,14 +115,16 @@ def fullColumnsEquiv (hμ : μ.colLen 0 ≤ N) (hν : ν.colLen 0 ≤ N)
     rw [addTableau_apply]
     by_cases hj : j < d
     · by_cases hi : i < N
-      · rw [ite_eq_left hj, ite_eq_left hi,
-          val_eq_of_mem_of_lt T (mem_of_rowLen_eq_add h (by omega) hj) hi]
-      · rw [ite_eq_left hj, ite_eq_right hi,
-          T.val.zeros fun hc => hi ((lt_colLen_zero_of_mem hc).trans_le hν)]
-    · rw [ite_eq_right hj, dropTableau_apply, Nat.sub_add_cancel (not_lt.mp hj)]
+      · simp only [hj, hi, ↓reduceIte]
+        rw [val_eq_of_mem_of_lt T (mem_of_rowLen_eq_add h (by omega) hj) hi]
+      · simp only [hj, hi, ↓reduceIte]
+        rw [T.val.zeros fun hc => hi ((lt_colLen_zero_of_mem hc).trans_le hν)]
+    · simp only [hj, ↓reduceIte]
+      rw [dropTableau_apply, Nat.sub_add_cancel (not_lt.mp hj)]
   right_inv U := by
     refine Subtype.ext (SemistandardYoungTableau.ext fun i j => ?_)
-    rw [dropTableau_apply, addTableau_apply, ite_eq_right (by omega), Nat.add_sub_cancel]
+    have hj : ¬ j + d < d := by omega
+    simp only [dropTableau_apply, addTableau_apply, hj, ↓reduceIte, Nat.add_sub_cancel]
 
 /-- Deleting the full columns reads the tableau from the column `d` on. -/
 @[simp]

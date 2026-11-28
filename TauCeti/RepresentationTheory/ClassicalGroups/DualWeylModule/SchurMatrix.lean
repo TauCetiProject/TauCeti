@@ -86,7 +86,7 @@ than `N` has no tableau in `N` letters, and then `b_T(z * y) = 0`.
 * `TauCeti.DualWeylModule.trace_schurMatrix_diagonal` and
   `TauCeti.DualWeylModule.trace_schurMatrix_diagonal_mul_det`: the character is the Schur
   polynomial, and Weyl's character formula in the cross-multiplied form: the character times the
-  alternant `det (x_a ^ (N - 1 - b))` is the alternant `det (x_a ^ (λ_b + N - 1 - b))`.
+  alternant `det (x_a ^ (N - 1 - b))` is the alternant `det (x_a ^ (μ.rowLen b + N - 1 - b))`.
 * `TauCeti.DualWeylModule.schurMatrix_eq_det_pow_smul_submatrix`,
   `TauCeti.DualWeylModule.submatrix_schurMatrix_eq_iff`,
   `TauCeti.DualWeylModule.mvPolynomialMulLeft_bideterminant_eq_pow_mul`,
@@ -353,23 +353,6 @@ variable {R : Type*} [CommRing R] {N N' n d : ℕ} {μ ν : YoungDiagram}
 variable (hμ : μ.colLen 0 ≤ N) (hν : ν.colLen 0 ≤ N) (h : ∀ i < N, ν.rowLen i = μ.rowLen i + d)
 include hμ hν h
 
-/-- **The full columns of a Schur matrix.** Let `ν` be `μ` with `d` columns of the full height `N`
-prepended, both with at most `N` rows. The Schur matrix of an `N × N` matrix `g` for `ν` is
-`det g ^ d` times its Schur matrix for `μ`, the tableaux being matched by deleting the full columns
-(`TauCeti.BoundedSSYT.fullColumnsEquiv`). -/
-theorem schurMatrix_eq_det_pow_smul_submatrix (g : Matrix (Fin N) (Fin N) R) :
-    schurMatrix ν g = g.det ^ d • (schurMatrix μ g).submatrix
-      (BoundedSSYT.fullColumnsEquiv hμ hν h) (BoundedSSYT.fullColumnsEquiv hμ hν h) := by
-  rw [schurMatrix_eq_iff ν (hν.trans le_rfl)]
-  intro T
-  rw [bideterminant_ssytFilling_eq_pow_mul hμ hν h le_rfl, map_mul, map_pow,
-    mvPolynomialMulLeft_mvPolynomialMinor, mvPolynomialMulLeft_bideterminant μ,
-    ← (BoundedSSYT.fullColumnsEquiv hμ hν h).sum_comp, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun U _ => ?_
-  rw [bideterminant_ssytFilling_eq_pow_mul hμ hν h le_rfl, Matrix.smul_apply,
-    Matrix.submatrix_apply, smul_eq_mul, smul_eq_C_mul, smul_eq_C_mul, map_mul, map_pow]
-  ring
-
 /-- **Uniqueness of the Schur matrix with the full columns split off.** Let `ν` be `μ` with `d`
 columns of the full height `N` prepended, both with at most `N` rows, `e` deleting the full
 columns, and `N ≤ n`. For an `N' × N` matrix `z`, `(schurMatrix ν z).submatrix id e.symm` is the
@@ -413,6 +396,26 @@ theorem mvPolynomialMulLeft_bideterminant_eq_pow_mul (hN : N ≤ n) (z : Matrix 
         ∑ U, schurMatrix ν z T ((BoundedSSYT.fullColumnsEquiv hμ hν h).symm U) •
           bideterminant R μ (hμ.trans hN) (ssytFilling U) := by
   simpa only [submatrix_apply, id] using (submatrix_schurMatrix_eq_iff hμ hν h hN).mp rfl T
+
+/-- **The full columns of a Schur matrix.** Let `ν` be `μ` with `d` columns of the full height `N`
+prepended, both with at most `N` rows. The Schur matrix of an `N × N` matrix `g` for `ν` is
+`det g ^ d` times its Schur matrix for `μ`, the tableaux being matched by deleting the full columns
+(`TauCeti.BoundedSSYT.fullColumnsEquiv`). -/
+theorem schurMatrix_eq_det_pow_smul_submatrix (g : Matrix (Fin N) (Fin N) R) :
+    schurMatrix ν g = g.det ^ d • (schurMatrix μ g).submatrix
+      (BoundedSSYT.fullColumnsEquiv hμ hν h) (BoundedSSYT.fullColumnsEquiv hμ hν h) := by
+  -- Substituting `g * y` multiplies `Δ(y)` by `det g`, so the expansion of `b_T(g * y)` along
+  -- `Δ(y) ^ d` has the coefficients `det g ^ d • schurMatrix μ g`.
+  have key := (submatrix_schurMatrix_eq_iff hμ hν h le_rfl (z := g)
+    (A := (g.det ^ d • schurMatrix μ g).submatrix (BoundedSSYT.fullColumnsEquiv hμ hν h) id)).mpr
+      fun T => by
+        rw [bideterminant_ssytFilling_eq_pow_mul hμ hν h le_rfl, map_mul, map_pow,
+          mvPolynomialMulLeft_mvPolynomialMinor, mvPolynomialMulLeft_bideterminant μ]
+        simp only [submatrix_apply, id, Matrix.smul_apply, smul_eq_mul, smul_eq_C_mul, map_mul,
+          map_pow, Finset.mul_sum]
+        exact Finset.sum_congr rfl fun U _ => by ring
+  ext T V
+  simpa using congrFun (congrFun key T) (BoundedSSYT.fullColumnsEquiv hμ hν h V)
 
 /-- **Evaluation vectors with the full columns split off.** Let `ν` be `μ` with `d` columns of the
 full height `N` prepended, both with at most `N` rows, `e` deleting the full columns, and
