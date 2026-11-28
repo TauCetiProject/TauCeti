@@ -141,6 +141,20 @@ lemma ihomHoFunctor_obj_mk_ihomObj₀Equiv_symm (g : A ⟶ B) :
     (ihomHoFunctor A B).obj (.mk ((ihomObj₀Equiv A B).symm g)) = mapHomotopyCategory g := by
   rw [ihomObj₀Equiv_symm_eq_unitHomEquiv, ihomHoFunctor_obj_mk, MonoidalClosed.uncurry'_curry']
 
+/-- Naturally equivalent functors invert the same edges, even when their simplicial source
+is not a quasicategory. -/
+lemma Edge.IsEquivalence.isIso_homotopyCategoryHomMk_map_iff {f g : A ⟶ B}
+    {α : Edge ((ihomObj₀Equiv _ _).symm f) ((ihomObj₀Equiv _ _).symm g)}
+    (hα : α.IsEquivalence) (w : A _⦋1⦌) :
+    IsIso (HomotopyCategory.homMk ((Edge.mk' w).map f)) ↔
+      IsIso (HomotopyCategory.homMk ((Edge.mk' w).map g)) := by
+  have : IsIso (HomotopyCategory.homMk α) := hα.isIso_homotopyCategoryHomMk
+  let i := asIso (HomotopyCategory.homMk α)
+  let e : mapHomotopyCategory f ≅ mapHomotopyCategory g :=
+    (eqToIso (ihomHoFunctor_obj_mk_ihomObj₀Equiv_symm f)).symm ≪≫
+      (ihomHoFunctor A B).mapIso i ≪≫ eqToIso (ihomHoFunctor_obj_mk_ihomObj₀Equiv_symm g)
+  exact NatIso.isIso_map_iff e (HomotopyCategory.homMk (Edge.mk' w))
+
 /-- **Naturality of the comparison in the source**: under the comparisons
 `ho Fun(-, B) ⥤ (ho - ⥤ ho B)`, precomposition with `f : A' ⟶ A` on `Fun(A, B)` corresponds to
 precomposition with `ho f`. -/

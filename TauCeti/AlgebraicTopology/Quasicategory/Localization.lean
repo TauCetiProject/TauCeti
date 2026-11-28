@@ -40,6 +40,8 @@ isomorphisms of functors `ho D ⥤ A` and reaches every functor `ho C ⥤ A` inv
 * `SSet.functorsInverting.precomp`: precomposition with a map `f : C ⟶ D` sending `W` to
   isomorphisms of `ho D`, as a map `Fun(D, E) ⟶ SSet.functorsInverting W E`.
 * `SSet.IsLocalization f W`: `f` is a localization of `C` at `W`.
+* `SSet.functorsInverting.precompFunctor`: the family of restricted precomposition maps.
+* `SSet.IsLocalization.iff_of_isEquivalence`: naturally equivalent maps localize together.
 * `SSet.IsLocalization.comp_iff`: the property is invariant under categorical equivalences of
   the target.
 * `SSet.IsLocalization.isLocalization_mapHomotopyCategory`: a localization `f` induces a
@@ -137,6 +139,113 @@ lemma precomp_comp {D' : SSet.{u}} (f : C ⟶ D)
   rw [← cancel_mono (functorsInverting W E).ι, precomp_ι, Category.assoc, precomp_ι, pre_map,
     NatTrans.comp_app]
 
+/-- Precomposition as a family indexed by functors inverting `W`, with values in functors
+inverting `W`. This restricts internal composition to the full subcategories of inverters. -/
+noncomputable def precompFunctor (E : SSet.{u}) :
+    (functorsInverting W D : SSet) ⟶
+      (ihom ((ihom D).obj E)).obj (functorsInverting W E) := by
+  let P := (functorsInverting W D).ι ≫
+    curry ((β_ _ _).hom ≫ comp C D E)
+  have hv (v : (functorsInverting W D : SSet) _⦋0⦌) :
+      ihomObj₀Equiv _ _ (P.app _ v) = (pre (ihomObj₀Equiv C D v.val)).app E := by
+    obtain ⟨f, hf⟩ := (ihomObj₀Equiv C D).symm.surjective v.val
+    simp [P, ← hf, curry_braiding_comp_app_ihomObj₀Equiv_symm]
+  have hL : Subcomplex.range (uncurry P) ≤ functorsInverting W E := by
+    apply (range_le_fullEnhancedSubcategory_iff _ _).2
+    rintro ⟨z, v⟩ w hw
+    have hz := congrArg (fun k ↦ k.app (op ⦋0⦌) z)
+      ((ihomObj₀Equiv_app P v).symm.trans (hv v))
+    have heval : (uncurry P).app _ (z, v) =
+        ((pre (ihomObj₀Equiv C D v.val)).app E).app _ z := by
+      have hpair : (CartesianMonoidalCategory.lift (𝟙 _) (const v)).app _ z = (z, v) := by
+        apply Prod.ext
+        · have h := congrArg (fun k ↦ k.app (op ⦋0⦌) z)
+            (CartesianMonoidalCategory.lift_fst (𝟙 ((ihom D).obj E)) (const v))
+          simp only [NatTrans.comp_app] at h
+          exact h
+        · have h := congrArg (fun k ↦ k.app (op ⦋0⦌) z)
+            (CartesianMonoidalCategory.lift_snd (𝟙 ((ihom D).obj E)) (const v))
+          simp only [NatTrans.comp_app] at h
+          exact h.trans (by simp [const_app, SimplexCategory.const_eq_id])
+      simpa only [NatTrans.comp_app, ConcreteCategory.comp_apply, hpair] using hz
+    rw [heval]
+    obtain ⟨g, rfl⟩ := (ihomObj₀Equiv D E).symm.surjective z
+    rw [pre_app_app_ihomObj₀Equiv_symm, Equiv.apply_symm_apply]
+    exact ((mem_fullEnhancedSubcategory_obj_zero_iff _ _).1 v.property w hw).map g
+  exact curry (Subcomplex.lift (uncurry P) hL)
+
+@[reassoc (attr := simp)]
+lemma precompFunctor_ι (E : SSet.{u}) :
+    precompFunctor (C := C) (D := D) (W := W) E ≫
+      (ihom ((ihom D).obj E)).map (functorsInverting W E).ι =
+    (functorsInverting W D).ι ≫ curry ((β_ _ _).hom ≫ comp C D E) := by
+  apply uncurry_injective
+  rw [uncurry_natural_right, precompFunctor, uncurry_curry]
+  exact Subcomplex.lift_ι _ _
+
+/-- Evaluating the family of restricted precomposition maps gives precomposition by the
+corresponding functor. -/
+@[simp]
+lemma ihomObj₀Equiv_precompFunctor_app (E : SSet.{u}) [Quasicategory E]
+    (v : (functorsInverting W D : SSet) _⦋0⦌)
+    (hv : ∀ w ∈ W, IsIso (HomotopyCategory.homMk
+      ((Edge.mk' w).map (ihomObj₀Equiv C D v.val)))) :
+    dsimp% ihomObj₀Equiv _ _ ((precompFunctor E).app _ v) =
+      precomp (ihomObj₀Equiv C D v.val) hv E := by
+  rw [← cancel_mono (functorsInverting W E).ι, ← ihomObj₀Equiv_ihom_map_app,
+    ← NatTrans.comp_app_apply, precompFunctor_ι, NatTrans.comp_app_apply, precomp_ι]
+  obtain ⟨f, hf⟩ := (ihomObj₀Equiv C D).symm.surjective v.val
+  simp [← hf, curry_braiding_comp_app_ihomObj₀Equiv_symm]
+
+/-- Equivalent inverting functors induce equivalent restricted precomposition maps. -/
+lemma exists_isEquivalence_precomp [Quasicategory D] {f g : C ⟶ D}
+    (hf : ∀ w ∈ W, IsIso (HomotopyCategory.homMk ((Edge.mk' w).map f)))
+    (hg : ∀ w ∈ W, IsIso (HomotopyCategory.homMk ((Edge.mk' w).map g)))
+    (α : Edge ((ihomObj₀Equiv _ _).symm f) ((ihomObj₀Equiv _ _).symm g))
+    (hα : α.IsEquivalence) (E : SSet.{u}) [Quasicategory E] :
+    ∃ e : Edge ((ihomObj₀Equiv _ _).symm (precomp f hf E))
+      ((ihomObj₀Equiv _ _).symm (precomp g hg E)), e.IsEquivalence := by
+  have hmem : α.edge ∈ (functorsInverting W D).obj _ := by
+    rw [mem_functorsInverting_obj_iff]
+    intro v w hw
+    obtain ⟨i, rfl⟩ := SimplexCategory.exists_eq_const_of_zero v
+    fin_cases i
+    · have h := congrArg (fun k ↦ ((ihom C).obj D).map k.op α.edge)
+        SimplexCategory.δ_one_eq_const.symm
+      have hs := h.trans α.src_eq
+      have hk := (congrArg (ihomObj₀Equiv C D) hs).trans (Equiv.apply_symm_apply _ f)
+      exact Eq.mpr (congrArg (fun k : C ⟶ D ↦ ((Edge.mk' w).map k).IsEquivalence) hk)
+        ((Edge.isEquivalence_iff_isIso_homotopyCategoryHomMk _).2 (hf w hw))
+    · have h := congrArg (fun k ↦ ((ihom C).obj D).map k.op α.edge)
+        SimplexCategory.δ_zero_eq_const.symm
+      have ht := h.trans α.tgt_eq
+      have hk := (congrArg (ihomObj₀Equiv C D) ht).trans (Equiv.apply_symm_apply _ g)
+      exact Eq.mpr (congrArg (fun k : C ⟶ D ↦ ((Edge.mk' w).map k).IsEquivalence) hk)
+        ((Edge.isEquivalence_iff_isIso_homotopyCategoryHomMk _).2 (hg w hw))
+  let e := α.toSubcomplex (functorsInverting W D) hmem
+  have : IsFullyFaithful (functorsInverting W D).ι :=
+    IsFullyFaithful.fullEnhancedSubcategory_ι _
+  have he : e.IsEquivalence :=
+    (Edge.isEquivalence_map_iff_of_isFullyFaithful (functorsInverting W D).ι e).1
+      ((Edge.isEquivalence_iff_of_edge_eq rfl).2 hα)
+  have hv (v : (functorsInverting W D : SSet) _⦋0⦌)
+      (h : ∀ w ∈ W, IsIso (HomotopyCategory.homMk
+        ((Edge.mk' w).map (ihomObj₀Equiv C D v.val)))) :
+      (precompFunctor E).app _ v =
+        (ihomObj₀Equiv _ _).symm (precomp (ihomObj₀Equiv C D v.val) h E) :=
+    (Equiv.eq_symm_apply _).2 (ihomObj₀Equiv_precompFunctor_app E v h)
+  let v₀ : (functorsInverting W D : SSet) _⦋0⦌ :=
+    ⟨(ihomObj₀Equiv _ _).symm f, by rw [← α.src_eq]; exact (functorsInverting W D).map _ hmem⟩
+  let v₁ : (functorsInverting W D : SSet) _⦋0⦌ :=
+    ⟨(ihomObj₀Equiv _ _).symm g, by rw [← α.tgt_eq]; exact (functorsInverting W D).map _ hmem⟩
+  have hs := hv v₀ (Eq.mpr (congrArg (fun k : C ⟶ D ↦ ∀ w ∈ W,
+    IsIso (HomotopyCategory.homMk ((Edge.mk' w).map k))) (Equiv.apply_symm_apply _ f)) hf)
+  have ht := hv v₁ (Eq.mpr (congrArg (fun k : C ⟶ D ↦ ∀ w ∈ W,
+    IsIso (HomotopyCategory.homMk ((Edge.mk' w).map k))) (Equiv.apply_symm_apply _ g)) hg)
+  simp only [v₀, v₁, Equiv.apply_symm_apply] at hs ht
+  exact ⟨(e.map (precompFunctor E)).ofEq hs ht,
+    (Edge.isEquivalence_ofEq_iff _ _).2 (he.map _)⟩
+
 end functorsInverting
 
 /-- A map `f : C ⟶ D` is a *localization of `C` at the set of edges `W`* when it sends every edge of
@@ -158,6 +267,12 @@ structure IsLocalization (f : C ⟶ D) (W : Set (C _⦋1⦌)) : Prop where
 namespace IsLocalization
 
 variable {W}
+
+/-- A localization with quasicategory target sends every marked edge to an equivalence. -/
+lemma isEquivalence_map [Quasicategory D] {f : C ⟶ D} (hf : IsLocalization f W)
+    (w : C _⦋1⦌) (hw : w ∈ W) : ((Edge.mk' w).map f).IsEquivalence :=
+  (Edge.isEquivalence_iff_isIso_homotopyCategoryHomMk _).2
+    (hf.isIso_homotopyCategoryHomMk_map w hw)
 
 /-- **Invariance under categorical equivalences of the target**: for a categorical equivalence
 `g : D ⟶ D'` of quasicategories, `f ≫ g` is a localization of `C` at `W` exactly when `f` is. -/
@@ -186,6 +301,45 @@ theorem comp_iff [Quasicategory D] {D' : SSet.{u}} [Quasicategory D'] {f : C ⟶
   · exact ⟨isIso_homotopyCategoryHomMk_map_comp W h.isIso_homotopyCategoryHomMk_map g, fun E _ ↦
       key h.isIso_homotopyCategoryHomMk_map E ▸ (hg.pre_app E).comp (h.isCategoricalEquivalence E)⟩
 
+/-- Precomposition with a localization is fully faithful on homotopy categories of functor
+quasicategories, for an arbitrary simplicial source and quasicategory target. -/
+lemma full_faithful_mapHomotopyCategory_pre_app {f : C ⟶ D} (h : IsLocalization f W)
+    (E : SSet.{u}) [Quasicategory E] :
+    (mapHomotopyCategory ((pre f).app E)).Full ∧
+      (mapHomotopyCategory ((pre f).app E)).Faithful := by
+  have : (mapHomotopyCategory
+      (functorsInverting.precomp f h.isIso_homotopyCategoryHomMk_map E)).IsEquivalence :=
+    (h.isCategoricalEquivalence E).isEquivalence_mapHomotopyCategory
+  have : IsFullyFaithful (functorsInverting W E).ι :=
+    IsFullyFaithful.fullEnhancedSubcategory_ι _
+  have hcomp : mapHomotopyCategory ((pre f).app E) =
+      mapHomotopyCategory (functorsInverting.precomp f h.isIso_homotopyCategoryHomMk_map E) ⋙
+        mapHomotopyCategory (functorsInverting W E).ι := by
+    rw [← functorsInverting.precomp_ι f h.isIso_homotopyCategoryHomMk_map]
+    exact congrArg Cat.Hom.toFunctor (hoFunctor.map_comp _ _)
+  rw [hcomp]
+  exact ⟨inferInstance, inferInstance⟩
+
+/-- Localization is preserved by an equivalence edge between functors, with no fibrancy
+assumption on their common simplicial source. -/
+theorem of_isEquivalence [Quasicategory D] {f g : C ⟶ D} (hf : IsLocalization f W)
+    (α : Edge ((ihomObj₀Equiv _ _).symm f) ((ihomObj₀Equiv _ _).symm g))
+    (hα : α.IsEquivalence) : IsLocalization g W := by
+  have hg : ∀ w ∈ W, IsIso (HomotopyCategory.homMk ((Edge.mk' w).map g)) :=
+    fun w hw ↦ (hα.isIso_homotopyCategoryHomMk_map_iff w).1
+      (hf.isIso_homotopyCategoryHomMk_map w hw)
+  refine ⟨hg, fun E _ ↦ ?_⟩
+  obtain ⟨e, he⟩ := functorsInverting.exists_isEquivalence_precomp
+    hf.isIso_homotopyCategoryHomMk_map hg α hα E
+  exact (hf.isCategoricalEquivalence E).of_isEquivalence e he
+
+/-- Localization is invariant under equivalence edges between maps from a simplicial set. -/
+theorem iff_of_isEquivalence [Quasicategory D] {f g : C ⟶ D}
+    (α : Edge ((ihomObj₀Equiv _ _).symm f) ((ihomObj₀Equiv _ _).symm g))
+    (hα : α.IsEquivalence) : IsLocalization f W ↔ IsLocalization g W :=
+  ⟨fun hf ↦ hf.of_isEquivalence α hα, fun hg ↦ hg.of_isEquivalence hα.invStruct.inv
+    hα.invStruct.invStructInv.isEquivalence⟩
+
 section HomotopyCategory
 
 variable {f : C ⟶ D} (h : IsLocalization f W) (A : Type u) [Category.{u} A]
@@ -201,25 +355,13 @@ private lemma mapHomotopyCategory_pre_app_eq :
   rw [← functorsInverting.precomp_ι f h.isIso_homotopyCategoryHomMk_map]
   exact congrArg Cat.Hom.toFunctor (hoFunctor.map_comp _ _)
 
-/-- Precomposition with `f`, as a functor `ho Fun(D, N A) ⥤ ho Fun(C, N A)`, is fully faithful. -/
-private lemma full_faithful_mapHomotopyCategory_pre_app :
-    (mapHomotopyCategory ((pre f).app (nerve A))).Full ∧
-      (mapHomotopyCategory ((pre f).app (nerve A))).Faithful := by
-  have : (mapHomotopyCategory (functorsInverting.precomp f h.isIso_homotopyCategoryHomMk_map
-      (nerve A))).IsEquivalence :=
-    (h.isCategoricalEquivalence (nerve A)).isEquivalence_mapHomotopyCategory
-  have : IsFullyFaithful (functorsInverting W (nerve A)).ι :=
-    IsFullyFaithful.fullEnhancedSubcategory_ι _
-  rw [mapHomotopyCategory_pre_app_eq h]
-  exact ⟨inferInstance, inferInstance⟩
-
 /-- Two functors `ho D ⥤ ho (N A)` are isomorphic as soon as their composites with `ho f` are. -/
 private lemma nonempty_iso_of_nonempty_iso_comp
     (F₁ F₂ : D.HomotopyCategory ⥤ (nerve A).HomotopyCategory)
     (α : Nonempty (mapHomotopyCategory f ⋙ F₁ ≅ mapHomotopyCategory f ⋙ F₂)) :
     Nonempty (F₁ ≅ F₂) := by
   obtain ⟨α⟩ := α
-  obtain ⟨_, _⟩ := full_faithful_mapHomotopyCategory_pre_app h A
+  obtain ⟨_, _⟩ := full_faithful_mapHomotopyCategory_pre_app h (nerve A)
   let ΘC := ihomHoFunctor C (nerve A)
   let ΘD := ihomHoFunctor D (nerve A)
   let M := mapHomotopyCategory ((pre f).app (nerve A))
