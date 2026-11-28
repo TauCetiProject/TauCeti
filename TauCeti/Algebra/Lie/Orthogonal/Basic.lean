@@ -69,6 +69,8 @@ hyperbolic pairs, and symmetry and invertibility of the split odd orthogonal Gra
   indefinite orthogonal Lie algebra is closed under transpose, and under conjugate transpose over
   a star ring.
 * `LieAlgebra.Orthogonal.isSymm_JD`: the split even orthogonal Gram matrix is symmetric.
+* `LieAlgebra.Orthogonal.isHermitian_JD`, `LieAlgebra.Orthogonal.JD_mul_JD` and
+  `LieAlgebra.Orthogonal.isUnit_JD`: it is Hermitian, squares to one and is invertible.
 * `LieAlgebra.Orthogonal.toBilin'_JD_comp_sumMap`: the split even orthogonal form is unchanged by
   renaming its hyperbolic pairs along an equivalence.
 * `LieAlgebra.Orthogonal.isSymm_JB` and `LieAlgebra.Orthogonal.isUnit_JB`: the split odd
@@ -268,6 +270,19 @@ variable {ι : Type*} [DecidableEq ι]
 theorem isSymm_JD : (JD ι R).IsSymm := by
   simp [Matrix.IsSymm, JD, Matrix.fromBlocks_transpose]
 
+open Matrix in
+/-- The hyperbolic Gram matrix `(0 1; 1 0)` is hermitian. -/
+theorem isHermitian_JD (l R : Type*) [DecidableEq l] [CommRing R] [StarRing R] :
+    Matrix.IsHermitian (JD l R) := by
+  rw [IsHermitian, JD, fromBlocks_conjTranspose]
+  simp
+
+open Matrix in
+/-- The hyperbolic Gram matrix `(0 1; 1 0)` is its own inverse. -/
+@[simp]
+theorem JD_mul_JD (l R : Type*) [DecidableEq l] [CommRing R] [Fintype l] : JD l R * JD l R = 1 := by
+  simp [JD, fromBlocks_multiply]
+
 /-- The split even orthogonal form does not depend on the names of the hyperbolic pairs:
 renaming both isotropic blocks along an equivalence preserves its values. -/
 theorem toBilin'_JD_comp_sumMap {κ : Type*} [DecidableEq κ] [Fintype ι] [Fintype κ] (e : ι ≃ κ)
@@ -284,6 +299,10 @@ theorem toBilin'_JD_comp_sumMap {κ : Type*} [DecidableEq κ] [Fintype ι] [Fint
 @[simp]
 theorem isSymm_JB : (JB ι R).IsSymm := by
   simp [Matrix.IsSymm, JB, JD, Matrix.fromBlocks_transpose]
+
+/-- The hyperbolic Gram matrix `(0 1; 1 0)` is invertible. -/
+theorem isUnit_JD (l R : Type*) [DecidableEq l] [CommRing R] [Fintype l] : IsUnit (JD l R) :=
+  IsUnit.of_mul_eq_one_right _ (JD_mul_JD l R)
 
 /-- The Gram matrix of the split odd orthogonal form is invertible when two is a unit. -/
 theorem isUnit_JB [Fintype ι] (h2 : IsUnit (2 : R)) : IsUnit (JB ι R) := by

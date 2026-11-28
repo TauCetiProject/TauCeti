@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Classical
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup.IsotropicSplitting
-import TauCeti.Algebra.Lie.Classical
+import TauCeti.Algebra.Lie.Orthogonal.Basic
 import TauCeti.LinearAlgebra.Matrix.Congruence
 
 /-!
