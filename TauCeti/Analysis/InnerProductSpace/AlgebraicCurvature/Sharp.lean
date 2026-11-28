@@ -49,6 +49,7 @@ curvature operator `I`, the curvature operator of the unit sphere, this pins the
 
 ## Main results
 
+* `TauCeti.bivectorSharp_rankOne_self`: every rank-one operator on `⋀² V` has vanishing `#`-square.
 * `TauCeti.inner_bivectorSharp_ιMulti` and `TauCeti.inner_bivectorSharp_self_ιMulti`: the sharp
   product as a contraction in an orthonormal basis.
 * `TauCeti.FourTensor.IsBivectorSymmetric.inner_curvatureEndomorphism_mul_ιMulti`: the product of
@@ -56,6 +57,8 @@ curvature operator `I`, the curvature operator of the unit sphere, this pins the
 * `TauCeti.FourTensor.IsBivectorSymmetric.curvatureEndomorphism_reactionBilinear` and
   `TauCeti.FourTensor.IsBivectorSymmetric.curvatureEndomorphism_reactionTensor`:
   `Q(r, s) = R S + S R + 2 R # S` and `Q(r) = 2 (R² + R#)` on the operator side.
+* `LinearMap.IsSymmetric.reactionBilinear_ofExteriorEnd` and
+  `LinearMap.IsSymmetric.reactionTensor_ofExteriorEnd`: the `ofExteriorEnd` reaction identities.
 * `TauCeti.bivectorSharp_id_id`: `I# = (n - 2) I`.
 
 ## References
@@ -101,6 +104,14 @@ theorem bivectorSharp_self (R : Module.End ℝ (⋀[ℝ]^2 V)) :
     bivectorSharp R R = bivectorAd ∘ₗ map 2 R ∘ₗ LinearMap.adjoint bivectorAd := by
   rw [bivectorSharp_apply, symmMap₂_self]
 
+/-- Every rank-one operator `ξ ↦ ⟪β, ξ⟫ • α` on `⋀[ℝ]^2 V` has vanishing `#`-square. -/
+@[simp]
+theorem bivectorSharp_rankOne_self (α β : ⋀[ℝ]^2 V) :
+    bivectorSharp (InnerProductSpace.rankOne ℝ α β).toLinearMap
+        (InnerProductSpace.rankOne ℝ α β).toLinearMap = 0 := by
+  rw [bivectorSharp_self, InnerProductSpace.toLinearMap_rankOne,
+    exteriorPower.map_smulRight (by decide), LinearMap.zero_comp, LinearMap.comp_zero]
+
 /-- **`R#` in an orthonormal basis.** For every orthonormal basis `(eₚ)` of `V`,
 `⟪R# (u ∧ v), z ∧ w⟫ = ∑ₚ ∑_q (⟪R (u ∧ eₚ), z ∧ e_q⟫ ⟪R (v ∧ eₚ), w ∧ e_q⟫
   - ⟪R (u ∧ eₚ), w ∧ e_q⟫ ⟪R (v ∧ eₚ), z ∧ e_q⟫)`. -/
@@ -139,7 +150,10 @@ theorem inner_bivectorSharp_ιMulti {ι : Type*} [Fintype ι] (b : OrthonormalBa
   -- Polarize the diagonal formula.
   have hpol : bivectorSharp R S = (1 / 2 : ℝ) •
       (bivectorSharp (R + S) (R + S) - bivectorSharp R R - bivectorSharp S S) := by
-    simp only [map_add, LinearMap.add_apply, bivectorSharp_comm S R]
+    have hp := LinearMap.BilinMap.polar_toQuadraticMap (B := bivectorSharp (V := V)) R S
+    simp only [QuadraticMap.polar, LinearMap.BilinMap.toQuadraticMap_apply,
+      bivectorSharp_comm S R] at hp
+    rw [hp]
     module
   rw [hpol, LinearMap.smul_apply, LinearMap.sub_apply, LinearMap.sub_apply, real_inner_smul_left,
     inner_sub_left, inner_sub_left, inner_bivectorSharp_self_ιMulti b,
@@ -151,6 +165,12 @@ theorem inner_bivectorSharp_ιMulti {ι : Type*} [Fintype ι] (b : OrthonormalBa
   refine Finset.sum_congr rfl fun q _ ↦ ?_
   simp only [LinearMap.add_apply, inner_add_left]
   ring
+
+end TauCeti
+
+namespace TauCeti
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
 namespace FourTensor
 
@@ -205,6 +225,45 @@ theorem IsBivectorSymmetric.curvatureEndomorphism_reactionTensor {r : FourTensor
   module
 
 end FourTensor
+
+end TauCeti
+
+namespace LinearMap.IsSymmetric
+
+open TauCeti TauCeti.FourTensor
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- **Polarized bivector-operator identity**: for symmetric endomorphisms `R, S` of `⋀[ℝ]^2 V`,
+`reactionBilinear V (ofExteriorEnd R) (ofExteriorEnd S)` equals
+`ofExteriorEnd (R * S + S * R + 2 • TauCeti.bivectorSharp R S)`. -/
+theorem reactionBilinear_ofExteriorEnd {R S : Module.End ℝ (⋀[ℝ]^2 V)}
+    (hR : R.IsSymmetric) (hS : S.IsSymmetric) :
+    reactionBilinear V (ofExteriorEnd R) (ofExteriorEnd S) =
+      ofExteriorEnd (R * S + S * R + (2 : ℝ) • TauCeti.bivectorSharp R S) := by
+  have hr : IsBivectorSymmetric (ofExteriorEnd R) :=
+    (isBivectorSymmetric_ofExteriorEnd_iff R).mpr hR
+  have hs : IsBivectorSymmetric (ofExteriorEnd S) :=
+    (isBivectorSymmetric_ofExteriorEnd_iff S).mpr hS
+  refine (hr.reactionBilinear hs).ofExteriorEnd_curvatureEndomorphism.symm.trans ?_
+  rw [hr.curvatureEndomorphism_reactionBilinear hs, curvatureEndomorphism_ofExteriorEnd,
+    curvatureEndomorphism_ofExteriorEnd]
+
+/-- **Bivector-operator identity**
+`Q(ofExteriorEnd R) = ofExteriorEnd (2 • (R * R + TauCeti.bivectorSharp R R))` for any symmetric
+endomorphism `R` of `⋀[ℝ]^2 V`. -/
+theorem reactionTensor_ofExteriorEnd {R : Module.End ℝ (⋀[ℝ]^2 V)} (hR : R.IsSymmetric) :
+    reactionTensor (ofExteriorEnd R) =
+      ofExteriorEnd ((2 : ℝ) • (R * R + TauCeti.bivectorSharp R R)) := by
+  rw [← reactionBilinear_self, reactionBilinear_ofExteriorEnd hR hR]
+  congr 1
+  module
+
+end LinearMap.IsSymmetric
+
+namespace TauCeti
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
 
 /-- **The normalization `I# = (n - 2) I`**: on the identity curvature operator `I` of `⋀² V`, the
 curvature operator of the unit sphere, the sharp product is `(n - 2) I` with `n = dim V`. -/

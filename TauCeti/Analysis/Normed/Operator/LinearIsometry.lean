@@ -146,6 +146,16 @@ end LinearIsometry
 
 namespace LinearIsometryEquiv
 
+/-- The linear map underlying `e.toLinearIsometry` is `e.toLinearMap`. -/
+@[simp]
+theorem toLinearIsometry_toLinearMap {R R₂ E F : Type*} [Semiring R] [Semiring R₂]
+    {σ₁₂ : R →+* R₂} {σ₂₁ : R₂ →+* R} [RingHomInvPair σ₁₂ σ₂₁] [RingHomInvPair σ₂₁ σ₁₂]
+    [SeminormedAddCommGroup E] [Module R E] [SeminormedAddCommGroup F] [Module R₂ F]
+    (e : E ≃ₛₗᵢ[σ₁₂] F) :
+    e.toLinearIsometry.toLinearMap = e.toLinearMap :=
+  -- Both sides unfold definitionally to `e.toLinearEquiv.toLinearMap`.
+  (rfl)
+
 variable {𝕜 E F H : Type*} [NontriviallyNormedField 𝕜]
   [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
