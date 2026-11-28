@@ -20,7 +20,10 @@ both orders have a top element, `g.rightAdjoint hg` automatically preserves `⊤
 
 On finite bounded linear orders these two constructions are mutually inverse and contravariantly
 functorial (`OrderHom.leftAdjoint_comp`, `OrderHom.rightAdjoint_comp`), yielding the duality
-between top-preserving and bottom-preserving monotone maps.
+between top-preserving and bottom-preserving monotone maps. Moreover, if `f` also preserves `⊥`
+(resp. `g` also preserves `⊤`), then `f.leftAdjoint` reflects `⊥`
+(`OrderHom.leftAdjoint_eq_bot_iff`, `OrderHom.leftAdjoint_ne_bot`) and `g.rightAdjoint` reflects
+`⊤` (`OrderHom.rightAdjoint_eq_top_iff`, `OrderHom.rightAdjoint_ne_top`).
 
 ## Main declarations
 
@@ -161,6 +164,40 @@ theorem rightAdjoint_comp {α β γ : Type*} [LinearOrder α] [Fintype α] [Orde
   (OrderHom.dual.symm_apply_eq.mpr
     (leftAdjoint_comp (f := OrderHom.dual g) hg (g := OrderHom.dual h) hh hhg)).trans
     (OrderHom.symm_dual_comp _ _)
+
+/-- When a top-preserving monotone map `f : α →o β` also preserves `⊥`, its left adjoint takes
+the value `⊥` only at `⊥`. -/
+@[simp]
+theorem leftAdjoint_eq_bot_iff {α β : Type*} [LinearOrder α] [Fintype α] [OrderTop α] [OrderBot α]
+    [PartialOrder β] [OrderTop β] [OrderBot β] [DecidableLE β]
+    (f : α →o β) (hf : f ⊤ = ⊤) (hbot : f ⊥ = ⊥) {y : β} :
+    f.leftAdjoint hf y = ⊥ ↔ y = ⊥ := by
+  rw [(f.galoisConnection_leftAdjoint hf).l_eq_bot, hbot, le_bot_iff]
+
+/-- When a top-preserving monotone map `f : α →o β` also preserves `⊥`, its left adjoint maps
+non-bottom elements to non-bottom elements. -/
+theorem leftAdjoint_ne_bot {α β : Type*} [LinearOrder α] [Fintype α] [OrderTop α] [OrderBot α]
+    [PartialOrder β] [OrderTop β] [OrderBot β] [DecidableLE β]
+    (f : α →o β) (hf : f ⊤ = ⊤) (hbot : f ⊥ = ⊥) {y : β} (hy : y ≠ ⊥) :
+    f.leftAdjoint hf y ≠ ⊥ :=
+  (f.leftAdjoint_eq_bot_iff hf hbot).not.mpr hy
+
+/-- When a bottom-preserving monotone map `g : β →o α` also preserves `⊤`, its right adjoint
+takes the value `⊤` only at `⊤`. -/
+@[simp]
+theorem rightAdjoint_eq_top_iff {α β : Type*} [PartialOrder α] [OrderTop α] [OrderBot α]
+    [DecidableLE α] [LinearOrder β] [Fintype β] [OrderTop β] [OrderBot β]
+    (g : β →o α) (hg : g ⊥ = ⊥) (htop : g ⊤ = ⊤) {x : α} :
+    g.rightAdjoint hg x = ⊤ ↔ x = ⊤ :=
+  leftAdjoint_eq_bot_iff (OrderHom.dual g) hg htop
+
+/-- When a bottom-preserving monotone map `g : β →o α` also preserves `⊤`, its right adjoint
+maps non-top elements to non-top elements. -/
+theorem rightAdjoint_ne_top {α β : Type*} [PartialOrder α] [OrderTop α] [OrderBot α]
+    [DecidableLE α] [LinearOrder β] [Fintype β] [OrderTop β] [OrderBot β]
+    (g : β →o α) (hg : g ⊥ = ⊥) (htop : g ⊤ = ⊤) {x : α} (hx : x ≠ ⊤) :
+    g.rightAdjoint hg x ≠ ⊤ :=
+  leftAdjoint_ne_bot (OrderHom.dual g) hg htop hx
 
 section Inverse
 

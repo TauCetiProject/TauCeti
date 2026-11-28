@@ -118,19 +118,13 @@ lemma cutOrderHom_comp (f : Fin n →o Fin m) (g : Fin m →o Fin p) :
 
 /-! ### The inverse of the cut map -/
 
-/-- The greatest `j` with `β j ≤ i.castSucc` is not the greatest vertex, since `β` preserves
-it. -/
-private lemma rightAdjoint_castSucc_ne_last (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : β 0 = 0)
-    (h : β (Fin.last n) = Fin.last m) (i : Fin m) :
-    β.rightAdjoint h₀ i.castSucc ≠ Fin.last n := fun he ↦
-  (Fin.castSucc_lt_last i).not_ge <| h ▸ (OrderHom.le_rightAdjoint_iff β h₀).mp he.ge
-
 /-- For a monotone map `β : Fin (n + 1) →o Fin (m + 1)` preserving both endpoints, the monotone
 map `Fin m →o Fin n` sending `i` to the greatest `j` with `β j ≤ i`. It is the inverse of
 `cutOrderHom` (`cutOrderHom_uncutOrderHom`, `uncutOrderHom_cutOrderHom`). -/
 def uncutOrderHom (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : β 0 = 0)
     (h : β (Fin.last n) = Fin.last m) : Fin m →o Fin n where
-  toFun i := (β.rightAdjoint h₀ i.castSucc).castPred (rightAdjoint_castSucc_ne_last β h₀ h i)
+  toFun i := (β.rightAdjoint h₀ i.castSucc).castPred
+    (β.rightAdjoint_ne_top h₀ h i.castSucc_ne_last)
   monotone' _ _ hii' := Fin.castPred_le_castPred_iff.mpr
     ((β.rightAdjoint h₀).monotone (Fin.castSucc_le_castSucc_iff.mpr hii'))
 
@@ -139,7 +133,7 @@ def uncutOrderHom (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : β 0 = 0)
 private lemma castSucc_uncutOrderHom (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : β 0 = 0)
     (h : β (Fin.last n) = Fin.last m) (i : Fin m) :
     (uncutOrderHom β h₀ h i).castSucc = β.rightAdjoint h₀ i.castSucc :=
-  Fin.castSucc_castPred _ (rightAdjoint_castSucc_ne_last β h₀ h i)
+  Fin.castSucc_castPred _ (β.rightAdjoint_ne_top h₀ h i.castSucc_ne_last)
 
 /-- The Galois condition characterizing `uncutOrderHom β h₀ h`: it lies below `j` exactly when
 `i < β j`. -/
