@@ -19,8 +19,6 @@ corresponding support inclusion and cardinality bound for finite linear combinat
 
 * `MvPolynomial.support_sum_monomial_subset`:
   `(∑ j ∈ s, monomial (a j) (w j)).support ⊆ s.image a`.
-* `MvPolynomial.coeff_sum_monomial_of_injOn`:
-  `(∑ i ∈ s, monomial (a i) (w i)).coeff (a j) = w j` when `a` is injective on `s` and `j ∈ s`.
 * `MvPolynomial.card_support_sum_monomial_le`:
   `#(∑ j ∈ s, monomial (a j) (w j)).support ≤ #s`.
 * `MvPolynomial.support_sum_C_mul_X_subset`:
@@ -43,18 +41,6 @@ theorem support_sum_monomial_subset [DecidableEq σ] (s : Finset ι) (a : ι →
     (∑ j ∈ s, monomial (a j) (w j)).support ⊆ s.image a :=
   support_sum.trans (biUnion_subset.2 fun _ hj ↦
     support_monomial_subset.trans (singleton_subset_iff.2 (mem_image_of_mem _ hj)))
-
-/-- If `a` is injective on `s`, then the coefficient of `∑ i ∈ s, monomial (a i) (w i)` at `a j`
-for `j ∈ s` is `w j`. -/
-theorem coeff_sum_monomial_of_injOn {s : Finset ι} {a : ι → σ →₀ ℕ} {w : ι → R}
-    (ha : Set.InjOn a s) {j : ι} (hj : j ∈ s) :
-    (∑ i ∈ s, monomial (a i) (w i)).coeff (a j) = w j := by
-  classical
-  rw [coeff_sum]
-  simp_rw [coeff_monomial]
-  rw [sum_eq_single_of_mem j hj
-    fun i hi hne ↦ ite_eq_right fun h ↦ hne (ha (mem_coe.2 hi) (mem_coe.2 hj) h)]
-  simp
 
 /-- A finite sum of monomials `∑ j ∈ s, monomial (a j) (w j)` has at most `#s` monomials in its
 support. -/

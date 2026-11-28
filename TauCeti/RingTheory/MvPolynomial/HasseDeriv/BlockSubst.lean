@@ -5,65 +5,32 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Real.Basic
-public import Mathlib.LinearAlgebra.Matrix.Kronecker
-public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import TauCeti.RingTheory.MvPolynomial.Block.Subst
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.ChainRule
-public import TauCeti.RingTheory.MvPolynomial.LinearSubst
-public import TauCeti.RingTheory.MvPolynomial.MultiHomogeneous
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 
 /-!
-# One linear change of variables in every block, and Hasse derivatives
+# Hasse derivatives and block-linear changes of variables
 
-Group the variables of a polynomial ring into blocks: `X (h, j)` is the variable `j : ι` of block
-`h : κ`. For a square matrix `A` indexed by `ι`, `MvPolynomial.blockSubst A` substitutes
-`X (h, j) ↦ ∑ i, A j i • X (h, i)` in every block at once. If the rows of `A` are linear forms
-`L₀, …, Lₙ`, then `P = blockSubst A Q` means that `P(x₁, …, xₘ) = Q(A x₁, …, A xₘ)`, so the
-coefficients of `Q = blockSubst A⁻¹ P` are the coefficients of `P` written in the monomials
-`∏ h, ∏ i, Lᵢ(x_h) ^ N (h, i)`. In Schmidt's proof of the Subspace Theorem the auxiliary
-polynomial is constructed so that these coefficients vanish whenever the weighted degree
-`∑ h, N (h, i) / d h` in some form `Lᵢ` is small; this is the multihomogeneous analogue of
-vanishing to high order at a point.
+This file propagates coefficient-vanishing conditions across Hasse derivatives after a block
+change of variables `MvPolynomial.blockSubst A` (defined in
+`TauCeti.RingTheory.MvPolynomial.Block.Subst`).
 
-The point of this file is that such vanishing passes to Hasse derivatives with the expected loss,
-depends on each form individually rather than on the complementary rows of `A`, and for a
-multihomogeneous polynomial upgrades automatically to two-sided concentration around the mean
-`card κ / card ι`.
-By the chain rule for block-linear substitutions, a derivative of `P` of order `I` becomes, in the
-coordinates of the forms, a combination of derivatives of `Q` whose orders `e` have the same block
-degrees `∑ j, e (h, j) = ∑ j, I (h, j)` as `I`
-(`MvPolynomial.blockSubst_inv_hasseDeriv`). Shifting an exponent vector by such an `e` raises its
-weighted degree in a single form by at most the weighted order `∑ h, (∑ j, I (h, j)) / d h` of
-`I`. No division by integers occurs, so no assumption on the characteristic is needed.
+By the chain rule for block-linear substitutions (`MvPolynomial.hasseDeriv_blockSubst`), a Hasse
+derivative of `P` of order `I` becomes, in the coordinates of the rows of an invertible matrix `A`,
+a combination of derivatives of `blockSubst A⁻¹ P` whose orders `e` have the same block degrees
+`∑ j, e (h, j) = ∑ j, I (h, j)` as `I` (`MvPolynomial.blockSubst_inv_hasseDeriv`). Shifting an
+exponent vector by such an `e` raises its weighted degree in a single form by at most the weighted
+order `∑ h, (∑ j, I (h, j)) / d h` of `I`. No division by integers occurs, so no assumption on the
+characteristic is needed.
 
-## Main definitions
-
-* `MvPolynomial.blockSubst A`: the substitution `X (h, j) ↦ ∑ i, A j i • X (h, i)` in every block.
+For a multihomogeneous polynomial in at least two variables per block, lower-tail vanishing at
+order zero along every row of `A` upgrades automatically to two-sided concentration around the mean
+`card κ / card ι` (`MvPolynomial.coeff_blockSubst_hasseDeriv_eq_zero_of_notMem_Ioo`).
 
 ## Main results
 
-* `MvPolynomial.aeval_blockLinearForm_eq_linearSubst`, `MvPolynomial.blockSubst_eq_linearSubst`:
-  substituting square block-linear forms is a block-diagonal `MvPolynomial.linearSubst`, and in
-  particular `blockSubst A` is `linearSubst (1 ⊗ₖ A)`; conversely, by
-  `MvPolynomial.linearSubst_eq_aeval_blockLinearForm_of_block`, a block-diagonal `linearSubst` is
-  the substitution of the block-linear forms given by its diagonal blocks.
-* `MvPolynomial.blockSubst_mul`: block substitution is a right action of the matrix monoid, and
-  `MvPolynomial.blockSubst_inv_blockSubst`, `MvPolynomial.blockSubst_blockSubst_inv`: an
-  invertible matrix gives an automorphism.
-* `MvPolynomial.eval_blockSubst`: evaluating `blockSubst A P` at `y` evaluates `P` at the point
-  whose block `h` is `A` applied to block `h` of `y`.
-* `MvPolynomial.IsMultiHomogeneous.blockSubst`,
-  `MvPolynomial.IsHomogeneous.blockSubst_smul`: block substitution preserves the multidegree,
-  and scaling `A` by `c` scales a homogeneous polynomial of degree `n` by `c ^ n`.
-* `MvPolynomial.IsMultiHomogeneous.aeval_blockLinearForm`,
-  `MvPolynomial.IsMultiHomogeneous.linearSubst_of_block`: so do block-varying linear forms and
-  block-diagonal linear substitutions.
-* `MvPolynomial.exists_mem_support_blockSubst_inv_le_of_coeff_ne_zero_of_row_eq`,
-  `MvPolynomial.coeff_blockSubst_inv_eq_zero_of_row_eq`: vanishing of `blockSubst A⁻¹ P` below a
-  weighted-degree threshold along row `i'` of an invertible matrix `A` passes to row `i` of any
-  matrix `B` with `A i' = B i`.
 * `MvPolynomial.hasseDeriv_blockSubst`: the chain rule for a block substitution.
 * `MvPolynomial.blockSubst_inv_hasseDeriv`: a Hasse derivative of `P`, written in the coordinates
   of the rows of `A`, is a combination of the derivatives of `blockSubst A⁻¹ P` of the same block
@@ -86,10 +53,6 @@ weighted degree in a single form by at most the weighted order `∑ h, (∑ j, I
 
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press
   (2006), §7.5.14 and Lemma 7.5.15.
-* J.-H. Evertse and H. P. Schlickewei, *A quantitative version of the Absolute Subspace Theorem*,
-  J. Reine Angew. Math. 548 (2002), 21–127.
-* W. M. Schmidt, *Diophantine Approximation*, Lecture Notes in Mathematics 785, Springer (1980),
-  Chapter VI.
 * J.-H. Evertse and R. G. Ferretti, *A further improvement of the quantitative Subspace theorem*,
   Ann. of Math. 177 (2013), §13, Proposition 13.6.
 -/
@@ -99,166 +62,10 @@ public section
 namespace MvPolynomial
 
 open Finset Matrix
-open scoped Kronecker
 
 section CommSemiring
 
-variable {R κ ι : Type*} [CommSemiring R] [Fintype ι]
-
-/-- The linear change of variables `X (h, j) ↦ ∑ i, A j i • X (h, i)`, applied to every block
-`h : κ` of the variables `X (h, j)`. -/
-noncomputable def blockSubst (A : Matrix ι ι R) :
-    MvPolynomial (κ × ι) R →ₐ[R] MvPolynomial (κ × ι) R :=
-  aeval (blockLinearForm fun _ j i ↦ A j i)
-
-theorem blockSubst_eq_aeval (A : Matrix ι ι R) :
-    (blockSubst A : MvPolynomial (κ × ι) R →ₐ[R] _) = aeval (blockLinearForm fun _ j i ↦ A j i) :=
-  (rfl)
-
-@[simp]
-theorem blockSubst_X (A : Matrix ι ι R) (h : κ) (j : ι) :
-    blockSubst A (X (h, j) : MvPolynomial (κ × ι) R) = ∑ i, C (A j i) * X (h, i) := by
-  rw [blockSubst_eq_aeval, aeval_X, blockLinearForm_apply]
-
-/-- Evaluating `blockSubst A P` at `y` is evaluating `P` at the point whose block `h` is `A`
-applied to the block `h` of `y`. -/
-theorem eval_blockSubst (A : Matrix ι ι R) (y : κ × ι → R) (P : MvPolynomial (κ × ι) R) :
-    eval y (blockSubst A P) = eval (fun p ↦ ∑ i, A p.2 i * y (p.1, i)) P :=
-  eval_aeval_blockLinearForm _ y P
-
-@[simp]
-theorem blockSubst_one [DecidableEq ι] :
-    (blockSubst (1 : Matrix ι ι R) : MvPolynomial (κ × ι) R →ₐ[R] _) = AlgHom.id R _ := by
-  refine algHom_ext fun ⟨h, j⟩ ↦ ?_
-  simp [Matrix.one_apply, apply_ite C, ite_mul]
-
-/-- Substituting square block-linear forms `MvPolynomial.blockLinearForm` is the linear
-substitution `MvPolynomial.linearSubst` by the block-diagonal matrix with block `A h` on block
-`h`. -/
-theorem aeval_blockLinearForm_eq_linearSubst [Fintype κ] [DecidableEq κ] (A : κ → ι → ι → R) :
-    aeval (blockLinearForm A) =
-      linearSubst (Matrix.of fun p q : κ × ι ↦
-        if p.1 = q.1 then A p.1 p.2 q.2 else 0) := by
-  refine algHom_ext fun ⟨h, j⟩ ↦ ?_
-  simp [blockLinearForm_apply, linearSubst_X, Fintype.sum_prod_type, apply_ite C, ite_mul]
-
-/-- Block substitution is the linear substitution `MvPolynomial.linearSubst` of the
-block-diagonal matrix `1 ⊗ₖ A`, with one copy of `A` for each block. -/
-theorem blockSubst_eq_linearSubst [Fintype κ] [DecidableEq κ] (A : Matrix ι ι R) :
-    (blockSubst A : MvPolynomial (κ × ι) R →ₐ[R] _) = linearSubst ((1 : Matrix κ κ R) ⊗ₖ A) := by
-  rw [blockSubst_eq_aeval, aeval_blockLinearForm_eq_linearSubst]
-  exact congrArg linearSubst (Matrix.ext fun _ _ ↦ by simp [Matrix.one_apply])
-
-/-- Block substitution is a right action of the matrix monoid. -/
-theorem blockSubst_mul (A B : Matrix ι ι R) :
-    (blockSubst (A * B) : MvPolynomial (κ × ι) R →ₐ[R] _) =
-      (blockSubst B).comp (blockSubst A) := by
-  refine algHom_ext fun ⟨h, j⟩ ↦ ?_
-  simp only [blockSubst_X, AlgHom.comp_apply, map_sum, map_mul, algHom_C, algebraMap_eq,
-    Matrix.mul_apply, sum_mul, mul_sum, mul_assoc]
-  exact sum_comm
-
-theorem blockSubst_mul_apply (A B : Matrix ι ι R) (P : MvPolynomial (κ × ι) R) :
-    blockSubst (A * B) P = blockSubst B (blockSubst A P) := by
-  rw [blockSubst_mul, AlgHom.comp_apply]
-
-@[simp]
-theorem blockSubst_zero (P : MvPolynomial (κ × ι) R) :
-    blockSubst (0 : Matrix ι ι R) P = C (P.coeff 0) := by
-  have h0 : blockLinearForm (fun (_ : κ) (_ _ : ι) ↦ (0 : R)) = 0 :=
-    funext fun ⟨h, j⟩ ↦ by simp [blockLinearForm_apply]
-  rw [blockSubst_eq_aeval]
-  simp only [Matrix.zero_apply, h0, aeval_zero, algebraMap_eq, constantCoeff_eq]
-
-/-- Block substitution preserves the constant coefficient. -/
-@[simp]
-theorem constantCoeff_blockSubst (A : Matrix ι ι R) (P : MvPolynomial (κ × ι) R) :
-    constantCoeff (blockSubst A P) = constantCoeff P := by
-  rw [← eval_zero, eval_blockSubst]
-  simp
-
-@[simp]
-theorem coeff_zero_blockSubst (A : Matrix ι ι R) (P : MvPolynomial (κ × ι) R) :
-    (blockSubst A P).coeff 0 = P.coeff 0 :=
-  constantCoeff_blockSubst A P
-
-/-- Changing the coefficients commutes with block substitution, after mapping the matrix entries. -/
-theorem map_blockSubst {S : Type*} [CommSemiring S] (f : R →+* S) (A : Matrix ι ι R)
-    (P : MvPolynomial (κ × ι) R) :
-    map f (blockSubst A P) = blockSubst (A.map f) (map f P) := by
-  induction P using MvPolynomial.induction_on with
-  | C a => simp [blockSubst_eq_aeval]
-  | add p q hp hq => simp [hp, hq]
-  | mul_X p q hp =>
-    rcases q with ⟨h, j⟩
-    simp [hp]
-
-omit [Fintype ι] in
-/-- Substituting block-linear forms preserves multihomogeneity and the multidegree. -/
-theorem IsMultiHomogeneous.aeval_blockLinearForm [DecidableEq κ] {τ : Type*} [Fintype τ]
-    {d : κ → ℕ} {P : MvPolynomial (κ × ι) R} (hP : IsMultiHomogeneous d P) (A : κ → ι → τ → R) :
-    IsMultiHomogeneous d (aeval (blockLinearForm A) P) :=
-  isMultiHomogeneous_iff_forall_isWeightedHomogeneous.2 fun h ↦
-    (hP.isWeightedHomogeneous h).aeval (isWeightedHomogeneous_blockLinearForm _ h)
-
-/-- Block substitution preserves multihomogeneity and the multidegree. -/
-theorem IsMultiHomogeneous.blockSubst [DecidableEq κ] {d : κ → ℕ} {P : MvPolynomial (κ × ι) R}
-    (hP : IsMultiHomogeneous d P) (A : Matrix ι ι R) :
-    IsMultiHomogeneous d (MvPolynomial.blockSubst A P) :=
-  hP.aeval_blockLinearForm _
-
-/-- A linear substitution whose matrix is block diagonal, `M x y = 0` whenever `x` and `y` lie in
-different blocks, is the substitution of the block-linear forms `MvPolynomial.blockLinearForm`
-given by the diagonal blocks of `M`. -/
-theorem linearSubst_eq_aeval_blockLinearForm_of_block [Fintype κ]
-    {M : Matrix (κ × ι) (κ × ι) R} (hM : ∀ x y, x.1 ≠ y.1 → M x y = 0) :
-    linearSubst M = aeval (blockLinearForm fun h p q ↦ M (h, p) (h, q)) := by
-  classical
-  rw [aeval_blockLinearForm_eq_linearSubst]
-  congr 1
-  ext ⟨h, p⟩ ⟨h', q⟩
-  by_cases hh : h = h'
-  · subst hh
-    simp
-  · simp [hh, hM (h, p) (h', q) hh]
-
-/-- A linear substitution whose matrix is block diagonal, `M x y = 0` whenever `x` and `y` lie in
-different blocks, preserves multihomogeneity and the multidegree. -/
-theorem IsMultiHomogeneous.linearSubst_of_block [Fintype κ] [DecidableEq κ] {d : κ → ℕ}
-    {P : MvPolynomial (κ × ι) R} (hP : IsMultiHomogeneous d P) {M : Matrix (κ × ι) (κ × ι) R}
-    (hM : ∀ x y, x.1 ≠ y.1 → M x y = 0) :
-    IsMultiHomogeneous d (linearSubst M P) := by
-  rw [linearSubst_eq_aeval_blockLinearForm_of_block hM]
-  exact hP.aeval_blockLinearForm _
-
-/-- Rescaling the matrix by `c` rescales a homogeneous polynomial of degree `n` by `c ^ n`. -/
-theorem IsHomogeneous.blockSubst_smul {P : MvPolynomial (κ × ι) R} {n : ℕ}
-    (hp : P.IsHomogeneous n) (c : R) (A : Matrix ι ι R) :
-    MvPolynomial.blockSubst (c • A) P = c ^ n • MvPolynomial.blockSubst A P := by
-  have hlin : blockLinearForm (fun (_ : κ) j i ↦ (c • A) j i) =
-      c • blockLinearForm (fun (_ : κ) j i ↦ A j i) := by
-    funext ⟨h, j⟩
-    simp [blockLinearForm_apply, Finset.smul_sum, smul_eq_C_mul, mul_assoc]
-  rw [blockSubst_eq_aeval, blockSubst_eq_aeval, hlin, hp.aeval_smul_of_algebra]
-
-/-- If row `i'` of `M` is the standard basis vector `Pi.single i 1`, then `blockSubst M` sends
-`X (h, i')` to `X (h, i)`, so every monomial `N'` occurring in `blockSubst M (monomial N c)` has
-exponent at least `N (h, i')` at `(h, i)` in every block `h`. -/
-theorem coeff_blockSubst_monomial_eq_zero_of_lt [DecidableEq ι] {M : Matrix ι ι R} {i i' : ι}
-    (hM : M i' = Pi.single i 1) {N N' : κ × ι →₀ ℕ} {c : R} {h : κ}
-    (hlt : N' (h, i) < N (h, i')) :
-    (blockSubst M (monomial N c)).coeff N' = 0 := by
-  classical
-  have hX : blockSubst M (X (h, i') : MvPolynomial (κ × ι) R) = X (h, i) := by
-    simp [blockSubst_X, hM, Pi.single_apply, apply_ite C, ite_mul]
-  have hsplit : monomial N c =
-      monomial (N - Finsupp.single (h, i') (N (h, i'))) c * X (h, i') ^ N (h, i') := by
-    rw [X_pow_eq_monomial, monomial_mul_monomial, mul_one,
-      tsub_add_cancel_of_le (Finsupp.single_le_iff.2 le_rfl)]
-  rw [hsplit, map_mul, map_pow, hX, X_pow_eq_monomial, coeff_mul_monomial', mul_one,
-    ite_eq_right (mt Finsupp.single_le_iff.1 hlt.not_ge)]
-
-variable [Fintype κ] [DecidableEq κ] [DecidableEq ι]
+variable {R κ ι : Type*} [CommSemiring R] [Fintype ι] [Fintype κ] [DecidableEq κ] [DecidableEq ι]
 
 /-- **The chain rule for a block substitution**:
 `∂^I (Q(A x)) = ∑_e c_{e,I} (∂^e Q)(A x)`, where `c_{e,I}` is the coefficient of `X ^ I` in the
@@ -276,64 +83,6 @@ end CommSemiring
 section CommRing
 
 variable {R κ ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι] {A : Matrix ι ι R}
-
-@[simp]
-theorem blockSubst_inv_blockSubst (hA : IsUnit A.det) (P : MvPolynomial (κ × ι) R) :
-    blockSubst A⁻¹ (blockSubst A P) = P := by
-  rw [← blockSubst_mul_apply, mul_nonsing_inv A hA, blockSubst_one, AlgHom.id_apply]
-
-@[simp]
-theorem blockSubst_blockSubst_inv (hA : IsUnit A.det) (P : MvPolynomial (κ × ι) R) :
-    blockSubst A (blockSubst A⁻¹ P) = P := by
-  rw [← blockSubst_mul_apply, nonsing_inv_mul A hA, blockSubst_one, AlgHom.id_apply]
-
-/-- **Exponents along a shared row do not decrease** (Evertse–Schlickewei). Suppose `A` is
-invertible and row `i'` of `A` equals row `i` of `B`. Every nonzero coefficient of
-`blockSubst B⁻¹ P` at `N'` comes from some exponent vector `N` in the support of `blockSubst A⁻¹ P`
-satisfying `N (h, i') ≤ N' (h, i)` in every block `h`. -/
-theorem exists_mem_support_blockSubst_inv_le_of_coeff_ne_zero_of_row_eq (hA : IsUnit A.det)
-    {B : Matrix ι ι R} {i i' : ι} (hrow : A i' = B i) {P : MvPolynomial (κ × ι) R}
-    {N' : κ × ι →₀ ℕ} (hN' : (blockSubst B⁻¹ P).coeff N' ≠ 0) :
-    ∃ N ∈ (blockSubst A⁻¹ P).support, ∀ h, N (h, i') ≤ N' (h, i) := by
-  classical
-  by_cases hB : IsUnit B.det
-  · -- Rewrite `blockSubst B⁻¹ P` as `blockSubst (A * B⁻¹) (blockSubst A⁻¹ P)`; row `i'` of
-    -- `A * B⁻¹` is `Pi.single i 1`.
-    have hAB : (A * B⁻¹) i' = Pi.single i 1 := by
-      ext k
-      have hk := congrArg (fun M : Matrix ι ι R ↦ M i k) (mul_nonsing_inv B hB)
-      simpa [Matrix.mul_apply, congrFun hrow, Matrix.one_apply, Pi.single_apply, eq_comm] using hk
-    have hsum : blockSubst B⁻¹ P = ∑ N ∈ (blockSubst A⁻¹ P).support,
-        blockSubst (A * B⁻¹) (monomial N ((blockSubst A⁻¹ P).coeff N)) :=
-      calc blockSubst B⁻¹ P
-          = blockSubst (A * B⁻¹) (blockSubst A⁻¹ P) := by
-            rw [blockSubst_mul_apply, blockSubst_blockSubst_inv hA]
-        _ = _ := by
-            conv_lhs => arg 2; rw [(blockSubst A⁻¹ P).as_sum]
-            exact map_sum _ _ _
-    rw [hsum, coeff_sum] at hN'
-    obtain ⟨N, hN, hcoeff⟩ := exists_ne_zero_of_sum_ne_zero hN'
-    refine ⟨N, hN, fun h ↦ not_lt.1 fun hlt ↦ hcoeff ?_⟩
-    exact coeff_blockSubst_monomial_eq_zero_of_lt hAB hlt
-  · -- When `B.det` is not a unit, `B⁻¹ = 0` and only `N' = 0` can occur, matched by `N = 0`.
-    rw [nonsing_inv_apply_not_isUnit B hB, blockSubst_zero, coeff_C] at hN'
-    split_ifs at hN' with h0
-    · refine ⟨0, mem_support_iff.2 ?_, fun _ ↦ Nat.zero_le _⟩
-      rwa [coeff_zero_blockSubst]
-    · exact False.elim (hN' rfl)
-
-/-- If the coefficients of `blockSubst A⁻¹ P` vanish whenever the weighted degree along row `i'` of
-an invertible matrix `A` is at most `θ`, then the coefficients of `blockSubst B⁻¹ P` vanish
-whenever the weighted degree along a matching row `B i = A i'` is at most `θ`. -/
-theorem coeff_blockSubst_inv_eq_zero_of_row_eq [Fintype κ] (hA : IsUnit A.det) {B : Matrix ι ι R}
-    {i i' : ι} (hrow : A i' = B i) {P : MvPolynomial (κ × ι) R} {d : κ → ℕ} {θ : ℝ}
-    (hP : ∀ N : κ × ι →₀ ℕ, ∑ h, (N (h, i') : ℝ) / d h ≤ θ → (blockSubst A⁻¹ P).coeff N = 0)
-    {N' : κ × ι →₀ ℕ} (hN' : ∑ h, (N' (h, i) : ℝ) / d h ≤ θ) :
-    (blockSubst B⁻¹ P).coeff N' = 0 := by
-  by_contra hc
-  obtain ⟨N, hN, hle⟩ := exists_mem_support_blockSubst_inv_le_of_coeff_ne_zero_of_row_eq hA hrow hc
-  refine mem_support_iff.1 hN (hP N ((sum_le_sum fun h _ ↦ ?_).trans hN'))
-  exact div_le_div_of_nonneg_right (Nat.cast_le.2 (hle h)) (Nat.cast_nonneg _)
 
 /-- A Hasse derivative of `P`, written in the coordinates of the rows of an invertible matrix `A`,
 is a combination of the derivatives of `blockSubst A⁻¹ P` (that is, of `P` in those coordinates)

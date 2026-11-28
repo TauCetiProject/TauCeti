@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.RepresentationTheory.Character.Twist
 public import TauCeti.RingTheory.MvPolynomial.Block.Dehomogenize
-public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.BlockSubst
+public import TauCeti.RingTheory.MvPolynomial.Block.Subst
 import TauCeti.RingTheory.MvPolynomial.Box
 
 /-!

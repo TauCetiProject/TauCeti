@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Height.Block.Subst
-import TauCeti.Algebra.MvPolynomial.Support
-import TauCeti.Combinatorics.Enumerative.AntidiagLargeDeviation
+import TauCeti.Algebra.MvPolynomial.Coeff
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 import TauCeti.NumberTheory.NumberField.House
 import TauCeti.NumberTheory.NumberField.SiegelsLemma
+import TauCeti.RingTheory.MvPolynomial.Block.Support.Count
+import TauCeti.RingTheory.MvPolynomial.HasseDeriv.BlockSubst
 
 /-!
 # The multihomogeneous auxiliary polynomial for the Subspace Theorem
@@ -43,7 +44,7 @@ at derivative order zero:
   order `0` below `m / n - m η` along every row of `A` propagates to all Hasse derivatives of
   weighted order at most `m η` and upgrades by multihomogeneity (`card ι ≥ 2`) to two-sided
   concentration in `(m / n - 2 m η, m / n + 2 m (n - 1) η)`.
-* By `Finset.exists_bound_mul_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_lt`,
+* By `TauCeti.exists_bound_mul_card_filter_multiMons_sum_div_le_lt`,
   once every `d h` is large enough to absorb the `O(1 / d h)` Chernoff error, `2 #F` copies of the
   lower-tail monomials number strictly less than `#(multiMons ι d)`. Clearing the denominators of
   each `A_f⁻¹` and applying `NumberField.exists_siegelConstant_linear` over `𝓞 K` produces
@@ -75,7 +76,7 @@ open Finset Height AdmissibleAbsValues Matrix NumberField
 
 section Helpers
 
-/-- Choosing `D₀` from `AntidiagLargeDeviation` so that `2 * k` copies of the lower-tail monomials
+/-- Choosing `D₀` from `Block.Support.Count` so that `2 * k` copies of the lower-tail monomials
 fit inside `multiMons ι d` whenever `k ≤ nForms` and
 `4 log (2 nForms) < card ι (card ι + 1) η² card κ`. -/
 private lemma exists_D0_two_mul_card_filter_multiMons_le {ι κ : Type*} [Fintype ι] [DecidableEq ι]
@@ -96,28 +97,23 @@ private lemma exists_D0_two_mul_card_filter_multiMons_le {ι κ : Type*} [Fintyp
     have hκ0 : (Fintype.card κ : ℝ) = 0 := hκ.antisymm (Nat.cast_nonneg _)
     rw [hκ0, mul_zero] at hm
     linarith
-  rw [← sq_abs, ← card_univ (α := ι)] at hm
+  rw [← sq_abs] at hm
   obtain ⟨D₀, hD₀, htail⟩ :=
-    exists_bound_mul_card_filter_piFinset_finsuppAntidiag_sum_apply_div_le_lt
-      (univ : Finset ι) (c := (2 * nForms : ℝ)) (by positivity) (abs_nonneg η) hm
+    TauCeti.exists_bound_mul_card_filter_multiMons_sum_div_le_lt
+      (c := (2 * nForms : ℝ)) (by positivity) (abs_nonneg η) hm
   refine ⟨D₀, hD₀, Fintype.card_pos_iff.mp (by exact_mod_cast hm_pos), fun d hd ↦ ?_⟩
-  have htail' := htail d hd (mem_univ i₀)
+  have htail' := htail d hd i₀
   have hk_le : (2 * k : ℝ) ≤ 2 * nForms := by exact_mod_cast Nat.mul_le_mul_left 2 hk
   have hreal : (2 * (k * #{N ∈ multiMons ι d | ∑ h, (N (h, i₀) : ℝ) / d h ≤
       Fintype.card κ / Fintype.card ι - Fintype.card κ * |η|}) : ℝ) < #(multiMons ι d) := by
-    rw [card_filter_multiMons_eq d (fun g ↦
-      ∑ h, (g (h, i₀) : ℝ) / d h ≤ Fintype.card κ / Fintype.card ι - Fintype.card κ * |η|),
-      card_multiMons_eq_card_piFinset]
-    push_cast
     rw [← mul_assoc]
-    rw [card_univ] at htail'
     have h1 : (2 * k : ℝ) *
-        (#{f ∈ Fintype.piFinset fun h ↦ (univ : Finset ι).finsuppAntidiag (d h) |
-          ∑ h, (f h i₀ : ℝ) / d h ≤
+        (#{N ∈ multiMons ι d |
+          ∑ h, (N (h, i₀) : ℝ) / d h ≤
             Fintype.card κ / Fintype.card ι - Fintype.card κ * |η|} : ℝ) ≤
         (2 * nForms : ℝ) *
-        (#{f ∈ Fintype.piFinset fun h ↦ (univ : Finset ι).finsuppAntidiag (d h) |
-          ∑ h, (f h i₀ : ℝ) / d h ≤
+        (#{N ∈ multiMons ι d |
+          ∑ h, (N (h, i₀) : ℝ) / d h ≤
             Fintype.card κ / Fintype.card ι - Fintype.card κ * |η|} : ℝ) :=
       mul_le_mul_of_nonneg_right hk_le (Nat.cast_nonneg _)
     linarith [h1, htail']

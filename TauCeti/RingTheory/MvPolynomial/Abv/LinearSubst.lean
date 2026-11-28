@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.Abv.Coeff
-public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.BlockSubst
+public import TauCeti.RingTheory.MvPolynomial.Block.Subst
 import TauCeti.Algebra.MvPolynomial.Support
 import TauCeti.Algebra.Order.GroupWithZero.Pow
 import TauCeti.Algebra.Order.Ring.Basic
@@ -16,9 +16,10 @@ import TauCeti.Algebra.Order.Ring.Basic
 
 Let `v` be an absolute value on a commutative semiring `R`. Substituting linear forms whose
 supports have size at most `k` and whose coefficients are bounded by `B` into a monomial `a X ^ s`
-produces a product of `s.degree` linear factors, so `MvPolynomial.abv_coeff_prod_le` bounds every
-coefficient of the result by `(k * B) ^ s.degree * v a`, and at a nonarchimedean absolute value
-the ultrametric inequality removes the factor `k`.
+produces a product of `s.degree` linear factors, so `MvPolynomial.abv_coeff_aeval_monomial_le`
+(in `TauCeti.RingTheory.MvPolynomial.Abv.Coeff`) bounds every coefficient of the result by
+`(k * B) ^ s.degree * v a`, and at a nonarchimedean absolute value the ultrametric inequality
+removes the factor `k`.
 
 For a homogeneous polynomial `p` of degree `n` in `card σ` variables, the exponent vectors have
 cardinality at most `(card σ).multichoose n ≤ card σ ^ n`, giving the coefficient bound
@@ -30,12 +31,6 @@ in general and by `B ^ (∑ h, d h) * C` at nonarchimedean absolute values.
 
 ## Main results
 
-* `MvPolynomial.abv_coeff_aeval_monomial_le`,
-  `MvPolynomial.abv_coeff_aeval_monomial_le_of_isNonarchimedean`: coefficient bounds for `aeval` on
-  a monomial.
-* `MvPolynomial.abv_coeff_aeval_le_of_isHomogeneous`,
-  `MvPolynomial.abv_coeff_aeval_le_of_isHomogeneous_of_isNonarchimedean`: coefficient bounds for
-  `aeval` on a homogeneous polynomial.
 * `MvPolynomial.abv_coeff_linearSubst_monomial_le`,
   `MvPolynomial.abv_coeff_linearSubst_le_of_isHomogeneous`, and their nonarchimedean companions.
 * `MvPolynomial.abv_coeff_blockSubst_monomial_le`,
@@ -57,7 +52,7 @@ namespace MvPolynomial
 
 section AbsoluteValue
 
-variable {σ τ κ ι R S : Type*} [CommSemiring R]
+variable {σ κ ι R S : Type*} [CommSemiring R]
 
 private theorem card_support_linearForm_le [Fintype σ] (r : σ → R) :
     #(∑ j, C (r j) * X j : MvPolynomial σ R).support ≤ Fintype.card σ :=
@@ -82,99 +77,6 @@ private theorem abv_coeff_blockLinearForm_le [Fintype ι] [Semiring S] [PartialO
     abv_coeff_sum_C_mul_X_le (Prod.mk_right_injective p.1).injOn hB0 (fun j _ ↦ hA p.2 j) m
 
 variable [Nontrivial R]
-
-/-- Substituting polynomials `f i` with `#(f i).support ≤ k` and coefficients bounded by `B` under
-`v` into `monomial s a` produces coefficients bounded by `(k * B) ^ s.degree * v a`. -/
-theorem abv_coeff_aeval_monomial_le [CommSemiring S] [PartialOrder S] [IsOrderedRing S] [IsDomain S]
-    {v : AbsoluteValue R S} {f : σ → MvPolynomial τ R} {k : ℕ} {B : S} {s : σ →₀ ℕ}
-    (hk : ∀ i ∈ s.support, #(f i).support ≤ k)
-    (hB : ∀ i ∈ s.support, ∀ m, v ((f i).coeff m) ≤ B) (a : R) (t : τ →₀ ℕ) :
-    v ((aeval f (monomial s a)).coeff t) ≤ (k * B) ^ s.degree * v a := by
-  classical
-  rw [aeval_monomial, algebraMap_eq, coeff_C_mul, map_mul,
-    mul_comm (v a), s.prod_pow_eq_prod_sigma f]
-  refine mul_le_mul_of_nonneg_right ?_ (v.nonneg a)
-  refine (abv_coeff_prod_le (s := s.support.sigma fun i ↦ range (s i)) (fun q ↦ f q.1)
-    (C := fun _ ↦ B) (fun q hq ↦ hB q.1 (mem_sigma.1 hq).1) t).trans ?_
-  rw [← s.card_sigma_range_eq_degree, ← prod_const]
-  refine prod_le_prod₀ (fun q hq ↦ mul_nonneg (Nat.cast_nonneg _)
-    ((v.nonneg _).trans (hB q.1 (mem_sigma.1 hq).1 0))) fun q hq ↦ ?_
-  exact mul_le_mul_of_nonneg_right (Nat.mono_cast (hk q.1 (mem_sigma.1 hq).1))
-    ((v.nonneg _).trans (hB q.1 (mem_sigma.1 hq).1 0))
-
-/-- Nonarchimedean companion to `abv_coeff_aeval_monomial_le`, without the support-size factor. -/
-theorem abv_coeff_aeval_monomial_le_of_isNonarchimedean [CommSemiring S] [LinearOrder S]
-    [IsOrderedRing S] [IsDomain S] {v : AbsoluteValue R S} (hv : IsNonarchimedean v)
-    {f : σ → MvPolynomial τ R} {B : S} {s : σ →₀ ℕ}
-    (hB : ∀ i ∈ s.support, ∀ m, v ((f i).coeff m) ≤ B) (a : R) (t : τ →₀ ℕ) :
-    v ((aeval f (monomial s a)).coeff t) ≤ B ^ s.degree * v a := by
-  classical
-  rw [aeval_monomial, algebraMap_eq, coeff_C_mul, map_mul,
-    mul_comm (v a), s.prod_pow_eq_prod_sigma f, ← s.card_sigma_range_eq_degree, ← prod_const]
-  exact mul_le_mul_of_nonneg_right
-    (abv_coeff_prod_le_of_isNonarchimedean (fun q ↦ f q.1) hv
-      (fun q hq ↦ hB q.1 (mem_sigma.1 hq).1) t) (v.nonneg a)
-
-/-- For a homogeneous polynomial `p` of degree `n`, substituting polynomials `f i` with
-`#(f i).support ≤ k` and coefficients bounded by `B` under `v` into `p`, whose coefficients are
-bounded by `C`, produces coefficients bounded by `#p.support * ((k * B) ^ n * C)`. -/
-theorem abv_coeff_aeval_le_of_isHomogeneous [CommSemiring S] [PartialOrder S] [IsOrderedRing S]
-    [IsDomain S] {v : AbsoluteValue R S} {p : MvPolynomial σ R} {n : ℕ}
-    (hp : p.IsHomogeneous n) {f : σ → MvPolynomial τ R} {k : ℕ} {B C : S}
-    (hk : ∀ i ∈ p.vars, #(f i).support ≤ k)
-    (hB : ∀ i ∈ p.vars, ∀ m, v ((f i).coeff m) ≤ B)
-    (hpC : ∀ a, v (p.coeff a) ≤ C) (t : τ →₀ ℕ) :
-    v ((aeval f p).coeff t) ≤ #p.support * ((k * B) ^ n * C) := by
-  classical
-  have hsum : aeval f p = ∑ s ∈ p.support, aeval f (monomial s (p.coeff s)) := by
-    conv_lhs => rw [p.as_sum]
-    exact map_sum _ _ _
-  calc v ((aeval f p).coeff t)
-      ≤ ∑ s ∈ p.support, v ((aeval f (monomial s (p.coeff s))).coeff t) := by
-        rw [hsum, coeff_sum]
-        exact v.sum_le _ _
-    _ ≤ ∑ _s ∈ p.support, (k * B) ^ n * C := sum_le_sum fun s hs ↦ by
-        have hdeg : s.degree = n := by
-          rw [Finsupp.degree_eq_weight_one (R := ℕ)]
-          exact hp (mem_support_iff.1 hs)
-        have hsub : s.support ⊆ p.vars := support_subset_vars_of_mem_support hs
-        have hpow : 0 ≤ (k * B : S) ^ s.degree := by
-          rcases eq_or_ne s 0 with rfl | hs0
-          · simp
-          · obtain ⟨i, hi⟩ := Finsupp.support_nonempty_iff.2 hs0
-            exact pow_nonneg
-              (mul_nonneg (Nat.cast_nonneg _) ((v.nonneg _).trans (hB i (hsub hi) 0))) _
-        rw [← hdeg]
-        exact (abv_coeff_aeval_monomial_le (fun i hi ↦ hk i (hsub hi))
-          (fun i hi ↦ hB i (hsub hi)) (p.coeff s) t).trans
-          (mul_le_mul_of_nonneg_left (hpC s) hpow)
-    _ = #p.support * ((k * B) ^ n * C) := by rw [sum_const, nsmul_eq_mul]
-
-/-- Nonarchimedean companion to `abv_coeff_aeval_le_of_isHomogeneous`, without the support-size
-factors. -/
-theorem abv_coeff_aeval_le_of_isHomogeneous_of_isNonarchimedean [CommSemiring S] [LinearOrder S]
-    [IsOrderedRing S] [IsDomain S] {v : AbsoluteValue R S} (hv : IsNonarchimedean v)
-    {p : MvPolynomial σ R} {n : ℕ} (hp : p.IsHomogeneous n) {f : σ → MvPolynomial τ R}
-    {B C : S} (hB0 : 0 ≤ B) (hB : ∀ i ∈ p.vars, ∀ m, v ((f i).coeff m) ≤ B)
-    (hpC : ∀ a, v (p.coeff a) ≤ C) (t : τ →₀ ℕ) :
-    v ((aeval f p).coeff t) ≤ B ^ n * C := by
-  classical
-  have hC0 : 0 ≤ C := (v.nonneg _).trans (hpC 0)
-  rcases eq_or_ne p 0 with rfl | hp0
-  · simpa using mul_nonneg (pow_nonneg hB0 n) hC0
-  have hne : p.support.Nonempty := support_nonempty.2 hp0
-  have hsum : aeval f p = ∑ s ∈ p.support, aeval f (monomial s (p.coeff s)) := by
-    conv_lhs => rw [p.as_sum]
-    exact map_sum _ _ _
-  rw [hsum, coeff_sum]
-  refine (hv.apply_sum_le_sup hne).trans (sup'_le hne _ fun s hs ↦ ?_)
-  have hdeg : s.degree = n := by
-    rw [Finsupp.degree_eq_weight_one (R := ℕ)]
-    exact hp (mem_support_iff.1 hs)
-  rw [← hdeg]
-  exact (abv_coeff_aeval_monomial_le_of_isNonarchimedean hv
-    (fun i hi ↦ hB i (support_subset_vars_of_mem_support hs hi)) (p.coeff s) t).trans
-    (mul_le_mul_of_nonneg_left (hpC s) (pow_nonneg hB0 _))
 
 /-- Each coefficient of `linearSubst M (monomial s a)` is bounded under `v` by
 `(card σ * B) ^ s.degree * v a` when the entries of `M` are bounded by `B`. -/

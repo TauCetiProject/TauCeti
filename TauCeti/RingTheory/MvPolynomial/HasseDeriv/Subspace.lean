@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.MvPolynomial.MultiHomogeneous
 import Mathlib.Algebra.Order.Archimedean.Real.Basic
 import Mathlib.Data.Fin.VecNotation
 import Mathlib.Data.Rat.Floor
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
 # Nonzero Hasse jets on bounded integer grids in linear subspaces
