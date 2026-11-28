@@ -10,7 +10,6 @@ import TauCeti.Analysis.Complex.CoordinateDivision.MDeriv
 import TauCeti.Analysis.Complex.CoordinateDivision.Multivariate
 import TauCeti.Analysis.Polynomial.OfMultiset
 import TauCeti.Data.Finsupp.Multiset
-import TauCeti.Data.Finsupp.Weight
 import TauCeti.Data.Nat.Pow
 
 /-!
@@ -58,25 +57,6 @@ namespace TauCeti
 
 /-! ### Preliminary helpers -/
 
-/-- Selects a multiset `s` of size `p` supported on `E` whose multiplicities are bounded by `k`. -/
-private theorem exists_multiset_card_eq_of_le_sum {E : Finset ℂ} {k : ℂ → ℕ} {p : ℕ}
-    (hsum : p ≤ ∑ ζ ∈ E, k ζ) :
-    ∃ s : Multiset ℂ, s.card = p ∧ (∀ ζ ∈ s, ζ ∈ E) ∧ ∀ ζ, s.count ζ ≤ k ζ := by
-  classical
-  let K : ℂ →₀ ℕ := Finsupp.indicator E fun a _ ↦ k a
-  have hK_deg : K.degree = ∑ ζ ∈ E, k ζ := by
-    simp [K, Finset.sum_attach]
-  obtain ⟨k', hk'_le, hk'_deg⟩ := Finsupp.exists_le_degree_eq K p (hK_deg.symm ▸ hsum)
-  refine ⟨k'.toMultiset, (Finsupp.card_toMultiset_eq_degree k').trans hk'_deg, fun ζ hζ ↦ ?_,
-    fun ζ ↦ ?_⟩
-  · exact Finsupp.support_indicator_subset _ _ <|
-      Finsupp.support_mono hk'_le ((Finsupp.mem_toMultiset _ _).mp hζ)
-  · rw [Finsupp.count_toMultiset]
-    by_cases hζE : ζ ∈ E
-    · simpa [K, hζE] using hk'_le ζ
-    · have h0 : k' ζ = 0 := Nat.eq_zero_of_le_zero (by simpa [K, hζE] using hk'_le ζ)
-      simp [h0]
-
 /-- Core `0 < n`, `0 < p`, `0 < r`, `5 * r ≤ R` regime of the weighted Cartesian Schwarz lemma. -/
 private theorem norm_le_mul_six_pow_mul_div_pow_of_five_mul_le {n : ℕ} {f : (Fin n → ℂ) → ℂ}
     (hf : Differentiable ℂ f) {E : Fin n → Finset ℂ} {k : Fin n → ℂ → ℕ} {p : ℕ}
@@ -91,7 +71,7 @@ private theorem norm_le_mul_six_pow_mul_div_pow_of_five_mul_le {n : ℕ} {f : (F
   have hR_pos : 0 < R := by linarith
   have hzR : z ∈ closedBall c R := closedBall_subset_closedBall (by linarith) hz
   have hM0 : 0 ≤ M := (norm_nonneg (f z)).trans (hM z hzR)
-  choose s hs_card hs_mem hs_count using fun i ↦ exists_multiset_card_eq_of_le_sum (hsum i)
+  choose s hs_card hs_mem hs_count using fun i ↦ Multiset.exists_card_eq_of_le_sum (hsum i)
   let P (i : Fin n) : ℂ[X] := Polynomial.ofMultiset (s i)
   have hP_monic (i : Fin n) : (P i).Monic := by
     dsimp only [P]

@@ -11,7 +11,6 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Analysis.Complex.DividedDifference.Analytic
 import TauCeti.Analysis.Complex.DividedDifference.Degree
 import TauCeti.Analysis.Complex.PartialDeriv.Degree
-import TauCeti.RingTheory.Polynomial.DegreeLT
 
 /-!
 # Dividing an entire function by a polynomial in one variable
@@ -499,19 +498,6 @@ theorem exists_degree_lt_partialModByMonic {P : ℂ[X]} (hP : P.Monic) (hf : Dif
   exact (iterate_partialDeriv_eq_zero_iff_exists_degree_lt
     (differentiable_partialModByMonic hf i P) i P.natDegree).mp
     (iterate_partialDeriv_partialModByMonic_eq_zero hP hf) z
-
-/-- Any map `T` on entire functions that maps `f` to an entire function, commutes with
-`(partialDeriv j)^[n]`, and sends `0` to `0` preserves coordinate-`j` polynomial degree bounds. -/
-private theorem exists_degree_lt_of_comm_iterate_partialDeriv
-    (T : ((ι → ℂ) → ℂ) → ((ι → ℂ) → ℂ)) (hf : Differentiable ℂ f)
-    (hTf : Differentiable ℂ (T f)) {j : ι}
-    (hcomm : ∀ n, (partialDeriv j)^[n] (T f) = T ((partialDeriv j)^[n] f))
-    (hT0 : T 0 = 0) {d : WithBot ℕ}
-    (hfj : ∀ y, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f (update y j w) = Q.eval w) (z : ι → ℂ) :
-    ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, T f (update z j w) = Q.eval w := by
-  obtain ⟨n, rfl, _⟩ := Polynomial.exists_mem_evalDegreeLT_of_exists_degree_lt (hfj z)
-  refine (iterate_partialDeriv_eq_zero_iff_exists_degree_lt hTf j n).mp ?_ z
-  rw [hcomm n, (iterate_partialDeriv_eq_zero_iff_exists_degree_lt hf j n).mpr hfj, hT0]
 
 /-- **Coordinate degree preservation for the quotient.** If `f` is entire and a polynomial of
 degree `< d` in another coordinate `j ≠ i`, then so is `partialDivByMonic i f P`. -/

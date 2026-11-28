@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Complex.PartialDeriv.Basic
 import TauCeti.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Complex.DividedDifference.Degree
 import TauCeti.Analysis.Complex.Liouville
+import TauCeti.RingTheory.Polynomial.DegreeLT
 
 /-!
 # Polynomial degree preservation under partial derivatives
@@ -20,7 +21,9 @@ Differentiating an entire function `f : (ι → ℂ) → ℂ` along any coordina
 Along `j = i` this follows from polynomial differentiation, and along `j ≠ i` it follows by
 evaluating `partialDslope i f (z i)` on the hyperplane `w i = z i`. Moreover, vanishing of
 `(partialDeriv i)^[d] f` characterizes entire functions that agree along every `zᵢ`-line with a
-polynomial of degree `< d` (`TauCeti.iterate_partialDeriv_eq_zero_iff_exists_degree_lt`).
+polynomial of degree `< d` (`TauCeti.iterate_partialDeriv_eq_zero_iff_exists_degree_lt`), so any
+operator `T` sending `0` to `0` and commuting with `(partialDeriv j)^[n]` on an entire function `f`
+(with `T f` entire) also preserves strict coordinate-`j` polynomial degree bounds.
 
 ## Main results
 
@@ -30,6 +33,9 @@ polynomial of degree `< d` (`TauCeti.iterate_partialDeriv_eq_zero_iff_exists_deg
   any strict coordinate polynomial degree bound `< d`.
 * `TauCeti.iterate_partialDeriv_eq_zero_iff_exists_degree_lt`: `(partialDeriv i)^[d] f = 0` iff
   every `zᵢ`-line agrees with a polynomial of degree `< d`.
+* `TauCeti.exists_degree_lt_of_comm_iterate_partialDeriv`: any operator `T` taking an entire
+  function `f` to an entire function, commuting with `(partialDeriv j)^[n]` on `f`, and sending
+  `0` to `0` preserves strict coordinate-`j` polynomial degree bounds.
 -/
 
 public section
@@ -113,5 +119,19 @@ theorem iterate_partialDeriv_eq_zero_iff_exists_degree_lt {ι : Type*} [Decidabl
           exact hQdeg
       rw [hline, Polynomial.iteratedDeriv_eq_factorial_mul_eval_hasseDeriv,
         Polynomial.hasseDeriv_eq_zero_of_lt_natDegree Q (n + 1) hQnat, eval_zero, mul_zero]
+
+/-- Any operator `T` taking an entire function `f` to an entire function `T f`, commuting with
+`(partialDeriv j)^[n]` on `f` for every `n`, and satisfying `T 0 = 0`, preserves strict
+coordinate-`j` polynomial degree bounds `< d`. -/
+theorem exists_degree_lt_of_comm_iterate_partialDeriv {ι : Type*} [DecidableEq ι] [Finite ι]
+    {f : (ι → ℂ) → ℂ} (T : ((ι → ℂ) → ℂ) → ((ι → ℂ) → ℂ)) (hf : Differentiable ℂ f)
+    (hTf : Differentiable ℂ (T f)) {j : ι}
+    (hcomm : ∀ n, (partialDeriv j)^[n] (T f) = T ((partialDeriv j)^[n] f))
+    (hT0 : T 0 = 0) {d : WithBot ℕ}
+    (hfj : ∀ y, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f (update y j w) = Q.eval w) (z : ι → ℂ) :
+    ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, T f (update z j w) = Q.eval w := by
+  obtain ⟨n, rfl, _⟩ := Polynomial.exists_mem_evalDegreeLT_of_exists_degree_lt (hfj z)
+  refine (iterate_partialDeriv_eq_zero_iff_exists_degree_lt hTf j n).mp ?_ z
+  rw [hcomm n, (iterate_partialDeriv_eq_zero_iff_exists_degree_lt hf j n).mpr hfj, hT0]
 
 end TauCeti

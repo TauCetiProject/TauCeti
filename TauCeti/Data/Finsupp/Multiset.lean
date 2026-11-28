@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Finsupp.Multiset
 public import Mathlib.Data.Finsupp.Weight
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Multisets of exponent vectors
@@ -34,6 +35,9 @@ which it takes each value.
 * `Finsupp.exists_sum_single_eq_iff`: the letter counts of ordered `n`-tuples are exactly the
   exponent vectors of total degree `n`.
 * `Multiset.toFinsupp_replicate`: `toFinsupp (replicate k i) = single i k`.
+* `Multiset.exists_card_eq_of_le_sum`: given a finite set `E` and multiplicities `k` of total sum
+  at least `p`, there exists a multiset of cardinality `p` supported on `E` with counts bounded by
+  `k`.
 
 The same unit steps summed along a list, with coefficients in any additive commutative monoid
 with one, count the occurrences of each letter; in characteristic zero these counts determine a
@@ -142,6 +146,26 @@ theorem toFinsupp_replicate {α : Type*} [DecidableEq α] (k : ℕ) (i : α) :
     toFinsupp (replicate k i) = Finsupp.single i k := by
   ext a
   rw [toFinsupp_apply, count_replicate, Finsupp.single_apply]
+
+/-- Given a finite set `E` and multiplicities `k : α → ℕ` with `p ≤ ∑ a ∈ E, k a`, there exists a
+multiset `s` of cardinality `p` supported on `E` whose multiplicities are bounded by `k`. -/
+theorem exists_card_eq_of_le_sum {α : Type*} [DecidableEq α] {E : Finset α} {k : α → ℕ}
+    {p : ℕ} (hsum : p ≤ ∑ a ∈ E, k a) :
+    ∃ s : Multiset α, s.card = p ∧ (∀ a ∈ s, a ∈ E) ∧ ∀ a, s.count a ≤ k a := by
+  classical
+  let K : α →₀ ℕ := Finsupp.indicator E fun a _ ↦ k a
+  have hK_deg : K.degree = ∑ a ∈ E, k a := by
+    simp [K, Finset.sum_attach]
+  obtain ⟨k', hk'_le, hk'_deg⟩ := Finsupp.exists_le_degree_eq K p (hK_deg.symm ▸ hsum)
+  refine ⟨k'.toMultiset, (Finsupp.card_toMultiset_eq_degree k').trans hk'_deg, fun a ha ↦ ?_,
+    fun a ↦ ?_⟩
+  · exact Finsupp.support_indicator_subset _ _ <|
+      Finsupp.support_mono hk'_le ((Finsupp.mem_toMultiset _ _).mp ha)
+  · rw [Finsupp.count_toMultiset]
+    by_cases haE : a ∈ E
+    · simpa [K, haE] using hk'_le a
+    · have h0 : k' a = 0 := Nat.eq_zero_of_le_zero (by simpa [K, haE] using hk'_le a)
+      simp [h0]
 
 end Multiset
 
