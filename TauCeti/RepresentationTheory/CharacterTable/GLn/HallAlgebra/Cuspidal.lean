@@ -41,9 +41,14 @@ similar to `g`, since the Sylvester map `y ↦ g y - y g` between the two blocks
 * `TauCeti.HallAlgebra.blockAverage_moebius`: `δμ(a, ·) = μ(a) · μ`.
 * `TauCeti.HallAlgebra.blockAverage_fun_mul_moebius`: `δ(B · μ)(a, b) = μ(a) μ(b) B(a ⊕ b)`.
 * `TauCeti.HallAlgebra.conj_moebius`: `μ` is real.
+* `TauCeti.HallAlgebra.greenCuspidal_eq_neg_moebius_mul`: `C_η = -(μ ∗ β_η)`.
 * `TauCeti.HallAlgebra.greenCuspidal_mul_constOne`: `C_η ∗ 𝟙 = -β_η`.
 * `TauCeti.HallAlgebra.greenCuspidal_eq_zero_of_dim_eq_zero`,
   `TauCeti.HallAlgebra.isCuspidal_greenCuspidal`: `C_η` vanishes in size `0` and is cuspidal.
+* `TauCeti.HallAlgebra.cuspidalSubmodule`, `TauCeti.HallAlgebra.isCuspidal_zero`,
+  `TauCeti.HallAlgebra.IsCuspidal.add`, `TauCeti.HallAlgebra.IsCuspidal.smul`,
+  `TauCeti.HallAlgebra.IsCuspidal.neg`, `TauCeti.HallAlgebra.IsCuspidal.sub`: the `ℂ`-submodule
+  of cuspidal elements and its linear closure properties.
 * `TauCeti.HallAlgebra.IsCuspidal.exists_charpoly_eq_pow`: if `A` is cuspidal and `A(g) ≠ 0`, the
   characteristic polynomial of `g` is a power of an irreducible polynomial.
 * `TauCeti.HallAlgebra.greenCuspidal_ofEnd_eq_mul`: `C_η(g)` only depends on `η` at the elements
@@ -292,7 +297,7 @@ variable [Finite k]
 
 /-- `C_η = -(μ ∗ β_η)`: at `g`, the terms `β(g|_U) μ(g|_U) + μ(g|_U) β(g|_{V/U}) = β(g) μ(g|_U)`
 add up to `β(g) · 1(g) = 0`. -/
-private theorem greenCuspidal_eq_neg_moebius_mul :
+theorem greenCuspidal_eq_neg_moebius_mul :
     (greenCuspidal K η : HallAlgebra k) = -(moebius * eigenvalueSum K η) := by
   refine ext_ofEnd fun _ g ↦ ?_
   have := Fintype.ofFinite g.invtSubmodule
@@ -391,5 +396,52 @@ theorem greenCuspidal_ofEnd_eq_mul {η η' : K → ℂ} {a : ℂ} {g : Module.En
   rw [eigenvalueSum_ofEnd, eigenvalueSum_ofEnd, h_map, Multiset.sum_map_mul_left, mul_assoc]
 
 end GreenFintype
+
+/-! ### Linear structure of cuspidal elements -/
+
+section CuspidalLinear
+
+variable [Fintype k]
+
+/-- `0` is cuspidal. -/
+theorem isCuspidal_zero : (0 : HallAlgebra k).IsCuspidal :=
+  isCuspidal_iff.mpr fun a b _ _ ↦ by simp [blockAverage_zero]
+
+/-- The sum of two cuspidal elements is cuspidal. -/
+theorem IsCuspidal.add {F H : HallAlgebra k} (hF : F.IsCuspidal) (hH : H.IsCuspidal) :
+    (F + H).IsCuspidal :=
+  isCuspidal_iff.mpr fun a b ha hb ↦ by
+    rw [blockAverage_add, add_apply, hF.blockAverage_eq_zero ha hb,
+      hH.blockAverage_eq_zero ha hb, add_zero]
+
+/-- A complex scalar multiple of a cuspidal element is cuspidal. -/
+theorem IsCuspidal.smul {F : HallAlgebra k} (hF : F.IsCuspidal) (c : ℂ) :
+    (c • F).IsCuspidal :=
+  isCuspidal_iff.mpr fun a b ha hb ↦ by
+    rw [blockAverage_smul, smul_apply, hF.blockAverage_eq_zero ha hb, mul_zero]
+
+/-- The negation of a cuspidal element is cuspidal. -/
+theorem IsCuspidal.neg {F : HallAlgebra k} (hF : F.IsCuspidal) : (-F).IsCuspidal := by
+  simpa only [neg_one_smul] using hF.smul (-1)
+
+/-- The difference of two cuspidal elements is cuspidal. -/
+theorem IsCuspidal.sub {F H : HallAlgebra k} (hF : F.IsCuspidal) (hH : H.IsCuspidal) :
+    (F - H).IsCuspidal := by
+  simpa only [sub_eq_add_neg] using hF.add hH.neg
+
+/-- The `ℂ`-submodule of cuspidal elements in `HallAlgebra k`. -/
+def cuspidalSubmodule : Submodule ℂ (HallAlgebra k) where
+  carrier := {F | F.IsCuspidal}
+  zero_mem' := isCuspidal_zero
+  add_mem' hF hH := hF.add hH
+  smul_mem' c _ hF := hF.smul c
+
+/-- Membership in `cuspidalSubmodule` is `IsCuspidal`. -/
+@[simp]
+theorem mem_cuspidalSubmodule {F : HallAlgebra k} :
+    F ∈ (cuspidalSubmodule : Submodule ℂ (HallAlgebra k)) ↔ F.IsCuspidal :=
+  Iff.rfl
+
+end CuspidalLinear
 
 end TauCeti.HallAlgebra
