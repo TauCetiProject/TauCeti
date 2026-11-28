@@ -11,9 +11,9 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Basic
 public import TauCeti.NumberTheory.ModularForms.Integral.Basic
 public import TauCeti.NumberTheory.ModularForms.LevelOne.QExpansion
 
+import Mathlib.NumberTheory.ModularForms.QExpansionInjective
 import Mathlib.RingTheory.TensorProduct.Maps
 import TauCeti.AlgebraicGeometry.EllipticCurve.Invariants.Presentation
-import TauCeti.NumberTheory.ModularForms.QExpansion.Graded
 
 /-!
 # Tate `q`-expansions of integral modular forms
@@ -635,9 +635,10 @@ theorem adjoinC₄C₆ΔToModularForms_eq_of {k : ℕ} {f : MvPolynomial Coeff �
       DirectSum.of (ModularForm 𝒮ℒ) (k : ℤ)
         (integralModularFormToModularForm k
           ⟨f, TauCeti.WeierstrassCurve.mem_integralModularFormSubmodule.mpr hf⟩) := by
-  refine TauCeti.ModularForm.qExpansionRingHom_injective one_pos one_mem_strictPeriods_SL ?_
-  rw [qExpansionRingHom_adjoinC₄C₆ΔToModularForms, ModularForm.qExpansionRingHom_apply,
-    qExpansion_integralModularFormToModularForm]
+  have hinj := ModularForm.qExpansionAlgHom_injective one_pos one_mem_strictPeriods_SL
+  rw [← AlgHom.coe_toRingHom, ModularForm.qExpansionAlgHom_toRingHom] at hinj
+  refine hinj ?_
+  simp [qExpansion_integralModularFormToModularForm]
 
 private noncomputable def complexAdjoinToModularForms :
     (ℂ ⊗[ℤ] Algebra.adjoin ℤ {Universal.curve.c₄, Universal.curve.c₆, Universal.curve.Δ}) →ₐ[ℂ]

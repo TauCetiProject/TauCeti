@@ -12,9 +12,9 @@ public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Series
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Laurent
 
+import Mathlib.NumberTheory.ModularForms.QExpansionInjective
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Congruence
 import TauCeti.NumberTheory.Bernoulli.Basic
-import TauCeti.NumberTheory.ModularForms.QExpansion.Graded
 import TauCeti.NumberTheory.ModularForms.QExpansion.Order
 import TauCeti.RingTheory.PowerSeries.SubringCoeff
 
@@ -415,15 +415,13 @@ theorem tendsto_discriminant_div_qParam_atImInfty :
         one_mem_strictPeriods_SL).differentiableAt
       discriminant_qExpansion_coeff_zero
 
-/-- **Algebraic independence of the `q`-expansions of `E₄` and `E₆`.** The level-one
-`q`-expansions `qExpansion 1 E₄` and `qExpansion 1 E₆` satisfy no nonzero polynomial relation
-over `ℂ`. -/
+/-- The level-one `q`-expansions of `E₄` and `E₆` satisfy no nonzero polynomial relation over
+`ℂ` in `ℂ⟦q⟧`. -/
 theorem algebraicIndependent_qExpansion_E₄_E₆ :
     AlgebraicIndependent ℂ ![qExpansion 1 E₄, qExpansion 1 E₆] := by
-  convert (AlgHom.algebraicIndependent_iff _
-    (qExpansionAlgHom_injective one_pos one_mem_strictPeriods_SL)).2 algebraicIndependent_E₄_E₆
-    using 1
-  funext i
+  convert _root_.ModularForm.algebraicIndependent_E₄_E₆.map'
+    (_root_.ModularForm.qExpansionAlgHom_injective one_pos one_mem_strictPeriods_SL) using 1
+  ext i
   fin_cases i <;> simp
 
 end TauCeti.ModularForm
