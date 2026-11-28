@@ -126,9 +126,8 @@ theorem exists_smul_eq_of_comap_eq
   -- so `a` is a unit of `A ∩ K` and a nonunit of `B ∩ K`, which are the same valuation subring
   have hq : ringExpChar K ^ n ≠ 0 := pow_ne_zero _ (expChar_ne_zero K _)
   have haB : a ∈ (B.comap (algebraMap K L)).nonunits := by
-    rw [mem_nonunits_comap, ha, mem_nonunits_iff, map_pow]
-    exact pow_lt_one₀ zero_le hNB hq
-  rw [← h, mem_nonunits_comap, ha, mem_nonunits_iff, map_pow, hNA, one_pow] at haB
+    rwa [mem_nonunits_comap, ha, pow_mem_nonunits_iff hq, mem_nonunits_iff]
+  rw [← h, mem_nonunits_comap, ha, pow_mem_nonunits_iff hq, mem_nonunits_iff, hNA] at haB
   exact lt_irrefl _ haB
 
 /-- **The extensions of a valuation subring form one orbit.** Under a finite group whose fixed

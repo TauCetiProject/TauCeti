@@ -68,26 +68,15 @@ theorem mem_absoluteUpperRamificationGroup_iff {u : ℝ} {σ : Field.absoluteGal
 /-- The absolute upper ramification subgroups form a decreasing filtration. -/
 theorem absoluteUpperRamificationGroup_antitone :
     Antitone (O.absoluteUpperRamificationGroup : ℝ → Subgroup (Field.absoluteGaloisGroup K)) := by
-  intro u v huv σ hσ
-  refine (mem_absoluteUpperRamificationGroup_iff (O := O)).mpr fun M ↦ ?_
-  exact Subgroup.map_mono (upperRamificationGroup_antitone _ _ huv)
-    ((mem_absoluteUpperRamificationGroup_iff (O := O)).mp hσ M)
-
-/-- The underlying set of an absolute upper ramification subgroup is the intersection of the
-preimages of the finite-level subgroups under restriction. -/
-theorem coe_absoluteUpperRamificationGroup (u : ℝ) :
-    (O.absoluteUpperRamificationGroup u : Set (Field.absoluteGaloisGroup K)) =
-      ⋂ M : FiniteGaloisIntermediateField K (AlgebraicClosure K),
-        {σ : Field.absoluteGaloisGroup K | AlgEquiv.restrictNormalHom ↥M σ ∈
-          (upperRamificationGroup ((Oₘ M).decompositionSubgroup K) (Oₘ M) u).map
-            ((Oₘ M).decompositionSubgroup K).subtype} := by
-  refine Set.ext fun σ ↦ (mem_absoluteUpperRamificationGroup_iff (O := O)).trans ?_
-  exact ⟨fun h ↦ Set.mem_iInter.mpr (fun M ↦ h M), fun h M ↦ Set.mem_iInter.mp h M⟩
+  intro u v huv
+  simp only [absoluteUpperRamificationGroup]
+  exact iInf_mono fun M ↦ Subgroup.comap_mono
+    (Subgroup.map_mono (upperRamificationGroup_antitone _ _ huv))
 
 /-- Each absolute upper ramification subgroup is closed in the Krull topology. -/
 theorem isClosed_absoluteUpperRamificationGroup (u : ℝ) :
     IsClosed (O.absoluteUpperRamificationGroup u : Set (Field.absoluteGaloisGroup K)) := by
-  rw [coe_absoluteUpperRamificationGroup]
+  simp only [absoluteUpperRamificationGroup, Subgroup.coe_iInf]
   exact isClosed_iInter fun M ↦
     (isClosed_discrete _).preimage
       (InfiniteGalois.restrictNormalHom_continuous M.toIntermediateField)
@@ -101,13 +90,14 @@ theorem absoluteUpperRamificationGroup_zero :
   refine Subgroup.ext fun (σ : AlgebraicClosure K ≃ₐ[K] AlgebraicClosure K) ↦ ?_
   refine (mem_absoluteUpperRamificationGroup_iff (σ := σ)).trans
     (Iff.trans ?_ (mem_map_inertiaSubgroup_iff (σ := σ)).symm)
-  simp_rw [upperRamificationGroup_of_le_zero _ _ le_rfl, ramificationGroupReal_def,
-    Int.ceil_zero, ramificationGroup_zero_eq_inertiaSubgroup]
-  have hrestrict (M : FiniteGaloisIntermediateField K (AlgebraicClosure K)) (x : M) :
-      algebraMap M (AlgebraicClosure K) (AlgEquiv.restrictNormalHom M σ x) =
-        σ (algebraMap M (AlgebraicClosure K) x) :=
-    AlgEquiv.restrictNormalHom_apply M.toIntermediateField σ x
-  simp only [mem_map_inertiaSubgroup_iff, mem_comap, mem_nonunits_comap, map_sub, hrestrict]
+  have hzero (M : FiniteGaloisIntermediateField K (AlgebraicClosure K)) :
+      ramificationGroupReal ((Oₘ M).decompositionSubgroup K) (Oₘ M) 0 =
+        (Oₘ M).inertiaSubgroup K := by
+    simpa only [Int.cast_zero, ramificationGroup_zero_eq_inertiaSubgroup] using
+      ramificationGroupReal_intCast ((Oₘ M).decompositionSubgroup K) (Oₘ M) (0 : ℤ)
+  simp_rw [upperRamificationGroup_of_le_zero _ _ le_rfl, hzero]
+  simp only [mem_map_inertiaSubgroup_iff, mem_comap, mem_nonunits_comap, map_sub,
+    IntermediateField.algebraMap_apply, AlgEquiv.restrictNormalHom_apply]
   constructor
   · intro h x hx
     -- A power of each element lies in a finite Galois subextension.
@@ -116,8 +106,7 @@ theorem absoluteUpperRamificationGroup_zero :
       expChar_of_injective_algebraMap (algebraMap K (AlgebraicClosure K)).injective p
     obtain ⟨n, M, hxM⟩ := FiniteGaloisIntermediateField.exists_expChar_pow_mem K p x
     let z : M := ⟨x ^ p ^ n, hxM⟩
-    have hz : algebraMap M (AlgebraicClosure K) z = x ^ p ^ n := by
-      simp only [IntermediateField.algebraMap_apply, z]
+    have hz : (z : AlgebraicClosure K) = x ^ p ^ n := rfl
     have hpow := h M z (hz ▸ O.pow_mem hx _)
     rw [hz, map_pow, ← sub_pow_expChar_pow] at hpow
     exact (pow_mem_nonunits_iff (pow_ne_zero _ (expChar_ne_zero K p))).mp hpow

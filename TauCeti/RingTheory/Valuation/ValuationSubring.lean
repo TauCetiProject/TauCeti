@@ -87,6 +87,7 @@ theorem mem_nonunits_comap {A : ValuationSubring L} {f : K →+* L} {x : K} :
 
 /-- A nonzero natural power belongs to the nonunits of a valuation subring exactly when
 its base does. -/
+@[simp]
 theorem pow_mem_nonunits_iff {A : ValuationSubring K} {x : K} {n : ℕ} (hn : n ≠ 0) :
     x ^ n ∈ A.nonunits ↔ x ∈ A.nonunits := by
   simp only [mem_nonunits_iff, map_pow, pow_lt_one_iff_of_nonneg zero_le hn]
