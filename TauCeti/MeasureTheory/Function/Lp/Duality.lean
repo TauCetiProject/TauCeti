@@ -524,6 +524,30 @@ theorem AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le [Sig
     exact (hFE hxF).1.le
   exact ((ENNReal.mul_le_mul_iff_left hFpos.ne' hFtop.ne).1 (hlow.trans hkC)).not_gt hCt
 
+/-- **Norming by simple functions, `q = ∞`, on a σ-finite support.** On an arbitrary measure
+space, let `h` be almost everywhere strongly measurable and vanish almost everywhere off a
+measurable set `t` on which `μ` is σ-finite. If `h` satisfies `‖∫ h g‖ₑ ≤ C * eLpNorm g 1 μ` for
+every simple function `g ∈ L¹` and some `C : ℝ≥0∞`, then the extended essential supremum
+`eLpNorm h ∞ μ` is at most `C`. -/
+theorem
+    AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le_of_restrict_compl_ae_eq_zero
+    {t : Set α} (ht : MeasurableSet t) [SigmaFinite (μ.restrict t)] {h : α → 𝕜}
+    (hmeas : AEStronglyMeasurable h μ) (hvan : h =ᵐ[μ.restrict tᶜ] 0) {C : ℝ≥0∞}
+    (hC : ∀ g : SimpleFunc α 𝕜, MemLp g 1 μ → ‖∫ x, h x * g x ∂μ‖ₑ ≤ C * eLpNorm g 1 μ) :
+    eLpNorm h ∞ μ ≤ C := by
+  rw [eLpNorm_congr_ae (indicator_ae_eq_of_restrict_compl_ae_eq_zero ht hvan).symm,
+    eLpNorm_indicator_eq_eLpNorm_restrict ht.nullMeasurableSet]
+  -- On `μ.restrict t` the σ-finite case applies, tested through the simple functions `1_t g`.
+  refine hmeas.restrict.eLpNorm_top_le_of_forall_enorm_integral_mul_le fun g hg ↦ ?_
+  have hgt : MemLp (g.restrict t) 1 μ := by
+    rwa [SimpleFunc.coe_restrict _ ht, memLp_indicator_iff_restrict ht.nullMeasurableSet]
+  calc ‖∫ x in t, h x * g x ∂μ‖ₑ = ‖∫ x, h x * g.restrict t x ∂μ‖ₑ := by
+        simp only [SimpleFunc.coe_restrict _ ht, ← integral_indicator ht, Set.indicator_mul_right]
+    _ ≤ C * eLpNorm (g.restrict t) 1 μ := hC _ hgt
+    _ = C * eLpNorm g 1 (μ.restrict t) := by
+        rw [SimpleFunc.coe_restrict _ ht,
+          eLpNorm_indicator_eq_eLpNorm_restrict ht.nullMeasurableSet]
+
 /-- **Norming by bounded functions of finite-measure support, `q = ∞`.** On a σ-finite measure
 space, if an almost everywhere strongly measurable `h` with values in an inner product space
 satisfies `‖∫ ⟪h, g⟫‖ ≤ C ‖g‖₁` for every bounded `g` vanishing off a set of finite measure, then
