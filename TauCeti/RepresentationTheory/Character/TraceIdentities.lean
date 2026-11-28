@@ -71,7 +71,7 @@ variable [CommSemiring k] [Monoid G] [Fintype n] [DecidableEq n]
 
 /-- The linear form on `k[G]` that extends `T : G → k`. -/
 private noncomputable def linearExtension (T : G → k) : k[G] →ₗ[k] k :=
-  (aeval T).toLinearMap ∘ₗ Finsupp.lift _ k G X ∘ₗ (coeffLinearEquiv k).toLinearMap
+  Finsupp.linearCombination k T ∘ₗ (coeffLinearEquiv k).toLinearMap
 
 -- `MonoidAlgebra.of` simplifies to `single`, so use that normal form for the generator rule.
 omit [Monoid G] in
@@ -90,10 +90,12 @@ private lemma eval_linearExtension_eq_zero {T : G → k}
     (hB : ∀ ρ : k[G] →ₐ[k] Matrix n n k, eval (fun x : k[G] ↦ (ρ x).trace) B = 0) :
     eval (linearExtension T) B = 0 := by
   let S : k[G] →ₗ[k] MvPolynomial G k :=
-    Finsupp.lift _ k G X ∘ₗ (coeffLinearEquiv k).toLinearMap
+    Finsupp.linearCombination k X ∘ₗ (coeffLinearEquiv k).toLinearMap
   have hT : (aeval T).toLinearMap ∘ₗ S = linearExtension T := by
-    ext g
-    simp [S, linearExtension]
+    have hX : ⇑(aeval T).toLinearMap ∘ (X : G → MvPolynomial G k) = T :=
+      funext fun g ↦ aeval_X T g
+    rw [← LinearMap.comp_assoc, ← Finsupp.linearCombination_linear_comp, hX]
+    rfl
   have hρ (ρ : G →* GL n k) :
       (aeval fun g ↦ (ρ g).val.trace).toLinearMap ∘ₗ S =
         traceLinearMap n k k ∘ₗ
