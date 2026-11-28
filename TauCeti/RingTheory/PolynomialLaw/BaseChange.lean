@@ -16,7 +16,9 @@ A law from `M` to `N` over `R` extends to a law from `B ⊗[R] M` to
 `B ⊗[R] N` over a commutative `R`-algebra `B`. Its component at a
 commutative `B`-algebra `S` is the original component at `S`, transported
 along the tensor cancellation equivalences. This construction preserves
-homogeneity and multiplicativity.
+homogeneity and multiplicativity. Thus a law defined over `R` can be used over `B`
+and evaluated on further `B`-algebras. Homogeneous multiplicative laws provide
+the input for scalar extension of determinants.
 
 ## References
 
@@ -37,22 +39,33 @@ namespace PolynomialLaw
 variable {R : Type u} [CommSemiring R] (B : Type v) [CommSemiring B] [Algebra R B]
   {M N : Type*} [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 
+private def transportedComponent (f : M →ₚₗ[R] N) (S : Type*) [CommSemiring S]
+    [Algebra B S] [Algebra R S] [IsScalarTower R B S] (x : S ⊗[B] (B ⊗[R] M)) :=
+  (cancelBaseChange R B B S N).symm (f.toFun S (cancelBaseChange R B B S M x))
+
+private theorem transportedComponent_natural (f : M →ₚₗ[R] N)
+    {S T : Type*} [CommSemiring S] [Algebra B S] [Algebra R S] [IsScalarTower R B S]
+    [CommSemiring T] [Algebra B T] [Algebra R T] [IsScalarTower R B T]
+    (φ : S →ₐ[B] T) (x : S ⊗[B] (B ⊗[R] M)) :
+    φ.toLinearMap.rTensor _ (transportedComponent B f S x) =
+      transportedComponent B f T (φ.toLinearMap.rTensor _ x) := by
+  apply (cancelBaseChange R B B T N).injective
+  simp only [transportedComponent, cancelBaseChange_rTensor, LinearEquiv.apply_symm_apply]
+  exact f.isCompat_apply (φ.restrictScalars R) _
+
 /-- Extend both modules of a polynomial law along a commutative algebra. -/
 def baseChange (f : M →ₚₗ[R] N) : B ⊗[R] M →ₚₗ[B] B ⊗[R] N where
   toFun' S _ _ x :=
     letI : Algebra R S := Algebra.compHom S (algebraMap R B)
     letI : IsScalarTower R B S := IsScalarTower.of_algebraMap_eq' rfl
-    (cancelBaseChange R B B S N).symm (f.toFun S (cancelBaseChange R B B S M x))
+    transportedComponent B f S x
   isCompat' {S} _ _ {T} _ _ φ := by
     let : Algebra R S := Algebra.compHom S (algebraMap R B)
     let : Algebra R T := Algebra.compHom T (algebraMap R B)
     let : IsScalarTower R B S := IsScalarTower.of_algebraMap_eq' rfl
     let : IsScalarTower R B T := IsScalarTower.of_algebraMap_eq' rfl
     funext x
-    apply (cancelBaseChange R B B T N).injective
-    rw [Function.comp_apply, Function.comp_apply, cancelBaseChange_rTensor,
-      LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply, cancelBaseChange_rTensor]
-    exact f.isCompat_apply (φ.restrictScalars R) _
+    exact transportedComponent_natural B f φ x
 
 /-- At an algebra in the universe of `B`, scalar extension transports the original law
 along tensor cancellation. -/
@@ -80,13 +93,33 @@ theorem baseChange_toFun (f : M →ₚₗ[R] N) (S : Type*) [CommSemiring S] [Al
     let : IsScalarTower R B (MvPolynomial (Fin k) B) := IsScalarTower.of_algebraMap_eq' rfl
     exact h φ p
   intro T _ _ _ _ φ p
-  apply (cancelBaseChange R B B S N).injective
-  rw [← isCompat_apply, ← toFun'_eq_toFun, baseChange_toFun' B f, cancelBaseChange_rTensor,
-    LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply, cancelBaseChange_rTensor]
-  exact f.isCompat_apply (φ.restrictScalars R) _
+  rw [← isCompat_apply, ← toFun'_eq_toFun, baseChange_toFun' B f]
+  exact transportedComponent_natural B f φ p
+
+/-- Scalar extension preserves the identity law. -/
+@[simp]
+theorem baseChange_id : (id : M →ₚₗ[R] M).baseChange B = id := by
+  ext S _ _ x
+  let : Algebra R S := Algebra.compHom S (algebraMap R B)
+  let : IsScalarTower R B S := IsScalarTower.of_algebraMap_eq' rfl
+  simp only [baseChange_toFun', ← LinearMap.toPolynomialLaw_id,
+    LinearMap.toPolynomialLaw_toFun, LinearMap.toPolynomialLaw_toFun', LinearMap.baseChange_id,
+    LinearMap.id_apply, LinearEquiv.symm_apply_apply]
+
+/-- Scalar extension commutes with composition of polynomial laws. -/
+@[simp]
+theorem baseChange_comp {P : Type*} [AddCommMonoid P] [Module R P]
+    (g : N →ₚₗ[R] P) (f : M →ₚₗ[R] N) :
+    (g.comp f).baseChange B = (g.baseChange B).comp (f.baseChange B) := by
+  ext S _ _ x
+  let : Algebra R S := Algebra.compHom S (algebraMap R B)
+  let : IsScalarTower R B S := IsScalarTower.of_algebraMap_eq' rfl
+  simp only [comp_toFun', Function.comp_apply, baseChange_toFun',
+    toFun_comp_apply, LinearEquiv.apply_symm_apply]
 
 /-- The extended law at a scalar-extended vector, evaluated on the ground algebra. -/
-theorem baseChange_ground (f : M →ₚₗ[R] N) (x : B ⊗[R] M) :
+@[simp]
+theorem ground_baseChange (f : M →ₚₗ[R] N) (x : B ⊗[R] M) :
     (f.baseChange B).ground x = f.toFun B x := by
   rw [ground_apply, baseChange_toFun', cancelBaseChange_self_eq_lid,
     cancelBaseChange_self_eq_lid, lid_tmul]
@@ -102,8 +135,7 @@ theorem IsHomogeneousOfDegree.baseChange {d : ℕ} {f : M →ₚₗ[R] N}
   have h (y : S ⊗[B] (B ⊗[R] M)) :
       (f.baseChange B).toFun' S y =
         (cancelBaseChange R B S S N).symm (f.toFun S (cancelBaseChange R B S S M y)) := by
-    -- Cancellation has the same underlying map over `B` and over `S`.
-    exact baseChange_toFun' B f S y
+    rw [baseChange_toFun', cancelBaseChange_apply_eq, cancelBaseChange_symm_apply_eq]
   rw [h, h, map_smul, hf.toFun_smul, map_smul]
 
 section Multiplicative
@@ -125,9 +157,9 @@ theorem IsMultiplicative.baseChange {M N : Type*} [Semiring M] [Algebra R M]
     have heM : eM.toLinearEquiv = cancelBaseChange R B S S M :=
       TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv_toLinearEquiv R B M S
     -- The algebra equivalences act through their underlying linear equivalences.
-    change _ = eN.symm.toLinearEquiv (f.toFun S (eM.toLinearEquiv y))
+    rw [← AlgEquiv.toLinearEquiv_apply, ← AlgEquiv.toLinearEquiv_apply]
     rw [heN, heM]
-    exact baseChange_toFun' B f S y
+    rw [baseChange_toFun', cancelBaseChange_apply_eq, cancelBaseChange_symm_apply_eq]
   refine ⟨?_, ?_⟩
   · intro S _ _
     let : Algebra R S := Algebra.compHom S (algebraMap R B)

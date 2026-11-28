@@ -7,8 +7,8 @@ module
 
 public import TauCeti.RingTheory.PolynomialLaw.Determinant.Comap
 public import TauCeti.RingTheory.PolynomialLaw.BaseChange
-public import TauCeti.Algebra.TensorProduct.BaseChange
 public import TauCeti.RingTheory.TensorProduct.Maps
+import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
 
 /-!
 # Scalar extension of Chenevier determinants
@@ -19,7 +19,7 @@ On elements coming from `R`, its values, characteristic coefficients, trace and
 characteristic polynomial are obtained by mapping their coefficients to `B`.
 The equivalence `scalarExtensionEquiv` also identifies the determinants over
 `B` on `B ⊗[A] R` with the homogeneous multiplicative laws over `A` from
-`R` to `B`.
+`R` to `B`, with both sides of fixed degree `d`.
 
 ## References
 
@@ -33,6 +33,9 @@ noncomputable section
 
 open TensorProduct Polynomial
 open TauCeti.Algebra.TensorProduct
+open _root_.Algebra.TensorProduct (scalarRestrictionInput scalarRestrictionInput_apply
+  scalarRestrictionInput_tmul scalarRestrictionOutput scalarRestrictionOutput_apply
+  scalarRestrictionOutput_tmul)
 
 namespace TauCeti.Determinant
 
@@ -65,6 +68,7 @@ theorem rid_toFun_ofPolynomialLaw (f : R →ₚₗ[A] B) (hf : f.IsHomogeneousOf
     LinearMap.baseChange_eq_lTensor, PolynomialLaw.baseChange_toFun]
   simp only [← AlgEquiv.toLinearEquiv_apply (e := baseChangeTowerAlgEquiv A B R S),
     baseChangeTowerAlgEquiv_toLinearEquiv]
+  rw [AlgebraTensorModule.cancelBaseChange_apply_eq]
   have h (y : S ⊗[A] B) :
       Algebra.TensorProduct.rid B S S
           ((Algebra.TensorProduct.mulLeft : B ⊗[A] B →ₐ[B] B).toLinearMap.lTensor S
@@ -132,15 +136,20 @@ theorem charCoeff_baseChange_one_tmul (i : ℕ) (x : R) :
           ((D.baseChange B).toLaw.toFun B[X] (1 ⊗ₜ (1 ⊗ₜ x) + X ⊗ₜ 1)) =
         (Algebra.TensorProduct.rid A A A[X]
           (D.toLaw.toFun A[X] (1 ⊗ₜ x + X ⊗ₜ 1))).map (algebraMap A B) := by
+    let φ : A[X] →ₐ[A] B[X] := Polynomial.mapAlgHom (Algebra.ofId A B)
+    have hout (y : A[X] ⊗[A] A) :
+        Algebra.TensorProduct.rid A B[X] B[X] (φ.toLinearMap.rTensor A y) =
+          (Algebra.TensorProduct.rid A A[X] A[X] y).map (algebraMap A B) := by
+      induction y using TensorProduct.inductionOn with
+      | tmul p a =>
+        simp [φ, Algebra.smul_def, IsScalarTower.algebraMap_apply A B B[X]]
+      | add y z hy hz => simp [hy, hz]
     rw [Algebra.TensorProduct.coe_rid, ← Algebra.TensorProduct.coe_rid B B[X] B[X],
-      rid_toFun_baseChange, map_add, baseChangeTowerAlgEquiv_tmul, one_smul,
-      Algebra.TensorProduct.one_def, baseChangeTowerAlgEquiv_tmul, one_smul,
-      D.toFun_tmul_add_tmul_one, map_sum, rid_toFun_one_tmul_add_X_tmul_one, Polynomial.map_sum]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    simp only [one_pow, one_mul, Algebra.TensorProduct.rid_tmul, Algebra.smul_def,
-      IsScalarTower.algebraMap_apply A B B[X], Polynomial.map_mul, Polynomial.map_C,
-      Polynomial.map_pow, Polynomial.map_X]
-    rfl
+      rid_toFun_baseChange]
+    have hn := congrArg (Algebra.TensorProduct.rid A B[X] B[X])
+      (D.toLaw.isCompat_apply φ (1 ⊗ₜ x + X ⊗ₜ 1))
+    rw [hout] at hn
+    simpa [φ, Algebra.TensorProduct.one_def, Algebra.TensorProduct.coe_rid] using hn.symm
   simpa only [Polynomial.coeff_map, coeff_rid_toFun_one_tmul_add_X_tmul_one _ hi] using
     congrArg (fun p : B[X] ↦ p.coeff (d - i)) h
 
@@ -158,15 +167,7 @@ theorem baseChange_self :
   apply (Algebra.TensorProduct.rid A S S).injective
   rw [rid_toFun_baseChange]
   congr 2
-  suffices h :
-      (baseChangeTowerAlgEquiv A A R S).toAlgHom.restrictScalars A =
-        Algebra.TensorProduct.map (AlgHom.id A S) (Algebra.TensorProduct.lid A R).toAlgHom
-    from AlgHom.congr_fun h x
-  apply Algebra.TensorProduct.ext'
-  intro s y
-  induction y using TensorProduct.inductionOn with
-  | tmul a r => simp [tmul_smul, smul_tmul']
-  | add y z hy hz => simp only [tmul_add, map_add, hy, hz]
+  exact AlgHom.congr_fun (baseChangeTowerAlgEquiv_self A R S) x
 
 /-- Extending along a tower of coefficient rings agrees with extending in one step,
 under the canonical identification of the scalar-extended algebras. -/
@@ -189,23 +190,7 @@ theorem baseChange_baseChange (C : Type*) [CommSemiring C] [Algebra A C] [Algebr
   rw [rid_toFun_baseChange (D.baseChange B) C, rid_toFun_baseChange D B,
     rid_toFun_baseChange D C]
   congr 2
-  suffices h :
-      ((baseChangeTowerAlgEquiv A B R S).toAlgHom.comp
-        (baseChangeTowerAlgEquiv B C (B ⊗[A] R) S).toAlgHom).restrictScalars C =
-      ((baseChangeTowerAlgEquiv A C R S).toAlgHom.restrictScalars C).comp
-        (Algebra.TensorProduct.map (AlgHom.id C S) (baseChangeTowerAlgEquiv A B R C).toAlgHom)
-    from AlgHom.congr_fun h x
-  refine Algebra.TensorProduct.ext' fun s y ↦ ?_
-  induction y using TensorProduct.inductionOn with
-  | add y z hy hz => simp only [tmul_add, map_add, hy, hz]
-  | tmul c z =>
-    induction z using TensorProduct.inductionOn with
-    | tmul b r =>
-      simp only [AlgHom.restrictScalars_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-        baseChangeTowerAlgEquiv_tmul, Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
-        Algebra.smul_def, IsScalarTower.algebraMap_apply B C S]
-      exact congrArg (fun t : S ↦ t ⊗ₜ[A] r) (by rw [(algebraMap C S).map_mul, mul_assoc])
-    | add y z hy hz => simp only [tmul_add, map_add, hy, hz]
+  exact AlgHom.congr_fun (baseChangeTowerAlgEquiv_comp A B R C S) x
 
 end Semiring
 
@@ -216,49 +201,47 @@ universe u
 variable {A : Type u} [CommSemiring A] {R : Type*} [Semiring R] [Algebra A R]
   {d : ℕ} (B : Type*) [CommSemiring B] [Algebra A B]
 
-private def restrictLawInput (S : Type*) [CommSemiring S] [Algebra A S] :
-    S ⊗[A] R →ₐ[A] (B ⊗[A] S) ⊗[B] (B ⊗[A] R) :=
-  ((baseChangeTowerAlgEquiv A B R (B ⊗[A] S)).symm.toAlgHom.restrictScalars A).comp
-    (Algebra.TensorProduct.map Algebra.TensorProduct.includeRight (AlgHom.id A R))
+private def restrictedComponent (D : Determinant B (B ⊗[A] R) d)
+    (S : Type*) [CommSemiring S] [Algebra A S] (x : S ⊗[A] R) :=
+  scalarRestrictionOutput B S (D.toLaw.toFun (B ⊗[A] S) (scalarRestrictionInput B S x))
 
-private theorem restrictLawInput_tmul {S : Type*} [CommSemiring S] [Algebra A S] (s : S) (r : R) :
-    restrictLawInput (R := R) B S (s ⊗ₜ[A] r) = (1 ⊗ₜ[A] s) ⊗ₜ[B] (1 ⊗ₜ[A] r) := by
-  simp [restrictLawInput]
-
-private def restrictLawOutput (S : Type*) [CommSemiring S] [Algebra A S] :
-    (B ⊗[A] S) ⊗[B] B →ₐ[A] S ⊗[A] B :=
-  (Algebra.TensorProduct.comm A B S).toAlgHom.comp
-    ((Algebra.TensorProduct.rid B B (B ⊗[A] S)).toAlgHom.restrictScalars A)
-
-private theorem restrictLawOutput_tmul {S : Type*} [CommSemiring S] [Algebra A S]
-    (b c : B) (s : S) :
-    restrictLawOutput B S ((b ⊗ₜ[A] s) ⊗ₜ[B] c) = s ⊗ₜ[A] (c * b) := by
-  simp [restrictLawOutput, smul_tmul', smul_eq_mul]
+private theorem restrictedComponent_natural (D : Determinant B (B ⊗[A] R) d)
+    {S T : Type*} [CommSemiring S] [Algebra A S] [CommSemiring T] [Algebra A T]
+    (φ : S →ₐ[A] T) (x : S ⊗[A] R) :
+    φ.toLinearMap.rTensor B (restrictedComponent B D S x) =
+      restrictedComponent B D T (φ.toLinearMap.rTensor R x) := by
+  let ψ := Algebra.TensorProduct.map (AlgHom.id B B) φ
+  have hin (x : S ⊗[A] R) :
+      ψ.toLinearMap.rTensor (B ⊗[A] R) (scalarRestrictionInput B S x) =
+        scalarRestrictionInput B T (φ.toLinearMap.rTensor R x) := by
+    apply (baseChangeTowerAlgEquiv A B R (B ⊗[A] T)).injective
+    rw [← AlgEquiv.toLinearEquiv_apply, baseChangeTowerAlgEquiv_toLinearEquiv,
+      ← AlgebraTensorModule.cancelBaseChange_apply_eq,
+      AlgebraTensorModule.cancelBaseChange_rTensor, AlgebraTensorModule.cancelBaseChange_apply_eq]
+    simp only [scalarRestrictionInput_apply]
+    rw [← baseChangeTowerAlgEquiv_toLinearEquiv, AlgEquiv.toLinearEquiv_apply,
+      AlgEquiv.apply_symm_apply, AlgEquiv.apply_symm_apply]
+    rw [← AlgHom.rTensor_toLinearMap_apply, ← LinearMap.rTensor_comp_apply,
+      ← AlgHom.toLinearMap_restrictScalars,
+      ← AlgHom.comp_toLinearMap, ← AlgHom.rTensor_toLinearMap_apply,
+      ← LinearMap.rTensor_comp_apply, ← AlgHom.comp_toLinearMap]
+    congr 2
+  have hout (y : (B ⊗[A] S) ⊗[B] B) :
+      φ.toLinearMap.rTensor B (scalarRestrictionOutput B S y) =
+        scalarRestrictionOutput B T (ψ.toLinearMap.rTensor B y) := by
+    induction y using TensorProduct.inductionOn with
+    | add y z hy hz => simp [hy, hz]
+    | tmul z c =>
+      induction z using TensorProduct.inductionOn with
+      | tmul b s => simp [scalarRestrictionOutput_tmul, ψ]
+      | add x y hx hy => simp only [add_tmul, map_add, hx, hy]
+  simp only [restrictedComponent, hout, D.toLaw.isCompat_apply, hin]
 
 /-- Regard a determinant on `B ⊗[A] R` as an `A`-polynomial law on `R` valued in `B`.
 Its component at `S` evaluates the determinant at the `B`-algebra `B ⊗[A] S`. -/
 def restrictLaw (D : Determinant B (B ⊗[A] R) d) : R →ₚₗ[A] B where
-  toFun' S _ _ x := restrictLawOutput B S
-    (D.toLaw.toFun (B ⊗[A] S) (restrictLawInput B S x))
-  isCompat' {S} _ _ {T} _ _ φ := by
-    let ψ := Algebra.TensorProduct.map (AlgHom.id B B) φ
-    have hin (x : S ⊗[A] R) :
-        ψ.toLinearMap.rTensor (B ⊗[A] R) (restrictLawInput B S x) =
-          restrictLawInput B T (φ.toLinearMap.rTensor R x) := by
-      induction x using TensorProduct.inductionOn with
-      | tmul s r => simp [restrictLawInput_tmul, ψ]
-      | add x y hx hy => simp [hx, hy]
-    have hout (y : (B ⊗[A] S) ⊗[B] B) :
-        φ.toLinearMap.rTensor B (restrictLawOutput B S y) =
-          restrictLawOutput B T (ψ.toLinearMap.rTensor B y) := by
-      induction y using TensorProduct.inductionOn with
-      | add y z hy hz => simp [hy, hz]
-      | tmul z c =>
-        induction z using TensorProduct.inductionOn with
-        | tmul b s => simp [restrictLawOutput_tmul, ψ]
-        | add x y hx hy => simp only [add_tmul, map_add, hx, hy]
-    funext x
-    simp only [Function.comp_apply, hout, D.toLaw.isCompat_apply, hin]
+  toFun' S _ _ x := restrictedComponent B D S x
+  isCompat' φ := funext (restrictedComponent_natural B D φ)
 
 /-- To evaluate a restricted determinant law at `S`, insert `S` into `B ⊗[A] S`, evaluate
 the determinant there, and swap the scalar factors in the output. -/
@@ -269,8 +252,19 @@ theorem restrictLaw_toFun' (D : Determinant B (B ⊗[A] R) d) (S : Type u)
         (Algebra.TensorProduct.rid B B (B ⊗[A] S)
           (D.toLaw.toFun (B ⊗[A] S)
             ((baseChangeTowerAlgEquiv A B R (B ⊗[A] S)).symm
-              (Algebra.TensorProduct.map Algebra.TensorProduct.includeRight (AlgHom.id A R) x)))) :=
-  (rfl)
+              (Algebra.TensorProduct.map Algebra.TensorProduct.includeRight
+                (AlgHom.id A R) x)))) := by
+  simp only [restrictLaw, restrictedComponent, scalarRestrictionInput_apply,
+    scalarRestrictionOutput_apply]
+
+/-- The restriction formula holds at test algebras in any universe. -/
+theorem restrictLaw_toFun (D : Determinant B (B ⊗[A] R) d) (S : Type*)
+    [CommSemiring S] [Algebra A S] (x : S ⊗[A] R) :
+    (D.restrictLaw B).toFun S x =
+      scalarRestrictionOutput B S (D.toLaw.toFun (B ⊗[A] S) (scalarRestrictionInput B S x)) := by
+  obtain ⟨k, φ, p, rfl⟩ := PolynomialLaw.exists_lift x
+  rw [← PolynomialLaw.isCompat_apply, ← PolynomialLaw.toFun'_eq_toFun]
+  exact restrictedComponent_natural B D φ p
 
 /-- Restricting the base of a determinant law preserves its degree. -/
 theorem isHomogeneousOfDegree_restrictLaw (D : Determinant B (B ⊗[A] R) d) :
@@ -279,39 +273,39 @@ theorem isHomogeneousOfDegree_restrictLaw (D : Determinant B (B ⊗[A] R) d) :
   intro S _ _ s x
   let ι : S →ₐ[A] B ⊗[A] S := Algebra.TensorProduct.includeRight
   have hin :
-      restrictLawInput B S (s • x) = ι s • restrictLawInput B S x := by
+      scalarRestrictionInput B S (s • x) = ι s • scalarRestrictionInput B S x := by
     induction x using TensorProduct.inductionOn with
     | tmul t r =>
-      simp [smul_tmul', restrictLawInput_tmul, ι, Algebra.smul_def,
+      simp [smul_tmul', scalarRestrictionInput_tmul, ι, Algebra.smul_def,
         Algebra.TensorProduct.tmul_mul_tmul]
     | add y z hy hz => simp [smul_add, hy, hz]
   have hout (y : (B ⊗[A] S) ⊗[B] B) :
-      restrictLawOutput B S (ι s ^ d • y) = s ^ d • restrictLawOutput B S y := by
+      scalarRestrictionOutput B S (ι s ^ d • y) = s ^ d • scalarRestrictionOutput B S y := by
     induction y using TensorProduct.inductionOn with
     | add y z hy hz => simp [smul_add, hy, hz]
     | tmul z c =>
       induction z using TensorProduct.inductionOn with
       | tmul b t =>
         rw [← map_pow]
-        simp [smul_tmul', restrictLawOutput_tmul, ι, Algebra.smul_def,
+        simp [smul_tmul', scalarRestrictionOutput_tmul, ι, Algebra.smul_def,
           Algebra.TensorProduct.tmul_mul_tmul]
       | add y z hy hz => simp only [smul_add, add_tmul, map_add, hy, hz]
-  simp only [restrictLaw, hin, D.isHomogeneousOfDegree.toFun_smul, hout]
+  simp only [restrictLaw, restrictedComponent, hin, D.isHomogeneousOfDegree.toFun_smul, hout]
 
 /-- Restricting the base of a determinant law preserves the unit and multiplication. -/
 theorem isMultiplicative_restrictLaw (D : Determinant B (B ⊗[A] R) d) :
     (D.restrictLaw B).IsMultiplicative where
   toFun'_one S _ _ := by
-    let g := restrictLawInput (A := A) (R := R) B S
-    let h := restrictLawOutput (A := A) B S
+    let g := scalarRestrictionInput (A := A) (R := R) B S
+    let h := scalarRestrictionOutput (A := A) B S
     calc
       h (D.toLaw.toFun (B ⊗[A] S) (g 1)) = h (D.toLaw.toFun (B ⊗[A] S) 1) :=
         congrArg (fun y ↦ h (D.toLaw.toFun (B ⊗[A] S) y)) g.map_one
       _ = h 1 := congrArg h (D.isMultiplicative.toFun_one (B ⊗[A] S))
       _ = 1 := h.map_one
   toFun'_mul {S} _ _ x y := by
-    let g := restrictLawInput (A := A) (R := R) B S
-    let h := restrictLawOutput (A := A) B S
+    let g := scalarRestrictionInput (A := A) (R := R) B S
+    let h := scalarRestrictionOutput (A := A) B S
     let f := D.toLaw.toFun (B ⊗[A] S)
     calc
       h (f (g (x * y))) = h (f (g x * g y)) := congrArg (h ∘ f) (g.map_mul x y)
@@ -325,10 +319,10 @@ theorem restrictLaw_ofPolynomialLaw (f : R →ₚₗ[A] B) (hf : f.IsHomogeneous
   ext S _ _ x
   let ι : S →ₐ[A] B ⊗[A] S := Algebra.TensorProduct.includeRight
   have hin :
-      baseChangeTowerAlgEquiv A B R (B ⊗[A] S) (restrictLawInput B S x) =
+      baseChangeTowerAlgEquiv A B R (B ⊗[A] S) (scalarRestrictionInput B S x) =
         ι.toLinearMap.rTensor R x := by
     rw [AlgHom.rTensor_toLinearMap_apply]
-    simp [restrictLawInput, ι]
+    simp [scalarRestrictionInput_apply, ι]
   have hout (y : S ⊗[A] B) :
       Algebra.TensorProduct.comm A B S
           (Algebra.TensorProduct.mulRight (ι.toLinearMap.rTensor B y)) = y := by
@@ -337,8 +331,7 @@ theorem restrictLaw_ofPolynomialLaw (f : R →ₚₗ[A] B) (hf : f.IsHomogeneous
       simp [ι, Algebra.TensorProduct.algebraMap_apply, Algebra.TensorProduct.tmul_mul_tmul]
     | add y z hy hz => simp [hy, hz]
   rw [PolynomialLaw.toFun'_eq_toFun f]
-  simp only [restrictLaw, restrictLawOutput, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-    AlgHom.restrictScalars_apply]
+  simp only [restrictLaw, restrictedComponent, scalarRestrictionOutput_apply]
   rw [Algebra.TensorProduct.coe_rid, ← Algebra.TensorProduct.coe_rid B (B ⊗[A] S) (B ⊗[A] S),
     rid_toFun_ofPolynomialLaw, hin, ← f.isCompat_apply, hout]
 
@@ -356,7 +349,7 @@ section Equivalence
 universe u
 
 variable {A : Type u} [CommSemiring A] {R : Type*} [Semiring R] [Algebra A R]
-  {d : ℕ} (B : Type u) [CommSemiring B] [Algebra A B]
+  {d : ℕ} (B : Type*) [CommSemiring B] [Algebra A B]
 
 /-- Extending the base of the restricted law recovers the determinant over `B`. -/
 @[simp]
@@ -368,29 +361,40 @@ theorem ofPolynomialLaw_restrictLaw (D : Determinant B (B ⊗[A] R) d) :
   let : IsScalarTower A B S := IsScalarTower.of_algebraMap_eq' rfl
   let μ : B ⊗[A] S →ₐ[B] S := Algebra.TensorProduct.mulLeft
   have hin (y : S ⊗[A] R) :
-      μ.toLinearMap.rTensor (B ⊗[A] R) (restrictLawInput B S y) =
+      μ.toLinearMap.rTensor (B ⊗[A] R) (scalarRestrictionInput B S y) =
         (baseChangeTowerAlgEquiv A B R S).symm y := by
-    induction y using TensorProduct.inductionOn with
-    | tmul s r => simp [restrictLawInput_tmul, μ]
-    | add y z hy hz => simp [hy, hz]
+    apply (baseChangeTowerAlgEquiv A B R S).injective
+    rw [← AlgEquiv.toLinearEquiv_apply, baseChangeTowerAlgEquiv_toLinearEquiv,
+      ← AlgebraTensorModule.cancelBaseChange_apply_eq,
+      AlgebraTensorModule.cancelBaseChange_rTensor, AlgebraTensorModule.cancelBaseChange_apply_eq,
+      ← baseChangeTowerAlgEquiv_toLinearEquiv, AlgEquiv.toLinearEquiv_apply,
+      scalarRestrictionInput_apply, AlgEquiv.apply_symm_apply, AlgEquiv.apply_symm_apply]
+    rw [← AlgHom.rTensor_toLinearMap_apply, ← LinearMap.rTensor_comp_apply,
+      ← AlgHom.toLinearMap_restrictScalars,
+      ← AlgHom.comp_toLinearMap]
+    have hμ : (μ.restrictScalars A).comp Algebra.TensorProduct.includeRight = AlgHom.id A S := by
+      ext s
+      simp [μ]
+    rw [hμ]
+    simp
   have hout (y : (B ⊗[A] S) ⊗[B] B) :
-      Algebra.TensorProduct.mulRight (restrictLawOutput B S y) =
+      Algebra.TensorProduct.mulRight (scalarRestrictionOutput B S y) =
         Algebra.TensorProduct.rid B S S (μ.toLinearMap.rTensor B y) := by
     induction y using TensorProduct.inductionOn with
     | add y z hy hz => simp [hy, hz]
     | tmul z c =>
       induction z using TensorProduct.inductionOn with
       | tmul b s =>
-        simp [restrictLawOutput_tmul, μ, Algebra.smul_def]
+        simp [scalarRestrictionOutput_tmul, μ, Algebra.smul_def]
         ac_rfl
       | add z w hz hw => simp only [add_tmul, map_add, hz, hw]
   simp only [PolynomialLaw.toFun'_eq_toFun]
   apply (Algebra.TensorProduct.rid B S S).injective
-  rw [rid_toFun_ofPolynomialLaw, ← PolynomialLaw.toFun'_eq_toFun (D.restrictLaw B)]
-  simp only [restrictLaw, hout, D.toLaw.isCompat_apply, hin, AlgEquiv.symm_apply_apply]
+  rw [rid_toFun_ofPolynomialLaw, restrictLaw_toFun]
+  simp only [hout, D.toLaw.isCompat_apply, hin, AlgEquiv.symm_apply_apply]
 
-/-- Homogeneous multiplicative laws over `A` with values in `B` are equivalent to
-determinants on the scalar-extended algebra over `B`. -/
+/-- Homogeneous multiplicative laws of fixed degree `d` over `A` with values in `B`
+are equivalent to degree-`d` determinants on the scalar-extended algebra over `B`. -/
 def scalarExtensionEquiv :
     {f : R →ₚₗ[A] B // f.IsHomogeneousOfDegree d ∧ f.IsMultiplicative} ≃
       Determinant B (B ⊗[A] R) d where
@@ -400,16 +404,56 @@ def scalarExtensionEquiv :
   left_inv f := Subtype.ext (restrictLaw_ofPolynomialLaw B f.val f.property.left f.property.right)
   right_inv := ofPolynomialLaw_restrictLaw B
 
-/-- The equivalence extends the base of a homogeneous multiplicative law. -/
+/-- The equivalence extends the base of a homogeneous multiplicative law of degree `d`. -/
 @[simp]
 theorem scalarExtensionEquiv_apply
     (f : {f : R →ₚₗ[A] B // f.IsHomogeneousOfDegree d ∧ f.IsMultiplicative}) :
     scalarExtensionEquiv B f = ofPolynomialLaw B f.val f.property.left f.property.right :=
   (rfl)
 
-/-- The inverse equivalence restricts the base of the determinant law. -/
+/-- The scalar-extension equivalence is natural in the coefficient algebra: postcomposing
+with the coefficient map corresponds to base-changing the determinant under tensor cancellation. -/
+theorem scalarExtensionEquiv_baseChange (C : Type*) [CommSemiring C] [Algebra A C]
+    [Algebra B C] [IsScalarTower A B C]
+    (f : {f : R →ₚₗ[A] B // f.IsHomogeneousOfDegree d ∧ f.IsMultiplicative}) :
+    (scalarExtensionEquiv B f).baseChange C =
+      (scalarExtensionEquiv (d := d) C
+        ⟨(IsScalarTower.toAlgHom A B C).toLinearMap.toPolynomialLaw.comp f.val,
+          by
+            simpa using
+              (IsScalarTower.toAlgHom A B C).toLinearMap.isHomogeneousOfDegree_toPolynomialLaw.comp
+                f.property.left,
+          (IsScalarTower.toAlgHom A B C).isMultiplicative_toPolynomialLaw.comp
+            f.property.right⟩).comap (baseChangeTowerAlgEquiv A B R C).toAlgHom := by
+  ext S _ _ x
+  let : Algebra B S := Algebra.compHom S (algebraMap B C)
+  let : Algebra A S := Algebra.compHom S (algebraMap A C)
+  let : IsScalarTower B C S := IsScalarTower.of_algebraMap_eq' rfl
+  let : IsScalarTower A C S := IsScalarTower.of_algebraMap_eq' rfl
+  let : IsScalarTower A B S := IsScalarTower.of_algebraMap_eq fun a ↦ calc
+    algebraMap A S a = algebraMap C S (algebraMap A C a) := rfl
+    _ = algebraMap C S (algebraMap B C (algebraMap A B a)) := by
+      rw [IsScalarTower.algebraMap_apply A B C]
+    _ = _ := rfl
+  simp only [PolynomialLaw.toFun'_eq_toFun, scalarExtensionEquiv_apply, comap_toFun]
+  apply (Algebra.TensorProduct.rid C S S).injective
+  rw [rid_toFun_baseChange, rid_toFun_ofPolynomialLaw, rid_toFun_ofPolynomialLaw,
+    PolynomialLaw.toFun_comp_apply, LinearMap.toPolynomialLaw_toFun,
+    LinearMap.baseChange_eq_lTensor, AlgHom.lTensor_toLinearMap_apply]
+  have hout (y : S ⊗[A] B) :
+      Algebra.TensorProduct.mulRight
+          (Algebra.TensorProduct.map (AlgHom.id A S) (IsScalarTower.toAlgHom A B C) y) =
+        Algebra.TensorProduct.mulRight y := by
+    induction y using TensorProduct.inductionOn with
+    | tmul s b => simp [IsScalarTower.algebraMap_apply B C S]
+    | add y z hy hz => simp [hy, hz]
+  rw [hout]
+  congr 2
+  exact AlgHom.congr_fun (baseChangeTowerAlgEquiv_comp A B R C S) x
+
+/-- The inverse equivalence restricts the base of the degree-`d` determinant law. -/
 @[simp]
-theorem coe_scalarExtensionEquiv_symm_apply (D : Determinant B (B ⊗[A] R) d) :
+theorem val_scalarExtensionEquiv_symm_apply (D : Determinant B (B ⊗[A] R) d) :
     ((scalarExtensionEquiv B).symm D).val = D.restrictLaw B :=
   (rfl)
 
@@ -444,28 +488,7 @@ theorem baseChange_algHomDet {n : Type*} [Fintype n] [DecidableEq n]
   rw [rid_toFun_baseChange, algHomDet_toFun, algHomDet_toFun,
     Algebra.TensorProduct.rid_tmul, Algebra.TensorProduct.rid_tmul, one_smul, one_smul]
   congr 1
-  suffices h :
-      (Algebra.matrixBaseChangeAlgEquiv A S n).toAlgHom.comp
-        ((Algebra.TensorProduct.map (AlgHom.id S S) ρ).comp
-          (baseChangeTowerAlgEquiv A B R S).toAlgHom) =
-      (Algebra.matrixBaseChangeAlgEquiv B S n).toAlgHom.comp
-        (Algebra.TensorProduct.map (AlgHom.id S S)
-          ((Algebra.matrixBaseChangeAlgEquiv A B n).toAlgHom.comp
-            (Algebra.TensorProduct.map (AlgHom.id B B) ρ)))
-    from AlgHom.congr_fun h x
-  refine Algebra.TensorProduct.ext' fun s y ↦ ?_
-  induction y using TensorProduct.inductionOn with
-  | add y z hy hz => simp only [tmul_add, map_add, hy, hz]
-  | tmul b r =>
-    simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, baseChangeTowerAlgEquiv_tmul,
-      Algebra.TensorProduct.map_tmul, AlgHom.id_apply, Algebra.matrixBaseChangeAlgEquiv_tmul]
-    rw [Matrix.map_smulₛₗ (algebraMap B S) (algebraMap B S) b (fun z ↦ by
-      simp)]
-    ext i j
-    simp only [Matrix.smul_apply, Matrix.map_apply]
-    simp only [Algebra.smul_def, Algebra.algebraMap_self_apply,
-      IsScalarTower.algebraMap_apply A B S]
-    ac_rfl
+  exact AlgHom.congr_fun (Algebra.matrixBaseChangeAlgEquiv_comp_tower A B R S n ρ) x
 
 end Ring
 
