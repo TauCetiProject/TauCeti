@@ -27,8 +27,9 @@ provide the resulting `SeminormedRing`, `NormedRing`, and `NormedAlgebra` instan
   `TwoSidedIdeal.Quotient.nonUnitalNormedCommRing`, `TwoSidedIdeal.Quotient.seminormedCommRing` and
   `TwoSidedIdeal.Quotient.normedCommRing`: the commutative variants of these structures.
 * `TwoSidedIdeal.Quotient.norm_mk_le`, `TwoSidedIdeal.Quotient.exists_norm_mk_lt`,
-  `TwoSidedIdeal.Quotient.norm_mk_eq` and `TwoSidedIdeal.Quotient.continuous_mk`: the basic
-  properties of the quotient norm and of the projection `mk I`.
+  `TwoSidedIdeal.Quotient.norm_mk_eq`, `TwoSidedIdeal.Quotient.norm_mk_eq_infDist` and
+  `TwoSidedIdeal.Quotient.continuous_mk`: the basic properties of the quotient norm and of the
+  projection `mk I`.
 * `TwoSidedIdeal.Quotient.seminormedRing`, `TwoSidedIdeal.Quotient.normedRing`, and
   `TwoSidedIdeal.Quotient.normedAlgebra` (with its `NormedSpace` instance
   `TwoSidedIdeal.Quotient.normedSpace`): unital and algebra counterparts on `R ⧸ I`.
@@ -70,6 +71,11 @@ theorem norm_mk_eq (a : A) : ‖mk I a‖ = sInf ((‖a + ·‖) '' (I : Set A))
     rw [QuotientAddGroup.mk'_apply, quotientAddGroupMk_eq_mk]
   rw [← hmk, ← AddSubgroup.coe_ofClass I]
   exact quotient_norm_mk_eq (AddSubgroup.ofClass I) a
+
+/-- The quotient norm of `mk I a` is the distance from `a` to `I`. -/
+theorem norm_mk_eq_infDist (a : A) : ‖mk I a‖ = Metric.infDist a (I : Set A) := by
+  rw [← quotientAddGroupMk_eq_mk]
+  exact QuotientAddGroup.norm_mk (S := AddSubgroup.ofClass I) a
 
 /-- The quotient projection `mk I` is continuous. -/
 @[fun_prop]

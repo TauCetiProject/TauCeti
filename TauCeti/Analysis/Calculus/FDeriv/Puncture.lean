@@ -24,8 +24,9 @@ whole-space statement is its case `s = univ`.
 
 For a map from the complex plane, the angular hypothesis follows from sublinear derivative
 blow-up: `‖z - a‖ * ‖du(z)‖ → 0`. The original value of `u` at the puncture is unrestricted;
-the extension replaces it with the limiting value `q` using `Function.update`. The same holds at a
-point `a` of the real axis for a map on the punctured closed upper half-disc, differentiable
+the extension replaces it with the limiting value `q` using `Function.update`; off the
+puncture the extension has the derivative of `u` (`TauCeti.fderiv_update_of_ne`). The same holds
+at a point `a` of the real axis for a map on the punctured closed upper half-disc, differentiable
 within the closed upper half-plane: this is the case where `s` is that half-plane, so the
 half-circles about `a` replace the circles, and the radius is the one along the real axis
 (`TauCeti.exists_continuousOn_update_inter_of_integrableOn_radial_deriv_of_tendsto`).
@@ -52,6 +53,13 @@ public section
 namespace TauCeti
 
 open Bornology Filter MeasureTheory Metric Set Topology
+
+/-- Changing a map at one point does not change its derivative at any other point. -/
+theorem fderiv_update_of_ne {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [DecidableEq E] {f : E → F}
+    {x₀ x : E} (h : x ≠ x₀) (y : F) :
+    fderiv 𝕜 (Function.update f x₀ y) x = fderiv 𝕜 f x :=
+  EventuallyEq.fderiv_eq ((eventually_ne_nhds h).mono fun _ hw ↦ Function.update_of_ne hw _ _)
 
 variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]

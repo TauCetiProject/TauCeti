@@ -9,10 +9,14 @@ public import Mathlib.RingTheory.KrullDimension.Basic
 public import Mathlib.RingTheory.Spectrum.Prime.RingHom
 public import Mathlib.RingTheory.LocalProperties.Basic
 public import Mathlib.RingTheory.Valuation.ValuationRing
+public import TauCeti.RingTheory.RingHom.VCover
 
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
+import TauCeti.Algebra.Algebra.Prod
 import TauCeti.RingTheory.KrullDimension.Basic
+import TauCeti.RingTheory.Valuation.Extension
+import TauCeti.RingTheory.Valuation.PrimeSplitting
 
 /-!
 # Arc-covers of rings
@@ -29,6 +33,16 @@ The main theorem is that a Milnor square gives an arc-cover: if `f : A →+* B` 
 stays inside `V` because a rank-one valuation is archimedean. Milnor squares are the source of
 arc-covers that are not v-covers, and they are the squares on which the excision criterion for
 arc-sheaves is tested.
+
+Every v-cover is an arc-cover, since an extension of valuation domains `V →+* W` with `V` of rank
+at most one can be followed by a homomorphism to a valuation domain of rank at most one which is
+still an extension. Over a valuation domain `V` of rank at most one the converse holds: lifting the
+identity of `V` factors an extension of `V`, which is faithfully flat and hence a v-cover, through
+the arc-cover. Thus `V →+* B` is an arc-cover exactly when the specialization from the generic to
+the closed point of `Spec V` lifts to `Spec B`, and after base change to such a `V` every arc-cover
+becomes a v-cover. For a prime `p` of a valuation domain `V`, the Milnor square
+`V, V ⧸ p, V_p, κ(p)` gives the arc-cover `V →+* V ⧸ p × V_p`; when `p` is neither zero nor
+maximal, as for the middle prime of a valuation domain of rank two, it is not a v-cover.
 
 ## Main definitions
 
@@ -48,11 +62,21 @@ arc-sheaves is tested.
 * `RingHom.exists_comp_eq_of_injOn`: a homomorphism to a valuation domain of rank at most one
   which does not kill `I` extends along a map carrying `I` bijectively onto an ideal.
 * `RingHom.isArcCover_quotientMk_prod`: a Milnor square gives an arc-cover.
+* `RingHom.IsVCover.isArcCover`: every v-cover is an arc-cover.
+* `RingHom.isArcCover_iff_isVCover`: out of a valuation domain of rank at most one, arc-covers and
+  v-covers agree; `RingHom.IsArcCover.isVCover_algebraMap_tensorProduct` is the base-changed form.
+* `RingHom.isArcCover_iff_exists_isPrime_le_of_valuationRing`: out of a valuation domain of rank
+  at most one, a homomorphism is an arc-cover if and only if the generic-to-closed specialization
+  lifts.
+* `TauCeti.ValuationRing.isArcCover_quotientMk_prod_algebraMap` and
+  `TauCeti.ValuationRing.not_isVCover_quotientMk_prod_algebraMap`: the prime-splitting cover of a
+  valuation domain is an arc-cover, and not a v-cover when the prime is neither zero nor maximal.
 
 ## References
 
 * B. Bhatt and A. Mathew, *The arc-topology*, Forum Math. Pi 9 (2021), Definition 1.2,
-  Lemma 2.3, Lemma 2.7 and Corollary 2.9.
+  Example 1.3, Proposition 2.1, Lemma 2.3, Lemma 2.4, Corollary 2.5, Lemma 2.7 and
+  Corollary 2.9.
 -/
 
 public section
@@ -256,4 +280,90 @@ theorem isArcCover_quotientMk_prod (hinj : Set.InjOn f I) (himage : (I.map f : S
 
 end Milnor
 
+section VCover
+
+open scoped TensorProduct
+
+/-- Every v-cover is an arc-cover: a lift through an extension of valuation domains of arbitrary
+rank is cut down to an extension of rank at most one. -/
+theorem IsVCover.isArcCover {f : A →+* B} (hf : f.IsVCover) : f.IsArcCover := by
+  intro V _ _ _ _ φ
+  obtain ⟨W, _, _, _, e, ψ, he, _, hψ⟩ := (isVCover_iff f).mp hf V φ
+  obtain ⟨W', i₁, i₂, i₃, i₄, g, hg, hg'⟩ := exists_krullDimLE_one_injective_isLocalHom_comp e he
+  exact ⟨W', i₁, i₂, i₃, i₄, g.comp e, g.comp ψ, hg, hg',
+    by rw [RingHom.comp_assoc, hψ, RingHom.comp_assoc]⟩
+
+variable [IsDomain A] [ValuationRing A] [Ring.KrullDimLE 1 A]
+
+/-- An arc-cover out of a valuation domain of rank at most one is a v-cover. -/
+theorem IsArcCover.isVCover {f : A →+* B} (hf : f.IsArcCover) : f.IsVCover := by
+  -- Lifting the identity of `A` factors an extension `A →+* W`, which is a v-cover, through `f`.
+  obtain ⟨W, _, _, _, _, e, ψ, he, _, hψ⟩ := hf A (RingHom.id A)
+  rw [RingHom.comp_id] at hψ
+  exact IsVCover.of_comp (g := ψ) (hψ ▸ IsVCover.of_injective_of_isLocalHom he)
+
+/-- Out of a valuation domain of rank at most one, arc-covers and v-covers agree. -/
+theorem isArcCover_iff_isVCover (f : A →+* B) : f.IsArcCover ↔ f.IsVCover :=
+  ⟨IsArcCover.isVCover, IsVCover.isArcCover⟩
+
+/-- A ring homomorphism `f : A →+* B` out of a valuation domain of rank at most one is an
+arc-cover if and only if some prime of `B` lying over the zero ideal of `A` is contained in a prime
+lying over the maximal ideal of `A`. On spectra: the specialization from the generic to the closed
+point of `Spec A` lifts to `Spec B`. When `A` is a field this says that `B` is nonzero. -/
+theorem isArcCover_iff_exists_isPrime_le_of_valuationRing (f : A →+* B) :
+    f.IsArcCover ↔ ∃ P Q : Ideal B, P.IsPrime ∧ Q.IsPrime ∧ P ≤ Q ∧ P.comap f = ⊥ ∧
+      Q.comap f = IsLocalRing.maximalIdeal A :=
+  (isArcCover_iff_isVCover f).trans (isVCover_iff_exists_isPrime_le_of_valuationRing f)
+
+omit [IsDomain A] [ValuationRing A] [Ring.KrullDimLE 1 A] in
+/-- After base change to a valuation domain of rank at most one, an arc-cover becomes a
+v-cover. -/
+theorem IsArcCover.isVCover_algebraMap_tensorProduct [Algebra A B]
+    (hf : (algebraMap A B).IsArcCover) (V : Type u) [CommRing V] [IsDomain V] [ValuationRing V]
+    [Ring.KrullDimLE 1 V] [Algebra A V] : (algebraMap V (V ⊗[A] B)).IsVCover :=
+  (IsArcCover.isStableUnderBaseChange.tensorProduct V hf).isVCover
+
+end VCover
+
 end RingHom
+
+namespace TauCeti.ValuationRing
+
+variable {V : Type u} [CommRing V] [IsDomain V] [ValuationRing V] (p : Ideal V) [p.IsPrime]
+
+/-- The prime-splitting arc-cover: for a prime `p` of a valuation domain `V`, the homomorphism
+`V →+* V ⧸ p × V_p` is an arc-cover. On spectra, `Spec V` is covered by the two closed intervals
+`Spec (V ⧸ p)` and `Spec V_p` meeting at `p`. -/
+theorem isArcCover_quotientMk_prod_algebraMap :
+    ((Ideal.Quotient.mk p).prod (algebraMap V (Localization.AtPrime p))).IsArcCover := by
+  -- `V →+* V_p` carries `p` bijectively onto `p V_p`.
+  refine RingHom.isArcCover_quotientMk_prod _
+    (IsLocalization.injective _ p.primeCompl_le_nonZeroDivisors).injOn fun z hz => ?_
+  obtain ⟨x, hx, rfl⟩ := PreValuationRing.exists_mem_algebraMap_eq_of_mem_map le_rfl hz
+  exact ⟨x, hx, rfl⟩
+
+/-- If the prime `p` of a valuation domain `V` is neither zero nor maximal, then the
+prime-splitting arc-cover `V →+* V ⧸ p × V_p` is not a v-cover: the identity of `V` lifts through
+neither factor after an extension of valuation domains. For instance, for the middle prime of a
+valuation domain of rank two, this cover separates the arc-topology from the v-topology. -/
+theorem not_isVCover_quotientMk_prod_algebraMap (hp0 : p ≠ ⊥)
+    (hpm : p ≠ IsLocalRing.maximalIdeal V) :
+    ¬((Ideal.Quotient.mk p).prod (algebraMap V (Localization.AtPrime p))).IsVCover := by
+  intro h
+  obtain ⟨W, _, _, _, e, ψ, he, _, hψ⟩ := (RingHom.isVCover_iff _).mp h V (RingHom.id V)
+  have hψx (x : V) : ψ (Ideal.Quotient.mk p x, algebraMap V _ x) = e x := RingHom.congr_fun hψ x
+  -- As `W` is a domain, `ψ` factors through one of the two projections.
+  rcases ψ.exists_eq_comp_fst_or_snd with ⟨φ, rfl⟩ | ⟨φ, rfl⟩
+  · -- Then `ψ` only sees `V ⧸ p`, so it kills the image of `p ≠ 0`, contradicting injectivity.
+    obtain ⟨x, hxp, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hp0
+    refine hx0 (he ?_)
+    simpa [Ideal.Quotient.eq_zero_iff_mem.mpr hxp] using (hψx x).symm
+  · -- Then `ψ` only sees `V_p`, so the image of an element `s` of the maximal ideal outside `p`,
+    -- a unit of `V_p`, is a unit of `W`.
+    obtain ⟨s, hsm, hsp⟩ := IsConcreteLE.exists_of_lt
+      ((IsLocalRing.le_maximalIdeal (Ideal.IsPrime.ne_top ‹_›)).lt_of_ne hpm)
+    have hunit : IsUnit (e s) := hψx s ▸
+      ((IsLocalization.AtPrime.isUnit_to_map_iff (Localization.AtPrime p) p s).mpr hsp).map φ
+    exact (IsLocalRing.mem_maximalIdeal s).mp hsm (hunit.of_map e)
+
+end TauCeti.ValuationRing

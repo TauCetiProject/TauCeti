@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.Morse.BirthDeath
 public import TauCeti.Geometry.Manifold.Morse.CriticalPointContinuation
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import Mathlib.Analysis.Calculus.Deriv.Pow
@@ -27,7 +28,9 @@ second derivative `6 x`, so:
   `TauCeti.totalCriticalCount_pow_three_sub_mul_of_pos`),
   a local maximum of Morse index `1` at `-√(t / 3)` and a local minimum of Morse index `0` at
   `√(t / 3)` (`TauCeti.manifoldMorseIndex_pow_three_sub_mul_neg_sqrt`,
-  `TauCeti.manifoldMorseIndex_pow_three_sub_mul_sqrt`).
+  `TauCeti.manifoldMorseIndex_pow_three_sub_mul_sqrt`,
+  `TauCeti.sep_criticalPoints_pow_three_sub_mul_manifoldMorseIndex_eq_of_pos`,
+  `TauCeti.criticalCount_pow_three_sub_mul_of_pos`).
 
 So `f_t` is a Morse function exactly when `t ≠ 0` (`TauCeti.isMorse_pow_three_sub_mul_iff`). Up
 to the factor `3` and the reparametrization `s = t / 3` this is the birth–death potential
@@ -51,6 +54,17 @@ the local uniqueness and the regularity of such a branch all fail.
   differentiable at `0` within `[0, ∞)`
   (`TauCeti.not_differentiableWithinAt_of_eventually_mem_criticalPoints_pow_three_sub_mul`), whereas
   the continuation theorem gives `C²` branches.
+
+The branches of critical points that do exist for `t > 0` end at the degenerate critical point:
+
+* every choice `ψ t` of critical points of `f_t` along a filter of parameters converging to `0`
+  tends to `0` (`TauCeti.tendsto_zero_of_eventually_mem_criticalPoints_pow_three_sub_mul`);
+* a continuous choice over a preconnected set of parameters, such as an interval, is one of the
+  two branches `t ↦ √(t / 3)` and `t ↦ -√(t / 3)`
+  (`TauCeti.eqOn_sqrt_or_eqOn_neg_sqrt_of_mem_criticalPoints_pow_three_sub_mul`), and these two
+  branches meet at `t = 0`.
+
+These two statements are instances of the corresponding statements for the birth–death potential.
 
 ## References
 
@@ -93,6 +107,14 @@ private theorem iteratedDeriv_two_pow_three_sub_mul (t x : ℝ) :
 theorem mem_criticalPoints_pow_three_sub_mul_iff :
     x ∈ criticalPoints 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 3 - t * y) ↔ 3 * x ^ 2 = t := by
   rw [mem_criticalPoints_iff_deriv_eq_zero, (hasDerivAt_pow_three_sub_mul t x).deriv, sub_eq_zero]
+
+/-- The critical points of `x³ - t x` are those of the birth–death potential `x³ / 3 - s x` at the
+parameter `s = t / 3`. -/
+private theorem mem_criticalPoints_pow_three_sub_mul_iff_fderiv_birthDeathPotential_eq_zero :
+    x ∈ criticalPoints 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 3 - t * y) ↔
+      fderiv ℝ (birthDeathPotential (t / 3)) x = 0 := by
+  rw [mem_criticalPoints_pow_three_sub_mul_iff, fderiv_birthDeathPotential_eq_zero_iff]
+  constructor <;> intro h <;> linarith
 
 /-- For `t < 0` the function `x³ - t x` has no critical point. -/
 theorem criticalPoints_pow_three_sub_mul_of_neg (ht : t < 0) :
@@ -190,6 +212,32 @@ theorem manifoldMorseIndex_pow_three_sub_mul_sqrt (ht : 0 < t) :
   rw [iteratedDeriv_two_pow_three_sub_mul]
   linarith [Real.sqrt_pos.2 (show 0 < t / 3 by positivity)]
 
+/-- For `t > 0`, the critical points of index `j` of `x³ - t x` are the local maximum `-√(t / 3)`
+if `j = 1` and the local minimum `√(t / 3)` if `j = 0`. -/
+theorem sep_criticalPoints_pow_three_sub_mul_manifoldMorseIndex_eq_of_pos (ht : 0 < t) (j : ℕ) :
+    {x ∈ criticalPoints 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 3 - t * y) |
+        manifoldMorseIndex 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 3 - t * y) x = j} =
+      (if j = 1 then {-√(t / 3)} else ∅) ∪ (if j = 0 then {√(t / 3)} else ∅) := by
+  have h₁ := manifoldMorseIndex_pow_three_sub_mul_neg_sqrt ht
+  have h₀ := manifoldMorseIndex_pow_three_sub_mul_sqrt ht
+  ext x
+  rw [criticalPoints_pow_three_sub_mul_of_pos ht, mem_sep_iff, mem_insert_iff, mem_singleton_iff,
+    mem_union]
+  constructor
+  · rintro ⟨rfl | rfl, rfl⟩
+    · rw [h₁]; simp
+    · rw [h₀]; simp
+  · rintro (h | h) <;> split_ifs at h with hj <;> simp_all
+
+/-- For `t > 0`, the function `x³ - t x` has one critical point of Morse index `1`, the local
+maximum `-√(t / 3)`, and one of index `0`, the local minimum `√(t / 3)`. -/
+theorem criticalCount_pow_three_sub_mul_of_pos (ht : 0 < t) (j : ℕ) :
+    criticalCount 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 3 - t * y) j =
+      (if j = 1 then 1 else 0) + if j = 0 then 1 else 0 := by
+  rw [criticalCount_def, sep_criticalPoints_pow_three_sub_mul_manifoldMorseIndex_eq_of_pos ht,
+    encard_union_eq (by split_ifs <;> simp_all)]
+  split_ifs <;> simp
+
 /-! ### Continuation fails at the degenerate critical point -/
 
 /-- **No branch of critical points through `t = 0`.** No function `ψ` picks a critical point
@@ -252,6 +300,45 @@ theorem not_differentiableWithinAt_of_eventually_mem_criticalPoints_pow_three_su
   have habs : |ψ t| ^ 2 ≤ (C * |t|) ^ 2 := pow_le_pow_left₀ (abs_nonneg _) hCt 2
   rw [sq_abs, abs_of_pos ht0] at habs
   nlinarith
+
+/-- **Branches of critical points end at the degenerate critical point.** Let `l` be a filter of
+parameters converging to `0`, such as `𝓝[>] 0`. If `ψ t` is a critical point of `x³ - t x`
+eventually along `l`, then `ψ t` tends to `0`, the degenerate critical point of `x³`. -/
+theorem tendsto_zero_of_eventually_mem_criticalPoints_pow_three_sub_mul {l : Filter ℝ}
+    (hl : l ≤ 𝓝 0) {ψ : ℝ → ℝ}
+    (h : ∀ᶠ t in l, ψ t ∈ criticalPoints 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 3 - t * y)) :
+    Tendsto ψ l (𝓝 0) :=
+  tendsto_zero_of_eventually_fderiv_birthDeathPotential_eq_zero
+    (((continuous_id.div_const 3).tendsto' 0 0 (zero_div 3)).mono_left hl)
+    (h.mono fun _ ↦
+      mem_criticalPoints_pow_three_sub_mul_iff_fderiv_birthDeathPotential_eq_zero.1)
+
+/-- **The two branches of critical points.** A continuous choice `ψ t` of critical points of
+`x³ - t x` over a preconnected set `T` of parameters, such as an interval, is one of the two
+branches: `ψ t = √(t / 3)` for all `t ∈ T`, the local minima, or `ψ t = -√(t / 3)` for all
+`t ∈ T`, the local maxima. The two branches meet at `t = 0`, where `ψ 0 = 0`; no parameter in `T`
+is negative, since `x³ - t x` has no critical point for `t < 0`. -/
+theorem eqOn_sqrt_or_eqOn_neg_sqrt_of_mem_criticalPoints_pow_three_sub_mul {T : Set ℝ}
+    {ψ : ℝ → ℝ} (hT : IsPreconnected T) (hψ : ContinuousOn ψ T)
+    (h : ∀ t ∈ T, ψ t ∈ criticalPoints 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 3 - t * y)) :
+    EqOn ψ (fun t ↦ √(t / 3)) T ∨ EqOn ψ (fun t ↦ -√(t / 3)) T := by
+  have h' (t : ℝ) (ht : t ∈ T) : fderiv ℝ (birthDeathPotential (t / 3)) (ψ t) = 0 :=
+    mem_criticalPoints_pow_three_sub_mul_iff_fderiv_birthDeathPotential_eq_zero.1 (h t ht)
+  have hT₀ : T ⊆ Ici 0 := fun t ht ↦ not_lt.1 fun hlt ↦ by
+    simpa [criticalPoints_pow_three_sub_mul_of_neg hlt] using h t ht
+  -- Away from `t = 0` the branch is one of the two square roots; at `t = 0` both vanish.
+  have hext {g : ℝ → ℝ} (hg : g 0 = 0) (hE : EqOn ψ g (T ∩ Ioi 0)) : EqOn ψ g T := fun t ht ↦ by
+    rcases (hT₀ ht).eq_or_lt with rfl | hpos
+    · rw [hg, ← abs_eq_zero, abs_eq_sqrt_of_fderiv_birthDeathPotential_eq_zero (h' 0 ht),
+        zero_div, Real.sqrt_zero]
+    · exact hE ⟨ht, hpos⟩
+  have hT' : IsPreconnected (T ∩ Ioi 0) := by
+    rw [isPreconnected_iff_ordConnected] at hT ⊢
+    exact hT.inter ordConnected_Ioi
+  exact (eqOn_sqrt_or_eqOn_neg_sqrt_of_forall_fderiv_birthDeathPotential_eq_zero hT'
+    (hψ.mono inter_subset_left)
+    (fun _ ht ↦ (div_pos ht.2 three_pos).ne') fun t ht ↦ h' t ht.1).imp
+    (hext (by simp)) (hext (by simp))
 
 /-- For `t ≠ 0` the continuation theorem applies at every critical point of `x³ - t x`. -/
 example {t₀ x₀ : ℝ} (ht₀ : t₀ ≠ 0)

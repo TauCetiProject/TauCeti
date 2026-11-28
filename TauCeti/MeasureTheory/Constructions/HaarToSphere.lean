@@ -67,6 +67,10 @@ Public formalization references:
   shell about the origin in polar coordinates.
 * `TauCeti.integrableOn_fun_norm_sub_addHaar`: a function of the distance to a point `c` is
   integrable on a ball about `c` if and only if its radial integrand is integrable.
+* `TauCeti.integrable_iff_integrableOn_Ioi_of_radial`,
+  `TauCeti.integral_eq_smul_integral_Ioi_of_radial`,
+  `TauCeti.integral_eq_mul_integral_Ioi_of_radial`: integrability and polar-coordinate integral of
+  a radial function along a unit ray.
 * `LinearIsometryEquiv.map_toSphere`: a linear isometric equivalence carries the surface
   measure of `μ` to the surface measure of the image of `μ`.
 * `MeasureTheory.Measure.isNegInvariant_toSphere`, `MeasureTheory.Measure.integral_coe_toSphere`,
@@ -328,6 +332,43 @@ theorem integrableOn_fun_norm_sub_addHaar {f : ℝ → F} {c : E} {r : ℝ} :
     ← (measurePreserving_add_right μ c).integrableOn_comp_preimage
       (measurableEmbedding_addRight c), preimage_add_right_ball, sub_self]
   simp only [Function.comp_def, add_sub_cancel_right]
+
+omit [Nontrivial E] in
+/-- A radial function `g : E → F` is Haar-integrable if and only if its restriction along a unit
+ray `r ↦ r ^ (d - 1) • g (r • e₀)` is integrable on `(0, ∞)`. -/
+theorem integrable_iff_integrableOn_Ioi_of_radial (μ : Measure E) [μ.IsAddHaarMeasure]
+    {g : E → F} (hg : ∀ x y, ‖x‖ = ‖y‖ → g x = g y) {e₀ : E} (he₀ : ‖e₀‖ = 1) :
+    Integrable g μ ↔
+      IntegrableOn (fun r : ℝ ↦ r ^ (Module.finrank ℝ E - 1) • g (r • e₀)) (Ioi 0) := by
+  have : Nontrivial E := ⟨⟨e₀, 0, fun h ↦ by simp [h] at he₀⟩⟩
+  have hgx : g = fun x ↦ g (‖x‖ • e₀) := funext fun x ↦
+    hg x (‖x‖ • e₀) (by rw [norm_smul, Real.norm_eq_abs, abs_norm, he₀, mul_one])
+  conv_lhs => rw [hgx]
+  exact integrable_fun_norm_addHaar μ (f := fun r : ℝ ↦ g (r • e₀))
+
+omit [Nontrivial E] in
+/-- **Polar-coordinate integral of a radial function along a unit ray.** For a radial function
+`g : E → F` and a unit vector `e₀ : E`,
+`∫ x, g x ∂μ = d • μ.real (ball 0 1) • ∫ r in Ioi 0, r ^ (d - 1) • g (r • e₀)`. -/
+theorem integral_eq_smul_integral_Ioi_of_radial (μ : Measure E) [μ.IsAddHaarMeasure]
+    {g : E → F} (hg : ∀ x y, ‖x‖ = ‖y‖ → g x = g y) {e₀ : E} (he₀ : ‖e₀‖ = 1) :
+    ∫ x, g x ∂μ = Module.finrank ℝ E • μ.real (ball (0 : E) 1) •
+      ∫ r in Ioi (0 : ℝ), r ^ (Module.finrank ℝ E - 1) • g (r • e₀) := by
+  have : Nontrivial E := ⟨⟨e₀, 0, fun h ↦ by simp [h] at he₀⟩⟩
+  have hgx : g = fun x ↦ g (‖x‖ • e₀) := funext fun x ↦
+    hg x (‖x‖ • e₀) (by rw [norm_smul, Real.norm_eq_abs, abs_norm, he₀, mul_one])
+  conv_lhs => rw [hgx]
+  exact integral_fun_norm_addHaar μ (f := fun r : ℝ ↦ g (r • e₀))
+
+omit [Nontrivial E] in
+/-- **Polar-coordinate integral of a real radial function along a unit ray.** For a radial function
+`g : E → ℝ` and a unit vector `e₀ : E`,
+`∫ x, g x ∂μ = d * (μ.real (ball 0 1) * ∫ r in Ioi 0, r ^ (d - 1) * g (r • e₀))`. -/
+theorem integral_eq_mul_integral_Ioi_of_radial (μ : Measure E) [μ.IsAddHaarMeasure]
+    {g : E → ℝ} (hg : ∀ x y, ‖x‖ = ‖y‖ → g x = g y) {e₀ : E} (he₀ : ‖e₀‖ = 1) :
+    ∫ x, g x ∂μ = (Module.finrank ℝ E : ℝ) * (μ.real (ball (0 : E) 1) *
+      ∫ r in Ioi (0 : ℝ), r ^ (Module.finrank ℝ E - 1) * g (r • e₀)) := by
+  simpa only [nsmul_eq_mul, smul_eq_mul] using integral_eq_smul_integral_Ioi_of_radial μ hg he₀
 
 omit [MeasurableSpace E] [BorelSpace E] [Nontrivial E] in
 /-- Along the ray through a point `u` of the unit sphere, the radially weighted integrand of the

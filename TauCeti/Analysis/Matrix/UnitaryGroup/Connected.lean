@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Convex.PathConnected
 public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
+import TauCeti.Topology.Algebra.UnitaryGroup
 
 /-!
 # Hermitian logarithms and connectedness of the complex unitary group
@@ -22,6 +23,11 @@ The existing map `selfAdjoint.expUnitary` is therefore surjective on complex mat
 Its continuity and the path connectedness of the real vector space of Hermitian matrices give
 `PathConnectedSpace (Matrix.unitaryGroup n ℂ)`, and hence connectedness. No nonemptiness
 assumption on the finite index type is needed.
+
+The complex special unitary group is path connected as well
+(`Matrix.specialUnitaryGroup.instPathConnectedSpace`): multiplying a unitary matrix `U` by the
+diagonal matrix `diag(conj (det U), 1, …, 1)` (`Matrix.UnitaryGroup.toSpecialUnitaryAt`) is a
+continuous map onto the special unitary group which fixes the special unitary matrices.
 
 ## References
 
@@ -78,3 +84,25 @@ instance instPathConnectedSpace : PathConnectedSpace (unitaryGroup n ℂ) :=
     selfAdjoint.continuous_expUnitary
 
 end Matrix.UnitaryGroup
+
+namespace Matrix.specialUnitaryGroup
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- The complex special unitary matrix group is path connected, including in dimension zero. -/
+instance instPathConnectedSpace : PathConnectedSpace (specialUnitaryGroup n ℂ) := by
+  rcases isEmpty_or_nonempty n with _ | ⟨⟨i₀⟩⟩
+  · -- Over an empty index type there is only one matrix.
+    have : Subsingleton (specialUnitaryGroup n ℂ) :=
+      ⟨fun A B ↦ Subtype.ext (Subsingleton.elim _ _)⟩
+    exact Function.Surjective.pathConnectedSpace (f := fun _ : unitaryGroup n ℂ ↦ 1)
+      (fun A ↦ ⟨1, Subsingleton.elim _ _⟩) continuous_const
+  -- Multiply `U` by `diag(conj (det U), 1, …, 1)`, which corrects its determinant to `1` and
+  -- fixes the special unitary matrices.
+  exact Function.Surjective.pathConnectedSpace (f := UnitaryGroup.toSpecialUnitaryAt i₀)
+    (fun A ↦ ⟨⟨A, (mem_specialUnitaryGroup_iff.1 A.property).1⟩,
+      Subtype.ext (UnitaryGroup.toSpecialUnitaryAt_of_det_eq_one i₀
+        (mem_specialUnitaryGroup_iff.1 A.property).2)⟩)
+    (UnitaryGroup.continuous_toSpecialUnitaryAt i₀)
+
+end Matrix.specialUnitaryGroup

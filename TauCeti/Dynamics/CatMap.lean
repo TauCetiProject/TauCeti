@@ -39,10 +39,13 @@ every point, so:
 * for `n ≥ 1`, `φⁿ` has `|det (1 - Pⁿ)| = tr (Pⁿ) - 2` fixed points, each of Lefschetz sign
   `sgn det (1 - Pⁿ) = -1`, so their signed count is `det (1 - Pⁿ) = 2 - tr (Pⁿ)`, the Lefschetz
   number `L (φⁿ)` above. This checks the Lefschetz fixed-point formula on every iterate of the cat
-  map, with the homological side taken from the description above rather than formalized;
+  map; the actual Lefschetz numbers of the iterates are computed from their actions on singular
+  homology in `TauCeti.AlgebraicTopology.Singular.LefschetzNumber.Torus`;
 * hence the dynamical zeta function `exp (∑ₙ (∑_{φⁿ x = x} sgn det (1 - dφⁿ_x)) tⁿ / n)`, built
   from the actual fixed points of the iterates and their linearizations, is
-  `(1 - 3 t + t ^ 2) / (1 - t) ^ 2 = 1 - t - 2 t ^ 2 - 3 t ^ 3 - ⋯`.
+  `(1 - 3 t + t ^ 2) / (1 - t) ^ 2 = 1 - t - 2 t ^ 2 - 3 t ^ 3 - ⋯`;
+* so is the Lefschetz zeta function `exp (∑ₙ L(φⁿ) tⁿ / n)` of `φ`, built from the traces of the
+  actions of its iterates on singular homology.
 
 ## Main results
 
@@ -61,6 +64,7 @@ every point, so:
   is `2 - tr (Pⁿ)`.
 * `TauCeti.subst_exp_finsum_sign_det_id_sub_fixedPointDerivative_iterate_catMapUnit_smul`: the
   dynamical zeta function of the cat map is `1 - t - 2 t ^ 2 - 3 t ^ 3 - ⋯`.
+* `TauCeti.lefschetzZeta_smulVecHom_catMap`: so is its Lefschetz zeta function.
 -/
 
 public section
@@ -235,5 +239,20 @@ theorem subst_exp_finsum_sign_det_id_sub_fixedPointDerivative_iterate_catMapUnit
   ext n
   rw [finsum_sign_det_id_sub_fixedPointDerivative_iterate_catMapUnit_smul, Int.cast_sub,
     Int.cast_ofNat]
+
+/-- **The Lefschetz zeta function of the cat map.** The Lefschetz zeta function
+`exp (∑ₙ L(φⁿ) tⁿ / n)` of the cat map `φ(x) = P • x` of the torus `Fin 2 → AddCircle p`, built
+from the traces of the actions of its iterates on singular homology, is
+`(1 - 3 t + t ^ 2) / (1 - t) ^ 2 = 1 - t - 2 t ^ 2 - 3 t ^ 3 - ⋯`, the dynamical zeta function
+`TauCeti.subst_exp_finsum_sign_det_id_sub_fixedPointDerivative_iterate_catMapUnit_smul`. -/
+theorem lefschetzZeta_smulVecHom_catMap :
+    (catMap.smulVecHom (AddCircle p) :
+        C(Fin 2 → AddCircle p, Fin 2 → AddCircle p)).lefschetzZeta ℚ =
+      PowerSeries.mk fun n ↦ if n = 0 then 1 else -(n : ℚ) := by
+  rw [← subst_exp_two_sub_trace_catMap_pow,
+    catMap.lefschetzZeta_smulVecHom ℚ (Fact.out : 0 < p).ne']
+  congr 2
+  ext n
+  rw [det_one_sub_catMap_pow, Int.cast_sub, Int.cast_ofNat]
 
 end TauCeti

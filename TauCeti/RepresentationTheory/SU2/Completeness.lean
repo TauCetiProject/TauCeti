@@ -55,6 +55,8 @@ the span.
   `tr · χ_{d+1} = χ_{d+2} + χ_d`, the character shadow of the Clebsch-Gordan decomposition of
   `Sym¹ ⊗ Sym^{d+1}`.
 * `TauCeti.SU2.character_symPower_eq_chebyshevU_eval`: `χ_d = U_d (tr / 2)`.
+* `TauCeti.SU2.character_symPower_eq_chebyshevU_eval_cos_conjugacyAngle`: `χ_d = U_d (cos θ)`
+  in the conjugacy angle `θ`.
 * `TauCeti.SU2.continuous_character_symPower`: the characters are continuous.
 * `TauCeti.SU2.pow_symPowerCharacter_one_mem_characterSpan`: every power of the trace lies in the
   span of the characters.
@@ -182,6 +184,16 @@ theorem character_symPower_eq_chebyshevU_eval (d : ℕ) (g : SU2) :
     simp only [eval_sub, eval_mul, eval_ofNat, eval_X]
     rw [← ihn, ← ihn1]
     linear_combination -hrec
+
+/-- The symmetric-power character of an element with conjugacy angle `θ` is the real
+Chebyshev value `U_d(cos θ)`. -/
+theorem character_symPower_eq_chebyshevU_eval_cos_conjugacyAngle (d : ℕ) (g : SU2) :
+    (symPower d).character g =
+      ((Polynomial.Chebyshev.U ℝ d).eval (Real.cos (conjugacyAngle g)) : ℝ) := by
+  rw [character_symPower_eq_chebyshevU_eval, trace_eq_of_isConj (isConj_torusExp_conjugacyAngle g),
+    trace_torusExp, mul_comm (2 : ℂ), mul_div_cancel_right₀ _ (by norm_num : (2 : ℂ) ≠ 0)]
+  rw [← Polynomial.Chebyshev.map_U Complex.ofRealHom]
+  exact Polynomial.eval_map_apply Complex.ofRealHom _
 
 /-! ### The characters as continuous functions -/
 

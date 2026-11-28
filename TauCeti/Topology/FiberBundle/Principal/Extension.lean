@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.FiberBundle.Associated.Principal
 public import TauCeti.Topology.FiberBundle.Associated.Pullback
+public import TauCeti.Topology.FiberBundle.Principal.Equiv
 
 /-!
 # Extension of the structure group of a principal bundle
@@ -20,10 +21,13 @@ is the transition cocycle of `P`. It is built from an unexposed core `extendCore
 
 We establish the canonical `ρ`-equivariant map `inl : P → Extend P ρ hρ`, the universal property
 and comparison with any principal `H`-bundle receiving a `ρ`-equivariant map from `P`
-(`equivOfEquivariant`, `equivOfEquivariant_unique`, `homeomorphOfEquivariant`), congruence along
-equal homomorphisms (`congrHomeomorph`), functoriality under identity and composition
-(`idHomeomorph`, `compHomeomorph`), compatibility with pullback (`pullbackHomeomorph`), and
-identification of associated bundles `(P ×_ρ H) ×_H F ≃ₜ P ×_G F` (`associatedHomeomorph`).
+(`equivOfEquivariant`, `equivOfEquivariant_unique`, `homeomorphOfEquivariant`, and as an
+equivalence of principal bundles `principalEquivOfEquivariant`), congruence along equal
+homomorphisms (`congrHomeomorph`, `congrPrincipalEquiv`), functoriality under identity and
+composition (`idHomeomorph`, `compHomeomorph`, `compPrincipalEquiv`) and under equivalences of
+principal bundles (`TauCeti.PrincipalBundle.Equiv.extend`), compatibility with pullback
+(`pullbackHomeomorph`), and identification of associated bundles `(P ×_ρ H) ×_H F ≃ₜ P ×_G F`
+(`associatedHomeomorph`).
 
 ## References
 
@@ -385,18 +389,34 @@ theorem homeomorphOfEquivariant_symm_apply (q : TotalSpace H Q) :
     (homeomorphOfEquivariant ρ hρ φ hφ hφc).symm (op h' • q) =
       op h' • (homeomorphOfEquivariant ρ hρ φ hφ hφc).symm q :=
   congrArg (TotalSpace.mk q.proj) (equivOfEquivariant_symm_smul ρ hρ φ hφ q.proj h' q.snd)
+
+/-- **Universal property of structure-group extension, as an equivalence of principal bundles.**
+If `φ : ∀ b, P b → Q b` is a continuous `ρ`-equivariant map into a principal `H`-bundle `Q` and `H`
+is a topological group, then `[p, h] ↦ φ b p • h` is an equivalence of principal `H`-bundles
+`Extend P ρ hρ ≃ Q`. -/
+noncomputable def principalEquivOfEquivariant :
+    PrincipalBundle.Equiv H (Extend P ρ hρ) Q where
+  toEquiv := equivOfEquivariant ρ hρ φ hφ
+  continuous_toFun := (homeomorphOfEquivariant ρ hρ φ hφ hφc).continuous.congr
+    (homeomorphOfEquivariant_apply ρ hρ φ hφ hφc)
+  continuous_invFun := (homeomorphOfEquivariant ρ hρ φ hφ hφc).symm.continuous.congr
+    (homeomorphOfEquivariant_symm_apply ρ hρ φ hφ hφc)
+  map_smul b z h := equivOfEquivariant_smul ρ hρ φ hφ b h z
+
+@[simp] theorem principalEquivOfEquivariant_toEquiv :
+    (principalEquivOfEquivariant ρ hρ φ hφ hφc).toEquiv = equivOfEquivariant ρ hρ φ hφ := (rfl)
 end ReductionHomeomorph
 
 section Congr
 variable [ContinuousMul H] {ρ₁ ρ₂ : G →* H}
 /-- Equal homomorphisms produce canonically equivalent extended fibres. -/
 noncomputable def congrEquiv (h : ρ₁ = ρ₂) (hρ₁ : Continuous ρ₁) (hρ₂ : Continuous ρ₂) (b : B) :
-    Extend P ρ₁ hρ₁ b ≃ Extend P ρ₂ hρ₂ b := h ▸ Equiv.refl _
+    Extend P ρ₁ hρ₁ b ≃ Extend P ρ₂ hρ₂ b := h ▸ _root_.Equiv.refl _
 /-- Equal homomorphisms produce canonically homeomorphic extended total spaces. -/
 noncomputable def congrHomeomorph (h : ρ₁ = ρ₂) (hρ₁ : Continuous ρ₁) (hρ₂ : Continuous ρ₂) :
     TotalSpace H (Extend P ρ₁ hρ₁) ≃ₜ TotalSpace H (Extend P ρ₂ hρ₂) := h ▸ Homeomorph.refl _
 @[simp] theorem congrEquiv_refl (ρ : G →* H) (hρ : Continuous ρ) (b : B) :
-    congrEquiv (P := P) rfl hρ hρ b = Equiv.refl _ := by unfold congrEquiv; rfl
+    congrEquiv (P := P) rfl hρ hρ b = _root_.Equiv.refl _ := by unfold congrEquiv; rfl
 @[simp] theorem congrHomeomorph_refl (ρ : G →* H) (hρ : Continuous ρ) :
     congrHomeomorph (P := P) rfl hρ hρ = Homeomorph.refl _ := by unfold congrHomeomorph; rfl
 section
@@ -426,6 +446,16 @@ theorem congrHomeomorph_symm_apply (z : TotalSpace H (Extend P ρ₂ hρ₂)) :
   subst h; rfl
 theorem congrHomeomorph_symm :
     (congrHomeomorph (P := P) h hρ₁ hρ₂).symm = congrHomeomorph h.symm hρ₂ hρ₁ := by subst h; rfl
+/-- Equal homomorphisms produce equivalent principal bundles: `congrEquiv` as an equivalence of
+principal `H`-bundles. -/
+noncomputable def congrPrincipalEquiv :
+    PrincipalBundle.Equiv H (Extend P ρ₁ hρ₁) (Extend P ρ₂ hρ₂) where
+  toEquiv := congrEquiv h hρ₁ hρ₂
+  continuous_toFun := by subst h; exact continuous_id
+  continuous_invFun := by subst h; exact continuous_id
+  map_smul b z x := congrEquiv_smul h hρ₁ hρ₂ b x z
+@[simp] theorem congrPrincipalEquiv_toEquiv :
+    (congrPrincipalEquiv (P := P) h hρ₁ hρ₂).toEquiv = congrEquiv h hρ₁ hρ₂ := (rfl)
 @[simp] theorem congrHomeomorph_proj (z : TotalSpace H (Extend P ρ₁ hρ₁)) :
     (congrHomeomorph h hρ₁ hρ₂ z).proj = z.proj := by subst h; rfl
 @[simp] theorem congrHomeomorph_symm_proj (z : TotalSpace H (Extend P ρ₂ hρ₂)) :
@@ -613,6 +643,17 @@ theorem compHomeomorph_symm_apply (z : TotalSpace K (Extend P (σ.comp ρ) (hσ.
     compHomeomorph ρ hρ σ hσ (op k' • z) = op k' • compHomeomorph ρ hρ σ hσ z := by
   rw [compHomeomorph_apply, compHomeomorph_apply]
   exact congrArg (TotalSpace.mk z.proj) (compEquiv_smul ρ hρ σ hσ z.proj k' z.snd)
+/-- **Functoriality of structure-group extension under composition**, as an equivalence of
+principal `K`-bundles `(P ×_ρ H) ×_σ K ≃ P ×_{σ ∘ ρ} K`, sending `[[p, h], k]` to `[p, σ h * k]`. -/
+noncomputable def compPrincipalEquiv :
+    PrincipalBundle.Equiv K (Extend (Extend P ρ hρ) σ hσ) (Extend P (σ.comp ρ) (hσ.comp hρ)) where
+  toEquiv := compEquiv ρ hρ σ hσ
+  continuous_toFun := (compHomeomorph ρ hρ σ hσ).continuous.congr (compHomeomorph_apply ρ hρ σ hσ)
+  continuous_invFun :=
+    (compHomeomorph ρ hρ σ hσ).symm.continuous.congr (compHomeomorph_symm_apply ρ hρ σ hσ)
+  map_smul b z k := compEquiv_smul ρ hρ σ hσ b k z
+@[simp] theorem compPrincipalEquiv_toEquiv :
+    (compPrincipalEquiv (P := P) ρ hρ σ hσ).toEquiv = compEquiv ρ hρ σ hσ := (rfl)
 @[simp] theorem compHomeomorph_symm_smul (k' : K)
     (z : TotalSpace K (Extend P (σ.comp ρ) (hσ.comp hρ))) :
     (compHomeomorph (P := P) ρ hρ σ hσ).symm (op k' • z) =
@@ -779,3 +820,65 @@ end
 end Associated
 
 end TauCeti.PrincipalBundle.Extend
+
+namespace TauCeti.PrincipalBundle.Equiv
+
+variable {G H B : Type*} [TopologicalSpace B] [Group G] [TopologicalSpace G]
+  [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+  {P P' : B → Type*} [TopologicalSpace (TotalSpace G P)] [∀ b, TopologicalSpace (P b)]
+  [FiberBundle G P] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P]
+  [TopologicalSpace (TotalSpace G P')] [∀ b, TopologicalSpace (P' b)]
+  [FiberBundle G P'] [∀ b, MulAction Gᵐᵒᵖ (P' b)] [PrincipalBundle G P']
+
+/-- **Functoriality of structure-group extension under equivalences.** An equivalence
+`ψ : P ≃ P'` of principal `G`-bundles induces the equivalence of principal `H`-bundles
+`P ×_ρ H ≃ P' ×_ρ H` sending `[p, h]` to `[ψ p, h]`. -/
+noncomputable def extend (ψ : PrincipalBundle.Equiv G P P') (ρ : G →* H)
+    (hρ : Continuous ρ) :
+    PrincipalBundle.Equiv H (Extend P ρ hρ) (Extend P' ρ hρ) :=
+  Extend.principalEquivOfEquivariant ρ hρ (fun b p ↦ Extend.inl ρ hρ (ψ.toEquiv b p))
+    (fun b p g ↦ by rw [ψ.map_smul, Extend.inl_smul])
+    ((Extend.continuous_inl P' ρ hρ).comp ψ.continuous_toFun)
+
+variable (ψ : PrincipalBundle.Equiv G P P') (ρ : G →* H) (hρ : Continuous ρ)
+
+/-- The equivalence `ψ.extend ρ hρ` sends `[p, h]` to `[ψ p, h]`. -/
+@[simp]
+theorem extend_toEquiv_mk {b : B} (p : P b) (h : H) :
+    (ψ.extend ρ hρ).toEquiv b (Extend.mk ρ hρ p h) = Extend.mk ρ hρ (ψ.toEquiv b p) h := by
+  rw [extend, Extend.principalEquivOfEquivariant_toEquiv, Extend.equivOfEquivariant_mk,
+    Extend.smul_inl]
+
+/-- The equivalence `ψ.extend ρ hρ` sends `[p, 1]` to `[ψ p, 1]`. -/
+@[simp]
+theorem extend_toEquiv_inl {b : B} (p : P b) :
+    (ψ.extend ρ hρ).toEquiv b (Extend.inl ρ hρ p) = Extend.inl ρ hρ (ψ.toEquiv b p) := by
+  rw [Extend.inl_def, extend_toEquiv_mk, Extend.inl_def]
+
+/-- Extending the identity equivalence gives the identity equivalence. -/
+@[simp]
+theorem extend_refl : (refl G P).extend ρ hρ = refl H (Extend P ρ hρ) := by
+  ext b z
+  obtain ⟨p, h, rfl⟩ := Extend.exists_mk z
+  rw [extend_toEquiv_mk]
+  rfl
+
+/-- Extension is compatible with composition of equivalences. -/
+@[simp]
+theorem extend_trans {P'' : B → Type*} [TopologicalSpace (TotalSpace G P'')]
+    [∀ b, TopologicalSpace (P'' b)] [FiberBundle G P''] [∀ b, MulAction Gᵐᵒᵖ (P'' b)]
+    [PrincipalBundle G P''] (ψ' : PrincipalBundle.Equiv G P' P'') :
+    (ψ.trans ψ').extend ρ hρ = (ψ.extend ρ hρ).trans (ψ'.extend ρ hρ) := by
+  ext b z
+  obtain ⟨p, h, rfl⟩ := Extend.exists_mk z
+  simp only [trans_toEquiv, _root_.Equiv.trans_apply, extend_toEquiv_mk]
+
+/-- Extension is compatible with inverses of equivalences. -/
+@[simp]
+theorem extend_symm : ψ.symm.extend ρ hρ = (ψ.extend ρ hρ).symm := by
+  ext b z
+  obtain ⟨p, h, rfl⟩ := Extend.exists_mk z
+  rw [symm_toEquiv, _root_.Equiv.eq_symm_apply, extend_toEquiv_mk, extend_toEquiv_mk, symm_toEquiv,
+    _root_.Equiv.apply_symm_apply]
+
+end TauCeti.PrincipalBundle.Equiv

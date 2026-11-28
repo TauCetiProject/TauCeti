@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
@@ -20,12 +20,17 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 /-!
 # Integrability of real powers: `Lᵖ` near the origin, shifted powers, `|x| ^ p` and `|sin x| ^ p`
 
-On an interval `(0, c)`, the power `t ↦ t ^ (-a)` is in `Lᵖ` for every finite exponent `p` with
-`a p < 1` (`TauCeti.memLp_rpow_neg_restrict_Ioo`). This is the `Lᵖ` form of Mathlib's
-`intervalIntegral.integrableOn_Ioo_rpow_iff`. For `a = 1 / 2` it shows that the derivative
-`(2 √t)⁻¹` of `t ↦ √t` is in `Lᵖ(0, c)` for `p < 2`. Translating `(0, b - a)` to `(a, b)` also
-gives the shifted integrability criterion `TauCeti.integrableOn_Ioo_sub_rpow_iff`: for `a < b`,
-`t ↦ (t - a) ^ s` is integrable on `(a, b)` if and only if `-1 < s`. On an upper ray `(a, ∞)`,
+On an interval `(0, c)`, the power `t ↦ t ^ s` is in `Lᵖ` for a finite exponent `p` exactly when
+`-1 < s p` (`TauCeti.memLp_rpow_restrict_Ioo_iff`), the `Lᵖ` form of Mathlib's
+`intervalIntegral.integrableOn_Ioo_rpow_iff`; so `t ↦ t ^ (-a)` is in `Lᵖ` when `a p < 1`
+(`TauCeti.memLp_rpow_neg_restrict_Ioo`). For `a = 1 / 2` this shows that the derivative
+`(2 √t)⁻¹` of `t ↦ √t` is in `Lᵖ(0, c)` for `p < 2`. More generally, the `i`-th derivative of
+`t ↦ t ^ s` is `s (s - 1) ⋯ (s - i + 1) t ^ (s - i)`, so it is in `Lᵖ(0, c)` exactly when this
+coefficient vanishes or `-1 < (s - i) p`
+(`TauCeti.memLp_iteratedFDeriv_rpow_const_restrict_Ioo_iff`). Translating `(0, b - a)` to
+`(a, b)` also gives the shifted integrability criterion
+`TauCeti.integrableOn_Ioo_sub_rpow_iff`: for `a < b`, `t ↦ (t - a) ^ s` is integrable on `(a, b)`
+if and only if `-1 < s`. On an upper ray `(a, ∞)`,
 `a > 0`, a power `t ^ p` with `p < -1` stays integrable after multiplication by the fractional part
 `{t} ∈ [0, 1)` (`TauCeti.integrableOn_rpow_mul_fract`).
 
@@ -49,18 +54,46 @@ open scoped Real
 
 namespace TauCeti
 
+/-- On `(0, c)`, the power `t ↦ t ^ s` is in `Lᵖ` for a finite exponent `p` if and only if
+`-1 < s p`. For `p = 0` both sides hold. -/
+theorem memLp_rpow_restrict_Ioo_iff {s c : ℝ} {p : ENNReal} (hc : 0 < c) (hp : p ≠ ⊤) :
+    MemLp (fun t : ℝ => t ^ s) p (volume.restrict (Ioo 0 c)) ↔ -1 < s * p.toReal := by
+  have hmeas : AEStronglyMeasurable (fun t : ℝ => t ^ s) (volume.restrict (Ioo 0 c)) :=
+    (by fun_prop : Measurable fun t : ℝ => t ^ s).aestronglyMeasurable
+  rcases eq_or_ne p 0 with rfl | hp0
+  · simpa using memLp_zero_iff_aestronglyMeasurable.2 hmeas
+  rw [← integrable_norm_rpow_iff hmeas hp0 hp, ← intervalIntegral.integrableOn_Ioo_rpow_iff hc]
+  refine integrableOn_congr_fun (fun t ht => ?_) measurableSet_Ioo
+  rw [Real.norm_of_nonneg (Real.rpow_nonneg ht.1.le _), ← Real.rpow_mul ht.1.le]
+
+/-- On `(0, b)`, the `i`-th derivative `s (s - 1) ⋯ (s - i + 1) x ^ (s - i)` of `x ^ s` lies in
+`Lᵖ` for a finite exponent `p` exactly when its coefficient vanishes or `-1 < (s - i) p`. -/
+theorem memLp_iteratedFDeriv_rpow_const_restrict_Ioo_iff {s b : ℝ} {p : ENNReal} (hb : 0 < b)
+    (hp : p ≠ ⊤) (i : ℕ) :
+    MemLp (iteratedFDeriv ℝ i fun x : ℝ => x ^ s) p (volume.restrict (Ioo 0 b)) ↔
+      (descPochhammer ℝ i).eval s = 0 ∨ -1 < (s - i) * p.toReal := by
+  set c := (descPochhammer ℝ i).eval s
+  have hsmooth : ContDiffOn ℝ i (fun x : ℝ => x ^ s) (Ioo 0 b) := fun x hx =>
+    (Real.contDiffAt_rpow_const_of_ne hx.1.ne').contDiffWithinAt
+  -- The `i`-th derivative has the norm of `c x ^ (s - i)` (`Real.iter_deriv_rpow_const`).
+  rw [memLp_congr_norm (g := fun x : ℝ => c * x ^ (s - i))
+    ((ContinuousOn.continuousOn_iteratedFDeriv hsmooth isOpen_Ioo le_rfl).aestronglyMeasurable
+      measurableSet_Ioo)
+    ((by fun_prop : Measurable fun x : ℝ => c * x ^ (s - i)).aestronglyMeasurable)
+    (.of_forall fun x => by
+      rw [norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_eq_iterate,
+        Real.iter_deriv_rpow_const])]
+  rcases eq_or_ne c 0 with hc | hc
+  · simp [hc]
+  · rw [← memLp_rpow_restrict_Ioo_iff hb hp]
+    simp only [hc, false_or]
+    exact ⟨fun h => by simpa [hc] using h.const_mul c⁻¹, fun h => h.const_mul c⟩
+
 /-- On `(0, c)`, the power `t ↦ t ^ (-a)` is in `Lᵖ` for every finite exponent `p` with
 `a p < 1`. -/
 theorem memLp_rpow_neg_restrict_Ioo {a c : ℝ} {p : ENNReal} (hc : 0 < c) (hp : p ≠ ⊤)
-    (hap : a * p.toReal < 1) : MemLp (fun t : ℝ => t ^ (-a)) p (volume.restrict (Ioo 0 c)) := by
-  have hmeas : AEStronglyMeasurable (fun t : ℝ => t ^ (-a)) (volume.restrict (Ioo 0 c)) :=
-    (by fun_prop : Measurable fun t : ℝ => t ^ (-a)).aestronglyMeasurable
-  rcases eq_or_ne p 0 with rfl | hp0
-  · exact memLp_zero_iff_aestronglyMeasurable.2 hmeas
-  refine (integrable_norm_rpow_iff hmeas hp0 hp).1 ?_
-  refine (integrableOn_congr_fun (fun t ht => ?_) measurableSet_Ioo).1
-    ((intervalIntegral.integrableOn_Ioo_rpow_iff hc).2 (by linarith : -1 < -a * p.toReal))
-  rw [Real.norm_of_nonneg (Real.rpow_nonneg ht.1.le _), ← Real.rpow_mul ht.1.le]
+    (hap : a * p.toReal < 1) : MemLp (fun t : ℝ => t ^ (-a)) p (volume.restrict (Ioo 0 c)) :=
+  (memLp_rpow_restrict_Ioo_iff hc hp).2 (by linarith [neg_mul a p.toReal])
 
 /-- On `(a, b)` with `a < b`, the shifted power `t ↦ (t - a) ^ s` is integrable if and only if
 `-1 < s`. -/

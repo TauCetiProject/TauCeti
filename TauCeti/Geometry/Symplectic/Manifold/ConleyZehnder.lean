@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Symplectic.Complex.ImInner.Maslov
 public import TauCeti.Geometry.Symplectic.ConleyZehnder.FrameChange
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Geometry.Symplectic.Complex.ImInner.Basic
@@ -64,6 +65,13 @@ index of the capped orbit, which grades the generators of the capped Floer compl
 ## Main results
 
 * `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_add_maslovIndex`: the change of frame law.
+* `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_mul_two_pi_eq_of_complex`: for frames with model
+  `(G, Im ⟪·, ·⟫)` differing by complex automorphisms `k`, the index changes by twice the winding
+  of `det k`; such a `k` exists for frames complex linear for an almost complex structure
+  (`TauCeti.SmoothAlmostComplexStructure.exists_continuous_complex_frame_change`).
+* `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_of_square`: frames along `γ` extended over a
+  square, with change of frame a loop on every segment and constant along the far edge, give the
+  same index.
 * `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_comp_eq`: independence of the frame over a cap.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.exists_isSymplecticFrame`: existence of symplectic frames.
 * `TauCeti.SmoothTwoForm.exists_int_frameConleyZehnderIndex_eq`: in a periodic frame, the index
@@ -118,12 +126,19 @@ theorem comp (hφ : IsSymplecticFrame σ ω₀ f φ) {Z : Type*} [TopologicalSpa
   ⟨hφ.continuous.comp ((hg.comp continuous_fst).prodMk continuous_snd),
     fun z ↦ hφ.apply_apply (g z)⟩
 
+/-- A symplectic frame precomposed with a continuous family `A` of linear symplectomorphisms of
+models `A(y) : W' ≃ W`, `y ↦ φ(y) ∘ A(y)`, is a symplectic frame with model `W'`. -/
+theorem trans_of_continuous (hφ : IsSymplecticFrame σ ω₀ f φ) {A : Y → W' ≃L[ℝ] W}
+    (hA : Continuous fun y ↦ (A y : W' →L[ℝ] W)) (hAω : ∀ y v w, ω₀ (A y v) (A y w) = ω' v w) :
+    IsSymplecticFrame σ ω' f fun y ↦ (A y).trans (φ y) :=
+  ⟨hφ.continuous.comp (continuous_fst.prodMk ((hA.comp continuous_fst).clm_apply continuous_snd)),
+    fun y v w ↦ by simp only [ContinuousLinearEquiv.trans_apply, hφ.apply_apply, hAω]⟩
+
 /-- A symplectic frame precomposed with a linear symplectomorphism of models `e : W' ≃ W` is a
 symplectic frame with model `W'`. -/
 theorem trans (hφ : IsSymplecticFrame σ ω₀ f φ) (e : W' ≃L[ℝ] W)
     (he : ∀ v w, ω₀ (e v) (e w) = ω' v w) : IsSymplecticFrame σ ω' f fun y ↦ e.trans (φ y) :=
-  ⟨hφ.continuous.comp (continuous_fst.prodMk (e.continuous.comp continuous_snd)), fun y v w ↦ by
-    simp only [ContinuousLinearEquiv.trans_apply, hφ.apply_apply, he]⟩
+  hφ.trans_of_continuous (A := fun _ ↦ e) continuous_const fun _ ↦ he
 
 /-- Two symplectic frames along the same map differ by linear symplectic maps of the model:
 `ψ(y)⁻¹ ∘ φ(y)` preserves `ω₀`. -/
@@ -394,6 +409,49 @@ theorem frameConleyZehnderIndex_eq_add_maslovIndex [FiniteDimensional ℝ W]
     rw [SymplecticForm.frameChange_apply]
     simp
 
+/-- **Frames along `γ` extended over a square.** Let `ψ` and `ψ'` be symplectic frames along a map
+`g` of the unit square whose change of frame `p ↦ ψ(p)⁻¹ ∘ ψ'(p)` takes the same value at the two
+ends of every segment `s = const` and is constant along the edge `s = 1`. Then symplectic frames
+`χ`, `χ'` along `γ` which agree with `ψ` and `ψ'` on the edge `s = 0` give the same Conley–Zehnder
+index of `Φ`: their change of frame is contracted through loops over the square. -/
+theorem frameConleyZehnderIndex_eq_of_square [FiniteDimensional ℝ W]
+    (hχ : IsSymplecticFrame σ ω₀ γ χ) (hχ' : IsSymplecticFrame σ ω₀ γ χ')
+    {g : unitInterval × unitInterval → M} {ψ ψ' : ∀ p, W ≃L[ℝ] TangentSpace I (g p)}
+    (hψ : IsSymplecticFrame σ ω₀ g ψ) (hψ' : IsSymplecticFrame σ ω₀ g ψ')
+    (hχψ : ∀ t v, χ t v = ψ (0, t) v) (hχψ' : ∀ t v, χ' t v = ψ' (0, t) v)
+    (hper : ∀ s, (ψ' (s, 0)).trans (ψ (s, 0)).symm = (ψ' (s, 1)).trans (ψ (s, 1)).symm)
+    (hone : ∀ t, (ψ' (1, t)).trans (ψ (1, t)).symm = (ψ' (1, 0)).trans (ψ (1, 0)).symm)
+    (hΦ : Continuous fun q : unitInterval × TangentSpace I (γ 0) ↦
+      (⟨γ q.1, Φ q.1 q.2⟩ : TangentBundle I M))
+    (hΦσ : ∀ t u v, σ.eval₂ (γ t) (Φ t u) (Φ t v) = σ.eval₂ (γ 0) u v) :
+    frameConleyZehnderIndex ω₀ hχ' hΦ hΦσ = frameConleyZehnderIndex ω₀ hχ hΦ hΦσ := by
+  -- Along `γ` the change of frame is that of `ψ` and `ψ'` along the edge `s = 0`.
+  have hedge (t : unitInterval) : (χ' t).trans (χ t).symm = (ψ' (0, t)).trans (ψ (0, t)).symm := by
+    ext v
+    rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.trans_apply, hχψ']
+    -- `χ t` and `ψ (0, t)` take values in the tangent spaces at `γ t` and `g (0, t)`, equal only
+    -- definitionally, so the inverse is cancelled by explicit terms rather than `rw`.
+    exact (χ t).symm_apply_eq.2 ((hχψ t _).trans ((ψ (0, t)).apply_symm_apply _)).symm
+  have hloop := (hedge 0).trans ((hper 0).trans (hedge 1).symm)
+  rw [frameConleyZehnderIndex_eq_add_maslovIndex hχ hχ' hloop]
+  suffices hm : ω₀.maslovIndex (transitionLoop hχ.continuous hχ'.continuous hloop)
+      (apply_transitionLoop_apply hχ hχ' hloop) = 0 by
+    rw [hm, Int.cast_zero, mul_zero, add_zero]
+  -- The change of frame over the square is a homotopy through loops from the change of frame
+  -- along `γ` to the constant loop at its value at the corner `(1, 0)`.
+  let F : C(unitInterval × unitInterval, W →L[ℝ] W) :=
+    ⟨fun p ↦ ((ψ' p).trans (ψ p).symm : W ≃L[ℝ] W),
+      continuous_trans_symm_of_continuous_frame hψ'.continuous hψ.continuous⟩
+  refine (ω₀.maslovIndex_eq_of_homotopy _
+    (Path.refl (((ψ' (1, 0)).trans (ψ (1, 0)).symm : W ≃L[ℝ] W) : W →L[ℝ] W)) F
+    (hψ'.apply_trans_symm_apply hψ) (fun t ↦ ?_) (fun t ↦ ?_) (fun s ↦ ?_)).trans
+    (ω₀.maslovIndex_refl _ _)
+  · ext v
+    rw [transitionLoop_apply, ContinuousMap.coe_mk, ContinuousLinearEquiv.coe_coe, ← hedge t,
+      ContinuousLinearEquiv.trans_apply]
+  · rw [Path.refl_apply, ContinuousMap.coe_mk, hone t]
+  · rw [ContinuousMap.coe_mk, hper s]
+
 /-- **The Conley–Zehnder index over a cap does not depend on the frame.** Let `f : Y → M` be a
 continuous map from a contractible space, `β` a loop in `Y`, and `Φ` a family of linear
 isomorphisms preserving `σ` along the loop `f ∘ β`. Restricted along `β`, any two symplectic frames
@@ -425,5 +483,42 @@ theorem frameConleyZehnderIndex_comp_eq [FiniteDimensional ℝ W] [FiniteDimensi
   rw [ω₀.maslovIndex_congr _ (β.map ha) _ fun t ↦ by ext v; simp,
     ω₀.maslovIndex_map_eq_zero ha (hφ''.apply_trans_symm_apply hφ), Int.cast_zero, mul_zero,
     add_zero]
+
+/-! ### Complex frames -/
+
+section Complex
+
+variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℂ G] [FiniteDimensional ℂ G]
+
+/-- **Change of frame by complex automorphisms.** Let `ψ` and `ψ'` be symplectic frames along `γ`
+with model `(G, Im ⟪·, ·⟫)` whose change of frame is a loop, and suppose that they differ by complex
+automorphisms of the model, `ψ t = ψ' t ∘ k t`. Then for every continuous lift `θ` of the normalized
+determinant of `k` through `Circle.exp`, `2π` times the Conley–Zehnder index of `Φ` read in `ψ'` is
+`2π` times its index read in `ψ` plus `2 (θ 1 - θ 0)`: the change of frame is the loop `k⁻¹` of
+unitary maps, whose Maslov index is minus the winding of `det k`. -/
+theorem frameConleyZehnderIndex_mul_two_pi_eq_of_complex {ψ ψ' : ∀ t, G ≃L[ℝ] TangentSpace I (γ t)}
+    (hψ : IsSymplecticFrame σ (imInnerSymplecticForm G) γ ψ)
+    (hψ' : IsSymplecticFrame σ (imInnerSymplecticForm G) γ ψ')
+    (hper : (ψ' 0).trans (ψ 0).symm = (ψ' 1).trans (ψ 1).symm) {k : unitInterval → G ≃L[ℂ] G}
+    (hk : ∀ t v, ψ t v = ψ' t (k t v)) {θ : unitInterval → ℝ} (hθ : Continuous θ)
+    (hθk : ∀ t, Circle.exp (θ t) = (k t).normalizedDet)
+    (hΦ : Continuous fun q : unitInterval × TangentSpace I (γ 0) ↦
+      (⟨γ q.1, Φ q.1 q.2⟩ : TangentBundle I M))
+    (hΦσ : ∀ t u v, σ.eval₂ (γ t) (Φ t u) (Φ t v) = σ.eval₂ (γ 0) u v) :
+    frameConleyZehnderIndex (imInnerSymplecticForm G) hψ' hΦ hΦσ * (2 * Real.pi) =
+      frameConleyZehnderIndex (imInnerSymplecticForm G) hψ hΦ hΦσ * (2 * Real.pi) +
+        2 * (θ 1 - θ 0) := by
+  have hm := SymplecticForm.maslovIndex_imInnerSymplecticForm_mul_two_pi_eq
+    (transitionLoop hψ.continuous hψ'.continuous hper) (apply_transitionLoop_apply hψ hψ' hper)
+    (k := fun t ↦ (k t).symm)
+    (fun t v ↦ by
+      rw [transitionLoop_apply, ContinuousLinearEquiv.symm_apply_eq, hk,
+        ContinuousLinearEquiv.apply_symm_apply])
+    (θ := fun t ↦ -θ t) hθ.neg
+    fun t ↦ by rw [Circle.exp_neg, hθk, ContinuousLinearEquiv.normalizedDet_symm]
+  rw [frameConleyZehnderIndex_eq_add_maslovIndex hψ hψ' hper hΦ hΦσ]
+  linear_combination 2 * hm
+
+end Complex
 
 end TauCeti.SmoothTwoForm

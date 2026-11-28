@@ -101,6 +101,7 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `(0, ∞)`, on `[0, ∞)`, and everywhere when `0 < s.re`.
 * `TauCeti.ofReal_cpow_mul_inv_mul_inv_cpow` -- for `a > 0` and `w` off the negative real axis,
   `a ^ s * (a⁻¹ * w⁻¹) ^ s = w ^ (-s)`.
+* `Complex.normSq_rpow` -- `normSq z ^ σ = ‖z‖ ^ (2 σ)`.
 * `Complex.mul_cpow_sub_one` -- `x * x ^ (s - 1) = x ^ s` for `x ≠ 0`.
 * `Complex.exp_log_add_mul` -- split an exponential at a principal logarithm.
 * `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half`,
@@ -120,7 +121,11 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `y ≠ 0`; the derivative needs `x, y ∈ slitPlane ∪ {0}`; the limit holds for arbitrary `x` and `y`.
 * `Complex.cpow_sub_natCast_mul_sum_mul_pow` -- reversing a finite sum of powers:
   `z^{a−n} ∑_{k<n} f(n − 1 − k) z^k = z^{a−1} ∑_{k<n} f(k) / z^k` for `z ≠ 0`.
+* `Complex.norm_ofReal_cpow_le_add_of_re_mem_Icc` -- for a positive real base, the norm of a
+  complex power on a vertical strip is bounded by the sum of the norms at the real endpoints.
 * `Complex.norm_ofReal_cpow_le_exp` -- for `a > 0`, `‖a ^ w‖ ≤ exp (|log a| ‖w‖)`.
+* `AnalyticAt.const_cpow` -- `y ↦ w ^ f y` is analytic at `x` whenever `f` is analytic at `x` and
+  either `w ≠ 0` or `f x ≠ 0`.
 * `Complex.norm_ofReal_cpow_sub_ofReal_cpow_le` -- for `b ≥ 1` and exponents with `re ≤ M`,
   `‖b ^ z - b ^ w‖ ≤ log b · b ^ M · ‖z - w‖`.
 * `Complex.hasDerivAt_add_cpow_mul_exp_mul` -- the derivative of `w ↦ (w + c) ^ b e^{k w}` where
@@ -129,6 +134,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `‖(1 - z * t) ^ s‖ ≤ exp (π |s.im|) (2 ^ s.re + (1 - t) ^ s.re)`.
 * `Complex.inv_cpow_half_cpow` -- `((z ^ (1/2))⁻¹) ^ w = z ^ (-w / 2)` for all `z, w : ℂ`.
 * `Complex.norm_cpow_le_mul_exp` -- `‖w ^ d‖ ≤ ‖w‖ ^ d.re * exp (π |d.im|)`.
+* `Complex.norm_cpow_add_mul_I_le` -- for `w ≠ 0`, `|log ‖w‖| ≤ M`, `|arg w| ≤ θ`, and `|σ| ≤ R`,
+  `‖w ^ (σ + y i)‖ ≤ exp (R * M + θ * |y|)`.
 * `Complex.norm_cpow_le_of_mem_closedBall` -- for `w ≠ 0`, a bound on `‖w ^ b‖` uniform for `b`
   in a closed ball.
 * `Complex.norm_one_add_cpow_le`, `Complex.norm_one_add_ofReal_mul_exp_mul_I_cpow_le` --
@@ -788,6 +795,11 @@ end TauCeti
 
 namespace Complex
 
+/-- A real power of `normSq z = ‖z‖ ^ 2` is a real power of the norm:
+`normSq z ^ σ = ‖z‖ ^ (2 σ)`. -/
+theorem normSq_rpow (z : ℂ) (σ : ℝ) : normSq z ^ σ = ‖z‖ ^ (2 * σ) := by
+  rw [normSq_eq_norm_sq, Real.rpow_mul (norm_nonneg z), Real.rpow_two]
+
 /-- Multiplying a principal power of a nonzero base by the base raises the exponent by one:
 `x * x ^ (s - 1) = x ^ s`. -/
 theorem mul_cpow_sub_one {x : ℂ} (hx : x ≠ 0) (s : ℂ) : x * x ^ (s - 1) = x ^ s := by
@@ -959,6 +971,14 @@ theorem hasDerivAt_add_cpow_mul_exp_mul (b c k : ℂ) {z : ℂ} (hz : z + c ∈ 
   rw [id, cpow_sub _ _ (slitPlane_ne_zero hz), cpow_one]
   field_simp
 
+/-- For a positive real base `u` and `a ≤ s.re ≤ b`, the norm of `u ^ s` is bounded by the
+sum of the norms of its powers at the real endpoints `a` and `b`. -/
+theorem norm_ofReal_cpow_le_add_of_re_mem_Icc {u a b : ℝ} (hu : 0 < u) {s : ℂ}
+    (hs : s.re ∈ Set.Icc a b) :
+    ‖(u : ℂ) ^ s‖ ≤ ‖(u : ℂ) ^ (a : ℂ)‖ + ‖(u : ℂ) ^ (b : ℂ)‖ := by
+  simp only [norm_cpow_eq_rpow_re_of_pos hu, ofReal_re]
+  exact Real.rpow_le_rpow_add_rpow_of_mem_Icc hu hs
+
 /-- A real power of a positive real number grows at most exponentially in the exponent. -/
 theorem norm_ofReal_cpow_le_exp {a : ℝ} (ha : 0 < a) (w : ℂ) :
     ‖(a : ℂ) ^ w‖ ≤ Real.exp (|Real.log a| * ‖w‖) := by
@@ -966,6 +986,16 @@ theorem norm_ofReal_cpow_le_exp {a : ℝ} (ha : 0 < a) (w : ℂ) :
   exact Real.exp_le_exp.mpr <| (le_abs_self _).trans <| by
     rw [abs_mul]
     exact mul_le_mul_of_nonneg_left (abs_re_le_norm w) (abs_nonneg _)
+
+/-- For a fixed complex base `w`, the exponential `y ↦ w ^ f y` is analytic at `x` whenever `f` is
+analytic at `x` and either `w ≠ 0` or `f x ≠ 0`. -/
+theorem _root_.AnalyticAt.const_cpow {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : E → ℂ} {x : E} {w : ℂ} (hf : AnalyticAt ℂ f x) (h : w ≠ 0 ∨ f x ≠ 0) :
+    AnalyticAt ℂ (fun y => w ^ f y) x := by
+  rcases h with hw | hfx
+  · exact ((differentiable_id.const_cpow (Or.inl hw)).analyticAt (f x)).comp hf
+  · exact ((differentiableOn_id.const_cpow (Or.inr fun _ ht => ht)).analyticAt
+      (isOpen_ne.mem_nhds hfx)).comp hf
 
 /-- For a real base `b ≥ 1`, the principal power `b ^ z` is Lipschitz in the exponent on each
 half-plane `re z ≤ M`, with constant `log b · b ^ M`:
@@ -1029,6 +1059,23 @@ theorem norm_cpow_le_mul_exp (w d : ℂ) :
     _ ≤ ‖w‖ ^ d.re * Real.exp (Real.pi * |d.im|) :=
         mul_le_mul_of_nonneg_left (inv_exp_arg_mul_le_exp_pi_mul_abs w d.im)
           (Real.rpow_nonneg (norm_nonneg w) _)
+
+/-- Sector-sensitive vertical-line bound for a principal complex power: for `w ≠ 0`,
+`|Real.log ‖w‖| ≤ M`, `|w.arg| ≤ θ`, and `|σ| ≤ R`,
+`‖w ^ ((σ : ℂ) + y * I)‖ ≤ Real.exp (R * M + θ * |y|)`. -/
+theorem norm_cpow_add_mul_I_le {w : ℂ} (hw : w ≠ 0) {R M θ : ℝ}
+    (hM : |Real.log ‖w‖| ≤ M) (hθ : |w.arg| ≤ θ) {σ y : ℝ} (hσ : |σ| ≤ R) :
+    ‖w ^ ((σ : ℂ) + y * I)‖ ≤ Real.exp (R * M + θ * |y|) := by
+  have hre : ((σ : ℂ) + y * I).re = σ := by simp
+  have him : ((σ : ℂ) + y * I).im = y := by simp
+  rw [norm_cpow_of_ne_zero hw, hre, him, Real.rpow_def_of_pos (norm_pos_iff.2 hw), ← Real.exp_sub]
+  refine Real.exp_le_exp.2 ?_
+  have h1 : Real.log ‖w‖ * σ ≤ R * M :=
+    (le_abs_self _).trans ((abs_mul _ _).trans_le
+      ((mul_le_mul hM hσ (abs_nonneg _) ((abs_nonneg _).trans hM)).trans_eq (mul_comm M R)))
+  have h2 : -(w.arg * y) ≤ θ * |y| :=
+    (neg_le_abs _).trans ((abs_mul _ _).trans_le (mul_le_mul_of_nonneg_right hθ (abs_nonneg y)))
+  linarith
 
 /-- Uniform norm bound for `(-log w) ^ k * exp (-s * log w)` on an annulus `δ ≤ ‖w‖ ≤ B`
 (`0 < δ`) with `‖s‖ ≤ S`. -/

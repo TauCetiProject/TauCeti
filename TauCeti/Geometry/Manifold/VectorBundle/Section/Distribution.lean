@@ -9,7 +9,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.Topo
 public import TauCeti.Geometry.Manifold.VectorBundle.Density
 public import TauCeti.Analysis.Distribution.TestFunction.DualEquiv
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
-import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
+import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.ChartTopology
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
@@ -59,6 +60,8 @@ charts whose source does not contain `x`
   test topology of any covering family of smooth frames, continuously identified with bundle tests.
 * `Bundle.Trivialization.chartTestCLM`: extension of native test functions on a chart target to
   bundle tests, as a continuous linear map.
+* `Bundle.Trivialization.chartLocalizationCLM`: the chart localization of bundle tests, as a
+  continuous linear map into the test functions supported in a compact subset of the chart target.
 * `Bundle.Trivialization.chartDistributionCLM`: the local representative of a functional on bundle
   tests, a distribution on the chart target with values in `F →L[ℝ] W`.
 * `TauCeti.BundleTest.ext_chartDistributionCLM`: functionals on bundle tests are determined by
@@ -195,6 +198,34 @@ theorem sub_apply (s t : BundleTest I F V) (x : M) : (s - t) x = s x - t x :=
 theorem sum_apply {ι : Type*} (u : Finset ι) (s : ι → BundleTest I F V) (x : M) :
     (∑ i ∈ u, s i) x = ∑ i ∈ u, s i x :=
   map_sum (AddMonoidHom.mk' (fun t : BundleTest I F V ↦ t x) fun a b ↦ add_apply a b x) s u
+
+/-- The closed support of a sum of bundle tests lies in the union of their closed supports. -/
+theorem tsupport_add_subset (s t : BundleTest I F V) :
+    closure {x | (s + t) x ≠ 0} ⊆ closure {x | s x ≠ 0} ∪ closure {x | t x ≠ 0} := by
+  rw [← closure_union]
+  refine closure_mono fun x (hx : (s + t) x ≠ 0) ↦ ?_
+  by_contra h
+  simp only [mem_union, mem_ofPred_eq, not_or, not_not] at h
+  exact hx (by rw [add_apply, h.1, h.2, add_zero])
+
+/-- The closed support of a scalar multiple of a bundle test lies in its closed support. -/
+theorem tsupport_smul_subset (a : ℝ) (s : BundleTest I F V) :
+    closure {x | (a • s) x ≠ 0} ⊆ closure {x | s x ≠ 0} :=
+  closure_mono fun x (hx : (a • s) x ≠ 0) (h : s x = 0) ↦ hx (by rw [smul_apply, h, smul_zero])
+
+/-- A bundle test coming from the sections supported in a compact set `K` is supported in `K`. -/
+theorem tsupport_ofSupportedIn_subset (K : Compacts M) (σ : supportedIn I F ∞ V K) :
+    closure {x | ofCompactlySupported I F V (ofSupportedIn K σ) x ≠ 0} ⊆ K := by
+  rw [coe_ofCompactlySupported, ofSupportedIn_apply, ← tsupport_def]
+  exact mem_supportedIn.1 σ.property
+
+/-- Near a point mapped off the support of a test `s`, the composite `s ∘ f` vanishes. -/
+theorem eventually_apply_comp_eq_zero {X : Type*} [TopologicalSpace X] {f : X → M}
+    (hf : Continuous f) (s : BundleTest I F V) {x : X} (hfx : f x ∉ closure {y | s y ≠ 0}) :
+    ∀ᶠ z in nhds x, s (f z) = 0 :=
+  Filter.eventually_of_mem
+    (hf.continuousAt.preimage_mem_nhds (isClosed_closure.isOpen_compl.mem_nhds hfx))
+    fun _ hz ↦ Bundle.apply_eq_zero_of_notMem_closure hz
 
 variable [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
 
@@ -386,6 +417,12 @@ theorem coe_chartTestCLM (φ : 𝓓(⟨c.target, c.open_target⟩, F)) :
     ⇑(t.chartTestCLM c hc hct φ) = (t.chartTestSection (n := ⊤) c hc hct φ).val :=
   (rfl)
 
+/-- The compactly supported section underlying an extended test is the extended section. -/
+theorem val_symm_chartTestCLM (φ : 𝓓(⟨c.target, c.open_target⟩, F)) :
+    ((BundleTest.ofCompactlySupported I F V).symm (t.chartTestCLM c hc hct φ)).val =
+      (t.chartTestSection (n := ⊤) c hc hct φ).val :=
+  ContMDiffSection.ext fun x ↦ congrFun (t.coe_chartTestCLM c hc hct φ) x
+
 /-- On the chart source, the extended test is the inverse frame applied to the value of the test
 function in coordinates. -/
 theorem chartTestCLM_apply_of_mem (φ : 𝓓(⟨c.target, c.open_target⟩, F)) {x : M}
@@ -440,13 +477,56 @@ theorem chartDistributionCLM_delta_of_notMem {x : M} (hx : x ∉ c.source) (ℓ 
 
 end Bundle.Trivialization
 
+/-! ### Chart localizations of bundle tests -/
+
+namespace Bundle.Trivialization
+
+open TauCeti
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [LocallyCompactSpace E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V]
+  [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
+  (t : Trivialization F (π F V)) [MemTrivializationAtlas t]
+  (c : OpenPartialHomeomorph M E)
+  (hc : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target) (hct : c.source ⊆ t.baseSet)
+  (ψ : C^∞⟮I, M; ℝ⟯) (L : Compacts E) (hL : (L : Set E) ⊆ c.target)
+  (hψ : MapsTo c (tsupport ψ) L)
+
+/-- The **chart localization** `Φ ↦ (ψ Φ) ∘ c⁻¹` of bundle tests, read in the frame `t`
+(`Bundle.Trivialization.chartLocalization`), as a continuous linear map into the test functions
+supported in the compact set `L`. -/
+def chartLocalizationCLM : BundleTest I F V →L[ℝ] 𝓓_{L}(E, F) where
+  toLinearMap := t.chartLocalization (n := ⊤) c hc hct ψ L hL hψ ∘ₗ
+    (compactlySupported I F ∞ V).subtype ∘ₗ (BundleTest.ofCompactlySupported I F V).symm.toLinearMap
+  cont := by
+    let := frameTopology (I := I) (n := ∞) (fun x : M ↦ trivializationAt F V x)
+      (fun x ↦ ⟨_, (trivializationAt F V x).open_baseSet⟩) fun _ ↦ subset_rfl
+    exact (t.continuous_chartLocalization c hc hct ψ L hL hψ _ _ _
+        fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩).comp
+      (continuous_val_compactlySupportedTopology (I := I) (n := ∞) _ _ _)
+
+/-- The chart localization of a bundle test `Φ` is the chart localization of its underlying
+section. -/
+theorem chartLocalizationCLM_apply (Φ : BundleTest I F V) :
+    t.chartLocalizationCLM c hc hct ψ L hL hψ Φ =
+      t.chartLocalization c hc hct ψ L hL hψ ((BundleTest.ofCompactlySupported I F V).symm Φ).val :=
+  (rfl)
+
+end Bundle.Trivialization
+
 /-! ### Functionals are determined by their local representatives -/
 
 namespace TauCeti.BundleTest
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [SigmaCompactSpace M] [IsManifold I ∞ M]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  [BoundarylessManifold I M]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
@@ -454,7 +534,7 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
   {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
 
 /-- **Functionals on bundle tests are determined by their local representatives.** On a
-boundaryless Hausdorff `σ`-compact manifold with finite-dimensional model, two functionals agree
+boundaryless Hausdorff manifold with finite-dimensional model, two functionals agree
 once their local representatives agree in every smooth chart lying over the base set of a
 trivialization of the bundle atlas: bundle tests are finite sums of chart extensions of native
 test functions (`ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`). -/
