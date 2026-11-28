@@ -91,15 +91,16 @@ theorem componentProj_comp_mapDomainAlgHom_left (hPH : P.IsComplement' H) (χ : 
   · ext
 
 /-- Applying `componentProj` to an element pushed forward from `O[P]` recovers it. -/
-theorem componentProj_mapDomainAlgHom_left (hPH : P.IsComplement' H) (χ : H →* Oˣ)
+@[simp]
+theorem componentProj_mapDomain_left (hPH : P.IsComplement' H) (χ : H →* Oˣ)
     (y : MonoidAlgebra O P) :
-    componentProj hPH χ (mapDomainAlgHom O O P.subtype y) = y :=
+    componentProj hPH χ (mapDomain (Subtype.val : P → G) y) = y :=
   DFunLike.congr_fun (componentProj_comp_mapDomainAlgHom_left hPH χ) y
 
-/-- `componentProj` is surjective, with right inverse `mapDomainAlgHom O O P.subtype`. -/
+/-- `componentProj` is surjective, with right inverse `mapDomain (Subtype.val : P → G)`. -/
 theorem componentProj_surjective (hPH : P.IsComplement' H) (χ : H →* Oˣ) :
     Function.Surjective (componentProj hPH χ) :=
-  Function.RightInverse.surjective (componentProj_mapDomainAlgHom_left hPH χ)
+  Function.RightInverse.surjective (componentProj_mapDomain_left hPH χ)
 
 /-- On `O[H] ⊆ O[G]`, `componentProj hPH χ` acts as scalar evaluation `χ.charEval` composed with
 the structure map `O →ₐ[O] O[P]`. -/
@@ -112,13 +113,16 @@ theorem componentProj_comp_mapDomainAlgHom_right (hPH : P.IsComplement' H) (χ :
     simp [Algebra.algebraMap_eq_smul_one, MonoidAlgebra.one_def, smul_single]
   · ext
 
-/-- On `O[H] ⊆ O[G]`, `componentProj hPH χ` acts as scalar evaluation `χ.charEval` followed by
-`algebraMap O O[P]`. -/
-theorem componentProj_mapDomainAlgHom_right (hPH : P.IsComplement' H) (χ : H →* Oˣ)
+/-- On `O[H]` pushed forward into `O[G]`, `componentProj hPH χ` acts as
+`single 1 (χ.charEval y)`. -/
+@[simp]
+theorem componentProj_mapDomain_right (hPH : P.IsComplement' H) (χ : H →* Oˣ)
     (y : MonoidAlgebra O H) :
-    componentProj hPH χ (mapDomainAlgHom O O H.subtype y) =
-      algebraMap O (MonoidAlgebra O P) (χ.charEval y) :=
-  DFunLike.congr_fun (componentProj_comp_mapDomainAlgHom_right hPH χ) y
+    componentProj hPH χ (mapDomain (Subtype.val : H → G) y) = single 1 (χ.charEval y) := by
+  simpa only [AlgHom.comp_apply, mapDomainAlgHom_apply, Subgroup.coe_subtype,
+    Algebra.ofId_apply, Algebra.algebraMap_eq_smul_one, MonoidAlgebra.one_def, smul_single,
+    mul_one, one_mul, smul_eq_mul] using
+    DFunLike.congr_fun (componentProj_comp_mapDomainAlgHom_right hPH χ) y
 
 /-- Evaluating `componentProj hPH χ x` at a character `φ : P →* Oˣ` agrees with evaluating `x` at
 the extended character `hPH.extendChar φ χ : G →* Oˣ`. -/

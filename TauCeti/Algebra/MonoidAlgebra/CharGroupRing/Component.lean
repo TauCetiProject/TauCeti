@@ -125,21 +125,6 @@ theorem one_sub_charIdempotent_mem_ker_proj (H : Subgroup G) [Fintype H]
   rw [map_sub, map_one, MonoidAlgebra.mapDomainAlgHom_apply, ψ.charEval_mapDomain, hψ,
     χ.charEval_charIdempotent_self (Nat.card_eq_fintype_card (α := H) ▸ hH), sub_self]
 
-section DomainNoFin
-
-variable [IsDomain O]
-
-/-- Evaluating `α_{Ψ_χ ∩ Ψ_I}` at the subgroup norm `N_I = ∑_{σ ∈ I} σ` gives `0` when `O` is
-a domain, with no invertibility assumption on `#H`. -/
-@[simp]
-theorem proj_componentNorm_subgroupCharSum_one_eq_zero (H I : Subgroup G) [Fintype I]
-    (χ : H →* Oˣ) :
-    proj {ψ : G →* Oˣ | ψ.comp H.subtype = χ ∧ ¬ I ≤ ψ.ker}
-      (TauCeti.subgroupCharSum (1 : G →* O) I) = 0 :=
-  proj_subgroupCharSum_one_eq_zero_of_forall I fun _ hψ ↦ hψ.right
-
-end DomainNoFin
-
 variable [IsDomain O] [Finite G] [HasEnoughRootsOfUnity O (Monoid.exponent G)]
 
 /-- For a finite commutative group `G`, a domain `O` with enough roots of unity of order
@@ -286,7 +271,7 @@ theorem ker_proj_component_norm (H I : Subgroup G) [Fintype H] [Fintype I]
       exact proj_eq_zero_iff.mp (RingHom.mem_ker.mp (one_sub_charIdempotent_mem_ker_proj H hH χ))
         ψ hψ.left
     · rw [Set.mem_singleton_iff.mp hN, SetLike.mem_coe, RingHom.mem_ker]
-      exact proj_componentNorm_subgroupCharSum_one_eq_zero H I χ
+      exact proj_subgroupCharSum_one_eq_zero_of_forall I fun _ hψ ↦ hψ.right
 
 /-- For a finite commutative group `G`, a domain `O` with enough roots of unity of order
 `exponent G`, and subgroups `H, I ≤ G` with `#H` a unit in `O`, the kernel of the restriction
@@ -430,8 +415,7 @@ theorem componentEquiv_symm_apply (hPH : P.IsComplement' H) (χ : H →* Oˣ)
       proj {ψ : G →* Oˣ | ψ.comp H.subtype = χ}
         (MonoidAlgebra.mapDomainAlgHom O O P.subtype y) := by
   apply (componentEquiv hPH χ).injective
-  rw [AlgEquiv.apply_symm_apply, componentEquiv_proj,
-    MonoidAlgebra.componentProj_mapDomainAlgHom_left]
+  simp [componentEquiv_proj]
 
 /-- Evaluating `componentEquiv hPH χ y` at a character `φ : P →* Oˣ` reads off the
 `hPH.extendChar φ χ`-coordinate of `y`. -/

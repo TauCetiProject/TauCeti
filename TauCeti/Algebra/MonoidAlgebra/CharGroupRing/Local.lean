@@ -13,7 +13,6 @@ public import TauCeti.GroupTheory.Complement.Prod
 public import TauCeti.GroupTheory.PGroup.Quotient
 public import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.Algebra.CharP.LocalRing
-import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
 # Units, locality, and adic completeness of character group rings
@@ -137,45 +136,40 @@ theorem residue_algebraMap_evalAlgHom [IsLocalRing Ψ.charGroupRing] {ψ : G →
   rw [eq_comm, ← sub_eq_zero, ← map_sub, IsLocalRing.residue_eq_zero_iff, mem_maximalIdeal_iff hψ]
   simp
 
-private theorem comp_evalAlgHom_surjective {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ) :
-    Function.Surjective
-      ((Algebra.ofId O (IsLocalRing.ResidueField O)).comp (evalAlgHom hψ)) := by
-  intro z
-  obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective z
-  exact ⟨algebraMap O Ψ.charGroupRing a, by simp [IsLocalRing.ResidueField.algebraMap_eq]⟩
-
 variable (Ψ) in
 /-- **Residue field isomorphism**: when `R_Ψ` is local, `ResidueField O` is canonically isomorphic
 to `ResidueField R_Ψ` via `algebraMap`. -/
 noncomputable def residueFieldEquiv [IsLocalRing Ψ.charGroupRing] :
     IsLocalRing.ResidueField O ≃+* IsLocalRing.ResidueField Ψ.charGroupRing :=
-  (TauCeti.residueFieldAlgEquivOfSurjective
-    (comp_evalAlgHom_surjective (nonempty_of_nontrivial (Ψ := Ψ)).some_mem)).symm.toRingEquiv
+  let hψ := (nonempty_of_nontrivial (Ψ := Ψ)).some_mem
+  have hleft :
+      (IsLocalRing.ResidueField.map (evalAlgHom hψ : Ψ.charGroupRing →+* O)).comp
+          (algebraMap (IsLocalRing.ResidueField O) (IsLocalRing.ResidueField Ψ.charGroupRing)) =
+        RingHom.id _ := by
+    ext z
+    obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective z
+    simp [IsLocalRing.ResidueField.algebraMap_residue, AlgHom.commutes]
+  RingEquiv.ofRingHom
+    (algebraMap (IsLocalRing.ResidueField O) (IsLocalRing.ResidueField Ψ.charGroupRing))
+    (IsLocalRing.ResidueField.map (evalAlgHom hψ : Ψ.charGroupRing →+* O))
+    (RingHom.ext fun w ↦
+      (IsLocalRing.ResidueField.map (evalAlgHom hψ : Ψ.charGroupRing →+* O)).injective <|
+        RingHom.congr_fun hleft _)
+    hleft
 
 /-- `residueFieldEquiv` acts as `algebraMap (ResidueField O) (ResidueField R_Ψ)`. -/
 @[simp]
 theorem residueFieldEquiv_apply [IsLocalRing Ψ.charGroupRing] (z : IsLocalRing.ResidueField O) :
     residueFieldEquiv Ψ z =
       algebraMap (IsLocalRing.ResidueField O) (IsLocalRing.ResidueField Ψ.charGroupRing) z := by
-  obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective z
-  have h : ((Algebra.ofId O (IsLocalRing.ResidueField O)).comp
-      (evalAlgHom (nonempty_of_nontrivial (Ψ := Ψ)).some_mem))
-      (algebraMap O Ψ.charGroupRing a) = IsLocalRing.residue O a := by
-    simp [IsLocalRing.ResidueField.algebraMap_eq]
-  have hres := TauCeti.residueFieldAlgEquivOfSurjective_symm_apply
-    (comp_evalAlgHom_surjective (nonempty_of_nontrivial (Ψ := Ψ)).some_mem)
-    (algebraMap O Ψ.charGroupRing a)
-  rw [h] at hres
-  exact hres.trans (IsLocalRing.ResidueField.algebraMap_residue _).symm
+  simp [residueFieldEquiv]
 
 /-- When `R_Ψ` is local, the canonical map `ResidueField O →+* ResidueField R_Ψ` is bijective:
 `R_Ψ` has no residue field extension over `O`. -/
 theorem algebraMap_residueField_bijective [IsLocalRing Ψ.charGroupRing] :
     Function.Bijective
       (algebraMap (IsLocalRing.ResidueField O) (IsLocalRing.ResidueField Ψ.charGroupRing)) := by
-  convert (residueFieldEquiv Ψ).bijective
-  ext z
-  exact (residueFieldEquiv_apply z).symm
+  simpa only [← funext residueFieldEquiv_apply] using (residueFieldEquiv Ψ).bijective
 
 /-- `residueFieldEquiv` sends the residue of `a ∈ O` to the residue of `algebraMap O R_Ψ a`. -/
 theorem residueFieldEquiv_residue [IsLocalRing Ψ.charGroupRing] (a : O) :
