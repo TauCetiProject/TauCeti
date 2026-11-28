@@ -107,6 +107,12 @@ theorem gnsImplementingGroup_apply_coe (g : G) (b : f.PreGNS) :
   (ContinuousLinearMap.completion_apply_coe _ b).trans <|
     congrArg _ (preGNSIsometry_apply α hf g b)
 
+/-- The implementing group sends the class of `a` to the class of `α_g a`. -/
+-- Not a simp lemma: `toGNS_apply` already rewrites the class map to the completion embedding.
+theorem gnsImplementingGroup_apply_toGNS (g : G) (a : A) :
+    α.gnsImplementingGroup hf g (f.toGNS a) = f.toGNS (α g a) := by
+  simp [toGNS_apply]
+
 /-- The GNS implementing group is unitary. -/
 theorem isUnitary_gnsImplementingGroup : (α.gnsImplementingGroup hf).IsUnitary := by
   refine (ContRepresentation.isUnitary_iff_norm_map _).2 fun g v => ?_
@@ -169,10 +175,9 @@ theorem gnsImplementingGroup_commute_gnsRadonNikodym
   refine ext_inner_left ℂ fun u =>
     f.denseRange_toGNS.induction_on u (isClosed_eq (by fun_prop) (by fun_prop)) fun a =>
       f.denseRange_toGNS.induction_on v (isClosed_eq (by fun_prop) (by fun_prop)) fun b => ?_
-  have hUa (x : A) (s : G) : U s (f.toGNS x) = f.toGNS (α s x) := by
-    simp [U, toGNS_apply]
   simp only [mul_apply_eq_comp]
-  rw [(ContinuousLinearMap.adjoint_inner_left (U t) _ _).symm, hU.adjoint_eq_inv t, hUa, hUa,
+  rw [(ContinuousLinearMap.adjoint_inner_left (U t) _ _).symm, hU.adjoint_eq_inv t,
+    α.gnsImplementingGroup_apply_toGNS hf, α.gnsImplementingGroup_apply_toGNS hf,
     inner_gnsRadonNikodym_toGNS hfg, inner_gnsRadonNikodym_toGNS hfg,
     show star (α t⁻¹ a) * b = α t⁻¹ (star a * α t b) by
       rw [map_mul, map_star, ← CStarAction.mul_apply, inv_mul_cancel, CStarAction.one_apply],

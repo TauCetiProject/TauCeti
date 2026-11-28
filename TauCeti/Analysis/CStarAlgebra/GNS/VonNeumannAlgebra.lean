@@ -111,6 +111,13 @@ theorem mem_gnsVonNeumannAlgebra_commutant_iff {T : f.GNS →L[ℂ] f.GNS} :
   rw [gnsVonNeumannAlgebra_def, VonNeumannAlgebra.mem_commutant_adjoin_iff_of_star_subset
     f.star_range_gnsNonUnitalStarAlgHom_subset, Set.forall_mem_range]
 
+/-- An operator lies in the commutant `M_f'` of the GNS von Neumann algebra exactly when it
+commutes pointwise with the image of the GNS representation. -/
+theorem mem_gnsVonNeumannAlgebra_commutant_iff_apply {T : f.GNS →L[ℂ] f.GNS} :
+    T ∈ f.gnsVonNeumannAlgebra.commutant ↔
+      ∀ a v, f.gnsNonUnitalStarAlgHom a (T v) = T (f.gnsNonUnitalStarAlgHom a v) := by
+  simp_rw [mem_gnsVonNeumannAlgebra_commutant_iff, ContinuousLinearMap.ext_iff, mul_apply_eq_comp]
+
 /-- The right representation of a tracial functional takes values in the commutant `M_f'` of the
 GNS von Neumann algebra. -/
 theorem gnsRightNonUnitalStarAlgHom_mem_commutant (hf : ∀ a b, f (a * b) = f (b * a))

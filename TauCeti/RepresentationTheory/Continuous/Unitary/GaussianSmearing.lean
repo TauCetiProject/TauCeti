@@ -79,6 +79,7 @@ def gaussianSmear (hU : U.IsUnitary) (hcont : ∀ v, Continuous fun g => U g v) 
       rw [norm_smul]; exact mul_le_mul_of_nonneg_left (norm_conj_apply_le hU R v t) (norm_nonneg _)
 
 /-- Pointwise evaluation of the complex-time Gaussian smearing operator. -/
+@[simp]
 theorem gaussianSmear_apply (hU : U.IsUnitary) (hcont : ∀ v, Continuous fun g => U g v)
     (R : H →L[ℂ] H) (c : ℝ) (z : ℂ) (v : H) :
     hU.gaussianSmear hcont R c z v =

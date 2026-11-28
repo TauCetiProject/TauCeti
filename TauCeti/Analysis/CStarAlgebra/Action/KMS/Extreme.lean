@@ -72,9 +72,8 @@ theorem IsKMSState.gnsVectorFunctional_mul_entireExtension_mul_I (hω : α.IsKMS
       ω.toPositiveLinearMap.gnsVectorFunctional z (b * a) := by
   let f := ω.toPositiveLinearMap; let π := f.gnsNonUnitalStarAlgHom
   obtain ⟨hzM, hzM'⟩ := VonNeumannAlgebra.mem_inf.mp hz
-  have hcomm (x : A) (v : f.GNS) : z (π x v) = π x (z v) := by
-    simpa [mul_apply_eq_comp] using
-      congrArg (fun T => T v) (f.mem_gnsVonNeumannAlgebra_commutant_iff.mp hzM' x).symm
+  have hcomm (x : A) (v : f.GNS) : z (π x v) = π x (z v) :=
+    (f.mem_gnsVonNeumannAlgebra_commutant_iff_apply.mp hzM' x v).symm
   have hz_adj : z ∈ VonNeumannAlgebra.adjoin (Set.range f.gnsStarAlgHom) := by
     rwa [← gnsVonNeumannAlgebra_eq_adjoin_range_gnsStarAlgHom]
   calc f.gnsVectorFunctional z (a * α.entireExtension b (β * I))
@@ -84,11 +83,13 @@ theorem IsKMSState.gnsVectorFunctional_mul_entireExtension_mul_I (hω : α.IsKMS
     _ = ⟪(f.toPreGNS (star a) : f.GNS),
           z (f.toPreGNS (α.entireExtension b (β * I)) : f.GNS)⟫_ℂ := by
         rw [show π a = star (π (star a)) by rw [map_star, star_star], star_eq_adjoint,
-          adjoint_inner_right]; simp [π, gnsVector_def, gnsNonUnitalStarAlgHom_apply_coe]
+          adjoint_inner_right, f.gnsVector_eq_toGNS_one, f.gnsNonUnitalStarAlgHom_apply_toGNS,
+          f.gnsNonUnitalStarAlgHom_apply_toGNS, mul_one, mul_one, f.toGNS_apply, f.toGNS_apply]
     _ = ⟪(f.toPreGNS (star a * star b) : f.GNS), z (f.toPreGNS 1 : f.GNS)⟫_ℂ :=
         hω.inner_apply_toPreGNS_entireExtension_mul_I hz_adj (star a) hb
     _ = ⟪π (star (b * a)) f.gnsVector, z f.gnsVector⟫_ℂ := by
-        simp [π, star_mul, gnsVector_def, gnsNonUnitalStarAlgHom_apply_coe]
+        rw [star_mul, f.gnsVector_eq_toGNS_one, f.gnsNonUnitalStarAlgHom_apply_toGNS, mul_one,
+          f.toGNS_apply, f.toGNS_apply]
     _ = f.gnsVectorFunctional z (b * a) := by
         rw [map_star, star_eq_adjoint, adjoint_inner_left, ← hcomm, gnsVectorFunctional_apply]
         simp [π, gnsStarAlgHom_apply]
@@ -134,7 +135,9 @@ private theorem apply_action_of_analytic_kms {φ : A →ₚ[ℂ] ℂ} (hβ : β 
   · have hpos1 := Complex.le_def.mp (φ.map_nonneg zero_le_one); set r : ℝ := (φ 1).re
     have hr_pos : 0 < r :=
       lt_of_le_of_ne hpos1.1 fun h => h1 (Complex.ext h.symm hpos1.2.symm)
-    have hφ1 : φc 1 = (r : ℂ) := Complex.ext rfl hpos1.2.symm
+    have hφ1 : φc 1 = (r : ℂ) := by
+      rw [PositiveContinuousLinearMap.coe_ofClass]
+      exact Complex.ext (Complex.ofReal_re r).symm (hpos1.2.symm.trans (Complex.ofReal_im r).symm)
     have hψ_kms : α.IsKMSState β (normalizePos φc r) :=
       isKMSState_normalizePos α β φc hr_pos hφ1 hkms
     have hinv := hψ_kms.apply_action hβ t a
@@ -175,7 +178,8 @@ private theorem comm_entireExtension_mul_I_of_gnsRadonNikodym (hω : α.IsKMSSta
   have ha := mem_entireAnalytic.mp a.property
   calc ⟪f.toGNS (a : A), (B * π c) (f.toPreGNS 1)⟫_ℂ
       = ⟪(f.toPreGNS (a : A) : f.GNS), B (f.toPreGNS c)⟫_ℂ := by
-        simp [π, mul_apply_eq_comp, toGNS_apply, gnsNonUnitalStarAlgHom_apply_coe]
+        rw [mul_apply_eq_comp, ← f.toGNS_apply 1, f.gnsNonUnitalStarAlgHom_apply_toGNS,
+          mul_one, f.toGNS_apply, f.toGNS_apply]
     _ = ⟪(f.toPreGNS ((a : A) * star b) : f.GNS), B (f.toPreGNS 1)⟫_ℂ :=
         hω.inner_apply_toPreGNS_entireExtension_mul_I hB_adj (a : A) hb
     _ = φ (b * star (a : A)) := by
@@ -183,8 +187,8 @@ private theorem comm_entireExtension_mul_I_of_gnsRadonNikodym (hω : α.IsKMSSta
           inner_gnsRadonNikodym_toGNS hφ]; simp [star_mul]
     _ = φ (star (a : A) * c) := (hkms (star (a : A)) ha.star b hb).symm
     _ = ⟪f.toGNS (a : A), (T * π c) f.gnsVector⟫_ℂ := by
-        simpa [f, π, mul_apply_eq_comp, toGNS_apply, gnsVector_def,
-          gnsNonUnitalStarAlgHom_apply_coe] using (inner_gnsRadonNikodym_toGNS hφ (a : A) c).symm
+        rw [mul_apply_eq_comp, f.gnsVector_eq_toGNS_one, f.gnsNonUnitalStarAlgHom_apply_toGNS,
+          mul_one, inner_gnsRadonNikodym_toGNS hφ]
     _ = ⟪f.toGNS (a : A), (π c * B) (f.toPreGNS 1)⟫_ℂ := by
         rw [← hT_comm _ ⟨c, rfl⟩, mul_apply_eq_comp, mul_apply_eq_comp, ← gnsVector_def, hBΩ]
 
@@ -232,12 +236,14 @@ theorem IsKMSState.gnsRadonNikodym_mem_center (hω : α.IsKMSState β ω) {φ : 
     ext v; refine f.denseRange_toGNS.induction_on v (isClosed_eq (by fun_prop) (by fun_prop))
       fun a => ?_
     calc B (f.toGNS a) = (B * π a) f.gnsVector := by
-          simp [π, mul_apply_eq_comp, toGNS_apply, gnsVector_def, gnsNonUnitalStarAlgHom_apply_coe]
+          rw [mul_apply_eq_comp, f.gnsVector_eq_toGNS_one, f.gnsNonUnitalStarAlgHom_apply_toGNS,
+            mul_one]
       _ = (T * π a) f.gnsVector := by
-          rw [← f.mem_gnsVonNeumannAlgebra_commutant_iff.mp hB_comm a, mul_apply_eq_comp, hBΩ,
-            ← mul_apply_eq_comp, f.mem_gnsVonNeumannAlgebra_commutant_iff.mp hT_comm a]
+          rw [mul_apply_eq_comp, ← f.mem_gnsVonNeumannAlgebra_commutant_iff_apply.mp hB_comm a _,
+            hBΩ, f.mem_gnsVonNeumannAlgebra_commutant_iff_apply.mp hT_comm a _, mul_apply_eq_comp]
       _ = T (f.toGNS a) := by
-          simp [π, mul_apply_eq_comp, toGNS_apply, gnsVector_def, gnsNonUnitalStarAlgHom_apply_coe]
+          rw [mul_apply_eq_comp, f.gnsVector_eq_toGNS_one, f.gnsNonUnitalStarAlgHom_apply_toGNS,
+            mul_one]
   exact VonNeumannAlgebra.mem_inf.mpr ⟨by simpa only [f, T, ← hBT] using hB_vN, hT_comm⟩
 
 /-- Normalizing the vector functional of a positive commutant operator by `t > 0` yields a positive

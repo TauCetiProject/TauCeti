@@ -221,12 +221,9 @@ theorem IsKMSState.modularConjugation_gnsImplementingGroup (hω : α.IsKMSState 
     (isClosed_eq (by fun_prop) (by fun_prop)) fun a => ?_
   have ha := mem_entireAnalytic.mp a.property; set r : ℝ := Multiplicative.toAdd t
   rw [show t = Multiplicative.ofAdd r from (ofAdd_toAdd t).symm]
-  have hU_toGNS (x : A) :
-      α.gnsImplementingGroup hinv (.ofAdd r) (ω.toPositiveLinearMap.toGNS x) =
-        ω.toPositiveLinearMap.toGNS (α (.ofAdd r) x) := by simp [toGNS_apply]
-  rw [hU_toGNS, hω.modularConjugation_apply_toGNS (ha.apply r),
-    hω.modularConjugation_apply_toGNS ha, hU_toGNS, ← map_star, entireExtension_action,
-    ← entireExtension_add_ofReal, add_comm]
+  rw [α.gnsImplementingGroup_apply_toGNS hinv, hω.modularConjugation_apply_toGNS (ha.apply r),
+    hω.modularConjugation_apply_toGNS ha, α.gnsImplementingGroup_apply_toGNS hinv,
+    ← map_star, entireExtension_action, ← entireExtension_add_ofReal, add_comm]
 
 /-! ### Conjugation of bounded operators by `J₀` -/
 
@@ -241,9 +238,7 @@ theorem IsKMSState.conjOperator_modularConjugation_gnsNonUnitalStarAlgHom_apply_
   let f := ω.toPositiveLinearMap
   rw [LinearIsometryEquiv.conjOperator_apply, hω.modularConjugation_symm,
     hω.modularConjugation_apply_toGNS ha,
-    show f.gnsNonUnitalStarAlgHom b (f.toGNS (α.entireExtension (star a) ((β / 2 : ℝ) * I))) =
-      f.toGNS (b * α.entireExtension (star a) ((β / 2 : ℝ) * I)) by
-      simp [toGNS_apply, gnsNonUnitalStarAlgHom_apply_coe],
+    f.gnsNonUnitalStarAlgHom_apply_toGNS b _,
     hω.modularConjugation_apply_toGNS (hb.mul (isEntireAnalytic_entireExtension α _ _)),
     star_mul, entireExtension_star, star_star, map_mul, Complex.conj_ofReal,
     Complex.conj_I, mul_neg, (isEntireAnalytic_entireExtension α a _).entireExtension_mul hb.star,
@@ -263,13 +258,11 @@ theorem IsKMSState.conjOperator_modularConjugation_gnsNonUnitalStarAlgHom_mem_co
     ext v; refine (denseRange_toGNS_entireAnalytic α f).induction_on v
       (isClosed_eq (by fun_prop) (by fun_prop)) fun a => ?_
     have ha := mem_entireAnalytic.mp a.property
-    have hρ (x y : A) : ρ x (f.toGNS y) = f.toGNS (x * y) := by
-      simp [ρ, toGNS_apply, gnsNonUnitalStarAlgHom_apply_coe]
     simp only [mul_apply_eq_comp]
-    rw [hρ c (a : A),
+    rw [f.gnsNonUnitalStarAlgHom_apply_toGNS c (a : A),
       hω.conjOperator_modularConjugation_gnsNonUnitalStarAlgHom_apply_toGNS ha hb,
       hω.conjOperator_modularConjugation_gnsNonUnitalStarAlgHom_apply_toGNS (hc.mul ha) hb,
-      hρ, mul_assoc]
+      f.gnsNonUnitalStarAlgHom_apply_toGNS, mul_assoc]
   refine f.mem_gnsVonNeumannAlgebra_commutant_iff.mpr fun c => ?_
   have hfor_b {b : A} (hb : α.IsEntireAnalytic b) :
       ρ c * hω.modularConjugation.conjOperator (ρ b) =

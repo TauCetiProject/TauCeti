@@ -104,12 +104,9 @@ private theorem gnsDominationMap_intertwines {f g : A →ₚ[ℂ] ℂ} {C : ℝ}
       (g.gnsNonUnitalStarAlgHom a).comp (f.gnsDominationMap g) := by
   ext v
   refine f.denseRange_toGNS.induction_on v (isClosed_eq (by fun_prop) (by fun_prop)) fun b => ?_
-  have hL : f.gnsNonUnitalStarAlgHom a (f.toGNS b) = f.toGNS (a * b) := by
-    simp [toGNS_apply, gnsNonUnitalStarAlgHom_apply_coe]
-  have hR : g.gnsNonUnitalStarAlgHom a (g.toGNS b) = g.toGNS (a * b) := by
-    simp [toGNS_apply, gnsNonUnitalStarAlgHom_apply_coe]
-  simp only [ContinuousLinearMap.coe_comp, Function.comp_apply, hL,
-    gnsDominationMap_apply_toGNS hfg, hR]
+  simp only [ContinuousLinearMap.coe_comp, Function.comp_apply,
+    f.gnsNonUnitalStarAlgHom_apply_toGNS, gnsDominationMap_apply_toGNS hfg,
+    g.gnsNonUnitalStarAlgHom_apply_toGNS]
 
 /-- The **GNS Radon–Nikodym operator** of a positive functional `g` relative to `f`: the positive
 operator `V† ∘L V` on `f.GNS`, where `V : f.GNS →L[ℂ] g.GNS` extends `[a]_f ↦ [a]_g`. When `g` is
