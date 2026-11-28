@@ -12,7 +12,7 @@ public import Mathlib.RingTheory.OrzechProperty
 public import TauCeti.LinearAlgebra.FixedSubmodule
 public import TauCeti.LinearAlgebra.Pi
 public import TauCeti.LinearAlgebra.Pi.Map
-public import TauCeti.LinearAlgebra.Semisimple
+public import TauCeti.LinearAlgebra.Semisimple.Basic
 
 /-!
 # Weak semisimplicity at the eigenvalue one
