@@ -38,9 +38,12 @@ data of the comparison, as in the algebraic statement; the transversal `s` of `U
 
 * `TauCeti.DiscreteRep.tensorInducedMackeyIso`: the Mackey comparison for discrete continuous
   representations.
-* `Subgroup.smoothTensorInducedMackeyIso_inv_tprod`: inverse Mackey regrouping of pure tensors,
+* `TauCeti.DiscreteRep.tensorInducedMackeyIso_inv_apply_tprod` and
+  `Subgroup.smoothTensorInducedMackeyIso_inv_tprod`: inverse Mackey regrouping of pure tensors,
   using `Subgroup.tensorInducedMackey_symm_tprod`. The invariant diagonal computation is
   `Subgroup.smoothTensorInducedMackeyIso_inv_tprod_const`.
+* `Subgroup.smoothTensorInducedMackeyIso_inv_ρ_eq_self`: inverse Mackey regrouping preserves
+  fixedness by a restricting subgroup element, by equivariance and the restriction action.
 * `TauCeti.smoothTensorInducedMackeyIso`: the Mackey comparison for smooth discrete
   representations.
 
@@ -108,6 +111,18 @@ coset and corrects the factor by the difference between `s` and the Mackey-adapt
         A.ρ ((U.monomialChangeTransversal s (U.mackeyLeftTransversal V r hr t)).left q)
           (m ((mackeyQuotientEquiv U V r hr).symm q).1 ((mackeyQuotientEquiv U V r hr).symm q).2) :=
   Subgroup.tensorInducedMackey_tprod U V r hr t A.ρ s m
+
+/-- The inverse discrete Mackey comparison undoes the transversal correction on each slot
+of a pure tensor and regroups the slots over the double cosets. -/
+@[simp] theorem tensorInducedMackeyIso_inv_apply_tprod (A : DiscreteRep.{u, v, w} R U)
+    (m : G ⧸ U → A.V) :
+    (tensorInducedMackeyIso U V hU r hr t s A).inv.toLinearMap
+        (PiTensorProduct.tprod R m) =
+      PiTensorProduct.tprod R fun D ↦ PiTensorProduct.tprod R fun q ↦
+        A.ρ (((U.monomialChangeTransversal s (U.mackeyLeftTransversal V r hr t)).left
+          (mackeyQuotientEquiv U V r hr ⟨D, q⟩))⁻¹) (m (mackeyQuotientEquiv U V r hr ⟨D, q⟩)) := by
+  rw [tensorInducedMackeyIso_inv_toLinearMap]
+  exact U.tensorInducedMackey_symm_tprod V r hr t A.ρ s m
 
 /-- The discrete Mackey comparison is natural in the coefficient representation. -/
 @[reassoc]
@@ -197,6 +212,34 @@ theorem smoothTensorInducedMackeyIso_inv_apply
     (LinearMap.congr_fun (DiscreteRep.tensorInducedMackeyIso_inv_toLinearMap
       U V hU r hr t s ((ofSmoothDiscrete R U).obj A)) z)
 
+/-- Inverse Mackey regrouping sends a vector in the smooth tensor induction fixed by
+`g.val` to an orbitwise tensor fixed by `g : V`. -/
+theorem _root_.Subgroup.smoothTensorInducedMackeyIso_inv_ρ_eq_self
+    (B : SmoothDiscreteTopRep.{u, v, w} R U)
+    {z : ((smoothTensorInductionFunctor R G U hU s).obj B).obj.V} (g : V)
+    (hz : ((smoothTensorInductionFunctor R G U hU s).obj B).obj.ρ g.val z = z) :
+    ((toSmoothDiscrete R V).obj (DiscreteRep.piTensorProduct fun D ↦
+      (ofSmoothDiscrete R V).obj
+        ((toSmoothDiscrete R V).obj
+          (DiscreteRep.tensorInduced _ (U.isOpen_mackeySubgroup_subgroupOf V hU (r D)) (t D)
+            ((ofSmoothDiscrete R _).obj
+              ((toSmoothDiscrete R _).obj
+                (DiscreteRep.res (mackeyToH (r D) U V) (U.continuous_mackeyToH V (r D))
+                  ((ofSmoothDiscrete R U).obj B)))))))).obj.ρ g
+        ((smoothTensorInducedMackeyIso U V hU r hr t s B).inv.hom.hom z) =
+      (smoothTensorInducedMackeyIso U V hU r hr t s B).inv.hom.hom z := by
+  let e := smoothTensorInducedMackeyIso U V hU r hr t s B
+  let X := (smoothTensorInductionFunctor R G U hU s).obj B
+  let Y := (ofSmoothDiscrete R G).obj X
+  let Z := DiscreteRep.res V.subtype continuous_subtypeVal Y
+  have hres : ((toSmoothDiscrete R V).obj Z).obj.ρ g z = z :=
+    (toSmoothDiscrete_obj_obj_ρ_apply Z g z).trans
+      ((DiscreteRep.res_ρ_apply V.subtype continuous_subtypeVal Y g z).trans
+        ((ofSmoothDiscrete_obj_ρ_apply R G X g.val z).trans hz))
+  have hcomm := (TopRep.hom_comm_apply ((smoothDiscreteι R V).map e.inv) g z).symm
+  rw [ObjectProperty.ι_map] at hcomm
+  exact hcomm.trans (congrArg e.inv.hom.hom hres)
+
 /-- The inverse smooth Mackey comparison applies the inverse transversal correction at each
 coset and then regroups the factors over the double cosets. -/
 @[simp]
@@ -207,9 +250,14 @@ theorem _root_.Subgroup.smoothTensorInducedMackeyIso_inv_tprod
       PiTensorProduct.tprod R fun D ↦ PiTensorProduct.tprod R fun q ↦
         A.obj.ρ (((U.monomialChangeTransversal s (U.mackeyLeftTransversal V r hr t)).left
           (mackeyQuotientEquiv U V r hr ⟨D, q⟩))⁻¹) (m (mackeyQuotientEquiv U V r hr ⟨D, q⟩)) := by
-  refine (smoothTensorInducedMackeyIso_inv_apply U V hU r hr t s A _).trans
-    ((U.tensorInducedMackey_symm_tprod V r hr t ((ofSmoothDiscrete R U).obj A).ρ s m).trans ?_)
-  congr 1
+  let e := DiscreteRep.tensorInducedMackeyIso U V hU r hr t s ((ofSmoothDiscrete R U).obj A)
+  refine (toSmoothDiscrete_map_hom_hom_apply R V e.inv _).trans ?_
+  refine (DiscreteRep.tensorInducedMackeyIso_inv_apply_tprod U V hU r hr t s
+    ((ofSmoothDiscrete R U).obj A) m).trans ?_
+  apply congrArg (fun f : ∀ D, V ⧸ (mackeySubgroup (r D) U V).subgroupOf V → A.obj.V ↦
+    PiTensorProduct.tprod R fun D ↦ PiTensorProduct.tprod R (f D))
+  funext D q
+  exact ofSmoothDiscrete_obj_ρ_apply R U A _ _
 
 /-- Inverse Mackey regrouping sends a diagonal tensor of a `U`-invariant vector to the tensor
 of its diagonal tensors over the individual double cosets. -/

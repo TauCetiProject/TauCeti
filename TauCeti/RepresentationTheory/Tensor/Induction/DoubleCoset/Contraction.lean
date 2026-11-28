@@ -233,11 +233,15 @@ theorem res_gradedCohomologyClass_smoothTensorInducedGradedResolutionContraction
         ((smoothTensorInducedMackeyIso U V hU r hr t s
           (smoothGradedResolutionFunctor.obj A)).inv.hom.hom z)
         (smoothTensorInducedMackeyIso_inv_mem_resolutionPiece U V hU r hr t s A n z hz)
-        (fun g ↦ U.smoothTensorInducedMackeyIso_inv_ρ_eq_self V hU r hr t s A g (hinv g.val))
+        (fun g ↦ by
+          have h := U.smoothTensorInducedMackeyIso_inv_ρ_eq_self V hU r hr t s
+            (smoothGradedResolutionFunctor.obj A) (z := z) g
+          exact h (hinv g.val))
         (U.smoothTensorInducedMackeyIso_inv_differential_eq_zero V hU r hr t s A hdz) := by
-  rw [TopRep.ResolutionContraction.gradedCohomologyClass_def,
-    res_cohomologyClass_smoothTensorInducedGradedResolutionContraction_mackey
-      U V hU r hr t s A hA]
+  rw [TopRep.ResolutionContraction.gradedCohomologyClass_def
+    (smoothTensorInducedGradedResolutionContraction U hU s A hA) z hz hinv hdz]
+  refine (res_cohomologyClass_smoothTensorInducedGradedResolutionContraction_mackey
+    U V hU r hr t s A hA (n := n) _ _).trans ?_
   rw [TopRep.ResolutionContraction.gradedCohomologyClass_def
     (smoothTensorInducedMackeyResolutionContraction U V hU r hr t s A hA)]
   congr 1
@@ -260,9 +264,10 @@ theorem _root_.Subgroup.res_smoothTensorInducedDiagonalClass [LocallyCompactSpac
       (smoothTensorInducedMackeyResolutionContraction U V hU r hr t s A hA).gradedCohomologyClass
         (PiTensorProduct.tprod R (fun D ↦ PiTensorProduct.tprod R
           (fun _ : V ⧸ (mackeySubgroup (r D) U V).subgroupOf V ↦ z)))
-        (U.tprod_diagonal_mem_mackeyResolutionPiece V hU r hr t A hz)
-        (U.mackey_ρ_tprod_diagonal V hU r t A hinv)
-        (U.mackeyDifferential_tprod_diagonal_eq_zero V hU r hr t s A hdz) := by
+        (U.tprod_diagonal_mem_smoothTensorInducedMackeyResolutionPiece V hU r hr t A hz)
+        (U.smoothTensorInducedMackeyResolutionModule_ρ_tprod_diagonal V hU r t A hinv)
+        (U.smoothTensorInducedMackeyResolutionDifferential_tprod_diagonal_eq_zero
+          V hU r hr t s A hdz) := by
   rw [smoothTensorInducedDiagonalClass_eq]
   refine (res_gradedCohomologyClass_smoothTensorInducedGradedResolutionContraction_mackey
     U V hU r hr t s A hA _
