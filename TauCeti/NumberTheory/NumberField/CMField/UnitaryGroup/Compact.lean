@@ -10,6 +10,7 @@ public import Mathlib.Topology.Maps.Proper.Basic
 import Mathlib.Analysis.CStarAlgebra.Matrix
 import Mathlib.Analysis.Normed.Field.ProperSpace
 import TauCeti.LinearAlgebra.Matrix.Diagonal
+import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 
 /-!
@@ -65,14 +66,9 @@ theorem norm_apply_le_one_of_star_mul_self_eq_one {M : Matrix ι ι (InfiniteAde
   -- Evaluation at `w` followed by the embedding `E_w → ℂ`, as a ring homomorphism.
   let ψ : InfiniteAdeleRing E →+* ℂ :=
     (InfinitePlace.Completion.extensionEmbedding w).comp (Pi.evalRingHom _ w)
-  have hψ : Function.Semiconj ψ star star := fun a ↦
-    InfiniteAdeleRing.extensionEmbedding_star_apply a w
-  have hU : M.map ψ ∈ unitaryGroup ι ℂ := by
-    rw [mem_unitaryGroup_iff']
-    calc star (M.map ψ) * M.map ψ = (star M * M).map ψ := by
-          rw [star_eq_conjTranspose, star_eq_conjTranspose, ← conjTranspose_map ψ hψ,
-            Matrix.map_mul]
-      _ = 1 := by rw [hM, Matrix.map_one ψ (map_zero ψ) (map_one ψ)]
+  have hU : M.map ψ ∈ unitaryGroup ι ℂ :=
+    map_mem_unitary ψ (fun a ↦ InfiniteAdeleRing.extensionEmbedding_star_apply a w)
+      (mem_unitaryGroup_iff'.2 hM)
   calc ‖M i j w‖ = ‖M.map ψ i j‖ :=
         ((InfinitePlace.Completion.isometry_extensionEmbedding w).norm_map_of_map_zero
           (map_zero _) (M i j w)).symm
