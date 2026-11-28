@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Idempotents.FunctorExtension
 public import Mathlib.CategoryTheory.Preadditive.Opposite
+public import TauCeti.CategoryTheory.Idempotents.Opposite
 public import TauCeti.CategoryTheory.Preadditive.AdditiveFunctor.Restriction
 
 /-!
@@ -26,26 +26,10 @@ public section
 
 namespace CategoryTheory.Idempotents
 
-open CategoryTheory.Functor Opposite
+open Opposite
 
 variable (C : Type*) [Category* C] (E : Type*) [Category* E] [IsIdempotentComplete E]
-
-private theorem isEquivalence_whiskeringLeft_toKaroubi_op :
-    ((whiskeringLeft Cᵒᵖ (Karoubi C)ᵒᵖ E).obj (toKaroubi C).op).IsEquivalence := by
-  let restrictOp := (whiskeringLeft Cᵒᵖ (Karoubi C)ᵒᵖ E).obj (toKaroubi C).op
-  let restrict := (whiskeringLeft C (Karoubi C) Eᵒᵖ).obj (toKaroubi C)
-  -- Turn contravariant functors to `E` into covariant functors to `Eᵒᵖ`.
-  have h : restrictOp.op ⋙ (leftOpRightOpEquiv C E).functor =
-      (leftOpRightOpEquiv (Karoubi C) E).functor ⋙ restrict := rfl
-  have : restrict.IsEquivalence := inferInstanceAs
-    ((whiskeringLeft C (Karoubi C) Eᵒᵖ).obj (toKaroubi C)).IsEquivalence
-  have : (restrictOp.op ⋙ (leftOpRightOpEquiv C E).functor).IsEquivalence := by
-    rw [h]
-    infer_instance
-  let := isEquivalence_of_comp_right restrictOp.op (leftOpRightOpEquiv C E).functor
-  exact restrictOp.op.asEquivalence.unop.isEquivalence_functor
-
-variable [Preadditive C] [Preadditive E]
+  [Preadditive C] [Preadditive E]
 
 /-- Restriction from the Karoubi envelope is an equivalence on additive functors to an
 idempotent-complete preadditive category. -/
@@ -55,9 +39,8 @@ instance : ((toKaroubi C).additiveWhiskeringLeft E).IsEquivalence :=
 
 /-- Restriction from the Karoubi envelope is an equivalence on contravariant additive functors
 to an idempotent-complete preadditive category. -/
-instance : ((toKaroubi C).op.additiveWhiskeringLeft E).IsEquivalence := by
-  let := isEquivalence_whiskeringLeft_toKaroubi_op C E
-  exact (toKaroubi C).op.isEquivalence_additiveWhiskeringLeft_of_retract
+instance : ((toKaroubi C).op.additiveWhiskeringLeft E).IsEquivalence :=
+  (toKaroubi C).op.isEquivalence_additiveWhiskeringLeft_of_retract
     (fun X ↦ ⟨op X.unop.X, ⟨X.unop.retract.op⟩⟩)
 
 end CategoryTheory.Idempotents
