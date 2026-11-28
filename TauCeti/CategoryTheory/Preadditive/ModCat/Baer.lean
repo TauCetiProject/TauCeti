@@ -212,22 +212,15 @@ private theorem maximal_graph_isIso (hE : E.Baer)
     intro X
     apply (AddCommGrpCat.epi_iff_surjective _).2
     intro x
+    have : M.obj.Additive := (additiveFunctor_iff M.obj).1 M.property
     let f : (yoneda C).obj X.unop ⟶ M :=
-      ObjectProperty.homMk
-        { app Y := AddCommGrpCat.ofHom
-            ((AddMonoidHom.eval x).comp (AddCommGrpCat.homAddEquiv.toAddMonoidHom.comp
-              (M.obj.mapAddHom.comp (CategoryTheory.opHom Y.unop X.unop))))
-          naturality Y Z g := by
-            apply AddCommGrpCat.ext
-            intro h
-            exact ConcreteCategory.congr_hom (M.obj.map_comp h.op g) x }
+      ObjectProperty.homMk ((preadditiveYonedaHomEquiv (X := X.unop) (F := M.obj)).symm x)
     obtain ⟨g, hg⟩ := maximal_graph_factors hE s hs f
     refine ⟨g.hom.app X (𝟙 X.unop), ?_⟩
     have hx := congrArg (fun k : (yoneda C).obj X.unop ⟶ M ↦ k.hom.app X (𝟙 X.unop)) hg
-    have hfx : f.hom.app X (𝟙 X.unop) = x := by
-      -- Evaluate the composite of bundled additive maps on the identity.
-      change M.obj.map (𝟙 X.unop).op x = x
-      simp
+    have hfx : f.hom.app X (𝟙 X.unop) = x :=
+      (preadditiveYonedaHomEquiv_apply (X := X.unop) (F := M.obj) f.hom).symm.trans
+        ((preadditiveYonedaHomEquiv (X := X.unop) (F := M.obj)).apply_symm_apply x)
     exact hx.trans hfx
   exact isIso_of_mono_of_epi p
 

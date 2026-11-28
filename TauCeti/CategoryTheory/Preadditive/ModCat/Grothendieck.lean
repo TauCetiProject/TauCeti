@@ -48,14 +48,9 @@ theorem exists_projective_separator [EssentiallySmall.{w} C] :
   let : Preadditive (SmallModel.{w} C) := Preadditive.ofFullyFaithful e.fullyFaithfulInverse
   have : e.inverse.Additive := e.fullyFaithfulInverse.additive_ofFullyFaithful
   have : e.functor.Additive := e.symm.additive_inverse_of_FullyFaithful
-  have : e.functor.op.Additive := Functor.op_additive e.functor
-  let E := e.op.symm.congrLeft (E := AddCommGrpCat.{w})
-  let M : ModCat.{w} (SmallModel.{w} C) ≌ ModCat.{w} C := E.congrFullSubcategory (by
-    ext F
-    simp only [ObjectProperty.prop_inverseImage_iff, additiveFunctor_iff]
-    -- The functor of the ambient equivalence acts by precomposition with `e.functor.op`.
-    change (e.functor.op ⋙ F).Additive ↔ F.Additive
-    exact ⟨fun _ ↦ e.functor.op.additive_of_full_essSurj_comp F, fun _ ↦ inferInstance⟩)
+  have : e.op.functor.Additive := Functor.op_additive e.functor
+  let M : ModCat.{w} (SmallModel.{w} C) ≌ ModCat.{w} C :=
+    (e.op.additiveCongrLeft (E := AddCommGrpCat.{w})).symm
   let G := ∐ (yoneda (SmallModel.{w} C)).obj
   have hsep : IsSeparator G := isSeparating_yoneda.isSeparator_coproduct
   exact ⟨M.functor.obj G, (M.map_projective_iff G).2 inferInstance, hsep.of_equivalence M⟩
