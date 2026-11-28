@@ -75,6 +75,11 @@ All in the namespace `TauCeti.AlgebraicGeometry`, except the last, which is in
   the transcendence degree over `k` of the residue field.
 * `finite_preimage_singleton_of_height_eq`: a fibre whose points all have the height of their
   image is finite.
+* `height_genericPoint_of_topologicalKrullDim_eq`: the generic point of an irreducible scheme of
+  dimension `n` has height `n`.
+* `isFinite_of_height_apply_eq`: a proper morphism under which every point keeps its height is
+  finite; in particular a proper dominant morphism of irreducible curves is finite
+  (`isFinite_of_isDominant_of_topologicalKrullDim_eq_one`).
 * `exists_isFinite_morphismRestrict_of_height_add_one`: a proper dominant morphism from an
   irreducible scheme to a scheme of the same finite dimension is finite over a neighbourhood of
   every point of codimension one.
@@ -311,6 +316,42 @@ theorem finite_preimage_singleton_of_height_eq {Y : Scheme.{u}} [Y.Over (Spec (.
   have : Finite (f.fiber y) := TopologicalSpace.NoetherianSpace.finite_of_t1Space
   exact f.range_fiberι y ▸ Set.finite_range _
 
+/-- On an irreducible scheme of dimension `n`, the generic point has height `n`. -/
+theorem height_genericPoint_of_topologicalKrullDim_eq {Z : Scheme.{u}} [IrreducibleSpace Z]
+    {n : ℕ∞} (hZ : topologicalKrullDim Z = n) : Order.height (genericPoint Z) = n := by
+  rw [← (genericPoint_spec Z).height_eq_topologicalKrullDim] at hZ
+  exact_mod_cast hZ
+
+/-- **Proper morphisms preserving heights are finite.** Let `f : X ⟶ Y` be a proper morphism of
+schemes over a field `k`, with `X` locally of finite type over `k`, such that every point of `X`
+has the height of its image. Then every fibre is finite, so `f` is quasi-finite and hence finite.
+The hypothesis holds for a dominant morphism of irreducible curves over `k`
+(`isFinite_of_isDominant_of_topologicalKrullDim_eq_one`). -/
+theorem isFinite_of_height_apply_eq {Y : Scheme.{u}} [Y.Over (Spec (.of k))] (f : X ⟶ Y)
+    [f.IsOver (Spec (.of k))] [IsProper f] (h : ∀ x, Order.height (f x) = Order.height x) :
+    IsFinite f := by
+  have : LocallyQuasiFinite f := .of_finite_preimage_singleton f fun y ↦
+    finite_preimage_singleton_of_height_eq k f y fun x hx ↦ hx ▸ (h x).symm
+  exact .of_isProper_of_locallyQuasiFinite f
+
+/-- **Proper dominant morphisms of curves are finite.** A proper dominant morphism `f : X ⟶ Y` of
+one-dimensional schemes over a field `k`, with `X` irreducible and locally of finite type over `k`
+(so that `Y` is irreducible too), is finite: it sends the generic point to the generic point, and
+closed points to closed points. -/
+theorem isFinite_of_isDominant_of_topologicalKrullDim_eq_one {Y : Scheme.{u}}
+    [Y.Over (Spec (.of k))] [IrreducibleSpace X] (f : X ⟶ Y) [f.IsOver (Spec (.of k))]
+    [IsProper f] [IsDominant f] (hX : topologicalKrullDim X = 1)
+    (hY : topologicalKrullDim Y = 1) : IsFinite f := by
+  have : IrreducibleSpace Y := f.irreducibleSpace_of_isDominant
+  refine isFinite_of_height_apply_eq k f fun x ↦
+    le_antisymm (f.isClosedMap.specializingMap.height_apply_le_height x) ?_
+  by_cases hx : x = genericPoint X
+  · rw [hx, f.genericPoint_eq_of_isDominant, height_genericPoint_of_topologicalKrullDim_eq hX,
+      height_genericPoint_of_topologicalKrullDim_eq hY]
+  -- Every other point is closed, of height zero.
+  rw [Scheme.height_of_isClosed (Scheme.isClosed_singleton_of_ne_genericPoint hX.le hx)]
+  exact zero_le
+
 /-- **Proper generically finite morphisms are finite in codimension one.** Let `f : X ⟶ Y` be a
 proper dominant morphism of schemes over a field `k`, with `X` irreducible and locally of
 finite type over `k` (so `Y` is irreducible too), both of dimension `n + 1`, and let `y ∈ Y` be
@@ -323,10 +364,9 @@ theorem exists_isFinite_morphismRestrict_of_height_add_one {Y : Scheme.{u}}
     (hy : Order.height y = n) :
     ∃ V : Y.Opens, y ∈ V ∧ IsFinite (f ∣_ V) := by
   have : IrreducibleSpace Y := f.irreducibleSpace_of_isDominant
-  have hgen : ∀ (Z : Scheme.{u}) [IrreducibleSpace Z], topologicalKrullDim Z = n + 1 →
-      Order.height (genericPoint Z) = n + 1 := fun Z _ hZ ↦ by
-    rw [← (genericPoint_spec Z).height_eq_topologicalKrullDim] at hZ
-    exact_mod_cast hZ
+  have hgen (Z : Scheme.{u}) [IrreducibleSpace Z] (hZ : topologicalKrullDim Z = n + 1) :
+      Order.height (genericPoint Z) = n + 1 :=
+    height_genericPoint_of_topologicalKrullDim_eq (by exact_mod_cast hZ)
   -- Every point `x` over `y` has height `n`: at least `n` since the closed map `f` does not
   -- increase heights, and less than `n + 1` since `x` is not the generic point of `X`, which maps
   -- to that of `Y`.

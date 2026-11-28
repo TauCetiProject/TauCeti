@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.AlgClosed.Basic
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
 public import TauCeti.Topology.KrullDimension.Irreducible
+import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
 
 /-!
 # Morphisms of schemes that are constant on a closed subset
@@ -110,14 +111,15 @@ theorem exists_subschemeι_comp_eq_of_image_subset {Z : Closeds X} {y : Y} (hy :
     ∃ g : (IdealSheafData.vanishingIdeal Z).subscheme ⟶ Spec (Y.residueField y),
       (IdealSheafData.vanishingIdeal Z).subschemeι ≫ f = g ≫ Y.fromSpecResidueField y := by
   have := isClosed_singleton_iff_isClosedImmersion.mp hy
-  -- The kernel of `Spec κ(y) ⟶ Y` vanishes on `y`, hence on the closure of `f '' Z`, which is
-  -- the kernel of the restriction of `f`.
+  -- The kernel of `Spec κ(y) ⟶ Y` vanishes on its support, which contains `y` and hence
+  -- `f '' Z`, so it is contained in the kernel of the restriction of `f`.
   have H : (Y.fromSpecResidueField y).ker ≤
       ((IdealSheafData.vanishingIdeal Z).subschemeι ≫ f).ker := by
-    rw [ker_comp, IdealSheafData.ker_subschemeι, IdealSheafData.map_vanishingIdeal,
-      ← IdealSheafData.le_support_iff_le_vanishingIdeal, Closeds.closure_le]
-    exact h.trans ((range_fromSpecResidueField y).symm.subset.trans
-      (Y.fromSpecResidueField y).range_subset_ker_support)
+    rw [ker_comp, IdealSheafData.ker_subschemeι]
+    exact (IdealSheafData.le_support_iff_le_vanishingIdeal.mp le_rfl).trans
+      (IdealSheafData.vanishingIdeal_le_map_vanishingIdeal f (Set.mapsTo_iff_image_subset.mpr
+        (h.trans ((range_fromSpecResidueField y).symm.subset.trans
+          (Y.fromSpecResidueField y).range_subset_ker_support))))
   exact ⟨IsClosedImmersion.lift _ _ H, (IsClosedImmersion.lift_fac _ _ H).symm⟩
 
 /-- A morphism locally of finite type into a Jacobson scheme is constant on a nonempty closed

@@ -43,6 +43,8 @@ discrete valuation ring.
 * `Scheme.IdealSheafData.vanishingIdeal_le_ker_of_range_subset`: a morphism from a reduced scheme
   with image in `Z` kills the vanishing ideal of `Z`, so it factors through the reduced induced
   closed subscheme.
+* `Scheme.IdealSheafData.vanishingIdeal_le_map_vanishingIdeal`: a morphism mapping `Z` into a
+  closed subset `W` restricts to a morphism of the reduced induced closed subschemes.
 * `Scheme.IdealSheafData.existsUnique_comp_subschemeι_vanishingIdeal_iff`: universal property of
   the reduced induced closed subscheme on `Z` for morphisms from reduced schemes.
 * `Scheme.Hom.isIso_lift_subschemeι_vanishingIdeal`: a reduced closed subscheme
@@ -138,6 +140,14 @@ theorem vanishingIdeal_le_ker_of_range_subset {Y : Scheme.{u}} [IsReduced Y] (f 
       rw [← SetLike.mem_coe, coe_support_vanishingIdeal]
       exact h ⟨y, rfl⟩
   exact (X.mem_zeroLocus_iff _ _).mp hZ s hs hy
+
+/-- If a morphism `f : Y ⟶ X` maps a closed subset `Z` of `Y` into a closed subset `W` of `X`,
+then the vanishing ideal of `W` is contained in the pushforward along `f` of the vanishing ideal of
+`Z`, so `f` restricts to a morphism `subschemeMap` of the reduced induced closed subschemes. -/
+theorem vanishingIdeal_le_map_vanishingIdeal {Y : Scheme.{u}} (f : Y ⟶ X) {Z : Closeds Y}
+    {W : Closeds X} (h : Set.MapsTo f Z W) : vanishingIdeal W ≤ (vanishingIdeal Z).map f := by
+  rw [map_vanishingIdeal]
+  exact vanishingIdeal_antimono (Closeds.closure_le.mpr h.image_subset)
 
 /-- A morphism `f : Y ⟶ X` from a reduced scheme factors uniquely through the reduced induced
 closed subscheme `(vanishingIdeal Z).subschemeι` on a closed subset `Z` if and only if its

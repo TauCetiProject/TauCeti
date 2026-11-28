@@ -22,8 +22,10 @@ The main result is the tower law `residueDegree_comp`, built on the scalar tower
 `isScalarTower_residueField` of residue fields along a composite. It identifies the residue degree
 of a composite with the product of the two successive residue degrees. We also characterize when a
 residue degree is positive and when it is one, and show that a morphism surjective on stalks, such
-as a closed immersion, has residue degree one everywhere, and that a morphism has residue degree
-one over any open of its target over which it is an isomorphism. The comparison
+as a closed immersion, has residue degree one everywhere, so that the two other sides of a
+commutative square of such maps have equal residue degrees (`residueDegree_eq_of_comp_eq`), and
+that a morphism has residue degree one over any open of its target over which it is an
+isomorphism. The comparison
 `finrank_residueField_stalk` computes this degree from the residue field of the local ring with
 any compatible base-field algebra structure, and `residueDegree_eq_finrank_residueField` computes
 it through any local ring isomorphic to the source stalk compatibly with the stalk map. These facts
@@ -110,6 +112,14 @@ theorem residueDegree_eq_one_of_surjectiveOnStalks (f : X ⟶ Y) [SurjectiveOnSt
   obtain ⟨t, rfl⟩ := f.stalkMap_surjective x s
   refine ⟨Y.residue (f x) t, ?_⟩
   rw [← CategoryTheory.comp_apply, Scheme.residue_residueFieldMap, CategoryTheory.comp_apply]
+
+/-- In a commutative square `g ≫ j = i ≫ f` whose maps `i` and `j` are surjective on stalks, for
+instance closed immersions, `g` and `f` have the same residue degrees:
+`[κ(x) : κ(g x)] = [κ(i x) : κ(f (i x))]`. -/
+theorem residueDegree_eq_of_comp_eq {X' Y' : Scheme.{u}} {g : X' ⟶ Y'} {j : Y' ⟶ Y} {i : X' ⟶ X}
+    {f : X ⟶ Y} [SurjectiveOnStalks i] [SurjectiveOnStalks j] (h : g ≫ j = i ≫ f) (x : X') :
+    g.residueDegree x = f.residueDegree (i x) := by
+  simpa using congrArg (fun φ ↦ φ.residueDegree x) h
 
 /-- The residue degree of `f` at `x` is computed by any local ring `T` over `𝒪_{Y, f x}` isomorphic
 to `𝒪_{X,x}` compatibly with the stalk map: it is the degree of the residue field of `T` over that
