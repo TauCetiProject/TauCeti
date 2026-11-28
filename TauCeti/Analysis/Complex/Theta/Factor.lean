@@ -184,10 +184,12 @@ private theorem add_eq_thetaFactor_mul_of_add {s : ℂ → ℂ} {m n m' n' : ℤ
     (h : ∀ z, s (z + m + n * τ) = thetaFactor k τ α β m n z * s z)
     (h' : ∀ z, s (z + m' + n' * τ) = thetaFactor k τ α β m' n' z * s z) (z : ℂ) :
     s (z + ↑(m + m') + ↑(n + n') * τ) = thetaFactor k τ α β (m + m') (n + n') z * s z := by
-  have := h (z + m' + n' * τ)
-  rw [show z + m' + n' * τ + m + n * τ = z + ↑(m + m') + ↑(n + n') * τ by push_cast; ring,
-    h' z] at this
-  rw [this, thetaFactor_add, mul_assoc]
+  have hz := h (z + m' + n' * τ)
+  have harg : z + m' + n' * τ + m + n * τ = z + ↑(m + m') + ↑(n + n') * τ := by
+    push_cast
+    ring
+  rw [harg, h' z] at hz
+  rw [hz, thetaFactor_add, mul_assoc]
 
 /-- The lattice vectors at which a function satisfies the automorphy law form a subgroup. -/
 private noncomputable def automorphySubgroup (s : ℂ → ℂ) : AddSubgroup (ℤ × ℤ) where
@@ -198,7 +200,10 @@ private noncomputable def automorphySubgroup (s : ℂ → ℂ) : AddSubgroup (�
     have h0 := thetaFactor_add (k := k) (τ := τ) (α := α) (β := β) p.1 p.2 (-p.1) (-p.2) z
     have hs := hp (z + ↑(-p.1) + ↑(-p.2) * τ)
     simp only [add_neg_cancel, thetaFactor_zero_zero] at h0
-    rw [show z + ↑(-p.1) + ↑(-p.2) * τ + p.1 + p.2 * τ = z by push_cast; ring] at hs
+    have harg : z + ↑(-p.1) + ↑(-p.2) * τ + p.1 + p.2 * τ = z := by
+      push_cast
+      ring
+    rw [harg] at hs
     have hne := thetaFactor_ne_zero (k := k) (τ := τ) (α := α) (β := β) p.1 p.2
       (z + ↑(-p.1) + ↑(-p.2) * τ)
     simp only [Prod.fst_neg, Prod.snd_neg]

@@ -135,11 +135,13 @@ theorem exists_thetaMetric_mul_norm_sq_le (hτ : τ.im ≠ 0) {s : ℂ → ℂ} 
     intro z w hw
     obtain ⟨n, m, rfl⟩ := PeriodPair.mem_lattice.mp hw
     have hεε : (ε : ℂ) * ε = 1 := by rcases hε with rfl | rfl <;> norm_num
-    have := thetaMetric_add_mul_norm_sq hτ (hs m (ε * n) z)
-    rwa [show z + m + ↑(ε * n) * (ε * σ) = z + (n * σ.periodPair.ω₁ + m * σ.periodPair.ω₂) by
+    have hnorm := thetaMetric_add_mul_norm_sq hτ (hs m (ε * n) z)
+    have harg : z + m + ↑(ε * n) * (ε * σ) =
+        z + (n * σ.periodPair.ω₁ + m * σ.periodPair.ω₂) := by
       simp only [UpperHalfPlane.periodPair_ω₁, UpperHalfPlane.periodPair_ω₂]
       push_cast
-      linear_combination (n * σ : ℂ) * hεε] at this
+      linear_combination (n * σ : ℂ) * hεε
+    rwa [harg] at hnorm
   obtain ⟨C, hC⟩ := (IsZLattice.isCompact_range_of_periodic σ.periodPair.lattice _
     (continuous_thetaMetric.mul (hc.norm.pow 2)) hper).isBounded.bddAbove
   exact ⟨C, fun z ↦ hC ⟨z, rfl⟩⟩

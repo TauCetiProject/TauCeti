@@ -109,9 +109,11 @@ theorem periodic_cexp_mul_of_add_one {α : ℝ} {s : ℂ → ℂ}
     Function.Periodic (fun z => cexp (-2 * π * I * (m + α) * z) * s z) 1 := by
   intro z
   simp only [h1, ← mul_assoc, ← Complex.exp_add]
-  rw [show -2 * π * I * (m + α) * (z + 1) + 2 * π * I * α =
-      -2 * π * I * (m + α) * z + (-m : ℤ) * (2 * π * I) by push_cast; ring,
-    Complex.exp_add _ ((-m : ℤ) * (2 * π * I)), Complex.exp_int_mul_two_pi_mul_I, mul_one]
+  have hexp : -2 * π * I * (m + α) * (z + 1) + 2 * π * I * α =
+      -2 * π * I * (m + α) * z + (-m : ℤ) * (2 * π * I) := by
+    push_cast
+    ring
+  rw [hexp, Complex.exp_add _ ((-m : ℤ) * (2 * π * I)), Complex.exp_int_mul_two_pi_mul_I, mul_one]
 
 private noncomputable def twistedPeriodic (α : ℝ) (s : ℂ → ℂ) (z : ℂ) : ℂ :=
   cexp (-2 * π * I * α * z) * s z

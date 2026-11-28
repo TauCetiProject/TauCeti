@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.TwoVariable
 public import TauCeti.Analysis.Complex.Theta.Fourier
 import TauCeti.Analysis.Complex.Theta.Vanishing
+import TauCeti.Basic.Complex.Basic
 import TauCeti.NumberTheory.ModularForms.JacobiTheta.TwoVariable
 
 /-!
@@ -97,9 +98,10 @@ theorem characteristicTheta_mem_thetaSections (k : ℕ) (τ : ℂ) (α β : ℝ)
         fun w ↦ jacobiTheta₂_add_left w (k * τ)
       convert hper.nat_mul k (k * z + (r + α) * τ - β) using 2
       ring
-    rw [characteristicTheta_apply, characteristicTheta_apply, hθ, ← mul_assoc, ← exp_add,
-      show 2 * π * I * (r + α) * (z + 1) =
-        2 * π * I * α + 2 * π * I * (r + α) * z + r * (2 * π * I) by ring,
+    have hexp : 2 * π * I * (r + α) * (z + 1) =
+        2 * π * I * α + 2 * π * I * (r + α) * z + r * (2 * π * I) := by
+      ring
+    rw [characteristicTheta_apply, characteristicTheta_apply, hθ, ← mul_assoc, ← exp_add, hexp,
       exp_add _ (r * (2 * π * I)), exp_int_mul_two_pi_mul_I, mul_one]
   · have hθ : jacobiTheta₂ (k * (z + τ) + (r + α) * τ - β) (k * τ) =
         cexp (-π * I * (k * τ + 2 * (k * z + (r + α) * τ - β))) *
@@ -116,14 +118,6 @@ theorem characteristicTheta_mem_thetaSections (k : ℕ) (τ : ℂ) (α β : ℝ)
 theorem characteristicTheta_one_eq_jacobiTheta₂ (τ z : ℂ) :
     characteristicTheta 1 τ 0 0 0 z = jacobiTheta₂ z τ := by
   simp [characteristicTheta_apply]
-
-private lemma im_natCast_mul (k : ℕ) (τ : ℂ) : ((k : ℂ) * τ).im = k * τ.im := by
-  rw [← ofReal_natCast, im_ofReal_mul]
-
-private lemma im_natCast_mul_pos {k : ℕ} {τ : ℂ} (hk : 0 < k) (hτ : 0 < τ.im) :
-    0 < ((k : ℂ) * τ).im := by
-  rw [im_natCast_mul]
-  exact mul_pos (Nat.cast_pos.mpr hk) hτ
 
 /-- When `k = 0` or `τ.im ≤ 0`, `characteristicTheta` vanishes identically (inheriting the
 junk-value convention `jacobiTheta₂_undef`). -/
