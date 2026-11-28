@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.QuasiAffine
 public import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 public import TauCeti.AlgebraicGeometry.Descent.Affine
+public import TauCeti.AlgebraicGeometry.Descent.Gluing
 public import TauCeti.AlgebraicGeometry.Descent.Open
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.StructureSheaf
 
@@ -41,10 +42,14 @@ of a base change descend
 does `X`, to a quasi-compact open of `Y₀`
 (`TauCeti.DescentDatum.exists_isQuasiAffine_baseChange_hom_isIso`).
 
-This is the local step of descent for schemes with a relatively ample line bundle: if `D` is
-compatible with an ample line bundle `L` on `X`, the nonvanishing loci `X_s` of the sections `s`
-of the powers of `L` which are invariant under `D` are stable quasi-affine opens of `X`, to which
-the result applies.
+Gluing these descents along a cover of `X` by stable opens
+(`TauCeti.DescentDatum.exists_baseChange_hom_isIso_of_iSup_eq_top`), a descent datum on a scheme
+covered by stable quasi-affine opens is effective
+(`TauCeti.DescentDatum.exists_baseChange_hom_isIso_of_iSup_eq_top_of_isQuasiAffine`). This is the
+local step of descent for schemes with a relatively ample line bundle: if `D` is compatible with an
+ample line bundle `L` on `X`, the nonvanishing loci `X_s` of the sections `s` of the powers of `L`
+which are invariant under `D` are stable quasi-affine opens of `X`, to which the result applies
+once they cover `X`.
 
 ## Main definitions
 
@@ -59,6 +64,8 @@ the result applies.
   `Spec Γ(X, ⊤)` for which the affinization is a morphism of descent data.
 * `TauCeti.DescentDatum.exists_isQuasiAffine_baseChange_hom_isIso`: **effective descent for
   quasi-affine schemes** along a flat surjective morphism of affine schemes.
+* `TauCeti.DescentDatum.exists_baseChange_hom_isIso_of_iSup_eq_top_of_isQuasiAffine`: effective
+  descent for schemes covered by stable quasi-affine opens, along such a morphism.
 
 ## References
 
@@ -250,5 +257,21 @@ theorem exists_isQuasiAffine_baseChange_hom_isIso [IsAffine S] [IsAffine S'] [Fl
     (Scheme.Hom.surjective (pullback.fst (U₀.ι ≫ Y₀.hom) p)).compactSpace
       (pullback.fst (U₀.ι ≫ Y₀.hom) p).continuous
   exact Scheme.IsQuasiAffine.of_isImmersion (X := U₀.toScheme) U₀.ι
+
+/-- **Effective descent for schemes covered by stable quasi-affine opens.** Let `p : S' ⟶ S` be
+a flat surjective morphism of affine schemes and `D` a descent datum relative to `p` on a scheme
+`X` over `S'`. If `X` is covered by opens `U i` which are stable under `D` and quasi-affine, then
+`D` is effective: it is isomorphic to the canonical descent datum on the base change of a scheme
+over `S`. -/
+theorem exists_baseChange_hom_isIso_of_iSup_eq_top_of_isQuasiAffine [IsAffine S] [IsAffine S']
+    [Flat p] [Surjective p] (D : DescentDatum p X) {ι : Sort*} (U : ι → X.left.Opens)
+    (hU : ⨆ i, U i = ⊤) (hs : ∀ i, D.IsStable (U i)) [∀ i, (U i).toScheme.IsQuasiAffine] :
+    ∃ (Y : Over S) (g : Hom (baseChange p Y) D), IsIso g.hom := by
+  refine exists_baseChange_hom_isIso_of_iSup_eq_top U hU hs fun i ↦ ?_
+  -- The restriction of `D` to `U i` lives on `U i`, regarded as a scheme over `S'`.
+  have : (Over.mk ((U i).ι ≫ X.hom)).left.IsQuasiAffine :=
+    inferInstanceAs (U i).toScheme.IsQuasiAffine
+  obtain ⟨Y, -, g, hg⟩ := (D.restrict (U i) (hs i)).exists_isQuasiAffine_baseChange_hom_isIso
+  exact ⟨Y, g, hg⟩
 
 end TauCeti.DescentDatum
