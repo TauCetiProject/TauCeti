@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Parallel
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Exponential.Basic
 public import TauCeti.Analysis.ODE.SecondOrder.ParameterJets
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
@@ -419,6 +420,38 @@ theorem norm_iteratedFDeriv_radialJacobiPositionFamily_le (h : IsNormalDomain I 
     (hV.contDiffAt_timeSlice hW h1W) (by exact_mod_cast Nat.le_succ n),
     ContinuousMultilinearMap.opNorm_prod] at hb
   exact (le_max_left _ _).trans hb
+
+/-- The actual radial Jacobi position has its constructed velocity as operator derivative. -/
+theorem hasDerivAt_radialJacobiPosition (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p)
+    {l r : ℝ} (hlr : l ≤ r) (hseg : ∀ s ∈ Icc l r, s • v ∈ U)
+    {t : ℝ} (ht : t ∈ Icc l r) :
+    HasDerivAt (h.radialJacobiPosition b v hlr hseg)
+      (h.radialJacobiVelocity b v hlr hseg t) t := by
+  apply TauCeti.hasDerivAt_clm_apply.mpr
+  intro x
+  rw [← b.sum_repr' x]
+  simp only [map_sum, map_smul]
+  exact HasDerivAt.fun_sum fun i (_ : i ∈ Finset.univ) ↦
+    (h.hasDerivAt_radialJacobiPosition_apply_basis b v hlr hseg ht i).const_smul _
+
+/-- The constructed velocity satisfies the actual ordinary operator Jacobi equation. -/
+theorem hasDerivAt_radialJacobiVelocity (h : IsNormalDomain I M p U)
+    (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (v : TangentSpace I p)
+    {l r : ℝ} (hlr : l < r) (hseg : ∀ s ∈ Icc l r, s • v ∈ U)
+    (h0 : 0 ∈ Icc l r) {t : ℝ} (ht : t ∈ Icc l r) :
+    HasDerivAt (h.radialJacobiVelocity b v hlr.le hseg)
+      (-((h.radialJacobiCurvature b v hlr.le hseg t).comp
+        (h.radialJacobiPosition b v hlr.le hseg t))) t := by
+  apply TauCeti.hasDerivAt_clm_apply.mpr
+  intro x
+  rw [← b.sum_repr' x]
+  simp only [map_sum, map_smul, neg_apply, ContinuousLinearMap.comp_apply,
+    Finset.sum_neg_distrib, smul_neg]
+  simpa only [Pi.smul_apply, smul_neg, Finset.sum_neg_distrib] using
+    HasDerivAt.fun_sum fun i (_ : i ∈ Finset.univ) ↦
+      (h.hasDerivAt_radialJacobiVelocity_apply_basis b v hlr hseg h0 ht i).const_smul
+        ⟪b i, x⟫_ℝ
 
 end IsNormalDomain
 

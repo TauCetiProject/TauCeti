@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
+public import Mathlib.Analysis.Calculus.Deriv.Basic
+import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # Compressions of operators
@@ -49,6 +51,14 @@ def compression : F →L[𝕜] F :=
 theorem compression_def : A.compression X = adjoint X ∘L A ∘L X :=
   (rfl)
 
+/-- Differentiating a curve of operators commutes with compression along a fixed map. -/
+theorem _root_.HasDerivAt.compression {A : 𝕜 → E →L[𝕜] E} {A' : E →L[𝕜] E} {t : 𝕜}
+    (hA : HasDerivAt A A' t) (X : F →L[𝕜] E) :
+    HasDerivAt (fun s ↦ (A s).compression X) (A'.compression X) t := by
+  have hd := (hasDerivAt_const t (adjoint X)).clm_comp
+    (hA.clm_comp (hasDerivAt_const t X))
+  simpa only [zero_comp, zero_add, comp_zero, add_zero, ← compression_def] using hd
+
 @[simp]
 theorem compression_apply (x : F) : A.compression X x = adjoint X (A (X x)) :=
   (rfl)
@@ -72,6 +82,11 @@ theorem compression_sub (B : E →L[𝕜] E) :
     (A - B).compression X = A.compression X - B.compression X := by
   ext x
   simp
+
+/-- Compression preserves negation in the operator argument. -/
+@[simp]
+theorem compression_neg : (-A).compression X = -A.compression X := by
+  simpa only [compression_zero, zero_sub] using compression_sub (0 : E →L[𝕜] E) X A
 
 /-- Compression preserves scalar multiplication in the operator argument. -/
 @[simp]
@@ -117,6 +132,23 @@ theorem adjoint_compression : adjoint (A.compression X) = (adjoint A).compressio
 theorem isSymmetric_compression {A : E →L[𝕜] E} (hA : (A : E →ₗ[𝕜] E).IsSymmetric) :
     (A.compression X : F →ₗ[𝕜] F).IsSymmetric :=
   isSelfAdjoint_iff_isSymmetric.1 <| (isSelfAdjoint_iff_isSymmetric.2 hA).adjoint_conj X
+
+/-- If the image lies in the subspace, compression along its inclusion preserves that image. -/
+theorem coe_compression_subtypeL_apply (p : Submodule 𝕜 E) [CompleteSpace p] (x : p)
+    (hx : A x ∈ p) : (A.compression p.subtypeL x : E) = A x := by
+  simp only [compression_apply, Submodule.adjoint_subtypeL]
+  exact p.starProjection_eq_self_iff.mpr hx
+
+/-- Compression respects composition when the right factor preserves the trial subspace. -/
+theorem compression_comp_of_invariant (B : E →L[𝕜] E) (p : Submodule 𝕜 E)
+    [CompleteSpace p] (hA : ∀ x ∈ p, A x ∈ p) :
+    (B.comp A).compression p.subtypeL =
+      (B.compression p.subtypeL).comp (A.compression p.subtypeL) := by
+  apply ContinuousLinearMap.ext
+  intro x
+  simp only [compression_apply, comp_apply, Submodule.adjoint_subtypeL]
+  have h := p.starProjection_eq_self_iff.mpr (hA x x.prop)
+  exact congrArg (fun z : E ↦ p.orthogonalProjectionOnto (B z)) h.symm
 
 /-- If `u` is an eigenvector of `A`, with eigenvalue `λ`, then `A` is block upper triangular along
 `E = 𝕜 u ⊕ u^⊥`, so every eigenvalue of the compression of `A` to `u^⊥` is an eigenvalue of `A`.
