@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.ProperAction.Basic
 public import TauCeti.Geometry.Lie.FundamentalVectorField
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Diffeomorph
 import TauCeti.LinearAlgebra.LinearMap.Coprod
 import TauCeti.Topology.Algebra.ProperAction.TransverseSlice
 
@@ -123,16 +124,10 @@ theorem _root_.IsLocalDiffeomorphAt.eventually_forall_smul_slice {n : ℕ∞ω} 
   have : ContMDiffSMul I I n G G := ⟨contMDiff_mul I n⟩
   let T : (G × S) ≃ₘ^n⟮I.prod J, I.prod J⟯ (G × S) :=
     (Diffeomorph.smul I I n g).prodCongr (Diffeomorph.refl J S n)
-  -- The slice map intertwines `T` with the action of `g` on `M`.
   have hT : (fun p : G × S ↦ p.1 • σ p.2) ∘ T =
       Diffeomorph.smul I I' n g (M := M) ∘ fun p : G × S ↦ p.1 • σ p.2 :=
     funext fun p ↦ by simp [T, mul_smul]
-  have hcomp : IsLocalDiffeomorphAt (I.prod J) I' n
-      ((fun p : G × S ↦ p.1 • σ p.2) ∘ T) (1, s) := by
-    rw [hT]
-    exact IsLocalDiffeomorphAt.comp (hf := hs)
-      (hg := (Diffeomorph.smul I I' n g).isLocalDiffeomorph _)
-  simpa [T] using hcomp.of_comp_right (T.isLocalDiffeomorph _)
+  simpa [T] using hs.of_comp_diffeomorph_eq T (Diffeomorph.smul I I' n g) le_rfl hT
 
 /-- **The differential of a slice map is onto along whole orbits.** For a slice `σ`
 differentiable at `s₀`, if the differential of `(h, s) ↦ h • σ s` at `(1, s₀)` is onto, then so is

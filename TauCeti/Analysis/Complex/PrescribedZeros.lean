@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Meromorphic.Divisor
 public import Mathlib.Topology.LocallyFinsupp
-public import TauCeti.Analysis.Complex.Runge.Operator
+public import TauCeti.Analysis.Complex.Runge.CompactPair
 import Mathlib.Analysis.Meromorphic.NormalForm
 import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 import TauCeti.Analysis.Analytic.Order
