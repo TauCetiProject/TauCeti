@@ -196,35 +196,37 @@ def liftToModuleCatFunctorForgetIso :
 theorem liftToModuleCatFunctorForgetIso_app (F : D ⥤+ AddCommGrpCat.{w}) :
     (liftToModuleCatFunctorForgetIso D R).app F = F.liftToModuleCatForgetIso R := (rfl)
 
+variable (D) in
+private abbrev whiskerForgetScalars : (D ⥤ ModuleCat.{w} R) ⥤ D ⥤ AddCommGrpCat.{w} :=
+  (Functor.whiskeringRight D _ _).obj (forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w})
+
 instance : (liftToModuleCatFunctor.{w} D R).Additive := by
-  let W := (Functor.whiskeringRight D _ _).obj
-    (forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w})
-  have : (liftToModuleCatFunctor.{w} D R ⋙ W).Additive :=
+  have : (liftToModuleCatFunctor.{w} D R ⋙ whiskerForgetScalars D R).Additive :=
     Functor.additive_of_iso (liftToModuleCatFunctorForgetIso D R).symm
-  exact Functor.additive_of_comp_faithful _ W
+  exact Functor.additive_of_comp_faithful _ (whiskerForgetScalars D R)
 
 instance : (liftToModuleCatFunctor.{w} D R).Faithful :=
   Functor.Faithful.of_comp_iso (liftToModuleCatFunctorForgetIso D R)
 
 instance : PreservesFiniteLimits (liftToModuleCatFunctor.{w} D R) := by
-  constructor
-  intro J _ _
   have : HasLimitsOfSize.{0, 0} (ModuleCat.{w} R) := ModuleCat.hasLimitsOfSize.{0, 0, w}
-  let W := (Functor.whiskeringRight D _ _).obj
-    (forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w})
-  have : PreservesLimitsOfShape J (liftToModuleCatFunctor.{w} D R ⋙ W) :=
-    preservesLimitsOfShape_of_natIso (liftToModuleCatFunctorForgetIso D R).symm
-  exact preservesLimitsOfShape_of_reflects_of_preserves _ W
+  have : PreservesFiniteLimits (additiveFunctor D AddCommGrpCat.{w}).ι :=
+    ⟨fun _ _ _ ↦ inferInstance⟩
+  have : PreservesFiniteLimits (liftToModuleCatFunctor.{w} D R ⋙ whiskerForgetScalars D R) :=
+    preservesFiniteLimits_of_natIso (liftToModuleCatFunctorForgetIso D R).symm
+  have : ReflectsFiniteLimits (whiskerForgetScalars.{w} D R) := ⟨fun _ _ _ ↦ inferInstance⟩
+  exact preservesFiniteLimits_of_reflects_of_preserves (liftToModuleCatFunctor.{w} D R)
+    (whiskerForgetScalars D R)
 
 instance : PreservesFiniteColimits (liftToModuleCatFunctor.{w} D R) := by
-  constructor
-  intro J _ _
-  let W := (Functor.whiskeringRight D _ _).obj
-    (forget₂ (ModuleCat.{w} R) AddCommGrpCat.{w})
-  have : PreservesColimitsOfShape J (liftToModuleCatFunctor.{w} D R ⋙ W) :=
-    preservesColimitsOfShape_of_natIso (liftToModuleCatFunctorForgetIso D R).symm
-  have : ReflectsColimitsOfShape J W := reflectsColimitsOfShape_of_reflectsIsomorphisms
-  exact preservesColimitsOfShape_of_reflects_of_preserves _ W
+  have : PreservesFiniteColimits (additiveFunctor D AddCommGrpCat.{w}).ι :=
+    ⟨fun _ _ _ ↦ inferInstance⟩
+  have : PreservesFiniteColimits (liftToModuleCatFunctor.{w} D R ⋙ whiskerForgetScalars D R) :=
+    preservesFiniteColimits_of_natIso (liftToModuleCatFunctorForgetIso D R).symm
+  have : ReflectsFiniteColimits (whiskerForgetScalars.{w} D R) :=
+    { reflects := fun _ _ _ ↦ reflectsColimitsOfShape_of_reflectsIsomorphisms }
+  exact preservesFiniteColimits_of_reflects_of_preserves (liftToModuleCatFunctor.{w} D R)
+    (whiskerForgetScalars D R)
 
 end CategoryTheory.AdditiveFunctor
 

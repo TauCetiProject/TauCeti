@@ -80,12 +80,15 @@ theorem dual_map_app_apply {F G : ModCat.{w} C} (α : F ⟶ G) (X : Cᵒᵖᵒ�
 instance : (dual (C := C) R E).Additive where
   map_add {F G} α β := by
     apply ObjectProperty.hom_ext
-    ext X g
-    -- Opposites reverse precomposition, and both additions are pointwise on components.
-    change ((AdditiveFunctor.liftToModuleCatFunctor Cᵒᵖ R).map (α + β).unop).app X.unop ≫ g =
-      ((AdditiveFunctor.liftToModuleCatFunctor Cᵒᵖ R).map α.unop).app X.unop ≫ g +
-      ((AdditiveFunctor.liftToModuleCatFunctor Cᵒᵖ R).map β.unop).app X.unop ≫ g
-    simp only [unop_add, Functor.map_add, NatTrans.app_add]
+    ext1
+    funext X
+    apply (cancel_mono (dualValueIso R E G.unop X).hom).mp
+    apply AddCommGrpCat.ext
+    intro g
+    have happ (γ : F ⟶ G) := dual_map_app_apply R E γ.unop X g
+    simp only [Quiver.Hom.op_unop, Opposite.op_unop] at happ
+    rw [ObjectProperty.add_hom, NatTrans.app_add, Preadditive.add_comp, AddCommGrpCat.hom_add_apply]
+    simp only [CategoryTheory.comp_apply, happ, unop_add, Functor.map_add, NatTrans.app_add]
     exact Preadditive.add_comp _ _ _ _ _ _
 
 /-- Forgetting the additivity witness of the dual recovers the scalar lift followed by
@@ -96,28 +99,24 @@ private def dualCompInclusionIso :
 
 /-- The contravariant dual sends finite colimits of modules to limits. -/
 instance : PreservesFiniteLimits (dual (C := C) R E) := by
-  constructor
-  intro J _ _
   have := preservesFiniteLimits_op (AdditiveFunctor.liftToModuleCatFunctor.{w} Cᵒᵖ R)
-  have : HasLimitsOfShape J (ModuleCat.{w} R)ᵒᵖ := inferInstance
-  have : PreservesLimitsOfShape J (dualUnderlying (C := C) R E) := inferInstance
-  have := preservesLimitsOfShape_of_natIso (J := J) (dualCompInclusionIso (C := C) R E).symm
-  exact preservesLimitsOfShape_of_reflects_of_preserves _
+  have : HasLimitsOfSize.{0, 0} (ModuleCat.{w} R)ᵒᵖ := inferInstance
+  have : PreservesFiniteLimits (dualUnderlying (C := C) R E) := ⟨fun _ _ _ ↦ inferInstance⟩
+  have := preservesFiniteLimits_of_natIso (dualCompInclusionIso (C := C) R E).symm
+  exact preservesFiniteLimits_of_reflects_of_preserves _
     (additiveFunctor Cᵒᵖᵒᵖ AddCommGrpCat.{w}).ι
 
 /-- For injective `E`, the dual takes finite colimits in the opposite module category to finite
 colimits. Together with finite limit preservation, this makes the contravariant dual exact. -/
 instance [Injective E] : PreservesFiniteColimits (dual (C := C) R E) := by
-  constructor
-  intro J _ _
   have := preservesFiniteColimits_op (AdditiveFunctor.liftToModuleCatFunctor.{w} Cᵒᵖ R)
   have : PreservesFiniteColimits (preadditiveYoneda.obj E) := by
     rw [preadditiveYoneda_obj]
     infer_instance
   have : HasColimitsOfSize.{0, 0} (ModuleCat.{w} R)ᵒᵖ := inferInstance
-  have : PreservesColimitsOfShape J (dualUnderlying (C := C) R E) := inferInstance
-  have := preservesColimitsOfShape_of_natIso (J := J) (dualCompInclusionIso (C := C) R E).symm
-  exact preservesColimitsOfShape_of_reflects_of_preserves _
+  have : PreservesFiniteColimits (dualUnderlying (C := C) R E) := ⟨fun _ _ _ ↦ inferInstance⟩
+  have := preservesFiniteColimits_of_natIso (dualCompInclusionIso (C := C) R E).symm
+  exact preservesFiniteColimits_of_reflects_of_preserves _
     (additiveFunctor Cᵒᵖᵒᵖ AddCommGrpCat.{w}).ι
 
 /-- A cogenerator of scalar modules makes the dual faithful. -/
