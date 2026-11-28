@@ -72,11 +72,12 @@ private lemma lipschitzWith_secondOrderSystem (c : 𝕜) :
   exact max_le (by nlinarith) (by nlinarith)
 
 /-- **Solutions of the first-order system are `C²` solutions.** A function `w` with `w' = v` and
-`v' = q w` on an open set, with `q` continuous there, is a `C²` solution of `w'' = q w` there.
+`v' = q w` on an open set, with `q w` continuous there, is a `C²` solution of `w'' = q w` there.
 This is the bridge from the first-order-system form of the equation to the `ContDiffOn` and
 `iteratedDeriv 2` form used in this file; the converse direction is
 `ContDiffOn.hasDerivAt_and_hasDerivAt_deriv`. -/
-theorem contDiffOn_two_of_hasDerivAt {v : ℝ → 𝕜} (hI : IsOpen I) (hq : ContinuousOn q I)
+theorem contDiffOn_two_of_hasDerivAt {v : ℝ → 𝕜} (hI : IsOpen I)
+    (hqw : ContinuousOn (fun x ↦ q x * w x) I)
     (hw : ∀ x ∈ I, HasDerivAt w (v x) x) (hv : ∀ x ∈ I, HasDerivAt v (q x * w x) x) :
     ContDiffOn ℝ 2 w I ∧ ∀ x ∈ I, iteratedDeriv 2 w x = q x * w x := by
   have hdw (x : ℝ) (hx : x ∈ I) : HasDerivAt (deriv w) (q x * w x) x :=
@@ -90,7 +91,7 @@ theorem contDiffOn_two_of_hasDerivAt {v : ℝ → 𝕜} (hI : IsOpen I) (hq : Co
   rw [show (1 : WithTop ℕ∞) = 0 + 1 by norm_num, contDiffOn_succ_iff_deriv_of_isOpen hI]
   refine ⟨fun x hx ↦ (hdw x hx).differentiableAt.differentiableWithinAt, by simp, ?_⟩
   rw [contDiffOn_zero]
-  exact (hq.mul fun x hx ↦ (hw x hx).continuousAt.continuousWithinAt).congr
+  exact hqw.congr
     fun x hx ↦ (hdw x hx).deriv
 
 variable (hI : IsOpen I) (hIc : I.OrdConnected) (hq : ContinuousOn q I)
@@ -149,7 +150,8 @@ theorem exists_contDiffOn_iteratedDeriv_eq_mul {t₀ : ℝ} (ht₀ : t₀ ∈ I)
     (hasFDerivAt_fst (p := X x)).comp_hasDerivAt (f := X) x (hXd x hx)
   have hX2 (x : ℝ) (hx : x ∈ I) : HasDerivAt (fun t ↦ (X t).2) (q x * (X x).1) x :=
     (hasFDerivAt_snd (p := X x)).comp_hasDerivAt (f := X) x (hXd x hx)
-  obtain ⟨hwc, hwq⟩ := contDiffOn_two_of_hasDerivAt hI hq hX1 hX2
+  obtain ⟨hwc, hwq⟩ := contDiffOn_two_of_hasDerivAt hI
+    (hq.mul (continuous_fst.comp_continuousOn hXc)) hX1 hX2
   refine ⟨fun t ↦ (X t).1, hwc, hwq, by simp [hX t₀ ht₀], ?_⟩
   rw [(hX1 t₀ ht₀).deriv, hX t₀ ht₀]
   simp
