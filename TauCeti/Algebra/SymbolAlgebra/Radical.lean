@@ -13,11 +13,13 @@ import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 /-!
 # The matrix corner selected by a radical
 
-For a specified root `α ^ n = a` in an arbitrary field extension, the degree `d` of its
-minimal polynomial divides `n`. The scalar `c = α ^ d` defines the corresponding smaller
-symbol algebra, and the degree `n` algebra is a matrix algebra over it. The equivalence
-has the prescribed diagonal and forward-shift generator images, including when `d = 1`
-or `n / d = 1`.
+Let `n` be positive, `ζ` a primitive `n`-th root of unity in the base field `F`, and
+`a, b : F` nonzero. For a specified root `α ^ n = algebraMap F E a` in an arbitrary
+field extension `E`, the degree `d` of its minimal polynomial over `F` divides `n`.
+The scalar `c : F` satisfying `α ^ d = algebraMap F E c` defines the smaller symbol
+algebra. The degree `n` symbol algebra is equivalent to `n / d` by `n / d` matrices over it.
+The equivalence has the prescribed diagonal and forward-shift generator images, including
+when `d = 1` or `n / d = 1`.
 
 ## References
 

@@ -253,7 +253,8 @@ section DegreeOne
 
 variable (a b)
 
-/-- A degree-one symbol algebra is the base semiring, without nonzero assumptions. -/
+/-- A degree-one symbol algebra with `ζ = 1` is the base semiring, with no nonzero
+assumption on either `a` or `b`. -/
 def algEquivOfDegreeOne : SymbolAlgebra 1 1 a b ≃ₐ[R] R :=
   AlgEquiv.ofAlgHom
     (lift a b (by simp) (by simp) (by simp [mul_comm]))

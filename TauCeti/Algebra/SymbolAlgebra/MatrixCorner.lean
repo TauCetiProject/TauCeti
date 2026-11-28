@@ -14,10 +14,12 @@ import TauCeti.Algebra.BrauerGroup.Basic
 /-!
 # Matrix corners of symbol algebras
 
-If `a = c ^ s` and `ζ` has order `d * s`, the degree `d * s` symbol algebra is the
-algebra of `s` by `s` matrices over the degree `d` symbol algebra with parameters
-`ζ ^ s`, `c`, and `b`. The matrices of the generators are a diagonal matrix and a
-forward shift whose wrap entry is the smaller algebra's second generator.
+Over a field `F`, `toMatrixOfPow` represents the degree `d * s` symbol algebra with first
+parameter `a = c ^ s` by `s` by `s` matrices over the degree `d` symbol algebra with parameters
+`ζ ^ s`, `c`, and `b`. It requires `ζ ^ (d * s) = 1` and `ζ ≠ 0`. The generator images are a
+diagonal matrix and a forward shift whose wrap entry is the smaller algebra's second generator.
+For positive `d` and `s`, a primitive `(d * s)`-th root of unity `ζ`, and nonzero `c` and `b`,
+`algEquivMatrixOfPow` gives this representation as an `F`-algebra equivalence.
 
 ## References
 
@@ -131,9 +133,11 @@ theorem bijective_toMatrixOfPow (hζ : IsPrimitiveRoot ζ (d * s)) (hc : c ≠ 0
   simp only [Fintype.card_fin]
   ring
 
-/-- A degree `d * s` symbol algebra with first parameter `c ^ s` is an `s` by `s`
-matrix algebra over the degree `d` symbol algebra with root `ζ ^ s`. This includes
-both the split case `d = 1` and the unchanged case `s = 1`. -/
+/-- For positive `d` and `s`, a primitive `(d * s)`-th root of unity `ζ`, and nonzero
+`c` and `b`, the diagonal-and-shift representation is an equivalence from the degree
+`d * s` symbol algebra with first parameter `c ^ s` to the `s` by `s` matrix algebra
+over the degree `d` symbol algebra with root `ζ ^ s`. This includes both the split
+case `d = 1` and the unchanged case `s = 1`. -/
 noncomputable def algEquivMatrixOfPow (hζ : IsPrimitiveRoot ζ (d * s)) (hc : c ≠ 0)
     (hb : b ≠ 0) :
     SymbolAlgebra (d * s) ζ (c ^ s) b ≃ₐ[F]

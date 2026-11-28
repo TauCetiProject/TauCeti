@@ -12,8 +12,9 @@ public import Mathlib.LinearAlgebra.Matrix.ToLin
 # Weighted forward shifts
 
 The forward shift with wrap entry `v` has `s`-th power equal to the scalar matrix of `v`,
-including over a noncommutative ring. In a commutative ring, this matrix represents
-multiplication by the root of `X ^ s - C v` in its power basis.
+including over a noncommutative ring. For positive `s` over a nontrivial commutative ring,
+the forward shift itself represents multiplication by the root of `X ^ s - C v` in its
+power basis.
 -/
 
 public section
@@ -22,7 +23,8 @@ open Polynomial
 
 namespace Matrix
 
-/-- The forward shift with ones below the diagonal and wrap entry `v` at the top right. -/
+/-- For positive size `s`, the forward shift has ones on the first subdiagonal, `v` at
+the top right, and all remaining entries zero. For size zero, it is the empty matrix. -/
 def weightedShift {A : Type*} [Zero A] [One A] (s : ℕ) (v : A) :
     Matrix (Fin s) (Fin s) A :=
   Matrix.of fun i j => if (i : ℕ) = j + 1 then 1 else
@@ -35,7 +37,8 @@ theorem weightedShift_apply {A : Type*} [Zero A] [One A] (s : ℕ) (v : A)
     weightedShift s v i j = if (i : ℕ) = j + 1 then 1 else
       if (i : ℕ) = 0 ∧ (j : ℕ) + 1 = s then v else 0 := by rfl
 
-/-- The weighted shift represents multiplication by the root in the power basis. -/
+/-- For positive size over a nontrivial commutative ring, the weighted shift itself
+represents multiplication by the root of `X ^ s - C v` in its power basis. -/
 theorem weightedShift_eq_toMatrix {R : Type*} [CommRing R] [Nontrivial R]
     (s : ℕ) [NeZero s] (v : R) :
     weightedShift s v = LinearMap.toMatrixAlgEquiv (AdjoinRoot.basisXPowSubC s v)
