@@ -386,6 +386,21 @@ theorem posSMulMono [NormSMulClass ℝ E] (h : IsOrderUnitNorm e) : PosSMulMono 
     simpa [norm_smul, abs_of_nonneg hr, mul_smul, ← smul_sub] using
       mul_le_mul_of_nonneg_left hb hr
 
+/-- A unital linear isometry between order-unit spaces preserves and reflects the order. -/
+theorem map_le_map_iff_of_linearIsometry {F : Type*} [SeminormedAddCommGroup F] [Module ℝ F]
+    [PartialOrder F] [IsOrderedAddMonoid F] {f : F} (he : IsOrderUnitNorm e)
+    (hf : IsOrderUnitNorm f) (i : E →ₗᵢ[ℝ] F) (hunit : i e = f) (a b : E) :
+    i a ≤ i b ↔ a ≤ b := by
+  rw [← sub_nonneg (b := i a), ← map_sub, hf.nonneg_iff_norm_smul_sub_le,
+    ← sub_nonneg (b := a), he.nonneg_iff_norm_smul_sub_le, ← hunit, ← map_smul, ← map_sub,
+    i.norm_map, i.norm_map]
+
+/-- A unital linear isometry between order-unit spaces is monotone. -/
+theorem monotone_of_linearIsometry {F : Type*} [SeminormedAddCommGroup F] [Module ℝ F]
+    [PartialOrder F] [IsOrderedAddMonoid F] {f : F} (he : IsOrderUnitNorm e)
+    (hf : IsOrderUnitNorm f) (i : E →ₗᵢ[ℝ] F) (hunit : i e = f) : Monotone i :=
+  fun _ _ hab => (he.map_le_map_iff_of_linearIsometry hf i hunit _ _).2 hab
+
 end IsOrderUnitNorm
 
 /-- The absolute value on `ℝ` is the order-unit norm of `1`. -/
@@ -563,13 +578,6 @@ theorem linearIsometryEquivOfOrderIso_symm_apply {F : Type*} [SeminormedAddCommG
     (hunit : Φ e = f) (hord : ∀ a b : E, Φ a ≤ Φ b ↔ a ≤ b) (b : F) :
     (he.linearIsometryEquivOfOrderIso hf Φ hunit hord).symm b = Φ.symm b := (rfl)
 
-/-- Every unital positive linear map between order-unit spaces is contractive: `‖T a‖ ≤ ‖a‖`. -/
-theorem norm_map_le_of_map_unit {F G : Type*} [SeminormedAddCommGroup F] [NormedSpace ℝ F]
-    [PartialOrder F] [IsOrderedAddMonoid F] {f : F} [FunLike G E F] [LinearMapClass G ℝ E F]
-    (he : IsOrderUnitNorm e) (hf : IsOrderUnitNorm f) (T : G)
-    (hT : ∀ ⦃a b : E⦄, a ≤ b → T a ≤ T b) (hunit : T e = f) (a : E) : ‖T a‖ ≤ ‖a‖ := by
-  simpa [hunit, hf.norm_eq_one] using hf.norm_map_le he.le_norm_smul T hT a
-
 end Extra
 
 end PositiveMap
@@ -596,9 +604,14 @@ the constant function `1`. -/
 theorem isOrderUnitNorm_continuousMap_one {K : Type*} [TopologicalSpace K] [CompactSpace K]
     [Nonempty K] : IsOrderUnitNorm (1 : C(K, ℝ)) := by
   have h1 : (ContinuousMap.linearIsometryBoundedOfCompact K ℝ ℝ).symm (1 : K →ᵇ ℝ) = 1 :=
-    ContinuousMap.ext fun _ => rfl
+    ContinuousMap.ext fun _ => by
+      rw [ContinuousMap.linearIsometryBoundedOfCompact_symm_apply,
+        BoundedContinuousFunction.coe_toContinuousMap, FunLike.coe_one, ContinuousMap.coe_one]
   simpa [h1] using (isOrderUnitNorm_boundedContinuousFunction_one (K := K)).map_linearIsometryEquiv
-    (ContinuousMap.linearIsometryBoundedOfCompact K ℝ ℝ).symm
-    fun f g => ContinuousMap.le_def.trans (boundedContinuousFunction_le_iff f g).symm
+    (ContinuousMap.linearIsometryBoundedOfCompact K ℝ ℝ).symm fun f g => by
+      rw [ContinuousMap.linearIsometryBoundedOfCompact_symm_apply,
+        ContinuousMap.linearIsometryBoundedOfCompact_symm_apply, ContinuousMap.le_def,
+        BoundedContinuousFunction.coe_toContinuousMap,
+        BoundedContinuousFunction.coe_toContinuousMap, boundedContinuousFunction_le_iff]
 
 end TauCeti

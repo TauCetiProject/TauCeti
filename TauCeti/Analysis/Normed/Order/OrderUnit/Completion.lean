@@ -345,7 +345,9 @@ theorem extend_unique {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [Co
 theorem opNorm_extend {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
     (T : E →L[ℝ] F) : ‖extend he T‖ = ‖T‖ := by
   refine le_antisymm ?_ ?_
-  · have hbound : ∀ a : E, ‖(T : E →ₗ[ℝ] F) a‖ ≤ ‖T‖ * ‖coe he a‖ := fun a => by
+  · -- `E` is only seminormed, so `ContinuousLinearMap.opNorm_extend_le` (which requires
+    -- `[NormedAddCommGroup E]`) does not apply directly; use `LinearMap.extendOfNorm` instead.
+    have hbound : ∀ a : E, ‖(T : E →ₗ[ℝ] F) a‖ ≤ ‖T‖ * ‖coe he a‖ := fun a => by
       simpa [(coe he).norm_map] using T.le_opNorm a
     have heq : (T : E →ₗ[ℝ] F).extendOfNorm (coe he).toLinearMap = extend he T :=
       LinearMap.extendOfNorm_unique (denseRange_coe he) ‖T‖ hbound (extend he T)

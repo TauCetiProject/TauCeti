@@ -280,6 +280,17 @@ theorem stateSpace_nonempty (h : IsOrderUnitNorm e) : (OrderUnit.stateSpace e).N
   exact ⟨StrongDual.toWeakDual g, h.mem_stateSpace_iff_norm_eq_one_and_apply_eq_one.2
     ⟨hg, by simpa [h.norm_eq_one] using hge⟩⟩
 
+-- `LinearIsometry.exists_extension_norm_eq` requires `[NormedAddCommGroup E]`;
+-- `NormedAddCommGroup.ofSeparation` provides this while keeping the ambient seminorm and
+-- topology definitionally unchanged.
+private theorem exists_extension_norm_eq_of_isOrderUnitNorm {E F : Type*}
+    [SeminormedAddCommGroup E] [NormedSpace ℝ E] [PartialOrder E] {e : E}
+    (he : IsOrderUnitNorm e) [SeminormedAddCommGroup F] [NormedSpace ℝ F]
+    (i : E →ₗᵢ[ℝ] F) (f : StrongDual ℝ E) :
+    ∃ g : StrongDual ℝ F, g.comp i.toContinuousLinearMap = f ∧ ‖g‖ = ‖f‖ := by
+  let : NormedAddCommGroup E := NormedAddCommGroup.ofSeparation fun _ => he.eq_zero_of_norm_eq_zero
+  exact LinearIsometry.exists_extension_norm_eq i f
+
 omit [IsOrderedAddMonoid E] in
 /-- **State extension along a unital linear isometry:** every state on `E` extends along any unital
 linear isometry `i : E →ₗᵢ[ℝ] F` into an order-unit space `(F, f)`. -/
@@ -288,8 +299,7 @@ theorem exists_state_extension_linearIsometry {F : Type*} [SeminormedAddCommGrou
     (hf : IsOrderUnitNorm f) (i : E →ₗᵢ[ℝ] F) (hunit : i e = f) {ψ : WeakDual ℝ E}
     (hψ : ψ ∈ OrderUnit.stateSpace e) :
     ∃ φ ∈ OrderUnit.stateSpace f, ∀ a : E, φ (i a) = ψ a := by
-  let : NormedAddCommGroup E := NormedAddCommGroup.ofSeparation fun _ => he.eq_zero_of_norm_eq_zero
-  obtain ⟨g, hg_comp, hg_norm⟩ := LinearIsometry.exists_extension_norm_eq i (toStrongDual ψ)
+  obtain ⟨g, hg_comp, hg_norm⟩ := exists_extension_norm_eq_of_isOrderUnitNorm he i (toStrongDual ψ)
   have hg_apply : ∀ a : E, g (i a) = ψ a := fun a => DFunLike.congr_fun hg_comp a
   have hg_one : g f = 1 := by rw [← hunit, hg_apply, hψ.2]
   have hg_norm_one : ‖g‖ = 1 := hg_norm.trans (he.norm_toStrongDual_of_mem_stateSpace hψ)
@@ -356,14 +366,22 @@ theorem norm_eq_iSup_states (h : IsOrderUnitNorm e) (a : E) :
   exact (h.norm_le_iff_forall_mem_stateSpace ((abs_nonneg _).trans (le_ciSup hb ⟨φ₀, hφ₀⟩))).2
     fun φ hφ => le_ciSup (f := g) hb ⟨φ, hφ⟩
 
+/-- Pullback of states along a unital linear isometry between order-unit spaces is surjective. -/
+theorem surjective_statePullback_of_linearIsometry {F : Type*} [SeminormedAddCommGroup F]
+    [NormedSpace ℝ F] [PartialOrder F] [IsOrderedAddMonoid F] {f : F} (he : IsOrderUnitNorm e)
+    (hf : IsOrderUnitNorm f) (i : E →ₗᵢ[ℝ] F) (hunit : i e = f) :
+    Function.Surjective (OrderUnit.statePullback i.toContinuousLinearMap
+      (he.monotone_of_linearIsometry hf i hunit) hunit) := by
+  intro ψ
+  obtain ⟨φ, hφ, hext⟩ := he.exists_state_extension_linearIsometry hf i hunit ψ.property
+  exact ⟨⟨φ, hφ⟩, Subtype.ext <| DFunLike.ext _ _ fun a => hext a⟩
+
 /-- Restriction of states from `E` to a unital subspace `p` is surjective. -/
 theorem surjective_statePullback_subtype (he : IsOrderUnitNorm e) (p : Submodule ℝ E)
     (hp : e ∈ p) :
     Function.Surjective (OrderUnit.statePullback (e := (⟨e, hp⟩ : p)) (f := e)
-      p.subtypeL (fun _ _ h => h) rfl) := by
-  intro ψ
-  obtain ⟨φ, hφ, hext⟩ := he.exists_extension_mem_stateSpace p hp ψ.property
-  exact ⟨⟨φ, hφ⟩, Subtype.ext <| DFunLike.ext _ _ fun x => hext x⟩
+      p.subtypeL (fun _ _ h => h) rfl) :=
+  (he.submodule p hp).surjective_statePullback_of_linearIsometry he p.subtypeₗᵢ rfl
 
 /-- **Norm attainment by a state:** for every `a : E`, there exists a state
 `φ ∈ OrderUnit.stateSpace e` such that `|φ a| = ‖a‖`. -/
