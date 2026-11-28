@@ -32,7 +32,7 @@ distinguish them. Yet after sifting by all primes below `z`, the even sequence r
 
 * `TauCeti.SieveApplications.oddParityWeight_eq_ite`,
   `TauCeti.SieveApplications.evenParityWeight_eq_ite`: the weights are the indicators of odd and
-  even `Ω(n)`.
+  even `Ω(n)`, the first at every `n` and the second at `n ≠ 0`.
 * `TauCeti.SieveApplications.oddParityWeight_add_evenParityWeight`: they sum to `1` at `n ≠ 0`.
 * `TauCeti.SieveApplications.sum_Icc_filter_dvd_oddParityWeight`,
   `TauCeti.SieveApplications.sum_Icc_filter_dvd_evenParityWeight`: the sums over the multiples of
@@ -80,9 +80,12 @@ theorem evenParityWeight_apply (hn : n ≠ 0) :
     evenParityWeight n = (1 + (liouville n : ℝ)) / 2 :=
   ite_eq_right hn
 
-/-- The odd parity weight at `n ≠ 0` is `(1 - (-1) ^ Ω(n)) / 2`. -/
-theorem oddParityWeight_apply_eq_pow (hn : n ≠ 0) :
+/-- The odd parity weight is `(1 - (-1) ^ Ω(n)) / 2`. This holds at `n = 0` as well, since
+`Ω(0) = 0`. -/
+theorem oddParityWeight_apply_eq_pow (n : ℕ) :
     oddParityWeight n = (1 - (-1 : ℝ) ^ Ω n) / 2 := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
   rw [oddParityWeight_apply hn, liouville_apply hn]
   push_cast
   rfl
@@ -94,17 +97,21 @@ theorem evenParityWeight_apply_eq_pow (hn : n ≠ 0) :
   push_cast
   rfl
 
-/-- The odd parity weight at `n ≠ 0` is the indicator of `Ω(n)` being odd. -/
-theorem oddParityWeight_eq_ite (hn : n ≠ 0) :
+/-- The odd parity weight is the indicator of `Ω(n)` being odd. This holds at `n = 0` as well,
+since `Ω(0) = 0` is even and the weight of `0` is `0`. -/
+@[simp]
+theorem oddParityWeight_eq_ite (n : ℕ) :
     oddParityWeight n = if Odd (Ω n) then 1 else 0 := by
-  rw [oddParityWeight_apply_eq_pow hn]
+  rw [oddParityWeight_apply_eq_pow]
   split_ifs with h
   · rw [h.neg_one_pow]
     norm_num
   · rw [(Nat.not_odd_iff_even.1 h).neg_one_pow]
     norm_num
 
-/-- The even parity weight at `n ≠ 0` is the indicator of `Ω(n)` being even. -/
+/-- The even parity weight at `n ≠ 0` is the indicator of `Ω(n)` being even. At `n = 0` the weight
+is `0` although `Ω(0) = 0` is even. -/
+@[simp]
 theorem evenParityWeight_eq_ite (hn : n ≠ 0) :
     evenParityWeight n = if Even (Ω n) then 1 else 0 := by
   rw [evenParityWeight_apply_eq_pow hn]
@@ -123,10 +130,8 @@ theorem oddParityWeight_add_evenParityWeight (hn : n ≠ 0) :
 /-- The odd parity weight takes only the values `0` and `1`. -/
 theorem oddParityWeight_eq_zero_or_eq_one (n : ℕ) :
     oddParityWeight n = 0 ∨ oddParityWeight n = 1 := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · exact Or.inl ArithmeticFunction.map_zero
-  · rw [oddParityWeight_eq_ite hn]
-    exact (ite_eq_or_eq _ _ _).symm
+  rw [oddParityWeight_eq_ite]
+  exact (ite_eq_or_eq _ _ _).symm
 
 /-- The even parity weight takes only the values `0` and `1`. -/
 theorem evenParityWeight_eq_zero_or_eq_one (n : ℕ) :
@@ -170,19 +175,13 @@ theorem sum_Icc_filter_dvd_evenParityWeight (d N : ℕ) :
   rw [Nat.sum_Icc_filter_dvd_eq, sum_congr rfl hterm, ← sum_div, sum_add_distrib, ← mul_sum]
   simp
 
-/-- A number below `z ^ 2` all of whose prime factors are at least `z` has at most one prime
-factor, counted with multiplicity. -/
-private theorem cardFactors_le_one_of_lt_sq (hn : n ≠ 0) (h : ∀ p ∈ n.primeFactors, z ≤ p)
-    (hlt : n < z ^ 2) : Ω n ≤ 1 :=
-  (Nat.isAtMostAlmostPrime_of_lt_pow hn h hlt).2
-
 /-- **The even survivor above the square root.** For `n < z ^ 2` all of whose prime factors are at
 least `z`, the even parity weight is `1` exactly at `n = 1`. -/
 theorem evenParityWeight_eq_one_iff_of_lt_sq (h : ∀ p ∈ n.primeFactors, z ≤ p)
     (hlt : n < z ^ 2) : evenParityWeight n = 1 ↔ n = 1 := by
   rcases eq_or_ne n 0 with rfl | hn
   · simp
-  have hΩ := cardFactors_le_one_of_lt_sq hn h hlt
+  have hΩ : Ω n ≤ 1 := (Nat.isAtMostAlmostPrime_of_lt_pow hn h hlt).2
   rw [evenParityWeight_eq_ite hn, ite_eq_left_iff, not_imp_comm]
   simp only [zero_ne_one, not_false_eq_true, forall_const]
   constructor
@@ -204,7 +203,7 @@ theorem oddParityWeight_eq_one_iff_of_lt_cube (h : ∀ p ∈ n.primeFactors, z �
   rcases eq_or_ne n 0 with rfl | hn
   · simp [Nat.not_prime_zero]
   have hΩ : Ω n ≤ 2 := (Nat.isAtMostAlmostPrime_of_lt_pow hn h hlt).2
-  rw [oddParityWeight_eq_ite hn, ite_eq_left_iff, not_imp_comm, ← cardFactors_eq_one_iff_prime]
+  rw [oddParityWeight_eq_ite, ite_eq_left_iff, not_imp_comm, ← cardFactors_eq_one_iff_prime]
   simp only [zero_ne_one, not_false_eq_true, forall_const]
   constructor
   · intro hodd
@@ -264,18 +263,17 @@ theorem sum_Icc_filter_rough_oddParityWeight (hNz : N < z ^ 3) :
 
 /-- `1` has even weight `1` and odd weight `0`. -/
 example : evenParityWeight 1 = 1 ∧ oddParityWeight 1 = 0 := by
-  simp [evenParityWeight_eq_ite, oddParityWeight_eq_ite]
+  simp
 
 /-- `4 = 2 ^ 2` has even parity, although it has only one distinct prime factor. -/
 example : evenParityWeight 4 = 1 := by
-  rw [evenParityWeight_eq_ite (by norm_num), show (4 : ℕ) = 2 ^ 2 by norm_num,
-    cardFactors_apply_prime_pow Nat.prime_two, ite_eq_left (by decide)]
+  have h4 : Ω 4 = 2 := by decide +kernel
+  rw [evenParityWeight_eq_ite (by norm_num), h4, ite_eq_left (by decide)]
 
 /-- `12 = 2 ^ 2 * 3` has odd weight `1`, since `Ω(12) = 3`. -/
 example : oddParityWeight 12 = 1 := by
-  rw [oddParityWeight_eq_ite (by norm_num), show (12 : ℕ) = 2 ^ 2 * 3 by norm_num,
-    cardFactors_mul (by norm_num) (by norm_num), cardFactors_apply_prime_pow Nat.prime_two,
-    cardFactors_apply_prime Nat.prime_three, ite_eq_left (by decide)]
+  have h12 : Ω 12 = 3 := by decide +kernel
+  rw [oddParityWeight_eq_ite, h12, ite_eq_left (by decide)]
 
 /-- Zero has neither weight. -/
 example : evenParityWeight 0 = 0 ∧ oddParityWeight 0 = 0 :=
