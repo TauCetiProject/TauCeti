@@ -113,6 +113,10 @@ Any point `w` on the boundary of the square `[-ε, ε] × [-ε, ε]` satisfies `
 
 A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
 
+A negation-invariant subset `S ⊆ ℂ` disjoint from the real axis decomposes as the disjoint union
+of two copies of its upper-half-plane part `{ρ ∈ S | 0 < ρ.im}`
+(`Complex.upperHalfSumEquivOfNegInvariant`).
+
 There is no ring homomorphism from `ℂ` to a semireal semiring, such as `ℝ` or any linearly
 ordered ring (`Complex.instIsEmptyRingHom`).
 
@@ -631,6 +635,42 @@ theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + �
     rw [add_im, ← eq_neg_iff_add_eq_zero] at h0
     rw [h0, abs_neg] at h
     exact h.false
+
+/-- A negation-invariant subset `S ⊆ ℂ` disjoint from the real axis decomposes as the disjoint
+union of two copies of its upper-half-plane part `{ρ ∈ S | 0 < ρ.im}`, sending `Sum.inl ρ ↦ ρ`
+and `Sum.inr ρ ↦ -ρ`. -/
+noncomputable def upperHalfSumEquivOfNegInvariant {S : Set ℂ} (hneg : ∀ {ρ}, ρ ∈ S → -ρ ∈ S)
+    (him : ∀ {ρ}, ρ ∈ S → ρ.im ≠ 0) :
+    {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im} ⊕ {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im} ≃ S :=
+  letI := Classical.propDecidable
+  let P : Set S := {ρ : S | 0 < (ρ : ℂ).im}
+  let ePos : {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im} ≃ P :=
+    (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ S) (fun ρ : ℂ ↦ 0 < ρ.im)).symm
+  let eNegS : S ≃ S :=
+    Equiv.subtypeEquiv (Equiv.neg ℂ) fun _ ↦ ⟨fun h ↦ hneg h, fun h ↦ by simpa using hneg h⟩
+  let eComp : P ≃ (Pᶜ : Set S) :=
+    Equiv.subtypeEquiv eNegS fun ρ ↦ by
+      have him_neg : ((eNegS ρ : S) : ℂ).im = -(ρ : ℂ).im := by
+        simp [eNegS]
+      simp only [P, Set.mem_compl_iff, Set.mem_ofPred_eq, him_neg, Left.neg_pos_iff, not_lt]
+      exact ⟨fun h ↦ h.le, fun h ↦ lt_of_le_of_ne h (Ne.symm (him ρ.property))⟩
+  (Equiv.sumCongr ePos (ePos.trans eComp)).trans (Equiv.Set.sumCompl P)
+
+/-- On the left summand, `Complex.upperHalfSumEquivOfNegInvariant` acts as the inclusion
+into `ℂ`. -/
+@[simp]
+theorem coe_upperHalfSumEquivOfNegInvariant_inl {S : Set ℂ} (hneg : ∀ {ρ}, ρ ∈ S → -ρ ∈ S)
+    (him : ∀ {ρ}, ρ ∈ S → ρ.im ≠ 0) (ρ : {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im}) :
+    ((upperHalfSumEquivOfNegInvariant hneg him (Sum.inl ρ) : S) : ℂ) = ρ := by
+  simp [upperHalfSumEquivOfNegInvariant, Equiv.subtypeSubtypeEquivSubtypeInter]
+
+/-- On the right summand, `Complex.upperHalfSumEquivOfNegInvariant` acts as negation
+into `ℂ`. -/
+@[simp]
+theorem coe_upperHalfSumEquivOfNegInvariant_inr {S : Set ℂ} (hneg : ∀ {ρ}, ρ ∈ S → -ρ ∈ S)
+    (him : ∀ {ρ}, ρ ∈ S → ρ.im ≠ 0) (ρ : {ρ : ℂ | ρ ∈ S ∧ 0 < ρ.im}) :
+    ((upperHalfSumEquivOfNegInvariant hneg him (Sum.inr ρ) : S) : ℂ) = -ρ := by
+  simp [upperHalfSumEquivOfNegInvariant, Equiv.subtypeSubtypeEquivSubtypeInter]
 
 /-- Any point `w` on the boundary of the square `[-ε, ε] × [-ε, ε]` satisfies
 `ε ≤ ‖w‖ ≤ 2 * ε`. -/
