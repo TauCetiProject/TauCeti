@@ -165,8 +165,11 @@ theorem neg_log_one_sub_le_div_mul {c v : ℝ} (hc1 : c < 1) (hv0 : 0 ≤ v)
     (Set.mem_Ioi.mpr zero_lt_one) (Set.mem_Ioi.mpr (sub_pos.mpr hc1))
     (sub_nonneg.mpr ((div_le_one hc0).mpr hvc)) (div_nonneg hv0 hc0.le) (sub_add_cancel _ _)
   simp only [log_one, smul_eq_mul, mul_zero, zero_add, mul_one] at hconc
-  rw [show (1 - v / c + v / c * (1 - c) : ℝ) = 1 - v by field_simp [hc0.ne']; ring] at hconc
-  linarith [hconc, show (-log (1 - c) / c) * v = -(v / c * log (1 - c)) by ring]
+  have hcomb : (1 - v / c : ℝ) + v / c * (1 - c) = 1 - v := by
+    field_simp [hc0.ne']; ring
+  have hcoef : (-log (1 - c) / c) * v = -(v / c * log (1 - c)) := by ring
+  rw [hcomb] at hconc
+  linarith [hconc, hcoef]
 
 /-- For `0 ≤ x ≤ 1/2`, `-log (1 - x) ≤ 2 x`, since `x + 2 x ^ 2 ≤ 2 x` there. -/
 theorem neg_log_one_sub_le_two_mul {x : ℝ} (hx0 : 0 ≤ x) (hx : x ≤ 1 / 2) :
