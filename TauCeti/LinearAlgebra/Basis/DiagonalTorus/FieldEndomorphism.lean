@@ -12,11 +12,11 @@ public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 # Field endomorphisms intertwined with characters of a split torus
 
 Consequences of the pinning equation `f (ξ(s) * u) = η(s) * f u` for characters `ξ, η` of `𝔾ₘ^κ`:
-`AddMonoidHom.multiplierSubring` and `AddMonoidHom.multiplierRingHom` (the subring of left
-multipliers on which a unital additive map acts multiplicatively, and its restricted ring
-homomorphism), `AddMonoidHom.exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_mul` and
-`RingHom.exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_eq` (over an infinite field, positive
-rational proportionality `d • η = m • ξ`), `AddMonoidHom.toRingHomOfTorusCharacter`
+`AddMonoidHom.multiplierSubring` (with `AddMonoidHom.mem_multiplierSubring` and
+`AddMonoidHom.le_multiplierSubring_iff`) and `AddMonoidHom.multiplierRingHom` (the subring of
+left multipliers on which a unital additive map acts multiplicatively, and its restricted ring
+homomorphism), `AddMonoidHom.exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_mul` (over an infinite
+field, positive rational proportionality `d • η = m • ξ`), `AddMonoidHom.toRingHomOfTorusCharacter`
 (upgrading a unital additive map `f` with `f 1 = 1` and the intertwining equation to a ring
 endomorphism when `s ↦ torusCharacter s ξ` is surjective onto `Kˣ`), and
 `TauCeti.eq_of_map_torusCharacter_eq` (uniqueness of zero-preserving maps on a surjective
@@ -50,6 +50,13 @@ def multiplierSubring {R S : Type*} [Ring R] [Ring S] (h : R →+ S) (hh1 : h 1 
 @[simp] theorem mem_multiplierSubring {R S : Type*} [Ring R] [Ring S] (h : R →+ S)
     (hh1 : h 1 = 1) {x : R} :
     x ∈ h.multiplierSubring hh1 ↔ ∀ y : R, h (x * y) = h x * h y :=
+  Iff.rfl
+
+/-- A subring `E` is contained in `h.multiplierSubring hh1` iff `h (x * y) = h x * h y` for all
+`x ∈ E` and `y : R`. -/
+theorem le_multiplierSubring_iff {R S : Type*} [Ring R] [Ring S] (h : R →+ S)
+    (hh1 : h 1 = 1) {E : Subring R} :
+    E ≤ h.multiplierSubring hh1 ↔ ∀ x ∈ E, ∀ y : R, h (x * y) = h x * h y :=
   Iff.rfl
 
 /-- Restriction of a unital additive homomorphism `h : R →+ S` to its multiplier subring
@@ -123,20 +130,6 @@ theorem exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_mul {κ K : Type*} [Fint
       rw [hz, ← natCast_zsmul, Int.toNat_of_nonneg hzpos.le]⟩
 
 end AddMonoidHom
-
-namespace RingHom
-
-/-- **Intertwining a ring endomorphism of an infinite field with split-torus characters forces
-positive rational proportionality.** -/
-theorem exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_eq {κ K : Type*} [Fintype κ] [Field K]
-    [Infinite K] (g : K →+* K) {ξ η : κ → ℤ}
-    (hmap : ∀ s : κ → Kˣ, g (torusCharacter s ξ : K) = (torusCharacter s η : K)) :
-    ∃ d m : ℕ, 0 < d ∧ 0 < m ∧ d • η = m • ξ :=
-  g.toAddMonoidHom.exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_mul
-    (fun h0 => (one_ne_zero (α := K)) (by simpa using congrArg (fun f : K →+ K => f 1) h0))
-    fun s u => by simp [hmap s]
-
-end RingHom
 
 namespace TauCeti
 

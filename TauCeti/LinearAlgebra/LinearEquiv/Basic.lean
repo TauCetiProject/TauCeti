@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Ideal.Maps
 import Mathlib.Algebra.Ring.Int.Units
+import TauCeti.Algebra.Module.LinearMap.End
 import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
@@ -152,19 +153,16 @@ theorem exists_eq_smulOfUnit_of_unique {R ι : Type*} [CommSemiring R] [Unique �
     (e : (ι → R) ≃ₗ[R] (ι → R)) : ∃ u : Rˣ, e = LinearEquiv.smulOfUnit u := by
   let φ := LinearEquiv.funUnique ι R R
   let e' : R ≃ₗ[R] R := (φ.symm.trans e).trans φ
-  have h1 (f : R →ₗ[R] R) (x : R) : f x = f 1 * x := by
-    calc f x = f (x • 1) := by rw [smul_eq_mul, mul_one]
-      _ = x • f 1 := f.map_smul x 1
-      _ = f 1 * x := by rw [smul_eq_mul, mul_comm]
-  refine ⟨⟨e' 1, e'.symm 1, ?_, ?_⟩, ?_⟩
-  · rw [← coe_toLinearMap, ← h1]; exact e'.apply_symm_apply 1
-  · rw [← coe_toLinearMap, ← h1]; exact e'.symm_apply_apply 1
-  · ext x i
-    rw [Unique.eq_default i]
-    have hval : e x default = φ (e x) := (congrFun (LinearEquiv.funUnique_apply ι R R) (e x)).symm
-    have hx : φ (e x) = e' (φ x) := by simp [e']
-    rw [hval, hx]
-    exact (h1 (e' : R →ₗ[R] R) (φ x)).trans (by simp [φ, smulOfUnit, mul_comm])
+  obtain ⟨u, hu⟩ := e'.isUnit_apply_one
+  refine ⟨u, ?_⟩
+  have he' : (e' : R →ₗ[R] R) = ((LinearEquiv.smulOfUnit u : R ≃ₗ[R] R) : R →ₗ[R] R) :=
+    LinearMap.ext_ring (by simp [← hu, smulOfUnit, Units.smul_def])
+  ext x i
+  rw [Unique.eq_default i]
+  have hval : e x default = φ (e x) := (congrFun (LinearEquiv.funUnique_apply ι R R) (e x)).symm
+  have hx : φ (e x) = e' (φ x) := by simp [e']
+  rw [hval, hx]
+  simpa [φ, smulOfUnit] using LinearMap.congr_fun he' (φ x)
 
 /-- Every `ℤ`-linear automorphism of `ι → ℤ` (`Unique ι`) is `id` or `-id`. -/
 theorem toLinearMap_eq_id_or_neg_of_unique {ι : Type*} [Unique ι] (e : (ι → ℤ) ≃ₗ[ℤ] (ι → ℤ)) :

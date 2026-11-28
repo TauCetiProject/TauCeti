@@ -56,6 +56,9 @@ along field and completion isomorphisms.
   `b = x² - a y²`.
 * `RingHom.toMonoidHom_comp`: converting a composite ring homomorphism to a monoid homomorphism
   gives the composite of the converted monoid homomorphisms.
+* `RingHom.isDomain_of_forall_map_pow_mul_map_pow_eq_one`: a nontrivial ring admitting two
+  homomorphisms into a nontrivial commutative semiring satisfying `g x ^ d * g' x ^ n = 1` on
+  nonzero elements is a domain.
 -/
 
 public section
@@ -165,5 +168,22 @@ theorem toMonoidHom_comp {R S T : Type*} [NonAssocSemiring R] [NonAssocSemiring 
     [NonAssocSemiring T] (g : S →+* T) (f : R →+* S) :
     (g.comp f).toMonoidHom = g.toMonoidHom.comp f.toMonoidHom :=
   MonoidHom.ext fun _ ↦ by simp [RingHom.toMonoidHom_eq_coe]
+
+/-- If two ring homomorphisms `g, g' : R →+* S` into a nontrivial commutative semiring satisfy
+`g x ^ d * g' x ^ n = 1` (`d ≠ 0 ∨ n ≠ 0`) on every nonzero element `x` of a nontrivial ring `R`,
+then `R` is a domain. -/
+theorem isDomain_of_forall_map_pow_mul_map_pow_eq_one {R S : Type*} [Ring R]
+    [Nontrivial R] [CommSemiring S] [Nontrivial S] (g g' : R →+* S) {d n : ℕ}
+    (hdn : d ≠ 0 ∨ n ≠ 0) (h : ∀ x : R, x ≠ 0 → g x ^ d * g' x ^ n = 1) : IsDomain R :=
+  let _ : NoZeroDivisors R := ⟨fun {a b} hab => by_contra fun hne => by
+    rw [not_or] at hne
+    have h1 : (g a ^ d * g' a ^ n) * (g b ^ d * g' b ^ n) = 1 := by
+      rw [h a hne.1, h b hne.2, mul_one]
+    rw [mul_mul_mul_comm, ← mul_pow, ← mul_pow, ← map_mul, ← map_mul, hab, map_zero,
+      map_zero] at h1
+    rcases hdn with hd | hn
+    · rw [zero_pow hd, zero_mul] at h1; exact zero_ne_one h1
+    · rw [zero_pow hn, mul_zero] at h1; exact zero_ne_one h1⟩
+  NoZeroDivisors.to_isDomain R
 
 end RingHom

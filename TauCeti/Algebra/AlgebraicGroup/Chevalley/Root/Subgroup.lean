@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
+import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Conjugate
 public import Mathlib.GroupTheory.Subgroup.Centralizer
@@ -251,10 +252,9 @@ theorem map_range_rootSubgroupPoints_of_comp_eq {A : Type v} {B : Type v'} [Comm
     MonoidHom.ext fun u => by
       simpa only [MonoidHom.comp_apply, AddMonoidHom.coe_toMultiplicative, Function.comp_apply,
         ofAdd_toAdd] using h (toAdd u)
-  rw [MonoidHom.map_range, hcomp, MonoidHom.range_comp,
-    MonoidHom.range_eq_top_of_surjective _ fun y =>
-      let ⟨x, hx⟩ := hf (toAdd y); ⟨ofAdd x, by simp [hx]⟩,
-    Subgroup.map_top]
+  rw [MonoidHom.map_range, hcomp]
+  exact MonoidHom.range_comp_of_surjective _ f.toMultiplicative fun y =>
+    let ⟨x, hx⟩ := hf (toAdd y); ⟨ofAdd x, by simp [hx]⟩
 
 /-- Conjugation by `D.weylElement (t.simpleIndex ht i) A 1` maps each root subgroup onto the
 reflected root subgroup, over every commutative ring `A`. -/

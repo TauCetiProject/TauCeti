@@ -11,6 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Injective
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.FieldEndomorphism
 import TauCeti.Algebra.Group.End
+import TauCeti.Algebra.Module.NatInt
 
 /-!
 # Standard and based endomorphisms of a Chevalley datum
@@ -319,12 +320,6 @@ private theorem IsStandard.paramHomOf_torusCharacter_mul (hF : D.IsStandard F)
     ← hF.rootSubgroupPoints_paramHomOf hβ, hF.isCharacterMap.map_apply,
     D.torusPoints_conj_rootSubgroupPoints, torusCharacter_torusPointMap] at hconj
   simpa only [toAdd_ofAdd] using congrArg toAdd (D.rootSubgroupPoints_injective _ K hconj.symm)
-
-private theorem nsmul_eq_nsmul_of_nsmul_eq {M : Type*} [AddCommMonoid M]
-    {d₁ m₁ d₂ m₂ : ℕ} {x y₁ y₂ : M}
-    (h₁ : d₁ • x = m₁ • y₁) (h₂ : d₂ • x = m₂ • y₂) :
-    (d₂ * m₁) • y₁ = (d₁ * m₂) • y₂ := by
-  rw [mul_smul, ← h₁, smul_comm, h₂, ← mul_smul]
 
 private theorem IsStandard.rawRootMap_injective (hF : D.IsStandard F) :
     Function.Injective hF.rawRootMap := fun α₁ α₂ hβ => by
