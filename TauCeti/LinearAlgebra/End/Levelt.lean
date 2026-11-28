@@ -376,14 +376,14 @@ end GeneralLinearGroup
 
 /-- Two changes of basis that give the same simultaneous conjugates of a pair as in Levelt's
 theorem differ by a nonzero scalar. -/
-theorem exists_smul_eq_of_levelt_conj_eq (A B : Matrix (Fin d) (Fin d) K)
-    (c c' : GL (Fin d) K) (hcop : IsCoprime A.charpoly B.charpoly)
+theorem exists_eq_smul_of_levelt_conj_eq {n : Type*} [Fintype n] [DecidableEq n]
+    (A B : Matrix n n K) (c c' : GL n K) (hcop : IsCoprime A.charpoly B.charpoly)
     (hrank : Matrix.rank (A - B) ≤ 1)
     (hA : c⁻¹.val * A * c.val = c'⁻¹.val * A * c'.val)
     (hB : c⁻¹.val * B * c.val = c'⁻¹.val * B * c'.val) :
     ∃ a : Kˣ, c'.val = (a : K) • c.val := by
   let T := c' * c⁻¹
-  have commute (M : Matrix (Fin d) (Fin d) K)
+  have commute (M : Matrix n n K)
       (hM : c⁻¹.val * M * c.val = c'⁻¹.val * M * c'.val) :
       Commute T.val.toLin' M.toLin' := by
     have h : Commute T.val M := by
@@ -400,11 +400,11 @@ theorem exists_smul_eq_of_levelt_conj_eq (A B : Matrix (Fin d) (Fin d) K)
     A.toLin'.exists_eq_smul_id_of_isCoprime_charpoly_of_finrank_range_sub_le_one_of_commute
       B.toLin' T.val.toLin' (by simpa only [Matrix.charpoly_toLin'] using hcop)
       hr (commute A hA) (commute B hB)
-  have hscalar : T.val = a • (1 : Matrix (Fin d) (Fin d) K) := by
+  have hscalar : T.val = a • (1 : Matrix n n K) := by
     apply Matrix.toLin'.injective
     simpa only [map_smul, Matrix.toLin'_one] using ha
   by_cases hzero : a = 0
-  · have hu : IsUnit (0 : Matrix (Fin d) (Fin d) K) := by
+  · have hu : IsUnit (0 : Matrix n n K) := by
       simpa only [hscalar, hzero, zero_smul] using T.isUnit
     have := subsingleton_iff_zero_eq_one.mp (isUnit_zero_iff.mp hu)
     exact ⟨1, Subsingleton.elim _ _⟩
