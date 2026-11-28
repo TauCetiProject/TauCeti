@@ -500,8 +500,9 @@ attribute [local instance] finiteDimensional_of_finrank_four
 
 include hQ
 
-/-- Polarization of `quadraticTwoForm` along a unit canonical spinor `u₀`: pairing `α • u₀` with
-`δα • u₀` gives `(Re(conj α * δα) / 4) • ω_u`. -/
+/-- Polarization of `quadraticTwoForm` along a unit canonical spinor `u₀`:
+`(√2 / 4) • quadraticTwoFormPolar o ρ hkl (α • u₀) (δα • u₀)` equals
+`(Re(conj α * δα) / 4) • ω_u`. -/
 theorem smul_quadraticTwoFormPolar_smul_smul_of_cliffordProjection_apply_eq_self
     {hkl : 2 + 2 = finrank ℝ V} (hω : o.hodgeStar hkl J.kahlerForm = J.kahlerForm)
     (h₂ : finrank ℂ (positiveHalfSpinors o ρ) = 2)
@@ -640,25 +641,22 @@ theorem smul_quadraticTwoFormPolar_smul_pairedSpinor
   have hω_sd := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
   set q := quadraticTwoFormPolar o ρ hkl (α • u₀) (β • pairedSpinor e u₀)
   have hq : β • pairedSpinor e u₀ = (0 : ℂ) • u₀ + β • pairedSpinor e u₀ := by simp
-  have hq_sd : o.hodgeStar hkl (q : ⋀[ℝ]^2 V) = q :=
-    o.hodgeStar_coe_of_mem_eigenspace_one hkl q
   have hω : ⟪J.kahlerSelfDual o hkl hω_sd, q⟫ = 0 := by
-    rw [Submodule.coe_inner,
-      AlmostComplexStructure.kahlerSelfDual_eq_selfDualWedge he h₀ h₂₃ hω_sd,
-      o.inner_selfDualWedge_left_of_hodgeStar_eq_self hkl hq_sd, real_inner_comm]
+    rw [AlmostComplexStructure.kahlerSelfDual_eq_selfDualWedge he h₀ h₂₃ hω_sd,
+      o.inner_selfDualWedge_left hkl q]
     dsimp only [q]
     rw [hq, inner_quadraticTwoFormPolar_ιMulti_zero_one hQ hkl h₀ h₂₃ hρ hu₀ hu₀₁]
     simp
   have hρ₁ : ⟪AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he, q⟫ =
       √2 * ((α * conj β).im / 2) := by
-    rw [Submodule.coe_inner, AlmostComplexStructure.antiInvariantSelfDual₁_eq_selfDualWedge,
-      o.inner_selfDualWedge_left_of_hodgeStar_eq_self hkl hq_sd, real_inner_comm]
+    rw [AlmostComplexStructure.antiInvariantSelfDual₁_eq_selfDualWedge,
+      o.inner_selfDualWedge_left hkl q]
     dsimp only [q]
     rw [hq, inner_quadraticTwoFormPolar_ιMulti_zero_two hQ hkl h₀ h₂₃ hρ hu₀ hu₀₁]
   have hρ₂ : ⟪AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he, q⟫ =
       √2 * ((α * conj β).re / 2) := by
-    rw [Submodule.coe_inner, AlmostComplexStructure.antiInvariantSelfDual₂_eq_selfDualWedge,
-      o.inner_selfDualWedge_left_of_hodgeStar_eq_self hkl hq_sd, real_inner_comm]
+    rw [AlmostComplexStructure.antiInvariantSelfDual₂_eq_selfDualWedge,
+      o.inner_selfDualWedge_left hkl q]
     dsimp only [q]
     rw [hq, inner_quadraticTwoFormPolar_ιMulti_zero_three hQ hkl h₀ h₂₃ hρ hu₀ hu₀₁]
   have him : (α * conj β).im = -(conj α * β).im := by simp [mul_comm]

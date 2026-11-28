@@ -450,7 +450,17 @@ theorem integral_inner_normalComplementaryInverse_normalModelAdjoint (hx : Conti
     inner_sub_right, ← (Vortex.weakGaugeFixedKernel x).inner_starProjection_left_eq_right,
     ← inner_sub_left, ← hr2, L2.inner_toLp r.snd hψ_lp]
 
-/-- **Existence of the complementary normal weak `L²` inverse at a plane vortex.** -/
+/-- **Existence of the complementary normal weak `L²` inverse at a plane vortex.** Given a
+`ContDiff ℝ 1` plane vortex `x` (`Vortex.equation x = 0`) satisfying the asymptotic boundary
+condition `4 * (x z 2 ^ 2 + x z 3 ^ 2) → 1` along `cocompact ℂ`, there exists a bounded linear map
+`𝒬 : NormalL2 volume →L[ℝ] NormalL2 volume` such that:
+1. `normalDomainSlowProj x ∘L 𝒬 = 0` (`Π₊ ∘ 𝒬 = 0`);
+2. `𝒬 ∘L normalTargetSlowProj x = 0` (`𝒬 ∘ Π₋ = 0`);
+3. `𝒬` is an `L²` left-inverse of `normalModelOperator x` modulo `normalDomainSlowProj x` on
+   `ContDiff ℝ 1` × `ContDiff ℝ 2` compactly supported pairs `(y, η)`;
+4. `𝒬` is a weak right-inverse of `normalModelOperator x` modulo `normalTargetSlowProj x` against
+   `normalModelAdjoint x` on `ContDiff ℝ 2` × `ContDiff ℝ 1` compactly supported test pairs
+   `(ϕ, ψ)`. -/
 theorem exists_normalComplementaryInverse (hx : ContDiff ℝ 1 x)
     (hsol : ∀ z, Vortex.equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :

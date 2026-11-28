@@ -30,7 +30,7 @@ subspace.
 
 In the normed setting, `IsClosed.differentiableAt_submodule_iff` shows that a map into a closed
 submodule is differentiable at a point if and only if its composition with the subtype inclusion is
-differentiable there.
+differentiable there, and `IsClosed.fderiv_coe_apply` commutes `fderiv` with the subtype coercion.
 
 Between complete inner product spaces, if `f` maps a neighbourhood of `x` into a subspace `V`,
 then the adjoint of its derivative at `x` vanishes on `Vᗮ`
@@ -124,6 +124,18 @@ theorem _root_.IsClosed.differentiableAt_submodule_iff (hS : IsClosed (S : Set F
   exact (HasFDerivAt.of_comp_of_isEmbedding (f := S.subtypeL) (f' := S.subtypeL) (g := f) (g' := L)
     (Topology.IsEmbedding.subtypeVal.continuousAt_iff.2 hg.continuousAt)
     S.subtypeL.hasFDerivAt Topology.IsEmbedding.subtypeVal hfg EventuallyEq.rfl).differentiableAt
+
+/-- For a closed submodule `S` (possibly over a scalar extension `𝕜'` of `𝕜`), taking the Fréchet
+derivative of a map into `S` commutes with coercing to the ambient space `F`. -/
+theorem _root_.IsClosed.fderiv_coe_apply {𝕜' : Type*} [NontriviallyNormedField 𝕜']
+    [NormedAlgebra 𝕜 𝕜'] [NormedSpace 𝕜' F] [IsScalarTower 𝕜 𝕜' F] {S : Submodule 𝕜' F}
+    (hS : IsClosed (S : Set F)) (f : E → S) (a v : E) :
+    fderiv 𝕜 (fun x ↦ (f x : F)) a v = (fderiv 𝕜 f a v : F) := by
+  by_cases hf : DifferentiableAt 𝕜 f a
+  · exact congrArg (· v) ((S.subtypeL.restrictScalars 𝕜).hasFDerivAt.comp a hf.hasFDerivAt).fderiv
+  · have hcoe : ¬DifferentiableAt 𝕜 (fun x ↦ (f x : F)) a := fun h ↦
+      hf ((hS.differentiableAt_submodule_iff (S := S.restrictScalars 𝕜) (f := f) (a := a)).2 h)
+    simp [fderiv_zero_of_not_differentiableAt hf, fderiv_zero_of_not_differentiableAt hcoe]
 
 end Normed
 

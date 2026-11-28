@@ -11,7 +11,8 @@ public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
 public import TauCeti.Analysis.PDE.SeibergWitten.Flat.Weitzenbock
 public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
 import Mathlib.Analysis.InnerProductSpace.PiL2
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
+import TauCeti.Analysis.Calculus.FDeriv.Submodule
+import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 
 /-!
 # The flat four-dimensional Seiberg–Witten operators and their linearization
@@ -53,26 +54,12 @@ private abbrev refBasis (V : Type*) [NormedAddCommGroup V] [InnerProductSpace �
     [Fact (finrank ℝ V = 4)] : OrthonormalBasis (Fin 4) ℝ V :=
   (stdOrthonormalBasis ℝ V).reindex (finCongr Fact.out)
 
-private theorem fderiv_coe_positiveHalfSpinors (χ : V → positiveHalfSpinors o ρ) (p v : V) :
-    fderiv ℝ (fun q ↦ (χ q : W)) p v = (fderiv ℝ χ p v : W) := by
-  let ιL : positiveHalfSpinors o ρ →L[ℝ] W :=
-    (positiveHalfSpinors o ρ).subtypeL.restrictScalars ℝ
-  let πL : W →L[ℝ] positiveHalfSpinors o ρ :=
-    (positiveHalfSpinors o ρ).orthogonalProjectionOnto.restrictScalars ℝ
-  by_cases hχ : DifferentiableAt ℝ χ p
-  · exact congrArg (· v) (ιL.hasFDerivAt.comp p hχ.hasFDerivAt).fderiv
-  · have hcoe : ¬DifferentiableAt ℝ (fun q ↦ (χ q : W)) p := fun h ↦
-      hχ <| (πL.differentiableAt.comp p h).congr_of_eventuallyEq <|
-        Filter.Eventually.of_forall fun q ↦
-          (Submodule.orthogonalProjectionOnto_mem_subspace_eq_self _).symm
-    rw [fderiv_zero_of_not_differentiableAt hcoe, fderiv_zero_of_not_differentiableAt hχ]
-    simp
-
 private theorem covariantDeriv_coe_positiveHalfSpinors (b : V → V [⋀^Fin 1]→L[ℝ] ℝ)
     (χ : V → positiveHalfSpinors o ρ) (p v : V) :
     covariantDeriv b (fun q ↦ (χ q : W)) p v = (covariantDeriv b χ p v : W) := by
-  simp only [covariantDeriv_apply, fderiv_coe_positiveHalfSpinors, Submodule.coe_add,
-    Submodule.coe_smul_of_tower]
+  simp only [covariantDeriv_apply,
+    (positiveHalfSpinors o ρ).isClosed_of_finiteDimensional.fderiv_coe_apply,
+    Submodule.coe_add, Submodule.coe_smul_of_tower]
 
 variable (o ρ) in
 /-- **The flat chiral Dirac operator** `D_b⁺ χ = D_b χ : W⁺ → W⁻`, restricting
@@ -205,7 +192,8 @@ theorem flatDeformationGauge_congr_orthonormalBasis (e' : OrthonormalBasis (Fin 
       (fderiv ℝ b' y).toLinearMap)
   refine congrArg (· + _) ?_
   simp only [fderiv_continuousAlternatingMap_apply_const_apply hb']
-  exact e.sum_apply_self_eq e' B
+  exact (LinearMap.BilinMap.metricTrace_eq_sum B e).symm.trans
+    (LinearMap.BilinMap.metricTrace_eq_sum B e')
 
 omit [FiniteDimensional ℂ W] in
 /-- `flatDeformationGauge` is additive in the perturbation `(b', ζ)` at a point of
@@ -396,7 +384,8 @@ theorem flatDeformationDirac_eq_coe_flatChiralDirac_add (b b' : V → V [⋀^Fin
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [coe_halfSpinCliffordMul_apply_apply, coe_halfSpinCliffordMul_apply_apply,
     LinearEquiv.coe_ofEq_apply, LinearEquiv.coe_ofEq_apply,
-    ← covariantDeriv_coe_positiveHalfSpinors, covariantDeriv_apply, fderiv_coe_positiveHalfSpinors]
+    ← covariantDeriv_coe_positiveHalfSpinors, covariantDeriv_apply,
+    (positiveHalfSpinors o ρ).isClosed_of_finiteDimensional.fderiv_coe_apply]
   simp only [Submodule.coe_smul_of_tower, ← Complex.coe_smul, smul_smul,
     mul_comm I (_ : ℂ), map_add]
 
@@ -426,7 +415,8 @@ theorem flatDeformationDirac_congr_orthonormalBasis (e' : OrthonormalBasis (Fin 
         (LinearEquiv.ofEq _ _ (positiveHalfSpinors_eq_eigenspace o ρ)
           (b' y (fun _ ↦ e' k) • (I • ψ y))) := by
     simpa [B, T, ContinuousAlternatingMap.ofSubsingletonLIE_symm_apply] using
-      e.sum_apply_self_eq e' B
+      (LinearMap.BilinMap.metricTrace_eq_sum B e).symm.trans
+        (LinearMap.BilinMap.metricTrace_eq_sum B e')
   rw [flatDeformationDirac_eq_coe_flatChiralDirac_add (e := e),
     flatDeformationDirac_eq_coe_flatChiralDirac_add (e := e')]
   simpa [Submodule.coe_sum] using congrArg (fun ν : Module.End.eigenspace (ρ (chirality Q o)) (-1) ↦

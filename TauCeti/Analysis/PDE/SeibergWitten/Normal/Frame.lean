@@ -44,8 +44,11 @@ this file constructs the eight-real-component domain and target linear equivalen
 
 * `SeibergWitten.normalFrameForm_eq_of_apply`: reconstruction of a `1`-form from its
   values on the orthonormal frame `e`.
-* `SeibergWitten.alternatingFormInner_normalFrameForm_add_norm_sq_normalFrameSpinor_div_four`:
-  weighted domain norm identity `‖b‖² + ‖ζ‖² / 4 = ‖y‖² + ‖η‖²`.
+* `SeibergWitten.normalFrameSelfDual_eq_sum`: expansion of `normalFrameSelfDual` in
+  `J.selfDualOrthonormalBasis`.
+* `SeibergWitten.alternatingFormInner_normalFrameForm_add_norm_sq_normalFrameSpinor_div_four` and
+  `SeibergWitten.alternatingFormInner_add_norm_sq_div_four_normalDomainEquiv`: weighted domain
+  norm identity `‖b‖² + ‖ζ‖² / 4 = ‖y‖² + ‖η‖²`.
 * `SeibergWitten.sq_add_norm_sq_add_norm_sq_div_four_normalTargetEquiv`: weighted target
   norm identity `f² + ‖τ‖² + ‖ν‖² / 4 = ‖L‖² + ‖A‖²`.
 
@@ -228,6 +231,14 @@ theorem normalFrameSelfDual_zero (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.o
     normalFrameSelfDual o hkl he h₀ h₂₃ 0 0 = 0 := by
   simp [normalFrameSelfDual]
 
+omit [FiniteDimensional ℂ W] in variable (o) in
+/-- `normalFrameSelfDual` expanded in `J.selfDualOrthonormalBasis`. -/
+theorem normalFrameSelfDual_eq_sum (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o)
+    (h₀ : J (e 0) = e 1) (h₂₃ : J (e 2) = e 3) (L A : EuclideanSpace ℝ (Fin 4)) :
+    normalFrameSelfDual o hkl he h₀ h₂₃ L A =
+      ∑ i : Fin 3, ![L 1, A 0, A 1] i • J.selfDualOrthonormalBasis o e hkl he h₀ h₂₃ i := by
+  simp [normalFrameSelfDual, Fin.sum_univ_three]
+
 variable (o ρ) in
 private abbrev positiveHalfSpinorsEquiv :
     positiveHalfSpinors o ρ ≃ₗ[ℂ] Module.End.eigenspace (ρ (chirality Q o)) 1 :=
@@ -277,32 +288,6 @@ theorem normalFrameNegSpinor_zero (e : OrthonormalBasis (Fin 4) ℝ V)
     normalFrameNegSpinor o ρ e u₀ 0 0 = 0 := by
   simp [normalFrameNegSpinor]
 
-private theorem inner_sub_smul_re_im_of_orthonormal {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℂ H] {a b : H} (ha : ‖a‖ = 1) (hb : ‖b‖ = 1) (hab : ⟪a, b⟫_ℂ = 0)
-    (x₂ x₃ y₂ y₃ : ℝ) :
-    let s : H := ((2 : ℂ) * (x₂ + x₃ * I)) • a - ((2 : ℂ) * (y₂ + y₃ * I)) • b
-    (⟪a, s⟫_ℂ).re / 2 = x₂ ∧ (⟪a, s⟫_ℂ).im / 2 = x₃ ∧
-      -(⟪b, s⟫_ℂ).re / 2 = y₂ ∧ -(⟪b, s⟫_ℂ).im / 2 = y₃ := by
-  intro s
-  have h₁ := inner_smul_add_smul_of_inner_eq_zero_left ha hab
-    ((2 : ℂ) * (x₂ + x₃ * I)) (-((2 : ℂ) * (y₂ + y₃ * I)))
-  have h₂ := inner_smul_add_smul_of_inner_eq_zero_right hb hab
-    ((2 : ℂ) * (x₂ + x₃ * I)) (-((2 : ℂ) * (y₂ + y₃ * I)))
-  rw [neg_smul, ← sub_eq_add_neg] at h₁ h₂
-  refine ⟨?_, ?_, ?_, ?_⟩
-  · exact (congrArg (fun z : ℂ ↦ z.re / 2) h₁).trans (by simp)
-  · exact (congrArg (fun z : ℂ ↦ z.im / 2) h₁).trans (by simp)
-  · exact (congrArg (fun z : ℂ ↦ -z.re / 2) h₂).trans (by simp)
-  · exact (congrArg (fun z : ℂ ↦ -z.im / 2) h₂).trans (by simp)
-
-private theorem two_mul_re_im_smul_sub_eq {H : Type*} [AddCommGroup H] [Module ℂ H]
-    (a b : H) (z₁ z₂ : ℂ) :
-    ((2 : ℂ) * (((z₁.re / 2 : ℝ) : ℂ) + ((z₁.im / 2 : ℝ) : ℂ) * I)) • a -
-        ((2 : ℂ) * (((-z₂.re / 2 : ℝ) : ℂ) + ((-z₂.im / 2 : ℝ) : ℂ) * I)) • b =
-      z₁ • a + z₂ • b := by
-  rw [sub_eq_add_neg, ← neg_smul]
-  congr 1 <;> congr 1 <;> (apply Complex.ext <;> simp <;> ring)
-
 section Equivs
 
 variable (o ρ) (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ V)
@@ -325,15 +310,20 @@ private theorem normalDomainEquiv_left_inv
   have horth :=
     inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self hQ h₀ h₂₃ hρ hu₀
   have hβ₀₁ : ‖pairedSpinor e u₀‖ = 1 := norm_pairedSpinor_eq_one hQ hρ hu₀₁
-  obtain ⟨hure, huim, hvre, hvim⟩ :=
-    inner_sub_smul_re_im_of_orthonormal hu₀₁ hβ₀₁ horth
-      (p.fst 2) (p.fst 3) (p.snd 2) (p.snd 3)
+  have hs : normalFrameSpinor o ρ e u₀ p.fst p.snd =
+      ((2 : ℂ) * (p.fst 2 + p.fst 3 * I)) • u₀ +
+        (-((2 : ℂ) * (p.snd 2 + p.snd 3 * I))) • pairedSpinor e u₀ := by
+    rw [normalFrameSpinor, sub_eq_add_neg, neg_smul]
+  have h₁ : ⟪u₀, normalFrameSpinor o ρ e u₀ p.fst p.snd⟫_ℂ =
+      (2 : ℂ) * (p.fst 2 + p.fst 3 * I) := by
+    rw [hs, inner_smul_add_smul_of_inner_eq_zero_left hu₀₁ horth]
+  have h₂' : ⟪pairedSpinor e u₀, normalFrameSpinor o ρ e u₀ p.fst p.snd⟫_ℂ =
+      -((2 : ℂ) * (p.snd 2 + p.snd 3 * I)) := by
+    rw [hs, inner_smul_add_smul_of_inner_eq_zero_right hβ₀₁ horth]
   have he_ite := orthonormal_iff_ite.1 e.orthonormal
   exact Prod.ext
-    (by ext i; fin_cases i <;>
-      first | exact hure | exact huim | simp [normalFrameForm_apply, he_ite])
-    (by ext i; fin_cases i <;>
-      first | exact hvre | exact hvim | simp [normalFrameForm_apply, he_ite])
+    (by ext i; fin_cases i <;> simp [normalFrameForm_apply, he_ite, h₁])
+    (by ext i; fin_cases i <;> simp [normalFrameForm_apply, he_ite, h₂'])
 
 private theorem normalDomainEquiv_right_inv
     (q : (V [⋀^Fin 1]→L[ℝ] ℝ) × positiveHalfSpinors o ρ) :
@@ -351,8 +341,9 @@ private theorem normalDomainEquiv_right_inv
       conv_rhs =>
         rw [eq_inner_smul_add_inner_pairedSpinor_smul hQ hkl he h₀ h₂₃ h₂ hρ
           hu₀ hu₀₁ q.snd]
-      simpa [normalFrameSpinor] using
-        two_mul_re_im_smul_sub_eq u₀ (pairedSpinor e u₀) ⟪u₀, q.snd⟫_ℂ ⟪pairedSpinor e u₀, q.snd⟫_ℂ)
+      dsimp only
+      rw [normalFrameSpinor, sub_eq_add_neg, ← neg_smul]
+      congr 1 <;> congr 1 <;> apply Complex.ext <;> simp <;> ring)
 
 /-- **The eight-component domain frame intertwiner** `(y, η) ≃ (b, ζ) ∈ Ω¹(V) × W⁺`. -/
 def normalDomainEquiv :
@@ -420,6 +411,15 @@ theorem alternatingFormInner_normalFrameForm_add_norm_sq_normalFrameSpinor_div_f
     EuclideanSpace.real_norm_sq_eq η, Fin.sum_univ_four, Fin.sum_univ_four]
   simp [normSq_apply]; ring
 
+/-- Weighted component norm identity for `normalDomainEquiv`:
+`‖b‖² + ‖ζ‖² / 4 = ‖y‖² + ‖η‖²`. -/
+theorem alternatingFormInner_add_norm_sq_div_four_normalDomainEquiv
+    (y η : EuclideanSpace ℝ (Fin 4)) :
+    let q := normalDomainEquiv o ρ hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁ (y, η)
+    alternatingFormInner V 1 q.fst q.fst + ‖q.snd‖ ^ 2 / 4 = ‖y‖ ^ 2 + ‖η‖ ^ 2 :=
+  alternatingFormInner_normalFrameForm_add_norm_sq_normalFrameSpinor_div_four
+    o ρ hQ h₀ h₂₃ hρ hu₀ hu₀₁ y η
+
 omit hQ hkl h₂ hρ hu₀ hu₀₁ in
 private def normalTargetInv (u₀ : positiveHalfSpinors o ρ)
     (q : ℝ × Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 ×
@@ -443,39 +443,39 @@ private theorem normalTargetEquiv_left_inv
         (p.fst 0, normalFrameSelfDual o hkl he h₀ h₂₃ p.fst p.snd,
           normalFrameNegSpinor o ρ e u₀ p.fst p.snd) = p := by
   let b := J.selfDualOrthonormalBasis o e hkl he h₀ h₂₃
-  let τ := normalFrameSelfDual o hkl he h₀ h₂₃ p.fst p.snd
-  have hb (i : Fin 3) : ⟪b i, τ⟫ = ![p.fst.ofLp 1, p.snd.ofLp 0, p.snd.ofLp 1] i := by
-    simpa [b, τ, normalFrameSelfDual, Fin.sum_univ_three] using
-      b.orthonormal.inner_right_fintype ![p.fst.ofLp 1, p.snd.ofLp 0, p.snd.ofLp 1] i
-  have hsd0 : ⟪J.kahlerSelfDual o hkl
-        (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he), τ⟫ =
-      p.fst.ofLp 1 := by
-    simpa [b] using hb 0
-  have hsd1 : ⟪AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he, τ⟫ =
-      p.snd.ofLp 0 := by
-    simpa [b] using hb 1
-  have hsd2 : ⟪AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he, τ⟫ =
-      p.snd.ofLp 1 := by
-    simpa [b] using hb 2
-  have hn (i : Fin 4) :
-      ‖halfSpinCliffordMul o ρ 1 (e i) (positiveHalfSpinorsEquiv o ρ u₀)‖ = 1 :=
-    norm_halfSpinCliffordMul_ofEq_eq_one hQ hρ (e.orthonormal.1 i) hu₀₁
+  have hsd (i : Fin 3) : ⟪b i, normalFrameSelfDual o hkl he h₀ h₂₃ p.fst p.snd⟫ =
+      ![p.fst.ofLp 1, p.snd.ofLp 0, p.snd.ofLp 1] i := by
+    rw [normalFrameSelfDual_eq_sum]
+    exact b.orthonormal.inner_right_fintype ![p.fst.ofLp 1, p.snd.ofLp 0, p.snd.ofLp 1] i
   have hw₂₀ := inner_halfSpinCliffordMul_two_zero hQ h₀ h₂₃ hρ hu₀
-  obtain ⟨h2re, h2im, h0re, h0im⟩ :=
-    inner_sub_smul_re_im_of_orthonormal (hn 2) (hn 0) hw₂₀
-      (p.fst 2) (p.fst 3) (p.snd 2) (p.snd 3)
+  have hspin : normalFrameNegSpinor o ρ e u₀ p.fst p.snd =
+      ((2 : ℂ) * (p.fst 2 + p.fst 3 * I)) •
+          halfSpinCliffordMul o ρ 1 (e 2) (positiveHalfSpinorsEquiv o ρ u₀) +
+        (-((2 : ℂ) * (p.snd 2 + p.snd 3 * I))) •
+          halfSpinCliffordMul o ρ 1 (e 0) (positiveHalfSpinorsEquiv o ρ u₀) := by
+    rw [normalFrameNegSpinor, sub_eq_add_neg, neg_smul]
+  have h₂' : ⟪halfSpinCliffordMul o ρ 1 (e 2) (positiveHalfSpinorsEquiv o ρ u₀),
+        normalFrameNegSpinor o ρ e u₀ p.fst p.snd⟫_ℂ =
+      (2 : ℂ) * (p.fst 2 + p.fst 3 * I) := by
+    rw [hspin, inner_smul_add_smul_of_inner_eq_zero_left
+      (norm_halfSpinCliffordMul_ofEq_eq_one hQ hρ (e.orthonormal.1 2) hu₀₁) hw₂₀]
+  have h₀' : ⟪halfSpinCliffordMul o ρ 1 (e 0) (positiveHalfSpinorsEquiv o ρ u₀),
+        normalFrameNegSpinor o ρ e u₀ p.fst p.snd⟫_ℂ =
+      -((2 : ℂ) * (p.snd 2 + p.snd 3 * I)) := by
+    rw [hspin, inner_smul_add_smul_of_inner_eq_zero_right
+      (norm_halfSpinCliffordMul_ofEq_eq_one hQ hρ (e.orthonormal.1 0) hu₀₁) hw₂₀]
   simp only [normalTargetInv]
   refine Prod.ext ?_ ?_
   · ext i; fin_cases i
     · simp
-    · exact hsd0
-    · simpa [normalFrameNegSpinor] using h2re
-    · simpa [normalFrameNegSpinor] using h2im
+    · simpa [b] using hsd 0
+    · simp [h₂']
+    · simp [h₂']
   · ext i; fin_cases i
-    · exact hsd1
-    · exact hsd2
-    · simpa [normalFrameNegSpinor] using h0re
-    · simpa [normalFrameNegSpinor] using h0im
+    · simpa [b] using hsd 1
+    · simpa [b] using hsd 2
+    · simp [h₀']
+    · simp [h₀']
 
 private theorem normalTargetEquiv_right_inv
     (q : ℝ × Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 ×
@@ -492,10 +492,9 @@ private theorem normalTargetEquiv_right_inv
     (by
       conv_rhs =>
         rw [eq_inner_halfSpinCliffordMul hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁ q.snd.snd]
-      simpa [normalTargetInv, normalFrameNegSpinor] using
-        two_mul_re_im_smul_sub_eq
-          (halfSpinCliffordMul o ρ 1 (e 2) (positiveHalfSpinorsEquiv o ρ u₀))
-          (halfSpinCliffordMul o ρ 1 (e 0) (positiveHalfSpinorsEquiv o ρ u₀)) _ _)
+      dsimp only
+      rw [normalTargetInv, normalFrameNegSpinor, sub_eq_add_neg, ← neg_smul]
+      congr 1 <;> congr 1 <;> apply Complex.ext <;> simp <;> ring)
 
 /-- **The eight-component target frame intertwiner** `(L, A) ≃ (f, τ, ν) ∈ ℝ × Λ⁺ V × W⁻`. -/
 def normalTargetEquiv :
@@ -552,21 +551,20 @@ theorem sq_add_norm_sq_add_norm_sq_div_four_normalTargetEquiv
   have hq0 : q.fst = L 0 := by simp only [q, normalTargetEquiv_apply]
   have hq1 : ‖q.snd.fst‖ ^ 2 = L 1 ^ 2 + A 0 ^ 2 + A 1 ^ 2 := by
     let b := J.selfDualOrthonormalBasis o e hkl he h₀ h₂₃
-    have hsum : ∑ i : Fin 3, (![L 1, A 0, A 1] i) • b i = q.snd.fst := by
-      simp [q, b, normalFrameSelfDual, Fin.sum_univ_three]
-    rw [← real_inner_self_eq_norm_sq, ← hsum,
+    have hqsd : q.snd.fst = ∑ i : Fin 3, ![L 1, A 0, A 1] i • b i :=
+      normalFrameSelfDual_eq_sum o hkl he h₀ h₂₃ L A
+    rw [← real_inner_self_eq_norm_sq, hqsd,
       b.orthonormal.inner_sum ![L 1, A 0, A 1] ![L 1, A 0, A 1] Finset.univ, Fin.sum_univ_three]
     simp [sq]
-  have hn (i : Fin 4) :
-      ‖halfSpinCliffordMul o ρ 1 (e i) (positiveHalfSpinorsEquiv o ρ u₀)‖ = 1 :=
-    norm_halfSpinCliffordMul_ofEq_eq_one hQ hρ (e.orthonormal.1 i) hu₀₁
   have hq2 : q.snd.snd =
       ((2 : ℂ) * (L 2 + L 3 * I)) •
           halfSpinCliffordMul o ρ 1 (e 2) (positiveHalfSpinorsEquiv o ρ u₀) +
         ((-2 : ℂ) * (A 2 + A 3 * I)) •
           halfSpinCliffordMul o ρ 1 (e 0) (positiveHalfSpinorsEquiv o ρ u₀) := by
     simp only [q, normalTargetEquiv_apply, normalFrameNegSpinor]; module
-  rw [hq0, hq1, hq2, norm_smul_add_smul_sq_of_inner_eq_zero (hn 2) (hn 0)
+  rw [hq0, hq1, hq2, norm_smul_add_smul_sq_of_inner_eq_zero
+      (norm_halfSpinCliffordMul_ofEq_eq_one hQ hρ (e.orthonormal.1 2) hu₀₁)
+      (norm_halfSpinCliffordMul_ofEq_eq_one hQ hρ (e.orthonormal.1 0) hu₀₁)
       (inner_halfSpinCliffordMul_two_zero hQ h₀ h₂₃ hρ hu₀),
     ← normSq_eq_norm_sq, ← normSq_eq_norm_sq, EuclideanSpace.real_norm_sq_eq L,
     EuclideanSpace.real_norm_sq_eq A, Fin.sum_univ_four, Fin.sum_univ_four]

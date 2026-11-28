@@ -54,9 +54,6 @@ basis vector `e_s` indexed by a finite set `s` of indices squares to the sign
   relations `γᵢ γⱼ + γⱼ γᵢ = -2 δᵢⱼ`, the contraction `∑ᵢⱼ γᵢ γⱼ B i j` of a doubly indexed family
   splits into its trace and its antisymmetrization.
 * `CliffordAlgebra.basis_mul_self_of_orthonormal`: `e_s * e_s = (-1) ^ ((|s| + 1).choose 2)`.
-* `CliffordAlgebra.ι_mul_ι_mul_ι_of_inner_eq_zero`: `c(u) c(v) c(u) = c(v)` for a unit vector `u`
-  orthogonal to `v`, together with its module-action counterpart
-  `CliffordAlgebra.map_ι_apply_map_ι_apply_map_ι_apply_of_inner_eq_zero`.
 
 ## References
 
@@ -255,28 +252,6 @@ theorem basis_mul_self_of_orthonormal {ι : Type*} [Fintype ι] [LinearOrder ι]
     prod_map_ι_sq_scalar (b.pairwise_isOrtho_map hQ (s.sort_nodup _)),
     b.prod_map_map_eq_neg_one_pow hQ, ← pow_add]
   simp [Nat.choose_succ_succ', add_comm]
-
-/-- For `Q v = -‖v‖²`, conjugating `ι Q v` by an orthogonal unit vector `u` fixes `ι Q v`:
-`ι Q u * ι Q v * ι Q u = ι Q v`. -/
-theorem ι_mul_ι_mul_ι_of_inner_eq_zero {u v : V} (hu : ‖u‖ = 1) (huv : ⟪u, v⟫ = 0) :
-    ι Q u * ι Q v * ι Q u = ι Q v := by
-  rw [ι_mul_ι_mul_ι, QuadraticMap.polar_eq_neg_two_inner hQ, huv, hQ, hu]
-  simp
-
-section ModuleAction
-
-variable {R W : Type*} [Semiring R] [AddCommGroup W] [Module R W] [Algebra ℝ (Module.End R W)]
-  {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End R W}
-
-/-- For `Q v = -‖v‖²`, conjugating `c(v)` by an orthogonal unit vector `u` fixes `c(v)` on any
-module: `c(u) (c(v) (c(u) w)) = c(v) w`. -/
-theorem map_ι_apply_map_ι_apply_map_ι_apply_of_inner_eq_zero {u v : V} (hu : ‖u‖ = 1)
-    (huv : ⟪u, v⟫ = 0) (w : W) :
-    ρ (ι Q u) (ρ (ι Q v) (ρ (ι Q u) w)) = ρ (ι Q v) w := by
-  simpa only [map_mul, mul_apply_eq_comp] using
-    congrArg (fun a ↦ ρ a w) (ι_mul_ι_mul_ι_of_inner_eq_zero hQ hu huv)
-
-end ModuleAction
 
 end CliffordAlgebra
 

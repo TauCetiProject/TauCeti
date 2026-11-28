@@ -40,12 +40,14 @@ volume of the four vectors, `⟪⋆(a ∧ b), u ∧ w⟫ = vol(a, b, u, w)`
 (`Orientation.inner_hodgeStar_ιMulti_two`), and the map `a ↦ √2 (ξ ∧ a)⁺` into `Λ⁺ V`
 (`Orientation.selfDualWedge`) satisfies the polarized ellipticity identity
 `⟪ξ, a⟫ * ⟪ξ, b⟫ + ⟪o.selfDualWedge hkl ξ a, o.selfDualWedge hkl ξ b⟫ = ‖ξ‖ ^ 2 * ⟪a, b⟫`
-(`Orientation.inner_mul_add_inner_selfDualWedge`). For a positively oriented orthonormal basis
-`e`, this gives `⋆(e₀ ∧ e₁) = e₂ ∧ e₃`, `⋆(e₀ ∧ e₂) = -(e₁ ∧ e₃)` and `⋆(e₀ ∧ e₃) = e₁ ∧ e₂`,
-together with the values on the three complementary wedges (`Orientation.hodgeStar_ιMulti_zero_one`
-and its companions). Consequently a self-dual or anti-self-dual two-vector is determined by its
-coordinates along `e₀ ∧ e₁`, `e₀ ∧ e₂` and `e₀ ∧ e₃`, and its squared norm is twice the sum of
-their squares
+(`Orientation.inner_mul_add_inner_selfDualWedge`). In particular, for an orthonormal family `v`
+and `k ≠ i`, `o.selfDualWedge hkl (v k) (v i)` is a unit vector preserving inner products
+(`Orientation.inner_selfDualWedge_of_orthonormal`, `Orientation.norm_selfDualWedge_of_orthonormal`).
+For a positively oriented orthonormal basis `e`, this gives `⋆(e₀ ∧ e₁) = e₂ ∧ e₃`,
+`⋆(e₀ ∧ e₂) = -(e₁ ∧ e₃)` and `⋆(e₀ ∧ e₃) = e₁ ∧ e₂`, together with the values on the three
+complementary wedges (`Orientation.hodgeStar_ιMulti_zero_one` and its companions). Consequently a
+self-dual or anti-self-dual two-vector is determined by its coordinates along `e₀ ∧ e₁`, `e₀ ∧ e₂`
+and `e₀ ∧ e₃`, and its squared norm is twice the sum of their squares
 (`Orientation.inner_ιMulti_two_of_hodgeStar_eq_neg`, `Orientation.norm_sq_of_hodgeStar_eq_neg`,
 `Orientation.inner_ιMulti_two_of_hodgeStar_eq_self`, `Orientation.norm_sq_of_hodgeStar_eq_self`). A
 self-dual or anti-self-dual two-vector thus vanishes exactly when these three coordinates do
@@ -311,6 +313,13 @@ theorem inner_selfDualWedge_left_of_hodgeStar_eq_self (hkl : 2 + 2 = finrank ℝ
   rw [coe_selfDualWedge_apply, real_inner_smul_left, inner_add_left, hs]
   ring
 
+/-- For a self-dual two-vector `τ` in `Λ⁺ V`, `⟪o.selfDualWedge hkl u w, τ⟫ = √2 * ⟪τ, u ∧ w⟫`. -/
+theorem inner_selfDualWedge_left (hkl : 2 + 2 = finrank ℝ V)
+    (τ : Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1) (u w : V) :
+    ⟪o.selfDualWedge hkl u w, τ⟫ = √2 * ⟪(τ : ⋀[ℝ]^2 V), ιMulti ℝ 2 ![u, w]⟫ := by
+  rw [Submodule.coe_inner, o.inner_selfDualWedge_left_of_hodgeStar_eq_self hkl
+      (o.hodgeStar_coe_of_mem_eigenspace_one hkl τ), real_inner_comm]
+
 /-- **Polarized ellipticity of `a ↦ (⟪ξ, a⟫, √2 (ξ ∧ a)⁺)` in dimension four**:
 `⟪ξ, a⟫ * ⟪ξ, b⟫ + ⟪o.selfDualWedge hkl ξ a, o.selfDualWedge hkl ξ b⟫ = ‖ξ‖ ^ 2 * ⟪a, b⟫`. -/
 theorem inner_mul_add_inner_selfDualWedge (hkl : 2 + 2 = finrank ℝ V) (ξ a b : V) :
@@ -325,6 +334,24 @@ theorem inner_mul_add_inner_selfDualWedge (hkl : 2 + 2 = finrank ℝ V) (ξ a b 
     real_inner_smul_right, inner_add_left, inner_add_right, hxy, hyx, o.inner_hodgeStar_hodgeStar,
     inner_ιMulti_two, real_inner_comm ξ a, real_inner_self_eq_norm_sq]
   linear_combination (‖ξ‖ ^ 2 * ⟪a, b⟫ - ⟪ξ, b⟫ * ⟪ξ, a⟫) / 2 * Real.mul_self_sqrt zero_le_two
+
+/-- For an orthonormal family `v` and `k ≠ i`, `o.selfDualWedge hkl (v k)` preserves inner
+products on `v i` and `v j`. -/
+theorem inner_selfDualWedge_of_orthonormal (hkl : 2 + 2 = finrank ℝ V) {ι : Type*}
+    {v : ι → V} (hv : Orthonormal ℝ v) {k i j : ι} (hki : k ≠ i) :
+    ⟪o.selfDualWedge hkl (v k) (v i), o.selfDualWedge hkl (v k) (v j)⟫ = ⟪v i, v j⟫ := by
+  have h := o.inner_mul_add_inner_selfDualWedge hkl (v k) (v i) (v j)
+  rw [hv.inner_eq_zero hki, zero_mul, zero_add, hv.1 k, one_pow, one_mul] at h
+  exact h
+
+/-- For an orthonormal family `v` and `k ≠ i`, `o.selfDualWedge hkl (v k) (v i)` is a unit
+vector in `Λ⁺ V`. -/
+theorem norm_selfDualWedge_of_orthonormal (hkl : 2 + 2 = finrank ℝ V) {ι : Type*}
+    {v : ι → V} (hv : Orthonormal ℝ v) {k i : ι} (hki : k ≠ i) :
+    ‖o.selfDualWedge hkl (v k) (v i)‖ = 1 :=
+  (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 <| by
+    rw [← real_inner_self_eq_norm_sq, o.inner_selfDualWedge_of_orthonormal hkl hv hki,
+      real_inner_self_eq_norm_sq, hv.1 i, one_pow]
 
 variable {o} (hkl : 2 + 2 = finrank ℝ V) {e : OrthonormalBasis (Fin 4) ℝ V}
   (he : e.toBasis.orientation = o)
