@@ -9,6 +9,8 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.AlgebraicGeometry.Pullbacks
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
 public import Mathlib.CategoryTheory.Monoidal.CommGrp_
+public import TauCeti.AlgebraicGeometry.GroupScheme.Torsion.Basic
+import TauCeti.AlgebraicGeometry.GroupScheme.Etale
 import TauCeti.AlgebraicGeometry.GroupScheme.Torsion.Infinitesimal
 import TauCeti.AlgebraicGeometry.Morphisms.Etale.FormallyEtale
 import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
@@ -19,6 +21,7 @@ import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
 On a smooth commutative group scheme over a field, multiplication by an integer invertible
 in the field is étale. A lift along a square-zero thickening can be corrected uniquely by
 an infinitesimal point at the identity, where multiplication by the integer is bijective.
+The scheme-theoretic torsion, as the fibre over the unit section, is therefore étale.
 
 ## References
 
@@ -147,5 +150,14 @@ theorem etale_zpow_of_intCast_ne_zero (G : CommGrp (Over (Spec (.of K)))) [Smoot
   have := locallyOfFinitePresentation_of_comp f.left G.X.hom
   have := formallyEtale_openImmersion_comp_zpow G u n hn
   exact AlgebraicGeometry.etale_of_formallyEtale (u ≫ f.left)
+
+/-- The scheme-theoretic `n`-torsion of a smooth commutative group scheme over a field
+is étale over the field when `n` is invertible there. -/
+theorem etale_torsion_of_intCast_ne_zero (G : CommGrp (Over (Spec (.of K)))) [Smooth G.X.hom]
+    {n : ℤ} (hn : (n : K) ≠ 0) : Etale (torsion G n).X.hom := by
+  rw [torsion_eq_kernel]
+  apply Grp.etale_kernel_hom
+  rw [CommGrp.forget₂Grp_map_hom, CommGrp.intCast_hom_hom_hom]
+  exact etale_zpow_of_intCast_ne_zero G hn
 
 end TauCeti.GroupScheme

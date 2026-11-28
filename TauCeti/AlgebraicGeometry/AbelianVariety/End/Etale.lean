@@ -69,10 +69,4 @@ theorem isFinite_torsion_of_intCast_ne_zero (A : AbelianVariety K) {n : ℤ} (hn
   MorphismProperty.of_isPullback (A.isPullback_torsionι_mulBy n)
     (A.isIsogeny_mulBy_of_intCast_ne_zero hn).isFinite
 
-/-- The scheme-theoretic `n`-torsion is étale over the field when `n` is invertible there. -/
-theorem etale_torsion_of_intCast_ne_zero (A : AbelianVariety K) {n : ℤ} (hn : (n : K) ≠ 0) :
-    Etale (GroupScheme.torsion (CommGrp.mk A.toOver) n).X.hom :=
-  MorphismProperty.of_isPullback (A.isPullback_torsionι_mulBy n)
-    (A.etale_mulBy_of_intCast_ne_zero hn)
-
 end TauCeti.AlgebraicGeometry.AbelianVariety

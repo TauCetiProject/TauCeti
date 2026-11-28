@@ -23,6 +23,9 @@ universal property on affine schemes, such as the Grassmannian.
 * A commutative square of schemes is a pullback square as soon as it is one on affine points
   (`AlgebraicGeometry.Scheme.isPullback_of_forall_spec`).
 
+The file also gives ring coordinates for affine points whose image lies in an affine open
+immersion, and uniqueness of those coordinates for any monomorphic chart.
+
 ## Main definitions
 
 * `AlgebraicGeometry.Scheme.homOfAffinePoints F hF`: the morphism `X ⟶ Y` inducing a natural map
@@ -50,6 +53,23 @@ universe u
 namespace AlgebraicGeometry.Scheme
 
 variable {X Y : Scheme.{u}}
+
+/-- A point `x : Spec B ⟶ X` whose image lies in the open immersion `inc : Spec R ⟶ X`
+is the spectrum of a ring map `R →+* B` followed by `inc`. -/
+theorem Hom.exists_specMap_comp_eq_of_range_subset {B R : CommRingCat.{u}}
+    (inc : Spec R ⟶ X) [IsOpenImmersion inc] (x : Spec B ⟶ X)
+    (hx : Set.range x ⊆ Set.range inc) :
+    ∃ f : R →+* B, Spec.map (CommRingCat.ofHom f) ≫ inc = x := by
+  obtain ⟨f, hf⟩ := Spec.map_surjective (IsOpenImmersion.lift inc x hx)
+  exact ⟨f.hom, by simpa only [CommRingCat.ofHom_hom, hf] using
+    IsOpenImmersion.lift_fac inc x hx⟩
+
+/-- Two ring maps `R →+* B` are equal if their spectrum maps agree
+after postcomposition with a monomorphism `inc : Spec R ⟶ X`. -/
+theorem Hom.eq_of_specMap_comp_eq {B R : CommRingCat.{u}}
+    (inc : Spec R ⟶ X) [Mono inc] {f g : R →+* B}
+    (h : Spec.map (CommRingCat.ofHom f) ≫ inc = Spec.map (CommRingCat.ofHom g) ≫ inc) : f = g :=
+  congrArg CommRingCat.Hom.hom (Spec.map_injective ((cancel_mono inc).mp h))
 
 /-- **Morphisms are determined by their affine points.** Two morphisms `X ⟶ Y` which agree after
 composition with every morphism `Spec A ⟶ X` are equal. -/

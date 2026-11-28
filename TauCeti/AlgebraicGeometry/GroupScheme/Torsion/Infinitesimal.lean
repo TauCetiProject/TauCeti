@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Pullbacks
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
 import TauCeti.AlgebraicGeometry.Morphisms.Thickening
+import TauCeti.AlgebraicGeometry.Scheme.AffinePoints
 
 /-!
 # Multiplication on the kernel of square-zero reduction
@@ -122,19 +123,6 @@ private lemma surjective_specMap_tripleTrd {B : Type u} [CommRing B] (I : Ideal 
     · exact mul_eq_zero_of_left ha _
   exact inferInstanceAs (Surjective (Spec.map p))
 
-private lemma exists_coordinates {B R : CommRingCat.{u}} {X : Scheme.{u}}
-    (inc : Spec R ⟶ X) [IsOpenImmersion inc] (x : Spec B ⟶ X)
-    (hx : Set.range x ⊆ Set.range inc) :
-    ∃ f : R →+* B, Spec.map (CommRingCat.ofHom f) ≫ inc = x := by
-  obtain ⟨f, hf⟩ := Spec.map_surjective (IsOpenImmersion.lift inc x hx)
-  exact ⟨f.hom, by simpa only [CommRingCat.ofHom_hom, hf] using
-    IsOpenImmersion.lift_fac inc x hx⟩
-
-private lemma eq_coordinates {B R : CommRingCat.{u}} {X : Scheme.{u}}
-    (inc : Spec R ⟶ X) [Mono inc] {f g : R →+* B}
-    (h : Spec.map (CommRingCat.ofHom f) ≫ inc = Spec.map (CommRingCat.ofHom g) ≫ inc) : f = g :=
-  congrArg CommRingCat.Hom.hom (Spec.map_injective ((cancel_mono inc).mp h))
-
 private lemma exists_unit_chart {K : Type u} [Field K]
     (G : Grp (Over (Spec (.of K)))) :
     ∃ (R : CommRingCat.{u}) (inc : Spec R ⟶ G.X.left), IsOpenImmersion inc ∧
@@ -191,7 +179,7 @@ private lemma coordinate_eq_mod {S : Scheme.{u}} (G : Grp (Over S))
     (ha : Spec.map (CommRingCat.ofHom a) ≫ inc = (x : Over.mk t ⟶ G.X).left)
     (he : Spec.map (CommRingCat.ofHom e) ≫ inc = (1 : Over.mk t ⟶ G.X).left) :
     (Ideal.Quotient.mk I).comp a = (Ideal.Quotient.mk I).comp e := by
-  apply eq_coordinates (B := CommRingCat.of (B ⧸ I)) inc
+  apply inc.eq_of_specMap_comp_eq (B := CommRingCat.of (B ⧸ I))
   have h := (reduction_point_eq_one G t I x).trans
     (MonObj.comp_one (M := G.X) (quotientPointHom t I)).symm
   simpa only [Over.comp_left, quotientPointHom, Over.homMk_left,
@@ -203,14 +191,18 @@ private lemma chart_coordinates {S : Scheme.{u}} (G : Grp (Over S))
     (hinc : Set.range (1 : Over.mk t ⟶ G.X).left ⊆ Set.range inc)
     (x : reductionKernel G t I) :
     ∃ a : R →+* B, Spec.map (CommRingCat.ofHom a) ≫ inc = (x : Over.mk t ⟶ G.X).left := by
-  apply exists_coordinates inc
-  have : IsFirstOrderThickening (quotientPointHom t I).left :=
+  apply inc.exists_specMap_comp_eq_of_range_subset
+  let j := quotientPointHom t I
+  have : IsFirstOrderThickening j.left :=
     IsFirstOrderThickening.SpecMap_quotient_mk hI
-  rw [← (quotientPointHom t I).left.surjective.range_comp]
-  rw [← TopCat.coe_comp, ← Scheme.Hom.comp_base, ← Over.comp_left, reduction_point_eq_one G t I x,
-    ← MonObj.comp_one (quotientPointHom t I), Over.comp_left]
-  rintro _ ⟨w, rfl⟩
-  exact hinc ⟨_, by rw [Scheme.Hom.comp_apply]⟩
+  have h := (reduction_point_eq_one G t I x).trans (MonObj.comp_one (M := G.X) j).symm
+  calc
+    Set.range (x : Over.mk t ⟶ G.X).left = Set.range (j ≫ (x : Over.mk t ⟶ G.X)).left :=
+      (range_eq_range_of_surjective _ _ j.left (by simp only [Over.comp_left])).symm
+    _ = Set.range (1 : Over.mk t ⟶ G.X).left :=
+      range_eq_range_of_surjective _ _ j.left (by
+        simpa only [Over.comp_left] using congrArg Over.Hom.left h.symm)
+    _ ⊆ Set.range inc := hinc
 
 private lemma chart_point_eq_of_coord {S : Scheme.{u}} (G : Grp (Over S))
     {B R : CommRingCat.{u}} {t : Spec B ⟶ S} {I : Ideal B}
@@ -345,20 +337,21 @@ private lemma chart_coordinates_mul {A B R : CommRingCat.{u}}
   have h₃ : triplePointTrd t I ≫ (p * q) = 1 := by simp [MonObj.comp_mul, hp₃, hq₃]
   have : Surjective (triplePointTrd t I).left := surjective_specMap_tripleTrd I hI
   have hrange : Set.range (p * q).left ⊆ Set.range inc := by
-    rw [← (triplePointTrd t I).left.surjective.range_comp]
-    have he : Spec.map (CommRingCat.ofHom (c 1)) ≫ inc = (1 : Over.mk t ⟶ G.X).left := hc 1
-    rw [← TopCat.coe_comp, ← Scheme.Hom.comp_base, ← Over.comp_left, h₃, ← he]
-    rintro _ ⟨z, rfl⟩
-    exact ⟨_, by rw [Scheme.Hom.comp_apply]⟩
-  obtain ⟨d, hd⟩ := exists_coordinates inc (p * q).left hrange
+    have h : (triplePointTrd t I).left ≫ (p * q).left =
+        Spec.map (CommRingCat.ofHom (c 1)) ≫ inc := by
+      simpa only [Over.comp_left] using (congrArg Over.Hom.left h₃).trans (hc 1).symm
+    rw [← range_eq_range_of_surjective _ _ _ h]
+    simp only [Set.range_subset_iff, Scheme.Hom.comp_apply]
+    exact fun _ ↦ Set.mem_range_self _
+  obtain ⟨d, hd⟩ := inc.exists_specMap_comp_eq_of_range_subset (p * q).left hrange
   have hd₁ : (tripleFst I).comp d = c x :=
-    eq_coordinates inc ((comp_chart G inc hd.symm _ rfl).symm.trans
+    inc.eq_of_specMap_comp_eq ((comp_chart G inc hd.symm _ rfl).symm.trans
       ((congrArg Over.Hom.left h₁).trans (hc x).symm))
   have hd₂ : (tripleSnd I).comp d = c y :=
-    eq_coordinates inc ((comp_chart G inc hd.symm _ rfl).symm.trans
+    inc.eq_of_specMap_comp_eq ((comp_chart G inc hd.symm _ rfl).symm.trans
       ((congrArg Over.Hom.left h₂).trans (hc y).symm))
   have hd₃ : (tripleTrd I).comp d = c 1 :=
-    eq_coordinates inc ((comp_chart G inc hd.symm _ rfl).symm.trans
+    inc.eq_of_specMap_comp_eq ((comp_chart G inc hd.symm _ rfl).symm.trans
       ((congrArg Over.Hom.left h₃).trans (hc 1).symm))
   let f := tripleCombine I hI 1 1
   let j := overTripleMap t I f (tripleCombine_comp_tripleDiagonal I hI 1 1)
@@ -366,7 +359,7 @@ private lemma chart_coordinates_mul {A B R : CommRingCat.{u}}
     rw [comp_chart G inc hp, combine_tripleLift_left hI hx, hc x])
   have hqy : j ≫ q = y := Over.OverMorphism.ext (by
     rw [comp_chart G inc hq, combine_tripleLift_right hI hy, hc y])
-  have heq : f.comp d = c (x * y) := eq_coordinates inc (by
+  have heq : f.comp d = c (x * y) := inc.eq_of_specMap_comp_eq (by
     rw [← comp_chart G inc hd.symm f (tripleCombine_comp_tripleDiagonal I hI 1 1),
       MonObj.comp_mul, hpx, hqy, hc, Subgroup.coe_mul])
   rw [← heq]
@@ -411,7 +404,7 @@ private lemma exists_scaled_coordinates {A B R : CommRingCat.{u}}
       ← CommRingCat.ofHom_comp, hmod]
   let y : reductionKernel G t I := ⟨j ≫ p, MonoidHom.mem_ker.mpr hred⟩
   refine ⟨y, fun r ↦ ?_⟩
-  have heq : c y = d := eq_coordinates inc ((hc y).trans hd)
+  have heq : c y = d := inc.eq_of_specMap_comp_eq ((hc y).trans hd)
   rw [heq]
   -- Only the first correction is scaled by the combining map.
   change c 1 r + a * (c x r - c 1 r) + 0 * (c 1 r - c 1 r) - c 1 r = _
