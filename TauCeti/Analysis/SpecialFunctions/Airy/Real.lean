@@ -32,7 +32,8 @@ and `Bi(x) ≥ 3^{−5/6} x / Γ(4/3)` gives `Bi(x) → ∞` as `x → ∞`.
 * `Real.hasDerivAt_airyAi`, `Real.hasDerivAt_airyBi` — the derivatives of the real restrictions,
   and `Real.ofReal_deriv_real_airyAi`, `Real.ofReal_deriv_real_airyBi` — `Ai′(x)` and
   `Bi′(x)` are real.
-* `Real.ofReal_real_scorerGi` — `Gi(x)` is the cast of its real restriction.
+* `Real.ofReal_real_scorerGi` — `Gi(x)` is the cast of its real restriction, and
+  `Real.scorerGi_ode` — it solves `Gi'' = x Gi − 1/π` (DLMF 9.12.3).
 * `Real.airyBi_pos`, `Real.deriv_airyBi_pos` — `Bi > 0` and `Bi′ > 0` on `[0, ∞)`.
 * `Real.tendsto_airyBi_atTop` — `Bi(x) → ∞` as `x → ∞`.
 
@@ -53,7 +54,7 @@ public section
 noncomputable section
 
 open Complex Filter
-open scoped ComplexConjugate
+open scoped ComplexConjugate Real
 
 namespace TauCeti
 
@@ -156,6 +157,22 @@ theorem _root_.Real.ofReal_deriv_real_airyBi (x : ℝ) :
     ((deriv Real.airyBi x : ℝ) : ℂ) = deriv airyBi x := by
   rw [(Real.hasDerivAt_airyBi x).deriv]
   exact ofReal_re_apply_of_forall_conj deriv_airyBi_conj x
+
+/-- **The inhomogeneous Airy equation for `Gi` on the real line**:
+`Gi''(x) = x Gi(x) − 1/π` for the real restriction (DLMF 9.12.3). -/
+theorem _root_.Real.scorerGi_ode (x : ℝ) :
+    deriv^[2] Real.scorerGi x = x * Real.scorerGi x - π⁻¹ := by
+  -- both derivatives of the real restriction are the real parts of the complex ones
+  have h₁ : deriv Real.scorerGi = fun y : ℝ => (deriv scorerGi (y : ℂ)).re := by
+    rw [funext Real.scorerGi_def]
+    exact funext fun y => (differentiable_scorerGi (y : ℂ)).hasDerivAt.real_of_complex.deriv
+  have h₂ : HasDerivAt (fun y : ℝ => (deriv scorerGi (y : ℂ)).re)
+      (deriv (deriv scorerGi) (x : ℂ)).re x :=
+    (differentiable_scorerGi.deriv (x : ℂ)).hasDerivAt.real_of_complex
+  have h := Complex.scorerGi_ode x
+  rw [Function.iterate_succ_apply', Function.iterate_one] at h
+  rw [Function.iterate_succ_apply', Function.iterate_one, h₁, h₂.deriv, h, ← ofReal_inv,
+    sub_re, re_ofReal_mul, ofReal_re, Real.scorerGi_def]
 
 /-! ### Positivity and growth of `Bi` -/
 

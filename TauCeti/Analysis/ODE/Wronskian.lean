@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 
 /-!
@@ -23,6 +24,9 @@ solutions has derivative `(q₁ - q₂) f g` when `f` solves the equation with `
 `q₂` (Lagrange's identity). For a common `q` this is Abel's identity: `p (f g' - f' g)` is
 constant on every open preconnected set where both solve the equation. Only the values of `p'` and
 `q` at the points of the set enter, so no regularity of `q` is needed, and `p` may vanish.
+
+Pointwise, the difference of solutions of two inhomogeneous equations `f'' = a f + c` and
+`g'' = a g + d` with a common coefficient `a` solves `w'' = a w + (c - d)`.
 
 With a first-order term, Abel's identity holds pointwise over any nontrivially normed field: if
 `f` and `g` satisfy `y'' + p y' + q y = 0` at a point `t`, the Wronskian `f g' - f' g` has
@@ -41,6 +45,8 @@ scalars `P`, `Q`, `R` are the coefficients evaluated at `t` and `P ≠ 0`, this 
   `(p (f g' - f' g))' = (q₁ - q₂) f g` for the expanded Sturm–Liouville equation.
 * `TauCeti.mul_wronskian_eq_of_sturmLiouville`: Abel's identity, `p (f g' - f' g)` is constant on
   an open preconnected set.
+* `ContDiffAt.iteratedDeriv_two_sub_eq_smul_add`: the difference of solutions of
+  `f'' = a f + c` and `g'' = a g + d` at a point solves `w'' = a w + (c - d)` there.
 * `HasDerivAt.wronskian_of_secondOrderLinearEquation`: Abel's identity at a point, for
   `y'' + p y' + q y = 0`.
 * `DifferentiableAt.hasDerivAt_wronskian_of_secondOrderLinearEquation`: Abel's identity at a
@@ -60,6 +66,17 @@ open Set
 namespace TauCeti
 
 variable {𝕜 : Type*}
+
+/-- **The difference of two inhomogeneous solutions.** If `f'' = a f + c` and `g'' = a g + d` at
+`z`, with a common coefficient `a` and with `f`, `g` twice continuously differentiable at `z`, then
+`(f - g)'' = a (f - g) + (c - d)` at `z`. -/
+theorem _root_.ContDiffAt.iteratedDeriv_two_sub_eq_smul_add [NontriviallyNormedField 𝕜]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f g : 𝕜 → F} {a z : 𝕜} {c d : F}
+    (hf : ContDiffAt 𝕜 2 f z) (hg : ContDiffAt 𝕜 2 g z) (hf' : iteratedDeriv 2 f z = a • f z + c)
+    (hg' : iteratedDeriv 2 g z = a • g z + d) :
+    iteratedDeriv 2 (f - g) z = a • (f - g) z + (c - d) := by
+  rw [iteratedDeriv_sub hf hg, hf', hg', Pi.sub_apply, smul_sub]
+  abel
 
 section FirstOrderTerm
 

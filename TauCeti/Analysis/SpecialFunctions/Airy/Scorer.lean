@@ -27,7 +27,9 @@ the origin these are Gamma values, `Hi⁽ⁿ⁾(0) = 3^{(n−2)/3} Γ((n+1)/3) /
 moment plus `1`, which is the inhomogeneous Airy equation `Hi'' = z Hi + 1/π` (DLMF 9.12.1). For a
 cube root of unity `ν`, the rotation `f ↦ (z ↦ ν f(ν z))` preserves every equation
 `w'' = z w + c` (`TauCeti.airy_inhomogeneous_ode_rotation`); with `ν = e^{∓2πi/3}` this gives the
-`Hi` part of DLMF 9.12.3. On the real line `Hi` is real.
+`Hi` part of DLMF 9.12.3. Since `Bi'' = z Bi`, `Gi = Bi − Hi` solves `Gi'' = z Gi − 1/π`
+(DLMF 9.12.3), and every entire solution of `w'' = z w + 1/π` differs from `Hi` by a solution of
+Airy's equation, a combination of `Ai` and `Bi` (DLMF 9.12.2). On the real line `Hi` is real.
 
 ## Main results
 
@@ -42,8 +44,14 @@ cube root of unity `ν`, the rotation `f ↦ (z ↦ ν f(ν z))` preserves every
   entire, and `Real.differentiable_scorerHi`, `Real.differentiable_scorerGi` — their real
   restrictions are differentiable.
 * `TauCeti.scorerHi_ode` — `Hi'' = z Hi + 1/π` (DLMF 9.12.1).
-* `TauCeti.scorerHi_rotation_ode` — `z ↦ ν Hi(ν z)` solves `w'' = z w + 1/π` when `ν³ = 1`
+* `Complex.scorerGi_ode` — `Gi'' = z Gi − 1/π` (DLMF 9.12.3), and
+  `TauCeti.scorerHi_rotation_ode` — `z ↦ ν Hi(ν z)` solves `w'' = z w + 1/π` when `ν³ = 1`
   (DLMF 9.12.3).
+* DLMF 9.12.2, every entire solution `w` of `w'' = z w + 1/π` is `Hi + c₁ Ai + c₂ Bi`, is the
+  application `differentiable_scorerHi.exists_eq_add_airy_combination hw scorerHi_ode hode` of
+  `Differentiable.exists_eq_add_airy_combination` in
+  `TauCeti.Analysis.SpecialFunctions.Airy.Equation`. This file imports that module privately, so
+  a caller must also import `TauCeti.Analysis.SpecialFunctions.Airy.Equation` to use it.
 * `Nat.iterate_deriv_scorerHi_zero` — `Hi⁽ⁿ⁾(0) = 3^{(n−2)/3} Γ((n+1)/3) / π`, and
   `TauCeti.scorerHi_zero` — `Hi(0) = 3^{−2/3} Γ(1/3) / π`.
 
@@ -56,7 +64,9 @@ product differential equation `TauCeti.airyAi_sq_add_airyBi_sq_differential_equa
 `TauCeti.Analysis.SpecialFunctions.Airy.Product.Integral`. The rotation argument is adapted from
 the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
 `DLMF/Airy/Scorer/Representations.lean`, whose `Hi` is defined by its Maclaurin series rather
-than by the integral used here.
+than by the integral used here. The equation for `Gi` and the general solution (DLMF 9.12.2) are
+adapted from `scorerGi_ode` and `scorer_general_solution` in lean-DLMF's file
+`DLMF/Airy/Basic/Scorer.lean`.
 
 ## References
 
@@ -243,6 +253,17 @@ Airy equation `w'' = z w + 1/π`; with `ν = e^{∓2πi/3}` this is DLMF 9.12.3 
 theorem scorerHi_rotation_ode {ν : ℂ} (hν : ν ^ 3 = 1) (z : ℂ) :
     deriv^[2] (fun w => ν * scorerHi (ν * w)) z = z * (ν * scorerHi (ν * z)) + (π : ℂ)⁻¹ :=
   airy_inhomogeneous_ode_rotation scorerHi_ode hν z
+
+/-- `Gi` solves the inhomogeneous Airy equation `Gi'' = z Gi − 1/π` (DLMF 9.12.3). -/
+theorem _root_.Complex.scorerGi_ode (z : ℂ) :
+    deriv^[2] scorerGi z = z * scorerGi z - (π : ℂ)⁻¹ := by
+  have h := differentiable_airyBi.contDiff.contDiffAt.iteratedDeriv_two_sub_eq_smul_add (a := z)
+    (c := 0) differentiable_scorerHi.contDiff.contDiffAt
+    (by rw [iteratedDeriv_eq_iterate, airyBi_ode, smul_eq_mul, add_zero])
+    (by rw [iteratedDeriv_eq_iterate, scorerHi_ode, smul_eq_mul])
+  have hGi : scorerGi = airyBi - scorerHi := funext Complex.scorerGi_def
+  rw [hGi, ← iteratedDeriv_eq_iterate, h, Pi.sub_apply, smul_eq_mul]
+  ring
 
 /-! ### The value at the origin -/
 
