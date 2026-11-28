@@ -167,6 +167,7 @@ theorem sum_adjMat (rel : X → X → Fin (d + 1)) :
   simp
 
 /-- The all-ones matrix `J` lies in the Bose–Mesner algebra. -/
+@[simp]
 theorem allOnes_mem_bmAlgebra (rel : X → X → Fin (d + 1)) :
     (Matrix.of fun _ _ : X => (1 : ℝ)) ∈ bmAlgebra rel := by
   rw [← sum_adjMat rel]
@@ -270,6 +271,7 @@ theorem adjMat_zero [DecidableEq X] (h : IsAssocScheme rel) : adjMat rel 0 = 1 :
   simp [Matrix.one_apply, h.rel_eq_zero_iff]
 
 /-- The identity matrix lies in the Bose–Mesner algebra. -/
+@[simp]
 theorem one_mem_bmAlgebra [DecidableEq X] (h : IsAssocScheme rel) :
     (1 : Matrix X X ℝ) ∈ bmAlgebra rel := by
   rw [← h.adjMat_zero]
@@ -294,6 +296,7 @@ theorem transpose_eq_of_mem_bmAlgebra (h : IsAssocScheme rel) {M : Matrix X X �
   | smul c _ _ h1 => simp [h1]
 
 /-- Every adjacency matrix of a symmetric association scheme is nonzero. -/
+@[simp]
 theorem adjMat_ne_zero (h : IsAssocScheme rel) (i : Fin (d + 1)) : adjMat rel i ≠ 0 := by
   obtain ⟨x, y, hxy⟩ := h.exists_rel_eq i
   intro h0
@@ -523,6 +526,10 @@ theorem mem_bmSubalgebra_iff [DecidableEq X] (h : IsAssocScheme rel) {M : Matrix
 theorem toSubmodule_bmSubalgebra [DecidableEq X] (h : IsAssocScheme rel) :
     h.bmSubalgebra.toSubmodule = bmAlgebra rel :=
   SetLike.ext fun _ => h.mem_bmSubalgebra_iff
+
+instance instIsMulCommutativeBmSubalgebra [DecidableEq X] (h : IsAssocScheme rel) :
+    IsMulCommutative h.bmSubalgebra :=
+  IsMulCommutative.of_setLike_mul_comm fun _ ha _ hb => h.mul_comm_of_mem_bmAlgebra ha hb
 
 /-- Symmetry of the intersection numbers: `p^k_ij = p^k_ji`. -/
 theorem intersectionNumber_comm (h : IsAssocScheme rel) (i j k : Fin (d + 1)) :
