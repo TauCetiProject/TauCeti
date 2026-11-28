@@ -57,6 +57,16 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
   {s : Set E} {x : E}
 
+/-- Rescaling perimeter by `addHaarScalarFactor μ volume` turns
+`perimeter μ U s < addHaarScalarFactor μ volume` into `perimeter volume U s < 1`. -/
+private theorem perimeter_lt_addHaarScalarFactor_iff {U : Opens E} :
+    perimeter μ U s < Measure.addHaarScalarFactor μ volume ↔ perimeter volume U s < 1 := by
+  have ha0 : (Measure.addHaarScalarFactor μ volume : ℝ≥0∞) ≠ 0 :=
+    ENNReal.coe_ne_zero.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume).ne'
+  rw [perimeter_eq_addHaarScalarFactor_mul volume]
+  simpa only [mul_one] using
+    ENNReal.mul_lt_mul_iff_right ha0 ENNReal.coe_ne_top (b := perimeter volume U s) (c := 1)
+
 /-- Around any `x ∈ Ω`, a set `s` of locally finite perimeter in `Ω` has volume-perimeter strictly
 below `1` on a punctured ball `ball x r \ {x} ⊆ Ω`, by applying
 `TauCeti.tendsto_totalVariationOn_ball_sdiff_singleton` to `|Dχ_s|`. -/
@@ -68,16 +78,13 @@ private theorem exists_ball_subset_and_perimeter_sdiff_singleton_lt_one
     ∃ r > 0, ball x r ⊆ Ω ∧
       perimeter volume ⟨ball x r \ {x}, isOpen_ball.sdiff isClosed_singleton⟩ s < 1 := by
   obtain ⟨δ, hδ, hδΩ⟩ := nhds_basis_ball.mem_iff.1 (Ω.isOpen.mem_nhds hx)
-  set a := Measure.addHaarScalarFactor μ volume
-  have ha0 : (a : ℝ≥0∞) ≠ 0 :=
-    ENNReal.coe_ne_zero.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume).ne'
+  have ha0 : (0 : ℝ≥0∞) < Measure.addHaarScalarFactor μ volume :=
+    ENNReal.coe_pos.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume)
   have hlim := tendsto_totalVariationOn_ball_sdiff_singleton hu hfin hx
-  obtain ⟨r, hlt, hr, hrδ⟩ := ((hlim.eventually (gt_mem_nhds ha0.bot_lt)).and
+  obtain ⟨r, hlt, hr, hrδ⟩ := ((hlim.eventually (gt_mem_nhds ha0)).and
     (Ioo_mem_nhdsGT hδ)).exists
-  refine ⟨r, hr, (ball_subset_ball hrδ.le).trans hδΩ, ?_⟩
-  rw [← ENNReal.mul_lt_mul_iff_left ha0 ENNReal.coe_ne_top, one_mul, mul_comm,
-    ← perimeter_eq_addHaarScalarFactor_mul volume, perimeter_def]
-  exact hlt
+  exact ⟨r, hr, (ball_subset_ball hrδ.le).trans hδΩ,
+    perimeter_lt_addHaarScalarFactor_iff.1 (by rwa [perimeter_def])⟩
 
 /-- Transporting `TauCeti.Real.measure_inter_eq_zero_or_sdiff_eq_zero_of_perimeter_lt_one` along a
 linear isometry `e : E ≃ₗᵢ[ℝ] ℝ`: if `e⁻¹(I) ⊆ U` for an open interval `I ⊆ ℝ` and `s` has
@@ -213,12 +220,8 @@ theorem ae_eq_empty_or_univ_of_perimeter_ball_lt (hn : finrank ℝ E = 1) {r : �
     (hs : NullMeasurableSet s (μ.restrict (ball x r)))
     (hP : perimeter μ ⟨ball x r, isOpen_ball⟩ s < Measure.addHaarScalarFactor μ volume) :
     s =ᵐ[μ.restrict (ball x r)] (∅ : Set E) ∨ s =ᵐ[μ.restrict (ball x r)] univ := by
-  have ha0 : (Measure.addHaarScalarFactor μ volume : ℝ≥0∞) ≠ 0 :=
-    ENNReal.coe_ne_zero.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure μ volume).ne'
-  have hPvol : perimeter volume ⟨ball x r, isOpen_ball⟩ s < 1 := by
-    rw [← ENNReal.mul_lt_mul_iff_left ha0 ENNReal.coe_ne_top, one_mul, mul_comm,
-      ← perimeter_eq_addHaarScalarFactor_mul volume]
-    exact hP
+  have hPvol : perimeter volume ⟨ball x r, isOpen_ball⟩ s < 1 :=
+    perimeter_lt_addHaarScalarFactor_iff.1 hP
   obtain ⟨e⟩ := (nonempty_linearIsometryEquiv_iff_finrank_eq (𝕜 := ℝ) (E := E) (F := ℝ)).2
     (hn.trans (Module.finrank_self ℝ).symm)
   set I : Opens ℝ := ⟨Ioo (e x - r) (e x + r), isOpen_Ioo⟩
