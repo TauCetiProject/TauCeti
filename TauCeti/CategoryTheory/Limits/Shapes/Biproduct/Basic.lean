@@ -558,6 +558,22 @@ variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
   {D : Type u'} [Category.{w'} D] [HasZeroMorphisms D]
   {E : Type*} [Category* E] [HasZeroMorphisms E]
 
+/-- The forward map of the singleton biproduct isomorphism is its sole projection. -/
+@[simp high]
+theorem biproductUniqueIso_hom_eq_π {J : Type*} [Unique J] (A : J → C)
+    [HasBiproduct A] : (biproductUniqueIso A).hom = biproduct.π A default := by
+  apply biproduct.hom_ext'
+  intro i
+  obtain rfl : i = default := Subsingleton.elim _ _
+  simp [biproductUniqueIso_hom, limitBiconeOfUnique]
+
+/-- The inverse of the singleton biproduct isomorphism is the inclusion of its sole summand. -/
+@[simp high]
+theorem biproductUniqueIso_inv_eq_ι {J : Type*} [Unique J] (A : J → C)
+    [HasBiproduct A] : (biproductUniqueIso A).inv = biproduct.ι A default := by
+  apply (cancel_mono (biproductUniqueIso A).hom).1
+  rw [Iso.inv_hom_id, biproductUniqueIso_hom_eq_π, biproduct.ι_π_self]
+
 /-- The composite of functors preserving biproducts of shape `J` preserves them. -/
 instance (priority := 100) preservesBiproductsOfShape_comp (J : Type w) (F : C ⥤ D)
     (G : D ⥤ E) [F.PreservesZeroMorphisms] [G.PreservesZeroMorphisms]

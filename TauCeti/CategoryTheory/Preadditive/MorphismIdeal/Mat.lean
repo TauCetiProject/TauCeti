@@ -70,17 +70,7 @@ theorem mem_hom_iff_entries (J : MorphismIdeal (Mat_ C)) {M N : Mat_ C} (f : M �
     A.isoBiproductEmbedding.hom ≫ biproduct.π (fun i => (Mat_.embedding C).obj (A.X i)) i
   have hentry (i : M.ι) (j : N.ι) : ι M i ≫ f ≫ π N j =
       (Mat_.embedding C).map (f i j) := by
-    dsimp only [ι, π]
-    rw [Mat_.isoBiproductEmbedding_inv, Mat_.isoBiproductEmbedding_hom]
-    dsimp only [Mat_.embedding]
-    simp only [Category.assoc]
-    erw [biproduct.ι_desc_assoc, biproduct.lift_π]
-    funext ⟨⟩ ⟨⟩
-    -- The singleton embedding hides its dependent index family from `comp_apply` rewriting.
-    -- Expand the two matrix products with the ambient families made explicit.
-    change (∑ k, (if h : i = k then eqToHom (congrArg M.X h) else 0) ≫
-      ∑ l, f k l ≫ (if h : l = j then eqToHom (congrArg N.X h) else 0)) = f i j
-    simp [dite_comp, comp_dite]
+    exact Mat_.ι_isoBiproductEmbedding_inv_comp_hom_π f i j
   have htotal (A : Mat_ C) : ∑ i, π A i ≫ ι A i = 𝟙 A := by
     dsimp only [ι, π]
     simp only [Category.assoc]

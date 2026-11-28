@@ -86,6 +86,28 @@ def liftToBiproductsYonedaObjIsoCoproduct (X : Mat_ C) :
   (inclusion C).mapIso ((TauCeti.ModCat.yoneda C).liftToBiproductsObjIso X) ≪≫
     (inclusion C).mapBiproduct _ ≪≫ biproduct.isoCoproduct _
 
+/-- The Yoneda coproduct comparison sends each transported biproduct inclusion to the
+corresponding coproduct injection. -/
+@[reassoc (attr := simp)]
+theorem map_ι_liftToBiproductsYonedaObjIsoCoproduct_hom (X : Mat_ C) (i : X.ι) :
+    (biproduct.ι (fun j ↦ (TauCeti.ModCat.yoneda C).obj (X.X j)) i).hom ≫
+      ((TauCeti.ModCat.yoneda C).liftToBiproductsObjIso X).inv.hom ≫
+        X.liftToBiproductsYonedaObjIsoCoproduct.hom =
+        Sigma.ι (fun j ↦ preadditiveYoneda.obj (X.X j)) i := by
+  let F := fun j ↦ (TauCeti.ModCat.yoneda C).obj (X.X j)
+  rw [← ObjectProperty.ι_map (f := biproduct.ι F i),
+    ← ObjectProperty.ι_map (f := ((TauCeti.ModCat.yoneda C).liftToBiproductsObjIso X).inv),
+    ← Functor.map_comp_assoc]
+  simp only [liftToBiproductsYonedaObjIsoCoproduct, Iso.trans_hom, Functor.mapIso_hom,
+    Category.assoc, ← Functor.map_comp_assoc, Iso.inv_hom_id, Category.comp_id]
+  rw [← Category.assoc]
+  have hi : (inclusion C).map (biproduct.ι F i) ≫ ((inclusion C).mapBiproduct F).hom =
+      biproduct.ι ((inclusion C).obj ∘ F) i := by
+    rw [← Iso.eq_comp_inv, Functor.mapBiproduct_inv, biproduct.ι_desc]
+  rw [hi, biproduct.isoCoproduct_hom, biproduct.ι_desc]
+  -- The underlying functors of the additive Yoneda objects are the representables.
+  rfl
+
 end CategoryTheory.Mat_
 
 namespace TauCeti.ModCat
@@ -195,8 +217,9 @@ private def matToProjFullyFaithful : (matToProj C).FullyFaithful :=
 
 variable (C) in
 /-- The Karoubi envelope of the matrix category is equivalent to the category of finitely
-generated projective modules. This extends the assignment of a matrix-category object to the
-finite direct sum of its representables. -/
+generated projective modules. On objects embedded by `toKaroubi`, the forward functor recovers
+the finite sum of representables up to `karoubiMatEquivProjRestrictIso` after inclusion into the
+ambient module category. -/
 def karoubiMatEquivProj : Karoubi (Mat_ C) ≌ (proj C).FullSubcategory := by
   let G := (functorExtension (Mat_ C) (proj C).FullSubcategory).obj (matToProj C)
   let hG : G.FullyFaithful := (matToProjFullyFaithful (C := C)).functorExtension
@@ -259,28 +282,37 @@ def matEquivProjRetract (P : Karoubi (Mat_ C)) :
   (P.retract.map ((karoubiMatEquivProj C).functor ⋙ (proj C).ι)).trans
     ((karoubiMatEquivProjRestrictIso C).app P.X).retract
 
+/-- The inclusion of the retract is the mapped Karoubi inclusion followed by the restriction
+isomorphism. -/
 theorem matEquivProjRetract_i (P : Karoubi (Mat_ C)) :
     (matEquivProjRetract P).i =
       ((karoubiMatEquivProj C).functor ⋙ (proj C).ι).map P.decompId_i ≫
-        (karoubiMatEquivProjRestrictIso C).hom.app P.X := (rfl)
+        (karoubiMatEquivProjRestrictIso C).hom.app P.X := by
+  have hi : P.retract.i = P.decompId_i := by
+    apply Karoubi.hom_ext
+    simp
+  simp only [matEquivProjRetract, Retract.trans_i, Retract.map_i, Iso.retract_i, Iso.app_hom, hi]
 
+/-- The projection of the retract is the inverse restriction isomorphism followed by the mapped
+Karoubi projection. -/
 theorem matEquivProjRetract_r (P : Karoubi (Mat_ C)) :
     (matEquivProjRetract P).r =
       (karoubiMatEquivProjRestrictIso C).inv.app P.X ≫
-        ((karoubiMatEquivProj C).functor ⋙ (proj C).ι).map P.decompId_p := (rfl)
+        ((karoubiMatEquivProj C).functor ⋙ (proj C).ι).map P.decompId_p := by
+  have hr : P.retract.r = P.decompId_p := by
+    apply Karoubi.hom_ext
+    simp
+  simp only [matEquivProjRetract, Retract.trans_r, Retract.map_r, Iso.retract_r, Iso.app_inv, hr]
 
 /-- The other composite of the retract maps is the image of the matrix idempotent. -/
 @[reassoc (attr := simp)]
 theorem matEquivProjRetract_r_i (P : Karoubi (Mat_ C)) :
     (matEquivProjRetract P).r ≫ (matEquivProjRetract P).i =
       (TauCeti.ModCat.yoneda C).liftToBiproducts.map P.p := by
-  let G := (karoubiMatEquivProj C).functor ⋙ (proj C).ι
-  let e := karoubiMatEquivProjRestrictIso C
   rw [matEquivProjRetract_r, matEquivProjRetract_i]
-  change (e.inv.app P.X ≫ G.map P.decompId_p) ≫ G.map P.decompId_i ≫ e.hom.app P.X = _
-  rw [Category.assoc, ← G.map_comp_assoc, ← P.decomp_p]
-  have h := e.hom.naturality P.p
-  change G.map ((toKaroubi (Mat_ C)).map P.p) ≫ e.hom.app P.X = _ at h
+  rw [Category.assoc, ← Functor.map_comp_assoc, ← P.decomp_p]
+  have h := (karoubiMatEquivProjRestrictIso C).hom.naturality P.p
+  simp only [Functor.comp_map] at h ⊢
   rw [h, Iso.inv_hom_id_app_assoc]
 
 end CategoryTheory.Idempotents.Karoubi
