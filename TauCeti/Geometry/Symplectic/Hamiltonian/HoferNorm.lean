@@ -39,7 +39,9 @@ for Hamiltonians on a closed manifold, where the maxima are attained and depend 
 
 * `E⁺` is monotone, subadditive, positively homogeneous, and shifted by `∫₀¹ c` when a function
   `c(t)` of time alone is added (`TauCeti.hoferPlus_mono`, `TauCeti.hoferPlus_add_le`,
-  `TauCeti.hoferPlus_smul`, `TauCeti.hoferPlus_add_const`).
+  `TauCeti.hoferPlus_smul`, `TauCeti.hoferPlus_add_const`); on a function `c(t)` of time alone it
+  is `∫₀¹ c` (`TauCeti.hoferPlus_const`), `E⁻(c) = -∫₀¹ c` (`TauCeti.hoferMinus_const`), and the
+  Hofer norm of `c` is `0` (`TauCeti.hoferNorm_const`).
 * The Hofer norm is nonnegative, symmetric, subadditive and absolutely homogeneous
   (`TauCeti.hoferNorm_nonneg`, `TauCeti.hoferNorm_neg`, `TauCeti.hoferNorm_add_le`,
   `TauCeti.hoferNorm_smul`). It does not see functions of time alone
@@ -176,6 +178,27 @@ theorem hoferPlus_le_hoferNorm {H : ℝ → M → ℝ} (h : ∀ t ∈ Icc (0 : �
 theorem hoferMinus_le_hoferNorm {H : ℝ → M → ℝ} (h : ∀ t ∈ Icc (0 : ℝ) 1, ∃ x, 0 ≤ H t x) :
     hoferMinus H ≤ hoferNorm H :=
   le_add_of_nonneg_left (hoferPlus_nonneg h)
+
+/-- For a Hamiltonian `c(t)` of time alone on a nonempty space, `E⁺(c) = ∫₀¹ c`. -/
+@[simp]
+theorem hoferPlus_const [Nonempty M] (c : ℝ → ℝ) :
+    hoferPlus (fun t (_ : M) ↦ c t) = ∫ t in Icc (0 : ℝ) 1, c t := by
+  simp [hoferPlus_def]
+
+/-- For a Hamiltonian `c(t)` of time alone on a nonempty space, `E⁻(c) = -∫₀¹ c`. -/
+@[simp]
+theorem hoferMinus_const [Nonempty M] (c : ℝ → ℝ) :
+    hoferMinus (fun t (_ : M) ↦ c t) = -∫ t in Icc (0 : ℝ) 1, c t := by
+  have h : -(fun t (_ : M) ↦ c t) = fun t _ ↦ -c t := (rfl)
+  rw [hoferMinus_def, h, hoferPlus_const, integral_neg]
+
+/-- A Hamiltonian `c(t)` of time alone has Hofer norm `0`, with no regularity of `c`: it has no
+oscillation in space. -/
+@[simp]
+theorem hoferNorm_const (c : ℝ → ℝ) : hoferNorm (fun t (_ : M) ↦ c t) = 0 := by
+  rcases isEmpty_or_nonempty M with _ | _
+  · simp [hoferNorm_def, hoferMinus_def, hoferPlus_def]
+  rw [hoferNorm_def, hoferMinus_const, hoferPlus_const, add_neg_cancel]
 
 variable [TopologicalSpace M] [CompactSpace M]
 

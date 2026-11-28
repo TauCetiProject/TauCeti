@@ -24,9 +24,17 @@ Section coefficients are columns, so the matrix convention is `F = dA + A∧A`.
 The formula uses the actual exterior derivative and wedge product of differential
 forms. The direction fields need not commute, and no metric is required.
 
+In the same convention a covariant derivative reads `(∇σ)ˡ = dσˡ + ∑ⱼ σʲ Aˡⱼ` in the frame
+(`IsLocalFrameOn.coeff_covariantDerivative_eq_add_sum`). Applied to the members of a second
+frame, this gives the change of frame formula `A(s) = P⁻¹ dP + P⁻¹ A(t) P`, where `P` is the
+matrix of coefficients of the frame `s` in the frame `t`
+(`IsLocalFrameOn.connectionForm_eq_sum_coeff_smul`).
+
 ## References
 
 * J. M. Lee, *Introduction to Riemannian Manifolds*, second edition, Chapter 7.
+* S. Kobayashi and K. Nomizu, *Foundations of Differential Geometry*, Vol. I, Interscience, 1963,
+  Chapter II, §1 (the transformation law of connection forms under a change of frame).
 * The expanded moving-frame calculation is `IsLocalFrameOn.coeff_curvatureOperator`;
   `TauCeti.mextDeriv_apply_one` identifies its differential terms.
 -/
@@ -63,6 +71,45 @@ omit [VectorBundle ℝ F V] in
 theorem connectionForm_apply (j l : ι) (x : M) (v : Fin 1 → TangentSpace I x) :
     hs.connectionForm cov j l x v = hs.coeff l x (cov (s j) x (v 0)) := by
   rfl
+
+/-- **A covariant derivative in its connection forms.** The coefficient of `∇_v σ` along `sₗ`
+is the derivative of the coefficient `σˡ` of `σ` along `v`, plus the coefficients `σʲ` paired
+with the connection forms `Aˡⱼ(v)`: `(∇σ)ˡ = dσˡ + ∑ⱼ σʲ Aˡⱼ`. Only differentiability of the
+coefficients of `σ` at the point is required. -/
+theorem coeff_covariantDerivative_eq_add_sum [Fintype ι] (hn : 1 ≤ n) {x : M} (hu : u ∈ 𝓝 x)
+    {σ : Π x, V x} (hσ : ∀ i, MDiffAt (fun y ↦ hs.coeff i y (σ y)) x) (l : ι)
+    (v : TangentSpace I x) :
+    hs.coeff l x (cov σ x v) = mvfderiv I (fun y ↦ hs.coeff l y (σ y)) x v +
+      ∑ j, hs.coeff j x (σ x) * hs.connectionForm cov j l x ![v] := by
+  classical
+  have hx : x ∈ u := mem_of_mem_nhds hu
+  rw [hs.covariantDerivative_eq_sum hn hu (cov.isCovariantDerivativeOnUniv.mono (subset_univ u))
+    hσ]
+  have hδ (i : ι) (c : ℝ) : hs.coeff l x (c • s i x) = if i = l then c else 0 := by
+    rw [map_smul, hs.coeff_apply_self hx, smul_eq_mul, mul_ite, mul_one, mul_zero]
+  simp [-mvfderiv_apply_eq_mfderiv_apply, map_sum, hδ, Finset.sum_add_distrib, add_comm]
+
+/-- **The change of frame formula for connection forms.** Let `s` and `t` be local frames, and
+write `Pᵐⱼ = tᵐ(sⱼ)` for the coefficients of `sⱼ` in `t`. Then the connection forms of `s` are
+`Aˡⱼ(s) = ∑ₘ sˡ(tₘ) (dPᵐⱼ + ∑ₖ Pᵏⱼ Aᵐₖ(t))`, that is `A(s) = P⁻¹ dP + P⁻¹ A(t) P` in matrix
+notation, since on the domain of `s` the coefficients `sˡ(tₘ)` form the inverse matrix `P⁻¹`.
+The frame `t` must be a `C¹` frame on a neighbourhood of the point, and the coefficients `Pᵐⱼ`
+differentiable there. No hypothesis on the frame `s` is needed: off its domain both sides
+vanish. -/
+theorem connectionForm_eq_sum_coeff_smul {κ : Type*} [Fintype κ] {t : κ → Π x, V x} {u' : Set M}
+    {n' : ℕ∞ω} (ht : IsLocalFrameOn I F n' t u') (hn' : 1 ≤ n') {x : M} (hu' : u' ∈ 𝓝 x)
+    (j : ι) (hP : ∀ m, MDiffAt (fun y ↦ ht.coeff m y (s j y)) x) (l : ι) :
+    hs.connectionForm cov j l x = ∑ m, hs.coeff l x (t m x) •
+      (TauCeti.mextDeriv (TauCeti.RoughForm.ofFunction I fun y ↦ ht.coeff m y (s j y)) x +
+        ∑ k, ht.coeff k x (s j x) • ht.connectionForm cov k m x) := by
+  ext v
+  rw [connectionForm_apply, ht.coeff_sum_eq (fun y ↦ cov (s j) y (v 0)) (mem_of_mem_nhds hu')]
+  simp only [map_sum, map_smul, smul_eq_mul, ContinuousAlternatingMap.sum_apply,
+    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.add_apply]
+  refine Finset.sum_congr rfl fun m _ ↦ ?_
+  rw [mul_comm, ht.coeff_covariantDerivative_eq_add_sum cov hn' hu' hP m (v 0),
+    TauCeti.mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply]
+  simp
 
 variable [IsManifold I 2 M] [FiniteDimensional ℝ F]
   [ContMDiffVectorBundle 2 F V I]

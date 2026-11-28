@@ -265,6 +265,15 @@ theorem evenCliffordHom_strandIncl (n : ℕ)
       map_smul, cliffordIncl_cliffordProjection, hi]
   exact AlgHom.congr_fun hhom x
 
+/-- `evenCliffordHom` intertwines Temperley–Lieb `strandInclAll` with `evenCliffordIncl` at every
+level `n ≥ 0`. -/
+@[simp]
+theorem evenCliffordHom_strandInclAll (n : ℕ) (x : TemperleyLieb ℂ (Real.sqrt 2 : ℂ) n) :
+    evenCliffordHom (n + 1) (strandInclAll n x) = evenCliffordIncl n (evenCliffordHom n x) := by
+  cases n with
+  | zero => rw [eq_algebraMap_aug_of_le_one (Nat.zero_le 1) x]; simp
+  | succ n => rw [strandInclAll_succ]; exact evenCliffordHom_strandIncl n x
+
 /-- Multiplying an included Clifford element on the right by the last Clifford projection scales its
 scalar trace by `2⁻¹`: the term containing `c_{n + 1}` vanishes by orthogonality. -/
 theorem scalarTrace_cliffordIncl_mul_cliffordProjection_last (n : ℕ)
@@ -387,11 +396,11 @@ theorem map_star_mul_self_eq_zero_iff_evenCliffordHom_eq_zero
 /-- **The trace radical at `δ = √2` is the kernel of `evenCliffordHom`.** -/
 theorem traceRadical_eq_ker_evenCliffordHom
     (htr : IsMarkovTrace ℂ (Real.sqrt 2 : ℂ) tr) (m : ℕ) :
-    (tr m).traceRadical (htr.map_mul_comm m) = RingHom.ker (evenCliffordHom m) := by
+    htr.traceRadical m = RingHom.ker (evenCliffordHom m) := by
   have hne : (Real.sqrt 2 : ℂ) ≠ 0 :=
     Complex.ofReal_ne_zero.mpr (Real.sqrt_ne_zero'.mpr zero_lt_two)
   ext x
-  rw [LinearMap.mem_traceRadical, RingHom.mem_ker]
+  rw [mem_traceRadical_iff, RingHom.mem_ker]
   simp only [htr.apply_eq_mul_scalarTrace_evenCliffordHom, map_mul, Subalgebra.coe_mul,
     mul_eq_zero, pow_ne_zero m hne, false_or]
   exact (evenCliffordHom_surjective m).forall.symm.trans
@@ -401,7 +410,7 @@ theorem traceRadical_eq_ker_evenCliffordHom
 theorem map_star_mul_self_eq_zero_iff_mem_traceRadical_sqrt_two
     (htr : IsMarkovTrace ℂ (Real.sqrt 2 : ℂ) tr) {m : ℕ}
     {x : TemperleyLieb ℂ (Real.sqrt 2 : ℂ) m} :
-    tr m (star x * x) = 0 ↔ x ∈ (tr m).traceRadical (htr.map_mul_comm m) := by
+    tr m (star x * x) = 0 ↔ x ∈ htr.traceRadical m := by
   rw [htr.map_star_mul_self_eq_zero_iff_evenCliffordHom_eq_zero,
     htr.traceRadical_eq_ker_evenCliffordHom, RingHom.mem_ker]
 
@@ -409,8 +418,7 @@ theorem map_star_mul_self_eq_zero_iff_mem_traceRadical_sqrt_two
 `EvenClifford m`. -/
 noncomputable def quotientEvenCliffordEquiv
     (htr : IsMarkovTrace ℂ (Real.sqrt 2 : ℂ) tr) (m : ℕ) :
-    (TemperleyLieb ℂ (Real.sqrt 2 : ℂ) m ⧸ (tr m).traceRadical (htr.map_mul_comm m)) ≃ₐ[ℂ]
-      EvenClifford m :=
+    htr.Quotient m ≃ₐ[ℂ] EvenClifford m :=
   (Ideal.quotientEquivAlgOfEq ℂ (htr.traceRadical_eq_ker_evenCliffordHom m)).trans
     (Ideal.quotientKerAlgEquivOfSurjective (evenCliffordHom_surjective m))
 
@@ -419,8 +427,7 @@ noncomputable def quotientEvenCliffordEquiv
 theorem quotientEvenCliffordEquiv_mk
     (htr : IsMarkovTrace ℂ (Real.sqrt 2 : ℂ) tr) (m : ℕ)
     (x : TemperleyLieb ℂ (Real.sqrt 2 : ℂ) m) :
-    htr.quotientEvenCliffordEquiv m
-        (Ideal.Quotient.mk ((tr m).traceRadical (htr.map_mul_comm m)) x) =
+    htr.quotientEvenCliffordEquiv m (Ideal.Quotient.mk (htr.traceRadical m) x) =
       evenCliffordHom m x := by
   simp [quotientEvenCliffordEquiv, Ideal.quotientEquivAlgOfEq_mk]
 
@@ -428,11 +435,9 @@ theorem quotientEvenCliffordEquiv_mk
 `quotientStrandIncl` with the even Clifford coordinate inclusion `evenCliffordIncl`. -/
 @[simp]
 theorem quotientEvenCliffordEquiv_quotientStrandIncl
-    (htr : IsMarkovTrace ℂ (Real.sqrt 2 : ℂ) tr) (n : ℕ)
-    (q : TemperleyLieb ℂ (Real.sqrt 2 : ℂ) (n + 1) ⧸
-      (tr (n + 1)).traceRadical (htr.map_mul_comm (n + 1))) :
-    htr.quotientEvenCliffordEquiv (n + 2) (htr.quotientStrandIncl n q) =
-      evenCliffordIncl (n + 1) (htr.quotientEvenCliffordEquiv (n + 1) q) := by
+    (htr : IsMarkovTrace ℂ (Real.sqrt 2 : ℂ) tr) (n : ℕ) (q : htr.Quotient n) :
+    htr.quotientEvenCliffordEquiv (n + 1) (htr.quotientStrandIncl n q) =
+      evenCliffordIncl n (htr.quotientEvenCliffordEquiv n q) := by
   obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective q
   simp
 
@@ -443,25 +448,24 @@ theorem quotientEvenCliffordEquiv_symm_evenCliffordHom
     (htr : IsMarkovTrace ℂ (Real.sqrt 2 : ℂ) tr) (m : ℕ)
     (x : TemperleyLieb ℂ (Real.sqrt 2 : ℂ) m) :
     (htr.quotientEvenCliffordEquiv m).symm (evenCliffordHom m x) =
-      Ideal.Quotient.mk ((tr m).traceRadical (htr.map_mul_comm m)) x :=
+      Ideal.Quotient.mk (htr.traceRadical m) x :=
   (htr.quotientEvenCliffordEquiv m).injective (by simp)
 
 /-- `(quotientEvenCliffordEquiv _).symm` intertwines `evenCliffordIncl` with
 `quotientStrandIncl`. -/
 @[simp]
 theorem quotientEvenCliffordEquiv_symm_evenCliffordIncl
-    (htr : IsMarkovTrace ℂ (Real.sqrt 2 : ℂ) tr) (n : ℕ)
-    (y : EvenClifford (n + 1)) :
-    (htr.quotientEvenCliffordEquiv (n + 2)).symm (evenCliffordIncl (n + 1) y) =
-      htr.quotientStrandIncl n ((htr.quotientEvenCliffordEquiv (n + 1)).symm y) :=
-  (htr.quotientEvenCliffordEquiv (n + 2)).injective (by simp)
+    (htr : IsMarkovTrace ℂ (Real.sqrt 2 : ℂ) tr) (n : ℕ) (y : EvenClifford n) :
+    (htr.quotientEvenCliffordEquiv (n + 1)).symm (evenCliffordIncl n y) =
+      htr.quotientStrandIncl n ((htr.quotientEvenCliffordEquiv n).symm y) :=
+  (htr.quotientEvenCliffordEquiv (n + 1)).injective (by
+    rw [AlgEquiv.apply_symm_apply, htr.quotientEvenCliffordEquiv_quotientStrandIncl,
+      AlgEquiv.apply_symm_apply])
 
 /-- The induced trace on the `m`-strand Temperley–Lieb quotient at `δ = √2` is `(√2 : ℂ) ^ m` times
 `CliffordAlgebra.scalarTrace` under `quotientEvenCliffordEquiv`. -/
 theorem quotientTrace_eq_mul_scalarTrace_quotientEvenCliffordEquiv
-    (htr : IsMarkovTrace ℂ (Real.sqrt 2 : ℂ) tr) (m : ℕ)
-    (q : TemperleyLieb ℂ (Real.sqrt 2 : ℂ) m ⧸
-      (tr m).traceRadical (htr.map_mul_comm m)) :
+    (htr : IsMarkovTrace ℂ (Real.sqrt 2 : ℂ) tr) (m : ℕ) (q : htr.Quotient m) :
     (tr m).quotientTrace (htr.map_mul_comm m) q =
       (Real.sqrt 2 : ℂ) ^ m *
         CliffordAlgebra.scalarTrace (cliffordForm m) (htr.quotientEvenCliffordEquiv m q) := by
@@ -481,9 +485,7 @@ theorem quotientTrace_quotientEvenCliffordEquiv_symm
 @[simp]
 theorem finrank_quotient_traceRadical_sqrt_two
     (htr : IsMarkovTrace ℂ (Real.sqrt 2 : ℂ) tr) (m : ℕ) :
-    Module.finrank ℂ
-        (TemperleyLieb ℂ (Real.sqrt 2 : ℂ) m ⧸ (tr m).traceRadical (htr.map_mul_comm m)) =
-      2 ^ (m - 1) := by
+    Module.finrank ℂ (htr.Quotient m) = 2 ^ (m - 1) := by
   rw [(htr.quotientEvenCliffordEquiv m).toLinearEquiv.finrank_eq, finrank_evenClifford]
 
 end IsMarkovTrace
@@ -505,7 +507,7 @@ loop value `√2` and every `m : ℕ`, there is a surjective `ℂ`-algebra homom
 `F : TemperleyLieb ℂ (√2 : ℂ) m →ₐ[ℂ] EvenClifford m` sending each generator `e j` to
 `(√2 : ℂ) • cliffordProjection m j`, intertwining `star` with `cliffordAdjoint m`, expressing
 `tr m` as `(√2 : ℂ) ^ m` times `CliffordAlgebra.scalarTrace (cliffordForm m)`, and having kernel
-equal to the trace radical `(tr m).traceRadical`. -/
+equal to the trace radical `htr.traceRadical m`. -/
 theorem exists_evenCliffordModel
     {tr : ∀ n : ℕ, TemperleyLieb ℂ (Real.sqrt 2 : ℂ) n →ₗ[ℂ] ℂ}
     (htr : IsMarkovTrace ℂ (Real.sqrt 2 : ℂ) tr) (m : ℕ) :
@@ -521,7 +523,7 @@ theorem exists_evenCliffordModel
         tr m x =
           (Real.sqrt 2 : ℂ) ^ m *
             CliffordAlgebra.scalarTrace (cliffordForm m) (F x)) ∧
-      RingHom.ker F = (tr m).traceRadical (htr.map_mul_comm m) :=
+      RingHom.ker F = htr.traceRadical m :=
   ⟨evenCliffordHom m,
     evenCliffordHom_surjective m,
     coe_evenCliffordHom_e m,

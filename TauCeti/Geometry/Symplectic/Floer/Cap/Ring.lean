@@ -63,6 +63,14 @@ particular their units, the classes of the two PSS cycles, agree
 (`TauCeti.Floer.coordinates_symm_coefficientComparison_sub_mem_coboundaries_zero`), with no family
 of PSS planes joining them.
 
+Between two such complexes, counts `Φ` and `Ψ` of rigid maps in the two directions which are chain
+maps, are homotopy inverse to each other and make `Φ (a ⋆ b) - Φ a ⋆' Φ b` a coboundary on cocycles
+induce an isomorphism of algebras over the ground ring (`TauCeti.Floer.algEquivOfCounts`), sending
+the class of `a` to that of `Φ a` (`TauCeti.Floer.algEquivOfCounts_of_mk`), with inverse induced by
+`Ψ` (`TauCeti.Floer.algEquivOfCounts_symm_of_mk`). Continuation maps and PSS maps are instances,
+with multiplicativity supplied by the continuation family of pairs of pants and by the comparison
+family respectively.
+
 The construction applies to any capped complex with class-indexed product counts, for instance to
 capped Morse generators with the counts of the Morse quantum product. The energy, compactness,
 index and boundary-count hypotheses are the ones the geometric moduli spaces are to supply; no
@@ -84,7 +92,7 @@ noncomputable section
 
 namespace TauCeti.Floer
 
-open DirectSum NovikovModule NovikovSeries PeriodGroup
+open _root_.DirectSum NovikovModule NovikovSeries PeriodGroup
 
 variable {R S : Type*} [AddCommGroup S] {ω : S →+ ℝ} {c : S →+ ℤ}
   {G : Type*} [AddMonoid G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
@@ -518,5 +526,209 @@ end Independence
 end CohomologyRing
 
 end Ring
+
+section AlgEquiv
+
+variable [CommRing R] {ι ι' : Type*} [Fintype ι] [Fintype ι'] {P : ι → Type*} {P' : ι' → Type*}
+  [∀ i, AddTorsor (PeriodGroup ω c) (P i)] [∀ i', AddTorsor (PeriodGroup ω c) (P' i')]
+  (r : ∀ i, P i) (r' : ∀ i', P' i') {F : (Σ i, P i) → ℝ} {F' : (Σ i', P' i') → ℝ}
+  (hF : ∀ i γ (D : P i), F ⟨i, γ +ᵥ D⟩ = F ⟨i, D⟩ - (-area ω c) γ)
+  (hF' : ∀ i' γ (D : P' i'), F' ⟨i', γ +ᵥ D⟩ = F' ⟨i', D⟩ - (-area ω c) γ)
+  {μ : (Σ i, P i) → ℤ} {μ' : (Σ i', P' i') → ℤ}
+  (hμ : ∀ i γ (D : P i), μ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ ⟨i, D⟩)
+  (hμ' : ∀ i' γ (D : P' i'), μ' ⟨i', γ +ᵥ D⟩ = degree ω c γ + μ' ⟨i', D⟩)
+  (n : ℤ) (D : ι → ι → NovikovSeries R G ωG) (D' : ι' → ι' → NovikovSeries R G ωG) {C C' : ℝ}
+  (hδ : ∀ p p', mapKernelOfMatrix r r (fun i k => coefficientComparison q hq (D i k)) p p' ≠ 0 →
+    F p' ≤ F p + C)
+  (hδ' : ∀ p p',
+    mapKernelOfMatrix r' r' (fun i k => coefficientComparison q hq (D' i k)) p p' ≠ 0 →
+      F' p' ≤ F' p + C')
+  (Q : ι → ι → ι → NovikovSeries R G ωG) (Q' : ι' → ι' → ι' → NovikovSeries R G ωG) {CQ CQ' : ℝ}
+  (hnQ : ∀ p₁ p₂ p₀,
+    kernelOfMatrix r r r (fun i j k => coefficientComparison q hq (Q i j k)) p₁ p₂ p₀ ≠ 0 →
+      F p₀ ≤ F p₁ + F p₂ + CQ)
+  (hnQ' : ∀ p₁ p₂ p₀,
+    kernelOfMatrix r' r' r' (fun i j k => coefficientComparison q hq (Q' i j k)) p₁ p₂ p₀ ≠ 0 →
+      F' p₀ ≤ F' p₁ + F' p₂ + CQ')
+  (hQ : ∀ i j k, ∀ A ∈ (Q i j k).support,
+    μ ⟨k, r k⟩ - degree ω c (q A) = μ ⟨i, r i⟩ + μ ⟨j, r j⟩ - n)
+  (hQ' : ∀ i j k, ∀ A ∈ (Q' i j k).support,
+    μ' ⟨k, r' k⟩ - degree ω c (q A) = μ' ⟨i, r' i⟩ + μ' ⟨j, r' j⟩ - n)
+  (hL : ∀ i j l, ∑ k, Q i j k * D k l =
+    ∑ k, D i k * Q k j l + negOnePowCast R (n - μ ⟨i, r i⟩) • ∑ k, D j k * Q i k l)
+  (hL' : ∀ i j l, ∑ k, Q' i j k * D' k l =
+    ∑ k, D' i k * Q' k j l + negOnePowCast R (n - μ' ⟨i, r' i⟩) • ∑ k, D' j k * Q' i k l)
+  (E : ι → NovikovSeries R G ωG) (E' : ι' → NovikovSeries R G ωG)
+  (hE : ∀ i, ∀ A ∈ (E i).support, μ ⟨i, r i⟩ - degree ω c (q A) = n)
+  (hE' : ∀ i, ∀ A ∈ (E' i).support, μ' ⟨i, r' i⟩ - degree ω c (q A) = n)
+  (hED : ∀ l, ∑ i, E i * D i l = 0) (hED' : ∀ l, ∑ i, E' i * D' i l = 0)
+  [DecidableEq ι] [DecidableEq ι']
+  (hone_mul : ∃ K : ι → ι → NovikovSeries R G ωG,
+    (∀ j l, ∀ A ∈ (K j l).support, μ ⟨l, r l⟩ - degree ω c (q A) = μ ⟨j, r j⟩ + 1) ∧
+    ∀ j l, ∑ i, E i * Q i j l - (1 : Matrix ι ι (NovikovSeries R G ωG)) j l =
+      ∑ m, K j m * D m l + ∑ m, D j m * K m l)
+  (hone_mul' : ∃ K : ι' → ι' → NovikovSeries R G ωG,
+    (∀ j l, ∀ A ∈ (K j l).support, μ' ⟨l, r' l⟩ - degree ω c (q A) = μ' ⟨j, r' j⟩ + 1) ∧
+    ∀ j l, ∑ i, E' i * Q' i j l - (1 : Matrix ι' ι' (NovikovSeries R G ωG)) j l =
+      ∑ m, K j m * D' m l + ∑ m, D' j m * K m l)
+  (hmul_one : ∃ K : ι → ι → NovikovSeries R G ωG,
+    (∀ i l, ∀ A ∈ (K i l).support, μ ⟨l, r l⟩ - degree ω c (q A) = μ ⟨i, r i⟩ + 1) ∧
+    ∀ i l, ∑ j, E j * Q i j l - (1 : Matrix ι ι (NovikovSeries R G ωG)) i l =
+      ∑ m, K i m * D m l + ∑ m, D i m * K m l)
+  (hmul_one' : ∃ K : ι' → ι' → NovikovSeries R G ωG,
+    (∀ i l, ∀ A ∈ (K i l).support, μ' ⟨l, r' l⟩ - degree ω c (q A) = μ' ⟨i, r' i⟩ + 1) ∧
+    ∀ i l, ∑ j, E' j * Q' i j l - (1 : Matrix ι' ι' (NovikovSeries R G ωG)) i l =
+      ∑ m, K i m * D' m l + ∑ m, D' i m * K m l)
+  (hassoc : ∃ K : ι → ι → ι → ι → NovikovSeries R G ωG,
+    (∀ i j k l, ∀ A ∈ (K i j k l).support,
+      μ ⟨l, r l⟩ - degree ω c (q A) = μ ⟨i, r i⟩ + μ ⟨j, r j⟩ + μ ⟨k, r k⟩ - 2 * n + 1) ∧
+    ∀ i j k l, ∑ t, Q i j t * Q t k l - ∑ u, Q j k u * Q i u l =
+      ∑ m, K i j k m * D m l + ∑ m, D i m * K m j k l +
+        negOnePowCast R (n - μ ⟨i, r i⟩) • ∑ m, D j m * K i m k l +
+        negOnePowCast R (n - μ ⟨i, r i⟩ + (n - μ ⟨j, r j⟩)) • ∑ m, D k m * K i j m l)
+  (hassoc' : ∃ K : ι' → ι' → ι' → ι' → NovikovSeries R G ωG,
+    (∀ i j k l, ∀ A ∈ (K i j k l).support,
+      μ' ⟨l, r' l⟩ - degree ω c (q A) = μ' ⟨i, r' i⟩ + μ' ⟨j, r' j⟩ + μ' ⟨k, r' k⟩ - 2 * n + 1) ∧
+    ∀ i j k l, ∑ t, Q' i j t * Q' t k l - ∑ u, Q' j k u * Q' i u l =
+      ∑ m, K i j k m * D' m l + ∑ m, D' i m * K m j k l +
+        negOnePowCast R (n - μ' ⟨i, r' i⟩) • ∑ m, D' j m * K i m k l +
+        negOnePowCast R (n - μ' ⟨i, r' i⟩ + (n - μ' ⟨j, r' j⟩)) • ∑ m, D' k m * K i j m l)
+  (Φ : ι → ι' → NovikovSeries R G ωG) (Ψ : ι' → ι → NovikovSeries R G ωG)
+  (hΦ : ∀ i i', ∀ A ∈ (Φ i i').support, μ' ⟨i', r' i'⟩ - degree ω c (q A) = μ ⟨i, r i⟩)
+  (hΨ : ∀ i' i, ∀ A ∈ (Ψ i' i).support, μ ⟨i, r i⟩ - degree ω c (q A) = μ' ⟨i', r' i'⟩)
+  (hΦD : ∀ i l, ∑ k, Φ i k * D' k l = ∑ k, D i k * Φ k l)
+  (hΨD : ∀ i l, ∑ k, Ψ i k * D k l = ∑ k, D' i k * Ψ k l)
+  (hmul : ∀ {e f : ℤ} {a b : NovikovModule R F},
+    a ∈ (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cocycles
+      (gradeBy R F fun p => n - μ p) e →
+    b ∈ (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cocycles
+      (gradeBy R F fun p => n - μ p) f →
+    countMap r r' q hq hF hF' Φ (kernelProduct hnQ (kernelOfMatrix_mem hF r r r _) a b) -
+        kernelProduct hnQ' (kernelOfMatrix_mem hF' r' r' r' _) (countMap r r' q hq hF hF' Φ a)
+          (countMap r r' q hq hF hF' Φ b) ∈
+      (kernelMap hδ' (mapKernelOfMatrix_mem hF' r' r' _)).coboundaries
+        (gradeBy R F' fun p => n - μ' p) (e + f))
+  (hΨΦ : ∃ Y : ι → ι → NovikovSeries R G ωG,
+    (∀ i l, ∀ A ∈ (Y i l).support, μ ⟨l, r l⟩ - degree ω c (q A) = μ ⟨i, r i⟩ + 1) ∧
+    ∀ i l, ∑ k, Φ i k * Ψ k l - (if i = l then 1 else 0) =
+      ∑ m, Y i m * D m l + ∑ m, D i m * Y m l)
+  (hΦΨ : ∃ Y' : ι' → ι' → NovikovSeries R G ωG,
+    (∀ i l, ∀ A ∈ (Y' i l).support, μ' ⟨l, r' l⟩ - degree ω c (q A) = μ' ⟨i, r' i⟩ + 1) ∧
+    ∀ i l, ∑ k, Ψ i k * Φ k l - (if i = l then 1 else 0) =
+      ∑ m, Y' i m * D' m l + ∑ m, D' i m * Y' m l)
+
+/-- **Homotopy-inverse multiplicative counts give algebra isomorphisms of count rings.** Let two
+complexes of class-indexed counts satisfy the hypotheses of `TauCeti.Floer.cohomologyGRingOfCounts`,
+so that their degree-wise cohomologies are algebras over the ground ring. Let `Φ` and `Ψ` be
+counts of rigid maps in the two directions which preserve the index (`hΦ`, `hΨ`), obey the
+chain-map identities (`hΦD`, `hΨD`) and whose composites are homotopic to the identities
+(`hΨΦ`, `hΦΨ`) through counts lowering the cochain degree by one. If `Φ (a ⋆ b) - Φ a ⋆' Φ b` is a
+coboundary for all cocycles `a` and `b` (`hmul`), then the maps induced by `Φ` on cohomology form
+an isomorphism of algebras over the ground ring. The units correspond although no identity relating
+the two unit cycles is assumed. -/
+def algEquivOfCounts :
+    letI := cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one
+      hassoc
+    letI := cohomologyGAlgebraOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one
+      hassoc
+    letI := cohomologyGRingOfCounts q hq r' hF' hμ' n D' hδ' Q' hnQ' hQ' hL' E' hE' hED' hone_mul'
+      hmul_one' hassoc'
+    letI := cohomologyGAlgebraOfCounts q hq r' hF' hμ' n D' hδ' Q' hnQ' hQ' hL' E' hE' hED'
+      hone_mul' hmul_one' hassoc'
+    (⨁ k, (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cohomology
+        (gradeBy R F fun p => n - μ p) k) ≃ₐ[R]
+      ⨁ k, (kernelMap hδ' (mapKernelOfMatrix_mem hF' r' r' _)).cohomology
+        (gradeBy R F' fun p => n - μ' p) k :=
+  LinearMap.cohomologyAlgEquiv (kernelProduct hnQ (kernelOfMatrix_mem hF r r r _))
+    (kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r hF hμ n Q hnQ hQ)
+    (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r hF hμ n D hδ Q hnQ hL)
+    _ (coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E hE hED)
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_right r q hq hF r hF hμ D hδ Q hnQ E
+      hone_mul)
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_left r q hq hF r hF hμ D hδ Q hnQ E
+      hmul_one)
+    (kernelProduct_kernelProduct_coefficientComparison_sub_mem_coboundaries q hq r hF hμ n D hδ Q
+      hnQ hassoc)
+    (kernelProduct hnQ' (kernelOfMatrix_mem hF' r' r' r' _))
+    (kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r' hF' hμ' n Q' hnQ' hQ')
+    (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r' hF' hμ' n D' hδ' Q' hnQ' hL')
+    _ (coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r' hF' hμ' n D' hδ' E' hE'
+      hED')
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_right r' q hq hF' r' hF' hμ' D' hδ' Q'
+      hnQ' E' hone_mul')
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_left r' q hq hF' r' hF' hμ' D' hδ' Q'
+      hnQ' E' hmul_one')
+    (kernelProduct_kernelProduct_coefficientComparison_sub_mem_coboundaries q hq r' hF' hμ' n D'
+      hδ' Q' hnQ' hassoc')
+    (countMap r r' q hq hF hF' Φ) (countMap_mem_gradeBy r r' q hq hF hF' hμ hμ' Φ hΦ)
+    (fun {_} {a} _ => kernelMap_countMap r r' q hq hF hF' Φ D D' hδ hδ' hΦD a) hmul
+    (bijective_cohomologyMap_countMap r r' q hq hF hF' hμ hμ' Φ D D' hδ hδ' n Ψ hΦ hΨ hΦD hΨD hΨΦ
+      hΦΨ)
+
+/-- The algebra isomorphism of homotopy-inverse multiplicative counts sends the class of a cocycle
+`a` to the class of its image `Φ a` under the map of the counts. -/
+theorem algEquivOfCounts_of_mk {k : ℤ}
+    (a : (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cocycles
+      (gradeBy R F fun p => n - μ p) k)
+    (b : (kernelMap hδ' (mapKernelOfMatrix_mem hF' r' r' _)).cocycles
+      (gradeBy R F' fun p => n - μ' p) k)
+    (hab : novikovMapOfMatrix hF hF' r r' (fun i i' => coefficientComparison q hq (Φ i i')) a = b) :
+    algEquivOfCounts q hq r r' hF hF' hμ hμ' n D D' hδ hδ' Q Q' hnQ hnQ' hQ hQ' hL hL' E E' hE hE'
+        hED hED' hone_mul hone_mul' hmul_one hmul_one' hassoc hassoc' Φ Ψ hΦ hΨ hΦD hΨD hmul hΨΦ
+        hΦΨ (of _ k (Submodule.Quotient.mk a)) =
+      of (fun k => (kernelMap hδ' (mapKernelOfMatrix_mem hF' r' r' _)).cohomology
+        (gradeBy R F' fun p => n - μ' p) k) k (Submodule.Quotient.mk b) := by
+  rw [algEquivOfCounts]
+  -- The degree hypotheses of the two products occur only in the instances, where unification
+  -- does not assign proofs, so they are supplied by name.
+  refine (LinearMap.cohomologyAlgEquiv_of
+    (hμdeg := kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r hF hμ n Q hnQ hQ)
+    (hνdeg := kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r' hF' hμ' n Q' hnQ' hQ')
+    ..).trans ?_
+  rw [LinearMap.cohomologyMap_mk]
+  exact congrArg _ (congrArg _ (Subtype.ext ((countMap_apply r r' q hq hF hF' Φ a).trans hab)))
+
+/-- The inverse of the algebra isomorphism of homotopy-inverse multiplicative counts is induced by
+the counts `Ψ` in the opposite direction: it sends the class of a cocycle `b` to the class of
+`Ψ b`. -/
+theorem algEquivOfCounts_symm_of_mk {k : ℤ}
+    (b : (kernelMap hδ' (mapKernelOfMatrix_mem hF' r' r' _)).cocycles
+      (gradeBy R F' fun p => n - μ' p) k)
+    (a : (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cocycles
+      (gradeBy R F fun p => n - μ p) k)
+    (hba : novikovMapOfMatrix hF' hF r' r (fun i' i => coefficientComparison q hq (Ψ i' i)) b = a) :
+    letI := cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one
+      hassoc
+    letI := cohomologyGAlgebraOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one
+      hassoc
+    letI := cohomologyGRingOfCounts q hq r' hF' hμ' n D' hδ' Q' hnQ' hQ' hL' E' hE' hED' hone_mul'
+      hmul_one' hassoc'
+    letI := cohomologyGAlgebraOfCounts q hq r' hF' hμ' n D' hδ' Q' hnQ' hQ' hL' E' hE' hED'
+      hone_mul' hmul_one' hassoc'
+    (algEquivOfCounts q hq r r' hF hF' hμ hμ' n D D' hδ hδ' Q Q' hnQ hnQ' hQ hQ' hL hL' E E' hE hE'
+        hED hED' hone_mul hone_mul' hmul_one hmul_one' hassoc hassoc' Φ Ψ hΦ hΨ hΦD hΨD hmul hΨΦ
+        hΦΨ).symm (of _ k (Submodule.Quotient.mk b)) =
+      of (fun k => (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).cohomology
+        (gradeBy R F fun p => n - μ p) k) k (Submodule.Quotient.mk a) := by
+  let := cohomologyGRingOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one hassoc
+  let := cohomologyGAlgebraOfCounts q hq r hF hμ n D hδ Q hnQ hQ hL E hE hED hone_mul hmul_one
+    hassoc
+  let := cohomologyGRingOfCounts q hq r' hF' hμ' n D' hδ' Q' hnQ' hQ' hL' E' hE' hED' hone_mul'
+    hmul_one' hassoc'
+  let := cohomologyGAlgebraOfCounts q hq r' hF' hμ' n D' hδ' Q' hnQ' hQ' hL' E' hE' hED' hone_mul'
+    hmul_one' hassoc'
+  refine (AlgEquiv.symm_apply_eq _).2 ?_
+  rw [algEquivOfCounts_of_mk q hq r r' hF hF' hμ hμ' n D D' hδ hδ' Q Q' hnQ hnQ' hQ hQ' hL hL' E E'
+    hE hE' hED hED' hone_mul hone_mul' hmul_one hmul_one' hassoc hassoc' Φ Ψ hΦ hΨ hΦD hΨD hmul hΨΦ
+    hΦΨ a
+    ⟨_, novikovMapOfMatrix_coefficientComparison_mem_cocycles r r' q hq hF hF' hμ hμ' hΦ hΦD hδ hδ'
+      a.property⟩
+    rfl]
+  -- `Φ (Ψ b) - b` is a coboundary, by the homotopy `hΦΨ`.
+  refine congrArg _ (LinearMap.cohomology_mk_eq_mk_iff.2 ?_).symm
+  have h := countMap_countMap_sub_mem_coboundaries r' r q hq hF' hF hμ' Ψ D' hδ' Φ hΦΨ b.property
+  rwa [countMap_apply r' r q hq hF' hF, hba, countMap_apply] at h
+
+end AlgEquiv
 
 end TauCeti.Floer

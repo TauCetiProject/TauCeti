@@ -8,7 +8,7 @@ module
 -- `GL` occurs in the statements below.
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 -- `qPochhammer` occurs in the statement of the density identity.
-public import TauCeti.Algebra.Ring.QPochhammer
+public import TauCeti.Algebra.Ring.QPochhammer.Basic
 -- Non-public: `Matrix.card_GL_field` is what the two factorizations below are read off, in the
 -- proofs only.
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Card
@@ -20,7 +20,7 @@ import TauCeti.Algebra.BigOperators.Finset.Range
 -- Non-public: the count along a local surjection is the unit count of the matrix rings.
 import TauCeti.LinearAlgebra.Matrix.IdealEntries
 import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
-import TauCeti.RingTheory.LocalRing.RingHom
+import TauCeti.RingTheory.LocalRing.RingHom.Basic
 -- Non-public: `Finset.prod_range_add_sub_eq` reverses the factors `q ^ i - 1`.
 import TauCeti.Algebra.BigOperators.Finset.Range
 -- Non-public: `Nat.pow_sub_pow_eq_pow_mul_pow_sub_one` factors each difference `q ^ n - q ^ i`.

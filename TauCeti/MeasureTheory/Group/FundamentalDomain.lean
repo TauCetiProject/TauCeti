@@ -47,6 +47,10 @@ only along a null frontier, is itself a fundamental domain.
   translated frontiers, whose translates cover almost everything and have pairwise disjoint
   interiors, is a fundamental domain. This is how a closed tile of a tessellation, such
   as a fundamental polygon, becomes a measurable fundamental domain.
+* `MeasureTheory.IsFundamentalDomain.of_existsUnique_div`,
+  `MeasureTheory.IsAddFundamentalDomain.of_existsUnique_sub`: in a commutative group, a
+  null-measurable set meeting each coset of the subgroup swept out by a map `φ` exactly once, in
+  the form `a / φ x` (`a - φ x`), is a fundamental domain.
 * `MeasureTheory.IsFundamentalDomain.congr_set`: a set a.e. equal to a fundamental domain is one.
 * `MeasureTheory.IsFundamentalDomain.measure_le_of_aedisjoint_smul`: a set a.e. disjoint from its
   nonidentity translates has measure at most that of a fundamental domain.
@@ -57,6 +61,8 @@ only along a null frontier, is itself a fundamental domain.
   positive, invariant under conjugation, and multiplied by the index on passing to a subgroup.
 * `MeasureTheory.covolume_eq_index_mul_covolume`: the same multiplicativity at finite index, with
   the index as a natural number.
+* `MeasureTheory.covolume_smul_measure`: for an invariant measure, scaling the measure by `c`
+  scales the covolume by `c`.
 
 Ported from the
 [AINTLIB `LeanModularForms` project](https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms),
@@ -70,7 +76,7 @@ namespace MeasureTheory
 
 open Measure Set
 
-open scoped Pointwise
+open scoped ENNReal Pointwise
 
 /-- **Transversal coset tiling of a fundamental domain.** If `s` is a fundamental domain
 for a group `G` acting on `α`, `H ≤ G` a subgroup, and `r : ι → G` a family such that
@@ -275,6 +281,30 @@ theorem IsFundamentalDomain.iUnion_mul_out_inv_smul {G α : Type*} [Group G] [Me
     (fun v ↦ hs.nullMeasurableSet_smul _) <| by
       simpa only [inv_inv, QuotientGroup.out_eq', Function.id_def] using Function.bijective_id
 
+/-- **A set meeting every coset exactly once is a fundamental domain.** In a commutative group
+`α`, a null-measurable set `s` containing exactly one quotient `a / φ x` of every point `a` by
+the values of a map `φ` is a fundamental domain for the subgroup `S` swept out by `φ`, acting by
+multiplication. -/
+@[to_additive /-- **A set meeting every coset exactly once is an additive fundamental domain.**
+In a commutative additive group `α`, a null-measurable set `s` containing exactly one difference
+`a - φ x` of every point `a` with the values of a map `φ` is an additive fundamental domain for the
+subgroup `S` swept out by `φ`, acting by addition. -/]
+theorem IsFundamentalDomain.of_existsUnique_div {A α : Type*} [CommGroup α] [MeasurableSpace α]
+    {μ : Measure α} (φ : A → α) {S : Subgroup α} (hS : ∀ g, g ∈ S ↔ ∃ x, φ x = g) {s : Set α}
+    (hs : NullMeasurableSet s μ) (h : ∀ a, ∃! x, a / φ x ∈ s) :
+    IsFundamentalDomain S s μ := by
+  refine .mk' hs fun a ↦ ?_
+  obtain ⟨x, hx, hxu⟩ := h a
+  refine ⟨⟨(φ x)⁻¹, inv_mem ((hS _).2 ⟨x, rfl⟩)⟩, ?_, ?_⟩
+  · simpa only [Subgroup.mk_smul, smul_eq_mul, inv_mul_eq_div] using hx
+  · rintro ⟨g, hg⟩ hg'
+    obtain ⟨y, hy⟩ := (hS _).1 (inv_mem hg)
+    have hy' : a / φ y ∈ s := by
+      rw [hy, div_inv_eq_mul, mul_comm]
+      exact hg'
+    obtain rfl := hxu y hy'
+    exact Subtype.ext (show g = (φ y)⁻¹ by rw [hy, inv_inv])
+
 /-- **A tile with disjoint interiors and null frontier is a fundamental domain.** Let `s` be a
 null-measurable set whose translates cover almost every point, all of whose translated frontiers
 are null, and whose interior is disjoint from its translates by nonidentity elements. Then `s` is
@@ -417,5 +447,24 @@ theorem covolume_eq_index_mul_covolume {G α : Type*} [Group G] [MulAction G α]
     covolume Δ α μ = (Δ.subgroupOf Γ).index * covolume Γ α μ := by
   rw [covolume_eq_card_mul_covolume h, ENat.card_eq_coe_natCard, ENat.toENNReal_coe,
     Subgroup.index]
+
+/-- **Covolume scales with the measure**: multiplying the measure by `c` multiplies the covolume
+by `c`. -/
+@[to_additive (attr := simp) addCovolume_smul_measure /-- **Covolume scales with the measure**:
+multiplying the measure by `c` multiplies the additive covolume by `c`. -/]
+theorem covolume_smul_measure {G α : Type*} [Group G] [MulAction G α] [MeasurableSpace α]
+    [Countable G] [MeasurableConstSMul G α] {μ : Measure α} [SMulInvariantMeasure G α μ]
+    (c : ℝ≥0∞) : covolume G α (c • μ) = c * covolume G α μ := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp only [zero_smul, zero_mul]
+    unfold covolume
+    split_ifs <;> simp
+  by_cases h : HasFundamentalDomain G α μ
+  · obtain ⟨s, hs⟩ := h.ExistsIsFundamentalDomain
+    rw [(hs.mono smul_absolutelyContinuous).covolume_eq_volume, hs.covolume_eq_volume,
+      smul_apply, smul_eq_mul]
+  · have h' : ¬HasFundamentalDomain G α (c • μ) := fun ⟨⟨s, hs⟩⟩ =>
+      h ⟨⟨s, hs.mono (absolutelyContinuous_smul hc)⟩⟩
+    simp [covolume, h, h']
 
 end MeasureTheory

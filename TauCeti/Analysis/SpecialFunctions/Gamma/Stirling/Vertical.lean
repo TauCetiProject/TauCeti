@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Basic
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Sector
 import Mathlib.Analysis.Asymptotics.Prod
 import Mathlib.Analysis.Complex.Liouville
 import TauCeti.Analysis.Asymptotics.VerticalStrip
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.Basic
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
@@ -30,8 +31,8 @@ from the real axis, on any pole-free vertical line (including complex shifts `w 
 the entire reciprocal `Γ⁻¹` across the whole strip; Cauchy's estimate on unit circles then bounds
 the derivative of `Γ⁻¹` across the strip and uniformly on unit balls.
 
-The proof is the sector form `TauCeti.abs_log_norm_Gamma_sub_stirling_le`
-(`TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Basic.lean`) at the angle `π / 4`.
+The proof is the sector form `TauCeti.abs_log_norm_Gamma_sub_stirling_lt`
+(`TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Sector.lean`) at the angle `π / 4`.
 Once `|σ| ≤ |t|` the point `σ + i t` has `|arg| ≤ 3π/4`, and the sector main term
 `(σ - 1/2) log ‖s‖ - t arg s - σ` differs from the vertical one by two terms of size `O(1 / |t|)`:
 
@@ -45,7 +46,7 @@ Negative `t` reduces to positive `t` by `Γ(conj s) = conj (Γ s)`.
 ## Main declarations
 
 * `TauCeti.abs_log_norm_Gamma_vertical_sub_le`: the explicit bound
-  `(1 / (8 * sin (π / 8) ^ 2) + |σ - 1/2| |σ| + σ ^ 2) / |t|` at every `s = σ + i t` with
+  `(1 / (12 * sin (π / 8) ^ 2) + |σ - 1/2| |σ| + σ ^ 2) / |t|` at every `s = σ + i t` with
   `t ≠ 0` and `|σ| ≤ |t|`.
 * `TauCeti.exists_abs_log_norm_Gamma_vertical_sub_le`: one constant and one threshold for all `s`
   with `Re s ∈ [a, b]`.
@@ -78,6 +79,8 @@ Negative `t` reduces to positive `t` by `Γ(conj s) = conj (Γ s)`.
   `TauCeti.exists_norm_inv_Gamma_and_deriv_ball_add_I_le`: uniform upper bounds for `‖(Γ s)⁻¹‖`
   and `‖deriv (Γ ·)⁻¹ s‖` across the strip `Re s ∈ [a, b]` and on shifted vertical lines over unit
   balls.
+* `TauCeti.exists_norm_Gamma_add_mul_I_le`: uniform exponential bounds for `‖Γ(w + i y)‖` and
+  `‖(Γ(w + i y))⁻¹‖` on bounded boxes `|Re w|, |Im w| ≤ R` for large `|y|`.
 
 The statements of `TauCeti.exists_norm_Gamma_le` and `TauCeti.exists_norm_Gamma_le_of_pos` follow
 the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
@@ -90,18 +93,24 @@ open Complex Real Filter Set Asymptotics
 
 namespace TauCeti
 
-/-- The modulus term: `0 ≤ log ‖σ + i t‖ - log t ≤ |σ| / t` for `t > 0`, since
-`t ≤ ‖σ + i t‖ ≤ t + |σ|`. -/
-private theorem abs_log_norm_sub_log_im_le {σ t : ℝ} (ht : 0 < t) :
+/-- The modulus term: `0 ≤ log ‖σ + i t‖ - log t ≤ (σ / t) ^ 2 / 2 ≤ |σ| / t` for
+`0 < t` and `|σ| ≤ t`. -/
+private theorem abs_log_norm_sub_log_im_le {σ t : ℝ} (ht : 0 < t) (hσt : |σ| ≤ t) :
     |Real.log ‖(σ : ℂ) + t * I‖ - Real.log t| ≤ |σ| / t := by
   set s : ℂ := σ + t * I
-  have hts : t ≤ ‖s‖ := by simpa [s, abs_of_pos ht] using abs_im_le_norm s
-  have hst : ‖s‖ ≤ |σ| + t := by simpa [s, abs_of_pos ht] using norm_le_abs_re_add_abs_im s
-  rw [abs_of_nonneg (sub_nonneg.2 (Real.log_le_log ht hts)),
-    ← Real.log_div (ht.trans_le hts).ne' ht.ne']
-  refine (Real.log_le_sub_one_of_pos (div_pos (ht.trans_le hts) ht)).trans ?_
-  rw [div_sub_one ht.ne']
-  exact div_le_div_of_nonneg_right (by linarith) ht.le
+  have hre : s.re = σ := by simp [s]
+  have him : s.im = t := by simp [s]
+  have h0 := Real.log_le_log (him ▸ ht) (im_le_norm s)
+  have h1 := (le_abs_self _).trans (Complex.abs_log_norm_sub_log_abs_im_le (z := s) (him ▸ ht.ne'))
+  rw [hre, him, abs_of_pos ht] at h1
+  rw [him] at h0
+  have hx : |σ / t| ≤ 1 := by
+    rw [abs_div, abs_of_pos ht]
+    exact div_le_one_of_le₀ hσt ht.le
+  rw [abs_of_nonneg (sub_nonneg.2 h0)]
+  calc Real.log ‖s‖ - Real.log t ≤ (σ / t) ^ 2 / 2 := h1
+    _ ≤ |σ / t| := by nlinarith [sq_abs (σ / t), abs_nonneg (σ / t)]
+    _ = |σ| / t := by rw [abs_div, abs_of_pos ht]
 
 /-- The angle term: `|t (arctan (σ / t) - σ / t)| ≤ σ ^ 2 / t` for `|σ| ≤ t`, from the cubic
 bound `|arctan x - x| ≤ |x| ^ 3` at `|x| ≤ 1`. -/
@@ -123,9 +132,9 @@ private theorem abs_log_norm_Gamma_vertical_sub_le_of_pos {σ t : ℝ} (ht : 0 <
     (hσt : |σ| ≤ t) :
     |Real.log ‖Complex.Gamma (σ + t * I)‖ -
         ((σ - 1 / 2) * Real.log |t| - π * |t| / 2 + Real.log (2 * π) / 2)| ≤
-      (1 / (8 * Real.sin (π / 8) ^ 2) + |σ - 1 / 2| * |σ| + σ ^ 2) / |t| := by
+      (1 / (12 * Real.sin (π / 8) ^ 2) + |σ - 1 / 2| * |σ| + σ ^ 2) / |t| := by
   set s : ℂ := σ + t * I
-  set K : ℝ := 1 / (8 * Real.sin (π / 8) ^ 2)
+  set K : ℝ := 1 / (12 * Real.sin (π / 8) ^ 2)
   have hre : s.re = σ := by simp [s]
   have him : s.im = t := by simp [s]
   rw [abs_of_pos ht]
@@ -146,13 +155,13 @@ private theorem abs_log_norm_Gamma_vertical_sub_le_of_pos {σ t : ℝ} (ht : 0 <
     obtain ⟨h1, h2⟩ := abs_le.1 hatan_le
     constructor <;> linarith [Real.pi_pos]
   -- Stirling on the sector `|arg s| ≤ 3π/4`
-  have hS := abs_log_norm_Gamma_sub_stirling_le (by positivity) hsector hs0
+  have hS := (abs_log_norm_Gamma_sub_stirling_lt (by positivity) hsector hs0).le
   rw [hre, him, show π / 4 / 2 = π / 8 by ring, ← div_div] at hS
   have hS' : K / ‖s‖ ≤ K / t := div_le_div_of_nonneg_left hK ht hts
   -- the modulus term
   have hA : |(σ - 1 / 2) * (Real.log ‖s‖ - Real.log t)| ≤ |σ - 1 / 2| * |σ| / t := by
     rw [abs_mul, mul_div_assoc]
-    exact mul_le_mul_of_nonneg_left (abs_log_norm_sub_log_im_le ht) (abs_nonneg _)
+    exact mul_le_mul_of_nonneg_left (abs_log_norm_sub_log_im_le ht hσt) (abs_nonneg _)
   have hsplit : Real.log ‖Complex.Gamma s‖ -
       ((σ - 1 / 2) * Real.log t - π * t / 2 + Real.log (2 * π) / 2) =
       (Real.log ‖Complex.Gamma s‖ - ((σ - 1 / 2) * Real.log ‖s‖ - t * s.arg - σ +
@@ -170,7 +179,7 @@ private theorem abs_log_norm_Gamma_vertical_sub_le_of_ne_zero {σ t : ℝ} (ht :
     (hσt : |σ| ≤ |t|) :
     |Real.log ‖Complex.Gamma (σ + t * I)‖ -
         ((σ - 1 / 2) * Real.log |t| - π * |t| / 2 + Real.log (2 * π) / 2)| ≤
-      (1 / (8 * Real.sin (π / 8) ^ 2) + |σ - 1 / 2| * |σ| + σ ^ 2) / |t| := by
+      (1 / (12 * Real.sin (π / 8) ^ 2) + |σ - 1 / 2| * |σ| + σ ^ 2) / |t| := by
   rcases ht.lt_or_gt with ht | ht
   · have hpos := abs_log_norm_Gamma_vertical_sub_le_of_pos (σ := σ) (neg_pos.2 ht)
       (by rwa [abs_of_neg ht] at hσt)
@@ -183,11 +192,11 @@ private theorem abs_log_norm_Gamma_vertical_sub_le_of_ne_zero {σ t : ℝ} (ht :
 /-- **Stirling's formula on vertical strips**, explicit form: for `s = σ + i t` with `t ≠ 0` and
 `|σ| ≤ |t|`,
 `|log ‖Γ(s)‖ - ((σ - 1/2) log |t| - π |t| / 2 + log (2π) / 2)| ≤
-(1 / (8 * sin (π / 8) ^ 2) + |σ - 1/2| |σ| + σ ^ 2) / |t|`. -/
+(1 / (12 * sin (π / 8) ^ 2) + |σ - 1/2| |σ| + σ ^ 2) / |t|`. -/
 theorem abs_log_norm_Gamma_vertical_sub_le {s : ℂ} (hs : s.im ≠ 0) (hre : |s.re| ≤ |s.im|) :
     |Real.log ‖Complex.Gamma s‖ -
         ((s.re - 1 / 2) * Real.log |s.im| - π * |s.im| / 2 + Real.log (2 * π) / 2)| ≤
-      (1 / (8 * Real.sin (π / 8) ^ 2) + |s.re - 1 / 2| * |s.re| + s.re ^ 2) / |s.im| := by
+      (1 / (12 * Real.sin (π / 8) ^ 2) + |s.re - 1 / 2| * |s.re| + s.re ^ 2) / |s.im| := by
   simpa only [re_add_im] using abs_log_norm_Gamma_vertical_sub_le_of_ne_zero hs hre
 
 /-- Stirling's formula on vertical strips, with one constant and one threshold for the whole
@@ -199,7 +208,7 @@ theorem exists_abs_log_norm_Gamma_vertical_sub_le (a b : ℝ) :
           ((s.re - 1 / 2) * Real.log |s.im| - π * |s.im| / 2 + Real.log (2 * π) / 2)| ≤
         C / |s.im| := by
   set M := max |a| |b|
-  refine ⟨1 / (8 * Real.sin (π / 8) ^ 2) + (M + 1 / 2) * M + M ^ 2, M + 1,
+  refine ⟨1 / (12 * Real.sin (π / 8) ^ 2) + (M + 1 / 2) * M + M ^ 2, M + 1,
     fun s hs ht ↦ ?_⟩
   have hσM : |s.re| ≤ M := abs_le_max_abs_abs hs.1 hs.2
   have hM : 0 ≤ M := (abs_nonneg _).trans hσM
@@ -788,5 +797,66 @@ theorem exists_norm_inv_Gamma_and_deriv_ball_add_I_le (w₀ : ℂ) :
             mul_le_mul_of_nonneg_left (hshift _ him_le y) hCd.le
       _ ≤ C * (1 + |y|) ^ (5 / 2 - w₀.re) * Real.exp (π * |y| / 2) := by
             rw [← mul_assoc, ← mul_assoc]; gcongr; exact le_max_right _ _
+
+/-- Uniform vertical-strip exponential bounds for `‖Γ(w + i y)‖` and `‖(Γ(w + i y))⁻¹‖`: for any
+`R : ℝ` and `ε > 0`, there exist `A` and `Y₀ ≥ 1` such that whenever `|w.re| ≤ R`, `|w.im| ≤ R`,
+and `Y₀ ≤ |y|`,
+`‖Γ(w + i y)‖ ≤ exp (A + (-π / 2 + ε) * |y|)` and
+`‖(Γ(w + i y))⁻¹‖ ≤ exp (A + (π / 2 + ε) * |y|)`. -/
+theorem exists_norm_Gamma_add_mul_I_le (R : ℝ) {ε : ℝ} (hε : 0 < ε) :
+    ∃ A Y₀ : ℝ, 1 ≤ Y₀ ∧ ∀ (w : ℂ) (y : ℝ), |w.re| ≤ R → |w.im| ≤ R → Y₀ ≤ |y| →
+      ‖Complex.Gamma (w + y * I)‖ ≤ Real.exp (A + (-π / 2 + ε) * |y|) ∧
+        ‖(Complex.Gamma (w + y * I))⁻¹‖ ≤ Real.exp (A + (π / 2 + ε) * |y|) := by
+  let M : ℝ := max R 0
+  have : 0 ≤ M := le_max_right R 0
+  obtain ⟨C, T, hST⟩ := exists_abs_log_norm_Gamma_vertical_sub_le (-M) M
+  let η : ℝ := ε / (M + 1)
+  have hη : 0 < η := div_pos hε (by positivity)
+  let Y₀ : ℝ := max 1 (max T 1 + M + 1)
+  let A : ℝ := |C| + |Real.log (2 * π) / 2| + π * M / 2 + ε * M - (M + 1) * Real.log η
+  refine ⟨A, Y₀, le_max_left _ _, fun w y hwre hwim hy => ?_⟩
+  have hwreM : |w.re| ≤ M := hwre.trans (le_max_left R 0)
+  have hwimM : |w.im| ≤ M := hwim.trans (le_max_left R 0)
+  set s : ℂ := w + y * I
+  have hs_re : s.re ∈ Icc (-M) M := by
+    simpa [s, mem_Icc] using abs_le.1 hwreM
+  have hs_im_sub : |(|s.im| - |y|)| ≤ M := by
+    simpa [s] using (abs_abs_sub_abs_le_abs_sub (w.im + y) y).trans (by simpa using hwimM)
+  have hyT : max T 1 + M + 1 ≤ |y| := (le_max_right _ _).trans hy
+  have hs_im_ge : 1 ≤ |s.im| := by linarith [(abs_le.1 hs_im_sub).1, le_max_right T 1]
+  -- Compare Stirling's formula at `s = w + i y` against the bound on `|Im s|`.
+  have hmain := hST s hs_re (by linarith [(abs_le.1 hs_im_sub).1, le_max_left T 1])
+  have hdiv : C / |s.im| ≤ |C| := (le_abs_self _).trans (by
+    rw [abs_div, abs_of_pos (zero_lt_one.trans_le hs_im_ge)]
+    exact div_le_self (abs_nonneg C) hs_im_ge)
+  -- Bound `|(Re s - 1/2) log |Im s|| ≤ ε |y| + const` using `η = ε / (M + 1)`.
+  have hlog_le : |(s.re - 1 / 2) * Real.log (|s.im|)| ≤
+      ε * |y| + ε * M - (M + 1) * Real.log η := by
+    have hlog_ge : 0 ≤ Real.log |s.im| := Real.log_nonneg hs_im_ge
+    have hsre : |s.re - 1 / 2| ≤ M + 1 := abs_le.2 ⟨by linarith [hs_re.1], by linarith [hs_re.2]⟩
+    have hlog_ub : Real.log |s.im| ≤ η * (|y| + M) - Real.log η := by
+      have h := Real.log_le_mul_sub_log_sub_one (zero_lt_one.trans_le hs_im_ge) hη
+      linarith [mul_le_mul_of_nonneg_left (by linarith [(abs_le.1 hs_im_sub).2] : |s.im| ≤ |y| + M)
+        hη.le]
+    rw [abs_mul, abs_of_nonneg hlog_ge]
+    refine (mul_le_mul hsre hlog_ub hlog_ge (by positivity)).trans_eq ?_
+    have hmul : (M + 1) * η = ε := mul_div_cancel₀ ε (by positivity)
+    linear_combination (|y| + M) * hmul
+  have hpi : |π * |s.im| / 2 - π * |y| / 2| ≤ π * M / 2 := by
+    rw [mul_div_right_comm π |s.im| 2, mul_div_right_comm π |y| 2, ← mul_sub, abs_mul,
+      abs_of_pos (by positivity)]
+    linarith [mul_le_mul_of_nonneg_left hs_im_sub (by positivity : 0 ≤ π / 2)]
+  have hpos : 0 < ‖Complex.Gamma s‖ := norm_pos_iff.2 (Complex.Gamma_ne_zero fun n hn => by
+    have him0 : s.im = 0 := by simp [hn]
+    rw [him0, abs_zero] at hs_im_ge; linarith)
+  -- Exponentiate the upper and lower log-norm bounds for `Γ` and `Γ⁻¹`.
+  refine ⟨?_, ?_⟩
+  · rw [← Real.exp_log hpos]; refine Real.exp_le_exp.2 ?_; dsimp only [A]
+    linarith [(abs_le.1 hmain).2, (abs_le.1 hlog_le).2, (abs_le.1 hpi).1,
+      le_abs_self (Real.log (2 * π) / 2)]
+  · rw [norm_inv, ← Real.exp_log hpos, ← Real.exp_neg]; refine Real.exp_le_exp.2 ?_
+    dsimp only [A]
+    linarith [(abs_le.1 hmain).1, (abs_le.1 hlog_le).1, (abs_le.1 hpi).2,
+      neg_le_abs (Real.log (2 * π) / 2)]
 
 end TauCeti

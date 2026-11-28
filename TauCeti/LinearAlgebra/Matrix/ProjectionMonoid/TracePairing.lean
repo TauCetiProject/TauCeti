@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.KZero
+public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.Prod
 
 /-!
 # Trace pairings on projection `K₀`-groups
@@ -17,6 +17,10 @@ additive under block sum, so it induces the **trace pairing**
 `f_* : K₀(R) →+ M` on the projection `K₀`-group (`TauCeti.ProjectionKZero.tracePairing`), natural
 under star ring homomorphisms (`TauCeti.ProjectionKZero.tracePairing_comp_map`). Neither
 positivity nor linearity enters.
+
+On a product, the pairing is computed summand by summand
+(`TauCeti.ProjectionKZero.tracePairing_prod`): this is the decomposition
+`x = inl_* (fst_* x) + inr_* (snd_* x)` of `K₀(R × S) ≃+ K₀(R) × K₀(S)` together with naturality.
 
 ## References
 
@@ -87,6 +91,21 @@ theorem tracePairing_congr {f f' : R →+ M} (h : f = f') (hf : ∀ a b, f (a * 
     (hf' : ∀ a b, f' (a * b) = f' (b * a)) : tracePairing f hf = tracePairing f' hf' := by
   subst h
   rfl
+
+/-- **The trace pairing of a product is computed summand by summand**: for a tracial
+`f : R × S →+ M`, `f_* x = (f ∘ inl)_* (fst_* x) + (f ∘ inr)_* (snd_* x)`. -/
+theorem tracePairing_prod (f : R × S →+ M) (hf : ∀ a b, f (a * b) = f (b * a))
+    (x : ProjectionKZero (R × S)) :
+    tracePairing f hf x =
+      tracePairing (f.comp (NonUnitalStarRingHom.inl R S).toNonUnitalRingHom.toAddMonoidHom)
+          (fun a b ↦ by simpa using hf (a, 0) (b, 0))
+          (map (NonUnitalStarRingHom.fst R S) x) +
+        tracePairing (f.comp (NonUnitalStarRingHom.inr R S).toNonUnitalRingHom.toAddMonoidHom)
+          (fun a b ↦ by simpa using hf (0, a) (0, b))
+          (map (NonUnitalStarRingHom.snd R S) x) := by
+  conv_lhs => rw [← map_inl_map_fst_add_map_inr_map_snd x]
+  rw [map_add, tracePairing_comp_map, tracePairing_comp_map, AddMonoidHom.comp_apply,
+    AddMonoidHom.comp_apply]
 
 end ProjectionKZero
 

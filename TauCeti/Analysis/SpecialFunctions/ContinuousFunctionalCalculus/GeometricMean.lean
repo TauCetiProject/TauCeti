@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.ConjSqrt
+public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Order
+
+import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Abs
 
 /-!
 # The geometric mean of two positive elements
@@ -39,10 +42,16 @@ roots (`CFC.sqrt_unique`).
 * `TauCeti.geometricMean_ringInverse_ringInverse`: it commutes with inversion.
 * `TauCeti.geometricMean_add_geometricMean_le`: the arithmetic--geometric mean inequality.
 * `TauCeti.eq_geometricMean_ringInverse_of_mul_mul`: the transport form `x * a * x = b`.
+* `TauCeti.le_geometricMean_of_mul_ringInverse_mul_le` and
+  `IsStrictlyPositive.isGreatest_geometricMean_setOf_mul_ringInverse_mul_le`: in a C⋆-algebra,
+  the geometric mean lies above every self-adjoint `x` with `x * a⁻¹ * x ≤ b`, and it is the
+  greatest nonnegative such `x`.
 
 ## References
 
 * T. Ando, *Topics on operator inequalities*, Hokkaido University, 1978.
+* B. Simon, *Loewner's theorem on monotone matrix functions*, Springer, 2019, Prop. 36.7 and
+  Thm. 36.9.
 * W. Pusz and S. L. Woronowicz, *Functional calculus for sesquilinear forms and the purification
   map*, Rep. Math. Phys. **8** (1975), 159--170.
 -/
@@ -220,3 +229,50 @@ theorem eq_geometricMean_ringInverse_of_mul_mul (h : x * a * x = b)
   rwa [inverse_inverse ha.isUnit]
 
 end TauCeti
+
+/-! ### Maximality in a C⋆-algebra -/
+
+namespace TauCeti
+
+variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] {a b x : A}
+
+/-- **Maximality of the geometric mean.** In a C⋆-algebra, every self-adjoint `x` with
+`x * a⁻¹ * x ≤ b` lies below the geometric mean of `a` and `b`, for strictly positive `a`. -/
+theorem le_geometricMean_of_mul_ringInverse_mul_le (h : x * a⁻¹ʳ * x ≤ b)
+    (ha : IsStrictlyPositive a := by cfc_tac) (hx : IsSelfAdjoint x := by cfc_tac) :
+    x ≤ geometricMean a b := by
+  -- Conjugating by `√a⁻¹` turns the hypothesis into `y * y ≤ √a⁻¹ * b * √a⁻¹`; then
+  -- `y ≤ |y| = √(y * y)`, and the square root is operator monotone.
+  set y := conjSqrt a⁻¹ʳ x
+  have hys : IsSelfAdjoint y := by
+    simpa only [y, conjSqrt_apply] using
+      hx.conjugate_self (sqrt_nonneg a⁻¹ʳ).isSelfAdjoint
+  have hy : y * y ≤ conjSqrt a⁻¹ʳ b := by
+    have hmul := conjSqrt_mul_mul_conjSqrt a⁻¹ʳ x 1 x
+    rw [mul_one, conjSqrt_one _ ha.ringInverse.nonneg] at hmul
+    exact hmul ▸ conjSqrt_le_conjSqrt h
+  have hyabs : y ≤ sqrt (y * y) := by
+    have habs := CFC.abs_sub_self y hys
+    rw [CFC.abs, hys.star_eq] at habs
+    exact sub_nonneg.mp (habs ▸ smul_nonneg zero_le_two (CFC.negPart_nonneg y))
+  calc x = conjSqrt a y := (conjSqrt_conjSqrt_ringInverse a x ha).symm
+    _ ≤ geometricMean a b := conjSqrt_le_conjSqrt (hyabs.trans (sqrt_le_sqrt _ _ hy))
+
+end TauCeti
+
+namespace IsStrictlyPositive
+
+open TauCeti
+
+variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A] {a b : A}
+
+/-- **The geometric mean as a greatest element.** In a C⋆-algebra, for strictly positive `a` and
+nonnegative `b`, the geometric mean of `a` and `b` is the greatest nonnegative `x` with
+`x * a⁻¹ * x ≤ b`. -/
+theorem isGreatest_geometricMean_setOf_mul_ringInverse_mul_le
+    (ha : IsStrictlyPositive a := by cfc_tac) (hb : 0 ≤ b := by cfc_tac) :
+    IsGreatest {x | 0 ≤ x ∧ x * a⁻¹ʳ * x ≤ b} (geometricMean a b) :=
+  ⟨⟨geometricMean_nonneg a b, (geometricMean_mul_ringInverse_mul_geometricMean ha hb).le⟩,
+    fun _ hx => le_geometricMean_of_mul_ringInverse_mul_le hx.2 ha hx.1.isSelfAdjoint⟩
+
+end IsStrictlyPositive

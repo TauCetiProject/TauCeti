@@ -29,9 +29,10 @@ On a seminormed group, as `‖s‖ → ∞`:
 * every power `‖s‖ ^ n` is `O(exp ‖s‖ ^ b)` whenever `0 < b`, and `o(exp (c ‖s‖))` whenever
   `0 < c`, so a polynomial weight turns `O(exp (-c ‖s‖))` decay into `O(exp (-a ‖s‖))` decay for
   every `a < c`;
-* `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`,
-  and `O(‖s‖ ^ b)` whenever `a ≤ b`; in particular `√‖s‖ = o(s)`, `‖s‖ ^ a` tends to `0` whenever
-  `a < 0`, and `√x / (x ^ a) ^ k → 0` for real `x → ∞` whenever `1 / 2 < a k`.
+* `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`
+  (so eventually `K * x ^ a ≤ x ^ b` for every constant `K`), and `O(‖s‖ ^ b)` (resp. `O(x ^ b)`)
+  whenever `a ≤ b`; in particular `√‖s‖ = o(s)`, `‖s‖ ^ a` tends to `0` whenever `a < 0`, and
+  `√x / (x ^ a) ^ k → 0` for real `x → ∞` whenever `1 / 2 < a k`.
 
 These are the comparisons behind the order of growth of an entire function.
 
@@ -41,14 +42,17 @@ As `h → 0⁺`, a positive power `h ^ θ` tends to zero, so every function `f =
 particular every multiple `A * h ^ θ`, falls below any positive constant. This is how polynomial
 rates in a small scale `h` become inequalities for all small `h`. Power laws multiply: if
 `f = O(h ^ a)` and `g = O(h ^ b)` as `h → 0⁺`, then `f * g = O(h ^ (a + b))`, and a bound
-`f = O(h ^ a)` weakens to `f = O(h ^ c)` for every `c ≤ a`. Likewise, near a point `w` of a normed
-group, a bound `f = O(‖x - w‖ ^ a)` within a set avoiding `w` weakens to `f = O(‖x - w‖ ^ c)` for
+`f = O(h ^ a)` weakens to `f = O(h ^ c)` for every `c ≤ a`; at `+∞` it weakens to
+`f = O(x ^ c)` for every `c ≥ a`. Likewise, near a point `w` of a normed group, a bound
+`f = O(‖x - w‖ ^ a)` within a set avoiding `w` weakens to `f = O(‖x - w‖ ^ c)` for
 every `c ≤ a`.
 
 ## Complex powers of a positive real variable
 
 Along any filter eventually in `(0, ∞)`, the complex power `t ^ w` of the real variable `t` is
-`O(t ^ Re w)`. For natural `n ≠ 0`, `‖ρ ^ n * n ^ α‖ = ‖ρ‖ ^ n * n ^ Re α` and
+`O(t ^ Re w)`, so a bound by `t ^ w` is a bound by the real power `t ^ Re w`
+(`Asymptotics.IsBigO.trans_ofReal_cpow_rpow`). For natural `n ≠ 0`,
+`‖ρ ^ n * n ^ α‖ = ‖ρ‖ ^ n * n ^ Re α` and
 `‖ρ ^ n * n ^ α * n⁻ᴹ‖ = ‖ρ‖ ^ n * n ^ (Re α - M)`. As `n → ∞`, `ρ ^ n * n ^ α = o(r ^ n)` whenever
 `‖ρ‖ < r`, and `‖ρ‖ ^ n * n ^ β = o(ρ ^ n * n ^ α)` whenever `β < Re α`.
 
@@ -74,6 +78,11 @@ If `(n + 1) ^ a ≤ C (n + 1) ^ b` for every natural number `n`, then `a ≤ b`:
 larger exponent outgrows every constant multiple of a smaller one. Symmetrically, if
 `t ^ a ≤ C t ^ b` for every `t ∈ (0, T]`, `T > 0`, then `b ≤ a`: near zero a power with a smaller
 exponent dominates every constant multiple of a larger one.
+
+## Logarithmic comparisons
+
+At positive infinity, `(1 + r) log (2 + r)` is `o(r ^ p)` for every `p > 1`, and any negative real
+power `x ^ r` (`r < 0`) is `o((log x)⁻¹)`.
 
 ## Powers outgrowing geometric sequences
 
@@ -137,18 +146,12 @@ open Asymptotics Bornology
 
 namespace TauCeti
 
-/-- A positive power of `h` tends to zero as `h → 0⁺`. -/
-theorem tendsto_rpow_nhdsGT_zero {θ : ℝ} (hθ : 0 < θ) :
-    Tendsto (fun h : ℝ ↦ h ^ θ) (𝓝[>] 0) (𝓝 0) := by
-  have ht := (Real.continuousAt_rpow_const 0 θ (Or.inr hθ.le)).tendsto
-  rw [Real.zero_rpow hθ.ne'] at ht
-  exact ht.mono_left nhdsWithin_le_nhds
-
 /-- A function bounded by a positive power of `h` is eventually below every positive bound as
 `h → 0⁺`. -/
 theorem eventually_lt_of_isBigO_rpow {f : ℝ → ℝ} {θ : ℝ} (hθ : 0 < θ)
     (hf : f =O[𝓝[>] 0] fun h ↦ h ^ θ) {c : ℝ} (hc : 0 < c) : ∀ᶠ h in 𝓝[>] 0, f h < c :=
-  (hf.trans_tendsto (tendsto_rpow_nhdsGT_zero hθ)).eventually (gt_mem_nhds hc)
+  (hf.trans_tendsto <| (tendsto_id.rpow_const_nhds_zero hθ).mono_left nhdsWithin_le_nhds).eventually
+    (gt_mem_nhds hc)
 
 /-- Near `0⁺`, a positive power of `h` with any coefficient is below any positive constant. -/
 theorem eventually_mul_rpow_lt_nhdsGT_zero {θ : ℝ} (hθ : 0 < θ) (A : ℝ) {c : ℝ} (hc : 0 < c) :
@@ -188,19 +191,23 @@ theorem isLittleO_pow_mul_cpow_pow_of_norm_lt {ρ : ℂ} (α : ℂ) {r : ℝ} (h
   exact mul_le_mul_of_nonneg_left ((Real.rpow_le_rpow_of_exponent_le hn' (Nat.le_ceil _)).trans_eq
     (Real.rpow_natCast _ _)) (by positivity)
 
+/-- For `a < b` and any constant `K`, eventually `K * x ^ a ≤ x ^ b` as `x → ∞`. -/
+theorem eventually_const_mul_rpow_le_rpow {a b : ℝ} (hab : a < b) (K : ℝ) :
+    ∀ᶠ x : ℝ in atTop, K * x ^ a ≤ x ^ b := by
+  filter_upwards [(tendsto_rpow_atTop (sub_pos.2 hab)).eventually_ge_atTop K,
+    eventually_gt_atTop 0] with x hx hx0
+  calc K * x ^ a ≤ x ^ (b - a) * x ^ a :=
+        mul_le_mul_of_nonneg_right hx (Real.rpow_nonneg hx0.le _)
+    _ = x ^ b := by rw [← Real.rpow_add hx0, sub_add_cancel]
+
 variable {E : Type*} [SeminormedAddCommGroup E]
 
 /-- For `a < b` and any real `c`, `exp (c * ‖s‖ ^ a)` is `O(exp ‖s‖ ^ b)` as `‖s‖ → ∞`. -/
 theorem isBigO_exp_mul_norm_rpow (c : ℝ) {a b : ℝ} (hab : a < b) :
     (fun s : E ↦ Real.exp (c * ‖s‖ ^ a)) =O[cobounded E] fun s ↦ Real.exp (‖s‖ ^ b) := by
-  have h : ∀ᶠ x : ℝ in atTop, c * x ^ a ≤ x ^ b := by
-    filter_upwards [(tendsto_rpow_atTop (sub_pos.2 hab)).eventually_ge_atTop c,
-      eventually_gt_atTop 0] with x hx hx0
-    calc c * x ^ a ≤ x ^ (b - a) * x ^ a :=
-          mul_le_mul_of_nonneg_right hx (Real.rpow_nonneg hx0.le _)
-      _ = x ^ b := by rw [← Real.rpow_add hx0, sub_add_cancel]
   refine Real.isBigO_exp_comp_exp_comp.2 (isBoundedUnder_of_eventually_le (a := 0) ?_)
-  filter_upwards [tendsto_norm_cobounded_atTop.eventually h] with s hs
+  filter_upwards [tendsto_norm_cobounded_atTop.eventually
+    (eventually_const_mul_rpow_le_rpow hab c)] with s hs
   simpa using hs
 
 /-- For `b > 0`, every power `‖s‖ ^ n` is `O(exp ‖s‖ ^ b)` as `‖s‖ → ∞`. -/
@@ -237,6 +244,13 @@ theorem isLittleO_rpow_rpow_atTop {a b : ℝ} (hab : a < b) :
     exact absurd h (Real.rpow_pos_of_pos hx b).ne'
   · filter_upwards [eventually_gt_atTop 0] with x hx
     rw [← Real.rpow_sub hx, neg_sub]
+
+/-- For `a ≤ b`, the real power `x ^ a` is `O(x ^ b)` as `x → ∞`. -/
+theorem isBigO_rpow_rpow_atTop_of_le {a b : ℝ} (hab : a ≤ b) :
+    (fun x : ℝ ↦ x ^ a) =O[atTop] fun x ↦ x ^ b := by
+  rcases eq_or_lt_of_le hab with rfl | hlt
+  · exact isBigO_refl _ _
+  · exact (isLittleO_rpow_rpow_atTop hlt).isBigO
 
 /-- The comparison `‖ρ‖ⁿ n^β = o(ρⁿ n^α)` for `β < Re α`. -/
 theorem isLittleO_norm_pow_mul_rpow_pow_mul_cpow (ρ : ℂ) {α : ℂ} {β : ℝ} (h : β < α.re) :
@@ -348,6 +362,22 @@ theorem IsBigO.nhdsGT_zero_rpow_of_le {R : Type*} [Norm R] {f : ℝ → R} {a c 
   rw [Real.norm_of_nonneg (Real.rpow_nonneg ht.1.le a)]
   exact Real.rpow_le_rpow_of_exponent_ge ht.1 ht.2.le h
 
+/-- Power laws weaken at `+∞`: if `f = O(x ^ a)` as `x → ∞`, then `f = O(x ^ c)` for every
+`a ≤ c`. -/
+theorem IsBigO.atTop_rpow_of_le {R : Type*} [Norm R] {f : ℝ → R} {a c : ℝ}
+    (hf : f =O[atTop] fun x ↦ x ^ a) (h : a ≤ c) : f =O[atTop] fun x ↦ x ^ c := by
+  refine hf.trans (Eventually.isBigO ?_)
+  filter_upwards [eventually_ge_atTop 1] with x hx
+  rw [Real.norm_of_nonneg (Real.rpow_nonneg (zero_le_one.trans hx) a)]
+  exact Real.rpow_le_rpow_of_exponent_le hx h
+
+/-- Along a filter eventually in `(0, ∞)`, a bound `f = O(t ^ w)` by a complex power of the real
+variable is a bound `f = O(t ^ a)` by the real power with exponent `a = Re w`. -/
+theorem IsBigO.trans_ofReal_cpow_rpow {R : Type*} [Norm R] {f : ℝ → R} {l : Filter ℝ} {w : ℂ}
+    {a : ℝ} (hf : f =O[l] fun t ↦ (t : ℂ) ^ w) (hl : ∀ᶠ t in l, 0 < t) (ha : w.re = a) :
+    f =O[l] fun t ↦ t ^ a :=
+  ha ▸ hf.trans (TauCeti.isBigO_ofReal_cpow_rpow hl w)
+
 /-- Power laws in the distance weaken near a point: if `f = O(‖x - w‖ ^ a)` as `x → w` within a
 set `s` that does not contain `w`, then `f = O(‖x - w‖ ^ c)` there for every `c ≤ a`. -/
 theorem IsBigO.nhdsWithin_norm_sub_rpow_of_le {E R : Type*} [NormedAddCommGroup E] [Norm R]
@@ -406,6 +436,16 @@ theorem add_one_mul_log_add_two_le {r t A : ℝ} (hr : 0 ≤ r) (ht : 0 ≤ t)
     _ ≤ (M * (1 + r)) * ((2 * M + 1) * log (2 + r)) :=
       mul_le_mul h1 hlog' (log_nonneg (by linarith)) (by positivity)
     _ = _ := by dsimp [M]; ring
+
+/-- Any negative real power `x ^ r` (`r < 0`) is negligible compared with `(log x)⁻¹` as
+`x → ∞`. -/
+theorem isLittleO_rpow_inv_log_atTop {r : ℝ} (hr : r < 0) :
+    (fun x : ℝ ↦ x ^ r) =o[atTop] fun x ↦ (log x)⁻¹ := by
+  refine ((isLittleO_log_rpow_atTop (neg_pos.mpr hr)).inv_rev ?_).congr' ?_ .rfl
+  · filter_upwards [eventually_gt_atTop (1 : ℝ)] with x hx h
+    exact absurd h (log_pos hx).ne'
+  · filter_upwards [eventually_ge_atTop (0 : ℝ)] with x hx
+    rw [← rpow_neg hx, neg_neg]
 
 /-- For every real `C` and every natural number `r ≥ 4 C ^ 2`, `C ^ r r ^ ((1 - r) / 2) < 1`. -/
 theorem pow_mul_rpow_lt_one_of_four_mul_sq_le (C : ℝ) {r : ℕ} (hCr : 4 * C ^ 2 ≤ r) :
