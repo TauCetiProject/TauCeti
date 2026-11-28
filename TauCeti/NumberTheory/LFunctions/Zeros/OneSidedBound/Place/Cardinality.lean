@@ -33,9 +33,7 @@ namespace TauCeti.OneSidedBound.Parameters
 @[simp] theorem totient_q₁ (P : Parameters) (s : ℕ) :
     (P.q₁ s).totient = towerDeg s * P.q₀.totient := by
   rw [P.q₁_def]
-  apply Nat.totient_mul_of_primeFactors_subset
-  rw [← P.primeFactors_q₁ s]
-  exact Nat.primeFactors_mono (by rw [P.q₁_def]; exact dvd_mul_left _ _) (P.q₁_pos s).ne'
+  exact Nat.totient_mul_of_primeFactors_subset (P.primeFactors_towerDeg_subset s)
 
 /-- Every unit class modulo `q₀` labels exactly `towerDeg s` units at level `q₁ s`. -/
 @[simp] theorem card_unitsMap_q₁_fiber (P : Parameters) (s : ℕ) (u : (ZMod P.q₀)ˣ) :

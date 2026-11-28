@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Duhamel
 public import TauCeti.Analysis.PDE.Spectrum.Operator.Basic
+import TauCeti.Analysis.InnerProductSpace.Parseval
 
 /-!
 # The Dirichlet semigroup of a divergence-form operator
@@ -72,6 +73,9 @@ exists (`TauCeti.PDE.exists_hilbertBasis_hasSum_dirichletSemigroup_apply`).
 * `TauCeti.PDE.eqOn_dirichletSemigroup_add_setIntegral_of_hasWeakLineDerivOn_gelfandDual`:
   weak solutions of the parabolic Dirichlet problem with time-independent coefficients are given
   by Duhamel's formula with the Dirichlet semigroup.
+* `TauCeti.PDE.inner_eq_exp_mul_of_hasWeakLineDerivOn_gelfandDual`: in an orthonormal basis of
+  eigenfunctions, each coefficient of a weak solution of `∂ₜu + L u = 0` decays like
+  `exp (-κ t)`.
 
 ## References
 
@@ -235,6 +239,45 @@ theorem eqOn_dirichletSemigroup_add_setIntegral_of_hasWeakLineDerivOn_gelfandDua
     hu hg (heq.mono fun t ht => ?_) hw hae
   ext v
   simpa only [add_apply, energyFormH1L0_apply, ContinuousLinearMap.gelfandDual_apply] using ht v
+
+include hcoeff hcoercive in
+/-- **Weak solutions in an eigenbasis.** Let `L` have time-independent coefficients whose energy
+form is bounded and coercive on `H¹₀(Ω)`, and let `(eᵢ)` be an orthonormal basis of `L²(Ω)` with
+`eᵢ` the value of a weak Dirichlet eigenfunction of `L` of eigenvalue `κᵢ`. Let `u` be a weak
+solution of `∂ₜu + L u = 0` in `(t₀, t₁) × Ω`, `u = 0` on `(t₀, t₁) × ∂Ω`, and `w` a continuous
+`L²(Ω)`-valued representative of `u` on `[t₀, t₁]`. Then each coefficient of `w` decays at the
+rate of its eigenvalue: `⟪eᵢ, w t⟫ = exp (-κᵢ (t - t₀)) ⟪eᵢ, w t₀⟫` for `t ∈ [t₀, t₁]`. -/
+theorem inner_eq_exp_mul_of_hasWeakLineDerivOn_gelfandDual {α : Type*}
+    (basis : HilbertBasis α ℝ (Lp ℝ 2 (mu.restrict Omega))) {kappa : α → ℝ}
+    {v : α → W1p0 mu Omega 2} (hvalue : ∀ i, W1p.value (v i : W1p mu Omega 2) = basis i)
+    (hv : ∀ i (v' : W1p0 mu Omega 2),
+      energyFormH1 a b c (v i : W1p mu Omega 2) (v' : W1p mu Omega 2) =
+        kappa i * ⟪W1p.value (v i : W1p mu Omega 2), W1p.value (v' : W1p mu Omega 2)⟫_ℝ)
+    {t₀ t₁ : ℝ} {u : ℝ → W1p0 mu Omega 2} {u' : ℝ → StrongDual ℝ (W1p0 mu Omega 2)}
+    {w : ℝ → Lp ℝ 2 (mu.restrict Omega)}
+    (h : HasWeakLineDerivOn volume ⟨Set.Ioo t₀ t₁, isOpen_Ioo⟩
+      (fun t => (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)).gelfandDual
+        (W1p0.valueL (u t))) u' 1)
+    (hu : IntegrableOn u (Set.Ioo t₀ t₁))
+    (heq : ∀ᵐ t ∂volume.restrict (Set.Ioo t₀ t₁), ∀ v' : W1p0 mu Omega 2,
+      u' t v' + energyFormH1 a b c (u t : W1p mu Omega 2) (v' : W1p mu Omega 2) = 0)
+    (hw : ContinuousOn w (Set.Icc t₀ t₁))
+    (hae : (fun t => W1p0.valueL (u t)) =ᵐ[volume.restrict (Set.Ioo t₀ t₁)] w)
+    {t : ℝ} (ht : t ∈ Set.Icc t₀ t₁) (i : α) :
+    ⟪basis i, w t⟫_ℝ = Real.exp (-(kappa i * (t - t₀))) * ⟪basis i, w t₀⟫_ℝ := by
+  -- By Duhamel's formula with zero forcing, `w t` is the Dirichlet semigroup applied to `w t₀`.
+  have hS := eqOn_dirichletSemigroup_add_setIntegral_of_hasWeakLineDerivOn_gelfandDual hcoeff
+    hcoercive (g := 0) h hu integrableOn_zero
+    (heq.mono fun t ht v' => by simpa only [Pi.zero_apply, inner_zero_left] using ht v') hw hae ht
+  simp only [Pi.zero_apply, map_zero, MeasureTheory.integral_zero, add_zero,
+    Semigroups.StronglyContinuousSemigroup.realOperator_def,
+    Semigroups.ContractionSemigroup.toStronglyContinuousSemigroup_apply] at hS
+  -- The semigroup multiplies the `i`-th coefficient by `exp (-κᵢ t)`.
+  have hi := hasSum_dirichletSemigroup_apply hcoeff hcoercive basis hvalue hv (t - t₀).toNNReal
+    (w t₀)
+  simp only [smul_smul] at hi
+  rw [hS, basis.orthonormal.inner_eq_of_hasSum hi i, HilbertBasis.repr_apply_apply,
+    Real.coe_toNNReal _ (sub_nonneg.2 ht.1)]
 
 end PDE
 

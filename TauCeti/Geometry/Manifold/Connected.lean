@@ -94,16 +94,11 @@ theorem isConnected_compl_of_isDiscrete_of_one_lt_rank [ConnectedSpace X]
 dimension greater than one leaves it preconnected. -/
 theorem isPreconnected_sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank
     (h : 1 < Module.rank ℝ E) {U s : Set X} (hU : IsOpen U) (hUc : IsPreconnected U)
-    (hs : IsClosed s) (hd : IsDiscrete s) : IsPreconnected (U \ s) := by
-  let V : TopologicalSpace.Opens X := ⟨U, hU⟩
-  let : PreconnectedSpace V := isPreconnected_iff_preconnectedSpace.mp hUc
-  have hc := isPreconnected_compl_of_isDiscrete_of_one_lt_rank (E := E) h
-    (hs.preimage (continuous_subtypeVal : Continuous (Subtype.val : V → X)))
+    (hs : IsClosed s) (hd : IsDiscrete s) : IsPreconnected (U \ s) :=
+  hUc.sdiff_of_isDiscrete (hs.preimage continuous_subtypeVal)
     (hd.preimage continuous_subtypeVal.continuousOn Subtype.val_injective)
-  have himage : Subtype.val '' (Subtype.val ⁻¹' s : Set V)ᶜ = U \ s := by
-    rw [image_compl_preimage, Subtype.range_val, TopologicalSpace.Opens.coe_mk]
-  rw [← himage]
-  exact hc.image _ continuous_subtypeVal.continuousOn
+    fun x _ _ hW ↦ exists_mem_nhds_subset_isConnected_sdiff_singleton
+      (X := (⟨U, hU⟩ : TopologicalSpace.Opens X)) h x hW
 
 end Seminormed
 

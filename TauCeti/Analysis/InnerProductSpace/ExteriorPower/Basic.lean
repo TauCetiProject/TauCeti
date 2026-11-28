@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Lie.ExteriorPower
 public import TauCeti.Analysis.InnerProductSpace.Dual
 public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 public import TauCeti.LinearAlgebra.BilinearForm.ExteriorSquare
+public import TauCeti.LinearAlgebra.ExteriorPower.SesquilinearForm
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
@@ -26,7 +27,8 @@ import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 # Norms and linear isometries of exterior powers
 
 The exterior powers `⋀[ℝ]^n E` of a finite-dimensional real inner product space carry Mathlib's
-induced inner product, with `⟪v₁ ∧ ⋯ ∧ vₙ, w₁ ∧ ⋯ ∧ wₙ⟫ = det ⟪vⱼ, wᵢ⟫`. This file proves that the
+induced inner product, with `⟪v₁ ∧ ⋯ ∧ vₙ, w₁ ∧ ⋯ ∧ wₙ⟫ = det ⟪vⱼ, wᵢ⟫`. This file identifies that
+inner product with `(innerₗ E).sesqExteriorPower n` and proves that the
 map `⋀ⁿ f` induced by a linear isometry `f` preserves it, so that rotations of an oriented space
 act isometrically on its forms, and that infinitesimal rotations, the skew-adjoint endomorphisms,
 act skew-adjointly on forms of every degree. It also records that the norm of a wedge
@@ -50,6 +52,7 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 
 ## Main results
 
+* `exteriorPower.sesqExteriorPower_innerₗ`: `(innerₗ E).sesqExteriorPower n = innerₗ (⋀[ℝ]^n E)`.
 * `exteriorPower.inner_map_map`: `⟪⋀ⁿ f x, ⋀ⁿ f y⟫ = ⟪x, y⟫` for a linear isometry `f`.
 * `exteriorPower.norm_map`, `exteriorPower.norm_map_linearIsometryEquiv`: `‖⋀ⁿ f x‖ = ‖x‖` for a
   linear isometry `f`.
@@ -246,6 +249,15 @@ theorem norm_ιMulti_comp_perm (v : Fin n → E) (σ : Equiv.Perm (Fin n)) :
 theorem norm_ιMulti_update_smul (v : Fin n → E) (i : Fin n) (c : ℝ) :
     ‖ιMulti ℝ n (Function.update v i (c • v i))‖ = |c| * ‖ιMulti ℝ n v‖ := by
   rw [AlternatingMap.map_update_smul, Function.update_eq_self, norm_smul, Real.norm_eq_abs]
+
+/-- On a finite-dimensional real inner product space `E`, the `k`-th exterior Gram form of
+`innerₗ E` is `innerₗ (⋀[ℝ]^k E)`. -/
+@[simp]
+theorem sesqExteriorPower_innerₗ (k : ℕ) :
+    (innerₗ E).sesqExteriorPower k = innerₗ (⋀[ℝ]^k E) := by
+  rw [LinearMap.BilinForm.sesqExteriorPower_eq_exteriorPower]
+  refine linearMap_ext (AlternatingMap.ext fun u ↦ linearMap_ext (AlternatingMap.ext fun v ↦ ?_))
+  simp [LinearMap.BilinForm.bilinForm_ιMulti_ιMulti, inner_ιMulti_ιMulti]
 
 /-- Every linearly independent `n`-frame `v` in a finite-dimensional real inner product space
 admits an orthonormal `n`-frame `u` with the same span and positive orientation, scaling the

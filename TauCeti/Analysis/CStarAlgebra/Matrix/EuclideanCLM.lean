@@ -21,7 +21,8 @@ operators on `EuclideanSpace ℂ n`, through Mathlib's `Matrix.toEuclideanCLM`. 
 (`CStarMatrix.norm_toEuclideanCLM`), traces (`CStarMatrix.trace_toEuclideanCLM`), operator-range
 dimensions (`CStarMatrix.finrank_range_toEuclideanCLM`), and the order
 (`CStarMatrix.toEuclideanCLM_le_toEuclideanCLM_iff`), and sends the matrix product `x⋆y` to the
-composition `x† ∘L y` of operators (`CStarMatrix.toEuclideanCLM_symm_adjoint_comp`).
+composition `x† ∘L y` of operators (`CStarMatrix.toEuclideanCLM_symm_adjoint_comp`), together with
+the rank-one Gram identity `CStarMatrix.star_toEuclideanCLM_symm_rankOne_mul_self`.
 -/
 
 public section
@@ -92,5 +93,16 @@ theorem toEuclideanCLM_symm_adjoint_comp (U W : EuclideanSpace ℂ n →L[ℂ] E
   rw [StarAlgEquiv.symm_apply_eq, map_mul, map_star, StarAlgEquiv.apply_symm_apply,
     StarAlgEquiv.apply_symm_apply, ContinuousLinearMap.star_eq_adjoint,
     ContinuousLinearMap.mul_def]
+
+/-- **Rank-one Gram identity** in `CStarMatrix`:
+`star (rankOne ℂ η ξ) * rankOne ℂ η ξ = (‖η‖ ^ 2) • rankOne ℂ ξ ξ` under `toEuclideanCLM`. -/
+theorem star_toEuclideanCLM_symm_rankOne_mul_self (η ξ : EuclideanSpace ℂ n) :
+    star (toEuclideanCLM.symm (InnerProductSpace.rankOne ℂ η ξ)) *
+      toEuclideanCLM.symm (InnerProductSpace.rankOne ℂ η ξ) =
+      (‖η‖ ^ 2) • toEuclideanCLM.symm (InnerProductSpace.rankOne ℂ ξ ξ) := by
+  refine EquivLike.injective toEuclideanCLM ?_
+  rw [map_mul, map_star, ← algebraMap_smul ℂ (‖η‖ ^ 2), map_smul]
+  simp [ContinuousLinearMap.star_eq_adjoint, InnerProductSpace.adjoint_rankOne,
+    ContinuousLinearMap.mul_def, InnerProductSpace.rankOne_comp_rankOne]
 
 end CStarMatrix

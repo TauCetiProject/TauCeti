@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Product
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Product.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.OrderedProduct
 
 /-!

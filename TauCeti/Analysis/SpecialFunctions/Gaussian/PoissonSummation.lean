@@ -10,8 +10,9 @@ public import Mathlib.Analysis.SpecialFunctions.Gaussian.PoissonSummation
 public import Mathlib.NumberTheory.LSeries.HurwitzZeta
 public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 public import TauCeti.Analysis.SpecialFunctions.Gaussian.LatticeSum
-import TauCeti.Analysis.Fourier.ZMod
-import TauCeti.Data.ZMod.FinEquiv
+import TauCeti.Analysis.Fourier.Poisson.Periodic
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Analysis.SpecialFunctions.Gaussian.Harmonic
 import TauCeti.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
@@ -30,8 +31,10 @@ sum into its zero term and paired positive and negative terms gives the correspo
 cosine series used for wrapped normal densities.  The proof specializes Mathlib's
 `Complex.tsum_exp_neg_quadratic`.
 
-For periodically weighted Gaussian sums of degree zero or one, the Hurwitz theta kernels
-give a Poisson formula in terms of the inverse finite Fourier transform of the weights.
+`ZMod.tsum_periodic_gaussian_eq_invDFT` applies Schwartz Poisson summation with periodic
+coefficients to Gaussians of degree zero or one and uses the Fourier transform of a Gaussian
+monomial. `ZMod.hasSum_periodic_gaussian_residue_sum` expresses the same input sum through
+Mathlib’s Hurwitz theta kernels.
 
 ## References
 
@@ -269,56 +272,30 @@ theorem hasSum_periodic_gaussian_residue_sum {N : ℕ} [NeZero N] (Φ : ZMod N �
   have hsummable := summable_periodic_gaussian Φ j ht
   convert hsummable.hasSum using 1
   symm
-  rw [TauCeti.tsum_int_eq_sum_fin_tsum hsummable N]
-  rw [mul_sum, ← (finEquiv N).toEquiv.sum_comp]
-  have hfin (a : Fin N) : (finEquiv N).toEquiv a = (a.val : ZMod N) := finEquiv_apply a
-  simp only [hfin]
+  rw [hsummable.tsum_int_eq_sum_zmod_tsum N, mul_sum]
   refine sum_congr rfl fun a _ ↦ ?_
-  have hcast (n : ℤ) : ((n * N + (a : ℤ) : ℤ) : ZMod N) = (a.val : ZMod N) := by simp
-  have hs (n : ℤ) : (n + ((a : ℕ) / (N : ℝ))) * (N * t) =
-      ((n * (N : ℤ) + (a : ℤ) : ℤ) : ℝ) * t := by
+  have hcast (n : ℤ) : ((n * N + (a.val : ℤ) : ℤ) : ZMod N) = a := by simp
+  have hs (n : ℤ) : (n + (a.val / (N : ℝ))) * (N * t) =
+      ((n * (N : ℤ) + (a.val : ℤ) : ℤ) : ℝ) * t := by
     push_cast
     field_simp
-  simp only [hcast, toAddCircle_apply, val_cast_of_lt a.isLt]
+  simp only [hcast, toAddCircle_apply]
   interval_cases j
   · simp only [pow_zero, ite_true, one_mul]
-    rw [← (hasSum_ofReal.mpr (hasSum_int_evenKernel ((a : ℕ) / (N : ℝ)) hsq)).tsum_eq,
+    rw [← (hasSum_ofReal.mpr (hasSum_int_evenKernel (a.val / (N : ℝ)) hsq)).tsum_eq,
       ← tsum_mul_left]
     refine tsum_congr fun n ↦ ?_
     rw [← hs n, mul_pow, ofReal_exp]
     simp [mul_assoc]
   · simp only [pow_one, one_ne_zero, ite_false]
-    rw [← (hasSum_ofReal.mpr (hasSum_int_oddKernel ((a : ℕ) / (N : ℝ)) hsq)).tsum_eq,
+    rw [← (hasSum_ofReal.mpr (hasSum_int_oddKernel (a.val / (N : ℝ)) hsq)).tsum_eq,
       ← tsum_mul_left, ← tsum_mul_left]
     refine tsum_congr fun n ↦ ?_
     rw [← hs n, mul_pow]
     push_cast
     simp [mul_assoc, mul_left_comm, mul_comm]
 
-private theorem hasSum_weighted_fourier_kernel {N : ℕ} [NeZero N] (Φ : ZMod N → ℂ)
-    {j : ℕ} (hj : j ≤ 1) {y : ℝ} (hy : y ≠ 0) :
-    HasSum (fun n : ℤ ↦ (-(I : ℂ)) ^ j * (n : ℂ) ^ j *
-      (N : ℂ) * (𝓕⁻ Φ) n * Real.exp (-Real.pi * (n : ℝ) ^ 2 * y ^ 2))
-      (∑ a : ZMod N, Φ a * if j = 0 then (cosKernel (toAddCircle a) (y ^ 2) : ℂ)
-        else (sinKernel (toAddCircle a) (y ^ 2) : ℂ)) := by
-  have hy2 := sq_pos_of_ne_zero hy
-  have hk (a : ZMod N) : HasSum (fun n : ℤ ↦ (-(I : ℂ)) ^ j * (n : ℂ) ^ j *
-      stdAddChar (a * (n : ZMod N)) * Real.exp (-Real.pi * (n : ℝ) ^ 2 * y ^ 2))
-      (if j = 0 then (cosKernel (toAddCircle a) (y ^ 2) : ℂ)
-        else (sinKernel (toAddCircle a) (y ^ 2) : ℂ)) := by
-    have hchar (n : ℤ) : stdAddChar (a * (n : ZMod N)) =
-        exp (2 * π * I * ((a.val : ℝ) / N : ℝ) * n) := by
-      rw [← fourier_val_div_eq_stdAddChar, fourier_coe_apply, ofReal_one, div_one, mul_right_comm]
-    rw [toAddCircle_apply]
-    simp_rw [hchar]
-    interval_cases j
-    · simpa using hasSum_int_cosKernel ((a.val : ℝ) / N) hy2
-    · simpa using hasSum_int_sinKernel ((a.val : ℝ) / N) hy2
-  refine (hasSum_sum (s := univ) fun a _ ↦ (hk a).mul_left (Φ a)).congr_fun fun n ↦ ?_
-  rw [invDFT_apply]
-  simp only [smul_eq_mul, mul_sum, sum_mul]
-  refine sum_congr rfl fun _ _ ↦ ?_
-  field_simp [NeZero.ne (N : ℂ)]
+open scoped SchwartzMap FourierTransform
 
 /-- Poisson summation for a periodic Gaussian sum of degree zero or one. The inverse finite
 Fourier transform includes the factor `1 / N`; degree one has the additional factor `−i`. -/
@@ -326,40 +303,37 @@ theorem tsum_periodic_gaussian_eq_invDFT {N : ℕ} [NeZero N] (Φ : ZMod N → �
     {j : ℕ} (hj : j ≤ 1) {t : ℝ} (ht : 0 < t) :
     (∑' n : ℤ, Φ n * W j ((n : ℝ) * t)) =
       (-(I : ℂ)) ^ j / (t : ℂ) *
-        ∑' n : ℤ, (𝓕⁻ Φ) n * W j ((n : ℝ) * (1 / (N * t))) := by
-  let y : ℝ := 1 / (N * t)
-  have hN : 0 < (N : ℝ) := Nat.cast_pos.mpr (NeZero.pos N)
-  have hy : 0 < y := one_div_pos.mpr (mul_pos hN ht)
-  have hi : 1 / ((N : ℝ) * t) ^ 2 = y ^ 2 := by dsimp [y]; rw [div_pow, one_pow]
-  have hsqr : (((N : ℝ) * t) ^ 2) ^ (1 / 2 : ℝ) = N * t := by
-    rw [← Real.rpow_natCast_mul (by positivity)]
-    norm_num
-  have hcub : (((N : ℝ) * t) ^ 2) ^ (3 / 2 : ℝ) = ((N : ℝ) * t) ^ 3 := by
-    rw [← Real.rpow_natCast_mul (by positivity)]
-    norm_num
-  have hkernel (a : ZMod N) :
-      ((if j = 0 then evenKernel else oddKernel) (toAddCircle a) (((N : ℝ) * t) ^ 2) : ℂ) =
-      ((y : ℂ) ^ (2 * j + 1)) *
-        (if j = 0 then (cosKernel (toAddCircle a) (y ^ 2) : ℂ)
-          else (sinKernel (toAddCircle a) (y ^ 2) : ℂ)) := by
-    interval_cases j
-    · simp only [ite_true, evenKernel_functional_equation, hi, hsqr, ofReal_mul,
-        Nat.mul_zero, zero_add, pow_one, y]
-    · rw [ite_eq_right Nat.one_ne_zero, ite_eq_right Nat.one_ne_zero,
-        oddKernel_functional_equation, hi, hcub, ofReal_mul, ← ofReal_pow]
-      congr 1
-      exact congrArg ofReal (by simpa only [y, one_pow] using
-        (div_pow (1 : ℝ) ((N : ℝ) * t) 3).symm)
-  -- Pass from the residue classes to the dual integer sum using the kernel identities.
-  rw [(hasSum_periodic_gaussian_residue_sum Φ hj ht.ne').tsum_eq]
-  simp_rw [hkernel, mul_left_comm (Φ _), ← mul_sum,
-    ← (hasSum_weighted_fourier_kernel Φ hj hy.ne').tsum_eq]
-  simp_rw [← tsum_mul_left]
+        ∑' n : ℤ, dft.symm Φ n * W j ((n : ℝ) * (1 / (N * t))) := by
+  have hb : 0 < (π : ℂ).re := Real.pi_pos
+  let f : 𝓢(ℝ, ℂ) := if j = 0 then SchwartzMap.gaussian hb else SchwartzMap.innerMulGaussian hb 1
+  have hw (x : ℝ) : W j x = (x : ℂ) ^ j * cexp (-(π : ℂ) * ‖x‖ ^ 2) := by
+    simp only [ofReal_mul, ofReal_exp, ofReal_neg, Real.norm_eq_abs, ← ofReal_pow, sq_abs]
+  have hf (x : ℝ) : f x = W j x := by
+    rw [hw]
+    by_cases h : j = 0
+    · simp only [f, ite_eq_left h, SchwartzMap.gaussian_apply, h, pow_zero, one_mul]
+    · have h₁ : j = 1 := by lia
+      simp only [f, ite_eq_right h, SchwartzMap.innerMulGaussian_apply,
+        h₁, pow_one, Real.inner_apply,
+        mul_one]
+  have hfourier (x : ℝ) : (𝓕 f) x = (-I) ^ j * W j x := by
+    rw [SchwartzMap.fourier_coe, funext hf, funext hw,
+      TauCeti.fourier_pow_mul_cexp_neg_mul_norm_sq_real hb hj]
+    have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr Real.pi_ne_zero
+    have harg : -(π : ℂ) ^ 2 * ‖x‖ ^ 2 / π = -(π : ℂ) * ‖x‖ ^ 2 := by field_simp
+    -- The normalized Gaussian has parameter `π` on both sides, so the power factor is one.
+    rw [div_self hπ, one_cpow, one_mul, harg, hw, mul_assoc]
+  have h := (f.dilate ht.ne').tsum_mul_periodic_eq_tsum_invDFT_fourier Φ
+  -- Substitute the Gaussian transform and express real dilations by division.
+  simp_rw [SchwartzMap.dilate_apply, SchwartzMap.fourier_dilate_apply, hfourier, hf,
+    Module.finrank_self, pow_one, Complex.real_smul, abs_of_pos ht, ofReal_inv,
+    smul_eq_mul, ← div_eq_inv_mul] at h
+  calc
+    _ = ∑' n : ℤ, Φ n * W j (t * (n : ℝ)) := tsum_congr fun n ↦ by rw [mul_comm t]
+    _ = _ := h.trans ?_
+  rw [← tsum_mul_left]
   refine tsum_congr fun n ↦ ?_
-  simp only [mul_pow, ofReal_mul, ofReal_pow, ofReal_intCast, y, ofReal_div, ofReal_one,
-    ofReal_natCast]
-  have hNc : (N : ℂ) ≠ 0 := NeZero.ne _
-  have htc : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr ht.ne'
-  interval_cases j <;> norm_num <;> field_simp [hNc, htc]
+  rw [div_div, div_eq_mul_one_div ((n : ℝ))]
+  ring
 
 end ZMod
