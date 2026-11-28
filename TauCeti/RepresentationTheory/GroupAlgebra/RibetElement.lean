@@ -106,9 +106,8 @@ private theorem charpoly_familyAlgHom_coeff (u : Y → MonoidAlgebra O G →ₐ[
   funext x
   have h := congrArg (·.coeff k)
     (charpoly_map (familyAlgHom u r) (Pi.evalRingHom (fun _ : Y ↦ L) x))
-  simp only [Polynomial.coeff_map, Pi.evalRingHom_apply] at h
-  rw [← h, ← RingHom.mapMatrix_apply, evalRingHom_mapMatrix_familyAlgHom, RingHom.mapMatrix_apply,
-    charpoly_map, Polynomial.coeff_map]
+  rw [← RingHom.mapMatrix_apply, evalRingHom_mapMatrix_familyAlgHom] at h
+  simpa [charpoly_map, Polynomial.coeff_map] using h.symm
 
 /-- The family `u` as one representation of `S[G]` over the ring of functions `Y → L`. -/
 private noncomputable def familyLift (u : Y → MonoidAlgebra O G →ₐ[O] Matrix σ σ O)
@@ -170,14 +169,13 @@ private theorem trace_familyLift_mul_aeval_apply (u : Y → MonoidAlgebra O G �
   set ι := mapRingHom G (algebraMap O S)
   have hsplit : ι ρ₁ * aeval (ι ρ₀) P = ι (ρ₁ * ρ₀) * aeval (ι ρ₀) P.divX + P.coeff 0 • ι ρ₁ := by
     conv_lhs => rw [← P.X_mul_divX_add]
-    rw [map_add, map_mul, aeval_X, aeval_C, mul_add, map_mul, mul_assoc, Algebra.smul_def,
-      Algebra.commutes]
+    simp only [map_add, map_mul, aeval_X, aeval_C, mul_add, mul_assoc, Algebra.smul_def]
+    rw [Algebra.commutes]
   have h0 : (familyAlgHom u (ρ₁ * ρ₀) * familyLift u S (aeval (ι ρ₀) P.divX)).trace x = 0 := by
     simp only [Matrix.trace, diag_apply, Matrix.mul_apply, Finset.sum_apply, Pi.mul_apply,
       familyAlgHom_apply, hx, Matrix.zero_apply, map_zero, zero_mul, Finset.sum_const_zero]
-  rw [hsplit, map_add, map_mul, map_smul, trace_add, trace_smul, Pi.add_apply,
-    familyLift_mapRingHom, familyLift_mapRingHom, h0, zero_add, trace_familyAlgHom,
-    Subalgebra.smul_def, smul_eq_mul, Pi.mul_apply]
+  rw [hsplit, map_add, map_mul, map_smul, familyLift_mapRingHom, familyLift_mapRingHom]
+  simp [-map_mul, h0, trace_familyAlgHom, Subalgebra.smul_def]
 
 /-- At a point `x`, the determinant of the block matrix of `B` along `familyLift u S` is that of
 the block matrix of `B` along `u x`. -/
@@ -237,8 +235,7 @@ theorem exists_ribet_element_of_tied_rows (u : Y → MonoidAlgebra O G →ₐ[O]
     (ι ρ₀) (B.map ι) hrows
   -- `f` is the trace of `ρ (ρ₁ P(ρ₀))`.
   obtain ⟨c, hc⟩ := htr (ι ρ₁)
-  replace hc : (c : Y → L) = (ρ (ι ρ₁ * aeval (ι ρ₀) P)).trace := hc
-  replace hP0 : ((P.eval 0 : S) : Y → L) = (comp N N σ σ (Y → L) ((B.map ι).map ρ)).det := hP0
+  rw [Subalgebra.algebraMap_apply] at hc hP0
   refine ⟨c, c.property, fun w hw ↦ ?_, fun x hx ↦ ?_⟩
   · -- `det (u x w)` is the scalar `D` of `S` with `ρ (v * ι w) = D` for some `v`.
     obtain ⟨v, D, hD, hv, -⟩ :=

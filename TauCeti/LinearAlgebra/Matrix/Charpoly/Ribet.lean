@@ -58,6 +58,7 @@ block matrix of `B`.
 The statement and the route through the polynomial ring `Λ[X]` follow
 `New.Selmer.exists_ribet_polynomial` (file `src/New/Congruences/FirstOrder/RibetMethod.lean`) in
 grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC).
+`TauCeti.traceIdeal` follows `New.Selmer.traceIdeal` in the same grh-lean file.
 -/
 
 public section

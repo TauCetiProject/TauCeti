@@ -48,6 +48,9 @@ principal minors of order `n`.
 `Matrix.det_fromBlocks_single₁₂_single₂₁` is adapted from the Lean project grh-lean
 (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), file
 `src/New/Spanning/Bessel/Basic.lean`, declaration `New.det_fromBlocks_single`.
+`Matrix.det_comp_map_of_eq_reindex_fromBlocks_diagonal` follows
+`New.Selmer.det_comp_map_eq_mul_prod` in grh-lean, file
+`src/New/Congruences/FirstOrder/RibetMethod.lean`.
 -/
 
 public section
