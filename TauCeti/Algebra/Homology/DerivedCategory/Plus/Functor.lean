@@ -230,14 +230,14 @@ private lemma mapDerivedCategoryCompHomologyFunctorIso_hom_app_ι_Q_obj
         F.map ((DerivedCategory.homologyFunctorFactors C₁ n).inv.app K.obj) ≫
         F.map ((DerivedCategory.homologyFunctor C₁ n).map
           ((DerivedCategory.Plus.QCompιIso C₁).inv.app K)) := by
-  have hnat := (F.mapDerivedCategoryCompHomologyFunctorIso n).hom.naturality
-    ((DerivedCategory.Plus.QCompιIso C₁).hom.app K)
-  simp only [Functor.comp_obj, ObjectProperty.ι_obj, Functor.comp_map] at hnat
-  rw [← cancel_mono (F.map ((DerivedCategory.homologyFunctor C₁ n).map
-    ((DerivedCategory.Plus.QCompιIso C₁).hom.app K)))]
-  simp only [Functor.comp_obj, ObjectProperty.ι_obj, Category.assoc, ← F.map_comp,
-    ← Functor.map_comp, Iso.inv_hom_id_app, Functor.map_id, Category.comp_id]
-  rw [← hnat, F.mapDerivedCategoryCompHomologyFunctorIso_hom_app_Q_obj n K.obj]
+  have hnat := (NatTrans.naturality_2 (F.mapDerivedCategoryCompHomologyFunctorIso n).hom
+    ((DerivedCategory.Plus.QCompιIso C₁).app K)).symm
+  dsimp only [Functor.comp_obj, Functor.comp_map] at hnat
+  rw [hnat]
+  dsimp only [ObjectProperty.ι_obj]
+  rw [F.mapDerivedCategoryCompHomologyFunctorIso_hom_app_Q_obj n K.obj]
+  simp only [Category.assoc]
+  rfl
 
 /-- On `DerivedCategory.Plus.Q.obj K`, `F.mapDerivedCategoryPlusCompHomologyFunctorIso` agrees
 with `F.mapDerivedCategoryPlusFactors`, `TauCeti.DerivedCategory.Plus.homologyFunctorFactors`, and
@@ -265,16 +265,13 @@ lemma mapDerivedCategoryPlusCompHomologyFunctorIso_hom_app_Q_obj
       ← Functor.map_comp, Iso.inv_hom_id_app, Functor.map_id, Category.comp_id]
   have hfac := congrArg (DerivedCategory.homologyFunctor C₂ n).map hfac_mor
   simp only [Functor.map_comp, ← Category.assoc] at hfac
-  -- Simplify the `QCompιIso` and `mapCochainComplexPlusCompι` identity factors on each side.
   have hQ₁ :
       F.map ((DerivedCategory.homologyFunctorFactors C₁ n).inv.app K.obj) ≫
         F.map ((DerivedCategory.homologyFunctor C₁ n).map
           ((DerivedCategory.Plus.QCompιIso C₁).inv.app K)) =
       F.map ((TauCeti.DerivedCategory.Plus.homologyFunctorFactors C₁ n).inv.app K) := by
-    simp [TauCeti.DerivedCategory.Plus.homologyFunctorFactors_inv_app,
-      DerivedCategory.Plus.QCompιIso_inv_app]
-    -- `DerivedCategory.Plus.ι.obj (Q.obj K)` is defeq to `DerivedCategory.Q.obj K.obj`.
-    rfl
+    rw [← F.map_comp]
+    exact congrArg F.map (TauCeti.DerivedCategory.Plus.homologyFunctorFactors_inv_app K n).symm
   have hQ₂ :
       (DerivedCategory.homologyFunctor C₂ n).map
           ((DerivedCategory.Plus.QCompιIso C₂).hom.app (F.mapCochainComplexPlus.obj K)) ≫
@@ -284,10 +281,14 @@ lemma mapDerivedCategoryPlusCompHomologyFunctorIso_hom_app_Q_obj
           ((F.mapHomologicalComplex (ComplexShape.up ℤ)).obj K.obj) =
       (TauCeti.DerivedCategory.Plus.homologyFunctorFactors C₂ n).hom.app
         (F.mapCochainComplexPlus.obj K) := by
-    rw [TauCeti.DerivedCategory.Plus.homologyFunctorFactors_hom_app,
-      DerivedCategory.Plus.QCompιIso_hom_app, Functor.mapCochainComplexPlusCompι_hom_app]
-    dsimp only [DerivedCategory.Plus.Q, Functor.comp_obj, ObjectProperty.ι_obj]
-    simp [Functor.mapCochainComplexPlus_obj_obj]
+    refine Eq.trans ?_ (TauCeti.DerivedCategory.Plus.homologyFunctorFactors_hom_app
+      (F.mapCochainComplexPlus.obj K) n).symm
+    have hnat := DerivedCategory.homologyFunctorFactors_hom_naturality
+      (F.mapCochainComplexPlusCompι.hom.app K) n
+    dsimp only [Functor.comp_obj, ObjectProperty.ι_obj] at hnat
+    rw [hnat, Functor.mapCochainComplexPlusCompι_hom_app]
+    dsimp only [Functor.mapCochainComplexPlus_obj_obj, HomologicalComplex.homologyFunctor_obj]
+    simp only [HomologicalComplex.homologyMap_id, Category.comp_id]
   -- Assemble from the unbounded formula at `ι (Q K)`.
   rw [F.mapDerivedCategoryPlusCompHomologyFunctorIso_hom_app,
     F.mapDerivedCategoryCompHomologyFunctorIso_hom_app_ι_Q_obj]
@@ -349,13 +350,14 @@ lemma mapDerivedCategoryPlus_app_Q_obj (τ : F ⟶ G) (K : CochainComplex.Plus C
         DerivedCategory.Q.map ((τ.mapHomologicalComplex _).app K.obj) ≫
         DerivedCategory.Q.map (G.mapCochainComplexPlusCompι.inv.app K) ≫
         (DerivedCategory.Plus.QCompιIso C₂).inv.app (G.mapCochainComplexPlus.obj K) := by
-    have hnat := (DerivedCategory.Plus.QCompιIso C₂).hom.naturality (τ.mapCochainComplexPlus.app K)
-    simp only [Functor.comp_obj, Functor.comp_map] at hnat
-    rw [← cancel_mono ((DerivedCategory.Plus.QCompιIso C₂).hom.app (G.mapCochainComplexPlus.obj K))]
-    simp only [Functor.comp_obj, Category.assoc, Iso.inv_hom_id_app, Category.comp_id, hnat]
-    rw [← DerivedCategory.Q.map_comp, ← DerivedCategory.Q.map_comp]
-    congr 2
-    simp [NatTrans.mapCochainComplexPlus_app_hom]
+    have hnat := (NatIso.naturality_2 (DerivedCategory.Plus.QCompιIso C₂)
+      (τ.mapCochainComplexPlus.app K)).symm
+    dsimp only [Functor.comp_obj, Functor.comp_map] at hnat
+    rw [hnat]
+    simp only [ObjectProperty.ι_map, NatTrans.mapCochainComplexPlus_app_hom,
+      Functor.mapCochainComplexPlusCompι_hom_app, Functor.mapCochainComplexPlusCompι_inv_app]
+    dsimp only [Functor.comp_obj, ObjectProperty.ι_obj, Functor.mapCochainComplexPlus_obj_obj]
+    simp only [Functor.map_id, Category.id_comp]
   have happ : τ.mapDerivedCategory.app
       (DerivedCategory.Plus.ι.obj (DerivedCategory.Plus.Q.obj K)) =
       F.mapDerivedCategory.map ((DerivedCategory.Plus.QCompιIso C₁).hom.app K) ≫
@@ -363,12 +365,14 @@ lemma mapDerivedCategoryPlus_app_Q_obj (τ : F ⟶ G) (K : CochainComplex.Plus C
         DerivedCategory.Q.map ((τ.mapHomologicalComplex _).app K.obj) ≫
         G.mapDerivedCategoryFactors.inv.app K.obj ≫
         G.mapDerivedCategory.map ((DerivedCategory.Plus.QCompιIso C₁).inv.app K) := by
-    have hnat := τ.mapDerivedCategory.naturality ((DerivedCategory.Plus.QCompιIso C₁).hom.app K)
-    simp only [Functor.comp_obj, ObjectProperty.ι_obj] at hnat
-    rw [← cancel_mono (G.mapDerivedCategory.map ((DerivedCategory.Plus.QCompιIso C₁).hom.app K))]
-    simp only [Functor.comp_obj, ObjectProperty.ι_obj, Category.assoc, ← Functor.map_comp,
-      Iso.inv_hom_id_app, Functor.map_id, Category.comp_id]
-    rw [← hnat, τ.mapDerivedCategory_app_Q_obj K.obj]
+    have hnat := (NatTrans.naturality_2 τ.mapDerivedCategory
+      ((DerivedCategory.Plus.QCompιIso C₁).app K)).symm
+    dsimp only [Functor.comp_obj] at hnat
+    rw [hnat]
+    dsimp only [ObjectProperty.ι_obj]
+    rw [τ.mapDerivedCategory_app_Q_obj K.obj]
+    simp only [Category.assoc]
+    rfl
   rw [hτ, Functor.map_comp, Functor.map_comp, F.ι_map_mapDerivedCategoryPlusFactors_hom_app K,
     hQ, G.ι_map_mapDerivedCategoryPlusFactors_inv_app K, happ]
   simp only [Functor.comp_obj, ObjectProperty.ι_obj, Category.assoc, Iso.inv_hom_id_app_assoc,

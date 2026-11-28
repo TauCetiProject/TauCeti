@@ -18,8 +18,7 @@ This file records basic properties of Mathlib's localization functor
 
 * `TauCeti.DerivedCategory.Plus.homologyFunctorFactors`: `Q ⋙ homologyFunctor C n` identifies
   with cochain-complex cohomology `HomologicalComplex.homologyFunctor`, with component formulas
-  `homologyFunctorFactors_hom_app`, `homologyFunctorFactors_inv_app`, and naturality
-  `TauCeti.DerivedCategory.Plus.homologyFunctorFactors_hom_naturality`.
+  `homologyFunctorFactors_hom_app` and `homologyFunctorFactors_inv_app`.
 * `TauCeti.DerivedCategory.Plus.Q_map_eq_of_homotopy`: homotopic morphisms of bounded-below
   cochain complexes induce the same morphism in `DerivedCategory.Plus C`.
 * `TauCeti.DerivedCategory.Plus.isIso_Q_map_of_quasiIso` and
@@ -57,34 +56,38 @@ def homologyFunctorFactors (n : ℤ) :
     _root_.DerivedCategory.Plus.Q ⋙ _root_.DerivedCategory.Plus.homologyFunctor C n ≅
       _root_.CochainComplex.Plus.ι C ⋙
         HomologicalComplex.homologyFunctor C (ComplexShape.up ℤ) n :=
-  NatIso.ofComponents
-    (fun K ↦ (_root_.DerivedCategory.homologyFunctorFactors C n).app K.obj)
-    (fun f ↦ (_root_.DerivedCategory.homologyFunctorFactors C n).hom.naturality f.hom)
+  (Functor.associator _ _ _).symm ≪≫
+    isoWhiskerRight (_root_.DerivedCategory.Plus.QCompιIso C)
+      (_root_.DerivedCategory.homologyFunctor C n) ≪≫
+    Functor.associator _ _ _ ≪≫
+    isoWhiskerLeft (_root_.CochainComplex.Plus.ι C)
+      (_root_.DerivedCategory.homologyFunctorFactors C n)
 
 /-- Component formula for `TauCeti.DerivedCategory.Plus.homologyFunctorFactors.hom`. -/
 @[simp]
 lemma homologyFunctorFactors_hom_app (K : _root_.CochainComplex.Plus C) (n : ℤ) :
     (homologyFunctorFactors C n).hom.app K =
-      (_root_.DerivedCategory.homologyFunctorFactors C n).hom.app K.obj :=
-  (rfl)
+      (_root_.DerivedCategory.homologyFunctor C n).map
+          ((_root_.DerivedCategory.Plus.QCompιIso C).hom.app K) ≫
+        (_root_.DerivedCategory.homologyFunctorFactors C n).hom.app K.obj := by
+  dsimp only [homologyFunctorFactors, _root_.DerivedCategory.Plus.homologyFunctor,
+    Iso.trans_hom, Iso.symm_hom, isoWhiskerRight_hom, isoWhiskerLeft_hom]
+  simp only [NatTrans.comp_app, Functor.associator_inv_app, Functor.associator_hom_app,
+    Functor.whiskerRight_app, Functor.whiskerLeft_app, ObjectProperty.ι_obj,
+    Category.id_comp]
 
 /-- Component formula for `TauCeti.DerivedCategory.Plus.homologyFunctorFactors.inv`. -/
 @[simp]
 lemma homologyFunctorFactors_inv_app (K : _root_.CochainComplex.Plus C) (n : ℤ) :
     (homologyFunctorFactors C n).inv.app K =
-      (_root_.DerivedCategory.homologyFunctorFactors C n).inv.app K.obj :=
-  (rfl)
-
-/-- Naturality of `TauCeti.DerivedCategory.Plus.homologyFunctorFactors` on a morphism in
-`CochainComplex.Plus C`. -/
-@[reassoc]
-lemma homologyFunctorFactors_hom_naturality {K L : _root_.CochainComplex.Plus C}
-    (f : K ⟶ L) (n : ℤ) :
-    (_root_.DerivedCategory.Plus.homologyFunctor C n).map (_root_.DerivedCategory.Plus.Q.map f) ≫
-        (homologyFunctorFactors C n).hom.app L =
-      (homologyFunctorFactors C n).hom.app K ≫
-        HomologicalComplex.homologyMap f.hom n :=
-  (homologyFunctorFactors C n).hom.naturality f
+      (_root_.DerivedCategory.homologyFunctorFactors C n).inv.app K.obj ≫
+        (_root_.DerivedCategory.homologyFunctor C n).map
+          ((_root_.DerivedCategory.Plus.QCompιIso C).inv.app K) := by
+  dsimp only [homologyFunctorFactors, _root_.DerivedCategory.Plus.homologyFunctor,
+    Iso.trans_inv, Iso.symm_inv, isoWhiskerRight_inv, isoWhiskerLeft_inv]
+  simp only [NatTrans.comp_app, Functor.associator_inv_app, Functor.associator_hom_app,
+    Functor.whiskerRight_app, Functor.whiskerLeft_app, ObjectProperty.ι_obj,
+    Category.comp_id]
 
 variable (C) in
 /-- The single functor `DerivedCategory.Plus.singleFunctor C n` factors through

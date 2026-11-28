@@ -89,7 +89,8 @@ theorem isIso_rightDerivedFunctorPlusUnit_app (hinj : ∀ (Y : C), Injective Y �
   have : IsIso (DerivedCategory.Plus.Q.map (F.mapCochainComplexPlus.map i')) :=
     TauCeti.DerivedCategory.Plus.isIso_Q_map_of_quasiIso (F.mapCochainComplexPlus.map i')
   have : ∀ n, Injective (L'.obj.X n) := hL
-  have h := F.rightDerivedFunctorPlusUnit_naturality i'
+  have h := F.rightDerivedFunctorPlusUnit.naturality i'
+  simp only [Functor.comp_obj, Functor.comp_map] at h
   have : IsIso (F.rightDerivedFunctorPlusUnit.app K ≫
       F.rightDerivedFunctorPlus.map (DerivedCategory.Plus.Q.map i')) := by
     rw [← h]

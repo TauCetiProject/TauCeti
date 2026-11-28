@@ -67,7 +67,9 @@ theorem quasiIso_map_of_adapted
     TauCeti.DerivedCategory.Plus.isIso_Q_map_of_quasiIso f
   have : IsIso (DerivedCategory.Plus.Q.map (F.mapCochainComplexPlus.map f) ≫
       F.rightDerivedFunctorPlusUnit.app L) := by
-    rw [F.rightDerivedFunctorPlusUnit_naturality f]
+    have hnat := F.rightDerivedFunctorPlusUnit.naturality f
+    simp only [Functor.comp_obj, Functor.comp_map] at hnat
+    rw [hnat]
     infer_instance
   have : IsIso (DerivedCategory.Plus.Q.map (F.mapCochainComplexPlus.map f)) :=
     IsIso.of_isIso_comp_right _ (F.rightDerivedFunctorPlusUnit.app L)

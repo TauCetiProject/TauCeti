@@ -11,6 +11,9 @@ public import TauCeti.Algebra.Homology.CochainComplex.Plus.InjectiveResolution
 public import TauCeti.Algebra.Homology.DerivedCategory.Plus.Functor
 public import TauCeti.Algebra.Homology.DerivedCategory.Plus.RightDerived
 
+import Mathlib.CategoryTheory.Functor.Derived.RightDerivedComposition
+import Mathlib.CategoryTheory.Functor.Derived.RightDerivedCompositionCommShift
+
 /-!
 # Comparison theorems for bounded-below right derived functors
 
@@ -69,9 +72,10 @@ variable {C₁ : Type u₁} [Category.{v₁} C₁] [Abelian C₁] [HasDerivedCat
 
 /-- Derived unit for `F₁.rightDerivedFunctorPlus ⋙ V.mapDerivedCategoryPlus`. -/
 private def rightDerivedCompUnit₁ :
-    F₁.mapCochainComplexPlus ⋙ V.mapCochainComplexPlus ⋙ DerivedCategory.Plus.Q ⟶
+    (F₁.mapCochainComplexPlus ⋙ V.mapCochainComplexPlus) ⋙ DerivedCategory.Plus.Q ⟶
       DerivedCategory.Plus.Q ⋙ F₁.rightDerivedFunctorPlus ⋙ V.mapDerivedCategoryPlus :=
-  whiskerLeft F₁.mapCochainComplexPlus V.mapDerivedCategoryPlusFactors.inv ≫
+  (Functor.associator _ _ _).hom ≫
+    whiskerLeft F₁.mapCochainComplexPlus V.mapDerivedCategoryPlusFactors.inv ≫
     (Functor.associator _ _ _).inv ≫
     whiskerRight F₁.rightDerivedFunctorPlusUnit V.mapDerivedCategoryPlus ≫
     (Functor.associator _ _ _).hom
@@ -85,40 +89,6 @@ private lemma rightDerivedCompUnit₁_app (K : CochainComplex.Plus C₁) :
 
 private instance : NatTrans.CommShift (rightDerivedCompUnit₁ F₁ V) ℤ := by
   dsimp [rightDerivedCompUnit₁]
-  infer_instance
-
-/-- Derived unit for `U.mapDerivedCategoryPlus ⋙ F₂.rightDerivedFunctorPlus`, transported along
-`e : F₁ ⋙ V ≅ U ⋙ F₂`. -/
-private def rightDerivedCompUnit₂ :
-    F₁.mapCochainComplexPlus ⋙ V.mapCochainComplexPlus ⋙ DerivedCategory.Plus.Q ⟶
-      DerivedCategory.Plus.Q ⋙ U.mapDerivedCategoryPlus ⋙ F₂.rightDerivedFunctorPlus :=
-  (Functor.associator _ _ _).inv ≫
-    whiskerRight ((F₁.mapCochainComplexPlusCompIso V).hom ≫
-      e.hom.mapCochainComplexPlus ≫ (U.mapCochainComplexPlusCompIso F₂).inv) _ ≫
-    (Functor.associator _ _ _).hom ≫
-    whiskerLeft U.mapCochainComplexPlus F₂.rightDerivedFunctorPlusUnit ≫
-    (Functor.associator _ _ _).inv ≫
-    whiskerRight U.mapDerivedCategoryPlusFactors.inv F₂.rightDerivedFunctorPlus ≫
-    (Functor.associator _ _ _).hom
-
-omit [EnoughInjectives C₁] [HasDerivedCategory D₁] [PreservesFiniteLimits V]
-  [PreservesFiniteColimits V] in
-private lemma rightDerivedCompUnit₂_app (K : CochainComplex.Plus C₁) :
-    (rightDerivedCompUnit₂ F₁ F₂ U V e).app K =
-      DerivedCategory.Plus.Q.map
-          ((F₁.mapCochainComplexPlusCompIso V).hom.app K ≫
-            e.hom.mapCochainComplexPlus.app K ≫
-            (U.mapCochainComplexPlusCompIso F₂).inv.app K) ≫
-        F₂.rightDerivedFunctorPlusUnit.app (U.mapCochainComplexPlus.obj K) ≫
-        F₂.rightDerivedFunctorPlus.map (U.mapDerivedCategoryPlusFactors.inv.app K) := by
-  dsimp [rightDerivedCompUnit₂]
-  simp
-
-private instance : NatTrans.CommShift (rightDerivedCompUnit₂ F₁ F₂ U V e) ℤ := by
-  have : NatTrans.CommShift (F₁.mapCochainComplexPlusCompIso V).hom ℤ := inferInstance
-  have : NatTrans.CommShift e.hom.mapCochainComplexPlus ℤ := inferInstance
-  have : NatTrans.CommShift (U.mapCochainComplexPlusCompIso F₂).inv ℤ := inferInstance
-  dsimp [rightDerivedCompUnit₂]
   infer_instance
 
 omit [HasDerivedCategory C₁] [EnoughInjectives C₁] in
@@ -140,14 +110,68 @@ private lemma isRightDerivedFunctor_comp₁ :
     dsimp [rightDerivedCompUnit₁]
     infer_instance
 
+private def rightDerivedCompIso :
+    U.mapCochainComplexPlus ⋙ F₂.mapCochainComplexPlus ≅
+      F₁.mapCochainComplexPlus ⋙ V.mapCochainComplexPlus :=
+  U.mapCochainComplexPlusCompIso F₂ ≪≫
+    { hom := e.inv.mapCochainComplexPlus
+      inv := e.hom.mapCochainComplexPlus
+      hom_inv_id := by
+        rw [← NatTrans.mapCochainComplexPlus_comp, e.inv_hom_id,
+          NatTrans.mapCochainComplexPlus_id]
+      inv_hom_id := by
+        rw [← NatTrans.mapCochainComplexPlus_comp, e.hom_inv_id,
+          NatTrans.mapCochainComplexPlus_id] } ≪≫
+    (F₁.mapCochainComplexPlusCompIso V).symm
+
+private instance : NatTrans.CommShift (rightDerivedCompIso F₁ F₂ U V e).hom ℤ := by
+  have : NatTrans.CommShift (U.mapCochainComplexPlusCompIso F₂).hom ℤ := inferInstance
+  have : NatTrans.CommShift e.inv.mapCochainComplexPlus ℤ := inferInstance
+  have : NatTrans.CommShift (F₁.mapCochainComplexPlusCompIso V).inv ℤ := inferInstance
+  dsimp [rightDerivedCompIso]
+  infer_instance
+
+private def rightDerivedCompNatTrans :
+    F₁.rightDerivedFunctorPlus ⋙ V.mapDerivedCategoryPlus ⟶
+      U.mapDerivedCategoryPlus ⋙ F₂.rightDerivedFunctorPlus :=
+  have := isRightDerivedFunctor_comp₁ F₁ V
+  Functor.natTransOfIsRightDerivedFunctorComp (rightDerivedCompIso F₁ F₂ U V e)
+    DerivedCategory.Plus.Q DerivedCategory.Plus.Q DerivedCategory.Plus.Q
+    (CochainComplex.Plus.quasiIso C₁)
+    U.mapDerivedCategoryPlusFactors.inv
+    F₂.rightDerivedFunctorPlusUnit
+    (rightDerivedCompUnit₁ F₁ V)
+
 include hU in
-private lemma isRightDerivedFunctor_comp₂ :
-    (U.mapDerivedCategoryPlus ⋙ F₂.rightDerivedFunctorPlus).IsRightDerivedFunctor
-      (rightDerivedCompUnit₂ F₁ F₂ U V e) (CochainComplex.Plus.quasiIso C₁) :=
-  (localizerMorphism_derives_comp F₁ V).isRightDerivedFunctor_of_isIso _ fun I ↦ by
-    have := hU I
-    dsimp [rightDerivedCompUnit₂]
+private lemma isIso_rightDerivedCompNatTrans :
+    IsIso (rightDerivedCompNatTrans F₁ F₂ U V e) := by
+  have := isRightDerivedFunctor_comp₁ F₁ V
+  rw [NatTrans.isIso_iff_isIso_app]
+  intro X
+  obtain ⟨b, hb⟩ := X.property
+  have : X.IsGE b := (X.isGE_ι_obj_iff b).1 hb
+  obtain ⟨I, _, ⟨iso⟩⟩ := DerivedCategory.Plus.exists_injective_nonempty_iso X b
+  have hiso : IsIso ((rightDerivedCompNatTrans F₁ F₂ U V e).app
+      (DerivedCategory.Plus.Q.obj ((InjectiveObject.ι C₁).mapCochainComplexPlus.obj I))) :=
+    Functor.isIso_natTransOfIsRightDerivedFunctorComp_app
+      (rightDerivedCompIso F₁ F₂ U V e)
+      DerivedCategory.Plus.Q DerivedCategory.Plus.Q DerivedCategory.Plus.Q
+      (CochainComplex.Plus.quasiIso C₁)
+      U.mapDerivedCategoryPlusFactors.inv
+      F₂.rightDerivedFunctorPlusUnit
+      (rightDerivedCompUnit₁ F₁ V)
+      ((InjectiveObject.ι C₁).mapCochainComplexPlus.obj I)
+      (by dsimp [rightDerivedCompUnit₁]; infer_instance)
+      inferInstance
+      (hU I)
+  have hnat := (rightDerivedCompNatTrans F₁ F₂ U V e).naturality iso.hom
+  have : IsIso ((F₁.rightDerivedFunctorPlus ⋙ V.mapDerivedCategoryPlus).map iso.hom ≫
+      (rightDerivedCompNatTrans F₁ F₂ U V e).app X) := by
+    rw [hnat]
     infer_instance
+  exact IsIso.of_isIso_comp_left
+    ((F₁.rightDerivedFunctorPlus ⋙ V.mapDerivedCategoryPlus).map iso.hom)
+    ((rightDerivedCompNatTrans F₁ F₂ U V e).app X)
 
 include hU in
 /-- **Exact-functor comparison for bounded-below right derived functors.**
@@ -158,25 +182,8 @@ compatibly with shifts. -/
 def rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso :
     F₁.rightDerivedFunctorPlus ⋙ V.mapDerivedCategoryPlus ≅
       U.mapDerivedCategoryPlus ⋙ F₂.rightDerivedFunctorPlus :=
-  have := isRightDerivedFunctor_comp₁ F₁ V
-  have := isRightDerivedFunctor_comp₂ F₁ F₂ U V e hU
-  Functor.rightDerivedUnique
-    (F₁.rightDerivedFunctorPlus ⋙ V.mapDerivedCategoryPlus)
-    (U.mapDerivedCategoryPlus ⋙ F₂.rightDerivedFunctorPlus)
-    (rightDerivedCompUnit₁ F₁ V) (rightDerivedCompUnit₂ F₁ F₂ U V e)
-    (CochainComplex.Plus.quasiIso C₁)
-
-include hU in
-private lemma rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso_hom :
-    (rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso F₁ F₂ U V e hU).hom =
-      have := isRightDerivedFunctor_comp₁ F₁ V
-      have := isRightDerivedFunctor_comp₂ F₁ F₂ U V e hU
-      Functor.rightDerivedNatTrans
-        (F₁.rightDerivedFunctorPlus ⋙ V.mapDerivedCategoryPlus)
-        (U.mapDerivedCategoryPlus ⋙ F₂.rightDerivedFunctorPlus)
-        (rightDerivedCompUnit₁ F₁ V) (rightDerivedCompUnit₂ F₁ F₂ U V e)
-        (CochainComplex.Plus.quasiIso C₁) (𝟙 _) :=
-  rfl
+  have := isIso_rightDerivedCompNatTrans F₁ F₂ U V e hU
+  asIso (rightDerivedCompNatTrans F₁ F₂ U V e)
 
 include hU in
 /-- Universal-property characterization of `rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso`:
@@ -196,28 +203,31 @@ lemma rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso_hom_fac_app
         F₂.rightDerivedFunctorPlusUnit.app (U.mapCochainComplexPlus.obj K) ≫
         F₂.rightDerivedFunctorPlus.map (U.mapDerivedCategoryPlusFactors.inv.app K) := by
   have := isRightDerivedFunctor_comp₁ F₁ V
-  have := isRightDerivedFunctor_comp₂ F₁ F₂ U V e hU
-  have h := Functor.rightDerivedNatTrans_app
-    (F₁.rightDerivedFunctorPlus ⋙ V.mapDerivedCategoryPlus)
-    (U.mapDerivedCategoryPlus ⋙ F₂.rightDerivedFunctorPlus)
-    (rightDerivedCompUnit₁ F₁ V) (rightDerivedCompUnit₂ F₁ F₂ U V e)
-    (CochainComplex.Plus.quasiIso C₁) (𝟙 _) K
-  rw [rightDerivedCompUnit₁_app, rightDerivedCompUnit₂_app, NatTrans.id_app,
-    Category.id_comp, Category.assoc,
-    ← rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso_hom F₁ F₂ U V e hU] at h
+  have h := Functor.comp_natTransOfIsRightDerivedFunctorComp_app
+    (rightDerivedCompIso F₁ F₂ U V e)
+    DerivedCategory.Plus.Q DerivedCategory.Plus.Q DerivedCategory.Plus.Q
+    (CochainComplex.Plus.quasiIso C₁)
+    U.mapDerivedCategoryPlusFactors.inv
+    F₂.rightDerivedFunctorPlusUnit
+    (rightDerivedCompUnit₁ F₁ V) K
+  rw [rightDerivedCompUnit₁_app, Category.assoc] at h
   rw [← cancel_epi (V.mapDerivedCategoryPlusFactors.inv.app (F₁.mapCochainComplexPlus.obj K)),
     Iso.inv_hom_id_app_assoc]
-  exact h
+  simpa [rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso, rightDerivedCompNatTrans,
+    rightDerivedCompIso] using h
 
 include hU in
 instance : NatTrans.CommShift
     (rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso F₁ F₂ U V e hU).hom ℤ := by
   have := isRightDerivedFunctor_comp₁ F₁ V
-  have := isRightDerivedFunctor_comp₂ F₁ F₂ U V e hU
-  exact NatTrans.CommShift.of_isRightDerivedFunctor
-    (rightDerivedCompUnit₁ F₁ V) (rightDerivedCompUnit₂ F₁ F₂ U V e)
-    (𝟙 _) (CochainComplex.Plus.quasiIso C₁)
-    (by simp [rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso])
+  change NatTrans.CommShift (Functor.natTransOfIsRightDerivedFunctorComp
+    (rightDerivedCompIso F₁ F₂ U V e)
+    DerivedCategory.Plus.Q DerivedCategory.Plus.Q DerivedCategory.Plus.Q
+    (CochainComplex.Plus.quasiIso C₁)
+    U.mapDerivedCategoryPlusFactors.inv
+    F₂.rightDerivedFunctorPlusUnit
+    (rightDerivedCompUnit₁ F₁ V)) ℤ
+  infer_instance
 
 include hU in
 /-- Cohomology-level comparison for `rightDerivedFunctorPlusCompMapDerivedCategoryPlusIso`:
@@ -306,41 +316,9 @@ private lemma degreeZeroComponent_hom_naturality (n : ℕ) {X Y : C} (f : X ⟶ 
   have h4 := (InjectiveResolution.isoRightDerivedObj_inv_naturality f IX IY φ.hom
     (InjectiveResolution.desc_commutes_zero f IY IX) F n).symm
   simp only [Functor.comp_map, HomologicalComplex.homologyFunctor_map] at h4
-  calc (DerivedCategory.Plus.homologyFunctor D (n : ℤ)).map
-        (F.rightDerivedFunctorPlus.map ((DerivedCategory.Plus.singleFunctor C 0).map f)) ≫
-      (degreeZeroComponent F n Y IY).hom
-    _ = ((DerivedCategory.Plus.homologyFunctor D (n : ℤ)).map
-          (F.rightDerivedFunctorPlus.map ((DerivedCategory.Plus.singleFunctor C 0).map f)) ≫
-        (DerivedCategory.Plus.homologyFunctor D (n : ℤ)).map (F.rightDerivedFunctorPlus.map
-          ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).hom.app Y))) ≫
-        (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution IY.ιPlus (n : ℤ)).hom ≫
-        (IY.cochainComplexPlusHomologyIso F n).hom ≫ (IY.isoRightDerivedObj F n).inv := by
-      simp only [degreeZeroComponent_hom, Category.assoc]
-    _ = (DerivedCategory.Plus.homologyFunctor D (n : ℤ)).map (F.rightDerivedFunctorPlus.map
-          ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).hom.app X)) ≫
-        ((DerivedCategory.Plus.homologyFunctor D (n : ℤ)).map (F.rightDerivedFunctorPlus.map
-          (DerivedCategory.Plus.Q.map ((TauCeti.CochainComplex.Plus.singleFunctor C 0).map f))) ≫
-        (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution IY.ιPlus (n : ℤ)).hom) ≫
-        (IY.cochainComplexPlusHomologyIso F n).hom ≫ (IY.isoRightDerivedObj F n).inv := by
-      rw [h1, Category.assoc, Category.assoc]
-    _ = (DerivedCategory.Plus.homologyFunctor D (n : ℤ)).map (F.rightDerivedFunctorPlus.map
-          ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).hom.app X)) ≫
-        (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution IX.ιPlus (n : ℤ)).hom ≫
-        (HomologicalComplex.homologyMap
-          ((F.mapHomologicalComplex (.up ℤ)).map (InjectiveResolution.cochainComplexPlusMap φ).hom)
-            (n : ℤ) ≫
-        (IY.cochainComplexPlusHomologyIso F n).hom) ≫ (IY.isoRightDerivedObj F n).inv := by
-      rw [h2, Category.assoc, Category.assoc]
-    _ = (DerivedCategory.Plus.homologyFunctor D (n : ℤ)).map (F.rightDerivedFunctorPlus.map
-          ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).hom.app X)) ≫
-        (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution IX.ιPlus (n : ℤ)).hom ≫
-        (IX.cochainComplexPlusHomologyIso F n).hom ≫
-        (HomologicalComplex.homologyMap ((F.mapHomologicalComplex (.up ℕ)).map φ.hom) n ≫
-        (IY.isoRightDerivedObj F n).inv) := by
-      rw [h3, Category.assoc]
-    _ = (degreeZeroComponent F n X IX).hom ≫ (F.rightDerived n).map f := by
-      rw [h4]
-      simp only [degreeZeroComponent_hom, Category.assoc]
+  rw [degreeZeroComponent_hom, degreeZeroComponent_hom]
+  simp only [Category.assoc]
+  rw [reassoc_of% h1, reassoc_of% h2, reassoc_of% h3, h4]
 
 /-- **Degree-zero complexes recover classical right derived functors.** For every `n : ℕ`,
 `DerivedCategory.Plus.singleFunctor C 0 ⋙ F.rightDerivedFunctorPlus ⋙
