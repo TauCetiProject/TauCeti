@@ -49,6 +49,8 @@ these natural numbers is zero.
   the order of the difference on the first factor.
 * `TauCeti.fwdDiff_iter_smul_eq_sum_range_sum_range`: the unshifted discrete Leibniz rule, using
   differences at the input point only.
+* `TauCeti.sum_range_smul_fwdDiff`: summation by parts for the forward difference on
+  `{0, …, N}`.
 * `TauCeti.fwdDiff_iter_pow_apply_zero`: `Δᵏ (t ↦ t ^ m) (0) = k! S(m, k)`.
 * `TauCeti.fwdDiff_iter_pow_eq_sum`: the `k`-th difference of `y ↦ y ^ m` with step `h` at `x`
   as `∑ₗ C(m, l) x ^ (m - l) h ^ l k! S(l, k)`.
@@ -155,6 +157,17 @@ theorem fwdDiff_iter_smul_eq_sum_range_sum_range [Module R G] (h : M) (f : M →
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [← Function.iterate_add_apply, Nat.add_comm j (n - i), smul_comm, smul_smul,
     smul_comm]
+
+/-- **Summation by parts for the forward difference** on `{0, …, N}`:
+`∑_{x=0}^{N} f(x) Δg(x) = f(N + 1) g(N + 1) - f(0) g(0) - ∑_{x=0}^{N} Δf(x) g(x + 1)`. -/
+theorem sum_range_smul_fwdDiff [Module R G] (f : ℕ → R) (g : ℕ → G) (N : ℕ) :
+    ∑ x ∈ Finset.range (N + 1), f x • Δ_[1] g x =
+      f (N + 1) • g (N + 1) - f 0 • g 0 -
+        ∑ x ∈ Finset.range (N + 1), Δ_[1] f x • g (x + 1) := by
+  rw [eq_sub_iff_add_eq, ← Finset.sum_add_distrib, ← Finset.sum_range_sub (fun k ↦ f k • g k)]
+  refine Finset.sum_congr rfl fun x _ ↦ ?_
+  simp only [fwdDiff, smul_sub, sub_smul]
+  abel
 
 end Ring
 
