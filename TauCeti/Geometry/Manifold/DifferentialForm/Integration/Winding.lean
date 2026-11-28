@@ -248,8 +248,8 @@ private theorem setIntegral_annulus_angleForm_eq {g : EuclideanSpace ℝ (Fin 2)
     rw [zero_add, hd ζ, h1, Complex.ofReal_one, div_one]
 
 omit [FiniteDimensional ℝ E] [IsManifold I 2 M] in
-/-- A function equal to `1` on `g (B(0, r))`, for an open embedding `g` of an open set containing
-`B(0, r)`, is locally constant at every point of `g (B(0, r))`. -/
+/-- A function equal to `1` on `g (ball 0 r)`, for an open embedding `g` of an open set containing
+`ball 0 r`, is locally constant at every point of `g (ball 0 r)`. -/
 private theorem eventually_eq_of_mem_image_ball {U : Opens (EuclideanSpace ℝ (Fin 2))}
     {g : EuclideanSpace ℝ (Fin 2) → M}
     (hg : IsOpenEmbedding (g ∘ ((↑) : U → EuclideanSpace ℝ (Fin 2)))) {r : ℝ}
@@ -272,8 +272,8 @@ private theorem eventually_eq_of_mem_image_ball {U : Opens (EuclideanSpace ℝ (
   rw [← hy', hψr x' hx', hψr x hx]
 
 omit [FiniteDimensional ℝ E] [IsManifold I 2 M] in
-/-- A function supported in `g (B(0, b))` and equal to `1` on `g (B̄(0, r))`, for `r > 0` and `g`
-injective on a set containing `B̄(0, b)`, forces `r < b`. -/
+/-- A function supported in `g (ball 0 b)` and equal to `1` on `g (closedBall 0 r)`, for `r > 0`
+and `g` injective on a set containing `closedBall 0 b`, forces `r < b`. -/
 private theorem lt_of_forall_mem_closedBall_eq_one {U : Set (EuclideanSpace ℝ (Fin 2))}
     {g : EuclideanSpace ℝ (Fin 2) → M} (hginj : InjOn g U) {r b : ℝ} (hr : 0 < r)
     (hbU : closedBall (0 : EuclideanSpace ℝ (Fin 2)) b ⊆ U) {ψ : M → ℝ}
@@ -286,7 +286,7 @@ private theorem lt_of_forall_mem_closedBall_eq_one {U : Set (EuclideanSpace ℝ 
     obtain ⟨y, hy, -⟩ := hψb (subset_tsupport _
       (show ψ (g 0) ≠ 0 by simp [hψr 0 (mem_closedBall_self hr.le)]))
     exact (norm_nonneg y).trans_lt (by simpa using hy)
-  -- Otherwise the point `b ∈ ℝ²` of norm `b` would lie in `B̄(0, r)`, where `ψ ∘ g = 1`.
+  -- Otherwise the point `b ∈ ℝ²` of norm `b` would lie in `closedBall 0 r`, where `ψ ∘ g = 1`.
   by_contra hbr
   have hx : ‖EuclideanSpace.single (0 : Fin 2) b‖ = b := by
     rw [EuclideanSpace.single, PiLp.norm_single, Real.norm_of_nonneg hb.le]
@@ -324,7 +324,7 @@ private theorem integralTopForm_wedge_angleForm_eq_setIntegral
   have hψ₀ {y : M} (hy : y ∉ tsupport ψ) : ∀ᶠ y' in 𝓝 y, ψ y' = ψ y := by
     filter_upwards [notMem_tsupport_iff_eventuallyEq.mp hy] with y' hy'
     rw [hy', image_eq_zero_of_notMem_tsupport hy, Pi.zero_apply]
-  -- `β` is continuous with compact support in `g (B̄(0, b))`, hence integrable.
+  -- `β` is continuous with compact support in `g (closedBall 0 b)`, hence integrable.
   have hβc : IsSmoothForm I 0 β := isSmoothForm_wedge_angleForm hψ fun y ↦ by
     by_cases h₁ : y ∈ g '' ball 0 r
     · exact Or.inl (hψ₁ h₁)
@@ -351,10 +351,10 @@ private theorem integralTopForm_wedge_angleForm_eq_setIntegral
     e.preimage_closedBall, map_zero]
 
 /-- **The cutoff integral of an angle form around a puncture.** Let `o` orient a surface `M`,
-and let `g : ℝ² → M` be an open embedding on an open set `U` containing `B̄(0, b)`, which
-preserves orientation on `U` and is `C²` on `B̄(0, b)`. Let `z₀, z₁` be functions which are `C²`
-with `z₀² + z₁² = 1` on `g (B̄(0, b) \ {0})`, and let `ψ` be a `C¹` function supported in
-`g (B(0, b))` and equal to `1` on `g (B̄(0, r))`, for some `r > 0`. Then the integral of
+and let `g : ℝ² → M` be an open embedding on an open set `U` containing `closedBall 0 b`, which
+preserves orientation on `U` and is `C²` on `closedBall 0 b`. Let `z₀, z₁` be functions which are
+`C²` with `z₀² + z₁² = 1` on `g (closedBall 0 b \ {0})`, and let `ψ` be a `C¹` function supported
+in `g (ball 0 b)` and equal to `1` on `g (closedBall 0 r)`, for some `r > 0`. Then the integral of
 `dψ ∧ (z₀ dz₁ - z₁ dz₀)` is `-2π` times the degree of the loop
 `d ζ = z₀ (g (r ζ)) + i z₁ (g (r ζ))` of directions of `z` along the circle of radius `r`, where
 `ℂ` is identified with `ℝ²` by `Complex.orthonormalBasisOneI`. -/
@@ -389,7 +389,7 @@ theorem integralTopForm_mextDeriv_ofFunction_wedge_eq_neg_two_pi_mul_degree
   have hψr' (x) (hx : x ∈ ball (0 : EuclideanSpace ℝ (Fin 2)) r) :=
     hψr x (ball_subset_closedBall hx)
   rw [integralTopForm_wedge_angleForm_eq_setIntegral o hg ho hr hrb hbU hg₂ hψ hψr' hψb hz₀ hz₁]
-  -- Off the annulus `r ≤ ‖w‖ ≤ b` the integrand vanishes, since `ψ` is `1` on `g (B(0, r))`.
+  -- Off the annulus `r ≤ ‖w‖ ≤ b` the integrand vanishes, since `ψ` is `1` on `g (ball 0 r)`.
   set A : Set ℂ := {w | r ≤ ‖w - 0‖ ∧ ‖w - 0‖ ≤ b}
   have hvan (w : ℂ) (hw : w ∈ closedBall 0 b \ A) :
       mpullback 𝓘(ℝ, EuclideanSpace ℝ (Fin 2)) I g
