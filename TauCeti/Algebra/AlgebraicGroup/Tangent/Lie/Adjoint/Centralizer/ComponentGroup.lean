@@ -12,6 +12,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Cen
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Map
 
+public import TauCeti.Algebra.AlgebraicGroup.FiniteType.Tangent
 import TauCeti.Algebra.Group.Subgroup.Ker
 
 /-!
@@ -301,16 +302,8 @@ theorem centralizerComponentGroupMap_eq_mapComponentGroup (f : H ⟶ K)
     (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
     centralizerComponentGroupMap f x =
       mapComponentGroup (ofHom ((toBialgHom f).centralizerMap x)) := by
-  rw [centralizerComponentGroupMap, HopfIdeal.componentGroupMap_eq_mapComponentGroup]
-  congr 1
-  -- `FiniteTypeCommHopfAlgCat.quotientMap` is not `@[expose]`, so compare after `mkQuotient`.
-  apply mkQuotient_hom_ext
-  rw [mkQuotient_comp_quotientMap]
-  apply hom_ext
-  ext a
-  rw [toBialgHom_comp, toBialgHom_comp, BialgHom.comp_apply, BialgHom.comp_apply,
-    toBialgHom_ofHom, toBialgHom_mkQuotient_apply, toBialgHom_mkQuotient_apply,
-    BialgHom.centralizerMap_mk]
+  rw [centralizerComponentGroupMap, HopfIdeal.componentGroupMap_eq_mapComponentGroup,
+    ofHom_centralizerMap]
 
 /-- `centralizerComponentGroupMap` commutes with the homomorphisms `A_K(x) →* π₀(K)` and
 `A_H(df(x)) →* π₀(H)` induced by the centralizer inclusions into the ambient groups. -/

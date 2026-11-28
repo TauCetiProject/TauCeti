@@ -33,6 +33,12 @@ Hopf-algebra morphisms, and for Hopf-ideal quotients; the coordinate-ring triang
   `TauCeti.CommHopfAlgCat.comp_eq_unit_comp_counit_iff`: the trivialization criterion.
 * `TauCeti.CommHopfAlgCat.comp_mkQuotient_kernelHopfIdeal`: the coordinate-ring triangle.
 * `TauCeti.CommHopfAlgCat.kernelHopfIdeal_le_iff`: the Hopf-ideal-quotient form.
+* `TauCeti.CommHopfAlgCat.kernelHopfIdeal_quotientMap`,
+  `TauCeti.CommHopfAlgCat.comapOfSurjective_kernelHopfIdeal_quotientMap`,
+  `TauCeti.CommHopfAlgCat.kernelQuotientMapIso`, and
+  `TauCeti.CommHopfAlgCat.kernelQuotientMapIsoOfLe`: the kernel of an induced quotient
+  morphism `quotientMap I J f h` and its identification with `ker(f) ∩ V(J)` (and `ker(f)`
+  when `J ≤ kernelHopfIdeal f`).
 
 ## References
 
@@ -209,6 +215,84 @@ theorem kernelHopfIdeal_le_iff (f : H ⟶ K) {J : HopfIdeal R K} :
             (Bialgebra.counitBialgHom R H)) := by
   rw [comp_eq_unit_comp_counit_iff, mkQuotient_ker]
   exact HopfIdeal.toIdeal_le_toIdeal.symm
+
+section QuotientMap
+
+/-- For any morphism `f : H ⟶ K` of commutative Hopf algebras and Hopf ideals `I`, `J` with
+`I.map f.hom ≤ J`, the kernel Hopf ideal of `quotientMap I J f h` is the image of
+`kernelHopfIdeal f` in `K ⧸ J`. -/
+theorem kernelHopfIdeal_quotientMap (I : HopfIdeal R H) (J : HopfIdeal R K)
+    (f : H ⟶ K) (h : I.map f.hom ≤ J) :
+    kernelHopfIdeal (quotientMap I J f h) =
+      (kernelHopfIdeal f).map (mkQuotient K J).hom := by
+  rw [← kernelHopfIdeal_comp_of_surjective (mkQuotient H I) (mkQuotient_surjective H I)
+      (quotientMap I J f h),
+    mkQuotient_comp_quotientMap, kernelHopfIdeal_comp]
+
+/-- The preimage in `K` of the defining ideal of the kernel of `quotientMap I J f h` cuts out
+`ker(f) ∩ V(J)` in `Spec K` (`kernelHopfIdeal f ⊔ J`). -/
+theorem comapOfSurjective_kernelHopfIdeal_quotientMap (I : HopfIdeal R H) (J : HopfIdeal R K)
+    (f : H ⟶ K) (h : I.map f.hom ≤ J) :
+    (kernelHopfIdeal (quotientMap I J f h)).comapOfSurjective (mkQuotient K J).hom
+        (mkQuotient_surjective K J) =
+      kernelHopfIdeal f ⊔ J := by
+  rw [kernelHopfIdeal_quotientMap, HopfIdeal.comapOfSurjective_map]
+  have hker :
+      HopfIdeal.kerOfSurjective (mkQuotient K J).hom (mkQuotient_surjective K J) = J := by
+    simpa only [hom_mkQuotient] using HopfIdeal.kerOfSurjective_mkBialgHom J
+  rw [hker]
+
+private theorem map_sup_eq_kernelHopfIdeal_quotientMap (I : HopfIdeal R H) (J : HopfIdeal R K)
+    (f : H ⟶ K) (h : I.map f.hom ≤ J) :
+    (kernelHopfIdeal f ⊔ J).map (mkQuotient K J).hom =
+      kernelHopfIdeal (quotientMap I J f h) := by
+  simp_rw [← comapOfSurjective_kernelHopfIdeal_quotientMap I J f h]
+  exact HopfIdeal.map_comapOfSurjective _ _ (mkQuotient_surjective K J)
+
+/-- The scheme-theoretic kernel of `quotientMap I J f h` is canonically isomorphic to the
+intersection `ker(f) ∩ V(J)` in `Spec K` (cut out by `kernelHopfIdeal f ⊔ J`). -/
+noncomputable def kernelQuotientMapIso (I : HopfIdeal R H) (J : HopfIdeal R K)
+    (f : H ⟶ K) (h : I.map f.hom ≤ J) :
+    quotient K (kernelHopfIdeal f ⊔ J) ≅
+      quotient (quotient K J) (kernelHopfIdeal (quotientMap I J f h)) :=
+  ((mkQuotient K J).quotientIsoQuotientQuotient rfl le_sup_right) ≪≫
+    eqToIso (congrArg (quotient _) (map_sup_eq_kernelHopfIdeal_quotientMap I J f h))
+
+/-- The canonical isomorphism `ker(f) ∩ V(J) ≅ ker(quotientMap I J f h)` identifies the closed
+immersion `ker(f) ∩ V(J) ↪ V(J)` with `ker(quotientMap I J f h) ↪ V(J)`. -/
+@[reassoc (attr := simp), simp]
+theorem quotientMapOfLe_comp_kernelQuotientMapIso_hom (I : HopfIdeal R H) (J : HopfIdeal R K)
+    (f : H ⟶ K) (h : I.map f.hom ≤ J) :
+    quotientMapOfLe K (le_sup_right : J ≤ kernelHopfIdeal f ⊔ J) ≫
+        (kernelQuotientMapIso I J f h).hom =
+      mkQuotient (quotient K J) (kernelHopfIdeal (quotientMap I J f h)) := by
+  apply mkQuotient_hom_ext
+  rw [← Category.assoc, mkQuotient_comp_quotientMapOfLe, kernelQuotientMapIso, Iso.trans_hom,
+    ← Category.assoc, mkQuotient_comp_quotientIsoQuotientQuotient_hom, Category.assoc, eqToIso.hom,
+    mkQuotient_comp_eqToHom (map_sup_eq_kernelHopfIdeal_quotientMap I J f h).symm]
+
+/-- Whenever `ker(f) ⊆ V(J)` scheme-theoretically (`J ≤ kernelHopfIdeal f`), the
+scheme-theoretic kernel of `quotientMap I J f h` is canonically isomorphic to `ker(f)`. -/
+noncomputable def kernelQuotientMapIsoOfLe (I : HopfIdeal R H) (J : HopfIdeal R K)
+    (f : H ⟶ K) (h : I.map f.hom ≤ J) (hle : J ≤ kernelHopfIdeal f) :
+    quotient K (kernelHopfIdeal f) ≅
+      quotient (quotient K J) (kernelHopfIdeal (quotientMap I J f h)) :=
+  eqToIso (congrArg (quotient K) (sup_eq_left.mpr hle).symm) ≪≫ kernelQuotientMapIso I J f h
+
+/-- When `J ≤ kernelHopfIdeal f`, the canonical isomorphism `ker(f) ≅ ker(quotientMap I J f h)`
+identifies `ker(f) ↪ V(J)` with `ker(quotientMap I J f h) ↪ V(J)`. -/
+@[reassoc (attr := simp), simp]
+theorem quotientMapOfLe_comp_kernelQuotientMapIsoOfLe_hom (I : HopfIdeal R H) (J : HopfIdeal R K)
+    (f : H ⟶ K) (h : I.map f.hom ≤ J) (hle : J ≤ kernelHopfIdeal f) :
+    quotientMapOfLe K hle ≫ (kernelQuotientMapIsoOfLe I J f h hle).hom =
+      mkQuotient (quotient K J) (kernelHopfIdeal (quotientMap I J f h)) := by
+  apply mkQuotient_hom_ext
+  rw [← Category.assoc, mkQuotient_comp_quotientMapOfLe, kernelQuotientMapIsoOfLe, Iso.trans_hom,
+    ← Category.assoc, eqToIso.hom, mkQuotient_comp_eqToHom (sup_eq_left.mpr hle),
+    ← mkQuotient_comp_quotientMapOfLe K le_sup_right, Category.assoc,
+    quotientMapOfLe_comp_kernelQuotientMapIso_hom]
+
+end QuotientMap
 
 end CommHopfAlgCat
 

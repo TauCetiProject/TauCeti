@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Basic
 public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import Mathlib.RingTheory.RingHom.FinitePresentation
-import TauCeti.RingTheory.RingHom.Quotient
 
 /-!
 # Kernels of composite affine group morphisms
@@ -87,65 +86,62 @@ theorem kernelCompositeMap_comp {M : _root_.CommHopfAlgCat.{v} R}
   simp only [← Category.assoc, mkQuotient_comp_kernelCompositeMap]
   simp only [Category.assoc, mkQuotient_comp_kernelCompositeMap, mkQuotient_comp_eqToHom]
 
+private theorem kernelCompositeMap_eq_quotientMap (f : H ⟶ K) (g : K ⟶ L) :
+    kernelCompositeMap f g =
+      quotientMap (kernelHopfIdeal f) (kernelHopfIdeal (f ≫ g)) g
+        (by rw [← kernelHopfIdeal_comp]) := by
+  apply mkQuotient_hom_ext
+  rw [mkQuotient_comp_kernelCompositeMap, mkQuotient_comp_quotientMap]
+
 /-- The kernel of the restriction on composite kernels is the original kernel, viewed as a
 closed subgroup of the composite kernel. -/
 @[simp]
 theorem kernelHopfIdeal_kernelCompositeMap (f : H ⟶ K) (g : K ⟶ L) :
     kernelHopfIdeal (kernelCompositeMap f g) =
       (kernelHopfIdeal g).map (mkQuotient L (kernelHopfIdeal (f ≫ g))).hom := by
-  rw [← kernelHopfIdeal_comp_of_surjective (mkQuotient K (kernelHopfIdeal f))
-    (mkQuotient_surjective K (kernelHopfIdeal f)), mkQuotient_comp_kernelCompositeMap]
-  exact kernelHopfIdeal_comp g _
+  rw [kernelCompositeMap_eq_quotientMap]
+  exact kernelHopfIdeal_quotientMap (kernelHopfIdeal f) (kernelHopfIdeal (f ≫ g)) g
+    (by rw [← kernelHopfIdeal_comp])
 
 /-- The scheme-theoretic kernel of the restriction on composite kernels is isomorphic to
 the original kernel, including its possibly nonreduced scheme structure. -/
 noncomputable def kernelCompositeKernelIso (f : H ⟶ K) (g : K ⟶ L) :
     quotient (quotient L (kernelHopfIdeal (f ≫ g)))
         (kernelHopfIdeal (kernelCompositeMap f g)) ≅ quotient L (kernelHopfIdeal g) :=
-  quotientIsoOfKerOfSurjectiveEq (quotientMapOfLe L (kernelHopfIdeal_comp_le f g))
-    (quotientMapOfLe_surjective L (kernelHopfIdeal_comp_le f g)) (by
-      rw [kernelHopfIdeal_kernelCompositeMap]
-      exact kerOfSurjective_quotientMapOfLe L (kernelHopfIdeal_comp_le f g))
+  eqToIso (congrArg (quotient _)
+      (congrArg kernelHopfIdeal (kernelCompositeMap_eq_quotientMap f g))) ≪≫
+    (kernelQuotientMapIsoOfLe (kernelHopfIdeal f) (kernelHopfIdeal (f ≫ g)) g
+      (by rw [← kernelHopfIdeal_comp]) (kernelHopfIdeal_comp_le f g)).symm
 
 /-- The kernel identification respects the inclusion into the composite kernel. -/
 @[reassoc (attr := simp)]
 theorem mkQuotient_comp_kernelCompositeKernelIso_hom (f : H ⟶ K) (g : K ⟶ L) :
     mkQuotient (quotient L (kernelHopfIdeal (f ≫ g)))
         (kernelHopfIdeal (kernelCompositeMap f g)) ≫ (kernelCompositeKernelIso f g).hom =
-      quotientMapOfLe L (kernelHopfIdeal_comp_le f g) :=
-  mkQuotient_comp_quotientIsoOfKerOfSurjectiveEq_hom _ _ _
-
-/-- Properties stable under base change pass to the restriction on composite kernels. -/
-private theorem kernelCompositeMap_property
-    {P : ∀ {A B : Type v} [CommRing A] [CommRing B], (A →+* B) → Prop}
-    (hP : RingHom.IsStableUnderBaseChange P) (hiso : RingHom.RespectsIso P)
-    (f : H ⟶ K) (g : K ⟶ L) (hg : P g.hom.toAlgHom.toRingHom) :
-    P (kernelCompositeMap f g).hom.toAlgHom.toRingHom := by
-  let I := (kernelHopfIdeal f).toIdeal
-  have he : (kernelHopfIdeal (f ≫ g)).toIdeal = I.map g.hom.toAlgHom.toRingHom := by
-    rw [kernelHopfIdeal_comp, HopfIdeal.map_toIdeal]
-    rfl
-  let e := Ideal.quotientEquivAlgOfEq L he.symm
-  have hp := hiso.left (Ideal.quotientMap (I.map g.hom.toAlgHom.toRingHom)
-    g.hom.toAlgHom.toRingHom Ideal.le_comap_map) e.toRingEquiv
-    (hP.quotientMap g.hom.toAlgHom.toRingHom I hg)
-  convert hp using 1
-  ext x
-  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, e]
-  exact kernelCompositeMap_mk f g x
+      quotientMapOfLe L (kernelHopfIdeal_comp_le f g) := by
+  rw [kernelCompositeKernelIso, Iso.trans_hom, ← Category.assoc, eqToIso.hom,
+    mkQuotient_comp_eqToHom (congrArg kernelHopfIdeal (kernelCompositeMap_eq_quotientMap f g)).symm,
+    Iso.symm_hom, Iso.comp_inv_eq]
+  exact (quotientMapOfLe_comp_kernelQuotientMapIsoOfLe_hom
+    (kernelHopfIdeal f) (kernelHopfIdeal (f ≫ g)) g (by rw [← kernelHopfIdeal_comp])
+    (kernelHopfIdeal_comp_le f g)).symm
 
 /-- A faithfully flat affine group morphism remains faithfully flat on composite kernels. -/
 theorem faithfullyFlat_kernelCompositeMap (f : H ⟶ K) (g : K ⟶ L)
     (hg : g.hom.toAlgHom.toRingHom.FaithfullyFlat) :
-    (kernelCompositeMap f g).hom.toAlgHom.toRingHom.FaithfullyFlat :=
-  kernelCompositeMap_property RingHom.FaithfullyFlat.isStableUnderBaseChange
-    RingHom.FaithfullyFlat.respectsIso f g hg
+    (kernelCompositeMap f g).hom.toAlgHom.toRingHom.FaithfullyFlat := by
+  rw [kernelCompositeMap_eq_quotientMap]
+  exact quotientMap_property RingHom.FaithfullyFlat.isStableUnderBaseChange
+    RingHom.FaithfullyFlat.respectsIso (kernelHopfIdeal f) (kernelHopfIdeal (f ≫ g)) g
+    (kernelHopfIdeal_comp f g).symm hg
 
 /-- A finitely presented affine group morphism remains finitely presented on composite kernels. -/
 theorem finitePresentation_kernelCompositeMap (f : H ⟶ K) (g : K ⟶ L)
     (hg : g.hom.toAlgHom.toRingHom.FinitePresentation) :
-    (kernelCompositeMap f g).hom.toAlgHom.toRingHom.FinitePresentation :=
-  kernelCompositeMap_property RingHom.finitePresentation_isStableUnderBaseChange
-    RingHom.finitePresentation_respectsIso f g hg
+    (kernelCompositeMap f g).hom.toAlgHom.toRingHom.FinitePresentation := by
+  rw [kernelCompositeMap_eq_quotientMap]
+  exact quotientMap_property RingHom.finitePresentation_isStableUnderBaseChange
+    RingHom.finitePresentation_respectsIso (kernelHopfIdeal f) (kernelHopfIdeal (f ≫ g)) g
+    (kernelHopfIdeal_comp f g).symm hg
 
 end TauCeti.CommHopfAlgCat

@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Isogeny.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Map
 import TauCeti.Algebra.AlgebraicGroup.Isogeny.Etale
 import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
-import TauCeti.RingTheory.RingHom.Quotient
 import Mathlib.RingTheory.RingHom.Finite
 
 /-!
@@ -87,10 +86,9 @@ private theorem centralizerMap_of_map_eq
       centralizerHopfIdeal K x) :
     IsIsogeny (_root_.CommHopfAlgCat.ofHom (f.hom.centralizerMap x)) := by
   refine (isIsogeny_iff _).mpr ⟨?_, ?_⟩
-  · rw [_root_.CommHopfAlgCat.hom_ofHom, AlgHom.Finite,
-      f.hom.centralizerMap_toRingHom_eq x hideal]
-    exact RingHom.finite_respectsIso.left _ _
-      (RingHom.finite_isStableUnderBaseChange.quotientMap f.hom.toAlgHom.toRingHom _ hf.finite)
+  · rw [_root_.CommHopfAlgCat.ofHom_centralizerMap, AlgHom.Finite]
+    exact CommHopfAlgCat.quotientMap_property RingHom.finite_isStableUnderBaseChange
+      RingHom.finite_respectsIso _ _ (_root_.CommHopfAlgCat.ofHom f.hom) hideal hf.finite
   · rw [_root_.CommHopfAlgCat.hom_ofHom]
     exact f.hom.faithfullyFlat_centralizerMap_of_map_eq hf.faithfullyFlat x hideal
 

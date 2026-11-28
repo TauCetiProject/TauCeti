@@ -9,7 +9,8 @@ public import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Functor
 import Mathlib.Algebra.Group.Action.Hom
 import TauCeti.Algebra.Group.Hom.Lift
 import TauCeti.Algebra.Group.Subgroup.Ker
-import TauCeti.GroupTheory.GroupAction.CompHom
+import TauCeti.GroupTheory.GroupAction.Hom
+import TauCeti.GroupTheory.GroupAction.Orbit.Basic
 
 /-!
 # Descent of homomorphisms and actions to the component group
@@ -109,7 +110,7 @@ theorem ker_descComponentGroupHom {M : Type*} [Monoid M]
         (HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H)) (CommAlgCat.of k k) ≤
       φ.ker) :
     (descComponentGroupHom H φ hφ).ker = φ.ker.map (rationalComponentMap H) :=
-  MonoidHom.ker_eq_map_of_comp_eq (rationalComponentMap_surjective H)
+  (rationalComponentMap_surjective H).ker_eq_map_of_comp_eq
     (descComponentGroupHom_comp_rationalComponentMap H φ hφ)
 
 /-- The descended homomorphism is injective exactly when `ker φ` is contained in `G°(k)`. -/
@@ -246,7 +247,7 @@ theorem orbit_componentGroupMulAction (X : Type*)
     MulAction.orbit (ConnectedComponents (PrimeSpectrum H)) x =
       MulAction.orbit (HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) x := by
   let _ := componentGroupMulAction H X htriv
-  exact TauCeti.MulAction.orbit_eq_of_surjective (rationalComponentMap_surjective H) x fun g ↦
+  exact (rationalComponentMap_surjective H).orbit_eq x fun g ↦
     componentGroupMulAction_rationalComponentMap_smul H X htriv g x
 
 /-- The stabilizer in `π₀(G)` of a point is the image of its `G(k)`-stabilizer. -/
@@ -260,8 +261,8 @@ theorem stabilizer_componentGroupMulAction (X : Type*)
       (MulAction.stabilizer (HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) x).map
         (rationalComponentMap H) := by
   let _ := componentGroupMulAction H X htriv
-  exact TauCeti.MulAction.stabilizer_eq_map_of_surjective (rationalComponentMap_surjective H) x
-    fun g ↦ componentGroupMulAction_rationalComponentMap_smul H X htriv g x
+  exact (rationalComponentMap_surjective H).stabilizer_eq_map x fun g ↦
+    componentGroupMulAction_rationalComponentMap_smul H X htriv g x
 
 /-- The fixed points of the descended `π₀(G)`-action coincide with the `G(k)`-fixed points. -/
 theorem fixedPoints_componentGroupMulAction (X : Type*)
@@ -273,7 +274,7 @@ theorem fixedPoints_componentGroupMulAction (X : Type*)
     MulAction.fixedPoints (ConnectedComponents (PrimeSpectrum H)) X =
       MulAction.fixedPoints (HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) X := by
   let _ := componentGroupMulAction H X htriv
-  exact TauCeti.MulAction.fixedPoints_eq_of_surjective (rationalComponentMap_surjective H)
+  exact (rationalComponentMap_surjective H).fixedPoints_eq
     (componentGroupMulAction_rationalComponentMap_smul H X htriv)
 
 /-- The kernel of the descended component action is the image of the kernel of the `G(k)`-action.

@@ -36,6 +36,8 @@ ambient elements without packing subgroup-membership proofs into the witness lis
   of `a` whose fiber lies in `s`, together with a witness set `W ⊆ H` covering `s`.
 * `MulAction.orbit_eq_of_invariant_list`: specialization of `MulAction.orbit_eq_of_invariant` to an
   explicit witness list `ws : List G`.
+* `Function.Surjective.orbit_eq` (and `Function.Surjective.addOrbit_eq`): orbits agree along a
+  surjection preserving the action.
 -/
 
 public section
@@ -92,3 +94,18 @@ theorem orbit_eq_of_invariant_list {G α S : Type*} {β : Sort*} [SetLike S G] [
     exact ⟨g, hg, rfl⟩
 
 end MulAction
+
+namespace Function.Surjective
+
+/-- Orbits of a `Q`-action coinciding with a `P`-action at `x` along a surjection `f : P → Q`
+coincide with the `P`-orbits at `x`. -/
+@[to_additive addOrbit_eq
+  /-- Orbits of an additive `Q`-action coinciding with an additive `P`-action at `x` along a
+  surjection `f : P → Q` coincide with the `P`-orbits at `x`. -/]
+theorem orbit_eq {P Q X : Type*} [SMul P X] [SMul Q X] {f : P → Q}
+    (hf : Function.Surjective f) (x : X) (hsmul : ∀ p : P, f p • x = p • x) :
+    MulAction.orbit Q x = MulAction.orbit P x := by
+  have h : (fun q : Q ↦ q • x) ∘ f = fun p : P ↦ p • x := funext hsmul
+  exact (hf.range_comp (fun q : Q ↦ q • x)).symm.trans (congrArg Set.range h)
+
+end Function.Surjective

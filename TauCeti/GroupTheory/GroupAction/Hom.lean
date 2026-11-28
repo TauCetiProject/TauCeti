@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.Map
 public import Mathlib.Algebra.Module.PUnit
 public import Mathlib.Algebra.Pointwise.Stabilizer
 public import Mathlib.GroupTheory.GroupAction.Basic
@@ -12,6 +13,7 @@ public import Mathlib.GroupTheory.GroupAction.FixedPoints
 public import Mathlib.GroupTheory.GroupAction.Hom
 public import Mathlib.GroupTheory.GroupAction.Pointwise
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
+import Mathlib.Algebra.Group.Subgroup.Ker
 
 /-!
 # Elementary equivariant maps and the existence of equivariant maps
@@ -25,7 +27,9 @@ For group actions, the stabilizer of the preimage of a set of values of an equiv
 stabilizer of the set; in particular the stabilizer of the image of a point is the stabilizer of
 the fibre through that point. An injective equivariant map preserves and reflects the orbit
 relation. An injective map, equivariant at a point, preserves its stabilizer and, already for
-monoid actions, whether it is fixed; no `MulActionHom` structure is needed.
+monoid actions, whether it is fixed; no `MulActionHom` structure is needed. Dually, along a
+surjection preserving an action, the target stabilizers are the images of the source stabilizers and
+the fixed points coincide.
 
 An equivariant map `X →[G] Y` sends each point to a point whose stabilizer contains the
 stabilizer of the first. Conversely, if every point of `X` has such a point in `Y`, an equivariant
@@ -42,6 +46,9 @@ stabilizer, and extend along the orbit.
 * `TauCeti.MulAction.stabilizer_eq_of_injective`,
   `TauCeti.MulAction.image_fixedPoints_of_bijective`: an injective equivariant map preserves
   stabilizers, and a bijective one carries the fixed points onto the fixed points.
+* `Function.Surjective.stabilizer_eq_map`, `Function.Surjective.fixedPoints_eq` (with additive
+  counterparts `addStabilizer_eq_map`, `addFixedPoints_eq`): stabilizer and fixed-point transfer
+  along surjections preserving the action.
 * `TauCeti.MulAction.orbitRel_apply_iff_of_injective`: an injective equivariant map preserves and
   reflects the orbit relation.
 * `TauCeti.MulAction.nonempty_mulActionHom_iff`: an equivariant map exists exactly when every
@@ -212,3 +219,34 @@ theorem MulAction.nonempty_mulActionHom_iff :
   rw [hr_smul, hfix, mul_smul]
 
 end TauCeti
+
+namespace Function.Surjective
+
+/-- Stabilizers under a `Q`-action coinciding with a `P`-action at `x` along a surjective group
+homomorphism `f : P →* Q` are the images under `f` of the `P`-stabilizers. -/
+@[to_additive addStabilizer_eq_map
+  /-- Stabilizers under an additive `Q`-action coinciding with an additive `P`-action at `x` along
+  a surjective additive group homomorphism `f : P →+ Q` are the images under `f` of the
+  `P`-stabilizers. -/]
+theorem stabilizer_eq_map {P Q X : Type*} [Group P] [Group Q] [MulAction P X] [MulAction Q X]
+    {f : P →* Q} (hf : Function.Surjective f) (x : X) (hsmul : ∀ p : P, f p • x = p • x) :
+    _root_.MulAction.stabilizer Q x = (_root_.MulAction.stabilizer P x).map f := by
+  rw [← Subgroup.map_comap_eq_self_of_surjective hf (_root_.MulAction.stabilizer Q x)]
+  congr 1
+  ext p
+  simp only [Subgroup.mem_comap, _root_.MulAction.mem_stabilizer_iff]
+  exact iff_of_eq (congrArg (· = x) (hsmul p))
+
+/-- Fixed points of a `Q`-action coinciding with a `P`-action along a surjection `f : P → Q`
+coincide with the `P`-fixed points. -/
+@[to_additive addFixedPoints_eq
+  /-- Fixed points of an additive `Q`-action coinciding with an additive `P`-action along a
+  surjection `f : P → Q` coincide with the `P`-fixed points. -/]
+theorem fixedPoints_eq {P Q X : Type*} [Monoid P] [Monoid Q] [MulAction P X] [MulAction Q X]
+    {f : P → Q} (hf : Function.Surjective f) (hsmul : ∀ (p : P) (x : X), f p • x = p • x) :
+    _root_.MulAction.fixedPoints Q X = _root_.MulAction.fixedPoints P X := by
+  ext x
+  simp only [_root_.MulAction.mem_fixedPoints]
+  exact hf.forall.trans (forall_congr' fun p ↦ iff_of_eq (congrArg (· = x) (hsmul p x)))
+
+end Function.Surjective

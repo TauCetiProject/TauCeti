@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.FiniteType
 public import Mathlib.RingTheory.FinitePresentation
-public import TauCeti.Algebra.AlgebraicGroup.FiniteType.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Cotangent
 public import TauCeti.RingTheory.Ideal.Cotangent.Basic
 
@@ -23,9 +22,6 @@ tangent space and the adjoint representation.
 
 * `TauCeti.Bialgebra.instModuleFiniteCotangentSpace`: the specialization to the counit of a
   finite-type commutative bialgebra.
-* `TauCeti.FiniteTypeCommHopfAlgCat.dualCotangentMap_toBialgHom_id` and
-  `TauCeti.FiniteTypeCommHopfAlgCat.dualCotangentMap_toBialgHom_comp`: functoriality of
-  `Derivation.dualCotangentMap ∘ toBialgHom` in `FiniteTypeCommHopfAlgCat`.
 
 ## References
 
@@ -58,32 +54,3 @@ instance instModuleFiniteCotangentSpace [Algebra.FiniteType R A] :
   exact AlgHom.finite_cotangent_ker_of_fg f hf hfg
 
 end TauCeti.Bialgebra
-
-namespace TauCeti.FiniteTypeCommHopfAlgCat
-
-open CategoryTheory Derivation
-
-section Functoriality
-
-universe u v
-
-variable {R : Type u} [CommRing R]
-
-/-- The dual cotangent map of the identity morphism in `FiniteTypeCommHopfAlgCat` acts as the
-identity. -/
-theorem dualCotangentMap_toBialgHom_id (H : FiniteTypeCommHopfAlgCat.{u, v} R)
-    (x : Module.Dual R (Bialgebra.CotangentSpace R H)) :
-    dualCotangentMap (toBialgHom (𝟙 H)) x = x := by
-  rw [toBialgHom_id, dualCotangentMap_id, LinearMap.id_apply]
-
-/-- The dual cotangent map of a composite morphism in `FiniteTypeCommHopfAlgCat` is the
-contravariant composite of the dual cotangent maps. -/
-theorem dualCotangentMap_toBialgHom_comp {H K L : FiniteTypeCommHopfAlgCat.{u, v} R}
-    (f : H ⟶ K) (g : K ⟶ L) (x : Module.Dual R (Bialgebra.CotangentSpace R L)) :
-    dualCotangentMap (toBialgHom f) (dualCotangentMap (toBialgHom g) x) =
-      dualCotangentMap (toBialgHom (f ≫ g)) x := by
-  rw [toBialgHom_comp, dualCotangentMap_comp, LinearMap.comp_apply]
-
-end Functoriality
-
-end TauCeti.FiniteTypeCommHopfAlgCat

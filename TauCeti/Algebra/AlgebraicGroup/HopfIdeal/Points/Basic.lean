@@ -319,9 +319,9 @@ lemma _root_.CommHopfAlgCat.Hom.mapDomainQuotientPointsSubgroup_id
     (hI : I.map (𝟙 H : H ⟶ H).hom ≤ I) (A : CommAlgCat.{w} R) :
     _root_.CommHopfAlgCat.Hom.mapDomainQuotientPointsSubgroup (𝟙 H) hI A =
       MonoidHom.id (quotientPointsSubgroup H I A) :=
-  MonoidHom.ext fun g ↦ Subtype.ext <| WithConv.ofConv_injective <| AlgHom.ext fun x ↦ by
+  MonoidHom.ext fun g ↦ Subtype.ext <| by
     rw [_root_.CommHopfAlgCat.Hom.coe_mapDomainQuotientPointsSubgroup_apply,
-      BialgHom.mapDomain_apply_apply]
+      hom_id_eq_bialgHom_id, BialgHom.mapDomain_id, MonoidHom.id_apply]
     rfl
 
 /-- Pulling back along a composite morphism restricts to the contravariant composite on cut-out
@@ -336,15 +336,12 @@ lemma _root_.CommHopfAlgCat.Hom.mapDomainQuotientPointsSubgroup_comp
       (phi ≫ psi).mapDomainQuotientPointsSubgroup (by
         rw [CommHopfAlgCat.hom_comp, ← HopfIdeal.map_map]
         exact (HopfIdeal.map_mono psi.hom hIJ).trans hJM) A :=
-  MonoidHom.ext fun g ↦ Subtype.ext <| WithConv.ofConv_injective <| AlgHom.ext fun x ↦ by
+  MonoidHom.ext fun g ↦ Subtype.ext <| by
     rw [MonoidHom.comp_apply,
       _root_.CommHopfAlgCat.Hom.coe_mapDomainQuotientPointsSubgroup_apply,
-      BialgHom.mapDomain_apply_apply,
       _root_.CommHopfAlgCat.Hom.coe_mapDomainQuotientPointsSubgroup_apply,
-      BialgHom.mapDomain_apply_apply,
       _root_.CommHopfAlgCat.Hom.coe_mapDomainQuotientPointsSubgroup_apply,
-      BialgHom.mapDomain_apply_apply,
-      CommHopfAlgCat.hom_comp, BialgHom.comp_apply]
+      _root_.CommHopfAlgCat.hom_comp, BialgHom.mapDomain_comp, MonoidHom.comp_apply]
 
 /-- For the quotient morphism `q : H ⟶ H ⧸ I`, given with `hq : q = mkQuotient H I`, a point of
 `H ⧸ I` vanishes on the image of a Hopf ideal `J` of `H` exactly when the corresponding point of

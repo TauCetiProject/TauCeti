@@ -95,7 +95,7 @@ theorem liftOfSurjectiveToMonoid_unique (χ : Q →* M') (hχ : ∀ g, χ (p g) 
   /-- The kernel of the descended additive homomorphism is the image of `ψ.ker` under `p`. -/]
 theorem ker_liftOfSurjectiveToMonoid :
     (liftOfSurjectiveToMonoid p hp ψ hψ).ker = ψ.ker.map p :=
-  ker_eq_map_of_comp_eq hp (liftOfSurjectiveToMonoid_comp p hp ψ hψ)
+  hp.ker_eq_map_of_comp_eq (liftOfSurjectiveToMonoid_comp p hp ψ hψ)
 
 /-- The descended homomorphism is injective if and only if `ψ.ker = p.ker`. -/
 @[to_additive

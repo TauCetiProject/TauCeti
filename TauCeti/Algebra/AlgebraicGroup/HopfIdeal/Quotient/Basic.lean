@@ -7,11 +7,13 @@ module
 
 public import Mathlib.RingTheory.FiniteType
 public import Mathlib.RingTheory.Nilpotent.Defs
+public import Mathlib.RingTheory.RingHomProperties
 public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.CommHopfAlgCat
 public import TauCeti.Algebra.Bialgebra.Quotient
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Map
+import TauCeti.RingTheory.RingHom.Quotient
 
 /-!
 # Hopf-ideal quotients of commutative Hopf algebras
@@ -53,6 +55,9 @@ The same quotient of a finite-type commutative Hopf algebra is again an object o
   quotient-to-quotient surjectivity.
 * `CommHopfAlgCat.quotientMap`, `TauCeti.FiniteTypeCommHopfAlgCat.quotientMap`: the morphism
   `H ⧸ I ⟶ K ⧸ J` induced by a morphism `f : H ⟶ K` with `I.map f ≤ J`.
+* `TauCeti.CommHopfAlgCat.quotientMap_toRingHom_eq` and
+  `TauCeti.CommHopfAlgCat.quotientMap_property`: base-change comparison and descent of
+  ring-homomorphism properties for `quotientMap` when `I.map f.hom = J`.
 * `CommHopfAlgCat.kerOfSurjective_quotientMapOfLe`: over a commutative ring, the
   Hopf ideal `J/I` is the surjective kernel of the induced quotient map.
 * `CommHopfAlgCat.ker_quotientMapOfLe`: over a field, the Hopf ideal `J/I` is the
@@ -731,6 +736,32 @@ lemma quotientMap_comp {L : _root_.CommHopfAlgCat.{v} R} (I : HopfIdeal R H)
   rw [mkQuotient_comp_quotientMap_assoc, mkQuotient_comp_quotientMap,
     mkQuotient_comp_quotientMap, Category.assoc]
 
+/-- When `I.map f.hom = J`, the underlying ring homomorphism of `quotientMap I J f h` is
+`Ideal.quotientMap` along `f.hom.toAlgHom.toRingHom` composed with `Ideal.quotEquivOfEq`. -/
+theorem quotientMap_toRingHom_eq (I : HopfIdeal R H) (J : HopfIdeal R K) (f : H ⟶ K)
+    {h : I.map f.hom ≤ J} (hideal : I.map f.hom = J) :
+    (quotientMap I J f h).hom.toAlgHom.toRingHom =
+      (Ideal.quotEquivOfEq
+          ((HopfIdeal.map_toIdeal I f.hom).symm.trans
+            (congrArg HopfIdeal.toIdeal hideal))).toRingHom.comp
+        (Ideal.quotientMap _ f.hom.toAlgHom.toRingHom Ideal.le_comap_map) := by
+  ext a
+  simp only [RingHom.comp_apply, Ideal.quotientMap_mk, RingEquiv.toRingHom_eq_coe,
+    RingEquiv.coe_toRingHom, Ideal.quotEquivOfEq_mk, AlgHom.toRingHom_eq_coe,
+    AlgHom.coe_toRingHom, BialgHom.coe_toAlgHom]
+  exact quotientMap_mk I J f h a
+
+/-- Properties stable under base change and respecting isomorphisms pass from `f` to
+`quotientMap I J f h` whenever `I.map f.hom = J`. -/
+theorem quotientMap_property
+    {P : ∀ {A B : Type v} [CommRing A] [CommRing B], (A →+* B) → Prop}
+    (hP : RingHom.IsStableUnderBaseChange P) (hiso : RingHom.RespectsIso P)
+    (I : HopfIdeal R H) (J : HopfIdeal R K) (f : H ⟶ K) {h : I.map f.hom ≤ J}
+    (hideal : I.map f.hom = J) (hf : P f.hom.toAlgHom.toRingHom) :
+    P (quotientMap I J f h).hom.toAlgHom.toRingHom := by
+  rw [quotientMap_toRingHom_eq I J f hideal]
+  exact hiso.left _ _ (hP.quotientMap f.hom.toAlgHom.toRingHom I.toIdeal hf)
+
 end CommHopfAlgCat
 
 end CommHopfAlgebras
@@ -766,13 +797,6 @@ lemma forget₂_commHopfAlgCat_map_mkQuotient (H : FiniteTypeCommHopfAlgCat.{u, 
     (forget₂ (FiniteTypeCommHopfAlgCat.{u, v} R) (_root_.CommHopfAlgCat.{v} R)).map
       (mkQuotient H I) = CommHopfAlgCat.mkQuotient H.obj I :=
   rfl
-
-/-- The finite-type quotient morphism acts on elements as the ideal quotient map. -/
-lemma toBialgHom_mkQuotient_apply (H : FiniteTypeCommHopfAlgCat.{u, v} R)
-    (I : HopfIdeal R H) (a : H) :
-    toBialgHom (mkQuotient H I) a = Ideal.Quotient.mk I.toIdeal a := by
-  rw [← Ideal.Quotient.mkₐ_eq_mk R I.toIdeal]
-  exact CommHopfAlgCat.mkQuotient_apply H.obj I a
 
 /-- Morphisms out of a finite-type Hopf-algebra quotient are determined by their composites
 with the quotient morphism. -/
