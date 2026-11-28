@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Over
-public import Mathlib.CategoryTheory.Monoidal.Cartesian.Mon
-public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
+public import TauCeti.AlgebraicGeometry.LineBundle.GroupPairing
 
 /-!
 # The Mumford correspondence on line-bundle classes
@@ -35,40 +34,45 @@ variable {S : Scheme.{u}}
 factors are the pullback along multiplication, the inverses of the two projection pullbacks,
 and the pullback along the constant map at the identity. -/
 noncomputable def mumfordClass (G : Over S) [MonObj G] :
-    LineBundleClass G.left →* LineBundleClass (Limits.pullback G.hom G.hom) :=
-  pullbackHom μ[G].left / (pullbackHom (fst G G).left * pullbackHom (snd G G).left) *
-    pullbackHom (toUnit (G ⊗ G) ≫ η[G]).left
+    LineBundleClass G.left →* LineBundleClass (Limits.pullback G.hom G.hom) where
+  toFun L := pairing L (fst G G) (snd G G)
+  map_one' := pairing_one _ _
+  map_mul' L M := pairing_mul L M _ _
+
+/-- The normalized Mumford class is the pairing of the two projections of `G ×ₛ G`. -/
+theorem mumfordClass_eq_pairing (G : Over S) [MonObj G] (L : LineBundleClass G.left) :
+    mumfordClass G L = pairing L (fst G G) (snd G G) :=
+  (rfl)
 
 /-- The four factors of the normalized Mumford correspondence on a line-bundle class. -/
 theorem mumfordClass_apply (G : Over S) [MonObj G] (L : LineBundleClass G.left) :
     mumfordClass G L = pullback μ[G].left L /
       (pullback (fst G G).left L * pullback (snd G G).left L) *
         pullback (toUnit (G ⊗ G) ≫ η[G]).left L := by
-  simp only [mumfordClass, MonoidHom.mul_apply, MonoidHom.div_apply, pullbackHom_apply]
+  have hmul : fst G G * snd G G = μ[G] := by
+    rw [Hom.mul_def, lift_fst_snd, Category.id_comp]
+  simp only [mumfordClass_eq_pairing, pairing_def, hmul, Hom.one_def, div_eq_mul_inv,
+    mul_inv, mul_assoc]
 
 /-- The Mumford class restricts to the trivial class along `x ↦ (x, 1)`. -/
 @[simp]
 theorem pullback_lift_id_unit_mumfordClass (G : Over S) [MonObj G] (L : LineBundleClass G.left) :
     pullback (Limits.pullback.lift (𝟙 G.left) (G.hom ≫ η[G].left) (by simp))
       (mumfordClass G L) = 1 := by
-  -- `Over.lift_left` leaves the components unsimplified. Use the slice lift for the unit law.
-  change pullback (lift (𝟙 G) (toUnit G ≫ η[G])).left (mumfordClass G L) = 1
-  simp only [mumfordClass_apply, div_eq_mul_inv, pullback_mul, pullback_inv, pullback_comp,
-    ← Over.comp_left, MonObj.lift_comp_one_right, lift_fst, lift_snd, comp_toUnit_assoc,
-    Over.id_left, pullback_id]
-  rw [← div_eq_mul_inv, div_mul_eq_mul_div, div_self']
+  suffices pullback (lift (𝟙 G) (toUnit G ≫ η[G])).left (mumfordClass G L) = 1 by
+    simpa only [Over.lift_left, Over.comp_left, Over.toUnit_left, Over.id_left] using this
+  rw [mumfordClass_eq_pairing, pullback_pairing, lift_fst, lift_snd, ← Hom.one_def]
+  exact pairing_one_right L _
 
 /-- The Mumford class restricts to the trivial class along `x ↦ (1, x)`. -/
 @[simp]
 theorem pullback_lift_unit_id_mumfordClass (G : Over S) [MonObj G] (L : LineBundleClass G.left) :
     pullback (Limits.pullback.lift (G.hom ≫ η[G].left) (𝟙 G.left) (by simp))
       (mumfordClass G L) = 1 := by
-  -- As for the first axis, the unit law applies to the slice lift.
-  change pullback (lift (toUnit G ≫ η[G]) (𝟙 G)).left (mumfordClass G L) = 1
-  simp only [mumfordClass_apply, div_eq_mul_inv, pullback_mul, pullback_inv, pullback_comp,
-    ← Over.comp_left, MonObj.lift_comp_one_left, lift_fst, lift_snd, comp_toUnit_assoc,
-    Over.id_left, pullback_id]
-  rw [← div_eq_mul_inv, div_mul_eq_mul_div, mul_comm L, div_self']
+  suffices pullback (lift (toUnit G ≫ η[G]) (𝟙 G)).left (mumfordClass G L) = 1 by
+    simpa only [Over.lift_left, Over.comp_left, Over.toUnit_left, Over.id_left] using this
+  rw [mumfordClass_eq_pairing, pullback_pairing, lift_fst, lift_snd, ← Hom.one_def]
+  exact pairing_one_left L _
 
 /-- On a commutative monoid scheme, swapping the two factors preserves the Mumford class. -/
 @[simp]

@@ -74,23 +74,27 @@ theorem uliftYonedaEquiv_mumfordPicardMap (L : InvertibleSheaf G.left) :
       RigidifiedLineBundleClass.mk (mumfordRigidifiedLineBundle L) :=
   uliftYonedaEquiv.apply_symm_apply _
 
+/-- At a point `a : T ⟶ G`, the Mumford family pulls back the normalized rigidified
+bundle along the base change induced by `a`. -/
+theorem mumfordPicardMap_app (L : InvertibleSheaf G.left) {T : Over S} (a : T ⟶ G) :
+    (mumfordPicardMap L).app (op T) ⟨a⟩ = RigidifiedLineBundleClass.pullback
+      (baseChangeSection_comp_pullback_map G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) a)
+      (RigidifiedLineBundleClass.mk (mumfordRigidifiedLineBundle L)) := by
+  rw [← rigidifiedPicardFunctor_map_apply]
+  have h := uliftYonedaEquiv_symm_apply_app.{u + 1}
+    (F := rigidifiedPicardFunctor G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) ⋙
+      forget CommGrpCat) (RigidifiedLineBundleClass.mk (mumfordRigidifiedLineBundle L)) (op T)
+  exact congrArg (fun f ↦ f ⟨a⟩) h
+
 /-- The underlying line-bundle class of the Mumford family at a point `a : T ⟶ G` is the
 pullback of the normalized Mumford class along `a × id`. -/
 theorem toLineBundleClass_mumfordPicardMap_app_eq_pullback (L : InvertibleSheaf G.left) {T : Over S}
     (a : T ⟶ G) :
     RigidifiedLineBundleClass.toLineBundleClass ((mumfordPicardMap L).app (op T) ⟨a⟩) =
       LineBundleClass.pullback (a ▷ G).left (mumfordClass G (LineBundleClass.mk L)) := by
-  have hmap : ((Over.pullback G.hom).map a.op.unop).left = (a ▷ G).left := by
+  have hmap : ((Over.pullback G.hom).map a).left = (a ▷ G).left := by
     apply pullback.hom_ext <;> simp
-  -- The lifted Yoneda map evaluates by restricting the universal rigidified class along `a`.
-  have happ : (mumfordPicardMap L).app (op T) ⟨a⟩ =
-      (rigidifiedPicardFunctor G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom)).map a.op
-        (RigidifiedLineBundleClass.mk (mumfordRigidifiedLineBundle L)) := by
-    have h := uliftYonedaEquiv_symm_apply_app.{u + 1}
-      (F := rigidifiedPicardFunctor G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) ⋙
-        forget CommGrpCat) (RigidifiedLineBundleClass.mk (mumfordRigidifiedLineBundle L)) (op T)
-    exact congrArg (fun f ↦ f ⟨a⟩) h
-  rw [happ, rigidifiedPicardFunctor_map_apply, RigidifiedLineBundleClass.toLineBundleClass_pullback,
+  rw [mumfordPicardMap_app, RigidifiedLineBundleClass.toLineBundleClass_pullback,
     RigidifiedLineBundleClass.toLineBundleClass_mk, hmap]
   exact congrArg (LineBundleClass.pullback (a ▷ G).left) (mk_mumfordLineBundle G L)
 
@@ -104,12 +108,11 @@ theorem toLineBundleClass_mumfordPicardMap_app (L : InvertibleSheaf G.left) {T :
         (LineBundleClass.pullback (fst T G ≫ a).left (LineBundleClass.mk L) *
          LineBundleClass.pullback (snd T G).left (LineBundleClass.mk L)) *
       LineBundleClass.pullback (toUnit (T ⊗ G) ≫ η[G]).left (LineBundleClass.mk L) := by
-  have hmul : (a ▷ G) ≫ μ[G] = (fst T G ≫ a) * snd T G := by
-    rw [Hom.mul_def, ← lift_whiskerRight, lift_fst_snd, Category.id_comp]
-  rw [toLineBundleClass_mumfordPicardMap_app_eq_pullback, mumfordClass_apply]
-  simp only [div_eq_mul_inv, LineBundleClass.pullback_mul, LineBundleClass.pullback_inv,
-    LineBundleClass.pullback_comp, ← Over.comp_left, hmul, whiskerRight_fst, whiskerRight_snd,
-    comp_toUnit_assoc]
+  rw [toLineBundleClass_mumfordPicardMap_app_eq_pullback, mumfordClass_eq_pairing,
+    LineBundleClass.pullback_pairing, whiskerRight_fst, whiskerRight_snd,
+    LineBundleClass.pairing_def, Hom.one_def]
+  simp only [div_eq_mul_inv, mul_inv_rev]
+  ac_rfl
 
 /-- The Mumford family takes the unit point to the trivial rigidified line-bundle class. -/
 @[simp]
@@ -120,10 +123,35 @@ theorem mumfordPicardMap_app_one (L : InvertibleSheaf G.left) (T : Over S) :
       ((mumfordPicardMap L).app (op T)) ⟨(1 : T ⟶ G)⟩ =
       (1 : RigidifiedLineBundleClass
         (baseChangeSection G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) T)) := by
+  have h : ((1 : T ⟶ G) ▷ G) = snd T G ≫ lift (toUnit G ≫ η[G]) (𝟙 G) := by
+    apply CartesianMonoidalCategory.hom_ext
+    · simp only [whiskerRight_fst, Category.assoc, lift_fst, Hom.one_def,
+        comp_toUnit_assoc]
+    · simp only [whiskerRight_snd, Category.assoc, lift_snd, Category.comp_id]
   apply RigidifiedLineBundleClass.toLineBundleClass_injective_of_comp_eq_id
     (baseChangeSection_fst G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) T)
-  rw [toLineBundleClass_mumfordPicardMap_app, RigidifiedLineBundleClass.toLineBundleClass_one,
-    MonObj.comp_one, _root_.one_mul, Hom.one_def, div_mul_eq_mul_div, mul_comm, div_self']
+  rw [toLineBundleClass_mumfordPicardMap_app_eq_pullback,
+    RigidifiedLineBundleClass.toLineBundleClass_one, h, Over.comp_left,
+    ← LineBundleClass.pullback_comp]
+  simp only [Over.lift_left, Over.comp_left, Over.toUnit_left, Over.id_left,
+    pullback_lift_unit_id_mumfordClass, LineBundleClass.pullback_one]
+
+/-- The Mumford family of a line bundle pulled back from the base takes every point to the
+trivial rigidified line-bundle class. -/
+@[simp]
+theorem mumfordPicardMap_app_pullback_hom (L : InvertibleSheaf S) {T : Over S} (a : T ⟶ G) :
+    ConcreteCategory.hom (C := Type (u + 1)) (X := ULift.{u + 1} (T ⟶ G))
+      (Y := ToType ((rigidifiedPicardFunctor G.hom η[G].left
+        (η[G].w.trans Over.tensorUnit_hom)).obj (op T)))
+      ((mumfordPicardMap ((InvertibleSheaf.pullback G.hom).obj L)).app (op T)) ⟨a⟩ = 1 := by
+  -- Use the explicit class group instance so `toLineBundleClass_one` can rewrite.
+  change _ = (1 : RigidifiedLineBundleClass
+    (baseChangeSection G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) T))
+  apply RigidifiedLineBundleClass.toLineBundleClass_injective_of_comp_eq_id
+    (baseChangeSection_fst G.hom η[G].left (η[G].w.trans Over.tensorUnit_hom) T)
+  rw [toLineBundleClass_mumfordPicardMap_app_eq_pullback,
+    RigidifiedLineBundleClass.toLineBundleClass_one, ← LineBundleClass.pullback_mk,
+    mumfordClass_pullback_hom, LineBundleClass.pullback_one]
 
 /-- Tensor product of line bundles gives pointwise tensor product of their Mumford families. -/
 theorem mumfordPicardMap_app_tensorProduct (L M : InvertibleSheaf G.left) {T : Over S}

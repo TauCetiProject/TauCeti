@@ -49,11 +49,19 @@ def mumfordLineBundle (L : InvertibleSheaf G.left) : InvertibleSheaf (G ⊗ G).l
   (((pullback μ[G].left).obj L) ⊗ ((pullback (toUnit (G ⊗ G) ≫ η[G]).left).obj L)) ⊗
     (((pullback (fst G G).left).obj L.dual) ⊗ ((pullback (snd G G).left).obj L.dual))
 
+/-- The normalized Mumford line bundle is the tensor product of the multiplication pullback,
+the unit-fibre correction, and the two projection pullbacks of the dual. -/
+theorem mumfordLineBundle_def (L : InvertibleSheaf G.left) :
+    mumfordLineBundle G L =
+      (((pullback μ[G].left).obj L) ⊗ ((pullback (toUnit (G ⊗ G) ≫ η[G]).left).obj L)) ⊗
+        (((pullback (fst G G).left).obj L.dual) ⊗ ((pullback (snd G G).left).obj L.dual)) :=
+  (rfl)
+
 /-- The class of the normalized Mumford line bundle in the Picard group of the product. -/
 @[simp]
 theorem mk_mumfordLineBundle (L : InvertibleSheaf G.left) :
     LineBundleClass.mk (mumfordLineBundle G L) = mumfordClass G (LineBundleClass.mk L) := by
-  simp only [mumfordClass_apply, mumfordLineBundle, LineBundleClass.mk_tensorObj,
+  simp only [mumfordClass_apply, mumfordLineBundle_def, LineBundleClass.mk_tensorObj,
     ← LineBundleClass.pullback_mk, ← LineBundleClass.inv_mk, LineBundleClass.pullback_inv,
     div_eq_mul_inv, mul_inv_rev]
   ac_rfl
