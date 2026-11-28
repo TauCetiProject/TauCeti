@@ -11,7 +11,6 @@ public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Topology.ApproximateUnit
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import TauCeti.RingTheory.Ideal.Quotient.Operations
-public import TauCeti.RingTheory.TwoSidedIdeal.Annihilator
 import TauCeti.Topology.Algebra.Ring.MaximalIdeals
 
 /-!
@@ -35,10 +34,7 @@ two-sided ideal), together with basic facts for units (`TauCeti.IsFull.of_isUnit
 `TauCeti.isFull_one`) and zero (`TauCeti.not_isFull_zero`).
 
 The preimage of a closed two-sided ideal under a continuous ring homomorphism is closed
-(`TwoSidedIdeal.isClosed_comap`). The annihilator of any two-sided ideal of a `T₁` topological
-ring is closed (`TwoSidedIdeal.isClosed_annihilator`). Hence, in a proper star ring, a
-self-adjoint ideal is essential as soon as it meets every nonzero closed two-sided ideal
-(`TwoSidedIdeal.isEssential_iff_forall_isClosed`).
+(`TwoSidedIdeal.isClosed_comap`).
 
 Closure commutes with passing to the underlying left ideal
 (`TwoSidedIdeal.asIdeal_topologicalClosure`). Hence, in a topological ring whose units form an open
@@ -96,7 +92,8 @@ namespace TwoSidedIdeal
 
 section TopologicalClosure
 
-variable {A : Type*} [NonUnitalRing A] [TopologicalSpace A] [IsTopologicalRing A]
+variable {A : Type*} [NonUnitalNonAssocRing A] [TopologicalSpace A] [IsTopologicalAddGroup A]
+  [SeparatelyContinuousMul A]
 
 /-- The topological closure of a two-sided ideal in a possibly nonunital topological ring, as a
 native two-sided ideal. -/
@@ -256,28 +253,6 @@ theorem isClosed_comap {φ : F} (hφ : Continuous φ) {J : TwoSidedIdeal S}
   exact hJ.preimage hφ
 
 end ClosedComap
-
-section Annihilator
-
-variable {A : Type*} [NonUnitalRing A] [TopologicalSpace A] [ContinuousMul A] [T1Space A]
-
-/-- The annihilator of a two-sided ideal of a `T₁` topological ring is closed. -/
-instance isClosed_annihilator (I : TwoSidedIdeal A) : IsClosed (I.annihilator : Set A) := by
-  have hset : (I.annihilator : Set A) = ⋂ x ∈ I, (· * x) ⁻¹' {0} := by
-    ext a
-    simp
-  rw [hset]
-  exact isClosed_biInter fun x _ ↦ isClosed_singleton.preimage (continuous_mul_const x)
-
-/-- In a `T₁` topological proper star ring, a self-adjoint ideal is essential exactly when it meets
-every nonzero closed two-sided ideal. -/
-theorem isEssential_iff_forall_isClosed [StarRing A] [IsProperStar A] {I : TwoSidedIdeal A}
-    (hI : ∀ x ∈ I, star x ∈ I) :
-    I.IsEssential ↔ ∀ J : TwoSidedIdeal A, IsClosed (J : Set A) → Disjoint I J → J = ⊥ :=
-  ⟨fun h _ _ ↦ h.eq_bot_of_disjoint, fun h ↦ (annihilator_eq_bot_iff_isEssential hI).1 <|
-    h _ (isClosed_annihilator I) (disjoint_annihilator hI)⟩
-
-end Annihilator
 
 end TwoSidedIdeal
 
