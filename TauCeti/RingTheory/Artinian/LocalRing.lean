@@ -64,13 +64,9 @@ theorem mem_primaryComponent_maximalIdeal_of_isArtinian (x : M) :
   refine ((maximalIdeal R).primaryComponent_mem M x).mpr ⟨n, ?_⟩
   rw [mem_torsionBySet_iff]
   rintro ⟨r, hr⟩
-  have hpow : ∀ k, (maximalIdeal R).map (Ideal.Quotient.mk I) ^ k ≤ Ring.jacobson (R ⧸ I) ^ k := by
-    intro k
-    induction k with
-    | zero => simp
-    | succ k ih => simpa only [pow_succ] using Ideal.mul_mono ih hle
   have hr' : Ideal.Quotient.mk I r ∈ Ring.jacobson (R ⧸ I) ^ n :=
-    hpow n (Ideal.map_pow (Ideal.Quotient.mk I) (maximalIdeal R) n ▸ Ideal.mem_map_of_mem _ hr)
+    pow_le_pow_left' hle n
+      (Ideal.map_pow (Ideal.Quotient.mk I) (maximalIdeal R) n ▸ Ideal.mem_map_of_mem _ hr)
   rw [hn, Ideal.zero_eq_bot, mem_bot, Ideal.Quotient.eq_zero_iff_mem] at hr'
   simpa [I, f] using hr'
 

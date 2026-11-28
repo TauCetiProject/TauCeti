@@ -37,6 +37,22 @@ noncomputable section
 
 universe u v w
 
+namespace TauCeti
+
+/-- If `E` is Artinian over `R` and `S` acts on `E` commuting with `R`, then `Hom_S(M, E)` is
+Artinian over `R` for every finitely generated `S`-module `M`. -/
+theorem isArtinian_linearMap_of_finite {R S E : Type*} [Ring R] [Semiring S]
+    [AddCommGroup E] [Module R E] [Module S E] [SMulCommClass S R E] [IsArtinian R E]
+    (M : Type*) [AddCommMonoid M] [Module S M] [Module.Finite S M] :
+    IsArtinian R (M →ₗ[S] E) := by
+  classical
+  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' S M
+  let e := LinearEquiv.piRing S E (Fin n) R
+  exact isArtinian_of_injective (e.toLinearMap.comp (f.lcomp R E))
+    (e.injective.comp (LinearMap.lcomp_injective_of_surjective f hf))
+
+end TauCeti
+
 namespace TauCeti.IsInjectiveEnvelope
 
 open IsLocalRing LinearMap
@@ -55,13 +71,9 @@ theorem isArtinian : IsArtinian R E :=
 /-- The Matlis dual of a finitely generated module over a Noetherian local ring is Artinian.
 Completeness and finiteness of the residue field are unnecessary. -/
 theorem isArtinian_linearMap_of_finite (M : Type w) [AddCommGroup M] [Module R M]
-    [Module.Finite R M] : IsArtinian R (M →ₗ[R] E) := by
-  classical
+    [Module.Finite R M] : IsArtinian R (M →ₗ[R] E) :=
   have := hι.isArtinian
-  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R M
-  let e := LinearEquiv.piRing R E (Fin n) R
-  exact isArtinian_of_injective (e.toLinearMap.comp (f.lcomp R E))
-    (e.injective.comp (LinearMap.lcomp_injective_of_surjective f hf))
+  TauCeti.isArtinian_linearMap_of_finite M
 
 /-- Over a Noetherian local ring, an `R`-module is finitely generated if and only if its Matlis
 dual is Artinian. Completeness of `R` is not required. -/

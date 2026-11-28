@@ -71,14 +71,10 @@ theorem isArtinian_linearMap_of_finite_adicCompletion
     letI := AdicCompletion.torsionModule hι.mem_primaryComponent
     haveI := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
     IsArtinian R (N →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E) := by
-  let A := _root_.AdicCompletion (maximalIdeal R) R
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
   have := hι.isArtinian
-  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' A N
-  let e : ((Fin n → A) →ₗ[A] E) ≃ₗ[A] (Fin n → E) := LinearEquiv.piRing A E (Fin n) A
-  let j : (N →ₗ[A] E) →ₗ[R] (Fin n → E) := (e.toLinearMap ∘ₗ f.lcomp A E).restrictScalars R
-  exact isArtinian_of_injective j (e.injective.comp (lcomp_injective_of_surjective f hf))
+  exact TauCeti.isArtinian_linearMap_of_finite N
 
 /-- An `R̂`-module `N` is finitely generated over `R̂` if and only if its completion-linear Matlis
 dual `Hom_{R̂}(N, E)` is Artinian over `R`. -/
@@ -231,12 +227,9 @@ def adicCompletionEquivDoubleDualOfFinite :
   let A := _root_.AdicCompletion (maximalIdeal R) R
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have : IsScalarTower R A E := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
-  have := hι.isArtinian_linearMap_of_finite N
-  exact hι.adicCompletion.evalEquivOfFinite (_root_.AdicCompletion (maximalIdeal R) N) ≪≫ₗ
-    LinearEquiv.congrLeft E A (AdicCompletion.torsionLiftEquiv hι.mem_primaryComponent).symm ≪≫ₗ
-    AdicCompletion.restrictScalarsEquivOfMemPrimaryComponent
-      (maximalIdeal R).fg_of_isNoetherianRing
-      (mem_primaryComponent_maximalIdeal_of_isArtinian (R := R) (M := N →ₗ[R] E))
+  exact hι.evalEquivOfFiniteOverAdicCompletion (_root_.AdicCompletion (maximalIdeal R) N) ≪≫ₗ
+    LinearEquiv.congrLeft E A
+      ((AdicCompletion.torsionLiftEquiv hι.mem_primaryComponent).symm.restrictScalars R)
 
 /-- Applying `adicCompletionEquivDoubleDualOfFinite` evaluates the completed lift of `f` at `z`; on
 `AdicCompletion.of (maximalIdeal R) N x` this simplifies further to `f x` via
@@ -248,7 +241,6 @@ theorem adicCompletionEquivDoubleDualOfFinite_apply_apply
       AdicCompletion.torsionLiftEquiv hι.mem_primaryComponent f z := by
   let := AdicCompletion.torsionModule hι.mem_primaryComponent
   have := AdicCompletion.torsionModule_isScalarTower hι.mem_primaryComponent
-  have := hι.isArtinian_linearMap_of_finite N
   simp [adicCompletionEquivDoubleDualOfFinite]
 
 @[simp]

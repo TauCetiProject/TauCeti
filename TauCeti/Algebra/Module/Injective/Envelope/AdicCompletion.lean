@@ -18,16 +18,17 @@ completion `R̂ = AdicCompletion 𝔪 R`, and let `ι : κ →ₗ[R] E` be an in
 (`TauCeti.IsInjectiveEnvelope.mem_primaryComponent`), `E` carries the canonical `R̂`-module
 structure `TauCeti.AdicCompletion.torsionModule`.
 
-By `TauCeti.AdicCompletion.torsionModule_injective`, `E` is injective over `R̂`. Composing `ι` with
-the canonical identification `ResidueField R̂ ≃ₐ[R] κ`
-(`TauCeti.AdicCompletion.residueFieldAlgEquiv`) exhibits `E` as an injective envelope of the
-residue field of the complete Noetherian local ring `R̂`
+By `TauCeti.AdicCompletion.torsionModule_injective`, `E` is injective over `R̂`. Precomposing `ι`
+with the inverse of the canonical identification `κ ≃ₐ[R] ResidueField R̂`
+(`TauCeti.AdicCompletion.residueFieldAlgEquiv`) gives
+`TauCeti.IsInjectiveEnvelope.adicCompletionResidueMap`, exhibiting `E` as an injective envelope
+of the residue field of the complete Noetherian local ring `R̂`
 (`TauCeti.IsInjectiveEnvelope.adicCompletion`).
 
 ## Main declarations
 
-* `TauCeti.IsInjectiveEnvelope.adicCompletionResidueMap`: `ι` lifted across
-  `ResidueField R̂ ≃ₐ[R] κ` to an `R̂`-linear map `ResidueField R̂ →ₗ[R̂] E`.
+* `TauCeti.IsInjectiveEnvelope.adicCompletionResidueMap`: `ι` precomposed with the inverse of
+  `κ ≃ₐ[R] ResidueField R̂` as an `R̂`-linear map `ResidueField R̂ →ₗ[R̂] E`.
 * `TauCeti.IsInjectiveEnvelope.adicCompletion`: `E` is an injective envelope of
   `ResidueField R̂` over `R̂`.
 
@@ -51,8 +52,9 @@ variable {R : Type u} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
   {E : Type v} [AddCommGroup E] [Module R E]
   {ι : ResidueField R →ₗ[R] E} (hι : IsInjectiveEnvelope ι)
 
-/-- An injective envelope `ι : ResidueField R →ₗ[R] E` lifted across
-`ResidueField R̂ ≃ₐ[R] ResidueField R` to an `R̂`-linear embedding of `ResidueField R̂` into `E`. -/
+/-- An injective envelope `ι : ResidueField R →ₗ[R] E` precomposed with the inverse of
+`ResidueField R ≃ₐ[R] ResidueField R̂` (`TauCeti.AdicCompletion.residueFieldAlgEquiv`) as an
+`R̂`-linear embedding of `ResidueField R̂` into `E`. -/
 def adicCompletionResidueMap :
     letI := AdicCompletion.torsionModule hι.mem_primaryComponent
     ResidueField (_root_.AdicCompletion (maximalIdeal R) R)
