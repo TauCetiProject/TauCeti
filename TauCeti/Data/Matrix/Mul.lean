@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Defs
+public import Mathlib.Algebra.Field.Defs
+public import Mathlib.Algebra.Ring.Idempotent
 public import Mathlib.Data.Matrix.Mul
 import Mathlib.Data.Matrix.Basic
 
@@ -80,6 +82,9 @@ its entry covariance `∑ p, E p a b * E p c d`. If a rectangular matrix `U` int
 * `Matrix.sum_mul_mul_apply`: the entries of `∑ p, E p * M * E p` through the entry covariance
   `∑ p, E p a b * E p c d` of the family `E`.
 * `Matrix.list_prod_map_mul_eq_mul_list_prod_map`: list products preserve rectangular intertwiners.
+* `Matrix.isIdempotentElem_card_inv_smul_allOnes`, `Matrix.card_inv_smul_allOnes_ne_zero`:
+  the normalized all-ones matrix `|X|⁻¹ • J` is a nonzero idempotent over a characteristic-zero
+  division semiring when `X` is nonempty.
 -/
 
 public section
@@ -348,5 +353,30 @@ theorem list_prod_map_mul_eq_mul_list_prod_map (L : List α) (U : Matrix m k R)
       ← Matrix.mul_assoc, h a (.head t), Matrix.mul_assoc, ← List.prod_cons, ← List.map_cons]
 
 end Semiring
+
+section AllOnes
+
+variable {X K : Type*} [Fintype X] [DivisionSemiring K]
+
+/-- The normalized all-ones matrix `|X|⁻¹ • J` is idempotent. -/
+theorem isIdempotentElem_card_inv_smul_allOnes :
+    IsIdempotentElem ((Fintype.card X : K)⁻¹ • of fun _ _ : X => (1 : K)) := by
+  by_cases hcard : (Fintype.card X : K) = 0
+  · simp [hcard, IsIdempotentElem]
+  · rw [IsIdempotentElem]
+    ext x y
+    simp [Matrix.mul_apply, hcard]
+
+/-- Over a characteristic-zero division semiring on a nonempty finite index type, the normalized
+all-ones matrix `|X|⁻¹ • J` is nonzero. -/
+theorem card_inv_smul_allOnes_ne_zero [Nonempty X] [CharZero K] :
+    ((Fintype.card X : K)⁻¹ • of fun _ _ : X => (1 : K)) ≠ 0 := by
+  have hcard : (Fintype.card X : K) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
+  obtain ⟨x⟩ := ‹Nonempty X›
+  intro h0
+  have hx := congrArg (fun M : Matrix X X K => M x x) h0
+  simp [hcard] at hx
+
+end AllOnes
 
 end Matrix

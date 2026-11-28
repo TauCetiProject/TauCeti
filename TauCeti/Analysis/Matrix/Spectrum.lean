@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import Mathlib.Analysis.InnerProductSpace.Positive
+import TauCeti.Algebra.Ring.Idempotent.Basic
 import TauCeti.Analysis.Matrix.LDL
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Diagonal
@@ -109,7 +110,23 @@ symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻�
   of the characteristic polynomial, so `μ - A` is singular;
 * `Matrix.IsHermitian.prod_comp_eigenvalues` and `Matrix.IsHermitian.sum_comp_eigenvalues` — a
   product or sum of a function over the matrix-indexed eigenvalues is the same over the sorted
-  eigenvalues.
+  eigenvalues;
+* `Matrix.IsHermitian.eq_zero_of_mulVec_eigenvectorBasis` — a matrix annihilating every vector of
+  `hA.eigenvectorBasis` is zero;
+* `Matrix.IsHermitian.exists_mulVec_eigenvectorBasis_ne_zero_of_mul_eq` — if `p * A = A` and `A` is
+  not a real scalar multiple of `p`, then `p` does not annihilate at least two eigenvectors of
+  `A` with distinct eigenvalues;
+* `Matrix.IsHermitian.mem_eigenspace_toEuclideanLin_iff`,
+  `Matrix.IsHermitian.mem_orthogonal_eigenspace_toEuclideanLin_iff` — membership in the
+  `μ`-eigenspace of `A.toEuclideanLin` and its orthogonal complement in terms of
+  `hA.eigenvectorBasis` coordinates;
+* `Matrix.IsHermitian.range_ker_toEuclideanLin_of_mulVec_eigenvectorBasis`,
+  `Matrix.IsHermitian.exists_spectral_projection` — for any real scalar `μ`, the subalgebra
+  `Algebra.adjoin ℝ {A}` contains an idempotent acting as the identity on the `μ`-eigenspace
+  of `A.toEuclideanLin` and zero on its orthogonal complement;
+* `Subalgebra.exists_split_idempotent_of_isHermitian` — in a real subalgebra of Hermitian
+  matrices, an idempotent `p` that is not scaled by an element `A` of the subalgebra splits into
+  two nonzero orthogonal idempotents in the subalgebra.
 
 ## References
 
@@ -599,7 +616,241 @@ theorem det_scalar_eigenvalues₀_sub_eq_zero (hA : A.IsHermitian)
     exact Multiset.mem_map_of_mem _ (Finset.mem_univ_val i)
   rw [← eval_charpoly, ((Polynomial.mem_roots (charpoly_monic _).ne_zero).1 hroot).eq_zero]
 
+/-- A matrix that annihilates every eigenvector in `hA.eigenvectorBasis` is zero. -/
+theorem eq_zero_of_mulVec_eigenvectorBasis (hA : A.IsHermitian) {C : Matrix ι ι 𝕜}
+    (hC : ∀ j, C *ᵥ ⇑(hA.eigenvectorBasis j) = 0) : C = 0 := by
+  apply Matrix.toEuclideanLin.injective
+  apply hA.eigenvectorBasis.toBasis.ext
+  intro j
+  exact PiLp.ext fun x => by simpa [Matrix.toLpLin_apply] using congrFun (hC j) x
+
+/-- If `A` is Hermitian, `p * A = A`, and `A` is not a real scalar multiple of `p`, then there
+are two eigenvectors in `hA.eigenvectorBasis` with distinct eigenvalues that are not annihilated
+by `p`. -/
+theorem exists_mulVec_eigenvectorBasis_ne_zero_of_mul_eq (hA : A.IsHermitian) {p : Matrix ι ι 𝕜}
+    (hpA : p * A = A) (hnot : ∀ c : ℝ, A ≠ c • p) :
+    ∃ x₀ y₀ : ι, p *ᵥ ⇑(hA.eigenvectorBasis x₀) ≠ 0 ∧
+      p *ᵥ ⇑(hA.eigenvectorBasis y₀) ≠ 0 ∧
+      hA.eigenvalues y₀ ≠ hA.eigenvalues x₀ := by
+  have hp_ne : p ≠ 0 := fun hp0 =>
+    hnot 0 (by rw [← hpA, hp0, Matrix.zero_mul, zero_smul])
+  obtain ⟨x₀, hx₀⟩ : ∃ x₀ : ι, p *ᵥ ⇑(hA.eigenvectorBasis x₀) ≠ 0 := by
+    by_contra! hall
+    exact hp_ne (hA.eq_zero_of_mulVec_eigenvectorBasis hall)
+  obtain ⟨y₀, hy₀_p, hy₀_ev⟩ : ∃ y₀ : ι,
+      p *ᵥ ⇑(hA.eigenvectorBasis y₀) ≠ 0 ∧
+      hA.eigenvalues y₀ ≠ hA.eigenvalues x₀ := by
+    by_contra! hall
+    refine hnot (hA.eigenvalues x₀)
+      (sub_eq_zero.mp (hA.eq_zero_of_mulVec_eigenvectorBasis fun j => ?_))
+    rw [Matrix.sub_mulVec, Matrix.smul_mulVec]
+    by_cases hpj : p *ᵥ ⇑(hA.eigenvectorBasis j) = 0
+    · have hAj : A *ᵥ ⇑(hA.eigenvectorBasis j) = 0 :=
+        (congrArg (· *ᵥ _) hpA.symm).trans
+          (by rw [← Matrix.mulVec_mulVec, hA.mulVec_eigenvectorBasis j, Matrix.mulVec_smul, hpj,
+            smul_zero])
+      rw [hAj, hpj, smul_zero, sub_zero]
+    · have hevj : hA.eigenvalues j = hA.eigenvalues x₀ := hall j hpj
+      rcases eq_or_ne (hA.eigenvalues x₀) 0 with hμ0 | hμ0
+      · rw [hA.mulVec_eigenvectorBasis j, hevj, hμ0, zero_smul, zero_smul, sub_zero]
+      · have hpb : p *ᵥ ⇑(hA.eigenvectorBasis j) = ⇑(hA.eigenvectorBasis j) := by
+          calc p *ᵥ ⇑(hA.eigenvectorBasis j)
+              = p *ᵥ ((hA.eigenvalues x₀)⁻¹ •
+                  (A *ᵥ ⇑(hA.eigenvectorBasis j))) := by
+                rw [hA.mulVec_eigenvectorBasis j, hevj, smul_smul, inv_mul_cancel₀ hμ0,
+                  one_smul]
+            _ = (hA.eigenvalues x₀)⁻¹ •
+                  ((p * A) *ᵥ ⇑(hA.eigenvectorBasis j)) := by
+                rw [Matrix.mulVec_smul, Matrix.mulVec_mulVec]
+            _ = ⇑(hA.eigenvectorBasis j) := by
+                rw [hpA, hA.mulVec_eigenvectorBasis j, hevj, smul_smul,
+                  inv_mul_cancel₀ hμ0, one_smul]
+        rw [hA.mulVec_eigenvectorBasis j, hevj, hpb, sub_self]
+  exact ⟨x₀, y₀, hx₀, hy₀_p, hy₀_ev⟩
+
+/-- A vector `v` lies in the `μ`-eigenspace of `A.toEuclideanLin` if and only if its coordinates
+in `hA.eigenvectorBasis` vanish at every index whose eigenvalue differs from `μ`. -/
+theorem mem_eigenspace_toEuclideanLin_iff (hA : A.IsHermitian) (μ : 𝕜)
+    (v : EuclideanSpace 𝕜 ι) :
+    v ∈ Module.End.eigenspace A.toEuclideanLin μ ↔
+      ∀ j, (hA.eigenvalues j : 𝕜) ≠ μ → hA.eigenvectorBasis.repr v j = 0 := by
+  let b := hA.eigenvectorBasis
+  rw [Module.End.mem_eigenspace_iff, b.repr.injective.eq_iff.symm, PiLp.ext_iff]
+  refine forall_congr' fun j => ?_
+  have hrep : b.repr (A.toEuclideanLin v) j = (hA.eigenvalues j : 𝕜) * b.repr v j := by
+    rw [b.repr_apply_apply, ← isSymmetric_toEuclideanLin_iff.mpr hA,
+      hA.toEuclideanLin_eigenvectorBasis, inner_smul_left, RCLike.conj_ofReal, b.repr_apply_apply]
+  rw [hrep, map_smul, PiLp.smul_apply, smul_eq_mul, ← sub_eq_zero, ← sub_mul, mul_eq_zero,
+    sub_eq_zero]
+  exact ⟨fun h hj => h.resolve_left hj, fun h => by
+    by_cases hj : (hA.eigenvalues j : 𝕜) = μ
+    · exact Or.inl hj
+    · exact Or.inr (h hj)⟩
+
+/-- A vector `v` lies in the orthogonal complement of the `μ`-eigenspace of `A.toEuclideanLin`
+if and only if its coordinates in `hA.eigenvectorBasis` vanish at every index with eigenvalue
+`μ`. -/
+theorem mem_orthogonal_eigenspace_toEuclideanLin_iff (hA : A.IsHermitian) (μ : 𝕜)
+    (v : EuclideanSpace 𝕜 ι) :
+    v ∈ (Module.End.eigenspace A.toEuclideanLin μ)ᗮ ↔
+      ∀ j, (hA.eigenvalues j : 𝕜) = μ → hA.eigenvectorBasis.repr v j = 0 := by
+  let b := hA.eigenvectorBasis
+  refine ⟨fun hv j hj => ?_, fun hv => (Submodule.mem_orthogonal _ v).mpr fun w hw => ?_⟩
+  · have hbj : b j ∈ Module.End.eigenspace A.toEuclideanLin μ := by
+      rw [Module.End.mem_eigenspace_iff, hA.toEuclideanLin_eigenvectorBasis, hj]
+    rw [b.repr_apply_apply]
+    exact (Submodule.mem_orthogonal _ v).mp hv (b j) hbj
+  · rw [← b.sum_repr' w, ← b.sum_repr' v, b.orthonormal.inner_sum]
+    refine Finset.sum_eq_zero fun j _ => ?_
+    rw [← b.repr_apply_apply v j]
+    by_cases hj : (hA.eigenvalues j : 𝕜) = μ
+    · rw [hv j hj, mul_zero]
+    · have hwj : (b.repr w).ofLp j = 0 := (hA.mem_eigenspace_toEuclideanLin_iff μ w).mp hw j hj
+      rw [← b.repr_apply_apply w j, hwj, map_zero, zero_mul]
+
+/-- If `Q : Matrix ι ι 𝕜` fixes every eigenvector in `hA.eigenvectorBasis` with eigenvalue `μ` and
+annihilates the rest, then `Q` is idempotent, `range Q.toEuclideanLin` is the `μ`-eigenspace of
+`A.toEuclideanLin`, and `ker Q.toEuclideanLin` is its orthogonal complement. -/
+theorem range_ker_toEuclideanLin_of_mulVec_eigenvectorBasis (hA : A.IsHermitian)
+    {Q : Matrix ι ι 𝕜} {μ : 𝕜}
+    (hQ : ∀ j, Q *ᵥ ⇑(hA.eigenvectorBasis j) =
+      if (hA.eigenvalues j : 𝕜) = μ then ⇑(hA.eigenvectorBasis j) else 0) :
+    IsIdempotentElem Q ∧
+      LinearMap.range Q.toEuclideanLin = Module.End.eigenspace A.toEuclideanLin μ ∧
+      LinearMap.ker Q.toEuclideanLin = (Module.End.eigenspace A.toEuclideanLin μ)ᗮ := by
+  have hQ_idem : IsIdempotentElem Q := by
+    rw [IsIdempotentElem, ← sub_eq_zero]
+    refine hA.eq_zero_of_mulVec_eigenvectorBasis fun j => ?_
+    rw [Matrix.sub_mulVec, ← Matrix.mulVec_mulVec, hQ j]
+    split_ifs with hj <;> simp [hj, hQ j]
+  have hQ_repr (v : EuclideanSpace 𝕜 ι) (j : ι) :
+      hA.eigenvectorBasis.repr (Q.toEuclideanLin v) j =
+        if (hA.eigenvalues j : 𝕜) = μ then hA.eigenvectorBasis.repr v j else 0 := by
+    conv_lhs => rw [hA.eigenvectorBasis.repr_apply_apply, ← hA.eigenvectorBasis.sum_repr' v,
+      map_sum, inner_sum]
+    have hQ_euclid (k : ι) : Q.toEuclideanLin (hA.eigenvectorBasis k) =
+        if (hA.eigenvalues k : 𝕜) = μ then hA.eigenvectorBasis k else 0 :=
+      PiLp.ext fun x => by
+        split_ifs with hk <;> simpa [toLpLin_apply, hk] using congrFun (hQ k) x
+    simp_rw [map_smul, inner_smul_right, hQ_euclid, apply_ite (inner 𝕜 (hA.eigenvectorBasis j)),
+      inner_zero_right]
+    refine (Finset.sum_eq_single j (fun k _ hk => ?_)
+      (fun h => absurd (Finset.mem_univ j) h)).trans ?_
+    · split_ifs <;> simp [hA.eigenvectorBasis.orthonormal.inner_eq_zero hk.symm]
+    · split_ifs <;> simp [← hA.eigenvectorBasis.repr_apply_apply]
+  refine ⟨hQ_idem, Submodule.ext fun v => ?_, Submodule.ext fun v => ?_⟩
+  · have hQp : IsIdempotentElem Q.toEuclideanLin := by
+      rw [IsIdempotentElem, Module.End.mul_eq_comp, ← Matrix.toLpLin_mul, hQ_idem.eq]
+    rw [LinearMap.IsIdempotentElem.mem_range_iff hQp, hA.mem_eigenspace_toEuclideanLin_iff μ v,
+      hA.eigenvectorBasis.repr.injective.eq_iff.symm, PiLp.ext_iff]
+    refine forall_congr' fun j => ?_
+    rw [hQ_repr v j]; split_ifs with hj <;> simp [hj, eq_comm]
+  · rw [LinearMap.mem_ker, hA.mem_orthogonal_eigenspace_toEuclideanLin_iff μ v,
+      ← hA.eigenvectorBasis.repr.map_eq_zero_iff, PiLp.ext_iff]
+    refine forall_congr' fun j => ?_
+    rw [hQ_repr v j]; split_ifs with hj <;> simp [hj]
+
+/-- For any real scalar `μ`, the real subalgebra generated by a Hermitian matrix `A` contains an
+idempotent acting as the identity on the `μ`-eigenspace of `A.toEuclideanLin` and as zero on its
+orthogonal complement (and hence fixing eigenvectors in `hA.eigenvectorBasis` with eigenvalue `μ`
+and annihilating the rest). -/
+theorem exists_spectral_projection (hA : A.IsHermitian) (μ : ℝ) :
+    ∃ Q ∈ Algebra.adjoin ℝ {A}, IsIdempotentElem Q ∧
+      (∀ j, Q *ᵥ ⇑(hA.eigenvectorBasis j) =
+        if hA.eigenvalues j = μ then ⇑(hA.eigenvectorBasis j) else 0) ∧
+      LinearMap.range Q.toEuclideanLin = Module.End.eigenspace A.toEuclideanLin (μ : 𝕜) ∧
+      LinearMap.ker Q.toEuclideanLin = (Module.End.eigenspace A.toEuclideanLin (μ : 𝕜))ᗮ := by
+  let S_ev : Finset ℝ := (Finset.univ.image hA.eigenvalues).erase μ
+  let fac (ν : ℝ) : Matrix ι ι 𝕜 := (μ - ν)⁻¹ • (A - ν • (1 : Matrix ι ι 𝕜))
+  set Q : Matrix ι ι 𝕜 := (S_ev.toList.map fac).prod
+  have hQ_mem : Q ∈ Algebra.adjoin ℝ {A} := list_prod_mem fun B hB => by
+    obtain ⟨ν, -, rfl⟩ := List.mem_map.mp hB
+    exact Subalgebra.smul_mem _
+      (sub_mem (Algebra.subset_adjoin rfl) (Subalgebra.smul_mem _ (one_mem _) ν)) _
+  have hQ_mulVec : ∀ (l : List ℝ) (j : ι),
+      (l.map fac).prod *ᵥ ⇑(hA.eigenvectorBasis j) =
+        (l.map fun ν => (μ - ν)⁻¹ * (hA.eigenvalues j - ν)).prod •
+          ⇑(hA.eigenvectorBasis j) := fun l j => by
+    induction l with
+    | nil => simp
+    | cons ν l ih =>
+      rw [List.map_cons, List.prod_cons, ← Matrix.mulVec_mulVec, ih, Matrix.mulVec_smul]
+      simp only [fac, Matrix.smul_mulVec, Matrix.sub_mulVec, Matrix.one_mulVec,
+        hA.mulVec_eigenvectorBasis j, ← sub_smul, smul_smul, List.map_cons, List.prod_cons]
+      rw [mul_comm _ ((List.map _ l).prod)]
+  have hQ_eval : ∀ j : ι, (S_ev.toList.map fun ν =>
+      (μ - ν)⁻¹ * (hA.eigenvalues j - ν)).prod =
+      if hA.eigenvalues j = μ then 1 else 0 := fun j => by
+    split_ifs with hj
+    · refine List.prod_eq_one fun x hx => ?_
+      obtain ⟨ν, hν, rfl⟩ := List.mem_map.mp hx
+      rw [hj, inv_mul_cancel₀
+        (sub_ne_zero.mpr (Finset.ne_of_mem_erase (Finset.mem_toList.mp hν)).symm)]
+    · exact List.prod_eq_zero (List.mem_map.mpr ⟨hA.eigenvalues j,
+        Finset.mem_toList.mpr (Finset.mem_erase.mpr
+          ⟨hj, Finset.mem_image_of_mem _ (Finset.mem_univ _)⟩), by simp⟩)
+  have hQ_act : ∀ j, Q *ᵥ ⇑(hA.eigenvectorBasis j) =
+      if hA.eigenvalues j = μ then ⇑(hA.eigenvectorBasis j) else 0 := fun j => by
+    rw [hQ_mulVec S_ev.toList j, hQ_eval j]; split_ifs <;> simp
+  obtain ⟨hQ_idem, hQ_range, hQ_ker⟩ :=
+    hA.range_ker_toEuclideanLin_of_mulVec_eigenvectorBasis (μ := (μ : 𝕜)) fun j => by
+      simpa only [RCLike.ofReal_inj] using hQ_act j
+  exact ⟨Q, hQ_mem, hQ_idem, hQ_act, hQ_range, hQ_ker⟩
+
 end Matrix.IsHermitian
+
+namespace Subalgebra
+
+/-- **Spectral splitting in a Hermitian matrix subalgebra.** Let `S` be a real subalgebra of
+square matrices over `𝕜` (`RCLike 𝕜`), all of whose elements are Hermitian (so `S` is
+automatically commutative, since `(M * N)ᴴ = Nᴴ * Mᴴ`). If `p ∈ S` is idempotent and `A ∈ S`
+does not act on `p` by a real scalar (`A * p ≠ c • p` for all `c : ℝ`), then `p` splits as a sum
+`p₁ + p₂` of two nonzero orthogonal idempotents in `S`. -/
+theorem exists_split_idempotent_of_isHermitian {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (S : Subalgebra ℝ (Matrix ι ι 𝕜)) (hS : ∀ M ∈ S, M.IsHermitian)
+    {p A : Matrix ι ι 𝕜} (hp_mem : p ∈ S) (hp_idem : IsIdempotentElem p)
+    (hA_mem : A ∈ S) (hnot : ∀ c : ℝ, A * p ≠ c • p) :
+    ∃ p₁ p₂ : Matrix ι ι 𝕜, p₁ ∈ S ∧ p₂ ∈ S ∧
+      IsIdempotentElem p₁ ∧ IsIdempotentElem p₂ ∧ p₁ * p₂ = 0 ∧ p₂ * p₁ = 0 ∧
+      p₁ ≠ 0 ∧ p₂ ≠ 0 ∧ p₁ + p₂ = p := by
+  have hcomm : ∀ {X Y : Matrix ι ι 𝕜}, X ∈ S → Y ∈ S → X * Y = Y * X := by
+    intro X Y hX hY
+    calc X * Y = (X * Y).conjTranspose := (hS _ (mul_mem hX hY)).symm
+      _ = Y.conjTranspose * X.conjTranspose := Matrix.conjTranspose_mul X Y
+      _ = Y * X := by rw [(hS Y hY).eq, (hS X hX).eq]
+  set M : Matrix ι ι 𝕜 := A * p
+  have hM_mem : M ∈ S := mul_mem hA_mem hp_mem
+  have hM_herm : M.IsHermitian := hS M hM_mem
+  have hpM : p * M = M := by
+    rw [hcomm hp_mem hM_mem]
+    simp [M, Matrix.mul_assoc, hp_idem.eq]
+  obtain ⟨x₀, y₀, hx₀, hy₀, hne⟩ :=
+    hM_herm.exists_mulVec_eigenvectorBasis_ne_zero_of_mul_eq hpM hnot
+  obtain ⟨Q, hQ_adjoin, hQ_idem, hQ_mulVec, -, -⟩ :=
+    hM_herm.exists_spectral_projection (hM_herm.eigenvalues x₀)
+  have hQ_mem : Q ∈ S := Algebra.adjoin_le (Set.singleton_subset_iff.mpr hM_mem) hQ_adjoin
+  have hQp : Commute Q p := hcomm hQ_mem hp_mem
+  refine ⟨Q * p, (1 - Q) * p, mul_mem hQ_mem hp_mem,
+    mul_mem (sub_mem (one_mem S) hQ_mem) hp_mem,
+    hQ_idem.mul_of_commute hQp.eq hp_idem,
+    hQ_idem.one_sub.mul_of_commute
+      (by rw [Commute, SemiconjBy, sub_mul, one_mul, mul_sub, mul_one, hQp.eq]) hp_idem,
+    hQ_idem.mul_mul_one_sub_mul_eq_zero hQp p,
+    hQ_idem.one_sub_mul_mul_mul_eq_zero hQp p, ?_, ?_, ?_⟩
+  · intro h0
+    have hmul := congrArg (fun B : Matrix ι ι 𝕜 => B.mulVec (hM_herm.eigenvectorBasis x₀)) h0
+    rw [Matrix.zero_mulVec, hQp.eq, ← Matrix.mulVec_mulVec] at hmul
+    simp only [hQ_mulVec x₀, ↓reduceIte] at hmul
+    exact hx₀ hmul
+  · intro h0
+    have hmul := congrArg (fun B : Matrix ι ι 𝕜 => B.mulVec (hM_herm.eigenvectorBasis y₀)) h0
+    rw [Matrix.zero_mulVec, sub_mul, one_mul, Matrix.sub_mulVec, hQp.eq,
+      ← Matrix.mulVec_mulVec] at hmul
+    simp only [hQ_mulVec y₀, hne, ↓reduceIte, Matrix.mulVec_zero, sub_zero] at hmul
+    exact hy₀ hmul
+  · rw [← add_mul, add_sub_cancel, one_mul]
+
+end Subalgebra
 
 namespace Matrix.PosDef
 

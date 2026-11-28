@@ -59,6 +59,14 @@ operator and restricts it to a scalar.
 * `IsIdempotentElem.two_mul_sub_one_mul_self`: `(2 p - 1) * (2 p - 1) = 1`.
 * `IsIdempotentElem.compress_sub_compress_mul_compress`:
   `p x p - (p y p)(p z p) = p (x - y z) p + p y (1 - p) · (1 - p) z p`.
+* `IsIdempotentElem.mul_mul_one_sub_mul_eq_zero`,
+  `IsIdempotentElem.one_sub_mul_mul_mul_eq_zero`: `(p * x) * ((1 - p) * y) = 0` and
+  `((1 - p) * x) * (p * y) = 0` when `p` commutes with `x`.
+* `IsIdempotentElem.add_mul_self_of_mul_eq_zero`,
+  `IsIdempotentElem.mul_add_self_of_mul_eq_zero`,
+  `IsIdempotentElem.mul_left_eq_zero_of_mul_add_eq_zero`,
+  `IsIdempotentElem.mul_right_eq_zero_of_add_mul_eq_zero`: orthogonality with a sum
+  `p₁ + p₂` of orthogonal idempotents passes to the summands `p₁` and `p₂`.
 * `TauCeti.one_add_mul_self_of_mul_self_eq_one`: if `u * u = 1`, then
   `(1 + u) * (1 + u) = (1 + u) + (1 + u)`.
 * `TauCeti.one_add_mul_one_add_mul_one_add_of_mul_self_eq_one`: if `u * u = 1` and
@@ -138,7 +146,57 @@ theorem compress_sub_compress_mul_compress (hp : IsIdempotentElem p) (x y z : R)
   simp only [mul_sub, sub_mul, mul_one, one_mul, mul_assoc, hp']
   abel
 
+/-- For an idempotent `p` commuting with `x`, `(p * x) * ((1 - p) * y) = 0`. -/
+theorem mul_mul_one_sub_mul_eq_zero (hp : IsIdempotentElem p) {x : R} (hx : Commute p x)
+    (y : R) : (p * x) * ((1 - p) * y) = 0 := by
+  calc (p * x) * ((1 - p) * y)
+      = p * (x * (1 - p)) * y := by simp only [mul_assoc]
+    _ = p * ((1 - p) * x) * y := by rw [mul_sub, sub_mul, mul_one, one_mul, hx.eq]
+    _ = (p * (1 - p)) * (x * y) := by simp only [mul_assoc]
+    _ = 0 := by rw [hp.mul_one_sub_self, zero_mul]
+
+/-- For an idempotent `p` commuting with `x`, `((1 - p) * x) * (p * y) = 0`. -/
+theorem one_sub_mul_mul_mul_eq_zero (hp : IsIdempotentElem p) {x : R} (hx : Commute p x)
+    (y : R) : ((1 - p) * x) * (p * y) = 0 := by
+  calc ((1 - p) * x) * (p * y)
+      = (1 - p) * (x * p) * y := by simp only [mul_assoc]
+    _ = (1 - p) * (p * x) * y := by rw [hx.eq]
+    _ = ((1 - p) * p) * (x * y) := by simp only [mul_assoc]
+    _ = 0 := by rw [hp.one_sub_mul_self, zero_mul]
+
 end Ring
+
+section NonUnitalNonAssocSemiring
+
+variable {R : Type*} [NonUnitalNonAssocSemiring R]
+
+/-- If `p₁` is idempotent and `p₂ * p₁ = 0`, then `(p₁ + p₂) * p₁ = p₁`. -/
+theorem add_mul_self_of_mul_eq_zero {p₁ p₂ : R} (hp₁ : IsIdempotentElem p₁)
+    (hp₂₁ : p₂ * p₁ = 0) : (p₁ + p₂) * p₁ = p₁ := by
+  rw [add_mul, hp₁.eq, hp₂₁, add_zero]
+
+/-- If `p₁` is idempotent and `p₁ * p₂ = 0`, then `p₁ * (p₁ + p₂) = p₁`. -/
+theorem mul_add_self_of_mul_eq_zero {p₁ p₂ : R} (hp₁ : IsIdempotentElem p₁)
+    (hp₁₂ : p₁ * p₂ = 0) : p₁ * (p₁ + p₂) = p₁ := by
+  rw [mul_add, hp₁.eq, hp₁₂, add_zero]
+
+end NonUnitalNonAssocSemiring
+
+section NonUnitalSemiring
+
+variable {R : Type*} [NonUnitalSemiring R]
+
+/-- If `p₁` is idempotent, `p₂ * p₁ = 0`, and `s * (p₁ + p₂) = 0`, then `s * p₁ = 0`. -/
+theorem mul_left_eq_zero_of_mul_add_eq_zero {p₁ p₂ s : R} (hp₁ : IsIdempotentElem p₁)
+    (hp₂₁ : p₂ * p₁ = 0) (hs : s * (p₁ + p₂) = 0) : s * p₁ = 0 := by
+  rw [← hp₁.add_mul_self_of_mul_eq_zero hp₂₁, ← mul_assoc, hs, zero_mul]
+
+/-- If `p₁` is idempotent, `p₁ * p₂ = 0`, and `(p₁ + p₂) * s = 0`, then `p₁ * s = 0`. -/
+theorem mul_right_eq_zero_of_add_mul_eq_zero {p₁ p₂ s : R} (hp₁ : IsIdempotentElem p₁)
+    (hp₁₂ : p₁ * p₂ = 0) (hs : (p₁ + p₂) * s = 0) : p₁ * s = 0 := by
+  rw [← hp₁.mul_add_self_of_mul_eq_zero hp₁₂, mul_assoc, hs, mul_zero]
+
+end NonUnitalSemiring
 
 end IsIdempotentElem
 
