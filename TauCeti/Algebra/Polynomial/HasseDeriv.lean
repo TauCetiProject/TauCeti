@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Polynomial.Taylor
 
 import Mathlib.Algebra.Polynomial.Eval.SMul
 import Mathlib.Data.Int.Interval
+import TauCeti.Data.Int.Interval
 import Mathlib.Data.Nat.Factorial.NatCast
 import Mathlib.Data.Rat.Floor
 import Mathlib.Data.ZMod.Basic
@@ -153,9 +154,7 @@ theorem exists_int_eval_hasseDeriv_ne_zero {R K : Type*} [CommRing R] [IsDomain 
   set a := ⌊B⌋₊
   set b := ⌊(s : K) / B⌋₊
   set I : Finset ℤ := Finset.Icc (-(a : ℤ)) (a : ℤ)
-  have hcardI : #I = 2 * a + 1 := by
-    rw [Int.card_Icc]
-    omega
+  have hcardI : #I = 2 * a + 1 := Int.card_Icc_neg_natCast_natCast a
   set S : Finset R := I.image Int.cast
   have hcardS : #S = 2 * a + 1 := by
     rw [Finset.card_image_of_injective _ Int.cast_injective, hcardI]

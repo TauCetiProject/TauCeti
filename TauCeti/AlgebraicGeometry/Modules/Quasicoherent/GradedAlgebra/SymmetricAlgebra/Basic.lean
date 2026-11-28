@@ -44,11 +44,15 @@ tag 01M1).
 * `TauCeti.AlgebraicGeometry.isIso_one_gradedSymmetricAlgebra` and
   `TauCeti.AlgebraicGeometry.epi_mul_gradedSymmetricAlgebra`: the unit and the multiplications of
   `Sym F` are respectively an isomorphism and epimorphisms;
+* `TauCeti.AlgebraicGeometry.isZero_gradedSymmetricAlgebra_obj_X`: the symmetric powers of
+  positive degree of a zero sheaf vanish;
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebra_hom_ext`: a graded algebra morphism out of
   `Sym F` is determined by its degree-one component;
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebra_map_degreeOne`: a graded algebra morphism
   `Sym F ⟶ Sym G` is the graded symmetric algebra of its degree-one component, and
   `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebra_preimage` computes its preimage accordingly;
+* `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.epi_gradedSymmetricAlgebra_map_one`:
+  the symmetric algebra map of an epimorphism is an epimorphism in degree one.;
 * the instances `(gradedSymmetricAlgebra X).Faithful` and `(gradedSymmetricAlgebra X).Full`.
 -/
 
@@ -312,6 +316,20 @@ instance epi_mul_gradedSymmetricAlgebra (F : QuasicoherentSheaf X) (i j : ℕ) :
   exact epi_comp' (h _) (epi_comp' (SheafOfModules.epi_symmetricPowerMul (R := X.sheaf) F.obj i j)
     (h _))
 
+open Limits in
+/-- The symmetric powers `Symⁿ F` of positive degree of a zero quasicoherent sheaf `F` vanish:
+the multiplication `Symⁿ⁻¹ F ⊗ F ⟶ Symⁿ F` is an epimorphism out of a zero sheaf. -/
+theorem isZero_gradedSymmetricAlgebra_obj_X {F : QuasicoherentSheaf X} (hF : IsZero F.obj)
+    {n : ℕ} (hn : n ≠ 0) : IsZero (((gradedSymmetricAlgebra X).obj F).obj.X n) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  set A := ((gradedSymmetricAlgebra X).obj F).obj
+  have h1 : IsZero (A.X 1) := hF.of_iso (gradedSymmetricAlgebraXOneIso F)
+  have h : IsZero (A.X m ⊗ A.X 1) := (MonoidalCategory.tensorLeft (A.X m)).map_isZero h1
+  -- `mul m 1` lands in `A.X (m + 1)` with the addition of the grading monoid `ℕ`, which
+  -- instance search does not identify with the goal's `m + 1`; elaborating without the expected
+  -- type (`(e :)`) lets it find `epi_mul_gradedSymmetricAlgebra` before unifying with the goal.
+  exact (IsZero.of_epi (A.toMon.mul m 1) h :)
+
 /-- Morphisms of graded quasicoherent algebras out of the graded symmetric algebra `Sym F` are
 determined by their degree-one components. -/
 theorem gradedSymmetricAlgebra_hom_ext {F : QuasicoherentSheaf X}
@@ -335,6 +353,21 @@ theorem gradedSymmetricAlgebra_map_degreeOne {F G : QuasicoherentSheaf X}
   refine gradedSymmetricAlgebra_hom_ext ?_
   rw [← cancel_mono ((gradedSymmetricAlgebraDegreeOneIso X).hom.app G)]
   exact ((gradedSymmetricAlgebraDegreeOneIso X).hom.naturality _).trans (by simp)
+
+/-- The symmetric algebra map of an epimorphism of quasi-coherent modules is epic in degree one. -/
+theorem QuasicoherentSheaf.epi_gradedSymmetricAlgebra_map_one
+    (F : QuasicoherentSheaf X) {G : QuasicoherentSheaf X} (q : F.obj ⟶ G.obj) [Epi q] :
+    Epi (((gradedSymmetricAlgebra X).map (ObjectProperty.homMk q)).hom.hom.hom 1) := by
+  apply GradedQuasicoherentAlgebra.epi_hom_hom_of_epi_degree_map _ 1
+  let e := gradedSymmetricAlgebraDegreeOneIso X
+  have h :
+      ((degree 1).map ((gradedSymmetricAlgebra X).map (ObjectProperty.homMk q))).hom ≫
+          (ObjectProperty.ι _).map (e.hom.app G) =
+        (ObjectProperty.ι _).map (e.hom.app F) ≫ q :=
+    (ObjectProperty.ι _).congr_map (e.hom.naturality (ObjectProperty.homMk q))
+  have he : Epi ((ObjectProperty.ι _).map (e.hom.app F) ≫ q) := inferInstance
+  rw [← h] at he
+  exact (epi_comp_iff_of_isIso _ ((ObjectProperty.ι _).map (e.hom.app G))).mp he
 
 /-- The graded symmetric algebra functor is full: a morphism of graded algebras `Sym F ⟶ Sym G`
 is the graded symmetric algebra of its degree-one component

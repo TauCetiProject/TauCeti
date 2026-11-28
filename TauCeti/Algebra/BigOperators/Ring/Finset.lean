@@ -34,10 +34,21 @@ over all triples, `(#s₀ * #s₁ * #s₂) * (p * q * r)`, as a sum of three one
 
 `TauCeti.sum_mul_const_of_sum_eq_one`: weights of total weight `1` average a constant to itself.
 
+## Coefficients of a Cauchy product
+
+`TauCeti.sum_range_mul_pow_mul_mul_pow_sub`: the `n`-th term
+`∑_{k ≤ n} uₖ ζᵏ v_{n-k} ζ^{n-k}` of the Cauchy product of `∑ uₖ ζᵏ` and `∑ vₖ ζᵏ` is
+`ζⁿ ∑_{k ≤ n} uₖ v_{n-k}`.
+
 ## Restricting a weighted sum to the points in a set
 
 `Finset.sum_filter_mem_mul_eq`: when the weight `w` vanishes outside a set `U`, the weighted sum
 `∑ s ∈ S, w s * r s` only sees the points of `S` lying in `U`.
+
+## Products of `±1`
+
+`Finset.prod_eq_one_or_neg_one`: a finite product of elements each equal to `1` or `-1` is
+`1` or `-1`.
 -/
 
 public section
@@ -88,6 +99,18 @@ theorem sum_mul_const_of_sum_eq_one {ι α : Type*} [NonAssocSemiring α] {s : F
     {p : ι → α} (hp : ∑ i ∈ s, p i = 1) (c : α) : ∑ i ∈ s, p i * c = c := by
   rw [← Finset.sum_mul, hp, one_mul]
 
+open Finset in
+/-- The coefficient of `ζⁿ` in the Cauchy product of `∑ uₖ ζᵏ` and `∑ vₖ ζᵏ`, written as `ζⁿ`
+times a sum of coefficients. -/
+theorem sum_range_mul_pow_mul_mul_pow_sub {R : Type*} [CommSemiring R] (ζ : R)
+    (u v : ℕ → R) (n : ℕ) :
+    ∑ k ∈ range (n + 1), u k * ζ ^ k * (v (n - k) * ζ ^ (n - k)) =
+      ζ ^ n * ∑ k ∈ range (n + 1), u k * v (n - k) := by
+  rw [mul_sum]
+  refine sum_congr rfl fun k hk ↦ ?_
+  rw [← pow_mul_pow_sub ζ (mem_range_succ_iff.mp hk)]
+  ring
+
 end TauCeti
 
 namespace Finset
@@ -115,5 +138,13 @@ theorem sq_dvd_prod_sub_one_sub_sum_add_card {R ι : Type*} [CommRing R] (s : Fi
     push_cast
     refine ⟨f + c * (r * f + e), ?_⟩
     linear_combination (∏ i ∈ s, u i - 1) * hc + (1 + r * c) * hf + r * c * he
+
+/-- A finite product of elements each equal to `1` or `-1` is equal to `1` or `-1`. -/
+theorem prod_eq_one_or_neg_one {ι M : Type*} [CommMonoid M] [HasDistribNeg M]
+    (s : Finset ι) {f : ι → M} (hf : ∀ i ∈ s, f i = 1 ∨ f i = -1) :
+    ∏ i ∈ s, f i = 1 ∨ ∏ i ∈ s, f i = -1 :=
+  prod_induction f (fun x ↦ x = 1 ∨ x = -1)
+    (fun _ _ ha hb ↦ by rcases ha with rfl | rfl <;> rcases hb with rfl | rfl <;> simp)
+    (Or.inl rfl) hf
 
 end Finset

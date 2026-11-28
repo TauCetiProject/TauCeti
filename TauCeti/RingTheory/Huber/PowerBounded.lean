@@ -138,6 +138,11 @@ theorem IsBounded.isPowerBounded_of_mem {S : Type*} [SetLike S M] [SubmonoidClas
     (hT : IsBounded (T : Set M)) {a : M} (ha : a ∈ T) : IsPowerBounded a :=
   isPowerBounded_iff.mpr <| hT.subset <| by rintro _ ⟨n, rfl⟩; exact pow_mem ha n
 
+/-- Every element of a discrete monoid with zero is power-bounded, since every subset is bounded
+(`isBounded_of_discreteTopology`). -/
+theorem isPowerBounded_of_discreteTopology [DiscreteTopology M] (a : M) : IsPowerBounded a :=
+  isBounded_of_discreteTopology _
+
 /-- `0` is power-bounded. -/
 @[simp]
 theorem isPowerBounded_zero : IsPowerBounded (0 : M) := by

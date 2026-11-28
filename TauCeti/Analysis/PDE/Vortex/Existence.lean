@@ -71,7 +71,8 @@ All in the namespace `TauCeti.Vortex`:
 * `exists_contDiff_equation_eq_zero_isZeroMultiplicity`: every `D ∈ Sym ℂ m` is the zero divisor
   of a smooth vortex with the degree-`m` end framing.
 * `framedVortexSubMulAction`: the smooth framed degree-`m` vortices of a coupling `c`, preserved
-  by smooth framed gauges.
+  by smooth framed gauges; in degree zero it contains the vacuum
+  (`vacuumField_mem_framedVortexSubMulAction`).
 * `framedVortexDivisor`: the zero divisor of a smooth framed degree-`m` vortex, a point of
   `Sym ℂ m`, characterized by `framedVortexDivisor_eq_iff`.
 
@@ -348,6 +349,14 @@ theorem mem_framedVortexSubMulAction {c : ℝ} {m : ℕ} {x : ℂ → EuclideanS
     x ∈ framedVortexSubMulAction c m ↔ ContDiff ℝ ∞ x ∧ (∀ z, coupledEquation c x z = 0) ∧
       Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) :=
   Iff.rfl
+
+/-- The vacuum `(0, 1)` is a smooth framed degree-`0` vortex of every coupling: its section has
+modulus one, so the curvature row holds whatever the coupling. -/
+theorem vacuumField_mem_framedVortexSubMulAction (c : ℝ) :
+    vacuumField ∈ framedVortexSubMulAction c 0 := by
+  refine mem_framedVortexSubMulAction.2 ⟨contDiff_vacuumField, fun z ↦ ?_, by simp⟩
+  ext i
+  fin_cases i <;> norm_num [equation_vacuumField]
 
 variable {c : ℝ} {m : ℕ}
 

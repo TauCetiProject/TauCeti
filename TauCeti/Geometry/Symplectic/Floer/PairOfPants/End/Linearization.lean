@@ -39,12 +39,6 @@ Since `a - b J` multiplies the form
 in which the estimates of the linearized operator on a cylindrical end apply to the pair of
 pants.
 
-The formal adjoint `D_u^*` on covector fields transforms in the same way, with the covector field
-`η` read in the chart as the `(0, 1)`-form `η (φ'_q ζ) ∘ (a + b J)`
-(`TauCeti.Floer.covectorPullback`): the adjoint of the operator of the half-cylinder on this form
-is `det dφ'_q = a² + b²` times `D_u^* η` at `φ'_q(ζ)`
-(`TauCeti.SymplecticForm.floerLinearizationAdjoint_comp_positiveEndChart`).
-
 ## References
 
 * M. Schwarz, *Cohomology operations from S¹-cobordisms in Floer homology*, PhD thesis,
@@ -153,48 +147,5 @@ theorem floerLinearization_comp_positiveEndChart (ω : SymplecticForm V)
     (isComplexLinearMap_fderiv_positiveEndChart q ζ) hu hξ (hK 1) (hK Complex.I) (hX 1)
     (hX Complex.I) ((floerOperator_eq_zero_iff ω J _ _ u _).2 hfl))
   rw [floerLinearization_def, floerLinearization_def, h₀, hH']
-
-/-- **The formal adjoint of the pair of pants on its ends.** Let `u` solve the Floer equation for
-the pair-of-pants perturbation of period-one Hamiltonians `H_q` at the point `φ'_q(ζ)` of the end
-`q`, with `ζ = (s, t)` and `s ≥ 2`, where `φ'_q` is the positive end chart, and let each `H_q(t)`
-be `C²` on `V`. Read the covector field `η` in this chart as the `(0, 1)`-form
-`η (φ'_q ·) ∘ (a + b J)` (`TauCeti.Floer.covectorPullback`), where `(a, b) = dφ'_q (1, 0)`. The
-formal adjoint of the operator along `u ∘ φ'_q` of the cylindrical datum `H'_q(t) dt` of the end
-Hamiltonian, with the structures `J(φ'_q(·), ·)`, applied to this form at `ζ`, is
-`det dφ'_q = a² + b²` times the formal adjoint `D_u^* η` in the global coordinate at `φ'_q(ζ)`. -/
-theorem floerLinearizationAdjoint_comp_positiveEndChart (ω : SymplecticForm V)
-    (hH : ∀ q, Periodic (H q) 1) {q : Puncture} (hHs : ∀ t, ContDiff ℝ 2 (H q t))
-    {J : ℝ × ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V} {η : ℝ × ℝ → V →L[ℝ] ℝ}
-    {ζ : ℝ × ℝ} (hζ : 2 ≤ ζ.1) (hu : DifferentiableAt ℝ u (positiveEndChart q ζ))
-    (hη : DifferentiableAt ℝ η (positiveEndChart q ζ))
-    (hJu : DifferentiableAt ℝ (fun z ↦ (J z (u z)).toLinearMap.toContinuousLinearMap)
-      (positiveEndChart q ζ))
-    (hfl : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J (positiveEndChart q ζ) (u (positiveEndChart q ζ)))
-      (ω.perturbedFDeriv
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
-        (positiveEndChart q ζ) : ℝ × ℝ →ₗ[ℝ] V)) :
-    ω.floerLinearizationAdjoint
-        (fun ζ' y ↦ (J (positiveEndChart q ζ') y).toLinearMap.toContinuousLinearMap)
-        (fun _ _ ↦ 0) (fun ζ' ↦ positiveEndHamiltonian H q ζ'.2) (u ∘ positiveEndChart q)
-        (covectorPullback (positiveEndChart q)
-          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ =
-      (fderiv ℝ (positiveEndChart q) ζ).det • ω.floerLinearizationAdjoint
-          (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u η (positiveEndChart q ζ) := by
-  obtain ⟨hK, hX, h₀, hH'⟩ :=
-    ω.pairOfPantsPerturbation_positiveEndChart_of_two_le hH hHs hζ (u (positiveEndChart q ζ))
-  refine Eq.trans ?_ (ω.floerLinearizationAdjoint_perturbationPullback
-    ((contDiff_positiveEndChart q 2).contDiffAt)
-    (.of_forall (isComplexLinearMap_fderiv_positiveEndChart q)) hu (hK 1) (hK Complex.I) (hX 1)
-    (hX Complex.I) ((floerOperator_eq_zero_iff ω J _ _ u _).2 hfl) hη hJu)
-  -- The pullback of the perturbation at `ζ` is the cylindrical datum `H'_q(t) dt`, and the
-  -- adjoint at `ζ` sees the perturbation only at `ζ`.
-  rw [floerLinearizationAdjoint_def, floerLinearizationAdjoint_def]
-  ext v
-  simp only [add_apply, ContinuousLinearMap.comp_apply, floerLinearizationCoeff_apply, h₀, hH']
 
 end TauCeti.SymplecticForm

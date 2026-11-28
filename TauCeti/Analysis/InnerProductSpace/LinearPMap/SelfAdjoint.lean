@@ -23,7 +23,8 @@ form `⟪x, A x⟫` is real, so for a scalar `c` the shift `x ↦ c • x - A x`
 For `im c ≠ 0` the shift is therefore bounded below by `|im c|`; if `A` is closed, its range is
 closed (`LinearPMap.isClosed_range_smul_sub_of_norm_le`).  When `A` is self-adjoint, the range of a
 shift that is bounded below is also dense, because a vector orthogonal to it is an eigenvector of
-`A†` for the eigenvalue `conj c` (`LinearPMap.exists_adjoint_apply_eq_of_inner_smul_sub_eq_zero`):
+`A†` for the eigenvalue `conj c`
+(`LinearPMap.forall_inner_smul_sub_eq_zero_iff_exists_adjoint_apply_eq`):
 for real `c` the lower bound excludes such an eigenvector, and for nonreal `c` so does symmetry, a
 symmetric operator having no nonreal eigenvalue
 (`LinearPMap.IsFormalAdjoint.eq_zero_of_apply_eq_smul`).  Hence every shift of a self-adjoint
@@ -54,8 +55,9 @@ linear maps used by the semigroup development.
   `LinearPMap.IsFormalAdjoint.inner_apply_eq_mul_inner`: pairing an eigenvector `v` for `c` with
   `A x` gives `c * ⟪v, x⟫`, and `LinearPMap.IsFormalAdjoint.inner_eq_zero_of_apply_eq_smul`: its
   eigenvectors for distinct eigenvalues are orthogonal.
-* `LinearPMap.exists_adjoint_apply_eq_of_inner_smul_sub_eq_zero`: a vector orthogonal to the range
-  of the shift `c • x - A x` is an eigenvector of the adjoint `A†` for the eigenvalue `conj c`, and
+* `LinearPMap.forall_inner_smul_sub_eq_zero_iff_exists_adjoint_apply_eq`: a vector is orthogonal
+  to the range of the shift `c • x - A x` exactly when it is an eigenvector of the adjoint `A†` for
+  the eigenvalue `conj c`, and
   `LinearPMap.denseRange_smul_sub_iff`: the shift has dense range exactly when `A†` has no nonzero
   eigenvector for `conj c`.
 * `LinearPMap.orthogonal_range_eq_ker_adjoint`: for a densely defined `T`,
@@ -76,6 +78,13 @@ linear maps used by the semigroup development.
   operator), dense and the whole space (self-adjoint operator).
 * `LinearPMap.IsFormalAdjoint.smul_sub_injective` and `IsSelfAdjoint.smul_sub_bijective`: a
   nonreal shift is injective, and bijective for a self-adjoint operator.
+* `LinearPMap.deficiencySubspace S z`: the deficiency subspace `N_z(S)`, the orthogonal complement
+  of the range of the shift `conj z - S`; `LinearPMap.mem_deficiencySubspace_iff_adjoint`: for
+  densely defined `S` on a Hilbert space it is the eigenspace `ker (S† - z)`;
+  `LinearPMap.deficiencySubspace_eq_bot_iff_denseRange`: on a Hilbert space it vanishes exactly
+  when `conj z - S` has dense range, and
+  `LinearPMap.IsFormalAdjoint.deficiencySubspace_eq_bot_iff_smul_sub_surjective`: for closed
+  symmetric `S` and nonreal `z` it vanishes exactly when `conj z - S` is surjective.
 * `LinearPMap.adjoint_smul`: the adjoint of a nonzero scalar multiple is the conjugate multiple of
   the adjoint; `dense_domain_of_adjoint_eq_neg` and `isSelfAdjoint_smul_of_adjoint_eq_neg`: a
   skew-adjoint partial linear map has dense domain, and its multiple by a nonzero purely imaginary
@@ -130,20 +139,23 @@ theorem IsFormalAdjoint.im_inner_self_apply {A : E →ₗ.[𝕜] E} (hA : A.IsFo
       inner_conj_symm (A x) (x : E)
     _ = inner 𝕜 (x : E) (A x) := hA x x
 
-/-- **Deficiency vectors are adjoint eigenvectors.** A vector orthogonal to the range of the shift
-`c • x - A x` of a densely defined partial linear map lies in the domain of the adjoint `A†`, which
-acts on it as multiplication by `conj c`. -/
-theorem exists_adjoint_apply_eq_of_inner_smul_sub_eq_zero [CompleteSpace E] {A : E →ₗ.[𝕜] E}
-    (hdense : Dense (A.domain : Set E)) {c : 𝕜} {y : E}
-    (h : ∀ x : A.domain, inner 𝕜 y (c • (x : E) - A x) = 0) :
-    ∃ hy : y ∈ A†.domain, A† ⟨y, hy⟩ = (starRingEnd 𝕜) c • y := by
-  have hpair : ∀ x : A.domain, inner 𝕜 ((starRingEnd 𝕜) c • y) (x : E) = inner 𝕜 y (A x) := by
-    intro x
-    have hx := h x
-    rw [inner_sub_right, sub_eq_zero] at hx
-    rw [inner_smul_left, RCLike.conj_conj, ← hx, inner_smul_right]
-  have hy : y ∈ A†.domain := mem_adjoint_domain_of_exists y ⟨_, hpair⟩
-  exact ⟨hy, adjoint_apply_eq hdense ⟨y, hy⟩ hpair⟩
+/-- **Deficiency vectors are adjoint eigenvectors.** For a densely defined partial linear map, a
+vector is orthogonal to the range of the shift `c • x - A x` exactly when it lies in the domain of
+the adjoint `A†`, which acts on it as multiplication by `conj c`. -/
+theorem forall_inner_smul_sub_eq_zero_iff_exists_adjoint_apply_eq [CompleteSpace E]
+    {A : E →ₗ.[𝕜] E} (hdense : Dense (A.domain : Set E)) {c : 𝕜} {y : E} :
+    (∀ x : A.domain, inner 𝕜 y (c • (x : E) - A x) = 0) ↔
+      ∃ hy : y ∈ A†.domain, A† ⟨y, hy⟩ = (starRingEnd 𝕜) c • y := by
+  refine ⟨fun h ↦ ?_, fun ⟨hy, hAy⟩ x ↦ ?_⟩
+  · have hpair : ∀ x : A.domain, inner 𝕜 ((starRingEnd 𝕜) c • y) (x : E) = inner 𝕜 y (A x) := by
+      intro x
+      have hx := h x
+      rw [inner_sub_right, sub_eq_zero] at hx
+      rw [inner_smul_left, RCLike.conj_conj, ← hx, inner_smul_right]
+    have hy : y ∈ A†.domain := mem_adjoint_domain_of_exists y ⟨_, hpair⟩
+    exact ⟨hy, adjoint_apply_eq hdense ⟨y, hy⟩ hpair⟩
+  · rw [inner_sub_right, inner_smul_right, ← adjoint_isFormalAdjoint hdense ⟨y, hy⟩ x, hAy,
+      inner_smul_left, RCLike.conj_conj, sub_self]
 
 /-- **Dense range of a shift.** For a densely defined partial linear map `A`, the shift
 `x ↦ c • x - A x` has dense range exactly when the adjoint `A†` has no nonzero eigenvector for the
@@ -154,16 +166,16 @@ theorem denseRange_smul_sub_iff [CompleteSpace E] {A : E →ₗ.[𝕜] E}
       ∀ y : A†.domain, A† y = (starRingEnd 𝕜) c • (y : E) → (y : E) = 0 := by
   constructor
   · intro h y hy
-    refine h.eq_zero_of_inner_left 𝕜 fun x ↦ ?_
-    rw [inner_sub_right, inner_smul_right, ← adjoint_isFormalAdjoint hdense y x, hy]
-    simp [inner_smul_left]
+    exact h.eq_zero_of_inner_left 𝕜
+      ((forall_inner_smul_sub_eq_zero_iff_exists_adjoint_apply_eq hdense).2 ⟨y.property, hy⟩)
   · intro h
     rw [DenseRange, ← A.coe_range_smulSub c]
     refine Submodule.dense_iff_topologicalClosure_eq_top.mpr
       (Submodule.topologicalClosure_eq_top_iff.mpr ((Submodule.eq_bot_iff _).mpr fun y hy => ?_))
     have hortho : ∀ x : A.domain, inner 𝕜 y (c • (x : E) - A x) = 0 := fun x =>
       (Submodule.mem_orthogonal' _ y).mp hy _ (LinearMap.mem_range.mpr ⟨x, A.smulSub_apply c x⟩)
-    obtain ⟨hy', hAy⟩ := exists_adjoint_apply_eq_of_inner_smul_sub_eq_zero hdense hortho
+    obtain ⟨hy', hAy⟩ :=
+      (forall_inner_smul_sub_eq_zero_iff_exists_adjoint_apply_eq hdense).1 hortho
     exact h ⟨y, hy'⟩ hAy
 
 /-- The values of a formal adjoint `S` of `T` are orthogonal to the kernel of `T`. In particular
@@ -353,6 +365,71 @@ theorem IsFormalAdjoint.isClosed_range_smul_sub [CompleteSpace E] {A : E →ₗ.
     (hA : A.IsFormalAdjoint A) (hcl : A.IsClosed) {c : 𝕜} (hc : RCLike.im c ≠ 0) :
     _root_.IsClosed (Set.range (fun x : A.domain => c • (x : E) - A x)) :=
   isClosed_range_smul_sub_of_norm_le hcl (abs_pos.mpr hc) (hA.abs_im_mul_norm_le_norm_smul_sub c)
+
+section Deficiency
+
+variable {S : E →ₗ.[𝕜] E} {z : 𝕜}
+
+variable (S z) in
+/-- The **deficiency subspace** `N_z(S)` of a partial linear map `S` at a scalar `z`: the
+orthogonal complement of the range of the shift `x ↦ conj z • x - S x`. For densely defined `S`
+on a Hilbert space it is the eigenspace `ker (S† - z)` of the adjoint
+(`LinearPMap.mem_deficiencySubspace_iff_adjoint`). -/
+def deficiencySubspace : Submodule 𝕜 E :=
+  (LinearMap.range (S.smulSub (starRingEnd 𝕜 z)))ᗮ
+
+variable (S z) in
+theorem deficiencySubspace_def :
+    S.deficiencySubspace z = (LinearMap.range (S.smulSub (starRingEnd 𝕜 z)))ᗮ :=
+  (rfl)
+
+/-- A vector lies in the deficiency subspace `N_z(S)` exactly when it is orthogonal to every
+`conj z • x - S x` with `x` in the domain of `S`. -/
+theorem mem_deficiencySubspace_iff {y : E} :
+    y ∈ S.deficiencySubspace z ↔
+      ∀ x : S.domain, inner 𝕜 y (starRingEnd 𝕜 z • (x : E) - S x) = 0 := by
+  simp only [deficiencySubspace, Submodule.mem_orthogonal', LinearMap.mem_range,
+    forall_exists_index, forall_apply_eq_imp_iff, smulSub_apply]
+
+/-- On a Hilbert space every deficiency subspace is complete, being an orthogonal complement. -/
+instance [CompleteSpace E] : CompleteSpace (S.deficiencySubspace z) :=
+  inferInstanceAs (CompleteSpace (LinearMap.range (S.smulSub (starRingEnd 𝕜 z)))ᗮ)
+
+variable (S z) in
+/-- On a Hilbert space, the orthogonal complement of the deficiency subspace `N_z(S)` is the
+closure of the range of the shift `x ↦ conj z • x - S x`. -/
+@[simp]
+theorem orthogonal_deficiencySubspace [CompleteSpace E] :
+    (S.deficiencySubspace z)ᗮ =
+      (LinearMap.range (S.smulSub (starRingEnd 𝕜 z))).topologicalClosure :=
+  Submodule.orthogonal_orthogonal_eq_closure _
+
+/-- For densely defined `S` on a Hilbert space, the deficiency subspace `N_z(S)` is the eigenspace
+`ker (S† - z)` of the adjoint. -/
+theorem mem_deficiencySubspace_iff_adjoint [CompleteSpace E] (hdense : Dense (S.domain : Set E))
+    {y : E} : y ∈ S.deficiencySubspace z ↔ ∃ hy : y ∈ S†.domain, S† ⟨y, hy⟩ = z • y := by
+  rw [mem_deficiencySubspace_iff, forall_inner_smul_sub_eq_zero_iff_exists_adjoint_apply_eq hdense,
+    RCLike.conj_conj]
+
+/-- On a Hilbert space, the deficiency subspace `N_z(S)` vanishes exactly when the shift
+`x ↦ conj z • x - S x` has dense range. -/
+theorem deficiencySubspace_eq_bot_iff_denseRange [CompleteSpace E] :
+    S.deficiencySubspace z = ⊥ ↔
+      DenseRange fun x : S.domain ↦ starRingEnd 𝕜 z • (x : E) - S x := by
+  rw [deficiencySubspace, ← Submodule.topologicalClosure_eq_top_iff, DenseRange,
+    ← coe_range_smulSub, Submodule.dense_iff_topologicalClosure_eq_top]
+
+/-- For closed symmetric `S` on a Hilbert space and nonreal `z`, the deficiency subspace `N_z(S)`
+vanishes exactly when the shift `x ↦ conj z • x - S x` is surjective. -/
+theorem IsFormalAdjoint.deficiencySubspace_eq_bot_iff_smul_sub_surjective [CompleteSpace E]
+    (hS : S.IsFormalAdjoint S) (hcl : S.IsClosed) (hz : RCLike.im z ≠ 0) :
+    S.deficiencySubspace z = ⊥ ↔
+      Function.Surjective fun x : S.domain ↦ starRingEnd 𝕜 z • (x : E) - S x := by
+  rw [deficiencySubspace_eq_bot_iff_denseRange, DenseRange, dense_iff_closure_eq,
+    (hS.isClosed_range_smul_sub hcl (by rwa [RCLike.conj_im, neg_ne_zero])).closure_eq,
+    Set.range_eq_univ]
+
+end Deficiency
 
 /-- **A symmetric operator has no nonreal eigenvalue**: the quadratic form at an eigenvector for
 `c` is `c * ‖x‖²`, whose imaginary part vanishes only if `x = 0`. -/

@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.GroupAction.Burnside
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 public import Mathlib.GroupTheory.Coset.Card
 public import Mathlib.GroupTheory.DoubleCoset
+import Mathlib.Tactic.Group
 import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
@@ -32,6 +33,8 @@ numbers, which is the group-theoretic half of the statement that the permutation
 
 * `TauCeti.doubleCosetEquivOrbitQuotient`: the bijection
   `H \ G / K ≃ ((G ⧸ H) × (G ⧸ K)) / G`.
+* `TauCeti.doubleCosetQuotientEquivOrbitRelQuotient`: the class set `Γ \ G / J` as the orbit
+  space of `J` acting on `G ⧸ Γ`, by `Γ g J ↦ J • g⁻¹ Γ`.
 * `TauCeti.orbitOfCosetTranslate`: the `𝒢`-orbit a class in `ℋ ⧸ 𝒢.subgroupOf ℋ` translates a
   point into — the index map along which a coset sum is regrouped into an orbit sum.
 * `Subgroup.orbitOfRightCoset`: for a subgroup `Γ` and a point `v`, the map `Γ g ↦ Γ (g • v)`
@@ -67,6 +70,11 @@ numbers, which is the group-theoretic half of the statement that the permutation
   `K`-orbit of `sH`.
 * `TauCeti.card_doubleCosetQuotient_eq_card_orbitQuotient`: the two sides of that bijection have
   the same cardinality.
+* `TauCeti.mem_orbit_iff_inv_mem_doubleCoset`: `(yH, K)` lies in the orbit of `(H, gK)` exactly
+  when `y⁻¹ ∈ H g K`.
+* `TauCeti.doubleCoset_eq_iUnion_op_out_inv_smul`: the inverses `t.out⁻¹` of representatives of
+  the left cosets `t` with `t.out⁻¹ ∈ H g K` represent the right cosets of `H` in `H g K`, without
+  repetition by `QuotientGroup.op_out_inv_smul_injective`.
 * `TauCeti.sum_card_fixedBy_mul_card_fixedBy_eq_card_doubleCosetQuotient_mul_card_group`:
   Burnside's lemma read through that bijection,
   `∑ g, |(G ⧸ H)^g| * |(G ⧸ K)^g| = #(H \ G / K) * |G|`.
@@ -154,6 +162,22 @@ theorem doubleCosetOrbit_eq_iff {a b : G} :
     exact ⟨QuotientGroup.eq.mpr (by simpa using H.inv_mem hh),
       QuotientGroup.eq.mpr (by simpa [mul_assoc] using hk)⟩
 
+/-- `(yH, K)` lies in the orbit of `(H, gK)` exactly when `y⁻¹ ∈ H g K`. -/
+theorem mem_orbit_iff_inv_mem_doubleCoset (g y : G) :
+    ((y : G ⧸ H), ((1 : G) : G ⧸ K)) ∈ orbit G (((1 : G) : G ⧸ H), (g : G ⧸ K)) ↔
+      y⁻¹ ∈ DoubleCoset.doubleCoset g (H : Set G) K := by
+  simp only [mem_orbit_iff, Prod.smul_mk, Quotient.smul_mk, smul_eq_mul, mul_one, Prod.mk.injEq,
+    QuotientGroup.eq, DoubleCoset.mem_doubleCoset]
+  constructor
+  · rintro ⟨k, hky, hkg⟩
+    refine ⟨(k⁻¹ * y)⁻¹, inv_mem hky, (k * g)⁻¹, ?_, by group⟩
+    simpa using hkg
+  · rintro ⟨a, ha, b, hb, hy⟩
+    refine ⟨b⁻¹ * g⁻¹, ?_, ?_⟩
+    · rw [← inv_inv y, hy]
+      simpa [mul_assoc] using inv_mem ha
+    · simpa [mul_assoc] using hb
+
 variable (H K)
 
 /-- **Double cosets are orbits.** The double cosets `H \ G / K` are in bijection with the orbits
@@ -188,6 +212,88 @@ theorem card_doubleCosetQuotient_eq_card_orbitQuotient :
       Nat.card (orbitRel.Quotient G ((G ⧸ H) × (G ⧸ K))) :=
   Nat.card_congr (doubleCosetEquivOrbitQuotient H K)
 
+
+section ClassSet
+
+variable (Γ J : Subgroup G)
+
+/-- Two cosets `g⁻¹ Γ` and `h⁻¹ Γ` lie in one `J`-orbit exactly when `g` and `h` lie in one
+double coset `Γ g J`. -/
+theorem orbitRel_mk_inv_eq_iff_doubleCoset_mk_eq {g h : G} :
+    (Quotient.mk'' ((g⁻¹ : G) : G ⧸ Γ) : orbitRel.Quotient J (G ⧸ Γ)) =
+        Quotient.mk'' ((h⁻¹ : G) : G ⧸ Γ) ↔
+      DoubleCoset.mk Γ J g = DoubleCoset.mk Γ J h := by
+  rw [Quotient.eq'', orbitRel_apply, ← mem_doubleCoset_iff_mk_mem_orbit,
+    DoubleCoset.mem_doubleCoset, DoubleCoset.eq]
+  constructor
+  · rintro ⟨u, hu, γ, hγ, h'⟩
+    exact ⟨γ, hγ, u, hu, by rw [← inv_inv g, h']; group⟩
+  · rintro ⟨γ, hγ, u, hu, h'⟩
+    exact ⟨u, hu, γ, hγ, by rw [h']; group⟩
+
+/-- **The class set as an orbit space.** The double coset space `Γ \ G / J` is the orbit space of
+`J` acting on the left cosets `G ⧸ Γ`, by `Γ g J ↦ J • g⁻¹ Γ`. -/
+noncomputable def doubleCosetQuotientEquivOrbitRelQuotient :
+    DoubleCoset.Quotient (Γ : Set G) J ≃ orbitRel.Quotient J (G ⧸ Γ) :=
+  Equiv.ofBijective
+    (Quotient.lift (fun g ↦ Quotient.mk'' ((g⁻¹ : G) : G ⧸ Γ)) fun _ _ h ↦
+      (orbitRel_mk_inv_eq_iff_doubleCoset_mk_eq Γ J).mpr (Quotient.sound h))
+    ⟨fun p q ↦ by
+      induction p using Quotient.inductionOn' with | h g => ?_
+      induction q using Quotient.inductionOn' with | h h => ?_
+      exact (orbitRel_mk_inv_eq_iff_doubleCoset_mk_eq Γ J).mp,
+    fun p ↦ by
+      induction p using Quotient.inductionOn' with | h x => ?_
+      induction x using QuotientGroup.induction_on with | H g => ?_
+      exact ⟨DoubleCoset.mk Γ J g⁻¹, by simp [DoubleCoset.mk]⟩⟩
+
+@[simp]
+theorem doubleCosetQuotientEquivOrbitRelQuotient_mk (g : G) :
+    doubleCosetQuotientEquivOrbitRelQuotient Γ J (DoubleCoset.mk Γ J g) =
+      Quotient.mk'' ((g⁻¹ : G) : G ⧸ Γ) :=
+  (rfl)
+
+@[simp]
+theorem doubleCosetQuotientEquivOrbitRelQuotient_symm_mk (g : G) :
+    (doubleCosetQuotientEquivOrbitRelQuotient Γ J).symm (Quotient.mk'' (g : G ⧸ Γ)) =
+      DoubleCoset.mk Γ J g⁻¹ := by
+  rw [Equiv.symm_apply_eq, doubleCosetQuotientEquivOrbitRelQuotient_mk, inv_inv]
+
+end ClassSet
+
+section RightCosets
+
+open scoped Pointwise
+
+variable {H K}
+
+/-- If `S` is the set of left cosets `t` with `t.out⁻¹ ∈ H g K`, the inverses `t.out⁻¹` represent
+the right cosets of `H` in `H g K`. -/
+theorem doubleCoset_eq_iUnion_op_out_inv_smul (g : G) {S : Set (G ⧸ H)}
+    (hS : ∀ t : G ⧸ H, t ∈ S ↔ (t.out⁻¹ : G) ∈ DoubleCoset.doubleCoset g (H : Set G) K) :
+    DoubleCoset.doubleCoset g (H : Set G) K =
+      ⋃ t : S, MulOpposite.op (((t : G ⧸ H).out)⁻¹ : G) • (H : Set G) := by
+  ext x
+  simp only [Set.mem_iUnion, mem_rightCoset_iff, inv_inv, SetLike.mem_coe]
+  constructor
+  · intro hx
+    obtain ⟨u, hu⟩ := QuotientGroup.mk_out_eq_mul H x⁻¹
+    refine ⟨⟨((x⁻¹ : G) : G ⧸ H), (hS _).2 ?_⟩, ?_⟩
+    · obtain ⟨a, ha, b, hb, hab⟩ := DoubleCoset.mem_doubleCoset.1 hx
+      refine DoubleCoset.mem_doubleCoset.2
+        ⟨(u : G)⁻¹ * a, mul_mem (inv_mem u.property) ha, b, hb, ?_⟩
+      rw [hu, hab]
+      group
+    · simp only [hu, mul_inv_cancel_left]
+      exact u.property
+  · rintro ⟨⟨t, ht⟩, hxt⟩
+    obtain ⟨a, ha, b, hb, hab⟩ := DoubleCoset.mem_doubleCoset.1 ((hS t).1 ht)
+    refine DoubleCoset.mem_doubleCoset.2 ⟨x * t.out * a, mul_mem hxt ha, b, hb, ?_⟩
+    have hx : x = x * t.out * (t.out)⁻¹ := by group
+    rw [hab] at hx
+    simpa [mul_assoc] using hx
+
+end RightCosets
 
 section GeneralAction
 

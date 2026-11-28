@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Intertwining
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.BlockSucc
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Block.Succ
 public import TauCeti.LinearAlgebra.Pi
 public import TauCeti.RepresentationTheory.ClassicalGroups.Standard
 

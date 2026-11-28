@@ -180,10 +180,9 @@ theorem extended_dual_one_eq_dual_one [IsDomain S] :
         (FractionalIdeal.dual R K (1 : FractionalIdeal S⁰ L)) =
       FractionalIdeal.dual Rₘ K (1 : FractionalIdeal Sₘ⁰ L) := by
   intro _ _ hMS _ _ _ _
-  exact extended_dual_one_eq_dual_one_of_span (algebraMap S Sₘ) (IsLocalization.injective Sₘ hMS)
-    (RingHom.id L) (fun s ↦ IsScalarTower.algebraMap_apply S Sₘ L s)
-    (by simpa only [RingHom.id_apply, Set.image_id'] using
-      (span_traceDual_one_eq_traceDual_one (M := M)).symm)
+  exact RingHom.extended_dual_one_eq_dual_one_of_span_traceDual_one (RingHom.id L)
+    (fun s ↦ (RingHom.id_apply (algebraMap S L s)).trans (IsScalarTower.algebraMap_apply S Sₘ L s))
+    (by simpa using span_traceDual_one_eq_traceDual_one (M := M))
 
 variable [IsDedekindDomain S]
 
@@ -215,9 +214,8 @@ theorem map_differentIdeal_eq_differentIdeal :
   let _ : IsFractionRing Sₘ L :=
     IsFractionRing.isFractionRing_of_isDomain_of_isLocalization
       (Algebra.algebraMapSubmonoid S M) Sₘ L
-  exact map_differentIdeal_eq_of_extended_dual_one_eq
+  exact map_differentIdeal_eq_differentIdeal_of_extended_dual_one
     (K := K) (L := L) (K' := K) (L' := L)
-    (IsLocalization.injective Sₘ hMS)
     (extended_dual_one_eq_dual_one (R := R) (Rₘ := Rₘ) (S := S) (Sₘ := Sₘ)
       (K := K) (L := L) (M := M))
 

@@ -14,9 +14,9 @@ import TauCeti.Analysis.Normed.Operator.Banach
 # The partial operator of an operator on a common domain: normed spaces
 
 For normed spaces `D`, `H`, `K`, an injective `ι : D →L H` and `A : D →L K`, this file
-characterizes when the partial operator `ContinuousLinearMap.domainOperator ι A hι` of
-`TauCeti.Topology.Algebra.Module.LinearPMap.CommonDomain`, with domain `range ι` and acting by
-`ι x ↦ A x`, is closed, and when `K = H`, which scalars are its resolvent points.
+characterizes when the partial operator `LinearMap.domainOperator ι A hι` of the underlying linear
+maps (see `TauCeti.LinearAlgebra.LinearPMap.CommonDomain`), with domain `range ι` and
+acting by `ι x ↦ A x`, is closed, and when `K = H`, which scalars are its resolvent points.
 
 * **Closedness.** If `D` is complete, the partial operator is closed when the norm of `D` is
   bounded by the graph norm, `‖x‖ ≤ C (‖ι x‖ + ‖A x‖)`
@@ -44,19 +44,20 @@ variable {𝕜 D H K : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup D] [NormedSpace 𝕜 D] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
   [NormedAddCommGroup K] [NormedSpace 𝕜 K]
 
-/-- For complete `D` and `H`, a scalar `c` is a resolvent point of `domainOperator ι A hι` exactly
-when `c • ι - A : D → H` is invertible. -/
+/-- For complete `D` and `H`, a scalar `c` is a resolvent point of
+`LinearMap.domainOperator ι A hι` exactly when `c • ι - A : D → H` is invertible. -/
 theorem mem_resolventSet_domainOperator_iff [CompleteSpace D] [CompleteSpace H]
     {ι A : D →L[𝕜] H} {hι : Injective ι} {c : 𝕜} :
-    c ∈ (domainOperator ι A hι).resolventSet ↔ (c • ι - A).IsInvertible :=
+    c ∈ (ι.toLinearMap.domainOperator A.toLinearMap hι).resolventSet ↔
+      (c • ι - A).IsInvertible :=
   ⟨fun h ↦ isInvertible_iff_bijective.2 (bijective_smul_sub_of_mem_resolventSet h),
     mem_resolventSet_domainOperator⟩
 
 /-- If `D` is complete and its norm is bounded by the graph norm, `‖x‖ ≤ C (‖ι x‖ + ‖A x‖)`, then
-`domainOperator ι A hι` is closed. -/
+`LinearMap.domainOperator ι A hι` is closed. -/
 theorem isClosed_domainOperator_of_norm_le [CompleteSpace D] {ι : D →L[𝕜] H} {A : D →L[𝕜] K}
     {hι : Injective ι} {C : ℝ} (hC : ∀ x, ‖x‖ ≤ C * (‖ι x‖ + ‖A x‖)) :
-    (domainOperator ι A hι).IsClosed := by
+    (ι.toLinearMap.domainOperator A.toLinearMap hι).IsClosed := by
   rw [isClosed_domainOperator_iff_isClosed_range]
   have hbound : ∀ x, ‖x‖ ≤ (2 * max C 0).toNNReal * ‖ι.prod A x‖ := fun x ↦ by
     have h₁ : ‖ι x‖ ≤ ‖ι.prod A x‖ := norm_fst_le (ι.prod A x)
@@ -68,11 +69,12 @@ theorem isClosed_domainOperator_of_norm_le [CompleteSpace D] {ι : D →L[𝕜] 
       _ = 2 * max C 0 * ‖ι.prod A x‖ := by ring
   exact ((ι.prod A).antilipschitz_of_bound hbound).isClosed_range (ι.prod A).uniformContinuous
 
-/-- For complete `D`, `H` and `K`, `domainOperator ι A hι` is closed exactly when the norm of `D`
-is bounded by the graph norm, `‖x‖ ≤ C (‖ι x‖ + ‖A x‖)` for some `C`. -/
+/-- For complete `D`, `H` and `K`, `LinearMap.domainOperator ι A hι` is closed exactly when the
+norm of `D` is bounded by the graph norm, `‖x‖ ≤ C (‖ι x‖ + ‖A x‖)` for some `C`. -/
 theorem isClosed_domainOperator_iff [CompleteSpace D] [CompleteSpace H] [CompleteSpace K]
     {ι : D →L[𝕜] H} {A : D →L[𝕜] K} {hι : Injective ι} :
-    (domainOperator ι A hι).IsClosed ↔ ∃ C, ∀ x, ‖x‖ ≤ C * (‖ι x‖ + ‖A x‖) := by
+    (ι.toLinearMap.domainOperator A.toLinearMap hι).IsClosed ↔
+      ∃ C, ∀ x, ‖x‖ ≤ C * (‖ι x‖ + ‖A x‖) := by
   refine ⟨fun h ↦ ?_, fun ⟨C, hC⟩ ↦ isClosed_domainOperator_of_norm_le hC⟩
   obtain ⟨K, hK⟩ := (ι.prod A).antilipschitz_of_injective_of_isClosed_range
     (fun x x' hxx' ↦ hι (by simpa using congrArg Prod.fst hxx'))

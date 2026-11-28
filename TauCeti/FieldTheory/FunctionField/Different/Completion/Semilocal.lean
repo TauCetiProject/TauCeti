@@ -61,7 +61,7 @@ theorem differentIdeal_integralCompletionSemilocal (P : Place k F) :
       integralClosure P.integers F' →ₐ[P.integers]
         P.completionPlace.integers ⊗[P.integers] integralClosure P.integers F').toRingHom
     (integralCompletionSemilocalEquiv k' F' P).toRingEquiv.toRingHom).trans
-    (Ideal.map_eq_pi_iff.mpr fun Q ↦ ?_)
+    (Ideal.map_eq_pi_of_map_evalRingHom _ _ _ fun Q ↦ ?_)
   rw [← map_differentIdeal_eq_differentIdeal_completionIntegers P Q.val Q.property]
   congr 1; ext x; simp
 

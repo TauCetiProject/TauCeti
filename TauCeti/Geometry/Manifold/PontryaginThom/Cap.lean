@@ -74,8 +74,9 @@ and `pr₂_*((o × x) ⌢ pr₁^* u) = ⟨u, o⟩ • x` because `V` is contract
   core is closed.
 * `TauCeti.IsFramedTube.tubePairMap_comp_pontryaginThomCollapsePairMap`: the collapse reads in the
   tube as the projection to the fibre.
-* `TauCeti.IsFramedTube.singularHomologyFunctor_map_tubePairMap`: on singular homology the tube
-  induces the map of `f ∘ pr₂`.
+* `TauCeti.IsFramedTube.singularHomologyFunctor_map_tubePairMap`,
+  `TauCeti.IsFramedTube.singularCohomologyMap_tubePairMap`: on singular homology and cohomology the
+  tube induces the maps of `f ∘ pr₂`.
 * `TauCeti.IsFramedTube.singularCap_pontryaginThomCollapse`: `z ⌢ c^* u = ⟨u, o⟩ • f_* x` when
   `z` restricts along the core to the image of `o × x`.
 
@@ -258,6 +259,16 @@ theorem singularHomologyFunctor_map_tubePairMap (h : IsFramedTube f τ) {C : Typ
   -- chains by definition.
   exact (TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor
     (tubePairMapHomotopy h) A n).symm
+
+/-- **The tube is homotopic to the core composed with the projection**, so on singular cohomology
+the tube with its factors exchanged pulls classes back as `(v, x) ↦ f x` does. -/
+theorem singularCohomologyMap_tubePairMap (h : IsFramedTube f τ) {C : Type*} [Category C]
+    [HasCoproducts.{w} C] [Abelian C] (R : C) (k : Type*) [Ring k] [Linear k C] (N : C) (n : ℕ) :
+    TopCat.singularCohomologyMap (R := R) (k := k) (M := N) (TopPair.Hom.fst h.tubePairMap) n =
+      TopCat.singularCohomologyMap (TopCat.ofHom ⟨f, h.continuous⟩) n ≫
+        TopCat.singularCohomologyMap (snd (TopCat.of V) (TopCat.of S)) n := by
+  rw [← TopCat.singularCohomologyMap_comp]
+  exact ((tubePairMapHomotopy h).congr_singularCohomologyMap R k N n).symm
 
 variable [ContinuousAdd V] [CompactSpace S] [T2Space M] {k : Type w} [CommRing k]
   {R L : ModuleCat.{w} k} {p q : ℕ}

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
+public import Mathlib.RingTheory.Binomial
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
@@ -19,6 +20,7 @@ import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.RingTheory.Binomial
 
 /-!
 # Principal complex powers: scaling, sector inversion, and holomorphic products
@@ -56,11 +58,14 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 ## Main results
 
 * `TauCeti.ofReal_mul_cpow` -- a principal power splits across a nonnegative real factor.
+* `TauCeti.div_ofReal_cpow` -- a principal power splits across division by a nonnegative real.
 * `TauCeti.ofReal_prod_cpow` -- a principal power splits across a finite product of nonnegative
   reals.
 * `TauCeti.mul_cpow_of_arg_add_mem` -- a principal power splits across a product when the
   arguments add in the principal range.
 * `TauCeti.mul_cpow_of_re_pos` -- the right-half-plane specialization.
+* `TauCeti.div_cpow_of_arg_div_add_arg_mem` -- a principal power splits across a quotient
+  `x / y` when the arguments of `x / y` and `y` add in the principal range.
 * `TauCeti.ofReal_pow_cpow` -- a principal power of a natural power of a nonnegative real
   multiplies the exponents.
 * `TauCeti.ofReal_cpow_conj` -- a principal power of a nonnegative real commutes with complex
@@ -72,12 +77,14 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   exponential of `(c log n) s`.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
   base on a suitable sector.
-* `TauCeti.exists_differentiableAt_pow_eq` -- near a nonzero point, a prescribed `k`-th root
-  extends to a `k`-th root function complex differentiable at that point.
+* `TauCeti.exists_analyticAt_pow_eq` -- near a nonzero point, a prescribed `k`-th root
+  extends to a `k`-th root function analytic at that point.
 * `TauCeti.cpow_mul_inv`, `TauCeti.cpow_add_one'` -- multiplying a principal power by `w⁻¹` or `w`
   lowers or raises the exponent by one, including at the base `0`.
 * `TauCeti.hasDerivAt_sub_div_sub_cpow` -- the derivative of `w ↦ ((w - α) / (w - γ)) ^ a` where
   the quotient lies in the slit plane.
+* `TauCeti.hasDerivAt_factorial_mul_choose_mul_cpow` -- the derivatives of `x ↦ x ^ α` on
+  `x > 0`: `i! C(α, i) x ^ (α - i)` has derivative `(i + 1)! C(α, i + 1) x ^ (α - (i + 1))`.
 * `TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow`, `TauCeti.exists_norm_ofReal_add_cpow_le`,
   `TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow` -- bounds on `(t + x) ^ r` for
   real `r` along the positive real axis; only the last allows `r > 0`.
@@ -94,6 +101,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `(0, ∞)`, on `[0, ∞)`, and everywhere when `0 < s.re`.
 * `TauCeti.ofReal_cpow_mul_inv_mul_inv_cpow` -- for `a > 0` and `w` off the negative real axis,
   `a ^ s * (a⁻¹ * w⁻¹) ^ s = w ^ (-s)`.
+* `Complex.normSq_rpow` -- `normSq z ^ σ = ‖z‖ ^ (2 σ)`.
+* `Complex.mul_cpow_sub_one` -- `x * x ^ (s - 1) = x ^ s` for `x ≠ 0`.
 * `Complex.exp_log_add_mul` -- split an exponential at a principal logarithm.
 * `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half`,
   `Complex.neg_cpow_half_eq_or_eq_neg` -- algebraic identities for principal `±1/2` powers,
@@ -112,7 +121,11 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `y ≠ 0`; the derivative needs `x, y ∈ slitPlane ∪ {0}`; the limit holds for arbitrary `x` and `y`.
 * `Complex.cpow_sub_natCast_mul_sum_mul_pow` -- reversing a finite sum of powers:
   `z^{a−n} ∑_{k<n} f(n − 1 − k) z^k = z^{a−1} ∑_{k<n} f(k) / z^k` for `z ≠ 0`.
+* `Complex.norm_ofReal_cpow_le_add_of_re_mem_Icc` -- for a positive real base, the norm of a
+  complex power on a vertical strip is bounded by the sum of the norms at the real endpoints.
 * `Complex.norm_ofReal_cpow_le_exp` -- for `a > 0`, `‖a ^ w‖ ≤ exp (|log a| ‖w‖)`.
+* `AnalyticAt.const_cpow` -- `y ↦ w ^ f y` is analytic at `x` whenever `f` is analytic at `x` and
+  either `w ≠ 0` or `f x ≠ 0`.
 * `Complex.norm_ofReal_cpow_sub_ofReal_cpow_le` -- for `b ≥ 1` and exponents with `re ≤ M`,
   `‖b ^ z - b ^ w‖ ≤ log b · b ^ M · ‖z - w‖`.
 * `Complex.hasDerivAt_add_cpow_mul_exp_mul` -- the derivative of `w ↦ (w + c) ^ b e^{k w}` where
@@ -121,6 +134,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `‖(1 - z * t) ^ s‖ ≤ exp (π |s.im|) (2 ^ s.re + (1 - t) ^ s.re)`.
 * `Complex.inv_cpow_half_cpow` -- `((z ^ (1/2))⁻¹) ^ w = z ^ (-w / 2)` for all `z, w : ℂ`.
 * `Complex.norm_cpow_le_mul_exp` -- `‖w ^ d‖ ≤ ‖w‖ ^ d.re * exp (π |d.im|)`.
+* `Complex.norm_cpow_add_mul_I_le` -- for `w ≠ 0`, `|log ‖w‖| ≤ M`, `|arg w| ≤ θ`, and `|σ| ≤ R`,
+  `‖w ^ (σ + y i)‖ ≤ exp (R * M + θ * |y|)`.
 * `Complex.norm_cpow_le_of_mem_closedBall` -- for `w ≠ 0`, a bound on `‖w ^ b‖` uniform for `b`
   in a closed ball.
 * `Complex.norm_one_add_cpow_le`, `Complex.norm_one_add_ofReal_mul_exp_mul_I_cpow_le` --
@@ -158,6 +173,14 @@ theorem ofReal_mul_cpow {r : ℝ} (hr : 0 ≤ r) (z w : ℂ) :
     Complex.cpow_def_of_ne_zero hz, Complex.log_ofReal_mul hr' hz, add_mul, Complex.exp_add]
   rw [Complex.ofReal_log hr]
 
+/-- A principal complex power splits across division by a nonnegative real scalar:
+`(z / r) ^ w = z ^ w / (r : ℂ) ^ w` for all complex `z` and `w`, without a branch hypothesis on
+`z`.  This generalizes `Complex.div_cpow_ofReal_nonneg` to a complex numerator. -/
+theorem div_ofReal_cpow {r : ℝ} (hr : 0 ≤ r) (z w : ℂ) :
+    (z / r) ^ w = z ^ w / (r : ℂ) ^ w := by
+  rw [div_eq_inv_mul, ← Complex.ofReal_inv, ofReal_mul_cpow (inv_nonneg.mpr hr), Complex.ofReal_inv,
+    Complex.inv_cpow_ofReal_nonneg hr, inv_mul_eq_div]
+
 /-- A principal complex power splits across a finite product of nonnegative reals:
 `((∏ i ∈ s, f i : ℝ) : ℂ) ^ z = ∏ i ∈ s, (f i : ℂ) ^ z`. -/
 theorem ofReal_prod_cpow {ι : Type*} (s : Finset ι) {f : ι → ℝ} (hf : ∀ i ∈ s, 0 ≤ f i)
@@ -182,6 +205,19 @@ theorem mul_cpow_of_arg_add_mem {x y : ℂ}
   · simp [zero_cpow hw]
   rw [cpow_def_of_ne_zero (mul_ne_zero hx hy), cpow_def_of_ne_zero hx,
     cpow_def_of_ne_zero hy, log_mul hx hy h, add_mul, exp_add]
+
+/-- A principal power splits across a quotient `x / y` when the arguments of `x / y` and of `y`
+add up to a value in the principal range `(-π, π]`, including when `y` is zero. -/
+theorem div_cpow_of_arg_div_add_arg_mem {x y : ℂ}
+    (h : arg (x / y) + arg y ∈ Set.Ioc (-Real.pi) Real.pi) (w : ℂ) :
+    (x / y) ^ w = x ^ w * y ^ (-w) := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · rcases eq_or_ne w 0 with rfl | hw
+    · simp
+    · simp [zero_cpow hw, zero_cpow (neg_ne_zero.2 hw)]
+  have h' := mul_cpow_of_arg_add_mem h w
+  rw [div_mul_cancel₀ x hy] at h'
+  rw [cpow_neg, h', mul_inv_cancel_right₀ (cpow_ne_zero_iff.2 (Or.inl hy))]
 
 /-- A principal power splits across a product of two numbers in the open right half-plane.
 Their arguments add without crossing the branch cut. -/
@@ -253,13 +289,14 @@ theorem injOn_I_mul_cpow_inv {S : Set ℂ} {f : ℂ → ℂ} {β : ℝ} (hinj : 
   exact hinj hz hw (by rw [← hrecover z hz, ← hrecover w hw, hp])
 
 /-- **A local holomorphic branch of the `k`-th root.** Near a nonzero `z₀` with a chosen `k`-th
-root `c`, there is a `k`-th root function which is complex differentiable at `z₀` and takes the
-value `c` there, namely `z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ)`. -/
-theorem exists_differentiableAt_pow_eq {z₀ c : ℂ} {k : ℕ} (hk : k ≠ 0) (hz₀ : z₀ ≠ 0)
+root `c`, there is a `k`-th root function which is analytic at `z₀` and takes the value `c` there,
+namely `z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ)`. -/
+theorem exists_analyticAt_pow_eq {z₀ c : ℂ} {k : ℕ} (hk : k ≠ 0) (hz₀ : z₀ ≠ 0)
     (hc : c ^ k = z₀) :
-    ∃ f : ℂ → ℂ, DifferentiableAt ℂ f z₀ ∧ f z₀ = c ∧ ∀ z, f z ^ k = z := by
+    ∃ f : ℂ → ℂ, AnalyticAt ℂ f z₀ ∧ f z₀ = c ∧ ∀ z, f z ^ k = z := by
   refine ⟨fun z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ), ?_, by simp [div_self hz₀], fun z ↦ ?_⟩
-  · exact ((differentiableAt_id.div_const _).cpow_const (by simp [div_self hz₀])).const_mul c
+  · exact analyticAt_const.mul
+      ((analyticAt_id.div_const).cpow analyticAt_const (by simp [div_self hz₀]))
   · rw [mul_pow, cpow_nat_inv_pow _ hk, hc, mul_div_cancel₀ _ hz₀]
 
 /-- The reciprocal-coordinate product of principal powers is holomorphic at zero,
@@ -393,6 +430,23 @@ theorem hasDerivAt_sub_div_sub_cpow {α γ a z : ℂ} (h : (z - α) / (z - γ) �
   rw [cpow_sub _ _ hq, cpow_one]
   field_simp
   ring
+
+/-- The derivatives of `x ↦ x ^ α` on `x > 0`: `i! C(α, i) x ^ (α - i)` has derivative
+`(i + 1)! C(α, i + 1) x ^ (α - (i + 1))`, where `C(α, i) = Ring.choose α i`. -/
+theorem hasDerivAt_factorial_mul_choose_mul_cpow (α : ℂ) (i : ℕ) {x : ℝ} (hx : 0 < x) :
+    HasDerivAt (fun y : ℝ => (i.factorial : ℂ) * Ring.choose α i * (y : ℂ) ^ (α - i))
+      (((i + 1).factorial : ℂ) * Ring.choose α (i + 1) * (x : ℂ) ^ (α - (i + 1 : ℕ))) x := by
+  have h := ((hasStrictDerivAt_cpow_const (c := α - i)
+    (ofReal_mem_slitPlane.2 hx)).hasDerivAt.comp_ofReal).const_mul
+    ((i.factorial : ℂ) * Ring.choose α i)
+  convert h using 1
+  have hrec := Ring.add_one_nsmul_choose_add_one α i
+  rw [nsmul_eq_mul] at hrec
+  push_cast at hrec ⊢
+  have hexp : α - (i + 1) = α - i - 1 := by ring
+  rw [Nat.factorial_succ, Nat.cast_mul, hexp]
+  push_cast
+  linear_combination (i.factorial : ℂ) * (x : ℂ) ^ (α - i - 1) * hrec
 
 /-- For `x ∈ slitPlane ∪ {0}` and a real exponent `r ≤ 0`, the principal power `(t + x) ^ r` is
 `O(t ^ r)` for `t > 0`. -/
@@ -636,9 +690,120 @@ theorem ofReal_cpow_mul_inv_mul_inv_cpow {a : ℝ} (ha : 0 < a) {w : ℂ} (hw : 
     inv_cpow_ofReal_nonneg ha.le, inv_cpow _ _ hw, cpow_neg]
   field_simp
 
+/-- Mean-value bound on `(y + 1) ^ (-w) - y ^ (-w)` along `(0, ∞)` when `-1 ≤ w.re`. -/
+theorem norm_ofReal_add_one_cpow_neg_sub_le {w : ℂ} (hw : -1 ≤ w.re) {y : ℝ} (hy : 0 < y) :
+    ‖((y : ℂ) + 1) ^ (-w) - (y : ℂ) ^ (-w)‖ ≤ ‖w‖ * y ^ (-w.re - 1) := by
+  have hderiv : ∀ x ∈ Set.Ici y,
+      HasDerivWithinAt (fun t : ℝ ↦ (t : ℂ) ^ (-w)) (-w * (x : ℂ) ^ (-w - 1)) (Set.Ici y) x :=
+    fun x hx ↦ (((Complex.hasStrictDerivAt_cpow_const (c := -w)
+      (Complex.ofReal_mem_slitPlane.mpr (hy.trans_le hx))).hasDerivAt).comp_ofReal).hasDerivWithinAt
+  have hbound : ∀ x ∈ Set.Ici y, ‖-w * (x : ℂ) ^ (-w - 1)‖ ≤ ‖w‖ * y ^ (-w.re - 1) := by
+    intro x hx
+    have hxpos : 0 < x := hy.trans_le hx
+    rw [norm_mul, norm_neg, Complex.norm_cpow_eq_rpow_re_of_pos hxpos,
+      Complex.sub_re, Complex.neg_re, Complex.one_re]
+    exact mul_le_mul_of_nonneg_left
+      (Real.rpow_le_rpow_of_nonpos hy hx (by linarith)) (norm_nonneg w)
+  have hmvt := (convex_Ici y).norm_image_sub_le_of_norm_hasDerivWithin_le hderiv hbound
+    (le_rfl : y ∈ Set.Ici y) (show y + 1 ∈ Set.Ici y by simp)
+  simpa [Complex.ofReal_add, Complex.ofReal_one] using hmvt
+
+/-- For any `k : ℕ` and `0 ≤ z.re`, the principal power `(k : ℂ) ^ (-z)` has norm at most `1`. -/
+theorem norm_natCast_cpow_neg_le_one {z : ℂ} (hz : 0 ≤ z.re) (k : ℕ) :
+    ‖(k : ℂ) ^ (-z)‖ ≤ 1 := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · rcases eq_or_ne z 0 with rfl | hz0
+    · simp
+    · simp [Complex.zero_cpow (neg_ne_zero.mpr hz0)]
+  · rw [← Complex.ofReal_natCast,
+      Complex.norm_cpow_eq_rpow_re_of_pos (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hk)),
+      Complex.neg_re]
+    exact Real.rpow_le_one_of_one_le_of_nonpos
+      (by exact_mod_cast Nat.pos_of_ne_zero hk) (by linarith)
+
+/-- For `1 ≤ k` and `0 ≤ z.re`, `‖(k + 1) ^ (-z) - k ^ (-z)‖ ≤ ‖z‖`. -/
+theorem norm_natCast_add_one_cpow_neg_sub_le_norm {z : ℂ} (hz : 0 ≤ z.re) {k : ℕ}
+    (hk : 1 ≤ k) : ‖((k + 1 : ℕ) : ℂ) ^ (-z) - (k : ℂ) ^ (-z)‖ ≤ ‖z‖ := by
+  have hk1 : (1 : ℝ) ≤ k := by exact_mod_cast hk
+  have hkpos : (0 : ℝ) < k := zero_lt_one.trans_le hk1
+  have h := norm_ofReal_add_one_cpow_neg_sub_le (w := z) (by linarith) hkpos
+  have hrpow : (k : ℝ) ^ (-z.re - 1) ≤ 1 :=
+    Real.rpow_le_one_of_one_le_of_nonpos hk1 (by linarith)
+  calc ‖((k + 1 : ℕ) : ℂ) ^ (-z) - (k : ℂ) ^ (-z)‖
+      = ‖(((k : ℝ) : ℂ) + 1) ^ (-z) - ((k : ℝ) : ℂ) ^ (-z)‖ := by push_cast; rfl
+    _ ≤ ‖z‖ * (k : ℝ) ^ (-z.re - 1) := h
+    _ ≤ ‖z‖ * 1 := mul_le_mul_of_nonneg_left hrpow (norm_nonneg z)
+    _ = ‖z‖ := mul_one _
+
+/-- Mean-value bound on the second forward difference
+`((k + 2) ^ (-z) - (k + 1) ^ (-z)) - ((k + 1) ^ (-z) - k ^ (-z))` for `1 ≤ k` and `0 ≤ z.re`. -/
+theorem norm_natCast_add_two_cpow_neg_sub_sub_le {z : ℂ} (hz : 0 ≤ z.re) {k : ℕ}
+    (hk : 1 ≤ k) :
+    ‖(((k + 2 : ℕ) : ℂ) ^ (-z) - ((k + 1 : ℕ) : ℂ) ^ (-z)) -
+        (((k + 1 : ℕ) : ℂ) ^ (-z) - (k : ℂ) ^ (-z))‖ ≤
+      ‖z‖ * ‖z + 1‖ / (k : ℝ) ^ 2 := by
+  have hk1 : (1 : ℝ) ≤ k := by exact_mod_cast hk
+  have hkpos : (0 : ℝ) < k := zero_lt_one.trans_le hk1
+  let g : ℝ → ℂ := fun y ↦ ((y : ℂ) + 1) ^ (-z) - (y : ℂ) ^ (-z)
+  have hderiv : ∀ x ∈ Set.Ici (k : ℝ),
+      HasDerivWithinAt g
+        (-z * (((x : ℂ) + 1) ^ (-(z + 1)) - (x : ℂ) ^ (-(z + 1)))) (Set.Ici (k : ℝ)) x := by
+    intro x (hx : (k : ℝ) ≤ x)
+    have hxpos : 0 < x := hkpos.trans_le hx
+    have hslit1 : ((x : ℂ) + 1) ∈ Complex.slitPlane := by
+      rw [← Complex.ofReal_one, ← Complex.ofReal_add]
+      exact Complex.ofReal_mem_slitPlane.mpr (by linarith)
+    have h1 : HasDerivAt (fun w : ℂ ↦ (w + 1) ^ (-z))
+        (-z * ((x : ℂ) + 1) ^ (-(z + 1))) (x : ℂ) :=
+      (((hasDerivAt_id' (x : ℂ)).add_const (1 : ℂ)).cpow_const (c := -z) hslit1).congr_deriv
+        (by ring_nf)
+    have h2 : HasDerivAt (fun w : ℂ ↦ w ^ (-z))
+        (-z * (x : ℂ) ^ (-(z + 1))) (x : ℂ) :=
+      ((hasDerivAt_id' (x : ℂ)).cpow_const (c := -z)
+        (Complex.ofReal_mem_slitPlane.mpr hxpos)).congr_deriv (by ring_nf)
+    exact (((h1.comp_ofReal).sub (h2.comp_ofReal)).congr_deriv (by ring)).hasDerivWithinAt
+  have hbound : ∀ x ∈ Set.Ici (k : ℝ),
+      ‖-z * (((x : ℂ) + 1) ^ (-(z + 1)) - (x : ℂ) ^ (-(z + 1)))‖ ≤
+        ‖z‖ * ‖z + 1‖ / (k : ℝ) ^ 2 := by
+    intro x (hx : (k : ℝ) ≤ x)
+    have hxpos : 0 < x := hkpos.trans_le hx
+    have hdiff := norm_ofReal_add_one_cpow_neg_sub_le (w := z + 1)
+      (by simp [Complex.add_re]; linarith) hxpos
+    have hexp : x ^ (-(z + 1).re - 1) ≤ (k : ℝ) ^ (-2 : ℝ) := by
+      calc x ^ (-(z + 1).re - 1)
+          ≤ x ^ (-2 : ℝ) := Real.rpow_le_rpow_of_exponent_le (hk1.trans hx)
+              (by simp [Complex.add_re]; linarith)
+        _ ≤ (k : ℝ) ^ (-2 : ℝ) := Real.rpow_le_rpow_of_nonpos hkpos hx (by norm_num)
+    have hsq : (k : ℝ) ^ (-2 : ℝ) = ((k : ℝ) ^ 2)⁻¹ := by
+      rw [show (-2 : ℝ) = -((2 : ℕ) : ℝ) by norm_num, Real.rpow_neg hkpos.le, Real.rpow_natCast]
+    rw [norm_mul, norm_neg, div_eq_mul_inv, mul_assoc]
+    exact mul_le_mul_of_nonneg_left
+      (hdiff.trans (by rw [← hsq]; exact mul_le_mul_of_nonneg_left hexp (norm_nonneg _)))
+      (norm_nonneg z)
+  have hmvt := (convex_Ici (k : ℝ)).norm_image_sub_le_of_norm_hasDerivWithin_le hderiv hbound
+    (le_rfl : (k : ℝ) ∈ Set.Ici (k : ℝ)) (show (k : ℝ) + 1 ∈ Set.Ici (k : ℝ) by simp)
+  have heq : g ((k : ℝ) + 1) - g (k : ℝ) =
+      (((k + 2 : ℕ) : ℂ) ^ (-z) - ((k + 1 : ℕ) : ℂ) ^ (-z)) -
+        (((k + 1 : ℕ) : ℂ) ^ (-z) - (k : ℂ) ^ (-z)) := by
+    simp only [g]
+    push_cast
+    ring_nf
+  rw [← heq]
+  simpa using hmvt
+
 end TauCeti
 
 namespace Complex
+
+/-- A real power of `normSq z = ‖z‖ ^ 2` is a real power of the norm:
+`normSq z ^ σ = ‖z‖ ^ (2 σ)`. -/
+theorem normSq_rpow (z : ℂ) (σ : ℝ) : normSq z ^ σ = ‖z‖ ^ (2 * σ) := by
+  rw [normSq_eq_norm_sq, Real.rpow_mul (norm_nonneg z), Real.rpow_two]
+
+/-- Multiplying a principal power of a nonzero base by the base raises the exponent by one:
+`x * x ^ (s - 1) = x ^ s`. -/
+theorem mul_cpow_sub_one {x : ℂ} (hx : x ≠ 0) (s : ℂ) : x * x ^ (s - 1) = x ^ s := by
+  rw [cpow_sub _ _ hx, cpow_one, mul_div_cancel₀ _ hx]
 
 /-- An exponential based at a principal logarithm splits into a principal power and the
 exponential of the remaining summand. -/
@@ -806,6 +971,14 @@ theorem hasDerivAt_add_cpow_mul_exp_mul (b c k : ℂ) {z : ℂ} (hz : z + c ∈ 
   rw [id, cpow_sub _ _ (slitPlane_ne_zero hz), cpow_one]
   field_simp
 
+/-- For a positive real base `u` and `a ≤ s.re ≤ b`, the norm of `u ^ s` is bounded by the
+sum of the norms of its powers at the real endpoints `a` and `b`. -/
+theorem norm_ofReal_cpow_le_add_of_re_mem_Icc {u a b : ℝ} (hu : 0 < u) {s : ℂ}
+    (hs : s.re ∈ Set.Icc a b) :
+    ‖(u : ℂ) ^ s‖ ≤ ‖(u : ℂ) ^ (a : ℂ)‖ + ‖(u : ℂ) ^ (b : ℂ)‖ := by
+  simp only [norm_cpow_eq_rpow_re_of_pos hu, ofReal_re]
+  exact Real.rpow_le_rpow_add_rpow_of_mem_Icc hu hs
+
 /-- A real power of a positive real number grows at most exponentially in the exponent. -/
 theorem norm_ofReal_cpow_le_exp {a : ℝ} (ha : 0 < a) (w : ℂ) :
     ‖(a : ℂ) ^ w‖ ≤ Real.exp (|Real.log a| * ‖w‖) := by
@@ -813,6 +986,16 @@ theorem norm_ofReal_cpow_le_exp {a : ℝ} (ha : 0 < a) (w : ℂ) :
   exact Real.exp_le_exp.mpr <| (le_abs_self _).trans <| by
     rw [abs_mul]
     exact mul_le_mul_of_nonneg_left (abs_re_le_norm w) (abs_nonneg _)
+
+/-- For a fixed complex base `w`, the exponential `y ↦ w ^ f y` is analytic at `x` whenever `f` is
+analytic at `x` and either `w ≠ 0` or `f x ≠ 0`. -/
+theorem _root_.AnalyticAt.const_cpow {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {f : E → ℂ} {x : E} {w : ℂ} (hf : AnalyticAt ℂ f x) (h : w ≠ 0 ∨ f x ≠ 0) :
+    AnalyticAt ℂ (fun y => w ^ f y) x := by
+  rcases h with hw | hfx
+  · exact ((differentiable_id.const_cpow (Or.inl hw)).analyticAt (f x)).comp hf
+  · exact ((differentiableOn_id.const_cpow (Or.inr fun _ ht => ht)).analyticAt
+      (isOpen_ne.mem_nhds hfx)).comp hf
 
 /-- For a real base `b ≥ 1`, the principal power `b ^ z` is Lipschitz in the exponent on each
 half-plane `re z ≤ M`, with constant `log b · b ^ M`:
@@ -876,6 +1059,23 @@ theorem norm_cpow_le_mul_exp (w d : ℂ) :
     _ ≤ ‖w‖ ^ d.re * Real.exp (Real.pi * |d.im|) :=
         mul_le_mul_of_nonneg_left (inv_exp_arg_mul_le_exp_pi_mul_abs w d.im)
           (Real.rpow_nonneg (norm_nonneg w) _)
+
+/-- Sector-sensitive vertical-line bound for a principal complex power: for `w ≠ 0`,
+`|Real.log ‖w‖| ≤ M`, `|w.arg| ≤ θ`, and `|σ| ≤ R`,
+`‖w ^ ((σ : ℂ) + y * I)‖ ≤ Real.exp (R * M + θ * |y|)`. -/
+theorem norm_cpow_add_mul_I_le {w : ℂ} (hw : w ≠ 0) {R M θ : ℝ}
+    (hM : |Real.log ‖w‖| ≤ M) (hθ : |w.arg| ≤ θ) {σ y : ℝ} (hσ : |σ| ≤ R) :
+    ‖w ^ ((σ : ℂ) + y * I)‖ ≤ Real.exp (R * M + θ * |y|) := by
+  have hre : ((σ : ℂ) + y * I).re = σ := by simp
+  have him : ((σ : ℂ) + y * I).im = y := by simp
+  rw [norm_cpow_of_ne_zero hw, hre, him, Real.rpow_def_of_pos (norm_pos_iff.2 hw), ← Real.exp_sub]
+  refine Real.exp_le_exp.2 ?_
+  have h1 : Real.log ‖w‖ * σ ≤ R * M :=
+    (le_abs_self _).trans ((abs_mul _ _).trans_le
+      ((mul_le_mul hM hσ (abs_nonneg _) ((abs_nonneg _).trans hM)).trans_eq (mul_comm M R)))
+  have h2 : -(w.arg * y) ≤ θ * |y| :=
+    (neg_le_abs _).trans ((abs_mul _ _).trans_le (mul_le_mul_of_nonneg_right hθ (abs_nonneg y)))
+  linarith
 
 /-- Uniform norm bound for `(-log w) ^ k * exp (-s * log w)` on an annulus `δ ≤ ‖w‖ ≤ B`
 (`0 < δ`) with `‖s‖ ≤ S`. -/

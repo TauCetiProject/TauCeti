@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Euclidean
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.VectorBundle
+public import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
 # The intrinsic Euclidean normal vector bundle
@@ -20,7 +21,7 @@ These coordinates let tubular parametrizations use intrinsic normal classes rath
 chosen orthogonal vectors. Install `SmoothEmbedding.orthogonalNormalSpaceFiberBundle` and
 `SmoothEmbedding.orthogonalNormalSpaceVectorBundle` locally to use this atlas.
 
-The construction reuses `Bundle.Trivialization.compHomeomorph`, the quotient-to-orthogonal
+The construction reuses `Bundle.Trivialization.compHomeomorphOfEq`, the quotient-to-orthogonal
 homeomorphism, and the fixed-model orthogonal normal trivializations.
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition, the
@@ -47,32 +48,24 @@ variable {E V F H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 using the fixed-model orthogonal normal coordinates. The quotient topology is preserved. -/
 def orthogonalNormalSpaceTrivialization (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E) (x₀ : M) :
-    Trivialization F (π F (fun x => f.NormalSpace x hn)) := by
+    Trivialization F (π F (fun x => f.isImmersion.NormalSpace x hn)) := by
   let e := normalBundleTrivialization
     (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
     (f.isImmersion.mfderiv_injective hn) hdim x₀
   let h := f.normalBundleHomeomorphOrthogonal (F := F) hn
-  -- `compHomeomorph` initially uses `proj ∘ h`; the representative map preserves the base.
-  exact { e.compHomeomorph h with
-    source_eq := by
-      ext p
-      simp only [Trivialization.compHomeomorph, Homeomorph.transOpenPartialHomeomorph_source,
-        mem_preimage, e.mem_source, h, normalBundleHomeomorphOrthogonal_apply]
-    proj_toFun := by
-      intro p hp
-      simpa only [Function.comp_apply, h, normalBundleHomeomorphOrthogonal_apply] using
-        (e.compHomeomorph h).proj_toFun p hp }
+  exact e.compHomeomorphOfEq h fun p => by simp [h, normalBundleHomeomorphOrthogonal_apply]
 
 /-- Taking intrinsic coordinates is taking orthogonal coordinates of the representative. -/
 @[simp] theorem orthogonalNormalSpaceTrivialization_apply
     (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E) (x₀ : M)
-    (p : TotalSpace F (fun x => f.NormalSpace x hn)) :
+    (p : TotalSpace F (fun x => f.isImmersion.NormalSpace x hn)) :
     f.orthogonalNormalSpaceTrivialization hn hdim x₀ p =
       normalBundleTrivialization
         (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
         (f.isImmersion.mfderiv_injective hn) hdim x₀
-        (f.normalBundleHomeomorphOrthogonal hn p) := (rfl)
+        (f.normalBundleHomeomorphOrthogonal hn p) :=
+  Trivialization.compHomeomorphOfEq_apply _ _ _ p
 
 /-- Intrinsic and orthogonal normal coordinates have the same base set. -/
 @[simp] theorem orthogonalNormalSpaceTrivialization_baseSet
@@ -81,7 +74,8 @@ def orthogonalNormalSpaceTrivialization (f : SmoothEmbedding I 𝓘(ℝ, V) n M 
     (f.orthogonalNormalSpaceTrivialization hn hdim x₀).baseSet =
       (normalBundleTrivialization
         (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
-        (f.isImmersion.mfderiv_injective hn) hdim x₀).baseSet := (rfl)
+        (f.isImmersion.mfderiv_injective hn) hdim x₀).baseSet :=
+  Trivialization.compHomeomorphOfEq_baseSet _ _ _
 
 /-- Inverse intrinsic coordinates take the normal class of inverse orthogonal coordinates. -/
 @[simp] theorem orthogonalNormalSpaceTrivialization_symm_apply
@@ -92,7 +86,8 @@ def orthogonalNormalSpaceTrivialization (f : SmoothEmbedding I 𝓘(ℝ, V) n M 
       (f.normalBundleHomeomorphOrthogonal hn).symm
         ((normalBundleTrivialization
           (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
-          (f.isImmersion.mfderiv_injective hn) hdim x₀).toOpenPartialHomeomorph.symm p) := (rfl)
+          (f.isImmersion.mfderiv_injective hn) hdim x₀).toOpenPartialHomeomorph.symm p) :=
+  Trivialization.compHomeomorphOfEq_toOpenPartialHomeomorph_symm_apply _ _ _ p
 
 /-- Intrinsic normal coordinates are fibrewise linear. -/
 instance instIsLinearOrthogonalNormalSpaceTrivialization
@@ -129,7 +124,7 @@ theorem orthogonalNormalSpaceTrivialization_coordChangeL
 @[instance_reducible]
 def orthogonalNormalSpaceFiberBundle (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E) :
-    FiberBundle F (fun x => f.NormalSpace x hn) where
+    FiberBundle F (fun x => f.isImmersion.NormalSpace x hn) where
   totalSpaceMk_isInducing' x := (f.isEmbedding_normalBundle_mk hn x).isInducing
   trivializationAtlas' := range (f.orthogonalNormalSpaceTrivialization hn hdim)
   trivializationAt' := f.orthogonalNormalSpaceTrivialization hn hdim
@@ -141,16 +136,16 @@ def orthogonalNormalSpaceFiberBundle (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) 
     (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E) (x : M) :
     letI := f.orthogonalNormalSpaceFiberBundle hn hdim
-    trivializationAt F (fun x => f.NormalSpace x hn) x =
+    trivializationAt F (fun x => f.isImmersion.NormalSpace x hn) x =
       f.orthogonalNormalSpaceTrivialization hn hdim x := (rfl)
 
 /-- The intrinsic atlas consists exactly of the transported orthogonal normal charts. -/
 @[simp] theorem mem_orthogonalNormalSpaceFiberBundle_trivializationAtlas_iff
     (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E)
-    (e : Trivialization F (π F (fun x => f.NormalSpace x hn))) :
+    (e : Trivialization F (π F (fun x => f.isImmersion.NormalSpace x hn))) :
     letI := f.orthogonalNormalSpaceFiberBundle hn hdim
-    e ∈ trivializationAtlas F (fun x => f.NormalSpace x hn) ↔
+    e ∈ trivializationAtlas F (fun x => f.isImmersion.NormalSpace x hn) ↔
       ∃ x, f.orthogonalNormalSpaceTrivialization hn hdim x = e := Iff.rfl
 
 /-- Intrinsic normal coordinates define a vector bundle: their transition operators are
@@ -158,7 +153,7 @@ those of the orthogonal normal vector bundle. -/
 theorem orthogonalNormalSpaceVectorBundle (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
     (hdim : Module.finrank ℝ F = Module.finrank ℝ V - Module.finrank ℝ E) :
     letI := f.orthogonalNormalSpaceFiberBundle hn hdim
-    VectorBundle ℝ F (fun x => f.NormalSpace x hn) := by
+    VectorBundle ℝ F (fun x => f.isImmersion.NormalSpace x hn) := by
   let := f.orthogonalNormalSpaceFiberBundle hn hdim
   refine { trivialization_linear' := ?_, continuousOn_coordChange' := ?_ }
   · rintro e ⟨x, rfl⟩
@@ -166,6 +161,7 @@ theorem orthogonalNormalSpaceVectorBundle (f : SmoothEmbedding I 𝓘(ℝ, V) n 
   · rintro e e' ⟨x, rfl⟩ ⟨x', rfl⟩
     have : IsManifold I ((0 : ℕ∞ω) + 1) M := by
       simpa using (inferInstance : IsManifold I 1 M)
+    simp only [orthogonalNormalSpaceTrivialization_baseSet]
     refine (contMDiffOn_normalBundleTrivialization_coordChangeL (n := 0)
       (f.contMDiff.of_le (ENat.one_le_iff_ne_zero_withTop.mpr hn))
       (f.isImmersion.mfderiv_injective hn) hdim x x').continuousOn.congr ?_
@@ -182,12 +178,13 @@ theorem orthogonalNormalSpaceContMDiffVectorBundle {m : ℕ∞ω}
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := f.orthogonalNormalSpaceFiberBundle hn hdim
     letI := f.orthogonalNormalSpaceVectorBundle hn hdim
-    ContMDiffVectorBundle m F (fun x => f.NormalSpace x hn) I := by
+    ContMDiffVectorBundle m F (fun x => f.isImmersion.NormalSpace x hn) I := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   let := f.orthogonalNormalSpaceFiberBundle hn hdim
   let := f.orthogonalNormalSpaceVectorBundle hn hdim
   constructor
   rintro e e' ⟨x, rfl⟩ ⟨x', rfl⟩
+  simp only [orthogonalNormalSpaceTrivialization_baseSet]
   refine (contMDiffOn_normalBundleTrivialization_coordChangeL
     (f.contMDiff.of_le hm) (f.isImmersion.mfderiv_injective hn) hdim x x').congr ?_
   intro y hy

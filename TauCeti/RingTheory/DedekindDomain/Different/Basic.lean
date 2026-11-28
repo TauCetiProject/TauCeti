@@ -23,8 +23,11 @@ The multiplicity lemmas express divisibility by powers of an ideal and Dedekind'
 For finite separable fraction-field extensions, the different is nonzero. When it is principal,
 membership in the trace dual is tested by multiplication by a generator, and division by that
 generator identifies `S` with its trace dual. This equivalence feeds the length computation of
-the complementary-module quotient. Finally, `FractionalIdeal.dualEquiv` packages
-`FractionalIdeal.dual` as an involutive permutation of the invertible fractional ideals, and
+the complementary-module quotient. Whenever compatible ring homomorphisms `S →+* S'` and
+`L →+* L'` transport the submodule trace dual of `S / R` to a generating set of that of `S' / R'`,
+extending the fractional-ideal trace dual and the different ideal along `S →+* S'` yields those of
+`S' / R'`. Finally, `FractionalIdeal.dualEquiv` packages `FractionalIdeal.dual` as an involutive
+permutation of the invertible fractional ideals, and
 `FractionalIdeal.trace_mem_range_of_mem_dual_one` records that an element of the trace dual of one
 has its trace in the base ring.
 -/
@@ -252,6 +255,58 @@ theorem galRestrict_apply_mem_differentIdeal_iff [IsDedekindDomain S] [IsTorsion
   rw [algebraMap_galRestrict_apply, hb, map_mul, AlgEquiv.apply_symm_apply,
     algebraMap_galRestrict_apply]
 
+section Extension
+
+variable {R' S' K' L' : Type*}
+variable [CommRing R'] [CommRing S'] [Field K'] [Field L']
+variable [Algebra R' S'] [Algebra R' K'] [Algebra K' L'] [Algebra R' L'] [Algebra S' L']
+variable [IsScalarTower R' K' L'] [IsScalarTower R' S' L']
+variable [IsDomain R'] [IsFractionRing R' K'] [IsFractionRing S' L']
+variable [IsIntegrallyClosed R'] [IsIntegralClosure S' R' L']
+variable [FiniteDimensional K' L'] [Algebra.IsSeparable K' L']
+
+/-- **Fractional-ideal trace duals commute with base change** whenever the submodule trace duals
+do: if compatible ring homomorphisms `f : S →+* S'` and `g : L →+* L'` carry the trace dual of
+`S` over `R` to a generating set of the trace dual of `S'` over `R'`, then extending
+`FractionalIdeal.dual R K 1` along `f` yields `FractionalIdeal.dual R' K' 1`. -/
+theorem _root_.RingHom.extended_dual_one_eq_dual_one_of_span_traceDual_one
+    [IsDomain S] [IsDomain S']
+    {f : S →+* S'} {hf : S⁰ ≤ Submonoid.comap f S'⁰} (g : L →+* L')
+    (hfg : ∀ s : S, g (algebraMap S L s) = algebraMap S' L' (f s))
+    (hspan : Submodule.span S' (g '' (Submodule.traceDual R K (1 : Submodule S L) : Set L)) =
+      Submodule.traceDual R' K' (1 : Submodule S' L')) :
+    (FractionalIdeal.dual R K (1 : FractionalIdeal S⁰ L)).extended L' hf =
+      FractionalIdeal.dual R' K' (1 : FractionalIdeal S'⁰ L') := by
+  have hmap : IsLocalization.map (S := L) L' f hf = g := by
+    refine IsFractionRing.ringHom_ext (A := S) fun s ↦ ?_
+    rw [IsLocalization.map_eq, hfg]
+  have hdual : ((FractionalIdeal.dual R K (1 : FractionalIdeal S⁰ L)) : Set L) =
+      Submodule.traceDual R K (1 : Submodule S L) := by
+    ext x
+    rw [SetLike.mem_coe, SetLike.mem_coe, ← FractionalIdeal.mem_coeToSubmodule,
+      FractionalIdeal.coe_dual_one_of_isDomain]
+  rw [← FractionalIdeal.coeToSubmodule_inj, FractionalIdeal.coeToSubmodule_extended_eq_span,
+    hmap, hdual, FractionalIdeal.coe_dual_one_of_isDomain]
+  exact hspan
+
+/-- **Different ideals commute with base change** whenever the fractional-ideal trace duals do:
+if extending `FractionalIdeal.dual R K 1` along `f : S →+* S'` yields
+`FractionalIdeal.dual R' K' 1`, then `(differentIdeal R S).map f = differentIdeal R' S'`. -/
+theorem map_differentIdeal_eq_differentIdeal_of_extended_dual_one
+    [IsDedekindDomain S] [IsDedekindDomain S'] [IsTorsionFree R S] [IsTorsionFree R' S']
+    {f : S →+* S'} {hf : S⁰ ≤ Submonoid.comap f S'⁰}
+    (hext : (FractionalIdeal.dual R K (1 : FractionalIdeal S⁰ L)).extended L' hf =
+      FractionalIdeal.dual R' K' (1 : FractionalIdeal S'⁰ L')) :
+    (differentIdeal R S).map f = differentIdeal R' S' := by
+  rw [← FractionalIdeal.coeIdeal_inj (K := L'),
+    ← FractionalIdeal.extended_coeIdeal_eq_map (K := L) L' hf,
+    ← FractionalIdeal.extendedHom'_apply,
+    coeIdeal_differentIdeal R K L S,
+    coeIdeal_differentIdeal R' K' L' S',
+    map_inv₀, FractionalIdeal.extendedHom'_apply, hext]
+
+end Extension
+
 section TraceCriterion
 
 attribute [local instance] FractionRing.liftAlgebra FractionRing.isScalarTower_liftAlgebra
@@ -318,68 +373,6 @@ theorem differentIdeal_self : differentIdeal D D = ⊤ := by
   rwa [← map_one (algebraMap D D),
     minpoly.eq_X_sub_C_of_algebraMap_inj _ (FaithfulSMul.algebraMap_injective D D),
     Polynomial.derivative_X_sub_C, map_one, ← Ideal.eq_top_iff_one] at h
-
-section Extension
-
-variable {R S K L R' S' K' L' : Type*}
-  [CommRing R] [CommRing S] [Field K] [Field L]
-  [Algebra R S] [Algebra R K] [Algebra K L] [Algebra R L] [Algebra S L]
-  [IsScalarTower R K L] [IsScalarTower R S L]
-  [IsDomain R] [IsFractionRing R K] [IsFractionRing S L]
-  [IsIntegrallyClosed R] [IsIntegralClosure S R L]
-  [FiniteDimensional K L] [Algebra.IsSeparable K L]
-  [CommRing R'] [CommRing S'] [Field K'] [Field L']
-  [Algebra R' S'] [Algebra R' K'] [Algebra K' L'] [Algebra R' L'] [Algebra S' L']
-  [IsScalarTower R' K' L'] [IsScalarTower R' S' L']
-  [IsDomain R'] [IsFractionRing R' K'] [IsFractionRing S' L']
-  [IsIntegrallyClosed R'] [IsIntegralClosure S' R' L']
-  [FiniteDimensional K' L'] [Algebra.IsSeparable K' L']
-
-/-- **Extending the fractional-ideal trace dual of one from a fraction-field span**: if an injective
-ring map `f : S →+* S'` induces a fraction-field map `g : L →+* L'` sending the complementary module
-of `S / R` to a spanning set of the complementary module of `S' / R'`, then `dual R K 1` extends
-to `dual R' K' 1`. -/
-theorem extended_dual_one_eq_dual_one_of_span
-    [IsDomain S] [IsDomain S']
-    (f : S →+* S') (hf : Function.Injective f) (g : L →+* L')
-    (hgf : ∀ s : S, g (algebraMap S L s) = algebraMap S' L' (f s))
-    (hspan : Submodule.traceDual R' K' (1 : Submodule S' L') =
-      Submodule.span S' (g '' Submodule.traceDual R K (1 : Submodule S L))) :
-    (FractionalIdeal.dual R K (1 : FractionalIdeal S⁰ L)).extended L'
-        (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective f hf) =
-      FractionalIdeal.dual R' K' (1 : FractionalIdeal S'⁰ L') := by
-  have hmap : IsLocalization.map (S := L) L' f
-      (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective f hf) = g :=
-    IsFractionRing.ringHom_ext (A := S) fun x ↦ by
-      rw [IsLocalization.map_eq, hgf]
-  have hdual : ((FractionalIdeal.dual R K (1 : FractionalIdeal S⁰ L)) : Set L) =
-      Submodule.traceDual R K (1 : Submodule S L) := Set.ext fun x ↦ by
-    rw [SetLike.mem_coe, SetLike.mem_coe, ← FractionalIdeal.mem_coeToSubmodule,
-      FractionalIdeal.coe_dual_one_of_isDomain]
-  rw [← FractionalIdeal.coeToSubmodule_inj, FractionalIdeal.coeToSubmodule_extended_eq_span,
-    hmap, hdual, FractionalIdeal.coe_dual_one_of_isDomain]
-  exact hspan.symm
-
-/-- **Extending the different ideal from the extended trace dual**: whenever `dual R K 1` extends
-along an injective ring map `f : S →+* S'` to `dual R' K' 1`, the different ideal
-`differentIdeal R S` pushes forward to `differentIdeal R' S'`. -/
-theorem map_differentIdeal_eq_of_extended_dual_one_eq
-    [IsDedekindDomain S] [Module.IsTorsionFree R S]
-    [IsDedekindDomain S'] [Module.IsTorsionFree R' S']
-    {f : S →+* S'} (hf : Function.Injective f)
-    (hext : (FractionalIdeal.dual R K (1 : FractionalIdeal S⁰ L)).extended L'
-        (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective f hf) =
-      FractionalIdeal.dual R' K' (1 : FractionalIdeal S'⁰ L')) :
-    (differentIdeal R S).map f = differentIdeal R' S' := by
-  rw [← FractionalIdeal.coeIdeal_inj (K := L'),
-    ← FractionalIdeal.extended_coeIdeal_eq_map (K := L) L'
-      (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective f hf),
-    ← FractionalIdeal.extendedHom'_apply,
-    coeIdeal_differentIdeal R K L S,
-    coeIdeal_differentIdeal R' K' L' S',
-    map_inv₀, FractionalIdeal.extendedHom'_apply, hext]
-
-end Extension
 
 end TauCeti
 

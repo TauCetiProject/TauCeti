@@ -17,7 +17,8 @@ embedding. Its valuation ring is a complete discrete valuation ring, and a unifo
 original field is still a uniformizer after completion. Completeness can be read through the
 order filtration: a sequence whose terms agree to increasing order has a limit to which it agrees
 to the same orders. In particular the completed valuation ring is complete for the adic topology
-of its maximal ideal, hence a Henselian local ring.
+of its maximal ideal, hence a Henselian local ring. The steps of the filtration also describe the
+topology: every neighbourhood of a point contains the coset of some step around it.
 
 The inclusion identifies every finite interval of the order filtration with the corresponding
 interval in the completion. In particular, completion does not change the residue field. These
@@ -187,6 +188,21 @@ theorem exists_sub_completionEmbedding_mem_filtration (x : P.Completion) (b : �
   refine ⟨y, ?_⟩
   rw [mem_filtration_iff, completionPlace_valuation, Valuation.map_sub_swap]
   exact hy.le
+
+/-- Every neighbourhood of a point `x` of the completion `F̂_P` contains the coset of some step
+of the filtration around `x`. -/
+theorem exists_forall_sub_mem_completionPlace_filtration_mem {x : P.Completion}
+    {U : Set P.Completion} (hU : U ∈ 𝓝 x) :
+    ∃ b : ℤ, ∀ y, y - x ∈ P.completionPlace.filtration b → y ∈ U := by
+  obtain ⟨γ, hγ⟩ := Valued.mem_nhds.1 hU
+  obtain ⟨c, hc0, hc⟩ : ∃ c : ℤᵐ⁰, c ≠ 0 ∧ ∀ y, Valued.v (y - x) < c → y ∈ U :=
+    ⟨MonoidWithZeroHom.ValueGroup₀.embedding γ.val, by simp,
+      fun y hy ↦ hγ ((Valuation.restrict_lt_iff_lt_embedding _).2 hy)⟩
+  refine ⟨1 - WithZero.log c, fun y hy ↦ hc y ?_⟩
+  rw [mem_filtration_iff, completionPlace_valuation] at hy
+  refine hy.trans_lt ?_
+  conv_rhs => rw [← WithZero.exp_log hc0]
+  exact WithZero.exp_lt_exp.2 (by omega)
 
 /-- An element of the completed filtration has an approximation in the original filtration,
 with error in any step; for a step below the given one, `0` already approximates. -/

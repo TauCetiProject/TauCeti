@@ -54,8 +54,9 @@ inner product space (`TauCeti.AlmostComplexStructure.symplecticForm_compatible`,
 
 * `TauCeti.imInnerSymplecticForm`: the symplectic form `Im ⟪·, ·⟫_ℂ`, with
   `TauCeti.imInnerSymplecticForm_def`,
-  `TauCeti.imInnerSymplecticForm_compatible` and
-  `TauCeti.imInnerSymplecticForm_associatedBilinForm_apply`.
+  `TauCeti.imInnerSymplecticForm_compatible`,
+  `TauCeti.imInnerSymplecticForm_associatedBilinForm_apply` and
+  `TauCeti.imInnerSymplecticForm_apply_ofComplexModule_eq_inner`.
 * `TauCeti.isLagrangian_imInnerSymplecticForm_iff` and
   `TauCeti.isLagrangian_imInnerSymplecticForm_iff_orthogonal_eq`: its Lagrangian subspaces.
 * `TauCeti.isSymplectomorphism_complexEuclideanEquivRealProd_symm` and
@@ -124,6 +125,12 @@ theorem imInnerSymplecticForm_associatedBilinForm_apply (v w : E) :
     (imInnerSymplecticForm E).associatedBilinForm (AlmostComplexStructure.ofComplexModule E) v w =
       ⟪v, w⟫_ℝ :=
   AlmostComplexStructure.symplecticForm_associatedBilinForm_apply _ v w
+
+/-- The metric `Im ⟪·, i ·⟫_ℂ` of the symplectic form `Im ⟪·, ·⟫_ℂ` and multiplication by `i` is the
+real inner product `Re ⟪·, ·⟫_ℂ`. -/
+theorem imInnerSymplecticForm_apply_ofComplexModule_eq_inner (v w : E) :
+    imInnerSymplecticForm E v (AlmostComplexStructure.ofComplexModule E w) = ⟪v, w⟫_ℝ :=
+  (imInnerSymplecticForm E).apply_ofComplexModule_eq_inner imInnerSymplecticForm_apply v w
 
 /-- The symplectic form `Im ⟪·, ·⟫_ℂ` is compatible with multiplication by `i`. -/
 theorem imInnerSymplecticForm_compatible :

@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.CategoryTheory.Sites.Spaces
 public import Mathlib.RingTheory.Ideal.Pointwise
+import TauCeti.AlgebraicGeometry.Restrict
 import Mathlib.AlgebraicGeometry.QuasiAffine
 import TauCeti.RingTheory.Ideal.Maps
 import TauCeti.RingTheory.Localization.Tower
@@ -29,9 +30,12 @@ form in which a free action of a finite group on an affine scheme enters the the
 quotients (`TauCeti.AffineInvariantQuotient.etale_projection`), once the group acts on `Γ(X, ⊤)` by
 pullback along inverses (`AlgebraicGeometry.Scheme.globalSectionsMulSemiringAction`).
 
-Morphisms into an affine scheme are determined by their effect on global sections. Hence, over an
-affine base `S`, base change along `j : T ⟶ S` is bijective on morphisms `Y ⟶ Y'` into an affine
-`Y'` whenever it does not change the global sections of `Y`.
+Morphisms into an affine scheme are determined by their effect on global sections. So if
+`j : P ⟶ Q` induces an isomorphism on global sections, as `X ⟶ Spec Γ(X, ⊤)` does, every morphism
+from `P` to an affine scheme extends uniquely along `j`
+(`AlgebraicGeometry.Scheme.Hom.precompEquivOfIsIsoAppTop`). Hence, over an affine base `S`, base
+change along `j : T ⟶ S` is bijective on morphisms `Y ⟶ Y'` into an affine `Y'` whenever it does
+not change the global sections of `Y`.
 
 It also shows that for a compatible tower `R → B ↪ R_a`, localizing `B` at `a` gives `R_a`,
 so `Spec B ⟶ Spec R` is an isomorphism over the basic open `D(a)`. The map from `R` need not
@@ -39,6 +43,9 @@ be injective. This is the local reason why an affine blowup changes nothing away
 
 ## Main definitions
 
+* `AlgebraicGeometry.Scheme.Hom.precompEquivOfIsIsoAppTop`: for `j : P ⟶ Q` inducing an
+  isomorphism on global sections and an affine scheme `Z`, precomposition with `j` is a bijection
+  `(Q ⟶ Z) ≃ (P ⟶ Z)`; injectivity is `AlgebraicGeometry.Scheme.Hom.eq_of_comp_eq_of_mono_appTop`.
 * `AlgebraicGeometry.Scheme.globalSectionsMulSemiringAction`: a group acting on a scheme `X` acts on
   `Γ(X, ⊤)` by `g • a = (σ g⁻¹)^*(a)`.
 * `AlgebraicGeometry.Scheme.stalkFromSpecTopAlgEquiv`: for an affine scheme `Z` and a prime ideal
@@ -129,6 +136,53 @@ theorem Scheme.isoSpec_inv_appTop (X : Scheme.{u}) [IsAffine X] :
     rw [← Scheme.Hom.comp_appTop, Iso.hom_inv_id, Scheme.Hom.id_appTop]
   rw [← Iso.comp_hom_eq_id]
   simpa [Scheme.isoSpec] using h
+
+/-- The morphism `X ⟶ Spec Γ(X, ⊤)` induces an isomorphism on global sections. -/
+instance Scheme.isIso_toSpecΓ_appTop (X : Scheme.{u}) : IsIso X.toSpecΓ.appTop := by
+  rw [Scheme.toSpecΓ_appTop]
+  infer_instance
+
+/-- A morphism `f : X ⟶ Y` to an affine scheme factors as `X ⟶ Spec Γ(X, ⊤) ⟶ Spec Γ(Y, ⊤) ≅ Y`,
+the middle map being induced by `f` on global sections. -/
+@[reassoc (attr := simp)]
+theorem Scheme.toSpecΓ_SpecMap_appTop_isoSpec_inv {X Y : Scheme.{u}} [IsAffine Y] (f : X ⟶ Y) :
+    X.toSpecΓ ≫ Spec.map f.appTop ≫ Y.isoSpec.inv = f := by
+  rw [← Scheme.toSpecΓ_naturality_assoc, Scheme.toSpecΓ_isoSpec_inv, Category.comp_id]
+
+/-- If `j : P ⟶ Q` induces a monomorphism on global sections, morphisms from `Q` to an affine
+scheme are determined by their composites with `j`. -/
+theorem Scheme.Hom.eq_of_comp_eq_of_mono_appTop {P Q Z : Scheme.{u}} [IsAffine Z] (j : P ⟶ Q)
+    [Mono j.appTop] {a b : Q ⟶ Z} (h : j ≫ a = j ≫ b) : a = b :=
+  ext_of_isAffine ((cancel_mono j.appTop).mp (by
+    rw [← Scheme.Hom.comp_appTop, ← Scheme.Hom.comp_appTop, h]))
+
+/-- If `j : P ⟶ Q` induces an isomorphism on global sections, precomposition with `j` is a
+bijection from morphisms `Q ⟶ Z` to morphisms `P ⟶ Z`, for every affine scheme `Z`: every
+morphism from `P` to an affine scheme extends uniquely along `j`. -/
+noncomputable def Scheme.Hom.precompEquivOfIsIsoAppTop {P Q : Scheme.{u}} (j : P ⟶ Q)
+    [IsIso j.appTop] (Z : Scheme.{u}) [IsAffine Z] : (Q ⟶ Z) ≃ (P ⟶ Z) := by
+  have h (f : P ⟶ Z) :
+      j ≫ (Q.toSpecΓ ≫ Spec.map (f.appTop ≫ inv j.appTop) ≫ Z.isoSpec.inv) = f := by
+    rw [Scheme.toSpecΓ_naturality_assoc, ← Spec.map_comp_assoc, Category.assoc,
+      IsIso.inv_hom_id, Category.comp_id, Scheme.toSpecΓ_SpecMap_appTop_isoSpec_inv]
+  exact
+    { toFun := fun g ↦ j ≫ g
+      invFun := fun f ↦ Q.toSpecΓ ≫ Spec.map (f.appTop ≫ inv j.appTop) ≫ Z.isoSpec.inv
+      left_inv := fun g ↦ j.eq_of_comp_eq_of_mono_appTop (h (j ≫ g))
+      right_inv := h }
+
+@[simp]
+theorem Scheme.Hom.precompEquivOfIsIsoAppTop_apply {P Q : Scheme.{u}} (j : P ⟶ Q)
+    [IsIso j.appTop] (Z : Scheme.{u}) [IsAffine Z] (g : Q ⟶ Z) :
+    j.precompEquivOfIsIsoAppTop Z g = j ≫ g :=
+  (rfl)
+
+/-- The extension of a morphism `f : P ⟶ Z` along `j` restricts to `f`. -/
+@[reassoc (attr := simp)]
+theorem Scheme.Hom.comp_precompEquivOfIsIsoAppTop_symm_apply {P Q : Scheme.{u}} (j : P ⟶ Q)
+    [IsIso j.appTop] (Z : Scheme.{u}) [IsAffine Z] (f : P ⟶ Z) :
+    j ≫ (j.precompEquivOfIsIsoAppTop Z).symm f = f :=
+  (j.precompEquivOfIsIsoAppTop Z).apply_symm_apply f
 
 /-- On an affine scheme `Z`, the stalk at `(isAffineOpen_top Z).fromSpec y` is a `Γ(Z, ⊤)`-algebra
 via the germ map on `⊤`. -/
@@ -327,6 +381,23 @@ lemma Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE {Z B : Scheme.{u}} (k : 
       _ = k.appLE V U e ≫ U.ι.appLE U T (by simp) := by
         rw [← Category.assoc, ← Scheme.ΓSpecIso_inv_naturality, Category.assoc,
           Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE]
+
+/-- Over an affine base `Y`, the preimage `f'⁻¹ V` of an affine open `V` of `Y'` is the base change
+of `X` along `Spec Γ(Y', V) ⟶ Spec Γ(Y, ⊤)`. -/
+lemma _root_.CategoryTheory.IsPullback.isPullback_preimage_ι_comp
+    {X Y X' Y' : Scheme.{u}} {f : X ⟶ Y} {g : Y' ⟶ Y} {f' : X' ⟶ Y'} {g' : X' ⟶ X}
+    (H : IsPullback g' f' f g) [IsAffine Y] {V : Y'.Opens}
+    (hV : IsAffineOpen V) (hVg : V ≤ g ⁻¹ᵁ ⊤) :
+    IsPullback ((f' ⁻¹ᵁ V).ι ≫ g') (f'.resLE V (f' ⁻¹ᵁ V) le_rfl ≫ hV.isoSpec.hom)
+      (f ≫ Y.toSpecΓ) (Spec.map (g.appLE ⊤ V hVg)) := by
+  have : IsIso V.toSpecΓ := inferInstanceAs (IsIso hV.isoSpec.hom)
+  have hB : IsPullback (V.ι ≫ g) V.toSpecΓ Y.toSpecΓ (Spec.map (g.appLE ⊤ V hVg)) := by
+    refine IsPullback.of_vert_isIso ⟨?_⟩
+    rw [Category.assoc, Scheme.toSpecΓ_naturality,
+      ← Scheme.Opens.toSpecΓ_SpecMap_presheaf_map_top_assoc, ← Spec.map_comp]
+    -- `g.appLE ⊤ V hVg` is by definition `g.appTop` followed by restriction to `V`.
+    rfl
+  exact ((f'.isPullback_resLE_of_eq V rfl).flip.paste_horiz H).paste_vert hB
 
 /-- Reading a function on an affine open chart `ι : Spec A ⟶ X` as an element of `A` and
 mapping it along `φ : A ⟶ A'` is the same as restricting it to the image `V` of `Spec A'` and
@@ -574,6 +645,33 @@ theorem Scheme.Hom.eq_of_comp_eq_of_forall_liesOver_eq {R A : Type u} [CommRing 
   obtain rfl : z = v := PrimeSpectrum.ext (huniq z.asIdeal z.isPrime this hz)
   exact Subtype.ext hzw.symm
 
+/-- Let `j : Y ⟶ X` be an open immersion and `U` a quasi-compact and quasi-separated open of `X`,
+for instance an affine open, whose intersection with the image of `j` is the basic open of
+`s ∈ Γ(X, U)`. Then the sections of `Y` over `j⁻¹ U` are the localization `Γ(X, U)_s`, as a
+`Γ(X, U)`-algebra through `j`. -/
+theorem Scheme.Hom.isLocalization_app_of_inf_opensRange_eq {X Y : Scheme.{u}} (j : Y ⟶ X)
+    [IsOpenImmersion j] {U : X.Opens} (hU : IsCompact (U : Set X))
+    (hU' : IsQuasiSeparated (U : Set X)) {s : Γ(X, U)} (h : U ⊓ j.opensRange = X.basicOpen s) :
+    letI := (j.app U).hom.toAlgebra
+    IsLocalization.Away s Γ(Y, j ⁻¹ᵁ U) := by
+  let := (j.app U).hom.toAlgebra
+  have := isLocalization_basicOpen_of_qcqs hU hU' s
+  -- The image `j (j⁻¹ U) = U ∩ j(Y)` is the basic open `D(s)`.
+  have e : j ''ᵁ j ⁻¹ᵁ U = X.basicOpen s := by
+    rw [Scheme.Hom.image_preimage_eq_opensRange_inf, inf_comm, h]
+  -- Transport along `Γ(X, D(s)) = Γ(X, j (j⁻¹ U)) ≅ Γ(Y, j⁻¹ U)`, which is compatible with the
+  -- maps from `Γ(X, U)` by `Scheme.Hom.app_appIso_inv`.
+  have key : X.presheaf.map (homOfLE (X.basicOpen_le s)).op ≫ X.presheaf.map (eqToHom e).op =
+      j.app U ≫ (j.appIso (j ⁻¹ᵁ U)).inv := by
+    rw [j.app_appIso_inv, ← Functor.map_comp]
+    rfl
+  refine IsLocalization.isLocalization_of_algEquiv (.powers s) (AlgEquiv.ofRingEquiv
+    (f := (X.presheaf.mapIso (eqToIso e).op ≪≫ j.appIso (j ⁻¹ᵁ U)).commRingCatIsoToRingEquiv)
+    fun x ↦ ?_)
+  calc _ = (j.appIso (j ⁻¹ᵁ U)).hom ((j.appIso (j ⁻¹ᵁ U)).inv (j.app U x)) :=
+        congrArg (j.appIso (j ⁻¹ᵁ U)).hom congr($(key).hom x)
+    _ = _ := (j.appIso (j ⁻¹ᵁ U)).inv_hom_id_apply _
+
 end AlgebraicGeometry
 
 namespace TauCeti.AlgebraicGeometry
@@ -599,32 +697,22 @@ theorem overPullback_map_bijective_of_isIso_appTop {S T : Scheme.{u}} [IsAffine 
     Function.Bijective (fun g : Y ⟶ Y' ↦ (Over.pullback j).map g) := by
   set e := Limits.pullback.fst Y.hom j
   have := h
-  -- Morphisms from `Y` to an affine scheme are determined by their composites with `e`.
-  have hcancel {Z : Scheme.{u}} [IsAffine Z] {g g' : Y.left ⟶ Z} (hg : e ≫ g = e ≫ g') :
-      g = g' := by
-    refine ext_of_isAffine ((cancel_mono e.appTop).mp ?_)
-    rw [← Scheme.Hom.comp_appTop, ← Scheme.Hom.comp_appTop, hg]
   -- The base change of `g` is determined by its composite with the first projection.
   have hmap (g : Y ⟶ Y') : ((Over.pullback j).map g).left ≫ Limits.pullback.fst Y'.hom j =
       e ≫ g.left :=
     Limits.pullback.lift_fst _ _ _
   refine ⟨fun g g' hgg' ↦ ?_, fun φ ↦ ?_⟩
-  · refine Over.OverMorphism.ext (hcancel ?_)
+  · refine Over.OverMorphism.ext (e.eq_of_comp_eq_of_mono_appTop ?_)
     rw [← hmap, ← hmap]
     exact congrArg (fun k ↦ k.left ≫ Limits.pullback.fst Y'.hom j) hgg'
-  -- The composite `χ : Y ×_S T ⟶ Y'` corresponds to a ring map `Γ(Y', 𝒪) ⟶ Γ(Y ×_S T, 𝒪)`,
-  -- which factors through the isomorphism `Γ(Y, 𝒪) ≅ Γ(Y ×_S T, 𝒪)`.
+  -- The composite `χ : Y ×_S T ⟶ Y'` extends along `e`, which is an isomorphism on functions.
   set φ' : Limits.pullback Y.hom j ⟶ Limits.pullback Y'.hom j := φ.left
   have hw : φ' ≫ Limits.pullback.snd Y'.hom j = Limits.pullback.snd Y.hom j :=
     Over.w φ
   set χ := φ' ≫ Limits.pullback.fst Y'.hom j with hχ
-  let ψ : Y.left ⟶ Y'.left :=
-    Y.left.toSpecΓ ≫ Spec.map (χ.appTop ≫ inv e.appTop) ≫ Y'.left.isoSpec.inv
-  have hψ : e ≫ ψ = χ := by
-    rw [Scheme.toSpecΓ_naturality_assoc, ← Spec.map_comp_assoc, Category.assoc,
-      IsIso.inv_hom_id, Category.comp_id, ← Scheme.toSpecΓ_naturality_assoc,
-      Scheme.toSpecΓ_isoSpec_inv, Category.comp_id]
-  have hψS : ψ ≫ Y'.hom = Y.hom := hcancel <| by
+  let ψ : Y.left ⟶ Y'.left := (e.precompEquivOfIsIsoAppTop Y'.left).symm χ
+  have hψ : e ≫ ψ = χ := e.comp_precompEquivOfIsIsoAppTop_symm_apply _ _
+  have hψS : ψ ≫ Y'.hom = Y.hom := e.eq_of_comp_eq_of_mono_appTop <| by
     calc e ≫ ψ ≫ Y'.hom = φ' ≫ Limits.pullback.snd Y'.hom j ≫ j := by
           rw [reassoc_of% hψ, hχ, Category.assoc, Limits.pullback.condition]
       _ = Limits.pullback.snd Y.hom j ≫ j := by rw [reassoc_of% hw]

@@ -47,6 +47,10 @@ basis of a block-diagonal family, and of a family that becomes block diagonal af
 and Cramer's rule for an endomorphism of a free module of finite rank. On a free module of rank
 one, every endomorphism is multiplication by its determinant.
 
+Over a field in which `-1` is not a square, such as `ℝ`, a vector space carrying an endomorphism
+`J` with `J * J = -1`, a complex structure, has even dimension, by comparing `det J ^ 2` with
+`det (-1)`.
+
 Finally, it records the Weinstein–Aronszajn identity `det (1 + X ∘ₗ Y) = det (1 + Y ∘ₗ X)` for
 linear maps `X` and `Y` between two free modules of finite rank, possibly of different ranks.
 
@@ -82,12 +86,18 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   `c` has determinant `c ^ finrank R V`.
 * `LinearEquiv.det_ker_eq_bot_of_finrank_le_one`: the determinant kernel is trivial in
   dimension at most one.
+* `Module.End.even_finrank_of_mul_self_eq_neg_one`: a vector space over a field in which `-1` is
+  not a square, with an endomorphism squaring to `-1`, has even dimension.
 * `Module.Basis.det_comp_eq_mul`: `b'.det (f ∘ v) = b'.det (f ∘ b) * b.det v` for a linear map
   `f` between two modules with bases `b` and `b'`.
 * `Module.Basis.prod_det_sumElim`: the determinant in a product basis of a family split between
   the two factors is the product of the two determinants.
 * `Module.Basis.exists_prod_det_eq_sign_smul_mul`: the same up to sign for a family with exactly
   as many members in the first factor as the rank of the first factor.
+* `Module.Basis.det_unique`: over an index type with a single element, the determinant of a
+  family in a basis `b` is the coordinate in `b` of its single vector.
+* `Module.Basis.det_unique_smul`: over an index type with a single element, the single vector of
+  a family is its determinant in a basis `b` times the single vector of `b`.
 * `Module.Basis.det_smul_smul_vecCons`: rescaling the first two of three vectors by `r` and `r'`
   multiplies their determinant by `r * r'`.
 * `Module.Basis.det_equivFun_symm_trans_equivFun`: the coordinate change from a basis `b` to a
@@ -98,6 +108,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   family `v` is a non-zero-divisor.
 * `Module.Basis.det_eq_det_of_det_eq_one`: a basis `b'` with `b.det b' = 1` has the same
   determinant form as `b`.
+* `Module.Basis.eq_zero_of_forall_det_eq_zero`: the determinant form of a rank-two basis is
+  nondegenerate.
 * `LinearMap.det_smul_mem_range`: Cramer's rule, `det φ • x ∈ range φ`.
 * `LinearMap.injective_of_det_mem_nonZeroDivisors`: an endomorphism of a free module of finite
   rank whose determinant is a non-zero-divisor is injective.
@@ -222,6 +234,19 @@ theorem exists_prod_det_eq_sign_smul_mul (b : Basis ι R M) (b' : Basis ι' R M'
   rw [hσ, prod_det_sumElim] at h
   rw [h, smul_smul, Int.units_mul_self, one_smul]
 
+/-- Over an index type with a single element, the determinant of a family `v` in a basis `b` is
+the coordinate in `b` of its single vector. This is `Matrix.det_unique` for `Module.Basis.det`. -/
+theorem det_unique [Unique ι] (b : Basis ι R M) (v : ι → M) :
+    b.det v = b.repr (v default) default := by
+  rw [det_apply, Matrix.det_unique, toMatrix_apply]
+
+/-- Over an index type with a single element, the single vector of a family `v` is its
+determinant in a basis `b` times the single vector of `b`. -/
+theorem det_unique_smul [Unique ι] (b : Basis ι R M) (v : ι → M) :
+    b.det v • b default = v default := by
+  rw [det_unique]
+  simpa using b.sum_repr (v default)
+
 /-- Rescaling the first two of three vectors by `r` and `r'` multiplies their determinant in a
 basis by `r * r'`. -/
 theorem det_smul_smul_vecCons (b : Basis (Fin 3) R M) (r r' : R) (u w d : M) :
@@ -272,6 +297,16 @@ determinant form. -/
 theorem det_eq_det_of_det_eq_one {b b' : Basis ι R M} (h : b.det b' = 1) : b'.det = b.det := by
   rw [AlternatingMap.eq_smul_basis_det b b'.det, ← mul_one (b'.det b), ← h, det_mul_det, det_self,
     one_smul]
+
+/-- **The determinant form of a rank-two basis is nondegenerate.** A vector `u` with
+`e.det ![u, v] = 0` for every `v` is zero. -/
+theorem eq_zero_of_forall_det_eq_zero (e : Basis (Fin 2) R M) {u : M}
+    (h : ∀ v, e.det ![u, v] = 0) : u = 0 := by
+  refine e.forall_coord_eq_zero_iff.1 fun i ↦ ?_
+  rw [coord_apply]
+  fin_cases i
+  · simpa [det_apply, Matrix.det_fin_two, toMatrix_apply] using h (e 1)
+  · simpa [det_apply, Matrix.det_fin_two, toMatrix_apply] using h (e 0)
 
 end Module.Basis
 
@@ -443,6 +478,27 @@ theorem det_ker_eq_bot_of_finrank_le_one {R V : Type*} [CommRing R] [AddCommGrou
     exact congrArg Subtype.val (Subsingleton.elim (⟨g, hg⟩ : SpecialLinearGroup R V) 1)
 
 end LinearEquiv
+
+namespace Module.End
+
+/-- **A complex structure forces even dimension.** If `-1` is not a square in the field `K`, such
+as an ordered field, a `K`-vector space with an endomorphism `J` such that `J * J = -1` has even
+dimension, since `det J ^ 2 = det (-1) = (-1) ^ finrank K V`. (An infinite-dimensional space has
+`finrank` zero.) -/
+theorem even_finrank_of_mul_self_eq_neg_one {K V : Type*} [Field K] [AddCommGroup V]
+    [Module K V] (hK : ¬IsSquare (-1 : K)) {J : Module.End K V} (hJ : J * J = -1) :
+    Even (finrank K V) := by
+  by_cases hV : FiniteDimensional K V
+  · by_contra hodd
+    have hdet : LinearMap.det (-1 : Module.End K V) = (-1) ^ finrank K V := by
+      simpa using LinearMap.det_smul (-1 : K) (1 : Module.End K V)
+    have h : LinearMap.det J * LinearMap.det J = (-1) ^ finrank K V := by
+      rw [← map_mul, hJ, hdet]
+    exact hK ⟨LinearMap.det J, by rw [h, (Nat.not_even_iff_odd.1 hodd).neg_one_pow]⟩
+  · rw [finrank_of_not_finite hV]
+    exact Even.zero
+
+end Module.End
 
 namespace Matrix
 
