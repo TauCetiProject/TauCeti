@@ -131,4 +131,15 @@ theorem anodyneExtensions_iff_isWeakHomotopyEquivalence {A B : SSet.{u}} (i : A 
   exact MorphismProperty.of_retract (P := (fibrations SSet.{u}).llp)
     (RetractArrow.ofLeftLiftingProperty h.fac) h.hi
 
+/-- A section of a weak homotopy equivalence can be cancelled when testing whether a
+composite with an arbitrary target map is a weak homotopy equivalence. -/
+lemma isWeakHomotopyEquivalence_section_comp_iff {A B D : SSet.{u}} {s : A ⟶ B}
+    [IsWeakHomotopyEquivalence s] (t : A ⟶ D) (σ : B ⟶ A) (hσ : σ ≫ s = 𝟙 B) :
+    IsWeakHomotopyEquivalence (σ ≫ t) ↔ IsWeakHomotopyEquivalence t := by
+  have : IsWeakHomotopyEquivalence (σ ≫ s) := by
+    rw [hσ]
+    infer_instance
+  have := IsWeakHomotopyEquivalence.of_postcomp σ s
+  exact ⟨fun _ ↦ IsWeakHomotopyEquivalence.of_precomp σ t, fun _ ↦ inferInstance⟩
+
 end SSet

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Presentable.Basic
-public import TauCeti.AlgebraicTopology.Quasicategory.Limit
+public import TauCeti.AlgebraicTopology.Quasicategory.Limit.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.CardinalFiltered
 
 /-!

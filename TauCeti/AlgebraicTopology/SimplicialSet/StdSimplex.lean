@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.Quasicategory.Nerve
 public import Mathlib.AlgebraicTopology.SimplicialSet.Boundary
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
+public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
 public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
 public import Mathlib.Data.Finset.Sort
 import Mathlib.CategoryTheory.Functor.KanExtension.DenseAtYoneda
@@ -69,6 +70,14 @@ public section
 open CategoryTheory Finset Opposite Simplicial MonoidalCategory CartesianMonoidalCategory
 
 universe u
+
+namespace SSet
+
+/-- The boundary `∂Δ[0]` of the standard `0`-simplex is empty. -/
+lemma not_nonempty_boundary_zero : ¬ (∂Δ[0] : SSet.{u}).Nonempty :=
+  (notNonempty_iff_hasDimensionLT_zero _).2 inferInstance
+
+end SSet
 
 namespace SSet.stdSimplex
 

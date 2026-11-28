@@ -61,6 +61,8 @@ simplicial set on these edges.
   `X`.
 * `SSet.coslice.isIso_π`: the coslice under the empty diagram is the whole simplicial set.
 * `SSet.coslice.isTerminal`: the coslice of a terminal simplicial set is terminal.
+* `SSet.coslice.opSliceIso_inv_comp_π`: through `SSet.coslice.opSliceIso`, the projection
+  `C_{p/} ⟶ C` is the opposite of the projection `Cᵒᵖ_{/pᵒᵖ} ⟶ Cᵒᵖ`.
 * `SSet.coslice.opSliceIso_inv_comp_map`: through `SSet.coslice.opSliceIso`, a map of coslices
   is the image under the reversal functor `SSet.opFunctor` of a map of slices.
 * `SSet.coslice.opSliceIsoOfEq p hp`: for a diagram `p'` equal to `pᵒᵖ`, the identification of
@@ -254,6 +256,32 @@ lemma comp_π (F : X ⟶ coslice p) : F ≫ π p = join.inr K X ≫ (homEquiv F)
   rw [π, ← join.inr_map_assoc (𝟙 K) F, ← homEquiv_comp_coe, Category.comp_id]
 
 variable (p) in
+/-- **The projection of the coslice is opposite to the projection of the slice**: through the
+identification of `C_{p/}` with `(Cᵒᵖ_{/pᵒᵖ})ᵒᵖ` (`SSet.coslice.opSliceIso`), the projection
+`C_{p/} ⟶ C` is the opposite of the projection `Cᵒᵖ_{/pᵒᵖ} ⟶ Cᵒᵖ`, followed by `Cᵒᵖᵒᵖ ≅ C`. -/
+lemma opSliceIso_inv_comp_π :
+    (opSliceIso p).inv ≫ π p =
+      opFunctor.map (slice.π (opFunctor.map p)) ≫ opFunctorCompOpFunctorIso.hom.app C := by
+  have h : opFunctor.map (π p) = opHomEquiv (𝟙 _) ≫ slice.π (opFunctor.map p) := by
+    rw [slice.comp_π, ← opIso_inv_comp_opFunctor_map_homEquiv_coe, π, Functor.map_comp,
+      ← join.opFunctor_map_inr_comp_opIso_hom_assoc, Iso.hom_inv_id_assoc]
+  let adj : opFunctor.{u} ⊣ opFunctor := opEquivalence.toAdjunction
+  have hi : (adj.homEquiv (coslice p) (slice (opFunctor.map p)))
+      (opHomEquiv (𝟙 _)) = (opSliceIso p).hom :=
+    (adj.homEquiv _ _).apply_symm_apply _
+  have h' := congrArg (adj.homEquiv (coslice p) C.op) h
+  rw [adj.homEquiv_naturality_right, hi, Adjunction.homEquiv_unit] at h'
+  have hu : adj.unit = opFunctorCompOpFunctorIso.inv := opEquivalence.toAdjunction_unit
+  rw [hu] at h'
+  have h'' := congrArg (· ≫ opFunctorCompOpFunctorIso.hom.app C) h'
+  simp only [Category.assoc] at h''
+  rw [← Functor.comp_map, opFunctorCompOpFunctorIso.hom.naturality (π p), Functor.id_map,
+    ← Category.assoc, ← NatTrans.comp_app, Iso.inv_hom_id, NatTrans.id_app] at h''
+  have hπ : π p = (opSliceIso p).hom ≫ opFunctor.map (slice.π (opFunctor.map p)) ≫
+      opFunctorCompOpFunctorIso.hom.app C := (Category.id_comp (π p)).symm.trans h''
+  exact (Iso.inv_comp_eq _).2 hπ
+
+variable (p) in
 /-- The coslice under the empty diagram is the whole simplicial set: when `K` is empty, the
 projection `C_{p/} ⟶ C` is an isomorphism. -/
 lemma isIso_π (hK : ¬ K.Nonempty) : IsIso (π p) := by
@@ -290,6 +318,14 @@ lemma homEquiv_comp_map_coe (F : X ⟶ coslice p) (i : L ⟶ K) (g : C ⟶ D) (h
   rw [map, homEquiv_comp_coe, Equiv.apply_symm_apply, hF, Category.assoc,
     ← join.map_comp_assoc, ← join.map_comp_assoc]
   simp
+
+/-- The map of coslices induced by `i` and `g` sends a simplex `σ : K ⋆ Δ[n] ⟶ C` to its
+restriction along `i ⋆ Δ[n]`, composed with `g`. -/
+@[simp]
+lemma objEquiv_map_app_coe {n : SimplexCategory} (i : L ⟶ K) (g : C ⟶ D) (h : i ≫ p ≫ g = q)
+    (σ : (coslice p).obj (op n)) :
+    (objEquiv ((map i g h).app _ σ)).val = join.map i (𝟙 _) ≫ (objEquiv σ).val ≫ g := by
+  rw [objEquiv_apply, ← yonedaEquiv_symm_comp, homEquiv_comp_map_coe, ← objEquiv_apply]
 
 /-- The map of coslices induced by identities is the identity. -/
 @[simp]

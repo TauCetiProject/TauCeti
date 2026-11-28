@@ -290,4 +290,21 @@ theorem rlp_monomorphisms_opFunctor_map_iff (p : X ⟶ Y) :
   exact ⟨fun h _ _ _ ⟨n⟩ ↦ (hasLiftingProperty_boundary_ι_opFunctor_map_iff p n).1 (h _ ⟨n⟩),
     fun h _ _ _ ⟨n⟩ ↦ (hasLiftingProperty_boundary_ι_opFunctor_map_iff p n).2 (h _ ⟨n⟩)⟩
 
+section
+
+variable {A B D : SSet.{u}} {s : A ⟶ B} (hs : (monomorphisms SSet.{u}).rlp s)
+  (t : A ⟶ D)
+include hs
+
+/-- For a trivial fibration `s : A ⟶ B` and a map `t : A ⟶ D`, the composite with `t` of any
+section `σ` of `s` is homotopic to the composite with `t` of any other section `τ`. -/
+lemma nonempty_homotopy_comp_section_comp (σ τ : B ⟶ A)
+    (hσ : σ ≫ s = 𝟙 B) (hτ : τ ≫ s = 𝟙 B) :
+    Nonempty (Homotopy (σ ≫ t) (τ ≫ t)) := by
+  obtain ⟨H, -⟩ :=
+    exists_homotopy_of_rlp_monomorphisms hs σ τ (by rw [hσ, hτ])
+  exact ⟨H.postcomp _⟩
+
+end
+
 end SSet

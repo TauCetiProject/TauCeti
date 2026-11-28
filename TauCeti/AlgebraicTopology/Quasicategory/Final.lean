@@ -95,20 +95,6 @@ lemma IsFinal.exists_edge {f : K ⟶ L} (hf : IsFinal f) (y : L _⦋0⦌) :
   rw [coslice.π_app (p := const y) s]
   exact (yonedaEquiv.symm_apply_apply _).symm.trans (yonedaEquiv_symm_zero _)
 
-/-- Under `Δ[0] ⋆ Δ[n] ≅ Δ[0 + n + 1]`, the last vertex of the face opposite to `0` is the last
-vertex of the base `Δ[n]`. -/
-private lemma const_last_comp_δ_zero (n : ℕ) :
-    stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋0 + n⦌ (Fin.last _)) ≫ stdSimplex.δ 0 =
-      stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)) ≫ join.inr Δ[0] Δ[n] ≫
-        (join.stdSimplexIso.{u} 0 n).hom := by
-  apply yonedaEquiv.injective
-  refine stdSimplex.ext _ _ fun i ↦ ?_
-  rw [stdSimplex.yonedaEquiv_comp_apply, stdSimplex.yonedaEquiv_comp_apply,
-    join.yonedaEquiv_inr_comp_stdSimplexIso_hom]
-  ext
-  simp [CosimplicialObject.δ, SimplexCategory.δ]
-  omega
-
 namespace IsTerminalVertex
 
 variable {x : L _⦋0⦌}
@@ -119,12 +105,10 @@ private lemma exists_extension (hx : L.IsTerminalVertex x) {n : ℕ} (τ : join 
     (hτ : join.inr _ _ ≫ τ = const x) :
     ∃ σ : join Δ[0] Δ[n] ⟶ L, join.map (𝟙 _) ∂Δ[n].ι ≫ σ = τ ∧ join.inr _ _ ≫ σ = const x := by
   let U := Subcomplex.unionJoin (∂Δ[0] : (Δ[0] : SSet.{u}).Subcomplex) ∂Δ[n]
-  have h₀ : ¬ (∂Δ[0] : SSet.{u}).Nonempty :=
-    fun ⟨v⟩ ↦ v.property fun _ ↦ ⟨0, Fin.subsingleton_one.elim _ _⟩
   -- Glue `τ` with the constant map at `x` on `∂Δ[0] ⋆ Δ[n] ≅ Δ[n]`.
   have hc : join.map (𝟙 _) ∂Δ[n].ι ≫ (const x : join ∂Δ[0] Δ[n] ⟶ L) =
       join.map ∂Δ[0].ι (𝟙 _) ≫ τ := by
-    have := join.isIso_inr (L := ∂Δ[n]) h₀
+    have := join.isIso_inr (L := ∂Δ[n]) not_nonempty_boundary_zero
     rw [comp_const, ← cancel_epi (join.inr _ _), join.inr_map_assoc, Category.id_comp, hτ,
       comp_const]
   let g : (U : SSet.{u}) ⟶ L := (Subcomplex.unionJoin.isPushout _ _).desc (const x) τ hc
@@ -137,17 +121,10 @@ private lemma exists_extension (hx : L.IsTerminalVertex x) {n : ℕ} (τ : join 
   have hU : U.preimage e.inv = ∂Δ[0 + n + 1] := join.preimage_unionJoin_boundary_boundary 0 n
   let i := Subcomplex.isoOfPreimageEq e hU
   -- The last vertex of `∂Δ[0 + n + 1]` is the last vertex `n` of `∂Δ[0] ⋆ Δ[n] ≅ Δ[n]`.
-  have hv :
-      stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋0 + n⦌ (Fin.last _)) ≫ boundary.ι 0 ≫ i.inv =
-      (stdSimplex.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ (Fin.last n)) ≫ join.inr _ _) ≫
-        Subcomplex.unionJoin.ι₁ _ _ := by
-    rw [← cancel_mono U.ι, ← cancel_mono e.hom]
-    simp only [U, i, Category.assoc, Subcomplex.isoOfPreimageEq_inv_ι, boundary.ι_ι_assoc,
-      Iso.inv_hom_id, Category.comp_id, Subcomplex.unionJoin.ι₁_ι_assoc, join.inr_map_assoc,
-      Category.id_comp]
-    exact const_last_comp_δ_zero n
   obtain ⟨σ', hσ'⟩ := (isTerminalVertex_iff x).1 hx (i.inv ≫ g) (by
-    rw [yonedaEquiv_naturality, reassoc_of% hv, hg₁, comp_const, comp_const, yonedaEquiv_const])
+    rw [yonedaEquiv_naturality,
+      reassoc_of% join.const_last_comp_boundary_ι_comp_isoOfPreimageEq_inv 0 n, hg₁,
+      comp_const, comp_const, yonedaEquiv_const])
   have key : U.ι ≫ e.hom ≫ σ' = g := by
     rw [← Subcomplex.isoOfPreimageEq_hom_ι_assoc e hU, ← hσ', i.hom_inv_id_assoc]
   refine ⟨e.hom ≫ σ', ?_, ?_⟩

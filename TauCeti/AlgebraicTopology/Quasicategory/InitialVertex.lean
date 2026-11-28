@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Quasicategory.TerminalVertex
+public import TauCeti.AlgebraicTopology.SimplicialSet.Coslice
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Op
-public import TauCeti.AlgebraicTopology.SimplicialSet.Op
+public import TauCeti.AlgebraicTopology.SimplicialSet.TrivialFibration
 
 /-!
 # Initial vertices of simplicial sets
@@ -19,7 +20,10 @@ Higher Topos Theory, and colimits of diagrams in a quasicategory are the initial
 coslices.
 
 Equivalently, every simplex boundary whose first vertex is `x` extends to a simplex
-(`SSet.isInitialVertex_iff`). This criterion uses reversal of simplex boundaries.
+(`SSet.isInitialVertex_iff`). This criterion uses reversal of simplex boundaries. Equivalently, the
+projection `X_{x/} ⟶ X` from the coslice under `x` is a trivial fibration
+(`SSet.isInitialVertex_iff_rlp_monomorphisms_π`): it is the opposite of the projection from the
+slice of `Xᵒᵖ` over `x`, which is a trivial fibration exactly when `x` is terminal in `Xᵒᵖ`.
 
 Through the identification of the edges and `2`-simplices of `Xᵒᵖ` with those of `X`
 (`SSet.Edge.opEquiv`, `SSet.Edge.CompStruct.opEquiv`), the properties of terminal vertices give
@@ -130,6 +134,29 @@ end IsInitialVertex
 lemma isInitialVertex_iff_of_iso (e : X ≅ Y) (x : X _⦋0⦌) :
     Y.IsInitialVertex (e.hom.app _ x) ↔ X.IsInitialVertex x :=
   isTerminalVertex_iff_of_iso (opFunctor.mapIso e) _
+
+open MorphismProperty in
+/-- **A vertex `x` is initial exactly when the projection `X_{x/} ⟶ X` from the coslice under `x`
+is a trivial fibration**: it has the right lifting property with respect to all monomorphisms.
+Through `SSet.coslice.opSliceIso`, this projection is the opposite of the projection from the slice
+of `Xᵒᵖ` over `x` (`SSet.coslice.opSliceIso_inv_comp_π`), so this is the criterion
+`SSet.isTerminalVertex_iff_rlp_monomorphisms_π` for the terminal vertex `x` of `Xᵒᵖ`. -/
+theorem isInitialVertex_iff_rlp_monomorphisms_π (x : X _⦋0⦌) :
+    X.IsInitialVertex x ↔
+      (monomorphisms SSet.{u}).rlp (coslice.π (yonedaEquiv.symm x)) := by
+  -- Restricting along `Δ[0] ≅ Δ[0]ᵒᵖ` identifies the slice of `Xᵒᵖ` over the opposite of
+  -- `yonedaEquiv.symm x` with the slice over the vertex `x` of `Xᵒᵖ`, compatibly with projections.
+  have hq : (stdSimplex.opIso ⦋0⦌).inv ≫ opFunctor.map (yonedaEquiv.symm x) ≫ 𝟙 X.op =
+      yonedaEquiv.symm (X.opObjEquiv.symm x) := by
+    rw [Category.comp_id, stdSimplex.opIso_inv_comp_opFunctor_map_yonedaEquiv_symm]
+  have h := slice.map_π _ _ hq
+  rw [Category.comp_id] at h
+  rw [isInitialVertex_iff_isTerminalVertex_op, isTerminalVertex_iff_rlp_monomorphisms_π,
+    ← cancel_left_of_respectsIso (monomorphisms SSet.{u}).rlp (slice.map _ _ hq), h,
+    ← rlp_monomorphisms_opFunctor_map_iff,
+    ← cancel_right_of_respectsIso (monomorphisms SSet.{u}).rlp _
+      (opFunctorCompOpFunctorIso.hom.app X),
+    ← coslice.opSliceIso_inv_comp_π, cancel_left_of_respectsIso (monomorphisms SSet.{u}).rlp]
 
 /-- Every vertex of a terminal simplicial set, such as `Δ[0]`, is initial. -/
 lemma isInitialVertex_of_isTerminal (hX : IsTerminal X) (x : X _⦋0⦌) : X.IsInitialVertex x :=

@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutP
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
 public import Mathlib.CategoryTheory.SingleObj
+public import TauCeti.AlgebraicTopology.SimplicialSet.Fiber
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Groupoid
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.SingleObj
@@ -212,6 +213,21 @@ lemma of_iso {L : SSet.{u}} (e : K ≅ L) [IsWeaklyContractible K] : IsWeaklyCon
     have H := (H₂.precomp ((pre e.hom).app Z)).postcomp ((pre e.inv).app Z)
     rw [Category.assoc, Category.assoc, constMaps_pre, Category.comp_id, hPQ] at H
     exact ⟨(pre e.hom).app Z ≫ g, ⟨by rwa [constMaps_pre_assoc]⟩, ⟨H⟩⟩
+
+end IsWeaklyContractible
+
+/-- The fibres of the restriction `A.fromPreimage q` of `q` over a subcomplex `A` are weakly
+contractible exactly when the corresponding fibres of `q` are, since they are isomorphic
+(`SSet.fiber.fromPreimageIso`). -/
+lemma isWeaklyContractible_fiber_fromPreimage_iff {X Y : SSet.{u}} (q : X ⟶ Y)
+    (A : Y.Subcomplex) (y : (A : SSet.{u}) _⦋0⦌) :
+    IsWeaklyContractible (fiber (A.fromPreimage q) y : SSet.{u}) ↔
+      IsWeaklyContractible (fiber q y.val : SSet.{u}) :=
+  ⟨fun _ ↦ .of_iso (fiber.fromPreimageIso q A y),
+    fun _ ↦ .of_iso (fiber.fromPreimageIso q A y).symm⟩
+
+
+namespace IsWeaklyContractible
 
 variable [IsWeaklyContractible K]
 

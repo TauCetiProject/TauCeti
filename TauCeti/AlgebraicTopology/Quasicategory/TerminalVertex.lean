@@ -7,6 +7,8 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
 public import Mathlib.CategoryTheory.Limits.Preorder
+public import TauCeti.AlgebraicTopology.SimplicialSet.Join.StdSimplex
+public import TauCeti.AlgebraicTopology.SimplicialSet.Slice
 public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal
 
 /-!
@@ -15,9 +17,11 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.StrictSegal
 A vertex `x` of a simplicial set `X` is terminal (`SSet.IsTerminalVertex`) if, for every `n ≥ 1`,
 every map `∂Δ[n] ⟶ X` whose last vertex is `x` extends to `Δ[n]`. This is Joyal's definition of
 a terminal object of a quasicategory. By the universal property of the join, it says that the
-projection `X_{/x} ⟶ X` from the slice over `x` is a trivial fibration, which for a quasicategory
-is equivalent to the contractibility of the mapping spaces into `x` (HTT Proposition 1.2.12.4).
-Limits of diagrams in a quasicategory are the terminal vertices of its slices.
+projection `X_{/x} ⟶ X` from the slice over `x` is a trivial fibration
+(`SSet.isTerminalVertex_iff_rlp_monomorphisms_π`): under `Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`, the boundary
+`∂Δ[n + 1]` is the union of `∂Δ[n] ⋆ Δ[0]` and `Δ[n]`. For a quasicategory this is equivalent to
+the contractibility of the mapping spaces into `x` (HTT Proposition 1.2.12.4). Limits of diagrams
+in a quasicategory are the terminal vertices of its slices.
 
 In dimension one the condition provides an edge from every vertex to `x`
 (`SSet.IsTerminalVertex.nonempty_edge`), and in dimension two a `2`-simplex filling every
@@ -126,6 +130,120 @@ lemma isTerminalVertex_iff_of_iso (e : X ≅ Y) (x : X _⦋0⦌) :
     Y.IsTerminalVertex (e.hom.app _ x) ↔ X.IsTerminalVertex x := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.map_iso e⟩
   simpa using h.map_iso e.symm
+
+/-- A lift of a boundary square for the slice projection is precisely an extension of the
+glued map from the union-join. The two restriction equations identify its cone and base parts. -/
+private lemma hasLift_iff_extension_unionJoin {x : X _⦋0⦌} (n : ℕ)
+    (g : (Subcomplex.unionJoin ∂Δ[n] ∂Δ[0] : SSet.{u}) ⟶ X)
+    (a : (∂Δ[n] : SSet.{u}) ⟶ slice (yonedaEquiv.symm x)) (b : Δ[n] ⟶ X)
+    (hg₁ : Subcomplex.unionJoin.ι₁ _ _ ≫ g = (slice.homEquiv a).val)
+    (hg₂ : join.inl _ _ ≫ Subcomplex.unionJoin.ι₂ _ _ ≫ g = b)
+    (sq : CommSq a ∂Δ[n].ι (slice.π (yonedaEquiv.symm x)) b) :
+    sq.HasLift ↔ ∃ f : join Δ[n] Δ[0] ⟶ X, (Subcomplex.unionJoin ∂Δ[n] ∂Δ[0]).ι ≫ f = g := by
+  have := join.isIso_inl (K := Δ[n]) not_nonempty_boundary_zero
+  constructor
+  · rintro ⟨⟨l, hl, hr⟩⟩
+    refine ⟨(slice.homEquiv l).val, (Subcomplex.unionJoin.isPushout _ _).hom_ext ?_ ?_⟩
+    · rw [Subcomplex.unionJoin.ι₁_ι_assoc, hg₁, ← slice.homEquiv_comp_coe, hl]
+    · rw [Subcomplex.unionJoin.ι₂_ι_assoc, ← cancel_epi (join.inl Δ[n] ∂Δ[0]),
+        join.inl_map_assoc, Category.id_comp, hg₂, ← slice.comp_π, hr]
+  · rintro ⟨f, hf⟩
+    have hinr : join.inr _ _ ≫ f = yonedaEquiv.symm x := by
+      rw [← Category.id_comp (join.inr Δ[n] Δ[0]), ← join.inr_map ∂Δ[n].ι, Category.assoc,
+        ← Subcomplex.unionJoin.ι₁_ι, Category.assoc, hf, hg₁]
+      exact (slice.homEquiv a).property
+    let l := slice.homEquiv.symm ⟨f, hinr⟩
+    have hl : (slice.homEquiv l).val = f := by rw [Equiv.apply_symm_apply]
+    refine ⟨⟨⟨l, slice.hom_ext ?_, ?_⟩⟩⟩
+    · rw [slice.homEquiv_comp_coe, hl, ← Subcomplex.unionJoin.ι₁_ι, Category.assoc, hf, hg₁]
+    · rw [slice.comp_π, hl, ← Category.id_comp (join.inl Δ[n] Δ[0]),
+        ← join.inl_map (𝟙 _) (boundary.{u} 0).ι, Category.assoc, ← Subcomplex.unionJoin.ι₂_ι,
+        Category.assoc, hf, hg₂]
+
+/-- If `x` is terminal, the projection `X_{/x} ⟶ X` lifts against `∂Δ[n] ⟶ Δ[n]`: a lifting
+problem glues, on `(∂Δ[n] ⋆ Δ[0]) ∪ (Δ[n] ⋆ ∂Δ[0]) ≅ ∂Δ[n + 1]`, to a map with last vertex `x`. -/
+private lemma hasLiftingProperty_π_of_isTerminalVertex {x : X _⦋0⦌} (hx : X.IsTerminalVertex x)
+    (n : ℕ) : HasLiftingProperty ∂Δ[n].ι (slice.π (yonedaEquiv.symm x)) := by
+  have := join.isIso_inl (K := Δ[n]) not_nonempty_boundary_zero
+  have := join.isIso_inl (K := ∂Δ[n]) not_nonempty_boundary_zero
+  refine ⟨fun {a b} sq ↦ ?_⟩
+  -- Glue the cone `∂Δ[n] ⋆ Δ[0] ⟶ X` of `a` with `b` on `Δ[n] ≅ Δ[n] ⋆ ∂Δ[0]`.
+  have hc : join.map (𝟙 _) (boundary.{u} 0).ι ≫ (slice.homEquiv a).val =
+      join.map ∂Δ[n].ι (𝟙 _) ≫ inv (join.inl Δ[n] (boundary.{u} 0 : SSet.{u})) ≫ b := by
+    rw [← cancel_epi (join.inl _ _), join.inl_map_assoc, Category.id_comp, join.inl_map_assoc,
+      IsIso.hom_inv_id_assoc, ← slice.comp_π, sq.w]
+  let U := Subcomplex.unionJoin ∂Δ[n] (boundary.{u} 0)
+  let g := (Subcomplex.unionJoin.isPushout ∂Δ[n] (boundary.{u} 0)).desc
+    (slice.homEquiv a).val (inv (join.inl Δ[n] (boundary.{u} 0 : SSet.{u})) ≫ b) hc
+  have hg₁ : Subcomplex.unionJoin.ι₁ _ _ ≫ g = (slice.homEquiv a).val :=
+    (Subcomplex.unionJoin.isPushout _ _).inl_desc _ _ _
+  have hg₂ : Subcomplex.unionJoin.ι₂ _ _ ≫ g =
+      inv (join.inl Δ[n] (boundary.{u} 0 : SSet.{u})) ≫ b :=
+    (Subcomplex.unionJoin.isPushout _ _).inr_desc _ _ _
+  let e := join.stdSimplexIso.{u} n 0
+  have key : U.preimage e.inv = ∂Δ[n + 1] := join.preimage_unionJoin_boundary_boundary n 0
+  let i := Subcomplex.isoOfPreimageEq e key
+  have hlast := join.const_last_comp_boundary_ι_comp_isoOfPreimageEq_inv.{u} n 0
+  simp only [Nat.add_zero, Fin.last_zero, SimplexCategory.const_eq_id,
+    CategoryTheory.Functor.map_id, Category.id_comp] at hlast
+  -- Extend the glued map, whose last vertex is `x`, to `Δ[n + 1] ≅ Δ[n] ⋆ Δ[0]`.
+  obtain ⟨σ, hσ⟩ := hx (i.inv ≫ g) (by
+    rw [yonedaEquiv_naturality,
+      reassoc_of% hlast, hg₁,
+      (slice.homEquiv a).property, Equiv.apply_symm_apply])
+  have hσU : U.ι ≫ e.hom ≫ σ = g := by
+    rw [← Subcomplex.isoOfPreimageEq_hom_ι_assoc e key, ← hσ, i.hom_inv_id_assoc]
+  exact (hasLift_iff_extension_unionJoin n g a b hg₁
+    (by rw [hg₂, IsIso.hom_inv_id_assoc]) sq).2 ⟨e.hom ≫ σ, hσU⟩
+
+/-- If the projection `X_{/x} ⟶ X` lifts against all boundary inclusions, then `x` is terminal: a
+map `∂Δ[n + 1] ≅ (∂Δ[n] ⋆ Δ[0]) ∪ (Δ[n] ⋆ ∂Δ[0]) ⟶ X` with last vertex `x` is a lifting problem
+against the projection. -/
+private lemma isTerminalVertex_of_hasLiftingProperty_π {x : X _⦋0⦌}
+    (h : ∀ n : ℕ, HasLiftingProperty ∂Δ[n].ι (slice.π (yonedaEquiv.symm x))) :
+    X.IsTerminalVertex x := by
+  intro n σ₀ hσ₀
+  let U := Subcomplex.unionJoin ∂Δ[n] ∂Δ[0]
+  let e := join.stdSimplexIso.{u} n 0
+  have key : U.preimage e.inv = ∂Δ[n + 1] := join.preimage_unionJoin_boundary_boundary n 0
+  let i := Subcomplex.isoOfPreimageEq e key
+  have hlast := join.const_last_comp_boundary_ι_comp_isoOfPreimageEq_inv.{u} n 0
+  simp only [Nat.add_zero, Fin.last_zero, SimplexCategory.const_eq_id,
+    CategoryTheory.Functor.map_id, Category.id_comp] at hlast
+  let g : (U : SSet.{u}) ⟶ X := i.hom ≫ σ₀
+  -- The map `g` on `U` is a cone `a` over `x` on `∂Δ[n]` and a simplex `b` on `Δ[n]`.
+  have ha : join.inr _ _ ≫ Subcomplex.unionJoin.ι₁ _ _ ≫ g = yonedaEquiv.symm x := by
+    rw [← reassoc_of% hlast,
+      i.inv_hom_id_assoc, ← hσ₀]
+    apply yonedaEquiv.injective
+    rw [Equiv.apply_symm_apply, yonedaEquiv_naturality]
+  let a := slice.homEquiv.symm ⟨Subcomplex.unionJoin.ι₁ _ _ ≫ g, ha⟩
+  let b : Δ[n] ⟶ X := join.inl _ _ ≫ Subcomplex.unionJoin.ι₂ ∂Δ[n] ∂Δ[0] ≫ g
+  have sq : CommSq a ∂Δ[n].ι (slice.π (yonedaEquiv.symm x)) b := ⟨by
+    rw [slice.comp_π, Equiv.apply_symm_apply, ← join.inl_map_assoc ∂Δ[n].ι (𝟙 _),
+      ← (Subcomplex.unionJoin.isPushout _ _).w_assoc, join.inl_map_assoc, Category.id_comp]⟩
+  have hg₁ : Subcomplex.unionJoin.ι₁ _ _ ≫ g = (slice.homEquiv a).val := by
+    rw [Equiv.apply_symm_apply]
+  have hg₂ : join.inl _ _ ≫ Subcomplex.unionJoin.ι₂ _ _ ≫ g = b := rfl
+  obtain ⟨f, hf⟩ := (hasLift_iff_extension_unionJoin n g a b hg₁ hg₂ sq).1 inferInstance
+  refine ⟨e.inv ≫ f, ?_⟩
+  rw [← cancel_epi i.hom, Subcomplex.isoOfPreimageEq_hom_ι_assoc e key,
+    Iso.hom_inv_id_assoc, hf]
+
+/-- **A vertex `x` is terminal exactly when the projection `X_{/x} ⟶ X` from the slice over `x` is
+a trivial fibration**: it has the right lifting property with respect to all monomorphisms. Under
+`Δ[n] ⋆ Δ[0] ≅ Δ[n + 1]`, the boundary `∂Δ[n + 1]` is the union of `∂Δ[n] ⋆ Δ[0]` and
+`Δ[n] ≅ Δ[n] ⋆ ∂Δ[0]`, so that a map `∂Δ[n + 1] ⟶ X` with last vertex `x` is a lifting problem of
+`∂Δ[n] ⟶ Δ[n]` against the projection.
+The forward boundary-gluing proof and last-vertex calculation follow
+`SSet.IsTerminalVertex.rlp_monomorphisms_pullback_const`. -/
+theorem isTerminalVertex_iff_rlp_monomorphisms_π (x : X _⦋0⦌) :
+    X.IsTerminalVertex x ↔
+      (MorphismProperty.monomorphisms SSet.{u}).rlp (slice.π (yonedaEquiv.symm x)) := by
+  rw [rlp_monomorphisms]
+  exact ⟨fun hx _ _ _ ⟨n⟩ ↦ hasLiftingProperty_π_of_isTerminalVertex hx n,
+    fun h ↦ isTerminalVertex_of_hasLiftingProperty_π fun n ↦
+      h _ (modelCategoryQuillen.boundary_ι_mem_I n)⟩
 
 /-- Every vertex of a terminal simplicial set, such as `Δ[0]`, is terminal. -/
 lemma isTerminalVertex_of_isTerminal (hX : IsTerminal X) (x : X _⦋0⦌) : X.IsTerminalVertex x :=
