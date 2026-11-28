@@ -19,37 +19,45 @@ import TauCeti.RingTheory.Polynomial.Pochhammer
 # Derivative and recurrences of the Jacobi polynomials
 
 For the Jacobi polynomials `Pₙ^{(α,β)} = Polynomial.jacobi α β n` over a commutative `ℚ`-algebra,
-with arbitrary parameters `α β`, this file proves the identities that relate neighbouring degrees
-and parameters. Each identity is stated with its coefficients on the polynomial side, so that no
-division occurs.
+with arbitrary parameters `α β`, this file proves the identities that relate neighbouring indices
+`n` and neighbouring parameters. The index `n` bounds the degree of `Pₙ^{(α,β)}` but need not equal
+it: for special parameters the leading coefficient vanishes. Each identity is stated with its
+coefficients on the polynomial side, so that no division occurs. It is an identity between the
+displayed weighted polynomials; it isolates an unweighted polynomial only when the coefficient in
+front of that polynomial can be cancelled.
 
-* `Polynomial.derivative_jacobi` lowers the degree by one and raises both parameters by one. It is
-  a `simp` lemma: derivatives of Jacobi polynomials of positive degree are rewritten to Jacobi
-  polynomials.
-* `Polynomial.jacobi_succ_contiguous_right` and `Polynomial.jacobi_succ_contiguous_left` keep the
-  degree `n + 1` on the left and express it through the degrees `n + 1` and `n` with one parameter
-  raised by one. Read from right to left, they lower `β`, respectively `α`, by one.
-* `Polynomial.C_mul_X_add_one_mul_jacobi_add_one_right` goes the other way in `β`: it expresses
-  `(X + 1) Pₙ^{(α,β+1)}` through the degrees `n + 1` and `n` at the parameters `(α, β)`.
-* `Polynomial.jacobi_succ_succ` keeps both parameters fixed and relates three consecutive degrees.
+* `Polynomial.derivative_jacobi`: the derivative of the polynomial of index `n + 1` is a scalar
+  multiple of the polynomial of index `n` with both parameters raised by one. It is a `simp`
+  lemma: derivatives of Jacobi polynomials of positive index are rewritten to Jacobi polynomials.
+* `Polynomial.jacobi_succ_contiguous_right` and `Polynomial.jacobi_succ_contiguous_left` equate
+  `(2n + α + β + 3) Pₙ₊₁^{(α,β)}` with a combination of the polynomials of indices `n + 1` and `n`
+  in which `β`, respectively `α`, is raised by one.
+* `Polynomial.C_mul_X_add_one_mul_jacobi_add_one_right` goes the other way in `β`: it equates
+  `(2n + α + β + 2) (X + 1) Pₙ^{(α,β+1)}` with a combination of the polynomials of indices `n + 1`
+  and `n` at the parameters `(α, β)`.
+* `Polynomial.jacobi_succ_succ` keeps both parameters fixed and relates three consecutive indices.
 
 The relations with `α` and `β` exchanged follow by the reflection `Polynomial.jacobi_comp_neg_X`,
 as `Polynomial.jacobi_succ_contiguous_left` does from `Polynomial.jacobi_succ_contiguous_right`.
 
-The three-term recurrence holds for all parameters, including those for which its leading
-coefficient `2 (n + 2) (n + α + β + 2) (2n + α + β + 2)` is not invertible. For such parameters it
-is still a valid identity, but it cannot be solved for `Pₙ₊₂^{(α,β)}` by division, so it does not
-determine the next polynomial from the previous two.
+The three-term recurrence holds for all parameters, whatever its leading coefficient
+`c = 2 (n + 2) (n + α + β + 2) (2n + α + β + 2)` is. How much it says about `Pₙ₊₂^{(α,β)}` depends
+on `c`. If `c` is a unit of the base ring, the recurrence can be solved for `Pₙ₊₂^{(α,β)}` by
+multiplying by the inverse of `c`. If multiplication by `c` is only injective, there is no such
+formula, but `Pₙ₊₂^{(α,β)}` is still the unique polynomial satisfying the recurrence, by
+cancellation. If `c` is a zero divisor, for instance `c = 0` for `α + β = -(n + 2)`, the
+recurrence is still a valid identity but no longer determines `Pₙ₊₂^{(α,β)}`.
 
 ## Main results
 
 * `Polynomial.derivative_jacobi`: `(Pₙ₊₁^{(α,β)})' = ((n + α + β + 2) / 2) Pₙ^{(α+1,β+1)}`
   (DLMF 18.9.15).
 * `Polynomial.jacobi_succ_contiguous_right`, `Polynomial.jacobi_succ_contiguous_left`: the
-  contiguous relations expressing `(2n + α + β + 3) Pₙ₊₁^{(α,β)}` through the polynomials with
-  `β`, respectively `α`, raised by one (DLMF 18.9.5 and its reflection).
-* `Polynomial.C_mul_X_add_one_mul_jacobi_add_one_right`: the contiguous relation expressing
-  `(2n + α + β + 2) (X + 1) Pₙ^{(α,β+1)}` through `Pₙ₊₁^{(α,β)}` and `Pₙ^{(α,β)}` (DLMF 18.9.6).
+  contiguous relations equating `(2n + α + β + 3) Pₙ₊₁^{(α,β)}` with a combination of the
+  polynomials with `β`, respectively `α`, raised by one (DLMF 18.9.5 and its reflection).
+* `Polynomial.C_mul_X_add_one_mul_jacobi_add_one_right`: the contiguous relation equating
+  `(2n + α + β + 2) (X + 1) Pₙ^{(α,β+1)}` with a combination of `Pₙ₊₁^{(α,β)}` and `Pₙ^{(α,β)}`
+  (DLMF 18.9.6).
 * `Polynomial.jacobi_succ_succ`: the three-term recurrence (DLMF 18.9.1, 18.9.2).
 
 ## References
@@ -83,6 +91,10 @@ private lemma derivative_jacobi_coeff (α β : R) (m k : ℕ) :
   have h₁ := congrArg (algebraMap ℚ R) (Nat.one_div_factorial_mul_factorial_succ_left (K := ℚ) m k)
   have h₂ := congrArg (algebraMap ℚ R) (Nat.one_div_factorial_mul_factorial_succ_right (K := ℚ) m k)
   simp only [map_mul, map_add, map_natCast, map_one] at h₁ h₂
+  -- Peeling the first factor off a rising factorial: `(x)ₙ₊₁ = x (x + 1)ₙ`.
+  have hp (n : ℕ) (x : R) :
+      (ascPochhammer R (n + 1)).eval x = x * (ascPochhammer R n).eval (x + 1) := by
+    rw [add_comm n 1, TauCeti.ascPochhammer_add_eval, ascPochhammer_one, eval_X, Nat.cast_one]
   -- After the first factor is peeled off the two rising factorials of length `m + 1` and `k + 1`,
   -- every rising factorial is evaluated at `β + k + 2` or at `α + m + 2`. These four equalities
   -- bring the arguments, which the two sides write differently, to one common form.
@@ -90,8 +102,7 @@ private lemma derivative_jacobi_coeff (α β : R) (m k : ℕ) :
   have hβ : β + ((k + 1 : ℕ) : R) + 1 = β + k + 1 + 1 := by push_cast; ring
   have hβ' : β + 1 + (k : R) + 1 = β + k + 1 + 1 := by ring
   have hα' : α + 1 + (m : R) + 1 = α + m + 1 + 1 := by ring
-  simp only [← eval_eq_smeval]
-  rw [TauCeti.ascPochhammer_succ_eval_left, TauCeti.ascPochhammer_succ_eval_left, hα, hβ, hβ', hα']
+  simp only [← eval_eq_smeval, hp, hα, hβ, hβ', hα']
   simp only [Algebra.smul_def, Nat.cast_add]
   linear_combination
     -((β + k + 1) * (ascPochhammer R m).eval (β + k + 1 + 1) *
@@ -99,27 +110,31 @@ private lemma derivative_jacobi_coeff (α β : R) (m k : ℕ) :
       (α + m + 1) * (ascPochhammer R m).eval (β + k + 1 + 1) *
         (ascPochhammer R k).eval (α + m + 1 + 1) * h₂
 
-/-- The derivative of a Jacobi polynomial of positive degree is a scalar multiple of the Jacobi
-polynomial of one degree less with both parameters raised by one:
+/-- The derivative of the Jacobi polynomial of index `n + 1` is a scalar multiple of the Jacobi
+polynomial of index `n` with both parameters raised by one:
 `(Pₙ₊₁^{(α,β)})' = ((n + α + β + 2) / 2) Pₙ^{(α+1,β+1)}` (DLMF 18.9.15). The scalar vanishes for
-`α + β = -(n + 2)`. -/
+`α + β = -(n + 2)`, where `Pₙ₊₁^{(α,β)}` is constant. -/
 @[simp]
 theorem derivative_jacobi (α β : R) (n : ℕ) :
     derivative (jacobi α β (n + 1)) =
       ((1 : ℚ) / 2) • (C (n + α + β + 2) * jacobi (α + 1) (β + 1) n) := by
-  -- The shifted-power rule at the shifts `1` and `-1`, whose products are those of `jacobi_def`.
-  have hd := fun f : ℕ → R => derivative_sum_smul_X_sub_C_pow_mul_X_sub_C_pow 1 (-1) f n
-  simp only [C_1, C_neg, sub_neg_eq_add] at hd
+  -- The shifted-power rule at the shifts `-1` and `1`, whose products are those of `jacobi_def`.
+  have hd := fun f : ℕ → R => derivative_sum_smul_X_add_C_pow_mul_X_add_C_pow (-1) 1 f n
+  simp only [C_1, C_neg, ← sub_eq_add_neg] at hd
   -- One factor `1 / 2` of the normalization `1 / 2 ^ (n + 1)` stays in front.
   have h2 : (1 : ℚ) / 2 ^ (n + 1) = 1 / 2 * (1 / 2 ^ n) := by ring
-  rw [jacobi_def, jacobi_def, derivative_smul, hd, mul_smul_comm, smul_smul, ← smul_eq_C_mul, h2]
+  -- Expand the derivative in the shifted powers of index `n`.
+  rw [jacobi_def, jacobi_def, derivative_smul, hd]
+  -- Collect the scalars; what remains is a termwise comparison of coefficients.
+  rw [mul_smul_comm, smul_smul, ← smul_eq_C_mul, h2]
   congr 1
   rw [smul_sum]
   refine sum_congr rfl fun k hk => ?_
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' (Nat.lt_succ_iff.1 (mem_range.1 hk))
-  -- With `n = m + k`, the exponent `n + 1 - k` of `X - 1` in degree `n + 1` is `m + 1`.
+  -- With `n = m + k`, the exponent `n + 1 - k` of `X - 1` at index `n + 1` is `m + 1`.
   have hexp : m + k + 1 - k = m + 1 := by omega
-  rw [smul_smul, Nat.add_sub_add_right, Nat.add_sub_cancel, hexp, ← derivative_jacobi_coeff]
+  simp only [hexp, Nat.add_sub_add_right, Nat.add_sub_cancel, smul_smul]
+  rw [← derivative_jacobi_coeff]
 
 /-! ### Contiguous relations -/
 
@@ -129,7 +144,7 @@ private lemma eval_one_jacobi_succ_contiguous_right (α β : R) (n : ℕ) :
       eval 1 (C (n + α + β + 2) * jacobi α (β + 1) (n + 1) +
         C (n + 1 + α) * jacobi α (β + 1) n) := by
   simp only [eval_mul, eval_add, eval_C, eval_one_jacobi, Algebra.smul_def, ← eval_eq_smeval,
-    ascPochhammer_succ_eval, Nat.algebraMap_one_div_factorial_succ (K := ℚ) (A := R) n]
+    ascPochhammer_succ_eval, Nat.algebraMap_one_div_factorial_eq_mul (K := ℚ) (A := R) n]
   ring
 
 /-- A contiguous relation of the Jacobi polynomials, raising `β` (DLMF 18.9.5):
@@ -159,8 +174,8 @@ theorem jacobi_succ_contiguous_right (α β : R) (n : ℕ) :
 DLMF 18.9.5):
 `(2n + α + β + 3) Pₙ₊₁^{(α,β)} = (n + α + β + 2) Pₙ₊₁^{(α+1,β)} - (n + 1 + β) Pₙ^{(α+1,β)}`.
 It is `Polynomial.jacobi_succ_contiguous_right` for the exchanged parameters, composed with `-X`:
-by `Polynomial.jacobi_comp_neg_X` the two terms of degree `n + 1` acquire the sign `(-1) ^ (n + 1)`
-and the term of degree `n` the opposite sign. -/
+by `Polynomial.jacobi_comp_neg_X` the two terms of index `n + 1` acquire the sign `(-1) ^ (n + 1)`
+and the term of index `n` the opposite sign. -/
 theorem jacobi_succ_contiguous_left (α β : R) (n : ℕ) :
     C (2 * n + α + β + 3) * jacobi α β (n + 1) =
       C (n + α + β + 2) * jacobi (α + 1) β (n + 1) - C (n + 1 + β) * jacobi (α + 1) β n := by
@@ -179,7 +194,7 @@ private lemma eval_one_C_mul_X_add_one_mul_jacobi_add_one_right (α β : R) (n :
       eval 1 (C (2 * ((n : R) + 1)) * jacobi α β (n + 1) + C (2 * (n + β + 1)) * jacobi α β n) := by
   simp only [eval_mul, eval_add, eval_C, eval_X, eval_one, eval_one_jacobi, Algebra.smul_def,
     ← eval_eq_smeval, ascPochhammer_succ_eval,
-    Nat.algebraMap_one_div_factorial_succ (K := ℚ) (A := R) n]
+    Nat.algebraMap_one_div_factorial_eq_mul (K := ℚ) (A := R) n]
   ring
 
 /-- A contiguous relation of the Jacobi polynomials, lowering `β` (DLMF 18.9.6):

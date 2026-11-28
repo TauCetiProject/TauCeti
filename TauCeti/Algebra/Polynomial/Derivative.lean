@@ -67,13 +67,13 @@ has no antiderivative.
 As linear endomorphisms of `R[X]`, the derivative and multiplication by `X` satisfy the Weyl
 relation `d x = x d + 1` (`Polynomial.derivative_mul_mulLeft_X`).
 
-Over a ring, not necessarily commutative, the derivative of a combination of the products
-`(X - a) ^ (n + 1 - k) (X - b) ^ k` is a combination of the products `(X - a) ^ (n - k) (X - b) ^ k`
-with explicit coefficients (`Polynomial.derivative_sum_smul_X_sub_C_pow_mul_X_sub_C_pow`).
+Over a commutative semiring, the derivative of a combination of the products
+`(X + a) ^ (n + 1 - k) (X + b) ^ k` is a combination of the products `(X + a) ^ (n - k) (X + b) ^ k`
+with explicit coefficients (`Polynomial.derivative_sum_smul_X_add_C_pow_mul_X_add_C_pow`).
 
-Over a ring in which multiplication by each nonzero natural number is injective, such as a
-`ℚ`-algebra, a polynomial is determined by its derivative together with its value at one point
-(`Polynomial.eq_of_derivative_eq_of_eval_eq`).
+Over an additively cancellative semiring in which multiplication by each nonzero natural number is
+injective, such as `ℕ` or a `ℚ`-algebra, a polynomial is determined by its derivative together
+with its value at one point (`Polynomial.eq_of_derivative_eq_of_eval_eq`).
 -/
 
 public section
@@ -377,59 +377,56 @@ theorem derivative_mul_mulLeft_X {R : Type*} [CommSemiring R] :
   simp [derivative_mul, add_comm]
 
 /-- **Differentiating a shifted-power expansion.** The derivative of a combination of the products
-`(X - a) ^ (n + 1 - k) (X - b) ^ k`, `k ≤ n + 1`, is the combination of the products
-`(X - a) ^ (n - k) (X - b) ^ k`, `k ≤ n`, in which the coefficient of the `k`-th product is
-`(n - k + 1) f k + (k + 1) f (k + 1)`. For `a - b` invertible the products of total degree `n`
-form a basis of the polynomials of degree at most `n`; in general they are only a family. The ring
-need not be commutative: `X - C a` and the natural numbers are the only factors that are moved. -/
-theorem derivative_sum_smul_X_sub_C_pow_mul_X_sub_C_pow {R : Type*} [Ring R] (a b : R)
+`(X + a) ^ (n + 1 - k) (X + b) ^ k`, `k ≤ n + 1`, is the combination of the products
+`(X + a) ^ (n - k) (X + b) ^ k`, `k ≤ n`, in which the coefficient of the `k`-th product is
+`(n - k + 1) f k + (k + 1) f (k + 1)`. Over a commutative ring in which `a - b` is invertible the
+products of total degree `n` form a basis of the polynomials of degree at most `n`; in general
+they are only a family. -/
+theorem derivative_sum_smul_X_add_C_pow_mul_X_add_C_pow {R : Type*} [CommSemiring R] (a b : R)
     (f : ℕ → R) (n : ℕ) :
-    derivative (∑ k ∈ Finset.range (n + 2), f k • ((X - C a) ^ (n + 1 - k) * (X - C b) ^ k)) =
+    derivative (∑ k ∈ Finset.range (n + 2), f k • ((X + C a) ^ (n + 1 - k) * (X + C b) ^ k)) =
       ∑ k ∈ Finset.range (n + 1), ((((n - k : ℕ) : R) + 1) * f k + ((k : R) + 1) * f (k + 1)) •
-        ((X - C a) ^ (n - k) * (X - C b) ^ k) := by
-  -- Mathlib's `derivative_X_sub_C_pow` asks for a commutative ring.
-  have hp (c : R) (m : ℕ) : derivative ((X - C c) ^ m) = C (m : R) * (X - C c) ^ (m - 1) := by
-    induction m with
-    | zero => simp
-    | succ m ih =>
-      rw [pow_succ, derivative_mul, ih, derivative_X_sub_C, mul_one, Nat.add_sub_cancel]
-      rcases m with _ | m
-      · simp
-      · rw [Nat.add_sub_cancel, mul_assoc, ← pow_succ, Nat.cast_succ (m + 1), C_add, C_1, add_mul,
-          one_mul]
-  have h (m k : ℕ) : derivative ((X - C a) ^ m * (X - C b) ^ k) =
-      C (m : R) * ((X - C a) ^ (m - 1) * (X - C b) ^ k) +
-        C (k : R) * ((X - C a) ^ m * (X - C b) ^ (k - 1)) := by
-    rw [derivative_mul, hp, hp, mul_assoc, ← mul_assoc ((X - C a) ^ m), map_natCast C k,
-      ← Nat.cast_comm k ((X - C a) ^ m), mul_assoc]
+        ((X + C a) ^ (n - k) * (X + C b) ^ k) := by
+  have h (m k : ℕ) : derivative ((X + C a) ^ m * (X + C b) ^ k) =
+      C (m : R) * ((X + C a) ^ (m - 1) * (X + C b) ^ k) +
+        C (k : R) * ((X + C a) ^ m * (X + C b) ^ (k - 1)) := by
+    simp only [derivative_mul, derivative_X_add_C_pow]
+    ring
   simp only [derivative_sum, derivative_smul, h, smul_add, Finset.sum_add_distrib]
   -- The first sum loses its top term and the second its bottom term, both with coefficient `0`.
   rw [Finset.sum_range_succ, Finset.sum_range_succ' (fun k =>
-    f k • (C (k : R) * ((X - C a) ^ (n + 1 - k) * (X - C b) ^ (k - 1))))]
+    f k • (C (k : R) * ((X + C a) ^ (n + 1 - k) * (X + C b) ^ (k - 1))))]
   simp only [Nat.sub_self, Nat.cast_zero, C_0, zero_mul, smul_zero, add_zero]
   rw [← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun k hk => ?_
   have hk' : k ≤ n := Nat.lt_succ_iff.1 (Finset.mem_range.1 hk)
-  -- The exponent of `X - C a` in the `k`-th term of the first sum, as a successor.
+  -- The exponent of `X + C a` in the `k`-th term of the first sum, as a successor.
   have hexp : n + 1 - k = n - k + 1 := by omega
-  rw [Nat.add_sub_add_right, Nat.add_sub_cancel, hexp, Nat.add_sub_cancel]
-  -- Natural numbers are central, so the coefficients collect without commutativity.
-  rw [← smul_eq_C_mul, ← smul_eq_C_mul, smul_smul, smul_smul, ← add_smul,
-    ← Nat.cast_comm (n - k + 1), ← Nat.cast_comm (k + 1), Nat.cast_succ, Nat.cast_succ]
+  simp only [hexp, Nat.add_sub_add_right, Nat.add_sub_cancel, smul_eq_C_mul, C_add, C_mul,
+    Nat.cast_add, Nat.cast_one, C_1]
+  ring
 
-/-- Over a ring in which multiplication by each nonzero natural number is injective, such as a
-`ℚ`-algebra, two polynomials with equal derivatives and equal values at one point `x` agree.
+/-- Over an additively cancellative semiring in which multiplication by each nonzero natural number
+is injective, such as `ℕ` or a `ℚ`-algebra, two polynomials with equal derivatives and equal
+values at one point `x` agree.
 
 Both hypotheses are needed: over `ℚ`, the polynomials `X - 1` and `0` agree at `1` but have
-different derivatives, while `1` and `0` have the same derivative but different values. So is
-the assumption on `R`: over `ZMod 2`, the polynomials `X ^ 2` and `0` have the same derivative and
-agree at `0`. -/
-theorem eq_of_derivative_eq_of_eval_eq {R : Type*} [Ring R] [HasUniqueDiv R] {p q : R[X]}
-    (x : R) (hd : derivative p = derivative q) (he : p.eval x = q.eval x) : p = q := by
-  have h := eq_C_of_derivative_eq_zero (p := p - q) (by rw [derivative_sub, hd, sub_self])
-  have h0 : (p - q).coeff 0 = 0 := by
-    have h1 := congrArg (eval x) h
-    rwa [eval_sub, he, sub_self, eval_C, eq_comm] at h1
-  rwa [h0, C_0, sub_eq_zero] at h
+different derivatives, while `1` and `0` have the same derivative but different values. So are
+the assumptions on `R`: over `ZMod 2`, the polynomials `X ^ 2` and `0` have the same derivative and
+agree at `0`; over `ℝ≥0∞`, which is not cancellative, `1 + X` and `2 + X` have the same derivative
+and the same value `∞` at `∞`. -/
+theorem eq_of_derivative_eq_of_eval_eq {R : Type*} [Semiring R] [IsCancelAdd R] [HasUniqueDiv R]
+    {p q : R[X]} (x : R) (hd : derivative p = derivative q) (he : p.eval x = q.eval x) :
+    p = q := by
+  -- Equal derivatives give equal coefficients in every positive degree.
+  have hdiv : p.divX = q.divX := by
+    ext n
+    have h := congrArg (fun r : R[X] => r.coeff n) hd
+    simp only [coeff_derivative, ← Nat.cast_succ, ← nsmul_eq_mul'] at h
+    rw [coeff_divX, coeff_divX]
+    exact HasUniqueDiv.nsmul_right_injective n.succ_ne_zero h
+  -- The common part `divX * X` cancels from the two values at `x`, leaving the constant terms.
+  rw [← divX_mul_X_add p, ← divX_mul_X_add q, hdiv, eval_add, eval_add, eval_C, eval_C] at he
+  rw [← divX_mul_X_add p, ← divX_mul_X_add q, hdiv, add_left_cancel he]
 
 end Polynomial
