@@ -1,0 +1,262 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Normed.Module.GaussianSum.Basic
+public import TauCeti.Analysis.Normed.Module.RademacherSum.TypeCotype
+
+import TauCeti.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.Normed.Module.GaussianSum.Comparison
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Probability.Distributions.Gaussian.MixedMoments
+
+/-!
+# Gaussian cotype
+
+A real normed space `Y` has *Gaussian cotype `q` with constant `C`* if every finite family `y`
+in `Y` satisfies `‖y‖_q ≤ C G₂(y)`, where `G₂(y) = (𝔼_g ‖∑ i, gᵢ yᵢ‖²)^(1/2)` is the Gaussian
+second moment, the `gᵢ` being independent real standard Gaussians. This is Rademacher cotype
+with the random signs replaced by Gaussian coefficients.
+
+Gaussian cotype passes along bounded additive maps with a lower bound (in particular along linear
+isometries with the same constant, and along bounded linear equivalences `U` with constant
+multiplied by `‖U⁻¹‖ ‖U‖`). No nontrivial real normed space has Gaussian cotype with constant
+`C < 1` or exponent `q < 2`.
+
+Rademacher cotype `2` with constant `C` implies Gaussian cotype `2` with the same constant:
+apply the cotype inequality to the family `(gᵢ yᵢ)ᵢ` for each value of the Gaussian vector `g`
+and integrate. Since every coefficient has second moment `1`, the left side integrates to
+`‖y‖₂²`, and since the Gaussian law is invariant under sign changes, the right side integrates
+to `C² G₂(y)²`.
+
+## Main declarations
+
+* `TauCeti.HasGaussianCotype`: Gaussian cotype `q` with constant `C`.
+* `TauCeti.HasGaussianCotype.norm_toLp_le`: the defining inequality for families indexed by any
+  finite type.
+* `TauCeti.HasGaussianCotype.subsingleton_of_lt_one`: a space with Gaussian cotype constant `< 1`
+  is a subsingleton.
+* `TauCeti.HasGaussianCotype.two_le`: a nonzero real normed space has no Gaussian cotype `q < 2`.
+* `TauCeti.HasGaussianCotype.of_map`, `TauCeti.HasGaussianCotype.of_linearIsometry`,
+  `TauCeti.HasGaussianCotype.of_continuousLinearEquiv`: transport of Gaussian cotype.
+* `TauCeti.HasCotype.hasGaussianCotype_two`: Rademacher cotype `2` implies Gaussian cotype `2`
+  with the same constant.
+* `TauCeti.hasGaussianCotype_two_of_innerProductSpace`: inner product spaces have Gaussian cotype
+  `2` with constant `1`.
+
+## References
+
+* G. Pisier, *Factorization of Linear Operators and Geometry of Banach Spaces*, CBMS Regional
+  Conference Series in Mathematics 60, AMS, 1986, §3, pp. 33–37.
+* G. Pisier, *Grothendieck's theorem, past and present*, Bull. Amer. Math. Soc. 49 (2012), §9.
+* M. Ledoux and M. Talagrand, *Probability in Banach Spaces*, §9.2.
+-/
+
+public section
+
+noncomputable section
+
+open MeasureTheory ProbabilityTheory
+open scoped ENNReal NNReal
+
+namespace TauCeti
+
+variable {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+
+variable (Y) in
+/-- `Y` has *Gaussian cotype `q` with constant `C`* if every finite family `y` in `Y` satisfies
+`‖y‖_q ≤ C G₂(y)`, where `‖y‖_q = ‖WithLp.toLp q y‖` is the `ℓ^q` norm of the family and
+`G₂(y) = (𝔼_g ‖∑ i, gᵢ yᵢ‖²)^(1/2)` is its Gaussian second moment, with independent real standard
+Gaussian coefficients `gᵢ`. -/
+def HasGaussianCotype (q : ℝ≥0∞) (C : ℝ≥0) : Prop :=
+  ∀ (n : ℕ) (y : Fin n → Y), ‖WithLp.toLp q y‖ ≤ C * gaussianSecondMoment y
+
+variable {q : ℝ≥0∞} {C C' : ℝ≥0}
+
+/-- The defining inequality of Gaussian cotype `q` with constant `C`, for families indexed by
+`Fin n`. -/
+theorem hasGaussianCotype_iff :
+    HasGaussianCotype Y q C ↔
+      ∀ (n : ℕ) (y : Fin n → Y), ‖WithLp.toLp q y‖ ≤ C * gaussianSecondMoment y :=
+  Iff.rfl
+
+/-- A Gaussian cotype constant may be enlarged. -/
+theorem HasGaussianCotype.mono_const (h : HasGaussianCotype Y q C) (hC : C ≤ C') :
+    HasGaussianCotype Y q C' :=
+  fun n y ↦ (h n y).trans
+    (mul_le_mul_of_nonneg_right (NNReal.coe_le_coe.2 hC) (gaussianSecondMoment_nonneg _))
+
+/-- The Gaussian cotype inequality holds for families indexed by any finite type. -/
+theorem HasGaussianCotype.norm_toLp_le {ι : Type*} [Fintype ι] (h : HasGaussianCotype Y q C)
+    (y : ι → Y) : ‖WithLp.toLp q y‖ ≤ C * gaussianSecondMoment y := by
+  let e := Fintype.equivFin ι
+  have hy := h _ (y ∘ e.symm)
+  rwa [gaussianSecondMoment_comp_equiv, PiLp.norm_toLp_comp_equiv] at hy
+
+/-! ### Degeneracy and exponent bounds -/
+
+/-- A real normed space with Gaussian cotype constant strictly smaller than `1` is a
+subsingleton. -/
+theorem HasGaussianCotype.subsingleton_of_lt_one (h : HasGaussianCotype Y q C) (hC : C < 1) :
+    Subsingleton Y := by
+  refine subsingleton_of_forall_eq 0 fun x ↦ ?_
+  by_contra hx
+  have hx0 : 0 < ‖x‖ := norm_pos_iff.2 hx
+  have hC1 : (C : ℝ) < 1 := NNReal.coe_lt_coe.2 hC
+  rcases eq_or_ne q 0 with rfl | hq
+  · let y : Y := (2 * ‖x‖)⁻¹ • x
+    have hy_norm : ‖y‖ = 1 / 2 := by
+      rw [norm_smul, Real.norm_eq_abs, abs_of_pos (by positivity)]
+      field_simp [hx0.ne']
+    have hnorm : ‖WithLp.toLp 0 (fun _ : Fin 1 ↦ y)‖ = 1 := by
+      rw [PiLp.norm_eq_card]
+      simp [show y ≠ 0 from fun h0 ↦ by simp [h0] at hy_norm]
+    have h1 := h 1 (fun _ ↦ y)
+    rw [hnorm, gaussianSecondMoment_unique, hy_norm] at h1
+    linarith
+  · have h1 := h 1 (fun _ ↦ x)
+    rw [gaussianSecondMoment_unique] at h1
+    have hnorm : ‖WithLp.toLp q (fun _ : Fin 1 ↦ x)‖ = ‖x‖ :=
+      (PiLp.norm_apply_eq_norm hq (WithLp.toLp q (fun _ : Fin 1 ↦ x)) (0 : Fin 1)).symm
+    rw [hnorm] at h1
+    nlinarith
+
+/-- A nonzero real normed space has no Gaussian cotype `q < 2`: the family of `n` copies of a
+nonzero vector has `ℓ^q` norm `n ^ (1 / q) ‖y‖` (or `n` for `q = 0`) while `G₂ = √n ‖y‖`. -/
+theorem HasGaussianCotype.two_le [Nontrivial Y] (h : HasGaussianCotype Y q C) : 2 ≤ q := by
+  obtain ⟨y, hy⟩ := exists_ne (0 : Y)
+  have hy' : 0 < ‖y‖ := norm_pos_iff.2 hy
+  rcases eq_or_ne q ∞ with rfl | hqtop
+  · exact le_top
+  rcases eq_or_ne q 0 with rfl | hq0
+  · exfalso
+    have key : (1 : ℝ) ≤ 1 / 2 := le_of_forall_rpow_le_mul_rpow (C := C * ‖y‖) fun n ↦ by
+      have hnorm : ‖WithLp.toLp 0 (fun _ : Fin (n + 1) ↦ y)‖ = (n : ℝ) + 1 := by
+        rw [PiLp.norm_eq_card]
+        simp [hy]
+      have hn := h (n + 1) (fun _ ↦ y)
+      rw [hnorm, gaussianSecondMoment_const, Real.sqrt_eq_rpow] at hn
+      simp only [Real.rpow_one, one_div, Fintype.card_fin, Nat.cast_add, Nat.cast_one] at hn ⊢
+      rwa [← mul_assoc, mul_right_comm (C : ℝ)] at hn
+    norm_num at key
+  have hqpos : 0 < q.toReal := ENNReal.toReal_pos hq0 hqtop
+  have key : q.toReal⁻¹ ≤ 1 / 2 := le_of_forall_rpow_le_mul_rpow (C := C) fun n ↦ by
+    have hn := h (n + 1) (fun _ ↦ y)
+    rw [PiLp.norm_eq_sum hqpos, gaussianSecondMoment_const, Real.sqrt_eq_rpow] at hn
+    simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul,
+      Nat.cast_add, Nat.cast_one, ← mul_assoc] at hn
+    rw [Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_mul (norm_nonneg _),
+      mul_one_div_cancel hqpos.ne', Real.rpow_one, one_div] at hn
+    exact le_of_mul_le_mul_right hn hy'
+  rw [← ENNReal.ofReal_toReal hqtop]
+  refine (ENNReal.ofReal_ofNat 2).symm.trans_le (ENNReal.ofReal_le_ofReal ?_)
+  rw [inv_le_iff_one_le_mul₀ hqpos] at key
+  linarith
+
+/-! ### Transport -/
+
+section Transport
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {𝓕 : Type*} [FunLike 𝓕 Y F] [AddMonoidHomClass 𝓕 Y F] {K M : ℝ≥0}
+
+/-- Gaussian cotype passes to the domain of an additive map `f` with `‖x‖ ≤ K ‖f x‖` and
+`‖f x‖ ≤ M ‖x‖`, the constant being multiplied by `K M`. -/
+theorem HasGaussianCotype.of_map (h : HasGaussianCotype F q C) (f : 𝓕)
+    (hK : ∀ x, ‖x‖ ≤ K * ‖f x‖) (hM : ∀ x, ‖f x‖ ≤ M * ‖x‖) :
+    HasGaussianCotype Y q (K * C * M) := by
+  rcases subsingleton_or_nontrivial F with hF | hF
+  · intro n y
+    have hy (i : Fin n) : ‖y i‖ = 0 :=
+      le_antisymm ((hK (y i)).trans (by simp [Subsingleton.elim (f (y i)) 0])) (norm_nonneg _)
+    rw [PiLp.norm_eq_zero_of_forall_norm_eq_zero hy]
+    exact mul_nonneg (NNReal.coe_nonneg _) (gaussianSecondMoment_nonneg _)
+  · have : Fact (1 ≤ q) := ⟨one_le_two.trans h.two_le⟩
+    intro n y
+    calc ‖WithLp.toLp q y‖ ≤ K * ‖WithLp.toLp q (fun i ↦ f (y i))‖ :=
+          PiLp.norm_le_mul_of_forall_norm_le_mul fun i ↦ hK (y i)
+      _ ≤ K * (C * (M * gaussianSecondMoment y)) := by
+          gcongr
+          exact (h n _).trans (by gcongr; exact gaussianSecondMoment_map_le f hM y)
+      _ = (K * C * M : ℝ≥0) * gaussianSecondMoment y := by push_cast; ring
+
+/-- Gaussian cotype passes along linear isometries with the same constant; in particular it passes
+to subspaces, through `Submodule.subtypeₗᵢ`. -/
+theorem HasGaussianCotype.of_linearIsometry {R : Type*} [Semiring R] [Module R Y] [Module R F]
+    (h : HasGaussianCotype F q C) (f : Y →ₗᵢ[R] F) : HasGaussianCotype Y q C := by
+  simpa only [one_mul, mul_one] using
+    h.of_map f (K := 1) (M := 1) (fun x ↦ by simp [f.norm_map]) (fun x ↦ by simp [f.norm_map])
+
+/-- Gaussian cotype passes along a bounded linear equivalence `U`, the constant being multiplied by
+`‖U⁻¹‖ ‖U‖`. -/
+theorem HasGaussianCotype.of_continuousLinearEquiv {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [NormedSpace 𝕜 Y] [NormedSpace 𝕜 F] (h : HasGaussianCotype F q C) (U : Y ≃L[𝕜] F) :
+    HasGaussianCotype Y q (‖(U.symm : F →L[𝕜] Y)‖₊ * C * ‖(U : Y →L[𝕜] F)‖₊) :=
+  h.of_map U (fun x ↦ by simpa using (U.symm : F →L[𝕜] Y).le_opNorm (U x))
+    fun x ↦ (U : Y →L[𝕜] F).le_opNorm x
+
+end Transport
+
+/-! ### Comparison from Rademacher cotype `2` -/
+
+/-- **Gaussian cotype from Rademacher cotype.** Rademacher cotype `2` with constant `C` implies
+Gaussian cotype `2` with the same constant. -/
+theorem HasCotype.hasGaussianCotype_two (h : HasCotype Y 2 C) : HasGaussianCotype Y 2 C := by
+  intro n y
+  refine (sq_le_sq₀ (by positivity)
+    (mul_nonneg C.property (gaussianSecondMoment_nonneg _))).1 ?_
+  -- For each value `g` of the Gaussian vector, the cotype inequality for `(gᵢ yᵢ)ᵢ`.
+  have hpt (g : EuclideanSpace ℝ (Fin n)) :
+      ‖WithLp.toLp 2 (fun i ↦ g i • y i)‖ ^ 2 ≤
+        (C : ℝ) ^ 2 * Finset.univ.expect fun ε : Fin n → ℤˣ ↦ ‖∑ i, g i • ε i • y i‖ ^ 2 := by
+    calc ‖WithLp.toLp 2 (fun i ↦ g i • y i)‖ ^ 2
+        ≤ (C * rademacherSecondMoment fun i ↦ g i • y i) ^ 2 :=
+          pow_le_pow_left₀ (norm_nonneg _) (h.norm_toLp_le _) 2
+      _ = _ := by
+          rw [mul_pow, rademacherSecondMoment_sq]
+          simp_rw [smul_comm (g _)]
+  have hint (ε : Fin n → ℤˣ) :
+      Integrable (fun g : EuclideanSpace ℝ (Fin n) ↦ ‖∑ i, g i • ε i • y i‖ ^ 2)
+        (stdGaussian (EuclideanSpace ℝ (Fin n))) :=
+    integrable_norm_sq_gaussianSum fun i ↦ ε i • y i
+  calc ‖WithLp.toLp 2 y‖ ^ 2
+      = ∫ g : EuclideanSpace ℝ (Fin n), ‖WithLp.toLp 2 (fun i ↦ g i • y i)‖ ^ 2
+          ∂stdGaussian (EuclideanSpace ℝ (Fin n)) := by
+        have heq (g : EuclideanSpace ℝ (Fin n)) :
+            ‖WithLp.toLp 2 (fun i ↦ g i • y i)‖ ^ 2 =
+              ∑ i, inner ℝ (EuclideanSpace.single i (1 : ℝ)) g ^ 2 * ‖y i‖ ^ 2 := by
+          simp [PiLp.norm_sq_eq_of_L2, norm_smul, mul_pow]
+        simp_rw [heq]
+        rw [integral_finsetSum _ fun i _ ↦
+          ((Probability.memLp_inner_stdGaussian _ 2 (by simp)).integrable_sq).mul_const _]
+        simp_rw [integral_mul_const, Probability.integral_sq_inner_stdGaussian]
+        simp [PiLp.norm_sq_eq_of_L2]
+    _ ≤ ∫ g : EuclideanSpace ℝ (Fin n), (C : ℝ) ^ 2 *
+          Finset.univ.expect fun ε : Fin n → ℤˣ ↦ ‖∑ i, g i • ε i • y i‖ ^ 2
+          ∂stdGaussian (EuclideanSpace ℝ (Fin n)) := by
+      refine integral_mono_of_nonneg (.of_forall fun _ ↦ by positivity) ?_
+        (.of_forall hpt)
+      simp_rw [Finset.expect_eq_sum_div_card]
+      exact ((integrable_finsetSum _ fun ε _ ↦ hint ε).div_const _).const_mul _
+    _ = (C : ℝ) ^ 2 * gaussianSecondMoment y ^ 2 := by
+      simp_rw [integral_const_mul, Finset.expect_eq_sum_div_card]
+      rw [integral_div, integral_finsetSum _ fun ε _ ↦ hint ε]
+      simp_rw [← gaussianSecondMoment_sq, gaussianSecondMoment_units_smul]
+      simp
+    _ = (C * gaussianSecondMoment y) ^ 2 := by ring
+
+section InnerProductSpace
+
+variable (𝕜 H : Type*) [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [NormedSpace ℝ H]
+
+include 𝕜 in
+/-- An inner product space has Gaussian cotype `2` with constant `1`. -/
+theorem hasGaussianCotype_two_of_innerProductSpace : HasGaussianCotype H 2 1 :=
+  (hasCotype_two_of_innerProductSpace 𝕜 H).hasGaussianCotype_two
+
+end InnerProductSpace
+
+end TauCeti

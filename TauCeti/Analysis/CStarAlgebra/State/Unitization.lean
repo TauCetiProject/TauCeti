@@ -253,20 +253,10 @@ theorem norm_apply_sub_apply_mul_sq_le (γ : A →P[ℂ] ℂ) {e : A} (he : 0 �
     simp only [u, star_star, ← Unitization.inr_star, ← Unitization.inr_mul, unitization_apply_inr]
     calc ‖γ (y * star y)‖ ≤ N * ‖y * star y‖ := (γ : A →L[ℂ] ℂ).le_opNorm _
       _ = N * ‖y‖ ^ 2 := by rw [CStarRing.norm_self_mul_star, sq]
-  have hval : γ.unitization (star v * v) = N - γ e - γ e + γ (e * e) := by
-    have hv : star v * v =
-        1 - (e : Unitization ℂ A) - e + ((e * e : A) : Unitization ℂ A) := by
-      simp only [v, star_sub, star_one, ← Unitization.inr_star, he.star_eq, Unitization.inr_mul]
-      noncomm_ring
-    rw [hv, map_add, map_sub, map_sub, unitization_apply_one, unitization_apply_inr,
-      unitization_apply_inr]
-  have hnn : 0 ≤ γ.unitization (star v * v) := γ.unitization.map_nonneg (star_mul_self_nonneg v)
-  have hee : (γ (e * e)).re ≤ (γ e).re :=
-    (Complex.le_def.mp (γ.mono (CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one he he1))).1
   have h2 : ‖γ.unitization (star v * v)‖ ≤ N - (γ e).re := by
-    rw [← Complex.re_eq_norm.mpr hnn, hval]
-    simp only [Complex.add_re, Complex.sub_re, Complex.ofReal_re]
-    linarith
+    simpa only [norm_unitization, unitization_apply_inr] using
+      γ.unitization.norm_map_star_one_sub_mul_one_sub_le ((Unitization.inr_nonneg_iff ℂ).mpr he)
+        (by simpa only [Unitization.norm_inr] using he1)
   rw [hkey]
   calc ‖γ.unitization (star u * v)‖ ^ 2
       ≤ ‖γ.unitization (star u * u)‖ * ‖γ.unitization (star v * v)‖ := hcs
