@@ -147,14 +147,10 @@ theorem trajMeasure_congr
   have hae : ∀ᵐ x ∂(μ₀.map e.symm), ∀ n, κ n =ᵐ[(traj κ 0 x).map (frestrictLe n)] η n := by
     rw [ae_all_iff]
     intro n
-    obtain ⟨N, hsub, hN, hN0⟩ := exists_measurable_superset_of_null (ae_iff.1 (h n))
-    rw [Measure.map_apply (measurable_frestrictLe n) hN, trajMeasure,
-      Measure.bind_apply (measurable_frestrictLe n hN) (traj κ 0).aemeasurable,
-      lintegral_eq_zero_iff ((traj κ 0).measurable_coe (measurable_frestrictLe n hN))] at hN0
-    filter_upwards [hN0] with x hx
-    refine ae_iff.2 (measure_mono_null hsub ?_)
-    rw [Measure.map_apply (measurable_frestrictLe n) hN]
-    exact hx
+    have hn := h n
+    rw [trajMeasure, Measure.map_comp _ _ (measurable_frestrictLe n)] at hn
+    filter_upwards [Measure.ae_ae_of_ae_comp hn] with x hx
+    rwa [Kernel.map_apply _ (measurable_frestrictLe n)] at hx
   -- From such a prefix, the two trajectory laws agree by uniqueness.
   have htraj : ∀ᵐ x ∂(μ₀.map e.symm), traj κ 0 x = traj η 0 x := by
     filter_upwards [hae] with x hx
@@ -165,9 +161,6 @@ theorem trajMeasure_congr
       exact hx n
     rw [← Measure.compProd_congr hn,
       map_frestrictLe_trajMeasure_compProd_eq_map_trajMeasure_of_sFinite]
-  ext s hs
-  rw [trajMeasure, trajMeasure, Measure.bind_apply hs (traj κ 0).aemeasurable,
-    Measure.bind_apply hs (traj η 0).aemeasurable]
-  exact lintegral_congr_ae (htraj.mono fun x hx ↦ congrArg (· s) hx)
+  exact Measure.comp_congr htraj
 
 end ProbabilityTheory.Kernel
