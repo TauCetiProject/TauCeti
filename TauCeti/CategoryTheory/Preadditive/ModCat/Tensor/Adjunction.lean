@@ -9,6 +9,9 @@ public import Mathlib.CategoryTheory.Adjunction.Limits
 public import Mathlib.CategoryTheory.Adjunction.Parametrized
 public import TauCeti.CategoryTheory.Preadditive.ModCat.Tensor.Basic
 
+-- Currying and tensor descent compute through `AddCommGrpCat.homLinearEquiv`.
+import all TauCeti.Algebra.Category.Grp.Preadditive
+
 /-!
 # Tensor–Hom adjunctions for modules over a preadditive category
 
@@ -19,6 +22,8 @@ on classes of pure tensors. In particular, both partial tensor functors preserve
 ## References
 
 * B. Mitchell, *Rings with several objects*, Adv. Math. 8 (1972), 1–161, §6, equation (2), p. 26.
+* The pointwise Hom functors use Markus Himmel's `CategoryTheory.preadditiveYoneda` in Mathlib.
+  The adjunctions use Joël Riou's `CategoryTheory.ParametrizedAdjunction` in Mathlib.
 -/
 
 public section
@@ -107,11 +112,6 @@ lemma tensorHomLeft_map_app_app_apply (a : F ⟶ F') (X : Cᵒᵖᵒᵖ)
 
 end HomActions
 
-/-- Identify the values of the pointwise Hom modules with `ℤ`-linear maps for tensor descent. -/
-private def tensorHomValueLinearEquiv (P A : AddCommGrpCat.{w}) :
-    (P ⟶ A) ≃ₗ[ℤ] (P →ₗ[ℤ] A) :=
-  AddCommGrpCat.homAddEquiv.toIntLinearEquiv.trans (addMonoidHomLequivInt ℤ)
-
 section Adjunction
 
 variable [EssentiallySmall.{w} C]
@@ -121,12 +121,12 @@ private noncomputable def tensorHomRightEquiv :
     (tensorObj G F ⟶ A) ≃ (F ⟶ (tensorHomRight.obj (op G)).obj A) where
   toFun h := ObjectProperty.homMk
     { app := fun X ↦ AddCommGrpCat.ofHom
-        (((tensorHomValueLinearEquiv _ _).symm.toLinearMap ∘ₗ
+        ((AddCommGrpCat.homLinearEquiv.symm.toLinearMap ∘ₗ
           ((tmulLinear X.unop).flip.compr₂ h.hom.toIntLinearMap)).toAddMonoidHom)
       naturality := fun X Y f ↦ AddCommGrpCat.ext fun y ↦ AddCommGrpCat.ext fun x ↦
         congrArg (fun z : tensorObj G F ↦ h z) (tmul_balance f.unop x y).symm }
   invFun h := tensorDesc
-    (fun X ↦ ((tensorHomValueLinearEquiv _ _).toLinearMap ∘ₗ
+    (fun X ↦ (AddCommGrpCat.homLinearEquiv.toLinearMap ∘ₗ
       (h.hom.app (op X)).hom.toIntLinearMap).flip)
     (fun X Y f x y ↦
       congrArg (fun k : G.obj.obj (op (op X)) ⟶ A ↦ k x)
@@ -149,12 +149,12 @@ private noncomputable def tensorHomLeftEquiv :
     (tensorObj G F ⟶ A) ≃ (G ⟶ (tensorHomLeft.obj (op F)).obj A) where
   toFun h := ObjectProperty.homMk
     { app := fun X ↦ AddCommGrpCat.ofHom
-        (((tensorHomValueLinearEquiv _ _).symm.toLinearMap ∘ₗ
+        ((AddCommGrpCat.homLinearEquiv.symm.toLinearMap ∘ₗ
           (tmulLinear X.unop.unop).compr₂ h.hom.toIntLinearMap).toAddMonoidHom)
       naturality := fun X Y f ↦ AddCommGrpCat.ext fun x ↦ AddCommGrpCat.ext fun y ↦
         congrArg (fun z : tensorObj G F ↦ h z) (tmul_balance f.unop.unop x y) }
   invFun h := tensorDesc
-    (fun X ↦ (tensorHomValueLinearEquiv _ _).toLinearMap ∘ₗ
+    (fun X ↦ AddCommGrpCat.homLinearEquiv.toLinearMap ∘ₗ
       (h.hom.app (op (op X))).hom.toIntLinearMap)
     (fun X Y f x y ↦
       congrArg (fun k : F.obj.obj (op Y) ⟶ A ↦ k y)
