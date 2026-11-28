@@ -13,7 +13,6 @@ public import Mathlib.RingTheory.Ideal.Quotient.Defs
 public import Mathlib.RingTheory.Ideal.Span
 import Mathlib.Algebra.CharP.Lemmas
 import TauCeti.Algebra.Polynomial.LinearFactor
-import TauCeti.Data.Nat.Factorial.Basic
 
 /-!
 # Taylor coefficients at a root and in subleading degree
@@ -71,10 +70,6 @@ idempotent, while that of `(X - C r) ^ 2` has coordinate `0` in order `1`.
   order `p.rootMultiplicity r` does not vanish at `r`.
 * `Polynomial.eval_iterate_derivative_eq_factorial_mul`: `(derivative^[k] f).eval a` is `k!`
   times `(hasseDeriv k f).eval a`.
-* `Polynomial.pow_dvd_factorial_mul_coeff_mul_X_pow`: `p ^ m` divides
-  `j! * (B * X ^ (p * m)).coeff j` for `0 < p`.
-* `Polynomial.pow_dvd_factorial_mul_coeff_mul_X_pow_add_C_mul`: `p ^ h` divides
-  `j! * (B * (X ^ p + C (p : R) * A) ^ h).coeff j` for `0 < p`.
 * `Polynomial.X_sub_C_pow_dvd_iff_forall_eval_hasseDeriv_eq_zero`,
   `Polynomial.le_rootMultiplicity_iff_forall_eval_hasseDeriv_eq_zero`: `(X - r) ^ n` divides `p`
   (and for `p ≠ 0`, `n ≤ p.rootMultiplicity r`) if and only if the Hasse derivatives of `p` of
@@ -109,39 +104,6 @@ namespace Polynomial
 theorem eval_iterate_derivative_eq_factorial_mul {R : Type*} [Semiring R] (k : ℕ) (f : R[X])
     (a : R) : (derivative^[k] f).eval a = (k.factorial : R) * (hasseDeriv k f).eval a := by
   rw [← factorial_smul_hasseDeriv, LinearMap.smul_apply, eval_smul, nsmul_eq_mul]
-
-/-- If `0 < p`, then `(p : R) ^ m` divides `(j.factorial : R) * (B * X ^ (p * m)).coeff j`
-over any semiring `R`. -/
-theorem pow_dvd_factorial_mul_coeff_mul_X_pow {R : Type*} [Semiring R]
-    {p : ℕ} (hp : 0 < p) (m j : ℕ) (B : R[X]) :
-    (p : R) ^ m ∣ (j.factorial : R) * (B * X ^ (p * m)).coeff j := by
-  rcases lt_or_ge j (p * m) with hlt | hge
-  · simp only [coeff_mul_X_pow', not_le.mpr hlt, ↓reduceIte, mul_zero, dvd_zero]
-  · obtain ⟨q_fac, hq_fac⟩ := Nat.pow_dvd_factorial_of_mul_le hp hge
-    have hcast : (j.factorial : R) = (p : R) ^ m * (q_fac : R) := by
-      rw [hq_fac, Nat.cast_mul, Nat.cast_pow]
-    rw [hcast, mul_assoc]
-    exact dvd_mul_right _ _
-
-/-- If `0 < p`, then `(p : R) ^ h` divides
-`(j.factorial : R) * (B * (X ^ p + C (p : R) * A) ^ h).coeff j` over any commutative semiring
-`R`. -/
-theorem pow_dvd_factorial_mul_coeff_mul_X_pow_add_C_mul {R : Type*} [CommSemiring R]
-    {p : ℕ} (hp : 0 < p) (h j : ℕ) (B A : R[X]) :
-    (p : R) ^ h ∣ (j.factorial : R) * (B * (X ^ p + C (p : R) * A) ^ h).coeff j := by
-  rw [(Commute.all (X ^ p : R[X]) (C (p : R) * A)).add_pow h, Finset.mul_sum,
-    finsetSum_coeff, Finset.mul_sum]
-  refine Finset.dvd_sum fun m hm ↦ ?_
-  have hm_le : m ≤ h := Nat.lt_succ_iff.mp (Finset.mem_range.mp hm)
-  set B' : R[X] := B * A ^ (h - m) * (h.choose m : R[X])
-  have hterm : B * ((X ^ p) ^ m * (C (p : R) * A) ^ (h - m) * (h.choose m : R[X])) =
-      C ((p : R) ^ (h - m)) * (B' * X ^ (p * m)) := by
-    rw [mul_pow, ← C_pow, ← pow_mul]
-    dsimp only [B']
-    ring
-  rw [hterm, coeff_C_mul, mul_left_comm]
-  conv_lhs => rw [← Nat.sub_add_cancel hm_le, pow_add]
-  exact mul_dvd_mul_left _ (pow_dvd_factorial_mul_coeff_mul_X_pow hp m j B')
 
 /-- The coefficients of the Taylor expansion `p(X + r)` as finite sums: the coefficient of `X ^ m`
 is `∑ₖ (k + m).choose m • (p.coeff (k + m) * r ^ k)`, summed over any range of indices `k`

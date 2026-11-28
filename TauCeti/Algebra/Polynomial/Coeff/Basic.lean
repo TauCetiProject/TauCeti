@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Degree.Operations
+import Mathlib.Tactic.Ring
+import TauCeti.Data.Nat.Factorial.Basic
 
 /-!
 # Coefficients of polynomials with a degree bound
@@ -20,6 +22,10 @@ If `p` has smaller degree than `q`, then the largest degree at which the coeffic
 `q` differ is the degree of `q`, where `p` has coefficient `0`.
 `Polynomial.exists_coeff_iff_of_degree_lt` records this in the form in which it decides a
 lexicographic comparison of coefficient sequences, starting from the top degree.
+
+For `p > 0`, multiplying `(B * X ^ (p * m)).coeff j` or `(B * (X ^ p + C p * A) ^ h).coeff j` by
+`j!` produces a multiple of `p ^ m` or `p ^ h` (`Polynomial.pow_dvd_factorial_mul_coeff_mul_X_pow`
+and `Polynomial.pow_dvd_factorial_mul_coeff_mul_X_pow_add_C_mul`).
 -/
 
 public section
@@ -60,5 +66,38 @@ theorem exists_coeff_iff_of_degree_lt {R : Type*} [Semiring R] {r : R → R → 
   · rwa [hp, coeff_natDegree] at hpqi
   · rw [hpq i hgt] at hpqi
     exact absurd hpqi (hr _)
+
+/-- If `0 < p`, then `(p : R) ^ m` divides `(j.factorial : R) * (B * X ^ (p * m)).coeff j`
+over any semiring `R`. -/
+theorem pow_dvd_factorial_mul_coeff_mul_X_pow {R : Type*} [Semiring R]
+    {p : ℕ} (hp : 0 < p) (m j : ℕ) (B : R[X]) :
+    (p : R) ^ m ∣ (j.factorial : R) * (B * X ^ (p * m)).coeff j := by
+  rcases lt_or_ge j (p * m) with hlt | hge
+  · simp only [coeff_mul_X_pow', not_le.mpr hlt, ↓reduceIte, mul_zero, dvd_zero]
+  · obtain ⟨q_fac, hq_fac⟩ := Nat.pow_dvd_factorial_of_mul_le hp hge
+    have hcast : (j.factorial : R) = (p : R) ^ m * (q_fac : R) := by
+      rw [hq_fac, Nat.cast_mul, Nat.cast_pow]
+    rw [hcast, mul_assoc]
+    exact dvd_mul_right _ _
+
+/-- If `0 < p`, then `(p : R) ^ h` divides
+`(j.factorial : R) * (B * (X ^ p + C (p : R) * A) ^ h).coeff j` over any commutative semiring
+`R`. -/
+theorem pow_dvd_factorial_mul_coeff_mul_X_pow_add_C_mul {R : Type*} [CommSemiring R]
+    {p : ℕ} (hp : 0 < p) (h j : ℕ) (B A : R[X]) :
+    (p : R) ^ h ∣ (j.factorial : R) * (B * (X ^ p + C (p : R) * A) ^ h).coeff j := by
+  rw [(Commute.all (X ^ p : R[X]) (C (p : R) * A)).add_pow h, Finset.mul_sum,
+    finsetSum_coeff, Finset.mul_sum]
+  refine Finset.dvd_sum fun m hm ↦ ?_
+  have hm_le : m ≤ h := Nat.lt_succ_iff.mp (Finset.mem_range.mp hm)
+  set B' : R[X] := B * A ^ (h - m) * (h.choose m : R[X])
+  have hterm : B * ((X ^ p) ^ m * (C (p : R) * A) ^ (h - m) * (h.choose m : R[X])) =
+      C ((p : R) ^ (h - m)) * (B' * X ^ (p * m)) := by
+    rw [mul_pow, ← C_pow, ← pow_mul]
+    dsimp only [B']
+    ring
+  rw [hterm, coeff_C_mul, mul_left_comm]
+  conv_lhs => rw [← Nat.sub_add_cancel hm_le, pow_add]
+  exact mul_dvd_mul_left _ (pow_dvd_factorial_mul_coeff_mul_X_pow hp m j B')
 
 end Polynomial

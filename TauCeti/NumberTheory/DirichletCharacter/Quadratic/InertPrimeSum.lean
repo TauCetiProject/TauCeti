@@ -7,14 +7,12 @@ module
 
 public import Mathlib.NumberTheory.Chebyshev
 public import TauCeti.NumberTheory.DirichletCharacter.Quadratic.FundamentalDiscriminant
-import Mathlib.Algebra.BigOperators.Fin
-import Mathlib.Data.Fintype.Prod
-import TauCeti.Algebra.BigOperators.Field
 import TauCeti.Algebra.Order.BigOperators.Sum.Min
+import TauCeti.Algebra.Squarefree
 import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Log.ProdPowDvd
-import TauCeti.NumberTheory.Chebyshev.Basic
+import TauCeti.NumberTheory.Chebyshev.FinitePrimeSums
 import TauCeti.NumberTheory.Chebyshev.PrimeTail
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic.InertPrimeSum.Determinant
 
@@ -41,8 +39,8 @@ by `R ^ 2 * S` yields the explicit bound for all `C ≥ 6` divisible by `3`, and
 ## Main results
 
 * `TauCeti.sum_primesLE_jacobiSym_eq_neg_one_le`: explicit upper bound on
-  `∑_{2C < p ≤ q^C, (d / p) = -1} log p / p` for any squarefree `d ≠ 1` with `|d| ≤ q` (`q ≥ 3`)
-  and any `C ≥ 6` divisible by `3`.
+  `∑_{2C < p ≤ q^C, (d / p) = -1} log p / p` for any nonsquare `d` with `|d| ≤ q` (`q ≥ 3`) and
+  any `C ≥ 6` divisible by `3`.
 * `DirichletCharacter.IsPrimitive.sum_primesLE_filter_eq_neg_one_le`: explicit upper bound on
   `∑_{p ≤ q^C, χ p = -1} log p / p` for a primitive nonprincipal quadratic character `χ` mod `q ≥ 3`
   over any commutative ring with `2 ≠ 0`, for all `C ≥ 6` divisible by `3`.
@@ -243,70 +241,6 @@ private theorem prime_error_sums_le {P : Finset ℕ} {X S C : ℕ}
           field_simp
   linarith
 
-/-- Lower bound on the double truncated sum `2 * ∑ r ∈ range R, ∑ s ∈ range S, min (r / p) s`
-in any strictly ordered field `K`. -/
-private theorem le_two_mul_sum_range_min_div {K : Type*} [Field K] [LinearOrder K]
-    [IsStrictOrderedRing K] (p R S : ℕ) :
-    (R : K) ^ 2 * S / p - (R : K) * S / p - (R : K) ^ 2 / p - 2 * R * S - (R : K) ^ 3 / p ^ 2 ≤
-      2 * ∑ r ∈ range R, ∑ s ∈ range S, ((min (r / p) s : ℕ) : K) := by
-  rcases Nat.eq_zero_or_pos p with rfl | hp
-  · simp only [Nat.cast_zero, div_zero, zero_sub, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true,
-      zero_pow, sub_zero, Nat.div_zero, Nat.zero_min, sum_const_zero, mul_zero]
-    have hRS : (0 : K) ≤ 2 * R * S := by positivity
-    linarith
-  have hpK : (0 : K) < p := by exact_mod_cast hp
-  have hr_term (r : ℕ) (hr : r ∈ range R) :
-      2 * (S : K) * r / p - 2 * S - (R : K) ^ 2 / p ^ 2 - (R : K) / p ≤
-        2 * ∑ s ∈ range S, ((min (r / p) s : ℕ) : K) := by
-    set k := r / p
-    have hk_le : (k : K) ≤ (R : K) / p :=
-      (le_div_iff₀ hpK).mpr (by exact_mod_cast (Nat.div_mul_le_self r p).trans (mem_range.mp hr).le)
-    have hk_ge : (r : K) / p - 1 ≤ k := by
-      rw [sub_le_iff_le_add, div_le_iff₀ hpK]
-      exact_mod_cast (by rw [add_mul, one_mul]; exact (Nat.lt_div_mul_add hp).le : r ≤ (k + 1) * p)
-    have hksq : (k : K) ^ 2 ≤ (R : K) ^ 2 / p ^ 2 := by rw [← div_pow]; gcongr
-    have h2Sk : 2 * (S : K) * r / p - 2 * S ≤ 2 * (S : K) * k := by
-      have hmul := mul_le_mul_of_nonneg_left hk_ge (by positivity : (0 : K) ≤ 2 * S)
-      have hnorm : 2 * (S : K) * ((r : K) / p - 1) = 2 * (S : K) * r / p - 2 * S := by ring
-      linarith
-    linarith [Finset.le_two_mul_sum_range_min (R := K) S k]
-  have hsum_r : ∑ r ∈ range R, (2 * (S : K) * r / p) = (S : K) * ((R : K) * (R - 1)) / p := by
-    calc ∑ r ∈ range R, (2 * (S : K) * r / p)
-        = ∑ r ∈ range R, (2 * (S : K) / p) * (r : K) :=
-          sum_congr rfl fun r _ ↦ by ring
-      _ = (2 * (S : K) / p) * ∑ r ∈ range R, (r : K) := (mul_sum ..).symm
-      _ = (S : K) * ((R : K) * (R - 1)) / p := by rw [Finset.sum_range_natCast]; ring
-  rw [mul_sum]
-  calc (R : K) ^ 2 * S / p - (R : K) * S / p - (R : K) ^ 2 / p - 2 * R * S - (R : K) ^ 3 / p ^ 2
-      = (S : K) * ((R : K) * (R - 1)) / p - (R : K) * (2 * S) -
-          (R : K) * ((R : K) ^ 2 / p ^ 2) - (R : K) * ((R : K) / p) := by ring
-    _ = ∑ r ∈ range R, (2 * (S : K) * r / p - 2 * S - (R : K) ^ 2 / p ^ 2 - (R : K) / p) := by
-        simp only [sub_eq_add_neg, sum_add_distrib, sum_neg_distrib, sum_const, card_range,
-          nsmul_eq_mul, hsum_r]
-    _ ≤ ∑ r ∈ range R, 2 * ∑ s ∈ range S, ((min (r / p) s : ℕ) : K) := sum_le_sum hr_term
-
-/-- Reindexing a sum over `Fin R × Fin S` with reversed second coordinate `S - 1 - j` as a double
-sum over `Finset.range R` and `Finset.range S`. -/
-private theorem sum_fin_prod_rev {M : Type*} [AddCommMonoid M] (R S : ℕ) (f : ℕ → ℕ → M) :
-    ∑ i : Fin R × Fin S, f i.1.val (S - 1 - i.2.val) =
-      ∑ r ∈ Finset.range R, ∑ s ∈ Finset.range S, f r s := by
-  rw [Fintype.sum_prod_type, ← Fin.sum_univ_eq_sum_range (n := R)]
-  refine Finset.sum_congr rfl fun r _ ↦ ?_
-  rw [← Equiv.sum_comp Fin.revPerm (fun s : Fin S ↦ f r.val (S - 1 - s.val)),
-    ← Fin.sum_univ_eq_sum_range (n := S)]
-  exact Finset.sum_congr rfl fun s _ ↦ by
-    congr 1
-    simp only [Fin.revPerm_apply, Fin.val_rev]
-    omega
-
-/-- Reversed-index `Fin R × Fin S` form of `le_two_mul_sum_range_min_div`. -/
-private theorem le_two_mul_sum_fin_prod_min_div {K : Type*} [Field K] [LinearOrder K]
-    [IsStrictOrderedRing K] (p R S : ℕ) :
-    (R : K) ^ 2 * S / p - (R : K) * S / p - (R : K) ^ 2 / p - 2 * R * S - (R : K) ^ 3 / p ^ 2 ≤
-      2 * ∑ i : Fin R × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : K) := by
-  rw [sum_fin_prod_rev R S (fun r s ↦ ((min (r / p) s : ℕ) : K))]
-  exact le_two_mul_sum_range_min_div p R S
-
 private theorem le_two_mul_sum_fin_prod_min_mul_log {p X S : ℕ} (hp : p.Prime) (hSX : S ≤ X) :
     (X : ℝ) ^ 2 * S * (Real.log p / p) - 2 * (X : ℝ) ^ 2 * (Real.log p / p) -
         2 * (X : ℝ) * S * Real.log p - (X : ℝ) ^ 3 * (Real.log p / (p : ℝ) ^ 2) ≤
@@ -317,7 +251,7 @@ private theorem le_two_mul_sum_fin_prod_min_mul_log {p X S : ℕ} (hp : p.Prime)
   have hexp :
       (X : ℝ) ^ 2 * S / p - 2 * (X : ℝ) ^ 2 / p - 2 * X * S - (X : ℝ) ^ 3 / p ^ 2 ≤
         2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ) := by
-    linarith [le_two_mul_sum_fin_prod_min_div (K := ℝ) p X S, hXS_div, h2div]
+    linarith [Fintype.le_two_mul_sum_fin_prod_min_div (K := ℝ) p X S, hXS_div, h2div]
   have hLHS :
       (X : ℝ) ^ 2 * S * (Real.log p / p) - 2 * (X : ℝ) ^ 2 * (Real.log p / p) -
           2 * (X : ℝ) * S * Real.log p - (X : ℝ) ^ 3 * (Real.log p / (p : ℝ) ^ 2) =
@@ -328,22 +262,23 @@ private theorem le_two_mul_sum_fin_prod_min_mul_log {p X S : ℕ} (hp : p.Prime)
 
 end InertPrimeSum
 
-/-- **Explicit Mertens bound for primes inert in `ℚ(√d)`.** For any squarefree integer `d ≠ 1`,
-any integer `q ≥ 3` with `|d| ≤ q`, and any exponent `C ≥ 6` divisible by `3`, the sum of
+/-- **Explicit Mertens bound for primes inert in `ℚ(√d)`.** For any nonsquare integer `d`, any
+integer `q ≥ 3` with `|d| ≤ q`, and any exponent `C ≥ 6` divisible by `3`, the sum of
 `log p / p` over primes `2 * C < p ≤ q ^ C` with `jacobiSym d p = -1` is bounded by
 `(1 + 1 / C) * (2 / 3 + 1 / (2 * C)) * log (q ^ C) + (4 * C * log 4 + 4 * log 4 + 15)`. -/
-theorem sum_primesLE_jacobiSym_eq_neg_one_le {d : ℤ} (hd : Squarefree d) (hd1 : d ≠ 1)
+theorem sum_primesLE_jacobiSym_eq_neg_one_le {d : ℤ} (hd : ¬ IsSquare d)
     {q C : ℕ} (hq3 : 3 ≤ q) (hdq : d.natAbs ≤ q) (hC6 : 6 ≤ C) (hC3 : 3 ∣ C) :
     ∑ p ∈ (Nat.primesLE (q ^ C)).filter (fun p : ℕ ↦ 2 * C < p ∧ jacobiSym d p = -1),
         Real.log p / (p : ℝ) ≤
       (1 + 1 / (C : ℝ)) * (2 / 3 + 1 / (2 * (C : ℝ))) * Real.log ((q : ℝ) ^ C) +
         (4 * (C : ℝ) * Real.log 4 + 4 * Real.log 4 + 15) := by
   open InertPrimeSum in
+  have hd0 : d ≠ 0 := fun h ↦ hd ⟨0, by simp [h]⟩
   set X := q ^ C
   set S := X / C
   obtain ⟨_, hS_pos, -, hdeg⟩ := grid_deg_lt_cube hq3 hC6 hC3
   obtain ⟨D, hD_pos, hD_log, hD_dvd⟩ :=
-    exists_pos_nat_log_le_and_pow_dvd_of_jacobiSym_eq_neg_one hd hd1 hdeg
+    exists_pos_nat_log_le_and_pow_dvd_of_jacobiSym_eq_neg_one hd hdeg
   set P := (Nat.primesLE X).filter fun p : ℕ ↦ 2 * C < p ∧ jacobiSym d p = -1
   have hsum_log_le :
       ∑ p ∈ P, (2 * ∑ i : Fin X × Fin S, ((min (i.1.val / p) (S - 1 - i.2.val) : ℕ) : ℝ)) *
@@ -371,7 +306,7 @@ theorem sum_primesLE_jacobiSym_eq_neg_one_le {d : ℤ} (hd : Squarefree d) (hd1 
   have hrhs_le : Real.log (D : ℝ) ≤
       (X : ℝ) ^ 2 * S * ((1 + 1 / (C : ℝ)) * (2 / 3 + 1 / (2 * (C : ℝ))) *
         Real.log ((q : ℝ) ^ C) + 15) :=
-    hD_log.trans (log_det_bound_explicit hd.ne_zero hq3 hdq (by omega) hC3)
+    hD_log.trans (log_det_bound_explicit hd0 hq3 hdq (by omega) hC3)
   have herr_sum := prime_error_sums_le
     (P := P) (fun _ hp ↦ ⟨(Finset.mem_filter.mp hp).1, (Finset.mem_filter.mp hp).2.1⟩)
     hS_pos (by omega : 0 < C) rfl
@@ -426,7 +361,8 @@ theorem DirichletCharacter.IsPrimitive.sum_primesLE_filter_eq_neg_one_le {R : Ty
       Int.cast_injOn_of_ringChar_ne_two hR (jacobiSym.trichotomy d p) (Or.inr (Or.inr rfl))
         hjac_cast⟩
   have hlarge := (Finset.sum_le_sum_of_subset_of_nonneg hlarge_sub fun _ _ _ ↦ by positivity).trans
-    (TauCeti.sum_primesLE_jacobiSym_eq_neg_one_le hd hd1 hq3 hdq hC6 hC3)
+    (TauCeti.sum_primesLE_jacobiSym_eq_neg_one_le
+      (Int.not_isSquare_of_squarefree_of_ne_one hd hd1) hq3 hdq hC6 hC3)
   linarith
 
 namespace TauCeti
