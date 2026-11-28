@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import TauCeti.NumberTheory.LSeries.ComplexHurwitzSeries
 import TauCeti.Analysis.Complex.ParametricIntegralHolomorphy
+import TauCeti.Analysis.MellinTransform.ExpKernel
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
@@ -21,7 +22,9 @@ Bridges `TauCeti.complexHurwitzSeries_eq_integral` in
 `0 < Re c`.
 
 Splitting off the exponential tail on `(1, ∞)` defines `TauCeti.hurwitzTailIntegral`, which
-converges for all `s : ℂ` when `0 < Re c` and is jointly analytic on
+converges for all `s : ℂ` when `0 < Re c` (via
+`TauCeti.integrableOn_Ioi_cpow_mul_exp_neg_mul_div_one_sub_exp_neg` in
+`TauCeti.Analysis.MellinTransform.ExpKernel`) and is jointly analytic on
 `{p : ℂ × ℂ | 0 < p.2.re}`.
 
 ## Main results
@@ -29,11 +32,9 @@ converges for all `s : ℂ` when `0 < Re c` and is jointly analytic on
 * `TauCeti.integral_cpow_mul_exp_neg_mul_div_one_sub_exp_neg_eq_Gamma_mul_complexHurwitzSeries`:
   `∫₀^∞ t^{s−1} e^{−ct} / (1 − e^{−t}) dt = Γ(s) * complexHurwitzSeries s c` for `1 < s.re` and
   `0 < c.re`.
-* `TauCeti.hurwitzTailIntegral`, `TauCeti.hurwitzTailIntegral_def`,
-  `TauCeti.integrableOn_Ioi_cpow_mul_exp_neg_mul_div_one_sub_exp_neg`, and
+* `TauCeti.hurwitzTailIntegral`, `TauCeti.hurwitzTailIntegral_def`, and
   `TauCeti.analyticOnNhd_hurwitzTailIntegral`:
-  the exponential tail integral on `(1, ∞)`, tail integrability on `Ioi T` for `0 < T`, and joint
-  analyticity on `{p : ℂ × ℂ | 0 < p.2.re}`.
+  the exponential tail integral on `(1, ∞)` and its joint analyticity on `{p : ℂ × ℂ | 0 < p.2.re}`.
 -/
 
 public section
@@ -65,23 +66,6 @@ noncomputable def hurwitzTailIntegral (s c : ℂ) : ℂ :=
 theorem hurwitzTailIntegral_def (s c : ℂ) :
     hurwitzTailIntegral s c =
       ∫ t in Ioi (1 : ℝ), (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t))) := (rfl)
-
-/-- For `0 < T` and `0 < c.re`, the tail integrand
-`t ↦ (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t)))` is integrable on `Ioi T`. -/
-theorem integrableOn_Ioi_cpow_mul_exp_neg_mul_div_one_sub_exp_neg {T : ℝ} (hT : 0 < T) (s : ℂ)
-    {c : ℂ} (hc : 0 < c.re) :
-    IntegrableOn
-      (fun t : ℝ => (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t)))) (Ioi T) := by
-  refine ((integrableOn_rpow_mul_exp_neg_mul_Ioi_of_pos (s := s.re - 1) hT
-    (Or.inl hc)).const_mul (1 - Real.exp (-T))⁻¹).mono'
-    (Measurable.aestronglyMeasurable (by fun_prop)) ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos (hT.trans ht), sub_re, one_re]
-  calc t ^ (s.re - 1) * ‖exp (-c * t) / (1 - exp (-t))‖
-      ≤ t ^ (s.re - 1) * ((1 - Real.exp (-T))⁻¹ * Real.exp (-c.re * t)) :=
-        mul_le_mul_of_nonneg_left (norm_exp_neg_mul_div_one_sub_exp_neg_le hT ht.le c)
-          (Real.rpow_nonneg (hT.trans ht).le _)
-    _ = (1 - Real.exp (-T))⁻¹ * (t ^ (s.re - 1) * Real.exp (-c.re * t)) := by ring
 
 /-- The exponential tail integral is jointly analytic on `{p : ℂ × ℂ | 0 < p.2.re}`. -/
 theorem analyticOnNhd_hurwitzTailIntegral :

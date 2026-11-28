@@ -40,7 +40,7 @@ of `q` events, each with the Markov tail `C / (N ^ a) ^ m`, takes this form thro
   power tends to `0`.
 * `Summable.const_add_rpow` — if `∑ a i ^ r` converges for `r ≤ 0` and `a` is positive
   outside a finite set, so does `∑ (c + a i) ^ r` for every real `c`.
-* `TauCeti.eventually_re_natCast_add_pos` — `(n : ℂ) + c` has positive real part for all
+* `Complex.eventually_re_natCast_add_pos` — `(n : ℂ) + c` has positive real part for all
   sufficiently large `n`.
 * `TauCeti.summable_norm_natCast_add_cpow_neg` and `TauCeti.summable_natCast_add_cpow_neg` —
   absolute convergence of `∑' n : ℕ, ((n : ℂ) + c) ^ (-s)` for `1 < s.re` and any `c : ℂ`.
@@ -94,7 +94,7 @@ theorem _root_.Summable.const_add_rpow {ι : Type*} {a : ι → ℝ} {r : ℝ}
   exact neg_le_iff_add_nonneg'.1 hi
 
 /-- For any `c : ℂ`, `(n : ℂ) + c` has positive real part for all sufficiently large `n : ℕ`. -/
-theorem eventually_re_natCast_add_pos (c : ℂ) :
+theorem _root_.Complex.eventually_re_natCast_add_pos (c : ℂ) :
     ∀ᶠ n : ℕ in Filter.atTop, 0 < ((n : ℂ) + c).re := by
   filter_upwards [(Filter.eventually_gt_atTop (-c.re)).natCast_atTop] with n hn
   simp only [add_re, natCast_re]
@@ -105,7 +105,7 @@ summable (for `c = -n` with `n : ℕ`, the `n`-th summand uses the totalized pri
 `0 ^ (-s) = 0`). -/
 theorem summable_norm_natCast_add_cpow_neg {s : ℂ} (hs : 1 < s.re) (c : ℂ) :
     Summable (fun n : ℕ => ‖((n : ℂ) + c) ^ (-s)‖) := by
-  obtain ⟨N, hN_pos⟩ := Filter.eventually_atTop.mp (eventually_re_natCast_add_pos c)
+  obtain ⟨N, hN_pos⟩ := Filter.eventually_atTop.mp c.eventually_re_natCast_add_pos
   have hN : (N : ℂ) + c ∈ slitPlane := mem_slitPlane_iff.mpr (Or.inl (hN_pos N le_rfl))
   obtain ⟨U, hU, -, C, -, hbound⟩ :=
     exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow hN (-s)

@@ -649,19 +649,72 @@ theorem eq_complexHurwitzZeta₁_of_eqOn_re_gt {c : ℂ} (hc : 0 < c.re) {H R : 
 
 /-! ### Analytic continuation of the shift identity -/
 
-/-- The `c ↦ c + 1` shift identity extends to all `s ≠ 1` and `0 < c.re`. -/
-theorem complexHurwitzZeta_add_one_right {s c : ℂ} (hs : s ≠ 1) (hc : 0 < c.re) :
+/-- The `c ↦ c + k` (`k : ℕ`) shift identity extends to all `s : ℂ` and `0 < c.re` (including
+`s = 1`, where both sides share the totalized polar term `(Gamma s)⁻¹ / (s - 1)`). -/
+theorem complexHurwitzZeta_add_natCast_right {s c : ℂ} (hc : 0 < c.re) (k : ℕ) :
+    complexHurwitzZeta s (c + k) =
+      complexHurwitzZeta s c - ∑ j ∈ Finset.range k, ((j : ℂ) + c) ^ (-s) := by
+  have hc_re : ∀ j : ℕ, 0 < ((j : ℂ) + c).re := fun j => by
+    simp only [add_re, natCast_re]; linarith [j.cast_nonneg (α := ℝ)]
+  have hck : 0 < (c + k).re := by simp only [add_re, natCast_re]; linarith [k.cast_nonneg (α := ℝ)]
+  have hc_ne : ∀ j : ℕ, (j : ℂ) + c ≠ 0 := fun j h0 =>
+    lt_irrefl (0 : ℝ) (by simpa [h0] using hc_re j)
+  let f : ℂ → ℂ := fun w => hurwitzCore w (c + k)
+  let g : ℂ → ℂ := fun w => hurwitzCore w c - ∑ j ∈ Finset.range k, ((j : ℂ) + c) ^ (-w)
+  have hf : DifferentiableOn ℂ f Set.univ := fun w _ =>
+    ((analyticOnNhd_hurwitzCore (w, c + k) hck).comp (f := fun z : ℂ => (z, c + k))
+      (analyticAt_id.prod analyticAt_const)).differentiableAt.differentiableWithinAt
+  have hg : DifferentiableOn ℂ g Set.univ := fun w _ =>
+    (((analyticOnNhd_hurwitzCore (w, c) hc).comp (f := fun z : ℂ => (z, c))
+      (analyticAt_id.prod analyticAt_const)).differentiableAt.sub
+        (DifferentiableAt.fun_sum fun j _ =>
+          differentiableAt_id.neg.const_cpow (Or.inl (hc_ne j)))).differentiableWithinAt
+  have hfreq : ∃ᶠ z in 𝓝[≠] (2 : ℂ), f z = g z := by
+    have hmem : {z : ℂ | 1 < z.re} ∈ 𝓝 (2 : ℂ) :=
+      (isOpen_lt continuous_const continuous_re).mem_nhds (by norm_num)
+    refine ((Filter.eventually_of_mem hmem fun z hz => ?_).filter_mono
+      nhdsWithin_le_nhds).frequently
+    have hz1 : 1 < z.re := hz
+    have hseries := complexHurwitzSeries_add_natCast c hz1 k
+    have hc_pow (j : ℕ) : exp (-z * log ((j : ℂ) + c)) = ((j : ℂ) + c) ^ (-z) := by
+      rw [cpow_def_of_ne_zero (hc_ne j), mul_comm]
+    simp_rw [hc_pow] at hseries
+    dsimp [f, g]
+    rw [← complexHurwitzZeta_sub_inv_Gamma_div z (c + k),
+      ← complexHurwitzZeta_sub_inv_Gamma_div z c,
+      complexHurwitzZeta_eq_complexHurwitzSeries hz1 hck,
+      complexHurwitzZeta_eq_complexHurwitzSeries hz1 hc, hseries]
+    ring
+  have hcore := hf.eqOn_of_isOpen_of_isPreconnected_of_frequently_eq hg isOpen_univ
+    isPreconnected_univ (mem_univ (2 : ℂ)) hfreq (mem_univ s)
+  dsimp [f, g] at hcore
+  calc
+    complexHurwitzZeta s (c + k)
+        = (Gamma s)⁻¹ / (s - 1) + hurwitzCore s (c + k) := rfl
+    _ = ((Gamma s)⁻¹ / (s - 1) + hurwitzCore s c) -
+          ∑ j ∈ Finset.range k, ((j : ℂ) + c) ^ (-s) := by rw [hcore]; ring
+    _ = complexHurwitzZeta s c - ∑ j ∈ Finset.range k, ((j : ℂ) + c) ^ (-s) := rfl
+
+/-- The `c ↦ c + 1` shift identity extends to all `s : ℂ` and `0 < c.re` (including `s = 1`). -/
+theorem complexHurwitzZeta_add_one_right {s c : ℂ} (hc : 0 < c.re) :
     complexHurwitzZeta s (c + 1) = complexHurwitzZeta s c - c ^ (-s) := by
-  have hc1 : 0 < (c + 1).re := by simp; linarith
-  have hc_ne : c ≠ 0 := fun h0 => lt_irrefl (0 : ℝ) (by rwa [h0, zero_re] at hc)
-  have hdg : DifferentiableOn ℂ (fun z => complexHurwitzZeta z c - c ^ (-z)) ({1}ᶜ) :=
-    fun _ hz => ((differentiableAt_complexHurwitzZeta_left hz hc).sub
-      (differentiableAt_id.neg.const_cpow (Or.inl hc_ne))).differentiableWithinAt
-  exact (eq_complexHurwitzZeta_of_eqOn_re_gt hc1 (b := 1) hdg (fun z hz => by
-    have hz1 : 1 < z.re := by simpa using hz
-    dsimp only
-    rw [complexHurwitzZeta_eq_complexHurwitzSeries hz1 hc, complexHurwitzSeries_add_one c hz1,
-      mul_comm (-z), ← cpow_def_of_ne_zero hc_ne]) hs).symm
+  simpa using complexHurwitzZeta_add_natCast_right hc 1
+
+/-- The `c ↦ c + k` (`k : ℕ`) shift identity for `complexHurwitzZeta₁` across all `s : ℂ` and
+`0 < c.re`. -/
+theorem complexHurwitzZeta₁_add_natCast_right {s c : ℂ} (hc : 0 < c.re) (k : ℕ) :
+    complexHurwitzZeta₁ s (c + k) =
+      complexHurwitzZeta₁ s c - (s - 1) * ∑ j ∈ Finset.range k, ((j : ℂ) + c) ^ (-s) := by
+  by_cases hs : s = 1
+  · subst hs; simp
+  · simp only [complexHurwitzZeta₁_eq_sub_one_mul hs, complexHurwitzZeta_add_natCast_right hc k,
+      mul_sub]
+
+/-- The `c ↦ c + 1` shift identity for `complexHurwitzZeta₁` across all `s : ℂ` and
+`0 < c.re`. -/
+theorem complexHurwitzZeta₁_add_one_right {s c : ℂ} (hc : 0 < c.re) :
+    complexHurwitzZeta₁ s (c + 1) = complexHurwitzZeta₁ s c - (s - 1) * c ^ (-s) := by
+  simpa using complexHurwitzZeta₁_add_natCast_right hc 1
 
 end TauCeti
 

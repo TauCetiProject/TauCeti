@@ -29,6 +29,7 @@ namespace TauCeti
 
 /-- At `c = 1` and real `t`, `hurwitzKernel 1 (t : ℂ)` coincides with the real Bernoulli kernel
 `(bernoulliKernel t : ℂ)` (including at `t = 0`). -/
+@[simp]
 theorem hurwitzKernel_one_ofReal (t : ℝ) :
     hurwitzKernel 1 (t : ℂ) = (bernoulliKernel t : ℂ) := by
   rcases eq_or_ne t 0 with rfl | ht

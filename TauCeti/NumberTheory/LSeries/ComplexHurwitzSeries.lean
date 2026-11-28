@@ -75,7 +75,7 @@ theorem summable_norm_complexHurwitzSeries (c : ℂ) {s : ℂ} (hs : 1 < s.re) :
     Summable fun n : ℕ ↦ ‖exp (-s * log (n + c))‖ := by
   refine (summable_norm_natCast_add_cpow_neg hs c).congr_cofinite ?_
   rw [Nat.cofinite_eq_atTop]
-  filter_upwards [eventually_re_natCast_add_pos c] with n hn
+  filter_upwards [c.eventually_re_natCast_add_pos] with n hn
   have hne : (n : ℂ) + c ≠ 0 := fun h0 ↦ lt_irrefl (0 : ℝ) (by rwa [h0, zero_re] at hn)
   rw [cpow_def_of_ne_zero hne, mul_comm]
 

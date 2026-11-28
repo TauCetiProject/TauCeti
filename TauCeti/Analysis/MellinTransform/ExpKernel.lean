@@ -14,6 +14,7 @@ import TauCeti.Analysis.SpecialFunctions.Exp.InvSubOne
 import TauCeti.Analysis.SpecialFunctions.Exp.LatticeSum
 import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
 import TauCeti.Analysis.SpecialFunctions.Pow.Summable
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # Mellin–Laplace exponential kernels
@@ -22,7 +23,9 @@ For `1 < Re s` and `0 < Re c`, the shifted exponential-kernel integrand
 `t ↦ (t : ℂ) ^ (s - 1) * (cexp (-c * t) / (1 - cexp (-t)))` is integrable on `(0, ∞)` via the
 shared scalar bound `(1 - exp (-t))⁻¹ ≤ 1 + t⁻¹` (`TauCeti.inv_one_sub_exp_neg_le`), and any
 compact subset of `{p : ℂ × ℂ | 1 < p.1.re ∧ 0 < p.2.re}` admits a common integrable majorant
-(`TauCeti.exists_integrableOn_norm_cpow_mul_exp_neg_mul_div_one_sub_exp_neg_le`).
+(`TauCeti.exists_integrableOn_norm_cpow_mul_exp_neg_mul_div_one_sub_exp_neg_le`). On a truncated
+half-line `Ioi T` with `0 < T`, the same integrand is integrable for every `s : ℂ` whenever
+`0 < Re c` (`TauCeti.integrableOn_Ioi_cpow_mul_exp_neg_mul_div_one_sub_exp_neg`).
 
 For `1 < Re s` and `0 < Re c`, termwise integration of the `t > 0` geometric expansion
 `exp ((1 - c) * t) / (exp t - 1) = ∑_{k ≥ 0} exp (-(k + c) * t)` over any subset of `(0, ∞)`
@@ -34,6 +37,8 @@ specializing to `c = 1` (for `1 < Re s`) yields `TauCeti.integrableOn_cpow_div_e
 * `TauCeti.integrableOn_cpow_mul_exp_neg_mul_div_one_sub_exp_neg`: integrability of
   `t ↦ (t : ℂ) ^ (s - 1) * (cexp (-c * t) / (1 - cexp (-t)))` on `Ioi 0` for `1 < s.re` and
   `0 < c.re`.
+* `TauCeti.integrableOn_Ioi_cpow_mul_exp_neg_mul_div_one_sub_exp_neg`: tail integrability on
+  `Ioi T` for `0 < T`, every `s : ℂ`, and `0 < c.re`.
 * `TauCeti.exists_integrableOn_norm_cpow_mul_exp_neg_mul_div_one_sub_exp_neg_le`:
   parameter-uniform integrable majorant on compact subsets of
   `{p : ℂ × ℂ | 1 < p.1.re ∧ 0 < p.2.re}`.
@@ -92,6 +97,23 @@ theorem integrableOn_cpow_mul_exp_neg_mul_div_one_sub_exp_neg {s c : ℂ} (hs : 
     _ = ‖(t : ℂ) ^ (s - 1) * cexp (-(c * t))‖ +
           ‖(t : ℂ) ^ ((s - 1) - 1) * cexp (-(c * t))‖ := by
         rw [norm_cpow_mul_exp_neg_mul s c ht0, norm_cpow_mul_exp_neg_mul (s - 1) c ht0]
+
+/-- For `0 < T` and `0 < c.re`, the tail integrand
+`t ↦ (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t)))` is integrable on `Ioi T`. -/
+theorem integrableOn_Ioi_cpow_mul_exp_neg_mul_div_one_sub_exp_neg {T : ℝ} (hT : 0 < T) (s : ℂ)
+    {c : ℂ} (hc : 0 < c.re) :
+    IntegrableOn
+      (fun t : ℝ => (t : ℂ) ^ (s - 1) * (exp (-c * t) / (1 - exp (-t)))) (Ioi T) := by
+  refine ((integrableOn_rpow_mul_exp_neg_mul_Ioi_of_pos (s := s.re - 1) hT
+    (Or.inl hc)).const_mul (1 - Real.exp (-T))⁻¹).mono'
+    (Measurable.aestronglyMeasurable (by fun_prop)) ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos (hT.trans ht), sub_re, one_re]
+  calc t ^ (s.re - 1) * ‖exp (-c * t) / (1 - exp (-t))‖
+      ≤ t ^ (s.re - 1) * ((1 - Real.exp (-T))⁻¹ * Real.exp (-c.re * t)) :=
+        mul_le_mul_of_nonneg_left (norm_exp_neg_mul_div_one_sub_exp_neg_le hT ht.le c)
+          (Real.rpow_nonneg (hT.trans ht).le _)
+    _ = (1 - Real.exp (-T))⁻¹ * (t ^ (s.re - 1) * Real.exp (-c.re * t)) := by ring
 
 /-- On any compact subset `K ⊆ {p : ℂ × ℂ | 1 < p.1.re ∧ 0 < p.2.re}`, the Mellin–Laplace
 integrand is dominated on `(0, ∞)` by a single parameter-independent integrable function. -/
