@@ -8,9 +8,11 @@ module
 public import TauCeti.NumberTheory.ArithmeticFunction.TwistedDivisorSum
 public import Mathlib.Analysis.PSeries
 public import Mathlib.Analysis.SpecialFunctions.Log.Base
+import Mathlib.Algebra.Order.Floor.Semifield
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 public import TauCeti.NumberTheory.ArithmeticFunction.Zeta
 public import Mathlib.NumberTheory.Harmonic.Bounds
+import TauCeti.Analysis.SpecialFunctions.Log.SumLogDiv.AddPow
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Basic
 import TauCeti.NumberTheory.ArithmeticFunction.Misc
 import TauCeti.NumberTheory.Divisors
@@ -66,6 +68,13 @@ factors and for the squared ordinary divisor count. The ordinary divisor count i
 `0 < |c| < Y` therefore number at most `4 Y (1 + log Y)`, where a pointwise bound for each
 `σ₀(|c|)` would lose a power of `Y`.
 
+The Nicolas–Tenenbaum bound `ArithmeticFunction.sum_Ioc_zeta_pow_le_div_factorial_mul_log_add_pow`
+bounds `∑_{1 ≤ n ≤ x} τ_{k+1}(n)` by `x (log x + k)^k / k!` for real `x ≥ 1`, where
+`τ_{k+1}(n)` counts ordered factorizations of `n` into `k + 1` positive integers. In
+Bordellès' class-number estimates, one bounds the class number by such a divisor sum, taking
+the order to be the field degree and the cutoff at least the Minkowski bound. The
+Nicolas–Tenenbaum estimate then gives an explicit upper bound without a regulator term.
+
 These mean bounds extend Arend Mellendijk's 2023 formalization of the squarefree divisor
 majorants in [Prime Number Theorem and More][PNT-Aux]. Heath-Brown's Lemma 3.1, in notes by
 Boris Moroz, treats that squarefree harmonic estimate and a coarser summatory logarithmic
@@ -76,6 +85,8 @@ exponent; the bounds here sum over all positive integers and improve the summato
 ## References
 
 * F. Diamond and J. Shurman, *A First Course in Modular Forms*, §5.9, Proposition 5.9.1.
+* O. Bordellès, *Explicit upper bounds for the average order of d_n(m) and application to class
+  number*, J. Inequal. Pure Appl. Math. 3 (2002), Art. 38, equation (1.2).
 * G. H. Hardy and E. M. Wright, *An Introduction to the Theory of Numbers*, Theorem 317.
 * D. Koukoulopoulos, *The Distribution of Prime Numbers*, Graduate Studies in Mathematics 203,
   AMS (2019), Exercise 2.9(b), (e), (f), pp. 33–34.
@@ -360,6 +371,43 @@ theorem sum_Ioc_zeta_pow_le_mul_one_add_log_pow (k : ℕ) {Z : ℝ} (hZ : 1 ≤ 
     (mul_le_mul (Nat.floor_le (zero_le_one.trans hZ))
       (pow_le_pow_left₀ hH (harmonic_floor_le_one_add_log Z hZ) (k - 1))
       (pow_nonneg hH _) (zero_le_one.trans hZ))
+
+/-- The Nicolas–Tenenbaum bound for the summatory ordered divisor function of order `k + 1`,
+valid for real cutoffs at least one. See Bordellès (2002), equation (1.2). -/
+theorem sum_Ioc_zeta_pow_le_div_factorial_mul_log_add_pow (k : ℕ) {x : ℝ} (hx : 1 ≤ x) :
+    (∑ n ∈ Ioc 0 ⌊x⌋₊, ((ζ ^ (k + 1)) n : ℝ)) ≤
+      x / (k.factorial : ℝ) * (Real.log x + k) ^ k := by
+  induction k generalizing x with
+  | zero =>
+    simpa only [Nat.zero_add, pow_zero, div_one, mul_one, Nat.factorial_zero, Nat.cast_one,
+      Nat.sub_self] using sum_Ioc_zeta_pow_le_mul_one_add_log_pow 1 hx
+  | succ k ih =>
+    have hconv :
+        (∑ n ∈ Ioc 0 ⌊x⌋₊, ((ζ ^ (k + 1 + 1)) n : ℝ)) =
+          ∑ d ∈ Ioc 0 ⌊x⌋₊, ∑ m ∈ Ioc 0 ⌊x / (d : ℝ)⌋₊, ((ζ ^ (k + 1)) m : ℝ) := by
+      rw [pow_succ' ζ (k + 1), ← Nat.cast_sum, sum_Ioc_mul_eq_sum_sum, Nat.cast_sum]
+      refine sum_congr rfl fun d hd ↦ ?_
+      rw [zeta_apply_ne (mem_Ioc.mp hd).1.ne', one_mul, Nat.cast_sum, Nat.floor_div_natCast]
+    rw [hconv]
+    calc
+      _ ≤ ∑ d ∈ Ioc 0 ⌊x⌋₊, (x / d) / (k.factorial : ℝ) *
+          (Real.log (x / d) + k) ^ k := by
+        refine sum_le_sum fun d hd ↦ ih ?_
+        have hm := mem_Ioc.mp hd
+        have hd₀ : 0 < (d : ℝ) := Nat.cast_pos.mpr hm.1
+        rw [le_div_iff₀ hd₀, one_mul]
+        exact (Nat.cast_le.mpr hm.2).trans (Nat.floor_le (zero_le_one.trans hx))
+      _ = x / (k.factorial : ℝ) *
+          ∑ d ∈ Ioc 0 ⌊x⌋₊, (Real.log (x / d) + k) ^ k / d := by
+        rw [mul_sum]
+        exact sum_congr rfl fun d _ ↦ by ring
+      _ ≤ _ := by
+        refine (mul_le_mul_of_nonneg_left
+          (TauCeti.sum_Ioc_log_div_add_pow_div_le k hx (Nat.cast_nonneg k))
+          (by positivity)).trans_eq ?_
+        rw [Nat.factorial_succ, Nat.cast_mul, div_mul_eq_div_div]
+        push_cast
+        ring
 
 /-- A coefficient-one summatory bound for three to the number of distinct prime factors. -/
 theorem sum_Ioc_three_pow_cardDistinctFactors_le_mul_one_add_log_sq {Z : ℝ} (hZ : 1 ≤ Z) :
