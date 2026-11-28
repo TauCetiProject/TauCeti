@@ -9,15 +9,17 @@ public import Mathlib.RingTheory.MvPolynomial.Ideal
 import TauCeti.RingTheory.MvPolynomial.Ideal
 
 /-!
-# Evaluation of monomials into ideal powers
+# Polynomial evaluation into ideal powers
 
-If a family `φ : σ → A` of elements of an `R`-algebra `A` takes values in an ideal `I : Ideal A`,
-then evaluating any monomial of total degree at least `d` at `φ` lands in `I ^ d`.
+A lower bound on the degree in selected variables gives a lower bound on the ideal power
+containing the value of the polynomial when those variables take values in the ideal.
 
 ## Main results
 
 * `MvPolynomial.aeval_monomial_mem_pow`: substituting elements of an ideal `I` into a unit monomial
   of total degree at least `d` produces an element of `I ^ d`.
+* `MvPolynomial.aeval_mem_pow_of_le_weight`: each monomial need only have degree at least `d`
+  in the selected variables; the values at the other variables are arbitrary.
 
 ## References
 
@@ -43,5 +45,26 @@ theorem aeval_monomial_mem_pow {R A σ : Type*} [CommSemiring R] [CommSemiring A
     exact hφ u
   exact Ideal.le_comap_pow (aeval φ) d
     (Ideal.pow_right_mono h_vars d ((monomial_mem_pow_idealOfVars_iff d γ one_ne_zero).2 hγ))
+
+/-- If each monomial of `p` has degree at least `d` in the variables selected by `D`, and
+those variables take values in `I`, then `aeval φ p` lies in `I ^ d`. -/
+theorem aeval_mem_pow_of_le_weight {R A σ : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+    {p : MvPolynomial σ R} {φ : σ → A} {I : Ideal A} (D : σ → Prop) [DecidablePred D]
+    (hφ : ∀ u, D u → φ u ∈ I) {d : ℕ}
+    (hp : ∀ β ∈ p.support, d ≤ Finsupp.weight (fun u ↦ if D u then 1 else 0) β) :
+    aeval φ p ∈ I ^ d := by
+  rw [p.as_sum, aeval_sum]
+  refine Ideal.sum_mem _ fun β hβ ↦ ?_
+  rw [aeval_monomial]
+  apply Ideal.mul_mem_left
+  have h := Ideal.prod_mem_prod (s := β.support) (I := fun u ↦ I ^ (if D u then β u else 0))
+    (x := fun u ↦ φ u ^ β u) (fun u _ ↦ by
+      by_cases hu : D u
+      · simpa only [ite_eq_left hu] using Ideal.pow_mem_pow (hφ u hu) (β u)
+      · simp [hu])
+  rw [Finset.prod_pow_eq_pow_sum] at h
+  have hd : d ≤ ∑ u ∈ β.support, if D u then β u else 0 := by
+    simpa [Finsupp.weight_apply, Finsupp.sum, nsmul_eq_mul, mul_ite] using hp β hβ
+  exact Ideal.pow_le_pow_right hd h
 
 end MvPolynomial
