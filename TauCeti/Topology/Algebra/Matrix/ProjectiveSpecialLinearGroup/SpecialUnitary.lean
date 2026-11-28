@@ -37,6 +37,8 @@ kernel of `toPSL` onto `PSU(n)` is a homeomorphism
   groups `SU(n) ⧸ ker toPSL ≃ₜ* PSU(n)`.
 * `Matrix.specialUnitaryGroup.isOpenQuotientMap_toPSL_rangeRestrict`: `toPSL.rangeRestrict` is an
   open quotient map from `SU(n)` onto `PSU(n)`.
+* `Matrix.specialUnitaryGroup.instContinuousSMulRangeToPSL`: the projective conjugation action of
+  `PSU(n)` on `SU(n)` is jointly continuous.
 -/
 
 public section
@@ -123,6 +125,18 @@ theorem isOpenQuotientMap_toPSL_rangeRestrict :
   rw [heq]
   exact quotientKerToPSLContinuousMulEquiv.toHomeomorph.isOpenQuotientMap.comp
     QuotientGroup.isOpenQuotientMap_mk
+
+/-- Over `ℝ` or `ℂ`, the projective conjugation action of `PSU(n)` on `SU(n)` is jointly
+continuous. -/
+instance instContinuousSMulRangeToPSL :
+    ContinuousSMul
+      (toPSL : specialUnitaryGroup n 𝕜 →* ProjectiveSpecialLinearGroup n 𝕜).range
+      (specialUnitaryGroup n 𝕜) where
+  continuous_smul := by
+    rw [← (isOpenQuotientMap_toPSL_rangeRestrict.prodMap IsOpenQuotientMap.id).continuous_comp_iff]
+    refine ((continuous_fst.mul continuous_snd).mul continuous_fst.inv).congr ?_
+    rintro ⟨u, A⟩
+    simp [toPSL_rangeRestrict_smul, ConjAct.toConjAct_smul]
 
 end RCLike
 

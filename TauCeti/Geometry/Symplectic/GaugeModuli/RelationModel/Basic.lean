@@ -35,6 +35,8 @@ field theory for coprime rank and degree*, §3).
 
 ## Main definitions
 
+* `TauCeti.GaugeModuli.commutatorProduct`: the ordered commutator product
+  `(A₁, B₁, …, A_g, B_g) ↦ [A₁, B₁] ⋯ [A_g, B_g]` valued in `SU(r)`.
 * `TauCeti.GaugeModuli.relationModuli`: the orbit quotient of `TauCeti.relationSet r ζ g` by
   simultaneous `SU(r)`-conjugation, with the quotient topology.
 * `TauCeti.GaugeModuli.relationModuliEquivPSUOrbitQuotient`: homeomorphism identifying
@@ -43,11 +45,15 @@ field theory for coprime rank and degree*, §3).
 
 ## Main results
 
-* `TauCeti.GaugeModuli.isClosed_relationSet`, `TauCeti.GaugeModuli.isCompact_relationSet`,
+* `TauCeti.GaugeModuli.continuous_commutatorProduct`,
+  `TauCeti.GaugeModuli.mem_relationSet_iff_commutatorProduct`,
+  `TauCeti.GaugeModuli.relationSet_eq_preimage_commutatorProduct`,
+  `TauCeti.GaugeModuli.isClosed_relationSet`, `TauCeti.GaugeModuli.isCompact_relationSet`,
   `TauCeti.GaugeModuli.continuous_conjAct_smul_relationSet`, and
-  `T2Space (relationModuli r ζ g)`: the relation set is compact, the simultaneous `SU(r)`
-  conjugation map and induced `PSU(r)` action are continuous (with the `PSU(r)` action proper), and
-  the quotient `relationModuli r ζ g` is compact Hausdorff.
+  `T2Space (relationModuli r ζ g)`: the commutator product is continuous with `relationSet r ζ g`
+  as its coerced fiber, the relation set is compact, the simultaneous `SU(r)` conjugation map and
+  induced `PSU(r)` action are continuous (with the `PSU(r)` action proper), and the quotient
+  `relationModuli r ζ g` is compact Hausdorff.
 * `TauCeti.GaugeModuli.eq_zero_of_commute_relationSet_of_trace_eq_zero`: vanishing of the
   trace-free commuting matrices (the infinitesimal stabilizer) at every solution when `ζ` is a
   primitive `r`-th root of unity (via `TauCeti.exists_eq_smul_one_of_commute_relationSet`).
@@ -130,30 +136,52 @@ theorem quotient_mk_relationModuli_eq_iff {r : ℕ} {ζ : ℂ} {g : ℕ} (x y : 
   exact ⟨fun ⟨u, hu⟩ => ⟨ConjAct.ofConjAct u, congrArg Subtype.val hu⟩,
     fun ⟨u, hu⟩ => ⟨ConjAct.toConjAct u, Subtype.ext hu⟩⟩
 
+/-- The ordered commutator product `(A₁, B₁, …, A_g, B_g) ↦ [A₁, B₁] ⋯ [A_g, B_g]` valued in
+`SU(r)`. -/
+def commutatorProduct (r g : ℕ)
+    (x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ) :
+    Matrix.specialUnitaryGroup (Fin r) ℂ :=
+  (List.ofFn fun j => ⁅(x j).1, (x j).2⁆).prod
+
+/-- Evaluation of the ordered commutator product `commutatorProduct r g`. -/
+@[simp]
+theorem commutatorProduct_apply {r g : ℕ}
+    (x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ) :
+    commutatorProduct r g x = (List.ofFn fun j => ⁅(x j).1, (x j).2⁆).prod := by
+  unfold commutatorProduct
+  rfl
+
+/-- Membership in `relationSet r ζ g` as the coerced fiber of `commutatorProduct r g` over
+`ζ • 1`. -/
+theorem mem_relationSet_iff_commutatorProduct {r : ℕ} {ζ : ℂ} {g : ℕ}
+    {x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ} :
+    x ∈ relationSet r ζ g ↔ (commutatorProduct r g x : Matrix (Fin r) (Fin r) ℂ) = ζ • 1 := by
+  rw [mem_relationSet, commutatorProduct_apply]
+
+/-- Characterization of `relationSet r ζ g` as the coerced fiber of `commutatorProduct r g` over
+`ζ • 1`. -/
+theorem relationSet_eq_preimage_commutatorProduct (r : ℕ) (ζ : ℂ) (g : ℕ) :
+    relationSet r ζ g =
+      (fun x => (commutatorProduct r g x : Matrix (Fin r) (Fin r) ℂ)) ⁻¹' {ζ • 1} := by
+  ext x
+  simp
+
+/-- The ordered commutator product `commutatorProduct r g` is continuous. -/
+theorem continuous_commutatorProduct (r g : ℕ) : Continuous (commutatorProduct r g) := by
+  simp_rw [funext (fun x => commutatorProduct_apply x), List.ofFn_eq_map]
+  refine continuous_list_prod (List.finRange g) fun j _ => ?_
+  have hA : Continuous fun x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ ×
+      Matrix.specialUnitaryGroup (Fin r) ℂ => (x j).1 :=
+    continuous_fst.comp (continuous_apply j)
+  have hB : Continuous fun x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ ×
+      Matrix.specialUnitaryGroup (Fin r) ℂ => (x j).2 :=
+    continuous_snd.comp (continuous_apply j)
+  exact ((hA.mul hB).mul hA.inv).mul hB.inv
+
 /-- The twisted relation set is closed in `(SU(r) × SU(r))^g`. -/
 theorem isClosed_relationSet (r : ℕ) (ζ : ℂ) (g : ℕ) : IsClosed (relationSet r ζ g) := by
-  have hcont : Continuous fun x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ ×
-      Matrix.specialUnitaryGroup (Fin r) ℂ =>
-      ((List.ofFn fun j => ⁅(x j).1, (x j).2⁆).prod : Matrix (Fin r) (Fin r) ℂ) := by
-    refine continuous_subtypeVal.comp ?_
-    simp_rw [List.ofFn_eq_map]
-    refine continuous_list_prod (List.finRange g) fun j _ => ?_
-    have hA : Continuous fun x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ ×
-        Matrix.specialUnitaryGroup (Fin r) ℂ => (x j).1 :=
-      continuous_fst.comp (continuous_apply j)
-    have hB : Continuous fun x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ ×
-        Matrix.specialUnitaryGroup (Fin r) ℂ => (x j).2 :=
-      continuous_snd.comp (continuous_apply j)
-    exact ((hA.mul hB).mul hA.inv).mul hB.inv
-  have hset : relationSet r ζ g =
-      (fun x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ ×
-          Matrix.specialUnitaryGroup (Fin r) ℂ =>
-        ((List.ofFn fun j => ⁅(x j).1, (x j).2⁆).prod : Matrix (Fin r) (Fin r) ℂ)) ⁻¹'
-        {ζ • 1} := by
-    ext x
-    simp [mem_relationSet]
-  rw [hset]
-  exact isClosed_singleton.preimage hcont
+  rw [relationSet_eq_preimage_commutatorProduct]
+  exact isClosed_singleton.preimage (continuous_subtypeVal.comp (continuous_commutatorProduct r g))
 
 /-- The twisted relation set is compact. -/
 theorem isCompact_relationSet (r : ℕ) (ζ : ℂ) (g : ℕ) : IsCompact (relationSet r ζ g) :=
@@ -163,32 +191,56 @@ instance instCompactSpaceRelationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
     CompactSpace (relationSet r ζ g) :=
   isCompact_iff_compactSpace.mp (isCompact_relationSet r ζ g)
 
+private theorem conjAct_toConjAct_smul_eq_self_iff {G : Type*} [Group G] (u a : G) :
+    ConjAct.toConjAct u • a = a ↔ Commute u a := by
+  rw [ConjAct.toConjAct_smul, mul_inv_eq_iff_eq_mul]
+  rfl
+
 /-- Central elements of `SU(r)` act trivially on `relationSet r ζ g`. -/
-theorem conjAct_smul_eq_self_of_mem_center {r : ℕ} {ζ : ℂ} {g : ℕ}
+theorem conjAct_smul_relationSet_eq_self_of_mem_center {r : ℕ} {ζ : ℂ} {g : ℕ}
     {u : Matrix.specialUnitaryGroup (Fin r) ℂ}
     (hu : u ∈ Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ))
     (x : relationSet r ζ g) : ConjAct.toConjAct u • x = x := by
-  have hfix (a : Matrix.specialUnitaryGroup (Fin r) ℂ) : ConjAct.toConjAct u • a = a := by
-    rw [ConjAct.smul_def, ConjAct.ofConjAct_toConjAct, mul_inv_eq_iff_eq_mul]
-    exact (Subgroup.mem_center_iff.mp hu a).symm
+  have hfix (a : Matrix.specialUnitaryGroup (Fin r) ℂ) : ConjAct.toConjAct u • a = a :=
+    (conjAct_toConjAct_smul_eq_self_iff u a).mpr (Subgroup.mem_center_iff.mp hu a).symm
   exact Subtype.ext <| funext fun j => Prod.ext (hfix (x.val j).1) (hfix (x.val j).2)
 
-/-- The induced simultaneous conjugation action of `PSU(r)` on `relationSet r ζ g`. When `ζ` is a
-primitive `r`-th root of unity, the action is free (`isCancelSMul_psu_relationSet`), and when
+/-- Projective conjugation of `PSU(r)` preserves the twisted relation set. -/
+theorem psu_smul_mem_relationSet {r : ℕ} {ζ : ℂ} {g : ℕ}
+    (p : (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
+      ProjectiveSpecialLinearGroup (Fin r) ℂ).range)
+    {x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ}
+    (hx : x ∈ relationSet r ζ g) : p • x ∈ relationSet r ζ g := by
+  obtain ⟨u, rfl⟩ := toPSL.rangeRestrict_surjective p
+  have heq :
+      (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
+          ProjectiveSpecialLinearGroup (Fin r) ℂ).rangeRestrict u • x =
+        ConjAct.toConjAct u • x :=
+    funext fun j => Prod.ext (toPSL_rangeRestrict_smul u (x j).1)
+      (toPSL_rangeRestrict_smul u (x j).2)
+  rw [heq]
+  exact conjAct_smul_mem_relationSet _ hx
+
+/-- The induced simultaneous conjugation action of `PSU(r)` on `relationSet r ζ g`, obtained by
+restricting the coordinatewise projective conjugation action on `(SU(r) × SU(r))^g`. When `ζ` is
+a primitive `r`-th root of unity, the action is free (`isCancelSMul_psu_relationSet`), and when
 additionally `relationSet r ζ g` is nonempty, the action is faithful. -/
 noncomputable instance instMulActionPSURelationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
     MulAction (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
-      ProjectiveSpecialLinearGroup (Fin r) ℂ).range (relationSet r ζ g) :=
-  MulAction.compHom (relationSet r ζ g) <|
-    MonoidHom.liftOfSurjective
-      (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
-        ProjectiveSpecialLinearGroup (Fin r) ℂ).rangeRestrict
-      toPSL.rangeRestrict_surjective
-      ⟨(MulAction.toPermHom (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ))
-          (relationSet r ζ g)).comp ConjAct.toConjAct.toMonoidHom, by
-        rw [MonoidHom.ker_rangeRestrict]
-        exact IsConcreteLE.le_iff.mpr fun _ hu => MonoidHom.mem_ker.mpr <| Equiv.ext fun x =>
-          conjAct_smul_eq_self_of_mem_center (ker_toPSL_le_center hu) x⟩
+      ProjectiveSpecialLinearGroup (Fin r) ℂ).range (relationSet r ζ g) where
+  smul p x := ⟨p • x.val, psu_smul_mem_relationSet p x.property⟩
+  one_smul x := Subtype.ext (one_smul _ x.val)
+  mul_smul p q x := Subtype.ext (mul_smul p q x.val)
+
+@[simp]
+theorem coe_psu_smul_relationSet {r : ℕ} {ζ : ℂ} {g : ℕ}
+    (p : (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
+      ProjectiveSpecialLinearGroup (Fin r) ℂ).range)
+    (x : relationSet r ζ g) :
+    ((p • x : relationSet r ζ g) :
+      Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ) =
+      p • x.val :=
+  (rfl)
 
 /-- On an element `toPSL.rangeRestrict u ∈ PSU(r)`, the `PSU(r)` action on `relationSet r ζ g`
 agrees with simultaneous conjugation by `u ∈ SU(r)`. -/
@@ -197,8 +249,9 @@ theorem toPSL_rangeRestrict_smul_relationSet {r : ℕ} {ζ : ℂ} {g : ℕ}
     (u : Matrix.specialUnitaryGroup (Fin r) ℂ) (x : relationSet r ζ g) :
     (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
       ProjectiveSpecialLinearGroup (Fin r) ℂ).rangeRestrict u • x =
-      ConjAct.toConjAct u • x := by
-  simp [MulAction.compHom_smul_def]
+      ConjAct.toConjAct u • x :=
+  Subtype.ext <| funext fun j =>
+    Prod.ext (toPSL_rangeRestrict_smul u (x.val j).1) (toPSL_rangeRestrict_smul u (x.val j).2)
 
 /-- The simultaneous conjugation map `SU(r) × relationSet r ζ g → relationSet r ζ g` is
 continuous. -/
@@ -213,16 +266,23 @@ theorem continuous_conjAct_smul_relationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
     (continuous_fst.mul
       (hπ.comp ((continuous_apply j).comp (continuous_subtypeVal.comp continuous_snd)))).mul
       continuous_fst.inv
-  exact continuous_induced_rng.mpr (continuous_pi fun j =>
-    (hcoord j Prod.fst continuous_fst).prodMk (hcoord j Prod.snd continuous_snd))
+  refine continuous_induced_rng.mpr ?_
+  refine (continuous_pi fun j =>
+    (hcoord j Prod.fst continuous_fst).prodMk (hcoord j Prod.snd continuous_snd)).congr ?_
+  rintro ⟨u, x⟩
+  refine funext fun j => ?_
+  dsimp only [Function.comp_apply]
+  rw [coe_conjAct_smul_relationSet]
+  exact Prod.ext (ConjAct.toConjAct_smul u (x.val j).1).symm
+    (ConjAct.toConjAct_smul u (x.val j).2).symm
 
 instance instContinuousSMulPSURelationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
     ContinuousSMul (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
       ProjectiveSpecialLinearGroup (Fin r) ℂ).range (relationSet r ζ g) where
-  continuous_smul := by
-    rw [← (isOpenQuotientMap_toPSL_rangeRestrict.prodMap IsOpenQuotientMap.id).continuous_comp_iff]
-    exact (continuous_conjAct_smul_relationSet r ζ g).congr fun ⟨u, x⟩ =>
-      (toPSL_rangeRestrict_smul_relationSet u x).symm
+  continuous_smul :=
+    continuous_induced_rng.mpr <|
+      (continuous_fst.smul (continuous_subtypeVal.comp continuous_snd)).congr fun ⟨p, x⟩ =>
+        (coe_psu_smul_relationSet p x).symm
 
 /-- The induced `PSU(r)` action on `relationSet r ζ g` is proper, since `PSU(r)` is compact
 and `relationSet r ζ g` is Hausdorff. -/
@@ -299,14 +359,11 @@ theorem conjAct_smul_relationSet_eq_self_iff {r : ℕ} {ζ : ℂ}
       u ∈ Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) := by
   constructor
   · intro h
-    have hcomm {a : Matrix.specialUnitaryGroup (Fin r) ℂ}
-        (ha : ConjAct.toConjAct u • a = a) : Commute u a := by
-      rw [ConjAct.smul_def, ConjAct.ofConjAct_toConjAct, mul_inv_eq_iff_eq_mul] at ha
-      exact ha
     refine TauCeti.relationSet_stabilizer_central hζ x.property fun j => ?_
     have hj : ConjAct.toConjAct u • x.val j = x.val j := congrFun (congrArg Subtype.val h) j
-    exact ⟨hcomm (congrArg Prod.fst hj), hcomm (congrArg Prod.snd hj)⟩
-  · exact fun hu => conjAct_smul_eq_self_of_mem_center hu x
+    exact ⟨(conjAct_toConjAct_smul_eq_self_iff u _).mp (congrArg Prod.fst hj),
+      (conjAct_toConjAct_smul_eq_self_iff u _).mp (congrArg Prod.snd hj)⟩
+  · exact fun hu => conjAct_smul_relationSet_eq_self_of_mem_center hu x
 
 /-- **Freeness of the induced `PSU(r)` action.** For a primitive `r`-th root of unity `ζ`, an
 element of `PSU(r)` fixes a point `x : relationSet r ζ g` if and only if it is `1` (so the action
@@ -431,9 +488,12 @@ instance instContinuousSMulCenterTwistRelationSet (r : ℕ) (ζ : ℂ) (g : ℕ)
           (π₁ (p.1 j)).val * π₂ (p.2.val j) :=
       (continuous_subtypeVal.comp (hπ₁.comp ((continuous_apply j).comp continuous_fst))).mul
         (hπ₂.comp ((continuous_apply j).comp (continuous_subtypeVal.comp continuous_snd)))
-    exact continuous_induced_rng.mpr (continuous_pi fun j =>
+    refine continuous_induced_rng.mpr ?_
+    refine (continuous_pi fun j =>
       (hcoord j Prod.fst continuous_fst Prod.fst continuous_fst).prodMk
-        (hcoord j Prod.snd continuous_snd Prod.snd continuous_snd))
+        (hcoord j Prod.snd continuous_snd Prod.snd continuous_snd)).congr ?_
+    rintro ⟨ε, x⟩
+    exact funext fun j => (coe_centerTwist_smul_relationSet ε x j).symm
 
 /-- Central twists commute with simultaneous `SU(r)`-conjugation on `relationSet r ζ g`. -/
 instance instSMulCommClassCenterTwistConjAct (r : ℕ) (ζ : ℂ) (g : ℕ) :

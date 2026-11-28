@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Basic.Complex.Basic
+public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
 public import Mathlib.LinearAlgebra.UnitaryGroup
@@ -43,6 +44,9 @@ rotations of the round sphere.
 * `Matrix.specialUnitaryGroup.toGL_toSL`: in `GL(n)`, it agrees with the unitary units.
 * `Matrix.specialUnitaryGroup.toPSL`: the homomorphism `SU(n) → PSL(n)`, whose range is `PSU(n)`.
 * `Matrix.specialUnitaryGroup.ker_toPSL`: its kernel is the preimage of the center of `SL(n)`.
+* `Matrix.specialUnitaryGroup.instMulDistribMulActionRangeToPSL` and
+  `Matrix.specialUnitaryGroup.toPSL_rangeRestrict_smul`: projective conjugation action of `PSU(n)`
+  on `SU(n)`.
 * `Matrix.specialUnitaryGroup.scalarCenter` and `Matrix.specialUnitaryGroup.coe_scalarCenter`:
   over `ℝ` or `ℂ`, construct a central element of `SU(n)` from a `card n`-th root of unity.
 * `Matrix.specialUnitaryGroup.mk_mem_range_toPSL_iff`: over `ℝ` or `ℂ`, the class of a matrix of
@@ -54,6 +58,7 @@ rotations of the round sphere.
   matrices whose scalar is a `card n`-th root of unity.
 * `Matrix.specialUnitaryGroup.centerEquivRootsOfUnity`,
   `Matrix.specialUnitaryGroup.scalar_centerEquivRootsOfUnity`,
+  `Matrix.specialUnitaryGroup.diagonal_centerEquivRootsOfUnity`,
   `Matrix.specialUnitaryGroup.coe_centerEquivRootsOfUnity_eq_diag`,
   `Matrix.specialUnitaryGroup.coe_centerEquivRootsOfUnity_symm`, and
   `Matrix.specialUnitaryGroup.centerEquivRootsOfUnity_eq_iff`: over `ℂ` with nonempty index
@@ -130,6 +135,44 @@ theorem ker_toPSL_le_center :
     (toPSL : specialUnitaryGroup n α →* _).ker ≤ Subgroup.center (specialUnitaryGroup n α) := by
   rw [ker_toPSL]
   exact Subgroup.comap_center_le_center toSL_injective
+
+/-- Projective conjugation of `PSU(n)` on `SU(n)`, descended from conjugation by `SU(n)` via
+`ker_toPSL_le_center`. -/
+noncomputable instance instMulDistribMulActionRangeToPSL :
+    MulDistribMulAction
+      (toPSL : specialUnitaryGroup n α →* ProjectiveSpecialLinearGroup n α).range
+      (specialUnitaryGroup n α) :=
+  let conjAut :
+      (toPSL : specialUnitaryGroup n α →* ProjectiveSpecialLinearGroup n α).range →*
+        MulAut (specialUnitaryGroup n α) :=
+    MonoidHom.liftOfSurjective
+      (toPSL : specialUnitaryGroup n α →* ProjectiveSpecialLinearGroup n α).rangeRestrict
+      toPSL.rangeRestrict_surjective
+      ⟨(MulDistribMulAction.toMulAut (ConjAct (specialUnitaryGroup n α))
+          (specialUnitaryGroup n α)).comp ConjAct.toConjAct.toMonoidHom, by
+        rw [MonoidHom.ker_rangeRestrict]
+        exact IsConcreteLE.le_iff.mpr fun u hu => MonoidHom.mem_ker.mpr <| MulEquiv.ext fun A => by
+          change ConjAct.toConjAct u • A = A
+          rw [ConjAct.toConjAct_smul, mul_inv_eq_iff_eq_mul]
+          exact (Subgroup.mem_center_iff.mp (ker_toPSL_le_center hu) A).symm⟩
+  { smul p A := conjAut p A
+    one_smul A := by
+      change conjAut 1 A = A
+      simp
+    mul_smul p q A := by
+      change conjAut (p * q) A = conjAut p (conjAut q A)
+      simp
+    smul_one p := (conjAut p).map_one
+    smul_mul p A B := (conjAut p).map_mul A B }
+
+/-- On an element `toPSL.rangeRestrict u ∈ PSU(n)`, projective conjugation on `SU(n)` agrees with
+conjugation by `u ∈ SU(n)`. -/
+@[simp]
+theorem toPSL_rangeRestrict_smul (u A : specialUnitaryGroup n α) :
+    (toPSL : specialUnitaryGroup n α →* ProjectiveSpecialLinearGroup n α).rangeRestrict u • A =
+      ConjAct.toConjAct u • A := by
+  dsimp only [HSMul.hSMul, SMul.smul, instMulDistribMulActionRangeToPSL]
+  simp [ConjAct.toConjAct_smul]
 
 /-- Over a ring without zero divisors, such as `ℝ` or `ℂ`, the kernel of `SU(2) → PSL(2)` is
 `{1, -1}`, so that `PSU(2) = SU(2) ⧸ {±1}`. -/
@@ -305,6 +348,16 @@ theorem scalar_centerEquivRootsOfUnity [Nonempty n]
   have hSL := SpecialLinearGroup.scalar_eq_coe_self_center
     ⟨toSL (A : specialUnitaryGroup n ℂ), toSL_mem_center A⟩ (Classical.arbitrary n)
   simpa [centerEquivRootsOfUnity, SpecialLinearGroup.center_equiv_rootsOfUnity'_apply] using hSL
+
+/-- Reconstructing a diagonal scalar matrix from a central element's `centerEquivRootsOfUnity`
+coordinate recovers the underlying matrix (so `simp` reduces `scalar n _` via
+`Matrix.scalar_apply`). -/
+@[simp]
+theorem diagonal_centerEquivRootsOfUnity [Nonempty n]
+    (A : Subgroup.center (specialUnitaryGroup n ℂ)) :
+    diagonal (fun _ : n => ((centerEquivRootsOfUnity A : ℂˣ) : ℂ)) =
+      ((A : specialUnitaryGroup n ℂ) : Matrix n n ℂ) := by
+  rw [← Matrix.scalar_apply, scalar_centerEquivRootsOfUnity]
 
 /-- The diagonal entries of a central element of `SU(n, ℂ)` equal its `centerEquivRootsOfUnity`
 coordinate. -/

@@ -198,8 +198,9 @@ theorem nonempty_relationModuli_of_pos (r : ℕ) (ζ : ℂ) (hζ : IsPrimitiveRo
   obtain ⟨x⟩ := nonempty_relationSet_of_pos r ζ hζ g hg
   exact ⟨Quotient.mk _ x⟩
 
-/-- At genus one, the central-twist action of `(Z(SU(r)) × Z(SU(r)))^1` (representing
-`H¹(T²; μ_r)` for `r ≥ 1`, and trivial at `r = 0`) on `relationModuli r ζ 1` is trivial. -/
+/-- At genus one, when `ζ` is a primitive `r`-th root of unity, the central-twist action of
+`(Z(SU(r)) × Z(SU(r)))^1` (representing `H¹(T²; μ_r)` for `r ≥ 1`, and trivial at `r = 0`) on
+`relationModuli r ζ 1` is trivial. -/
 @[simp]
 theorem centerTwist_smul_eq_self_relationModuli_genus_one (r : ℕ) (ζ : ℂ)
     (hζ : IsPrimitiveRoot ζ r)
