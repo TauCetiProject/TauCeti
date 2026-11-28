@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Basic
+import Mathlib.Tactic.FieldSimp
 
 /-!
 # Power commutation for scalar-commuting elements of an algebra
@@ -26,6 +27,8 @@ of `R`.
   `(u * x) ^ n = r ^ (n * (n - 1)) • (u ^ n * x ^ n)`.
 * `TauCeti.Algebra.smul_eq_of_mem_algebraMapSubmonoid`: such an action fixes the elements of
   `Algebra.algebraMapSubmonoid A M`.
+* `TauCeti.inv_algebraMap_eq_smul_inv_algebraMap_mul`: in a field `K` that is an `S`-algebra,
+  `1/d = d' • 1/(d d')` when the image of `d'` is nonzero (refining a denominator).
 -/
 
 public section
@@ -54,6 +57,14 @@ theorem mul_pow_of_mul_eq_sq_smul_mul {r : R} {u x : A} (h : x * u = r ^ 2 • (
     rw [pow_succ, ih, smul_mul_assoc, mul_assoc, ← mul_assoc (x ^ n), hxnu, smul_mul_assoc,
       mul_smul_comm, smul_smul, ← pow_mul, ← pow_add, hexp, mul_assoc u (x ^ n) x, ← pow_succ x,
       ← mul_assoc (u ^ n) u, ← pow_succ u, Nat.add_sub_cancel]
+
+/-- **Refining a denominator**: in a field `K` that is an `S`-algebra, `1/d = d' • 1/(d d')` when
+the image of `d'` in `K` is nonzero. -/
+theorem inv_algebraMap_eq_smul_inv_algebraMap_mul {S K : Type*} [CommSemiring S] [Field K]
+    [Algebra S K] {d d' : S} (hd' : algebraMap S K d' ≠ 0) :
+    (algebraMap S K d)⁻¹ = d' • (algebraMap S K (d * d'))⁻¹ := by
+  rw [Algebra.smul_def, map_mul]
+  field_simp
 
 /-- A monoid `G` acting on the `R`-algebra `A` multiplicatively and commuting with the scalars of
 `R`, for instance by `R`-algebra endomorphisms, fixes the image in `A` of a submonoid of `R`. -/
