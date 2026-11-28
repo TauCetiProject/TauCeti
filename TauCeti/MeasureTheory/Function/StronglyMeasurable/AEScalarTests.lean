@@ -7,6 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.Function.StronglyMeasurable.ScalarTests
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
+public import Mathlib.Analysis.InnerProductSpace.Basic
+import Mathlib.Analysis.InnerProductSpace.LinearMap
 import TauCeti.Analysis.Normed.Operator.Norming
 
 /-!
@@ -16,6 +18,9 @@ Scalar a.e. measurability and an essentially separable range characterize a.e. s
 measurability. On a complete separable supporting subspace, any separating family of
 continuous linear functionals suffices. Each scalar test may have its own exceptional null
 set. The full-dual criterion requires no completeness of the target or supporting subspace.
+On a complete second-countable real inner product space the inner products with fixed vectors
+form such a separating family
+(`TauCeti.aestronglyMeasurable_of_forall_aemeasurable_inner`).
 
 The proofs apply the pointwise Pettis criteria to the null-measurable σ-algebra and then
 use Mathlib's `aestronglyMeasurable_iff_nullMeasurable_separable` to return to the original
@@ -149,5 +154,25 @@ theorem aestronglyMeasurable_iff_scalar_tests {f : S → X} :
   exact hfg.symm
 
 end RCLike
+
+section InnerProduct
+
+variable {E S : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  [SecondCountableTopology E] [MeasurableSpace S] {μ : Measure S}
+
+/-- On a complete second-countable real inner product space, a function whose inner products with
+every fixed vector are almost everywhere measurable is almost everywhere strongly measurable: the
+functionals `⟪u, ·⟫` separate points. -/
+theorem aestronglyMeasurable_of_forall_aemeasurable_inner {f : S → E}
+    (hf : ∀ u : E, AEMeasurable (fun s ↦ inner ℝ u (f s)) μ) : AEStronglyMeasurable f μ := by
+  have : CompleteSpace (⊤ : Submodule ℝ E) :=
+    (show IsClosed ((⊤ : Submodule ℝ E) : Set E) by simp).completeSpace_coe
+  refine (aestronglyMeasurable_iff_separating_tests (E := ⊤) (Y := range (innerSL ℝ))
+    (fun x _ hx ↦ inner_self_eq_zero.1 (hx _ ⟨x, rfl⟩))
+    (ae_of_all _ fun _ ↦ Submodule.mem_top)).2 ?_
+  rintro _ ⟨u, rfl⟩
+  simpa using hf u
+
+end InnerProduct
 
 end TauCeti

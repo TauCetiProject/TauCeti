@@ -76,6 +76,17 @@ theorem measurable_tilted (κ : Kernel β α) [IsSFiniteKernel κ] {f : β → �
   rw [h]
   exact (Kernel.withDensity κ _).measurable
 
+/-- For an integrable exponential weight `exp ∘ f`, an observable with values in a real normed
+space has vanishing Bochner integral under the tilted measure `μ.tilted f` iff its product with
+the weight has vanishing Bochner integral under `μ`. -/
+theorem integral_tilted_eq_zero_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {μ : Measure α} {f : α → ℝ} (hf : Integrable (fun x ↦ exp (f x)) μ) {g : α → E} :
+    ∫ x, g x ∂μ.tilted f = 0 ↔ ∫ x, exp (f x) • g x ∂μ = 0 := by
+  rcases eq_zero_or_neZero μ with rfl | _
+  · simp
+  simp_rw [integral_tilted, div_eq_inv_mul, mul_smul, integral_smul, smul_eq_zero, inv_eq_zero,
+    or_iff_right (integral_exp_pos hf).ne']
+
 end TauCeti
 
 namespace MeasureTheory.Measure

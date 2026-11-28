@@ -20,8 +20,9 @@ zero vanishes almost everywhere.
 
 ## Main results
 
-* `MeasureTheory.Measure.ext_of_integral_exp_inner_eq`: Laplace transforms agreeing near zero
-  determine a finite measure.
+* `MeasureTheory.Measure.ext_of_integral_exp_inner_eq`: if a measure `μ` has exponential moments
+  on a neighbourhood of zero (so it is finite), a finite measure `ν` whose Laplace transform agrees
+  with that of `μ` near zero equals `μ`.
 * `MeasureTheory.ae_eq_zero_of_integral_exp_inner_mul_eq_zero`: a real function whose products
   with `exp ⟪u, ·⟫` are integrable with integral zero for all `u` near zero vanishes almost
   everywhere, for any measure.
