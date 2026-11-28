@@ -61,9 +61,11 @@ theorem gnsRepresentation_eq_smul_one
     (φ : StarPositiveFunctional (InfiniteTypeAHeckeAlgebra ℂ q)) (hq0 : (q : ℂ) + ↑q⁻¹ = 0)
     (x : InfiniteTypeAHeckeAlgebra ℂ q) :
     gnsRepresentation φ x = indexCharacter ℂ q x • 1 := by
+  let _ : CStarAlgebra (φ.HilbertGNS →L[ℂ] φ.HilbertGNS) := inferInstance
   have hnorm (i : ℕ) : IsStarNormal (gnsRepresentation φ (T q i)) :=
     isStarNormal_of_mem_unitary (gnsRepresentation_T_mem_unitary φ i)
-  exact map_eq_smul_one_indexCharacter_of_isStarNormal hq0 (gnsRepresentation φ) hnorm x
+  simpa only [Algebra.algebraMap_eq_smul_one] using
+    map_eq_algebraMap_indexCharacter_of_isStarNormal hq0 (gnsRepresentation φ) hnorm x
 
 /-- At `q + q⁻¹ = 0` (`q = ±i`), every algebraically positive functional `φ` is a scalar multiple
 of `indexCharacter ℂ q`. -/
@@ -94,7 +96,8 @@ theorem apply_one_eq_one_and_forall_star_mul_self_nonneg_iff_of_sq_eq_neg_one
     (hsq : (q : ℂ) ^ 2 = -1) {μ : InfiniteTypeAHeckeAlgebra ℂ q →ₗ[ℂ] ℂ} :
     (μ 1 = 1 ∧ ∀ x, 0 ≤ μ (star x * x)) ↔ μ = (indexCharacter ℂ q).toLinearMap :=
   apply_one_eq_one_and_forall_star_mul_self_nonneg_iff_of_add_inv_eq_zero <|
-    mul_left_cancel₀ q.ne_zero (by linear_combination hsq + q.mul_inv)
+    mul_left_cancel₀ q.ne_zero <| by
+      rw [Units.val_mul_add_inv, mul_zero, hsq, add_neg_cancel]
 
 /-- **Classification of positive Markov traces on the unit circle for `(q + q⁻¹) ^ 2 ≤ 1`.**
 This covers both `q = ±i` (`(q + q⁻¹) ^ 2 = 0`) and `0 < (q + q⁻¹) ^ 2 ≤ 1` (including `l = 3`):
@@ -114,8 +117,9 @@ theorem isMarkovTrace_and_forall_star_mul_self_nonneg_iff_of_add_inv_sq_le_one
       have hz : z = q := by
         simpa [hμ.map_one, hμ_eq] using (hμ.map_mul_T (n := 0) (Subalgebra.one_mem _)).symm
       exact Or.inl ⟨hz, hμ_eq⟩
-    · have hs_sa : IsSelfAdjoint ((q : ℂ) + ↑q⁻¹) :=
-        Units.isSelfAdjoint_add_inv_of_mem_unitary hq.out
+    · have hs_sa : IsSelfAdjoint ((q : ℂ) + ↑q⁻¹) := by
+        simpa only [Units.mem_unitary_iff_star_eq_inv.mp hq.out] using
+          IsSelfAdjoint.add_star_self (q : ℂ)
       let τ : ℂ := (((q : ℂ) + ↑q⁻¹) ^ 2)⁻¹
       have hτ : τ * ((q : ℂ) + ↑q⁻¹) ^ 2 = 1 := inv_mul_cancel₀ (pow_ne_zero 2 hs0)
       have : Fact (IsSelfAdjoint τ) := ⟨(hs_sa.pow 2).inv₀⟩

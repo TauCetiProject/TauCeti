@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Opposite
+public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.Algebra.Star.NonUnitalSubalgebra
 
 /-!
@@ -19,6 +20,9 @@ opposite equivalences on nonunital and unital `⋆`-algebra homomorphisms and no
 * `StarAlgHom.op`, `StarAlgHom.unop`: `(A →⋆ₐ[R] B) ≃ (Aᵐᵒᵖ →⋆ₐ[R] Bᵐᵒᵖ)`.
 * `NonUnitalStarSubalgebra.op`, `NonUnitalStarSubalgebra.unop`, `NonUnitalStarSubalgebra.opEquiv`:
   `NonUnitalStarSubalgebra R A ≃o NonUnitalStarSubalgebra R Aᵐᵒᵖ`.
+* `TauCeti.starRingOfConjOpposite`, `TauCeti.starModule_of_conjOpposite`: assemble `StarRing` and
+  `StarModule` instances on an `R`-algebra from a conjugate-linear algebra map into `Aᵐᵒᵖ`
+  whose double application fixes an algebra-generating set.
 -/
 
 public section
@@ -144,3 +148,43 @@ def opEquiv : NonUnitalStarSubalgebra R A ≃o NonUnitalStarSubalgebra R Aᵐᵒ
     opEquiv.symm S = S.unop := (rfl)
 
 end NonUnitalStarSubalgebra
+
+namespace TauCeti
+
+section ConjOppositeStar
+
+variable {R A : Type*} [CommSemiring R] [StarRing R] [Semiring A] [Algebra R A]
+
+/-- Assemble a `StarRing` instance on an `R`-algebra `A` from a ring homomorphism `f : A →+* Aᵐᵒᵖ`
+conjugating scalars whose double application fixes an algebra-generating set `s`. -/
+@[expose, instance_reducible]
+def starRingOfConjOpposite {s : Set A} (hs : Algebra.adjoin R s = ⊤)
+    (f : A →+* Aᵐᵒᵖ) (hf : ∀ r : R, f (algebraMap R A r) = op (algebraMap R A (star r)))
+    (hinv : ∀ x ∈ s, (f (f x).unop).unop = x) : StarRing A where
+  star x := (f x).unop
+  star_involutive := by
+    let g : A →ₐ[R] A :=
+      { toFun x := (f (f x).unop).unop
+        map_one' := by simp
+        map_mul' x y := by simp
+        map_zero' := by simp
+        map_add' x y := by simp
+        commutes' r := by simp [hf] }
+    exact DFunLike.congr_fun
+      (AlgHom.ext_of_adjoin_eq_top (φ₁ := g) (φ₂ := AlgHom.id R A) hs hinv)
+  star_mul x y := by simp
+  star_add x y := by simp
+
+/-- The `StarModule` instance accompanying `starRingOfConjOpposite`. -/
+theorem starModule_of_conjOpposite [StarRing A] (f : A →+* Aᵐᵒᵖ)
+    (hf : ∀ r : R, f (algebraMap R A r) = op (algebraMap R A (star r)))
+    (hstar : ∀ x, star x = (f x).unop) : StarModule R A where
+  star_smul r x := by
+    have h : star (algebraMap R A r) = algebraMap R A (star r) := by
+      rw [hstar, hf]
+      rfl
+    simp [Algebra.smul_def, star_mul, h, Algebra.commutes]
+
+end ConjOppositeStar
+
+end TauCeti

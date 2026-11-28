@@ -25,11 +25,8 @@ elements sends every generator to `q` and factors through `indexCharacter R q`.
 
 * `TauCeti.InfiniteTypeAHeckeAlgebra.map_T_eq_algebraMap_of_isStarNormal`: normal generator images
   collapse to `q` when `q + q⁻¹ = 0`.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.map_eq_algebraMap_indexCharacter_of_isStarNormal`,
-  `TauCeti.InfiniteTypeAHeckeAlgebra.map_eq_smul_one_indexCharacter_of_isStarNormal`:
+* `TauCeti.InfiniteTypeAHeckeAlgebra.map_eq_algebraMap_indexCharacter_of_isStarNormal`:
   representations by normal generators factor through `indexCharacter`.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.map_eq_algebraMap_indexCharacter_of_mem_unitary`:
-  unitary representations at `q + q⁻¹ = 0` factor through `indexCharacter`.
 -/
 
 public section
@@ -65,19 +62,6 @@ theorem map_eq_algebraMap_indexCharacter_of_isStarNormal (hq : (q : R) + ↑q⁻
   DFunLike.congr_fun
     (hom_ext (F := AlgHom.ofClass φ) (G := (Algebra.ofId R A).comp (indexCharacter R q))
       fun i ↦ by simpa using map_T_eq_algebraMap_of_isStarNormal hq φ (hφ i)) x
-
-/-- Scalar-action form of `map_eq_algebraMap_indexCharacter_of_isStarNormal`. -/
-theorem map_eq_smul_one_indexCharacter_of_isStarNormal (hq : (q : R) + ↑q⁻¹ = 0) (φ : F)
-    (hφ : ∀ i, IsStarNormal (φ (T q i))) (x : InfiniteTypeAHeckeAlgebra R q) :
-    φ x = indexCharacter R q x • (1 : A) := by
-  rw [map_eq_algebraMap_indexCharacter_of_isStarNormal hq φ hφ x, Algebra.algebraMap_eq_smul_one]
-
-/-- **Unitary representations at `q + q⁻¹ = 0` factor through `indexCharacter`.** -/
-theorem map_eq_algebraMap_indexCharacter_of_mem_unitary (hq : (q : R) + ↑q⁻¹ = 0) (φ : F)
-    (hφ : ∀ i, φ (T q i) ∈ unitary A) (x : InfiniteTypeAHeckeAlgebra R q) :
-    φ x = algebraMap R A (indexCharacter R q x) :=
-  map_eq_algebraMap_indexCharacter_of_isStarNormal hq φ
-    (fun i ↦ isStarNormal_of_mem_unitary (hφ i)) x
 
 end RepeatedRoot
 

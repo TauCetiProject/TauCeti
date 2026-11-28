@@ -96,11 +96,6 @@ theorem isStarProjection_gnsRepresentation_e (i : ℕ) :
     IsStarProjection (gnsRepresentation φ (e τ i)) :=
   (isStarProjection_e i).map (gnsRepresentation φ)
 
-/-- Every generator `e τ i` acts on `φ.HilbertGNS` with operator norm at most `1`. -/
-theorem norm_gnsRepresentation_e_le_one (i : ℕ) : ‖gnsRepresentation φ (e τ i)‖ ≤ 1 := by
-  rw [gnsRepresentation_eq_boundedRepresentation, φ.boundedRepresentation_apply]
-  exact φ.norm_hilbertLeftMul_le_one_of_isStarProjection (isStarProjection_e i)
-
 end Functional
 
 /-- Algebraic positivity of a linear functional on `BalancedProjectionAlgebra ℂ τ` is equivalent to

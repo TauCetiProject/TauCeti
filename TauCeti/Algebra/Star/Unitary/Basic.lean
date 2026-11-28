@@ -38,8 +38,7 @@ the Cartan decomposition of `H`. The same elements also form the subgroup
 * `Unitary.ringInverse_coe`: the ring inverse of a unitary element is its adjoint.
 * `Units.mem_unitary_iff_star_eq_inv`: a unit `u` is unitary if and only if `star u = u⁻¹`
   in `R`.
-* `Units.isSelfAdjoint_add_inv_of_mem_unitary`, `Units.star_sub_inv_of_mem_unitary`: for a unitary
-  unit `u`, `u + u⁻¹` is self-adjoint and `u - u⁻¹` is skew-adjoint.
+* `Units.star_sub_inv_of_mem_unitary`: for a unitary unit `u`, `u - u⁻¹` is skew-adjoint.
 * `Subgroup.unitaryInfEquiv`: the unitary elements of a subgroup `H` of `Mˣ` are the unitary
   elements of `M` whose unit lies in `H`.
 * `Subgroup.unitaryPart`: the unitary part of a subgroup of units, with `Subgroup.mem_unitaryPart`
@@ -107,12 +106,6 @@ theorem star_inv_eq_of_mem_unitary (h : (u : R) ∈ unitary R) : star (↑u⁻¹
   rw [← mem_unitary_iff_star_eq_inv.1 h, star_star]
 
 end Monoid
-
-/-- For a unit `u` whose underlying element is unitary, `u + u⁻¹` is self-adjoint. -/
-theorem isSelfAdjoint_add_inv_of_mem_unitary {R : Type*} [Semiring R] [StarRing R] {u : Rˣ}
-    (h : (u : R) ∈ unitary R) : IsSelfAdjoint ((u : R) + ↑u⁻¹) := by
-  rw [IsSelfAdjoint, star_add, mem_unitary_iff_star_eq_inv.1 h, star_inv_eq_of_mem_unitary h,
-    add_comm]
 
 /-- For a unit `u` whose underlying element is unitary, `u - u⁻¹` is skew-adjoint. -/
 theorem star_sub_inv_of_mem_unitary {R : Type*} [Ring R] [StarRing R] {u : Rˣ}

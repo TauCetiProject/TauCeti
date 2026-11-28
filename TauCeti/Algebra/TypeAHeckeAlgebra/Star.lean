@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.Subalgebra
 public import Mathlib.Algebra.Star.SelfAdjoint
+public import TauCeti.Algebra.Star.Opposite
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Embedding
 import TauCeti.Algebra.Star.SelfAdjoint
 
@@ -74,25 +75,13 @@ private theorem conjugateReverse_algebraMap (r : R) :
       op (algebraMap R _ (star r)) := by
   simp [conjugateReverse, Algebra.compHom_algebraMap_apply, starRingEnd_apply]
 
-private theorem conjugateReverse_involutive (x : InfiniteTypeAHeckeAlgebra R q) :
-    unop (conjugateReverse (unop (conjugateReverse x))) = x := by
-  have hx : x ∈ Algebra.adjoin R (Set.range (T q)) := by simp [adjoin_range_T]
-  induction hx using Algebra.adjoin_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    simp [conjugateReverse_T]
-  | algebraMap r => simp [conjugateReverse_algebraMap]
-  | add x y _ _ hx hy => simp [map_add, hx, hy]
-  | mul x y _ _ hx hy => simp [map_mul, hx, hy]
-
 /-- The real-parameter star ring structure: generators are self-adjoint and scalars are
 conjugated. Requires `Fact (IsSelfAdjoint (q : R))`, i.e. a star-fixed (e.g. real) parameter. -/
 @[no_expose]
-instance instStarRing : StarRing (InfiniteTypeAHeckeAlgebra R q) where
-  star x := unop (conjugateReverse x)
-  star_involutive := conjugateReverse_involutive
-  star_mul x y := by simp [map_mul]
-  star_add x y := by simp [map_add]
+instance instStarRing : StarRing (InfiniteTypeAHeckeAlgebra R q) :=
+  starRingOfConjOpposite adjoin_range_T conjugateReverse conjugateReverse_algebraMap (by
+    rintro _ ⟨i, rfl⟩
+    simp [conjugateReverse_T])
 
 /-- Every generator is self-adjoint in the real-parameter convention. -/
 @[simp]
@@ -106,13 +95,9 @@ theorem star_val_inv_unitT (i : ℕ) :
     simp [IsSelfAdjoint]
   simpa only [Ring.inverse_unit] using h.ringInverse.star_eq
 
-private theorem star_algebraMap (r : R) :
-    star (algebraMap R (InfiniteTypeAHeckeAlgebra R q) r) = algebraMap R _ (star r) :=
-  congrArg unop (conjugateReverse_algebraMap r)
-
 /-- The real-parameter involution is conjugate-linear over the coefficient ring. -/
-instance instStarModule : StarModule R (InfiniteTypeAHeckeAlgebra R q) where
-  star_smul r x := by simp [Algebra.smul_def, star_mul, star_algebraMap, Algebra.commutes]
+instance instStarModule : StarModule R (InfiniteTypeAHeckeAlgebra R q) :=
+  starModule_of_conjOpposite conjugateReverse conjugateReverse_algebraMap (fun _ ↦ rfl)
 
 section UniversalProperty
 

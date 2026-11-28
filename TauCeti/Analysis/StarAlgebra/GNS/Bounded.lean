@@ -81,13 +81,6 @@ variable {A : Type*} [NonUnitalRing A] [Module ℂ A] [StarRing A] [StarModule �
 /-- The Hilbert-space completion of the algebraic GNS inner product space `φ.GNS`. -/
 abbrev HilbertGNS : Type _ := Completion φ.GNS
 
-/-- Bounded operators on `φ.HilbertGNS` form a proper star ring. Direct typeclass search hits
-pending-depth limits when unfolding `φ.HilbertGNS` through `Completion` and `SeparationQuotient`, so
-we seed the `CStarAlgebra` instance explicitly. -/
-instance : IsProperStar (φ.HilbertGNS →L[ℂ] φ.HilbertGNS) :=
-  let _ : CStarAlgebra (φ.HilbertGNS →L[ℂ] φ.HilbertGNS) := inferInstance
-  inferInstance
-
 /-- The canonical linear map sending an algebra element to its class in the completed GNS Hilbert
 space. -/
 def hilbertClassMap : A →ₗ[ℂ] φ.HilbertGNS :=
@@ -656,13 +649,9 @@ theorem exists_cstar_state_representation_iff_of_forall_continuous_leftMul
       (exists_cstar_representation_iff_forall_nonneg_of_forall_continuous_leftMul hcont).mp
         ⟨C, hC₁, hC₂, hC₃, ω, π, hf⟩⟩
   · rintro ⟨hf₁, hpos⟩
-    let φ : StarPositiveFunctional A := ⟨f, hpos⟩
-    exact ⟨φ.HilbertGNS →L[ℂ] φ.HilbertGNS, inferInstance, inferInstance, inferInstance,
-      φ.hilbertPositiveLinearMap, φ.boundedRepresentation (hcont φ),
-      (φ.hilbertPositiveLinearMap_one).trans
-        ((StarPositiveFunctional.mk_apply f hpos 1).trans hf₁),
-      fun a => (φ.hilbertPositiveLinearMap_boundedRepresentation (hcont φ) a).trans
-        (StarPositiveFunctional.mk_apply f hpos a)⟩
+    obtain ⟨C, hC₁, hC₂, hC₃, ω, π, hf⟩ :=
+      (exists_cstar_representation_iff_forall_nonneg_of_forall_continuous_leftMul hcont).mpr hpos
+    exact ⟨C, hC₁, hC₂, hC₃, ω, π, by simpa only [map_one, hf₁] using hf 1, hf⟩
 
 end CStarRealization
 

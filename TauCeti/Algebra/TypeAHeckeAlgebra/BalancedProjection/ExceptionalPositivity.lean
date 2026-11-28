@@ -56,6 +56,7 @@ theorem commute_gnsRepresentation_of_zero
     (φ : StarPositiveFunctional (BalancedProjectionAlgebra ℂ 0))
     (x y : BalancedProjectionAlgebra ℂ 0) :
     Commute (gnsRepresentation φ x) (gnsRepresentation φ y) :=
+  let _ : CStarAlgebra (φ.HilbertGNS →L[ℂ] φ.HilbertGNS) := inferInstance
   commute_map_of_zero (gnsRepresentation φ) (isStarProjection_gnsRepresentation_e φ) x y
 
 /-- At `τ = 0`, every algebraically positive linear functional is automatically tracial. -/

@@ -9,6 +9,7 @@ public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Infinite
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
+import TauCeti.Algebra.Ring.Units
 
 /-!
 # Algebraic comparison between the balanced projection and type-A Hecke presentations
@@ -290,7 +291,8 @@ theorem one_add_sq_smul_heckeEquiv_one_sub_e (hτ : τ * ((q : R) + ↑q⁻¹) ^
     ((1 : R) + (q : R) ^ 2) • heckeEquiv q hτ (1 - e τ i) =
       algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i := by
   have hcoeff : ((1 : R) + (q : R) ^ 2) * (τ * ((q : R) + ↑q⁻¹)) = q := by
-    linear_combination -(τ * ((q : R) + ↑q⁻¹)) * q.mul_inv + (q : R) * hτ
+    rw [← Units.val_mul_add_inv q, mul_assoc, ← val_inv_addInvUnit hτ, ← val_addInvUnit hτ,
+      Units.mul_inv, mul_one]
   rw [heckeEquiv_one_sub_e hτ, smul_smul, hcoeff, smul_sub, Algebra.algebraMap_eq_smul_one,
     Algebra.algebraMap_eq_smul_one, smul_smul, ← sq]
 

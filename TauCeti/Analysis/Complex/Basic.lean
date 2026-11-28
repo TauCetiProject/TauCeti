@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Ring.Semireal.Defs
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Complex.Trigonometric
 public import TauCeti.Analysis.RCLike.Basic
+import TauCeti.Algebra.Ring.Units
 
 /-!
 # Complex conjugation: invariant discs, symmetric norms and unit-norm quotients
@@ -505,12 +506,9 @@ theorem add_inv_ne_zero_of_isSelfAdjoint {q : ℂˣ} (hq : IsSelfAdjoint (q : �
     (q : ℂ) + ↑q⁻¹ ≠ 0 := by
   obtain ⟨r, hr⟩ := Complex.conj_eq_iff_real.mp hq
   intro h0
-  have hcomplex : (r : ℂ) ^ 2 + 1 = 0 := by
-    calc (r : ℂ) ^ 2 + 1
-        = (q : ℂ) * (q : ℂ) + (q : ℂ) * ↑q⁻¹ := by rw [← hr, sq, q.mul_inv]
-      _ = (q : ℂ) * ((q : ℂ) + ↑q⁻¹) := by rw [mul_add]
-      _ = 0 := by rw [h0, mul_zero]
-  have hreal : r ^ 2 + 1 = 0 := by exact_mod_cast hcomplex
+  have hcomplex : 1 + (r : ℂ) ^ 2 = 0 := by
+    simpa only [← hr, h0, mul_zero] using (Units.val_mul_add_inv q).symm
+  have hreal : 1 + r ^ 2 = 0 := by exact_mod_cast hcomplex
   nlinarith
 
 /-- A point of the closed disc of centre `c` and radius `ρ` has real part in

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Algebra.Star.Subalgebra
+public import TauCeti.Algebra.Star.Opposite
 public import TauCeti.Algebra.Star.SelfAdjoint
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection.Complement
 
@@ -80,23 +81,13 @@ private theorem conjugateReverse_algebraMap (r : R) :
       op (algebraMap R _ (star r)) :=
   (conjugateReverseData (R := R) (τ := τ)).property.right r
 
-private theorem conjugateReverse_involutive (x : BalancedProjectionAlgebra R τ) :
-    unop (conjugateReverse (unop (conjugateReverse x))) = x := by
-  have hx : x ∈ Algebra.adjoin R (Set.range (e (R := R) τ)) := by simp [adjoin_range_e]
-  induction hx using Algebra.adjoin_induction with
-  | mem _ hx => rcases hx with ⟨i, rfl⟩; simp [conjugateReverse_e]
-  | algebraMap r => simp [conjugateReverse_algebraMap]
-  | add x y _ _ hx hy => simp [map_add, hx, hy]
-  | mul x y _ _ hx hy => simp [map_mul, hx, hy]
-
 /-- When `τ` is self-adjoint, `BalancedProjectionAlgebra R τ` is a star ring in which every
 generator `e i` is self-adjoint and scalars are conjugated. -/
 @[no_expose]
-instance instStarRing : StarRing (BalancedProjectionAlgebra R τ) where
-  star x := unop (conjugateReverse x)
-  star_involutive := conjugateReverse_involutive
-  star_mul x y := by simp [map_mul]
-  star_add x y := by simp [map_add]
+instance instStarRing : StarRing (BalancedProjectionAlgebra R τ) :=
+  starRingOfConjOpposite adjoin_range_e conjugateReverse conjugateReverse_algebraMap (by
+    rintro _ ⟨i, rfl⟩
+    simp [conjugateReverse_e])
 
 /-- Every generator `e i` is self-adjoint. -/
 @[simp]
@@ -111,11 +102,8 @@ theorem isStarProjection_e (i : ℕ) : IsStarProjection (e (R := R) τ i) :=
   ⟨isIdempotentElem_e i, isSelfAdjoint_e i⟩
 
 /-- Scalar multiplication is conjugate-linear with respect to `star`. -/
-instance instStarModule : StarModule R (BalancedProjectionAlgebra R τ) where
-  star_smul r x := by
-    have h : star (algebraMap R (BalancedProjectionAlgebra R τ) r) = algebraMap R _ (star r) :=
-      congrArg unop (conjugateReverse_algebraMap r)
-    simp [Algebra.smul_def, star_mul, h, Algebra.commutes]
+instance instStarModule : StarModule R (BalancedProjectionAlgebra R τ) :=
+  starModule_of_conjOpposite conjugateReverse conjugateReverse_algebraMap (fun _ ↦ rfl)
 
 section UniversalProperty
 
