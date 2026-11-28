@@ -15,47 +15,48 @@ import Mathlib.Topology.Homeomorph.Lemmas
 # The subspace topology on the rational points of a closed polydisc
 
 Let `K` be a complete ultrametric normed field and `D = closedPolydisc k K` the closed unit
-polydisc `Spa (K⟨T₁, …, Tₖ⟩, K⟨T₁, …, Tₖ⟩°)`. Given a point `x ∈ Spa (K, K°)`, each tuple
-`a ∈ (K°)ᵏ` determines the classical evaluation point `classicalPoint x a ha ∈ D`.
+polydisc `Spa (K⟨T₁, …, Tₖ⟩, K⟨T₁, …, Tₖ⟩°)`. Each integral tuple `a : Fin k → K°` determines the
+canonical rational point
+`normClassicalPoint (fun i ↦ (a i : K)) (fun i ↦ mem_powerBoundedSubring.mp (a i).property) ∈ D`.
 
 Using the evaluation continuity proved in `TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Eval`,
-the classical-point map `a ↦ classicalPoint x a ha` is continuous for every complete ultrametric
-normed field `K`. Although the basic opens of `Spv K⟨T⟩` cut out weak inequalities
-`‖f(a)‖ ≤ ‖g(a)‖ ≠ 0`, the ultrametric inequality preserves them on a neighbourhood where `g`
-varies by less than `‖g(a₀)‖` and `f` varies by less than `‖g(a₀)‖`, so preimages of basic opens
-are open in `(K°)ᵏ`.
+this canonical rational-point map `(Fin k → K°) → closedPolydisc k K` is continuous for every
+complete ultrametric normed field `K`. Although the basic opens of `Spv K⟨T⟩` cut out weak
+inequalities `‖f(a)‖ ≤ ‖g(a)‖ ≠ 0`, the ultrametric inequality preserves them on a neighbourhood
+where `g` varies by less than `‖g(a₀)‖` and `f` varies by less than `‖g(a₀)‖`, so preimages of
+basic opens are open in `Fin k → K°`.
 
-Conversely, for any nonzero scalar `c ∈ K` and any centre `a₀ ∈ (K°)ᵏ`, the basic open
-`R({T₁ - a₀,₁, …, Tₖ - a₀,ₖ} / c)` pulls back along the classical-point map to the metric closed
-ball of radius `‖c‖` about `a₀`. When `K` is nontrivially normed, such balls form a neighbourhood
-basis in `(K°)ᵏ`, so the classical-point map is a topological embedding and induces a homeomorphism
-from `(K°)ᵏ` onto the subspace `D(K)` of `K`-rational points. (In positive dimension `k ≥ 1` over a
-trivially normed infinite field, the subspace topology on `D(K)` is strictly coarser than the
-discrete topology of `Kᵏ`.)
+Conversely, for any nonzero scalar `c ∈ K` and any centre `a₀ : Fin k → K°`, the basic open
+`R({T₁ - a₀,₁, …, Tₖ - a₀,ₖ} / c)` pulls back along the canonical rational-point map to the metric
+closed ball of radius `‖c‖` about `a₀`. When `K` is nontrivially normed, such balls form a
+neighbourhood basis in `Fin k → K°`, so the map is a topological embedding and induces a
+homeomorphism from `Fin k → K°` onto the subspace `rationalPoints k K` of `K`-rational points. (In
+positive dimension `k ≥ 1` over a trivially normed infinite field, the subspace topology on
+`rationalPoints k K` is strictly coarser than the discrete topology of `(K°)ᵏ`.)
 
-Since `(K°)ᵏ` is the closed unit ball in the complete finite product `Kᵏ`, it is complete as a
+Since `K°` is closed in the complete space `K`, the finite product `Fin k → K°` is complete as a
 metric space. When `K` is nontrivially normed, transporting along this homeomorphism shows that
-`D(K)` is completely metrizable and hence a Baire space.
+`rationalPoints k K` is completely metrizable (and hence automatically a Baire space via Mathlib's
+`BaireSpace.of_completelyPseudoMetrizable`).
 
 ## Main definitions
 
-* `TauCeti.ValuationSpectrum.classicalPointRangeHomeomorph`: for a complete nontrivially normed
-  ultrametric field `K`, the homeomorphism from `{a : Fin k → K // ∀ i, IsPowerBounded (a i)}`
-  onto the subspace of `K`-rational classical points of `closedPolydisc k K`.
+* `TauCeti.ValuationSpectrum.rationalPointHomeomorph`: for a complete nontrivially normed
+  ultrametric field `K`, the homeomorphism from `Fin k → powerBoundedSubring K` onto
+  `rationalPoints k K`.
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.continuous_classicalPoint`: the classical-point map
-  `(K°)ᵏ → closedPolydisc k K` is continuous.
-* `TauCeti.ValuationSpectrum.preimage_classicalPoint_rationalSubset_eq_closedBall`: the preimage of
-  the basic open `R({Tᵢ - a₀,ᵢ} / c)` under the classical-point map is the closed metric ball of
-  radius `‖c‖` about `a₀`.
-* `TauCeti.ValuationSpectrum.isEmbedding_classicalPoint`: over a complete nontrivially normed
-  ultrametric field, the classical-point map is a topological embedding.
-* `TauCeti.ValuationSpectrum.isCompletelyMetrizableSpace_range_classicalPoint` and
-  `TauCeti.ValuationSpectrum.baireSpace_range_classicalPoint`: over a complete nontrivially normed
-  ultrametric field, the subspace of `K`-rational points of `closedPolydisc k K` is completely
-  metrizable and a Baire space.
+* `TauCeti.ValuationSpectrum.continuous_normClassicalPoint`: the canonical rational-point map
+  `(Fin k → powerBoundedSubring K) → closedPolydisc k K` is continuous.
+* `TauCeti.ValuationSpectrum.preimage_normClassicalPoint_rationalSubset_eq_closedBall`: the preimage
+  of the basic open `R({Tᵢ - a₀,ᵢ} / c)` under the canonical rational-point map is the closed metric
+  ball of radius `‖c‖` about `a₀`.
+* `TauCeti.ValuationSpectrum.isEmbedding_normClassicalPoint`: over a complete nontrivially normed
+  ultrametric field, the canonical rational-point map is a topological embedding.
+* `TauCeti.ValuationSpectrum.isCompletelyMetrizableSpace_rationalPoints`: over a complete
+  nontrivially normed ultrametric field, the subspace `rationalPoints k K` of `closedPolydisc k K`
+  is completely metrizable.
 
 ## References
 
@@ -75,70 +76,94 @@ section NormedField
 
 variable {k : ℕ} {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
-/-- Membership of a classical point in a basic open `Spv(K⟨T⟩)(f/g)` reduces to comparing norms
-of evaluations: `‖f(a)‖ ≤ ‖g(a)‖` and `0 < ‖g(a)‖`. -/
-theorem classicalPoint_mem_basicOpen_iff (x : spa (powerBoundedSubring K)) (a : Fin k → K)
-    (ha : ∀ i, IsPowerBounded (a i))
-    (f g : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    (classicalPoint x a ha).val ∈ basicOpen f g ↔
-      ‖evalAtHom a ha f‖ ≤ ‖evalAtHom a ha g‖ ∧ 0 < ‖evalAtHom a ha g‖ := by
-  rw [mem_basicOpen_iff, classicalPoint_vle, classicalPoint_vle, map_zero,
-    vle_iff_norm_le_of_mem_spa x.property, vle_iff_norm_le_of_mem_spa x.property, norm_zero,
-    not_le]
+private def powerBoundedPiEquiv (k : ℕ) (K : Type*) [NormedField K] [IsUltrametricDist K] :
+    (Fin k → powerBoundedSubring K) → {a : Fin k → K // ∀ i, IsPowerBounded (a i)} :=
+  fun a ↦ ⟨fun i ↦ (a i : K), fun i ↦ mem_powerBoundedSubring.mp (a i).property⟩
 
-/-- **Continuity of the classical-point map `(K°)ᵏ → closedPolydisc k K`.** Every basic open
-`Spv(K⟨T⟩)(f/g)` pulls back to `{a | ‖f(a)‖ ≤ ‖g(a)‖ ∧ 0 < ‖g(a)‖}`. By continuity of evaluation
-and the ultrametric inequality, if `a₀` satisfies these conditions then they persist on the open
-neighbourhood where `f` and `g` each vary by strictly less than `‖g(a₀)‖`. -/
-theorem continuous_classicalPoint (x : spa (powerBoundedSubring K)) :
-    Continuous fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-      classicalPoint x a.val a.property := by
+omit [CompleteSpace K] in
+private theorem continuous_powerBoundedPiEquiv :
+    Continuous (powerBoundedPiEquiv k K) :=
+  (continuous_pi fun i ↦ continuous_subtypeVal.comp (continuous_apply i)).subtype_mk _
+
+/-- **Continuity of the canonical rational-point map `(Fin k → K°) → closedPolydisc k K`.** Every
+basic open `Spv(K⟨T⟩)(f/g)` pulls back to `{a | ‖f(a)‖ ≤ ‖g(a)‖ ∧ 0 < ‖g(a)‖}`. By continuity of
+evaluation and the ultrametric inequality, if `a₀` satisfies these conditions then they persist on
+the open neighbourhood where `f` and `g` each vary by strictly less than `‖g(a₀)‖`. -/
+theorem continuous_normClassicalPoint :
+    Continuous fun a : Fin k → powerBoundedSubring K ↦
+      normClassicalPoint (fun i ↦ (a i : K))
+        (fun i ↦ mem_powerBoundedSubring.mp (a i).property) := by
   refine continuous_induced_rng.mpr ?_
   rw [instTopologicalSpace_eq_generateFrom, continuous_generateFrom_iff]
   rintro _ ⟨f, g, rfl⟩
   rw [isOpen_iff_mem_nhds]
   intro a₀ ha₀
-  rw [Set.mem_preimage, Function.comp_apply, classicalPoint_mem_basicOpen_iff] at ha₀
-  obtain ⟨hfg, hgpos⟩ := ha₀
-  set r : ℝ := ‖evalAtHom a₀.val a₀.property g‖
-  have hopen : IsOpen ({a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} |
-        ‖evalAtHom a.val a.property f - evalAtHom a₀.val a₀.property f‖ < r} ∩
-      {a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} |
-        ‖evalAtHom a.val a.property g - evalAtHom a₀.val a₀.property g‖ < r}) :=
-    (isOpen_lt ((continuous_evalAtHom_arg f).sub continuous_const).norm continuous_const).inter
-      (isOpen_lt ((continuous_evalAtHom_arg g).sub continuous_const).norm continuous_const)
+  rw [Set.mem_preimage, Function.comp_apply, normClassicalPoint_mem_basicOpen_iff] at ha₀
+  obtain ⟨hfg, hgne⟩ := ha₀
+  have hgpos : 0 < ‖evalAtHom (powerBoundedPiEquiv k K a₀).val
+      (powerBoundedPiEquiv k K a₀).property g‖ :=
+    norm_pos_iff.mpr hgne
+  set r : ℝ := ‖evalAtHom (powerBoundedPiEquiv k K a₀).val
+    (powerBoundedPiEquiv k K a₀).property g‖
+  have hcont_f : Continuous fun a : Fin k → powerBoundedSubring K ↦
+      evalAtHom (powerBoundedPiEquiv k K a).val (powerBoundedPiEquiv k K a).property f :=
+    (continuous_evalAtHom_arg f).comp continuous_powerBoundedPiEquiv
+  have hcont_g : Continuous fun a : Fin k → powerBoundedSubring K ↦
+      evalAtHom (powerBoundedPiEquiv k K a).val (powerBoundedPiEquiv k K a).property g :=
+    (continuous_evalAtHom_arg g).comp continuous_powerBoundedPiEquiv
+  have hopen : IsOpen ({a : Fin k → powerBoundedSubring K |
+        ‖evalAtHom (powerBoundedPiEquiv k K a).val (powerBoundedPiEquiv k K a).property f -
+          evalAtHom (powerBoundedPiEquiv k K a₀).val
+            (powerBoundedPiEquiv k K a₀).property f‖ < r} ∩
+      {a : Fin k → powerBoundedSubring K |
+        ‖evalAtHom (powerBoundedPiEquiv k K a).val (powerBoundedPiEquiv k K a).property g -
+          evalAtHom (powerBoundedPiEquiv k K a₀).val
+            (powerBoundedPiEquiv k K a₀).property g‖ < r}) :=
+    (isOpen_lt (hcont_f.sub continuous_const).norm continuous_const).inter
+      (isOpen_lt (hcont_g.sub continuous_const).norm continuous_const)
   refine mem_nhds_iff.mpr ⟨_, fun a ha ↦ ?_, hopen, by simp [hgpos]⟩
   obtain ⟨hf_lt, hg_lt⟩ := ha
-  have hga : ‖evalAtHom a.val a.property g‖ = r := by
-    rw [← sub_add_cancel (evalAtHom a.val a.property g) (evalAtHom a₀.val a₀.property g),
+  have hga : ‖evalAtHom (powerBoundedPiEquiv k K a).val
+      (powerBoundedPiEquiv k K a).property g‖ = r := by
+    rw [← sub_add_cancel
+        (evalAtHom (powerBoundedPiEquiv k K a).val (powerBoundedPiEquiv k K a).property g)
+        (evalAtHom (powerBoundedPiEquiv k K a₀).val (powerBoundedPiEquiv k K a₀).property g),
       IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm hg_lt.ne, max_eq_right hg_lt.le]
-  have hfa : ‖evalAtHom a.val a.property f‖ ≤ r := by
-    rw [← sub_add_cancel (evalAtHom a.val a.property f) (evalAtHom a₀.val a₀.property f)]
+  have hfa : ‖evalAtHom (powerBoundedPiEquiv k K a).val
+      (powerBoundedPiEquiv k K a).property f‖ ≤ r := by
+    rw [← sub_add_cancel
+        (evalAtHom (powerBoundedPiEquiv k K a).val (powerBoundedPiEquiv k K a).property f)
+        (evalAtHom (powerBoundedPiEquiv k K a₀).val (powerBoundedPiEquiv k K a₀).property f)]
     exact (IsUltrametricDist.norm_add_le_max _ _).trans (max_le hf_lt.le hfg)
-  rw [Set.mem_preimage, Function.comp_apply, classicalPoint_mem_basicOpen_iff, hga]
-  exact ⟨hfa, hgpos⟩
+  rw [Set.mem_preimage, Function.comp_apply, normClassicalPoint_mem_basicOpen_iff]
+  change ‖evalAtHom (powerBoundedPiEquiv k K a).val (powerBoundedPiEquiv k K a).property f‖ ≤
+      ‖evalAtHom (powerBoundedPiEquiv k K a).val (powerBoundedPiEquiv k K a).property g‖ ∧
+    evalAtHom (powerBoundedPiEquiv k K a).val (powerBoundedPiEquiv k K a).property g ≠ 0
+  rw [hga]
+  exact ⟨hfa, norm_ne_zero_iff.mp (hga ▸ hgpos.ne')⟩
 
 open scoped Classical in
-/-- **Basic-open balls pull back to metric closed balls on `(K°)ᵏ`.** For any centre `a₀ ∈ (K°)ᵏ`
-and any nonzero `c ∈ K`, the preimage of the basic open `R({T₁ - a₀,₁, …, Tₖ - a₀,ₖ} / c)`
-under the classical-point map is the closed ball of radius `‖c‖` about `a₀`. -/
-theorem preimage_classicalPoint_rationalSubset_eq_closedBall (x : spa (powerBoundedSubring K))
-    (a₀ : {a : Fin k → K // ∀ i, IsPowerBounded (a i)}) {c : K} (hc : c ≠ 0) :
-    (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-        classicalPoint x a.val a.property) ⁻¹'
+/-- **Basic-open balls pull back to metric closed balls on `Fin k → K°`.** For any centre
+`a₀ : Fin k → K°` and any nonzero `c ∈ K`, the preimage of the basic open
+`R({T₁ - a₀,₁, …, Tₖ - a₀,ₖ} / c)` under the canonical rational-point map is the closed ball of
+radius `‖c‖` about `a₀`. -/
+theorem preimage_normClassicalPoint_rationalSubset_eq_closedBall
+    (a₀ : Fin k → powerBoundedSubring K) {c : K} (hc : c ≠ 0) :
+    (fun a : Fin k → powerBoundedSubring K ↦
+        normClassicalPoint (fun i ↦ (a i : K))
+          (fun i ↦ mem_powerBoundedSubring.mp (a i).property)) ⁻¹'
       (Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _)
         (Finset.univ.image fun i : Fin k ↦
           weightedX (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight i -
-            weightedC _ isWeightFamily_one_weight (a₀.val i))
+            weightedC _ isWeightFamily_one_weight (a₀ i : K))
         (weightedC _ isWeightFamily_one_weight c)) =
       Metric.closedBall a₀ ‖c‖ := by
   ext a
-  simp only [Set.mem_preimage, mem_rationalSubset_iff, ← closedPolydisc_def,
-    (classicalPoint x a.val a.property).property, true_and, Finset.mem_image, Finset.mem_univ,
-    true_and, forall_exists_index, forall_apply_eq_imp_iff, classicalPoint_vle, map_sub, map_zero,
-    evalAtHom_weightedX, evalAtHom_weightedC, vle_iff_norm_le_of_mem_spa x.property, norm_zero,
-    not_le, norm_pos_iff.mpr hc, and_true, Metric.mem_closedBall, Subtype.dist_eq, dist_eq_norm,
-    pi_norm_le_iff_of_nonneg (norm_nonneg c), Pi.sub_apply]
+  simp only [Set.mem_preimage, normClassicalPoint_mem_rationalSubset_iff, Finset.mem_image,
+    Finset.mem_univ, true_and, forall_exists_index, forall_apply_eq_imp_iff, map_sub,
+    evalAtHom_weightedX, evalAtHom_weightedC, hc, ne_eq, not_false_eq_true, and_true,
+    Metric.mem_closedBall, dist_eq_norm, pi_norm_le_iff_of_nonneg (norm_nonneg c), Pi.sub_apply,
+    AddSubgroupClass.coe_norm, AddSubgroupClass.coe_sub]
 
 end NormedField
 
@@ -146,80 +171,92 @@ section NontriviallyNormedField
 
 variable {k : ℕ} {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
-/-- **Over a complete nontrivially normed ultrametric field `K`, the classical-point map
-`(K°)ᵏ → closedPolydisc k K` is a topological embedding.** Continuity holds by
-`continuous_classicalPoint`, injectivity by `classicalPoint_injective_of_isField`, and metric
-closed balls of arbitrarily small positive radius `‖c‖` arise as preimages of basic opens
+/-- **Over a complete nontrivially normed ultrametric field `K`, the canonical rational-point map
+`(Fin k → K°) → closedPolydisc k K` is a topological embedding.** Continuity holds by
+`continuous_normClassicalPoint`, injectivity by `normClassicalPoint_injective`, and metric closed
+balls of arbitrarily small positive radius `‖c‖` arise as preimages of basic opens
 `R({Tᵢ - a₀,ᵢ} / c)`. -/
-theorem isEmbedding_classicalPoint (x : spa (powerBoundedSubring K)) :
-    Topology.IsEmbedding fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-      classicalPoint x a.val a.property := by
+theorem isEmbedding_normClassicalPoint :
+    Topology.IsEmbedding fun a : Fin k → powerBoundedSubring K ↦
+      normClassicalPoint (fun i ↦ (a i : K))
+        (fun i ↦ mem_powerBoundedSubring.mp (a i).property) := by
   classical
-  refine Topology.IsEmbedding.mk (Topology.isInducing_iff_nhds.mpr fun a₀ ↦ ?_)
-    (classicalPoint_injective_of_isField (Field.toIsField K) x)
-  refine le_antisymm ((continuous_classicalPoint x).continuousAt.tendsto.le_comap) ?_
-  intro U hU
-  obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp hU
-  obtain ⟨c, hcpos, hcε⟩ := NormedField.exists_norm_lt K hε
-  have hc : c ≠ 0 := norm_pos_iff.mp hcpos
-  set T : Finset (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
-      isWeightFamily_one_weight) :=
-    Finset.univ.image fun i : Fin k ↦
-      weightedX (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight i -
-        weightedC _ isWeightFamily_one_weight (a₀.val i)
-  set V : Set (closedPolydisc k K) :=
-    Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T (weightedC _ _ c)
-  have hpre : (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-      classicalPoint x a.val a.property) ⁻¹' V = Metric.closedBall a₀ ‖c‖ :=
-    preimage_classicalPoint_rationalSubset_eq_closedBall x a₀ hc
-  have hVopen : IsOpen V :=
-    isOpen_val_preimage_rationalSubset_closedPolydisc T (weightedC _ _ c)
-  have ha₀V : classicalPoint x a₀.val a₀.property ∈ V :=
-    (Set.ext_iff.mp hpre a₀).mpr (Metric.mem_closedBall_self (norm_nonneg c))
-  refine Filter.mem_comap.mpr ⟨V, hVopen.mem_nhds ha₀V, ?_⟩
-  rw [hpre]
-  exact (Metric.closedBall_subset_ball hcε).trans hball
+  refine Topology.IsEmbedding.mk (Topology.isInducing_iff_nhds.mpr fun a₀ ↦ ?_) fun a b hab ↦ ?_
+  · refine le_antisymm (continuous_normClassicalPoint.continuousAt.tendsto.le_comap) ?_
+    intro U hU
+    obtain ⟨ε, hε, hball⟩ := Metric.mem_nhds_iff.mp hU
+    obtain ⟨c, hcpos, hcε⟩ := NormedField.exists_norm_lt K hε
+    have hc : c ≠ 0 := norm_pos_iff.mp hcpos
+    set T : Finset (weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K))
+        isWeightFamily_one_weight) :=
+      Finset.univ.image fun i : Fin k ↦
+        weightedX (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight i -
+          weightedC _ isWeightFamily_one_weight (a₀ i : K)
+    set V : Set (closedPolydisc k K) :=
+      Subtype.val ⁻¹' rationalSubset (powerBoundedSubring _) T (weightedC _ _ c)
+    have hpre : (fun a : Fin k → powerBoundedSubring K ↦
+        normClassicalPoint (fun i ↦ (a i : K))
+          (fun i ↦ mem_powerBoundedSubring.mp (a i).property)) ⁻¹' V =
+        Metric.closedBall a₀ ‖c‖ :=
+      preimage_normClassicalPoint_rationalSubset_eq_closedBall a₀ hc
+    have hVopen : IsOpen V :=
+      isOpen_val_preimage_rationalSubset_closedPolydisc T (weightedC _ _ c)
+    have ha₀V : normClassicalPoint (fun i ↦ (a₀ i : K))
+        (fun i ↦ mem_powerBoundedSubring.mp (a₀ i).property) ∈ V :=
+      (Set.ext_iff.mp hpre a₀).mpr (Metric.mem_closedBall_self (norm_nonneg c))
+    refine Filter.mem_comap.mpr ⟨V, hVopen.mem_nhds ha₀V, ?_⟩
+    rw [hpre]
+    exact (Metric.closedBall_subset_ball hcε).trans hball
+  · have hpi := normClassicalPoint_injective (k := k) (K := K)
+      (a₁ := ⟨fun i ↦ (a i : K), fun i ↦ mem_powerBoundedSubring.mp (a i).property⟩)
+      (a₂ := ⟨fun i ↦ (b i : K), fun i ↦ mem_powerBoundedSubring.mp (b i).property⟩) hab
+    exact funext fun i ↦ Subtype.ext (congrFun (congrArg Subtype.val hpi) i)
 
-/-- **Homeomorphism from `(K°)ᵏ` onto the `K`-rational points of `closedPolydisc k K`.** Over a
-complete nontrivially normed ultrametric field `K`, with the subspace topology inherited from the
-adic spectrum, the `K`-rational points `D(K)` are homeomorphic to `(K°)ᵏ` with its valuation
-topology. -/
-noncomputable def classicalPointRangeHomeomorph (x : spa (powerBoundedSubring K)) :
-    {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ≃ₜ
-      Set.range (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-        classicalPoint x a.val a.property) :=
-  (isEmbedding_classicalPoint x).toHomeomorph
+/-- **The homeomorphism between `Fin k → powerBoundedSubring K` and `rationalPoints k K`**, over a
+complete nontrivially normed ultrametric field. -/
+noncomputable def rationalPointHomeomorph :
+    (Fin k → powerBoundedSubring K) ≃ₜ rationalPoints k K :=
+  isEmbedding_normClassicalPoint.toHomeomorph.trans
+    (Homeomorph.setCongr <| by
+      ext v
+      simp only [mem_rationalPoints_iff, Set.mem_range]
+      refine ⟨?_, ?_⟩
+      · rintro ⟨a, rfl⟩
+        exact ⟨_, _, rfl⟩
+      · rintro ⟨a, ha, rfl⟩
+        exact ⟨fun i ↦ ⟨a i, mem_powerBoundedSubring.mpr (ha i)⟩, rfl⟩)
 
+/-- Applying `rationalPointHomeomorph` returns `normClassicalPoint` at the tuple of underlying
+elements of `K`. -/
 @[simp]
-theorem classicalPointRangeHomeomorph_apply_coe (x : spa (powerBoundedSubring K))
-    (a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)}) :
-    (classicalPointRangeHomeomorph x a : closedPolydisc k K) =
-      classicalPoint x a.val a.property := (rfl)
+theorem rationalPointHomeomorph_apply (a : Fin k → powerBoundedSubring K) :
+    (rationalPointHomeomorph a : closedPolydisc k K) =
+      normClassicalPoint (fun i ↦ (a i : K))
+        (fun i ↦ mem_powerBoundedSubring.mp (a i).property) := by
+  rw [rationalPointHomeomorph]
+  rfl
 
+/-- The inverse of `rationalPointHomeomorph` recovers `a` from its canonical rational point. -/
 @[simp]
-theorem classicalPointRangeHomeomorph_symm_apply (x : spa (powerBoundedSubring K))
-    (a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)}) :
-    (classicalPointRangeHomeomorph x).symm ⟨classicalPoint x a.val a.property, ⟨a, rfl⟩⟩ = a :=
-  (isEmbedding_classicalPoint x).toHomeomorph_symm_apply a
+theorem rationalPointHomeomorph_symm_apply_normClassicalPoint
+    (a : Fin k → powerBoundedSubring K) :
+    rationalPointHomeomorph.symm
+        ⟨normClassicalPoint (fun i ↦ (a i : K))
+            (fun i ↦ mem_powerBoundedSubring.mp (a i).property),
+          normClassicalPoint_mem_rationalPoints _ _⟩ = a := by
+  have h : (⟨normClassicalPoint (fun i ↦ (a i : K))
+        (fun i ↦ mem_powerBoundedSubring.mp (a i).property),
+      normClassicalPoint_mem_rationalPoints _ _⟩ : rationalPoints k K) =
+      rationalPointHomeomorph a :=
+    Subtype.ext (rationalPointHomeomorph_apply a).symm
+  rw [h, rationalPointHomeomorph.symm_apply_apply]
 
-/-- **Over a complete nontrivially normed ultrametric field `K`, the `K`-rational points of a closed
-polydisc form a completely metrizable space.** -/
-theorem isCompletelyMetrizableSpace_range_classicalPoint (x : spa (powerBoundedSubring K)) :
-    TopologicalSpace.IsCompletelyMetrizableSpace
-      (Set.range (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-        classicalPoint x a.val a.property)) := by
-  have : CompleteSpace {a : Fin k → K // ∀ i, IsPowerBounded (a i)} :=
-    completeSpace_subtype_forall_isPowerBounded
-  exact (classicalPointRangeHomeomorph x).symm.isClosedEmbedding.IsCompletelyMetrizableSpace
-
-/-- **Over a complete nontrivially normed ultrametric field `K`, the `K`-rational points of a closed
-polydisc form a Baire space.** -/
-theorem baireSpace_range_classicalPoint (x : spa (powerBoundedSubring K)) :
-    BaireSpace
-      (Set.range (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-        classicalPoint x a.val a.property)) := by
-  have := isCompletelyMetrizableSpace_range_classicalPoint (k := k) x
-  exact BaireSpace.of_completelyPseudoMetrizable
+/-- **The subspace `rationalPoints k K` of a closed polydisc is completely metrizable**, being
+homeomorphic to `Fin k → powerBoundedSubring K`. -/
+instance isCompletelyMetrizableSpace_rationalPoints :
+    TopologicalSpace.IsCompletelyMetrizableSpace (rationalPoints k K) :=
+  (rationalPointHomeomorph (k := k) (K := K)).symm.isClosedEmbedding
+    |>.IsCompletelyMetrizableSpace
 
 end NontriviallyNormedField
 

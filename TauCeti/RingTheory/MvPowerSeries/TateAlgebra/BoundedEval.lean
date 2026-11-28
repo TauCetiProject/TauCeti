@@ -112,6 +112,16 @@ theorem norm_restrictedEval₂OfBound_le (f : IsRestricted.subring (R := R) c) :
   (norm_restrictedEval₂_le (RingHom.id S) a (fun _ ↦ le_rfl) ha _).trans
     (norm_restrictedMap_le φ hφ f)
 
+/-- Bounded evaluation is Lipschitz in the evaluation tuple on the closed polydisc of polyradius
+`c`: if `‖a i - b i‖ ≤ δ * c i` for every `i` with `0 ≤ δ`, then
+`‖f(a) - f(b)‖ ≤ δ * (C * ‖f‖)`. -/
+theorem norm_restrictedEval₂OfBound_sub_le {b : Fin k → S}
+    (hb : ∀ i, ‖b i‖ ≤ c i) {δ : ℝ} (hδ : 0 ≤ δ) (hab : ∀ i, ‖a i - b i‖ ≤ δ * c i)
+    (f : IsRestricted.subring (R := R) c) :
+    ‖restrictedEval₂OfBound φ a hφ ha f - restrictedEval₂OfBound φ b hφ hb f‖ ≤ δ * (C * ‖f‖) :=
+  (norm_restrictedEval₂_sub_le (RingHom.id S) (fun _ ↦ le_rfl) ha hb hδ hab
+    (restrictedMap φ hφ f)).trans (mul_le_mul_of_nonneg_left (norm_restrictedMap_le φ hφ f) hδ)
+
 /-- Bounded evaluation is Lipschitz for the Gauss norm topology. -/
 theorem lipschitzWith_restrictedEval₂OfBound :
     LipschitzWith (Real.toNNReal C) (restrictedEval₂OfBound φ a hφ ha) :=

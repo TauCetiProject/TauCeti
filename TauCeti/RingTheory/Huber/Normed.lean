@@ -68,22 +68,27 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
   than one is a pseudouniformiser.
 * `TauCeti.Huber.isPseudoUniformizer_iff_norm_lt_one`: in a normed division ring the
   pseudouniformisers are the nonzero elements of norm less than one.
-* `TauCeti.Huber.coe_powerBoundedSubring_eq_closedBall` and
+* `TauCeti.Huber.coe_powerBoundedSubring_eq_closedBall`,
+  `TauCeti.Huber.isClosed_powerBoundedSubring`,
+  `TauCeti.Huber.completeSpace_powerBoundedSubring`, and
   `TauCeti.Huber.powerBoundedSubring_eq_integer`: in an ultrametric normed field `K°` is the
-  closed unit ball, equal as a subring to `𝒪[K]`.
+  closed unit ball (hence closed, and complete when `K` is complete), equal as a subring to
+  `𝒪[K]`.
 * `TauCeti.Huber.powerBoundedSubring.dvd_iff_norm_le` and
   `TauCeti.Huber.powerBoundedSubring.isUnit_iff_norm_eq_one`: in an ultrametric normed field
   divisibility in `K°` is comparison of norms and units of `K°` are the elements of norm one.
 * `TauCeti.Huber.isLocalRing_powerBoundedSubring`,
-  `TauCeti.Huber.maximalIdeal_powerBoundedSubring`, and
-  `TauCeti.Huber.isMaximal_topologicallyNilpotentIdeal`: `K°` is a local ring with maximal ideal
-  `K°°`.
+  `TauCeti.Huber.maximalIdeal_powerBoundedSubring`,
+  `TauCeti.Huber.isMaximal_topologicallyNilpotentIdeal`, and
+  `TauCeti.Huber.isOpen_topologicallyNilpotentIdeal`: `K°` is a local ring with open maximal
+  ideal `K°°`.
 * `TauCeti.Huber.exists_isOpen_isBounded_subring`: an ultrametric seminormed ring has an open
   bounded subring, even when `‖1‖ ≠ 1`.
 * `TauCeti.Huber.IsTateRing.of_isUnit_norm_lt_one`: an ultrametric seminormed commutative ring
   with a unit of norm less than one is a Tate ring.
 * `TauCeti.Huber.IsTateRing.of_nontriviallyNormedField`: a nontrivially normed field with an
   ultrametric norm is a Tate ring; for instance `ℚ_[p]`.
+* `TauCeti.Huber.IsHuberRing.of_normedField`: every ultrametric normed field is a Huber ring.
 * `TauCeti.Huber.IsTateRing.of_normedAlgebra`: an ultrametric seminormed algebra over a
   nontrivially normed field is Tate, without requiring its norm at one to equal one.
 * `TauCeti.Huber.exists_subring_ball_subset_forall_norm_le`: in such an algebra, finitely many
@@ -348,6 +353,17 @@ theorem maximalIdeal_powerBoundedSubring :
 instance isMaximal_topologicallyNilpotentIdeal : (topologicallyNilpotentIdeal K).IsMaximal :=
   maximalIdeal_powerBoundedSubring (K := K) ▸ maximalIdeal.isMaximal (powerBoundedSubring K)
 
+/-- For an ultrametric normed field `K`, `K°°` is an open ideal of `K°`. -/
+theorem isOpen_topologicallyNilpotentIdeal :
+    IsOpen (topologicallyNilpotentIdeal K : Set (powerBoundedSubring K)) := by
+  have hopen : (topologicallyNilpotentIdeal K : Set (powerBoundedSubring K)) =
+      (Subtype.val : powerBoundedSubring K → K) ⁻¹' Metric.ball 0 1 := by
+    ext x
+    simp only [SetLike.mem_coe, mem_topologicallyNilpotentIdeal, IsTopologicallyNilpotent,
+      tendsto_pow_atTop_nhds_zero_iff_norm_lt_one, Set.mem_preimage, mem_ball_zero_iff]
+  rw [hopen]
+  exact Metric.isOpen_ball.preimage continuous_subtypeVal
+
 end UltrametricDvd
 
 open Pointwise in
@@ -408,6 +424,16 @@ theorem coe_powerBoundedSubring_eq_closedBall :
   ext x
   simp
 
+/-- The power-bounded subring `K°` of an ultrametric normed field is closed in `K`. -/
+theorem isClosed_powerBoundedSubring :
+    IsClosed (powerBoundedSubring K : Set K) :=
+  (coe_powerBoundedSubring_eq_closedBall K).symm ▸ Metric.isClosed_closedBall
+
+/-- The power-bounded subring `K°` of a complete ultrametric normed field is complete. -/
+instance completeSpace_powerBoundedSubring [CompleteSpace K] :
+    CompleteSpace (powerBoundedSubring K) :=
+  (isClosed_powerBoundedSubring K).completeSpace_coe
+
 end Ultrametric
 
 /-- **An ultrametric seminormed ring has an open bounded subring**: the elements
@@ -450,6 +476,14 @@ instance IsTateRing.of_nontriviallyNormedField (K : Type*) [NontriviallyNormedFi
     [IsUltrametricDist K] : IsTateRing K := by
   obtain ⟨ϖ, h0, h1⟩ := NormedField.exists_norm_lt_one K
   exact IsTateRing.of_isUnit_norm_lt_one (isUnit_iff_ne_zero.mpr (norm_pos_iff.mp h0)) h1
+
+/-- **Every ultrametric normed field is a Huber ring**: either its topology is discrete or its norm
+is nontrivial, in which case it is a Tate ring (`IsTateRing.of_nontriviallyNormedField`). -/
+theorem IsHuberRing.of_normedField (K : Type*) [NormedField K] [IsUltrametricDist K] :
+    IsHuberRing K := by
+  rcases NormedField.discreteTopology_or_nontriviallyNormedField K with _ | ⟨_, rfl⟩
+  · infer_instance
+  · exact (IsTateRing.of_nontriviallyNormedField K).toIsHuberRing
 
 /-- An ultrametric seminormed algebra over a nontrivially normed field is a Tate ring.
 No normalisation of the algebra norm at one is required. -/

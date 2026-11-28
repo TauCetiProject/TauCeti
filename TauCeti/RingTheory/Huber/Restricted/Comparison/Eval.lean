@@ -27,9 +27,10 @@ infrastructure.
 * `TauCeti.Huber.weightedEvalHom_eq_restrictedEval₂OfBound` and
   `TauCeti.Huber.weightedEvalHomCompletion_eq_restrictedEval₂OfBound`: Huber evaluation and bounded
   normed evaluation agree under the uncompleted and completed Gauss comparisons.
-* `TauCeti.Huber.norm_weightedEvalHom_le` and
+* `TauCeti.Huber.norm_weightedEvalHom_le`,
+  `TauCeti.Huber.norm_weightedEvalHom_sub_weightedEvalHom_le`, and
   `TauCeti.Huber.norm_weightedEvalHomCompletion_le`: Huber evaluation obeys the coefficient-map
-  norm bound, measured in the Gauss norm.
+  norm bound and is Lipschitz in the evaluation tuple, measured in the Gauss norm.
 
 ## References
 
@@ -72,6 +73,22 @@ theorem norm_weightedEvalHom_le
       C * ‖restrictedMvPowerSeriesGaussEquiv f‖ := by
   rw [weightedEvalHom_eq_restrictedEval₂OfBound hφc hφ ha hb]
   exact φ.norm_restrictedEval₂OfBound_le a hφ ha _
+
+include hφ ha in
+/-- **Huber evaluation is Lipschitz in the evaluation tuple on the closed unit ball**, with
+Lipschitz constant `C * ‖restrictedMvPowerSeriesGaussEquiv f‖`. -/
+theorem norm_weightedEvalHom_sub_weightedEvalHom_le {b : Fin k → S}
+    (hb₁ : ∀ i, ‖b i‖ ≤ 1) (hb' : IsWeightBounded φ (fun _ : Fin k ↦ ({1} : Set R)) b)
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set R))
+      isWeightFamily_one_weight) :
+    ‖weightedEvalHom isWeightFamily_one_weight hφc hb f -
+        weightedEvalHom isWeightFamily_one_weight hφc hb' f‖ ≤
+      C * ‖restrictedMvPowerSeriesGaussEquiv f‖ * ‖a - b‖ := by
+  rw [weightedEvalHom_eq_restrictedEval₂OfBound hφc hφ ha hb,
+    weightedEvalHom_eq_restrictedEval₂OfBound hφc hφ hb₁ hb']
+  exact (RingHom.norm_restrictedEval₂OfBound_sub_le φ a hφ ha hb₁ (norm_nonneg (a - b))
+    (fun i ↦ by simpa only [mul_one, Pi.sub_apply] using norm_le_pi_norm (a - b) i)
+    (restrictedMvPowerSeriesGaussEquiv f)).trans_eq (by ring)
 
 variable [CompleteSpace R]
 

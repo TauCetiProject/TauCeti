@@ -14,16 +14,19 @@ public import TauCeti.RingTheory.Huber.Restricted.Comparison.Eval
 This file compares Wedhorn's evaluation homomorphism `TauCeti.ValuationSpectrum.evalAtHom` on the
 unit Tate algebra `A⟨T₁, …, Tₖ⟩` with the normed restricted evaluation
 `MvPowerSeries.restrictedEval₂` by specializing the Huber evaluation comparison in
-`TauCeti.RingTheory.Huber.Restricted.Comparison.Eval`, and transfers the Gauss-norm bound and
-continuity in the evaluation argument to `evalAtHom`.
+`TauCeti.RingTheory.Huber.Restricted.Comparison.Eval`, and transfers the Gauss-norm bound,
+Lipschitz continuity, and continuity in the evaluation argument to `evalAtHom`.
 
 ## Main results
 
 * `TauCeti.ValuationSpectrum.evalAtHom_eq_restrictedEval₂`: comparison of `evalAtHom` with
   `MvPowerSeries.restrictedEval₂` via `restrictedMvPowerSeriesGaussEquiv`.
 * `TauCeti.ValuationSpectrum.norm_evalAtHom_le`: Gauss-norm bound for `evalAtHom`.
-* `TauCeti.ValuationSpectrum.continuous_evalAtHom_arg`: for fixed `f`, `a ↦ evalAtHom a.1 a.2 f`
-  is continuous on `(K°)ᵏ`.
+* `TauCeti.ValuationSpectrum.norm_evalAtHom_sub_evalAtHom_le`: evaluation of a restricted series on
+  `(A°)ᵏ` is Lipschitz with constant its unit Gauss norm.
+* `TauCeti.ValuationSpectrum.lipschitzWith_evalAtHom_apply` and
+  `TauCeti.ValuationSpectrum.continuous_evalAtHom_arg`: for fixed `f`, `a ↦ evalAtHom a.1 a.2 f`
+  is Lipschitz and continuous on `(K°)ᵏ`.
 
 ## References
 
@@ -63,31 +66,45 @@ theorem norm_evalAtHom_le (a : Fin k → A) (ha : ∀ i, IsPowerBounded (a i))
   rw [evalAtHom_eq_restrictedEval₂ a ha ha' f]
   exact MvPowerSeries.norm_restrictedEval₂_le (RingHom.id A) a (fun _ ↦ le_rfl) ha' _
 
+/-- **Evaluation of a restricted power series is Lipschitz on the closed unit polydisc**, with
+Lipschitz constant its unit Gauss norm. -/
+theorem norm_evalAtHom_sub_evalAtHom_le {a b : Fin k → A}
+    (ha : ∀ i, IsPowerBounded (a i)) (hb : ∀ i, IsPowerBounded (b i))
+    (ha₁ : ∀ i, ‖a i‖ ≤ 1) (hb₁ : ∀ i, ‖b i‖ ≤ 1)
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    ‖evalAtHom a ha f - evalAtHom b hb f‖ ≤
+      ‖restrictedMvPowerSeriesGaussEquiv f‖ * ‖a - b‖ := by
+  rw [evalAtHom_eq_restrictedEval₂ a ha ha₁ f, evalAtHom_eq_restrictedEval₂ b hb hb₁ f]
+  simpa only [mul_comm ‖a - b‖] using
+    MvPowerSeries.norm_restrictedEval₂_sub_le (RingHom.id A) (fun _ ↦ le_rfl) ha₁ hb₁
+      (norm_nonneg (a - b))
+      (fun i ↦ by simpa only [mul_one, Pi.sub_apply] using norm_le_pi_norm (a - b) i)
+      (restrictedMvPowerSeriesGaussEquiv f)
+
 end NormedCommRing
 
 section NormedField
 
 variable {k : ℕ} {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
+/-- For a fixed restricted power series `f ∈ K⟨T₁, …, Tₖ⟩`, evaluation `a ↦ f(a)` is Lipschitz on
+`(K°)ᵏ` with constant the unit Gauss norm of `f`. -/
+theorem lipschitzWith_evalAtHom_apply
+    (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight) :
+    LipschitzWith ‖restrictedMvPowerSeriesGaussEquiv f‖₊
+      fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦ evalAtHom a.val a.property f := by
+  refine LipschitzWith.of_dist_le_mul fun a b ↦ ?_
+  rw [coe_nnNorm, dist_eq_norm, Subtype.dist_eq, dist_eq_norm]
+  exact norm_evalAtHom_sub_evalAtHom_le a.property b.property
+    (fun i ↦ isPowerBounded_iff_norm_le_one.mp (a.property i))
+    (fun i ↦ isPowerBounded_iff_norm_le_one.mp (b.property i)) f
+
 /-- **Evaluation of a fixed restricted series is continuous in its argument** on `(K°)ᵏ`. -/
 theorem continuous_evalAtHom_arg
     (f : weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set K)) isWeightFamily_one_weight) :
     Continuous fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-      evalAtHom a.val a.property f := by
-  let e : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} →
-      {a : Fin k → K // ∀ i, ‖a i‖ ≤ (1 : ℝ)} :=
-    fun a ↦ ⟨a.val, fun i ↦ isPowerBounded_iff_norm_le_one.mp (a.property i)⟩
-  have he : Continuous e := continuous_subtypeVal.subtype_mk _
-  have hfun : (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-        evalAtHom a.val a.property f) =
-      (fun a : {a : Fin k → K // ∀ i, ‖a i‖ ≤ (1 : ℝ)} ↦
-        MvPowerSeries.restrictedEval₂ (RingHom.id K) a.val (fun _ ↦ le_rfl) a.property
-          (restrictedMvPowerSeriesGaussEquiv f)) ∘ e :=
-    funext fun a ↦ evalAtHom_eq_restrictedEval₂ a.val a.property (fun i ↦
-      isPowerBounded_iff_norm_le_one.mp (a.property i)) f
-  rw [hfun]
-  exact (MvPowerSeries.continuous_restrictedEval₂_arg (RingHom.id K) (fun _ ↦ le_rfl)
-    (restrictedMvPowerSeriesGaussEquiv f)).comp he
+      evalAtHom a.val a.property f :=
+  (lipschitzWith_evalAtHom_apply f).continuous
 
 end NormedField
 

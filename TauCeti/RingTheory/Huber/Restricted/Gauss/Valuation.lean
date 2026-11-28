@@ -28,13 +28,13 @@ Gauss valuation at most `1` (both when `K` is nontrivially normed, using
 
 ## Main results
 
-* `TauCeti.Huber.coe_weightedGaussValuation_normedField_eq_norm`: the real value of
-  `weightedGaussValuation` equals `‖restrictedMvPowerSeriesGaussEquiv f‖`.
-* `TauCeti.Huber.coe_weightedGaussValuation_normedField`: the real value of
-  `weightedGaussValuation` equals `MvPowerSeries.gaussNorm` at unit polyradius.
-* `TauCeti.Huber.weightedGaussValuation_le_one_of_mem_powerBoundedSubring`: every power-bounded
-  restricted power series over an ultrametric normed field has unit-radius Gauss valuation at most
-  `1`.
+* `TauCeti.Huber.unitGaussValuation`: the unit-radius Gauss valuation `K⟨T₁, …, Tₙ⟩ → ℝ≥0`,
+  together with `TauCeti.Huber.unitGaussValuation_def`,
+  `TauCeti.Huber.coe_unitGaussValuation_eq_norm`, `TauCeti.Huber.coe_unitGaussValuation`,
+  `TauCeti.Huber.unitGaussValuation_eq_zero_iff`, `TauCeti.Huber.unitGaussValuation_weightedC`,
+  `TauCeti.Huber.unitGaussValuation_weightedX`,
+  `TauCeti.Huber.unitGaussValuation_le_one_iff_mem_weightedSubring`, and
+  `TauCeti.Huber.unitGaussValuation_le_one_of_mem_powerBoundedSubring`.
 
 ## References
 
@@ -49,39 +49,98 @@ namespace TauCeti.Huber
 
 open scoped NNReal NormedField
 
-variable {K : Type*} [NormedField K] [IsUltrametricDist K]
+section UnitGaussValuation
 
-/-- The unit-radius Gauss valuation extending `NormedField.valuation` has real value equal to the
-Gauss norm of `restrictedMvPowerSeriesGaussEquiv f`. -/
-theorem coe_weightedGaussValuation_normedField_eq_norm (n : ℕ)
+variable (n : ℕ) (K : Type*) [NormedField K] [IsUltrametricDist K]
+
+/-- **The unit Gauss valuation on `K⟨T₁, …, Tₙ⟩`**, sending `f = ∑_ν a_ν T^ν` to `max_ν ‖a_ν‖₊`. -/
+noncomputable def unitGaussValuation :
+    Valuation
+      (weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight)
+      ℝ≥0 :=
+  weightedGaussValuation n (NormedField.isContinuous_valuation (K := K))
+
+/-- Unfolding equation bridging `unitGaussValuation` to `weightedGaussValuation`. -/
+theorem unitGaussValuation_def :
+    unitGaussValuation n K =
+      weightedGaussValuation n (NormedField.isContinuous_valuation (K := K)) :=
+  (rfl)
+
+/-- The unit Gauss valuation is continuous. -/
+theorem isContinuous_unitGaussValuation :
+    (unitGaussValuation n K).IsContinuous :=
+  isContinuous_weightedGaussValuation _
+
+variable {K} in
+/-- The unit Gauss valuation has real value equal to the Gauss norm of
+`restrictedMvPowerSeriesGaussEquiv f`. -/
+theorem coe_unitGaussValuation_eq_norm
     (f : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    (weightedGaussValuation n (Valued.isContinuous_v (R := K)) f : ℝ) =
+    (unitGaussValuation n K f : ℝ) =
       ‖restrictedMvPowerSeriesGaussEquiv f‖ := by
+  rw [unitGaussValuation_def]
   refine le_antisymm ?_ ?_
   · obtain ⟨ν, hν⟩ := exists_coeff_eq_weightedGaussValuation
-      (Valued.isContinuous_v (R := K)) (f := f)
+      (NormedField.isContinuous_valuation (K := K)) (f := f)
     rw [← hν, ← coe_restrictedMvPowerSeriesGaussEquiv]
     exact MvPowerSeries.norm_coeff_le_norm (restrictedMvPowerSeriesGaussEquiv f) ν
   · obtain ⟨ν, hν⟩ := MvPowerSeries.exists_norm_coeff_eq_norm
       (restrictedMvPowerSeriesGaussEquiv f)
     rw [← hν, coe_restrictedMvPowerSeriesGaussEquiv]
     exact NNReal.coe_le_coe.mpr
-      (coeff_le_weightedGaussValuation (Valued.isContinuous_v (R := K)) f ν)
+      (coeff_le_weightedGaussValuation (NormedField.isContinuous_valuation (K := K)) f ν)
 
-/-- **The unit-radius Gauss valuation agrees with `MvPowerSeries.gaussNorm` at unit polyradius.** -/
-theorem coe_weightedGaussValuation_normedField (n : ℕ)
+/-- **The unit Gauss valuation coerces to Mathlib's unit-radius `MvPowerSeries.gaussNorm`.** -/
+theorem coe_unitGaussValuation
     (f : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight) :
-    (weightedGaussValuation n (Valued.isContinuous_v (R := K)) f : ℝ) =
+    (unitGaussValuation n K f : ℝ) =
       MvPowerSeries.gaussNorm norm (fun _ : Fin n ↦ (1 : ℝ)) (f : MvPowerSeries (Fin n) K) := by
-  rw [coe_weightedGaussValuation_normedField_eq_norm, MvPowerSeries.norm_eq_gaussNorm,
+  rw [coe_unitGaussValuation_eq_norm, MvPowerSeries.norm_eq_gaussNorm,
     coe_restrictedMvPowerSeriesGaussEquiv]
 
-/-- Every power-bounded restricted series over an ultrametric normed field has unit-radius Gauss
-valuation at most `1`. -/
-theorem weightedGaussValuation_le_one_of_mem_powerBoundedSubring (n : ℕ)
+/-- The unit Gauss valuation vanishes only on the zero series. -/
+@[simp]
+theorem unitGaussValuation_eq_zero_iff
+    {f : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight} :
+    unitGaussValuation n K f = 0 ↔ f = 0 := by
+  rw [unitGaussValuation_def, weightedGaussValuation_eq_zero_iff]
+  simp only [NormedField.valuation_apply, nnNorm_eq_zero]
+  exact ⟨fun h ↦ Subtype.ext (MvPowerSeries.ext fun ν ↦ by simp [h ν]), fun h ν ↦ by simp [h]⟩
+
+/-- On constants, `unitGaussValuation` restricts to `‖·‖₊`. -/
+@[simp]
+theorem unitGaussValuation_weightedC (c : K) :
+    unitGaussValuation n K
+        (weightedC (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight c) = ‖c‖₊ := by
+  rw [unitGaussValuation_def, weightedGaussValuation_weightedC, NormedField.valuation_apply]
+
+/-- Every coordinate variable `Tᵢ` has unit Gauss valuation `1`. -/
+@[simp]
+theorem unitGaussValuation_weightedX (i : Fin n) :
+    unitGaussValuation n K
+        (weightedX (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight i) = 1 := by
+  rw [unitGaussValuation_def, weightedGaussValuation_weightedX]
+
+/-- A series has unit Gauss valuation at most `1` if and only if it lies in `K°⟨T₁, …, Tₙ⟩`. -/
+theorem unitGaussValuation_le_one_iff_mem_weightedSubring
+    {f : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight} :
+    unitGaussValuation n K f ≤ 1 ↔
+      f ∈ weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
+        (powerBoundedSubring K) := by
+  rw [unitGaussValuation_def, weightedGaussValuation_le_iff, mem_weightedSubring, mem_weightedNhd]
+  refine forall_congr' fun ν ↦ ?_
+  rw [weightMul_one_weight, Subring.mem_toAddSubgroup, mem_powerBoundedSubring,
+    isPowerBounded_iff_norm_le_one, NormedField.valuation_apply, ← NNReal.coe_le_coe, coe_nnNorm,
+    NNReal.coe_one]
+
+variable {n K} in
+/-- **The unit Gauss valuation is at most `1` on power-bounded series.** -/
+theorem unitGaussValuation_le_one_of_mem_powerBoundedSubring
     {f : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight}
-    (hf : f ∈ powerBoundedSubring _) :
-    weightedGaussValuation n (Valued.isContinuous_v (R := K)) f ≤ 1 := by
+    (hf : f ∈ powerBoundedSubring
+      (weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight)) :
+    unitGaussValuation n K f ≤ 1 := by
+  rw [unitGaussValuation_def]
   refine (weightedGaussValuation_le_iff _).mpr fun ν ↦ ?_
   by_cases hnt : ∃ c : K, 1 < ‖c‖
   · let : NontriviallyNormedField K := ⟨hnt⟩
@@ -92,5 +151,7 @@ theorem weightedGaussValuation_le_one_of_mem_powerBoundedSubring (n : ℕ)
       (mem_powerBoundedSubring.mp hcoeff))
   · push Not at hnt
     exact NNReal.coe_le_coe.mp (hnt _)
+
+end UnitGaussValuation
 
 end TauCeti.Huber
