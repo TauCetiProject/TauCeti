@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Fourier.ZMod
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
+import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.Data.ZMod.Count
 
 /-!
@@ -96,21 +97,19 @@ theorem dft_comp_natCast_val (hv : v ∣ N) (f : ZMod v → E) (k : ℤ) :
       ← sum_comp_natCast_val hv]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     -- the character modulo `N` at `-j L m` is the character modulo `v` at `-j m`
-    have h₁ : -(j * ((L * m : ℤ) : ZMod N)) = ((-((j.val : ℤ) * L * m) : ℤ) : ZMod N) := by
+    have h₁ : -(j * ((L * m : ℤ) : ZMod N)) = (((L : ℤ) * -((j.val : ℤ) * m) : ℤ) : ZMod N) := by
       push_cast
       rw [natCast_zmod_val]
       ring
     have h₂ : -(((j.val : ℕ) : ZMod v) * (m : ZMod v)) = ((-((j.val : ℤ) * m) : ℤ) : ZMod v) := by
       push_cast
       ring
-    rw [h₁, h₂, stdAddChar_coe, stdAddChar_coe]
-    congr 2
-    have hv' : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
-    have hL' : (L : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hL
-    have hN' : (N : ℂ) = v * L := by exact_mod_cast hN
-    rw [hN']
-    push_cast
-    field_simp
+    have : NeZero L := ⟨hL⟩
+    have hcancel {N' : ℕ} [NeZero N'] (h : N' = v * L) (x : ℤ) :
+        stdAddChar (((L * x : ℤ) : ZMod N')) = stdAddChar (x : ZMod v) := by
+      subst h
+      exact stdAddChar_intCast_natCast_mul x
+    rw [h₁, h₂, hcancel hN]
   · -- translating by `v` fixes the reduction and multiplies the transform by `e(-v k / N) ≠ 1`
     set T : ZMod N → E := fun j ↦ stdAddChar (-(j * (k : ZMod N))) • f (j.val : ZMod v)
     have hred (j : ZMod N) : (((j + v).val : ℕ) : ZMod v) = (j.val : ZMod v) := by
