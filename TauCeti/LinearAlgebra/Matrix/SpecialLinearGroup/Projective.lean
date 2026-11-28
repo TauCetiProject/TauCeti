@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
 public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.GroupTheory.QuotientGroup.Index
 
 /-!
@@ -39,6 +40,8 @@ index.
 * `Subgroup.map_liftSL`, `Subgroup.liftSL_map`: the image of `Γ.liftSL` is `Γ`, and the preimage
   of the image of `Γ ≤ SL(n, R)` is `Γ.withCenter`.
 * `Subgroup.index_liftSL`: `Γ.liftSL` has the index of `Γ`.
+* `Subgroup.quotientNormalCoreLiftSLEquiv`: canonical isomorphism
+  `(SL(n, R) ⧸ Γ.liftSL.normalCore) ≃* (PSL(n, R) ⧸ Γ.normalCore)`.
 * `Subgroup.liftSL_conjAct_smul`: lifting commutes with conjugation.
 * `Subgroup.index_map_mk'_of_center_le`: the image in `PSL(n, R)` of a subgroup of `SL(n, R)`
   containing the centre has the same index.
@@ -226,6 +229,32 @@ theorem liftSL_conjAct_smul (g : SpecialLinearGroup n R)
   ext x
   simp only [mem_pointwise_smul_iff_inv_smul_mem, mem_liftSL, ← map_inv, ConjAct.toConjAct_smul,
     QuotientGroup.mk_mul, QuotientGroup.mk_inv]
+
+/-- The quotient of `SL(n, R)` by the normal core of `Γ.liftSL` is canonically isomorphic to the
+quotient of `PSL(n, R)` by the normal core of `Γ`, since `SL(n, R) →* PSL(n, R)` is surjective. -/
+noncomputable def quotientNormalCoreLiftSLEquiv (Γ : Subgroup (ProjectiveSpecialLinearGroup n R)) :
+    (SpecialLinearGroup n R ⧸ Γ.liftSL.normalCore) ≃*
+      (ProjectiveSpecialLinearGroup n R ⧸ Γ.normalCore) :=
+  let π : SpecialLinearGroup n R →* ProjectiveSpecialLinearGroup n R :=
+    QuotientGroup.mk' (center (SpecialLinearGroup n R))
+  let φ : SpecialLinearGroup n R →* ProjectiveSpecialLinearGroup n R ⧸ Γ.normalCore :=
+    (QuotientGroup.mk' Γ.normalCore).comp π
+  have hker : Γ.liftSL.normalCore = φ.ker := by
+    rw [← MonoidHom.comap_ker, QuotientGroup.ker_mk', liftSL_def]
+    exact normalCore_comap_of_forall_exists_mul_eq π fun g ↦
+      let ⟨x, hx⟩ := QuotientGroup.mk'_surjective _ g
+      ⟨x, 1, one_mem _, by rw [mul_one]; exact hx⟩
+  QuotientGroup.liftEquiv Γ.liftSL.normalCore
+    ((QuotientGroup.mk'_surjective _).comp (QuotientGroup.mk'_surjective _)) hker
+
+/-- Evaluation of `Subgroup.quotientNormalCoreLiftSLEquiv` on coset representatives. -/
+@[simp]
+theorem quotientNormalCoreLiftSLEquiv_mk (Γ : Subgroup (ProjectiveSpecialLinearGroup n R))
+    (g : SpecialLinearGroup n R) :
+    Γ.quotientNormalCoreLiftSLEquiv (QuotientGroup.mk g) =
+      QuotientGroup.mk (g : ProjectiveSpecialLinearGroup n R) := by
+  rw [quotientNormalCoreLiftSLEquiv, QuotientGroup.liftEquiv_mk, MonoidHom.comp_apply]
+  exact congrArg QuotientGroup.mk (QuotientGroup.mk'_apply _ g)
 
 end Lift
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZModThree.Basic
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.Three
 public import TauCeti.RepresentationTheory.CharacterTable.Dixon.ClassData.Basic
 
 /-!

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZModThree.Basic
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ZMod.Three
 import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
 import TauCeti.Algebra.Group.Subgroup.ZPowers
 import TauCeti.GroupTheory.SpecificGroups.Quaternion.Basic

@@ -70,6 +70,8 @@ proof is independent of the source's.
   base change on `GL ι`, and restricts to a homomorphism between these kernels.
 * `Matrix.SpecialLinearGroup.map_injective` and `Matrix.SpecialLinearGroup.mem_range_map_iff`:
   along an injective ring hom, base change is injective and its range is described entrywise.
+* `Matrix.SpecialLinearGroup.map_neg` and `Matrix.SpecialLinearGroup.map_neg_one`:
+  `map f (-g) = -map f g`, in particular `map f (-1) = -1`.
 * `Matrix.SpecialLinearGroup.mapGL_neg` and `Matrix.SpecialLinearGroup.mapGL_neg_one`:
   `mapGL S (-g) = -mapGL S g`, in particular `mapGL S (-1) = -1`.
 * `Matrix.SpecialLinearGroup.toGL_neg_one`, `Matrix.SpecialLinearGroup.neg_one_eq_one_iff` and
@@ -396,6 +398,19 @@ theorem coe_centerMulEquivRootsOfUnityFin_symm_apply (n : ℕ) (hn : 0 < n)
     ((centerMulEquivRootsOfUnityFin n hn A).apply_symm_apply ζ)
   rw [coe_centerMulEquivRootsOfUnityFin_apply] at h
   exact h
+
+/-- Scalar extension `SL(n, R) →* SL(n, S)` commutes with negation. -/
+@[simp]
+protected lemma map_neg {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
+    [Fact (Even (Fintype.card n))] (f : R →+* S) (g : SpecialLinearGroup n R) :
+    map f (-g) = -map f g :=
+  Subtype.ext <| f.mapMatrix.map_neg (g : Matrix n n R)
+
+/-- `-I` maps to `-I` under scalar extension `SL(n, R) →* SL(n, S)`. -/
+lemma map_neg_one {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
+    [Fact (Even (Fintype.card n))] (f : R →+* S) :
+    map f (-1 : SpecialLinearGroup n R) = -1 := by
+  rw [SpecialLinearGroup.map_neg, map_one]
 
 /-- The base-change map `SL(n, R) → GL(n, S)` commutes with negation. -/
 @[simp]

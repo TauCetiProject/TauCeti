@@ -13,7 +13,7 @@ public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.FinTwo
 -- `sl2zToPSL2R` occurs in `TauCeti.sl2zToPSL2R_smul_infty_eq_infty_iff`.
-public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
+public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.Basic
 -- `IsAlgClosed` occurs in `Matrix.ProjectiveSpecialLinearGroup.exists_smul_eq_self`.
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 

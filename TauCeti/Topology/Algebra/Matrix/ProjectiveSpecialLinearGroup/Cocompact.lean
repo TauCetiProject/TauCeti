@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Group.Matrix
-public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup
+public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.Basic
 
 import TauCeti.Analysis.Matrix.Normed
 

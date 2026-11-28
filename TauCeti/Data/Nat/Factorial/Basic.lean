@@ -29,6 +29,7 @@ termwise comparison of the power series of `x * exp (x ^ 2 / 6)` and `sinh x`;
 termwise comparison that sums moment bounds `((n + 1)!)² aⁿ` against the series of `cosh`;
 `Nat.pow_three_le_two_mul_descFactorial_three`, `n ^ 3 ≤ 2 * (n)₃` for `6 ≤ n`, comparing the
 number of triples of `n` elements with the number of injective ones;
+`Nat.pow_three_le_factorial`, `n ^ 3 ≤ n !` for `6 ≤ n`;
 `Nat.factorial_add_mul_factorial_add_le`, `(s + j)! * (s + j)! ≤ (2 * s + j)! * j !`, which bounds
 products of factorials in double hypergeometric series;
 `Nat.ascFactorial_two_mul_le_pow_add`, `n (n + 1) ⋯ (n + 2k - 1) ≤ (n + k) ^ (2k)`, the inequality
@@ -143,6 +144,13 @@ theorem pow_three_le_two_mul_descFactorial_three {n : ℕ} (hn : 6 ≤ n) :
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
   simp only [descFactorial_succ, descFactorial_zero]
   grind
+
+/-- From `n = 6` on, the cube of `n` is at most `n!`: `n ^ 3 ≤ n !`. -/
+theorem pow_three_le_factorial {n : ℕ} (hn : 6 ≤ n) : n ^ 3 ≤ n ! := by
+  have h2 : 2 ≤ (n - 3)! := Nat.factorial_two ▸ Nat.factorial_le (by omega)
+  calc n ^ 3 ≤ 2 * n.descFactorial 3 := pow_three_le_two_mul_descFactorial_three hn
+    _ ≤ (n - 3)! * n.descFactorial 3 := Nat.mul_le_mul_right _ h2
+    _ = n ! := Nat.factorial_mul_descFactorial (by omega)
 
 /-- Factorial divisibility under Euclidean division: `(i / d)! * (j / d)! ∣ ((i + j) / d)!`. -/
 theorem factorial_div_mul_factorial_div_dvd (d i j : ℕ) :
