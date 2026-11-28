@@ -116,13 +116,16 @@ private theorem logDeriv_clearedCompletion_zero :
     have := hf.continuousAt
     have := hg.continuousAt
     fun_prop (disch := norm_num)
+  have hrank : (NumberField.Units.rank K : ℂ) + 1 = nrRealPlaces K + nrComplexPlaces K := by
+    exact_mod_cast NumberField.Units.rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K
   have heq := hcont.continuousAt.eq_of_eventuallyEq_nhdsNE hcont' (by
     filter_upwards [hfEq, hgEq, hζ, (dedekindZetaData K).eventually_gammaFactor_ne_zero 0,
       h₁, self_mem_nhdsWithin] with z hzF hzG hzζ hzγ hz₁ hz₀
     have hz₀' : z ≠ 0 := hz₀
     rw [logDeriv_clearedCompletion K hz₀' hz₁ hzγ hzζ, ← hzF, ← hzG, hordζ, hordγ]
-    simp only [sub_zero, WithTop.untop₀_coe, Int.cast_add, Int.cast_sub, Int.cast_one,
-      Int.cast_neg, Int.cast_natCast, div_eq_mul_inv]
+    simp only [sub_zero, WithTop.untop₀_coe, Int.cast_add, Int.cast_neg, Int.cast_natCast,
+      div_eq_mul_inv]
+    rw [← hrank]
     ring)
   simpa [clearedCompletion, sub_eq_add_neg] using heq
 
