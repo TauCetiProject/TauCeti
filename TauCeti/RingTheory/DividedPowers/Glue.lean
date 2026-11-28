@@ -24,6 +24,8 @@ on `I · A⟨x⟩ + A⟨x⟩₊` in a divided power polynomial algebra.
 ## Main definitions
 
 * `DividedPowers.convolution γ ε n x y`: the antidiagonal sum `∑_{i + j = n} γᵢ(x) εⱼ(y)`.
+* `DividedPowers.supPowers h`: the additive divided-power candidate on `I ⊔ J` defined by
+  convolution.
 * `DividedPowers.glue γ ε h`: the glued divided power structure on `I ⊔ J`.
 
 ## Main results
@@ -85,8 +87,8 @@ theorem convolution_zero {x y : A} (hx : x ∈ I) (hy : y ∈ J) :
 @[simp]
 theorem convolution_one {x y : A} (hx : x ∈ I) (hy : y ∈ J) :
     convolution γ ε 1 x y = x + y := by
-  rw [convolution_def, Nat.sum_antidiagonal_eq_sum_range_succ_mk, sum_range_succ, sum_range_one]
-  simp [γ.dpow_zero hx, γ.dpow_one hx, ε.dpow_zero hy, ε.dpow_one hy, add_comm]
+  rw [← coeff_exp_mul_exp, PowerSeries.coeff_one_mul]
+  simp [exp, γ.dpow_zero hx, γ.dpow_one hx, ε.dpow_zero hy, ε.dpow_one hy]
 
 /-- In degree `2`, `convolution γ ε 2 x y = γ.dpow 2 x + x * y + ε.dpow 2 y` for `x ∈ I` and
 `y ∈ J`. -/
@@ -215,7 +217,7 @@ private theorem supDpow_add (n : ℕ) {x y : A} (hx : x ∈ I) (hy : y ∈ J) :
   exact convolution_eq_of_add_eq γ ε h n h1 hx h2 hy h3
 
 /-- The additive divided-power candidate on `I ⊔ J` defined by convolution. -/
-private noncomputable def supPowers : TauCeti.PD.AdditivePowers (I ⊔ J) where
+noncomputable def supPowers : TauCeti.PD.AdditivePowers (I ⊔ J) where
   dpow := supDpow (γ := γ) (ε := ε)
   dpow_null hz := by rw [supDpow, dite_eq_right hz]
   dpow_zero hz := by
@@ -239,15 +241,21 @@ private noncomputable def supPowers : TauCeti.PD.AdditivePowers (I ⊔ J) where
     rw [mul_add, supDpow_add h _ (I.mul_mem_left a hx) (J.mul_mem_left a hy),
       supDpow_add h _ hx hy, convolution_mul γ ε n a hx hy]
 
-private theorem supPowers_dpow_add (n : ℕ) {x y : A} (hx : x ∈ I) (hy : y ∈ J) :
+/-- At `x + y` with `x ∈ I` and `y ∈ J`, the candidate `supPowers h` evaluates to the convolution
+`Cₙ(x, y)`. -/
+theorem supPowers_dpow_add (n : ℕ) {x y : A} (hx : x ∈ I) (hy : y ∈ J) :
     (supPowers h).dpow n (x + y) = convolution γ ε n x y :=
   supDpow_add h n hx hy
 
-private theorem supPowers_dpow_of_mem_left (n : ℕ) {x : A} (hx : x ∈ I) :
+/-- On `I`, the candidate `supPowers h` agrees with `γ`. -/
+@[simp]
+theorem supPowers_dpow_of_mem_left (n : ℕ) {x : A} (hx : x ∈ I) :
     (supPowers h).dpow n x = γ.dpow n x := by
   simpa using supPowers_dpow_add h n hx J.zero_mem
 
-private theorem supPowers_dpow_of_mem_right (n : ℕ) {y : A} (hy : y ∈ J) :
+/-- On `J`, the candidate `supPowers h` agrees with `ε`. -/
+@[simp]
+theorem supPowers_dpow_of_mem_right (n : ℕ) {y : A} (hy : y ∈ J) :
     (supPowers h).dpow n y = ε.dpow n y := by
   simpa using supPowers_dpow_add h n I.zero_mem hy
 
@@ -271,6 +279,12 @@ noncomputable def glue (γ : DividedPowers I) (ε : DividedPowers J)
       · rw [supPowers_dpow_of_mem_right h _ hs,
           supPowers_dpow_of_mem_right h _ (ε.dpow_mem hn hs), supPowers_dpow_of_mem_right h _ hs]
         exact ε.dpow_comp hn hs)
+
+/-- The additive candidate underlying `glue γ ε h` is `supPowers h`. -/
+@[simp]
+theorem ofDividedPowers_glue :
+    TauCeti.PD.AdditivePowers.ofDividedPowers (glue γ ε h) = supPowers h :=
+  TauCeti.PD.AdditivePowers.ofDividedPowers_toDividedPowers _ _ _ _
 
 /-- At `x + y` with `x ∈ I` and `y ∈ J`, the glued operation is the convolution `Cₙ(x, y)`. -/
 theorem glue_dpow_add (n : ℕ) {x y : A} (hx : x ∈ I) (hy : y ∈ J) :
@@ -352,6 +366,7 @@ protected theorem glue_of_le_right (hIJ : I ≤ J) :
 
 /-- Gluing a divided power structure with itself recovers `γ` as a bundled `DividedPowers`
 structure up to transport along `sup_idem`. -/
+@[simp]
 theorem glue_self (γ : DividedPowers I) :
     (sup_idem I ▸ glue γ γ fun _ _ _ ↦ rfl) = γ := by
   rw [Subsingleton.elim (sup_idem I) (sup_of_le_left (le_refl I)),
@@ -359,6 +374,7 @@ theorem glue_self (γ : DividedPowers I) :
 
 /-- Gluing `γ` with `dividedPowersBot A` recovers `γ` as a bundled `DividedPowers` structure up
 to transport along `sup_bot_eq`. -/
+@[simp]
 theorem glue_bot (γ : DividedPowers I) :
     (sup_bot_eq I ▸ glue γ (dividedPowersBot A) (coincide_on_inf_bot_right γ)) = γ := by
   rw [Subsingleton.elim (sup_bot_eq I) (sup_of_le_left (bot_le : (⊥ : Ideal A) ≤ I)),
@@ -366,6 +382,7 @@ theorem glue_bot (γ : DividedPowers I) :
 
 /-- Gluing `dividedPowersBot A` with `ε` recovers `ε` as a bundled `DividedPowers` structure up
 to transport along `bot_sup_eq`. -/
+@[simp]
 theorem bot_glue (ε : DividedPowers J) :
     (bot_sup_eq J ▸ glue (dividedPowersBot A) ε (coincide_on_inf_bot_left ε)) = ε := by
   rw [Subsingleton.elim (bot_sup_eq J) (sup_of_le_right (bot_le : (⊥ : Ideal A) ≤ J)),

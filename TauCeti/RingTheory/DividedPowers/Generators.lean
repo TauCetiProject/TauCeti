@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.DividedPowers.RatAlgebra
 public import Mathlib.Algebra.Polynomial.Coeff
-public import Mathlib.Algebra.TrivSqZeroExt.Basic
+public import Mathlib.Algebra.TrivSqZeroExt.Ideal
 public import Mathlib.Data.Finset.Sym
 public import Mathlib.Data.Nat.Choose.Vandermonde
 public import Mathlib.Data.ZMod.Basic
@@ -119,9 +119,7 @@ are equal. -/
 @[simp]
 theorem ofDividedPowers_inj {γ γ' : DividedPowers I} :
     ofDividedPowers γ = ofDividedPowers γ' ↔ γ = γ' :=
-  ⟨fun h ↦ DividedPowers.ext γ γ' fun n x _ ↦
-    congrFun (congrFun (congrArg AdditivePowers.dpow h) n) x,
-   fun h ↦ h ▸ rfl⟩
+  ⟨fun h ↦ DividedPowers.coe_injective (I := I) (congrArg AdditivePowers.dpow h), fun h ↦ h ▸ rfl⟩
 
 variable (δ : AdditivePowers I)
 
@@ -511,7 +509,7 @@ end Generators
 private noncomputable def counterexampleDpow (n : ℕ)
     (x : TrivSqZeroExt (ZMod 2) (ZMod 2)) : TrivSqZeroExt (ZMod 2) (ZMod 2) := by
   classical
-  exact if x ∈ Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)} then
+  exact if x ∈ TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2) then
     match n with
     | 0 => 1
     | 1 => x
@@ -521,16 +519,15 @@ private noncomputable def counterexampleDpow (n : ℕ)
 
 private lemma counterexampleDpow_mem {n : ℕ} (hn : n ≠ 0)
     {x : TrivSqZeroExt (ZMod 2) (ZMod 2)}
-    (hx : x ∈ Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)}) :
-    counterexampleDpow n x ∈ Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)} := by
+    (hx : x ∈ TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2)) :
+    counterexampleDpow n x ∈ TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2) := by
   classical
   match n with
   | 0 => exact absurd rfl hn
   | 1 | 2 | 3 | _ + 4 => simp [counterexampleDpow, hx]
 
 private noncomputable def counterexampleAdditivePowers :
-    AdditivePowers
-      (Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)} : Ideal (TrivSqZeroExt (ZMod 2) (ZMod 2))) where
+    AdditivePowers (TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2)) where
   dpow := counterexampleDpow
   dpow_null hx := by
     classical
@@ -544,7 +541,7 @@ private noncomputable def counterexampleAdditivePowers :
   dpow_mem hn hx := counterexampleDpow_mem hn hx
   dpow_add {n x y} hx hy := by
     classical
-    have hxy : x + y ∈ Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)} := Ideal.add_mem _ hx hy
+    have hxy : x + y ∈ TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2) := Ideal.add_mem _ hx hy
     match n with
     | 0 => simp [counterexampleDpow, hx, hy, hxy]
     | 1 =>
@@ -552,11 +549,9 @@ private noncomputable def counterexampleAdditivePowers :
       simp [counterexampleDpow, hx, hy, hxy, add_comm]
     | k + 2 =>
       rw [Finset.Nat.sum_antidiagonal_succ, Finset.Nat.sum_antidiagonal_succ']
-      have hsq : (Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)} :
-          Ideal (TrivSqZeroExt (ZMod 2) (ZMod 2))) *
-          Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)} = ⊥ := by
-        rw [Ideal.span_singleton_mul_span_singleton, TrivSqZeroExt.inr_mul_inr,
-          Ideal.span_singleton_eq_bot]
+      have hsq : TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2) *
+          TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2) = ⊥ := by
+        simpa [pow_two] using TrivSqZeroExt.kerIdeal_sq (ZMod 2) (ZMod 2)
       have hmid : ∑ p ∈ antidiagonal k,
           counterexampleDpow (p.1 + 1) x * counterexampleDpow (p.2 + 1) y = 0 :=
         Finset.sum_eq_zero fun p _ ↦ Ideal.mem_bot.mp <| hsq ▸
@@ -568,12 +563,12 @@ private noncomputable def counterexampleAdditivePowers :
       | _ + 2 => simp [counterexampleDpow, hx, hy, hxy]
   dpow_mul {n a x} hx := by
     classical
-    have hax : a * x ∈ Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)} := Ideal.mul_mem_left _ a hx
+    have hax : a * x ∈ TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2) := Ideal.mul_mem_left _ a hx
     match n with
     | 0 | 1 | 2 | _ + 4 => simp [counterexampleDpow, hx, hax]
     | 3 =>
       simp only [counterexampleDpow, hx, hax, ↓reduceIte]
-      rcases Ideal.mem_span_singleton.mp hx with ⟨b, rfl⟩
+      rw [(TrivSqZeroExt.mem_kerIdeal_iff_inr (ZMod 2) (ZMod 2) x).mp hx]
       have hcube : a.fst * a.fst * a.fst = a.fst := by
         have : ∀ u : ZMod 2, u * u * u = u := by decide
         exact this a.fst
@@ -586,16 +581,15 @@ numbers `𝔽₂[ε]/(ε²)` with `I = (ε)`, the family `δ₀ = 1`, `δ₁ = �
 `n = 2` and `n ≥ 4` satisfies all additive divided power axioms, yet fails `mul_dpow` at
 `m = 1, n = 2` because `δ₁(ε) * δ₂(ε) = 0 ≠ ε = 3 * δ₃(ε)`. -/
 theorem exists_not_dividedPowers :
-    ∃ δ : AdditivePowers (Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)}),
+    ∃ δ : AdditivePowers (TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2)),
       δ.dpow 1 (TrivSqZeroExt.inr 1) * δ.dpow 2 (TrivSqZeroExt.inr 1) ≠
         (((1 + 2).choose 1 : ℕ) : TrivSqZeroExt (ZMod 2) (ZMod 2)) *
           δ.dpow (1 + 2) (TrivSqZeroExt.inr 1) ∧
-      ∀ γ : DividedPowers (Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)}), γ.dpow ≠ δ.dpow := by
+      ∀ γ : DividedPowers (TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2)), γ.dpow ≠ δ.dpow := by
   classical
   let δ := counterexampleAdditivePowers
-  have hε : TrivSqZeroExt.inr (1 : ZMod 2) ∈
-      (Ideal.span {TrivSqZeroExt.inr (1 : ZMod 2)} : Ideal (TrivSqZeroExt (ZMod 2) (ZMod 2))) :=
-    Ideal.subset_span rfl
+  have hε : TrivSqZeroExt.inr (1 : ZMod 2) ∈ TrivSqZeroExt.kerIdeal (ZMod 2) (ZMod 2) :=
+    (TrivSqZeroExt.mem_kerIdeal_iff_inr (ZMod 2) (ZMod 2) _).mpr rfl
   -- Verify `mul_dpow` fails at `(m, n) = (1, 2)` on `ε = TrivSqZeroExt.inr 1`.
   have hlhs : δ.dpow 1 (TrivSqZeroExt.inr 1) * δ.dpow 2 (TrivSqZeroExt.inr 1) = 0 := by
     simp [δ, counterexampleAdditivePowers, counterexampleDpow, hε]
