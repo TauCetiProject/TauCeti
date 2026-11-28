@@ -35,6 +35,24 @@ open TensorProduct
 
 namespace Representation
 
+section CommSemiring
+
+variable {G R A V : Type*} [Monoid G] [CommSemiring R] [Semiring A] [Algebra R A]
+  [Module.Free R A] [AddCommMonoid V] [Module R V]
+
+/-- Under scalar extension to an algebra free as a module, a fixed vector comes from the tensor
+of any submodule containing every fixed vector of the original representation. -/
+theorem mem_range_lTensor_subtype_of_fixed_baseChange_of_free (ρ : Representation R G V)
+    (P : Submodule R V) (hP : ∀ v, (∀ g, ρ g v = v) → v ∈ P)
+    {w : A ⊗[R] V} (hw : ∀ g, baseChange A ρ g w = w) :
+    w ∈ LinearMap.range (P.subtype.lTensor A) := by
+  classical
+  let b := Module.Free.chooseBasis R A
+  exact (b.mem_range_lTensor_subtype_iff P w).2 fun i ↦
+    hP _ (equivFinsuppOfBasisLeft_apply_fixed_of_baseChange b ρ hw i)
+
+end CommSemiring
+
 variable {G R A V : Type*} [Group G] [CommRing R] [CommRing A] [Algebra R A] [Module.Free R A]
   [AddCommGroup V] [Module R V]
 
@@ -42,14 +60,9 @@ variable {G R A V : Type*} [Group G] [CommRing R] [CommRing A] [Algebra R A] [Mo
 comparison map `A ⊗_R V^G → (A ⊗_R V)^G` is surjective for every group `G`. -/
 theorem invariantsBaseChangeMap_surjective_of_free (ρ : Representation R G V) :
     Function.Surjective (ρ.invariantsBaseChangeMap (A := A)) := by
-  classical
   rintro ⟨w, hw⟩
-  let b := Module.Free.chooseBasis R A
-  let e := TensorProduct.equivFinsuppOfBasisLeft b (N := V)
-  have hinv (i : Module.Free.ChooseBasisIndex R A) : e w i ∈ ρ.invariants :=
-    (mem_invariants _ _).2 <|
-      equivFinsuppOfBasisLeft_apply_fixed_of_baseChange b ρ ((mem_invariants _ _).1 hw) i
-  obtain ⟨y, hy⟩ := (b.mem_range_lTensor_subtype_iff ρ.invariants w).2 hinv
+  obtain ⟨y, hy⟩ := ρ.mem_range_lTensor_subtype_of_fixed_baseChange_of_free ρ.invariants
+    (fun v ↦ (mem_invariants ρ v).2) ((mem_invariants _ w).1 hw)
   exact ⟨y, Subtype.ext ((coe_invariantsBaseChangeMap ρ y).trans hy)⟩
 
 /-- **Free scalar extension commutes with invariants**: for `A` free over `R`, the comparison map

@@ -7,27 +7,26 @@ module
 
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BaseChange
 public import TauCeti.RepresentationTheory.BaseChange
-public import TauCeti.RepresentationTheory.SymmetricAlgebra.BasicInvariants
+import TauCeti.RepresentationTheory.BaseChange.Invariants
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Reynolds
 import TauCeti.Algebra.TensorProduct.BaseChange
-import TauCeti.RingTheory.TensorProduct.MvPolynomial
 
 /-!
 # Scalar extension of polynomial invariants
 
-Let `ρ` be a representation of a group `G` on an `R`-module `M`, and let `S` be a commutative
+Let `ρ` be a representation of a monoid `G` on an `R`-module `M`, and let `S` be a commutative
 `R`-algebra. The canonical equivalence `S ⊗[R] Sym M ≃ Sym (S ⊗[R] M)`
 (`SymmetricAlgebra.scalarTensorBialgEquiv`) is equivariant: it intertwines the scalar
 extension of the induced action of `G` on `Sym M` with the action induced by the scalar-extended
 representation `ρ.baseChange S`. This file draws the consequences for invariants.
 
-* For a finite group and a flat `R`-algebra `S`, the invariant subalgebra commutes with scalar
-  extension: `S ⊗[R] Sym(M)^G ≃ Sym(S ⊗[R] M)^G` as `S`-algebras. This is the flat base change
-  of finite-group invariants (`Representation.invariantsBaseChangeEquiv`), transported along the
-  equivariant equivalence; the comparison map is the scalar extension of the inclusion of the
-  invariants, so it is an algebra map.
-* When `#G` is invertible, the Reynolds operator commutes with scalar extension, with no flatness
-  hypothesis: averaging over `G` is a finite sum, so it commutes with `S ⊗[R] -`
+* For a finite acting monoid and a flat `R`-algebra `S`, the invariant subalgebra
+  commutes with scalar extension: `S ⊗[R] Sym(M)^G ≃ Sym(S ⊗[R] M)^G` as `S`-algebras.
+  The proof transports
+  `Representation.mem_range_lTensor_subtype_iff_fixed_baseChange_of_finite` along the equivariant
+  equivalence. The comparison extends the inclusion of invariants and is an algebra map.
+* For a finite group with invertible `#G`, the Reynolds operator commutes with scalar extension
+  without flatness: averaging over `G` is a finite sum, so it commutes with `S ⊗[R] -`
   (`Representation.averageMap_baseChange`).
 * Over a field `K`, the dimension of each homogeneous component of the invariant subalgebra does
   not change under extension to any nontrivial commutative `K`-algebra. Thus the Hilbert series of
@@ -40,15 +39,9 @@ representation `ρ.baseChange S`. This file draws the consequences for invariant
 * `Representation.symmetricAlgebraInvariantsBaseChangeMap`: the canonical algebra comparison
   for any monoid action.
 * `Representation.symmetricAlgebraInvariantsBaseChangeMap_bijective_of_free`: the comparison is
-  bijective for any monoid action when the coefficient algebra is free.
-* `Representation.IsBasicInvariants.baseChange_of_bijective`,
-  `Representation.IsBasicInvariants.baseChange` and
-  `Representation.IsBasicInvariants.baseChange_of_free`: basic invariants retain their degrees
-  under a bijective comparison, in particular for finite-flat and free scalar extensions.
-* `Representation.symmetricAlgebraInvariantsBaseChangeEquiv`: flat scalar extension of the invariant
-  subalgebra, as an algebra equivalence.
-* `Representation.exists_lTensor_val_eq_of_mem_invariants_baseChange`: for flat `S`, every invariant
-  of the scalar extension of the induced representation on `Sym M` comes from `S ⊗[R] Sym(M)^G`.
+  bijective for any monoid action when the coefficient algebra is free as an `R`-module.
+* `Representation.symmetricAlgebraInvariantsBaseChangeEquiv`: flat scalar extension for a finite
+  acting monoid, as an algebra equivalence.
 * `Representation.coe_symmetricAlgebraReynolds_scalarTensorBialgEquiv_tmul`: the Reynolds operator
   commutes with scalar extension.
 * `Representation.symmetricAlgebraReynolds_scalarTensorBialgEquiv`: for flat `S`, the same
@@ -67,7 +60,7 @@ open SymmetricAlgebra TensorProduct TauCeti.SymmetricAlgebra
 
 namespace Representation
 
-variable {R S G M ι : Type*}
+variable {R S G M : Type*}
 
 section CommSemiring
 
@@ -121,13 +114,15 @@ theorem scalarTensorBialgEquiv_lTensor_val_mem_symmetricAlgebraInvariants
   | tmul s a =>
       simp [(ρ.mem_symmetricAlgebraInvariants a).1 a.property g]
 
-/-- The invariant algebra comparison for scalar extension sends a tensor of invariants into the
-scalar-extended invariant algebra via the canonical symmetric algebra equivalence. -/
+/-- The canonical comparison from the scalar extension of the invariant algebra of `ρ` to the
+invariant algebra of the scalar-extended representation. -/
 noncomputable def symmetricAlgebraInvariantsBaseChangeMap :
     S ⊗[R] ρ.symmetricAlgebraInvariants →ₐ[S] (ρ.baseChange S).symmetricAlgebraInvariants :=
   (((scalarTensorBialgEquiv (k := R) (K := S) (M := M)).toAlgEquiv.toAlgHom).comp
     (Algebra.TensorProduct.lTensor (S := S) S ρ.symmetricAlgebraInvariants.val)).codRestrict _
-      (ρ.scalarTensorBialgEquiv_lTensor_val_mem_symmetricAlgebraInvariants (S := S))
+      (fun x ↦ by
+        simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, BialgEquiv.coe_toAlgEquiv]
+        exact ρ.scalarTensorBialgEquiv_lTensor_val_mem_symmetricAlgebraInvariants x)
 
 /-- The comparison map is the tensor of the invariant inclusion followed by the symmetric
 algebra scalar-extension equivalence. -/
@@ -135,17 +130,9 @@ algebra scalar-extension equivalence. -/
 theorem coe_symmetricAlgebraInvariantsBaseChangeMap (x : S ⊗[R] ρ.symmetricAlgebraInvariants) :
     (ρ.symmetricAlgebraInvariantsBaseChangeMap x : SymmetricAlgebra S (S ⊗[R] M)) =
       scalarTensorBialgEquiv (k := R) (K := S)
-        (Algebra.TensorProduct.lTensor (S := S) S ρ.symmetricAlgebraInvariants.val x) :=
-  (rfl)
-
-/-- On a pure tensor, the invariant comparison applies the symmetric algebra equivalence to the
-tensor of the scalar and the underlying invariant. -/
-theorem symmetricAlgebraInvariantsBaseChangeMap_tmul (s : S)
-    (a : ρ.symmetricAlgebraInvariants) :
-    (ρ.symmetricAlgebraInvariantsBaseChangeMap (s ⊗ₜ[R] a) : SymmetricAlgebra S (S ⊗[R] M)) =
-      scalarTensorBialgEquiv (s ⊗ₜ[R] (a : SymmetricAlgebra R M)) := by
-  rw [coe_symmetricAlgebraInvariantsBaseChangeMap, Algebra.TensorProduct.map_tmul,
-    AlgHom.id_apply, Subalgebra.coe_val]
+        (Algebra.TensorProduct.lTensor (S := S) S ρ.symmetricAlgebraInvariants.val x) := by
+  simp only [symmetricAlgebraInvariantsBaseChangeMap, AlgHom.coe_codRestrict,
+    AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, BialgEquiv.coe_toAlgEquiv]
 
 /-- Flat scalar extension makes the invariant algebra comparison injective. -/
 theorem symmetricAlgebraInvariantsBaseChangeMap_injective [Module.Flat R S] :
@@ -158,31 +145,21 @@ theorem symmetricAlgebraInvariantsBaseChangeMap_injective [Module.Flat R S] :
     ρ.symmetricAlgebraInvariants.val.toLinearMap Subtype.val_injective
     (scalarTensorBialgEquiv.injective h)
 
-/-- The invariant algebra comparison is bijective for a free scalar extension of any monoid
-representation. In a basis of `S` over `R`, an invariant tensor has invariant coordinates. -/
-theorem symmetricAlgebraInvariantsBaseChangeMap_bijective_of_free [Module.Free R S] :
-    Function.Bijective (ρ.symmetricAlgebraInvariantsBaseChangeMap (S := S)) := by
-  classical
-  refine ⟨ρ.symmetricAlgebraInvariantsBaseChangeMap_injective, ?_⟩
-  -- Transport the basis argument of `Representation.invariantsBaseChangeMap_surjective_of_free`
-  -- through the symmetric algebra equivalence.
+private theorem symmetricAlgebraInvariantsBaseChangeMap_surjective
+    (hlift : ∀ {x : S ⊗[R] SymmetricAlgebra R M},
+      (∀ g, (ρ.symmetricAlgebra.baseChange S) g x = x) →
+      x ∈ LinearMap.range (ρ.symmetricAlgebraInvariants.toSubmodule.subtype.lTensor S)) :
+    Function.Surjective (ρ.symmetricAlgebraInvariantsBaseChangeMap (S := S)) := by
   intro y
   let e := ρ.symmetricAlgebraBaseChangeEquiv S
-  let w := e.symm (y : SymmetricAlgebra S (S ⊗[R] M))
-  have hw (g : G) : (ρ.symmetricAlgebra.baseChange S) g w = w := by
+  have hw (g : G) : (ρ.symmetricAlgebra.baseChange S) g (e.symm y) = e.symm y := by
     have hg := IntertwiningMap.isIntertwining _ _ e.symm.toIntertwiningMap g
       (y : SymmetricAlgebra S (S ⊗[R] M))
     rw [Equiv.coe_toIntertwiningMap,
       ((ρ.baseChange S).mem_symmetricAlgebraInvariants y).1 y.property g] at hg
     exact hg.symm
-  let b := Module.Free.chooseBasis R S
-  have hb (i : Module.Free.ChooseBasisIndex R S) :
-      TensorProduct.equivFinsuppOfBasisLeft b w i ∈ ρ.symmetricAlgebraInvariants :=
-    (ρ.mem_symmetricAlgebraInvariants _).2
-      (equivFinsuppOfBasisLeft_apply_fixed_of_baseChange b ρ.symmetricAlgebra hw i)
-  obtain ⟨x, hx⟩ :=
-    (b.mem_range_lTensor_subtype_iff ρ.symmetricAlgebraInvariants.toSubmodule w).2 hb
-  have hxt : ρ.symmetricAlgebraInvariants.val.toLinearMap.lTensor S x = w := by
+  obtain ⟨x, hx⟩ := hlift hw
+  have hxt : ρ.symmetricAlgebraInvariants.val.toLinearMap.lTensor S x = e.symm y := by
     rw [Subalgebra.toSubmodule_subtype] at hx
     exact hx
   refine ⟨x, Subtype.ext ?_⟩
@@ -190,123 +167,56 @@ theorem symmetricAlgebraInvariantsBaseChangeMap_bijective_of_free [Module.Free R
     LinearMap.baseChange_eq_lTensor, hxt, ← ρ.symmetricAlgebraBaseChangeEquiv_apply]
   exact e.apply_symm_apply y
 
-variable {ρ}
-
-/-- If the invariant algebra comparison is bijective, the scalar extensions of basic invariants
-are basic invariants of the same degrees. -/
-theorem IsBasicInvariants.baseChange_of_bijective
-    {f : ι → ρ.symmetricAlgebraInvariants} {d : ι → ℕ} (h : ρ.IsBasicInvariants f d)
-    (hbij : Function.Bijective (ρ.symmetricAlgebraInvariantsBaseChangeMap (S := S))) :
-    (ρ.baseChange S).IsBasicInvariants
-      (fun i ↦ ρ.symmetricAlgebraInvariantsBaseChangeMap (1 ⊗ₜ[R] f i)) d := by
-  constructor
-  · intro i
-    rw [symmetricAlgebraInvariantsBaseChangeMap_tmul]
-    exact scalarTensorBialgEquiv_mem_homogeneousSubmodule
-      (Submodule.tmul_mem_baseChange_of_mem 1 (h.homogeneous i))
-  · -- The evaluation factorization uses Mathlib's `MvPolynomial.algebraTensorAlgEquiv` to
-    -- change the coefficient ring.
-    rw [← MvPolynomial.comp_aeval,
-      MvPolynomial.aeval_one_tmul_eq_lTensor_comp_algebraTensorAlgEquiv_symm f]
-    have ht : Function.Bijective (Algebra.TensorProduct.lTensor (S := S) S
-        (MvPolynomial.aeval (R := R) f)) := by
-      rw [AlgHom.coe_tensorProduct_map_id (S := S), ← AlgHom.coe_tensorProduct_map_id (S := R)]
-      exact Algebra.TensorProduct.map_bijective
-        (f := AlgHom.id R S) Function.bijective_id h.bijective_aeval
-    simpa only [AlgHom.coe_comp, AlgEquiv.coe_toAlgHom] using
-      hbij.comp (ht.comp (MvPolynomial.algebraTensorAlgEquiv (σ := ι) R S).symm.bijective)
-
-/-- Over a free algebra `S`, the scalar extensions of basic invariants for any monoid
-are basic invariants of the same degrees. -/
-theorem IsBasicInvariants.baseChange_of_free [Module.Free R S]
-    {f : ι → ρ.symmetricAlgebraInvariants} {d : ι → ℕ} (h : ρ.IsBasicInvariants f d) :
-    (ρ.baseChange S).IsBasicInvariants
-      (fun i ↦ ρ.symmetricAlgebraInvariantsBaseChangeMap (1 ⊗ₜ[R] f i)) d :=
-  h.baseChange_of_bijective ρ.symmetricAlgebraInvariantsBaseChangeMap_bijective_of_free
+/-- If `S` is free as an `R`-module, the invariant algebra comparison is bijective for any
+monoid action. -/
+theorem symmetricAlgebraInvariantsBaseChangeMap_bijective_of_free [Module.Free R S] :
+    Function.Bijective (ρ.symmetricAlgebraInvariantsBaseChangeMap (S := S)) :=
+  ⟨ρ.symmetricAlgebraInvariantsBaseChangeMap_injective,
+    ρ.symmetricAlgebraInvariantsBaseChangeMap_surjective
+      (ρ.symmetricAlgebra.mem_range_lTensor_subtype_of_fixed_baseChange_of_free _
+        fun v ↦ (ρ.mem_symmetricAlgebraInvariants v).2)⟩
 
 end CommSemiring
 
 section Invariants
 
-variable [CommRing R] [CommRing S] [Algebra R S] [Group G] [AddCommMonoid M] [Module R M]
+variable [CommRing R] [CommRing S] [Algebra R S] [AddCommMonoid M] [Module R M]
+  [Module.Flat R S] [Monoid G] [Finite G]
 variable (ρ : Representation R G M)
 
-variable [Module.Flat R S] [Finite G]
-
-/-- Every invariant of the scalar extension of the induced representation on `Sym M` is the
-scalar extension of an invariant of `ρ`, when `S` is flat over `R`. -/
-theorem exists_lTensor_val_eq_of_mem_invariants_baseChange {y : S ⊗[R] SymmetricAlgebra R M}
-    (hy : y ∈ (ρ.symmetricAlgebra.baseChange S).invariants) :
-    ∃ x : S ⊗[R] ρ.symmetricAlgebraInvariants,
-      Algebra.TensorProduct.lTensor (S := S) S ρ.symmetricAlgebraInvariants.val x = y := by
-  -- The invariant submodule of the induced representation is the invariant subalgebra.
-  let r : ρ.symmetricAlgebra.invariants →ₗ[R] ρ.symmetricAlgebraInvariants :=
-    ρ.symmetricAlgebraInvariants.toSubmoduleEquiv.toLinearMap ∘ₗ
-      (LinearEquiv.ofEq _ _ ρ.toSubmodule_symmetricAlgebraInvariants.symm).toLinearMap
-  have hr (z : S ⊗[R] ρ.symmetricAlgebra.invariants) :
-      Algebra.TensorProduct.lTensor (S := S) S ρ.symmetricAlgebraInvariants.val
-        (r.lTensor S z) = ρ.symmetricAlgebra.invariants.subtype.lTensor S z := by
-    induction z with
-    | add x y hx hy => simp only [map_add, hx, hy]
-    -- `Subalgebra.toSubmoduleEquiv` and `LinearEquiv.ofEq` do not change the underlying element,
-    -- and Mathlib has no simp lemma for the former.
-    | tmul s a => rfl
-  obtain ⟨z, hz⟩ := (ρ.symmetricAlgebra.invariantsBaseChangeEquiv (A := S)).surjective ⟨y, hy⟩
-  have hz' := congrArg Subtype.val hz
-  rw [coe_invariantsBaseChangeEquiv] at hz'
-  exact ⟨r.lTensor S z, by rw [hr, hz']⟩
-
-/-- Every invariant of `ρ.baseChange S` is the image of the scalar extension of an invariant of
-`ρ`, when `S` is flat over `R`. -/
-private theorem exists_scalarTensorBialgEquiv_lTensor_val_eq
-    {y : SymmetricAlgebra S (S ⊗[R] M)} (hy : y ∈ (ρ.baseChange S).symmetricAlgebraInvariants) :
-    ∃ x : S ⊗[R] ρ.symmetricAlgebraInvariants, scalarTensorBialgEquiv (k := R) (K := S)
-      (Algebra.TensorProduct.lTensor (S := S) S ρ.symmetricAlgebraInvariants.val x) = y := by
-  -- Pull `y` back to an invariant of the scalar extension of the induced representation.
-  let e := ρ.symmetricAlgebraBaseChangeEquiv S
-  have hy' : e.symm y ∈ (ρ.symmetricAlgebra.baseChange S).invariants := by
-    have := (e.symm.invariantsLinearEquiv ⟨y, (mem_invariants _ y).2
-      (((ρ.baseChange S).mem_symmetricAlgebraInvariants y).1 hy)⟩).property
-    rwa [Equiv.coe_invariantsLinearEquiv_apply] at this
-  obtain ⟨x, hx⟩ := ρ.exists_lTensor_val_eq_of_mem_invariants_baseChange hy'
-  refine ⟨x, ?_⟩
-  rw [hx]
-  exact e.apply_symm_apply y
-
-/-- **Polynomial invariants commute with flat scalar extension.** For a finite group `G` and a
-flat `R`-algebra `S`, the scalar extension of the invariant subalgebra `Sym(M)^G` is the invariant
-subalgebra of the scalar-extended representation. The equivalence is the scalar extension of the
-inclusion `Sym(M)^G → Sym M`, followed by the canonical equivalence
-`S ⊗[R] Sym M ≃ Sym (S ⊗[R] M)`. -/
+/-- **Polynomial invariants commute with flat scalar extension.** For a finite monoid `G` and
+an `R`-algebra `S` flat as an `R`-module, the canonical comparison identifies
+`S ⊗[R] Sym(M)^G` with the invariant algebra of the scalar-extended representation. -/
 noncomputable def symmetricAlgebraInvariantsBaseChangeEquiv :
-    S ⊗[R] ρ.symmetricAlgebraInvariants ≃ₐ[S] (ρ.baseChange S).symmetricAlgebraInvariants := by
-  refine AlgEquiv.ofBijective _ ⟨ρ.symmetricAlgebraInvariantsBaseChangeMap_injective, ?_⟩
-  intro y
-  obtain ⟨x, hx⟩ := ρ.exists_scalarTensorBialgEquiv_lTensor_val_eq y.property
-  exact ⟨x, Subtype.ext ((ρ.coe_symmetricAlgebraInvariantsBaseChangeMap x).trans hx)⟩
+    S ⊗[R] ρ.symmetricAlgebraInvariants ≃ₐ[S] (ρ.baseChange S).symmetricAlgebraInvariants :=
+  AlgEquiv.ofBijective _ ⟨ρ.symmetricAlgebraInvariantsBaseChangeMap_injective,
+    ρ.symmetricAlgebraInvariantsBaseChangeMap_surjective
+      (fun {x} hx ↦ (ρ.symmetricAlgebra.mem_range_lTensor_subtype_iff_fixed_baseChange_of_finite
+        ρ.symmetricAlgebraInvariants.toSubmodule ρ.mem_symmetricAlgebraInvariants (x := x)).2 hx)⟩
 
-/-- The finite-flat equivalence has underlying algebra homomorphism
-`Representation.symmetricAlgebraInvariantsBaseChangeMap`. -/
+/-- For a finite acting monoid and flat scalar extension, the equivalence has underlying algebra
+homomorphism `Representation.symmetricAlgebraInvariantsBaseChangeMap`. -/
 @[simp]
 theorem symmetricAlgebraInvariantsBaseChangeEquiv_toAlgHom :
     (ρ.symmetricAlgebraInvariantsBaseChangeEquiv (S := S)).toAlgHom =
       ρ.symmetricAlgebraInvariantsBaseChangeMap :=
   AlgEquiv.toAlgHom_ofBijective _ _
 
-/-- The finite-flat equivalence applies the canonical invariant algebra comparison. -/
+/-- For a finite acting monoid and flat scalar extension, the equivalence applies the canonical
+invariant algebra comparison. -/
 @[simp]
 theorem symmetricAlgebraInvariantsBaseChangeEquiv_apply
     (x : S ⊗[R] ρ.symmetricAlgebraInvariants) :
     ρ.symmetricAlgebraInvariantsBaseChangeEquiv x = ρ.symmetricAlgebraInvariantsBaseChangeMap x :=
   AlgEquiv.ofBijective_apply _ _ _
 
-/-- The flat base change of the invariant subalgebra is the scalar extension of the inclusion of
-the invariants, followed by the canonical equivalence `S ⊗[R] Sym M ≃ Sym (S ⊗[R] M)`. -/
-theorem coe_symmetricAlgebraInvariantsBaseChangeEquiv (x : S ⊗[R] ρ.symmetricAlgebraInvariants) :
-    (ρ.symmetricAlgebraInvariantsBaseChangeEquiv x : SymmetricAlgebra S (S ⊗[R] M)) =
-      scalarTensorBialgEquiv (k := R) (K := S)
-        (Algebra.TensorProduct.lTensor (S := S) S ρ.symmetricAlgebraInvariants.val x) := by
-  rw [symmetricAlgebraInvariantsBaseChangeEquiv_apply, coe_symmetricAlgebraInvariantsBaseChangeMap]
+/-- The inverse of the flat scalar-extension equivalence cancels the canonical comparison. -/
+@[simp]
+theorem symmetricAlgebraInvariantsBaseChangeEquiv_symm_apply_baseChangeMap
+    (x : S ⊗[R] ρ.symmetricAlgebraInvariants) :
+    ρ.symmetricAlgebraInvariantsBaseChangeEquiv.symm
+      (ρ.symmetricAlgebraInvariantsBaseChangeMap (S := S) x) = x := by
+  rw [← symmetricAlgebraInvariantsBaseChangeEquiv_apply, AlgEquiv.symm_apply_apply]
 
 /-- The inverse of the flat base change of the invariant subalgebra agrees, after inclusion, with
 the inverse of the canonical equivalence `S ⊗[R] Sym M ≃ Sym (S ⊗[R] M)`. -/
@@ -317,24 +227,32 @@ theorem lTensor_val_symmetricAlgebraInvariantsBaseChangeEquiv_symm
         (ρ.symmetricAlgebraInvariantsBaseChangeEquiv.symm y) =
       (scalarTensorBialgEquiv (k := R) (K := S) (M := M)).symm y := by
   apply (scalarTensorBialgEquiv (k := R) (K := S) (M := M)).toAlgEquiv.injective
-  simp only [BialgEquiv.coe_toAlgEquiv]
-  rw [← coe_symmetricAlgebraInvariantsBaseChangeEquiv, AlgEquiv.apply_symm_apply,
-    BialgEquiv.apply_symm_apply]
-
-variable {ρ}
-
-/-- Over a flat algebra `S`, the scalar extensions of basic invariants of a finite group
-are basic invariants of the same degrees. -/
-theorem IsBasicInvariants.baseChange {f : ι → ρ.symmetricAlgebraInvariants} {d : ι → ℕ}
-    (h : ρ.IsBasicInvariants f d) :
-    (ρ.baseChange S).IsBasicInvariants
-      (fun i ↦ ρ.symmetricAlgebraInvariantsBaseChangeEquiv (1 ⊗ₜ[R] f i)) d := by
-  simp only [symmetricAlgebraInvariantsBaseChangeEquiv_apply]
-  apply h.baseChange_of_bijective
-  rw [← symmetricAlgebraInvariantsBaseChangeEquiv_toAlgHom, AlgEquiv.coe_toAlgHom]
-  exact ρ.symmetricAlgebraInvariantsBaseChangeEquiv.bijective
+  simp only [BialgEquiv.coe_toAlgEquiv, BialgEquiv.apply_symm_apply]
+  rw [← coe_symmetricAlgebraInvariantsBaseChangeMap,
+    ← symmetricAlgebraInvariantsBaseChangeEquiv_apply, AlgEquiv.apply_symm_apply]
 
 end Invariants
+
+section GroupInvariants
+
+variable [CommRing R] [CommRing S] [Algebra R S] [Group G] [AddCommMonoid M] [Module R M]
+  [Module.Flat R S] [Finite G] (ρ : Representation R G M)
+
+/-- For a finite group and flat scalar extension, every invariant of the scalar extension of
+the induced representation on `Sym M` comes from `S ⊗[R] Sym(M)^G`. -/
+theorem exists_lTensor_val_eq_of_mem_invariants_baseChange {y : S ⊗[R] SymmetricAlgebra R M}
+    (hy : y ∈ (ρ.symmetricAlgebra.baseChange S).invariants) :
+    ∃ x : S ⊗[R] ρ.symmetricAlgebraInvariants,
+      Algebra.TensorProduct.lTensor (S := S) S ρ.symmetricAlgebraInvariants.val x = y := by
+  obtain ⟨x, hx⟩ := (ρ.symmetricAlgebra.mem_range_lTensor_subtype_iff_fixed_baseChange_of_finite
+    ρ.symmetricAlgebraInvariants.toSubmodule ρ.mem_symmetricAlgebraInvariants).2
+    ((mem_invariants _ y).1 hy)
+  refine ⟨x, ?_⟩
+  rw [AlgHom.coe_tensorProduct_map_id, LinearMap.baseChange_eq_lTensor]
+  rw [Subalgebra.toSubmodule_subtype] at hx
+  exact hx
+
+end GroupInvariants
 
 section Reynolds
 
@@ -369,7 +287,8 @@ theorem symmetricAlgebraReynolds_scalarTensorBialgEquiv [Module.Flat R S]
   | tmul s p =>
       refine Subtype.ext ?_
       rw [coe_symmetricAlgebraReynolds_scalarTensorBialgEquiv_tmul,
-        coe_symmetricAlgebraInvariantsBaseChangeEquiv]
+        symmetricAlgebraInvariantsBaseChangeEquiv_apply,
+        coe_symmetricAlgebraInvariantsBaseChangeMap]
       simp only [LinearMap.baseChange_tmul, LinearMap.restrictScalars_apply,
         Algebra.TensorProduct.map_tmul, AlgHom.id_apply, Subalgebra.coe_val]
 

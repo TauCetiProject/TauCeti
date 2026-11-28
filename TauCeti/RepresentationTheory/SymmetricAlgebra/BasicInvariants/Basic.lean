@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.AlgebraicIndependent.Defs
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
+import TauCeti.Algebra.MvPolynomial.Eval
 
 /-!
 # Basic invariants
@@ -15,6 +16,8 @@ public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
 the invariant algebra, using Mathlib's `MvPolynomial.aeval`.
 `Representation.IsBasicInvariants.aevalEquiv` gives the resulting polynomial presentation, and
 `Representation.IsBasicInvariants.algebraicIndependent` gives algebraic independence over a ring.
+`Representation.isBasicInvariants_iff` characterizes a system over a ring in terms of homogeneity,
+algebraic independence and generation by `Algebra.adjoin`.
 
 For a representation on `V`, the contragredient gives formal invariants in `Sym(V*)`. Pointwise
 evaluation on `V` can identify distinct formal invariants, for instance over finite fields.
@@ -62,10 +65,17 @@ theorem IsBasicInvariants.aevalEquiv_apply (h : ρ.IsBasicInvariants f d) (p : M
     h.aevalEquiv p = aeval f p :=
   AlgEquiv.ofBijective_apply _ _ _
 
-/-- The polynomial presentation sends each variable to the corresponding basic invariant. -/
-theorem IsBasicInvariants.aevalEquiv_X (h : ρ.IsBasicInvariants f d) (i : ι) :
-    h.aevalEquiv (X i) = f i := by
-  rw [h.aevalEquiv_apply, aeval_X]
+/-- The inverse presentation recovers a polynomial from its value at the basic invariants. -/
+@[simp]
+theorem IsBasicInvariants.aevalEquiv_symm_aeval (h : ρ.IsBasicInvariants f d)
+    (p : MvPolynomial ι R) : h.aevalEquiv.symm (aeval f p) = p := by
+  rw [← h.aevalEquiv_apply, AlgEquiv.symm_apply_apply]
+
+/-- The inverse presentation sends a basic invariant to its corresponding variable. -/
+@[simp]
+theorem IsBasicInvariants.aevalEquiv_symm_apply_generator (h : ρ.IsBasicInvariants f d) (i : ι) :
+    h.aevalEquiv.symm (f i) = X i := by
+  rw [← aeval_X (R := R) f i, h.aevalEquiv_symm_aeval]
 
 end CommSemiring
 
@@ -74,5 +84,15 @@ theorem IsBasicInvariants.algebraicIndependent [CommRing R] [Monoid G] [AddCommM
     [Module R M] {ρ : Representation R G M} {f : ι → ρ.symmetricAlgebraInvariants} {d : ι → ℕ}
     (h : ρ.IsBasicInvariants f d) : AlgebraicIndependent R f :=
   algebraicIndependent_iff_injective_aeval.mpr h.bijective_aeval.injective
+
+/-- Over a commutative ring, basic invariants are precisely homogeneous, algebraically independent
+generators of the invariant algebra, with the specified degrees. -/
+theorem isBasicInvariants_iff [CommRing R] [Monoid G] [AddCommMonoid M] [Module R M]
+    (ρ : Representation R G M) {f : ι → ρ.symmetricAlgebraInvariants} {d : ι → ℕ} :
+    ρ.IsBasicInvariants f d ↔
+      (∀ i, (f i : SymmetricAlgebra R M) ∈ homogeneousSubmodule R M (d i)) ∧
+        AlgebraicIndependent R f ∧ Algebra.adjoin R (Set.range f) = ⊤ := by
+  rw [algebraicIndependent_iff_injective_aeval, ← aeval_surjective_iff_adjoin_range_eq_top]
+  exact ⟨fun h ↦ ⟨h.homogeneous, h.bijective_aeval⟩, fun h ↦ ⟨h.1, h.2⟩⟩
 
 end Representation

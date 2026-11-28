@@ -198,9 +198,8 @@ end AsAlgebraHom
 
 section Invariants
 
-variable {G : Type w} [Group G]
 variable {R : Type u} {A : Type v} [CommRing R] [CommRing A] [Algebra R A]
-variable [Module.Flat R A] [AddCommGroup V] [Module R V]
+variable [AddCommGroup V] [Module R V]
 
 /-- The simultaneous defect of invariance: its `g`-coordinate sends `x` to `ρ(g)x - x`.
 Its kernel is the invariant submodule. -/
@@ -208,34 +207,10 @@ private def invariantDefect (ρ : Representation R G V) :
     V →ₗ[R] (G → V) :=
   LinearMap.pi fun g ↦ ρ g - LinearMap.id
 
-private theorem mem_ker_invariantDefect {ρ : Representation R G V} {x : V} :
-    x ∈ LinearMap.ker ρ.invariantDefect ↔ x ∈ ρ.invariants := by
-  rw [LinearMap.mem_ker, funext_iff]
-  simp [invariantDefect, mem_invariants, sub_eq_zero]
+private theorem mem_ker_invariantDefect_iff {ρ : Representation R G V} {v : V} :
+    v ∈ LinearMap.ker ρ.invariantDefect ↔ ∀ g, ρ g v = v := by
+  simp [invariantDefect, LinearMap.mem_ker, funext_iff, sub_eq_zero]
 
-/-- The invariants of a representation are its simultaneous invariance kernel. -/
-private def invariantsEquivKerInvariantDefect (ρ : Representation R G V) :
-    ρ.invariants ≃ₗ[R] LinearMap.ker ρ.invariantDefect where
-  toFun x := ⟨x, mem_ker_invariantDefect.mpr x.property⟩
-  invFun x := ⟨x, mem_ker_invariantDefect.mp x.property⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-@[simp]
-private theorem coe_invariantsEquivKerInvariantDefect
-    (ρ : Representation R G V) (x : ρ.invariants) :
-    (ρ.invariantsEquivKerInvariantDefect x : V) = x :=
-  rfl
-
-@[simp]
-private theorem coe_invariantsEquivKerInvariantDefect_symm
-    (ρ : Representation R G V) (x : LinearMap.ker ρ.invariantDefect) :
-    (ρ.invariantsEquivKerInvariantDefect.symm x : V) = x :=
-  rfl
-
-omit [Module.Flat R A] in
 private theorem ker_invariantDefect_baseChange [Finite G] (ρ : Representation R G V) :
     LinearMap.ker (baseChange A ρ).invariantDefect =
       LinearMap.ker (TensorProduct.AlgebraTensorModule.lTensor A A ρ.invariantDefect) := by
@@ -259,6 +234,43 @@ private theorem ker_invariantDefect_baseChange [Finite G] (ρ : Representation R
         rw [TensorProduct.tmul_add, TensorProduct.tmul_neg]
   rw [hDefect]
   exact (TensorProduct.piRight R A A (fun _ : G ↦ V)).map_eq_zero_iff
+
+/-- If membership in a submodule is characterized by fixedness under a finite monoid action,
+then its tensor under flat scalar extension is precisely the submodule of fixed vectors. -/
+theorem mem_range_lTensor_subtype_iff_fixed_baseChange_of_finite [Module.Flat R A] [Finite G]
+    (ρ : Representation R G V) (P : Submodule R V)
+    (hP : ∀ v, v ∈ P ↔ ∀ g, ρ g v = v) {x : A ⊗[R] V} :
+    x ∈ LinearMap.range (P.subtype.lTensor A) ↔ ∀ g, baseChange A ρ g x = x := by
+  have hEq : LinearMap.ker ρ.invariantDefect = P :=
+    Submodule.ext fun v ↦ mem_ker_invariantDefect_iff.trans (hP v).symm
+  have hmem : x ∈ LinearMap.ker (baseChange A ρ).invariantDefect ↔
+      ∀ g, baseChange A ρ g x = x := mem_ker_invariantDefect_iff
+  rw [ker_invariantDefect_baseChange, Module.Flat.ker_lTensor_eq, hEq] at hmem
+  simpa only [LinearMap.mem_range, AlgebraTensorModule.coe_lTensor] using hmem
+
+variable {G : Type w} [Group G] [Module.Flat R A]
+
+/-- The invariants of a representation are its simultaneous invariance kernel. -/
+private def invariantsEquivKerInvariantDefect (ρ : Representation R G V) :
+    ρ.invariants ≃ₗ[R] LinearMap.ker ρ.invariantDefect where
+  toFun x := ⟨x, mem_ker_invariantDefect_iff.mpr (mem_invariants _ _ |>.mp x.property)⟩
+  invFun x := ⟨x, (mem_invariants _ _).mpr (mem_ker_invariantDefect_iff.mp x.property)⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+private theorem coe_invariantsEquivKerInvariantDefect
+    (ρ : Representation R G V) (x : ρ.invariants) :
+    (ρ.invariantsEquivKerInvariantDefect x : V) = x :=
+  rfl
+
+@[simp]
+private theorem coe_invariantsEquivKerInvariantDefect_symm
+    (ρ : Representation R G V) (x : LinearMap.ker ρ.invariantDefect) :
+    (ρ.invariantsEquivKerInvariantDefect.symm x : V) = x :=
+  rfl
 
 /-- **Flat scalar extension commutes with finite-group invariants.** If `A` is flat over `R` and
 `G` is finite, the scalar extension of the invariant submodule of `ρ` is naturally linearly
