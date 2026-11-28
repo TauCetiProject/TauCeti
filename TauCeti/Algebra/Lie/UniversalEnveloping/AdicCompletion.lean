@@ -8,8 +8,8 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basis
 public import TauCeti.RingTheory.AdicCompletion.ScalarIdeal
 
-import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.LinearAlgebra.Basis.ExtendedIdeal
+import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.AdicCompletion.Finite
 
 /-!
@@ -57,46 +57,7 @@ abbrev adicCompletion := (scalarAdicFiltration I L).completion
 /-- Projection to the actual finite-order quotient by `I^(k+1) U(L)`. -/
 abbrev adicProjection (k : ℕ) :
     adicCompletion I L →ₐ[R] U ⧸ (I.map (algebraMap R U)) ^ (k + 1) :=
-  AdicCompletion.extendedIdealCompletionProjection I k
-
-/-- The canonical map computes to the ordinary quotient map at each finite order. -/
-@[simp↓]
-theorem adicProjection_toAdicCompletion (k : ℕ) (x : U) :
-    adicProjection I L k ((scalarAdicFiltration I L).toCompletionₐ (R := R) x) =
-      Ideal.Quotient.mk ((I.map (algebraMap R U)) ^ (k + 1)) x := by
-  rw [AdicCompletion.extendedIdealCompletionProjection_apply,
-    TauCeti.AlgFiltration.toCompletionₐ_apply,
-    TauCeti.AlgFiltration.projection_toCompletion, Ideal.quotientEquivAlgOfEq_mk]
-
-/-- Finite-order projections are compatible with the concrete quotient transition maps. -/
-@[simp]
-theorem adicProjection_factor {k l : ℕ} (h : k ≤ l) (x : adicCompletion I L) :
-    Ideal.Quotient.factor (Ideal.pow_le_pow_right (Nat.add_le_add_right h 1))
-      (adicProjection I L l x) = adicProjection I L k x := by
-  let F := scalarAdicFiltration I L
-  have he (z : U ⧸ F.ideal (l + 1)) :
-      Ideal.Quotient.factor (Ideal.pow_le_pow_right (Nat.add_le_add_right h 1))
-        (Ideal.quotientEquivAlgOfEq R
-          (Ideal.algFiltration_ideal (I.map (algebraMap R U)) (l + 1)) z) =
-      Ideal.quotientEquivAlgOfEq R (Ideal.algFiltration_ideal (I.map (algebraMap R U)) (k + 1))
-        (Ideal.Quotient.factor (F.antitone (Nat.add_le_add_right h 1)) z) := by
-    dsimp only [F] at z ⊢
-    simp only [← AlgEquiv.toAlgHom_apply, ← AlgHom.coe_toRingHom,
-      AlgEquiv.toAlgHom_toRingHom, Ideal.quotientEquivAlgOfEq_coe_eq_factor,
-      Ideal.Quotient.factor_comp_apply]
-  simp only [AdicCompletion.extendedIdealCompletionProjection_apply]
-  rw [he, F.factor_projection h]
-
-/-- All finite-order projections determine an element of the integral completion. -/
-@[ext]
-theorem adicCompletion_ext {x y : adicCompletion I L}
-    (h : ∀ k, adicProjection I L k x = adicProjection I L k y) : x = y := by
-  apply (scalarAdicFiltration I L).completion_ext
-  intro k
-  let e := Ideal.quotientEquivAlgOfEq R (Ideal.algFiltration_ideal (I.map (algebraMap R U)) (k + 1))
-  have hk := h k
-  simp only [AdicCompletion.extendedIdealCompletionProjection_apply] at hk
-  exact e.injective hk
+  TauCeti.extendedIdealCompletionProjection I k
 
 variable {L} {ι : Type w} [LinearOrder ι] (b : Module.Basis ι R L)
 
@@ -123,21 +84,25 @@ theorem adicPBWEquiv_mk (n : ℕ) (x : U) (α : ι →₀ ℕ) :
       Ideal.Quotient.mk (I ^ n) (b.pbwBasis.repr x α) := by
   simp [adicPBWEquiv]
 
+/-- A single finite-order PBW coefficient is represented by the corresponding scalar
+multiple of the ordered PBW monomial. -/
+@[simp↓]
+theorem adicPBWEquiv_symm_single (n : ℕ) (α : ι →₀ ℕ) (r : R) :
+    (adicPBWEquiv I b n).symm (Finsupp.single α (Ideal.Quotient.mk (I ^ n) r)) =
+      Ideal.Quotient.mk _ (r • b.pbwBasis α) := by
+  simp [adicPBWEquiv, ← AlgEquiv.toLinearEquiv_symm]
+
 /-- Reduction of finite-order quotients reduces each PBW coefficient by the scalar quotient map. -/
 theorem adicPBWEquiv_factor {m n : ℕ} (h : m ≤ n)
     (x : U ⧸ (I.map (algebraMap R U)) ^ n) (α : ι →₀ ℕ) :
     adicPBWEquiv I b m (Ideal.Quotient.factor (Ideal.pow_le_pow_right h) x) α =
       Ideal.Quotient.factor (Ideal.pow_le_pow_right h) (adicPBWEquiv I b n x α) := by
-  simp only [adicPBWEquiv, LinearEquiv.trans_apply, AlgEquiv.toLinearEquiv_apply]
-  rw [← b.pbwBasis.quotientEquiv_factor (Ideal.pow_le_pow_right h)]
-  congr 2
-  simp only [← AlgEquiv.toAlgHom_apply, ← AlgHom.coe_toRingHom,
-    AlgEquiv.toAlgHom_toRingHom, Ideal.quotientEquivAlgOfEq_coe_eq_factor,
-    Ideal.Quotient.factor_comp_apply]
+  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective x
+  simp only [Ideal.Quotient.factor_mk, adicPBWEquiv_mk]
 
 /-- Freeness of the Lie algebra and separatedness of the base suffice for the ordinary
 inclusion into the integral completion; finite rank and completeness are not needed. -/
-theorem toAdicCompletion_injective [Module.Free R L] [IsHausdorff I R] :
+theorem toCompletionₐ_injective [Module.Free R L] [IsHausdorff I R] :
     Function.Injective ((scalarAdicFiltration I L).toCompletionₐ (R := R)) := by
   classical
   let b := Module.Free.chooseBasis R L
@@ -145,10 +110,6 @@ theorem toAdicCompletion_injective [Module.Free R L] [IsHausdorff I R] :
     IsWellOrder.linearOrder WellOrderingRel
   let : Module.Free R U := Module.Free.of_basis b.pbwBasis
   let : IsHausdorff I U := IsHausdorff.of_free I U
-  intro x y h
-  apply AdicCompletion.of_injective I U
-  apply (AdicCompletion.extendedIdealCompletionEquiv (A := U) I).injective
-  simpa only [AdicCompletion.extendedIdealCompletionEquiv_of,
-    TauCeti.AlgFiltration.toCompletionₐ_apply] using h
+  exact TauCeti.toCompletionₐ_injective_of_isHausdorff I
 
 end TauCeti.UniversalEnvelopingAlgebra

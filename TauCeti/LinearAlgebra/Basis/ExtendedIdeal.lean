@@ -47,6 +47,8 @@ determinant of an `A`-valued matrix coordinatewise.
 * `LinearMap.apply_sum_smul_mem_map_algebraMap_iff`: `φ (∑ j, x j • v j) ∈ J A` exactly when every
   row of the coefficient matrix applied to `x` lies in `J`.
 * `Module.Basis.quotient_repr_mk`: the coordinates of a class are the classes of the coordinates.
+* `Module.Basis.quotientEquiv_symm_single`: a single residue coordinate represents a scalar
+  multiple of a basis vector, including in noncommutative algebras.
 * `LinearMap.toMatrix_quotient`: the coefficient matrix of a reduction of `φ` is the entrywise
   reduction of the coefficient matrix of `φ`.
 
@@ -109,6 +111,17 @@ theorem quotientEquiv_mk (b : Basis ι R A) (J : Ideal R) (x : A) (i : ι) :
     TensorProduct.quotTensorEquivQuotSMul_symm_mk, baseChange_repr_tmul]
   simp [Algebra.smul_def]
 
+/-- A single residue coefficient corresponds to the class of the scalar multiple of its
+basis vector, also when the algebra is noncommutative. -/
+@[simp↓]
+theorem quotientEquiv_symm_single (b : Basis ι R A) (J : Ideal R) (i : ι) (r : R) :
+    (b.quotientEquiv J).symm (Finsupp.single i (Ideal.Quotient.mk J r)) =
+      Ideal.Quotient.mk _ (r • b i) := by
+  classical
+  apply (b.quotientEquiv J).injective
+  ext j
+  by_cases h : i = j <;> simp [h]
+
 /-- Reduction along an inclusion of scalar ideals reduces each coordinate by the scalar
 quotient map. -/
 theorem quotientEquiv_factor (b : Basis ι R A) {J K : Ideal R} (h : J ≤ K)
@@ -136,6 +149,7 @@ noncomputable def quotient (b : Basis ι R A) (J : Ideal R) :
 @[simp]
 theorem quotient_repr_mk (b : Basis ι R A) (J : Ideal R) (x : A) (i : ι) :
     (b.quotient J).repr (Ideal.Quotient.mk _ x) i = Ideal.Quotient.mk J (b.repr x i) := by
+  rw [quotient, LinearEquiv.extendScalarsOfSurjective_apply]
   exact b.quotientEquiv_mk J x i
 
 @[simp]
