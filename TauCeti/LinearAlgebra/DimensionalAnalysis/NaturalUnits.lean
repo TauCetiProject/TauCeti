@@ -127,11 +127,11 @@ theorem det_unitBasis : (Matrix.of (unitBasis R : Fin 3 → Fin 3 → R)).det = 
   norm_num [speed, action, mass]
 
 /-- The unique exponents of speed, action, and mass that give a length dimension. -/
-theorem sum_smul_unitBasis_eq_length_iff (u : Fin 3 → ℤ) :
-    (∑ i, u i • unitBasis ℤ i) = length ℤ ↔ u = ![-1, 1, -1] := by
-  have h : (unitBasis ℤ).equivFun (length ℤ) = ![-1, 1, -1] := by
+theorem sum_smul_unitBasis_eq_length_iff (u : Fin 3 → R) :
+    (∑ i, u i • unitBasis R i) = length R ↔ u = ![-1, 1, -1] := by
+  have h : (unitBasis R).equivFun (length R) = ![-1, 1, -1] := by
     rw [unitBasis_equivFun_apply, length_def]
-    decide
+    simp
   rw [← Basis.equivFun_symm_apply, LinearEquiv.symm_apply_eq, h]
 
 /-- A monomial in the reduced Planck constant `ℏ`, mass `m`, and speed `c` with length
