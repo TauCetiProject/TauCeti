@@ -9,8 +9,6 @@ public import TauCeti.Probability.Distributions.Gaussian.Affine
 public import TauCeti.Probability.Distributions.LogNormal.Basic
 public import TauCeti.Analysis.InnerProductSpace.PiL2
 
-import TauCeti.MeasureTheory.Measure.Dirac
-
 /-!
 # Multivariate log-normal laws
 
