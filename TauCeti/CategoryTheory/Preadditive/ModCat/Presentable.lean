@@ -94,15 +94,6 @@ instance [EssentiallySmall.{v} C] : IsLocallyFinitelyPresentable.{v} (ModCat.{v}
     ⟨_, inferInstance, isStrongGenerator_ofObj_yoneda,
       ofObj_smallModel_yoneda_le_isCardinalPresentable Cardinal.aleph0⟩
 
-/-- A coproduct of representable modules indexed by a type in the morphism universe is
-projective. Mathlib's coproduct projectivity instance uses the module category's morphism
-universe, so the index is first moved along `ULift`. -/
-instance projective_sigma_yoneda {I : Type v} (X : I → C) :
-    Projective (∐ fun i ↦ (yoneda C).obj (X i)) :=
-  let e := Sigma.reindex (Equiv.ulift : ULift.{u} I ≃ I) (fun i ↦ (yoneda C).obj (X i))
-  have hProjective (i : ULift.{u} I) : Projective ((yoneda C).obj (X i.down)) := inferInstance
-  Projective.of_iso e (@Projective.instSigmaObj _ _ _ _ _ hProjective)
-
 section Cardinal
 
 open Cardinal

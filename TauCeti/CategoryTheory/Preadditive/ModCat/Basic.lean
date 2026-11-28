@@ -43,6 +43,8 @@ finitely presented functors are additive, so `mod C` is a full subcategory of `M
 * `Abelian (ModCat C)` and `HasColimitsOfShape J (ModCat C)`, found by instance inference from
   the closure instances for additive functors and Mathlib's full-subcategory instances.
 * `Projective ((ModCat.yoneda C).obj X)`: representable modules are projective.
+* `TauCeti.ModCat.projective_sigma_yoneda`: coproducts of representable modules indexed in the
+  source category's morphism universe are projective.
 * `TauCeti.ModCat.linear`: the scoped instance `Linear R (D ⥤+ AddCommGrpCat)` for an `R`-linear
   preadditive category `D`; after `open scoped TauCeti.ModCat`, specializing `D` to an opposite
   category gives `Linear R (ModCat D)`.
@@ -125,6 +127,16 @@ instance (X : C) : Projective ((yoneda C).obj X) where
     have : Epi π.hom := (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι.map_epi π
     obtain ⟨s, hs⟩ := exists_comp_eq_preadditiveYoneda_obj_of_epi π.hom g.hom
     exact ⟨ObjectProperty.homMk s, ObjectProperty.hom_ext _ hs⟩
+
+variable {C} in
+/-- A coproduct of representable modules indexed by a type in the morphism universe is
+projective. Mathlib's coproduct projectivity instance uses the module category's morphism
+universe, so the index is first moved along `ULift`. -/
+instance projective_sigma_yoneda {I : Type v} (X : I → C) :
+    Projective (∐ fun i ↦ (yoneda C).obj (X i)) :=
+  let e := Sigma.reindex (Equiv.ulift : ULift.{u} I ≃ I) (fun i ↦ (yoneda C).obj (X i))
+  have hProjective (i : ULift.{u} I) : Projective ((yoneda C).obj (X i.down)) := inferInstance
+  Projective.of_iso e (@Projective.instSigmaObj _ _ _ _ _ hProjective)
 
 variable {C} in
 /-- The inclusion into all functors sends a coproduct of representable modules to the coproduct
