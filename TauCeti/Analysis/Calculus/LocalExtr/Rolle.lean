@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Data.Finset.Max
 
 import Mathlib.Analysis.Calculus.LocalExtr.Rolle
-import Mathlib.Analysis.Calculus.TangentCone.Real
 
 /-!
 # Rolle's theorem for finitely many zeros
@@ -32,10 +31,11 @@ zero estimate for real exponential polynomials `∑ pₖ(x) exp(γₖ x)`.
 * `TauCeti.exists_card_le_card_add_of_hasDerivAt`: if `F (n + 1)` is the derivative of `F n` for
   `n < k`, a finite set `Z` of zeros of `F 0` gives a finite set `Z'` of zeros of `F k` with
   `#Z ≤ #Z' + k`.
-* `Set.OrdConnected.exists_card_le_card_add_of_continuousOn`: the same count on an
-  order-connected set, where derivative identities are needed only in the interior.
+* `Set.OrdConnected.exists_card_le_card_add_of_continuousOn_of_deriv_eq`: the same count on an
+  order-connected set, assuming `deriv (F n) x = F (n + 1) x` only in the interior.
 * `ContDiffOn.exists_iteratedDerivWithin_eq_zero_of_lt_card`: the `k`-th derivative within
-  an order-connected set has a zero there if the original function has more than `k` zeros there.
+  an order-connected set has a zero there if the function is `C^k` on the set and has more
+  than `k` zeros there.
 
 ## References
 
@@ -96,9 +96,9 @@ theorem exists_finset_deriv_eq_zero {f : ℝ → ℝ} {Z : Finset ℝ} (hZ : Z.N
         exact ⟨z, Or.inr hz, hxz, hzy⟩
 
 /-- On an order-connected set `s`, suppose `F n` is continuous and `F (n + 1)` agrees with its
-derivative in the interior for each `n < k`. A finite set `Z` of zeros of `F 0` in `s` then has
-at most `k` more points than some finite set of zeros of `F k` in `s`. -/
-theorem _root_.Set.OrdConnected.exists_card_le_card_add_of_continuousOn {s : Set ℝ}
+Lean derivative `deriv (F n)` in the interior for each `n < k`. A finite set `Z` of zeros of
+`F 0` in `s` then has at most `k` more points than some finite set of zeros of `F k` in `s`. -/
+theorem _root_.Set.OrdConnected.exists_card_le_card_add_of_continuousOn_of_deriv_eq {s : Set ℝ}
     (hs : s.OrdConnected) {F : ℕ → ℝ → ℝ} {k : ℕ}
     (hF : ∀ n < k, ContinuousOn (F n) s)
     (hD : ∀ n < k, ∀ x ∈ interior s, deriv (F n) x = F (n + 1) x)
@@ -129,7 +129,8 @@ theorem exists_card_le_card_add_of_hasDerivAt {F : ℕ → ℝ → ℝ} {k : ℕ
     (hF : ∀ n < k, ∀ x, HasDerivAt (F n) (F (n + 1) x) x) {Z : Finset ℝ}
     (hZ : ∀ x ∈ Z, F 0 x = 0) :
     ∃ Z' : Finset ℝ, (∀ x ∈ Z', F k x = 0) ∧ #Z ≤ #Z' + k := by
-  obtain ⟨Z', -, hZ', hcard⟩ := Set.ordConnected_univ.exists_card_le_card_add_of_continuousOn
+  obtain ⟨Z', -, hZ', hcard⟩ :=
+    Set.ordConnected_univ.exists_card_le_card_add_of_continuousOn_of_deriv_eq
     (F := F) (k := k) (fun n hn x _ ↦ (hF n hn x).continuousAt.continuousWithinAt)
     (fun n hn x _ ↦ (hF n hn x).deriv) (Z := Z) (Set.subset_univ _) hZ
   exact ⟨Z', hZ', hcard⟩
@@ -144,11 +145,9 @@ theorem _root_.ContDiffOn.exists_iteratedDerivWithin_eq_zero_of_lt_card {s : Set
   · obtain ⟨x, hx⟩ := card_pos.mp ((Nat.zero_le k).trans_lt hk)
     exact ⟨x, hZs hx, by simpa only [hk₀, iteratedDerivWithin_zero] using hZ x hx⟩
   have htwo : (↑Z : Set ℝ).Nontrivial := one_lt_card_iff_nontrivial.mp (by omega)
-  obtain ⟨x, hx, y, hy, hxy⟩ := htwo.exists_lt
-  have hinterior := (Set.nonempty_Ioo.mpr hxy).mono
-    (interior_maximal (Set.Ioo_subset_Icc_self.trans (hs.out (hZs hx) (hZs hy))) isOpen_Ioo)
-  have hu := uniqueDiffOn_convex hs.convex hinterior
-  obtain ⟨Z', hZ's, hZ', hcard⟩ := hs.exists_card_le_card_add_of_continuousOn
+  have hu := uniqueDiffOn_convex hs.convex
+    (hs.convex.nontrivial_iff_nonempty_interior.mp (htwo.mono hZs))
+  obtain ⟨Z', hZ's, hZ', hcard⟩ := hs.exists_card_le_card_add_of_continuousOn_of_deriv_eq
     (F := fun n ↦ iteratedDerivWithin n f s) (k := k)
     (fun n hn ↦ hf.continuousOn_iteratedDerivWithin (by exact_mod_cast hn.le) hu)
     (fun n _ x hx ↦ by
