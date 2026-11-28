@@ -413,9 +413,8 @@ theorem etaMultiplier_neg (γ : SL(2, ℤ)) :
   refine etaMultiplier_eq_of_eta_smul_eq (τ := UpperHalfPlane.I) ?_
   set z : ℂ := (γ 1 0 : ℂ) * UpperHalfPlane.I + γ 1 1
   have hdenom : ((-γ : SL(2, ℤ)) 1 0 : ℂ) * (UpperHalfPlane.I : ℂ) + (-γ : SL(2, ℤ)) 1 1 = -z := by
-    have hmap : Matrix.SpecialLinearGroup.mapGL ℝ (-γ) = -Matrix.SpecialLinearGroup.mapGL ℝ γ :=
-      Units.ext (by simp)
-    rw [← ModularGroup.denom_mapGL (-γ), hmap, UpperHalfPlane.denom_neg, ModularGroup.denom_mapGL]
+    rw [← ModularGroup.denom_mapGL (-γ), Matrix.SpecialLinearGroup.mapGL_neg,
+      UpperHalfPlane.denom_neg, ModularGroup.denom_mapGL]
   have hcond : (0 < z.im ∨ (z.im = 0 ∧ z.re < 0)) ↔ 0 < γ 1 0 ∨ (γ 1 0 = 0 ∧ γ 1 1 < 0) := by
     simp [z]
   rw [ModularGroup.SL_neg_smul, eta_smul, hdenom, Complex.sqrt_neg z]
@@ -489,10 +488,9 @@ theorem etaMultiplier_inv (γ : SL(2, ℤ)) :
       ModularGroup.denom_mapGL, ModularGroup.denom_mapGL] at hcoc
     exact eq_inv_of_mul_eq_one_left hcoc.symm
   -- An upper-triangular matrix in `SL(2, ℤ)` has `a * d = 1`, so its diagonal entries agree (`±1`).
-  have hdiag (hc : γ 1 0 = 0) : γ 0 0 = γ 1 1 := by
-    rcases Int.mul_eq_one_iff_eq_one_or_neg_one.mp
+  have hdiag (hc : γ 1 0 = 0) : γ 0 0 = γ 1 1 :=
+    Int.eq_of_mul_eq_one
       (Matrix.SpecialLinearGroup.apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc)
-      with ⟨h0, h1⟩ | ⟨h0, h1⟩ <;> simp [h0, h1]
   have harg : z.arg = π ↔ γ 1 0 = 0 ∧ γ 1 1 < 0 := by
     have h := UpperHalfPlane.arg_ofReal_mul_add_eq_pi_iff
       ((γ⁻¹ : SL(2, ℤ)) 1 0 : ℝ) ((γ⁻¹ : SL(2, ℤ)) 1 1 : ℝ) UpperHalfPlane.I
