@@ -179,7 +179,8 @@ theorem multispanSectionsLinearEquiv_apply_left
   simp only [multispanSectionsLinearEquiv, LinearEquiv.trans_apply,
     SemimoduleCat.sectionsLinearEquivOfIso_apply, asSemimoduleIndexIso_hom_app_left,
     AlgCat.sectionsLinearEquiv_apply]
-  exact LinearMap.id_apply (R := R) (s.val (.left a))
+  exact (LinearMap.congr_fun (SemimoduleCat.hom_id (M := SemimoduleCat.of R (I.left a)))
+    (s.val (.left a))).trans (LinearMap.id_apply _)
 
 /-- The comparison of sections preserves a chamber component. -/
 @[simp]
@@ -189,7 +190,8 @@ theorem multispanSectionsLinearEquiv_apply_right
   simp only [multispanSectionsLinearEquiv, LinearEquiv.trans_apply,
     SemimoduleCat.sectionsLinearEquivOfIso_apply, asSemimoduleIndexIso_hom_app_right,
     AlgCat.sectionsLinearEquiv_apply]
-  exact LinearMap.id_apply (R := R) (s.val (.right b))
+  exact (LinearMap.congr_fun (SemimoduleCat.hom_id (M := SemimoduleCat.of R (I.right b)))
+    (s.val (.right b))).trans (LinearMap.id_apply _)
 
 /-- The inverse comparison of sections preserves a face component. -/
 @[simp]
@@ -199,7 +201,8 @@ theorem multispanSectionsLinearEquiv_symm_apply_left
   simp only [multispanSectionsLinearEquiv, LinearEquiv.symm_trans_apply,
     AlgCat.sectionsLinearEquiv_symm_apply, SemimoduleCat.sectionsLinearEquivOfIso_symm_apply,
     asSemimoduleIndexIso_inv_app_left]
-  exact LinearMap.id_apply (R := R) (s.val (.left a))
+  exact (LinearMap.congr_fun (SemimoduleCat.hom_id (M := SemimoduleCat.of R (I.left a)))
+    (s.val (.left a))).trans (LinearMap.id_apply _)
 
 /-- The inverse comparison of sections preserves a chamber component. -/
 @[simp]
@@ -209,7 +212,8 @@ theorem multispanSectionsLinearEquiv_symm_apply_right
   simp only [multispanSectionsLinearEquiv, LinearEquiv.symm_trans_apply,
     AlgCat.sectionsLinearEquiv_symm_apply, SemimoduleCat.sectionsLinearEquivOfIso_symm_apply,
     asSemimoduleIndexIso_inv_app_right]
-  exact LinearMap.id_apply (R := R) (s.val (.right b))
+  exact (LinearMap.congr_fun (SemimoduleCat.hom_id (M := SemimoduleCat.of R (I.right b)))
+    (s.val (.right b))).trans (LinearMap.id_apply _)
 
 /-- A chamber family is compatible over the algebras exactly when it is compatible over
 their underlying semimodules. -/
