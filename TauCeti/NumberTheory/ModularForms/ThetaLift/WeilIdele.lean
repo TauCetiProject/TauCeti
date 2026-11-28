@@ -13,8 +13,10 @@ import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.MulIndicator
 
 The finite Weil idele records the local denominator factors of the Weil lattice.
 `TauCeti.GlobalNumberFields.finiteWeilIdele` uses `FiniteAdeleRing.mulIndicator` to put
-`c⁻¹` at the primes containing `β` and `1` elsewhere. Its inverse is integral, and a
-multiple of `c` clears its denominators.
+`c⁻¹` at the primes containing `β` and `1` elsewhere.
+`TauCeti.GlobalNumberFields.inv_finiteWeilIdele_apply` gives the inverse component `c` at
+those primes and `1` elsewhere. The inverse is integral, and a multiple of `c` clears
+the denominators of the idele.
 
 `RingEquiv.finiteWeilIdele_mul_map_mul_mem_integralUnits` computes the product with an
 automorphic image modulo integral units. In the CM case,
@@ -60,6 +62,20 @@ theorem finiteWeilIdele_apply (β : R) (hc : c ≠ 0) (w : HeightOneSpectrum R) 
   simp only [unitEmbedding_apply, FiniteAdeleRing.algebraMap_apply, Units.val_inv_eq_inv_val,
     Units.val_mk0, Set.mem_ofPred_eq]
 
+open Classical in
+/-- The inverse finite Weil idele has component `c` at primes containing `β` and `1` elsewhere. -/
+@[simp↓]
+theorem inv_finiteWeilIdele_apply (β : R) (hc : c ≠ 0) (w : HeightOneSpectrum R) :
+    (↑((finiteWeilIdele K β hc)⁻¹) : 𝔸ᶠ[R, K]) w =
+      if β ∈ w.asIdeal then (algebraMap R K c : w.adicCompletion K) else 1 := by
+  rw [← coe_unitsProj_apply, map_inv, Units.val_inv_eq_inv_val, coe_unitsProj_apply,
+    finiteWeilIdele_apply]
+  have hcoe : (((algebraMap R K c)⁻¹ : K) : w.adicCompletion K) =
+      (algebraMap R K c : w.adicCompletion K)⁻¹ :=
+    map_inv₀ (algebraMap K (w.adicCompletion K)) _
+  rw [hcoe]
+  split_ifs <;> simp only [inv_inv, inv_one]
+
 /-- The inverse of the finite Weil idele is integral at every finite place. -/
 theorem inv_finiteWeilIdele_mem_integralAdeles (β : R) (hc : c ≠ 0) :
     (↑((finiteWeilIdele K β hc)⁻¹) : 𝔸ᶠ[R, K]) ∈ integralAdeles R K := by
@@ -95,6 +111,7 @@ variable {β c : 𝓞 E}
 
 /-- Transporting a finite Weil idele by a field automorphism transports both the integer
 selecting the places and the integer inverted there. -/
+@[simp↓]
 theorem _root_.RingEquiv.map_finiteWeilIdele (σ : E ≃+* E) (β : 𝓞 E) (hc : c ≠ 0) :
     Units.map (finiteAdeleEquiv E E σ).toMonoidHom (finiteWeilIdele E β hc) =
       finiteWeilIdele E (c := RingOfIntegers.mapRingEquiv σ c) (RingOfIntegers.mapRingEquiv σ β)
@@ -151,9 +168,9 @@ theorem star_finiteWeilIdele [IsCMField E] (β : 𝓞 E) (hc : c ≠ 0) :
     star (finiteWeilIdele E β hc) =
       finiteWeilIdele E (c := ringOfIntegersComplexConj E c) (ringOfIntegersComplexConj E β)
         (by simpa only [map_zero] using (ringOfIntegersComplexConj E).injective.ne hc) := by
-  apply Units.ext
-  rw [Units.coe_star, ← finiteAdeleConj_apply, finiteAdeleConj_def]
-  exact congrArg Units.val ((complexConj E).toRingEquiv.map_finiteWeilIdele β hc)
+  rw [FiniteAdeleRing.star_unit_eq_map]
+  -- Both maps on integers are the restriction of `complexConj E`.
+  exact (complexConj E).toRingEquiv.map_finiteWeilIdele β hc
 
 /-- If `β` is coprime to its conjugate, `c` is associated to its conjugate, and every prime
 containing `c` contains `β` or its conjugate, the product of the finite Weil idele, its
@@ -166,12 +183,7 @@ theorem finiteWeilIdele_mul_star_mul_mem_integralUnits [IsCMField E]
     finiteWeilIdele E β hc * star (finiteWeilIdele E β hc) *
       unitEmbedding (𝓞 E) E (Units.mk0 (c : E) (RingOfIntegers.coe_ne_zero_iff.mpr hc)) ∈
         integralUnits (𝓞 E) E := by
-  have hstar : Units.map (finiteAdeleEquiv E E (complexConj E).toRingEquiv).toMonoidHom
-      (finiteWeilIdele E β hc) = star (finiteWeilIdele E β hc) := by
-    apply Units.ext
-    rw [Units.coe_star, ← finiteAdeleConj_apply, finiteAdeleConj_def]
-    exact Units.coe_map _ _
-  rw [← hstar]
+  rw [FiniteAdeleRing.star_unit_eq_map]
   exact (complexConj E).toRingEquiv.finiteWeilIdele_mul_map_mul_mem_integralUnits
     hc hβ hassoc hsupport
 
