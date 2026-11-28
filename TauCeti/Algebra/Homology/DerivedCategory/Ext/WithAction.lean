@@ -90,21 +90,33 @@ lemma toExt_precompLinearMap {P P' : C} {m : ℕ} (α : Ext P P' m) {n n' : ℕ}
     (x : ExtWithAction ρ P' n) : toExt ρ (precompLinearMap ρ α h x) = α.comp (toExt ρ x) h :=
   (rfl)
 
+/-- Precomposition with the identity morphism is the identity map. -/
+@[simp]
+lemma precompLinearMap_mk₀_id {P : C} (n : ℕ) :
+    precompLinearMap ρ (mk₀ (𝟙 P)) (zero_add n) = LinearMap.id := by
+  ext x
+  apply (toExt ρ).injective
+  rw [toExt_precompLinearMap, mk₀_id_comp, LinearMap.id_apply]
+
+/-- Precomposition reverses composition: precomposing with `f ≫ g` is precomposing with `g`,
+then with `f`. -/
+@[simp]
+lemma precompLinearMap_mk₀_comp {P P' P'' : C} (f : P ⟶ P') (g : P' ⟶ P'') (n : ℕ) :
+    precompLinearMap ρ (mk₀ (f ≫ g)) (zero_add n) =
+      (precompLinearMap ρ (mk₀ f) (zero_add n)).comp
+        (precompLinearMap ρ (mk₀ g) (zero_add n)) := by
+  ext x
+  apply (toExt ρ).injective
+  rw [LinearMap.comp_apply, toExt_precompLinearMap, toExt_precompLinearMap, toExt_precompLinearMap,
+    ← mk₀_comp_mk₀, comp_assoc_of_second_deg_zero]
+
 /-- Precomposition with an isomorphism, as an `A`-linear equivalence. -/
 noncomputable def precompLinearEquiv {P P' : C} (e : P ≅ P') (n : ℕ) :
     ExtWithAction ρ P' n ≃ₗ[A] ExtWithAction ρ P n :=
   LinearEquiv.ofLinearMap (precompLinearMap ρ (mk₀ e.hom) (zero_add n))
     (precompLinearMap ρ (mk₀ e.inv) (zero_add n))
-    (LinearMap.ext fun x ↦ by
-      -- Forget the transported module structure and compute composition in Ext.
-      change (mk₀ e.hom).comp ((mk₀ e.inv).comp (toExt ρ x) (zero_add n)) (zero_add n) =
-        toExt ρ x
-      rw [← comp_assoc_of_second_deg_zero, mk₀_comp_mk₀, e.hom_inv_id, mk₀_id_comp])
-    (LinearMap.ext fun x ↦ by
-      -- Forget the transported module structure and compute composition in Ext.
-      change (mk₀ e.inv).comp ((mk₀ e.hom).comp (toExt ρ x) (zero_add n)) (zero_add n) =
-        toExt ρ x
-      rw [← comp_assoc_of_second_deg_zero, mk₀_comp_mk₀, e.inv_hom_id, mk₀_id_comp])
+    (by rw [← precompLinearMap_mk₀_comp, e.hom_inv_id, precompLinearMap_mk₀_id])
+    (by rw [← precompLinearMap_mk₀_comp, e.inv_hom_id, precompLinearMap_mk₀_id])
 
 @[simp]
 lemma toExt_precompLinearEquiv {P P' : C} (e : P ≅ P') (n : ℕ) (x : ExtWithAction ρ P' n) :
