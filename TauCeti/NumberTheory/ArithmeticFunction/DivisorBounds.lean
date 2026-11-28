@@ -9,12 +9,10 @@ public import TauCeti.NumberTheory.ArithmeticFunction.TwistedDivisorSum
 public import Mathlib.Analysis.PSeries
 public import Mathlib.Analysis.SpecialFunctions.Log.Base
 import Mathlib.Algebra.Order.Floor.Semifield
-import Mathlib.Algebra.Order.Ring.Pow
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import Mathlib.Analysis.SumIntegralComparisons
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import TauCeti.NumberTheory.ArithmeticFunction.Zeta
 public import Mathlib.NumberTheory.Harmonic.Bounds
+import TauCeti.Analysis.SpecialFunctions.Log.SumLogDivAddPow
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Basic
 import TauCeti.NumberTheory.ArithmeticFunction.Misc
 import TauCeti.NumberTheory.Divisors
@@ -55,9 +53,11 @@ factors and for the squared ordinary divisor count. The ordinary divisor count i
 `σ₀(|c|)` would lose a power of `Y`.
 
 The Nicolas–Tenenbaum bound `ArithmeticFunction.sum_Ioc_zeta_pow_le_div_factorial_mul_log_add_pow`
-gives an explicit factorial denominator in the summatory ordered-divisor estimate. It uses
-Mathlib's `ArithmeticFunction.sum_Ioc_mul_eq_sum_sum` for the convolution step and
-`AntitoneOn.sum_le_integral_Ico` for the resulting logarithmic sum.
+bounds `∑_{1 ≤ n ≤ x} τ_{k+1}(n)` by `x (log x + k)^k / k!` for real `x ≥ 1`, where
+`τ_{k+1}(n)` counts ordered factorizations of `n` into `k + 1` positive integers. In
+Bordellès' class-number estimates, one bounds the class number by such a divisor sum, taking
+the order to be the field degree and the cutoff at least the Minkowski bound. The
+Nicolas–Tenenbaum estimate then gives an explicit upper bound without a regulator term.
 
 These mean bounds extend Arend Mellendijk's 2023 formalization of the squarefree divisor
 majorants in [Prime Number Theorem and More][PNT-Aux]. Heath-Brown's Lemma 3.1, in notes by
@@ -353,62 +353,6 @@ theorem sum_Ioc_zeta_pow_le_mul_one_add_log_pow (k : ℕ) {Z : ℝ} (hZ : 1 ≤ 
       (pow_le_pow_left₀ hH (harmonic_floor_le_one_add_log Z hZ) (k - 1))
       (pow_nonneg hH _) (zero_le_one.trans hZ))
 
-/-- Bound the logarithmic sum arising in the Nicolas–Tenenbaum induction, with the shift and
-exponent both equal to `k`. -/
-private theorem sum_Ioc_log_div_add_pow_div_le (k : ℕ) {x : ℝ} (hx : 1 ≤ x) :
-    (∑ d ∈ Ioc 0 ⌊x⌋₊, (Real.log (x / d) + k) ^ k / d) ≤
-      (Real.log x + (k + 1 : ℕ)) ^ (k + 1) / (k + 1 : ℕ) := by
-  let f (t : ℝ) := (Real.log (x / t) + k) ^ k / t
-  have hx₀ : 0 < x := zero_lt_one.trans_le hx
-  have hN : 1 ≤ ⌊x⌋₊ := Nat.le_floor (by simpa only [Nat.cast_one] using hx)
-  have hN₁ : (1 : ℝ) ≤ ⌊x⌋₊ := Nat.one_le_cast.mpr hN
-  have hNx : (⌊x⌋₊ : ℝ) ≤ x := Nat.floor_le hx₀.le
-  have hbase {t : ℝ} (ht₀ : 0 < t) (ht : t ≤ x) : 0 ≤ Real.log (x / t) + k :=
-    add_nonneg (Real.log_nonneg ((le_div_iff₀ ht₀).2 (by simpa only [one_mul] using ht)))
-      (Nat.cast_nonneg k)
-  have ha : AntitoneOn f (Set.Icc 1 (⌊x⌋₊ : ℝ)) := by
-    intro a ha b hb hab
-    have ha₀ := zero_lt_one.trans_le ha.1
-    have hb₀ := ha₀.trans_le hab
-    have ha₁ := hbase ha₀ (ha.2.trans hNx)
-    have hb₁ := hbase hb₀ (hb.2.trans hNx)
-    dsimp only [f]
-    gcongr
-  have hsum : (∑ d ∈ Ioc 1 ⌊x⌋₊, f d) ≤ ∫ t in (1 : ℝ)..(⌊x⌋₊ : ℝ), f t := by
-    have h := AntitoneOn.sum_le_integral_Ico hN (by simpa only [Nat.cast_one] using ha)
-    rwa [Finset.sum_Ico_add' (fun d : ℕ ↦ f d) 1 ⌊x⌋₊ 1,
-      Finset.Ico_add_one_add_one_eq_Ioc, Nat.cast_one] at h
-  let F (t : ℝ) := -(Real.log x - Real.log t + k) ^ (k + 1) / (k + 1 : ℕ)
-  have hint : (∫ t in (1 : ℝ)..(⌊x⌋₊ : ℝ), f t) = F ⌊x⌋₊ - F 1 := by
-    refine intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t ht ↦ ?_)
-      (Set.uIcc_of_le hN₁ ▸ ha).intervalIntegrable
-    have ht₀ : 0 < t := zero_lt_one.trans_le ((Set.uIcc_of_le hN₁ ▸ ht).1)
-    have hd := ((((Real.hasDerivAt_log ht₀.ne').const_sub (Real.log x)).add_const
-      (k : ℝ)).pow (k + 1)).neg.div_const ((k + 1 : ℕ) : ℝ)
-    refine hd.congr_deriv ?_
-    simp only [f, Real.log_div hx₀.ne' ht₀.ne', Nat.add_sub_cancel]
-    push_cast
-    field_simp
-  have hF : F ⌊x⌋₊ ≤ 0 := by
-    have hpos := zero_lt_one.trans_le hN₁
-    have hlog := hbase hpos hNx
-    rw [Real.log_div hx₀.ne' hpos.ne'] at hlog
-    exact div_nonpos_of_nonpos_of_nonneg (neg_nonpos.mpr (pow_nonneg hlog _)) (by positivity)
-  have hlog : 0 ≤ Real.log x + k := add_nonneg (Real.log_nonneg hx) (Nat.cast_nonneg k)
-  have hpow := pow_add_mul_le_add_pow (b := 1) hlog (by positivity) (k + 1)
-  rw [← insert_Ioc_add_one_left_eq_Ioc (a := 0) hN, zero_add, sum_insert (by simp), Nat.cast_one]
-  calc
-    _ ≤ f 1 + (F ⌊x⌋₊ - F 1) := hint ▸ add_le_add_right hsum _
-    _ ≤ f 1 - F 1 := by linarith only [hF]
-    _ = (Real.log x + k) ^ k + (Real.log x + k) ^ (k + 1) / (k + 1 : ℕ) := by
-      simp only [f, F, Real.log_one, sub_zero, div_one, neg_div, sub_neg_eq_add]
-    _ ≤ _ := by
-      rw [le_div_iff₀ (by positivity)]
-      push_cast at hpow ⊢
-      rw [← add_assoc]
-      field_simp
-      simpa only [mul_one, one_mul, add_comm, mul_comm] using hpow
-
 /-- The Nicolas–Tenenbaum bound for the summatory ordered divisor function of order `k + 1`,
 valid for real cutoffs at least one. See Bordellès (2002), equation (1.2). -/
 theorem sum_Ioc_zeta_pow_le_div_factorial_mul_log_add_pow (k : ℕ) {x : ℝ} (hx : 1 ≤ x) :
@@ -439,7 +383,7 @@ theorem sum_Ioc_zeta_pow_le_div_factorial_mul_log_add_pow (k : ℕ) {x : ℝ} (h
         rw [mul_sum]
         exact sum_congr rfl fun d _ ↦ by ring
       _ ≤ _ := by
-        refine (mul_le_mul_of_nonneg_left (sum_Ioc_log_div_add_pow_div_le k hx)
+        refine (mul_le_mul_of_nonneg_left (TauCeti.sum_Ioc_log_div_add_pow_div_le k hx)
           (by positivity)).trans_eq ?_
         rw [Nat.factorial_succ, Nat.cast_mul]
         ring
