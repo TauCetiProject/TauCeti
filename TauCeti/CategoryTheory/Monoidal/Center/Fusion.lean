@@ -176,9 +176,8 @@ theorem forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_eq_
     (endAlgEquivOfSimple_smul_id (k := k) (End.of (normGlobalDim C a))).symm
   rw [forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app_f k Z a,
     smul_f, id_f]
-  conv_lhs =>
-    rw [hsmul, MonoidalLinear.smul_whiskerRight, Linear.smul_comp, Linear.comp_smul,
-      id_whiskerRight, Category.id_comp, Iso.inv_hom_id]
+  conv_lhs => rw [hsmul]
+  simp [-endAlgEquivOfSimple_smul_id]
 
 /-- When `normGlobalDim C a ≠ 0`, each component of the unit of `forgetInductionAdjunction` is
 a split monomorphism in `Center C`, retracted by

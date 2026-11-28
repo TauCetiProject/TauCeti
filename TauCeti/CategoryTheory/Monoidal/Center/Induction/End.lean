@@ -194,9 +194,7 @@ theorem inductionEndπ_repr (X : C) (S : SimpleClasses C) :
     inductionEndπ X S.repr = biproduct.π (inductionSummand X) S := by
   let u := IsFiniteSemisimpleCategory.chosenSimpleDecompIso S.repr
   have hmate : S.repr ◁ X ◁ (u.inv)ᘁ ≫ S.repr ◁ X ◁ (u.hom)ᘁ = 𝟙 _ := by
-    have h := (whiskerLeftIso S.repr (whiskerLeftIso X u.rightAdjointMate)).inv_hom_id
-    rwa [whiskerLeftIso_inv, whiskerLeftIso_inv, whiskerLeftIso_hom, whiskerLeftIso_hom,
-      Iso.rightAdjointMate_inv, Iso.rightAdjointMate_hom] at h
+    simpa using (whiskerLeftIso S.repr (whiskerLeftIso X u.rightAdjointMate)).inv_hom_id
   rw [inductionEndπ_eq_endπAux]
   dsimp only [endπAux]
   rw [Fintype.sum_unique, ← IsFiniteSemisimpleCategory.chosenSimpleDecompIso_hom,
