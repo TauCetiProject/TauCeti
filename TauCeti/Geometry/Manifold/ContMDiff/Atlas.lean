@@ -54,6 +54,9 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
   and `OpenPartialHomeomorph.contMDiffOn_extendTrans_symm`,
   `OpenPartialHomeomorph.contMDiffAt_extendTrans_symm`: `C^n` regularity of a maximal-atlas chart
   transported by `OpenPartialHomeomorph.extendTrans` and of its inverse.
+* `TauCeti.liftCodTransition`, `TauCeti.contMDiffOn_liftCodTransition`, and
+  `TauCeti.liftCodTransition_mem_maximalAtlas`: lifting a partial homeomorphism of `E''` along
+  `L : E ≃L[𝕜] E'' × F` by the identity on `F`, and preserving maximal-atlas membership.
 -/
 
 public section
@@ -159,6 +162,78 @@ theorem _root_.ContMDiffOn.contDiffOn_comp_symm_of_mem_maximalAtlas {f : M' → 
     ((contMDiffOn_symm_of_mem_maximalAtlas hφ).mono Set.inter_subset_left) Set.inter_subset_right)
 
 end CompSymm
+
+section LiftCodTransition
+
+variable {E'' F : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Lift a partial homeomorphism `σ` of `E''` along `L : E ≃L[𝕜] E'' × F` by acting as the
+identity on `F`. -/
+def liftCodTransition (L : E ≃L[𝕜] E'' × F) (σ : OpenPartialHomeomorph E'' E'') :
+    OpenPartialHomeomorph E E :=
+  (L.toHomeomorph.transOpenPartialHomeomorph
+    (σ.prod (OpenPartialHomeomorph.refl F))).transHomeomorph L.symm.toHomeomorph
+
+/-- A point `u` lies in `(liftCodTransition L σ).source` if and only if `(L u).1` lies in
+`σ.source`. -/
+theorem mem_liftCodTransition_source_iff (L : E ≃L[𝕜] E'' × F)
+    (σ : OpenPartialHomeomorph E'' E'') (u : E) :
+    u ∈ (liftCodTransition L σ).source ↔ (L u).1 ∈ σ.source := by
+  simp [liftCodTransition]
+
+/-- A point `u` lies in `(liftCodTransition L σ).target` if and only if `(L u).1` lies in
+`σ.target`. -/
+theorem mem_liftCodTransition_target_iff (L : E ≃L[𝕜] E'' × F)
+    (σ : OpenPartialHomeomorph E'' E'') (u : E) :
+    u ∈ (liftCodTransition L σ).target ↔ (L u).1 ∈ σ.target := by
+  simp [liftCodTransition]
+
+/-- The inverse of `liftCodTransition L σ` is `liftCodTransition L σ.symm`. -/
+theorem liftCodTransition_symm (L : E ≃L[𝕜] E'' × F) (σ : OpenPartialHomeomorph E'' E'') :
+    (liftCodTransition L σ).symm = liftCodTransition L σ.symm := by
+  refine OpenPartialHomeomorph.ext _ _ (fun _ ↦ by simp [liftCodTransition])
+    (fun _ ↦ by simp [liftCodTransition]) ?_
+  ext u
+  simp [mem_liftCodTransition_source_iff, mem_liftCodTransition_target_iff]
+
+/-- Application formula for `liftCodTransition` in terms of `L`, `σ`, and `L.symm`. -/
+theorem liftCodTransition_apply (L : E ≃L[𝕜] E'' × F) (σ : OpenPartialHomeomorph E'' E'')
+    (u : E) :
+    liftCodTransition L σ u = L.symm (σ (L u).1, (L u).2) := by
+  simp [liftCodTransition]
+
+/-- Applying `L` to `liftCodTransition L σ u` gives `σ (L u).1` in the first component. -/
+theorem liftCodTransition_apply_fst (L : E ≃L[𝕜] E'' × F) (σ : OpenPartialHomeomorph E'' E'')
+    (u : E) :
+    (L (liftCodTransition L σ u)).1 = σ (L u).1 := by
+  simp [liftCodTransition_apply]
+
+/-- Lifting a partial homeomorphism `σ` that is `C^n` on its source along `L : E ≃L[𝕜] E'' × F`
+gives a partial homeomorphism that is `C^n` on its source. -/
+theorem contMDiffOn_liftCodTransition (L : E ≃L[𝕜] E'' × F)
+    {σ : OpenPartialHomeomorph E'' E''}
+    (hσ : ContMDiffOn 𝓘(𝕜, E'') 𝓘(𝕜, E'') n σ σ.source) :
+    ContMDiffOn 𝓘(𝕜, E) 𝓘(𝕜, E) n (liftCodTransition L σ)
+      (liftCodTransition L σ).source :=
+  L.symm.contDiff.contMDiff.comp_contMDiffOn <|
+    ((hσ.comp ((ContinuousLinearMap.fst 𝕜 E'' F).contMDiff.contMDiffOn
+        (s := (σ.prod (OpenPartialHomeomorph.refl F)).source))
+      fun _ hp ↦ hp.1).prodMk_space
+      (ContinuousLinearMap.snd 𝕜 E'' F).contMDiff.contMDiffOn).comp
+      L.contDiff.contMDiff.contMDiffOn fun _ hu ↦ hu
+
+/-- Lifting a chart `σ` of the maximal `C^n` atlas of `E''` along `L : E ≃L[𝕜] E'' × F` gives a
+chart of the maximal `C^n` atlas of `E`. -/
+theorem liftCodTransition_mem_maximalAtlas (L : E ≃L[𝕜] E'' × F)
+    {σ : OpenPartialHomeomorph E'' E''} (hσ : σ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E'') n E'') :
+    liftCodTransition L σ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n E :=
+  (liftCodTransition L σ).mem_maximalAtlas_of_contMDiffOn
+    (contMDiffOn_liftCodTransition L (contMDiffOn_of_mem_maximalAtlas hσ))
+    ((liftCodTransition_symm L σ).symm ▸
+      contMDiffOn_liftCodTransition L (contMDiffOn_symm_of_mem_maximalAtlas hσ))
+
+end LiftCodTransition
 
 end TauCeti
 

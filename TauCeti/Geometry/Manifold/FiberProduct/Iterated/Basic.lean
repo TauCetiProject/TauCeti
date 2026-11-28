@@ -77,7 +77,7 @@ instance instUniqueZero : Unique (IteratedFiberProduct π 0) where
   uniq _ := Subtype.ext (funext fun i ↦ i.elim0)
 
 /-- The `i`-th factor projection `Y^[k] → Y`. -/
-@[expose] def eval {k : ℕ} (i : Fin k) (y : IteratedFiberProduct π k) : Y :=
+def eval {k : ℕ} (i : Fin k) (y : IteratedFiberProduct π k) : Y :=
   y.val i
 
 /-- Evaluation at `i` reads the `i`-th coordinate of the underlying tuple. -/
@@ -96,7 +96,7 @@ theorem map_eval_eq {k : ℕ} (y : IteratedFiberProduct π k) (i j : Fin k) :
   y.property i j
 
 /-- The diagonal inclusion `Y → Y^[k]` sending `z` to the constant tuple `(z, …, z)`. -/
-@[expose] def const (k : ℕ) (z : Y) : IteratedFiberProduct π k :=
+def const (k : ℕ) (z : Y) : IteratedFiberProduct π k :=
   ⟨fun _ ↦ z, fun _ _ ↦ rfl⟩
 
 /-- The underlying tuple of `const k z` is the constant function `Function.const (Fin k) z`. -/
@@ -121,7 +121,7 @@ theorem injective_const (m : ℕ) :
 
 /-- The common projection `Y^[m + 1] → M` to the base, defined via the `0`-th factor and equal to
 `π ∘ eval i` for every `i : Fin (m + 1)`. -/
-@[expose] def baseProj {m : ℕ} (y : IteratedFiberProduct π (m + 1)) : M :=
+def baseProj {m : ℕ} (y : IteratedFiberProduct π (m + 1)) : M :=
   π (y.val 0)
 
 /-- The base projection agrees with `π (y.1 i)` at every coordinate `i : Fin (m + 1)`. -/
@@ -147,7 +147,7 @@ theorem surjective_baseProj_iff {m : ℕ} :
 
 /-- Contravariant reindexing of `IteratedFiberProduct π` along `α : Fin k₁ → Fin k₂`, sending
 `y` to `y ∘ α`. -/
-@[expose] def reindex {k₁ k₂ : ℕ} (α : Fin k₁ → Fin k₂) (y : IteratedFiberProduct π k₂) :
+def reindex {k₁ k₂ : ℕ} (α : Fin k₁ → Fin k₂) (y : IteratedFiberProduct π k₂) :
     IteratedFiberProduct π k₁ :=
   ⟨y.val ∘ α, fun i j ↦ y.property (α i) (α j)⟩
 
@@ -233,7 +233,7 @@ theorem leftInverse_reindex_surjInv {k₁ k₂ : ℕ} {α : Fin k₁ → Fin k�
   fun y ↦ ext fun i ↦ by rw [eval_reindex, eval_reindex, surjInv_eq hα]
 
 /-- The `i`-th face map `Y^[m + 2] → Y^[m + 1]`, omitting coordinate `i` via `Fin.succAbove i`. -/
-@[expose] def face {m : ℕ} (i : Fin (m + 2)) :
+def face {m : ℕ} (i : Fin (m + 2)) :
     IteratedFiberProduct π (m + 2) → IteratedFiberProduct π (m + 1) :=
   reindex i.succAbove
 
@@ -282,7 +282,7 @@ theorem surjective_face {m : ℕ} (i : Fin (m + 2)) :
 
 /-- The `i`-th diagonal degeneracy map `Y^[m + 1] → Y^[m + 2]`, repeating coordinate `i` via
 `Fin.predAbove i`. -/
-@[expose] def degeneracy {m : ℕ} (i : Fin (m + 1)) :
+def degeneracy {m : ℕ} (i : Fin (m + 1)) :
     IteratedFiberProduct π (m + 1) → IteratedFiberProduct π (m + 2) :=
   reindex i.predAbove
 
@@ -441,7 +441,7 @@ theorem degeneracy_castSucc_degeneracy {m : ℕ} {i j : Fin (m + 1)} (hij : i �
 
 /-- Prepend a point `z` of the fibre over `baseProj y` to the tuple `y`, giving the tuple
 `(z, y₀, …, y_m)` of `Y^[m + 2]`. -/
-@[expose] def cons {m : ℕ} (z : Y) (y : IteratedFiberProduct π (m + 1)) (h : π z = baseProj y) :
+def cons {m : ℕ} (z : Y) (y : IteratedFiberProduct π (m + 1)) (h : π z = baseProj y) :
     IteratedFiberProduct π (m + 2) :=
   ⟨Fin.cons z y.val, by
     have key : ∀ i : Fin (m + 2), π (Fin.cons (α := fun _ ↦ Y) z y.val i) = baseProj y :=

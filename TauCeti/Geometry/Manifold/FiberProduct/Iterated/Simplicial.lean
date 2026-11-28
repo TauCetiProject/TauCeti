@@ -141,8 +141,14 @@ theorem isSubmersion_reindex_of_injective {m₁ m₂ : ℕ} {α : Fin (m₁ + 1)
   have hu : ∀ i₁ i₂ : Fin (m₁ + 1),
       mfderiv IY IM π (y.val (α i₁)) (u i₁) =
         tangentSpaceCast IM (π (y.val (α i₂))) (π (y.val (α i₁)))
-          (mfderiv IY IM π (y.val (α i₂)) (u i₂)) :=
-    (mem_range_mfderiv_coe_iteratedFiberProduct_iff hn hπ m₁ x u).1 ⟨η, rfl⟩
+          (mfderiv IY IM π (y.val (α i₂)) (u i₂)) := by
+    have hx := (mem_range_mfderiv_coe_iteratedFiberProduct_iff hn hπ m₁ x u).1 ⟨η, rfl⟩
+    change (fun z : Fin (m₁ + 1) → Y ↦ ∀ i₁ i₂ : Fin (m₁ + 1),
+      mfderiv IY IM π (z i₁) (u i₁) =
+        tangentSpaceCast IM (π (z i₂)) (π (z i₁))
+          (mfderiv IY IM π (z i₂) (u i₂))) (y.val ∘ α)
+    rw [← IteratedFiberProduct.coe_reindex α y]
+    exact hx
   let w₀ : TangentSpace IM (π (y.val (α 0))) := mfderiv IY IM π (y.val (α 0)) (u 0)
   have hsurj : ∀ j : Fin (m₂ + 1),
       ∃ v_j : TangentSpace IY (y.val j),
@@ -181,7 +187,8 @@ theorem isSubmersion_reindex_of_injective {m₁ m₂ : ℕ} {α : Fin (m₁ + 1)
   have hfn : ((fun f : Fin (m₁ + 1) → Y ↦ f i) ∘
       (Subtype.val ∘ IteratedFiberProduct.reindex α :
         IteratedFiberProduct π (m₂ + 1) → (Fin (m₁ + 1) → Y))) =
-      (fun g : Fin (m₂ + 1) → Y ↦ g (α i)) ∘ Subtype.val := rfl
+      (fun g : Fin (m₂ + 1) → Y ↦ g (α i)) ∘ Subtype.val :=
+    funext fun q ↦ by simp [IteratedFiberProduct.coe_reindex]
   have hc₂ := mfderiv_comp y (TauCeti.hasMFDerivAt_apply (α i) y.val).mdifferentiableAt
     ((hemb₂.contMDiff y).mdifferentiableAt hn0)
   rw [TauCeti.mfderiv_apply] at hc₂
@@ -220,7 +227,7 @@ theorem contMDiff_face {m : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) (i : Fin (m + 
         IteratedFiberProduct π (m + 2) → IteratedFiberProduct π (m + 1)) := by
   let := iteratedFiberProductChartedSpace hn hπ (m + 1)
   let := iteratedFiberProductChartedSpace hn hπ m
-  exact contMDiff_reindex hn hπ hm' i.succAbove
+  exact IteratedFiberProduct.face_eq_reindex i ▸ contMDiff_reindex hn hπ hm' i.succAbove
 
 /-- **Every face map is a surjective submersion.** On `IteratedFiberProduct π (m + 2)`, each face
 map `face i : Y^[m + 2] → Y^[m + 1]` omitting the `i`-th factor is a `C^n` submersion. -/
@@ -234,7 +241,8 @@ theorem isSubmersion_face {m : ℕ} (i : Fin (m + 2)) :
         IteratedFiberProduct π (m + 2) → IteratedFiberProduct π (m + 1)) := by
   let := iteratedFiberProductChartedSpace hn hπ (m + 1)
   let := iteratedFiberProductChartedSpace hn hπ m
-  exact isSubmersion_reindex_of_injective hn hπ Fin.succAbove_right_injective
+  exact IteratedFiberProduct.face_eq_reindex i ▸
+    isSubmersion_reindex_of_injective hn hπ Fin.succAbove_right_injective
 
 /-- Every diagonal degeneracy map `degeneracy i : Y^[m + 1] → Y^[m + 2]` is `C^{m'}` for
 `m' ≤ n`. -/
@@ -248,7 +256,7 @@ theorem contMDiff_degeneracy {m : ℕ} {m' : ℕ∞ω} (hm' : m' ≤ n) (i : Fin
         IteratedFiberProduct π (m + 1) → IteratedFiberProduct π (m + 2)) := by
   let := iteratedFiberProductChartedSpace hn hπ m
   let := iteratedFiberProductChartedSpace hn hπ (m + 1)
-  exact contMDiff_reindex hn hπ hm' i.predAbove
+  exact IteratedFiberProduct.degeneracy_eq_reindex i ▸ contMDiff_reindex hn hπ hm' i.predAbove
 
 /-- For a section `s` of `π`, prepending `s (baseProj y)` to `y`, a map `Y^[m + 1] → Y^[m + 2]`,
 is `C^{m'}` at `y` whenever `s` is `C^{m'}` at `baseProj y`. -/
