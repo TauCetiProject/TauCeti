@@ -122,16 +122,6 @@ variable {σ R : Type*} [CommSemiring R]
 
 /-! ### Cartier operators -/
 
-/-- Each coordinate of the top Cartier offset is strictly below the positive modulus. -/
-theorem equivFunOnFinite_symm_sub_one_lt {n : ℕ} [Finite σ] (hn : n ≠ 0) (i : σ) :
-    (equivFunOnFinite.symm fun _ : σ ↦ n - 1) i < n := by
-  simpa using Nat.sub_one_lt hn
-
-/-- The exponent vector of a residue monomial is coordinatewise at most the top Cartier offset. -/
-theorem _root_.Finsupp.mapRange_finVal_le_sub_one {n : ℕ} [NeZero n] [Finite σ] (β : σ →₀ Fin n) :
-    β.mapRange Fin.val (Fin.val_zero n) ≤ (equivFunOnFinite.symm fun _ : σ ↦ n - 1) :=
-  fun i ↦ by simpa using Nat.le_sub_one_of_lt (β i).isLt
-
 section Cartier
 
 variable (n : ℕ) [NeZero n]
