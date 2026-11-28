@@ -79,21 +79,29 @@ theorem dedekindZetaC_rat_eq_riemannZeta {s : ℂ} (hs : s ≠ 1) :
   rw [dedekindZetaC_rat_eq_toMeromorphicNFOn,
     toMeromorphicNFOn_apply_of_analyticAt meromorphic_riemannZeta (analyticOn_riemannZeta s hs)]
 
+/-- Transports `meromorphicOrderAt` from `dedekindZetaC ℚ` to `riemannZeta` at every `s : ℂ`,
+including at `s = 1`, since the two functions agree as punctured germs. -/
 @[simp]
 theorem meromorphicOrderAt_dedekindZetaC_rat (s : ℂ) :
     meromorphicOrderAt (dedekindZetaC ℚ) s = meromorphicOrderAt riemannZeta s :=
   meromorphicOrderAt_congr (dedekindZetaC_rat_eventuallyEq_riemannZeta s)
 
+/-- Transports `MeromorphicOn.divisor` from `dedekindZetaC ℚ` to `riemannZeta` on any set `U`,
+including at `s = 1`, since the two functions agree as punctured germs. -/
 @[simp]
 theorem divisor_dedekindZetaC_rat (U : Set ℂ) :
     MeromorphicOn.divisor (dedekindZetaC ℚ) U = MeromorphicOn.divisor riemannZeta U :=
   MeromorphicOn.divisor_congr_nhdsNE fun s _ ↦ dedekindZetaC_rat_eventuallyEq_riemannZeta s
 
+/-- Transports `divisorCount` from `dedekindZetaC ℚ` to `riemannZeta` on arbitrary sets `U` and `R`,
+including at `s = 1`, since the two functions agree as punctured germs. -/
 @[simp]
 theorem divisorCount_dedekindZetaC_rat (U R : Set ℂ) :
     divisorCount (dedekindZetaC ℚ) U R = divisorCount riemannZeta U R :=
   divisorCount_congr_nhdsNE fun s _ ↦ dedekindZetaC_rat_eventuallyEq_riemannZeta s
 
+/-- Transports `zeroCount` from `dedekindZetaC ℚ` to `riemannZeta` on arbitrary sets `U` and `R`,
+including at `s = 1`, since the two functions agree as punctured germs. -/
 @[simp]
 theorem zeroCount_dedekindZetaC_rat (U R : Set ℂ) :
     zeroCount (dedekindZetaC ℚ) U R = zeroCount riemannZeta U R :=

@@ -65,8 +65,8 @@ theorem meromorphicOrderAt_heckeLFunctionC_induced_of_eulerCorrection_ne_zero (h
 
 /-- Wherever the deleted Euler correction is nonzero, inducing does not change the divisor of
 `heckeLFunctionC` on any domain `U`. -/
-theorem divisor_heckeLFunctionC_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪)
-    (U : Set ℂ) {s : ℂ} (hs : χ.eulerCorrection 𝔫 s ≠ 0) :
+theorem divisor_heckeLFunctionC_induced_of_eulerCorrection_ne_zero (h : 𝔪 ∣ 𝔫)
+    (χ : RayClassCharacter 𝔪) (U : Set ℂ) {s : ℂ} (hs : χ.eulerCorrection 𝔫 s ≠ 0) :
     MeromorphicOn.divisor (heckeLFunctionC (χ.induced h)) U s =
       MeromorphicOn.divisor (heckeLFunctionC χ) U s := by
   by_cases hsU : s ∈ U
@@ -83,17 +83,18 @@ theorem divisor_heckeLFunctionC_induced_of_re_ne_zero (h : 𝔪 ∣ 𝔫) (χ : 
     (U : Set ℂ) {s : ℂ} (hs : s.re ≠ 0) :
     MeromorphicOn.divisor (heckeLFunctionC (χ.induced h)) U s =
       MeromorphicOn.divisor (heckeLFunctionC χ) U s :=
-  divisor_heckeLFunctionC_induced h χ U (χ.eulerCorrection_ne_zero 𝔫 hs)
+  divisor_heckeLFunctionC_induced_of_eulerCorrection_ne_zero h χ U
+    (χ.eulerCorrection_ne_zero 𝔫 hs)
 
 /-- On any region `R` and divisor domain `U` such that the deleted Euler correction is nonzero on
 `R ∩ U`, inducing does not change the zero count of `heckeLFunctionC`. -/
-theorem zeroCount_heckeLFunctionC_induced (h : 𝔪 ∣ 𝔫) (χ : RayClassCharacter 𝔪)
-    {U R : Set ℂ} (hR : ∀ s ∈ R ∩ U, χ.eulerCorrection 𝔫 s ≠ 0) :
+theorem zeroCount_heckeLFunctionC_induced_of_eulerCorrection_ne_zero (h : 𝔪 ∣ 𝔫)
+    (χ : RayClassCharacter 𝔪) {U R : Set ℂ} (hR : ∀ s ∈ R ∩ U, χ.eulerCorrection 𝔫 s ≠ 0) :
     zeroCount (heckeLFunctionC (χ.induced h)) U R =
       zeroCount (heckeLFunctionC χ) U R :=
   zeroCount_congr_divisor fun s hsR ↦ by
     by_cases hsU : s ∈ U
-    · rw [divisor_heckeLFunctionC_induced h χ U (hR s ⟨hsR, hsU⟩)]
+    · rw [divisor_heckeLFunctionC_induced_of_eulerCorrection_ne_zero h χ U (hR s ⟨hsR, hsU⟩)]
     · simp only [Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ hsU]
 
 /-- On any region `R` and divisor domain `U` whose intersection avoids the imaginary axis, inducing
@@ -102,7 +103,8 @@ theorem zeroCount_heckeLFunctionC_induced_of_re_ne_zero (h : 𝔪 ∣ 𝔫) (χ 
     {U R : Set ℂ} (hR : ∀ s ∈ R ∩ U, s.re ≠ 0) :
     zeroCount (heckeLFunctionC (χ.induced h)) U R =
       zeroCount (heckeLFunctionC χ) U R :=
-  zeroCount_heckeLFunctionC_induced h χ fun s hs ↦ χ.eulerCorrection_ne_zero 𝔫 (hR s hs)
+  zeroCount_heckeLFunctionC_induced_of_eulerCorrection_ne_zero h χ fun s hs ↦
+    χ.eulerCorrection_ne_zero 𝔫 (hR s hs)
 
 /-- On any region `R` and divisor domain `U` whose intersection avoids the imaginary axis, a
 presented Hecke L-function has the same zero count as its underlying primitive character. -/

@@ -207,9 +207,11 @@ theorem zeroCount_dirichletData_entireCompletion_eq_LFunction {R : Set ℂ}
     (hR : ∀ s ∈ R, 0 < s.re) :
     zeroCount (dirichletData χ hχ).entireCompletion Set.univ R =
       zeroCount χ.LFunction Set.univ R := by
-  rcases eq_or_ne χ 1 with h1 | hne
-  · obtain ⟨he, hL⟩ := dirichletData_entireCompletion_of_eq_one χ hχ h1
-    rw [he, hL]
+  rcases eq_or_ne χ 1 with rfl | hne
+  · have hN : N = 1 := hχ.eq_one_iff.mp rfl
+    subst hN
+    rw [dirichletData_entireCompletion_eq_zetaEntireCompletion_of_eq_one _ hχ rfl,
+      DirichletCharacter.LFunction_modOne_eq]
     exact zeroCount_zetaEntireCompletion_eq_riemannZeta hR
   · exact zeroCount_congr_divisor fun s hs ↦
       congrArg Int.toNat

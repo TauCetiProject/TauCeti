@@ -61,9 +61,8 @@ theorem zeroCount_zetaEntireCompletion_eq_heckeLFunctionC_one_inter (R : Set ℂ
       zeroCount (heckeLFunctionC (1 : PrimitiveRayClassCharacter ℚ).character)
         univ (R ∩ {s | s.re ∈ Ioo 0 1}) := by
   have h := zeroCount_dirichletData_entireCompletion_eq_heckeLFunctionC_inter 1 R
-  change zeroCount (dirichletData (1 : DirichletCharacter ℂ 1)
-      DirichletCharacter.isPrimitive_one_level_one).entireCompletion univ R = _ at h
-  rwa [dirichletData_modOne, riemannZetaData_entireCompletion,
+  rwa [dirichletData_entireCompletion_eq_zetaEntireCompletion_of_eq_one _ _
+      PrimitiveDirichletCharacter.character_one,
     PrimitiveDirichletCharacter.toPrimitiveRayClassCharacter_one] at h
 
 end TauCeti.LFunctions

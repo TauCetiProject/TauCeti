@@ -158,6 +158,7 @@ theorem toPrimitiveRayClassCharacter_one : toPrimitiveRayClassCharacter 1 = 1 :=
   rw [← of_one (N := 1), toPrimitiveRayClassCharacter_of, map_one,
     PrimitiveRayClassCharacter.of_one]
 
+/-- A primitive Dirichlet bundle maps to `1` iff it is `1`. -/
 @[simp]
 theorem toPrimitiveRayClassCharacter_eq_one_iff (ψ : PrimitiveDirichletCharacter) :
     toPrimitiveRayClassCharacter ψ = 1 ↔ ψ = 1 :=
@@ -179,6 +180,8 @@ theorem changeLevel_toDirichletCharacter_toPrimitiveRayClassCharacter
     DirichletCharacter.changeLevel (dvd_of_eq (absNorm_conductor_toPrimitiveRayClassCharacter ψ))
       (toPrimitiveRayClassCharacter ψ).character.toDirichletCharacter = ψ.character := by
   let η := (ratDirichletEquiv ψ.level (NeZero.ne (ψ.level : ℕ))).symm ψ.character
+  -- Generalize `toPrimitiveRayClassCharacter ψ` to `ξ` with `ξ = of η` because `ξ` appears in the
+  -- source level `Ideal.absNorm ξ.conductor.finitePart` of `changeLevel`, preventing direct `rw`.
   have h1 : ∀ (ξ : PrimitiveRayClassCharacter ℚ),
       ξ = PrimitiveRayClassCharacter.of η →
       ∀ (h : Ideal.absNorm ξ.conductor.finitePart ∣ ψ.level),
@@ -194,6 +197,8 @@ theorem changeLevel_toDirichletCharacter_toPrimitiveRayClassCharacter
       MulEquiv.apply_symm_apply]
   exact h1 (toPrimitiveRayClassCharacter ψ) (toPrimitiveRayClassCharacter_apply ψ) _
 
+/-- At any integer `m : ℤ`, the Dirichlet character of `toPrimitiveRayClassCharacter ψ` equals
+`ψ.character m`. -/
 @[simp]
 theorem toDirichletCharacter_toPrimitiveRayClassCharacter_intCast
     (ψ : PrimitiveDirichletCharacter) (m : ℤ) :
@@ -205,6 +210,8 @@ theorem toDirichletCharacter_toPrimitiveRayClassCharacter_intCast
   exact hm.trans (ψ.isPrimitive.apply_intCast_eq_primitiveCharacter_of_changeLevel_eq
     dvd_rfl (DirichletCharacter.changeLevel_self ψ.character) m).symm
 
+/-- At any natural number `m : ℕ`, the Dirichlet character of `toPrimitiveRayClassCharacter ψ`
+equals `ψ.character m`. -/
 @[simp]
 theorem toDirichletCharacter_toPrimitiveRayClassCharacter_natCast
     (ψ : PrimitiveDirichletCharacter) (m : ℕ) :
@@ -212,6 +219,8 @@ theorem toDirichletCharacter_toPrimitiveRayClassCharacter_natCast
   simpa only [Int.cast_natCast] using
     toDirichletCharacter_toPrimitiveRayClassCharacter_intCast ψ (m : ℤ)
 
+/-- The Dirichlet L-function of `(toPrimitiveRayClassCharacter ψ).character.toDirichletCharacter`
+equals `ψ.character.LFunction`. -/
 @[simp]
 theorem LFunction_toDirichletCharacter_toPrimitiveRayClassCharacter
     (ψ : PrimitiveDirichletCharacter) :
@@ -221,6 +230,8 @@ theorem LFunction_toDirichletCharacter_toPrimitiveRayClassCharacter
     (absNorm_conductor_toPrimitiveRayClassCharacter ψ)
     (changeLevel_toDirichletCharacter_toPrimitiveRayClassCharacter ψ)
 
+/-- The inverse dictionary maps `PrimitiveRayClassCharacter.of η` to the primitive Dirichlet
+bundle `of η.toDirichletCharacter`. -/
 @[simp]
 theorem toPrimitiveRayClassCharacter_symm_of {𝔪 : Modulus ℚ} (η : RayClassCharacter 𝔪) :
     toPrimitiveRayClassCharacter.symm (PrimitiveRayClassCharacter.of η) =
@@ -228,12 +239,6 @@ theorem toPrimitiveRayClassCharacter_symm_of {𝔪 : Modulus ℚ} (η : RayClass
   rw [Equiv.symm_apply_eq, toPrimitiveRayClassCharacter_of,
     RayClassCharacter.toDirichletCharacter_def, MulEquiv.symm_apply_apply,
     PrimitiveRayClassCharacter.of_induced]
-
-theorem toPrimitiveRayClassCharacter_symm_eq_of_toDirichletCharacter
-    (ψ : PrimitiveRayClassCharacter ℚ) :
-    toPrimitiveRayClassCharacter.symm ψ = of ψ.character.toDirichletCharacter := by
-  simpa only [PrimitiveRayClassCharacter.of_character] using
-    toPrimitiveRayClassCharacter_symm_of ψ.character
 
 /-- At a nonzero ideal, the primitive ray class character associated to `ψ` has weight given by
 `ψ` at the ideal norm, with both sides zero at ideals meeting the conductor. -/

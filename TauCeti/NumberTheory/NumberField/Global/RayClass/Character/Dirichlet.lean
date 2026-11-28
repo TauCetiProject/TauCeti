@@ -60,7 +60,7 @@ character, and its infinite part is empty exactly when the Dirichlet character i
 * `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_finitePart_eq_span`,
   `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_infinitePart_eq_empty_iff_even`,
   `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_toDirichletCharacter`,
-  `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_eq_ratFiniteModulus_of_even`, and
+  `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_eq_spanNat_of_even`, and
   `TauCeti.GlobalNumberFields.RayClassCharacter.conductor_eq_ratModulus_of_not_even`: the
   conductor of a ray class character of `ℚ` is the conductor of its Dirichlet character, with the
   real place included exactly for an odd character.
@@ -294,6 +294,8 @@ noncomputable def toDirichletCharacter :
   (ratDirichletEquiv (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _)).toMonoidHom.comp
     (induced (dvd_ratModulus_absNorm 𝔪))
 
+/-- Evaluates `toDirichletCharacter` as `ratDirichletEquiv` applied to the character induced to
+`(Ideal.absNorm 𝔪.finitePart)·∞`. -/
 theorem toDirichletCharacter_def (ψ : RayClassCharacter 𝔪) :
     ψ.toDirichletCharacter = ratDirichletEquiv (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _)
       (ψ.induced (dvd_ratModulus_absNorm 𝔪)) := (rfl)
@@ -304,6 +306,7 @@ theorem toDirichletCharacter_injective :
     Function.Injective (toDirichletCharacter (𝔪 := 𝔪)) :=
   (ratDirichletEquiv _ _).injective.comp (induced_injective (dvd_ratModulus_absNorm 𝔪))
 
+/-- A ray class character of `ℚ` is trivial iff its attached Dirichlet character is principal. -/
 @[simp]
 theorem toDirichletCharacter_eq_one_iff (ψ : RayClassCharacter 𝔪) :
     ψ.toDirichletCharacter = 1 ↔ ψ = 1 :=
@@ -345,6 +348,7 @@ theorem changeLevel_toDirichletCharacter_ratModulus :
     ratModulus_dvd_ratModulus_iff.mpr (dvd_of_eq (absNorm_ratModulus_finitePart n hn))
   rw [toDirichletCharacter_def, ← ratDirichletEquiv_induced h₁, induced_trans, induced_refl]
 
+/-- At `(n)·∞`, `toDirichletCharacter` and `ratDirichletEquiv` agree on every integer `m : ℤ`. -/
 @[simp]
 theorem toDirichletCharacter_ratModulus_intCast (m : ℤ) :
     η.toDirichletCharacter m = ratDirichletEquiv n hn η m := by
@@ -354,6 +358,8 @@ theorem toDirichletCharacter_ratModulus_intCast (m : ℤ) :
   rw [← changeLevel_toDirichletCharacter_ratModulus (η := η),
     changeLevel_eq_cast_of_dvd' _ _ ha']
 
+/-- At `(n)·∞`, `toDirichletCharacter` and `ratDirichletEquiv` agree on every natural number
+`m : ℕ`. -/
 @[simp]
 theorem toDirichletCharacter_ratModulus_natCast (m : ℕ) :
     η.toDirichletCharacter m = ratDirichletEquiv n hn η m := by

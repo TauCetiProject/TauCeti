@@ -65,15 +65,13 @@ theorem dirichletData_entireCompletion_of_ne_one (hne : χ ≠ 1) :
     dirichletData_polarPolynomial_of_ne_one χ hχ hne, Polynomial.eval_one, one_mul]
 
 /-- For the principal primitive character (necessarily of conductor `1`), the entire completion
-is `zetaEntireCompletion` and the ordinary L-function is `riemannZeta`. -/
-theorem dirichletData_entireCompletion_of_eq_one (h1 : χ = 1) :
-    (dirichletData χ hχ).entireCompletion = zetaEntireCompletion ∧
-      χ.LFunction = riemannZeta := by
+equals `zetaEntireCompletion`. -/
+theorem dirichletData_entireCompletion_eq_zetaEntireCompletion_of_eq_one (h1 : χ = 1) :
+    (dirichletData χ hχ).entireCompletion = zetaEntireCompletion := by
   subst h1
   have hN : N = 1 := hχ.eq_one_iff.mp rfl
   subst hN
-  exact ⟨by rw [dirichletData_modOne, riemannZetaData_entireCompletion],
-    DirichletCharacter.LFunction_modOne_eq⟩
+  rw [dirichletData_modOne, riemannZetaData_entireCompletion]
 
 /-- The functional equation of a primitive Dirichlet entire completion, against the inverse
 character. -/
@@ -137,9 +135,11 @@ and `riemannZeta` is not analytic, so both analytic orders vanish). -/
 theorem analyticOrderAt_dirichletData_entireCompletion_eq_LFunction
     {s : ℂ} (hs : 0 < s.re) :
     analyticOrderAt (dirichletData χ hχ).entireCompletion s = analyticOrderAt χ.LFunction s := by
-  rcases eq_or_ne χ 1 with h1 | hne
-  · obtain ⟨he, hL⟩ := dirichletData_entireCompletion_of_eq_one χ hχ h1
-    rw [he, hL]
+  rcases eq_or_ne χ 1 with rfl | hne
+  · have hN : N = 1 := hχ.eq_one_iff.mp rfl
+    subst hN
+    rw [dirichletData_entireCompletion_eq_zetaEntireCompletion_of_eq_one _ hχ rfl,
+      DirichletCharacter.LFunction_modOne_eq]
     exact analyticOrderAt_zetaEntireCompletion_eq_riemannZeta hs
   · rw [analyticOrderAt_dirichletData_entireCompletion χ hχ hne,
       χ.analyticOrderAt_completedLFunction hs (.inr hne)]
@@ -169,9 +169,10 @@ theorem dirichletData_entireCompletion_eq_zero_iff {s : ℂ} (hs : 0 < s.re) :
       analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hs,
       (χ.analyticAt_LFunction h1).analyticOrderAt_ne_zero]
   · push Not at h1
-    rcases h1 with ⟨rfl, h1⟩
-    obtain ⟨he, hL⟩ := dirichletData_entireCompletion_of_eq_one χ hχ h1
-    simp [he, hL, riemannZeta_one_ne_zero]
+    rcases h1 with ⟨rfl, rfl⟩
+    have hN : N = 1 := hχ.eq_one_iff.mp rfl
+    subst hN
+    simp [riemannZeta_one_ne_zero, DirichletCharacter.LFunction_modOne_eq]
 
 /-- Every primitive Dirichlet entire completion is nonzero at the origin,
 as required by Hadamard factorization. -/

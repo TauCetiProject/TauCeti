@@ -144,24 +144,35 @@ section ZeroCounting
 
 variable {𝔪 : Modulus ℚ}
 
+/-- Transports `meromorphicOrderAt` from `heckeLFunctionC η` to `η.toDirichletCharacter.LFunction`
+at every `s : ℂ`, including at `s = 1`, since the two functions agree as punctured germs. -/
 @[simp]
 theorem meromorphicOrderAt_heckeLFunctionC_eq_LFunction (η : RayClassCharacter 𝔪) (s : ℂ) :
     meromorphicOrderAt (heckeLFunctionC η) s =
       meromorphicOrderAt η.toDirichletCharacter.LFunction s :=
   meromorphicOrderAt_congr (heckeLFunctionC_eventuallyEq_LFunction η s)
 
+/-- Transports `MeromorphicOn.divisor` from `heckeLFunctionC η` to
+`η.toDirichletCharacter.LFunction` on any set `U`, including at `s = 1`, since the two functions
+agree as punctured germs. -/
 @[simp]
 theorem divisor_heckeLFunctionC_eq_LFunction (η : RayClassCharacter 𝔪) (U : Set ℂ) :
     MeromorphicOn.divisor (heckeLFunctionC η) U =
       MeromorphicOn.divisor η.toDirichletCharacter.LFunction U :=
   MeromorphicOn.divisor_congr_nhdsNE fun z _ ↦ heckeLFunctionC_eventuallyEq_LFunction η z
 
+/-- Transports `divisorCount` from `heckeLFunctionC η` to `η.toDirichletCharacter.LFunction` on
+arbitrary sets `U` and `R`, including at `s = 1`, since the two functions agree as punctured
+germs. -/
 @[simp]
 theorem divisorCount_heckeLFunctionC_eq_LFunction (η : RayClassCharacter 𝔪) (U R : Set ℂ) :
     divisorCount (heckeLFunctionC η) U R =
       divisorCount η.toDirichletCharacter.LFunction U R :=
   divisorCount_congr_nhdsNE fun z _ ↦ heckeLFunctionC_eventuallyEq_LFunction η z
 
+/-- Transports `zeroCount` from `heckeLFunctionC η` to `η.toDirichletCharacter.LFunction` on
+arbitrary sets `U` and `R`, including at `s = 1`, since the two functions agree as punctured
+germs. -/
 @[simp]
 theorem zeroCount_heckeLFunctionC_eq_LFunction (η : RayClassCharacter 𝔪) (U R : Set ℂ) :
     zeroCount (heckeLFunctionC η) U R =

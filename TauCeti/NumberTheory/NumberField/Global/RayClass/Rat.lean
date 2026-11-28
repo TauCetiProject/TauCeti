@@ -428,14 +428,14 @@ theorem absNorm_ratModulus_finitePart (n : ℕ) (hn : n ≠ 0) :
 /-- The finite part of `Modulus.spanNat ℚ n` has absolute norm `n`. -/
 -- Not a `simp` lemma: `Modulus.spanNat_finitePart` and `Ideal.absNorm_span_singleton` rewrite
 -- the LHS.
-theorem absNorm_spanNat_finitePart (n : ℕ) [NeZero n] :
+theorem absNorm_spanNat_finitePart_rat (n : ℕ) [NeZero n] :
     Ideal.absNorm (Modulus.spanNat ℚ n).finitePart = n := by
   rw [Modulus.spanNat_finitePart, ← ratModulus_finitePart n (NeZero.ne n),
     absNorm_ratModulus_finitePart]
 
 /-- The moduli `(n)` and `(n)·∞` of `ℚ` have the same finite prime support. -/
 @[simp]
-theorem spanNat_support (n : ℕ) [NeZero n] :
+theorem support_spanNat_eq_support_ratModulus (n : ℕ) [NeZero n] :
     (Modulus.spanNat ℚ n).support = (ratModulus n (NeZero.ne n)).support := by
   ext v
   simp [Modulus.mem_support_iff]

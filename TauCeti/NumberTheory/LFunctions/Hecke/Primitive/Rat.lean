@@ -61,6 +61,8 @@ theorem changeLevel_toDirichletCharacter_of {𝔪 : Modulus ℚ} (η : RayClassC
   (RayClassCharacter.toDirichletCharacter_induced (conductor_of_dvd η)
     (of η).character).symm.trans (congrArg _ (induced_character_of η))
 
+/-- At any integer `m : ℤ`, the Dirichlet character of `of η` equals
+`η.toDirichletCharacter.primitiveCharacter m`. -/
 @[simp]
 theorem toDirichletCharacter_of_intCast {𝔪 : Modulus ℚ} (η : RayClassCharacter 𝔪) (m : ℤ) :
     (of η).character.toDirichletCharacter m = η.toDirichletCharacter.primitiveCharacter m :=
@@ -68,6 +70,8 @@ theorem toDirichletCharacter_of_intCast {𝔪 : Modulus ℚ} (η : RayClassChara
     (map_dvd Ideal.absNorm (Modulus.dvd_iff.mp (conductor_of_dvd η)).1)
     (changeLevel_toDirichletCharacter_of η) m
 
+/-- At any natural number `m : ℕ`, the Dirichlet character of `of η` equals
+`η.toDirichletCharacter.primitiveCharacter m`. -/
 @[simp]
 theorem toDirichletCharacter_of_natCast {𝔪 : Modulus ℚ} (η : RayClassCharacter 𝔪) (m : ℕ) :
     (of η).character.toDirichletCharacter m = η.toDirichletCharacter.primitiveCharacter m := by
