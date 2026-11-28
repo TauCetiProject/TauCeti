@@ -121,6 +121,19 @@ theorem geometricallyConnected_identityComponent (I : HopfIdeal k H) :
     I.identityComponentQuotientIso.symm
     (FiniteTypeCommHopfAlgCat.geometricallyConnected_identityComponent _)
 
+/-- The identity component of a closed subgroup is contained in the identity component of the
+ambient group. The inequality is reversed on defining ideals. -/
+theorem identityComponentHopfIdeal_le_identityComponent (I : HopfIdeal k H) :
+    HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H) ≤ I.identityComponent := by
+  let _ : ConnectedSpace
+      (PrimeSpectrum (FiniteTypeCommHopfAlgCat.quotient H I.identityComponent)) :=
+    geometricallyConnectedCommHopfAlgProperty.connectedSpace
+      I.geometricallyConnected_identityComponent
+  intro x hx
+  apply (CommHopfAlgCat.mkQuotient_eq_zero_iff H.obj I.identityComponent x).mp
+  exact CommHopfAlgCat.identityComponentHopfIdeal_toIdeal_le_ker_of_connected
+    (CommHopfAlgCat.mkQuotient H.obj I.identityComponent) (HopfIdeal.mem_toIdeal.mpr hx)
+
 /-- The identity component of a smooth closed subgroup is smooth. -/
 theorem smooth_identityComponent (I : HopfIdeal k H)
     [Algebra.Smooth k (FiniteTypeCommHopfAlgCat.quotient H I)] :

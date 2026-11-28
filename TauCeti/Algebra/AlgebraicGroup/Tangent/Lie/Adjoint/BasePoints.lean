@@ -26,7 +26,9 @@ universes. Consequently, base-valued points carry `sl₂` triples in `Lie(G)` to
 * `Derivation.basePointsRepresentation_adjointComodule_bracket`: `basePointsRepresentation` of the
   adjoint comodule preserves the Lie bracket.
 * `Derivation.basePointsAdjointLieEquiv`: the Lie algebra automorphism of
-  `Module.Dual R (Bialgebra.CotangentSpace R H)` attached to a base-valued point.
+  `Module.Dual R (Bialgebra.CotangentSpace R H)` attached to a base-valued point, with
+  `Derivation.asGroupHom_basePointsRepresentation_adjointComodule` identifying
+  `Representation.asGroupHom` of the adjoint comodule with its `GL` image.
 * `IsSl2Triple.basePointsRepresentation_adjointComodule`: the base-point adjoint action carries
   `sl₂` triples to `sl₂` triples.
 
@@ -106,6 +108,19 @@ theorem basePointsAdjointLieEquiv_toLinearMap (g : WithConv (H →ₐ[R] R)) :
       Comodule.basePointsRepresentation (Module.Dual R (Bialgebra.CotangentSpace R H)) g := by
   let := adjointComodule (R := R) (H := H)
   exact LinearMap.ext fun x ↦ basePointsAdjointLieEquiv_apply g x
+
+/-- `Representation.asGroupHom` of the base-point representation on the adjoint comodule agrees
+with viewing `Derivation.basePointsAdjointLieEquiv g` in the general linear group. -/
+@[simp]
+theorem asGroupHom_basePointsRepresentation_adjointComodule (g : WithConv (H →ₐ[R] R)) :
+    letI := adjointComodule (R := R) (H := H)
+    Representation.asGroupHom
+        (Comodule.basePointsRepresentation (Module.Dual R (Bialgebra.CotangentSpace R H))) g =
+      LinearMap.GeneralLinearGroup.ofLinearEquiv
+        (basePointsAdjointLieEquiv (R := R) (H := H) g).toLinearEquiv := by
+  let := adjointComodule (R := R) (H := H)
+  refine Units.ext <| LinearMap.ext fun x ↦ ?_
+  simp [Representation.asGroupHom_apply]
 
 /-- The identity point acts as the identity Lie automorphism. -/
 @[simp]
