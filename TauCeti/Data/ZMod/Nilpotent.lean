@@ -27,6 +27,8 @@ is needed. For `p = 2` these say that the units of `ℤ/2^{k+1}` are exactly the
 * `ZMod.isUnit_natCast_mul_add`: `p c + u` is a unit in `ℤ/p^n` when `u` is.
 * `ZMod.not_isUnit_natCast_mul`: `p c` is not a unit in a nontrivial `ℤ/p^n`.
 * `ZMod.natCast_self_pow_ne_zero`: `p ≠ 0` in `ℤ/p^n` for `1 < p` and `1 < n`.
+* `ZMod.natCast_self_mul_self_eq_zero` and `ZMod.natCast_self_sq_ne_zero`: in `ℤ/p²` the element
+  `p` has square zero, and it is nonzero when `p` is prime.
 -/
 
 public section
@@ -60,5 +62,14 @@ theorem natCast_self_pow_ne_zero (hp : 1 < p) (hn : 1 < n) : (p : ZMod (p ^ n)) 
   intro h
   have : n ≤ 1 := (Nat.pow_dvd_pow_iff_le_right hp).mp (by rwa [pow_one])
   omega
+
+/-- `p * p = 0` in `ℤ/p²`. -/
+theorem natCast_self_mul_self_eq_zero (p : ℕ) : (p : ZMod (p ^ 2)) * p = 0 := by
+  rw [← sq]
+  exact_mod_cast ZMod.natCast_self (p ^ 2)
+
+/-- For prime `p`, the element `p` is nonzero in `ℤ/p²`. -/
+theorem natCast_self_sq_ne_zero (p : ℕ) [Fact p.Prime] : (p : ZMod (p ^ 2)) ≠ 0 :=
+  natCast_self_pow_ne_zero (Fact.out : p.Prime).one_lt one_lt_two
 
 end ZMod
