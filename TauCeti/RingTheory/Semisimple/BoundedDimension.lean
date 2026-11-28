@@ -14,9 +14,9 @@ import TauCeti.RingTheory.Semisimple.Multiplicity
 # Bounded dimension over a semisimple algebra
 
 `TauCeti.exists_finite_module_family_of_rank_le` gives a finite family containing a representative
-of every module of bounded dimension over a fixed semisimple algebra. It uses
-`IsSemisimpleModule.exists_simple_family` on the regular module and
-`IsSemisimpleModule.exists_linearEquiv_pi_submodule` on the module being represented.
+of every module of bounded dimension over a fixed semisimple algebra. The representatives satisfy
+the same dimension bound and live in the universe of the algebra, independently of the universe
+of the module being represented.
 
 This supplies the finite list of rational module types in the Jordan–Zassenhaus argument
 (I. Reiner, *Maximal Orders*, §26).
@@ -30,6 +30,8 @@ universe u v
 
 open Module
 
+-- Formal sources: `IsSemisimpleModule.exists_simple_family` and
+-- `IsSemisimpleModule.exists_linearEquiv_pi_submodule`.
 /-- Over a semisimple `k`-algebra `A`, the modules of `k`-dimension at most `d` have finitely
 many isomorphism classes. The representatives live in the universe of `A` even when the modules
 they represent do not. -/
