@@ -184,4 +184,17 @@ theorem isClosedEmbedding_realizationMap (h : K ≤ L) :
       Set.preimage_image_eq _ (realizationMap_injective h)]
     exact hs.preimage (continuous_faceInclusion K ⟨σ, hσ⟩)
 
+/-- A precomplex contained in `L` is void iff no point of `Realization L` has its support in
+that precomplex. -/
+theorem forall_support_notMem_iff_eq_bot {P : PreAbstractSimplicialComplex ι}
+    (hP : P ≤ L.toPreAbstractSimplicialComplex) :
+    (∀ x : Realization L, x.val.support ∉ P) ↔ P = ⊥ := by
+  refine ⟨fun h => SetLike.ext fun σ =>
+      ⟨fun hσ => ?_, fun hσ => False.elim (PreAbstractSimplicialComplex.notMem_bot hσ)⟩,
+    fun hbot x hx => ?_⟩
+  · obtain ⟨x, hx⟩ := exists_support_eq (hP hσ)
+    exact False.elim (h x (by simpa [hx] using hσ))
+  · rw [hbot] at hx
+    exact PreAbstractSimplicialComplex.notMem_bot hx
+
 end AbstractSimplicialComplex

@@ -292,6 +292,12 @@ theorem starLinkProjection_apply (x : puncturedClosedStar K v) (w : ι) :
       if w = v then 0 else (1 - x.val.val v)⁻¹ * x.val.val w :=
   normalizedLinkCoordinates_apply K v x w
 
+/-- The support of the radial link projection is obtained by erasing the apex vertex. -/
+@[simp]
+theorem support_starLinkProjection (x : puncturedClosedStar K v) :
+    (starLinkProjection K v x).val.val.support = x.val.val.support.erase v :=
+  normalizedLinkCoordinates_support K v x
+
 /-- Move from a link point towards the apex, with apex coordinate `t < 1`. -/
 def starRay (y : geometricLink K v) (t : Ico (0 : ℝ) 1) : puncturedClosedStar K v := by
   classical

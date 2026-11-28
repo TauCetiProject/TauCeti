@@ -111,7 +111,7 @@ theorem boundarylessManifold_iff (e : M ≃ₜ N) (hEE' : finrank 𝕜 E = finra
     fun _ => e.symm.boundarylessManifold I' I hEE'.symm⟩
 
 /-- The restriction of a homeomorphism to the manifold interiors of its domain and codomain. -/
-@[expose] def manifoldInteriorHomeomorph (e : M ≃ₜ N)
+def manifoldInteriorHomeomorph (e : M ≃ₜ N)
     (hEE' : finrank 𝕜 E = finrank 𝕜 E') :
     I.interior M ≃ₜ I'.interior N :=
   e.subtype (e.isInteriorPoint_iff I I' hEE')
@@ -121,17 +121,17 @@ theorem boundarylessManifold_iff (e : M ≃ₜ N) (hEE' : finrank 𝕜 E = finra
 theorem coe_manifoldInteriorHomeomorph_apply (e : M ≃ₜ N)
     (hEE' : finrank 𝕜 E = finrank 𝕜 E')
     (x : I.interior M) : (e.manifoldInteriorHomeomorph I I' hEE' x : N) = e x :=
-  rfl
+  (rfl)
 
 /-- The inverse of `Homeomorph.manifoldInteriorHomeomorph` agrees with `e.symm`. -/
 @[simp]
 theorem coe_manifoldInteriorHomeomorph_symm_apply (e : M ≃ₜ N)
     (hEE' : finrank 𝕜 E = finrank 𝕜 E')
     (y : I'.interior N) : ((e.manifoldInteriorHomeomorph I I' hEE').symm y : M) = e.symm y :=
-  rfl
+  (rfl)
 
 /-- The restriction of a homeomorphism to the manifold boundaries of its domain and codomain. -/
-@[expose] def boundaryHomeomorph (e : M ≃ₜ N) (hEE' : finrank 𝕜 E = finrank 𝕜 E') :
+def boundaryHomeomorph (e : M ≃ₜ N) (hEE' : finrank 𝕜 E = finrank 𝕜 E') :
     I.boundary M ≃ₜ I'.boundary N :=
   e.subtype (e.isBoundaryPoint_iff I I' hEE')
 
@@ -139,12 +139,12 @@ theorem coe_manifoldInteriorHomeomorph_symm_apply (e : M ≃ₜ N)
 @[simp]
 theorem coe_boundaryHomeomorph_apply (e : M ≃ₜ N) (hEE' : finrank 𝕜 E = finrank 𝕜 E')
     (x : I.boundary M) : (e.boundaryHomeomorph I I' hEE' x : N) = e x :=
-  rfl
+  (rfl)
 
 /-- The inverse of `Homeomorph.boundaryHomeomorph` agrees with `e.symm`. -/
 @[simp]
 theorem coe_boundaryHomeomorph_symm_apply (e : M ≃ₜ N) (hEE' : finrank 𝕜 E = finrank 𝕜 E')
     (y : I'.boundary N) : ((e.boundaryHomeomorph I I' hEE').symm y : M) = e.symm y :=
-  rfl
+  (rfl)
 
 end Homeomorph

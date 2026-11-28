@@ -278,6 +278,12 @@ theorem isCombinatorialManifold_succ_iff :
       IsCombinatorialSphere (link K {v}) n ∨ IsCombinatorialBall (link K {v}) n :=
   Iff.rfl
 
+/-- Combinatorial manifoldness does not depend on the `DecidableEq` instance. -/
+theorem isCombinatorialManifold_congr_decidableEq {ι : Type*} (d₁ d₂ : DecidableEq ι)
+    {K : PreAbstractSimplicialComplex ι} {n : ℕ} :
+    @IsCombinatorialManifold ι d₁ K n ↔ @IsCombinatorialManifold ι d₂ K n := by
+  rw [Subsingleton.elim d₁ d₂]
+
 /-- The void precomplex is vacuously a combinatorial `n`-manifold in every dimension. -/
 @[simp]
 theorem isCombinatorialManifold_bot :

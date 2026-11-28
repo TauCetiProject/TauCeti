@@ -165,6 +165,37 @@ theorem map_inclusion_restrict {K : PreAbstractSimplicialComplex ι} {s t : Set 
   exact (map_val_restrict hs).trans
     (map_val_restrict fun τ hτ => (hs τ hτ).trans hst).symm
 
+/-- Restrict a precomplex `L` to its own vertex subtype `{v : ι // ({v} : Finset ι) ∈ L}`,
+turning it into an abstract simplicial complex with no unused vertices. -/
+def restrictToVertices (L : PreAbstractSimplicialComplex ι) :
+    AbstractSimplicialComplex {v : ι // ({v} : Finset ι) ∈ L} :=
+  PreAbstractSimplicialComplex.toAbstractSimplicialComplex _
+    (L.restrict {v : ι | ({v} : Finset ι) ∈ L}) fun v => by
+      rw [mem_faces, mem_restrict_iff_map, Finset.map_singleton]
+      exact v.property
+
+/-- Forgetting singletons from `L.restrictToVertices` recovers the vertex restriction of `L` to its
+own vertices. -/
+theorem restrictToVertices_toPreAbstractSimplicialComplex (L : PreAbstractSimplicialComplex ι) :
+    L.restrictToVertices.toPreAbstractSimplicialComplex =
+      L.restrict {v : ι | ({v} : Finset ι) ∈ L} :=
+  (rfl)
+
+/-- A finite set of vertices of `L` is a face of `L.restrictToVertices` iff its subtype image is a
+face of `L`. -/
+@[simp]
+theorem mem_restrictToVertices_iff (L : PreAbstractSimplicialComplex ι)
+    (σ : Finset {v : ι // ({v} : Finset ι) ∈ L}) :
+    σ ∈ L.restrictToVertices ↔ σ.map (Function.Embedding.subtype _) ∈ L :=
+  Iff.rfl
+
+/-- Relabeling `L.restrictToVertices` along `Subtype.val` recovers `L`. -/
+@[simp]
+theorem map_val_restrictToVertices [DecidableEq ι] (L : PreAbstractSimplicialComplex ι) :
+    L.restrictToVertices.toPreAbstractSimplicialComplex.map
+        (Subtype.val : {v : ι // ({v} : Finset ι) ∈ L} → ι) = L :=
+  map_val_restrict fun _ hτ _ hv => singleton_mem_of_mem hτ hv
+
 end PreAbstractSimplicialComplex
 
 noncomputable section

@@ -8,7 +8,7 @@ module
 public import TauCeti.Topology.PL.Structure
 public import TauCeti.AlgebraicTopology.SimplicialComplex.CombinatorialManifold.HalfSpaceBoundary
 public import TauCeti.Geometry.Manifold.Boundary.Homeomorph
-public import TauCeti.AlgebraicTopology.SimplicialComplex.Restriction
+public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Restriction
 
 /-!
 # Topological invariance of the boundary of a PL manifold
@@ -40,9 +40,16 @@ manifold (`HalfSpaceBoundary`) and homeomorphism invariance of manifold boundary
 * `TauCeti.PLStructure.preimage_boundary`, `TauCeti.PLStructure.image_boundary`, and
   `TauCeti.PLStructure.image_manifoldInterior`
 * `TauCeti.PLStructure.boundary_eq_empty_iff` and `TauCeti.PLStructure.boundarylessManifold_iff`
+* `TauCeti.PLStructure.boundary_ι`, `TauCeti.PLStructure.boundary_K`, and
+  `TauCeti.PLStructure.coe_boundary_e`
 * `TauCeti.PLStructure.manifoldBoundary_boundary_eq_bot`
 * `TauCeti.PLStructure.image_manifoldBoundary_of_homeomorph` and
   `TauCeti.PLStructure.manifoldBoundary_eq_bot_iff_of_homeomorph`
+
+## References
+
+* C. P. Rourke, B. J. Sanderson, *Introduction to Piecewise-Linear Topology*, Springer (1972),
+  Chapters 2–3 (boundary of a PL manifold and closedness of the boundary).
 -/
 
 public section
@@ -88,9 +95,10 @@ theorem preimage_boundary (hE : finrank ℝ E = n + 1) :
     s.e ⁻¹' I.boundary M =
       {x : Realization s.K |
         x.val.support ∈ manifoldBoundary s.K.toPreAbstractSimplicialComplex} := by
-  ext x
-  change I.IsBoundaryPoint (s.e x) ↔ _
-  simpa using s.isBoundaryPoint_iff I hE (s.e x)
+  let := s.isCombinatorialManifold.realizationChartedSpace
+  have hdim : finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) = finrank ℝ E := by simp [hE]
+  rw [s.e.preimage_boundary (𝓡∂ (n + 1)) I hdim]
+  exact s.isCombinatorialManifold.boundary_realizationChartedSpace
 
 /-- `I.boundary M` is the `s.e`-image of the combinatorial boundary subpolyhedron. -/
 theorem image_boundary (hE : finrank ℝ E = n + 1) :
@@ -103,26 +111,16 @@ subpolyhedron. -/
 theorem image_manifoldInterior (hE : finrank ℝ E = n + 1) :
     s.e '' {x : Realization s.K |
       x.val.support ∉ manifoldBoundary s.K.toPreAbstractSimplicialComplex} = I.interior M := by
-  ext x
-  constructor
-  · rintro ⟨y, hy, rfl⟩
-    exact (s.isInteriorPoint_iff I hE (s.e y)).mpr (by simpa using hy)
-  · intro hx
-    refine ⟨s.e.symm x, ?_, s.e.apply_symm_apply x⟩
-    exact (s.isInteriorPoint_iff I hE x).mp hx
+  let := s.isCombinatorialManifold.realizationChartedSpace
+  have hdim : finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) = finrank ℝ E := by simp [hE]
+  rw [← s.isCombinatorialManifold.interior_realizationChartedSpace]
+  exact s.e.image_manifoldInterior (𝓡∂ (n + 1)) I hdim
 
 /-- The manifold boundary of `M` is empty iff the combinatorial boundary of `s.K` is `⊥`. -/
 theorem boundary_eq_empty_iff (hE : finrank ℝ E = n + 1) :
     I.boundary M = ∅ ↔ manifoldBoundary s.K.toPreAbstractSimplicialComplex = ⊥ := by
   rw [← s.image_boundary I hE, image_eq_empty, eq_empty_iff_forall_notMem]
-  constructor
-  · intro h
-    refine SetLike.ext fun σ => ⟨fun hσ => ?_, fun hσ => False.elim (notMem_bot hσ)⟩
-    obtain ⟨x, hx⟩ := AbstractSimplicialComplex.exists_support_eq (manifoldBoundary_le hσ)
-    exact False.elim (h x (by simpa [hx] using hσ))
-  · intro hbot x hx
-    simp only [Set.mem_ofPred_eq, hbot] at hx
-    exact notMem_bot hx
+  exact AbstractSimplicialComplex.forall_support_notMem_iff_eq_bot manifoldBoundary_le
 
 /-- `M` is a boundaryless manifold iff the combinatorial boundary of `s.K` is `⊥`. -/
 theorem boundarylessManifold_iff (hE : finrank ℝ E = n + 1) :
@@ -130,106 +128,77 @@ theorem boundarylessManifold_iff (hE : finrank ℝ E = n + 1) :
   rw [← ModelWithCorners.Boundaryless.iff_boundary_eq_empty]
   exact s.boundary_eq_empty_iff I hE
 
-private def boundaryComplex {ι : Type u} [DecidableEq ι]
-    (K : AbstractSimplicialComplex ι) :
-    AbstractSimplicialComplex
-      {v : ι // ({v} : Finset ι) ∈ manifoldBoundary K.toPreAbstractSimplicialComplex} :=
-  PreAbstractSimplicialComplex.toAbstractSimplicialComplex _
-    ((manifoldBoundary K.toPreAbstractSimplicialComplex).restrict
-      {v : ι | ({v} : Finset ι) ∈ manifoldBoundary K.toPreAbstractSimplicialComplex})
-    fun v => by
-      rw [mem_faces, mem_restrict_iff_map, Finset.map_singleton]
-      exact v.property
-
-private theorem map_boundaryComplex {ι : Type u} [DecidableEq ι]
-    (K : AbstractSimplicialComplex ι) :
-    (boundaryComplex K).toPreAbstractSimplicialComplex.map
-        (Function.Embedding.subtype (· ∈
-          {v : ι | ({v} : Finset ι) ∈ manifoldBoundary K.toPreAbstractSimplicialComplex})) =
-      manifoldBoundary K.toPreAbstractSimplicialComplex := by
-  refine PreAbstractSimplicialComplex.ext ?_
-  ext σ
-  change σ ∈ ((manifoldBoundary K.toPreAbstractSimplicialComplex).restrict _).map
-      (Subtype.val : {v : ι |
-        ({v} : Finset ι) ∈ manifoldBoundary K.toPreAbstractSimplicialComplex} → ι) ↔
-    σ ∈ manifoldBoundary K.toPreAbstractSimplicialComplex
-  rw [PreAbstractSimplicialComplex.mem_map_restrict_iff]
-  refine ⟨fun h => h.1, fun hσ => ⟨hσ, fun v hv => ?_⟩⟩
-  exact (manifoldBoundary K.toPreAbstractSimplicialComplex).isRelLowerSet_faces.mem_of_le
-    hσ (Finset.singleton_subset_iff.mpr hv) (Finset.singleton_nonempty v)
-
 /-- The boundary `I.boundary M` inherits an `n`-dimensional PL structure by restricting the
-combinatorial boundary of `s.K` to its boundary vertices. -/
-def boundary (hE : finrank ℝ E = n + 1) : PLStructure (I.boundary M) n := by
-  let B := manifoldBoundary s.K.toPreAbstractSimplicialComplex
-  let V : Set s.ι := {v : s.ι | ({v} : Finset s.ι) ∈ B}
-  let KB := boundaryComplex s.K
-  have hKBmap : KB.toPreAbstractSimplicialComplex.map Subtype.val = B :=
-    map_boundaryComplex s.K
-  have hKBman : IsCombinatorialManifold KB.toPreAbstractSimplicialComplex n := by
-    rw [← isCombinatorialManifold_map_iff Subtype.val_injective, hKBmap]
+combinatorial boundary of `s.K` to its boundary vertices. The body is exposed so that the
+vertex type and triangulating complex of `s.boundary I hE` are given by `restrictToVertices`
+definitionally. -/
+@[expose] def boundary (hE : finrank ℝ E = n + 1) : PLStructure (I.boundary M) n where
+  ι := {v : s.ι // ({v} : Finset s.ι) ∈ manifoldBoundary s.K.toPreAbstractSimplicialComplex}
+  K := (manifoldBoundary s.K.toPreAbstractSimplicialComplex).restrictToVertices
+  isCombinatorialManifold := by
+    rw [isCombinatorialManifold_congr_decidableEq (Classical.decEq _) Subtype.instDecidableEq,
+      ← isCombinatorialManifold_map_iff Subtype.val_injective, map_val_restrictToVertices]
     exact s.isCombinatorialManifold.isCombinatorialManifold_manifoldBoundary
-  let r : Realization KB ≃ₜ {x : Realization s.K | x.val.support ∈ B} :=
-    KB.toPreAbstractSimplicialComplex.realizationRelabelingHomeomorph
-      (Function.Embedding.subtype (· ∈ V)) (map_boundaryComplex s.K) rfl
-      (manifoldBoundary_le (K := s.K.toPreAbstractSimplicialComplex))
+  e :=
+    let := s.isCombinatorialManifold.realizationChartedSpace
+    (restrictToVerticesRealizationHomeomorph
+      (K := s.K) (manifoldBoundary_le (K := s.K.toPreAbstractSimplicialComplex))).trans
+      ((Homeomorph.setCongr s.isCombinatorialManifold.boundary_realizationChartedSpace.symm).trans
+        (s.e.boundaryHomeomorph (𝓡∂ (n + 1)) I (by simp [hE])))
+
+/-- The vertex type of `s.boundary I hE` consists of the boundary vertices of `s.K`. -/
+@[simp]
+theorem boundary_ι (hE : finrank ℝ E = n + 1) :
+    (s.boundary I hE).ι =
+      {v : s.ι // ({v} : Finset s.ι) ∈ manifoldBoundary s.K.toPreAbstractSimplicialComplex} :=
+  (rfl)
+
+/-- The triangulating complex of `s.boundary I hE` is the vertex restriction of the combinatorial
+boundary of `s.K`. -/
+@[simp]
+theorem boundary_K (hE : finrank ℝ E = n + 1) :
+    (s.boundary I hE).K =
+      (manifoldBoundary s.K.toPreAbstractSimplicialComplex).restrictToVertices :=
+  (rfl)
+
+/-- On underlying points of `M`, the triangulation homeomorphism of `s.boundary I hE` pushes
+barycentric coordinates forward along `Subtype.val` and applies `s.e`. -/
+@[simp]
+theorem coe_boundary_e (hE : finrank ℝ E = n + 1)
+    (y : Realization (s.boundary I hE).K) :
+    ((s.boundary I hE).e y : M) =
+      s.e ⟨Finsupp.mapDomain Subtype.val y.val, by
+        rw [← restrictToVerticesRealizationHomeomorph_val
+          (manifoldBoundary_le (K := s.K.toPreAbstractSimplicialComplex)) y]
+        exact (restrictToVerticesRealizationHomeomorph (K := s.K)
+          (manifoldBoundary_le (K := s.K.toPreAbstractSimplicialComplex)) y).val.property⟩ :=
   let := s.isCombinatorialManifold.realizationChartedSpace
-  have hcod : {x : Realization s.K | x.val.support ∈ B} =
-      (𝓡∂ (n + 1)).boundary (Realization s.K) :=
-    s.isCombinatorialManifold.boundary_realizationChartedSpace.symm
-  have hdim : finrank ℝ (EuclideanSpace ℝ (Fin (n + 1))) = finrank ℝ E := by simp [hE]
-  let eB : Realization KB ≃ₜ I.boundary M :=
-    r.trans ((Homeomorph.setCongr hcod).trans (s.e.boundaryHomeomorph (𝓡∂ (n + 1)) I hdim))
-  exact ⟨{v : s.ι // ({v} : Finset s.ι) ∈ B}, KB,
-    by rw [Subsingleton.elim (Classical.decEq _) Subtype.instDecidableEq]; exact hKBman, eB⟩
+  (Homeomorph.coe_boundaryHomeomorph_apply _ _ _ _ _).trans <|
+    congrArg s.e <| Subtype.ext <| restrictToVerticesRealizationHomeomorph_val
+      (manifoldBoundary_le (K := s.K.toPreAbstractSimplicialComplex)) y
 
 /-- The induced PL structure on the boundary `I.boundary M` is itself boundaryless: its
 combinatorial boundary is `⊥`. -/
 theorem manifoldBoundary_boundary_eq_bot (hE : finrank ℝ E = n + 1) :
     manifoldBoundary (s.boundary I hE).K.toPreAbstractSimplicialComplex = ⊥ := by
-  dsimp only [boundary]
-  have hbd :
-      (manifoldBoundary (boundaryComplex s.K).toPreAbstractSimplicialComplex).map
-        (Subtype.val : {v : s.ι //
-          ({v} : Finset s.ι) ∈ manifoldBoundary s.K.toPreAbstractSimplicialComplex} → s.ι) =
-        ⊥ := by
-    rw [map_manifoldBoundary _ Subtype.val_injective]
-    have hmap : (boundaryComplex s.K).toPreAbstractSimplicialComplex.map Subtype.val =
-        manifoldBoundary s.K.toPreAbstractSimplicialComplex :=
-      map_boundaryComplex s.K
-    rw [hmap]
+  let B := (manifoldBoundary s.K.toPreAbstractSimplicialComplex).restrictToVertices
+  have hmb :
+      manifoldBoundary (s.boundary I hE).K.toPreAbstractSimplicialComplex =
+        @manifoldBoundary _ Subtype.instDecidableEq B.toPreAbstractSimplicialComplex :=
+    manifoldBoundary_congr_decidableEq
+      (K := B.toPreAbstractSimplicialComplex) (Classical.decEq _) Subtype.instDecidableEq
+  have hbot :
+      @manifoldBoundary _ Subtype.instDecidableEq B.toPreAbstractSimplicialComplex = ⊥ := by
+    apply map_injective Subtype.val_injective
+    dsimp only
+    rw [map_manifoldBoundary _ Subtype.val_injective, map_val_restrictToVertices,
+      PreAbstractSimplicialComplex.map_bot]
     exact s.isCombinatorialManifold.manifoldBoundary_manifoldBoundary
-  refine SetLike.ext fun σ => ⟨fun hσ => ?_, fun hσ => False.elim (notMem_bot hσ)⟩
-  have hdec : (Classical.decEq {v : s.ι //
-      ({v} : Finset s.ι) ∈ manifoldBoundary s.K.toPreAbstractSimplicialComplex}) =
-      Subtype.instDecidableEq :=
-    Subsingleton.elim _ _
-  have hσ' : σ ∈ manifoldBoundary (boundaryComplex s.K).toPreAbstractSimplicialComplex := by
-    change σ ∈ @manifoldBoundary _ (Classical.decEq _) _ at hσ
-    rwa [hdec] at hσ
-  have hmem : σ.image Subtype.val ∈
-      (manifoldBoundary (boundaryComplex s.K).toPreAbstractSimplicialComplex).map
-        (Subtype.val : {v : s.ι //
-          ({v} : Finset s.ι) ∈ manifoldBoundary s.K.toPreAbstractSimplicialComplex} → s.ι) :=
-    mem_map_iff.mpr ⟨σ, hσ', rfl⟩
-  rw [hbd] at hmem
-  exact False.elim (notMem_bot hmem)
+  exact hmb.trans hbot
 
 end ChartedBoundary
 
 section HomeomorphInvariance
-
-private theorem forall_notMem_manifoldBoundary_iff {ι : Type*} [DecidableEq ι]
-    (K : AbstractSimplicialComplex ι) :
-    (∀ x : Realization K, x.val.support ∉ manifoldBoundary K.toPreAbstractSimplicialComplex) ↔
-      manifoldBoundary K.toPreAbstractSimplicialComplex = ⊥ := by
-  refine ⟨fun h => SetLike.ext fun σ =>
-      ⟨fun hσ => ?_, fun hσ => False.elim (notMem_bot hσ)⟩,
-    fun hbot x hx => ?_⟩
-  · obtain ⟨x, hx⟩ := AbstractSimplicialComplex.exists_support_eq (manifoldBoundary_le hσ)
-    exact False.elim (h x (by simpa [hx] using hσ))
-  · rw [hbot] at hx
-    exact notMem_bot hx
 
 variable {M : Type u} {N : Type v} [TopologicalSpace M] [TopologicalSpace N] {n : ℕ}
   (s : PLStructure M (n + 1)) (t : PLStructure N (n + 1))
@@ -265,7 +234,8 @@ theorem manifoldBoundary_eq_bot_iff_of_homeomorph (f : M ≃ₜ N) :
   rw [s.isCombinatorialManifold.boundary_realizationChartedSpace,
     t.isCombinatorialManifold.boundary_realizationChartedSpace,
     eq_empty_iff_forall_notMem, eq_empty_iff_forall_notMem] at hbe
-  simp only [Set.mem_ofPred_eq, forall_notMem_manifoldBoundary_iff] at hbe
+  simp only [Set.mem_ofPred_eq,
+    AbstractSimplicialComplex.forall_support_notMem_iff_eq_bot manifoldBoundary_le] at hbe
   exact hbe
 
 end HomeomorphInvariance
