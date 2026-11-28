@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Ideal.Int
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import Mathlib.RingTheory.DedekindDomain.Factorization
+import TauCeti.FieldTheory.Finite.Card
 import TauCeti.NumberTheory.RamificationInertia.Tower
 import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
@@ -40,6 +41,8 @@ objects that description involves and records their elementary theory.
   state the complementary form.
 * `TauCeti.rationalPrimeBelow_pow_le_absNorm`: the norm of `𝔭` is at least the rational prime
   below it raised to any power at most the residue degree.
+* `IsDedekindDomain.HeightOneSpectrum.four_le_absNorm`: if `𝓞 K` contains roots of `X² + X + 1`
+  and of `X² + 1`, every height-one prime has absolute norm at least `4`.
 * `TauCeti.mem_higherDegreePrimes_of_one_lt_inertiaDeg`: residue degree above one over an
   intermediate number field forces residue degree above one over `ℚ`.
 * `IsDedekindDomain.HeightOneSpectrum.absNorm_eq_absNorm_under_of_inertiaDeg_eq_one`: a prime of
@@ -158,6 +161,24 @@ theorem rationalPrimeBelow_pow_le_absNorm {𝔭 : HeightOneSpectrum (𝓞 K)} {n
   -- the norm is `p ^ f`, and `p` is at least `2`, so the power is monotone in the exponent
   absNorm_eq_rationalPrimeBelow_pow 𝔭 ▸
     Nat.pow_le_pow_right (prime_rationalPrimeBelow 𝔭).one_lt.le hn
+
+/-- **Residue fields of order at least four.** If `𝓞 K` contains a root `ω` of `X² + X + 1` and a
+root `i` of `X² + 1`, then every height-one prime of `𝓞 K` has absolute norm at least `4`: its
+residue field contains their reductions, so it is neither `𝔽₂`, where `X² + X + 1` has no root,
+nor `𝔽₃`, where `X² + 1` has none. -/
+theorem _root_.IsDedekindDomain.HeightOneSpectrum.four_le_absNorm (𝔭 : HeightOneSpectrum (𝓞 K))
+    {ω i : 𝓞 K} (hω : ω ^ 2 + ω + 1 = 0) (hi : i ^ 2 + 1 = 0) :
+    4 ≤ Ideal.absNorm 𝔭.asIdeal := by
+  let := Ideal.Quotient.field 𝔭.asIdeal
+  rw [Ideal.absNorm_apply, Submodule.cardQuot_apply]
+  have h1 : 1 < Nat.card (𝓞 K ⧸ 𝔭.asIdeal) := Finite.one_lt_card
+  have h2 := TauCeti.FiniteField.natCard_ne_two_of_sq_add_self_add_one_eq_zero
+    (ω := Ideal.Quotient.mk 𝔭.asIdeal ω) (by
+      simpa using congrArg (Ideal.Quotient.mk 𝔭.asIdeal) hω)
+  have h3 := TauCeti.FiniteField.natCard_ne_three_of_sq_add_one_eq_zero
+    (i := Ideal.Quotient.mk 𝔭.asIdeal i) (by
+      simpa using congrArg (Ideal.Quotient.mk 𝔭.asIdeal) hi)
+  omega
 
 /-- A height-one prime of `𝓞 E` whose residue degree over a number field `K` below `E` exceeds one
 has residue degree above one over `ℚ`, since residue degrees multiply along `ℤ → 𝓞 K → 𝓞 E`. -/

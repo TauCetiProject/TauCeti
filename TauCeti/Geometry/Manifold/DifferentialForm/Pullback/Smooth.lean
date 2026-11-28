@@ -31,7 +31,9 @@ For smooth maps, `SmoothForm.mpullback` bundles this operation as a linear map o
 Its underlying rough form is the existing `TauCeti.mpullback`. Restriction to an open subset does
 not change the values of a smooth form (`TauCeti.SmoothForm.coe_mpullback_subtype_val_apply`), so
 a map pulls one form back to another near a set once its restriction to an open subset does
-(`TauCeti.SmoothForm.eventually_mpullback_eq_of_subtype_val_comp_eq`).
+(`TauCeti.SmoothForm.eventually_mpullback_eq_of_subtype_val_comp_eq`). Pulling back along a map
+restricted to an open subset is, at each point of the subset, pulling back along the map itself
+(`TauCeti.SmoothForm.coe_mpullback_comp_subtypeVal_apply`).
 Pullback commutes with wedge products and wedge powers
 (`TauCeti.SmoothForm.mpullback_wedge`, `TauCeti.SmoothForm.mpullback_wedgePow`); for wedge powers
 this holds pointwise along any map (`TauCeti.mpullback_wedgePow_apply`).
@@ -507,6 +509,18 @@ theorem coe_mpullback_subtype_val_apply {U : TopologicalSpace.Opens M} (σ : Smo
     (x : U) : (mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ).val x = σ.val x :=
   TauCeti.mpullback_subtype_val_apply σ.val x
 
+/-- **Restricted smooth pullback laws.** Let `f : U → V` be the restriction of a smooth map
+`A : M → M'` to open subsets, that is `Subtype.val ∘ f = A ∘ Subtype.val`. If `A` pulls the smooth
+form `φ` back to `ψ`, then `f` pulls the restriction of `φ` to `V` back to the restriction of `ψ`
+to `U`. -/
+theorem mpullback_mpullback_subtype_val_of_comp_eq {U : TopologicalSpace.Opens M}
+    {V : TopologicalSpace.Opens M'} {f : U → V} {A : M → M'} {hA : ContMDiff I I' ∞ A}
+    (hcomp : Subtype.val ∘ f = A ∘ Subtype.val) {φ : SmoothForm I' M' F k}
+    {ψ : SmoothForm I M F k} (h : mpullback A hA φ = ψ) :
+    TauCeti.mpullback (F := F) I I' f (TauCeti.mpullback I' I' (Subtype.val : V → M') φ.val) =
+      TauCeti.mpullback (F := F) I I (Subtype.val : U → M) ψ.val := by
+  rw [TauCeti.mpullback_mpullback_subtype_val_of_comp_eq hcomp, ← h, coe_mpullback]
+
 /-- Smooth vector-valued zero-forms on an open partition glue to a global smooth zero-form whose
 restriction to each piece is the prescribed form. -/
 theorem exists_zeroForm_mpullback_eq_of_partition {U : M → TopologicalSpace.Opens M}
@@ -571,6 +585,16 @@ theorem mpullback_comp_subtypeVal_apply {U : TopologicalSpace.Opens M} {f : M �
     (mpullback _ hf φ).val x v = φ.val (f x) (fun i ↦ mfderiv I I' f x (v i)) := by
   rw [mpullback_apply]
   exact congrArg (φ.val (f x)) (funext fun i ↦ Manifold.mfderiv_comp_subtype_val_apply (v i))
+
+/-- The pullback of a smooth form along a map `f` restricted to an open subset `U` is, at `x ∈ U`,
+the rough pullback of the form along `f` itself at `x`. -/
+theorem coe_mpullback_comp_subtypeVal_apply {U : TopologicalSpace.Opens M} {f : M → M'}
+    (hf : ContMDiff I I' ∞ (f ∘ (Subtype.val : U → M))) (φ : SmoothForm I' M' F k) (x : U) :
+    (mpullback _ hf φ).val x = TauCeti.mpullback (F := F) I I' f φ.val x := by
+  ext v
+  rw [mpullback_comp_subtypeVal_apply]
+  -- `v` reads as a family of tangent vectors of `M` at `x`: the two tangent spaces are the same.
+  exact (TauCeti.mpullback_apply (I := I) (I' := I') (F := F) f φ.val (x : M) v).symm
 
 /-- Pullback along a smooth map with a smooth right inverse is injective. -/
 theorem mpullback_injective_of_rightInverse {f : M → M'} {g : M' → M}

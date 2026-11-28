@@ -25,7 +25,8 @@ records the derivatives of a section cut off by a function of `s`.
 
 ## Main results
 
-* `TauCeti.Floer.sobolevDensity_nonneg`: the density is nonnegative.
+* `TauCeti.Floer.sobolevDensity_nonneg`, `TauCeti.Floer.norm_sq_le_sobolevDensity`: the density
+  is nonnegative and bounds `‖ξ‖²`.
 * `TauCeti.Floer.continuous_sobolevDensity`, `TauCeti.Floer.continuousAt_sobolevDensity`: the
   density of a `C¹` map is continuous, and that of a map `C¹` at a point is continuous there.
 * `TauCeti.Floer.sobolevDensity_congr_of_eventuallyEq`: the density at `z` depends only on the
@@ -42,7 +43,7 @@ records the derivatives of a section cut off by a function of `s`.
   conformal weight `ρ` is at most `B`, the weighted energy `∫ (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)` is at
   most `B + 1` times the `W^{1,2}` energy.
 * `TauCeti.Floer.setIntegral_norm_sq_le_setIntegral_sobolevDensity`: the density bounds `‖ξ‖²`, so
-  its integral over a rectangle bounds the `L²` norm.
+  on a compact set where a `C¹` map `g` equals `η`, the energy of `g` bounds the `L²` norm of `η`.
 * `TauCeti.Floer.setIntegral_sobolevDensity_le_of_eventuallyEq_one`: if `β = 1` near every point
   of `s` and `s ⊆ t` with `t` compact, the energy of `ξ` on `s` is at most that of `β ξ` on `t`.
 -/
@@ -69,6 +70,13 @@ theorem sobolevDensity_apply (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
 theorem sobolevDensity_nonneg (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : 0 ≤ sobolevDensity ξ z := by
   rw [sobolevDensity_apply]
   positivity
+
+/-- The energy density bounds the squared norm: `‖ξ z‖² ≤ sobolevDensity ξ z`. -/
+theorem norm_sq_le_sobolevDensity (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    ‖ξ z‖ ^ 2 ≤ sobolevDensity ξ z := by
+  rw [sobolevDensity_apply]
+  nlinarith [sq_nonneg ‖fderiv ℝ ξ z stdComplexLineReal‖,
+    sq_nonneg ‖fderiv ℝ ξ z stdComplexLineImag‖]
 
 /-- The zero map has zero energy density. -/
 @[simp]
@@ -141,17 +149,17 @@ theorem sobolevDensity_add_le {ξ₁ ξ₂ : ℝ × ℝ → V} {z : ℝ × ℝ} 
   linarith [hsq (fderiv ℝ ξ₁ z stdComplexLineReal) (fderiv ℝ ξ₂ z stdComplexLineReal),
     hsq (fderiv ℝ ξ₁ z stdComplexLineImag) (fderiv ℝ ξ₂ z stdComplexLineImag), hsq (ξ₁ z) (ξ₂ z)]
 
-/-- The `L²` norm of a `C¹` map over a rectangle is at most its `W^{1,2}` energy. -/
-theorem setIntegral_norm_sq_le_setIntegral_sobolevDensity {ξ : ℝ × ℝ → V}
-    (hξ : ContDiff ℝ 1 ξ) (a b : ℝ) :
-    ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2 ≤
-      ∫ z in Icc a b ×ˢ Icc (0 : ℝ) 1, sobolevDensity ξ z :=
-  setIntegral_mono_on (Continuous.integrableOn_Icc_prod_Icc (by have := hξ.continuous; fun_prop))
-    (continuous_sobolevDensity hξ).integrableOn_Icc_prod_Icc
-    (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ by
-      rw [sobolevDensity_apply]
-      have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineReal‖
-      have := sq_nonneg ‖fderiv ℝ ξ z stdComplexLineImag‖
+/-- If a `C¹` map `g` agrees with `η` on a compact set `s`, the `L²` norm of `η` on `s` is at most
+the `W^{1,2}` energy of `g` there. -/
+theorem setIntegral_norm_sq_le_setIntegral_sobolevDensity {η g : ℝ × ℝ → V} {s : Set (ℝ × ℝ)}
+    (hs : IsCompact s) (hηi : IntegrableOn (fun z ↦ ‖η z‖ ^ 2) s) (hg : ContDiff ℝ 1 g)
+    (hgη : EqOn g η s) :
+    ∫ z in s, ‖η z‖ ^ 2 ≤ ∫ z in s, sobolevDensity g z :=
+  setIntegral_mono_on hηi ((continuous_sobolevDensity hg).continuousOn.integrableOn_compact hs)
+    hs.measurableSet fun z hz ↦ by
+      rw [sobolevDensity_apply, ← hgη hz]
+      have := sq_nonneg ‖fderiv ℝ g z stdComplexLineReal‖
+      have := sq_nonneg ‖fderiv ℝ g z stdComplexLineImag‖
       linarith
 
 /-- **Comparing with a cut-off map.** If `β = 1` near every point of a measurable set `s`, and `s`

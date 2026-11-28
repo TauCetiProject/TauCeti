@@ -65,7 +65,8 @@ orthogonal reparametrizations of attached cells. Likewise a linear isometry of a
 `EuclideanSpace ℝ ι` for a finite index type `ι` of cardinality `n`.
 
 The disk is also homeomorphic to the closed unit ball of the sup norm on `Fin n → ℝ`, with its
-boundary going to the unit sphere (`TauCeti.diskHomeomorphClosedBall`); this is how the disk is
+boundary going to the unit sphere (`TauCeti.diskHomeomorphClosedBall`), and its interior
+`TauCeti.diskInterior` to the open unit ball; this is how the disk is
 compared with the domains of characteristic maps of CW complexes and with the cube. In dimension one
 it is the identity on coordinates (`TauCeti.coe_diskHomeomorphClosedBall_one_apply`). Composing it
 with the affine homeomorphism `TauCeti.cubeHomeomorphClosedBall` of the cube onto the same ball
@@ -280,6 +281,14 @@ lemma coe_diskCenter_down (n : ℕ) :
         EuclideanSpace ℝ (Fin n)) = 0 :=
   (rfl)
 
+/-- The centre of the disk is sent to the centre `0` of the closed unit ball of the sup norm. -/
+lemma coe_diskHomeomorphClosedBall_diskCenter (n : ℕ) :
+    (diskHomeomorphClosedBall n (diskCenter.{u} n) : Fin n → ℝ) = 0 := by
+  rw [coe_diskHomeomorphClosedBall_apply]
+  -- The centre of `TopCat.disk n` is `0` only after unfolding its `ULift`, so `erw` is used.
+  erw [coe_diskCenter_down, ContinuousLinearEquiv.unitBallHomeomorph_apply, map_zero,
+    gaugeRescale_zero]
+
 /-- The centre of the disk does not lie on its boundary sphere. -/
 lemma diskCenter_notMem_range_diskBoundaryInclusion (n : ℕ) :
     diskCenter.{u} n ∉ Set.range (TopCat.diskBoundaryInclusion.{u} n) := by
@@ -333,6 +342,28 @@ lemma diskHomeomorphClosedBall_mem_ball_iff {n : ℕ} (z : TopCat.disk.{u} n) :
     ← norm_diskHomeomorphClosedBall_eq_one_iff]
   exact (lt_iff_le_and_ne).trans
     (and_iff_right (mem_closedBall_zero_iff.1 (diskHomeomorphClosedBall n z).property))
+
+/-- The interior of the disk `Dⁿ`, in sup-norm coordinates: the points which
+`TauCeti.diskHomeomorphClosedBall` sends into the open unit ball, that is the points off the
+boundary sphere (`TauCeti.diskHomeomorphClosedBall_mem_ball_iff`). -/
+def diskInterior (n : ℕ) : Set (TopCat.disk.{u} n) :=
+  {z | ‖(diskHomeomorphClosedBall n z : Fin n → ℝ)‖ < 1}
+
+/-- A point lies in the interior of the disk exactly when its sup-norm coordinates have norm less
+than `1`. -/
+lemma mem_diskInterior_iff {n : ℕ} {z : TopCat.disk.{u} n} :
+    z ∈ diskInterior n ↔ ‖(diskHomeomorphClosedBall n z : Fin n → ℝ)‖ < 1 :=
+  Iff.rfl
+
+/-- The interior of the disk is open. -/
+lemma isOpen_diskInterior {n : ℕ} : IsOpen (diskInterior.{u} n) :=
+  isOpen_lt (continuous_norm.comp (continuous_subtypeVal.comp
+    (diskHomeomorphClosedBall n).continuous)) continuous_const
+
+/-- The centre of the disk lies in its interior. -/
+lemma diskCenter_mem_diskInterior (n : ℕ) : diskCenter.{u} n ∈ diskInterior.{u} n := by
+  rw [mem_diskInterior_iff, coe_diskHomeomorphClosedBall_diskCenter, norm_zero]
+  exact zero_lt_one
 
 /-- The dimension of the Euclidean space `EuclideanSpace ℝ (ULift (Fin n))`. -/
 lemma finrank_euclideanSpace_ulift_fin (n : ℕ) :
@@ -515,6 +546,16 @@ lemma eq_sphereMinus_or_eq_spherePlus (p : TopCat.diskBoundary.{u} 1) :
   rcases sq_eq_one_iff.1 (sq_diskBoundary_one_eq_one p) with h | h
   · exact Or.inr (diskBoundary_one_ext (h.trans spherePlus_down_apply_zero.{u}.symm))
   · exact Or.inl (diskBoundary_one_ext (h.trans sphereMinus_down_apply_zero.{u}.symm))
+
+/-- A point `s` of `S⁰` whose coordinate has the sign of the coordinate of a point `w ≠ 0` of the
+`1`-disk is the direction `‖w‖⁻¹ • w` of `w`. -/
+lemma diskBoundary_one_eq_inv_norm_smul {w : TopCat.disk.{u} 1} {s : TopCat.diskBoundary.{u} 1}
+    (hw : w.down.val 0 ≠ 0) (hs : s.down.val 0 * |w.down.val 0| = w.down.val 0) :
+    s.down.val = ‖w.down.val‖⁻¹ • w.down.val := by
+  refine PiLp.ext fun j ↦ ?_
+  rw [Subsingleton.elim j 0, PiLp.smul_apply, smul_eq_mul, EuclideanSpace.norm_fin_one,
+    eq_inv_mul_iff_mul_eq₀ (abs_ne_zero.2 hw), mul_comm]
+  exact hs
 
 /-- The two points `-e₀` and `e₀` of `S⁰` are distinct. -/
 lemma sphereMinus_ne_spherePlus : (sphereMinus : TopCat.diskBoundary.{u} 1) ≠ spherePlus := by

@@ -18,7 +18,9 @@ These examples test the almost setup `(R°, R°°)` on the perfectoid field `ℂ
   topologically nilpotent elements of `𝓞_{ℂ_p}`;
 * the residue module `𝓞_{ℂ_p} ⧸ 𝓞_{ℂ_p}°°` is almost zero, and so every root `ϖ ^ (1 / p ^ n)`
   of a pseudouniformiser with compatible roots, and every pseudouniformiser, acts on it by zero;
-* `𝓞_{ℂ_p}` itself is not almost zero, since a pseudouniformiser does not kill `1`.
+* `𝓞_{ℂ_p}` itself is not almost zero, since a pseudouniformiser does not kill `1`;
+* for any ring of integral elements `P.plus` of `ℂ_p`, the almost setup `(P.plus, ℂ_p°°)` exists,
+  `ℂ_p° ⧸ P.plus` is almost zero, and the inclusion `P.plus →ₗ ℂ_p°` is an almost isomorphism.
 
 ## References
 
@@ -53,3 +55,23 @@ example : ¬ (almostSetup p ℂ_[p]).IsAlmostZero (powerBoundedSubring ℂ_[p]) 
   have h2 := congrArg Subtype.val h1
   rw [PseudoUniformizerRoots.coe_rootPB, ZeroMemClass.coe_zero] at h2
   exact (ϖ.isPseudoUniformizer_root 0).isUnit.ne_zero h2
+
+-- For any ring of integral elements `P.plus` of `ℂ_p`, the almost setup `(P.plus, ℂ_p°°)` exists,
+-- the quotient `ℂ_p° ⧸ P.plus` is almost zero, and the inclusion `P.plus →ₗ ℂ_p°` is an almost
+-- isomorphism.
+example (P : Pair ℂ_[p]) :
+    letI : Algebra P.plus (powerBoundedSubring ℂ_[p]) :=
+      (Subring.inclusion P.isRingOfIntegralElements.le_powerBoundedSubring).toAlgebra
+    letI : IsScalarTower P.plus (powerBoundedSubring ℂ_[p]) ℂ_[p] :=
+      IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+    (almostSetupPlus p ℂ_[p] P.isRingOfIntegralElements).IsAlmostZero
+        (powerBoundedSubring ℂ_[p] ⧸
+          LinearMap.range (Algebra.linearMap P.plus (powerBoundedSubring ℂ_[p]))) ∧
+      (almostSetupPlus p ℂ_[p] P.isRingOfIntegralElements).IsAlmostIso
+        (Algebra.linearMap P.plus (powerBoundedSubring ℂ_[p])) := by
+  let : Algebra P.plus (powerBoundedSubring ℂ_[p]) :=
+    (Subring.inclusion P.isRingOfIntegralElements.le_powerBoundedSubring).toAlgebra
+  have : IsScalarTower P.plus (powerBoundedSubring ℂ_[p]) ℂ_[p] :=
+    IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+  exact ⟨almostSetupPlus_isAlmostZero_powerBounded_quotient P.isRingOfIntegralElements,
+    almostSetupPlus_isAlmostIso_algebraLinearMap P.isRingOfIntegralElements⟩

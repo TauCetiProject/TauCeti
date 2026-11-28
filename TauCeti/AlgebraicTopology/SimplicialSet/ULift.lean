@@ -90,6 +90,13 @@ lemma uliftFunctor_preimage_app_apply
     (uliftFunctor.{v}.preimage f).app n x = (f.app n (ULift.up x)).down :=
   congrArg ULift.down congr($(uliftFunctor.{v}.map_preimage f).app n (ULift.up x))
 
+/-- On simplices, `SSet.uliftFunctor.map` lowers to the action of the underlying map. -/
+@[simp]
+lemma uliftFunctor_map_app_down (f : X ⟶ Y) {m : SimplexCategoryᵒᵖ}
+    (s : (uliftFunctor.{v, u}.obj X).obj m) :
+    ((uliftFunctor.{v, u}.map f).app m s).down = f.app m s.down :=
+  rfl
+
 /-- The universe lift of a simplicial set is nonempty exactly when the simplicial set is. -/
 @[simp]
 lemma nonempty_uliftFunctor_obj_iff (X : SSet.{u}) :

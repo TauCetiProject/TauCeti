@@ -42,6 +42,8 @@ Hilbert's Theorem 90, and then `x / bⁿ` is fixed by complex conjugation.
   automorphism that is the conjugation of every complex embedding is CM, without assuming that
   it is Galois over `ℚ`.
 * `NumberField.IsCMField.exists_complexConj_div_eq_iff`: Hilbert's Theorem 90 for `K / K⁺`.
+* `NumberField.IsCMField.star_eq_complexConj`: the star structure of a CM field is its complex
+  conjugation, and `NumberField.IsCMField.complexConj_trans_complexConj`: it is an involution.
 * `NumberField.IsCMField.complexConj_algebraMap`: complex conjugations of CM fields are compatible
   along field extensions.
 * `NumberField.IsCMField.ringOfIntegersComplexConj_apply_apply`: complex conjugation of the ring of
@@ -56,6 +58,8 @@ Hilbert's Theorem 90, and then `x / bⁿ` is fixed by complex conjugation.
   square root `i` of `-1` to `-i`.
 * `NumberField.IsCMField.exists_mem_maximalRealSubfield_div_eq_pow_iff`: a unit `x` of a CM field
   is a totally real unit times an `n`-th power if and only if `x / conj x` is an `n`-th power.
+* `NumberField.IsCMField.exists_ringOfIntegersComplexConj_ne`: complex conjugation moves some
+  integer of a CM number field.
 
 ## References
 
@@ -100,6 +104,19 @@ namespace NumberField.IsCMField
 variable (K : Type*) [Field K] [CharZero K] [IsCMField K] [Algebra.IsIntegral ℚ K]
 
 local notation3 "K⁺" => maximalRealSubfield K
+
+variable {K} in
+/-- The star structure of a CM field (`NumberField.IsCMField.starRing`) is its complex
+conjugation. -/
+@[simp]
+theorem star_eq_complexConj (x : K) : star x = complexConj K x :=
+  (rfl)
+
+/-- Complex conjugation of a CM field, as a ring automorphism, is an involution. -/
+@[simp]
+theorem complexConj_trans_complexConj :
+    (complexConj K).toRingEquiv.trans (complexConj K).toRingEquiv = RingEquiv.refl K :=
+  RingEquiv.ext fun x ↦ complexConj_apply_apply K x
 
 /-- **Hilbert's Theorem 90 for a CM field.** A unit `x` of a CM field satisfies
 `x * conj x = 1` if and only if `x = conj y / y` for a unit `y`. -/
@@ -201,5 +218,22 @@ theorem exists_mem_maximalRealSubfield_div_eq_pow_iff {x : Kˣ} {n : ℕ} :
     field_simp
 
 end Pow
+
+end NumberField.IsCMField
+
+namespace NumberField.IsCMField
+
+variable {K : Type*} [Field K] [NumberField K] [IsCMField K]
+
+/-- Complex conjugation acts nontrivially on the ring of integers of a CM number field: some
+integer `y` has `conj y ≠ y`, because `K` is the fraction field of `𝓞 K` and conjugation is not the
+identity of `K`. -/
+theorem exists_ringOfIntegersComplexConj_ne : ∃ y : 𝓞 K, ringOfIntegersComplexConj K y ≠ y := by
+  by_contra! h
+  refine complexConj_ne_one K (AlgEquiv.ext fun x ↦ ?_)
+  obtain ⟨a, b, -, rfl⟩ := IsFractionRing.div_surjective (A := 𝓞 K) x
+  have hc (z : 𝓞 K) : complexConj K (algebraMap (𝓞 K) K z) = algebraMap (𝓞 K) K z := by
+    simpa [← RingOfIntegers.coe_eq_algebraMap] using congrArg ((↑) : 𝓞 K → K) (h z)
+  rw [map_div₀, hc, hc, AlgEquiv.one_apply]
 
 end NumberField.IsCMField
