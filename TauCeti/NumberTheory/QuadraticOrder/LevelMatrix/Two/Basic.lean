@@ -12,11 +12,15 @@ public import Mathlib.Data.ZMod.Basic
 # Quadratic multiplication matrices at level two
 
 The unit group of a quadratic algebra modulo `2` has order `1`, `2` or `3`, in the split,
-ramified and inert cases respectively. These are the orders of the corresponding multiplication
-matrix groups, before quotienting by the image of the integral units. For the Gaussian and
-Eisenstein integer algebras, every residue unit lifts to an actual integral unit. Thus their
-unit images cannot be replaced by the scalar signs, which both reduce to the identity at
-level two.
+ramified and inert cases respectively (`card_periodMatrixGroup_zmod_two`). These are the orders
+of the corresponding multiplication matrix groups, before quotienting by the image of the integral
+units. For the Gaussian and Eisenstein integer algebras, every residue unit lifts to an actual
+integral unit (`units_map_zmod_two_gaussian_surjective`,
+`units_map_zmod_two_eisenstein_surjective`). Thus their unit images cannot be replaced by the
+scalar signs, which both reduce to the identity at level two.
+
+For the reduced global-unit subgroups `unitPeriodMatrixSubgroup a b 2`, see
+`TauCeti.NumberTheory.QuadraticOrder.LevelMatrix.Two.Quotient`.
 
 ## References
 
