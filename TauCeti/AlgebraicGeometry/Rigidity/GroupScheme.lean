@@ -21,7 +21,7 @@ satisfying `A.hom_* 𝒪_A = 𝒪_S` (for instance abelian schemes and elliptic 
 
 1. **Pointed morphisms are homomorphisms**
    (`TauCeti.AlgebraicGeometry.isMonHom_of_one_hom_of_flat`):
-   for any separated, locally of finite type group scheme `B` over `S`, a morphism `f : A ⟶ B` over
+   for any separated group scheme `B` over `S`, a morphism `f : A ⟶ B` over
    `S` sending the identity section of `A` to that of `B` is automatically a homomorphism of monoid
    schemes (`IsMonHom f`). The defect `(x, y) ↦ f(xy) / (f(x) f(y))` vanishes on `A ×_S {1}`, hence
    depends only on `y` by the relative rigidity lemma, and vanishes on `{1} ×_S A`.
@@ -48,7 +48,7 @@ structures over `Spec K`.
 
 * `TauCeti.AlgebraicGeometry.isMonHom_of_one_hom_of_flat`: pointed morphisms out of a proper, flat,
   geometrically integral monoid scheme `A` over `S` with `A.hom_* 𝒪_A = 𝒪_S` into a separated
-  locally finite type group scheme `B` over `S` are homomorphisms.
+  group scheme `B` over `S` are homomorphisms.
 * `TauCeti.AlgebraicGeometry.monObj_eq_of_one_eq_of_flat` and
   `TauCeti.AlgebraicGeometry.grpObj_eq_of_one_eq_of_flat`: uniqueness of monoid and group structures
   with a prescribed identity section over `S`.
@@ -93,13 +93,13 @@ variable {S : Scheme.{u}}
 
 /-- **Pointed morphisms out of proper flat geometrically integral monoid schemes are
 homomorphisms.** Let `A` be a monoid scheme over `S` whose structure morphism is proper, flat, and
-geometrically integral with `A.hom_* 𝒪_A = 𝒪_S`, and let `B` be a separated locally finite type
+geometrically integral with `A.hom_* 𝒪_A = 𝒪_S`, and let `B` be a separated
 group scheme over `S`. Every morphism `f : A ⟶ B` over `S` carrying the identity section of `A` to
 that of `B` is a homomorphism of monoid schemes. -/
 theorem isMonHom_of_one_hom_of_flat {A B : Over S} [mA : MonObj A] [gB : GrpObj B]
     [IsProper A.hom] [Flat A.hom] [GeometricallyIntegral A.hom]
     (hA : ∀ V : S.affineOpens, IsIso (A.hom.app V))
-    [IsSeparated B.hom] [LocallyOfFiniteType B.hom]
+    [IsSeparated B.hom]
     (f : A ⟶ B) (hf : η[A] ≫ f = η[B]) : IsMonHom f := by
   -- The defect `h (x, y) = f (x y) / (f x * f y)` in the group of morphisms `A ×_S A ⟶ B`.
   let h : A ⊗ A ⟶ B := (μ ≫ f) / ((fst _ _ ≫ f) * (snd _ _ ≫ f))
@@ -153,11 +153,11 @@ theorem isCommMonObj_of_isProper_of_flat (G : Over S) [GrpObj G]
 
 /-- Construct a morphism in `CommGrp (Over S)` from a pointed morphism `f : A.X ⟶ B.X` over `S`,
 when `A` is proper, flat, and geometrically integral over `S` with `A.X.hom_* 𝒪_{A.X} = 𝒪_S` and
-`B` is separated and locally of finite type over `S`. -/
+`B` is separated over `S`. -/
 noncomputable def commGrpHomOfOneHom {A B : CommGrp (Over S)}
     [IsProper A.X.hom] [Flat A.X.hom] [GeometricallyIntegral A.X.hom]
     (hA : ∀ V : S.affineOpens, IsIso (A.X.hom.app V))
-    [IsSeparated B.X.hom] [LocallyOfFiniteType B.X.hom]
+    [IsSeparated B.X.hom]
     (f : A.X ⟶ B.X) (hf : η[A.X] ≫ f = η[B.X]) : A ⟶ B :=
   have : IsMonHom f := isMonHom_of_one_hom_of_flat hA f hf
   CommGrp.homMk f
@@ -166,20 +166,20 @@ noncomputable def commGrpHomOfOneHom {A B : CommGrp (Over S)}
 theorem commGrpHomOfOneHom_hom_hom_hom {A B : CommGrp (Over S)}
     [IsProper A.X.hom] [Flat A.X.hom] [GeometricallyIntegral A.X.hom]
     (hA : ∀ V : S.affineOpens, IsIso (A.X.hom.app V))
-    [IsSeparated B.X.hom] [LocallyOfFiniteType B.X.hom]
+    [IsSeparated B.X.hom]
     (f : A.X ⟶ B.X) (hf : η[A.X] ≫ f = η[B.X]) :
     (commGrpHomOfOneHom hA f hf).hom.hom.hom = f :=
   have : IsMonHom f := isMonHom_of_one_hom_of_flat hA f hf
   CommGrp.homMk_hom_hom_hom f
 
 /-- For `A, B : CommGrp (Over S)` with `A` proper, flat, and geometrically integral over `S`
-satisfying `A.X.hom_* 𝒪_{A.X} = 𝒪_S` and `B` separated and locally of finite type over `S`,
+satisfying `A.X.hom_* 𝒪_{A.X} = 𝒪_S` and `B` separated over `S`,
 homomorphisms `A ⟶ B` in `CommGrp (Over S)` are equivalent to identity-preserving morphisms
 `A.X ⟶ B.X` in `Over S`. -/
 noncomputable def commGrpHomEquivPointed (A B : CommGrp (Over S))
     [IsProper A.X.hom] [Flat A.X.hom] [GeometricallyIntegral A.X.hom]
     (hA : ∀ V : S.affineOpens, IsIso (A.X.hom.app V))
-    [IsSeparated B.X.hom] [LocallyOfFiniteType B.X.hom] :
+    [IsSeparated B.X.hom] :
     (A ⟶ B) ≃ {f : A.X ⟶ B.X // η[A.X] ≫ f = η[B.X]} where
   toFun F := ⟨F.hom.hom.hom, IsMonHom.one_hom F.hom.hom.hom⟩
   invFun f := commGrpHomOfOneHom hA f.val f.property
@@ -192,7 +192,7 @@ noncomputable def commGrpHomEquivPointed (A B : CommGrp (Over S))
 theorem coe_commGrpHomEquivPointed_apply {A B : CommGrp (Over S)}
     [IsProper A.X.hom] [Flat A.X.hom] [GeometricallyIntegral A.X.hom]
     (hA : ∀ V : S.affineOpens, IsIso (A.X.hom.app V))
-    [IsSeparated B.X.hom] [LocallyOfFiniteType B.X.hom] (F : A ⟶ B) :
+    [IsSeparated B.X.hom] (F : A ⟶ B) :
     (commGrpHomEquivPointed A B hA F : A.X ⟶ B.X) = F.hom.hom.hom := by
   simp [commGrpHomEquivPointed]
 
@@ -202,7 +202,7 @@ corresponding homomorphism via `commGrpHomOfOneHom`. -/
 theorem commGrpHomEquivPointed_symm_apply {A B : CommGrp (Over S)}
     [IsProper A.X.hom] [Flat A.X.hom] [GeometricallyIntegral A.X.hom]
     (hA : ∀ V : S.affineOpens, IsIso (A.X.hom.app V))
-    [IsSeparated B.X.hom] [LocallyOfFiniteType B.X.hom]
+    [IsSeparated B.X.hom]
     (f : {f : A.X ⟶ B.X // η[A.X] ≫ f = η[B.X]}) :
     (commGrpHomEquivPointed A B hA).symm f = commGrpHomOfOneHom hA f.val f.property := by
   simp [commGrpHomEquivPointed]
@@ -214,10 +214,9 @@ section Field
 variable {K : Type u} [Field K]
 
 /-- A morphism of monoid schemes over a field `K` from a proper geometrically integral source to a
-locally finite type group scheme is a homomorphism if it preserves the identity. -/
+group scheme is a homomorphism if it preserves the identity. -/
 theorem isMonHom_of_one_hom {A B : Over (Spec (.of K))} [MonObj A] [GrpObj B]
     [IsProper A.hom] [GeometricallyIntegral A.hom]
-    [LocallyOfFiniteType B.hom]
     (f : A ⟶ B) (hf : η[A] ≫ f = η[B]) : IsMonHom f :=
   isMonHom_of_one_hom_of_flat
     (fun V ↦ A.hom.isIso_app_of_universallyClosed_of_geometricallyIntegral V) f hf
