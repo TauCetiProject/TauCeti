@@ -174,10 +174,8 @@ theorem ofExteriorSquareBilin_compContinuousLinearMap (f : W →L[ℝ] V)
       ofExteriorSquareBilin (B.comp (exteriorPower.map 2 f.toLinearMap)
         (exteriorPower.map 2 f.toLinearMap)) := by
   refine ext_vec fun u v z w ↦ ?_
-  rw [compContinuousLinearMap_apply_vec, ofExteriorSquareBilin_apply, ofExteriorSquareBilin_apply,
-    LinearMap.BilinForm.comp_apply, exteriorPower.map_apply_ιMulti_two,
-    exteriorPower.map_apply_ιMulti_two]
-  rfl
+  simp only [compContinuousLinearMap_apply_vec, ofExteriorSquareBilin_apply,
+    LinearMap.BilinForm.comp_apply, exteriorPower.map_apply_ιMulti_two, ContinuousLinearMap.coe_coe]
 
 end ContinuousLinearMap
 

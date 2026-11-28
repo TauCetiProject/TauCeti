@@ -42,7 +42,7 @@ LinearMap.BilinMap.metricTrace ((ricci r).compLeft A)`.
 ## Main results
 
 * `TauCeti.FourTensor.inner_curvatureEndomorphism_ιMulti_of_antisymm`,
-  `TauCeti.FourTensor.curvatureEndomorphism_ext_iff_inner_ιMulti_two_of_antisymm`,
+  `TauCeti.FourTensor.curvatureEndomorphism_eq_iff_inner_ιMulti_two_of_antisymm`,
   `TauCeti.FourTensor.isBivectorSymmetric_ofBivectorEnd_iff`,
   `TauCeti.FourTensor.curvatureEndomorphism_ofBivectorEnd`,
   `TauCeti.FourTensor.coe_bivectorSymmetricEquivSelfAdjoint`,
@@ -149,7 +149,7 @@ theorem IsAlgebraicCurvature.inner_curvatureEndomorphism_ιMulti {r : FourTensor
 
 /-- For a pair-antisymmetric four-tensor `r`, `curvatureEndomorphism r` is uniquely determined by
 its inner products on pure wedges. -/
-theorem curvatureEndomorphism_ext_iff_inner_ιMulti_two_of_antisymm {r : FourTensor V}
+theorem curvatureEndomorphism_eq_iff_inner_ιMulti_two_of_antisymm {r : FourTensor V}
     (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
     (h₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z])
     (T : Module.End ℝ (⋀[ℝ]^2 V)) :
@@ -184,7 +184,7 @@ theorem isBivectorSymmetric_ofBivectorEnd_iff {T : Module.End ℝ (⋀[ℝ]^2 V)
 @[simp]
 theorem curvatureEndomorphism_ofBivectorEnd (T : Module.End ℝ (⋀[ℝ]^2 V)) :
     curvatureEndomorphism (ofBivectorEnd T) = T :=
-  (curvatureEndomorphism_ext_iff_inner_ιMulti_two_of_antisymm (r := ofBivectorEnd T)
+  (curvatureEndomorphism_eq_iff_inner_ιMulti_two_of_antisymm (r := ofBivectorEnd T)
     (ofExteriorSquareBilin_antisymm_first (bilinFormToEnd.symm T))
     (ofExteriorSquareBilin_antisymm_last (bilinFormToEnd.symm T)) T).2 fun u v z w ↦
       (ofBivectorEnd_apply T u v z w).symm

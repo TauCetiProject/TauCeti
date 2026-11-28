@@ -531,12 +531,6 @@ theorem isSymm_schouten_iff (hdim : Module.finrank ℝ V ≠ 2) {r : FourTensor 
     real_inner_comm u v] at heq
   linarith
 
-/-- The Schouten form of a four-tensor symmetric under pair interchange is symmetric. -/
-theorem isSymm_schouten_of_swap_pairs {r : FourTensor V}
-    (hswap : ∀ u v z w, r ![u, v, z, w] = r ![z, w, u, v]) :
-    (schouten r).IsSymm :=
-  isSymm_schouten (isSymm_ricci_of_swap_pairs hswap)
-
 /-- For a bivector-symmetric four-tensor `r`, `schouten r` is symmetric. -/
 theorem IsBivectorSymmetric.isSymm_schouten {r : FourTensor V} (hr : IsBivectorSymmetric r) :
     (schouten r).IsSymm := FourTensor.isSymm_schouten hr.isSymm_ricci
@@ -777,6 +771,23 @@ theorem IsAlgebraicCurvature.trace_curvatureEndomorphism_weyl_comp_tracelessRicc
 
 /-! ### Low dimensions and orthogonal equivariance -/
 
+private theorem weyl_eq_zero_of_finrank_eq_three_of_antisymm {r : FourTensor V}
+    (hdim : Module.finrank ℝ V = 3)
+    (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
+    (h₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) :
+    weyl r = 0 := by
+  let b := stdOrthonormalBasis ℝ V
+  refine toLinearMap₄_injective <| by
+    rw [map_zero]
+    refine LinearMap.eq_zero_of_sum_basis_eq_zero_of_card_eq_three
+      ((two_ne_zero (α := ℝ)).isUnit.isSMulRegular ℝ) b.toBasis (by rw [Fintype.card_fin, hdim])
+      (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using weyl_antisymm_first h₁ ..)
+      (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using weyl_antisymm_last h₂ ..)
+      fun u v ↦ ?_
+    have h := congr($(ricci_weyl_of_antisymm h₁ h₂) u v)
+    simp only [ricci_apply_orthonormalBasis b, LinearMap.zero_apply] at h
+    simpa [weyl_antisymm_last h₂ _ u v] using h
+
 /-- In dimension `3`, every pair-antisymmetric four-tensor is the Kulkarni–Nomizu product of its
 Schouten tensor with the inner product. -/
 theorem eq_kulkarniNomizu_schouten_of_finrank_eq_three_of_antisymm
@@ -784,39 +795,9 @@ theorem eq_kulkarniNomizu_schouten_of_finrank_eq_three_of_antisymm
     (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
     (h₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) :
     r = kulkarniNomizu (schouten r) (innerₗ V) := by
-  let q : FourTensor V := r - kulkarniNomizu (schouten r) (innerₗ V)
-  have hq₁ (u v z w : V) : q ![u, v, z, w] = -q ![v, u, z, w] := by
-    simp only [q, sub_apply]
-    rw [h₁ u v z w, kulkarniNomizu_antisymm_first]
-    ring
-  have hq₂ (u v z w : V) : q ![u, v, z, w] = -q ![u, v, w, z] := by
-    simp only [q, sub_apply]
-    rw [h₂ u v z w, kulkarniNomizu_antisymm_last]
-    ring
-  have hric : ricci q = 0 := by
-    rw [map_sub, ricci_kulkarniNomizu_innerₗ,
-      ricci_eq_smul_schouten_add (by omega) (fun h1 ↦ by omega), sub_self]
-  let b := stdOrthonormalBasis ℝ V
-  have hq0 : toLinearMap₄ q = 0 :=
-    LinearMap.eq_zero_of_sum_basis_eq_zero_of_card_eq_three
-      ((two_ne_zero (α := ℝ)).isUnit.isSMulRegular ℝ) b.toBasis (by rw [Fintype.card_fin, hdim])
-      (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using hq₁ ..)
-      (fun _ _ _ _ ↦ by simpa only [toLinearMap₄_apply] using hq₂ ..)
-      fun u v ↦ by
-        have h := congr($hric u v)
-        simp only [ricci_apply_orthonormalBasis b, LinearMap.zero_apply] at h
-        simp_rw [toLinearMap₄_apply, OrthonormalBasis.coe_toBasis, hq₂ _ u v,
-          Finset.sum_neg_distrib, neg_eq_zero]
-        exact h
-  exact sub_eq_zero.mp <| toLinearMap₄_injective (hq0.trans (map_zero _).symm)
-
-private theorem weyl_eq_zero_of_finrank_eq_three_of_antisymm {r : FourTensor V}
-    (hdim : Module.finrank ℝ V = 3)
-    (h₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w])
-    (h₂ : ∀ u v z w, r ![u, v, z, w] = -r ![u, v, w, z]) :
-    weyl r = 0 := by
-  rw [weyl_eq_sub_kulkarniNomizu_schouten (by omega) r,
-    ← eq_kulkarniNomizu_schouten_of_finrank_eq_three_of_antisymm hdim h₁ h₂, sub_self]
+  have h := weyl_eq_zero_of_finrank_eq_three_of_antisymm hdim h₁ h₂
+  rw [weyl_eq_sub_kulkarniNomizu_schouten (by omega) r] at h
+  exact sub_eq_zero.mp h
 
 /-- **In dimension at most `3`, the Weyl part of every pair-antisymmetric four-tensor vanishes.** -/
 theorem weyl_eq_zero_of_finrank_le_three_of_antisymm {r : FourTensor V}

@@ -76,8 +76,8 @@ theorem prod_comp_ofFinEmbEquiv_symm {n : ℕ} (s : powersetCard I n)
 noncomputable def ofLtPair : {p : I × I // p.1 < p.2} ≃ powersetCard I 2 :=
   ((OrderEmbedding.equivSubtypeStrictMono (α := Fin 2) (β := I)).trans
     ((finTwoArrowEquiv I).subtypeEquiv fun f ↦ by
-      rw [Fin.strictMono_iff_lt_succ, Fin.forall_fin_one]
-      rfl)).symm.trans ofFinEmbEquiv
+      simp [Fin.strictMono_iff_lt_succ, Fin.forall_fin_one, finTwoArrowEquiv_apply])).symm.trans
+    ofFinEmbEquiv
 
 /-- The inverse of `ofLtPair` reads the two coordinates of the increasing enumeration. -/
 @[simp]
