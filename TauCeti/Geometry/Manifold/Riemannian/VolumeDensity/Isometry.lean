@@ -48,6 +48,8 @@ J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed., Springer GTM 176 (20
   a map injective on a measurable set, over independent model vector spaces of equal dimension.
 * `Homeomorph.measurePreserving_riemannianVolume`: a homeomorphism whose tangent maps preserve
   the inner products preserves the Riemannian volume.
+* `TauCeti.measurePreserving_smul_riemannianVolume`: for a group acting by smooth maps, a
+  translation whose tangent maps preserve the inner products preserves the Riemannian volume.
 -/
 
 public section
@@ -292,5 +294,25 @@ theorem measurePreserving_riemannianVolume [LindelofSpace M] [LindelofSpace N]
 end RiemannianIsometry
 
 end CrossModel
+
+section SMul
+
+open scoped ContDiff
+
+variable [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
+  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+  {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M]
+
+/-- **Isometric translations preserve volume.** For a group acting on `M` by smooth maps, if the
+differentials of the translation `x ↦ g • x` preserve the Riemannian inner products, then it
+preserves the Riemannian volume. -/
+theorem measurePreserving_smul_riemannianVolume (g : G)
+    (hg : ∀ (x : M) (u w : TangentSpace I x),
+      ⟪mfderiv I I (g • ·) x u, mfderiv I I (g • ·) x w⟫_ℝ = ⟪u, w⟫_ℝ) :
+    MeasurePreserving (g • · : M → M) (riemannianVolume I M) (riemannianVolume I M) := by
+  simpa only [RiemannianIsometry.coe_constSMul] using
+    (RiemannianIsometry.constSMul g hg).measurePreserving_riemannianVolume
+
+end SMul
 
 end TauCeti

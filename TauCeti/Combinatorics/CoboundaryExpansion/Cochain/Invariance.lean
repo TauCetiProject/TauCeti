@@ -30,7 +30,8 @@ once `X.triangles` is nonempty. Moreover, `Cochain.defect` equals an unoriented 
 `X.triangles`, is independent of the vertex `LinearOrder`, and is preserved by vertex relabellings.
 
 Pushing a cochain forward along a norm-nonincreasing homomorphism `φ : G →* H` (`Cochain.map φ`)
-does not increase `defect` or `gaugeDist`. Specializing `φ` to `L.subtype` for a subgroup `L ≤ G`
+does not increase `defect` or `gaugeDist`, and along a norm-preserving isomorphism both are
+unchanged (`Cochain.gaugeDist_map_mulEquiv`). Specializing `φ` to `L.subtype` for a subgroup `L ≤ G`
 shows that embedding `L`-valued cochains into `G` preserves `defect` and `cost` (on embedded gauges)
 and can only decrease `gaugeDist`.
 
@@ -659,6 +660,16 @@ theorem cost_map_eq {φ : G →* H} {ℓ_G : GroupNorm G} {ℓ_H : GroupNorm H}
     (α.map φ).cost ℓ_H (φ ∘ β) = α.cost ℓ_G β := by
   rw [cost_def, cost_def]; refine sum_congr rfl fun _ _ => ?_
   rw [Function.comp_apply, Function.comp_apply, map_apply, ← map_inv, ← map_mul, ← map_mul, hφ]
+
+/-- Along a norm-preserving isomorphism, `gaugeDist` is unchanged. -/
+theorem gaugeDist_map_mulEquiv {e : G ≃* H} {ℓ_G : GroupNorm G} {ℓ_H : GroupNorm H}
+    (he : ∀ g, ℓ_H (e g) = ℓ_G g) (α : Cochain X G) :
+    (α.map (e : G →* H)).gaugeDist ℓ_H = α.gaugeDist ℓ_G := by
+  refine le_antisymm (α.gaugeDist_map_le fun g => (he g).le) ?_
+  have hα : (α.map (e : G →* H)).map (e.symm : H →* G) = α := by ext u v _; simp
+  calc α.gaugeDist ℓ_G = ((α.map (e : G →* H)).map (e.symm : H →* G)).gaugeDist ℓ_G := by rw [hα]
+    _ ≤ (α.map (e : G →* H)).gaugeDist ℓ_H :=
+      gaugeDist_map_le (fun h => by simpa using (he (e.symm h)).symm.le) _
 
 /-- Embedding an `L`-valued cochain into `G` along a subgroup `L ≤ G` preserves `defect` relative
 to the restricted norm `ℓ.comp L.subtype_injective`. -/

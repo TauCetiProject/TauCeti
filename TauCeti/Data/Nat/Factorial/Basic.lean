@@ -7,6 +7,10 @@ module
 
 public import Mathlib.Data.Nat.Factorial.Basic
 public import Mathlib.Data.Nat.Choose.Basic
+import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Data.Nat.Factorial.BigOperators
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Zify
 
 /-!
 # Nonvanishing factorials and falling-factorial bounds
@@ -24,9 +28,12 @@ termwise comparison of the power series of `x * exp (x ^ 2 / 6)` and `sinh x`;
 `Nat.factorial_succ_sq_le_four_pow_mul_factorial_two_mul`, `((n + 1)!)² ≤ 4 ^ n * (2 * n)!`, the
 termwise comparison that sums moment bounds `((n + 1)!)² aⁿ` against the series of `cosh`;
 `Nat.pow_three_le_two_mul_descFactorial_three`, `n ^ 3 ≤ 2 * (n)₃` for `6 ≤ n`, comparing the
-number of triples of `n` elements with the number of injective ones; and
+number of triples of `n` elements with the number of injective ones;
 `Nat.factorial_add_mul_factorial_add_le`, `(s + j)! * (s + j)! ≤ (2 * s + j)! * j !`, which bounds
-products of factorials in double hypergeometric series.
+products of factorials in double hypergeometric series;
+`Nat.ascFactorial_two_mul_le_pow_add`, `n (n + 1) ⋯ (n + 2k - 1) ≤ (n + k) ^ (2k)`, the inequality
+of arithmetic and geometric means for a rising factorial of even length; and
+`Nat.factorial_div_mul_factorial_div_dvd`, `(i / d)! * (j / d)! ∣ ((i + j) / d)!`.
 -/
 
 public section
@@ -110,6 +117,25 @@ theorem factorial_add_mul_factorial_add_le (s j : ℕ) :
     _ = (s + j + s).choose s * (s + j)! * s ! * j ! := by ac_rfl
     _ = (s + j + s)! * j ! := by rw [e₂]
 
+/-- A rising factorial of even length is at most the power of its middle:
+`n (n + 1) ⋯ (n + 2k - 1) ≤ (n + k) ^ (2k)`, an instance of the inequality of arithmetic and
+geometric means. -/
+theorem ascFactorial_two_mul_le_pow_add (n k : ℕ) : n.ascFactorial (2 * k) ≤ (n + k) ^ (2 * k) := by
+  rw [← Nat.pow_le_pow_iff_left two_ne_zero, ascFactorial_eq_prod_range]
+  calc (∏ j ∈ Finset.range (2 * k), (n + j)) ^ 2
+      = ∏ j ∈ Finset.range (2 * k), (n + j) * (n + (2 * k - 1 - j)) := by
+        rw [Finset.prod_mul_distrib, Finset.prod_range_reflect (fun j ↦ n + j), sq]
+    _ ≤ ∏ _j ∈ Finset.range (2 * k), (n + k) ^ 2 := by
+        refine Finset.prod_le_prod fun j hj ↦ ?_
+        have hj := Finset.mem_range.1 hj
+        have h : ((n : ℤ) + (2 * k - 1 - j : ℕ)) + (n + j) = 2 * (n + k) - 1 := by
+          push_cast [Nat.sub_sub, Nat.cast_sub (by omega : 1 + j ≤ 2 * k)]
+          ring
+        zify
+        nlinarith [sq_nonneg (((n : ℤ) + (2 * k - 1 - j : ℕ)) - (n + j))]
+    _ = ((n + k) ^ (2 * k)) ^ 2 := by
+        rw [Finset.prod_const, Finset.card_range, ← pow_mul, ← pow_mul, mul_comm]
+
 /-- From `n = 6` on, the cube of `n` is at most twice the third falling factorial:
 `n ^ 3 ≤ 2 * (n)₃`. -/
 theorem pow_three_le_two_mul_descFactorial_three {n : ℕ} (hn : 6 ≤ n) :
@@ -117,5 +143,11 @@ theorem pow_three_le_two_mul_descFactorial_three {n : ℕ} (hn : 6 ≤ n) :
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
   simp only [descFactorial_succ, descFactorial_zero]
   grind
+
+/-- Factorial divisibility under Euclidean division: `(i / d)! * (j / d)! ∣ ((i + j) / d)!`. -/
+theorem factorial_div_mul_factorial_div_dvd (d i j : ℕ) :
+    (i / d)! * (j / d)! ∣ ((i + j) / d)! :=
+  Nat.dvd_trans (factorial_mul_factorial_dvd_factorial_add (i / d) (j / d))
+    (factorial_dvd_factorial div_add_div_le_add_div)
 
 end Nat

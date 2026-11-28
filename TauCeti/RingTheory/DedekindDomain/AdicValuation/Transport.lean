@@ -37,6 +37,9 @@ how an automorphism permuting the places above a given place acts on their compl
 * `IsDedekindDomain.HeightOneSpectrum.intValuation_ringEquiv` and
   `IsDedekindDomain.HeightOneSpectrum.valuation_ringEquivOfRingEquiv`: the integer-valued and the
   fraction-field adic valuations transport.
+* `IsDedekindDomain.HeightOneSpectrum.valuation_equivOfRingEquiv` and
+  `IsDedekindDomain.HeightOneSpectrum.eq_equivOfRingEquiv_iff`: the transport `e v` of `v` carries
+  the `v`-adic valuation along `σ`, and is the only height one prime of `R'` doing so.
 * `IsDedekindDomain.HeightOneSpectrum.adicCompletionCongr`: the induced isomorphism of adic
   completions, with `adicCompletionCongr_algebraMap` (it extends `σ`),
   `continuous_adicCompletionCongr`, its universal property `eq_adicCompletionCongr_of_continuous`,
@@ -122,6 +125,27 @@ theorem valuation_ringEquivOfRingEquiv (e : R ≃+* R') {v : HeightOneSpectrum R
   rw [map_div₀, Valuation.map_div, Valuation.map_div,
     valuation_ringEquivOfRingEquiv_algebraMap e hvw a,
     valuation_ringEquivOfRingEquiv_algebraMap e hvw b]
+
+/-- **The image of a height one prime.** The transport `e v = equivOfRingEquiv e v` of a height
+one prime `v` of `R` carries the `v`-adic valuation along the induced isomorphism
+`σ = IsFractionRing.ringEquivOfRingEquiv e` of fraction fields: `|σ f|_{e v} = |f|_v`. -/
+theorem valuation_equivOfRingEquiv (e : R ≃+* R') (v : HeightOneSpectrum R) (f : K) :
+    (equivOfRingEquiv e v).valuation K' (IsFractionRing.ringEquivOfRingEquiv e f) =
+      v.valuation K f :=
+  valuation_ringEquivOfRingEquiv e (asIdeal_equivOfRingEquiv e v) f
+
+/-- **The image of a height one prime is characterised by its valuation**: a height one prime `w`
+of `R'` satisfies `|σ f|_w = |f|_v` for all `f : K`, where
+`σ = IsFractionRing.ringEquivOfRingEquiv e`, exactly when it is the transport
+`equivOfRingEquiv e v` of `v`. -/
+theorem eq_equivOfRingEquiv_iff (e : R ≃+* R') {v : HeightOneSpectrum R}
+    {w : HeightOneSpectrum R'} :
+    w = equivOfRingEquiv e v ↔
+      ∀ f : K, w.valuation K' (IsFractionRing.ringEquivOfRingEquiv e f) = v.valuation K f := by
+  refine ⟨fun h ↦ h ▸ valuation_equivOfRingEquiv e v, fun hw ↦ ?_⟩
+  refine valuation_injective K' (Valuation.ext fun y ↦ ?_)
+  obtain ⟨f, rfl⟩ := (IsFractionRing.ringEquivOfRingEquiv e : K ≃+* K').surjective y
+  rw [hw, valuation_equivOfRingEquiv]
 
 end DedekindDomain
 

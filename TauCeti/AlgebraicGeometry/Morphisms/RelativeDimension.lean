@@ -61,6 +61,8 @@ over the field `κ(z)`, so the inequality bounds its dimension by `e + d`.
   to an open subscheme is an open subspace of the fibre of the morphism.
 * `TauCeti.AlgebraicGeometry.RelativeDimensionLE.isZariskiLocalAtSource` and
   `TauCeti.AlgebraicGeometry.RelativeDimensionLE.isZariskiLocalAtTarget`: locality.
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_fiber_of_isPullback`: for `f` locally of finite
+  type, the fibres of a base change of `f` have the dimensions of the corresponding fibres of `f`.
 * `TauCeti.AlgebraicGeometry.RelativeDimensionLE.of_isPullback`: stability under base change of
   morphisms locally of finite type.
 * `TauCeti.AlgebraicGeometry.relativeDimensionLE_iff_of_field`: over a field, the condition bounds
@@ -239,12 +241,12 @@ instance RelativeDimensionLE.isZariskiLocalAtTarget (d : ℕ) :
     fun x hx ↦ by simpa [Set.mem_singleton_iff.mp hx] using hi]
   exact topologicalKrullDim_preimage_le _ y
 
-/-- Having relative dimension at most `d` is stable under base change of morphisms locally of
-finite type. -/
-theorem RelativeDimensionLE.of_isPullback {P : Scheme.{u}} {fst : P ⟶ X} {snd : P ⟶ Y}
-    {f : X ⟶ Z} {g : Y ⟶ Z} (h : IsPullback fst snd f g) [LocallyOfFiniteType f]
-    [RelativeDimensionLE d f] : RelativeDimensionLE d snd := by
-  refine ⟨fun y ↦ ?_⟩
+/-- **Fibre dimension under base change.** For a cartesian square with `f` locally of finite
+type, the fibre of the base change `snd` over `y` has the Krull dimension of the fibre of `f`
+over `g y`. -/
+theorem topologicalKrullDim_fiber_of_isPullback {P : Scheme.{u}} {fst : P ⟶ X} {snd : P ⟶ Y}
+    {f : X ⟶ Z} {g : Y ⟶ Z} (h : IsPullback fst snd f g) [LocallyOfFiniteType f] (y : Y) :
+    topologicalKrullDim (snd.fiber y) = topologicalKrullDim (f.fiber (g y)) := by
   have : LocallyOfFiniteType (f.fiberToSpecResidueField (g y)) :=
     inferInstanceAs (LocallyOfFiniteType (pullback.snd f (Z.fromSpecResidueField (g y))))
   let := (g.residueFieldMap y).hom.toAlgebra
@@ -253,10 +255,17 @@ theorem RelativeDimensionLE.of_isPullback {P : Scheme.{u}} {fst : P ⟶ X} {snd 
   -- `isPullback_fiberToSpecResidueField_of_isPullback` has `snd.fiber y` as its corner, since
   -- `Scheme.Hom.fiber` is defined as that pullback.
   exact ((isPullback_fiberToSpecResidueField_of_isPullback h y).isoPullback.hom.homeomorph
-    |>.isHomeomorph.topologicalKrullDim_eq).trans_le <|
-    (topologicalKrullDim_pullback_Spec_map_of_field (K := Z.residueField (g y))
-      (L := Y.residueField y) (f.fiberToSpecResidueField (g y))).trans_le
-      (topologicalKrullDim_fiber_le (g y))
+    |>.isHomeomorph.topologicalKrullDim_eq).trans <|
+    topologicalKrullDim_pullback_Spec_map_of_field (K := Z.residueField (g y))
+      (L := Y.residueField y) (f.fiberToSpecResidueField (g y))
+
+/-- Having relative dimension at most `d` is stable under base change of morphisms locally of
+finite type. -/
+theorem RelativeDimensionLE.of_isPullback {P : Scheme.{u}} {fst : P ⟶ X} {snd : P ⟶ Y}
+    {f : X ⟶ Z} {g : Y ⟶ Z} (h : IsPullback fst snd f g) [LocallyOfFiniteType f]
+    [RelativeDimensionLE d f] : RelativeDimensionLE d snd :=
+  ⟨fun y ↦ (topologicalKrullDim_fiber_of_isPullback h y).trans_le
+    (topologicalKrullDim_fiber_le (g y))⟩
 
 /-- The base change `pullback.snd f g` of a morphism `f` locally of finite type has relative
 dimension at most that of `f`. -/

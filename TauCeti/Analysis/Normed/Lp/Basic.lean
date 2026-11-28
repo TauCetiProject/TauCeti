@@ -26,7 +26,9 @@ the sum of the norms of the coordinates (`lp.hasSum_norm_one`, and `lp.hasSum_en
 extended norms); for `1 ≤ p` it bounds the `ℓ^p` norm (`lp.norm_le_tsum_norm`). Sequences whose
 coordinates have the same norms have the same `ℓᵖ` norm (`lp.norm_eq_of_forall_norm_eq`); in
 particular the sequence `i ↦ ‖f i‖` of coordinate norms of `f ∈ ℓᵖ` (`lp.normSeq`) has `ℓᵖ` norm
-`‖f‖` (`lp.norm_normSeq`). For Hölder conjugate exponents `p` and `q`, including `1` and `∞`,
+`‖f‖` (`lp.norm_normSeq`). Coordinates pass to limits: if `fₙ → f` in `ℓᵖ` and each
+`e (fₙ i)` is `A xₙ` for continuous `e`, `A` and `xₙ → x`, then `e (f i) = A x`
+(`lp.map_apply_eq_of_tendsto`). For Hölder conjugate exponents `p` and `q`, including `1` and `∞`,
 every finite sum of `‖f i‖ ‖g i‖` is at most `‖f‖ ‖g‖` (`lp.sum_norm_mul_norm_le`). For `0 < p ≤ q`
 the `ℓ^q` norm of a sequence is at most its `ℓᵖ` norm (`lp.norm_le_norm_of_exponent_le`), the norm
 form of Mathlib's inclusion `Memℓp.of_exponent_ge`. A sequence indexed by `ℕ` whose terms are
@@ -76,14 +78,19 @@ separable fibres and countably many nontrivial fibres suffice for separability
 characterization `lp.separableSpace_iff` (and `lp.separableSpace_iff_countable` when every fibre is
 nontrivial and separable).
 
+The single-coordinate embedding `lp.single p i` is injective at every exponent
+(`lp.single_injective`), so `lp E p` is nontrivial whenever at least one summand is
+(`lp.nontrivial_at`, `lp.nontrivial_iff`, `lp.instNontrivial`, `lp.instNontrivialOfNonempty`).
+
 For `p ≠ ∞` the coordinate vectors span a dense subspace, so a uniformly bounded family of
 operators on `lp E p` that converges on every `single i x` converges at every vector
-(`lp.tendsto_apply_of_tendsto_apply_single`). In the scalar case such an operator `T` is given by
-its coordinate series `T x = ∑ i, xᵢ • T eᵢ` (`ContinuousLinearMap.hasSum_smul_lp_single`), so for
-`q ≠ ∞` an operator out of `ℓ^q` into a Hausdorff space is determined by its values on the unit
-coordinate vectors (`ContinuousLinearMap.ext_lp_of_ne_top`). On ℓ¹, a uniform bound `C` on the
-norms `‖T eᵢ‖` bounds `‖T‖` (`ContinuousLinearMap.opNorm_lpOne_le`), so the norm of `T` is the
-supremum of the norms `‖T eᵢ‖` (`ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`,
+(`lp.tendsto_apply_of_tendsto_apply_single`). For `q ≠ ∞`, a continuous linear map `T` out of
+scalar `ℓ^q` is given by its coordinate series `T x = ∑ i, xᵢ • T eᵢ`
+(`ContinuousLinearMap.hasSum_smul_lp_single`), so an operator out of `ℓ^q` into a Hausdorff space is
+determined by its values on the unit coordinate vectors (`ContinuousLinearMap.ext_lp_of_ne_top`).
+On ℓ¹, a uniform bound `C` on the norms `‖T eᵢ‖` bounds `‖T‖`
+(`ContinuousLinearMap.opNorm_lpOne_le`), so the norm of `T` is the supremum of the norms `‖T eᵢ‖`
+(`ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`,
 `ContinuousLinearMap.nnnorm_eq_ciSup_nnnorm_lp_single`). For iterated `ℓᵖ` spaces (`1 ≤ p`), the
 uncurried sequence lies in `ℓᵖ` on the product index type (`lp.memℓp_prod`), and for `1 ≤ p < ∞`
 the `p`-th powers of the doubly indexed coordinate norms are summable
@@ -217,6 +224,16 @@ theorem normSeq_apply (f : lp E p) (i : ι) : normSeq f i = ‖f i‖ := (rfl)
 @[simp]
 theorem norm_normSeq (f : lp E p) : ‖normSeq f‖ = ‖f‖ :=
   norm_eq_of_forall_norm_eq fun i ↦ by simp
+
+/-- **Coordinates of a limit in `ℓᵖ`.** If `fₙ → f` in `ℓᵖ`, `xₙ → x`, and `e (fₙ i) = A xₙ` for
+continuous maps `e` and `A` into a Hausdorff space, then `e (f i) = A x`. -/
+theorem map_apply_eq_of_tendsto [Fact (1 ≤ p)] {α X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [T2Space Y] {l : Filter α} [l.NeBot] {F : α → lp E p} {f : lp E p}
+    (hF : Tendsto F l (𝓝 f)) {x : α → X} {y : X} (hx : Tendsto x l (𝓝 y)) {i : ι}
+    {e : E i → Y} (he : Continuous e) {A : X → Y} (hA : Continuous A)
+    (h : ∀ n, e (F n i) = A (x n)) : e (f i) = A y :=
+  tendsto_nhds_unique (((he.tendsto _).comp (tendsto_pi_nhds.1
+    ((lp.uniformContinuous_coe.continuous.tendsto f).comp hF) i)).congr h) ((hA.tendsto y).comp hx)
 
 /-- The coordinates of the Hölder pairing `lp.holderL r B hBK e f` are `B i (e i) (f i)`. -/
 @[simp]
@@ -492,6 +509,36 @@ theorem tendsto_apply_of_tendsto_apply_single [DecidableEq ι] {Z : Type*}
   exact ContinuousLinearMap.tendsto_apply_of_dense hD hC (fun y hy ↦ hy) x
 
 end Density
+
+section Nontrivial
+
+variable {ι : Type*} {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] {p : ℝ≥0∞}
+
+/-- The single-coordinate embedding `lp.single p i` is injective at every exponent. -/
+theorem single_injective [DecidableEq ι] (p : ℝ≥0∞) (i : ι) :
+    Function.Injective (lp.single (E := E) p i) :=
+  fun _ _ hab => by simpa only [lp.single_apply_self] using congr($hab i)
+
+/-- `lp E p` is nontrivial whenever at least one summand `E i` is nontrivial. -/
+theorem nontrivial_at (i : ι) [Nontrivial (E i)] : Nontrivial (lp E p) := by
+  classical
+  exact (single_injective p i).nontrivial
+
+/-- `lp E p` is nontrivial if and only if at least one summand `E i` is nontrivial. -/
+theorem nontrivial_iff : Nontrivial (lp E p) ↔ ∃ i, Nontrivial (E i) := by
+  refine ⟨fun ⟨x, y, hxy⟩ => ?_, fun ⟨i, _⟩ => nontrivial_at i⟩
+  by_contra! h
+  exact hxy (lp.ext (funext fun i => (h i).elim (x i) (y i)))
+
+/-- `lp E p` is nontrivial when `ι` is inhabited and `E default` is nontrivial. -/
+instance instNontrivial [Inhabited ι] [Nontrivial (E default)] : Nontrivial (lp E p) :=
+  nontrivial_at default
+
+/-- `lp E p` is nontrivial when `ι` is nonempty and every summand `E i` is nontrivial. -/
+instance instNontrivialOfNonempty [Nonempty ι] [∀ i, Nontrivial (E i)] : Nontrivial (lp E p) :=
+  ‹Nonempty ι›.elim fun i => nontrivial_at i
+
+end Nontrivial
 
 /-- For `p ≠ ∞`, every vector of `lp E p` vanishes outside a countable set of indices. -/
 theorem countable_dsupport (hp : p ≠ ∞) (f : lp E p) : {i | f i ≠ 0}.Countable :=

@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Young.BetaNumbers
 public import TauCeti.Combinatorics.Young.Kostka
 import TauCeti.Combinatorics.Young.OfRowLens
+import TauCeti.Combinatorics.Young.Sublevel
 
 /-!
 # Interlacing shapes and the branching of bounded tableaux
@@ -61,6 +62,11 @@ way keeps every type non-dependent, so the resulting sum decomposition
   of the remaining letters occurs.
 * `TauCeti.BoundedSSYT.fiberEquiv`: the tableaux of shape `μ` in `n + 1` letters with a given
   sub-shape `ν` of small entries are the tableaux of shape `ν` in `n` letters.
+* `TauCeti.BoundedSSYT.sigmaEquiv`: the total form, the tableaux of shape `μ` in `n + 1` letters
+  are the pairs of an interlacing shape `ν` with at most `n` rows and a tableau of shape `ν` in
+  `n` letters.
+* `YoungDiagram.rowLenDiff_injective`: a shape interlacing `μ` is determined by the differences
+  `μ.rowLen s - ν.rowLen s` of the row lengths.
 * `TauCeti.BoundedSSYT.sum_eq_sum_interlacingShapes`: the resulting decomposition of a sum over
   the tableaux of shape `μ`, indexed by the interlacing shapes, and
   `TauCeti.BoundedSSYT.card_eq_sum_interlacingShapes`: its counting form, the branching rule for
@@ -128,6 +134,13 @@ theorem InterlacedBy.card_le_card_add_rowLen_zero (h : InterlacedBy μ ν) :
   rw [μ.card_eq_sum_range_rowLen hL, Finset.sum_range_succ']
   omega
 
+/-- An interlacing shape is at most one cell shorter in every column. -/
+theorem InterlacedBy.colLen_le_colLen_add_one (h : InterlacedBy μ ν) (j : ℕ) :
+    μ.colLen j ≤ ν.colLen j + 1 := by
+  by_contra! hlt
+  have := h.mem_of_lt (Nat.lt_succ_self _) (_root_.YoungDiagram.mem_iff_lt_colLen.mpr hlt)
+  exact lt_irrefl _ (_root_.YoungDiagram.mem_iff_lt_colLen.mp this)
+
 /-- **The shapes interlacing `μ` with at most `n` rows.**  These index the summands of the
 `GLₙ₊₁ ↓ GLₙ` branching rule; the row bound is genuine, since a shape may interlace `μ` and still
 be too tall to be written in `n` letters. -/
@@ -178,6 +191,34 @@ theorem sum_interlacingShapes_eq_sum_piFinset {M : Type*} [AddCommMonoid M] {n :
         rowLen_eq_zero_iff.mpr (hμ.trans (by omega))]
       exact ⟨le_rfl, Nat.zero_le _⟩
 
+/-- The differences `μ.rowLen s - ν.rowLen s` of the row lengths of two Young diagrams, for the
+`n` rows `s < n`. -/
+noncomputable def rowLenDiff {n : ℕ} (μ ν : _root_.YoungDiagram) : Fin n →₀ ℕ :=
+  Finsupp.equivFunOnFinite.symm fun s => μ.rowLen s - ν.rowLen s
+
+@[simp]
+theorem rowLenDiff_apply {n : ℕ} (μ ν : _root_.YoungDiagram) (s : Fin n) :
+    rowLenDiff μ ν s = μ.rowLen s - ν.rowLen s := by
+  simp [rowLenDiff]
+
+/-- A shape interlacing `μ` is determined by the differences of the row lengths, when `μ` has at
+most `n` rows. -/
+theorem rowLenDiff_injective {N n : ℕ} (hμ : μ.colLen 0 ≤ n) :
+    Function.Injective fun ν : interlacingShapes N μ => (rowLenDiff μ ν.val : Fin n →₀ ℕ) := by
+  intro ν₁ ν₂ h_eq
+  have hle (ν : interlacingShapes N μ) := (mem_interlacingShapes.mp ν.property).1
+  refine Subtype.ext (rowLen_injective (funext fun s => ?_))
+  rcases lt_or_ge s n with hs | hs
+  · have := DFunLike.congr_fun h_eq ⟨s, hs⟩
+    simp only [rowLenDiff_apply] at this
+    have h₁ := (hle ν₁).rowLen_le s
+    have h₂ := (hle ν₂).rowLen_le s
+    omega
+  · have h_zero (ν : interlacingShapes N μ) : ν.val.rowLen s = 0 :=
+      Nat.eq_zero_of_le_zero (((hle ν).rowLen_le s).trans_eq
+        (rowLen_eq_zero_iff.mpr (hμ.trans hs)))
+    rw [h_zero, h_zero]
+
 end YoungDiagram
 
 namespace TauCeti
@@ -226,18 +267,15 @@ variable {n : ℕ} {μ ν : _root_.YoungDiagram}
 
 /-- **The sub-shape of small entries**: the cells of `μ` whose entry is smaller than the top letter
 `n`.  It is a Young diagram because the entries increase weakly to the right and downwards. -/
-def restrictShape (T : BoundedSSYT (n + 1) μ) : _root_.YoungDiagram where
-  cells := μ.cells.filter fun c => T.val c.1 c.2 < n
-  isLowerSet := by
-    rintro c d hdc hc
-    simp only [Finset.coe_filter, Set.mem_ofPred_eq] at hc ⊢
-    exact ⟨μ.isLowerSet hdc hc.1,
-      lt_of_le_of_lt (SemistandardYoungTableau.entry_le_of_le T.val hdc.1 hdc.2 hc.1) hc.2⟩
+def restrictShape (T : BoundedSSYT (n + 1) μ) : _root_.YoungDiagram :=
+  μ.strictSublevel (fun c => T.val c.val.1 c.val.2)
+    (fun _ d h => SemistandardYoungTableau.entry_le_of_le T.val h.1 h.2 d.property) n
 
 @[simp]
 theorem mem_restrictShape {T : BoundedSSYT (n + 1) μ} {i j : ℕ} :
     ((i, j) : ℕ × ℕ) ∈ restrictShape T ↔ ((i, j) : ℕ × ℕ) ∈ μ ∧ T.val i j < n :=
-  Finset.mem_filter
+  (YoungDiagram.mem_strictSublevel (hf := _)).trans
+    ⟨fun ⟨hc, hlt⟩ => ⟨hc, hlt⟩, fun ⟨hc, hlt⟩ => ⟨hc, hlt⟩⟩
 
 /-- Reading the defining property of `TauCeti.BoundedSSYT.restrictShape` off an equation naming
 it. -/
@@ -442,6 +480,33 @@ theorem fiberEquiv_apply (h : YoungDiagram.InterlacedBy μ ν)
 @[simp]
 theorem fiberEquiv_symm_apply (h : YoungDiagram.InterlacedBy μ ν) (T : BoundedSSYT n ν) :
     (fiberEquiv h).symm T = ⟨extend h T, restrictShape_extend h T⟩ :=
+  (rfl)
+
+/-- **The branching bijection.**  A tableau of shape `μ` in the letters `{0, …, n}` is a shape `ν`
+interlacing `μ` with at most `n` rows together with a tableau of shape `ν` in the letters
+`{0, …, n - 1}`, the top letter filling `μ / ν`: the total space of `fiberEquiv`. -/
+def sigmaEquiv (n : ℕ) (μ : _root_.YoungDiagram) :
+    (Σ ν : YoungDiagram.interlacingShapes n μ, BoundedSSYT n ν) ≃ BoundedSSYT (n + 1) μ :=
+  (Equiv.sigmaCongrRight fun ν : YoungDiagram.interlacingShapes n μ =>
+    ((Equiv.subtypeEquivRight fun _ => Subtype.ext_iff).trans
+      (fiberEquiv (YoungDiagram.mem_interlacingShapes.mp ν.property).1)).symm).trans
+    (Equiv.sigmaFiberEquiv fun T : BoundedSSYT (n + 1) μ =>
+      (⟨restrictShape T, restrictShape_mem_interlacingShapes T⟩ :
+        YoungDiagram.interlacingShapes n μ))
+
+/-- The branching bijection restores the top letter. -/
+@[simp]
+theorem sigmaEquiv_apply (n : ℕ) (μ : _root_.YoungDiagram)
+    (i : Σ ν : YoungDiagram.interlacingShapes n μ, BoundedSSYT n ν) :
+    sigmaEquiv n μ i = extend (YoungDiagram.mem_interlacingShapes.mp i.1.property).1 i.2 := by
+  simp [sigmaEquiv]
+
+/-- The inverse of the branching bijection records the sub-shape of small entries and erases the
+top letter. -/
+@[simp]
+theorem sigmaEquiv_symm_apply (n : ℕ) (μ : _root_.YoungDiagram) (T : BoundedSSYT (n + 1) μ) :
+    (sigmaEquiv n μ).symm T =
+      ⟨⟨restrictShape T, restrictShape_mem_interlacingShapes T⟩, restrict T _ rfl⟩ :=
   (rfl)
 
 /-- **The branching decomposition of a sum over tableaux**: summing over the tableaux of shape `μ`

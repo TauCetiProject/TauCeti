@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.LefschetzNumber.Torus
 public import TauCeti.Geometry.Manifold.Instances.AddCircle.Torus
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Zeta
+import Mathlib.Algebra.CharP.Algebra
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 import TauCeti.Topology.Instances.AddCircle.Torus
 
@@ -25,7 +27,9 @@ finite group isomorphic to `ℤⁿ / (1 - A) ℤⁿ`, with `|det (1 - A)|` eleme
 `k ≠ 0` with `(1 - A) k = 0` gives a circle of fixed points, so the fixed points are infinite
 (`Matrix.infinite_ker_smulVecHom`). Hence `x ↦ A • x` has finitely many fixed points exactly when
 `det (1 - A) ≠ 0` (`AddCircle.finite_fixedPoints_generalLinearGroup_smul_iff`), and in all cases
-the `Nat.card` of the set of fixed points, `0` for an infinite set, is `|det (1 - A)|`.
+the `Nat.card` of the set of fixed points, `0` for an infinite set, is `|det (1 - A)|`. Applied to
+`Aⁿ`, the map has finitely many periodic points of period `n` exactly when `det (1 - Aⁿ) ≠ 0`
+(`AddCircle.finite_ptsOfPeriod_generalLinearGroup_smul_iff`).
 
 The derivative of `x ↦ A • x` is the matrix `A` at every point
 (`AddCircle.mfderiv_generalLinearGroup_smul_apply`), so at every fixed point the fixed-point
@@ -38,9 +42,14 @@ Lefschetz sign `sgn det (1 - A)`. Since there are `|det (1 - A)|` of them, their
 
 (`AddCircle.finsum_sign_det_id_sub_fixedPointDerivative_generalLinearGroup_smul`); when
 `det (1 - A) = 0` every sign is `0` and both sides vanish. This is the
-fixed-point side of the Lefschetz formula for linear automorphisms of a torus: `A` acts on
-`H_k(Tⁿ; ℚ) = Λᵏ ℚⁿ` by `Λᵏ A`, and `∑ₖ (-1)ᵏ tr Λᵏ A = det (1 - A)` is its Lefschetz number. The
-homological side is not formalized here.
+fixed-point side of the Lefschetz formula for linear automorphisms of a torus. On the homological
+side, over a field `k` of characteristic zero, `A` acts on `H_r(Tⁿ; k) = Λʳ kⁿ` by `Λʳ A`, and
+`∑ᵣ (-1)ʳ tr Λʳ A = det (1 - A)` is its Lefschetz number (`Matrix.lefschetzNumber_smulVecHom`). So
+the Lefschetz fixed-point formula holds for every iterate of `x ↦ A • x` (`AddCircle.`
+`finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLinearGroup_smul_eq_lefschetzNumber`),
+and the Lefschetz zeta function of `x ↦ A • x` is its dynamical zeta function, built from the fixed
+points of its iterates and their Lefschetz signs (`AddCircle.`
+`lefschetzZeta_generalLinearGroup_smul_eq_subst_exp_finsum_sign_det_id_sub_fixedPointDerivative`).
 
 On the two-torus `ι = Fin 2` these signed counts determine the dynamical zeta function
 `ζ = exp (∑ₙ (∑_{φⁿ x = x} sgn det (1 - dφⁿ_x)) tⁿ / n)` of `φ(x) = A • x`. Since
@@ -73,6 +82,8 @@ every period.
   equal to `|det (1 - A)|`.
 * `AddCircle.finite_fixedPoints_generalLinearGroup_smul_iff`: they are finite exactly when
   `det (1 - A) ≠ 0`.
+* `AddCircle.finite_ptsOfPeriod_generalLinearGroup_smul_iff`: the periodic points of period `n` are
+  finite exactly when `det (1 - Aⁿ) ≠ 0`.
 * `AddCircle.det_id_sub_fixedPointDerivative_generalLinearGroup_smul`: `det (1 - df_x) =
   det (1 - A)` at every fixed point.
 * `AddCircle.isNondegenerateFixedPt_generalLinearGroup_smul_iff`: a fixed point is nondegenerate
@@ -83,6 +94,12 @@ every period.
   signed count of the fixed points of the `n`-th iterate is `det (1 - Aⁿ)`.
 * `AddCircle.isNondegenerateUpToPeriod_generalLinearGroup_smul_iff`: nondegeneracy up to period
   `N` exactly when `det (1 - Aᵏ) ≠ 0` for `0 < k ≤ N`.
+* `AddCircle.`
+  `finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLinearGroup_smul_eq_lefschetzNumber`:
+  the Lefschetz fixed-point formula for every iterate.
+* `AddCircle.`
+  `lefschetzZeta_generalLinearGroup_smul_eq_subst_exp_finsum_sign_det_id_sub_fixedPointDerivative`:
+  the Lefschetz zeta function is the dynamical zeta function.
 * `AddCircle.`
   `subst_exp_finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLinearGroup_smul_mul`:
   the dynamical zeta function of a linear map of the two-torus is
@@ -142,6 +159,17 @@ theorem finite_fixedPoints_generalLinearGroup_smul_iff (A : GL ι ℤ) :
     (fixedPoints fun x : ι → AddCircle p ↦ A • x).Finite ↔ (1 - (A : Matrix ι ι ℤ)).det ≠ 0 := by
   rw [fixedPoints_generalLinearGroup_smul_eq_ker, ← Set.finite_coe_iff, SetLike.coe_sort_coe,
     finite_ker_smulVecHom_iff]
+
+/-- **Finitely many periodic points of a given period.** The toral automorphism `x ↦ A • x` has
+finitely many periodic points of period `n` exactly when `det (1 - Aⁿ) ≠ 0`. -/
+theorem finite_ptsOfPeriod_generalLinearGroup_smul_iff (A : GL ι ℤ) (n : ℕ) :
+    (ptsOfPeriod (fun x : ι → AddCircle p ↦ A • x) n).Finite ↔
+      (1 - (A : Matrix ι ι ℤ) ^ n).det ≠ 0 := by
+  -- The periodic points of period `n` are the fixed points of `x ↦ Aⁿ • x`.
+  have h : ptsOfPeriod (fun x : ι → AddCircle p ↦ A • x) n = fixedPoints fun x ↦ (A ^ n) • x := by
+    ext x
+    simp [IsPeriodicPt, IsFixedPt, smul_iterate]
+  rw [h, finite_fixedPoints_generalLinearGroup_smul_iff, Units.val_pow_eq_pow_val]
 
 /-- **The number of fixed points of a toral automorphism.** For `p ≠ 0`, the set of fixed points of
 the map `x ↦ A • x` of the torus `ι → AddCircle p` has `Nat.card` equal to `|det (1 - A)|`. When
@@ -307,5 +335,54 @@ theorem coeff_subst_exp_finsum_sign_det_id_sub_fixedPointDerivative_iterate_gene
     ((Int.castRingHom ℚ).det_map_eq_one hA) hn, Matrix.intCast_det_one_sub]
 
 end FinTwo
+
+end AddCircle
+
+/-! ### The Lefschetz fixed-point formula -/
+
+namespace AddCircle
+
+variable (p : ℝ) [Fact (0 < p)] {ι : Type} [Fintype ι] [DecidableEq ι]
+
+/-- **The Lefschetz fixed-point formula for the iterates of a toral automorphism.** For
+`A ∈ GL(ι, ℤ)` acting on the torus `ι → AddCircle p` by `φ(x) = A • x` and a field `k` of
+characteristic zero, the signed count of the fixed points of the `n`-th iterate `φⁿ`, each with its
+Lefschetz sign `sgn det (1 - dφⁿ_x)`, is the Lefschetz number of `φⁿ`: both are `det (1 - Aⁿ)`. No
+nondegeneracy is needed: when `det (1 - Aⁿ) = 0`, every sign is `0` and both sides vanish. -/
+theorem
+    finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLinearGroup_smul_eq_lefschetzNumber
+    (k : Type) [Field k] [CharZero k] (A : GL ι ℤ) (n : ℕ) :
+    ((∑ᶠ x : {x : ι → AddCircle p // (fun y ↦ A • y)^[n] x = x},
+      (SignType.sign (LinearMap.det (LinearMap.id - fixedPointDerivative
+        (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (fun y ↦ A • y)^[n] x)) : ℤ) : ℤ) : k) =
+      (⟨(fun y ↦ A • y)^[n], (continuous_const_smul A).iterate n⟩ :
+        C(ι → AddCircle p, ι → AddCircle p)).lefschetzNumber k := by
+  -- `φ` is the map `x ↦ A • x` induced by the matrix `A`
+  have h : (⟨(fun y ↦ A • y)^[n], (continuous_const_smul A).iterate n⟩ :
+      C(ι → AddCircle p, ι → AddCircle p)) =
+      ⟨(⇑((A : Matrix ι ι ℤ).smulVecHom (AddCircle p)))^[n],
+        ((A : Matrix ι ι ℤ).smulVecHom (AddCircle p)).continuous.iterate n⟩ :=
+    ContinuousMap.ext fun x ↦ congrFun (congrArg (·^[n])
+      (funext (generalLinearGroup_smul_eq_smulVecHom p A))) x
+  rw [finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLinearGroup_smul, h,
+    Matrix.lefschetzNumber_iterate_smulVecHom _ k (Fact.out : 0 < p).ne']
+
+/-- **The Lefschetz zeta function of a toral automorphism is its dynamical zeta function.** For
+`A ∈ GL(ι, ℤ)` acting on the torus `ι → AddCircle p` by `φ(x) = A • x` and a field `k` of
+characteristic zero, the Lefschetz zeta function `exp (∑ₙ L(φⁿ) tⁿ / n)` of `φ` is
+`exp (∑ₙ (∑_{φⁿ x = x} sgn det (1 - dφⁿ_x)) tⁿ / n)`, built from the fixed points of the iterates
+of `φ` and their Lefschetz signs. -/
+theorem
+    lefschetzZeta_generalLinearGroup_smul_eq_subst_exp_finsum_sign_det_id_sub_fixedPointDerivative
+    (k : Type) [Field k] [Algebra ℚ k] (A : GL ι ℤ) :
+    (⟨fun y ↦ A • y, continuous_const_smul A⟩ :
+        C(ι → AddCircle p, ι → AddCircle p)).lefschetzZeta k =
+      (PowerSeries.exp k).subst (PowerSeries.mk fun n ↦ (n : ℚ)⁻¹ •
+        ((∑ᶠ x : {x : ι → AddCircle p // (fun y ↦ A • y)^[n] x = x},
+          (SignType.sign (LinearMap.det (LinearMap.id - fixedPointDerivative
+            (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (fun y ↦ A • y)^[n] x)) : ℤ) : ℤ) : k)) := by
+  have := algebraRat.charZero k
+  simp_rw [ContinuousMap.lefschetzZeta_def, ContinuousMap.coe_mk,
+    finsum_sign_det_id_sub_fixedPointDerivative_iterate_generalLinearGroup_smul_eq_lefschetzNumber]
 
 end AddCircle

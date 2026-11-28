@@ -101,59 +101,6 @@ section LocalFunctional
 variable (k H A : Type u) [CommSemiring k] [Semiring H] [Bialgebra k H]
   [Module.Flat k H] [CommSemiring A] [Algebra k A]
 
-/-- Inclusion of finite regular subcomodules as a morphism in the finite comodule category. -/
-noncomputable def regularInclusion
-    {N Q : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H)}
-    (hNQ : N.val ≤ Q.val) :
-    finiteRegularObject k H N ⟶ finiteRegularObject k H Q := by
-  letI : Module.Finite k N.val := Subcomodule.mem_finiteSubcomodules.mp N.property
-  letI : Module.Finite k Q.val := Subcomodule.mem_finiteSubcomodules.mp Q.property
-  refine FGComoduleCat.ofHom (R := k) (C := H)
-    { toLinearMap := Submodule.inclusion hNQ
-      map_coact := ?_ }
-  apply LinearMap.ext
-  intro n
-  apply Module.Flat.rTensor_preserves_injective_linearMap
-    (SMulMemClass.subtype Q.val) Subtype.val_injective
-  have hcomp : (SMulMemClass.subtype Q.val).comp (Submodule.inclusion hNQ) =
-      SMulMemClass.subtype N.val := by
-    ext
-    rfl
-  calc
-    (SMulMemClass.subtype Q.val).rTensor H
-        (TensorProduct.map (Submodule.inclusion hNQ) LinearMap.id
-          (Comodule.coact (R := k) (C := H) (M := N.val) n)) =
-        (SMulMemClass.subtype N.val).rTensor H
-          (Comodule.coact (R := k) (C := H) (M := N.val) n) := by
-      rw [LinearMap.rTensor_def, LinearMap.rTensor_def, TensorProduct.map_map,
-        LinearMap.comp_id, hcomp]
-    _ = Comodule.coact (R := k) (C := H) (M := H) n :=
-      Subcomodule.subtype_rTensor_coact N.val n
-    _ = (SMulMemClass.subtype Q.val).rTensor H
-        (Comodule.coact (R := k) (C := H) (M := Q.val)
-          (Submodule.inclusion hNQ n)) :=
-      (Subcomodule.subtype_rTensor_coact Q.val (Submodule.inclusion hNQ n)).symm
-
-/-- The inclusion of finite regular subcomodules is the ordinary subtype inclusion. -/
-@[simp]
-theorem regularInclusion_apply
-    {N Q : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H)}
-    (hNQ : N.val ≤ Q.val) (n : N.val) :
-    regularInclusion k H hNQ n = ⟨n, hNQ n.property⟩ :=
-  by
-    unfold regularInclusion
-    rfl
-
-/-- The linear map underlying inclusion of finite regular subcomodules is the ordinary submodule
-inclusion. -/
-@[simp]
-theorem regularInclusion_toLinearMap
-    {N Q : Subcomodule.finiteSubcomodules (R := k) (C := H) (M := H)}
-    (hNQ : N.val ≤ Q.val) :
-    (regularInclusion k H hNQ).hom.toLinearMap = Submodule.inclusion hNQ := by
-  unfold regularInclusion
-  rfl
-
 /-- The linear functional on a finite subcomodule of the regular comodule extracted from a
 tensor automorphism. It applies the automorphism to `1 ⊗ n` and then evaluates the regular
 coordinate by the counit. -/
@@ -189,9 +136,12 @@ theorem localFunctional_eq_comp_inclusion
   apply LinearMap.ext
   intro n
   rw [LinearMap.comp_apply, localFunctional_apply, localFunctional_apply]
+  let : Module.Finite k N.val := Subcomodule.mem_finiteSubcomodules.mp N.property
+  let : Module.Finite k Q.val := Subcomodule.mem_finiteSubcomodules.mp Q.property
   have happ := LinearMap.congr_fun
-    (scalarExtensionComponent_natural k H A η (regularInclusion k H hNQ)) (1 ⊗ₜ[k] n)
-  simp only [regularInclusion_toLinearMap, LinearMap.comp_apply,
+    (scalarExtensionComponent_natural k H A η
+      (FGComoduleCat.ofHom (Subcomodule.inclusion hNQ))) (1 ⊗ₜ[k] n)
+  simp only [FGComoduleCat.ofHom_hom, Subcomodule.inclusion_toLinearMap, LinearMap.comp_apply,
     LinearMap.baseChange_tmul] at happ
   rw [← happ]
   have hcounit (x : A ⊗[k] N.val) :
