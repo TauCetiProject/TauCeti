@@ -71,6 +71,8 @@ namespace TauCeti
 
 namespace KacMoody
 
+open Enveloping
+
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I ℤ}

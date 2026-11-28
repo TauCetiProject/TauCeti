@@ -26,14 +26,15 @@ between `Enveloping R`-modules and Lie modules whenever Lie-module predicates ar
 
 For any `Enveloping R`-module `M` whose `K`-action is compatible with the algebra structure of
 `Enveloping R`, the Cartan and Chevalley generators act by `K`-linear endomorphisms
-`cartanAction R M`, `positiveAction R M`, and `negativeAction R M`. For `μ ∈ Dual K H`, the weight
-space `weightSpace R M μ` is the joint eigenspace `⨅ x : H, (cartanAction R M x).eigenspace (μ x)`.
+`cartanAction R M`, `positiveAction R M`, and `negativeAction R M`. For `μ ∈ Dual K H`,
+`Enveloping.weightSpace R M μ` is `⨅ x : H, (cartanAction R M x).eigenspace (μ x)` (cf.
+`TauCeti.KacMoody.weightSpace`).
 The defining relations move weight vectors along simple roots: `positiveAction R M i` carries weight
 `μ` into `μ + αᵢ` and `negativeAction R M i` carries `μ` into `μ - αᵢ`.
 
 A module `M` is a *weight module* (`IsWeightModule R M`) when its weight spaces span `M`. Because
-joint eigenspaces of any linear family are independent (`iSupIndep_weightSpace`) and non-linear
-eigenvalue functions have trivial joint eigenspaces (`TauCeti.iSup_dual_eq_iSup`), every
+joint eigenspaces of any linear family are independent (`Enveloping.iSupIndep_weightSpace`) and
+non-linear eigenvalue functions have trivial joint eigenspaces (`TauCeti.iSup_dual_eq_iSup`), every
 `cartanAction`-invariant `K`-subspace of a weight module — in particular every
 `Enveloping R`-submodule of a weight module — decomposes as the direct sum of its intersections
 with the weight spaces, over an arbitrary base field.
@@ -55,9 +56,8 @@ finiteness hypothesis on the index set `I`.
   `TauCeti.KacMoody.positiveAction`, `TauCeti.KacMoody.negativeAction`: the `K`-linear actions of
   the presented algebra and its Cartan, raising, and lowering generators on an
   `Enveloping R`-module.
-* `TauCeti.KacMoody.weightSpace`: the joint eigenspace of `cartanAction R M` for a linear form `μ`,
-  with `TauCeti.KacMoody.weightSpaceMap` for the induced map on weight spaces and
-  `TauCeti.KacMoody.weightSpaceDirectSumEquiv` identifying weight spaces of a direct sum.
+* `TauCeti.KacMoody.Enveloping.weightSpace`: `cartanAction R M` weight spaces, with
+  `TauCeti.KacMoody.weightSpaceMap` and `TauCeti.KacMoody.weightSpaceDirectSumEquiv`.
 * `TauCeti.KacMoody.IsWeightModule`: predicate that the weight spaces span `M`.
 * `TauCeti.KacMoody.IsCategoryO`: Kac's category `O` predicate (weight module with
   finite-dimensional weight spaces and weights bounded above by finitely many cones `λ - Q₊`).
@@ -66,8 +66,8 @@ finiteness hypothesis on the index set `I`.
 
 * `TauCeti.KacMoody.positiveAction_mem_weightSpace` and
   `TauCeti.KacMoody.negativeAction_mem_weightSpace`: ladder shifts by `±αᵢ`.
-* `TauCeti.KacMoody.iSupIndep_weightSpace` and `TauCeti.KacMoody.IsWeightModule.isInternal`:
-  weight spaces are independent, and internally decompose any weight module.
+* `TauCeti.KacMoody.Enveloping.iSupIndep_weightSpace` and
+  `TauCeti.KacMoody.IsWeightModule.isInternal`: independence and internal decomposition.
 * `TauCeti.KacMoody.IsWeightModule.iSup_inf_weightSpace_eq`: every `Enveloping R`-submodule of a
   weight module is the supremum of its weight components.
 * `TauCeti.KacMoody.IsWeightModule.submodule`, `TauCeti.KacMoody.IsWeightModule.quotient`,
@@ -237,8 +237,7 @@ variable {N : Type*} [AddCommGroup N] [Module K N] [Module (Enveloping R) N]
 /-- Any `Enveloping R`-linear map intertwines `lieAction`. -/
 @[simp]
 theorem map_lieAction (f : M →ₗ[Enveloping R] N) (x : PresentedLieAlgebra R) (m : M) :
-    f (lieAction R M x m) = lieAction R N x (f m) := by
-  rw [lieAction_apply, lieAction_apply, map_smul]
+    f (lieAction R M x m) = lieAction R N x (f m) := by simp [lieAction_apply]
 
 /-- Any `Enveloping R`-linear map intertwines `cartanAction`. -/
 @[simp]
@@ -294,6 +293,8 @@ variable (R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
 variable (M : Type*) [AddCommGroup M] [Module K M] [Module (Enveloping R) M]
   [IsScalarTower K (Enveloping R) M]
 
+namespace Enveloping
+
 /-- The **weight space** `M_μ` of an `Enveloping R`-module `M` for `μ ∈ Dual K H`, defined as the
 joint eigenspace `⨅ x : H, (cartanAction R M x).eigenspace (μ x)`. -/
 noncomputable def weightSpace (R : CartanRealization (A.map (Int.cast : ℤ → K)) H)
@@ -304,14 +305,24 @@ noncomputable def weightSpace (R : CartanRealization (A.map (Int.cast : ℤ → 
 theorem weightSpace_def (μ : Dual K H) :
     weightSpace R M μ = ⨅ x : H, (cartanAction R M x).eigenspace (μ x) := (rfl)
 
+/-- **Weight spaces for distinct weights are independent**, over any base field. -/
+theorem iSupIndep_weightSpace : iSupIndep (weightSpace R M) :=
+  (iSupIndep_iInf_eigenspace fun x : H ↦ cartanAction R M x).comp DFunLike.coe_injective
+
 variable {R M}
 
 /-- **Simultaneous eigenvector criterion for weight spaces.** A vector `m` lies in
-`weightSpace R M μ` if and only if every Cartan element `x : H` acts on `m` by the scalar
-`μ x`. -/
+`Enveloping.weightSpace R M μ` if and only if every Cartan element `x : H` acts on `m` by the
+scalar `μ x`. -/
 theorem mem_weightSpace_iff {μ : Dual K H} {m : M} :
     m ∈ weightSpace R M μ ↔ ∀ x : H, cartanAction R M x m = μ x • m := by
   simp [weightSpace_def, Submodule.mem_iInf]
+
+end Enveloping
+
+open Enveloping
+
+variable {R M}
 
 /-- Every Cartan element `x : H` acts on a vector in `weightSpace R M μ` by the scalar `μ x`. -/
 theorem cartanAction_apply_of_mem_weightSpace {μ : Dual K H} {m : M}
@@ -329,8 +340,7 @@ theorem cartanAction_mem_weightSpace {μ : Dual K H} {m : M} (hm : m ∈ weightS
 theorem positiveAction_mem_weightSpace {μ : Dual K H} {m : M}
     (hm : m ∈ weightSpace R M μ) (i : I) :
     positiveAction R M i m ∈ weightSpace R M (μ + R.root i) := by
-  rw [mem_weightSpace_iff]
-  intro x
+  rw [mem_weightSpace_iff]; intro x
   rw [cartanAction_positiveAction_apply, cartanAction_apply_of_mem_weightSpace hm, map_smul,
     LinearMap.add_apply, add_smul]
 
@@ -338,8 +348,7 @@ theorem positiveAction_mem_weightSpace {μ : Dual K H} {m : M}
 theorem negativeAction_mem_weightSpace {μ : Dual K H} {m : M}
     (hm : m ∈ weightSpace R M μ) (i : I) :
     negativeAction R M i m ∈ weightSpace R M (μ - R.root i) := by
-  rw [mem_weightSpace_iff]
-  intro x
+  rw [mem_weightSpace_iff]; intro x
   rw [cartanAction_negativeAction_apply, cartanAction_apply_of_mem_weightSpace hm, map_smul,
     LinearMap.sub_apply, sub_smul]
 
@@ -373,10 +382,6 @@ theorem iSup_weightSpace_eq_iSup_iInf_eigenspace :
   iSup_dual_eq_iSup (ρ := cartanAction R M)
     (fun χ ↦ ⨅ x : H, (cartanAction R M x).eigenspace (χ x)) fun _ ↦ le_rfl
 
-/-- **Weight spaces for distinct weights are independent**, over any base field. -/
-theorem iSupIndep_weightSpace : iSupIndep (weightSpace R M) :=
-  (iSupIndep_iInf_eigenspace fun x : H ↦ cartanAction R M x).comp DFunLike.coe_injective
-
 /-- If submodules `W j ≤ weightSpace R M (w j)` with pairwise distinct weights `w j` span `M`,
 then each `weightSpace R M (w k)` equals `W k`. -/
 theorem weightSpace_eq_of_iSup_eq_top {κ : Type*} {W : κ → Submodule K M} {w : κ → Dual K H}
@@ -403,8 +408,7 @@ variable {N : Type*} [AddCommGroup N] [Module K N] [Module (Enveloping R) N]
 theorem map_weightSpace_le (f : M →ₗ[Enveloping R] N) (μ : Dual K H) :
     (weightSpace R M μ).map (f.restrictScalars K) ≤ weightSpace R N μ := by
   rintro _ ⟨m, hm, rfl⟩
-  rw [mem_weightSpace_iff]
-  intro x
+  rw [mem_weightSpace_iff]; intro x
   rw [LinearMap.coe_restrictScalars, ← map_cartanAction, cartanAction_apply_of_mem_weightSpace hm,
     ← LinearMap.coe_restrictScalars (R := K), map_smul]
 
@@ -565,6 +569,8 @@ end DirectSum
 
 end WeightSpaces
 
+open Enveloping
+
 /-! ### Weight modules -/
 
 section IsWeightModule
@@ -631,8 +637,7 @@ variable {N : Type*} [AddCommGroup N] [Module K N] [Module (Enveloping R) N]
 weight module. -/
 theorem IsWeightModule.of_injective (hN : IsWeightModule R N) {f : M →ₗ[Enveloping R] N}
     (hf : Function.Injective f) : IsWeightModule R M := by
-  rw [isWeightModule_iff, eq_top_iff]
-  intro m _
+  rw [isWeightModule_iff, eq_top_iff]; intro m _
   have hmem : f m ∈ ⨆ μ : Dual K H,
       LinearMap.range (f.restrictScalars K) ⊓ weightSpace R N μ := by
     rw [hN.iSup_inf_weightSpace_eq_of_forall_mapsTo _
@@ -697,8 +702,7 @@ theorem IsWeightModule.quotient (hM : IsWeightModule R M) (P : Submodule (Envelo
 /-- Binary products of weight modules are weight modules. -/
 theorem IsWeightModule.prod (hM : IsWeightModule R M) (hN : IsWeightModule R N) :
     IsWeightModule R (M × N) := by
-  rw [isWeightModule_iff, eq_top_iff]
-  rintro ⟨m, n⟩ _
+  rw [isWeightModule_iff, eq_top_iff]; rintro ⟨m, n⟩ _
   have hm := map_iSup_weightSpace_le (LinearMap.inl (Enveloping R) M N)
     ⟨m, hM.symm ▸ Submodule.mem_top, rfl⟩
   have hn := map_iSup_weightSpace_le (LinearMap.inr (Enveloping R) M N)
@@ -711,8 +715,7 @@ theorem IsWeightModule.directSum {κ : Type*} {P : κ → Type*} [∀ j, AddComm
     [∀ j, IsScalarTower K (Enveloping R) (P j)] (hP : ∀ j, IsWeightModule R (P j)) :
     IsWeightModule R (⨁ j, P j) := by
   classical
-  rw [isWeightModule_iff, eq_top_iff]
-  intro v _
+  rw [isWeightModule_iff, eq_top_iff]; intro v _
   refine DirectSum.induction_on v (zero_mem _) (fun j m ↦ ?_) fun _ _ hx hy ↦ add_mem hx hy
   rw [← DirectSum.lof_eq_of (Enveloping R)]
   exact map_iSup_weightSpace_le (DirectSum.lof (Enveloping R) κ P j)
@@ -789,8 +792,7 @@ theorem IsCategoryO.prod (hM : IsCategoryO R M) (hN : IsCategoryO R N) :
   isWeightModule := hM.isWeightModule.prod hN.isWeightModule
   finiteDimensional_weightSpace μ := by
     have := hM.finiteDimensional_weightSpace μ; have := hN.finiteDimensional_weightSpace μ
-    rw [weightSpace_prod]
-    exact Module.Finite.equiv (Submodule.prodEquiv _ _).symm
+    rw [weightSpace_prod]; exact Module.Finite.equiv (Submodule.prodEquiv _ _).symm
   exists_finset_rootLE := by
     classical
     obtain ⟨S₁, hS₁⟩ := hM.exists_finset_rootLE; obtain ⟨S₂, hS₂⟩ := hN.exists_finset_rootLE
@@ -868,9 +870,7 @@ theorem IsWeightModule.exists_primitive_vector_of_exists_finset_rootLE
     (Submodule.ne_bot_iff _).mpr ⟨_, ⟨heP, heW⟩, hne⟩
   have hle : R.RootLE μ (μ + R.root i) := by
     simpa [CartanRealization.rootLE_iff] using R.root_mem_posRootCone i
-  have hroot0 : R.root i = 0 := by
-    simpa using hmax (μ + R.root i) hinf hle
-  exact R.root_linearIndependent.ne_zero i hroot0
+  exact R.root_linearIndependent.ne_zero i (by simpa using hmax (μ + R.root i) hinf hle)
 
 /-- **Existence of maximal weights in category `O`.** Over a field of characteristic zero, every
 nonzero `Enveloping R`-submodule `P` of a module `M` in `IsCategoryO` admits a `RootLE`-maximal
