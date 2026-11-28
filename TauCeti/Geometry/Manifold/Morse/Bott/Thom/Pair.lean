@@ -734,30 +734,6 @@ end IsCriticalSubmanifold
 
 end Gauge
 
-section Empty
-
-variable {E H E' H' S : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
-  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] [NormedAddCommGroup E']
-  [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S]
-  [ChartedSpace H' S] {f : M → ℝ}
-
-/-- **A band whose critical points lie on an empty submanifold carries no relative cohomology.** If
-`a ≤ b`, the band `f⁻¹[a, b]` of a smooth function `f` is compact and all its critical points
-lie on the image of an embedding of an empty manifold `S`, then the band has no critical points, so
-`Hⁿ({f ≤ b}, {f ≤ a})` vanishes in every degree, with arbitrary coefficients. This is the
-cohomology form of `TauCeti.SmoothEmbedding.isZero_singularHomology_sublevelPair_of_isEmpty`. -/
-theorem isZero_singularCohomology_sublevelPair_of_isEmpty [IsEmpty S]
-    {i : SmoothEmbedding J I ∞ S M} (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b : ℝ} (hab : a ≤ b)
-    (hcompact : IsCompact (f ⁻¹' Icc a b)) (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i)
-    {C : Type w} [Category.{v} C] [Abelian C] [HasCoproducts.{u} C] (R : C) (k : Type*) [Ring k]
-    [Linear k C] (N : C) (n : ℕ) :
-    IsZero ((sublevelPair f hab).singularCohomology R k N n) :=
-  isZero_singularCohomology_sublevelPair_of_mfderiv_ne_zero R k N hfs hab hcompact
-    (mfderiv_ne_zero_of_isEmpty hcrit) n
-
-end Empty
-
 section Attachment
 
 variable {E M S : Type u} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -1164,8 +1140,8 @@ theorem nonempty_singularCohomology_sublevelPair_iso_thomPair [T2Space M]
   let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
   cases isEmpty_or_nonempty S with
   | inl hS =>
-    exact ⟨(isZero_singularCohomology_sublevelPair_of_isEmpty hfs (hac.trans hcb).le hcompact hcrit
-        R k N n).iso
+    exact ⟨(isZero_singularCohomology_sublevelPair_of_isEmpty R k N hfs (hac.trans hcb).le hcompact
+        hcrit n).iso
       (TopPair.isZero_singularCohomology_of_surjective_map
         (thomPair (Fin r → ℝ) fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s)
         (R := R) (k := k) (M := N) (fun x ↦ isEmptyElim (TotalSpace.proj x)) n)⟩

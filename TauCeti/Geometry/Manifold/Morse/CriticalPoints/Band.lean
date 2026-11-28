@@ -39,8 +39,9 @@ theorem isRegularValue_iff_notMem_image_criticalPoints_inter_preimage {s : Set �
     (hd : d ∈ s) :
     IsRegularValue I 𝓘(ℝ) f d ↔ d ∉ f '' (criticalPoints I f ∩ f ⁻¹' s) := by
   rw [isRegularValue_iff_notMem_image_criticalPoints]
-  exact not_congr ⟨fun ⟨x, hx, hxd⟩ ↦ ⟨x, ⟨hx, show f x ∈ s from hxd.symm ▸ hd⟩, hxd⟩,
-    fun ⟨x, ⟨hx, _⟩, hxd⟩ ↦ ⟨x, hx, hxd⟩⟩
+  refine not_congr ⟨fun ⟨x, hx, hxd⟩ ↦ ?_, fun ⟨x, ⟨hx, _⟩, hxd⟩ ↦ ⟨x, hx, hxd⟩⟩
+  have hxs : f x ∈ s := by rw [hxd]; exact hd
+  exact ⟨x, ⟨hx, hxs⟩, hxd⟩
 
 /-- A scalar value `d ∈ s` other than `c` is regular for `f` whenever every critical point of `f`
 in `f ⁻¹' s` lies on the level `c`. -/
