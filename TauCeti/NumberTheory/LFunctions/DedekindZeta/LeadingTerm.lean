@@ -231,46 +231,64 @@ theorem dedekindZeta_continuation_leadingTerm {n : ℕ} (hn : 2 ≤ n) {Z : ℂ 
       (hZ a ha).tendsto_inv_pow_smul_meromorphicTrailingCoeffAt hord
   · simpa only [ofReal_natCast] using dedekindZeta_re_pos (K := K) hnat
 
+/-- **Trailing coefficient of the reciprocal Dedekind zeta completion factor at `s = 0`**:
+`meromorphicTrailingCoeffAt (invDedekindZetaCompletionFactor K) 0 = 2⁻¹ ^ (r₁ + r₂)`. -/
+@[simp]
+theorem meromorphicTrailingCoeffAt_invDedekindZetaCompletionFactor_zero :
+    meromorphicTrailingCoeffAt (invDedekindZetaCompletionFactor K) 0 =
+      (2 : ℂ)⁻¹ ^ (nrRealPlaces K + nrComplexPlaces K) := by
+  have hd : ((|discr K| : ℤ) : ℂ) ≠ 0 := by exact_mod_cast (abs_discr_pos K).ne'
+  have hdiscrA : AnalyticAt ℂ (fun z : ℂ ↦ ((|discr K| : ℤ) : ℂ) ^ (-z / 2)) 0 :=
+    (by fun_prop : AnalyticAt ℂ (fun z : ℂ ↦ -z / 2) 0).const_cpow (.inl hd)
+  have hdiscr :
+      meromorphicTrailingCoeffAt (fun z : ℂ ↦ ((|discr K| : ℤ) : ℂ) ^ (-z / 2)) 0 = 1 := by
+    simpa using hdiscrA.meromorphicTrailingCoeffAt_of_ne_zero (by simp)
+  have hGℝ : MeromorphicAt (fun z : ℂ ↦ (Gammaℝ z)⁻¹ ^ nrRealPlaces K) 0 := by fun_prop
+  have hGℂ : MeromorphicAt (fun z : ℂ ↦ (Gammaℂ z)⁻¹ ^ nrComplexPlaces K) 0 := by fun_prop
+  have hR : meromorphicTrailingCoeffAt (fun z : ℂ ↦ (Gammaℝ z)⁻¹ ^ nrRealPlaces K) 0 =
+      (2 : ℂ)⁻¹ ^ nrRealPlaces K := by
+    rw [(TauCeti.meromorphic_Gammaℝ 0).fun_inv.meromorphicTrailingCoeffAt_fun_pow,
+      meromorphicTrailingCoeffAt_fun_inv, meromorphicTrailingCoeffAt_Gammaℝ_zero]
+  have hC : meromorphicTrailingCoeffAt (fun z : ℂ ↦ (Gammaℂ z)⁻¹ ^ nrComplexPlaces K) 0 =
+      (2 : ℂ)⁻¹ ^ nrComplexPlaces K := by
+    rw [(TauCeti.meromorphic_Gammaℂ 0).fun_inv.meromorphicTrailingCoeffAt_fun_pow,
+      meromorphicTrailingCoeffAt_fun_inv, meromorphicTrailingCoeffAt_Gammaℂ_zero]
+  have hfac : invDedekindZetaCompletionFactor K = fun z ↦
+      ((|discr K| : ℤ) : ℂ) ^ (-z / 2) * (Gammaℝ z)⁻¹ ^ nrRealPlaces K *
+        (Gammaℂ z)⁻¹ ^ nrComplexPlaces K :=
+    funext (invDedekindZetaCompletionFactor_def K)
+  rw [hfac, (hdiscrA.meromorphicAt.fun_mul hGℝ).meromorphicTrailingCoeffAt_fun_mul hGℂ,
+    hdiscrA.meromorphicAt.meromorphicTrailingCoeffAt_fun_mul hGℝ, hdiscr, hR, hC, one_mul, pow_add]
+
+/-- **Trailing coefficient of `Λ_K` at `s = 0`** (Neukirch VII §5):
+`meromorphicTrailingCoeffAt (completedDedekindZeta K) 0 = -(2 ^ (r₁ + r₂) h R / w)`. -/
+@[simp]
+theorem meromorphicTrailingCoeffAt_completedDedekindZeta_zero :
+    meromorphicTrailingCoeffAt (completedDedekindZeta K) 0 =
+      (-(2 ^ (nrRealPlaces K + nrComplexPlaces K) * classNumber K * regulator K /
+        torsionOrder K : ℝ) : ℂ) := by
+  have hlim : Tendsto (fun z : ℂ ↦ z * completedDedekindZeta K z) (𝓝[≠] 0)
+      (𝓝 (meromorphicTrailingCoeffAt (completedDedekindZeta K) 0)) := by
+    refine (meromorphic_completedDedekindZeta K 0).tendsto_nhds_meromorphicTrailingCoeffAt.congr
+      fun z ↦ ?_
+    simp [meromorphicOrderAt_completedDedekindZeta_zero]
+  exact tendsto_nhds_unique hlim (tendsto_mul_completedDedekindZeta_zero K)
+
 /-- **Trailing coefficient of `ζ_K` at `s = 0`** (Neukirch VII (5.11)):
 `meromorphicTrailingCoeffAt (dedekindZetaC K) 0 = -(h R / w)`. -/
 @[simp]
 theorem meromorphicTrailingCoeffAt_dedekindZetaC_zero :
     meromorphicTrailingCoeffAt (dedekindZetaC K) 0 =
       (-((classNumber K : ℝ) * regulator K / torsionOrder K : ℝ) : ℂ) := by
-  have hd : ((|discr K| : ℤ) : ℂ) ≠ 0 := by exact_mod_cast (abs_discr_pos K).ne'
-  have hdiscr : AnalyticAt ℂ (fun z : ℂ ↦ ((|discr K| : ℤ) : ℂ) ^ (-z / 2)) 0 :=
-    (by fun_prop : AnalyticAt ℂ (fun z : ℂ ↦ -z / 2) 0).const_cpow (.inl hd)
-  have hGℝ : MeromorphicAt (fun z : ℂ ↦ (Gammaℝ z)⁻¹ ^ nrRealPlaces K) 0 := by fun_prop
-  have hGℂ : MeromorphicAt (fun z : ℂ ↦ (Gammaℂ z)⁻¹ ^ nrComplexPlaces K) 0 := by fun_prop
   have hfac : MeromorphicAt (invDedekindZetaCompletionFactor K) 0 :=
     (analyticAt_invDedekindZetaCompletionFactor K 0).meromorphicAt
-  have hΛ_coeff : meromorphicTrailingCoeffAt (completedDedekindZeta K) 0 =
-      (-(2 ^ (nrRealPlaces K + nrComplexPlaces K) * classNumber K * regulator K /
-        torsionOrder K : ℝ) : ℂ) := by
-    have hlim : Tendsto (fun z : ℂ ↦ z * completedDedekindZeta K z) (𝓝[≠] 0)
-        (𝓝 (meromorphicTrailingCoeffAt (completedDedekindZeta K) 0)) := by
-      refine (meromorphic_completedDedekindZeta K 0).tendsto_nhds_meromorphicTrailingCoeffAt.congr
-        fun z ↦ ?_
-      simp [meromorphicOrderAt_completedDedekindZeta_zero]
-    exact tendsto_nhds_unique hlim (tendsto_mul_completedDedekindZeta_zero K)
   rw [meromorphicTrailingCoeffAt_congr_nhdsNE
       (dedekindZetaC_eventuallyEq_invDedekindZetaCompletionFactor_mul K 0),
     hfac.meromorphicTrailingCoeffAt_fun_mul (meromorphic_completedDedekindZeta K 0),
-    show invDedekindZetaCompletionFactor K = fun z ↦
-        ((|discr K| : ℤ) : ℂ) ^ (-z / 2) * (Gammaℝ z)⁻¹ ^ nrRealPlaces K *
-          (Gammaℂ z)⁻¹ ^ nrComplexPlaces K from
-      funext (invDedekindZetaCompletionFactor_def K),
-    (hdiscr.meromorphicAt.fun_mul hGℝ).meromorphicTrailingCoeffAt_fun_mul hGℂ,
-    hdiscr.meromorphicAt.meromorphicTrailingCoeffAt_fun_mul hGℝ,
-    hdiscr.meromorphicTrailingCoeffAt_of_ne_zero (by simp),
-    (TauCeti.meromorphic_Gammaℝ 0).fun_inv.meromorphicTrailingCoeffAt_fun_pow,
-    (TauCeti.meromorphic_Gammaℂ 0).fun_inv.meromorphicTrailingCoeffAt_fun_pow,
-    meromorphicTrailingCoeffAt_fun_inv, meromorphicTrailingCoeffAt_fun_inv,
-    meromorphicTrailingCoeffAt_Gammaℝ_zero, meromorphicTrailingCoeffAt_Gammaℂ_zero,
-    hΛ_coeff]
-  simp only [neg_zero, zero_div, cpow_zero]
+    meromorphicTrailingCoeffAt_invDedekindZetaCompletionFactor_zero,
+    meromorphicTrailingCoeffAt_completedDedekindZeta_zero]
   push_cast
-  rw [pow_add, inv_pow, inv_pow]
+  rw [inv_pow]
   field_simp
 
 /-- **Leading term of `ζ_K` at `s = 0`** (Neukirch VII (5.11)):
