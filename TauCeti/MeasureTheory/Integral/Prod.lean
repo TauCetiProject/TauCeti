@@ -30,6 +30,8 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
 * `TauCeti.lintegral_mul_setLIntegral_eq` exchanges a weighted integral of set integrals over an
   arbitrary parameter measure with the corresponding integral over the sections of the truncating
   relation.
+* `TauCeti.lintegral_lintegral_lintegral_rotate` moves the innermost of three iterated integrals
+  outermost.
 * `TauCeti.lintegral_cond_prod_le` bounds a lower Lebesgue integral over a product of two
   conditional laws by any bound the integrand satisfies on the rectangle conditioned on. Use it to
   estimate an integral against two independently conditioned coordinates when the integrand is
@@ -111,6 +113,28 @@ open scoped ENNReal ProbabilityTheory
 variable {α β γ E : Type*} {mα : MeasurableSpace α} {mβ : MeasurableSpace β}
   {mγ : MeasurableSpace γ} {μ : Measure α} {ν : Measure β} {κ : Measure γ}
   [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- Moves the innermost of three iterated integrals outermost. -/
+theorem lintegral_lintegral_lintegral_rotate {ρ : Measure γ} [SFinite μ] [SFinite ν] [SFinite ρ]
+    {k : α → β × γ → ℝ≥0∞}
+    (hk : Measurable fun p : α × (β × γ) ↦ k p.1 p.2) :
+    (∫⁻ b, ∫⁻ c, ∫⁻ a, k a (b, c) ∂μ ∂ρ ∂ν) =
+      ∫⁻ a, ∫⁻ b, ∫⁻ c, k a (b, c) ∂ρ ∂ν ∂μ := by
+  have hInner (b : β) : Measurable fun p : γ × α ↦ k p.2 (b, p.1) :=
+    hk.comp (measurable_snd.prodMk (measurable_const.prodMk measurable_fst))
+  have hOuter : Measurable fun p : (α × β) × γ ↦ k p.1.1 (p.1.2, p.2) :=
+    hk.comp ((measurable_fst.comp measurable_fst).prodMk
+      ((measurable_snd.comp measurable_fst).prodMk measurable_snd))
+  have hSections : Measurable fun p : α × β ↦ ∫⁻ c, k p.1 (p.2, c) ∂ρ :=
+    hOuter.lintegral_prod_right'
+  have hSwap : Measurable fun p : β × α ↦ ∫⁻ c, k p.2 (p.1, c) ∂ρ :=
+    hSections.comp measurable_swap
+  calc
+    _ = ∫⁻ b, ∫⁻ a, ∫⁻ c, k a (b, c) ∂ρ ∂μ ∂ν := by
+      refine lintegral_congr fun b ↦ ?_
+      exact lintegral_lintegral_swap (μ := ρ) (ν := μ) (hInner b).aemeasurable
+    _ = ∫⁻ a, ∫⁻ b, ∫⁻ c, k a (b, c) ∂ρ ∂ν ∂μ :=
+      lintegral_lintegral_swap (μ := ν) (ν := μ) hSwap.aemeasurable
 
 /-- The truncated integral `t ↦ ∫⁻ x in {x | R t x}, g x ∂μ` of an a.e.-measurable integrand is
 measurable when the truncating relation is jointly measurable. -/

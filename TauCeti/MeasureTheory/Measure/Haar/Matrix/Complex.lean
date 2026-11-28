@@ -30,6 +30,8 @@ on `κ → ℂ` by `mulVec` and on `ι → κ → ℂ` by two-sided and by affin
 
 * `MeasureTheory.lintegral_comp_mulVec`: for an invertible complex matrix `u`,
   `∫⁻ y : κ → ℂ, g (u *ᵥ y) = ENNReal.ofReal (‖u.det‖⁻¹ ^ 2) * ∫⁻ y : κ → ℂ, g y`.
+* `MeasureTheory.lintegral_eq_enorm_pow_mul_lintegral_comp_smul`: for nonzero `a : ℂ`,
+  `∫⁻ u : κ → ℂ, g u = ‖a‖ₑ ^ (2 |κ|) * ∫⁻ u, g (a • u)`.
 * `MeasureTheory.lintegral_comp_matrix_mul_add`: for an invertible complex matrix `S` and offset
   `c : Matrix ι κ ℂ`,
   `∫⁻ A : ι → κ → ℂ, g (of.symm (S * of A + c)) =`
@@ -60,6 +62,7 @@ Kronecker product on arrays of entries.
 public section
 
 open Fintype Matrix
+open scoped ENNReal
 
 namespace MeasureTheory
 
@@ -107,6 +110,24 @@ theorem lintegral_comp_mulVec {κ : Type*} [Fintype κ] [DecidableEq κ]
   rw [lintegral_congr fun y ↦ by rw [← hf],
     lintegral_comp_linearMap (volume : Measure (κ → ℂ)) (h_det.trans_ne h_pos.ne') g,
     h_det, abs_of_pos (inv_pos.2 h_pos), inv_pow]
+
+/-- Scaling every coordinate of `κ → ℂ` by a nonzero complex number contributes its real Jacobian
+`‖a‖ₑ ^ (2 |κ|)` to the lower Lebesgue integral. -/
+theorem lintegral_eq_enorm_pow_mul_lintegral_comp_smul {κ : Type*} [Fintype κ] {a : ℂ}
+    (ha : a ≠ 0) (g : (κ → ℂ) → ℝ≥0∞) :
+    ∫⁻ u, g u = ‖a‖ₑ ^ (2 * Fintype.card κ) * ∫⁻ u : κ → ℂ, g (a • u) := by
+  classical
+  let D : Matrix κ κ ℂ := diagonal fun _ ↦ a
+  have hD : D.det ≠ 0 := by simp [D, ha]
+  have h := lintegral_comp_mulVec hD g
+  have hdet : D.det = a ^ Fintype.card κ := by simp [D]
+  have ha' : 0 < ‖a‖ := norm_pos_iff.mpr ha
+  have hvec (u : κ → ℂ) : D *ᵥ u = a • u := by
+    funext i
+    exact Matrix.mulVec_diagonal _ _ _
+  simp only [hvec, hdet, norm_pow, ← inv_pow, ← pow_mul, Nat.mul_comm (Fintype.card κ) 2,
+    ENNReal.ofReal_pow (inv_nonneg.mpr ha'.le), ENNReal.ofReal_inv_of_pos ha', ofReal_norm] at h
+  rw [h, ← mul_assoc, ← ENNReal.inv_pow, ENNReal.mul_inv_cancel (by simp [ha]) (by simp), one_mul]
 
 /-- **Change of variables for two-sided multiplication** on `ι → κ → ℂ`: for invertible complex
 matrices `P` and `Q`, the substitution `A ↦ P * A * Q` has the real Jacobian
