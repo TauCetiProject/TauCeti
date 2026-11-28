@@ -41,14 +41,11 @@ namespace TauCeti
 
 variable (p : ℕ) [hp : Fact p.Prime] (K : Type*) [Field K] [CharZero K]
 
-private def zHatToZModHom (p : ℕ) [hp : Fact p.Prime] : Additive zHat.{0} →ₜ* ZMod p :=
-  ⟨(zHat.toZMod.{0} (⟨p, hp.out.pos⟩ : ℕ+)).toMonoidHom,
-    zHat.continuous_toZMod.{0} (⟨p, hp.out.pos⟩ : ℕ+)⟩
-
 /-- **The mod-`p` cyclotomic character** `G_K →ₜ* (ZMod p)ˣ`, defined as the level-`p` reduction
 of `profiniteCyclotomicCharacter K`. -/
 def modPLocalCyclotomicCharacter : Field.absoluteGaloisGroup K →ₜ* (ZMod p)ˣ :=
-  (ContinuousMonoidHom.unitsMap (zHatToZModHom p)).comp
+  (ContinuousMonoidHom.unitsMap
+      (zHat.toZModContinuousMonoidHom.{0} (⟨p, hp.out.pos⟩ : ℕ+))).comp
     (profiniteCyclotomicCharacter.{_, 0} K)
 
 /-- The value of `modPLocalCyclotomicCharacter p K` in `ZMod p` is the mod-`p` reduction of
@@ -60,9 +57,8 @@ theorem coe_modPLocalCyclotomicCharacter_apply (σ : Field.absoluteGaloisGroup K
   have hlhs : (modPLocalCyclotomicCharacter p K σ : ZMod p) =
       zHat.toZMod.{0} (⟨p, hp.out.pos⟩ : ℕ+)
         (profiniteCyclotomicCharacter.{_, 0} K σ : Additive zHat) := by
-    rw [modPLocalCyclotomicCharacter, ContinuousMonoidHom.coe_comp, Function.comp_apply,
-      ContinuousMonoidHom.coe_unitsMap_apply]
-    rfl
+    erw [modPLocalCyclotomicCharacter, ContinuousMonoidHom.coe_comp, Function.comp_apply,
+      ContinuousMonoidHom.coe_unitsMap_apply, zHat.toZModContinuousMonoidHom_apply]
   rw [hlhs, ← PadicInt.cast_toZModPow_eq_toZMod one_ne_zero,
     ← map_component_profiniteCyclotomicCharacter.{_, 0} K p σ, Units.coe_map, MonoidHom.coe_ofClass,
     zHat.toZModPow_component p 1]

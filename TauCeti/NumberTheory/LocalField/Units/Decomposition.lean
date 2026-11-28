@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.LocalField.Teichmuller
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.RingTheory.Valuation.Discrete.UnitPart
 public import TauCeti.Topology.Algebra.Group.Shear
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The structure of the multiplicative group of a local field
@@ -38,6 +39,8 @@ such as the count of its power classes, to the group of principal units `U(K,1)`
 
 * `TauCeti.ker_normalizedValuation` and `TauCeti.continuous_normalizedValuation`: the normalized
   valuation is a continuous homomorphism with kernel `U(K,0)`.
+* `ContinuousMonoidHom.valuation_apply_eq_one`: every continuous homomorphism from a compact
+  monoid into `Lˣ` takes values of valuation `1`.
 * `TauCeti.normalizedValuation_comp_zpowersHom`: a uniformizer splits the normalized valuation.
 * `TauCeti.instSigmaCompactSpaceUnits`: `Kˣ` is σ-compact.
 * `TauCeti.existsUnique_eq_zpow_mul`: every `x : Kˣ` is uniquely `ϖ ^ n * u` with `u ∈ U(K,0)`.
@@ -98,6 +101,19 @@ theorem continuous_normalizedValuation : Continuous (normalizedValuation K) :=
 theorem normalizedValuation_coe_unitFiltration_zero (u : unitFiltration K 0) :
     normalizedValuation K u = 1 :=
   ((ker_normalizedValuation K).ge u.property : _)
+
+/-- Every continuous homomorphism from a compact monoid `A` into the unit group `Kˣ` of a
+nonarchimedean local field `K` takes values of valuation `1`, because its composition with
+`normalizedValuation K` is trivial. -/
+theorem _root_.ContinuousMonoidHom.valuation_apply_eq_one {K : Type*} [Field K] [ValuativeRel K]
+    [TopologicalSpace K] [IsNonarchimedeanLocalField K] {A : Type*} [Monoid A]
+    [TopologicalSpace A] [CompactSpace A] (φ : A →ₜ* Kˣ) (a : A) :
+    valuation K (φ a : K) = 1 := by
+  let f : A →ₜ* Multiplicative ℤ :=
+    ⟨(normalizedValuation K).comp φ.toMonoidHom,
+      (continuous_normalizedValuation K).comp φ.continuous⟩
+  exact (normalizedValuation_eq_one_iff _).mp
+    (DFunLike.congr_fun (ContinuousMonoidHom.eq_one_of_isMulTorsionFree f) a)
 
 end NormalizedValuation
 

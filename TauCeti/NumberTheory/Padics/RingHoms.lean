@@ -89,9 +89,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
   `PadicInt.natCard_quotient_span`, `PadicInt.isAddCyclic_quotient_span`: a nonzero `x` generates
   the same ideal as `p ^ v` for `v` its valuation, so `ℤ_[p] ⧸ (x)` is `ZMod (p ^ v)`, a finite
   ring of cardinality `p ^ v` whose additive group is cyclic.
-* `PadicInt.valuation_natCast`, `PadicInt.valuation_eq_zero_of_isUnit`,
-  `PadicInt.one_le_valuation_of_dvd`: the valuation of a natural number is its `p`-adic
-  valuation, units have valuation `0`, and a nonzero multiple of `p` has valuation at least `1`.
+* `PadicInt.valuation_natCast`, `PadicInt.one_le_valuation_of_dvd`: the valuation of a natural
+  number is its `p`-adic valuation, and a nonzero multiple of `p` has valuation at least `1`.
 * `PadicInt.index_range_nsmul`: `n ℤ_p` has index `p ^ v_p(n)` in `ℤ_p` for `n ≠ 0`.
 * `PadicInt.dvd_pow_valuation`: a nonzero `x` divides `p ^ v` for `v` its valuation.
 * `PadicInt.addVal_eq_valuation`: on nonzero elements, the additive valuation of the discrete
@@ -514,13 +513,6 @@ theorem index_range_nsmul {n : ℕ} (hn : n ≠ 0) :
     ← natCard_quotient_span (Nat.cast_ne_zero.mpr hn)]
   -- the ideal quotient `ℤ_[p] ⧸ I` is by definition the additive quotient by `I.toAddSubgroup`
   exact AddSubgroup.index_eq_card _
-
-/-- A unit of `ℤ_[p]` has valuation `0`. -/
-theorem valuation_eq_zero_of_isUnit {x : ℤ_[p]} (hx : IsUnit x) : x.valuation = 0 := by
-  have h := isUnit_iff.1 hx
-  rwa [norm_eq_zpow_neg_valuation hx.ne_zero,
-    zpow_eq_one_iff_right₀ (Nat.cast_nonneg p) (by exact_mod_cast hp.out.ne_one), neg_eq_zero,
-    Nat.cast_eq_zero] at h
 
 /-- A nonzero `p`-adic integer divisible by `p` has valuation at least `1`. -/
 theorem one_le_valuation_of_dvd {x : ℤ_[p]} (hx : x ≠ 0) (h : (p : ℤ_[p]) ∣ x) :

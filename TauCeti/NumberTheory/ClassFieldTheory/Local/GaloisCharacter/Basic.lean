@@ -178,7 +178,7 @@ variable {A : Type*} [CommGroup A] [TopologicalSpace A] [IsTopologicalGroup A] [
 that sends the geometric Artin symbol of `x` to `δ(x)`
 (`ContinuousMonoidHom.padicGaloisCharacter_geometricArtinMap`). It is
 `ContinuousMonoidHom.padicGaloisCharacterOfZHat` specialized at `zHat.lift (δ(p))`. -/
-def padicGaloisCharacter (δ : ℚ_[p]ˣ →ₜ* A) :
+@[expose] def padicGaloisCharacter (δ : ℚ_[p]ˣ →ₜ* A) :
     Field.absoluteGaloisGroupAbelianization ℚ_[p] →ₜ* A :=
   δ.padicGaloisCharacterOfZHat (zHat.lift (δ (padicPrimeUnit p)))
 

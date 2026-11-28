@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Padic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.ZHat
 public import TauCeti.NumberTheory.Padics.UnitsCharacter.Unitary
 public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.ZMod
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
@@ -103,7 +104,7 @@ section CommGroup
 variable {G : Type*} [CommGroup G] [TopologicalSpace G] [ContinuousMul G]
 
 /-- Given `δ : ℚ_[p]ˣ →ₜ* G` and a continuous homomorphism `φ : ℤ̂ →ₜ* G`, construct the
-continuous Galois character `σ ↦ φ((unramifiedCoordinate σ)⁻¹) * δ(χ_cyc(σ))`, pulling back
+continuous Galois character `σ ↦ δ(χ_cyc(σ)) * φ((unramifiedCoordinate σ)⁻¹)`, pulling back
 `ContinuousMonoidHom.padicGaloisCharacterOfZHat` to `G_{ℚ_p}`.
 
 This generalizes `ContinuousMonoidHom.padicGaloisCharacter` by taking the unramified factor
@@ -116,26 +117,33 @@ def toGaloisCharacterOfZHat (δ : ℚ_[p]ˣ →ₜ* G) (φ : zHat.{0} →ₜ* G)
     (Subgroup.quotientMkContinuousMonoidHom
       (commutator (Field.absoluteGaloisGroup ℚ_[p])).topologicalClosure)
 
+/-- Evaluating `δ.padicGaloisCharacterOfZHat φ` on the abelianized class `(σ : G_{ℚ_p}^{ab})`
+gives `δ.toGaloisCharacterOfZHat φ σ`. -/
+theorem padicGaloisCharacterOfZHat_mk (δ : ℚ_[p]ˣ →ₜ* G) (φ : zHat.{0} →ₜ* G)
+    (σ : Field.absoluteGaloisGroup ℚ_[p]) :
+    δ.padicGaloisCharacterOfZHat φ (σ : Field.absoluteGaloisGroupAbelianization ℚ_[p]) =
+      δ.toGaloisCharacterOfZHat φ σ := by
+  rw [toGaloisCharacterOfZHat, coe_comp, Function.comp_apply,
+    Subgroup.quotientMkContinuousMonoidHom_apply]
+
 /-- Pointwise formula for `δ.toGaloisCharacterOfZHat φ`. -/
 @[simp]
 theorem toGaloisCharacterOfZHat_apply (δ : ℚ_[p]ˣ →ₜ* G) (φ : zHat.{0} →ₜ* G)
     (σ : Field.absoluteGaloisGroup ℚ_[p]) :
     δ.toGaloisCharacterOfZHat φ σ =
-      φ ((unramifiedCoordinate ℚ_[p] (σ : Field.absoluteGaloisGroupAbelianization ℚ_[p]))⁻¹) *
-        δ (padicIntUnitsInclusion p (localCyclotomicCharacter p ℚ_[p] σ)) := by
-  simp [toGaloisCharacterOfZHat, abelianizedLocalCyclotomicCharacter_mk, mul_comm]
+      δ (padicIntUnitsInclusion p (localCyclotomicCharacter p ℚ_[p] σ)) *
+        φ ((unramifiedCoordinate ℚ_[p] (σ : Field.absoluteGaloisGroupAbelianization ℚ_[p]))⁻¹) := by
+  simp [toGaloisCharacterOfZHat, abelianizedLocalCyclotomicCharacter_mk]
 
 /-- Evaluating `δ.toGaloisCharacterOfZHat φ` on a lift of `geometricArtinMap ℚ_[p] x` gives
-`φ (zHat.gen ^ (x : ℚ_[p]).valuation) * δ (padicIntUnitsInclusion p (padicUnitPart p x))`. -/
+`δ (padicIntUnitsInclusion p (padicUnitPart p x)) * φ (zHat.gen ^ (x : ℚ_[p]).valuation)`. -/
 theorem toGaloisCharacterOfZHat_geometricArtinMap (δ : ℚ_[p]ˣ →ₜ* G) (φ : zHat.{0} →ₜ* G)
     (x : ℚ_[p]ˣ) (σ : Field.absoluteGaloisGroup ℚ_[p])
     (hσ : (σ : Field.absoluteGaloisGroupAbelianization ℚ_[p]) = geometricArtinMap ℚ_[p] x) :
     δ.toGaloisCharacterOfZHat φ σ =
-      φ (zHat.gen ^ (x : ℚ_[p]).valuation) *
-        δ (padicIntUnitsInclusion p (padicUnitPart p x)) := by
-  rw [toGaloisCharacterOfZHat, coe_comp, Function.comp_apply,
-    Subgroup.quotientMkContinuousMonoidHom_apply, hσ, padicGaloisCharacterOfZHat_geometricArtinMap,
-    mul_comm]
+      δ (padicIntUnitsInclusion p (padicUnitPart p x)) *
+        φ (zHat.gen ^ (x : ℚ_[p]).valuation) := by
+  rw [← padicGaloisCharacterOfZHat_mk, hσ, padicGaloisCharacterOfZHat_geometricArtinMap]
 
 /-- **Exact compatibility condition for `toGaloisCharacterOfZHat`.** `δ.toGaloisCharacterOfZHat φ`
 restricts on `W_{ℚ_p}` to `δ.toWeilCharacter` if and only if `φ zHat.gen = δ(p)`. -/
@@ -154,7 +162,7 @@ theorem toGaloisCharacterOfZHat_weilToAbsolute_iff (δ : ℚ_[p]ˣ →ₜ* G) (�
     simpa using hspec
   · intro hφ w
     rw [toGaloisCharacterOfZHat_apply, padic_toWeilCharacter_apply,
-      unramifiedCoordinate_weilDegree]
+      unramifiedCoordinate_weilDegree, mul_comm]
     congr 1
     conv_lhs => rw [← ofAdd_toAdd (weilDegree ℚ_[p] w), zHat.ofInt_ofAdd]
     rw [← zpow_neg, map_zpow, hφ]
@@ -238,9 +246,7 @@ theorem padicGaloisCharacter_weilToAbsolute (δ : ℚ_[p]ˣ →ₜ* A) (w : Weil
       padicGaloisCharacter δ
           (weilToAbsolute ℚ_[p] w : Field.absoluteGaloisGroupAbelianization ℚ_[p]) =
         δ.toGaloisCharacterOfZHat (zHat.lift (δ (padicPrimeUnit p))) (weilToAbsolute ℚ_[p] w) := by
-    rw [padicGaloisCharacter_apply, toGaloisCharacterOfZHat_apply,
-      abelianizedLocalCyclotomicCharacter_mk, mul_comm,
-      ← zpow_neg_one (δ (padicPrimeUnit p)), zHat.lift_zpow_apply, zpow_neg_one, map_inv]
+    rw [padicGaloisCharacter, padicGaloisCharacterOfZHat_mk]
   exact h.trans (δ.toGaloisCharacterOfZHat_weilToAbsolute _ (zHat.lift_gen _) w)
 
 end Profinite
@@ -327,18 +333,16 @@ theorem padicGaloisCharacter_padicModPCyclotomicCharacter
     ContinuousMonoidHom.padicGaloisCharacter (padicModPCyclotomicCharacter p)
         (σ : Field.absoluteGaloisGroupAbelianization ℚ_[p]) =
       modPLocalCyclotomicCharacter p ℚ_[p] σ := by
-  have h : (ContinuousMonoidHom.padicGaloisCharacter (padicModPCyclotomicCharacter p)).comp
-      (Subgroup.quotientMkContinuousMonoidHom
-        (commutator (Field.absoluteGaloisGroup ℚ_[p])).topologicalClosure) =
+  rw [ContinuousMonoidHom.padicGaloisCharacter,
+    ContinuousMonoidHom.padicGaloisCharacterOfZHat_mk]
+  have h : (padicModPCyclotomicCharacter p).toGaloisCharacterOfZHat
+        (zHat.lift ((padicModPCyclotomicCharacter p) (padicPrimeUnit p))) =
       modPLocalCyclotomicCharacter p ℚ_[p] :=
     galoisCharacter_eq_of_weilToAbsolute_eq fun w ↦ by
-      rw [ContinuousMonoidHom.coe_comp, Function.comp_apply,
-        Subgroup.quotientMkContinuousMonoidHom_apply,
-        (padicModPCyclotomicCharacter p).padicGaloisCharacter_weilToAbsolute w,
+      rw [(padicModPCyclotomicCharacter p).toGaloisCharacterOfZHat_weilToAbsolute _
+          (zHat.lift_gen _) w,
         modPLocalCyclotomicCharacter_weilToAbsolute_eq_toWeilCharacter_padicModPCyclotomicCharacter]
-  have h' := DFunLike.congr_fun h σ
-  rwa [ContinuousMonoidHom.coe_comp, Function.comp_apply,
-    Subgroup.quotientMkContinuousMonoidHom_apply] at h'
+  exact DFunLike.congr_fun h σ
 
 section NonUnitary
 

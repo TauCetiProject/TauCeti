@@ -46,8 +46,7 @@ a character.
 
 ## Main results
 
-* `TauCeti.padicIntUnitsInclusion_injective`, `TauCeti.valuation_padicIntUnitsInclusion`,
-  `TauCeti.normalizedValuation_padicIntUnitsInclusion`,
+* `TauCeti.normalizedValuation_padicIntUnitsInclusion`,
   `TauCeti.padicIntUnitsInclusion_mem_unitFiltration_zero`: properties of `ℤ_pˣ → ℚ_pˣ`.
 * `TauCeti.padicUnitPart_apply_of_eq`: if `x = p ^ k u` with `u ∈ ℤ_pˣ`, then `x |x| = u`.
 * `TauCeti.coe_eq_zpow_valuation_mul_padicUnitPart`,
@@ -87,18 +86,6 @@ variable {p}
 theorem coe_padicIntUnitsInclusion_apply (u : ℤ_[p]ˣ) :
     ((padicIntUnitsInclusion p u : ℚ_[p]ˣ) : ℚ_[p]) = ((u : ℤ_[p]) : ℚ_[p]) :=
   (rfl)
-
-variable (p) in
-/-- `padicIntUnitsInclusion p` is injective. -/
-theorem padicIntUnitsInclusion_injective : Function.Injective (padicIntUnitsInclusion p) :=
-  fun _ _ h ↦ Units.ext <| PadicInt.ext <| by
-    simpa [coe_padicIntUnitsInclusion_apply] using congrArg (fun x : ℚ_[p]ˣ ↦ (x : ℚ_[p])) h
-
-/-- Every unit of `ℤ_[p]` has valuation zero in `ℚ_[p]`. -/
-theorem valuation_padicIntUnitsInclusion (u : ℤ_[p]ˣ) :
-    ((padicIntUnitsInclusion p u : ℚ_[p]).valuation) = 0 := by
-  rw [← _root_.Padic.toAdd_normalizedValuation_eq_valuation,
-    _root_.Padic.toAdd_normalizedValuation_eq_zero_of_coe_eq (coe_padicIntUnitsInclusion_apply u)]
 
 /-- Every unit of `ℤ_[p]` has normalized valuation `1` in `ℚ_[p]`. -/
 @[simp]

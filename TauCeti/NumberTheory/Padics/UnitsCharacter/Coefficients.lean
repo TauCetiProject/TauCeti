@@ -23,10 +23,7 @@ This file also constructs additional canonical characters of `ℚ_[p]ˣ` complem
 `TauCeti.padicUnitPart` and `TauCeti.unramifiedCharacter`:
 
 * `TauCeti.padicModPCyclotomicCharacter p`: the mod-`p` character `ω : ℚ_[p]ˣ →ₜ* (ZMod p)ˣ`,
-  obtained by reducing `TauCeti.padicUnitPart p` modulo `p`. After pushing forward to the residue
-  field `k` of a finite extension `L / ℚ_[p]` along the induced maps `ℤ_[p] →+* k` and
-  `ZMod p →+* k`, `TauCeti.padicUnitPart p` agrees with the pushforward of `ω`
-  (`TauCeti.unitsMap_ringHom_comp_padicUnitPart`).
+  obtained by reducing `TauCeti.padicUnitPart p` modulo `p`.
 * `TauCeti.padicAlgebraMapCharacter p R h`: the character `x ↦ algebraMap ℚ_[p] R x` into a
   topological `ℚ_[p]`-algebra `R` with continuous structure map.
 
@@ -37,12 +34,6 @@ This file also constructs additional canonical characters of `ℚ_[p]ˣ` complem
   `TauCeti.WeightSpace p Λ`.
 * `TauCeti.padicModPCyclotomicCharacter`, `TauCeti.padicAlgebraMapCharacter`: the mod-`p`
   cyclotomic character `ω` and the algebra-map character `x ↦ x`.
-
-## Main results
-
-* `TauCeti.unitsMap_ringHom_comp_padicUnitPart`: pushing `padicUnitPart p` along any
-  `f : ℤ_[p] →+* k` with `[CharP k p]` agrees with pushing `padicModPCyclotomicCharacter p` along
-  `ZMod.castHom`.
 
 ## References
 
@@ -147,18 +138,6 @@ theorem coe_padicModPCyclotomicCharacter_padicIntUnitsInclusion (u : ℤ_[p]ˣ) 
     (padicModPCyclotomicCharacter p (padicIntUnitsInclusion p u) : ZMod p) =
       PadicInt.toZMod (u : ℤ_[p]) := by
   simp [padicModPCyclotomicCharacter]
-
-/-- Pushing `x ↦ x |x|` along any ring homomorphism `f : ℤ_[p] →+* k` into a topological ring
-`k` of characteristic `p` (for instance the residue field `𝓀[L]` of a finite extension `L / ℚ_[p]`)
-agrees with pushing `ω` along `ZMod.castHom`. -/
-theorem unitsMap_ringHom_comp_padicUnitPart {k : Type*} [Ring k] [CharP k p]
-    [TopologicalSpace k] (f : ℤ_[p] →+* k) :
-    (ContinuousMonoidHom.unitsMap ⟨f.toMonoidHom, f.continuous_of_padicInt_charP⟩).comp
-        (padicUnitPart p) =
-      (ContinuousMonoidHom.unitsMap
-          ⟨(ZMod.castHom (dvd_refl p) k).toMonoidHom, continuous_of_discreteTopology⟩).comp
-        (padicModPCyclotomicCharacter p) :=
-  ContinuousMonoidHom.unitsMap_ringHom_comp_eq_castHom f (padicUnitPart p)
 
 /-- The canonical character `x ↦ algebraMap ℚ_[p] R x` into a topological `ℚ_[p]`-algebra `R`
 whose structure map is continuous. -/

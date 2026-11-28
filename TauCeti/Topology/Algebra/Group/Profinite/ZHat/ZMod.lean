@@ -42,8 +42,9 @@ is `ℤ`, which is not profinite, and no lift exists.
 
 ## Main definitions
 
-* `TauCeti.zHat.toZMod`: reduction of a profinite integer modulo `n`, a continuous ring
-  homomorphism `Additive zHat →+* ZMod n`.
+* `TauCeti.zHat.toZMod`, `TauCeti.zHat.toZModContinuousMonoidHom`: reduction of a profinite integer
+  modulo `n`, as a ring homomorphism `Additive zHat →+* ZMod n` and as a continuous multiplicative
+  homomorphism `Additive zHat →ₜ* ZMod n`.
 * `TauCeti.zHat.modSubgroup`, `TauCeti.zHat.modQuotientEquiv`, `TauCeti.zHat.modTransversal`:
   the open reduction kernel, its finite cyclic quotient, and the canonical residue transversal.
 * `TauCeti.zHat.addLift`: the additive homomorphism into `Additive zHat` assembled from a
@@ -143,6 +144,18 @@ theorem lift_ofAdd_one_apply (x : zHat.{u}) :
 /-- Reduction modulo `n` is continuous. -/
 theorem continuous_toZMod : Continuous (toZMod n : Additive zHat.{u} → ZMod n) :=
   continuous_toAdd.comp ((lift _).continuous.comp continuous_toMul)
+
+/-- Reduction modulo `n` as a continuous multiplicative homomorphism
+`Additive zHat.{u} →ₜ* ZMod n`. -/
+noncomputable def toZModContinuousMonoidHom : Additive zHat.{u} →ₜ* ZMod n where
+  toMonoidHom := (toZMod n).toMonoidHom
+  continuous_toFun := continuous_toZMod n
+
+/-- Evaluating `zHat.toZModContinuousMonoidHom n` on `a` gives `zHat.toZMod n a`. -/
+@[simp]
+theorem toZModContinuousMonoidHom_apply (a : Additive zHat.{u}) :
+    toZModContinuousMonoidHom n a = toZMod n a :=
+  (rfl)
 
 /-- **Compatibility of the projections along divisibility.** Reducing modulo `n` and then modulo
 a divisor `m` of `n` is reducing modulo `m`. -/

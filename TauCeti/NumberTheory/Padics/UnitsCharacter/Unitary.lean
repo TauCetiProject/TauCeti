@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Padics.UnitsCharacter.Coefficients
 public import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
-import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
+import TauCeti.NumberTheory.LocalField.Units.Decomposition
 
 /-!
 # Unitary continuous characters of `ℚ_pˣ`
@@ -15,7 +15,7 @@ import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 A continuous character `δ : ℚ_[p]ˣ →ₜ* Lˣ` with values in a valuated field `L` is **unitary**
 (`TauCeti.PadicUnitsCharacter.IsUnitary`) when `valuation L (δ (padicPrimeUnit p) : L) = 1`. When
 `L` is a nonarchimedean local field, every continuous homomorphism from a compact monoid into `Lˣ`
-takes values of valuation `1` (`ContinuousMonoidHom.valuation_apply_eq_one`), so in particular
+takes values of valuation `1` by `ContinuousMonoidHom.valuation_apply_eq_one`, so in particular
 `δ` maps `ℤ_[p]ˣ` into units of valuation `1`
 (`TauCeti.PadicUnitsCharacter.valuation_apply_padicIntUnitsInclusion_eq_one`), and `δ` is unitary
 if and only if `valuation L (δ x : L) = 1` for all `x ∈ ℚ_[p]ˣ`
@@ -35,8 +35,6 @@ nonarchimedean local field `L` equipped with a continuous `ℚ_[p]`-algebra stru
 * `TauCeti.PadicUnitsCharacter.isUnitary_iff_valuation_padicPrimeUnit_eq_one`,
   `TauCeti.PadicUnitsCharacter.isUnitary_one`, `TauCeti.PadicUnitsCharacter.isUnitary_mul`,
   `TauCeti.PadicUnitsCharacter.isUnitary_inv`: basic properties of unitary characters.
-* `ContinuousMonoidHom.valuation_apply_eq_one`: every continuous homomorphism from a compact
-  monoid into `Lˣ` takes values of valuation `1`.
 * `TauCeti.PadicUnitsCharacter.valuation_apply_padicIntUnitsInclusion_eq_one`: `δ(ℤ_[p]ˣ)` has
   valuation `1` in any nonarchimedean local field.
 * `TauCeti.PadicUnitsCharacter.isUnitary_iff_forall_valuation_eq_one`: characterization of unitarity
@@ -96,26 +94,6 @@ theorem PadicUnitsCharacter.isUnitary_inv [ContinuousMul L] {δ : PadicUnitsChar
 end UnitaryBasic
 
 end TauCeti
-
-namespace ContinuousMonoidHom
-
-open TauCeti
-
-variable {L : Type*} [Field L] [ValuativeRel L] [TopologicalSpace L]
-  [IsNonarchimedeanLocalField L]
-
-/-- Every continuous homomorphism from a compact monoid `A` into the unit group `Lˣ` of a
-nonarchimedean local field `L` takes values of valuation `1`, because its composition with
-`normalizedValuation L` is trivial. -/
-theorem valuation_apply_eq_one {A : Type*} [Monoid A] [TopologicalSpace A] [CompactSpace A]
-    (φ : A →ₜ* Lˣ) (a : A) : valuation L (φ a : L) = 1 := by
-  let f : A →ₜ* Multiplicative ℤ :=
-    ⟨(normalizedValuation L).comp φ.toMonoidHom,
-      (continuous_normalizedValuation L).comp φ.continuous⟩
-  exact (normalizedValuation_eq_one_iff _).mp
-    (DFunLike.congr_fun (ContinuousMonoidHom.eq_one_of_isMulTorsionFree f) a)
-
-end ContinuousMonoidHom
 
 namespace TauCeti
 
