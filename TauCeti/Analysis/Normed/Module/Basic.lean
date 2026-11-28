@@ -80,6 +80,10 @@ normed spaces:
   action of a normed division ring, and `σ t ≠ 0`, rescaling by `(σ t)⁻¹` turns the error at
   `t • v` into the error at `v`: `‖(σ t)⁻¹ • w - L v‖ = ‖σ t‖⁻¹ * ‖w - L (t • v)‖`. No continuity
   of `L` is needed.
+* `NormedAddCommGroup.ofCore_toPseudoMetricSpace` and
+  `NormedAddCommGroup.ofCore_toTopologicalSpace`: constructing a `NormedAddCommGroup` via `ofCore`
+  on a type already carrying a `SeminormedAddCommGroup` recovers the same pseudometric and
+  topological structures.
 
 The coordinate bound is adapted from [KLS](https://github.com/human-ai-mathematics/kls-lean),
 commit `65810c73f9dd7945fc646ab484cb19d673f5291d`,
@@ -419,5 +423,24 @@ theorem Continuous.div_norm_smul {X F : Type*} [TopologicalSpace X] [SeminormedA
   refine squeeze_zero_norm hle ?_
   simpa [hτ0 p hpf, hp] using
     ((hτ.norm.tendsto p).add (hy.norm.tendsto p)).add hfract.norm
+
+/-- Constructing a `NormedAddCommGroup` via `ofCore` on a type that already carries a
+`SeminormedAddCommGroup` instance recovers the same underlying pseudometric space. -/
+theorem NormedAddCommGroup.ofCore_toPseudoMetricSpace {𝕜 E : Type*} [NormedField 𝕜]
+    [hE : SeminormedAddCommGroup E] [Module 𝕜 E] (core : NormedSpace.Core 𝕜 E) :
+    (NormedAddCommGroup.ofCore core).toPseudoMetricSpace = hE.toPseudoMetricSpace := by
+  ext f g
+  rw [@dist_eq_norm_neg_add _
+      (NormedAddCommGroup.ofCore core).toSeminormedAddCommGroup.toSeminormedAddGroup,
+    norm_neg_add, dist_eq_norm]
+
+/-- Constructing a `NormedAddCommGroup` via `ofCore` on a type that already carries a
+`SeminormedAddCommGroup` instance recovers the same topology. -/
+theorem NormedAddCommGroup.ofCore_toTopologicalSpace {𝕜 E : Type*} [NormedField 𝕜]
+    [hE : SeminormedAddCommGroup E] [Module 𝕜 E] (core : NormedSpace.Core 𝕜 E) :
+    (NormedAddCommGroup.ofCore core).toUniformSpace.toTopologicalSpace =
+      hE.toUniformSpace.toTopologicalSpace :=
+  congrArg (fun m : PseudoMetricSpace E => m.toUniformSpace.toTopologicalSpace)
+    (NormedAddCommGroup.ofCore_toPseudoMetricSpace core)
 
 end

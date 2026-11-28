@@ -143,6 +143,14 @@ noncomputable def mapEndStarAlgEquiv (X : C) :
 
 end EndStarAlgEquiv
 
+/-- Forgetting invertibility from `CategoryTheory.Functor.mapEndStarAlgEquiv` recovers
+`CategoryTheory.Functor.mapEndStarAlgHom`. -/
+@[simp] theorem toStarAlgHom_mapEndStarAlgEquiv {R : Type w} [CommSemiring R]
+    [Preadditive C] [Preadditive D] [CategoryTheory.Linear R C] [CategoryTheory.Linear R D]
+    (F : C ⥤ D) [F.Additive] [F.Linear R] [F.PreservesDagger] [F.Full] [F.Faithful] (X : C) :
+    (F.mapEndStarAlgEquiv R X).toStarAlgHom = F.mapEndStarAlgHom R X := by
+  ext; simp
+
 end CategoryTheory.Functor
 
 namespace CategoryTheory.NatTrans

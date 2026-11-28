@@ -114,8 +114,9 @@ theorem lipschitzWith_map (X Y : C) :
 functor between C*-categories is norm-closed. -/
 theorem isClosed_kerIdeal (X Y : C) :
     IsClosed (F.kerIdeal.hom X Y : Set (X ⟶ Y)) := by
-  simpa only [← SetLike.setOfPred_mem_eq, Functor.mem_kerIdeal_hom, mapCLM_apply] using
-    isClosed_eq (F.mapCLM X Y).continuous continuous_const
+  convert (F.mapCLM X Y).isClosed_ker
+  ext f
+  simp [Functor.mem_kerIdeal_hom, LinearMap.mem_ker]
 
 /-! ### Faithful and fully faithful linear dagger functors -/
 
@@ -214,18 +215,11 @@ variable {C : Type u₁} [Category.{v₁} C] [Preadditive C] [CategoryTheory.Lin
     ‖e.endStarAlgEquiv R he a‖₊ = ‖a‖₊ :=
   Subtype.ext (e.norm_endStarAlgEquiv he a)
 
-/-- Conjugation by a unitary isomorphism preserves and reflects the spectral order on endomorphism
-C*-algebras. -/
-theorem endStarAlgEquiv_le_iff {R : Type*} [Semiring R] [CategoryTheory.Linear R C]
-    {X Y : C} (e : X ≅ Y) (he : IsUnitary e.hom) {a b : End X} :
-    e.endStarAlgEquiv R he a ≤ e.endStarAlgEquiv R he b ↔ a ≤ b :=
-  map_le_map_iff (e.endStarAlgEquiv R he)
-
 /-- Conjugation by a unitary isomorphism preserves and reflects positivity in endomorphism
 C*-algebras. -/
 @[simp] theorem endStarAlgEquiv_nonneg_iff {R : Type*} [Semiring R] [CategoryTheory.Linear R C]
     {X Y : C} (e : X ≅ Y) (he : IsUnitary e.hom) {a : End X} :
     0 ≤ e.endStarAlgEquiv R he a ↔ 0 ≤ a := by
-  simpa only [map_zero] using e.endStarAlgEquiv_le_iff (R := R) he (a := 0) (b := a)
+  simpa only [map_zero] using map_le_map_iff (e.endStarAlgEquiv R he) (a := 0) (b := a)
 
 end CategoryTheory.Iso

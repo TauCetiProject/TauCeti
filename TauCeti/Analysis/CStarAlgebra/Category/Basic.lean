@@ -10,6 +10,7 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.CategoryTheory.Dagger.Basic
+import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.CategoryTheory.Dagger.Polarization
 
 /-!
@@ -35,7 +36,7 @@ is stated as `f ≫ dagger f = g ≫ dagger g` for an endomorphism `g` of `X`; i
 * `TauCeti.CStarCategory.norm_comp_dagger_le_polarization`: polarization norm bound.
 * `TauCeti.CStarCategory.norm_id`, `TauCeti.CStarCategory.isZero_iff_norm_id_eq_zero`, and
   `TauCeti.CStarCategory.not_isZero_iff_norm_id_eq_one`: zero-object vs nonzero identity norms,
-  together with norm formulas for self-adjoint idempotents and unitary arrows.
+  together with norm formulas for unitary arrows.
 * `CategoryTheory.End.instCStarAlgebra`: each endomorphism algebra `End X` is a unital
   C*-algebra, with Mathlib's operator-order multiplication and the dagger as star.
 * `CategoryTheory.End.nonneg_iff`: the positive elements of `End X` are exactly the composites
@@ -196,125 +197,6 @@ theorem norm_comp_dagger_le_polarization (f g : X ⟶ Y) :
   conv_lhs => rw [sub_eq_add_neg, sub_eq_add_neg]
   refine norm_add₄_le.trans_eq ?_
   simp only [_root_.norm_neg, norm_smul, Complex.norm_I, one_mul, norm_self_comp_dagger]
-
-/-! ### Identity, unitary, projection, and zero-object norm formulas -/
-
-/-- Every self-adjoint idempotent `p : X ⟶ X` in a C*-category has norm `0` or `1`. -/
-theorem norm_eq_zero_or_one_of_idempotent_of_dagger {p : X ⟶ X}
-    (hp : p ≫ p = p) (hsa : dagger p = p) : ‖p‖ = 0 ∨ ‖p‖ = 1 := by
-  have hsq : ‖p‖ ^ 2 = ‖p‖ := by
-    calc
-      ‖p‖ ^ 2 = ‖p ≫ dagger p‖ := (norm_self_comp_dagger p).symm
-      _ = ‖p‖ := by rw [hsa, hp]
-  exact eq_zero_or_one_of_sq_eq_self hsq
-
-/-- A nonzero self-adjoint idempotent has norm `1`. -/
-theorem norm_eq_one_of_idempotent_of_dagger {p : X ⟶ X}
-    (hp : p ≫ p = p) (hsa : dagger p = p) (hp0 : p ≠ 0) : ‖p‖ = 1 :=
-  (norm_eq_zero_or_one_of_idempotent_of_dagger hp hsa).resolve_left (mt norm_eq_zero.mp hp0)
-
-/-- Every self-adjoint idempotent is a contraction (`‖p‖ ≤ 1`). -/
-theorem norm_le_one_of_idempotent_of_dagger {p : X ⟶ X}
-    (hp : p ≫ p = p) (hsa : dagger p = p) : ‖p‖ ≤ 1 := by
-  rcases norm_eq_zero_or_one_of_idempotent_of_dagger hp hsa with h | h <;> linarith
-
-/-- The identity arrow of any object in a C*-category has norm `0` or `1`. -/
-theorem norm_id_eq_zero_or_one (X : C) : ‖(𝟙 X : X ⟶ X)‖ = 0 ∨ ‖(𝟙 X : X ⟶ X)‖ = 1 :=
-  norm_eq_zero_or_one_of_idempotent_of_dagger (Category.id_comp (𝟙 X)) (dagger_id X)
-
-/-- The identity of an object has norm at most one. -/
-theorem norm_id_le_one (X : C) : ‖𝟙 X‖ ≤ 1 :=
-  norm_le_one_of_idempotent_of_dagger (Category.id_comp (𝟙 X)) (dagger_id X)
-
-/-- The identity of an object that is not a zero object has norm one. -/
-theorem norm_id {X : C} (hX : ¬ Limits.IsZero X) : ‖𝟙 X‖ = 1 :=
-  norm_eq_one_of_idempotent_of_dagger (Category.id_comp (𝟙 X)) (dagger_id X)
-    (mt (Limits.IsZero.iff_id_eq_zero X).mpr hX)
-
-/-- Every arrow out of a zero object has norm `0`. -/
-theorem _root_.CategoryTheory.Limits.IsZero.norm_hom_left (hX : Limits.IsZero X) (f : X ⟶ Y) :
-    ‖f‖ = 0 := by
-  rw [hX.eq_of_src f 0, norm_zero]
-
-/-- Every arrow into a zero object has norm `0`. -/
-theorem _root_.CategoryTheory.Limits.IsZero.norm_hom_right (hY : Limits.IsZero Y) (f : X ⟶ Y) :
-    ‖f‖ = 0 := by
-  rw [hY.eq_of_tgt f 0, norm_zero]
-
-/-- The identity arrow of a zero object has norm `0`. -/
-theorem _root_.CategoryTheory.Limits.IsZero.norm_id (hX : Limits.IsZero X) :
-    ‖(𝟙 X : X ⟶ X)‖ = 0 :=
-  hX.norm_hom_left (𝟙 X)
-
-/-- An object in a C*-category is a zero object precisely when its identity arrow has norm `0`. -/
-theorem isZero_iff_norm_id_eq_zero (X : C) : Limits.IsZero X ↔ ‖(𝟙 X : X ⟶ X)‖ = 0 := by
-  rw [Limits.IsZero.iff_id_eq_zero, norm_eq_zero]
-
-/-- An object in a C*-category is nonzero precisely when its identity arrow has norm `1`. -/
-theorem not_isZero_iff_norm_id_eq_one (X : C) : ¬ Limits.IsZero X ↔ ‖(𝟙 X : X ⟶ X)‖ = 1 := by
-  rw [isZero_iff_norm_id_eq_zero]
-  rcases norm_id_eq_zero_or_one X with h | h <;> simp [h]
-
-/-- If `X ⟶ X` is nontrivial, the identity arrow `𝟙 X` has norm `1`. -/
-@[simp] theorem norm_id_of_nontrivial (X : C) [Nontrivial (X ⟶ X)] :
-    ‖(𝟙 X : X ⟶ X)‖ = 1 := by
-  refine (not_isZero_iff_norm_id_eq_one X).mp fun hX => ?_
-  obtain ⟨f, g, hfg⟩ := exists_pair_ne (X ⟶ X)
-  exact hfg (hX.eq_of_src f g)
-
-/-- In a C*-category with a chosen zero object `0`, `‖𝟙 (0 : C)‖ = 0`. -/
-theorem norm_id_zero_object [Limits.HasZeroObject C] :
-    open scoped ZeroObject in
-    ‖(𝟙 (0 : C) : (0 : C) ⟶ 0)‖ = 0 :=
-  (Limits.isZero_zero C).norm_id
-
-/-- Pre-composing with an arrow satisfying `dagger u ≫ u = 𝟙 Y` preserves norms. -/
-theorem norm_comp_of_dagger_comp_id {u : X ⟶ Y} (hu : dagger u ≫ u = 𝟙 Y) (g : Y ⟶ Z) :
-    ‖u ≫ g‖ = ‖g‖ := by
-  refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp ?_
-  have hcomp : dagger (u ≫ g) ≫ (u ≫ g) = dagger g ≫ g := by
-    calc
-      dagger (u ≫ g) ≫ (u ≫ g) = dagger g ≫ (dagger u ≫ u) ≫ g := by
-        simp only [dagger_comp, Category.assoc]
-      _ = dagger g ≫ g := by rw [hu, Category.id_comp]
-  rw [← norm_dagger_comp_self, hcomp, norm_dagger_comp_self]
-
-/-- Post-composing with an arrow satisfying `u ≫ dagger u = 𝟙 X` preserves norms. -/
-theorem norm_comp_of_comp_dagger_id {u : X ⟶ Y} (hu : u ≫ dagger u = 𝟙 X) (f : W ⟶ X) :
-    ‖f ≫ u‖ = ‖f‖ := by
-  calc
-    ‖f ≫ u‖ = ‖dagger (f ≫ u)‖ := (norm_dagger _).symm
-    _ = ‖dagger u ≫ dagger f‖ := by rw [dagger_comp]
-    _ = ‖dagger f‖ := norm_comp_of_dagger_comp_id (by rw [dagger_dagger]; exact hu) (dagger f)
-    _ = ‖f‖ := norm_dagger f
-
-/-- Pre-composing with a unitary arrow preserves norms. -/
-@[simp] theorem _root_.TauCeti.IsUnitary.norm_comp_left {u : X ⟶ Y} (hu : IsUnitary u)
-    (g : Y ⟶ Z) : ‖u ≫ g‖ = ‖g‖ :=
-  norm_comp_of_dagger_comp_id hu.dagger_hom_id g
-
-/-- Post-composing with a unitary arrow preserves norms. -/
-@[simp] theorem _root_.TauCeti.IsUnitary.norm_comp_right {u : X ⟶ Y} (hu : IsUnitary u)
-    (f : W ⟶ X) : ‖f ≫ u‖ = ‖f‖ :=
-  norm_comp_of_comp_dagger_id hu.hom_dagger_id f
-
-/-- The norm of a unitary arrow `u : X ⟶ Y` equals `‖𝟙 X‖` (`1` when `X` is nonzero, `0` when `X`
-is a zero object). -/
-theorem _root_.TauCeti.IsUnitary.norm_eq_norm_id {u : X ⟶ Y} (hu : IsUnitary u) :
-    ‖u‖ = ‖(𝟙 X : X ⟶ X)‖ := by
-  calc
-    ‖u‖ = ‖dagger u‖ := (norm_dagger u).symm
-    _ = ‖u ≫ dagger u‖ := (hu.norm_comp_left (dagger u)).symm
-    _ = ‖(𝟙 X : X ⟶ X)‖ := by rw [hu.hom_dagger_id]
-
-/-- Every unitary arrow is a contraction (`‖u‖ ≤ 1`). -/
-theorem _root_.TauCeti.IsUnitary.norm_le_one {u : X ⟶ Y} (hu : IsUnitary u) : ‖u‖ ≤ 1 :=
-  hu.norm_eq_norm_id.trans_le (norm_id_le_one X)
-
-/-- A unitary arrow out of an object with nontrivial endomorphisms has norm `1`. -/
-theorem _root_.TauCeti.IsUnitary.norm_eq_one {u : X ⟶ Y} (hu : IsUnitary u)
-    [Nontrivial (X ⟶ X)] : ‖u‖ = 1 := by
-  rw [hu.norm_eq_norm_id, norm_id_of_nontrivial]
 
 end CStarCategory
 
@@ -530,3 +412,117 @@ theorem comp_comp_dagger_le_norm_smul {Y : C} (g : X ⟶ Y) (a : End Y)
   simp [Algebra.algebraMap_eq_smul_one, ← Complex.coe_smul]
 
 end CategoryTheory.End
+
+namespace TauCeti.CStarCategory
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [Linear ℂ C]
+  [DaggerCategory C] [DaggerPreadditive C] [DaggerLinear ℂ C]
+  [∀ X Y : C, Norm (X ⟶ Y)] [CStarCategory C]
+variable {W X Y Z : C}
+
+/-! ### Identity, unitary, and zero-object norm formulas -/
+
+/-- The identity arrow of any object in a C*-category has norm `0` or `1`. -/
+theorem norm_id_eq_zero_or_one (X : C) : ‖(𝟙 X : X ⟶ X)‖ = 0 ∨ ‖(𝟙 X : X ⟶ X)‖ = 1 := by
+  by_cases hX : (𝟙 X : X ⟶ X) = 0
+  · left; simp [hX]
+  · right
+    exact (End.norm_of (𝟙 X)).symm.trans <|
+      (IsStarProjection.one (End X)).norm_eq_one (mt (congrArg End.asHom) hX)
+
+/-- The identity of an object has norm at most one. -/
+theorem norm_id_le_one (X : C) : ‖𝟙 X‖ ≤ 1 :=
+  (End.norm_of (𝟙 X)).symm.trans_le (IsStarProjection.one (End X)).norm_le
+
+/-- The identity of an object that is not a zero object has norm one. -/
+theorem norm_id {X : C} (hX : ¬ Limits.IsZero X) : ‖𝟙 X‖ = 1 :=
+  (End.norm_of (𝟙 X)).symm.trans <|
+    (IsStarProjection.one (End X)).norm_eq_one
+      (mt (congrArg End.asHom) (mt (Limits.IsZero.iff_id_eq_zero X).mpr hX))
+
+/-- Every arrow out of a zero object has norm `0`. -/
+theorem _root_.CategoryTheory.Limits.IsZero.norm_hom_left (hX : Limits.IsZero X) (f : X ⟶ Y) :
+    ‖f‖ = 0 := by
+  rw [hX.eq_of_src f 0, norm_zero]
+
+/-- Every arrow into a zero object has norm `0`. -/
+theorem _root_.CategoryTheory.Limits.IsZero.norm_hom_right (hY : Limits.IsZero Y) (f : X ⟶ Y) :
+    ‖f‖ = 0 := by
+  rw [hY.eq_of_tgt f 0, norm_zero]
+
+/-- The identity arrow of a zero object has norm `0`. -/
+theorem _root_.CategoryTheory.Limits.IsZero.norm_id (hX : Limits.IsZero X) :
+    ‖(𝟙 X : X ⟶ X)‖ = 0 :=
+  hX.norm_hom_left (𝟙 X)
+
+/-- An object in a C*-category is a zero object precisely when its identity arrow has norm `0`. -/
+theorem isZero_iff_norm_id_eq_zero (X : C) : Limits.IsZero X ↔ ‖(𝟙 X : X ⟶ X)‖ = 0 := by
+  rw [Limits.IsZero.iff_id_eq_zero, norm_eq_zero]
+
+/-- An object in a C*-category is nonzero precisely when its identity arrow has norm `1`. -/
+theorem not_isZero_iff_norm_id_eq_one (X : C) : ¬ Limits.IsZero X ↔ ‖(𝟙 X : X ⟶ X)‖ = 1 := by
+  rw [isZero_iff_norm_id_eq_zero]
+  rcases norm_id_eq_zero_or_one X with h | h <;> simp [h]
+
+/-- If `X ⟶ X` is nontrivial, the identity arrow `𝟙 X` has norm `1`. -/
+@[simp] theorem norm_id_of_nontrivial (X : C) [Nontrivial (X ⟶ X)] :
+    ‖(𝟙 X : X ⟶ X)‖ = 1 := by
+  refine (not_isZero_iff_norm_id_eq_one X).mp fun hX => ?_
+  obtain ⟨f, g, hfg⟩ := exists_pair_ne (X ⟶ X)
+  exact hfg (hX.eq_of_src f g)
+
+/-- In a C*-category with a chosen zero object `0`, `‖𝟙 (0 : C)‖ = 0`. -/
+theorem norm_id_zero_object [Limits.HasZeroObject C] :
+    open scoped ZeroObject in
+    ‖(𝟙 (0 : C) : (0 : C) ⟶ 0)‖ = 0 :=
+  (Limits.isZero_zero C).norm_id
+
+/-- Pre-composing with an arrow satisfying `dagger u ≫ u = 𝟙 Y` preserves norms. -/
+theorem norm_comp_of_dagger_comp_id {u : X ⟶ Y} (hu : dagger u ≫ u = 𝟙 Y) (g : Y ⟶ Z) :
+    ‖u ≫ g‖ = ‖g‖ := by
+  refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp ?_
+  have hcomp : dagger (u ≫ g) ≫ (u ≫ g) = dagger g ≫ g := by
+    calc
+      dagger (u ≫ g) ≫ (u ≫ g) = dagger g ≫ (dagger u ≫ u) ≫ g := by
+        simp only [dagger_comp, Category.assoc]
+      _ = dagger g ≫ g := by rw [hu, Category.id_comp]
+  rw [← norm_dagger_comp_self, hcomp, norm_dagger_comp_self]
+
+/-- Post-composing with an arrow satisfying `u ≫ dagger u = 𝟙 X` preserves norms. -/
+theorem norm_comp_of_comp_dagger_id {u : X ⟶ Y} (hu : u ≫ dagger u = 𝟙 X) (f : W ⟶ X) :
+    ‖f ≫ u‖ = ‖f‖ := by
+  calc
+    ‖f ≫ u‖ = ‖dagger (f ≫ u)‖ := (norm_dagger _).symm
+    _ = ‖dagger u ≫ dagger f‖ := by rw [dagger_comp]
+    _ = ‖dagger f‖ := norm_comp_of_dagger_comp_id (by rw [dagger_dagger]; exact hu) (dagger f)
+    _ = ‖f‖ := norm_dagger f
+
+/-- Pre-composing with a unitary arrow preserves norms. -/
+@[simp] theorem _root_.TauCeti.IsUnitary.norm_comp_left {u : X ⟶ Y} (hu : IsUnitary u)
+    (g : Y ⟶ Z) : ‖u ≫ g‖ = ‖g‖ :=
+  norm_comp_of_dagger_comp_id hu.dagger_hom_id g
+
+/-- Post-composing with a unitary arrow preserves norms. -/
+@[simp] theorem _root_.TauCeti.IsUnitary.norm_comp_right {u : X ⟶ Y} (hu : IsUnitary u)
+    (f : W ⟶ X) : ‖f ≫ u‖ = ‖f‖ :=
+  norm_comp_of_comp_dagger_id hu.hom_dagger_id f
+
+/-- The norm of a unitary arrow `u : X ⟶ Y` equals `‖𝟙 X‖` (`1` when `X` is nonzero, `0` when `X`
+is a zero object). -/
+theorem _root_.TauCeti.IsUnitary.norm_eq_norm_id {u : X ⟶ Y} (hu : IsUnitary u) :
+    ‖u‖ = ‖(𝟙 X : X ⟶ X)‖ := by
+  calc
+    ‖u‖ = ‖dagger u‖ := (norm_dagger u).symm
+    _ = ‖u ≫ dagger u‖ := (hu.norm_comp_left (dagger u)).symm
+    _ = ‖(𝟙 X : X ⟶ X)‖ := by rw [hu.hom_dagger_id]
+
+/-- Every unitary arrow is a contraction (`‖u‖ ≤ 1`). -/
+theorem _root_.TauCeti.IsUnitary.norm_le_one {u : X ⟶ Y} (hu : IsUnitary u) : ‖u‖ ≤ 1 :=
+  hu.norm_eq_norm_id.trans_le (norm_id_le_one X)
+
+/-- A unitary arrow out of an object with nontrivial endomorphisms has norm `1`. -/
+theorem _root_.TauCeti.IsUnitary.norm_eq_one {u : X ⟶ Y} (hu : IsUnitary u)
+    [Nontrivial (X ⟶ X)] : ‖u‖ = 1 := by
+  rw [hu.norm_eq_norm_id, norm_id_of_nontrivial]
+
+end TauCeti.CStarCategory

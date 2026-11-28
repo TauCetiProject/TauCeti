@@ -178,14 +178,16 @@ theorem norm_rightCompCLM_le (X : C) (g : Y ⟶ Z) : ‖rightCompCLM X g‖ ≤ 
 /-- The right-annihilator `{g : Y ⟶ Z | f ≫ g = 0}` of `f : X ⟶ Y` is closed in `Y ⟶ Z`. -/
 theorem isClosed_rightAnnihilator (Z : C) (f : X ⟶ Y) :
     IsClosed {g : Y ⟶ Z | f ≫ g = 0} := by
-  simpa only [leftCompCLM_apply] using
-    isClosed_eq (leftCompCLM Z f).continuous continuous_const
+  convert (leftCompCLM Z f).isClosed_ker using 1
+  ext g
+  simp [LinearMap.mem_ker]
 
 /-- The left-annihilator `{f : X ⟶ Y | f ≫ g = 0}` of `g : Y ⟶ Z` is closed in `X ⟶ Y`. -/
 theorem isClosed_leftAnnihilator (X : C) (g : Y ⟶ Z) :
     IsClosed {f : X ⟶ Y | f ≫ g = 0} := by
-  simpa only [rightCompCLM_apply] using
-    isClosed_eq (rightCompCLM X g).continuous continuous_const
+  convert (rightCompCLM X g).isClosed_ker using 1
+  ext f
+  simp [LinearMap.mem_ker]
 
 /-- The space of intertwiners `{h : X ⟶ Y | a ≫ h = h ≫ b}` between endomorphisms `a` and `b`
 is closed in `X ⟶ Y`. -/
