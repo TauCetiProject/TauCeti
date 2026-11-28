@@ -20,9 +20,10 @@ circle the series converges only conditionally, so the statement is a limit of t
 partial sums. Its proof combines Dirichlet's test, which gives convergence, with Abel's limit
 theorem, which identifies the limit with the radial limit of `-log (1 - r z)`.
 
-Taking imaginary parts at `z = exp (θ i)` gives the classical sawtooth series
-`∑ sin (n θ) / n = (π - θ) / 2` for `0 < θ < 2π`. This is the conditionally convergent input that
-evaluates the Hurwitz and Dirichlet L-functions at `s = 0`.
+At `z = exp (θ i)`, the imaginary part gives the sawtooth series used to evaluate the Hurwitz
+and Dirichlet L-functions at `s = 0`. The real part gives the logarithmic cosine series.
+Applying `TauCeti.norm_sum_range_smul_le_of_antitone` to the shifted geometric sums bounds the
+errors in both evaluations.
 
 ## Main results
 
@@ -31,6 +32,13 @@ evaluates the Hurwitz and Dirichlet L-functions at `s = 0`.
 * `Real.tendsto_sum_Icc_sin_mul_div`: the sawtooth series
   `∑_{n=1}^N sin (n θ) / n → (π - θ) / 2` for `0 < θ < 2π`, using the argument
   `Complex.arg_one_sub_exp_mul_I` of `1 - exp (θ i)`.
+* `Real.tendsto_sum_Icc_cos_mul_div`: the cosine series `∑ cos (n θ) / n → -log (2 sin (θ / 2))`
+  on the same interval, using `Complex.log_re` and the chord length.
+* `Complex.norm_sum_range_pow_div_natCast_add_le`: a bound on finite blocks of the logarithmic
+  series, giving the truncation bound `Complex.norm_neg_log_one_sub_sub_sum_range_le` on the disc.
+  At `z = exp (θ i)`, the errors in the sine and cosine sums through `N` are at most
+  `1 / ((N + 1) * sin (θ / 2))`
+  (`Real.abs_sub_sum_Icc_sin_mul_div_le`, `Real.abs_sub_sum_Icc_cos_mul_div_le`).
 -/
 
 public section
@@ -95,33 +103,137 @@ theorem tendsto_sum_range_taylorSeries_neg_log {z : ℂ} (hz : ‖z‖ ≤ 1) (h
   rw [sum_range_succ']
   simp [hf]
 
+/-- A finite block of the logarithmic series starting at index `N + 1` is bounded in norm by
+`2 * ‖z‖ ^ (N + 1) / (‖z - 1‖ * (N + 1))` on the closed unit disc away from `1`. -/
+theorem norm_sum_range_pow_div_natCast_add_le {z : ℂ} (hz : ‖z‖ ≤ 1) (hz1 : z ≠ 1)
+    (N H : ℕ) :
+    ‖∑ i ∈ range H, z ^ (N + 1 + i) / (↑(N + 1 + i) : ℂ)‖ ≤
+      2 * ‖z‖ ^ (N + 1) / (‖z - 1‖ * (N + 1)) := by
+  have hprefix (k : ℕ) : ‖∑ i ∈ range k, z ^ (N + 1 + i)‖ ≤
+      ‖z‖ ^ (N + 1) * (2 / ‖z - 1‖) := by
+    simp only [pow_add z (N + 1), ← mul_sum, norm_mul, norm_pow]
+    gcongr
+    exact TauCeti.norm_geom_sum_le hz hz1 k
+  have hw (i j : ℕ) (hij : i ≤ j) :
+      (↑(N + 1 + j) : ℝ)⁻¹ ≤ (↑(N + 1 + i) : ℝ)⁻¹ := by
+    refine inv_anti₀ (by positivity) ?_
+    exact_mod_cast Nat.add_le_add_left hij (N + 1)
+  have hweighted := TauCeti.norm_sum_range_smul_le_of_antitone (n := H)
+    (w := fun i ↦ (↑(N + 1 + i) : ℝ)⁻¹) (fun k _ ↦ hprefix k)
+    (fun i _ j _ hij ↦ hw i j hij) (by positivity)
+  have hrhs :
+      ‖z‖ ^ (N + 1) * (2 / ‖z - 1‖) * (↑(N + 1 + 0) : ℝ)⁻¹ =
+        2 * ‖z‖ ^ (N + 1) / (‖z - 1‖ * (N + 1)) := by grind
+  rw [← hrhs]
+  simpa only [real_smul, ofReal_inv, ofReal_natCast, div_eq_inv_mul] using hweighted
+
+/-- The error after truncating the logarithmic series on the closed unit disc away from
+`1` is bounded by the geometric prefix bound times the first omitted reciprocal index. -/
+theorem norm_neg_log_one_sub_sub_sum_range_le {z : ℂ} (hz : ‖z‖ ≤ 1) (hz1 : z ≠ 1)
+    (N : ℕ) :
+    ‖-log (1 - z) - ∑ n ∈ range (N + 1), z ^ n / n‖ ≤
+      2 * ‖z‖ ^ (N + 1) / (‖z - 1‖ * (N + 1)) := by
+  have hlim := ((tendsto_sum_range_taylorSeries_neg_log hz hz1).comp
+    ((tendsto_add_atTop_nat (N + 1)).congr fun m ↦ Nat.add_comm m (N + 1))).sub_const
+      (∑ n ∈ range (N + 1), z ^ n / n)
+  refine le_of_tendsto' hlim.norm fun m ↦ ?_
+  have hsplit :
+      (∑ n ∈ range (N + 1 + m), z ^ n / n) - ∑ n ∈ range (N + 1), z ^ n / n =
+        ∑ i ∈ range m, z ^ (N + 1 + i) / (↑(N + 1 + i) : ℂ) := by
+    rw [sum_range_add, add_sub_cancel_left]
+  rw [Function.comp_apply, hsplit]
+  exact norm_sum_range_pow_div_natCast_add_le hz hz1 N m
+
 end Complex
 
 namespace Real
 
+private theorem norm_exp_mul_I_sub_one {θ : ℝ} (hθ : θ ∈ Set.Icc 0 (2 * π)) :
+    ‖Complex.exp (θ * Complex.I) - 1‖ = 2 * sin (θ / 2) := by
+  have hs : 0 ≤ sin (θ / 2) :=
+    sin_nonneg_of_nonneg_of_le_pi (by linarith [hθ.1]) (by linarith [hθ.2])
+  rw [mul_comm _ Complex.I, Complex.norm_exp_I_mul_ofReal_sub_one,
+    Real.norm_of_nonneg (by positivity)]
+
+private theorem exp_mul_I_ne_one {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π)) :
+    Complex.exp (θ * Complex.I) ≠ 1 := by
+  have hs : 0 < sin (θ / 2) := sin_pos_of_pos_of_lt_pi (by linarith [hθ.1]) (by linarith [hθ.2])
+  refine sub_ne_zero.mp (norm_pos_iff.mp ?_)
+  rw [norm_exp_mul_I_sub_one (Set.Ioo_subset_Icc_self hθ)]
+  positivity
+
+private theorem sum_range_exp_mul_I_pow_div (θ : ℝ) (N : ℕ) :
+    ∑ n ∈ range (N + 1), Complex.exp (θ * Complex.I) ^ n / (n : ℂ) =
+      ∑ n ∈ Icc 1 N, Complex.exp (((n : ℝ) * θ) * Complex.I) / (n : ℂ) := by
+  rw [sum_range_succ', ← Ico_add_one_right_eq_Icc, sum_Ico_eq_sum_range, Nat.add_sub_cancel]
+  simp only [CharP.cast_eq_zero, div_zero, add_zero]
+  refine sum_congr rfl fun n _ ↦ ?_
+  rw [← Complex.exp_natCast_mul, ← mul_assoc, Complex.ofReal_natCast,
+    add_comm n 1]
+
 /-- **The sawtooth series.** For `0 < θ < 2π`, the ordered partial sums of `∑ sin (n θ) / n`
-tend to `(π - θ) / 2`. The series converges only conditionally. -/
+tend to `(π - θ) / 2`. -/
 theorem tendsto_sum_Icc_sin_mul_div {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π)) :
     Tendsto (fun N : ℕ ↦ ∑ n ∈ Icc 1 N, sin (n * θ) / n) atTop (𝓝 ((π - θ) / 2)) := by
-  set w : ℂ := Complex.exp (θ * Complex.I) with hw
-  have hnorm : ‖w‖ ≤ 1 := by rw [hw, Complex.norm_exp_ofReal_mul_I]
-  have hw1 : w ≠ 1 := by
-    intro h
-    have hcos : Real.cos θ = 1 := by
-      rw [← Complex.exp_ofReal_mul_I_re, ← hw, h, Complex.one_re]
-    have := (Real.cos_eq_one_iff_of_lt_of_lt (by linarith [hθ.1, Real.pi_pos]) hθ.2).mp hcos
-    linarith [hθ.1]
   have h := ((Complex.continuous_im.tendsto _).comp
-    (Complex.tendsto_sum_range_taylorSeries_neg_log hnorm hw1)).comp (tendsto_add_atTop_nat 1)
-  rw [Complex.neg_im, Complex.log_im, hw, Complex.arg_one_sub_exp_mul_I hθ,
-    show -((θ - π) / 2) = (π - θ) / 2 by ring] at h
+    (Complex.tendsto_sum_range_taylorSeries_neg_log
+      (by rw [Complex.norm_exp_ofReal_mul_I]) (exp_mul_I_ne_one hθ))).comp
+    (tendsto_add_atTop_nat 1)
+  rw [Complex.neg_im, Complex.log_im, Complex.arg_one_sub_exp_mul_I hθ, neg_div', neg_sub] at h
   refine h.congr fun N ↦ ?_
-  simp only [Function.comp_apply, Complex.im_sum]
-  rw [sum_range_succ', ← Ico_add_one_right_eq_Icc, sum_Ico_eq_sum_range, Nat.add_sub_cancel]
-  simp only [CharP.cast_eq_zero, div_zero, Complex.zero_im, add_zero]
-  refine sum_congr rfl fun i _ ↦ ?_
-  rw [add_comm 1 i, ← Complex.exp_natCast_mul, ← mul_assoc,
-    show ((i + 1 : ℕ) : ℂ) * θ = (((i + 1 : ℕ) * θ : ℝ) : ℂ) by push_cast; ring,
-    Complex.div_natCast_im, Complex.exp_ofReal_mul_I_im]
+  simp only [Function.comp_apply]
+  rw [sum_range_exp_mul_I_pow_div]
+  simp only [Complex.im_sum, Complex.div_natCast_im, ← Complex.ofReal_mul,
+    Complex.exp_ofReal_mul_I_im]
+
+/-- **The logarithmic cosine series.** For `0 < θ < 2π`, the ordered partial sums of
+`∑ cos (n θ) / n` tend to `-log (2 sin (θ / 2))`. -/
+theorem tendsto_sum_Icc_cos_mul_div {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π)) :
+    Tendsto (fun N : ℕ ↦ ∑ n ∈ Icc 1 N, cos (n * θ) / n) atTop
+      (𝓝 (-log (2 * sin (θ / 2)))) := by
+  have h := ((Complex.continuous_re.tendsto _).comp
+    (Complex.tendsto_sum_range_taylorSeries_neg_log
+      (by rw [Complex.norm_exp_ofReal_mul_I]) (exp_mul_I_ne_one hθ))).comp
+    (tendsto_add_atTop_nat 1)
+  rw [Complex.neg_re, Complex.log_re, norm_sub_rev (1 : ℂ),
+    norm_exp_mul_I_sub_one (Set.Ioo_subset_Icc_self hθ)] at h
+  refine h.congr fun N ↦ ?_
+  simp only [Function.comp_apply]
+  rw [sum_range_exp_mul_I_pow_div]
+  simp only [Complex.re_sum, Complex.div_natCast_re, ← Complex.ofReal_mul,
+    Complex.exp_ofReal_mul_I_re]
+
+private theorem norm_neg_log_one_sub_exp_sub_sum_Icc_le {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π))
+    (N : ℕ) :
+    ‖-Complex.log (1 - Complex.exp (θ * Complex.I)) -
+      ∑ n ∈ Icc 1 N, Complex.exp (((n : ℝ) * θ) * Complex.I) / (n : ℂ)‖ ≤
+      1 / ((N + 1) * sin (θ / 2)) := by
+  have h := Complex.norm_neg_log_one_sub_sub_sum_range_le
+    (by rw [Complex.norm_exp_ofReal_mul_I]) (exp_mul_I_ne_one hθ) N
+  rw [sum_range_exp_mul_I_pow_div, norm_exp_mul_I_sub_one (Set.Ioo_subset_Icc_self hθ),
+    Complex.norm_exp_ofReal_mul_I, one_pow, mul_one] at h
+  convert h using 1
+  field_simp
+
+/-- The error after the first `N` terms of the sawtooth series is at most
+`1 / ((N + 1) * sin (θ / 2))` when `0 < θ < 2π`. See Pomerance, *Remarks on the
+Pólya–Vinogradov inequality*, Lemma 4. -/
+theorem abs_sub_sum_Icc_sin_mul_div_le {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π)) (N : ℕ) :
+    |(π - θ) / 2 - ∑ n ∈ Icc 1 N, sin (n * θ) / n| ≤
+      1 / ((N + 1) * sin (θ / 2)) := by
+  simpa only [Complex.sub_im, Complex.neg_im, Complex.log_im, Complex.im_sum,
+    Complex.div_natCast_im, ← Complex.ofReal_mul, Complex.exp_ofReal_mul_I_im,
+    Complex.arg_one_sub_exp_mul_I hθ, neg_div', neg_sub] using
+    (Complex.abs_im_le_norm _).trans (norm_neg_log_one_sub_exp_sub_sum_Icc_le hθ N)
+
+/-- The error after the first `N` terms of the logarithmic cosine series is at most
+`1 / ((N + 1) * sin (θ / 2))` when `0 < θ < 2π`. -/
+theorem abs_sub_sum_Icc_cos_mul_div_le {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π)) (N : ℕ) :
+    |-log (2 * sin (θ / 2)) - ∑ n ∈ Icc 1 N, cos (n * θ) / n| ≤
+      1 / ((N + 1) * sin (θ / 2)) := by
+  simpa only [Complex.sub_re, Complex.neg_re, Complex.log_re, Complex.re_sum, norm_sub_rev (1 : ℂ),
+    Complex.div_natCast_re, ← Complex.ofReal_mul, Complex.exp_ofReal_mul_I_re,
+    norm_exp_mul_I_sub_one (Set.Ioo_subset_Icc_self hθ)] using
+    (Complex.abs_re_le_norm _).trans (norm_neg_log_one_sub_exp_sub_sum_Icc_le hθ N)
 
 end Real

@@ -25,9 +25,11 @@ yields summability of `∑ (n + 1) * f n * r ^ (n + 1)`. On the closed unit ball
 geometric partial sums are bounded by `2 / ‖x - 1‖`. **Dirichlet's test** holds for coefficients
 of bounded variation tending to zero: their products with a sequence of bounded partial sums have
 Cauchy partial sums.
-Quantitatively, Abel's inequality bounds a block `∑ n ∈ Ioc K M, w n • a n` by `2 B w (K + 1)`
-when the partial sums of `a` are at most `B` and the weights `w` are nonnegative and antitone, so
-a convergent series of this shape has tail at most `2 B w (K + 1)` after `K` terms.
+`norm_sum_range_smul_le_of_antitone` is the finite Abel inequality for nonnegative decreasing
+weights and bounded prefix sums. Applied to a shifted sequence, it bounds a block
+`∑ n ∈ Ioc K M, w n • a n` by `2 B w (K + 1)` when the partial sums of `a` are at most `B`
+and the weights `w` are nonnegative and antitone. A convergent series of this shape has tail
+at most `2 B w (K + 1)` after `K` terms.
 
 In a normed division ring, a geometric series indexed by positive integers sums to `r / (1 - r)`
 for `‖r‖ < 1`.
@@ -209,6 +211,42 @@ open Finset
 
 variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
 
+/-- **Abel's inequality** for a finite sum. If the prefix sums of `a` through length `n` have
+norm at most `B` and the weights decrease to a nonnegative last weight, then the weighted sum has
+norm at most `B * w 0`. -/
+theorem norm_sum_range_smul_le_of_antitone {a : ℕ → E} {w : ℕ → ℝ} {B : ℝ} {n : ℕ}
+    (ha : ∀ k ≤ n, ‖∑ i ∈ range k, a i‖ ≤ B)
+    (hw : AntitoneOn w (Set.Iio n)) (hw₀ : 0 ≤ w (n - 1)) :
+    ‖∑ i ∈ range n, w i • a i‖ ≤ B * w 0 := by
+  cases n with
+  | zero =>
+    have hB := (norm_nonneg _).trans (ha 0 le_rfl)
+    simpa only [range_zero, sum_empty, norm_zero, Nat.zero_sub] using
+      mul_nonneg hB hw₀
+  | succ n =>
+    have hn₀ : 0 ≤ w n := hw₀
+    have hanti (i : ℕ) (hi : i < n) : w (i + 1) ≤ w i :=
+      hw (by lia : i < n + 1) (by lia : i + 1 < n + 1) (Nat.le_succ i)
+    have htel : ∑ i ∈ range n, (w i - w (i + 1)) = w 0 - w n := by
+      have h (i : ℕ) : w i - w (i + 1) = -(w (i + 1) - w i) := (neg_sub _ _).symm
+      simp_rw [h]
+      rw [sum_neg_distrib, sum_range_sub, neg_sub]
+    have hvar :
+        ‖∑ i ∈ range n, (w (i + 1) - w i) • ∑ j ∈ range (i + 1), a j‖ ≤
+          (w 0 - w n) * B := by
+      rw [← htel, sum_mul]
+      refine (norm_sum_le _ _).trans (sum_le_sum fun i hi ↦ ?_)
+      have h := hanti i (mem_range.mp hi)
+      rw [norm_smul, Real.norm_of_nonpos (sub_nonpos.mpr h), neg_sub]
+      exact mul_le_mul_of_nonneg_left (ha (i + 1) (by grind)) (sub_nonneg.mpr h)
+    rw [sum_range_by_parts, Nat.add_sub_cancel]
+    calc
+      _ ≤ w n * B + (w 0 - w n) * B := by
+        refine norm_sub_le_of_le ?_ hvar
+        rw [norm_smul, Real.norm_of_nonneg hn₀]
+        exact mul_le_mul_of_nonneg_left (ha _ le_rfl) hn₀
+      _ = B * w 0 := by ring
+
 /-- **Abel's inequality** for a block of a series. If every partial sum `∑ k ∈ Icc 1 n, a k`
 has norm at most `B`, and the real weights `w` are nonnegative and antitone beyond `K`, then
 `‖∑ n ∈ Ioc K M, w n • a n‖ ≤ 2 * B * w (K + 1)` for every `M`. Mathlib's
@@ -218,48 +256,23 @@ theorem norm_sum_Ioc_smul_le {a : ℕ → E} {w : ℕ → ℝ} {B : ℝ} {K : �
     (hw : AntitoneOn w (Set.Ioi K)) (hw₀ : ∀ n, K < n → 0 ≤ w n)
     (ha : ∀ n, ‖∑ k ∈ Icc 1 n, a k‖ ≤ B) (M : ℕ) :
     ‖∑ n ∈ Ioc K M, w n • a n‖ ≤ 2 * B * w (K + 1) := by
-  have hB : 0 ≤ B := (norm_nonneg _).trans (ha 0)
-  have hK : 0 ≤ w (K + 1) := hw₀ _ K.lt_succ_self
-  rcases le_or_gt M K with hMK | hKM
-  · rw [Ioc_eq_empty_of_le hMK, sum_empty, norm_zero]
-    positivity
-  -- Summation by parts against `a'`, which agrees with `a` off `0` and vanishes at `0`, so that
-  -- its partial sums over `range (n + 1)` are the partial sums `∑ k ∈ Icc 1 n, a k`.
-  set a' : ℕ → E := fun n ↦ if n = 0 then 0 else a n with ha'
-  have hS (n : ℕ) : ∑ i ∈ range (n + 1), a' i = ∑ k ∈ Icc 1 n, a k := by
-    induction n with
-    | zero => simp [ha']
-    | succ n ih => rw [sum_range_succ, ih, sum_Icc_succ_top (by omega)]; simp [ha']
-  have hsum : ∑ n ∈ Ioc K M, w n • a n = ∑ n ∈ Ioc K M, w n • a' n :=
-    sum_congr rfl fun n hn ↦ by
-      have hn0 : n ≠ 0 := by simp only [mem_Ioc] at hn; omega
-      simp [ha', hn0]
-  rw [hsum, sum_Ioc_by_parts w a' hKM, hS, hS]
-  -- The remaining terms are bounded by `B` times the telescoping variation of `w`.
-  have hvar : ‖∑ i ∈ Ioc K (M - 1), (w (i + 1) - w i) • ∑ j ∈ range (i + 1), a' j‖ ≤
-      B * (w (K + 1) - w M) := by
-    have htel : ∑ i ∈ Ico (K + 1) M, (w i - w (i + 1)) = w (K + 1) - w M := by
-      have := sum_Ico_sub w (show K + 1 ≤ M by omega)
-      rw [sum_sub_distrib] at this ⊢
-      linarith
-    calc _ ≤ ∑ i ∈ Ioc K (M - 1), (w i - w (i + 1)) * B := by
-          refine (norm_sum_le _ _).trans (sum_le_sum fun i hi ↦ ?_)
-          have hi' := mem_Ioc.mp hi
-          have hmono : w (i + 1) ≤ w i :=
-            hw (show K < i by omega) (show K < i + 1 by omega) (by omega)
-          rw [norm_smul, hS, Real.norm_of_nonpos (sub_nonpos.mpr hmono), neg_sub]
-          exact mul_le_mul_of_nonneg_left (ha i) (sub_nonneg.mpr hmono)
-      _ = B * (w (K + 1) - w M) := by
-          rw [← sum_mul, ← Ico_add_one_add_one_eq_Ioc, Nat.sub_add_cancel (by omega : 1 ≤ M),
-            htel, mul_comm]
-  have hM : 0 ≤ w M := hw₀ _ hKM
-  calc _ ≤ w M * B + w (K + 1) * B + B * (w (K + 1) - w M) := by
-        refine norm_sub_le_of_le (norm_sub_le_of_le ?_ ?_) hvar
-        · rw [norm_smul, Real.norm_of_nonneg hM]
-          exact mul_le_mul_of_nonneg_left (ha M) hM
-        · rw [norm_smul, Real.norm_of_nonneg hK]
-          exact mul_le_mul_of_nonneg_left (ha K) hK
-    _ = 2 * B * w (K + 1) := by ring
+  have hIcc (n : ℕ) : Icc 1 n = Ioc 0 n := Icc_add_one_left_eq_Ioc 0 n
+  have hprefix (k : ℕ) :
+      ‖∑ i ∈ range k, a (K + 1 + i)‖ ≤ 2 * B := by
+    have hsum : ∑ i ∈ range k, a (K + 1 + i) = ∑ i ∈ Ioc K (K + k), a i := by
+      rw [← Ico_add_one_add_one_eq_Ioc, add_right_comm K k 1, sum_Ico_eq_sum_range,
+        Nat.add_sub_cancel_left]
+    have hsplit : ∑ i ∈ Icc 1 (K + k), a i =
+        (∑ i ∈ Icc 1 K, a i) + ∑ i ∈ Ioc K (K + k), a i := by
+      rw [hIcc, hIcc, sum_Ioc_consecutive _ (Nat.zero_le K) (Nat.le_add_right K k)]
+    rw [hsum, eq_sub_iff_add_eq'.2 hsplit.symm, two_mul]
+    exact norm_sub_le_of_le (ha _) (ha _)
+  rw [← Ico_add_one_add_one_eq_Ioc, sum_Ico_eq_sum_range, Nat.add_sub_add_right]
+  have h := norm_sum_range_smul_le_of_antitone (n := M - K) (a := fun i ↦ a (K + 1 + i))
+    (w := fun i ↦ w (K + 1 + i)) (fun k _ ↦ hprefix k)
+    (fun i _ j _ hij ↦ hw (Set.mem_Ioi.mpr (by lia)) (Set.mem_Ioi.mpr (by lia)) (by lia))
+    (hw₀ _ (by lia))
+  simpa only [Nat.add_zero] using h
 
 /-- **The tail of a series with bounded partial sums.** If every partial sum
 `∑ k ∈ Icc 1 n, a k` has norm at most `B`, the real weights `w` are nonnegative and antitone
