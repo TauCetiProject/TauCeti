@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.BracketNorm
-public import TauCeti.Geometry.Lie.Subgroup.Unitary.Matrix
+public import Mathlib.Algebra.Lie.OfAssociative
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.Logic.Equiv.Fin.Basic
+public import TauCeti.Algebra.Lie.BracketNorm
+public import TauCeti.Geometry.Lie.Subgroup.Unitary.Matrix
 public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
 /-!
@@ -17,8 +19,10 @@ public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 The gauge theory of connections on Euclidean space takes as structure group a compact group `G`
 of unitary matrices, with Lie algebra `𝔤 = {X : exp (t X) ∈ G for all real t}` acting on itself
 by `Ad(g) X = g X g⁻¹`, together with an inner product `⟨·,·⟩` on `𝔤` that is invariant under
-`Ad(G)`. All pointwise norms of connections and curvatures, `|A|² = ∑ⱼ ⟨Aⱼ, Aⱼ⟩`, are formed
-with this inner product, and its `Ad`-invariance is what makes them gauge invariant.
+`Ad(G)`. Curvatures are `𝔤`-valued two-forms transforming homogeneously by `Ad(g)`, so their
+pointwise norms `|F|² = ∑_{i < j} ⟨Fᵢⱼ, Fᵢⱼ⟩` formed with this inner product are gauge invariant;
+by contrast, the gauge transformation of a connection includes an inhomogeneous derivative term
+`-(∂ g) g⁻¹` alongside `Ad(g) A`, so the pointwise norm of a connection is not gauge invariant.
 
 This file bundles such a triple as `TauCeti.CompactMatrixStructureGroup n`: a closed subgroup of
 `Matrix.unitaryGroup n ℂ` (closed subgroups of `U(n)` are exactly the compact ones), with a
@@ -26,6 +30,12 @@ symmetric positive-definite `Ad`-invariant bilinear form on its Lie algebra
 `ClosedSubgroup.matrixLieAlgebra`. The group need not be connected, so `Ad`-invariance is part of
 the data: it implies that every `ad X` is skew-adjoint, but the converse fails for disconnected
 groups.
+
+To expose Mathlib's `InnerProductSpace`, norm, isometry, and operator-adjoint API for the chosen
+metric, `S.NormedLieAlgebra` wraps `S.group.matrixLieAlgebra` as a finite-dimensional real inner
+product space and Lie algebra with `⟪X, Y⟫ = S.innerForm X.toLieSubalgebra Y.toLieSubalgebra`. On
+`S.NormedLieAlgebra`, `S.Ad g` packages `Ad(g)` as a linear isometry equivalence and
+`S.adjoint_ad X` gives `(ad X)† = -ad X`.
 
 The structure constant `γ₀ = max {|⁅X, Y⁆| : |X| ≤ 1, |Y| ≤ 1}` of a structure group is the norm
 `S.innerForm.toQuadraticMap.lieBracketNorm` of the bracket of `𝔤` for its inner product
@@ -36,10 +46,16 @@ constant of a block-diagonal product is the larger of those of the factors.
 
 * `TauCeti.CompactMatrixStructureGroup`: a closed subgroup of `U(n)` with an `Ad`-invariant inner
   product on its Lie algebra.
+* `TauCeti.CompactMatrixStructureGroup.NormedLieAlgebra`: the Lie algebra of a structure group
+  equipped with the `InnerProductSpace ℝ` and `NormedAddCommGroup` structures induced by
+  `S.innerForm`.
+* `TauCeti.CompactMatrixStructureGroup.Ad`: the adjoint action `Ad(g)` on `S.NormedLieAlgebra` as
+  a linear isometry equivalence `S.NormedLieAlgebra ≃ₗᵢ[ℝ] S.NormedLieAlgebra`.
 * `TauCeti.CompactMatrixStructureGroup.ofTraceForm`: every closed subgroup of `U(n)` with the
   trace form `⟨X, Y⟩ = -Re tr (X Y)`.
 * `TauCeti.CompactMatrixStructureGroup.unitary`,
-  `TauCeti.CompactMatrixStructureGroup.specialUnitary`: `U(n)` and `SU(n)` with the trace form.
+  `TauCeti.CompactMatrixStructureGroup.specialUnitary`: `U(n)` and `SU(n)` with the unscaled
+  trace form `⟨X, Y⟩ = -Re tr (X Y)`.
 * `TauCeti.CompactMatrixStructureGroup.restrict`: the restriction to a closed subgroup.
 * `TauCeti.CompactMatrixStructureGroup.reindex`: transports a structure group along a bijection
   `e : n ≃ m`.
@@ -55,11 +71,12 @@ constant of a block-diagonal product is the larger of those of the factors.
   isometry of the inner product.
 * `TauCeti.CompactMatrixStructureGroup.innerForm_lie_left`: each `ad X` is skew-adjoint,
   `⟨[X, Y], Z⟩ = -⟨Y, [X, Z]⟩`.
-* `TauCeti.CompactMatrixStructureGroup.ofTraceForm_neg_trace_mul`: for the trace form,
-  `-tr (X Y)` is real and equals the inner product.
+* `TauCeti.CompactMatrixStructureGroup.adjoint_ad`: on `S.NormedLieAlgebra`,
+  `LinearMap.adjoint (LieAlgebra.ad ℝ S.NormedLieAlgebra X) =`
+  `-LieAlgebra.ad ℝ S.NormedLieAlgebra X`.
 * `TauCeti.CompactMatrixStructureGroup.unitary_innerForm`,
   `TauCeti.CompactMatrixStructureGroup.specialUnitary_innerForm`: the inner forms of `U(n)` and
-  `SU(n)` are the matrix trace forms.
+  `SU(n)` are the unscaled matrix trace forms `⟨X, Y⟩ = -Re tr (X Y)`.
 * `TauCeti.CompactMatrixStructureGroup.reindex_refl`,
   `TauCeti.CompactMatrixStructureGroup.reindex_trans`: functoriality of `reindex`.
 * `TauCeti.CompactMatrixStructureGroup.lieBracketNorm_restrict_le`: restriction does not increase
@@ -81,7 +98,7 @@ noncomputable section
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-open scoped Matrix
+open scoped Matrix RealInnerProductSpace
 
 namespace TauCeti
 
@@ -159,6 +176,217 @@ theorem innerForm_self_nonneg (X : S.group.matrixLieAlgebra) : 0 ≤ S.innerForm
 theorem innerForm_self_eq_zero {X : S.group.matrixLieAlgebra} : S.innerForm X X = 0 ↔ X = 0 :=
   S.posDef_innerForm.anisotropic.eq_zero_iff
 
+section NormedLieAlgebra
+
+/-- The Lie algebra of a compact matrix structure group `S`, as a standalone type carrying the
+inner product `S.innerForm` through Mathlib's `InnerProductSpace`, norm, isometry, and
+operator-adjoint API. -/
+@[ext]
+structure NormedLieAlgebra {n : Type*} [Fintype n] [DecidableEq n]
+    (S : CompactMatrixStructureGroup n) where
+  /-- The underlying element of `S.group.matrixLieAlgebra`. -/
+  toLieSubalgebra : S.group.matrixLieAlgebra
+
+/-- `NormedLieAlgebra.toLieSubalgebra` is injective. -/
+theorem NormedLieAlgebra.toLieSubalgebra_injective :
+    Function.Injective
+      (NormedLieAlgebra.toLieSubalgebra : S.NormedLieAlgebra → S.group.matrixLieAlgebra) :=
+  fun _ _ h ↦ NormedLieAlgebra.ext h
+
+instance : CoeOut S.NormedLieAlgebra (Matrix n n ℂ) where
+  coe X := (X.toLieSubalgebra : Matrix n n ℂ)
+
+instance : LieRing S.NormedLieAlgebra where
+  add X Y := ⟨X.toLieSubalgebra + Y.toLieSubalgebra⟩
+  add_assoc _ _ _ := NormedLieAlgebra.ext (add_assoc _ _ _)
+  zero := ⟨0⟩
+  zero_add _ := NormedLieAlgebra.ext (zero_add _)
+  add_zero _ := NormedLieAlgebra.ext (add_zero _)
+  nsmul k X := ⟨k • X.toLieSubalgebra⟩
+  nsmul_zero _ := NormedLieAlgebra.ext (zero_smul _ _)
+  nsmul_succ _ _ := NormedLieAlgebra.ext (succ_nsmul _ _)
+  neg X := ⟨-X.toLieSubalgebra⟩
+  sub X Y := ⟨X.toLieSubalgebra - Y.toLieSubalgebra⟩
+  sub_eq_add_neg _ _ := NormedLieAlgebra.ext (sub_eq_add_neg _ _)
+  zsmul k X := ⟨k • X.toLieSubalgebra⟩
+  zsmul_zero' _ := NormedLieAlgebra.ext (zero_zsmul _)
+  zsmul_succ' _ _ := NormedLieAlgebra.ext (SubNegMonoid.zsmul_succ' _ _)
+  zsmul_neg' _ _ := NormedLieAlgebra.ext (SubNegMonoid.zsmul_neg' _ _)
+  neg_add_cancel _ := NormedLieAlgebra.ext (neg_add_cancel _)
+  add_comm _ _ := NormedLieAlgebra.ext (add_comm _ _)
+  bracket X Y := ⟨⁅X.toLieSubalgebra, Y.toLieSubalgebra⁆⟩
+  add_lie _ _ _ := NormedLieAlgebra.ext (add_lie _ _ _)
+  lie_add _ _ _ := NormedLieAlgebra.ext (lie_add _ _ _)
+  lie_self _ := NormedLieAlgebra.ext (lie_self _)
+  leibniz_lie _ _ _ := NormedLieAlgebra.ext (leibniz_lie _ _ _)
+
+instance : LieAlgebra ℝ S.NormedLieAlgebra where
+  smul r X := ⟨r • X.toLieSubalgebra⟩
+  one_smul _ := NormedLieAlgebra.ext (one_smul _ _)
+  mul_smul _ _ _ := NormedLieAlgebra.ext (mul_smul _ _ _)
+  smul_zero _ := NormedLieAlgebra.ext (smul_zero _)
+  smul_add _ _ _ := NormedLieAlgebra.ext (smul_add _ _ _)
+  add_smul _ _ _ := NormedLieAlgebra.ext (add_smul _ _ _)
+  zero_smul _ := NormedLieAlgebra.ext (zero_smul _ _)
+  lie_smul r X Y := NormedLieAlgebra.ext (lie_smul r X.toLieSubalgebra Y.toLieSubalgebra)
+
+/-- `toLieSubalgebra` commutes with zero. -/
+@[simp]
+theorem NormedLieAlgebra.toLieSubalgebra_zero : (0 : S.NormedLieAlgebra).toLieSubalgebra = 0 :=
+  rfl
+
+/-- `toLieSubalgebra` commutes with addition. -/
+@[simp]
+theorem NormedLieAlgebra.toLieSubalgebra_add (X Y : S.NormedLieAlgebra) :
+    (X + Y).toLieSubalgebra = X.toLieSubalgebra + Y.toLieSubalgebra :=
+  rfl
+
+/-- `toLieSubalgebra` commutes with negation. -/
+@[simp]
+theorem NormedLieAlgebra.toLieSubalgebra_neg (X : S.NormedLieAlgebra) :
+    (-X).toLieSubalgebra = -X.toLieSubalgebra :=
+  rfl
+
+/-- `toLieSubalgebra` commutes with subtraction. -/
+@[simp]
+theorem NormedLieAlgebra.toLieSubalgebra_sub (X Y : S.NormedLieAlgebra) :
+    (X - Y).toLieSubalgebra = X.toLieSubalgebra - Y.toLieSubalgebra :=
+  rfl
+
+/-- `toLieSubalgebra` commutes with scalar multiplication. -/
+@[simp]
+theorem NormedLieAlgebra.toLieSubalgebra_smul (r : ℝ) (X : S.NormedLieAlgebra) :
+    (r • X).toLieSubalgebra = r • X.toLieSubalgebra :=
+  rfl
+
+/-- `toLieSubalgebra` commutes with the Lie bracket. -/
+@[simp]
+theorem NormedLieAlgebra.toLieSubalgebra_bracket (X Y : S.NormedLieAlgebra) :
+    ⁅X, Y⁆.toLieSubalgebra = ⁅X.toLieSubalgebra, Y.toLieSubalgebra⁆ :=
+  rfl
+
+/-- The canonical Lie algebra isomorphism `S.NormedLieAlgebra ≃ₗ⁅ℝ⁆ S.group.matrixLieAlgebra`. -/
+@[expose]
+def lieEquivMatrixLieAlgebra : S.NormedLieAlgebra ≃ₗ⁅ℝ⁆ S.group.matrixLieAlgebra where
+  toFun := NormedLieAlgebra.toLieSubalgebra
+  invFun X := ⟨X⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  map_lie' := rfl
+
+/-- Evaluation of `lieEquivMatrixLieAlgebra`. -/
+@[simp]
+theorem lieEquivMatrixLieAlgebra_apply (X : S.NormedLieAlgebra) :
+    S.lieEquivMatrixLieAlgebra X = X.toLieSubalgebra :=
+  rfl
+
+/-- Evaluation of `lieEquivMatrixLieAlgebra.symm`. -/
+@[simp]
+theorem lieEquivMatrixLieAlgebra_symm_apply (X : S.group.matrixLieAlgebra) :
+    S.lieEquivMatrixLieAlgebra.symm X = ⟨X⟩ :=
+  rfl
+
+/-- The `InnerProductSpace.Core` on `S.NormedLieAlgebra` induced by `S.innerForm`. -/
+@[instance_reducible, expose]
+def NormedLieAlgebra.innerProductSpaceCore : InnerProductSpace.Core ℝ S.NormedLieAlgebra where
+  inner X Y := S.innerForm X.toLieSubalgebra Y.toLieSubalgebra
+  conj_inner_symm X Y := by simpa using S.innerForm_comm Y.toLieSubalgebra X.toLieSubalgebra
+  re_inner_nonneg X := S.innerForm_self_nonneg X.toLieSubalgebra
+  add_left X Y Z := S.innerForm.add_left _ _ _
+  smul_left X Y r := by simp
+  definite X hX := NormedLieAlgebra.ext (S.innerForm_self_eq_zero.mp hX)
+
+instance : NormedAddCommGroup S.NormedLieAlgebra :=
+  (NormedLieAlgebra.innerProductSpaceCore S).toNormedAddCommGroup
+
+instance : InnerProductSpace ℝ S.NormedLieAlgebra :=
+  InnerProductSpace.ofCore (NormedLieAlgebra.innerProductSpaceCore S).toCore
+
+instance : FiniteDimensional ℝ S.NormedLieAlgebra :=
+  Module.Finite.equiv (lieEquivMatrixLieAlgebra S).symm.toLinearEquiv
+
+/-- The real inner product on `S.NormedLieAlgebra` is `S.innerForm`. -/
+@[simp]
+theorem real_inner_eq_innerForm (X Y : S.NormedLieAlgebra) :
+    ⟪X, Y⟫ = S.innerForm X.toLieSubalgebra Y.toLieSubalgebra :=
+  rfl
+
+/-- The squared norm on `S.NormedLieAlgebra` is `S.innerForm X X`. -/
+theorem norm_sq_eq_innerForm (X : S.NormedLieAlgebra) :
+    ‖X‖ ^ 2 = S.innerForm X.toLieSubalgebra X.toLieSubalgebra := by
+  rw [← real_inner_self_eq_norm_sq, real_inner_eq_innerForm]
+
+/-- The adjoint action `Ad(g)` on `S.NormedLieAlgebra`, packaged as a linear isometry
+equivalence. -/
+@[expose]
+def Ad (g : S.group) : S.NormedLieAlgebra ≃ₗᵢ[ℝ] S.NormedLieAlgebra where
+  toFun X := ⟨S.group.matrixAdjointRepresentation g X.toLieSubalgebra⟩
+  invFun X := ⟨S.group.matrixAdjointRepresentation g⁻¹ X.toLieSubalgebra⟩
+  left_inv X := NormedLieAlgebra.ext <| by
+    change ((S.group.matrixAdjointRepresentation g⁻¹) *
+      (S.group.matrixAdjointRepresentation g)) X.toLieSubalgebra = X.toLieSubalgebra
+    rw [← map_mul, inv_mul_cancel, map_one, one_apply_eq_self]
+  right_inv X := NormedLieAlgebra.ext <| by
+    change ((S.group.matrixAdjointRepresentation g) *
+      (S.group.matrixAdjointRepresentation g⁻¹)) X.toLieSubalgebra = X.toLieSubalgebra
+    rw [← map_mul, mul_inv_cancel, map_one, one_apply_eq_self]
+  map_add' _ _ := NormedLieAlgebra.ext (map_add _ _ _)
+  map_smul' r X := NormedLieAlgebra.ext
+    ((S.group.matrixAdjointRepresentation g).map_smul r X.toLieSubalgebra)
+  norm_map' X := by
+    rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), norm_sq_eq_innerForm, norm_sq_eq_innerForm]
+    exact S.innerForm_matrixAdjointRepresentation g X.toLieSubalgebra X.toLieSubalgebra
+
+/-- The underlying `matrixLieAlgebra` element of `S.Ad g X` is
+`S.group.matrixAdjointRepresentation g X.toLieSubalgebra`. -/
+@[simp]
+theorem Ad_toLieSubalgebra (g : S.group) (X : S.NormedLieAlgebra) :
+    (S.Ad g X).toLieSubalgebra = S.group.matrixAdjointRepresentation g X.toLieSubalgebra :=
+  rfl
+
+/-- `S.Ad 1` is the identity linear isometry equivalence. -/
+@[simp]
+theorem Ad_one : S.Ad 1 = LinearIsometryEquiv.refl ℝ S.NormedLieAlgebra := by
+  ext X
+  simp
+
+/-- `S.Ad` respects group multiplication: `S.Ad (g * h) X = S.Ad g (S.Ad h X)`. -/
+theorem Ad_mul (g h : S.group) (X : S.NormedLieAlgebra) :
+    S.Ad (g * h) X = S.Ad g (S.Ad h X) :=
+  NormedLieAlgebra.ext (by simp [map_mul, mul_apply_eq_comp])
+
+/-- Each `S.Ad g` preserves the Lie bracket. -/
+@[simp]
+theorem Ad_lie (g : S.group) (X Y : S.NormedLieAlgebra) :
+    S.Ad g ⁅X, Y⁆ = ⁅S.Ad g X, S.Ad g Y⁆ :=
+  NormedLieAlgebra.ext
+    (ClosedSubgroup.matrixAdjointRepresentation_lie g X.toLieSubalgebra Y.toLieSubalgebra)
+
+/-- On `S.NormedLieAlgebra`, `ad X` is skew-adjoint with respect to the inner product:
+`⟪ad X Y, Z⟫ = -⟪Y, ad X Z⟫`. -/
+theorem inner_ad_left (X Y Z : S.NormedLieAlgebra) :
+    ⟪LieAlgebra.ad ℝ S.NormedLieAlgebra X Y, Z⟫ =
+      -⟪Y, LieAlgebra.ad ℝ S.NormedLieAlgebra X Z⟫ := by
+  simp only [LieAlgebra.ad_apply, real_inner_eq_innerForm,
+    NormedLieAlgebra.toLieSubalgebra_bracket]
+  exact S.innerForm_lie_left X.toLieSubalgebra Y.toLieSubalgebra Z.toLieSubalgebra
+
+/-- Every adjoint action operator `ad X` on `S.NormedLieAlgebra` is skew-adjoint:
+`LinearMap.adjoint (LieAlgebra.ad ℝ S.NormedLieAlgebra X) = -LieAlgebra.ad ℝ S.NormedLieAlgebra X`.
+-/
+@[simp]
+theorem adjoint_ad (X : S.NormedLieAlgebra) :
+    LinearMap.adjoint (LieAlgebra.ad ℝ S.NormedLieAlgebra X) =
+      -LieAlgebra.ad ℝ S.NormedLieAlgebra X := by
+  symm
+  rw [LinearMap.eq_adjoint_iff]
+  intro Y Z
+  simp only [LinearMap.neg_apply, inner_neg_left, S.inner_ad_left, neg_neg]
+
+end NormedLieAlgebra
+
 section OfTraceForm
 
 /-- **Every closed subgroup of `U(n)` is a structure group** for the trace form
@@ -173,22 +401,17 @@ def ofTraceForm (G : ClosedSubgroup (Matrix.unitaryGroup n ℂ)) :
   posDef_innerForm := ClosedSubgroup.posDef_matrixTraceForm
   isInvariantForm_innerForm := ClosedSubgroup.isInvariantForm_matrixTraceForm
 
+/-- The underlying closed subgroup of `ofTraceForm G` is `G`. -/
 @[simp]
 theorem ofTraceForm_group (G : ClosedSubgroup (Matrix.unitaryGroup n ℂ)) :
     (ofTraceForm G).group = G :=
   (rfl)
 
+/-- The inner form of `ofTraceForm G` is the unscaled trace pairing `⟨X, Y⟩ = -Re tr (X Y)`. -/
 @[simp]
 theorem ofTraceForm_innerForm (G : ClosedSubgroup (Matrix.unitaryGroup n ℂ)) :
     (ofTraceForm G).innerForm = G.matrixTraceForm :=
   (rfl)
-
-/-- For the trace form, `-tr (X * Y)` is already real and coincides with the real inner product
-`(ofTraceForm G).innerForm X Y`. -/
-theorem ofTraceForm_neg_trace_mul (G : ClosedSubgroup (Matrix.unitaryGroup n ℂ))
-    (X Y : G.matrixLieAlgebra) :
-    -((X : Matrix n n ℂ) * (Y : Matrix n n ℂ)).trace = ((ofTraceForm G).innerForm X Y : ℂ) :=
-  ClosedSubgroup.neg_trace_mul_eq_matrixTraceForm X Y
 
 variable (n) in
 /-- The full unitary group `U(n)` as a compact matrix structure group with the trace form
@@ -198,10 +421,13 @@ variable (n) in
 def unitary : CompactMatrixStructureGroup n :=
   ofTraceForm (ClosedSubgroup.unitary n ℂ)
 
+/-- The underlying closed subgroup of `unitary n` is `ClosedSubgroup.unitary n ℂ`. -/
 @[simp]
 theorem unitary_group : (unitary n).group = ClosedSubgroup.unitary n ℂ :=
   (rfl)
 
+/-- The inner form of `unitary n` is the unscaled trace pairing `⟨X, Y⟩ = -Re tr (X Y)`
+(`ClosedSubgroup.matrixTraceForm`). -/
 @[simp]
 theorem unitary_innerForm : (unitary n).innerForm = (ClosedSubgroup.unitary n ℂ).matrixTraceForm :=
   (rfl)
@@ -214,10 +440,13 @@ variable (n) in
 def specialUnitary : CompactMatrixStructureGroup n :=
   ofTraceForm (ClosedSubgroup.specialUnitary n ℂ)
 
+/-- The underlying closed subgroup of `specialUnitary n` is `ClosedSubgroup.specialUnitary n ℂ`. -/
 @[simp]
 theorem specialUnitary_group : (specialUnitary n).group = ClosedSubgroup.specialUnitary n ℂ :=
   (rfl)
 
+/-- The inner form of `specialUnitary n` is the unscaled trace pairing `⟨X, Y⟩ = -Re tr (X Y)`
+(`ClosedSubgroup.matrixTraceForm`). -/
 @[simp]
 theorem specialUnitary_innerForm :
     (specialUnitary n).innerForm = (ClosedSubgroup.specialUnitary n ℂ).matrixTraceForm :=
@@ -252,6 +481,7 @@ def restrict (S : CompactMatrixStructureGroup n) (hH : H ≤ S.group) :
     simp only [LinearMap.compl₁₂_apply, LieHom.coe_toLinearMap, hAd,
       innerForm_matrixAdjointRepresentation]
 
+/-- The underlying closed subgroup of `S.restrict hH` is `H`. -/
 @[simp]
 theorem restrict_group (hH : H ≤ S.group) : (S.restrict hH).group = H :=
   (rfl)
@@ -294,6 +524,7 @@ def reindex (S : CompactMatrixStructureGroup n) (e : n ≃ m) :
       ClosedSubgroup.matrixLieAlgebraReindexEquiv_symm_matrixAdjointRepresentation e hu,
       innerForm_matrixAdjointRepresentation]
 
+/-- The underlying closed subgroup of `S.reindex e` is `S.group.reindex e`. -/
 @[simp]
 theorem reindex_group (e : n ≃ m) : (S.reindex e).group = S.group.reindex e :=
   (rfl)
@@ -382,6 +613,7 @@ def prod (S₁ : CompactMatrixStructureGroup n) (S₂ : CompactMatrixStructureGr
     simp only [LinearMap.add_apply, LinearMap.compl₁₂_apply, LinearMap.fst_apply,
       LinearMap.snd_apply, innerForm_matrixAdjointRepresentation]
 
+/-- The underlying closed subgroup of `S₁.prod S₂` is `S₁.group.fromBlocksProd S₂.group`. -/
 @[simp]
 theorem prod_group (S₁ : CompactMatrixStructureGroup n) (S₂ : CompactMatrixStructureGroup m) :
     (S₁.prod S₂).group = S₁.group.fromBlocksProd S₂.group :=
@@ -411,6 +643,8 @@ def blockProd {N₁ N₂ : ℕ} (S₁ : CompactMatrixStructureGroup (Fin N₁))
     (S₂ : CompactMatrixStructureGroup (Fin N₂)) : CompactMatrixStructureGroup (Fin (N₁ + N₂)) :=
   (S₁.prod S₂).reindex finSumFinEquiv
 
+/-- The underlying closed subgroup of `S₁.blockProd S₂` is
+`(S₁.group.fromBlocksProd S₂.group).reindex finSumFinEquiv`. -/
 @[simp]
 theorem blockProd_group {N₁ N₂ : ℕ} (S₁ : CompactMatrixStructureGroup (Fin N₁))
     (S₂ : CompactMatrixStructureGroup (Fin N₂)) :

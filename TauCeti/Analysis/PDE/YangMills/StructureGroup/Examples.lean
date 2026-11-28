@@ -47,7 +47,6 @@ carries an `ad`-invariant inner product that fails `Ad`-invariance—see
   `TauCeti.YangMills.lie_su2I_su2J`, `TauCeti.YangMills.lie_su2J_su2K`,
   `TauCeti.YangMills.lie_su2K_su2I`.
 * `TauCeti.YangMills.pmOne_group`, `TauCeti.YangMills.pmOne_innerForm`,
-  `TauCeti.YangMills.matrixLieAlgebra_pmOne`,
   `TauCeti.YangMills.subsingleton_matrixLieAlgebra_pmOne`.
 
 ## References
@@ -259,13 +258,9 @@ theorem pmOne_group : pmOne.group = TauCeti.Lie.pmOneSubgroup :=
 theorem pmOne_innerForm : pmOne.innerForm = TauCeti.Lie.pmOneSubgroup.matrixTraceForm :=
   (rfl)
 
-/-- The Lie algebra of `pmOne` is trivial (`⊥`). -/
-theorem matrixLieAlgebra_pmOne : pmOne.group.matrixLieAlgebra = ⊥ := by
-  rw [pmOne_group, TauCeti.Lie.matrixLieAlgebra_pmOneSubgroup]
-
 /-- The Lie algebra `pmOne.group.matrixLieAlgebra` has a single element. -/
 theorem subsingleton_matrixLieAlgebra_pmOne : Subsingleton pmOne.group.matrixLieAlgebra := by
-  rw [matrixLieAlgebra_pmOne]
+  rw [pmOne_group, TauCeti.Lie.matrixLieAlgebra_pmOneSubgroup]
   exact LieSubalgebra.subsingleton_bot
 
 end FinitePmOne

@@ -50,7 +50,8 @@ cone at `0` of `{Y : exp Y ∈ G}`. That cone lies in `𝔤` by the limit criter
   tangent cone of `G` at `g`.
 * `ClosedSubgroup.tangentConeAt_eq_matrixTangentSpace`: the tangent cone of `G` at `g` is `g 𝔤`.
 * `ClosedSubgroup.range_mvfderiv_matrixInclusion`: the manifold differential of the matrix
-  inclusion `G → Matrix n n 𝕜` at `g ∈ G` has range `g 𝔤`.
+  inclusion `G.toGL → Matrix n n 𝕜` of the embedded Lie subgroup `G.toGL` at `G.equivToGL g`
+  has range `g 𝔤`.
 * `ClosedSubgroup.fderiv_apply_mem_matrixTangentSpace`: the derivative at `x` of a map with values
   in `G` near `x` lies in the tangent space of `G` at its value.
 
@@ -134,17 +135,19 @@ section TangentCone
 open scoped Matrix.Norms.Operator
 
 /-- If `exp Y` lies in `G`, so does `exp (-Y)`. -/
-private theorem exists_eq_exp_neg {Y : Matrix n n 𝕜} (hY : ∃ g ∈ G, (g : Matrix n n 𝕜) = exp Y) :
-    ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (-Y) := by
+private theorem exists_eq_exp_neg {Y : Matrix n n 𝕜}
+    (hY : ∃ g ∈ G, (g : Matrix n n 𝕜) = NormedSpace.exp Y) :
+    ∃ g ∈ G, (g : Matrix n n 𝕜) = NormedSpace.exp (-Y) := by
   obtain ⟨g, hg, hgY⟩ := hY
   refine ⟨g⁻¹, inv_mem hg, ?_⟩
-  have h : exp (-Y) * (g : Matrix n n 𝕜) = 1 := by rw [hgY, Matrix.exp_neg_mul_exp]
+  have h : NormedSpace.exp (-Y) * (g : Matrix n n 𝕜) = 1 := by
+    rw [hgY, Matrix.exp_neg_mul_exp]
   rw [Matrix.UnitaryGroup.inv_val]
   exact (left_inv_eq_right_inv h (Unitary.mul_star_self_of_mem g.property)).symm
 
 /-- The tangent cone at `0` of `{Y : exp Y ∈ G}` lies in the Lie algebra. -/
 private theorem tangentConeAt_setOf_exp_subset :
-    tangentConeAt ℝ {Y : Matrix n n 𝕜 | ∃ g ∈ G, (g : Matrix n n 𝕜) = exp Y} 0 ⊆
+    tangentConeAt ℝ {Y : Matrix n n 𝕜 | ∃ g ∈ G, (g : Matrix n n 𝕜) = NormedSpace.exp Y} 0 ⊆
       G.matrixLieAlgebra := by
   intro V hV
   obtain ⟨c, d, hc, hd, hcd⟩ := mem_tangentConeAt_iff_exists_seq_norm_tendsto_atTop.mp hV
@@ -170,27 +173,28 @@ private theorem tangentConeAt_one_subset :
   -- A local logarithm `L`: the local inverse of `exp` at `0`, which has derivative the identity.
   -- The scoped operator norm induces the native topology and module structure of the matrices,
   -- so the facts below, stated for the latter, are accepted up to definitional unfolding.
-  have hexp : HasStrictFDerivAt (exp : Matrix n n 𝕜 → Matrix n n 𝕜)
+  have hexp : HasStrictFDerivAt (NormedSpace.exp : Matrix n n 𝕜 → Matrix n n 𝕜)
       ((ContinuousLinearEquiv.refl ℝ (Matrix n n 𝕜) : Matrix n n 𝕜 →L[ℝ] Matrix n n 𝕜)) 0 :=
     hasStrictFDerivAt_exp_zero
-  have hU : {M | exp (hexp.localInverse _ _ _ M) = M} ∈ 𝓝 (1 : Matrix n n 𝕜) := by
+  have hU : {M | NormedSpace.exp (hexp.localInverse _ _ _ M) = M} ∈ 𝓝 (1 : Matrix n n 𝕜) := by
     have h := hexp.eventually_right_inverse
-    rw [exp_zero] at h
+    rw [NormedSpace.exp_zero] at h
     exact h
   have hlog :
       HasFDerivAt (hexp.localInverse _ _ _) (ContinuousLinearMap.id ℝ (Matrix n n 𝕜)) 1 := by
     have h := hexp.to_localInverse.hasFDerivAt
-    rw [exp_zero] at h
+    rw [NormedSpace.exp_zero] at h
     exact h
   have hlog1 : hexp.localInverse _ _ _ (1 : Matrix n n 𝕜) = 0 := by
     have h := hexp.localInverse_apply_image
-    rw [exp_zero] at h
+    rw [NormedSpace.exp_zero] at h
     exact h
   intro V hV
   rw [← tangentConeAt_inter_nhds hU] at hV
   have h : V ∈ tangentConeAt ℝ (hexp.localInverse _ _ _ ''
       ((((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G) ∩
-        {M | exp (hexp.localInverse _ _ _ M) = M})) (hexp.localInverse _ _ _ 1) :=
+        {M | NormedSpace.exp (hexp.localInverse _ _ _ M) = M}))
+      (hexp.localInverse _ _ _ 1) :=
     hlog.hasFDerivWithinAt.mapsTo_tangent_cone hV
   rw [hlog1] at h
   refine tangentConeAt_setOf_exp_subset (tangentConeAt_mono ?_ h)
@@ -206,15 +210,15 @@ theorem mem_posTangentConeAt_of_mem_matrixTangentSpace {g : G} {V : Matrix n n �
   obtain ⟨X, hX, rfl⟩ := Submodule.mem_map.mp hV
   -- The curve `t ↦ g exp (t X)` stays in `G` and has velocity `g X` at `t = 0`.
   have hγ := (hasDerivAt_exp_smul_const X (0 : ℝ)).const_mul (g : Matrix n n 𝕜)
-  simp only [zero_smul, exp_zero, one_mul] at hγ
-  have hmem : ∀ᶠ t in 𝓝[>] (0 : ℝ), (g : Matrix n n 𝕜) * exp (t • X) ∈
+  simp only [zero_smul, NormedSpace.exp_zero, one_mul] at hγ
+  have hmem : ∀ᶠ t in 𝓝[>] (0 : ℝ), (g : Matrix n n 𝕜) * NormedSpace.exp (t • X) ∈
       ((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G := by
     refine Eventually.of_forall fun t ↦ ?_
     obtain ⟨h, hh, hht⟩ := mem_matrixLieAlgebra_iff.mp ((LieSubalgebra.mem_toSubmodule _).mp hX) t
     exact ⟨g * h, mul_mem g.property hh, by simp [hht]⟩
   have h : (g : Matrix n n 𝕜) * X ∈ posTangentConeAt
       (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G)
-      ((g : Matrix n n 𝕜) * exp ((0 : ℝ) • X)) :=
+      ((g : Matrix n n 𝕜) * NormedSpace.exp ((0 : ℝ) • X)) :=
     hγ.hasDerivWithinAt.mem_posTangentConeAt hmem.frequently
   simpa using h
 
@@ -267,8 +271,9 @@ attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
 attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
 
 variable (G) in
-/-- At any `g ∈ G`, the range of the differential of the matrix inclusion `G → Matrix n n 𝕜`
-is the left translate `g · 𝔤 = G.matrixTangentSpace g`. -/
+/-- For the embedded Lie subgroup manifold `G.toGL`, at any `g ∈ G` the range of the differential
+of the matrix inclusion `G.toGL → Matrix n n 𝕜` at `G.equivToGL g` is the left translate
+`g · 𝔤 = G.matrixTangentSpace g`. -/
 theorem range_mvfderiv_matrixInclusion (g : G) :
     let E := (lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜)) (toGL G)).toSubmodule
     let _ : ChartedSpace E (toGL G) := (embeddedLieSubgroupData G).chartedSpace

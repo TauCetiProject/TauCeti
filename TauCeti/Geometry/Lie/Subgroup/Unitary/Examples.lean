@@ -9,11 +9,17 @@ public import TauCeti.Geometry.Lie.Subgroup.Unitary.Matrix
 import Mathlib.LinearAlgebra.BilinearForm.Hom
 import Mathlib.LinearAlgebra.Complex.Module
 import TauCeti.Algebra.Group.Subgroup.ZPowers
+import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
 import TauCeti.Analysis.Matrix.Normed
+import TauCeti.Analysis.Matrix.UnitaryGroup.MaximalTorus
 import TauCeti.Analysis.Matrix.UnitaryGroup.Weyl
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
+import TauCeti.Geometry.Lie.Subgroup.Weyl.Finite
+import TauCeti.Geometry.Manifold.Instances.Unitary
 import TauCeti.LinearAlgebra.Matrix.Hermitian.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 import TauCeti.Topology.Algebra.Group.Subgroup
+import TauCeti.Topology.Algebra.Star.Unitary
 
 /-!
 # Concrete closed subgroups of the unitary group and counterexample
@@ -56,7 +62,7 @@ matrix Lie algebras:
 
 public section
 
-open scoped ComplexConjugate Matrix
+open scoped ComplexConjugate Matrix Manifold
 
 noncomputable section
 
@@ -131,11 +137,7 @@ section DisconnectedCounterexample
 diagonal torus `TauCeti.unitaryTorus (Fin 2)` in `U(2)`. -/
 def torusSemidirectZ2Subgroup : ClosedSubgroup (Matrix.unitaryGroup (Fin 2) ℂ) where
   toSubgroup := Subgroup.normalizer (unitaryTorus (Fin 2) : Set (Matrix.unitaryGroup (Fin 2) ℂ))
-  isClosed' := Subgroup.isClosed_normalizer <| by
-    rw [show (unitaryTorus (Fin 2) : Set (Matrix.unitaryGroup (Fin 2) ℂ)) =
-        Set.range (unitaryTorusHom (Fin 2)) from
-      Set.ext fun _ ↦ mem_unitaryTorus_iff_exists_unitaryTorusHom.trans (by simp [eq_comm])]
-    exact (isCompact_range (continuous_unitaryTorusHom (n := Fin 2))).isClosed
+  isClosed' := Subgroup.isClosed_normalizer (isTorus_unitaryTorus (n := Fin 2)).isClosed
 
 private theorem toSubgroup_torusSemidirectZ2Subgroup :
     torusSemidirectZ2Subgroup.toSubgroup =
@@ -184,48 +186,63 @@ theorem mem_torusSemidirectZ2Subgroup_iff {U : Matrix.unitaryGroup (Fin 2) ℂ} 
         _ = (U * P) * P := (mul_assoc _ _ _).symm
         _ = unitaryTorusHom (Fin 2) z * Matrix.permutationUnitary (Equiv.swap 0 1) := by rw [hz]
 
+section
+open scoped ContDiff Matrix.Norms.Operator
+attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
+attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
+
+private theorem isOpen_unitaryTorus_subgroupOf_normalizer :
+    IsOpen ((unitaryTorus (Fin 2)).subgroupOf
+      (Subgroup.normalizer (unitaryTorus (Fin 2) : Set (Matrix.unitaryGroup (Fin 2) ℂ))) :
+      Set (Subgroup.normalizer (unitaryTorus (Fin 2) : Set (Matrix.unitaryGroup (Fin 2) ℂ)))) := by
+  let _ : CompactSpace (Matrix.unitaryGroup (Fin 2) ℂ) :=
+    { isCompact_univ :=
+        (Topology.IsInducing.subtypeVal :
+          Topology.IsInducing (Subtype.val :
+            Matrix.unitaryGroup (Fin 2) ℂ → Matrix (Fin 2) (Fin 2) ℂ)).isCompact_iff.mpr
+            (by rw [Set.image_univ, Subtype.range_coe]
+                exact TauCeti.Matrix.isCompact_unitaryGroup (n := Fin 2) (𝕜 := ℂ)) }
+  let _ : ChartedSpace _ (Matrix.unitaryGroup (Fin 2) ℂ) :=
+    Unitary.instChartedSpace (R := Matrix (Fin 2) (Fin 2) ℂ)
+  let _ : IsManifold (Unitary.model (Matrix (Fin 2) (Fin 2) ℂ)) ∞
+      (Matrix.unitaryGroup (Fin 2) ℂ) :=
+    Unitary.instIsManifold (R := Matrix (Fin 2) (Fin 2) ℂ)
+  let _ : LieGroup (Unitary.model (Matrix (Fin 2) (Fin 2) ℂ)) ∞
+      (Matrix.unitaryGroup (Fin 2) ℂ) :=
+    Unitary.instLieGroup (R := Matrix (Fin 2) (Fin 2) ℂ)
+  have hT : TauCeti.Lie.IsMaximalTorus (unitaryTorus (Fin 2)) := isMaximalTorus_unitaryTorus
+  exact hT.isOpen_subgroupOf_normalizer (Unitary.model (Matrix (Fin 2) (Fin 2) ℂ))
+end
+
 /-- An exponential line staying in `torusSemidirectZ2Subgroup` remains in the diagonal torus. -/
 private theorem exp_smul_diag_of_mem_torusSemidirectZ2Subgroup
     {X : Matrix (Fin 2) (Fin 2) ℂ} (hX : X ∈ torusSemidirectZ2Subgroup.matrixLieAlgebra)
     (t : ℝ) :
     NormedSpace.exp (t • X) 0 1 = 0 ∧ NormedSpace.exp (t • X) 1 0 = 0 := by
-  have hexp := ClosedSubgroup.mem_matrixLieAlgebra_iff.mp hX
-  let D : Set (Matrix (Fin 2) (Fin 2) ℂ) := {M | M 0 1 = 0 ∧ M 1 0 = 0}
-  let A : Set (Matrix (Fin 2) (Fin 2) ℂ) := {M | M 0 0 = 0 ∧ M 1 1 = 0}
-  have hD_closed : IsClosed D :=
-    (isClosed_eq ((continuous_apply 1).comp (continuous_apply 0)) continuous_const).inter
-      (isClosed_eq ((continuous_apply 0).comp (continuous_apply 1)) continuous_const)
-  have hA_closed : IsClosed A :=
-    (isClosed_eq ((continuous_apply 0).comp (continuous_apply 0)) continuous_const).inter
-      (isClosed_eq ((continuous_apply 1).comp (continuous_apply 1)) continuous_const)
-  -- Every point on the exponential line lies in `D ∪ A`, and no unitary matrix lies in `D ∩ A`.
-  have hcov : Set.range (fun s : ℝ ↦ NormedSpace.exp (s • X)) ⊆ D ∪ A := by
-    rintro _ ⟨s, rfl⟩
-    obtain ⟨u, hu, hEq⟩ := hexp s
-    simpa [← hEq, D, A] using mem_torusSemidirectZ2Subgroup_iff.mp hu
-  have hdisj : Set.range (fun s : ℝ ↦ NormedSpace.exp (s • X)) ∩ (D ∩ A) = ∅ := by
-    rw [Set.eq_empty_iff_forall_notMem]
-    rintro M ⟨⟨s, rfl⟩, hsD, hsA⟩
-    obtain ⟨u, -, hEq⟩ := hexp s
-    have hzero : (u : Matrix (Fin 2) (Fin 2) ℂ) = 0 := by
-      ext i j
-      fin_cases i <;> fin_cases j
-      · exact hEq.symm ▸ hsA.1
-      · exact hEq.symm ▸ hsD.1
-      · exact hEq.symm ▸ hsD.2
-      · exact hEq.symm ▸ hsA.2
-    have h1 := Matrix.mem_unitaryGroup_iff.1 u.property
-    rw [hzero, zero_mul] at h1
-    have h00 := congrFun (congrFun h1 0) 0
-    simp at h00
-  -- Connectedness of `ℝ` forces the range into `D` because `exp 0 = 1 ∈ D \ A`.
-  have hsub := (isPreconnected_iff_subset_of_disjoint_closed.1
-    (isPreconnected_range (Matrix.continuous_exp_smul X)) D A hD_closed hA_closed hcov
-      hdisj).resolve_right fun hA ↦ by
-    have h1A : (1 : Matrix (Fin 2) (Fin 2) ℂ) ∈ A := by
-      simpa using hA ⟨0, rfl⟩
-    simpa [A] using h1A.1
-  exact hsub ⟨t, rfl⟩
+  let N := Subgroup.normalizer (unitaryTorus (Fin 2) : Set (Matrix.unitaryGroup (Fin 2) ℂ))
+  let f : torusSemidirectZ2Subgroup → N := fun g ↦
+    ⟨g.val, mem_torusSemidirectZ2Subgroup_iff_mem_normalizer.mp g.property⟩
+  have hf_cont : Continuous f := continuous_induced_rng.mpr continuous_subtypeVal
+  let γ : ℝ → N := fun s ↦ f (torusSemidirectZ2Subgroup.exp (s • ⟨X, hX⟩))
+  have hγ_cont : Continuous γ :=
+    hf_cont.comp (ClosedSubgroup.continuous_exp.comp (continuous_id.smul continuous_const))
+  let TN : Set N := ((unitaryTorus (Fin 2)).subgroupOf N : Set N)
+  have hTN_closed : IsClosed TN :=
+    (isTorus_unitaryTorus (n := Fin 2)).isClosed.preimage continuous_subtypeVal
+  have hTN_open : IsOpen TN := isOpen_unitaryTorus_subgroupOf_normalizer
+  have h0 : γ 0 ∈ TN := by
+    change ((γ 0 : Matrix.unitaryGroup (Fin 2) ℂ)) ∈ unitaryTorus (Fin 2)
+    have h1 : (γ 0 : Matrix.unitaryGroup (Fin 2) ℂ) = 1 :=
+      Subtype.ext (by simp [γ, f])
+    rw [h1]
+    exact one_mem _
+  have hsub : Set.range γ ⊆ TN :=
+    (isPreconnected_range hγ_cont).subset_isClopen ⟨hTN_closed, hTN_open⟩ ⟨γ 0, ⟨0, rfl⟩, h0⟩
+  have hdiag : ((γ t : Matrix.unitaryGroup (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ).IsDiag :=
+    mem_unitaryTorus_iff.mp (hsub ⟨t, rfl⟩)
+  rw [show ((γ t : Matrix.unitaryGroup (Fin 2) ℂ) : Matrix (Fin 2) (Fin 2) ℂ) =
+      NormedSpace.exp (t • X) by simp [γ, f]] at hdiag
+  exact ⟨hdiag (by decide), hdiag (by decide)⟩
 
 /-- The Lie algebra of `T² ⋊ ℤ/2 ⊂ U(2)` is the abelian algebra of purely imaginary diagonal
 `2 × 2` matrices. -/
@@ -313,24 +330,28 @@ theorem weightedDiagBilinForm_isSymm : weightedDiagBilinForm.IsSymm :=
 
 /-- `weightedDiagBilinForm` is positive definite on `torusSemidirectZ2Subgroup.matrixLieAlgebra`. -/
 theorem weightedDiagBilinForm_posDef : weightedDiagBilinForm.toQuadraticMap.PosDef := by
-  intro X hX
-  rw [LinearMap.BilinMap.toQuadraticMap_apply, weightedDiagBilinForm_apply]
-  obtain ⟨h01, h10, hre0, hre1⟩ :=
-    (mem_matrixLieAlgebra_torusSemidirectZ2_iff X.val).1 X.property
-  by_contra hle
-  push Not at hle
-  have h0 : 0 ≤ (X.val 0 0).im * (X.val 0 0).im := mul_self_nonneg _
-  have h1 : 0 ≤ (X.val 1 1).im * (X.val 1 1).im := mul_self_nonneg _
-  have him0 : (X.val 0 0).im = 0 := mul_self_eq_zero.1 (by linarith)
-  have him1 : (X.val 1 1).im = 0 := mul_self_eq_zero.1 (by linarith)
-  apply hX
-  apply Subtype.ext
-  ext i j
-  fin_cases i <;> fin_cases j
-  · exact Complex.ext hre0 him0
-  · exact h01
-  · exact h10
-  · exact Complex.ext hre1 him1
+  let diagIm : torusSemidirectZ2Subgroup.matrixLieAlgebra →ₗ[ℝ] (Fin 2 → ℝ) :=
+    LinearMap.pi fun i ↦ Complex.imLm.comp
+      ((Matrix.entryLinearMap ℝ ℂ i i).comp
+        torusSemidirectZ2Subgroup.matrixLieAlgebra.incl.toLinearMap)
+  have hdiagIm : Function.Injective diagIm := by
+    rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+    intro X hX
+    obtain ⟨h01, h10, hre0, hre1⟩ :=
+      (mem_matrixLieAlgebra_torusSemidirectZ2_iff X.val).1 X.property
+    have him0 : (X.val 0 0).im = 0 := congrFun hX 0
+    have him1 : (X.val 1 1).im = 0 := congrFun hX 1
+    apply Subtype.ext
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [Complex.ext_iff, h01, h10, hre0, hre1, him0, him1]
+  have hq : weightedDiagBilinForm.toQuadraticMap =
+      (QuadraticMap.weightedSumSquares ℝ ![(1 : ℝ), 2]).comp diagIm := by
+    ext X
+    simp [diagIm, Fin.sum_univ_two]
+    ring
+  have hws : (QuadraticMap.weightedSumSquares ℝ ![(1 : ℝ), 2]).PosDef :=
+    (QuadraticMap.posDef_weightedSumSquares_iff _).mpr fun i ↦ by fin_cases i <;> norm_num
+  exact hq ▸ hws.comp diagIm hdiagIm
 
 /-- Normalization of `e₁` under `weightedDiagBilinForm`: `⟨e₁, e₁⟩ = 1`. -/
 theorem weightedDiagBilinForm_e₁_e₁ : weightedDiagBilinForm torusE₁ torusE₁ = 1 := by
@@ -349,15 +370,15 @@ theorem weightedDiagBilinForm_e₁_e₂ : weightedDiagBilinForm torusE₁ torusE
 theorem weightedDiagBilinForm_lieInvariant :
     weightedDiagBilinForm.lieInvariant torusSemidirectZ2Subgroup.matrixLieAlgebra := by
   intro X Y Z
-  have hlie : ∀ A B : torusSemidirectZ2Subgroup.matrixLieAlgebra, ⁅A, B⁆ = 0 := by
-    intro A B
-    obtain ⟨hA01, hA10, _, _⟩ := (mem_matrixLieAlgebra_torusSemidirectZ2_iff A.val).1 A.property
-    obtain ⟨hB01, hB10, _, _⟩ := (mem_matrixLieAlgebra_torusSemidirectZ2_iff B.val).1 B.property
-    apply Subtype.ext
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [LieRing.of_associative_ring_bracket, Matrix.mul_apply, Fin.sum_univ_two, hA01, hA10,
-        hB01, hB10, mul_comm]
+  have isDiag_of_mem (A : torusSemidirectZ2Subgroup.matrixLieAlgebra) :
+      (A : Matrix (Fin 2) (Fin 2) ℂ).IsDiag := by
+    obtain ⟨h01, h10, _, _⟩ := (mem_matrixLieAlgebra_torusSemidirectZ2_iff A.val).1 A.property
+    intro i j hij
+    fin_cases i <;> fin_cases j <;> simp_all
+  have hlie (A B : torusSemidirectZ2Subgroup.matrixLieAlgebra) : ⁅A, B⁆ = 0 :=
+    Subtype.ext <| by
+      rw [LieSubalgebra.coe_bracket, LieRing.of_associative_ring_bracket, ← Ring.lie_def]
+      exact TauCeti.lie_eq_zero_of_isDiag (isDiag_of_mem A) (isDiag_of_mem B)
   simp [hlie]
 
 /-- Conjugation by the swap matrix `!![0, 1; 1, 0] ∈ T² ⋊ ℤ/2` exchanges `e₁` and `e₂`, so

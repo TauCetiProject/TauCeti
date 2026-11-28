@@ -353,16 +353,10 @@ variable (n 𝕜 : Type*) [Fintype n] [DecidableEq n] [CommRing 𝕜] [StarRing 
 def specialUnitary : ClosedSubgroup (Matrix.unitaryGroup n 𝕜) where
   toSubgroup := Matrix.UnitaryGroup.specialUnitarySubgroup n 𝕜
   isClosed' := by
-    -- Identify the `ClosedSubgroup` carrier with the preimage of `{1}` under `det`.
-    change IsClosed ((Matrix.UnitaryGroup.specialUnitarySubgroup n 𝕜 :
-      Subgroup (Matrix.unitaryGroup n 𝕜)) : Set (Matrix.unitaryGroup n 𝕜))
-    have hset : ((Matrix.UnitaryGroup.specialUnitarySubgroup n 𝕜 :
-        Subgroup (Matrix.unitaryGroup n 𝕜)) : Set (Matrix.unitaryGroup n 𝕜)) =
-        (fun U : Matrix.unitaryGroup n 𝕜 ↦ (U : Matrix n n 𝕜).det) ⁻¹' {1} := by
-      ext U
-      simp [Matrix.UnitaryGroup.mem_specialUnitarySubgroup_iff]
-    rw [hset]
-    exact isClosed_singleton.preimage continuous_subtypeVal.matrix_det
+    convert (isClosed_singleton (x := (1 : 𝕜))).preimage
+      (continuous_subtypeVal : Continuous ((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜)).matrix_det
+    ext U
+    simp
 
 /-- Membership in `ClosedSubgroup.specialUnitary n 𝕜` is having determinant `1`. -/
 @[simp]
@@ -423,23 +417,20 @@ theorem unitaryReindexContinuousMulEquiv_mem_reindex
 theorem reindex_refl (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) :
     G.reindex (Equiv.refl n) = G := by
   apply ClosedSubgroup.toSubgroup_injective
-  ext U
-  have hL : U ∈ (G.reindex (Equiv.refl n)).toSubgroup ↔ U ∈ G.reindex (Equiv.refl n) := Iff.rfl
-  have hR : U ∈ G.toSubgroup ↔ U ∈ G := Iff.rfl
-  rw [hL, hR, mem_reindex_iff]
-  simp [Matrix.unitaryReindexContinuousMulEquiv_refl]
+  rw [toSubgroup_reindex, Matrix.unitaryReindexContinuousMulEquiv_refl]
+  exact Subgroup.map_id _
 
 /-- Reindexing along a composite equivalence `e.trans f` equals reindexing along `e` then `f`. -/
 @[simp]
 theorem reindex_trans (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) (e : n ≃ m) (f : m ≃ p) :
     G.reindex (e.trans f) = (G.reindex e).reindex f := by
   apply ClosedSubgroup.toSubgroup_injective
-  ext V
-  have hL : V ∈ (G.reindex (e.trans f)).toSubgroup ↔ V ∈ G.reindex (e.trans f) := Iff.rfl
-  have hR : V ∈ ((G.reindex e).reindex f).toSubgroup ↔ V ∈ (G.reindex e).reindex f := Iff.rfl
-  rw [hL, hR, mem_reindex_iff, mem_reindex_iff, mem_reindex_iff, Equiv.symm_trans,
-    ← Matrix.unitaryReindexContinuousMulEquiv_trans_unitaryReindexContinuousMulEquiv]
-  rfl
+  rw [toSubgroup_reindex, toSubgroup_reindex, toSubgroup_reindex, Subgroup.map_map]
+  congr 1
+  exact congrArg
+    (fun φ : Matrix.unitaryGroup n 𝕜 ≃ₜ* Matrix.unitaryGroup p 𝕜 ↦ φ.toMulEquiv.toMonoidHom)
+    (Matrix.unitaryReindexContinuousMulEquiv_trans_unitaryReindexContinuousMulEquiv
+      (α := 𝕜) e f).symm
 
 end Reindex
 

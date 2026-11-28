@@ -237,13 +237,6 @@ theorem det_exp (A : Matrix n n 𝕂) : det (exp A) = exp (trace A) := by
           exp_zero, mul_one]
     _ = exp (trace A) := by rw [← mul_assoc, hconst, one_mul]
 
-/-- The exponential line `t ↦ exp (t • X)` of a matrix is continuous on `ℝ`. -/
-theorem continuous_exp_smul {m 𝕜 : Type*} [Fintype m] [DecidableEq m] [RCLike 𝕜]
-    (X : Matrix m m 𝕜) :
-    Continuous (fun t : ℝ ↦ exp (t • X)) := by
-  let _ : NormedAlgebra ℚ (Matrix m m 𝕜) := TauCeti.normedAlgebraRatOfReal
-  exact exp_continuous.comp (continuous_id.smul continuous_const)
-
 section EntryDerivative
 
 variable {m 𝕂 A : Type*} [Fintype m] [DecidableEq m] [RCLike 𝕂] [NormedRing A] [NormedAlgebra 𝕂 A]
