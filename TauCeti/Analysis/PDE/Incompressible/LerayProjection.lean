@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.Distribution.TestFunction.Gradient
+public import TauCeti.Analysis.Distribution.TestFunction.Lp
 public import TauCeti.Analysis.PDE.Incompressible.Solenoidal
 
 /-!
@@ -17,7 +19,8 @@ gradient. It removes from a velocity field its gradient part, and is the operato
 the pressure is eliminated from the incompressible Navier–Stokes and Euler equations.
 
 The orthogonal complement of `L²_σ` is the closure in `L²(μ; E)` of the gradients of smooth
-compactly supported functions, which is `TauCeti.wassersteinTangentSpace μ`. So every
+compactly supported functions, which is `TauCeti.wassersteinTangentSpace μ`
+(`TauCeti.orthogonal_solenoidalLp_two`). So every
 `u ∈ L²(μ; E)` splits uniquely as `u = ℙu + (u - ℙu)`, with `ℙu` solenoidal and `u - ℙu` a limit of
 test gradients: this is the abstract form of the **Helmholtz–Weyl decomposition**. For an additive
 Haar measure, the limits of test gradients are exactly the square integrable weak gradients
@@ -26,17 +29,17 @@ Haar measure, the limits of test gradients are exactly the square integrable wea
 
 ## Main declarations
 
-* `TauCeti.orthogonal_solenoidalLp_two`: the orthogonal complement of `L²_σ` is the closure of
-  the test gradients.
 * `TauCeti.lerayProjection`: the Leray projection, as a continuous linear endomorphism of
   `L²(μ; E)`.
 * `TauCeti.range_lerayProjection` and `TauCeti.ker_lerayProjection`: its range is `L²_σ` and its
   kernel is the closure of the test gradients; `TauCeti.lerayProjection_eq_self_iff` and
   `TauCeti.lerayProjection_eq_zero_iff` are the pointwise forms.
 * `TauCeti.lerayProjection_eq_iff`: the Helmholtz–Weyl decomposition is unique.
-* `TauCeti.isStarProjection_lerayProjection` and `TauCeti.norm_lerayProjection_le`: `ℙ` is a
-  self-adjoint idempotent of operator norm at most `1`.
-* `TauCeti.lerayProjection_toLp_gradient`: `ℙ` annihilates test gradients.
+* `TauCeti.isStarProjection_lerayProjection`, `TauCeti.inner_lerayProjection_left_eq_right` and
+  `TauCeti.norm_lerayProjection_le`: `ℙ` is a self-adjoint idempotent of operator norm at most
+  `1`.
+* `TauCeti.lerayProjection_toLp_gradient` and `TauCeti.lerayProjection_ambientToLp_gradientCLM`:
+  `ℙ` annihilates test gradients.
 * `TauCeti.norm_sq_eq_norm_lerayProjection_sq_add_norm_sub_sq`: the Pythagorean identity
   `‖u‖² = ‖ℙu‖² + ‖u - ℙu‖²`.
 
@@ -54,19 +57,12 @@ public section
 noncomputable section
 
 open MeasureTheory
-open scoped ENNReal Gradient
+open scoped ENNReal Gradient Distributions InnerProductSpace
 
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
-
-variable (μ) in
-/-- **Helmholtz–Weyl, abstract form.** The orthogonal complement of the solenoidal fields in
-`L²(μ; E)` is the closure of the gradients of smooth compactly supported functions. -/
-theorem orthogonal_solenoidalLp_two :
-    (solenoidalLp E 2 μ).toSubmoduleᗮ = wassersteinTangentSpace μ := by
-  rw [solenoidalLp_two_eq_orthogonal_wassersteinTangentSpace, Submodule.orthogonal_orthogonal]
 
 variable (μ) in
 /-- The **Leray projection** `ℙ`: the orthogonal projection of `L²(μ; E)` onto the closed
@@ -80,9 +76,10 @@ theorem lerayProjection_def :
 
 /-- The Leray projection of a field is solenoidal. -/
 theorem lerayProjection_apply_mem (u : Lp E 2 μ) : lerayProjection μ u ∈ solenoidalLp E 2 μ :=
-  Submodule.starProjection_apply_mem _ u
+  (ClosedSubmodule.mem_toSubmodule_iff _ _).1 (Submodule.starProjection_apply_mem _ u)
 
 /-- The gradient part `u - ℙu` of a field is a limit of test gradients. -/
+@[simp]
 theorem sub_lerayProjection_mem_wassersteinTangentSpace (u : Lp E 2 μ) :
     u - lerayProjection μ u ∈ wassersteinTangentSpace μ := by
   rw [← orthogonal_solenoidalLp_two]
@@ -101,11 +98,13 @@ theorem ker_lerayProjection :
   rw [lerayProjection_def, Submodule.ker_starProjection, orthogonal_solenoidalLp_two]
 
 /-- The Leray projection fixes exactly the solenoidal fields. -/
+@[simp]
 theorem lerayProjection_eq_self_iff {u : Lp E 2 μ} :
     lerayProjection μ u = u ↔ u ∈ solenoidalLp E 2 μ :=
-  Submodule.starProjection_eq_self_iff
+  Submodule.starProjection_eq_self_iff.trans (ClosedSubmodule.mem_toSubmodule_iff _ _)
 
 /-- The Leray projection annihilates exactly the limits of test gradients. -/
+@[simp]
 theorem lerayProjection_eq_zero_iff {u : Lp E 2 μ} :
     lerayProjection μ u = 0 ↔ u ∈ wassersteinTangentSpace μ := by
   rw [← ker_lerayProjection]
@@ -117,13 +116,24 @@ theorem lerayProjection_eq_iff {u v : Lp E 2 μ} (hv : v ∈ solenoidalLp E 2 μ
     lerayProjection μ u = v ↔ u - v ∈ wassersteinTangentSpace μ := by
   refine ⟨fun h ↦ h ▸ sub_lerayProjection_mem_wassersteinTangentSpace u, fun h ↦ ?_⟩
   rw [← orthogonal_solenoidalLp_two] at h
-  exact Submodule.eq_starProjection_of_mem_orthogonal' hv h (add_sub_cancel v u).symm
+  exact Submodule.eq_starProjection_of_mem_orthogonal'
+    ((ClosedSubmodule.mem_toSubmodule_iff _ _).2 hv) h (add_sub_cancel v u).symm
 
 /-- The Leray projection annihilates the gradient of a smooth compactly supported function. -/
 @[simp]
 theorem lerayProjection_toLp_gradient {φ : E → ℝ} (hφ : ContDiff ℝ (⊤ : ℕ∞) φ)
     (hφc : HasCompactSupport φ) (hm : MemLp (∇ φ) 2 μ) : lerayProjection μ (hm.toLp (∇ φ)) = 0 :=
   lerayProjection_eq_zero_iff.2 (toLp_gradient_mem_wassersteinTangentSpace hφ hφc hm)
+
+/-- The Leray projection annihilates the class in `L²` of a bundled test gradient. -/
+@[simp]
+theorem lerayProjection_ambientToLp_gradientCLM [BorelSpace E] {Ω : TopologicalSpace.Opens E}
+    (φ : 𝓓(Ω, ℝ)) :
+    lerayProjection μ (TestFunction.ambientToLp ℝ 2 μ (TestFunction.gradientCLM φ)) = 0 :=
+  lerayProjection_eq_zero_iff.2 <| mem_wassersteinTangentSpace_of_ae_eq_gradient φ.contDiff
+    φ.hasCompactSupport <| by
+      simpa only [TestFunction.gradientCLM_apply] using
+        TestFunction.coeFn_ambientToLp (TestFunction.gradientCLM φ)
 
 /-- The Leray projection is idempotent. -/
 @[simp]
@@ -132,8 +142,14 @@ theorem lerayProjection_lerayProjection (u : Lp E 2 μ) :
   lerayProjection_eq_self_iff.2 (lerayProjection_apply_mem u)
 
 /-- The Leray projection is a self-adjoint idempotent, that is, an orthogonal projection. -/
+@[simp]
 theorem isStarProjection_lerayProjection : IsStarProjection (lerayProjection μ) :=
   isStarProjection_starProjection
+
+/-- **The Leray projection is self-adjoint**: `⟪ℙu, v⟫ = ⟪u, ℙv⟫`. -/
+theorem inner_lerayProjection_left_eq_right (u v : Lp E 2 μ) :
+    ⟪lerayProjection μ u, v⟫_ℝ = ⟪u, lerayProjection μ v⟫_ℝ :=
+  Submodule.inner_starProjection_left_eq_right _ u v
 
 /-- The Leray projection does not increase the `L²` norm. -/
 theorem norm_lerayProjection_apply_le (u : Lp E 2 μ) : ‖lerayProjection μ u‖ ≤ ‖u‖ :=

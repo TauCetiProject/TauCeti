@@ -715,6 +715,23 @@ theorem W1p.eq_zero_of_gradient_eq_zero [Nontrivial E] (hp : p ≠ ∞) {u : W1p
   filter_upwards [hc] with x hx
   simp [hx]
 
+/-- **Two Sobolev functions with the same gradient differ by a constant.** If `U ≤ V` with `U`
+preconnected, and the weak gradients of `u ∈ W^{1,p}(U)` and `v ∈ W^{1,p}(V)` agree almost
+everywhere on `U`, then `v` agrees almost everywhere on `U` with `u` plus a constant. -/
+theorem W1p.exists_value_ae_eq_add_const_of_gradient_ae_eq_of_le {V : Opens E} (hUV : U ≤ V)
+    (hU : IsPreconnected (U : Set E)) {u : W1p mu U p} {v : W1p mu V p}
+    (hgrad : (W1p.gradient v : E → E) =ᵐ[mu.restrict U] W1p.gradient u) :
+    ∃ e : ℝ, (W1p.value v : E → ℝ) =ᵐ[mu.restrict U] fun x ↦ W1p.value u x + e := by
+  have hd : W1p.gradient (W1p.restrictL hUV v - u) = 0 := by
+    rw [W1p.gradient_sub, sub_eq_zero]
+    exact Lp.ext ((W1p.gradient_restrictL_ae hUV v).trans hgrad)
+  obtain ⟨e, he⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero hU hd
+  refine ⟨e, ?_⟩
+  filter_upwards [he, W1p.value_sub_ae (W1p.restrictL hUV v) u, W1p.value_restrictL_ae hUV v]
+    with x h₁ h₂ h₃
+  rw [← h₃]
+  linarith [h₂ ▸ h₁, Pi.sub_apply (W1p.value (W1p.restrictL hUV v)) (W1p.value u) x]
+
 /-- **Integration up to a constant on a preconnected domain.** If `Ω` is preconnected and the weak
 gradient of `u ∈ W^{1,p}(Ω)` agrees almost everywhere on `Ω` with the classical gradient `∇ q` of
 a function `q` that is `C¹` on `Ω`, then `u` agrees almost everywhere on `Ω` with `q + c` for some
@@ -737,37 +754,14 @@ theorem W1p.exists_value_ae_eq_add_const_of_gradient_ae_eq
     obtain ⟨v, hvval, hvgrad⟩ :=
       W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact (mu := mu) (Omega := B) (p := p)
         Omega.isOpen hq (isCompact_closedBall x r) ball_subset_closedBall hKsub
-    have hdiff_grad : W1p.gradient (W1p.restrictL hBO u - v) = 0 := by
-      rw [W1p.gradient_sub, sub_eq_zero]
-      apply Lp.ext
-      exact (W1p.gradient_restrictL_ae hBO u).trans <|
-        Filter.EventuallyEq.trans (ae_restrict_of_ae_restrict_of_subset hBO hgrad) hvgrad.symm
-    obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero
-      (Omega := B) (convex_ball x r).isPreconnected hdiff_grad
+    obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_add_const_of_gradient_ae_eq_of_le hBO
+      (convex_ball x r).isPreconnected (u := v) (v := u)
+      (Filter.EventuallyEq.trans (ae_restrict_of_ae_restrict_of_subset hBO hgrad) hvgrad.symm)
     refine ⟨c, ball x r, ball_mem_nhds x hr, ?_⟩
-    filter_upwards [hc, W1p.value_sub_ae (W1p.restrictL hBO u) v,
-      W1p.value_restrictL_ae hBO u, hvval] with y hy hsub huB hvB
-    rw [← hy, hsub, Pi.sub_apply, huB, hvB]
+    filter_upwards [hc, hvval] with y huy hvy
+    rw [huy, hvy, add_sub_cancel_left]
   obtain ⟨c, hc⟩ := hloc
   refine ⟨c, hc.mono fun x hx ↦ ?_⟩
   linarith
-
-/-- **Two Sobolev functions with the same gradient differ by a constant.** If `U ≤ V` with `U`
-preconnected, and the weak gradients of `u ∈ W^{1,p}(U)` and `v ∈ W^{1,p}(V)` agree almost
-everywhere on `U`, then `v` agrees almost everywhere on `U` with `u` plus a constant. -/
-theorem W1p.exists_value_ae_eq_add_const_of_gradient_ae_eq_of_le {V : Opens E} (hUV : U ≤ V)
-    (hU : IsPreconnected (U : Set E)) {u : W1p mu U p} {v : W1p mu V p}
-    (hgrad : (W1p.gradient v : E → E) =ᵐ[mu.restrict U] W1p.gradient u) :
-    ∃ e : ℝ, (W1p.value v : E → ℝ) =ᵐ[mu.restrict U] fun x ↦ W1p.value u x + e := by
-  have hd : W1p.gradient (W1p.restrictL hUV v - u) = 0 := Lp.ext <| by
-    filter_upwards [W1p.gradient_sub_ae (W1p.restrictL hUV v) u, W1p.gradient_restrictL_ae hUV v,
-      hgrad, Lp.coeFn_zero E p (mu.restrict U)] with x h₁ h₂ h₃ h₄
-    rw [h₁, Pi.sub_apply, h₂, h₃, h₄, sub_self, Pi.zero_apply]
-  obtain ⟨e, he⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero hU hd
-  refine ⟨e, ?_⟩
-  filter_upwards [he, W1p.value_sub_ae (W1p.restrictL hUV v) u, W1p.value_restrictL_ae hUV v]
-    with x h₁ h₂ h₃
-  rw [← h₃]
-  linarith [h₂ ▸ h₁, Pi.sub_apply (W1p.value (W1p.restrictL hUV v)) (W1p.value u) x]
 
 end TauCeti

@@ -5,19 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.PDE.Incompressible.CurlFree
 public import TauCeti.Analysis.PDE.Incompressible.LerayProjection
-public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
-import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import TauCeti.Analysis.Distribution.TestFunction.Lp
+public import TauCeti.Analysis.Sobolev.D1p0.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Liouville
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 import TauCeti.Analysis.Sobolev.D1p0.Restriction
-import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
-import TauCeti.Analysis.Sobolev.W1p.Restriction
-import TauCeti.Analysis.Sobolev.WeakDeriv.Local
-import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
-import TauCeti.MeasureTheory.Function.Gluing
-import TauCeti.MeasureTheory.Function.Lp.Duality
 
 /-!
 # The Helmholtz–Weyl decomposition on `L²`
@@ -33,12 +26,10 @@ the statement that this closure consists of the square integrable weak gradients
 
 ## The argument
 
-*Limits of test gradients are gradients.* On every ball `ball 0 (k + 1)` a limit `w` of test
-gradients is the weak gradient of a Sobolev function, because the gradients of `W^{1,2}` on a
-bounded convex set form a closed subspace (`TauCeti.D1p0.exists_w1p_gradient_ae_eq`, from the
-Poincaré–Wirtinger inequality). Normalized to have mean zero on the unit ball, two of these
-potentials agree on the smaller ball, since their difference has zero gradient on a connected set,
-and they glue to a potential on the whole space.
+*Limits of test gradients are gradients.* A limit `w` of test gradients lies in the homogeneous
+Sobolev space `D^{1,2}_0(E)` (`TauCeti.wassersteinTangentSpace_le_comap_d1p0Submodule`), and every
+element of that space is the weak gradient of a function on the whole space
+(`TauCeti.D1p0.exists_hasWeakFDerivOn`).
 
 *Gradients are limits of test gradients.* A square integrable weak gradient `w = ∇q` is curl
 free in distributions: `∫ ∂_b φ ⟪a, w⟫ = ∫ ∂_a φ ⟪b, w⟫` for every test function `φ`, by the
@@ -56,9 +47,10 @@ a square integrable harmonic function on the whole space vanishes
   test gradients is the space of square integrable weak gradients.
 * `TauCeti.lerayProjection_eq_iff_exists_hasWeakFDerivOn`: `ℙu = v` for solenoidal `v` exactly
   when `u - v` is a weak gradient, so `u = ℙu + ∇q` uniquely.
-* `TauCeti.curlFreeLp`: the closed subspace of curl-free fields in `L²(μ; E)`, and
-  `TauCeti.orthogonal_solenoidalLp_two_eq_curlFreeLp`: the orthogonal complement of `L²_σ` is the
-  space of curl-free fields.
+* `TauCeti.orthogonal_solenoidalLp_two_eq_curlFreeLp`: the orthogonal complement of `L²_σ` is the
+  space of curl-free fields (`TauCeti.curlFreeLp`).
+* `TauCeti.wassersteinTangentSpace_le_comap_d1p0Submodule`: the limits of test gradients lie in
+  `D^{1,2}_0(E)`.
 * `TauCeti.eq_zero_of_mem_solenoidalLp_of_mem_curlFreeLp`: a square integrable field that is
   divergence free and curl free vanishes.
 * `TauCeti.HasWeakFDerivOn.mem_orthogonal_solenoidalLp_two` and
@@ -77,67 +69,15 @@ public section
 
 noncomputable section
 
-open MeasureTheory Metric Set TopologicalSpace InnerProductSpace LineDeriv
+open MeasureTheory TopologicalSpace InnerProductSpace LineDeriv
 open scoped ENNReal Gradient Distributions RealInnerProductSpace Laplacian
 
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [MeasurableSpace E]
-  [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
+  [BorelSpace E] [FiniteDimensional ℝ E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
-/-! ### Curl-free fields -/
-
-/-- The test field `∂_b φ • a - ∂_a φ • b`, whose pairing with a field `u` tests the symmetry
-`∂_a u_b = ∂_b u_a` of the derivatives of `u` in distributions. -/
-private def curlTestField (φ : 𝓓((⊤ : Opens E), ℝ)) (a b : E) (x : E) : E :=
-  (∂_{b} φ) x • a - (∂_{a} φ) x • b
-
-private theorem memLp_curlTestField (φ : 𝓓((⊤ : Opens E), ℝ)) (a b : E) :
-    MemLp (curlTestField φ a b) 2 μ :=
-  (((∂_{b} φ).continuous.smul continuous_const).sub
-    ((∂_{a} φ).continuous.smul continuous_const)).memLp_of_hasCompactSupport
-    (((∂_{b} φ).hasCompactSupport.smul_right).sub (∂_{a} φ).hasCompactSupport.smul_right)
-
-/-- A test function times a component of a square integrable field is integrable. -/
-private theorem integrable_testFunction_mul_inner {u : E → E} (hu : MemLp u 2 μ)
-    (ψ : 𝓓((⊤ : Opens E), ℝ)) (c : E) : Integrable (fun x ↦ ψ x * ⟪c, u x⟫) μ :=
-  (ψ.integrable_smul_of_memLp (hu.const_inner c)).congr (.of_forall fun _ ↦ smul_eq_mul _ _)
-
-/-- The pairing of a square integrable field with a curl test field. -/
-private theorem integral_inner_curlTestField {u : E → E} (hu : MemLp u 2 μ)
-    (φ : 𝓓((⊤ : Opens E), ℝ)) (a b : E) :
-    ∫ x, ⟪curlTestField φ a b x, u x⟫ ∂μ =
-      ∫ x, (∂_{b} φ) x * ⟪a, u x⟫ ∂μ - ∫ x, (∂_{a} φ) x * ⟪b, u x⟫ ∂μ := by
-  rw [← integral_sub (integrable_testFunction_mul_inner hu _ a)
-    (integrable_testFunction_mul_inner hu _ b)]
-  simp only [curlTestField, inner_sub_left, real_inner_smul_left]
-
-variable (μ) in
-/-- The closed subspace of `L²(μ; E)` of **curl-free fields**: the fields `u` whose
-distributional derivatives are symmetric, `∂_b ⟪a, u⟫ = ∂_a ⟪b, u⟫` for all directions `a` and
-`b` (see `TauCeti.mem_curlFreeLp_iff`). -/
-def curlFreeLp : ClosedSubmodule ℝ (Lp E 2 μ) :=
-  ⨅ t : 𝓓((⊤ : Opens E), ℝ) × E × E, (⊥ : ClosedSubmodule ℝ ℝ).comap
-    (MemLp.innerLpCLM ℝ (memLp_curlTestField (μ := μ) t.1 t.2.1 t.2.2))
-
-/-- A field is curl free exactly when `∫ ∂_b φ ⟪a, u⟫ = ∫ ∂_a φ ⟪b, u⟫` for every test function
-`φ` and all directions `a` and `b`. -/
-theorem mem_curlFreeLp_iff {u : Lp E 2 μ} :
-    u ∈ curlFreeLp μ ↔ ∀ (φ : 𝓓((⊤ : Opens E), ℝ)) (a b : E),
-      ∫ x, (∂_{b} φ) x * ⟪a, u x⟫ ∂μ = ∫ x, (∂_{a} φ) x * ⟪b, u x⟫ ∂μ := by
-  simp only [curlFreeLp, ClosedSubmodule.mem_iInf, ClosedSubmodule.mem_comap,
-    ClosedSubmodule.mem_bot, MemLp.innerLpCLM_apply, Prod.forall,
-    integral_inner_curlTestField (Lp.memLp u), sub_eq_zero]
-
-/-- **A square integrable weak gradient is curl free**, by the symmetry of weak second
-derivatives. -/
-theorem HasWeakFDerivOn.mem_curlFreeLp {q : E → ℝ} {w : Lp E 2 μ}
-    (hq : HasWeakFDerivOn μ ⊤ q fun x ↦ innerSL ℝ (w x)) : w ∈ curlFreeLp μ := by
-  refine mem_curlFreeLp_iff.2 fun φ a b ↦ ?_
-  have h := (hq.hasWeakLineDerivOn a).integral_inner_lineDeriv_comm (hq.hasWeakLineDerivOn b) φ
-  simpa [TestFunction.lineDerivOp_apply, real_inner_comm, mul_comm] using h
-
-variable [FiniteDimensional ℝ E]
+/-! ### Divergence-free and curl-free fields -/
 
 /-- Limits of test gradients are curl free. -/
 private theorem wassersteinTangentSpace_le_curlFreeLp :
@@ -172,10 +112,11 @@ private theorem weaklyHarmonicOn_of_mem_curlFreeLp {u : Lp E 2 μ}
             rw [← TestFunction.laplacianCLM_apply, laplacianCLM_eq_sum b]
             simp
           simp_rw [hΔ, Finset.sum_mul]
-          exact integral_finsetSum _ fun i _ ↦ integrable_testFunction_mul_inner hu _ a
+          exact integral_finsetSum _ fun i _ ↦
+            (∂_{b i} (∂_{b i} φ)).integrable_mul_inner_of_memLp hu a
       _ = ∑ i, ∫ x, (∂_{b i} χ) x * ⟪b i, u x⟫ ∂μ := Finset.sum_congr rfl fun i _ ↦ hcurl i
       _ = ∫ x, ⟪u x, ∇ (χ : E → ℝ) x⟫ ∂μ := by
-          rw [← integral_finsetSum _ fun i _ ↦ integrable_testFunction_mul_inner hu _ (b i)]
+          rw [← integral_finsetSum _ fun i _ ↦ (∂_{b i} χ).integrable_mul_inner_of_memLp hu (b i)]
           refine integral_congr_ae (.of_forall fun x ↦ ?_)
           simp only [TestFunction.lineDerivOp_eq_lineDerivCLM ℝ,
             TestFunction.lineDerivCLM_apply_eq_inner]
@@ -217,90 +158,36 @@ theorem orthogonal_solenoidalLp_two_eq_curlFreeLp :
 
 /-! ### Potentials of limits of test gradients -/
 
-/-- On a bounded convex open set, a limit in `L²(μ; E)` of test gradients agrees with the weak
-gradient of a Sobolev function. -/
-private theorem exists_w1p_gradient_ae_eq_of_mem_wassersteinTangentSpace {U : Opens E}
-    (hconv : Convex ℝ (U : Set E)) (hb : Bornology.IsBounded (U : Set E)) {w : Lp E 2 μ}
-    (hw : w ∈ wassersteinTangentSpace μ) :
-    ∃ v : W1p μ U 2, W1p.gradient v =ᵐ[μ.restrict U] w := by
-  -- Transport `w` to `L²(μ.restrict ⊤; E)`, where `D^{1,2}_0(E)` lives.
-  have hle : μ.restrict ((⊤ : Opens E) : Set E) ≤ (1 : ℝ≥0∞) • μ := by
-    rw [one_smul]
-    exact Measure.restrict_le_self
-  set ρ : Lp E 2 μ →L[ℝ] Lp E 2 (μ.restrict ((⊤ : Opens E) : Set E)) :=
-    Lp.LpToLpOfMeasureLeSMul (by simp) hle
-  have hρ (f : Lp E 2 μ) : ρ f =ᵐ[μ.restrict ((⊤ : Opens E) : Set E)] f :=
-    Lp.coeFn_LpToLpOfMeasureLeSMul (by simp) hle f
-  -- It maps the test gradients, hence their closure, into `D^{1,2}_0(E)`.
-  have hK : wassersteinTangentSpace μ ≤ (d1p0Submodule μ ⊤ 2).toSubmodule.comap ρ.toLinearMap :=
-    (wassersteinTangentSpace_le_iff ((d1p0Submodule μ ⊤ 2).isClosed.preimage ρ.continuous)).2
-      fun φ hφ hφc f hf ↦ by
-        let ψ : 𝓓((⊤ : Opens E), ℝ) := ⟨φ, hφ, hφc, by simp⟩
-        have heq : ρ f = gradientTestFunctionLp 2 ψ := Lp.ext <| by
-          filter_upwards [hρ f, ae_restrict_of_ae hf, gradientTestFunctionLp_apply_ae 2 ψ]
-            with x h₁ h₂ h₃
-          simp only [ψ, h₁, h₂, h₃, TestFunction.coe_mk]
-        rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, heq,
-          ClosedSubmodule.mem_toSubmodule_iff, ← SetLike.mem_coe, coe_d1p0Submodule]
-        exact subset_closure ⟨ψ, rfl⟩
-  obtain ⟨v, hv⟩ := D1p0.exists_w1p_gradient_ae_eq le_top hconv hb
-    (⟨ρ w, hK hw⟩ : D1p0 μ ⊤ 2)
-  exact ⟨v, hv.trans (ae_restrict_of_ae_restrict_of_subset (subset_univ _) (hρ w))⟩
+variable (μ) in
+/-- **Limits of test gradients lie in `D^{1,2}_0(E)`.** Moved to `L²(μ.restrict ⊤; E)`, where the
+homogeneous Sobolev space `D^{1,2}_0(E)` lives, the closure in `L²(μ; E)` of the test gradients
+lands in `D^{1,2}_0(E)`. -/
+theorem wassersteinTangentSpace_le_comap_d1p0Submodule :
+    wassersteinTangentSpace μ ≤ (d1p0Submodule μ ⊤ 2).toSubmodule.comap
+      (LpToLpRestrictCLM E E ℝ μ 2 ((⊤ : Opens E) : Set E)).toLinearMap := by
+  set ρ := LpToLpRestrictCLM E E ℝ μ 2 ((⊤ : Opens E) : Set E)
+  refine (wassersteinTangentSpace_le_iff ((d1p0Submodule μ ⊤ 2).isClosed.preimage
+    ρ.continuous)).2 fun φ hφ hφc f hf ↦ ?_
+  let ψ : 𝓓((⊤ : Opens E), ℝ) := ⟨φ, hφ, hφc, by simp⟩
+  have heq : ρ f = D1p0.ofTestFunctionₗ μ ⊤ 2 ψ := by
+    rw [D1p0.coe_ofTestFunctionₗ]
+    refine Lp.ext ?_
+    filter_upwards [LpToLpRestrictCLM_coeFn ℝ _ f, ae_restrict_of_ae hf,
+      gradientTestFunctionLp_apply_ae 2 ψ] with x h₁ h₂ h₃
+    simp only [ρ, ψ, h₁, h₂, h₃, TestFunction.coe_mk]
+  rw [Submodule.mem_comap, ContinuousLinearMap.coe_coe, heq]
+  exact (D1p0.ofTestFunctionₗ μ ⊤ 2 ψ).property
 
 /-- **Limits of test gradients are weak gradients.** Every element of the closure in `L²(μ; E)`
-of the test gradients is the weak gradient on the whole space of a locally integrable function.
-The potentials on the balls `ball 0 (k + 1)`, normalized to have mean zero on the unit ball, agree
-on overlaps, since the space is connected, and glue. -/
+of the test gradients is the weak gradient on the whole space of a function `q : E → ℝ`. -/
 private theorem exists_hasWeakFDerivOn_of_mem_wassersteinTangentSpace {w : Lp E 2 μ}
     (hw : w ∈ wassersteinTangentSpace μ) :
     ∃ q : E → ℝ, HasWeakFDerivOn μ ⊤ q fun x ↦ innerSL ℝ (w x) := by
-  let B : ℕ → Opens E := fun k ↦ ⟨ball 0 (k + 1), isOpen_ball⟩
-  have hBmono {k m : ℕ} (hkm : k ≤ m) : B k ≤ B m :=
-    ball_subset_ball (by simp only [add_le_add_iff_right, Nat.cast_le, hkm])
-  have hfin (k) : IsFiniteMeasure (μ.restrict (B k : Set E)) :=
-    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
-  have hB0 (k) : ball (0 : E) 1 ⊆ B k := fun x hx ↦ hBmono (Nat.zero_le k) (by simpa [B] using hx)
-  choose v hv using fun k ↦ exists_w1p_gradient_ae_eq_of_mem_wassersteinTangentSpace
-    (U := B k) (convex_ball _ _) isBounded_ball hw
-  let c : ℕ → ℝ := fun k ↦ ⨍ x in ball (0 : E) 1, W1p.value (v k) x ∂μ
-  let a : ℕ → E → ℝ := fun k x ↦ W1p.value (v k) x - c k
-  -- Each normalized potential has weak gradient `w` on its ball.
-  have ha (k) : HasWeakFDerivOn μ (B k) (a k) fun x ↦ innerSL ℝ (w x) := by
-    have hconst : HasWeakFDerivOn μ (B k) (fun _ ↦ c k) fun _ ↦ 0 :=
-      hasWeakFDerivOn_iff.2 fun e ↦ by
-        simpa only [zero_apply] using hasWeakLineDerivOn_const (μ := μ) (Ω := B k) (v := e) (c k)
-    refine ((W1p.hasWeakFDerivOn (v k)).sub hconst).congr_ae_deriv ?_
-    filter_upwards [hv k] with x hx
-    simp only [Pi.sub_apply, sub_zero, hx]
-  -- Two potentials differ by a constant on the smaller ball, so their normalizations agree.
-  have hle {k m : ℕ} (hkm : k ≤ m) : a m =ᵐ[μ.restrict (B k)] a k := by
-    obtain ⟨e, hdiff⟩ := W1p.exists_value_ae_eq_add_const_of_gradient_ae_eq_of_le (hBmono hkm)
-      (convex_ball (0 : E) _).isPreconnected (u := v k) (v := v m)
-      (.trans (ae_restrict_of_ae_restrict_of_subset (hBmono hkm) (hv m)) (hv k).symm)
-    have hint : IntegrableOn (W1p.value (v k)) (ball (0 : E) 1) μ :=
-      IntegrableOn.mono_set ((Lp.memLp (W1p.value (v k))).integrable one_le_two) (hB0 k)
-    have hc : c m = c k + e := by
-      have h₁ := setAverage_congr_fun (μ := μ) measurableSet_ball ((ae_restrict_iff'
-        measurableSet_ball).1 (ae_restrict_of_ae_restrict_of_subset (hB0 k) hdiff))
-      have h₂ := setAverage_add hint (integrableOn_const (C := e) measure_ball_lt_top.ne)
-      rw [setAverage_const (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne] at h₂
-      exact h₁.trans h₂
-    filter_upwards [hdiff] with x hx
-    simp only [a, hx, hc]
-    ring
-  have hcompat (k m : ℕ) : a k =ᵐ[μ.restrict ((B k : Set E) ∩ B m)] a m := by
-    rcases le_total k m with hkm | hmk
-    · rw [inter_eq_left.2 (hBmono hkm)]
-      exact (hle hkm).symm
-    · rw [inter_eq_right.2 (hBmono hmk)]
-      exact hle hmk
-  obtain ⟨q, hq⟩ := exists_forall_ae_eq_restrict_of_ae_eq_restrict_inter
-    (fun k ↦ (B k).isOpen.measurableSet) hcompat
-  have hsup : (⨆ k, B k) = ⊤ := eq_top_iff.2 fun x _ ↦ Opens.mem_iSup.2
-    ⟨⌈‖x‖⌉₊, by simpa [B] using (Nat.le_ceil ‖x‖).trans_lt (lt_add_one _)⟩
-  refine ⟨q, ?_⟩
-  rw [← hsup, hasWeakFDerivOn_iSup_iff]
-  exact fun k ↦ (ha k).congr_ae (hq k).symm
+  obtain ⟨q, hq⟩ := D1p0.exists_hasWeakFDerivOn
+    (⟨_, wassersteinTangentSpace_le_comap_d1p0Submodule μ hw⟩ : D1p0 μ ⊤ 2)
+  refine ⟨q, hq.congr_ae_deriv ?_⟩
+  filter_upwards [LpToLpRestrictCLM_coeFn ℝ _ w] with x hx
+  simp only [ContinuousLinearMap.coe_coe, hx]
 
 /-! ### The Helmholtz–Weyl decomposition -/
 
