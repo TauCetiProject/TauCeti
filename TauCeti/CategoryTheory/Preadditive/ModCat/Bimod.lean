@@ -171,10 +171,13 @@ section Regular
 variable (R : Type*) [CommSemiring R] (C : Type u₂) [Category.{v₂} C]
   [Preadditive C] [Linear R C]
 
+-- Mathlib's `CategoryTheory.preadditiveCoyoneda` supplies the Hom groups.
+-- `TensorProduct.lift` extends the action to all tensor morphisms using the `R`-linearity of
+-- precomposition and postcomposition.
 -- Expose the carrier so that subgroups of its values can be used with morphism membership.
-/-- The regular `R`-central bimodule takes its values from Mathlib's
-`CategoryTheory.preadditiveCoyoneda`. The two composition actions extend to the tensor category
-by `TensorProduct.lift`, using the `R`-linearity of both compositions. -/
+/-- The regular `R`-central bimodule assigns the additive group `X ⟶ Y` to `(X, Y)`.
+For `f : X ⟶ X'` and `g : Y ⟶ Y'`, the pure tensor of `f` and `g.op` acts on
+`h : X' ⟶ Y` by `h ↦ f ≫ h ≫ g`. -/
 @[expose]
 def linearRegularBimod : LinearBimod.{v₂} R C C := by
   let action (P Q : LinearTensor R C Cᵒᵖ) :
