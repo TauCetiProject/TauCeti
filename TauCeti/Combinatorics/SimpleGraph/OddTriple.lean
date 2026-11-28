@@ -64,21 +64,7 @@ theorem card_edgeFinset_inter_sym2_triple [DecidableRel G.Adj] {a b c : V} (hab 
     #(G.edgeFinset ∩ ({a, b, c} : Finset V).sym2) =
       (if G.Adj a b then 1 else 0) + (if G.Adj a c then 1 else 0) +
         (if G.Adj b c then 1 else 0) := by
-  have h : G.edgeFinset ∩ ({a, b, c} : Finset V).sym2 =
-      ({s(a, b), s(a, c), s(b, c)} : Finset (Sym2 V)).filter (· ∈ G.edgeSet) := by
-    ext e
-    induction e using Sym2.ind with
-    | _ x y =>
-      simp only [mem_inter, mem_edgeFinset, mem_sym2_iff, Sym2.mem_iff, mem_filter,
-        mem_insert, mem_singleton, mem_edgeSet, Sym2.eq_iff]
-      constructor
-      · rintro ⟨hxy, hx⟩
-        have hx' := hx x (Or.inl rfl)
-        have hy' := hx y (Or.inr rfl)
-        refine ⟨?_, hxy⟩
-        rcases hx' with rfl | rfl | rfl <;> rcases hy' with rfl | rfl | rfl <;> simp_all
-      · grind
-  rw [h, card_filter, sum_insert, sum_insert, sum_singleton]
+  rw [edgeFinset_inter_sym2_triple, card_filter, sum_insert, sum_insert, sum_singleton]
   · simp [add_assoc]
   · simp [hab, hbc.symm]
   · simp [hbc, hab.symm, hac]
