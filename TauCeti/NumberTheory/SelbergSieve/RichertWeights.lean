@@ -21,9 +21,10 @@ sum
 `W = ∑_{n ∈ A, every prime factor of n is ≥ N ^ α} a n * (1 - ∑_{p ∣ n} w_p)`
 
 is a combination `S - ∑_p w_p S_p` of sifted sums, to which upper and lower sieve bounds apply.
-The weights are chosen so that `∑_{p ∣ n} w_p ≥ 1` as soon as `n ≤ N` has at least `r + 1` prime
-factors: with distinct prime factors always, and with prime factors counted with multiplicity
-unless the square of a prime in `[N ^ α, N ^ β)` divides `n`. Hence a positive lower bound for `W`
+The weights are chosen so that `∑_{p ∣ n} w_p ≥ 1` as soon as `n ≤ N`, every prime factor of `n`
+is at least `N ^ α`, and `n` has at least `r + 1` prime factors: with distinct prime factors
+always, and with prime factors counted with multiplicity unless the square of a prime in
+`[N ^ α, N ^ β)` divides `n`. Hence a positive lower bound for `W`
 produces members of `A` with at most `r` prime factors, up to that square exception.
 
 The inner sum runs over the distinct prime factors of `n`; no hypothesis `α < β` is needed for
@@ -38,10 +39,12 @@ the statements below.
 
 * `TauCeti.SieveWeighted.richertWeight_nonneg`: the weights are nonnegative.
 * `TauCeti.SieveWeighted.richertSum_eq_sum_sub_sum_mul`: `W = S - ∑_p w_p S_p`.
-* `TauCeti.SieveWeighted.one_le_sum_primeFactors_richertWeight`: `∑_{p ∣ n} w_p ≥ 1` when `n` has
-  at least `r + 1` distinct prime factors.
-* `TauCeti.SieveWeighted.one_le_sum_primeFactors_richertWeight_of_forall_sq_dvd`: the same when
-  `Ω(n) ≥ r + 1` and no prime below `N ^ β` has its square dividing `n`.
+* `TauCeti.SieveWeighted.one_le_sum_primeFactors_richertWeight`: `∑_{p ∣ n} w_p ≥ 1` when
+  `1 ≤ n ≤ N`, every prime factor of `n` is at least `N ^ α`, and `n` has at least `r + 1` distinct
+  prime factors.
+* `TauCeti.SieveWeighted.one_le_sum_primeFactors_richertWeight_of_forall_sq_dvd`: the same, for
+  `1 ≤ n ≤ N` with every prime factor at least `N ^ α`, when `Ω(n) ≥ r + 1` and no prime below
+  `N ^ β` has its square dividing `n`.
 * `TauCeti.SieveWeighted.richertSum_le_sum_add_sum`: `W` is at most the weight of the `n` with
   `Ω(n) ≤ r` plus the weight of the `n` divisible by the square of a prime in `[N ^ α, N ^ β)`.
 
@@ -68,25 +71,34 @@ noncomputable def richertWeight (N α β : ℝ) (r : ℕ) (p : ℕ) : ℝ :=
   else 0
 
 /-- The value of Richert's weight at a prime in the weighted range. -/
+@[simp]
 theorem richertWeight_of_prime (hp : p.Prime) (hpα : N ^ α ≤ (p : ℝ)) (hpβ : (p : ℝ) < N ^ β) :
     richertWeight N α β r p = β / ((r + 1) * β - 1) * (1 - Real.log p / (β * Real.log N)) :=
   ite_eq_left ⟨hp, hpα, hpβ⟩
 
 /-- Richert's weight vanishes at a number that is not prime. -/
+@[simp]
 theorem richertWeight_eq_zero_of_not_prime (hp : ¬p.Prime) : richertWeight N α β r p = 0 :=
   ite_eq_right fun h ↦ hp h.1
 
 /-- Richert's weight vanishes below the range: at `p < N ^ α`. -/
+@[simp]
 theorem richertWeight_eq_zero_of_lt (hpα : (p : ℝ) < N ^ α) : richertWeight N α β r p = 0 :=
   ite_eq_right fun h ↦ hpα.not_ge h.2.1
 
 /-- Richert's weight vanishes above the range, including at the endpoint `p = N ^ β`. -/
+@[simp]
 theorem richertWeight_eq_zero_of_le (hpβ : N ^ β ≤ (p : ℝ)) : richertWeight N α β r p = 0 :=
   ite_eq_right fun h ↦ hpβ.not_gt h.2.2
 
-/-- Richert's weights are nonnegative when `N > 1`, `β > 0` and `(r + 1) β > 1`. -/
-theorem richertWeight_nonneg (hN : 1 < N) (hβ : 0 < β) (hr : 1 < (r + 1) * β) (p : ℕ) :
+/-- The normalization `(r + 1) β > 1` forces `β > 0`. -/
+private theorem pos_of_one_lt_mul (hr : 1 < (r + 1) * β) : 0 < β :=
+  pos_of_mul_pos_right (zero_lt_one.trans hr) (by positivity)
+
+/-- Richert's weights are nonnegative when `N > 1` and `(r + 1) β > 1`. -/
+theorem richertWeight_nonneg (hN : 1 < N) (hr : 1 < (r + 1) * β) (p : ℕ) :
     0 ≤ richertWeight N α β r p := by
+  have hβ : 0 < β := pos_of_one_lt_mul hr
   rw [richertWeight]
   split_ifs with h
   · obtain ⟨hp, -, hpβ⟩ := h
@@ -100,9 +112,10 @@ theorem richertWeight_nonneg (hN : 1 < N) (hβ : 0 < β) (hr : 1 < (r + 1) * β)
 
 /-- At a prime `p ≥ N ^ α`, Richert's weight is at least the unrestricted expression
 `β / ((r + 1) β - 1) * (1 - log p / (β log N))`: beyond `N ^ β` that expression is nonpositive. -/
-theorem mul_one_sub_log_div_le_richertWeight (hN : 1 < N) (hβ : 0 < β) (hr : 1 < (r + 1) * β)
+theorem mul_one_sub_log_div_le_richertWeight (hN : 1 < N) (hr : 1 < (r + 1) * β)
     (hp : p.Prime) (hpα : N ^ α ≤ (p : ℝ)) :
     β / ((r + 1) * β - 1) * (1 - Real.log p / (β * Real.log N)) ≤ richertWeight N α β r p := by
+  have hβ : 0 < β := pos_of_one_lt_mul hr
   rcases lt_or_ge (p : ℝ) (N ^ β) with hpβ | hpβ
   · rw [richertWeight_of_prime hp hpα hpβ]
   · rw [richertWeight_eq_zero_of_le hpβ]
@@ -116,9 +129,10 @@ theorem mul_one_sub_log_div_le_richertWeight (hN : 1 < N) (hβ : 0 < β) (hr : 1
 
 /-- The normalization of Richert's weights: if `K ≥ r + 1` and `log n ≤ log N`, then
 `β / ((r + 1) β - 1) * (K - log n / (β log N)) ≥ 1`. -/
-private theorem one_le_mul_sub_log_div (hN : 1 < N) (hβ : 0 < β) (hr : 1 < (r + 1) * β)
+private theorem one_le_mul_sub_log_div (hN : 1 < N) (hr : 1 < (r + 1) * β)
     {K : ℝ} (hK : (r : ℝ) + 1 ≤ K) {x : ℝ} (hx : x ≤ Real.log N) :
     1 ≤ β / ((r + 1) * β - 1) * (K - x / (β * Real.log N)) := by
+  have hβ : 0 < β := pos_of_one_lt_mul hr
   have hlog : 0 < Real.log N := Real.log_pos hN
   have hden : 0 < (r + 1) * β - 1 := by linarith
   have hx' : x / (β * Real.log N) ≤ 1 / β := by
@@ -135,7 +149,7 @@ private theorem one_le_mul_sub_log_div (hN : 1 < N) (hβ : 0 < β) (hr : 1 < (r 
 /-- **Richert's weights exceed one on numbers with many distinct prime factors.** If
 `1 ≤ n ≤ N`, every prime factor of `n` is at least `N ^ α`, and `n` has at least `r + 1` distinct
 prime factors, then `∑_{p ∣ n} w_p ≥ 1`. -/
-theorem one_le_sum_primeFactors_richertWeight (hN : 1 < N) (hβ : 0 < β)
+theorem one_le_sum_primeFactors_richertWeight (hN : 1 < N)
     (hr : 1 < (r + 1) * β) (hn0 : n ≠ 0) (hnN : (n : ℝ) ≤ N)
     (hrough : ∀ p ∈ n.primeFactors, N ^ α ≤ (p : ℝ)) (hω : r + 1 ≤ #n.primeFactors) :
     1 ≤ ∑ p ∈ n.primeFactors, richertWeight N α β r p := by
@@ -145,25 +159,26 @@ theorem one_le_sum_primeFactors_richertWeight (hN : 1 < N) (hβ : 0 < β)
   have hK : (r : ℝ) + 1 ≤ (#n.primeFactors : ℝ) := by exact_mod_cast hω
   calc (1 : ℝ) ≤ β / ((r + 1) * β - 1) *
         ((#n.primeFactors : ℝ) - (∑ p ∈ n.primeFactors, Real.log p) / (β * Real.log N)) :=
-        one_le_mul_sub_log_div hN hβ hr hK hlogn
+        one_le_mul_sub_log_div hN hr hK hlogn
     _ = ∑ p ∈ n.primeFactors,
           β / ((r + 1) * β - 1) * (1 - Real.log p / (β * Real.log N)) := by
         rw [← mul_sum, sum_sub_distrib, sum_const, nsmul_eq_mul, mul_one, sum_div]
     _ ≤ ∑ p ∈ n.primeFactors, richertWeight N α β r p :=
-        sum_le_sum fun p hp ↦ mul_one_sub_log_div_le_richertWeight hN hβ hr
+        sum_le_sum fun p hp ↦ mul_one_sub_log_div_le_richertWeight hN hr
           (Nat.prime_of_mem_primeFactors hp) (hrough p hp)
 
 /-- **The square exception.** If `1 ≤ n ≤ N`, every prime factor of `n` is at least `N ^ α`, `n`
 has at least `r + 1` prime factors counted with multiplicity, and every prime whose square divides
 `n` is at least `N ^ β`, then `∑_{p ∣ n} w_p ≥ 1`. Hence a number with `Ω(n) > r` can have a
 positive Richert summand only if the square of some prime in `[N ^ α, N ^ β)` divides it. -/
-theorem one_le_sum_primeFactors_richertWeight_of_forall_sq_dvd (hN : 1 < N) (hβ : 0 < β)
+theorem one_le_sum_primeFactors_richertWeight_of_forall_sq_dvd (hN : 1 < N)
     (hr : 1 < (r + 1) * β) (hn0 : n ≠ 0) (hnN : (n : ℝ) ≤ N)
     (hrough : ∀ p ∈ n.primeFactors, N ^ α ≤ (p : ℝ)) (hΩ : r + 1 ≤ Ω n)
     (hsq : ∀ p ∈ n.primeFactors, p ^ 2 ∣ n → N ^ β ≤ (p : ℝ)) :
     1 ≤ ∑ p ∈ n.primeFactors, richertWeight N α β r p := by
   have hlog : 0 < Real.log N := Real.log_pos hN
   have hN0 : 0 < N := zero_lt_one.trans hN
+  have hβ : 0 < β := pos_of_one_lt_mul hr
   have hc : 0 ≤ β / ((r + 1) * β - 1) := div_nonneg hβ.le (by linarith)
   have hlogn : Real.log n ≤ Real.log N :=
     Real.log_le_log (Nat.cast_pos.2 (Nat.pos_of_ne_zero hn0)) hnN
@@ -180,7 +195,7 @@ theorem one_le_sum_primeFactors_richertWeight_of_forall_sq_dvd (hN : 1 < N) (hβ
       hpp.factorization_pos_of_dvd hn0 (Nat.dvd_of_mem_primeFactors hp)
     rcases he.eq_or_lt with he1 | he2
     · rw [← he1, Nat.cast_one, one_mul]
-      exact mul_one_sub_log_div_le_richertWeight hN hβ hr hpp (hrough p hp)
+      exact mul_one_sub_log_div_le_richertWeight hN hr hpp (hrough p hp)
     · have hpβ : N ^ β ≤ (p : ℝ) := hsq p hp ((hpp.pow_dvd_iff_le_factorization hn0).2 he2)
       have hle : β * Real.log N ≤ Real.log p := by
         rw [← Real.log_rpow hN0]
@@ -191,9 +206,9 @@ theorem one_le_sum_primeFactors_richertWeight_of_forall_sq_dvd (hN : 1 < N) (hβ
       rw [hfac]
       exact (mul_nonpos_of_nonneg_of_nonpos hc (mul_nonpos_of_nonneg_of_nonpos
         (Nat.cast_nonneg _) (sub_nonpos.2 ((one_le_div (mul_pos hβ hlog)).2 hle)))).trans
-        (richertWeight_nonneg hN hβ hr p)
+        (richertWeight_nonneg hN hr p)
   calc (1 : ℝ) ≤ β / ((r + 1) * β - 1) * ((Ω n : ℝ) - Real.log n / (β * Real.log N)) :=
-        one_le_mul_sub_log_div hN hβ hr hK hlogn
+        one_le_mul_sub_log_div hN hr hK hlogn
     _ = ∑ p ∈ n.primeFactors, β / ((r + 1) * β - 1) * ((n.factorization p : ℝ) -
           (n.factorization p : ℝ) * Real.log p / (β * Real.log N)) := by
         rw [← mul_sum, sum_sub_distrib, ← sum_div, ← hΩsum, ← hlogsum]
@@ -251,7 +266,7 @@ open Classical in
 and let `A` be a finite set of integers in `[1, N]` with nonnegative weights `a`. Then Richert's
 weighted sum is at most the weight of the `n ∈ A` with `Ω(n) ≤ r` plus the weight of the `n ∈ A`
 divisible by the square of a prime in `[N ^ α, N ^ β)`. -/
-theorem richertSum_le_sum_add_sum (hN : 1 < N) (hβ : 0 < β) (hr : 1 < (r + 1) * β)
+theorem richertSum_le_sum_add_sum (hN : 1 < N) (hr : 1 < (r + 1) * β)
     {A : Finset ℕ} {a : ℕ → ℝ} (ha : ∀ n ∈ A, 0 ≤ a n) (hA : ∀ n ∈ A, n ≠ 0 ∧ (n : ℝ) ≤ N) :
     richertSum A a N α β r ≤ ∑ n ∈ A.filter (fun n : ℕ ↦ Ω n ≤ r), a n +
       ∑ n ∈ A.filter (fun n : ℕ ↦ ∃ p : ℕ, p.Prime ∧ N ^ α ≤ (p : ℝ) ∧ (p : ℝ) < N ^ β ∧
@@ -261,7 +276,7 @@ theorem richertSum_le_sum_add_sum (hN : 1 < N) (hβ : 0 < β) (hr : 1 < (r + 1) 
   have han := ha n hn
   obtain ⟨hn0, hnN⟩ := hA n hn
   have hw : 0 ≤ ∑ p ∈ n.primeFactors, richertWeight N α β r p :=
-    sum_nonneg fun p _ ↦ richertWeight_nonneg hN hβ hr p
+    sum_nonneg fun p _ ↦ richertWeight_nonneg hN hr p
   have hle : a n * (1 - ∑ p ∈ n.primeFactors, richertWeight N α β r p) ≤ a n :=
     mul_le_of_le_one_right han (by linarith)
   have h1 : 0 ≤ (if Ω n ≤ r then a n else 0) := by split_ifs <;> first | exact han | exact le_rfl
@@ -280,7 +295,7 @@ theorem richertSum_le_sum_add_sum (hN : 1 < N) (hβ : 0 < β) (hr : 1 < (r + 1) 
     exact hle.trans (le_add_of_nonneg_left h1)
   · rw [ite_eq_right hΩ, ite_eq_right hsq, add_zero]
     refine mul_nonpos_of_nonneg_of_nonpos han (sub_nonpos.2 ?_)
-    refine one_le_sum_primeFactors_richertWeight_of_forall_sq_dvd hN hβ hr hn0 hnN hrough
+    refine one_le_sum_primeFactors_richertWeight_of_forall_sq_dvd hN hr hn0 hnN hrough
       (by omega) fun p hp hp2 ↦ ?_
     by_contra hlt
     exact hsq ⟨p, Nat.prime_of_mem_primeFactors hp, hrough p hp, not_le.1 hlt, hp2⟩
@@ -297,8 +312,9 @@ It is counted by the square exception. -/
 example : ∃ q : ℕ, q.Prime ∧ (8 : ℝ) ^ (1 / 4 : ℝ) ≤ (q : ℝ) ∧ (q : ℝ) < (8 : ℝ) ^ (1 : ℝ) ∧
     q ^ 2 ∣ 8 := by
   refine ⟨2, Nat.prime_two, ?_, by norm_num, by norm_num⟩
+  have h24 : (16 : ℝ) = 2 ^ (4 : ℝ) := by norm_num
   have h16 : ((16 : ℝ)) ^ (1 / 4 : ℝ) = 2 := by
-    rw [show (16 : ℝ) = 2 ^ (4 : ℝ) by norm_num, ← Real.rpow_mul (by norm_num)]
+    rw [h24, ← Real.rpow_mul (by norm_num)]
     norm_num
   rw [Nat.cast_ofNat, ← h16]
   exact Real.rpow_le_rpow (by norm_num) (by norm_num) (by norm_num)
