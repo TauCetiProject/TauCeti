@@ -39,6 +39,8 @@ These are the categorical sides of the covariant and contravariant defects of `e
 
 * `TauCeti.ExactStructure.Extension.exists_mk_pushout_eq_of_isProjective`: every class in
   `Ext¹_E(Z, W)` is a cobase change of `[e]`.
+* `TauCeti.ExactStructure.ProjectivePresentation.isFiniteLength_ext1`: it suffices to bound
+  the length of `Hom(K, W)` for the kernel `K` of a projective presentation of `Z`.
 * `TauCeti.ExactStructure.EnoughProjectives.isFiniteLength_ext1`: if `Hom(-, W)` takes values of
   finite length, then so does `Ext¹_E(-, W)`.
 
@@ -127,6 +129,13 @@ theorem homQuotientEquivExt1OfIsProjective_mk {W : C} (v : X ⟶ W) :
       (Ext1.mk e).pushout v :=
   (rfl)
 
+/-- For a conflation `X ⟶ P ⟶ Z` with relatively projective middle term, `Ext¹_E(Z, W)` has
+finite length if `Hom(X, W)` does. -/
+theorem isFiniteLength_ext1_of_isProjective (W : C) (hW : IsFiniteLength R (X ⟶ W)) :
+    IsFiniteLength R (E.Ext1 Z W) :=
+  (e.homQuotientEquivExt1OfIsProjective he R W).isFiniteLength
+    (hW.of_surjective (Submodule.mkQ_surjective _))
+
 /-- **Stable `Hom` as a cokernel.** If the middle term of `e : X ⟶ P ⟶ Z` is relatively
 projective, the quotient functor identifies the cokernel of `Hom(Y, P) → Hom(Y, Z)` with the
 `Hom` space of the projective stable category. -/
@@ -151,14 +160,20 @@ end Linear
 
 end Extension
 
+/-- Given a projective presentation of `Z` with kernel `K`, `Ext¹_E(Z, W)` has finite length if
+`Hom(K, W)` does. -/
+theorem ProjectivePresentation.isFiniteLength_ext1 (P : E.ProjectivePresentation Z)
+    (R : Type*) [Ring R] [Linear R C] (W : C)
+    (hK : IsFiniteLength R (P.K ⟶ W)) : IsFiniteLength R (E.Ext1 Z W) :=
+  P.extension.isFiniteLength_ext1_of_isProjective P.isProjective_extension_obj R W hK
+
 /-- In an exact category with enough projectives, `Ext¹_E(Z, W)` has finite length if every
 `Hom(K, W)` has finite length. -/
 theorem EnoughProjectives.isFiniteLength_ext1 (h : E.EnoughProjectives)
     (R : Type*) [Ring R] [Linear R C] (Z W : C)
     (hW : ∀ K : C, IsFiniteLength R (K ⟶ W)) : IsFiniteLength R (E.Ext1 Z W) := by
   let P := h.projectivePresentation Z
-  let e := P.extension.homQuotientEquivExt1OfIsProjective P.isProjective_extension_obj R W
-  exact e.isFiniteLength ((hW P.K).of_surjective (Submodule.mkQ_surjective _))
+  exact P.isFiniteLength_ext1 R W (hW P.K)
 
 end ExactStructure
 
