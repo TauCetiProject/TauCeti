@@ -203,7 +203,8 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_leftEssential
   have hR_inv : ∀ a, ∀ x ∈ L.essentialSubmodule, R a x ∈ L.essentialSubmodule :=
     fun a _ hx ↦ apply_mem_essentialSubmodule_of_comm hLR a hx
   obtain ⟨ψ, D₁, hD₁, hD₁_EL, hD_eq⟩ :=
-    exists_residual_derivation_of_restrict hL hR hLR L.essentialSubmodule hL_inv hR_inv hD hEL
+    exists_eq_add_dualAction_sub_dualAction_of_restrict hL hR hLR L.essentialSubmodule hL_inv hR_inv
+      hD hEL
   obtain ⟨φ₁, hφ₁⟩ := exists_eq_dualAction_sub_dualAction_of_forall_apply_left_eq_zero hC hl D₁
     hD₁ fun a b x ↦ hD₁_EL a (L b x) (apply_mem_essentialSubmodule L b x)
   refine ⟨ψ + φ₁, fun a ↦ ?_⟩
@@ -236,7 +237,8 @@ theorem exists_eq_dualAction_sub_dualAction_of_restrict_rightEssential
   have hR_inv : ∀ a, ∀ x ∈ R.essentialSubmodule, R a x ∈ R.essentialSubmodule :=
     fun a x _ ↦ apply_mem_essentialSubmodule R a x
   obtain ⟨ψ, D₁, hD₁, hD₁_ER, hD_eq⟩ :=
-    exists_residual_derivation_of_restrict hL hR hLR R.essentialSubmodule hL_inv hR_inv hD hER
+    exists_eq_add_dualAction_sub_dualAction_of_restrict hL hR hLR R.essentialSubmodule hL_inv hR_inv
+      hD hER
   let Lop : Aᵐᵒᵖ →L[𝕜] E →L[𝕜] E := R.compUnop
   let Rop : Aᵐᵒᵖ →L[𝕜] E →L[𝕜] E := L.compUnop
   let D₁op : Aᵐᵒᵖ →L[𝕜] StrongDual 𝕜 E := D₁.compUnop

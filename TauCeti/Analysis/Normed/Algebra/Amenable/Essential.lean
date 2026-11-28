@@ -13,7 +13,8 @@ public import TauCeti.Analysis.Normed.Algebra.Derivation.Essential
 
 Let `A` be a normed algebra with a bounded two-sided approximate identity. This file proves that `A`
 is amenable if and only if every bounded derivation into the dual of an essential Banach
-`A`-bimodule (in the universe of `A`) is inner (`TauCeti.isAmenable_iff_essential`; Runde,
+`A`-bimodule (in the universe of `A`) is inner
+(`TauCeti.isAmenable_iff_forall_essential_exists_eq_dualAction_sub_dualAction`; Runde,
 Proposition 2.1.5).
 
 Given any Banach `A`-bimodule `E`, its two-sided essential part
@@ -23,9 +24,9 @@ itself both left- and right-essential. Innerness on `E_ess` lifts back to `E` vi
 
 ## Main results
 
-* `TauCeti.isAmenable_iff_essential`: a normed algebra with a bounded two-sided approximate
-  identity is amenable if and only if every bounded derivation into the dual of an essential
-  Banach bimodule is inner.
+* `TauCeti.isAmenable_iff_forall_essential_exists_eq_dualAction_sub_dualAction`: a normed algebra
+  with a bounded two-sided approximate identity is amenable if and only if every bounded derivation
+  into the dual of an essential Banach bimodule is inner.
 
 ## References
 
@@ -46,7 +47,8 @@ namespace TauCeti
 /-- **Reduction of amenability to essential bimodules** (Runde, Proposition 2.1.5). A normed
 algebra with a bounded two-sided approximate identity is amenable if and only if every bounded
 derivation into the dual of an essential Banach `A`-bimodule (in the universe of `A`) is inner. -/
-theorem isAmenable_iff_essential {𝕜 : Type v} {A : Type u} [NontriviallyNormedField 𝕜]
+theorem isAmenable_iff_forall_essential_exists_eq_dualAction_sub_dualAction
+    {𝕜 : Type v} {A : Type u} [NontriviallyNormedField 𝕜]
     [IsRCLikeNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
     {l : Filter A} (hl : l.IsApproximateUnit) {C : ℝ} (hC : ∀ᶠ e in l, ‖e‖ ≤ C) :
     IsAmenable 𝕜 A ↔

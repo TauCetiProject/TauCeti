@@ -21,8 +21,8 @@ or a dual bimodule `E*`. This file provides basic algebraic and submodule-restri
   preserves the derivation law for the restricted actions
   (`Submodule.precomp_subtypeL_comp_mul_apply`);
 * when the restriction to a jointly invariant submodule `p` is inner, Hahn–Banach extension
-  produces a residual bounded derivation annihilating `p`
-  (`TauCeti.exists_residual_derivation_of_restrict`).
+  produces a bounded derivation `D₁` annihilating `p` such that `D` equals `D₁` plus an inner
+  derivation (`TauCeti.exists_eq_add_dualAction_sub_dualAction_of_restrict`).
 
 ## Main results
 
@@ -31,9 +31,9 @@ or a dual bimodule `E*`. This file provides basic algebraic and submodule-restri
   derivations.
 * `Submodule.precomp_subtypeL_comp_mul_apply`: restricting a dual-valued derivation to a jointly
   invariant submodule preserves its Leibniz law.
-* `TauCeti.exists_residual_derivation_of_restrict`: Hahn–Banach reduction of a bounded derivation
-  that is inner on a jointly invariant submodule to a residual derivation vanishing on that
-  submodule.
+* `TauCeti.exists_eq_add_dualAction_sub_dualAction_of_restrict`: Hahn–Banach reduction of a bounded
+  derivation that is inner on a jointly invariant submodule to a derivation vanishing on that
+  submodule plus an inner derivation.
 -/
 
 public section
@@ -85,8 +85,9 @@ theorem _root_.Submodule.precomp_subtypeL_comp_mul_apply {L R : A →L[𝕜] E �
   simp only [comp_apply, hD, map_add, precomp_apply, dualAction_restrictAction_comp_subtypeL]
 
 /-- If a bounded derivation `D : A →L[𝕜] E*` restricts to an inner derivation on a jointly invariant
-submodule `p`, Hahn–Banach produces a residual bounded derivation `D₁` annihilating `p`. -/
-theorem exists_residual_derivation_of_restrict [IsRCLikeNormedField 𝕜]
+submodule `p`, Hahn–Banach produces a bounded derivation `D₁` annihilating `p` and an element
+`ψ : E*` with `D a = D₁ a + (dualAction R a ψ - dualAction L a ψ)`. -/
+theorem exists_eq_add_dualAction_sub_dualAction_of_restrict [IsRCLikeNormedField 𝕜]
     {L R : A →L[𝕜] E →L[𝕜] E}
     (hL : ∀ a b x, L (a * b) x = L a (L b x)) (hR : ∀ a b x, R (a * b) x = R b (R a x))
     (hLR : ∀ a b x, L a (R b x) = R b (L a x))
