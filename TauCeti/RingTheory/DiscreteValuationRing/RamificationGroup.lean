@@ -276,11 +276,7 @@ unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_ramificationGroupGradedTo
       (TauCeti.IsLocalRing.ramificationGroupGradedToResidueField hπ n τ).toAdd := by
   induction τ using QuotientGroup.induction_on with
   | _ σ =>
-    have hdiv : π ^ (n + 2) ∣ (σ : G) • π - π := by
-      have h := mem_ramificationGroup_iff.mp σ.property π
-      rwa [(by omega : ((n : ℤ) + 1 + 1).toNat = n + 2), hπ.maximalIdeal_eq,
-        Ideal.span_singleton_pow, Ideal.mem_span_singleton] at h
-    obtain ⟨y, hy⟩ := hdiv
+    obtain ⟨y, hy⟩ := pow_dvd_smul_sub_of_mem_ramificationGroup hπ (by exact_mod_cast σ.property) π
     have h1 : ((uniformizerRatio (n + 1) hπ σ : Bˣ) : B) - 1 = y * π ^ (n + 1) := by
       apply mul_right_cancel₀ hπ.ne_zero
       rw [sub_mul, one_mul, mul_comm _ π, mul_coe_uniformizerRatio, hy]

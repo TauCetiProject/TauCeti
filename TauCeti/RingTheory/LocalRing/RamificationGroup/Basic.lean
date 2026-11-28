@@ -195,6 +195,11 @@ theorem ramificationGroup_antitone : Antitone (ramificationGroup G S) := by
   rw [mem_ramificationGroup_iff] at hσ ⊢
   exact fun x ↦ Ideal.pow_le_pow_right (by omega) (hσ x)
 
+/-- Finiteness of a ramification group passes downward along the filtration. -/
+theorem finite_ramificationGroup_of_le {i j : ℤ} (hij : i ≤ j)
+    [Finite (ramificationGroup G S i)] : Finite (ramificationGroup G S j) :=
+  Finite.of_injective _ (Subgroup.inclusion_injective (ramificationGroup_antitone G S hij))
+
 end Defs
 
 section Adjoin

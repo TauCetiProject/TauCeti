@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.StrictHenselization.Local
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.FieldTheory.Separable
 import Mathlib.RingTheory.Etale.StandardEtale
+import TauCeti.RingTheory.LocalRing.ResidueField.Lift
 import TauCeti.RingTheory.Unramified.Diagonal
 
 /-!
@@ -139,16 +140,10 @@ theorem toTarget_surjective : Function.Surjective (toTarget R Ω) := by
   intro α
   -- Lift the minimal polynomial of `α` to a monic polynomial `p` over `R`. Its root `α` is
   -- simple, so the standard étale algebra of `p` has a point sending its root to `α`.
-  have hsep := Algebra.IsSeparable.isSeparable (ResidueField R) α
-  obtain ⟨p, hp, -, hmonic⟩ := lifts_and_natDegree_eq_and_monic
-    ((lifts_iff_coeff_lifts (f := algebraMap R (ResidueField R))
-      (minpoly (ResidueField R) α)).mpr fun _ ↦ Ideal.Quotient.mk_surjective _)
-    (minpoly.monic (Algebra.IsSeparable.isIntegral (ResidueField R) α))
-  have hroot : aeval α p = 0 := by
-    rw [← aeval_map_algebraMap (ResidueField R), hp, minpoly.aeval]
-  have hderiv : aeval α (derivative p) ≠ 0 := by
-    rw [← aeval_map_algebraMap (ResidueField R), ← derivative_map, hp]
-    exact hsep.aeval_derivative_ne_zero (minpoly.aeval _ _)
+  obtain ⟨p, hmonic, -, hroot, hderiv⟩ :=
+    TauCeti.IsLocalRing.exists_monic_lifts_minpoly_of_isSeparable
+      (R := R) α (Algebra.IsSeparable.isSeparable (ResidueField R) α)
+  rw [← IsLocalRing.ResidueField.algebraMap_eq, aeval_map_algebraMap] at hroot hderiv
   let P : StandardEtalePair R :=
     { f := p, monic_f := hmonic, g := derivative p, cond := ⟨1, 0, 1, by simp⟩ }
   have hP : P.HasMap α := ⟨hroot, isUnit_iff_ne_zero.mpr hderiv⟩
