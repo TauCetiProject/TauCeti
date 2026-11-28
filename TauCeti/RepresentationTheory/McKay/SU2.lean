@@ -20,11 +20,13 @@ labellings between conjugate subgroups (`TauCeti.SU2.isMcKayLabelling_conj_iff` 
 
 public section
 
+open CategoryTheory
+
 namespace TauCeti.SU2
 
 /-- **The McKay correspondence for finite nontrivial subgroups of `SU(2)`.** -/
 theorem exists_isMcKayLabelling (H : Subgroup SU2) [Finite H] [Nontrivial H] :
-    ∃ (t : AffineDynkinType) (e : SimpleFDRepClasses ℂ H ≃ Fin t.nodes),
+    ∃ (t : AffineDynkinType) (e : SimpleClasses (FDRep ℂ H) ≃ Fin t.nodes),
       t.Valid ∧ IsMcKayLabelling (stdFDRep H) t e :=
   TauCeti.exists_isMcKayLabelling (stdFDRep H) (finrank_stdFDRep H) (ρ_stdFDRep_injective H)
     (det_ρ_stdFDRep H)
@@ -33,11 +35,11 @@ theorem exists_isMcKayLabelling (H : Subgroup SU2) [Finite H] [Nontrivial H] :
 conjugate subgroups `H` and `K = H.map (MulAut.conj g : SU2 →* SU2)`. -/
 theorem isMcKayLabelling_conj_iff {H K : Subgroup SU2} {g : SU2}
     (hK : K = H.map (MulAut.conj g : SU2 →* SU2)) (t : AffineDynkinType)
-    (e : SimpleFDRepClasses ℂ K ≃ Fin t.nodes) :
+    (e : SimpleClasses (FDRep ℂ K) ≃ Fin t.nodes) :
     IsMcKayLabelling (stdFDRep H) t
-        ((SimpleFDRepClasses.resEquiv ℂ
+        ((SimpleClasses.equiv (Action.resEquiv (FGModuleCat ℂ)
             (((MulAut.conj g).subgroupMap H).trans
-              (MulEquiv.subgroupCongr hK.symm))).symm.trans e) ↔
+              (MulEquiv.subgroupCongr hK.symm)))).symm.trans e) ↔
       IsMcKayLabelling (stdFDRep K) t e := by
   rw [← isMcKayLabelling_congr (stdFDRepConjIso hK) t, isMcKayLabelling_res_iff]
 
@@ -45,11 +47,11 @@ theorem isMcKayLabelling_conj_iff {H K : Subgroup SU2} {g : SU2}
 `K = H.map (MulAut.conj g : SU2 →* SU2)`. -/
 theorem isMcKayLabelling_conj {H K : Subgroup SU2} {g : SU2}
     (hK : K = H.map (MulAut.conj g : SU2 →* SU2)) {t : AffineDynkinType}
-    {e : SimpleFDRepClasses ℂ K ≃ Fin t.nodes} (h : IsMcKayLabelling (stdFDRep K) t e) :
+    {e : SimpleClasses (FDRep ℂ K) ≃ Fin t.nodes} (h : IsMcKayLabelling (stdFDRep K) t e) :
     IsMcKayLabelling (stdFDRep H) t
-      ((SimpleFDRepClasses.resEquiv ℂ
+      ((SimpleClasses.equiv (Action.resEquiv (FGModuleCat ℂ)
           (((MulAut.conj g).subgroupMap H).trans
-            (MulEquiv.subgroupCongr hK.symm))).symm.trans e) :=
+            (MulEquiv.subgroupCongr hK.symm)))).symm.trans e) :=
   h.of_mulEquiv _ (stdFDRepConjIso hK)
 
 end TauCeti.SU2

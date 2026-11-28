@@ -189,16 +189,13 @@ theorem eq_one_or_eq_neg_one_of_mul_self_eq_one_of_det_eq_one [NoZeroDivisors K]
   simp only [smul_mul_smul_comm, hA, one_mul] at hsq
   have htr : (2 : K) * 2 = A.trace * A.trace := by
     simpa [smul_smul] using congrFun (congrFun hsq 0) 0
-  have htr' : (A.trace - 2) * (A.trace + 2) = 0 := by
-    calc (A.trace - 2) * (A.trace + 2) = A.trace * A.trace - 2 * 2 := by ring
-      _ = 0 := sub_eq_zero.mpr htr.symm
-  rcases mul_eq_zero.mp htr' with h | h
+  rcases mul_self_eq_mul_self_iff.mp htr.symm with h | h
   · left
-    rw [sub_eq_zero.mp h] at h2A
+    rw [h] at h2A
     ext i j
     exact mul_left_cancel₀ h2 (by simpa [smul_eq_mul] using congrFun (congrFun h2A i) j)
   · right
-    rw [eq_neg_of_add_eq_zero_left h, neg_smul, ← smul_neg] at h2A
+    rw [h, neg_smul, ← smul_neg] at h2A
     ext i j
     exact mul_left_cancel₀ h2 (by simpa [smul_eq_mul] using congrFun (congrFun h2A i) j)
 

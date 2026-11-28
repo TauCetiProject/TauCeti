@@ -264,6 +264,39 @@ def homotopyIndexEquiv (n : ℕ) :
 @[simp] theorem homotopyIndexEquiv_inr_inr (n : ℕ) (k : Fin (n + 1)) :
     homotopyIndexEquiv n (.inr (.inr k)) = (k, k.succ) := (rfl)
 
+/-- An equivalence `ι ≃ Fin 2` from two distinct elements `x₀ ≠ x₁` covering `ι`, sending `x₀` to
+`0` and `x₁` to `1`. -/
+def equivFinTwoOfPair {ι : Type*} [DecidableEq ι] {x₀ x₁ : ι} (hne : x₀ ≠ x₁)
+    (hall : ∀ k : ι, k = x₀ ∨ k = x₁) : ι ≃ Fin 2 where
+  toFun x := if x = x₀ then 0 else 1
+  invFun j := if j = 0 then x₀ else x₁
+  left_inv x := by rcases hall x with rfl | rfl <;> simp [hne.symm]
+  right_inv := Fin.forall_fin_two.2 ⟨by simp, by simp [hne.symm]⟩
+
+/-- `TauCeti.equivFinTwoOfPair` sends the first distinguished element to `0`. -/
+@[simp]
+theorem equivFinTwoOfPair_left {ι : Type*} [DecidableEq ι] {x₀ x₁ : ι} (hne : x₀ ≠ x₁)
+    (hall : ∀ k : ι, k = x₀ ∨ k = x₁) : equivFinTwoOfPair hne hall x₀ = 0 := by
+  simp [equivFinTwoOfPair]
+
+/-- `TauCeti.equivFinTwoOfPair` sends the second distinguished element to `1`. -/
+@[simp]
+theorem equivFinTwoOfPair_right {ι : Type*} [DecidableEq ι] {x₀ x₁ : ι} (hne : x₀ ≠ x₁)
+    (hall : ∀ k : ι, k = x₀ ∨ k = x₁) : equivFinTwoOfPair hne hall x₁ = 1 := by
+  simp [equivFinTwoOfPair, hne.symm]
+
+/-- The inverse of `TauCeti.equivFinTwoOfPair` sends `0` to the first distinguished element. -/
+@[simp]
+theorem equivFinTwoOfPair_symm_zero {ι : Type*} [DecidableEq ι] {x₀ x₁ : ι} (hne : x₀ ≠ x₁)
+    (hall : ∀ k : ι, k = x₀ ∨ k = x₁) : (equivFinTwoOfPair hne hall).symm 0 = x₀ := by
+  simp [equivFinTwoOfPair]
+
+/-- The inverse of `TauCeti.equivFinTwoOfPair` sends `1` to the second distinguished element. -/
+@[simp]
+theorem equivFinTwoOfPair_symm_one {ι : Type*} [DecidableEq ι] {x₀ x₁ : ι} (hne : x₀ ≠ x₁)
+    (hall : ∀ k : ι, k = x₀ ∨ k = x₁) : (equivFinTwoOfPair hne hall).symm 1 = x₁ := by
+  simp [equivFinTwoOfPair]
+
 end TauCeti
 
 /-- The permutation of path coordinates that permutes the consecutive blocks of width `m` by `τ`

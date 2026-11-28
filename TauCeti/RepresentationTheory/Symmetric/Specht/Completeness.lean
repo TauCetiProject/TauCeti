@@ -177,12 +177,12 @@ open CategoryTheory
 /-- **The isomorphism class of the Specht module `S^μ` as a simple object of `FDRep ℚ Sₙ`.** The
 categorical counterpart of `TauCeti.spechtModuleClass`. -/
 noncomputable def spechtModuleFDRepClass (μ : n.Partition) :
-    SimpleFDRepClasses ℚ (Equiv.Perm (Fin n)) :=
-  SimpleFDRepClasses.mk (spechtModule (R := ℚ) μ)
+    SimpleClasses (FDRep ℚ (Equiv.Perm (Fin n))) :=
+  SimpleClasses.classOf (spechtModule (R := ℚ) μ)
 
 @[simp]
 theorem spechtModuleFDRepClass_def (μ : n.Partition) :
-    spechtModuleFDRepClass μ = SimpleFDRepClasses.mk (spechtModule (R := ℚ) μ) :=
+    spechtModuleFDRepClass μ = SimpleClasses.classOf (spechtModule (R := ℚ) μ) :=
   (rfl)
 
 /-- **The classification, read in `FDRep ℚ Sₙ`.** Sending a partition of `n` to the isomorphism
@@ -193,22 +193,21 @@ theorem spechtModuleFDRepClass_bijective :
   constructor
   · intro μ ν h
     rw [spechtModuleFDRepClass_def, spechtModuleFDRepClass_def,
-      SimpleFDRepClasses.mk_eq_mk_iff] at h
+      SimpleClasses.classOf_eq_iff_nonempty_iso] at h
     exact (spechtModule_iso_iff μ ν).mp h
-  · refine SimpleFDRepClasses.ind (fun X hX ↦ ?_)
-    let _ := hX
+  · refine SimpleClasses.ind (fun X _ ↦ ?_)
     have : _root_.Representation.IsIrreducible X.ρ :=
-      (FDRep.simple_iff_isIrreducible X).mp hX
+      (FDRep.simple_iff_isIrreducible X).mp ‹_›
     obtain ⟨μ, hμ⟩ := exists_nonempty_equiv_spechtModule X.ρ
     refine ⟨μ, ?_⟩
-    rw [spechtModuleFDRepClass_def, SimpleFDRepClasses.mk_eq_mk_iff]
+    rw [spechtModuleFDRepClass_def, SimpleClasses.classOf_eq_iff_nonempty_iso]
     exact ⟨(nonempty_fdRepIso_iff.mpr hμ).some.symm⟩
 
 /-- **The categorical classification of the irreducible rational representations of the symmetric
 group**: `μ ↦ S^μ` is a bijection from the partitions of `n` to the isomorphism classes of simple
 objects of `FDRep ℚ Sₙ`. -/
 noncomputable def partitionEquivSimpleFDRepClasses (n : ℕ) :
-    n.Partition ≃ SimpleFDRepClasses ℚ (Equiv.Perm (Fin n)) :=
+    n.Partition ≃ SimpleClasses (FDRep ℚ (Equiv.Perm (Fin n))) :=
   Equiv.ofBijective _ spechtModuleFDRepClass_bijective
 
 @[simp]
@@ -227,16 +226,16 @@ theorem existsUnique_nonempty_iso_spechtModule (X : FDRep ℚ (Equiv.Perm (Fin n
 /-- The partition a Specht module's class names is the partition it was built from: the `symm`
 companion of `TauCeti.partitionEquivSimpleFDRepClasses_apply`. -/
 @[simp]
-theorem partitionEquivSimpleFDRepClasses_symm_mk_spechtModule (μ : n.Partition) :
+theorem partitionEquivSimpleFDRepClasses_symm_classOf_spechtModule (μ : n.Partition) :
     (partitionEquivSimpleFDRepClasses n).symm
-      (SimpleFDRepClasses.mk (spechtModule (R := ℚ) μ)) = μ := by
+      (SimpleClasses.classOf (spechtModule (R := ℚ) μ)) = μ := by
   rw [← spechtModuleFDRepClass_def, ← partitionEquivSimpleFDRepClasses_apply,
     Equiv.symm_apply_apply]
 
 /-- **The categorical classification and the module classification are the same bijection**, read
 across `μ ↦ S^μ`. -/
 noncomputable def simpleFDRepClassesEquivSimpleModuleClasses (n : ℕ) :
-    SimpleFDRepClasses ℚ (Equiv.Perm (Fin n)) ≃
+    SimpleClasses (FDRep ℚ (Equiv.Perm (Fin n))) ≃
       SimpleSubmoduleClasses ℚ[Equiv.Perm (Fin n)] ℚ[Equiv.Perm (Fin n)] :=
   (partitionEquivSimpleFDRepClasses n).symm.trans (partitionEquivSimpleModuleClasses n)
 
@@ -247,15 +246,14 @@ bijections, is the map sending a simple object of `FDRep ℚ Sₙ` to the isomor
 @[simp]
 theorem coe_simpleFDRepClassesEquivSimpleModuleClasses :
     ⇑(simpleFDRepClassesEquivSimpleModuleClasses n) =
-      SimpleFDRepClasses.toSimpleSubmoduleClasses := by
-  funext c
-  induction c using SimpleFDRepClasses.ind with
-  | _ X hX =>
-    let _ := hX
+      SimpleClasses.toSimpleSubmoduleClasses := by
+  funext S
+  induction S using SimpleClasses.ind with
+  | h X =>
     -- Name the partition of `X`, so that both sides are evaluated at a Specht module.
     obtain ⟨μ, hμ, -⟩ := existsUnique_nonempty_iso_spechtModule X
-    rw [(SimpleFDRepClasses.mk_eq_mk_iff X (spechtModule (R := ℚ) μ)).mpr hμ]
-    rw [SimpleFDRepClasses.toSimpleSubmoduleClasses_mk]
+    rw [(SimpleClasses.classOf_eq_iff_nonempty_iso X (spechtModule (R := ℚ) μ)).mpr hμ]
+    rw [SimpleClasses.toSimpleSubmoduleClasses_classOf]
     simp [simpleFDRepClassesEquivSimpleModuleClasses]
 
 end Categorical

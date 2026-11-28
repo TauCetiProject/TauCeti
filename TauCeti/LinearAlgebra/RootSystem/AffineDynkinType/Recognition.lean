@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Combinatorics.SimpleGraph.SingularCartanMatrix
 public import TauCeti.RepresentationTheory.Quiver.FiniteRepType.AffineSubgraph
+import TauCeti.LinearAlgebra.Matrix.Connected
 import TauCeti.LinearAlgebra.Matrix.MulVec
 import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.IntegralNullVector
 import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.SpecialNodes
+import TauCeti.Logic.Equiv.Fin.Basic
 
 /-!
 # Recognition of the affine simply-laced diagrams
@@ -35,7 +37,7 @@ recognised by the simple-graph statement. Allowing non-negative integer off-diag
 `Ã₁` back on equal footing: any symmetric, loop-free, connected matrix `M : Matrix ι ι ℕ` carrying
 a positive vector `δ` with `δ i₀ = 1` and `M *ᵥ δ = 2 • δ` is isomorphic to `2I - t.cartanMatrix`
 for a valid `t : AffineDynkinType`, with `δ` matching `t.marks` and `i₀` carried to `t.affineNode`
-(`TauCeti.exists_affineDynkinType_of_symm_loopFree_mulVec_eq_two_smul`).
+(`Matrix.exists_affineDynkinType_of_isSymm_of_diag_eq_zero_of_mulVec_eq_two_smul`).
 
 ## Main results
 
@@ -45,8 +47,8 @@ for a valid `t : AffineDynkinType`, with `δ` matching `t.marks` and `i₀` carr
   semidefinite form, where the weight is replaced by the condition that `2I - A` is positive
   semidefinite and singular
   (`SimpleGraph.Preconnected.exists_sum_eq_two_mul_iff_posSemidef_and_det_eq_zero`).
-* `TauCeti.exists_affineDynkinType_of_symm_loopFree_mulVec_eq_two_smul`: **matrix recognition**
-  including `Ã₁`, with marks and affine-node normalization.
+* `Matrix.exists_affineDynkinType_of_isSymm_of_diag_eq_zero_of_mulVec_eq_two_smul`: **matrix
+  recognition** including `Ã₁`, with marks and affine-node normalization.
 
 ## References
 
@@ -120,34 +122,9 @@ theorem Connected.posSemidef_and_det_eq_zero_iff_existsUnique_affineDynkinType_i
 
 end SimpleGraph
 
-namespace TauCeti
+namespace Matrix
 
-open Finset _root_.Matrix
-
-section Helpers
-
-/-- If rows `a` and `b` of `M` vanish outside `{a, b}`, every vertex reachable from `a` or `b`
-along positive entries lies in `{a, b}`. -/
-private theorem eq_or_eq_of_reflTransGen {ι : Type*} (M : Matrix ι ι ℕ) {a b : ι}
-    (hMa : ∀ j, j ≠ b → M a j = 0) (hMb : ∀ j, j ≠ a → M b j = 0) {x y : ι}
-    (hxy : Relation.ReflTransGen (fun u v ↦ u ≠ v ∧ 0 < M u v) x y) (hx : x = a ∨ x = b) :
-    y = a ∨ y = b := by
-  induction hxy with
-  | refl => exact hx
-  | tail _ hstep ih =>
-    rcases ih with rfl | rfl
-    · exact Or.inr (by_contra fun hyb ↦ by have := hMa _ hyb; have := hstep.2; omega)
-    · exact Or.inl (by_contra fun hya ↦ by have := hMb _ hya; have := hstep.2; omega)
-
-/-- An equivalence `ι ≃ Fin 2` from two distinct elements `x₀ ≠ x₁` covering `ι`. -/
-private def equivFinTwoOfPair {ι : Type*} [DecidableEq ι] {x₀ x₁ : ι} (hne : x₀ ≠ x₁)
-    (hall : ∀ k : ι, k = x₀ ∨ k = x₁) : ι ≃ Fin 2 where
-  toFun x := if x = x₀ then 0 else 1
-  invFun j := if j = 0 then x₀ else x₁
-  left_inv x := by rcases hall x with rfl | rfl <;> simp [hne.symm]
-  right_inv := Fin.forall_fin_two.2 ⟨by simp, by simp [hne.symm]⟩
-
-end Helpers
+open Finset TauCeti
 
 section MatrixRecognition
 
@@ -189,8 +166,12 @@ private theorem exists_affineDynkinType_A_one_of_two_le
   have hMb_other (j : ι) (hja : j ≠ a) : M b j = 0 :=
     Matrix.apply_eq_zero_of_mulVec_apply_eq_mul (fun _ ↦ Nat.zero_le _) (fun _ ↦ Nat.zero_le _)
       (by simpa [Matrix.mulVec, dotProduct, hMba_eq, hδ_ab] using hδ_sum b) hja (hδ_pos j).ne'
-  have hall_ab (k : ι) : k = a ∨ k = b :=
-    eq_or_eq_of_reflTransGen M hMa_other hMb_other (hReach a k) (Or.inl rfl)
+  have hall_ab (k : ι) : k = a ∨ k = b := by
+    refine M.mem_of_reflTransGen_ne_and_pos (s := {a, b}) (fun u hu v _ huv ↦ ?_) (hReach a k)
+      (by simp)
+    rcases hu with rfl | rfl
+    · exact Or.inr (by_contra fun hvb ↦ huv.ne' (hMa_other v hvb))
+    · exact Or.inl (by_contra fun hva ↦ huv.ne' (hMb_other v hva))
   -- Step 3: Reorient `{a, b}` around `i₀` and build the `Ã₁` labelling.
   obtain ⟨c, hc_ne, hc_all, hMic, hMci, hδc⟩ :
       ∃ c : ι, i₀ ≠ c ∧ (∀ k : ι, k = i₀ ∨ k = c) ∧ M i₀ c = 2 ∧ M c i₀ = 2 ∧ δ c = 1 := by
@@ -204,8 +185,7 @@ private theorem exists_affineDynkinType_A_one_of_two_le
     rcases hc_all x with rfl | rfl <;> rcases hc_all y with rfl | rfl <;>
       simp [hLoop, hc_ne, hc_ne.symm, hMic, hMci]
   · rw [AffineDynkinType.marks_A_apply]; rcases hc_all x with rfl | rfl <;> simp [hδ_one, hδc]
-  · rw [AffineDynkinType.affineNode_A]
-    exact (ite_eq_left rfl : (equivFinTwoOfPair hc_ne hc_all) i₀ = 0)
+  · rw [AffineDynkinType.affineNode_A]; dsimp only [e]; exact equivFinTwoOfPair_left hc_ne hc_all
 
 /-- `{0, 1}` graphical branch: recognized by Kac's theorem and normalized at `i₀`. -/
 private theorem exists_affineDynkinType_of_le_one
@@ -251,7 +231,7 @@ private theorem exists_affineDynkinType_of_le_one
 matrix `M : Matrix ι ι ℕ` admitting a positive vector `δ` with `δ i₀ = 1` and `M *ᵥ δ = 2 • δ` is
 isomorphic to `2I - t.cartanMatrix` for a valid `t : AffineDynkinType`, with `δ` matching `t.marks`
 and `i₀` mapped to `t.affineNode`. -/
-theorem exists_affineDynkinType_of_symm_loopFree_mulVec_eq_two_smul
+theorem exists_affineDynkinType_of_isSymm_of_diag_eq_zero_of_mulVec_eq_two_smul
     (M : Matrix ι ι ℕ) (hSymm : M.IsSymm) (hLoop : ∀ i, M i i = 0)
     (i₀ : ι) (hConn : ∀ i, Relation.ReflTransGen (fun x y ↦ x ≠ y ∧ 0 < M x y) i i₀)
     (δ : ι → ℕ) (hδ_pos : ∀ i, 0 < δ i) (hδ_one : δ i₀ = 1)
@@ -280,4 +260,4 @@ theorem exists_affineDynkinType_of_symm_loopFree_mulVec_eq_two_smul
 
 end MatrixRecognition
 
-end TauCeti
+end Matrix

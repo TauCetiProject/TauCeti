@@ -91,6 +91,7 @@ of `Representation.Equiv` apply to isomorphic objects.
   it takes a tensor product to the tensor product of the forgotten objects, on the nose.
 * `FDRep.hom_hom_hom_comm`: a morphism intertwines the actions, read on the underlying linear
   maps.
+* `FDRep.zero_hom_hom_hom_apply`: the zero morphism acts as zero on underlying vectors.
 * `FDRep.comp_hom_hom_hom_apply`: a composite of finite-representation morphisms evaluates
   by successive application on the underlying vectors.
 * `FDRep.op_smul_apply`: the opposite-endomorphism action is precomposition on underlying vectors.
@@ -321,6 +322,14 @@ theorem eqToIso_inv_forget₂_map_hom_apply {R : Type u} {G : Type v} [Ring R] [
     {X Y : FDRep R G} (f : X ⟶ Y) (x : X.V) :
     ((eqToIso (forget₂_obj X)).inv ≫ (forget₂ (FDRep R G) (Rep R G)).map f ≫
       (eqToIso (forget₂_obj Y)).hom).hom x = f.hom.hom.hom x := (rfl)
+
+/-- The zero morphism in `FDRep R G` acts as zero on underlying vectors. -/
+@[simp]
+theorem zero_hom_hom_hom_apply {R : Type u} {G : Type v} [Ring R] [Monoid G]
+    (X Y : FDRep R G) (x : X.V) :
+    (0 : X ⟶ Y).hom.hom.hom x = 0 := by
+  simp only [Action.zero_hom, ← CategoryTheory.ObjectProperty.ι_map, Functor.map_zero,
+    ModuleCat.hom_zero, LinearMap.zero_apply]
 
 /-- A composite of finite-representation morphisms evaluates by successive application on
 the underlying vectors. -/

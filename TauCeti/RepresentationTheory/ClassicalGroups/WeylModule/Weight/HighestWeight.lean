@@ -31,7 +31,7 @@ diagram with more than `n` rows has the zero Weyl module.
 
 Together with the irreducibility of `V_λ` (`TauCeti.isIrreducible_rationalWeylRep`), this says
 that `λ ↦ V_λ` is an injective map from the dominant weights of `GL n` to the isomorphism classes
-of irreducible representations, `TauCeti.SimpleFDRepClasses k (GL n k)`
+of irreducible representations, `TauCeti.SimpleClasses (FDRep k (GL (Fin n) k))`
 (`TauCeti.rationalWeylFDRepClass_injective`): half of the theorem of the highest weight for
 `GL n`. The other half, that every irreducible rational representation is some `V_λ`, is
 `TauCeti.IsRationalRep.exists_nonempty_equiv_rationalWeylRep` in
@@ -191,12 +191,12 @@ variable (k : Type u) [Field k] [CharZero k]
 `V_λ` to be simple, so the hypotheses are those of `TauCeti.isIrreducible_rationalWeylRep`:
 characteristic zero rather than a bare `ℚ`-algebra structure. -/
 noncomputable def rationalWeylFDRepClass (l : DominantWeight n) :
-    SimpleFDRepClasses k (GL (Fin n) k) :=
-  SimpleFDRepClasses.mk (rationalWeylFDRep k n l)
+    SimpleClasses (FDRep k (GL (Fin n) k)) :=
+  SimpleClasses.classOf (rationalWeylFDRep k n l)
 
 @[simp]
 theorem rationalWeylFDRepClass_def (l : DominantWeight n) :
-    rationalWeylFDRepClass k l = SimpleFDRepClasses.mk (rationalWeylFDRep k n l) :=
+    rationalWeylFDRepClass k l = SimpleClasses.classOf (rationalWeylFDRep k n l) :=
   (rfl)
 
 /-- **`λ ↦ V_λ` is injective on isomorphism classes**: distinct dominant weights of `GL n` name
@@ -206,7 +206,7 @@ of the highest-weight classification; that every irreducible rational representa
 theorem rationalWeylFDRepClass_injective :
     Function.Injective (rationalWeylFDRepClass k (n := n)) := fun _ _ hl => by
   rw [rationalWeylFDRepClass_def, rationalWeylFDRepClass_def,
-    SimpleFDRepClasses.mk_eq_mk_iff] at hl
+    SimpleClasses.classOf_eq_iff_nonempty_iso] at hl
   exact (nonempty_iso_rationalWeylFDRep_iff k).mp hl
 
 /-- **Schur's lemma on rational Weyl modules**: over an algebraically closed characteristic-zero

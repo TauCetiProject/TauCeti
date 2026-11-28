@@ -139,13 +139,15 @@ theorem finrank_hom_tensor_leftDual [Invertible (Nat.card G : k)] (V X Y : FDRep
     finrank k (X ⟶ V ⊗ Y) = finrank k (Y ⟶ (ᘁV) ⊗ X) := by
   rw [finrank_hom_comm X (V ⊗ Y), (TauCeti.tensorLeftHomLinearEquiv k Y (ᘁV) V X).finrank_eq]
 
-/-- **Symmetry of tensor Hom-dimensions for a self-dual representation** (becoming multiplicity
-symmetry for simple `X`, `Y` in the split semisimple case). -/
+/-- **Symmetry of tensor Hom-dimensions for a self-dual representation.** When `|G|` is invertible
+in `k`, `dim_k (X ⟶ V ⊗ Y) = dim_k (Y ⟶ V ⊗ X)` for self-dual `V` (becoming multiplicity symmetry
+for simple `X`, `Y` in the split semisimple case). -/
 theorem finrank_hom_tensor_comm_of_equiv_dual [Invertible (Nat.card G : k)] {V : FDRep k G}
     (he : Nonempty (_root_.Representation.Equiv V.ρ (Representation.dual V.ρ)))
     (X Y : FDRep k G) : finrank k (X ⟶ V ⊗ Y) = finrank k (Y ⟶ V ⊗ X) := by
   obtain ⟨e⟩ := he
-  exact (finrank_hom_comm X (V ⊗ Y)).trans
-    (tensorLeftHomLinearEquivOfEquivDual e Y X).finrank_eq
+  rw [finrank_hom_tensor_leftDual]
+  exact (Linear.homCongr k (Iso.refl Y)
+    (whiskerRightIso (isoLeftDualOfEquivDual e).symm X)).finrank_eq
 
 end FDRep

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.SpecialUnitary
 public import TauCeti.RepresentationTheory.ClassicalGroups.SymmetricPower.Basic
 public import TauCeti.RepresentationTheory.SU2.Basic
 import TauCeti.Algebra.GroupWithZero.Units.Basic

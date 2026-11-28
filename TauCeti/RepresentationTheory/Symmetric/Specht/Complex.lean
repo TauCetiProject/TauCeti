@@ -207,26 +207,26 @@ theorem spechtModuleℂ_character_injective :
 /-- **The isomorphism class of the complex Specht module `ℂ ⊗_ℚ S^μ`** as a simple object of
 `FDRep ℂ Sₙ`. The complex counterpart of `TauCeti.spechtModuleFDRepClass`. -/
 noncomputable def spechtModuleℂFDRepClass (μ : n.Partition) :
-    SimpleFDRepClasses ℂ (Equiv.Perm (Fin n)) :=
-  SimpleFDRepClasses.mk (spechtModuleℂ μ)
+    SimpleClasses (FDRep ℂ (Equiv.Perm (Fin n))) :=
+  SimpleClasses.classOf (spechtModuleℂ μ)
 
 @[simp]
 theorem spechtModuleℂFDRepClass_def (μ : n.Partition) :
-    spechtModuleℂFDRepClass μ = SimpleFDRepClasses.mk (spechtModuleℂ μ) :=
+    spechtModuleℂFDRepClass μ = SimpleClasses.classOf (spechtModuleℂ μ) :=
   (rfl)
 
 /-- **The complex Specht modules exhaust the simple objects of `FDRep ℂ Sₙ`.** They are pairwise
 non-isomorphic and as many as the conjugacy classes of `Sₙ`, and over a field whose group algebra
 is semisimple, as `ℂ[Sₙ]` is, the conjugacy classes bound the isomorphism classes of simple objects
-(`TauCeti.SimpleFDRepClasses.bijective_of_injective_of_card_conjClasses_le`), so there is no room
+(`TauCeti.SimpleClasses.bijective_of_injective_of_card_conjClasses_le`), so there is no room
 for any other. -/
 theorem spechtModuleℂFDRepClass_bijective :
     Function.Bijective (spechtModuleℂFDRepClass (n := n)) := by
-  refine SimpleFDRepClasses.bijective_of_injective_of_card_conjClasses_le ?_
+  refine SimpleClasses.bijective_of_injective_of_card_conjClasses_le ?_
     (Nat.card_congr (partitionEquivConjClasses n).symm).le
   intro μ ν h
   rw [spechtModuleℂFDRepClass_def, spechtModuleℂFDRepClass_def,
-    SimpleFDRepClasses.mk_eq_mk_iff] at h
+    SimpleClasses.classOf_eq_iff_nonempty_iso] at h
   exact (spechtModuleℂ_iso_iff μ ν).mp h
 
 /-- **The classification of the irreducible complex representations of the symmetric group**:
@@ -234,7 +234,7 @@ theorem spechtModuleℂFDRepClass_bijective :
 objects of `FDRep ℂ Sₙ`. It is the complex counterpart of
 `TauCeti.partitionEquivSimpleFDRepClasses`, indexed by the same partitions. -/
 noncomputable def partitionEquivSimpleFDRepClassesℂ (n : ℕ) :
-    n.Partition ≃ SimpleFDRepClasses ℂ (Equiv.Perm (Fin n)) :=
+    n.Partition ≃ SimpleClasses (FDRep ℂ (Equiv.Perm (Fin n))) :=
   Equiv.ofBijective _ spechtModuleℂFDRepClass_bijective
 
 @[simp]
@@ -245,9 +245,9 @@ theorem partitionEquivSimpleFDRepClassesℂ_apply (μ : n.Partition) :
 /-- The partition a complex Specht module's class names is the partition it was built from: the
 `symm` companion of `TauCeti.partitionEquivSimpleFDRepClassesℂ_apply`. -/
 @[simp]
-theorem partitionEquivSimpleFDRepClassesℂ_symm_mk_spechtModuleℂ (μ : n.Partition) :
+theorem partitionEquivSimpleFDRepClassesℂ_symm_classOf_spechtModuleℂ (μ : n.Partition) :
     (partitionEquivSimpleFDRepClassesℂ n).symm
-      (SimpleFDRepClasses.mk (spechtModuleℂ μ)) = μ := by
+      (SimpleClasses.classOf (spechtModuleℂ μ)) = μ := by
   rw [← spechtModuleℂFDRepClass_def, ← partitionEquivSimpleFDRepClassesℂ_apply,
     Equiv.symm_apply_apply]
 
@@ -255,8 +255,8 @@ theorem partitionEquivSimpleFDRepClassesℂ_symm_mk_spechtModuleℂ (μ : n.Part
 partition.** -/
 theorem existsUnique_nonempty_iso_spechtModuleℂ (X : FDRep ℂ (Equiv.Perm (Fin n))) [Simple X] :
     ∃! μ : n.Partition, Nonempty (X ≅ spechtModuleℂ μ) := by
-  obtain ⟨μ, hμ⟩ := spechtModuleℂFDRepClass_bijective.surjective (SimpleFDRepClasses.mk X)
-  rw [spechtModuleℂFDRepClass_def, SimpleFDRepClasses.mk_eq_mk_iff] at hμ
+  obtain ⟨μ, hμ⟩ := spechtModuleℂFDRepClass_bijective.surjective (SimpleClasses.classOf X)
+  rw [spechtModuleℂFDRepClass_def, SimpleClasses.classOf_eq_iff_nonempty_iso] at hμ
   refine ⟨μ, ⟨hμ.some.symm⟩, fun ν hν => ?_⟩
   exact (spechtModuleℂ_iso_iff ν μ).mp ⟨hν.some.symm.trans hμ.some.symm⟩
 

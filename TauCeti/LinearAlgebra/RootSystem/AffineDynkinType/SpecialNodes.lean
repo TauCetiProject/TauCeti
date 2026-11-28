@@ -13,8 +13,7 @@ import TauCeti.LinearAlgebra.RootSystem.AffineDynkinType.IntegralNullVector
 # Automorphisms and special nodes of affine simply-laced diagrams
 
 A node of an affine Dynkin diagram whose mark equals `1` is a **special node** in the sense of
-Bourbaki. Every graph automorphism of an affine simply-laced diagram preserves both its
-generalized Cartan matrix (`TauCeti.AffineDynkinType.cartanMatrix_graph_iso_apply`) and its marks
+Bourbaki. Every graph automorphism of an affine simply-laced diagram preserves its marks
 (`TauCeti.AffineDynkinType.marks_graph_iso_apply`), `Ã₁` included. Conversely, on a valid diagram
 the automorphism group acts transitively on the special nodes: every node of mark `1` can be moved
 to `TauCeti.AffineDynkinType.affineNode` by a graph automorphism
@@ -22,9 +21,6 @@ to `TauCeti.AffineDynkinType.affineNode` by a graph automorphism
 
 ## Main results
 
-* `TauCeti.AffineDynkinType.cartanMatrix_graph_iso_apply` and
-  `TauCeti.AffineDynkinType.cartanMatrix_submatrix_graph_iso`: every graph automorphism preserves
-  the generalized Cartan matrix, `Ã₁` included.
 * `TauCeti.AffineDynkinType.marks_graph_iso_apply` and
   `TauCeti.AffineDynkinType.marks_comp_graph_iso`: every graph automorphism preserves the marks.
 * `TauCeti.AffineDynkinType.exists_graph_iso_apply_eq_affineNode` and
@@ -42,23 +38,6 @@ public section
 open Finset SimpleGraph
 
 namespace TauCeti.AffineDynkinType
-
-/-- **Every graph automorphism of an affine simply-laced diagram preserves its generalized Cartan
-matrix**, `Ã₁` included. -/
-@[simp]
-theorem cartanMatrix_graph_iso_apply {t : AffineDynkinType} (σ : t.graph ≃g t.graph)
-    (i j : Fin t.nodes) : t.cartanMatrix (σ i) (σ j) = t.cartanMatrix i j := by
-  by_cases h : t = A 1
-  · subst h
-    simp only [cartanMatrix_A_one_apply, σ.injective.eq_iff]
-  · have hg : t.IsGraphical := isGraphical_iff_ne_A_one.mpr h
-    simp only [cartanMatrix_apply hg, σ.injective.eq_iff, σ.map_adj_iff]
-
-/-- Reindexing the generalized Cartan matrix along a graph automorphism leaves it unchanged. -/
-@[simp]
-theorem cartanMatrix_submatrix_graph_iso {t : AffineDynkinType} (σ : t.graph ≃g t.graph) :
-    t.cartanMatrix.submatrix σ σ = t.cartanMatrix :=
-  Matrix.ext (cartanMatrix_graph_iso_apply σ)
 
 /-- **Every graph automorphism of an affine simply-laced diagram preserves its marks.** -/
 @[simp]

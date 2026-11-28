@@ -77,6 +77,13 @@ theorem classOf_repr (S : SimpleClasses C) : classOf S.repr = S := by
   apply Subtype.ext
   exact toSkeleton_fromSkeleton_obj S.val
 
+/-- To prove a property of every simple isomorphism class, it suffices to prove it on
+`SimpleClasses.classOf X` for each simple object `X`. -/
+@[elab_as_elim]
+theorem ind {motive : SimpleClasses C → Prop}
+    (h : ∀ (X : C) [Simple X], motive (classOf X)) (S : SimpleClasses C) : motive S :=
+  classOf_repr S ▸ h S.repr
+
 /-- Two simple classes are equal exactly when their chosen representatives are isomorphic. -/
 @[simp]
 theorem eq_iff_nonempty_iso (S T : SimpleClasses C) :

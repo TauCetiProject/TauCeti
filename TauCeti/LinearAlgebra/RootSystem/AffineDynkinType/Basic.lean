@@ -94,6 +94,9 @@ number, which reduces connectedness to a single induction. Explicitly:
   `.graph_E8_adj`: adjacency in each diagram, as a condition on node numbers.
 * `TauCeti.AffineDynkinType.cartanMatrix_eq_graphCartanMatrix`: outside `A₁` the Cartan matrix is
   the matrix `2I - A` of the underlying graph, `SimpleGraph.graphCartanMatrix`.
+* `TauCeti.AffineDynkinType.cartanMatrix_graph_iso_apply` and
+  `TauCeti.AffineDynkinType.cartanMatrix_submatrix_graph_iso`: every graph automorphism preserves
+  the generalized Cartan matrix, `Ã₁` included.
 * `TauCeti.AffineDynkinType.graph_eq_diagramGraph_cartanMatrix`: the graph is the diagram of the
   Cartan matrix in the sense of `TauCeti.diagramGraph`, at `A₁` too.
 * `TauCeti.AffineDynkinType.cartanMatrix_E8_eq_submatrix_cartanMatrix_E`: affine `E₈` is Mathlib's
@@ -554,6 +557,23 @@ edge and `0` otherwise. -/
 lemma cartanMatrix_apply {t : AffineDynkinType} (ht : t.IsGraphical) (i j : Fin t.nodes) :
     t.cartanMatrix i j = if i = j then 2 else if t.graph.Adj i j then -1 else 0 := by
   rw [cartanMatrix_eq_graphCartanMatrix ht, SimpleGraph.graphCartanMatrix_apply]
+
+/-- **Every graph automorphism of an affine simply-laced diagram preserves its generalized Cartan
+matrix**, `Ã₁` included. -/
+@[simp]
+theorem cartanMatrix_graph_iso_apply {t : AffineDynkinType} (σ : t.graph ≃g t.graph)
+    (i j : Fin t.nodes) : t.cartanMatrix (σ i) (σ j) = t.cartanMatrix i j := by
+  by_cases h : t = A 1
+  · subst h
+    simp only [cartanMatrix_A_one_apply, σ.injective.eq_iff]
+  · have hg : t.IsGraphical := isGraphical_iff_ne_A_one.mpr h
+    simp only [cartanMatrix_apply hg, σ.injective.eq_iff, σ.map_adj_iff]
+
+/-- Reindexing the generalized Cartan matrix along a graph automorphism leaves it unchanged. -/
+@[simp]
+theorem cartanMatrix_submatrix_graph_iso {t : AffineDynkinType} (σ : t.graph ≃g t.graph) :
+    t.cartanMatrix.submatrix σ σ = t.cartanMatrix :=
+  Matrix.ext (cartanMatrix_graph_iso_apply σ)
 
 /-- The diagonal entries of the generalized Cartan matrix are `2`, `A₁` included. -/
 @[simp] lemma cartanMatrix_apply_same (t : AffineDynkinType) (i : Fin t.nodes) :

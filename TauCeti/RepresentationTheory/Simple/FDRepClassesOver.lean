@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Skeletal
 public import TauCeti.RepresentationTheory.Induction.LiesOver
 public import TauCeti.RepresentationTheory.Simple.Basic
 
@@ -15,12 +16,12 @@ Fix a homomorphism `φ : N →* H` and an `N`-representation `V`.  The simple ob
 lying over `V` along `φ` (`FDRep.LiesOver`) span a full subcategory, and this file names its
 skeleton: the isomorphism classes of those representations, written `Irr(H ∣ V)` in the literature.
 
-The type needs no new device.  `TauCeti.SimpleFDRepClasses` is already the skeleton of the full
-subcategory of simple objects of `FDRep k H`; here the cutting property is the conjunction of
+The type needs no new device. `TauCeti.SimpleClasses (FDRep k H)` is already the skeleton of the
+full subcategory of simple objects of `FDRep k H`; here the cutting property is the conjunction of
 simplicity with `FDRep.LiesOver`, so the same constructions of
-`TauCeti.RepresentationTheory.Simple.Basic` and `TauCeti.CategoryTheory.Skeletal` apply verbatim.
+`TauCeti.CategoryTheory.Skeletal` apply verbatim.
 The classes come with the constructor `mk`, the comparison `mk_eq_mk_iff`, the eliminator `ind`,
-the lift `lift` of an isomorphism-invariant function, and the injection `toSimpleFDRepClasses` that
+the lift `lift` of an isomorphism-invariant function, and the injection `toSimpleClasses` that
 forgets the constituent.
 
 ## Main definitions
@@ -33,7 +34,7 @@ forgets the constituent.
 
 * `TauCeti.SimpleFDRepClassesOver.mk_eq_mk_iff`: two representations lying over `V` have the same
   class exactly when they are isomorphic.
-* `TauCeti.SimpleFDRepClassesOver.toSimpleFDRepClasses_injective`: the classes over `V` inject into
+* `TauCeti.SimpleFDRepClassesOver.toSimpleClasses_injective`: the classes over `V` inject into
   all simple-object classes, so no information is lost by remembering the constituent.
 -/
 
@@ -110,20 +111,20 @@ theorem lift_mk {α : Sort*} {f : ∀ (U : FDRep k H) [Simple U], U.LiesOver φ 
 
 /-- Forgetting the constituent: the class of a simple representation lying over `V`, read as a
 class of simple representations. -/
-noncomputable def toSimpleFDRepClasses :
-    SimpleFDRepClassesOver φ V → SimpleFDRepClasses k H :=
-  lift (fun U _ _ ↦ SimpleFDRepClasses.mk U)
-    fun U U' _ _ _ _ e ↦ (SimpleFDRepClasses.mk_eq_mk_iff U U').mpr e
+noncomputable def toSimpleClasses :
+    SimpleFDRepClassesOver φ V → SimpleClasses (FDRep k H) :=
+  lift (fun U _ _ ↦ SimpleClasses.classOf U)
+    fun U U' _ _ _ _ e ↦ (SimpleClasses.classOf_eq_iff_nonempty_iso U U').mpr e
 
 @[simp]
-theorem toSimpleFDRepClasses_mk (U : FDRep k H) [Simple U] (h : U.LiesOver φ V) :
-    toSimpleFDRepClasses (mk U h) = SimpleFDRepClasses.mk U :=
-  lift_mk (f := fun U _ _ ↦ SimpleFDRepClasses.mk U) U h
+theorem toSimpleClasses_mk (U : FDRep k H) [Simple U] (h : U.LiesOver φ V) :
+    toSimpleClasses (mk U h) = SimpleClasses.classOf U :=
+  lift_mk (f := fun U _ _ ↦ SimpleClasses.classOf U) U h
 
 /-- **Forgetting the constituent is injective**: the classes over `V` are a subfamily of all
 simple-object classes, not a quotient of one. -/
-theorem toSimpleFDRepClasses_injective :
-    Function.Injective (toSimpleFDRepClasses (φ := φ) (V := V)) := by
+theorem toSimpleClasses_injective :
+    Function.Injective (toSimpleClasses (φ := φ) (V := V)) := by
   intro a
   induction a using ind with
   | _ U hU hlies =>
@@ -131,7 +132,7 @@ theorem toSimpleFDRepClasses_injective :
   induction b using ind with
   | _ U' hU' hlies' =>
   intro hab
-  rw [toSimpleFDRepClasses_mk, toSimpleFDRepClasses_mk, SimpleFDRepClasses.mk_eq_mk_iff] at hab
+  rw [toSimpleClasses_mk, toSimpleClasses_mk, SimpleClasses.classOf_eq_iff_nonempty_iso] at hab
   exact (mk_eq_mk_iff U U' hlies hlies').mpr hab
 
 end SimpleFDRepClassesOver
