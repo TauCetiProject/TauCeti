@@ -49,11 +49,10 @@ instance (priority := 100) isClosedUnderIsomorphisms_of_isClosedUnderKernels [P.
     [P.IsClosedUnderKernels] : P.IsClosedUnderIsomorphisms where
   of_iso {X Y} e hX := by
     obtain ⟨Z, hZ⟩ := P.exists_prop_of_nonempty
-    have hk : IsLimit (KernelFork.ofι e.inv (comp_zero : e.inv ≫ (0 : X ⟶ Z) = 0)) :=
-      KernelFork.IsLimit.ofι _ _ (fun k _ ↦ k ≫ e.hom) (fun _ _ ↦ by simp)
-        (fun _ _ m hm ↦ by
-          rw [← cancel_mono e.inv, hm, Category.assoc, e.hom_inv_id, Category.comp_id])
-    exact P.prop_of_isLimit_kernelFork hk hX hZ
+    exact P.prop_of_isLimit_kernelFork
+      (IsKernel.isoKernel (0 : X ⟶ Z) e.inv (KernelFork.IsLimit.ofId (0 : X ⟶ Z) rfl) e.symm
+        (by simp))
+      hX hZ
 
 /-- A nonempty property of objects closed under cokernels is closed under isomorphisms: if `Z` lies
 in `P` and `e : X ≅ Y`, then `Y` is a cokernel of the zero morphism `Z ⟶ X` via `e.hom`. -/
@@ -61,10 +60,10 @@ instance (priority := 100) isClosedUnderIsomorphisms_of_isClosedUnderCokernels [
     [P.IsClosedUnderCokernels] : P.IsClosedUnderIsomorphisms where
   of_iso {X Y} e hX := by
     obtain ⟨Z, hZ⟩ := P.exists_prop_of_nonempty
-    have hk : IsColimit (CokernelCofork.ofπ e.hom (zero_comp : (0 : Z ⟶ X) ≫ e.hom = 0)) :=
-      CokernelCofork.IsColimit.ofπ _ _ (fun k _ ↦ e.inv ≫ k) (fun _ _ ↦ by simp)
-        (fun _ _ m hm ↦ by rw [← cancel_epi e.hom, hm, Iso.hom_inv_id_assoc])
-    exact P.prop_of_isColimit_cokernelCofork hk hZ hX
+    exact P.prop_of_isColimit_cokernelCofork
+      (IsCokernel.cokernelIso (0 : Z ⟶ X) e.hom (CokernelCofork.IsColimit.ofId (0 : Z ⟶ X) rfl) e
+        (by simp))
+      hZ hX
 
 end IsClosedUnderIsomorphisms
 

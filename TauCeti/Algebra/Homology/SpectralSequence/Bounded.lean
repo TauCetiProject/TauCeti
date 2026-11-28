@@ -195,12 +195,8 @@ lemma exists_bound_below_of_finite (E : SpectralSequence C c r₀) (A : Bidegree
     (n : ℤ)
     (hfin : Set.Finite {pq : κ | A.deg pq = n ∧ ¬ IsZero ((E.page r₀ le_rfl).X pq)}) :
     ∃ β : ℤ,
-      ∀ pq : κ, A.deg pq = n → β ≤ A.fil pq → IsZero ((E.page r₀ le_rfl).X pq) := by
-  obtain ⟨M, hM⟩ := (hfin.image A.fil).bddAbove
-  refine ⟨M + 1, fun pq hdeg hfil ↦ ?_⟩
-  by_contra hnz
-  have := hM ⟨pq, ⟨hdeg, hnz⟩, rfl⟩
-  lia
+      ∀ pq : κ, A.deg pq = n → β ≤ A.fil pq → IsZero ((E.page r₀ le_rfl).X pq) :=
+  E.exists_isZero_page_of_le_fil_of_finite A le_rfl n hfin
 
 /-- If total degree `n` has only finitely many nonzero first-page positions, then there is a lower
 bound `α` on their filtration degrees. -/
@@ -208,12 +204,8 @@ lemma exists_bound_above_of_finite (E : SpectralSequence C c r₀) (A : Bidegree
     (n : ℤ)
     (hfin : Set.Finite {pq : κ | A.deg pq = n ∧ ¬ IsZero ((E.page r₀ le_rfl).X pq)}) :
     ∃ α : ℤ,
-      ∀ pq : κ, A.deg pq = n → A.fil pq ≤ α → IsZero ((E.page r₀ le_rfl).X pq) := by
-  obtain ⟨M, hM⟩ := (hfin.image A.fil).bddBelow
-  refine ⟨M - 1, fun pq hdeg hfil ↦ ?_⟩
-  by_contra hnz
-  have := hM ⟨pq, ⟨hdeg, hnz⟩, rfl⟩
-  lia
+      ∀ pq : κ, A.deg pq = n → A.fil pq ≤ α → IsZero ((E.page r₀ le_rfl).X pq) :=
+  E.exists_isZero_page_of_fil_le_of_finite A le_rfl n hfin
 
 /-- **Boundedness equals finiteness in each total degree** (Stacks Project, Tag 0BDV,
 Lemma 24.8 (3)). A spectral sequence is bounded with respect to `A` if and only if each total

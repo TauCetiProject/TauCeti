@@ -19,92 +19,11 @@ the alternating total-degree signs `pq ↦ (-1)^(A.deg pq)` induced on every pag
 
 public section
 
-namespace ComplexShape
-
-/-- Alternating total-degree signs `(p, q) ↦ (-1)^(p + q)` for the `r`th page shape
-`ComplexShape.up' (r, 1 - r)` of a cohomological spectral sequence. -/
-instance eulerCharSignsUp'Cohomological (r : ℤ) :
-    (up' (⟨r, 1 - r⟩ : ℤ × ℤ)).EulerCharSigns where
-  χ pq := (pq.1 + pq.2).negOnePow
-  χ_next {a b} h := by
-    obtain ⟨p, q⟩ := a
-    obtain ⟨p', q'⟩ := b
-    simp only [up', Prod.mk_add_mk, Prod.mk.injEq] at h
-    have hsum : p' + q' = p + q + 1 := by lia
-    rw [hsum, Int.negOnePow_succ]
-
-@[simp↓]
-lemma eulerCharSignsUp'Cohomological_χ (r : ℤ) (pq : ℤ × ℤ) :
-    (up' (⟨r, 1 - r⟩ : ℤ × ℤ)).χ pq = (pq.1 + pq.2).negOnePow := rfl
-
-/-- Alternating total-degree signs `(p, q) ↦ (-1)^(p + q)` for the `r`th page shape
-`ComplexShape.up' (-r, r - 1)` of a homological spectral sequence. -/
-instance eulerCharSignsUp'Homological (r : ℤ) :
-    (up' (⟨-r, r - 1⟩ : ℤ × ℤ)).EulerCharSigns where
-  χ pq := (pq.1 + pq.2).negOnePow
-  χ_next {a b} h := by
-    obtain ⟨p, q⟩ := a
-    obtain ⟨p', q'⟩ := b
-    simp only [up', Prod.mk_add_mk, Prod.mk.injEq] at h
-    have hsum : p + q = p' + q' + 1 := by lia
-    rw [hsum, Int.negOnePow_succ, neg_neg]
-
-@[simp↓]
-lemma eulerCharSignsUp'Homological_χ (r : ℤ) (pq : ℤ × ℤ) :
-    (up' (⟨-r, r - 1⟩ : ℤ × ℤ)).χ pq = (pq.1 + pq.2).negOnePow := rfl
-
-/-- Alternating total-degree signs `(p, q) ↦ (-1)^(p + q)` for the `r`th page shape
-`ComplexShape.spectralSequenceNat (r, 1 - r)` of a first-quadrant cohomological spectral
-sequence. -/
-instance eulerCharSignsSpectralSequenceNatCohomological (r : ℤ) :
-    (spectralSequenceNat ⟨r, 1 - r⟩).EulerCharSigns where
-  χ pq := ((pq.1 : ℤ) + (pq.2 : ℤ)).negOnePow
-  χ_next {a b} h := by
-    simp only [spectralSequenceNat_rel_iff] at h
-    have hsum : (b.1 : ℤ) + (b.2 : ℤ) = (a.1 : ℤ) + (a.2 : ℤ) + 1 := by lia
-    rw [hsum, Int.negOnePow_succ]
-
-@[simp↓]
-lemma eulerCharSignsSpectralSequenceNatCohomological_χ (r : ℤ) (pq : ℕ × ℕ) :
-    (spectralSequenceNat ⟨r, 1 - r⟩).χ pq = ((pq.1 : ℤ) + (pq.2 : ℤ)).negOnePow := rfl
-
-/-- Alternating total-degree signs `(p, q) ↦ (-1)^(p + q)` for the `r`th page shape
-`ComplexShape.spectralSequenceNat (-r, r - 1)` of a first-quadrant homological spectral
-sequence. -/
-instance eulerCharSignsSpectralSequenceNatHomological (r : ℤ) :
-    (spectralSequenceNat ⟨-r, r - 1⟩).EulerCharSigns where
-  χ pq := ((pq.1 : ℤ) + (pq.2 : ℤ)).negOnePow
-  χ_next {a b} h := by
-    simp only [spectralSequenceNat_rel_iff] at h
-    have hsum : (a.1 : ℤ) + (a.2 : ℤ) = (b.1 : ℤ) + (b.2 : ℤ) + 1 := by lia
-    rw [hsum, Int.negOnePow_succ, neg_neg]
-
-@[simp↓]
-lemma eulerCharSignsSpectralSequenceNatHomological_χ (r : ℤ) (pq : ℕ × ℕ) :
-    (spectralSequenceNat ⟨-r, r - 1⟩).χ pq = ((pq.1 : ℤ) + (pq.2 : ℤ)).negOnePow := rfl
-
-/-- Alternating total-degree signs `(p, q) ↦ (-1)^(p + q)` for the `r`th page shape
-`ComplexShape.spectralSequenceFin l (r, 1 - r)` of a cohomological spectral sequence on `l`
-rows. -/
-instance eulerCharSignsSpectralSequenceFinCohomological (l : ℕ) (r : ℤ) :
-    (spectralSequenceFin l ⟨r, 1 - r⟩).EulerCharSigns where
-  χ pq := (pq.1 + (pq.2.val : ℤ)).negOnePow
-  χ_next {a b} h := by
-    simp only [spectralSequenceFin_rel_iff] at h
-    have hsum : b.1 + (b.2.val : ℤ) = a.1 + (a.2.val : ℤ) + 1 := by lia
-    rw [hsum, Int.negOnePow_succ]
-
-@[simp↓]
-lemma eulerCharSignsSpectralSequenceFinCohomological_χ (l : ℕ) (r : ℤ) (pq : ℤ × Fin l) :
-    (spectralSequenceFin l ⟨r, 1 - r⟩).χ pq = (pq.1 + (pq.2.val : ℤ)).negOnePow := rfl
-
-end ComplexShape
-
 namespace TauCeti.BidegreeAssignment
 
 /-- The alternating signs `pq ↦ (-1)^(A.deg pq)` induced by a bidegree assignment on page `r`
 (`r₀ ≤ r`). -/
-@[instance_reducible]
+@[expose, instance_reducible]
 def eulerCharSigns {κ : Type*} {c : ℤ → ComplexShape κ} {r₀ : ℤ}
     (A : BidegreeAssignment c r₀) (r : ℤ) (hr : r₀ ≤ r) : (c r).EulerCharSigns where
   χ pq := (A.deg pq).negOnePow
@@ -117,3 +36,64 @@ lemma eulerCharSigns_χ {κ : Type*} {c : ℤ → ComplexShape κ} {r₀ : ℤ}
     (A.eulerCharSigns r hr).χ pq = (A.deg pq).negOnePow := (rfl)
 
 end TauCeti.BidegreeAssignment
+
+namespace ComplexShape
+
+/-- Alternating total-degree signs `(p, q) ↦ (-1)^(p + q)` for the `r`th page shape
+`ComplexShape.up' (r, 1 - r)` of a cohomological spectral sequence. -/
+instance eulerCharSignsUp'Cohomological (r : ℤ) :
+    (up' (⟨r, 1 - r⟩ : ℤ × ℤ)).EulerCharSigns :=
+  (TauCeti.BidegreeAssignment.cohomological r).eulerCharSigns r le_rfl
+
+@[simp↓]
+lemma eulerCharSignsUp'Cohomological_χ (r : ℤ) (pq : ℤ × ℤ) :
+    (up' (⟨r, 1 - r⟩ : ℤ × ℤ)).χ pq = (pq.1 + pq.2).negOnePow := by rfl
+
+/-- Alternating total-degree signs `(p, q) ↦ (-1)^(p + q)` for the `r`th page shape
+`ComplexShape.up' (-r, r - 1)` of a homological spectral sequence. -/
+instance eulerCharSignsUp'Homological (r : ℤ) :
+    (up' (⟨-r, r - 1⟩ : ℤ × ℤ)).EulerCharSigns :=
+  (TauCeti.BidegreeAssignment.homological r).eulerCharSigns r le_rfl
+
+@[simp↓]
+lemma eulerCharSignsUp'Homological_χ (r : ℤ) (pq : ℤ × ℤ) :
+    (up' (⟨-r, r - 1⟩ : ℤ × ℤ)).χ pq = (pq.1 + pq.2).negOnePow := by
+  change (-pq.1 - pq.2).negOnePow = (pq.1 + pq.2).negOnePow
+  rw [show -pq.1 - pq.2 = -(pq.1 + pq.2) by lia, Int.negOnePow_neg]
+
+/-- Alternating total-degree signs `(p, q) ↦ (-1)^(p + q)` for the `r`th page shape
+`ComplexShape.spectralSequenceNat (r, 1 - r)` of a first-quadrant cohomological spectral
+sequence. -/
+instance eulerCharSignsSpectralSequenceNatCohomological (r : ℤ) :
+    (spectralSequenceNat ⟨r, 1 - r⟩).EulerCharSigns :=
+  (TauCeti.BidegreeAssignment.cohomologicalNat r).eulerCharSigns r le_rfl
+
+@[simp↓]
+lemma eulerCharSignsSpectralSequenceNatCohomological_χ (r : ℤ) (pq : ℕ × ℕ) :
+    (spectralSequenceNat ⟨r, 1 - r⟩).χ pq = ((pq.1 : ℤ) + (pq.2 : ℤ)).negOnePow := by rfl
+
+/-- Alternating total-degree signs `(p, q) ↦ (-1)^(p + q)` for the `r`th page shape
+`ComplexShape.spectralSequenceNat (-r, r - 1)` of a first-quadrant homological spectral
+sequence. -/
+instance eulerCharSignsSpectralSequenceNatHomological (r : ℤ) :
+    (spectralSequenceNat ⟨-r, r - 1⟩).EulerCharSigns :=
+  (TauCeti.BidegreeAssignment.homologicalNat r).eulerCharSigns r le_rfl
+
+@[simp↓]
+lemma eulerCharSignsSpectralSequenceNatHomological_χ (r : ℤ) (pq : ℕ × ℕ) :
+    (spectralSequenceNat ⟨-r, r - 1⟩).χ pq = ((pq.1 : ℤ) + (pq.2 : ℤ)).negOnePow := by
+  change (-(pq.1 : ℤ) - (pq.2 : ℤ)).negOnePow = ((pq.1 : ℤ) + (pq.2 : ℤ)).negOnePow
+  rw [show -(pq.1 : ℤ) - (pq.2 : ℤ) = -((pq.1 : ℤ) + (pq.2 : ℤ)) by lia, Int.negOnePow_neg]
+
+/-- Alternating total-degree signs `(p, q) ↦ (-1)^(p + q)` for the `r`th page shape
+`ComplexShape.spectralSequenceFin l (r, 1 - r)` of a cohomological spectral sequence on `l`
+rows. -/
+instance eulerCharSignsSpectralSequenceFinCohomological (l : ℕ) (r : ℤ) :
+    (spectralSequenceFin l ⟨r, 1 - r⟩).EulerCharSigns :=
+  (TauCeti.BidegreeAssignment.cohomologicalFin l r).eulerCharSigns r le_rfl
+
+@[simp↓]
+lemma eulerCharSignsSpectralSequenceFinCohomological_χ (l : ℕ) (r : ℤ) (pq : ℤ × Fin l) :
+    (spectralSequenceFin l ⟨r, 1 - r⟩).χ pq = (pq.1 + (pq.2.val : ℤ)).negOnePow := by rfl
+
+end ComplexShape
