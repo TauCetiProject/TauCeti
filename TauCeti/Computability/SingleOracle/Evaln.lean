@@ -59,6 +59,13 @@ the program relative to every oracle extending those answers.
   `TauCeti.Oracle.Single.Code.dom_eval_oracle_iff_exists_evaln_finset`: the values and halting
   of a program relative to a set oracle are witnessed by successful runs against finite sets
   agreeing with the oracle below the use.
+* `TauCeti.Oracle.Single.Code.forall_evaln_eq_some_of_sup_le_of_eqOn`: **simultaneous
+  preservation** of a finite batch of successful runs, at every fuel above the largest of their
+  fuels and against all answers agreeing below the largest of their uses.
+* `TauCeti.Oracle.Single.Code.exists_forall_evaln_eq_some_of_mem_eval`: a finite batch of
+  convergent computations has a common fuel and a common use bound, from which all its runs
+  succeed, with the given outputs and fixed uses, at every larger fuel and against all answers
+  agreeing below the use bound.
 
 ## References
 
@@ -807,5 +814,46 @@ theorem dom_eval_oracle_iff_exists_evaln_finset {A : Set ℕ} {c : Code} {n : �
     rw [stageUse_eq_of_evaln_eq_some hd] at hagree
     exact Part.dom_iff_mem.2 ⟨d.output, mem_eval_oracle_iff_exists_evaln_finset.2
       ⟨k, F, d, hd, rfl, hagree⟩⟩
+/-! ### Finite batches of runs
+
+A finite batch of runs is indexed by a finset `s` of an arbitrary type `ι`: the run `i` is that of
+the program `c i` on the input `x i`. The indexing need not be injective, so a batch may contain
+the same program and input several times, and it may be empty. -/
+
+section Batch
+
+variable {ι : Type*} {s : Finset ι} {c : ι → Code} {x : ι → ℕ}
+
+/-- **Simultaneous preservation**, the stage-to-stage form of the use principle for a finite batch.
+If each run `i ∈ s` succeeds against the answers `σ` at its own fuel `k i`, then all of them
+succeed, with the same outputs and uses, at every fuel `k'` at least the largest of these fuels
+and against all answers `τ` agreeing with `σ` below the largest of their uses. For the empty
+batch, or a batch of runs without queries, the agreement hypothesis is vacuous. -/
+theorem forall_evaln_eq_some_of_sup_le_of_eqOn {τ : ℕ → Option ℕ} {k : ι → ℕ} {k' : ℕ}
+    {d : ι → Halt} (h : ∀ i ∈ s, evaln σ (k i) (c i) (x i) = some (d i)) (hk : s.sup k ≤ k')
+    (hστ : Set.EqOn σ τ (Set.Iio (s.sup fun i => (d i).use))) :
+    ∀ i ∈ s, evaln τ k' (c i) (x i) = some (d i) := fun i hi =>
+  evaln_eq_some_of_eqOn (evaln_mono ((Finset.le_sup hi).trans hk) (h i hi))
+    (hστ.mono (Set.Iio_subset_Iio (Finset.le_sup (f := fun i => (d i).use) hi)))
+
+/-- **A common fuel and use bound for a finite batch.** If the answers `σ` give every value of the
+oracle `O`, and each program `c i`, for `i ∈ s`, has the value `y i` at `x i` relative to `O`, then
+there are a fuel `K` and a use bound `U ≤ K`, and successful runs `d i` with outputs `y i` and uses
+at most `U`, such that every run `i ∈ s` succeeds with exactly `d i` at every fuel `k ≥ K` against
+all answers agreeing with `σ` below `U`. In particular all runs succeed against `σ` at fuel `K`.
+For a total oracle `O : ℕ → ℕ`, the answers are `fun z => some (O z)`. -/
+theorem exists_forall_evaln_eq_some_of_mem_eval {O : ℕ →. ℕ}
+    (hσ : ∀ z y, y ∈ O z → σ z = some y) {y : ι → ℕ} (h : ∀ i ∈ s, y i ∈ eval O (c i) (x i)) :
+    ∃ K U : ℕ, U ≤ K ∧ ∃ d : ι → Halt, (∀ i ∈ s, (d i).output = y i ∧ (d i).use ≤ U) ∧
+      ∀ k, K ≤ k → ∀ τ : ℕ → Option ℕ, Set.EqOn σ τ (Set.Iio U) →
+        ∀ i ∈ s, evaln τ k (c i) (x i) = some (d i) := by
+  have : Nonempty Halt := ⟨⟨0, 0⟩⟩
+  choose! k d hd hy using fun i hi => exists_evaln_eq_some_of_mem_eval hσ (h i hi)
+  exact ⟨s.sup k, s.sup fun i => (d i).use,
+    Finset.sup_mono_fun fun i hi => evaln_use_le (hd i hi), d,
+    fun i hi => ⟨hy i hi, Finset.le_sup (f := fun i => (d i).use) hi⟩,
+    fun _ hk _ hστ => forall_evaln_eq_some_of_sup_le_of_eqOn hd hk hστ⟩
+
+end Batch
 
 end TauCeti.Oracle.Single.Code
