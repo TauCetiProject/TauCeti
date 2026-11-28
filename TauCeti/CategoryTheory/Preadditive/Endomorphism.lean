@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Ring.Equiv
 public import Mathlib.CategoryTheory.Conj
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
+public import Mathlib.CategoryTheory.Preadditive.Opposite
 public import Mathlib.RingTheory.Idempotents
 public import Mathlib.RingTheory.LocalRing.Basic
 import TauCeti.CategoryTheory.IrreducibleMorphism
@@ -24,6 +25,8 @@ when `F` is full.
 ## Main definitions
 
 * `CategoryTheory.Iso.endRingEquiv`: the ring isomorphism `End X ≃+* End Y` induced by `X ≅ Y`.
+* `CategoryTheory.End.opRingEquiv`: the endomorphism ring of an object in the opposite category
+  is the opposite of its original endomorphism ring.
 * `CategoryTheory.Functor.mapEndRingHom`: the ring homomorphism `End X →+* End (F.obj X)` of an
   additive functor.
 * `IsIdempotentElem.endRingEquivCorner`: for an idempotent `e = p ≫ i` of `X` split through `Y`
@@ -41,6 +44,33 @@ when `F` is full.
 -/
 
 public section
+
+namespace CategoryTheory.End
+
+variable {C : Type*} [Category* C] [Preadditive C]
+
+/-- Taking the opposite of an endomorphism reverses the order of multiplication. -/
+def opRingEquiv (X : C) : (End X)ᵐᵒᵖ ≃+* End (Opposite.op X) where
+  toFun f := End.of f.unop.asHom.op
+  invFun f := MulOpposite.op (End.of f.asHom.unop)
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_mul' _ _ := End.ext op_comp
+  map_add' f g := End.ext (op_add C f.unop.asHom g.unop.asHom)
+
+/-- The opposite ring equivalence takes the opposite of the underlying morphism. -/
+@[simp]
+theorem opRingEquiv_apply_asHom (X : C) (f : (End X)ᵐᵒᵖ) :
+    (opRingEquiv X f).asHom = f.unop.asHom.op :=
+  (rfl)
+
+/-- The inverse of the opposite ring equivalence unopposes the underlying morphism. -/
+@[simp]
+theorem opRingEquiv_symm_apply_unop_asHom (X : C) (f : End (Opposite.op X)) :
+    ((opRingEquiv X).symm f).unop.asHom = f.asHom.unop :=
+  (rfl)
+
+end CategoryTheory.End
 
 namespace CategoryTheory.Iso
 

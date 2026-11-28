@@ -10,8 +10,10 @@ public import TauCeti.CategoryTheory.Preadditive.Endomorphism
 import TauCeti.CategoryTheory.Idempotents.Split
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
+public import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Products
 import Mathlib.CategoryTheory.Adjunction.Limits
 public import Mathlib.RingTheory.LocalRing.Basic
+import Mathlib.RingTheory.LocalRing.RingHom.Basic
 
 /-!
 # Krull-Schmidt categories
@@ -31,6 +33,7 @@ to a finite biproduct of objects with local endomorphism rings.
   object is indecomposable exactly when its endomorphism ring is local.
 * `CategoryTheory.Equivalence.isKrullSchmidt`: the Krull-Schmidt property is invariant under
   equivalence of categories.
+* `TauCeti.isKrullSchmidt_op`: the opposite of a Krull-Schmidt category is Krull-Schmidt.
 
 ## Implementation notes
 
@@ -193,6 +196,17 @@ class IsKrullSchmidt [HasFiniteBiproducts C] : Prop where
     ∃ (n : ℕ) (P : Fin n → C), (∀ i, IsLocalRing (End (P i))) ∧ Nonempty (X ≅ ⨁ P)
 
 variable {C} [HasFiniteBiproducts C]
+
+attribute [local instance] HasFiniteBiproducts.of_hasFiniteCoproducts in
+/-- The opposite of a Krull-Schmidt category is Krull-Schmidt. -/
+instance isKrullSchmidt_op [IsKrullSchmidt C] : IsKrullSchmidt Cᵒᵖ where
+  exists_iso_biproduct X := by
+    obtain ⟨n, P, hP, ⟨e⟩⟩ := IsKrullSchmidt.exists_iso_biproduct X.unop
+    refine ⟨n, fun i ↦ Opposite.op (P i), fun i ↦ ?_,
+      ⟨e.symm.op ≪≫ (biproduct.isoCoproduct P).symm.op ≪≫
+        opCoproductIsoProduct P ≪≫ (biproduct.isoProduct _).symm⟩⟩
+    let := hP i
+    exact (End.opRingEquiv (P i)).isLocalRing
 
 /-- **A Krull-Schmidt category is idempotent complete.** -/
 instance isIdempotentComplete_of_isKrullSchmidt [IsKrullSchmidt C] : IsIdempotentComplete C where

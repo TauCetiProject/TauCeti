@@ -16,6 +16,7 @@ public import Mathlib.CategoryTheory.ObjectProperty.Kernels
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.FunctorCategory
+public import Mathlib.CategoryTheory.Simple
 
 /-!
 # Closure properties and linear structures of additive functors
@@ -58,8 +59,11 @@ target is different.
   morphisms.
 * `CategoryTheory.Functor.additive_biproduct`, `CategoryTheory.Functor.additive_sigma`: finite
   biproducts and finite coproducts of additive functors are additive.
-* `CategoryTheory.Functor.additive_of_epi`: a quotient of an additive functor
-  `C ⥤ AddCommGrpCat` is additive.
+* `CategoryTheory.Functor.additive_of_epi` and `CategoryTheory.Functor.additive_of_mono`:
+  quotients of abelian-group-valued additive functors and subfunctors of additive functors are
+  additive.
+* `CategoryTheory.AdditiveFunctor.simple_obj_iff`: simplicity can be checked in the ambient
+  functor category.
 * `TauCeti.additiveFunctor_isClosedUnderLimitsOfShape`,
   `TauCeti.additiveFunctor_isClosedUnderColimitsOfShape`: additive functors are closed under the
   limits and colimits of the target, together with instances for zero, kernels, cokernels and
@@ -124,6 +128,13 @@ theorem additive_of_epi {F G : C ⥤ AddCommGrpCat.{v}} [F.Additive] (q : F ⟶ 
     obtain ⟨y, rfl⟩ := (AddCommGrpCat.epi_iff_surjective (q.app Z)).1 inferInstance x
     simp only [AddCommGrpCat.hom_add_apply, ← NatTrans.naturality_apply, Functor.map_add,
       _root_.map_add]
+
+/-- A subfunctor of an additive functor is additive. -/
+theorem additive_of_mono {F G : C ⥤ D} [G.Additive]
+    (i : F ⟶ G) [∀ Y, Mono (i.app Y)] : F.Additive where
+  map_add {X Y f g} := by
+    apply (cancel_mono (i.app Y)).mp
+    simp only [Preadditive.add_comp, i.naturality, Functor.map_add, Preadditive.comp_add]
 
 end Functor
 
@@ -197,6 +208,31 @@ end Closure
 end TauCeti
 
 namespace CategoryTheory.AdditiveFunctor
+
+section Simple
+
+variable {C D : Type*} [Category* C] [Category* D] [Preadditive C] [Preadditive D]
+  [HasPullbacks D]
+
+/-- Simplicity of an additive functor is equivalent to simplicity in the ambient functor category.
+Every subfunctor of an additive functor is additive. -/
+theorem simple_obj_iff (F : C ⥤+ D) : Simple F.obj ↔ Simple F := by
+  constructor
+  · intro hF
+    have : Simple ((forget C D).obj F) := by simpa only [forget_obj] using hF
+    exact (forget C D).simple_of_simple_obj F
+  · intro hF
+    refine ⟨fun {G} i _ ↦ ?_⟩
+    let G' : C ⥤+ D := ⟨G, (additiveFunctor_iff G).mpr (Functor.additive_of_mono i)⟩
+    let j : G' ⟶ F := ObjectProperty.homMk i
+    have hmap : (forget C D).map j = i := by
+      simp only [forget_map, j, ObjectProperty.homMk_hom]
+    have : Mono j :=
+      (forget C D).mono_of_mono_map (f := j) (by simpa only [hmap] using (inferInstance : Mono i))
+    rw [← hmap, isIso_iff_of_reflects_iso j (forget C D), ne_eq, Functor.map_eq_zero_iff]
+    exact Simple.mono_isIso_iff_nonzero j
+
+end Simple
 
 variable {D : Type*} [Category* D] [Preadditive D] {A : Type*} [Category* A] [Preadditive A]
 
