@@ -219,6 +219,11 @@ theorem SL_slash_neg (k : ℤ) (f : ℍ → ℂ) (A : SL(2, ℤ)) :
   -- Mathlib states the `-I` law with the constant function `(-1) ^ k`; as a scalar it is `•`.
   exact ModularForm.SL_smul_slash k A f ((-1 : ℂ) ^ k)
 
+/-- At weight `0` the slash action of `SL(2, ℤ)` is composition with the Möbius action. -/
+theorem SL_slash_zero (f : ℍ → ℂ) (A : SL(2, ℤ)) : f ∣[(0 : ℤ)] A = fun τ ↦ f (A • τ) := by
+  funext τ
+  rw [_root_.ModularForm.SL_slash_apply, neg_zero, zpow_zero, mul_one]
+
 /-- In odd weight, a function invariant under the weight-`k` slash action of `-1` vanishes,
 because `f ∣[k] (-1) = -f`. -/
 theorem eq_zero_of_slash_neg_one_eq (h : f ∣[k] (-1 : SL(2, ℤ)) = f) (hk : Odd k) : f = 0 := by
@@ -281,6 +286,22 @@ theorem _root_.Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul (s : SL(2, �
   rw [ModularForm.slash_apply, σ_eq_refl_of_det_pos (by simp),
     Matrix.SpecialLinearGroup.mapGL_smul, inv_smul_smul, h2]
   simp [mul_comm]
+
+/-- A function is invariant under the weight-`k` slash action of `h ∈ SL(2, ℝ)` exactly when it
+satisfies the weight-`k` transformation law `f (h • τ) = denom h τ ^ k * f τ`. -/
+theorem _root_.Matrix.SpecialLinearGroup.slash_mapGL_eq_self_iff (h : SL(2, ℝ)) (k : ℤ)
+    (f : ℍ → ℂ) :
+    f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ h = f ↔
+      ∀ τ : ℍ, f (h • τ) = denom (Matrix.SpecialLinearGroup.mapGL ℝ h) τ ^ k * f τ := by
+  have hslash (τ : ℍ) : (f ∣[k] Matrix.SpecialLinearGroup.mapGL ℝ h) τ =
+      denom (Matrix.SpecialLinearGroup.mapGL ℝ h) τ ^ (-k) * f (h • τ) := by
+    rw [ModularForm.slash_apply_of_det_pos k (by simp), Matrix.SpecialLinearGroup.mapGL_smul]
+    simp [mul_comm]
+  have hd (τ : ℍ) := denom_ne_zero (Matrix.SpecialLinearGroup.mapGL ℝ h) τ
+  refine ⟨fun hf τ ↦ ?_, fun hf ↦ funext fun τ ↦ ?_⟩
+  · rw [← congrFun hf τ, hslash, ← mul_assoc, ← zpow_add₀ (hd τ), add_neg_cancel, zpow_zero,
+      one_mul]
+  · rw [hslash, hf, ← mul_assoc, zpow_neg_mul_zpow_self k (hd τ), one_mul]
 
 /-- The slash of a positive-determinant matrix preserves holomorphy at a point. -/
 private theorem mdifferentiableAt_slash_of_det_pos (k : ℤ) {g : GL (Fin 2) ℝ}

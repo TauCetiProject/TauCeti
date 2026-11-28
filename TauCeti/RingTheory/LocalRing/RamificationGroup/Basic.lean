@@ -14,7 +14,6 @@ public import TauCeti.Algebra.Group.Subgroup.FiniteFiltration
 public import TauCeti.Algebra.Ring.Action.End
 public import TauCeti.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.RingTheory.Ideal.Inertia
-public import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
 public import TauCeti.RingTheory.Ideal.RamificationGroup
 public import TauCeti.RingTheory.LocalRing.Pointwise
 import Mathlib.Combinatorics.Enumerative.DoubleCounting
@@ -50,8 +49,6 @@ integer indexing that Herbrand theory uses.
 
 * `TauCeti.IsLocalRing.ramificationGroup_natCast`: at a nonnegative index `G_i` is
   `Ideal.ramificationGroup` of the maximal ideal.
-* `TauCeti.IsLocalRing.unitsMap_mul_inv_mem_principalUnitGroup_natCast`: an element of `G_n` moves
-  every unit of `S` by a factor in `(𝔪 ^ (n + 1)).principalUnitGroup`.
 * `TauCeti.IsLocalRing.ramificationGroup_eq_top_of_le_neg_one`,
   `TauCeti.IsLocalRing.ramificationGroup_antitone`, and
   `TauCeti.IsLocalRing.finite_ramificationGroup_of_le`: the filtration starts at `⊤`, decreases,
@@ -172,15 +169,6 @@ theorem mem_ramificationGroup_iff_quotient_mk_smul_eq {i : ℤ} {σ : G} :
       Ideal.Quotient.mk (maximalIdeal S ^ (i + 1).toNat) (σ • x) =
         Ideal.Quotient.mk (maximalIdeal S ^ (i + 1).toNat) x := by
   simp [mem_ramificationGroup_iff, Ideal.Quotient.eq]
-
-/-- An element of `G_n` moves every unit of `S` by a factor in
-`(𝔪 ^ (n + 1)).principalUnitGroup`. -/
-theorem unitsMap_mul_inv_mem_principalUnitGroup_natCast {n : ℕ} {σ : G}
-    (hσ : σ ∈ ramificationGroup G S (n : ℤ)) (u : Sˣ) :
-    Units.map (MulSemiringAction.toRingHom G S σ).toMonoidHom u * u⁻¹ ∈
-      (maximalIdeal S ^ (n + 1)).principalUnitGroup := by
-  have h : ((n : ℤ) + 1).toNat = n + 1 := by omega
-  exact h ▸ Ideal.unitsMap_mul_inv_mem_principalUnitGroup hσ u
 
 variable (G S)
 

@@ -6,30 +6,19 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
-public import TauCeti.RingTheory.LocalRing.PrincipalUnitGroup
-public import Mathlib.RingTheory.Ideal.IsPrincipalPowQuotient
+import TauCeti.NumberTheory.LocalField.UnitFiltration.Uniformizer
 
 /-!
 # Positive graded pieces of the unit filtration
 
-For a nonarchimedean local field `K`, multiplication becomes addition on each positive
-successive quotient of the unit filtration.  More precisely, subtracting one gives a canonical
-isomorphism
-
-`U(K,n) / U(K,n+1) ≃ 𝓂[K]^n / 𝓂[K]^(n+1)`
-
-for `n > 0`.  Since the maximal ideal of the discrete valuation ring `𝒪[K]` is principal,
-each ideal quotient is a one-dimensional copy of the residue field.  Combining these facts
-identifies every positive graded piece with the additive group of `𝓀[K]`, and shows that it
-has `#𝓀[K]` elements.
+For a nonarchimedean local field `K`, each positive successive quotient `U(K,n+1) / U(K,n+2)`
+of the unit filtration is identified, via
+`TauCeti.unitFiltrationGradedSuccEquivResidueFieldOfUniformizer`, with the additive group of the
+residue field `𝓀[K]`. This file records the resulting cardinalities, relative indices, powering
+congruence, and strictness of the unit filtration.
 
 ## Main results
 
-* `TauCeti.unitFiltrationGradedSuccEquivMaximalIdealGraded`: subtracting one identifies a
-  positive unit-filtration quotient with the corresponding quotient of powers of the maximal
-  ideal.
-* `TauCeti.unitFiltrationGradedSuccEquivResidueField`: every positive graded piece is additively
-  isomorphic to the residue field.
 * `TauCeti.natCard_unitFiltrationGraded_succ` and
   `TauCeti.relIndex_unitFiltration_succ_succ`: the positive graded pieces and relative indices
   have cardinality `#𝓀[K]`.
@@ -44,9 +33,6 @@ has `#𝓀[K]` elements.
 * `TauCeti.unitFiltration_le_unitFiltration_iff`: the steps of the unit filtration are distinct,
   except that `U(K,1) = U(K,0)` when `#𝓀[K] = 2`
   (`TauCeti.unitFiltration_one_eq_unitFiltration_zero_iff`).
-
-The final identification reuses Mathlib's `Ideal.quotEquivPowQuotPowSucc`, the linear equivalence
-between a quotient by a nonzero principal ideal and each successive quotient of its powers.
 
 ## References
 
@@ -64,108 +50,19 @@ namespace TauCeti
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
-/-- The `n`th graded piece of the maximal-ideal filtration of `𝒪[K]`, presented as
-`𝓂[K]^n / 𝓂[K]^(n+1)`.  The denominator is written as `𝓂[K] • ⊤` on the subtype
-`𝓂[K]^n`; `Submodule.mem_smul_top_iff` identifies it with `𝓂[K]^(n+1)`. -/
-abbrev MaximalIdealGraded (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
-    [IsNonarchimedeanLocalField K] (n : ℕ) :=
-  (𝓂[K] ^ n : Ideal 𝒪[K]) ⧸
-    (𝓂[K] • ⊤ : Submodule 𝒪[K] (𝓂[K] ^ n : Ideal 𝒪[K]))
-
-/-- The difference `u - 1` attached to `u ∈ U(K,n+1)`, as an element of `𝓂[K]^(n+1)`. -/
-noncomputable def unitFiltrationDifference (n : ℕ)
-    (x : unitFiltration K (n + 1)) : (𝓂[K] ^ (n + 1) : Ideal 𝒪[K]) :=
-  ⟨unitFiltrationToIntegerUnits (n + 1) x - 1, by
-    -- `mem_unitFiltration_succ_congr` spells the inclusion `𝒪[K]ˣ →* Kˣ` through
-    -- `RingHom.toMonoidHom`, which is not the simp-normal form of the coercion.
-    apply (mem_unitFiltration_succ_congr n (unitFiltrationToIntegerUnits (n + 1) x)).mp
-    rw [RingHom.toMonoidHom_eq_coe, unitsMap_subtype_unitFiltrationToIntegerUnits]
-    exact x.prop⟩
-
--- Not a `simp` lemma: the ambient-field form `coe_coe_unitFiltrationDifference` below is the
--- `simp`-normal one, and both firing would take its left-hand side out of normal form.
-private theorem coe_unitFiltrationDifference (n : ℕ) (x : unitFiltration K (n + 1)) :
-    (unitFiltrationDifference n x : 𝒪[K]) =
-      (unitFiltrationToIntegerUnits (n + 1) x : 𝒪[K]) - 1 :=
-  rfl
-
-/-- In the ambient field, `unitFiltrationDifference n u` is `u - 1`. -/
-@[simp]
-theorem coe_coe_unitFiltrationDifference (n : ℕ) (x : unitFiltration K (n + 1)) :
-    (((unitFiltrationDifference n x : 𝒪[K]) : K)) = ((x : Kˣ) : K) - 1 := by
-  rw [coe_unitFiltrationDifference, AddSubgroupClass.coe_sub, OneMemClass.coe_one,
-    coe_unitFiltrationToIntegerUnits]
-
-/-- Transporting `x ∈ U(K,n+1)` back to `(𝓂[K] ^ (n + 1)).principalUnitGroup` has difference
-from `1` equal to `unitFiltrationDifference n x`. -/
-theorem coe_principalUnitGroupEquivUnitFiltration_symm_sub_one (n : ℕ)
-    (x : unitFiltration K (n + 1)) :
-    (⟨(((principalUnitGroupEquivUnitFiltration K (n + 1)).symm x : 𝒪[K]ˣ) : 𝒪[K]) - 1,
-      Ideal.mem_principalUnitGroup.mp
-        ((principalUnitGroupEquivUnitFiltration K (n + 1)).symm x).property⟩ :
-        (𝓂[K] ^ (n + 1) : Ideal 𝒪[K])) = unitFiltrationDifference n x := by
-  apply Subtype.ext
-  rw [coe_unitFiltrationDifference]
-  rfl
-
-/-- Subtracting one identifies the positive unit-filtration quotient
-`U(K,n+1) / U(K,n+2)` with `𝓂[K]^(n+1) / 𝓂[K]^(n+2)`, transported from
-`TauCeti.IsLocalRing.principalUnitGroupGradedSuccEquivMaximalIdealGraded`. -/
-noncomputable def unitFiltrationGradedSuccEquivMaximalIdealGraded (n : ℕ) :
-    UnitFiltrationGraded K (n + 1) ≃* Multiplicative (MaximalIdealGraded K (n + 1)) :=
-  (principalUnitGroupGradedEquivUnitFiltrationGraded K (n + 1)).symm.trans
-    (IsLocalRing.principalUnitGroupGradedSuccEquivMaximalIdealGraded 𝒪[K] n)
-
-/-- On a class represented by `u ∈ U(K,n+1)`, the positive-depth graded equivalence is the
-class of `u - 1` modulo `𝓂[K]^(n+2)`. -/
-@[simp]
-theorem unitFiltrationGradedSuccEquivMaximalIdealGraded_mk
-    (n : ℕ) (x : unitFiltration K (n + 1)) :
-    unitFiltrationGradedSuccEquivMaximalIdealGraded (K := K) n (QuotientGroup.mk x) =
-      Multiplicative.ofAdd (Submodule.Quotient.mk (unitFiltrationDifference n x)) := by
-  rw [unitFiltrationGradedSuccEquivMaximalIdealGraded, MulEquiv.trans_apply,
-    principalUnitGroupGradedEquivUnitFiltrationGraded_symm_mk,
-    IsLocalRing.principalUnitGroupGradedSuccEquivMaximalIdealGraded_mk,
-    coe_principalUnitGroupEquivUnitFiltration_symm_sub_one]
-
-/-- Every positive graded piece `U(K,n+1) / U(K,n+2)`, read additively, is isomorphic to the
-additive group of the residue field. -/
-noncomputable def unitFiltrationGradedSuccEquivResidueField (n : ℕ) :
-    Additive (UnitFiltrationGraded K (n + 1)) ≃+ 𝓀[K] :=
-  (unitFiltrationGradedSuccEquivMaximalIdealGraded (K := K) n).toAdditive.trans <|
-    (AddEquiv.additiveMultiplicative (MaximalIdealGraded K (n + 1))).trans <|
-      (Ideal.quotEquivPowQuotPowSucc
-        (I := 𝓂[K]) (IsPrincipalIdealRing.principal 𝓂[K])
-        (IsDiscreteValuationRing.not_a_field 𝒪[K]) (n + 1)).toAddEquiv.symm
-
-/-- On a class represented by `u ∈ U(K,n+1)`, the positive-depth residue-field equivalence is
-the residue class attached to `u - 1` by Mathlib's principal-power-quotient equivalence. -/
-@[simp]
-theorem unitFiltrationGradedSuccEquivResidueField_ofMul_mk (n : ℕ)
-    (x : unitFiltration K (n + 1)) :
-    unitFiltrationGradedSuccEquivResidueField (K := K) n
-        (Additive.ofMul (QuotientGroup.mk x)) =
-      (Ideal.quotEquivPowQuotPowSucc
-        (I := 𝓂[K]) (IsPrincipalIdealRing.principal 𝓂[K])
-        (IsDiscreteValuationRing.not_a_field 𝒪[K]) (n + 1)).symm
-        (Submodule.Quotient.mk (unitFiltrationDifference n x)) := by
-  rw [unitFiltrationGradedSuccEquivResidueField]
-  simp only [AddEquiv.trans_apply, MulEquiv.toAdditive_apply_apply, toMul_ofMul,
-    unitFiltrationGradedSuccEquivMaximalIdealGraded_mk]
-  -- What remains only strips the `Additive`/`Multiplicative` tags of the intermediate
-  -- equivalence and reads the linear equivalence additively; both are definitional.
-  rfl
-
 /-- The positive graded piece `U(K,n+1) / U(K,n+2)` is finite. -/
 noncomputable instance finite_unitFiltrationGraded_succ (n : ℕ) :
     Finite (UnitFiltrationGraded K (n + 1)) :=
+  have ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
   Finite.of_equiv 𝓀[K]
-    (unitFiltrationGradedSuccEquivResidueField (K := K) n).symm.toEquiv
+    (unitFiltrationGradedSuccEquivResidueFieldOfUniformizer (K := K) n π hπ).symm.toEquiv
 
 /-- Every positive graded piece has the cardinality of the residue field. -/
 theorem natCard_unitFiltrationGraded_succ (n : ℕ) :
-    Nat.card (UnitFiltrationGraded K (n + 1)) = Nat.card 𝓀[K] :=
-  Nat.card_congr (unitFiltrationGradedSuccEquivResidueField (K := K) n).toEquiv
+    Nat.card (UnitFiltrationGraded K (n + 1)) = Nat.card 𝓀[K] := by
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  exact Nat.card_congr
+    (unitFiltrationGradedSuccEquivResidueFieldOfUniformizer (K := K) n π hπ).toEquiv
 
 /-- Every positive step has relative index equal to the cardinality of the residue field:
 `[U(K,n+1) : U(K,n+2)] = #𝓀[K]`. -/

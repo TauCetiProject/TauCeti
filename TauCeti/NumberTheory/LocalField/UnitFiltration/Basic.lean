@@ -10,7 +10,7 @@ public import Mathlib.GroupTheory.Index
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.Topology.Algebra.Group.Units
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
-public import TauCeti.RingTheory.LocalRing.PrincipalUnitGroup
+public import TauCeti.RingTheory.LocalRing.UnitFiltration
 import Mathlib.Topology.Algebra.Group.Pointwise
 
 /-!
@@ -20,7 +20,8 @@ For a nonarchimedean local field `K` this file defines the unit filtration
 
 `TauCeti.unitFiltration K i : Subgroup Kˣ`,
 
-the subgroup `U(K,i)` of those units of `𝒪[K]` that are congruent to `1` modulo `𝓂[K] ^ i`.
+the image inside `Kˣ` of the local-ring unit filtration `TauCeti.IsLocalRing.unitFiltration 𝒪[K] i`,
+consisting of those units of `𝒪[K]` that are congruent to `1` modulo `𝓂[K] ^ i`.
 The indexing is by natural numbers, and the depth-zero case is part of the definition rather
 than a separate convention: `𝓂[K] ^ 0 = ⊤`, so `U(K,0)` is the whole image of `𝒪[K]ˣ` in `Kˣ`,
 while `U(K,i) = 1 + 𝓂[K] ^ i` for `i ≥ 1`.
@@ -41,6 +42,9 @@ action on a finite extension, and its behaviour under a field embedding.
   of `𝒪[K]`.
 * `TauCeti.unitFiltrationToIntegerUnits`: a unit of `K` lying in `U(K,i)`, read as a unit of
   `𝒪[K]`.
+* `TauCeti.unitFiltrationEquivInteger` and `TauCeti.unitFiltrationGradedEquivInteger`: the
+  canonical identifications of `U(K,i)` and `U(K,i) / U(K,i+1)` with
+  `TauCeti.IsLocalRing.unitFiltration 𝒪[K] i` and `TauCeti.IsLocalRing.UnitFiltrationGraded 𝒪[K] i`.
 
 ## Main results
 
@@ -57,13 +61,8 @@ action on a finite extension, and its behaviour under a field embedding.
   valuation.
 * `TauCeti.unitFiltration_zero` and `TauCeti.unitFiltration_one`: the two shallow steps are
   Mathlib's `ValuationSubring.unitGroup` and `ValuationSubring.principalUnitGroup`.
-* `TauCeti.principalUnitGroupEquivUnitFiltration` and
-  `TauCeti.principalUnitGroupGradedEquivUnitFiltrationGraded`: canonical identifications with
-  the local-ring principal unit filtration `(𝓂[K] ^ i).principalUnitGroup` and its graded
-  quotients `TauCeti.IsLocalRing.PrincipalUnitGroupGraded 𝒪[K] i`.
 * `TauCeti.unitFiltrationGradedZeroEquivResidueFieldUnits`: reduction identifies the
-  depth-zero graded piece with the multiplicative group of the residue field, transported from
-  `TauCeti.IsLocalRing.principalUnitGroupGradedZeroEquivResidueFieldUnits`.
+  depth-zero graded piece with the multiplicative group of the residue field.
 * `TauCeti.unitFiltration_antitone` and `TauCeti.unitFiltration_succ_lt`: the filtration is
   decreasing, and strictly so from depth one on.
 * `TauCeti.iInf_unitFiltration`: the filtration separates points, `⨅ i, U(K,i) = ⊥`.
@@ -100,12 +99,13 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
 
 variable (K) in
-/-- The unit filtration `U(K,i)` of a nonarchimedean local field `K`: the units of `𝒪[K]` that
-are congruent to `1` modulo `𝓂[K] ^ i`, viewed inside `Kˣ`. The depth-zero step is included in
-the definition through `𝓂[K] ^ 0 = ⊤`, so that `U(K,0)` is the image of `𝒪[K]ˣ`, while
+/-- The unit filtration `U(K,i)` of a nonarchimedean local field `K`: the image in `Kˣ` of the
+local-ring unit filtration `TauCeti.IsLocalRing.unitFiltration 𝒪[K] i`, consisting of the units of
+`𝒪[K]` that are congruent to `1` modulo `𝓂[K] ^ i`. The depth-zero step is included in the
+definition through `𝓂[K] ^ 0 = ⊤`, so that `U(K,0)` is the image of `𝒪[K]ˣ`, while
 `U(K,i) = 1 + 𝓂[K] ^ i` for `i ≥ 1`. -/
 def unitFiltration (i : ℕ) : Subgroup Kˣ :=
-  ((Units.map (Ideal.Quotient.mk (𝓂[K] ^ i)).toMonoidHom).ker).map
+  (TauCeti.IsLocalRing.unitFiltration 𝒪[K] i).map
     (Units.map (Subring.subtype 𝒪[K]).toMonoidHom)
 
 /-- Membership in the unit filtration, congruence form: `x` is the image of a unit `u` of `𝒪[K]`
@@ -113,9 +113,7 @@ with `u ≡ 1 mod 𝓂[K] ^ i`. -/
 theorem mem_unitFiltration_iff_exists {i : ℕ} {x : Kˣ} :
     x ∈ unitFiltration K i ↔
       ∃ u : 𝒪[K]ˣ, (u : 𝒪[K]) - 1 ∈ 𝓂[K] ^ i ∧ ((u : 𝒪[K]) : K) = (x : K) := by
-  simp only [unitFiltration, Subgroup.mem_map, MonoidHom.mem_ker, Units.ext_iff, Units.coe_map,
-    Units.val_one, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, Subring.coe_subtype,
-    ← (Ideal.Quotient.mk (𝓂[K] ^ i)).map_one, Ideal.Quotient.mk_eq_mk_iff_sub_mem]
+  simp [unitFiltration, Units.ext_iff]
 
 /-- Membership in the unit filtration at positive depth for a unit of `𝒪[K]`: the congruence
 `u ≡ 1 mod 𝓂[K] ^ (i + 1)`. The general-depth statement is `mem_unitFiltration_iff_exists`.
@@ -232,7 +230,130 @@ theorem unitFiltration_one :
     pow_one]
   exact hdvd _
 
-/-! ### The depth-zero graded piece
+/-- The unit filtration is decreasing. -/
+theorem unitFiltration_antitone : Antitone (unitFiltration K) :=
+  fun _ _ h ↦ Subgroup.map_mono (TauCeti.IsLocalRing.unitFiltration_antitone 𝒪[K] h)
+
+/-- The unit filtration is strictly decreasing from depth one on: `U(K,i+1) < U(K,i)` for
+`i ≠ 0`, as witnessed by `1 + π ^ i` for a uniformizer `π`. At depth zero the inclusion
+`U(K,1) ≤ U(K,0)` is an equality when the residue field is `𝔽₂`. -/
+theorem unitFiltration_succ_lt {i : ℕ} (hi : i ≠ 0) :
+    unitFiltration K (i + 1) < unitFiltration K i := by
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
+  have hπ1 : valuation K (π : K) < 1 := Valuation.integer.v_irreducible_lt_one hπ
+  have hπ0 : 0 < valuation K (π : K) := by
+    rw [pos_iff_ne_zero, Valuation.ne_zero_iff, ne_eq, ZeroMemClass.coe_eq_zero]
+    exact hπ.ne_zero
+  have hv : valuation K (1 + (π : K) ^ i) = 1 := (valuation K).map_one_add_of_lt <| by
+    rw [map_pow]
+    exact pow_lt_one₀ zero_le hπ1 hi
+  set x : Kˣ := Units.mk0 (1 + (π : K) ^ i) fun h ↦ by simp [h] at hv
+  have hx : valuation K ((x : K) - 1) = valuation K (π : K) ^ i := by
+    simp [x]
+  refine IsConcreteLE.lt_iff_le_and_exists.2 ⟨unitFiltration_antitone i.le_succ, x, ?_, ?_⟩
+  · rw [mem_unitFiltration_iff_valuation_sub_one_le hi hπ, hx]
+  · rw [mem_unitFiltration_iff_valuation_sub_one_le i.succ_ne_zero hπ, hx, not_le]
+    exact pow_lt_pow_right_of_lt_one₀ hπ0 hπ1 i.lt_succ_self
+
+/-! ### The filtration inside the units of `𝒪[K]`
+
+Every step of the filtration consists of units of `𝒪[K]`, and at depth zero the step is exactly
+the unit group of `𝒪[K]`. -/
+
+-- Provenance: the identification of the depth-zero step with `𝒪[K]ˣ` is Mathlib's
+-- `ValuationSubring.unitGroupMulEquiv`.
+/-- The depth-zero step `U(K,0)` of the unit filtration, as the unit group of `𝒪[K]`. -/
+def unitFiltrationZeroEquivIntegerUnits : unitFiltration K 0 ≃* 𝒪[K]ˣ :=
+  (MulEquiv.subgroupCongr unitFiltration_zero).trans
+    (valuation K).valuationSubring.unitGroupMulEquiv
+
+/-- The identification of `U(K,0)` with `𝒪[K]ˣ` does not move the underlying element of `K`. -/
+@[simp]
+theorem coe_unitFiltrationZeroEquivIntegerUnits (x : unitFiltration K 0) :
+    ((unitFiltrationZeroEquivIntegerUnits x : 𝒪[K]ˣ) : K) = ((x : Kˣ) : K) := (rfl)
+
+/-- The inverse identification of `𝒪[K]ˣ` with `U(K,0)` does not move the underlying element of
+`K`. -/
+@[simp]
+theorem coe_unitFiltrationZeroEquivIntegerUnits_symm (u : 𝒪[K]ˣ) :
+    (((unitFiltrationZeroEquivIntegerUnits.symm u : unitFiltration K 0) : Kˣ) : K) =
+      ((u : 𝒪[K]) : K) := (rfl)
+
+/-- Every step of the unit filtration consists of units of `𝒪[K]`; this is the resulting
+homomorphism `U(K,i) →* 𝒪[K]ˣ`. -/
+def unitFiltrationToIntegerUnits (i : ℕ) : unitFiltration K i →* 𝒪[K]ˣ :=
+  unitFiltrationZeroEquivIntegerUnits.toMonoidHom.comp
+    (Subgroup.inclusion (unitFiltration_antitone (Nat.zero_le i)))
+
+/-- Reading a step of the unit filtration in `𝒪[K]ˣ` does not move the underlying element of
+`K`. -/
+@[simp]
+theorem coe_unitFiltrationToIntegerUnits (i : ℕ) (x : unitFiltration K i) :
+    (((unitFiltrationToIntegerUnits i x : 𝒪[K]ˣ) : 𝒪[K]) : K) = ((x : Kˣ) : K) := (rfl)
+
+/-- Reading a step of the unit filtration in `𝒪[K]ˣ` and back into `Kˣ` is the identity. -/
+@[simp]
+theorem unitsMap_subtype_unitFiltrationToIntegerUnits (i : ℕ) (x : unitFiltration K i) :
+    Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) (unitFiltrationToIntegerUnits i x) =
+      (x : Kˣ) := Units.ext (rfl)
+
+/-- Reading a step of the unit filtration in `𝒪[K]ˣ` is injective. -/
+theorem unitFiltrationToIntegerUnits_injective (i : ℕ) :
+    Function.Injective (unitFiltrationToIntegerUnits (K := K) i) :=
+  unitFiltrationZeroEquivIntegerUnits.injective.comp (Subgroup.inclusion_injective _)
+
+/-- The `i`-th step `U(K,i)` of the unit filtration of a local field `K`, identified with
+`TauCeti.IsLocalRing.unitFiltration 𝒪[K] i` inside `𝒪[K]ˣ`. -/
+def unitFiltrationEquivInteger (i : ℕ) :
+    unitFiltration K i ≃* TauCeti.IsLocalRing.unitFiltration 𝒪[K] i :=
+  (Subgroup.equivMapOfInjective (TauCeti.IsLocalRing.unitFiltration 𝒪[K] i)
+    (Units.map (Subring.subtype 𝒪[K]).toMonoidHom)
+    (Units.map_injective Subtype.val_injective)).symm
+
+/-- Viewing `u ∈ TauCeti.IsLocalRing.unitFiltration 𝒪[K] i` in `U(K,i)` maps `u` along the
+integer-ring inclusion `𝒪[K]ˣ →* Kˣ`. -/
+@[simp]
+theorem coe_unitFiltrationEquivInteger_symm (i : ℕ)
+    (u : TauCeti.IsLocalRing.unitFiltration 𝒪[K] i) :
+    ((unitFiltrationEquivInteger (K := K) i).symm u : Kˣ) =
+      Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) (u : 𝒪[K]ˣ) :=
+  Subgroup.coe_equivMapOfInjective_apply (TauCeti.IsLocalRing.unitFiltration 𝒪[K] i)
+    (Units.map (Subring.subtype 𝒪[K]).toMonoidHom)
+    (Units.map_injective Subtype.val_injective) u
+
+/-- Viewing `x ∈ U(K,i)` in `TauCeti.IsLocalRing.unitFiltration 𝒪[K] i` gives the same unit of
+`𝒪[K]` as `unitFiltrationToIntegerUnits`. -/
+@[simp]
+theorem coe_unitFiltrationEquivInteger (i : ℕ) (x : unitFiltration K i) :
+    (unitFiltrationEquivInteger i x : 𝒪[K]ˣ) = unitFiltrationToIntegerUnits i x := by
+  apply Units.map_injective (f := (Subring.subtype 𝒪[K] : 𝒪[K] →* K)) Subtype.val_injective
+  rw [unitsMap_subtype_unitFiltrationToIntegerUnits, ← coe_unitFiltrationEquivInteger_symm]
+  exact congrArg Subtype.val ((unitFiltrationEquivInteger i).symm_apply_apply x)
+
+/-- The unit filtration separates points: an element lying in every step is `1`. -/
+theorem iInf_unitFiltration : ⨅ i, unitFiltration K i = ⊥ := by
+  simp only [unitFiltration]
+  rw [← Subgroup.map_iInf _ (Units.map_injective Subtype.val_injective),
+    TauCeti.IsLocalRing.iInf_unitFiltration_eq_bot, Subgroup.map_bot]
+
+/-- A unit of `𝒪[K]` lies in the depth-one step `U(K,1)` of the unit filtration exactly when it
+reduces to `1`: the principal units are the kernel of reduction. -/
+theorem mem_unitFiltration_one_iff_residue_eq_one (u : 𝒪[K]ˣ) :
+    Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u ∈ unitFiltration K 1 ↔
+      residue 𝒪[K] (u : 𝒪[K]) = 1 := by
+  rw [← TauCeti.IsLocalRing.mem_unitFiltration_one_iff_residue_eq_one]
+  exact Subgroup.mem_map_iff_mem (Units.map_injective Subtype.val_injective)
+
+/-- A principal unit reduces to `1`. -/
+@[simp]
+theorem unitsMap_residue_unitFiltrationToIntegerUnits_one (y : unitFiltration K 1) :
+    Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) (unitFiltrationToIntegerUnits 1 y) = 1 := by
+  refine Units.ext ?_
+  rw [Units.coe_map]
+  exact (mem_unitFiltration_one_iff_residue_eq_one _).mp
+    (by rw [unitsMap_subtype_unitFiltrationToIntegerUnits]; exact y.property)
+
+/-! ### Graded pieces and the depth-zero quotient
 
 Reduction modulo `𝓂[K]` carries `U(K,0)`, the units of `𝒪[K]`, onto the multiplicative group
 `𝓀[K]ˣ` of the residue field, and a unit reduces to `1` exactly when it lies in `U(K,1)`. So
@@ -244,112 +365,60 @@ abbrev UnitFiltrationGraded (K : Type*) [Field K] [ValuativeRel K] [TopologicalS
     [IsNonarchimedeanLocalField K] (i : ℕ) :=
   unitFiltration K i ⧸ (unitFiltration K (i + 1)).subgroupOf (unitFiltration K i)
 
-/-- The `i`-th step of the unit filtration inside `Kˣ` is the image of
-`(𝓂[K] ^ i).principalUnitGroup` from the local ring `𝒪[K]`. -/
-theorem unitFiltration_eq_map_principalUnitGroup (i : ℕ) :
-    unitFiltration K i =
-      (𝓂[K] ^ i).principalUnitGroup.map (Units.map (Subring.subtype 𝒪[K]).toMonoidHom) := by
-  ext x
-  simp only [mem_unitFiltration_iff_exists, Subgroup.mem_map, Ideal.mem_principalUnitGroup,
-    Units.ext_iff, Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-    Subring.coe_subtype]
+private theorem map_subgroupOf_unitFiltrationEquivInteger (i : ℕ) :
+    ((unitFiltration K (i + 1)).subgroupOf (unitFiltration K i)).map
+        (unitFiltrationEquivInteger i).toMonoidHom =
+      (TauCeti.IsLocalRing.unitFiltration 𝒪[K] (i + 1)).subgroupOf
+        (TauCeti.IsLocalRing.unitFiltration 𝒪[K] i) := by
+  ext u
+  simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf]
+  constructor
+  · rintro ⟨x, hx, hxu⟩
+    obtain ⟨v, hv, hvx⟩ := Subgroup.mem_map.mp hx
+    have hEq : (u : 𝒪[K]ˣ) = v :=
+      Units.map_injective (f := (Subring.subtype 𝒪[K]).toMonoidHom)
+        Subtype.val_injective (by simpa [← hxu] using hvx.symm)
+    exact hEq ▸ hv
+  · intro hu
+    refine ⟨(unitFiltrationEquivInteger i).symm u, ?_,
+      (unitFiltrationEquivInteger i).apply_symm_apply u⟩
+    exact Subgroup.mem_map_of_mem _ hu
 
-variable (K) in
-/-- Identifying the principal unit group `(𝓂[K] ^ i).principalUnitGroup` of `𝒪[K]` with
-`unitFiltration K i` inside `Kˣ`. -/
-def principalUnitGroupEquivUnitFiltration (i : ℕ) :
-    (𝓂[K] ^ i).principalUnitGroup ≃* unitFiltration K i :=
-  (Subgroup.equivMapOfInjective ((𝓂[K] ^ i).principalUnitGroup)
-      (Units.map (Subring.subtype 𝒪[K]).toMonoidHom)
-      (Units.map_injective Subtype.coe_injective)).trans
-    (MulEquiv.subgroupCongr (unitFiltration_eq_map_principalUnitGroup i).symm)
-
-/-- Identifying `(𝓂[K] ^ i).principalUnitGroup` with `unitFiltration K i` preserves the
-underlying unit in `Kˣ`. -/
-@[simp]
-theorem coe_principalUnitGroupEquivUnitFiltration (i : ℕ) (u : (𝓂[K] ^ i).principalUnitGroup) :
-    (principalUnitGroupEquivUnitFiltration K i u : Kˣ) =
-      Units.map (Subring.subtype 𝒪[K]).toMonoidHom (u : 𝒪[K]ˣ) :=
-  (rfl)
-
-/-- Every step of the unit filtration consists of units of `𝒪[K]`; this is the resulting
-homomorphism `U(K,i) →* 𝒪[K]ˣ`. -/
-@[expose]
-def unitFiltrationToIntegerUnits (i : ℕ) : unitFiltration K i →* 𝒪[K]ˣ :=
-  (𝓂[K] ^ i).principalUnitGroup.subtype.comp
-    (principalUnitGroupEquivUnitFiltration K i).symm.toMonoidHom
-
-/-- Reading a step of the unit filtration in `𝒪[K]ˣ` does not move the underlying element of
-`K`. -/
-@[simp]
-theorem coe_unitFiltrationToIntegerUnits (i : ℕ) (x : unitFiltration K i) :
-    (((unitFiltrationToIntegerUnits i x : 𝒪[K]ˣ) : 𝒪[K]) : K) = ((x : Kˣ) : K) := by
-  have h := congrArg (fun z : unitFiltration K i ↦ ((z : Kˣ) : K))
-    ((principalUnitGroupEquivUnitFiltration K i).apply_symm_apply x)
-  simpa only [unitFiltrationToIntegerUnits, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    Subgroup.coe_subtype, coe_principalUnitGroupEquivUnitFiltration, Units.coe_map,
-    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, Subring.coe_subtype] using h
-
-/-- Reading a step of the unit filtration in `𝒪[K]ˣ` and back into `Kˣ` is the identity. -/
-@[simp]
-theorem unitsMap_subtype_unitFiltrationToIntegerUnits (i : ℕ) (x : unitFiltration K i) :
-    Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) (unitFiltrationToIntegerUnits i x) =
-      (x : Kˣ) :=
-  Units.ext (coe_unitFiltrationToIntegerUnits i x)
-
-/-- Reading a step of the unit filtration in `𝒪[K]ˣ` is injective. -/
-theorem unitFiltrationToIntegerUnits_injective (i : ℕ) :
-    Function.Injective (unitFiltrationToIntegerUnits (K := K) i) :=
-  (Subgroup.subtype_injective _).comp (principalUnitGroupEquivUnitFiltration K i).symm.injective
-
-variable (K) in
-/-- Identifying the local-ring graded piece `IsLocalRing.PrincipalUnitGroupGraded 𝒪[K] i` with
-`UnitFiltrationGraded K i`. -/
-def principalUnitGroupGradedEquivUnitFiltrationGraded (i : ℕ) :
-    IsLocalRing.PrincipalUnitGroupGraded 𝒪[K] i ≃* UnitFiltrationGraded K i :=
+/-- The `i`-th graded piece `U(K,i) / U(K,i+1)` of the unit filtration of a local field `K`,
+identified with `TauCeti.IsLocalRing.UnitFiltrationGraded 𝒪[K] i`. -/
+def unitFiltrationGradedEquivInteger (i : ℕ) :
+    UnitFiltrationGraded K i ≃* TauCeti.IsLocalRing.UnitFiltrationGraded 𝒪[K] i :=
   QuotientGroup.congr
-    ((𝓂[K] ^ (i + 1)).principalUnitGroup.subgroupOf (𝓂[K] ^ i).principalUnitGroup)
     ((unitFiltration K (i + 1)).subgroupOf (unitFiltration K i))
-    (principalUnitGroupEquivUnitFiltration K i) (by
-      ext x
-      simp only [Subgroup.mem_subgroupOf, Subgroup.mem_map, Ideal.mem_principalUnitGroup]
-      refine ⟨fun ⟨u, hu, hux⟩ ↦ mem_unitFiltration_iff_exists.mpr
-        ⟨(u : 𝒪[K]ˣ), hu, congrArg (fun z : Kˣ ↦ (z : K))
-          (congrArg (fun z : unitFiltration K i ↦ (z : Kˣ)) hux)⟩, fun hx ↦ ?_⟩
-      refine ⟨(principalUnitGroupEquivUnitFiltration K i).symm x, ?_,
-        (principalUnitGroupEquivUnitFiltration K i).apply_symm_apply x⟩
-      rw [mem_unitFiltration_iff_exists] at hx
-      obtain ⟨w, hw, hwx⟩ := hx
-      have hweq : ((principalUnitGroupEquivUnitFiltration K i).symm x : 𝒪[K]ˣ) = w := by
-        apply Units.ext
-        apply Subtype.ext
-        exact (coe_unitFiltrationToIntegerUnits i x).trans hwx.symm
-      rwa [hweq])
+    ((TauCeti.IsLocalRing.unitFiltration 𝒪[K] (i + 1)).subgroupOf
+      (TauCeti.IsLocalRing.unitFiltration 𝒪[K] i))
+    (unitFiltrationEquivInteger i)
+    (map_subgroupOf_unitFiltrationEquivInteger i)
 
-/-- Evaluating `principalUnitGroupGradedEquivUnitFiltrationGraded` on the class of `u`. -/
+/-- Evaluates `unitFiltrationGradedEquivInteger` on the class of `x`. -/
 @[simp]
-theorem principalUnitGroupGradedEquivUnitFiltrationGraded_mk (i : ℕ)
-    (u : (𝓂[K] ^ i).principalUnitGroup) :
-    principalUnitGroupGradedEquivUnitFiltrationGraded K i (QuotientGroup.mk u) =
-      QuotientGroup.mk (principalUnitGroupEquivUnitFiltration K i u) :=
-  QuotientGroup.congr_mk _ _ _ _ u
+theorem unitFiltrationGradedEquivInteger_mk (i : ℕ) (x : unitFiltration K i) :
+    unitFiltrationGradedEquivInteger (K := K) i (QuotientGroup.mk x) =
+      QuotientGroup.mk (unitFiltrationEquivInteger i x) :=
+  QuotientGroup.congr_mk ..
 
-/-- Evaluating the inverse of `principalUnitGroupGradedEquivUnitFiltrationGraded` on the class of
-`x`. -/
+/-- Evaluates the inverse of `unitFiltrationGradedEquivInteger` on the class of `u`. -/
 @[simp]
-theorem principalUnitGroupGradedEquivUnitFiltrationGraded_symm_mk (i : ℕ)
-    (x : unitFiltration K i) :
-    (principalUnitGroupGradedEquivUnitFiltrationGraded K i).symm (QuotientGroup.mk x) =
-      QuotientGroup.mk ((principalUnitGroupEquivUnitFiltration K i).symm x) := by
-  refine (principalUnitGroupGradedEquivUnitFiltrationGraded K i).injective ?_
-  simp only [MulEquiv.apply_symm_apply, principalUnitGroupGradedEquivUnitFiltrationGraded_mk]
+theorem unitFiltrationGradedEquivInteger_symm_mk (i : ℕ)
+    (u : TauCeti.IsLocalRing.unitFiltration 𝒪[K] i) :
+    (unitFiltrationGradedEquivInteger (K := K) i).symm (QuotientGroup.mk u) =
+      QuotientGroup.mk ((unitFiltrationEquivInteger (K := K) i).symm u) := by
+  apply (unitFiltrationGradedEquivInteger (K := K) i).injective
+  rw [MulEquiv.apply_symm_apply, unitFiltrationGradedEquivInteger_mk,
+    MulEquiv.apply_symm_apply]
 
 /-- The depth-zero graded piece `U(K,0) / U(K,1)` is the multiplicative group of the residue
-field, transported from `TauCeti.IsLocalRing.principalUnitGroupGradedZeroEquivResidueFieldUnits`. -/
+field. The isomorphism is induced by reduction modulo the maximal ideal, transported from
+`TauCeti.IsLocalRing.unitFiltrationGradedZeroEquivResidueFieldUnits`. -/
 noncomputable def unitFiltrationGradedZeroEquivResidueFieldUnits :
     UnitFiltrationGraded K 0 ≃* (𝓀[K])ˣ :=
-  (principalUnitGroupGradedEquivUnitFiltrationGraded K 0).symm.trans
-    (IsLocalRing.principalUnitGroupGradedZeroEquivResidueFieldUnits 𝒪[K])
+  (unitFiltrationGradedEquivInteger (K := K) 0).trans
+    (TauCeti.IsLocalRing.unitFiltrationGradedZeroEquivResidueFieldUnits 𝒪[K])
 
 /-- On a class represented by `x ∈ U(K,0)`, the depth-zero graded equivalence is reduction of
 `x` modulo the maximal ideal. -/
@@ -358,18 +427,27 @@ theorem unitFiltrationGradedZeroEquivResidueFieldUnits_mk (x : unitFiltration K 
     unitFiltrationGradedZeroEquivResidueFieldUnits (K := K) (QuotientGroup.mk x) =
       (valuation K).valuationSubring.unitGroupToResidueFieldUnits
         ⟨(x : Kˣ), (unitFiltration_zero (K := K)).le x.prop⟩ := by
+  apply Units.ext
   rw [unitFiltrationGradedZeroEquivResidueFieldUnits, MulEquiv.trans_apply,
-    principalUnitGroupGradedEquivUnitFiltrationGraded_symm_mk,
-    IsLocalRing.principalUnitGroupGradedZeroEquivResidueFieldUnits_mk]
-  refine Units.ext ?_
-  rw [Units.coe_map, ValuationSubring.coe_unitGroupToResidueFieldUnits_apply]
-  -- `ValuationSubring.unitGroupToResidueFieldUnits` reduces modulo the maximal ideal of
-  -- `(valuation K).valuationSubring`, which is definitionally `𝒪[K]`; reduce that wrapper to
-  -- compare the representatives in `𝒪[K]`.
-  change residue 𝒪[K] (((principalUnitGroupEquivUnitFiltration K 0).symm x : 𝒪[K]ˣ) : 𝒪[K]) =
-    residue 𝒪[K] ⟨((x : Kˣ) : K), _⟩
-  exact congrArg (residue 𝒪[K])
-    (Subtype.ext (coe_unitFiltrationToIntegerUnits 0 x))
+    unitFiltrationGradedEquivInteger_mk,
+    TauCeti.IsLocalRing.coe_unitFiltrationGradedZeroEquivResidueFieldUnits_mk,
+    coe_unitFiltrationEquivInteger, ValuationSubring.coe_unitGroupToResidueFieldUnits_apply]
+  -- The valuation subring of `K` is built on `𝒪[K]`, `unitFiltrationToIntegerUnits 0 x` is
+  -- definitionally the underlying unit of `𝒪[K]`, and both residue maps are the quotient by
+  -- the same maximal ideal, so the two sides agree by unfolding.
+  rfl
+
+-- Not a `simp` lemma: `unitFiltrationGradedZeroEquivResidueFieldUnits_mk` rewrites its left-hand
+-- side first.
+/-- On a class represented by `x ∈ U(K,0)`, the depth-zero graded equivalence is the residue of
+`x`, read as an element of `𝒪[K]`. -/
+theorem coe_unitFiltrationGradedZeroEquivResidueFieldUnits_mk (x : unitFiltration K 0) :
+    (unitFiltrationGradedZeroEquivResidueFieldUnits (QuotientGroup.mk x) : 𝓀[K]) =
+      residue 𝒪[K] (unitFiltrationToIntegerUnits 0 x : 𝒪[K]) := by
+  rw [unitFiltrationGradedZeroEquivResidueFieldUnits, MulEquiv.trans_apply,
+    unitFiltrationGradedEquivInteger_mk,
+    TauCeti.IsLocalRing.coe_unitFiltrationGradedZeroEquivResidueFieldUnits_mk,
+    coe_unitFiltrationEquivInteger]
 
 /-- The depth-zero graded piece is finite. -/
 noncomputable instance finite_unitFiltrationGraded_zero :
@@ -400,104 +478,6 @@ theorem relIndex_unitFiltration_one_zero :
   rw [Subgroup.relIndex, Subgroup.index]
   simpa only [UnitFiltrationGraded, zero_add] using
     natCard_unitFiltrationGraded_zero (K := K)
-
-/-- The unit filtration is decreasing. -/
-theorem unitFiltration_antitone : Antitone (unitFiltration K) := by
-  intro i j hij x hx
-  rw [mem_unitFiltration_iff_exists] at hx ⊢
-  obtain ⟨u, hu, hux⟩ := hx
-  exact ⟨u, Ideal.pow_le_pow_right hij hu, hux⟩
-
-/-- The unit filtration is strictly decreasing from depth one on: `U(K,i+1) < U(K,i)` for
-`i ≠ 0`, as witnessed by `1 + π ^ i` for a uniformizer `π`. At depth zero the inclusion
-`U(K,1) ≤ U(K,0)` is an equality when the residue field is `𝔽₂`. -/
-theorem unitFiltration_succ_lt {i : ℕ} (hi : i ≠ 0) :
-    unitFiltration K (i + 1) < unitFiltration K i := by
-  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
-  have hπ1 : valuation K (π : K) < 1 := Valuation.integer.v_irreducible_lt_one hπ
-  have hπ0 : 0 < valuation K (π : K) := by
-    rw [pos_iff_ne_zero, Valuation.ne_zero_iff, ne_eq, ZeroMemClass.coe_eq_zero]
-    exact hπ.ne_zero
-  have hv : valuation K (1 + (π : K) ^ i) = 1 := (valuation K).map_one_add_of_lt <| by
-    rw [map_pow]
-    exact pow_lt_one₀ zero_le hπ1 hi
-  set x : Kˣ := Units.mk0 (1 + (π : K) ^ i) fun h ↦ by simp [h] at hv
-  have hx : valuation K ((x : K) - 1) = valuation K (π : K) ^ i := by
-    simp [x]
-  refine IsConcreteLE.lt_iff_le_and_exists.2 ⟨unitFiltration_antitone i.le_succ, x, ?_, ?_⟩
-  · rw [mem_unitFiltration_iff_valuation_sub_one_le hi hπ, hx]
-  · rw [mem_unitFiltration_iff_valuation_sub_one_le i.succ_ne_zero hπ, hx, not_le]
-    exact pow_lt_pow_right_of_lt_one₀ hπ0 hπ1 i.lt_succ_self
-
-/-- The unit filtration separates points: an element lying in every step is `1`. -/
-theorem iInf_unitFiltration : ⨅ i, unitFiltration K i = ⊥ := by
-  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (R := 𝒪[K])
-  refine le_antisymm (fun x hx ↦ ?_) bot_le
-  simp only [Subgroup.mem_iInf] at hx
-  rw [Subgroup.mem_bot, ← Units.val_eq_one, ← sub_eq_zero]
-  by_contra h
-  obtain ⟨i, hi⟩ := exists_pow_lt₀ (Valuation.integer.v_irreducible_lt_one (v := valuation K) hπ)
-      (Units.mk0 (valuation K ((x : K) - 1)) (by simpa using h))
-  exact absurd ((mem_unitFiltration_iff_valuation_le hπ).mp (hx i)).2 hi.not_ge
-
-/-! ### The filtration inside the units of `𝒪[K]`
-
-Every step of the filtration consists of units of `𝒪[K]`, and at depth zero the step is exactly
-the unit group of `𝒪[K]`. -/
-
--- Provenance: the identification of the depth-zero step with `𝒪[K]ˣ` is Mathlib's
--- `ValuationSubring.unitGroupMulEquiv`.
-/-- The depth-zero step `U(K,0)` of the unit filtration, as the unit group of `𝒪[K]`. -/
-def unitFiltrationZeroEquivIntegerUnits : unitFiltration K 0 ≃* 𝒪[K]ˣ :=
-  (MulEquiv.subgroupCongr unitFiltration_zero).trans
-    (valuation K).valuationSubring.unitGroupMulEquiv
-
-/-- The identification of `U(K,0)` with `𝒪[K]ˣ` does not move the underlying element of `K`. -/
-@[simp]
-theorem coe_unitFiltrationZeroEquivIntegerUnits (x : unitFiltration K 0) :
-    ((unitFiltrationZeroEquivIntegerUnits x : 𝒪[K]ˣ) : K) = ((x : Kˣ) : K) := (rfl)
-
-/-- The inverse identification of `𝒪[K]ˣ` with `U(K,0)` does not move the underlying element of
-`K`. -/
-@[simp]
-theorem coe_unitFiltrationZeroEquivIntegerUnits_symm (u : 𝒪[K]ˣ) :
-    (((unitFiltrationZeroEquivIntegerUnits.symm u : unitFiltration K 0) : Kˣ) : K) =
-      ((u : 𝒪[K]) : K) := (rfl)
-
-/-- A unit of `𝒪[K]` lies in the depth-one step `U(K,1)` of the unit filtration exactly when it
-reduces to `1`: the principal units are the kernel of reduction. -/
-theorem mem_unitFiltration_one_iff_residue_eq_one (u : 𝒪[K]ˣ) :
-    Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u ∈ unitFiltration K 1 ↔
-      residue 𝒪[K] (u : 𝒪[K]) = 1 := by
-  -- `mem_unitFiltration_succ_congr` spells the inclusion `𝒪[K]ˣ →* Kˣ` through
-  -- `RingHom.toMonoidHom`, which is not the simp-normal form used in the statement above.
-  rw [show (1 : ℕ) = 0 + 1 from rfl, ← RingHom.toMonoidHom_eq_coe (Subring.subtype 𝒪[K]),
-    mem_unitFiltration_succ_congr, zero_add, pow_one,
-    ← Ideal.Quotient.eq_zero_iff_mem (I := 𝓂[K]), map_sub, map_one, sub_eq_zero]
-  rfl
-
-/-- A principal unit reduces to `1`. -/
-@[simp]
-theorem unitsMap_residue_unitFiltrationToIntegerUnits_one (y : unitFiltration K 1) :
-    Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) (unitFiltrationToIntegerUnits 1 y) = 1 := by
-  refine Units.ext ?_
-  rw [Units.coe_map]
-  exact (mem_unitFiltration_one_iff_residue_eq_one _).mp
-    (by rw [unitsMap_subtype_unitFiltrationToIntegerUnits]; exact y.property)
-
--- Not a `simp` lemma: `unitFiltrationGradedZeroEquivResidueFieldUnits_mk` rewrites its left-hand
--- side first.
-/-- On a class represented by `x ∈ U(K,0)`, the depth-zero graded equivalence is the residue of
-`x`, read as an element of `𝒪[K]`. -/
-theorem coe_unitFiltrationGradedZeroEquivResidueFieldUnits_mk (x : unitFiltration K 0) :
-    (unitFiltrationGradedZeroEquivResidueFieldUnits (QuotientGroup.mk x) : 𝓀[K]) =
-      residue 𝒪[K] (unitFiltrationToIntegerUnits 0 x : 𝒪[K]) := by
-  rw [unitFiltrationGradedZeroEquivResidueFieldUnits_mk,
-    ValuationSubring.coe_unitGroupToResidueFieldUnits_apply]
-  -- The valuation subring of `K` is built on `𝒪[K]`, and both residue maps are the quotient by
-  -- the same maximal ideal, so the two sides agree up to `coe_unitFiltrationToIntegerUnits`.
-  change residue 𝒪[K] ⟨((x : Kˣ) : K), _⟩ = residue 𝒪[K] (unitFiltrationToIntegerUnits 0 x : 𝒪[K])
-  exact congrArg (residue 𝒪[K]) (Subtype.ext (coe_unitFiltrationToIntegerUnits 0 x).symm)
 
 section Topology
 

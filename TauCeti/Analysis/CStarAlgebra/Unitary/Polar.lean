@@ -8,14 +8,14 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.Connected.PathConnected
-public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
+public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar.Basic
 
 /-!
 # Invertible elements are joined to their polar unitaries
 
 For an invertible element `x` of a unital C⋆-algebra `A`, `Units.polarUnitary x` is the unitary
 factor `u` of the polar decomposition `x = u |x|`, `|x| = √(x⋆x)`
-(`TauCeti/Analysis/SpecialFunctions/ContinuousFunctionalCalculus/Polar.lean`). This file shows
+(`TauCeti/Analysis/SpecialFunctions/ContinuousFunctionalCalculus/Polar/Basic.lean`). This file shows
 that `u` is joined to `x` by a path of invertible elements (`Units.joined_polarUnitary`):
 `t ↦ u ((1 - t)|x| + t)` stays invertible, since `(1 - t)|x| + t` is strictly positive for
 `t ∈ [0, 1]`. This straight-line path has the same endpoints as the polar deformation
@@ -30,6 +30,8 @@ The consequences for invertible matrices and the stable component group are in
   strictly positive `a`, `b` and `t ∈ [0, 1]`.
 * `Units.joined_polarUnitary`: `x` and its polar unitary lie in one path component of `Aˣ`.
 * `Units.exists_unitary_joined`: every invertible element is joined in `Aˣ` to a unitary.
+* `IsConj.exists_mem_unitary_mul_mul_star_eq`: similar self-adjoint elements are unitarily
+  equivalent.
 
 ## References
 
@@ -84,5 +86,18 @@ theorem Units.exists_unitary_joined (x : Aˣ) : ∃ v : unitary A, Joined x (Uni
   let : PartialOrder A := CStarAlgebra.spectralOrder A
   let : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
   ⟨_, x.joined_polarUnitary⟩
+
+/-- **Similar self-adjoint elements are unitarily equivalent.** If an invertible element of a unital
+C⋆-algebra conjugates a self-adjoint `x` to a self-adjoint `y`, then so does a unitary, namely its
+polar unitary. Stated without `Units.polarUnitary` and an order on `A`, so that it applies to
+`CStarMatrix`. -/
+theorem IsConj.exists_mem_unitary_mul_mul_star_eq {x y : A} (h : IsConj x y)
+    (hx : IsSelfAdjoint x) (hy : IsSelfAdjoint y) : ∃ u ∈ unitary A, u * x * star u = y := by
+  let _ : PartialOrder A := CStarAlgebra.spectralOrder A
+  let _ : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
+  obtain ⟨a, ha⟩ := h
+  refine ⟨a.polarUnitary, a.polarUnitary.property, ?_⟩
+  rw [a.polarUnitary_mul_eq_mul_polarUnitary hx hy ha, mul_assoc,
+    Unitary.mul_star_self_of_mem a.polarUnitary.property, mul_one]
 
 end Polar

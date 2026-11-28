@@ -35,7 +35,9 @@ inside the `b`-torsion subgroup is the ambient `a`-torsion subgroup, and for a s
 commutative semiring the `a`-torsion submodule is the kernel of left scalar multiplication
 `LinearMap.lsmul R M a`. Linear maps send torsion elements to torsion elements, so submodules and
 linear images of torsion modules are torsion, and the torsion submodule of `M × N` is the product
-of the torsion submodules. A linear map into a torsion-free module vanishes on the torsion.
+of the torsion submodules. A linear map into a torsion-free module vanishes on the torsion. A
+semilinear equivalence along a ring isomorphism maps the torsion submodule onto the torsion
+submodule.
 
 ## Main definitions
 
@@ -56,11 +58,14 @@ of the torsion submodules. A linear map into a torsion-free module vanishes on t
 * `TauCeti.Submodule.comap_torsion_of_comp_eq_smul`: a linear map with a left inverse up to a
   nonzerodivisor reflects torsion.
 * `LinearMap.le_comap_torsion`: a linear map sends torsion elements to torsion elements.
+* `LinearEquiv.map_torsion`: a semilinear equivalence along a ring isomorphism maps the torsion
+  submodule onto the torsion submodule.
 * `LinearMap.torsion_le_ker`: a linear map into a torsion-free module vanishes on the torsion
   submodule.
 * `TauCeti.Submodule.prodMk_mem_torsion`: a pair of torsion elements is torsion.
-* `Module.IsTorsion.of_injective`, `Module.IsTorsion.of_surjective`, `Module.IsTorsion.prod`:
-  submodules, linear images and products of torsion modules are torsion.
+* `Module.IsTorsion.of_injective`, `Module.IsTorsion.of_surjective`, `Module.IsTorsion.prod`,
+  `Module.IsTorsion.pi`: submodules, linear images, and binary and finite dependent products of
+  torsion modules are torsion.
 * `TauCeti.isTorsion_pi_self_iff`: over a nontrivial ring `R`, the free module `ι → R` is torsion
   exactly when `ι` is empty.
 * `LinearEquiv.isTorsion'_iff`: being `S`-torsion is invariant under linear equivalences.
@@ -86,6 +91,11 @@ of the torsion submodules. A linear map into a torsion-free module vanishes on t
   containing a nonzerodivisor is a torsion module.
 * `Ideal.torsionOf_eq_span_pow_of_prime`: over a principal ideal domain, if `p ^ m` kills `t` but
   `p ^ (m - 1)` does not, for a prime `p`, the annihilator of `t` is `(p ^ m)`.
+* `Module.isTorsion'_iff`, `Module.not_isTorsion'_iff`,
+  `Module.exists_forall_smul_ne_zero_of_imp_of_not_isTorsion'`: elementwise characterizations of
+  `S`-torsion, its negation, and extracting a witness from a torsion implication.
+* `Module.isTorsion'_of_zero_mem`: every module is `S`-torsion when `0 ∈ S`.
+* `Submodule.isTorsion'_quotient_iff`: elementwise characterization of `S`-torsion quotients.
 -/
 
 public section
@@ -241,6 +251,32 @@ theorem _root_.LinearMap.le_comap_torsion (f : M →ₗ[R] N) :
   exact (_root_.Submodule.mem_torsion_iff _).mpr
     ⟨a, by rw [← LinearMap.map_smul_of_tower, ha, map_zero]⟩
 
+omit [Module R N] in
+/-- A semilinear equivalence along a ring isomorphism maps torsion elements to torsion elements:
+`σ` maps the nonzerodivisors of `R` into those of `S`. -/
+private theorem _root_.LinearEquiv.map_torsion_le {S : Type*} [CommSemiring S] [Module S N]
+    {σ : R →+* S} {σ' : S →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ] (e : M ≃ₛₗ[σ] N) :
+    (_root_.Submodule.torsion R M).map (e : M →ₛₗ[σ] N) ≤ _root_.Submodule.torsion S N := by
+  rintro _ ⟨x, hx, rfl⟩
+  obtain ⟨a, ha⟩ := (_root_.Submodule.mem_torsion_iff x).mp hx
+  have hσa : σ a ∈ S⁰ := by
+    rw [← RingHomInvPair.toRingEquiv_apply σ σ',
+      ← MulEquivClass.map_nonZeroDivisors (RingHomInvPair.toRingEquiv σ σ')]
+    exact Submonoid.mem_map_of_mem _ a.property
+  have h := congrArg e ha
+  rw [Submonoid.smul_def, e.map_smulₛₗ, map_zero] at h
+  exact (_root_.Submodule.mem_torsion_iff (e x)).mpr ⟨⟨σ a, hσa⟩, h⟩
+
+omit [Module R N] in
+/-- A semilinear equivalence along a ring isomorphism `σ : R ≃+* S` maps the torsion submodule onto
+the torsion submodule: `σ` maps the nonzerodivisors of `R` onto those of `S`. -/
+theorem _root_.LinearEquiv.map_torsion {S : Type*} [CommSemiring S] [Module S N] {σ : R →+* S}
+    {σ' : S →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ] (e : M ≃ₛₗ[σ] N) :
+    (_root_.Submodule.torsion R M).map (e : M →ₛₗ[σ] N) = _root_.Submodule.torsion S N := by
+  refine le_antisymm e.map_torsion_le ?_
+  rw [_root_.Submodule.map_equiv_eq_comap_symm, ← _root_.Submodule.map_le_iff_le_comap]
+  exact e.symm.map_torsion_le
+
 /-- A linear map `f` for which some `g` satisfies `g ∘ f = a • id` with `a` a nonzerodivisor
 reflects torsion: an element is torsion if and only if its image is. -/
 theorem comap_torsion_of_comp_eq_smul {f : M →ₗ[R] N} {g : N →ₗ[R] M} {a : R} (ha : a ∈ R⁰)
@@ -339,7 +375,23 @@ theorem prod (hM : Module.IsTorsion R M) (hN : Module.IsTorsion R N) :
     ((_root_.Submodule.mem_torsion_iff _).mpr (@hM x.1))
     ((_root_.Submodule.mem_torsion_iff _).mpr (@hN x.2)))
 
+/-- A dependent product of finitely many torsion modules is torsion. -/
+theorem pi {ι : Type*} [Finite ι] {P : ι → Type*} [∀ i, AddCommMonoid (P i)]
+    [∀ i, Module R (P i)] (hP : ∀ i, Module.IsTorsion R (P i)) :
+    Module.IsTorsion R (∀ i, P i) := fun x ↦ by
+  cases nonempty_fintype ι
+  choose a ha using fun i ↦ @hP i (x i)
+  refine ⟨∏ i, a i, funext fun i ↦ ?_⟩
+  obtain ⟨c, hc⟩ := Finset.dvd_prod_of_mem a (Finset.mem_univ i)
+  rw [Pi.smul_apply, hc, mul_comm, mul_smul, ha i, smul_zero, Pi.zero_apply]
+
 end Module.IsTorsion
+
+/-- An element `r` of a commutative ring `R` acts by zero on `R ⧸ (r)`. -/
+theorem Module.isTorsionBy_quotient_span_singleton {R : Type*} [CommRing R] (r : R) :
+    Module.IsTorsionBy R (R ⧸ Ideal.span {r}) r :=
+  (Module.isTorsionBy_quotient_iff _ r).mpr fun x =>
+    Ideal.mul_mem_right x _ (Ideal.mem_span_singleton_self r)
 
 namespace TauCeti
 
@@ -483,3 +535,52 @@ theorem torsionOf_eq_span_pow_of_prime {R M : Type*} [CommRing R] [IsDomain R]
   rw [hg, Ideal.submodule_span_eq, span_singleton_eq_span_singleton.mpr hgi, him']
 
 end Ideal
+
+namespace Module
+
+/-- A module is `S`-torsion if and only if every element is annihilated by some element of `S`. -/
+theorem isTorsion'_iff {R M : Type*} [MulOneClass R] [AddCommMonoid M] [SMul R M]
+    {S : Submonoid R} : Module.IsTorsion' M S ↔ ∀ x : M, ∃ s ∈ S, s • x = 0 :=
+  ⟨fun h x ↦ let ⟨s, hs⟩ := @h x; ⟨s, s.property, hs⟩,
+   fun h x ↦ let ⟨s, hs, hsx⟩ := h x; ⟨⟨s, hs⟩, hsx⟩⟩
+
+/-- A module is not `S`-torsion if and only if some element is not annihilated by any element of
+`S`. -/
+theorem not_isTorsion'_iff {R M : Type*} [MulOneClass R] [AddCommMonoid M] [SMul R M]
+    {S : Submonoid R} : ¬ Module.IsTorsion' M S ↔ ∃ x : M, ∀ s ∈ S, s • x ≠ 0 := by
+  simp [Module.isTorsion'_iff]
+
+/-- If `S`-torsion on a family `F` over all indices satisfying `p` implies `S`-torsion on `G`,
+then a failure of `S`-torsion on `G` produces an index `i` with `p i` and an element of `F i`
+annihilated by no scalar in `S`. -/
+theorem exists_forall_smul_ne_zero_of_imp_of_not_isTorsion' {ι R G : Type*} {F : ι → Type*}
+    {p : ι → Prop} [MulOneClass R] [AddCommMonoid G] [SMul R G]
+    [∀ i, AddCommMonoid (F i)] [∀ i, SMul R (F i)] {S : Submonoid R}
+    (himp : (∀ i, p i → IsTorsion' (F i) S) → IsTorsion' G S)
+    (hG : ¬ IsTorsion' G S) :
+    ∃ i, p i ∧ ∃ x : F i, ∀ s ∈ S, s • x ≠ 0 := by
+  obtain ⟨i, hi⟩ := Classical.not_forall.mp (mt himp hG)
+  rw [not_imp, not_isTorsion'_iff] at hi
+  exact ⟨i, hi.1, hi.2⟩
+
+/-- When `0 ∈ S`, every module is `S`-torsion. -/
+theorem isTorsion'_of_zero_mem {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    {S : Submonoid R} (h0 : (0 : R) ∈ S) : Module.IsTorsion' M S :=
+  fun _ ↦ ⟨⟨0, h0⟩, by rw [Submonoid.smul_def, zero_smul]⟩
+
+end Module
+
+namespace Submodule
+
+/-- A quotient module `N ⧸ p` is `S`-torsion if and only if every element of `N` is carried into
+`p` by some element of `S`. -/
+theorem isTorsion'_quotient_iff {R N : Type*} [CommRing R] [AddCommGroup N] [Module R N]
+    (p : Submodule R N) (S : Submonoid R) :
+    Module.IsTorsion' (N ⧸ p) S ↔ ∀ y : N, ∃ s ∈ S, s • y ∈ p := by
+  refine ⟨fun h y ↦ ?_, fun h q ↦ Submodule.Quotient.induction_on p q fun y ↦ ?_⟩
+  · obtain ⟨⟨s, hs⟩, hsy⟩ := @h (Submodule.Quotient.mk y)
+    exact ⟨s, hs, by simpa [Submonoid.mk_smul, ← Submodule.Quotient.mk_smul] using hsy⟩
+  · obtain ⟨s, hs, hsy⟩ := h y
+    exact ⟨⟨s, hs⟩, by simpa [Submonoid.mk_smul, ← Submodule.Quotient.mk_smul] using hsy⟩
+
+end Submodule

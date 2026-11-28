@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.Monotonicity
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lemmas
-import TauCeti.Analysis.Calculus.ContDiff.FDerivApply
+import TauCeti.Analysis.Calculus.ContDiff.FDeriv.Apply
 
 /-!
 # `Lᵖ` seminorms of derivatives

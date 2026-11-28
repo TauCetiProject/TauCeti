@@ -6,10 +6,11 @@ Authors: OpenAI Codex
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Topology.MetricSpace.Thickening
 
 /-!
-# Norm bounds for nonnegative translations in complex sectors
+# Norm and argument bounds in complex sectors
 
 For a complex number `s` separated in argument from the negative real axis and a nonnegative
 real `t`, the norm of the translate `s + t` is bounded below by a fixed multiple of `‖s‖ + t`:
@@ -24,12 +25,20 @@ constant `(1 - cos δ) / 2 = sin (δ / 2) ^ 2` for `t ≥ 0`
 `Re z ≤ c ‖z‖`, `c < 1`, around the negative real axis,
 `(1 - max c (-1)) / 2 * (t + ‖z‖) ≤ ‖t - z‖`, and in multiplicative form
 `(1 - max c (-1)) / 2 * (1 + ‖z‖ t) ≤ ‖1 - z t‖` (`Complex.mul_one_add_le_norm_one_sub_mul`).
+On a half plane `Re z ≤ r₀` with `Q ≥ 4 r₀` or `‖z‖ ≥ 8 r₀`, a real `Q ≥ 0` satisfies
+`(Q + ‖z‖) / 4 ≤ ‖Q - z‖` (`Complex.add_norm_div_four_le_norm_ofReal_sub`).
 These inequalities control reciprocal kernels in sectorial and Stieltjes integrals and resolvent
 symbols. A nonzero point of such a sector, with `0 < δ`, lies in the slit plane, as does every
 point of an exterior sector `{z : ℂ | r < ‖z‖ ∧ |arg z| < θ}` with `0 ≤ r` and `θ ≤ π`
 (`Complex.setOf_lt_norm_and_abs_arg_lt_subset_inter_slitPlane`), and every
 sector `{z : ℂ | |arg z| < α ∧ r < ‖z‖}` is preconnected
 (`Complex.isPreconnected_setOf_abs_arg_lt_and_lt_norm`).
+
+For open discs centered in a sector, the tangent angle from the origin to `Metric.ball c r` is
+controlled by `r / ‖c‖`: when `0 ≤ δ ≤ π / 2` and `r ≤ ‖c‖ * sin δ` (with `arg c ± δ` avoiding the
+branch cut), every `z ∈ Metric.ball c r` satisfies `|arg z - arg c| < δ`
+(`Complex.abs_arg_sub_arg_lt_of_mem_ball`), placing the whole disc inside an open sector
+(`Complex.arg_mem_Ioo_of_mem_ball`).
 
 Discs whose radii are a fixed multiple `c ≤ 1 / 2` of the norm of their centers, centered at
 the points of a closed sector `|arg z| ≤ θ'`, stay inside every larger open sector `|arg w| < θ`,
@@ -108,6 +117,34 @@ theorem mul_add_norm_le_norm_ofReal_sub {z : ℂ} {c t : ℝ} (ht : 0 ≤ t) (hz
       rw [norm_neg, neg_re]
       nlinarith [mul_le_mul_of_nonneg_right (le_max_left c (-1)) (norm_nonneg z)])
   rwa [norm_neg, neg_add_eq_sub, add_comm ‖z‖ t] at h
+
+/-- **The half plane estimate.** For a real `Q ≥ 0` and `z` in the half plane `Re z ≤ r₀`, the
+difference `Q - z` satisfies `(Q + ‖z‖) / 4 ≤ ‖Q - z‖`, provided `Q ≥ 4 r₀` or `‖z‖ ≥ 8 r₀`. For
+`r₀ > 0` the half plane contains a neighbourhood of the closed negative real axis, `0` included,
+unlike the sectors of `Complex.mul_add_norm_le_norm_ofReal_sub`. -/
+theorem add_norm_div_four_le_norm_ofReal_sub {Q r₀ : ℝ} {z : ℂ} (hQ : 0 ≤ Q)
+    (hz : z.re ≤ r₀) (h : 4 * r₀ ≤ Q ∨ 8 * r₀ ≤ ‖z‖) :
+    (Q + ‖z‖) / 4 ≤ ‖(Q : ℂ) - z‖ := by
+  rcases le_or_gt (4 * r₀) Q with hQ4 | hQ4
+  · -- Then `Re (Q - z) ≥ Q / 2 + |Re z|`, and `‖Q - z‖ ≥ |Im z|`.
+    have hre := Complex.re_le_norm ((Q : ℂ) - z)
+    have him := Complex.abs_im_le_norm ((Q : ℂ) - z)
+    rw [Complex.sub_re, Complex.ofReal_re] at hre
+    rw [Complex.sub_im, Complex.ofReal_im, zero_sub, abs_neg] at him
+    have hz' := Complex.norm_le_abs_re_add_abs_im z
+    have : Q / 2 + |z.re| ≤ Q - z.re := by
+      rcases le_or_gt z.re 0 with h0 | h0
+      · rw [abs_of_nonpos h0]
+        linarith
+      · rw [abs_of_pos h0]
+        linarith
+    linarith [norm_nonneg z]
+  · -- Then `‖z‖ ≥ 8 r₀ > 2 Q`.
+    have h8 : 8 * r₀ ≤ ‖z‖ := h.resolve_left (not_le.2 hQ4)
+    have : ‖z‖ - Q ≤ ‖(Q : ℂ) - z‖ := by
+      have := norm_sub_norm_le z (Q : ℂ)
+      rwa [norm_sub_rev, Complex.norm_real, Real.norm_of_nonneg hQ] at this
+    linarith
 
 /-- On the sector `Re r ≤ c ‖r‖`, the numbers `1 - r t` with a nonnegative real `t` satisfy
 `(1 - max c (-1)) / 2 * (1 + ‖r‖ t) ≤ ‖1 - r t‖`, which keeps them away from `0` for `c < 1`. -/
@@ -237,6 +274,82 @@ theorem isPreconnected_setOf_abs_arg_lt_and_lt_norm {α r : ℝ} :
   rw [← himg]
   exact ((Set.ordConnected_Ici.inter Set.ordConnected_Ioi).isPreconnected.prod
     isPreconnected_Ioo).image φ hφ.continuousOn
+
+/-- **Sharp tangent-angle bound on `ball 1 (sin δ)`.** If `0 ≤ δ ≤ π / 2` and `‖u‖ < sin δ`, then
+`|(1 + u).arg| < δ`. -/
+theorem abs_arg_one_add_lt_of_norm_lt_sin {u : ℂ} {δ : ℝ}
+    (hδ₀ : 0 ≤ δ) (hδ₁ : δ ≤ Real.pi / 2) (hu : ‖u‖ < Real.sin δ) :
+    |(1 + u).arg| < δ := by
+  have hre_lt : |u.re| < 1 :=
+    (abs_re_le_norm u).trans_lt (hu.trans_le (Real.sin_le_one δ))
+  have hre_pos : 0 < (1 + u).re := by simp; linarith [(abs_lt.mp hre_lt).1]
+  have harg_pi : |(1 + u).arg| < Real.pi / 2 :=
+    abs_arg_lt_pi_div_two_iff.mpr (.inl hre_pos)
+  have hu_sq : Real.sin (1 + u).arg ^ 2 ≤ ‖u‖ ^ 2 := by
+    have h1 := norm_circleMap_sub_circleMap_sq 0 ‖1 + u‖ 1 (1 + u).arg 0
+    have hcm : circleMap 0 1 0 = 1 := by simp [circleMap_zero]
+    rw [circleMap_zero_norm_arg, hcm, add_sub_cancel_left, one_pow, mul_one, sub_zero] at h1
+    have hcs := Real.sin_sq_add_cos_sq (1 + u).arg
+    nlinarith [sq_nonneg (‖1 + u‖ - Real.cos (1 + u).arg)]
+  have hsin_lt : Real.sin |(1 + u).arg| < Real.sin δ := by
+    have hsq : Real.sin |(1 + u).arg| ^ 2 < Real.sin δ ^ 2 := by
+      rw [← sq_abs (Real.sin (1 + u).arg),
+        Real.abs_sin_eq_sin_abs_of_abs_le_pi (abs_arg_le_pi _)] at hu_sq
+      exact hu_sq.trans_lt (sq_lt_sq' (by linarith [norm_nonneg u]) hu)
+    have hnn₁ : 0 ≤ Real.sin |(1 + u).arg| :=
+      Real.sin_nonneg_of_nonneg_of_le_pi (abs_nonneg _) (by linarith [Real.pi_pos])
+    have hnn₂ : 0 ≤ Real.sin δ := Real.sin_nonneg_of_nonneg_of_le_pi hδ₀ (by linarith [Real.pi_pos])
+    nlinarith
+  by_contra! hge
+  exact (Real.strictMonoOn_sin.le_iff_le
+    ⟨by linarith [hδ₀, Real.pi_pos], hδ₁⟩
+    ⟨by linarith [abs_nonneg (1 + u).arg, Real.pi_pos], harg_pi.le⟩).mpr hge |>.not_gt hsin_lt
+
+/-- If `z ∈ Metric.ball c r` with `r ≤ ‖c‖ * sin δ` (`0 ≤ δ ≤ π / 2`) and `[arg c - δ, arg c + δ]`
+lies in `[-π, π]`, then `|arg z - arg c| < δ`. -/
+theorem abs_arg_sub_arg_lt_of_mem_ball {c z : ℂ} {r δ : ℝ}
+    (hδ₀ : 0 ≤ δ) (hδ₁ : δ ≤ Real.pi / 2)
+    (hlo : -Real.pi ≤ c.arg - δ) (hhi : c.arg + δ ≤ Real.pi)
+    (hr : r ≤ ‖c‖ * Real.sin δ) (hz : z ∈ Metric.ball c r) :
+    |z.arg - c.arg| < δ := by
+  have hz_lt : ‖z - c‖ < r := mem_ball_iff_norm.mp hz
+  have hc : c ≠ 0 := fun h0 => by
+    rw [h0, norm_zero, zero_mul] at hr
+    linarith [norm_nonneg (z - c)]
+  set u : ℂ := (z - c) / c
+  have hc_pos : 0 < ‖c‖ := norm_pos_iff.mpr hc
+  have hu_lt : ‖u‖ < Real.sin δ := by
+    rw [norm_div, div_lt_iff₀ hc_pos, mul_comm]
+    exact hz_lt.trans_le hr
+  have harg_u : |(1 + u).arg| < δ := abs_arg_one_add_lt_of_norm_lt_sin hδ₀ hδ₁ hu_lt
+  have h1u_ne : 1 + u ≠ 0 := by
+    intro h0
+    have : ‖u‖ = 1 := by
+      have hu_eq : u = -1 := eq_neg_of_add_eq_zero_right h0
+      simp [hu_eq]
+    linarith [Real.sin_le_one δ]
+  have hz_eq : z = c * (1 + u) := by
+    dsimp [u]
+    field_simp
+    ring
+  have hIoc : c.arg + (1 + u).arg ∈ Set.Ioc (-Real.pi) Real.pi := by
+    obtain ⟨h1, h2⟩ := abs_lt.mp harg_u
+    exact ⟨by linarith, by linarith⟩
+  rw [hz_eq, arg_mul hc h1u_ne hIoc]
+  simpa using harg_u
+
+/-- **Sector containment for an open disc.** If `θ₁` and `θ₂` lie in `[-π, π]`, and
+`0 ≤ δ ≤ min (π / 2) (min (arg c - θ₁) (θ₂ - arg c))` with `r ≤ ‖c‖ * sin δ`, then every
+`z ∈ Metric.ball c r` satisfies `z.arg ∈ Set.Ioo θ₁ θ₂`. -/
+theorem arg_mem_Ioo_of_mem_ball {θ₁ θ₂ : ℝ} {c z : ℂ} {r δ : ℝ}
+    (hθ₁ : -Real.pi ≤ θ₁) (hθ₂ : θ₂ ≤ Real.pi)
+    (hδ₀ : 0 ≤ δ) (hδ₁ : δ ≤ Real.pi / 2)
+    (hd₁ : δ ≤ c.arg - θ₁) (hd₂ : δ ≤ θ₂ - c.arg)
+    (hr : r ≤ ‖c‖ * Real.sin δ) (hz : z ∈ Metric.ball c r) :
+    z.arg ∈ Set.Ioo θ₁ θ₂ := by
+  have h := abs_lt.mp <| abs_arg_sub_arg_lt_of_mem_ball hδ₀ hδ₁
+    (by linarith) (by linarith) hr hz
+  exact ⟨by linarith, by linarith⟩
 
 end Complex
 

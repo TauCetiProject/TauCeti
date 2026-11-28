@@ -20,8 +20,11 @@ function on `ℂ` they are the vectors of the lattice `ℤ τ + ℤ`.
 
 A function on a product is periodic under `(0, c)` exactly when it is `c`-periodic in its second
 coordinate (`Function.periodic_zero_prodMk_iff`); for instance a map on the cylinder `ℝ × ℝ` of
-period one in `t`. A function that agrees with `f ∘ φ` along a line `{a} × γ` has every period
-that `φ` has along that line (`Function.periodic_of_forall_comp_eq`).
+period one in `t`. Such a function, or a predicate invariant under `b ↦ b + c` in its second
+coordinate, is unchanged by `b ↦ b + n * c` for every `n ∈ ℤ`
+(`Function.apply_add_int_mul_of_periodic`, `Function.iff_add_int_mul_of_periodic`). A function
+that agrees with `f ∘ φ` along a line `{a} × γ` has every period that `φ` has along that line
+(`Function.periodic_of_forall_comp_eq`).
 
 A function with period `c` composed with the reflection `x ↦ -x` still has period `c`
 (`Function.Periodic.comp_neg`).
@@ -51,6 +54,20 @@ second coordinate. -/
 theorem periodic_zero_prodMk_iff {γ δ : Type*} [AddZeroClass γ] [Add δ] {g : γ × δ → β}
     {c : δ} : Periodic g (0, c) ↔ ∀ a, Periodic (fun b ↦ g (a, b)) c :=
   ⟨fun h a b ↦ by simpa using h (a, b), fun h ⟨a, b⟩ ↦ by simpa using h a b⟩
+
+/-- A function on a product with period `c` in its second coordinate has period `n * c` there for
+every integer `n`. -/
+theorem apply_add_int_mul_of_periodic {γ : Type*} {g : γ × α → β} {c : α}
+    (hg : ∀ a b, g (a, b + c) = g (a, b)) (n : ℤ) (a : γ) (b : α) :
+    g (a, b + n * c) = g (a, b) :=
+  (Periodic.int_mul (f := fun b ↦ g (a, b)) (hg a) n) b
+
+/-- A predicate on a product invariant under `b ↦ b + c` in its second coordinate is invariant
+under `b ↦ b + n * c` for every integer `n`. -/
+theorem iff_add_int_mul_of_periodic {γ : Type*} {P : γ × α → Prop} {c : α}
+    (hP : ∀ a b, P (a, b + c) ↔ P (a, b)) (n : ℤ) (a : γ) (b : α) :
+    P (a, b + n * c) ↔ P (a, b) :=
+  (apply_add_int_mul_of_periodic (fun a b ↦ propext (hP a b)) n a b).to_iff
 
 /-- A function `g` that agrees with `f ∘ φ` along a line `{a} × γ` has period `c` when `φ` has
 period `c` along that line. For instance, an end structure `J_e(t)` agreeing with `J` in an end

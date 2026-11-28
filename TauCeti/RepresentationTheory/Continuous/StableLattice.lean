@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Lattice
-public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
+public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Basic
 
 /-!
 # Stable lattices for compact groups
@@ -101,8 +101,6 @@ theorem exists_le_stable_lattice (ρ : Representation E Γ V)
 theorem exists_stable_lattice [FiniteDimensional E V] (ρ : Representation E Γ V)
     (hρ : ∀ x, Continuous fun g => ρ g x) :
     ∃ L : Submodule 𝒪[E] V, IsFullLattice E L ∧ ∀ g, ∀ x ∈ L, ρ g x ∈ L := by
-  have := isFullLattice_span (R := 𝒪[E]) (finite_range (Module.finBasis E V))
-    (Module.finBasis E V).span_eq
   obtain ⟨L, -, hL⟩ := ρ.exists_le_stable_lattice hρ (span 𝒪[E] (range (Module.finBasis E V)))
   exact ⟨L, hL⟩
 

@@ -813,7 +813,7 @@ private theorem NoOppositeCovectorsOn.exists_one_add_norm_pow_mul_localFourier_s
 
 /-- The integrand of `NoOppositeCovectorsOn.integral_localFourier_mul_localFourier_neg_eq`, as a
 function of `(ζ, η)`, is integrable for every Schwartz function `b`. -/
-private theorem NoOppositeCovectorsOn.integrable_mul_localFourier_mul_localFourier
+theorem NoOppositeCovectorsOn.integrable_mul_localFourier_mul_localFourier
     {φ g : 𝓓(Ω, ℂ)} (h : NoOppositeCovectorsOn S T (tsupport φ)) (hg : tsupport g ⊆ tsupport φ)
     (b : 𝓢(E, ℂ)) :
     Integrable (fun p : E × E ↦
