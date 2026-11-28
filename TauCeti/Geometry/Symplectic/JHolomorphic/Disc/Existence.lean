@@ -86,8 +86,8 @@ gains a derivative, so on the unit disc the discs `u_{Q, ξ}` and `u_{Q', ξ'}` 
 differ by at most `C (‖ξ - ξ'‖ + ε)`, with `C` depending only on `F`. In the normal disc families
 of the large-parameter analysis, `Q` is the Beltrami coefficient of the almost complex structure in
 coordinates centred at a point of the curve and `ξ` a unit normal vector there, so this is the
-estimate from which continuity of the family in the base point is to be derived, once it is
-transferred through the rescaling.
+estimate behind the Lipschitz dependence of the family on the base point, which is transferred
+through the rescaling in `TauCeti.Geometry.Symplectic.JHolomorphic.Disc.Rescaling`.
 
 The contraction adapts the small-coefficient Beltrami fixed point
 `TauCeti.exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv`

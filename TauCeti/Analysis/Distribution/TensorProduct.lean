@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.ComplexPairing
+public import TauCeti.Analysis.Distribution.LinearEquiv
 public import TauCeti.Analysis.Distribution.TestFunction.Prod
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
@@ -63,6 +64,7 @@ supports. The tensor product of the point masses at `a` and `b` is the point mas
 * `Distribution.lineDerivOp_tensorProduct`: `∂_{(v, w)} (S ⊗ T) = ∂_{v} S ⊗ T + S ⊗ ∂_{w} T`.
 * `Distribution.tensorProduct_delta`: `δ_a ⊗ δ_b = δ_(a, b)`.
 * `Distribution.dsupport_tensorProduct_subset`: `supp (S ⊗ T) ⊆ supp S ×ˢ supp T`.
+* `Distribution.transportCLM_prodComm_tensorProduct`: commutativity, `(T ⊗ S) ∘ swap = S ⊗ T`.
 
 ## Implementation notes
 
@@ -516,6 +518,23 @@ theorem dsupport_tensorProduct_subset :
   rw [tensorProduct_apply, complexPairing_eq_of_eventuallyEq S (ψ := 0)
     (eventually_of_mem (hB.isOpen_compl.mem_nhdsSet.2 hSB) fun x hx ↦ by simp [hzero x hx]),
     map_zero]
+
+/-- **Commutativity of the tensor product.** Transporting `T ⊗ S`, on `O ×ˢ Ω ⊆ D × E`, along
+the swap `E × D ≃ D × E` gives `S ⊗ T` on `Ω ×ˢ O`: `(T ⊗ S) (φ ∘ swap) = (S ⊗ T) φ`. This is
+Fubini's theorem for distributions. -/
+theorem transportCLM_prodComm_tensorProduct {V' : Opens (D × E)}
+    (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D))
+    (hV' : (V' : Set (D × E)) = (O : Set D) ×ˢ (Ω : Set E))
+    (h : MapsTo (ContinuousLinearEquiv.prodComm ℝ E D) V V') :
+    transportCLM (ContinuousLinearEquiv.prodComm ℝ E D) h (T.tensorProduct S hV'.subset) =
+      S.tensorProduct T hV.subset := by
+  refine (tensorProduct_eq S T hV fun φ ψ ↦ ?_).symm
+  -- The swap of the tensor product of `φ` and `ψ` is the tensor product of `ψ` and `φ`.
+  have hswap : (ContinuousLinearEquiv.prodComm ℝ E D).transportTestFunction ℝ h
+      (prodSMulCLM ψ hV.symm.subset φ) = prodSMulCLM φ hV'.symm.subset ψ := by
+    ext p
+    simp [smul_eq_mul, mul_comm]
+  rw [transportCLM_apply, hswap, tensorProduct_prodSMulCLM, mul_comm]
 
 end TensorProduct
 

@@ -7,7 +7,9 @@ module
 
 public import TauCeti.RingTheory.FormalGlueing.Detection
 import TauCeti.Algebra.Module.Torsion.PrimaryComponent
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Pi
+import TauCeti.RingTheory.Flat.Amitsur
 
 /-!
 # Lifting compatible elements in formal glueing
@@ -59,11 +61,11 @@ private theorem amitsur_differential_eq_zero_of_locally_in_range
       IsLocalizedModule.map (.powers g) (LocalizedModule.mkLinearMap (.powers g) M)
         (LocalizedModule.mkLinearMap (.powers g) (S ⊗[R] M)) (TensorProduct.mk R S M 1) z =
           LocalizedModule.mkLinearMap (.powers g) (S ⊗[R] M) y) :
-    ((TensorProduct.mk R S M 1).lTensor S - TensorProduct.mk R S (S ⊗[R] M) 1) y = 0 := by
+    Amitsur.d₀ S M y = 0 := by
   classical
   let η := TensorProduct.mk R S M 1
-  let d := η.lTensor S - TensorProduct.mk R S (S ⊗[R] M) 1
-  have hd : d ∘ₗ η = 0 := by ext m; simp [d, η]
+  let d := Amitsur.d₀ (R := R) S M
+  have hd : d ∘ₗ η = 0 := Amitsur.d₀_comp_mk_one S M
   -- The local lifts kill the Amitsur obstruction on every basic open, making it torsion.
   have ht : d y ∈ ((Ideal.span (G : Set R)).map (algebraMap R S)).primaryComponent
       (S ⊗[R] (S ⊗[R] M)) := by
@@ -95,8 +97,8 @@ private theorem amitsur_differential_eq_zero_of_locally_in_range
     (coe_primaryComponentEquivTensorProduct_apply hI
       (Submodule.fg_span G.finite_toSet) z).symm.trans (congrArg Subtype.val hz)
   -- Multiplication retracts `1 ⊗ -` and annihilates the Amitsur obstruction.
-  let μ := TensorProduct.lift (Algebra.lsmul R R (A := S) (S ⊗[R] M)).toLinearMap
-  have hμ : μ ∘ₗ d = 0 := by ext s m; simp [μ, d, η, smul_tmul']
+  let μ := tensorProductMulLeft (R := R) S M
+  have hμ : μ ∘ₗ d = 0 := Amitsur.tensorProductMulLeft_comp_d₀ S M
   have hz0 : (z : S ⊗[R] M) = 0 := by
     have h := congr(μ $hz')
     have hμy : μ (d y) = 0 := LinearMap.congr_fun hμ y
@@ -131,6 +133,7 @@ theorem mem_range_mk_one_iff_locally_mem_range (y : S ⊗[R] M)
     let q : S ⊗[R] M →ₗ[R] Q := η.range.mkQ
     have hqη : q ∘ₗ η = 0 := LinearMap.range_mkQ_comp η
     have hd := TauCeti.amitsur_differential_eq_zero_of_locally_in_range G hI y hy
+    rw [TauCeti.Amitsur.d₀_def] at hd
     have heq : η.lTensor S y = (1 : S) ⊗ₜ[R] y := sub_eq_zero.mp hd
     -- In the cokernel of `η`, the Amitsur identity kills the base-change image of `y`.
     have hcomp0 : q.lTensor S ∘ₗ η.lTensor S = 0 := by

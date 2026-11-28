@@ -64,6 +64,9 @@ scalars `𝕜`; for instance, for `f` on `ℂ`,
   `ContinuousLinearMap.comp_comp_eq_of_hasFDerivAt_comp_left`: postcomposition with an embedding
   `Φ` turns the derivatives of `k` into those of `Φ ∘ k`, and every derivative of `Φ ∘ k` arises
   this way when `Φ` is a split injection.
+* `TauCeti.norm_fderiv_comp_smul`, `TauCeti.norm_fderiv_comp_smul_sub`: precomposition with
+  `w ↦ a • w` scales the norm of a Fréchet derivative, and the distance between two of them, by
+  `|a|`.
 * `TauCeti.fderiv_comp_add_smul`: `fderiv 𝕜` of `w ↦ f (c + a • w)` at `w` is `a` times
   `fderiv 𝕜 f (c + a • w)`, for every `f`.
 * `TauCeti.fderiv_comp_smul_apply`: `fderiv 𝕜 (fun w ↦ f (c • w)) x v` equals
@@ -155,12 +158,21 @@ theorem exists_norm_fderiv_comp_le_mul_norm_fderiv {f : E → G} {φ : F → E} 
         rw [mul_comm]
         exact mul_le_mul_of_nonneg_right hKy (norm_nonneg _)
 
-/-- Precomposing a real-valued function with scalar multiplication scales the norm of its
-Fréchet derivative by the absolute value of the scalar. -/
-theorem norm_fderiv_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {f : E → ℝ} (a : ℝ) (x : E) :
+/-- Precomposing a function between real normed spaces with scalar multiplication scales the
+norm of its Fréchet derivative by the absolute value of the scalar. -/
+theorem norm_fderiv_comp_smul {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} (a : ℝ) (x : E) :
     ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ = |a| * ‖fderiv ℝ f (a • x)‖ := by
   rw [_root_.fderiv_comp_smul a, norm_smul, Real.norm_eq_abs]
+
+/-- Precomposing two functions between real normed spaces with the same scalar multiplication
+scales the distance between their Fréchet derivatives, at any two points, by the absolute value of
+the scalar. -/
+theorem norm_fderiv_comp_smul_sub {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] (f g : E → F) (a : ℝ) (x y : E) :
+    ‖fderiv ℝ (fun z ↦ f (a • z)) x - fderiv ℝ (fun z ↦ g (a • z)) y‖ =
+      |a| * ‖fderiv ℝ f (a • x) - fderiv ℝ g (a • y)‖ := by
+  rw [_root_.fderiv_comp_smul, _root_.fderiv_comp_smul, ← smul_sub, norm_smul, Real.norm_eq_abs]
 
 /-- **The chain rule for an affine change of variables.** `fderiv 𝕜` of `w ↦ f (c + a • w)` at
 `w` is `a` times `fderiv 𝕜 f (c + a • w)`. Like `fderiv_comp_smul`, this holds for every `f`: if

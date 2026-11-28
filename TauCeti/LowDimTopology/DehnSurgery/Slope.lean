@@ -11,7 +11,7 @@ public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Topology.Compactification.OnePoint.Basic
 public import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
 public import Mathlib.Topology.Instances.AddCircle.Real
-public import TauCeti.Algebra.Module.Primitive
+public import TauCeti.Algebra.Module.Primitive.Basic
 
 /-!
 # Slopes on a framed boundary torus

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Lp.C0Ideal
 public import TauCeti.Analysis.CStarAlgebra.Ideal
 public import TauCeti.Analysis.Normed.Lp.Basic
 import Mathlib.Analysis.CStarAlgebra.Spectrum
+import TauCeti.Algebra.Star.Basic
 
 /-!
 # The `c₀` direct sum of C⋆-algebras
