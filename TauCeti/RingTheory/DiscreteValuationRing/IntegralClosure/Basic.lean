@@ -125,7 +125,7 @@ dimension at most `[L : K]` over `k`. A spanning family of `k ⊗[A] B` lifts to
 spanning `B` modulo `𝔪_A B`. As `B` is a DVR it is `𝔪_A`-adically separated, and `A` is complete,
 so by the complete Nakayama lemma the lifted family spans `B`. -/
 
-open IsLocalRing TensorProduct
+open _root_.IsLocalRing TensorProduct
 
 variable (A K L B : Type*) [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
   [Field K] [Algebra A K] [IsFractionRing A K]
@@ -197,7 +197,7 @@ end Complete
 
 namespace integralClosure
 
-open IsLocalRing
+open _root_.IsLocalRing
 
 variable (A L : Type*) [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
   [IsAdicComplete (maximalIdeal A) A]
@@ -218,7 +218,7 @@ end integralClosure
 
 namespace Ring
 
-open IsLocalRing
+open _root_.IsLocalRing
 
 variable (A : Type*) [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
   [IsAdicComplete (maximalIdeal A) A]
