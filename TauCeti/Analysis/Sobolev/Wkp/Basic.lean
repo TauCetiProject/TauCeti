@@ -74,8 +74,9 @@ The projections below are sealed instead, and are used through their characteris
   the sum of the almost-everywhere values of the summands.
 * `TauCeti.Wkp.tendsto_eLpNorm_sub_of_tendsto`: convergence in `W^{k,p}(Ω)` gives convergence in
   `Lᵖ(Ω)` of any almost-everywhere representatives of the values.
-* `TauCeti.Wkp.norm_le_mul_pow_of_ae_le`, `TauCeti.Wkp.norm_eq_of_measurePreserving`: inductive
-  `W^{k,p}` norm bounds and isometry criteria along quasi-measure-preserving and
+* `TauCeti.Wkp.norm_le_mul_pow_of_ae_le`,
+  `TauCeti.Wkp.norm_map_eq_of_measurePreserving_of_ae_norm_eq`:
+  inductive `W^{k,p}` norm bounds and isometry criteria along quasi-measure-preserving and
   measure-preserving maps.
 
 ## References
@@ -1009,16 +1010,19 @@ theorem norm_le_mul_pow_of_ae_le {E' : Type*} [MeasurableSpace E'] [NormedAddCom
         (pow_le_pow_left₀ (norm_nonneg _) hgrad' 2)
 
 /-- **Inductive `W^{k,p}` norm equality along a measure-preserving map.** If `T k` commutes with
-`lowerOrder` and preserves the pointwise norms of the value and highest weak derivative almost
-everywhere along a measure-preserving map `Φ`, then `‖T k u‖ = ‖u‖` for every order `k`. -/
-theorem norm_eq_of_measurePreserving {E' : Type*} [MeasurableSpace E'] [NormedAddCommGroup E']
-    [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E'] [BorelSpace E']
+`lowerOrder` and preserves the pointwise norms of the value at orders zero and one and of the
+highest weak derivative almost everywhere along a measure-preserving map `Φ`, then `‖T k u‖ = ‖u‖`
+for every order `k`. -/
+theorem norm_map_eq_of_measurePreserving_of_ae_norm_eq {E' : Type*} [MeasurableSpace E']
+    [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E'] [BorelSpace E']
     {ν : Measure E'} [ν.IsAddHaarMeasure] {W : Opens E'}
     {Φ : E → E'} (hΦ : MeasurePreserving Φ (mu.restrict Omega) (ν.restrict W))
     (T : ∀ k, Wkp ν W p k → Wkp mu Omega p k)
     (hlow : ∀ k (u : Wkp ν W p (k + 1)), lowerOrder k (T (k + 1) u) = T k (lowerOrder k u))
-    (hval : ∀ k (u : Wkp ν W p k),
-      ∀ᵐ x ∂mu.restrict Omega, ‖value k (T k u) x‖ = ‖value k u (Φ x)‖)
+    (hval₀ : ∀ u : Wkp ν W p 0,
+      ∀ᵐ x ∂mu.restrict Omega, ‖value 0 (T 0 u) x‖ = ‖value 0 u (Φ x)‖)
+    (hval₁ : ∀ u : Wkp ν W p 1,
+      ∀ᵐ x ∂mu.restrict Omega, ‖value 1 (T 1 u) x‖ = ‖value 1 u (Φ x)‖)
     (hgrad : ∀ k (u : Wkp ν W p (k + 1)),
       ∀ᵐ x ∂mu.restrict Omega,
         ‖iteratedGradient k (T (k + 1) u) x‖ = ‖iteratedGradient k u (Φ x)‖) :
@@ -1027,13 +1031,13 @@ theorem norm_eq_of_measurePreserving {E' : Type*} [MeasurableSpace E'] [NormedAd
       rw [← value_zero (T 0 u)]
       conv_rhs => rw [← value_zero u]
       refine (Lp.norm_eq_norm_of_ae_eq ?_).trans (Lp.norm_compMeasurePreserving (value 0 u) hΦ)
-      filter_upwards [hval 0 u, Lp.coeFn_compMeasurePreserving (value 0 u) hΦ] with x hx hcomp
+      filter_upwards [hval₀ u, Lp.coeFn_compMeasurePreserving (value 0 u) hΦ] with x hx hcomp
       rw [hx, hcomp, Function.comp_apply]
   | 1, u => by
       have hpt := W1p.ae_norm_coe_eq_of_ae_eq hΦ.quasiMeasurePreserving
         (v := firstOrder 0 (T 1 u)) (u := firstOrder 0 u)
         (by
-          filter_upwards [hval 1 u] with x hx
+          filter_upwards [hval₁ u] with x hx
           rwa [value_firstOrder, value_firstOrder])
         (by
           filter_upwards [hgrad 0 u] with x hx
@@ -1048,7 +1052,8 @@ theorem norm_eq_of_measurePreserving {E' : Type*} [MeasurableSpace E'] [NormedAd
   | k + 2, u => by
       have hlow' : ‖lowerOrder (k + 1) (T (k + 2) u)‖ = ‖lowerOrder (k + 1) u‖ := by
         rw [hlow]
-        exact norm_eq_of_measurePreserving hΦ T hlow hval hgrad (k + 1) (lowerOrder (k + 1) u)
+        exact norm_map_eq_of_measurePreserving_of_ae_norm_eq hΦ T hlow hval₀ hval₁ hgrad (k + 1)
+          (lowerOrder (k + 1) u)
       have hgrad' : ‖iteratedGradient (k + 1) (T (k + 2) u)‖ = ‖iteratedGradient (k + 1) u‖ := by
         refine (Lp.norm_eq_norm_of_ae_eq ?_).trans
           (Lp.norm_compMeasurePreserving (iteratedGradient (k + 1) u) hΦ)

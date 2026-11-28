@@ -352,15 +352,12 @@ theorem exists_wkp_value_ae_eq_of_trace_comp_iteratedGradient_eq_of_norm_sub_le
         ContinuousLinearMap.traceCLM_conj_symmPart_comp_of_comp_eq_id hMN _ _ h₂, traceCLM_apply,
         h₃])
   -- Composing back with `e⁻¹` gives `v ∈ W^{2,r}(E)` with value `u`.
-  set v := Wkp.compAffineEquiv (U := ⊤) volume e.symm 0 (by simp) 2 v'
-  have hvs := Wkp.value_compAffineEquiv_ae (U := ⊤) volume e.symm 0 (by simp) 2 v'
-  rw [Measure.ae_restrict_coe_opens_top] at hvs
+  set v := (Wkp.compAffineEquiv (ν := volume) (U := ⊤) (W := ⊤) (p := r) volume e 0
+    (by simp) 2).symm v'
   have hv : (Wkp.value 2 v : E → ℝ) =ᵐ[volume] Wkp.value 2 u := by
-    filter_upwards [hvs,
-      (e.symm.toContinuousAddEquiv.quasiMeasurePreserving_addHaar volume volume).ae
-        (hv'.trans hwv)] with y h₁ h₂
-    rw [ContinuousLinearEquiv.toContinuousAddEquiv_coe] at h₂
-    rw [h₁, add_zero, h₂, ContinuousLinearEquiv.apply_symm_apply]
+    simpa only [Measure.ae_restrict_coe_opens_top] using
+      Wkp.value_compAffineEquiv_symm_ae_of_ae_eq (U := ⊤) (W := ⊤) volume e 0 (by simp) 2
+        (by simpa only [Measure.ae_restrict_coe_opens_top, add_zero] using hv'.trans hwv)
   exact ⟨v, hv, iteratedGradient_ae_eq_of_value_ae_eq hv⟩
 
 end TauCeti

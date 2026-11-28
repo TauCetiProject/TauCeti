@@ -17,10 +17,11 @@ and let `U = e⁻¹(W)` for open sets `U ⊆ E` and `W ⊆ E'`. For every order 
 
 `TauCeti.Wkp.compLinearIsometryEquiv : W^{k,p}(W) ≃ₗᵢ[ℝ] W^{k,p}(U)`.
 
-The value of `u ∘ e` is `u ∘ e`, and its weak derivative of order `k + 1` at `x` is the highest
-weak derivative of `u` at `e x`, pulled back by `e` in every slot: at order two this is
-`D²(u ∘ e)(x) = e† ∘ D²u(e x) ∘ e`, the formula of
-`TauCeti.Wkp.iteratedGradient_compAffineEquiv_ae`, where `e† = e⁻¹` is the adjoint of `e`.
+For `u ∈ W^{k,p}(W)`, the value of `u ∘ e` is `u ∘ e` almost everywhere on `U`. When
+`u ∈ W^{k+1,p}(W)`, its weak derivative of order `k + 1` at `x` agrees almost everywhere on `U`
+with the highest weak derivative of `u` at `e x`, pulled back by `e` in every slot: at order two,
+`D²(u ∘ e)(x) = e† ∘ D²u(e x) ∘ e` almost everywhere on `U` (the formula of
+`TauCeti.Wkp.iteratedGradient_compAffineEquiv_ae`, where `e† = e⁻¹` is the adjoint of `e`).
 The pullback of iterated gradients is `(e.iteratedGradientCongr j).symm`, where
 `LinearIsometryEquiv.iteratedGradientCongr` pushes iterated gradients forward along `e`.
 Zero boundary values are preserved and reflected: a test function on `W` composed with `e` is a
@@ -85,13 +86,17 @@ private theorem measurePreserving_restrict (he : MeasurePreserving e μ ν)
 private theorem norm_compAffineEquiv_zero (he : MeasurePreserving e μ ν)
     (hUW : (U : Set E) = e ⁻¹' W) (k : ℕ) (u : Wkp ν W p k) :
     ‖compAffineEquiv μ e.toContinuousLinearEquiv 0 (hUW_affine hUW) k u‖ = ‖u‖ :=
-  norm_eq_of_measurePreserving (measurePreserving_restrict he hUW)
+  let hval (j : ℕ) (w : Wkp ν W p j) :
+      ∀ᵐ x ∂μ.restrict U,
+        ‖value j (compAffineEquiv μ e.toContinuousLinearEquiv 0 (hUW_affine hUW) j w) x‖ =
+          ‖value j w (e x)‖ := by
+    filter_upwards [value_compAffineEquiv_ae μ e.toContinuousLinearEquiv 0
+      (hUW_affine hUW) j w] with x hx
+    rw [hx, add_zero, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+  norm_map_eq_of_measurePreserving_of_ae_norm_eq (measurePreserving_restrict he hUW)
     (fun j w ↦ compAffineEquiv μ e.toContinuousLinearEquiv 0 (hUW_affine hUW) j w)
     (fun j w ↦ lowerOrder_compAffineEquiv μ e.toContinuousLinearEquiv 0 (hUW_affine hUW) j w)
-    (fun j w ↦ by
-      filter_upwards [value_compAffineEquiv_ae μ e.toContinuousLinearEquiv 0
-        (hUW_affine hUW) j w] with x hx
-      rw [hx, add_zero, LinearIsometryEquiv.coe_toContinuousLinearEquiv])
+    (hval 0) (hval 1)
     (fun j w ↦ by
       filter_upwards [iteratedGradient_compAffineEquiv_ae μ e.toContinuousLinearEquiv 0
         (hUW_affine hUW) j w] with x hx

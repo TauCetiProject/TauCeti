@@ -361,19 +361,13 @@ theorem exists_wkp_value_ae_eq_of_traceCLM_comp_eq_of_norm_sub_le_of_normalHalfS
         with y h₁ h₂ h₃
       rw [h₁, ContinuousLinearMap.traceCLM_conj_symmPart_comp_of_comp_eq_id hMN _ _ h₂, h₃])
   -- Composing back with `e⁻¹` returns to `u`.
-  have hHe : (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) =
-      (fun y => e.symm y + 0) ⁻¹'
-        (normalHalfSpace (E := E) (a / c) : Set (WithLp 2 (ℝ × E))) := by
-    simpa using e.toLinearEquiv.eq_preimage_symm_add_neg 0 (by simpa using hH a)
-  set v := Wkp.compAffineEquiv volume e.symm 0 hHe 2 v'
-  have hq' := e.symm.quasiMeasurePreserving_restrict (volume : Measure (WithLp 2 (ℝ × E)))
-    (fun y hy => by simpa only [mem_preimage, add_zero] using hHe.subset hy)
+  set v := (Wkp.compAffineEquiv (ν := volume) (p := r) volume e 0
+    (by simpa using hH a) 2).symm v'
   have hvu : (Wkp.value 2 v : WithLp 2 (ℝ × E) → ℝ)
       =ᵐ[(volume : Measure (WithLp 2 (ℝ × E))).restrict (normalHalfSpace (E := E) a)]
-      Wkp.value 2 u := by
-    filter_upwards [Wkp.value_compAffineEquiv_ae volume e.symm 0 hHe 2 v',
-      hq'.ae (hv'.trans hwv)] with y h₁ h₂
-    rw [h₁, add_zero, h₂, ContinuousLinearEquiv.apply_symm_apply]
+      Wkp.value 2 u :=
+    Wkp.value_compAffineEquiv_symm_ae_of_ae_eq volume e 0 (by simpa using hH a) 2
+      (by simpa only [add_zero] using hv'.trans hwv)
   exact ⟨v, hvu, Wkp.iteratedGradient_ae_eq_of_value_ae_eq 1 hvu⟩
 
 end TauCeti

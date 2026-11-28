@@ -26,10 +26,11 @@ by the absolute value of the determinant of its linear part on images
 its linear part has nonzero determinant (`MeasureTheory.Measure.addHaar_preimage_affineMap`),
 the affine forms of Mathlib's `MeasureTheory.Measure.addHaar_image_linearMap` and
 `MeasureTheory.Measure.addHaar_preimage_linearMap`. Between possibly distinct real normed spaces,
-an invertible affine map `x ↦ B x + b` pushes forward a restricted additive Haar measure with
-scalar factor `addHaarScalarFactor (μ.map B) ν`
-(`MeasureTheory.Measure.map_restrict_preimage_continuousLinearEquiv_add_eq_smul_restrict`,
-`MeasureTheory.Measure.map_restrict_continuousLinearEquiv_add_le_smul_restrict`) and is
+an invertible affine map `x ↦ B x + b` pushes forward `μ.restrict ((fun x ↦ B x + b) ⁻¹' t)` to
+`addHaarScalarFactor (μ.map B) ν • ν.restrict t`
+(`MeasureTheory.Measure.map_restrict_preimage_continuousLinearEquiv_add_eq_smul_restrict`), and for
+any `MapsTo` pair `(s, t)` pushes forward `μ.restrict s` to at most that scaled target measure
+(`MeasureTheory.Measure.map_restrict_continuousLinearEquiv_add_le_smul_restrict`), so it is
 quasi-measure-preserving globally and on `MapsTo` pairs
 (`MeasureTheory.Measure.quasiMeasurePreserving_continuousLinearEquiv_add`,
 `MeasureTheory.Measure.quasiMeasurePreserving_continuousLinearEquiv_add_restrict`). The affine

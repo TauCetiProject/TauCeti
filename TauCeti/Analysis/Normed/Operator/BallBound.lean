@@ -29,7 +29,8 @@ continuous linear map `B : E →L[𝕜] F` maps an open ball `Metric.ball y ρ` 
 into a bounded set `s ⊆ F`, then `‖B‖ ≤ Metric.diam s / (2 * ρ)`
 (`ContinuousLinearMap.opNorm_le_diam_div_two_mul_of_mapsTo_add_ball` and its linear specialization
 `ContinuousLinearMap.opNorm_le_diam_div_two_mul_of_mapsTo_ball`), and when `B` is a continuous
-linear equivalence with `(B · + b) ⁻¹' w ⊆ s` and `ball z ρ ⊆ w`, the inverse satisfies
+linear equivalence with `(B · + b) ⁻¹' w ⊆ s` for a bounded set `s ⊆ E` (`Bornology.IsBounded s`)
+and `ball z ρ ⊆ w` for `0 < ρ`, the inverse satisfies
 `‖(B.symm : F →L[𝕜] E)‖ ≤ Metric.diam s / (2 * ρ)`
 (`ContinuousLinearEquiv.opNorm_symm_le_diam_div_two_mul_of_ball_subset`).
 

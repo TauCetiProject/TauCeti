@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 
@@ -31,9 +32,10 @@ Sobolev-conjugate exponent `p⋆` on the function itself, so both the `Lᵖ` nor
 the critical `L^{p⋆}` norm are invariant.
 
 More generally, composing with a linear automorphism `e` or an affine automorphism `x ↦ e x + b`
-multiplies the `Lᵖ` seminorm by `|det e|^(-1 / p)`, and the `Lᵖ` seminorm on the preimage of `s`
-by the same factor relative to the `Lᵖ` seminorm on `s`, for any set `s`. The codomain only needs a
-continuous extended norm.
+multiplies the `Lᵖ` seminorm by `|det e|⁻¹ ^ (1 / p).toReal`, and the `Lᵖ` seminorm on the
+preimage of `s` by the same factor relative to the `Lᵖ` seminorm on `s`, for any set `s`. Here
+`(1 / p).toReal` is `0` at `p = 0` and `p = ∞`, where the factor is thus `1`. The codomain only
+needs a continuous extended norm.
 
 ## Main declarations
 
@@ -45,7 +47,8 @@ continuous extended norm.
   seminorm.
 * `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv`,
   `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv_add`:
-  `‖u ∘ e‖_p = |det e|^(-1 / p) * ‖u‖_p` and `‖u (e · + b)‖_p = |det e|^(-1 / p) * ‖u‖_p`.
+  `‖u ∘ e‖_p = |det e|⁻¹ ^ (1 / p).toReal * ‖u‖_p` and
+  `‖u (e · + b)‖_p = |det e|⁻¹ ^ (1 / p).toReal * ‖u‖_p`.
 * `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage`,
   `MeasureTheory.Measure.eLpNorm_comp_continuousLinearEquiv_add_restrict_preimage`: the same
   identities for the `Lᵖ` seminorms on the preimage of `s` and on `s`.
@@ -55,8 +58,11 @@ continuous extended norm.
   `MeasureTheory.MemLp.comp_continuousLinearEquiv_restrict_preimage` carries `Lᵖ` on `s` to `Lᵖ`
   on `e ⁻¹' s`.
 * `MeasureTheory.Lp.compContinuousLinearEquivAddRestrict`,
-  `MeasureTheory.Lp.coeFn_compContinuousLinearEquivAddRestrict`: restricted additive Haar `Lᵖ`
-  precomposition along an invertible affine map `x ↦ B x + b`.
+  `MeasureTheory.Lp.coeFn_compContinuousLinearEquivAddRestrict`,
+  `MeasureTheory.Lp.norm_compContinuousLinearEquivAddRestrict_le`,
+  `MeasureTheory.Lp.norm_compContinuousLinearEquivAddRestrict`: restricted additive Haar `Lᵖ`
+  precomposition along an invertible affine map `x ↦ B x + b`, its `MapsTo` norm bound, and its
+  exact norm identity on preimages.
 * `MeasureTheory.Lp.norm_le_mul_abs_det_inv_rpow_of_ae_le`,
   `MeasureTheory.Lp.norm_eq_mul_abs_det_inv_rpow_of_ae_eq`: affine `Lᵖ` norm comparison and exact
   identity on arbitrary sets.
@@ -101,7 +107,9 @@ theorem eLpNorm_comp_inv_smul (u : E → G) {r : ℝ} (hr : r ≠ 0) (p : ℝ≥
 
 /-- **Affine change of variables in the `Lᵖ` seminorm on a set:** composing with `x ↦ e x + b`,
 for a linear automorphism `e`, multiplies the `Lᵖ` seminorm on `(fun x ↦ e x + b) ⁻¹' s` by
-`|det e|^(-1 / p)` relative to the `Lᵖ` seminorm on `s`. The set `s` need not be measurable. -/
+`|det e|⁻¹ ^ (1 / p).toReal` relative to the `Lᵖ` seminorm on `s`. The set `s` need not be
+measurable. The exponent `(1 / p).toReal` is `0` at `p = 0` and `p = ∞`, where the factor is thus
+`1`. -/
 theorem eLpNorm_comp_continuousLinearEquiv_add_restrict_preimage
     (u : E → G) (e : E ≃L[ℝ] E) (b : E) (p : ℝ≥0∞) {s : Set E} :
     eLpNorm (fun x ↦ u (e x + b)) p (μ.restrict ((fun x ↦ e x + b) ⁻¹' s)) =
@@ -120,7 +128,8 @@ theorem eLpNorm_comp_continuousLinearEquiv_add_restrict_preimage
 
 /-- **Affine change of variables in the `Lᵖ` seminorm:** composing with `x ↦ e x + b`, for a
 linear automorphism `e`, multiplies the `Lᵖ` seminorm against an additive Haar measure by
-`|det e|^(-1 / p)`. -/
+`|det e|⁻¹ ^ (1 / p).toReal`. The exponent `(1 / p).toReal` is `0` at `p = 0` and `p = ∞`, where
+the factor is thus `1`. -/
 theorem eLpNorm_comp_continuousLinearEquiv_add (u : E → G) (e : E ≃L[ℝ] E) (b : E) (p : ℝ≥0∞) :
     eLpNorm (fun x ↦ u (e x + b)) p μ =
       ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal * eLpNorm u p μ := by
@@ -128,8 +137,9 @@ theorem eLpNorm_comp_continuousLinearEquiv_add (u : E → G) (e : E ≃L[ℝ] E)
 
 /-- **Linear change of variables in the `Lᵖ` seminorm on a set:** composing with a linear
 automorphism `e` multiplies the `Lᵖ` seminorm on `e ⁻¹' s`, against an additive Haar measure, by
-`|det e|^(-1 / p)` relative to the `Lᵖ` seminorm of the function on `s`. The set `s` need not be
-measurable. -/
+`|det e|⁻¹ ^ (1 / p).toReal` relative to the `Lᵖ` seminorm of the function on `s`. The set `s` need
+not be measurable. The exponent `(1 / p).toReal` is `0` at `p = 0` and `p = ∞`, where the factor is
+thus `1`. -/
 theorem eLpNorm_comp_continuousLinearEquiv_restrict_preimage
     (u : E → G) (e : E ≃L[ℝ] E) (p : ℝ≥0∞) {s : Set E} :
     eLpNorm (u ∘ e) p (μ.restrict (e ⁻¹' s)) =
@@ -138,8 +148,8 @@ theorem eLpNorm_comp_continuousLinearEquiv_restrict_preimage
   simpa [Function.comp_def] using eLpNorm_comp_continuousLinearEquiv_add_restrict_preimage μ u e 0 p
 
 /-- **Linear change of variables in the `Lᵖ` seminorm:** composing with a linear automorphism `e`
-multiplies the `Lᵖ` seminorm against an additive Haar measure by `|det e|^(-1 / p)`. The exponent
-`1 / p` is `(1 / p).toReal`, which is `0` at `p = 0` and `p = ∞`, where the factor is thus `1`. -/
+multiplies the `Lᵖ` seminorm against an additive Haar measure by `|det e|⁻¹ ^ (1 / p).toReal`.
+The exponent `(1 / p).toReal` is `0` at `p = 0` and `p = ∞`, where the factor is thus `1`. -/
 theorem eLpNorm_comp_continuousLinearEquiv (u : E → G) (e : E ≃L[ℝ] E) (p : ℝ≥0∞) :
     eLpNorm (u ∘ e) p μ = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal *
       eLpNorm u p μ := by
@@ -325,13 +335,14 @@ open scoped ENNReal
 /-- **Affine `Lᵖ` norm comparison on arbitrary sets.** If `f ∈ Lᵖ(μ.restrict s)` and
 `g ∈ Lᵖ(μ.restrict t)` satisfy `‖f x‖ ≤ M * ‖g (B x + b)‖` for `μ.restrict s`-a.e. `x`, where
 `x ↦ B x + b` maps `s` into `t` for a linear automorphism `B : E ≃L[ℝ] E` and `0 ≤ M`, then
-`‖f‖ ≤ M * |det B|⁻¹ ^ (1 / p).toReal * ‖g‖`. -/
+`‖f‖ ≤ M * |det B|⁻¹ ^ (1 / p).toReal * ‖g‖` (where `(1 / p).toReal = 0`, hence factor `1`, at
+`p = 0` and `p = ∞`). -/
 theorem norm_le_mul_abs_det_inv_rpow_of_ae_le {E G H : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
     {μ : Measure E} [μ.IsAddHaarMeasure] {p : ℝ≥0∞} {s t : Set E}
     [NormedAddCommGroup G] [NormedAddCommGroup H]
-    (B : E ≃L[ℝ] E) (b : E) (hst : Set.MapsTo (fun x ↦ B x + b) s t)
-    {f : Lp G p (μ.restrict s)} {g : Lp H p (μ.restrict t)} {M : ℝ} (hM : 0 ≤ M)
+    (f : Lp G p (μ.restrict s)) (B : E ≃L[ℝ] E) (b : E)
+    (hst : Set.MapsTo (fun x ↦ B x + b) s t) {g : Lp H p (μ.restrict t)} {M : ℝ} (hM : 0 ≤ M)
     (hpt : ∀ᵐ x ∂μ.restrict s, ‖f x‖ ≤ M * ‖g (B x + b)‖) :
     ‖f‖ ≤ M * |LinearMap.det (B : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal * ‖g‖ := by
   have he : eLpNorm f p (μ.restrict s) ≤ ENNReal.ofReal M *
@@ -354,13 +365,14 @@ theorem norm_le_mul_abs_det_inv_rpow_of_ae_le {E G H : Type*} [NormedAddCommGrou
 /-- **Exact affine `Lᵖ` norm identity on preimages.** If `f ∈ Lᵖ(μ.restrict s)` and
 `g ∈ Lᵖ(μ.restrict t)` satisfy `f =ᵐ c • g (B · + b)` on `s = (fun x ↦ B x + b) ⁻¹' t` for a
 linear automorphism `B : E ≃L[ℝ] E` and scalar `c`, then
-`‖f‖ = ‖c‖ * |det B|⁻¹ ^ (1 / p).toReal * ‖g‖`. -/
+`‖f‖ = ‖c‖ * |det B|⁻¹ ^ (1 / p).toReal * ‖g‖` (where `(1 / p).toReal = 0`, hence factor `1`, at
+`p = 0` and `p = ∞`). -/
 theorem norm_eq_mul_abs_det_inv_rpow_of_ae_eq {E G 𝕜 : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E]
     {μ : Measure E} [μ.IsAddHaarMeasure] {p : ℝ≥0∞} {s t : Set E}
     [NormedAddCommGroup G] [NormedDivisionRing 𝕜] [Module 𝕜 G] [NormSMulClass 𝕜 G]
-    (B : E ≃L[ℝ] E) (b : E) (hst : s = (fun x ↦ B x + b) ⁻¹' t)
-    {f : Lp G p (μ.restrict s)} {g : Lp G p (μ.restrict t)} (c : 𝕜)
+    (f : Lp G p (μ.restrict s)) (B : E ≃L[ℝ] E) (b : E)
+    (hst : s = (fun x ↦ B x + b) ⁻¹' t) {g : Lp G p (μ.restrict t)} (c : 𝕜)
     (hpt : (f : E → G) =ᵐ[μ.restrict s] fun x ↦ c • g (B x + b)) :
     ‖f‖ = ‖c‖ * |LinearMap.det (B : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal * ‖g‖ := by
   rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae hpt]
@@ -396,11 +408,52 @@ noncomputable def compContinuousLinearEquivAddRestrict (𝕜 : Type*) [NormedFie
 on `μ.restrict s` with `x ↦ f (B x + b)`. -/
 theorem coeFn_compContinuousLinearEquivAddRestrict {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 G]
     {μ : Measure E'} [μ.IsAddHaarMeasure] {ν : Measure F} [ν.IsAddHaarMeasure]
-    {s : Set E'} {t : Set F} (B : E' ≃L[ℝ] F) (b : F)
-    (hst : Set.MapsTo (fun x ↦ B x + b) s t) (f : Lp G p (ν.restrict t)) :
+    {s : Set E'} {t : Set F} (f : Lp G p (ν.restrict t)) (B : E' ≃L[ℝ] F) (b : F)
+    (hst : Set.MapsTo (fun x ↦ B x + b) s t) :
     compContinuousLinearEquivAddRestrict 𝕜 μ ν B b hst f =ᵐ[μ.restrict s]
       fun x ↦ f (B x + b) :=
   coeFn_compOfMapLeSmul _ _ _ f
+
+/-- **Norm bound for restricted affine `Lᵖ` precomposition under `MapsTo`.** When
+`x ↦ B x + b` maps `s` into `t`, `‖compContinuousLinearEquivAddRestrict 𝕜 μ ν B b hst f‖` is
+bounded by `(Measure.addHaarScalarFactor (μ.map B) ν : ℝ) ^ (1 / p).toReal * ‖f‖` (where
+`(1 / p).toReal = 0`, hence factor `1`, at `p = ∞`). -/
+theorem norm_compContinuousLinearEquivAddRestrict_le {𝕜 : Type*} [NormedField 𝕜]
+    [NormedSpace 𝕜 G] {μ : Measure E'} [μ.IsAddHaarMeasure] {ν : Measure F}
+    [ν.IsAddHaarMeasure] {s : Set E'} {t : Set F} (f : Lp G p (ν.restrict t))
+    (B : E' ≃L[ℝ] F) (b : F) (hst : Set.MapsTo (fun x ↦ B x + b) s t) :
+    ‖compContinuousLinearEquivAddRestrict 𝕜 μ ν B b hst f‖ ≤
+      (Measure.addHaarScalarFactor (μ.map B) ν : ℝ) ^ (1 / p).toReal * ‖f‖ := by
+  rw [compContinuousLinearEquivAddRestrict]
+  simpa only [← ENNReal.toReal_rpow, ENNReal.coe_toReal] using
+    norm_compOfMapLeSmul_le (𝕜 := 𝕜)
+      (B.continuous.add (continuous_const (y := b))).measurable.aemeasurable
+      (ENNReal.coe_ne_top (r := Measure.addHaarScalarFactor (μ.map B) ν))
+      (Measure.map_restrict_continuousLinearEquiv_add_le_smul_restrict μ ν B b hst) f
+
+/-- **Exact norm identity for restricted affine `Lᵖ` precomposition on preimages.** When
+`s = (fun x ↦ B x + b) ⁻¹' t`, `compContinuousLinearEquivAddRestrict` scales the `Lᵖ` norm by
+`(Measure.addHaarScalarFactor (μ.map B) ν : ℝ) ^ (1 / p).toReal` (where `(1 / p).toReal = 0`,
+hence factor `1`, at `p = ∞`). -/
+theorem norm_compContinuousLinearEquivAddRestrict {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 G]
+    {μ : Measure E'} [μ.IsAddHaarMeasure] {ν : Measure F} [ν.IsAddHaarMeasure]
+    {s : Set E'} {t : Set F} (f : Lp G p (ν.restrict t)) (B : E' ≃L[ℝ] F) (b : F)
+    (hs : s = (fun x ↦ B x + b) ⁻¹' t) :
+    ‖compContinuousLinearEquivAddRestrict 𝕜 μ ν B b (hs ▸ Set.mapsTo_preimage _ _) f‖ =
+      (Measure.addHaarScalarFactor (μ.map B) ν : ℝ) ^ (1 / p).toReal * ‖f‖ := by
+  have : LocallyCompactSpace E' := B.toHomeomorph.isOpenEmbedding.locallyCompactSpace
+  have : SecondCountableTopology E' := B.toHomeomorph.isInducing.secondCountableTopology
+  have : (μ.map B).IsAddHaarMeasure := B.isAddHaarMeasure_map μ
+  have hC₀ : (Measure.addHaarScalarFactor (μ.map B) ν : ℝ≥0∞) ≠ 0 :=
+    ENNReal.coe_ne_zero.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure (μ.map B) ν).ne'
+  have hmap : (μ.restrict s).map (fun x ↦ B x + b) =
+      (Measure.addHaarScalarFactor (μ.map B) ν : ℝ≥0∞) • ν.restrict t :=
+    hs ▸ Measure.map_restrict_preimage_continuousLinearEquiv_add_eq_smul_restrict μ ν B b t
+  rw [compContinuousLinearEquivAddRestrict]
+  simpa only [← ENNReal.toReal_rpow, ENNReal.coe_toReal] using
+    norm_compOfMapLeSmul (𝕜 := 𝕜)
+      (B.continuous.add (continuous_const (y := b))).measurable.aemeasurable hC₀
+      ENNReal.coe_ne_top hmap f
 
 end Affine
 
