@@ -7,9 +7,9 @@ module
 
 public import TauCeti.RingTheory.Polynomial.Resultant.WeightedHomogeneous
 import Mathlib.RingTheory.Localization.Away.Basic
-import Mathlib.RingTheory.MvPolynomial.Localization
 import TauCeti.Algebra.MvPolynomial.Equiv
 import TauCeti.Algebra.Polynomial.Taylor
+import TauCeti.RingTheory.MvPolynomial.Localization
 import TauCeti.RingTheory.Polynomial.Resultant.FreeMonic
 import TauCeti.RingTheory.Polynomial.Resultant.RootCoordinates
 
@@ -457,13 +457,6 @@ private theorem coeff_optionSubtypeNeEquiv_depressedDiscr_self (A : Type*) [Comm
     rw [hu_eq, Finsupp.single_eq_of_ne j.property] at huj
     exact hj huj.symm
 
-private theorem natCast_sub_one_eq_neg_one {A : Type*} [CommRing A] {m : ℕ} (hm : 1 ≤ m)
-    (hmA : (m : A) = 0) : ((m - 1 : ℕ) : A) = -1 := by
-  have h1 : ((m - 1 : ℕ) : A) + ((1 : ℕ) : A) = 0 := by
-    rw [← Nat.cast_add, Nat.sub_add_cancel hm, hmA]
-  rw [Nat.cast_one] at h1
-  exact eq_neg_of_add_eq_zero_left h1
-
 private theorem isUnit_leadingCoeff_optionSubtypeNeEquiv_depressedDiscr (A : Type*) [CommRing A]
     [Nontrivial A] {m : ℕ} (hm : 3 ≤ m) (hmA : (m : A) = 0) :
     IsUnit (MvPolynomial.optionSubtypeNeEquiv A (⟨m - 3, by omega⟩ : Fin (m - 1))
@@ -471,7 +464,7 @@ private theorem isUnit_leadingCoeff_optionSubtypeNeEquiv_depressedDiscr (A : Typ
   let e := MvPolynomial.optionSubtypeNeEquiv A (⟨m - 3, by omega⟩ : Fin (m - 1))
   have hunit : IsUnit ((e (depressedDiscr A m)).coeff m) := by
     rw [coeff_optionSubtypeNeEquiv_depressedDiscr_self A hm, depressedDiscr_coeff_single_eq A hm,
-      natCast_sub_one_eq_neg_one (by omega) hmA, ← pow_add]
+      Nat.cast_sub (by omega), hmA, Nat.cast_one, zero_sub, ← pow_add]
     exact (isUnit_one.neg.pow _).map MvPolynomial.C
   have hdeg : (e (depressedDiscr A m)).natDegree = m :=
     natDegree_eq_of_le_of_coeff_ne_zero
@@ -583,29 +576,6 @@ private theorem depressedDiscr_prime_of_isUnit [IsDomain R] (h2 : (2 : R) ≠ 0)
   rw [hψ]
   exact prime_discr_freeMonic h2 hm2
 
-/-- Divisibility by `p` after localizing away from `r` descends to `C (r ^ k) * x = p * q₀`. -/
-private theorem exists_C_pow_mul_eq_mul_of_map_localization_away
-    {σ R : Type*} [CommRing R] {r : R} (hr : r ∈ nonZeroDivisors R) {p x : MvPolynomial σ R}
-    (hdvd : MvPolynomial.map (algebraMap R (Localization.Away r)) p ∣
-      MvPolynomial.map (algebraMap R (Localization.Away r)) x) :
-    ∃ (k : ℕ) (q₀ : MvPolynomial σ R), MvPolynomial.C (r ^ k) * x = p * q₀ := by
-  let := MvPolynomial.algebraMvPolynomial (σ := σ) (R := R) (S := Localization.Away r)
-  have hinj : Function.Injective (algebraMap R (Localization.Away r)) :=
-    IsLocalization.injective (Localization.Away r) (Submonoid.powers_le.mpr hr)
-  obtain ⟨qS, hqS⟩ := hdvd
-  obtain ⟨⟨q₀, _, b, ⟨k, rfl⟩, rfl⟩, hq₀⟩ :=
-    IsLocalization.surj ((Submonoid.powers r).map (MvPolynomial.C (σ := σ))) qS
-  simp only [MvPolynomial.algebraMap_def, MvPolynomial.map_C] at hq₀
-  refine ⟨k, q₀, MvPolynomial.map_injective _ hinj ?_⟩
-  calc
-    MvPolynomial.map (algebraMap R (Localization.Away r)) (MvPolynomial.C (r ^ k) * x)
-        = MvPolynomial.map (algebraMap R (Localization.Away r)) p *
-            (qS * MvPolynomial.C (algebraMap R (Localization.Away r) (r ^ k))) := by
-      simp only [map_mul, MvPolynomial.map_C, hqS]
-      ring
-    _ = MvPolynomial.map (algebraMap R (Localization.Away r)) (p * q₀) := by
-      simp only [map_mul, hq₀]
-
 /-- **The generic depressed discriminant is prime.** Over a domain in which `2 ≠ 0` and
 `(m : R) ≠ 0`, with `IsUnit (2 : R)` when `m = 2`, the discriminant of `Xᵐ + a₂ Xᵐ⁻² + ⋯ + aₘ`
 is a prime element of `R[a₂, …, aₘ]` for every `m ≥ 2`. -/
@@ -637,8 +607,8 @@ theorem depressedDiscr_prime [IsDomain R] (h2 : (2 : R) ≠ 0) (hmR : (m : R) �
         depressedDiscr Rm m ∣ MvPolynomial.map (algebraMap R Rm) x → depressedDiscr R m ∣ x := by
       intro x hx
       rw [← hmap_eq] at hx
-      obtain ⟨k, q₀, hcx⟩ := exists_C_pow_mul_eq_mul_of_map_localization_away
-        (mem_nonZeroDivisors_of_ne_zero hmR) hx
+      obtain ⟨k, q₀, hcx⟩ :=
+        MvPolynomial.exists_C_pow_mul_eq_mul_of_map_localization_away (m : R) hx
       exact depressedDiscr_dvd_of_C_pow_mul_dvd hm3 hmR hcx
     rcases hprime_Rm.dvd_or_dvd hfg_Rm with hf | hg
     · exact Or.inl (descend f hf)
