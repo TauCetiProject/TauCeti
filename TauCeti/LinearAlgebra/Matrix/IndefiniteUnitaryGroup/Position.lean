@@ -11,7 +11,10 @@ public import TauCeti.LinearAlgebra.Matrix.FormAdjoint
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Matrix.ToLin
+import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 import TauCeti.LinearAlgebra.Matrix.Range
+import TauCeti.LinearAlgebra.Matrix.Submatrix
+import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 
 /-!
 # Positions of a smaller unitary group in a larger one
@@ -117,13 +120,6 @@ theorem inducesModFlag_iff {v : Matrix n (Fin (d + 1)) K} {i₀ : Matrix n m K} 
       Y * i₀ = i₀ * Y' + v.submatrix id Fin.castSucc * C :=
   Iff.rfl
 
-/-- A left inverse `T` of `v` restricts to a left inverse of the columns of `v` indexed by an
-injective `e`. -/
-private theorem submatrix_mul_submatrix_eq_one {k : Type*} [DecidableEq k]
-    {v : Matrix n k K} {T : Matrix k n K} {l : Type*} [DecidableEq l] {e : l → k}
-    (he : Function.Injective e) (hT : T * v = 1) : T.submatrix e id * v.submatrix id e = 1 := by
-  rw [← submatrix_mul _ _ _ _ _ Function.bijective_id, hT, submatrix_one _ he]
-
 /-- **The sum of a flag-lowering matrix is unique**: if the vectors `v_j` are independent and `Y`
 lowers their flag with the sums `σ` and `σ'`, then `σ = σ'`. -/
 theorem LowersFlag.sum_eq_of_linearIndependent {v : Matrix n (Fin (d + 1)) K} {Y : Matrix n n K}
@@ -138,31 +134,7 @@ theorem LowersFlag.sum_eq_of_linearIndependent {v : Matrix n (Fin (d + 1)) K} {Y
       ← hN']
   rw [h_eq]
 
-/-- If `Z` is a left inverse of the first `d` vectors `v₁, …, v_d` and `Y₀` maps the vectors
-`v_j` into their span with matrix `N₀`, then `tr (v_t Z Y₀) = ∑ N₀_{a, t a}` for the vectors
-`v_t = (v_{t 1}, …, v_{t d})`. -/
-private theorem trace_submatrix_mul_mul_eq_sum {v : Matrix n (Fin (d + 1)) K}
-    {Z : Matrix (Fin d) n K} {Y₀ : Matrix n n K} {N₀ : Matrix (Fin d) (Fin (d + 1)) K}
-    {t : Fin d → Fin (d + 1)}
-    (hZ : Z * v.submatrix id Fin.castSucc = 1) (hN₀ : Y₀ * v = v.submatrix id Fin.castSucc * N₀) :
-    (v.submatrix id t * Z * Y₀).trace = ∑ a : Fin d, N₀ a (t a) := by
-  have h_cols : Y₀ * v.submatrix id t = v.submatrix id Fin.castSucc * N₀.submatrix id t := by
-    simpa only [submatrix_mul _ _ id id t Function.bijective_id, submatrix_id_id] using
-      congrArg (·.submatrix id t) hN₀
-  calc (v.submatrix id t * Z * Y₀).trace
-        = (v.submatrix id Fin.castSucc * N₀.submatrix id t * Z).trace := by
-        rw [trace_mul_comm, ← Matrix.mul_assoc, h_cols]
-    _ = (N₀.submatrix id t).trace := by rw [trace_mul_cycle, hZ, Matrix.one_mul]
-    _ = ∑ a : Fin d, N₀ a (t a) := by simp [Matrix.trace]
-
 variable [StarRing K]
-
-/-- The products `⟨v_{t a}, M y⟩_J` with the vectors `v_{t a}` are the rows `t a` of `vᴴ J M`. -/
-private theorem submatrix_conjTranspose_mul_mul_eq_submatrix {k l p : Type*}
-    (v : Matrix n k K) (t : l → k) (J : Matrix n n K) (M : Matrix n p K) :
-    (v.submatrix id t)ᴴ * J * M = (vᴴ * J * M).submatrix t id := by
-  rw [conjTranspose_submatrix, Matrix.mul_assoc, Matrix.mul_assoc,
-    submatrix_mul _ _ _ _ _ Function.bijective_id, submatrix_id_id]
 
 /-- A **position** of `U(J')` in `U(J)` with `d + 1` vectors: the columns `v₁, …, v_{d+1}` of `v`
 are independent, their products `⟨v_a, v_b⟩_J = (vᴴ J v)_{ab}` vanish except that

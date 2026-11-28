@@ -23,7 +23,9 @@ one equivalence preserves the trace. Two square matrices intertwined by a matrix
 determinant is a non-zero-divisor have the same trace; over a domain this applies to every
 intertwiner of nonzero determinant, such as the inclusion matrix of a full-rank sublattice.
 The trace of a product of two skew-Hermitian matrices is fixed by `star` (in particular,
-it is real over `ℂ`).
+it is real over `ℂ`). If `Y` maps the columns of `v` into the span of the columns of `w` with
+matrix `N`, and `Z` is a left inverse of `w`, then `trace (v.submatrix id t * Z * Y)` is the sum of
+the entries `N a (t a)`.
 
 ## Main results
 
@@ -42,6 +44,8 @@ it is real over `ℂ`).
   matrices is fixed by `star`.
 * `Matrix.sum_map_mul_comm`: the trace property for rectangular matrices over a possibly
   noncommutative ring, through an additive map `f` with `f (a * b) = f (b * a)`.
+* `Matrix.trace_submatrix_mul_mul_eq_sum`: if `Z * w = 1` and `Y * v = w * N`, then
+  `trace (v.submatrix id t * Z * Y) = ∑ a, N a (t a)`.
 -/
 
 public section
@@ -124,5 +128,21 @@ theorem sum_map_mul_comm {R M F : Type*} [AddCommMonoid R] [Mul R] [AddCommMonoi
   simp only [Matrix.mul_apply, map_sum]
   rw [Finset.sum_comm]
   exact Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun i _ ↦ hf _ _
+
+/-- If `Z` is a left inverse of `w` and `Y` maps the columns of `v` into the span of the columns
+of `w` with matrix `N`, then `tr (v_t Z Y) = ∑ N_{a, t a}` for the columns
+`v_t = (v_{t a})_a` of `v`. -/
+theorem trace_submatrix_mul_mul_eq_sum {k : Type*} [DecidableEq m] {v : Matrix n k R}
+    {w : Matrix n m R} {Z : Matrix m n R} {Y : Matrix n n R} {N : Matrix m k R} {t : m → k}
+    (hZ : Z * w = 1) (hN : Y * v = w * N) :
+    (v.submatrix id t * Z * Y).trace = ∑ a, N a (t a) := by
+  have h_cols : Y * v.submatrix id t = w * N.submatrix id t := by
+    simpa only [submatrix_mul _ _ id id t Function.bijective_id, submatrix_id_id] using
+      congrArg (·.submatrix id t) hN
+  calc (v.submatrix id t * Z * Y).trace
+        = (w * N.submatrix id t * Z).trace := by
+        rw [trace_mul_comm, ← Matrix.mul_assoc, h_cols]
+    _ = (N.submatrix id t).trace := by rw [trace_mul_cycle, hZ, Matrix.one_mul]
+    _ = ∑ a, N a (t a) := by simp [Matrix.trace]
 
 end Matrix
