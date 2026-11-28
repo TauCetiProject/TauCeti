@@ -27,8 +27,9 @@ theorem: its principal minors count the spanning arborescences.
 ## Main results
 
 * `TauCeti.outLaplacian_apply_self`, `TauCeti.outLaplacian_apply_of_ne`: the entries.
-* `TauCeti.sum_outLaplacian_apply`, `TauCeti.outLaplacian_mulVec_one`: every row sums to `0`.
-* `TauCeti.det_outLaplacian`: over a commutative ring the determinant is `0` when `V` is
+* `TauCeti.sum_outLaplacian_apply`, `TauCeti.outLaplacian_mulVec_one_eq_zero`: every row sums
+  to `0`.
+* `TauCeti.det_outLaplacian_eq_zero`: over a commutative ring the determinant is `0` when `V` is
   nonempty.
 * `TauCeti.outLaplacian_eq_outLaplacian_iff`: two weight functions have the same Laplacian
   exactly when they agree off the diagonal, so the loop weights do not matter.
@@ -42,7 +43,8 @@ theorem: its principal minors count the spanning arborescences.
 
 ## References
 
-* R. P. Stanley, *Algebraic Combinatorics*, 2nd ed., Theorem 10.4.
+* R. P. Stanley, *Topics in Algebraic Combinatorics*, author's draft, version of 1 February
+  2013, Chapter 10, Theorem 10.4, p. 193.
 -/
 
 public section
@@ -166,7 +168,7 @@ theorem vecMul_outLaplacian_apply {R : Type*} [NonUnitalNonAssocRing R] (w : V �
 
 /-- The out-degree Laplacian sends the all-ones vector to `0`. -/
 @[simp]
-theorem outLaplacian_mulVec_one {R : Type*} [NonAssocRing R] (w : V → V → R) :
+theorem outLaplacian_mulVec_one_eq_zero {R : Type*} [NonAssocRing R] (w : V → V → R) :
     outLaplacian w *ᵥ 1 = 0 := by
   ext v
   simp [outLaplacian_mulVec_apply]
@@ -174,9 +176,9 @@ theorem outLaplacian_mulVec_one {R : Type*} [NonAssocRing R] (w : V → V → R)
 /-- Over a commutative ring, the out-degree Laplacian on a nonempty vertex type has
 determinant `0`. -/
 @[simp]
-theorem det_outLaplacian {R : Type*} [CommRing R] [Nonempty V] (w : V → V → R) :
+theorem det_outLaplacian_eq_zero {R : Type*} [CommRing R] [Nonempty V] (w : V → V → R) :
     (outLaplacian w).det = 0 :=
-  det_eq_zero_of_mulVec_eq_zero_of_mem_nonZeroDivisors (outLaplacian_mulVec_one w)
+  det_eq_zero_of_mulVec_eq_zero_of_mem_nonZeroDivisors (outLaplacian_mulVec_one_eq_zero w)
     (i := Classical.arbitrary V) (one_mem _)
 
 /-- For a weight function whose rows sum to `1` the out-degree Laplacian is `1 - of w`. -/
@@ -195,9 +197,8 @@ theorem outLaplacian_of_mem_rowStochastic {R : Type*} [Ring R] [PartialOrder R]
 theorem outLaplacian_adjMatrix {R : Type*} [AddCommGroupWithOne R] (G : SimpleGraph V)
     [DecidableRel G.Adj] : outLaplacian (G.adjMatrix R) = G.lapMatrix R := by
   ext u v
-  rw [outLaplacian_apply (G.adjMatrix R), SimpleGraph.lapMatrix, SimpleGraph.degMatrix,
-    Matrix.sub_apply, diagonal_apply, G.degree_eq_sum_if_adj]
-  simp [SimpleGraph.adjMatrix_apply]
+  simp [outLaplacian_apply (G.adjMatrix R), SimpleGraph.lapMatrix, SimpleGraph.degMatrix,
+    diagonal_apply, G.degree_eq_sum_if_adj, SimpleGraph.adjMatrix_apply]
 
 end Ring
 
