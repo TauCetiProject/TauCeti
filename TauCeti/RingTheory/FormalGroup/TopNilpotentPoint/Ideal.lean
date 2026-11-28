@@ -43,19 +43,17 @@ noncomputable def idealPointSubgroup (F : FormalGroup R) (I : Ideal A) :
   add_mem' {x y} hx hy := by
     let _ : UniformSpace R := ⊥
     rw [Set.mem_ofPred_eq, TopNilpotentPoint.val_add_eq_eval₂]
-    refine MvPowerSeries.eval₂_mem_of_finite continuous_of_discreteTopology
-      (MvPowerSeries.hasEval_finTwo x.hasEval y.hasEval) ?_ _ ?_
-    · intro i
-      fin_cases i
-      · exact hx
-      · exact hy
-    · simp [F.zero_constantCoeff]
+    exact F.toPowerSeries.eval₂_mem_of_finite continuous_of_discreteTopology
+      (MvPowerSeries.hasEval_finTwo x.hasEval y.hasEval) (Fin.forall_fin_two.mpr ⟨hx, hy⟩)
+      (by simp [F.zero_constantCoeff])
   neg_mem' {x} hx := by
     let _ : UniformSpace R := ⊥
     let _ : ContinuousSMul R A := DiscreteTopology.instContinuousSMul R A
     rw [Set.mem_ofPred_eq, TopNilpotentPoint.val_neg_eq_eval₂, ← PowerSeries.coe_aeval x.hasEval]
     exact PowerSeries.aeval_mem_of_constantCoeff_eq_zero x.hasEval F.constantCoeff_addInvX hx
 
+/-- For any ideal `I`, a topologically nilpotent point lies in the ideal point subgroup
+exactly when its coordinate belongs to `I`. -/
 @[simp]
 theorem mem_idealPointSubgroup (F : FormalGroup R) (I : Ideal A)
     (x : F.TopNilpotentPoint A) : x ∈ F.idealPointSubgroup I ↔ x.val ∈ I := Iff.rfl

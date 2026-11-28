@@ -89,19 +89,34 @@ def idealPointSubmodule (I : Ideal S) :
       exact (F.mem_idealPointSubgroup I _).2 <|
         (ρ.act a).val_toTopNilpotentPointHom_mem I ((F.mem_idealPointSubgroup I x).1 hx) }
 
-@[simp]
-theorem mem_idealPointSubmodule (I : Ideal S) (x : F.TopNilpotentPoint S) :
-    x ∈ ρ.idealPointSubmodule I ↔ x.val ∈ I := F.mem_idealPointSubgroup I x
-
-/-- Two points in the ideal submodule are equal exactly when their coordinates agree. -/
-theorem idealPointSubmodule_ext_iff {I : Ideal S} {x y : ρ.idealPointSubmodule I} :
-    x = y ↔ x.val.val = y.val.val := FormalGroup.idealPointSubgroup_ext_iff
-
 /-- Forgetting scalar multiplication recovers the formal-group point subgroup of the same ideal. -/
 @[simp]
 theorem idealPointSubmodule_toAddSubgroup (I : Ideal S) :
     letI := ρ.isComm
     (ρ.idealPointSubmodule I).toAddSubgroup = F.idealPointSubgroup I := (rfl)
+
+/-- For any ideal `I`, a topologically nilpotent point lies in the ideal point submodule
+exactly when its coordinate belongs to `I`. -/
+@[simp]
+theorem mem_idealPointSubmodule (I : Ideal S) (x : F.TopNilpotentPoint S) :
+    x ∈ ρ.idealPointSubmodule I ↔ x.val ∈ I := by
+  let _ := ρ.isComm
+  rw [← Submodule.mem_toAddSubgroup, idealPointSubmodule_toAddSubgroup, mem_idealPointSubgroup]
+
+/-- Two points in the ideal submodule are equal exactly when their coordinates agree. -/
+theorem idealPointSubmodule_ext_iff {I : Ideal S} {x y : ρ.idealPointSubmodule I} :
+    x = y ↔ x.val.val = y.val.val :=
+  ⟨fun h ↦ congrArg (fun z : ρ.idealPointSubmodule I ↦ z.val.val) h,
+    fun h ↦ Subtype.ext (TopNilpotentPoint.ext h)⟩
+
+/-- The coordinates of points in the ideal submodule are exactly the topologically
+nilpotent elements of the ideal. -/
+theorem range_val_idealPointSubmodule (I : Ideal S) :
+    Set.range (fun x : ρ.idealPointSubmodule I ↦ x.val.val) =
+      (I : Set S) ∩ {s | IsTopologicallyNilpotent s} := by
+  let _ := ρ.isComm
+  change Set.range (fun x : (ρ.idealPointSubmodule I).toAddSubgroup ↦ x.val.val) = _
+  rw [idealPointSubmodule_toAddSubgroup, range_val_idealPointSubgroup]
 
 /-- Inclusion of ideals induces inclusion of their formal-module point submodules. -/
 theorem idealPointSubmodule_mono :
@@ -164,6 +179,15 @@ def mapTopNilpotentPoint (φ : S →A[R] T) :
 theorem mapTopNilpotentPoint_apply (φ : S →A[R] T) (x : F.TopNilpotentPoint S) :
     ρ.mapTopNilpotentPoint φ x = TopNilpotentPoint.map F φ x := (rfl)
 
+/-- An injective coefficient map acts injectively on convergent points. -/
+theorem mapTopNilpotentPoint_injective (φ : S →A[R] T) (hφ : Function.Injective φ) :
+    Function.Injective (ρ.mapTopNilpotentPoint φ) := by
+  intro x y h
+  apply TopNilpotentPoint.ext
+  apply hφ
+  simpa only [mapTopNilpotentPoint_apply, TopNilpotentPoint.val_map] using
+    congrArg TopNilpotentPoint.val h
+
 /-- The identity coefficient map acts identically on convergent points. -/
 @[simp]
 theorem mapTopNilpotentPoint_id :
@@ -210,6 +234,15 @@ theorem coe_mapIdealPoint {I : Ideal S} {J : Ideal T} (φ : S →A[R] T) (hφ : 
     (x : ρ.idealPointSubmodule I) :
     (ρ.mapIdealPoint φ hφ x : F.TopNilpotentPoint T) = TopNilpotentPoint.map F φ x := (rfl)
 
+/-- An injective coefficient map acts injectively on ideal points. -/
+theorem mapIdealPoint_injective {I : Ideal S} {J : Ideal T}
+    (φ : S →A[R] T) (hφ : Set.MapsTo φ I J) (hinj : Function.Injective φ) :
+    Function.Injective (ρ.mapIdealPoint φ hφ) := by
+  intro x y h
+  apply Subtype.ext
+  apply ρ.mapTopNilpotentPoint_injective φ hinj
+  simpa only [mapTopNilpotentPoint_apply, coe_mapIdealPoint] using congrArg Subtype.val h
+
 /-- The identity algebra map acts as the identity on ideal points. -/
 @[simp]
 theorem mapIdealPoint_id (I : Ideal S) :
@@ -228,15 +261,8 @@ theorem mapIdealPoint_comp {I : Ideal S} {J : Ideal T} {K : Ideal U}
   let _ := ρ.topNilpotentPointModule S
   let _ := ρ.topNilpotentPointModule T
   let _ := ρ.topNilpotentPointModule U
-  apply ContinuousLinearMap.ext
-  intro x
-  apply Subtype.ext
-  calc
-    _ = TopNilpotentPoint.map F (ψ.comp φ) x :=
-      ρ.coe_mapIdealPoint (ψ.comp φ) (I := I) (J := K) _ x
-    _ = _ := by
-      simp only [ContinuousLinearMap.comp_apply, coe_mapIdealPoint, TopNilpotentPoint.map_comp,
-        AddMonoidHom.comp_apply]
+  simp only [mapIdealPoint, mapTopNilpotentPoint_comp]
+  exact ContinuousLinearMap.restrict_comp _ _ _
 
 end Coefficients
 
@@ -283,6 +309,7 @@ theorem toTopNilpotentPointContinuousLinearMap_id (ρ : FormalModule A F) :
   simp
 
 /-- Evaluation on convergent points preserves composition of formal-module homomorphisms. -/
+@[simp]
 theorem toTopNilpotentPointContinuousLinearMap_comp {H : FormalGroup R}
     {υ : FormalModule A H} (g : τ.Hom υ) (f : ρ.Hom τ) :
     letI := ρ.isComm
@@ -331,6 +358,7 @@ theorem toIdealPointContinuousLinearMap_id (ρ : FormalModule A F) (I : Ideal S)
   simp
 
 /-- Evaluation on ideal points preserves composition of formal-module homomorphisms. -/
+@[simp]
 theorem toIdealPointContinuousLinearMap_comp {H : FormalGroup R} {υ : FormalModule A H}
     (g : τ.Hom υ) (f : ρ.Hom τ) (I : Ideal S) :
     (g.comp f).toIdealPointContinuousLinearMap I = (g.toIdealPointContinuousLinearMap I).comp
@@ -341,11 +369,8 @@ theorem toIdealPointContinuousLinearMap_comp {H : FormalGroup R} {υ : FormalMod
   let _ := ρ.topNilpotentPointModule S
   let _ := τ.topNilpotentPointModule S
   let _ := υ.topNilpotentPointModule S
-  apply ContinuousLinearMap.ext
-  intro x
-  apply Subtype.ext
-  simp only [ContinuousLinearMap.comp_apply, coe_toIdealPointContinuousLinearMap,
-    comp_toFormalGroupHom, FormalGroupHom.toTopNilpotentPointHom_comp, AddMonoidHom.comp_apply]
+  simp only [toIdealPointContinuousLinearMap, toTopNilpotentPointContinuousLinearMap_comp]
+  exact ContinuousLinearMap.restrict_comp _ _ _
 
 /-- Applying a formal-module homomorphism to an ideal point commutes with change of
 coefficient algebra. -/
@@ -366,18 +391,28 @@ linear equivalence on points in each ideal. -/
 def idealPointContinuousLinearEquiv {τ : FormalModule A G} (e : FormalGroupIso F G)
     (he : ∀ a, e.toHom.comp (ρ.act a) = (τ.act a).comp e.toHom) (I : Ideal S) :
     ρ.idealPointSubmodule I ≃L[A] τ.idealPointSubmodule I := by
+  let _ := ρ.isComm
+  let _ := τ.isComm
   let f : ρ.Hom τ := ⟨e.toHom, he⟩
-  let E : ρ.idealPointSubmodule I ≃+ τ.idealPointSubmodule I := e.toIdealPointEquiv I
+  let eρ := AddEquiv.addSubgroupCongr (ρ.idealPointSubmodule_toAddSubgroup I)
+  let eτ := AddEquiv.addSubgroupCongr (τ.idealPointSubmodule_toAddSubgroup I)
+  let E : ρ.idealPointSubmodule I ≃+ τ.idealPointSubmodule I :=
+    (eρ.trans (e.toIdealPointEquiv I)).trans eτ.symm
+  have heval (x : ρ.idealPointSubmodule I) :
+      (E x : G.TopNilpotentPoint S) = e.toHom.toTopNilpotentPointHom S x :=
+    e.coe_toIdealPointEquiv I (eρ x)
+  have heval_inv (x : τ.idealPointSubmodule I) :
+      (E.symm x : F.TopNilpotentPoint S) = e.invHom.toTopNilpotentPointHom S x :=
+    e.coe_toIdealPointEquiv_symm I (eτ x)
   have hf (x : ρ.idealPointSubmodule I) :
       E x = f.toIdealPointContinuousLinearMap I x :=
-    Subtype.ext <| (e.coe_toIdealPointEquiv I x).trans
-      (f.coe_toIdealPointContinuousLinearMap I x).symm
+    Subtype.ext <| (heval x).trans (f.coe_toIdealPointContinuousLinearMap I x).symm
   have hcont : Continuous (fun x ↦ E x) := by
     simpa only [hf] using (f.toIdealPointContinuousLinearMap I).continuous
   have hcont_inv : Continuous E.symm := by
     apply continuous_induced_rng.2
     convert e.invHom.continuous_toTopNilpotentPointHom.comp continuous_subtypeVal using 1
-    exact funext (e.coe_toIdealPointEquiv_symm I ·)
+    exact funext heval_inv
   exact
     { E.toLinearEquiv (fun a x ↦ by simp only [hf, map_smul]) with
       continuous_toFun := hcont
@@ -388,16 +423,18 @@ theorem coe_idealPointContinuousLinearEquiv {τ : FormalModule A G} (e : FormalG
     (he : ∀ a, e.toHom.comp (ρ.act a) = (τ.act a).comp e.toHom) (I : Ideal S)
     (x : ρ.idealPointSubmodule I) :
     (ρ.idealPointContinuousLinearEquiv e he I x : G.TopNilpotentPoint S) =
-      e.toHom.toTopNilpotentPointHom S x :=
-  e.coe_toIdealPointEquiv I x
+      e.toHom.toTopNilpotentPointHom S x := by
+  let x' := AddEquiv.addSubgroupCongr (ρ.idealPointSubmodule_toAddSubgroup I) x
+  exact e.coe_toIdealPointEquiv I x'
 
-@[simp]
+/-- The inverse point equivalence evaluates the inverse formal-group isomorphism. -/
 theorem coe_idealPointContinuousLinearEquiv_symm {τ : FormalModule A G} (e : FormalGroupIso F G)
     (he : ∀ a, e.toHom.comp (ρ.act a) = (τ.act a).comp e.toHom) (I : Ideal S)
     (x : τ.idealPointSubmodule I) :
     ((ρ.idealPointContinuousLinearEquiv e he I).symm x : F.TopNilpotentPoint S) =
-      e.invHom.toTopNilpotentPointHom S x :=
-  e.coe_toIdealPointEquiv_symm I x
+      e.invHom.toTopNilpotentPointHom S x := by
+  let x' := AddEquiv.addSubgroupCongr (τ.idealPointSubmodule_toAddSubgroup I) x
+  exact e.coe_toIdealPointEquiv_symm I x'
 
 /-- The identity formal-group isomorphism induces the identity equivalence on ideal points. -/
 @[simp]
@@ -412,17 +449,13 @@ theorem idealPointContinuousLinearEquiv_refl (I : Ideal S) :
 /-- The inverse intertwining isomorphism induces the inverse equivalence on ideal points. -/
 @[simp]
 theorem idealPointContinuousLinearEquiv_symm {τ : FormalModule A G} (e : FormalGroupIso F G)
-    (he : ∀ a, e.symm.toHom.comp (τ.act a) = (ρ.act a).comp e.symm.toHom) (I : Ideal S) :
-    τ.idealPointContinuousLinearEquiv e.symm he I =
-      (ρ.idealPointContinuousLinearEquiv e ((ρ.eq_conj_iff e τ).mp (by
-        calc
-          τ = (τ.conj e.symm).conj e := by
-            simpa only [FormalGroupIso.symm_symm] using (τ.conj_conj_symm e.symm).symm
-          _ = ρ.conj e := congrArg (·.conj e) ((τ.eq_conj_iff e.symm ρ).mpr he).symm)) I).symm := by
+    (he : ∀ a, e.toHom.comp (ρ.act a) = (τ.act a).comp e.toHom) (I : Ideal S) :
+    (ρ.idealPointContinuousLinearEquiv e he I).symm =
+      τ.idealPointContinuousLinearEquiv e.symm (ρ.comp_act_symm e he) I := by
   apply ContinuousLinearEquiv.ext
   funext x
   apply Subtype.ext
-  simp
+  simp [coe_idealPointContinuousLinearEquiv_symm]
 
 /-- The equivalence on ideal points preserves composition of intertwining isomorphisms. -/
 @[simp]
@@ -431,11 +464,7 @@ theorem idealPointContinuousLinearEquiv_trans {H : FormalGroup R}
     (he : ∀ a, e.toHom.comp (ρ.act a) = (τ.act a).comp e.toHom)
     (hg : ∀ a, g.toHom.comp (τ.act a) = (υ.act a).comp g.toHom) (I : Ideal S) :
     (ρ.idealPointContinuousLinearEquiv e he I).trans (τ.idealPointContinuousLinearEquiv g hg I) =
-      ρ.idealPointContinuousLinearEquiv (e.trans g) (by
-        let f : ρ.Hom τ := ⟨e.toHom, he⟩
-        let k : τ.Hom υ := ⟨g.toHom, hg⟩
-        simpa only [FormalGroupIso.trans_toHom, Hom.comp_toFormalGroupHom] using
-          (k.comp f).comp_act) I := by
+      ρ.idealPointContinuousLinearEquiv (e.trans g) (ρ.comp_act_trans e g he hg) I := by
   apply ContinuousLinearEquiv.ext
   funext x
   apply Subtype.ext

@@ -369,6 +369,25 @@ def conjInvHom : Hom (ρ.conj e) ρ where
 @[simp]
 theorem conjInvHom_toFormalGroupHom : (ρ.conjInvHom e).toFormalGroupHom = e.invHom := (rfl)
 
+/-- The inverse of an isomorphism intertwining two scalar actions also intertwines them. -/
+theorem comp_act_symm {τ : FormalModule A G}
+    (he : ∀ a, e.toHom.comp (ρ.act a) = (τ.act a).comp e.toHom) :
+    ∀ a, e.symm.toHom.comp (τ.act a) = (ρ.act a).comp e.symm.toHom := by
+  have hτ := (ρ.eq_conj_iff e τ).mpr he
+  subst τ
+  simpa only [FormalGroupIso.symm_toHom, conjInvHom_toFormalGroupHom] using
+    (ρ.conjInvHom e).comp_act
+
+/-- Composing isomorphisms that intertwine scalar actions preserves intertwining. -/
+theorem comp_act_trans {H : FormalGroup R} {τ : FormalModule A G} {υ : FormalModule A H}
+    (g : FormalGroupIso G H)
+    (he : ∀ a, e.toHom.comp (ρ.act a) = (τ.act a).comp e.toHom)
+    (hg : ∀ a, g.toHom.comp (τ.act a) = (υ.act a).comp g.toHom) :
+    ∀ a, (e.trans g).toHom.comp (ρ.act a) = (υ.act a).comp (e.trans g).toHom := by
+  let f : ρ.Hom τ := ⟨e.toHom, he⟩
+  let k : τ.Hom υ := ⟨g.toHom, hg⟩
+  simpa only [FormalGroupIso.trans_toHom, Hom.comp_toFormalGroupHom] using (k.comp f).comp_act
+
 /-- Transport along the identity isomorphism does nothing. -/
 @[simp]
 theorem conj_refl : ρ.conj (FormalGroupIso.refl F) = ρ := by

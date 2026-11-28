@@ -51,7 +51,8 @@ theorem val_rescaleLogHom_toTopNilpotentPointHom (x : (F.rescale s).TopNilpotent
       (PowerSeries.hasSum_aeval (R := R) x.hasEval (F.rescaleLog hs)))
 
 /-- Evaluation of the integral logarithm identifies the rescaled formal group on `I` with
-ordinary addition on `I`. Its inverse evaluates the inverse integral logarithm. -/
+ordinary addition on `I`. Every element of `I` must be topologically nilpotent so that the
+inverse integral logarithm can be evaluated on all of `I`. -/
 noncomputable def rescaleLogPointEquiv : (F.rescale s).idealPointSubgroup I ≃+ I :=
   ((F.rescaleLogIso hs).toIdealPointEquiv I).trans
     (Ideal.additiveFormalGroupPointEquiv I hI)

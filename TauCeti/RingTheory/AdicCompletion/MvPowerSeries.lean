@@ -12,7 +12,7 @@ import Mathlib.RingTheory.MvPowerSeries.Trunc
 import TauCeti.RingTheory.AdicCompletion.AlgHom
 import TauCeti.RingTheory.AdicCompletion.Surjective
 import TauCeti.RingTheory.MvPolynomial.Ideal
-import TauCeti.RingTheory.MvPowerSeries.Ideal
+import TauCeti.RingTheory.MvPowerSeries.Ideal.Basic
 
 /-!
 # Completions which are formal power series rings

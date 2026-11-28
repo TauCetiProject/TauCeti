@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPowerSeries.Evaluation
-import TauCeti.RingTheory.MvPowerSeries.Ideal
+import TauCeti.RingTheory.MvPowerSeries.Ideal.Basic
 
 /-!
 # Ideal bounds for finite-variable power-series evaluation
@@ -31,8 +31,8 @@ variable {σ R S : Type*} [CommRing R] [UniformSpace R] [IsTopologicalSemiring R
 
 /-- In finitely many variables, evaluation at admissible arguments in an ideal is congruent
 to the image of the constant term modulo that ideal. -/
-theorem eval₂_sub_constantCoeff_mem_of_finite (hφ : Continuous φ) (ha : HasEval a)
-    (hmem : ∀ i, a i ∈ I) (f : MvPowerSeries σ R) :
+theorem eval₂_sub_constantCoeff_mem_of_finite (f : MvPowerSeries σ R)
+    (hφ : Continuous φ) (ha : HasEval a) (hmem : ∀ i, a i ∈ I) :
     eval₂ φ a f - φ (constantCoeff f) ∈ I := by
   let e := eval₂Hom (φ := φ) hφ ha
   have hle : Ideal.span (Set.range X) ≤ I.comap e := by
@@ -46,9 +46,9 @@ theorem eval₂_sub_constantCoeff_mem_of_finite (hφ : Continuous φ) (ha : HasE
 /-- In finitely many variables, evaluation lies in any ideal containing the admissible
 arguments and the image of the constant term. Taking the ideal to be `I ^ k` gives the
 bound for an ideal power. -/
-theorem eval₂_mem_of_finite (hφ : Continuous φ) (ha : HasEval a) (hmem : ∀ i, a i ∈ I)
-    (f : MvPowerSeries σ R) (hcc : φ (constantCoeff f) ∈ I) : eval₂ φ a f ∈ I := by
+theorem eval₂_mem_of_finite (f : MvPowerSeries σ R) (hφ : Continuous φ) (ha : HasEval a)
+    (hmem : ∀ i, a i ∈ I) (hcc : φ (constantCoeff f) ∈ I) : eval₂ φ a f ∈ I := by
   simpa only [sub_add_cancel] using I.add_mem
-    (eval₂_sub_constantCoeff_mem_of_finite hφ ha hmem f) hcc
+    (f.eval₂_sub_constantCoeff_mem_of_finite hφ ha hmem) hcc
 
 end MvPowerSeries
