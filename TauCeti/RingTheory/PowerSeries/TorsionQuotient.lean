@@ -178,17 +178,17 @@ theorem fg_restrictScalars_of_fg (hk : ∀ m : M, (X ^ k : R⟦X⟧) • m = 0)
       change x ∈ W
       rw [← hs]
       exact Submodule.subset_span hx
-    · -- Expand the local name to rewrite the generating-set equality under restriction.
-      change W.restrictScalars R[X] ≤ _
-      rw [← hs]
-      intro x hx
-      induction hx using Submodule.span_induction with
-      | mem x hx => exact Submodule.subset_span hx
-      | zero => exact Submodule.zero_mem _
-      | add x y _ _ hx hy => exact Submodule.add_mem _ hx hy
-      | smul a x _ hx =>
-        rw [eq_shift_mul_X_pow_add_trunc k a, add_smul, mul_smul, hk, smul_zero, zero_add]
-        exact (Submodule.span R[X] (s : Set M)).smul_mem (a.trunc k) hx
+    · let P := Submodule.span R[X] (s : Set M)
+      have hP : ∀ w ∈ P.restrictScalars R, (X : R⟦X⟧) • w ∈ P.restrictScalars R := by
+        intro w hw
+        have h := P.smul_mem Polynomial.X hw
+        -- The polynomial action is restriction along the power-series algebra map.
+        change (algebraMap R[X] R⟦X⟧ Polynomial.X) • w ∈ P at h
+        simpa [algebraMap_apply'] using h
+      have hspan : W ≤ submoduleOfXSMulMem hk (P.restrictScalars R) hP := by
+        rw [← hs]
+        exact Submodule.span_le.mpr fun x hx ↦ Submodule.subset_span hx
+      exact hspan
   exact TauCeti.Algebra.fg_restrictScalars_of_forall_pow_smul_eq_zero
     (Polynomial.adjoin_X (R := R)) hW' (fun y _ ↦ ⟨k, by
       -- Compute the restricted polynomial action through the defining algebra map.

@@ -219,17 +219,9 @@ noncomputable def piLatticeHahnEquiv [Finite ι] (a : ℤ) :
         change e ((p : R⸨X⸩) • f) = p • e f
         rw [e.map_smul]
         rfl }
-  exact
-    { toFun v := ⟨e'.symm v, (he _).mpr (by
-        -- The auxiliary equivalence has the same function as `e`; name that function for rewriting.
-        change e' (e'.symm v.val) ∈ piLattice R ι a
-        rw [e'.apply_symm_apply]
-        exact v.property)⟩
-      invFun f := ⟨e' f, (he _).mp f.property⟩
-      left_inv v := Subtype.ext (e'.apply_symm_apply v)
-      right_inv f := Subtype.ext (e'.symm_apply_apply f)
-      map_add' v w := Subtype.ext (e'.symm.map_add v w)
-      map_smul' p v := Subtype.ext (e'.symm.map_smul p v) }
+  exact e'.symm.ofSubmodules _ _ (by
+    rw [Submodule.map_equiv_eq_comap_symm]
+    exact Submodule.ext fun f ↦ (he f).symm)
 
 /-- The coefficient of the vector-valued comparison is the corresponding coordinate
 coefficient. -/
@@ -247,7 +239,8 @@ theorem coeff_piLatticeHahnEquiv [Finite ι] (a : ℤ) (v : piLattice R ι a) (n
 noncomputable def piLatticeQuotientHahnEquiv [Finite ι] (a b : ℤ) :
     (piLattice R ι a ⧸ (piLattice R ι b).comap (piLattice R ι a).subtype) ≃ₗ[R⟦X⟧]
       TauCeti.HahnModule.latticeQuotient R (ι → R) a b :=
-  -- The Hahn jet carries the quotient action from its power-series lattices.
+  -- The named comparison crosses the module boundary without exposing either lattice body;
+  -- the type annotation fixes the power-series quotient before applying that comparison.
   (Submodule.Quotient.equiv _ _ (piLatticeHahnEquiv a) (by
     rw [Submodule.map_equiv_eq_comap_symm]
     ext f
@@ -282,33 +275,18 @@ theorem piLatticeQuotientHahnEquiv_mk [Finite ι] (a b : ℤ) (v : piLattice R �
   simp [piLatticeQuotientHahnEquiv, Submodule.Quotient.equiv_apply]
 
 variable (R ι) in
-/-- The coefficients of a bounded coordinate jet. For finite `ι`, this is transported from
-vector-valued Hahn jets; the coordinate construction also covers arbitrary `ι`. -/
+/-- The coefficients of a bounded coordinate jet, valid for arbitrary coordinate types. -/
 noncomputable def boundedLatticeQuotientEquiv (N : ℕ) :
-    boundedLatticeQuotient R ι N ≃ₗ[R] (ι → Finset.Ico (-N : ℤ) N → R) := by
-  classical
-  -- Finite charts use vector-valued Hahn jets. The coordinate construction also supports
-  -- infinite coordinate types, for which a global Hahn-coordinate comparison does not exist.
-  exact if h : Finite ι then
-    have := h
-    (piLatticeQuotientHahnEquiv (-N : ℤ) N).restrictScalars R ≪≫ₗ
-      TauCeti.HahnModule.latticeQuotientEquiv R (ι → R) (-N) N ≪≫ₗ
-        (LinearEquiv.curry R R _ _).symm ≪≫ₗ
-          LinearEquiv.funCongrLeft R R (Equiv.prodComm _ _) ≪≫ₗ LinearEquiv.curry R R _ _
-  else piLatticeQuotientEquiv R ι (-N : ℤ) N
+    boundedLatticeQuotient R ι N ≃ₗ[R] (ι → Finset.Ico (-N : ℤ) N → R) :=
+  piLatticeQuotientEquiv R ι (-N : ℤ) N
 
 /-- The coordinates of the class of `v` are the coefficients of the coordinates of `v`. -/
 @[simp]
 theorem boundedLatticeQuotientEquiv_mk (N : ℕ)
     (v : piLattice R ι (-N : ℤ)) (i : ι) (m : Finset.Ico (-N : ℤ) N) :
     boundedLatticeQuotientEquiv R ι N (Submodule.Quotient.mk v) i m =
-      ((v : ι → R⸨X⸩) i).coeff m := by
-  classical
-  unfold boundedLatticeQuotientEquiv
-  split_ifs with h
-  · have := h
-    simp
-  · exact piLatticeQuotientEquiv_mk _ _ _ _ _
+      ((v : ι → R⸨X⸩) i).coeff m :=
+  piLatticeQuotientEquiv_mk _ _ _ _ _
 
 /-- `M_N` is free over `R`, with the basis of its coefficients. -/
 instance [Finite ι] (N : ℕ) : Module.Free R (boundedLatticeQuotient R ι N) :=
@@ -342,21 +320,20 @@ theorem X_pow_smul_mem_piLattice (N : ℕ) {v : ι → R⸨X⸩}
 /-- `M_N` is killed by `X ^ (2 N)`. -/
 theorem X_pow_smul_boundedLatticeQuotient (N : ℕ) (q : boundedLatticeQuotient R ι N) :
     (PowerSeries.X ^ (2 * N) : R⟦X⟧) • q = 0 := by
-  classical
-  by_cases h : Finite ι
-  · have := h
-    apply (piLatticeQuotientHahnEquiv (-N : ℤ) N).injective
-    rw [map_smul, map_zero]
-    exact TauCeti.HahnModule.X_pow_smul_latticeQuotient_eq_zero R (ι → R)
-      (-N : ℤ) N (2 * N) (by omega) _
-  · -- Preserve the arbitrary-coordinate result beyond the finite Hahn comparison.
-    induction q using Submodule.Quotient.induction_on with
-    | _ v =>
-      rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, Submodule.mem_comap,
-        Submodule.subtype_apply, Submodule.coe_smul]
-      exact X_pow_smul_mem_piLattice N v.property
+  induction q using Submodule.Quotient.induction_on with
+  | _ v =>
+    rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, Submodule.mem_comap,
+      Submodule.subtype_apply, Submodule.coe_smul]
+    exact X_pow_smul_mem_piLattice N v.property
 
 variable (N : ℕ)
+
+/-- The bounded jet correspondence, retaining the upper bound in the interval subtype. -/
+private noncomputable def jetOrderIso :
+    Submodule R⟦X⟧ (boundedLatticeQuotient R ι N) ≃o
+      Set.Ici ((piLattice R ι (-N : ℤ)).mapIic
+        ((piLattice R ι (N : ℤ)).comap (piLattice R ι (-N : ℤ)).subtype)) :=
+  (Submodule.comapMkQRelIso _).trans ((Submodule.mapIic _).Ici _)
 
 /-- The image `Λ / X ^ N R⟦X⟧^ι` in `M_N` of a submodule `Λ ⊆ R⸨X⸩^ι`. -/
 noncomputable def jetSubmodule (Λ : Submodule R⟦X⟧ (ι → R⸨X⸩)) :
@@ -367,8 +344,7 @@ noncomputable def jetSubmodule (Λ : Submodule R⟦X⟧ (ι → R⸨X⸩)) :
 /-- The preimage in `X ^ (-N) R⟦X⟧^ι ⊆ R⸨X⸩^ι` of a submodule of `M_N`. -/
 noncomputable def jetPreimage (W : Submodule R⟦X⟧ (boundedLatticeQuotient R ι N)) :
     Submodule R⟦X⟧ (ι → R⸨X⸩) :=
-  (W.comap (Submodule.mkQ _)).map
-    (piLattice R ι (-N : ℤ)).subtype
+  (jetOrderIso N W).val.val
 
 variable {N}
 
@@ -387,38 +363,40 @@ theorem mem_jetPreimage_iff {W : Submodule R⟦X⟧ (boundedLatticeQuotient R ι
     v ∈ jetPreimage N W ↔
       ∃ hv : v ∈ piLattice R ι (-N : ℤ),
         (Submodule.Quotient.mk ⟨v, hv⟩ : boundedLatticeQuotient R ι N) ∈ W := by
-  simp [jetPreimage]
+  -- Compute the composite order isomorphism on carriers for the membership lemmas.
+  change v ∈ (W.comap (Submodule.mkQ _)).map (piLattice R ι (-N : ℤ)).subtype ↔ _
+  simp
 
 /-- The preimage of a submodule of `M_N` lies in `X ^ (-N) R⟦X⟧^ι`. -/
 theorem jetPreimage_le (W : Submodule R⟦X⟧ (boundedLatticeQuotient R ι N)) :
     jetPreimage N W ≤ piLattice R ι (-N : ℤ) :=
-  Submodule.map_subtype_le _ _
+  (jetOrderIso N W).val.property
 
 /-- The preimage of a submodule of `M_N` contains `X ^ N R⟦X⟧^ι`. -/
 theorem le_jetPreimage (W : Submodule R⟦X⟧ (boundedLatticeQuotient R ι N)) :
     piLattice R ι (N : ℤ) ≤ jetPreimage N W := by
-  intro v hv
-  have hv' : v ∈ piLattice R ι (-N : ℤ) :=
-    piLattice_antitone (by omega : (-N : ℤ) ≤ N) hv
-  refine mem_jetPreimage_iff.mpr ⟨hv', ?_⟩
-  convert W.zero_mem
-  exact (Submodule.Quotient.mk_eq_zero _).mpr hv
+  have h : ((piLattice R ι (-N : ℤ)).mapIic
+      ((piLattice R ι (N : ℤ)).comap (piLattice R ι (-N : ℤ)).subtype)).val ≤
+        jetPreimage N W := (jetOrderIso N W).property
+  simpa only [Submodule.coe_mapIic_apply, Submodule.map_comap_subtype,
+    inf_eq_right.mpr (piLattice_antitone (by omega : (-N : ℤ) ≤ N))] using h
 
 /-- The image of the preimage of a submodule of `M_N` is that submodule. -/
 @[simp]
 theorem jetSubmodule_jetPreimage (W : Submodule R⟦X⟧ (boundedLatticeQuotient R ι N)) :
-    jetSubmodule N (jetPreimage N W) = W := by
-  rw [jetSubmodule, jetPreimage,
-    Submodule.comap_map_eq_of_injective (Submodule.injective_subtype _),
-    Submodule.map_comap_eq_of_surjective (Submodule.mkQ_surjective _)]
+    jetSubmodule N (jetPreimage N W) = W :=
+  (jetOrderIso N).symm_apply_apply W
 
 /-- A submodule between `X ^ N R⟦X⟧^ι` and `X ^ (-N) R⟦X⟧^ι` is the preimage of its image. -/
 theorem jetPreimage_jetSubmodule {Λ : Submodule R⟦X⟧ (ι → R⸨X⸩)}
     (h₀ : piLattice R ι (N : ℤ) ≤ Λ)
     (h₁ : Λ ≤ piLattice R ι (-N : ℤ)) :
     jetPreimage N (jetSubmodule N Λ) = Λ := by
-  rw [jetPreimage, jetSubmodule, Submodule.comap_map_mkQ, sup_eq_right.mpr fun w hw ↦ h₀ hw,
-    Submodule.map_comap_subtype, inf_eq_right.mpr h₁]
+  let Λ' : Set.Ici ((piLattice R ι (-N : ℤ)).mapIic
+      ((piLattice R ι (N : ℤ)).comap (piLattice R ι (-N : ℤ)).subtype)) :=
+    ⟨⟨Λ, h₁⟩, by
+      exact (Submodule.map_comap_subtype _ _).le.trans (inf_le_right.trans h₀)⟩
+  exact congrArg (fun p ↦ p.val.val) ((jetOrderIso N).apply_symm_apply Λ')
 
 section Projectivity
 
