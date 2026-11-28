@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.AbsoluteArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.UnitsLayer
 public import TauCeti.Topology.Algebra.Group.TopologicalAbelianization
+import TauCeti.GroupTheory.Abelianization.Basic
 
 /-!
 # The Artin map of a class formation on the units of a field
@@ -33,6 +34,8 @@ This is the common construction behind the nonarchimedean local Artin map
 
 * `TauCeti.ClassFieldTheory.ClassFormation.fieldArtinMap`: the Artin map `Kˣ →* G_K^ab` of a
   class formation on `unitsFormation K`.
+* `AlgHom.abelianizationRestrictNormalHom`: restriction to the abelianization of a finite
+  Galois group via `NormalLayer.abelianizationRestrict` and `layerGalEquiv`.
 
 ## Main results
 
@@ -45,7 +48,9 @@ This is the common construction behind the nonarchimedean local Artin map
 
 public noncomputable section
 
-namespace TauCeti.ClassFieldTheory.ClassFormation
+namespace TauCeti.ClassFieldTheory
+
+namespace ClassFormation
 
 variable {K : Type} [Field K] (F : ClassFormation (unitsFormation K))
 
@@ -88,4 +93,33 @@ theorem absoluteArtinMap_eq_of_mk_eq_fieldArtinMap (x : Kˣ) (σ : Field.absolut
     ← ContinuousMulEquiv.topologicalAbelianizationCongr_symm,
     ContinuousMulEquiv.apply_symm_apply, ofMul_toMul]
 
-end TauCeti.ClassFieldTheory.ClassFormation
+end ClassFormation
+
+section Finite
+
+open scoped IsMulCommutative
+
+variable {F : Type} {E : Type*} [Field F] [Field E] [Algebra F E]
+  [FiniteDimensional F E] [IsGalois F E]
+
+/-- Restriction from the absolute Galois abelianization to `Gal(E/F)^ab` along a
+separable-closure embedding of a finite Galois extension. -/
+def _root_.AlgHom.abelianizationRestrictNormalHom (ι : E →ₐ[F] SeparableClosure F) :
+    Additive (Field.absoluteGaloisGroupAbelianization F) →+
+      Additive (Group.Abelianization Gal(E/F)) :=
+  (MulEquiv.toAdditive (layerGalEquiv ι).abelianizationCongr).toAddMonoidHom.comp <|
+    (NormalLayer.abelianizationRestrict (fixingOpenNormalSubgroup F E)).comp <|
+      MonoidHom.toAdditive (↑(absoluteGaloisGroupRestrictEquiv F).topologicalAbelianizationCongr)
+
+/-- Finite restriction transports the absolute symbol to the separable-closure model, then
+projects to the finite layer and identifies its Galois group with `Gal(E/F)`. -/
+theorem _root_.AlgHom.abelianizationRestrictNormalHom_apply (ι : E →ₐ[F] SeparableClosure F)
+    (x : Field.absoluteGaloisGroupAbelianization F) :
+    ι.abelianizationRestrictNormalHom (.ofMul x) =
+      MulEquiv.toAdditive (layerGalEquiv ι).abelianizationCongr
+        (NormalLayer.abelianizationRestrict (fixingOpenNormalSubgroup F E)
+          (.ofMul ((absoluteGaloisGroupRestrictEquiv F).topologicalAbelianizationCongr x))) := (rfl)
+
+end Finite
+
+end TauCeti.ClassFieldTheory
