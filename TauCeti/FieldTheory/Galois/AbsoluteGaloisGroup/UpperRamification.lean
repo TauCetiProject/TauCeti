@@ -16,16 +16,19 @@ import TauCeti.RingTheory.Valuation.ValuationSubring
 /-!
 # Upper ramification of the absolute Galois group
 
-`absoluteUpperRamificationGroup_def` gives the intersection of finite-level preimages.
-`le_absoluteUpperRamificationGroup_iff` tests subgroup bounds via finite restrictions.
-`absoluteUpperRamificationGroup_antitone` and `isClosed_absoluteUpperRamificationGroup`
-give a decreasing filtration by closed subgroups, using
-`TauCeti.IsLocalRing.upperRamificationGroup_antitone` and
-`InfiniteGalois.restrictNormalHom_continuous`.
+To extend finite upper numbering to the absolute Galois group, choose a valuation subring of the
+algebraic closure and restrict it to each finite Galois subextension. The term at `u` consists of
+automorphisms whose finite restrictions lie in the images of the corresponding decomposition
+groups' upper groups at `u`. `absoluteUpperRamificationGroup_def` gives this intersection of
+preimages, and `le_absoluteUpperRamificationGroup_iff` tests subgroup bounds at finite levels.
 
-`absoluteUpperRamificationGroup_zero` identifies the term at zero with the image of inertia, using
-`TauCeti.IsLocalRing.ramificationGroup_zero_eq_inertiaSubgroup` at finite levels and
-`FiniteGaloisIntermediateField.exists_expChar_pow_mem` for descent.
+`absoluteUpperRamificationGroup_antitone` and `isClosed_absoluteUpperRamificationGroup` give a
+decreasing filtration by Krull-closed subgroups, using
+`TauCeti.IsLocalRing.upperRamificationGroup_antitone` and
+`InfiniteGalois.restrictNormalHom_continuous`. `absoluteUpperRamificationGroup_zero` identifies the
+term at zero with the image of inertia, using
+`TauCeti.IsLocalRing.ramificationGroup_zero_eq_inertiaSubgroup` and
+`FiniteGaloisIntermediateField.exists_expChar_pow_mem`.
 
 ## References
 
