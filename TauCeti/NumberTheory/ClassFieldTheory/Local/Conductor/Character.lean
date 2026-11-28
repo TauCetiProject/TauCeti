@@ -15,12 +15,13 @@ import TauCeti.NumberTheory.ClassFieldTheory.Local.UnitFiltration
 /-!
 # Local conductor exponents and characters
 
-For a finite Galois extension of nonarchimedean local fields, the norm conductor exponent is the
-maximum of the Artin conductor exponents of its one-dimensional characters
-(`conductorExponent_eq_iSup_artinConductorExponent`). The bound is characterized in
-`conductorExponent_le_iff_forall_artinConductorExponent_le`. The comparison uses
-`normResidue_map_unitFiltration` and Mathlib's separation of points of the abelianized Galois
-group by characters (`CommGroup.forall_apply_eq_apply_iff`).
+For a finite Galois extension of nonarchimedean local fields, assume the coefficient monoid has
+enough roots of unity for the exponent of the abelianized Galois group. Then
+`conductorExponent_le_iff_forall_artinConductorExponent_le` lets one bound the norm conductor
+exponent by bounding the Artin conductor exponent of every one-dimensional character.
+`conductorExponent_eq_iSup_artinConductorExponent` identifies the norm conductor exponent with
+the maximum of those character conductors. The comparison uses `normResidue_map_unitFiltration`
+and Mathlib's character separation theorem `CommGroup.forall_apply_eq_apply_iff`.
 
 ## References
 
@@ -52,9 +53,9 @@ theorem conductorExponent_le_iff_forall_artinConductorExponent_le {n : ℕ} :
   have hnorm : conductorExponent K L ≤ n ↔
       (unitFiltration K n).map
         ((normResidue K L).toMonoidHom.comp (QuotientGroup.mk' (normGroup K L))) = ⊥ := by
-    rw [conductorExponent_le_iff, Subgroup.map_eq_bot_iff]
-    simp only [IsConcreteLE.le_iff, MonoidHom.mem_ker, MonoidHom.comp_apply,
-      MulEquiv.coe_toMonoidHom, QuotientGroup.mk'_apply, normResidue_mk_eq_one_iff]
+    rw [conductorExponent_le_iff, Subgroup.map_eq_bot_iff,
+      MonoidHom.ker_comp_of_injective _ (normResidue K L).toMonoidHom (normResidue K L).injective,
+      QuotientGroup.ker_mk']
   rw [hnorm, normResidue_map_unitFiltration, Subgroup.map_eq_bot_iff]
   simp_rw [artinConductorExponent_le_iff]
   constructor
