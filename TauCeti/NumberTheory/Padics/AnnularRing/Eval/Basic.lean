@@ -244,9 +244,13 @@ def eval₂ (f : ℤ_[p] →+* K) (hf : ∃ C : ℝ, ∀ a : ℤ_[p], ‖f a‖ 
 variable (f : ℤ_[p] →+* K) (hf : ∃ C : ℝ, ∀ a : ℤ_[p], ‖f a‖ ≤ C * ‖a‖)
   (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p)
 
+/-- The evaluation `eval₂ f hf t ht htinv x` is the bilateral series
+`∑' m : ℤ, f (x.coeff m) * t ^ m`. -/
 theorem eval₂_apply (x : AnnularRing p) :
     eval₂ f hf t ht htinv x = ∑' m : ℤ, f (x.coeff m) * ((t ^ m : Kˣ) : K) := (rfl)
 
+/-- The bilateral series `∑_{m ∈ ℤ} f (x.coeff m) * t ^ m` converges to
+`eval₂ f hf t ht htinv x`. -/
 theorem hasSum_eval₂ (x : AnnularRing p) :
     HasSum (fun m : ℤ ↦ f (x.coeff m) * ((t ^ m : Kˣ) : K)) (eval₂ f hf t ht htinv x) :=
   (summable_eval₂ f hf t ht htinv x).hasSum
@@ -588,6 +592,8 @@ theorem hasSum_localizedEval₂ (x : A) :
     add_neg_cancel_right]
   rw [localizedCoeff_eq_of_mul_pow ha m]
 
+/-- On `H[1/T]`, `localizedEval₂` is given by the bilateral series
+`∑' m : ℤ, f (localizedCoeff p x m) * t ^ m`. -/
 theorem localizedEval₂_eq_tsum (x : A) :
     localizedEval₂ f hf t ht htinv x =
       ∑' m : ℤ, f (localizedCoeff p x m) * ((t ^ m : Kˣ) : K) :=
@@ -681,15 +687,19 @@ variable {p : ℕ} [Fact p.Prime] {K : Type*} [NormedRing K] [Algebra ℤ_[p] K]
 `‖t⁻¹‖ < p`. -/
 def evalAlgHom (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p) :
     AnnularRing p →ₐ[ℤ_[p]] K :=
-  { eval₂ (algebraMap ℤ_[p] K) TauCeti.exists_norm_algebraMap_le_of_isBoundedSMul t ht htinv with
-    commutes' :=
-      eval₂_algebraMap (algebraMap ℤ_[p] K) TauCeti.exists_norm_algebraMap_le_of_isBoundedSMul t ht
-        htinv }
+  have hf : ∃ C : ℝ, ∀ a : ℤ_[p], ‖algebraMap ℤ_[p] K a‖ ≤ C * ‖a‖ :=
+    (TauCeti.exists_norm_algebraMap_le_of_norm_smul_le (R := ℤ_[p]) (S := K)
+      ⟨1, fun r s ↦ by simpa using norm_smul_le r s⟩).elim fun C hC ↦ ⟨C, hC⟩
+  { eval₂ (algebraMap ℤ_[p] K) hf t ht htinv with
+    commutes' := eval₂_algebraMap (algebraMap ℤ_[p] K) hf t ht htinv }
 
+/-- The underlying ring homomorphism of `evalAlgHom` is `eval₂ (algebraMap ℤ_[p] K)`. -/
 theorem evalAlgHom_toRingHom (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p)
     (hf : ∃ C : ℝ, ∀ a : ℤ_[p], ‖algebraMap ℤ_[p] K a‖ ≤ C * ‖a‖) :
     (evalAlgHom t ht htinv).toRingHom = eval₂ (algebraMap ℤ_[p] K) hf t ht htinv := (rfl)
 
+/-- The `ℤ_p`-algebra evaluation `evalAlgHom` sends `x` to
+`∑' m : ℤ, algebraMap ℤ_[p] K (x.coeff m) * t ^ m`. -/
 theorem evalAlgHom_apply (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p)
     (x : AnnularRing p) :
     evalAlgHom t ht htinv x = ∑' m : ℤ, algebraMap ℤ_[p] K (x.coeff m) * ((t ^ m : Kˣ) : K) :=
@@ -697,25 +707,35 @@ theorem evalAlgHom_apply (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹
 
 @[simp] theorem evalAlgHom_T (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p) :
     evalAlgHom t ht htinv T = (t : K) :=
-  eval₂_T (algebraMap ℤ_[p] K) TauCeti.exists_norm_algebraMap_le_of_isBoundedSMul t ht htinv
+  eval₂_T (algebraMap ℤ_[p] K)
+    ((TauCeti.exists_norm_algebraMap_le_of_norm_smul_le (R := ℤ_[p]) (S := K)
+      ⟨1, fun r s ↦ by simpa using norm_smul_le r s⟩).elim fun C hC ↦ ⟨C, hC⟩)
+    t ht htinv
 
 @[simp] theorem evalAlgHom_U (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p) :
     evalAlgHom t ht htinv U = (p : K) * ((t⁻¹ : Kˣ) : K) :=
-  eval₂_U (algebraMap ℤ_[p] K) TauCeti.exists_norm_algebraMap_le_of_isBoundedSMul t ht htinv
+  eval₂_U (algebraMap ℤ_[p] K)
+    ((TauCeti.exists_norm_algebraMap_le_of_norm_smul_le (R := ℤ_[p]) (S := K)
+      ⟨1, fun r s ↦ by simpa using norm_smul_le r s⟩).elim fun C hC ↦ ⟨C, hC⟩)
+    t ht htinv
 
 /-- The `ℤ_p`-algebra evaluation `H[1/T] →ₐ[ℤ_[p]] K` at a unit `t : Kˣ` with `‖t‖ < 1` and
 `‖t⁻¹‖ < p`. -/
 def localizedEvalAlgHom {A : Type*} [CommRing A] [Algebra (AnnularRing p) A]
     [IsLocalization.Away (T : AnnularRing p) A] [Algebra ℤ_[p] A]
     (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p) : A →ₐ[ℤ_[p]] K :=
-  { localizedEval₂ (algebraMap ℤ_[p] K) TauCeti.exists_norm_algebraMap_le_of_isBoundedSMul t ht
-      htinv with
+  have hf : ∃ C : ℝ, ∀ a : ℤ_[p], ‖algebraMap ℤ_[p] K a‖ ≤ C * ‖a‖ :=
+    (TauCeti.exists_norm_algebraMap_le_of_norm_smul_le (R := ℤ_[p]) (S := K)
+      ⟨1, fun r s ↦ by simpa using norm_smul_le r s⟩).elim fun C hC ↦ ⟨C, hC⟩
+  { localizedEval₂ (algebraMap ℤ_[p] K) hf t ht htinv with
     commutes' := fun c ↦ by
       have hmap : algebraMap ℤ_[p] A c =
           algebraMap (AnnularRing p) A (algebraMap ℤ_[p] (AnnularRing p) c) :=
         DFunLike.congr_fun (ringHom_padicInt_eq (algebraMap ℤ_[p] A)) c
       rw [RingHom.toFun_eq_coe, hmap, localizedEval₂_algebraMap, eval₂_algebraMap] }
 
+/-- The underlying ring homomorphism of `localizedEvalAlgHom` is
+`localizedEval₂ (algebraMap ℤ_[p] K)`. -/
 theorem localizedEvalAlgHom_toRingHom {A : Type*} [CommRing A] [Algebra (AnnularRing p) A]
     [IsLocalization.Away (T : AnnularRing p) A] [Algebra ℤ_[p] A]
     (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p)
@@ -728,7 +748,9 @@ theorem localizedEvalAlgHom_toRingHom {A : Type*} [CommRing A] [Algebra (Annular
     (t : Kˣ) (ht : ‖(t : K)‖ < 1) (htinv : ‖((t⁻¹ : Kˣ) : K)‖ < p) (a : AnnularRing p) :
     localizedEvalAlgHom (A := A) t ht htinv (algebraMap (AnnularRing p) A a) =
       evalAlgHom t ht htinv a :=
-  localizedEval₂_algebraMap (algebraMap ℤ_[p] K) TauCeti.exists_norm_algebraMap_le_of_isBoundedSMul
+  localizedEval₂_algebraMap (algebraMap ℤ_[p] K)
+    ((TauCeti.exists_norm_algebraMap_le_of_norm_smul_le (R := ℤ_[p]) (S := K)
+      ⟨1, fun r s ↦ by simpa using norm_smul_le r s⟩).elim fun C hC ↦ ⟨C, hC⟩)
     t ht htinv a
 
 end EvalAlgHom
@@ -768,6 +790,8 @@ def eval (t : K) (ht₀ : (p : ℝ)⁻¹ < ‖t‖) (ht₁ : ‖t‖ < 1) : Annu
   eval₂ (padicIntAlgebraMap p K) TauCeti.exists_norm_padicIntAlgebraMap_le
     (Units.mk0 t (ne_zero_of_inv_p_lt ht₀)) ht₁ (norm_mk0_inv_lt_p ht₀)
 
+/-- The specialized evaluation `eval` agrees with `eval₂ (padicIntAlgebraMap p K)` at the
+corresponding unit. -/
 theorem eval_eq_eval₂ (t : K) (ht₀ : (p : ℝ)⁻¹ < ‖t‖) (ht₁ : ‖t‖ < 1)
     (u : Kˣ) (hu : (u : K) = t)
     (hf : ∃ C : ℝ, ∀ a : ℤ_[p], ‖padicIntAlgebraMap p K a‖ ≤ C * ‖a‖)
@@ -831,6 +855,8 @@ def localizedEval (t : K) (ht₀ : (p : ℝ)⁻¹ < ‖t‖) (ht₁ : ‖t‖ < 
   localizedEval₂ (padicIntAlgebraMap p K) TauCeti.exists_norm_padicIntAlgebraMap_le
     (Units.mk0 t (ne_zero_of_inv_p_lt ht₀)) ht₁ (norm_mk0_inv_lt_p ht₀)
 
+/-- The specialized evaluation `localizedEval` agrees with `localizedEval₂ (padicIntAlgebraMap p K)`
+at the corresponding unit. -/
 theorem localizedEval_eq_localizedEval₂ (t : K) (ht₀ : (p : ℝ)⁻¹ < ‖t‖) (ht₁ : ‖t‖ < 1)
     (u : Kˣ) (hu : (u : K) = t)
     (hf : ∃ C : ℝ, ∀ a : ℤ_[p], ‖padicIntAlgebraMap p K a‖ ≤ C * ‖a‖)
@@ -855,6 +881,9 @@ theorem localizedEval_eq_localizedEval₂ (t : K) (ht₀ : (p : ℝ)⁻¹ < ‖t
     (Units.mk0 t (ne_zero_of_inv_p_lt ht₀)) ht₁ (norm_mk0_inv_lt_p ht₀) k).trans ?_
   rw [Units.val_zpow_eq_zpow_val, Units.val_mk0]
 
+/-- For every `x ∈ H[1/T]`, the bilateral series
+`∑_{m ∈ ℤ} algebraMap ℚ_[p] K (localizedCoeff p x m) * t ^ m` converges to
+`localizedEval t ht₀ ht₁ x`. -/
 theorem hasSum_localizedEval (t : K) (ht₀ : (p : ℝ)⁻¹ < ‖t‖) (ht₁ : ‖t‖ < 1) (x : A) :
     HasSum (fun m : ℤ ↦ algebraMap ℚ_[p] K (localizedCoeff p x m) * t ^ m)
       (localizedEval t ht₀ ht₁ x) := by

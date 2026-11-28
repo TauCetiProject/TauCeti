@@ -12,12 +12,12 @@ public import TauCeti.RingTheory.Huber.TateGauge.Normed
 # Tate gauges on the away localisation `A₀[1/π]`
 
 Let `A₀` be a commutative ring, `π ∈ A₀` a nonzerodivisor such that `A₀` is `π`-adically
-separated, and `A` a localisation of `A₀` away from `π`. Endowing `A` with the `π`-adic topology
-`TauCeti.Huber.awayTopology π A`, any radius `α ∈ (0, 1)` produces a norm datum
-`TauCeti.Huber.awayTateNormDatum` with ring of definition `(algebraMap A₀ A).range` and
-pseudo-uniformiser `π`, and hence a compatible ultrametric `NormedCommRing` structure
-`TauCeti.Huber.awayNormedCommRing` on `A` whose underlying ring, uniform space, and topology
-agree definitionally with those already on `A`.
+separated, and `A` a localisation of `A₀` away from `π`. Any radius `α ∈ (0, 1)` produces a norm
+datum `TauCeti.Huber.awayTateNormDatum` (for any topology on `A` with basis `πⁿ A₀`), with ring
+of definition `(algebraMap A₀ A).range` and pseudo-uniformiser `π`, and hence an ultrametric
+`NormedCommRing` structure `TauCeti.Huber.awayNormedCommRing` on `A` whose underlying `CommRing`,
+`UniformSpace`, and `TopologicalSpace` structures are definitionally `‹CommRing A›`,
+`TauCeti.Huber.awayUniformSpace π A`, and `TauCeti.Huber.awayTopology π A`.
 
 When `A₀` is additionally `π`-adically precomplete, `awayNormedCommRing` is complete; when `A` is
 nontrivial, it is a normalised normed Tate ring in which `π` is a multiplicative pseudo-uniformiser
@@ -141,11 +141,13 @@ theorem topologicalSpace_awayNormedCommRing :
     (awayNormedCommRing π A hπ hα₀ hα₁).toUniformSpace.toTopologicalSpace =
       awayTopology π A := (rfl)
 
+/-- The sets `πⁿ A₀` form a neighbourhood basis of zero for `awayNormedCommRing`. -/
 theorem hasBasis_nhds_zero_awayNormedCommRing :
     letI := awayNormedCommRing π A hπ hα₀ hα₁
     (𝓝 (0 : A)).HasBasis (fun _ : ℕ ↦ True) fun n ↦ (awayNhd π A n : Set A) :=
   hasBasis_nhds_zero_awayTopology (π := π) (A := A)
 
+/-- The norm of `awayNormedCommRing` agrees with the `π`-adic Tate gauge `tateNorm`. -/
 theorem norm_awayNormedCommRing (x : A) :
     letI := awayNormedCommRing π A hπ hα₀ hα₁
     ‖x‖ = tateNorm
@@ -206,6 +208,7 @@ theorem isTate_awayNormedCommRing [Nontrivial A] :
   let := awayNormedCommRing π A hπ hα₀ hα₁
   exact ⟨⟨awayNormedPseudoUniformizer π A hπ hα₀ hα₁⟩⟩
 
+/-- The closed unit ball of `awayNormedCommRing` is the image of `A₀`. -/
 theorem norm_le_one_iff_awayNormedCommRing {x : A} :
     letI := awayNormedCommRing π A hπ hα₀ hα₁
     ‖x‖ ≤ 1 ↔ x ∈ (algebraMap A₀ A).range := by
@@ -214,6 +217,8 @@ theorem norm_le_one_iff_awayNormedCommRing {x : A} :
   exact tateNorm_le_one_iff_awayTateNormDatum
     (hasBasis_nhds_zero_awayNormedCommRing π A hπ hα₀ hα₁) hα₀ hα₁
 
+/-- Multiplication by `π ^ k` (`k ∈ ℤ`) scales the norm of `awayNormedCommRing` by `α ^ k`, i.e.,
+`‖π ^ k * x‖ = α ^ k * ‖x‖`. -/
 theorem norm_pseudoUniformizer_zpow_mul_awayNormedCommRing (k : ℤ) (x : A) :
     letI := awayNormedCommRing π A hπ hα₀ hα₁
     ‖(((IsLocalization.Away.algebraMap_isUnit π).unit ^ k : Aˣ) : A) * x‖ = α ^ k * ‖x‖ := by
@@ -223,6 +228,7 @@ theorem norm_pseudoUniformizer_zpow_mul_awayNormedCommRing (k : ℤ) (x : A) :
     tateNorm_zpow_mul
       (awayTateNormDatum (hasBasis_nhds_zero_awayNormedCommRing π A hπ hα₀ hα₁) hα₀ hα₁) k x
 
+/-- Multiplication by `π` scales the norm of `awayNormedCommRing` by `α`. -/
 theorem norm_pseudoUniformizer_mul_awayNormedCommRing (x : A) :
     letI := awayNormedCommRing π A hπ hα₀ hα₁
     ‖algebraMap A₀ A π * x‖ = α * ‖x‖ := by
@@ -232,6 +238,8 @@ theorem norm_pseudoUniformizer_mul_awayNormedCommRing (x : A) :
     tateNorm_pseudoUniformizer_mul
       (awayTateNormDatum (hasBasis_nhds_zero_awayNormedCommRing π A hπ hα₀ hα₁) hα₀ hα₁) x
 
+/-- On a nontrivial localisation `A₀[1/π]`, the pseudo-uniformiser `π` has norm `α` in
+`awayNormedCommRing`. -/
 theorem norm_pseudoUniformizer_awayNormedCommRing [Nontrivial A] :
     letI := awayNormedCommRing π A hπ hα₀ hα₁
     ‖algebraMap A₀ A π‖ = α := by

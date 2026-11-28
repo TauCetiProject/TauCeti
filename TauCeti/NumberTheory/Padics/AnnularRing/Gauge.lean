@@ -88,7 +88,7 @@ theorem tateNorm_U_pow {α : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1) (j : ℕ) 
       zero_add, T_zpow_neg_mul_mem_range_iff] at h
     exact T_not_dvd_U_pow j <| T_dvd_iff.mpr fun m ↦ by
       simpa only [localizedCoeff_algebraMap] using h m
-  simpa using Huber.tateNorm_eq_zpow_of_mem_of_not_mem (Huber.awayTateNormDatum hb hα₀ hα₁)
+  simpa using Huber.tateNorm_eq_zpow_of_mem_of_notMem (Huber.awayTateNormDatum hb hα₀ hα₁)
     hmem hnot
 
 /-- The element `U = p / T` has norm `1` for the `T`-gauge of any radius `α ∈ (0, 1)`. -/
@@ -112,6 +112,8 @@ section AwayNormedCommRing
 variable (p : ℕ) [Fact p.Prime] (A : Type*) [CommRing A] [Algebra (AnnularRing p) A]
   [IsLocalization.Away (T : AnnularRing p) A] {α : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1)
 
+/-- The closed ball of radius `α ^ n` for `Huber.awayNormedCommRing` is cut out by the shifted
+coefficient bound `‖localizedCoeff p x m‖ ≤ p ^ min 0 (m - n)`. -/
 theorem norm_le_zpow_iff_awayNormedCommRing {x : A} {n : ℤ} :
     letI := Huber.awayNormedCommRing (T : AnnularRing p) A T_mem_nonZeroDivisors hα₀ hα₁
     ‖x‖ ≤ α ^ n ↔ ∀ m : ℤ, ‖localizedCoeff p x m‖ ≤ (p : ℝ) ^ min 0 (m - n) := by
@@ -122,6 +124,7 @@ theorem norm_le_zpow_iff_awayNormedCommRing {x : A} {n : ℤ} :
       hα₀ hα₁)
     hα₀ hα₁
 
+/-- Every power `U ^ j` has norm `1` in `Huber.awayNormedCommRing`. -/
 theorem norm_U_pow_awayNormedCommRing (j : ℕ) :
     letI := Huber.awayNormedCommRing (T : AnnularRing p) A T_mem_nonZeroDivisors hα₀ hα₁
     ‖algebraMap (AnnularRing p) A (U ^ j)‖ = 1 := by
@@ -132,6 +135,7 @@ theorem norm_U_pow_awayNormedCommRing (j : ℕ) :
       hα₀ hα₁)
     hα₀ hα₁ j
 
+/-- The element `U = p / T` has norm `1` in `Huber.awayNormedCommRing`. -/
 theorem norm_U_awayNormedCommRing :
     letI := Huber.awayNormedCommRing (T : AnnularRing p) A T_mem_nonZeroDivisors hα₀ hα₁
     ‖algebraMap (AnnularRing p) A U‖ = 1 := by
@@ -142,6 +146,7 @@ theorem norm_U_awayNormedCommRing :
       hα₀ hα₁)
     hα₀ hα₁
 
+/-- The element `p` has norm `α` in `Huber.awayNormedCommRing`. -/
 theorem norm_p_awayNormedCommRing :
     letI := Huber.awayNormedCommRing (T : AnnularRing p) A T_mem_nonZeroDivisors hα₀ hα₁
     ‖(p : A)‖ = α := by

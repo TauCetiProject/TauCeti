@@ -169,8 +169,7 @@ theorem norm_padicIntAlgebraMap [NormOneClass K] (a : ℤ_[p]) :
 theorem exists_norm_padicIntAlgebraMap_le :
     ∃ C : ℝ, ∀ a : ℤ_[p], ‖padicIntAlgebraMap p K a‖ ≤ C * ‖a‖ :=
   ⟨‖(1 : K)‖, fun a ↦ by
-    rw [padicIntAlgebraMap_apply, Algebra.algebraMap_eq_smul_one, mul_comm]
-    simpa [PadicInt.norm_coe] using norm_smul_le (a : ℚ_[p]) (1 : K)⟩
+    rw [padicIntAlgebraMap_apply, norm_algebraMap, PadicInt.norm_coe, mul_comm]⟩
 
 /-- In a seminormed `ℚ_p`-algebra with `‖1‖ = 1`, the structure map `ℤ_p → K` is an isometry. -/
 theorem isometry_padicIntAlgebraMap [NormOneClass K] : Isometry (padicIntAlgebraMap p K) :=

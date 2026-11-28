@@ -77,17 +77,17 @@ variable {p : ℕ} [Fact p.Prime] {K : Type*} [NormedDivisionRing K] [NormedAlge
 
 /-- When the `T`-gauge radius equals `‖t‖`, evaluation at `t` is contractive:
 `‖localizedEval t x‖ ≤ ‖x‖`. -/
-theorem norm_localizedEval_le_of_eq (t : K) (ht₀ : (p : ℝ)⁻¹ < ‖t‖) (ht₁ : ‖t‖ < 1) (x : A) :
-    letI := Huber.awayNormedCommRing (T : AnnularRing p) A T_mem_nonZeroDivisors
-      ((inv_pos.2 (Nat.cast_pos.mpr (Fact.out : p.Prime).pos)).trans ht₀) ht₁
+theorem norm_localizedEval_le_of_eq {α : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1)
+    (t : K) (ht₀ : (p : ℝ)⁻¹ < ‖t‖) (ht₁ : ‖t‖ < 1) (hα : α = ‖t‖) (x : A) :
+    letI := Huber.awayNormedCommRing (T : AnnularRing p) A T_mem_nonZeroDivisors hα₀ hα₁
     ‖localizedEval t ht₀ ht₁ x‖ ≤ ‖x‖ := by
-  have htpos : 0 < ‖t‖ := (inv_pos.2 (Nat.cast_pos.mpr (Fact.out : p.Prime).pos)).trans ht₀
-  let := Huber.awayNormedCommRing (T : AnnularRing p) A T_mem_nonZeroDivisors htpos ht₁
+  subst hα
+  let := Huber.awayNormedCommRing (T : AnnularRing p) A T_mem_nonZeroDivisors hα₀ hα₁
   rw [Huber.norm_awayNormedCommRing]
   set d := Huber.awayTateNormDatum
     (Huber.hasBasis_nhds_zero_awayNormedCommRing (T : AnnularRing p) A T_mem_nonZeroDivisors
-      htpos ht₁)
-    htpos ht₁
+      hα₀ hα₁)
+    hα₀ hα₁
   refine le_of_forall_gt fun r hr ↦ ?_
   obtain ⟨n, hmem, hnr⟩ := (Huber.tateNorm_lt_iff d).1 hr
   rw [Huber.awayTateNormDatum_pseudoUniformizer, Huber.awayTateNormDatum_ringOfDefinition] at hmem

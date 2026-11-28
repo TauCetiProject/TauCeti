@@ -14,10 +14,8 @@ Over a seminormed commutative ring `R`, which need not be a field, an `R`-biline
 `‖β x y‖ ≤ C * ‖x‖ * ‖y‖` is jointly continuous (`LinearMap.continuous₂_of_bound`), and so is a
 scalar action with `‖r • m‖ ≤ C * ‖r‖ * ‖m‖` (`TauCeti.continuousSMul_of_norm_smul_le`).
 For an `R`-algebra `S`, a bound on the action makes the structure map bounded
-(`TauCeti.exists_norm_algebraMap_le_of_norm_smul_le`, and
-`TauCeti.exists_norm_algebraMap_le_of_isBoundedSMul` when `[IsBoundedSMul R S]`), and conversely
-a bound on the structure map makes the action bounded
-(`TauCeti.exists_norm_smul_le_of_norm_algebraMap_le`).
+(`TauCeti.exists_norm_algebraMap_le_of_norm_smul_le`), and conversely a bound on the structure map
+makes the action bounded (`TauCeti.exists_norm_smul_le_of_norm_algebraMap_le`).
 The evaluation action of bounded operators on a seminormed space is bounded
 (`ContinuousLinearMap.isBoundedSMul_apply`) and hence jointly continuous
 (`IsBoundedSMul.continuousSMul`), as is every submonoid such as the unitary group.
@@ -70,14 +68,6 @@ theorem TauCeti.exists_norm_algebraMap_le_of_norm_smul_le {S : Type*} [Seminorme
     ∃ C : ℝ≥0, ∀ r : R, ‖algebraMap R S r‖ ≤ C * ‖r‖ :=
   h.elim fun C hC ↦ ⟨C * ‖(1 : S)‖₊, fun r ↦ by
     simpa [Algebra.algebraMap_eq_smul_one, mul_right_comm] using hC r 1⟩
-
-/-- If `R` acts on an `R`-algebra `S` with `[IsBoundedSMul R S]`, then the structure map is
-bounded: `‖algebraMap R S r‖ ≤ C * ‖r‖` for some `C : ℝ`. -/
-theorem TauCeti.exists_norm_algebraMap_le_of_isBoundedSMul {S : Type*} [SeminormedRing S]
-    [Algebra R S] [IsBoundedSMul R S] :
-    ∃ C : ℝ, ∀ r : R, ‖algebraMap R S r‖ ≤ C * ‖r‖ :=
-  ⟨‖(1 : S)‖, fun r ↦ by
-    simpa [Algebra.algebraMap_eq_smul_one, mul_comm] using norm_smul_le r (1 : S)⟩
 
 /-- If the structure map of an `R`-algebra `S` is bounded, `‖algebraMap R S r‖ ≤ C * ‖r‖`, then
 so is the scalar action: `‖r • s‖ ≤ C * ‖r‖ * ‖s‖`. -/

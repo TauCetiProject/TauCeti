@@ -37,7 +37,7 @@ of a Tate ring is; the norm does not depend on an ideal of definition, so none i
 * `TauCeti.Huber.tateNorm_le_zpow_iff`: the closed ball of radius `r ^ n` is `ϖ ^ n A₀`.
 * `TauCeti.Huber.tateNorm_lt_iff`: the open ball of radius `r` is the union of `ϖ ^ n A₀` with
   `d.radius ^ n < r`.
-* `TauCeti.Huber.tateNorm_eq_zpow_of_mem_of_not_mem`: exact norm from consecutive filtration
+* `TauCeti.Huber.tateNorm_eq_zpow_of_mem_of_notMem`: exact norm from consecutive filtration
   membership.
 * `TauCeti.Huber.tateNorm_hasBasis_nhds_zero`: the open balls about zero are a neighbourhood
   basis of zero.
@@ -190,7 +190,7 @@ theorem tateNorm_lt_iff {x : A} {r : ℝ} :
   simp only [inv_zpow', neg_neg]
 
 /-- If `x ∈ ϖ ^ n A₀` and `x ∉ ϖ ^ (n + 1) A₀`, then the norm of `x` is `r ^ n`. -/
-theorem tateNorm_eq_zpow_of_mem_of_not_mem {x : A} {n : ℤ}
+theorem tateNorm_eq_zpow_of_mem_of_notMem {x : A} {n : ℤ}
     (hmem : ((d.pseudoUniformizer ^ (-n) : Aˣ) : A) * x ∈ d.ringOfDefinition)
     (hnot : ((d.pseudoUniformizer ^ (-(n + 1)) : Aˣ) : A) * x ∉ d.ringOfDefinition) :
     tateNorm d x = d.radius ^ n := by
