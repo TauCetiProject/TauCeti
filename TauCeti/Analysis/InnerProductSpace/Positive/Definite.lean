@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.Analysis.Matrix.Hermitian
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 import TauCeti.Analysis.InnerProductSpace.Reflection
@@ -49,7 +50,8 @@ half-space.
   symmetric (`ContinuousLinearMap.isSymmetric_two_inv_smul_add_adjoint`), which has the same real
   quadratic form as `A` (`ContinuousLinearMap.re_inner_two_inv_smul_add_adjoint_apply`).
 * `ContinuousLinearMap.posDef_toMatrix_symmPart`: over the reals, the matrix of the symmetric part
-  of a positive-definite operator in an orthonormal basis is positive definite.
+  of a positive-definite operator in an orthonormal basis is positive definite, and
+  `ContinuousLinearMap.det_two_inv_smul_add_adjoint_pos`: so its determinant is positive.
 * `ContinuousLinearMap.norm_conj_symmPart_sub_id_le`: over the reals, after the change of
   variables `e` with `e e† = (A + A†) / 2` and `‖e⁻¹‖ ≤ λ^{-1/2}`, the symmetric part of `a` becomes
   `e⁻¹ ((a + a†) / 2) e⁻†`, within `‖a - A‖ / λ` of the identity;
@@ -188,26 +190,6 @@ theorem _root_.ContinuousLinearMap.exists_continuousLinearEquiv_comp_adjoint_eq_
     have h := hRn (O y)
     rwa [← he, O.norm_map] at h
 
-omit [FiniteDimensional 𝕜 V] in
-/-- The symmetric part `(A + A†) / 2` of an operator `A` is symmetric. -/
-theorem _root_.ContinuousLinearMap.isSymmetric_two_inv_smul_add_adjoint [CompleteSpace V]
-    (A : V →L[𝕜] V) : (((2⁻¹ : 𝕜) • (A + A.adjoint) : V →L[𝕜] V) : V →ₗ[𝕜] V).IsSymmetric :=
-  fun x y => by
-    simp only [ContinuousLinearMap.coe_coe, smul_apply, add_apply, inner_smul_left,
-      inner_smul_right, inner_add_left, inner_add_right, ContinuousLinearMap.adjoint_inner_left,
-      ContinuousLinearMap.adjoint_inner_right, map_inv₀, map_ofNat]
-    ring
-
-omit [FiniteDimensional 𝕜 V] in
-/-- The symmetric part `(A + A†) / 2` of an operator `A` has the same real quadratic form
-`re ⟪A ξ, ξ⟫` as `A`. -/
-theorem _root_.ContinuousLinearMap.re_inner_two_inv_smul_add_adjoint_apply [CompleteSpace V]
-    (A : V →L[𝕜] V) (ξ : V) :
-    re ⟪((2⁻¹ : 𝕜) • (A + A.adjoint)) ξ, ξ⟫_𝕜 = re ⟪A ξ, ξ⟫_𝕜 := by
-  simp [inner_add_left, inner_smul_left, ContinuousLinearMap.adjoint_inner_left,
-    inner_re_symm ξ (A ξ), normSq_apply]
-  ring
-
 /-- **Factoring the symmetric part of a coercive operator through a prescribed direction.** Let
 `A` be an operator on a finite-dimensional inner product space, not necessarily symmetric, with
 `λ ‖ξ‖² ≤ re ⟪A ξ, ξ⟫` for some `λ > 0`, and let `ν` be a vector. Then there is a continuous linear
@@ -276,6 +258,14 @@ theorem posDef_toMatrix_symmPart {V : Type*} [NormedAddCommGroup V] [InnerProduc
     _ = star x ⬝ᵥ (LinearMap.toMatrix b.toBasis b.toBasis (S : V →ₗ[ℝ] V) *ᵥ x) := by
         simp only [dotProduct, Matrix.mulVec, star_trivial,
           LinearMap.toMatrix_orthonormalBasis_apply, coe_coe, ← hS, hxv, real_inner_comm v]
+
+/-- The determinant of the symmetric part `(A + A†) / 2` of a positive definite endomorphism `A`
+of a finite-dimensional real inner product space is positive. -/
+theorem det_two_inv_smul_add_adjoint_pos {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] {A : V →L[ℝ] V}
+    (hA : ∀ ξ, ξ ≠ 0 → 0 < ⟪A ξ, ξ⟫_ℝ) : 0 < ((2⁻¹ : ℝ) • (A + A.adjoint)).det := by
+  rw [ContinuousLinearMap.det, ← LinearMap.det_toMatrix (stdOrthonormalBasis ℝ V).toBasis]
+  exact (posDef_toMatrix_symmPart hA _).det_pos
 
 section ConjSymmPart
 

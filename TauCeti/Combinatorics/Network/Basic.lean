@@ -79,6 +79,15 @@ structure Network (K : Type w) (V : Type u) [LE K] where
 
 namespace Network
 
+/-- Two networks are equal when their arrow families and their lower and upper bounds agree. -/
+@[ext]
+theorem ext {K : Type w} {V : Type u} [LE K] {N N' : Network.{u, v, w} K V}
+    (hHom : N.Hom = N'.Hom) (hlower : HEq N.lower N'.lower)
+    (hupper : HEq N.upper N'.upper) : N = N' := by
+  cases N
+  cases N'
+  simpa only [Network.mk.injEq] using And.intro hHom ⟨hlower, hupper⟩
+
 /-- Assignments on the arrow family of a network. -/
 abbrev Assignment {K : Type w} {V : Type u} [LE K] (N : Network K V) (R : Type*) :=
   TauCeti.Assignment N.Hom R

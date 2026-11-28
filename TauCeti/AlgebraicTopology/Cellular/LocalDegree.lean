@@ -27,7 +27,9 @@ local degrees of the attaching maps.
   cellular coordinate of any `n`-chain (`TauCeti.cellularChainBasis_repr_eq_inv_cellLocalClass`)
   and implies that a cellular map sending `openCell n i` into `skeletonLT C' n ∪ openCell n i'`
   maps the cellular basis vector of `i` to a scalar multiple of that of `i'`
-  (`TauCeti.cellularChainGroupMap_cellularChainBasis_eq_smul`).
+  (`TauCeti.cellularChainGroupMap_cellularChainBasis_eq_smul`), and to zero if it sends
+  `openCell n i` into `skeletonLT C' n`
+  (`TauCeti.cellularChainGroupMap_cellularChainBasis_eq_zero`).
 * Hence, with coefficients in a ring, pushing the reduced fundamental class of the boundary sphere
   of an `(n + 1)`-cell `j` through its attaching map into `Hₙ(Xⁿ)`, and then into
   `Hₙ(Xⁿ, Xⁿ ∖ {x})`, gives the incidence coefficient `[j : i]` times the local class of `i` at
@@ -56,6 +58,8 @@ local homology is constant along convex sets in a chart
 ## Main definitions and results
 
 * `TauCeti.skeletonPairToComplSingleton`: the inclusion `(Xⁿ, Xⁿ⁻¹) ⟶ (Xⁿ, Xⁿ ∖ {x})`.
+* `TauCeti.isEmbedding_cellDiskHom_restrict`: the characteristic map of a cell embeds the interior
+  `TauCeti.diskInterior` of the disk onto the open cell.
 * `TauCeti.cellLocalClass`: the local class of the cell `i` at `x`.
 * `TauCeti.isIso_singularHomologyMap_characteristicCellPairMap_comp_skeletonPairToComplSingleton`
   and `TauCeti.isIso_cellLocalClass`: the characteristic map computes the local homology at `x`,
@@ -71,6 +75,8 @@ local homology is constant along convex sets in a chart
   `TauCeti.cellularChainGroupMap_cellularChainBasis_eq_smul`: off-cell vanishing and scalar action
   on cellular basis vectors for cellular maps carrying an open `n`-cell into the union of the
   `(n - 1)`-skeleton and another open `n`-cell.
+* `TauCeti.cellularChainGroupMap_cellularChainBasis_eq_zero`: a cellular map carrying an open
+  `n`-cell into the `(n - 1)`-skeleton kills its cellular basis vector.
 * `TauCeti.singularHomologyπ_cellAttachingMap_eq_cellularIncidence_smul` and
   `TauCeti.cellularIncidence_eq_inv_cellLocalClass`: **the incidence numbers are local degrees of
   the attaching maps**.
@@ -230,14 +236,6 @@ private lemma isIso_diskBoundaryPairToDiskSphere (n : ℕ) :
   obtain ⟨s, hs⟩ := (norm_diskHomeomorphClosedBall_eq_one_iff z.val).1 z.property
   exact ⟨s, Subtype.ext hs⟩
 
-/-- The interior of the disk, in sup-norm coordinates. -/
-private def diskInterior (n : ℕ) : Set (TopCat.disk.{w} n) :=
-  {z | ‖(diskHomeomorphClosedBall n z : Fin n → ℝ)‖ < 1}
-
-private lemma isOpen_diskInterior : IsOpen (diskInterior.{w} n) :=
-  isOpen_lt (continuous_norm.comp (continuous_subtypeVal.comp
-    (diskHomeomorphClosedBall n).continuous)) continuous_const
-
 /-- The radial deformation `TauCeti.radialPush r` of the disk, in sup-norm coordinates. -/
 private def diskRadialPush {r : ℝ} (hr : 0 ≤ r) :
     C(I × TopCat.disk.{w} n, TopCat.disk.{w} n) where
@@ -285,14 +283,15 @@ private lemma mem_cellChart_target_iff (i : cell C n) (u : ULift.{w} (Fin n → 
   rw [cellChart, OpenPartialHomeomorph.transHomeomorph_target, openCellChart_target]
   exact mem_ball_zero_iff
 
-/-- On the interior of the disk, the characteristic map is an embedding into the skeleton. -/
-private lemma isEmbedding_cellDiskHom_restrict (i : cell C n) :
+/-- On the interior of the disk, the characteristic map is an embedding into the skeleton: it is a
+homeomorphism onto the open cell. -/
+lemma isEmbedding_cellDiskHom_restrict (i : cell C n) :
     IsEmbedding ((diskInterior n).domRestrict (cellDiskHom i)) := by
   -- Read the interior of the disk as the open ball through `diskHomeomorphClosedBall`, then
   -- apply the homeomorphism of the open ball onto the open cell.
   have he₁ : IsEmbedding fun z : diskInterior.{w} n ↦
-      (⟨(diskHomeomorphClosedBall n z : Fin n → ℝ), mem_ball_zero_iff.2 z.property⟩ :
-        ball (0 : Fin n → ℝ) 1) :=
+      (⟨(diskHomeomorphClosedBall n z : Fin n → ℝ),
+        mem_ball_zero_iff.2 (mem_diskInterior_iff.1 z.property)⟩ : ball (0 : Fin n → ℝ) 1) :=
     (IsEmbedding.subtypeVal.comp ((diskHomeomorphClosedBall n).isEmbedding.comp
       IsEmbedding.subtypeVal)).codRestrict _ _
   have hsub : openCell n i ⊆ (skeletonLT C ((n + 1 : ℕ) : ℕ∞) : Set X) := by
@@ -301,7 +300,8 @@ private lemma isEmbedding_cellDiskHom_restrict (i : cell C n) :
   convert he₂.comp he₁ using 1
   funext z
   exact Subtype.ext ((coe_cellDiskHom_apply i z.val).trans (openCellHomeomorph_apply n i
-    ⟨(diskHomeomorphClosedBall n z : Fin n → ℝ), mem_ball_zero_iff.2 z.property⟩).symm)
+    ⟨(diskHomeomorphClosedBall n z : Fin n → ℝ),
+      mem_ball_zero_iff.2 (mem_diskInterior_iff.1 z.property)⟩).symm)
 
 variable (x : skeletonObj C (n + 1))
 
@@ -385,7 +385,7 @@ private lemma mapsTo_cellDiskHom_compl :
 
 private lemma diskCore_subset_diskInterior : diskCore C x i ⊆ diskInterior n :=
   fun z (hz : ‖(diskHomeomorphClosedBall n z : Fin n → ℝ)‖ ≤ cellRadius C x i) ↦
-    hz.trans_lt (cellRadius_lt_one C x hx)
+    mem_diskInterior_iff.2 (hz.trans_lt (cellRadius_lt_one C x hx))
 
 private lemma isIso_singularHomologyMap_compl_cellBall (k : ℕ) :
     IsIso (TopPair.singularHomologyMap (TopPair.ofSubsetMap
@@ -426,10 +426,9 @@ private lemma isIso_singularHomologyMap_excisionMap_comp_cellDiskHom (k : ℕ) :
     rw [TopPair.range_ofSubset_map, hg] at hz
     rw [TopPair.range_ofSubset_map]
     intro hcore
-    refine hz ((mem_cellBall_iff C x hx _).2 ⟨⟨_, mem_ball_zero_iff.2 z.property,
-      (coe_cellDiskHom_apply i z.val).symm⟩, ?_⟩)
-    rw [coe_cellDiskHom_apply i z.val,
-      (map n i).left_inv (by rw [source_eq]; exact mem_ball_zero_iff.2 z.property)]
+    have hz' := mem_ball_zero_iff.2 (mem_diskInterior_iff.1 z.property)
+    refine hz ((mem_cellBall_iff C x hx _).2 ⟨⟨_, hz', (coe_cellDiskHom_apply i z.val).symm⟩, ?_⟩)
+    rw [coe_cellDiskHom_apply i z.val, (map n i).left_inv (by rw [source_eq]; exact hz')]
     exact hcore
   · cases b
     · exact (isClosed_cellBall C x hx).isOpen_compl
@@ -445,7 +444,7 @@ private lemma isIso_singularHomologyMap_excisionMap_comp_cellDiskHom (k : ℕ) :
       have hb : ‖(map n i).symm m‖ < 1 := mem_ball_zero_iff.1 (map_symm_mem_ball n hm)
       refine ⟨⟨(diskHomeomorphClosedBall n).symm
         ⟨(map n i).symm m, mem_closedBall_zero_iff.2 hb.le⟩, ?_⟩, ?_⟩
-      · rw [diskInterior, mem_ofPred_eq, Homeomorph.apply_symm_apply]
+      · rw [mem_diskInterior_iff, Homeomorph.apply_symm_apply]
         exact hb
       · refine (hg _).trans (Subtype.ext ?_)
         rw [coe_cellDiskHom_apply,
@@ -874,6 +873,20 @@ theorem cellularChainGroupMap_cellularChainBasis_eq_smul
     rw [Finsupp.single_eq_same]
   · rw [Finsupp.single_eq_of_ne hk]
     exact cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_ne C C' R hf hi hk
+
+/-- **A cellular map carrying the open cell of `i` into the `(n - 1)`-skeleton sends the cellular
+basis vector of `i` to zero.** -/
+theorem cellularChainGroupMap_cellularChainBasis_eq_zero
+    {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f) {n : ℕ} {i : cell C n}
+    (hi : ∀ z (hz : z ∈ openCell n i), (f ⟨z, openCell_subset_complex n i hz⟩ : Y) ∈
+      (skeletonLT C' (n : ℕ∞) : Set Y)) :
+    cellularChainGroupMap C C' hf (ModuleCat.of R R) n (cellularChainBasis C R n i) = 0 := by
+  refine (cellularChainBasis C' R n).repr.injective (Finsupp.ext fun k ↦ ?_)
+  rw [map_zero, Finsupp.zero_apply]
+  let x : skeletonObj C' (n + 1) := ⟨map n k 0, map_mem_skeletonLT_succ k (by simp)⟩
+  have hx : (x : Y) ∈ openCell n k := ⟨0, mem_ball_zero_iff.2 (by simp), rfl⟩
+  exact cellularChainBasis_repr_cellularChainGroupMap_eq_zero_of_notMem C C' R hf x hx
+    fun z hz hzx ↦ notMem_skeletonLT_of_mem_openCell n hx (hzx ▸ hi z hz)
 
 end CellularMap
 

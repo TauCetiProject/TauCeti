@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.RepresentingChainSystem
 public import TauCeti.Geometry.Manifold.Morse.DG.TwistedComplex
 public import TauCeti.Geometry.Manifold.Morse.Stable.Broken.Levels
 
@@ -32,9 +33,10 @@ levels keeps the Moore path of every broken trajectory, so it keeps the evaluati
 Hence the two chain systems have the same Barraud–Cornea cocycle
 (`TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle_chainSystemChangeLevels`) and the same DG
 Morse complex (`TauCeti.IsAdaptedPseudoGradient.dgMorseComplex_chainSystemChangeLevels`), with
-coefficients in every DG local system. That the change of levels carries representing chain systems
-to representing chain systems, which would follow from `TopPair.IsCubicalRepresentative.map`
-along the change of levels, is not shown here.
+coefficients in every DG local system. The change of levels also carries a representing chain
+system of classes `μ` relative to the boundaries, such as the fundamental classes rel boundary of
+the trajectory spaces, to a representing chain system of the images of `μ`
+(`TauCeti.TwistingChainSystem.IsRepresenting.chainSystemChangeLevels`).
 
 ## Main definitions
 
@@ -49,6 +51,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   not depend on the levels.
 * `chainSystemChangeLevels_chainSystemChangeLevels`: changing the levels of a twisting chain system
   and changing them back recovers it.
+* `TauCeti.TwistingChainSystem.IsRepresenting.chainSystemChangeLevels`: the change of levels
+  preserves representing chain systems.
 * `barraudCorneaCocycle_chainSystemChangeLevels`: a twisting chain system and the one it induces on
   other levels have the same Barraud–Cornea cocycle.
 * `dgMorseComplex_chainSystemChangeLevels`: they have the same DG Morse complex.
@@ -65,13 +69,15 @@ public section
 
 noncomputable section
 
-open Set
+open CategoryTheory Set
 open scoped ContDiff Manifold
+
+universe u v
 
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
+  {M : Type u} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
   [CompactSpace M] [T2Space M]
   {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x} {ι ι' : Type*}
 
@@ -136,6 +142,37 @@ theorem chainSystemChangeLevels_chainSystemChangeLevels
   simp_rw [← hX.morseBrokenTrajectorySpaceHomeomorph_symm hf hdense hdense' hc hc',
     Homeomorph.symm_comp_toContinuousMap]
   exact TwistingChainSystem.map_id S
+
+/-- **The change of levels preserves representing chain systems.** If `S` represents classes `μ`
+of the trajectory spaces on the levels of `c₁` relative to their boundaries, such as their
+fundamental classes rel boundary, the twisting chain system it induces on the levels of `c₂`
+represents the images of the classes `μ` under the changes of levels of the trajectory spaces,
+which carry the boundaries onto the boundaries. -/
+theorem _root_.TauCeti.TwistingChainSystem.IsRepresenting.chainSystemChangeLevels
+    {ι₁ ι₂ : Type v} {c₁ : ι₁ → ℝ} {c₂ : ι₂ → ℝ}
+    (hdense₁ : ∀ x y : criticalPoints 𝓘(ℝ, E) f, Ioo (f y) (f x) ⊆ closure (range c₁))
+    (hdense₂ : ∀ x y : criticalPoints 𝓘(ℝ, E) f, Ioo (f y) (f x) ⊆ closure (range c₂))
+    (hc₁ : ∀ i (x : criticalPoints 𝓘(ℝ, E) f), c₁ i ≠ f x)
+    (hc₂ : ∀ i (x : criticalPoints 𝓘(ℝ, E) f), c₂ i ≠ f x) {k : Type (max u v)} [CommRing k]
+    {S : TwistingChainSystem ind (hX.morseBrokenTrajectorySpaceComp hc₁) k}
+    {μ : ∀ x y : criticalPoints 𝓘(ℝ, E) f, ((TopPair.ofSubset
+      (X := TopCat.of (hX.morseBrokenTrajectorySpace c₁ x y))
+      (hX.morseBrokenTrajectorySpaceBoundary c₁ x y)).cubicalChainComplex k).homology
+        (ind x - ind y - 1).toNat}
+    (hS : S.IsRepresenting (M := fun x y : criticalPoints 𝓘(ℝ, E) f ↦
+      TopCat.of (hX.morseBrokenTrajectorySpace c₁ x y))
+      (fun x y ↦ hX.morseBrokenTrajectorySpaceBoundary c₁ x y) μ) :
+    (hX.chainSystemChangeLevels hf hdense₁ hdense₂ hc₁ hc₂ ind S).IsRepresenting
+      (M := fun x y : criticalPoints 𝓘(ℝ, E) f ↦ TopCat.of (hX.morseBrokenTrajectorySpace c₂ x y))
+      (fun x y ↦ hX.morseBrokenTrajectorySpaceBoundary c₂ x y) fun x y ↦
+        (HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k (TopPair.ofSubsetMap
+          (TopCat.ofHom (hX.morseBrokenTrajectorySpaceHomeomorph hf hdense₁ hdense₂ hc₁ hc₂ x y))
+          fun w ↦
+            (hX.morseBrokenTrajectorySpaceHomeomorph_mem_morseBrokenTrajectorySpaceBoundary_iff
+              hf hdense₁ hdense₂ hc₁ hc₂ w).2)) (ind x - ind y - 1).toNat).hom (μ x y) :=
+  hS.map _ fun _ _ w ↦
+    (hX.morseBrokenTrajectorySpaceHomeomorph_mem_morseBrokenTrajectorySpaceBoundary_iff hf
+      hdense₁ hdense₂ hc₁ hc₂ w).2
 
 /-- **The Barraud–Cornea cocycle does not depend on the levels**: a twisting chain system on the
 trajectory spaces on the levels of `c` and the one it induces on the levels of `c'` have the same

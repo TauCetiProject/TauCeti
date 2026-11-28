@@ -75,6 +75,8 @@ with the Frobenius kernel.
   trivial-intersection set, and in particular so is the nonidentity part of `H`.
 * `TauCeti.IsTISet.one_notMem`: conversely, a trivial-intersection set for a proper subgroup
   avoids the identity.
+* `TauCeti.IsTISet.normalizer_eq`: a nonempty trivial-intersection set has normalizer its
+  subgroup.
 * `TauCeti.IsTISet.ncard_conjugatesOfSet`: the `Set.ncard` identity
   `(Group.conjugatesOfSet S).ncard = |G : H| · |S|`, an actual count of the elements the conjugates
   of a trivial-intersection set cover when `H` has finite index and `S` is finite.
@@ -349,6 +351,16 @@ theorem one_notMem (hS : IsTISet S H) (hH : H ≠ ⊤) : (1 : G) ∉ S := by
     exact hH ((Subgroup.eq_top_iff' H).mpr (by simpa using h))
   intro h1
   exact hS.disjoint_conj g hg 1 h1 (by simpa using h1)
+
+/-- **A nonempty trivial-intersection set has normalizer its subgroup.**  The subgroup normalizes
+the set by `TauCeti.IsTISet.conj_image_eq`, and an element outside it moves any point of the set
+off the set.  Nonemptiness is needed: every element normalizes `∅`. -/
+theorem normalizer_eq (hS : IsTISet S H) (hS0 : S.Nonempty) : Subgroup.normalizer S = H := by
+  refine le_antisymm (fun g hg => ?_) fun h hh =>
+    Subgroup.mem_normalizer_iff_conj_image_eq.2 (hS.conj_image_eq hh)
+  obtain ⟨s, hs⟩ := hS0
+  by_contra hgH
+  exact hS.disjoint_conj g hgH s hs ((Subgroup.mem_set_normalizer_iff.1 hg s).1 hs)
 
 end IsTISet
 

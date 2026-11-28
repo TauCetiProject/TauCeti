@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Opens
 
 /-!
 # The cotangent bundle of a normed space
@@ -31,6 +32,15 @@ covector `p` through its value `p 1` gives the global coordinates `T*𝕜 ≃ �
 symplectic form of the cotangent bundle is a constant linear form
 (`TauCeti.Geometry.Symplectic.Cotangent.Bundle.ModelSpace`).
 
+Over an open subset `U` of `E`, a covector is likewise an element of the dual of `E`, and a map
+into `T*U` is continuous as soon as its base point and its covector depend continuously on the
+parameter (`TauCeti.CotangentBundle.continuous_totalSpaceMk_opens`). Through a chart `c` of a
+manifold `M` modelled on `E`, the covector `p ∘ Dc(c⁻¹ y)` of `M` pulled back from a point `y` of
+the chart target and a covector `p` of `E` depends continuously on `(y, p)`
+(`TauCeti.CotangentBundle.continuousAt_mk_symm_comp_mfderiv`), so a neighbourhood of a covector of
+`M` pulls back to a neighbourhood of its reading in `c`
+(`TauCeti.CotangentBundle.eventually_mk_symm_comp_mfderiv_of_eventually`).
+
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Graduate Texts in Mathematics 218,
@@ -42,7 +52,7 @@ public section
 noncomputable section
 
 open Bundle
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff Topology
 
 namespace TauCeti.CotangentBundle
 
@@ -157,5 +167,89 @@ theorem mfderiv_lineDiffeomorph_apply (z : CotangentBundle 𝓘(𝕜) 𝕜) (v :
   -- The identity of the tangent space followed by `lineEquiv`, which reads `p` as `p 1`.
   rw [lineDiffeomorph, Diffeomorph.coe_trans, hcomp, ContinuousLinearEquiv.coe_toDiffeomorph, he]
   exact lineEquiv_apply 𝕜 v
+
+variable {E} in
+/-- **Continuous covector fields over an open subset of a normed space.** Let `U` be an open subset
+of a normed space `E`. A map into the cotangent bundle of `U`, sending `x` to the covector `φ x` of
+`E` at the point `β x` of `U`, is continuous when `β` and `φ` are. -/
+theorem continuous_totalSpaceMk_opens {U : TopologicalSpace.Opens E} {X : Type*}
+    [TopologicalSpace X] {β : X → U} (hβ : Continuous β) {φ : X → E →L[𝕜] 𝕜}
+    (hφ : Continuous φ) :
+    Continuous fun x ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (β x) (φ x) : CotangentBundle 𝓘(𝕜, E) U) := by
+  -- Through the open embedding `T*U → T*E`, this is the map `x ↦ (β x, φ x)` into `E × E*`.
+  refine (isOpenEmbedding_openInclusion U).isInducing.continuous_iff.2 ?_
+  have h : (openInclusion U ∘ fun x ↦
+      (TotalSpace.mk' (E →L[𝕜] 𝕜) (β x) (φ x) : CotangentBundle 𝓘(𝕜, E) U)) =
+      (modelSpaceDiffeomorph E).symm ∘ fun x ↦ ((β x : E), φ x) := by
+    funext x
+    rw [Function.comp_apply, openInclusion_def, Function.comp_apply,
+      modelSpaceDiffeomorph_symm_apply]
+    congr 1
+    ext v
+    rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      Manifold.tangentSpaceOpenEquiv_symm_apply]
+    -- Both sides evaluate `φ x` at `v`, read in the tangent spaces of `U` and of `E`.
+    rfl
+  rw [h]
+  exact (modelSpaceDiffeomorph E).symm.continuous.comp
+    ((continuous_subtypeVal.comp hβ).prodMk hφ)
+
+section Chart
+
+variable {E} {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} {M : Type*}
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+
+/-- **Covectors of the model space pulled back through a chart.** Let `c` be an open partial
+homeomorphism of `M` into its model space `E`, `C¹` at `c⁻¹ y₀` for a point `y₀` of its target.
+The covector `p ∘ Dc(c⁻¹ y)` at `c⁻¹ y`, pulled back from a covector `p` of `E`, depends
+continuously on `(y, p) ∈ E × E*` at `(y₀, p₀)`. -/
+theorem continuousAt_mk_symm_comp_mfderiv {c : OpenPartialHomeomorph M E}
+    {w₀ : E × (E →L[𝕜] 𝕜)} (hw₀ : w₀.1 ∈ c.target)
+    (hc : ContMDiffAt I 𝓘(𝕜, E) 1 c (c.symm w₀.1)) :
+    ContinuousAt (fun w : E × (E →L[𝕜] 𝕜) ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (c.symm w.1)
+      (w.2 ∘L mfderiv I 𝓘(𝕜, E) c (c.symm w.1)) : CotangentBundle I M)) w₀ := by
+  have hg : ContinuousAt (fun w : E × (E →L[𝕜] 𝕜) ↦ c.symm w.1) w₀ :=
+    ContinuousAt.comp (g := c.symm) (f := Prod.fst) (c.continuousAt_symm hw₀)
+      continuous_fst.continuousAt
+  -- The covector `p` of `E` at `c (c⁻¹ y)`, continuous through the global coordinates
+  -- `T*E ≃ E × E*`.
+  have hΨ : ContinuousAt (fun w : E × (E →L[𝕜] 𝕜) ↦
+      (TotalSpace.mk' (E →L[𝕜] 𝕜) (c (c.symm w.1)) w.2 : CotangentBundle 𝓘(𝕜, E) E)) w₀ := by
+    simpa only [Function.comp_def, modelSpaceDiffeomorph_symm_apply] using
+      (modelSpaceDiffeomorph E).symm.continuous.continuousAt.comp
+        ((ContinuousAt.comp (g := c) (f := fun w : E × (E →L[𝕜] 𝕜) ↦ c.symm w.1)
+          (c.continuousAt (c.map_target hw₀)) hg).prodMk continuous_snd.continuousAt)
+  exact continuousAt_mk_comp_mfderiv (f := c) (fun _ ↦ rfl) hΨ hg hc
+
+/-- **Neighbourhoods of covectors read through a chart.** Let `c` be an open partial homeomorphism
+of `M` into its model space `E`, differentiable with its inverse and `C¹` at `x ∈ c.source`. A
+property of covectors of `M` holding near the covector `ξ` at `x` holds, read in `c`, near the
+reading `(c x, ξ ∘ D(c⁻¹)(c x))` of `ξ`: for `(y, p)` near it, `y` lies in the chart target and the
+property holds at the covector `p ∘ Dc(c⁻¹ y)` at `c⁻¹ y`, whose reading in `c` is `p`
+(`OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_comp_mfderiv_symm`). -/
+theorem eventually_mk_symm_comp_mfderiv_of_eventually {c : OpenPartialHomeomorph M E}
+    (hc : c.MDifferentiable I 𝓘(𝕜, E)) {x : M} (hx : x ∈ c.source)
+    (hcx : ContMDiffAt I 𝓘(𝕜, E) 1 c x) {ξ : TangentSpace I x →L[𝕜] 𝕜}
+    {Q : CotangentBundle I M → Prop}
+    (h : ∀ᶠ p in 𝓝 (TotalSpace.mk' (E →L[𝕜] 𝕜) x ξ : CotangentBundle I M), Q p) :
+    ∀ᶠ w : E × (E →L[𝕜] 𝕜) in 𝓝 (c x, ξ ∘L mfderiv 𝓘(𝕜, E) I c.symm (c x)),
+      w.1 ∈ c.target ∧ Q (TotalSpace.mk' (E →L[𝕜] 𝕜) (c.symm w.1)
+        (w.2 ∘L mfderiv I 𝓘(𝕜, E) c (c.symm w.1))) := by
+  have hy₀ : c x ∈ c.target := c.map_source hx
+  -- Pulling the reading of `ξ` back through `c` gives `ξ`.
+  have hw₀ : (TotalSpace.mk' (E →L[𝕜] 𝕜) (c.symm (c x))
+      ((ξ ∘L mfderiv 𝓘(𝕜, E) I c.symm (c x)) ∘L mfderiv I 𝓘(𝕜, E) c (c.symm (c x))) :
+        CotangentBundle I M) = TotalSpace.mk' (E →L[𝕜] 𝕜) x ξ := by
+    rw [c.left_inv hx]
+    congr 1
+    ext v
+    exact congr_arg ξ congr($(hc.symm_comp_deriv hx) v)
+  have hcont := continuousAt_mk_symm_comp_mfderiv
+    (w₀ := (c x, ξ ∘L mfderiv 𝓘(𝕜, E) I c.symm (c x))) hy₀ (by rwa [c.left_inv hx])
+  filter_upwards [hcont.eventually (hw₀ ▸ h),
+    continuous_fst.continuousAt.preimage_mem_nhds (c.open_target.mem_nhds hy₀)] with w hw hwt
+  exact ⟨hwt, hw⟩
+
+end Chart
 
 end TauCeti.CotangentBundle

@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.MeasureTheory.SpecificCodomains.Pi
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.MeasureTheory.Function.Lp.AeMem
 import TauCeti.MeasureTheory.Function.Lp.Norm
@@ -43,8 +44,12 @@ of `Lᵖ` of the strip from `TauCeti.Analysis.Sobolev.Strip.Jet`.
   considered with (`TauCeti.StripSobolev.valueL_inclusion`). An element is determined by its value
   (`TauCeti.StripSobolev.valueL_injective`): integrating by parts against test functions
   supported in the open strip `ℝ × (0, 1)` shows that the derivatives are the weak derivatives of
-  the value (`TauCeti.StripSobolev.hasWeakLineDerivOn_derivSL`,
-  `TauCeti.StripSobolev.hasWeakLineDerivOn_derivTL`), which vanish where the value does
+  the value. Integration by parts over the strip holds whenever the boundary terms in `t`
+  agree (`TauCeti.StripSobolev.integral_smul_fderiv_add_fderiv_smul_eq_zero`), and passes from the
+  jets of a space of sections to their closure in every `Lᵖ`
+  (`TauCeti.StripSobolev.integral_smul_add_eq_zero_of_mem_jetClosure`). The weak derivatives
+  (`TauCeti.StripSobolev.hasWeakLineDerivOn_derivSL`,
+  `TauCeti.StripSobolev.hasWeakLineDerivOn_derivTL`) vanish where the value does
   (`TauCeti.HasWeakLineDerivOn.ae_eq_zero_of_isOpen`).
 * **Translation invariance.** Translating sections in the `s` direction is a linear isometric
   equivalence of `H1 F₀ F₁` (`TauCeti.StripSobolev.translate`): the norm is translation
@@ -169,10 +174,10 @@ instance (p : ℝ≥0∞) : HasLpJets p (testSection F₀ F₁) :=
 
 /-- The jet of a test section does not depend on the boundary conditions it is considered
 with. -/
-theorem jetLp_inclusion (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') (ξ : testSection F₀ F₁) :
-    jetLp 2 (testSection F₀' F₁') (Submodule.inclusion (testSection_mono h₀ h₁) ξ) =
-      jetLp 2 (testSection F₀ F₁) ξ := by
-  rw [jetLp_apply 2, jetLp_apply 2]
+theorem jetLp_inclusion {p : ℝ≥0∞} (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') (ξ : testSection F₀ F₁) :
+    jetLp p (testSection F₀' F₁') (Submodule.inclusion (testSection_mono h₀ h₁) ξ) =
+      jetLp p (testSection F₀ F₁) ξ := by
+  rw [jetLp_apply p, jetLp_apply p]
   rfl
 
 variable (F₀ F₁) in
@@ -212,9 +217,13 @@ theorem inclusion_jetH1 (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') (ξ : te
 /-! ### The components of an element of `H1` -/
 
 variable (F₀ F₁) in
-/-- The value `(ξ, ξ_s, ξ_t) ↦ ξ` of an element of `H1`, in `L²(ℝ × [0, 1], V)`. -/
-def valueL : H1 F₀ F₁ →L[ℝ] Lp V 2 stripMeasure :=
-  ((ContinuousLinearMap.fst ℝ V (V × V)).compLpL 2 stripMeasure).comp (H1 F₀ F₁).subtypeL
+/-- The value `(ξ, ξ_s, ξ_t) ↦ ξ` of an `Lᵖ` jet in the closure of the jets of test sections, in
+`Lᵖ(ℝ × [0, 1], V)`: for `p = 2` the value of an element of `H1 F₀ F₁`, and in general of an
+element of the Sobolev space `TauCeti.StripSobolev.W1p F₀ F₁ p`. -/
+def valueL (p : ℝ≥0∞) [Fact (1 ≤ p)] :
+    jetClosure p (testSection F₀ F₁) →L[ℝ] Lp V p stripMeasure :=
+  ((ContinuousLinearMap.fst ℝ V (V × V)).compLpL p stripMeasure).comp
+    (jetClosure p (testSection F₀ F₁)).subtypeL
 
 variable (F₀ F₁) in
 /-- The `s`-derivative `(ξ, ξ_s, ξ_t) ↦ ξ_s` of an element of `H1`, in `L²(ℝ × [0, 1], V)`. -/
@@ -228,9 +237,10 @@ def derivTL : H1 F₀ F₁ →L[ℝ] Lp V 2 stripMeasure :=
   (((ContinuousLinearMap.snd ℝ V V).comp (ContinuousLinearMap.snd ℝ V (V × V))).compLpL 2
     stripMeasure).comp (H1 F₀ F₁).subtypeL
 
-/-- The value of an element of `H1` is represented by the first component of its jet. -/
-theorem coeFn_valueL (x : H1 F₀ F₁) :
-    valueL F₀ F₁ x =ᵐ[stripMeasure] fun z ↦ ((x : Lp (V × V × V) 2 stripMeasure) z).1 :=
+/-- The value of an `Lᵖ` jet in the closure of the jets of test sections is represented by its
+first component. -/
+theorem coeFn_valueL {p : ℝ≥0∞} [Fact (1 ≤ p)] (x : jetClosure p (testSection F₀ F₁)) :
+    valueL F₀ F₁ p x =ᵐ[stripMeasure] fun z ↦ ((x : Lp (V × V × V) p stripMeasure) z).1 :=
   ContinuousLinearMap.coeFn_compLpL _ _
 
 /-- The `s`-derivative of an element of `H1` is represented by the second component of its
@@ -249,7 +259,7 @@ theorem coeFn_derivTL (x : H1 F₀ F₁) :
 with. -/
 @[simp]
 theorem valueL_inclusion (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') (x : H1 F₀ F₁) :
-    valueL F₀' F₁' (Submodule.inclusion (H1_mono h₀ h₁) x) = valueL F₀ F₁ x :=
+    valueL F₀' F₁' 2 (Submodule.inclusion (H1_mono h₀ h₁) x) = valueL F₀ F₁ 2 x :=
   (rfl)
 
 /-- The `s`-derivative of an element of `H1` does not depend on the boundary conditions it is
@@ -266,10 +276,11 @@ theorem derivTL_inclusion (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') (x : H
     derivTL F₀' F₁' (Submodule.inclusion (H1_mono h₀ h₁) x) = derivTL F₀ F₁ x :=
   (rfl)
 
-/-- The value of the jet of a test section is the section. -/
-theorem valueL_jetH1 (ξ : testSection F₀ F₁) :
-    valueL F₀ F₁ (jetH1 F₀ F₁ ξ) =ᵐ[stripMeasure] (ξ : ℝ × ℝ → V) := by
-  filter_upwards [coeFn_valueL (jetH1 F₀ F₁ ξ), coeFn_jetLp 2 ξ] with z h₁ h₂
+/-- The value of the `Lᵖ` jet of a test section is the section. -/
+theorem valueL_toJetClosure {p : ℝ≥0∞} [Fact (1 ≤ p)] (ξ : testSection F₀ F₁) :
+    valueL F₀ F₁ p (toJetClosure p (testSection F₀ F₁) ξ) =ᵐ[stripMeasure] (ξ : ℝ × ℝ → V) := by
+  filter_upwards [coeFn_valueL (toJetClosure p (testSection F₀ F₁) ξ), coeFn_jetLp p ξ]
+    with z h₁ h₂
   rw [h₁, coe_toJetClosure, h₂, jet_apply]
 
 /-- The `s`-derivative of the jet of a test section is `∂s ξ`. -/
@@ -302,19 +313,22 @@ theorem ae_mem_openStrip : ∀ᵐ z ∂stripMeasure, z ∈ (univ : Set ℝ) ×ˢ
   · simp [← h0]
   · simp [h1]
 
-/-- Integration by parts against a test function supported in the open strip: the integral of
-`φ ∂ ξ + (∂ φ) ξ` vanishes, in each of the two coordinate directions `e`. -/
-private theorem integral_smul_fderiv_add_eq_zero {φ : ℝ × ℝ → ℝ} (hφ : ContDiff ℝ 1 φ)
-    (hφU : tsupport φ ⊆ (univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1)
-    {ξ : ℝ × ℝ → V} (hξ : ξ ∈ testSection F₀ F₁) {e : ℝ × ℝ} (he : e = (1, 0) ∨ e = (0, 1)) :
+/-- **Integration by parts on the strip.** Let `φ` be a `C¹` function and `ξ` a `C¹` section
+vanishing for `|s|` large, such that `φ ξ` takes the same values on the two boundary lines `t = 0`
+and `t = 1`: for instance `φ` vanishes near them, or `φ` and `ξ` have period one in `t`. Then the
+integral over the strip of `φ ∂ₑξ + (∂ₑφ) ξ` vanishes in each of the two coordinate directions
+`e`. -/
+theorem integral_smul_fderiv_add_fderiv_smul_eq_zero {φ : ℝ × ℝ → ℝ} (hφ : ContDiff ℝ 1 φ)
+    {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) {R : ℝ} (hR : ∀ s t, R ≤ |s| → ξ (s, t) = 0)
+    (hbd : ∀ s, φ (s, 1) • ξ (s, 1) = φ (s, 0) • ξ (s, 0)) {e : ℝ × ℝ}
+    (he : e = (1, 0) ∨ e = (0, 1)) :
     ∫ z, (φ z • fderiv ℝ ξ z e + fderiv ℝ φ z e • ξ z) ∂stripMeasure = 0 := by
-  obtain ⟨hξ1, -, -, R, hR⟩ := mem_testSection_iff.1 hξ
   set F : ℝ × ℝ → V := fun z ↦ φ z • fderiv ℝ ξ z e + fderiv ℝ φ z e • ξ z
-  have hξd := hξ1.differentiable (by norm_num)
+  have hξd := hξ.differentiable one_ne_zero
   have hφd := hφ.differentiable one_ne_zero
   have hFc : Continuous F :=
-    ((hφ.continuous.smul ((hξ1.continuous_fderiv (by norm_num)).clm_apply continuous_const)).add
-      (((hφ.continuous_fderiv one_ne_zero).clm_apply continuous_const).smul hξ1.continuous))
+    ((hφ.continuous.smul ((hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const)).add
+      (((hφ.continuous_fderiv one_ne_zero).clm_apply continuous_const).smul hξ.continuous))
   have hΦ : ∀ z, HasFDerivAt (fun w ↦ φ w • ξ w)
       (φ z • fderiv ℝ ξ z + (fderiv ℝ φ z).smulRight (ξ z)) z := fun z ↦
     (hφd z).hasFDerivAt.smul (hξd z).hasFDerivAt
@@ -326,73 +340,77 @@ private theorem integral_smul_fderiv_add_eq_zero {φ : ℝ × ℝ → ℝ} (hφ 
     simp [F, hd, h.1]
   rw [integral_strip_eq_setIntegral_of_jet_eq_zero hR hF]
   rcases he with rfl | rfl
-  · refine setIntegral_rect_eq_zero_of_hasDerivAt_fst (Φ := fun w ↦ φ w • ξ w) hFc
+  · -- In the direction `s` the boundary terms vanish because `ξ` vanishes at `s = ± R`.
+    refine setIntegral_rect_eq_zero_of_hasDerivAt_fst (Φ := fun w ↦ φ w • ξ w) hFc
       (fun s t ↦ ?_) fun t ↦ ?_
     · have := (hΦ (s, t)).comp_hasDerivAt (f := fun x : ℝ ↦ (x, t)) s
         (HasDerivAt.prodMk (hasDerivAt_id' s) (hasDerivAt_const s t))
       simpa [F, Function.comp_def] using this
     · simp [hR R t (le_abs_self R), hR (-R) t (by rw [abs_neg]; exact le_abs_self R)]
-  · refine setIntegral_rect_eq_zero_of_hasDerivAt_snd (Φ := fun w ↦ φ w • ξ w) hFc
-      (fun s t ↦ ?_) fun s ↦ ?_
-    · have := (hΦ (s, t)).comp_hasDerivAt (f := fun x : ℝ ↦ (s, x)) t
-        (HasDerivAt.prodMk (hasDerivAt_const t s) (hasDerivAt_id' t))
-      simpa [F, Function.comp_def] using this
-    · have h₀ : φ (s, 0) = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ (hφU h).2.1.false
-      have h₁ : φ (s, 1) = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ (hφU h).2.2.false
-      simp [h₀, h₁]
+  · -- In the direction `t` the boundary terms agree by hypothesis.
+    refine setIntegral_rect_eq_zero_of_hasDerivAt_snd (Φ := fun w ↦ φ w • ξ w) hFc
+      (fun s t ↦ ?_) hbd
+    have := (hΦ (s, t)).comp_hasDerivAt (f := fun x : ℝ ↦ (s, x)) t
+      (HasDerivAt.prodMk (hasDerivAt_const t s) (hasDerivAt_id' t))
+    simpa [F, Function.comp_def] using this
 
 variable [CompleteSpace V]
 
-/-- The weak derivative identity on `H1`: for an `L²` jet `x ∈ H1`, a test function `φ` supported
-in the open strip and a coordinate direction `e`, with `P` the component of the jet recording the
-derivative in the direction `e`, `∫ φ P(x) + ∫ (∂_e φ) x₁ = 0`. -/
-private theorem integral_smul_add_eq_zero_of_mem_H1 {x : Lp (V × V × V) 2 stripMeasure}
-    (hx : x ∈ H1 F₀ F₁) {φ : ℝ × ℝ → ℝ} (hφ : ContDiff ℝ 1 φ) (hφs : HasCompactSupport φ)
-    (hφU : tsupport φ ⊆ (univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1) {e : ℝ × ℝ}
-    (he : e = (1, 0) ∨ e = (0, 1)) {P : V × V × V →L[ℝ] V}
-    (hP : ∀ (ξ : ℝ × ℝ → V) z, P (jet ξ z) = fderiv ℝ ξ z e) :
+/-- **Weak derivative identities pass to the closure of the jets.** Let `S` be a space of sections
+with jets in `Lᵖ` of the strip, let `φ` and its partial derivative `∂ₑφ` in a coordinate direction
+`e` lie in `L^q` for the Hölder conjugate exponent `q` of `p`, and let `P` be the component of the
+jet recording the derivative in the direction `e`. If `∫ φ ∂ₑξ + (∂ₑφ) ξ = 0` over the strip for
+every `ξ ∈ S`, then `∫ φ P(x) + ∫ (∂ₑφ) x₁ = 0` for every `x` in the closure `jetClosure p S` of
+their `Lᵖ` jets. -/
+theorem integral_smul_add_eq_zero_of_mem_jetClosure {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {S : Submodule ℝ (ℝ × ℝ → V)} [HasLpJets p S] {φ : ℝ × ℝ → ℝ} {e : ℝ × ℝ}
+    (hφ : MemLp φ p.conjExponent stripMeasure)
+    (hφe : MemLp (fun z ↦ fderiv ℝ φ z e) p.conjExponent stripMeasure) {P : V × V × V →L[ℝ] V}
+    (hP : ∀ (ξ : ℝ × ℝ → V) z, P (jet ξ z) = fderiv ℝ ξ z e)
+    (h : ∀ ξ ∈ S, ∫ z, (φ z • fderiv ℝ ξ z e + fderiv ℝ φ z e • ξ z) ∂stripMeasure = 0)
+    {x : Lp (V × V × V) p stripMeasure} (hx : x ∈ jetClosure p S) :
     ∫ z, φ z • P (x z) ∂stripMeasure + ∫ z, fderiv ℝ φ z e • (x z).1 ∂stripMeasure = 0 := by
-  have hφ₂ : MemLp φ 2 stripMeasure := hφ.continuous.memLp_of_hasCompactSupport hφs
-  have hφe : MemLp (fun z ↦ fderiv ℝ φ z e) 2 stripMeasure :=
-    ((hφ.continuous_fderiv one_ne_zero).clm_apply continuous_const).memLp_of_hasCompactSupport
-      (hφs.fderiv_apply (𝕜 := ℝ) e)
+  -- Pair against `φ` and `∂ₑφ` in the Hölder conjugate exponent `q` of `p`.
+  set q := p.conjExponent
+  have : Fact (1 ≤ q) := ⟨ENNReal.HolderConjugate.one_le q p⟩
   set B : ℝ →L[ℝ] V →L[ℝ] V := ContinuousLinearMap.lsmul ℝ ℝ
-  set Λ : Lp (V × V × V) 2 stripMeasure →L[ℝ] V :=
-    (B.lpPairing stripMeasure 2 2 (hφ₂.toLp φ)).comp (P.compLpL 2 stripMeasure) +
-      (B.lpPairing stripMeasure 2 2 (hφe.toLp _)).comp
-        ((ContinuousLinearMap.fst ℝ V (V × V)).compLpL 2 stripMeasure)
-  have hΛ : ∀ f : Lp (V × V × V) 2 stripMeasure, Λ f =
+  set Λ : Lp (V × V × V) p stripMeasure →L[ℝ] V :=
+    (B.lpPairing stripMeasure q p (hφ.toLp φ)).comp (P.compLpL p stripMeasure) +
+      (B.lpPairing stripMeasure q p (hφe.toLp _)).comp
+        ((ContinuousLinearMap.fst ℝ V (V × V)).compLpL p stripMeasure)
+  have hΛ : ∀ f : Lp (V × V × V) p stripMeasure, Λ f =
       ∫ z, φ z • P (f z) ∂stripMeasure + ∫ z, fderiv ℝ φ z e • (f z).1 ∂stripMeasure := by
     intro f
     simp only [Λ, add_apply, ContinuousLinearMap.comp_apply,
       ContinuousLinearMap.lpPairing_eq_integral]
     congr 1 <;> refine integral_congr_ae ?_
-    · filter_upwards [hφ₂.coeFn_toLp, P.coeFn_compLp f] with z h₁ h₂
+    · filter_upwards [hφ.coeFn_toLp, P.coeFn_compLp f] with z h₁ h₂
       simp [B, h₁, h₂]
     · filter_upwards [hφe.coeFn_toLp,
         (ContinuousLinearMap.fst ℝ V (V × V)).coeFn_compLp f] with z h₁ h₂
       simp [B, h₁, h₂]
-  -- `Λ` vanishes on the jets of test sections, hence on their closure `H1`.
-  have hrange : Set.range (jetLp 2 (testSection F₀ F₁)) ⊆ {f | Λ f = 0} := by
+  -- `Λ` vanishes on the jets of the elements of `S`, hence on their closure.
+  have hrange : Set.range (jetLp p S) ⊆ {f | Λ f = 0} := by
     rintro _ ⟨ξ, rfl⟩
     rw [mem_ofPred_eq, hΛ]
-    have hξ := coeFn_jetLp 2 ξ
-    have hξ2 := (mem_testSection_iff.1 ξ.property).1
-    have hint₁ : Integrable (fun z ↦ φ z • fderiv ℝ (ξ : ℝ × ℝ → V) z e) stripMeasure :=
-      (hφ.continuous.smul ((hξ2.continuous_fderiv (by norm_num)).clm_apply
-        continuous_const)).integrable_of_hasCompactSupport (hφs.smul_right)
-    have hint₂ : Integrable (fun z ↦ fderiv ℝ φ z e • (ξ : ℝ × ℝ → V) z) stripMeasure :=
-      (((hφ.continuous_fderiv one_ne_zero).clm_apply continuous_const).smul
-        hξ2.continuous).integrable_of_hasCompactSupport ((hφs.fderiv_apply (𝕜 := ℝ) e).smul_right)
-    have e₁ : ∫ z, φ z • P (jetLp 2 (testSection F₀ F₁) ξ z) ∂stripMeasure =
+    have hj := coeFn_jetLp p ξ
+    have hξj : MemLp (jet (ξ : ℝ × ℝ → V)) p stripMeasure := HasLpJets.memLp_jet _ ξ.property
+    have hξ1 : MemLp (ξ : ℝ × ℝ → V) p stripMeasure := by simpa only [jet_apply] using hξj.fst
+    have hξe : MemLp (fun z ↦ fderiv ℝ (ξ : ℝ × ℝ → V) z e) p stripMeasure :=
+      hξj.fderiv_apply_of_jet e
+    have e₁ : ∫ z, φ z • P (jetLp p S ξ z) ∂stripMeasure =
         ∫ z, φ z • fderiv ℝ (ξ : ℝ × ℝ → V) z e ∂stripMeasure :=
-      integral_congr_ae (hξ.mono fun z hz ↦ by simp only [hz, hP])
-    have e₂ : ∫ z, fderiv ℝ φ z e • (jetLp 2 (testSection F₀ F₁) ξ z).1 ∂stripMeasure =
+      integral_congr_ae (hj.mono fun z hz ↦ by simp only [hz, hP])
+    have e₂ : ∫ z, fderiv ℝ φ z e • (jetLp p S ξ z).1 ∂stripMeasure =
         ∫ z, fderiv ℝ φ z e • (ξ : ℝ × ℝ → V) z ∂stripMeasure :=
-      integral_congr_ae (hξ.mono fun z hz ↦ by simp only [hz, jet_apply])
+      integral_congr_ae (hj.mono fun z hz ↦ by simp only [hz, jet_apply])
+    have hint₁ : Integrable (fun z ↦ φ z • fderiv ℝ (ξ : ℝ × ℝ → V) z e) stripMeasure :=
+      memLp_one_iff_integrable.1 (hφ.smul (r := 1) hξe)
+    have hint₂ : Integrable (fun z ↦ fderiv ℝ φ z e • (ξ : ℝ × ℝ → V) z) stripMeasure :=
+      memLp_one_iff_integrable.1 (hφe.smul (r := 1) hξ1)
     rw [e₁, e₂, ← integral_add hint₁ hint₂]
-    exact integral_smul_fderiv_add_eq_zero hφ hφU ξ.property he
-  have hker : (H1 F₀ F₁ : Set (Lp (V × V × V) 2 stripMeasure)) ⊆ {f | Λ f = 0} :=
+    exact h ξ ξ.property
+  have hker : (jetClosure p S : Set (Lp (V × V × V) p stripMeasure)) ⊆ {f | Λ f = 0} :=
     jetClosure_subset_of_isClosed (isClosed_eq Λ.continuous continuous_const) hrange
   rw [← hΛ]
   exact hker hx
@@ -415,14 +433,26 @@ private theorem hasWeakLineDerivOn_of_mem_H1 {x : Lp (V × V × V) 2 stripMeasur
   simp_rw [hl]
   refine eq_neg_of_add_eq_zero_left ?_
   rw [add_comm]
-  exact integral_smul_add_eq_zero_of_mem_H1 hx (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
-    φ.tsupport_subset he hP
+  -- `φ` and its derivatives are continuous with compact support, so they lie in every `Lᵖ`.
+  have hφ : ContDiff ℝ 1 (φ : ℝ × ℝ → ℝ) := φ.contDiff.of_le (by simp)
+  refine integral_smul_add_eq_zero_of_mem_jetClosure
+    (hφ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport)
+    (((hφ.continuous_fderiv one_ne_zero).clm_apply continuous_const).memLp_of_hasCompactSupport
+      (φ.hasCompactSupport.fderiv_apply (𝕜 := ℝ) e)) hP (fun ξ hξ ↦ ?_) hx
+  -- The boundary terms vanish because `φ` is supported in the open strip.
+  obtain ⟨hξ2, -, -, R, hR⟩ := mem_testSection_iff.1 hξ
+  refine integral_smul_fderiv_add_fderiv_smul_eq_zero hφ (hξ2.of_le one_le_two) hR (fun s ↦ ?_) he
+  have h₀ : (φ : ℝ × ℝ → ℝ) (s, 0) = 0 :=
+    image_eq_zero_of_notMem_tsupport fun h ↦ (φ.tsupport_subset h).2.1.false
+  have h₁ : (φ : ℝ × ℝ → ℝ) (s, 1) = 0 :=
+    image_eq_zero_of_notMem_tsupport fun h ↦ (φ.tsupport_subset h).2.2.false
+  simp [h₀, h₁]
 
 /-- On the open strip `ℝ × (0, 1)`, the `s`-derivative of an element of `H1` is the weak
 derivative of its value in the direction `(1, 0)`. -/
 theorem hasWeakLineDerivOn_derivSL (x : H1 F₀ F₁) :
     HasWeakLineDerivOn stripMeasure ⟨univ ×ˢ Ioo 0 1, isOpen_univ.prod isOpen_Ioo⟩
-      (valueL F₀ F₁ x) (derivSL F₀ F₁ x) (1, 0) :=
+      (valueL F₀ F₁ 2 x) (derivSL F₀ F₁ x) (1, 0) :=
   ((hasWeakLineDerivOn_of_mem_H1 x.property (Or.inl rfl) (P := (ContinuousLinearMap.fst ℝ V V).comp
     (ContinuousLinearMap.snd ℝ V (V × V))) fun ξ z ↦ by rw [jet_apply]; rfl).congr_ae
       (ae_restrict_of_ae (coeFn_valueL x).symm)).congr_ae_deriv
@@ -432,7 +462,7 @@ theorem hasWeakLineDerivOn_derivSL (x : H1 F₀ F₁) :
 derivative of its value in the direction `(0, 1)`. -/
 theorem hasWeakLineDerivOn_derivTL (x : H1 F₀ F₁) :
     HasWeakLineDerivOn stripMeasure ⟨univ ×ˢ Ioo 0 1, isOpen_univ.prod isOpen_Ioo⟩
-      (valueL F₀ F₁ x) (derivTL F₀ F₁ x) (0, 1) :=
+      (valueL F₀ F₁ 2 x) (derivTL F₀ F₁ x) (0, 1) :=
   ((hasWeakLineDerivOn_of_mem_H1 x.property (Or.inr rfl) (P := (ContinuousLinearMap.snd ℝ V V).comp
     (ContinuousLinearMap.snd ℝ V (V × V))) fun ξ z ↦ by rw [jet_apply]; rfl).congr_ae
       (ae_restrict_of_ae (coeFn_valueL x).symm)).congr_ae_deriv
@@ -441,9 +471,9 @@ theorem hasWeakLineDerivOn_derivTL (x : H1 F₀ F₁) :
 /-- **An element of `H1` is determined by its value.** The value map `(ξ, ξ_s, ξ_t) ↦ ξ` is
 injective on `H1`: if the value of an element of `H1` vanishes, so do its derivatives, as they are
 its weak derivatives. Thus `H1` is a space of sections of the strip. -/
-theorem valueL_injective : Function.Injective (valueL F₀ F₁) := by
+theorem valueL_injective : Function.Injective (valueL F₀ F₁ 2) := by
   refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
-  have hv : ∀ᵐ z ∂stripMeasure, valueL F₀ F₁ x z = 0 := by
+  have hv : ∀ᵐ z ∂stripMeasure, valueL F₀ F₁ 2 x z = 0 := by
     rw [hx]
     exact Lp.coeFn_zero V 2 stripMeasure
   have hΩ : stripMeasure.restrict ((univ : Set ℝ) ×ˢ Ioo (0 : ℝ) 1) = stripMeasure :=
@@ -451,7 +481,7 @@ theorem valueL_injective : Function.Injective (valueL F₀ F₁) := by
   -- Each derivative vanishes almost everywhere, as the weak derivative of `0`.
   have hderiv : ∀ {D : Lp V 2 stripMeasure} {e : ℝ × ℝ},
       HasWeakLineDerivOn stripMeasure ⟨univ ×ˢ Ioo 0 1, isOpen_univ.prod isOpen_Ioo⟩
-        (valueL F₀ F₁ x) D e → ∀ᵐ z ∂stripMeasure, D z = 0 := fun h ↦ by
+        (valueL F₀ F₁ 2 x) D e → ∀ᵐ z ∂stripMeasure, D z = 0 := fun h ↦ by
     have h' := h.ae_eq_zero_of_isOpen isOpen_univ (ae_restrict_of_ae (hv.mono fun z hz _ ↦ hz))
     simp only [TopologicalSpace.Opens.coe_mk, hΩ] at h'
     exact h'.mono fun z hz ↦ hz (mem_univ z)
@@ -753,15 +783,16 @@ private theorem inner_add_inner_jetH1_eq_integral {D : H1 F₀ F₁ →L[ℝ] Lp
     (ξ η : testSection F₀ F₁) :
     Integrable (fun z ↦ ⟪fderiv ℝ (ξ : ℝ × ℝ → V) z v, (η : ℝ × ℝ → V) z⟫_ℝ +
         ⟪(ξ : ℝ × ℝ → V) z, fderiv ℝ (η : ℝ × ℝ → V) z v⟫_ℝ) stripMeasure ∧
-      ⟪D (jetH1 F₀ F₁ ξ), valueL F₀ F₁ (jetH1 F₀ F₁ η)⟫_ℝ +
-          ⟪valueL F₀ F₁ (jetH1 F₀ F₁ ξ), D (jetH1 F₀ F₁ η)⟫_ℝ =
+      ⟪D (jetH1 F₀ F₁ ξ), valueL F₀ F₁ 2 (jetH1 F₀ F₁ η)⟫_ℝ +
+          ⟪valueL F₀ F₁ 2 (jetH1 F₀ F₁ ξ), D (jetH1 F₀ F₁ η)⟫_ℝ =
         ∫ z, (⟪fderiv ℝ (ξ : ℝ × ℝ → V) z v, (η : ℝ × ℝ → V) z⟫_ℝ +
           ⟪(ξ : ℝ × ℝ → V) z, fderiv ℝ (η : ℝ × ℝ → V) z v⟫_ℝ) ∂stripMeasure := by
-  have hae : (fun z ↦ ⟪D (jetH1 F₀ F₁ ξ) z, valueL F₀ F₁ (jetH1 F₀ F₁ η) z⟫_ℝ +
-      ⟪valueL F₀ F₁ (jetH1 F₀ F₁ ξ) z, D (jetH1 F₀ F₁ η) z⟫_ℝ) =ᵐ[stripMeasure]
+  have hae : (fun z ↦ ⟪D (jetH1 F₀ F₁ ξ) z, valueL F₀ F₁ 2 (jetH1 F₀ F₁ η) z⟫_ℝ +
+      ⟪valueL F₀ F₁ 2 (jetH1 F₀ F₁ ξ) z, D (jetH1 F₀ F₁ η) z⟫_ℝ) =ᵐ[stripMeasure]
         fun z ↦ ⟪fderiv ℝ (ξ : ℝ × ℝ → V) z v, (η : ℝ × ℝ → V) z⟫_ℝ +
           ⟪(ξ : ℝ × ℝ → V) z, fderiv ℝ (η : ℝ × ℝ → V) z v⟫_ℝ := by
-    filter_upwards [hD ξ, valueL_jetH1 η, valueL_jetH1 ξ, hD η] with z h₁ h₂ h₃ h₄
+    filter_upwards [hD ξ, valueL_toJetClosure (p := 2) η, valueL_toJetClosure (p := 2) ξ, hD η]
+      with z h₁ h₂ h₃ h₄
     rw [h₁, h₂, h₃, h₄]
   refine ⟨((L2.integrable_inner (𝕜 := ℝ) _ _).add (L2.integrable_inner _ _)).congr hae, ?_⟩
   rw [L2.inner_def, L2.inner_def, ← integral_add (L2.integrable_inner _ _)
@@ -769,8 +800,8 @@ private theorem inner_add_inner_jetH1_eq_integral {D : H1 F₀ F₁ →L[ℝ] Lp
 
 /-- Green's formula in the `s` direction for test sections. -/
 private theorem inner_derivSL_add_inner_derivSL_jetH1 (ξ η : testSection F₀ F₁) :
-    ⟪derivSL F₀ F₁ (jetH1 F₀ F₁ ξ), valueL F₀ F₁ (jetH1 F₀ F₁ η)⟫_ℝ +
-        ⟪valueL F₀ F₁ (jetH1 F₀ F₁ ξ), derivSL F₀ F₁ (jetH1 F₀ F₁ η)⟫_ℝ = 0 := by
+    ⟪derivSL F₀ F₁ (jetH1 F₀ F₁ ξ), valueL F₀ F₁ 2 (jetH1 F₀ F₁ η)⟫_ℝ +
+        ⟪valueL F₀ F₁ 2 (jetH1 F₀ F₁ ξ), derivSL F₀ F₁ (jetH1 F₀ F₁ η)⟫_ℝ = 0 := by
   obtain ⟨hint, heq⟩ := inner_add_inner_jetH1_eq_integral derivSL_jetH1 ξ η
   rw [heq]
   -- Integrate over each line `ℝ × {t}` first.
@@ -784,7 +815,7 @@ private theorem inner_derivSL_add_inner_derivSL_jetH1 (ξ η : testSection F₀ 
 /-- **Green's formula in the `s` direction.** For `x`, `y ∈ H1 F₀ F₁`,
 `⟪∂s x, y⟫ + ⟪x, ∂s y⟫ = 0` in `L²`: the strip has no boundary in the `s` direction. -/
 theorem inner_derivSL_add_inner_derivSL (x y : H1 F₀ F₁) :
-    ⟪derivSL F₀ F₁ x, valueL F₀ F₁ y⟫_ℝ + ⟪valueL F₀ F₁ x, derivSL F₀ F₁ y⟫_ℝ = 0 := by
+    ⟪derivSL F₀ F₁ x, valueL F₀ F₁ 2 y⟫_ℝ + ⟪valueL F₀ F₁ 2 x, derivSL F₀ F₁ y⟫_ℝ = 0 := by
   induction x, y using jetClosure_induction₂ with
   | hP => exact isClosed_eq (by fun_prop) (by fun_prop)
   | h ξ η => exact inner_derivSL_add_inner_derivSL_jetH1 ξ η
@@ -793,8 +824,8 @@ variable [CompleteSpace V]
 
 /-- Green's formula in the `t` direction for test sections. -/
 private theorem inner_derivTL_add_inner_derivTL_jetH1 (ξ η : testSection F₀ F₁) :
-    ⟪derivTL F₀ F₁ (jetH1 F₀ F₁ ξ), valueL F₀ F₁ (jetH1 F₀ F₁ η)⟫_ℝ +
-        ⟪valueL F₀ F₁ (jetH1 F₀ F₁ ξ), derivTL F₀ F₁ (jetH1 F₀ F₁ η)⟫_ℝ =
+    ⟪derivTL F₀ F₁ (jetH1 F₀ F₁ ξ), valueL F₀ F₁ 2 (jetH1 F₀ F₁ η)⟫_ℝ +
+        ⟪valueL F₀ F₁ 2 (jetH1 F₀ F₁ ξ), derivTL F₀ F₁ (jetH1 F₀ F₁ η)⟫_ℝ =
       ⟪(traceL F₀ F₁ (jetH1 F₀ F₁ ξ)).2, (traceL F₀ F₁ (jetH1 F₀ F₁ η)).2⟫_ℝ -
         ⟪(traceL F₀ F₁ (jetH1 F₀ F₁ ξ)).1, (traceL F₀ F₁ (jetH1 F₀ F₁ η)).1⟫_ℝ := by
   obtain ⟨hint, heq⟩ := inner_add_inner_jetH1_eq_integral derivTL_jetH1 ξ η
@@ -815,7 +846,7 @@ private theorem inner_derivTL_add_inner_derivTL_jetH1 (ξ η : testSection F₀ 
 `⟪∂t x, y⟫ + ⟪x, ∂t y⟫ = ⟪x(·, 1), y(·, 1)⟫ - ⟪x(·, 0), y(·, 0)⟫` in `L²`, the boundary values
 being the traces. This is the boundary term in the formal adjoint of `∂s + J ∂t`. -/
 theorem inner_derivTL_add_inner_derivTL (x y : H1 F₀ F₁) :
-    ⟪derivTL F₀ F₁ x, valueL F₀ F₁ y⟫_ℝ + ⟪valueL F₀ F₁ x, derivTL F₀ F₁ y⟫_ℝ =
+    ⟪derivTL F₀ F₁ x, valueL F₀ F₁ 2 y⟫_ℝ + ⟪valueL F₀ F₁ 2 x, derivTL F₀ F₁ y⟫_ℝ =
       ⟪(traceL F₀ F₁ x).2, (traceL F₀ F₁ y).2⟫_ℝ - ⟪(traceL F₀ F₁ x).1, (traceL F₀ F₁ y).1⟫_ℝ := by
   induction x, y using jetClosure_induction₂ with
   | hP => exact isClosed_eq (by fun_prop) (by fun_prop)

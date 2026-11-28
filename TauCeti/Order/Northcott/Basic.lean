@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Data.Set.Card
 public import Mathlib.Order.Filter.AtTopBot.Finset
 public import Mathlib.Order.Northcott
+public import Mathlib.Topology.Algebra.InfiniteSum.Group
 public import Mathlib.Topology.Algebra.Order.Floor
 public import Mathlib.Topology.UniformSpace.Real
 import Mathlib.Algebra.BigOperators.Group.Finset.Indicator
@@ -21,8 +23,14 @@ This file packages the finite carrier selected by a real cutoff for a natural-va
 function, together with generic summatory functions over that carrier. The carrier depends only
 on the integer part of the cutoff, and for a nonnegative cutoff it agrees with the one selected by
 its natural floor. It also provides the `Northcott` instance for the identity on any locally finite
-order bounded below, identifying `summatory (fun n : ℕ ↦ n)` for zero-vanishing weights with the
-partial sum over `Finset.Icc 1 ⌊x⌋₊`.
+order bounded below (identifying `summatory (fun n : ℕ ↦ n)` for zero-vanishing weights with the
+partial sum over `Finset.Icc 1 ⌊x⌋₊`), the conversion between a norm-truncated `finprod` and a
+finite product over `normLE`, and the identification of the `HasSum` tail of a summable weight
+above a cutoff as the total sum minus `summatory`. In addition, shifted natural cutoffs
+`(N i : ℝ) + c ≤ x` select finitely many indices (`finite_setOf_natCast_add_le`), and for any
+Northcott function `f` into a linearly ordered topological space with the order topology, the
+sublevel sets `{i | f i ≤ t}` are eventually constant as `t → r⁺`
+(`Northcott.eventuallyEq_setOf_le_nhdsGE`).
 -/
 
 public section
@@ -50,6 +58,11 @@ variable {ι : Type*} (N : ι → ℕ) [Northcott N]
 is a natural number and `N` is Northcott. -/
 theorem finite_setOf_natCast_le (x : ℝ) : {i : ι | (N i : ℝ) ≤ x}.Finite :=
   (Northcott.finite_le (h := N) ⌊x⌋₊).subset fun _ hi ↦ Nat.le_floor hi
+
+/-- Only finitely many indices have shifted `N`-value `(N i : ℝ) + c` at most a fixed real
+number `x`. -/
+theorem finite_setOf_natCast_add_le (c x : ℝ) : {i : ι | (N i : ℝ) + c ≤ x}.Finite :=
+  (finite_setOf_natCast_le N (x - c)).subset fun _ hi ↦ le_sub_iff_add_le.2 hi
 
 /-- The finite set of indices whose `N`-value is at most the real cutoff `x`. The cutoff is
 inclusive: an index with `N i = x` belongs to `normLE N x`. -/
@@ -244,6 +257,27 @@ theorem eventually_summatory_indicator_sub_eq (w : ι → ℝ) {S T : Set ι}
   · rw [Set.indicator_of_mem hS, Set.indicator_of_mem (by tauto)]
   · rw [Set.indicator_of_notMem hS, Set.indicator_of_notMem (by tauto)]
 
+/-- A `finprod` truncated at a Northcott cutoff `x` equals the finite product over `normLE N x`. -/
+@[to_additive /-- A `finsum` truncated at a Northcott cutoff `x` equals the finite sum over
+`normLE N x`. -/]
+theorem finprod_ite_le_eq_prod_normLE {M : Type*} [CommMonoid M] (w : ι → M) (x : ℝ) :
+    (∏ᶠ i : ι, if (N i : ℝ) ≤ x then w i else 1) = ∏ i ∈ normLE N x, w i := by
+  rw [finprod_congr (g := fun i ↦ ∏ᶠ (_ : i ∈ normLE N x), w i) fun i ↦ by
+    simp only [finprod_eq_if, mem_normLE], finprod_mem_finset_eq_prod _ (normLE N x)]
+
+/-- For a summable weight `w`, zeroing out the terms of `N`-value at most `x` leaves a series with
+sum `(∑' i, w i) - summatory N w x`. -/
+theorem hasSum_ite_le_zero_tsum_sub_summatory {G : Type*} [AddCommGroup G] [TopologicalSpace G]
+    [IsTopologicalAddGroup G] {w : ι → G} (hw : Summable w) (x : ℝ) :
+    HasSum (fun i : ι ↦ if (N i : ℝ) ≤ x then 0 else w i) ((∑' i, w i) - summatory N w x) := by
+  have hcompl :
+      HasSum (w ∘ (↑) : ↥((normLE N x : Set ι)ᶜ) → G) ((∑' i, w i) - summatory N w x) := by
+    rw [summatory_apply]
+    exact (normLE N x).hasSum_iff_compl.mp hw.hasSum
+  rw [hasSum_subtype_iff_indicator] at hcompl
+  refine hcompl.congr_fun fun i ↦ ?_
+  by_cases hi : (N i : ℝ) ≤ x <;> simp [hi]
+
 /-- For a nonnegative real cutoff, the carrier of the identity on `ℕ` is `Finset.Iic ⌊x⌋₊`. -/
 theorem normLE_id_eq_Iic {x : ℝ} (hx : 0 ≤ x) :
     normLE (fun n : ℕ ↦ n) x = Finset.Iic ⌊x⌋₊ := by
@@ -267,3 +301,37 @@ theorem summatory_id_eq_sum_Icc {M : Type*} [AddCommMonoid M] {w : ℕ → M} (h
       exact hw0
 
 end TauCeti
+
+namespace Northcott
+
+open Filter
+open scoped Topology
+
+/-- For a Northcott function into a linearly ordered topological space with the order topology, the
+sublevel sets `{i | f i ≤ t}` are eventually equal to `{i | f i ≤ r}` as `t → r⁺`. -/
+theorem eventuallyEq_setOf_le_nhdsGE {ι α : Type*} [LinearOrder α] [TopologicalSpace α]
+    [OrderTopology α] (f : ι → α) [Northcott f] (r : α) :
+    (fun t => {i : ι | f i ≤ t}) =ᶠ[𝓝[≥] r] fun _ => {i : ι | f i ≤ r} := by
+  by_cases hgt : ∃ R, r < R
+  · rcases hgt with ⟨R, hR⟩
+    have hS : {i : ι | f i ≤ R}.Finite := finite_le (h := f) R
+    have hfin : ∀ᶠ t in 𝓝[≥] r, ∀ i ∈ {i : ι | f i ≤ R}, f i ≤ t ↔ f i ≤ r :=
+      (Filter.eventually_all_finite hS).2 fun i _ => by
+        by_cases hi : f i ≤ r
+        · filter_upwards [self_mem_nhdsWithin] with t ht
+          exact iff_of_true (hi.trans ht) hi
+        · filter_upwards [nhdsWithin_le_nhds (Iio_mem_nhds (not_le.1 hi))] with t ht
+          exact iff_of_false (not_le.2 ht) hi
+    filter_upwards [hfin, nhdsWithin_le_nhds (Iio_mem_nhds hR)] with t ht hlt
+    ext i
+    simp only [Set.mem_ofPred_eq]
+    by_cases hi : f i ≤ R
+    · exact ht i hi
+    · have hlt_i : R < f i := not_le.1 hi
+      exact iff_of_false (not_le.2 (hlt.trans hlt_i)) (not_le.2 (hR.trans hlt_i))
+  · filter_upwards [self_mem_nhdsWithin] with t (ht : r ≤ t)
+    have hmax : ∀ s, s ≤ r := fun s => not_lt.1 fun hs => hgt ⟨s, hs⟩
+    obtain rfl : t = r := le_antisymm (hmax t) ht
+    rfl
+
+end Northcott

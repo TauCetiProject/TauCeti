@@ -102,6 +102,13 @@ Reindexing a colimit cofan along an equivalence of index types and summand isomo
 colimit cofan (`Cofan.isColimitOfEquiv`), and a cofan whose summands each decompose as coproducts
 is a colimit whenever the resulting sigma-indexed cofan is a colimit
 (`Cofan.isColimitOfIsColimitSigma`, converse to `Cofan.isColimitTrans`).
+
+## Finite partial sums of projections onto summands
+
+In a preadditive category, the endomorphism `∑ j ∈ t, Sigma.π g j ≫ Sigma.ι g j` of a coproduct
+`∐ g` is the identity on each summand indexed by `t` (`Sigma.ι_comp_sum_π_comp_ι`). Since a vector
+of a coproduct of modules or representations lies in finitely many summands, this computes it as the
+finite sum of its components.
 -/
 
 public section
@@ -434,3 +441,18 @@ lemma isIso_inj_of_isInitial {C : Type*} [Category* C] {ι : Type*} {X : ι → 
 end IsColimit
 
 end CategoryTheory.Limits.Cofan
+
+namespace CategoryTheory.Limits.Sigma
+
+/-- On the summands indexed by `t`, the endomorphism `∑ j ∈ t, π_j ≫ ι_j` of a coproduct in a
+preadditive category is the identity. -/
+@[reassoc]
+theorem ι_comp_sum_π_comp_ι {C : Type*} [Category* C] [Preadditive C] {β : Type*}
+    [DecidableEq β] (g : β → C) [HasCoproduct g] {t : Finset β} {i : β} (hi : i ∈ t) :
+    Sigma.ι g i ≫ ∑ j ∈ t, Sigma.π g j ≫ Sigma.ι g j = Sigma.ι g i := by
+  rw [Preadditive.comp_sum, Finset.sum_eq_single_of_mem i hi]
+  · simp
+  · intro j _ hj
+    rw [Sigma.ι_π_of_ne_assoc _ (Ne.symm hj), zero_comp]
+
+end CategoryTheory.Limits.Sigma
