@@ -106,21 +106,23 @@ theorem rankEquivIntOfForallIsStablyFree_of [Nontrivial R]
     rankEquivIntOfForallIsStablyFree R h (SplitK0.of.{u} P) = (Module.finrank R P.obj : ℤ) :=
   (rankEquivIntOfForallIsStablyFree_apply_eq_rankEquiv R h _).trans (rankEquiv_of R h P)
 
+/-- Over a principal ideal domain, every finitely generated projective module is stably free. -/
+theorem forall_isStablyFree_of_isPrincipalIdealRing [IsDomain R] [IsPrincipalIdealRing R]
+    (P : (finiteProjectiveModules R).FullSubcategory) : Module.IsStablyFree R P.obj :=
+  have : Module.Free R P.obj := Module.free_of_finite_type_torsion_free'
+  inferInstance
+
 /-- **PID `K₀` classification.** Over a principal ideal domain `R`, every finitely generated
 projective module is free, so stalk rank gives a ring isomorphism `K₀(proj R) ≃+* ℤ`. -/
 noncomputable def rankEquivIntOfIsPrincipalIdealRing [IsDomain R] [IsPrincipalIdealRing R] :
     SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+* ℤ :=
-  rankEquivIntOfForallIsStablyFree R fun P ↦
-    have : Module.Free R P.obj := Module.free_of_finite_type_torsion_free'
-    inferInstance
+  rankEquivIntOfForallIsStablyFree R (forall_isStablyFree_of_isPrincipalIdealRing R)
 
 /-- `rankEquivIntOfIsPrincipalIdealRing` is `rankEquivIntOfForallIsStablyFree` applied to the
 stably-free witness for principal ideal domains. -/
 theorem rankEquivIntOfIsPrincipalIdealRing_eq [IsDomain R] [IsPrincipalIdealRing R] :
     rankEquivIntOfIsPrincipalIdealRing R =
-      rankEquivIntOfForallIsStablyFree R (fun P ↦
-        have : Module.Free R P.obj := Module.free_of_finite_type_torsion_free'
-        inferInstance) :=
+      rankEquivIntOfForallIsStablyFree R (forall_isStablyFree_of_isPrincipalIdealRing R) :=
   (rfl)
 
 @[simp]
@@ -128,7 +130,7 @@ theorem rankEquivIntOfIsPrincipalIdealRing_of [IsDomain R] [IsPrincipalIdealRing
     (P : (finiteProjectiveModules R).FullSubcategory) :
     rankEquivIntOfIsPrincipalIdealRing R (SplitK0.of.{u} P) = (Module.finrank R P.obj : ℤ) :=
   haveI : Module.Free R P.obj := Module.free_of_finite_type_torsion_free'
-  rankEquivIntOfForallIsStablyFree_of R _ P
+  rankEquivIntOfForallIsStablyFree_of R (forall_isStablyFree_of_isPrincipalIdealRing R) P
 
 variable {R}
 

@@ -153,13 +153,14 @@ noncomputable def equivOfEq {f₁ f₂ : LocallyConstant (PrimeSpectrum R) ℕ} 
 
 /-- The clopen-glued module for the constant rank function `n` is linearly isomorphic to `Rⁿ`. -/
 noncomputable def constEquiv (n : ℕ) :
-    ClopenRankModule R (LocallyConstant.const (PrimeSpectrum R) n) ≃ₗ[R] (Fin n → R) := by
-  classical
-  by_cases hR : Subsingleton R
-  · have := Module.subsingleton R (ClopenRankModule R (LocallyConstant.const (PrimeSpectrum R) n))
-    have := Module.subsingleton R (Fin n → R)
-    exact LinearEquiv.ofSubsingleton _ _
-  · have : Nontrivial R := not_subsingleton_iff_nontrivial.1 hR
+    ClopenRankModule R (LocallyConstant.const (PrimeSpectrum R) n) ≃ₗ[R] (Fin n → R) :=
+  open Classical in
+  if hR : Subsingleton R then
+    let _ := Module.subsingleton R (ClopenRankModule R (LocallyConstant.const (PrimeSpectrum R) n))
+    let _ := Module.subsingleton R (Fin n → R)
+    LinearEquiv.ofSubsingleton _ _
+  else
+    let _ : Nontrivial R := not_subsingleton_iff_nontrivial.1 hR
     let c := LocallyConstant.const (PrimeSpectrum R) n
     let k₀ : c.range_finite.toFinset :=
       ⟨n, c.range_finite.mem_toFinset.2 ⟨Classical.arbitrary _, rfl⟩⟩
@@ -168,7 +169,7 @@ noncomputable def constEquiv (n : ℕ) :
     have htop : c.fiberClopens n = ⊤ := Clopens.ext (by ext p; simp [c])
     have he1 : (isIdempotentElemEquivClopens.symm (c.fiberClopens n)).val = 1 := by
       rw [htop, PrimeSpectrum.isIdempotentElemEquivClopens_symm_top]
-    exact (equivPi R c).trans
+    (equivPi R c).trans
       { toFun x i := (x k₀ i : R)
         map_add' _ _ := rfl
         map_smul' _ _ := rfl
@@ -177,7 +178,11 @@ noncomputable def constEquiv (n : ℕ) :
           have hek : (isIdempotentElemEquivClopens.symm (c.fiberClopens k.val)).val = 1 := by
             rw [hk, he1]
           rw [hek, Ideal.span_singleton_one]; trivial⟩
-        left_inv x := by funext k; cases huniq k; rfl
+        left_inv x := funext fun k ↦ by
+          -- `k` appears in the dependent domain `Fin k.val` and codomain `Ideal.span ...`;
+          -- substituting `k = k₀` reduces `Fin.cast _ i` to `i` and identifies the ideal types.
+          cases huniq k
+          rfl
         right_inv _ := rfl }
 
 /-- Extension of scalars along `φ : R →+* S` carries `ClopenRankModule R f` to the clopen-glued

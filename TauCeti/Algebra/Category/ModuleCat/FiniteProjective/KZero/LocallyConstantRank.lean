@@ -14,6 +14,8 @@ public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Semiloca
 import TauCeti.Order.Disjoint
 import TauCeti.RingTheory.Idempotents.Clopen.Basic
 import TauCeti.RingTheory.Idempotents.Module
+import TauCeti.Topology.LocallyConstant.Algebra
+import TauCeti.Topology.LocallyConstant.CharFn
 
 /-!
 # Reduced `K₀`, clopen section naturality, and semilocal / PID rank classifications
@@ -160,31 +162,14 @@ theorem rankSection_eq_sum_of_partition (g : LocallyConstant (PrimeSpectrum R) �
     (hdisj : (s : Set ι).PairwiseDisjoint U) (hcover : s.sup U = ⊤)
     (hval : ∀ i ∈ s, ∀ p ∈ U i, g p = c i) :
     rankSection R g = ∑ i ∈ s, c i • SplitK0.of.{u} (clopenProjective R (U i)) := by
-  have hg : g = ∑ i ∈ s, c i • LocallyConstant.charFn ℤ (U i).isClopen := by
-    ext p
-    have hp_mem : p ∈ s.sup U := by rw [hcover]; trivial
-    rw [← SetLike.mem_coe, Clopens.coe_finset_sup, Set.mem_iUnion₂] at hp_mem
-    obtain ⟨i₀, hi₀, hpi₀⟩ := hp_mem
-    rw [← LocallyConstant.evalAddMonoidHom_apply p
-        (∑ i ∈ s, c i • LocallyConstant.charFn ℤ (U i).isClopen),
-      map_sum, Finset.sum_eq_single_of_mem i₀ hi₀]
-    · rw [map_zsmul, LocallyConstant.evalAddMonoidHom_apply, LocallyConstant.coe_charFn,
-        Set.indicator_of_mem hpi₀, Pi.one_apply, smul_eq_mul, mul_one, hval i₀ hi₀ p hpi₀]
-    · intro j hj hne
-      have hnot : p ∉ U j := fun hpj ↦ (hdisj hj hi₀ hne).le_bot ⟨hpj, hpi₀⟩
-      simp [LocallyConstant.coe_charFn, hnot]
-  rw [hg, map_sum]
+  rw [LocallyConstant.eq_sum_charFn_of_partition g s U c hdisj hcover hval, map_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [map_zsmul, rankSection_charFn]
 
 @[simp]
 theorem rankSection_const (n : ℤ) :
     rankSection R (LocallyConstant.const (PrimeSpectrum R) n) = n := by
-  have h : LocallyConstant.const (PrimeSpectrum R) n = n :=
-    LocallyConstant.ext fun p ↦ by
-      rw [← LocallyConstant.evalRingHom_apply p (n : LocallyConstant (PrimeSpectrum R) ℤ),
-        map_intCast, Int.cast_id, LocallyConstant.coe_const, Function.const_apply]
-  rw [h, map_intCast]
+  simpa [LocallyConstant.intCast_eq_const] using map_intCast (rankSection R) n
 
 /-- The finite-projective object `R ⧸ (1 - e_{f⁻¹{k}})` repeated `k` times for a rank fiber `k`. -/
 private noncomputable def clopenRankPiece (f : LocallyConstant (PrimeSpectrum R) ℕ) (k : ℕ) :
@@ -347,8 +332,15 @@ theorem rankEquivIntOfForallIsStablyFree_apply [Nontrivial R]
     (x : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory) (p : PrimeSpectrum R) :
     rankEquivIntOfForallIsStablyFree R h x = rank R x p := by
   obtain ⟨z, rfl⟩ := exists_zsmul_of_finiteProjectiveModulesRegular_eq R h x
-  rw [splitK0_of_finiteProjectiveModulesRegular R, zsmul_one,
-    ← LocallyConstant.evalRingHom_apply p, map_intCast, map_intCast, map_intCast, Int.cast_id]
+  simp [splitK0_of_finiteProjectiveModulesRegular R, LocallyConstant.intCast_eq_const]
+
+/-- Over a commutative semilocal ring with connected prime spectrum, every finitely generated
+projective module is stably free. -/
+theorem forall_isStablyFree_of_finite_maximalSpectrum
+    [Finite (MaximalSpectrum R)] [ConnectedSpace (PrimeSpectrum R)]
+    (P : (finiteProjectiveModules R).FullSubcategory) : Module.IsStablyFree R P.obj :=
+  have : Module.Free R P.obj := Module.free_of_connectedSpace_of_finite_maximalSpectrum
+  inferInstance
 
 /-- **Connected semilocal / local `K₀` classification.** Over a commutative semilocal ring with
 connected prime spectrum (in particular, over any commutative local ring), stalk rank gives a ring
@@ -357,16 +349,14 @@ noncomputable def rankEquivIntOfFiniteMaximalSpectrum
     [Finite (MaximalSpectrum R)] [ConnectedSpace (PrimeSpectrum R)] :
     SplitK0.{u} (finiteProjectiveModules R).FullSubcategory ≃+* ℤ :=
   have : Nontrivial R := PrimeSpectrum.nonempty_iff_nontrivial.1 inferInstance
-  rankEquivIntOfForallIsStablyFree R fun P ↦
-    have : Module.Free R P.obj := Module.free_of_connectedSpace_of_finite_maximalSpectrum
-    inferInstance
+  rankEquivIntOfForallIsStablyFree R (forall_isStablyFree_of_finite_maximalSpectrum R)
 
 theorem rankEquivIntOfFiniteMaximalSpectrum_apply
     [Finite (MaximalSpectrum R)] [ConnectedSpace (PrimeSpectrum R)]
     (x : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory) (p : PrimeSpectrum R) :
     rankEquivIntOfFiniteMaximalSpectrum R x = rank R x p :=
   have : Nontrivial R := PrimeSpectrum.nonempty_iff_nontrivial.1 inferInstance
-  rankEquivIntOfForallIsStablyFree_apply R _ x p
+  rankEquivIntOfForallIsStablyFree_apply R (forall_isStablyFree_of_finite_maximalSpectrum R) x p
 
 @[simp]
 theorem rankEquivIntOfFiniteMaximalSpectrum_of
@@ -375,13 +365,13 @@ theorem rankEquivIntOfFiniteMaximalSpectrum_of
     rankEquivIntOfFiniteMaximalSpectrum R (SplitK0.of.{u} P) = (Module.finrank R P.obj : ℤ) :=
   have : Nontrivial R := PrimeSpectrum.nonempty_iff_nontrivial.1 inferInstance
   haveI : Module.Free R P.obj := Module.free_of_connectedSpace_of_finite_maximalSpectrum
-  rankEquivIntOfForallIsStablyFree_of R _ P
+  rankEquivIntOfForallIsStablyFree_of R (forall_isStablyFree_of_finite_maximalSpectrum R) P
 
 theorem rankEquivIntOfIsPrincipalIdealRing_apply [IsDomain R] [IsPrincipalIdealRing R]
     (x : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory) (p : PrimeSpectrum R) :
     rankEquivIntOfIsPrincipalIdealRing R x = rank R x p := by
   rw [rankEquivIntOfIsPrincipalIdealRing_eq]
-  exact rankEquivIntOfForallIsStablyFree_apply R _ x p
+  exact rankEquivIntOfForallIsStablyFree_apply R (forall_isStablyFree_of_isPrincipalIdealRing R) x p
 
 end Classification
 

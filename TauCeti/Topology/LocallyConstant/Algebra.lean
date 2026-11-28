@@ -58,6 +58,10 @@ theorem sum_smul_charFn [Fintype X] [DiscreteTopology X] [Semiring Y] (f : Local
   ext y
   simp [coe_charFn, Set.indicator_apply]
 
+/-- An integer cast into `LocallyConstant X Y` is the corresponding constant function. -/
+theorem intCast_eq_const [IntCast Y] (n : ℤ) : (n : LocallyConstant X Y) = const X (n : Y) :=
+  (rfl)
+
 end LocallyConstant
 
 section FunLeft
