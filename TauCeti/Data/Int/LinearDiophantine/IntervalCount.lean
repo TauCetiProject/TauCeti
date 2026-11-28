@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Real.Basic
+public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.ZMod.Basic
 import Mathlib.Data.Int.GCD
 import Mathlib.Data.Nat.Cast.Field
+import Mathlib.Data.Rat.Cast.Order
 import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
@@ -28,7 +29,9 @@ If `(a₁ + a₂) N ≤ p`, two solutions of the congruence `a₂ n₁ ≡ a₁ 
 value of `a₁ n₂ - a₂ n₁`, because the difference of the two values is divisible by `p` and smaller
 than `p` in absolute value. So the bound for one level `c` also bounds the solutions of the
 congruence. This is the count of Treviño's Lemma 5 for the multiplicative energy in Burgess's
-method. For `a₁ = a₂ = a` and `2 a N ≤ p` the solutions are exactly the `N` pairs `n₁ = n₂`.
+method. For `a₁ = a₂ = a` and `a N ≤ p` the solutions are exactly the `N` pairs `n₁ = n₂`.
+
+The bounds take values in any linear ordered field.
 
 ## Main results
 
@@ -40,7 +43,7 @@ method. For `a₁ = a₂ = a` and `2 a N ≤ p` the solutions are exactly the `N
 * `Int.card_filter_mul_eq_mul_le_max`: at most `N gcd(a₁, a₂) / max(a₁, a₂) + 1` solutions of
   `a₂ n₁ ≡ a₁ n₂ (mod p)` in `I²` when `(a₁ + a₂) N ≤ p`.
 * `Int.card_filter_mul_eq_mul_self`: exactly `N` solutions of `a n₁ ≡ a n₂ (mod p)` in `I²` when
-  `0 < a` and `2 a N ≤ p`.
+  `0 < a` and `a N ≤ p`.
 
 ## References
 
@@ -54,11 +57,13 @@ open Finset
 
 namespace Int
 
+variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+
 /-- **Solutions at one level.** If `0 < a₂`, at most `N gcd(a₁, a₂) / a₂ + 1` pairs
 `(n₁, n₂) ∈ (M, M + N]²` satisfy `a₁ n₂ - a₂ n₁ = c`: their `n₂` lie in one residue class modulo
 `a₂ / gcd(a₁, a₂)` and determine `n₁`. -/
 theorem card_filter_mul_sub_mul_eq_le {a₁ a₂ : ℕ} (ha₂ : 0 < a₂) (M : ℤ) (N : ℕ) (c : ℤ) :
-    (#{n ∈ Ioc M (M + N) ×ˢ Ioc M (M + N) | a₁ * n.2 - a₂ * n.1 = c} : ℝ) ≤
+    (#{n ∈ Ioc M (M + N) ×ˢ Ioc M (M + N) | a₁ * n.2 - a₂ * n.1 = c} : K) ≤
       N * Nat.gcd a₁ a₂ / a₂ + 1 := by
   set S := {n ∈ Ioc M (M + N) ×ˢ Ioc M (M + N) | (a₁ : ℤ) * n.2 - a₂ * n.1 = c}
   rcases S.eq_empty_or_nonempty with hS | ⟨n₀, hn₀⟩
@@ -107,12 +112,12 @@ theorem card_filter_mul_sub_mul_eq_le {a₁ a₂ : ℕ} (ha₂ : 0 < a₂) (M : 
         push_cast
         rw [div_div_eq_mul_div]
         ring
-  simpa using (Rat.cast_le (K := ℝ)).mpr hq
+  simpa using (Rat.cast_le (K := K)).mpr hq
 
 /-- The bound of `Int.card_filter_mul_sub_mul_eq_le` with `max(a₁, a₂)` in place of `a₂`. -/
 theorem card_filter_mul_sub_mul_eq_le_max {a₁ a₂ : ℕ} (ha : 0 < max a₁ a₂) (M : ℤ) (N : ℕ)
     (c : ℤ) :
-    (#{n ∈ Ioc M (M + N) ×ˢ Ioc M (M + N) | a₁ * n.2 - a₂ * n.1 = c} : ℝ) ≤
+    (#{n ∈ Ioc M (M + N) ×ˢ Ioc M (M + N) | a₁ * n.2 - a₂ * n.1 = c} : K) ≤
       N * Nat.gcd a₁ a₂ / max a₁ a₂ + 1 := by
   rcases le_total a₁ a₂ with h₁₂ | h₂₁
   · rw [max_eq_right h₁₂] at ha ⊢
@@ -163,7 +168,7 @@ theorem mul_sub_eq_mul_sub_of_cast_mul_eq {p a₁ a₂ : ℕ} {M : ℤ} {N : ℕ
 satisfy `a₂ n₁ ≡ a₁ n₂ (mod p)`: all of them have the same value of `a₁ n₂ - a₂ n₁`. -/
 theorem card_filter_mul_eq_mul_le_max {p a₁ a₂ : ℕ} (ha : 0 < max a₁ a₂) (M : ℤ) {N : ℕ}
     (h : (a₁ + a₂) * N ≤ p) :
-    (#{n ∈ Ioc M (M + N) ×ˢ Ioc M (M + N) | (a₂ : ZMod p) * n.1 = a₁ * n.2} : ℝ) ≤
+    (#{n ∈ Ioc M (M + N) ×ˢ Ioc M (M + N) | (a₂ : ZMod p) * n.1 = a₁ * n.2} : K) ≤
       N * Nat.gcd a₁ a₂ / max a₁ a₂ + 1 := by
   set S := {n ∈ Ioc M (M + N) ×ˢ Ioc M (M + N) | (a₂ : ZMod p) * n.1 = a₁ * n.2}
   rcases S.eq_empty_or_nonempty with hS | ⟨n₀, hn₀⟩
@@ -176,22 +181,29 @@ theorem card_filter_mul_eq_mul_le_max {p a₁ a₂ : ℕ} (ha : 0 < max a₁ a�
   have key := mul_sub_eq_mul_sub_of_cast_mul_eq h hnI hn₀I hn' hn₀'
   exact mem_filter.mpr ⟨hnI, by linear_combination -key⟩
 
-/-- For `0 < a` and `2 a N ≤ p`, the pairs `(n₁, n₂) ∈ (M, M + N]²` with `a n₁ ≡ a n₂ (mod p)`
-are the `N` pairs with `n₁ = n₂`. -/
-theorem card_filter_mul_eq_mul_self {p a : ℕ} (ha : 0 < a) (M : ℤ) {N : ℕ}
-    (h : 2 * a * N ≤ p) :
+/-- For `0 < a` and `a N ≤ p`, the pairs `(n₁, n₂) ∈ (M, M + N]²` with `a n₁ ≡ a n₂ (mod p)`
+are the `N` pairs with `n₁ = n₂`: `a (n₁ - n₂)` is divisible by `p` and at most
+`a (N - 1) < p` in absolute value. -/
+theorem card_filter_mul_eq_mul_self {p a : ℕ} (ha : 0 < a) (M : ℤ) {N : ℕ} (h : a * N ≤ p) :
     #{n ∈ Ioc M (M + N) ×ˢ Ioc M (M + N) | (a : ZMod p) * n.1 = a * n.2} = N := by
-  have h' : (a + a) * N ≤ p := by rwa [← two_mul]
   have hdiag : {n ∈ Ioc M (M + N) ×ˢ Ioc M (M + N) | (a : ZMod p) * n.1 = a * n.2} =
       (Ioc M (M + N)).diag := by
     ext ⟨n₁, n₂⟩
     simp only [mem_filter, mem_diag, mem_product]
     constructor
     · rintro ⟨⟨hn₁, hn₂⟩, hn⟩
-      have key := mul_sub_eq_mul_sub_of_cast_mul_eq (n := (n₁, n₂)) (n' := (n₂, n₂)) h'
-        (mem_product.2 ⟨hn₁, hn₂⟩) (mem_product.2 ⟨hn₂, hn₂⟩) hn rfl
-      rw [sub_self, mul_zero, mul_eq_zero, sub_eq_zero] at key
-      exact ⟨hn₁, key.resolve_left (by exact_mod_cast ha.ne')⟩
+      have hI₁ := mem_Ioc.mp hn₁
+      have hI₂ := mem_Ioc.mp hn₂
+      have ha' : (0 : ℤ) < a := by exact_mod_cast ha
+      have hp : (a : ℤ) * N ≤ p := by exact_mod_cast h
+      have hd : |n₁ - n₂| < N := abs_sub_lt_iff.mpr ⟨by omega, by omega⟩
+      have key : (a : ℤ) * (n₁ - n₂) = 0 := by
+        refine Int.eq_zero_of_abs_lt_dvd ((ZMod.intCast_zmod_eq_zero_iff_dvd _ p).mp ?_) ?_
+        · push_cast
+          linear_combination hn
+        · rw [abs_mul, Nat.abs_cast]
+          nlinarith [hp, ha', hd]
+      exact ⟨hn₁, sub_eq_zero.mp ((mul_eq_zero.mp key).resolve_left ha'.ne')⟩
     · rintro ⟨hn₁, rfl⟩
       exact ⟨⟨hn₁, hn₁⟩, rfl⟩
   rw [hdiag, diag_card, Int.card_Ioc, add_sub_cancel_left, Int.toNat_natCast]

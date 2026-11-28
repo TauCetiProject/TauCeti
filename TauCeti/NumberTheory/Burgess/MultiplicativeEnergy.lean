@@ -106,11 +106,8 @@ theorem burgessEnergy_empty_right [NeZero p] (𝒜 : Finset ℕ) : burgessEnergy
 /-- For a unit `a` of `ZMod p`, `n = a x` exactly when `n a⁻¹ = x`. -/
 private theorem eq_mul_iff_mul_inv_eq {a : ZMod p} (ha : IsUnit a) {n x : ZMod p} :
     n = a * x ↔ n * a⁻¹ = x := by
-  constructor
-  · rintro rfl
-    rw [mul_comm, ← mul_assoc, ZMod.inv_mul_of_unit _ ha, one_mul]
-  · rintro rfl
-    rw [mul_comm n, ← mul_assoc, ZMod.mul_inv_of_unit _ ha, one_mul]
+  obtain ⟨u, rfl⟩ := ha
+  rw [ZMod.inv_coe_unit, Units.mul_inv_eq_iff_eq_mul, mul_comm]
 
 /-- **The weighted first moment.** If every `a ∈ 𝒜` is a unit modulo `p`, each pair
 `(a, n) ∈ 𝒜 × I` has exactly one `x = n a⁻¹` with `n ≡ a x (mod p)`, so `∑_x v(x) • w(x)` is the
@@ -180,7 +177,7 @@ theorem burgessEnergy_le [NeZero p] (𝒜 : Finset ℕ) {A : ℕ} (h𝒜 : ∀ a
   refine sum_le_sum fun a₁ ha₁ ↦ ?_
   rw [Nat.cast_sum, ← add_sum_erase _ _ ha₁, filter_ne']
   have hdiag := Int.card_filter_mul_eq_mul_self (p := p) (h𝒜 a₁ ha₁).1 M
-    (le_trans (Nat.mul_le_mul_right N (Nat.mul_le_mul_left 2 (h𝒜 a₁ ha₁).2)) h)
+    (le_trans (Nat.mul_le_mul_right N (by have := (h𝒜 a₁ ha₁).2; omega)) h)
   refine add_le_add (by rw [hdiag]) (sum_le_sum fun a₂ ha₂ ↦ ?_)
   have ha₂' := mem_of_mem_erase ha₂
   exact Int.card_filter_mul_eq_mul_le_max (lt_max_of_lt_right (h𝒜 a₂ ha₂').1) M (hpair ha₁ ha₂')
