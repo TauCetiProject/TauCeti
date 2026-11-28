@@ -317,6 +317,36 @@ of the map out of the empty space, is empty. -/
     closed' A hA h := Topology.RelCWComplex.closed' A hA ⟨h, by simp [hD]⟩
     union' := by simpa [hD] using Topology.RelCWComplex.union' (C := (univ : Set X)) }
 
+/-- The cells in each dimension of the induced classical CW structure are the original attachment
+indices. This equivalence identifies the carriers without unfolding the CW structure. -/
+def toCWComplexCellEquiv (c : CWComplex X) (n : ℕ) :
+    c.toCWComplex.cell n ≃ (c.attachCells n (not_isMax n)).ι :=
+  Equiv.refl _
+
+/-- The classical characteristic map on the closed ball is the original cell inclusion after
+radial identification with the Euclidean disk. -/
+@[simp] lemma toCWComplex_map_apply (c : CWComplex X) (n : ℕ) (i : c.toCWComplex.cell n)
+    (x : closedBall (0 : Fin n → ℝ) 1) :
+    letI := c.toCWComplex
+    Topology.RelCWComplex.map (C := (univ : Set X)) n i x =
+      (⟨n, not_isMax n, c.toCWComplexCellEquiv n i⟩ : c.Cells).ι
+        ((TauCeti.diskHomeomorphClosedBall n).symm x) :=
+  c.toRelCWComplex_map_apply n i x
+
+/-- The image of the `n`-th categorical stage is the classical skeleton below dimension `n`. -/
+lemma range_incl_app_eq_toCWComplex_skeletonLT (c : CWComplex X) (n : ℕ) :
+    letI := c.t2Space
+    letI := c.toCWComplex
+    range (c.incl.app n) =
+      (Topology.RelCWComplex.skeletonLT (univ : Set X) n : Set X) := by
+  let _ := c.t2Space
+  let _ := c.toCWComplex
+  refine (c.range_incl_app_eq_toRelCWComplex_skeletonLT n).trans ?_
+  -- `c.toCWComplex` shares `cell` and `map` (hence `closedCell`) definitionally with
+  -- `c.toRelCWComplex`, and its base is `∅` (`range (initial.to X) = ∅`).
+  simp [Topology.RelCWComplex.coe_skeletonLT, range_eq_empty (initial.to X)]
+  rfl
+
 /-- **A space with a categorical CW structure has CW type.** -/
 theorem cwType (c : CWComplex X) : TauCeti.CWType X :=
   have := c.t2Space
