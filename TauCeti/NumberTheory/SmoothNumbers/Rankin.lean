@@ -56,8 +56,9 @@ theorem Nat.smoothNumbersUpTo_card_le_rpow_mul_prod (N k : ℕ) {σ : ℝ} (hσ 
     have hn0 : (0 : ℝ) < n :=
       Nat.cast_pos.2 (Nat.pos_of_ne_zero (Nat.ne_zero_of_mem_smoothNumbers (hmem n hn)))
     have hnN : (n : ℝ) ≤ N := Nat.cast_le.2 (Nat.mem_smoothNumbersUpTo.1 hn).1
-    rw [Real.rpow_neg hn0.le, ← div_eq_mul_inv, ← Real.div_rpow N.cast_nonneg hn0.le]
-    exact Real.one_le_rpow ((one_le_div hn0).2 hnN) hσ.le
+    have h : (1 : ℝ) ≤ ((N : ℝ) / n) ^ σ := Real.one_le_rpow ((one_le_div hn0).2 hnN) hσ.le
+    rw [Real.div_rpow N.cast_nonneg hn0.le] at h
+    simpa only [Real.rpow_neg hn0.le, div_eq_mul_inv] using h
   -- The sum over the counted `n` is at most the full sum over the smooth numbers.
   have hsum : ∑ n ∈ Nat.smoothNumbersUpTo N k, (n : ℝ) ^ (-σ) ≤
       ∏ p ∈ k.primesBelow, (1 - (p : ℝ) ^ (-σ))⁻¹ := by
