@@ -67,6 +67,17 @@ abbrev diagram : ι ⥤ CommRingCat.{u} where
   map_comp g h := CommRingCat.hom_ext <| RingHom.ext fun _ ↦
     (DirectedSystem.map_map' f g.le h.le _).symm
 
+-- Rewrite before simp reduces the projections of the abbreviation.
+/-- The object of `diagram f` at `i` is the stage ring `G i`. -/
+@[simp↓]
+theorem diagram_obj (i : ι) : (diagram f).obj i = CommRingCat.of (G i) :=
+  (rfl)
+
+/-- The underlying ring homomorphism of a map in `diagram f` is the stage transition. -/
+@[simp↓]
+theorem diagram_map_hom {i j : ι} (h : i ⟶ j) : ((diagram f).map h).hom = f i j h.le :=
+  (rfl)
+
 /-- The concrete ring colimit gives a cocone on the universe lift of `diagram f`. -/
 noncomputable abbrev cocone : Cocone (diagram f ⋙ CommRingCat.uliftFunctor.{v, u}) where
   pt := CommRingCat.of (_root_.Ring.DirectLimit G (f · · ·))
