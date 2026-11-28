@@ -2,7 +2,8 @@ name: Claims Access
 
 # Admits contributors to the shared claim namespace, TauCetiProject/tauceti-claims, so that workers
 # run by different people do not spend two subscriptions on the same job. The rule is: anyone whose
-# pull request has been merged here. See scripts/claims_access.py for why, and for what `sweep` does.
+# pull request has landed here, on GitHub or (as the merge queue reports at GET /claims/forgejo-landers)
+# on Forgejo. See TauCetiTools' claims_access.py for why, and for what `sweep` does.
 #
 # The claim repository holds leases and nothing else. It is separate from this one on purpose —
 # coordinating workers must never need write access to the library — and its Actions are disabled,
@@ -20,7 +21,10 @@ name: Claims Access
 
 on:
   schedule:
-  - cron: "23 * * * *"   # hourly; a new contributor waits at most that long, and claims in their fork meanwhile
+  # The fallback. GitHub starts scheduled runs hours late, so the merge queue's host dispatches this
+  # workflow whenever a new author lands, and hourly otherwise (TauCetiWorker docs/forgejo-worker.md,
+  # "Claim access for contributor fleets"). A new contributor claims in their fork meanwhile.
+  - cron: "23 * * * *"
   workflow_dispatch:
     inputs:
       dry-run:
