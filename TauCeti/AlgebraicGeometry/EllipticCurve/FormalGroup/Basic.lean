@@ -114,18 +114,9 @@ theorem formalGroup_addInvX (W : WeierstrassCurve R) :
   apply Eq.symm
   apply ((formalGroup W).eq_addInvX_iff_subst_right_eq_zero W.hasSubst_formalInverse).mpr
   rw [formalGroup_toPowerSeries,
-    MvPowerSeries.subst_rename unitSumUnitEquivFinTwo _
-      (MvPowerSeries.hasSubst_of_constantCoeff_zero (by
-        intro i
-        fin_cases i
-        · exact PowerSeries.constantCoeff_X
-        · exact W.constantCoeff_formalInverse))]
-  convert W.subst_invPair_formalAdd using 1
-  congr 1
-  funext i
-  rcases i with i | i <;> cases i <;> simp
-  -- The one-variable `PowerSeries.X` is `MvPowerSeries.X ()`.
-  rfl
+    MvPowerSeries.subst_rename_unitSumUnitEquivFinTwo (formalAdd W)
+      PowerSeries.HasSubst.X' W.hasSubst_formalInverse]
+  exact W.subst_invPair_formalAdd
 
 /-- The doubling series is the geometric inverse of the tangent's third intersection parameter.
 This identity holds for every Weierstrass curve over a commutative ring. -/
@@ -136,13 +127,10 @@ theorem nsmulSeries_two_formalGroup (W : WeierstrassCurve R) :
   have hX : HasSubst (fun _ : Unit ⊕ Unit => (PowerSeries.X : PowerSeries R)) :=
     hasSubst_of_constantCoeff_zero fun _ => PowerSeries.constantCoeff_X
   rw [FormalGroup.nsmulSeries_succ, FormalGroup.nsmulSeries_one,
-    formalGroup_toPowerSeries, subst_rename _ _ (PowerSeries.hasSubst_pair
-      PowerSeries.constantCoeff_X PowerSeries.constantCoeff_X)]
-  have hfamily : (![PowerSeries.X, PowerSeries.X] : Fin 2 → PowerSeries R) ∘
-      unitSumUnitEquivFinTwo = fun _ => PowerSeries.X := by
-    funext s
-    rcases s with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> simp
-  rw [hfamily, formalAdd_def, ← PowerSeries.subst_def,
+    formalGroup_toPowerSeries,
+    subst_rename_unitSumUnitEquivFinTwo (formalAdd W)
+      PowerSeries.HasSubst.X' PowerSeries.HasSubst.X',
+    pairSubstitution_self, formalAdd_def, ← PowerSeries.subst_def,
     subst_powerSeriesSubst hX
       (PowerSeries.HasSubst.of_constantCoeff_zero W.constantCoeff_formalThirdRoot)]
 

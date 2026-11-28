@@ -56,19 +56,29 @@ equation at the substituted parameter rather than at `z`.
   this one asks for `[CommRing S]` on the *coefficient algebra*, but nothing of the parameter,
   whose constant coefficient the equation forces to be nilpotent. The curve's base ring `R` is a
   `CommSemiring` for both.
-* `WeierstrassCurve.algebraMap_wEquationRHS`: the equation's right-hand side commutes with an
-  algebra map, so a solution over a ring is a solution over any algebra over it.
-* `WeierstrassCurve.wEquation_of_equation`: the `w`-equation is the Weierstrass equation in the
-  coordinates `z = -x / y`, `w = -1 / y`.
-* `WeierstrassCurve.subst_wEquationRHS` and `WeierstrassCurve.subst_formalW_wEquation`:
-  substituting a series `q` into the equation gives the equation at `q`, so `w(q)` solves it
-  there. When moreover `constantCoeff q = 0`, `eq_subst_formalW_of_wEquation` combines this with
+* `WeierstrassCurve.algebraMap_wEquationRHS` and `RingHom.map_wEquationRHS`: the equation's
+  right-hand side commutes with algebra maps and compatible ring homomorphisms, so a solution over
+  a ring transports along scalar extensions and base change.
+* `WeierstrassCurve.wEquation_of_equation` and `WeierstrassCurve.nonsingular_of_wEquation`: the
+  `w`-equation is the Weierstrass equation in the coordinates `z = -x / y`, `w = -1 / y`, and
+  conversely a nonzero solution yields a nonsingular affine point.
+* `WeierstrassCurve.subst_wEquationRHS`, `WeierstrassCurve.subst_formalW_wEquation`, and
+  `WeierstrassCurve.algebraMap_subst_formalW_wEquation`: substituting a series `q` into the
+  equation gives the equation at `q`, so `w(q)` solves it there and across any commutative
+  algebra. When moreover `constantCoeff q = 0`, `eq_subst_formalW_of_wEquation` combines this with
   `eq_of_wEquation` to identify `w(q)` as the only such solution.
+* `WeierstrassCurve.subst_formalW_eq_zero_iff`,
+  `WeierstrassCurve.algebraMap_subst_formalW_eq_zero_iff`,
+  `WeierstrassCurve.subst_formalW_ne_zero`, and `WeierstrassCurve.algebraMap_subst_formalW_ne_zero`:
+  over any commutative ring, `w(q) = 0 ↔ q ^ 3 = 0` for every substitutable `q`, and the same
+  after any faithful algebra map; over a ring without zero divisors, `w(q) ≠ 0` when `q ≠ 0` and
+  `constantCoeff q = 0`.
 * `WeierstrassCurve.formalWCoeff_recurrence`: the coefficientwise recurrence — each coefficient
   of `w(z)` above the leading one, from the strictly earlier ones. This is the form to compute
   with; the strong recursion behind `formalWCoeff` is an implementation detail.
-* `WeierstrassCurve.formalWCoeff_zero`, `_one`, `_two`, `_three` and
-  `WeierstrassCurve.formalWCoeff_eq_zero_of_lt`: the series begins `w(z) = z ^ 3 + ⋯`.
+* `WeierstrassCurve.formalWCoeff_zero`, `_one`, `_two`, `_three`,
+  `WeierstrassCurve.formalWCoeff_eq_zero_of_lt`, and `WeierstrassCurve.formalW_ne_zero`: the
+  series begins `w(z) = z ^ 3 + ⋯`, so it is nonzero over a nontrivial semiring.
 * `WeierstrassCurve.formalW_eq_X_pow_mul_formalU`: `w(z) = z ^ 3 * u(z)`, where
   `WeierstrassCurve.constantCoeff_formalU` gives `u(0) = 1`. Over a `CommRing` that makes `u(z)`
   a unit; at the `CommSemiring` generality of that section it does not.
@@ -327,6 +337,18 @@ theorem wEquation_of_equation (W : WeierstrassCurve O) {x y : K}
   rw [wEquationRHS_def]
   field_simp
   linear_combination -hxy
+
+/-- **The converse reading of `wEquation_of_equation`**, with smoothness: if `(q, w)` satisfies
+the `w`-equation over a field `F` with `w ≠ 0` and `W.Δ ≠ 0`, then `(q / w, -1 / w)` is a
+nonsingular affine point of `W`. -/
+theorem nonsingular_of_wEquation {F : Type*} [Field F] (W : WeierstrassCurve F) {q w : F}
+    (hw : w = wEquationRHS W q w) (hw0 : w ≠ 0) (hΔ : W.Δ ≠ 0) :
+    W.toAffine.Nonsingular (q / w) (-1 / w) := by
+  refine (W.toAffine.equation_iff_nonsingular_of_Δ_ne_zero hΔ).mp ?_
+  rw [Affine.equation_iff]
+  rw [wEquationRHS_def] at hw
+  field_simp
+  linear_combination hw
 
 end Equation
 
@@ -588,6 +610,32 @@ theorem subst_formalW_wEquation {τ S : Type*} [CommRing S] [Algebra R S] {a : M
   conv_lhs => rw [formalW_wEquation W]
   rw [subst_wEquationRHS W ha, PowerSeries.subst_X ha]
 
+/-- A ring homomorphism compatible with a base-ring homomorphism `φ : R →+* S` carries the
+right-hand side of the `w`-equation of `W` to that of `W.map φ` at the images of its parameter
+and unknown. -/
+theorem _root_.RingHom.map_wEquationRHS {S A B : Type*} [CommRing S] [CommSemiring A]
+    [CommSemiring B] [Algebra R A] [Algebra S B] (f : A →+* B) {φ : R →+* S}
+    (hf : f.comp (algebraMap R A) = (algebraMap S B).comp φ) (W : WeierstrassCurve R)
+    (q v : A) :
+    f (wEquationRHS W q v) = wEquationRHS (W.map φ) (f q) (f v) := by
+  have h : ∀ r : R, f (algebraMap R A r) = algebraMap S B (φ r) := RingHom.congr_fun hf
+  simp only [wEquationRHS_def, map_add, map_mul, map_pow, h,
+    WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₂, WeierstrassCurve.map_a₃,
+    WeierstrassCurve.map_a₄, WeierstrassCurve.map_a₆]
+
+/-- Pushing the substituted `w`-expansion into any commutative `MvPowerSeries τ S`-algebra `T`
+gives a solution of the `w`-equation of `W` base-changed to `T`. -/
+theorem algebraMap_subst_formalW_wEquation {τ S T : Type*} [CommRing S] [Algebra R S]
+    [CommRing T] [Algebra (MvPowerSeries τ S) T] {a : MvPowerSeries τ S}
+    (ha : PowerSeries.HasSubst a) :
+    algebraMap (MvPowerSeries τ S) T (PowerSeries.subst a (formalW W)) =
+      wEquationRHS
+        (W.map ((algebraMap (MvPowerSeries τ S) T).comp (algebraMap R (MvPowerSeries τ S))))
+        (algebraMap (MvPowerSeries τ S) T a)
+        (algebraMap (MvPowerSeries τ S) T (PowerSeries.subst a (formalW W))) := by
+  conv_lhs => rw [subst_formalW_wEquation W ha]
+  exact (algebraMap (MvPowerSeries τ S) T).map_wEquationRHS rfl W _ _
+
 /-- **The substituted `w`-expansion is the unique solution at the substituted parameter.** For a
 parameter `q` with vanishing constant coefficient, any series with vanishing constant coefficient
 solving the `w`-equation at `q` is `w(q)`.
@@ -602,6 +650,54 @@ theorem eq_subst_formalW_of_wEquation {q v : PowerSeries R}
   have ha : PowerSeries.HasSubst q := PowerSeries.HasSubst.of_constantCoeff_zero' hq
   refine eq_of_wEquation W hq hv ?_ h (subst_formalW_wEquation W ha)
   exact PowerSeries.constantCoeff_subst_eq_zero hq (formalW W) (constantCoeff_formalW W)
+
+/-- Over any commutative ring, the `w`-expansion at a substitutable parameter vanishes if and only
+if the cube of the parameter vanishes: `w(q) = q ^ 3 * u(q)` where `u(q)` is a unit. -/
+@[simp]
+theorem subst_formalW_eq_zero_iff {σ S : Type*} [CommRing S] [Algebra R S]
+    {q : MvPowerSeries σ S} (hq : PowerSeries.HasSubst q) :
+    PowerSeries.subst q (formalW W) = 0 ↔ q ^ 3 = 0 := by
+  have hu : IsUnit (formalU W) := by
+    rw [MvPowerSeries.isUnit_iff_constantCoeff, ← PowerSeries.constantCoeff_eq,
+      constantCoeff_formalU]
+    exact isUnit_one
+  have hsu : IsUnit (PowerSeries.subst q (formalU W)) := by
+    simpa only [PowerSeries.coe_substAlgHom] using
+      hu.map (PowerSeries.substAlgHom (R := R) (S := S) hq)
+  have hw : PowerSeries.subst q (formalW W) = q ^ 3 * PowerSeries.subst q (formalU W) := by
+    rw [formalW_eq_X_pow_mul_formalU, ← PowerSeries.coe_substAlgHom hq, map_mul, map_pow,
+      PowerSeries.substAlgHom_X]
+  rw [hw, hsu.mul_left_eq_zero]
+
+/-- The `w`-expansion at a substitutable parameter vanishes after being pushed into a commutative
+algebra `T` on which `MvPowerSeries σ S` acts faithfully if and only if `q ^ 3 = 0`. -/
+theorem algebraMap_subst_formalW_eq_zero_iff {σ S T : Type*} [CommRing S] [Algebra R S]
+    [CommRing T] [Algebra (MvPowerSeries σ S) T] [FaithfulSMul (MvPowerSeries σ S) T]
+    {q : MvPowerSeries σ S} (hq : PowerSeries.HasSubst q) :
+    algebraMap (MvPowerSeries σ S) T (PowerSeries.subst q (formalW W)) = 0 ↔ q ^ 3 = 0 := by
+  rw [map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective (MvPowerSeries σ S) T),
+    W.subst_formalW_eq_zero_iff hq]
+
+/-- Over a ring without zero divisors, the `w`-expansion at a nonzero substitutable parameter is
+itself nonzero. -/
+theorem subst_formalW_ne_zero {σ S : Type*} [CommRing S] [Algebra R S] [NoZeroDivisors S]
+    {q : MvPowerSeries σ S} (hq : PowerSeries.HasSubst q) (hq0 : q ≠ 0) :
+    PowerSeries.subst q (formalW W) ≠ 0 := by
+  rw [ne_eq, W.subst_formalW_eq_zero_iff hq]
+  exact pow_ne_zero 3 hq0
+
+/-- The `w`-expansion at a nonzero parameter stays nonzero after being pushed into a reduced ring
+`KK` on which `MvPowerSeries σ R` acts faithfully. -/
+theorem algebraMap_subst_formalW_ne_zero {σ KK : Type*} [CommRing KK] [IsReduced KK]
+    [Algebra (MvPowerSeries σ R) KK] [FaithfulSMul (MvPowerSeries σ R) KK]
+    {q : MvPowerSeries σ R} (hq : MvPowerSeries.constantCoeff q = 0) (hq0 : q ≠ 0) :
+    algebraMap (MvPowerSeries σ R) KK (PowerSeries.subst q (formalW W)) ≠ 0 := by
+  have hinj := FaithfulSMul.algebraMap_injective (MvPowerSeries σ R) KK
+  rw [ne_eq, W.algebraMap_subst_formalW_eq_zero_iff (PowerSeries.HasSubst.of_constantCoeff_zero hq)]
+  intro h
+  have hpow : algebraMap (MvPowerSeries σ R) KK q ^ 3 = 0 := by
+    rw [← map_pow, h, map_zero]
+  exact hq0 (hinj ((eq_zero_of_pow_eq_zero hpow).trans (map_zero _).symm))
 
 /-! ### Base change
 
@@ -619,10 +715,8 @@ and the unknown with it. -/
 @[simp]
 theorem map_wEquationRHS (q v : PowerSeries R) :
     wEquationRHS (W.map φ) (PowerSeries.map φ q) (PowerSeries.map φ v) =
-      PowerSeries.map φ (wEquationRHS W q v) := by
-  simp only [wEquationRHS_powerSeries, map_add, map_mul, map_pow, PowerSeries.map_C,
-    WeierstrassCurve.map_a₁, WeierstrassCurve.map_a₂, WeierstrassCurve.map_a₃,
-    WeierstrassCurve.map_a₄, WeierstrassCurve.map_a₆]
+      PowerSeries.map φ (wEquationRHS W q v) :=
+  ((PowerSeries.map φ).map_wEquationRHS (by ext; simp) W q v).symm
 
 /-- **The `w`-expansion commutes with base change.** Both sides have vanishing constant
 coefficient and solve the `w`-equation of `W.map φ`, and that solution is unique. -/

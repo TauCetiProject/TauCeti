@@ -50,6 +50,10 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
 * `MvPowerSeries.pairSubstitution` : the substitution family `Unit ⊕ Unit → MvPowerSeries σ O`
   sending the left variable to `q₁` and the right one to `q₂`; substituting a pair of series into
   a two-variable one is `subst (pairSubstitution q₁ q₂) f`.
+* `MvPowerSeries.pairSubstitution_self` : substituting the same series into both variables of a
+  `Unit ⊕ Unit`-indexed series gives the constant family `fun _ ↦ q`.
+* `MvPowerSeries.comp_pairSubstitution` : postcomposing a `pairSubstitution` family acts
+  componentwise on the two entries.
 * `MvPowerSeries.hasSubst_pair` and `MvPowerSeries.hasSubst_pair_of_hasSubst` : a pair of series
   with vanishing (or nilpotent) constant coefficient is a legitimate substitution family for the
   two variables indexed by `Unit ⊕ Unit`.
@@ -62,6 +66,8 @@ uniformities are shadowed, so the evaluation the statement is about is never re-
   equals substitution after mapping the coefficients.
 * `MvPowerSeries.subst_powerSeriesSubst` : substituting into the composite of a one-variable
   series with a multivariate one is substituting into the inner series.
+* `MvPowerSeries.subst_subst_eq_zero` : a second substitution that kills every entry of the first
+  substitution family kills any series with vanishing constant term.
 * `MvPowerSeries.constantCoeff_subst_of_constantCoeff_zero` : substituting a family of series
   without constant term preserves the constant coefficient.
 * `MvPowerSeries.hasSubst_finTwo` : two substitutable series form a substitution family `![x, y]`
@@ -231,6 +237,21 @@ theorem hasSubst_pair_of_hasSubst (hq₁ : PowerSeries.HasSubst q₁)
   hasSubst_of_constantCoeff_nilpotent fun i ↦ by
     rcases i with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> simpa [pairSubstitution]
 
+omit [CommRing O] in
+/-- Substituting the same series into both variables of a `Unit ⊕ Unit`-indexed series is the
+constant substitution family `fun _ ↦ q`. -/
+theorem pairSubstitution_self (q : MvPowerSeries σ O) :
+    pairSubstitution q q = fun _ ↦ q :=
+  funext fun s ↦ by rcases s with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> rfl
+
+omit [CommRing O] in
+/-- Postcomposing a `pairSubstitution` family with a function `f` acts componentwise on the two
+entries of the pair. -/
+theorem comp_pairSubstitution {α : Type*} (f : MvPowerSeries σ O → α)
+    (q₁ q₂ : MvPowerSeries σ O) :
+    (fun s ↦ f (pairSubstitution q₁ q₂ s)) = Sum.elim (fun _ ↦ f q₁) (fun _ ↦ f q₂) :=
+  funext fun s ↦ by rcases s with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> rfl
+
 end HasSubstPair
 
 section CoordSpecialize
@@ -304,6 +325,19 @@ theorem subst_powerSeriesSubst {R S O : Type*} [CommRing R] [CommRing S] [CommRi
     (hg : PowerSeries.HasSubst g) (f : PowerSeries R) :
     subst b (PowerSeries.subst g f) = PowerSeries.subst (subst b g) f := by
   rw [PowerSeries.subst_def, PowerSeries.subst_def, subst_comp_subst_apply hg.const hb]
+
+/-- Substituting `b` into `subst a f` gives `0` when `f` has vanishing constant coefficient and
+`b` kills every entry of `a`. -/
+theorem subst_subst_eq_zero {O O' O'' : Type*} [CommRing O] [CommRing O'] [CommRing O'']
+    [Algebra O O'] [Algebra O O''] [Algebra O' O''] [IsScalarTower O O' O'']
+    {σ' τ' υ' : Type*} {a : σ' → MvPowerSeries τ' O'} (ha : HasSubst a)
+    {b : τ' → MvPowerSeries υ' O''} (hb : HasSubst b) (hba : ∀ s, subst b (a s) = 0)
+    {f : MvPowerSeries σ' O} (hf : constantCoeff f = 0) :
+    subst b (subst a f) = 0 := by
+  rw [subst_comp_subst_apply ha hb]
+  have h0 : (fun s ↦ subst b (a s)) = 0 := funext hba
+  rw [h0]
+  exact subst_zero_of_constantCoeff_zero hf
 
 /-- Substituting a family of series without constant term preserves the constant coefficient.
 
