@@ -311,7 +311,8 @@ theorem IsEtaleLocalDescription.locallyOfFiniteType {f : Y ⟶ X} (hf : IsEtaleL
       simpa only [ObjectProperty.FullSubcategory.comp_hom, Category.assoc] using
         congrArg InducedCategory.Hom.hom (hfac y)
     rw [hfac']
-    exact ((hg y).isFinite.locallyOfFiniteType.comp_of_isOpenImmersion _).isOpenImmersion_comp _
+    exact (((locallyOfFiniteType_iff _).mp
+      (hg y).isFinite.locallyOfFiniteType).comp_of_isOpenImmersion _).isOpenImmersion_comp _
   rw [← IsOpenImmersion.isoRestrictOfRangeEq_inv_comp (u y).hom (O := O y) rfl, Category.assoc,
     MorphismProperty.cancel_left_of_respectsIso @PreAdicSpace.LocallyOfFiniteType.{u}]
   exact huf

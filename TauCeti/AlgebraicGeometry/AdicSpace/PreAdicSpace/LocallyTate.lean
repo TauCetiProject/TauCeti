@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Analytic
 
 /-!

@@ -38,6 +38,9 @@ A ring equivalence `e : R ≃+* S` transports polynomial equations in both direc
 `b = x² - a y²`, which transports Hilbert symbols and local and global quadratic norm equations
 along field and completion isomorphisms.
 
+Four composable ring homomorphisms satisfying a chain of commuting squares and triangles paste
+together into a single outer composition equality (`RingHom.comp_comp_comp_eq_comp_of_comp_eq`).
+
 ## Main results
 
 * `TauCeti.map_neg_one_eq_one_or_eq_neg_one`: the image of `-1` is `1` or `-1`.
@@ -54,6 +57,8 @@ along field and completion isomorphisms.
 * `Set.MapsTo.ringHom_pow`: if a ring endomorphism `f` maps `A` into itself, so does `f ^ n`.
 * `RingEquiv.exists_eq_sq_sub_mul_sq_map_iff`: a ring equivalence preserves solvability of
   `b = x² - a y²`.
+* `RingHom.comp_comp_comp_eq_comp_of_comp_eq`: paste a four-step chain of commuting squares and
+  triangles of ring homomorphisms into a single outer composition identity.
 * `RingHom.toMonoidHom_comp`: converting a composite ring homomorphism to a monoid homomorphism
   gives the composite of the converted monoid homomorphisms.
 -/
@@ -158,6 +163,29 @@ theorem exists_eq_sq_sub_mul_sq_map_iff {R S : Type*} [Ring R] [Ring S] (e : R �
 end RingEquiv
 
 namespace RingHom
+
+/-- **Pasting a four-step factorization of ring homomorphisms.** Given commuting relations
+`e ∘ ι₁ = ι₁₂ ∘ ι₀`, `β ∘ ι₁₂ = ι₂₃ ∘ π`, `π ∘ ι₀ = f`, `θ ∘ ι₂₃ = ι₂₄`, and `ρ ∘ ι₂₄ = g`, the
+outer composite `((ρ ∘ θ) ∘ (β ∘ e)) ∘ ι₁` equals `g ∘ f`. -/
+theorem comp_comp_comp_eq_comp_of_comp_eq
+    {R₁ R₂ R₃ S₁ S₂ S₃ S₄ S₅ : Type*}
+    [NonAssocSemiring R₁] [NonAssocSemiring R₂] [NonAssocSemiring R₃]
+    [NonAssocSemiring S₁] [NonAssocSemiring S₂] [NonAssocSemiring S₃]
+    [NonAssocSemiring S₄] [NonAssocSemiring S₅]
+    {f : R₁ →+* R₂} {g : R₂ →+* R₃}
+    {ι₀ : R₁ →+* S₁} {ι₁ : R₁ →+* S₅} {ι₁₂ : S₁ →+* S₂} {ι₂₃ : R₂ →+* S₃} {ι₂₄ : R₂ →+* S₄}
+    {e : S₅ →+* S₂} {β : S₂ →+* S₃} {π : S₁ →+* R₂} {θ : S₃ →+* S₄} {ρ : S₄ →+* R₃}
+    (he : e.comp ι₁ = ι₁₂.comp ι₀) (hβ : β.comp ι₁₂ = ι₂₃.comp π)
+    (hπ : π.comp ι₀ = f) (hθ : θ.comp ι₂₃ = ι₂₄) (hρ : ρ.comp ι₂₄ = g) :
+    ((ρ.comp θ).comp (β.comp e)).comp ι₁ = g.comp f := by
+  calc
+    ((ρ.comp θ).comp (β.comp e)).comp ι₁
+      = ρ.comp (θ.comp (β.comp (e.comp ι₁))) := by simp only [comp_assoc]
+    _ = ρ.comp (θ.comp ((β.comp ι₁₂).comp ι₀)) := by rw [he, comp_assoc]
+    _ = ρ.comp (θ.comp ((ι₂₃.comp π).comp ι₀)) := by rw [hβ]
+    _ = (ρ.comp (θ.comp ι₂₃)).comp (π.comp ι₀) := by simp only [comp_assoc]
+    _ = (ρ.comp ι₂₄).comp f := by rw [hθ, hπ]
+    _ = g.comp f := by rw [hρ]
 
 /-- Viewing a composite ring homomorphism as a monoid homomorphism gives the composite of the
 converted monoid homomorphisms. -/

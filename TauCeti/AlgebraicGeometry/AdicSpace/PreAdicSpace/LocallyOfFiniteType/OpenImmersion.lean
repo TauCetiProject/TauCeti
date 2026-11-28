@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyOfFiniteType.Basic
-public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete
+public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete.Basic
 
 /-!
 # Open immersions are locally of finite type
@@ -42,11 +42,7 @@ theorem locallyOfFiniteType_id (hX : isAdic X) : LocallyOfFiniteType (𝟙 X) :=
   intro U
   obtain ⟨A, _, _, _, _, _, _, _, S, P, hP, ⟨e⟩⟩ :=
     (isAffinoid_iff_exists_complete _).mp ((mem_propOpens_iff _).mp U.property)
-  have hs : isSheafy (presentationLimitPreAdicSpace P S.plus
-      S.isRingOfIntegralElements.isPowerBounded_of_mem hP) :=
-    ObjectProperty.prop_of_iso isSheafy e (isSheafy_restrict U.val.isOpenEmbedding hX.isSheafy)
-  have hs' := (isSheafy_presentationLimitPreAdicSpace_iff P S.plus
-    S.isRingOfIntegralElements.isPowerBounded_of_mem hP).mp hs
+  have hs' := isSheaf_of_restrict_iso hX.isSheafy P hP e
   have hid := locallyOfFiniteType_id_presentationLimitPreAdicSpace (T := S) P hP hs'
   have hpre := MorphismProperty.RespectsIso.precomp (@LocallyOfFiniteType) e.hom _ hid
   have hpost := MorphismProperty.RespectsIso.postcomp (@LocallyOfFiniteType) e.inv _ hpre

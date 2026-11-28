@@ -7,7 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Adic
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Comap
+public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Pair
 
+import TauCeti.RingTheory.Huber.LocalizationTopology.FiniteType
 import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
@@ -229,11 +231,12 @@ namespace AdicSpace
 open PairOfDefinition PreAdicSpace ValuationSpectrum
 
 /-- **Complete Hausdorff charts for chart-local morphisms of adic spaces**: if `Q` is a property of
-morphisms of Huber pairs that cancels on the right (`Q (φ₁.comp ιA) → Q φ₁`) whenever `S₁` and `T`
-are complete Hausdorff Huber pairs, then every point `x` of the source of a morphism `f : X ⟶ Y` of
-adic spaces satisfying `chartLocally Q f.hom` admits an affinoid chart `(U, V)` around `x` in which
-both the target ring `A` and the source ring `B` are complete and Hausdorff and the inducing Huber
-pair morphism satisfies `Q`. -/
+morphisms of Huber pairs that cancels on the right along morphisms topologically of finite type
+(`ιA.IsTopologicallyFiniteType → Q (φ₁.comp ιA) → Q φ₁`) whenever `S₁` and `T` are complete
+Hausdorff Huber pairs, then every point `x` of the source of a morphism `f : X ⟶ Y` of adic spaces
+satisfying `chartLocally Q f.hom` admits an affinoid chart `(U, V)` around `x` in which both the
+target ring `A` and the source ring `B` are complete and Hausdorff and the inducing Huber pair
+morphism satisfies `Q`. -/
 theorem exists_complete_chart_of_chartLocally
     (Q : ∀ {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
       {B : Type u} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B] [IsHuberRing B]
@@ -245,7 +248,7 @@ theorem exists_complete_chart_of_chartLocally
       {B : Type u} [CommRing B] [UniformSpace B] [IsUniformAddGroup B]
       [IsTopologicalRing B] [CompleteSpace B] [T2Space B] [IsHuberRing B] {T : Pair B}
       {ιA : Pair.Hom S S₁} {φ₁ : Pair.Hom S₁ T},
-      Q (φ₁.comp ιA) → Q φ₁)
+      ιA.IsTopologicallyFiniteType → Q (φ₁.comp ιA) → Q φ₁)
     {X Y : AdicSpace.{u}} {f : X ⟶ Y} (hf : chartLocally Q f.hom) (x : X.obj) :
     ∃ (U : Opens X.obj) (_ : x ∈ U) (V : Opens Y.obj) (_ : U ≤ (Opens.map f.hom.base).obj V)
       (A : Type u) (_ : CommRing A) (_ : UniformSpace A) (_ : IsUniformAddGroup A)
@@ -337,12 +340,13 @@ theorem exists_complete_chart_of_chartLocally
     apply Pair.Hom.ext
     rw [Pair.Hom.toRingHom_comp, toRingHom_toCompletionLocHom]
     exact hge
-  have hφ₁ : Q φ₁ := hQ (hcomp.symm ▸ hφ)
+  have hιA : ιA.IsTopologicallyFiniteType :=
+    P.isTopologicallyFiniteType_toCompletionLocHom S hP ({1} : Finset A) 1 L hden (by simp)
+  have hφ₁ : Q φ₁ := hQ hιA (hcomp.symm ▸ hφ)
   -- 3. `R({1} / 1) = ⊤` gives `Spa(A₁, S₁⁺) ≅ Spa(A, S⁺)` compatible with `ιA`.
   have hsheafA : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S.plus))
       (presentationLimitPresheaf P S.plus) :=
-    (isSheafy_presentationLimitPreAdicSpace_iff P S.plus _ hP).mp
-      (ObjectProperty.prop_of_iso isSheafy eV (isSheafy_restrict _ Y.property.isSheafy))
+    isSheaf_of_restrict_iso P hP eV
   have hsheafA₁ : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa S₁.plus))
       (presentationLimitPresheaf P₁ S₁.plus) :=
     isSheaf_presentationLimitPresheaf_rationalLocalizationPair P S hP ({1} : Finset A) 1 L hden

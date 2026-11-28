@@ -136,9 +136,7 @@ private theorem isAdic_of_mapsTo_analyticPoints {f : X ⟶ Y}
     ((mem_propOpens_iff _).mp hV)
   have hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa T.plus))
       (presentationLimitPresheaf P' T.plus) :=
-    (isSheafy_presentationLimitPreAdicSpace_iff P' T.plus _ hP').mp
-      (ObjectProperty.prop_of_iso isSheafy eU
-        (isSheafy_restrict U.isOpenEmbedding X.property.isSheafy))
+    isSheaf_of_restrict_iso P' hP' eU
   -- the restriction `l : U → V` of `f`, and the morphism `g` of adic spectra it gives
   have hrange : Set.range (X.obj.ofRestrict U.isOpenEmbedding ≫ f.hom).base ⊆
       Set.range (Y.obj.ofRestrict V.isOpenEmbedding).base := by

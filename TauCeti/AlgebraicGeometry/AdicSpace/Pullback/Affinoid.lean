@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Affinoid.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.TensorProduct.Sheafy
 public import TauCeti.RingTheory.Huber.TensorProduct.Pushout
 
-import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete
+import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete.Basic
 import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.GlueMorphisms
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.TensorProduct.Points
 import TauCeti.RingTheory.Huber.TensorProduct.TopologicallyFiniteType

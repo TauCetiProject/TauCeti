@@ -76,10 +76,11 @@ the variables holds because the variables of every completed `A⟨X⟩_T` satisf
 * `TauCeti.Huber.continuous_iterateRingEquiv` and its `symm`, with the `_coe` and `_apply` `@[simp]`
   lemmas: the isomorphism is one of *topological* rings, and it is `iterateSplitHom` with inverse
   `iterateJoinHom`.
-* `TauCeti.Huber.iterateSplitHom_comp_algebraMap`: the comparison carries the structure map of
-  `A⟨X₁,…,X_{k+m}⟩_U` to that of the iterate, which is what makes it a map of `A`-algebras. The
-  iterate carries no `Algebra A` instance — `Algebra` does not compose transitively — so
-  `iterateAlgEquiv` supplies the one its structure map induces, and
+* `TauCeti.Huber.iterateStructureHom_eq_comp` and `TauCeti.Huber.iterateSplitHom_comp_algebraMap`:
+  the structure map of the iterate equals the composite of the two structure maps, and the
+  comparison carries the structure map of `A⟨X₁,…,X_{k+m}⟩_U` to that of the iterate, which is what
+  makes it a map of `A`-algebras. The iterate carries no `Algebra A` instance — `Algebra` does not
+  compose transitively — so `iterateAlgEquiv` supplies the one its structure map induces, and
   `TauCeti.Huber.iterateAlgEquiv_toRingEquiv` with its two `_apply` forms says that this changes
   nothing but the bundling.
 
@@ -156,6 +157,15 @@ theorem iterateStructureHom_apply (a : A) :
   rw [iterateStructureHom, RingHom.comp_apply,
     algebraMap_completion_weightedRestrictedSubring_apply _ _ hT,
     algebraMap_completion_weightedRestrictedSubring_apply _ _ hW]
+
+/-- The structure map of the iterated algebra is the composite of the inner and outer structure
+maps. -/
+theorem iterateStructureHom_eq_comp :
+    iterateStructureHom hT hW =
+      (algebraMap (Completion (weightedRestrictedSubring T hT))
+        (Completion (weightedRestrictedSubring W hW))).comp
+        (algebraMap A (Completion (weightedRestrictedSubring T hT))) :=
+  (rfl)
 
 include hTU hUW in
 /-- **The generators of the iterated algebra satisfy the hypothesis of Wedhorn's universal

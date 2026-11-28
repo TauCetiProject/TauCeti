@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.WeaklyFiniteType
+public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.FiniteType
 
 import TauCeti.RingTheory.Huber.NoetherianType.TopologicallyFiniteType
 
@@ -114,8 +114,8 @@ theorem locallyOfFinitePresentation_iff_chartLocally (f : X ⟶ Y) :
 /-- **A morphism locally of finite presentation is locally of finite type** (Huber 1996, §1.2):
 on each chart it is induced by a morphism of Huber pairs topologically of finite type. -/
 theorem LocallyOfFinitePresentation.locallyOfFiniteType {f : X ⟶ Y}
-    (hf : LocallyOfFinitePresentation f) : PreAdicSpace.LocallyOfFiniteType f.hom :=
-  (locallyOfFiniteType_iff f.hom).mpr <|
+    (hf : LocallyOfFinitePresentation f) : LocallyOfFiniteType f :=
+  (locallyOfFiniteType_iff_chartLocally f).mpr <|
     chartLocally_mono (fun _ hφ ↦ hφ.1) ((locallyOfFinitePresentation_iff_chartLocally f).mp hf)
 
 /-- **Being locally of finite presentation is invariant under isomorphisms** of the source and of
@@ -180,10 +180,7 @@ theorem LocallyOfFinitePresentation.of_isOpenImmersion (f : X ⟶ Y)
   obtain ⟨U, hU, hxU⟩ := isLocallyHuberStandard_iff.mp hX x
   obtain ⟨A, _, _, _, _, _, _, _, _, S, P, hP, ⟨eU⟩⟩ :=
     (isHuberStandardAffinoid_iff _).mp ((mem_propOpens_iff _).mp hU)
-  have hsheaf := (isSheafy_presentationLimitPreAdicSpace_iff P S.plus
-    S.isRingOfIntegralElements.isPowerBounded_of_mem hP).mp <|
-      ObjectProperty.prop_of_iso isSheafy eU
-        (isSheafy_restrict U.isOpenEmbedding X.property.isSheafy)
+  have hsheaf := isSheaf_of_restrict_iso P hP eU
   -- `f` identifies `U` with the open `f(U)` of `Y`
   let V : Opens Y.obj := f.hom.isOpenEmbedding.isOpenMap.functor.obj U
   let e := IsOpenImmersion.isoOfRangeEq _ _ (IsOpenImmersion.range_ofRestrict_comp_base f.hom U)

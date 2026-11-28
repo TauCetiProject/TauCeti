@@ -113,20 +113,6 @@ universe u
 
 section Helpers
 
-/-- Transfer sheafiness from an open adic subspace `S.restrict V` across a `PreAdicSpace` chart
-isomorphism `S.obj.restrict V ≅ Spa(A, A⁺)`. -/
-private theorem isSheaf_of_restrict_iso {S : AdicSpace.{u}} {V : Opens S.obj}
-    {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-    {SA : Pair A} (PA : PairOfDefinition A) (hPA : PA.ringOfDefinition ≤ SA.plus)
-    (eV₀ : S.obj.restrict V.isOpenEmbedding ≅
-      presentationLimitPreAdicSpace PA SA.plus SA.isRingOfIntegralElements.isPowerBounded_of_mem
-        hPA) :
-    Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa SA.plus))
-      (presentationLimitPresheaf PA SA.plus) :=
-  (isSheafy_presentationLimitPreAdicSpace_iff PA SA.plus _ hPA).mp
-    (ObjectProperty.prop_of_iso isSheafy eV₀
-      (isSheafy_restrict V.isOpenEmbedding S.property.isSheafy))
-
 /-- Lift a `PreAdicSpace` affinoid chart equation for `f : X ⟶ S` to an `AdicSpace` factorization
 through `comapOfPresentation`. -/
 private theorem ofRestrict_comp_eq_comapOfPresentation {X S : AdicSpace.{u}} {f : X ⟶ S}
@@ -474,7 +460,7 @@ private theorem chartLocally_of_isPullback
   -- 1. Choose a complete Hausdorff chart `(U, V)` of `f` around `p(z)`.
   obtain ⟨U, hzpU, V, hUV, A, _, _, _, _, _, _, _, SA, PA, hPA,
     C, _, _, _, _, _, _, _, UC, PC, hPC, φ, hφQ, hsheafC, eU₀, eV₀, hfac_f⟩ :=
-    exists_complete_chart_of_chartLocally Q hQcomp hf (p.hom.base z)
+    exists_complete_chart_of_chartLocally Q (fun _ ↦ hQcomp) hf (p.hom.base z)
   have hφtft : IsTopologicallyFiniteType φ.toRingHom := hQtft hφQ
   have hsheafA := isSheaf_of_restrict_iso PA hPA eV₀
   -- 2. Since `g(q(z)) = f(p(z)) ∈ V`, pick a stably sheafy affinoid `W ⊆ g⁻¹(V)` at `q(z)`.

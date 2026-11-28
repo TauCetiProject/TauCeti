@@ -448,6 +448,19 @@ theorem comapOfPresentation_ofPairIsoOfPresentation_inv {S : Pair A} {T : Pair B
   rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp]
   exact ofPairIsoOfPresentation_hom_comapOfPresentation hS hT P hP P' hP' φ
 
+/-- An isomorphism-invariant morphism property `W` holds for `comapOfPair` if and only if it holds
+for `comapOfPresentation` with respect to any compatible pairs of definition `P` and `P'`. -/
+theorem comapOfPair_iff_comapOfPresentation (W : MorphismProperty AdicSpace.{u})
+    [W.RespectsIso] {S : Pair A} {T : Pair B}
+    (hS : IsSheafyForEveryPresentation S.plus) (hT : IsSheafyForEveryPresentation T.plus)
+    (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus)
+    (P' : PairOfDefinition B) (hP' : P'.ringOfDefinition ≤ T.plus) (φ : Pair.Hom S T) :
+    W (comapOfPair hS hT φ) ↔
+      W (comapOfPresentation S P hP (hS.isSheaf P hP) T P' hP' (hT.isSheaf P' hP') φ) := by
+  rw [← MorphismProperty.cancel_right_of_respectsIso W _ (ofPairIsoOfPresentation S hS P hP).hom,
+    ← ofPairIsoOfPresentation_hom_comapOfPresentation hS hT P hP P' hP' φ,
+    MorphismProperty.cancel_left_of_respectsIso W]
+
 /-- For complete Hausdorff `B`, `comapOfPair` is adic if and only if the underlying ring
 homomorphism is adic. -/
 theorem isAdic_comapOfPair_iff {B : Type u} [CommRing B] [UniformSpace B]

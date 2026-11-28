@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.FiniteType
 public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.TargetLocally
 public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.WeaklyFiniteType
 public import TauCeti.RingTheory.Huber.Pair.Finite.Basic
-import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete
+import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.Affinoid.Complete.Basic
 
 /-!
 # Finite morphisms of adic spaces
@@ -120,8 +121,8 @@ theorem IsFinite.chartLocally {f : X ⟶ Y} (hf : IsFinite f) :
 /-- **Finite morphisms are locally of finite type**: a finite morphism of Huber pairs is
 topologically of finite type. -/
 theorem IsFinite.locallyOfFiniteType {f : X ⟶ Y} (hf : IsFinite f) :
-    PreAdicSpace.LocallyOfFiniteType f.hom :=
-  (locallyOfFiniteType_iff f.hom).mpr <|
+    LocallyOfFiniteType f :=
+  (locallyOfFiniteType_iff_chartLocally f).mpr <|
     chartLocally_mono (fun _ hφ ↦ hφ.isTopologicallyFiniteType) hf.chartLocally
 
 /-- Over each neighbourhood `V` supplied by the definition, the preimage under a finite morphism

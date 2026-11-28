@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.RingHom.FinitePresentation
 public import TauCeti.RingTheory.Huber.NoetherianType.Quotient
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Complete
+public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Discrete
 
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Noetherian
-import TauCeti.Topology.Algebra.GroupCompletion
-import TauCeti.Topology.Maps.OpenQuotient
 
 /-!
 # Noetherian type and Huber's standing class ascend along homomorphisms topologically of finite type
@@ -39,7 +39,8 @@ The defining alternatives are treated separately.
   (`TauCeti.Huber.mem_of_mem_nhds_of_forall_weightedX_mem`). Passing along the open quotient map to
   `B` preserves both noetherianity of the ring of definition and finite generation over it.
 * If `A` is discrete, `A⟨X⟩_T` and its completion are discrete, so any open quotient `B` is
-  discrete as well (`TauCeti.Huber.IsTopologicallyFiniteType.discreteTopology`).
+  discrete as well (`TauCeti.Huber.IsTopologicallyFiniteType.discreteTopology`, from
+  `TauCeti.RingTheory.Huber.TopologicallyFiniteType.Discrete`).
 
 No completeness is assumed of `A` or of `B`.
 
@@ -51,12 +52,16 @@ No completeness is assumed of `A` or of `B`.
 * `TauCeti.Huber.IsTopologicallyFiniteType.exists_pairOfDefinition_isNoetherianRing_and_finiteType`:
   finite generation over a noetherian ring of definition likewise ascends along homomorphisms
   topologically of finite type.
-* `TauCeti.Huber.IsTopologicallyFiniteType.discreteTopology`: over a discrete base, any target of a
-  homomorphism topologically of finite type is discrete.
 * `TauCeti.Huber.IsNoetherianType.of_isTopologicallyFiniteType`: noetherian type ascends along
   homomorphisms topologically of finite type.
 * `TauCeti.Huber.IsHuberStandard.of_isTopologicallyFiniteType`: Huber's standing class ascends
   along homomorphisms topologically of finite type.
+* `TauCeti.Huber.IsHuberStandard.discreteTopology_or_isNoetherianRing_of_isTopologicallyFiniteType`:
+  over a Huber ring in Huber's standing class, along any homomorphism topologically of finite type
+  either the base is discrete or the target is a noetherian ring.
+* `TauCeti.Huber.IsTopologicallyFiniteType.finitePresentation_of_comp`: right-cancellation of
+  algebraic finite presentation when the intermediate ring is discrete and the base is in Huber's
+  standing class.
 
 ## References
 
@@ -102,18 +107,6 @@ theorem IsTopologicallyFiniteType.exists_pairOfDefinition_isNoetherianRing_and_f
   have := P.finiteType_weighted_completion hT
   exact ⟨(P.weighted hT).completion.map π hπ, inferInstance, inferInstance⟩
 
-omit [IsTopologicalRing B] in
-/-- **Discrete topology ascends along homomorphisms topologically of finite type**: over a discrete
-ring `A`, every weighted restricted power-series ring `A⟨X⟩_T` and its completion are discrete, so
-any open quotient `B` is discrete as well. -/
-theorem IsTopologicallyFiniteType.discreteTopology [DiscreteTopology A]
-    (hφ : IsTopologicallyFiniteType φ) : DiscreteTopology B := by
-  obtain ⟨k, T, _, hT, π, hπ, -⟩ := isTopologicallyFiniteType_iff.mp hφ
-  have : DiscreteTopology (Completion (weightedRestrictedSubring T hT)) :=
-    Completion.discreteTopology_iff_separationQuotient.mpr
-      SeparationQuotient.isQuotientMap_mk.discreteTopology
-  exact hπ.discreteTopology
-
 /-- **Noetherian type ascends along homomorphisms topologically of finite type** (Huber,
 Corollary 3.4; Wedhorn, Proposition 6.35 and Remark 6.37(1)). If `A` is a Huber ring of
 noetherian type and `φ : A → B` is topologically of finite type, then `B` is of noetherian type.
@@ -123,13 +116,10 @@ theorem IsNoetherianType.of_isTopologicallyFiniteType [IsHuberRing A] [IsNoether
   refine IsNoetherianType.elim ‹_› (fun P _ ↦ ?_) fun _ _ ↦ ?_
   · obtain ⟨Q, hQ⟩ := hφ.exists_pairOfDefinition_isNoetherianRing P
     exact .of_pairOfDefinition Q hQ
-  · -- `B` is Tate, and complete and Hausdorff for its additive uniformity, so strongly noetherian
-    have := hφ.isTateRing
+  · have := hφ.isTateRing
     let _ : UniformSpace B := IsTopologicalAddGroup.rightUniformSpace B
     have : IsUniformAddGroup B := isUniformAddGroup_of_addCommGroup
-    have := hφ.completeSpace
-    have := hφ.t2Space
-    have := hφ.isStronglyNoetherian
+    have := hφ.completeSpace; have := hφ.t2Space; have := hφ.isStronglyNoetherian
     infer_instance
 
 /-- **Huber's standing class ascends along homomorphisms topologically of finite type**
@@ -144,11 +134,41 @@ theorem IsHuberStandard.of_isTopologicallyFiniteType [IsHuberRing A] [IsHuberSta
   · have := hφ.isTateRing
     let _ : UniformSpace B := IsTopologicalAddGroup.rightUniformSpace B
     have : IsUniformAddGroup B := isUniformAddGroup_of_addCommGroup
-    have := hφ.completeSpace
-    have := hφ.t2Space
-    have := hφ.isStronglyNoetherian
+    have := hφ.completeSpace; have := hφ.t2Space; have := hφ.isStronglyNoetherian
     infer_instance
-  · have := hφ.discreteTopology
-    infer_instance
+  · have := hφ.discreteTopology; infer_instance
+
+omit [IsTopologicalRing B] in
+/-- **Standing-class dichotomy along homomorphisms topologically of finite type**: if `A` is in
+Huber's standing class and `γ : A →+* C` is topologically of finite type, then either `A` is
+discrete or `C` is a noetherian ring. Indeed, in the two non-discrete alternatives of
+`IsHuberStandard A`, `C` is either finite type over a noetherian ring of definition or a strongly
+noetherian Tate ring, and hence noetherian in both cases. -/
+theorem IsHuberStandard.discreteTopology_or_isNoetherianRing_of_isTopologicallyFiniteType
+    [IsHuberRing A] [hA : IsHuberStandard A] {C : Type*} [CommRing C] [TopologicalSpace C]
+    {γ : A →+* C} (hγ : IsTopologicallyFiniteType γ) :
+    DiscreteTopology A ∨ IsNoetherianRing C := by
+  refine hA.elim (fun Q _ _ ↦ Or.inr ?_) (fun _ _ ↦ Or.inr hγ.isNoetherianRing) Or.inl
+  obtain ⟨Q', _, _⟩ := hγ.exists_pairOfDefinition_isNoetherianRing_and_finiteType Q
+  exact Algebra.FiniteType.isNoetherianRing Q'.ringOfDefinition C
+
+omit [IsTopologicalRing B] in
+/-- **Right-cancellation of discrete finite presentation over Huber's standing class**: suppose `A`
+lies in Huber's standing class, `ψ : A →+* C` and `φ : C →+* D` are topologically of finite type,
+`C` is discrete, and `φ.comp ψ` is algebraically of finite presentation whenever `A` is discrete.
+Then `φ` is algebraically of finite presentation. By the standing-class dichotomy, either `A` is
+discrete (so finite-type `ψ` is cancelled on the right from `φ.comp ψ` to deduce finite
+presentation of `φ`), or `C` is noetherian (so algebraic finite type of `φ` upgrades to finite
+presentation). -/
+theorem IsTopologicallyFiniteType.finitePresentation_of_comp [IsHuberRing A] [IsHuberStandard A]
+    {C : Type*} [CommRing C] [TopologicalSpace C] [NonarchimedeanRing C]
+    {D : Type*} [CommRing D] [TopologicalSpace D] {ψ : A →+* C} {φ : C →+* D}
+    (hψ : IsTopologicallyFiniteType ψ) (hφ : IsTopologicallyFiniteType φ)
+    (hfp : DiscreteTopology A → (φ.comp ψ).FinitePresentation) [DiscreteTopology C] :
+    φ.FinitePresentation := by
+  rcases IsHuberStandard.discreteTopology_or_isNoetherianRing_of_isTopologicallyFiniteType hψ with
+    hDiscA | _
+  · exact RingHom.FinitePresentation.of_comp_finiteType ψ (hfp hDiscA) hψ.finiteType
+  · exact RingHom.FinitePresentation.of_finiteType.mp hφ.finiteType
 
 end TauCeti.Huber
