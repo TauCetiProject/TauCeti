@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Polynomial.Norm
+public import Mathlib.Algebra.Polynomial.Expand
 public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.Algebra.Polynomial.Homogenize
 public import TauCeti.Analysis.SpecialFunctions.Pow.Real
@@ -75,6 +76,23 @@ theorem l1Norm_eq_sum_range (P : R[X]) :
     P.l1Norm = ∑ i ∈ Finset.range (P.natDegree + 1), ‖P.coeff i‖ :=
   P.l1Norm_eq_sum_of_support_subset fun i hi ↦
     Finset.mem_range.2 (Nat.lt_succ_iff.2 (le_natDegree_of_mem_supp i hi))
+
+/-- Substituting a positive power of `X` leaves the coefficient l¹-norm unchanged. -/
+@[simp] theorem l1Norm_expand {S : Type*} [SeminormedCommRing S] (P : S[X]) {m : ℕ} (hm : 0 < m) :
+    (expand S m P).l1Norm = P.l1Norm := by
+  let e : ℕ ↪ ℕ := ⟨fun n ↦ m * n, mul_right_injective₀ hm.ne'⟩
+  have hs : (expand S m P).support = P.support.map e := by
+    ext k
+    rcases em (m ∣ k) with ⟨n, rfl⟩ | hk
+    · have he : e n = m * n := rfl
+      rw [← he, Finset.mem_map']
+      rw [he, mem_support_iff, coeff_expand_mul' hm, ← mem_support_iff]
+    · rw [mem_support_iff, coeff_expand hm, ite_eq_right hk]
+      simp only [ne_eq, not_true_eq_false, false_iff, Finset.mem_map]
+      rintro ⟨n, _, hn⟩
+      exact hk ⟨n, hn.symm⟩
+  rw [l1Norm_eq_sum_support, hs, Finset.sum_map, l1Norm_eq_sum_support]
+  exact Finset.sum_congr rfl fun n _ ↦ congrArg norm (coeff_expand_mul' hm P n)
 
 /-- A sum over the support of coefficient norms weighted by factors bounded by `c` is at most
 `c` times the coefficient l¹-norm. -/

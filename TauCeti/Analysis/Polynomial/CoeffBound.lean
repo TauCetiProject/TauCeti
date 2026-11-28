@@ -55,6 +55,22 @@ open Polynomial
 
 namespace Polynomial
 
+/-- Dividing by `X - C z` with `‖z‖ ≤ 1` bounds each quotient coefficient by the coefficient
+l¹-norm of the dividend. The estimate also applies when the remainder is nonzero. -/
+theorem norm_coeff_divByMonic_X_sub_C_le_l1Norm {R : Type*} [SeminormedRing R] (p : R[X])
+    {z : R} (hz : ‖z‖ ≤ 1) (i : ℕ) : ‖(p /ₘ (X - C z)).coeff i‖ ≤ p.l1Norm := by
+  rw [coeff_divByMonic_X_sub_C, l1Norm_eq_sum_range]
+  calc
+    _ ≤ ∑ j ∈ Finset.Icc (i + 1) p.natDegree, ‖p.coeff j‖ := by
+      refine norm_sum_le_of_le _ fun j _ ↦ ?_
+      rcases Nat.eq_zero_or_pos (j - (i + 1)) with he | he
+      · rw [he, pow_zero, one_mul]
+      · exact (norm_mul_le _ _).trans (mul_le_of_le_one_left (norm_nonneg _)
+          ((norm_pow_le' z he).trans (pow_le_one₀ (norm_nonneg _) hz)))
+    _ ≤ _ := Finset.sum_le_sum_of_subset_of_nonneg
+      (fun j hj ↦ Finset.mem_range.mpr (Nat.lt_succ_of_le (Finset.mem_Icc.mp hj).2))
+      (fun j _ _ ↦ norm_nonneg _)
+
 variable {K : Type*} [NormedField K]
 
 /-- **The constant coefficient against a distinguished root.** A monic polynomial `p` that splits
