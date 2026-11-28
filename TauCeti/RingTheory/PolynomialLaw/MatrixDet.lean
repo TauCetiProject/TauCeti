@@ -34,6 +34,8 @@ matrix representation in the sense of Chenevier (`TauCeti.Determinant.algHomDet`
   homogeneous of degree `card n` and multiplicative.
 * `AlgHom.det_comp_toPolynomialLaw`: it is invariant under matrix-algebra endomorphisms,
   by `AlgHom.det_apply_matrix` after scalar extension.
+* `AlgEquiv.det_comp_toPolynomialLaw`: the corresponding simplification for matrix-algebra
+  automorphisms.
 
 ## Implementation notes
 
@@ -148,8 +150,8 @@ theorem isMultiplicative_det : (det n A).IsMultiplicative where
       Algebra.TensorProduct.tmul_mul_tmul, one_mul]
 
 /-- The determinant polynomial law is invariant under any matrix-algebra endomorphism. This
-compares the determinant laws obtained from two matrix splittings over the same coefficient ring,
-even when the splittings differ by an automorphism that is only locally inner. -/
+compares the determinant laws obtained from two splittings into the same matrix algebra (after
+reindexing if needed), even when they differ by an automorphism that is only locally inner. -/
 @[simp]
 theorem _root_.AlgHom.det_comp_toPolynomialLaw (σ : AlgHom A (Matrix n n A) (Matrix n n A)) :
     (det n A).comp σ.toLinearMap.toPolynomialLaw = det n A := by
@@ -159,15 +161,20 @@ theorem _root_.AlgHom.det_comp_toPolynomialLaw (σ : AlgHom A (Matrix n n A) (Ma
   let : CommRing S := (algebraMap A S).commSemiringToCommRing
   let e := matrixBaseChangeAlgEquiv A S n
   let f := Algebra.TensorProduct.map (AlgHom.id S S) σ
-  let τ := e.toAlgHom.comp (f.comp e.symm.toAlgHom)
+  let τ := AlgEquiv.arrowCongr e e f
   have hf : σ.toLinearMap.baseChange S = f.toLinearMap := by
-    apply TensorProduct.AlgebraTensorModule.ext
-    intro s M
-    simp only [LinearMap.baseChange_tmul, AlgHom.toLinearMap_apply,
-      Algebra.TensorProduct.map_tmul, AlgHom.id_apply, f]
+    simp only [f, Algebra.TensorProduct.toLinearMap_map, AlgHom.toLinearMap_id,
+      LinearMap.baseChange]
   have hτ : τ (e x) = e (f x) := by
-    simp only [τ, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.symm_apply_apply]
+    simp only [τ, AlgEquiv.arrowCongr_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+      AlgEquiv.symm_apply_apply]
   rw [det_toFun, det_toFun, hf, AlgHom.toLinearMap_apply]
   exact congrArg (· ⊗ₜ 1) (hτ ▸ τ.det_apply_matrix (e x))
+
+/-- The determinant polynomial law is invariant under matrix-algebra automorphisms. -/
+@[simp]
+theorem _root_.AlgEquiv.det_comp_toPolynomialLaw (e : Matrix n n A ≃ₐ[A] Matrix n n A) :
+    (det n A).comp e.toLinearMap.toPolynomialLaw = det n A := by
+  simpa only [AlgEquiv.toAlgHom_toLinearMap] using e.toAlgHom.det_comp_toPolynomialLaw
 
 end PolynomialLaw

@@ -629,8 +629,9 @@ theorem trace_algHomDet (ρ : R →ₐ[A] Matrix n n A) (x : R) :
       Matrix.trace_eq_neg_charpoly_coeff]
 
 /-- Postcomposing a matrix representation with a matrix-algebra endomorphism preserves its
-determinant. In particular, two matrix splittings of the same algebra give the same determinant
-over their common coefficient ring. -/
+determinant. In particular, two matrix splittings of the same algebra over a common coefficient
+ring and of the same matrix degree give the same determinant, with the indices identified if
+needed. -/
 @[simp]
 theorem _root_.AlgHom.algHomDet_comp (σ : AlgHom A (Matrix n n A) (Matrix n n A))
     (ρ : R →ₐ[A] Matrix n n A) : algHomDet (σ.comp ρ) = algHomDet ρ := by
