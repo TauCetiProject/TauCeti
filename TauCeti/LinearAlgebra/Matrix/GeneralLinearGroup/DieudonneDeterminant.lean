@@ -404,6 +404,14 @@ theorem coe_dieudonneDet_fin_two (g : GL (Fin 2) D) :
     (dieudonneDet (Fin 2) D g : WithZero (Group.Abelianization Dˣ)) = dieudonneDetFinTwo D g := by
   rw [dieudonneDet_fin_apply, AlgebraicK1.coe_divisionRingEquiv_mk_two]
 
+/-- The isomorphism `K₁(D) ≃* Dˣ/[Dˣ, Dˣ]` sends the class of an invertible matrix to its
+Dieudonné determinant. -/
+@[simp]
+theorem AlgebraicK1.divisionRingEquiv_mkOfFintype (g : GL n D) :
+    AlgebraicK1.divisionRingEquiv D (AlgebraicK1.mkOfFintype D n g) = dieudonneDet n D g := by
+  rw [AlgebraicK1.mkOfFintype_apply, dieudonneDet, MonoidHom.comp_apply, MonoidHom.comp_apply,
+    MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom]
+
 /-- Elementary matrices have Dieudonné determinant one. -/
 @[simp]
 theorem dieudonneDet_transvectionUnit {i j : n} (hij : i ≠ j) (a : D) :
@@ -417,32 +425,15 @@ is the class of `d`. -/
 @[simp]
 theorem dieudonneDet_diagGL_mulSingle (i : n) (d : Dˣ) :
     dieudonneDet n D (diagGL (Pi.mulSingle i d)) = Group.Abelianization.of d := by
-  have hk : 1 ≤ Fintype.card n := Fintype.card_pos_iff.mpr ⟨i⟩
-  let e : n ≃ Fin (Fintype.card n) :=
-    (Fintype.equivFin n).trans (Equiv.swap (Fintype.equivFin n i) ⟨0, hk⟩)
-  have he : e i = ⟨0, hk⟩ := by simp [e]
-  have hdiag : e.reindexGL D (diagGL (Pi.mulSingle i d)) =
-      stabilizeGL D hk (Matrix.GeneralLinearGroup.scalar (Fin 1) d) := by
-    ext a b
-    obtain ⟨a, rfl⟩ := e.surjective a
-    obtain ⟨b, rfl⟩ := e.surjective b
-    have key : ∀ c : n, (e c : ℕ) < 1 ↔ c = i := fun c ↦ by
-      rw [Nat.lt_one_iff, ← e.injective.eq_iff, he, Fin.ext_iff]
-    simp only [Equiv.coe_reindexGL, submatrix_apply, Equiv.symm_apply_apply, diagGL_coe,
-      diagonal_apply, coe_stabilizeGL_apply, key, e.apply_eq_iff_eq, Matrix.one_apply]
-    by_cases ha : a = i <;> by_cases hb : b = i <;> simp [ha, hb, Ne.symm]
-  rw [← dieudonneDet_reindexGL e, hdiag, dieudonneDet_fin_apply, AlgebraicK1.mk_stabilizeGL,
-    ← AlgebraicK1.ofUnits_apply, AlgebraicK1.divisionRingEquiv_ofUnits]
+  rw [← AlgebraicK1.divisionRingEquiv_mkOfFintype, AlgebraicK1.mkOfFintype_diagGL_mulSingle,
+    AlgebraicK1.divisionRingEquiv_ofUnits]
 
 /-- The Dieudonné determinant of an invertible diagonal matrix is the product of the classes of its
 diagonal entries. -/
 theorem dieudonneDet_diagGL (t : n → Dˣ) :
     dieudonneDet n D (diagGL t) = ∏ i, Group.Abelianization.of (t i) := by
-  -- `Dˣ` need not be commutative, so decompose `t` with a noncommutative product
-  have h := Finset.univ.map_noncommProd (fun i ↦ Pi.mulSingle i (t i))
-    (fun i _ j _ _ ↦ Pi.mulSingle_apply_commute t i j) ((dieudonneDet n D).comp diagGL)
-  rw [Finset.noncommProd_mulSingle, Finset.noncommProd_eq_prod] at h
-  simpa using h
+  rw [← AlgebraicK1.divisionRingEquiv_mkOfFintype, AlgebraicK1.mkOfFintype_diagGL, map_prod]
+  simp
 
 /-- The Dieudonné determinant is surjective as soon as there is an index. -/
 theorem dieudonneDet_surjective [Nonempty n] : Function.Surjective (dieudonneDet n D) := by
@@ -566,14 +557,6 @@ theorem eq_dieudonneDet {φ : GL n D →* Group.Abelianization Dˣ} (i : n)
     intro g _
     obtain ⟨d, hd⟩ := Group.Abelianization.surjective_of _ (φ g)
     rw [MonoidHom.mem_ker, ← hd, Units.val_eq_one.1 (hD _ d.ne_zero), map_one]
-
-/-- The isomorphism `K₁(D) ≃* Dˣ/[Dˣ, Dˣ]` sends the class of an invertible matrix to its
-Dieudonné determinant. -/
-@[simp]
-theorem AlgebraicK1.divisionRingEquiv_mkOfFintype (g : GL n D) :
-    AlgebraicK1.divisionRingEquiv D (AlgebraicK1.mkOfFintype D n g) = dieudonneDet n D g := by
-  rw [AlgebraicK1.mkOfFintype_apply, dieudonneDet, MonoidHom.comp_apply, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom, MulEquiv.coe_toMonoidHom]
 
 /-! ## Block matrices -/
 

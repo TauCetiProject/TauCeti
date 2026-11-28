@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Alternating.Curry
 public import Mathlib.LinearAlgebra.Basis.Prod
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import TauCeti.Data.Fin.Sum
 
 /-!
 # A vector followed by a basis of a hyperplane
@@ -137,11 +138,11 @@ of `Fin (m + 1) → R`. -/
 theorem cons_singleton_prod_basisFun_reindex_finSumFinEquiv_trans_finCongr (i : Fin (m + 1)) :
     Fin.cons (α := fun _ ↦ R)
         (((Basis.singleton (Fin 1) R).prod (Pi.basisFun R (Fin m))).reindex
-          (finSumFinEquiv.trans (finCongr (add_comm 1 m))) i).1
+          (TauCeti.finOneSumEquiv m) i).1
         (((Basis.singleton (Fin 1) R).prod (Pi.basisFun R (Fin m))).reindex
-          (finSumFinEquiv.trans (finCongr (add_comm 1 m))) i).2 =
+          (TauCeti.finOneSumEquiv m) i).2 =
       Pi.basisFun R (Fin (m + 1)) i := by
-  rw [coe_prod_reindex_finSumFinEquiv_trans_finCongr]
+  rw [TauCeti.finOneSumEquiv, coe_prod_reindex_finSumFinEquiv_trans_finCongr]
   funext l
   induction i using Fin.cases <;> induction l using Fin.cases <;>
     simp [Fin.append_left_eq_cons, Pi.single_apply]

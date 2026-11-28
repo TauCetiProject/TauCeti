@@ -222,29 +222,23 @@ theorem coe_prodBlockSucc (cB : unitary α × unitaryGroup (Fin m) α) :
 @[simp]
 theorem prodBlockSucc_apply_zero_zero (cB : unitary α × unitaryGroup (Fin m) α) :
     (prodBlockSucc α m cB : Matrix (Fin (m + 1)) (Fin (m + 1)) α) 0 0 = cB.1 := by
-  rw [coe_prodBlockSucc, reindex_apply, submatrix_apply, TauCeti.finOneSumEquiv_symm_zero,
-    fromBlocks_apply₁₁, diagonal_apply_eq]
+  simp [coe_prodBlockSucc]
 
 @[simp]
 theorem prodBlockSucc_apply_zero_succ (cB : unitary α × unitaryGroup (Fin m) α) (j : Fin m) :
     (prodBlockSucc α m cB : Matrix (Fin (m + 1)) (Fin (m + 1)) α) 0 j.succ = 0 := by
-  rw [coe_prodBlockSucc, reindex_apply, submatrix_apply, TauCeti.finOneSumEquiv_symm_zero,
-    TauCeti.finOneSumEquiv_symm_succ, fromBlocks_apply₁₂]
-  rfl
+  simp [coe_prodBlockSucc]
 
 @[simp]
 theorem prodBlockSucc_apply_succ_zero (cB : unitary α × unitaryGroup (Fin m) α) (i : Fin m) :
     (prodBlockSucc α m cB : Matrix (Fin (m + 1)) (Fin (m + 1)) α) i.succ 0 = 0 := by
-  rw [coe_prodBlockSucc, reindex_apply, submatrix_apply, TauCeti.finOneSumEquiv_symm_zero,
-    TauCeti.finOneSumEquiv_symm_succ, fromBlocks_apply₂₁]
-  rfl
+  simp [coe_prodBlockSucc]
 
 @[simp]
 theorem prodBlockSucc_apply_succ_succ (cB : unitary α × unitaryGroup (Fin m) α) (i j : Fin m) :
     (prodBlockSucc α m cB : Matrix (Fin (m + 1)) (Fin (m + 1)) α) i.succ j.succ =
       (cB.2 : Matrix (Fin m) (Fin m) α) i j := by
-  rw [coe_prodBlockSucc, reindex_apply, submatrix_apply, TauCeti.finOneSumEquiv_symm_succ,
-    TauCeti.finOneSumEquiv_symm_succ, fromBlocks_apply₂₂]
+  simp [coe_prodBlockSucc]
 
 /-- The block-diagonal embedding of `U(1) × U(m)` in `U(m + 1)` is injective. -/
 theorem prodBlockSucc_injective : Function.Injective (prodBlockSucc α m) := by
@@ -282,10 +276,7 @@ theorem mem_range_prodBlockSucc_iff {A : unitaryGroup (Fin (m + 1)) α} :
       (fromBlocks (diagonal fun _ ↦ A.val 0 0) 0 0 B) := by
     ext p q
     refine Fin.cases ?_ (fun i ↦ ?_) p <;> refine Fin.cases ?_ (fun j ↦ ?_) q <;>
-      simp only [reindex_apply, submatrix_apply, TauCeti.finOneSumEquiv_symm_zero,
-        TauCeti.finOneSumEquiv_symm_succ, fromBlocks_apply₁₁, fromBlocks_apply₁₂,
-        fromBlocks_apply₂₁, fromBlocks_apply₂₂, diagonal_apply_eq] <;>
-      first | rfl | exact hrow j | exact hA i
+      simp [hrow, hA]; rfl
   have hB : B ∈ unitaryGroup (Fin m) α :=
     ((reindex_fromBlocks_zero_zero_mem_unitary_iff _).1 (hAB ▸ A.property)).2
   exact ⟨(⟨A.val 0 0, Unitary.mem_iff_star_mul_self.2 hc⟩, ⟨B, hB⟩), Subtype.ext hAB.symm⟩

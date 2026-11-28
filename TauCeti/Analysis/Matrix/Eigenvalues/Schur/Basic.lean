@@ -10,6 +10,7 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Analysis.Normed.Module.Normalize
 import Mathlib.LinearAlgebra.Eigenspace.Charpoly
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Extension
+import TauCeti.Data.Fin.Sum
 import TauCeti.LinearAlgebra.Matrix.Triangular.Intertwining
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 import TauCeti.RingTheory.Polynomial.RootEnumeration
@@ -79,7 +80,7 @@ private theorem exists_unitary_schur_first_column {n : ℕ}
 private theorem exists_unitary_initial_schur_block {n : ℕ}
     (A : Matrix (Fin (n + 1)) (Fin (n + 1)) 𝕜) (d : Fin (n + 1) → 𝕜)
     (hd : A.charpoly = ∏ i, (X - C (d i))) :
-    let e : Fin 1 ⊕ Fin n ≃ Fin (n + 1) := finSumFinEquiv.trans (finCongr (Nat.add_comm 1 n))
+    let e : Fin 1 ⊕ Fin n ≃ Fin (n + 1) := TauCeti.finOneSumEquiv n
     ∃ (U : unitaryGroup (Fin (n + 1)) 𝕜) (F : Matrix (Fin 1) (Fin n) 𝕜)
       (D : Matrix (Fin n) (Fin n) 𝕜),
       (star U.val * A * U.val).submatrix e e =
@@ -89,10 +90,8 @@ private theorem exists_unitary_initial_schur_block {n : ℕ}
     simp [Polynomial.IsRoot, hd, Fin.prod_univ_succ]
   obtain ⟨U, hcol⟩ := exists_unitary_schur_first_column A hz
   let B := star U.val * A * U.val
-  let e : Fin 1 ⊕ Fin n ≃ Fin (n + 1) := finSumFinEquiv.trans (finCongr (Nat.add_comm 1 n))
-  have he₀ (i : Fin 1) : e (Sum.inl i) = 0 := by
-    apply Fin.ext
-    simp [e, Fin.eq_zero i]
+  let e : Fin 1 ⊕ Fin n ≃ Fin (n + 1) := TauCeti.finOneSumEquiv n
+  have he₀ (i : Fin 1) : e (Sum.inl i) = 0 := TauCeti.finOneSumEquiv_inl n i
   let D := (B.submatrix e e).toBlocks₂₂
   let F := (B.submatrix e e).toBlocks₁₂
   have hB : B.submatrix e e = fromBlocks (diagonal fun _ : Fin 1 ↦ d 0) F 0 D := by
@@ -121,13 +120,9 @@ private theorem exists_unitary_isUpperTriangular_diag_fin {n : ℕ}
   induction n with
   | zero => exact ⟨1, fun i ↦ i.elim0, funext fun i ↦ i.elim0⟩
   | succ n ih =>
-    let e : Fin 1 ⊕ Fin n ≃ Fin (n + 1) := finSumFinEquiv.trans (finCongr (Nat.add_comm 1 n))
-    have he₀ (i : Fin 1) : e (Sum.inl i) = 0 := by
-      apply Fin.ext
-      simp [e, Fin.eq_zero i]
-    have he₁ (i : Fin n) : e (Sum.inr i) = i.succ := by
-      apply Fin.ext
-      simp [e]
+    let e : Fin 1 ⊕ Fin n ≃ Fin (n + 1) := TauCeti.finOneSumEquiv n
+    have he₀ (i : Fin 1) : e (Sum.inl i) = 0 := TauCeti.finOneSumEquiv_inl n i
+    have he₁ (i : Fin n) : e (Sum.inr i) = i.succ := TauCeti.finOneSumEquiv_inr n i
     obtain ⟨U, F, D, hB, hD⟩ := exists_unitary_initial_schur_block A d hd
     obtain ⟨V, hV, hdiag⟩ := ih D (d ∘ Fin.succ) hD
     let W := UnitaryGroup.prodBlockSucc 𝕜 n (1, V)

@@ -529,7 +529,8 @@ open TauCeti
 theorem reindexGL_diagGL {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ] [DecidableEq κ]
     {k : Type*} [Semiring k] (e : ι ≃ κ) (d : ι → kˣ) :
     e.reindexGL k (diagGL d) = diagGL (d ∘ e.symm) := by
-  ext a b
-  simp [Matrix.diagonal_apply, e.symm.apply_eq_iff_eq]
+  apply Units.ext
+  rw [Equiv.coe_reindexGL, diagGL_coe, diagGL_coe, Matrix.submatrix_diagonal_equiv _ e.symm]
+  rfl
 
 end Equiv

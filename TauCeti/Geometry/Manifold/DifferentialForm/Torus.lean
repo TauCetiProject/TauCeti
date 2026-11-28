@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.Instances.AddCircle.Torus
 public import TauCeti.Geometry.Manifold.MFDeriv.Pi
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Family
+import TauCeti.Data.Fin.Sum
 import TauCeti.LinearAlgebra.Basis.Fin
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
@@ -693,11 +694,11 @@ theorem mpullback_piCons_torusVolumeForm (p : Fin (m + 1) → ℝ) [∀ i, Fact 
   -- The product of the unit basis of `ℝ` and the coordinate basis of `Fin m → ℝ`, the circle
   -- first, indexed by `Fin (m + 1)`.
   let b := ((Module.Basis.singleton (Fin 1) ℝ).prod (Pi.basisFun ℝ (Fin m))).reindex
-    (finSumFinEquiv.trans (finCongr (add_comm 1 m)))
+    (TauCeti.finOneSumEquiv m)
   have hb : ⇑b = fun r ↦
       Fin.append (fun i ↦ (Module.Basis.singleton (Fin 1) ℝ i, (0 : Fin m → ℝ)))
         (fun j ↦ ((0 : ℝ), Pi.basisFun ℝ (Fin m) j)) (Fin.cast (add_comm 1 m).symm r) :=
-    Module.Basis.coe_prod_reindex_finSumFinEquiv_trans_finCongr _ _ _
+    Module.Basis.coe_prod_reindex_finSumFinEquiv_trans_finCongr _ _ (Nat.one_add m)
   refine Subtype.ext (funext fun q ↦ ?_)
   -- The differential of `Fin.cons` sends `b` to the coordinate basis of `Fin (m + 1) → ℝ`, so the
   -- left side takes the value `1` on `b`.

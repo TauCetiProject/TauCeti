@@ -291,7 +291,8 @@ combined diagonal entries. -/
 theorem fromBlocksGL_diagGL (d₁ : m → Aˣ) (d₂ : k → Aˣ) :
     fromBlocksGL (diagGL d₁, diagGL d₂) = diagGL (Sum.elim d₁ d₂) := by
   apply Units.ext
-  ext (a | a) (b | b) <;> simp [Matrix.diagonal_apply]
+  rw [coe_fromBlocksGL, diagGL_coe, diagGL_coe, diagGL_coe, Matrix.fromBlocks_diagonal]
+  exact congrArg Matrix.diagonal (Sum.comp_elim (Units.val : Aˣ → A) d₁ d₂).symm
 
 /-- The block diagonal homomorphism is injective. -/
 theorem fromBlocksGL_injective :

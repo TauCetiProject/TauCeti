@@ -63,7 +63,7 @@ product of the classes of the matrices `(u, 1)` and `(1, v)`.
   with invertible diagonal blocks `u` and `v` has class `[u] + [v]`.
 * `TauCeti.AlgebraicK1.mkOfFintype_eq_one_iff`: `[u]` is trivial exactly when `u ⊕ 1` is
   elementary for an identity block of some size.
-* `TauCeti.AlgebraicK1.mkOfFintype_diagGL_mulSingle`, `TauCeti.AlgebraicK1.mk_diagGL_mulSingle`,
+* `TauCeti.AlgebraicK1.mkOfFintype_diagGL_mulSingle`,
   `TauCeti.AlgebraicK1.mkOfFintype_diagGL`, `TauCeti.AlgebraicK1.mkOfFintype_scalar`: the class of
   an invertible diagonal matrix is the sum of the classes of its diagonal entries.
 * `TauCeti.AlgebraicK1.ofUnits_eq_ofUnits_of_coe_eq_one_add_mul`: `[1 + ab] = [1 + ba]`.
@@ -290,14 +290,6 @@ theorem mkOfFintype_diagGL_mulSingle (i : ι) (a : Aˣ) :
   congr 1
   ext j l
   simp [Subsingleton.elim j l]
-
-/-- A diagonal matrix whose only possibly non-identity diagonal entry is `d` at coordinate `i`
-represents the same class in algebraic `K₁` as `ofUnits A d`. -/
-@[simp]
-theorem mk_diagGL_mulSingle {n : ℕ} (i : Fin n) (d : Aˣ) :
-    mk A n (diagGL (Pi.mulSingle i d)) = ofUnits A d := by
-  rw [← mkOfFintype_fin]
-  exact mkOfFintype_diagGL_mulSingle i d
 
 /-- The class of the invertible diagonal matrix with diagonal entries `t i` is the product of the
 classes of the units `t i`. -/

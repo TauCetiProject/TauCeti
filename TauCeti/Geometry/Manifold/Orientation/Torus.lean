@@ -253,8 +253,9 @@ theorem isOrientationPreservingAt_piCons_torusOrientation (p : Fin (m + 1) → �
   have hb (i : Fin (m + 1)) :
       Fin.cons (α := fun _ ↦ ℝ) (b₀.reindex (finCongr (add_comm 1 m)) i).1
         (b₀.reindex (finCongr (add_comm 1 m)) i).2 = Pi.basisFun ℝ (Fin (m + 1)) i := by
-    simpa only [b₀, Module.Basis.reindex_apply, Equiv.symm_trans_apply] using
-      Module.Basis.cons_singleton_prod_basisFun_reindex_finSumFinEquiv_trans_finCongr (R := ℝ) i
+    simpa only [b₀, Module.Basis.reindex_apply, Equiv.symm_trans_apply, TauCeti.finOneSumEquiv]
+      using Module.Basis.cons_singleton_prod_basisFun_reindex_finSumFinEquiv_trans_finCongr
+        (R := ℝ) i
   -- The tangent spaces are the model spaces `ℝ`, `Fin m → ℝ` and `Fin (m + 1) → ℝ`, so these
   -- bases are tangent bases; both are positive, by the coordinate description of the orientations.
   refine (isOrientationPreservingAt_iff_of_basis (b₀.reindex (finCongr (add_comm 1 m)))
