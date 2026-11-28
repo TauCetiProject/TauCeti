@@ -181,39 +181,6 @@ private def ProdChainInv.ofStage {F₁ F₂ : ℕ ⥤ TopCat.{w}} {c₁ : Cocone
     rintro ⟨x, y⟩ ⟨⟨a, ha, rfl⟩, ⟨b, hb, rfl⟩⟩
     exact hVW' (mk_mem_prod (hclV'' ha) (hclW'' hb))
 
-private theorem isOpen_iUnion_of_isColimit {F : ℕ ⥤ TopCat.{w}} {c : Cocone F}
-    (hc : IsColimit c) (n₀ : ℕ) (V : ℕ → Set c.pt) (hV_mono : Monotone V)
-    (hV_open : ∀ k, IsOpen ((Subtype.val : range (c.ι.app (n₀ + k)) → c.pt) ⁻¹' V k)) :
-    IsOpen (⋃ k, V k) := by
-  rw [TopCat.isOpen_iff_of_isColimit _ hc]
-  intro m
-  choose O hO_open hO_eq using fun k ↦ isOpen_induced_iff.1 (hV_open k)
-  have hpre : c.ι.app m ⁻¹' (⋃ k, V k) = ⋃ (k : ℕ) (_ : m ≤ k), c.ι.app m ⁻¹' O k := by
-    ext z
-    simp only [mem_preimage, mem_iUnion]
-    constructor
-    · rintro ⟨k, hk⟩
-      refine ⟨max m k, le_max_left m k, ?_⟩
-      have hz_mem := hV_mono (le_max_right m k) hk
-      have hzA : c.ι.app m z ∈ range (c.ι.app (n₀ + max m k)) :=
-        monotone_range_ι c (Nat.le_trans (le_max_left m k) (Nat.le_add_left _ _)) ⟨z, rfl⟩
-      have hz_pre : ⟨c.ι.app m z, hzA⟩ ∈
-          (Subtype.val : range (c.ι.app (n₀ + max m k)) → c.pt) ⁻¹' O (max m k) := by
-        rw [hO_eq (max m k)]
-        exact hz_mem
-      exact hz_pre
-    · rintro ⟨k, hmk, hk⟩
-      have hzA : c.ι.app m z ∈ range (c.ι.app (n₀ + k)) :=
-        monotone_range_ι c (hmk.trans (Nat.le_add_left _ _)) ⟨z, rfl⟩
-      have hz_pre : ⟨c.ι.app m z, hzA⟩ ∈
-          (Subtype.val : range (c.ι.app (n₀ + k)) → c.pt) ⁻¹' V k := by
-        rw [← hO_eq k]
-        exact hk
-      exact ⟨k, hz_pre⟩
-  rw [hpre]
-  exact isOpen_iUnion fun k ↦
-    isOpen_iUnion fun _ ↦ (hO_open k).preimage (c.ι.app m).hom.continuous
-
 private theorem isOpen_stage_trace_prod
     {F₁ F₂ : ℕ ⥤ TopCat.{w}} [∀ n, CompactSpace (F₁.obj n)] [∀ n, T2Space (F₁.obj n)]
     [∀ n, CompactSpace (F₂.obj n)] [∀ n, T2Space (F₂.obj n)]

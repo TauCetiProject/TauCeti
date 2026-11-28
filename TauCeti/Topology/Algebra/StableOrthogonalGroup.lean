@@ -171,7 +171,9 @@ theorem toStableOrthogonalGroup_of (n : ℕ) (A : Matrix.specialOrthogonalGroup 
         (SequentialColimitGroup.of (continuousSpecialOrthogonalBlockSucc ℝ) n A) =
       SequentialColimitGroup.of (continuousOrthogonalBlockSucc ℝ) n
         (Matrix.specialOrthogonalGroup.toOrthogonalGroup A) := by
-  rw [toStableOrthogonalGroup, SequentialColimitGroup.lift_of]
+  rw [toStableOrthogonalGroup, SequentialColimitGroup.lift_of, ContinuousMonoidHom.coe_comp,
+    Function.comp_apply]
+  -- Unfold the `ContinuousMonoidHom` wrapper `{ toMonoidHom := toOrthogonalGroup, ... }`.
   rfl
 
 /-- The canonical inclusion `SO → O` is injective. -/

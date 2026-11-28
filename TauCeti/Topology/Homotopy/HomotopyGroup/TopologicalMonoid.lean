@@ -201,17 +201,8 @@ theorem injective_map_of_one {G H : Type*} [Group G] [Group H] [TopologicalSpace
     Function.Injective (map (N := N) f.toContinuousMap (x := x) rfl) := by
   have hx := (homeomorphEquivOfEq (N := N) (Homeomorph.mulLeft x) (mul_one x)).bijective
   have hfx := (homeomorphEquivOfEq (N := N) (Homeomorph.mulLeft (f x)) (mul_one (f x))).bijective
-  intro a b hab
-  obtain ⟨a', rfl⟩ := hx.2 a
-  obtain ⟨b', rfl⟩ := hx.2 b
-  have hcomp :
-      (map (N := N) f.toContinuousMap rfl ∘
-        map (N := N) ⟨Homeomorph.mulLeft x, (Homeomorph.mulLeft x).continuous⟩ (mul_one x)) a' =
-      (map (N := N) f.toContinuousMap rfl ∘
-        map (N := N) ⟨Homeomorph.mulLeft x, (Homeomorph.mulLeft x).continuous⟩ (mul_one x)) b' :=
-    hab
-  rw [← map_mulLeft_comp_map] at hcomp
-  exact congrArg _ (hinj (hfx.1 hcomp))
+  exact Function.Injective.of_comp_right
+    (map_mulLeft_comp_map f N x ▸ hfx.1.comp hinj) hx.2
 
 /-- A continuous homomorphism of topological groups that is surjective on `π_N` at the identity is
 surjective on `π_N` at every base point. -/
@@ -220,12 +211,7 @@ theorem surjective_map_of_one {G H : Type*} [Group G] [Group H] [TopologicalSpac
     (hsurj : Function.Surjective (map (N := N) f.toContinuousMap (_root_.map_one f))) (x : G) :
     Function.Surjective (map (N := N) f.toContinuousMap (x := x) rfl) := by
   have hfx := (homeomorphEquivOfEq (N := N) (Homeomorph.mulLeft (f x)) (mul_one (f x))).bijective
-  have hcomp : Function.Surjective
-      (map (N := N) f.toContinuousMap rfl ∘
-        map (N := N) ⟨Homeomorph.mulLeft x, (Homeomorph.mulLeft x).continuous⟩ (mul_one x)) := by
-    rw [← map_mulLeft_comp_map]
-    exact hfx.2.comp hsurj
-  exact hcomp.of_comp
+  exact (map_mulLeft_comp_map f N x ▸ hfx.2.comp hsurj).of_comp
 
 end ContinuousMonoidHom
 

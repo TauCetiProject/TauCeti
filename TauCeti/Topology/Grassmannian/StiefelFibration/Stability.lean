@@ -134,24 +134,21 @@ theorem isNConnected_specialOrthogonalBlockSucc (n : ℕ) :
   let φHomeo : _root_.Matrix.specialOrthogonalGroup (Fin (n + 1)) ℝ ≃ₜ
       _root_.Matrix.specialOrthogonalGroup (Fin (1 + n)) ℝ :=
     (_root_.Matrix.specialOrthogonalReindexContinuousMulEquiv ℝ e).toHomeomorph
-  let φ : C(_root_.Matrix.specialOrthogonalGroup (Fin (n + 1)) ℝ,
-      _root_.Matrix.specialOrthogonalGroup (Fin (1 + n)) ℝ) :=
-    ⟨φHomeo, φHomeo.continuous⟩
-  have hcomp : φ.comp (continuousSpecialOrthogonalBlockSucc ℝ n).toContinuousMap =
+  have hcomp : φHomeo.toHomotopyEquiv.toFun.comp
+        (continuousSpecialOrthogonalBlockSucc ℝ n).toContinuousMap =
       ⟨fromBlocksOne ℝ 1 n, finiteOrthonormalFrame.continuous_fromBlocksOne n⟩ := by
     ext A i j
-    have hA : φ ((continuousSpecialOrthogonalBlockSucc ℝ n).toContinuousMap A) =
-        _root_.Matrix.specialOrthogonalReindexContinuousMulEquiv ℝ e
-          (specialOrthogonalBlockSucc ℝ n A) := by
-      -- Unfolds `ContinuousMap.coe_mk` and `ContinuousMulEquiv.toHomeomorph` coercion to `⇑`.
-      simp [φ, φHomeo]
-      rfl
-    rw [ContinuousMap.comp_apply, hA,
+    rw [ContinuousMap.comp_apply, Homeomorph.coe_toHomotopyEquiv]
+    -- Unfold `φHomeo` to `specialOrthogonalReindexContinuousMulEquiv ℝ e`.
+    change (_root_.Matrix.specialOrthogonalReindexContinuousMulEquiv ℝ e
+      (continuousSpecialOrthogonalBlockSucc ℝ n A) :
+        _root_.Matrix (Fin (1 + n)) (Fin (1 + n)) ℝ) i j = _
+    rw [continuousSpecialOrthogonalBlockSucc_apply,
       _root_.Matrix.coe_specialOrthogonalReindexContinuousMulEquiv_apply]
     exact congrFun (congrFun (reindex_coe_specialOrthogonalBlockSucc_eq_fromBlocksOne ℝ n A) i) j
   refine (ContinuousMap.IsWeakHomotopyEquivalence.isNConnected_comp_iff
     φHomeo.toHomotopyEquiv.isWeakHomotopyEquivalence).1 ?_
-  rw [show φHomeo.toHomotopyEquiv.toFun = φ from ContinuousMap.ext fun _ ↦ rfl, hcomp]
+  rw [hcomp]
   exact TauCeti.Matrix.SpecialOrthogonalGroup.isNConnected_fromBlocksOne 1 n
 
 private lemma homotopyGroup_toOrthogonalGroup_blockSucc_sq (n : ℕ) (N : Type*) :
@@ -213,14 +210,8 @@ theorem isNConnected_orthogonalBlockSucc (n : ℕ) :
         (n := n + 1) (Fin (m + 1))
       have bi₂ := _root_.Matrix.specialOrthogonalGroup.bijective_homotopyGroup_map_toOrthogonalGroup
         (n := n + 2) (Fin (m + 1))
-      intro a b hab
-      obtain ⟨a', rfl⟩ := bi₁.2 a
-      obtain ⟨b', rfl⟩ := bi₁.2 b
-      have hcomp := congrArg id hab
-      rw [← Function.comp_apply (f := HomotopyGroup.map (N := Fin (m + 1)) f.toContinuousMap _),
-        ← Function.comp_apply (f := HomotopyGroup.map (N := Fin (m + 1)) f.toContinuousMap _),
-        ← homotopyGroup_toOrthogonalGroup_blockSucc_sq n (Fin (m + 1))] at hcomp
-      exact congrArg _ (hinjSO (bi₂.1 hcomp))
+      exact Function.Injective.of_comp_right
+        (homotopyGroup_toOrthogonalGroup_blockSucc_sq n (Fin (m + 1)) ▸ bi₂.1.comp hinjSO) bi₁.2
   · cases k with
     | zero =>
       exact HomotopyGroup.map_surjective_of_isEmpty_of_exists_joined f.toContinuousMap rfl hex

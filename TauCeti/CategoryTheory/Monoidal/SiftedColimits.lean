@@ -311,17 +311,22 @@ end Mon
 section CommMon
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory.{v} C] [BraidedCategory.{v} C]
-  {J : Type w} [Category.{w'} J]
-  [∀ X : C, PreservesColimitsOfShape J (tensorLeft X)]
-  [IsSifted J]
+  {J : Type w} [Category.{w'} J] [IsSifted J]
 
-/-- A cocone in `CommMon C` over a sifted diagram whose underlying cocone in `C` is colimiting is
-itself colimiting. -/
+/-- A cocone in `CommMon C` over a sifted diagram whose underlying cocone in `C` is colimiting and
+whose tensor square is preserved as a colimit is itself colimiting. -/
 noncomputable def CommMon.isColimitOfForget (F : J ⥤ CommMon C) (c : Cocone F)
-    (hc : IsColimit ((CommMon.forget C).mapCocone c)) : IsColimit c :=
-  have := preservesColimitsOfShape_tensorRight_of_braided (C := C) (J := J)
+    (hc : IsColimit ((CommMon.forget C).mapCocone c))
+    [PreservesColimit₂ (F ⋙ CommMon.forget C) (F ⋙ CommMon.forget C) (curriedTensor C)] :
+    IsColimit c :=
+  letI : PreservesColimit₂ ((F ⋙ CommMon.forget₂Mon C) ⋙ Mon.forget C)
+      ((F ⋙ CommMon.forget₂Mon C) ⋙ Mon.forget C) (curriedTensor C) :=
+    inferInstanceAs (PreservesColimit₂ (F ⋙ CommMon.forget C) (F ⋙ CommMon.forget C)
+      (curriedTensor C))
   isColimitOfReflects (CommMon.forget₂Mon C)
     (Mon.isColimitOfForget (F ⋙ CommMon.forget₂Mon C) ((CommMon.forget₂Mon C).mapCocone c) hc)
+
+variable [∀ X : C, PreservesColimitsOfShape J (tensorLeft X)]
 
 namespace CommMon.ColimitConstruction
 
@@ -375,7 +380,9 @@ noncomputable instance CommMon.forgetCreatesColimitsOfShape :
     { lifts c hc :=
         { liftedCocone := CommMon.ColimitConstruction.cocone F c hc
           validLift := CommMon.ColimitConstruction.forgetCoconeIso F c hc }
-      reflects {c} hc := ⟨CommMon.isColimitOfForget F c hc⟩ }
+      reflects {c} hc :=
+        have := preservesColimitsOfShape_tensorRight_of_braided (C := C) (J := J)
+        ⟨CommMon.isColimitOfForget F c hc⟩ }
 
 /-- `CommMon C` has colimits of sifted shape `J` whenever `C` does and `tensorLeft` preserves
 them. -/
@@ -391,23 +398,32 @@ open CartesianMonoidalCategory
 
 variable {C : Type u} [Category.{v} C] [CartesianMonoidalCategory.{v} C]
   {J : Type w} [Category.{w'} J] [IsSifted J]
-  [∀ X : C, PreservesColimitsOfShape J (tensorLeft X)]
-  [∀ X : C, PreservesColimitsOfShape J (tensorRight X)]
 
-/-- A cocone in `Grp C` over a sifted diagram whose underlying cocone in `C` is colimiting is
-itself colimiting. -/
+/-- A cocone in `Grp C` over a sifted diagram whose underlying cocone in `C` is colimiting and
+whose tensor square is preserved as a colimit is itself colimiting. -/
 noncomputable def Grp.isColimitOfForget (F : J ⥤ Grp C) (c : Cocone F)
-    (hc : IsColimit ((Grp.forget C).mapCocone c)) : IsColimit c :=
+    (hc : IsColimit ((Grp.forget C).mapCocone c))
+    [PreservesColimit₂ (F ⋙ Grp.forget C) (F ⋙ Grp.forget C) (curriedTensor C)] :
+    IsColimit c :=
+  letI : PreservesColimit₂ ((F ⋙ Grp.forget₂Mon C) ⋙ Mon.forget C)
+      ((F ⋙ Grp.forget₂Mon C) ⋙ Mon.forget C) (curriedTensor C) :=
+    inferInstanceAs (PreservesColimit₂ (F ⋙ Grp.forget C) (F ⋙ Grp.forget C)
+      (curriedTensor C))
   isColimitOfReflects (Grp.forget₂Mon C)
     (Mon.isColimitOfForget (F ⋙ Grp.forget₂Mon C) ((Grp.forget₂Mon C).mapCocone c) hc)
 
 /-- The underlying morphism of the descent from `Grp.isColimitOfForget` is the descent of the
 underlying cocone. -/
 theorem Grp.isColimitOfForget_desc_hom (F : J ⥤ Grp C) (c : Cocone F)
-    (hc : IsColimit ((Grp.forget C).mapCocone c)) (s : Cocone F) :
+    (hc : IsColimit ((Grp.forget C).mapCocone c))
+    [PreservesColimit₂ (F ⋙ Grp.forget C) (F ⋙ Grp.forget C) (curriedTensor C)]
+    (s : Cocone F) :
     ((Grp.isColimitOfForget F c hc).desc s).hom.hom = hc.desc ((Grp.forget C).mapCocone s) :=
   hc.uniq ((Grp.forget C).mapCocone s) _ fun j ↦
     congrArg (fun k ↦ k.hom.hom) ((Grp.isColimitOfForget F c hc).fac s j)
+
+variable [∀ X : C, PreservesColimitsOfShape J (tensorLeft X)]
+  [∀ X : C, PreservesColimitsOfShape J (tensorRight X)]
 
 namespace Grp.ColimitConstruction
 
@@ -538,15 +554,21 @@ open CartesianMonoidalCategory
 
 variable {C : Type u} [Category.{v} C] [CartesianMonoidalCategory.{v} C] [BraidedCategory.{v} C]
   {J : Type w} [Category.{w'} J] [IsSifted J]
-  [∀ X : C, PreservesColimitsOfShape J (tensorLeft X)]
 
-/-- A cocone in `CommGrp C` over a sifted diagram whose underlying cocone in `C` is colimiting is
-itself colimiting. -/
+/-- A cocone in `CommGrp C` over a sifted diagram whose underlying cocone in `C` is colimiting and
+whose tensor square is preserved as a colimit is itself colimiting. -/
 noncomputable def CommGrp.isColimitOfForget (F : J ⥤ CommGrp C) (c : Cocone F)
-    (hc : IsColimit ((CommGrp.forget C).mapCocone c)) : IsColimit c :=
-  have := preservesColimitsOfShape_tensorRight_of_braided (C := C) (J := J)
+    (hc : IsColimit ((CommGrp.forget C).mapCocone c))
+    [PreservesColimit₂ (F ⋙ CommGrp.forget C) (F ⋙ CommGrp.forget C) (curriedTensor C)] :
+    IsColimit c :=
+  letI : PreservesColimit₂ ((F ⋙ CommGrp.forget₂Grp C) ⋙ Grp.forget C)
+      ((F ⋙ CommGrp.forget₂Grp C) ⋙ Grp.forget C) (curriedTensor C) :=
+    inferInstanceAs (PreservesColimit₂ (F ⋙ CommGrp.forget C) (F ⋙ CommGrp.forget C)
+      (curriedTensor C))
   isColimitOfReflects (CommGrp.forget₂Grp C)
     (Grp.isColimitOfForget (F ⋙ CommGrp.forget₂Grp C) ((CommGrp.forget₂Grp C).mapCocone c) hc)
+
+variable [∀ X : C, PreservesColimitsOfShape J (tensorLeft X)]
 
 namespace CommGrp.ColimitConstruction
 
@@ -584,7 +606,9 @@ noncomputable instance CommGrp.forgetCreatesColimitsOfShape :
     { lifts c hc :=
         { liftedCocone := CommGrp.ColimitConstruction.cocone F c hc
           validLift := CommGrp.ColimitConstruction.forgetCoconeIso F c hc }
-      reflects {c} hc := ⟨CommGrp.isColimitOfForget F c hc⟩ }
+      reflects {c} hc :=
+        have := preservesColimitsOfShape_tensorRight_of_braided (C := C) (J := J)
+        ⟨CommGrp.isColimitOfForget F c hc⟩ }
 
 /-- `CommGrp C` has colimits of sifted shape `J` whenever `C` does and `tensorLeft` preserves
 them. -/

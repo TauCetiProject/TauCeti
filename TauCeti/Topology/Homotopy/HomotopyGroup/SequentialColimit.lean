@@ -23,10 +23,13 @@ to finite stages:
   lifts to a generalized loop in some stage `n ≥ m`.
 * `TauCeti.TopCat.exists_lift_genLoop_homotopic_of_le`: two generalized loops in stage `m` that
   become homotopic in `c.pt` are already homotopic in some stage `n ≥ m`.
+* `TauCeti.TopCat.homOfLE_induction`: induction principle along transition maps of a sequential
+  diagram `F : ℕ ⥤ TopCat`.
 * `TauCeti.TopCat.surjective_homotopyGroup_map_ι`,
   `TauCeti.TopCat.injective_homotopyGroup_map_ι`, `TauCeti.TopCat.bijective_homotopyGroup_map_ι`,
-  `TauCeti.TopCat.homotopyGroupMulEquivι`: stagewise surjectivity, injectivity, and bijectivity
-  on homotopy groups above stage `m` descend to the canonical inclusion `c.ι.app m`.
+  `TauCeti.TopCat.homotopyGroupMulEquivι`, `TauCeti.TopCat.homotopyGroupMulEquivι_apply`:
+  stagewise surjectivity, injectivity, and bijectivity on homotopy groups above stage `m`
+  descend to the canonical inclusion `c.ι.app m`.
 * `TauCeti.TopCat.isNConnected_ι_of_forall_succ`: if every transition map
   `F.obj k ⟶ F.obj (k + 1)` with `m ≤ k` is `d`-connected, then `c.ι.app m : F.obj m ⟶ c.pt`
   is `d`-connected.
@@ -40,6 +43,27 @@ open CategoryTheory Limits Topology Topology.Homotopy
 universe u
 
 namespace TauCeti.TopCat
+
+/-- Induction principle along transition morphisms `F.map (homOfLE hmn)` of a sequential diagram
+`F : ℕ ⥤ TopCat` starting from stage `m`. -/
+theorem homOfLE_induction {F : ℕ ⥤ TopCat.{u}} (m : ℕ) (P : ∀ ⦃n : ℕ⦄, C(F.obj m, F.obj n) → Prop)
+    (hid : P (ContinuousMap.id (F.obj m)))
+    (hstep : ∀ ⦃n : ℕ⦄ (hmn : m ≤ n), P (F.map (homOfLE hmn)).hom →
+      P ((F.map (homOfLE n.le_succ)).hom.comp (F.map (homOfLE hmn)).hom))
+    {n : ℕ} (hmn : m ≤ n) : P (F.map (homOfLE hmn)).hom := by
+  induction hmn with
+  | refl =>
+    have h : (F.map (homOfLE (le_refl m))).hom = ContinuousMap.id (F.obj m) := by
+      ext z
+      rw [Subsingleton.elim (homOfLE (le_refl m)) (𝟙 m), F.map_id, TopCat.coe_id, id_eq,
+        ContinuousMap.id_apply]
+    exact h ▸ hid
+  | @step k hmk ih =>
+    have h : (F.map (homOfLE hmk.step)).hom =
+        (F.map (homOfLE k.le_succ)).hom.comp (F.map (homOfLE hmk)).hom := by
+      ext z
+      rw [ContinuousMap.comp_apply, ← ConcreteCategory.comp_apply, ← F.map_comp, homOfLE_comp]
+    exact h ▸ hstep hmk ih
 
 section Lift
 
@@ -98,19 +122,18 @@ theorem exists_lift_genLoop_homotopic_of_le {N : Type*} (m : ℕ) (x : F.obj m)
       _ = H' (t, z) := ContinuousMap.congr_fun hg (t, z)
   have hc_w (u : F.obj m) : c.ι.app n (F.map (homOfLE hmn) u) = c.ι.app m u := by
     rw [← ConcreteCategory.comp_apply, c.w]
+  have hval (r : Ω^ N (F.obj m) x) (z : I^N) :
+      ((GenLoop.map (c.ι.app m).hom rfl r : Ω^ N c.pt _) : C(I^N, c.pt)) z =
+        c.ι.app n (F.map (homOfLE hmn) (r z)) := by
+    rw [_root_.GenLoop.coe_coe, GenLoop.map_apply, hc_w]
   refine ⟨n, hmn, GenLoop.homotopic_of_continuousMap g' (fun z ↦ ?_) (fun z ↦ ?_)
     fun t z hz ↦ ?_⟩
   · apply (hι n).injective
-    rw [hcomp, H'.apply_zero z, GenLoop.coe_map, ContinuousMap.comp_apply,
-      _root_.GenLoop.coe_coe, GenLoop.map_apply]
-    exact (hc_w (p z)).symm
+    rw [hcomp, H'.apply_zero z, hval, GenLoop.map_apply]
   · apply (hι n).injective
-    rw [hcomp, H'.apply_one z, GenLoop.coe_map, ContinuousMap.comp_apply,
-      _root_.GenLoop.coe_coe, GenLoop.map_apply]
-    exact (hc_w (q z)).symm
+    rw [hcomp, H'.apply_one z, hval, GenLoop.map_apply]
   · apply (hι n).injective
-    rw [hcomp, H'.eq_fst t hz, GenLoop.coe_map, ContinuousMap.comp_apply,
-      _root_.GenLoop.coe_coe, _root_.GenLoop.boundary p z hz, hc_w x]
+    rw [hcomp, H'.eq_fst t hz, hval, _root_.GenLoop.boundary p z hz]
 
 end Lift
 
@@ -118,40 +141,6 @@ section HomotopyGroup
 
 variable {F : ℕ ⥤ TopCat.{u}} {c : Cocone F} (hc : IsColimit c)
   (hι : ∀ n, IsEmbedding (c.ι.app n))
-
-private theorem map_homOfLE_add_zero {F : ℕ ⥤ TopCat.{u}} (m : ℕ) :
-    (F.map (homOfLE (Nat.le_add_right m 0))).hom = ContinuousMap.id (F.obj m) := by
-  ext z
-  rw [Subsingleton.elim (homOfLE (Nat.le_add_right m 0)) (𝟙 m), F.map_id, TopCat.coe_id, id_eq,
-    ContinuousMap.id_apply]
-
-private theorem bijective_homotopyGroup_map_homOfLE_add_zero {F : ℕ ⥤ TopCat.{u}}
-    (N : Type*) (m : ℕ) (x : F.obj m) :
-    Function.Bijective (HomotopyGroup.map (N := N) (x := x)
-      (F.map (homOfLE (Nat.le_add_right m 0))).hom rfl) := by
-  have hx : (F.map (homOfLE (Nat.le_add_right m 0))).hom x = x := by
-    rw [map_homOfLE_add_zero, ContinuousMap.id_apply]
-  have hcomp₁ : (F.map (homOfLE (Nat.le_add_right m 0))).hom.comp
-      (ContinuousMap.id (F.obj m)) = ContinuousMap.id (F.obj m) := by
-    rw [map_homOfLE_add_zero, ContinuousMap.comp_id]
-  have hcomp₂ : (ContinuousMap.id (F.obj m)).comp
-      (F.map (homOfLE (Nat.le_add_right m 0))).hom = ContinuousMap.id (F.obj m) := by
-    rw [map_homOfLE_add_zero, ContinuousMap.id_comp]
-  exact Function.bijective_iff_has_inverse.2 ⟨HomotopyGroup.map (ContinuousMap.id (F.obj m)) hx,
-    fun a ↦ HomotopyGroup.map_map_of_comp_eq_id (ContinuousMap.id (F.obj m))
-      (F.map (homOfLE (Nat.le_add_right m 0))).hom rfl hx hcomp₂ a,
-    fun a ↦ HomotopyGroup.map_map_of_comp_eq_id (F.map (homOfLE (Nat.le_add_right m 0))).hom
-      (ContinuousMap.id (F.obj m)) hx rfl hcomp₁ a⟩
-
-private theorem homotopyGroup_map_comp_le {N : Type*} {m k : ℕ} (hmk : m ≤ k) (x : F.obj m) :
-    HomotopyGroup.map (N := N) (x := F.map (homOfLE hmk) x)
-          (F.map (homOfLE k.le_succ)).hom rfl ∘
-        HomotopyGroup.map (x := x) (F.map (homOfLE hmk)).hom rfl =
-      HomotopyGroup.map (x := x) (F.map (homOfLE (hmk.trans k.le_succ))).hom
-        (by rw [← ConcreteCategory.comp_apply, ← F.map_comp, homOfLE_comp]) := by
-  refine HomotopyGroup.map_comp_map_of_comp_eq ?_ rfl rfl _
-  ext z
-  rw [ContinuousMap.comp_apply, ← ConcreteCategory.comp_apply, ← F.map_comp, homOfLE_comp]
 
 private theorem homotopyGroup_map_ι_comp_le {N : Type*} {m n : ℕ} (hmn : m ≤ n) (x : F.obj m) :
     HomotopyGroup.map (N := N) (x := F.map (homOfLE hmn) x) (c.ι.app n).hom
@@ -173,26 +162,23 @@ theorem surjective_homotopyGroup_map_ι {N : Type*} (m : ℕ) (x : F.obj m)
         (rfl : F.map (homOfLE k.le_succ) (F.map (homOfLE hmk) x) =
           F.map (homOfLE k.le_succ) (F.map (homOfLE hmk) x)))) :
     Function.Surjective (HomotopyGroup.map (N := N) (c.ι.app m).hom rfl (x := x)) := by
-  have hstep : ∀ (d : ℕ),
-      Function.Surjective (HomotopyGroup.map (N := N) (x := x)
-        (F.map (homOfLE (Nat.le_add_right m d))).hom rfl) := by
-    intro d
-    induction d with
-    | zero => exact (bijective_homotopyGroup_map_homOfLE_add_zero N m x).2
-    | succ d ih =>
-      have hcomp := (hsurj (m + d) (Nat.le_add_right m d)).comp ih
-      rw [homotopyGroup_map_comp_le (F := F) (Nat.le_add_right m d) x] at hcomp
-      exact (HomotopyGroup.surjective_map_congr rfl _ rfl).1 hcomp
+  have hstep : ∀ ⦃n : ℕ⦄ (hmn : m ≤ n),
+      Function.Surjective (HomotopyGroup.map (N := N) (x := x) (F.map (homOfLE hmn)).hom rfl) :=
+    fun _ hmn ↦ homOfLE_induction m
+      (fun _ f ↦ Function.Surjective (HomotopyGroup.map (N := N) (x := x) f rfl))
+      (fun b ↦ ⟨b, HomotopyGroup.map_id_apply b⟩)
+      (fun k hmk ih ↦
+        HomotopyGroup.map_comp_map (F.map (homOfLE k.le_succ)).hom rfl
+          (F.map (homOfLE hmk)).hom rfl ▸ (hsurj k hmk).comp ih) hmn
   intro b
   induction b using Quotient.inductionOn with | h p =>
   obtain ⟨n, hmn, p', hp'⟩ := exists_lift_genLoop_of_le hc hι m x p
-  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hmn
-  obtain ⟨a, ha⟩ := hstep d ⟦p'⟧
+  obtain ⟨a, ha⟩ := hstep hmn ⟦p'⟧
   refine ⟨a, ?_⟩
   have h1 : HomotopyGroup.map (c.ι.app m).hom rfl a =
-      HomotopyGroup.map (c.ι.app (m + d)).hom (by rw [← ConcreteCategory.comp_apply, c.w])
-        (HomotopyGroup.map (F.map (homOfLE (Nat.le_add_right m d))).hom rfl a) :=
-    (congrFun (homotopyGroup_map_ι_comp_le (Nat.le_add_right m d) x) a).symm
+      HomotopyGroup.map (c.ι.app n).hom (by rw [← ConcreteCategory.comp_apply, c.w])
+        (HomotopyGroup.map (F.map (homOfLE hmn)).hom rfl a) :=
+    (congrFun (homotopyGroup_map_ι_comp_le hmn x) a).symm
   rw [h1, ha, HomotopyGroup.map_mk]
   exact congrArg Quotient.mk' hp'
 
@@ -205,23 +191,20 @@ theorem injective_homotopyGroup_map_ι {N : Type*} (m : ℕ) (x : F.obj m)
         (rfl : F.map (homOfLE k.le_succ) (F.map (homOfLE hmk) x) =
           F.map (homOfLE k.le_succ) (F.map (homOfLE hmk) x)))) :
     Function.Injective (HomotopyGroup.map (N := N) (c.ι.app m).hom rfl (x := x)) := by
-  have hstep : ∀ (d : ℕ),
-      Function.Injective (HomotopyGroup.map (N := N) (x := x)
-        (F.map (homOfLE (Nat.le_add_right m d))).hom rfl) := by
-    intro d
-    induction d with
-    | zero => exact (bijective_homotopyGroup_map_homOfLE_add_zero N m x).1
-    | succ d ih =>
-      have hcomp := (hinj (m + d) (Nat.le_add_right m d)).comp ih
-      rw [homotopyGroup_map_comp_le (F := F) (Nat.le_add_right m d) x] at hcomp
-      exact (HomotopyGroup.injective_map_congr rfl _ rfl).1 hcomp
+  have hstep : ∀ ⦃n : ℕ⦄ (hmn : m ≤ n),
+      Function.Injective (HomotopyGroup.map (N := N) (x := x) (F.map (homOfLE hmn)).hom rfl) :=
+    fun _ hmn ↦ homOfLE_induction m
+      (fun _ f ↦ Function.Injective (HomotopyGroup.map (N := N) (x := x) f rfl))
+      (fun a b hab ↦ by rwa [HomotopyGroup.map_id_apply, HomotopyGroup.map_id_apply] at hab)
+      (fun k hmk ih ↦
+        HomotopyGroup.map_comp_map (F.map (homOfLE k.le_succ)).hom rfl
+          (F.map (homOfLE hmk)).hom rfl ▸ (hinj k hmk).comp ih) hmn
   intro a b hab
   induction a using Quotient.inductionOn with | h p =>
   induction b using Quotient.inductionOn with | h q =>
   rw [HomotopyGroup.map_mk, HomotopyGroup.map_mk] at hab
   obtain ⟨n, hmn, H⟩ := exists_lift_genLoop_homotopic_of_le hc hι m x (Quotient.exact hab)
-  obtain ⟨d, rfl⟩ := Nat.exists_eq_add_of_le hmn
-  exact hstep d (Quotient.sound H)
+  exact hstep hmn (Quotient.sound H)
 
 include hc hι in
 /-- If every transition map from stage `m` onwards induces a bijection on `π_N` along the orbit
@@ -244,9 +227,22 @@ noncomputable def homotopyGroupMulEquivι {N : Type*} [DecidableEq N] [Nonempty 
       Function.Bijective (HomotopyGroup.map (N := N) (F.map (homOfLE k.le_succ)).hom
         (rfl : F.map (homOfLE k.le_succ) (F.map (homOfLE hmk) x) =
           F.map (homOfLE k.le_succ) (F.map (homOfLE hmk) x)))) :
-    HomotopyGroup N (F.obj m) x ≃* HomotopyGroup N c.pt (c.ι.app m x) :=
+    HomotopyGroup N (F.obj m) x ≃* HomotopyGroup N c.pt (dsimp% c.ι.app m x) :=
   MulEquiv.ofBijective (HomotopyGroup.mapHom (c.ι.app m).hom rfl)
     (bijective_homotopyGroup_map_ι hc hι m x hbij)
+
+include hc hι in
+/-- `homotopyGroupMulEquivι` acts on homotopy classes by `HomotopyGroup.map`. -/
+@[simp]
+theorem homotopyGroupMulEquivι_apply {N : Type*} [DecidableEq N] [Nonempty N]
+    (m : ℕ) (x : F.obj m)
+    (hbij : ∀ (k : ℕ) (hmk : m ≤ k),
+      Function.Bijective (HomotopyGroup.map (N := N) (F.map (homOfLE k.le_succ)).hom
+        (rfl : F.map (homOfLE k.le_succ) (F.map (homOfLE hmk) x) =
+          F.map (homOfLE k.le_succ) (F.map (homOfLE hmk) x))))
+    (a : HomotopyGroup N (F.obj m) x) :
+    homotopyGroupMulEquivι hc hι m x hbij a = HomotopyGroup.map (c.ι.app m).hom rfl a :=
+  HomotopyGroup.mapHom_apply (c.ι.app m).hom rfl a
 
 include hc hι in
 /-- In a sequential colimit of `T1` spaces along embeddings, if every transition map from stage
@@ -258,32 +254,23 @@ theorem isNConnected_ι_of_forall_succ (m d : ℕ)
     obtain ⟨n₀, x₀, rfl⟩ :=
       Types.jointly_surjective_of_isColimit (isColimitOfPreserves (forget TopCat) hc) y
     dsimp
-    obtain ⟨k, hk⟩ := Nat.exists_eq_add_of_le (le_max_left m n₀)
-    have hstep : ∀ d' : ℕ,
-        (F.map (homOfLE (Nat.le_add_right m d'))).hom.IsNConnected d := by
-      intro d'
-      induction d' with
-      | zero =>
-        rw [map_homOfLE_add_zero]
-        exact ContinuousMap.IsWeakHomotopyEquivalence.id.isNConnected d
-      | succ d' ih =>
-        have hcomp : (F.map (homOfLE (Nat.le_add_right m (d' + 1)))).hom =
-            (F.map (homOfLE (m + d').le_succ)).hom.comp
-              (F.map (homOfLE (Nat.le_add_right m d'))).hom := by
-          ext a
-          rw [ContinuousMap.comp_apply, ← ConcreteCategory.comp_apply, ← F.map_comp, homOfLE_comp]
-        rw [hcomp]
-        exact (hconn (m + d') (Nat.le_add_right m d')).comp ih
-    let z : F.obj (m + k) := F.map (homOfLE (hk ▸ le_max_right m n₀)) x₀
-    obtain ⟨x, hx⟩ := (hstep k).exists_joined z
+    let k := max m n₀
+    have hmk : m ≤ k := le_max_left m n₀
+    have hn₀ : n₀ ≤ k := le_max_right m n₀
+    have hstep : ∀ ⦃n : ℕ⦄ (hmn : m ≤ n), (F.map (homOfLE hmn)).hom.IsNConnected d :=
+      fun _ hmn ↦ homOfLE_induction m (fun _ f ↦ f.IsNConnected d)
+        (ContinuousMap.IsWeakHomotopyEquivalence.id.isNConnected d)
+        (fun j hmj ih ↦ (hconn j hmj).comp ih) hmn
+    let z : F.obj k := F.map (homOfLE hn₀) x₀
+    obtain ⟨x, hx⟩ := (hstep hmk).exists_joined z
     refine ⟨x, ?_⟩
-    have h1 : c.ι.app (m + k) (F.map (homOfLE (Nat.le_add_right m k)) x) = c.ι.app m x := by
+    have h1 : c.ι.app k (F.map (homOfLE hmk) x) = c.ι.app m x := by
       rw [← ConcreteCategory.comp_apply, c.w]
-    have h2 : c.ι.app (m + k) z = c.ι.app n₀ x₀ := by
+    have h2 : c.ι.app k z = c.ι.app n₀ x₀ := by
       dsimp [z]
       rw [← ConcreteCategory.comp_apply, c.w]
     rw [← h1, ← h2]
-    exact hx.map (c.ι.app (m + k)).hom.continuous
+    exact hx.map (c.ι.app k).hom.continuous
   injective k hk x :=
     injective_homotopyGroup_map_ι hc hι m x fun j hmj ↦ (hconn j hmj).injective k hk _
   surjective k hk x :=

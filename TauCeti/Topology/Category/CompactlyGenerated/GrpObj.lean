@@ -166,19 +166,19 @@ theorem isTopologicalGroup_of_grpObj (X : CompactlyGenerated.{u, w}) [GrpObj X]
   rw [hmul]
   exact μ[X].hom.hom.continuous.comp (counitHomeomorph.{u, w} (TopCat.of (X × X))).symm.continuous
 
-/-- A morphism of monoid objects between group objects in `CompactlyGenerated.{u, w}` is a monoid
-homomorphism with respect to `groupOfGrpObj`. -/
-def monoidHomOfIsMonHom {X Y : CompactlyGenerated.{u, w}} [GrpObj X] [GrpObj Y] (f : X ⟶ Y)
+/-- A morphism of monoid objects in `CompactlyGenerated.{u, w}` is a monoid homomorphism with
+respect to `monoidOfMonObj`. -/
+def monoidHomOfIsMonHom {X Y : CompactlyGenerated.{u, w}} [MonObj X] [MonObj Y] (f : X ⟶ Y)
     [IsMonHom f] :
-    @MonoidHom X Y (groupOfGrpObj X).toMulOne (groupOfGrpObj Y).toMulOne :=
-  letI := groupOfGrpObj X
-  letI := groupOfGrpObj Y
+    @MonoidHom X Y (monoidOfMonObj X).toMulOne (monoidOfMonObj Y).toMulOne :=
+  letI := monoidOfMonObj X
+  letI := monoidOfMonObj Y
   { toFun := f
     map_one' := ConcreteCategory.congr_hom (IsMonHom.one_hom f) PUnit.unit
     map_mul' x y := ConcreteCategory.congr_hom (IsMonHom.mul_hom f) (x, y) }
 
 @[simp]
-theorem monoidHomOfIsMonHom_apply {X Y : CompactlyGenerated.{u, w}} [GrpObj X] [GrpObj Y]
+theorem monoidHomOfIsMonHom_apply {X Y : CompactlyGenerated.{u, w}} [MonObj X] [MonObj Y]
     (f : X ⟶ Y) [IsMonHom f] (x : X) : monoidHomOfIsMonHom f x = f x := (rfl)
 
 end FromGrpObj
