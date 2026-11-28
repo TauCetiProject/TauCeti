@@ -286,8 +286,7 @@ private theorem dpow_dpow_add_eq_sum {x y : A} (hx : x ∈ I) (hy : y ∈ I)
       rw [δ.dpow_zero hx, one_mul, Nat.sub_zero]
       exact δ.dpow_mem hn hy
     · exact I.mul_mem_right _ (δ.dpow_mem hi hx)
-  rw [δ.dpow_add' hx hy, DividedPowers.dpow_sum' (I := I.toAddSubmonoid) δ.dpow δ.dpow_zero
-    δ.dpow_add δ.dpow_eval_zero hmem]
+  rw [δ.dpow_add' hx hy, δ.dpow_sum hmem]
   have hterm : ∀ k ∈ (range (n + 1)).sym m,
       ∏ i ∈ range (n + 1), δ.dpow (Multiset.count i k) (δ.dpow i x * δ.dpow (n - i) y) =
         (symCoeff n k : A) * (δ.dpow (symWeight n k).1 x * δ.dpow (symWeight n k).2 y) := by
@@ -503,7 +502,7 @@ theorem toDividedPowers_ofDividedPowers (γ : DividedPowers I) {S : Set A} (hS :
       (ofDividedPowers γ).dpow m ((ofDividedPowers γ).dpow n s) =
         (uniformBell m n : A) * (ofDividedPowers γ).dpow (m * n) s) :
     (ofDividedPowers γ).toDividedPowers hS hmul hcomp = γ :=
-  DividedPowers.ext _ _ fun _ _ ↦ by simp
+  (toDividedPowers_unique _ hS hmul hcomp rfl).symm
 
 end Generators
 

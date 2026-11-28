@@ -427,10 +427,9 @@ in every degree. -/
 theorem existsUnique_dividedPowers_sup_iff (γ : DividedPowers I) (ε : DividedPowers J) :
     (∃! θ : DividedPowers (I ⊔ J),
         (∀ n, ∀ x ∈ I, θ.dpow n x = γ.dpow n x) ∧ ∀ n, ∀ y ∈ J, θ.dpow n y = ε.dpow n y) ↔
-      ∀ n, ∀ w ∈ I ⊓ J, γ.dpow n w = ε.dpow n w := by
-  refine ⟨fun ⟨θ, ⟨hθI, hθJ⟩, _⟩ n w hw ↦ ?_,
+      ∀ n, ∀ w ∈ I ⊓ J, γ.dpow n w = ε.dpow n w :=
+  ⟨fun hθ ↦ exists_dividedPowers_sup_iff.mp hθ.exists,
     fun h ↦ ⟨glue γ ε h, (eq_glue_iff h _).mp rfl, fun θ hθ ↦ (eq_glue_iff h θ).mpr hθ⟩⟩
-  rw [← hθI n w hw.1, hθJ n w hw.2]
 
 /-- When `I ⊓ J = I * J`, there is a unique divided power structure on `I ⊔ J` restricting to `γ`
 on `I` and to `ε` on `J`. -/
