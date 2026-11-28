@@ -44,6 +44,11 @@ theorem placeLocalPrimeSum_def (A : ℕ) (κ : ι → ℝ) (next : ℕ → ι �
 
 variable {A : ℕ} {κ : ι → ℝ} {next : ℕ → ι → ι} {y : ℝ} {σ : ι}
 
+/-- The local sum at a place is nonnegative because its kernel uses positive parts. -/
+theorem placeLocalPrimeSum_nonneg (p : ℕ) : 0 ≤ placeLocalPrimeSum d A κ next y σ p := by
+  rw [placeLocalPrimeSum_def]
+  exact localPrimeSum_nonneg fun _ _ ↦ ite_nonneg (le_max_right _ _) le_rfl
+
 /-- The local sum vanishes at `p ≥ X` if the weights reached by the powers of `p` up to `A`
 are at least `y / X`. -/
 theorem placeLocalPrimeSum_eq_zero_of_le {X : ℝ} {p : ℕ} (hXp : X ≤ p)
@@ -77,6 +82,11 @@ noncomputable def localPrimeSumTotal (A : ℕ) (κ : ι → ℝ) (next : ℕ →
 theorem localPrimeSumTotal_def (A : ℕ) (κ : ι → ℝ) (next : ℕ → ι → ι) (p : ℕ) :
     localPrimeSumTotal d A κ next p = ∑ σ, placeLocalPrimeSum d A κ next (κ σ) σ p := (rfl)
 
+/-- The total of the local prime sums at the direction places is nonnegative. -/
+theorem localPrimeSumTotal_nonneg (p : ℕ) : 0 ≤ localPrimeSumTotal d A κ next p := by
+  rw [localPrimeSumTotal_def]
+  exact sum_nonneg fun _ _ ↦ placeLocalPrimeSum_nonneg d p
+
 /-- The gain at `p` for `m` lifts, each with an order-`a` row at every place in `S` and `k`
 direction rows of order `κ σ` at every `σ`. Each row uses `placeLocalPrimeSum`: the positive
 parts on powers up to `A` carry the Legendre half-weight `(1 - χ(p^e)) / 2`. -/
@@ -94,8 +104,15 @@ theorem chainPrimeGain_def (A m k : ℕ) (S : Finset ι) (a : ℝ)
 
 variable {m k : ℕ} {S : Finset ι} {a : ℝ}
 
+/-- The gain is nonnegative: it adds local sums with natural multiplicities. -/
+theorem chainPrimeGain_nonneg (p : ℕ) : 0 ≤ chainPrimeGain d A m k S a κ next p := by
+  rw [chainPrimeGain_def]
+  exact mul_nonneg (Nat.cast_nonneg _) (add_nonneg
+    (sum_nonneg fun _ _ ↦ placeLocalPrimeSum_nonneg d p)
+    (mul_nonneg (Nat.cast_nonneg _) (localPrimeSumTotal_nonneg d p)))
+
 /-- A split prime contributes no gain, since its local prime sums vanish. -/
-theorem chainPrimeGain_eq_zero_of_legendreSym_eq_one {p : ℕ} (hp : legendreSym d p = 1) :
+@[simp] theorem chainPrimeGain_eq_zero_of_legendreSym_eq_one {p : ℕ} (hp : legendreSym d p = 1) :
     chainPrimeGain d A m k S a κ next p = 0 := by
   simp only [chainPrimeGain_def, localPrimeSumTotal_def, placeLocalPrimeSum_def,
     localPrimeSum_eq_zero_of_legendreSym_eq_one hp, sum_const_zero, mul_zero, add_zero]
