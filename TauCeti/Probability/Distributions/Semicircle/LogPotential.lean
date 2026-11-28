@@ -6,18 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Semicircle.ResolventTransform
-import TauCeti.Analysis.Complex.Basic
-import TauCeti.Analysis.Real.Inequalities
 import TauCeti.MeasureTheory.Measure.LogarithmicPotential.Basic
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-import TauCeti.Basic.Complex.OfRealSub
 
 /-!
 # The logarithmic potential of the semicircle law
 
-For a positive-variance semicircle law `semicircleReal a v`, the logarithmic potential on its
-support is `(x - a) ^ 2 / (4 * v) + log (√v) - 1 / 2`. The standard law `semicircleReal 0 1`
-therefore has potential `x ^ 2 / 4 - 1 / 2` on `[-2, 2]`. Hence the effective potential
+For the standard law `semicircleReal 0 1`, the logarithmic potential is
+`x ^ 2 / 4 - 1 / 2` on `[-2, 2]`. Hence the effective potential
 `x ^ 2 / 2 - 2 ∫ log |x - y| dμ(y)` of the Gaussian beta gas is constant on the support. This is
 the equality part of the equilibrium criterion; the effective-potential inequality outside the
 support is also needed for the full characterization.
@@ -26,14 +22,10 @@ support is also needed for the full characterization.
 
 * `TauCeti.Probability.integrable_log_abs_sub_semicircleReal`: the logarithmic kernel is
   integrable against the semicircle law.
-* `TauCeti.Probability.integral_log_norm_sub_semicircleReal_of_im_pos`: the upper-half-plane
-  potential formula for any semicircle law, including zero variance.
 * `TauCeti.Probability.tendsto_integral_log_norm_sub_semicircleReal`: convergence to the real-axis
   potential at every real point, including outside the support.
 * `TauCeti.Probability.integral_log_abs_sub_semicircleReal_zero_one`: the logarithmic potential
   on the support of the standard semicircle law.
-* `TauCeti.Probability.integral_log_abs_sub_semicircleReal_of_mem_Icc`: the logarithmic potential
-  on the support of any positive-variance semicircle law.
 
 ## Implementation notes
 
@@ -94,7 +86,14 @@ theorem tendsto_integral_log_norm_sub_semicircleReal (a x : ℝ) {v : ℝ≥0} (
   refine Measure.tendsto_integral_log_norm_sub_of_ae_abs_le (semicircleReal a v) x R ?_
     (ae_ne_semicircleReal a x hv) (integrable_log_abs_sub_semicircleReal x a v)
   filter_upwards [ae_mem_Icc_semicircleReal a v] with y hy
-  exact Real.abs_le_abs_add_of_mem_Icc a y (2 * Real.sqrt v) hy
+  have hy' : |y - a| ≤ 2 * Real.sqrt v := by
+    rcases hy with ⟨hylo, hyhi⟩
+    rw [abs_le]
+    constructor <;> linarith
+  have habs := abs_sub_abs_le_abs_sub y a
+  have hcomm : |y - a| = |a - y| := abs_sub_comm y a
+  rw [hcomm] at hy'
+  linarith
 
 /-- The Stieltjes transform of the standard semicircle law. -/
 local notation "m" => resolventTransform (semicircleReal 0 1)
@@ -272,117 +271,29 @@ private theorem real_logPotential_eq_primitive_re {z : ℂ} (hz : 0 < z.im) :
   dsimp [C] at hzero
   linarith
 
-private theorem log_norm_eq_primitive_re {z : ℂ} (hz : 0 < z.im) :
-    (∫ y : ℝ, Real.log ‖z - y‖ ∂semicircleReal 0 1) =
-      (-(z * m z) / 2).re - Real.log ‖m z‖ - 1 / 2 := by
-  rw [real_logPotential_eq_primitive_re hz, primitive_re]
-
 end UpperHalfPlane
-
-private theorem integral_log_norm_sub_semicircleReal_affine
-    (a : ℝ) {v : ℝ≥0} (hv : 0 < v) (z : ℂ)
-    (hne : ∀ᵐ y : ℝ ∂semicircleReal 0 1, (z - a) / Real.sqrt v - y ≠ 0)
-    (hint : Integrable (fun y : ℝ ↦ Real.log ‖(z - a) / Real.sqrt v - y‖)
-      (semicircleReal 0 1)) :
-    (∫ y : ℝ, Real.log ‖z - y‖ ∂semicircleReal a v) =
-      Real.log (Real.sqrt v) +
-        ∫ y : ℝ, Real.log ‖(z - a) / Real.sqrt v - y‖ ∂semicircleReal 0 1 := by
-  let s : ℝ := Real.sqrt v
-  have hs : 0 < s := by dsimp [s]; exact Real.sqrt_pos.2 (by exact_mod_cast hv)
-  have hmap : (semicircleReal 0 1).map (fun y : ℝ ↦ a + s * y) =
-      semicircleReal a v := map_add_sqrt_mul_semicircleReal_zero_one a v
-  rw [← hmap]
-  exact Measure.integral_log_norm_sub_map_affine _ a hs z hne hint
-
-private theorem integral_log_norm_sub_semicircleReal_of_im_pos_of_pos
-    (a : ℝ) {v : ℝ≥0} (hv : 0 < v) {z : ℂ}
-    (hz : 0 < z.im) :
-    (∫ y : ℝ, Real.log ‖z - y‖ ∂semicircleReal a v) =
-      ( -((z - a) * resolventTransform (semicircleReal a v) z) / 2).re -
-        Real.log ‖resolventTransform (semicircleReal a v) z‖ - 1 / 2 := by
-  let s : ℝ := Real.sqrt v
-  let w : ℂ := (z - a) / s
-  have hs : 0 < s := by dsimp [s]; exact Real.sqrt_pos.2 (by exact_mod_cast hv)
-  have hw : 0 < w.im := by
-    simpa only [w, Complex.div_ofReal_im, Complex.sub_im, Complex.ofReal_im, sub_zero] using
-      div_pos hz hs
-  have hlogInt :
-      Integrable (fun y : ℝ ↦ Real.log ‖w - y‖) (semicircleReal 0 1) :=
-    Measure.integrable_log_norm_sub_of_im_ne_zero (semicircleReal 0 1)
-      isCompact_Icc (by simpa using restrict_Icc_semicircleReal 0 1) hw.ne'
-  have hne : ∀ᵐ y : ℝ ∂semicircleReal 0 1, w - y ≠ 0 := by
-    filter_upwards with y
-    exact sub_ne_zero.mpr
-      (Ne.symm (sub_ne_zero.mp (Complex.ofReal_sub_ne_zero_of_im_ne_zero hw.ne' y)))
-  have hscale :
-      (∫ y : ℝ, Real.log ‖z - y‖ ∂semicircleReal a v) =
-        Real.log s + ∫ y : ℝ, Real.log ‖w - y‖ ∂semicircleReal 0 1 := by
-    exact integral_log_norm_sub_semicircleReal_affine a hv z hne hlogInt
-  have hstd := log_norm_eq_primitive_re hw
-  have hRT : resolventTransform (semicircleReal a v) z =
-      (s : ℂ)⁻¹ * resolventTransform (semicircleReal 0 1) w := by
-    simpa [s, w] using resolventTransform_semicircleReal_eq_inv_sqrt_mul_zero_one a hv z
-  have harg : z - a = (s : ℂ) * w := by
-    dsimp [w]
-    exact (mul_div_cancel₀ _ (Complex.ofReal_ne_zero.mpr hs.ne')).symm
-  have hprod :
-      (z - a) * ((s : ℂ)⁻¹ * m w) = w * m w := by
-    rw [harg]
-    field_simp [ne_of_gt hs]
-  have hnorm :
-      ‖(s : ℂ)⁻¹ * m w‖ = s⁻¹ * ‖m w‖ := by
-    rw [norm_mul, norm_inv, Complex.norm_real, Real.norm_eq_abs, abs_of_pos hs]
-  have hlog :
-      Real.log ‖(s : ℂ)⁻¹ * m w‖ = Real.log ‖m w‖ - Real.log s := by
-    rw [hnorm, Real.log_mul (inv_ne_zero (ne_of_gt hs)) (norm_ne_zero_iff.mpr (m_ne_zero hw)),
-      Real.log_inv]
-    ring
-  calc
-    ∫ y : ℝ, Real.log ‖z - y‖ ∂semicircleReal a v =
-        Real.log s + ∫ y : ℝ, Real.log ‖w - y‖ ∂semicircleReal 0 1 := hscale
-    _ = Real.log s + (-(w * m w) / 2).re - Real.log ‖m w‖ - 1 / 2 := by
-      rw [hstd]
-      ring
-    _ = ( -((z - a) * resolventTransform (semicircleReal a v) z) / 2).re -
-        Real.log ‖resolventTransform (semicircleReal a v) z‖ - 1 / 2 := by
-      rw [hRT, hprod, hlog]
-      ring_nf
-
-/-- In the upper half-plane, the logarithmic potential of a semicircle law is expressed by its
-resolvent transform, including when its variance is zero. -/
-theorem integral_log_norm_sub_semicircleReal_of_im_pos (a : ℝ) (v : ℝ≥0) {z : ℂ}
-    (hz : 0 < z.im) :
-    (∫ y : ℝ, Real.log ‖z - y‖ ∂semicircleReal a v) =
-      ( -((z - a) * resolventTransform (semicircleReal a v) z) / 2).re -
-        Real.log ‖resolventTransform (semicircleReal a v) z‖ - 1 / 2 := by
-  rcases eq_zero_or_pos v with rfl | hv
-  · have hza : z - (a : ℂ) ≠ 0 := sub_ne_zero.mpr
-      (Ne.symm (sub_ne_zero.mp (Complex.ofReal_sub_ne_zero_of_im_ne_zero hz.ne' a)))
-    have hmul : (z - (a : ℂ)) * ((a : ℂ) - z)⁻¹ = -1 := by
-      have hsub : (a : ℂ) - z = -(z - a) := by ring
-      rw [hsub, inv_neg, mul_neg, mul_inv_cancel₀ hza]
-    rw [semicircleReal_zero_var, integral_dirac, resolventTransform_dirac]
-    simp only [resolvent, Ring.inverse_eq_inv', Complex.coe_algebraMap, hmul, norm_inv,
-      Real.log_inv]
-    rw [norm_sub_rev (a : ℂ) z]
-    norm_num
-  · exact integral_log_norm_sub_semicircleReal_of_im_pos_of_pos a hv hz
 
 private theorem tendsto_primitive_re_boundary {x : ℝ} (hx : x ∈ Icc (-2) 2) :
     Tendsto
       (fun ε : ℝ ↦ (primitive ((x : ℂ) + (ε : ℂ) * Complex.I)).re)
       (𝓝[>] 0) (𝓝 (x ^ 2 / 4 - 1 / 2)) := by
   let c : ℂ := ((-x / 2 : ℝ) : ℂ) + (Real.sqrt (1 - x ^ 2 / 4) : ℂ) * Complex.I
-  have hrad : 0 ≤ 1 - x ^ 2 / 4 := by
-    have hx2 : x ^ 2 ≤ 4 := by
-      have h := sq_le_sq' hx.1 hx.2
-      norm_num at h
-      exact h
-    linarith
   have hcSq : Complex.normSq c = 1 := by
-    rw [Complex.normSq_apply]
-    simp [c]
-    nlinarith [Real.sq_sqrt hrad]
+    have hx0 : ‖(-x / 2 : ℝ)‖ ≤ 1 := by
+      rw [Real.norm_eq_abs, abs_div, abs_of_pos (by norm_num : (0 : ℝ) < 2), abs_neg]
+      exact (div_le_iff₀ (by norm_num : (0 : ℝ) < 2)).2 <|
+        abs_le.mpr ⟨by linarith [hx.1], by linarith [hx.2]⟩
+    have hform : c =
+        ((-x / 2 : ℝ) : ℂ) +
+          Complex.I * (Real.sqrt (1 - (-x / 2) ^ 2) : ℝ) := by
+      dsimp [c]
+      rw [show ((Real.sqrt (1 - x ^ 2 / 4) : ℝ) : ℂ) * Complex.I =
+          Complex.I * (Real.sqrt (1 - x ^ 2 / 4) : ℝ) by ring,
+        show (1 - x ^ 2 / 4 : ℝ) = 1 - (-x / 2) ^ 2 by ring]
+    rw [hform]
+    exact Complex.normSq_ofReal_add_I_mul_sqrt_one_sub hx0
+  have hcNorm : ‖c‖ = 1 := by
+    rw [Complex.norm_def, hcSq, Real.sqrt_one]
   have hcNorm : ‖c‖ = 1 := by
     have h := Complex.normSq_eq_norm_sq c
     rw [hcSq] at h
@@ -425,57 +336,10 @@ theorem integral_log_abs_sub_semicircleReal_zero_one (x : ℝ) (hx : x ∈ Icc (
     calc
       H ε = ∫ y : ℝ, Real.log ‖z - y‖ ∂semicircleReal 0 1 := by
         simp [H, z]
-      _ = (-(z * m z) / 2).re - Real.log ‖m z‖ - 1 / 2 :=
-        by
-          simpa using
-            integral_log_norm_sub_semicircleReal_of_im_pos 0 1 hz
-      _ = (primitive z).re := (primitive_re z).symm
+      _ = (primitive z).re := by
+        exact real_logPotential_eq_primitive_re hz
   have hprimitive := tendsto_primitive_re_boundary hx
   have hH' := Filter.Tendsto.congr' (EventuallyEq.symm hEq) hprimitive
   exact tendsto_nhds_unique hH hH'
-
-/-- The logarithmic potential of a positive-variance semicircle law on its support. -/
-theorem integral_log_abs_sub_semicircleReal_of_mem_Icc (a x : ℝ) {v : ℝ≥0} (hv : 0 < v)
-    (hx : x ∈ Icc (a - 2 * Real.sqrt v) (a + 2 * Real.sqrt v)) :
-    (∫ y : ℝ, Real.log |x - y| ∂semicircleReal a v) =
-      (x - a) ^ 2 / (4 * (v : ℝ)) + Real.log (Real.sqrt v) - 1 / 2 := by
-  let s : ℝ := Real.sqrt v
-  let x₀ : ℝ := (x - a) / s
-  have hs : 0 < s := by dsimp [s]; exact Real.sqrt_pos.2 (by exact_mod_cast hv)
-  have hs2 : s ^ 2 = v := by
-    dsimp [s]
-    exact Real.sq_sqrt v.coe_nonneg
-  have hx₀ : x₀ ∈ Icc (-2) 2 := sub_div_sqrt_mem_Icc_of_mem_Icc hv hx
-  have hlogInt : Integrable (fun y : ℝ ↦ Real.log |x₀ - y|) (semicircleReal 0 1) :=
-    integrable_log_abs_sub_semicircleReal x₀ 0 1
-  have hne : ∀ᵐ y : ℝ ∂semicircleReal 0 1, y ≠ x₀ := by
-    exact ae_ne_semicircleReal 0 x₀ (by norm_num)
-  have hne' : ∀ᵐ y : ℝ ∂semicircleReal 0 1,
-      ((x : ℂ) - a) / Real.sqrt v - y ≠ 0 := by
-    filter_upwards [hne] with y hy
-    have hxy : x₀ - y ≠ 0 := sub_ne_zero.mpr (Ne.symm hy)
-    exact_mod_cast hxy
-  have hlogInt' : Integrable
-      (fun y : ℝ ↦ Real.log ‖((x : ℂ) - a) / Real.sqrt v - y‖)
-      (semicircleReal 0 1) := by
-    simpa [← Complex.ofReal_sub, ← Complex.ofReal_div, Complex.norm_real,
-      Real.norm_eq_abs, x₀, s] using hlogInt
-  have hscale :
-      (∫ y : ℝ, Real.log |x - y| ∂semicircleReal a v) =
-        Real.log s + ∫ y : ℝ, Real.log |x₀ - y| ∂semicircleReal 0 1 := by
-    simpa [← Complex.ofReal_sub, ← Complex.ofReal_div, Complex.norm_real,
-      Real.norm_eq_abs, x₀, s] using
-      integral_log_norm_sub_semicircleReal_affine a hv (x : ℂ) hne' hlogInt'
-  calc
-    ∫ y : ℝ, Real.log |x - y| ∂semicircleReal a v =
-        Real.log s + ∫ y : ℝ, Real.log |x₀ - y| ∂semicircleReal 0 1 := hscale
-    _ = Real.log s + x₀ ^ 2 / 4 - 1 / 2 := by
-      rw [integral_log_abs_sub_semicircleReal_zero_one x₀ hx₀]
-      ring
-    _ = (x - a) ^ 2 / (4 * (v : ℝ)) + Real.log s - 1 / 2 := by
-      dsimp only [x₀]
-      rw [← hs2]
-      field_simp [ne_of_gt hs]
-      ring
 
 end TauCeti.Probability

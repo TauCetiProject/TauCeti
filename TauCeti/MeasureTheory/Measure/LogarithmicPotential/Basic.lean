@@ -30,13 +30,10 @@ Both potentials recover the measure by the distributional Laplacian when the ord
 potential has a finite logarithmic moment. The normalized potential works for any finite
 measure.
 
-For real measures embedded in the plane, the potential is the integral of the real-line
-kernel. Compactly supported finite real measures have integrable off-axis kernels and a
-complex logarithmic kernel integral whose derivative off the real axis is minus the resolvent
-transform.
-Bounded real probability measures admit affine transport and normalization at imaginary
-infinity; at non-atomic points their vertical boundary values converge when the real kernel
-is integrable.
+Compactly supported finite real measures have integrable off-axis kernels and a complex
+logarithmic kernel integral whose derivative in the upper half-plane is minus the resolvent
+transform. Bounded real probability measures admit normalization at imaginary infinity; at
+non-atomic points their vertical boundary values converge when the real kernel is integrable.
 
 The recovery formula is the measure-theoretic form of the identity in T. Tao,
 *Topics in Random Matrix Theory*, §2.8.3. The single-pole identity used here is
@@ -61,12 +58,6 @@ def logarithmicPotential (μ : Measure ℂ) (z : ℂ) : ℝ :=
 /-- The logarithmic potential as an integral over the locations of the poles. -/
 theorem logarithmicPotential_def (μ : Measure ℂ) (z : ℂ) :
     μ.logarithmicPotential z = ∫ w, Real.log ‖z - w‖ ∂μ := (rfl)
-
-/-- The potential of a real measure embedded in the complex plane. -/
-theorem logarithmicPotential_map_ofReal (μ : Measure ℝ) (z : ℂ) :
-    (μ.map Complex.ofReal).logarithmicPotential z =
-      ∫ x : ℝ, Real.log ‖z - x‖ ∂μ := by
-  rw [logarithmicPotential_def, integral_map_of_stronglyMeasurable (by fun_prop) (by fun_prop)]
 
 /-- The complex logarithmic kernel is integrable off the real axis for a finite real measure
 carried by a compact set. -/
@@ -129,11 +120,7 @@ theorem hasDerivAt_integral_clog_sub_of_im_ne_zero (μ : Measure ℝ) [IsFiniteM
         simpa using hw'
       simpa using HasDerivAt.clog hd hslit)
   convert key.2 using 1
-  rw [MeasureTheory.resolventTransform_apply, ← integral_neg]
-  apply integral_congr_ae
-  filter_upwards with y
-  simp only [resolvent, Ring.inverse_eq_inv, Complex.coe_algebraMap]
-  rw [← neg_sub z (y : ℂ), inv_neg, neg_neg]
+  rw [MeasureTheory.resolventTransform_eq_neg_integral_inv_sub, neg_neg]
 
 /-- A real measure dominated by a finite multiple of volume on a bounded interval has an
 integrable logarithmic kernel at every real point. -/
@@ -173,7 +160,7 @@ theorem tendsto_integral_log_norm_sub_of_ae_abs_le (μ : Measure ℝ) [IsFiniteM
       Real.norm_log_norm_add_mul_I_sub_le_of_ne_of_abs_le x y ε R
         (by rw [abs_of_pos hεpos]; exact hεle) hy hxy
   · filter_upwards [hne] with y hxy
-    exact TauCeti.tendsto_log_norm_add_mul_I_sub x y hxy
+    exact Real.tendsto_log_norm_add_mul_I_sub x y hxy
 
 /-- On the imaginary axis, the logarithmic kernel integral of a bounded real probability
 measure lies between `log t` and `log (t + R)`. -/
@@ -225,32 +212,6 @@ theorem tendsto_integral_log_norm_mul_I_sub_log_atTop (μ : Measure ℝ) [IsProb
   · filter_upwards [eventually_gt_atTop 0] with t ht
     have h := (log_le_integral_log_norm_mul_I_sub_and_le_log_add μ R hR t ht).2
     linarith
-
-/-- The logarithmic kernel integral under a positive affine pushforward of a real probability
-measure, when the normalized kernel is integrable and nonzero almost everywhere. -/
-theorem integral_log_norm_sub_map_affine (μ : Measure ℝ) [IsProbabilityMeasure μ]
-    (a : ℝ) {s : ℝ} (hs : 0 < s) (z : ℂ)
-    (hne : ∀ᵐ y : ℝ ∂μ, (z - a) / s - y ≠ 0)
-    (hint : Integrable (fun y : ℝ ↦ Real.log ‖(z - a) / s - y‖) μ) :
-    (∫ y : ℝ, Real.log ‖z - y‖ ∂μ.map (fun y ↦ a + s * y)) =
-      Real.log s + ∫ y : ℝ, Real.log ‖(z - a) / s - y‖ ∂μ := by
-  let w : ℂ := (z - a) / s
-  have hzw : (s : ℂ) * w = z - a := by
-    dsimp [w]
-    exact mul_div_cancel₀ _ (Complex.ofReal_ne_zero.mpr hs.ne')
-  have hkernel : (fun y : ℝ ↦ Real.log ‖z - (a + s * y)‖) =ᵐ[μ]
-      fun y ↦ Real.log s + Real.log ‖w - y‖ := by
-    filter_upwards [hne] with y hy
-    have harg : z - (a + s * y) = (s : ℂ) * (w - y) := by
-      rw [mul_sub, hzw]
-      ring
-    have hnorm : ‖z - (a + s * y)‖ = s * ‖w - y‖ := by
-      rw [harg, norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_pos hs]
-    rw [hnorm, Real.log_mul (ne_of_gt hs) (norm_ne_zero_iff.mpr hy)]
-  rw [integral_map_of_stronglyMeasurable (by fun_prop) (by fun_prop)]
-  simp only [Complex.ofReal_add, Complex.ofReal_mul]
-  rw [integral_congr_ae hkernel, integral_add (integrable_const _) hint]
-  simp
 
 /-- The logarithmic potential of a Dirac mass is the translated logarithmic kernel. -/
 @[simp]

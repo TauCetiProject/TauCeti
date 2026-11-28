@@ -70,9 +70,8 @@ whenever `‖z‖ ≤ C` (`Complex.norm_mul_add_div_natCast_le`). If `s + β` va
 number `s ≥ 1`, then `‖s + β‖ ≥ c s` for some `c > 0` and all `s ≥ 1`
 (`Complex.exists_pos_mul_le_norm_natCast_add`).
 
-A ball of radius `r` around `z` stays above height `z.im - r`
-(`Complex.sub_lt_im_of_mem_ball`), and its imaginary parts have absolute value greater than
-`|z.im| - r` (`Complex.abs_im_sub_lt_abs_im_of_mem_ball`).
+The imaginary parts of a point in a ball of radius `r` around `z` have absolute value greater
+than `|z.im| - r` (`Complex.abs_im_sub_lt_abs_im_of_mem_ball`).
 
 The real coordinates `equivRealProdCLM : ℂ ≃L[ℝ] ℝ × ℝ` do not increase distances, so they map the
 disc of radius `r` about `equivRealProdCLM.symm z₀` into the square `B_r(z₀)` of `ℝ × ℝ`
@@ -104,16 +103,6 @@ public section
 
 open scoped ComplexConjugate
 
-/-- A point in a ball has imaginary part greater than the center's imaginary part minus the
-radius. -/
-theorem Complex.sub_lt_im_of_mem_ball {z w : ℂ} {r : ℝ} (hw : w ∈ Metric.ball z r) :
-    z.im - r < w.im := by
-  rw [Metric.mem_ball, dist_eq_norm] at hw
-  have h := Complex.abs_im_le_norm (w - z)
-  simp only [Complex.sub_im] at h
-  have := neg_abs_le (w.im - z.im)
-  linarith
-
 /-- A point in a ball has imaginary part whose absolute value is greater than the absolute
 imaginary part of the center minus the radius. -/
 theorem Complex.abs_im_sub_lt_abs_im_of_mem_ball {z w : ℂ} {r : ℝ}
@@ -123,10 +112,9 @@ theorem Complex.abs_im_sub_lt_abs_im_of_mem_ball {z w : ℂ} {r : ℝ}
     have h := Complex.abs_im_le_norm (w - z)
     simp only [Complex.sub_im] at h
     exact h.trans_lt hw
-  have htri : |z.im| ≤ |w.im| + |w.im - z.im| := by
-    calc
-      |z.im| = |w.im - (w.im - z.im)| := by congr 1; ring
-      _ ≤ |w.im| + |w.im - z.im| := abs_sub _ _
+  have hdist' : |z.im - w.im| < r := by
+    simpa [abs_sub_comm] using hdist
+  have htri := abs_sub_abs_le_abs_sub z.im w.im
   linarith
 
 /-- A complex number and its inverse lie in the open right half-plane together. -/

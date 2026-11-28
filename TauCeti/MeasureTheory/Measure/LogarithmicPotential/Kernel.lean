@@ -29,6 +29,10 @@ theorem continuous_log_sub_of_im_ne_zero {w : ℂ} (hw : w.im ≠ 0) :
   (by fun_prop : Continuous fun y : ℝ ↦ w - (y : ℂ)).clog
     (fun y ↦ by simp [Complex.slitPlane, hw])
 
+end TauCeti
+
+namespace Real
+
 /-- The logarithmic kernel converges to its real-axis value away from its singularity. -/
 theorem tendsto_log_norm_add_mul_I_sub (x y : ℝ) (hxy : y ≠ x) :
     Tendsto (fun ε : ℝ ↦ Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖)
@@ -43,7 +47,7 @@ theorem tendsto_log_norm_add_mul_I_sub (x y : ℝ) (hxy : y ≠ x) :
     (nhdsWithin_le_nhds : 𝓝[>] (0 : ℝ) ≤ 𝓝 0)
   simpa [← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs] using hlog
 
-end TauCeti
+end Real
 
 namespace Real
 

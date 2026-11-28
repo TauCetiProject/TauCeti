@@ -82,17 +82,6 @@ theorem ae_mem_Icc_semicircleReal (a : ℝ) (v : ℝ≥0) :
   filter_upwards [ae_mem_Ioo_semicircleMeasure] with x hx
   constructor <;> nlinarith [Real.sqrt_nonneg (v : ℝ), hx.1, hx.2]
 
-/-- Normalizing a point in the support gives a point in the standard support. -/
-theorem sub_div_sqrt_mem_Icc_of_mem_Icc {a x : ℝ} {v : ℝ≥0} (hv : 0 < v)
-    (hx : x ∈ Icc (a - 2 * Real.sqrt v) (a + 2 * Real.sqrt v)) :
-    (x - a) / Real.sqrt v ∈ Icc (-2) 2 := by
-  have hs : 0 < Real.sqrt v := Real.sqrt_pos.2 (by exact_mod_cast hv)
-  constructor
-  · apply (le_div_iff₀ hs).2
-    nlinarith [hx.1]
-  · apply (div_le_iff₀ hs).2
-    nlinarith [hx.2]
-
 /-- Restriction to the support interval leaves the semicircle law unchanged. -/
 @[simp]
 theorem restrict_Icc_semicircleReal (a : ℝ) (v : ℝ≥0) :
@@ -163,14 +152,6 @@ theorem map_affine_semicircleReal (a b c : ℝ) (v : ℝ≥0) :
         rw [abs_of_neg (lt_of_not_ge hc)]
         ring
       _ = _ := by rw [map_neg_semicircleMeasure]
-
-/-- Every semicircle law is the affine image of the standard semicircle law. -/
-theorem map_add_sqrt_mul_semicircleReal_zero_one (a : ℝ) (v : ℝ≥0) :
-    (semicircleReal 0 1).map (fun x : ℝ ↦ a + Real.sqrt v * x) = semicircleReal a v := by
-  have hvar : Real.toNNReal (Real.sqrt v ^ 2) * (1 : ℝ≥0) = v := by
-    apply NNReal.coe_injective
-    simp [Real.sq_sqrt v.coe_nonneg]
-  simpa [hvar] using map_affine_semicircleReal 0 a (Real.sqrt v) 1
 
 /-- At positive variance the semicircle has density `(2πv)⁻¹ √(4v - (x - a)²)`.
 The real square root makes the density zero outside the support interval. -/
