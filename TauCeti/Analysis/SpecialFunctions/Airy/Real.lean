@@ -33,6 +33,15 @@ and `Bi(x) ≥ 3^{−5/6} x / Γ(4/3)` gives `Bi(x) → ∞` as `x → ∞`.
   and `Real.ofReal_deriv_real_airyAi`, `Real.ofReal_deriv_real_airyBi` — `Ai′(x)` and
   `Bi′(x)` are real.
 * `Real.ofReal_real_scorerGi` — `Gi(x)` is the cast of its real restriction.
+* `TauCeti.hasDerivAt_deriv_re_of_airy_ode` — Airy's equation for the real restriction of an
+  entire solution `w` of `w″ = z w`, and its cases `Real.hasDerivAt_deriv_airyAi`,
+  `Real.hasDerivAt_deriv_airyBi`: the derivatives of `Ai′` and `Bi′` are `x Ai(x)` and `x Bi(x)`.
+* `Real.wronskian_airyAi_airyBi` — the Wronskian `Ai Bi′ − Ai′ Bi = 1/π` on the real line.
+* `TauCeti.realAiryAi_zero`, `TauCeti.deriv_realAiryAi_zero`, `TauCeti.realAiryAi_zero_pos`,
+  `TauCeti.deriv_realAiryAi_zero_neg` — `Ai(0) = 3^{−2/3}/Γ(2/3) > 0` and
+  `Ai′(0) = −3^{−1/3}/Γ(1/3) < 0` for the real restriction.
+* `TauCeti.realAiryBi_zero`, `TauCeti.deriv_realAiryBi_zero` — `Bi(0) = √3 Ai(0)` and
+  `Bi′(0) = −√3 Ai′(0)` for the real restrictions.
 * `Real.airyBi_pos`, `Real.deriv_airyBi_pos` — `Bi > 0` and `Bi′ > 0` on `[0, ∞)`.
 * `Real.tendsto_airyBi_atTop` — `Bi(x) → ∞` as `x → ∞`.
 
@@ -42,10 +51,13 @@ and `Bi(x) ≥ 3^{−5/6} x / Γ(4/3)` gives `Bi(x) → ∞` as `x → ∞`.
   <https://dlmf.nist.gov/9.4>.
 
 The conjugation symmetry is adapted from the lean-DLMF project
-(<https://github.com/bjbraams/lean-DLMF>), file `DLMF/Airy/Basic/Properties.lean`. The positivity
-of `Bi` and `Bi′` and the limit of `Bi` are proved here from the series, rather than through the
-zero locations (`DLMF/Airy/Zeros/RealAndAi.lean`, `DLMF/Airy/RealOrderProperties.lean`) and
-convexity (`DLMF/Airy/Products.lean`) used in lean-DLMF.
+(<https://github.com/bjbraams/lean-DLMF>), file `DLMF/Airy/Basic/Properties.lean`, and Airy's
+equation and the Wronskian on the real line from its file `DLMF/Airy/Basic/ModulusPhase.lean`
+(`Real.hasDerivAt_airyAiDeriv`, `Real.hasDerivAt_airyBiDeriv`, `wronskian_airyReal`). The
+positivity of `Bi` and `Bi′` and the limit of `Bi` are proved here from the series, rather than
+through the zero locations (`DLMF/Airy/Zeros/RealAndAi.lean`,
+`DLMF/Airy/RealOrderProperties.lean`) and convexity (`DLMF/Airy/Products.lean`) used in
+lean-DLMF.
 -/
 
 public section
@@ -53,7 +65,7 @@ public section
 noncomputable section
 
 open Complex Filter
-open scoped ComplexConjugate
+open scoped ComplexConjugate Real
 
 namespace TauCeti
 
@@ -156,6 +168,87 @@ theorem _root_.Real.ofReal_deriv_real_airyBi (x : ℝ) :
     ((deriv Real.airyBi x : ℝ) : ℂ) = deriv airyBi x := by
   rw [(Real.hasDerivAt_airyBi x).deriv]
   exact ofReal_re_apply_of_forall_conj deriv_airyBi_conj x
+
+/-! ### Airy's equation, the Wronskian and the values at the origin on the real line -/
+
+/-- Airy's equation on the real line for an entire solution `w` of `w″ = z w`: the derivative of
+the real restriction `x ↦ Re w(x)` has derivative `x Re w(x)` at `x`. -/
+theorem hasDerivAt_deriv_re_of_airy_ode {w : ℂ → ℂ} (hw : Differentiable ℂ w)
+    (hw' : ∀ z, deriv^[2] w z = z * w z) (x : ℝ) :
+    HasDerivAt (deriv fun t : ℝ => (w t).re) (x * (w x).re) x := by
+  have h := (hasDerivAt_deriv_of_airy_ode hw hw' x).real_of_complex
+  rw [re_ofReal_mul] at h
+  exact h.congr_of_eventuallyEq
+    (Eventually.of_forall fun t => (hw t).hasDerivAt.real_of_complex.deriv)
+
+/-- Airy's equation on the real line: `Ai′` has derivative `x Ai(x)` at `x`. -/
+theorem _root_.Real.hasDerivAt_deriv_airyAi (x : ℝ) :
+    HasDerivAt (deriv Real.airyAi) (x * Real.airyAi x) x := by
+  simpa only [← Real.airyAi_def] using
+    hasDerivAt_deriv_re_of_airy_ode TauCeti.differentiable_airyAi airyAi_ode x
+
+/-- Airy's equation on the real line: `Bi′` has derivative `x Bi(x)` at `x`. -/
+theorem _root_.Real.hasDerivAt_deriv_airyBi (x : ℝ) :
+    HasDerivAt (deriv Real.airyBi) (x * Real.airyBi x) x := by
+  simpa only [← Real.airyBi_def] using
+    hasDerivAt_deriv_re_of_airy_ode TauCeti.differentiable_airyBi airyBi_ode x
+
+/-- **The Wronskian** on the real line: `Ai(x) Bi′(x) − Ai′(x) Bi(x) = 1/π` (DLMF 9.2.7). -/
+theorem _root_.Real.wronskian_airyAi_airyBi (x : ℝ) :
+    Real.airyAi x * deriv Real.airyBi x - deriv Real.airyAi x * Real.airyBi x = π⁻¹ := by
+  have h := TauCeti.wronskian_airyAi_airyBi x
+  rw [← Real.ofReal_real_airyAi, ← Real.ofReal_real_airyBi, ← Real.ofReal_deriv_real_airyAi,
+    ← Real.ofReal_deriv_real_airyBi] at h
+  exact_mod_cast h
+
+/-- `Ai(0) = 3^{−2/3}/Γ(2/3)` for the real restriction of `Ai` (DLMF 9.2.3). -/
+@[simp]
+theorem realAiryAi_zero : Real.airyAi 0 = 3 ^ (-2 / 3 : ℝ) / Real.Gamma (2 / 3) := by
+  apply ofReal_injective
+  rw [Real.ofReal_real_airyAi, ofReal_zero, TauCeti.airyAi_zero, ofReal_div,
+    ofReal_cpow (by norm_num), ← Gamma_ofReal]
+  norm_num
+
+/-- `Ai′(0) = −3^{−1/3}/Γ(1/3)` for the real restriction of `Ai` (DLMF 9.2.4). -/
+@[simp]
+theorem deriv_realAiryAi_zero :
+    deriv Real.airyAi 0 = -(3 ^ (-1 / 3 : ℝ) / Real.Gamma (1 / 3)) := by
+  apply ofReal_injective
+  rw [Real.ofReal_deriv_real_airyAi, ofReal_zero, TauCeti.deriv_airyAi_zero, ofReal_neg, ofReal_div,
+    ofReal_cpow (by norm_num), ← Gamma_ofReal]
+  push_cast
+  ring
+
+/-- `Ai(0) > 0` for the real restriction of `Ai`. -/
+theorem realAiryAi_zero_pos : 0 < Real.airyAi 0 := by
+  have := Real.Gamma_pos_of_pos (by norm_num : (0 : ℝ) < 2 / 3)
+  rw [realAiryAi_zero]
+  positivity
+
+/-- `Ai′(0) < 0` for the real restriction of `Ai`. -/
+theorem deriv_realAiryAi_zero_neg : deriv Real.airyAi 0 < 0 := by
+  have := Real.Gamma_pos_of_pos (by norm_num : (0 : ℝ) < 1 / 3)
+  rw [deriv_realAiryAi_zero, neg_lt_zero]
+  positivity
+
+/-- `√3` cast to `ℂ` is the principal power `3 ^ (1/2)`. -/
+private theorem ofReal_sqrt_three : ((√3 : ℝ) : ℂ) = (3 : ℂ) ^ (1 / 2 : ℂ) := by
+  rw [Real.sqrt_eq_rpow, ofReal_cpow (by norm_num)]
+  norm_num
+
+/-- `Bi(0) = √3 Ai(0)` for the real restrictions, cast down from
+`TauCeti.airyBi_zero_eq_cpow_mul_airyAi_zero`. -/
+theorem realAiryBi_zero : Real.airyBi 0 = √3 * Real.airyAi 0 := by
+  apply ofReal_injective
+  rw [ofReal_mul, Real.ofReal_real_airyBi, Real.ofReal_real_airyAi, ofReal_zero,
+    ofReal_sqrt_three, airyBi_zero_eq_cpow_mul_airyAi_zero]
+
+/-- `Bi′(0) = −√3 Ai′(0)` for the real restrictions, cast down from
+`TauCeti.deriv_airyBi_zero_eq_neg_cpow_mul_deriv_airyAi_zero`. -/
+theorem deriv_realAiryBi_zero : deriv Real.airyBi 0 = -√3 * deriv Real.airyAi 0 := by
+  apply ofReal_injective
+  rw [ofReal_mul, ofReal_neg, Real.ofReal_deriv_real_airyBi, Real.ofReal_deriv_real_airyAi,
+    ofReal_zero, ofReal_sqrt_three, deriv_airyBi_zero_eq_neg_cpow_mul_deriv_airyAi_zero]
 
 /-! ### Positivity and growth of `Bi` -/
 
