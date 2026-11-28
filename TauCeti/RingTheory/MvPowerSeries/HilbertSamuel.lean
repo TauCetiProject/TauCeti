@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.LocalRing.HilbertSamuel
 public import TauCeti.RingTheory.MvPowerSeries.FormalDivision
 import TauCeti.Data.Finsupp.Weight
 import TauCeti.Order.PiLex
+import TauCeti.RingTheory.MvPowerSeries.Length
 
 /-!
 # Hilbert–Samuel functions of formal power series ideals and lexicographic stabilization
@@ -109,12 +110,13 @@ theorem localQuotientHilbertSamuel_eq_ncard_diff_initialDiagram {σ K : Type*} [
     simp [and_comm]
   have hfin : (degLex.initialDiagram (I ⊔ IsLocalRing.maximalIdeal _ ^ (ℓ + 1)))ᶜ.Finite :=
     hD ▸ (Finsupp.finite_of_degree_le ℓ).sdiff
-  have hlen := TauCeti.finrank_eq_length_mul_finrank_residueField K (MvPowerSeries σ K)
-    (MvPowerSeries σ K ⧸ (I ⊔ IsLocalRing.maximalIdeal _ ^ (ℓ + 1)))
-  rw [MvPowerSeries.finrank_residueField, mul_one,
-    degLex.finrank_quotient_eq_ncard_compl_initialDiagram hfin, hD] at hlen
-  rw [hlen, ← localQuotientHilbertSamuel_def,
-    ENat.natCast_toNat (I.localQuotientHilbertSamuel_ne_top ℓ)]
+  have := hfin.fintype
+  have : Module.Finite K (MvPowerSeries σ K ⧸ (I ⊔ IsLocalRing.maximalIdeal _ ^ (ℓ + 1))) :=
+    Module.Finite.equiv
+      ((degLex.quotientEquivComplementSubmodule _).trans
+        (degLex.complementSubmoduleEquivFun _)).symm
+  rw [localQuotientHilbertSamuel_def, ← TauCeti.length_mvPowerSeries_restrictScalars,
+    Module.length_eq_finrank, degLex.finrank_quotient_eq_ncard_compl_initialDiagram hfin, hD]
 
 /-- In finitely many variables `σ`, two ideals of `MvPowerSeries σ K₁` and `MvPowerSeries σ K₂`
 with the same graded lexicographic initial diagram have the same Hilbert–Samuel function. -/
@@ -142,7 +144,7 @@ theorem localQuotientHilbertSamuel_bot_eq_choose {σ K : Type*} [Fintype σ] [Fi
   let : LinearOrder σ := LinearOrder.lift' _ (Fintype.equivFin σ).injective
   rw [Ideal.localQuotientHilbertSamuel_eq_ncard_diff_initialDiagram,
     MonomialOrder.initialDiagram_bot, Set.sdiff_empty, ← Nat.card_coe_set_eq, Set.coe_ofPred,
-    TauCeti.natCard_degree_le, Nat.card_eq_fintype_card, add_comm]
+    TauCeti.natCard_degree_le_eq_choose, Nat.card_eq_fintype_card, add_comm]
 
 /-- The Hilbert–Samuel function of `K[[X]] ⧸ I` is the coercion to `ℕ∞` of the counting function
 of an upper set of exponents, namely of the graded lexicographic diagram of initial exponents of
@@ -214,7 +216,7 @@ theorem localQuotientHilbertSamuel_span_image_X {σ : Type*} (K : Type*) [Field 
           Finsupp.embDomain_eq_mapDomain, Finsupp.degree_mapDomain]
       rw [Equiv.symm_apply_apply] at hdeg
       rw [hdeg]
-  rw [Nat.card_congr (e₁.trans e₂), TauCeti.natCard_degree_le]
+  rw [Nat.card_congr (e₁.trans e₂), TauCeti.natCard_degree_le_eq_choose]
 
 /-- For any variable `i : σ` in finitely many variables, the Hilbert–Samuel value of
 `Ideal.span {MvPowerSeries.X i}` at degree `n` is
@@ -265,19 +267,16 @@ theorem exists_forall_ge_localQuotientHilbertSamuel_eq_of_toLex_le
       toLex (I j).localQuotientHilbertSamuel) :
     ∃ j₀, ∀ j, j₀ ≤ j →
       (I j).localQuotientHilbertSamuel = (I j₀).localQuotientHilbertSamuel := by
-  let _ : LinearOrder σ := LinearOrder.lift' (Finite.equivFin σ) (Finite.equivFin σ).injective
-  let D : ℕ → Set (σ →₀ ℕ) := fun j ↦ MonomialOrder.degLex.initialDiagram (I j)
-  let c (j ℓ : ℕ) : ℕ := ({α : σ →₀ ℕ | α.degree ≤ ℓ} \ D j).ncard
-  have hval : ∀ j ℓ, (I j).localQuotientHilbertSamuel ℓ = (c j ℓ : ℕ∞) := fun j ℓ ↦
-    Ideal.localQuotientHilbertSamuel_eq_ncard_diff_initialDiagram (I j) ℓ
-  have hanti : Antitone fun j ↦ toLex (c j) := antitone_nat_of_succ_le fun j ↦
-    (strictMono_toLex_comp
-      fun (_ : ℕ) ↦ (Nat.strictMono_cast : StrictMono (Nat.cast : ℕ → ℕ∞))).le_iff_le.mp <| by
-        simpa only [ofLex_toLex, ← hval] using h j
-  obtain ⟨j₀, hj₀⟩ := exists_forall_ge_ncard_sdiff_eq_of_antitone
-    (fun j ↦ MonomialOrder.degLex.isUpperSet_initialDiagram (I j)) hanti
+  choose D hD using fun j ↦ MvPowerSeries.exists_localQuotientHilbertSamuel_eq_ncard_sdiff (I j)
+  have hanti : Antitone fun j ↦ toLex fun ℓ ↦
+      ({α : σ →₀ ℕ | α.degree ≤ ℓ} \ (D j : Set (σ →₀ ℕ))).ncard :=
+    antitone_nat_of_succ_le fun j ↦
+      (strictMono_toLex_comp
+        fun (_ : ℕ) ↦ (Nat.strictMono_cast : StrictMono (Nat.cast : ℕ → ℕ∞))).le_iff_le.mp <| by
+          simpa only [ofLex_toLex, ← hD] using h j
+  obtain ⟨j₀, hj₀⟩ := exists_forall_ge_ncard_sdiff_eq_of_antitone (fun j ↦ (D j).upper) hanti
   refine ⟨j₀, fun j hj ↦ funext fun ℓ ↦ ?_⟩
-  rw [hval j ℓ, hval j₀ ℓ]
+  rw [hD j, hD j₀]
   exact congrArg Nat.cast (hj₀ j hj ℓ)
 
 /-- **Pointwise Hilbert–Samuel stabilization** over `MvPowerSeries σ (K j)` (`[Finite σ]`): every

@@ -29,8 +29,9 @@ semicontinuity at all four scopes
 `Monotone.lowerSemicontinuousAt_comp_of_finite_image_on_nhds`,
 `Monotone.lowerSemicontinuousOn_comp_of_finite_image_on_nhdsWithin`,
 `Monotone.lowerSemicontinuous_comp_of_finite_image_on_nhds`). In particular, for a well-ordered
-index type `ι`, composing with `Pi.toLex` yields semicontinuity into `Lex (∀ i, β i)` directly
-via `Pi.toLex_monotone.<scope>_comp_of_finite_image_on_nhds<Within> hf hfin`.
+index type `ι` (with `Mathlib.Order.PiLex`), composing with `toLex` yields semicontinuity into
+`Lex (∀ i, β i)` directly via
+`Pi.toLex_monotone.<scope>_comp_of_finite_image_on_nhds<Within> hf hfin`.
 
 ## References
 

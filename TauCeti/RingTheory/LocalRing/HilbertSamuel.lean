@@ -129,7 +129,7 @@ theorem localQuotientHilbertSamuel_eq_zero_iff {I : Ideal A} {n : ℕ} :
 
 /-- `0 < I.localQuotientHilbertSamuel n` if and only if `I` is a proper ideal. -/
 @[simp]
-theorem localQuotientHilbertSamuel_pos_iff {I : Ideal A} {n : ℕ} :
+theorem localQuotientHilbertSamuel_pos_iff (I : Ideal A) {n : ℕ} :
     0 < I.localQuotientHilbertSamuel n ↔ I ≠ ⊤ := by
   rw [pos_iff_ne_zero, not_iff_not, localQuotientHilbertSamuel_eq_zero_iff]
 
@@ -166,11 +166,10 @@ theorem localQuotientHilbertSamuel_sup_maximalIdeal_pow (I : Ideal A) {k n : ℕ
 theorem localQuotientHilbertSamuel_sup_maximalIdeal_pow_succ (I : Ideal A) (k n : ℕ) :
     (I ⊔ maximalIdeal A ^ (k + 1)).localQuotientHilbertSamuel n =
       I.localQuotientHilbertSamuel (min k n) := by
-  rw [localQuotientHilbertSamuel_def, localQuotientHilbertSamuel_def, sup_assoc]
-  refine congrArg (fun J ↦ Module.length A (A ⧸ (I ⊔ J))) ?_
-  rcases le_total k n with hkn | hnk
-  · rw [min_eq_left hkn, sup_eq_left.mpr (pow_le_pow_right (Nat.add_le_add_right hkn 1))]
-  · rw [min_eq_right hnk, sup_eq_right.mpr (pow_le_pow_right (Nat.add_le_add_right hnk 1))]
+  have hanti : Antitone (fun t : ℕ ↦ maximalIdeal A ^ (t + 1)) :=
+    fun _ _ h ↦ pow_le_pow_right (Nat.succ_le_succ h)
+  rw [localQuotientHilbertSamuel_def, localQuotientHilbertSamuel_def, sup_assoc,
+    ← hanti.map_inf]
 
 /-- Filtration step: `H_{A/I}(n + 1)` equals `H_{A/I}(n)` plus the length of the image of
 `𝔪 ^ (n + 1)` in `A ⧸ (I + 𝔪 ^ (n + 2))`. -/

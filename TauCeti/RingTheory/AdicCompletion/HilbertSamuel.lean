@@ -52,14 +52,17 @@ theorem localQuotientHilbertSamuel_map_algebraMap_adicCompletion {A : Type*} [Co
     (I.map (algebraMap A (AdicCompletion (maximalIdeal A) A))).localQuotientHilbertSamuel n =
       I.localQuotientHilbertSamuel n := by
   have fg := (maximalIdeal A).fg_of_isNoetherianRing
-  refine localQuotientHilbertSamuel_map_of_surjective _ (fun x ↦ ?_) ?_ I
-  · obtain ⟨x, rfl⟩ := Quotient.mk_surjective x
-    obtain ⟨y, hy⟩ := AdicCompletion.exists_sub_algebraMap_mem_map_pow fg (n + 1) x
-    rw [Ideal.map_pow, ← AdicCompletion.maximalIdeal_eq_map] at hy
-    exact ⟨y, (Quotient.eq.mpr hy).symm⟩
+  set f := algebraMap A (AdicCompletion (maximalIdeal A) A)
+  have hH : maximalIdeal A ^ (n + 1) ≤ ((maximalIdeal A).map f ^ (n + 1)).comap f := by
+    rw [← Ideal.map_pow]
+    exact le_comap_map
+  have hbij := AdicCompletion.quotientMap_algebraMap_bijective fg (n + 1) (H := hH)
+  refine localQuotientHilbertSamuel_map_of_surjective f ?_ ?_ I
+  · rw [AdicCompletion.maximalIdeal_eq_map, ← Ideal.quotientMap_comp_mk hH]
+    exact hbij.2.comp Quotient.mk_surjective
   · ext a
-    rw [mem_comap, AdicCompletion.maximalIdeal_eq_map, ← Ideal.map_pow,
-      AdicCompletion.algebraMap_mem_map_pow_iff]
+    rw [mem_comap, AdicCompletion.maximalIdeal_eq_map, ← Quotient.eq_zero_iff_mem,
+      ← Quotient.eq_zero_iff_mem, ← Ideal.quotientMap_mk (H := hH), map_eq_zero_iff _ hbij.1]
 
 end Ideal
 
