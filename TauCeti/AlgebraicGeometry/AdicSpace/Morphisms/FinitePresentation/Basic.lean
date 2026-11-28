@@ -180,10 +180,7 @@ theorem LocallyOfFinitePresentation.of_isOpenImmersion (f : X ⟶ Y)
   obtain ⟨U, hU, hxU⟩ := isLocallyHuberStandard_iff.mp hX x
   obtain ⟨A, _, _, _, _, _, _, _, _, S, P, hP, ⟨eU⟩⟩ :=
     (isHuberStandardAffinoid_iff _).mp ((mem_propOpens_iff _).mp hU)
-  have hsheaf := (isSheafy_presentationLimitPreAdicSpace_iff P S.plus
-    S.isRingOfIntegralElements.isPowerBounded_of_mem hP).mp <|
-      ObjectProperty.prop_of_iso isSheafy eU
-        (isSheafy_restrict U.isOpenEmbedding X.property.isSheafy)
+  have hsheaf := isSheaf_of_restrict_iso P hP eU
   -- `f` identifies `U` with the open `f(U)` of `Y`
   let V : Opens Y.obj := f.hom.isOpenEmbedding.isOpenMap.functor.obj U
   let e := IsOpenImmersion.isoOfRangeEq _ _ (IsOpenImmersion.range_ofRestrict_comp_base f.hom U)

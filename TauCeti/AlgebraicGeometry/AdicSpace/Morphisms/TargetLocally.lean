@@ -312,10 +312,7 @@ theorem targetLocally_id
         S.isRingOfIntegralElements.isPowerBounded_of_mem hP)) :
     targetLocally Q (𝟙 X) := fun x ↦ by
   obtain ⟨V, hxV, A, _, _, _, _, _, _, _, S, P, hP, hQ, ⟨eV⟩⟩ := h x
-  have hsheaf := (isSheafy_presentationLimitPreAdicSpace_iff P S.plus
-    S.isRingOfIntegralElements.isPowerBounded_of_mem hP).mp
-      (ObjectProperty.prop_of_iso isSheafy eV
-        (isSheafy_restrict V.isOpenEmbedding X.property.isSheafy))
+  have hsheaf := isSheaf_of_restrict_iso P hP eV
   refine ⟨V, hxV, A, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
     inferInstance, inferInstance, S, P, hP, A, inferInstance, inferInstance, inferInstance,
     inferInstance, inferInstance, inferInstance, inferInstance, S, P, hP, Pair.Hom.id S, hQ,
