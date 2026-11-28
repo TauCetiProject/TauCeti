@@ -21,6 +21,13 @@ the equation for each coefficient of the inverse involves only lower-degree coef
 
 This is §3.1 of the Tau Ceti roadmap *Hodge–Tate lattices and Lubin–Tate logarithms*.
 The twisted power notation follows §4.1 of *Lubin–Tate formal modules and quasi-canonical lifts*.
+
+## References
+
+Levent Alpöge's Riemann-hypothesis formalization proves the case `q = p²` in
+`Formalism/GaussJetBounds/GenLogInverse.lean`, where the twisted system is
+`Formalism.DworkPowerSeriesWeights.genLog`. The proof here follows the degree induction route
+given for general `q` in §3.1.
 -/
 
 public section
@@ -165,6 +172,7 @@ private theorem norm_coeff_le_of_subst_twistedLog {p : ℕ} (hp : p.Prime)
     have hpow := norm_coeff_pow_le_rpow_sub (hg₀ (ς^[e + 1] x)) hr n hk fun t ht ht₀ ↦ by
       rw [hrpow]
       simpa using ih t.degree (ht.trans_le hN.le) (ς^[e + 1] x) t ht₀ rfl
+    -- Write the power using `k` to match the bound in `hpow`.
     change ‖((p : K) ^ (e + 1))⁻¹ * coeff n (g (ς^[e + 1] x) ^ k)‖ ≤ _
     rw [norm_mul, norm_inv, norm_pow, hpK, inv_pow, inv_inv]
     calc
@@ -187,7 +195,7 @@ end Norm
 two-sided, and the coefficient of degree `d > 0` has norm at most `p ^ ((d - 1) / (q - 1))`
 when `‖(p : K)‖ = p⁻¹`. -/
 theorem exists_twistedLog_inverse_norm_coeff_le (K : Type*) [NormedField K] [IsUltrametricDist K]
-    [CharZero K] (p : ℕ) (hp : p.Prime) (hpK : ‖(p : K)‖ = (p : ℝ)⁻¹)
+    (p : ℕ) (hp : p.Prime) (hpK : ‖(p : K)‖ = (p : ℝ)⁻¹)
     {S : Type*} [Finite S] (ς : S → S) (q : ℕ) (hq : 2 ≤ q) :
     ∃ g : S → MvPowerSeries S K,
       (∀ x, constantCoeff (g x) = 0) ∧
@@ -215,7 +223,7 @@ theorem exists_twistedLog_inverse_norm_coeff_le (K : Type*) [NormedField K] [IsU
       (by
         intro y
         rw [substAlgHom_apply]
-        change subst (fun z ↦ subst L (g z)) (L y) = L y
+        dsimp only [gL]
         have hs := hasSubst_of_constantCoeff_zero hL₀
         rw [← subst_comp_subst_apply (hasSubst_of_constantCoeff_zero hg₀) hs, hright y, subst_X hs])
       (by
