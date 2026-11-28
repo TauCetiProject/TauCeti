@@ -55,22 +55,18 @@ theorem mumfordClass_apply (G : Over S) [MonObj G] (L : LineBundleClass G.left) 
     mul_inv, mul_assoc]
 
 /-- The Mumford class restricts to the trivial class along `x ↦ (x, 1)`. -/
-@[simp]
+-- Rewrite before `Over.lift_left` expands the slice lift.
+@[simp↓]
 theorem pullback_lift_id_unit_mumfordClass (G : Over S) [MonObj G] (L : LineBundleClass G.left) :
-    pullback (Limits.pullback.lift (𝟙 G.left) (G.hom ≫ η[G].left) (by simp))
-      (mumfordClass G L) = 1 := by
-  suffices pullback (lift (𝟙 G) (toUnit G ≫ η[G])).left (mumfordClass G L) = 1 by
-    simpa only [Over.lift_left, Over.comp_left, Over.toUnit_left, Over.id_left] using this
+    pullback (lift (𝟙 G) (toUnit G ≫ η[G])).left (mumfordClass G L) = 1 := by
   rw [mumfordClass_eq_pairing, pullback_pairing, lift_fst, lift_snd, ← Hom.one_def]
   exact pairing_one_right L _
 
 /-- The Mumford class restricts to the trivial class along `x ↦ (1, x)`. -/
-@[simp]
+-- Rewrite before `Over.lift_left` expands the slice lift.
+@[simp↓]
 theorem pullback_lift_unit_id_mumfordClass (G : Over S) [MonObj G] (L : LineBundleClass G.left) :
-    pullback (Limits.pullback.lift (G.hom ≫ η[G].left) (𝟙 G.left) (by simp))
-      (mumfordClass G L) = 1 := by
-  suffices pullback (lift (toUnit G ≫ η[G]) (𝟙 G)).left (mumfordClass G L) = 1 by
-    simpa only [Over.lift_left, Over.comp_left, Over.toUnit_left, Over.id_left] using this
+    pullback (lift (toUnit G ≫ η[G]) (𝟙 G)).left (mumfordClass G L) = 1 := by
   rw [mumfordClass_eq_pairing, pullback_pairing, lift_fst, lift_snd, ← Hom.one_def]
   exact pairing_one_left L _
 

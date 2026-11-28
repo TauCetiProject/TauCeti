@@ -106,19 +106,41 @@ def mumfordAxisEvaluation (L : InvertibleSheaf G.left) :
         (Functor.Monoidal.μIso F L L.dual ≪≫ F.mapIso evaluation ≪≫
           (Functor.Monoidal.εIso F).symm)) ≪≫ λ_ _
 
+private lemma mumfordFstAxisFactors (L : InvertibleSheaf G.left) :
+    let i := (lift (𝟙 G) (toUnit G ≫ η[G])).left
+    (((pullback (i ≫ μ[G].left)).obj L) ⊗
+      ((pullback (i ≫ (toUnit (G ⊗ G) ≫ η[G]).left)).obj L)) ⊗
+      (((pullback (i ≫ (fst G G).left)).obj L.dual) ⊗
+        ((pullback (i ≫ (snd G G).left)).obj L.dual)) =
+    ((pullback (𝟙 G.left)).obj L ⊗ (pullback (toUnit G ≫ η[G]).left).obj L) ⊗
+      ((pullback (𝟙 G.left)).obj L.dual ⊗ (pullback (toUnit G ≫ η[G]).left).obj L.dual) := by
+  dsimp only
+  simp only [← Over.comp_left, lift_comp_one_right, lift_fst, lift_snd, comp_toUnit_assoc,
+    Over.id_left]
+
+private lemma mumfordSndAxisFactors (L : InvertibleSheaf G.left) :
+    let i := (lift (toUnit G ≫ η[G]) (𝟙 G)).left
+    (((pullback (i ≫ μ[G].left)).obj L) ⊗
+      ((pullback (i ≫ (toUnit (G ⊗ G) ≫ η[G]).left)).obj L)) ⊗
+      (((pullback (i ≫ (fst G G).left)).obj L.dual) ⊗
+        ((pullback (i ≫ (snd G G).left)).obj L.dual)) =
+    ((pullback (𝟙 G.left)).obj L ⊗ (pullback (toUnit G ≫ η[G]).left).obj L) ⊗
+      ((pullback (toUnit G ≫ η[G]).left).obj L.dual ⊗ (pullback (𝟙 G.left)).obj L.dual) := by
+  dsimp only
+  simp only [← Over.comp_left, lift_comp_one_left, lift_fst, lift_snd, comp_toUnit_assoc,
+    Over.id_left]
+
 private def mumfordLineBundleFstEvaluation (L : InvertibleSheaf G.left) :
     (pullback (lift (𝟙 G) (toUnit G ≫ η[G])).left).obj (mumfordLineBundle G L) ≅
       𝟙_ (InvertibleSheaf G.left) :=
   pullbackMumfordLineBundleIso G _ L ≪≫
-    eqToIso (by simp only [← Over.comp_left, lift_comp_one_right, lift_fst, lift_snd,
-      comp_toUnit_assoc, Over.id_left]) ≪≫ mumfordAxisEvaluation G L
+    eqToIso (mumfordFstAxisFactors G L) ≪≫ mumfordAxisEvaluation G L
 
 private def mumfordLineBundleSndEvaluation (L : InvertibleSheaf G.left) :
     (pullback (lift (toUnit G ≫ η[G]) (𝟙 G)).left).obj (mumfordLineBundle G L) ≅
       𝟙_ (InvertibleSheaf G.left) :=
   pullbackMumfordLineBundleIso G _ L ≪≫
-    eqToIso (by simp only [← Over.comp_left, lift_comp_one_left, lift_fst, lift_snd,
-      comp_toUnit_assoc, Over.id_left]) ≪≫
+    eqToIso (mumfordSndAxisFactors G L) ≪≫
     (Iso.refl _ ⊗ᵢ (β_ _ _)) ≪≫ mumfordAxisEvaluation G L
 
 open AlgebraicGeometry.Scheme.Modules
@@ -138,8 +160,7 @@ theorem mumfordLineBundleFstRigidification_def (L : InvertibleSheaf G.left) :
       (eqToIso (InvertibleSheaf.pullback_obj_obj (lift (𝟙 G) (toUnit G ≫ η[G])).left _)).symm ≪≫
         (SheafOfModules.isInvertible G.left).ι.mapIso
           (pullbackMumfordLineBundleIso G _ L ≪≫
-            eqToIso (by simp only [← Over.comp_left, lift_comp_one_right, lift_fst, lift_snd,
-              comp_toUnit_assoc, Over.id_left]) ≪≫ mumfordAxisEvaluation G L) :=
+            eqToIso (by exact mumfordFstAxisFactors G L) ≪≫ mumfordAxisEvaluation G L) :=
   (rfl)
 
 private def mumfordLineBundleSndEval (L : InvertibleSheaf G.left) :
@@ -199,8 +220,7 @@ theorem mumfordLineBundleSndRigidification_def (L : InvertibleSheaf G.left) :
       ((eqToIso (InvertibleSheaf.pullback_obj_obj (lift (toUnit G ≫ η[G]) (𝟙 G)).left _)).symm ≪≫
         (SheafOfModules.isInvertible G.left).ι.mapIso
           (pullbackMumfordLineBundleIso G _ L ≪≫
-            eqToIso (by simp only [← Over.comp_left, lift_comp_one_left, lift_fst, lift_snd,
-              comp_toUnit_assoc, Over.id_left]) ≪≫
+            eqToIso (by exact mumfordSndAxisFactors G L) ≪≫
             (Iso.refl _ ⊗ᵢ (β_ _ _)) ≪≫ mumfordAxisEvaluation G L)) ≪≫
         asIso (globalSectionsSmul (𝟙_ G.left.Modules) ↑u) :=
   (rfl)
