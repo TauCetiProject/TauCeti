@@ -7,7 +7,6 @@ module
 
 public import TauCeti.RepresentationTheory.CharacterTable.Pairing
 import TauCeti.RepresentationTheory.AsAlgebraHom
-import TauCeti.RepresentationTheory.CharacterTable.ClassSum.Basis
 import TauCeti.RepresentationTheory.NormInvariants
 
 /-!
@@ -54,11 +53,6 @@ theorem apply_eq_neg_one_of_add_apply_mul_left_eq_const_of_characterPairing_ne_z
   -- f(g⁻¹). The nonzero character pairing ensures its action has nonzero trace.
   let z := ofConjClassesCenter (toConjClasses (invMap f))
   have hz (g : G) : (z : k[G]).coeff g = f.val g⁻¹ := by simp [z]
-  have htrace : characterPairing (ofCharacter ρ) f =
-      (Nat.card G : k)⁻¹ * LinearMap.trace k V (ρ.asAlgebraHom (z : k[G])) := by
-    have h := ρ.trace_mul_asAlgebraHom_eq_sum (z : k[G]) 1
-    simp only [map_one, one_mul, hz, smul_eq_mul] at h
-    simp only [characterPairing_apply, ofCharacter_apply, h, mul_comm]
   have hnorm : ρ.norm = 0 := by
     ext v
     have hv := (ρ.normInvariants v).property
@@ -76,17 +70,16 @@ theorem apply_eq_neg_one_of_add_apply_mul_left_eq_const_of_characterPairing_ne_z
     smul_zero] at hzero
   -- Schur's lemma lets us cancel the action of z, over any coefficient field.
   let T := IntertwiningMap.centralAlgebraMul ρ z.property
-  have hT_apply (v : V) : T v = ρ.asAlgebraHom (z : k[G]) v :=
-    IntertwiningMap.centralAlgebraMul_apply ρ z.property v
   have hinj := (IsIrreducible.injective_or_eq_zero T).resolve_right fun hT ↦ hp (by
     have hz0 : ρ.asAlgebraHom (z : k[G]) = 0 := by
       ext v
-      simp [← hT_apply, hT]
-    rw [htrace, hz0, map_zero, mul_zero])
+      rw [← IntertwiningMap.centralAlgebraMul_apply ρ z.property]
+      exact DFunLike.congr_fun hT v
+    rw [characterPairing_ofCharacter_eq_inv_card_mul_trace, hz0, map_zero, mul_zero])
   ext v
   apply hinj
-  simpa only [hT_apply, LinearMap.add_apply, mul_apply_eq_comp,
-    LinearMap.neg_apply, one_apply_eq_self, map_neg] using
+  simpa only [T, IntertwiningMap.centralAlgebraMul_apply ρ z.property, LinearMap.add_apply,
+    mul_apply_eq_comp, LinearMap.neg_apply, one_apply_eq_self, map_neg] using
     eq_neg_of_add_eq_zero_right (LinearMap.congr_fun hzero v)
 
 /-- Suppose the group order is invertible in the coefficient field and a class function has an

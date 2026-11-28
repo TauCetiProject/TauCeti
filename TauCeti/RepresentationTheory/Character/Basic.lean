@@ -75,8 +75,7 @@ theorem trace_mul_asAlgebraHom_eq_sum {k G V : Type*} [Field k] [Monoid G] [Fint
     [AddCommGroup V] [Module k V] (ρ : Representation k G V) (a : MonoidAlgebra k G) (x : G) :
     LinearMap.trace k V (ρ x * ρ.asAlgebraHom a) =
       ∑ g : G, a.coeff g • ρ.character (x * g) := by
-  -- This is the coefficient calculation of
-  -- TauCeti.Representation.trace_mul_asAlgebraHom_characterSum for arbitrary a.
+  -- This generalizes the character-sum trace calculation used for central idempotents.
   rw [asAlgebraHom_eq_sum, Finset.mul_sum, map_sum]
   refine Finset.sum_congr rfl fun g _ ↦ ?_
   rw [mul_smul_comm, ← map_mul ρ, map_smul, character]

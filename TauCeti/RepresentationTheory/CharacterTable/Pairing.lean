@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Group.Conj
-public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
+public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.Basis
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 
 /-!
@@ -166,6 +166,27 @@ end Semifield
 
 variable [Field k]
 
+/-- Pairing with the trivial character is the normalized sum of the class-function values. -/
+theorem characterPairing_ofCharacter_trivial_left (f : ClassFunction k G) :
+    characterPairing (ofCharacter (Representation.trivial k G k)) f =
+      (Nat.card G : k)⁻¹ * ∑ g : G, f.val g := by
+  rw [characterPairing_symm, characterPairing_apply]
+  simp only [ofCharacter_apply, Representation.char_trivial, Module.finrank_self, Nat.cast_one,
+    mul_one]
+
+open scoped Classical MonoidAlgebra in
+/-- Pairing a character with `f` is the normalized trace of the action of the central group-algebra
+element with coefficients `g ↦ f(g⁻¹)`. -/
+theorem characterPairing_ofCharacter_eq_inv_card_mul_trace (f : ClassFunction k G)
+    {V : Type*} [AddCommGroup V] [Module k V] (ρ : Representation k G V) :
+    characterPairing (ofCharacter ρ) f = (Nat.card G : k)⁻¹ *
+      LinearMap.trace k V
+        (ρ.asAlgebraHom (ofConjClassesCenter (toConjClasses (invMap f)) : k[G])) := by
+  have h := ρ.trace_mul_asAlgebraHom_eq_sum (ofConjClassesCenter (toConjClasses (invMap f))) 1
+  simp only [map_one, one_mul, ofConjClassesCenter_coeff, toConjClasses_mk, invMap_apply,
+    smul_eq_mul] at h
+  simp only [characterPairing_apply, ofCharacter_apply, h, mul_comm]
+
 /-- If the group order is invertible in the coefficient field and the sum of a class function and
 its left translate is constant, that constant is twice the pairing with the trivial character.
 The identity also applies in characteristic two. -/
@@ -178,9 +199,7 @@ theorem two_mul_characterPairing_trivial_of_add_apply_mul_left_eq_const (f : Cla
     Finset.card_univ, Fintype.card_eq_nat_card, nsmul_eq_mul] at hsum
   have hreindex : ∑ g, f.val (c * g) = ∑ g, f.val g := Equiv.sum_comp (Equiv.mulLeft c) f.val
   rw [hreindex] at hsum
-  rw [characterPairing_symm, characterPairing_apply]
-  simp only [ofCharacter_apply, Representation.char_trivial, Module.finrank_self, Nat.cast_one,
-    mul_one]
+  rw [characterPairing_ofCharacter_trivial_left]
   field_simp
   linear_combination hsum
 

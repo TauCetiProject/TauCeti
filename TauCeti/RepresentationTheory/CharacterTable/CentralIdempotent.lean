@@ -178,18 +178,6 @@ theorem asAlgebraHom_characterSum :
     σ.asAlgebraHom (characterSum ρ) = ∑ g : G, ρ.character g⁻¹ • σ g := by
   simp [characterSum_eq_sum, map_sum, _root_.Representation.asAlgebraHom_single]
 
-/-- The trace of the action of the character sum of `ρ` on `σ`, after `σ(x⁻¹)`, expanded as a sum of
-products of character values.
-
-Its right-hand side is the coefficient of `x` in the product of the two character sums, and its
-left-hand side collapses to a scalar multiple of a single character value when `σ` is irreducible;
-comparing the two is how `TauCeti.Representation.characterSum_mul_characterSum` is proved. -/
-theorem trace_mul_asAlgebraHom_characterSum (x : G) :
-    LinearMap.trace k W (σ x⁻¹ * σ.asAlgebraHom (characterSum ρ)) =
-      ∑ g : G, ρ.character g⁻¹ * σ.character (x⁻¹ * g) := by
-  simpa only [characterSum_coeff, smul_eq_mul] using
-    σ.trace_mul_asAlgebraHom_eq_sum (characterSum ρ) x⁻¹
-
 end Defs
 
 /-! ### Multiplying by a character sum -/
@@ -202,7 +190,7 @@ variable [Fintype G] [FiniteDimensional k W] [IsAlgClosed k] [σ.IsIrreducible]
 by the scalar that the central character of `σ` records.
 
 The coefficient of `x` on the left is `∑_g χ(g⁻¹) ψ(x⁻¹ g)`, which
-`TauCeti.Representation.trace_mul_asAlgebraHom_characterSum` identifies with a trace; a central
+`Representation.trace_mul_asAlgebraHom_eq_sum` identifies with a trace; a central
 element acts on an irreducible representation by a scalar, so that trace collapses to a multiple of
 `ψ(x⁻¹)`, the coefficient of `x` on the right. -/
 theorem characterSum_mul_characterSum :
@@ -212,14 +200,14 @@ theorem characterSum_mul_characterSum :
   ext x
   rw [MonoidAlgebra.coeff_mul_apply_left, Finsupp.sum_fintype _ _ fun _ => by simp]
   have hcoeff : ∑ g : G, (characterSum ρ).coeff g * (characterSum σ).coeff (g⁻¹ * x) =
-      ∑ g : G, ρ.character g⁻¹ * σ.character (x⁻¹ * g) := by
+      ∑ g : G, (characterSum ρ).coeff g • σ.character (x⁻¹ * g) := by
     refine Finset.sum_congr rfl fun g _ => ?_
-    rw [characterSum_coeff, characterSum_coeff, mul_inv_rev, inv_inv]
+    rw [smul_eq_mul, characterSum_coeff σ, mul_inv_rev, inv_inv]
   have hscalar : σ.asAlgebraHom (characterSum ρ) =
       centralCharacter σ (characterSumCenter ρ) • LinearMap.id := by
     rw [← characterSumCenter_coe ρ]
     exact asAlgebraHom_center σ (characterSumCenter ρ)
-  rw [hcoeff, ← trace_mul_asAlgebraHom_characterSum ρ σ x, hscalar,
+  rw [hcoeff, ← σ.trace_mul_asAlgebraHom_eq_sum (characterSum ρ) x⁻¹, hscalar,
     ← Module.End.one_eq_id, mul_smul_comm, mul_one, map_smul, smul_eq_mul]
   simp [_root_.Representation.character]
 
@@ -244,10 +232,8 @@ theorem centralCharacter_characterSumCenter_mul_character_one :
       Nat.card G * (if Nonempty (ρ.Equiv σ) then 1 else 0) := by
   have htrace : LinearMap.trace k W (σ.asAlgebraHom (characterSum ρ)) =
       ∑ g : G, σ.character g * ρ.character g⁻¹ := by
-    have h := trace_mul_asAlgebraHom_characterSum ρ σ 1
-    simp only [inv_one, _root_.map_one, one_mul] at h
-    rw [h]
-    exact Finset.sum_congr rfl fun g _ => mul_comm _ _
+    simpa only [_root_.map_one, one_mul, characterSum_coeff, smul_eq_mul, mul_comm] using
+      σ.trace_mul_asAlgebraHom_eq_sum (characterSum ρ) 1
   have hcenter := trace_asAlgebraHom_center σ (characterSumCenter ρ)
   rw [characterSumCenter_coe, htrace, ← σ.char_one] at hcenter
   rw [← hcenter, ← _root_.Representation.char_orthonormal σ ρ, ← mul_assoc,
