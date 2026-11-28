@@ -51,6 +51,8 @@ This file contains basic facts about finite partial sums.
   by parts, writing `∑ᵢ yᵢ • xᵢ` through the prefix sums of `x`.
 * `TauCeti.prefixSum_le_of_sum_le`: a tuple with smaller total sum and larger tail has smaller
   prefix sums.
+* `TauCeti.sum_le_prefixSum_card`: for an antitone tuple, the sum over any set of coordinates is at
+  most the prefix sum of the same length.
 * `TauCeti.eq_zero_of_forall_sum_Iic_eq_zero`: a function on a locally finite order whose sums
   over all lower intervals `Iic k` vanish is zero.
 -/
@@ -275,6 +277,29 @@ theorem prefixSum_add_prefixSum_add_two_le [Preorder M] [IsOrderedAddMonoid M] {
     _ ≤ prefixSum (k + 1) x + (prefixSum k x + x ⟨k, by omega⟩) := by
         gcongr; exact hx (Fin.mk_le_mk.mpr (by omega))
     _ = prefixSum (k + 1) x + prefixSum (k + 1) x := by rw [← h₁]
+
+/-- For an antitone tuple, the sum over any set of coordinates is at most the prefix sum of the
+same length: the first coordinates are the largest. -/
+theorem sum_le_prefixSum_card [LinearOrder M] [IsOrderedAddMonoid M] {x : Fin n → M}
+    (hx : Antitone x) (s : Finset (Fin n)) : ∑ i ∈ s, x i ≤ prefixSum #s x := by
+  classical
+  set t : Finset (Fin n) := univ.filter fun i ↦ (i : ℕ) < #s
+  have ht : #t = #s := by
+    rw [Fin.card_filter_val_lt, min_eq_right (card_le_univ s |>.trans_eq (Fintype.card_fin n))]
+  -- Coordinates of `s` outside `t` come after the coordinates of `t` outside `s`.
+  have hle : ∑ i ∈ s \ t, x i ≤ ∑ i ∈ t \ s, x i := by
+    rcases (t \ s).eq_empty_or_nonempty with h | h
+    · have hst : s \ t = ∅ :=
+        card_eq_zero.1 ((card_sdiff_eq_card_sdiff_iff.2 ht.symm).trans (card_eq_zero.2 h))
+      simp [hst, h]
+    · calc ∑ i ∈ s \ t, x i ≤ #(s \ t) • (t \ s).inf' h x := by
+            refine sum_le_card_nsmul _ _ _ fun a ha ↦ le_inf' h _ fun b hb ↦ hx ?_
+            simp only [t, mem_sdiff, mem_filter, mem_univ, true_and] at ha hb
+            exact Fin.le_def.2 (by omega)
+        _ = #(t \ s) • (t \ s).inf' h x := by rw [card_sdiff_eq_card_sdiff_iff.2 ht.symm]
+        _ ≤ ∑ i ∈ t \ s, x i := card_nsmul_le_sum _ _ _ fun b hb ↦ inf'_le x hb
+  rw [prefixSum_def, ← sum_inter_add_sum_sdiff s t, ← sum_inter_add_sum_sdiff t s, inter_comm]
+  gcongr
 
 /-- If `y` has at least the total sum of `x` and lies below `x` from coordinate `k` on, then the
 prefix sum of length `k` of `x` is at most that of `y`. -/
