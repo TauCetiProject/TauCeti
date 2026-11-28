@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.CMField.SelfAdjointFiniteAdele
+public import TauCeti.NumberTheory.NumberField.Global.Adeles.StandardFiniteAdeleHaar
 import TauCeti.MeasureTheory.Constructions.Pi
+import TauCeti.NumberTheory.NumberField.Countable
 
 /-!
 # The density of a function on the finite adeles at a norm
@@ -21,19 +23,28 @@ Fourier integral
 `δ(Φ₀, α) = ∫_{z ∈ 𝔸_f⁺} ∫_{x ∈ 𝔸_f^ι} Φ₀(x) · ψ_f(z (x*x − α) / 2) dμ^ι(x) dz`
 
 (`TauCeti.normDensity`), where `x*x = ∑ i, star (x i) * x i` is the standard hermitian norm.
-Heuristically, by Fourier inversion on `𝔸_f⁺`, it is the density at `α` of the push-forward of
-`Φ₀ dμ^ι` under `x ↦ x*x`. It is the finite-adelic integral that plays the part of the singular
-series in Siegel's formula for the vectors of a given norm in a definite hermitian lattice (Siegel,
-Weil).
+It is the finite-adelic integral that plays the part of the singular series in Siegel's formula
+for the vectors of a given norm in a definite hermitian lattice (Siegel, Weil).
+
+The kernel depends on `α` only through its self-adjoint part, since `ψ_f(z β) = 1` for self-adjoint
+`z` and `β` with `star β = −β`. Heuristically, for self-adjoint `α` and integrable data, Fourier
+inversion on `𝔸_f⁺`, with the Haar measure dual to that of `z`, identifies `δ(Φ₀, α)` with the
+density at `α` of the push-forward of `Φ₀ dμ^ι` under the map `x ↦ x*x` into `𝔸_f⁺`. This
+interpretation is not formalised here.
 
 The measure `μ` is a parameter: the density scales by `c ^ |ι|` when `μ` is scaled by `c`
-(`MeasureTheory.Measure.normDensity_smul_measure`), so any normalisation of the Haar measure of
-`𝔸_f` may be plugged in. The integrals are Bochner integrals; `δ` is the iterated integral, with
-no claim of absolute convergence of the double integral.
+(`MeasureTheory.Measure.normDensity_smul_measure`). The density of the roadmap uses the standard
+Haar measure `TauCeti.GlobalNumberFields.standardFiniteAdeleHaar` of `𝔸_f`, for which `Ô` has
+volume `vol(Ô) = 2^{r₂}/√|d_E|` in each coordinate; this is `TauCeti.standardNormDensity`. The
+integrals are Bochner integrals; `δ` is the iterated integral, with no claim of absolute
+convergence of the double integral.
 
 ## Main declarations
 
-* `TauCeti.normDensity`: the density `δ(Φ₀, α)`.
+* `TauCeti.normDensity`: the density `δ(Φ₀, α)` for a measure `μ` on `𝔸_f`.
+* `TauCeti.standardNormDensity`: the density `δ(Φ₀, α)` for the standard Haar measure of `𝔸_f`,
+  which is `vol(Ô) ^ |ι|` times the density for the Haar measure giving `Ô` volume one
+  (`TauCeti.standardNormDensity_eq_volIntegralAdeles_pow_mul`).
 * `MeasureTheory.Measure.normDensity_smul`: `δ` is homogeneous in `Φ₀`.
 * `MeasureTheory.Measure.normDensity_smul_measure`: scaling `μ` by `c` scales `δ` by `c ^ |ι|`.
 * `MeasureTheory.Measure.conj_normDensity`: the complex conjugate of `δ(Φ₀, α)` is
@@ -51,8 +62,8 @@ no claim of absolute convergence of the double integral.
 public section
 noncomputable section
 
-open IsDedekindDomain NumberField NumberField.IsCMField MeasureTheory MeasureTheory.Measure
-  TauCeti.GlobalNumberFields
+open IsDedekindDomain IsDedekindDomain.FiniteAdeleRing NumberField NumberField.IsCMField
+  MeasureTheory MeasureTheory.Measure TauCeti.GlobalNumberFields
 open scoped NumberField.AdeleRing ComplexConjugate NNReal
 
 namespace TauCeti
@@ -67,6 +78,13 @@ the self-adjoint finite adeles of the CM field `E` with the Haar measure
 def normDensity (μ : Measure 𝔸ᶠ[E]) (Φ₀ : (ι → 𝔸ᶠ[E]) → ℂ) (α : 𝔸ᶠ[E]) : ℂ :=
   ∫ z, ∫ x, Φ₀ x * finiteAdeleAddChar E ((2 : E)⁻¹ • ((z : 𝔸ᶠ[E]) * (star x ⬝ᵥ x - α)))
     ∂Measure.pi (fun _ ↦ μ) ∂selfAdjointFiniteAdeleHaar E
+
+/-- The **density of `Φ₀` at the norm `α`** for the standard Haar measure of the finite adeles:
+the density `normDensity E (standardFiniteAdeleHaar E) Φ₀ α`, in which `x` runs over `𝔸_f^ι` with
+the Haar measure for which `Ô` has volume `vol(Ô) = 2^{r₂}/√|d_E|` in each coordinate, and `z` over
+the self-adjoint finite adeles with the Haar measure giving the dual lattice volume one. -/
+def standardNormDensity (Φ₀ : (ι → 𝔸ᶠ[E]) → ℂ) (α : 𝔸ᶠ[E]) : ℂ :=
+  normDensity E (standardFiniteAdeleHaar E) Φ₀ α
 
 end TauCeti
 
@@ -101,6 +119,15 @@ theorem normDensity_smul_measure (μ : Measure 𝔸ᶠ[E]) [SigmaFinite μ] (c :
   simp only [normDensity_def, Measure.pi_smul (fun _ : ι ↦ c) (fun _ ↦ μ),
     integral_smul_nnreal_measure, Finset.prod_const, Finset.card_univ, NNReal.smul_def,
     Complex.real_smul, NNReal.coe_pow, Complex.ofReal_pow, integral_const_mul]
+
+/-- The density for the standard Haar measure of `𝔸_f` is `vol(Ô) ^ |ι|` times the density for
+the Haar measure giving the integral finite adeles `Ô` volume one. -/
+theorem _root_.TauCeti.standardNormDensity_eq_volIntegralAdeles_pow_mul
+    (Φ₀ : (ι → 𝔸ᶠ[E]) → ℂ) (α : 𝔸ᶠ[E]) :
+    standardNormDensity E Φ₀ α = (volIntegralAdeles E : ℂ) ^ Fintype.card ι *
+      normDensity E (addHaarMeasure (integralAdelesPositiveCompacts (𝓞 E) E)) Φ₀ α := by
+  rw [standardNormDensity, standardFiniteAdeleHaar_def]
+  exact normDensity_smul_measure _ _ _ _
 
 /-- The complex conjugate of the density of `Φ₀` is the density of the conjugate of `Φ₀`: the
 conjugate of `ψ_f(z (x*x − α) / 2)` is its value at `−z`, and the Haar measure of the self-adjoint
