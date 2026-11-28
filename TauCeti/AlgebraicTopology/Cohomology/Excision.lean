@@ -23,7 +23,10 @@ closure lies in the interior of `B` does not change relative cohomology
 and an open neighbourhood `U` of `K`, restriction `Hⁿ(X, X ∖ K) ⟶ Hⁿ(U, U ∖ K)` is an
 isomorphism (`TopPair.isIso_singularCohomologyMap_excisionMap_of_isClosed_subset`); this is the
 form in which cohomology with supports in a compact subset of a Hausdorff space, and hence
-Poincaré duality, is localised.
+Poincaré duality, is localised. For a continuous real function `f` and `a' ≤ b` with `a < a'` or
+`a' = b`, excising `{f < a}` gives isomorphisms for the collar inclusion
+`TauCeti.bandCollarPairInclusion f a ha'b : (f⁻¹[a, b], f⁻¹[a, a']) ⟶ ({f ≤ b}, {f ≤ a'})`
+(`TopPair.isIso_singularCohomologyMap_bandCollarPairInclusion`).
 
 All of these follow from the general statement
 `TopPair.quasiIso_singularCochainComplexMap_of_open_cover`: a map of topological pairs
@@ -205,6 +208,25 @@ theorem isIso_singularCohomologyMap_ofSubsetMap_compl_iff {U L₁ L₂ : Set X} 
   exact ⟨fun _ ↦ IsIso.of_isIso_fac_right hw.symm, fun _ ↦ IsIso.of_isIso_fac_left hw⟩
 
 end Subsets
+
+section BandCollar
+
+variable (R k M) in
+/-- **Collar excision for continuous real functions, in cohomology.** For a continuous function
+`f : X → ℝ` and `a' ≤ b` with `a < a'` or `a' = b`, excising `{f < a}` from `({f ≤ b}, {f ≤ a'})`
+shows that
+`TauCeti.bandCollarPairInclusion f a ha'b : (f⁻¹[a, b], f⁻¹[a, a']) ⟶ ({f ≤ b}, {f ≤ a'})`
+induces isomorphisms on relative singular cohomology in every degree. -/
+theorem isIso_singularCohomologyMap_bandCollarPairInclusion {X : Type w} [TopologicalSpace X]
+    {f : X → ℝ} (hf : Continuous f) {a a' b : ℝ} (ha'b : a' ≤ b) (hlt : a < a' ∨ a' = b)
+    (n : ℕ) :
+    IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
+      (TauCeti.bandCollarPairInclusion f a ha'b) n) := by
+  obtain ⟨h₁, h₂, U, h₃, h₄, h₅⟩ :=
+    TauCeti.exists_open_cover_bandCollarPairInclusion hf ha'b hlt
+  exact isIso_singularCohomologyMap_of_open_cover (R := R) (k := k) (M := M) _ h₁ h₂ U h₃ h₄ h₅ n
+
+end BandCollar
 
 /-- If `A ⊆ B''`, the inclusion `(A, A ∩ B) ⟶ (X, B')` followed by the restriction
 `(X, B') ⟶ (X, B'')` factors through the subspace `B''`, so it induces zero on relative

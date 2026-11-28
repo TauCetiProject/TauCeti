@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Excision
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Relative
 public import TauCeti.AlgebraicTopology.Singular.Triple
 public import TauCeti.Topology.Category.TopPair
+public import TauCeti.Topology.Order.Sublevel
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.Topology.Closure
 
@@ -26,7 +27,10 @@ the complement of a closed set `K` may be computed in any open neighbourhood `U`
 (`TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset`). If `s` and `t` are
 disjoint closed subsets of `X`, then relative to `s` the union `s ∪ t` has the homology of `t`: the
 inclusion `(t, ∅) ⟶ (s ∪ t, s)` induces isomorphisms
-(`TopPair.isIso_singularHomologyMap_ofInclusionMap_union_of_disjoint`).
+(`TopPair.isIso_singularHomologyMap_ofInclusionMap_union_of_disjoint`). For a continuous real
+function `f` and `a' ≤ b` with `a < a'` or `a' = b`, excising `{f < a}` gives isomorphisms for the
+collar inclusion `TauCeti.bandCollarPairInclusion : (f⁻¹[a, b], f⁻¹[a, a']) ⟶ ({f ≤ b}, {f ≤ a'})`
+(`TopPair.isIso_singularHomologyMap_bandCollarPairInclusion`).
 
 All of these follow from a statement about an arbitrary map of topological pairs `f : P ⟶ P'`
 whose map on ambient spaces is an embedding and whose subspace is the full preimage of the subspace
@@ -863,5 +867,21 @@ theorem exists_singularHomologyMap_excisionMap_eq (hU : IsOpen U) (hV : IsOpen V
   exact ConcreteCategory.congr_hom (IsIso.inv_hom_id _) y₁
 
 end Union
+
+section BandCollar
+
+/-- **Collar excision for continuous real functions.** For a continuous function `f : X → ℝ` and
+`a' ≤ b` with `a < a'` or `a' = b`, excising `{f < a}` from `({f ≤ b}, {f ≤ a'})` shows that
+`TauCeti.bandCollarPairInclusion f a ha'b : (f⁻¹[a, b], f⁻¹[a, a']) ⟶ ({f ≤ b}, {f ≤ a'})`
+induces isomorphisms on relative singular homology in every degree. -/
+theorem isIso_singularHomologyMap_bandCollarPairInclusion {X : Type w} [TopologicalSpace X]
+    {f : X → ℝ} (hf : Continuous f) {a a' b : ℝ} (ha'b : a' ≤ b) (hlt : a < a' ∨ a' = b)
+    (n : ℕ) :
+    IsIso (TopPair.singularHomologyMap (TauCeti.bandCollarPairInclusion f a ha'b) R n) := by
+  obtain ⟨h₁, h₂, U, h₃, h₄, h₅⟩ :=
+    TauCeti.exists_open_cover_bandCollarPairInclusion hf ha'b hlt
+  exact isIso_singularHomologyMap_of_open_cover R _ h₁ h₂ U h₃ h₄ h₅ n
+
+end BandCollar
 
 end TopPair

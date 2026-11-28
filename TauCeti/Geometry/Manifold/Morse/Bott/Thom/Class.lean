@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.DiscSpherePair
 public import TauCeti.Topology.VectorBundle.Orientation.ThomClass
 public import TauCeti.Topology.VectorBundle.Thom.Homology
 import TauCeti.Geometry.Manifold.Topology
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 import TauCeti.Topology.VectorBundle.Orientation.Cover.FundamentalGroup
 
 /-!
@@ -108,6 +109,8 @@ In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
   `Hₚ(S; K)`.
 * `nonempty_singularHomology_sublevelPair_iso_singularHomology_of_orientation`: the same for an
   oriented `ν⁻` and every commutative ring `K`.
+* `nonempty_singularHomology_sublevelPair_iso_singularHomology_of_two_eq_zero`: the same for every
+  `ν⁻` when `2 = 0` in `K`.
 
 In the namespaces `TauCeti.SmoothEmbedding` and `TauCeti.IsMorseBottFamily`:
 
@@ -377,7 +380,7 @@ variable {E : Type u} {H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpa
   [SecondCountableTopology M] {E' H' P : Type*} {S : Type u} [NormedAddCommGroup E']
   [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
   [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [J.Boundaryless] [TopologicalSpace S]
-  [ChartedSpace H' S] [IsManifold J ∞ S] [Nonempty S] [NormedAddCommGroup P] [NormedSpace ℝ P]
+  [ChartedSpace H' S] [IsManifold J ∞ S] [NormedAddCommGroup P] [NormedSpace ℝ P]
   [FiniteDimensional ℝ P] {f : M → ℝ} {i : SmoothEmbedding J I ∞ S M} (hn : (∞ : ℕ∞ω) ≠ 0)
   (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b c : ℝ}
   (hc : ∀ s, f (i s) = c) (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
@@ -393,12 +396,12 @@ variable {E : Type u} {H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpa
 include h hfs hc hac hcb hcompact hcrit in
 /-- **A Thom class of the negative normal bundle computes the homology across a Morse–Bott
 level.** Let `i : S → M` be a nondegenerate critical submanifold of a smooth function `f` on a
-Hausdorff, second-countable, finite-dimensional, boundaryless manifold, with `S` nonempty and
-`f = c` along `i`, and let `g` be a smooth fibre metric on its normal bundle. Let `a < c < b` be
-such that the band `f⁻¹[a, b]` is compact and all its critical points lie on `i`. Suppose that the
-negative normal spaces relative to `g` have continuous local frames of size `r`, so that they form
-the negative normal bundle `ν⁻` of rank `r`, and let `u` be a Thom class of `ν⁻` with coefficients
-in a commutative ring `K`. Then `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K) ≅ Hₚ(S; K)` in every degree `p`. -/
+Hausdorff, second-countable, finite-dimensional, boundaryless manifold, with `f = c` along `i`, and
+let `g` be a smooth fibre metric on its normal bundle. Let `a < c < b` be such that the band
+`f⁻¹[a, b]` is compact and all its critical points lie on `i`. Suppose that the negative normal
+spaces relative to `g` have continuous local frames of size `r`, so that they form the negative
+normal bundle `ν⁻` of rank `r`, and let `u` be a Thom class of `ν⁻` with coefficients in a
+commutative ring `K`. Then `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K) ≅ Hₚ(S; K)` in every degree `p`. -/
 theorem nonempty_singularHomology_sublevelPair_iso_singularHomology_of_isThomClass
     {K : Type u} [CommRing K]
     (u : letI := i.normalSpaceFiberBundle hn hdim
@@ -419,17 +422,15 @@ theorem nonempty_singularHomology_sublevelPair_iso_singularHomology_of_isThomCla
         (TopCat.of S)) := by
   let := i.normalSpaceFiberBundle hn hdim
   let := i.normalSpaceVectorBundle hn hdim
-  -- The band has the homology of `(D_ε, S_ε)`, which the Thom class computes.
-  obtain ⟨ε₀, hε₀, hband⟩ :=
-    h.nonempty_singularHomology_sublevelPair_iso_negativeDiscSpherePair hn hfs hc hac hcb hcompact
-      hcrit hdim g hV
-  have hε : ε₀ / 2 ∈ Ioo 0 ε₀ := ⟨half_pos hε₀, half_lt_self hε₀⟩
-  obtain ⟨e₁⟩ := hband (ε₀ / 2) hε (ModuleCat.of K K) m
-  have h' := h.toIsCriticalSubmanifold
-  obtain ⟨e₂⟩ :=
-    h'.nonempty_singularHomology_negativeDiscSpherePair_iso_singularHomology_of_isThomClass hn
-      g.toRiemannianMetric hdim hV hε.1 u hu hm
-  exact ⟨e₁ ≪≫ e₂⟩
+  let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+  let := hV.fiberBundle
+  have := hV.vectorBundle
+  -- The negative normal spaces have the dimension of the Morse index.
+  have hr := h.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ hV
+  -- The band has the homology of the Thom pair of `ν⁻`, which the Thom class computes.
+  obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_thomPair hn hfs hc hac hcb hcompact
+    hcrit hdim g hr (ModuleCat.of K K) m
+  exact ⟨e ≪≫ homologyThomIso (Fin r → ℝ) _ p m (by rwa [finrank_fin_fun]) u hu⟩
 
 include h hfs hc hac hcb hcompact hcrit in
 /-- **The homology across the level of a Morse–Bott submanifold with an oriented negative normal
@@ -459,6 +460,70 @@ theorem nonempty_singularHomology_sublevelPair_iso_singularHomology_of_orientati
     hcb hcompact hcrit hdim g hV u hu hm
 
 end IsNondegenerateCriticalSubmanifold
+
+section TwoEqZero
+
+namespace IsNondegenerateCriticalSubmanifold
+
+variable {E : Type u} {H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+  [SecondCountableTopology M] {E' H' : Type*} {S : Type u} [NormedAddCommGroup E']
+  [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} [J.Boundaryless] [TopologicalSpace S] [ChartedSpace H' S]
+  [IsManifold J ∞ S] {f : M → ℝ} {i : SmoothEmbedding J I ∞ S M}
+
+/-- **The homology across a Morse–Bott level in characteristic two.** Let `i : S → M` be a
+nondegenerate critical submanifold of a smooth function `f` on a Hausdorff, second-countable,
+finite-dimensional, boundaryless manifold, with `f = c` along `i` and Morse index `r` at every
+point of `i`. Let `a < c < b` be such that the band `f⁻¹[a, b]` is compact and all its critical
+points lie on `i`, and let `K` be a commutative ring in which `2 = 0`, such as `ZMod 2`. Then with
+no orientation of the negative normal bundle, `Hᵣ₊ₚ({f ≤ b}, {f ≤ a}; K) ≅ Hₚ(S; K)` in every
+degree `p`. -/
+theorem nonempty_singularHomology_sublevelPair_iso_singularHomology_of_two_eq_zero
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) {a b c : ℝ}
+    (hc : ∀ s, f (i s) = c) (hac : a < c) (hcb : c < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i)
+    {r : ℕ} (hr : ∀ s, manifoldMorseIndex I f (i s) = r) (K : Type u) [CommRing K]
+    (h2 : (2 : K) = 0) {p m : ℕ} (hm : r + p = m) :
+    Nonempty ((sublevelPair f (hac.trans hcb).le).singularHomology (ModuleCat.of K K) m ≅
+      ((singularHomologyFunctor (ModuleCat.{u} K) p).obj (ModuleCat.of K K)).obj
+        (TopCat.of S)) := by
+  cases isEmpty_or_nonempty S with
+  | inl _ =>
+    exact ⟨(isZero_singularHomology_sublevelPair_of_isEmpty hfs (hac.trans hcb).le hcompact hcrit
+        (ModuleCat.of K K) m).iso
+      (isZero_singularHomology_of_isEmpty (ModuleCat.of K K) (TopCat.of S) p)⟩
+  | inr _ =>
+    have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
+    have := h.toIsCriticalSubmanifold.compactSpace_of_isCompact_preimage_Icc (hfs.of_le (by simp))
+      hc hac.le hcb.le hcompact hcrit
+    have : T2Space S := i.isEmbedding.t2Space
+    -- Choose a smooth fibre metric on the normal bundle; its negative normal spaces form `ν⁻`.
+    let P := EuclideanSpace ℝ (Fin (finrank ℝ E - finrank ℝ E'))
+    have hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E' := finrank_euclideanSpace_fin
+    let := i.normalSpaceFiberBundle hn hdim
+    let := i.normalSpaceVectorBundle hn hdim
+    have : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+    have : IsManifold I (∞ + 2) M := .of_le (n := ∞) (by simp)
+    have : IsManifold J (∞ + 1) S := by simpa using (inferInstance : IsManifold J ∞ S)
+    let := i.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
+    obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := J) (n := ⊤) (F := P)
+      (E := fun s ↦ i.isImmersion.NormalSpace s hn)
+    have hV := (h.hasLocalContMDiffSubbundleFrames_negativeNormalSpace hn (k := ∞) (by simp)
+      (fun s ↦ (hfs (i s)).of_le (by simp)) hdim g hr).hasLocalSubbundleFrames
+    let := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g.toRiemannianMetric)
+    let := hV.fiberBundle
+    have := hV.vectorBundle
+    -- Every vector bundle has a Thom class with coefficients in `K`.
+    obtain ⟨u, hu⟩ := exists_isThomClass_of_two_eq_zero (F := Fin r → ℝ)
+      (E := fun s ↦ h.negativeNormalSpace hn g.toRiemannianMetric s) K h2
+    exact h.nonempty_singularHomology_sublevelPair_iso_singularHomology_of_isThomClass hn hfs hc
+      hac hcb hcompact hcrit hdim g hV u hu hm
+
+end IsNondegenerateCriticalSubmanifold
+
+end TwoEqZero
 
 end TauCeti.SmoothEmbedding
 
