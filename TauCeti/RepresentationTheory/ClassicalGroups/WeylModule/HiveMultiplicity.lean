@@ -13,13 +13,16 @@ import TauCeti.RepresentationTheory.FDRep.DirectSum
 /-!
 # Tensor-product multiplicities and invariants via integer hives
 
-Combining the object-level hive-to-Littlewood–Richardson equivalence of
-`TauCeti.Combinatorics.Hive.LittlewoodRichardson` with Stembridge's Littlewood–Richardson rule for
-Schur polynomials (`TauCeti.diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau`) and the
-rational Weyl-module decomposition (`TauCeti.nonempty_equiv_tprod_rationalWeylRep`), this file
-identifies integer hive counts with tensor-product multiplicities and invariant dimensions of
-`GL n ℂ` (for the Schur-polynomial expansion, its specializations, sharpness, and `hiveCount_comm`,
-see `TauCeti.Combinatorics.Hive.Schur`):
+Combining the signed hive-to-Littlewood–Richardson multiplicity formula
+(`TauCeti.Hive.sum_natCard_lrTableau_shift_eq_hiveCount`, from
+`TauCeti.Hive.hiveCount_productBoundary` in `TauCeti.Combinatorics.Hive.LittlewoodRichardson`) with
+the rational Weyl-module `FDRep` tensor-product decomposition
+(`TauCeti.nonempty_equiv_tensor_rationalWeylFDRep`), the bounded-Yamanouchi tableau count
+(`TauCeti.card_boundedYamanouchi_eq_natCard_lrTableau`), and Hom-space dimensions between
+irreducibles (`TauCeti.finrank_hom_rationalWeylFDRep`), this file identifies integer hive counts
+with tensor-product multiplicities and invariant dimensions of `GL n ℂ` (for the Schur-polynomial
+expansion, its specializations, sharpness, and `hiveCount_comm`, see
+`TauCeti.Combinatorics.Hive.Schur`):
 
 * **Intertwiner multiplicity** (`TauCeti.Hive.finrank_hom_eq_hiveCount`): for arbitrary signed
   dominant weights `λ, μ, γ` of `GL n ℂ`, the complex dimension of the intertwiner space
@@ -55,60 +58,6 @@ open CategoryTheory MonoidalCategory Matrix YoungDiagram
 namespace TauCeti.Hive
 
 /-! ### Hom-space multiplicities and invariants on rational Weyl modules -/
-
-open scoped Classical in
-/-- Partition-indexed multiplicity sum matching `hiveCount (productBoundary lam μ γ)`. -/
-private theorem sum_natCard_lrTableau_shift_eq_hiveCount {n : ℕ} (lam μ γ : DominantWeight n) :
-    (∑ ν : {ν : (lam.detShiftShape.card + μ.detShiftShape.card).Partition //
-        (ofPartition ν).colLen 0 ≤ n},
-      if γ = (weightOfShape n (ofPartition ν.val)).shift (lam.detShift + μ.detShift) then
-        Nat.card (LRTableau lam.detShiftShape (ofPartition ν.val) μ.detShiftShape)
-      else 0) = hiveCount (productBoundary lam μ γ) := by
-  let Sub := {ν : (lam.detShiftShape.card + μ.detShiftShape.card).Partition //
-    (ofPartition ν).colLen 0 ≤ n}
-  rw [hiveCount_productBoundary]
-  split_ifs with hdet
-  · set γ' := γ.shift (-(lam.detShift + μ.detShift))
-    have hγ' : γ'.IsPolynomial := DominantWeight.isPolynomial_shift_neg_of_le_detShift hdet
-    have heq_iff (ν : Sub) :
-        γ = (weightOfShape n (ofPartition ν.val)).shift (lam.detShift + μ.detShift) ↔
-          γ'.shape = ofPartition ν.val :=
-      ⟨fun h => by
-        have h' : γ' = weightOfShape n (ofPartition ν.val) := by simp [γ', h]
-        rw [h', shape_weightOfShape ν.property],
-      fun h => by
-        have h' : weightOfShape n (ofPartition ν.val) = γ' := by rw [← h, weightOfShape_shape hγ']
-        simp [h', γ']⟩
-    have hsummand (ν : Sub) :
-        (if γ = (weightOfShape n (ofPartition ν.val)).shift (lam.detShift + μ.detShift) then
-          Nat.card (LRTableau lam.detShiftShape (ofPartition ν.val) μ.detShiftShape)
-        else 0) =
-          if γ'.shape = ofPartition ν.val then
-            Nat.card (LRTableau lam.detShiftShape (ofPartition ν.val) μ.detShiftShape)
-          else 0 :=
-      if_congr (heq_iff ν) rfl rfl
-    rw [Finset.sum_congr rfl fun ν _ => hsummand ν]
-    by_cases hcard : γ'.shape.card = lam.detShiftShape.card + μ.detShiftShape.card
-    · let ν₀ : Sub := ⟨γ'.shape.toPartition hcard, by simp⟩
-      have hν₀ (ν : Sub) : γ'.shape = ofPartition ν.val ↔ ν = ν₀ :=
-        ⟨fun h => Subtype.ext <| YoungDiagram.ofPartition_injective <| by
-          rw [← h, YoungDiagram.ofPartition_toPartition],
-        fun h => by rw [h, YoungDiagram.ofPartition_toPartition]⟩
-      rw [Finset.sum_congr rfl fun ν _ => if_congr (hν₀ ν) rfl rfl,
-        Finset.sum_ite_eq' Finset.univ ν₀]
-      simp [ν₀]
-    · have hne (ν : Sub) : γ'.shape ≠ ofPartition ν.val := fun h =>
-        hcard (by rw [h, YoungDiagram.card_ofPartition])
-      simp [hne, isEmpty_lrTableau_of_card_ne hcard]
-  · have hne (ν : Sub) :
-        γ ≠ (weightOfShape n (ofPartition ν.val)).shift (lam.detShift + μ.detShift) := fun h =>
-      hdet <| by
-        cases n with
-        | zero => simp
-        | succ m =>
-          refine DominantWeight.isPolynomial_shift_neg_iff_le_detShift.mp ?_
-          simp [h]
-    simp [hne]
 
 /-- **The hive model of tensor-product multiplicities for `GL n ℂ`**: for all dominant weights
 `λ, μ, γ` of `GL n ℂ`, the complex dimension of the space of intertwiners from `V_γ` to
@@ -150,9 +99,8 @@ private theorem finrank_hom_tensorUnit_tensor_eq {n : ℕ} (lam μ ν : Dominant
   -- which re-sums to `dim Hom(V_{ν*}, V_λ ⊗ V_μ)`.
   have hrot (σ : DominantWeight n) :
       hiveCount (productBoundary σ ν 0) = if ν.dual = σ then 1 else 0 := by
-    have hb : productBoundary σ ν 0 = fun s => productBoundary 0 σ ν.dual (s + 1) := by
-      ext s i; fin_cases s <;> simp
-    rw [hb, hiveCount_rotate, hiveCount_productBoundary_zero_left]
+    rw [productBoundary_def, DominantWeight.dual_zero,
+      hiveCount_cyclic_eq_hiveCount_productBoundary, hiveCount_productBoundary_zero_left]
   have hterm (σ : DominantWeight n) :
       Module.finrank ℂ (rationalWeylFDRep ℂ n 0 ⟶
           rationalWeylFDRep ℂ n σ ⊗ rationalWeylFDRep ℂ n ν) =
@@ -172,7 +120,7 @@ theorem finrank_invariants_eq_hiveCount {n : ℕ} (lam μ ν : DominantWeight n)
           rationalWeylFDRep ℂ n ν) =
       hiveCount ![lam.val, μ.val, ν.val] := by
   have hdual : productBoundary lam μ ν.dual = ![lam.val, μ.val, ν.val] := by
-    ext s i; fin_cases s <;> simp
+    rw [productBoundary_def, DominantWeight.dual_dual]
   rw [finrank_hom_tensorUnit_tensor_eq, finrank_hom_eq_hiveCount, hdual]
 
 /-! ### Concrete representation-theoretic checks -/
@@ -232,7 +180,9 @@ theorem finrank_invariants_two_std_checks :
         (⟨![1, 0], by decide⟩ : DominantWeight 2).val,
         (⟨![-1, -1], by decide⟩ : DominantWeight 2).val] =
         productBoundary ⟨![1, 0], by decide⟩ ⟨![1, 0], by decide⟩ ⟨![1, 1], by decide⟩ := by
-      ext s i; fin_cases s <;> fin_cases i <;> simp
+      rw [productBoundary_def]
+      simp only [Matrix.vecCons_inj, and_true, true_and]
+      ext i; fin_cases i <;> simp
     rw [hb]
     exact hiveCount_two_std_std_det
   · refine hiveCount_eq_zero_of_sum_ne_zero ?_

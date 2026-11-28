@@ -171,36 +171,49 @@ cancellative commutative semiring. The diagrams with more rows have Schur polyno
 (`TauCeti.diagramSchurPoly_eq_zero_of_lt_colLen`). -/
 theorem linearIndependent_diagramSchurPoly [IsCancelAdd R] {N : ℕ} :
     LinearIndependent R fun μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} => diagramSchurPoly N R μ := by
-  rw [linearIndependent_iff'ₛ]
-  intro s g g' hsum μ hμ
-  -- Keep the terms of degree `|μ|`, which are independent by
-  -- `linearIndependent_diagramSchurPoly_of_colLen_le`.
-  have hc (ν : {μ : YoungDiagram // μ.colLen 0 ≤ N}) :
-      homogeneousComponent μ.val.card (diagramSchurPoly N R ν) =
-        if ν.val.card = μ.val.card then diagramSchurPoly N R ν else 0 := by
-    rw [homogeneousComponent_of_mem
-      ((mem_homogeneousSubmodule _ _).mpr isHomogeneous_diagramSchurPoly)]
-    exact if_congr eq_comm rfl rfl
-  have h := congrArg (homogeneousComponent μ.val.card) hsum
-  simp only [map_sum, map_smul, hc, smul_ite, smul_zero] at h
-  rw [← sum_filter, ← sum_subtype_eq_sum_filter, ← sum_filter, ← sum_subtype_eq_sum_filter] at h
-  let e : {ν : {μ : YoungDiagram // μ.colLen 0 ≤ N} // ν.val.card = μ.val.card} ≃
-      {ν : μ.val.card.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N} :=
+  classical
+  let _ := MvPolynomial.gradedAlgebra (σ := Fin N) (R := R)
+  let V := homogeneousSubmodule (Fin N) R
+  let fiberEquiv (n : ℕ) :
+      {μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} // μ.val.card = n} ≃
+        {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N} :=
     ((Equiv.subtypeSubtypeEquivSubtypeInter (fun ν : YoungDiagram => ν.colLen 0 ≤ N)
-        (fun ν : YoungDiagram => ν.card = μ.val.card)).trans
+        (fun ν : YoungDiagram => ν.card = n)).trans
       ((Equiv.subtypeEquivRight fun _ => and_comm).trans
-        (Equiv.subtypeSubtypeEquivSubtypeInter (fun ν : YoungDiagram => ν.card = μ.val.card)
+        (Equiv.subtypeSubtypeEquivSubtypeInter (fun ν : YoungDiagram => ν.card = n)
           (fun ν : YoungDiagram => ν.colLen 0 ≤ N)).symm)).trans
       (Equiv.subtypeEquiv YoungDiagram.equivPartition fun ν => by
         simp [YoungDiagram.equivPartition])
-  have hli : LinearIndependent R
-      (fun ν : {ν : {μ : YoungDiagram // μ.colLen 0 ≤ N} // ν.val.card = μ.val.card} =>
-        diagramSchurPoly N R ν.val.val) := by
-    convert (linearIndependent_diagramSchurPoly_of_colLen_le
-      (R := R) (n := μ.val.card) (N := N)).comp e e.injective with ν
-    simp [e, YoungDiagram.equivPartition]
-  exact linearIndependent_iff'ₛ.mp hli (s.subtype fun ν => ν.val.card = μ.val.card)
-    (fun ν => g ν.val) (fun ν => g' ν.val) h ⟨μ, rfl⟩ (by simpa using hμ)
+  let f (n : ℕ) (μ : {μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} // μ.val.card = n}) : V n :=
+    ⟨diagramSchurPoly N R μ.val.val, (mem_homogeneousSubmodule _ _).mpr <| by
+      have h := isHomogeneous_diagramSchurPoly (N := N) (R := R) (μ := μ.val.val)
+      rwa [μ.property] at h⟩
+  have hf (n : ℕ) : LinearIndependent R (f n) := by
+    have hli : LinearIndependent R ((V n).subtype ∘ f n) := by
+      rw [show (V n).subtype ∘ f n =
+          (fun ν : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N} =>
+            diagramSchurPoly N R (YoungDiagram.ofPartition ν.val)) ∘ fiberEquiv n by
+        funext μ
+        simp [f, fiberEquiv, YoungDiagram.equivPartition]]
+      exact (linearIndependent_diagramSchurPoly_of_colLen_le
+        (R := R) (n := n) (N := N)).comp (fiberEquiv n) (fiberEquiv n).injective
+    exact hli.of_comp (V n).subtype
+  have hsingle : LinearIndependent R fun ix :
+      Σ n : ℕ, {μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} // μ.val.card = n} =>
+      DirectSum.lof R ℕ (fun n => V n) ix.1 (f ix.1 ix.2) :=
+    DFinsupp.linearIndependent_single f hf
+  have hdecomp : LinearIndependent R fun ix :
+      Σ n : ℕ, {μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} // μ.val.card = n} =>
+      diagramSchurPoly N R ix.2.val.val := by
+    have hcomp :=
+      ((DirectSum.decomposeLinearEquiv V).symm.toLinearMap.linearIndependent_iff_of_injOn
+        (v := fun ix : Σ n : ℕ, {μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} // μ.val.card = n} =>
+          DirectSum.lof R ℕ (fun n => V n) ix.1 (f ix.1 ix.2))
+        (DirectSum.decomposeLinearEquiv V).symm.injective.injOn).mpr hsingle
+    simpa [f, Function.comp_def] using hcomp
+  exact hdecomp.comp
+    (Equiv.sigmaFiberEquiv (fun μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} => μ.val.card)).symm
+    (Equiv.injective _)
 
 end LinearIndependent
 

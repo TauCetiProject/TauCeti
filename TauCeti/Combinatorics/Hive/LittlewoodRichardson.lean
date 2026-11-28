@@ -56,8 +56,10 @@ skew tableau is recovered from its row counts by sorting each row
 * `TauCeti.Hive.hiveCount_productBoundary_eq_natCard_lrTableau_shape`,
   `TauCeti.Hive.hiveCount_productBoundary_eq_natCard_lrTableau_shift`,
   `TauCeti.Hive.hiveCount_productBoundary_of_isPolynomial`,
-  `TauCeti.Hive.hiveCount_productBoundary`: the same for polynomial dominant weights of `GL n`, for
-  determinant-shifted weights, and unconditionally for arbitrary signed dominant weights.
+  `TauCeti.Hive.hiveCount_productBoundary`,
+  `TauCeti.Hive.sum_natCard_lrTableau_shift_eq_hiveCount`: the same for polynomial dominant
+  weights of `GL n`, for determinant-shifted weights, unconditionally for arbitrary signed dominant
+  weights, and in partition-sum form.
 * `TauCeti.Hive.hiveCount_productBoundary_zero_left`: unit-weight fibre counts; the right-hand
   analogue is `TauCeti.Hive.hiveCount_productBoundary_zero_right` in
   `TauCeti.Combinatorics.Hive.Pieri`.
@@ -618,6 +620,66 @@ theorem hiveCount_productBoundary (lam μ γ : DominantWeight n) :
   · rw [← natCard_fixedIntegerHive]
     exact Nat.card_congr (fixedIntegerHiveDetShiftEquivLRTableau hdet)
   · exact hiveCount_eq_zero_iff.mpr ⟨fun ⟨_, hb⟩ => hdet (detShift_le_of_productBoundary hb)⟩
+
+open scoped Classical in
+/-- Partition-indexed Littlewood–Richardson sum matching `hiveCount (productBoundary lam μ γ)` for
+arbitrary signed dominant weights `lam, μ, γ : DominantWeight n`. -/
+theorem sum_natCard_lrTableau_shift_eq_hiveCount {n : ℕ} (lam μ γ : DominantWeight n) :
+    (∑ ν : {ν : (lam.detShiftShape.card + μ.detShiftShape.card).Partition //
+        (YoungDiagram.ofPartition ν).colLen 0 ≤ n},
+      if γ = (weightOfShape n (YoungDiagram.ofPartition ν.val)).shift (lam.detShift + μ.detShift)
+      then Nat.card (LRTableau lam.detShiftShape (YoungDiagram.ofPartition ν.val) μ.detShiftShape)
+      else 0) = hiveCount (productBoundary lam μ γ) := by
+  let Sub := {ν : (lam.detShiftShape.card + μ.detShiftShape.card).Partition //
+    (YoungDiagram.ofPartition ν).colLen 0 ≤ n}
+  rw [hiveCount_productBoundary]
+  split_ifs with hdet
+  · set γ' := γ.shift (-(lam.detShift + μ.detShift))
+    have hγ' : γ'.IsPolynomial := DominantWeight.isPolynomial_shift_neg_of_le_detShift hdet
+    have heq_iff (ν : Sub) :
+        γ = (weightOfShape n (YoungDiagram.ofPartition ν.val)).shift (lam.detShift + μ.detShift) ↔
+          γ'.shape = YoungDiagram.ofPartition ν.val :=
+      ⟨fun h => by
+        have h' : γ' = weightOfShape n (YoungDiagram.ofPartition ν.val) := by simp [γ', h]
+        rw [h', shape_weightOfShape ν.property],
+      fun h => by
+        have h' : weightOfShape n (YoungDiagram.ofPartition ν.val) = γ' := by
+          rw [← h, weightOfShape_shape hγ']
+        simp [h', γ']⟩
+    have hsummand (ν : Sub) :
+        (if γ = (weightOfShape n (YoungDiagram.ofPartition ν.val)).shift
+            (lam.detShift + μ.detShift) then
+          Nat.card (LRTableau lam.detShiftShape (YoungDiagram.ofPartition ν.val) μ.detShiftShape)
+        else 0) =
+          if γ'.shape = YoungDiagram.ofPartition ν.val then
+            Nat.card (LRTableau lam.detShiftShape (YoungDiagram.ofPartition ν.val) μ.detShiftShape)
+          else 0 :=
+      if_congr (heq_iff ν) rfl rfl
+    rw [Finset.sum_congr rfl fun ν _ => hsummand ν]
+    by_cases hcard : γ'.shape.card = lam.detShiftShape.card + μ.detShiftShape.card
+    · let ν₀ : Sub := ⟨γ'.shape.toPartition hcard, by
+        rw [YoungDiagram.ofPartition_toPartition]
+        exact DominantWeight.colLen_zero_shape_le γ'⟩
+      have hν₀ (ν : Sub) : γ'.shape = YoungDiagram.ofPartition ν.val ↔ ν = ν₀ :=
+        ⟨fun h => Subtype.ext <| YoungDiagram.ofPartition_injective <| by
+          rw [← h, YoungDiagram.ofPartition_toPartition],
+        fun h => by rw [h, YoungDiagram.ofPartition_toPartition]⟩
+      rw [Finset.sum_congr rfl fun ν _ => if_congr (hν₀ ν) rfl rfl,
+        Finset.sum_ite_eq' Finset.univ ν₀]
+      simp [ν₀]
+    · have hne (ν : Sub) : γ'.shape ≠ YoungDiagram.ofPartition ν.val := fun h =>
+        hcard (by rw [h, YoungDiagram.card_ofPartition])
+      simp [hne, isEmpty_lrTableau_of_card_ne hcard]
+  · have hne (ν : Sub) :
+        γ ≠ (weightOfShape n (YoungDiagram.ofPartition ν.val)).shift
+          (lam.detShift + μ.detShift) := fun h =>
+      hdet <| by
+        cases n with
+        | zero => simp
+        | succ m =>
+          refine DominantWeight.isPolynomial_shift_neg_iff_le_detShift.mp ?_
+          simp [h]
+    simp [hne]
 
 open scoped Classical in
 /-- With trivial first input weight `0`, `productBoundary 0 μ γ` has one integer hive when `γ = μ`
