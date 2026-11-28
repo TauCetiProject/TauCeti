@@ -8,32 +8,27 @@ module
 public import Mathlib.Order.PiLex
 
 /-!
-# Comparisons on lexicographically ordered products
+# Lexicographic products and coordinatewise maps
 
-Mathlib equips `Lex (∀ i, β i)` with `<` defined via `Pi.Lex (· < ·) (· < ·)` wrapped in `id` to
-prevent unwanted definitional reduction (`Mathlib.Order.PiLex`). This module provides explicit
-iff characterizations `Pi.Lex.toLex_lt_toLex` and `Pi.Lex.toLex_le_toLex` relating `<` and `≤` on
-`Lex (∀ i, β i)` to `Pi.Lex`, matching `Prod.Lex.toLex_lt_toLex` and `Prod.Lex.toLex_le_toLex`.
+This module provides `TauCeti.strictMono_toLex_comp`, lifting a family of coordinatewise strictly
+monotone maps to a strictly monotone map on `Lex (∀ i, β i)`.
 
 ## Main results
 
-* `Pi.Lex.toLex_lt_toLex`, `Pi.Lex.toLex_le_toLex`: explicit iff characterizations of
-  `toLex x < toLex y` and `toLex x ≤ toLex y` in terms of `Pi.Lex`.
+* `TauCeti.strictMono_toLex_comp`: coordinatewise strictly monotone maps induce a strictly monotone
+  map between lexicographic products.
 -/
 
 public section
 
-namespace Pi.Lex
+namespace TauCeti
 
-variable {ι : Type*} {β : ι → Type*}
+/-- A family of coordinatewise strictly monotone maps induces a strictly monotone map on the
+lexicographic product. -/
+theorem strictMono_toLex_comp {ι : Type*} {β γ : ι → Type*} [LinearOrder ι]
+    [∀ i, PartialOrder (β i)] [∀ i, PartialOrder (γ i)]
+    {f : ∀ i, β i → γ i} (hf : ∀ i, StrictMono (f i)) :
+    StrictMono fun x : Lex (∀ i, β i) ↦ toLex fun i ↦ f i (ofLex x i) :=
+  fun _ _ ⟨i, hi, hlt⟩ ↦ ⟨i, fun j hj ↦ congrArg (f j) (hi j hj), hf i hlt⟩
 
-/-- Strict inequality on `Lex (∀ i, β i)` is `Pi.Lex (· < ·) (· < ·)`. -/
-theorem toLex_lt_toLex [LT ι] [∀ i, LT (β i)] {x y : ∀ i, β i} :
-    toLex x < toLex y ↔ Pi.Lex (· < ·) (· < ·) x y := (Iff.rfl)
-
-/-- Nonstrict inequality on `Lex (∀ i, β i)` is equality or `Pi.Lex (· < ·) (· < ·)`. -/
-theorem toLex_le_toLex [LinearOrder ι] [∀ i, PartialOrder (β i)] {x y : ∀ i, β i} :
-    toLex x ≤ toLex y ↔ x = y ∨ Pi.Lex (· < ·) (· < ·) x y :=
-  le_iff_eq_or_lt.trans (or_congr toLex_inj toLex_lt_toLex)
-
-end Pi.Lex
+end TauCeti

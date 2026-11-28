@@ -17,9 +17,9 @@ over `A` of `A ⧸ (I + 𝔪 ^ (n + 1))`. When `I` is proper, `B = A ⧸ I` is l
 Hilbert–Samuel function `n ↦ ℓ_B(B ⧸ 𝔪_B ^ (n + 1))` of `B`
 (`Ideal.localQuotientHilbertSamuel_bot_quotient`). For the unit ideal it vanishes identically
 (`Ideal.localQuotientHilbertSamuel_top`), while for `I = 𝔪` every value equals `1`
-(`Ideal.localQuotientHilbertSamuel_maximalIdeal`) and adjoining `𝔪 ^ (k + 1)` truncates the
+(`TauCeti.localQuotientHilbertSamuel_maximalIdeal`) and adjoining `𝔪 ^ (k + 1)` truncates the
 function at `min k n` (`Ideal.localQuotientHilbertSamuel_sup_maximalIdeal_pow_succ`,
-`Ideal.localQuotientHilbertSamuel_maximalIdeal_pow_succ`). Indexing by ideals of a fixed ambient
+`TauCeti.localQuotientHilbertSamuel_maximalIdeal_pow_succ`). Indexing by ideals of a fixed ambient
 local ring keeps the unit ideal in scope and lets the functions of different ideals of the same ring
 be compared, which is how they are used to measure singularities of closed subschemes of a fixed
 regular ambient space.
@@ -58,13 +58,14 @@ power series rings over a field.
   finite.
 * `Ideal.localQuotientHilbertSamuel_eq_zero_iff`, `Ideal.localQuotientHilbertSamuel_pos_iff`: a
   value vanishes exactly for the unit ideal.
-* `Ideal.localQuotientHilbertSamuel_zero`, `Ideal.localQuotientHilbertSamuel_bot_zero`,
-  `Ideal.localQuotientHilbertSamuel_maximalIdeal`: the value at `0` of a proper ideal is `1`, and
+* `Ideal.localQuotientHilbertSamuel_zero`, `TauCeti.localQuotientHilbertSamuel_bot_zero`,
+  `TauCeti.localQuotientHilbertSamuel_maximalIdeal`: the value at `0` of a proper ideal is `1`, and
   `H_{A/𝔪}(n) = 1` for all `n`.
 * `Ideal.localQuotientHilbertSamuel_monotone`, `Ideal.localQuotientHilbertSamuel_anti`,
   `Ideal.localQuotientHilbertSamuel_sup_maximalIdeal_pow`,
   `Ideal.localQuotientHilbertSamuel_sup_maximalIdeal_pow_succ`,
-  `Ideal.localQuotientHilbertSamuel_maximalIdeal_pow_succ`, `Ideal.localQuotientHilbertSamuel_succ`:
+  `TauCeti.localQuotientHilbertSamuel_maximalIdeal_pow_succ`,
+  `Ideal.localQuotientHilbertSamuel_succ`:
   monotonicity in `n`, antitonicity in `I`, truncation by powers of `𝔪`, and the one-step
   filtration identity.
 * `Ideal.localQuotientHilbertSamuel_map_eq_ker_sup_of_surjective`,
@@ -143,19 +144,6 @@ theorem localQuotientHilbertSamuel_zero {I : Ideal A} (hI : I ≠ ⊤) :
   rw [localQuotientHilbertSamuel_def, zero_add, pow_one, sup_eq_right.mpr (le_maximalIdeal hI)]
   exact length_quotient_eq_one _
 
-/-- At degree `0`, the Hilbert–Samuel function of a local ring `A` itself (`I = ⊥`) equals `1`. -/
-@[simp]
-theorem localQuotientHilbertSamuel_bot_zero :
-    (⊥ : Ideal A).localQuotientHilbertSamuel 0 = 1 :=
-  localQuotientHilbertSamuel_zero bot_ne_top
-
-/-- For the maximal ideal `𝔪` of a local ring `A`, every Hilbert–Samuel value equals `1`. -/
-@[simp]
-theorem localQuotientHilbertSamuel_maximalIdeal (n : ℕ) :
-    (maximalIdeal A).localQuotientHilbertSamuel n = 1 := by
-  rw [localQuotientHilbertSamuel_def, sup_eq_left.mpr (pow_le_self n.succ_ne_zero),
-    length_quotient_eq_one]
-
 /-- The Hilbert–Samuel function is monotone. -/
 theorem localQuotientHilbertSamuel_monotone (I : Ideal A) : Monotone I.localQuotientHilbertSamuel :=
   fun _ _ h ↦ TauCeti.length_quotient_anti
@@ -183,13 +171,6 @@ theorem localQuotientHilbertSamuel_sup_maximalIdeal_pow_succ (I : Ideal A) (k n 
   rcases le_total k n with hkn | hnk
   · rw [min_eq_left hkn, sup_eq_left.mpr (pow_le_pow_right (Nat.add_le_add_right hkn 1))]
   · rw [min_eq_right hnk, sup_eq_right.mpr (pow_le_pow_right (Nat.add_le_add_right hnk 1))]
-
-/-- For `𝔪 ^ (k + 1)`, the Hilbert–Samuel value at degree `n` agrees with that of `⊥` at degree
-`min k n`. -/
-theorem localQuotientHilbertSamuel_maximalIdeal_pow_succ (k n : ℕ) :
-    (maximalIdeal A ^ (k + 1)).localQuotientHilbertSamuel n =
-      (⊥ : Ideal A).localQuotientHilbertSamuel (min k n) := by
-  rw [← bot_sup_eq (maximalIdeal A ^ (k + 1)), localQuotientHilbertSamuel_sup_maximalIdeal_pow_succ]
 
 /-- Filtration step: `H_{A/I}(n + 1)` equals `H_{A/I}(n)` plus the length of the image of
 `𝔪 ^ (n + 1)` in `A ⧸ (I + 𝔪 ^ (n + 2))`. -/
@@ -332,6 +313,29 @@ end Flat
 end Ideal
 
 namespace TauCeti
+
+/-- At degree `0`, the Hilbert–Samuel function of a local ring `A` itself (`I = ⊥`) equals `1`. -/
+@[simp]
+theorem localQuotientHilbertSamuel_bot_zero {A : Type*} [CommRing A] [IsLocalRing A] :
+    (⊥ : Ideal A).localQuotientHilbertSamuel 0 = 1 :=
+  Ideal.localQuotientHilbertSamuel_zero bot_ne_top
+
+/-- For the maximal ideal `𝔪` of a local ring `A`, every Hilbert–Samuel value equals `1`. -/
+@[simp]
+theorem localQuotientHilbertSamuel_maximalIdeal {A : Type*} [CommRing A] [IsLocalRing A] (n : ℕ) :
+    (IsLocalRing.maximalIdeal A).localQuotientHilbertSamuel n = 1 := by
+  rw [Ideal.localQuotientHilbertSamuel_def,
+    sup_eq_left.mpr (Ideal.pow_le_self n.succ_ne_zero),
+    Ideal.length_quotient_eq_one]
+
+/-- For `𝔪 ^ (k + 1)`, the Hilbert–Samuel value at degree `n` agrees with that of `⊥` at degree
+`min k n`. -/
+theorem localQuotientHilbertSamuel_maximalIdeal_pow_succ {A : Type*} [CommRing A] [IsLocalRing A]
+    (k n : ℕ) :
+    (IsLocalRing.maximalIdeal A ^ (k + 1)).localQuotientHilbertSamuel n =
+      (⊥ : Ideal A).localQuotientHilbertSamuel (min k n) := by
+  rw [← bot_sup_eq (IsLocalRing.maximalIdeal A ^ (k + 1)),
+    Ideal.localQuotientHilbertSamuel_sup_maximalIdeal_pow_succ]
 
 /-- Isomorphic local rings have the same intrinsic Hilbert–Samuel function (`I = ⊥`). -/
 theorem localQuotientHilbertSamuel_bot_of_equiv {A B E : Type*}

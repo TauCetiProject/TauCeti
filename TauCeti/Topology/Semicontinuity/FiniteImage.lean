@@ -83,19 +83,9 @@ theorem eventually_ge_of_lowerSemicontinuousWithinAt_of_finite_image_on_nhdsWith
     {f : α → ∀ i, β i} {s : Set α} {x : α}
     (hf : ∀ i, LowerSemicontinuousWithinAt (f · i) s x)
     (hfin : ∃ u ∈ 𝓝[s] x, (f '' u).Finite) :
-    ∀ᶠ x' in 𝓝[s] x, f x ≤ f x' := by
-  let f' : α → ∀ i, (β i)ᵒᵈ := fun a i ↦ OrderDual.toDual (f a i)
-  have hf' : ∀ i, UpperSemicontinuousWithinAt (f' · i) s x := fun i y hy ↦
-    (hf i (OrderDual.ofDual y) (OrderDual.toDual_lt.mp hy)).mono
-      fun _ hx' ↦ OrderDual.toDual_lt.mpr hx'
-  have hfin' : ∃ u ∈ 𝓝[s] x, (f' '' u).Finite := by
-    obtain ⟨u, hu, hufin⟩ := hfin
-    refine ⟨u, hu, ?_⟩
-    rw [← Set.image_image (fun v i ↦ OrderDual.toDual (v i)) f u]
-    exact hufin.image _
-  exact
-    (eventually_le_of_upperSemicontinuousWithinAt_of_finite_image_on_nhdsWithin hf' hfin').mono
-      fun _ hx' i ↦ OrderDual.toDual_le_toDual.mp (hx' i)
+    ∀ᶠ x' in 𝓝[s] x, f x ≤ f x' :=
+  eventually_le_of_upperSemicontinuousWithinAt_of_finite_image_on_nhdsWithin
+    (β := fun i ↦ (β i)ᵒᵈ) hf hfin
 
 /-- If each coordinate of `f` is lower semicontinuous at `x` and `f` takes finitely many values on
 a neighbourhood of `x`, then `f x ≤ f x'` eventually in `𝓝 x`. -/
@@ -103,11 +93,9 @@ theorem eventually_ge_of_lowerSemicontinuousAt_of_finite_image_on_nhds
     {f : α → ∀ i, β i} {x : α}
     (hf : ∀ i, LowerSemicontinuousAt (f · i) x)
     (hfin : ∃ u ∈ 𝓝 x, (f '' u).Finite) :
-    ∀ᶠ x' in 𝓝 x, f x ≤ f x' := by
-  rw [← nhdsWithin_univ]
-  refine eventually_ge_of_lowerSemicontinuousWithinAt_of_finite_image_on_nhdsWithin
-    (fun i ↦ (hf i).lowerSemicontinuousWithinAt univ) ?_
-  rwa [nhdsWithin_univ]
+    ∀ᶠ x' in 𝓝 x, f x ≤ f x' :=
+  eventually_le_of_upperSemicontinuousAt_of_finite_image_on_nhds
+    (β := fun i ↦ (β i)ᵒᵈ) hf hfin
 
 end Eventually
 
@@ -169,9 +157,9 @@ theorem Monotone.lowerSemicontinuousWithinAt_comp_of_finite_image_on_nhdsWithin
     {g : (∀ i, β i) → γ} (hg : Monotone g) {f : α → ∀ i, β i} {s : Set α} {x : α}
     (hf : ∀ i, LowerSemicontinuousWithinAt (f · i) s x)
     (hfin : ∃ u ∈ 𝓝[s] x, (f '' u).Finite) :
-    LowerSemicontinuousWithinAt (fun x' ↦ g (f x')) s x := fun _ hy ↦
-  (TauCeti.eventually_ge_of_lowerSemicontinuousWithinAt_of_finite_image_on_nhdsWithin
-    hf hfin).mono fun _ hx' ↦ hy.trans_le (hg hx')
+    LowerSemicontinuousWithinAt (fun x' ↦ g (f x')) s x :=
+  Monotone.upperSemicontinuousWithinAt_comp_of_finite_image_on_nhdsWithin
+    (β := fun i ↦ (β i)ᵒᵈ) (γ := γᵒᵈ) hg.dual hf hfin
 
 /-- Post-composing a coordinatewise lower semicontinuous map `f` taking finitely many distinct
 product values on a neighbourhood of `x` with a monotone map preserves
@@ -180,9 +168,9 @@ theorem Monotone.lowerSemicontinuousAt_comp_of_finite_image_on_nhds
     {g : (∀ i, β i) → γ} (hg : Monotone g) {f : α → ∀ i, β i} {x : α}
     (hf : ∀ i, LowerSemicontinuousAt (f · i) x)
     (hfin : ∃ u ∈ 𝓝 x, (f '' u).Finite) :
-    LowerSemicontinuousAt (fun x' ↦ g (f x')) x := fun _ hy ↦
-  (TauCeti.eventually_ge_of_lowerSemicontinuousAt_of_finite_image_on_nhds hf hfin).mono
-    fun _ hx' ↦ hy.trans_le (hg hx')
+    LowerSemicontinuousAt (fun x' ↦ g (f x')) x :=
+  Monotone.upperSemicontinuousAt_comp_of_finite_image_on_nhds
+    (β := fun i ↦ (β i)ᵒᵈ) (γ := γᵒᵈ) hg.dual hf hfin
 
 /-- Post-composing a coordinatewise lower semicontinuous map `f` taking finitely many distinct
 product values on a relative neighbourhood within `s` of each point of `s` with a monotone map
@@ -192,9 +180,8 @@ theorem Monotone.lowerSemicontinuousOn_comp_of_finite_image_on_nhdsWithin
     (hf : ∀ i, LowerSemicontinuousOn (f · i) s)
     (hfin : ∀ x ∈ s, ∃ u ∈ 𝓝[s] x, (f '' u).Finite) :
     LowerSemicontinuousOn (fun x' ↦ g (f x')) s :=
-  fun x hx ↦
-    hg.lowerSemicontinuousWithinAt_comp_of_finite_image_on_nhdsWithin
-      (fun i ↦ hf i x hx) (hfin x hx)
+  Monotone.upperSemicontinuousOn_comp_of_finite_image_on_nhdsWithin
+    (β := fun i ↦ (β i)ᵒᵈ) (γ := γᵒᵈ) hg.dual hf hfin
 
 /-- Post-composing a coordinatewise lower semicontinuous map `f` taking finitely many distinct
 product values on a neighbourhood of each point with a monotone map preserves
@@ -204,6 +191,7 @@ theorem Monotone.lowerSemicontinuous_comp_of_finite_image_on_nhds
     (hf : ∀ i, LowerSemicontinuous (f · i))
     (hfin : ∀ x, ∃ u ∈ 𝓝 x, (f '' u).Finite) :
     LowerSemicontinuous (fun x' ↦ g (f x')) :=
-  fun x ↦ hg.lowerSemicontinuousAt_comp_of_finite_image_on_nhds (fun i ↦ hf i x) (hfin x)
+  Monotone.upperSemicontinuous_comp_of_finite_image_on_nhds
+    (β := fun i ↦ (β i)ᵒᵈ) (γ := γᵒᵈ) hg.dual hf hfin
 
 end MonotoneComp

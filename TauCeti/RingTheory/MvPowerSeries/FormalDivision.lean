@@ -552,49 +552,21 @@ theorem disjoint_restrictScalars_complementSubmodule {R : Type*} [Semiring R]
     (ord.mem_complementSubmodule_iff.mp hfc)
 
 open scoped Classical in
-private noncomputable def seriesOfComplement {R : Type*} [Semiring R]
-    (I : Ideal (MvPowerSeries σ R))
-    (g : {α : σ →₀ ℕ // α ∉ ord.initialDiagram I} → R) : MvPowerSeries σ R :=
-  Function.extend Subtype.val g 0
-
-private theorem coeff_seriesOfComplement_coe {R : Type*} [Semiring R]
-    (I : Ideal (MvPowerSeries σ R))
-    (g : {α : σ →₀ ℕ // α ∉ ord.initialDiagram I} → R)
-    (α : {α : σ →₀ ℕ // α ∉ ord.initialDiagram I}) :
-    MvPowerSeries.coeff α.val (ord.seriesOfComplement I g) = g α := by
-  rw [MvPowerSeries.coeff_apply, seriesOfComplement]
-  exact Subtype.val_injective.extend_apply g 0 α
-
-private theorem coeff_seriesOfComplement_of_mem {R : Type*} [Semiring R]
-    (I : Ideal (MvPowerSeries σ R))
-    (g : {α : σ →₀ ℕ // α ∉ ord.initialDiagram I} → R)
-    {β : σ →₀ ℕ} (hβ : β ∈ ord.initialDiagram I) :
-    MvPowerSeries.coeff β (ord.seriesOfComplement I g) = 0 := by
-  rw [MvPowerSeries.coeff_apply, seriesOfComplement,
-    Function.extend_apply' _ _ _ fun ⟨α, h⟩ ↦ α.property (h ▸ hβ), Pi.zero_apply]
-
 /-- The `R`-submodule `ord.complementSubmodule I` of power series supported outside
 `ord.initialDiagram I` is `R`-linearly isomorphic to the function space
 `{α : σ →₀ ℕ // α ∉ ord.initialDiagram I} → R`. -/
 noncomputable def complementSubmoduleEquivFun {R : Type*} [Semiring R]
     (I : Ideal (MvPowerSeries σ R)) :
-    ord.complementSubmodule I ≃ₗ[R] ({α : σ →₀ ℕ // α ∉ ord.initialDiagram I} → R) where
-  toFun f α := MvPowerSeries.coeff α.val f.val
-  map_add' f g := funext fun α ↦ map_add (MvPowerSeries.coeff α.val) f.val g.val
-  map_smul' _ _ := funext fun _ ↦ by simp
-  invFun g := ⟨ord.seriesOfComplement I g,
-    ord.mem_complementSubmodule_iff.mpr fun β hβ hD ↦ by
-      rw [MvPowerSeries.mem_support, ord.coeff_seriesOfComplement_of_mem I g hD] at hβ
-      exact hβ rfl⟩
-  left_inv f := Subtype.ext <| MvPowerSeries.ext fun β ↦ by
-    by_cases h : β ∈ ord.initialDiagram I
-    · rw [Subtype.coe_mk, ord.coeff_seriesOfComplement_of_mem I _ h]
-      symm
-      by_contra hne
-      exact absurd h (ord.mem_complementSubmodule_iff.mp f.property β
-        (MvPowerSeries.mem_support.mpr hne))
-    · exact ord.coeff_seriesOfComplement_coe I (fun α ↦ MvPowerSeries.coeff α.val f.val) ⟨β, h⟩
-  right_inv g := funext fun α ↦ ord.coeff_seriesOfComplement_coe I g α
+    ord.complementSubmodule I ≃ₗ[R] ({α : σ →₀ ℕ // α ∉ ord.initialDiagram I} → R) :=
+  (LinearEquiv.ofEq (ord.complementSubmodule I)
+    (⨅ α ∈ ord.initialDiagram I, LinearMap.ker (LinearMap.proj α : ((σ →₀ ℕ) → R) →ₗ[R] R))
+    (Submodule.ext fun f ↦ by
+      simp only [ord.mem_complementSubmodule_iff, MvPowerSeries.mem_support,
+        MvPowerSeries.coeff_apply, not_imp_not, Submodule.mem_iInf]
+      rfl)).trans
+    (LinearMap.iInfKerProjEquiv R (fun _ : σ →₀ ℕ ↦ R)
+      (disjoint_compl_left (a := ord.initialDiagram I))
+      (Set.compl_union_self (ord.initialDiagram I)).ge)
 
 @[simp]
 theorem complementSubmoduleEquivFun_apply {R : Type*} [Semiring R]
@@ -611,8 +583,12 @@ theorem coeff_coe_complementSubmoduleEquivFun_symm {R : Type*} [Semiring R]
     MvPowerSeries.coeff β ((ord.complementSubmoduleEquivFun I).symm g : MvPowerSeries σ R) =
       if h : β ∉ ord.initialDiagram I then g ⟨β, h⟩ else 0 := by
   split_ifs with h
-  · exact ord.coeff_seriesOfComplement_of_mem I g h
-  · exact ord.coeff_seriesOfComplement_coe I g ⟨β, h⟩
+  · by_contra hne
+    exact ord.mem_complementSubmodule_iff.mp
+      ((ord.complementSubmoduleEquivFun I).symm g).property β
+      (MvPowerSeries.mem_support.mpr hne) h
+  · exact (ord.complementSubmoduleEquivFun_apply I _ ⟨β, h⟩).symm.trans
+      (congrFun ((ord.complementSubmoduleEquivFun I).apply_symm_apply g) ⟨β, h⟩)
 
 /-- At an exponent `α` outside `ord.initialDiagram I`, the series
 `((ord.complementSubmoduleEquivFun I).symm g : MvPowerSeries σ R)` has coefficient `g α`. -/
@@ -621,8 +597,9 @@ theorem coeff_coe_complementSubmoduleEquivFun_symm_coe {R : Type*} [Semiring R]
     (I : Ideal (MvPowerSeries σ R)) (g : {α : σ →₀ ℕ // α ∉ ord.initialDiagram I} → R)
     (α : {α : σ →₀ ℕ // α ∉ ord.initialDiagram I}) :
     MvPowerSeries.coeff α.val ((ord.complementSubmoduleEquivFun I).symm g : MvPowerSeries σ R) =
-      g α :=
-  ord.coeff_seriesOfComplement_coe I g α
+      g α := by
+  classical
+  simp [ord.coeff_coe_complementSubmoduleEquivFun_symm, α.property]
 
 /-- At an exponent `β ∈ ord.initialDiagram I`, the series
 `((ord.complementSubmoduleEquivFun I).symm g : MvPowerSeries σ R)` has coefficient `0`. -/
@@ -630,8 +607,9 @@ theorem coeff_coe_complementSubmoduleEquivFun_symm_coe {R : Type*} [Semiring R]
 theorem coeff_coe_complementSubmoduleEquivFun_symm_of_mem {R : Type*} [Semiring R]
     (I : Ideal (MvPowerSeries σ R)) (g : {α : σ →₀ ℕ // α ∉ ord.initialDiagram I} → R)
     {β : σ →₀ ℕ} (hβ : β ∈ ord.initialDiagram I) :
-    MvPowerSeries.coeff β ((ord.complementSubmoduleEquivFun I).symm g : MvPowerSeries σ R) = 0 :=
-  ord.coeff_seriesOfComplement_of_mem I g hβ
+    MvPowerSeries.coeff β ((ord.complementSubmoduleEquivFun I).symm g : MvPowerSeries σ R) = 0 := by
+  classical
+  simp [ord.coeff_coe_complementSubmoduleEquivFun_symm, hβ]
 
 private theorem sub_mem_and_mem_complementSubmodule {R ι : Type*} [Ring R] [Fintype ι]
     {I : Ideal (MvPowerSeries σ R)}

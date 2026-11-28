@@ -11,7 +11,8 @@ import TauCeti.RingTheory.MvPowerSeries.HilbertSamuel
 # Examples of formal power series Hilbert–Samuel functions
 
 This file collects worked examples illustrating `Ideal.localQuotientHilbertSamuel` for ideals
-in multivariate power series rings `MvPowerSeries σ K` and `TauCeti.hsLexStabilization`:
+in multivariate power series rings `MvPowerSeries σ K` and lexicographic stabilization
+(`TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_toLex_le`):
 
 * the univariate fat point `K⟦X⟧ ⧸ (X²)` with Hilbert–Samuel function `(1, 2, 2, …)`;
 * the ascending chain of univariate ideals `(X ^ max (N - j) 1)`, whose Hilbert–Samuel
@@ -22,7 +23,7 @@ in multivariate power series rings `MvPowerSeries σ K` and `TauCeti.hsLexStabil
   lexicographically;
 * the counterexample sequence `f j ℓ = if j ≤ ℓ then 1 else 0`, which strictly decreases
   lexicographically without stabilizing, showing that realizability by ideals is essential in
-  `TauCeti.hsLexStabilization`.
+  `TauCeti.exists_forall_ge_localQuotientHilbertSamuel_eq_of_toLex_le`.
 -/
 
 namespace TauCeti
@@ -72,7 +73,7 @@ example (K : Type*) [Field K] :
   intro I₁ I₂ H₁ H₂
   have hH₁ : ∀ n, 1 ≤ n → H₁ n = 3 := fun n hn ↦ by
     dsimp only [H₁, I₁]
-    rw [Ideal.localQuotientHilbertSamuel_maximalIdeal_pow_succ 1 n,
+    rw [localQuotientHilbertSamuel_maximalIdeal_pow_succ 1 n,
       min_eq_left hn, MvPowerSeries.localQuotientHilbertSamuel_bot_eq_choose, Fintype.card_fin]
     norm_num
   have hH₂ : ∀ n, H₂ n = (n + 1 : ℕ∞) := fun n ↦ by
@@ -94,9 +95,9 @@ example (K : Type*) [Field K] :
   · rw [hH₂ 1, hH₁ 1 le_rfl]
     norm_num
 
-/-- Realizability as Hilbert–Samuel functions is essential for `hsLexStabilization`: the sequence
-`f j ℓ = if j ≤ ℓ then 1 else 0` decreases strictly in the lexicographic order at every step and
-never stabilizes, and for `j ≥ 1` none of its terms is realized by any ideal of `A`. -/
+/-- Realizability as Hilbert–Samuel functions is essential for lexicographic stabilization: the
+sequence `f j ℓ = if j ≤ ℓ then 1 else 0` decreases strictly in the lexicographic order at every
+step and never stabilizes, and for `j ≥ 1` none of its terms is realized by any ideal of `A`. -/
 example (A : Type*) [CommRing A] [IsLocalRing A] :
     let f : ℕ → ℕ → ℕ∞ := fun j ℓ ↦ if j ≤ ℓ then 1 else 0
     (∀ j, Pi.Lex (· < ·) (· < ·) (f (j + 1)) (f j)) ∧

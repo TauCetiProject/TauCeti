@@ -901,8 +901,8 @@ theorem initialDiagram_degLex_sup_maximalIdeal_pow
     degLex.initialDiagram (I ⊔ IsLocalRing.maximalIdeal (MvPowerSeries σ K) ^ k) =
       degLex.initialDiagram I ∪ {α : σ →₀ ℕ | k ≤ α.degree} :=
   initialDiagram_degLex_sup_eq_union_of_order I _ k
-    (fun _ hg ↦ MvPowerSeries.natCast_le_order_of_mem_maximalIdeal_pow hg)
-    (fun α hα ↦ Ideal.pow_le_pow_right hα (MvPowerSeries.monomial_mem_maximalIdeal_pow α 1))
+    (fun g hg ↦ g.natCast_le_order_of_mem_maximalIdeal_pow hg)
+    (fun α hα ↦ Ideal.pow_le_pow_right hα (TauCeti.mvPowerSeries_monomial_mem_maximalIdeal_pow α 1))
 
 /-- Over a field `K`, adjoining the maximal ideal of `MvPowerSeries σ K` to an ideal `I` adjoins
 all nonzero exponents (`1 ≤ α.degree`) to `degLex.initialDiagram I`. -/

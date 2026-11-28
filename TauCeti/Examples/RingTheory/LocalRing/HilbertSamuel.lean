@@ -35,7 +35,7 @@ example : ∃ (p : ℚ[X]) (hmax : (Ideal.span {p}).IsMaximal),
   have hp_deg : p.natDegree = 2 := by simp [p]
   have hp_irr : Irreducible p := Polynomial.irreducible_X_sq_add_one ℚ
   have hmax : (Ideal.span {p}).IsMaximal := PrincipalIdealRing.isMaximal_of_irreducible hp_irr
-  refine ⟨p, hmax, Ideal.localQuotientHilbertSamuel_bot_zero, ?_⟩
+  refine ⟨p, hmax, localQuotientHilbertSamuel_bot_zero, ?_⟩
   let A := Localization.AtPrime (Ideal.span {p})
   have : Module.Finite ℚ (ℚ[X] ⧸ Ideal.span {p}) := (AdjoinRoot.powerBasis hp_irr.ne_zero).finite
   have hres : Module.length ℚ (IsLocalRing.ResidueField A) = 2 := by
@@ -47,4 +47,4 @@ example : ∃ (p : ℚ[X]) (hmax : (Ideal.span {p}).IsMaximal),
     Ideal.quotientEquivAlgOfEq ℚ (by simp)
   rw [← hquot.toLinearEquiv.length_eq,
     length_quotient_sup_maximalIdeal_pow_eq_mul_length_residueField ℚ A ⊥ 0,
-    Ideal.localQuotientHilbertSamuel_bot_zero, one_mul, hres]
+    localQuotientHilbertSamuel_bot_zero, one_mul, hres]
