@@ -5,7 +5,8 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Kernel.IonescuTulcea.Traj
+public import Mathlib.Probability.Kernel.IonescuTulcea.Traj
+public import TauCeti.Probability.Kernel.IonescuTulcea.Maps
 
 /-!
 # Projective limits on sequences

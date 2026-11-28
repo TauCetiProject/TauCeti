@@ -98,16 +98,16 @@ def envStep (n : ℕ) : Kernel ((_ : Iic n) → ι × ℝ) (ι × ℝ) :=
 theorem envStep_def (n : ℕ) :
     envStep ρ π n = π.next n ⊗ₖ (ρ (n + 1)).prodMkLeft ((_ : Iic n) → ι × ℝ) := (rfl)
 
-variable [∀ t, IsMarkovKernel (ρ t)]
-
-instance (n : ℕ) : IsMarkovKernel (envStep ρ π n) := by
+instance (n : ℕ) [IsMarkovKernel (ρ (n + 1))] : IsMarkovKernel (envStep ρ π n) := by
   rw [envStep_def]
   infer_instance
 
 /-- The arm marginal of the joint step is the policy's kernel. -/
 @[simp]
-theorem fst_envStep (n : ℕ) : (envStep ρ π n).fst = π.next n := by
+theorem fst_envStep (n : ℕ) [IsMarkovKernel (ρ (n + 1))] : (envStep ρ π n).fst = π.next n := by
   rw [envStep_def, Kernel.fst_compProd]
+
+variable [∀ t, IsMarkovKernel (ρ t)]
 
 /-- The law on trajectories `ℕ → ι × ℝ` of the interaction of the policy `π` with the environment
 `ρ`: the first arm is drawn from `π.first` and its reward from `ρ 0`, and after round `n` the next
