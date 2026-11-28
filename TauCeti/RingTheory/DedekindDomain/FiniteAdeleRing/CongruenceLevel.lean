@@ -15,16 +15,19 @@ import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.Topology.Instances.Matrix
 
 /-!
-# Congruence levels of `GL₂` over the integral finite adeles
+# Congruence levels over the integral finite adeles
 
 For a Dedekind domain `R` with fraction field `K` (for instance the ring of integers of a number
 field), write `Ô = ∏_v 𝒪_v` for the integral finite adeles and `NÔ` for the completion
 `IsDedekindDomain.FiniteAdeleRing.completedIdeal K N` of an integral ideal `N`. This file defines
-the three congruence levels of `GL₂(𝔸_f)`:
+the congruence levels of `GL_n(𝔸_f)`:
 
-* the principal level `K(N)`, the image along `TauCeti.GeneralLinear.pointsContinuousMulEquiv`
-  and the inclusion `Ô ⊆ 𝔸_f` of Tau Ceti's congruence subgroup of level `NÔ` of the `Ô`-points
-  of `GL₂`, that is, `{g ∈ GL₂(Ô) : g ≡ 1 mod NÔ}`;
+* for a finite index type `ι` of size `n`, the principal level `K(N) ⊆ GL_n(𝔸_f)`, the image under
+  `IsDedekindDomain.FiniteAdeleRing.integralGL` of the kernel of reduction
+  `GL_n(Ô) → GL_n(Ô ⧸ NÔ)`, that is, `{g ∈ GL_n(Ô) : g ≡ 1 mod NÔ}`; for `GL₂` it is the image
+  along `TauCeti.GeneralLinear.pointsContinuousMulEquiv` and `Ô ⊆ 𝔸_f` of Tau Ceti's congruence
+  subgroup of level `NÔ` of the `Ô`-points of `GL₂`
+  (`IsDedekindDomain.FiniteAdeleRing.principalLevel_fin_two_eq_map_congruenceSubgroup`);
 * `K₀(N) = {g ∈ GL₂(Ô) : c ∈ NÔ}` and `K₁(N) = {g ∈ GL₂(Ô) : c ∈ NÔ, d - 1 ∈ NÔ}`, where
   `g = [[a, b], [c, d]]`, the images of the levels `TauCeti.GL2K0 (NÔ)` and `TauCeti.GL2K1 (NÔ)`
   of `GL₂(Ô)`.
@@ -37,8 +40,9 @@ conditions on the entries (`NÔ` is closed in `Ô`).
 
 ## Main declarations
 
-* `IsDedekindDomain.FiniteAdeleRing.principalLevel`, `level1`, `level0`: the levels `K(N)`,
-  `K₁(N)` and `K₀(N)`, images of subgroups of `GL₂(Ô)` under the inclusion
+* `IsDedekindDomain.FiniteAdeleRing.principalLevel`, `level1`, `level0`: the levels `K(N)` of
+  `GL_n(𝔸_f)` and `K₁(N)`, `K₀(N)` of `GL₂(𝔸_f)`, images of subgroups of `GL_n(Ô)` under the
+  inclusion
   `IsDedekindDomain.FiniteAdeleRing.integralGL` of
   `TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.IntegralGL`, with entrywise membership
   criteria `mem_principalLevel_iff`, `mem_level1_iff` and `mem_level0_iff`, all instances of
@@ -73,19 +77,17 @@ namespace IsDedekindDomain.FiniteAdeleRing
 open TauCeti TauCeti.GeneralLinear
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
-variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
+variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K] (ι : Type*) [Fintype ι]
+  [DecidableEq ι]
 
 /-! ### The levels -/
 
-/-- The **principal congruence level** `K(N) ⊆ GL₂(𝔸_f)`: the image along
-`TauCeti.GeneralLinear.pointsContinuousMulEquiv` and `Ô ⊆ 𝔸_f` of the congruence subgroup of
-level `NÔ` of the `Ô`-points of `GL₂`, that is, `{g ∈ GL₂(Ô) : g - 1 ∈ M₂(NÔ)}`. -/
-def principalLevel (N : Ideal R) : Subgroup (GL (Fin 2) 𝔸ᶠ[R, K]) :=
-  (HopfAlgebra.congruenceSubgroup R (coordinateHopfAlgebra R 2) (completedIdeal K N)).map
-    ((integralGL K (Fin 2)).comp
-      (pointsContinuousMulEquiv (k := R) (R := integralAdeles R K) 2 :
-        WithConv (coordinateHopfAlgebra R 2 →ₐ[R] integralAdeles R K) ≃*
-          GL (Fin 2) (integralAdeles R K)).toMonoidHom)
+/-- The **principal congruence level** `K(N) ⊆ GL_n(𝔸_f)` of a finite index type `ι` of size `n`:
+the image under `integralGL` of the kernel of reduction `GL_n(Ô) → GL_n(Ô ⧸ NÔ)`, that is,
+`{g ∈ GL_n(Ô) : g - 1 ∈ M_n(NÔ)}`. -/
+def principalLevel (N : Ideal R) : Subgroup (GL ι 𝔸ᶠ[R, K]) :=
+  (Matrix.GeneralLinearGroup.map (n := ι) (Ideal.Quotient.mk (completedIdeal K N))).ker.map
+    (integralGL K ι)
 
 /-- The **level `K₁(N)`** of `GL₂(𝔸_f)`: the matrices `[[a, b], [c, d]] ∈ GL₂(Ô)` with
 `c ∈ NÔ` and `d - 1 ∈ NÔ`. -/
@@ -97,12 +99,23 @@ def level1 (N : Ideal R) : Subgroup (GL (Fin 2) 𝔸ᶠ[R, K]) :=
 def level0 (N : Ideal R) : Subgroup (GL (Fin 2) 𝔸ᶠ[R, K]) :=
   (GL2K0 (completedIdeal K N)).map (integralGL K (Fin 2))
 
-/-- `K(N)` is the image of the kernel of reduction `GL₂(Ô) → GL₂(Ô ⧸ NÔ)`. -/
+/-- `K(N)` is the image of the kernel of reduction `GL_n(Ô) → GL_n(Ô ⧸ NÔ)`. -/
 theorem principalLevel_eq_map_ker (N : Ideal R) :
-    principalLevel K N =
-      (Matrix.GeneralLinearGroup.map (n := Fin 2)
-        (Ideal.Quotient.mk (completedIdeal K N))).ker.map (integralGL K (Fin 2)) := by
-  rw [principalLevel, coe_pointsContinuousMulEquiv, ← Subgroup.map_map,
+    principalLevel K ι N =
+      (Matrix.GeneralLinearGroup.map (n := ι)
+        (Ideal.Quotient.mk (completedIdeal K N))).ker.map (integralGL K ι) :=
+  (rfl)
+
+/-- For `GL₂`, `K(N)` is the image along `TauCeti.GeneralLinear.pointsContinuousMulEquiv` and
+`Ô ⊆ 𝔸_f` of the congruence subgroup of level `NÔ` of the `Ô`-points of `GL₂`. -/
+theorem principalLevel_fin_two_eq_map_congruenceSubgroup (N : Ideal R) :
+    principalLevel K (Fin 2) N =
+      (HopfAlgebra.congruenceSubgroup R (coordinateHopfAlgebra R 2) (completedIdeal K N)).map
+        ((integralGL K (Fin 2)).comp
+          (pointsContinuousMulEquiv (k := R) (R := integralAdeles R K) 2 :
+            WithConv (coordinateHopfAlgebra R 2 →ₐ[R] integralAdeles R K) ≃*
+              GL (Fin 2) (integralAdeles R K)).toMonoidHom) := by
+  rw [principalLevel_eq_map_ker, coe_pointsContinuousMulEquiv, ← Subgroup.map_map,
     ← map_congruenceSubgroup (R := R)]
 
 /-- `K₁(N)` is the image of `K₁(NÔ) ≤ GL₂(Ô)`. -/
@@ -115,18 +128,18 @@ theorem level0_def (N : Ideal R) :
     level0 K N = (GL2K0 (completedIdeal K N)).map (integralGL K (Fin 2)) :=
   (rfl)
 
-variable {K}
+variable {K ι}
 
 /-- Entrywise membership in `K(N)`: integral entries, integral inverse entries, and every entry of
 `g - 1` in `NÔ`. -/
-theorem mem_principalLevel_iff {N : Ideal R} {g : GL (Fin 2) 𝔸ᶠ[R, K]} :
-    g ∈ principalLevel K N ↔
-      ∃ (hg : ∀ i j, (g : Matrix (Fin 2) (Fin 2) 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K),
-        (∀ i j, (↑g⁻¹ : Matrix (Fin 2) (Fin 2) 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K) ∧
-          ∀ i j, (⟨_, hg i j⟩ - (1 : Matrix (Fin 2) (Fin 2) (integralAdeles R K)) i j :
+theorem mem_principalLevel_iff {N : Ideal R} {g : GL ι 𝔸ᶠ[R, K]} :
+    g ∈ principalLevel K ι N ↔
+      ∃ (hg : ∀ i j, (g : Matrix ι ι 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K),
+        (∀ i j, (↑g⁻¹ : Matrix ι ι 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K) ∧
+          ∀ i j, (⟨_, hg i j⟩ - (1 : Matrix ι ι (integralAdeles R K)) i j :
             integralAdeles R K) ∈ completedIdeal K N := by
-  rw [principalLevel_eq_map_ker, mem_map_integralGL_iff (Fin 2)
-    (P := fun M ↦ ∀ i j, M i j - (1 : Matrix (Fin 2) (Fin 2) _) i j ∈ completedIdeal K N)
+  rw [principalLevel_eq_map_ker, mem_map_integralGL_iff ι
+    (P := fun M ↦ ∀ i j, M i j - (1 : Matrix ι ι _) i j ∈ completedIdeal K N)
     fun _ ↦ Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff _]
   simp only [Matrix.of_apply]
 
@@ -153,26 +166,26 @@ theorem mem_level0_iff {N : Ideal R} {g : GL (Fin 2) 𝔸ᶠ[R, K]} :
     fun _ ↦ GL2K0.mem_iff]
   simp only [Matrix.of_apply]
 
-/-- The entries of the diagonal image in `GL₂(𝔸_f)` of a matrix of `GL₂(R)` are integral. -/
-private theorem map_algebraMap_apply_mem_integralAdeles (g : GL (Fin 2) R) (i j : Fin 2) :
-    (Matrix.GeneralLinearGroup.map (algebraMap R 𝔸ᶠ[R, K]) g : Matrix (Fin 2) (Fin 2) 𝔸ᶠ[R, K])
+/-- The entries of the diagonal image in `GL_n(𝔸_f)` of a matrix of `GL_n(R)` are integral. -/
+private theorem map_algebraMap_apply_mem_integralAdeles (g : GL ι R) (i j : ι) :
+    (Matrix.GeneralLinearGroup.map (algebraMap R 𝔸ᶠ[R, K]) g : Matrix ι ι 𝔸ᶠ[R, K])
       i j ∈ integralAdeles R K := by
   rw [Matrix.GeneralLinearGroup.map_apply]
   exact (integralAdeles R K).algebraMap_mem _
 
-/-- The entries of the inverse of the diagonal image in `GL₂(𝔸_f)` of a matrix of `GL₂(R)` are
+/-- The entries of the inverse of the diagonal image in `GL_n(𝔸_f)` of a matrix of `GL_n(R)` are
 integral. -/
-private theorem map_algebraMap_inv_apply_mem_integralAdeles (g : GL (Fin 2) R) (i j : Fin 2) :
+private theorem map_algebraMap_inv_apply_mem_integralAdeles (g : GL ι R) (i j : ι) :
     (↑(Matrix.GeneralLinearGroup.map (algebraMap R 𝔸ᶠ[R, K]) g)⁻¹ :
-      Matrix (Fin 2) (Fin 2) 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K := by
+      Matrix ι ι 𝔸ᶠ[R, K]) i j ∈ integralAdeles R K := by
   rw [← map_inv]
   exact map_algebraMap_apply_mem_integralAdeles (K := K) g⁻¹ i j
 
-/-- The diagonal image in `GL₂(𝔸_f)` of a matrix of `GL₂(R)` congruent to `1` modulo `N` lies in
+/-- The diagonal image in `GL_n(𝔸_f)` of a matrix of `GL_n(R)` congruent to `1` modulo `N` lies in
 the principal level `K(N)`. -/
-theorem map_algebraMap_mem_principalLevel {N : Ideal R} {g : GL (Fin 2) R}
-    (hg : ∀ i j, (g : Matrix (Fin 2) (Fin 2) R) i j - (1 : Matrix (Fin 2) (Fin 2) R) i j ∈ N) :
-    Matrix.GeneralLinearGroup.map (algebraMap R 𝔸ᶠ[R, K]) g ∈ principalLevel K N := by
+theorem map_algebraMap_mem_principalLevel {N : Ideal R} {g : GL ι R}
+    (hg : ∀ i j, (g : Matrix ι ι R) i j - (1 : Matrix ι ι R) i j ∈ N) :
+    Matrix.GeneralLinearGroup.map (algebraMap R 𝔸ᶠ[R, K]) g ∈ principalLevel K ι N := by
   rw [mem_principalLevel_iff]
   refine ⟨map_algebraMap_apply_mem_integralAdeles g, map_algebraMap_inv_apply_mem_integralAdeles g,
     fun i j ↦ ?_⟩
@@ -180,18 +193,18 @@ theorem map_algebraMap_mem_principalLevel {N : Ideal R} {g : GL (Fin 2) R}
   ext
   simp [Matrix.one_apply, apply_ite]
 
-/-- An entry of the diagonal image of a matrix of `GL₂(R)`, read in `Ô`, is the image of the
+/-- An entry of the diagonal image of a matrix of `GL_n(R)`, read in `Ô`, is the image of the
 entry. -/
-private theorem mk_map_algebraMap_apply (g : GL (Fin 2) R) (i j : Fin 2) :
+private theorem mk_map_algebraMap_apply (g : GL ι R) (i j : ι) :
     (⟨_, map_algebraMap_apply_mem_integralAdeles (K := K) g i j⟩ : integralAdeles R K) =
-      algebraMap R (integralAdeles R K) ((g : Matrix (Fin 2) (Fin 2) R) i j) :=
+      algebraMap R (integralAdeles R K) ((g : Matrix ι ι R) i j) :=
   Subtype.ext (by simp [Matrix.GeneralLinearGroup.map_apply])
 
-/-- For `N ≠ ⊥`, the diagonal image in `GL₂(𝔸_f)` of a matrix of `GL₂(R)` lies in the principal
+/-- For `N ≠ ⊥`, the diagonal image in `GL_n(𝔸_f)` of a matrix of `GL_n(R)` lies in the principal
 level `K(N)` exactly when the matrix is congruent to `1` modulo `N`. -/
-theorem map_algebraMap_mem_principalLevel_iff {N : Ideal R} (hN : N ≠ ⊥) {g : GL (Fin 2) R} :
-    Matrix.GeneralLinearGroup.map (algebraMap R 𝔸ᶠ[R, K]) g ∈ principalLevel K N ↔
-      ∀ i j, (g : Matrix (Fin 2) (Fin 2) R) i j - (1 : Matrix (Fin 2) (Fin 2) R) i j ∈ N := by
+theorem map_algebraMap_mem_principalLevel_iff {N : Ideal R} (hN : N ≠ ⊥) {g : GL ι R} :
+    Matrix.GeneralLinearGroup.map (algebraMap R 𝔸ᶠ[R, K]) g ∈ principalLevel K ι N ↔
+      ∀ i j, (g : Matrix ι ι R) i j - (1 : Matrix ι ι R) i j ∈ N := by
   refine ⟨fun hg i j ↦ ?_, map_algebraMap_mem_principalLevel⟩
   obtain ⟨_, _, h⟩ := mem_principalLevel_iff.mp hg
   rw [← algebraMap_mem_completedIdeal_iff (K := K) hN, map_sub]
@@ -223,10 +236,10 @@ theorem map_algebraMap_mem_level0_iff {N : Ideal R} (hN : N ≠ ⊥) {g : GL (Fi
     map_algebraMap_inv_apply_mem_integralAdeles (K := K) g, ?_⟩⟩
   rwa [mk_map_algebraMap_apply]
 
-variable (K)
+variable (K ι)
 
 /-- `K(N) ≤ K₁(N)`. -/
-theorem principalLevel_le_level1 (N : Ideal R) : principalLevel K N ≤ level1 K N := by
+theorem principalLevel_le_level1 (N : Ideal R) : principalLevel K (Fin 2) N ≤ level1 K N := by
   rw [principalLevel_eq_map_ker, level1]
   exact Subgroup.map_mono (GL2K1.ker_map_le _)
 
@@ -235,9 +248,9 @@ theorem level1_le_level0 (N : Ideal R) : level1 K N ≤ level0 K N :=
   Subgroup.map_mono (GL2K1.le_GL2K0 _)
 
 /-- `K(M) ≤ K(N)` whenever `M ⊆ N`. -/
-theorem principalLevel_mono : Monotone (principalLevel K (R := R)) :=
-  fun _ _ h ↦ Subgroup.map_mono (HopfAlgebra.congruenceSubgroup_mono R (coordinateHopfAlgebra R 2)
-    (integralAdeles R K) (completedIdeal_mono K h))
+theorem principalLevel_mono : Monotone (principalLevel K ι (R := R)) :=
+  fun _ _ h ↦ Subgroup.map_mono
+    (Matrix.GeneralLinearGroup.ker_map_quotientMk_mono (completedIdeal_mono K h))
 
 /-- `K₁(M) ≤ K₁(N)` whenever `M ⊆ N`. -/
 theorem level1_mono : Monotone (level1 K (R := R)) :=
@@ -257,24 +270,22 @@ theorem level0_top : level0 K (⊤ : Ideal R) = (integralGL K (Fin 2)).range := 
 theorem level1_top : level1 K (⊤ : Ideal R) = (integralGL K (Fin 2)).range := by
   rw [level1, completedIdeal_top, GL2K1_top, ← MonoidHom.range_eq_map]
 
-/-- For `N = R`, `K(N)` is `GL₂(Ô)`. -/
+/-- For `N = R`, `K(N)` is `GL_n(Ô)`. -/
 @[simp]
-theorem principalLevel_top : principalLevel K (⊤ : Ideal R) = (integralGL K (Fin 2)).range :=
-  le_antisymm (principalLevel_le_level1 K ⊤ |>.trans (level1_le_level0 K ⊤) |>.trans
-    (level0_top K).le) (by
-      rw [principalLevel_eq_map_ker, MonoidHom.range_eq_map]
-      refine Subgroup.map_mono fun g _ ↦ ?_
-      rw [Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff, completedIdeal_top]
-      exact fun _ _ ↦ Submodule.mem_top)
+theorem principalLevel_top : principalLevel K ι (⊤ : Ideal R) = (integralGL K ι).range := by
+  rw [principalLevel_eq_map_ker, MonoidHom.range_eq_map]
+  refine congrArg _ (eq_top_iff.2 fun g _ ↦ ?_)
+  rw [Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff, completedIdeal_top]
+  exact fun _ _ ↦ Submodule.mem_top
 
 /-- At the zero ideal the principal level is trivial: `K(0) = {1}`. -/
 @[simp]
-theorem principalLevel_bot : principalLevel K (⊥ : Ideal R) = ⊥ := by
+theorem principalLevel_bot : principalLevel K ι (⊥ : Ideal R) = ⊥ := by
   rw [principalLevel_eq_map_ker, (MonoidHom.ker_eq_bot_iff _).mpr
     (Matrix.GeneralLinearGroup.map_injective ((RingHom.injective_iff_ker_eq_bot _).mpr
       (Ideal.mk_ker.trans (completedIdeal_bot K)))), Subgroup.map_bot]
 
-variable {K}
+variable {K ι}
 
 open Matrix.GeneralLinearGroup in
 /-- The unipotent matrix `[[1, b], [0, 1]]` with integral `b` is the image of the unipotent
@@ -298,7 +309,8 @@ open Matrix.GeneralLinearGroup in
 `b ∈ NÔ`. -/
 theorem upperRightHom_mem_principalLevel_iff {b : 𝔸ᶠ[R, K]} (hb : b ∈ integralAdeles R K)
     {N : Ideal R} :
-    upperRightHom b ∈ principalLevel K N ↔ (⟨b, hb⟩ : integralAdeles R K) ∈ completedIdeal K N := by
+    upperRightHom b ∈ principalLevel K (Fin 2) N ↔
+      (⟨b, hb⟩ : integralAdeles R K) ∈ completedIdeal K N := by
   rw [principalLevel_eq_map_ker, ← integralGL_upperRightHom ⟨b, hb⟩,
     Subgroup.mem_map_iff_mem (integralGL_injective K (Fin 2)), mem_ker_map_quotientMk_iff]
   refine ⟨fun h ↦ by simpa using h 0 1, fun h i j ↦ ?_⟩
@@ -308,26 +320,27 @@ open Matrix.GeneralLinearGroup in
 /-- For a nonzero ideal `N` and `r ∈ R`, the unipotent matrix `[[1, r], [0, 1]]` lies in `K(N)`
 exactly when `r ∈ N`. -/
 theorem upperRightHom_algebraMap_mem_principalLevel_iff {N : Ideal R} (hN₀ : N ≠ ⊥) {r : R} :
-    upperRightHom (algebraMap R 𝔸ᶠ[R, K] r) ∈ principalLevel K N ↔ r ∈ N := by
+    upperRightHom (algebraMap R 𝔸ᶠ[R, K] r) ∈ principalLevel K (Fin 2) N ↔ r ∈ N := by
   rw [upperRightHom_mem_principalLevel_iff ((integralAdeles R K).algebraMap_mem r)]
   exact algebraMap_mem_completedIdeal_iff hN₀
 
-variable (K)
+variable (K ι)
 
 /-! ### Topology -/
 
-/-- For `N ≠ ⊥`, `K(N)` is open in `GL₂(𝔸_f)`: it is the image under the open embedding
-`integralGL` of the kernel of reduction modulo the open ideal `NÔ`. -/
+/-- For `N ≠ ⊥`, `K(N)` is open in `GL_n(𝔸_f)`: it is the image under the open embedding
+`integralGL` of the kernel of reduction modulo the open ideal `NÔ`, a neighbourhood of `1` in
+`GL_n(Ô)`. -/
 theorem isOpen_principalLevel {N : Ideal R} (hN : N ≠ ⊥) :
-    IsOpen (principalLevel K N : Set (GL (Fin 2) 𝔸ᶠ[R, K])) := by
+    IsOpen (principalLevel K ι N : Set (GL ι 𝔸ᶠ[R, K])) := by
   rw [principalLevel_eq_map_ker, Subgroup.coe_map]
-  exact (isOpenEmbedding_integralGL K (Fin 2)).isOpenMap _
-    (isOpen_ker_map_quotientMk 2 (isOpen_completedIdeal K hN))
+  exact (isOpenEmbedding_integralGL K ι).isOpenMap _ (Subgroup.isOpen_of_mem_nhds _
+    ((hasBasis_nhds_one_ker_map_quotientMk ι (hasBasis_nhds_zero_completedIdeal K)).mem_of_mem hN))
 
 /-- For `N ≠ ⊥`, `K₁(N)` is open in `GL₂(𝔸_f)`. -/
 theorem isOpen_level1 {N : Ideal R} (hN : N ≠ ⊥) :
     IsOpen (level1 K N : Set (GL (Fin 2) 𝔸ᶠ[R, K])) :=
-  Subgroup.isOpen_mono (principalLevel_le_level1 K N) (isOpen_principalLevel K hN)
+  Subgroup.isOpen_mono (principalLevel_le_level1 K N) (isOpen_principalLevel K (Fin 2) hN)
 
 /-- For `N ≠ ⊥`, `K₀(N)` is open in `GL₂(𝔸_f)`. -/
 theorem isOpen_level0 {N : Ideal R} (hN : N ≠ ⊥) :
@@ -337,21 +350,21 @@ theorem isOpen_level0 {N : Ideal R} (hN : N ≠ ⊥) :
 variable [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)]
 
 /-- With finite residue fields, `K(N)` is compact: it is the image of the kernel of reduction
-modulo `NÔ`, a closed subgroup of the compact group `GL₂(Ô)` as `NÔ` is closed. -/
+modulo `NÔ`, a closed subgroup of the compact group `GL_n(Ô)` as `NÔ` is closed. -/
 theorem isCompact_principalLevel (N : Ideal R) :
-    IsCompact (principalLevel K N : Set (GL (Fin 2) 𝔸ᶠ[R, K])) := by
+    IsCompact (principalLevel K ι N : Set (GL ι 𝔸ᶠ[R, K])) := by
   -- The kernel of reduction is cut out by the closed conditions `g i j - δ i j ∈ NÔ`.
-  have h : ((Matrix.GeneralLinearGroup.map (n := Fin 2)
-      (Ideal.Quotient.mk (completedIdeal K N))).ker : Set (GL (Fin 2) (integralAdeles R K))) =
-        ⋂ (i) (j), {g : GL (Fin 2) (integralAdeles R K) | (g : Matrix (Fin 2) (Fin 2) _) i j -
-          (1 : Matrix (Fin 2) (Fin 2) (integralAdeles R K)) i j ∈ completedIdeal K N} := by
+  have h : ((Matrix.GeneralLinearGroup.map (n := ι)
+      (Ideal.Quotient.mk (completedIdeal K N))).ker : Set (GL ι (integralAdeles R K))) =
+        ⋂ (i) (j), {g : GL ι (integralAdeles R K) | (g : Matrix ι ι _) i j -
+          (1 : Matrix ι ι (integralAdeles R K)) i j ∈ completedIdeal K N} := by
     ext g
     simp only [SetLike.mem_coe, Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff,
       Set.mem_iInter, Set.mem_ofPred_eq]
   rw [principalLevel_eq_map_ker, Subgroup.coe_map, h]
   exact (isClosed_iInter fun i ↦ isClosed_iInter fun j ↦ (isClosed_completedIdeal K N).preimage
     ((Units.continuous_val.matrix_elem i j).sub continuous_const)).isCompact.image
-      (continuous_integralGL K (Fin 2))
+      (continuous_integralGL K ι)
 
 /-- With finite residue fields, `K₁(N)` is compact: it is the image of the subgroup of `GL₂(Ô)`
 cut out by the closed conditions `c ∈ NÔ` and `d - 1 ∈ NÔ`. -/

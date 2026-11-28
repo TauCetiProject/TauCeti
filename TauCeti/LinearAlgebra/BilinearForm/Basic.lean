@@ -59,6 +59,8 @@ maps valued in an arbitrary module.
   preserves and reflects symmetry.
 * `LinearMap.BilinForm.exists_smul_eq_of_forall_dvd`: a form all of whose values are divisible
   by a regular element `a` is `a` times a form.
+* `LinearMap.BilinForm.eq_of_smul_eq`: rescaling by a left-regular element determines a bilinear
+  form uniquely.
 * `LinearMap.BilinForm.IsRefl.compl₁₂`: pullback preserves reflexivity.
 * `LinearMap.BilinForm.IsSymm.compl₁₂`: pullback preserves symmetry.
 * `LinearMap.BilinForm.IsSymm.apply_add_self`: polarization of a symmetric bilinear form.
@@ -181,6 +183,22 @@ theorem forall_dvd_iff_of_smul_eq {R M : Type*} [CommSemiring R] [AddCommMonoid 
     (∀ x, r ∣ C x x) ↔ ∀ x, r * a ∣ B x x := by
   subst B
   simp only [LinearMap.smul_apply, smul_eq_mul, mul_comm r a, ha.dvd_cancel_left]
+
+/-- Divisibility of self-pairings on a submodule `P` by `r * a` is equivalent to divisibility by
+`r` for any `a`-rescaling `C` of `B.restrict P` when `a` is left-regular. -/
+theorem forall_dvd_restrict_iff_of_smul_eq {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {B : LinearMap.BilinForm R M} {P : Submodule R M} {C : LinearMap.BilinForm R P}
+    {a : R} (ha : IsLeftRegular a) (hC : a • C = B.restrict P) (r : R) :
+    (∀ x : P, r ∣ C x x) ↔ ∀ v ∈ P, r * a ∣ B v v := by
+  rw [forall_dvd_iff_of_smul_eq ha hC r, Subtype.forall]
+  simp [restrict_apply]
+
+/-- Rescaling by a left-regular element determines a bilinear form uniquely. -/
+theorem eq_of_smul_eq {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    {a : R} (ha : IsLeftRegular a) {B C₁ C₂ : LinearMap.BilinForm R M}
+    (h₁ : a • C₁ = B) (h₂ : a • C₂ = B) : C₁ = C₂ :=
+  LinearMap.ext₂ fun x y ↦ ha (by
+    simpa using (LinearMap.congr_fun₂ h₁ x y).trans (LinearMap.congr_fun₂ h₂ x y).symm)
 
 /-- Rescaling by a scalar `a` that acts injectively on `R`, such as a regular element of `R`,
 neither creates nor destroys symmetry of a bilinear form. -/
