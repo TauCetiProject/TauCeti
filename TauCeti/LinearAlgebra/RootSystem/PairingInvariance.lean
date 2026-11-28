@@ -35,6 +35,30 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommG
 @[simp] theorem pairingIn_eq_pairing (P : RootPairing ι R M N) (i j : ι) :
     P.pairingIn R i j = P.pairing i j := by simpa using P.algebraMap_pairingIn R i j
 
+/-- Two root indices with `P.pairingIn S i j ≠ 2` are distinct. -/
+theorem ne_of_pairingIn_ne_two (P : RootPairing ι R M N) {S : Type*} [CommRing S] [Algebra S R]
+    [FaithfulSMul S R] [P.IsValuedIn S] {i j : ι} (h : P.pairingIn S i j ≠ 2) : i ≠ j :=
+  fun hij ↦ h (hij ▸ P.pairingIn_same S j)
+
+/-- When `P.pairingIn S i j = 0`, the ambient pairing `P.pairing i j` vanishes. -/
+theorem pairing_eq_zero_of_pairingIn_eq_zero (P : RootPairing ι R M N) {S : Type*} [CommRing S]
+    [Algebra S R] [P.IsValuedIn S] {i j : ι} (h : P.pairingIn S i j = 0) :
+    P.pairing i j = 0 := by
+  rw [← P.algebraMap_pairingIn S, h, map_zero]
+
+/-- When `P.pairingIn S i j = -1`, the ambient pairing `P.pairing i j` equals `-1`. -/
+theorem pairing_eq_neg_one_of_pairingIn_eq_neg_one (P : RootPairing ι R M N) {S : Type*}
+    [CommRing S] [Algebra S R] [P.IsValuedIn S] {i j : ι} (h : P.pairingIn S i j = -1) :
+    P.pairing i j = -1 := by
+  rw [← P.algebraMap_pairingIn S, h, map_neg, map_one]
+
+/-- When `P.pairing i j = (z : R)` in a faithfully `ℤ`-valued root pairing, `P.pairingIn ℤ i j = z`.
+-/
+theorem pairingIn_eq_of_pairing_eq_intCast (P : RootPairing ι R M N) [FaithfulSMul ℤ R]
+    [P.IsValuedIn ℤ] {i j : ι} {z : ℤ} (h : P.pairing i j = (z : R)) :
+    P.pairingIn ℤ i j = z :=
+  FaithfulSMul.algebraMap_injective ℤ R (by rw [P.algebraMap_pairingIn ℤ, h, eq_intCast])
+
 /-- Rewrites `P₂.pairingIn R (e i) (e j) = P.pairing i j` into agreement of `pairingIn R`. -/
 theorem pairingIn_eq_of_pairingIn_eq_pairing {ι₂ S M₂ N₂ : Type*} [CommRing S] [Algebra R S]
     [AddCommGroup M₂] [Module S M₂] [AddCommGroup N₂] [Module S N₂]

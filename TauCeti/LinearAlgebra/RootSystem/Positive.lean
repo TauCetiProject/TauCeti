@@ -77,8 +77,9 @@ positive root is a nonnegative integer combination of the simple coroots.
   `TauCeti.isPointed_posRootCone` says `Q⁺` is pointed,
   `TauCeti.eq_zero_of_add_eq_zero_of_mem_posRootCone` is the same fact as a cancellation rule,
   `TauCeti.root_add_ne_zero_of_mem_posRoots_of_mem_posRootCone` specializes that to a positive root
-  added to a member of `Q⁺`, and `TauCeti.sum_root_ne_zero_of_mem_posRoots` deduces that a nonempty
-  sum of positive roots is nonzero.
+  added to a member of `Q⁺`, `TauCeti.sum_root_ne_zero_of_mem_posRoots` deduces that a nonempty
+  sum of positive roots is nonzero, and `RootPairing.nsmul_root_mem_posRootCone_iff` says a root is
+  positive iff a positive natural multiple of it lies in `Q⁺`.
 * `TauCeti.eq_of_nsmul_root_sub_root_mem_posRootCone` says that the only positive root lying below
   a natural multiple of a simple root, in the order defined by `Q⁺`, is that simple root itself.
 * `TauCeti.one_le_height_of_mem_posRoots` says every positive root has height at least one, and
@@ -663,6 +664,27 @@ theorem sum_root_ne_zero_of_mem_posRoots {κ : Type*} {s : Finset κ} (hs : s.No
   exact root_add_ne_zero_of_mem_posRoots_of_mem_posRootCone P b (hf x₀ hx₀)
     (AddSubmonoid.sum_mem _ fun x hx =>
       root_mem_posRootCone_of_mem_posRoots P b (hf x (Finset.mem_of_mem_erase hx)))
+
+/-- **A root is positive if and only if a positive natural multiple of it lies in the positive
+root cone.** -/
+theorem _root_.RootPairing.nsmul_root_mem_posRootCone_iff {n : ℕ} (hn : n ≠ 0) {i : ι} :
+    n • P.root i ∈ posRootCone P b ↔ i ∈ posRoots P b := by
+  refine ⟨fun h ↦ ?_, fun hi ↦
+    (posRootCone P b).nsmul_mem (root_mem_posRootCone_of_mem_posRoots P b hi) n⟩
+  rcases mem_posRoots_or_mem_negRoots P b i with hpos | hneg
+  · exact hpos
+  · exfalso
+    have hr : -P.root i ∈ posRootCone P b := by
+      have := root_mem_posRootCone_of_mem_posRoots P b
+        ((reflectionPerm_self_mem_posRoots_iff_mem_negRoots P b i).mpr hneg)
+      rwa [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self] at this
+    have h0 : n • P.root i = 0 :=
+      (isPointed_posRootCone P b).eq_zero_of_mem_of_neg_mem h
+        (by simpa [nsmul_neg] using (posRootCone P b).nsmul_mem hr n)
+    have h2 : P.coroot' i (n • P.root i) = 0 := by rw [h0, map_zero]
+    rw [map_nsmul, RootPairing.root_coroot'_eq_pairing, RootPairing.pairing_same, nsmul_eq_mul,
+      ← Nat.cast_two (R := R), ← Nat.cast_mul, Nat.cast_eq_zero] at h2
+    omega
 
 /-- **A simple root dominates only itself.** If a natural multiple of a simple root `αᵢ` exceeds a
 positive root `αⱼ` inside the cone `Q⁺`, then `αⱼ` is `αᵢ`.

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.FixedSubmodule
+public import TauCeti.LinearAlgebra.RootSystem.EquivComp
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.LinearAlgebra.RootSystem.HomInvariance
@@ -38,6 +39,8 @@ are therefore indexed by the image `RootPairing.foldedIndices P σ`, a finite se
 * `RootPairing.orbitIndices`: the distinct indices in the orbit of a root index.
 * `RootPairing.orbitSum`: the sum of the roots in that orbit, each counted once.
 * `RootPairing.foldedIndices`: the set of all orbit sums.
+* `RootPairing.Equiv.foldedIndicesCongr`: bijection between `foldedIndices` induced by an
+  intertwining equivalence of root pairings.
 
 ## Main results
 
@@ -45,12 +48,19 @@ are therefore indexed by the image `RootPairing.foldedIndices P σ`, a finite se
 * `RootPairing.card_orbitIndices`: the size of the orbit is the minimal period of `i`.
 * `RootPairing.orbitSum_eq_of_mem`: the orbit sum does not depend on the representative.
 * `RootPairing.orbitSum_eq_root_of_indexEquiv_eq`: the orbit sum of a fixed root is that root.
+* `RootPairing.orbitSum_eq_add_of_apply_apply`: the orbit sum of a non-fixed period-two root is
+  `P.root i + P.root (σ.indexEquiv i)`.
 * `RootPairing.sum_range_root_pow_apply_eq_nsmul`: a sum over a period `m` is `m / d` times the
   orbit sum.
-* `RootPairing.weightMap_orbitSum`: an equivalence of root pairings intertwining two automorphisms
-  carries orbit sums to orbit sums; in particular `RootPairing.orbitSum_mem_fixedSubmodule` says
-  each orbit sum is fixed by `σ`, and `RootPairing.coroot'_eq_of_mem_orbitIndices` says coroot
-  evaluations on any `σ`-fixed weight are constant along each `σ`-orbit.
+* `RootPairing.coroot'_orbitSum`: evaluating a coroot functional on an orbit sum sums the
+  root-coroot pairings over the orbit.
+* `RootPairing.weightMap_orbitSum` and `RootPairing.Equiv.weightMap_orbitSum_of_autCongr`: an
+  equivalence of root pairings intertwining two automorphisms carries orbit sums to orbit sums
+  (and `RootPairing.Equiv.mem_foldedIndices_weightMap` transports membership in `foldedIndices`); in
+  particular `RootPairing.orbitSum_mem_fixedSubmodule` says each orbit sum is fixed by `σ`,
+  `RootPairing.coroot'_indexEquiv_of_mem_fixedSubmodule` says `σ` preserves coroot evaluation on a
+  `σ`-fixed weight, and `RootPairing.coroot'_eq_of_mem_orbitIndices` says coroot evaluations on any
+  `σ`-fixed weight are constant along each `σ`-orbit.
 * `RootPairing.orbitSum_reflectionPerm_self`: the orbit sum of a negated root is the negated
   orbit sum.
 * `RootPairing.mem_support_iff_of_mem_orbitIndices`: for an automorphism permuting the simple roots
@@ -119,6 +129,18 @@ theorem orbitIndices_eq_singleton_iff : P.orbitIndices σ i = {i} ↔ σ.indexEq
   · ext j
     rw [mem_orbitIndices, Finset.mem_singleton]
     exact ⟨fun hj ↦ (hj.eq_of_left h).symm, fun hj ↦ hj ▸ Equiv.Perm.SameCycle.refl _ _⟩
+
+/-- If `σ` has period dividing `2` at `i`, then the root orbit of `i` is `{i, σ.indexEquiv i}`. -/
+theorem orbitIndices_eq_pair_of_apply_apply [DecidableEq ι]
+    (h : σ.indexEquiv (σ.indexEquiv i) = i) :
+    P.orbitIndices σ i = {i, σ.indexEquiv i} := by
+  ext q; rw [mem_orbitIndices_iff_exists_pow, mem_insert, mem_singleton]
+  refine ⟨?_, by rintro (rfl | rfl); exacts [⟨0, rfl⟩, ⟨1, by simp⟩]⟩
+  rintro ⟨m, rfl⟩; induction m with
+  | zero => exact Or.inl rfl
+  | succ m ih =>
+    rw [pow_succ', Equiv.Perm.mul_apply]
+    exact ih.elim (fun hq ↦ Or.inr (by rw [hq])) (fun hq ↦ Or.inl (by rw [hq, h]))
 
 variable (P σ i)
 
@@ -189,6 +211,12 @@ theorem orbitSum_eq_sum_range :
     exact mem_orbitIndices_iff_exists_pow.mpr ⟨k, rfl⟩
   · rw [card_image_of_injOn hinj, card_range, card_orbitIndices]
 
+/-- Evaluating a coroot functional on an orbit sum sums the root-coroot pairings over the orbit. -/
+theorem coroot'_orbitSum (j : ι) :
+    P.coroot' j (P.orbitSum σ i) = ∑ r ∈ P.orbitIndices σ i, P.pairing r j := by
+  rw [orbitSum_def, map_sum]
+  exact sum_congr rfl fun r _ ↦ P.root_coroot'_eq_pairing j r
+
 variable {P σ i}
 
 /-- The orbit sum does not depend on the chosen member of the orbit. -/
@@ -199,6 +227,14 @@ theorem orbitSum_eq_of_mem (h : j ∈ P.orbitIndices σ i) : P.orbitSum σ j = P
 theorem orbitSum_eq_root_of_indexEquiv_eq (h : σ.indexEquiv i = i) :
     P.orbitSum σ i = P.root i := by
   rw [orbitSum, orbitIndices_eq_singleton_iff.mpr h, sum_singleton]
+
+/-- The orbit sum of a root `i` of local period dividing `2` (`σ² i = i`) and not fixed by `σ`
+is the two-term sum `P.root i + P.root (σ.indexEquiv i)`. -/
+theorem orbitSum_eq_add_of_apply_apply (h : σ.indexEquiv (σ.indexEquiv i) = i)
+    (hne : σ.indexEquiv i ≠ i) :
+    P.orbitSum σ i = P.root i + P.root (σ.indexEquiv i) := by
+  classical
+  rw [orbitSum_def, orbitIndices_eq_pair_of_apply_apply h, sum_pair hne.symm]
 
 /-- **Full-period sums.** If `σᵐ` fixes `i`, then summing the roots `σᵏ αᵢ` over `k < m`
 counts every root of the orbit `m / d` times, where `d` is the size of the orbit. -/
@@ -264,6 +300,14 @@ theorem weightMap_orbitSum_self : σ.weightMap (P.orbitSum σ i) = P.orbitSum σ
 theorem orbitSum_mem_fixedSubmodule :
     P.orbitSum σ i ∈ LinearMap.fixedSubmodule σ.weightMap :=
   LinearMap.mem_fixedSubmodule_iff.mpr (weightMap_orbitSum_self P σ i)
+
+omit [Finite ι] in
+/-- On a `σ`-fixed weight `x`, the coroot functionals `P.coroot' (σ.indexEquiv j)` and
+`P.coroot' j` agree. -/
+theorem coroot'_indexEquiv_of_mem_fixedSubmodule (j : ι) {x : M}
+    (hx : x ∈ LinearMap.fixedSubmodule σ.weightMap) :
+    P.coroot' (σ.indexEquiv j) x = P.coroot' j x := by
+  conv_lhs => rw [← LinearMap.mem_fixedSubmodule_iff.mp hx, Hom.coroot'_weightMap]
 
 variable {P σ i} in
 /-- On a `σ`-fixed weight `x`, the coroot functionals `P.coroot' j` take the same value at every
@@ -403,5 +447,59 @@ theorem zero_notMem_foldedIndices [CharZero R] {b : P.Base}
     (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) : 0 ∉ P.foldedIndices σ := by
   rintro ⟨i, hi⟩
   exact orbitSum_ne_zero hσ i hi
+
+namespace Equiv
+
+section FoldedIndicesCongr
+
+variable {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
+  {P₂ : RootPairing ι₂ R M₂ N₂} [Finite ι₂]
+
+/-- An equivalence intertwining `σ` and `σ₂` via `φ.autCongr σ = σ₂` carries orbit sums of `σ`
+to orbit sums of `σ₂`. -/
+theorem weightMap_orbitSum_of_autCongr (φ : P.Equiv P₂) {σ : P.Aut} {σ₂ : P₂.Aut}
+    (hφ : φ.autCongr σ = σ₂) (i : ι) :
+    φ.weightMap (P.orbitSum σ i) = P₂.orbitSum σ₂ (φ.indexEquiv i) :=
+  RootPairing.weightMap_orbitSum φ (φ.indexEquiv_apply_of_autCongr_eq hφ) i
+
+/-- An equivalence intertwining `σ` and `σ₂` carries members of `P.foldedIndices σ` into
+`P₂.foldedIndices σ₂`. -/
+theorem mem_foldedIndices_weightMap (φ : P.Equiv P₂) {σ : P.Aut} {σ₂ : P₂.Aut}
+    (hφ : φ.autCongr σ = σ₂) (v : P.foldedIndices σ) :
+    φ.weightMap (v : M) ∈ P₂.foldedIndices σ₂ := by
+  obtain ⟨i, hi⟩ := mem_foldedIndices.mp v.property
+  exact mem_foldedIndices.mpr ⟨φ.indexEquiv i, hi ▸ (φ.weightMap_orbitSum_of_autCongr hφ i).symm⟩
+
+/-- An intertwining equivalence `φ : P.Equiv P₂` carries `P.foldedIndices σ` onto
+`P₂.foldedIndices σ₂`. -/
+noncomputable def foldedIndicesCongr (φ : P.Equiv P₂) {σ : P.Aut} {σ₂ : P₂.Aut}
+    (hφ : φ.autCongr σ = σ₂) : P.foldedIndices σ ≃ P₂.foldedIndices σ₂ where
+  toFun v := ⟨φ.weightMap (v : M), φ.mem_foldedIndices_weightMap hφ v⟩
+  invFun w := ⟨(symm P P₂ φ).weightMap (w : M₂), (symm P P₂ φ).mem_foldedIndices_weightMap
+    (by rw [← hφ]; ext x <;> simp [autCongr_apply]) w⟩
+  left_inv _ := Subtype.ext (by simp)
+  right_inv _ := Subtype.ext (by simp)
+
+/-- Coercing `φ.foldedIndicesCongr hφ v` applies `φ.weightMap` to `(v : M)`. -/
+@[simp] theorem coe_foldedIndicesCongr_apply (φ : P.Equiv P₂) {σ : P.Aut} {σ₂ : P₂.Aut}
+    (hφ : φ.autCongr σ = σ₂) (v : P.foldedIndices σ) :
+    ((φ.foldedIndicesCongr hφ v : P₂.foldedIndices σ₂) : M₂) = φ.weightMap (v : M) := (rfl)
+
+/-- Coercing `(φ.foldedIndicesCongr hφ).symm w` applies `φ.weightEquiv.symm` to `(w : M₂)`. -/
+@[simp] theorem coe_foldedIndicesCongr_symm_apply (φ : P.Equiv P₂) {σ : P.Aut} {σ₂ : P₂.Aut}
+    (hφ : φ.autCongr σ = σ₂) (w : P₂.foldedIndices σ₂) :
+    (((φ.foldedIndicesCongr hφ).symm w : P.foldedIndices σ) : M) =
+      φ.weightEquiv.symm (w : M₂) := (rfl)
+
+/-- An intertwining equivalence preserves and reflects membership in `foldedIndices`. -/
+theorem mem_foldedIndices_weightMap_iff (φ : P.Equiv P₂) {σ : P.Aut} {σ₂ : P₂.Aut}
+    (hφ : φ.autCongr σ = σ₂) (v : M) :
+    φ.weightMap v ∈ P₂.foldedIndices σ₂ ↔ v ∈ P.foldedIndices σ :=
+  ⟨fun h ↦ by simpa [foldedIndicesCongr] using ((φ.foldedIndicesCongr hφ).symm ⟨_, h⟩).property,
+    fun h ↦ φ.mem_foldedIndices_weightMap hφ ⟨v, h⟩⟩
+
+end FoldedIndicesCongr
+
+end Equiv
 
 end RootPairing

@@ -134,11 +134,12 @@ theorem mk_typeACosetRepresentativeDual_val (a : ZMod (n + 1)) :
     field_simp; ring
   have key :
       (typeAIsometryZeroSumLattice n (typeACosetRepresentative n k) : Fin (n + 1) → ℚ) = w := by
-    rw [← sum_smul_zeroSumSimpleRoot n hw]
+    rw [← sum_smul_coe_singleParityCheckCodeBasis ℚ hw]
     conv_lhs => rw [← sum_smul_typeASimpleRoot (typeACosetRepresentative n k), map_sum]
     simp only [map_smul, Submodule.coe_sum, Submodule.coe_smul,
       typeAIsometryZeroSumLattice_typeASimpleRoot]
-    refine sum_congr rfl fun j _ ↦ congrArg (· • zeroSumSimpleRoot n j) ?_
+    refine sum_congr rfl fun j _ ↦
+      congrArg (· • (singleParityCheckCodeBasis ℚ n j : Fin (n + 1) → ℚ)) ?_
     have hfilt : (Iic j.castSucc).filter (fun s : Fin (n + 1) ↦ (s : ℕ) < k) =
         univ.filter (fun s : Fin (n + 1) ↦ (s : ℕ) < min (j.val + 1) k) := by
       ext s; simp only [mem_filter, mem_Iic, mem_univ, true_and, Fin.le_iff_val_le_val,
@@ -156,11 +157,9 @@ pairs to `1` with `α_{k-1}` (when `1 ≤ k ≤ n`) and to `0` with every other 
 @[simp] theorem form_typeACosetRepresentative_typeASimpleRoot {k : ℕ} (hk : k ≤ n + 1) (i : Fin n) :
     (typeARootLattice n).form (typeACosetRepresentative n k) (typeASimpleRoot n i) =
       if i.val + 1 = k then 1 else 0 := by
-  have hroot : zeroSumSimpleRoot n i = Pi.single i.castSucc 1 - Pi.single i.succ 1 := by
-    ext r; simp [zeroSumSimpleRoot_apply, Pi.single_apply]
   rw [← (typeAIsometryZeroSumLattice n).map_app, zeroSumLattice_form, zeroSumForm_apply,
-    typeAIsometryZeroSumLattice_typeASimpleRoot, hroot, dotProduct_sub, dotProduct_single,
-    dotProduct_single, mul_one, mul_one,
+    typeAIsometryZeroSumLattice_typeASimpleRoot, coe_singleParityCheckCodeBasis_apply,
+    dotProduct_sub, dotProduct_single, dotProduct_single, mul_one, mul_one,
     typeAIsometryZeroSumLattice_typeACosetRepresentative_apply hk,
     typeAIsometryZeroSumLattice_typeACosetRepresentative_apply hk, Fin.val_castSucc, Fin.val_succ]
   split_ifs <;> first | (exfalso; omega) | ring
