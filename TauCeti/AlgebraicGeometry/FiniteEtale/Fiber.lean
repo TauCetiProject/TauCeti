@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Basic
+public import TauCeti.AlgebraicGeometry.ResidueField
 public import TauCeti.CategoryTheory.Comma.Over.Pullback
+import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 
 /-!
 # Base change and geometric fibres of finite étale schemes
@@ -43,6 +46,12 @@ connected base any two geometric points are joined by a path
 torsor under `π₁(S, y)`; over a disconnected base,
 `TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Component` describes which geometric points are
 joined by paths.
+
+A finite étale scheme has as many points in a geometric fibre as its rank at the underlying
+base point (`FiniteEtaleScheme.natCard_fiber_obj`), so the count is locally constant.
+The formula uses `AlgebraicGeometry.Scheme.Hom.natCard_eq_finrank_of_etale` over the
+separably closed field and invariance of rank under base change. Over a connected base,
+a count of one at a chosen geometric point characterizes isomorphisms.
 
 The fibre functor is corepresented by the geometric point itself:
 `FiniteEtaleScheme.fiberCompInclIso` identifies `fiber x` with the set of lifts of `x` to
@@ -264,6 +273,32 @@ classification of finite étale schemes over a separably closed field. -/
 theorem fiber_def (x : Spec (.of Ω) ⟶ S) :
     fiber x = pullback x ⋙ (equivOfIsSepClosed Ω).functor :=
   (rfl)
+
+/-- The cardinality of a geometric fibre of a finite étale scheme is its rank at the
+underlying point of the base. -/
+@[simp]
+theorem natCard_fiber_obj (Y : FiniteEtaleScheme S) (x : Spec (.of Ω) ⟶ S) :
+    Nat.card ((fiber x).obj Y) = Y.obj.hom.finrank (x default) := by
+  let Z := (pullback x).obj Y
+  calc
+    Nat.card ((fiber x).obj Y) = Nat.card (Over.mk (𝟙 _) ⟶ Z.obj) :=
+      Nat.card_congr ((equivOfIsSepClosedFunctorCompInclIso Ω).app Z).toEquiv
+    _ = Z.obj.hom.finrank default := Z.obj.hom.natCard_eq_finrank_of_etale default
+    _ = Y.obj.hom.finrank (x default) := Scheme.Hom.finrank_pullback_snd Y.obj.hom x default
+
+/-- The number of geometric points above each point of the base is locally constant. -/
+theorem isLocallyConstant_natCard_fiber_obj (Y : FiniteEtaleScheme S) :
+    IsLocallyConstant fun s : S ↦ Nat.card ((fiber (S.fromSpecAlgebraicClosure s)).obj Y) := by
+  simpa only [natCard_fiber_obj, Scheme.fromSpecAlgebraicClosure_apply] using
+    Y.obj.hom.isLocallyConstant_finrank
+
+/-- A finite étale scheme over a connected base maps isomorphically to the base exactly when
+its fibre at one chosen geometric point has cardinality one. -/
+theorem isIso_hom_iff_natCard_fiber_obj_eq_one [PreconnectedSpace S] (Y : FiniteEtaleScheme S)
+    (x : Spec (.of Ω) ⟶ S) : IsIso Y.obj.hom ↔ Nat.card ((fiber x).obj Y) = 1 := by
+  rw [natCard_fiber_obj, Y.obj.hom.isIso_iff_finrank_eq]
+  exact ⟨fun h ↦ congrFun h _, fun h ↦ funext fun s ↦
+    (Y.obj.hom.isLocallyConstant_finrank.apply_eq_of_preconnectedSpace s (x default)).trans h⟩
 
 /-- The **étale fundamental group** `π₁(S, x)` of a scheme `S` at a geometric point
 `x : Spec Ω ⟶ S`: the group of automorphisms of the geometric fibre functor at `x` on finite

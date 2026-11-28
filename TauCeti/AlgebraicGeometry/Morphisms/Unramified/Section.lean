@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Unramified.Basic
 import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 import TauCeti.AlgebraicGeometry.IdealSheaf.Section
 import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
+import TauCeti.AlgebraicGeometry.Morphisms.OpenImmersion
 
 /-!
 # Images of sections of unramified morphisms
@@ -49,12 +50,6 @@ theorem isOpenImmersion_of_comp_eq_id (s : S ⟶ X) {f : X ⟶ S} [Unramified f]
     (hs : s ≫ f = 𝟙 S) : IsOpenImmersion s :=
   have : IsOpenImmersion (s ≫ f) := hs ▸ inferInstance
   MorphismProperty.of_postcomp (W' := @Unramified) _ _ f ‹_› this
-
-/-- The open image of an open-immersion section maps isomorphically to the base. -/
-theorem isIso_opensRange_ι_comp_of_comp_eq_id (s : S ⟶ X) [IsOpenImmersion s]
-    {f : X ⟶ S} (hs : s ≫ f = 𝟙 S) : IsIso (s.opensRange.ι ≫ f) := by
-  rw [← s.isoOpensRange_inv_comp, Category.assoc, hs, Category.comp_id]
-  infer_instance
 
 /-- Sections of a separated unramified morphism correspond to the open and closed
 subschemes of its source that map isomorphically to its target. -/
