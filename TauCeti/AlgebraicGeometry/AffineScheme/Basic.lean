@@ -45,7 +45,7 @@ be injective. This is the local reason why an affine blowup changes nothing away
 
 * `AlgebraicGeometry.Scheme.Hom.precompEquivOfIsIsoAppTop`: for `j : P ⟶ Q` inducing an
   isomorphism on global sections and an affine scheme `Z`, precomposition with `j` is a bijection
-  `(Q ⟶ Z) ≃ (P ⟶ Z)`; injectivity is `AlgebraicGeometry.Scheme.Hom.eq_of_comp_eq_of_isIso_appTop`.
+  `(Q ⟶ Z) ≃ (P ⟶ Z)`; injectivity is `AlgebraicGeometry.Scheme.Hom.eq_of_comp_eq_of_mono_appTop`.
 * `AlgebraicGeometry.Scheme.globalSectionsMulSemiringAction`: a group acting on a scheme `X` acts on
   `Γ(X, ⊤)` by `g • a = (σ g⁻¹)^*(a)`.
 * `AlgebraicGeometry.Scheme.stalkFromSpecTopAlgEquiv`: for an affine scheme `Z` and a prime ideal
@@ -149,10 +149,10 @@ theorem Scheme.toSpecΓ_SpecMap_appTop_isoSpec_inv {X Y : Scheme.{u}} [IsAffine 
     X.toSpecΓ ≫ Spec.map f.appTop ≫ Y.isoSpec.inv = f := by
   rw [← Scheme.toSpecΓ_naturality_assoc, Scheme.toSpecΓ_isoSpec_inv, Category.comp_id]
 
-/-- If `j : P ⟶ Q` induces an isomorphism on global sections, morphisms from `Q` to an affine
+/-- If `j : P ⟶ Q` induces a monomorphism on global sections, morphisms from `Q` to an affine
 scheme are determined by their composites with `j`. -/
-theorem Scheme.Hom.eq_of_comp_eq_of_isIso_appTop {P Q Z : Scheme.{u}} [IsAffine Z] (j : P ⟶ Q)
-    [IsIso j.appTop] {a b : Q ⟶ Z} (h : j ≫ a = j ≫ b) : a = b :=
+theorem Scheme.Hom.eq_of_comp_eq_of_mono_appTop {P Q Z : Scheme.{u}} [IsAffine Z] (j : P ⟶ Q)
+    [Mono j.appTop] {a b : Q ⟶ Z} (h : j ≫ a = j ≫ b) : a = b :=
   ext_of_isAffine ((cancel_mono j.appTop).mp (by
     rw [← Scheme.Hom.comp_appTop, ← Scheme.Hom.comp_appTop, h]))
 
@@ -160,18 +160,16 @@ theorem Scheme.Hom.eq_of_comp_eq_of_isIso_appTop {P Q Z : Scheme.{u}} [IsAffine 
 bijection from morphisms `Q ⟶ Z` to morphisms `P ⟶ Z`, for every affine scheme `Z`: every
 morphism from `P` to an affine scheme extends uniquely along `j`. -/
 noncomputable def Scheme.Hom.precompEquivOfIsIsoAppTop {P Q : Scheme.{u}} (j : P ⟶ Q)
-    [IsIso j.appTop] (Z : Scheme.{u}) [IsAffine Z] : (Q ⟶ Z) ≃ (P ⟶ Z) where
-  toFun g := j ≫ g
-  invFun f := Q.toSpecΓ ≫ Spec.map (f.appTop ≫ inv j.appTop) ≫ Z.isoSpec.inv
-  left_inv g := j.eq_of_comp_eq_of_isIso_appTop (by
+    [IsIso j.appTop] (Z : Scheme.{u}) [IsAffine Z] : (Q ⟶ Z) ≃ (P ⟶ Z) := by
+  have h (f : P ⟶ Z) :
+      j ≫ (Q.toSpecΓ ≫ Spec.map (f.appTop ≫ inv j.appTop) ≫ Z.isoSpec.inv) = f := by
     rw [Scheme.toSpecΓ_naturality_assoc, ← Spec.map_comp_assoc, Category.assoc,
-      IsIso.inv_hom_id, Category.comp_id, ← Scheme.toSpecΓ_naturality_assoc,
-      Scheme.toSpecΓ_isoSpec_inv, Category.comp_id])
-  right_inv f := by
-    dsimp only
-    rw [Scheme.toSpecΓ_naturality_assoc, ← Spec.map_comp_assoc, Category.assoc,
-      IsIso.inv_hom_id, Category.comp_id, ← Scheme.toSpecΓ_naturality_assoc,
-      Scheme.toSpecΓ_isoSpec_inv, Category.comp_id]
+      IsIso.inv_hom_id, Category.comp_id, Scheme.toSpecΓ_SpecMap_appTop_isoSpec_inv]
+  exact
+    { toFun := fun g ↦ j ≫ g
+      invFun := fun f ↦ Q.toSpecΓ ≫ Spec.map (f.appTop ≫ inv j.appTop) ≫ Z.isoSpec.inv
+      left_inv := fun g ↦ j.eq_of_comp_eq_of_mono_appTop (h (j ≫ g))
+      right_inv := h }
 
 @[simp]
 theorem Scheme.Hom.precompEquivOfIsIsoAppTop_apply {P Q : Scheme.{u}} (j : P ⟶ Q)
@@ -704,7 +702,7 @@ theorem overPullback_map_bijective_of_isIso_appTop {S T : Scheme.{u}} [IsAffine 
       e ≫ g.left :=
     Limits.pullback.lift_fst _ _ _
   refine ⟨fun g g' hgg' ↦ ?_, fun φ ↦ ?_⟩
-  · refine Over.OverMorphism.ext (e.eq_of_comp_eq_of_isIso_appTop ?_)
+  · refine Over.OverMorphism.ext (e.eq_of_comp_eq_of_mono_appTop ?_)
     rw [← hmap, ← hmap]
     exact congrArg (fun k ↦ k.left ≫ Limits.pullback.fst Y'.hom j) hgg'
   -- The composite `χ : Y ×_S T ⟶ Y'` extends along `e`, which is an isomorphism on functions.
@@ -714,7 +712,7 @@ theorem overPullback_map_bijective_of_isIso_appTop {S T : Scheme.{u}} [IsAffine 
   set χ := φ' ≫ Limits.pullback.fst Y'.hom j with hχ
   let ψ : Y.left ⟶ Y'.left := (e.precompEquivOfIsIsoAppTop Y'.left).symm χ
   have hψ : e ≫ ψ = χ := e.comp_precompEquivOfIsIsoAppTop_symm_apply _ _
-  have hψS : ψ ≫ Y'.hom = Y.hom := e.eq_of_comp_eq_of_isIso_appTop <| by
+  have hψS : ψ ≫ Y'.hom = Y.hom := e.eq_of_comp_eq_of_mono_appTop <| by
     calc e ≫ ψ ≫ Y'.hom = φ' ≫ Limits.pullback.snd Y'.hom j ≫ j := by
           rw [reassoc_of% hψ, hχ, Category.assoc, Limits.pullback.condition]
       _ = Limits.pullback.snd Y.hom j ≫ j := by rw [reassoc_of% hw]

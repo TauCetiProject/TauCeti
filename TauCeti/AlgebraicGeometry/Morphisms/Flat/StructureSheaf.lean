@@ -28,8 +28,9 @@ sheaves that is an isomorphism on a basis is an isomorphism.
 Over an affine base `Y` only the global sections are needed: if `X` is quasi-compact and
 quasi-separated and `Γ(Y, 𝒪) ≅ Γ(X, 𝒪)`, then `f_* 𝒪_X = 𝒪_Y`, because over a basic open `D(r)`
 both rings of sections are localizations away from `r`. So every flat base change `T ×_Y X ⟶ T`
-induces an isomorphism on global sections. For `X ⟶ Spec Γ(X, 𝒪)` this says that the
-affinization of a quasi-compact quasi-separated scheme commutes with flat base change.
+induces an isomorphism on global sections. In particular, every flat base change of
+`X ⟶ Spec Γ(X, 𝒪)` induces an isomorphism on global sections. When its target is affine, this
+base change is the absolute affinization of its source.
 
 Over a field every base change is flat, so a quasi-compact quasi-separated scheme `X` over a field
 `K` with `Γ(X, 𝒪_X) = K` satisfies `p_* 𝒪_{X_T} = 𝒪_T` for *every* scheme `T` over `K`. This holds
