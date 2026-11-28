@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.Center
 public import Mathlib.Algebra.Star.Module
-import Mathlib.Algebra.Field.Basic
-import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Ring.RingNF
 
 /-!
 # Involution-closed absorption, proper-star annihilators, scalar commutation, and star-linearity
@@ -179,7 +178,7 @@ theorem add_star_add_mul_eq_zero_star {R : Type*} [CommSemiring R] [StarRing R]
 
 /-- Two parameters admissible for a star-fixed scalar `d` compose to the admissible parameter
 `a + b + a * b * d`. -/
-theorem add_star_add_mul_eq_zero_mul {R : Type*} [CommSemiring R] [StarRing R]
+theorem add_star_add_mul_eq_zero_add_add_mul {R : Type*} [CommSemiring R] [StarRing R]
     {a b d : R} (hd : star d = d) (ha : a + star a + a * star a * d = 0)
     (hb : b + star b + b * star b * d = 0) :
     let c := a + b + a * b * d

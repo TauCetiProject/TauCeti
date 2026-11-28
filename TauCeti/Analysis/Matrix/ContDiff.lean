@@ -19,6 +19,7 @@ elementary matrices.
 
 public section
 
+open Matrix
 open scoped ContDiff Matrix.Norms.Elementwise
 
 variable {𝕜 R E : Type*} [NontriviallyNormedField 𝕜]
@@ -40,3 +41,19 @@ theorem ContDiffOn.matrix_mul {f : E → Matrix m n R} {g : E → Matrix n p R} 
     (hf : ContDiffOn 𝕜 k f s) (hg : ContDiffOn 𝕜 k g s) :
     ContDiffOn 𝕜 k (fun x => f x * g x) s :=
   (contDiff_fst.matrix_mul contDiff_snd).comp_contDiffOn (hf.prodMk hg)
+
+/-- The dot product of two smooth vector families is smooth. -/
+@[fun_prop]
+theorem ContDiff.dotProduct {f g : E → n → R}
+    (hf : ContDiff 𝕜 k f) (hg : ContDiff 𝕜 k g) :
+    ContDiff 𝕜 k (fun x => f x ⬝ᵥ g x) := by
+  simp only [_root_.dotProduct]
+  fun_prop
+
+/-- Multiplying a smooth matrix family by a smooth vector family preserves smoothness. -/
+@[fun_prop]
+theorem ContDiff.matrix_mulVec {f : E → Matrix m n R} {g : E → n → R}
+    (hf : ContDiff 𝕜 k f) (hg : ContDiff 𝕜 k g) :
+    ContDiff 𝕜 k (fun x => f x *ᵥ g x) := by
+  refine contDiff_pi' fun i => ?_
+  exact (contDiff_pi.mp hf i).dotProduct hg

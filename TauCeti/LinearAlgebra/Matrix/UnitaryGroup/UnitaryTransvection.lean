@@ -8,8 +8,10 @@ module
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Form
 public import TauCeti.LinearAlgebra.Matrix.UnitaryTransvection
 public import TauCeti.Algebra.Star.Basic
+import Mathlib.Algebra.CharP.Two
 import Mathlib.Tactic.FieldSimp
 import TauCeti.Algebra.Star.Pi
+import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # Admissible unitary transvections in the unitary group of a Hermitian matrix
@@ -31,14 +33,13 @@ Over a field, with the convention `0⁻¹ = 0`, the parameter `a = -s⁻¹` is a
 `Matrix.unitaryGroupOf.reflection`, defined for every vector `v`: the reflection in `v` when
 `⟨v, v⟩ ≠ 0`, and the identity when `v` is isotropic.
 
-Over a field in which `2 ≠ 0`, one admissible transvection carries an isotropic vector `y` to any
-isotropic `x` with `⟨x, y⟩ ≠ 0`: it is the transvection along `x - y` with parameter
-`(⟨x, y⟩ - ⟨x, x⟩ / 2)⁻¹`, which is admissible for every `x`, isotropic or not
-(`Matrix.unitaryGroupOf.orbitSection`). Where the denominator `⟨x, y⟩ - ⟨x, x⟩ / 2` is nonzero it
-is a quasi-reflection, and where the denominator vanishes it is the identity. As a function of `x`
-it is a section of the orbit map `g ↦ g y` over these isotropic vectors, given on the nonvanishing
-locus of the denominator by rational functions of the coordinates of `x` and their conjugates;
-this is how smooth local sections of the isotropic orbit are obtained over `ℝ` and `ℂ`.
+Over a field in which `2 ≠ 0`, the transvection along `x - y` with parameter
+`(⟨x, y⟩ - (⟨x, x⟩ + ⟨y, y⟩) / 2)⁻¹` is admissible for every `x` and `y`
+(`Matrix.unitaryGroupOf.orbitSection`). Where the denominator is nonzero it is a quasi-reflection,
+and where the denominator vanishes it is the identity. When `⟨x, x⟩ = ⟨y, y⟩` and the denominator
+is nonzero, it sends `y` to `x`. Its entries on the nonvanishing locus are rational functions of
+the coordinates and their conjugates. For isotropic `y`, this gives smooth local sections of the
+isotropic orbit over `ℝ` and `ℂ`.
 
 ## Main definitions
 
@@ -47,8 +48,8 @@ this is how smooth local sections of the isotropic orbit are obtained over `ℝ`
 * `Matrix.unitaryGroupOf.reflection`: when `2 ≠ 0`, the reflection in non-isotropic `v`, extended
   by the identity to isotropic `v`; in characteristic two it is always the identity.
 * `Matrix.unitaryGroupOf.orbitSection`: the admissible transvection along `x - y` with parameter
-  `(⟨x, y⟩ - ⟨x, x⟩ / 2)⁻¹`, for isotropic `y`; a quasi-reflection where the denominator is nonzero
-  and the identity where it vanishes.
+  `(⟨x, y⟩ - (⟨x, x⟩ + ⟨y, y⟩) / 2)⁻¹`, assuming `2 ≠ 0`; a quasi-reflection where the
+  denominator is nonzero and the identity where it vanishes.
 
 ## Main results
 
@@ -60,8 +61,8 @@ this is how smooth local sections of the isotropic orbit are obtained over `ℝ`
 * `Matrix.unitaryGroupOf.inv_reflection` and
   `Matrix.unitaryGroupOf.reflection_eq_one_of_dotProduct_self_eq_zero`: the reflection is an
   involution, and is the identity at isotropic vectors.
-* `Matrix.unitaryGroupOf.orbitSection_mulVec`: the orbit section sends `y` to every isotropic `x`
-  with `⟨x, y⟩ ≠ 0`.
+* `Matrix.unitaryGroupOf.orbitSection_mulVec`: the orbit section sends `y` to every `x` of the
+  same Hermitian norm with nonzero denominator.
 
 ## Attribution
 
@@ -69,8 +70,9 @@ Quasi-reflections and their use to carry one isotropic vector to another follow
 `New.quasiReflection` and `New.exists_quasiReflection_mulVec_eq` of grh-lean
 (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), file
 `src/Lib/Adelic/Witt/WittTheorem.lean`; the module-level version is
-`TauCeti.SignedHermitianSpace.quasiReflection`. The parameter `(⟨x, y⟩ - ⟨x, x⟩ / 2)⁻¹`, which
-keeps the transvection unitary off the isotropic cone, is particular to this file.
+`TauCeti.SignedHermitianSpace.quasiReflection`. The parameter
+`(⟨x, y⟩ - (⟨x, x⟩ + ⟨y, y⟩) / 2)⁻¹`, which keeps the transvection unitary away from the
+equal-norm locus too, is particular to this file.
 
 ## References
 
@@ -150,11 +152,12 @@ theorem unitaryTransvection_smul (c a : R)
     (ha : a + star a + a * star a * (star (c • v) ⬝ᵥ A *ᵥ (c • v)) = 0) :
     unitaryTransvection hA (c • v) a ha =
       unitaryTransvection hA v (a * c * star c) (by
-        rw [star_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul,
-          smul_eq_mul] at ha
+        rw [← TauCeti.starRingEnd_comp_eq_star,
+          comp_smul_dotProduct_mulVec_smul, starRingEnd_apply,
+          TauCeti.starRingEnd_comp_eq_star] at ha
         calc
           _ = c * star c *
-              (a + star a + a * star a * (star c * (c * (star v ⬝ᵥ A *ᵥ v)))) := by
+              (a + star a + a * star a * (star c * c * (star v ⬝ᵥ A *ᵥ v))) := by
             simp only [star_mul, star_star]
             ring
           _ = 0 := by rw [ha, mul_zero]) := by
@@ -166,7 +169,8 @@ theorem unitaryTransvection_mul_unitaryTransvection {b : R}
     (hb : b + star b + b * star b * (star v ⬝ᵥ A *ᵥ v) = 0) :
     unitaryTransvection hA v a ha * unitaryTransvection hA v b hb =
       unitaryTransvection hA v (a + b + a * b * (star v ⬝ᵥ A *ᵥ v))
-        (TauCeti.add_star_add_mul_eq_zero_mul (hA.star_dotProduct_mulVec_comm v v) ha hb) := by
+        (TauCeti.add_star_add_mul_eq_zero_add_add_mul
+          (hA.star_dotProduct_mulVec_comm v v) ha hb) := by
   apply unitaryGroupOf.ext
   simp only [Subgroup.coe_mul, Units.val_mul, val_unitaryTransvection,
     Matrix.unitaryTransvection_mul_unitaryTransvection_eq, TauCeti.starRingEnd_comp_eq_star]
@@ -234,7 +238,8 @@ theorem reflection_smul (hA : A.IsHermitian) (v : n → K) {c : K} (hc : c ≠ 0
     reflection hA (c • v) = reflection hA v := by
   rw [reflection, unitaryTransvection_smul]
   congr 1
-  rw [star_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul, smul_eq_mul]
+  rw [← TauCeti.starRingEnd_comp_eq_star, comp_smul_dotProduct_mulVec_smul,
+    starRingEnd_apply, TauCeti.starRingEnd_comp_eq_star]
   by_cases hv : star v ⬝ᵥ A *ᵥ v = 0
   · simp [hv]
   · have hsc : star c ≠ 0 := star_ne_zero.mpr hc
@@ -248,6 +253,19 @@ theorem inv_reflection (hA : A.IsHermitian) (v : n → K) :
   congr 1
   rw [star_neg, star_div₀, star_ofNat, hA.star_dotProduct_mulVec_comm v v]
 
+/-- Two consecutive reflections in the same direction cancel. -/
+@[simp]
+theorem reflection_mul_reflection (hA : A.IsHermitian) (v : n → K) :
+    reflection hA v * reflection hA v = 1 := by
+  simpa only [inv_reflection] using inv_mul_cancel (reflection hA v)
+
+/-- In characteristic two every bundled reflection is the identity. -/
+@[simp]
+theorem reflection_eq_one_of_char_two [CharP K 2] (hA : A.IsHermitian) (v : n → K) :
+    reflection hA v = 1 := by
+  apply unitaryGroupOf.ext
+  simp [CharTwo.two_eq_zero]
+
 end unitaryGroupOf
 
 end Field
@@ -257,23 +275,25 @@ section NeZeroTwo
 variable {K : Type*} [Field K] [StarRing K] [NeZero (2 : K)] {A : Matrix n n K} {y : n → K}
 
 omit [DecidableEq n] in
-/-- For Hermitian `A` and isotropic `y`, the parameter `(⟨x, y⟩ - ⟨x, x⟩ / 2)⁻¹` is admissible for
-the vector `x - y`, for every `x`. -/
+/-- For Hermitian `A` and `2 ≠ 0`, the parameter
+`(⟨x, y⟩ - (⟨x, x⟩ + ⟨y, y⟩) / 2)⁻¹` is admissible for `x - y`. -/
 private theorem orbitSection_param_admissible (hA : A.IsHermitian)
-    (hy : star y ⬝ᵥ A *ᵥ y = 0) (x : n → K) :
-    (star x ⬝ᵥ A *ᵥ y - star x ⬝ᵥ A *ᵥ x / 2)⁻¹ + star (star x ⬝ᵥ A *ᵥ y - star x ⬝ᵥ A *ᵥ x / 2)⁻¹ +
-      (star x ⬝ᵥ A *ᵥ y - star x ⬝ᵥ A *ᵥ x / 2)⁻¹ *
-        star (star x ⬝ᵥ A *ᵥ y - star x ⬝ᵥ A *ᵥ x / 2)⁻¹ *
+    (y x : n → K) :
+    (star x ⬝ᵥ A *ᵥ y - (star x ⬝ᵥ A *ᵥ x + star y ⬝ᵥ A *ᵥ y) / 2)⁻¹ +
+      star (star x ⬝ᵥ A *ᵥ y - (star x ⬝ᵥ A *ᵥ x + star y ⬝ᵥ A *ᵥ y) / 2)⁻¹ +
+      (star x ⬝ᵥ A *ᵥ y - (star x ⬝ᵥ A *ᵥ x + star y ⬝ᵥ A *ᵥ y) / 2)⁻¹ *
+        star (star x ⬝ᵥ A *ᵥ y - (star x ⬝ᵥ A *ᵥ x + star y ⬝ᵥ A *ᵥ y) / 2)⁻¹ *
         (star (x - y) ⬝ᵥ A *ᵥ (x - y)) = 0 := by
-  set b := star x ⬝ᵥ A *ᵥ y - star x ⬝ᵥ A *ᵥ x / 2 with hb_def
+  set b := star x ⬝ᵥ A *ᵥ y - (star x ⬝ᵥ A *ᵥ x + star y ⬝ᵥ A *ᵥ y) / 2 with hb_def
   -- The scalar `b` satisfies `b + star b + ⟨x - y, x - y⟩ = 0`, so its inverse is admissible.
   have hb : b + star b + star (x - y) ⬝ᵥ A *ᵥ (x - y) = 0 := by
-    have hsb : star b = star y ⬝ᵥ A *ᵥ x - star x ⬝ᵥ A *ᵥ x / 2 := by
+    have hsb : star b = star y ⬝ᵥ A *ᵥ x - (star x ⬝ᵥ A *ᵥ x + star y ⬝ᵥ A *ᵥ y) / 2 := by
       simp [hb_def, hA.star_dotProduct_mulVec_comm x x,
-        hA.star_dotProduct_mulVec_comm x y]
+        hA.star_dotProduct_mulVec_comm x y, hA.star_dotProduct_mulVec_comm y y]
     have hc : star (x - y) ⬝ᵥ A *ᵥ (x - y) =
-        star x ⬝ᵥ A *ᵥ x - star x ⬝ᵥ A *ᵥ y - star y ⬝ᵥ A *ᵥ x := by
-      simp only [star_sub, sub_dotProduct, mulVec_sub, dotProduct_sub, hy]
+        star x ⬝ᵥ A *ᵥ x - star x ⬝ᵥ A *ᵥ y - star y ⬝ᵥ A *ᵥ x +
+          star y ⬝ᵥ A *ᵥ y := by
+      simp only [star_sub, sub_dotProduct, mulVec_sub, dotProduct_sub]
       ring
     rw [hsb, hc, hb_def]
     field_simp
@@ -282,48 +302,48 @@ private theorem orbitSection_param_admissible (hA : A.IsHermitian)
 
 namespace unitaryGroupOf
 
-/-- **A section of the isotropic orbit by admissible transvections.** For Hermitian `A`, isotropic
-`y` and any `x`, the admissible transvection along `x - y` with parameter
-`(⟨x, y⟩ - ⟨x, x⟩ / 2)⁻¹`, an element of `unitaryGroupOf A`. Where the denominator
-`⟨x, y⟩ - ⟨x, x⟩ / 2` is nonzero it is a quasi-reflection, and where the denominator vanishes it is
-the identity (`orbitSection_eq_one_of_denominator_eq_zero`). When `x` is isotropic and
-`⟨x, y⟩ ≠ 0` it sends `y` to `x` (`orbitSection_mulVec`), so `x ↦ orbitSection hA hy x` is a
-section of the orbit map `g ↦ g y` over these vectors. -/
-noncomputable def orbitSection (hA : A.IsHermitian) (hy : star y ⬝ᵥ A *ᵥ y = 0) (x : n → K) :
+/-- **A section of an equal-norm orbit by admissible transvections.** For Hermitian `A` and
+`2 ≠ 0`, the transvection along `x - y` with parameter
+`(⟨x, y⟩ - (⟨x, x⟩ + ⟨y, y⟩) / 2)⁻¹` belongs to `unitaryGroupOf A` for every `x` and `y`.
+It is a quasi-reflection where the denominator is nonzero, and the identity where it vanishes
+(`orbitSection_eq_one_of_denominator_eq_zero`). When `⟨x, x⟩ = ⟨y, y⟩` and the denominator is
+nonzero, it sends `y` to `x` (`orbitSection_mulVec`). -/
+noncomputable def orbitSection (hA : A.IsHermitian) (y x : n → K) :
     unitaryGroupOf A :=
   unitaryTransvection hA (x - y) _
-    (orbitSection_param_admissible hA hy x)
+    (orbitSection_param_admissible hA y x)
 
 /-- The matrix of the orbit section at `x` is the unitary transvection along `x - y` with parameter
-`(⟨x, y⟩ - ⟨x, x⟩ / 2)⁻¹`. -/
+`(⟨x, y⟩ - (⟨x, x⟩ + ⟨y, y⟩) / 2)⁻¹`. -/
 @[simp]
-theorem val_orbitSection (hA : A.IsHermitian) (hy : star y ⬝ᵥ A *ᵥ y = 0) (x : n → K) :
-    ((orbitSection hA hy x : GL n K) : Matrix n n K) =
+theorem val_orbitSection (hA : A.IsHermitian) (y x : n → K) :
+    ((orbitSection hA y x : GL n K) : Matrix n n K) =
       A.unitaryTransvection (starRingEnd K) (x - y)
-        (star x ⬝ᵥ A *ᵥ y - star x ⬝ᵥ A *ᵥ x / 2)⁻¹ := by
+        (star x ⬝ᵥ A *ᵥ y - (star x ⬝ᵥ A *ᵥ x + star y ⬝ᵥ A *ᵥ y) / 2)⁻¹ := by
   unfold orbitSection
   exact val_unitaryTransvection _ _
 
 /-- The total orbit section is the identity where its denominator vanishes. -/
 @[simp]
 theorem orbitSection_eq_one_of_denominator_eq_zero (hA : A.IsHermitian)
-    (hy : star y ⬝ᵥ A *ᵥ y = 0) {x : n → K}
-    (hx : star x ⬝ᵥ A *ᵥ y - star x ⬝ᵥ A *ᵥ x / 2 = 0) : orbitSection hA hy x = 1 := by
+    {y x : n → K}
+    (hx : star x ⬝ᵥ A *ᵥ y - (star x ⬝ᵥ A *ᵥ x + star y ⬝ᵥ A *ᵥ y) / 2 = 0) :
+    orbitSection hA y x = 1 := by
   apply unitaryGroupOf.ext
   simp [hx]
 
-/-- The orbit section takes its source vector to the identity element. -/
-theorem orbitSection_self (hA : A.IsHermitian) (hy : star y ⬝ᵥ A *ᵥ y = 0) :
-    orbitSection hA hy y = 1 :=
-  orbitSection_eq_one_of_denominator_eq_zero hA hy (by simp [hy])
-
-/-- **The orbit section carries `y` to `x`** for every isotropic `x` with `⟨x, y⟩ ≠ 0`. -/
-theorem orbitSection_mulVec (hA : A.IsHermitian) (hy : star y ⬝ᵥ A *ᵥ y = 0) {x : n → K}
-    (hx : star x ⬝ᵥ A *ᵥ x = 0) (hxy : star x ⬝ᵥ A *ᵥ y ≠ 0) :
-    ((orbitSection hA hy x : GL n K) : Matrix n n K) *ᵥ y = x := by
+/-- **The orbit section carries `y` to `x`** when their Hermitian norms agree and its denominator
+is nonzero. -/
+theorem orbitSection_mulVec (hA : A.IsHermitian) {y x : n → K}
+    (hx : star x ⬝ᵥ A *ᵥ x = star y ⬝ᵥ A *ᵥ y)
+    (hxy : star x ⬝ᵥ A *ᵥ y -
+      (star x ⬝ᵥ A *ᵥ x + star y ⬝ᵥ A *ᵥ y) / 2 ≠ 0) :
+    ((orbitSection hA y x : GL n K) : Matrix n n K) *ᵥ y = x := by
   rw [val_orbitSection]
   apply Matrix.unitaryTransvection_sub_mulVec_eq
-  simpa [TauCeti.starRingEnd_comp_eq_star, star_sub, sub_dotProduct, hx, hy] using
+  have hhalf : (star x ⬝ᵥ A *ᵥ x + star y ⬝ᵥ A *ᵥ y) / 2 =
+      star y ⬝ᵥ A *ᵥ y := by rw [hx, ← two_mul, mul_div_cancel_left₀ _ (NeZero.ne 2)]
+  simpa only [TauCeti.starRingEnd_comp_eq_star, star_sub, sub_dotProduct, hhalf] using
     inv_mul_cancel₀ hxy
 
 end unitaryGroupOf

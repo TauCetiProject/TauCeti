@@ -39,7 +39,7 @@ For the first statement and isotropic `x₀`, the section `g x` is the admissibl
 It lies in `U(J)` for every `x`. Where the denominator `⟨x, y₀⟩ - ⟨x, x⟩ / 2` is nonzero, it is a
 quasi-reflection whose entries are rational functions of the coordinates of `x` and their
 conjugates; at a zero denominator the section is the identity. It sends `y₀` to every isotropic
-`x` at which that denominator does not vanish. For the second statement,
+`x` at which that denominator does not vanish. For the second statement, when `x₀` is isotropic,
 `Matrix.exists_comp_dotProduct_mulVec_eq_zero_and_eq_one` supplies an isotropic partner `y₀` with
 `⟨y₀, x₀⟩ ≠ 0`; it gives a section `g` carrying `y₀`, and `x ↦ g x * (g x₀)⁻¹` carries `x₀`.
 
@@ -50,7 +50,7 @@ with a normed real algebra structure and a continuous, real-linear involution.
 ## Main results
 
 * `Matrix.unitaryGroupOf.contDiffOn_orbitSection_apply`: the entries of the orbit section are
-  real-analytic where `⟨x, y₀⟩ - ⟨x, x⟩ / 2 ≠ 0`.
+  real-analytic where `⟨x, y₀⟩ - (⟨x, x⟩ + ⟨y₀, y₀⟩) / 2 ≠ 0`.
 * `Matrix.unitaryGroupOf.exists_contDiffOn_mulVec_eq_of_dotProduct_mulVec_ne_zero`: smooth
   local sections of the map `g ↦ g y₀`, for isotropic `y₀`, over the isotropic vectors near a
   vector `x₀` with `⟨y₀, x₀⟩ ≠ 0`.
@@ -64,8 +64,8 @@ The statements follow `New.Exchange.exists_contDiff_carrying_isotropic` and
 (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), file
 `src/Lib/Adelic/Witt/SmoothWitt.lean`, which construct such sections over `ℂ` from
 quasi-reflections and Eichler maps. Here the first statement uses a single admissible transvection
-with a parameter adapted to the target vector over `ℝ` or `ℂ`; the fixed-source statement uses
-the product `g x * (g x₀)⁻¹`.
+with a parameter adapted to the target vector over `ℝ` or `ℂ`; when `x₀` is isotropic the
+fixed-source statement uses the product `g x * (g x₀)⁻¹`.
 
 ## References
 
@@ -88,20 +88,21 @@ local instance : CharZero 𝕜 := Algebra.charZero_of_charZero ℝ 𝕜
 local instance : StarModule ℝ 𝕜 := ContinuousStar.starModule_real
 
 omit [DecidableEq n] in
-/-- The denominator `x ↦ ⟨x, y⟩ - ⟨x, x⟩ / 2` of the orbit section is a real-analytic function of
-`x`. -/
+/-- The denominator `x ↦ ⟨x, y⟩ - (⟨x, x⟩ + ⟨y, y⟩) / 2` of the orbit section is a real-analytic
+function of `x`. -/
 private theorem contDiff_dotProduct_sub_half_dotProduct (y : n → 𝕜) :
-    ContDiff ℝ ω fun x : n → 𝕜 => star x ⬝ᵥ J *ᵥ y - star x ⬝ᵥ J *ᵥ x / 2 := by
-  simp only [dotProduct, mulVec, Pi.star_apply]
-  fun_prop
+    ContDiff ℝ ω fun x : n → 𝕜 =>
+      star x ⬝ᵥ J *ᵥ y - (star x ⬝ᵥ J *ᵥ x + star y ⬝ᵥ J *ᵥ y) / 2 := by
+  exact (contDiff_id.star.dotProduct contDiff_const).sub
+    (((contDiff_id.star.dotProduct (contDiff_const.matrix_mulVec contDiff_id)).add
+      contDiff_const).div_const 2)
 
-/-- **The orbit section is real-analytic.** For Hermitian `J` and isotropic `y₀`, the entries of the
-orbit section `x ↦ Matrix.unitaryGroupOf.orbitSection hJ hy₀ x` are real-analytic functions of `x`
-on the open set where `⟨x, y₀⟩ - ⟨x, x⟩ / 2 ≠ 0`. -/
-theorem contDiffOn_orbitSection_apply (hJ : J.IsHermitian) {y₀ : n → 𝕜}
-    (hy₀ : star y₀ ⬝ᵥ J *ᵥ y₀ = 0) (i j : n) :
-    ContDiffOn ℝ ω (fun x => ((orbitSection hJ hy₀ x : GL n 𝕜) : Matrix n n 𝕜) i j)
-      {x | star x ⬝ᵥ J *ᵥ y₀ - star x ⬝ᵥ J *ᵥ x / 2 ≠ 0} := by
+/-- **The orbit section is real-analytic.** For Hermitian `J` and any `y₀`, the entries of the
+orbit section `x ↦ Matrix.unitaryGroupOf.orbitSection hJ y₀ x` are real-analytic functions of `x`
+on the open set where `⟨x, y₀⟩ - (⟨x, x⟩ + ⟨y₀, y₀⟩) / 2 ≠ 0`. -/
+theorem contDiffOn_orbitSection_apply (hJ : J.IsHermitian) (y₀ : n → 𝕜) (i j : n) :
+    ContDiffOn ℝ ω (fun x => ((orbitSection hJ y₀ x : GL n 𝕜) : Matrix n n 𝕜) i j)
+      {x | star x ⬝ᵥ J *ᵥ y₀ - (star x ⬝ᵥ J *ᵥ x + star y₀ ⬝ᵥ J *ᵥ y₀) / 2 ≠ 0} := by
   simp only [val_orbitSection, unitaryTransvection_def, Matrix.add_apply, Matrix.smul_apply,
     vecMulVec_apply, smul_eq_mul, TauCeti.starRingEnd_comp_eq_star]
   refine contDiffOn_const.add
@@ -110,11 +111,10 @@ theorem contDiffOn_orbitSection_apply (hJ : J.IsHermitian) {y₀ : n → 𝕜}
   fun_prop
 
 /-- The orbit section is real-analytic as a matrix-valued function on its nonvanishing locus. -/
-theorem contDiffOn_orbitSection (hJ : J.IsHermitian) {y₀ : n → 𝕜}
-    (hy₀ : star y₀ ⬝ᵥ J *ᵥ y₀ = 0) :
-    ContDiffOn ℝ ω (fun x => ((orbitSection hJ hy₀ x : GL n 𝕜) : Matrix n n 𝕜))
-      {x | star x ⬝ᵥ J *ᵥ y₀ - star x ⬝ᵥ J *ᵥ x / 2 ≠ 0} :=
-  contDiffOn_pi.mpr fun i => contDiffOn_pi.mpr fun j => contDiffOn_orbitSection_apply hJ hy₀ i j
+theorem contDiffOn_orbitSection (hJ : J.IsHermitian) (y₀ : n → 𝕜) :
+    ContDiffOn ℝ ω (fun x => ((orbitSection hJ y₀ x : GL n 𝕜) : Matrix n n 𝕜))
+      {x | star x ⬝ᵥ J *ᵥ y₀ - (star x ⬝ᵥ J *ᵥ x + star y₀ ⬝ᵥ J *ᵥ y₀) / 2 ≠ 0} :=
+  contDiffOn_pi.mpr fun i => contDiffOn_pi.mpr fun j => contDiffOn_orbitSection_apply hJ y₀ i j
 
 /-- Near a non-isotropic vector there are no isotropic vectors, so the constant map `1` satisfies
 the section property over the isotropic vectors there, for any vector `y`, vacuously. -/
@@ -142,13 +142,13 @@ theorem exists_contDiffOn_mulVec_eq_of_dotProduct_mulVec_ne_zero (hJ : J.IsHermi
   · exact exists_contDiffOn_mulVec_eq_of_ne_zero hx₀ y₀
   -- On isotropic vectors the denominator of the orbit section is `⟨x, y₀⟩`.
   have hden (x : n → 𝕜) (hx : star x ⬝ᵥ J *ᵥ x = 0) :
-      star x ⬝ᵥ J *ᵥ y₀ - star x ⬝ᵥ J *ᵥ x / 2 = star x ⬝ᵥ J *ᵥ y₀ := by
-    simp [hx]
+      star x ⬝ᵥ J *ᵥ y₀ - (star x ⬝ᵥ J *ᵥ x + star y₀ ⬝ᵥ J *ᵥ y₀) / 2 = star x ⬝ᵥ J *ᵥ y₀ := by
+    simp [hx, hy₀]
   refine ⟨_, isOpen_ne_fun (contDiff_dotProduct_sub_half_dotProduct y₀).continuous continuous_const,
-    ?_, orbitSection hJ hy₀, contDiffOn_orbitSection hJ hy₀, fun x hx hxx => ?_⟩
+    ?_, orbitSection hJ y₀, contDiffOn_orbitSection hJ y₀, fun x hx hxx => ?_⟩
   · rw [Set.mem_ofPred_eq, hden x₀ hx₀, ← hJ.star_dotProduct_mulVec_comm]
     exact star_ne_zero.mpr hxy
-  · exact orbitSection_mulVec hJ hy₀ hxx (by rwa [← hden x hxx])
+  · exact orbitSection_mulVec hJ (hxx.trans hy₀.symm) hx
 
 /-- **Smooth local sections, over the isotropic vectors, of the orbit map of a vector.** Let `J` be
 Hermitian and let `x₀` satisfy `J *ᵥ x₀ ≠ 0`, that is lie outside the radical of the form; this
@@ -175,11 +175,10 @@ theorem exists_contDiffOn_mulVec_eq_of_mulVec_ne_zero (hJ : J.IsHermitian) {x₀
     exists_contDiffOn_mulVec_eq_of_dotProduct_mulVec_ne_zero hJ hy₀
       (by rw [← hJ.star_dotProduct_mulVec_comm, hyx, star_one]; exact one_ne_zero)
   -- The section `g` carries `y₀` to `x₀`, so `(g x₀)⁻¹` carries `x₀` back to `y₀`.
-  have hinv : (((g x₀)⁻¹ : unitaryGroupOf J) : GL n 𝕜) *ᵥ x₀ = y₀ := calc
-    _ = ((((g x₀ : GL n 𝕜)⁻¹ : GL n 𝕜) : Matrix n n 𝕜) *
-          ((g x₀ : GL n 𝕜) : Matrix n n 𝕜)) *ᵥ y₀ := by
-      rw [← mulVec_mulVec, hgy x₀ hx₀N hiso, Subgroup.coe_inv]
-    _ = y₀ := by rw [Units.inv_mul, one_mulVec]
+  have hinv : (((g x₀)⁻¹ : unitaryGroupOf J) : GL n 𝕜) *ᵥ x₀ = y₀ := by
+    simpa only [Units.smul_def, Matrix.smul_eq_mulVec, Subgroup.coe_inv] using
+      (inv_smul_eq_iff.mpr (hgy x₀ hx₀N hiso).symm :
+        (g x₀ : GL n 𝕜)⁻¹ • x₀ = y₀)
   refine ⟨N, hN, hx₀N, fun x => g x * (g x₀)⁻¹, ?_, fun x hx hxx => ?_⟩
   · simpa only [Subgroup.coe_mul, Units.val_mul] using hg.matrix_mul contDiffOn_const
   · rw [Subgroup.coe_mul, Units.val_mul, ← mulVec_mulVec, hinv, hgy x hx hxx]
