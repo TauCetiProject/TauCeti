@@ -31,9 +31,9 @@ combinatorial reductions:
   `∑ i, ∑ j, w i j * bit x i * (1 - bit x j)` of a real weight matrix `w`, shows that for a simple
   graph `G`, `cutWeight (G.adjMatrix ℝ) x` counts the edges between `{i | x i = true}` and its
   complement (`SimpleGraph.cutWeight_adjMatrix_eq_card_between`), relates symmetric cuts to
-  field-free Ising energies (`TauCeti.cutWeight_eq_ising`), relates arbitrary cuts to QUBOs
-  (`TauCeti.cutWeight_eq_neg_qubo`), and reduces every QUBO on `ι` to the negative of a symmetric
-  cut weight on `Option ι` with no additive constant (`TauCeti.qubo_eq_neg_cutWeight`).
+  field-free Ising energies (`Matrix.IsSymm.cutWeight_eq_const_sub_ising`), relates arbitrary cuts
+  to QUBOs (`TauCeti.cutWeight_eq_neg_qubo`), and reduces every QUBO on `ι` to the negative of a
+  symmetric cut weight on `Option ι` with no additive constant (`TauCeti.qubo_eq_neg_cutWeight`).
 
 ## Main definitions
 
@@ -45,7 +45,7 @@ combinatorial reductions:
 
 * `TauCeti.ising_ancilla`, `TauCeti.xor_option_surjective`, `TauCeti.card_filter_xor_option_eq`,
   `TauCeti.isMinOn_ising_ancilla_iff`: ancilla elimination of external fields.
-* `SimpleGraph.cutWeight_adjMatrix_eq_card_between`, `TauCeti.cutWeight_eq_ising`,
+* `SimpleGraph.cutWeight_adjMatrix_eq_card_between`, `Matrix.IsSymm.cutWeight_eq_const_sub_ising`,
   `TauCeti.cutWeight_eq_neg_qubo`: graph cut counting and cut–Ising–QUBO identities.
 * `TauCeti.qubo_eq_neg_cutWeight`, `TauCeti.iInf_qubo_eq_neg_iSup_cutWeight`,
   `TauCeti.isMinOn_qubo_iff_isMaxOn_cutWeight`: reduction from QUBO minimization to Max-Cut.
@@ -107,10 +107,23 @@ theorem isingAncillaMatrix_none_none (J : Matrix ι ι ℝ) (h : ι → ℝ) :
     isingAncillaMatrix J h none none = 0 :=
   (rfl)
 
-theorem isSymm_isingAncillaMatrix {J : Matrix ι ι ℝ} (hJ : J.IsSymm) (h : ι → ℝ) :
-    (isingAncillaMatrix J h).IsSymm := by
+end Ancilla
+
+end TauCeti
+
+namespace Matrix.IsSymm
+
+/-- The ancilla coupling matrix of a symmetric matrix `J` is symmetric. -/
+theorem isingAncillaMatrix {ι : Type*} {J : Matrix ι ι ℝ} (hJ : J.IsSymm) (h : ι → ℝ) :
+    (TauCeti.isingAncillaMatrix J h).IsSymm := by
   ext a b
   cases a <;> cases b <;> simp [hJ.apply]
+
+end Matrix.IsSymm
+
+namespace TauCeti
+
+section Ancilla
 
 /-- Eliminating external fields by coupling to one ancilla spin `none`: the field-free Ising
 energy on `Option ι` equals the original Ising energy evaluated at `i ↦ xor (y (some i)) (y none)`.
@@ -257,6 +270,7 @@ theorem cutWeight_smul (c : ℝ) (w : Matrix ι ι ℝ) (x : ι → Bool) :
 @[simp]
 theorem cutWeight_diagonal [DecidableEq ι] (d : ι → ℝ) (x : ι → Bool) :
     cutWeight (Matrix.diagonal d) x = 0 := by
+  rw [cutWeight_def]
   refine Finset.sum_eq_zero fun i _ ↦ ?_
   rw [Fintype.sum_eq_single i]
   · cases h : x i <;> simp [h]
@@ -273,10 +287,6 @@ theorem cutWeight_not (w : Matrix ι ι ℝ) (x : ι → Bool) :
   rw [Finset.sum_comm]
   refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
   ring
-
-theorem cutWeight_not_of_isSymm {w : Matrix ι ι ℝ} (hw : w.IsSymm) (x : ι → Bool) :
-    cutWeight w (fun i ↦ !x i) = cutWeight w x := by
-  rw [cutWeight_not, hw.eq]
 
 /-- `cutWeight w x` is the sum of `w i j` over pairs `(i, j)` with `x i = true` and `x j = false`.
 -/
@@ -333,37 +343,55 @@ end
 
 end SimpleGraph
 
-namespace TauCeti
+namespace Matrix.IsSymm
 
-section Cuts
+section
 
 variable {ι : Type*} [Fintype ι]
 
+/-- For symmetric weights `w`, complementing a configuration preserves `TauCeti.cutWeight w`. -/
+theorem cutWeight_not {w : Matrix ι ι ℝ} (hw : w.IsSymm) (x : ι → Bool) :
+    TauCeti.cutWeight w (fun i ↦ !x i) = TauCeti.cutWeight w x := by
+  rw [TauCeti.cutWeight_not, hw.eq]
+
 /-- For symmetric weights `w`, the cut weight is an explicit affine shift of the field-free Ising
 energy with coupling matrix `(1 / 4) • w`. -/
-theorem cutWeight_eq_ising {w : Matrix ι ι ℝ} (hw : w.IsSymm) (x : ι → Bool) :
-    cutWeight w x = (∑ i, ∑ j, w i j) / 4 - ising ((1 / 4 : ℝ) • w) 0 x := by
-  simp only [cutWeight_def, ising_def, Matrix.smul_apply, smul_eq_mul, Pi.zero_apply, zero_mul,
-    Finset.sum_const_zero, add_zero, bit_eq_one_sub_spin_div_two]
+theorem cutWeight_eq_const_sub_ising {w : Matrix ι ι ℝ} (hw : w.IsSymm) (x : ι → Bool) :
+    TauCeti.cutWeight w x = (∑ i, ∑ j, w i j) / 4 - TauCeti.ising ((1 / 4 : ℝ) • w) 0 x := by
+  simp only [TauCeti.cutWeight_def, TauCeti.ising_def, Matrix.smul_apply, smul_eq_mul,
+    Pi.zero_apply, zero_mul, Finset.sum_const_zero, add_zero, TauCeti.bit_eq_one_sub_spin_div_two]
   have h1 :
-      (∑ i, ∑ j, w i j * ((1 - spin x i) / 2) * (1 - (1 - spin x j) / 2)) =
-        (∑ i, ∑ j, w i j) / 4 - (∑ i, ∑ j, w i j * spin x i / 4) +
-          (∑ i, ∑ j, w i j * spin x j / 4) -
-          ∑ i, ∑ j, (1 / 4 * w i j) * spin x i * spin x j := by
+      (∑ i, ∑ j, w i j * ((1 - TauCeti.spin x i) / 2) * (1 - (1 - TauCeti.spin x j) / 2)) =
+        (∑ i, ∑ j, w i j) / 4 - (∑ i, ∑ j, w i j * TauCeti.spin x i / 4) +
+          (∑ i, ∑ j, w i j * TauCeti.spin x j / 4) -
+          ∑ i, ∑ j, (1 / 4 * w i j) * TauCeti.spin x i * TauCeti.spin x j := by
     simp only [Finset.sum_div, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
     refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
     ring
-  have hcancel : (∑ i, ∑ j, w i j * spin x i / 4) = ∑ i, ∑ j, w i j * spin x j / 4 := by
+  have hcancel :
+      (∑ i, ∑ j, w i j * TauCeti.spin x i / 4) = ∑ i, ∑ j, w i j * TauCeti.spin x j / 4 := by
     rw [Finset.sum_comm]
     simp [hw.apply]
   rw [h1, hcancel]
   ring
 
-/-- For symmetric weights `w`, global maximizers of `cutWeight w` are the same as global
-minimizers of the field-free Ising energy `ising ((1 / 4 : ℝ) • w) 0`. -/
+/-- For symmetric weights `w`, global maximizers of `TauCeti.cutWeight w` are the same as global
+minimizers of the field-free Ising energy `TauCeti.ising ((1 / 4 : ℝ) • w) 0`. -/
 theorem isMaxOn_cutWeight_iff_isMinOn_ising {w : Matrix ι ι ℝ} (hw : w.IsSymm) (x : ι → Bool) :
-    IsMaxOn (cutWeight w) Set.univ x ↔ IsMinOn (ising ((1 / 4 : ℝ) • w) 0) Set.univ x := by
-  simp only [isMaxOn_univ_iff, isMinOn_univ_iff, cutWeight_eq_ising hw, sub_le_sub_iff_left]
+    IsMaxOn (TauCeti.cutWeight w) Set.univ x ↔
+      IsMinOn (TauCeti.ising ((1 / 4 : ℝ) • w) 0) Set.univ x := by
+  simp only [isMaxOn_univ_iff, isMinOn_univ_iff, hw.cutWeight_eq_const_sub_ising,
+    sub_le_sub_iff_left]
+
+end
+
+end Matrix.IsSymm
+
+namespace TauCeti
+
+section Cuts
+
+variable {ι : Type*} [Fintype ι]
 
 /-- Every cut weight (for arbitrary, possibly asymmetric `w`) is the negative of an explicit
 QUBO objective. -/
@@ -459,7 +487,8 @@ theorem qubo_eq_neg_cutWeight (Q : Matrix ι ι ℝ) (y : Option ι → Bool) :
   calc
     qubo Q (fun i ↦ xor (y (some i)) (y none))
       = ising ((1 / 4 : ℝ) • Q) (fun i ↦ -(∑ j, (Q i j + Q j i)) / 4)
-          (fun i ↦ xor (y (some i)) (y none)) + (∑ i, ∑ j, Q i j) / 4 := qubo_eq_ising Q _
+          (fun i ↦ xor (y (some i)) (y none)) + (∑ i, ∑ j, Q i j) / 4 :=
+        qubo_eq_ising_add_const Q _
     _ = (1 / 4 : ℝ) * ising Q h (fun i ↦ xor (y (some i)) (y none)) +
           (∑ i, ∑ j, Q i j) / 4 := by
         rw [hfield, ising_smul]
@@ -468,7 +497,7 @@ theorem qubo_eq_neg_cutWeight (Q : Matrix ι ι ℝ) (y : Option ι → Bool) :
     _ = ising ((1 / 4 : ℝ) • quboCutMatrix Q) 0 y + (∑ i, ∑ j, Q i j) / 4 := by
         rw [hcut]
     _ = -cutWeight (quboCutMatrix Q) y := by
-        rw [cutWeight_eq_ising (isSymm_quboCutMatrix Q) y, sum_quboCutMatrix]
+        rw [(isSymm_quboCutMatrix Q).cutWeight_eq_const_sub_ising y, sum_quboCutMatrix]
         ring
 
 /-- The global infimum of `qubo Q` equals minus the max-cut supremum of `quboCutMatrix Q`. -/

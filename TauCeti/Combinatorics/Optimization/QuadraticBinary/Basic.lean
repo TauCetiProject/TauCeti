@@ -48,8 +48,8 @@ vanish on subsets of cardinality greater than `2` (`TauCeti.exists_qubo_add_cons
 
 ## Main results
 
-* `TauCeti.qubo_eq_ising`, `TauCeti.ising_eq_qubo`: exact conversions between QUBO and Ising forms,
-  with minimizer (`TauCeti.isMinOn_qubo_iff_isMinOn_ising`) and infimum
+* `TauCeti.qubo_eq_ising_add_const`, `TauCeti.ising_eq_qubo_add_const`: exact conversions between
+  QUBO and Ising forms, with minimizer (`TauCeti.isMinOn_qubo_iff_isMinOn_ising`) and infimum
   (`TauCeti.iInf_qubo_eq_iInf_ising_add`) equivalences.
 * `TauCeti.qubo_eq_qubo_iff`, `TauCeti.ising_sub_trace_eq_iff`: exact parameter invariance.
 * `TauCeti.existsUnique_sum_prod_bit`, `TauCeti.exists_qubo_add_const_iff`: unique multilinear
@@ -332,7 +332,7 @@ private theorem sum_add_transpose_mul (M : Matrix ι ι ℝ) (f : ι → ℝ) :
   rw [Finset.sum_comm (f := fun i j ↦ M i j * f j)]
 
 /-- Every quadratic pseudo-Boolean function is an Ising energy plus an explicit constant. -/
-theorem qubo_eq_ising (Q : Matrix ι ι ℝ) (x : ι → Bool) :
+theorem qubo_eq_ising_add_const (Q : Matrix ι ι ℝ) (x : ι → Bool) :
     qubo Q x = ising ((1 / 4 : ℝ) • Q) (fun i ↦ -(∑ j, (Q i j + Q j i)) / 4) x +
       (∑ i, ∑ j, Q i j) / 4 := by
   simp only [qubo_def, ising_def, Matrix.smul_apply, smul_eq_mul, bit_eq_one_sub_spin_div_two]
@@ -369,8 +369,14 @@ theorem isingQuboMatrix_apply [DecidableEq ι] (J : Matrix ι ι ℝ) (h : ι �
 
 @[simp]
 theorem isingQuboMatrix_apply_self [DecidableEq ι] (J : Matrix ι ι ℝ) (h : ι → ℝ) (i : ι) :
-    isingQuboMatrix J h i i = 4 * J i i - 2 * (∑ j, (J i j + J j i) + h i) := by
-  simp [isingQuboMatrix_apply]
+    isingQuboMatrix J h i i = -2 * ((∑ j with i ≠ j, (J i j + J j i)) + h i) := by
+  simp only [isingQuboMatrix_apply, ↓reduceIte]
+  rw [← Finset.add_sum_erase Finset.univ (fun j ↦ J i j + J j i) (Finset.mem_univ i)]
+  have herase : Finset.univ.erase i = Finset.univ.filter fun j ↦ i ≠ j := by
+    ext j
+    simp [ne_comm]
+  rw [herase]
+  ring
 
 @[simp]
 theorem isingQuboMatrix_apply_of_ne [DecidableEq ι] (J : Matrix ι ι ℝ) (h : ι → ℝ) {i j : ι}
@@ -379,7 +385,7 @@ theorem isingQuboMatrix_apply_of_ne [DecidableEq ι] (J : Matrix ι ι ℝ) (h :
   simp [isingQuboMatrix_apply, hij]
 
 /-- Every Ising energy is a quadratic pseudo-Boolean function plus an explicit constant. -/
-theorem ising_eq_qubo [DecidableEq ι] (J : Matrix ι ι ℝ) (h : ι → ℝ) (x : ι → Bool) :
+theorem ising_eq_qubo_add_const [DecidableEq ι] (J : Matrix ι ι ℝ) (h : ι → ℝ) (x : ι → Bool) :
     ising J h x = qubo (isingQuboMatrix J h) x + (∑ i, ∑ j, J i j + ∑ i, h i) := by
   rw [isingQuboMatrix_def, qubo_sub, qubo_smul, qubo_diagonal]
   simp only [ising_def, qubo_def, spin_eq_one_sub_two_mul_bit]
@@ -417,14 +423,14 @@ model with coupling `(1 / 4 : ℝ) • Q` and external field `fun i ↦ -(∑ j,
 theorem isMinOn_qubo_iff_isMinOn_ising (Q : Matrix ι ι ℝ) (x : ι → Bool) :
     IsMinOn (qubo Q) Set.univ x ↔
       IsMinOn (ising ((1 / 4 : ℝ) • Q) fun i ↦ -(∑ j, (Q i j + Q j i)) / 4) Set.univ x := by
-  rw [funext (qubo_eq_ising Q), isMinOn_add_const]
+  rw [funext (qubo_eq_ising_add_const Q), isMinOn_add_const]
 
 /-- Global minimizers of `ising J h` are the same as global minimizers of its equivalent QUBO
 objective `isingQuboMatrix J h`. -/
 theorem isMinOn_ising_iff_isMinOn_qubo [DecidableEq ι] (J : Matrix ι ι ℝ) (h : ι → ℝ)
     (x : ι → Bool) :
     IsMinOn (ising J h) Set.univ x ↔ IsMinOn (qubo (isingQuboMatrix J h)) Set.univ x := by
-  rw [funext (ising_eq_qubo J h), isMinOn_add_const]
+  rw [funext (ising_eq_qubo_add_const J h), isMinOn_add_const]
 
 /-- The global infimum of `qubo Q` equals the global infimum of its equivalent Ising model plus
 the additive constant `(∑ i, ∑ j, Q i j) / 4`. -/
@@ -432,50 +438,41 @@ theorem iInf_qubo_eq_iInf_ising_add (Q : Matrix ι ι ℝ) :
     ⨅ x, qubo Q x =
       (⨅ x, ising ((1 / 4 : ℝ) • Q) (fun i ↦ -(∑ j, (Q i j + Q j i)) / 4) x) +
         (∑ i, ∑ j, Q i j) / 4 := by
-  rw [iInf_congr (qubo_eq_ising Q), ← ciInf_add (Set.Finite.bddBelow (Set.finite_range _))]
+  rw [iInf_congr (qubo_eq_ising_add_const Q),
+    ← ciInf_add (Set.Finite.bddBelow (Set.finite_range _))]
 
 /-- The global infimum of `ising J h` equals the global infimum of its equivalent QUBO objective
 plus the additive constant `∑ i, ∑ j, J i j + ∑ i, h i`. -/
 theorem iInf_ising_eq_iInf_qubo_add [DecidableEq ι] (J : Matrix ι ι ℝ) (h : ι → ℝ) :
     ⨅ x, ising J h x =
       (⨅ x, qubo (isingQuboMatrix J h) x) + (∑ i, ∑ j, J i j + ∑ i, h i) := by
-  rw [iInf_congr (ising_eq_qubo J h), ← ciInf_add (Set.Finite.bddBelow (Set.finite_range _))]
+  rw [iInf_congr (ising_eq_qubo_add_const J h),
+    ← ciInf_add (Set.Finite.bddBelow (Set.finite_range _))]
 
 /-! ### Parameter invariance -/
 
+/-- Evaluating `qubo Q` on the indicator configuration `fun k ↦ decide (k ∈ S)` of a finset `S`
+restricts both sums to `S`. -/
+theorem qubo_decide_mem [DecidableEq ι] (Q : Matrix ι ι ℝ) (S : Finset ι) :
+    qubo Q (fun k ↦ decide (k ∈ S)) = ∑ i ∈ S, ∑ j ∈ S, Q i j := by
+  have hbit (k : ι) : bit (fun m ↦ decide (m ∈ S)) k = if k ∈ S then 1 else 0 := by
+    simp [bit_def]
+  have hinner (i : ι) :
+      (∑ j : ι, Q i j * (if i ∈ S then (1 : ℝ) else 0) * if j ∈ S then 1 else 0) =
+        if i ∈ S then ∑ j ∈ S, Q i j else 0 := by
+    by_cases hi : i ∈ S <;> simp [hi]
+  simp only [qubo_def, hbit, hinner, ← Finset.sum_filter, Finset.filter_mem_eq_inter,
+    Finset.univ_inter]
+
 private theorem qubo_indicator_single [DecidableEq ι] (Q : Matrix ι ι ℝ) (a : ι) :
     qubo Q (fun k ↦ decide (k = a)) = Q a a := by
-  rw [qubo_def, Fintype.sum_eq_single a]
-  · rw [Fintype.sum_eq_single a]
-    · simp
-    · intro j hj
-      simp [hj]
-  · intro i hi
-    simp [hi]
+  simpa [Finset.mem_singleton] using qubo_decide_mem Q {a}
 
 private theorem qubo_indicator_pair [DecidableEq ι] (Q : Matrix ι ι ℝ) {i j : ι} (hij : i ≠ j) :
     qubo Q (fun k ↦ decide (k = i ∨ k = j)) = Q i i + Q j j + (Q i j + Q j i) := by
-  rw [qubo_def]
-  have hbit (k : ι) : bit (fun m ↦ decide (m = i ∨ m = j)) k = if k = i ∨ k = j then 1 else 0 := by
-    by_cases hk : k = i ∨ k = j
-    · simp [hk]
-    · obtain ⟨h1, h2⟩ := not_or.mp hk
-      simp [h1, h2]
-  simp_rw [hbit]
-  have hsum (f : ι → ℝ) : (∑ k, if k = i ∨ k = j then f k else 0) = f i + f j := by
-    have hfilt : Finset.univ.filter (fun k ↦ k = i ∨ k = j) = {i, j} := by
-      ext k
-      simp
-    rw [← Finset.sum_filter, hfilt, Finset.sum_pair hij]
-  have hinner (a : ι) :
-      (∑ b, Q a b * (if a = i ∨ a = j then (1 : ℝ) else 0) * if b = i ∨ b = j then 1 else 0) =
-        if a = i ∨ a = j then Q a i + Q a j else 0 := by
-    by_cases ha : a = i ∨ a = j
-    · simp only [ha, ↓reduceIte, mul_one]
-      simpa only [mul_ite, mul_one, mul_zero] using hsum (fun b ↦ Q a b)
-    · simp [ha]
-  simp_rw [hinner]
-  rw [hsum fun a ↦ Q a i + Q a j]
+  have h := qubo_decide_mem Q {i, j}
+  simp only [Finset.mem_insert, Finset.mem_singleton, Finset.sum_pair hij] at h
+  rw [h]
   ring
 
 /-- `qubo Q₁ = qubo Q₂` holds if and only if `Q₁ + Q₁ᵀ = Q₂ + Q₂ᵀ`. -/
@@ -531,7 +528,8 @@ theorem ising_sub_trace_eq_iff (J₁ J₂ : Matrix ι ι ℝ) (h₁ h₂ : ι �
     have heq' (x : ι → Bool) :
         qubo (isingQuboMatrix J₁ h₁) x + (∑ i, ∑ j, J₁ i j + ∑ i, h₁ i - J₁.trace) =
           qubo (isingQuboMatrix J₂ h₂) x + (∑ i, ∑ j, J₂ i j + ∑ i, h₂ i - J₂.trace) := by
-      rw [← add_sub_assoc, ← ising_eq_qubo, ← add_sub_assoc, ← ising_eq_qubo, heq x]
+      rw [← add_sub_assoc, ← ising_eq_qubo_add_const, ← add_sub_assoc,
+        ← ising_eq_qubo_add_const, heq x]
     have hconst :
         ∑ i, ∑ j, J₁ i j + ∑ i, h₁ i - J₁.trace = ∑ i, ∑ j, J₂ i j + ∑ i, h₂ i - J₂.trace := by
       have h0 := heq' (fun _ ↦ false)
@@ -553,12 +551,8 @@ theorem ising_sub_trace_eq_iff (J₁ J₂ : Matrix ι ι ℝ) (h₁ h₂ : ι �
     refine ⟨?_, hJ⟩
     ext i
     have hii := congrArg (fun M : Matrix ι ι ℝ ↦ M i i) hmat
-    have hsum : ∑ j, (J₁ i j + J₁ j i) - (J₁ i i + J₁ i i) =
-        ∑ j, (J₂ i j + J₂ j i) - (J₂ i i + J₂ i i) := by
-      rw [← Finset.sum_erase_add _ _ (Finset.mem_univ i),
-        ← Finset.sum_erase_add _ _ (Finset.mem_univ i), add_sub_cancel_right,
-        add_sub_cancel_right]
-      refine Finset.sum_congr rfl fun j hj ↦ hJ i j (Finset.ne_of_mem_erase hj).symm
+    have hsum : (∑ j with i ≠ j, (J₁ i j + J₁ j i)) = ∑ j with i ≠ j, (J₂ i j + J₂ j i) :=
+      Finset.sum_congr rfl fun j hj ↦ hJ i j (Finset.mem_filter.mp hj).2
     simp only [Matrix.add_apply, Matrix.transpose_apply, isingQuboMatrix_apply_self] at hii
     linarith [hii, hsum]
   · rintro ⟨rfl, hJ⟩ x
