@@ -50,10 +50,14 @@ idele classes to ray classes.
   from the modulus enlarges the ray subgroup at most by the idele classes concentrated there.
 * `TauCeti.GlobalNumberFields.mem_ker_ideleCongruenceToClassHom_iff`: kernel of
   `ideleCongruenceToClassHom 𝔪`.
+* `TauCeti.GlobalNumberFields.range_ideleCongruenceToClassHom`: the range of
+  `ideleCongruenceToClassHom 𝔪` is `raySubgroup 𝔪`.
+* `TauCeti.GlobalNumberFields.isOpenMap_ideleCongruenceToClassHom`:
+  `ideleCongruenceToClassHom 𝔪` is an open map.
 * `TauCeti.GlobalNumberFields.ideleCongruenceToClassHom_surjective_iff`,
-  `TauCeti.GlobalNumberFields.isQuotientMap_ideleCongruenceToClassHom_iff`: the continuous map from
-  `ideleCongruenceSubgroup 𝔪` to the idele class group is open, and is surjective (and hence a
-  quotient map) exactly when `raySubgroup 𝔪 = ⊤`.
+  `TauCeti.GlobalNumberFields.isQuotientMap_ideleCongruenceToClassHom_iff`:
+  `ideleCongruenceToClassHom 𝔪` is surjective (and hence a quotient map) onto the idele class
+  group exactly when `raySubgroup 𝔪 = ⊤`.
 
 ## References
 

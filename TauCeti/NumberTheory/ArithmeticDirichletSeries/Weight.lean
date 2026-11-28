@@ -57,9 +57,10 @@ into good primes; this is the engine behind both
 * `TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood` and
   `TauCeti.MultiplicativeIdealWeight.IsTrivialOnGood`: the weights agreeing with a purely
   imaginary norm twist, respectively with the trivial weight, on their good ideals, with the
-  structure theorem `TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood.eq_normTwist`,
-  `TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood.eq_of_absNorm_eq`, its
-  converse `TauCeti.MultiplicativeIdealWeight.isNormTwistOnGood_normTwist_ofBadPrimes`, and the
+  structure theorem `TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood.eq_normTwist`, its
+  converse `TauCeti.MultiplicativeIdealWeight.isNormTwistOnGood_normTwist_ofBadPrimes`,
+  `TauCeti.MultiplicativeIdealWeight.IsNormTwistOnGood.eq_of_absNorm_eq` (good ideals of equal
+  absolute norm get equal values), and the
   behaviour of the parameter under conjugation, the pointwise product, powers and a further
   twist;
 * `TauCeti.MultiplicativeIdealWeight.toIdealArithmeticFunction`: passage to the general

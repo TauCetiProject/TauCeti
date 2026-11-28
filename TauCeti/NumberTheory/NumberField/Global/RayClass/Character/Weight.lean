@@ -139,15 +139,6 @@ theorem toUnitaryIdealWeight_mul (χ ψ : RayClassCharacter 𝔪) :
   apply Subtype.ext
   simp
 
-/-- For a modulus with trivial finite part, the trivial ray class character gives the trivial
-unitary ideal weight. -/
-theorem toUnitaryIdealWeight_one_of_finitePart_eq_top (h : 𝔪.finitePart = ⊤) :
-    (1 : RayClassCharacter 𝔪).toUnitaryIdealWeight = 1 := by
-  apply Subtype.ext
-  ext I
-  simp [TauCeti.MultiplicativeIdealWeight.one_apply,
-    Modulus.support_eq_empty_of_finitePart_eq_top h]
-
 /-- The ideal weight of the inverse character is the conjugate ideal weight. -/
 @[simp]
 theorem toUnitaryIdealWeight_inv (χ : RayClassCharacter 𝔪) :
