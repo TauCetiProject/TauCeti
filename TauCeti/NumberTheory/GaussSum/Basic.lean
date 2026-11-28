@@ -298,9 +298,9 @@ theorem gaussSum_pow_eq_sum {R R' : Type*} [CommRing R] [Fintype R] [CommRing R'
 variable {F : Type*} [Field F] [Fintype F]
 
 open scoped Classical in
-/-- For every shift parameter `a` in a finite field, the shifted Gauss sum is the
-unshifted sum times `χ⁻¹ a`, except at `a = 0` for the trivial character, where it
-counts the nonzero field elements. -/
+/-- For a multiplicative shift by `a` in a finite field, the shifted Gauss sum is the
+unshifted sum times `χ⁻¹ a`, except at `a = 0` for the trivial character, where it is
+`Nat.card F - 1` cast into `S`. -/
 theorem gaussSum_mulShift_eq_ite {S : Type*} [CommRing S] [NoZeroDivisors S]
     (χ : MulChar F S) (ψ : AddChar F S) (a : F) :
     gaussSum χ (ψ.mulShift a) =
