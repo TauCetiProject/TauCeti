@@ -275,6 +275,8 @@ private theorem span_le_of_forall_exteriorFlagForms {r : ℕ} {c₀ : k} {u : Fi
       exteriorFlagVector_ne_zero_iff.mpr (hu.comp _ (Fin.castSucc_injective m))
     obtain ⟨φ_m, hφ_m⟩ := Module.Projective.exists_dual_eq_one k hy_m
     let L := incidenceDual η φ_m ξ
+    have hL (v : Fin (m + 2) → M) : L (exteriorFlagVector k (m + 2) v) = 0 :=
+      incidenceDual_exteriorFlagVector_eq_zero η φ_m ξ v
     let s := _root_.SymmetricAlgebra.ι k _ L * _root_.SymmetricAlgebra.ι k _ L
     have hs : s ∈ exteriorFlagForms k M (m + 2) :=
       ⟨SetLike.mul_mem_graded (TauCeti.SymmetricAlgebra.ι_mem_homogeneousSubmodule _ _ L)
@@ -282,8 +284,7 @@ private theorem span_le_of_forall_exteriorFlagForms {r : ℕ} {c₀ : k} {u : Fi
         rintro _ ⟨c, v, rfl⟩
         simp only [s, map_mul, _root_.SymmetricAlgebra.lift_ι_apply, map_smul,
           LinearMap.smul_apply, Module.Dual.eval_apply]
-        dsimp only [L]
-        rw [incidenceDual_exteriorFlagVector_eq_zero, smul_zero, mul_zero]⟩
+        rw [hL, smul_zero, mul_zero]⟩
     have hLw : L ((flagSpaceSuccEquiv k M (m + 1)).symm
         ((c₀ • exteriorFlagVector k (m + 1) u) ⊗ₜ[k]
           _root_.exteriorPower.ιMulti k (m + 2) v₀)) = 0 :=
