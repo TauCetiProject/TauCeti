@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.Rank
 public import Mathlib.SetTheory.Cardinal.Finite
 
 import Mathlib.Algebra.Order.Star.Rat
+import Mathlib.Combinatorics.Enumerative.DoubleCounting
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.LinearAlgebra.Matrix.PosDef
 import TauCeti.LinearAlgebra.Matrix.Rank
@@ -40,9 +41,12 @@ equivalently `r = k`. Its incidence matrix commutes with `J` and is invertible o
 
 ## Main results
 
-* `TauCeti.Design.IsTwoDesign.card_blocks_through`: every point lies on `r = replication v k ℓ`
+* `TauCeti.Design.IsTwoDesign.card_blocks_through_eq_replication` and
+  `TauCeti.Design.IsTwoDesign.replication_mul_sub_one`: every point lies on `r = replication v k ℓ`
   blocks and `r * (k - 1) = ℓ * (v - 1)`.
 * `TauCeti.Design.IsTwoDesign.card_blocks_mul`: `Nat.card L * k = v * replication v k ℓ`.
+* `TauCeti.Design.IsTwoDesign.incMatrix_mul_ones` and
+  `TauCeti.Design.IsTwoDesign.ones_mul_incMatrix`: row and column sums of `incMatrix`.
 * `TauCeti.Design.IsTwoDesign.incMatrix_mul_transpose`: the Gram identity
   `N * Nᵀ = (r - ℓ) • 1 + ℓ • J`.
 * `TauCeti.Design.isTwoDesign_of_incMatrix_mul_transpose`: converse of the Gram identity over a
@@ -76,7 +80,7 @@ there are `v` points, every block is incident with `k` points, every two distinc
 together incident with exactly `ℓ` blocks, and `2 ≤ k < v`, `0 < ℓ`. Repeated blocks are allowed. -/
 structure IsTwoDesign (v k ℓ : ℕ) : Prop where
   card_points : Nat.card P = v
-  card_block : ∀ l, Nat.card {p // inc p l} = k
+  card_points_of_block : ∀ l, Nat.card {p // inc p l} = k
   card_pair : ∀ p q, p ≠ q → Nat.card {l // inc p l ∧ inc q l} = ℓ
   two_le : 2 ≤ k
   lt_card : k < v
@@ -85,7 +89,7 @@ structure IsTwoDesign (v k ℓ : ℕ) : Prop where
 variable (inc) in
 /-- A symmetric design: a `2`-design with as many blocks as points. -/
 structure IsSymmetricDesign (v k ℓ : ℕ) : Prop extends IsTwoDesign inc v k ℓ where
-  card_blocks : Nat.card L = v
+  card_blocks_eq : Nat.card L = v
 
 /-- The replication number `r = ℓ (v - 1) / (k - 1)` of a `2`-`(v, k, ℓ)` design. -/
 def replication (v k ℓ : ℕ) : ℕ := ℓ * (v - 1) / (k - 1)
@@ -103,7 +107,7 @@ theorem IsTwoDesign.finite_blocks (h : IsTwoDesign inc v k ℓ) : Finite L := by
   have := h.finite_points
   have hpair (l : L) :
       ∃ pq : {pq : P × P // pq.1 ≠ pq.2}, inc pq.val.1 l ∧ inc pq.val.2 l := by
-    have hcard : Nat.card {p // inc p l} = k := h.card_block l
+    have hcard : Nat.card {p // inc p l} = k := h.card_points_of_block l
     have : Finite {p // inc p l} :=
       Nat.finite_of_card_ne_zero (hcard ▸ by have := h.two_le; omega)
     let := Fintype.ofFinite {p // inc p l}
@@ -120,65 +124,58 @@ theorem IsTwoDesign.finite_blocks (h : IsTwoDesign inc v k ℓ) : Finite L := by
 
 /-! ### Counting blocks and the replication number -/
 
-/-- **The replication number.** Every point of a `2`-`(v, k, ℓ)` design lies on
-`r = replication v k ℓ` blocks, and `r * (k - 1) = ℓ * (v - 1)`. -/
-theorem IsTwoDesign.card_blocks_through (h : IsTwoDesign inc v k ℓ) (p : P) :
-    Nat.card {l // inc p l} = replication v k ℓ ∧ replication v k ℓ * (k - 1) = ℓ * (v - 1) := by
+private theorem IsTwoDesign.card_blocks_through_mul_sub_one (h : IsTwoDesign inc v k ℓ) (p : P) :
+    Nat.card {l // inc p l} * (k - 1) = ℓ * (v - 1) := by
   have := h.finite_points
   have := h.finite_blocks
   let := Fintype.ofFinite P
   let := Fintype.ofFinite L
   classical
-  let S := {x : P × L // x.1 ≠ p ∧ inc p x.2 ∧ inc x.1 x.2}
-  let e₁ : S ≃ Σ q : {q : P // q ≠ p}, {l : L // inc p l ∧ inc q.val l} :=
-    { toFun := fun ⟨⟨q, l⟩, hq, hpl, hql⟩ ↦ ⟨⟨q, hq⟩, ⟨l, hpl, hql⟩⟩
-      invFun := fun ⟨⟨q, hq⟩, ⟨l, hpl, hql⟩⟩ ↦ ⟨⟨q, l⟩, hq, hpl, hql⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl }
-  let e₂ : S ≃ Σ l : {l : L // inc p l}, {q : P // inc q l ∧ q ≠ p} :=
-    { toFun := fun ⟨⟨q, l⟩, hq, hpl, hql⟩ ↦ ⟨⟨l, hpl⟩, ⟨q, hql, hq⟩⟩
-      invFun := fun ⟨⟨l, hpl⟩, ⟨q, hql, hq⟩⟩ ↦ ⟨⟨q, l⟩, hq, hpl, hql⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl }
-  have h1 : Fintype.card S = (v - 1) * ℓ := by
-    rw [Fintype.card_congr e₁, Fintype.card_sigma]
-    have hsum : ∀ q : {q : P // q ≠ p}, Fintype.card {l : L // inc p l ∧ inc q.val l} = ℓ := by
-      intro q
-      rw [← Nat.card_eq_fintype_card, h.card_pair p q.val q.property.symm]
-    simp only [hsum, Finset.sum_const, Finset.card_univ, smul_eq_mul]
-    rw [Fintype.card_subtype_compl, Fintype.card_subtype_eq, ← Nat.card_eq_fintype_card,
-      h.card_points]
-  have h2 : Fintype.card S = Nat.card {l // inc p l} * (k - 1) := by
-    rw [Fintype.card_congr e₂, Fintype.card_sigma]
-    have hsum :
-        ∀ l : {l : L // inc p l}, Fintype.card {q : P // inc q l.val ∧ q ≠ p} = k - 1 := by
-      intro l
-      rw [← Fintype.card_congr
-          (Equiv.subtypeSubtypeEquivSubtypeInter (fun q ↦ inc q l.val) (· ≠ p)),
-        Fintype.card_subtype_compl (fun q : {q // inc q l.val} ↦ q.val = p)]
-      have hpeq : Fintype.card {q : {q // inc q l.val} // q.val = p} = 1 := by
-        rw [Fintype.card_eq_one_iff]
-        exact ⟨⟨⟨p, l.property⟩, rfl⟩, fun ⟨_, hq⟩ ↦ Subtype.ext (Subtype.ext hq)⟩
-      rw [hpeq, ← Nat.card_eq_fintype_card, h.card_block l.val]
-    simp only [hsum, Finset.sum_const, Finset.card_univ, smul_eq_mul, Nat.card_eq_fintype_card]
-  have hmul : Nat.card {l // inc p l} * (k - 1) = ℓ * (v - 1) := by
-    rw [← h2, h1, mul_comm]
-  have hkpos : 0 < k - 1 := Nat.sub_pos_of_lt h.two_le
-  have hr : Nat.card {l // inc p l} = replication v k ℓ :=
-    Nat.eq_div_of_mul_eq_left hkpos.ne' hmul
-  exact ⟨hr, hr ▸ hmul⟩
+  let s : Finset P := {p}ᶜ
+  let t : Finset L := Finset.univ.filter (inc p)
+  have hst := Finset.card_mul_eq_card_mul inc (s := s) (t := t) (m := ℓ) (n := k - 1)
+    (fun q hq ↦ by
+      have hqp : p ≠ q := (Finset.mem_compl.1 hq |> Finset.notMem_singleton.1).symm
+      rw [← h.card_pair p q hqp, Nat.card_eq_fintype_card, Fintype.card_subtype]
+      congr 1; ext l
+      simp [t, Finset.mem_bipartiteAbove])
+    (fun l hl ↦ by
+      have hpl : inc p l := (Finset.mem_filter.1 hl).2
+      have hbelow : s.bipartiteBelow inc l = (Finset.univ.filter (inc · l)).erase p := by
+        ext q
+        simp [s, Finset.mem_bipartiteBelow, and_comm]
+      rw [hbelow, Finset.card_erase_of_mem (Finset.mem_filter.2 ⟨Finset.mem_univ p, hpl⟩),
+        ← Fintype.card_subtype, ← Nat.card_eq_fintype_card, h.card_points_of_block l])
+  have hs : s.card = v - 1 := by
+    simp [s, Finset.card_compl, ← Nat.card_eq_fintype_card, h.card_points]
+  have ht : t.card = Nat.card {l // inc p l} := by
+    rw [Nat.card_eq_fintype_card, Fintype.card_subtype]
+  rw [hs, ht, mul_comm _ ℓ] at hst
+  exact hst.symm
 
-/-- In a `2`-`(v, k, ℓ)` design, `ℓ < replication v k ℓ`. -/
-theorem IsTwoDesign.lt_replication (h : IsTwoDesign inc v k ℓ) : ℓ < replication v k ℓ := by
+/-- **The replication number.** Every point of a `2`-`(v, k, ℓ)` design lies on
+`r = replication v k ℓ` blocks. -/
+theorem IsTwoDesign.card_blocks_through_eq_replication (h : IsTwoDesign inc v k ℓ) (p : P) :
+    Nat.card {l // inc p l} = replication v k ℓ :=
+  Nat.eq_div_of_mul_eq_left (Nat.sub_pos_of_lt h.two_le).ne'
+    (h.card_blocks_through_mul_sub_one p)
+
+/-- The basic parameter identity `r * (k - 1) = ℓ * (v - 1)` of a `2`-`(v, k, ℓ)` design. -/
+theorem IsTwoDesign.replication_mul_sub_one (h : IsTwoDesign inc v k ℓ) :
+    replication v k ℓ * (k - 1) = ℓ * (v - 1) := by
   have := h.finite_points
   let := Fintype.ofFinite P
   obtain ⟨p⟩ : Nonempty P := by
     rw [← Fintype.card_pos_iff, ← Nat.card_eq_fintype_card, h.card_points]
     have := h.two_le; have := h.lt_card; omega
-  have hmul := (h.card_blocks_through p).2
+  rw [← h.card_blocks_through_eq_replication p]
+  exact h.card_blocks_through_mul_sub_one p
+
+/-- In a `2`-`(v, k, ℓ)` design, `ℓ < replication v k ℓ`. -/
+theorem IsTwoDesign.lt_replication (h : IsTwoDesign inc v k ℓ) : ℓ < replication v k ℓ := by
   have hlt : ℓ * (k - 1) < ℓ * (v - 1) :=
     Nat.mul_lt_mul_of_pos_left (Nat.sub_lt_sub_right (by have := h.two_le; omega) h.lt_card) h.pos
-  rw [← hmul] at hlt
+  rw [← h.replication_mul_sub_one] at hlt
   exact Nat.lt_of_mul_lt_mul_right hlt
 
 /-- **Counting blocks.** In a `2`-`(v, k, ℓ)` design, `b * k = v * r`. -/
@@ -189,19 +186,16 @@ theorem IsTwoDesign.card_blocks_mul (h : IsTwoDesign inc v k ℓ) :
   let := Fintype.ofFinite P
   let := Fintype.ofFinite L
   classical
-  let e : (Σ p : P, {l : L // inc p l}) ≃ Σ l : L, {p : P // inc p l} :=
-    (Equiv.subtypeProdEquivSigmaSubtype inc).symm.trans
-      (((Equiv.prodComm P L).subtypeEquiv fun _ ↦ Iff.rfl).trans
-        (Equiv.subtypeProdEquivSigmaSubtype fun l p ↦ inc p l))
-  have hcard : ∑ p : P, Nat.card {l // inc p l} = ∑ l : L, Nat.card {p // inc p l} := by
-    simpa only [Fintype.card_sigma, Nat.card_eq_fintype_card] using Fintype.card_congr e
-  have h1 : ∑ p : P, Nat.card {l // inc p l} = v * replication v k ℓ := by
-    simp only [fun p ↦ (h.card_blocks_through p).1, Finset.sum_const, Finset.card_univ,
-      smul_eq_mul, ← Nat.card_eq_fintype_card, h.card_points]
-  have h2 : ∑ l : L, Nat.card {p // inc p l} = Nat.card L * k := by
-    simp only [h.card_block, Finset.sum_const, Finset.card_univ, smul_eq_mul,
-      Nat.card_eq_fintype_card]
-  rw [← h1, ← h2, hcard]
+  have hmul := Finset.card_mul_eq_card_mul inc (s := (Finset.univ : Finset P))
+    (t := (Finset.univ : Finset L)) (m := replication v k ℓ) (n := k)
+    (fun p _ ↦ by
+      rw [← h.card_blocks_through_eq_replication p, Nat.card_eq_fintype_card, Fintype.card_subtype]
+      simp [Finset.bipartiteAbove])
+    (fun l _ ↦ by
+      rw [← h.card_points_of_block l, Nat.card_eq_fintype_card, Fintype.card_subtype]
+      simp [Finset.bipartiteBelow])
+  simp only [Finset.card_univ, ← Nat.card_eq_fintype_card, h.card_points] at hmul
+  exact hmul.symm
 
 /-! ### Incidence matrices and the Gram identity -/
 
@@ -223,10 +217,33 @@ theorem incMatrix_map {R S F : Type*} [Zero R] [One R] [Zero S] [One S]
   ext p l
   simp [apply_ite f]
 
-/-- The transpose of the incidence matrix of `inc` is the incidence matrix of `flip inc`. -/
+/-- The transpose of the incidence matrix of `inc` is the incidence matrix of the flipped
+relation `fun l p ↦ inc p l`. -/
 @[simp]
-theorem incMatrix_transpose {R : Type*} [Zero R] [One R] [DecidableRel inc] :
+theorem transpose_incMatrix {R : Type*} [Zero R] [One R] [DecidableRel inc] :
     (incMatrix R inc)ᵀ = incMatrix R fun l p ↦ inc p l := (rfl)
+
+/-- Multiplying the incidence matrix on the right by an all-ones matrix multiplies it by the
+replication number `r`. -/
+theorem IsTwoDesign.incMatrix_mul_ones [Fintype L] [DecidableRel inc]
+    {R α : Type*} [NonAssocSemiring R] (h : IsTwoDesign inc v k ℓ) :
+    incMatrix R inc * (Matrix.of fun _ _ ↦ 1 : Matrix L α R) =
+      (replication v k ℓ : R) • Matrix.of fun _ _ ↦ 1 := by
+  ext p a
+  simp only [Matrix.mul_apply, incMatrix_apply, Matrix.of_apply, mul_one, Finset.sum_boole,
+    ← Fintype.card_subtype, ← Nat.card_eq_fintype_card, h.card_blocks_through_eq_replication,
+    Matrix.smul_apply, smul_eq_mul]
+
+/-- Multiplying the incidence matrix on the left by an all-ones matrix multiplies it by the
+block size `k`. -/
+theorem IsTwoDesign.ones_mul_incMatrix [Fintype P] [DecidableRel inc]
+    {R α : Type*} [NonAssocSemiring R] (h : IsTwoDesign inc v k ℓ) :
+    (Matrix.of fun _ _ ↦ 1 : Matrix α P R) * incMatrix R inc =
+      (k : R) • Matrix.of fun _ _ ↦ 1 := by
+  ext a l
+  simp only [Matrix.mul_apply, Matrix.of_apply, one_mul, incMatrix_apply, Finset.sum_boole,
+    ← Fintype.card_subtype, ← Nat.card_eq_fintype_card, h.card_points_of_block,
+    Matrix.smul_apply, smul_eq_mul, mul_one]
 
 /-- The `(p, q)` entry of `N * Nᵀ` counts the blocks incident with both `p` and `q`. -/
 theorem incMatrix_mul_transpose_apply [Fintype L] [DecidableRel inc]
@@ -245,8 +262,8 @@ theorem IsTwoDesign.incMatrix_mul_transpose [Fintype L] [DecidableEq P] [Decidab
   ext p q
   rw [incMatrix_mul_transpose_apply, ← Nat.card_eq_fintype_card]
   rcases eq_or_ne p q with rfl | hpq
-  · have heq : {l // inc p l ∧ inc p l} = {l // inc p l} := by simp only [and_self]
-    rw [heq, (h.card_blocks_through p).1]
+  · simp only [and_self]
+    rw [h.card_blocks_through_eq_replication]
     simp [sub_add_cancel]
   · rw [h.card_pair p q hpq]
     simp [hpq]
@@ -262,7 +279,7 @@ theorem isTwoDesign_of_incMatrix_mul_transpose [Fintype L] [DecidableEq P] [Deci
       d • (1 : Matrix P P R) + (ℓ : R) • Matrix.of fun _ _ ↦ 1) :
     IsTwoDesign inc v k ℓ where
   card_points := hv
-  card_block := hk
+  card_points_of_block := hk
   card_pair p q hpq := by
     have h := congr_fun₂ hN p q
     rw [incMatrix_mul_transpose_apply, ← Nat.card_eq_fintype_card] at h
@@ -296,10 +313,7 @@ theorem IsTwoDesign.rank_incMatrix [DecidableRel inc] {K : Type*} [Field K] [Cha
     exact (Matrix.PosDef.one.smul hdiag).add_posSemidef hJ
   have hunit : IsUnit (incMatrix ℚ inc * (incMatrix ℚ inc)ᵀ) := hpos.isUnit
   have hrankQ : (incMatrix ℚ inc).rank = Fintype.card P := by
-    refine le_antisymm ((incMatrix ℚ inc).rank_le_card_height) ?_
-    calc Fintype.card P = (incMatrix ℚ inc * (incMatrix ℚ inc)ᵀ).rank :=
-          (rank_of_isUnit _ hunit).symm
-      _ ≤ (incMatrix ℚ inc).rank := rank_mul_le_left _ _
+    rw [← rank_self_mul_transpose, rank_of_isUnit _ hunit]
   rw [← incMatrix_map (Rat.castHom K), Matrix.rank_map, hrankQ, ← Nat.card_eq_fintype_card,
     h.card_points]
 
@@ -312,7 +326,7 @@ theorem IsTwoDesign.isSymmetricDesign_iff (h : IsTwoDesign inc v k ℓ) :
   have hvpos : 0 < v := by have := h.two_le; have := h.lt_card; omega
   refine ⟨fun hs ↦ ?_, fun hr ↦ ⟨h, ?_⟩⟩
   · have hmul := h.card_blocks_mul
-    rw [hs.card_blocks] at hmul
+    rw [hs.card_blocks_eq] at hmul
     exact (Nat.mul_left_cancel hvpos hmul).symm
   · have hmul := h.card_blocks_mul
     rw [hr] at hmul
@@ -328,13 +342,14 @@ private theorem IsSymmetricDesign.incMatrix_transpose_mul_rat [Fintype P] [Decid
   classical
   have hr : replication v k ℓ = k := h.toIsTwoDesign.isSymmetricDesign_iff.1 h
   have hcard : Fintype.card P = Fintype.card L := by
-    rw [← Nat.card_eq_fintype_card, ← Nat.card_eq_fintype_card, h.card_points, h.card_blocks]
+    rw [← Nat.card_eq_fintype_card, ← Nat.card_eq_fintype_card, h.card_points, h.card_blocks_eq]
   let e : P ≃ L := Fintype.equivOfCardEq hcard
   let N : Matrix P L ℚ := incMatrix ℚ inc
   let N' : Matrix P P ℚ := N.submatrix (Equiv.refl P) e
   let J : Matrix P P ℚ := Matrix.of fun _ _ ↦ 1
+  have hsub : N'ᵀ = Nᵀ.submatrix e (Equiv.refl P) :=
+    Matrix.transpose_submatrix N (Equiv.refl P) e
   have hNN' : N' * N'ᵀ = ((k : ℚ) - ℓ) • (1 : Matrix P P ℚ) + (ℓ : ℚ) • J := by
-    have hsub : N'ᵀ = Nᵀ.submatrix e (Equiv.refl P) := rfl
     rw [hsub, submatrix_mul_equiv N Nᵀ (Equiv.refl P) e (Equiv.refl P), Equiv.coe_refl,
       submatrix_id_id]
     simpa only [hr] using h.toIsTwoDesign.incMatrix_mul_transpose (R := ℚ)
@@ -343,24 +358,22 @@ private theorem IsSymmetricDesign.incMatrix_transpose_mul_rat [Fintype P] [Decid
       Matrix.rank_submatrix N (Equiv.refl P) e, h.toIsTwoDesign.rank_incMatrix,
       ← Nat.card_eq_fintype_card, h.card_points]
   have hrow : N' * J = (k : ℚ) • J := by
-    ext p q
-    simp only [N', N, J, Matrix.mul_apply, submatrix_apply, Equiv.refl_apply, mul_one,
-      incMatrix_apply, Matrix.smul_apply, Matrix.of_apply, smul_eq_mul]
-    rw [e.sum_comp (fun l ↦ if inc p l then (1 : ℚ) else 0), Finset.sum_boole,
-      ← Fintype.card_subtype, ← Nat.card_eq_fintype_card,
-      (h.toIsTwoDesign.card_blocks_through p).1, hr]
+    have hJ : J = (Matrix.of fun _ _ ↦ 1 : Matrix L P ℚ).submatrix e (Equiv.refl P) := by
+      ext; simp [J]
+    conv_lhs => rhs; rw [hJ]
+    rw [submatrix_mul_equiv N _ (Equiv.refl P) e (Equiv.refl P),
+      h.toIsTwoDesign.incMatrix_mul_ones, hr, Equiv.coe_refl, submatrix_id_id]
   have hcol : J * N' = (k : ℚ) • J := by
-    ext p q
-    simp only [N', N, J, Matrix.mul_apply, submatrix_apply, Equiv.refl_apply, one_mul, mul_one,
-      incMatrix_apply, Matrix.smul_apply, Matrix.of_apply, smul_eq_mul]
-    rw [Finset.sum_boole, ← Fintype.card_subtype, ← Nat.card_eq_fintype_card, h.card_block (e q)]
+    conv_lhs => lhs; rw [← submatrix_id_id J]
+    rw [← Equiv.coe_refl, submatrix_mul_equiv J N (Equiv.refl P) (Equiv.refl P) e,
+      h.toIsTwoDesign.ones_mul_incMatrix]
+    ext; simp [J]
   have hcomm : N' * N'ᵀ * N' = N' * (N' * N'ᵀ) := by
     rw [hNN']
     simp only [mul_add, add_mul, mul_smul_comm, smul_mul_assoc, mul_one, one_mul, hrow, hcol]
   have hNtN' : N'ᵀ * N' = ((k : ℚ) - ℓ) • (1 : Matrix P P ℚ) + (ℓ : ℚ) • J :=
     hunit.mul_left_cancel (by rw [← Matrix.mul_assoc, hcomm, ← hNN'])
   have hsub' : N'ᵀ * N' = (Nᵀ * N).submatrix e e := by
-    have hsub : N'ᵀ = Nᵀ.submatrix e (Equiv.refl P) := rfl
     rw [hsub, submatrix_mul_equiv Nᵀ N e (Equiv.refl P) e]
   have hres := congrArg (fun M : Matrix P P ℚ ↦ M.submatrix e.symm e.symm) hNtN'
   rw [hsub', submatrix_submatrix, Equiv.self_comp_symm, submatrix_id_id] at hres
@@ -378,12 +391,13 @@ theorem IsSymmetricDesign.flip (h : IsSymmetricDesign inc v k ℓ) :
   let := Fintype.ofFinite L
   classical
   have hr : replication v k ℓ = k := h.toIsTwoDesign.isSymmetricDesign_iff.1 h
-  have hcard : ∀ p, Nat.card {l // _root_.flip inc l p} = k := fun p ↦
-    ((h.toIsTwoDesign.card_blocks_through p).1).trans hr
+  have hcard : ∀ p, Nat.card {l // inc p l} = k := fun p ↦
+    (h.toIsTwoDesign.card_blocks_through_eq_replication p).trans hr
   have hNtN := h.incMatrix_transpose_mul_rat
-  rw [← Matrix.transpose_transpose (incMatrix ℚ inc), incMatrix_transpose] at hNtN
-  refine ⟨isTwoDesign_of_incMatrix_mul_transpose (R := ℚ) (d := (k : ℚ) - ℓ) h.card_blocks hcard
-    h.two_le h.lt_card h.pos hNtN, h.card_points⟩
+  rw [← Matrix.transpose_transpose (incMatrix ℚ inc), transpose_incMatrix] at hNtN
+  rw [Function.flip_def]
+  exact ⟨isTwoDesign_of_incMatrix_mul_transpose (R := ℚ) (d := (k : ℚ) - ℓ) h.card_blocks_eq
+    hcard h.two_le h.lt_card h.pos hNtN, h.card_points⟩
 
 /-- For a symmetric `2`-`(v, k, ℓ)` design over any ring, `Nᵀ * N = (k - ℓ) • 1 + ℓ • J`. -/
 theorem IsSymmetricDesign.incMatrix_transpose_mul [Fintype P] [DecidableEq L] [DecidableRel inc]
@@ -391,9 +405,10 @@ theorem IsSymmetricDesign.incMatrix_transpose_mul [Fintype P] [DecidableEq L] [D
     (incMatrix R inc)ᵀ * incMatrix R inc =
       ((k : R) - ℓ) • (1 : Matrix L L R) + (ℓ : R) • Matrix.of fun _ _ ↦ 1 := by
   have hr : replication v k ℓ = k := h.toIsTwoDesign.isSymmetricDesign_iff.1 h
-  have hflip : IsSymmetricDesign (fun l p ↦ inc p l) v k ℓ := h.flip
+  have hflip : IsSymmetricDesign (fun l p ↦ inc p l) v k ℓ := by
+    simpa only [Function.flip_def] using h.flip
   conv_lhs => rhs; rw [← Matrix.transpose_transpose (incMatrix R inc)]
-  rw [incMatrix_transpose]
+  rw [transpose_incMatrix]
   simpa only [hr] using hflip.toIsTwoDesign.incMatrix_mul_transpose (R := R)
 
 end TauCeti.Design
