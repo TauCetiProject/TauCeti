@@ -77,6 +77,8 @@ submodule.
   `LinearMap.lsmul R M a`.
 * `Submodule.mem_torsionBy_self_iff`: in a commutative semiring `R`, `x ∈ R[a]` if and only if
   `a * x = 0`.
+* `Submodule.torsionBySet_pi`: the submodule of a product annihilated by a set of scalars is the
+  product of the submodules annihilated by it.
 * `Submodule.forall_pow_smul_mem_iff_forall_smul_mem`: saturation of a submodule with respect to a
   scalar is equivalent to saturation with respect to all powers of that scalar.
 * `Submodule.Quotient.mk_mem_torsionBy_iff`: the class of `x` in `M ⧸ P` is `a`-torsion if and
@@ -450,6 +452,16 @@ itself exactly when `a * x = 0`: the scalar action of `R` on itself is multiplic
 theorem mem_torsionBy_self_iff {R : Type*} [CommSemiring R] {a x : R} :
     x ∈ torsionBy R R a ↔ a * x = 0 := by
   rw [mem_torsionBy_iff, smul_eq_mul]
+
+/-- The submodule of a product `∀ i, M i` annihilated by a set `s` of scalars is the product of
+the submodules of the factors annihilated by `s`. -/
+theorem torsionBySet_pi {R ι : Type*} [CommSemiring R] {M : ι → Type*}
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (s : Set R) :
+    torsionBySet R (∀ i, M i) s = pi Set.univ fun i ↦ torsionBySet R (M i) s := by
+  ext x
+  simp only [mem_torsionBySet_iff, mem_pi, Set.mem_univ, forall_const, funext_iff,
+    Pi.smul_apply, Pi.zero_apply]
+  exact forall_comm
 
 /-- A submodule `P` of an `R`-module `M` is `a`-saturated (`∀ x, a • x ∈ P → x ∈ P`) if and only
 if it is saturated with respect to all powers of `a`. -/
