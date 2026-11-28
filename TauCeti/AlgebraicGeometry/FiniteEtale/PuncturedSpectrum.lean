@@ -10,6 +10,8 @@ public import TauCeti.AlgebraicGeometry.PuncturedSpectrum
 public import Mathlib.RingTheory.Depth.Basic
 public import Mathlib.AlgebraicGeometry.Restrict
 public import TauCeti.RingTheory.LocalRing.RingHom
+import Mathlib.AlgebraicGeometry.PullbackCarrier
+import Mathlib.AlgebraicGeometry.Morphisms.RingHomProperties
 import TauCeti.Algebra.Algebra.Pi
 import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Pullback
 import TauCeti.AlgebraicGeometry.FiniteEtale.MorphismProperty
@@ -29,6 +31,8 @@ projections `R × R → R`, viewed as morphisms of finite étale schemes over `S
 
 ## Main results
 
+* `TauCeti.IsLocalRing.etale_localizationAway_of_etale_puncturedSpectrum`: an algebra that is
+  étale over the punctured spectrum becomes étale after inverting any element of the maximal ideal.
 * `TauCeti.IsLocalRing.restrictPunctured_faithful_iff`: restriction to the punctured spectrum is
   faithful if and only if `0 < ringKrullDim R`.
 * `TauCeti.IsLocalRing.restrictPunctured_faithful_of_one_le_depth`: restriction is faithful for a
@@ -63,11 +67,46 @@ public section
 
 noncomputable section
 
-open AlgebraicGeometry CategoryTheory TopologicalSpace
+open AlgebraicGeometry CategoryTheory Limits TopologicalSpace IsLocalRing
 
 universe u
 
 namespace TauCeti.IsLocalRing
+
+/-- If an algebra over a local ring is étale above the punctured spectrum, then inverting
+the image of any element of the maximal ideal gives an étale algebra over the local ring. -/
+theorem etale_localizationAway_of_etale_puncturedSpectrum {A C : Type u} [CommRing A]
+    [IsLocalRing A] [CommRing C] [Algebra A C] {a : A} (ha : a ∈ maximalIdeal A)
+    [Etale (pullback.snd (Spec.algebraMap A C) (puncturedSpectrum A).ι)] :
+    Algebra.Etale A (Localization.Away (algebraMap A C a)) := by
+  let p := Spec.algebraMap A C
+  let i := Spec.algebraMap C (Localization.Away (algebraMap A C a))
+  have hi : Set.range i ⊆ (p ⁻¹ᵁ puncturedSpectrum A : Set _) := by
+    have h : Set.range i = (PrimeSpectrum.basicOpen (algebraMap A C a) : Set (PrimeSpectrum C)) :=
+      PrimeSpectrum.localization_away_comap_range _ (algebraMap A C a)
+    rw [h]
+    intro x hx
+    refine (mem_preimage_puncturedSpectrum_iff A x).mpr fun he ↦ hx ?_
+    have hm : a ∈ x.asIdeal.under A := he.symm ▸ ha
+    exact (Ideal.mem_comap (f := algebraMap A C)).mp hm
+  let i' := IsOpenImmersion.lift (p ⁻¹ᵁ puncturedSpectrum A).ι i
+    (by simpa using hi)
+  have hi' : IsOpenImmersion i' := by
+    have : IsOpenImmersion (i' ≫ (p ⁻¹ᵁ puncturedSpectrum A).ι) := by
+      rw [IsOpenImmersion.lift_fac]
+      infer_instance
+    exact .of_comp i' (p ⁻¹ᵁ puncturedSpectrum A).ι
+  have h : Etale (p ∣_ puncturedSpectrum A) := by
+    rw [morphismRestrict]
+    exact inferInstanceAs (Etale ((pullbackRestrictIsoRestrict p (puncturedSpectrum A)).inv ≫
+      pullback.snd (Spec.algebraMap A C) (puncturedSpectrum A).ι))
+  have he : Etale (i ≫ p) := by
+    rw [← IsOpenImmersion.lift_fac (p ⁻¹ᵁ puncturedSpectrum A).ι i (by simpa using hi),
+      Category.assoc, ← morphismRestrict_ι]
+    infer_instance
+  exact RingHom.etale_algebraMap.mp <| (HasRingHomProperty.Spec_iff (P := @Etale)).mp <| by
+    simpa [i, p, Spec.algebraMap, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
+      IsScalarTower.algebraMap_eq A C (Localization.Away (algebraMap A C a))] using he
 
 variable (R : Type u) [CommRing R] [IsLocalRing R]
 

@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.FiniteEtale.PuncturedSpectrum
 import Mathlib.RingTheory.Regular.Flat
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.FiniteEtale.Henselian
-import TauCeti.AlgebraicGeometry.Pullback.SpecMap
 import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Sections
 import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.Depth.WeaklyRegular
@@ -49,40 +48,6 @@ namespace TauCeti.IsLocalRing
 variable {A B C : Type u} [CommRing A] [IsLocalRing A] [IsNoetherianRing A]
   [CommRing B] [Algebra A B] [CommRing C] [Algebra A C]
 
-omit [IsNoetherianRing A] in
-private lemma etale_localizationAway_of_etale_puncturedSpectrum {a : A}
-    (ha : a ∈ maximalIdeal A)
-    [Etale (pullback.snd (Spec.algebraMap A C) (puncturedSpectrum A).ι)] :
-    Algebra.Etale A (Localization.Away (algebraMap A C a)) := by
-  let p := Spec.algebraMap A C
-  let i := Spec.algebraMap C (Localization.Away (algebraMap A C a))
-  have hi : Set.range i ⊆ (p ⁻¹ᵁ puncturedSpectrum A : Set _) := by
-    have h : Set.range i = (PrimeSpectrum.basicOpen (algebraMap A C a) : Set (PrimeSpectrum C)) :=
-      PrimeSpectrum.localization_away_comap_range _ (algebraMap A C a)
-    rw [h]
-    intro x hx
-    refine (mem_preimage_puncturedSpectrum_iff A x).mpr fun he ↦ hx ?_
-    have hm : a ∈ x.asIdeal.under A := he.symm ▸ ha
-    exact (Ideal.mem_comap (f := algebraMap A C)).mp hm
-  let i' := IsOpenImmersion.lift (p ⁻¹ᵁ puncturedSpectrum A).ι i
-    (by simpa using hi)
-  have hi' : IsOpenImmersion i' := by
-    have : IsOpenImmersion (i' ≫ (p ⁻¹ᵁ puncturedSpectrum A).ι) := by
-      rw [IsOpenImmersion.lift_fac]
-      infer_instance
-    exact .of_comp i' (p ⁻¹ᵁ puncturedSpectrum A).ι
-  have h : Etale (p ∣_ puncturedSpectrum A) := by
-    rw [morphismRestrict]
-    exact inferInstanceAs (Etale ((pullbackRestrictIsoRestrict p (puncturedSpectrum A)).inv ≫
-      pullback.snd (Spec.algebraMap A C) (puncturedSpectrum A).ι))
-  have he : Etale (i ≫ p) := by
-    rw [← IsOpenImmersion.lift_fac (p ⁻¹ᵁ puncturedSpectrum A).ι i (by simpa using hi),
-      Category.assoc, ← morphismRestrict_ι]
-    infer_instance
-  exact RingHom.etale_algebraMap.mp <| (HasRingHomProperty.Spec_iff (P := @Etale)).mp <| by
-    simpa [i, p, Spec.algebraMap, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
-      IsScalarTower.algebraMap_eq A C (Localization.Away (algebraMap A C a))] using he
-
 private lemma exists_lift_of_etale_puncturedSpectrum [Module.Finite A B] [Module.Flat A B]
     {f a b : A} [IsAdicComplete (Ideal.span {f}) A]
     (ha : a ∈ maximalIdeal A) (hb : b ∈ maximalIdeal A) (hreg : IsWeaklyRegular A [f, a, b])
@@ -116,67 +81,6 @@ private lemma exists_lift_of_etale_puncturedSpectrum [Module.Finite A B] [Module
     rw [← Ideal.map_pow]
     exact hB
   exact (J.existsUnique_lift_of_isAdicComplete hpow g₀).exists
-
-omit [IsLocalRing A] [IsNoetherianRing A] in
-/-- Use Hartogs to extend a morphism from the punctured hypersurface to the affine hypersurface,
-then lift its ring map and restrict back to the punctured hypersurface. -/
-private lemma exists_overHom_lift_quotient (I : Ideal A) [IsLocalRing (A ⧸ I)]
-    (hΓ : IsIso (pullback.fst (Spec.algebraMap (A ⧸ I) (B ⧸ I.map (algebraMap A B)))
-      (puncturedSpectrum (A ⧸ I)).ι).appTop)
-    (hlift : ∀ g₀ : C →ₐ[A] B ⧸ I.map (algebraMap A B),
-      ∃ g : C →ₐ[A] B, (Ideal.Quotient.mkₐ A _).comp g = g₀) :
-    let Y := (algSpec (.of A)).obj (.op (CommAlgCat.of A B))
-    let Z := (algSpec (.of A)).obj (.op (CommAlgCat.of A C))
-    let F := Over.pullback (Spec.algebraMap A (A ⧸ I)) ⋙ Over.pullback (puncturedSpectrum (A ⧸ I)).ι
-    ∀ α : F.obj Y ⟶ F.obj Z, ∃ g : Y ⟶ Z, F.map g = α := by
-  intro Y Z F α
-  let J := I.map (algebraMap A B)
-  let j₀ := (puncturedSpectrum (A ⧸ I)).ι
-  let q := Spec.algebraMap A (A ⧸ I)
-  let p₀ := Spec.algebraMap (A ⧸ I) (B ⧸ J)
-  let H := TauCeti.AlgebraicGeometry.isPullback_SpecMap_quotient A B I
-  let e : Over.mk p₀ ≅ (Over.pullback q).obj Y := Over.isoMk H.isoPullback H.isoPullback_hom_snd
-  let Z₀ := (Over.pullback q).obj Z
-  have : IsAffineHom Z₀.hom := inferInstanceAs (IsAffineHom (pullback.snd (Spec.algebraMap A C) q))
-  have : IsAffine Z₀.left := isAffine_of_isAffineHom Z₀.hom
-  obtain ⟨φ, hφ⟩ := (TauCeti.AlgebraicGeometry.overPullback_map_bijective_of_isIso_appTop j₀
-    (Y := Over.mk p₀) (Y' := Z₀) hΓ).surjective ((Over.pullback j₀).map e.hom ≫ α)
-  have hφw : φ.left ≫ pullback.snd Z.hom q = p₀ := Over.w φ
-  have hp₀ : p₀ ≫ q = Spec.algebraMap A (B ⧸ J) := by
-    simp only [p₀, q, Spec.algebraMap, ← Spec.map_comp, ← CommRingCat.ofHom_comp]
-    rw [← IsScalarTower.algebraMap_eq A (A ⧸ I) (B ⧸ J)]
-  let ψ : (algSpec (.of A)).obj (.op (CommAlgCat.of A (B ⧸ J))) ⟶ Z :=
-    Over.homMk (φ.left ≫ pullback.fst Z.hom q) (calc
-      (φ.left ≫ pullback.fst Z.hom q) ≫ Z.hom =
-          (φ.left ≫ pullback.snd Z.hom q) ≫ q := by simp only [Category.assoc, pullback.condition]
-      _ = p₀ ≫ q := by rw [hφw]
-      _ = _ := hp₀)
-  let m := (algSpec.fullyFaithful (R := .of A)).preimage ψ
-  obtain ⟨g, hg⟩ := hlift m.unop.hom
-  let g' : Y ⟶ Z := (algSpec (.of A)).map (CommAlgCat.ofHom g).op
-  have hmap : e.hom ≫ (Over.pullback q).map g' = φ := by
-    apply Over.OverMorphism.ext
-    apply pullback.hom_ext
-    · have hfst : ((Over.pullback q).map g').left ≫ pullback.fst Z.hom q =
-          pullback.fst Y.hom q ≫ g'.left := pullback.lift_fst _ _ _
-      have he : e.hom.left ≫ pullback.fst Y.hom q = _ := H.isoPullback_hom_fst
-      rw [Over.comp_left_assoc, hfst, ← Category.assoc, he]
-      have hm : Spec.map (CommRingCat.ofHom m.unop.hom.toRingHom) =
-          φ.left ≫ pullback.fst Z.hom q :=
-        congrArg (fun k ↦ k.left) ((algSpec.fullyFaithful (R := .of A)).map_preimage ψ)
-      have hg' : g'.left = Spec.map (CommRingCat.ofHom g.toRingHom) := rfl
-      have heq : Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk J)) ≫
-          Spec.map (CommRingCat.ofHom g.toRingHom) =
-          Spec.map (CommRingCat.ofHom ((Ideal.Quotient.mkₐ A J).comp g).toRingHom) := by
-        rw [← Spec.map_comp, ← CommRingCat.ofHom_comp]
-        rfl
-      exact (congrArg (fun k ↦ Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk J)) ≫ k) hg').trans
-        (heq.trans ((congrArg (fun k ↦ Spec.map (CommRingCat.ofHom k.toRingHom)) hg).trans hm))
-    · exact (Over.w (e.hom ≫ (Over.pullback q).map g')).trans (Over.w φ).symm
-  refine ⟨g', (cancel_epi ((Over.pullback j₀).map e.hom)).mp ?_⟩
-  dsimp only [F, Functor.comp_map]
-  rw [← Functor.map_comp, hmap]
-  exact hφ
 
 private lemma exists_overHom_lift_hypersurface [Module.Finite A B] [Module.Flat A B]
     {f : A} [IsAdicComplete (Ideal.span {f}) A] [IsLocalRing (A ⧸ Ideal.span {f})]
