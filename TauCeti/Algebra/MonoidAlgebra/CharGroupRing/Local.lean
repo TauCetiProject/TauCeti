@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import TauCeti.Algebra.Algebra.Subalgebra.Pi
 public import TauCeti.Algebra.MonoidAlgebra.CharEval.Residue
@@ -23,10 +24,11 @@ character group ring `R_Ψ ⊆ ∏_{ψ ∈ Ψ} O`. Following Dasgupta and Kakde 
 this file establishes when `R_Ψ` is a local ring, describes its maximal ideal, residue field, and
 adic topology, and equips it with its complete Noetherian local `O`-algebra structure:
 
-* **Units (`Subalgebra.isUnit_iff`, `Subalgebra.isUnit_iff_isUnit_prod`)**: when `Ψ` is finite,
-  `y ∈ R_Ψ` is a unit in `R_Ψ` (not merely in the ambient product `∏_{ψ ∈ Ψ} O`) if and only if
-  every coordinate `y(ψ)` is a unit in `O`, equivalently if and only if `∏_{ψ ∈ Ψ} y(ψ)` is a
-  unit in `O`, obtained directly from `TauCeti/Algebra/Algebra/Subalgebra/Pi.lean`.
+* **Units (`Set.charGroupRing.isUnit_iff`, `Set.charGroupRing.isUnit_iff_isUnit_prod`)**: when `Ψ`
+  is finite, `y ∈ R_Ψ` is a unit in `R_Ψ` (not merely in the ambient product `∏_{ψ ∈ Ψ} O`) if
+  and only if every coordinate `y(ψ)` is a unit in `O`, equivalently if and only if
+  `∏_{ψ ∈ Ψ} y(ψ)` is a unit in `O`, obtained directly from
+  `TauCeti/Algebra/Algebra/Subalgebra/Pi.lean`.
 * **Locality (`Set.charGroupRing.isLocalRing_of_residue_eq`, `Set.charGroupRing.isLocalRing`)**:
   suppose `(O, 𝔪)` is a local ring and `Ψ` is finite, nonempty, and any two characters in `Ψ`
   agree modulo `𝔪` at every `g : G`. Then all members of `Ψ` induce the same homomorphism
@@ -40,7 +42,7 @@ adic topology, and equips it with its complete Noetherian local `O`-algebra stru
 * **Consequences of locality**: once `[IsLocalRing Ψ.charGroupRing]` holds (with `[Nontrivial O]`,
   and no finiteness or `p`-power hypotheses repeated), surjectivity of `evalAlgHom` makes every
   coordinate evaluation a local homomorphism (`isLocalHom_evalAlgHom_of_isLocalRing`), so `y ∈ R_Ψ`
-  is a unit iff `y(ψ) ∈ Oˣ` at any single `ψ ∈ Ψ` (`Set.charGroupRing.isUnit_iff`).
+  is a unit iff `y(ψ) ∈ Oˣ` at any single `ψ ∈ Ψ` (`Set.charGroupRing.isUnit_iff_isUnit_apply`).
   When `O` is a local ring, this identifies the maximal ideal of `R_Ψ` as the preimage of `𝔪` at
   any single `ψ ∈ Ψ` (`Set.charGroupRing.maximalIdeal_eq_comap`) and identifies the residue field of
   `R_Ψ` with `ResidueField O` (`Set.charGroupRing.residueFieldEquiv`). When in addition `R_Ψ` is
@@ -61,12 +63,14 @@ adic topology, and equips it with its complete Noetherian local `O`-algebra stru
 
 ## Main definitions and results
 
+* `Set.charGroupRing.isUnit_iff` and `Set.charGroupRing.isUnit_iff_isUnit_prod`: coordinatewise
+  and product criteria for units of `R_Ψ` when `Ψ` is finite.
 * `Set.charGroupRing.isLocalHom_evalAlgHom_of_residue_eq` and
   `Set.charGroupRing.isLocalRing_of_residue_eq`: locality of `R_Ψ` when characters in `Ψ` agree
   modulo the maximal ideal of `O`.
-* `Set.charGroupRing.isLocalHom_evalAlgHom` and `Set.charGroupRing.isLocalRing`: locality of `R_Ψ`
-  when characters in `Ψ` have equal `p^k`-th powers.
-* `Set.charGroupRing.isUnit_iff`, `Set.charGroupRing.maximalIdeal_eq_comap`, and
+* `Set.charGroupRing.isLocalRing`: locality of `R_Ψ` when characters in `Ψ` have equal
+  `p^k`-th powers.
+* `Set.charGroupRing.isUnit_iff_isUnit_apply`, `Set.charGroupRing.maximalIdeal_eq_comap`, and
   `Set.charGroupRing.residueFieldEquiv`: single-coordinate unit criterion, maximal ideal, and
   residue field of a local character group ring (with adic topology given by
   `IsLocalRing.maximalIdeal_adicTopology_eq_map`).
@@ -82,6 +86,25 @@ adic topology, and equips it with its complete Noetherian local `O`-algebra stru
 public section
 
 namespace Set.charGroupRing
+
+section Units
+
+variable {O G : Type*} [CommRing O] [CommGroup G] {Ψ : Set (G →* Oˣ)}
+
+/-- **Units in a finite character group ring**: when `Ψ` is finite, an element `y ∈ R_Ψ` is a
+unit in `R_Ψ` (and not merely in `∏_{ψ ∈ Ψ} O`) if and only if every coordinate `y(ψ)` is a unit
+in `O`. -/
+theorem isUnit_iff [Finite Ψ] {y : Ψ.charGroupRing} :
+    IsUnit y ↔ ∀ ψ : Ψ, IsUnit ((y : Ψ → O) ψ) :=
+  Subalgebra.isUnit_iff_forall_isUnit_apply
+
+/-- **Product criterion for units in a finite character group ring**: when `Ψ` is finite,
+`y ∈ R_Ψ` is a unit in `R_Ψ` if and only if the product `∏_{ψ ∈ Ψ} y(ψ)` is a unit in `O`. -/
+theorem isUnit_iff_isUnit_prod [Fintype Ψ] {y : Ψ.charGroupRing} :
+    IsUnit y ↔ IsUnit (∏ ψ : Ψ, (y : Ψ → O) ψ) :=
+  Subalgebra.isUnit_iff_isUnit_prod
+
+end Units
 
 section LocalStructure
 
@@ -104,8 +127,8 @@ instance isLocalHom_evalAlgHom_of_isLocalRing [Nontrivial O] [IsLocalRing Ψ.cha
 
 /-- When `R_Ψ` is a local ring and `O` is nontrivial, an element `y ∈ R_Ψ` is a unit in `R_Ψ` if
 and only if its `ψ`-coordinate is a unit in `O` at any single `ψ ∈ Ψ`. -/
-theorem isUnit_iff [Nontrivial O] [IsLocalRing Ψ.charGroupRing] {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ)
-    {y : Ψ.charGroupRing} :
+theorem isUnit_iff_isUnit_apply [Nontrivial O] [IsLocalRing Ψ.charGroupRing] {ψ : G →* Oˣ}
+    (hψ : ψ ∈ Ψ) {y : Ψ.charGroupRing} :
     IsUnit y ↔ IsUnit ((y : Ψ → O) ⟨ψ, hψ⟩) := by
   rw [← evalAlgHom_apply hψ]
   exact (isUnit_map_iff (evalAlgHom hψ) y).symm
@@ -229,7 +252,7 @@ theorem isLocalHom_evalAlgHom_of_residue_eq [Finite Ψ]
       IsLocalRing.residue O (ψ₁ g) = IsLocalRing.residue O (ψ₂ g))
     {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ) :
     IsLocalHom (evalAlgHom hψ) := by
-  refine ⟨fun y hy ↦ Subalgebra.isUnit_iff.mpr fun χ ↦ ?_⟩
+  refine ⟨fun y hy ↦ isUnit_iff.mpr fun χ ↦ ?_⟩
   rw [← IsLocalRing.residue_ne_zero_iff_isUnit, residue_apply_eq_of_residue_eq hΨ y χ ⟨ψ, hψ⟩,
     IsLocalRing.residue_ne_zero_iff_isUnit, ← evalAlgHom_apply hψ]
   exact hy
@@ -251,27 +274,6 @@ end ResidueEq
 section ExpChar
 
 variable (p : ℕ) [ExpChar (IsLocalRing.ResidueField O) p]
-
-/-- When any two characters in `Ψ` have equal `p^k`-th powers at every element of `G` for some `k`,
-all coordinates of any element `y ∈ R_Ψ` have the same residue in `ResidueField O`. -/
-theorem residue_apply_eq_of_pow_eq
-    (hΨ : ∀ ψ₁ ∈ Ψ, ∀ ψ₂ ∈ Ψ, ∀ g : G, ∃ k : ℕ, ψ₁ g ^ p ^ k = ψ₂ g ^ p ^ k)
-    (y : Ψ.charGroupRing) (ψ₁ ψ₂ : Ψ) :
-    IsLocalRing.residue O ((y : Ψ → O) ψ₁) = IsLocalRing.residue O ((y : Ψ → O) ψ₂) :=
-  residue_apply_eq_of_residue_eq
-    (fun _ h₁ _ h₂ g ↦ IsLocalRing.residue_units_eq_of_exists_pow_eq p (hΨ _ h₁ _ h₂ g))
-    y ψ₁ ψ₂
-
-/-- **Coordinate evaluation is a local homomorphism**: when `Ψ` is finite and any two characters in
-`Ψ` have equal `p^k`-th powers at each element of `G` for some `k`, coordinate evaluation at
-`ψ ∈ Ψ` reflects units. -/
-theorem isLocalHom_evalAlgHom [Finite Ψ]
-    (hΨ : ∀ ψ₁ ∈ Ψ, ∀ ψ₂ ∈ Ψ, ∀ g : G, ∃ k : ℕ, ψ₁ g ^ p ^ k = ψ₂ g ^ p ^ k)
-    {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ) :
-    IsLocalHom (evalAlgHom hψ) :=
-  isLocalHom_evalAlgHom_of_residue_eq
-    (fun _ h₁ _ h₂ g ↦ IsLocalRing.residue_units_eq_of_exists_pow_eq p (hΨ _ h₁ _ h₂ g))
-    hψ
 
 /-- **Locality criterion for character group rings** (Dasgupta–Kakde, §2.3, §5.1, §7.1): over a
 local ring `O` whose residue field has exponential characteristic `p`, the character group ring
