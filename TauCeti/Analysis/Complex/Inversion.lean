@@ -103,7 +103,7 @@ theorem exists_homeomorph_compl_ball_add_inv_comp_inv {G : ℂ → ℂ} {K S : S
   have hkmaps : MapsTo k S (ball 0 1)ᶜ := hleft.mapsTo hbij.surjOn
   have hright : RightInvOn k h S := hbij.surjOn.leftInvOn_of_rightInvOn hleft
   have hinvc : ContinuousOn (fun y : ℂ => (y - p)⁻¹) S :=
-    ContinuousOn.inv₀ (by fun_prop) fun y hy hyp => hp (by rwa [sub_eq_zero.mp hyp] at hy)
+    (continuousOn_inv_sub_compl_singleton p).mono fun _ hy h ↦ hp (h ▸ hy)
   have hkc : ContinuousOn k S :=
     (hGinvc.comp hinvc fun y hy => (hιW hy).1).inv₀ fun y hy h0 =>
       hkmaps hy (by rw [Function.comp_apply] at h0; simp [hk, h0])

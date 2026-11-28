@@ -16,6 +16,7 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
 public import TauCeti.Topology.VectorBundle.Subbundle
 import TauCeti.Geometry.Manifold.Immersion.NormalSpace.Basic
+import TauCeti.Geometry.Manifold.Instances.MappingTorus.ClosedOrbit.NormalOrientation
 import TauCeti.Geometry.Manifold.Morse.Bott.MappingTorus.NegativeOrientation
 import TauCeti.Geometry.Manifold.Morse.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.Morse.Prod
@@ -305,45 +306,6 @@ theorem negativeNormalSpace_criticalCircle_one_eq_top
       (isNondegenerateCriticalSubmanifold_criticalCircle (.inl rfl))]
   exact manifoldMorseIndex_height_criticalCircle_one s
 
-/-- A nonzero vertical vector at a point of the maximum circle is not tangent to the circle, so
-its normal class does not vanish. -/
-private theorem normalClass_mfderiv_mk_one_ne_zero {w : TangentSpace (𝓡 1) (1 : sphere (0 : ℂ) 1)}
-    (hw : w ≠ 0) (t : ℝ) :
-    (criticalCircle 1 (.inl rfl)).isImmersion.normalClass (t : AddCircle ((1 : ℕ) : ℝ)) hn
-      (mfderiv (𝓡 1) (𝓘(ℝ).prod (𝓡 1)) (mk t) 1 w) ≠ 0 := by
-  intro h0
-  obtain ⟨u, hu⟩ :=
-    ((criticalCircle 1 (.inl rfl)).isImmersion.normalClass_eq_zero_iff _ hn _).1 h0
-  have hper := (isFixedPt_conjCircleDiffeomorph (.inl rfl)).isPeriodicPt 1
-  have hγ : ⇑(criticalCircle 1 (.inl rfl)) = SmoothMappingTorus.closedOrbit _ hper :=
-    SmoothEmbedding.coe_ofIsSmoothEmbedding _ _
-  -- The tangent vector `u` of the circle has the vertical image `d[t, ·]₁ w`.
-  have hu' : mfderiv 𝓘(ℝ) (𝓘(ℝ).prod (𝓡 1)) (SmoothMappingTorus.closedOrbit _ hper)
-      (t : AddCircle ((1 : ℕ) : ℝ)) u = mfderiv (𝓡 1) (𝓘(ℝ).prod (𝓡 1)) (mk t) 1 w := by
-    rw [← hγ]
-    exact hu
-  -- The projection to the circle undoes the velocity of the circle and kills vertical vectors.
-  have hvert := (SmoothMappingTorus.range_mfderiv_mk conjCircleDiffeomorph t 1) ▸
-    LinearMap.mem_range_self (mfderiv (𝓡 1) (𝓘(ℝ).prod (𝓡 1)) (mk t) 1).toLinearMap w
-  -- Both tangent spaces of the circle are `ℝ`, read in the charts of the circle.
-  have h₁ := congrArg (fun L : ℝ →L[ℝ] ℝ ↦ L u)
-    (SmoothMappingTorus.mfderiv_proj_comp_mfderiv_closedOrbit hper (by simp) t)
-  have h₂ : mfderiv (𝓘(ℝ).prod (𝓡 1)) 𝓘(ℝ) (SmoothMappingTorus.proj conjCircleDiffeomorph)
-      (SmoothMappingTorus.closedOrbit _ hper t)
-      (mfderiv 𝓘(ℝ) (𝓘(ℝ).prod (𝓡 1)) (SmoothMappingTorus.closedOrbit _ hper) t u) =
-        mfderiv (𝓘(ℝ).prod (𝓡 1)) 𝓘(ℝ) (SmoothMappingTorus.proj conjCircleDiffeomorph) (mk t 1)
-          (mfderiv (𝓡 1) (𝓘(ℝ).prod (𝓡 1)) (mk t) 1 w) := by
-    rw [hu']
-    exact congrArg (fun L : ℝ × EuclideanSpace ℝ (Fin 1) →L[ℝ] ℝ ↦ L _)
-      (mfderiv_congr_point (SmoothMappingTorus.closedOrbit_coe hper t))
-  have h₃ : mfderiv (𝓘(ℝ).prod (𝓡 1)) 𝓘(ℝ) (SmoothMappingTorus.proj conjCircleDiffeomorph) (mk t 1)
-      (mfderiv (𝓡 1) (𝓘(ℝ).prod (𝓡 1)) (mk t) 1 w) = 0 :=
-    LinearMap.mem_ker.1 hvert
-  have hu0 : u = 0 := h₁.symm.trans (h₂.trans h₃)
-  rw [hu0, map_zero] at hu'
-  exact hw (SmoothMappingTorus.injective_mfderiv_mk conjCircleDiffeomorph (by simp) t 1
-    (hu'.symm.trans (map_zero _).symm))
-
 /-- **The seam of the maximum circle.** At `[1, 1] = [0, conj 1]` the vertical vector `d[1, ·]₁ w`
 is `-d[0, ·]₁ w`, since conjugation acts by `-1` on the tangent line of the circle at `1`. -/
 private theorem mfderiv_mk_one_one_eq_neg (w : TangentSpace (𝓡 1) (1 : sphere (0 : ℂ) 1)) :
@@ -401,8 +363,8 @@ theorem isEmpty_vectorBundleOrientation_negativeNormalSpace_criticalCircle_one
     inferInstanceAs (Nontrivial (EuclideanSpace ℝ (Fin 1)))
   obtain ⟨w, hw⟩ := exists_ne (0 : TangentSpace (𝓡 1) (1 : sphere (0 : ℂ) 1))
   have hν (t : ℝ) : ν w t ∈ zeroSectionCompl (Fin 1 → ℝ) _ :=
-    mem_zeroSectionCompl.2 fun h0 ↦ normalClass_mfderiv_mk_one_ne_zero hn hw t
-      (congrArg Subtype.val h0)
+    mem_zeroSectionCompl.2 fun h0 ↦ hw ((SmoothMappingTorus.normalClass_mfderiv_mk_eq_zero_iff hn
+      (criticalCircle_coe _) t w).1 (congrArg Subtype.val h0))
   have hcont : Continuous (ν w) :=
     (isEmbedding_totalSpace_subbundle W (Fin 1 → ℝ)
       (h.negativeNormalSpace hn g)).isInducing.continuous_iff.2
@@ -411,22 +373,17 @@ theorem isEmpty_vectorBundleOrientation_negativeNormalSpace_criticalCircle_one
     ((zeroSectionComplOrientation (by simp)).continuous.comp (hcont.subtype_mk hν)) (x := 0)
     (y := 1) ?_
   -- At the seam `[1, z] = [0, conj z]` the normal class of `d[1, ·]₁ w` is that of `-d[0, ·]₁ w`.
-  -- Normal classes over equal points of the circle with the same representative agree.
-  have hmk (s s' : AddCircle ((1 : ℕ) : ℝ)) (hs : s = s') (v : ℝ × EuclideanSpace ℝ (Fin 1))
-      (hv : c.isImmersion.normalClass s hn v ∈ h.negativeNormalSpace hn g s)
-      (hv' : c.isImmersion.normalClass s' hn v ∈ h.negativeNormalSpace hn g s') :
-      (⟨s, ⟨_, hv⟩⟩ : TotalSpace (Fin 1 → ℝ) fun s ↦ h.negativeNormalSpace hn g s) =
-        ⟨s', ⟨_, hv'⟩⟩ := by
-    subst hs
-    rfl
   have hbase : ((1 : ℝ) : AddCircle ((1 : ℕ) : ℝ)) = ((0 : ℝ) : AddCircle ((1 : ℕ) : ℝ)) := by
     simp
   have hν₁ : ν w 1 = ⟨(0 : ℝ), -(ν w 0).snd⟩ := by
-    refine (hmk _ _ hbase _ _ ?_).trans (congrArg (TotalSpace.mk _) (Subtype.ext ?_))
-    · rw [negativeNormalSpace_criticalCircle_one_eq_top]
-      exact Submodule.mem_top
-    · exact (congrArg (c.isImmersion.normalClass _ hn) (mfderiv_mk_one_one_eq_neg w)).trans
-        (map_neg _ _)
+    -- Normal classes over equal points of the circle with the same representative agree.
+    refine (congrArg (fun s ↦ (⟨s, ⟨c.isImmersion.normalClass s hn
+      (mfderiv (𝓡 1) (𝓘(ℝ).prod (𝓡 1)) (mk 1) 1 w),
+        (negativeNormalSpace_criticalCircle_one_eq_top hn g s).symm ▸ Submodule.mem_top⟩⟩ :
+          TotalSpace (Fin 1 → ℝ) fun s ↦ h.negativeNormalSpace hn g s)) hbase).trans
+      (congrArg (TotalSpace.mk _) (Subtype.ext ?_))
+    exact (congrArg (c.isImmersion.normalClass _ hn) (mfderiv_mk_one_one_eq_neg w)).trans
+      (map_neg _ _)
   simp only [Function.comp_apply]
   have hx := mem_zeroSectionCompl.1 (hν 0)
   have h₁ : (⟨ν w 1, hν 1⟩ : zeroSectionCompl (Fin 1 → ℝ) _) =

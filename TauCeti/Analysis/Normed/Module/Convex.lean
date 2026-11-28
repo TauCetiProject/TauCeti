@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.Topology.Algebra.Module.Basic
+import TauCeti.Analysis.Convex.Topology
 
 /-!
 # Closed convex hulls and convex sets containing a ball
@@ -34,6 +35,11 @@ homothety with the opposite ratio sends it into `sᶜ ∩ ball x r`
 
 Replacing every member of a filter by its real convex hull preserves limits of real-linear maps
 into real seminormed spaces (`Filter.Tendsto.lift'_convexHull`).
+
+Similarly, in a proper real normed space, if a set `Ω` is star-convex about every point of
+`Metric.ball x₀ ρ`, then for every strictly smaller radius `r < ρ` and every `x ∈ Ω`, the closed
+convex hull `closure (convexHull ℝ (insert x (Metric.closedBall x₀ r)))` is contained in `Ω`
+(`TauCeti.closure_convexHull_insert_closedBall_subset_of_forall_starConvex`).
 
 In a nontrivial real seminormed space a punctured ball `ball c r \ {c}`, `r > 0`, is not convex
 (`TauCeti.not_convex_ball_sdiff_singleton`), so it is neither an open nor a closed ball
@@ -142,6 +148,17 @@ theorem closedBall_add_smul_sub_subset_interior_or_disjoint_of_forall_starConvex
       _ ≤ δ := htδ
   have hyz : dist y z < r / 2 := mem_ball.1 (hKB (mem_cthickening_of_dist_le y q δ K hqK hyq))
   exact closedBall_add_smul_sub_subset_interior_of_forall_starConvex hs hy hyz ht₀ ht₁
+
+/-- In a proper real normed space, if `Ω` is star-convex about every point of `Metric.ball x₀ ρ`,
+then for every `x ∈ Ω` and `r < ρ` the closed convex hull of
+`insert x (Metric.closedBall x₀ r)` is contained in `Ω`. -/
+theorem closure_convexHull_insert_closedBall_subset_of_forall_starConvex
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
+    {Ω : Set E} {x x₀ : E} {r ρ : ℝ} (hr : r < ρ) (hx : x ∈ Ω)
+    (hstar : ∀ y ∈ ball x₀ ρ, StarConvex ℝ y Ω) :
+    closure (convexHull ℝ (insert x (closedBall x₀ r))) ⊆ Ω :=
+  (isCompact_closedBall x₀ r).closure_convexHull_insert_subset_of_forall_starConvex
+    (convex_closedBall x₀ r) Subset.rfl hx fun y hy ↦ hstar y (closedBall_subset_ball hr hy)
 
 end TauCeti
 

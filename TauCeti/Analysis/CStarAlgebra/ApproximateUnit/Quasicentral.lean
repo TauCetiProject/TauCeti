@@ -12,6 +12,7 @@ import Mathlib.Analysis.Convex.Combination
 import Mathlib.Analysis.CStarAlgebra.Hom
 import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.Analysis.SpecificLimits.Basic
+import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.Normed.Ring.Basic
 

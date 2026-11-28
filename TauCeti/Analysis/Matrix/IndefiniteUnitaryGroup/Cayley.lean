@@ -194,28 +194,15 @@ theorem cayleyChart_eq_one_of_not_isUnit (hA : ¬IsUnit A)
   rw [cayleyChart_def, nonsing_inv_apply_not_isUnit A (mt (isUnit_iff_isUnit_det A).2 hA)]
   simp
 
-/-- For Hermitian `A` and skew-Hermitian `S`, the matrix `-A⁻¹ S / 2` lies in the Lie algebra of
-the unitary group of `A`: it is skew-adjoint for the form of `A`. -/
-theorem star_neg_smul_inv_mul_mul_add (hA : A.IsHermitian)
-    (S : skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
-    star (-((2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)))) * A +
-      A * -((2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ))) = 0 := by
-  have hS : star (S : Matrix n n ℂ) = -S := skewAdjoint.mem_iff.1 S.property
-  have hA' : star A⁻¹ = A⁻¹ := by
-    rw [star_eq_conjTranspose, conjTranspose_nonsing_inv, hA.eq]
-  simp only [star_neg, star_smul, star_mul, hS, hA', Matrix.neg_mul, Matrix.mul_neg,
-    Matrix.smul_mul, Matrix.mul_smul, star_inv₀, star_ofNat]
-  -- `S A⁻¹ A = A A⁻¹ S`: either `A` is invertible, or `A⁻¹ = 0`.
-  by_cases hd : IsUnit A.det
-  · simp [nonsing_inv_mul_cancel_right _ _ hd, mul_nonsing_inv_cancel_left _ _ hd]
-  · simp [nonsing_inv_apply_not_isUnit A hd]
-
 /-- **The Cayley chart takes values in the unitary group.** For Hermitian `A` and skew-Hermitian
 `S` with `1 - A⁻¹ S / 2` invertible, `φ(S)ᴴ A φ(S) = A`. -/
 theorem star_cayleyChart_mul_mul_cayleyChart (hA : A.IsHermitian)
     (hS : IsUnit (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)))) :
     star (cayleyChart A S) * A * cayleyChart A S = A :=
-  star_cayleyCoord_one_mul_mul_cayleyCoord_one (star_neg_smul_inv_mul_mul_add hA S)
+  star_cayleyCoord_one_mul_mul_cayleyCoord_one (by
+    simpa only [Matrix.mul_neg, Matrix.mul_smul] using
+      star_inv_mul_mul_add hA (Y := -((2 : ℂ)⁻¹ • (S : Matrix n n ℂ)))
+        (by simp [star_smul, skewAdjoint.mem_iff.1 S.property]))
     (by rwa [← sub_eq_add_neg])
 
 /-- **The Cayley chart as a bijection.** For an invertible Hermitian `A`, the Cayley chart is a
@@ -231,7 +218,11 @@ noncomputable def cayleyChartEquiv (hA : A.IsHermitian) (hA' : IsUnit A) :
     norm_num
   Equiv.trans (β := {X : Matrix n n ℂ // star X * A + A * X = 0 ∧ IsUnit (1 + X)})
     { toFun S := ⟨-((2 : ℂ)⁻¹ • (A⁻¹ * (S.val : Matrix n n ℂ))),
-        star_neg_smul_inv_mul_mul_add hA S.val, by rw [← sub_eq_add_neg]; exact S.property⟩
+        by
+          simpa only [Matrix.mul_neg, Matrix.mul_smul] using
+            star_inv_mul_mul_add hA (Y := -((2 : ℂ)⁻¹ • (S.val : Matrix n n ℂ)))
+              (by simp [star_smul, skewAdjoint.mem_iff.1 S.val.property]),
+        by rw [← sub_eq_add_neg]; exact S.property⟩
       invFun X := ⟨⟨-(2 : ℂ) • (A * X.val), skewAdjoint.mem_iff.2 <| by
           rw [star_smul, star_mul, star_eq_conjTranspose A, hA.eq,
             eq_neg_of_add_eq_zero_left X.property.1]
@@ -338,7 +329,12 @@ theorem star_cayleyChart_mul_mul_fderiv_cayleyChart (hA : A.IsHermitian) (hA' : 
       star (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)))⁻¹ * T *
         (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)))⁻¹ := by
   -- `φ(S)ᴴ A D⁻¹ = D⁻ᴴ A`, since `-A⁻¹ S / 2` is skew-adjoint for the form of `A`.
-  have key := star_cayleyCoord_one_mul_mul_inv (star_neg_smul_inv_mul_mul_add hA S)
+  have hskew : star (-((2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)))) * A +
+      A * -((2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ))) = 0 := by
+    simpa only [Matrix.mul_neg, Matrix.mul_smul] using
+      star_inv_mul_mul_add hA (Y := -((2 : ℂ)⁻¹ • (S : Matrix n n ℂ)))
+        (by simp [star_smul, skewAdjoint.mem_iff.1 S.property])
+  have key := star_cayleyCoord_one_mul_mul_inv hskew
   rw [← sub_eq_add_neg, ← cayleyChart_def] at key
   rw [fderiv_cayleyChart_apply hS]
   generalize 1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)) = D at key ⊢

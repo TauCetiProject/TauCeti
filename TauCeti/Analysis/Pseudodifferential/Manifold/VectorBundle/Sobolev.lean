@@ -10,6 +10,8 @@ public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.ChartPat
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.ChartQuantization
 public import TauCeti.Analysis.Pseudodifferential.UniformSobolev
 public import TauCeti.Analysis.Sobolev.BesselPotential.Postcomp
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Completion
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.LocalizedChangeOfVariables
 
 /-!
@@ -62,6 +64,19 @@ reading is comparable with those of its frame coefficients
 entries of `P` act on these coefficients
 (`TauCeti.cutoffFrameCoeff_map_smul_eq_sum_sectionEntry`).
 
+**Extension to Sobolev spaces.** With `H^s(M; E)` the closure of the chart readings of smooth
+sections in the Hilbert sum `⨁ᵢₖ H^s(ℝⁿ)` (`TauCeti.sectionChartSobolevSpace`), the estimate in
+its Hilbert norm (`TauCeti.exists_norm_sectionChartReading_apply_le`) makes the continuous extension
+`TauCeti.sectionChartSobolevExtension` of `P` to `H^s(M; E) → H^q(M; F)`, `q ≤ s - m`, agree with
+`P` on smooth sections (`TauCeti.sectionChartSobolevExtension_toSectionChartSobolevSpace_of_mem`).
+These extensions compose (`TauCeti.sectionChartSobolevExtension_comp_of_mem`), and by Rellich's
+theorem they are compact when `q < s - m`
+(`TauCeti.isCompactOperator_sectionChartSobolevExtension_of_mem`), in particular for operators of
+negative order. Applied to the identity, an operator of order `0`, the estimate shows that
+`H^s(M; E)` does not depend on the charts, trivializations, cutoffs and basis used to read
+sections, up to an isomorphism that is the identity on smooth sections
+(`TauCeti.sectionChartSobolevSpaceCongr`).
+
 ## The argument
 
 The estimates are instances of the patching theorems of
@@ -94,6 +109,13 @@ changes of variables are bounded on `H^s`
   `exists_sum_norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwartz_apply_le_sum`: the
   estimates between two charts, in one chart and on `M`, for the readings with values in `V`
   and `W`.
+* `sectionChartSobolevExtension_toSectionChartSobolevSpace_of_mem`: `P` extends to a
+  bounded operator `H^s(M; E) → H^q(M; F)` for `q ≤ s - m`.
+* `isCompactOperator_sectionChartSobolevExtension_of_mem`: the extension is compact for
+  `q < s - m`.
+* `sectionChartSobolevExtension_comp_of_mem`: extensions compose.
+* `sectionChartSobolevSpaceCongr`: the Sobolev spaces of two choices of chart and frame
+  data are isomorphic.
 
 ## References
 
@@ -447,5 +469,133 @@ theorem exists_sum_norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwar
     (Finset.sum_le_sum fun j _ ↦ hC j u).trans_eq (Finset.sum_mul _ _ _).symm⟩
 
 end FiberReading
+
+/-! ### Extension to the Sobolev spaces of sections over a compact manifold -/
+
+section Extension
+
+variable [FiniteDimensional ℂ W] {κ ν μ : Type*} [Fintype κ] [Fintype ν] [Fintype μ]
+  {e : κ → OpenPartialHomeomorph M (CoordinateSpace n)}
+  {he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M}
+  {ψ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ)} {t : κ → Trivialization V (π V E)}
+  [∀ i, MemTrivializationAtlas (t i)] {ρ : κ → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯}
+  {hρ : ∀ i, tsupport (ρ i) ⊆ (t i).baseSet} {b : Module.Basis ι ℂ V}
+  {e' : ν → OpenPartialHomeomorph M (CoordinateSpace n)}
+  {he' : ∀ j, e' j ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M}
+  {φ : ∀ j, 𝓓(⟨(e' j).target, (e' j).open_target⟩, ℝ)} {t' : ν → Trivialization W (π W F)}
+  [∀ j, MemTrivializationAtlas (t' j)] {χ : ν → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯}
+  {hχ : ∀ j, tsupport (χ j) ⊆ (t' j).baseSet} {b' : Module.Basis μ ℂ W} {s q : ℝ}
+
+/-- **The Sobolev estimate in the Hilbert norms of chart readings.** Let `P` be a classical
+pseudodifferential operator of order `m` between bundles, and let `ψᵢ` be cutoffs in charts `eᵢ`
+whose readings on `M` add up to `1`, with trivializations `tᵢ` of `E` and functions `ρᵢ` supported
+in their base sets and equal to `1` on `eᵢ⁻¹(supp ψᵢ)`. For any finitely many cutoffs `φⱼ` in
+charts `e'ⱼ`, trivializations `t'ⱼ` of `F` with cutoffs `χⱼ`, a basis `(b'ₗ)` of `W` and real
+orders `q ≤ s - m`, there is a constant `C` such that every smooth section `u` of `E` satisfies
+
+`‖(φⱼ · (χⱼ b'ₗ*(t'ⱼ (P u)) ∘ e'ⱼ⁻¹))ⱼₗ‖_{⨁ H^q} ≤ C ‖(ψᵢ · (ρᵢ b_k*(tᵢ u) ∘ eᵢ⁻¹))ᵢₖ‖_{⨁ H^s}`. -/
+theorem exists_norm_sectionChartReading_apply_le
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
+    (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1)
+    (hρψ : ∀ i, ∀ y ∈ tsupport (ψ i), ρ i ((e i).symm y) = 1) (hq : q ≤ s - m) :
+    ∃ C, ∀ u, ‖sectionChartReading he' φ t' χ hχ b' q (P u)‖ ≤
+      C * ‖sectionChartReading he ψ t ρ hρ b s u‖ := by
+  obtain ⟨C, hC⟩ :=
+    exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_cutoffFrameCoeff_le_sum hP
+      he' φ t' χ hχ (fun l ↦ (b'.coord l).toContinuousLinearMap) he ψ hψ t ρ hρ hρψ b s
+  refine PiLp.exists_norm_le_mul_norm_of_sum_norm_le
+    (f := fun u ↦ sectionChartReading he' φ t' χ hχ b' q (P u)) (C := C) fun u ↦ ?_
+  simp only [sectionChartReading_apply, Fintype.sum_prod_type]
+  refine (Finset.sum_le_sum fun j _ ↦ Finset.sum_le_sum fun l _ ↦ ?_).trans (hC u)
+  rw [← BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM hq]
+  exact BesselPotentialSpace.norm_inclusion_apply_le hq _
+
+/-- **Pseudodifferential operators between bundles act on Sobolev spaces.** On a compact manifold,
+with the Sobolev spaces `H^s(M; E)` of chart and frame data whose cutoffs add up to `1`
+(`TauCeti.sectionChartSobolevSpace`), a classical pseudodifferential operator `P : Γ(E) → Γ(F)` of
+order `m` extends to a continuous linear map `H^s(M; E) → H^q(M; F)` for every `q ≤ s - m`,
+`TauCeti.sectionChartSobolevExtension`: the extension agrees with `P` on smooth sections. -/
+theorem sectionChartSobolevExtension_toSectionChartSobolevSpace_of_mem
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
+    (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1)
+    (hρψ : ∀ i, ∀ y ∈ tsupport (ψ i), ρ i ((e i).symm y) = 1) (hq : q ≤ s - m)
+    (u : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
+    sectionChartSobolevExtension he ψ t ρ hρ b he' φ t' χ hχ b' P s q
+        (toSectionChartSobolevSpace he ψ t ρ hρ b s u) =
+      toSectionChartSobolevSpace he' φ t' χ hχ b' q (P u) :=
+  LinearMap.rangeClosureExtension_toRangeClosure
+    (exists_norm_sectionChartReading_apply_le hP hψ hρψ hq) u
+
+/-- **Operators gaining more than their order are compact.** On a compact manifold, the extension
+of a classical pseudodifferential operator `P : Γ(E) → Γ(F)` of order `m` to
+`H^s(M; E) → H^q(M; F)` is a compact operator when `q < s - m`: it factors through the compact
+inclusion `H^{s - m}(M; F) ⊆ H^q(M; F)`. In particular operators of negative order are compact
+from `H^s(M; E)` to `H^s(M; F)`. -/
+theorem isCompactOperator_sectionChartSobolevExtension_of_mem
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
+    (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1)
+    (hρψ : ∀ i, ∀ y ∈ tsupport (ψ i), ρ i ((e i).symm y) = 1) (hq : q < s - m) :
+    IsCompactOperator (sectionChartSobolevExtension he ψ t ρ hρ b he' φ t' χ hχ b' P s q) := by
+  rw [sectionChartSobolevExtension, ← LinearMap.rangeClosureMap_comp_rangeClosureExtension
+    (piMap_inclusion_sectionChartReading he' φ t' χ hχ b' hq.le)
+    (exists_norm_sectionChartReading_apply_le hP hψ hρψ le_rfl)]
+  exact (isCompactOperator_sectionChartSobolevInclusion he' φ t' χ hχ b' hq).comp_clm _
+
+/-- **Extensions of pseudodifferential operators between bundles compose.** If `P : Γ(E) → Γ(F)`
+and `Q : Γ(F) → Γ(G)` are classical pseudodifferential operators of orders `m` and `m'`, with
+`q ≤ s - m` and `r ≤ q - m'`, then the extension of `Q ∘ P` to `H^s(M; E) → H^r(M; G)` is the
+extension of `P` to `H^s(M; E) → H^q(M; F)` followed by that of `Q` to `H^q(M; F) → H^r(M; G)`. -/
+theorem sectionChartSobolevExtension_comp_of_mem {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℂ X] [FiniteDimensional ℂ X] {G : M → Type*} [TopologicalSpace (TotalSpace X G)]
+    [∀ x, AddCommGroup (G x)] [∀ x, Module ℝ (G x)] [∀ x, Module ℂ (G x)]
+    [∀ x, TopologicalSpace (G x)] [FiberBundle X G] [VectorBundle ℝ X G] [VectorBundle ℂ X G]
+    [ContMDiffVectorBundle ∞ X G 𝓘(ℝ, CoordinateSpace n)] {ν'' μ'' : Type*} [Fintype ν'']
+    [Fintype μ''] {e'' : ν'' → OpenPartialHomeomorph M (CoordinateSpace n)}
+    {he'' : ∀ l, e'' l ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M}
+    {ϑ : ∀ l, 𝓓(⟨(e'' l).target, (e'' l).open_target⟩, ℝ)} {t'' : ν'' → Trivialization X (π X G)}
+    [∀ l, MemTrivializationAtlas (t'' l)] {σ : ν'' → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯}
+    {hσ : ∀ l, tsupport (σ l) ⊆ (t'' l).baseSet} {b'' : Module.Basis μ'' ℂ X}
+    {Q : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); X, G⟯}
+    {m' r : ℝ} (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
+    (hQ : Q ∈ sectionClassicalPseudodifferentialOperators m')
+    (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1)
+    (hρψ : ∀ i, ∀ y ∈ tsupport (ψ i), ρ i ((e i).symm y) = 1)
+    (hφ : ∀ x, ∑ j, (e' j).cutoffPullback (he' j) (φ j) 1 x = 1)
+    (hχφ : ∀ j, ∀ y ∈ tsupport (φ j), χ j ((e' j).symm y) = 1) (hq : q ≤ s - m)
+    (hr : r ≤ q - m') :
+    sectionChartSobolevExtension he' φ t' χ hχ b' he'' ϑ t'' σ hσ b'' Q q r ∘L
+        sectionChartSobolevExtension he ψ t ρ hρ b he' φ t' χ hχ b' P s q =
+      sectionChartSobolevExtension he ψ t ρ hρ b he'' ϑ t'' σ hσ b'' (Q ∘ₗ P) s r :=
+  LinearMap.rangeClosureExtension_comp (exists_norm_sectionChartReading_apply_le hQ hφ hχφ hr)
+    (exists_norm_sectionChartReading_apply_le hP hψ hρψ hq)
+
+variable (he ψ t ρ hρ b)
+
+/-- **Independence of the charts, frames and cutoffs.** The Sobolev spaces `H^s(M; E)` of two
+families of chart and frame data for `E`, whose chart cutoffs add up to `1` and whose frame
+cutoffs equal `1` over the chart cutoffs, are isomorphic Banach spaces, through the isomorphism
+that is the identity on smooth sections (`LinearMap.rangeClosureCongr_toRangeClosure`). The
+estimates both ways are the Sobolev estimate for the identity, a pseudodifferential operator of
+order `0`. -/
+abbrev sectionChartSobolevSpaceCongr {ν' μ' : Type*} [Fintype ν'] [Fintype μ']
+    {e' : ν' → OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he' : ∀ j, e' j ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (φ : ∀ j, 𝓓(⟨(e' j).target, (e' j).open_target⟩, ℝ)) (t' : ν' → Trivialization V (π V E))
+    [∀ j, MemTrivializationAtlas (t' j)] (χ : ν' → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯)
+    (hχ : ∀ j, tsupport (χ j) ⊆ (t' j).baseSet) (b' : Module.Basis μ' ℂ V)
+    (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1)
+    (hρψ : ∀ i, ∀ y ∈ tsupport (ψ i), ρ i ((e i).symm y) = 1)
+    (hφ : ∀ x, ∑ j, (e' j).cutoffPullback (he' j) (φ j) 1 x = 1)
+    (hχφ : ∀ j, ∀ y ∈ tsupport (φ j), χ j ((e' j).symm y) = 1) (s : ℝ) :
+    sectionChartSobolevSpace he ψ t ρ hρ b s ≃L[ℂ] sectionChartSobolevSpace he' φ t' χ hχ b' s :=
+  (sectionChartReading he ψ t ρ hρ b s).rangeClosureCongr (sectionChartReading he' φ t' χ hχ b' s)
+    (by
+      simpa using exists_norm_sectionChartReading_apply_le (he' := he') (φ := φ) (b' := b')
+        id_mem_sectionClassicalPseudodifferentialOperators hψ hρψ (sub_zero s).ge)
+    (by
+      simpa using exists_norm_sectionChartReading_apply_le (he' := he) (φ := ψ) (b' := b)
+        id_mem_sectionClassicalPseudodifferentialOperators hφ hχφ (sub_zero s).ge)
+
+end Extension
 
 end TauCeti
