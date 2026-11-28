@@ -92,8 +92,8 @@ length `(2 ^ ε - 2 ^ (-ε)) X` of the window `(2 ^ (-ε) X, 2 ^ ε X)` on which
 For a natural number `n ≤ x` and every real exponent `p`, `n ^ p ≤ max 1 (x ^ p)`. This bounds
 all the weights `n ^ p` of a partial sum `∑_{n ≤ x}` at once, whatever the sign of `p`.
 
-For `x ≥ 1` and `a > 0`, the roots `x ^ (1 / k)` decrease as `k` grows, so their sum over
-`a ≤ k ≤ ⌊y⌋₊` is bounded by `(y + 1 - a)⁺ * x ^ (1 / a)`.
+For `x ≥ 0` and `a > 0` (with `x ≥ 1` or `⌊y⌋₊ < a`), the roots `x ^ (1 / k)` decrease as `k`
+grows, so their sum over `a ≤ k ≤ ⌊y⌋₊` is bounded by `(y + 1 - a)⁺ * x ^ (1 / a)`.
 
 For `0 ≤ x` and `0 < ε ≤ 1`, `log (x + 1) ≤ x ^ ε / ε`. Unlike Mathlib's `Real.log_le_rpow_div`
 for `log x`, the shifted logarithm is dominated by the power of `x` itself, so a coefficient bound
@@ -113,7 +113,7 @@ both for `0 ≤ log x` and for the case `p = 0`, where the statement reduces to 
   and `u < b ^ (-p / q) ↔ u ^ q * b ^ p < 1` for `b > 0`, `u ≥ 0`, and `q ≠ 0`.
 * `Real.sum_Icc_floor_rpow_one_div_le`:
   `∑ k ∈ Finset.Icc a ⌊y⌋₊, x ^ ((1 : ℝ) / k) ≤ max (y + 1 - a) 0 * x ^ ((1 : ℝ) / a)` for
-  `x ≥ 1` and `a > 0`.
+  `x ≥ 0`, `a > 0`, and either `1 ≤ x` or `⌊y⌋₊ < a`.
 * `Real.rpow_neg_le_half`: `y ^ (-s) ≤ 1 / 2` for `2 ≤ y` and `1 ≤ s`.
 * `Real.pow_mul_sqrt_le_rpow_div_two`: `q ^ n √q ≤ q ^ (M / 2)` for `1 ≤ q` and `2n < M`.
 * `Real.rpow_neg_le_mul_rpow_neg`: `y ^ (-q) ≤ a ^ q x ^ (-q)` for `0 < x ≤ a y`, `a ≥ 0` and
@@ -493,18 +493,22 @@ theorem natCast_rpow_le_max_one_rpow {n : ℕ} {x : ℝ} (hnx : (n : ℝ) ≤ x)
     · exact rpow_le_one_of_one_le_of_nonpos (by exact_mod_cast hn) h
   · exact (rpow_le_rpow (by positivity) hnx h).trans (le_max_right _ _)
 
-/-- For `x ≥ 1`, `a > 0`, and any real cutoff `y`, the roots `x ^ (1 / k)` over `a ≤ k ≤ ⌊y⌋₊`
-sum to at most `(y + 1 - a)⁺ * x ^ (1 / a)`. -/
-theorem sum_Icc_floor_rpow_one_div_le {x : ℝ} (hx : 1 ≤ x) {a : ℕ} (ha : 0 < a) (y : ℝ) :
+/-- For `x ≥ 0`, `a > 0`, and any real cutoff `y` with `1 ≤ x` or `⌊y⌋₊ < a`, the roots
+`x ^ (1 / k)` over `a ≤ k ≤ ⌊y⌋₊` sum to at most `(y + 1 - a)⁺ * x ^ (1 / a)`. -/
+theorem sum_Icc_floor_rpow_one_div_le {x : ℝ} (hx : 0 ≤ x) {a : ℕ} (ha : 0 < a) (y : ℝ)
+    (hxy : 1 ≤ x ∨ ⌊y⌋₊ < a) :
     ∑ k ∈ Finset.Icc a ⌊y⌋₊, x ^ ((1 : ℝ) / k) ≤
       max (y + 1 - a) 0 * x ^ ((1 : ℝ) / a) := by
-  rcases lt_or_ge y 0 with hy | hy
-  · rw [Nat.floor_of_nonpos hy.le, Finset.Icc_eq_empty (by omega), Finset.sum_empty]
-    positivity
-  · exact TauCeti.sum_Icc_floor_le_max_mul hy (rpow_nonneg (zero_le_one.trans hx) _) a
-      fun k hk ↦ rpow_le_rpow_of_exponent_le hx
-        (one_div_le_one_div_of_le (by exact_mod_cast ha)
-          (by exact_mod_cast (Finset.mem_Icc.mp hk).1))
+  rcases hxy with hx1 | hy
+  · rcases lt_or_ge y 0 with hy0 | hy0
+    · rw [Nat.floor_of_nonpos hy0.le, Finset.Icc_eq_empty (by omega), Finset.sum_empty]
+      positivity
+    · exact TauCeti.sum_Icc_floor_le_max_mul hy0 (rpow_nonneg hx _) a
+        fun k hk ↦ rpow_le_rpow_of_exponent_le hx1
+          (one_div_le_one_div_of_le (by exact_mod_cast ha)
+            (by exact_mod_cast (Finset.mem_Icc.mp hk).1))
+  · rw [Finset.Icc_eq_empty (by omega), Finset.sum_empty]
+    exact mul_nonneg (le_max_right _ _) (rpow_nonneg hx _)
 
 /-- For `0 ≤ x` and `0 < ε ≤ 1`, `log (x + 1) ≤ x ^ ε / ε`. -/
 theorem log_add_one_le_rpow_div {x ε : ℝ} (hx : 0 ≤ x) (hε : 0 < ε) (hε₁ : ε ≤ 1) :
