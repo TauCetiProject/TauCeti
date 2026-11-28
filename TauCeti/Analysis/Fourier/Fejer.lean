@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.Monomial
+import Mathlib.Algebra.BigOperators.Group.Finset.Interval
 import Mathlib.Algebra.Ring.GeomSum
+import Mathlib.Analysis.Real.Pi.Bounds
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Algebra.BigOperators.Finset.Fiber
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.Fourier.AddCircle
@@ -18,6 +21,10 @@ The Fejér kernel of order `N` on `AddCircle T` is the squared norm of the sum o
 `N` Fourier monomials, divided by `N`. It is nonnegative and has integral one for normalized
 Haar measure when `N > 0`. Its Fourier coefficients are the triangular weights
 `(N - |k|) / N`, truncated to zero outside `|k| < N`.
+
+For finite samples, `half_natCast_le_fejerKernel_of_mul_norm_le` bounds the kernel below near
+zero on the unit circle, and `Finset.sum_fejerKernel_le_card_add` bounds its sum by the zero mode
+and the norms of the positive modes of Mathlib's Fourier monomials.
 
 The normalization uses `AddCircle.haarAddCircle`, of total mass one, and the Fourier
 monomials of Mathlib. This is the positive kernel underlying Cesàro means of Fourier sums.
@@ -189,6 +196,105 @@ theorem sum_Icc_max_sub_abs_mul_fourier {M K : ℕ} (hMK : M ≤ K) (x : AddCirc
     · rw [Nat.sub_eq_zero_of_le (le_of_not_ge hn), Nat.cast_zero,
         max_eq_left (sub_nonpos.mpr (Nat.cast_le.mpr (le_of_not_ge hn)))]
   exact_mod_cast hcast.symm
+
+/-- For positive order `N`, the Fejér kernel is at least half its peak within distance
+`1 / (4 * N)` of zero on the unit circle. At order zero both sides vanish. -/
+theorem half_natCast_le_fejerKernel_of_mul_norm_le {N : ℕ} {x : UnitAddCircle}
+    (hx : (N : ℝ) * ‖x‖ ≤ 1 / 4) : (N : ℝ) / 2 ≤ fejerKernel N x := by
+  rcases Nat.eq_zero_or_pos N with rfl | hN
+  · simp
+  have hN' : 0 < (N : ℝ) := Nat.cast_pos'.mpr hN
+  obtain ⟨y, rfl⟩ := QuotientAddGroup.mk_surjective x
+  let t : ℝ := y - round y
+  have ht : (t : UnitAddCircle) = (y : UnitAddCircle) := by
+    have hround : ((round y : ℝ) : UnitAddCircle) = 0 :=
+      (AddCircle.coe_eq_zero_iff (1 : ℝ)).2 ⟨round y, by simp⟩
+    rw [AddCircle.coe_sub, hround, sub_zero]
+  have htN : (N : ℝ) * |t| ≤ 1 / 4 := by simpa only [UnitAddCircle.norm_eq] using hx
+  by_cases ht0 : t = 0
+  · rw [← ht, ht0, AddCircle.coe_zero, fejerKernel_apply_zero]
+    linarith
+  let u := |Real.pi * t|
+  let v := |Real.pi * (N : ℝ) * t|
+  have hu : 0 < u := abs_pos.mpr (mul_ne_zero Real.pi_pos.ne' ht0)
+  have hv_formula : v = (N : ℝ) * u := by grind
+  have hvπ : v ≤ Real.pi / 4 := by
+    rw [hv_formula]
+    dsimp only [u]
+    rw [abs_mul, abs_of_pos Real.pi_pos, mul_left_comm]
+    linarith [mul_le_mul_of_nonneg_left htN Real.pi_pos.le]
+  have huπ : u ≤ Real.pi / 4 :=
+    (le_mul_of_one_le_left hu.le (by exact_mod_cast hN : (1 : ℝ) ≤ N)).trans
+      (hv_formula ▸ hvπ)
+  have hv1 : v ≤ 1 := hvπ.trans (by linarith [Real.pi_lt_four])
+  have hden : |Real.sin (Real.pi * t)| = Real.sin u :=
+    Real.abs_sin_eq_sin_abs_of_abs_le_pi (huπ.trans (by linarith [Real.pi_pos]))
+  have hnum : |Real.sin (Real.pi * N * t)| = Real.sin v :=
+    Real.abs_sin_eq_sin_abs_of_abs_le_pi (hvπ.trans (by linarith [Real.pi_pos]))
+  have hsin : 0 < Real.sin u := Real.sin_pos_of_pos_of_lt_pi hu (by linarith [Real.pi_pos])
+  have hv3 : v ^ 3 ≤ v :=
+    (pow_le_pow_of_le_one (abs_nonneg _) hv1 (by decide : 1 ≤ 3)).trans_eq (pow_one v)
+  have hratio : 5 / 6 * (N : ℝ) ≤ |Real.sin (Real.pi * N * t) / Real.sin (Real.pi * t)| := by
+    rw [abs_div, hnum, hden, le_div_iff₀ hsin]
+    calc
+      _ ≤ 5 / 6 * v := by
+        rw [hv_formula, mul_assoc]
+        gcongr
+        exact Real.sin_le hu.le
+      _ ≤ _ := by linarith [Real.sin_ge_sub_cube (abs_nonneg (Real.pi * (N : ℝ) * t))]
+  have hsq := pow_le_pow_left₀ (by positivity : 0 ≤ 5 / 6 * (N : ℝ)) hratio 2
+  rw [sq_abs] at hsq
+  have hkernel := natCast_mul_fejerKernel_coe (T := 1) N (t := t)
+    (by simpa only [div_one, ← abs_pos, hden] using hsin)
+  simp only [div_one] at hkernel
+  rw [← ht, ← mul_le_mul_iff_of_pos_left hN', hkernel]
+  nlinarith [sq_nonneg (N : ℝ)]
+
+/-- The sum of the Fejér kernel over a finite sample is bounded by its zero-frequency mass
+plus twice the sum of the norms of its positive-frequency exponential sums. -/
+theorem _root_.Finset.sum_fejerKernel_le_card_add {ι : Type*} (s : Finset ι)
+    (x : ι → AddCircle T) (N : ℕ) :
+    ∑ i ∈ s, fejerKernel N (x i) ≤
+      (s.card : ℝ) + 2 * ∑ k ∈ Finset.Icc (1 : ℤ) N, ‖∑ i ∈ s, fourier k (x i)‖ := by
+  rcases Nat.eq_zero_or_pos N with rfl | hN
+  · simp
+  let F : ℤ → ℂ := fun k ↦ ∑ i ∈ s, fourier k (x i)
+  let w : ℤ → ℝ := fun k ↦ max 0 ((N : ℝ) - |(k : ℝ)|)
+  let J := Finset.Icc (-(N : ℤ)) N
+  have hN' : 0 < (N : ℝ) := Nat.cast_pos'.mpr hN
+  have hexp : (∑ k ∈ J, (w k : ℂ) * F k) = ((N : ℝ) * ∑ i ∈ s, fejerKernel N (x i) : ℝ) := by
+    push_cast
+    simp only [F, Finset.mul_sum]
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl fun i _ ↦ sum_Icc_max_sub_abs_mul_fourier le_rfl (x i)
+  have htriangle : (N : ℝ) * ∑ i ∈ s, fejerKernel N (x i) ≤ (N : ℝ) * ∑ k ∈ J, ‖F k‖ := by
+    calc
+      _ = ‖∑ k ∈ J, (w k : ℂ) * F k‖ := by
+        rw [hexp, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg]
+        exact mul_nonneg hN'.le (Finset.sum_nonneg fun i _ ↦ fejerKernel_nonneg N (x i))
+      _ ≤ ∑ k ∈ J, ‖(w k : ℂ) * F k‖ := norm_sum_le _ _
+      _ ≤ _ := by
+        rw [Finset.mul_sum]
+        refine Finset.sum_le_sum fun k _ ↦ ?_
+        have hw0 : 0 ≤ w k := le_max_left _ _
+        have hwN : w k ≤ N := max_le hN'.le (sub_le_self _ (abs_nonneg _))
+        rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hw0]
+        gcongr
+  have heven : Function.Even (fun k ↦ ‖F k‖) := by
+    intro k
+    simp only [F, fourier_neg, ← map_sum, Complex.norm_conj]
+  have hzero : ‖F 0‖ = (s.card : ℝ) := by
+    simp only [F, fourier_zero, Finset.sum_const, nsmul_eq_mul, mul_one, Complex.norm_natCast]
+  have hsplit : ∑ k ∈ J, ‖F k‖ = (s.card : ℝ) + 2 * ∑ k ∈ Finset.Icc (1 : ℤ) N, ‖F k‖ := by
+    have hpos : ∑ k ∈ Finset.Icc (1 : ℤ) N, ‖F k‖ =
+        ∑ k ∈ Finset.range N, ‖F (1 + (k : ℤ))‖ := by
+      rw [← Finset.Ico_add_one_right_eq_Icc, add_comm (N : ℤ),
+        Finset.sum_Ico_int_add_eq_sum_range]
+    rw [hpos, Finset.sum_Icc_of_even_eq_range heven, Finset.sum_range_succ', two_nsmul]
+    simp only [Nat.cast_zero, Nat.cast_succ, add_comm (1 : ℤ), hzero]
+    ring
+  rw [← hsplit]
+  exact (mul_le_mul_iff_of_pos_left hN').mp htriangle
 
 variable [Fact (0 < T)]
 
