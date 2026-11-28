@@ -187,8 +187,8 @@ theorem ofPowerSeries_X : ofPowerSeries γ hγ (X : R⟦X⟧) = single γ (1 : R
 theorem coeff_ofPowerSeries_nsmul (f : R⟦X⟧) (n : ℕ) :
     (ofPowerSeries γ hγ f).coeff (n • γ) = PowerSeries.coeff n f := by
   -- The multiples of `γ` are pairwise distinct, because their periods `n • N γ` are.
-  have hinj : Function.Injective (multiplesHom H γ) :=
-    .of_comp (f := N) <| by simpa [Function.comp_def] using (nsmul_left_strictMono hγ).injective
+  have hinj : Function.Injective (multiplesHom H γ) := by
+    simpa only [← multiplesHom_apply] using N.nsmul_left_injective_of_map_ne_zero hγ.ne'
   rw [ofPowerSeries_apply, ← multiplesHom_apply, coeff_map_of_injective _ _ _ hinj]
   simp
 

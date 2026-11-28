@@ -75,12 +75,16 @@ norm to a Euclidean one.
   preconnected subset of the image is preconnected.
 * `TauCeti.exists_isConvexChart_inter_preimage_ball`: a map that is open onto a convex set near a
   point, with preconnected fibres there, has a convexity chart around that point.
+* `TauCeti.IsConvexChart.source_inter_preimage`: convexity charts of a map read in a chart give
+  convexity charts of the map.
 * `TauCeti.isConvexChart_source_inter_preimage`: a map reading as an open linear map in a chart
   has the preimages of open convex sets as convexity charts.
 * `IsProperMap.convex_range_of_isConvexChart`: a proper locally convex map from a connected
   Hausdorff space has convex image.
 * `IsProperMap.isPreconnected_preimage_singleton_of_isConvexChart`: its fibres are preconnected,
   so connected over points of the image.
+* `IsProperMap.isMinOn_of_isLocalMin_of_isConvexChart`: a proper locally convex function to `ℝ`
+  on a connected Hausdorff space attains its minimum at each of its local minima.
 
 ## References
 
@@ -225,6 +229,35 @@ theorem exists_isConvexChart_inter_preimage_ball {f : X → E} (hf : Continuous 
     simp only [mem_inter_iff, mem_preimage, mem_singleton_iff]
     exact ⟨fun ⟨⟨hyU, _⟩, hyv⟩ ↦ ⟨hyU, hyv⟩, fun ⟨hyU, hyv⟩ ↦ ⟨⟨hyU, hyv ▸ hv.1⟩, hyv⟩⟩
 
+/-- **Convexity charts read in a chart.** Let `e` be a partial homeomorphism from `X` to a
+topological space `F`, and let `f` read in `e` as a map `g : F → E`, that is, `f = g ∘ e` on the
+source of `e`. Then the preimage under `e` of a convexity chart `B ⊆ e.target` of `g` is a convexity
+chart of `f`. This transports local models of `f`, such as the normal forms of the Morse–Bott lemma
+or of a moment map, from coordinates to `X`. -/
+theorem IsConvexChart.source_inter_preimage {F : Type*} [TopologicalSpace F]
+    {e : OpenPartialHomeomorph X F} {g : F → E} {B : Set F} (hB : IsConvexChart g B)
+    (hBt : B ⊆ e.target) {f : X → E} (hf : EqOn f (g ∘ e) e.source) :
+    IsConvexChart f (e.source ∩ e ⁻¹' B) := by
+  have himage : ∀ W ⊆ e.source ∩ e ⁻¹' B, f '' W = g '' (e '' W) := fun W hW ↦ by
+    rw [(hf.mono (hW.trans inter_subset_left)).image_eq, image_comp]
+  have hB' : e '' (e.source ∩ e ⁻¹' B) = B := by
+    rw [← e.symm_image_eq_source_inter_preimage hBt]
+    exact e.image_symm_image_of_subset_target hBt
+  refine ⟨e.isOpen_inter_preimage hB.isOpen, ?_, fun W hW hWo x hx ↦ ?_, fun v ↦ ?_⟩
+  · rw [himage _ subset_rfl, hB']
+    exact hB.convex_image
+  · rw [himage W hW, himage _ subset_rfl, hB', hf (hW hx).1, comp_apply]
+    exact hB.image_mem_nhdsWithin _ (by rw [← hB']; exact image_mono hW)
+      (e.isOpen_image_of_subset_source hWo (hW.trans inter_subset_left)) (e x)
+      (mem_image_of_mem e hx)
+  · -- The fibre is the image under `e⁻¹` of the fibre `B ∩ g⁻¹ {v}` of `g`.
+    have hfib : e.source ∩ e ⁻¹' B ∩ f ⁻¹' {v} = e.symm '' (B ∩ g ⁻¹' {v}) := by
+      rw [inter_right_comm, hf.inter_preimage_eq, preimage_comp, inter_assoc, ← preimage_inter,
+        inter_comm (g ⁻¹' {v}), e.symm_image_eq_source_inter_preimage (inter_subset_left.trans hBt)]
+    rw [hfib]
+    exact (hB.isPreconnected_inter_preimage_singleton v).image _
+      (e.continuousOn_symm.mono (inter_subset_left.trans hBt))
+
 /-- **Convexity charts of a linear map read in a chart.** Let `e` be a partial homeomorphism from
 `X` to a real normed space `F`, and let `f` read in `e` as an open linear map `g : F → E`, that is,
 `f = g ∘ e` on the source of `e`. Then the preimage under `e` of every open convex subset `B` of the
@@ -235,25 +268,10 @@ and a map in submersion normal form reads in this way. -/
 theorem isConvexChart_source_inter_preimage {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     {e : OpenPartialHomeomorph X F} {g : F →ₗ[ℝ] E} (hg : IsOpenMap g) {f : X → E}
     (hf : EqOn f (g ∘ e) e.source) {B : Set F} (hBo : IsOpen B) (hBc : Convex ℝ B)
-    (hBt : B ⊆ e.target) : IsConvexChart f (e.source ∩ e ⁻¹' B) := by
-  have himage : ∀ W ⊆ e.source ∩ e ⁻¹' B, f '' W = g '' (e '' W) := fun W hW ↦ by
-    rw [(hf.mono (hW.trans inter_subset_left)).image_eq, image_comp]
-  have hB : e '' (e.source ∩ e ⁻¹' B) = B := by
-    rw [← e.symm_image_eq_source_inter_preimage hBt]
-    exact e.image_symm_image_of_subset_target hBt
-  refine ⟨e.isOpen_inter_preimage hBo, ?_, fun W hW hWo x hx ↦ ?_, fun v ↦ ?_⟩
-  · rw [himage _ subset_rfl, hB]
-    exact hBc.linear_image g
-  · refine mem_nhdsWithin_of_mem_nhds (IsOpen.mem_nhds ?_ (mem_image_of_mem f hx))
-    rw [himage W hW]
-    exact hg _ (e.isOpen_image_of_subset_source hWo (hW.trans inter_subset_left))
-  · -- The fibre is the image under `e⁻¹` of the convex slice `B ∩ g⁻¹ {v}`.
-    have hfib : e.source ∩ e ⁻¹' B ∩ f ⁻¹' {v} = e.symm '' (B ∩ g ⁻¹' {v}) := by
-      rw [inter_right_comm, hf.inter_preimage_eq, preimage_comp, inter_assoc, ← preimage_inter,
-        inter_comm (g ⁻¹' {v}), e.symm_image_eq_source_inter_preimage (inter_subset_left.trans hBt)]
-    rw [hfib]
-    exact ((hBc.inter ((convex_singleton v).linear_preimage g)).isPreconnected).image _
-      (e.continuousOn_symm.mono (inter_subset_left.trans hBt))
+    (hBt : B ⊆ e.target) : IsConvexChart f (e.source ∩ e ⁻¹' B) :=
+  IsConvexChart.source_inter_preimage ⟨hBo, hBc.linear_image g,
+    fun W _ hWo _ hx ↦ mem_nhdsWithin_of_mem_nhds ((hg W hWo).mem_nhds (mem_image_of_mem g hx)),
+    fun v ↦ (hBc.inter ((convex_singleton v).linear_preimage g)).isPreconnected⟩ hBt hf
 
 /-! ### Chains of linked points -/
 
@@ -866,5 +884,66 @@ theorem isPreconnected_preimage_singleton_of_isConvexChart (hf : IsProperMap f)
   convert h using 1
   ext x
   simp
+
+/-- **Local minima of locally convex functions are global.** A proper function `g` from a connected
+Hausdorff space to `ℝ`, every point of which lies in a convexity chart, attains its minimum at each
+of its local minima. -/
+theorem isMinOn_of_isLocalMin_of_isConvexChart {g : X → ℝ} (hg : IsProperMap g)
+    (hloc : ∀ x, ∃ U, x ∈ U ∧ IsConvexChart g U) {x : X} (hx : IsLocalMin g x) :
+    IsMinOn g univ x := by
+  -- Write `c = g x`. The points near which `g ≥ c` form an open set `O`.
+  set c := g x
+  set O : Set X := {y | ∀ᶠ z in 𝓝 y, c ≤ g z}
+  have hO : IsOpen O := isOpen_setOfPred_eventually_nhds
+  -- A convexity chart `U` meeting `O` at a point `y` of the level `c` lies in `{c ≤ g}`: otherwise
+  -- the interval `g '' U` contains values below `c`, and a neighbourhood of `y` on which `g ≥ c`
+  -- would not be mapped onto a relative neighbourhood of `c`.
+  have key {U : Set X} (hU : IsConvexChart g U) {y : X} (hyU : y ∈ U) (hyO : y ∈ O)
+      (hyc : g y = c) {z : X} (hzU : z ∈ U) : c ≤ g z := by
+    by_contra! hlt
+    obtain ⟨N, hNsub, hNo, hyN⟩ := mem_nhds_iff.1 (inter_mem (hU.isOpen.mem_nhds hyU) hyO)
+    have hN := hU.image_mem_nhdsWithin N (hNsub.trans inter_subset_left) hNo y hyN
+    rw [hyc] at hN
+    obtain ⟨ε, hε, hball⟩ := Metric.mem_nhdsWithin_iff.1 hN
+    set t := max (g z) (c - ε / 2)
+    have htc : t < c := max_lt hlt (by linarith)
+    have htU : t ∈ g '' U := hU.convex_image.segment_subset ⟨z, hzU, rfl⟩ ⟨y, hyU, hyc⟩
+      (by rw [segment_eq_Icc hlt.le]; exact ⟨le_max_left _ _, htc.le⟩)
+    have htball : t ∈ Metric.ball c ε := by
+      rw [Metric.mem_ball, Real.dist_eq, abs_sub_lt_iff]
+      constructor <;> linarith [le_max_right (g z) (c - ε / 2)]
+    obtain ⟨w, hwN, hw⟩ := hball ⟨htball, htU⟩
+    have hcw : c ≤ g w := (hNsub hwN).2
+    rw [hw] at hcw
+    exact hcw.not_gt htc
+  -- Hence the preconnected level `g ⁻¹' {c}` lies in `O`.
+  set V : Set X := {y | ∃ U, IsConvexChart g U ∧ y ∈ U ∧ ∃ z ∈ U, g z < c}
+  have hV : IsOpen V := isOpen_iff_forall_mem_open.2 fun y ⟨U, hU, hyU, hz⟩ ↦
+    ⟨U, fun y' hy' ↦ ⟨U, hU, hy', hz⟩, hU.isOpen, hyU⟩
+  have hcover : g ⁻¹' {c} ⊆ O ∪ V := fun y _ ↦ by
+    obtain ⟨U, hyU, hU⟩ := hloc y
+    by_cases hz : ∃ z ∈ U, g z < c
+    · exact Or.inr ⟨U, hU, hyU, hz⟩
+    · push Not at hz
+      exact Or.inl (Filter.mem_of_superset (hU.isOpen.mem_nhds hyU) hz)
+  have hdisj : g ⁻¹' {c} ∩ (O ∩ V) = ∅ := by
+    refine eq_empty_iff_forall_notMem.2 fun y ⟨hyc, hyO, U, hU, hyU, z, hzU, hz⟩ ↦ ?_
+    exact (key hU hyU hyO hyc hzU).not_gt hz
+  have hlevel : g ⁻¹' {c} ⊆ O := by
+    rcases isPreconnected_iff_subset_of_disjoint.1
+      (hg.isPreconnected_preimage_singleton_of_isConvexChart hloc c) O V hO hV hcover hdisj with
+      h | h
+    · exact h
+    · exact absurd hdisj (ne_empty_iff_nonempty.2 ⟨x, rfl, hx, h rfl⟩)
+  -- Hence `{c ≤ g} = O` is open and closed, so it is everything.
+  have hS : {y | c ≤ g y} = O := by
+    refine Subset.antisymm (fun y hy ↦ ?_) fun y hy ↦ hy.self_of_nhds
+    have hy' : c ≤ g y := hy
+    rcases hy'.lt_or_eq with hlt | heq
+    · exact (hg.continuous.continuousAt.eventually (lt_mem_nhds hlt)).mono fun _ ↦ le_of_lt
+    · exact hlevel heq.symm
+  have huniv : {y | c ≤ g y} = univ :=
+    IsClopen.eq_univ ⟨isClosed_le continuous_const hg.continuous, hS ▸ hO⟩ ⟨x, le_refl c⟩
+  exact isMinOn_univ_iff.2 fun y ↦ (huniv ▸ mem_univ y : y ∈ {y | c ≤ g y})
 
 end IsProperMap

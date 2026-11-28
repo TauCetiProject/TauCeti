@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Tiling.Lozenge.Region
+public import TauCeti.Combinatorics.Tiling.Lozenge.Region.Basic
 public import Mathlib.Combinatorics.Tiling.Tile
 public import Mathlib.Data.Set.Card
 
@@ -37,11 +37,14 @@ lozenges may stick out of `R` by one face. A plane tiling is a tiling of `Set.un
 * `TauCeti.IsFreeTiling.inter_regionEdges`, `TauCeti.IsTiling.isFreeTiling_inter_regionEdges`: the
   restriction of a free tiling of `S ⊇ R`, in particular of a plane tiling, to the edges of `R` is
   a free tiling of `R`.
+* `TauCeti.IsTiling.sdiff_union`: replacing a tiling of a subregion by another tiling of it.
 * `TauCeti.IsFreeTiling.isTiling_iff`: a free tiling is a tiling exactly when it contains no
   boundary edge.
 * `TauCeti.isTiling_vadd_iff`, `TauCeti.isTiling_rot_iff`, `TauCeti.isFreeTiling_vadd_iff`,
   `TauCeti.isFreeTiling_rot_iff`: translations and `ρ` map tilings and free tilings to those of the
   image region.
+* `TauCeti.IsTiling.image_rot`: `ρ` maps plane tilings to plane tilings.
+* `TauCeti.isTiling_edgesOfDir`: the edges of a single direction form a plane tiling.
 * `TauCeti.isTiling_iff_placedTile`: tilings are the families of placed tiles of
   `lozengeProtoset` lying in `R`, pairwise disjoint and covering `R`.
 
@@ -86,6 +89,20 @@ theorem isTiling_univ_iff :
     IsTiling Set.univ M ↔ ∀ f : TriFace, ∃! e, e ∈ M ∧ e ∈ f.edges := by
   simp [IsTiling]
 
+/-- The empty tiling is the only tiling of the empty region. -/
+@[simp] theorem isTiling_empty_iff : IsTiling ∅ M ↔ M = ∅ := by
+  simp only [isTiling_def, Set.mem_empty_iff_false, false_imp_iff, implies_true, and_true,
+    Set.eq_empty_iff_forall_notMem]
+  exact ⟨fun h e he => h e he _ e.mem_whiteFace_edges, fun h e he => (h e he).elim⟩
+
+/-- Every face has exactly one edge of each direction, so the edges of direction `k` form a plane
+tiling, by lozenges of the single type `k`. -/
+theorem isTiling_edgesOfDir (k : Fin 3) : IsTiling Set.univ (edgesOfDir k) := by
+  rw [isTiling_univ_iff]
+  intro f
+  rw [TriFace.existsUnique_mem_edges_iff]
+  exact ⟨k, mem_edgesOfDir.2 (TriFace.edge_k f k), fun j hj => by simpa using hj⟩
+
 namespace IsTiling
 
 theorem subset_interiorEdges (h : IsTiling R M) : M ⊆ interiorEdges R :=
@@ -113,6 +130,52 @@ theorem eq_of_mem_edges (h : IsTiling R M) {e e' : TriEdge} (he : e ∈ M) (he' 
   (h.2 f (h.1 e he f hef)).unique ⟨he, hef⟩ ⟨he', he'f⟩
 
 end IsTiling
+
+/-! ### Replacing a tiling of a subregion -/
+
+section Replace
+
+variable {A B : Set TriEdge}
+
+/-- If `M` contains at most one edge of each face of `S` and contains a tiling `A` of `S`, then it
+contains no edge of a tiling `B` of `S` disjoint from `A`. -/
+theorem disjoint_of_isTiling_of_subset {S : Set TriFace} (hA : IsTiling S A) (hB : IsTiling S B)
+    (hAB : Disjoint A B) (hM : ∀ f ∈ S, ∀ e ∈ M, ∀ e' ∈ M, e ∈ f.edges → e' ∈ f.edges → e = e')
+    (hAM : A ⊆ M) : Disjoint M B := by
+  rw [Set.disjoint_right]
+  intro b hb hbM
+  have hf : b.whiteFace ∈ S := hB.whiteFace_mem hb
+  obtain ⟨a, ⟨ha, haf⟩, -⟩ := hA.existsUnique hf
+  have := hM _ hf a (hAM ha) b hbM haf b.mem_whiteFace_edges
+  exact Set.disjoint_left.1 hAB ha (this ▸ hb)
+
+/-- Replacing a tiling `A` of a subregion `S` by another tiling `B` of `S`, inside a tiling `M` of
+`R` containing `A`, gives a tiling of `R`. -/
+theorem IsTiling.sdiff_union {S : Set TriFace} (hM : IsTiling R M) (hA : IsTiling S A)
+    (hB : IsTiling S B) (hAM : A ⊆ M) : IsTiling R (M \ A ∪ B) := by
+  have hSR : S ⊆ R := fun f hf => by
+    obtain ⟨a, ⟨ha, haf⟩, -⟩ := hA.existsUnique hf
+    exact hM.mem_of_mem_edges (hAM ha) haf
+  refine isTiling_def.2 ⟨?_, fun f hf => ?_⟩
+  · rintro e (⟨heM, -⟩ | heB) f hef
+    · exact hM.mem_of_mem_edges heM hef
+    · exact hSR (hB.mem_of_mem_edges heB hef)
+  by_cases hfS : f ∈ S
+  · obtain ⟨b, ⟨hb, hbf⟩, hbu⟩ := hB.existsUnique hfS
+    refine ⟨b, ⟨Or.inr hb, hbf⟩, fun e ⟨he, hef⟩ => ?_⟩
+    rcases he with ⟨heM, heA⟩ | heB
+    · obtain ⟨a, ⟨ha, haf⟩, -⟩ := hA.existsUnique hfS
+      exact absurd (hM.eq_of_mem_edges heM (hAM ha) hef haf ▸ ha) heA
+    · exact hbu e ⟨heB, hef⟩
+  · have hAf : ∀ e ∈ A, e ∉ f.edges := fun e he hef => hfS (hA.mem_of_mem_edges he hef)
+    have hBf : ∀ e ∈ B, e ∉ f.edges := fun e he hef => hfS (hB.mem_of_mem_edges he hef)
+    obtain ⟨e, ⟨heM, hef⟩, heu⟩ := hM.existsUnique hf
+    refine ⟨e, ⟨Or.inl ⟨heM, fun heA => hAf e heA hef⟩, hef⟩, fun e' ⟨he', he'f⟩ => ?_⟩
+    rcases he' with ⟨he'M, -⟩ | he'B
+    · exact heu e' ⟨he'M, he'f⟩
+    · exact absurd he'f (hBf e' he'B)
+
+end Replace
 
 /-- A plane free tiling is a plane tiling: every edge is an edge of some face. -/
 theorem isFreeTiling_univ_iff :
@@ -260,6 +323,11 @@ private theorem image_iff (φ : Equiv.Perm TriFace) (ψ : Equiv.Perm TriEdge)
     IsTiling (TriFace.rot '' R) (TriEdge.rot '' M) ↔ IsTiling R M := by
   rw [isTiling_iff_subset_interiorEdges, isTiling_iff_subset_interiorEdges]
   exact image_iff _ _ (fun _ _ => TriEdge.rot_mem_edges_rot) interiorEdges (interiorEdges_rot R)
+
+/-- `ρ` maps plane tilings to plane tilings. -/
+theorem IsTiling.image_rot (h : IsTiling Set.univ M) : IsTiling Set.univ (TriEdge.rot '' M) := by
+  have := (isTiling_rot_iff (R := Set.univ) (M := M)).2 h
+  rwa [Set.image_univ_of_surjective TriFace.rot.surjective] at this
 
 /-- Translations map free tilings of `R` to free tilings of the translated region. -/
 @[simp] theorem isFreeTiling_vadd_iff (w : ℤ × ℤ) :

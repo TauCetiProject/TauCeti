@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
+public import Mathlib.AlgebraicGeometry.Morphisms.FinitePresentation
 public import Mathlib.AlgebraicGeometry.OpenImmersion
 public import Mathlib.AlgebraicGeometry.Fiber
 public import Mathlib.AlgebraicGeometry.FunctionField
@@ -153,6 +154,14 @@ lemma isClosedImmersion_specialFiberι (R : Type u) [CommRing R] [IsLocalRing R]
       (Spec.map (CommRingCat.ofHom (algebraMap R (ResidueField R)))) :=
     isClosedImmersion_Spec_map_residue R
   exact inferInstance
+
+/-- The special fibre of a morphism locally of finite presentation is locally of finite
+presentation over the residue field. -/
+instance locallyOfFinitePresentation_specialFiber_hom {R : Type u} [CommRing R] [IsLocalRing R]
+    {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) [LocallyOfFinitePresentation toBase] :
+    LocallyOfFinitePresentation (specialFiber R toBase).hom := by
+  rw [specialFiber_hom]
+  infer_instance
 
 section GenericPoint
 
@@ -348,15 +357,7 @@ lemma isPullback_genericFiberTower :
   · simp
   · simp
   · simp
-  · have hMap :
-        Spec.map (CommRingCat.ofHom (algebraMap K L)) ≫
-            Spec.map (CommRingCat.ofHom (algebraMap R K)) =
-          Spec.map (CommRingCat.ofHom (algebraMap R L)) := by
-      rw [← Spec.map_comp]
-      congr 1
-      ext r
-      exact (IsScalarTower.algebraMap_apply R K L r).symm
-    simpa using hMap
+  · simp
 
 /-- Iterated scalar extension is canonically isomorphic to direct scalar extension. -/
 noncomputable def genericFiberTowerIso :

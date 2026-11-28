@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.LocalField.PowerSubgroup.Basic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.Algebra.Group.PowMonoidHom
-public import TauCeti.RingTheory.Valuation.ValuationRing
+public import TauCeti.RingTheory.Valuation.ValuationRing.Basic
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 
 import TauCeti.Algebra.Group.Units.Basic

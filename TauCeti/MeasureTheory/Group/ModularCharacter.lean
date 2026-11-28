@@ -9,6 +9,7 @@ public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.MeasureTheory.Group.ModularCharacter
 public import TauCeti.MeasureTheory.Group.Integral
 public import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.MeasureTheory.Measure.Count.Topology
 import TauCeti.Topology.Instances.NNReal
 
 /-!
@@ -49,6 +50,7 @@ none of this assumes σ-finiteness.
 
 * `TauCeti.le_ker_modularCharacter_of_isCompact` and `TauCeti.center_le_ker_modularCharacter`:
   the modular character is trivial on every compact subgroup and on the centre.
+* `TauCeti.modularCharacter_eq_one_of_discreteTopology`: discrete groups are unimodular.
 * `TauCeti.integral_mul_right_eq_modularCharacter_smul`: right translation of compactly
   supported integrands.
 * `TauCeti.integral_modularCharacter_smul_inv_eq_self` and
@@ -69,8 +71,9 @@ none of this assumes σ-finiteness.
   `MeasureTheory.Measure.quasiMeasurePreserving_inv_mul_of_regular`: right translation, inversion
   and `y ↦ y⁻¹ * x` preserve null sets of a regular Haar measure.
 * `TauCeti.integral_mul_right_eq_modularCharacter_smul_of_regular`,
-  `TauCeti.integral_inv_eq_integral_modularCharacter_smul_of_regular` and their lower Lebesgue
-  versions `TauCeti.lintegral_mul_right_eq_modularCharacter_mul_of_regular` and
+  `TauCeti.integral_inv_eq_integral_modularCharacter_smul_of_regular`,
+  `TauCeti.integral_smul_inv_mul_eq_integral_modularCharacter_smul_of_regular`, and their lower
+  Lebesgue versions `TauCeti.lintegral_mul_right_eq_modularCharacter_mul_of_regular` and
   `TauCeti.lintegral_inv_eq_lintegral_modularCharacter_mul_of_regular`: the change-of-variables
   formulas for every integrand, against a regular Haar measure.
 
@@ -94,6 +97,15 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 /-- The bundled modular character evaluates to the modular character function. -/
 theorem modularCharacter_apply (g : G) :
     Measure.modularCharacter g = Measure.modularCharacterFun g := rfl
+
+/-- A discrete group is unimodular: right translation preserves counting measure, which is a Haar
+measure. -/
+theorem modularCharacter_eq_one_of_discreteTopology {G : Type*} [Group G] [TopologicalSpace G]
+    [DiscreteTopology G] (g : G) : Measure.modularCharacter g = 1 := by
+  borelize G
+  rw [modularCharacter_apply,
+    Measure.modularCharacterFun_eq_haarScalarFactor (Measure.count : Measure G) g]
+  simp only [map_mul_right_eq_self, Measure.haarScalarFactor_self]
 
 /-- A nonzero test integral computes the modular character by right translation.
 No regularity assumption on the Haar measure is needed. -/
@@ -575,5 +587,18 @@ theorem integral_inv_eq_integral_modularCharacter_smul_of_regular (f : G → E) 
   rw [← integral_inv_measure, Measure.inv_eq_withDensity_modularCharacter_of_regular,
     integral_withDensity_eq_integral_smul continuous_modularCharacter.measurable]
   simp_rw [NNReal.smul_def]
+
+/-- **Right-variable form of a pointwise group convolution integral.** For a regular left Haar
+measure `μ` on a locally compact group `G`, substituting `y = x * z⁻¹` using left invariance and
+the modular inversion formula transforms `∫ y, g y • u (y⁻¹ * x) ∂μ` into
+`∫ z, c(z) • (g (x * z⁻¹) • u z) ∂μ`, where `c` is the modular character. -/
+theorem integral_smul_inv_mul_eq_integral_modularCharacter_smul_of_regular
+    {α : Type*} [SMul α E] (g : G → α) (u : G → E) (x : G) :
+    ∫ y, g y • u (y⁻¹ * x) ∂μ =
+      ∫ z, (Measure.modularCharacter z : ℝ) • (g (x * z⁻¹) • u z) ∂μ := by
+  rw [← integral_mul_left_eq_self (fun y => g y • u (y⁻¹ * x)) x]
+  simpa only [mul_inv_rev, inv_mul_cancel_right, inv_inv] using
+    integral_inv_eq_integral_modularCharacter_smul_of_regular (μ := μ)
+      fun z => g (x * z⁻¹) • u z
 
 end TauCeti

@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Group.Matrix
+public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.NumberTheory.ClassFieldTheory.WeilGroup.Archimedean.Basic
+public import TauCeti.RepresentationTheory.ClassicalGroups.Standard
+import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # Bounded archimedean parameters
@@ -40,6 +43,8 @@ to `W_ℂ` is (`TauCeti.ClassFieldTheory.WeilGroupReal.isBoundedParameter_restri
   groups are bounded.
 * `TauCeti.ClassFieldTheory.WeilGroupReal.isBoundedParameter_restrictComplex_iff`: a parameter of
   `W_ℝ` is bounded exactly when its restriction to `W_ℂ` is.
+* `TauCeti.ClassFieldTheory.WeilGroupReal.not_isSemisimpleRepresentation_logNormUnipotent`: the
+  unipotent parameter `w ↦ [[1, log |norm w|], [0, 1]]` is not semisimple.
 * `TauCeti.ClassFieldTheory.WeilGroupReal.not_isBoundedParameter_logNormUnipotent`: the unipotent
   parameter `w ↦ [[1, log |norm w|], [0, 1]]` is not bounded.
 
@@ -167,6 +172,45 @@ theorem not_isBoundedParameter_logNormUnipotent : ¬ IsBoundedParameter logNormU
   simp only [logNormUnipotent_apply_zero_one, hw, Units.val_mk0, Real.log_exp, Complex.norm_real,
     Real.norm_eq_abs] at this
   linarith [le_abs_self (B + 1)]
+
+/-- **The unipotent parameter is not semisimple.** The line `ℂ e₀` is stable under
+`w ↦ [[1, log |norm w|], [0, 1]]`, but has no stable complement: a vector `v` with `v 1 ≠ 0` is
+moved by `v 1 • e₀` by an element `w` with `log |norm w| = 1`. -/
+theorem not_isSemisimpleRepresentation_logNormUnipotent :
+    ¬ Representation.IsSemisimpleRepresentation ((stdRep ℂ 2).comp logNormUnipotent) := by
+  intro h
+  set ρ := (stdRep ℂ 2).comp logNormUnipotent
+  have hact (w : WeilGroupReal) (v : Fin 2 → ℂ) :
+      ρ w v = ![v 0 + (Real.log (norm w : ℝ) : ℂ) * v 1, v 1] := by
+    ext i
+    fin_cases i <;> simp [ρ, stdRep_apply, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
+  -- the stable line `ℂ e₀`
+  have hline (v : Fin 2 → ℂ) : v ∈ ℂ ∙ (Pi.single 0 1 : Fin 2 → ℂ) ↔ v 1 = 0 := by
+    rw [Submodule.mem_span_singleton]
+    refine ⟨fun ⟨c, hc⟩ ↦ by simp [← hc], fun hv ↦ ⟨v 0, ?_⟩⟩
+    ext i
+    fin_cases i <;> simp [hv]
+  have he₀ (w : WeilGroupReal) : ∃ t : ℂ, ρ w (Pi.single 0 1) = t • Pi.single 0 1 :=
+    ⟨1, by ext i; fin_cases i <;> simp [hact]⟩
+  obtain ⟨τ, hτ⟩ := exists_isCompl (Subrepresentation.spanSingleton _ he₀)
+  have hc : IsCompl (ℂ ∙ (Pi.single 0 1 : Fin 2 → ℂ)) τ.toSubmodule := by
+    rw [← Subrepresentation.toSubmodule_spanSingleton _ he₀]
+    exact Subrepresentation.isCompl_toSubmodule.mpr hτ
+  have hdisj (x : Fin 2 → ℂ) (hxσ : x 1 = 0) (hxτ : x ∈ τ.toSubmodule) : x = 0 :=
+    Submodule.disjoint_def.mp hc.disjoint x ((hline x).mpr hxσ) hxτ
+  -- `e₁` decomposes as `a + b` with `a ∈ ℂ e₀` and `b ∈ τ`, so `b 1 = 1`
+  obtain ⟨a, ha, b, hb, hab⟩ :=
+    Submodule.mem_sup.mp (hc.sup_eq_top ▸ Submodule.mem_top (x := (Pi.single 1 1 : Fin 2 → ℂ)))
+  have hb₁ : b 1 = 1 := by
+    have := congrFun hab 1
+    rw [Pi.add_apply, (hline a).mp ha] at this
+    simpa using this
+  -- an element with `log |norm w| = 1` moves `b` by `e₀`, which lies in `ℂ e₀ ∩ τ = 0`
+  obtain ⟨w, hw⟩ := norm_surjective (Units.mk0 (Real.exp 1) (Real.exp_pos 1).ne')
+  have hmem : ρ w b - b ∈ τ.toSubmodule := sub_mem (τ.apply_mem_toSubmodule w hb) hb
+  have hzero := hdisj _ (by simp [hact]) hmem
+  have := congrFun hzero 0
+  simp [hact, hw, hb₁] at this
 
 end WeilGroupReal
 

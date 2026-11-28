@@ -87,6 +87,11 @@ noncomputable instance instModuleOppositeCycles (h : IsDGAlgebra 𝒜 d) :
     Module (h.cycles)ᵐᵒᵖ M :=
   Module.compHom M h.cycles.val.op.toRingHom
 
+omit [Module R M] [IsScalarTower R Aᵐᵒᵖ M] in
+/-- A cycle of the algebra acts on `M` through its underlying element of `A`. -/
+theorem cycles_op_smul_def (c : h.cycles) (x : M) : op c • x = op (c : A) • x :=
+  (rfl)
+
 /-- The restricted cycle action is compatible with the action of the ground ring. -/
 noncomputable instance instIsScalarTowerOppositeCycles (h : IsDGAlgebra 𝒜 d) :
     IsScalarTower R (h.cycles)ᵐᵒᵖ M :=
