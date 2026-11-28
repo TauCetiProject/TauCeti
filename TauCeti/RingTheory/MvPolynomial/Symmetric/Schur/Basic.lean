@@ -69,8 +69,8 @@ involution, and it lives downstream in
   tableaux.
 * `TauCeti.diagramSchurPoly_eq_zero_iff` and `TauCeti.schurPoly_eq_zero_iff`: a Schur polynomial
   vanishes exactly for a shape taller than its alphabet.
-* `TauCeti.sum_nsmul_diagramSchurPoly_eq_sum_colLen_le`: a sum of Schur polynomials over the
-  partitions of `n` only sees the partitions with at most `N` rows.
+* `TauCeti.sum_smul_schurPoly_eq_sum_card_le`: a sum of Schur polynomials over the partitions
+  of `n` in an alphabet of size at most `b` only sees the partitions with at most `b` parts.
 * `TauCeti.isHomogeneous_diagramSchurPoly` and `TauCeti.isHomogeneous_schurPoly`: a Schur
   polynomial is homogeneous of degree the number of cells of its shape.
 
@@ -357,17 +357,6 @@ theorem coeff_diagramSchurPoly_ofPartition_eq_zero_of_not_dominates (hd : ¬ μ.
     rw [card_ofPartition]
     exact ((degree_rowLenWeight_lt h).trans_eq (card_ofPartition ν)).ne
 
-/-- A sum of Schur polynomials in the alphabet `Fin N` over the partitions of `n` only sees the
-partitions with at most `N` rows: the Schur polynomials of the others vanish. -/
-theorem sum_nsmul_diagramSchurPoly_eq_sum_colLen_le (c : n.Partition → ℕ) :
-    ∑ ν, c ν • diagramSchurPoly N R (ofPartition ν) =
-      ∑ ν : {ν : n.Partition // (ofPartition ν).colLen 0 ≤ N},
-        c ν.val • diagramSchurPoly N R (ofPartition ν.val) := by
-  rw [← Fintype.sum_subtype_add_sum_subtype fun ν => (ofPartition ν).colLen 0 ≤ N,
-    Fintype.sum_eq_zero (fun ν : {ν // ¬(ofPartition ν).colLen 0 ≤ N} => _) fun ν => by
-      rw [diagramSchurPoly_eq_zero_of_lt_colLen (not_le.mp ν.property), smul_zero],
-    add_zero]
-
 end Partition
 
 section Alphabet
@@ -482,6 +471,19 @@ theorem schurPoly_eq_zero_of_card_lt (h : Fintype.card σ < μ.parts.card) :
     schurPoly σ R μ = 0 := by
   rw [schurPoly, diagramSchurPoly_eq_zero_of_lt_colLen
     (by rwa [YoungDiagram.colLen_zero_ofPartition]), map_zero]
+
+/-- A sum of Schur polynomials in a finite alphabet `σ` over the partitions of `n` only sees the
+partitions with at most `b` parts whenever `Fintype.card σ ≤ b`: the Schur polynomials of the
+others vanish. -/
+theorem sum_smul_schurPoly_eq_sum_card_le {M : Type*} [SMulZeroClass M (MvPolynomial σ R)]
+    {b : ℕ} (hσ : Fintype.card σ ≤ b) (c : n.Partition → M) :
+    ∑ ν, c ν • schurPoly σ R ν =
+      ∑ ν : {ν : n.Partition // ν.parts.card ≤ b}, c ν.val • schurPoly σ R ν.val := by
+  rw [← Finset.subtype_univ,
+    Finset.sum_subtype_eq_sum_filter (f := fun ν : n.Partition => c ν • schurPoly σ R ν),
+    Finset.sum_filter_of_ne fun ν _ hν => by
+      by_contra hlt
+      exact hν (by rw [schurPoly_eq_zero_of_card_lt _ (hσ.trans_lt (not_le.mp hlt)), smul_zero])]
 
 /-- **A Schur polynomial vanishes exactly for a partition with more parts than the alphabet has
 letters.** -/

@@ -10,6 +10,7 @@ public import TauCeti.Combinatorics.Young.Partitions
 public import TauCeti.Combinatorics.Young.LittlewoodRichardson.Yamanouchi
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Bialternant
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Symmetric
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.LinearIndependent
 
 /-!
 # The Littlewood–Richardson rule in Stembridge's form
@@ -26,7 +27,10 @@ This is `TauCeti.diagramSchurPoly_mul_diagramSchurPoly`. The sum runs over the p
 `c_ν` is the number `Nat.card (TauCeti.LRTableau λ ν μ)` of Littlewood–Richardson tableaux, by the
 bijection `TauCeti.lrTableauEquivYamanouchi`; for taller `ν` the Schur polynomial `s_ν` vanishes.
 So the coefficients may equally be taken to be the Littlewood–Richardson coefficients
-(`TauCeti.diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau`).
+(`TauCeti.diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau`). Comparing the two
+`ℤ`-polynomial expansions of `s_λ · s_μ = s_μ · s_λ` in `|λ| + |μ|` variables via uniqueness of
+their natural-number coefficients (`TauCeti.eq_of_sum_nsmul_diagramSchurPoly_eq`) immediately gives
+the symmetry `c^ν_{λ μ} = c^ν_{μ λ}` (`TauCeti.natCard_lrTableau_comm`).
 
 ## Stembridge's proof
 
@@ -55,6 +59,8 @@ commutative semiring.
 * `TauCeti.diagramSchurPoly_mul_diagramSchurPoly`: **the Littlewood–Richardson rule**.
 * `TauCeti.diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau`: the
   Littlewood–Richardson rule with the Littlewood–Richardson coefficients `c^ν_{λ μ}`.
+* `TauCeti.natCard_lrTableau_comm`: **symmetry of the Littlewood–Richardson coefficients**,
+  `c^ν_{λ μ} = c^ν_{μ λ}`.
 
 ## References
 
@@ -318,5 +324,28 @@ theorem diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau {R : Type
     rw [← Fintype.card_subtype]
     exact card_boundedYamanouchi_eq_natCard_lrTableau hν
   · rw [diagramSchurPoly_eq_zero_of_lt_colLen (Nat.lt_of_not_le hν), smul_zero, smul_zero]
+
+/-- **Symmetry of the Littlewood–Richardson coefficients**: `c^ν_{λ μ} = c^ν_{μ λ}` for all Young
+diagrams `λ`, `ν`, and `μ`. -/
+theorem natCard_lrTableau_comm (lam outer μ : YoungDiagram) :
+    Nat.card (LRTableau lam outer μ) = Nat.card (LRTableau μ outer lam) := by
+  by_cases hcard : outer.card = lam.card + μ.card
+  · set d := lam.card + μ.card
+    have heq_diag :
+        ∑ ν : d.Partition,
+          Nat.card (LRTableau lam (ofPartition ν) μ) • diagramSchurPoly d ℤ (ofPartition ν) =
+        ∑ ν : d.Partition,
+          Nat.card (LRTableau μ (ofPartition ν) lam) • diagramSchurPoly d ℤ (ofPartition ν) := by
+      rw [← diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau, mul_comm,
+        diagramSchurPoly_mul_diagramSchurPoly_eq_sum_natCard_lrTableau]
+      exact congrArg (fun m => ∑ ν : m.Partition,
+        Nat.card (LRTableau μ (ofPartition ν) lam) • diagramSchurPoly d ℤ (ofPartition ν))
+        (add_comm μ.card lam.card)
+    simpa only [YoungDiagram.ofPartition_toPartition] using
+      congrFun (eq_of_sum_nsmul_diagramSchurPoly_eq le_rfl heq_diag)
+        (YoungDiagram.toPartition outer hcard)
+  · have hcard' : outer.card ≠ μ.card + lam.card := by omega
+    rw [@Nat.card_of_isEmpty _ (isEmpty_lrTableau_of_card_ne hcard),
+      @Nat.card_of_isEmpty _ (isEmpty_lrTableau_of_card_ne hcard')]
 
 end TauCeti

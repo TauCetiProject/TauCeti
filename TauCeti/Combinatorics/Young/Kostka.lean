@@ -57,6 +57,7 @@ highest-weight tableau `SemistandardYoungTableau.highestWeight μ` is `μ.rowLen
 * `TauCeti.BoundedSSYT.isEmpty_of_lt_colLen`: a shape taller than its alphabet admits no tableau.
 * `TauCeti.kostkaNumber_self`: `K_{μ μ} = 1`.
 * `TauCeti.kostkaNumber_eq_zero_of_not_dominates`: `K_{μ ν} = 0` unless `μ` dominates `ν`.
+* `TauCeti.kostkaNumber_eq_zero_of_lt`: `K_{μ ν} = 0` whenever `μ < ν` in `TauCeti.PartitionLex`.
 
 ## References
 
@@ -331,5 +332,13 @@ shape `μ` and content `ν` unless `μ` dominates `ν`. -/
 theorem kostkaNumber_eq_zero_of_not_dominates {n : ℕ} {μ ν : n.Partition}
     (h : ¬ μ.Dominates ν) : kostkaNumber μ ν = 0 :=
   not_not.mp fun h' => h (dominates_of_kostkaNumber_ne_zero h')
+
+open scoped PartitionLex in
+/-- **Lexicographic vanishing of Kostka numbers** (`K_{μ ν} = 0` for `μ < ν`): there is no
+semistandard tableau of shape `μ` and content `ν` when `μ < ν` in `TauCeti.PartitionLex`. -/
+theorem kostkaNumber_eq_zero_of_lt {n : ℕ} {μ ν : n.Partition} (h : μ < ν) :
+    kostkaNumber μ ν = 0 :=
+  kostkaNumber_eq_zero_of_not_dominates fun hdom =>
+    (not_le.mpr h) (Nat.Partition.lex_le_of_dominates hdom)
 
 end TauCeti

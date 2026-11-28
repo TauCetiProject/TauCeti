@@ -64,6 +64,8 @@ for a nonempty weight (`TauCeti.DominantWeight.detShift_shift`).
   its last entry is nonnegative.
 * `TauCeti.shapeEquivPolynomialWeight`: the Young diagrams with at most `n` rows are the
   polynomial dominant weights of `GL n`.
+* `TauCeti.DominantWeight.shape_eq_shape_iff`: two dominant weights of possibly different ranks
+  have the same Young diagram iff their zero-extended `Int.toNat` coordinate sequences agree.
 * `TauCeti.DominantWeight.shift_weightOfShape_detShiftShape`: the determinant twist
   `λ = μ + λₙ·(1, …, 1)` with `μ = detShiftShape λ`, together with
   `TauCeti.DominantWeight.colLen_zero_detShiftShape_le_pred`, which bounds `μ` by `n - 1` rows.
@@ -326,6 +328,14 @@ theorem rowLen_shape_eq_zero_of_le (l : DominantWeight n) {i : ℕ} (hi : n ≤ 
     l.shape.rowLen i = 0 :=
   YoungDiagram.rowLen_ofRowLensFin_eq_zero_of_le _ _ hi
 
+/-- The `i`-th row length of `l.shape` at an arbitrary natural index `i`: `(l.val ⟨i, h⟩).toNat`
+when `i < n`, and `0` otherwise. -/
+theorem rowLen_shape_eq_ite (l : DominantWeight n) (i : ℕ) :
+    l.shape.rowLen i = if h : i < n then (l.val ⟨i, h⟩).toNat else 0 := by
+  split_ifs with h
+  · exact l.rowLen_shape ⟨i, h⟩
+  · exact l.rowLen_shape_eq_zero_of_le (not_lt.mp h)
+
 @[simp]
 theorem colLen_zero_shape_le (l : DominantWeight n) : l.shape.colLen 0 ≤ n :=
   YoungDiagram.colLen_zero_ofRowLensFin_le _ _
@@ -375,6 +385,16 @@ theorem shape_weightOfShape {n : ℕ} {μ : YoungDiagram} (hμ : μ.colLen 0 ≤
 @[simp]
 theorem DominantWeight.shape_zero {n : ℕ} : (0 : DominantWeight n).shape = ⊥ :=
   weightOfShape_bot n ▸ shape_weightOfShape (by simp)
+
+/-- Two dominant weights (possibly of different ranks) have the same Young diagram if and only if
+their zero-extended `Int.toNat` coordinate sequences agree. -/
+theorem DominantWeight.shape_eq_shape_iff {m n : ℕ} (w₁ : DominantWeight m)
+    (w₂ : DominantWeight n) :
+    w₁.shape = w₂.shape ↔
+      ∀ i : ℕ, (if h : i < m then (w₁.val ⟨i, h⟩).toNat else 0) =
+        if h : i < n then (w₂.val ⟨i, h⟩).toNat else 0 := by
+  rw [← YoungDiagram.rowLen_injective.eq_iff, funext_iff]
+  exact forall_congr' fun i => by rw [w₁.rowLen_shape_eq_ite, w₂.rowLen_shape_eq_ite]
 
 @[simp]
 theorem weightOfShape_shape {n : ℕ} {l : DominantWeight n} (hl : l.IsPolynomial) :

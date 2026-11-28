@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Symmetric.FrobeniusCharacteristic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.MurnaghanNakayama
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.LinearIndependent
 
 /-!
 # The Murnaghan–Nakayama rule for Specht characters
