@@ -69,7 +69,6 @@ lemma src_ι : src g e ≫ (rightMappingSpaceOver p e).ι =
 /-- Source restriction on composition triangles over `e` is a trivial fibration. -/
 theorem rlp_src [Quasicategory X] : (monomorphisms SSet.{u}).rlp (src g e) := by
   intro A B i hi
-  have : Mono i := hi
   have := rightMappingSpace.postcompSpace.rlp_src x g i hi
   exact inferInstanceAs (HasLiftingProperty i (Subcomplex.fromPreimage _ _))
 
@@ -108,8 +107,8 @@ noncomputable def map {q : Y ⟶ S} (F : X ⟶ Y) (hF : F ≫ q = p)
     (postcompSpace g e : SSet.{u}) ⟶ (postcompSpace (g.map F) eF : SSet.{u}) :=
   lift (g.map F) eF (src g e ≫ rightMappingSpaceOver.map F hF he)
     ((postcompSpace g e).ι ≫ rightMappingSpace.postcompSpace.map x g F)
-    (by rw [Category.assoc, rightMappingSpace.postcompSpace.map_src,
-      ← src_ι_assoc, Category.assoc, rightMappingSpaceOver.map_ι])
+    (by simp only [Category.assoc, rightMappingSpace.postcompSpace.map_src,
+      rightMappingSpaceOver.map_ι, src_ι_assoc])
 
 @[reassoc (attr := simp)]
 lemma map_ι {q : Y ⟶ S} (F : X ⟶ Y) (hF : F ≫ q = p)
@@ -192,8 +191,8 @@ lemma map_tgt {q : Y ⟶ nerve C} (F : X ⟶ Y) (hF : F ≫ q = p)
     map g e F hF he ≫ tgt (g.map F) eF h' =
       tgt g e h ≫ rightMappingSpaceOver.map F hF he' := by
   rw [← cancel_mono (rightMappingSpaceOver q eF').ι]
-  rw [Category.assoc, tgt_ι, map_ι_assoc, rightMappingSpace.postcompSpace.map_tgt,
-    Category.assoc, rightMappingSpaceOver.map_ι, tgt_ι_assoc]
+  simp only [Category.assoc, tgt_ι, map_ι_assoc, rightMappingSpace.postcompSpace.map_tgt,
+    rightMappingSpaceOver.map_ι, tgt_ι_assoc]
 
 end postcompSpace
 
@@ -239,11 +238,11 @@ theorem exists_homotopy_map_postcomp [Quasicategory X] [Quasicategory Y]
   obtain ⟨H, -⟩ := exists_homotopy_of_rlp_monomorphisms
     (postcompSpace.rlp_src (g.map F) eF)
     (s ≫ postcompSpace.map g e F hF he) (map F hF he ≫ s') (by
-      rw [Category.assoc, postcompSpace.map_src, ← Category.assoc, hs,
-        Category.assoc, hs', Category.id_comp, Category.comp_id])
+      simp only [Category.assoc, postcompSpace.map_src, reassoc_of% hs, hs',
+        Category.comp_id])
   have hl : (s ≫ postcompSpace.map g e F hF he) ≫ postcompSpace.tgt (g.map F) eF h' =
       postcomp g h ≫ map F hF he' := by
-    rw [Category.assoc, postcompSpace.map_tgt g e F hF he he' h h', ← Category.assoc, ht]
+    simp only [Category.assoc, postcompSpace.map_tgt g e F hF he he' h h', reassoc_of% ht]
   have hr : (map F hF he ≫ s') ≫ postcompSpace.tgt (g.map F) eF h' =
       map F hF he ≫ postcomp (g.map F) h' := by rw [Category.assoc, ht']
   rw [← hl, ← hr]
