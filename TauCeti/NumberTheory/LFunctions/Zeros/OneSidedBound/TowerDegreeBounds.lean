@@ -7,14 +7,14 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Parameters
+import Mathlib.Analysis.Complex.ExponentialBounds
 
 /-!
-# Numerical bounds for the cyclotomic tower degree
+# Upper bound for the cyclotomic tower degree
 
-The dyadic factor controls the lower bound for `towerDeg s`. The remaining ternary factor is
-logarithmic in the prime-sum cutoff `x` and can be absorbed by a small power of the logarithm
-of the larger cutoff. These bounds control the contribution of the tower degree to the
-archimedean sizes of cyclotomic differents.
+The ternary factor of `towerDeg s` is logarithmic in the prime-sum cutoff `x` and can be
+absorbed by a small power of the logarithm of the larger cutoff. This upper bound controls
+the contribution of the tower degree to the archimedean sizes of cyclotomic differents.
 
 ## References
 
@@ -26,11 +26,6 @@ public section
 
 namespace TauCeti.OneSidedBound
 
-/-- The tower degree is at least its dyadic factor. -/
-theorem two_pow_le_towerDeg (s : ℕ) : 2 ^ s ≤ towerDeg s := by
-  rw [towerDeg_def]
-  exact Nat.le_mul_of_pos_left _ (Nat.mul_pos (by decide) (by simp [l₀_def]))
-
 private theorem l₀_le_mul_of_two_pow_le {s : ℕ} {x t : ℝ}
     (hdyadic : (2 : ℝ) ^ s ≤ (4 * x) ^ (11 : ℕ)) (ht : 1 ≤ t) (hxt : Real.log x ≤ t) :
     (l₀ s : ℝ) ≤ 81 * (44 * t) := by
@@ -41,12 +36,8 @@ private theorem l₀_le_mul_of_two_pow_le {s : ℕ} {x t : ℝ}
   have hodd : Odd (11 : ℕ) := by decide
   have htwo : 0 < (2 : ℝ) ^ s := by positivity
   have hx : 0 < x := by linarith [hodd.pow_pos_iff.mp (htwo.trans_le hdyadic)]
-  have hlog₄ : Real.log 4 = 2 * Real.log 2 := by
-    calc
-      Real.log 4 = Real.log ((2 : ℝ) ^ (2 : ℕ)) := by norm_num
-      _ = 2 * Real.log 2 := by rw [Real.log_pow]; norm_num
   have hslog := Real.log_le_log htwo hdyadic
-  rw [Real.log_pow, Real.log_pow, Real.log_mul (by norm_num) hx.ne', hlog₄] at hslog
+  rw [Real.log_pow, Real.log_pow, Real.log_mul (by norm_num) hx.ne', Real.log_four_eq] at hslog
   norm_num at hslog
   have hlog₂ : (1 / 2 : ℝ) ≤ Real.log 2 := by
     linarith [Real.one_sub_inv_le_log_of_pos (by norm_num : (0 : ℝ) < 2)]
@@ -71,8 +62,8 @@ theorem towerDeg_le_pow_mul_log_rpow {s : ℕ} {x b : ℝ}
     linarith [Real.log_nonpos hL₀ h.le]
   have hLp : 0 < L := zero_lt_one.trans_le hL
   have hroot : (L ^ (1 / 6 : ℝ)) ^ (6 : ℕ) = L := by
-    rw [← Real.rpow_natCast, ← Real.rpow_mul hLp.le]
-    norm_num
+    simpa only [one_div, Nat.cast_ofNat] using
+      Real.rpow_inv_natCast_pow hLp.le (n := 6) (by decide)
   have hxroot : Real.log x ≤ L ^ (1 / 6 : ℝ) := by
     by_cases hx : 0 ≤ Real.log x
     · exact (pow_le_pow_iff_left₀ hx (by positivity) (by decide)).mp (hroot ▸ hscale)
