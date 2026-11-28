@@ -66,6 +66,11 @@ theorem reducedSigma_neg (z : ℂ) : L.reducedSigma (-z) = -L.reducedSigma z := 
 theorem reducedSigma_eq_zero_iff {z : ℂ} : L.reducedSigma z = 0 ↔ z ∈ L.lattice := by
   simp [reducedSigma_def, L.weierstrassSigma_eq_zero_iff]
 
+/-- Reduced sigma vanishes at every lattice point. -/
+@[simp]
+theorem reducedSigma_coe (l : L.lattice) : L.reducedSigma l = 0 :=
+  L.reducedSigma_eq_zero_iff.mpr l.property
+
 /-- Reduced sigma vanishes at the origin. -/
 @[simp]
 theorem reducedSigma_zero : L.reducedSigma 0 = 0 :=
