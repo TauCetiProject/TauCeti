@@ -11,6 +11,7 @@ public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.Set.Card
 
 import Mathlib.Basic.Finite.Prod
+import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Set.Finite.Range
 
 /-!
@@ -54,7 +55,8 @@ only finitely many rounded families have entries in `[-R, R]`.
 * `TauCeti.mem_Icc_ceil_floor_of_mem_Icc`: if `x ∈ [δ m, δ (m + 1)]` and `|x| ≤ R`, then
   `m ∈ [⌈-R / δ⌉ - 1, ⌊R / δ⌋]`.
 * `TauCeti.exists_finset_forall_exists_le_lt_add`: finitely many families round up, by less
-  than `δ` in each entry, every family with entries in `[-R, R]`.
+  than `δ` in each entry, every family with entries in `[-R, R]`. Mathlib's `Int.card_Icc`
+  and `Fintype.card_fun` bound the number of families by `(2 * ⌈R / δ⌉₊ + 1) ^ Nat.card κ`.
 * `TauCeti.floor_div_eq_of_forall_intCast_mul_notMem_uIcc`: if no multiple of `δ > 0` lies
   between `a` and `b`, then `⌊a / δ⌋ = ⌊b / δ⌋`.
 * `TauCeti.encard_setOf_intCast_mul_mem_Ioo_le`: an open interval of length `L` contains at most
@@ -255,24 +257,40 @@ theorem encard_setOf_intCast_mul_mem_Ioo_le (hδ : 0 < δ) (c L : K) :
 
 /-- **Rounding up to a grid.** For a step `δ > 0` and a bound `R`, finitely many families on a
 finite index type round up every family `a` with entries in `[-R, R]`: some `c` among them has
-`a k ≤ c k < a k + δ` for every `k`. The families are those with entries `δ m`,
-`m ∈ [⌈-R / δ⌉, ⌈R / δ⌉]`, and `c k = δ ⌈a k / δ⌉`. -/
+`a k ≤ c k < a k + δ` for every `k`. There are at most `(2 * m + 1) ^ Nat.card κ` families,
+where `m = ⌈R / δ⌉₊`, by using multiples `δ z` with `z ∈ [-m, m]`. -/
 theorem exists_finset_forall_exists_le_lt_add {κ : Type*} [Finite κ] (hδ : 0 < δ) (R : K) :
-    ∃ T : Finset (κ → K), ∀ a : κ → K, (∀ k, |a k| ≤ R) →
-      ∃ c ∈ T, ∀ k, a k ≤ c k ∧ c k < a k + δ := by
+    ∃ T : Finset (κ → K), T.card ≤ (2 * ⌈R / δ⌉₊ + 1) ^ Nat.card κ ∧
+      ∀ a : κ → K, (∀ k, |a k| ≤ R) → ∃ c ∈ T, ∀ k, a k ≤ c k ∧ c k < a k + δ := by
   classical
-  refine ⟨(Set.finite_range fun (g : κ → Set.Icc ⌈-R / δ⌉ ⌈R / δ⌉) k ↦ δ * (g k : ℤ)).toFinset,
-    fun a ha ↦ ⟨fun k ↦ δ * ⌈a k / δ⌉, ?_, fun k ↦ ⟨?_, ?_⟩⟩⟩
-  · -- rounding up preserves the bounds `-R ≤ a k ≤ R`
-    refine (Set.Finite.mem_toFinset _).2 ⟨fun k ↦ ⟨⌈a k / δ⌉, ?_, ?_⟩, rfl⟩ <;>
-      refine Int.ceil_mono (div_le_div_of_nonneg_right ?_ hδ.le)
-    exacts [(abs_le.1 (ha k)).1, (abs_le.1 (ha k)).2]
-  · dsimp only
-    rw [mul_comm, ← div_le_iff₀ hδ]
-    exact Int.le_ceil _
-  · dsimp only
-    rw [mul_comm, ← lt_div_iff₀ hδ, add_div, div_self hδ.ne']
-    exact Int.ceil_lt_add_one _
+  let inst := Fintype.ofFinite κ
+  let m := ⌈R / δ⌉₊
+  let I := Finset.Icc (-(m : ℤ)) (m : ℤ)
+  let round (g : κ → I) (k : κ) : K := (g k : ℤ) * δ
+  refine ⟨Finset.univ.image round, ?_, ?_⟩
+  · refine Finset.card_image_le.trans_eq ?_
+    rw [Finset.card_univ, Fintype.card_fun, Fintype.card_coe, Int.card_Icc,
+      Nat.card_eq_fintype_card]
+    exact congrArg (· ^ Fintype.card κ) (by lia)
+  · intro a ha
+    have hR : R / δ ≤ (m : K) := Nat.le_ceil _
+    let g (k : κ) : I := ⟨⌈a k / δ⌉, Finset.mem_Icc.mpr (by
+      have hk := abs_le.mp (ha k)
+      constructor
+      · rw [← Int.ceil_intCast (R := K) (-(m : ℤ))]
+        apply Int.ceil_mono
+        rw [Int.cast_neg, Int.cast_natCast]
+        have hlow := div_le_div_of_nonneg_right hk.1 hδ.le
+        rw [neg_div] at hlow
+        exact (neg_le_neg hR).trans hlow
+      · rw [Int.ceil_le, Int.cast_natCast]
+        exact (div_le_div_of_nonneg_right hk.2 hδ.le).trans hR)⟩
+    refine ⟨round g, Finset.mem_image_of_mem _ (Finset.mem_univ _), fun k ↦ ?_⟩
+    have hlo : a k ≤ (⌈a k / δ⌉ : ℤ) * δ := (div_le_iff₀ hδ).mp (Int.le_ceil _)
+    have hhi : ((⌈a k / δ⌉ : ℤ) : K) * δ < a k + δ := by
+      rw [← lt_div_iff₀ hδ, add_div, div_self hδ.ne']
+      exact Int.ceil_lt_add_one _
+    exact ⟨hlo, hhi⟩
 
 /-- For `t > 0`, two nonnegative elements `a`, `b` of an ordered field with the same natural
 floor of `x * t` differ by less than `1 / t`: on the nonnegative half-line the cells of the grid of
