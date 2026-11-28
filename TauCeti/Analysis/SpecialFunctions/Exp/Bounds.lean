@@ -66,6 +66,7 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exp_neg_sub_mul_le_of_le`: `exp (-(x - σ) t) ≤ exp (-(x - σ) δ)` for `σ ≤ x` and
   `δ ≤ t`.
 * `Real.pow_le_exp_mul`: `x ^ k ≤ exp (k x)` for `0 ≤ x` and every natural `k`.
+* `Real.exp_le_pow_of_exp_one_le`: `exp y ≤ x ^ n` for `exp 1 ≤ x` and `y ≤ n`.
 * `TauCeti.exp_div_pow_le_exp_div_pow`: `exp t / d ^ k ≤ exp c / s ^ k` for `0 < s`, `0 ≤ d` and
   `k (s / d - 1) + t ≤ c`.
 * `TauCeti.one_add_mul_le_one_add_mul_exp_mul_sub_one`:
@@ -419,6 +420,15 @@ times the base: `x ^ k ≤ exp (k x)` for `0 ≤ x`, since `x ≤ x + 1 ≤ exp 
 theorem _root_.Real.pow_le_exp_mul {x : ℝ} (hx : 0 ≤ x) (k : ℕ) : x ^ k ≤ exp (k * x) := by
   rw [exp_natCast_mul]
   exact pow_le_pow_left₀ hx (by linarith [add_one_le_exp x]) k
+
+/-- A natural power with base at least `exp 1` bounds `exp y` whenever `y` is at most the
+exponent of the power. -/
+theorem _root_.Real.exp_le_pow_of_exp_one_le {x y : ℝ} {n : ℕ} (hx : exp 1 ≤ x) (hy : y ≤ n) :
+    exp y ≤ x ^ n := by
+  calc
+    exp y ≤ exp n := exp_le_exp.mpr hy
+    _ = exp 1 ^ n := by rw [← exp_natCast_mul, mul_one]
+    _ ≤ x ^ n := pow_le_pow_left₀ (exp_nonneg _) hx _
 
 /-- Comparison of two geometric rates against exponential factors: for `0 < s` and `0 ≤ d`, if
 `k (s / d - 1) + t ≤ c` then `exp t / d ^ k ≤ exp c / s ^ k`. For `0 < d` it follows from

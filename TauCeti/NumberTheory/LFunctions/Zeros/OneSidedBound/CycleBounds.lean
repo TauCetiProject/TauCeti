@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Parameters
 import Mathlib.Analysis.Complex.ExponentialBounds
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
 # Numerical bounds for Frobenius cycles in a theta-lift chain
@@ -65,15 +66,6 @@ theorem cutoff_pow_l₀_le_sqrt {x₁ b : ℝ} {s : ℕ} (hx₁ : 0 < x₁)
     linarith
   · exact (by exact_mod_cast l₀_le h : (l₀ s : ℝ) ≤ 81 * s).trans (by gcongr)
 
-/-- A natural power with base at least three dominates the exponential of its exponent. -/
-private theorem exp_le_nat_pow_of_three_le {y : ℝ} {p n : ℕ} (hp : 3 ≤ p) (hy : y ≤ n) :
-    exp y ≤ (p : ℝ) ^ n := by
-  have hp' : exp 1 ≤ (p : ℝ) := exp_one_lt_three.le.trans (by exact_mod_cast hp)
-  calc
-    exp y ≤ exp n := exp_le_exp.mpr hy
-    _ = exp 1 ^ n := by rw [← exp_natCast_mul, mul_one]
-    _ ≤ (p : ℝ) ^ n := pow_le_pow_left₀ (exp_nonneg _) hp' _
-
 /-- The orbit length forces the residue size to dominate the fourth power of the
 jet order `x * b`. Only `p ≥ 3`, rather than primality, is needed. -/
 theorem jet_order_pow_four_le_residue_size {x b : ℝ} {m p j : ℕ}
@@ -100,7 +92,8 @@ theorem jet_order_pow_four_le_residue_size {x b : ℝ} {m p j : ℕ}
     _ = exp (8 * log b) := by
       rw [← Nat.cast_ofNat (R := ℝ) (n := 8), exp_natCast_mul, exp_log hb]
       ring
-    _ ≤ (p : ℝ) ^ j := exp_le_nat_pow_of_three_le hp (hm'.trans (by exact_mod_cast hj))
+    _ ≤ (p : ℝ) ^ j := exp_le_pow_of_exp_one_le
+      (exp_one_lt_three.le.trans (by exact_mod_cast hp)) (hm'.trans (by exact_mod_cast hj))
 
 /-- The logarithmic factor of the cycle degree condition fits inside `√b`.
 Here `e` is the step exponent and `n` is the number of letters. -/
@@ -142,7 +135,8 @@ private theorem clog_le_log_cutoff {x x₁ : ℝ} {p m : ℕ} (hx : 4 ≤ x)
   let r := ⌈log x⌉₊
   have hx' : x ≤ (p : ℝ) ^ r := calc
     x = exp (log x) := (exp_log (by linarith)).symm
-    _ ≤ (p : ℝ) ^ r := exp_le_nat_pow_of_three_le hp (Nat.le_ceil _)
+    _ ≤ (p : ℝ) ^ r := exp_le_pow_of_exp_one_le
+      (exp_one_lt_three.le.trans (by exact_mod_cast hp)) (Nat.le_ceil _)
   have hm' : (m : ℝ) ≤ x := by
     apply le_of_pow_le_pow_left₀ two_ne_zero (by linarith)
     exact hm.trans (by nlinarith)
