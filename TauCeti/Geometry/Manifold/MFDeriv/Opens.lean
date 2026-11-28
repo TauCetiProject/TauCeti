@@ -28,6 +28,10 @@ subset of a normed space depends continuously on the point
 A map read in the coordinate of a chart of the maximal atlas, `x ↦ g (e x)`, is differentiable on
 every open subset of the chart's source where `g` is differentiable at the chart image
 (`TauCeti.Manifold.mdifferentiable_restrict_comp_chart`).
+
+For a map between open subsets of normed spaces agreeing with a map having Fréchet derivative `A'`,
+the differential read through `tangentSpaceOpenEquiv` and `NormedSpace.fromTangentSpace` applies
+`A'` (`TauCeti.Manifold.fromTangentSpace_tangentSpaceOpenEquiv_mfderiv_of_hasFDerivAt`).
 -/
 
 public section
@@ -148,5 +152,24 @@ theorem mdifferentiable_restrict_comp_chart {e : OpenPartialHomeomorph N H'}
     MDifferentiable J I fun x : W ↦ g (e x) := fun x ↦
   mdifferentiableAt_comp_subtype_val_iff.2
     ((hg x x.property).comp (x : N) (mdifferentiableAt_of_mem_maximalAtlas he (hW x.property)))
+
+/-- The differential of a map `ι : U → V` between open subsets of normed spaces that restricts a
+map `A : E' → E` with Fréchet derivative `A'` at `x`, read through `tangentSpaceOpenEquiv` and
+`NormedSpace.fromTangentSpace`, applies `A'`. -/
+theorem fromTangentSpace_tangentSpaceOpenEquiv_mfderiv_of_hasFDerivAt
+    {U : Opens E'} {V : Opens E} (ι : U → V) {A : E' → E} {A' : E' →L[𝕜] E}
+    (hι : ∀ w : U, (ι w : E) = A w.val) {x : U} (hA : HasFDerivAt A A' x.val)
+    (v : TangentSpace 𝓘(𝕜, E') x) :
+    NormedSpace.fromTangentSpace (ι x).val
+        (tangentSpaceOpenEquiv (I := 𝓘(𝕜, E)) (ι x)
+          (mfderiv 𝓘(𝕜, E') 𝓘(𝕜, E) ι x v)) =
+      A' (NormedSpace.fromTangentSpace x.val
+        (tangentSpaceOpenEquiv (I := 𝓘(𝕜, E')) x v)) := by
+  have hv : mfderiv 𝓘(𝕜, E') 𝓘(𝕜, E) ι x v =
+      mfderiv 𝓘(𝕜, E') 𝓘(𝕜, E) A x.val (tangentSpaceOpenEquiv (I := 𝓘(𝕜, E')) x v) := by
+    rw [mfderiv_apply_of_subtype_val_comp_eq (I := 𝓘(𝕜, E')) (I' := 𝓘(𝕜, E)) (funext hι) v,
+      tangentSpaceOpenEquiv_apply]
+  rw [tangentSpaceOpenEquiv_apply, hv, hA.mfderiv_apply, hι x]
+  exact ContinuousLinearEquiv.apply_symm_apply _ _
 
 end TauCeti.Manifold

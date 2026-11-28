@@ -66,7 +66,9 @@ subset of the target manifold.
 * `Submodule.comap_mfderiv_subtype_val`: pulling a subspace of `T_x M` back along the differential
   of the inclusion of an open subset gives the same subspace.
 * `PartialDiffeomorph.exists_ambient_of_opens`: a partial diffeomorphism out of an open subset
-  agrees near a point of its source with a partial diffeomorphism out of the ambient manifold.
+  agrees near a point of its source with a partial diffeomorphism out of the ambient manifold
+  (and `PartialDiffeomorph.exists_ambient_of_opens_forall` records agreement in value and
+  differential across the whole ambient source).
 * `PartialDiffeomorph.subtypeVal`: the inclusion of a nonempty open subset as a partial
   diffeomorphism.
 * `PartialDiffeomorph.liftOpens`: a partial diffeomorphism between nonempty open subsets, as a
@@ -518,6 +520,41 @@ theorem exists_ambient_of_opens {U : TopologicalSpace.Opens M}
     rw [Ψ.right_inv hz'] at h
     rw [coe_trans_symm, Function.comp_apply]
     exact h.symm
+
+/-- **Carrying a partial diffeomorphism out of an open subset to the ambient manifold, with
+values and differentials on the whole source.** If `Φ` is a `C^n` partial diffeomorphism out of an
+open subset `U` of `M` and `p₀ ∈ Φ.source`, then there is a `C^n` partial diffeomorphism `e` out
+of `M` whose source contains `p₀` and lies in `U`, and which agrees with `Φ` in value and
+differential at every point of `e.source`. -/
+theorem exists_ambient_of_opens_forall {U : TopologicalSpace.Opens M}
+    (Φ : PartialDiffeomorph I J U N n) {p₀ : U} (hp₀ : p₀ ∈ Φ.source) :
+    ∃ e : PartialDiffeomorph I J M N n,
+      (p₀ : M) ∈ e.source ∧ e.source ⊆ U ∧ e p₀ = Φ p₀ ∧
+      ∀ y ∈ e.source, ∃ hyU : y ∈ (U : Set M),
+        (⟨y, hyU⟩ : U) ∈ Φ.source ∧ e y = Φ ⟨y, hyU⟩ ∧
+        ∀ v : TangentSpace I y, mfderiv I J e y v = mfderiv I J Φ ⟨y, hyU⟩ v := by
+  let sv := subtypeVal I n U ⟨p₀⟩
+  let e := sv.symm.trans Φ
+  have hsv_p (q : U) : sv.symm (q : M) = q := by
+    rw [PartialDiffeomorph.symm_toPartialEquiv]
+    exact subtypeVal_symm_apply_coe U ⟨p₀⟩ q
+  have he_src : e.source = (U : Set M) ∩ sv.symm ⁻¹' Φ.source := by
+    simp [e, sv]
+  have hp₀e : (p₀ : M) ∈ e.source := by
+    rw [he_src, mem_inter_iff, mem_preimage, hsv_p p₀]
+    exact ⟨p₀.property, hp₀⟩
+  have heU : e.source ⊆ U := fun y hy ↦ (he_src ▸ hy).1
+  have hep₀ : e p₀ = Φ p₀ := by
+    rw [coe_trans, Function.comp_apply, hsv_p p₀]
+  have heq : ⇑e ∘ (Subtype.val : U → M) = ⇑Φ := funext fun q ↦ by
+    rw [Function.comp_apply, coe_trans, Function.comp_apply, hsv_p q]
+  refine ⟨e, hp₀e, heU, hep₀, fun y hy ↦ ?_⟩
+  let p : U := ⟨y, heU hy⟩
+  have hpΦ : p ∈ Φ.source := hsv_p p ▸ (he_src ▸ hy).2
+  refine ⟨heU hy, hpΦ, congrFun heq p, fun v ↦ ?_⟩
+  have h1 : mfderiv I J (⇑e ∘ (Subtype.val : U → M)) p v = mfderiv I J e y v :=
+    TauCeti.Manifold.mfderiv_comp_subtype_val_apply v
+  rw [← h1, heq]
 
 /-- **A partial diffeomorphism between open subsets, read in the ambient manifolds.** A
 partial diffeomorphism `Φ` from an open subset `U` of `M` to an open subset `V` of `N` is a partial

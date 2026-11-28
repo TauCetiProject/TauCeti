@@ -55,13 +55,13 @@ also when `U` is empty (`TauCeti.exists_partialDiffeomorph_mpullback_apply_eq_of
 diffeomorphism, viewed as a diffeomorphism between its source and target, pulls back the restriction
 of a form to its target as it pulls back the form itself
 (`TauCeti.mpullback_toDiffeomorphSourceTarget_apply`), its inverse does the same for the
-restriction to its source (`TauCeti.mpullback_toDiffeomorphSourceTarget_symm_apply`), and the
-restriction to open subsets of a diffeomorphism pulls back restricted forms as the diffeomorphism
-pulls back the forms themselves (`TauCeti.mpullback_subtype_mpullback_subtype_val`). So a
-construction carried out on an open submanifold, such as a flow defined only where some condition
-on the forms holds, transfers to the ambient manifold. In particular, a partial diffeomorphism of
-the source of a partial diffeomorphism `Ψ` fixing a set `K` corrects `Ψ` to a partial
-diffeomorphism agreeing with `Ψ` on `K`
+restriction to its source (`PartialDiffeomorph.mpullback_toDiffeomorphSourceTarget_symm_apply`),
+and the restriction to open subsets of a diffeomorphism pulls back restricted forms as the
+diffeomorphism pulls back the forms themselves (`TauCeti.mpullback_subtype_mpullback_subtype_val`).
+So a construction carried out on an open submanifold, such as a flow defined only where some
+condition on the forms holds, transfers to the ambient manifold. In particular, a partial
+diffeomorphism of the source of a partial diffeomorphism `Ψ` fixing a set `K` corrects `Ψ` to a
+partial diffeomorphism agreeing with `Ψ` on `K`
 (`PartialDiffeomorph.exists_eqOn_mpullback_apply_eq_of_opens`).
 
 On a product `U × M` with an open subset `U` of a normed space, the differential of the first
@@ -600,9 +600,10 @@ omit [IsManifold I 1 M] in
 subsets.** Pulling the restriction of a form on `M` to the source of `Ψ` back along
 `Ψ.toDiffeomorphSourceTarget.symm` is, at each point of the target, pulling the form back along
 `Ψ.symm`. -/
-theorem mpullback_toDiffeomorphSourceTarget_symm_apply {E' H' M' : Type*} [NormedAddCommGroup E']
-    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
-    [ChartedSpace H' M'] {n : WithTop ℕ∞} (Ψ : PartialDiffeomorph I I' M M' n) (hn : n ≠ 0)
+theorem _root_.PartialDiffeomorph.mpullback_toDiffeomorphSourceTarget_symm_apply {E' H' M' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+    [TopologicalSpace M'] [ChartedSpace H' M'] {n : WithTop ℕ∞}
+    (Ψ : PartialDiffeomorph I I' M M' n) (hn : n ≠ 0)
     (ω : RoughForm I M F k) (x : (⟨Ψ.target, Ψ.open_target⟩ : Opens M')) :
     mpullback I' I Ψ.toDiffeomorphSourceTarget.symm (mpullback I I Subtype.val ω) x =
       mpullback I' I Ψ.symm ω x := by
