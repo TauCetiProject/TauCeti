@@ -34,7 +34,9 @@ theorem isIso_τ₃_of_epi_of_isIso {C : Type*} [Category* C] [Abelian C]
     [Epi R₁.g] [Epi R₂.g] [Epi φ.τ₁] [IsIso φ.τ₂] : IsIso φ.τ₃ := by
   have : Mono φ.τ₃ :=
     ShortComplex.mono_of_epi_of_epi_of_mono φ hR₂ inferInstance inferInstance inferInstance
-  have : Epi (R₁.g ≫ φ.τ₃) := φ.comm₂₃ ▸ epi_comp φ.τ₂ R₂.g
+  have : Epi (R₁.g ≫ φ.τ₃) := by
+    rw [← φ.comm₂₃]
+    exact epi_comp φ.τ₂ R₂.g
   have : Epi φ.τ₃ := epi_of_epi R₁.g φ.τ₃
   exact isIso_of_mono_of_epi φ.τ₃
 

@@ -386,17 +386,13 @@ lemma supportedModuleHPresheafZeroIso_inv_app_apply
 lemma supportedModuleHPresheafZeroIso_hom_naturality (f : F ⟶ G) :
     (supportedModuleHPresheafFunctor S 0).map f ≫ (G.supportedModuleHPresheafZeroIso S).hom =
       (F.supportedModuleHPresheafZeroIso S).hom ≫ ((supportedSubmoduleFunctor S).map f).hom := by
-  ext W x
-  refine Subtype.ext ?_
-  -- Expose the `supportedModuleH` carrier of
-  -- `((supportedModuleHPresheafFunctor S 0).obj F).obj (op W)`.
-  let s : F.supportedModuleH S W 0 := x
-  refine (coe_supportedModuleHPresheafZeroIso_hom_app_apply S G (op W)
-    (((supportedModuleHPresheafFunctor S 0).map f).app (op W) s)).trans ?_
+  refine supportedModuleHPresheaf_hom_ext fun W x ↦ Subtype.ext ?_
+  refine (coe_supportedModuleHPresheafZeroIso_hom_app_apply S G W
+    (((supportedModuleHPresheafFunctor S 0).map f).app W x)).trans ?_
   rw [supportedModuleHPresheafFunctor_map_app_apply]
-  refine (coe_supportedModuleHZeroEquiv_naturality_right S W f s).trans ?_
-  rw [← coe_supportedModuleHPresheafZeroIso_hom_app_apply S F (op W) s]
-  exact (coe_supportedSubmoduleFunctor_map_hom_app_apply S f (op W) _).symm
+  refine (coe_supportedModuleHZeroEquiv_naturality_right S W.unop f x).trans ?_
+  rw [← coe_supportedModuleHPresheafZeroIso_hom_app_apply S F W x]
+  exact (coe_supportedSubmoduleFunctor_map_hom_app_apply S f W _).symm
 
 /-- The degree-zero supported cohomology presheaf of modules already satisfies the sheaf law. -/
 theorem isSheaf_supportedModuleHPresheaf_zero

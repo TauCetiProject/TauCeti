@@ -721,18 +721,17 @@ namespace CategoryTheory.Sheaf
 
 variable {R} (S : Closeds X)
 
-variable {S} in
-/-- Extensionality for morphisms between supported cohomology presheaves, exposing the
+/-- Extensionality for morphisms out of a supported cohomology presheaf, exposing the
 `CategoryTheory.Sheaf.supportedModuleH` carrier directly. -/
-private lemma supportedModuleHPresheaf_hom_ext {S₁ S₂ : Closeds X}
-    {F G : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)} {m k : ℕ}
-    {φ ψ : F.supportedModuleHPresheaf S₁ m ⟶ G.supportedModuleHPresheaf S₂ k}
-    (h : ∀ (W : (Opens X)ᵒᵖ) (x : F.supportedModuleH S₁ W.unop m), φ.app W x = ψ.app W x) :
+lemma supportedModuleHPresheaf_hom_ext {S : Closeds X}
+    {F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)} {m : ℕ}
+    {P : TopCat.Presheaf (ModuleCat.{u} R) X}
+    {φ ψ : F.supportedModuleHPresheaf S m ⟶ P}
+    (h : ∀ (W : (Opens X)ᵒᵖ) (x : F.supportedModuleH S W.unop m), φ.app W x = ψ.app W x) :
     φ = ψ := by
   ext W x
   exact h (op W) x
 
-variable {S} in
 /-- Evaluating a sum of morphisms of supported cohomology presheaves on a class adds their
 values. -/
 private lemma supportedModuleHPresheaf_add_app_apply {S₁ S₂ : Closeds X}
@@ -742,21 +741,20 @@ private lemma supportedModuleHPresheaf_add_app_apply {S₁ S₂ : Closeds X}
     (φ + ψ).app W x = φ.app W x + ψ.app W x :=
   (rfl)
 
-variable {S} in
-/-- Evaluating a composite of morphisms of supported cohomology presheaves on a class applies them
-successively. -/
-private lemma supportedModuleHPresheaf_comp_app_apply {S₁ S₂ S₃ : Closeds X}
-    {F G H : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)} {m k l : ℕ}
-    (φ : F.supportedModuleHPresheaf S₁ m ⟶ G.supportedModuleHPresheaf S₂ k)
-    (ψ : G.supportedModuleHPresheaf S₂ k ⟶ H.supportedModuleHPresheaf S₃ l)
-    (W : (Opens X)ᵒᵖ) (x : F.supportedModuleH S₁ W.unop m) :
+/-- Evaluating a composite of morphisms out of a supported cohomology presheaf on a class applies
+them successively. -/
+lemma supportedModuleHPresheaf_comp_app_apply {S : Closeds X}
+    {F : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)} {m : ℕ}
+    {P₂ P₃ : TopCat.Presheaf (ModuleCat.{u} R) X}
+    (φ : F.supportedModuleHPresheaf S m ⟶ P₂) (ψ : P₂ ⟶ P₃)
+    (W : (Opens X)ᵒᵖ) (x : F.supportedModuleH S W.unop m) :
     (φ ≫ ψ).app W x = ψ.app W (φ.app W x) := by
   rw [NatTrans.comp_app]
-  -- `x` has type `F.supportedModuleH S₁ W.unop m` rather than
-  -- `(F.supportedModuleHPresheaf S₁ m).obj W`, so `CategoryTheory.comp_apply` needs the
+  -- `x` has type `F.supportedModuleH S W.unop m` rather than
+  -- `(F.supportedModuleHPresheaf S m).obj W`, so `CategoryTheory.comp_apply` needs the
   -- presheaf-object domain type explicitly.
   exact CategoryTheory.comp_apply (φ.app W) (ψ.app W)
-    (x : (F.supportedModuleHPresheaf S₁ m).obj W)
+    (x : (F.supportedModuleHPresheaf S m).obj W)
 
 /-- The morphism of presheaves `H_Sᵐ(-, F) ⟶ H_Sᵏ(-, G)` given by the Yoneda
 product with an `Ext` class `α : Extⁿ(F, G)`, where `m + n = k`. For
