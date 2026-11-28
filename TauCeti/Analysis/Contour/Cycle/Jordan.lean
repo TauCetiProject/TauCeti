@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Contour.Cycle.Reverse
 public import TauCeti.Analysis.Contour.Cycle.Winding
 public import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Jordan
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.JordanCurve
-import TauCeti.Topology.JordanCurve.Interval
 
 /-!
 # Oriented boundary cycles of finitely connected Jordan regions
@@ -38,15 +37,16 @@ and null-homology adapters.
   `induction_on_lt`, `jordanSign_ne_zero_of_ne`, `jordanSign_positivelyOrient`: algebraic and
   orientation properties of `positivelyOrient`.
 * `TauCeti.Contour.Cycle.windingNumber_of_positivelyOrient_eq_one_of_mem_filledHull_sdiff`: a
-  positively oriented simple closed absolutely continuous curve has winding number `1` on its
-  inside.
+  closed absolutely continuous curve with nonzero `jordanSign` has winding number `1` on its
+  inside after `positivelyOrient`.
 * `TauCeti.Contour.jordanRegion_def`, `TauCeti.Contour.mem_jordanRegion_iff`,
   `TauCeti.Contour.jordanRegion_empty`, `TauCeti.Contour.isOpen_jordanRegion`,
+  `TauCeti.Contour.isBounded_jordanRegion`, `TauCeti.Contour.closure_jordanRegion`,
   `TauCeti.Contour.Cycle.trace_jordanBoundaryCycle`,
   `notMem_trace_jordanBoundaryCycle_of_mem`, `windingNumber_jordanBoundaryCycle`,
   `windingWeight_jordanBoundaryCycle`, `isIn_jordanBoundaryCycle`,
-  `isNullHomologous_jordanBoundaryCycle`: region, openness, trace, winding, and null-homology
-  adapters.
+  `isNullHomologous_jordanBoundaryCycle`: region, openness, boundedness, closure, trace, winding,
+  and null-homology adapters.
 
 ## References
 
@@ -180,19 +180,15 @@ theorem jordanSign_ne_zero_of_ne {γ : AbsolutelyContinuousClosedCurve} (hab : �
       hlt η.source_eq_target hinj')
     fun h ↦ by rwa [← neg_ne_zero, ← jordanSign_symm]
 
-/-- After `positivelyOrient`, every simple closed absolutely continuous curve (`γ.a ≠ γ.b`,
-`InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))`) has `jordanSign` equal to `1`. -/
-theorem jordanSign_positivelyOrient {γ : AbsolutelyContinuousClosedCurve} (hab : γ.a ≠ γ.b)
-    (hinj : InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))) :
+/-- After `positivelyOrient`, every curve with nonzero `jordanSign` has `jordanSign` equal to
+`1`. -/
+theorem jordanSign_positivelyOrient {γ : AbsolutelyContinuousClosedCurve}
+    (h : jordanSign γ γ.a γ.b ≠ 0) :
     jordanSign γ.positivelyOrient γ.positivelyOrient.a γ.positivelyOrient.b = 1 := by
-  refine induction_on_lt hab hinj
-    (P := fun η ↦ jordanSign η.positivelyOrient η.positivelyOrient.a η.positivelyOrient.b = 1)
-    (fun {η} hη hηinj ↦ ?_)
-    fun h ↦ by rwa [← positivelyOrient_symm (jordanSign_ne_zero_of_ne hab hinj)]
-  rcases η.absolutelyContinuousOnInterval.jordanSign_eq_one_or_neg_one
-      hη η.source_eq_target hηinj with h | h
-  · rwa [positivelyOrient_of_jordanSign_eq_one h]
-  · rw [positivelyOrient_of_jordanSign_eq_neg_one h, jordanSign_symm, h, neg_neg]
+  rcases jordanSign_eq_one_or_neg_one_or_zero γ γ.a γ.b with h1 | h1 | h1
+  · rwa [positivelyOrient_of_jordanSign_eq_one h1]
+  · rw [positivelyOrient_of_jordanSign_eq_neg_one h1, jordanSign_symm, h1, neg_neg]
+  · exact (h h1).elim
 
 /-- A simple closed absolutely continuous curve (`γ.a ≠ γ.b`,
 `InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))`) has a Jordan curve as its interval image. -/
@@ -256,31 +252,20 @@ theorem integral_of_positivelyOrient {E : Type*} [NormedAddCommGroup E] [NormedS
       integral_of_symm, h1, neg_one_smul]
   · exact (h h1).elim
 
-/-- Inside `filledHull (γ '' uIcc γ.a γ.b) \ (γ '' uIcc γ.a γ.b)`, a positively oriented simple
-closed absolutely continuous curve (`γ.a ≠ γ.b`, `InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))`)
-has cycle winding number `1`. -/
+/-- Inside `filledHull (γ '' uIcc γ.a γ.b) \ (γ '' uIcc γ.a γ.b)`, any closed absolutely
+continuous curve with nonzero `jordanSign` has cycle winding number `1` after
+`positivelyOrient`. -/
 theorem windingNumber_of_positivelyOrient_eq_one_of_mem_filledHull_sdiff
-    {γ : AbsolutelyContinuousClosedCurve} (hab : γ.a ≠ γ.b)
-    (hinj : InjOn γ (Ico (min γ.a γ.b) (max γ.a γ.b))) {z : ℂ}
+    {γ : AbsolutelyContinuousClosedCurve} (h : jordanSign γ γ.a γ.b ≠ 0) {z : ℂ}
     (hz : z ∈ filledHull (γ '' uIcc γ.a γ.b) \ (γ '' uIcc γ.a γ.b)) :
     windingNumber z (FreeAddCommGroup.of γ.positivelyOrient) = 1 := by
-  refine AbsolutelyContinuousClosedCurve.induction_on_lt hab hinj
-    (P := fun η ↦ z ∈ filledHull (η '' uIcc η.a η.b) \ (η '' uIcc η.a η.b) →
-      windingNumber z (FreeAddCommGroup.of η.positivelyOrient) = 1)
-    (fun {η} hη hηinj hzη ↦ ?_)
-    (fun h hz' ↦ by
-      rw [← AbsolutelyContinuousClosedCurve.positivelyOrient_symm
-        (AbsolutelyContinuousClosedCurve.jordanSign_ne_zero_of_ne hab hinj)]
-      exact h (by simpa only [γ.image_symm] using hz')) hz
-  have hw := η.absolutelyContinuousOnInterval
-    |>.windingNumber_eq_jordanSign_of_mem_filledHull_sdiff hη η.source_eq_target hηinj hzη
-  rcases η.absolutelyContinuousOnInterval.jordanSign_eq_one_or_neg_one
-      hη η.source_eq_target hηinj with h | h
-  · rw [AbsolutelyContinuousClosedCurve.positivelyOrient_of_jordanSign_eq_one h, windingNumber_of,
-      hw, h, Int.cast_one]
-  · rw [AbsolutelyContinuousClosedCurve.positivelyOrient_of_jordanSign_eq_neg_one h,
-      windingNumber_of_symm η hzη.2, windingNumber_of, hw, h, Int.cast_neg, Int.cast_one,
-      neg_neg]
+  rcases jordanSign_eq_one_or_neg_one_or_zero γ γ.a γ.b with h1 | h1 | h1
+  · rw [AbsolutelyContinuousClosedCurve.positivelyOrient_of_jordanSign_eq_one h1,
+      windingNumber_of, (jordanSign_eq_one_iff.mp h1).2 z hz]
+  · rw [AbsolutelyContinuousClosedCurve.positivelyOrient_of_jordanSign_eq_neg_one h1,
+      windingNumber_of_symm γ hz.2, windingNumber_of,
+      (jordanSign_eq_neg_one_iff.mp h1).2 z hz, neg_neg]
+  · exact (h h1).elim
 
 end Cycle
 
@@ -375,6 +360,32 @@ theorem isOpen_jordanRegion {γ₀ : AbsolutelyContinuousClosedCurve} {s : Finse
     IsOpen (jordanRegion γ₀ s γ) :=
   (isCompact_uIcc.image_of_continuousOn γ₀.continuousOn).isClosed.isOpen_filledHull_sdiff_biUnion
     s fun i _ ↦ (isCompact_uIcc.image_of_continuousOn (γ i).continuousOn).isClosed
+
+/-- The region `jordanRegion γ₀ s γ` determined by closed absolutely continuous curves `γ₀` and
+`γ i` (`i ∈ s`) is bounded. -/
+theorem isBounded_jordanRegion {γ₀ : AbsolutelyContinuousClosedCurve} {s : Finset ι}
+    {γ : ι → AbsolutelyContinuousClosedCurve} :
+    IsBounded (jordanRegion γ₀ s γ) :=
+  (isBounded_filledHull.mpr (isCompact_uIcc.image_of_continuousOn γ₀.continuousOn).isBounded).subset
+    (sdiff_subset.trans sdiff_subset)
+
+/-- **Closure identification for `jordanRegion`.** When `γ₀` and `γ i` (`i ∈ s`) are simple
+closed curves whose filled hulls are pairwise disjoint and contained in the inside of `γ₀`, the
+closure of `jordanRegion γ₀ s γ` is `filledHull (γ₀ '' uIcc γ₀.a γ₀.b)` minus the open hole
+interiors `filledHull (γ i '' uIcc (γ i).a (γ i).b) \ (γ i '' uIcc (γ i).a (γ i).b)`. -/
+theorem closure_jordanRegion {γ₀ : AbsolutelyContinuousClosedCurve} {s : Finset ι}
+    {γ : ι → AbsolutelyContinuousClosedCurve} (hab₀ : γ₀.a ≠ γ₀.b)
+    (hinj₀ : InjOn γ₀ (Ico (min γ₀.a γ₀.b) (max γ₀.a γ₀.b)))
+    (hab : ∀ i ∈ s, (γ i).a ≠ (γ i).b)
+    (hinj : ∀ i ∈ s, InjOn (γ i) (Ico (min (γ i).a (γ i).b) (max (γ i).a (γ i).b)))
+    (hsub : ∀ i ∈ s, filledHull (γ i '' uIcc (γ i).a (γ i).b) ⊆
+      filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \ (γ₀ '' uIcc γ₀.a γ₀.b))
+    (hdisj : (s : Set ι).PairwiseDisjoint fun i ↦ filledHull (γ i '' uIcc (γ i).a (γ i).b)) :
+    closure (jordanRegion γ₀ s γ) =
+      filledHull (γ₀ '' uIcc γ₀.a γ₀.b) \
+        ⋃ i ∈ s, (filledHull (γ i '' uIcc (γ i).a (γ i).b) \ (γ i '' uIcc (γ i).a (γ i).b)) :=
+  (γ₀.isJordanCurve_image_of_ne hab₀ hinj₀).closure_filledHull_sdiff_biUnion
+    (fun i hi ↦ (γ i).isJordanCurve_image_of_ne (hab i hi) (hinj i hi)) hsub hdisj
 
 namespace Cycle
 
@@ -493,20 +504,23 @@ theorem windingNumber_jordanBoundaryCycle (hab₀ : γ₀.a ≠ γ₀.b)
   rw [trace_jordanBoundaryCycle_eq_union hsub] at hz
   rw [jordanBoundaryCycle, map_sub, map_sum]
   split_ifs with hzΔ
-  · rw [windingNumber_of_positivelyOrient_eq_one_of_mem_filledHull_sdiff hab₀ hinj₀ hzΔ.1,
+  · rw [windingNumber_of_positivelyOrient_eq_one_of_mem_filledHull_sdiff
+          (AbsolutelyContinuousClosedCurve.jordanSign_ne_zero_of_ne hab₀ hinj₀) hzΔ.1,
       Finset.sum_eq_zero fun i hi ↦
         windingNumber_of_positivelyOrient_eq_zero_of_notMem_filledHull (γ i)
           (fun h ↦ hzΔ.2 (mem_iUnion₂.mpr ⟨i, hi, h⟩)), sub_zero]
   · by_cases hzF₀ : z ∈ filledHull (γ₀ '' uIcc γ₀.a γ₀.b)
     · obtain ⟨i, hi, hzFi⟩ := mem_iUnion₂.mp
         (by_contra fun h ↦ hzΔ ⟨⟨hzF₀, fun h₀ ↦ hz (Or.inl h₀)⟩, h⟩)
-      rw [windingNumber_of_positivelyOrient_eq_one_of_mem_filledHull_sdiff hab₀ hinj₀
+      rw [windingNumber_of_positivelyOrient_eq_one_of_mem_filledHull_sdiff
+            (AbsolutelyContinuousClosedCurve.jordanSign_ne_zero_of_ne hab₀ hinj₀)
             ⟨hzF₀, fun h₀ ↦ hz (Or.inl h₀)⟩,
         Finset.sum_eq_single i (fun j hj hji ↦
             windingNumber_of_positivelyOrient_eq_zero_of_notMem_filledHull (γ j)
               (Set.disjoint_left.mp (hdisj hi hj hji.symm) hzFi))
           (fun hnot ↦ (hnot hi).elim),
-        windingNumber_of_positivelyOrient_eq_one_of_mem_filledHull_sdiff (hab i hi) (hinj i hi)
+        windingNumber_of_positivelyOrient_eq_one_of_mem_filledHull_sdiff
+          (AbsolutelyContinuousClosedCurve.jordanSign_ne_zero_of_ne (hab i hi) (hinj i hi))
           ⟨hzFi, fun h ↦ hz (Or.inr (mem_iUnion₂.mpr ⟨i, hi, h⟩))⟩, sub_self]
     · rw [windingNumber_of_positivelyOrient_eq_zero_of_notMem_filledHull γ₀ hzF₀,
         Finset.sum_eq_zero fun i hi ↦

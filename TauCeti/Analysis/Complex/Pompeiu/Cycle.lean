@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.CauchyKernel
 public import TauCeti.Analysis.Complex.Wirtinger.Cycle
 public import TauCeti.Analysis.Contour.Cycle.Jordan
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.Complex.Pompeiu.Basic
 import TauCeti.Analysis.Contour.Cycle.Circle
 import TauCeti.MeasureTheory.Integral.Circle.Integral
-import TauCeti.MeasureTheory.Integral.DominatedConvergence
+import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 
 /-!
 # The Cauchy–Pompeiu formula on bounded domains with contour-cycle boundaries
@@ -30,7 +30,6 @@ together with its specialization to finitely connected Jordan regions via
 
 ## Main results
 
-* `TauCeti.integrableOn_sub_inv_smul_conjWirtingerDeriv`
 * `TauCeti.Contour.Cycle.integral_sub_circleIntegral_sub_inv_smul_eq`
 * `TauCeti.cauchyPompeiu_smul`, `TauCeti.cauchyPompeiu`
 * `TauCeti.cauchyPompeiu_jordanBoundaryCycle_smul`, `TauCeti.cauchyPompeiu_jordanBoundaryCycle`
@@ -52,92 +51,7 @@ open scoped Real Topology
 
 namespace TauCeti
 
-/-! ### Area integrability for the Cauchy–Pompeiu kernel -/
-
-/-- If `Δ` is a bounded plane set with `closure Δ ⊆ Ω` (`Ω` open) and `f : ℂ → E` is real `C¹`
-on `Ω`, then `z ↦ (z - ξ)⁻¹ • conjWirtingerDeriv f z 1` is integrable on `Δ` for every `ξ : ℂ`. -/
-theorem integrableOn_sub_inv_smul_conjWirtingerDeriv {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] {Ω Δ : Set ℂ} (hΩ : IsOpen Ω) (hbounded : IsBounded Δ)
-    (hclosure : closure Δ ⊆ Ω) {f : ℂ → E} (hf : ContDiffOn ℝ 1 f Ω) (ξ : ℂ) :
-    IntegrableOn (fun z ↦ (z - ξ)⁻¹ • conjWirtingerDeriv f z 1) Δ := by
-  have hcont : ContinuousOn (fun z ↦ conjWirtingerDeriv f z 1) Ω :=
-    (hf.conjWirtingerDeriv_apply_of_isOpen hΩ (m := 0) (by simp) 1).continuousOn
-  obtain ⟨M, hM⟩ := (Metric.isCompact_of_isClosed_isBounded isClosed_closure
-    hbounded.closure).exists_bound_of_continuousOn (hcont.mono hclosure)
-  exact (integrableOn_sub_inv_smul_of_isBounded hbounded.closure
-    ((hcont.mono hclosure).aestronglyMeasurable isClosed_closure.measurableSet)
-    (ae_restrict_of_forall_mem isClosed_closure.measurableSet hM) ξ).mono_set subset_closure
-
 /-! ### Punctured Cauchy–Pompeiu identity -/
-
-section PuncturedHelpers
-
-open scoped Classical in
-private theorem isIn_and_isNullHomologous_sub_circleCycle {Ω Δ : Set ℂ}
-    (hΔΩ : Δ ⊆ Ω) (C : Contour.Cycle) (htrace : C.IsIn Ω)
-    (hindex : ∀ z ∉ C.trace, C.windingNumber z = if z ∈ Δ then 1 else 0)
-    {ξ : ℂ} {ε : ℝ} (hε : 0 < ε) (hball : closedBall ξ ε ⊆ Δ) (hξtr : ξ ∉ C.trace) :
-    ∃ r, 0 < r ∧ r < ε ∧
-      (C - Contour.circleCycle ξ ε).IsIn (Ω \ closedBall ξ r) ∧
-      (C - Contour.circleCycle ξ ε).IsNullHomologous (Ω \ closedBall ξ r) := by
-  obtain ⟨δ, hδ, hballδ⟩ := Metric.isOpen_iff.mp C.isCompact_trace.isClosed.isOpen_compl ξ hξtr
-  set r : ℝ := min (ε / 2) (δ / 2)
-  have hr0 : 0 < r := lt_min (half_pos hε) (half_pos hδ)
-  have hrε : r < ε := (min_le_left _ _).trans_lt (half_lt_self hε)
-  have hrδ : r < δ := (min_le_right _ _).trans_lt (half_lt_self hδ)
-  have hmiss : Disjoint (closedBall ξ r) C.trace := Set.disjoint_left.mpr fun z hz htr ↦
-    hballδ (mem_ball.mpr ((mem_closedBall.mp hz).trans_lt hrδ)) htr
-  have htr_C : C.trace ⊆ Ω \ closedBall ξ r := fun z hz ↦
-    ⟨C.isIn_iff.mp htrace hz, fun hzr ↦ Set.disjoint_left.mp hmiss hzr hz⟩
-  have htr_S : (Contour.circleCycle ξ ε).trace ⊆ Ω \ closedBall ξ r := by
-    rw [Contour.Cycle.trace_circleCycle, abs_of_pos hε]
-    exact fun z hz ↦ ⟨hΔΩ (hball (sphere_subset_closedBall hz)),
-      fun hzr ↦ (mem_closedBall.mp hzr).not_gt (hrε.trans_eq (mem_sphere.mp hz).symm)⟩
-  refine ⟨r, hr0, hrε, ?_, ?_⟩
-  · rw [Contour.Cycle.isIn_iff]
-    exact (Contour.Cycle.trace_sub_subset _ _).trans (union_subset htr_C htr_S)
-  · rw [Contour.Cycle.isNullHomologous_iff]
-    intro z hzU
-    rw [map_sub]
-    by_cases hzr : z ∈ closedBall ξ r
-    · have hzε : dist z ξ < ε := (mem_closedBall.mp hzr).trans_lt hrε
-      rw [hindex z (fun h ↦ (htr_C h).2 hzr), ite_eq_left (hball (ball_subset_closedBall hzε)),
-        Contour.Cycle.windingNumber_circleCycle_eq_one_of_dist_lt hzε, sub_self]
-    · have hzΩ : z ∉ Ω := fun h ↦ hzU ⟨h, hzr⟩
-      have hzΔ : z ∉ Δ := fun h ↦ hzΩ (hΔΩ h)
-      rw [hindex z (fun h ↦ hzΩ (htr_C h).1), ite_eq_right hzΔ,
-        Contour.Cycle.windingNumber_circleCycle_eq_zero_of_lt_dist hε.le
-          (not_le.mp fun hle ↦ hzΔ (hball (mem_closedBall.mpr hle))), sub_zero]
-
-open scoped Classical in
-private theorem windingWeight_sub_circleCycle_ae_eq {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] {Δ : Set ℂ} (C : Contour.Cycle)
-    (hindex : ∀ z ∉ C.trace, C.windingNumber z = if z ∈ Δ then 1 else 0)
-    {ξ : ℂ} {ε : ℝ} (hε : 0 < ε) (hball : closedBall ξ ε ⊆ Δ) (g : ℂ → E) :
-    (fun z ↦ (C - Contour.circleCycle ξ ε).windingWeight z • g z) =ᵐ[volume]
-      (Δ \ closedBall ξ ε).indicator g := by
-  have hae (D : Contour.Cycle) : ∀ᵐ z ∂volume, z ∉ D.trace :=
-    compl_mem_ae_iff.mpr (D.addHaar_trace_eq_zero volume)
-  filter_upwards [hae C, hae (Contour.circleCycle ξ ε)] with z hzC hzS
-  have hzCS : z ∉ (C - Contour.circleCycle ξ ε).trace := fun h ↦
-    (Contour.Cycle.trace_sub_subset _ _ h).elim hzC hzS
-  have hwt : (C - Contour.circleCycle ξ ε).windingWeight z =
-      Δ.indicator (1 : ℂ → ℝ) z - (ball ξ ε).indicator (1 : ℂ → ℝ) z := by
-    rw [Contour.Cycle.windingWeight_eq_of_notMem _ hzCS, map_sub, sub_re, hindex z hzC,
-      ← (Contour.circleCycle ξ ε).windingWeight_eq_of_notMem hzS,
-      Contour.Cycle.windingWeight_circleCycle ξ hε.le]
-    by_cases hzΔ : z ∈ Δ <;> simp [hzΔ]
-  rw [hwt, ← Pi.sub_apply, ← Set.indicator_sdiff (ball_subset_closedBall.trans hball),
-    ← congrFun (Set.indicator_smul_left _ _ _) z]
-  simp only [Pi.one_apply, one_smul]
-  have hne : dist z ξ ≠ ε := by
-    rwa [Contour.Cycle.trace_circleCycle, abs_of_pos hε, mem_sphere] at hzS
-  have hmem : z ∈ ball ξ ε ↔ z ∈ closedBall ξ ε := by
-    rw [mem_ball, mem_closedBall]
-    exact ⟨le_of_lt, fun hle ↦ lt_of_le_of_ne hle hne⟩
-  simp only [indicator_apply, Set.mem_sdiff, hmem]
-
-end PuncturedHelpers
 
 open scoped Classical in
 /-- **Punctured Cauchy–Pompeiu identity.** For an open set `Ω`, a measurable set `Δ ⊆ Ω`, a
@@ -159,7 +73,7 @@ theorem Contour.Cycle.integral_sub_circleIntegral_sub_inv_smul_eq {E : Type*}
     C.integral (fun z ↦ (z - ξ)⁻¹ • f z) - (∮ z in C(ξ, ε), (z - ξ)⁻¹ • f z) =
       (2 * I : ℂ) • ∫ z in Δ \ closedBall ξ ε, (z - ξ)⁻¹ • conjWirtingerDeriv f z 1 := by
   obtain ⟨r, hr0, hrε, htr_r, hnull_r⟩ :=
-    isIn_and_isNullHomologous_sub_circleCycle hΔΩ C htrace hindex hε hball hξtr
+    C.isIn_and_isNullHomologous_sub_circleCycle hΔΩ htrace hindex hε hball hξtr
   set U_r : Set ℂ := Ω \ closedBall ξ r
   have hU_r : IsOpen U_r := hΩ.sdiff isClosed_closedBall
   have hne : ∀ z ∈ U_r, z - ξ ≠ 0 := fun z hz hsub ↦
@@ -185,7 +99,8 @@ theorem Contour.Cycle.integral_sub_circleIntegral_sub_inv_smul_eq {E : Type*}
     _ = ∫ z in U_r, (Δ \ closedBall ξ ε).indicator
           (fun z ↦ (z - ξ)⁻¹ • conjWirtingerDeriv f z 1) z :=
           integral_congr_ae
-            ((windingWeight_sub_circleCycle_ae_eq C hindex hε hball _).filter_mono ae_restrict_le)
+            (((C.windingWeight_sub_circleCycle_ae_eq hindex hε hball).filter_mono
+              ae_restrict_le).mono fun z hz ↦ by simp [hz, Set.indicator_apply])
     _ = ∫ z in Δ \ closedBall ξ ε, (z - ξ)⁻¹ • conjWirtingerDeriv f z 1 := by
           have hsub : Δ \ closedBall ξ ε ⊆ U_r := fun z ⟨hzΔ, hzcl⟩ ↦
             ⟨hΔΩ hzΔ, fun hzr ↦ hzcl (closedBall_subset_closedBall hrε.le hzr)⟩

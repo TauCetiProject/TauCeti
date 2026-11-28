@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import Mathlib.Analysis.Calculus.DiffContOnCl
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
+import TauCeti.Analysis.Complex.Wirtinger.Cycle
+import TauCeti.Analysis.Contour.Cycle.Circle
 import TauCeti.MeasureTheory.Integral.Circle.Integral
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.InterBall
@@ -110,30 +112,33 @@ theorem integral_mul_conj_deriv_circleMap_eq_neg_two_mul_I_mul_integral_ball_wir
     (hball : closedBall c R ⊆ U) (hF : ContDiffOn ℝ 1 F U) :
     (∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ)) =
       (-2 * I) * ∫ z in ball c R, wirtingerDeriv F z 1 := by
-  have hFc : ContDiffOn ℝ 1 (fun z ↦ conj (F z)) U :=
-    (Complex.conjCLE : ℂ →L[ℝ] ℂ).contDiff.comp_contDiffOn hF
-  have hstokes := congrArg conj
-    (integral_ball_conjWirtingerDeriv_eq_circleIntegral (h := fun z ↦ conj (F z)) hR
-      fun z hz ↦ hFc.contDiffAt (hU.mem_nhds (hball hz)))
-  rw [← integral_conj, smul_eq_mul, map_mul, map_inv₀, map_mul, map_ofNat, conj_I,
-    circleIntegral, ← intervalIntegral.intervalIntegral_conj] at hstokes
-  have h_lhs : (∫ z in ball c R, conj (conjWirtingerDeriv (fun z ↦ conj (F z)) z 1)) =
-      ∫ z in ball c R, wirtingerDeriv F z 1 :=
-    setIntegral_congr_fun measurableSet_ball fun z _ ↦ by
-      rw [conjWirtingerDeriv_conj_comp_apply, starRingEnd_self_apply]
-  have h_rhs : (∫ θ in 0..2 * π, conj (deriv (circleMap c R) θ • conj (F (circleMap c R θ)))) =
+  set S := Contour.circleCycle c R
+  have htrace : S.IsIn U := by
+    rw [Contour.Cycle.isIn_iff, Contour.Cycle.trace_circleCycle, abs_of_nonneg hR]
+    exact sphere_subset_closedBall.trans hball
+  have hnull : S.IsNullHomologous U := by
+    rw [Contour.Cycle.isNullHomologous_iff]
+    intro z hzU
+    exact Contour.Cycle.windingNumber_circleCycle_eq_zero_of_lt_dist hR
+      (lt_of_not_ge fun hle ↦ hzU (hball (mem_closedBall.mpr hle)))
+  have hS := S.conj_integral_conj_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv
+    hU htrace hnull hF
+  rw [Contour.Cycle.integral_circleCycle, circleIntegral,
+    ← intervalIntegral.intervalIntegral_conj] at hS
+  have h_lhs : (∫ θ in 0..2 * π, conj (deriv (circleMap c R) θ • conj (F (circleMap c R θ)))) =
       ∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ) :=
     intervalIntegral.integral_congr fun θ _ ↦ by
       rw [smul_eq_mul, map_mul, starRingEnd_self_apply, mul_comm]
-  rw [h_lhs, h_rhs] at hstokes
-  have htwo : (2 : ℂ) * -I = -2 * I := by ring
-  rw [htwo] at hstokes
-  calc
-    (∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ))
-        = (-2 * I) * ((-2 * I)⁻¹ *
-            ∫ θ in 0..2 * π, F (circleMap c R θ) * conj (deriv (circleMap c R) θ)) := by
-          rw [← mul_assoc, mul_inv_cancel₀ (mul_ne_zero (by norm_num) I_ne_zero), one_mul]
-    _ = (-2 * I) * ∫ z in ball c R, wirtingerDeriv F z 1 := by rw [hstokes]
+  have h_rhs : (∫ z in U, (S.windingWeight z : ℂ) * wirtingerDeriv F z 1) =
+      ∫ z in ball c R, wirtingerDeriv F z 1 := by
+    have hwt : (fun z ↦ (S.windingWeight z : ℂ) * wirtingerDeriv F z 1) =
+        (ball c R).indicator fun z ↦ wirtingerDeriv F z 1 := by
+      ext z
+      rw [Contour.Cycle.windingWeight_circleCycle c hR]
+      by_cases hz : z ∈ ball c R <;> simp [hz]
+    rw [hwt, setIntegral_indicator measurableSet_ball,
+      inter_eq_right.mpr (ball_subset_closedBall.trans hball)]
+  rwa [h_lhs, h_rhs] at hS
 
 section Product
 

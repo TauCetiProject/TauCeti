@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Contour.Cycle.Basic
 public import TauCeti.Analysis.Contour.Winding.UnboundedComponent
+import TauCeti.Analysis.Contour.Cycle.Trace
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.LocallyConstant
 
 /-!
@@ -27,9 +28,9 @@ the cycle, and hence vanishes on every unbounded connected component of the comp
 ## Main results
 
 * `TauCeti.Contour.Cycle.windingWeight` is the real index set to zero on the trace;
-  `hasCompactSupport_windingWeight`, `indicator_windingWeight_eq_self`, and
-  `tsupport_windingWeight_subset` characterize its support and its restriction to a null-homology
-  domain.
+  `hasCompactSupport_windingWeight`, `windingWeight_sub_ae`, `indicator_windingWeight_eq_self`, and
+  `tsupport_windingWeight_subset` characterize its support, additivity a.e., and restriction to a
+  null-homology domain.
 * `TauCeti.Contour.Cycle.windingNumber_eq_integral_of_not_mem_trace` identifies the winding number
   off the trace with the normalized ordinary cycle integral of the Cauchy kernel.
 * `TauCeti.Contour.Cycle.exists_int_windingNumber_of_not_mem_trace` proves integer-valuedness off
@@ -275,6 +276,17 @@ theorem windingWeight_eq_zero_of_mem (C : Contour.Cycle) {z : ℂ} (hz : z ∈ t
 theorem windingWeight_eq_of_notMem (C : Contour.Cycle) {z : ℂ} (hz : z ∉ trace C) :
     C.windingWeight z = (windingNumber z C).re :=
   indicator_of_mem hz _
+
+/-- Almost everywhere, the trace-zero winding weight of `C - D` equals
+`C.windingWeight - D.windingWeight`. -/
+theorem windingWeight_sub_ae (C D : Cycle) :
+    (C - D).windingWeight =ᵐ[volume] C.windingWeight - D.windingWeight := by
+  have hae (E : Cycle) : ∀ᵐ z ∂volume, z ∉ trace E :=
+    compl_mem_ae_iff.mpr (E.addHaar_trace_eq_zero volume)
+  filter_upwards [hae C, hae D] with z hzC hzD
+  have hzCD : z ∉ trace (C - D) := fun h ↦ (trace_sub_subset C D h).elim hzC hzD
+  rw [windingWeight_eq_of_notMem _ hzCD, Pi.sub_apply,
+    windingWeight_eq_of_notMem _ hzC, windingWeight_eq_of_notMem _ hzD, map_sub, Complex.sub_re]
 
 /-- The actual real cycle index, set to zero on its trace, has compact support. -/
 theorem hasCompactSupport_windingWeight (C : Contour.Cycle) :

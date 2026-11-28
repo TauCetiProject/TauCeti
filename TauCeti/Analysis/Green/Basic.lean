@@ -20,7 +20,10 @@ field with components `P, Q` uses the real 1-form `P dx + Q dy`; its curl is `�
 The raw-curve integrand agrees with Mathlib's `curveIntegral` on a `Path`, including for paths
 whose derivative is defined only almost everywhere. Its integral is unchanged by the affine
 normalization of the parameter interval to `[0, 1]`
-(`TauCeti.Green.integral_circulationFun_comp_lineMap`).
+(`TauCeti.Green.integral_circulationFun_comp_lineMap`), and complex contour integrands
+`γ' t * F (γ t)` and `F (γ t) * conj (γ' t)` decompose into planar circulation integrands
+(`TauCeti.deriv_mul_eq_circulationFun`, `TauCeti.re_deriv_mul_eq_circulationFun`,
+`TauCeti.im_deriv_mul_eq_circulationFun`, `TauCeti.mul_conj_deriv_eq_circulationFun`).
 
 These conventions fix the signs for planar Green identities.
 -/
@@ -165,3 +168,50 @@ theorem integral_circulationFun_comp_lineMap {γ : ℝ → ℂ} {a b : ℝ} {P Q
   simpa using this
 
 end TauCeti.Green
+
+namespace TauCeti
+
+/-- Along any curve `γ`, `γ' t * F (γ t)` decomposes into the planar circulation integrands of
+`(Re F, -Im F)` and `(Im F, Re F)`. -/
+theorem deriv_mul_eq_circulationFun (F : ℂ → ℂ) (γ : ℝ → ℂ) (t : ℝ) :
+    deriv γ t * F (γ t) =
+      (Green.circulationFun (fun z ↦ (F z).re) (fun z ↦ -(F z).im) γ t : ℂ) +
+        Complex.I * (Green.circulationFun (fun z ↦ (F z).im) (fun z ↦ (F z).re) γ t : ℂ) := by
+  apply Complex.ext <;>
+    simp only [Green.circulationFun, Complex.add_re, Complex.add_im, Complex.ofReal_re,
+      Complex.ofReal_im, Complex.mul_re, Complex.mul_im, Complex.I_re, Complex.I_im] <;> ring
+
+/-- Along any curve `γ`, the real part of `γ' t * F (γ t)` is the planar circulation integrand of
+`(Re F, -Im F)`. -/
+theorem re_deriv_mul_eq_circulationFun (F : ℂ → ℂ) (γ : ℝ → ℂ) (t : ℝ) :
+    (deriv γ t * F (γ t)).re =
+      Green.circulationFun (fun z ↦ (F z).re) (fun z ↦ -(F z).im) γ t := by
+  rw [deriv_mul_eq_circulationFun]; simp
+
+/-- Along any curve `γ`, the imaginary part of `γ' t * F (γ t)` is the planar circulation integrand
+of `(Im F, Re F)`. -/
+theorem im_deriv_mul_eq_circulationFun (F : ℂ → ℂ) (γ : ℝ → ℂ) (t : ℝ) :
+    (deriv γ t * F (γ t)).im =
+      Green.circulationFun (fun z ↦ (F z).im) (fun z ↦ (F z).re) γ t := by
+  rw [deriv_mul_eq_circulationFun]; simp
+
+/-- Along any curve `γ`, `F (γ t) * conj (γ' t)` decomposes into the planar circulation integrands
+of `(Re F, Im F)` and `(Im F, -Re F)`, corresponding to
+`F dbar z = (u dx + v dy) + i (v dx - u dy)`. -/
+theorem mul_conj_deriv_eq_circulationFun (F : ℂ → ℂ) (γ : ℝ → ℂ) (t : ℝ) :
+    F (γ t) * (starRingEnd ℂ) (deriv γ t) =
+      (Green.circulationFun (fun z ↦ (F z).re) (fun z ↦ (F z).im) γ t : ℂ) +
+        Complex.I * (Green.circulationFun (fun z ↦ (F z).im) (fun z ↦ -(F z).re) γ t : ℂ) := by
+  have h := congrArg (starRingEnd ℂ)
+    (deriv_mul_eq_circulationFun (fun z ↦ (starRingEnd ℂ) (F z)) γ t)
+  have hc : -Green.circulationFun (fun z ↦ -(F z).im) (fun z ↦ (F z).re) γ t =
+      Green.circulationFun (fun z ↦ (F z).im) (fun z ↦ -(F z).re) γ t := by
+    simp only [Green.circulationFun]; ring
+  simp only [map_mul, map_add, starRingEnd_self_apply, Complex.conj_ofReal, Complex.conj_I,
+    Complex.conj_re, Complex.conj_im, neg_neg,
+    mul_comm ((starRingEnd ℂ) (deriv γ t)) (F (γ t))] at h
+  rw [h, ← hc]
+  push_cast
+  ring
+
+end TauCeti

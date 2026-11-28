@@ -12,7 +12,6 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import TauCeti.MeasureTheory.Integral.NormRpow
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-import Mathlib.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Function.Lp.Translation
 

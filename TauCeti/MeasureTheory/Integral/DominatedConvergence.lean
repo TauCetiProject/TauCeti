@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
-import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
@@ -65,9 +64,6 @@ integrated norms are summable is integrable.
   functions whose integrated norms are summable is integrable.
 * `TendstoUniformlyOn.tendsto_intervalIntegral_comp`: if `F i → f` uniformly on `[[a, b]]`, then
   `∫ g(t, F i t) dt → ∫ g(t, f t) dt` over `a..b` for every jointly continuous `g`.
-* `MeasureTheory.IntegrableOn.tendsto_integral_sdiff_closedBall_nhdsGT`: excising a shrinking
-  closed ball around a point `ξ` that is null for `μ.restrict Δ` recovers `∫ z in Δ, h z ∂μ` as
-  `ε → 0⁺`.
 -/
 
 public section
@@ -465,20 +461,3 @@ theorem TendstoUniformlyOn.tendsto_intervalIntegral_comp {ι β E : Type*} [Unif
     (continuousOn_id.prodMk (h.continuousOn hF.frequently)))
     |>.comp_tendstoUniformlyOn (g := uncurry g) (fun _ _ ↦ hg.continuousAt)
       ((TauCeti.tendstoUniformlyOn_const id l _).prodMk_same h)
-
-open Filter MeasureTheory Topology Set Metric in
-/-- Excising a shrinking closed ball around a point `ξ` with `(μ.restrict Δ) {ξ} = 0` recovers the
-set integral over `Δ` as the radius tends to `0⁺`. -/
-theorem MeasureTheory.IntegrableOn.tendsto_integral_sdiff_closedBall_nhdsGT {X E : Type*}
-    [MetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {μ : Measure X} {Δ : Set X} {h : X → E}
-    (hh : IntegrableOn h Δ μ) {ξ : X} (hξ : (μ.restrict Δ) {ξ} = 0) :
-    Tendsto (fun ε ↦ ∫ z in Δ \ closedBall ξ ε, h z ∂μ) (𝓝[>] 0) (𝓝 (∫ z in Δ, h z ∂μ)) := by
-  have hcov : AECover (μ.restrict Δ) (𝓝[>] (0 : ℝ)) (fun ε ↦ (closedBall ξ ε)ᶜ) :=
-    ⟨by filter_upwards [compl_mem_ae_iff.mpr hξ] with z hz
-        filter_upwards [Ioo_mem_nhdsGT (dist_pos.mpr hz)] with ε hε
-        simpa [mem_closedBall] using hε.2,
-     fun _ ↦ isClosed_closedBall.measurableSet.compl⟩
-  simpa only [Measure.restrict_restrict isClosed_closedBall.measurableSet.compl,
-    Set.inter_comm, ← Set.sdiff_eq] using hcov.integral_tendsto_of_countably_generated hh
-

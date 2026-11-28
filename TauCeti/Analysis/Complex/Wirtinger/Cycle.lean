@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import TauCeti.Analysis.Green.Cycle
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Normed.Module.Dual
+import TauCeti.Analysis.Green.WindingWeight.Cycle
 
 /-!
 # Complex Green–Stokes formulas on contour cycles
@@ -30,13 +31,14 @@ circulation formula on contour cycles (under the same `U`, `C.IsIn U`, `C.IsNull
 
 ## Main results
 
-* `TauCeti.re_deriv_mul_eq_circulationFun`, `im_deriv_mul_eq_circulationFun`,
-  `TauCeti.Contour.Cycle.re_integral_eq_sum_circulationFun`, `im_integral_eq_sum_circulationFun`
 * `TauCeti.curl_re_neg_im_eq_neg_two_mul_im_conjWirtingerDeriv`,
   `curl_im_re_eq_two_mul_re_conjWirtingerDeriv`
+* `TauCeti.Contour.Cycle.integrableOn_windingWeight_smul_conjWirtingerDeriv`,
+  `TauCeti.Contour.Cycle.integrableOn_windingWeight_smul_wirtingerDeriv`
 * `TauCeti.Contour.Cycle.integral_eq_two_mul_I_mul_integral_windingWeight_conjWirtingerDeriv`,
   `TauCeti.Contour.Cycle.integral_eq_two_mul_I_smul_integral_windingWeight_conjWirtingerDeriv`
-* `Contour.Cycle.circulation_dzBar_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv`
+* `Contour.Cycle.conj_integral_conj_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv`,
+  `Contour.Cycle.circulation_dzBar_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv`
 
 ## References
 
@@ -54,79 +56,6 @@ open Complex ComplexConjugate Filter MeasureTheory Metric Set
 open scoped Interval Real Topology
 
 namespace TauCeti
-
-/-! ### Coordinate comparison between complex contour integrands and planar circulation -/
-
-/-- Along any curve `γ`, the real part of `γ' t * F (γ t)` is the planar circulation integrand of
-`(Re F, -Im F)`. -/
-theorem re_deriv_mul_eq_circulationFun (F : ℂ → ℂ) (γ : ℝ → ℂ) (t : ℝ) :
-    (deriv γ t * F (γ t)).re =
-      Green.circulationFun (fun z ↦ (F z).re) (fun z ↦ -(F z).im) γ t := by
-  simp only [Green.circulationFun, mul_re]; ring
-
-/-- Along any curve `γ`, the imaginary part of `γ' t * F (γ t)` is the planar circulation integrand
-of `(Im F, Re F)`. -/
-theorem im_deriv_mul_eq_circulationFun (F : ℂ → ℂ) (γ : ℝ → ℂ) (t : ℝ) :
-    (deriv γ t * F (γ t)).im =
-      Green.circulationFun (fun z ↦ (F z).im) (fun z ↦ (F z).re) γ t := by
-  simp only [Green.circulationFun, mul_im]; ring
-
-/-- Along any curve `γ`, `γ' t * F (γ t)` decomposes into the planar circulation integrands of
-`(Re F, -Im F)` and `(Im F, Re F)`. -/
-theorem deriv_mul_eq_circulationFun (F : ℂ → ℂ) (γ : ℝ → ℂ) (t : ℝ) :
-    deriv γ t * F (γ t) =
-      (Green.circulationFun (fun z ↦ (F z).re) (fun z ↦ -(F z).im) γ t : ℂ) +
-        I * (Green.circulationFun (fun z ↦ (F z).im) (fun z ↦ (F z).re) γ t : ℂ) := by
-  apply Complex.ext <;>
-    simp only [Green.circulationFun, add_re, add_im, ofReal_re, ofReal_im, mul_re, mul_im,
-      I_re, I_im] <;> ring
-
-/-- Along any curve `γ`, `F (γ t) * conj (γ' t)` decomposes into the planar circulation integrands
-of `(Re F, Im F)` and `(Im F, -Re F)`, corresponding to
-`F dbar z = (u dx + v dy) + i (v dx - u dy)`. -/
-theorem mul_conj_deriv_eq_circulationFun (F : ℂ → ℂ) (γ : ℝ → ℂ) (t : ℝ) :
-    F (γ t) * conj (deriv γ t) =
-      (Green.circulationFun (fun z ↦ (F z).re) (fun z ↦ (F z).im) γ t : ℂ) +
-        I * (Green.circulationFun (fun z ↦ (F z).im) (fun z ↦ -(F z).re) γ t : ℂ) := by
-  apply Complex.ext <;>
-    simp only [Green.circulationFun, add_re, add_im, ofReal_re, ofReal_im, mul_re, mul_im,
-      conj_re, conj_im, I_re, I_im] <;> ring
-
-namespace Contour.Cycle
-
-/-- When `t ↦ deriv γ t • F (γ t)` is interval-integrable along every curve `γ` in the support
-of `C`, the real part of `C.integral F` equals the coefficient-weighted sum of the real
-circulations of `(Re F, -Im F)` over the supported generators. -/
-theorem re_integral_eq_sum_circulationFun (C : Cycle) {F : ℂ → ℂ}
-    (hF : ∀ γ ∈ FreeAddCommGroup.support C,
-      IntervalIntegrable (fun t ↦ deriv γ t • F (γ t)) volume γ.a γ.b) :
-    (C.integral F).re =
-      ∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℝ) *
-        ∫ t in γ.a..γ.b, Green.circulationFun (fun z ↦ (F z).re) (fun z ↦ -(F z).im) γ t := by
-  rw [integral_eq_sum_support, Complex.re_sum]
-  refine Finset.sum_congr rfl fun γ hγ ↦ ?_
-  rw [← Complex.reCLM_apply, map_zsmul, zsmul_eq_mul,
-    ← Complex.reCLM.intervalIntegral_comp_comm (hF γ hγ)]
-  exact congrArg _ (intervalIntegral.integral_congr fun t _ ↦
-    re_deriv_mul_eq_circulationFun F γ t)
-
-/-- When `t ↦ deriv γ t • F (γ t)` is interval-integrable along every curve `γ` in the support
-of `C`, the imaginary part of `C.integral F` equals the coefficient-weighted sum of the real
-circulations of `(Im F, Re F)` over the supported generators. -/
-theorem im_integral_eq_sum_circulationFun (C : Cycle) {F : ℂ → ℂ}
-    (hF : ∀ γ ∈ FreeAddCommGroup.support C,
-      IntervalIntegrable (fun t ↦ deriv γ t • F (γ t)) volume γ.a γ.b) :
-    (C.integral F).im =
-      ∑ γ ∈ FreeAddCommGroup.support C, (FreeAddCommGroup.coeff γ C : ℝ) *
-        ∫ t in γ.a..γ.b, Green.circulationFun (fun z ↦ (F z).im) (fun z ↦ (F z).re) γ t := by
-  rw [integral_eq_sum_support, Complex.im_sum]
-  refine Finset.sum_congr rfl fun γ hγ ↦ ?_
-  rw [← Complex.imCLM_apply, map_zsmul, zsmul_eq_mul,
-    ← Complex.imCLM.intervalIntegral_comp_comm (hF γ hγ)]
-  exact congrArg _ (intervalIntegral.integral_congr fun t _ ↦
-    im_deriv_mul_eq_circulationFun F γ t)
-
-end Contour.Cycle
 
 /-! ### Planar curls of the `dz` and `dbar z` coordinate pairs -/
 
@@ -265,7 +194,11 @@ theorem integral_eq_two_mul_I_smul_integral_windingWeight_conjWirtingerDeriv
   · rw [integral_of_not_completeSpace hE, MeasureTheory.integral_of_not_completeSpace hE,
       smul_zero]
 
-private theorem conj_integral_conj_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv
+/-- **Dual complex Green formula for `F dbar z` on a contour cycle.** For `F : ℂ → ℂ` real `C¹`
+on an open set `U` and a cycle `C` in `U` that is null-homologous in `U`,
+`conj (C.integral (fun z ↦ conj (F z)))` equals
+`(-2 * I) * ∫ z in U, C.windingWeight z * wirtingerDeriv F z 1`. -/
+theorem conj_integral_conj_eq_neg_two_mul_I_mul_integral_windingWeight_wirtingerDeriv
     (C : Cycle) {U : Set ℂ} {F : ℂ → ℂ} (hU : IsOpen U) (htrace : C.IsIn U)
     (hnull : C.IsNullHomologous U) (hF : ContDiffOn ℝ 1 F U) :
     conj (C.integral (fun z ↦ conj (F z))) =
