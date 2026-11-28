@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+public import Mathlib.Topology.FiberBundle.Constructions
 public import TauCeti.Analysis.Calculus.Jet.FirstOrder
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Topology.VectorBundle.Trivialization
@@ -68,6 +69,10 @@ change of charts.
   (`TauCeti.FirstJetBundle.ofDeriv_trivial`).
 * `TauCeti.FirstJetBundle.exists_contMDiffAt_jet_eq`: every first jet is the first jet of a
   section that is `C^n` at the base point.
+
+* `TopologicalSpace.Opens.localRep_restrict_eq_of_mem_extChartAt_target`: local representatives
+  agree with those of restricted sections on inherited chart targets, by Mathlib's pullback
+  trivialization and `TopologicalSpace.Opens.coe_extChartAt_symm_apply`.
 
 The construction follows Mathlib's `tangentBundleCore`: the bundle is indexed by the points of `M`,
 and derivatives in charts are taken within `range I`, so manifolds with boundary are allowed.
@@ -526,6 +531,33 @@ theorem localRep_apply (s : ∀ x, V x) (i : M) (z : E) :
     localRep I F s i z =
       (trivializationAt F V i ⟨(extChartAt I i).symm z, s ((extChartAt I i).symm z)⟩).2 :=
   (rfl)
+
+variable {I F} in
+/-- The local representative of a restricted section agrees with the ambient representative
+on the inherited extended chart target, using Mathlib's `Bundle.Trivialization.pullback` and
+`TopologicalSpace.Opens.coe_extChartAt_symm_apply`. -/
+theorem _root_.TopologicalSpace.Opens.localRep_restrict_eq_of_mem_extChartAt_target
+    (U : TopologicalSpace.Opens M) (s : ∀ y, V y) (x : U)
+    {z : E} (hz : z ∈ (extChartAt I x).target) :
+    haveI : ∀ y, Nonempty (V y) := fun y ↦ ⟨s y⟩
+    localRep I F (V := (⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)
+        (fun y : U ↦ s (y : M)) x z = localRep I F s (x : M) z := by
+  let : ∀ y, Nonempty (V y) := fun y ↦ ⟨s y⟩
+  let f : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+  let t : ∀ y : U, (f *ᵖ V) y := fun y ↦ s (y : M)
+  let e := trivializationAt F V (x : M)
+  let y := (extChartAt I x).symm z
+  have hpull : trivializationAt F (f *ᵖ V) x = e.pullback f :=
+    FiberBundle.pullback_trivializationAt' (F := F) (E := V) f x
+  calc
+    localRep I F t x z = (trivializationAt F (f *ᵖ V) x ⟨y, t y⟩).2 :=
+      localRep_apply I F t x z
+    _ = (e ⟨(y : M), s (y : M)⟩).2 :=
+      (congrArg (fun e' ↦ (e' ⟨y, t y⟩).2) hpull).trans
+        (congrArg Prod.snd (e.pullback_apply f ⟨y, t y⟩))
+    _ = localRep I F s (x : M) z :=
+      (congrArg (fun w : M ↦ (e ⟨w, s w⟩).2) (U.coe_extChartAt_symm_apply x hz)).trans
+        (localRep_apply I F s (x : M) z).symm
 
 /-- At the image of a point of the chart domain, the local representative is the trivialized
 value of the section. -/

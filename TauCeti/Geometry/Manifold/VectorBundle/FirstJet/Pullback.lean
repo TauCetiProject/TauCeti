@@ -26,8 +26,6 @@ pullback of the trivialization of `V` at `f x`), and proves that it is the pullb
 
 ## Main definitions and results
 
-* `TopologicalSpace.Opens.localRep_restrict_eq_of_mem_extChartAt_target`: local
-  representatives of sections agree with those of their restrictions on inherited chart targets.
 * `TauCeti.FirstJetBundle.pullbackMap f x`: the continuous linear map
   `J¹V_{f x} →L[𝕜] J¹(f*V)_x`.
 * `TauCeti.FirstJetBundle.pullbackMap_jet`: it sends `j¹s(f x)` to `j¹(s ∘ f)(x)` for a section
@@ -68,32 +66,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   (I : ModelWithCorners 𝕜 E H) {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H']
   (J : ModelWithCorners 𝕜 E' H') {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-
-section OpenRestriction
-
-variable {I} {F : Type*} [TopologicalSpace F] {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, TopologicalSpace (V x)] [∀ x, Nonempty (V x)] [FiberBundle F V]
-
-/-- The local representative of a restricted section agrees with the ambient representative
-on the target of the inherited extended chart. -/
-theorem _root_.TopologicalSpace.Opens.localRep_restrict_eq_of_mem_extChartAt_target
-    (U : Opens M) (s : ∀ y, V y) (x : U) {z : E} (hz : z ∈ (extChartAt I x).target) :
-    localRep I F (V := ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V))
-        (fun y : U ↦ s (y : M)) x z = localRep I F s (x : M) z := by
-  let ι : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
-  let t : ∀ y, (ι *ᵖ V) y := fun y ↦ s (y : M)
-  let e := trivializationAt F V (x : M)
-  let y := (extChartAt I x).symm z
-  calc
-    localRep I F t x z = (e.pullback ι ⟨y, t y⟩).2 := localRep_apply I F t x z
-    _ = (e ⟨(y : M), s (y : M)⟩).2 := congrArg Prod.snd (e.pullback_apply ι ⟨y, t y⟩)
-    _ = localRep I F s (x : M) z :=
-      (congrArg (fun w : M ↦ (e ⟨w, s w⟩).2) (U.coe_extChartAt_symm_apply x hz)).trans
-        (localRep_apply I F s (x : M) z).symm
-
-end OpenRestriction
-
-variable (F : Type*) [NormedAddCommGroup F] [NormedSpace 𝕜 F] [IsManifold I 1 M] [IsManifold J 1 N]
+  (F : Type*) [NormedAddCommGroup F] [NormedSpace 𝕜 F] [IsManifold I 1 M] [IsManifold J 1 N]
 
 section
 
