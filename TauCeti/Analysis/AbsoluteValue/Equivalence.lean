@@ -32,6 +32,8 @@ two such that are equivalent are equal.
 * `Rat.AbsoluteValue.not_isNonarchimedean_real`: the real absolute value on `ℚ` is archimedean.
 * `AbsoluteValue.isNontrivial_of_forall_natCast_eq`: agreement on natural-number casts transfers
   nontriviality from an absolute value on `ℚ` to one on a semiring.
+* `AbsoluteValue.isEquiv_iff_le_one_iff`: two absolute values on a field are equivalent exactly
+  when they have the same closed unit ball.
 -/
 
 public section
@@ -148,5 +150,18 @@ theorem _root_.AbsoluteValue.isNontrivial_of_forall_natCast_eq {F : Type*} [Semi
   obtain ⟨n, hn, hn'⟩ := ha.exists_nat_ne_one
   exact ⟨n, v.ne_zero_iff.mp (by rw [hva]; exact a.ne_zero (Nat.cast_ne_zero.mpr hn)),
     by rwa [hva]⟩
+
+/-- Two absolute values on a field are equivalent exactly when they have the same closed unit
+ball. This is the closed-ball form of Mathlib's `AbsoluteValue.isEquiv_iff_lt_one_iff`. -/
+theorem _root_.AbsoluteValue.isEquiv_iff_le_one_iff {R S : Type*} [Field R] [Semifield S]
+    [LinearOrder S] [IsStrictOrderedRing S] {v w : AbsoluteValue R S} :
+    v.IsEquiv w ↔ ∀ x, v x ≤ 1 ↔ w x ≤ 1 := by
+  refine ⟨fun h _ ↦ h.le_one_iff, fun h ↦ AbsoluteValue.isEquiv_iff_lt_one_iff.mpr fun x ↦ ?_⟩
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  -- For `x ≠ 0`, `u x < 1` says that `u x⁻¹ ≤ 1` fails.
+  have h_inv (u : AbsoluteValue R S) : u x < 1 ↔ ¬u x⁻¹ ≤ 1 := by
+    rw [map_inv₀, inv_le_one₀ (u.pos hx), not_le]
+  rw [h_inv, h_inv, h]
 
 end TauCeti
