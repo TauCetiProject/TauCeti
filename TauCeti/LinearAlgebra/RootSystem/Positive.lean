@@ -37,8 +37,9 @@ positive root is a nonnegative integer combination of the simple coroots.
 ## Main results
 
 * `TauCeti.image_reflectionPerm_self_posRoots` says root negation exchanges the two sets.
-* `TauCeti.posRoots_map` and `TauCeti.negRoots_map` say an equivalence of root pairings carries
-  the positive and negative roots of a base to those of the transported base.
+* `TauCeti.posRoots_map`, `TauCeti.negRoots_map`, and `TauCeti.posRootCone_map` say an
+  equivalence of root pairings carries the positive roots, negative roots, and positive root cone
+  of a base to those of the transported base.
 * `TauCeti.ncard_posRoots_eq_natCard_div_two` says that, for a finite root index type, exactly
   half of the roots are positive, and `TauCeti.posRootsFinset_eq_filter`,
   `TauCeti.card_posRootsFinset` read `TauCeti.posRootsFinset` as the filter of the positivity
@@ -453,6 +454,28 @@ theorem mem_posRootCone_iff_exists_nat_of_bijOn {κ : Type*} [Fintype κ] {e : �
   · rintro ⟨c, rfl⟩
     exact (posRootCone P b).sum_mem fun i _ ↦ (posRootCone P b).nsmul_mem
       (AddSubmonoid.subset_closure ⟨e i, he.mapsTo trivial, rfl⟩) _
+
+section Map
+
+variable {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
+  {P₂ : RootPairing ι₂ R M₂ N₂}
+
+omit [CharZero R] in
+/-- An equivalence of root pairings carries the positive root cone of a base to that of the
+transported base. -/
+theorem posRootCone_map (e : P.Equiv P₂) :
+    posRootCone P₂ (b.map e) =
+      (posRootCone P b).map (e.weightEquiv : M →ₗ[R] M₂).toAddMonoidHom := by
+  classical
+  rw [posRootCone_def, posRootCone_def, AddMonoidHom.map_mclosure, RootPairing.Base.support_map_eq]
+  congr 1
+  ext v
+  simp only [Set.mem_image, Finset.mem_coe, Finset.mem_image, exists_exists_and_eq_and]
+  exact exists_congr fun i ↦ and_congr_right fun _ ↦ by
+    simp [LinearMap.toAddMonoidHom_coe, RootPairing.Equiv.weightEquiv_apply,
+      RootPairing.Hom.root_weightMap_apply]
+
+end Map
 
 /-- Every positive root lies in the positive root cone. -/
 theorem root_mem_posRootCone_of_mem_posRoots {i : ι} (hi : i ∈ posRoots P b) :

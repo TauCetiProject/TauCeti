@@ -31,6 +31,7 @@ permutations of products and powers of automorphisms is recorded.
 
 * `RootPairing.Equiv.autCongr`: conjugation by an equivalence, as a group isomorphism
   `P.Aut ≃* Q.Aut`.
+* `RootPairing.equivMap`: the canonical equivalence `P.Equiv (P.map e f g)`.
 * `RootPairing.mapDual` and `RootPairing.equivMapDual`: pushforward of `P` along `e : ι ≃ ι₂` and
   `f : M ≃ₗ[R] M₂` onto `M₂` paired with `Module.Dual R M₂` by evaluation, and the canonical
   equivalence `P.Equiv (P.mapDual e f)`.
@@ -119,6 +120,11 @@ Not a `simp` lemma: it would rewrite the left-hand side of the `simp` lemma
 `RootPairing.Equiv.autCongr_smul_index`, which is stated for the action. -/
 theorem smul_index_eq_indexEquiv (g : Aut P) (i : ι) :
     g • i = g.indexEquiv i :=
+  (rfl)
+
+/-- The action of the automorphism group on weight vectors is through `weightEquiv`. -/
+theorem smul_eq_weightEquiv (g : Aut P) (x : M) :
+    g • x = g.weightEquiv x :=
   (rfl)
 
 noncomputable section Conjugation
@@ -274,6 +280,73 @@ end Pow
 end RootPairing.Equiv
 
 namespace RootPairing
+
+section Map
+
+variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
+
+/-- The canonical equivalence of root pairings from `P` to `P.map e f g`. -/
+def equivMap (P : RootPairing ι R M N) (e : ι ≃ ι₂) (f : M ≃ₗ[R] M₂) (g : N ≃ₗ[R] N₂) :
+    P.Equiv (P.map e f g) where
+  weightMap := f.toLinearMap
+  coweightMap := g.symm.toLinearMap
+  indexEquiv := e
+  weight_coweight_transpose := by ext x y; simp [RootPairing.map]
+  root_weightMap := by ext i; simp [RootPairing.map]
+  coroot_coweightMap := by ext i; simp [RootPairing.map]
+  bijective_weightMap := f.bijective
+  bijective_coweightMap := g.symm.bijective
+
+@[simp]
+theorem equivMap_weightEquiv (P : RootPairing ι R M N) (e : ι ≃ ι₂) (f : M ≃ₗ[R] M₂)
+    (g : N ≃ₗ[R] N₂) : (P.equivMap e f g).weightEquiv = f :=
+  LinearEquiv.ext fun _ ↦ rfl
+
+@[simp]
+theorem equivMap_coweightEquiv (P : RootPairing ι R M N) (e : ι ≃ ι₂) (f : M ≃ₗ[R] M₂)
+    (g : N ≃ₗ[R] N₂) : (P.equivMap e f g).coweightEquiv = g.symm :=
+  LinearEquiv.ext fun _ ↦ rfl
+
+@[simp]
+theorem equivMap_indexEquiv (P : RootPairing ι R M N) (e : ι ≃ ι₂) (f : M ≃ₗ[R] M₂)
+    (g : N ≃ₗ[R] N₂) : (P.equivMap e f g).indexEquiv = e :=
+  (rfl)
+
+/-- Reindexing and keeping both spaces unchanged preserves reflections. -/
+@[simp]
+theorem map_reflection_refl (P : RootPairing ι R M N) (e : ι ≃ ι₂) (i : ι₂) :
+    (P.map e (LinearEquiv.refl R M) (LinearEquiv.refl R N)).reflection i =
+      P.reflection (e.symm i) := by
+  ext x
+  simp [RootPairing.map, reflection_apply, coroot']
+
+/-- Reindexing and keeping both spaces unchanged preserves coreflections. -/
+@[simp]
+theorem map_coreflection_refl (P : RootPairing ι R M N) (e : ι ≃ ι₂) (i : ι₂) :
+    (P.map e (LinearEquiv.refl R M) (LinearEquiv.refl R N)).coreflection i =
+      P.coreflection (e.symm i) := by
+  ext x
+  simp [RootPairing.map, coreflection_apply, root']
+
+/-- Reindexing and keeping both spaces unchanged preserves the set of reflections. -/
+@[simp]
+theorem range_map_reflection_refl (P : RootPairing ι R M N) (e : ι ≃ ι₂) :
+    Set.range (P.map e (LinearEquiv.refl R M) (LinearEquiv.refl R N)).reflection =
+      Set.range P.reflection := by
+  rw [funext (P.map_reflection_refl e)]
+  exact e.symm.surjective.range_comp P.reflection
+
+/-- Reindexing and keeping both spaces unchanged preserves the set of coreflections. -/
+@[simp]
+theorem range_map_coreflection_refl (P : RootPairing ι R M N) (e : ι ≃ ι₂) :
+    Set.range (P.map e (LinearEquiv.refl R M) (LinearEquiv.refl R N)).coreflection =
+      Set.range P.coreflection := by
+  rw [funext (P.map_coreflection_refl e)]
+  exact e.symm.surjective.range_comp P.coreflection
+
+end Map
+
 section MapDual
 
 variable {ι ι₂ R M N M₂ : Type*} [CommRing R] [AddCommGroup M] [Module R M]
