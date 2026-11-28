@@ -47,6 +47,10 @@ only along a null frontier, is itself a fundamental domain.
   translated frontiers, whose translates cover almost everything and have pairwise disjoint
   interiors, is a fundamental domain. This is how a closed tile of a tessellation, such
   as a fundamental polygon, becomes a measurable fundamental domain.
+* `MeasureTheory.IsFundamentalDomain.of_existsUnique_div`,
+  `MeasureTheory.IsAddFundamentalDomain.of_existsUnique_sub`: in a commutative group, a
+  null-measurable set meeting each coset of the subgroup swept out by a map `φ` exactly once, in
+  the form `a / φ x` (`a - φ x`), is a fundamental domain.
 * `MeasureTheory.IsFundamentalDomain.congr_set`: a set a.e. equal to a fundamental domain is one.
 * `MeasureTheory.IsFundamentalDomain.measure_le_of_aedisjoint_smul`: a set a.e. disjoint from its
   nonidentity translates has measure at most that of a fundamental domain.
@@ -276,6 +280,30 @@ theorem IsFundamentalDomain.iUnion_mul_out_inv_smul {G α : Type*} [Group G] [Me
     (r := fun v : Γ₂ ⧸ (ConjAct.toConjAct δ⁻¹ • Γ₁).subgroupOf Γ₂ ↦ (v.out)⁻¹)
     (fun v ↦ hs.nullMeasurableSet_smul _) <| by
       simpa only [inv_inv, QuotientGroup.out_eq', Function.id_def] using Function.bijective_id
+
+/-- **A set meeting every coset exactly once is a fundamental domain.** In a commutative group
+`α`, a null-measurable set `s` containing exactly one quotient `a / φ x` of every point `a` by
+the values of a map `φ` is a fundamental domain for the subgroup `S` swept out by `φ`, acting by
+multiplication. -/
+@[to_additive /-- **A set meeting every coset exactly once is an additive fundamental domain.**
+In a commutative additive group `α`, a null-measurable set `s` containing exactly one difference
+`a - φ x` of every point `a` with the values of a map `φ` is an additive fundamental domain for the
+subgroup `S` swept out by `φ`, acting by addition. -/]
+theorem IsFundamentalDomain.of_existsUnique_div {A α : Type*} [CommGroup α] [MeasurableSpace α]
+    {μ : Measure α} (φ : A → α) {S : Subgroup α} (hS : ∀ g, g ∈ S ↔ ∃ x, φ x = g) {s : Set α}
+    (hs : NullMeasurableSet s μ) (h : ∀ a, ∃! x, a / φ x ∈ s) :
+    IsFundamentalDomain S s μ := by
+  refine .mk' hs fun a ↦ ?_
+  obtain ⟨x, hx, hxu⟩ := h a
+  refine ⟨⟨(φ x)⁻¹, inv_mem ((hS _).2 ⟨x, rfl⟩)⟩, ?_, ?_⟩
+  · simpa only [Subgroup.mk_smul, smul_eq_mul, inv_mul_eq_div] using hx
+  · rintro ⟨g, hg⟩ hg'
+    obtain ⟨y, hy⟩ := (hS _).1 (inv_mem hg)
+    have hy' : a / φ y ∈ s := by
+      rw [hy, div_inv_eq_mul, mul_comm]
+      exact hg'
+    obtain rfl := hxu y hy'
+    exact Subtype.ext (show g = (φ y)⁻¹ by rw [hy, inv_inv])
 
 /-- **A tile with disjoint interiors and null frontier is a fundamental domain.** Let `s` be a
 null-measurable set whose translates cover almost every point, all of whose translated frontiers

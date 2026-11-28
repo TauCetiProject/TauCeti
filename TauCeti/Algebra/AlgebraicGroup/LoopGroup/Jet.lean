@@ -69,6 +69,7 @@ this is the presentation of `L⁺G` as a proalgebraic group.
   subgroup `K_N(R)` of level `(X ^ N)`.
 * `TauCeti.HopfAlgebra.positiveLoopJetLimitMulEquiv_naturality`: the isomorphism with the inverse
   limit is natural in `R`.
+* `TauCeti.HopfAlgebra.positiveLoopEvalZero_naturality`: evaluation at `X = 0` is natural in `R`.
 * `TauCeti.HopfAlgebra.ker_positiveLoopEvalZero`: the kernel of evaluation at `X = 0` is `K_1(R)`.
 * `TauCeti.HopfAlgebra.jetProjection_positiveLoopPointsMulEquiv` and
   `TauCeti.HopfAlgebra.positiveLoopPointsMulEquiv_naturality`: the points of
@@ -412,6 +413,15 @@ theorem ker_positiveLoopEvalZero :
   congr 1
   ext f
   rw [RingHom.mem_ker, RingHom.mem_ker, PowerSeries.constantCoeffAlgHom_apply]
+
+/-- **Naturality of reduction modulo `t`.** For `φ : R →ₐ[k] S`, reducing the coefficientwise
+image of a positive loop under `φ` is mapping its reduction along `φ`. -/
+theorem positiveLoopEvalZero_naturality {S : Type*} [CommRing S] [Algebra k S]
+    (φ : R →ₐ[k] S) (g : WithConv (H →ₐ[k] R⟦X⟧)) :
+    positiveLoopEvalZero k H S (AlgHom.mapValue (PowerSeries.mapAlgHom φ) g) =
+      AlgHom.mapValue φ (positiveLoopEvalZero k H R g) :=
+  WithConv.ofConv_injective <| AlgHom.ext fun h ↦ by
+    simp [AlgHom.mapValue_apply, PowerSeries.mapAlgHom_apply]
 
 end EvalZero
 

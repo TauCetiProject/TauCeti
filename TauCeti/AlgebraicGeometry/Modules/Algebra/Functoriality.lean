@@ -43,7 +43,10 @@ relative spectra over `Y` and over `X` are related under base change, is natural
   over global functions, multiplication by `c` on `q_* 𝒪_W` matching multiplication by `g^♯ c` on
   `p_* 𝒪_V`;
 * `AlgebraicGeometry.Scheme.Hom.pushforward_map_globalSectionsSmul_tensorHom_mul`: the
-  multiplication of `q_* 𝒪_W` is bilinear over the global functions of `W`;
+  multiplication of `q_* 𝒪_W` is bilinear over the global functions of `W`, and
+  `AlgebraicGeometry.Scheme.Hom.pushforward_map_globalSectionsSmul_of_eq_one` and
+  `AlgebraicGeometry.Scheme.Hom.pushforward_map_globalSectionsSmul_of_eq_zero` push forward
+  multiplication by `1` and by `0`;
 * `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso_hom_naturality`: the
   comparison `f_* (q_* 𝒪_T) ≅ (q ≫ f)_* 𝒪_T` of function algebras is natural in `T`;
 * `TauCeti.AlgebraicGeometry.overFunctions X`: the function-algebra functor `q ↦ q_* 𝒪_T` on all
@@ -271,6 +274,26 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforward_map_globalSectionsSmul_ten
   -- term.
   exact (Functor.LaxMonoidal.μ_natural_assoc (Scheme.Modules.pushforward q) _ _ _).trans
     ((congrArg (_ ≫ ·) h').trans (Category.assoc _ _ _).symm)
+
+variable (q) in
+/-- Pushing forward along `q` the multiplication by a global function equal to `1` gives the
+identity. Not a `simp` lemma: `simp` proves it from `globalSectionsSmul_one` and
+`Functor.map_id`; it is stated for a function `c = 1` so that it applies to powers such as
+`c ^ 0` without rewriting under the pushforward. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforward_map_globalSectionsSmul_of_eq_one
+    (M : W.Modules) {c : Γ(W, ⊤)} (hc : c = 1) :
+    (Scheme.Modules.pushforward q).map (Scheme.Modules.globalSectionsSmul M c) = 𝟙 _ := by
+  rw [hc, Scheme.Modules.globalSectionsSmul_one]
+  exact (Scheme.Modules.pushforward q).map_id _
+
+variable (q) in
+/-- Pushing forward along `q` the multiplication by a global function equal to `0` gives the zero
+morphism. Not a `simp` lemma, for the same reason as
+`Scheme.Hom.pushforward_map_globalSectionsSmul_of_eq_one`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforward_map_globalSectionsSmul_of_eq_zero
+    (M : W.Modules) {c : Γ(W, ⊤)} (hc : c = 0) :
+    (Scheme.Modules.pushforward q).map (Scheme.Modules.globalSectionsSmul M c) = 0 := by
+  rw [hc, Scheme.Modules.globalSectionsSmul_zero, Functor.map_zero]
 
 variable {Y T T' : Scheme.{u}}
 

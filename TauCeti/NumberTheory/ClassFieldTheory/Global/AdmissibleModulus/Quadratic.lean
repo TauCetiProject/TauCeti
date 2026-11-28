@@ -29,7 +29,7 @@ For a quadratic field `E` this determines the conductor completely: its finite p
 by `|d_E|` (`finitePart_abelianConductor_of_isQuadraticExtension`), and its infinite part contains
 the real place exactly when `d_E < 0` (`mem_infinitePart_abelianConductor_iff_discr_neg`). So the
 conductor of `E/ℚ` is `(|d_E|)` for a real quadratic field
-(`abelianConductor_eq_ratFiniteModulus_of_discr_pos`) and `(|d_E|)·∞` for an imaginary one
+(`abelianConductor_eq_spanNat_of_discr_pos`) and `(|d_E|)·∞` for an imaginary one
 (`abelianConductor_eq_ratModulus_of_discr_neg`).
 
 For instance, the three quadratic subfields `ℚ(i)`, `ℚ(√2)` and `ℚ(√-2)` of `ℚ(ζ₈)` have
@@ -51,7 +51,7 @@ cyclotomic field containing them.
   of the conductor of a quadratic field is `(|d_E|)`.
 * `TauCeti.ClassFieldTheory.mem_infinitePart_abelianConductor_iff_discr_neg`: the conductor of a
   quadratic field contains the real place exactly when its discriminant is negative.
-* `TauCeti.ClassFieldTheory.abelianConductor_eq_ratFiniteModulus_of_discr_pos` and
+* `TauCeti.ClassFieldTheory.abelianConductor_eq_spanNat_of_discr_pos` and
   `TauCeti.ClassFieldTheory.abelianConductor_eq_ratModulus_of_discr_neg`: the conductor of a real
   quadratic field is `(d_E)`, and that of an imaginary quadratic field is `(|d_E|)·∞`.
 * `TauCeti.ClassFieldTheory.abelianConductor_sqrt_two`,
@@ -72,7 +72,7 @@ noncomputable section
 namespace TauCeti.ClassFieldTheory
 
 open IsDedekindDomain _root_.NumberField _root_.NumberField.InfinitePlace
-  TauCeti.GlobalNumberFields Polynomial
+  TauCeti.GlobalNumberFields _root_.Polynomial
 
 /-! ### Abelian extensions of `ℚ` -/
 
@@ -130,10 +130,12 @@ theorem mem_infinitePart_abelianConductor_iff_discr_neg (w : {w : InfinitePlace 
 
 /-- **The conductor of a real quadratic field** `E` is the modulus `(d_E)`, without the real place.
 -/
-theorem abelianConductor_eq_ratFiniteModulus_of_discr_pos (hd : 0 < discr E) :
-    abelianConductor ℚ E = ratFiniteModulus (discr E).natAbs (by omega) := by
+theorem abelianConductor_eq_spanNat_of_discr_pos (hd : 0 < discr E) :
+    have : NeZero (discr E).natAbs := ⟨by omega⟩
+    abelianConductor ℚ E = Modulus.spanNat ℚ (discr E).natAbs := by
+  have : NeZero (discr E).natAbs := ⟨by omega⟩
   refine Modulus.ext ?_ ?_
-  · rw [finitePart_abelianConductor_of_isQuadraticExtension, ratFiniteModulus_finitePart]
+  · rw [finitePart_abelianConductor_of_isQuadraticExtension, Modulus.spanNat_finitePart]
   · ext w
     simpa [mem_infinitePart_abelianConductor_iff_discr_neg] using hd.le
 
@@ -158,11 +160,11 @@ variable {K : Type} [Field K] [NumberField K] {θ : 𝓞 K}
 /-- **The conductor of `ℚ(√2)` is `(8)`**: the discriminant of `ℚ(√2)` is `8`. -/
 theorem abelianConductor_sqrt_two (hmin : minpoly ℤ θ = X ^ 2 - 2)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    abelianConductor ℚ K = ratFiniteModulus 8 (by norm_num) := by
+    abelianConductor ℚ K = Modulus.spanNat ℚ 8 := by
   have : Algebra.IsQuadraticExtension ℚ K := ⟨TauCeti.NumberField.Sqrt2.finrank_eq_two hmin hgen⟩
   have hd := TauCeti.NumberField.Sqrt2.discr_eq_eight hmin hgen
-  rw [abelianConductor_eq_ratFiniteModulus_of_discr_pos K (by omega)]
-  simp [hd]
+  rw [abelianConductor_eq_spanNat_of_discr_pos K (by omega)]
+  ext <;> simp [hd]
 
 /-- **The conductor of `ℚ(√-2)` is `(8)·∞`**: the discriminant of `ℚ(√-2)` is `-8`. -/
 theorem abelianConductor_sqrt_neg_two (hmin : minpoly ℤ θ = X ^ 2 + 2)
@@ -181,11 +183,11 @@ theorem abelianConductor_sqrt_neg_two (hmin : minpoly ℤ θ = X ^ 2 + 2)
 discriminant of `ℚ(√5)` is `5`. -/
 theorem abelianConductor_sqrt_five (hmin : minpoly ℤ θ = X ^ 2 - X - 1)
     (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤) :
-    abelianConductor ℚ K = ratFiniteModulus 5 (by norm_num) := by
+    abelianConductor ℚ K = Modulus.spanNat ℚ 5 := by
   have : Algebra.IsQuadraticExtension ℚ K := ⟨TauCeti.NumberField.Sqrt5.finrank_eq_two hmin hgen⟩
   have hd := TauCeti.NumberField.Sqrt5.discr_eq_five hmin hgen
-  rw [abelianConductor_eq_ratFiniteModulus_of_discr_pos K (by omega)]
-  simp [hd]
+  rw [abelianConductor_eq_spanNat_of_discr_pos K (by omega)]
+  ext <;> simp [hd]
 
 end Examples
 
