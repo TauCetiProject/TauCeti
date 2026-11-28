@@ -7,11 +7,10 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DeterminantK1
 public import TauCeti.RingTheory.DedekindDomain.Circle
+public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.RotationLoop
+public import TauCeti.Topology.Circle.CoordinateRing
 
-import Mathlib.RingTheory.Complex
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.RotationLoop
-import TauCeti.Topology.Circle.CoordinateRing
 
 /-!
 # Nontriviality of `SK₁` for the algebraic circle
@@ -40,7 +39,10 @@ propagates nonvanishing from `ℝ` to `k`.
 
 ## Main results
 
+* `TauCeti.coe_circleRotation`: the underlying matrix of `circleRotation k` is `!![x, -y; y, x]`.
 * `TauCeti.circleRotation_mul_transpose`: `circleRotation k` is algebraically orthogonal.
+* `TauCeti.evalGL_stabilizeGL_circleRotation`: evaluating the stabilized rotation matrix over
+  `CircleRing ℝ` on the unit circle gives `circleRotationLoop`.
 * `TauCeti.map_circleRotation`: base change on `CircleRing` preserves `circleRotation`.
 * `TauCeti.circleRotation_notMem_elementarySubgroup`: no stabilization of `circleRotation k` is
   elementary when `k` admits `k →+* ℝ`.
@@ -79,6 +81,12 @@ def circleRotation : Matrix.SpecialLinearGroup (Fin 2) (CircleRing k) :=
 
 variable {k}
 
+/-- The underlying matrix of `circleRotation k` is `!![x, -y; y, x]`. -/
+theorem coe_circleRotation :
+    (circleRotation k : Matrix (Fin 2) (Fin 2) (CircleRing k)) =
+      !![CircleRing.x, -CircleRing.y; CircleRing.y, CircleRing.x] :=
+  (rfl)
+
 /-- Entry `(0, 0)` of `circleRotation k` is `x`. -/
 @[simp]
 theorem circleRotation_apply_zero_zero :
@@ -109,34 +117,25 @@ theorem circleRotation_mul_transpose :
       (circleRotation k : Matrix (Fin 2) (Fin 2) (CircleRing k))ᵀ = 1 := by
   have hT : (circleRotation k : Matrix (Fin 2) (Fin 2) (CircleRing k))ᵀ =
       adjugate (circleRotation k : Matrix (Fin 2) (Fin 2) (CircleRing k)) := by
-    change !![CircleRing.x, -CircleRing.y; CircleRing.y, CircleRing.x]ᵀ =
-      adjugate !![CircleRing.x, -CircleRing.y; CircleRing.y, CircleRing.x]
-    rw [Matrix.adjugate_fin_two_of, neg_neg]
-    ext i j
-    fin_cases i <;> fin_cases j <;> rfl
+    rw [coe_circleRotation, Matrix.adjugate_fin_two_of, neg_neg]
+    exact (Matrix.transposeᵣ_eq _).symm
   rw [hT, Matrix.mul_adjugate, (circleRotation k).prop, one_smul]
 
 end CircleRotation
 
 /-! ## Nonvanishing in algebraic `K₁` and `SK₁` -/
 
-private theorem evalGL_stabilizeGL_circleRotation (N : ℕ) (hN : 2 ≤ N) :
+/-- Evaluating the stabilized rotation matrix over `CircleRing ℝ` on the unit circle gives
+`circleRotationLoop`. -/
+theorem evalGL_stabilizeGL_circleRotation (N : ℕ) (hN : 2 ≤ N) :
     CircleRing.evalGL (stabilizeGL (CircleRing ℝ) hN (SpecialLinearGroup.toGL (circleRotation ℝ))) =
       circleRotationLoop hN := by
-  ext1 z
-  let φ : CircleRing ℝ →+* ℝ :=
-    ((ContinuousMap.evalAlgHom ℝ ℝ z).comp CircleRing.evalCircle).toRingHom
-  have heval : CircleRing.evalGL
-        (stabilizeGL (CircleRing ℝ) hN (SpecialLinearGroup.toGL (circleRotation ℝ))) z =
-      Units.map φ.mapMatrix.toMonoidHom
-        (stabilizeGL (CircleRing ℝ) hN (SpecialLinearGroup.toGL (circleRotation ℝ))) := by
-    ext i j
-    simp [φ]
-  rw [heval, ← stabilizeGL_map, circleRotationLoop_apply]
-  congr 1
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [φ, coe_unitsLeftMulMatrix, Algebra.leftMulMatrix_complex]
+  ext z i j
+  simp only [CircleRing.coe_evalGL_apply, coe_stabilizeGL_apply, coe_circleRotationLoop_apply]
+  split_ifs with hij
+  · rcases i with ⟨_ | _ | i, hi⟩ <;> rcases j with ⟨_ | _ | j, hj⟩ <;> simp at hij ⊢
+  · simp only [Matrix.one_apply]
+    split_ifs <;> simp
 
 private theorem circleRotation_notMem_elementarySubgroup_real (N : ℕ) (hN : 2 ≤ N) :
     stabilizeGL (CircleRing ℝ) hN (SpecialLinearGroup.toGL (circleRotation ℝ)) ∉
