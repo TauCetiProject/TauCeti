@@ -197,6 +197,25 @@ theorem orientationAt_mk (o : OrientationLift I M ι) (x : M) :
   simp only [orientationAt, Orientation.toVectorBundleOrientation_mk,
     OrientationLift.toVectorBundleOrientation_apply]
 
+/-- Mapping the tangent orientation of `Orientation.mk o` along `tangentSpaceCastModel` reads off
+the signed model orientation `if o.sign x ⟨x, _⟩ = 1 then o.modelOrientation else
+-o.modelOrientation`, including at boundary and corner points. -/
+theorem map_tangentSpaceCastModel_orientationAt_mk (o : OrientationLift I M ι) (x : M) :
+    _root_.Orientation.map ι (tangentSpaceCastModel I x).toLinearEquiv
+      ((Orientation.mk o).orientationAt x) =
+      if o.sign x ⟨x, mem_chart_source H x⟩ = 1 then
+        o.modelOrientation
+      else -o.modelOrientation := by
+  rw [orientationAt_mk]
+  -- `TangentSpace I x` is definitionally `E` and `tangentSpaceCastModel I x` is the definitional
+  -- identity across that type synonym, so `(tangentSpaceCastModel I x).toLinearEquiv` reduces to
+  -- `LinearEquiv.refl ℝ E` and `Orientation.map_refl` yields `OrientationLift.orientationAt_eq`.
+  have hcast :
+      _root_.Orientation.map ι (tangentSpaceCastModel I x).toLinearEquiv (o.orientationAt x) =
+        o.orientationAt x :=
+    DFunLike.congr_fun (_root_.Orientation.map_refl ι) (o.orientationAt x)
+  rw [hcast, OrientationLift.orientationAt_eq, OrientationLift.chartOrientation_eq_ite]
+
 @[simp]
 theorem orientationAt_neg (o : Orientation I M ι) (x : M) :
     orientationAt (-o) x = -orientationAt o x := by

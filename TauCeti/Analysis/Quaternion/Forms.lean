@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Analysis.Quaternion
+public import TauCeti.Analysis.Calculus.DifferentialForm.Flux
 public import TauCeti.Topology.Algebra.Module.Determinant
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Algebra.Order.Group.Pointwise.Interval
@@ -286,55 +287,45 @@ theorem _root_.Quaternion.sum_inner_dq_single_smul (q : ℍ) :
 
 /-! ### The `3`-form `Dq` -/
 
-/-- The real `3`-form on `Fin 4 → ℝ` omitting the coordinate `i`: the determinant of the
-`3 × 3` matrix of the remaining coordinates of three vectors. These are `dx∧dy∧dz`,
-`dt∧dy∧dz`, `dt∧dx∧dz` and `dt∧dx∧dy`. -/
-noncomputable def minorForm (i : Fin 4) : (Fin 4 → ℝ) [⋀^Fin 3]→L[ℝ] ℝ :=
-  AlternatingMap.toContinuousAlternatingMap
-    (Matrix.detRowAlternating.compLinearMap (LinearMap.funLeft ℝ ℝ i.succAbove))
-
-theorem minorForm_apply (i : Fin 4) (v : Fin 3 → Fin 4 → ℝ) :
-    minorForm i v = (Matrix.of fun r c ↦ v r (i.succAbove c)).det := by
-  rw [minorForm, AlternatingMap.coe_toContinuousAlternatingMap,
-    AlternatingMap.compLinearMap_apply]
-  -- `Matrix.det` is `Matrix.detRowAlternating` evaluated on the rows of the matrix.
-  rfl
-
 /-- The constant quaternion-valued `3`-form
 `Dq = dx∧dy∧dz − i dt∧dy∧dz − j dt∧dz∧dx − k dt∧dx∧dy` on the coordinate space `Fin 4 → ℝ`.
 Its `i`-th coefficient is `(-1) ^ i` times the `i`-th unit `1, i, j, k`, against the real
 `3`-form omitting the coordinate `i`. -/
 noncomputable def Dq : (Fin 4 → ℝ) [⋀^Fin 3]→L[ℝ] ℍ :=
-  ∑ i : Fin 4,
-    (minorForm i).smulRight ((-1 : ℝ) ^ (i : ℕ) • QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) i)
+  fluxForm (E := ℍ) (fun i _ ↦ QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) i) 0
 
+/-- `Dq` is the constant coordinate `fluxForm` of the quaternion basis `1, i, j, k`. -/
+theorem Dq_eq_fluxForm (x : Fin 4 → ℝ) :
+    Dq = fluxForm (E := ℍ) (fun i _ ↦ QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) i) x := by
+  ext1 v
+  rw [Dq, fluxForm_apply, fluxForm_apply]
 
 /-- `Dq v` is the sum over the coordinates `i` of `(-1) ^ i` times the minor of `v` omitting
 coordinate `i`, times the `i`-th unit of `1, i, j, k`. -/
 theorem Dq_apply (v : Fin 3 → Fin 4 → ℝ) :
     Dq v = ∑ i : Fin 4,
-      ((-1 : ℝ) ^ (i : ℕ) * minorForm i v) • QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) i := by
-  simp only [Dq, ContinuousAlternatingMap.sum_apply, ContinuousAlternatingMap.smulRight_apply,
-    mul_comm _ (minorForm _ v), mul_smul]
+      ((-1 : ℝ) ^ (i : ℕ) * coordMinorForm i v) •
+        QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) i :=
+  fluxForm_apply _ 0 v
 
 /-- The real part of `Dq` is `dx∧dy∧dz`. -/
 @[simp]
-theorem re_Dq (v : Fin 3 → Fin 4 → ℝ) : (Dq v).re = minorForm 0 v := by
+theorem re_Dq (v : Fin 3 → Fin 4 → ℝ) : (Dq v).re = coordMinorForm 0 v := by
   norm_num [Dq_apply, Fin.sum_univ_four, ← dq_single, Pi.single_apply]
 
 /-- The `i`-component of `Dq` is `-dt∧dy∧dz`. -/
 @[simp]
-theorem imI_Dq (v : Fin 3 → Fin 4 → ℝ) : (Dq v).imI = -minorForm 1 v := by
+theorem imI_Dq (v : Fin 3 → Fin 4 → ℝ) : (Dq v).imI = -coordMinorForm 1 v := by
   norm_num [Dq_apply, Fin.sum_univ_four, ← dq_single, Pi.single_apply]
 
 /-- The `j`-component of `Dq` is `-dt∧dz∧dx = dt∧dx∧dz`. -/
 @[simp]
-theorem imJ_Dq (v : Fin 3 → Fin 4 → ℝ) : (Dq v).imJ = minorForm 2 v := by
+theorem imJ_Dq (v : Fin 3 → Fin 4 → ℝ) : (Dq v).imJ = coordMinorForm 2 v := by
   norm_num [Dq_apply, Fin.sum_univ_four, ← dq_single, Pi.single_apply]
 
 /-- The `k`-component of `Dq` is `-dt∧dx∧dy`. -/
 @[simp]
-theorem imK_Dq (v : Fin 3 → Fin 4 → ℝ) : (Dq v).imK = -minorForm 3 v := by
+theorem imK_Dq (v : Fin 3 → Fin 4 → ℝ) : (Dq v).imK = -coordMinorForm 3 v := by
   norm_num [Dq_apply, Fin.sum_univ_four, ← dq_single, Pi.single_apply]
 
 /-- On the coordinate triple obtained by deleting the `i`-th direction, `Dq` takes the value
@@ -344,16 +335,17 @@ theorem imK_Dq (v : Fin 3 → Fin 4 → ℝ) : (Dq v).imK = -minorForm 3 v := by
 theorem Dq_succAbove (i : Fin 4) :
     Dq (fun r ↦ Pi.single (i.succAbove r) 1) =
       (-1 : ℝ) ^ (i : ℕ) • QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) i := by
-  rw [← dq_single]
-  fin_cases i <;> ext <;>
-    norm_num [minorForm_apply, Matrix.det_fin_three, Pi.single_apply, Fin.succAbove, -dq_single]
+  have hrem : (fun r ↦ (Pi.single (i.succAbove r) 1 : Fin 4 → ℝ)) =
+      i.removeNth fun k : Fin 4 ↦ (Pi.single k 1 : Fin 4 → ℝ) := (rfl)
+  rw [Dq, hrem]
+  exact fluxForm_removeNth_single (E := ℍ) _ 0 i
 
 /-- `Dq` is the quaternionic interior product of the volume form: the real inner product of
 `dq w` with `Dq v` is the determinant of the matrix with rows `w, v 0, v 1, v 2`. -/
 theorem inner_dq_Dq (w : Fin 4 → ℝ) (v : Fin 3 → Fin 4 → ℝ) :
     ⟪dq w, Dq v⟫ = (Matrix.of (Fin.cons w v : Fin 4 → Fin 4 → ℝ)).det := by
   rw [Matrix.det_succ_row_zero, Fin.sum_univ_four, Quaternion.inner_def]
-  simp [minorForm_apply, Matrix.submatrix, Fin.succAbove]
+  simp [coordMinorForm_apply, Matrix.submatrix, Fin.succAbove]
   ring
 
 /-- The squared Euclidean norm of `Dq v` equals the `3 × 3` Gram determinant of the three tangent
@@ -362,7 +354,7 @@ parallelepiped they span. -/
 theorem norm_Dq_sq (v : Fin 3 → Fin 4 → ℝ) :
     ‖Dq v‖ ^ 2 = (Matrix.gram ℝ fun r ↦ dq (v r)).det := by
   rw [sq, ← _root_.Quaternion.normSq_eq_norm_mul_self, _root_.Quaternion.normSq_def']
-  simp only [re_Dq, imI_Dq, imJ_Dq, imK_Dq, minorForm_apply, Matrix.det_fin_three,
+  simp only [re_Dq, imI_Dq, imJ_Dq, imK_Dq, coordMinorForm_apply, Matrix.det_fin_three,
     Matrix.gram_apply, _root_.Quaternion.inner_def, Fin.succAbove]
   norm_num
   ring
@@ -375,7 +367,7 @@ theorem Dq_star {v w : Fin 3 → Fin 4 → ℝ} (h : ∀ r, dq (w r) = star (dq 
   have h1 r : w r 1 = -v r 1 := by simpa using congrArg QuaternionAlgebra.imI (h r)
   have h2 r : w r 2 = -v r 2 := by simpa using congrArg QuaternionAlgebra.imJ (h r)
   have h3 r : w r 3 = -v r 3 := by simpa using congrArg QuaternionAlgebra.imK (h r)
-  ext <;> simp [minorForm_apply, Matrix.det_fin_three, Fin.succAbove, h0, h1, h2, h3]
+  ext <;> simp [coordMinorForm_apply, Matrix.det_fin_three, Fin.succAbove, h0, h1, h2, h3]
   ring
 
 /-- Quaternionic conjugation in real coordinates `(t, x, y, z) ↦ (t, -x, -y, -z)`, as a continuous
