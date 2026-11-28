@@ -121,6 +121,14 @@ theorem closedOrbit_coe (t : ℝ) : closedOrbit φ h t = mk φ t x :=
 theorem closedOrbit_comp_coe :
     closedOrbit φ h ∘ ((↑) : ℝ → AddCircle (d : ℝ)) = fun t ↦ mk φ t x := (rfl)
 
+/-- The point `x` of a loop `t ↦ [t, x]` in the mapping torus, parametrized by the circle `ℝ / ℤ`,
+is fixed by `φ`, since `[1, x] = [0, x]`. -/
+theorem apply_eq_of_forall_eq_mk {γ : AddCircle ((1 : ℕ) : ℝ) → SmoothMappingTorus φ}
+    (hγ : ∀ t : ℝ, γ t = mk φ t x) : φ x = x :=
+  (mk_add_one_eq_mk_iff φ 0 x).1 (by
+    rw [zero_add, ← hγ, ← hγ]
+    exact congrArg γ (by simp))
+
 /-- The closed orbit is continuous. -/
 theorem continuous_closedOrbit : Continuous (closedOrbit φ h) := by
   rw [(QuotientAddGroup.isQuotientMap_mk _).continuous_iff, closedOrbit_comp_coe]

@@ -66,13 +66,11 @@ theorem ker_orthogonalDetSquareClass [FiniteDimensional K V]
   rw [MonoidHom.mem_ker, orthogonalDetSquareClass_apply, squareClassHom_eq_one_iff,
     mem_specialOrthogonalWithin_iff, ← orthogonalDet_apply]
   refine ⟨fun hsq ↦ ?_, fun h1 ↦ by rw [h1]; exact IsSquare.one⟩
-  have hsq2 := congrArg Units.val
-    (TauCeti.QuadraticMap.orthogonalDet_sq ((nondegenerate_polar_iff.mpr hQ).1) g)
-  rw [Units.val_pow_eq_pow_val, Units.val_one, sq_eq_one_iff] at hsq2
-  rcases hsq2 with h1 | h1
-  · exact Units.ext h1
+  rcases TauCeti.QuadraticMap.orthogonalDet_eq_one_or_eq_neg_one
+      ((nondegenerate_polar_iff.mpr hQ).1) g with h1 | h1
+  · exact h1
   · have h2 := hsq.map (Units.coeHom K)
-    rw [Units.coeHom_apply, h1] at h2
+    rw [Units.coeHom_apply, h1, Units.val_neg, Units.val_one] at h2
     exact absurd h2 h
 
 end QuadraticMap

@@ -6,26 +6,29 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.MarkovChain.Examples.IntegerWalk.Basic
+public import TauCeti.Probability.MarkovChain.Examples.IntegerWalk.Recurrence
 public import TauCeti.Probability.MarkovChain.Occupation
 public import TauCeti.Analysis.SpecificLimits.CentralBinomial
 public import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 
 /-!
-# Infinite mean return time of the symmetric integer walk
+# Infinite mean return time of nearest-neighbor integer walks
 
-The symmetric nearest-neighbor walk has infinite extended mean positive return time.
-The value at a missing return is infinity, not zero. The result is stated separately
-from recurrence, so it can be combined with the return-series criterion to classify
-the walk as null recurrent.
+Every nearest-neighbor integer walk `integerWalk p` (`p : unitInterval`) has infinite
+extended mean first positive return time, with no symmetry assumption on `p`. For the
+symmetric walk (`p = 1 / 2`), central binomial return probabilities tend to zero, so their
+Cesàro averages vanish whereas the occupation strong law identifies their limit with the
+reciprocal extended mean return time; a finite mean would give a positive reciprocal. For
+every biased walk (`p ≠ 1 / 2`), including the deterministic endpoints `0` and `1`, the
+walk is transient and therefore also has infinite mean return time.
 
-Central binomial probabilities tend to zero. Their Cesàro means therefore vanish,
-whereas the occupation law identifies their limit with the reciprocal extended mean
-return time. A finite mean would give a positive reciprocal, a contradiction.
-No invariant-probability characterization is needed.
+State classification consequences (null recurrence at `p = 1 / 2` and absence of positive
+recurrent states for every `p`) follow in
+`TauCeti.Probability.MarkovChain.Examples.IntegerWalk.Classification`.
 
 ## References
 
-* J. R. Norris, *Markov Chains*, Cambridge University Press (1997), §§1.6 and 1.10.
+* J. R. Norris, *Markov Chains*, Cambridge University Press (1997), §§1.6, 1.7, and 1.10.
 -/
 
 public section
@@ -70,19 +73,22 @@ private theorem tendsto_integerWalk_integral_visitCount_div (p : unitInterval)
   simpa only [div_eq_inv_mul, Function.comp_apply] using
     ((tendsto_integerWalk_pow_real_self p hp x).comp (tendsto_add_atTop_nat 1)).cesaro
 
-/-- The extended mean first positive return of the symmetric integer walk is infinite.
-The first return starts at one, and a missing return contributes infinity. -/
-theorem integerWalk_meanReturnTime_eq_top (p : unitInterval) (hp : (p : ℝ) = 1 / 2)
-    (x : ℤ) : (integerWalk p).meanReturnTime x = ∞ := by
-  classical
-  let P := markovChainLaw (Measure.dirac x) (integerWalk p)
-  by_contra hfinite
-  have hpos : 0 < ((integerWalk p).meanReturnTime x)⁻¹.toReal :=
-    ENNReal.toReal_pos (ENNReal.inv_ne_zero.mpr hfinite)
-      (ENNReal.inv_ne_top.mpr (ne_zero_of_lt
-        (lt_of_lt_of_le zero_lt_one (Kernel.one_le_meanReturnTime (κ := integerWalk p) (x := x)))))
-  have hLLN := (HasLaw.id (μ := P)).tendsto_integral_visitCount_div_markovChainLaw_dirac
-  exact hpos.ne' (tendsto_nhds_unique hLLN (tendsto_integerWalk_integral_visitCount_div p hp x))
+/-- The extended mean first positive return time of every nearest-neighbor integer walk is
+infinite, for both symmetric and biased parameters (including the deterministic endpoints). -/
+-- Simplify before the endpoint rules replace `integerWalk` by a deterministic kernel.
+@[simp↓]
+theorem integerWalk_meanReturnTime_eq_top (p : unitInterval) (x : ℤ) :
+    (integerWalk p).meanReturnTime x = ∞ := by
+  by_cases hp : (p : ℝ) = 1 / 2
+  · by_contra hfinite
+    have hpos : 0 < ((integerWalk p).meanReturnTime x)⁻¹.toReal :=
+      ENNReal.toReal_pos (ENNReal.inv_ne_zero.mpr hfinite)
+        (ENNReal.inv_ne_top.mpr (ne_zero_of_lt (lt_of_lt_of_le zero_lt_one
+          (Kernel.one_le_meanReturnTime (κ := integerWalk p) (x := x)))))
+    have hLLN := (HasLaw.id (μ := markovChainLaw (Measure.dirac x) (integerWalk p)))
+      |>.tendsto_integral_visitCount_div_markovChainLaw_dirac
+    exact hpos.ne' (tendsto_nhds_unique hLLN (tendsto_integerWalk_integral_visitCount_div p hp x))
+  · exact ((integerWalk_isTransient_iff p x).mpr hp).meanReturnTime_eq_top
 
 end TauCeti.Probability
 
@@ -90,25 +96,19 @@ namespace ProbabilityTheory.HasLaw
 
 open TauCeti.Probability
 
-/-- Every realization of the symmetric integer walk has infinite extended mean first
-positive return. No topology on its probability space is required. -/
+/-- Every realization of any nearest-neighbor integer walk has infinite extended mean first
+positive return. No symmetry assumption on `p` or topology on the sample space is required. -/
 theorem lintegral_integerWalk_hittingAfter_eq_top
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℕ → ℤ}
     {p : unitInterval} {x : ℤ}
-    (hX : HasLaw X (markovChainLaw (Measure.dirac x) (integerWalk p)) P)
-    (hp : (p : ℝ) = 1 / 2) :
+    (hX : HasLaw X (markovChainLaw (Measure.dirac x) (integerWalk p)) P) :
     (∫⁻ ω, ENat.toENNReal (hittingAfter (fun n ω => X ω n) {x} 1 ω) ∂P) = ∞ := by
   have hτ : Measurable (hittingAfter (fun n (ω : ℕ → ℤ) => ω n) {x} 1) :=
     (Filtration.adapted_piLE.isStoppingTime_hittingAfter
       (f := Filtration.piLE (X := fun _ : ℕ => ℤ)) (measurableSet_singleton x)).measurable'
   have hm := (measurable_of_countable (fun t : WithTop ℕ => ENat.toENNReal t)).comp hτ
-  -- Entrance times depend only on the coordinate path; evaluation after composition
-  -- therefore identifies the integrand with the canonical path functional.
-  convert (hX.lintegral_comp hm.aemeasurable).trans
-    (by simpa only [Kernel.meanReturnTime_def, Function.comp_def] using
-      integerWalk_meanReturnTime_eq_top p hp x) using 1
-  apply lintegral_congr
-  intro ω
-  simp only [Function.comp_apply, hittingAfter_def]
+  exact (hX.lintegral_comp hm.aemeasurable).trans
+    (by simpa only [Kernel.meanReturnTime_def, Function.comp_apply] using
+      integerWalk_meanReturnTime_eq_top p x)
 
 end ProbabilityTheory.HasLaw

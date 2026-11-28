@@ -89,6 +89,8 @@ makes the slices charts of `A_m^k / G_(k+1)`; that slice theorem is not proved h
 * `TauCeti.Vortex.SobolevFieldSpace.exists_pos_forall_abs_norm_sectionValue_sub_le`: fields close
   in the real coordinates to a gauge transform of `y` have sections close in norm to that of `y`,
   uniformly in the gauge.
+* `TauCeti.Vortex.SobolevFieldSpace.abs_norm_sectionValue_sub_le_of_forall_norm_sub_le`: the same
+  for fields pointwise close to a gauge transform of `y`.
 
 ## References
 
@@ -480,6 +482,21 @@ theorem exists_pos_forall_abs_norm_sectionValue_sub_le {δ : ℝ} (hδ : 0 < δ)
   refine (abs_norm_sub_norm_le _ _).trans ((hC x (g • y) z).trans ?_)
   rw [lt_div_iff₀ (by positivity)] at hxy
   nlinarith [norm_nonneg (x.realSubRef _ - (g • y).realSubRef (Nat.cast_nonneg k))]
+
+/-- **Fields pointwise close to a gauge orbit have sections close in norm.** If a continuous field
+`x` of `A_m^k` is within `δ` of a gauge transform `g · y` at every point, then the norms of the
+sections of `x` and `y` differ by at most `2 δ` everywhere. This is the form of
+`exists_pos_forall_abs_norm_sectionValue_sub_le` for pointwise (`C⁰`) closeness of the fields. -/
+theorem abs_norm_sectionValue_sub_le_of_forall_norm_sub_le {δ : ℝ}
+    {x y : SobolevFieldSpace f m k} {g : SobolevTopologicalGaugeGroup hs}
+    (h : ∀ z, ‖x z - (g • y) z‖ ≤ δ) (z : ℂ) :
+    |‖sectionValue x z‖ - ‖sectionValue y z‖| ≤ 2 * δ := by
+  rw [← norm_sectionValue_smul g y z]
+  calc |‖sectionValue x z‖ - ‖sectionValue ⇑(g • y) z‖|
+      ≤ ‖sectionValue (⇑x - ⇑(g • y)) z‖ := by
+        rw [sectionValue_sub]
+        exact abs_norm_sub_norm_le _ _
+    _ ≤ 2 * δ := (norm_sectionValue_le _ z).trans (by gcongr; exact h z)
 
 end SobolevFieldSpace
 

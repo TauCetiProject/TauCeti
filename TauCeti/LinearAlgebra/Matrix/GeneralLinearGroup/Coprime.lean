@@ -22,6 +22,7 @@ coordinate curves to simple closed curves.
 
 ## Main results
 
+* `Matrix.GeneralLinearGroup.isUnit_mul_sub_mul`: the determinant `a d - b c` is a unit.
 * `Matrix.GeneralLinearGroup.isCoprime_row`: the two entries of a row are coprime.
 * `Matrix.GeneralLinearGroup.isCoprime_col`: the two entries of a column are coprime.
 -/
@@ -32,11 +33,16 @@ namespace Matrix.GeneralLinearGroup
 
 variable {R : Type*} [CommRing R]
 
+/-- The determinant `a d - b c` of an invertible `2 × 2` matrix `!![a, b; c, d]` is a unit. -/
+theorem isUnit_mul_sub_mul (A : GL (Fin 2) R) : IsUnit (A 0 0 * A 1 1 - A 0 1 * A 1 0) := by
+  rw [← det_fin_two]
+  exact isUnits_det_units A
+
 /-- The two entries of a row of an invertible `2 × 2` matrix are coprime. -/
 theorem isCoprime_row (A : GL (Fin 2) R) (i : Fin 2) : IsCoprime (A i 0) (A i 1) := by
-  obtain ⟨u, hu⟩ : IsUnit (A : Matrix (Fin 2) (Fin 2) R).det := isUnits_det_units A
+  obtain ⟨u, hu⟩ := isUnit_mul_sub_mul A
   have hdet : ((u⁻¹ : Rˣ) : R) * (A 0 0 * A 1 1 - A 0 1 * A 1 0) = 1 := by
-    rw [← det_fin_two, ← hu, Units.inv_mul]
+    rw [← hu, Units.inv_mul]
   refine match i with
   | 0 => ⟨u⁻¹ * A 1 1, -(u⁻¹ * A 1 0), ?_⟩
   | 1 => ⟨-(u⁻¹ * A 0 1), u⁻¹ * A 0 0, ?_⟩ <;>
@@ -44,9 +50,9 @@ theorem isCoprime_row (A : GL (Fin 2) R) (i : Fin 2) : IsCoprime (A i 0) (A i 1)
 
 /-- The two entries of a column of an invertible `2 × 2` matrix are coprime. -/
 theorem isCoprime_col (A : GL (Fin 2) R) (j : Fin 2) : IsCoprime (A 0 j) (A 1 j) := by
-  obtain ⟨u, hu⟩ : IsUnit (A : Matrix (Fin 2) (Fin 2) R).det := isUnits_det_units A
+  obtain ⟨u, hu⟩ := isUnit_mul_sub_mul A
   have hdet : ((u⁻¹ : Rˣ) : R) * (A 0 0 * A 1 1 - A 0 1 * A 1 0) = 1 := by
-    rw [← det_fin_two, ← hu, Units.inv_mul]
+    rw [← hu, Units.inv_mul]
   refine match j with
   | 0 => ⟨u⁻¹ * A 1 1, -(u⁻¹ * A 0 1), ?_⟩
   | 1 => ⟨-(u⁻¹ * A 1 0), u⁻¹ * A 0 0, ?_⟩ <;>

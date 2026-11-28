@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Scheme.Normal
-public import TauCeti.FieldTheory.Separable.FractionRingPolynomial
+public import TauCeti.FieldTheory.Separable.FractionRing.Polynomial
 public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic

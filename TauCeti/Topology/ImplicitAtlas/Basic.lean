@@ -10,6 +10,7 @@ public import Mathlib.Data.Finset.Update
 public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.Topology.Maps.OpenQuotient
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
+import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
 # Implicit atlases
@@ -59,7 +60,9 @@ the footprints are open and cover `X` (`TauCeti.ImplicitAtlas.Core.isOpen_footpr
 *footprint conditions* `V_I ∩ V_K ⊆ V_J` for `I ⊆ J ⊆ K` and `V_I ∩ V_J ⊆ V_(I ∪ J)`
 (`TauCeti.ImplicitAtlas.Core.footprint_inter_footprint_subset_footprint`,
 `TauCeti.ImplicitAtlas.Core.footprint_inter_footprint_subset_footprint_union`), which make the
-cover `{V_I}` suitable for gluing local data indexed by pairs `I ⊆ J`, and the regular locus is
+cover `{V_I}` suitable for gluing local data indexed by pairs `I ⊆ J`. Every point of the
+regular locus `X_I^reg` has a chart to `ℝ^(d + m_I)`
+(`TauCeti.ImplicitAtlas.exists_openPartialHomeomorph_of_mem_regLocus`), so the regular locus is
 empty where the expected dimension `d + m_I` is negative
 (`TauCeti.ImplicitAtlas.regLocus_eq_empty_of_neg`), so that a nonempty space carries no atlas
 whose expected dimensions are all negative (`TauCeti.ImplicitAtlas.isEmpty_of_forall_neg`).
@@ -520,13 +523,24 @@ end Core
 
 variable (𝒜 : ImplicitAtlas Γ E ρ T act X d)
 
+/-- **Charts at regular points.** Every point of `X_I^reg` lies in the source of an open partial
+homeomorphism from `X_I` to `ℝⁿ`, where the natural number `n` is the expected dimension
+`d + m_I`. -/
+theorem exists_openPartialHomeomorph_of_mem_regLocus {I : Finset A} {x : T I}
+    (hx : x ∈ 𝒜.regLocus I) :
+    ∃ n : ℕ, (n : ℤ) = d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) ∧
+      ∃ e : OpenPartialHomeomorph (T I) (EuclideanSpace ℝ (Fin n)), x ∈ e.source := by
+  have hψ : 𝒜.footprintMap (subset_refl I) ⟨x, mem_kuranishiZeroSet_self _ x⟩ ∈ 𝒜.regLocus I := by
+    rwa [𝒜.footprintMap_self]
+  obtain ⟨n, hn, e, hxe, -⟩ := 𝒜.exists_openPartialHomeomorph (subset_refl I) _ hψ
+  have : IsEmpty ↥(I \ I) := ⟨fun α ↦ by simpa using α.property⟩
+  exact ⟨n, hn, e.transHomeomorph (Homeomorph.prodUnique _ _), hxe⟩
+
 /-- The expected dimension `d + m_I` is nonnegative wherever the regular locus `X_I^reg` is
 nonempty: there it is the dimension of a topological manifold. -/
 theorem nonneg_of_mem_regLocus {I : Finset A} {x : T I} (hx : x ∈ 𝒜.regLocus I) :
     0 ≤ d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) := by
-  have hψ : 𝒜.footprintMap (subset_refl I) ⟨x, mem_kuranishiZeroSet_self _ x⟩ ∈ 𝒜.regLocus I := by
-    rwa [𝒜.footprintMap_self]
-  obtain ⟨n, hn, -⟩ := 𝒜.exists_openPartialHomeomorph (subset_refl I) _ hψ
+  obtain ⟨n, hn, -⟩ := 𝒜.exists_openPartialHomeomorph_of_mem_regLocus hx
   exact hn ▸ Int.natCast_nonneg n
 
 /-- The regular locus `X_I^reg` is empty when the expected dimension `d + m_I` is negative. -/

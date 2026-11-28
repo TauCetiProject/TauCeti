@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 public import Mathlib.Analysis.Polynomial.CauchyBound
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Algebra.Polynomial.Derivative
+public import Mathlib.RingTheory.Polynomial.Basic
 import Mathlib.Analysis.Normed.Group.Constructions
 
 /-!
@@ -27,6 +28,9 @@ a smooth function of `c` (`TauCeti.Polynomial.contDiff_coeff_monicOfCoeff`,
 `TauCeti.Polynomial.contDiff_coeff_derivative_monicOfCoeff`): it is a coordinate of `c`, the
 constant `1` or `0`, or such a coordinate times a constant. So the value of `monicOfCoeff c` at a
 point is smooth jointly in `c` and the point (`TauCeti.Polynomial.contDiff_eval_monicOfCoeff`).
+That value is affine in `c`: its derivative in the direction `v` is the value of the polynomial of
+degree less than `d` with coefficients `v` (`TauCeti.Polynomial.fderiv_eval_monicOfCoeff_apply`),
+the tangent vector of the coefficient chart of `Sym^d`.
 -/
 
 public section
@@ -97,5 +101,35 @@ theorem contDiff_eval_monicOfCoeff {E : Type*} [NormedAddCommGroup E] [NormedSpa
   exact (hr.pow d).add (ContDiff.sum fun i _ ↦ (contDiff_pi.1 hc i).mul (hr.pow _))
 
 end ContDiff
+
+section FDeriv
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {d : ℕ}
+
+/-- The value at `z` of the monic polynomial with lower coefficients `c` is affine in `c`, with
+linear part `v ↦ ∑ᵢ vᵢ zⁱ`. -/
+theorem hasFDerivAt_eval_monicOfCoeff (c : Fin d → 𝕜) (z : 𝕜) :
+    HasFDerivAt (fun c' : Fin d → 𝕜 ↦ (monicOfCoeff c').eval z)
+      (∑ i : Fin d, (ContinuousLinearMap.proj i : (Fin d → 𝕜) →L[𝕜] 𝕜).smulRight (z ^ (i : ℕ)))
+      c := by
+  set L : (Fin d → 𝕜) →L[𝕜] 𝕜 :=
+    ∑ i : Fin d, (ContinuousLinearMap.proj i : (Fin d → 𝕜) →L[𝕜] 𝕜).smulRight (z ^ (i : ℕ))
+  have h : (fun c' : Fin d → 𝕜 ↦ (monicOfCoeff c').eval z) = fun c' ↦ z ^ d + L c' := by
+    ext c'
+    simp [L, eval_monicOfCoeff]
+  rw [h]
+  exact ((hasFDerivAt_const (z ^ d) c).add L.hasFDerivAt).congr_fderiv (zero_add L)
+
+/-- **The coefficient derivative of `monicOfCoeff`.** The derivative in `c`, in the direction `v`,
+of the value at `z` of the monic polynomial with lower coefficients `c` is the value at `z` of the
+polynomial of degree less than `d` with coefficients `v`. -/
+theorem fderiv_eval_monicOfCoeff_apply (c v : Fin d → 𝕜) (z : 𝕜) :
+    fderiv 𝕜 (fun c' : Fin d → 𝕜 ↦ (monicOfCoeff c').eval z) c v =
+      ((degreeLTEquiv 𝕜 d).symm v : 𝕜[X]).eval z := by
+  rw [(hasFDerivAt_eval_monicOfCoeff c z).fderiv, eval_eq_sum_degreeLTEquiv (Subtype.prop _),
+    Subtype.coe_eta, LinearEquiv.apply_symm_apply]
+  simp
+
+end FDeriv
 
 end TauCeti.Polynomial
