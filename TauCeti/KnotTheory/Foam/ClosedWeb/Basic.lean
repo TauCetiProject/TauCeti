@@ -216,6 +216,10 @@ theorem cyclicSucc_symm_ne_self (d : W.End) : W.cyclicSucc.symm d ≠ d := by
   intro h
   exact W.cyclicSucc_ne_self d (by simpa using (congrArg W.cyclicSucc h).symm)
 
+/-- Every interval edge has two ends. -/
+theorem card_end : Nat.card W.End = 2 * Nat.card W.Edge := by
+  rw [Nat.card_prod, Nat.card_eq_fintype_card (α := Bool), Fintype.card_bool, mul_comm]
+
 /-- The interval-end count is three times the number of vertices. -/
 theorem three_mul_card_vertex_eq_two_mul_card_edge :
     3 * Nat.card W.Vertex = 2 * Nat.card W.Edge := by

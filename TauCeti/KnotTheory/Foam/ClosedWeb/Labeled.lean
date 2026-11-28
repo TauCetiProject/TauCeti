@@ -198,6 +198,39 @@ theorem edgeLabel_ends_of_one_or_two (W : LabeledClosedWeb.{u} ℕ) (v : W.Verte
   have h2 := hl 2
   omega
 
+private theorem orientation_zero_incident_of_one_or_two (W : LabeledClosedWeb.{u} ℕ)
+    (d : W.End)
+    (hl : ∀ i : Fin 3, W.edgeLabel (W.ends (W.incident d, i)).1 = 1 ∨
+      W.edgeLabel (W.ends (W.incident d, i)).1 = 2) :
+    (W.ends (W.incident d, 0)).2 = if W.edgeLabel d.1 = 2 then d.2 else !d.2 := by
+  obtain ⟨⟨v, i⟩, rfl⟩ := W.ends.surjective d
+  simp only [ClosedWeb.incident_ends] at hl ⊢
+  obtain ⟨h0, h1, h2⟩ := W.edgeLabel_ends_of_one_or_two v hl
+  fin_cases i <;> simp [h0, h1, h2]
+
+private theorem orientation_zero_incident_opposite_eq_not_of_one_or_two
+    (W : LabeledClosedWeb.{u} ℕ) (d : W.End)
+    (hl : ∀ i : Fin 3, W.edgeLabel (W.ends (W.incident d, i)).1 = 1 ∨
+      W.edgeLabel (W.ends (W.incident d, i)).1 = 2)
+    (hl' : ∀ i : Fin 3, W.edgeLabel (W.ends (W.incident (d.1, !d.2), i)).1 = 1 ∨
+      W.edgeLabel (W.ends (W.incident (d.1, !d.2), i)).1 = 2) :
+    (W.ends (W.incident (d.1, !d.2), 0)).2 = !(W.ends (W.incident d, 0)).2 := by
+  simp only [W.orientation_zero_incident_of_one_or_two d hl,
+    W.orientation_zero_incident_of_one_or_two (d.1, !d.2) hl']
+  split_ifs <;> simp
+
+/-- An edge whose incident labels lie in `{1,2}` joins a split to a merge or a merge to a
+split. Only the labels at its two endpoints are constrained. -/
+theorem isSplit_incident_iff_isMerge_incident_opposite_of_one_or_two
+    (W : LabeledClosedWeb.{u} ℕ) (d : W.End)
+    (hl : ∀ i : Fin 3, W.edgeLabel (W.ends (W.incident d, i)).1 = 1 ∨
+      W.edgeLabel (W.ends (W.incident d, i)).1 = 2)
+    (hl' : ∀ i : Fin 3, W.edgeLabel (W.ends (W.incident (d.1, !d.2), i)).1 = 1 ∨
+      W.edgeLabel (W.ends (W.incident (d.1, !d.2), i)).1 = 2) :
+    W.IsSplit (W.incident d) ↔ W.IsMerge (W.incident (d.1, !d.2)) := by
+  simp [ClosedWeb.isSplit_def, ClosedWeb.isMerge_def,
+    W.orientation_zero_incident_opposite_eq_not_of_one_or_two d hl hl']
+
 /-- Labelled webs are equal when their underlying webs are equal and their labels agree. -/
 @[ext] theorem ext {W V : LabeledClosedWeb.{u} Λ} (h : W.toClosedWeb = V.toClosedWeb)
     (he : HEq W.edgeLabel V.edgeLabel) (hc : HEq W.circleLabel V.circleLabel) : W = V := by
