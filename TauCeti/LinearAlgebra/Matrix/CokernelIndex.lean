@@ -55,6 +55,9 @@ finite-index subrings of finite products of principal ideal domains:
   `Matrix.card_quotient_range_mulVecLin_map_mk_of_finite`: cokernel invariance modulo a finite
   ideal.
 * `Matrix.cokernelMapRingEquiv`: additive equivalence of cokernels induced by a ring equivalence.
+* `Matrix.relIndex_comap_mulVecLin_map_eq_cardQuot`: along an injective algebra `R ⊆ T`, for `C`
+  over `R` invertible over `T`, the index of `R^ι` in `{y : C y ∈ R^ι}` is the order of the
+  cokernel of `C` over `R`.
 * `Matrix.finite_quotient_range_mulVecLin_subring_iff`,
   `Matrix.card_quotient_range_mulVecLin_subring`: cokernel comparison along a finite-index subring.
 * `Matrix.cokernelPiLinearEquiv`: coordinatewise decomposition of a matrix cokernel over `∏ k, R k`.
@@ -202,6 +205,41 @@ theorem cokernelMapRingEquiv_symm_mk (e : R₁ ≃+* R₂) (A : Matrix m n R₁)
   (rfl)
 
 end RingEquiv
+
+section Algebra
+
+variable {R T ι : Type*} [CommRing R] [CommRing T] [Algebra R T] [Fintype ι] [DecidableEq ι]
+
+/-- Let `R ⊆ T` be an injective algebra and `C` a square matrix over `R` that is invertible over
+`T`. The index of `R^ι` in `{y ∈ T^ι : C y ∈ R^ι}` is the order of the cokernel of `C` over `R`:
+multiplication by `C` maps the pair onto `(R^ι, C R^ι)`. -/
+theorem relIndex_comap_mulVecLin_map_eq_cardQuot (hf : Function.Injective (algebraMap R T))
+    {C : Matrix ι ι R} (hC : IsUnit (C.map (algebraMap R T)).det) :
+    (LinearMap.range ((Algebra.linearMap R T).compLeft ι)).toAddSubgroup.relIndex
+      ((LinearMap.range ((Algebra.linearMap R T).compLeft ι)).comap
+        ((C.map (algebraMap R T)).mulVecLin.restrictScalars R)).toAddSubgroup =
+      (LinearMap.range C.mulVecLin).cardQuot := by
+  set C' := C.map (algebraMap R T)
+  let ψ : (ι → T) →+ (ι → T) := C'.mulVecLin.toAddMonoidHom
+  let ιv : (ι → R) →+ (ι → T) := ((Algebra.linearMap R T).compLeft ι).toAddMonoidHom
+  have hC' : IsUnit C' := (Matrix.isUnit_iff_isUnit_det C').2 hC
+  have hψ : Function.Injective ψ := Matrix.mulVec_injective_of_isUnit hC'
+  have hιv : Function.Injective ιv := fun x y hxy ↦ funext fun i ↦ hf (congrFun hxy i)
+  have h_comp : ψ.comp ιv = ιv.comp C.mulVecLin.toAddMonoidHom :=
+    AddMonoidHom.ext fun w ↦ funext fun i ↦ (RingHom.map_mulVec (algebraMap R T) C w i).symm
+  -- multiplication by `C'` maps `{y : C' y ∈ R^ι}` onto `R^ι` and `R^ι` onto `C R^ι`
+  have h_Y : ((LinearMap.range ((Algebra.linearMap R T).compLeft ι)).comap
+      (C'.mulVecLin.restrictScalars R)).toAddSubgroup.map ψ = ιv.range := by
+    -- the preimage submodule is the preimage subgroup `ιv.range.comap ψ`
+    change (ιv.range.comap ψ).map ψ = ιv.range
+    exact AddSubgroup.map_comap_eq_self_of_surjective (Matrix.mulVec_surjective_iff_isUnit.2 hC') _
+  rw [LinearMap.range_toAddSubgroup, ← AddSubgroup.relIndex_map_map_of_injective _ _ hψ, h_Y,
+    AddMonoidHom.map_range, h_comp, ← AddMonoidHom.map_range, AddMonoidHom.range_eq_map ιv,
+    AddSubgroup.relIndex_map_map_of_injective _ _ hιv, AddSubgroup.relIndex_top_right]
+  -- `Submodule.cardQuot` is defined as the index of the underlying additive subgroup
+  rfl
+
+end Algebra
 
 section Subring
 

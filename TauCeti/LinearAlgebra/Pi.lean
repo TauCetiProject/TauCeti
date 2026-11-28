@@ -75,6 +75,8 @@ weights.
   turns the action of `a : A` into the coordinatewise action of `a` on the factors.
 * `LinearMap.compLeft_single`: applying a linear map coordinatewise to the one-point family
   `Pi.single i x` gives the one-point family `Pi.single i (f x)`.
+* `Subalgebra.mem_range_compLeft_algebraLinearMap_iff`: the vectors with entries in a subalgebra
+  `S` are the image of `S^κ`.
 * `LinearMap.map_single_one_one_eq_sub`: a linear map on `Fin 2 → K` takes `Pi.single 1 1` to
   the difference of its values at `1` and at `Pi.single 0 1`.
 * `LinearMap.toMatrix_piMap`: in product bases, `LinearMap.piMap f` is block diagonal, including
@@ -517,6 +519,14 @@ public theorem map_single_one_one_eq_sub {K V : Type*} [Semiring K] [AddCommGrou
   simpa [Fin.sum_univ_two] using Finset.univ_sum_single (1 : Fin 2 → K)
 
 end LinearMap
+
+/-- The vectors in `A^κ` with entries in a subalgebra `S` are the image of `S^κ` under the
+coordinatewise inclusion. -/
+public theorem Subalgebra.mem_range_compLeft_algebraLinearMap_iff {R A : Type*} [CommSemiring R]
+    [CommSemiring A] [Algebra R A] {S : Subalgebra R A} {κ : Type*} {v : κ → A} :
+    v ∈ LinearMap.range ((Algebra.linearMap S A).compLeft κ) ↔ ∀ i, v i ∈ S := by
+  simp [LinearMap.range_compLeft, Submodule.mem_pi, Algebra.linearMap_apply,
+    Subalgebra.algebraMap_apply]
 
 namespace Module.Basis
 

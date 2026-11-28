@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.CMField.AdeleStar
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Lattice
+import TauCeti.LinearAlgebra.Matrix.Congruence
 import TauCeti.LinearAlgebra.Matrix.Range
 
 /-!
@@ -92,17 +93,9 @@ theorem gramDet_def (B : Matrix κ (Fin r) 𝔸ᶠ[E]) :
 `conj (det M) · det M`. -/
 theorem gramDet_mul (B : Matrix κ (Fin r) 𝔸ᶠ[E]) (M : Matrix (Fin r) (Fin r) 𝔸ᶠ[E]) :
     gramDet (B * M) = finiteAdeleConj E M.det * gramDet B * M.det := by
-  have h_map : (B * M).map (finiteAdeleConj E) =
-      B.map (finiteAdeleConj E) * M.map (finiteAdeleConj E) :=
-    Matrix.map_mul (f := (finiteAdeleConj E).toRingHom)
-  have h_det : (M.map (finiteAdeleConj E)).det = finiteAdeleConj E M.det :=
-    (RingHom.map_det (finiteAdeleConj E).toRingHom M).symm
-  calc gramDet (B * M)
-    _ = ((M.map (finiteAdeleConj E))ᵀ * ((B.map (finiteAdeleConj E))ᵀ * B) * M).det := by
-      rw [gramDet_def, h_map, transpose_mul]
-      simp only [Matrix.mul_assoc]
-    _ = finiteAdeleConj E M.det * gramDet B * M.det := by
-      rw [det_mul, det_mul, det_transpose, h_det, gramDet_def B]
+  classical
+  simpa only [gramDet_def, Matrix.mul_one] using
+    det_transpose_map_mul_mul_mul (finiteAdeleConj E) 1 B M
 
 /-- Changing the columns of `B` by a square matrix `M` multiplies the generalised index of the
 Gram determinant by `[det M]²`. -/

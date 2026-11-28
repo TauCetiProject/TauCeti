@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
+import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 
 /-!
 # Traces and determinant pencils under rectangular congruence
@@ -36,6 +37,11 @@ one factor after the other.
   `Matrix.one_add_vecMulVec_single_add_single_mul_mul_transpose_apply` — the determinant and
   entries of congruence under the basis substitution `r ↦ r + a + b`.
 * `Matrix.transpose_map_mul_mul_mul` — `((M N) ^ σ)ᵀ Q (M N) = (N ^ σ)ᵀ ((M ^ σ)ᵀ Q M) N`.
+* `Matrix.det_transpose_map_mul_mul_mul` — the change of basis
+  `det (((k C) ^ σ)ᵀ J (k C)) = σ (det C) * det ((k ^ σ)ᵀ J k) * det C`.
+* `Matrix.map_det_eq_det_of_transpose_map_eq`, `Matrix.transpose_map_transpose_map_mul_mul` — a
+  `σ`-hermitian matrix has a `σ`-fixed determinant, and `(X ^ σ)ᵀ J X` is `σ`-hermitian for a
+  `σ`-hermitian `J` and an involution `σ`.
 * `Matrix.mul_mul_transpose_apply` — entrywise expansion of `(P * M * Qᵀ) i j` as a double sum.
 * `Matrix.mul_mul_mul_transpose_sub_mul_smul` and
   `Matrix.mul_mul_transpose_sub_smul_of_mul_eq_one`: the similitude defect
@@ -130,6 +136,30 @@ theorem transpose_map_mul_mul_mul {l m n R : Type*} [Fintype l] [Fintype m] [Com
     ((M * N).map σ)ᵀ * Q * (M * N) = (N.map σ)ᵀ * ((M.map σ)ᵀ * Q * M) * N := by
   rw [Matrix.map_mul, transpose_mul]
   simp only [Matrix.mul_assoc]
+
+/-- **Change of basis in a twisted Gram determinant.** For a square matrix `C`,
+`det (((k C) ^ σ)ᵀ J (k C)) = σ (det C) * det ((k ^ σ)ᵀ J k) * det C`. -/
+theorem det_transpose_map_mul_mul_mul {m n R S : Type*} [Fintype m] [Fintype n] [DecidableEq n]
+    [CommRing R] [FunLike S R R] [RingHomClass S R R] (σ : S) (J : Matrix m m R)
+    (k : Matrix m n R) (C : Matrix n n R) :
+    det (((k * C).map σ)ᵀ * J * (k * C)) = σ C.det * det ((k.map σ)ᵀ * J * k) * C.det := by
+  rw [← RingHom.coe_coe σ, transpose_map_mul_mul_mul, det_mul, det_mul, det_transpose,
+    RingHom.map_det, RingHom.mapMatrix_apply]
+
+/-- A square matrix that is `σ`-hermitian, `(M ^ σ)ᵀ = M`, has a `σ`-fixed determinant. -/
+theorem map_det_eq_det_of_transpose_map_eq {n R S : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] [FunLike S R R] [RingHomClass S R R] {σ : S} {M : Matrix n n R}
+    (hM : (M.map σ)ᵀ = M) : σ M.det = M.det :=
+  calc σ M.det
+    _ = (M.map σ).det := by simpa using RingHom.map_det (σ : R →+* R) M
+    _ = M.det := by rw [← det_transpose, hM]
+
+/-- For an involution `σ` and a `σ`-hermitian `J`, `(X ^ σ)ᵀ J X` is `σ`-hermitian. -/
+theorem transpose_map_transpose_map_mul_mul {l m R S : Type*} [Fintype l] [CommSemiring R]
+    [FunLike S R R] [RingHomClass S R R] {σ : S} (hσ : Function.Involutive σ) {J : Matrix l l R}
+    (hJ : (J.map σ)ᵀ = J) (X : Matrix l m R) :
+    ((((X.map σ)ᵀ * J * X).map σ)ᵀ) = (X.map σ)ᵀ * J * X := by
+  rw [transpose_map_mul, transpose_map_mul, hJ, transpose_map_transpose_map hσ, Matrix.mul_assoc]
 
 /-- Entrywise expansion of a bilinear congruence `(P * M * Qᵀ) i j` as a double sum over the
 inner indices. -/
