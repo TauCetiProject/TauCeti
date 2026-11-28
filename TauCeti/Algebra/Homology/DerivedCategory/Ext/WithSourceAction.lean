@@ -57,14 +57,13 @@ private lemma precompose_add (a b : A) (x : Ext X Y n) :
 /-- Scalars act on Ext by precomposition with the corresponding source endomorphism. -/
 @[no_expose]
 instance : Module A (ExtWithSourceAction ρ Y n) :=
-  show Module A (Ext X Y n) from
-    { smul := precompose ρ
-      one_smul := precompose_one ρ
-      mul_smul := precompose_mul ρ
-      smul_zero a := Ext.comp_zero (Ext.mk₀ (ρ a).unop.asHom) Y n n (zero_add n)
-      smul_add a x y := Ext.comp_add (Ext.mk₀ (ρ a).unop.asHom) x y (zero_add n)
-      zero_smul := precompose_zero ρ
-      add_smul := precompose_add ρ }
+  { smul := precompose ρ
+    one_smul := precompose_one ρ
+    mul_smul := precompose_mul ρ
+    smul_zero a := Ext.comp_zero (Ext.mk₀ (ρ a).unop.asHom) Y n n (zero_add n)
+    smul_add a x y := Ext.comp_add (Ext.mk₀ (ρ a).unop.asHom) x y (zero_add n)
+    zero_smul := precompose_zero ρ
+    add_smul := precompose_add ρ }
 
 /-- Forget the action to recover the ordinary Ext group. -/
 def toExt : ExtWithSourceAction ρ Y n ≃+ Ext X Y n := AddEquiv.refl _
