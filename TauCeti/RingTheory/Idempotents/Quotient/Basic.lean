@@ -188,11 +188,12 @@ noncomputable def cornerRingEquivQuotient {O : Type*} [CommRing O] {e : O}
       rw [show (φ x).val = e * x * e from he.val_compress x, mul_right_comm, he.eq]
     constructor
     · intro hx
-      have hex : e * x = 0 := by rw [← hval, hx]; rfl
+      have hex : e * x = 0 := by
+        rw [← hval, congrArg Subtype.val hx, IsIdempotentElem.Corner.val_zero]
       exact ⟨x, by rw [sub_mul, one_mul, hex, sub_zero]⟩
     · rintro ⟨y, rfl⟩
       apply Subtype.ext
-      rw [hval, show (0 : he.Corner).val = 0 from rfl, ← mul_assoc, mul_sub, mul_one, he.eq,
+      rw [hval, IsIdempotentElem.Corner.val_zero, ← mul_assoc, mul_sub, mul_one, he.eq,
         sub_self, zero_mul]
   exact (RingHom.quotientKerEquivOfSurjective fun x ↦ ⟨x.val, he.compress_val x⟩).symm.trans
     (Ideal.quotEquivOfEq hker)

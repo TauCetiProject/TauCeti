@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.Algebra.Module.Projective
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Lift
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.TensorProduct.Finite
@@ -54,6 +55,8 @@ relations, for instance the rationalisation of a module over an integral group r
   `N ⊗[R] (R ⧸ I) ≃ N ⧸ I S • N` for an `S`-module `N`.
 * `LinearMap.cokernelBaseChangeEquiv`: the `S`-linear isomorphism
   `S ⊗[R] cokernel f ≃ₗ[S] cokernel (S ⊗[R] f)`.
+* `TauCeti.quotTensorEquivQuotSMulQuot`: the `(R ⧸ I)`-linear upgrade of Mathlib's
+  `TensorProduct.quotTensorEquivQuotSMul`, identifying `(R ⧸ I) ⊗[R] M` with `M ⧸ I • ⊤`.
 
 ## Main results
 
@@ -535,6 +538,28 @@ theorem finite_baseChange_of_finite_quotSMulTop (k : Type*) [Ring k] (ℓ : ℕ)
     Module.Finite k (k ⊗[ℤ] V) :=
   have := AddMonoid.FG.to_moduleFinite_int (G := QuotSMulTop (ℓ : ℤ) V)
   QuotSMulTop.finite_baseChange (r := (ℓ : ℤ)) (by simp)
+
+section QuotSMulTop
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- The `(R ⧸ I)`-linear equivalence `(R ⧸ I) ⊗[R] M ≃ₗ[R ⧸ I] M ⧸ I M`, upgrading Mathlib's
+`TensorProduct.quotTensorEquivQuotSMul` to quotient-ring linearity. -/
+noncomputable def quotTensorEquivQuotSMulQuot (I : Ideal R) :
+    ((R ⧸ I) ⊗[R] M) ≃ₗ[R ⧸ I] (M ⧸ (I • (⊤ : Submodule R M))) :=
+  (TensorProduct.quotTensorEquivQuotSMul M I).extendScalarsOfSurjective Ideal.Quotient.mk_surjective
+
+@[simp]
+theorem quotTensorEquivQuotSMulQuot_one_tmul (I : Ideal R) (x : M) :
+    quotTensorEquivQuotSMulQuot I (1 ⊗ₜ[R] x) = Submodule.Quotient.mk x :=
+  TensorProduct.quotTensorEquivQuotSMul_mk_one_tmul I x
+
+@[simp]
+theorem quotTensorEquivQuotSMulQuot_symm_mk (I : Ideal R) (x : M) :
+    (quotTensorEquivQuotSMulQuot (R := R) (M := M) I).symm (Submodule.Quotient.mk x) = 1 ⊗ₜ[R] x :=
+  TensorProduct.quotTensorEquivQuotSMul_symm_mk I x
+
+end QuotSMulTop
 
 end TauCeti
 

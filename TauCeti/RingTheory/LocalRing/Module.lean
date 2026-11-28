@@ -16,8 +16,11 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import TauCeti.LinearAlgebra.Dual.Lemmas
 public import TauCeti.LinearAlgebra.Unimodular
 public import TauCeti.RingTheory.LocalRing.Residue
+import Mathlib.Algebra.Category.ModuleCat.Biproducts
 import Mathlib.Algebra.Module.Shrink
+import Mathlib.LinearAlgebra.TensorProduct.Quotient
 import TauCeti.Algebra.Module.Projective.Schanuel
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Generators of modules over a local ring
@@ -63,6 +66,10 @@ Splitting off these summands one at a time shows that `M` is free.
   value `1` on a finite projective module is free of rank one less.
 * `Module.free_of_projective_of_isLocalRing`: a finitely generated projective module over a
   possibly noncommutative local ring is free, for any `AddCommMonoid` module.
+* `TauCeti.IsLocalRing.exists_linearEquiv_fin_ker_of_comp_eq_id`: over a local ring, a split
+  surjection `Aˢ → Aʳ` satisfies `r ≤ s` and has a free kernel of rank `s - r`.
+* `TauCeti.IsLocalRing.finrank_residueField_tensorProduct_eq_of_minimalCover`: any minimal free
+  cover `Aʳ ↠ N` (`ker π ≤ 𝔪_A Aʳ`) has `dim_κ (κ ⊗ N) = r`.
 
 ## References
 
@@ -322,3 +329,86 @@ theorem isUnimodular_iff_notMem_maximalIdeal_smul_top [Module.Projective R M] {m
 end Commutative
 
 end Module
+
+namespace TauCeti.IsLocalRing
+
+section MinimalCover
+
+variable {A N : Type*} [CommRing A] [_root_.IsLocalRing A] [AddCommGroup N] [Module A N]
+
+/-- Over a local ring, a split surjection `Aˢ → Aʳ` satisfies `r ≤ s` and has a free kernel of
+rank `s - r`. No Noetherian hypothesis is needed. -/
+theorem exists_linearEquiv_fin_ker_of_comp_eq_id {r s : ℕ}
+    (u : (Fin s → A) →ₗ[A] (Fin r → A)) (w : (Fin r → A) →ₗ[A] (Fin s → A))
+    (huw : u ∘ₗ w = LinearMap.id) :
+    r ≤ s ∧ Nonempty ((Fin (s - r) → A) ≃ₗ[A] LinearMap.ker u) := by
+  let e : (LinearMap.ker u × (Fin r → A)) ≃ₗ[A] (Fin s → A) :=
+    lequivProdOfRightSplitExact Subtype.val_injective (Submodule.range_subtype _) huw
+  have : Module.Finite A (LinearMap.ker u) :=
+    Module.Finite.of_surjective
+      (LinearMap.fst A (LinearMap.ker u) (Fin r → A) ∘ₗ e.symm.toLinearMap)
+      (Prod.fst_surjective.comp e.symm.surjective)
+  have : Module.Projective A (LinearMap.ker u) :=
+    Module.Projective.of_split (e.toLinearMap ∘ₗ LinearMap.inl A (LinearMap.ker u) (Fin r → A))
+      (LinearMap.fst A (LinearMap.ker u) (Fin r → A) ∘ₗ e.symm.toLinearMap)
+      (LinearMap.ext fun x ↦ by simp)
+  have : Module.Free A (LinearMap.ker u) := Module.free_of_projective_of_isLocalRing
+  have hdim : Module.finrank A (LinearMap.ker u) + r = s := by
+    simpa [Module.finrank_prod, Module.finrank_fin_fun] using e.finrank_eq
+  exact ⟨by omega, ⟨(Module.finBasisOfFinrankEq A (LinearMap.ker u) (by omega)).equivFun.symm⟩⟩
+
+/-- Any minimal free cover `π : Aʳ ↠ N` (`ker π ≤ 𝔪_A Aʳ`) over a local ring `A` has
+rank equal to `dim_κ (κ ⊗[A] N)`. -/
+theorem finrank_residueField_tensorProduct_eq_of_minimalCover {r : ℕ}
+    (π : (Fin r → A) →ₗ[A] N) (hπ : Function.Surjective π)
+    (hmin : LinearMap.ker π ≤ _root_.IsLocalRing.maximalIdeal A • (⊤ : Submodule A (Fin r → A))) :
+    Module.finrank (_root_.IsLocalRing.ResidueField A)
+      (_root_.IsLocalRing.ResidueField A ⊗[A] N) = r := by
+  let κ := _root_.IsLocalRing.ResidueField A
+  let b : Fin r → κ ⊗[A] N := fun j ↦ 1 ⊗ₜ[A] π (Pi.single j 1)
+  have htmul_sum (c : κ) (x : Fin r → A) :
+      c ⊗ₜ[A] π x = ∑ j : Fin r, (c * _root_.IsLocalRing.residue A (x j)) • b j := by
+    have hx : x = ∑ j : Fin r, x j • Pi.single j (1 : A) := pi_eq_sum_univ' x
+    conv_lhs => rw [hx, map_sum]
+    simp only [map_smul, TensorProduct.tmul_sum, b]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [← TensorProduct.smul_tmul, TensorProduct.smul_tmul', smul_eq_mul, mul_one,
+      Algebra.smul_def, _root_.IsLocalRing.ResidueField.algebraMap_eq, mul_comm]
+  have hspan : Submodule.span κ (Set.range b) = ⊤ := by
+    rw [eq_top_iff]
+    intro y _
+    refine TensorProduct.inductionOn y (fun c n ↦ ?_) fun _ _ hx hy ↦ add_mem hx hy
+    obtain ⟨x, rfl⟩ := hπ n
+    rw [htmul_sum c x]
+    exact Submodule.sum_mem _ fun j _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨j, rfl⟩)
+  have hli : LinearIndependent κ b := by
+    rw [Fintype.linearIndependent_iff]
+    intro c hc j
+    choose x hx using fun i ↦ _root_.IsLocalRing.residue_surjective (c i)
+    have htmul : (1 : κ) ⊗ₜ[A] π x = 0 := by
+      rw [htmul_sum 1 x]
+      simpa only [one_mul, hx] using hc
+    -- By definition, `ResidueField A = A ⧸ maximalIdeal A`.
+    have hmem : π x ∈ _root_.IsLocalRing.maximalIdeal A • (⊤ : Submodule A N) := by
+      have htmul' : (1 : A ⧸ _root_.IsLocalRing.maximalIdeal A) ⊗ₜ[A] π x = 0 := htmul
+      have h0 := congrArg
+        (TensorProduct.quotTensorEquivQuotSMul N (_root_.IsLocalRing.maximalIdeal A)) htmul'
+      rwa [TensorProduct.quotTensorEquivQuotSMul_mk_one_tmul, map_zero,
+        Submodule.Quotient.mk_eq_zero] at h0
+    have hmem' : π x ∈
+        (_root_.IsLocalRing.maximalIdeal A • (⊤ : Submodule A (Fin r → A))).map π := by
+      rwa [Submodule.map_smul'', Submodule.map_top, LinearMap.range_eq_top.mpr hπ]
+    obtain ⟨w, hw, hwx⟩ := hmem'
+    have hx_mem : x ∈ _root_.IsLocalRing.maximalIdeal A • (⊤ : Submodule A (Fin r → A)) := by
+      rw [show x = w + (x - w) by abel]
+      exact add_mem hw (hmin (by rw [LinearMap.mem_ker, map_sub, hwx, sub_self]))
+    have hxj : x j ∈ _root_.IsLocalRing.maximalIdeal A := by
+      have hcoord := (Ideal.mem_smul_top_pi_iff (_root_.IsLocalRing.maximalIdeal A)).mp hx_mem j
+      simpa only [smul_eq_mul, Ideal.mul_top] using hcoord
+    rw [← hx j, _root_.IsLocalRing.residue_eq_zero_iff]
+    exact hxj
+  exact (Module.finrank_eq_card_basis (Module.Basis.mk hli hspan.ge)).trans (Fintype.card_fin r)
+
+end MinimalCover
+
+end TauCeti.IsLocalRing

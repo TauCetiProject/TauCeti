@@ -57,8 +57,9 @@ its coefficients and shows that it is prime when `I` is.
   in `(R ⧸ K)⟦X⟧` when `J * J ≤ K`.
 * `PowerSeries.jacobson_eq_comap_constantCoeff`: `Ring.jacobson R⟦X⟧` is the preimage of
   `Ring.jacobson R` under `constantCoeff`.
-* `PowerSeries.quotientMapRingEquiv`, `PowerSeries.quotientSpanCRingEquiv`: quotient isomorphisms
-  `R⟦X⟧ ⧸ (ker φ).map C ≃+* S⟦X⟧` and `R⟦X⟧ ⧸ (C r) ≃+* (R ⧸ (r))⟦X⟧`.
+* `PowerSeries.quotientMapRingEquiv`, `PowerSeries.quotientSpanCRingEquiv`,
+  `PowerSeries.isLocalRing_quotient_span_C`: quotient isomorphisms
+  `R⟦X⟧ ⧸ (ker φ).map C ≃+* S⟦X⟧` and `R⟦X⟧ ⧸ (C r) ≃+* (R ⧸ (r))⟦X⟧`, preserving locality.
 -/
 
 public section
@@ -202,5 +203,10 @@ theorem quotientSpanCRingEquiv_mk (r : R) (f : R⟦X⟧) :
     quotientSpanCRingEquiv r (Ideal.Quotient.mk _ f) =
       f.map (Ideal.Quotient.mk (Ideal.span {r})) := by
   simp [quotientSpanCRingEquiv]
+
+/-- If `R ⧸ (r)` is a local ring, then so is `R⟦X⟧ ⧸ (C r)`. -/
+theorem isLocalRing_quotient_span_C (r : R) [IsLocalRing (R ⧸ Ideal.span {r})] :
+    IsLocalRing (R⟦X⟧ ⧸ Ideal.span {C r}) :=
+  (quotientSpanCRingEquiv r).symm.isLocalRing
 
 end PowerSeries

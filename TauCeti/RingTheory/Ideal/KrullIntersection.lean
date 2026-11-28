@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Noetherian.Defs
 
 import Mathlib.RingTheory.Filtration
 import TauCeti.RingTheory.Ideal.Extended
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # Consequences of Krull's intersection theorem
@@ -20,7 +21,9 @@ For a finite module over a noetherian commutative ring:
   essential because the powers of one maximal ideal need not separate a nonlocal ring;
 * every submodule `N` is closed in the `I`-adic topology for any ideal `I` contained in the
   Jacobson radical (`Ideal.iInf_sup_pow_smul_eq_of_le_jacobson`), and in particular every ideal `J`
-  satisfies `⨅ n, J ⊔ I ^ n = J` (`Ideal.iInf_sup_pow_eq_of_le_jacobson`).
+  satisfies `⨅ n, J ⊔ I ^ n = J` (`Ideal.iInf_sup_pow_eq_of_le_jacobson`), yielding closed-ideal
+  inclusion and equality detection along cofinal quotient families
+  (`Ideal.le_of_forall_map_quotientMk_le`, `Ideal.eq_of_forall_map_quotientMk_eq`).
 
 For an algebra `A` over a noetherian commutative ring `R`, finite as an `R`-module but not
 necessarily commutative, the powers of the two-sided ideal of `A` extended from an ideal `I` of
@@ -98,6 +101,35 @@ theorem iInf_sup_pow_eq_of_le_jacobson (I : Ideal R) (hI : I ≤ Ring.jacobson R
     I.iInf_sup_pow_smul_eq_of_le_jacobson (M := R) hI J
 
 end Module
+
+section ClosedIdealDetection
+
+variable {R : Type*} [CommRing R]
+
+/-- **Closed-ideal inclusion detection.** In a Noetherian ring `R`, let `J ≤ Ring.jacobson R` and
+let `{Kᵢ}` be a family of ideals cofinal in the powers of `J`. If `I` maps into the image of `L`
+in every quotient `R ⧸ Kᵢ`, then `I ≤ L`. -/
+theorem le_of_forall_map_quotientMk_le [IsNoetherianRing R] {J : Ideal R}
+    (hJ : J ≤ Ring.jacobson R) {ι : Type*} {K : ι → Ideal R}
+    (hcof : ∀ N : ℕ, ∃ i : ι, K i ≤ J ^ N) {I L : Ideal R}
+    (h : ∀ i, I.map (Ideal.Quotient.mk (K i)) ≤ L.map (Ideal.Quotient.mk (K i))) : I ≤ L := by
+  rw [← J.iInf_sup_pow_eq_of_le_jacobson hJ L]
+  refine le_iInf fun N ↦ ?_
+  obtain ⟨i, hi⟩ := hcof N
+  exact (map_quotientMk_le_map_quotientMk_iff.mp (h i)).trans (sup_le_sup_left hi L)
+
+/-- **Closed-ideal equality detection.** In a Noetherian ring `R`, let `J ≤ Ring.jacobson R` and
+let `{Kᵢ}` be a family of ideals cofinal in the powers of `J`. Two ideals of `R` with equal images
+in every quotient `R ⧸ Kᵢ` are equal. -/
+theorem eq_of_forall_map_quotientMk_eq [IsNoetherianRing R] {J : Ideal R}
+    (hJ : J ≤ Ring.jacobson R) {ι : Type*} {K : ι → Ideal R}
+    (hcof : ∀ N : ℕ, ∃ i : ι, K i ≤ J ^ N) {I L : Ideal R}
+    (h : ∀ i, I.map (Ideal.Quotient.mk (K i)) = L.map (Ideal.Quotient.mk (K i))) : I = L :=
+  le_antisymm
+    (le_of_forall_map_quotientMk_le hJ hcof fun i ↦ (h i).le)
+    (le_of_forall_map_quotientMk_le hJ hcof fun i ↦ (h i).ge)
+
+end ClosedIdealDetection
 
 section ExtendedIdeal
 
