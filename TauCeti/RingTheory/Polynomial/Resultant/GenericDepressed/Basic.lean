@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Polynomial.Resultant.WeightedHomogeneous
 import Mathlib.RingTheory.Localization.Away.Basic
 import TauCeti.Algebra.MvPolynomial.Equiv
 import TauCeti.Algebra.Polynomial.Taylor
+import TauCeti.Data.Finsupp.MapDomain
 import TauCeti.RingTheory.MvPolynomial.Localization
 import TauCeti.RingTheory.Polynomial.Resultant.FreeMonic
 import TauCeti.RingTheory.Polynomial.Resultant.RootCoordinates

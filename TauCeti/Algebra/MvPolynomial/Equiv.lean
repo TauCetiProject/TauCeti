@@ -389,23 +389,6 @@ theorem optionSubtypeNeEquiv_symm_C_C (i : σ) (r : R) :
     (optionSubtypeNeEquiv R i).symm (Polynomial.C (C r)) = C r :=
   (optionSubtypeNeEquiv R i).symm_apply_eq.mpr (optionSubtypeNeEquiv_C i r).symm
 
--- Not tagged `@[simp]`: Mathlib's `Equiv.optionSubtypeNe_apply` is `@[simp]`, so `simpNF` rejects
--- `Equiv.optionSubtypeNe` on a `@[simp]` left-hand side.
-/-- Extending `d` by `n` at `i` via `Equiv.optionSubtypeNe i` evaluates to `n` at `i`. -/
-theorem _root_.Finsupp.mapDomain_optionSubtypeNe_optionElim_self {M : Type*} [AddCommMonoid M]
-    (i : σ) (n : M) (d : {b : σ // b ≠ i} →₀ M) :
-    (Finsupp.optionElim n d).mapDomain (Equiv.optionSubtypeNe i) i = n := by
-  rw [Finsupp.mapDomain_equiv_apply, Equiv.optionSubtypeNe_symm_self,
-    Finsupp.optionElim_apply_none]
-
-/-- Extending `d` by `n` at `i` via `Equiv.optionSubtypeNe i` evaluates to `d ⟨j, h⟩` at
-`j ≠ i`. -/
-theorem _root_.Finsupp.mapDomain_optionSubtypeNe_optionElim_of_ne {M : Type*} [AddCommMonoid M]
-    {i j : σ} (h : j ≠ i) (n : M) (d : {b : σ // b ≠ i} →₀ M) :
-    (Finsupp.optionElim n d).mapDomain (Equiv.optionSubtypeNe i) j = d ⟨j, h⟩ := by
-  rw [Finsupp.mapDomain_equiv_apply, Equiv.optionSubtypeNe_symm_of_ne h,
-    Finsupp.optionElim_apply_some]
-
 /-- Extracting the coefficient of `d` in the `n`-th univariate coefficient of
 `optionSubtypeNeEquiv R i p` recovers the coefficient of `p` at the exponent obtained by
 extending `d` with `n` at `i`. -/

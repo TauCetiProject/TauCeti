@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Data.Finsupp.Basic
 public import Mathlib.Data.Finsupp.Lex
+public import Mathlib.Data.Finsupp.Option
 public import Mathlib.Data.Finsupp.Weight
+public import Mathlib.Logic.Equiv.Option
 import Mathlib.LinearAlgebra.Finsupp.Supported
 
 /-!
@@ -29,6 +31,11 @@ weight for the pulled-back weights (`Finsupp.weight_mapDomain`).
 Pushing forward along a strictly monotone map of linearly ordered indices preserves and reflects
 the strict and non-strict lexicographic orders, since the relabeled functions vanish off the image
 and the order relabels the positions where they first differ.
+
+Extending a finitely supported function on `{b : α // b ≠ i}` by a value at `i` via
+`Finsupp.optionElim` and pushing forward along `Equiv.optionSubtypeNe i` evaluates to the inserted
+value at `i` (`Finsupp.mapDomain_optionSubtypeNe_optionElim_self`) and to the original values
+elsewhere (`Finsupp.mapDomain_optionSubtypeNe_optionElim_of_ne`).
 -/
 
 public section
@@ -163,5 +170,20 @@ theorem toLex_mapDomain_le_toLex_mapDomain_iff {α β M : Type*} [LinearOrder α
     toLex (mapDomain f x) ≤ toLex (mapDomain f y) ↔ toLex x ≤ toLex y := by
   simp only [le_iff_lt_or_eq, toLex_mapDomain_lt_toLex_mapDomain_iff hf, toLex_inj,
     (mapDomain_injective hf.injective).eq_iff]
+
+-- Not tagged `@[simp]`: Mathlib's `Equiv.optionSubtypeNe_apply` is `@[simp]`, so `simpNF` rejects
+-- `Equiv.optionSubtypeNe` on a `@[simp]` left-hand side.
+/-- Extending `d` by `n` at `i` via `Equiv.optionSubtypeNe i` evaluates to `n` at `i`. -/
+theorem mapDomain_optionSubtypeNe_optionElim_self {α M : Type*} [DecidableEq α] [AddCommMonoid M]
+    (i : α) (n : M) (d : {b : α // b ≠ i} →₀ M) :
+    (optionElim n d).mapDomain (Equiv.optionSubtypeNe i) i = n := by
+  rw [mapDomain_equiv_apply, Equiv.optionSubtypeNe_symm_self, optionElim_apply_none]
+
+/-- Extending `d` by `n` at `i` via `Equiv.optionSubtypeNe i` evaluates to `d ⟨j, h⟩` at
+`j ≠ i`. -/
+theorem mapDomain_optionSubtypeNe_optionElim_of_ne {α M : Type*} [DecidableEq α] [AddCommMonoid M]
+    {i j : α} (h : j ≠ i) (n : M) (d : {b : α // b ≠ i} →₀ M) :
+    (optionElim n d).mapDomain (Equiv.optionSubtypeNe i) j = d ⟨j, h⟩ := by
+  rw [mapDomain_equiv_apply, Equiv.optionSubtypeNe_symm_of_ne h, optionElim_apply_some]
 
 end Finsupp

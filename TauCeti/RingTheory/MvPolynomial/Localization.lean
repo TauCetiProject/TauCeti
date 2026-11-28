@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.MvPolynomial.Localization
+import Mathlib.GroupTheory.MonoidLocalization.Divisibility
 
 /-!
 # Divisibility in multivariate polynomial rings over away localizations
@@ -37,24 +38,10 @@ theorem exists_C_pow_mul_eq_mul_of_map_localization_away
     [IsLocalization.Away r S] {p x : MvPolynomial σ R}
     (hdvd : map (algebraMap R S) p ∣ map (algebraMap R S) x) :
     ∃ (k : ℕ) (q₀ : MvPolynomial σ R), C (r ^ k) * x = p * q₀ := by
-  obtain ⟨qS, hqS⟩ := hdvd
-  obtain ⟨⟨q₁, _, b, ⟨k, rfl⟩, rfl⟩, hq₁⟩ :=
-    IsLocalization.surj ((Submonoid.powers r).map (C (σ := σ))) qS
-  simp only [algebraMap_def, map_C] at hq₁
-  have heq : algebraMap (MvPolynomial σ R) (MvPolynomial σ S) (C (r ^ k) * x) =
-      algebraMap (MvPolynomial σ R) (MvPolynomial σ S) (p * q₁) := by
-    simp only [algebraMap_def, map_mul, map_C, hqS]
-    calc
-      C (algebraMap R S (r ^ k)) * (map (algebraMap R S) p * qS)
-          = map (algebraMap R S) p * (qS * C (algebraMap R S (r ^ k))) := by ring
-      _ = map (algebraMap R S) p * map (algebraMap R S) q₁ := by rw [hq₁]
-  obtain ⟨⟨_, _, ⟨m, rfl⟩, rfl⟩, hm⟩ :=
-    IsLocalization.exists_of_eq (M := (Submonoid.powers r).map (C (σ := σ)))
-      (S := MvPolynomial σ S) heq
-  refine ⟨m + k, C (r ^ m) * q₁, ?_⟩
-  calc
-    C (r ^ (m + k)) * x = C (r ^ m) * (C (r ^ k) * x) := by rw [pow_add, map_mul, mul_assoc]
-    _ = C (r ^ m) * (p * q₁) := hm
-    _ = p * (C (r ^ m) * q₁) := by ring
+  let f := IsLocalization.toLocalizationMap ((Submonoid.powers r).map (C (σ := σ)))
+    (MvPolynomial σ S)
+  have hf : f p ∣ f x := by simpa [f, IsLocalization.toLocalizationMap_apply, algebraMap_def]
+  obtain ⟨_, ⟨_, ⟨k, rfl⟩, rfl⟩, q₀, hq₀⟩ := f.map_dvd_map.mp hf
+  exact ⟨k, q₀, by simpa [map_pow] using hq₀⟩
 
 end MvPolynomial
