@@ -9,6 +9,7 @@ public import TauCeti.Probability.PointProcess.Poisson.Basic
 public import TauCeti.MeasureTheory.Measure.NNReal
 
 import TauCeti.MeasureTheory.Measure.AtomlessStandardBorel.Transport
+import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 import TauCeti.Probability.Distributions.Poisson.SmallRate
 import Mathlib.Order.Interval.Set.Union
 
