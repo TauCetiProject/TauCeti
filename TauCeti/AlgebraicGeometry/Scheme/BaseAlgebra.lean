@@ -37,6 +37,8 @@ the base, stalk, and function-field algebra structures form a scalar tower.
   base are compatible with the base-ring algebra structures.
 * `Scheme.Hom.stalkMap_algebraMap`: the stalk maps of a morphism over the affine base are
   compatible with the base-ring algebra structures.
+* `Scheme.Hom.isScalarTower_sections_stalk`: compatible opens `U ≤ f⁻¹ V` yield compatible
+  scalar towers between section rings and stalks.
 * `Scheme.Hom.stalkAlgEquivOfIsOpenImmersion`: an open immersion over `Spec k` identifies the
   local rings as `k`-algebras.
 * `Scheme.baseStalkResidueFieldIsScalarTower`: compatibility of the base, stalk, and residue-field
@@ -525,6 +527,42 @@ lemma stalkAlgEquivOfIsOpenImmersion_apply (f : X ⟶ Y) [IsOpenImmersion f]
   (rfl)
 
 end StalkMap
+
+section SectionsStalk
+
+variable {X Y : Scheme.{u}}
+
+/-- For a morphism of schemes `f : X ⟶ Y` and compatible opens `U ≤ f⁻¹ V`, the section rings
+`Γ(Y, V)` and `Γ(X, U)` and the stalks `𝒪_{Y, f x}` and `𝒪_{X, x}` form two compatible scalar
+towers over `Γ(Y, V)`. -/
+theorem isScalarTower_sections_stalk (f : X ⟶ Y) (x : X)
+    {V : Y.Opens} {U : X.Opens} (hxV : f x ∈ V) (hxU : x ∈ U) (hUV : U ≤ f ⁻¹ᵁ V) :
+    letI : Algebra Γ(Y, V) Γ(X, U) := (f.appLE V U hUV).hom.toAlgebra
+    letI : Algebra Γ(X, U) (X.presheaf.stalk x) := X.presheaf.algebra_section_stalk ⟨x, hxU⟩
+    letI : Algebra Γ(Y, V) (Y.presheaf.stalk (f x)) :=
+      Y.presheaf.algebra_section_stalk ⟨f x, hxV⟩
+    letI : Algebra (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := (f.stalkMap x).hom.toAlgebra
+    letI : Algebra Γ(Y, V) (X.presheaf.stalk x) :=
+      (f.appLE V U hUV ≫ X.presheaf.germ U x hxU).hom.toAlgebra
+    IsScalarTower Γ(Y, V) Γ(X, U) (X.presheaf.stalk x) ∧
+      IsScalarTower Γ(Y, V) (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := by
+  let _ : Algebra Γ(Y, V) Γ(X, U) := (f.appLE V U hUV).hom.toAlgebra
+  let _ : Algebra Γ(X, U) (X.presheaf.stalk x) := X.presheaf.algebra_section_stalk ⟨x, hxU⟩
+  let _ : Algebra Γ(Y, V) (Y.presheaf.stalk (f x)) :=
+    Y.presheaf.algebra_section_stalk ⟨f x, hxV⟩
+  let _ : Algebra (Y.presheaf.stalk (f x)) (X.presheaf.stalk x) := (f.stalkMap x).hom.toAlgebra
+  let _ : Algebra Γ(Y, V) (X.presheaf.stalk x) :=
+    (f.appLE V U hUV ≫ X.presheaf.germ U x hxU).hom.toAlgebra
+  have hnat : f.appLE V U hUV ≫ X.presheaf.germ U x hxU =
+      Y.presheaf.germ V (f x) hxV ≫ f.stalkMap x := by
+    rw [Scheme.Hom.germ_stalkMap, Scheme.Hom.app_eq_appLE,
+      ← X.presheaf.germ_res (homOfLE hUV) x hxU, Scheme.Hom.appLE_map_assoc]
+  refine ⟨.of_algebraMap_eq fun r ↦ ?_, .of_algebraMap_eq fun r ↦ ?_⟩
+  · simp only [RingHom.algebraMap_toAlgebra, CommRingCat.hom_comp, RingHom.comp_apply]
+  · simp only [RingHom.algebraMap_toAlgebra, CommRingCat.hom_ext_iff.mp hnat,
+      CommRingCat.hom_comp, RingHom.comp_apply]
+
+end SectionsStalk
 
 end AlgebraicGeometry.Scheme.Hom
 

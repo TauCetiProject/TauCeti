@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.RamificationInertia.Ramification
 public import Mathlib.RingTheory.Localization.Integer
 public import TauCeti.RingTheory.DedekindDomain.Different.Basic
+import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 
 /-!
 # Localization of the different ideal
@@ -225,36 +226,17 @@ include K L in
 theorem multiplicity_differentIdeal_eq_multiplicity_under [IsDomain Rₘ] [IsDedekindDomain Sₘ]
     [IsTorsionFree R S] [IsTorsionFree Rₘ Sₘ] {P : Ideal Sₘ} [P.IsPrime] (hP : P ≠ ⊥) :
     multiplicity P (differentIdeal Rₘ Sₘ) = multiplicity (P.under S) (differentIdeal R S) := by
-  -- Extending `P ∩ S` to the localization gives back `P`, so its ramification index is one and
-  -- extension preserves the coefficient; `map_differentIdeal_eq_differentIdeal` identifies the
-  -- extended different with `𝔇(Sₘ / Rₘ)`.
   have hM : M ≤ R⁰ := fun m hm ↦ mem_nonZeroDivisors_iff_ne_zero.mpr fun hm0 ↦
     (IsLocalization.map_units Rₘ ⟨m, hm⟩).ne_zero (by simp [hm0])
   have hMS : Algebra.algebraMapSubmonoid S M ≤ S⁰ :=
     map_le_nonZeroDivisors_of_injective _ (FaithfulSMul.algebraMap_injective R S) hM
   let _ : FaithfulSMul S Sₘ :=
     (faithfulSMul_iff_algebraMap_injective S Sₘ).mpr (IsLocalization.injective Sₘ hMS)
-  have hmap : (P.under S).map (algebraMap S Sₘ) = P :=
-    IsLocalization.map_under (Algebra.algebraMapSubmonoid S M) Sₘ P
-  have hunder : P.under S ≠ ⊥ := fun h ↦ hP (by rw [← hmap, h, Ideal.map_bot])
-  have hD : differentIdeal R S ≠ ⊥ :=
-    differentIdeal_ne_bot_of_isSeparable (K := K) (L := L)
-  have hone : Ideal.ramificationIdx' (P.under S) P = 1 := by
-    have h : Ideal.ramificationIdx' (P.under S) ((P.under S).map (algebraMap S Sₘ)) = 1 :=
-      Ideal.ramificationIdx'_map_self_eq_one (by rw [hmap]; exact Ideal.IsPrime.ne_top ‹_›)
-        (by rwa [hmap])
-    rwa [hmap] at h
-  have h := Ideal.IsDedekindDomain.emultiplicity_map_eq_ramificationIdx'_mul hD
-    (Ideal.prime_of_isPrime hunder (Ideal.IsPrime.under S P)).irreducible
-    (Ideal.prime_of_isPrime hP ‹P.IsPrime›).irreducible hP
-  rw [hone, Nat.cast_one, one_mul,
-    (FiniteMultiplicity.of_prime_left (Ideal.prime_of_isPrime hP ‹P.IsPrime›)
-      (Ideal.map_ne_bot_of_ne_bot hD)).emultiplicity_eq_multiplicity,
-    (FiniteMultiplicity.of_prime_left (Ideal.prime_of_isPrime hunder (Ideal.IsPrime.under S P))
-      hD).emultiplicity_eq_multiplicity,
-    map_differentIdeal_eq_differentIdeal (R := R) (Rₘ := Rₘ) (S := S) (Sₘ := Sₘ) (K := K)
-      (L := L) (M := M)] at h
-  exact_mod_cast h
+  rw [← map_differentIdeal_eq_differentIdeal (R := R) (Rₘ := Rₘ) (S := S) (Sₘ := Sₘ)
+    (K := K) (L := L) (M := M)]
+  exact Ideal.multiplicity_map_of_map_eq hP
+    (IsLocalization.map_under (Algebra.algebraMapSubmonoid S M) Sₘ P)
+    (differentIdeal_ne_bot_of_isSeparable (K := K) (L := L))
 
 end TauCeti
 

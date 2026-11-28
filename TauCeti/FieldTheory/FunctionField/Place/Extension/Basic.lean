@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.PurelyInseparable.Tower
 public import Mathlib.RingTheory.Valuation.Extension
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
+public import TauCeti.FieldTheory.FunctionField.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Filtration
 public import TauCeti.FieldTheory.FunctionField.Place.Map
@@ -17,7 +18,8 @@ import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 import TauCeti.RingTheory.Valuation.NontrivialComap
 -- Proof-only: linear disjointness transports linear independence of the constants.
 import TauCeti.FieldTheory.IntermediateField.LinearDisjoint
--- Proof-only: a surjective valuation is nontrivial.
+-- Proof-only: a surjective valuation is nontrivial; perfect constants yield perfect residue fields.
+import TauCeti.FieldTheory.FunctionField.Place.Degree
 import TauCeti.RingTheory.Valuation.Surjective
 
 /-!
@@ -134,6 +136,8 @@ to the canonical fraction fields used by Mathlib's different API.
   outside `k`.
 * `TauCeti.Place.isSeparable_residueField_iff_of_degree_eq_one`: at a rational place over a
   rational place, the residue extension is separable exactly when the constant extension is.
+* `TauCeti.Place.isSeparable_residueField_restrict_of_perfectField`: over a perfect constant field,
+  every residue extension is separable.
 * `TauCeti.Place.isFractionRing_integralClosure`,
   `TauCeti.Place.isLocalization_integralClosure`,
   `TauCeti.Place.isDedekindDomain_integralClosure`,
@@ -680,7 +684,7 @@ instance instIsLocalHomIntegers :
     rw [P'.isUnit_iff_valuation_eq_one, coe_algebraMap_integers] at ha
     exact (Valuation.HasExtension.val_map_eq_one_iff _ _ _).mp ha
 
-open Polynomial in
+open _root_.Polynomial in
 /-- The residue field of a place is algebraic over the residue field of the place below it, for
 any integral extension `F' / F`. The minimal polynomial over `F` of `y ∈ 𝒪_{P'}`, normalized so
 that its coefficients lie in `𝒪_P` and one of them is a unit, reduces to a nonzero polynomial
@@ -958,6 +962,14 @@ theorem isSeparable_residueField_iff_of_degree_eq_one (P' : Place k' F') (h' : P
   simp only [RingHom.coe_comp, Function.comp_apply, RingEquiv.coe_toRingHom,
     AlgEquiv.coe_toRingEquiv, residueFieldEquivOfDegreeEqOne_apply,
     algebraMap_residueField_algebraMap]
+
+/-- Over a perfect constant field `k`, every residue extension `P'.ResidueField` over
+`(P'.restrict k F).ResidueField` is separable when `F / k` is an algebraic function field. -/
+theorem isSeparable_residueField_restrict_of_perfectField [PerfectField k]
+    (hF : IsFunctionField k F) (P' : Place k' F') :
+    Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField :=
+  have := (P'.restrict k F).perfectField_residueField hF
+  inferInstance
 
 end ResidueConstants
 

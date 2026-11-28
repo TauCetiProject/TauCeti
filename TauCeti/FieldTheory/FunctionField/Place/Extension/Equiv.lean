@@ -74,6 +74,76 @@ theorem restrict_equivOfRingEquiv [Algebra k K] [Algebra k' K'] [IsScalarTower k
       algebraMap K' L' f = τ (algebraMap K L (σK.symm f)))]
 
 include hK in
+/-- **The valuation ring equivalence for the restricted place along a commuting square**:
+if `τ : L ≃+* L'` carries the image of `K` onto the image of `K'` along `σK : K ≃+* K'`, then
+`σK` identifies the valuation ring of `Q.restrict k K` with that of
+`(equivOfRingEquiv σ τ h Q).restrict k' K'`. -/
+noncomputable def integersEquivRestrictOfRingEquiv [Algebra k K] [Algebra k' K']
+    [IsScalarTower k K L] [IsScalarTower k' K' L'] [Algebra.IsIntegral K L]
+    [Algebra.IsIntegral K' L'] (Q : Place k L) :
+    (Q.restrict k K).integers ≃+* ((equivOfRingEquiv σ τ h Q).restrict k' K').integers :=
+  have hσK : ∀ c, σK (algebraMap k K c) = algebraMap k' K' (σ c) := fun c ↦
+    (algebraMap K' L').injective (by
+      rw [← hK, ← IsScalarTower.algebraMap_apply k K L, h, IsScalarTower.algebraMap_apply k' K' L'])
+  have hr := restrict_equivOfRingEquiv σ τ h σK hK hσK Q
+  (integersEquivOfRingEquiv σ σK hσK (Q.restrict k K)).trans
+    (RingEquiv.subringCongr (congrArg (fun P ↦ P.integers.toSubring) hr.symm))
+
+include hK in
+/-- Coercion formula for `integersEquivRestrictOfRingEquiv`: it acts on underlying field elements as
+`σK`. -/
+@[simp]
+theorem coe_integersEquivRestrictOfRingEquiv [Algebra k K] [Algebra k' K']
+    [IsScalarTower k K L] [IsScalarTower k' K' L'] [Algebra.IsIntegral K L]
+    [Algebra.IsIntegral K' L'] (Q : Place k L) (x : (Q.restrict k K).integers) :
+    ((integersEquivRestrictOfRingEquiv σ τ h σK hK Q x : K')) = σK x := by
+  dsimp only [integersEquivRestrictOfRingEquiv]
+  rw [RingEquiv.trans_apply, RingEquiv.coe_subringCongr_apply, coe_integersEquivOfRingEquiv]
+
+include hK in
+/-- **The commuting residue-field square along a commutative square of semilinear isomorphisms**:
+the residue-field maps induced by `integersEquivRestrictOfRingEquiv` below and
+`integersEquivOfRingEquiv` above commute with the residue-field embeddings. -/
+theorem residueField_comm_equivOfRingEquiv [Algebra k K] [Algebra k' K']
+    [IsScalarTower k K L] [IsScalarTower k' K' L'] [Algebra.IsIntegral K L]
+    [Algebra.IsIntegral K' L'] (Q : Place k L) :
+    (algebraMap ((equivOfRingEquiv σ τ h Q).restrict k' K').ResidueField
+        (equivOfRingEquiv σ τ h Q).ResidueField).comp
+      (IsLocalRing.ResidueField.mapEquiv
+        (integersEquivRestrictOfRingEquiv σ τ h σK hK Q)).toRingHom =
+      (IsLocalRing.ResidueField.mapEquiv (integersEquivOfRingEquiv σ τ h Q)).toRingHom.comp
+        (algebraMap (Q.restrict k K).ResidueField Q.ResidueField) := by
+  have hring :
+      (algebraMap ((equivOfRingEquiv σ τ h Q).restrict k' K').integers
+          (equivOfRingEquiv σ τ h Q).integers).comp
+        (integersEquivRestrictOfRingEquiv σ τ h σK hK Q : _ →+* _) =
+      (integersEquivOfRingEquiv σ τ h Q : _ →+* _).comp
+        (algebraMap (Q.restrict k K).integers Q.integers) := by
+    ext x
+    simp [hK]
+  have halg {P : Place k L} [Algebra k K] [IsScalarTower k K L] [Algebra.IsIntegral K L] :
+      algebraMap (P.restrict k K).ResidueField P.ResidueField =
+        IsLocalRing.ResidueField.map (algebraMap (P.restrict k K).integers P.integers) :=
+    Ideal.Quotient.ringHom_ext (RingHom.ext fun _ ↦ rfl)
+  have halg' {P' : Place k' L'} [Algebra k' K'] [IsScalarTower k' K' L']
+      [Algebra.IsIntegral K' L'] :
+      algebraMap (P'.restrict k' K').ResidueField P'.ResidueField =
+        IsLocalRing.ResidueField.map (algebraMap (P'.restrict k' K').integers P'.integers) :=
+    Ideal.Quotient.ringHom_ext (RingHom.ext fun _ ↦ rfl)
+  have h1 :
+      (IsLocalRing.ResidueField.mapEquiv
+        (integersEquivRestrictOfRingEquiv σ τ h σK hK Q)).toRingHom =
+      IsLocalRing.ResidueField.map (integersEquivRestrictOfRingEquiv σ τ h σK hK Q : _ →+* _) :=
+    rfl
+  have h2 :
+      (IsLocalRing.ResidueField.mapEquiv (integersEquivOfRingEquiv σ τ h Q)).toRingHom =
+      IsLocalRing.ResidueField.map (integersEquivOfRingEquiv σ τ h Q : _ →+* _) :=
+    rfl
+  rw [halg', halg, h1, h2, ← IsLocalRing.ResidueField.map_comp,
+    ← IsLocalRing.ResidueField.map_comp]
+  simp only [hring]
+
+include hK in
 /-- **The relative degree is invariant under a commutative square of semilinear isomorphisms**:
 if `τ : L ≃+* L'` carries the constants along `σ` and the image of `K` onto the image of `K'`
 along `σK : K ≃+* K'`, then transporting a place of `L` along `τ` does not change its relative
@@ -82,26 +152,25 @@ theorem relativeDegree_equivOfRingEquiv_of_comm [Algebra k K] [Algebra k' K']
     [IsScalarTower k K L] [IsScalarTower k' K' L'] [Algebra.IsIntegral K L]
     [Algebra.IsIntegral K' L'] (Q : Place k L) :
     relativeDegree k' K' (equivOfRingEquiv σ τ h Q) = relativeDegree k K Q := by
-  have hσK : ∀ c, σK (algebraMap k K c) = algebraMap k' K' (σ c) := fun c ↦
-    (algebraMap K' L').injective (by
-      rw [← hK, ← IsScalarTower.algebraMap_apply k K L, h, IsScalarTower.algebraMap_apply k' K' L'])
-  have hr := restrict_equivOfRingEquiv σ τ h σK hK hσK Q
-  -- `σK` matches the valuation rings of the two places below.
-  let i : (Q.restrict k K).integers ≃+* ((equivOfRingEquiv σ τ h Q).restrict k' K').integers :=
-    (integersEquivOfRingEquiv σ σK hσK (Q.restrict k K)).trans
-      (RingEquiv.subringCongr (congrArg (fun P ↦ P.integers.toSubring) hr.symm))
   rw [relativeDegree_def, relativeDegree_def]
-  refine (Algebra.finrank_eq_of_equiv_equiv (IsLocalRing.ResidueField.mapEquiv i)
+  exact (Algebra.finrank_eq_of_equiv_equiv
+    (IsLocalRing.ResidueField.mapEquiv (integersEquivRestrictOfRingEquiv σ τ h σK hK Q))
     (IsLocalRing.ResidueField.mapEquiv (integersEquivOfRingEquiv σ τ h Q))
-    (RingHom.ext fun x ↦ ?_)).symm
-  obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
-  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-    IsLocalRing.ResidueField.mapEquiv_apply, IsLocalRing.ResidueField.map_residue,
-    IsLocalRing.ResidueField.algebraMap_residue]
-  congr 1
-  ext
-  refine (congrArg (algebraMap K' L') (coe_integersEquivOfRingEquiv σ σK hσK _ x)).trans ?_
-  simpa using (hK x).symm
+    (residueField_comm_equivOfRingEquiv σ τ h σK hK Q)).symm
+
+include hK in
+/-- **Residue-field separability is invariant under a commutative square of semilinear
+isomorphisms**. -/
+theorem isSeparable_residueField_equivOfRingEquiv_of_comm [Algebra k K] [Algebra k' K']
+    [IsScalarTower k K L] [IsScalarTower k' K' L'] [Algebra.IsIntegral K L]
+    [Algebra.IsIntegral K' L'] (Q : Place k L) :
+    Algebra.IsSeparable ((equivOfRingEquiv σ τ h Q).restrict k' K').ResidueField
+        (equivOfRingEquiv σ τ h Q).ResidueField ↔
+      Algebra.IsSeparable (Q.restrict k K).ResidueField Q.ResidueField :=
+  (Algebra.IsSeparable.iff_of_equiv_equiv
+    (IsLocalRing.ResidueField.mapEquiv (integersEquivRestrictOfRingEquiv σ τ h σK hK Q))
+    (IsLocalRing.ResidueField.mapEquiv (integersEquivOfRingEquiv σ τ h Q))
+    (residueField_comm_equivOfRingEquiv σ τ h σK hK Q)).symm
 
 end Semilinear
 
@@ -151,6 +220,17 @@ theorem relativeDegree_map [Algebra k K] [Algebra k K'] [IsScalarTower k K L]
     relativeDegree k K' (Q.map e) = relativeDegree k K Q := by
   rw [map_eq_equivOfRingEquiv]
   exact relativeDegree_equivOfRingEquiv_of_comm _ _ _ σ he Q
+
+/-- **Residue-field separability is invariant under a commutative square of isomorphisms**: if
+`e : L ≃ₐ[k] L'` carries the image of `K` onto the image of `K'` along `σ : K ≃+* K'`, then
+separability of the residue extension at `Q.map e` is equivalent to that at `Q`. -/
+theorem isSeparable_residueField_map [Algebra k K] [Algebra k K'] [IsScalarTower k K L]
+    [IsScalarTower k K' L'] [Algebra.IsIntegral K L] [Algebra.IsIntegral K' L'] (σ : K ≃+* K')
+    (he : ∀ x, e (algebraMap K L x) = algebraMap K' L' (σ x)) (Q : Place k L) :
+    Algebra.IsSeparable ((Q.map e).restrict k K').ResidueField (Q.map e).ResidueField ↔
+      Algebra.IsSeparable (Q.restrict k K).ResidueField Q.ResidueField := by
+  rw [map_eq_equivOfRingEquiv]
+  exact isSeparable_residueField_equivOfRingEquiv_of_comm _ _ _ σ he Q
 
 end Commute
 

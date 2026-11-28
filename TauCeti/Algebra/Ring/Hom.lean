@@ -54,6 +54,8 @@ along field and completion isomorphisms.
 * `Set.MapsTo.ringHom_pow`: if a ring endomorphism `f` maps `A` into itself, so does `f ^ n`.
 * `RingEquiv.exists_eq_sq_sub_mul_sq_map_iff`: a ring equivalence preserves solvability of
   `b = x² - a y²`.
+* `RingEquiv.apply_symm_of_comm` and `RingEquiv.comp_symm_of_comm`: inverting the equivalences
+  in a commuting square of ring homomorphisms.
 * `RingHom.toMonoidHom_comp`: converting a composite ring homomorphism to a monoid homomorphism
   gives the composite of the converted monoid homomorphisms.
 -/
@@ -154,6 +156,22 @@ theorem exists_eq_sq_sub_mul_sq_map_iff {R S : Type*} [Ring R] [Ring S] (e : R �
     exact ⟨e.symm x, e.symm y, e.injective (by simpa using h)⟩
   · rintro ⟨x, y, h⟩
     exact ⟨e x, e y, by simp [h]⟩
+
+/-- In a commuting square with ring isomorphisms `eR : R ≃+* R'` and `eA : A ≃+* A'`, if
+`f' (eR r) = eA (f r)` for all `r`, then `f (eR.symm r') = eA.symm (f' r')` for all `r'`. -/
+theorem apply_symm_of_comm {R R' A A' : Type*} [NonAssocSemiring R] [NonAssocSemiring R']
+    [NonAssocSemiring A] [NonAssocSemiring A'] (eR : R ≃+* R') (eA : A ≃+* A')
+    (f : R →+* A) (f' : R' →+* A') (h : ∀ r : R, f' (eR r) = eA (f r)) (r' : R') :
+    f (eR.symm r') = eA.symm (f' r') :=
+  eA.injective (by rw [eA.apply_symm_apply, ← h, eR.apply_symm_apply])
+
+/-- Homomorphism-level form of `RingEquiv.apply_symm_of_comm`: if `f'.comp eR = eA.comp f`, then
+`f.comp eR.symm = eA.symm.comp f'`. -/
+theorem comp_symm_of_comm {R R' A A' : Type*} [NonAssocSemiring R] [NonAssocSemiring R']
+    [NonAssocSemiring A] [NonAssocSemiring A'] (eR : R ≃+* R') (eA : A ≃+* A')
+    (f : R →+* A) (f' : R' →+* A') (h : f'.comp (eR : R →+* R') = (eA : A →+* A').comp f) :
+    f.comp (eR.symm : R' →+* R) = (eA.symm : A' →+* A).comp f' :=
+  RingHom.ext (apply_symm_of_comm eR eA f f' (fun r ↦ DFunLike.congr_fun h r))
 
 end RingEquiv
 

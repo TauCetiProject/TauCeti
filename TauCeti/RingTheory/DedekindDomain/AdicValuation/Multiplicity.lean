@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.RamificationInertia.Ramification
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
+import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 
 /-!
 # Multiplicities of ideals in a completed integer ring
@@ -34,29 +35,10 @@ theorem multiplicity_map_adicCompletionIntegers (v : HeightOneSpectrum R)
     (I : Ideal R) (hI : I ≠ ⊥) :
     multiplicity (IsLocalRing.maximalIdeal (v.adicCompletionIntegers K))
         (I.map (algebraMap R (v.adicCompletionIntegers K))) =
-      multiplicity v.asIdeal I := by
-  let B := v.adicCompletionIntegers K
-  let P : Ideal B := IsLocalRing.maximalIdeal B
-  have hmap : Ideal.map (algebraMap R B) v.asIdeal = P :=
-    v.map_asIdeal_adicCompletionIntegers (K := K)
-  have hP : P ≠ ⊥ := IsDiscreteValuationRing.not_a_field B
-  have hPprime : P.IsPrime := inferInstance
-  have : P.LiesOver v.asIdeal :=
-    (Ideal.liesOver_iff_dvd_map hPprime.ne_top).2
-      (by rw [hmap])
-  have hidx : Ideal.ramificationIdx' v.asIdeal P = 1 := by
-    rw [← hmap]
-    exact Ideal.ramificationIdx'_map_self_eq_one
-      (by rw [hmap]; exact hPprime.ne_top)
-      (by rw [hmap]; exact hP)
-  have h := Ideal.IsDedekindDomain.emultiplicity_map_eq_ramificationIdx'_mul hI
-    v.irreducible (Ideal.prime_of_isPrime hP hPprime).irreducible hP
-  rw [hidx, Nat.cast_one, one_mul,
-    (FiniteMultiplicity.of_prime_left
-      (Ideal.prime_of_isPrime hP hPprime)
-        (Ideal.map_ne_bot_of_ne_bot hI)).emultiplicity_eq_multiplicity,
-    (FiniteMultiplicity.of_prime_left v.prime hI).emultiplicity_eq_multiplicity] at h
-  exact_mod_cast h
+      multiplicity v.asIdeal I :=
+  Ideal.multiplicity_map_of_map_eq
+    (IsDiscreteValuationRing.not_a_field (v.adicCompletionIntegers K))
+    (v.map_asIdeal_adicCompletionIntegers (K := K)) hI
 
 end IsDedekindDomain.HeightOneSpectrum
 

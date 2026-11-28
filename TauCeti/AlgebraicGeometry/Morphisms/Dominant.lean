@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.FunctionField
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import Mathlib.AlgebraicGeometry.Stalk
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
+public import Mathlib.FieldTheory.Separable
 
 /-!
 # Dominant morphisms and rational functions
@@ -85,6 +86,8 @@ the generic point, and a dominant one by its pullback of rational functions.
   agree.
 * `AlgebraicGeometry.Scheme.Hom.isIso_functionFieldMap_of_isOpenImmersion`: along a dominant open
   immersion of irreducible schemes, `functionFieldMap` is an isomorphism.
+* `AlgebraicGeometry.Scheme.Hom.isSeparable_functionFieldMap`: transport separability from a
+  typeclass `Algebra Y.functionField X.functionField` to `f.functionFieldMap.hom.toAlgebra`.
 
 ## References
 
@@ -398,6 +401,18 @@ instance isIso_functionFieldMap_of_isOpenImmersion (f : X ⟶ Y) [IsOpenImmersio
   have : IsIso (Y.presheaf.stalkSpecializes
       (specializes_of_eq f.genericPoint_eq_of_isDominant)) :=
     (Y.presheaf.stalkCongr (Inseparable.of_eq f.genericPoint_eq_of_isDominant.symm)).isIso_hom
+  infer_instance
+
+/-- Transport separability from a typeclass `Algebra Y.functionField X.functionField` to the
+algebra structure induced by `f.functionFieldMap` when the two maps agree pointwise. -/
+theorem isSeparable_functionFieldMap [IsIntegral X] [IsIntegral Y] (f : X ⟶ Y) [IsDominant f]
+    [Algebra Y.functionField X.functionField] [Algebra.IsSeparable Y.functionField X.functionField]
+    (hmap : ∀ z : Y.functionField,
+      algebraMap Y.functionField X.functionField z = f.functionFieldMap z) :
+    @Algebra.IsSeparable Y.functionField X.functionField _ _ f.functionFieldMap.hom.toAlgebra := by
+  have halg : f.functionFieldMap.hom.toAlgebra = ‹Algebra Y.functionField X.functionField› :=
+    Algebra.algebra_ext _ _ fun z ↦ by rw [RingHom.algebraMap_toAlgebra, hmap]
+  rw [halg]
   infer_instance
 
 end Scheme.Hom
