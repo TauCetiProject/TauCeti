@@ -26,11 +26,11 @@ transvection membership properties:
 * `TauCeti.diagGL_mul_mul_inv_mem_map_iwahoriOne_of_isUpperTriangular` and
   `TauCeti.diagGL_inv_mul_mul_mem_map_iwahoriOne_of_isLowerTriangular`: conjugation of upper- and
   lower-triangular elements of `I₁` by dominant diagonal matrices.
-* `ValuationSubring.valuation_diag_eq_one_of_mem_map_iwahoriOne`: every diagonal entry of `g ∈ I₁`
+* `TauCeti.valuation_diag_eq_one_of_mem_map_iwahoriOne`: every diagonal entry of `g ∈ I₁`
   has valuation `1`.
-* `ValuationSubring.diagGL_mem_normalizer_map_iwahoriOne`: diagonal matrices whose entries share a
+* `TauCeti.diagGL_mem_normalizer_map_iwahoriOne`: diagonal matrices whose entries share a
   common valuation normalise `I₁`.
-* `ValuationSubring.transvectionUnit_mem_map_iwahoriOne_iff`: a transvection `1 + c E_{ij}`
+* `TauCeti.transvectionUnit_mem_map_iwahoriOne_iff`: a transvection `1 + c E_{ij}`
   (`i ≠ j`) lies in `I₁` iff `v(c) ≤ 1` when `i < j`, and `v(c) < 1` when `j < i`.
 
 ## References
@@ -158,7 +158,7 @@ theorem diagGL_inv_mul_mul_mem_map_iwahoriOne_of_isLowerTriangular {t : m → K�
 
 /-- Every diagonal entry of an element of the pro-`p` Iwahori subgroup `I₁ ⊆ GL_m(K)` has
 valuation `1`. -/
-theorem _root_.ValuationSubring.valuation_diag_eq_one_of_mem_map_iwahoriOne {g : GL m K}
+theorem valuation_diag_eq_one_of_mem_map_iwahoriOne {g : GL m K}
     (hg : g ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K))) (i : m) :
     A.valuation (g i i) = 1 := by
   have hlt : A.valuation (g i i - 1) < A.valuation (1 : K) := by
@@ -167,7 +167,7 @@ theorem _root_.ValuationSubring.valuation_diag_eq_one_of_mem_map_iwahoriOne {g :
 
 /-- A diagonal matrix whose entries all have the same valuation normalises the pro-`p` Iwahori
 subgroup `I₁ ⊆ GL_m(K)`. -/
-theorem _root_.ValuationSubring.diagGL_mem_normalizer_map_iwahoriOne {t : m → Kˣ}
+theorem diagGL_mem_normalizer_map_iwahoriOne {t : m → Kˣ}
     (ht : ∀ i j : m, A.valuation (t i : K) = A.valuation (t j : K)) :
     diagGL t ∈ Subgroup.normalizer
       ((iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)) : Set (GL m K)) := by
@@ -187,7 +187,7 @@ theorem _root_.ValuationSubring.diagGL_mem_normalizer_map_iwahoriOne {t : m → 
 /-- A transvection `1 + c E_{ij}` (`i ≠ j`) lies in the pro-`p` Iwahori subgroup `I₁ ⊆ GL_m(K)`
 iff `A.valuation c ≤ 1` when `i < j` and `A.valuation c < 1` when `j < i`. -/
 @[simp]
-theorem _root_.ValuationSubring.transvectionUnit_mem_map_iwahoriOne_iff {i j : m} (hij : i ≠ j)
+theorem transvectionUnit_mem_map_iwahoriOne_iff {i j : m} (hij : i ≠ j)
     (c : K) :
     transvectionUnit hij c ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)) ↔
       (i < j ∧ A.valuation c ≤ 1) ∨ (j < i ∧ A.valuation c < 1) := by

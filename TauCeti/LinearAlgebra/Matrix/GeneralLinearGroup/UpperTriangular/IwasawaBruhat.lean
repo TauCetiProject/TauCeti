@@ -10,8 +10,6 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalize
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Iwahori.Valuation
 public import TauCeti.LinearAlgebra.Matrix.Permutation
 
-import TauCeti.RingTheory.Valuation.Basic
-
 /-!
 # The Iwasawa–Bruhat decomposition of `GL_m` over a valued field
 
@@ -20,7 +18,8 @@ nonarchimedean local field), and let `I₁ ⊆ GL_m(K)` be the image of the pro-
 `TauCeti.iwahoriOne m 𝒪` of `GL_m(𝒪)`: the integral invertible matrices that are upper
 unitriangular modulo the maximal ideal. In terms of the valuation `v` of `𝒪`, a matrix `k ∈ GL_m(K)`
 lies in `I₁` exactly when all its entries have `v ≤ 1`, its entries below the diagonal have
-`v < 1`, and `v (k i i - 1) < 1` for every `i` (`TauCeti.mem_map_iwahoriOne_iff`).
+`v < 1`, and `v (k i i - 1) < 1` for every `i` (imported as `TauCeti.mem_map_iwahoriOne_iff` from
+`UpperTriangular.Iwahori.Valuation`).
 
 The **Iwasawa–Bruhat decomposition** says that every `g ∈ GL_m(K)` factors as
 
@@ -54,8 +53,6 @@ factor `u`, with `t = σ = 1`.
 
 ## Main results
 
-* `TauCeti.mem_map_iwahoriOne_iff`: membership in the image of the pro-`p` Iwahori subgroup,
-  through valuations of the entries.
 * `TauCeti.exists_eq_mul_diagGL_mul_permutationGL_mul`: the Iwasawa–Bruhat decomposition
   `g = u * t * σ * k`.
 * `TauCeti.exists_eq_mul_diagGL_mul_permutationGL_mul_and_isLowerTriangular`: the same
