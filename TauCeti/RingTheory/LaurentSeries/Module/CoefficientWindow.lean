@@ -320,12 +320,17 @@ end Splitting
 
 section Shift
 
-variable (R V : Type*) [CommRing R] [AddCommGroup V] [Module R V]
+variable (R V : Type*) [Ring R] [AddCommGroup V] [Module R V]
 variable {a a' b b' : ℤ}
 
-/-- Truncated multiplication by `X` on a finite Laurent window. -/
+/-- Truncated multiplication by the central series `X` on a finite Laurent window
+over an arbitrary coefficient ring. -/
 noncomputable def latticeQuotientShift (a b : ℤ) : Module.End R (latticeQuotient R V a b) :=
-  DistribSMul.toLinearMap R _ (PowerSeries.X : R⟦X⟧)
+  { toFun := fun q ↦ (PowerSeries.X : R⟦X⟧) • q
+    map_add' := smul_add _
+    map_smul' := fun r q ↦ by
+      rw [RingHom.id_apply, ← C_smul_latticeQuotient, ← C_smul_latticeQuotient,
+        smul_smul, smul_smul, (PowerSeries.commute_X (PowerSeries.C r)).eq] }
 
 /-- The truncated shift is the inherited power-series action. -/
 theorem latticeQuotientShift_apply (a b : ℤ) (q : latticeQuotient R V a b) :
@@ -429,15 +434,26 @@ end Shift
 section BaseChange
 
 variable (R V A : Type*) [CommRing R] [AddCommGroup V] [Module R V]
-  [CommRing A] [Algebra R A]
+  [Ring A] [Algebra R A]
 
-/-- Extension of coefficients on finite Laurent windows. No flatness is required. -/
+/-- Extension of coefficients on finite Laurent windows to an arbitrary, possibly
+noncommutative, coefficient algebra. No flatness is required. -/
 noncomputable def latticeQuotientBaseChange (a b : ℤ) :
     A ⊗[R] latticeQuotient R V a b ≃ₗ[A] latticeQuotient A (A ⊗[R] V) a b :=
-  (TensorProduct.AlgebraTensorModule.congr (LinearEquiv.refl A A)
+  let f : A ⊗[R] latticeQuotient R V a b →ₗ[A] (Finset.Ico a b → A ⊗[R] V) :=
+    LinearMap.pi fun k ↦
+      ((LinearMap.proj k).comp (latticeQuotientEquiv R V a b).toLinearMap).baseChange A
+  -- Mathlib's finite-product equivalence requires commutative scalars, so use `R` here.
+  let e := (TensorProduct.AlgebraTensorModule.congr (LinearEquiv.refl R A)
     (latticeQuotientEquiv R V a b)).trans
-    ((TensorProduct.piRight R A A (fun _ : Finset.Ico a b ↦ V)).trans
-      (latticeQuotientEquiv A (A ⊗[R] V) a b).symm)
+      (TensorProduct.piRight R R A (fun _ : Finset.Ico a b ↦ V))
+  have hf : ⇑f = ⇑e := by
+    ext q k
+    induction q using TensorProduct.inductionOn with
+    | add q q' hq hq' => simp [hq, hq']
+    | tmul x q => simp [f, e]
+  (LinearEquiv.ofBijective f (hf ▸ e.bijective)).trans
+    (latticeQuotientEquiv A (A ⊗[R] V) a b).symm
 
 /-- On a pure tensor the coefficient comparison tensors each coefficient separately. -/
 @[simp]
