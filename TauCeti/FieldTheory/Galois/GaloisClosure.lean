@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.Galois.GaloisClosure
 public import TauCeti.FieldTheory.Galois.Restriction
 import Mathlib.FieldTheory.PurelyInseparable.Basic
+import TauCeti.FieldTheory.Normal.Closure
 
 /-!
 # The normal closure of a finite intermediate field
@@ -75,13 +76,13 @@ element `x` belongs to a finite Galois intermediate field. -/
 theorem exists_expChar_pow_mem (p : ℕ) [ExpChar k p] (x : K) :
     ∃ (n : ℕ) (M : FiniteGaloisIntermediateField k K), x ^ p ^ n ∈ M.toIntermediateField := by
   obtain ⟨n, y, hy⟩ := IsPurelyInseparable.pow_mem (separableClosure k K) p x
-  have := (IntermediateField.isSeparable_adjoin_simple_iff_isSeparable k K).mpr
-    (mem_separableClosure_iff.mp y.property)
-  have hyM := le_normalClosure k (IntermediateField.adjoin k {(y : K)})
-    (IntermediateField.mem_adjoin_simple_self k (y : K))
-  have hy' : (y : K) = x ^ p ^ n := by
-    simpa only [IntermediateField.algebraMap_apply] using hy
-  exact ⟨n, normalClosure k (IntermediateField.adjoin k {(y : K)}), hy' ▸ hyM⟩
+  obtain ⟨M, hfin, hGalois, hM⟩ := TauCeti.exists_isGalois_superset (Set.finite_singleton (y : K))
+    fun z hz ↦ by
+      rw [Set.mem_singleton_iff.mp hz]
+      exact ⟨mem_separableClosure_iff.mp y.property, Normal.splits' (F := k) (y : K)⟩
+  rw [IntermediateField.algebraMap_apply] at hy
+  exact ⟨n, { toIntermediateField := M, finiteDimensional := hfin, isGalois := hGalois },
+    hy ▸ hM (Set.mem_singleton _)⟩
 
 end FiniteGaloisIntermediateField
 

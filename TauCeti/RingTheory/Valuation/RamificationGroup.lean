@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.RingTheory.Valuation.RamificationGroup
+import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!
 # The action of a decomposition group on its valuation subring
@@ -91,18 +92,15 @@ theorem mem_decompositionSubgroup_iff (A : ValuationSubring L) (σ : L ≃ₐ[K]
 valuation subring by a nonunit of that subring. -/
 theorem mem_decompositionSubgroup_of_sub_mem_nonunits (A : ValuationSubring L) {σ : L ≃ₐ[K] L}
     (h : ∀ x ∈ A, σ x - x ∈ A.nonunits) : σ ∈ A.decompositionSubgroup K := by
-  refine (A.mem_decompositionSubgroup_iff σ).mpr fun x ↦ ⟨?_, ?_⟩
-  · intro hσx
-    rcases eq_or_ne x 0 with rfl | hx
-    · exact A.zero_mem
-    by_contra hxA
-    -- Outside the valuation subring, the inverse is a nonunit.
-    have hinv : x⁻¹ ∈ A.nonunits := A.inv_mem_nonunits_iff.mpr (Or.inr hxA)
-    have hσinv := A.nonunits.add_mem (h x⁻¹ (A.nonunits_subset hinv)) hinv
-    rw [sub_add_cancel, map_inv₀, A.inv_mem_nonunits_iff] at hσinv
-    exact (hσinv.resolve_left ((map_ne_zero σ).2 hx)) hσx
-  · intro hx
-    simpa only [sub_add_cancel] using A.add_mem _ _ (A.nonunits_subset (h x hx)) hx
+  have heq : A = A.comap σ.toRingHom := by
+    refine eq_of_le_of_nonunits_le (fun x hx ↦ ?_) (fun x hx ↦ ?_) <;>
+      simp only [mem_comap, mem_nonunits_comap, RingEquiv.toRingHom_eq_coe,
+        RingEquiv.coe_toRingHom, AlgEquiv.coe_toRingEquiv]
+    · simpa only [sub_add_cancel] using A.add_mem _ _ (A.nonunits_subset (h x hx)) hx
+    · simpa only [sub_add_cancel] using A.nonunits.add_mem (h x (A.nonunits_subset hx)) hx
+  refine (A.mem_decompositionSubgroup_iff σ).mpr fun x ↦ ?_
+  simpa only [mem_comap, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
+    AlgEquiv.coe_toRingEquiv] using Iff.of_eq (congrArg (x ∈ ·) heq.symm)
 
 /-- **Decomposition-group membership is unchanged by restricting scalars**: for a tower of fields
 `K ⊆ E ⊆ L`, an automorphism of `L` over `E` lies in the decomposition group of `A` over `E`

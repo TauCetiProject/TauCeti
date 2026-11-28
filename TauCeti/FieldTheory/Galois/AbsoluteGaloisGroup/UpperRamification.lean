@@ -16,19 +16,16 @@ import TauCeti.RingTheory.Valuation.ValuationSubring
 /-!
 # Upper ramification of the absolute Galois group
 
-For a valuation subring of the algebraic closure, `absoluteUpperRamificationGroup` intersects
-the preimages of the finite-level upper ramification groups in the absolute Galois group. At
-each finite level the valuation subring can have a proper decomposition group, so the
-construction uses its image in the full finite Galois group.
+`absoluteUpperRamificationGroup_def` gives the intersection of finite-level preimages.
+`le_absoluteUpperRamificationGroup_iff` tests subgroup bounds via finite restrictions.
 `absoluteUpperRamificationGroup_antitone` and `isClosed_absoluteUpperRamificationGroup`
 give a decreasing filtration by closed subgroups, using
 `TauCeti.IsLocalRing.upperRamificationGroup_antitone` and
 `InfiniteGalois.restrictNormalHom_continuous`.
 
-`absoluteUpperRamificationGroup_zero` identifies the term at zero with the image of Mathlib's
-`ValuationSubring.inertiaSubgroup`. The proof uses
-`TauCeti.IsLocalRing.ramificationGroup_zero_eq_inertiaSubgroup` at finite levels and descends
-membership using `FiniteGaloisIntermediateField.exists_expChar_pow_mem`.
+`absoluteUpperRamificationGroup_zero` identifies the term at zero with the image of inertia, using
+`TauCeti.IsLocalRing.ramificationGroup_zero_eq_inertiaSubgroup` at finite levels and
+`FiniteGaloisIntermediateField.exists_expChar_pow_mem` for descent.
 
 ## References
 
@@ -49,8 +46,28 @@ local notation "Oₘ" M => O.comap (algebraMap ↥M (AlgebraicClosure K))
 ramification subgroups of the decomposition groups at all finite Galois levels. -/
 noncomputable def absoluteUpperRamificationGroup (u : ℝ) : Subgroup (Field.absoluteGaloisGroup K) :=
   ⨅ M : FiniteGaloisIntermediateField K (AlgebraicClosure K),
-    ((upperRamificationGroup ((Oₘ M).decompositionSubgroup K) (Oₘ M) u).map
-      ((Oₘ M).decompositionSubgroup K).subtype).comap (AlgEquiv.restrictNormalHom ↥M)
+    Subgroup.comap (G := Field.absoluteGaloisGroup K) (AlgEquiv.restrictNormalHom ↥M)
+      ((upperRamificationGroup ((Oₘ M).decompositionSubgroup K) (Oₘ M) u).map
+        ((Oₘ M).decompositionSubgroup K).subtype)
+
+/-- The absolute upper ramification subgroup is the intersection of the finite-level preimages. -/
+theorem absoluteUpperRamificationGroup_def (u : ℝ) :
+    O.absoluteUpperRamificationGroup u = ⨅ M : FiniteGaloisIntermediateField K (AlgebraicClosure K),
+      Subgroup.comap (G := Field.absoluteGaloisGroup K) (AlgEquiv.restrictNormalHom ↥M)
+        ((upperRamificationGroup ((Oₘ M).decompositionSubgroup K) (Oₘ M) u).map
+          ((Oₘ M).decompositionSubgroup K).subtype) := (rfl)
+
+variable {O} in
+/-- A subgroup lies in the filtration term iff its finite images lie in the finite upper groups. -/
+@[simp]
+theorem le_absoluteUpperRamificationGroup_iff {u : ℝ} {H : Subgroup (Field.absoluteGaloisGroup K)} :
+    H ≤ O.absoluteUpperRamificationGroup u ↔
+      ∀ M : FiniteGaloisIntermediateField K (AlgebraicClosure K),
+        H.map (AlgEquiv.restrictNormalHom ↥M) ≤
+          (upperRamificationGroup ((Oₘ M).decompositionSubgroup K) (Oₘ M) u).map
+            ((Oₘ M).decompositionSubgroup K).subtype := by
+  rw [absoluteUpperRamificationGroup_def, le_iInf_iff]
+  exact forall_congr' fun _ ↦ Subgroup.map_le_iff_le_comap.symm
 
 variable {O} in
 /-- Membership in the absolute upper ramification subgroup is tested on all finite Galois
@@ -62,24 +79,26 @@ theorem mem_absoluteUpperRamificationGroup_iff {u : ℝ} {σ : Field.absoluteGal
         AlgEquiv.restrictNormalHom ↥M σ ∈
           (upperRamificationGroup ((Oₘ M).decompositionSubgroup K) (Oₘ M) u).map
             ((Oₘ M).decompositionSubgroup K).subtype := by
-  rw [absoluteUpperRamificationGroup, Subgroup.mem_iInf]
-  exact forall_congr' fun M ↦ Subgroup.mem_comap
+  rw [absoluteUpperRamificationGroup_def, Subgroup.mem_iInf]
+  exact forall_congr' fun _ ↦ Subgroup.mem_comap
 
 /-- The absolute upper ramification subgroups form a decreasing filtration. -/
 theorem absoluteUpperRamificationGroup_antitone :
     Antitone (O.absoluteUpperRamificationGroup : ℝ → Subgroup (Field.absoluteGaloisGroup K)) := by
   intro u v huv
-  simp only [absoluteUpperRamificationGroup]
+  simp only [absoluteUpperRamificationGroup_def]
   exact iInf_mono fun M ↦ Subgroup.comap_mono
     (Subgroup.map_mono (upperRamificationGroup_antitone _ _ huv))
 
 /-- Each absolute upper ramification subgroup is closed in the Krull topology. -/
 theorem isClosed_absoluteUpperRamificationGroup (u : ℝ) :
     IsClosed (O.absoluteUpperRamificationGroup u : Set (Field.absoluteGaloisGroup K)) := by
-  simp only [absoluteUpperRamificationGroup, Subgroup.coe_iInf]
-  exact isClosed_iInter fun M ↦
-    (isClosed_discrete _).preimage
-      (InfiniteGalois.restrictNormalHom_continuous M.toIntermediateField)
+  rw [absoluteUpperRamificationGroup_def, Subgroup.coe_iInf]
+  refine isClosed_iInter fun M ↦ ?_
+  rw [@Subgroup.coe_comap (Field.absoluteGaloisGroup K) _ _ _ _ (AlgEquiv.restrictNormalHom ↥M)]
+  -- The absolute Galois group carries the Krull topology of the algebraic closure.
+  exact (isClosed_discrete _).preimage
+    (InfiniteGalois.restrictNormalHom_continuous M.toIntermediateField)
 
 /-- At zero the absolute upper ramification subgroup is inertia, viewed in the full absolute
 Galois group. This holds for every valuation subring of the algebraic closure. -/
