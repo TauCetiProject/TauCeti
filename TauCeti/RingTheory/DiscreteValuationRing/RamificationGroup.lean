@@ -100,18 +100,6 @@ section UniformizerRatio
 variable {G : Type*} [Group G] {B : Type*} [CommRing B] [MulSemiringAction G B]
 variable [IsDomain B] [_root_.IsDiscreteValuationRing B]
 
-private theorem unitsMap_mul_inv_mem_principalUnitGroup {i : ℕ} {σ : G}
-    (hσ : σ ∈ ramificationGroup G B (i : ℤ)) (u : Bˣ) :
-    Units.map (MulSemiringAction.toRingHom G B σ).toMonoidHom u * u⁻¹ ∈
-      (maximalIdeal B ^ (i + 1)).principalUnitGroup := by
-  rw [Ideal.mem_principalUnitGroup]
-  have hsub :
-      ((Units.map (MulSemiringAction.toRingHom G B σ).toMonoidHom u * u⁻¹ : Bˣ) : B) - 1 =
-        (σ • (u : B) - (u : B)) * ↑u⁻¹ := by
-    simp [sub_mul]
-  rw [hsub]
-  exact Ideal.mul_mem_right _ _ (mem_ramificationGroup_natCast_iff.mp hσ (u : B))
-
 private theorem uniformizerChangeUnit_smul_mem_principalUnitGroup {ϖ : B} (hϖ : Irreducible ϖ)
     {i : ℕ} {σ : G} (hσ : σ ∈ ramificationGroup G B (i : ℤ)) :
     uniformizerChangeUnit ϖ (σ • ϖ) hϖ

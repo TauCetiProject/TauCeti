@@ -59,15 +59,6 @@ noncomputable def unitFiltrationGradedSuccEquivResidueFieldOfUniformizer (n : �
   (unitFiltrationGradedEquivPrincipalUnitGroupPowGraded (n + 1)).toAdditive.trans
     (maximalIdealPrincipalUnitGroupPowGradedSuccEquivResidueFieldOfUniformizer n π hπ)
 
-private theorem val_coe_unitFiltrationEquivPrincipalUnitGroup_sub_one (n : ℕ)
-    (x : unitFiltration K (n + 1)) :
-    ((unitFiltrationEquivPrincipalUnitGroup (n + 1) x : 𝒪[K]ˣ) : 𝒪[K]) - 1 =
-      (unitFiltrationDifference n x : 𝒪[K]) := by
-  apply Subtype.coe_injective
-  dsimp only
-  rw [AddSubgroupClass.coe_sub, coe_coe_unitFiltrationDifference, Subring.coe_one,
-    coe_unitFiltrationEquivPrincipalUnitGroup_apply, coe_unitFiltrationToIntegerUnits]
-
 /-- The uniformizer coordinate of the class of `u` is characterized by multiplying it by
 `π^(n+1)`: the result is the class of `u - 1` in the maximal-ideal graded piece. -/
 @[simp]

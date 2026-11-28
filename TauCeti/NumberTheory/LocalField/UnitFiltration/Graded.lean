@@ -100,6 +100,26 @@ theorem coe_coe_unitFiltrationDifference (n : ℕ) (x : unitFiltration K (n + 1)
     ((x : Kˣ) : K) - 1
   rw [coe_unitFiltrationToIntegerUnits]
 
+/-- Viewing `unitFiltrationToIntegerUnits (n + 1) x` in `𝒪[K]` and subtracting `1` recovers
+`unitFiltrationDifference n x`. -/
+@[simp]
+theorem val_coe_unitFiltrationToIntegerUnits_sub_one (n : ℕ)
+    (x : unitFiltration K (n + 1)) :
+    ((unitFiltrationToIntegerUnits (n + 1) x : 𝒪[K]ˣ) : 𝒪[K]) - 1 =
+      (unitFiltrationDifference n x : 𝒪[K]) :=
+  (coe_unitFiltrationDifference n x).symm
+
+-- Not `@[simp]`: `coe_unitFiltrationEquivPrincipalUnitGroup_apply` simplifies the LHS to
+-- `val_coe_unitFiltrationToIntegerUnits_sub_one` above.
+/-- Viewing `unitFiltrationEquivPrincipalUnitGroup (n + 1) x` in `𝒪[K]` and subtracting `1`
+recovers `unitFiltrationDifference n x`. -/
+theorem val_coe_unitFiltrationEquivPrincipalUnitGroup_sub_one (n : ℕ)
+    (x : unitFiltration K (n + 1)) :
+    ((unitFiltrationEquivPrincipalUnitGroup (n + 1) x : 𝒪[K]ˣ) : 𝒪[K]) - 1 =
+      (unitFiltrationDifference n x : 𝒪[K]) := by
+  rw [coe_unitFiltrationEquivPrincipalUnitGroup_apply,
+    val_coe_unitFiltrationToIntegerUnits_sub_one]
+
 /-- Subtracting one, modulo the next power of the maximal ideal, is a homomorphism from a
 positive unit-filtration step to the multiplicative copy of the corresponding ideal quotient. -/
 noncomputable def unitFiltrationToMaximalIdealGraded (n : ℕ) :
@@ -119,9 +139,7 @@ theorem unitFiltrationToMaximalIdealGraded_apply (n : ℕ)
     Ideal.principalUnitGroupToQuotient_apply, AddEquiv.toMultiplicative_apply_apply, toAdd_ofAdd,
     Ideal.powQuotientComapEquivSmulTop_mk]
   exact congrArg (fun z ↦ Multiplicative.ofAdd (Submodule.Quotient.mk z)) <|
-    Subtype.ext (by
-      rw [Subtype.coe_mk, coe_unitFiltrationEquivPrincipalUnitGroup_apply,
-        coe_unitFiltrationDifference])
+    Subtype.ext (val_coe_unitFiltrationEquivPrincipalUnitGroup_sub_one n x)
 
 /-- The kernel of subtracting one modulo `𝓂[K]^(n+2)` is precisely `U(K,n+2)`. -/
 theorem ker_unitFiltrationToMaximalIdealGraded (n : ℕ) :
@@ -172,9 +190,7 @@ theorem unitFiltrationGradedSuccEquivMaximalIdealGraded_mk
     Ideal.principalUnitGroupPowQuotientEquiv_mk,
     AddEquiv.toMultiplicative_apply_apply, toAdd_ofAdd, Ideal.powQuotientComapEquivSmulTop_mk]
   exact congrArg (fun z ↦ Multiplicative.ofAdd (Submodule.Quotient.mk z)) <|
-    Subtype.ext (by
-      rw [Subtype.coe_mk, coe_unitFiltrationEquivPrincipalUnitGroup_apply,
-        coe_unitFiltrationDifference])
+    Subtype.ext (val_coe_unitFiltrationEquivPrincipalUnitGroup_sub_one n x)
 
 /-- Every positive graded piece `U(K,n+1) / U(K,n+2)`, read additively, is isomorphic to the
 additive group of the residue field. -/

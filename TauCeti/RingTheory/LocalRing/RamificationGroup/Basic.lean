@@ -14,6 +14,7 @@ public import TauCeti.Algebra.Group.Subgroup.FiniteFiltration
 public import TauCeti.Algebra.Ring.Action.End
 public import TauCeti.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.RingTheory.Ideal.Inertia
+public import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
 public import TauCeti.RingTheory.Ideal.RamificationGroup
 public import TauCeti.RingTheory.LocalRing.Pointwise
 import Mathlib.Combinatorics.Enumerative.DoubleCounting
@@ -138,6 +139,20 @@ theorem mem_ramificationGroup_natCast_iff {n : ℕ} {σ : G} :
     σ ∈ ramificationGroup G S n ↔ ∀ x : S, σ • x - x ∈ maximalIdeal S ^ (n + 1) := by
   have h : ((n : ℤ) + 1).toNat = n + 1 := by omega
   rw [mem_ramificationGroup_iff, h]
+
+/-- An element `σ ∈ G_i` sends every unit `u` of `S` to a translate differing by a principal unit
+modulo `𝔪 ^ (i + 1)`: `(σ • u) * u⁻¹ ∈ 1 + 𝔪 ^ (i + 1)`. -/
+theorem unitsMap_mul_inv_mem_principalUnitGroup {i : ℕ} {σ : G}
+    (hσ : σ ∈ ramificationGroup G S (i : ℤ)) (u : Sˣ) :
+    Units.map (MulSemiringAction.toRingHom G S σ).toMonoidHom u * u⁻¹ ∈
+      (maximalIdeal S ^ (i + 1)).principalUnitGroup := by
+  rw [Ideal.mem_principalUnitGroup]
+  have hsub :
+      ((Units.map (MulSemiringAction.toRingHom G S σ).toMonoidHom u * u⁻¹ : Sˣ) : S) - 1 =
+        (σ • (u : S) - (u : S)) * ↑u⁻¹ := by
+    simp [sub_mul]
+  rw [hsub]
+  exact Ideal.mul_mem_right _ _ (mem_ramificationGroup_natCast_iff.mp hσ (u : S))
 
 /-- At a nonnegative index, the ramification group of the local ring is the ramification group
 `Ideal.ramificationGroup` of its maximal ideal. -/
