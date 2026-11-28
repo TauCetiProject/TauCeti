@@ -413,8 +413,9 @@ theorem etaMultiplier_neg (γ : SL(2, ℤ)) :
   refine etaMultiplier_eq_of_eta_smul_eq (τ := UpperHalfPlane.I) ?_
   set z : ℂ := (γ 1 0 : ℂ) * UpperHalfPlane.I + γ 1 1
   have hdenom : ((-γ : SL(2, ℤ)) 1 0 : ℂ) * (UpperHalfPlane.I : ℂ) + (-γ : SL(2, ℤ)) 1 1 = -z := by
-    simp only [z, Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, Int.cast_neg]
-    ring
+    have hmap : Matrix.SpecialLinearGroup.mapGL ℝ (-γ) = -Matrix.SpecialLinearGroup.mapGL ℝ γ :=
+      Units.ext (by simp)
+    rw [← ModularGroup.denom_mapGL (-γ), hmap, UpperHalfPlane.denom_neg, ModularGroup.denom_mapGL]
   have hcond : (0 < z.im ∨ (z.im = 0 ∧ z.re < 0)) ↔ 0 < γ 1 0 ∨ (γ 1 0 = 0 ∧ γ 1 1 < 0) := by
     simp [z]
   rw [ModularGroup.SL_neg_smul, eta_smul, hdenom, Complex.sqrt_neg z]
@@ -502,7 +503,9 @@ theorem etaMultiplier_inv (γ : SL(2, ℤ)) :
     exact h.trans (and_congr_right fun hc ↦ by rw [hdiag hc])
   have hroot : Complex.sqrt w * Complex.sqrt z =
       if γ 1 0 = 0 ∧ γ 1 1 < 0 then -1 else 1 := by
-    have hz : z ≠ 0 := Complex.sqrt_eq_zero_iff.not.mp (UpperHalfPlane.sqrt_denom_ne_zero γ⁻¹ _)
+    have hz : z ≠ 0 := by
+      simpa only [z, ModularGroup.denom_mapGL] using
+        UpperHalfPlane.denom_ne_zero (Matrix.SpecialLinearGroup.mapGL ℝ γ⁻¹) UpperHalfPlane.I
     rw [hw, Complex.sqrt_inv_mul_sqrt hz]
     simp only [harg]
   have hprod : etaMultiplier γ * etaMultiplier γ⁻¹ *

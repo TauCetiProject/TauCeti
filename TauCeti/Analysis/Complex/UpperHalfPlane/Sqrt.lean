@@ -49,6 +49,7 @@ theorem continuous_sqrt_ofReal_mul_add (m n : ℝ) :
 
 /-- A real linear combination `m τ + n` at `τ ∈ ℍ` lies on the negative real branch cut
 (`arg = π`) if and only if `m = 0` and `n < 0`. -/
+@[simp]
 theorem arg_ofReal_mul_add_eq_pi_iff (m n : ℝ) (τ : ℍ) :
     ((m : ℂ) * τ + n).arg = π ↔ m = 0 ∧ n < 0 := by
   rw [Complex.arg_eq_pi_iff]

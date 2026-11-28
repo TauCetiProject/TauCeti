@@ -87,52 +87,51 @@ theorem sqrt_neg_I_mul {τ : ℂ} (hτ : 0 < τ.im) : sqrt (-I * τ) = (sqrt I)�
 negative real number, and by `i` otherwise. -/
 theorem sqrt_neg (z : ℂ) :
     sqrt (-z) = if 0 < z.im ∨ (z.im = 0 ∧ z.re < 0) then -I * sqrt z else I * sqrt z := by
-  by_cases him : z.im = 0
-  · rcases lt_or_ge z.re 0 with hre | hre
-    · rw [ite_eq_left (Or.inr ⟨him, hre⟩)]
-      have h := sqrt_neg_of_nonneg (a := -z)
-        (by rw [nonneg_iff]; exact ⟨by simp [hre.le], by simp [him]⟩)
-      rw [neg_neg] at h
-      rw [h, ← mul_assoc]
-      simp
-    · rw [ite_eq_right (by rintro (h | ⟨_, h⟩) <;> linarith)]
-      exact sqrt_neg_of_nonneg (by rw [nonneg_iff]; exact ⟨hre, him.symm⟩)
-  · have hpos : 0 ≤ z.im ↔ 0 < z.im := ⟨fun h ↦ lt_of_le_of_ne h (Ne.symm him), le_of_lt⟩
-    have hneg : 0 ≤ (-z).im ↔ ¬ 0 < z.im := by simp [not_lt]
-    have hcond : (0 < z.im ∨ z.im = 0 ∧ z.re < 0) ↔ 0 < z.im := by simp [him]
-    simp_rw [hcond, sqrt_eq_real_add_ite, hpos, hneg]
-    simp only [norm_neg, neg_re, sub_neg_eq_add, ← sub_eq_add_neg]
-    split_ifs <;> linear_combination (√((‖z‖ - z.re) / 2) : ℂ) * I_sq
+  rw [sqrt, neg_eq_neg_one_mul]
+  split_ifs with h
+  · have harg : π < (-1 : ℂ).arg + z.arg := by
+      rw [arg_neg_one, lt_add_iff_pos_right]
+      rcases h with him | ⟨him, hre⟩
+      · exact lt_of_le_of_ne (arg_nonneg_iff.mpr him.le)
+          fun h0 ↦ him.ne' (arg_eq_zero_iff (z := z).mp h0.symm).2
+      · rw [arg_eq_pi_iff.mpr ⟨hre, him⟩]
+        exact Real.pi_pos
+    have hexp : exp (-2 * π * I * (2⁻¹ : ℂ)) = -1 := by
+      rw [show (-2 * π * I * (2⁻¹ : ℂ)) = -(π * I) by ring, exp_neg, exp_pi_mul_I,
+        inv_neg, inv_one]
+    rw [mul_cpow_of_pi_lt harg, hexp, ← sqrt, sqrt_neg_one, ← sqrt]
+    ring
+  · have harg : (-1 : ℂ).arg + z.arg ∈ Set.Ioc (-π) π := by
+      rw [arg_neg_one]
+      have hle : z.arg ≤ 0 := by
+        push Not at h
+        rcases lt_or_eq_of_le h.1 with him | him
+        · exact (arg_neg_iff.mpr him).le
+        · exact (arg_eq_zero_iff.mpr ⟨h.2 him, him⟩).le
+      exact ⟨by linarith [neg_pi_lt_arg z, Real.pi_pos], by linarith⟩
+    rw [mul_cpow harg, ← sqrt, sqrt_neg_one, ← sqrt]
 
 /-- Multiplying `√(z⁻¹)` by `√z` for `z ≠ 0` gives `-1` on the negative real branch cut
 (`z.arg = π`) and `1` elsewhere. -/
 theorem sqrt_inv_mul_sqrt {z : ℂ} (hz : z ≠ 0) :
     sqrt z⁻¹ * sqrt z = if z.arg = π then -1 else 1 := by
-  have hne (w : ℂ) (hw : w ≠ 0) (harg : w.arg ≠ π) : sqrt w⁻¹ * sqrt w = 1 := by
-    rw [sqrt, sqrt, inv_cpow w _ harg, ← sqrt]
-    exact inv_mul_cancel₀ (sqrt_eq_zero_iff.not.mpr hw)
   by_cases h : z.arg = π
-  · rw [ite_eq_left h]
-    obtain ⟨hx, hy⟩ := arg_eq_pi_iff.mp h
-    have hs1 : sqrt z = I * sqrt (-z) := by
-      have h' := sqrt_neg (-z)
-      rw [neg_neg, ite_eq_right (by simp [hy, hx.le])] at h'
-      exact h'
-    have hs2 : sqrt z⁻¹ = I * sqrt (-z)⁻¹ := by
-      have hre : 0 < (-z⁻¹).re := by
-        simpa [inv_re] using neg_pos.mpr (div_neg_of_neg_of_pos hx (normSq_pos.mpr hz))
-      have him : (-z⁻¹).im = 0 := by simp [inv_im, hy]
-      have h' := sqrt_neg (-z⁻¹)
-      rw [neg_neg, ite_eq_right (by rintro (h0 | ⟨_, h0⟩) <;> linarith), ← inv_neg] at h'
-      exact h'
-    have harg_neg : (-z).arg ≠ π := fun hpi ↦ by
-      have hlt := (arg_eq_pi_iff.mp hpi).1
-      rw [neg_re] at hlt
-      linarith
-    calc sqrt z⁻¹ * sqrt z = (I * I) * (sqrt (-z)⁻¹ * sqrt (-z)) := by rw [hs1, hs2]; ring
-      _ = -1 := by rw [I_mul_I, hne (-z) (neg_ne_zero.mpr hz) harg_neg, mul_one]
-  · rw [ite_eq_right h]
-    exact hne z hz h
+  · have harg : π < z⁻¹.arg + z.arg := by
+      rw [arg_inv, ite_eq_left h, h]
+      linarith [Real.pi_pos]
+    have hmul : (1 : ℂ) = sqrt z⁻¹ * sqrt z * -1 := by
+      calc (1 : ℂ) = (z⁻¹ * z) ^ (2⁻¹ : ℂ) := by rw [inv_mul_cancel₀ hz, one_cpow]
+        _ = sqrt z⁻¹ * sqrt z * -1 := by
+          rw [mul_cpow_of_pi_lt harg, show (-2 * π * I * (2⁻¹ : ℂ)) = -(π * I) by ring,
+            exp_neg, exp_pi_mul_I, inv_neg, inv_one, ← sqrt, ← sqrt]
+    rw [ite_eq_left h]
+    linear_combination hmul
+  · have harg : z⁻¹.arg + z.arg ∈ Set.Ioc (-π) π := by
+      rw [arg_inv, ite_eq_right h, neg_add_cancel]
+      exact ⟨neg_lt_zero.mpr Real.pi_pos, Real.pi_pos.le⟩
+    rw [ite_eq_right h]
+    calc sqrt z⁻¹ * sqrt z = (z⁻¹ * z) ^ (2⁻¹ : ℂ) := by rw [mul_cpow harg, ← sqrt, ← sqrt]
+      _ = 1 := by rw [inv_mul_cancel₀ hz, one_cpow]
 
 /-- The principal square root has nonnegative real part. -/
 @[simp]
