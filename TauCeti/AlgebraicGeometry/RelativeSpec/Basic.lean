@@ -29,8 +29,6 @@ This is exactly the input of Mathlib's relative gluing on the small affine Zaris
 
 ## Main declarations
 
-* `CategoryTheory.CommMon.sectionsPresheafMap`: the morphism of presheaves of section rings
-  induced by a morphism of algebras, and its compatibility with the structure maps;
 * `CategoryTheory.CommMon.isLocalization_basicOpen`: for quasi-coherent `A`, an affine open `U`
   and `f ∈ Γ(X, U)`, `Γ(A.X, X.basicOpen f)` is the localization of `Γ(A.X, U)` away from `f`;
 * `AlgebraicGeometry.Scheme.AffineZariskiSite.isPullback_relativeGluingData_cover` and
@@ -65,87 +63,6 @@ variable {X : Scheme.{u}} (A : CommMon X.Modules)
 
 namespace CategoryTheory.CommMon
 
-/-- A morphism of commutative sheaf algebras induces a morphism of their presheaves of rings. -/
-def sectionsPresheafMap {A B : CommMon X.Modules}
-    (f : A ⟶ B) : A.sectionsPresheaf ⟶ B.sectionsPresheaf where
-  app U := CommRingCat.ofHom (CommMon.sectionsAlgHom f U.unop).toRingHom
-  naturality {U V} i := by
-    dsimp only [CommMon.sectionsPresheaf]
-    rw [← CommRingCat.ofHom_comp, ← CommRingCat.ofHom_comp]
-    congr 1
-    ext x
-    -- The section rings have the same carriers as the module sections, but their
-    -- ring instances are obtained through the sections functor.
-    dsimp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
-    exact CommMon.sectionsAlgHom_restrictSections f i.unop x
-
-@[simp]
-lemma sectionsPresheafMap_app {A B : CommMon X.Modules}
-    (f : A ⟶ B) (U : X.Opensᵒᵖ) :
-    (CommMon.sectionsPresheafMap f).app U =
-      CommRingCat.ofHom (CommMon.sectionsAlgHom f U.unop).toRingHom :=
-  (rfl)
-
-@[simp]
-lemma sectionsPresheafMap_id (A : CommMon X.Modules) :
-    CommMon.sectionsPresheafMap (𝟙 A) = 𝟙 A.sectionsPresheaf := by
-  apply NatTrans.ext
-  funext U
-  rw [CommMon.sectionsPresheafMap_app, CommMon.sectionsAlgHom_id, NatTrans.id_app]
-  dsimp only [CommMon.sectionsPresheaf]
-  ext x
-  simp only [CommRingCat.hom_ofHom, CommRingCat.hom_id, AlgHom.toRingHom_eq_coe,
-    RingHom.coe_coe, AlgHom.id_apply, RingHom.id_apply]
-
-@[simp]
-lemma sectionsPresheafMap_comp {A B C : CommMon X.Modules}
-    (f : A ⟶ B) (g : B ⟶ C) :
-    CommMon.sectionsPresheafMap (f ≫ g) =
-      CommMon.sectionsPresheafMap f ≫ CommMon.sectionsPresheafMap g := by
-  apply NatTrans.ext
-  funext U
-  rw [NatTrans.comp_app, CommMon.sectionsPresheafMap_app,
-    CommMon.sectionsPresheafMap_app, CommMon.sectionsPresheafMap_app,
-    CommMon.sectionsAlgHom_comp]
-  dsimp only [CommMon.sectionsPresheaf]
-  rw [← CommRingCat.ofHom_comp]
-  congr 1
-
-/-- Algebra morphisms commute with the structure map from the structure presheaf. -/
-@[reassoc (attr := simp)]
-lemma toSectionsPresheaf_comp_sectionsPresheafMap
-    {A B : CommMon X.Modules} (f : A ⟶ B) :
-    A.toSectionsPresheaf ≫ CommMon.sectionsPresheafMap f = B.toSectionsPresheaf := by
-  ext U : 1
-  rw [NatTrans.comp_app, CommMon.toSectionsPresheaf_app,
-    CommMon.sectionsPresheafMap_app, CommMon.toSectionsPresheaf_app]
-  -- The presheaf components and the explicitly bundled section rings agree
-  -- after unfolding the sections construction.
-  erw [← CommRingCat.ofHom_comp]
-  congr 1
-  ext r
-  exact (CommMon.sectionsAlgHom f U).commutes r
-
-/-- The algebra morphism built from a morphism of section rings induces that morphism. -/
-@[simp]
-lemma sectionsPresheafMap_homOfSectionsPresheaf
-    {A B : CommMon X.Modules} (φ : A.sectionsPresheaf ⟶ B.sectionsPresheaf)
-    (h : A.toSectionsPresheaf ≫ φ = B.toSectionsPresheaf) :
-    CommMon.sectionsPresheafMap (CommMon.homOfSectionsPresheaf φ h) = φ := by
-  ext U x
-  exact (CommMon.sectionsAlgHom_apply _ U.unop x).trans
-    (CommMon.homOfSectionsPresheaf_hom_hom_app_apply φ h U.unop x)
-
-/-- An algebra morphism is recovered from the morphism of section rings it induces. -/
-@[simp]
-lemma homOfSectionsPresheaf_sectionsPresheafMap
-    {A B : CommMon X.Modules} (f : A ⟶ B) :
-    CommMon.homOfSectionsPresheaf (CommMon.sectionsPresheafMap f)
-      (CommMon.toSectionsPresheaf_comp_sectionsPresheafMap f) = f :=
-  CommMon.hom_ext_of_sectionsAlgHom fun U ↦ AlgHom.ext fun x ↦
-    (CommMon.sectionsAlgHom_apply _ U x).trans
-      (CommMon.homOfSectionsPresheaf_hom_hom_app_apply _ _ U x)
-
 /-- Two morphisms into the presheaf of section rings of a commutative `𝒪ₓ`-algebra agree as soon
 as they agree on affine opens. -/
 lemma sectionsPresheaf_hom_ext {F : X.Opensᵒᵖ ⥤ CommRingCat.{u}}
@@ -166,8 +83,11 @@ lemma hom_ext_of_isAffineOpen {A B : CommMon X.Modules}
   have hp : CommMon.sectionsPresheafMap f = CommMon.sectionsPresheafMap g :=
     B.sectionsPresheaf_hom_ext fun U hU ↦ by
       rw [CommMon.sectionsPresheafMap_app, CommMon.sectionsPresheafMap_app, h U hU]
-  exact CommMon.hom_ext_of_sectionsAlgHom fun U ↦ AlgHom.ext fun x ↦
-    ConcreteCategory.congr_hom (NatTrans.congr_app hp (op U)) x
+  refine CommMon.hom_ext_of_sectionsAlgHom fun U ↦ AlgHom.toRingHom_injective ?_
+  have hU := NatTrans.congr_app hp (op U)
+  rw [CommMon.sectionsPresheafMap_app, CommMon.sectionsPresheafMap_app] at hU
+  simpa only [CommRingCat.hom_ofHom, AlgHom.toRingHom_eq_coe]
+    using congrArg CommRingCat.Hom.hom hU
 
 end CategoryTheory.CommMon
 
