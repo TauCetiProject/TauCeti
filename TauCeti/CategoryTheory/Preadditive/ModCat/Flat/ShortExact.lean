@@ -115,8 +115,8 @@ end
 
 /-- In a short exact sequence of modules over a preadditive category, if the last term is flat,
 the middle term is flat if and only if the first term is flat. -/
-theorem flat_iff_of_shortExact {S : ShortComplex (ModCat.{w} C)} (hS : S.ShortExact)
-    [S.X₃.Flat] : S.X₂.Flat ↔ S.X₁.Flat := by
+theorem _root_.CategoryTheory.ShortComplex.ShortExact.modCat_flat_iff
+    {S : ShortComplex (ModCat.{w} C)} (hS : S.ShortExact) [S.X₃.Flat] : S.X₂.Flat ↔ S.X₁.Flat := by
   let : (additiveFunctor Cᵒᵖ AddCommGrpCat.{w}).IsClosedUnderFiniteLimits := {}
   let : (additiveFunctor Cᵒᵖ AddCommGrpCat.{w}).IsClosedUnderFiniteColimits := {}
   have h (X : C) := hS.map_of_exact
