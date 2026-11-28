@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Colon
 public import Mathlib.RingTheory.Ideal.MinimalPrime.Localization
 public import Mathlib.RingTheory.KrullDimension.Basic
 public import Mathlib.RingTheory.Spectrum.Prime.RingHom
+
+import Mathlib.RingTheory.KrullDimension.Zero
+import TauCeti.RingTheory.Ideal.MinimalPrime.Localization
 
 /-!
 # Units and injective homomorphisms out of zero-dimensional rings
@@ -27,8 +31,12 @@ zero-dimensional the induced map of prime spectra is surjective
 `R`, the finite product of its residue fields, this says that each of these fields embeds into a
 residue field of `S`. No hypothesis on `S` is needed in either statement.
 
-These apply to the induced map of total rings of fractions along an injective ring homomorphism,
-when the source total ring of fractions is Artinian.
+The principal ideal of any element is comaximal with its annihilator modulo the nilradical
+(`Ideal.span_singleton_sup_nilradical_colon_eq_top`). This uses the minimal-prime localization
+lemma `Ideal.exists_mul_pow_mem_of_mem_minimalPrimes`.
+
+The unit and spectrum results apply to the induced map of total rings of fractions along an
+injective ring homomorphism, when the source total ring of fractions is Artinian.
 -/
 
 public section
@@ -64,3 +72,24 @@ theorem PrimeSpectrum.comap_surjective_of_injective_of_krullDimLE_zero {g : R �
   obtain ⟨q, hq, hqp⟩ := Ideal.exists_comap_eq_of_mem_minimalPrimes_of_injective hg p.asIdeal
     (Ideal.mem_minimalPrimes_of_krullDimLE_zero p.asIdeal)
   exact ⟨⟨q, hq⟩, PrimeSpectrum.ext hqp⟩
+
+/-- In a commutative semiring of Krull dimension at most zero, the principal ideal of an element
+is comaximal with its annihilator modulo the nilradical. -/
+theorem Ideal.span_singleton_sup_nilradical_colon_eq_top {A : Type*} [CommSemiring A]
+    [Ring.KrullDimLE 0 A] (a : A) :
+    span {a} ⊔ (nilradical A).colon (span {a}) = ⊤ := by
+  by_contra h
+  obtain ⟨P, hP, hle⟩ := Ideal.exists_le_maximal _ h
+  have hPrime := hP.isPrime
+  have haP : a ∈ P := hle (Ideal.mem_sup_left (Ideal.mem_span_singleton_self a))
+  have hMin : P ∈ (⊥ : Ideal A).minimalPrimes :=
+    Ideal.mem_minimalPrimes_of_krullDimLE_zero P
+  obtain ⟨s, hs, k, hsk⟩ := Ideal.exists_mul_pow_mem_of_mem_minimalPrimes hMin haP
+  have hsa : s * a ∈ nilradical A := by
+    rw [nilradical_eq_sInf, Ideal.mem_sInf]
+    intro Q hQ
+    have hz : s * a ^ k ∈ Q := (bot_le : (⊥ : Ideal A) ≤ Q) hsk
+    rcases hQ.mem_or_mem hz with h | h
+    · exact Q.mul_mem_right _ h
+    · exact Q.mul_mem_left _ (hQ.mem_of_pow_mem k h)
+  exact hs (hle (Ideal.mem_sup_right (Ideal.mem_colon_span_singleton.mpr hsa)))
