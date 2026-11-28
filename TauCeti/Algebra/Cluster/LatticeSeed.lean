@@ -97,6 +97,19 @@ theorem weightedPairing_self (hAlt : B.IsAlt) (k : K) :
   rw [s.weightedPairing_intCast B hB]
   simp [hAlt.self_eq_zero]
 
+/-- Pairing the negative of a vector with the weighted pivot negates the integer entry. -/
+@[simp]
+theorem weightedPairing_neg (x : N) (k : K) :
+    s.weightedPairing B hB (-x) k = -s.weightedPairing B hB x k := by
+  simp only [← weightedPairingHom_apply, map_neg]
+
+/-- Adding a multiple of the pivot to a vector does not change its pairing with the pivot. -/
+@[simp]
+theorem weightedPairing_add_smul_self (hAlt : B.IsAlt) (x : N) (a : ℤ) (k : K) :
+    s.weightedPairing B hB (x + a • (s.vector k : N)) k = s.weightedPairing B hB x k := by
+  simp only [← weightedPairingHom_apply, map_add, map_smul]
+  simp [hAlt]
+
 /-- The positive weights skew-symmetrize the matrix of integral pairing entries, with
 row index the unweighted vector and column index the weighted vector. -/
 theorem weight_mul_weightedPairing (hAlt : B.IsAlt) (i k : K) :
@@ -160,20 +173,31 @@ theorem signedMutation_vector_of_ne (hAlt : B.IsAlt) (sign : ℤ) {i k : K} (hik
       s.vector i + max (sign * s.weightedPairing B hB (s.vector i) k) 0 • s.vector k := by
   simp [signedMutation, hik]
 
-/-- The entries paired against the pivot negate under mutation, since the correction is a
-multiple of the alternating pairing's isotropic pivot. -/
+/-- For every ambient vector, mutation negates the pairing against the weighted pivot. -/
 @[simp]
+theorem signedMutation_weightedPairing_self_index (hAlt : B.IsAlt) (sign : ℤ) (k : K)
+    (x : N) :
+    (s.signedMutation B hB hAlt sign k).weightedPairing B hB x k =
+      -s.weightedPairing B hB x k := by
+  apply Int.cast_injective (α := ℚ)
+  simp [map_neg]
+
+/-- A mutated vector has the same pairing against the original weighted pivot. -/
+@[simp]
+theorem weightedPairing_signedMutation_vector (hAlt : B.IsAlt) (sign : ℤ) (i k : K) :
+    s.weightedPairing B hB ((s.signedMutation B hB hAlt sign k).vector i) k =
+      s.weightedPairing B hB (s.vector i) k := by
+  rcases eq_or_ne i k with rfl | hik
+  · simp [hAlt]
+  · simp [hik, hAlt]
+
+/-- The pairing of a mutated vector against the mutated weighted pivot negates the original
+entry. The simplifier obtains this equation from the two changes separately. -/
 theorem signedMutation_weightedPairing_pivot (hAlt : B.IsAlt) (sign : ℤ) (i k : K) :
     (s.signedMutation B hB hAlt sign k).weightedPairing B hB
       ((s.signedMutation B hB hAlt sign k).vector i) k =
       -s.weightedPairing B hB (s.vector i) k := by
-  apply Int.cast_injective (α := ℚ)
-  simp only [Int.cast_neg, weightedPairing_intCast _ B hB, signedMutation_weight,
-    signedMutation_vector_self, Submodule.coe_neg, smul_neg, map_neg]
-  rcases eq_or_ne i k with rfl | hik
-  · simp [map_neg, hAlt.self_eq_zero]
-  · rw [s.signedMutation_vector_of_ne B hB hAlt sign hik]
-    simp [map_add, LinearMap.add_apply, hAlt.self_eq_zero]
+  simp
 
 /-- Applying a signed mutation and then the opposite signed mutation at the same pivot
 recovers the original weighted family. -/
@@ -191,6 +215,13 @@ theorem signedMutation_signedMutation_neg (hAlt : B.IsAlt) (sign : ℤ) (k : K) 
     simp [smul_neg, add_assoc]
   · funext i
     simp
+
+/-- Applying the opposite signed mutation first and then the given signed mutation
+at the same pivot also recovers the original family. -/
+@[simp]
+theorem signedMutation_neg_signedMutation (hAlt : B.IsAlt) (sign : ℤ) (k : K) :
+    (s.signedMutation B hB hAlt (-sign) k).signedMutation B hB hAlt sign k = s := by
+  simpa only [neg_neg] using s.signedMutation_signedMutation_neg B hB hAlt (-sign) k
 
 /-- Applying two positive mutations sends each vector `x` to the transvection
 `x + B(x, dₖ eₖ) • eₖ` in the pivot direction, with the pairing read as an integer. -/
@@ -213,12 +244,14 @@ noncomputable def mutationSquareEquiv (hAlt : B.IsAlt) (k : K) : N ≃ₗ[ℤ] N
     (by simp [hAlt])
 
 /-- The forward mutation-square transvection adds the pivot correction. -/
+@[simp]
 theorem mutationSquareEquiv_apply (hAlt : B.IsAlt) (k : K) (x : N) :
     s.mutationSquareEquiv B hB hAlt k x =
       x + s.weightedPairing B hB x k • (s.vector k : N) := by
   rw [mutationSquareEquiv, LinearEquiv.transvection.apply, weightedPairingHom_apply]
 
 /-- The inverse mutation-square transvection subtracts the pivot correction. -/
+@[simp]
 theorem mutationSquareEquiv_symm_apply (hAlt : B.IsAlt) (k : K) (x : N) :
     (s.mutationSquareEquiv B hB hAlt k).symm x =
       x - s.weightedPairing B hB x k • (s.vector k : N) := by
