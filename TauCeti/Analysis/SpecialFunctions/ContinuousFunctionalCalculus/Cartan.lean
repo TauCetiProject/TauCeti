@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog.Basic
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
-public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
+public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar.Basic
 public import TauCeti.Geometry.Lie.Exponential.Units.Basic
-import Mathlib.Analysis.Normed.Ring.Units
+import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar.Continuity
 import TauCeti.Topology.Algebra.Star.Unitary
 
 /-!
@@ -57,8 +57,8 @@ discharged in `TauCeti/Analysis/Matrix/Cartan/Closed/Basic.lean`
 * `Units.mul_exp_eq_iff_polarUnitary_eq_and_log_sqrt_star_mul_eq`: its uniqueness.
 * `Units.coe_polarUnitary_eq_mul_exp_neg_log_sqrt_star_mul`: the unitary factor is
   `a * exp (-log √(a⋆ a))`.
-* `Units.continuous_polarUnitary`, `Units.continuous_log_sqrt_star_mul`: both factors depend
-  continuously on the unit.
+* `Units.continuous_log_sqrt_star_mul`: the self-adjoint factor depends continuously on the unit
+  (for `Units.continuous_polarUnitary`, see `Polar/Continuity.lean`).
 * `Unitary.joined_of_joined_toUnits`, `Unitary.joined_toUnits_iff`: two unitaries are joined by a
   path of unitaries exactly when they are joined by a path of units.
 * `TauCeti.cartanHomeomorph`: the homeomorphism `unitary A × selfAdjoint A ≃ₜ Aˣ`,
@@ -157,14 +157,6 @@ theorem continuous_log_sqrt_star_mul :
     (CFC.continuousOn_sqrt.comp_continuous hval fun a ↦ star_mul_self_nonneg (a : A)) fun a ↦ ?_
   have ha := a.isStrictlyPositive_sqrt_star_mul
   exact ⟨ha.isSelfAdjoint, ha.isUnit⟩
-
-/-- The polar unitary factor `a.polarUnitary` of a unit depends continuously on the unit. -/
-theorem continuous_polarUnitary : Continuous fun a : Aˣ ↦ a.polarUnitary := by
-  -- Mathlib's lemmas on `exp` in a Banach algebra are stated for normed `ℚ`-algebras.
-  let : NormedAlgebra ℚ A := .restrictScalars ℚ ℝ A
-  refine Continuous.subtype_mk ?_ _
-  simp_rw [coe_polarUnitary_eq_mul_exp_neg_log_sqrt_star_mul]
-  exact continuous_val.mul (exp_continuous.comp continuous_log_sqrt_star_mul.neg)
 
 end Units
 

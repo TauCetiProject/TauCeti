@@ -42,6 +42,9 @@ lie in any open set containing the points of `K` mapped to `y`
 
 A nonempty compact set totally ordered by specialization contains a point specializing all of its
 points (`IsCompact.exists_forall_specializes`).
+
+A continuous map from a compact space to a T1 space preserves nonempty downward directed
+intersections of closed sets (`Continuous.image_iInter_of_isClosed`).
 -/
 
 public section
@@ -51,6 +54,27 @@ namespace TauCeti
 open Filter Set Topology
 
 variable {X : Type*} [TopologicalSpace X]
+
+/-- A continuous map from a compact space to a T1 space takes the intersection of a nonempty
+downward directed family of closed sets to the intersection of their images. -/
+theorem _root_.Continuous.image_iInter_of_isClosed {Y ι : Type*} [CompactSpace X]
+    [TopologicalSpace Y] [T1Space Y] [Nonempty ι] {f : X → Y} (hf : Continuous f)
+    (S : ι → Set X) (hS : ∀ i, IsClosed (S i)) (hdir : Directed (· ⊇ ·) S) :
+    f '' (⋂ i, S i) = ⋂ i, f '' S i := by
+  refine (image_iInter_subset S f).antisymm ?_
+  intro y hy
+  let C (i : ι) := S i ∩ f ⁻¹' {y}
+  have hclosed (i : ι) : IsClosed (C i) := (hS i).inter (isClosed_singleton.preimage hf)
+  have hne (i : ι) : (C i).Nonempty := by
+    obtain ⟨x, hx, hxy⟩ := mem_iInter.mp hy i
+    exact ⟨x, hx, hxy⟩
+  have hC : Directed (· ⊇ ·) C :=
+    hdir.mono_comp (· ⊇ ·) (g := fun s ↦ s ∩ f ⁻¹' {y})
+      (fun {_ _} h ↦ inter_subset_inter_left _ h)
+  obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed C hC hne
+    (fun i ↦ (hclosed i).isCompact) hclosed
+  exact ⟨x, mem_iInter.mpr fun i ↦ (mem_iInter.mp hx i).1,
+    (mem_iInter.mp hx ‹Nonempty ι›.some).2⟩
 
 /-- Compactness of `U ∩ S` for a compact set `U` may be checked on open pieces of `U` around
 each of its points. -/

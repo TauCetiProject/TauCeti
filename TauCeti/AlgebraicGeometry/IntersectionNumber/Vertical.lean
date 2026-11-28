@@ -400,6 +400,7 @@ theorem intersectionNumber_subschemeι_ker_specialFiberι_eq_sum [IsProper toBas
             ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).subschemeι a := by
   let S := (toBase.finite_setOf_base_eq_closedPoint
     (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset
+  have := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
   exact (intersectionNumber_subschemeι_prod_pow_aux toBase (ι := S)
     (fun i ↦ vanishingIdeal ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩)
     (fun i ↦ toBase.specialFiberMultiplicity π i)
@@ -411,7 +412,7 @@ theorem intersectionNumber_subschemeι_ker_specialFiberι_eq_sum [IsProper toBas
     (fun i ↦ toBase.relativeDimensionLE_subscheme_vanishingIdeal_closure_singleton hX
       (fun h ↦ one_ne_zero ((i : CodimensionOnePoint X).property.symm.trans
         (Order.coheight_eq_zero.mpr h))) ((Set.Finite.mem_toFinset _).mp i.property))
-    a Finset.univ ((toBase.ker_specialFiberι_eq_prod_vanishingIdeal hX hη hπ).trans
+    a Finset.univ ((toBase.ker_specialFiberι_eq_prod_vanishingIdeal hη hπ).trans
       (Finset.prod_coe_sort S _).symm) le_rfl).2
 
 end Prod

@@ -49,7 +49,8 @@ The **core chart** `TauCeti.Floer.pairOfPantsCoreChart` is the loopwise concaten
 (`TauCeti.loopwiseTrans`) of these two halves. It is a smooth map of the cylinder `ℝ × ℝ / ℤ`
 (`TauCeti.Floer.contDiff_pairOfPantsCoreChart`,
 `TauCeti.Floer.pairOfPantsCoreChart_apply_add_one`) into `S₀`
-(`TauCeti.Floer.pairOfPantsCoreChart_mem_preimage_truncation`). It is constant in `s` for
+(`TauCeti.Floer.pairOfPantsCoreChart_mem_preimage_truncation`), hence into `S`
+(`TauCeti.Floer.pairOfPantsCoreChart_mem_thricePuncturedSphereReal`). It is constant in `s` for
 `s ≤ 0` and for `s ≥ 1` (`TauCeti.Floer.pairOfPantsCoreChart_mk_of_nonpos`,
 `TauCeti.Floer.pairOfPantsCoreChart_mk_of_one_le`). At `s = 0` it runs through the collared
 concatenation of the end loops of the inputs `0` and `1` at height `0`, both starting at `1/2`
@@ -107,9 +108,10 @@ The area formula is proved in polar coordinates about `1/2`: by Fubini's theorem
 outermost (`Complex.integral_comp_polarCoord_symm`), the integral over `S₀` is an iterated
 integral over the angle and over the segment of radii of `S₀` on each ray, and rescaling the radius
 and the angle of each half to `[0, 1]` turns it into the integral over the core chart
-(`TauCeti.intervalIntegral.integral_integral_deriv_smul_comp_of_deriv_nonneg`). The module-valued
-Jacobian formula `TauCeti.mpullback_comp_apply_eq_det_smul` reads the pulled-back form along the
-chart as its Jacobian times the area density of `u`.
+(`TauCeti.intervalIntegral.integral_integral_deriv_smul_comp_of_deriv_nonneg`). The pulled-back
+form along the chart is read as its Jacobian determinant times the area density of `u` through
+`TauCeti.mpullback_comp_apply_eq_det_smul`, with the determinant computed by
+`LinearMap.det_finTwoProd`.
 
 ## References
 
@@ -132,37 +134,46 @@ namespace TauCeti.Floer
 
 /-- The distance from `1/2` to the output circle `‖w‖ = 2` along the ray at the angle `θ`, the
 positive root of `ρ² + ρ cos θ = 15/4`. -/
-private def coreOuterRadius (θ : ℝ) : ℝ :=
+def pairOfPantsOuterRadius (θ : ℝ) : ℝ :=
   (-Real.cos θ + √(Real.cos θ ^ 2 + 15)) / 2
 
-private theorem coreOuterRadius_sq_add (θ : ℝ) :
-    coreOuterRadius θ ^ 2 + Real.cos θ * coreOuterRadius θ = 15 / 4 := by
+theorem pairOfPantsOuterRadius_def (θ : ℝ) :
+    pairOfPantsOuterRadius θ = (-Real.cos θ + √(Real.cos θ ^ 2 + 15)) / 2 :=
+  (rfl)
+
+/-- The outer radius is a root of `ρ² + ρ cos θ = 15/4`. -/
+theorem pairOfPantsOuterRadius_sq_add (θ : ℝ) :
+    pairOfPantsOuterRadius θ ^ 2 + Real.cos θ * pairOfPantsOuterRadius θ = 15 / 4 := by
   have h := Real.sq_sqrt (by positivity : (0 : ℝ) ≤ Real.cos θ ^ 2 + 15)
-  simp only [coreOuterRadius]
+  simp only [pairOfPantsOuterRadius]
   linear_combination h / 4
 
-private theorem one_lt_coreOuterRadius (θ : ℝ) : 1 < coreOuterRadius θ := by
+/-- The output circle lies at distance more than `1` from `1/2` along every ray. -/
+theorem one_lt_pairOfPantsOuterRadius (θ : ℝ) : 1 < pairOfPantsOuterRadius θ := by
   have hc := Real.cos_le_one θ
   have h : 2 + Real.cos θ < √(Real.cos θ ^ 2 + 15) :=
     Real.lt_sqrt_of_sq_lt (by nlinarith)
-  simp only [coreOuterRadius]
+  simp only [pairOfPantsOuterRadius]
   linarith
 
-private theorem abs_cos_le_coreOuterRadius (θ : ℝ) : |Real.cos θ| ≤ coreOuterRadius θ :=
-  (abs_le.2 ⟨Real.neg_one_le_cos θ, Real.cos_le_one θ⟩).trans (one_lt_coreOuterRadius θ).le
+private theorem abs_cos_le_pairOfPantsOuterRadius (θ : ℝ) :
+    |Real.cos θ| ≤ pairOfPantsOuterRadius θ :=
+  (abs_le.2 ⟨Real.neg_one_le_cos θ, Real.cos_le_one θ⟩).trans (one_lt_pairOfPantsOuterRadius θ).le
 
-private theorem coreOuterRadius_add_two_pi (θ : ℝ) :
-    coreOuterRadius (θ + 2 * π) = coreOuterRadius θ := by
-  simp [coreOuterRadius]
+/-- The outer radius is `2π`-periodic in the angle. -/
+theorem pairOfPantsOuterRadius_add_two_pi (θ : ℝ) :
+    pairOfPantsOuterRadius (θ + 2 * π) = pairOfPantsOuterRadius θ := by
+  simp [pairOfPantsOuterRadius]
 
-private theorem contDiff_coreOuterRadius {n : ℕ∞} : ContDiff ℝ n coreOuterRadius := by
+/-- The outer radius is a smooth function of the angle. -/
+theorem contDiff_pairOfPantsOuterRadius {n : ℕ∞} : ContDiff ℝ n pairOfPantsOuterRadius := by
   have h : ContDiff ℝ n fun θ ↦ √(Real.cos θ ^ 2 + 15) :=
     ((Real.contDiff_cos.pow 2).add contDiff_const).sqrt fun θ ↦ by positivity
   exact (Real.contDiff_cos.neg.add h).div_const 2
 
 /-- The distance from the point `k / 2` to the output circle `‖w‖ = 2` along the ray at the angle
 `θ`: the positive root `R` of `R² + k R cos θ = 4 - k² / 4`, for `k² ≤ 16`. For `k = 1` it is
-`coreOuterRadius θ`. -/
+`pairOfPantsOuterRadius θ`. -/
 private def outputRayRadius (k θ : ℝ) : ℝ :=
   (-(k * Real.cos θ) + √((k * Real.cos θ) ^ 2 + 16 - k ^ 2)) / 2
 
@@ -172,10 +183,11 @@ private def outputRayPoint (k θ : ℝ) : ℝ × ℝ :=
   Complex.equivRealProdCLM (circleMap (k / 2 : ℝ) (outputRayRadius k θ) θ)
 
 /-- From `1/2` the ray at the angle `θ` meets the output circle at the distance
-`coreOuterRadius θ`. -/
+`pairOfPantsOuterRadius θ`. -/
 private theorem outputRayPoint_one (θ : ℝ) :
-    outputRayPoint 1 θ = Complex.equivRealProdCLM (circleMap (1 / 2) (coreOuterRadius θ) θ) := by
-  simp only [outputRayPoint, outputRayRadius, coreOuterRadius]
+    outputRayPoint 1 θ =
+      Complex.equivRealProdCLM (circleMap (1 / 2) (pairOfPantsOuterRadius θ) θ) := by
+  simp only [outputRayPoint, outputRayRadius, pairOfPantsOuterRadius]
   push_cast
   ring_nf
 
@@ -229,20 +241,23 @@ private theorem norm_sq_circleMap_half_sub_one (ρ θ : ℝ) :
   simp [circleMap, Complex.exp_mul_I, ← Complex.ofReal_cos, ← Complex.ofReal_sin]
   nlinarith [Real.sin_sq_add_cos_sq θ]
 
-private theorem mem_truncation_zero_iff {w : ℂ} :
-    w ∈ truncation 0 ↔ 1 / 2 ≤ ‖w‖ ∧ 1 / 2 ≤ ‖w - 1‖ ∧ ‖w‖ ≤ 2 := by
-  rw [truncation_eq]
-  simp [and_assoc]
+/-- **The outer radius reaches the output circle.** The point at the outer radius on the ray from
+`1/2` at the angle `θ` lies on the output circle `‖w‖ = 2`. -/
+theorem norm_circleMap_half_pairOfPantsOuterRadius (θ : ℝ) :
+    ‖circleMap (1 / 2 : ℂ) (pairOfPantsOuterRadius θ) θ‖ = 2 := by
+  have h := norm_sq_circleMap_half (pairOfPantsOuterRadius θ) θ
+  rw [add_assoc, mul_comm, add_comm (Real.cos θ * _), pairOfPantsOuterRadius_sq_add] at h
+  nlinarith [norm_nonneg (circleMap (1 / 2 : ℂ) (pairOfPantsOuterRadius θ) θ)]
 
 /-- On the ray from `1/2` at the angle `θ`, the truncation `S₀` is the segment of radii
 `[|cos θ|, R θ]`. -/
 private theorem circleMap_half_mem_truncation_zero_iff {ρ θ : ℝ} (hρ : 0 < ρ) :
     circleMap (1 / 2 : ℂ) ρ θ ∈ truncation 0 ↔
-      |Real.cos θ| ≤ ρ ∧ ρ ≤ coreOuterRadius θ := by
+      |Real.cos θ| ≤ ρ ∧ ρ ≤ pairOfPantsOuterRadius θ := by
   have h₁ := norm_sq_circleMap_half ρ θ
   have h₂ := norm_sq_circleMap_half_sub_one ρ θ
-  have hR := coreOuterRadius_sq_add θ
-  have hR₁ := one_lt_coreOuterRadius θ
+  have hR := pairOfPantsOuterRadius_sq_add θ
+  have hR₁ := one_lt_pairOfPantsOuterRadius θ
   have hc := Real.neg_one_le_cos θ
   have hn₁ := norm_nonneg (circleMap (1 / 2 : ℂ) ρ θ)
   have hn₂ := norm_nonneg (circleMap (1 / 2 : ℂ) ρ θ - 1)
@@ -254,7 +269,7 @@ private theorem circleMap_half_mem_truncation_zero_iff {ρ θ : ℝ} (hρ : 0 < 
     refine ⟨?_, ?_, ?_⟩ <;> nlinarith
 
 private theorem circleMap_half_mem_truncation_zero {ρ θ : ℝ} (h₁ : |Real.cos θ| ≤ ρ)
-    (h₂ : ρ ≤ coreOuterRadius θ) : circleMap (1 / 2 : ℂ) ρ θ ∈ truncation 0 := by
+    (h₂ : ρ ≤ pairOfPantsOuterRadius θ) : circleMap (1 / 2 : ℂ) ρ θ ∈ truncation 0 := by
   rcases (abs_nonneg _).trans h₁ |>.lt_or_eq with hρ | hρ
   · exact (circleMap_half_mem_truncation_zero_iff hρ).2 ⟨h₁, h₂⟩
   · subst hρ
@@ -270,7 +285,8 @@ integral over the angles of the integrals over the segments of radii `[|cos θ|,
 private theorem integral_truncation_zero_eq_intervalIntegral {f : ℂ → F}
     (hf : IntegrableOn f (truncation 0)) :
     ∫ w in truncation 0, f w =
-      ∫ θ in -π..π, ∫ ρ in |Real.cos θ|..coreOuterRadius θ, ρ • f (circleMap (1 / 2) ρ θ) := by
+      ∫ θ in -π..π, ∫ ρ in |Real.cos θ|..pairOfPantsOuterRadius θ,
+        ρ • f (circleMap (1 / 2) ρ θ) := by
   have hS : MeasurableSet (truncation 0) := (isCompact_truncation 0).isClosed.measurableSet
   set g := (truncation 0).indicator f
   have hg : Integrable g := hf.integrable_indicator hS
@@ -283,36 +299,37 @@ private theorem integral_truncation_zero_eq_intervalIntegral {f : ℂ → F}
     intervalIntegral.integral_of_le (by linarith [Real.pi_pos]), integral_Ioc_eq_integral_Ioo]
   refine setIntegral_congr_fun measurableSet_Ioo fun θ _ ↦ ?_
   have hslice : EqOn (fun ρ : ℝ ↦ ρ • g (1 / 2 + Complex.polarCoord.symm (ρ, θ)))
-      ((Icc |Real.cos θ| (coreOuterRadius θ)).indicator
+      ((Icc |Real.cos θ| (pairOfPantsOuterRadius θ)).indicator
         fun ρ ↦ ρ • f (circleMap (1 / 2) ρ θ)) (Ioi 0) := fun ρ hρ ↦ by
     have hmem := circleMap_half_mem_truncation_zero_iff (θ := θ) (mem_Ioi.1 hρ)
     simp only [g, TauCeti.add_polarCoord_symm_eq_circleMap]
-    by_cases h : |Real.cos θ| ≤ ρ ∧ ρ ≤ coreOuterRadius θ
+    by_cases h : |Real.cos θ| ≤ ρ ∧ ρ ≤ pairOfPantsOuterRadius θ
     · rw [indicator_of_mem (hmem.2 h), indicator_of_mem h]
     · rw [indicator_of_notMem (mt hmem.1 h), indicator_of_notMem h, smul_zero]
   rw [setIntegral_congr_fun measurableSet_Ioi hslice, setIntegral_congr_set Ioi_ae_eq_Ici,
     setIntegral_indicator measurableSet_Icc,
     inter_eq_right.mpr (Icc_subset_Ici_self.trans (Ici_subset_Ici.mpr (abs_nonneg _))),
-    integral_Icc_eq_integral_Ioc, intervalIntegral.integral_of_le (abs_cos_le_coreOuterRadius θ)]
+    integral_Icc_eq_integral_Ioc,
+    intervalIntegral.integral_of_le (abs_cos_le_pairOfPantsOuterRadius θ)]
 
 /-- The radius `|cos θ| + σ (R θ - |cos θ|)`, running from the inner to the outer boundary of the
 core along the ray at the angle `θ` as `σ` runs over `[0, 1]`. -/
 private def coreRayRadius (θ σ : ℝ) : ℝ :=
-  |Real.cos θ| + σ * (coreOuterRadius θ - |Real.cos θ|)
+  |Real.cos θ| + σ * (pairOfPantsOuterRadius θ - |Real.cos θ|)
 
 /-- The integral over the segment of the core on the ray at the angle `θ`, with the radius
 rescaled to `[0, 1]`. -/
 private def coreAngularIntegrand (f : ℂ → F) (θ : ℝ) : F :=
-  ∫ σ in (0 : ℝ)..1, ((coreOuterRadius θ - |Real.cos θ|) * coreRayRadius θ σ) •
+  ∫ σ in (0 : ℝ)..1, ((pairOfPantsOuterRadius θ - |Real.cos θ|) * coreRayRadius θ σ) •
     f (circleMap (1 / 2) (coreRayRadius θ σ) θ)
 
 private theorem intervalIntegral_eq_coreAngularIntegrand (f : ℂ → F) (θ : ℝ) :
-    ∫ ρ in |Real.cos θ|..coreOuterRadius θ, ρ • f (circleMap (1 / 2) ρ θ) =
+    ∫ ρ in |Real.cos θ|..pairOfPantsOuterRadius θ, ρ • f (circleMap (1 / 2) ρ θ) =
       coreAngularIntegrand f θ := by
   simp only [coreAngularIntegrand, coreRayRadius]
   set k := |Real.cos θ|
-  set h := coreOuterRadius θ - k
-  have hkh : k + h = coreOuterRadius θ := by simp only [h]; ring
+  set h := pairOfPantsOuterRadius θ - k
+  have hkh : k + h = pairOfPantsOuterRadius θ := by simp only [h]; ring
   have := intervalIntegral.smul_integral_comp_add_mul (a := 0) (b := 1)
     (fun ρ ↦ ρ • f (circleMap (1 / 2) ρ θ)) h k
   simp only [mul_zero, add_zero, mul_one] at this
@@ -325,7 +342,7 @@ private theorem continuous_coreAngularIntegrand {f : ℂ → F}
     (hf : ContinuousOn f (truncation 0)) : Continuous (coreAngularIntegrand f) := by
   -- Clamping the rescaled radius to `[0, 1]` changes nothing on the interval of integration and
   -- keeps every point in the core, where `f` is continuous.
-  have hR := contDiff_coreOuterRadius (n := 0).continuous
+  have hR := contDiff_pairOfPantsOuterRadius (n := 0).continuous
   have hρ : Continuous fun p : ℝ × ℝ ↦ coreRayRadius p.1 (projIcc 0 1 zero_le_one p.2) := by
     unfold coreRayRadius
     fun_prop
@@ -334,20 +351,20 @@ private theorem continuous_coreAngularIntegrand {f : ℂ → F}
         truncation 0 := by
     have h₀ := (projIcc 0 1 zero_le_one p.2).prop.1
     have h₁ := (projIcc 0 1 zero_le_one p.2).prop.2
-    have h := abs_cos_le_coreOuterRadius p.1
+    have h := abs_cos_le_pairOfPantsOuterRadius p.1
     refine circleMap_half_mem_truncation_zero ?_ ?_ <;> simp only [coreRayRadius] <;> nlinarith
   have hc : Continuous fun p : ℝ × ℝ ↦
       circleMap (1 / 2 : ℂ) (coreRayRadius p.1 (projIcc 0 1 zero_le_one p.2)) p.1 := by
     unfold circleMap
     fun_prop
   have hcont : Continuous fun p : ℝ × ℝ ↦
-      ((coreOuterRadius p.1 - |Real.cos p.1|) *
+      ((pairOfPantsOuterRadius p.1 - |Real.cos p.1|) *
         coreRayRadius p.1 (projIcc 0 1 zero_le_one p.2)) •
         f (circleMap (1 / 2) (coreRayRadius p.1 (projIcc 0 1 zero_le_one p.2)) p.1) :=
     ((hR.comp continuous_fst).sub (continuous_abs.comp (Real.continuous_cos.comp
       continuous_fst))).mul hρ |>.smul (hf.comp_continuous hc hmem)
   refine (intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (μ := volume)
-    (f := fun θ σ ↦ ((coreOuterRadius θ - |Real.cos θ|) *
+    (f := fun θ σ ↦ ((pairOfPantsOuterRadius θ - |Real.cos θ|) *
       coreRayRadius θ (projIcc 0 1 zero_le_one σ)) •
       f (circleMap (1 / 2) (coreRayRadius θ (projIcc 0 1 zero_le_one σ)) θ))
     hcont 0 1).congr fun θ ↦ ?_
@@ -357,8 +374,8 @@ private theorem continuous_coreAngularIntegrand {f : ℂ → F}
 
 private theorem coreAngularIntegrand_add_two_pi (f : ℂ → F) (θ : ℝ) :
     coreAngularIntegrand f (θ + 2 * π) = coreAngularIntegrand f θ := by
-  simp only [coreAngularIntegrand, coreRayRadius, coreOuterRadius_add_two_pi, Real.cos_add_two_pi,
-    periodic_circleMap _ _ θ]
+  simp only [coreAngularIntegrand, coreRayRadius, pairOfPantsOuterRadius_add_two_pi,
+    Real.cos_add_two_pi, periodic_circleMap _ _ θ]
 
 /-- The clockwise angle about `1/2` of the ray through the lobe of the input end `0` (for
 `a = 1/4`) or of the input end `1` (for `a = 3/4`), at the parameter `r ∈ [0, 1]`. -/
@@ -367,7 +384,7 @@ private def lobeAngle (a r : ℝ) : ℝ := -(2 * π * (a + r / 2))
 /-- The radius along the ray of a lobe, from `sin (π r) = |cos θ|` at `σ = 0` to the output
 circle at `σ = 1`. -/
 private def lobeRadius (a σ r : ℝ) : ℝ :=
-  Real.sin (π * r) + σ * (coreOuterRadius (lobeAngle a r) - Real.sin (π * r))
+  Real.sin (π * r) + σ * (pairOfPantsOuterRadius (lobeAngle a r) - Real.sin (π * r))
 
 /-- The point of the core on the ray of a lobe at the rescaled radius `σ`. -/
 private def lobePoint (a σ r : ℝ) : ℂ :=
@@ -399,7 +416,7 @@ private theorem lobeRadius_eq_coreRayRadius {a r : ℝ} (ha : a = 1 / 4 ∨ a = 
 private theorem lobePoint_mem_truncation {a : ℝ} (ha : a = 1 / 4 ∨ a = 3 / 4) {σ r : ℝ}
     (hσ : σ ∈ Icc 0 1) (hr : r ∈ Icc 0 1) : lobePoint a σ r ∈ truncation 0 := by
   rw [lobePoint, lobeRadius_eq_coreRayRadius ha hr]
-  have h := abs_cos_le_coreOuterRadius (lobeAngle a r)
+  have h := abs_cos_le_pairOfPantsOuterRadius (lobeAngle a r)
   refine circleMap_half_mem_truncation_zero ?_ ?_ <;> simp only [coreRayRadius] <;>
     nlinarith [hσ.1, hσ.2]
 
@@ -408,10 +425,12 @@ coordinates `(r, σ) ∈ [0, 1]²` of each lobe, with polar Jacobian `π (R - si
 private theorem integral_truncation_zero_eq_lobes {f : ℂ → F}
     (hf : ContinuousOn f (truncation 0)) :
     ∫ w in truncation 0, f w = π • ((∫ r in (0 : ℝ)..1, ∫ σ in (0 : ℝ)..1,
-        ((coreOuterRadius (lobeAngle (1 / 4) r) - Real.sin (π * r)) * lobeRadius (1 / 4) σ r) •
+        ((pairOfPantsOuterRadius (lobeAngle (1 / 4) r) - Real.sin (π * r)) *
+          lobeRadius (1 / 4) σ r) •
           f (lobePoint (1 / 4) σ r)) +
       ∫ r in (0 : ℝ)..1, ∫ σ in (0 : ℝ)..1,
-        ((coreOuterRadius (lobeAngle (3 / 4) r) - Real.sin (π * r)) * lobeRadius (3 / 4) σ r) •
+        ((pairOfPantsOuterRadius (lobeAngle (3 / 4) r) - Real.sin (π * r)) *
+          lobeRadius (3 / 4) σ r) •
           f (lobePoint (3 / 4) σ r)) := by
   have hG := continuous_coreAngularIntegrand hf
   have hper : Periodic (coreAngularIntegrand f) (2 * π) := coreAngularIntegrand_add_two_pi f
@@ -427,7 +446,7 @@ private theorem integral_truncation_zero_eq_lobes {f : ℂ → F}
   have hlobe (a : ℝ) (ha : a = 1 / 4 ∨ a = 3 / 4) :
       ∫ θ in (-(2 * π * a) - π)..(-(2 * π * a)), coreAngularIntegrand f θ =
         π • ∫ r in (0 : ℝ)..1, ∫ σ in (0 : ℝ)..1,
-          ((coreOuterRadius (lobeAngle a r) - Real.sin (π * r)) * lobeRadius a σ r) •
+          ((pairOfPantsOuterRadius (lobeAngle a r) - Real.sin (π * r)) * lobeRadius a σ r) •
             f (lobePoint a σ r) := by
     have h := intervalIntegral.smul_integral_comp_add_mul (a := 0) (b := 1)
       (coreAngularIntegrand f) (-π) (-(2 * π * a))
@@ -502,7 +521,7 @@ private theorem coreLobe_of_mem {a : ℝ} {z : ℝ × ℝ} (hz : z.2 ∈ Icc 0 1
 private theorem contDiff_lobeRadius {n : ℕ∞} (a : ℝ) :
     ContDiff ℝ n fun p : ℝ × ℝ ↦ lobeRadius a p.1 p.2 := by
   unfold lobeRadius lobeAngle
-  have hR := (contDiff_coreOuterRadius (n := n)).comp
+  have hR := (contDiff_pairOfPantsOuterRadius (n := n)).comp
     (contDiff_const.mul (contDiff_const.add (contDiff_snd.div_const 2)) :
       ContDiff ℝ n fun p : ℝ × ℝ ↦ 2 * π * (a + p.2 / 2)).neg
   have hs : ContDiff ℝ n fun p : ℝ × ℝ ↦ Real.sin (π * p.2) :=
@@ -555,7 +574,7 @@ private theorem coreLobe_mem_thricePuncturedSphereReal {a : ℝ} (ha : a = 1 / 4
   set ρ := lobeRadius a (smoothTransition z.1) r
   have hS₁ : S ≤ 1 := Real.sin_le_one _
   have hS₀ : -1 < S := sin_pi_mul_lobeClamp_gt z.2
-  have hR := one_lt_coreOuterRadius (lobeAngle a r)
+  have hR := one_lt_pairOfPantsOuterRadius (lobeAngle a r)
   have hσ₀ := smoothTransition.nonneg z.1
   have hρ : S ≤ ρ := by
     simp only [ρ, lobeRadius]
@@ -592,9 +611,9 @@ private theorem coreLobe_three_quarters_one (s : ℝ) :
   rw [coreLobe_of_mem (by simp), coreLobe_of_mem (by simp), lobeChart, lobeChart, lobePoint,
     lobePoint, lobeRadius, lobeRadius,
     show lobeAngle (3 / 4) 1 = lobeAngle (1 / 4) 0 + -(2 * π) by rw [lobeAngle, lobeAngle]; ring]
-  have hR : coreOuterRadius (lobeAngle (1 / 4) 0 + -(2 * π)) =
-      coreOuterRadius (lobeAngle (1 / 4) 0) := by
-    rw [← coreOuterRadius_add_two_pi, neg_add_cancel_right]
+  have hR : pairOfPantsOuterRadius (lobeAngle (1 / 4) 0 + -(2 * π)) =
+      pairOfPantsOuterRadius (lobeAngle (1 / 4) 0) := by
+    rw [← pairOfPantsOuterRadius_add_two_pi, neg_add_cancel_right]
   have hc (ρ : ℝ) : circleMap (1 / 2 : ℂ) ρ (lobeAngle (1 / 4) 0 + -(2 * π)) =
       circleMap (1 / 2) ρ (lobeAngle (1 / 4) 0) := by
     rw [← periodic_circleMap (1 / 2 : ℂ) ρ, neg_add_cancel_right]
@@ -655,14 +674,10 @@ private theorem coreLobe_three_quarters_mk_zero {r : ℝ} (hr : r ∈ Icc 0 1) :
 
 /-- The point of the output circle `‖w‖ = 2` on the ray from `1/2` at the angle `θ`. -/
 private def outputCirclePoint (θ : ℝ) : ℂ :=
-  circleMap (1 / 2) (coreOuterRadius θ) θ
+  circleMap (1 / 2) (pairOfPantsOuterRadius θ) θ
 
-private theorem norm_outputCirclePoint (θ : ℝ) : ‖outputCirclePoint θ‖ = 2 := by
-  have h := norm_sq_circleMap_half (coreOuterRadius θ) θ
-  have h' := coreOuterRadius_sq_add θ
-  have hn := norm_nonneg (outputCirclePoint θ)
-  rw [outputCirclePoint] at hn ⊢
-  nlinarith
+private theorem norm_outputCirclePoint (θ : ℝ) : ‖outputCirclePoint θ‖ = 2 :=
+  norm_circleMap_half_pairOfPantsOuterRadius θ
 
 /-- On the output circle, the end of a lobe is the point of the circle at the angle of the
 lobe. -/
@@ -693,6 +708,12 @@ theorem pairOfPantsCoreChart_mem_preimage_truncation (z : ℝ × ℝ) :
   obtain ⟨s, t⟩ := z
   exact loopwiseTrans_mem (fun _ hr ↦ symm_coreLobe_mem_truncation (.inl rfl) hr)
     (fun _ hr ↦ symm_coreLobe_mem_truncation (.inr rfl) hr)
+
+/-- The core chart takes values in the pair of pants `S`. -/
+theorem pairOfPantsCoreChart_mem_thricePuncturedSphereReal (z : ℝ × ℝ) :
+    pairOfPantsCoreChart z ∈ thricePuncturedSphereReal := by
+  have h := truncation_subset 0 (pairOfPantsCoreChart_mem_preimage_truncation z)
+  rwa [mem_thricePuncturedSphereReal_iff]
 
 /-- **The input loop of the core chart.** For `s = 0` the core chart runs through the collared
 concatenation of the end charts of the input ends `0` and `1` at height `0`, the circles of
@@ -738,7 +759,7 @@ theorem pairOfPantsCoreChart_mk_one (t : ℝ) :
         ((-Real.sin (π * z.2) + √(Real.sin (π * z.2) ^ 2 + 15)) / 2) (-(3 * π / 2) - π * z.2)))
       (1, t) := by
   refine loopwiseTrans_congr (fun r hr ↦ ?_) (fun r hr ↦ ?_) <;>
-    rw [coreLobe_mk_one _ hr, outputCirclePoint, coreOuterRadius]
+    rw [coreLobe_mk_one _ hr, outputCirclePoint, pairOfPantsOuterRadius]
   · rw [cos_lobeAngle_quarter, neg_neg, neg_sq,
       show lobeAngle (1 / 4) r = -(π / 2) - π * r by rw [lobeAngle]; ring]
   · rw [cos_lobeAngle_three_quarters,
@@ -764,12 +785,12 @@ private theorem hasDerivAt_lobeAngle (a r : ℝ) : HasDerivAt (lobeAngle a) (-π
 
 private theorem hasDerivAt_lobePoint_fst (a σ r : ℝ) :
     HasDerivAt (fun σ ↦ lobePoint a σ r)
-      (((coreOuterRadius (lobeAngle a r) - Real.sin (π * r) : ℝ) : ℂ) *
+      (((pairOfPantsOuterRadius (lobeAngle a r) - Real.sin (π * r) : ℝ) : ℂ) *
         Complex.exp (lobeAngle a r * Complex.I)) σ := by
   have h : HasDerivAt (fun σ : ℝ ↦ (lobeRadius a σ r : ℂ))
-      ((coreOuterRadius (lobeAngle a r) - Real.sin (π * r) : ℝ) : ℂ) σ := by
+      ((pairOfPantsOuterRadius (lobeAngle a r) - Real.sin (π * r) : ℝ) : ℂ) σ := by
     have := ((hasDerivAt_id σ).mul_const
-      (coreOuterRadius (lobeAngle a r) - Real.sin (π * r))).const_add (Real.sin (π * r))
+      (pairOfPantsOuterRadius (lobeAngle a r) - Real.sin (π * r))).const_add (Real.sin (π * r))
     simpa [lobeRadius] using this.ofReal_comp
   simpa [lobePoint, circleMap] using
     (h.mul_const (Complex.exp (lobeAngle a r * Complex.I))).const_add (1 / 2 : ℂ)
@@ -790,7 +811,7 @@ private theorem hasDerivAt_lobePoint_snd (a σ r : ℝ) :
 private theorem fderiv_lobeChart_apply_one_zero (a : ℝ) (z : ℝ × ℝ) :
     fderiv ℝ (lobeChart a) z (1, 0) = Complex.equivRealProdCLM
       (((deriv smoothTransition z.1 : ℝ) : ℂ) *
-        (((coreOuterRadius (lobeAngle a z.2) - Real.sin (π * z.2) : ℝ) : ℂ) *
+        (((pairOfPantsOuterRadius (lobeAngle a z.2) - Real.sin (π * z.2) : ℝ) : ℂ) *
           Complex.exp (lobeAngle a z.2 * Complex.I))) := by
   have hβ : HasDerivAt smoothTransition (deriv smoothTransition z.1) z.1 :=
     (smoothTransition.contDiff (n := 1).differentiable one_ne_zero z.1).hasDerivAt
@@ -825,7 +846,7 @@ private theorem mpullback_comp_lobeChart_apply (a : ℝ) {u : ℝ × ℝ → M} 
     (z : ℝ × ℝ) (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (lobeChart a z)) :
     mpullback 𝓘(ℝ, ℝ × ℝ) I (u ∘ lobeChart a) φ z ![(1, 0), (0, 1)] =
       (-(π * deriv smoothTransition z.1 *
-          (coreOuterRadius (lobeAngle a z.2) - Real.sin (π * z.2)) *
+          (pairOfPantsOuterRadius (lobeAngle a z.2) - Real.sin (π * z.2)) *
           lobeRadius a (smoothTransition z.1) z.2)) •
         mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (lobeChart a z) ![(1, 0), (0, 1)] := by
   have hL := ((contDiff_lobeChart (n := 1) a).differentiable one_ne_zero z).hasFDerivAt
@@ -841,7 +862,7 @@ private theorem mpullback_comp_lobeChart_apply (a : ℝ) {u : ℝ × ℝ → M} 
     Complex.add_im, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im,
     Complex.neg_re, Complex.neg_im]
   linear_combination (-(π * deriv smoothTransition z.1 *
-    (coreOuterRadius (lobeAngle a z.2) - Real.sin (π * z.2)) *
+    (pairOfPantsOuterRadius (lobeAngle a z.2) - Real.sin (π * z.2)) *
     lobeRadius a (smoothTransition z.1) z.2)) * he
 
 /-! ### The area of the core -/
@@ -860,12 +881,12 @@ private theorem continuousOn_lobeIntegrand [IsManifold I 1 M] {a : ℝ}
     (ha : a = 1 / 4 ∨ a = 3 / 4)
     {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) :
-    ContinuousOn (fun p : ℝ × ℝ ↦ (-(π * (coreOuterRadius (lobeAngle a p.1) -
+    ContinuousOn (fun p : ℝ × ℝ ↦ (-(π * (pairOfPantsOuterRadius (lobeAngle a p.1) -
       Real.sin (π * p.1)) * lobeRadius a p.2 p.1)) •
         areaDensity φ u (Complex.equivRealProdCLM (lobePoint a p.2 p.1)))
       (Icc 0 1 ×ˢ Icc 0 1) := by
   have hθ : Continuous (lobeAngle a) := by unfold lobeAngle; fun_prop
-  have hR := (contDiff_coreOuterRadius (n := 0)).continuous
+  have hR := (contDiff_pairOfPantsOuterRadius (n := 0)).continuous
   have hρ := (contDiff_lobeRadius (n := 0) a).continuous
   have hP : Continuous fun p : ℝ × ℝ ↦ Complex.equivRealProdCLM (lobePoint a p.2 p.1) :=
     Complex.equivRealProdCLM.continuous.comp (Continuous.comp
@@ -887,12 +908,12 @@ private theorem rectangleIntegral_comp_lobeChart [IsManifold I 1 M] {a : ℝ}
     {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) :
     rectangleIntegral φ (u ∘ lobeChart a) (0, 0) (1, 1) =
       -(π • ∫ r in (0 : ℝ)..1, ∫ σ in (0 : ℝ)..1,
-        ((coreOuterRadius (lobeAngle a r) - Real.sin (π * r)) * lobeRadius a σ r) •
+        ((pairOfPantsOuterRadius (lobeAngle a r) - Real.sin (π * r)) * lobeRadius a σ r) •
           areaDensity φ u (Complex.equivRealProdCLM (lobePoint a σ r))) := by
   -- On the square the pullback is the Jacobian of the lobe times the area density of `u`.
   have hpt (s r : ℝ) (hr : r ∈ uIcc (0 : ℝ) 1) :
       mpullback 𝓘(ℝ, ℝ × ℝ) I (u ∘ lobeChart a) φ (s, r) ![(1, 0), (0, 1)] =
-        deriv smoothTransition s • (-(π * (coreOuterRadius (lobeAngle a r) -
+        deriv smoothTransition s • (-(π * (pairOfPantsOuterRadius (lobeAngle a r) -
           Real.sin (π * r)) * lobeRadius a (smoothTransition s) r)) •
             areaDensity φ u (Complex.equivRealProdCLM (lobePoint a (smoothTransition s) r)) := by
     rw [uIcc_of_le zero_le_one] at hr
@@ -910,7 +931,7 @@ private theorem rectangleIntegral_comp_lobeChart [IsManifold I 1 M] {a : ℝ}
   -- Exchange the two integrals and substitute `σ = β s` for the smooth transition `β`.
   have hsub := TauCeti.intervalIntegral.integral_integral_deriv_smul_comp_of_deriv_nonneg
     (K := fun r σ ↦
-      (-(π * (coreOuterRadius (lobeAngle a r) - Real.sin (π * r)) * lobeRadius a σ r)) •
+      (-(π * (pairOfPantsOuterRadius (lobeAngle a r) - Real.sin (π * r)) * lobeRadius a σ r)) •
         areaDensity φ u (Complex.equivRealProdCLM (lobePoint a σ r)))
     (c := 0) (d := 1) zero_le_one
     (fun s _ ↦ (smoothTransition.contDiff (n := 1).differentiable one_ne_zero s).hasDerivAt)
@@ -959,13 +980,7 @@ theorem rectangleIntegral_comp_pairOfPantsCoreChart [IsManifold I 1 M] {φ : Rou
       Complex.equivRealProdCLM.continuous.continuousOn fun w hw ↦ ?_
     rw [mem_thricePuncturedSphereReal_iff, ContinuousLinearEquiv.symm_apply_apply]
     exact truncation_subset 0 hw
-  have hpre : Complex.measurableEquivRealProd ⁻¹'
-      (Complex.equivRealProdCLM.symm ⁻¹' truncation 0) = truncation 0 := by
-    ext w
-    simp [Complex.measurableEquivRealProd]
-  rw [← Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
-    Complex.measurableEquivRealProd.measurableEmbedding _ _, hpre,
-    Complex.coe_measurableEquivRealProd_eq_equivRealProdCLM]
+  rw [Complex.setIntegral_preimage_equivRealProdCLM_symm]
   exact congrArg (fun x ↦ -x) (integral_truncation_zero_eq_lobes hg).symm
 
 /-! ### The core as a cylinder -/
@@ -973,9 +988,8 @@ theorem rectangleIntegral_comp_pairOfPantsCoreChart [IsManifold I 1 M] {φ : Rou
 private theorem contMDiff_comp_pairOfPantsCoreChart {n : ℕ∞} {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n u thricePuncturedSphereReal) :
     ContMDiff 𝓘(ℝ, ℝ × ℝ) I n (u ∘ pairOfPantsCoreChart) :=
-  hu.comp_contMDiff contDiff_pairOfPantsCoreChart.contMDiff fun z ↦ by
-    have h := truncation_subset 0 (pairOfPantsCoreChart_mem_preimage_truncation z)
-    rwa [mem_thricePuncturedSphereReal_iff]
+  hu.comp_contMDiff contDiff_pairOfPantsCoreChart.contMDiff
+    pairOfPantsCoreChart_mem_thricePuncturedSphereReal
 
 /-- **The core of the pair of pants as a cylinder.** For a map `u` of the pair of pants `S` into
 a manifold `M` which is `C²` on `S`, the composite of `u` with the core chart is a cylinder from
@@ -994,6 +1008,16 @@ theorem isLoopCylinder_comp_pairOfPantsCoreChart {u : ℝ × ℝ → M}
     rw [Function.comp_apply, pairOfPantsCoreChart_mk_zero, apply_loopwiseTrans u]
     simp only [Function.comp_def]
   apply_one _ := Function.comp_apply
+
+omit [TopologicalSpace M] in
+/-- Maps ending at `s = 1` at the loops of `u` along the input ends at height `0`, placed side by
+side, end where the core of `u` starts. -/
+private theorem loopwiseTrans_mk_one_eq_comp_pairOfPantsCoreChart {u D₀ D₁ : ℝ × ℝ → M}
+    (h₀ : ∀ t, D₀ (1, t) = u (endChart Puncture.zero (0, t)))
+    (h₁ : ∀ t, D₁ (1, t) = u (endChart Puncture.one (0, t))) (t : ℝ) :
+    loopwiseTrans D₀ D₁ (1, t) = (u ∘ pairOfPantsCoreChart) (0, t) := by
+  rw [Function.comp_apply, pairOfPantsCoreChart_mk_zero, apply_loopwiseTrans u]
+  exact loopwiseTrans_congr (fun r _ ↦ h₀ r) (fun r _ ↦ h₁ r)
 
 /-- **Gluing discs of the inputs to the core.** Let `u` be a map of the pair of pants `S` into a
 manifold `M`, `C¹` on `S`, and let `D₀` and `D₁` be `C¹` maps of the plane which end at `s = 1`
@@ -1015,11 +1039,9 @@ theorem rectangleIntegral_rectangleTrans_loopwiseTrans_comp_pairOfPantsCoreChart
       rectangleIntegral φ D₀ (0, 0) (1, 1) + rectangleIntegral φ D₁ (0, 0) (1, 1) -
         ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation 0,
           φ (u z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (1, 0), mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (0, 1)] := by
-  have hmatch (t : ℝ) : loopwiseTrans D₀ D₁ (1, t) = (u ∘ pairOfPantsCoreChart) (0, t) := by
-    rw [Function.comp_apply, pairOfPantsCoreChart_mk_zero, apply_loopwiseTrans u]
-    exact loopwiseTrans_congr (fun r _ ↦ h₀ r) (fun r _ ↦ h₁ r)
   rw [rectangleIntegral_rectangleTrans hφ (contMDiff_loopwiseTrans hD₀ hD₁ h₀₁ h₁₀)
-    (contMDiff_comp_pairOfPantsCoreChart hu) hmatch 0 1,
+    (contMDiff_comp_pairOfPantsCoreChart hu)
+    (loopwiseTrans_mk_one_eq_comp_pairOfPantsCoreChart h₀ h₁) 0 1,
     rectangleIntegral_loopwiseTrans hφ hD₀ hD₁ h₀₁ h₁₀ 0 1,
     rectangleIntegral_comp_pairOfPantsCoreChart hφ hu, ← sub_eq_add_neg]
 
@@ -1027,27 +1049,29 @@ theorem rectangleIntegral_rectangleTrans_loopwiseTrans_comp_pairOfPantsCoreChart
 
 private theorem outputCirclePoint_add_two_pi (θ : ℝ) :
     outputCirclePoint (θ + 2 * π) = outputCirclePoint θ := by
-  rw [outputCirclePoint, outputCirclePoint, coreOuterRadius_add_two_pi, periodic_circleMap]
+  rw [outputCirclePoint, outputCirclePoint, pairOfPantsOuterRadius_add_two_pi, periodic_circleMap]
 
 private theorem contDiff_outputCirclePoint {n : ℕ∞} : ContDiff ℝ n outputCirclePoint := by
   have h := ContDiff.comp (g := fun p : ℝ × ℝ ↦ (1 / 2 : ℂ) + Complex.polarCoord.symm p)
-    (f := fun θ : ℝ ↦ (coreOuterRadius θ, θ)) (TauCeti.contDiff_add_polarCoord_symm (n := n) _)
-    ((contDiff_coreOuterRadius (n := n)).prodMk contDiff_id)
+    (f := fun θ : ℝ ↦ (pairOfPantsOuterRadius θ, θ))
+    (TauCeti.contDiff_add_polarCoord_symm (n := n) _)
+    ((contDiff_pairOfPantsOuterRadius (n := n)).prodMk contDiff_id)
   convert h using 1
   funext θ
   simp only [Function.comp_apply, TauCeti.add_polarCoord_symm_eq_circleMap, outputCirclePoint]
 
 /-- A point of the ray from `1/2` at the angle `θ` lies on the output circle exactly at the
-distance `coreOuterRadius θ` from `1/2`. -/
-private theorem coreOuterRadius_eq_of_norm_circleMap {r θ : ℝ} (hr : 0 < r)
-    (h : ‖circleMap (1 / 2 : ℂ) r θ‖ = 2) : coreOuterRadius θ = r := by
+distance `pairOfPantsOuterRadius θ` from `1/2`. -/
+private theorem pairOfPantsOuterRadius_eq_of_norm_circleMap {r θ : ℝ} (hr : 0 < r)
+    (h : ‖circleMap (1 / 2 : ℂ) r θ‖ = 2) : pairOfPantsOuterRadius θ = r := by
   have h₁ := norm_sq_circleMap_half r θ
-  have h₂ := coreOuterRadius_sq_add θ
-  have h₃ := one_lt_coreOuterRadius θ
+  have h₂ := pairOfPantsOuterRadius_sq_add θ
+  have h₃ := one_lt_pairOfPantsOuterRadius θ
   have hc := Real.neg_one_le_cos θ
   rw [h] at h₁
   -- Both radii are positive roots of `ρ² + ρ cos θ = 15/4`.
-  have hprod : (coreOuterRadius θ - r) * (coreOuterRadius θ + r + Real.cos θ) = 0 := by
+  have hprod :
+      (pairOfPantsOuterRadius θ - r) * (pairOfPantsOuterRadius θ + r + Real.cos θ) = 0 := by
     linear_combination h₂ + h₁
   rcases mul_eq_zero.1 hprod with h | h <;> linarith
 
@@ -1184,8 +1208,8 @@ private theorem outputCirclePoint_endOutputAngle (t : ℝ) :
     rw [circleMap, hexp, mul_left_comm, Complex.norm_mul_exp_arg_mul_I, endOutputOffset]
     field_simp
     ring
-  have hr : coreOuterRadius (endOutputAngle t) = ‖endOutputOffset t‖ :=
-    coreOuterRadius_eq_of_norm_circleMap (norm_pos_iff.2 hz) <| by
+  have hr : pairOfPantsOuterRadius (endOutputAngle t) = ‖endOutputOffset t‖ :=
+    pairOfPantsOuterRadius_eq_of_norm_circleMap (norm_pos_iff.2 hz) <| by
       rw [hcirc, norm_mul, norm_inv, Complex.norm_exp_ofReal_mul_I]
       norm_num
   rw [outputCirclePoint, hr, hcirc, hend]
@@ -1292,6 +1316,14 @@ theorem isLoopCylinder_comp_pairOfPantsOutputCylinder {u : ℝ × ℝ → M}
   apply_zero t := by rw [Function.comp_apply, pairOfPantsOutputCylinder_mk_zero]
   apply_one t := by rw [Function.comp_apply, pairOfPantsOutputCylinder_mk_one]
 
+omit [TopologicalSpace M] in
+/-- A map followed by the core of `u` ends where the output cylinder of `u` starts. -/
+private theorem rectangleTrans_comp_pairOfPantsCoreChart_mk_one (w u : ℝ × ℝ → M) (t : ℝ) :
+    rectangleTrans w (u ∘ pairOfPantsCoreChart) (1, t) =
+      (u ∘ pairOfPantsOutputCylinder) (0, t) := by
+  rw [rectangleTrans_apply_one, Function.comp_apply, Function.comp_apply,
+    pairOfPantsOutputCylinder_mk_zero]
+
 /-! ### Discs of the output end loop glued from discs of the input end loops -/
 
 /-- The **disc of the output end loop glued from discs of the input end loops** along a map `u`
@@ -1310,6 +1342,30 @@ theorem pairOfPantsGluedDisc_def (D₀ D₁ u : ℝ × ℝ → M) :
       rectangleTrans (rectangleTrans (loopwiseTrans D₀ D₁) (u ∘ pairOfPantsCoreChart))
         (u ∘ pairOfPantsOutputCylinder) :=
   (rfl)
+
+omit [TopologicalSpace M] in
+/-- The glued disc ends at `s = 1` at the loop of `u` along the output end at height `0`. -/
+@[simp]
+theorem pairOfPantsGluedDisc_mk_one (D₀ D₁ u : ℝ × ℝ → M) (t : ℝ) :
+    pairOfPantsGluedDisc D₀ D₁ u (1, t) = u (endChart Puncture.inf (0, t)) := by
+  rw [pairOfPantsGluedDisc_def, rectangleTrans_apply_one, Function.comp_apply,
+    pairOfPantsOutputCylinder_mk_one]
+
+/-- **The glued disc is `Cⁿ`.** Let `u` be a map of the pair of pants into a manifold `M`, `Cⁿ` on
+`S`, and let `D₀` and `D₁` be `Cⁿ` maps of the plane which end at `s = 1` at the loops of `u` along
+the input ends `0` and `1` at height `0` and share their seam. Then the glued disc is `Cⁿ`. -/
+theorem contMDiff_pairOfPantsGluedDisc {n : ℕ∞} {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n u thricePuncturedSphereReal) {D₀ D₁ : ℝ × ℝ → M}
+    (hD₀ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I n D₀) (hD₁ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I n D₁)
+    (h₀₁ : ∀ s, D₀ (s, 1) = D₁ (s, 0)) (h₁₀ : ∀ s, D₁ (s, 1) = D₀ (s, 0))
+    (h₀ : ∀ t, D₀ (1, t) = u (endChart Puncture.zero (0, t)))
+    (h₁ : ∀ t, D₁ (1, t) = u (endChart Puncture.one (0, t))) :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ) I n (pairOfPantsGluedDisc D₀ D₁ u) := by
+  exact contMDiff_rectangleTrans (contMDiff_rectangleTrans (contMDiff_loopwiseTrans hD₀ hD₁ h₀₁ h₁₀)
+    (contMDiff_comp_pairOfPantsCoreChart hu)
+    (loopwiseTrans_mk_one_eq_comp_pairOfPantsCoreChart h₀ h₁))
+    (contMDiff_comp_pairOfPantsOutputCylinder hu)
+    (rectangleTrans_comp_pairOfPantsCoreChart_mk_one _ u)
 
 /-- **The glued disc is a disc of the output end loop.** Let `u` be a map of the pair of pants
 into a manifold `M`, `C²` on `S`, and let `D₀` and `D₁` be discs centred at a common point `x`
@@ -1350,16 +1406,12 @@ theorem rectangleIntegral_pairOfPantsGluedDisc [IsManifold I 1 M] {φ : RoughFor
       rectangleIntegral φ D₀ (0, 0) (1, 1) + rectangleIntegral φ D₁ (0, 0) (1, 1) -
         ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation 0,
           φ (u z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (1, 0), mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (0, 1)] := by
-  have hmatch (t : ℝ) : loopwiseTrans D₀ D₁ (1, t) = (u ∘ pairOfPantsCoreChart) (0, t) := by
-    rw [Function.comp_apply, pairOfPantsCoreChart_mk_zero, apply_loopwiseTrans u]
-    exact loopwiseTrans_congr (fun r _ ↦ h₀ r) (fun r _ ↦ h₁ r)
   have hfirst := contMDiff_rectangleTrans (contMDiff_loopwiseTrans hD₀ hD₁ h₀₁ h₁₀)
-    (contMDiff_comp_pairOfPantsCoreChart hu) hmatch
+    (contMDiff_comp_pairOfPantsCoreChart hu)
+    (loopwiseTrans_mk_one_eq_comp_pairOfPantsCoreChart h₀ h₁)
   rw [pairOfPantsGluedDisc, rectangleIntegral_rectangleTrans hφ hfirst
       (contMDiff_comp_pairOfPantsOutputCylinder hu)
-      (fun t ↦ by
-        rw [rectangleTrans_apply_one, Function.comp_apply, Function.comp_apply,
-          pairOfPantsOutputCylinder_mk_zero]) 0 1,
+      (rectangleTrans_comp_pairOfPantsCoreChart_mk_one _ u) 0 1,
     rectangleIntegral_comp_pairOfPantsOutputCylinder hu,
     rectangleIntegral_rectangleTrans_loopwiseTrans_comp_pairOfPantsCoreChart hφ hu hD₀ hD₁ h₀₁ h₁₀
       h₀ h₁, add_zero]

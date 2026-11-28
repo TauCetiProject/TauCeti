@@ -211,10 +211,9 @@ theorem exists_pos_gluingDetLineEquiv_apply_eq_smul
     ∃ c : ℝ, 0 < c ∧ ∀ t, gluingDetLineEquiv hQ' h₁ h₂ (hC Q' hQ' hQ'C) t =
       c • gluingDetLineEquiv hQ h₁ h₂ (hC Q hQ hQC) t := by
   refine exists_pos_detLineGluingEquiv_apply_eq_smul h₁ h₂ hQ.surjective _ _ fun s hs ↦ ?_
-  -- The right inverse `Q + s (Q' - Q) = (1 - s) Q + s Q'` has norm at most `C`, and its gluing map
-  -- is `(1 - s)` times the gluing map along `Q` plus `s` times that along `Q'`.
-  have hQsC : ‖Q + s • (Q' - Q)‖ ≤ C := by
-    rw [show Q + s • (Q' - Q) = (1 - s) • Q + s • Q' by module]
+  -- The right inverse `(1 - s) Q + s Q'` has norm at most `C`, and its gluing map is `(1 - s)`
+  -- times the gluing map along `Q` plus `s` times that along `Q'`.
+  have hQsC : ‖(1 - s) • Q + s • Q'‖ ≤ C := by
     calc ‖(1 - s) • Q + s • Q'‖ ≤ ‖(1 - s) • Q‖ + ‖s • Q'‖ :=
           norm_add_le ((1 - s) • Q) (s • Q')
       _ ≤ ‖1 - s‖ * ‖Q‖ + ‖s‖ * ‖Q'‖ := add_le_add (opNorm_smul_le _ _) (opNorm_smul_le _ _)
@@ -225,14 +224,9 @@ theorem exists_pos_gluingDetLineEquiv_apply_eq_smul
           · exact sub_nonneg.2 hs.2
           · exact hs.1
       _ = C := by ring
-  convert hC (Q + s • (Q' - Q)) (fun y ↦ by simp [-coprod_apply, hQ y, hQ' y]) hQsC using 1
+  convert hC _ (rightInverse_smul_add_smul hQ hQ' (sub_add_cancel 1 s)) hQsC using 1
   funext k
-  refine Subtype.ext ?_
-  simp only [LinearMap.add_apply, LinearMap.smul_apply, LinearEquiv.coe_coe,
-    LinearEquiv.ofBijective_apply, ContinuousLinearMap.coe_coe, Submodule.coe_add,
-    Submodule.coe_smul, coe_gluingKerMap_apply, add_apply,
-    smul_apply, sub_apply]
-  module
+  simp [gluingKerMap_smul_add_smul hQ hQ' (sub_add_cancel 1 s) k]
 
 variable [CompleteSpace W] in
 /-- **For long necks the glued orientation does not depend on the right inverse.** Let `D₁` and

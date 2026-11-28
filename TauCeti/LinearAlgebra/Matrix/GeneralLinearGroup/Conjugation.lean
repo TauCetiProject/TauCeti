@@ -66,6 +66,11 @@ theorem inv_mulVec_mulVec_of_eq_mul_mul_inv [Semiring R] (g : GL n R)
   rw [mulVec_mulVec, mulVec_mulVec, h, ← Matrix.mul_assoc, ← Matrix.mul_assoc,
     Units.inv_mul, Matrix.one_mul]
 
+/-- `g⁻¹ (g v) = v` for `g ∈ GL n R` and a vector `v`. -/
+theorem inv_mulVec_mulVec [Semiring R] (g : GL n R) (v : n → R) :
+    (g⁻¹ : GL n R) *ᵥ ((g : Matrix n n R) *ᵥ v) = v := by
+  rw [mulVec_mulVec, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_mulVec]
+
 /-- Right multiplication of row vectors by `g ∈ GL n R` is inverted by `g⁻¹`: solving
 `a ᵥ* g = y` for the row vector `a` gives `y ᵥ* g⁻¹`. -/
 theorem vecMul_eq_iff_eq_vecMul_inv [Semiring R] (g : GL n R) (a y : n → R) :

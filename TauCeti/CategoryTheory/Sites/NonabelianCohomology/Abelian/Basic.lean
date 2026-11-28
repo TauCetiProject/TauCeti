@@ -88,6 +88,13 @@ def abelianSheafToGrpSheafObjEquiv (F : Sheaf J AddCommGrpCat.{w}) (U : Cᵒᵖ)
     Multiplicative (F.obj.obj U) ≃* ((abelianSheafToGrpSheaf J).obj F).obj.obj U :=
   MulEquiv.refl _
 
+/-- The sections of the group sheaf underlying an abelian sheaf form a commutative group. -/
+instance abelianSheafToGrpSheafObjCommGroup (F : Sheaf J AddCommGrpCat.{w}) (U : Cᵒᵖ) :
+    CommGroup (((abelianSheafToGrpSheaf J).obj F).obj.obj U) where
+  mul_comm a b := by
+    apply (abelianSheafToGrpSheafObjEquiv F U).symm.injective
+    simp only [map_mul, mul_comm]
+
 /-- The restriction maps of the sheaf of groups underlying an abelian sheaf are those of the
 abelian sheaf. -/
 @[simp]
@@ -105,6 +112,31 @@ lemma abelianSheafToGrpSheaf_map_hom_app_abelianSheafToGrpSheafObjEquiv
     ((abelianSheafToGrpSheaf J).map φ).hom.app U (abelianSheafToGrpSheafObjEquiv F U a) =
       abelianSheafToGrpSheafObjEquiv G U (.ofAdd (φ.hom.app U a.toAdd)) :=
   (rfl)
+
+/-- Forgetting the addition on an abelian sheaf agrees with forgetting its multiplicative
+underlying group sheaf. The comparison sends `a` to its multiplicative presentation. -/
+def abelianSheafToGrpSheafForgetIso (F : Sheaf J AddCommGrpCat.{w}) :
+    (sheafCompose J (forget AddCommGrpCat.{w})).obj F ≅
+      (sheafCompose J (forget GrpCat.{w})).obj ((abelianSheafToGrpSheaf J).obj F) :=
+  (fullyFaithfulSheafToPresheaf J (Type w)).preimageIso
+    (NatIso.ofComponents (fun U ↦
+      ((Multiplicative.ofAdd : _ ≃ Multiplicative _).trans
+        (abelianSheafToGrpSheafObjEquiv F U).toEquiv).toIso)
+      (fun f ↦ by
+        ext a
+        exact (abelianSheafToGrpSheaf_map_abelianSheafToGrpSheafObjEquiv F f (.ofAdd a)).symm))
+
+/-- The forward comparison writes a section multiplicatively. -/
+lemma abelianSheafToGrpSheafForgetIso_hom_app (F : Sheaf J AddCommGrpCat.{w})
+    (U : Cᵒᵖ) (a : F.obj.obj U) :
+    (abelianSheafToGrpSheafForgetIso F).hom.hom.app U a =
+      abelianSheafToGrpSheafObjEquiv F U (.ofAdd a) := (rfl)
+
+/-- The inverse comparison returns the additive section underlying a multiplicative section. -/
+lemma abelianSheafToGrpSheafForgetIso_inv_app (F : Sheaf J AddCommGrpCat.{w})
+    (U : Cᵒᵖ) (a : ((abelianSheafToGrpSheaf J).obj F).obj.obj U) :
+    (abelianSheafToGrpSheafForgetIso F).inv.hom.app U a =
+      ((abelianSheafToGrpSheafObjEquiv F U).symm a).toAdd := (rfl)
 
 section Pushforward
 

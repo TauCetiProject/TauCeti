@@ -29,6 +29,8 @@ algebra and an `X` at which no root vanishes, it is the closed Weyl chamber cont
 ## Main results
 
 * `TauCeti.isClosed_closedChamber`: the closed chamber is closed in finite dimension.
+* `TauCeti.isClosed_closedChamber_of_continuous`: the closed chamber is closed for any topology in
+  which the forms are continuous.
 * `TauCeti.mem_closedChamber_of_forall_eq_zero`, `TauCeti.self_mem_closedChamber`: basic
   memberships.
 -/
@@ -63,6 +65,14 @@ theorem mem_closedChamber_of_forall_eq_zero {α : ι → Dual ℝ V} {X p : V} (
 /-- `X` lies in its own closed chamber. -/
 theorem self_mem_closedChamber (α : ι → Dual ℝ V) (X : V) : X ∈ closedChamber α X :=
   mem_closedChamber.mpr fun i ↦ mul_self_nonneg (α i X)
+
+/-- The closed chamber of `X` is closed for any topology on `V` in which the forms are
+continuous. -/
+theorem isClosed_closedChamber_of_continuous [TopologicalSpace V] {α : ι → Dual ℝ V}
+    (hα : ∀ i, Continuous (α i)) (X : V) : IsClosed (closedChamber α X : Set V) := by
+  have : (closedChamber α X : Set V) = ⋂ i, {p | 0 ≤ α i p * α i X} := by ext; simp
+  rw [this]
+  exact isClosed_iInter fun i ↦ isClosed_le continuous_const ((hα i).mul continuous_const)
 
 /-- The closed chamber of `X` is closed in a finite-dimensional Hausdorff topological vector
 space. -/

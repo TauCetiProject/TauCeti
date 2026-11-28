@@ -176,6 +176,33 @@ noncomputable instance instMonoidalCategory :
         exact TensorProduct.ext rfl
     }
 
+-- These equalities are for explicit rewriting: the comparison's source and target
+-- objects agree only definitionally, and replacing it by an identity during simp can
+-- prevent the monoidal cancellation lemmas from matching.
+/-- The forgetful functor to semimodules has the identity tensor comparison. -/
+theorem forget₂_semimoduleCat_μ (M N : FGComoduleCat.{u, v, u} R C) :
+    Functor.LaxMonoidal.μ
+      (forget₂ (FGComoduleCat.{u, v, u} R C) (SemimoduleCat.{u} R)) M N = 𝟙 _ :=
+  (rfl)
+
+/-- The forgetful functor to semimodules has the identity inverse tensor comparison. -/
+theorem forget₂_semimoduleCat_δ (M N : FGComoduleCat.{u, v, u} R C) :
+    Functor.OplaxMonoidal.δ
+      (forget₂ (FGComoduleCat.{u, v, u} R C) (SemimoduleCat.{u} R)) M N = 𝟙 _ :=
+  (rfl)
+
+/-- The forgetful functor to semimodules has the identity unit comparison. -/
+theorem forget₂_semimoduleCat_ε :
+    Functor.LaxMonoidal.ε
+      (forget₂ (FGComoduleCat.{u, v, u} R C) (SemimoduleCat.{u} R)) = 𝟙 _ :=
+  (rfl)
+
+/-- The forgetful functor to semimodules has the identity inverse unit comparison. -/
+theorem forget₂_semimoduleCat_η :
+    Functor.OplaxMonoidal.η
+      (forget₂ (FGComoduleCat.{u, v, u} R C) (SemimoduleCat.{u} R)) = 𝟙 _ :=
+  (rfl)
+
 variable {R C}
 variable {M M' N N' P : FGComoduleCat.{u, v, u} R C}
 

@@ -138,9 +138,8 @@ lemma smallEtaleBaseChange_map_left {V W : Y.Etale} (g : V ⟶ W) :
 `𝟙 X`. -/
 lemma smallEtaleBaseChange_map_left_eq_pullback_map {V W : Y.Etale} (g : V ⟶ W) :
     (f.smallEtaleBaseChange.map g).left =
-      pullback.map V.hom f W.hom f g.left (𝟙 X) (𝟙 Y) (by simp) (by simp) := by
-  rw [smallEtaleBaseChange_map_left]
-  apply pullback.hom_ext <;> simp
+      pullback.map V.hom f W.hom f g.left (𝟙 X) (𝟙 Y) (by simp) (by simp) :=
+  MorphismProperty.Over.pullback_map_left_eq_pullback_map _ _ f g
 
 /-- On underlying schemes over `X`, `smallEtaleBaseChange f` is base change along `f`. -/
 noncomputable def smallEtaleBaseChangeCompForgetIso :
@@ -251,6 +250,21 @@ lemma coverPreserving_smallEtaleMap (j : X ⟶ Y) [Etale j] :
 end Hom
 
 namespace Etale
+
+/-- The identity of `S`, as an object of the small étale site of `S`, is a terminal object. -/
+noncomputable def mkIdTerminal (S : Scheme.{u}) : IsTerminal (Etale.mk (𝟙 S)) :=
+  IsTerminal.isTerminalOfObj (Etale.forget S) _ CategoryTheory.Over.mkIdTerminal
+
+/-- Pulling back a morphism in `S.Etale` whose underlying morphism of schemes is surjective yields
+a first projection whose underlying morphism of schemes is surjective. -/
+instance surjective_pullback_fst {S : Scheme.{u}} {U V W : S.Etale}
+    (f : U ⟶ W) (g : V ⟶ W) [Surjective g.left] :
+    Surjective (Limits.pullback.fst f g).left :=
+  MorphismProperty.of_isPullback (P := @Surjective)
+    (IsPullback.of_isLimit
+      (Limits.isLimitOfHasPullbackOfPreservesLimit
+        (Etale.forget S ⋙ CategoryTheory.Over.forget S) f g)).flip
+    ‹_›
 
 variable {S : Scheme.{u}} (U : S.Etale)
 

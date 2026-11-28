@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.UniversalCover.Group
 public import TauCeti.AlgebraicTopology.UniversalCover.SemilocallySimplyConnected
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Projection
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering.Basic
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SimplyConnected
 import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Connected

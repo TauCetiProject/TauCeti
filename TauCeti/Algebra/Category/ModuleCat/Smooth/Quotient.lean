@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Smooth.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
-public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
+public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Twist
 public import TauCeti.CategoryTheory.Monoidal.Action.LinearFunctor
 

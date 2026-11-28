@@ -269,11 +269,8 @@ theorem detLineOrientationTransport_floerSobolevOperator_eq_map (ω : Symplectic
     hxpper hndp huxp hδp (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) (fun w ↦ (hJab w).symm)
     (fun w ↦ (hKsab w).symm) (fun w ↦ (hKtab w).symm) hT hF
     (continuousOn_const.congr fun μ _ ↦ hconst μ) (fun μ _ ↦ by rw [hconst μ]; exact hT₀)
-  have := congrFun key o
-  rw [Function.comp_apply, Function.comp_apply, detLineOrientationTransport_eq_map_of_forall_eq _ _
-    fun μ _ ↦ (hconst μ).trans (hconst a).symm] at this
-  rw [← (Equiv.symm_apply_eq _).2 this, Module.Ray.map_symm, LinearMap.detLineCongrOfEq_symm]
-  simp only [LinearMap.map_detLineCongrOfEq_map_detLineCongrOfEq]
+  exact detLineOrientationTransport_eq_map_of_comp_eq_of_forall_eq hT _ _ _
+    (fun μ _ ↦ (hconst μ).trans (hconst a).symm) _ _ key o
 
 end Transport
 

@@ -9,7 +9,7 @@ public import Mathlib.Basic.Real.Basic
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 public import Mathlib.NumberTheory.NumberField.Norm
 public import TauCeti.Analysis.SpecialFunctions.Log.ProdPowDvd
-import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.Norm.Divisibility
 
 /-!
@@ -18,7 +18,7 @@ import TauCeti.RingTheory.Norm.Divisibility
 The norm `N(α) = Algebra.norm ℚ α` of a nonzero algebraic integer `α` is a nonzero integer, so
 `1 ≤ |N(α)|`. The norm of a rational integer `m` is `m ^ [K : ℚ]`, so divisibility between
 rational integers is the same in `𝓞 K` as in `ℤ`; in particular `𝓞 K / n 𝓞 K` has
-characteristic `n`.
+characteristic `n` (see `TauCeti.NumberTheory.NumberField.RingOfIntegers.IntCast`).
 
 Divisibility of `a ∈ 𝓞 K` by `(m : 𝓞 K) ^ e` gives `m ^ (finrank ℚ K * e) ∣ Algebra.norm ℤ a`,
 the number-field case of `Algebra.pow_finrank_mul_dvd_norm_of_algebraMap_pow_dvd`. The absolute
@@ -31,16 +31,6 @@ nonzero algebraic integer with bounded conjugates bounds such a sum of prime log
 
 * `NumberField.RingOfIntegers.one_le_abs_norm`: `1 ≤ |N(α)|` for every nonzero `α : 𝓞 K`.
 * `NumberField.RingOfIntegers.dvd_natAbs_norm`: every `α : 𝓞 K` divides `|N(α)|`.
-* `NumberField.RingOfIntegers.intCast_dvd_intCast`: `(m : 𝓞 K) ∣ n ↔ m ∣ n` for `m n : ℤ`.
-* `NumberField.RingOfIntegers.natCast_dvd_natCast`,
-  `NumberField.RingOfIntegers.span_natCast_eq_span_natCast`: `(m : 𝓞 K) ∣ n ↔ m ∣ n` and
-  `Ideal.span {(m : 𝓞 K)} = Ideal.span {(n : 𝓞 K)} ↔ m = n` for `m n : ℕ`.
-* `NumberField.RingOfIntegers.isUnit_intCast`, `NumberField.RingOfIntegers.isUnit_natCast`,
-  `NumberField.RingOfIntegers.isUnit_natCast_iff`: `IsUnit (m : 𝓞 K) ↔ IsUnit m` for `m : ℤ` or
-  `m : ℕ` (and `↔ m = 1` for `m : ℕ`).
-* `NumberField.RingOfIntegers.isCoprime_intCast`, `NumberField.RingOfIntegers.isCoprime_natCast`:
-  coprimality between integers or natural numbers is the same in `𝓞 K` as in `ℤ` or `ℕ`.
-* `NumberField.RingOfIntegers.charP_quotient_span_natCast`: `𝓞 K / n 𝓞 K` has characteristic `n`.
 * `NumberField.RingOfIntegers.natCard_quotient_span_natCast`:
   `Nat.card (𝓞 K / n 𝓞 K) = n ^ [K : ℚ]`, so `𝓞 K / n 𝓞 K` has `n ^ [K : ℚ]` elements for `n ≠ 0`.
 * `NumberField.prod_norm_embedding_eq_abs_norm`: `∏ σ, ‖σ x‖ = |N(x)|` for `x : K`.
@@ -48,6 +38,9 @@ nonzero algebraic integer with bounded conjugates bounds such a sum of prime log
   whenever `(m : 𝓞 K) ^ e ∣ a`.
 * `NumberField.abs_norm_le_prod`, `NumberField.abs_norm_le_pow` and their `RingOfIntegers`
   versions: bounds on the norm from bounds on the conjugates.
+* `NumberField.RingOfIntegers.absNorm_le_pow_of_mem`: an integral ideal containing a nonzero
+  element all of whose conjugates have absolute value at most `C` has norm at most
+  `C ^ [K:ℚ]`.
 * `NumberField.RingOfIntegers.sum_mul_log_le_finrank_mul_log`: for nonzero `δ ∈ 𝓞 K` with
   conjugates bounded by `C` and `∏ p ∈ P, p ^ e p ∣ norm δ`, `∑ p ∈ P, e p * log p ≤ n * log C`.
 
@@ -76,62 +69,6 @@ theorem one_le_abs_norm {α : 𝓞 K} (hα : α ≠ 0) :
 theorem dvd_natAbs_norm (α : 𝓞 K) : α ∣ ((Algebra.norm ℤ α).natAbs : 𝓞 K) := by
   rw [← Ideal.absNorm_span_singleton, ← Ideal.mem_span_singleton]
   exact Ideal.absNorm_mem _
-
-/-- Divisibility between rational integers is the same in `𝓞 K` as in `ℤ`. -/
-@[simp, norm_cast]
-theorem intCast_dvd_intCast {m n : ℤ} : (m : 𝓞 K) ∣ (n : 𝓞 K) ↔ m ∣ n := by
-  refine ⟨fun h ↦ ?_, Int.cast_dvd_cast _ _⟩
-  simpa only [Algebra.norm_algebraMap, Int.pow_dvd_pow_iff Module.finrank_pos.ne'] using
-    map_dvd (Algebra.norm ℤ) (show algebraMap ℤ (𝓞 K) m ∣ algebraMap ℤ (𝓞 K) n by simpa using h)
-
-/-- Divisibility between natural numbers is the same in `𝓞 K` as in `ℕ`. -/
-@[simp, norm_cast]
-theorem natCast_dvd_natCast {m n : ℕ} : (m : 𝓞 K) ∣ (n : 𝓞 K) ↔ m ∣ n := by
-  simpa using (intCast_dvd_intCast (K := K) (m := m) (n := n)).trans Int.natCast_dvd_natCast
-
-/-- Natural numbers generate equal ideals in `𝓞 K` if and only if they are equal. -/
-@[simp]
-theorem span_natCast_eq_span_natCast {m n : ℕ} :
-    Ideal.span {(m : 𝓞 K)} = Ideal.span {(n : 𝓞 K)} ↔ m = n := by
-  rw [le_antisymm_iff, Ideal.span_singleton_le_span_singleton,
-    Ideal.span_singleton_le_span_singleton, natCast_dvd_natCast, natCast_dvd_natCast,
-    and_comm, Nat.dvd_antisymm_iff]
-
-/-- A rational integer is a unit in `𝓞 K` if and only if it is a unit in `ℤ`. -/
-@[simp, norm_cast]
-theorem isUnit_intCast {m : ℤ} : IsUnit (m : 𝓞 K) ↔ IsUnit m := by
-  rw [isUnit_iff_dvd_one, ← Int.cast_one (R := 𝓞 K), intCast_dvd_intCast, ← isUnit_iff_dvd_one]
-
-/-- A natural number is a unit in `𝓞 K` if and only if it is a unit in `ℕ`. -/
-@[norm_cast]
-theorem isUnit_natCast {n : ℕ} : IsUnit (n : 𝓞 K) ↔ IsUnit n := by
-  rw [← Int.cast_natCast, isUnit_intCast, Int.ofNat_isUnit]
-
-/-- A natural number is a unit in `𝓞 K` if and only if it is `1`. -/
-@[simp]
-theorem isUnit_natCast_iff {n : ℕ} : IsUnit (n : 𝓞 K) ↔ n = 1 :=
-  isUnit_natCast.trans Nat.isUnit_iff
-
-/-- Coprimality between rational integers is the same in `𝓞 K` as in `ℤ`. -/
-@[simp, norm_cast]
-theorem isCoprime_intCast {m n : ℤ} : IsCoprime (m : 𝓞 K) (n : 𝓞 K) ↔ IsCoprime m n := by
-  refine ⟨fun h ↦ Int.isCoprime_iff_gcd_eq_one.mpr ?_, IsCoprime.intCast⟩
-  have hu : IsUnit ((m.gcd n : ℤ) : 𝓞 K) :=
-    h.isUnit_of_dvd' (intCast_dvd_intCast.mpr (Int.gcd_dvd_left m n))
-      (intCast_dvd_intCast.mpr (Int.gcd_dvd_right m n))
-  exact Nat.dvd_one.mp (Int.natCast_dvd_natCast.mp (isUnit_iff_dvd_one.mp (isUnit_intCast.mp hu)))
-
-/-- Coprimality between natural numbers is the same in `𝓞 K` as in `ℕ`. -/
-@[simp, norm_cast]
-theorem isCoprime_natCast {m n : ℕ} : IsCoprime (m : 𝓞 K) (n : 𝓞 K) ↔ m.Coprime n := by
-  rw [← Int.cast_natCast m, ← Int.cast_natCast n, isCoprime_intCast, Nat.isCoprime_iff_coprime]
-
-variable (K) in
-/-- The residue ring `𝓞 K / n 𝓞 K` has characteristic `n`. -/
-instance charP_quotient_span_natCast (n : ℕ) : CharP (𝓞 K ⧸ Ideal.span {(n : 𝓞 K)}) n :=
-  ⟨fun m ↦ by
-    rw [← map_natCast (Ideal.Quotient.mk _), Ideal.Quotient.eq_zero_iff_mem,
-      Ideal.mem_span_singleton, natCast_dvd_natCast]⟩
 
 /-- `Nat.card (𝓞 K ⧸ m 𝓞 K) = m ^ [K : ℚ]`: for `m ≠ 0` the quotient of `𝓞 K` by the natural
 number `m` has `m ^ [K : ℚ]` elements; for `m = 0` the quotient is infinite and both sides are
@@ -193,6 +130,20 @@ of `a` has absolute value at most `C ^ finrank ℚ K`. -/
 theorem abs_norm_le_pow (a : 𝓞 K) {C : ℝ} (hC : ∀ σ : K →+* ℂ, ‖σ a‖ ≤ C) :
     |(Algebra.norm ℤ a : ℝ)| ≤ C ^ finrank ℚ K := by
   simpa [Embeddings.card] using abs_norm_le_prod a hC
+
+/-- If an integral ideal `I` of a number field `K` contains a nonzero element `t` all of whose
+complex conjugates have absolute value at most `C`, then `N(I) ≤ C ^ [K:ℚ]`, since `N(I)`
+divides `|N_{K/ℚ}(t)|`. -/
+theorem absNorm_le_pow_of_mem {I : Ideal (𝓞 K)} {t : 𝓞 K} (ht : t ∈ I)
+    (h0 : t ≠ 0) {C : ℝ} (hC : ∀ φ : K →+* ℂ, ‖φ t‖ ≤ C) :
+    (Ideal.absNorm I : ℝ) ≤ C ^ finrank ℚ K := by
+  have hdvd := Int.natCast_dvd.mp (Ideal.absNorm_dvd_norm_of_mem ht)
+  have hpos : 0 < (Algebra.norm ℤ t).natAbs :=
+    Int.natAbs_pos.mpr (Algebra.norm_ne_zero_iff.mpr h0)
+  calc (Ideal.absNorm I : ℝ) ≤ ((Algebra.norm ℤ t).natAbs : ℝ) := by
+        exact_mod_cast Nat.le_of_dvd hpos hdvd
+    _ = |(Algebra.norm ℤ t : ℝ)| := by rw [Nat.cast_natAbs, Int.cast_abs]
+    _ ≤ C ^ finrank ℚ K := abs_norm_le_pow t hC
 
 /-- If a nonzero `δ ∈ 𝓞 K` has every complex conjugate of absolute value at most `C` and
 `∏ p ∈ P, p ^ e p` divides its integral norm, then `∑ p ∈ P, e p * log p ≤ finrank ℚ K * log C`. -/

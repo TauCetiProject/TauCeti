@@ -51,8 +51,7 @@ include hker
 /-- Positive translation by a section of the kernel is an endomorphism of a lift. -/
 def kernelTranslationHom (a : (A.obj ⋙ forget GrpCat).sections) : L ⟶ L :=
   CostructuredArrow.homMk (L.left.translationHom (GrpCat.sectionsMap i.hom a)) (by
-    dsimp only [mapFunctor]
-    rw [mapHom_translationHom_eq_id]
+    rw [mapFunctor_map_translationHom_eq_id]
     · exact Category.id_comp _
     · intro U
       simpa [GrpCat.sectionsπMonoidHom] using
@@ -101,9 +100,9 @@ theorem kernelTranslation_injective : Function.Injective (kernelTranslation hker
 omit hi hker [∀ U, IsMulCommutative (B.obj.obj U)] in
 /-- An endomorphism of a lift induces the identity on its extended torsor. -/
 @[simp]
-lemma mapHom_left_eq_id (f : L ⟶ L) : mapHom φ f.left = 𝟙 (L.left.map φ) := by
+lemma mapFunctor_map_left_eq_id (f : L ⟶ L) : (mapFunctor φ).map f.left = 𝟙 (L.left.map φ) := by
   apply (cancel_mono L.hom).mp
-  simpa only [mapFunctor, Category.id_comp] using CostructuredArrow.w f
+  exact (CostructuredArrow.w f).trans (Category.id_comp _).symm
 
 include hi in
 /-- Every endomorphism of a lift is a positive translation by a kernel section. -/
@@ -111,8 +110,8 @@ theorem exists_kernelTranslationHom_eq (f : L ⟶ L) :
     ∃ a : (A.obj ⋙ forget GrpCat).sections, kernelTranslationHom hker L a = f := by
   obtain ⟨s, hs⟩ := L.left.exists_translationHom_eq f.left
   have hm : (L.left.translationHom s).hom ≫ L.left.toMap φ = L.left.toMap φ := by
-    rw [← toMap_mapHom, hs, mapHom_left_eq_id]
-    simp
+    rw [← toMap_mapFunctor_map, hs, mapFunctor_map_left_eq_id]
+    exact Category.comp_id _
   have hk : ∀ (U : Cᵒᵖ) (_p : L.left.sheaf.obj.obj U),
       φ.hom.app U (GrpCat.sectionsπMonoidHom B.obj U s) = 1 := by
     intro U p

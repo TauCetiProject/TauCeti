@@ -56,6 +56,12 @@ a unit modulo `8` is determined by its residue modulo `4` and its value under `�
   determinant of a unimodular form over `ℤ_[2]` is `1 + t - n` modulo `4`.
 * `LinearMap.BilinForm.IsSymm.equivalent_iff_two_dvd_iff_and_χ₈_eq_and_eight_dvd`: unimodular forms
   of the same rank over `ℤ_[2]` are classified by their type, sign and oddity.
+* `LinearMap.BilinForm.χ₈_toZModPow_three_det_toMatrix_eq`: the determinant sign `χ₈(det)` is
+  invariant under change of finite basis.
+* `LinearMap.BilinForm.iIsOrtho.χ₈_det_toMatrix_eq`: the determinant sign `χ₈(det)` in any basis
+  equals `χ₈` of the diagonal product of an orthogonal basis.
+* `LinearMap.BilinForm.iIsOrtho.toZModPow_three_apply_self_eq_sum`: the oddity modulo `8` of a
+  unit-diagonal orthogonal basis equals the sum of its diagonal entries.
 
 ## References
 
@@ -182,5 +188,39 @@ theorem IsSymm.equivalent_iff_two_dvd_iff_and_χ₈_eq_and_eight_dvd (hB : B.IsS
   generalize PadicInt.toZModPow 3 (u - v - 2 * r) = Y at hχ ⊢
   revert X Y
   decide
+
+/-- Changing between two finite bases of `M` leaves `χ₈(det B)` unchanged, since the
+basis-change matrix has unit determinant. -/
+theorem χ₈_toZModPow_three_det_toMatrix_eq {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (B : BilinForm ℤ_[2] M) (b b' : Basis ι ℤ_[2] M) :
+    χ₈ (PadicInt.toZModPow 3 (B.toMatrix b).det) =
+      χ₈ (PadicInt.toZModPow 3 (B.toMatrix b').det) := by
+  rw [det_toMatrix_eq_det_sq_mul_det b' b, map_mul, map_pow, map_mul, map_pow,
+    (by decide : ∀ x : ZMod (2 ^ 3), x * x = 1 → χ₈ x ^ 2 = 1) _
+      (PadicInt.isUnit_iff_toZModPow_three_mul_self.mp
+        (Matrix.isUnit_det_of_right_inverse (b'.toMatrix_mul_toMatrix_flip b))),
+    one_mul]
+
+/-- The determinant sign `χ₈(det)` in any finite basis `b` equals `χ₈` of the product of the
+diagonal entries in any orthogonal basis `c`. -/
+theorem iIsOrtho.χ₈_det_toMatrix_eq {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {c : Basis ι ℤ_[2] M} (hc : B.iIsOrtho c) (b : Basis ι ℤ_[2] M) :
+    χ₈ (PadicInt.toZModPow 3 (B.toMatrix b).det) =
+      χ₈ (∏ i, PadicInt.toZModPow 3 (B (c i) (c i))) := by
+  rw [B.χ₈_toZModPow_three_det_toMatrix_eq b c, hc.det_toMatrix, map_prod]
+
+/-- The oddity modulo `8` of a form with a unit-diagonal orthogonal basis `c` equals the sum of
+the diagonal entries `B (c i) (c i)` modulo `8`. -/
+theorem iIsOrtho.toZModPow_three_apply_self_eq_sum {ι : Type*} [Fintype ι]
+    {c : Basis ι ℤ_[2] M} (hc : B.iIsOrtho c) (hcu : ∀ i, IsUnit (B (c i) (c i)))
+    {w : M} (hw : B.IsCharacteristic w) :
+    PadicInt.toZModPow 3 (B w w) = ∑ i, PadicInt.toZModPow 3 (B (c i) (c i)) := by
+  classical
+  have : Free ℤ_[2] M := .of_basis c
+  have : B.IsPerfPair := c.isPerfPair_of_isUnit_det c B (hc.isUnit_det_toMatrix hcu)
+  have h8 := hw.eight_dvd_apply_self_sub_apply_self hc.isSymm
+    (hc.isCharacteristic_sum PadicInt.two_dvd_sq_sub_self)
+  rw [hc.apply_sum_sum] at h8
+  simpa [map_sum] using PadicInt.eight_dvd_sub_iff_toZModPow_three_eq.mp h8
 
 end LinearMap.BilinForm

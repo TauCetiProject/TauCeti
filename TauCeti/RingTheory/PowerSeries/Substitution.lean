@@ -12,10 +12,12 @@ public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.PiTopology
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import Mathlib.RingTheory.PowerSeries.Trunc
+public import TauCeti.RingTheory.PowerSeries.Jet
 -- Proof-only: lowest homogeneous components of powers.
 import TauCeti.RingTheory.MvPowerSeries.Order
 -- Proof-only: algebra maps out of `R⟦X⟧` agree with `aeval` on polynomials.
 import TauCeti.RingTheory.PowerSeries.Evaluation
+import TauCeti.RingTheory.PowerSeries.Order
 import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
 import Mathlib.RingTheory.PowerSeries.Inverse
 
@@ -67,8 +69,8 @@ of a completed group algebra attached to two topological generators.
 
 ## Main results
 
-* `PowerSeries.coeff_subst_eq_sum_range`: a finite coefficient formula when the inner series
-  has zero constant coefficient.
+* `PowerSeries.coeff_subst_eq_sum_range`, `PowerSeries.coeff_subst_eq_sum_range_of_lt`: finite
+  coefficient formulas when the inner series has zero constant coefficient.
 * `Continuous.powerSeries_subst`: substitution is jointly continuous in coefficientwise
   continuous families whose inner series have zero constant coefficient.
 * `PowerSeries.HasSubst.C`: a nilpotent constant can be substituted.
@@ -94,6 +96,9 @@ of a completed group algebra attached to two topological generators.
 * `PowerSeries.coeff_succ_subst_X_mul`: the `(n + 1)`-st coefficient of `f (X * M)` is
   `[X^n](M * g (X * M))`, where `g` is the shift of `f`.
 * `PowerSeries.X_pow_dvd_subst`: substitution preserves divisibility by `X ^ n`.
+* `PowerSeries.jetSubstAlgHom`: substitution of a zero-constant series descends to finite jets.
+* `PowerSeries.jetSubstAlgHom_comp`: composition of these maps is substitution by the composite
+  series.
 * `PowerSeries.X_pow_dvd_subst_sub_subst`: substitution respects congruence modulo `X ^ n` of
   the substituted series.
 * `PowerSeries.homogeneousComponent_subst_of_le_order`: if `f` has order at least `n`, the
@@ -140,8 +145,17 @@ theorem coeff_subst_eq_sum_range {R S : Type*} [CommRing R] [CommRing S]
   rw [Function.mem_support] at hk
   simp only [Finset.coe_range, Set.mem_Iio]
   by_contra h
-  exact hk (by rw [coeff_of_lt_order _ ((Nat.cast_lt.mpr (by omega : n < k)).trans_le
-    (le_order_pow_of_constantCoeff_eq_zero k hg)), smul_zero])
+  exact hk (by rw [coeff_pow_eq_zero_of_lt hg (by omega : n < k), smul_zero])
+
+/-- When the inner series has zero constant coefficient, the coefficient of degree `n` of a
+substitution equals the finite sum over `Finset.range N` for any `N > n`. -/
+theorem coeff_subst_eq_sum_range_of_lt {R S : Type*} [CommRing R] [CommRing S]
+    [Algebra R S] (f : R⟦X⟧) {g : S⟦X⟧} (hg : constantCoeff g = 0) {n N : ℕ} (hn : n < N) :
+    coeff n (f.subst g) = ∑ k ∈ Finset.range N, coeff k f • coeff n (g ^ k) := by
+  rw [coeff_subst_eq_sum_range f hg n]
+  refine Finset.sum_subset (Finset.range_subset_range.mpr hn) fun k _ hk ↦ ?_
+  rw [Finset.mem_range] at hk
+  rw [coeff_pow_eq_zero_of_lt hg (by omega : n < k), smul_zero]
 
 /-- When the inner series has zero constant coefficient, composing the truncation of the outer
 series below degree `M` with the truncation of the inner series below degree `N` computes the
@@ -158,8 +172,7 @@ theorem coeff_trunc_comp_trunc {R : Type*} [CommRing R] (f : R⟦X⟧) {g : R⟦
   simp only [Polynomial.coeff_C_mul, hpow, smul_eq_mul]
   -- The coefficient of `X ^ k` in `g ^ n` vanishes for `n > k`.
   refine (Finset.sum_subset (Finset.range_subset_range.mpr hM) fun n _ hn ↦ ?_).symm
-  rw [coeff_of_lt_order _ ((Nat.cast_lt.mpr (by grind : k < n)).trans_le
-    (le_order_pow_of_constantCoeff_eq_zero n hg)), mul_zero]
+  rw [coeff_pow_eq_zero_of_lt hg (by grind : k < n), mul_zero]
 
 /-- A nilpotent constant can be substituted into a power series. -/
 theorem HasSubst.C {R : Type*} [CommRing R] {x : R} (hx : IsNilpotent x) :
@@ -421,6 +434,45 @@ theorem X_pow_dvd_subst {a : S⟦X⟧} (ha : constantCoeff a = 0) {n : ℕ} {f :
   obtain ⟨g, rfl⟩ := hf
   rw [subst_mul ha', subst_pow ha', subst_X ha']
   exact (pow_dvd_pow_of_dvd (X_dvd_iff.mpr ha) n).mul_right _
+
+open scoped Polynomial
+
+/-- Substitution by a series of zero constant coefficient descends to each finite jet algebra. -/
+noncomputable def jetSubstAlgHom (N : ℕ) (a : R⟦X⟧) (ha : constantCoeff a = 0) :
+    AdjoinRoot (Polynomial.X ^ N : R[X]) →ₐ[R] AdjoinRoot (Polynomial.X ^ N : R[X]) :=
+  AlgHom.liftOfSurjective (jet R N) jet_surjective
+    ((jet R N).comp (substAlgHom (.of_constantCoeff_zero' ha))) fun f hf ↦ by
+      rw [RingHom.mem_ker]
+      -- The kernel exposes the `toRingHom` projection, so `AlgHom.comp_apply` cannot
+      -- rewrite it. Expose the definitionally equal algebra-hom application instead.
+      change (jet R N) ((substAlgHom (.of_constantCoeff_zero' ha)) f) = 0
+      rw [coe_substAlgHom, jet_eq_zero_iff]
+      exact X_pow_dvd_subst ha (jet_eq_zero_iff.mp hf)
+
+@[simp]
+theorem jetSubstAlgHom_jet (N : ℕ) (a : R⟦X⟧) (ha : constantCoeff a = 0) (f : R⟦X⟧) :
+    jetSubstAlgHom N a ha (jet R N f) = jet R N (f.subst a) := by
+  simp [jetSubstAlgHom, coe_substAlgHom]
+
+/-- The root is sent to the jet of the substituted series. -/
+@[simp]
+theorem jetSubstAlgHom_root (N : ℕ) (a : R⟦X⟧) (ha : constantCoeff a = 0) :
+    jetSubstAlgHom N a ha (AdjoinRoot.root (Polynomial.X ^ N : R[X])) = jet R N a := by
+  rw [← jet_X, jetSubstAlgHom_jet, subst_X (.of_constantCoeff_zero' ha)]
+
+/-- Substitution by `X` induces the identity on every jet algebra. -/
+@[simp]
+theorem jetSubstAlgHom_X {R : Type*} [CommRing R] (N : ℕ) :
+    jetSubstAlgHom N (X : R⟦X⟧) constantCoeff_X = AlgHom.id R _ :=
+  AdjoinRoot.algHom_ext (by simp)
+
+/-- Composing truncated substitutions is substitution by the composite series. -/
+theorem jetSubstAlgHom_comp {R : Type*} [CommRing R] (N : ℕ) (a b : R⟦X⟧)
+    (ha : constantCoeff a = 0) (hb : constantCoeff b = 0) :
+    (jetSubstAlgHom N b hb).comp (jetSubstAlgHom N a ha) =
+      jetSubstAlgHom N (a.subst b)
+        (by simp [constantCoeff_subst_of_constantCoeff_zero' hb, ha]) :=
+  AdjoinRoot.algHom_ext (by simp)
 
 /-- Substitution respects congruence modulo `X ^ n` of the substituted series: if `a ≡ b` modulo
 `X ^ n`, then `f (a) ≡ f (b)` modulo `X ^ n`. For `n ≠ 0` the congruence forces `b` to have
