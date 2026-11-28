@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 import TauCeti.Algebra.Exact.Ladder
+import Mathlib.GroupTheory.Index
 
 /-!
 # Linear maps on scalar and ideal torsion
@@ -269,5 +270,119 @@ theorem existsUnique_torsion_lift_of_bijective_ker_smul (f : M →ₗ[R] N)
   exact congrArg Subtype.val (huniq ⟨z, (mem_torsionBy_iff _ _).mpr hz.1⟩ (Subtype.ext hz.2))
 
 end Lift
+
+
+private lemma natCard_torsionBy_eq_card_ker {R M : Type*} [CommSemiring R] [AddCommGroup M]
+    [Module R M] (r : R) :
+    Nat.card (Submodule.torsionBy R M r) =
+      Nat.card (DistribSMul.toLinearMap R M r).toAddMonoidHom.ker :=
+  Nat.card_congr (Equiv.subtypeEquivRight fun _ ↦ by
+    simp [Submodule.mem_torsionBy_iff, AddMonoidHom.mem_ker])
+
+private lemma natCard_torsionBy_mul_eq_of_surjective {R M N : Type*} [CommSemiring R]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] (r : R) {f : M →ₗ[R] N}
+    [Finite (LinearMap.ker f)] (hf : Function.Surjective f) :
+    ∃ k : ℕ, 0 < k ∧
+      Nat.card (Submodule.torsionBy R M r) = k * Nat.card (Submodule.torsionBy R N r) := by
+  let K : AddSubgroup M := f.toAddMonoidHom.ker
+  have : Finite K := Finite.of_equiv (LinearMap.ker f)
+    ⟨fun x ↦ ⟨x.val, x.property⟩, fun x ↦ ⟨x.val, x.property⟩, fun _ ↦ rfl, fun _ ↦ rfl⟩
+  let TM : AddSubgroup M := (DistribSMul.toLinearMap R M r).toAddMonoidHom.ker
+  let TN : AddSubgroup N := (DistribSMul.toLinearMap R N r).toAddMonoidHom.ker
+  let g : TM →+ TN :=
+    { toFun x := ⟨f x.val, by
+        have hx : r • x.val = 0 := x.property
+        rw [AddMonoidHom.mem_ker, LinearMap.toAddMonoidHom_coe, DistribSMul.toLinearMap_apply,
+          ← map_smul, hx, map_zero]⟩
+      map_zero' := Subtype.ext (map_zero f)
+      map_add' x y := Subtype.ext (map_add f x.val y.val) }
+  let mulK : K →+ K :=
+    { toFun x := ⟨r • x.val, by
+        have hx : f x.val = 0 := x.property
+        rw [AddMonoidHom.mem_ker, LinearMap.toAddMonoidHom_coe, map_smul, hx, smul_zero]⟩
+      map_zero' := Subtype.ext (smul_zero r)
+      map_add' x y := Subtype.ext (smul_add r x.val y.val) }
+  let lift (y : TN) : M := (hf y.val).choose
+  have hlift (y : TN) : f (lift y) = y.val := (hf y.val).choose_spec
+  let δ : TN →+ K ⧸ mulK.range :=
+    { toFun y := QuotientAddGroup.mk ⟨r • lift y, by
+        have hy : r • y.val = 0 := y.property
+        rw [AddMonoidHom.mem_ker, LinearMap.toAddMonoidHom_coe, map_smul, hlift, hy]⟩
+      map_zero' := (QuotientAddGroup.eq_zero_iff _).mpr
+        ⟨⟨lift 0, by rw [AddMonoidHom.mem_ker, LinearMap.toAddMonoidHom_coe, hlift]; rfl⟩, rfl⟩
+      map_add' y₁ y₂ := by
+        rw [← QuotientAddGroup.mk_add, QuotientAddGroup.eq]
+        refine ⟨⟨lift y₁ + lift y₂ - lift (y₁ + y₂), ?_⟩, Subtype.ext ?_⟩
+        · rw [AddMonoidHom.mem_ker, LinearMap.toAddMonoidHom_coe]; simp [hlift]
+        · dsimp only [mulK, AddMonoidHom.coe_mk, ZeroHom.coe_mk, AddSubgroup.coe_add,
+            NegMemClass.coe_neg]
+          rw [smul_sub, smul_add]; abel }
+  have hker_δ : δ.ker = g.range := by
+    ext y
+    simp only [AddMonoidHom.mem_ker, δ, AddMonoidHom.coe_mk, ZeroHom.coe_mk,
+      QuotientAddGroup.eq_zero_iff, AddMonoidHom.mem_range]
+    constructor
+    · rintro ⟨⟨k, hk⟩, hkm⟩
+      refine ⟨⟨lift y - k, ?_⟩, Subtype.ext ?_⟩
+      · rw [AddMonoidHom.mem_ker, LinearMap.toAddMonoidHom_coe, DistribSMul.toLinearMap_apply,
+          smul_sub, sub_eq_zero]
+        exact (congrArg Subtype.val hkm).symm
+      · have hk' : f k = 0 := hk
+        simp [g, hlift, hk']
+    · rintro ⟨⟨m, hm⟩, hmy⟩
+      have hm' : r • m = 0 := hm
+      have hfm : f m = y.val := congrArg Subtype.val hmy
+      refine ⟨⟨lift y - m, by rw [AddMonoidHom.mem_ker, LinearMap.toAddMonoidHom_coe]; simp [hlift,
+        hfm]⟩, Subtype.ext ?_⟩
+      simp [mulK, smul_sub, hm']
+  have hker_g : Nat.card g.ker = Nat.card mulK.ker :=
+    Nat.card_congr
+      ⟨fun x ↦ ⟨⟨x.val.val, congrArg Subtype.val x.property⟩, Subtype.ext x.val.property⟩,
+       fun y ↦ ⟨⟨y.val.val, congrArg Subtype.val y.property⟩, Subtype.ext y.val.property⟩,
+       fun _ ↦ rfl, fun _ ↦ rfl⟩
+  have hq_dvd : Nat.card δ.range ∣ Nat.card g.ker := by
+    rw [hker_g, ← AddSubgroup.index_range]
+    exact ⟨δ.range.index, (AddSubgroup.index_mul_card δ.range).symm.trans (mul_comm _ _)⟩
+  obtain ⟨k, hk⟩ := hq_dvd
+  have hker_pos : 0 < Nat.card g.ker := by rw [hker_g]; exact Nat.card_pos
+  have hk_pos : 0 < k := Nat.pos_of_ne_zero fun h0 ↦ hker_pos.ne' (by simpa [h0] using hk)
+  have hM : Nat.card TM = Nat.card g.range * Nat.card g.ker := by
+    rw [← Nat.card_congr (QuotientAddGroup.quotientKerEquivRange g).toEquiv,
+      ← AddSubgroup.index_mul_card g.ker, AddSubgroup.index]
+  have hN : Nat.card TN = Nat.card δ.range * Nat.card g.range := by
+    rw [← Nat.card_congr (QuotientAddGroup.quotientKerEquivRange δ).toEquiv,
+      ← hker_δ, ← AddSubgroup.index_mul_card δ.ker, AddSubgroup.index]
+  rw [natCard_torsionBy_eq_card_ker, natCard_torsionBy_eq_card_ker]
+  exact ⟨k, hk_pos, by rw [hM, hN, hk]; ring⟩
+
+/-- Under a surjective `R`-linear map `f : M →ₗ[R] N` with finite kernel, the order of the
+`r`-torsion of `N` divides the order of the `r`-torsion of `M`. This bounds torsion in a quotient
+without requiring surjectivity on the torsion submodules.
+
+Adapted from `grh-lean` (https://github.com/lsernau/grh-lean at commit
+`72fead102f663d5c7a407964a13dc0cf9d977207`, Apache 2.0, Copyright 2026 Anthropic, PBC), file
+`src/Lib/ClassField/GreenbergWiles/RelationsModL.lean` (`New.card_torsionBy_le_of_surjective`),
+generalized from finite abelian groups to surjective linear maps with finite kernel over any
+commutative semiring and strengthened to divisibility. -/
+theorem natCard_torsionBy_dvd_of_surjective {R M N : Type*} [CommSemiring R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] (r : R) {f : M →ₗ[R] N}
+    [Finite (LinearMap.ker f)] (hf : Function.Surjective f) :
+    Nat.card (Submodule.torsionBy R N r) ∣ Nat.card (Submodule.torsionBy R M r) := by
+  obtain ⟨k, _, hk⟩ := natCard_torsionBy_mul_eq_of_surjective r hf
+  exact ⟨k, by rw [hk, mul_comm]⟩
+
+/-- Under a surjective `R`-linear map `f : M →ₗ[R] N` with finite kernel, the `r`-torsion of `N`
+has at most as many elements as the `r`-torsion of `M`.
+
+Adapted from `grh-lean` (https://github.com/lsernau/grh-lean at commit
+`72fead102f663d5c7a407964a13dc0cf9d977207`, Apache 2.0, Copyright 2026 Anthropic, PBC), file
+`src/Lib/ClassField/GreenbergWiles/RelationsModL.lean` (`New.card_torsionBy_le_of_surjective`). -/
+theorem natCard_torsionBy_le_of_surjective {R M N : Type*} [CommSemiring R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] (r : R) {f : M →ₗ[R] N}
+    [Finite (LinearMap.ker f)] (hf : Function.Surjective f) :
+    Nat.card (Submodule.torsionBy R N r) ≤ Nat.card (Submodule.torsionBy R M r) := by
+  obtain ⟨k, hk_pos, hk⟩ := natCard_torsionBy_mul_eq_of_surjective r hf
+  rw [hk]
+  exact Nat.le_mul_of_pos_left _ hk_pos
 
 end TauCeti
