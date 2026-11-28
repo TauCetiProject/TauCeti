@@ -28,10 +28,15 @@ namespace TauCeti.OneSidedBound.Parameters
 
 variable (P : Parameters)
 
-private theorem q₁_eq_base_mul_two_pow (s : ℕ) :
+/-- The level is the increment in the tower unit's representative times `2 ^ s`. -/
+theorem q₁_eq_base_mul_two_pow (s : ℕ) :
     P.q₁ s = (3 * l₀ s * P.q₀) * 2 ^ s := by
   rw [q₁_def, towerDeg_def]
   ac_rfl
+
+/-- The increment in the tower unit's representative is divisible by four. -/
+theorem four_dvd_towerUnit_base (s : ℕ) : 4 ∣ 3 * l₀ s * P.q₀ :=
+  dvd_mul_of_dvd_right ((by norm_num : 4 ∣ 18480).trans P.dvd_q₀) _
 
 /-- The unit represented by `1 + 3 · l₀ s · q₀` modulo `q₁ s`. -/
 def towerUnit (s : ℕ) : (ZMod (P.q₁ s))ˣ :=
@@ -51,8 +56,7 @@ def towerUnit (s : ℕ) : (ZMod (P.q₁ s))ˣ :=
 @[simp] theorem orderOf_towerUnit (s : ℕ) : orderOf (P.towerUnit s) = 2 ^ s := by
   rw [← orderOf_units, P.coe_towerUnit, P.q₁_eq_base_mul_two_pow]
   exact ZMod.orderOf_one_add_natCast_mul_two_pow
-    (by have := P.q₀_pos; rw [l₀_def]; positivity)
-    (dvd_mul_of_dvd_right ((by norm_num : 4 ∣ 18480).trans P.dvd_q₀) _) s
+    (by have := P.q₀_pos; rw [l₀_def]; positivity) (P.four_dvd_towerUnit_base s) s
 
 /-- Among the divisors of `q₁ s`, the tower unit reduces to `1` exactly at the divisors of
 `3 · l₀ s · q₀`. -/
