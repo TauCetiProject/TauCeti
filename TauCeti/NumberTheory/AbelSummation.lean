@@ -79,6 +79,9 @@ at `k = 2`, where `log k > 0`.
   `log log x + B + O(1 / log x)`.
 * `TauCeti.exists_abs_sum_Icc_div_log_sub_log_log_sub_le`: if `∑_{2 ≤ k ≤ t} c k = log t + O(1)`,
   then `∑_{2 ≤ k ≤ x} c k / log k = log log x + B + O(1 / log x)`.
+* `TauCeti.sum_Icc_div_log_le_of_forall_sum_Icc_le`: the one-sided form, if `0 ≤ κ` and
+  `∑_{2 ≤ k ≤ n} c k ≤ κ log n + C` for all `n ≥ 2`, then
+  `∑_{2 ≤ k ≤ N} c k / log k ≤ κ log log N + (κ - κ log log 2 + C / log 2)`.
 
 ## References
 
@@ -589,5 +592,49 @@ theorem exists_abs_sum_Icc_div_log_sub_log_log_sub_le {c : ℕ → ℝ} {C : ℝ
     (S := fun t ↦ ∑ k ∈ Finset.Icc 2 ⌊t⌋₊, c k)
     ((measurable_from_nat (f := fun n ↦ ∑ k ∈ Finset.Icc 2 n, c k)).comp Nat.measurable_floor) h
   exact ⟨B, fun x hx ↦ by simpa only [← sum_Icc_div_log_eq] using hB x hx⟩
+
+/-- **A one-sided bound for partial sums weighted by `1 / log`.** If `0 ≤ κ` and the partial sums
+`∑_{2 ≤ k ≤ n} c k` are at most `κ log n + C` for every natural `n ≥ 2`, then
+`∑_{2 ≤ k ≤ N} c k / log k ≤ κ log log N + (κ - κ log log 2 + C / log 2)` for every `N ≥ 2`. No
+sign condition on `c` and no lower bound on its partial sums is needed. The proof is a discrete
+summation by parts, using `1 - log n / log (n + 1) ≤ log log (n + 1) - log log n`. -/
+theorem sum_Icc_div_log_le_of_forall_sum_Icc_le {c : ℕ → ℝ} {κ C : ℝ} (hκ : 0 ≤ κ)
+    (h : ∀ n : ℕ, 2 ≤ n → ∑ k ∈ Finset.Icc 2 n, c k ≤ κ * Real.log n + C) {N : ℕ} (hN : 2 ≤ N) :
+    ∑ k ∈ Finset.Icc 2 N, c k / Real.log k ≤
+      κ * Real.log (Real.log N) + (κ - κ * Real.log (Real.log 2) + C / Real.log 2) := by
+  have hlog (n : ℕ) (hn : 2 ≤ n) : 0 < Real.log n :=
+    Real.log_pos (by exact_mod_cast (show 1 < n by omega))
+  have key : ∑ k ∈ Finset.Icc 2 N, c k / Real.log k ≤
+      (∑ k ∈ Finset.Icc 2 N, c k) / Real.log N +
+        κ * (Real.log (Real.log N) - Real.log (Real.log 2)) +
+        C * (1 / Real.log 2 - 1 / Real.log N) := by
+    induction N, hN using Nat.le_induction with
+    | base => simp
+    | succ n hn ih =>
+      rw [Finset.sum_Icc_succ_top (by omega), Finset.sum_Icc_succ_top (by omega), add_div]
+      set U : ℝ := ∑ k ∈ Finset.Icc 2 n, c k
+      set L : ℝ := Real.log n
+      set L' : ℝ := Real.log (n + 1 : ℕ)
+      have hL : 0 < L := hlog n hn
+      have hL' : 0 < L' := hlog (n + 1) (by omega)
+      have hLL' : L ≤ L' :=
+        Real.log_le_log (by exact_mod_cast (show 0 < n by omega)) (by exact_mod_cast n.le_succ)
+      have hd : 0 ≤ 1 / L - 1 / L' := sub_nonneg.2 (one_div_le_one_div_of_le hL hLL')
+      have h1 : U * (1 / L - 1 / L') ≤ (κ * L + C) * (1 / L - 1 / L') :=
+        mul_le_mul_of_nonneg_right (h n hn) hd
+      have h2 : (κ * L + C) * (1 / L - 1 / L') = κ * (1 - L / L') + C * (1 / L - 1 / L') := by
+        field_simp
+      have hconc : 1 - L / L' ≤ Real.log L' - Real.log L := by
+        have h3 := Real.one_sub_inv_le_log_of_pos (div_pos hL' hL)
+        rwa [inv_div, Real.log_div hL'.ne' hL.ne'] at h3
+      have h4 := mul_le_mul_of_nonneg_left hconc hκ
+      have h5 : U / L - U / L' = U * (1 / L - 1 / L') := by ring
+      linarith
+  have hU : (∑ k ∈ Finset.Icc 2 N, c k) / Real.log N ≤ κ + C / Real.log N := by
+    rw [div_le_iff₀ (hlog N hN), add_mul, div_mul_cancel₀ _ (hlog N hN).ne']
+    exact h N hN
+  have hsplit : C * (1 / Real.log 2 - 1 / Real.log N) = C / Real.log 2 - C / Real.log N := by
+    ring
+  linarith
 
 end TauCeti
