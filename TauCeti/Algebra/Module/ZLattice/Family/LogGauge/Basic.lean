@@ -382,7 +382,6 @@ noncomputable def logTranslationQuotientNonzeroOpens [TopologicalSpace E] (l : �
 
 /-- Canonical equivalence between the open-subset subtype `logTranslationQuotientNonzeroOpens P l`
 and the raw predicate subtype `{q // torusFamilyCyclicQuotientProjection ... q ≠ 0}`. -/
-@[expose, reducible]
 noncomputable def logTranslationQuotientNonzeroOpensEquiv [TopologicalSpace E] (l : Λ) :
     letI := periodAddAction (powPullbackPeriod m r P)
     letI := logTranslationMulAction P l
@@ -399,6 +398,38 @@ noncomputable def logTranslationQuotientNonzeroOpensEquiv [TopologicalSpace E] (
     (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
     (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
     (logTranslationSection_mul P l)
+
+/-- Coercing `logTranslationQuotientNonzeroOpensEquiv` to the ambient cyclic quotient is the
+identity on values. -/
+@[simp] theorem coe_logTranslationQuotientNonzeroOpensEquiv [TopologicalSpace E] (l : Λ)
+    (q : letI := periodAddAction (powPullbackPeriod m r P)
+      letI := logTranslationMulAction P l
+      ↥(logTranslationQuotientNonzeroOpens P l)) :
+    ((logTranslationQuotientNonzeroOpensEquiv P l q :
+        letI := periodAddAction (powPullbackPeriod m r P)
+        letI := logTranslationMulAction P l
+        orbitRel.Quotient (rootsOfUnity m ℂ)
+          (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))) = q.val :=
+  coe_torusFamilyCyclicQuotientNonzeroOpensEquiv _ _ _ _ _ _ _ _ _ q
+
+/-- Coercing the inverse of `logTranslationQuotientNonzeroOpensEquiv` to the ambient cyclic
+quotient is the identity on values. -/
+@[simp] theorem coe_logTranslationQuotientNonzeroOpensEquiv_symm [TopologicalSpace E] (l : Λ)
+    (q : letI := periodAddAction (powPullbackPeriod m r P)
+      letI := logTranslationMulAction P l
+      {q : orbitRel.Quotient (rootsOfUnity m ℂ)
+          (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) //
+        torusFamilyCyclicQuotientProjection (fun _ _ ↦ AddMonoidHom.id E) (fun _ _ ↦ rfl)
+          (fun _ _ _ _ ↦ rfl) (powPullbackPeriod m r P)
+          (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
+          (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
+          (logTranslationSection_mul P l) q ≠ 0}) :
+    (((logTranslationQuotientNonzeroOpensEquiv P l).symm q :
+        letI := periodAddAction (powPullbackPeriod m r P)
+        letI := logTranslationMulAction P l
+        orbitRel.Quotient (rootsOfUnity m ℂ)
+          (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)))) = q.val :=
+  coe_torusFamilyCyclicQuotientNonzeroOpensEquiv_symm _ _ _ _ _ _ _ _ _ q
 
 end NormalizedAction
 
@@ -838,10 +869,9 @@ private theorem continuous_torusFamilyLogGaugeEquiv :
           (torusFamilyNonzeroOpensEquiv Subtype.val P continuous_subtypeVal).symm)) =
       (fun q ↦ torusFamilyLogGauge P l (Quotient.out q)) ∘ Subtype.val := by
     ext q'
-    simp only [Function.comp_apply, Equiv.trans_apply, coe_torusFamilyNonzeroOpensEquiv_symm,
-      logTranslationQuotientNonzeroOpensEquiv]
+    simp only [Function.comp_apply, Equiv.trans_apply, coe_torusFamilyNonzeroOpensEquiv_symm]
     dsimp only [torusFamilyLogGaugeEquiv, Equiv.coe_fn_mk]
-    rw [coe_torusFamilyCyclicQuotientNonzeroOpensEquiv]
+    rw [coe_logTranslationQuotientNonzeroOpensEquiv]
   rw [hcomp]
   exact (continuousAt_torusFamilyLogGauge_out P l hcont
     ((mem_torusFamilyCyclicQuotientNonzeroOpens _ _ _ _ _ _ _ _ _ q.val).1
@@ -866,7 +896,7 @@ private theorem continuous_torusFamilyLogGaugeEquiv_symm :
       torusFamilyLogGaugeInv P l hr ∘ Subtype.val := by
     ext y'
     simp only [Function.comp_apply, Equiv.symm_trans_apply, Equiv.symm_symm,
-      logTranslationQuotientNonzeroOpensEquiv, coe_torusFamilyCyclicQuotientNonzeroOpensEquiv_symm]
+      coe_logTranslationQuotientNonzeroOpensEquiv_symm]
     dsimp only [torusFamilyLogGaugeEquiv, Equiv.coe_fn_symm_mk]
     rw [coe_torusFamilyNonzeroOpensEquiv]
   rw [hcomp]

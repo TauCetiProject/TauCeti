@@ -175,9 +175,7 @@ theorem torusFamilyLogGaugeDiffeomorph_add_nsmul (l μ : Λ) (hr : 0 ≤ r)
   refine congrArg (fun x ↦
     (torusFamilyLogTwistEquiv Subtype.val P (-μ) (torusFamilyLogGaugeEquiv P l hr x)).val)
     (Subtype.ext ?_)
-  dsimp only [logTranslationQuotientNonzeroOpensEquiv]
-  rw [coe_torusFamilyCyclicQuotientNonzeroOpensEquiv,
-    coe_torusFamilyCyclicQuotientNonzeroOpensEquiv]
+  simp only [coe_logTranslationQuotientNonzeroOpensEquiv]
 
 end DiffeomorphComparison
 
