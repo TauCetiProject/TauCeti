@@ -77,37 +77,6 @@ theorem isSigma_one_dom_eval (c : Code) :
   exact ⟨fun ⟨_, k, d, hd, _⟩ => ⟨k, d, hd⟩,
     fun ⟨k, d, hd⟩ => ⟨d.output, k, d, hd, rfl⟩⟩
 
-/-- Halting of an oracle program with a Boolean output (`0` or `1`) is Σ⁰₁ uniformly in the
-program and input. -/
-theorem isSigma_one_eval_bool :
-    IsSigma Z 1 (fun p : Code × ℕ =>
-      ∃ b : Bool, encode b ∈ Code.eval Z.oracle p.1 p.2) := by
-  obtain ⟨guard, hguard⟩ := Code.exists_boolGuardCode
-  have harg : Primrec fun p : Code × ℕ =>
-      Nat.pair (encode (Code.comp guard p.1)) p.2 :=
-    Primrec₂.natPair.comp
-      (Primrec.encode.comp (Code.primrec₂_comp.comp (Primrec.const guard) Primrec.fst))
-      Primrec.snd
-  have hdom := (isSigma_one_dom_eval (Z := Z) Code.universal).preimage harg.computableIn
-  refine hdom.of_eq fun p => ?_
-  -- Rewrite `Z.oracle` to its coerced indicator so `Code.eval_universal` applies uniformly.
-  rw [Z.oracle_eq_indicator]
-  have hbind : ∀ y : ℕ,
-      y ∈ Code.eval ((Z.indicator 1 : ℕ → ℕ) : ℕ →. ℕ) Code.universal
-          (Nat.pair (encode (Code.comp guard p.1)) p.2) ↔
-        ∃ m ∈ Code.eval ((Z.indicator 1 : ℕ → ℕ) : ℕ →. ℕ) p.1 p.2, m < 2 ∧ y = 0 :=
-    fun y => by
-      simp only [Code.eval_universal, ofNat_encode, Code.eval_comp]
-      exact Part.mem_bind_iff.trans (by simp [hguard])
-  simp only [Part.dom_iff_mem, hbind]
-  constructor
-  · rintro ⟨_, m, hm, hlt, _⟩
-    match m, hlt with
-    | 0, _ => exact ⟨false, hm⟩
-    | 1, _ => exact ⟨true, hm⟩
-  · rintro ⟨b, hb⟩
-    exact ⟨0, encode b, hb, by cases b <;> decide, rfl⟩
-
 /-- The domain of a partial function recursive in `Z` is Σ⁰₁ relative to `Z`. -/
 theorem _root_.RecursiveIn.isSigma_one_mem_dom {β : Type*} [Primcodable β] {f : α →. β}
     (hf : RecursiveIn {Z.oracle} f) : IsSigma Z 1 (· ∈ f.Dom) := by
@@ -115,6 +84,44 @@ theorem _root_.RecursiveIn.isSigma_one_mem_dom {β : Type*} [Primcodable β] {f 
   obtain ⟨c, hc⟩ := Code.exists_code.1 hf
   exact ((isSigma_one_dom_eval c).preimage Primrec.encode.computableIn).of_eq fun x => by
     simp [PFun.Dom, hc, encodek]
+
+/-- Halting of an oracle program with a Boolean output (`0` or `1`) is Σ⁰₁ uniformly in the
+program and input. -/
+theorem isSigma_one_eval_bool :
+    IsSigma Z 1 (fun p : Code × ℕ =>
+      ∃ b : Bool, encode b ∈ Code.eval Z.oracle p.1 p.2) := by
+  obtain ⟨guard, hguard⟩ := Code.exists_boolGuardCode
+  have hev : RecursiveIn {Z.oracle} (fun p : Code × ℕ => Code.eval Z.oracle p.1 p.2) := by
+    rw [Z.oracle_eq_indicator]
+    exact Code.recursiveIn₂_eval (Z.indicator 1)
+  have hstep : Primrec fun p : Code × ℕ => (Code.comp guard p.1, p.2) :=
+    (Code.primrec₂_comp.comp (Primrec.const guard) Primrec.fst).pair Primrec.snd
+  have harg : Nat.RecursiveIn {Z.oracle}
+      (fun n => ((decode (α := Code × ℕ) n).map fun p =>
+        encode (Code.comp guard p.1, p.2) : Part ℕ)) :=
+    (Partrec.nat_iff.1 (Computable.ofOption (Primrec.option_map Primrec.decode
+      (Primrec.encode.comp (hstep.comp Primrec.snd)).to₂).to_comp)).recursiveIn
+  have hcomp : RecursiveIn {Z.oracle}
+      ((fun p : Code × ℕ => Code.eval Z.oracle (Code.comp guard p.1) p.2) : Code × ℕ →. ℕ) := by
+    refine (Nat.RecursiveIn.comp hev harg).of_eq fun n => ?_
+    cases decode (α := Code × ℕ) n <;> simp
+  refine hcomp.isSigma_one_mem_dom.of_eq fun p => ?_
+  have hbind : ∀ y,
+      y ∈ Code.eval Z.oracle (Code.comp guard p.1) p.2 ↔
+        ∃ m ∈ Code.eval Z.oracle p.1 p.2, m < 2 ∧ y = 0 := fun y => by
+    rw [Code.eval_comp]
+    refine Part.mem_bind_iff.trans ?_
+    simp only [hguard, Part.mem_assert_iff, Part.mem_some_iff, exists_prop]
+  refine (PFun.mem_dom (fun p : Code × ℕ =>
+    Code.eval Z.oracle (Code.comp guard p.1) p.2) p).trans ?_
+  simp only [hbind]
+  constructor
+  · rintro ⟨_, m, hm, hlt, -⟩
+    match m, hlt with
+    | 0, _ => exact ⟨false, hm⟩
+    | 1, _ => exact ⟨true, hm⟩
+  · rintro ⟨b, hb⟩
+    exact ⟨0, encode b, hb, by cases b <;> decide, rfl⟩
 
 /-- **The first relativized Post equivalence.** Σ⁰₁ predicates relative to `Z` are exactly the
 domains of partial functions recursive in `Z`. -/

@@ -189,7 +189,8 @@ output `0` exactly when `MatrixHolds` fails. -/
 theorem IsValid.zero_mem_eval_iff {Z : Set ℕ} {nf : NormalFormCode} (h : nf.IsValid Z)
     {l : List ℕ} (hl : l.length = nf.quantifiers.depth + nf.arity) :
     0 ∈ Code.eval Z.oracle nf.matrix (encode l) ↔ ¬nf.MatrixHolds Z l := by
-  obtain ⟨b, hb⟩ := h l hl
+  obtain ⟨b, hb⟩ := isValid_iff.1 h l hl
+  rw [matrixHolds_iff]
   cases b with
   | false =>
     simp only [encode_false] at hb
@@ -289,7 +290,8 @@ private theorem computableIn_fin_bool_iff_exists_code {Z : Set ℕ} {k : ℕ}
 private theorem isValid_of_depth_eq {Z : Set ℕ} {p q : QuantifierPrefix} {k j : ℕ} {c : Code}
     (hdepth : p.depth + k = q.depth + j) (h : (NormalFormCode.mk p k c).IsValid Z) :
     (NormalFormCode.mk q j c).IsValid Z :=
-  fun l hl => h l (hl.trans hdepth.symm)
+  (NormalFormCode.isValid_mk Z q j c).2 fun l hl =>
+    (NormalFormCode.isValid_mk Z p k c).1 h l (hl.trans hdepth.symm)
 
 -- Soundness for a quantifier-free matrix on `Fin k → ℕ`.
 private theorem isSigma_zero_matrix {Z : Set ℕ} {k : ℕ} {c : Code}
@@ -325,8 +327,10 @@ private theorem isClass_eval_step {Z : Set ℕ} {p p' : QuantifierPrefix} {k : �
     p'.IsClass Z ((NormalFormCode.mk p' k c).Holds Z) :=
   (hclosure (hp.preimage
     (Primrec.fin_cons.comp Primrec.snd Primrec.fst).computableIn)).of_eq fun x =>
-      (hcongr fun y => by simp [List.ofFn_succ]).trans
-        (heval (fun l => 1 ∈ Code.eval Z.oracle c (encode l)) (List.ofFn x)).symm
+      ((hcongr fun y => (NormalFormCode.holds_mk Z p (k + 1) c (Fin.cons y x)).trans
+        (by simp only [List.ofFn_succ, Fin.cons_zero, Fin.cons_succ])).trans
+        (heval (fun l => 1 ∈ Code.eval Z.oracle c (encode l)) (List.ofFn x)).symm).trans
+        (NormalFormCode.holds_mk Z p' k c x).symm
 
 -- Soundness by structural induction on the quantifier prefix.
 private theorem isClass_eval_of_valid {Z : Set ℕ} {p : QuantifierPrefix} {k : ℕ} {c : Code}
