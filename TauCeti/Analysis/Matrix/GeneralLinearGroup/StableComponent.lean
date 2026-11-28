@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.GeneralLinearGroup.Connected
-public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.StableComponent
+public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.StableComponent.Basic
 
 /-!
 # The stable component group of `ℂ`

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Polarization
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Norm
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
+import TauCeti.Geometry.Manifold.MFDeriv.Exp
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
@@ -70,7 +71,7 @@ theorem mvfderiv_scalarCurvature_of_surface_soliton (hn : Module.finrank ℝ E =
     (x : M) (v : TangentSpace I x) :
     mvfderiv I ∇.scalarCurvature x v = ∇.scalarCurvature x * mvfderiv I f x v := by
   have h := ricciTensor_mgradient_of_hessian_eq_mul_inner hf
-    ((contMDiff_const.sub (∇.contMDiff_scalarCurvature.div_const 2)).mdifferentiableAt
+    ((contMDiff_const.sub ((∇.contMDiff_scalarCurvature (n := ⊤)).div_const 2)).mdifferentiableAt
       (by simp))
     (fun y ↦ hessian_eq_of_surface_soliton hn (hsol y)) v
   rw [∇.ricciTensor_eq_scalarCurvature_div_two_smul (x := x)
@@ -86,7 +87,7 @@ theorem mvfderiv_scalarCurvature_of_surface_soliton (hn : Module.finrank ℝ E =
       rw [heq]
       exact TauCeti.mvfderiv_const_smul_field (I := I) ∇.scalarCurvature x (2 : ℝ)⁻¹
     rw [mvfderiv_fun_sub mdifferentiableAt_const
-      ((∇.contMDiff_scalarCurvature.div_const 2).mdifferentiableAt (by simp)), hd']
+      (((∇.contMDiff_scalarCurvature (n := ⊤)).div_const 2).mdifferentiableAt (by simp)), hd']
     simp only [sub_apply, mvfderiv_const,
       zero_apply, smul_apply, smul_eq_mul]
     ring
@@ -103,11 +104,10 @@ theorem mvfderiv_weighted_scalar_of_surface_soliton (hn : Module.finrank ℝ E =
     mvfderiv I (fun y ↦ ∇.scalarCurvature y * Real.exp (-f y)) x v = 0 := by
   have hdexp : mvfderiv I (fun y ↦ Real.exp (-f y)) x =
       -(Real.exp (-f x)) • mvfderiv I f x := by
-    simpa only [Function.comp_def, Real.deriv_exp, mvfderiv_fun_neg, smul_neg, neg_smul]
-      using (TauCeti.mvfderiv_scalar_comp (I := I) (g := fun y ↦ -f y) (φ := Real.exp)
-        (hf.neg.mdifferentiableAt (by simp)) Real.differentiable_exp.differentiableAt)
+    rw [TauCeti.mvfderiv_exp (g := fun y ↦ -f y) (hf.neg.mdifferentiableAt (by simp)),
+      mvfderiv_fun_neg, smul_neg, neg_smul]
   have hRdiff : MDiffAt ∇.scalarCurvature x :=
-    ∇.contMDiff_scalarCurvature.mdifferentiableAt (by simp)
+    (∇.contMDiff_scalarCurvature (n := ⊤)).mdifferentiableAt (by simp)
   have hexdiff : MDiffAt (fun y ↦ Real.exp (-f y)) x :=
     (Real.contDiff_exp.contMDiff.comp hf.neg).mdifferentiableAt (by simp)
   rw [mvfderiv_fun_mul (f := ∇.scalarCurvature) (g := fun y ↦ Real.exp (-f y))
@@ -149,7 +149,7 @@ theorem mvfderiv_hamilton_of_surface_soliton (hn : Module.finrank ℝ E = 2)
       (2 * ρ) • mvfderiv I f x := by
     exact TauCeti.mvfderiv_const_smul_field f x (2 * ρ)
   have hRdiff : MDiffAt ∇.scalarCurvature x :=
-    ∇.contMDiff_scalarCurvature.mdifferentiableAt (by simp)
+    (∇.contMDiff_scalarCurvature (n := ⊤)).mdifferentiableAt (by simp)
   have hsum : MDiffAt (fun y ↦ ∇.scalarCurvature y + ‖mgradient I f y‖ ^ 2) x :=
     hRdiff.add hdnorm
   have hscale : MDiffAt (fun y ↦ 2 * ρ * f y) x :=
