@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Analysis.PDE.Incompressible.Solenoidal
 public import TauCeti.MeasureTheory.Function.Lp.Convolution
-import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-import Mathlib.Analysis.Calculus.BumpFunction.Normed
 import Mathlib.Analysis.Calculus.ContDiff.Convolution
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.ChangeOfVariables
+import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 
 /-!
 # Translation, convolution and mollification of solenoidal fields
@@ -23,7 +23,7 @@ commutes with the Bochner integral and vanishes on every translate.
 
 Mollification therefore maps `Lᵖ_σ` into smooth solenoidal fields: convolving with a compactly
 supported `C¹` kernel produces a `C¹` field whose classical divergence vanishes everywhere.
-Combined with the approximate identity `TauCeti.tendsto_convolutionLp_comp_inv_smul`, every
+Combined with the approximate identity `TauCeti.tendsto_normedBumpLp`, every
 field of `Lᵖ_σ`, `1 ≤ p < ∞`, is an `Lᵖ` limit of solenoidal fields with smooth
 representatives.
 
@@ -117,26 +117,21 @@ theorem trace_fderiv_convolution_eq_zero (hp : p ≠ ∞) {ρ : E → ℝ} (hρc
       trivial
 
 /-- For `p < ∞`, every field of `Lᵖ_σ(E)` is an `Lᵖ` limit of fields of `Lᵖ_σ(E)` with smooth
-representatives: the mollifications `ρ_ε ⋆ u` of `u` by the dilations of a normalized smooth
-bump function. -/
+representatives: the mollifications `ρₙ ⋆ u` of `u` by the shrinking normalized smooth bumps
+`ContDiffBump.shrinking`. -/
 theorem mem_closure_contDiff_of_mem_solenoidalLp (hp : p ≠ ∞) {u : Lp E p μ}
     (hu : u ∈ solenoidalLp E p μ) :
     u ∈ closure {v : Lp E p μ | v ∈ solenoidalLp E p μ ∧
       ∃ w : E → E, ContDiff ℝ (⊤ : ℕ∞) w ∧ (v : E → E) =ᵐ[μ] w} := by
-  let φ : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
-  have hlim := tendsto_convolutionLp_comp_inv_smul hp (φ.integrable_normed (μ := μ)) u
-  rw [φ.integral_normed, one_smul] at hlim
-  refine mem_closure_of_tendsto hlim (eventually_nhdsWithin_of_forall fun ε (hε : 0 < ε) ↦ ?_)
-  set ρ : E → ℝ := fun y ↦ (ε ^ Module.finrank ℝ E)⁻¹ • φ.normed μ (ε⁻¹ • y)
-  have hρc : HasCompactSupport ρ :=
-    HasCompactSupport.smul_left (f := fun _ : E ↦ (ε ^ Module.finrank ℝ E)⁻¹)
-      (φ.hasCompactSupport_normed.comp_smul (inv_ne_zero hε.ne'))
-  have hρ : ContDiff ℝ (⊤ : ℕ∞) ρ :=
-    (φ.contDiff_normed.comp (contDiff_const_smul _)).const_smul _
-  exact ⟨convolutionLp_mem_solenoidalLp hp ρ hu, _,
-    hρc.contDiff_convolution_left _ hρ ((Lp.memLp u).locallyIntegrable Fact.out),
-    convolutionLp_ae_eq_convolution_coeFn hp
-      (hρ.continuous.integrable_of_hasCompactSupport hρc) u⟩
+  let φ : ℕ → ContDiffBump (0 : E) := ContDiffBump.shrinking one_pos
+  refine mem_closure_of_tendsto
+    (tendsto_normedBumpLp hp (ContDiffBump.tendsto_rOut_shrinking one_pos) u)
+    (Eventually.of_forall fun n ↦ ?_)
+  rw [normedBumpLp_eq_convolutionLp]
+  exact ⟨convolutionLp_mem_solenoidalLp hp _ hu, _,
+    (φ n).hasCompactSupport_normed.contDiff_convolution_left _ (φ n).contDiff_normed
+      ((Lp.memLp u).locallyIntegrable Fact.out),
+    convolutionLp_ae_eq_convolution_coeFn hp (φ n).integrable_normed u⟩
 
 end Convolution
 
