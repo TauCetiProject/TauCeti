@@ -20,8 +20,9 @@ import TauCeti.RingTheory.TraceFunctional.Semisimple
 Over an algebraically closed field of characteristic zero, every function on a group satisfying
 all polynomial identities among traces of homomorphisms to `GL n k`, for any finite index type
 `n`, is the character of a semisimple representation on `n → k`. Empty index types are allowed.
-The hypothesis includes all trace identities; this is weaker than reconstructing a representation
-from just the pseudocharacter relations.
+The hypothesis requires every polynomial trace identity, which is stronger than the
+pseudocharacter relations. The result is therefore weaker than Taylor–Rouquier reconstruction
+from a pseudocharacter.
 
 The proof extends the function to the group algebra and quotients by the trace-pairing kernel.
 Evaluation minors bound the dimension of this quotient. Integral Newton polynomials detect

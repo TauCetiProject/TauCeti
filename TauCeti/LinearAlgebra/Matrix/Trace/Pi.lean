@@ -16,7 +16,7 @@ of that block. The coefficients can be arbitrary scalars in a commutative semiri
 
 ## Provenance
 
-`LinearMap.apply_eq_sum_mul_trace_of_map_mul_comm` adapts the matrix-unit calculation in
+`LinearMap.exists_apply_eq_sum_mul_trace_of_map_mul_comm` adapts the matrix-unit calculation in
 `New.exists_rep_of_trace` in `src/Lib/GaloisRep/Pseudocharacter/SemisimpleRepresentations.lean`
 in grh-lean (https://github.com/lsernau/grh-lean, commit `72fead1`, Apache 2.0,
 Copyright 2026 Anthropic, PBC). Arbitrary finite index types and semiring scalars are new here.
@@ -38,7 +38,7 @@ attribute [local ext] Matrix.ext_linearMap
 /-- A cyclic linear form on a finite product of matrix algebras is the sum of the block traces
 weighted by coefficients agreeing with every diagonal matrix unit in their block.
 Empty blocks are allowed. -/
-theorem apply_eq_sum_mul_trace_of_map_mul_comm
+theorem exists_apply_eq_sum_mul_trace_of_map_mul_comm
     {k ι : Type*} [CommSemiring k] [Fintype ι] [DecidableEq ι]
     {n : ι → Type*} [∀ i, Fintype (n i)] [∀ i, DecidableEq (n i)]
     (τ : (Π i, Matrix (n i) (n i) k) →ₗ[k] k)

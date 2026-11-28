@@ -64,7 +64,7 @@ theorem exists_algHom_trace_eq_pi_matrix [CharZero k]
   classical
   let _ := Fintype.ofFinite ι
   let c (i : ι) := if h : Nonempty (n i) then (hnat i (Classical.choice h)).choose else 0
-  obtain ⟨w, hw, hτw⟩ := τ.apply_eq_sum_mul_trace_of_map_mul_comm hcomm
+  obtain ⟨w, hw, hτw⟩ := τ.exists_apply_eq_sum_mul_trace_of_map_mul_comm hcomm
   let κ := Σ p : Σ i : ι, Fin (c i), n p.1
   let blocks : (Π i, Matrix (n i) (n i) k) →ₐ[k] Matrix κ κ k :=
     (blockDiagonal'AlgHom _ k k).comp (AlgHom.pi fun p ↦ Pi.evalAlgHom k _ p.1)
