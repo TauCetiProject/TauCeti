@@ -8,7 +8,6 @@ module
 public import Mathlib.FieldTheory.AbsoluteGaloisGroup
 public import Mathlib.NumberTheory.LocalField.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.MazurFiniteness
-import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.FiniteExtension
 import TauCeti.NumberTheory.LocalField.Cohomology
 import TauCeti.NumberTheory.LocalField.FiniteExtension.IntermediateField
 import TauCeti.RepresentationTheory.Homological.ContCohomology.TrivialFp.Explicit

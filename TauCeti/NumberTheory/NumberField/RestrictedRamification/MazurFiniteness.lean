@@ -14,8 +14,9 @@ import TauCeti.NumberTheory.NumberField.RestrictedRamification.Cohomology
 
 For a number field `K` and a finite set `S` of its finite places, Hermite's theorem gives
 finitely many continuous homomorphisms from each open subgroup of `G_{K,S}` to a finite discrete
-group (`TauCeti.RestrictedRamification.finite_continuousMonoidHom`). Taking the target to be
-`ZMod p` supplies the finiteness hypothesis for global Galois deformation rings.
+group (`TauCeti.RestrictedRamification.finite_continuousMonoidHom`). For `p ≠ 0`, taking the
+target to be the additive group of `ZMod p` supplies the finiteness hypothesis for global Galois
+deformation rings.
 
 ## References
 
@@ -31,8 +32,9 @@ open scoped NumberField
 namespace TauCeti.RestrictedRamification
 
 /-- The Galois group of the maximal subextension of a normal extension `Ω/K` unramified outside
-a finite set `S` of finite places of a number field `K` satisfies Mazur's finiteness condition.
-Ramification at infinite places is allowed. -/
+a finite set `S` of finite places of a number field `K` satisfies Mazur's finiteness condition
+for every `p ≠ 0`, with characters valued in the additive group of `ZMod p`. Ramification at
+infinite places is allowed. -/
 theorem mazurFiniteness_galoisGroupS {K Ω : Type*} [Field K] [NumberField K] [Field Ω]
     [Algebra K Ω] [Normal K Ω] (p : ℕ) [NeZero p]
     (S : Set (HeightOneSpectrum (𝓞 K))) (hS : S.Finite) :
