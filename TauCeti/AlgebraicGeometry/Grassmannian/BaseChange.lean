@@ -247,6 +247,12 @@ morphism of `G(k, R' ⊗[R] M)`, it exhibits `G(k, R' ⊗[R] M)` as the base cha
 noncomputable def baseChangeHom : scheme R' (R' ⊗[R] M) k ⟶ scheme R M k :=
   (TensorProduct.isBaseChange R M R').grassmannianSchemeHom k
 
+/-- `baseChangeHom` is `IsBaseChange.grassmannianSchemeHom` for the base change `m ↦ 1 ⊗ m`, so
+the results about the latter apply to it. -/
+theorem baseChangeHom_eq_grassmannianSchemeHom :
+    baseChangeHom R R' M k = (TensorProduct.isBaseChange R M R').grassmannianSchemeHom k :=
+  (rfl)
+
 variable {R R' M k}
 
 variable {A : Type u} [CommRing A] [Algebra R' A] [Algebra R A] [IsScalarTower R R' A]
