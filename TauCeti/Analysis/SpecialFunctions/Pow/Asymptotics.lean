@@ -94,6 +94,13 @@ proof of the Gelfond–Schneider theorem.
 
 For all reals `a` and `b`, `(1 + a / x) ^ (b * x)` converges to `Real.exp (a * b)` as the real
 number `x` tends to infinity (`Real.tendsto_one_add_div_rpow_mul_exp`).
+
+## A power saving against two logarithms
+
+For `δ > 0` and every real `c`, `L ^ (1 - δ) * log (1 + L / c) = o(L / log L)` as `L → ∞`
+(`Real.isLittleO_rpow_one_sub_mul_log_one_add_div_div_log_atTop`): the saving `L ^ (-δ)` beats
+the two logarithms. This makes the contribution of the small primes negligible in the maximal
+order of the divisor function.
 -/
 
 public section
@@ -526,5 +533,48 @@ theorem tendsto_one_add_div_rpow_mul_exp (a b : ℝ) :
   refine h1.congr' ?_
   filter_upwards [hpos] with x hbase
   rw [← rpow_mul hbase, mul_comm x b]
+
+/-- For `δ > 0` and every real `c`, the power saving `L ^ (-δ)` beats two logarithms:
+`L ^ (1 - δ) * log (1 + L / c) = o(L / log L)` as `L → ∞`. -/
+theorem isLittleO_rpow_one_sub_mul_log_one_add_div_div_log_atTop {δ : ℝ} (hδ : 0 < δ) (c : ℝ) :
+    (fun L : ℝ ↦ L ^ (1 - δ) * log (1 + L / c)) =o[atTop] fun L ↦ L / log L := by
+  refine isLittleO_iff.2 fun η hη ↦ ?_
+  filter_upwards [(isLittleO_log_rpow_rpow_atTop 2 hδ).bound (half_pos hη), eventually_ge_atTop 2,
+    eventually_ge_atTop (2 / |c|), eventually_ge_atTop (2 * |c|)] with L hL hL2 hLc hLc'
+  have hL0 : 0 < L := by linarith
+  have hlogL : 0 < log L := log_pos (by linarith)
+  have hpow : 0 < L ^ δ := rpow_pos_of_pos hL0 δ
+  have hsq : log L ^ 2 ≤ η / 2 * L ^ δ := by
+    rw [norm_of_nonneg (rpow_nonneg hlogL.le 2), norm_of_nonneg hpow.le] at hL
+    exact_mod_cast hL
+  -- For large `L`, `1 ≤ |1 + L / c| ≤ L ^ 2` (or `c = 0`), so `|log (1 + L / c)| ≤ 2 log L`.
+  have hlog : |log (1 + L / c)| ≤ 2 * log L := by
+    rcases eq_or_ne c 0 with rfl | hc
+    · rw [div_zero, add_zero, log_one, abs_zero]
+      positivity
+    have hcL : 2 ≤ |L / c| := by
+      rw [abs_div, abs_of_pos hL0, le_div_iff₀ (abs_pos.2 hc)]
+      exact hLc'
+    have hlow : 1 ≤ |1 + L / c| := by
+      have h := abs_add_le (1 + L / c) (-1)
+      rw [abs_neg, abs_one, add_neg_cancel_comm] at h
+      linarith
+    have hupp : |1 + L / c| ≤ L ^ 2 := by
+      have h := abs_add_le 1 (L / c)
+      have hdiv : |L / c| ≤ L ^ 2 / 2 := by
+        rw [abs_div, abs_of_pos hL0, div_le_iff₀ (abs_pos.2 hc)]
+        nlinarith [(div_le_iff₀ (abs_pos.2 hc)).1 hLc]
+      rw [abs_one] at h
+      nlinarith
+    have h := (le_pow_iff_log_le (zero_lt_one.trans_le hlow) hL0).mp hupp
+    rw [log_abs, Nat.cast_ofNat] at h
+    rwa [abs_of_nonneg (by rw [← log_abs]; exact log_nonneg hlow)]
+  rw [norm_mul, norm_of_nonneg (rpow_nonneg hL0.le _), norm_eq_abs,
+    norm_of_nonneg (div_nonneg hL0.le hlogL.le), rpow_sub hL0, rpow_one]
+  calc L / L ^ δ * |log (1 + L / c)| ≤ L / L ^ δ * (2 * log L) :=
+        mul_le_mul_of_nonneg_left hlog (div_nonneg hL0.le hpow.le)
+    _ ≤ η * (L / log L) := by
+        rw [← mul_div_assoc, div_mul_eq_mul_div, div_le_div_iff₀ hpow hlogL]
+        nlinarith [mul_le_mul_of_nonneg_left hsq hL0.le]
 
 end Real

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.BigOperators
+public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 import Mathlib.Data.Finset.NatDivisors
 import TauCeti.NumberTheory.Divisors
@@ -30,6 +31,10 @@ For multiplicative `f` and fixed `k`, the sum `∑ f(d)` over the divisors `d` o
 split uniquely as products of the corresponding divisors of `m` and of `n`
 (`Nat.Coprime.divisors_filter_pow_dvd_mul`).
 
+Finally, the divisor count `d(n) = ∏_{p ∣ n} (v_p(n) + 1)` gives
+`log d(n) = ∑_{p ∣ n} log (v_p(n) + 1)` (`Nat.log_card_divisors`), the form used to bound the
+maximal order of `d(n)`.
+
 ## Main results
 
 * `ArithmeticFunction.sum_Ioc_mul_smul_eq_sum_sum`:
@@ -41,6 +46,8 @@ split uniquely as products of the corresponding divisors of `m` and of `n`
 * `ArithmeticFunction.two_pow_cardFactors_le`: `2 ^ Ω n ≤ n` for `n ≠ 0`, the case `z = 2`.
 * `ArithmeticFunction.IsMultiplicative.sum_divisors_filter_pow_dvd_mul`: for multiplicative `f`,
   `n ↦ ∑_{dᵏ ∣ n} f(d)` is multiplicative.
+* `Nat.log_card_divisors`: the logarithm of the number of divisors of `n` is
+  `∑_{p ∣ n} log (v_p(n) + 1)`.
 -/
 
 public section
@@ -127,3 +134,18 @@ theorem IsMultiplicative.sum_divisors_filter_pow_dvd_mul {f : ArithmeticFunction
       product_subset_product (filter_subset _ _) (filter_subset _ _)
 
 end ArithmeticFunction
+
+namespace Nat
+
+/-- The logarithm of the number of divisors of `n` is the sum of `log (v_p(n) + 1)` over the
+prime divisors `p` of `n`. At `n = 0` both sides are zero. -/
+theorem log_card_divisors (n : ℕ) :
+    Real.log (#n.divisors) = ∑ p ∈ n.primeFactors, Real.log (n.factorization p + 1) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  · rw [Nat.card_divisors hn, Nat.cast_prod, Real.log_prod]
+    · simp only [Nat.cast_add, Nat.cast_one]
+    · intro p _
+      positivity
+
+end Nat
