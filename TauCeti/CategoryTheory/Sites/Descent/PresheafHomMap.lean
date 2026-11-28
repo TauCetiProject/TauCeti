@@ -62,6 +62,20 @@ theorem presheafHomPrecomp_app_apply {M M' : F.obj (.mk (op S))} (φ : M' ⟶ M)
     (F.presheafHomPrecomp φ N).app T p = (F.map T.unop.hom.op.toLoc).toFunctor.map φ ≫ p :=
   (rfl)
 
+variable {F} in
+/-- Precomposition with the pullbacks of `φ` is composition of the global section
+`presheafHomGlobalSection φ` with local morphisms. -/
+lemma presheafHomPrecomp_eq_lift_comp_presheafHomComp {M' M N : F.obj (.mk (op S))}
+    (φ : M' ⟶ M) :
+    F.presheafHomPrecomp φ N = CartesianMonoidalCategory.lift
+      (CartesianMonoidalCategory.toUnit _ ≫ presheafHomGlobalSection φ) (𝟙 _) ≫
+        presheafHomComp M' M N := by
+  refine NatTrans.ext (funext fun T ↦ ConcreteCategory.hom_ext _ _ fun a ↦ ?_)
+  rw [presheafHomPrecomp_app_apply, NatTrans.comp_app, ConcreteCategory.comp_apply,
+    presheafHomComp_app_apply]
+  change _ = (presheafHomGlobalSection φ).app T _ ≫ a
+  rw [presheafHomGlobalSection_app_apply]
+
 @[simp]
 theorem presheafHomPrecomp_id (M N : F.obj (.mk (op S))) :
     F.presheafHomPrecomp (𝟙 M) N = 𝟙 (F.presheafHom M N) := by

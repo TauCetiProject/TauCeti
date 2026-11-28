@@ -350,20 +350,6 @@ lemma presheafHomPostcomp_app_apply (M : F.obj (.mk (op S))) {N N' : F.obj (.mk 
     (F.presheafHomPostcomp M φ).app T p = p ≫ (F.map T.unop.hom.op.toLoc).toFunctor.map φ :=
   (rfl)
 
-/-- Precomposition of local morphisms with the pullbacks of a morphism `φ : M' ⟶ M`, as a
-morphism of presheaves on `Over S`. -/
-def presheafHomPrecomp {M' M N : F.obj (.mk (op S))} (φ : M' ⟶ M) :
-    F.presheafHom M N ⟶ F.presheafHom M' N where
-  app T := TypeCat.ofHom fun a ↦ (F.map T.unop.hom.op.toLoc).toFunctor.map φ ≫ a
-  naturality T T' g := by
-    ext a
-    dsimp
-    rw [pullHom_comp, pullHom_map]
-
-lemma presheafHomPrecomp_app_apply {M' M N : F.obj (.mk (op S))} (φ : M' ⟶ M) (T : (Over S)ᵒᵖ)
-    (a : (F.presheafHom M N).obj T) :
-    (presheafHomPrecomp φ).app T a = (F.map T.unop.hom.op.toLoc).toFunctor.map φ ≫ a := (rfl)
-
 open MonoidalCategory in
 /-- The global section `T ↦ T.hom^* ψ` of the presheaf of morphisms from `N` to `P` given by a
 morphism `ψ : N ⟶ P`. -/
@@ -390,18 +376,6 @@ lemma presheafHomPostcomp_eq_lift_comp_presheafHomComp {M N P : F.obj (.mk (op S
   exact (F.presheafHomPostcomp_app_apply M ψ T a).trans
     (presheafHomComp_app_apply M N P T ((CartesianMonoidalCategory.lift (𝟙 _)
       (CartesianMonoidalCategory.toUnit _ ≫ presheafHomGlobalSection ψ)).app T a)).symm
-
-/-- Precomposition with the pullbacks of `φ` is composition of the global section
-`presheafHomGlobalSection φ` with local morphisms. -/
-lemma presheafHomPrecomp_eq_lift_comp_presheafHomComp {M' M N : F.obj (.mk (op S))}
-    (φ : M' ⟶ M) :
-    presheafHomPrecomp (N := N) φ = CartesianMonoidalCategory.lift
-      (CartesianMonoidalCategory.toUnit _ ≫ presheafHomGlobalSection φ) (𝟙 _) ≫
-        presheafHomComp M' M N := by
-  ext T a
-  exact (presheafHomPrecomp_app_apply φ T a).trans
-    (presheafHomComp_app_apply M' M N T ((CartesianMonoidalCategory.lift
-      (CartesianMonoidalCategory.toUnit _ ≫ presheafHomGlobalSection φ) (𝟙 _)).app T a)).symm
 
 /-- The pullback of the comparison isomorphism `f^* (p^* N) ⟶ k^* N` (for `f ≫ p = k`) is the
 comparison isomorphism. -/

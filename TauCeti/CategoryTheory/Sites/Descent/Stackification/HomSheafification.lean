@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Enriched.Basic
-public import TauCeti.CategoryTheory.Sites.Descent.IsPrestack
+public import TauCeti.CategoryTheory.Sites.Descent.PresheafHomMap
 public import TauCeti.CategoryTheory.Sites.Over.SheafifySections
 
 /-!
@@ -245,7 +245,8 @@ precomposition of local morphisms with the pullbacks of `φ`. -/
 lemma Fiber.homEquiv_toFiber_map_comp {M M' : F.obj (.mk (op U))} {N : Fiber J F U}
     (φ : M' ⟶ M) (x : Fiber.mk M ⟶ N) :
     Fiber.homEquiv (Fiber.mk M') N ((toFiber J F U).map φ ≫ x) =
-      (J.sheafifySections U).map (presheafHomPrecomp φ) (Fiber.homEquiv (Fiber.mk M) N x) := by
+      (J.sheafifySections U).map (F.presheafHomPrecomp φ N.obj)
+        (Fiber.homEquiv (Fiber.mk M) N x) := by
   rw [presheafHomPrecomp_eq_lift_comp_presheafHomComp, Functor.map_comp,
     ← Functor.Monoidal.lift_μ_assoc]
   refine (Fiber.homEquiv_comp ((toFiber J F U).map φ) x).trans ?_

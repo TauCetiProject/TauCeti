@@ -299,8 +299,8 @@ lemma toFiber_map_comp_pullbackHom_sheafifyPresheafHomEquiv_comp (M N : F.obj (.
         ((F.map T.hom.op.toLoc).toFunctor.obj N) p.left).hom) ≫
       F.presheafHomPostcomp _ ((F.mapComp' T.hom.op.toLoc p.left.op.toLoc T'.hom.op.toLoc
         (by rw [← Over.w p]; rfl)).inv.toNatTrans.app N) ≫
-      presheafHomPrecomp ((F.mapComp' T.hom.op.toLoc p.left.op.toLoc T'.hom.op.toLoc
-        (by rw [← Over.w p]; rfl)).hom.toNatTrans.app M) =
+      F.presheafHomPrecomp ((F.mapComp' T.hom.op.toLoc p.left.op.toLoc T'.hom.op.toLoc
+        (by rw [← Over.w p]; rfl)).hom.toNatTrans.app M) _ =
       Functor.whiskerRight (NatTrans.op (Over.mapCompOfHom p).hom) (F.presheafHom M N) ≫
         (F.overMapCompPresheafHomIso M N T'.hom).hom := by
     refine NatTrans.ext (funext fun Z ↦ ConcreteCategory.hom_ext _ _ fun w ↦ ?_)
@@ -345,7 +345,8 @@ lemma sheafifyPresheafHomEquiv_mkId (M N : F.obj (.mk (op U)))
   have key : (F.overMapCompPresheafHomIso M N (𝟙 U)).hom =
       Functor.whiskerRight (NatTrans.op (Over.mapId U).inv) (F.presheafHom M N) ≫
         F.presheafHomPostcomp _ ((F.mapId' (𝟙 U).op.toLoc (by simp)).inv.toNatTrans.app N) ≫
-          presheafHomPrecomp ((F.mapId' (𝟙 U).op.toLoc (by simp)).hom.toNatTrans.app M) := by
+          F.presheafHomPrecomp
+            ((F.mapId' (𝟙 U).op.toLoc (by simp)).hom.toNatTrans.app M) _ := by
     refine NatTrans.ext (funext fun Z ↦ ConcreteCategory.hom_ext _ _ fun w ↦ ?_)
     have h := mapComp'_conj_eq_mapId'_conj_pullHom Z.unop.hom _ rfl
       ((Over.mapId U).inv.app Z.unop).left (by simp) M N w
@@ -362,7 +363,8 @@ lemma sheafifyPresheafHomEquiv_mkId (M N : F.obj (.mk (op U)))
   -- `Fiber.obj` and `(Over.mk (𝟙 U)).hom = 𝟙 U`, so the rewrites need `erw`.
   erw [Fiber.homEquiv_comp_toFiber_map, Equiv.apply_symm_apply]
   refine Eq.trans ?_ (congrArg (fun z ↦ (J.sheafifySections U).map
-    (presheafHomPrecomp ((F.mapId' (𝟙 U).op.toLoc (by simp)).hom.toNatTrans.app M))
+    (F.presheafHomPrecomp ((F.mapId' (𝟙 U).op.toLoc (by simp)).hom.toNatTrans.app M)
+      ((F.map (𝟙 U).op.toLoc).toFunctor.obj N))
       ((J.sheafifySections U).map
         (F.presheafHomPostcomp _ ((F.mapId' (𝟙 U).op.toLoc (by simp)).inv.toNatTrans.app N)) z))
           (Equiv.apply_symm_apply (Fiber.homEquiv (Fiber.mk M) (Fiber.mk N)) s).symm)
