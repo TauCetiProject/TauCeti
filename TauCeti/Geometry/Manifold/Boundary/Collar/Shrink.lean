@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Smooth
+import Mathlib.Geometry.Manifold.Algebra.Structures
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
@@ -24,6 +25,8 @@ the reparametrization `TauCeti.SmoothCollar.reparam` along it.
 
 ## Main definitions
 
+* `TauCeti.EuclideanHalfSpace.prodScaleDiffeomorph`: positive variable-depth scaling over any
+  charted base, at arbitrary regularity.
 * `TauCeti.EuclideanHalfSpace.normalIioOpensScale`: multiplication by `ε ∈ (0, 1]`, as a self-map
   of the depth parameter `[0, 1)`.
 * `TauCeti.SmoothCollar.shrink`: the collar `(x, t) ↦ c (x, ε t)`.
@@ -53,6 +56,88 @@ open scoped Manifold ContDiff
 namespace TauCeti
 
 namespace EuclideanHalfSpace
+
+section ProdScale
+
+variable {E H N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace N] [ChartedSpace H N] {k : WithTop ℕ∞}
+
+/-- Scale each half-line fibre by a positive `C^k` function on an arbitrary charted space. -/
+def prodScaleDiffeomorph (δ : N → ℝ) (hδ : ContMDiff I 𝓘(ℝ) k δ)
+    (hpos : ∀ x, 0 < δ x) :
+    (N × EuclideanHalfSpace 1) ≃ₘ^k⟮I.prod (𝓡∂ 1), I.prod (𝓡∂ 1)⟯ (N × EuclideanHalfSpace 1) := by
+  let scale (r : N → ℝ) (p : N × EuclideanHalfSpace 1) := (p.1, normalRay (r p.1 * p.2.val 0))
+  have hscale (r : N → ℝ) (hr : ContMDiff I 𝓘(ℝ) k r) (hr₀ : ∀ x, 0 ≤ r x) :
+      ContMDiff (I.prod (𝓡∂ 1)) (I.prod (𝓡∂ 1)) k (scale r) := by
+    have htime : ContMDiff (𝓡∂ 1) 𝓘(ℝ) k (fun t : EuclideanHalfSpace 1 ↦ t.val 0) :=
+      (EuclideanSpace.proj (0 : Fin 1)).contDiff.contMDiff.comp (𝓡∂ 1).contMDiff
+    exact contMDiff_fst.prodMk <| ((hr.comp contMDiff_fst).mul (htime.comp contMDiff_snd)).normalRay
+      fun p ↦ mul_nonneg (hr₀ p.1) p.2.property
+  have hinv (r s : N → ℝ) (hr₀ : ∀ x, 0 ≤ r x) (hrs : ∀ x, s x * r x = 1)
+      (p : N × EuclideanHalfSpace 1) : scale s (scale r p) = p := by
+    refine Prod.ext rfl ?_
+    -- Expose only the two applications of the local scale map.
+    change normalRay (s p.1 * (normalRay (r p.1 * p.2.val 0)).val 0) = p.2
+    rw [normalRay_coe_apply_of_nonneg (mul_nonneg (hr₀ _) p.2.property), ← mul_assoc,
+      hrs, one_mul, normalRay_normalCoord]
+  refine
+    { toFun := scale δ
+      invFun := scale (fun x ↦ (δ x)⁻¹)
+      left_inv := hinv δ _ (fun x ↦ (hpos x).le) (fun x ↦ inv_mul_cancel₀ (hpos x).ne')
+      right_inv := hinv _ δ (fun x ↦ inv_nonneg.mpr (hpos x).le)
+        (fun x ↦ mul_inv_cancel₀ (hpos x).ne')
+      contMDiff_toFun := hscale δ hδ (fun x ↦ (hpos x).le)
+      contMDiff_invFun := hscale _ (hδ.inv₀ fun x ↦ (hpos x).ne')
+        (fun x ↦ inv_nonneg.mpr (hpos x).le) }
+
+-- Keep the point equations out of simp so bundled inverse cancellation still applies.
+-- The projection equations below provide the coordinate simp rules.
+
+/-- Fibrewise scaling preserves the base and multiplies the normal coordinate by the depth. -/
+theorem prodScaleDiffeomorph_apply (δ : N → ℝ) (hδ : ContMDiff I 𝓘(ℝ) k δ)
+    (hpos : ∀ x, 0 < δ x) (p : N × EuclideanHalfSpace 1) :
+    prodScaleDiffeomorph δ hδ hpos p = (p.1, normalRay (δ p.1 * p.2.val 0)) :=
+  -- Read the defining map through the bundled diffeomorphism coercion.
+  (rfl)
+
+/-- The inverse fibrewise scaling divides the normal coordinate by the depth. -/
+theorem prodScaleDiffeomorph_symm_apply (δ : N → ℝ) (hδ : ContMDiff I 𝓘(ℝ) k δ)
+    (hpos : ∀ x, 0 < δ x) (p : N × EuclideanHalfSpace 1) :
+    (prodScaleDiffeomorph δ hδ hpos).symm p = (p.1, normalRay ((δ p.1)⁻¹ * p.2.val 0)) :=
+  -- Read the defining map through the bundled diffeomorphism coercion.
+  (rfl)
+
+/-- Fibrewise scaling fixes the base coordinate. -/
+@[simp]
+theorem prodScaleDiffeomorph_fst (δ : N → ℝ) (hδ : ContMDiff I 𝓘(ℝ) k δ)
+    (hpos : ∀ x, 0 < δ x) (p : N × EuclideanHalfSpace 1) :
+    (prodScaleDiffeomorph δ hδ hpos p).1 = p.1 := by
+  rw [prodScaleDiffeomorph_apply]
+
+/-- Fibrewise scaling multiplies the nonnegative normal coordinate by the depth. -/
+@[simp]
+theorem prodScaleDiffeomorph_normalCoord (δ : N → ℝ) (hδ : ContMDiff I 𝓘(ℝ) k δ)
+    (hpos : ∀ x, 0 < δ x) (p : N × EuclideanHalfSpace 1) :
+    (prodScaleDiffeomorph δ hδ hpos p).2.val 0 = δ p.1 * p.2.val 0 := by
+  rw [prodScaleDiffeomorph_apply, normalRay_coe_apply_of_nonneg
+    (mul_nonneg (hpos _).le p.2.property)]
+
+/-- Inverse fibrewise scaling fixes the base coordinate. -/
+@[simp]
+theorem prodScaleDiffeomorph_symm_fst (δ : N → ℝ) (hδ : ContMDiff I 𝓘(ℝ) k δ)
+    (hpos : ∀ x, 0 < δ x) (p : N × EuclideanHalfSpace 1) :
+    ((prodScaleDiffeomorph δ hδ hpos).symm p).1 = p.1 := by
+  rw [prodScaleDiffeomorph_symm_apply]
+
+/-- Inverse fibrewise scaling divides the nonnegative normal coordinate by the depth. -/
+@[simp]
+theorem prodScaleDiffeomorph_symm_normalCoord (δ : N → ℝ) (hδ : ContMDiff I 𝓘(ℝ) k δ)
+    (hpos : ∀ x, 0 < δ x) (p : N × EuclideanHalfSpace 1) :
+    ((prodScaleDiffeomorph δ hδ hpos).symm p).2.val 0 = (δ p.1)⁻¹ * p.2.val 0 := by
+  rw [prodScaleDiffeomorph_symm_apply, normalRay_coe_apply_of_nonneg
+    (mul_nonneg (inv_nonneg.mpr (hpos _).le) p.2.property)]
+
+end ProdScale
 
 variable {m : ℕ} [NeZero m] {k : WithTop ℕ∞} {ε : ℝ}
 

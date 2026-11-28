@@ -39,7 +39,7 @@ analogue, for complete fields and immersed hypersurfaces, is
 This is the local ingredient of the flow construction of a smooth collar (Hirsch, *Differential
 Topology*, Chapter 4, Theorem 6.1; Lee, *Introduction to Smooth Manifolds*, Theorem 9.25), whose
 other ingredients are the injectivity of the flow-out (`TauCeti.injOn_flowOut_boundary`) and a
-smooth depth (`TauCeti.exists_contMDiffMap_depth_boundaryFlow`).
+smooth depth (`TauCeti.exists_contMDiffMap_depth_boundary`).
 
 ## Main results
 

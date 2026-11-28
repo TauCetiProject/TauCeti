@@ -120,6 +120,10 @@ def normalRay (r : ℝ) : EuclideanHalfSpace 1 := ⟨toLp 2 fun _ ↦ max r 0, l
 @[simp]
 theorem normalRay_coe_apply (r : ℝ) : (normalRay r).val 0 = max r 0 := (rfl)
 
+/-- The normal coordinate of a nonnegative point on the normal ray is its parameter. -/
+theorem normalRay_coe_apply_of_nonneg {r : ℝ} (hr : 0 ≤ r) : (normalRay r).val 0 = r :=
+  (normalRay_coe_apply r).trans (max_eq_left hr)
+
 /-- The origin of the one-dimensional half-space model has vanishing normal coordinate. -/
 @[simp]
 theorem val_zero_apply : (0 : EuclideanHalfSpace 1).val 0 = 0 := (rfl)
@@ -233,13 +237,10 @@ def homeomorphNormalIio (ε : ℝ) : ↥(normalIio ε) ≃ₜ ↥(Set.Ico (0 : �
   toEquiv :=
     { toFun := fun t ↦ ⟨t.val.val 0, t.val.property, mem_normalIio.1 t.property⟩
       invFun := fun r ↦ ⟨normalRay r.val, by
-        rw [mem_normalIio, normalRay_coe_apply, max_eq_left r.property.1]
+        rw [mem_normalIio, normalRay_coe_apply_of_nonneg r.property.1]
         exact r.property.2⟩
       left_inv := fun t ↦ Subtype.ext (normalRay_normalCoord t.val)
-      right_inv := fun r ↦ Subtype.ext (by
-        have hr : (normalRay r.val).val 0 = r.val := by
-          rw [normalRay_coe_apply, max_eq_left r.property.1]
-        exact hr) }
+      right_inv := fun r ↦ Subtype.ext (normalRay_coe_apply_of_nonneg r.property.1) }
   continuous_toFun := by fun_prop
   continuous_invFun := (continuous_normalRay.comp continuous_subtypeVal).subtype_mk _
 
