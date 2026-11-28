@@ -148,6 +148,17 @@ theorem equivLinearMapAsModule_apply
     equivLinearMapAsModule ρ σ f x = (f (x : V) : W) :=
   (rfl)
 
+/-- The intertwining map underlying `Representation.IntertwiningMap.ofBijective f hf` is `f`. -/
+@[simp]
+theorem toIntertwiningMap_ofBijective
+    {A G V W : Type*} [CommSemiring A] [Monoid G]
+    [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W]
+    {ρ : Representation A G V} {σ : Representation A G W}
+    (f : IntertwiningMap ρ σ) (hf : Function.Bijective f) :
+    (f.ofBijective hf).toIntertwiningMap = f := by
+  ext v
+  exact congrFun (coe_ofBijective _ _ f hf) v
+
 section codRestrict
 
 variable {A G V W : Type*} [Semiring A] [Monoid G]

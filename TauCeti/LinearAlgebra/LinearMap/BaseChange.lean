@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Contraction
 public import Mathlib.LinearAlgebra.TensorProduct.Projective
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import TauCeti.LinearAlgebra.Dual.BaseChange
+import TauCeti.LinearAlgebra.TensorProduct.Tower
 
 /-!
 # Scalar extension of linear maps and Hom spaces
@@ -20,8 +21,13 @@ This comparison allows a scalar-extended Hom representation to act on scalar-ext
 
 When the coefficient algebra is faithfully flat, extension of scalars is injective on linear
 maps (`LinearMap.baseChange_injective`). Faithful flatness therefore permits checking equality of
-linear maps after extension of scalars; in particular only the identity extends to the identity
-(`LinearEquiv.baseChange_eq_one_iff`).
+linear maps after extension of scalars, including comparing maps defined over two intermediate
+algebras inside a common enlargement (`LinearMap.baseChange_eq_of_baseChange_eq`) and noting
+that only the identity extends to the identity (`LinearEquiv.baseChange_eq_one_iff`). Scalar-tower
+cancellation `AlgebraTensorModule.cancelBaseChange` also commutes with scalar multiples and finite
+sums of scalar multiples of base-changed linear maps
+(`LinearMap.cancelBaseChange_comp_smul_baseChange`,
+`LinearMap.cancelBaseChange_comp_sum_smul_baseChange`).
 
 For a finitely generated projective `R`-module `V` and a finitely generated projective `A`-module
 `E`, an `R`-linear map `c : V → End_A E` extends `A`-linearly to `A ⊗[R] V`, and the finite
@@ -169,6 +175,89 @@ theorem baseChange_eq_one_iff {e : M ≃ₗ[R] M} : e.baseChange R A M M = 1 ↔
   exact LinearMap.baseChange_injective.eq_iff
 
 end LinearEquiv
+
+namespace LinearMap
+
+/-- **Linear maps equal over a faithfully flat extension agree over any common enlargement.**
+If `f₁` over `E₁` and `f₂` over `E₂` induce the same map `L ⊗[E] V → L ⊗[E] W` after extending
+scalars to `L`, then they already induce the same map `E' ⊗[E] V → E' ⊗[E] W` over any common
+enlargement `E'` over which `L` is faithfully flat. -/
+theorem baseChange_eq_of_baseChange_eq
+    {E E₁ E₂ E' L V W : Type*}
+    [CommSemiring E] [CommSemiring E₁] [CommSemiring E₂] [CommRing E'] [Ring L]
+    [Algebra E E₁] [Algebra E E₂] [Algebra E E'] [Algebra E L]
+    [Algebra E₁ E'] [Algebra E₁ L] [Algebra E₂ E'] [Algebra E₂ L] [Algebra E' L]
+    [IsScalarTower E E₁ E'] [IsScalarTower E E₁ L] [IsScalarTower E₁ E' L]
+    [IsScalarTower E E₂ E'] [IsScalarTower E E₂ L] [IsScalarTower E₂ E' L]
+    [IsScalarTower E E' L]
+    [Module.FaithfullyFlat E' L]
+    [AddCommMonoid V] [Module E V] [AddCommMonoid W] [Module E W]
+    (f₁ : (E₁ ⊗[E] V) →ₗ[E₁] (E₁ ⊗[E] W))
+    (f₂ : (E₂ ⊗[E] V) →ₗ[E₂] (E₂ ⊗[E] W))
+    (hL :
+      (AlgebraTensorModule.cancelBaseChange E E₁ L L W).toLinearMap ∘ₗ
+          f₁.baseChange L ∘ₗ
+          (AlgebraTensorModule.cancelBaseChange E E₁ L L V).symm.toLinearMap =
+        (AlgebraTensorModule.cancelBaseChange E E₂ L L W).toLinearMap ∘ₗ
+          f₂.baseChange L ∘ₗ
+          (AlgebraTensorModule.cancelBaseChange E E₂ L L V).symm.toLinearMap) :
+    (AlgebraTensorModule.cancelBaseChange E E₁ E' E' W).toLinearMap ∘ₗ
+        f₁.baseChange E' ∘ₗ
+        (AlgebraTensorModule.cancelBaseChange E E₁ E' E' V).symm.toLinearMap =
+      (AlgebraTensorModule.cancelBaseChange E E₂ E' E' W).toLinearMap ∘ₗ
+        f₂.baseChange E' ∘ₗ
+        (AlgebraTensorModule.cancelBaseChange E E₂ E' E' V).symm.toLinearMap := by
+  -- `LinearMap.baseChange_injective` requires `AddCommGroup`, which `E' ⊗[E] _` inherits from
+  -- `[CommRing E']`.
+  let : AddCommGroup (E' ⊗[E] V) := Module.addCommMonoidToAddCommGroup E'
+  let : AddCommGroup (E' ⊗[E] W) := Module.addCommMonoidToAddCommGroup E'
+  apply LinearMap.baseChange_injective (R := E') (A := L)
+  ext v
+  apply (AlgebraTensorModule.cancelBaseChange E E' L L W).injective
+  have hv := LinearMap.congr_fun hL ((1 : L) ⊗ₜ[E] v)
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
+    AlgebraTensorModule.cancelBaseChange_symm_tmul, LinearMap.baseChange_tmul] at hv
+  simp only [AlgebraTensorModule.curry_apply, TensorProduct.curry_apply,
+    LinearMap.restrictScalars_apply, LinearMap.baseChange_tmul, LinearMap.comp_apply,
+    LinearEquiv.coe_coe, AlgebraTensorModule.cancelBaseChange_symm_tmul]
+  exact (AlgebraTensorModule.cancelBaseChange_one_tmul_cancelBaseChange _).trans
+    (hv.trans (AlgebraTensorModule.cancelBaseChange_one_tmul_cancelBaseChange _).symm)
+
+/-- Scalar-tower naturality for a single scalar multiple of a base-changed linear map. -/
+theorem cancelBaseChange_comp_smul_baseChange
+    {E E' L V W : Type*} [CommSemiring E] [CommSemiring E'] [CommSemiring L]
+    [Algebra E E'] [Algebra E L] [Algebra E' L] [IsScalarTower E E' L]
+    [AddCommMonoid V] [Module E V] [AddCommMonoid W] [Module E W]
+    (c : E') (g : V →ₗ[E] W) :
+    (AlgebraTensorModule.cancelBaseChange E E' L L W).toLinearMap ∘ₗ
+        (c • g.baseChange E').baseChange L =
+      (algebraMap E' L c • g.baseChange L) ∘ₗ
+        (AlgebraTensorModule.cancelBaseChange E E' L L V).toLinearMap := by
+  ext v
+  simp [TensorProduct.smul_tmul', Algebra.smul_def]
+
+/-- Scalar-tower naturality for a finite sum of scalar multiples of base-changed linear maps. -/
+theorem cancelBaseChange_comp_sum_smul_baseChange
+    {E E' L V W ι : Type*} [CommSemiring E] [CommSemiring E'] [CommSemiring L]
+    [Algebra E E'] [Algebra E L] [Algebra E' L] [IsScalarTower E E' L]
+    [AddCommMonoid V] [Module E V] [AddCommMonoid W] [Module E W]
+    (s : Finset ι) (c : ι → E') (g : ι → (V →ₗ[E] W)) :
+    (AlgebraTensorModule.cancelBaseChange E E' L L W).toLinearMap ∘ₗ
+        (∑ i ∈ s, c i • (g i).baseChange E').baseChange L =
+      (∑ i ∈ s, algebraMap E' L (c i) • (g i).baseChange L) ∘ₗ
+        (AlgebraTensorModule.cancelBaseChange E E' L L V).toLinearMap := by
+  rw [← LinearMap.baseChangeHom_apply, map_sum,
+    ← LinearMap.llcomp_apply' (R₃ := L)
+      (AlgebraTensorModule.cancelBaseChange E E' L L W).toLinearMap,
+    map_sum,
+    ← LinearMap.lcomp_apply' (S := L) (N := L ⊗[E] W)
+      (AlgebraTensorModule.cancelBaseChange E E' L L V).toLinearMap,
+    map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simpa only [LinearMap.baseChangeHom_apply, LinearMap.llcomp_apply', LinearMap.lcomp_apply'] using
+    cancelBaseChange_comp_smul_baseChange (c i) (g i)
+
+end LinearMap
 
 public section
 

@@ -78,6 +78,8 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   is the corresponding scalar matrix.
 * `Module.Basis.equivFun_list_prod_smul`: the coordinates of a product of linear automorphisms
   applied to a vector are the product of their matrices applied to its coordinates.
+* `Matrix.mulVecLin_comp_eq_of_map_mul_eq`: an injective ring hom reflects matrix commutation to
+  `Matrix.mulVecLin`.
 
 The first is used to turn the Azumaya isomorphism of a finite-dimensional central simple algebra
 into a matrix algebra in `TauCeti/Algebra/CentralSimple/Opposite.lean`.
@@ -362,6 +364,18 @@ theorem toLin_bijective_iff_isUnit_det {R V M ι : Type*} [CommRing R] [AddCommM
     (v : Module.Basis ι R V) (b : Module.Basis ι R M) (A : Matrix ι ι R) :
     Function.Bijective (Matrix.toLin v b A) ↔ IsUnit A.det := by
   rw [toLin_bijective_iff, isUnit_iff_isUnit_det]
+
+/-- **Reflection of a matrix commutation relation along an injective ring homomorphism.** If
+`M.map φ * M₁.map φ = M₂.map φ * M.map φ` for an injective homomorphism `φ : R →+* S`, then
+`Matrix.mulVecLin M ∘ₗ Matrix.mulVecLin M₁ = Matrix.mulVecLin M₂ ∘ₗ Matrix.mulVecLin M`. -/
+theorem mulVecLin_comp_eq_of_map_mul_eq {R S ι₁ ι₂ : Type*} [CommSemiring R] [Semiring S]
+    [Fintype ι₁] [Fintype ι₂] {φ : R →+* S} (hφ : Function.Injective φ)
+    {M : Matrix ι₂ ι₁ R} {M₁ : Matrix ι₁ ι₁ R} {M₂ : Matrix ι₂ ι₂ R}
+    (h : M.map φ * M₁.map φ = M₂.map φ * M.map φ) :
+    Matrix.mulVecLin M ∘ₗ Matrix.mulVecLin M₁ = Matrix.mulVecLin M₂ ∘ₗ Matrix.mulVecLin M := by
+  have hmul : M * M₁ = M₂ * M :=
+    Matrix.map_injective hφ (by simpa only [Matrix.map_mul] using h)
+  rw [← Matrix.mulVecLin_mul, hmul, Matrix.mulVecLin_mul]
 
 /-- For bases `v` and `b` indexed by `Fin 2`, the linear map with matrix `A` sends the vector with
 coordinates `(x, y)` in `v` to the vector with coordinates `A (x, y)` in `b`. -/

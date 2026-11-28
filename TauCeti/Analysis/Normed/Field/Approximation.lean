@@ -38,6 +38,9 @@ polynomial `X ^ p ^ n - t X - b` has derivative `-t`, so its roots are separable
 
 ## Main results
 
+* `Polynomial.exists_monic_natDegree_eq_aeval_eq_zero_norm_sub_lt`: a root in `L` of a monic
+  polynomial over `K` can be approximated arbitrarily closely by a root of a monic polynomial of
+  the same degree over the dense subfield `k`.
 * `IsAlgebraic.exists_monic_and_natDegree_eq_and_aeval_eq_zero_and_norm_sub_lt`: an element of `L`
   algebraic over `K` is arbitrarily close to a root of a monic polynomial over `k` of the same
   degree as its minimal polynomial.
@@ -64,6 +67,27 @@ section DenseSubfield
 variable {k K L : Type*} [Field k] [NormedField K] [NormedField L] [NormedAlgebra K L]
   [Algebra k K] [Algebra k L] [IsScalarTower k K L] [IsAlgClosed L]
 
+/-- **Approximating a root of a monic polynomial by a root over a dense subfield.** If `x : L` is
+a root of a monic polynomial `f ∈ K[X]` in an algebraically closed normed extension `L / K` and `k`
+has dense image in `K`, then for every `δ > 0` there exist a monic polynomial `g ∈ k[X]` of the
+same degree as `f` and a root `β : L` of `g` within distance `δ` of `x`. -/
+theorem Polynomial.exists_monic_natDegree_eq_aeval_eq_zero_norm_sub_lt
+    {f : K[X]} (hfm : f.Monic) {x : L} (hx : aeval x f = 0)
+    (hk : DenseRange (algebraMap k K)) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ (g : k[X]) (β : L), g.Monic ∧ g.natDegree = f.natDegree ∧ aeval β g = 0 ∧ ‖x - β‖ < δ := by
+  have hn : f.natDegree ≠ 0 := fun h0 ↦ by
+    simp [eq_one_of_monic_natDegree_zero hfm h0] at hx
+  have hM : 0 < max ‖x‖ 1 := lt_max_of_lt_right one_pos
+  -- the coefficient precision that continuity of roots turns into the distance `δ`
+  have hε : 0 < (δ / max ‖x‖ 1) ^ f.natDegree / (f.natDegree + 1) := by positivity
+  obtain ⟨g, hgm, hdeg, hcoeff⟩ :=
+    exists_monic_and_natDegree_eq_and_norm_map_algebraMap_coeff_sub_lt hk hfm hε
+  obtain ⟨β, hβ, hxβ⟩ := exists_aroots_norm_sub_lt_of_norm_coeff_sub_lt hε hx hfm
+    (hgm.map _) (by rw [natDegree_map, hdeg]) hcoeff (IsAlgClosed.splits _)
+  rw [mul_div_cancel₀ _ (by positivity), Real.pow_rpow_inv_natCast (div_pos hδ hM).le hn,
+    div_mul_cancel₀ _ hM.ne'] at hxβ
+  exact ⟨g, β, hgm, hdeg.symm, by simpa [aeval_map_algebraMap] using (mem_aroots.mp hβ).2, hxβ⟩
+
 /-- **An element algebraic over `K` is close to a root of a polynomial over a dense subfield `k`**
 of the same degree as its minimal polynomial, in an algebraically closed normed field `L` over `K`:
 for every `δ > 0` there is a monic `g` over `k` with `deg g = deg (minpoly K x)` and a root `y` of
@@ -72,19 +96,10 @@ theorem IsAlgebraic.exists_monic_and_natDegree_eq_and_aeval_eq_zero_and_norm_sub
     (hx : IsAlgebraic K x) (hk : DenseRange (algebraMap k K)) {δ : ℝ} (hδ : 0 < δ) :
     ∃ (g : k[X]) (y : L), g.Monic ∧ (minpoly K x).natDegree = g.natDegree ∧ aeval y g = 0 ∧
       ‖x - y‖ < δ := by
-  have hfm : (minpoly K x).Monic := minpoly.monic hx.isIntegral
-  have hn : (minpoly K x).natDegree ≠ 0 := (minpoly.natDegree_pos hx.isIntegral).ne'
-  have hM : 0 < max ‖x‖ 1 := lt_max_of_lt_right one_pos
-  -- the coefficient precision that continuity of roots turns into the distance `δ`
-  have hε : 0 < (δ / max ‖x‖ 1) ^ (minpoly K x).natDegree / ((minpoly K x).natDegree + 1) := by
-    positivity
-  obtain ⟨g, hgm, hdeg, hcoeff⟩ :=
-    exists_monic_and_natDegree_eq_and_norm_map_algebraMap_coeff_sub_lt hk hfm hε
-  obtain ⟨b, hb, hxb⟩ := exists_aroots_norm_sub_lt_of_norm_coeff_sub_lt hε (minpoly.aeval K x) hfm
-    (hgm.map _) (by rw [natDegree_map, hdeg]) hcoeff (IsAlgClosed.splits _)
-  refine ⟨g, b, hgm, hdeg, by simpa using (mem_aroots.mp hb).2, ?_⟩
-  rwa [mul_div_cancel₀ _ (by positivity), Real.pow_rpow_inv_natCast (div_pos hδ hM).le hn,
-    div_mul_cancel₀ _ hM.ne'] at hxb
+  obtain ⟨g, y, hgm, hdeg, hgy, hxy⟩ :=
+    exists_monic_natDegree_eq_aeval_eq_zero_norm_sub_lt (minpoly.monic hx.isIntegral)
+      (minpoly.aeval K x) hk hδ
+  exact ⟨g, y, hgm, hdeg.symm, hgy, hxy⟩
 
 /-- **Elements algebraic over `K` are limits of elements algebraic over a dense subfield `k`**,
 in an algebraically closed normed field `L` over `K`. -/

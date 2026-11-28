@@ -36,6 +36,8 @@ in `TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Basic`).
 
 * `TauCeti.ContinuousRep.ofFramed ρ`: the continuous representation on `n → A` of a framed
   representation `ρ : Γ →ₜ* GL_n(A)`, with underlying linear representation `Representation.ofGL ρ`.
+* `TauCeti.ContinuousRep.ofFramedCongr`: canonical isomorphism between `ofFramed φ₁` and
+  `ofFramed φ₂` for equal homomorphisms `φ₁ = φ₂`.
 * `TauCeti.ContinuousRep.frame b ρ`: the frame of a continuous representation in a basis `b`.
 * `TauCeti.ContinuousRep.ofFramedFrameIso b ρ`: `ofFramed (frame b ρ) ≅ ρ`.
 * `TauCeti.ContinuousRep.framedMap f hf ρ`: entrywise coefficient change along a continuous
@@ -96,6 +98,27 @@ theorem ofFramed_apply_eq_toLin' (ρ : Γ →ₜ* GL n A) (g : Γ) :
 theorem toRepresentation_ofFramed (ρ : Γ →ₜ* GL n A) :
     (ofFramed ρ).toRepresentation = Representation.ofGL (ρ : Γ →* GL n A) :=
   (rfl)
+
+/-- **Congruence isomorphism for `ofFramed`.** Equal continuous matrix homomorphisms yield
+canonically isomorphic continuous representations on `n → A`. -/
+def ofFramedCongr {φ₁ φ₂ : Γ →ₜ* GL n A} (h : φ₁ = φ₂) :
+    Iso (ofFramed φ₁) (ofFramed φ₂) where
+  toRepresentationEquiv := .mk (.refl A (n → A)) fun g ↦ by
+    ext v i
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.refl_apply,
+      coe_toRepresentation, ofFramed_apply, h]
+  continuous_toFun := continuous_id
+  continuous_invFun := continuous_id
+
+@[simp]
+theorem ofFramedCongr_apply {φ₁ φ₂ : Γ →ₜ* GL n A} (h : φ₁ = φ₂) (v : n → A) :
+    ofFramedCongr h v = v :=
+  (rfl)
+
+@[simp]
+theorem ofFramedCongr_symm_apply {φ₁ φ₂ : Γ →ₜ* GL n A} (h : φ₁ = φ₂) (v : n → A) :
+    (ofFramedCongr h).symm v = v :=
+  EquivLike.injective (ofFramedCongr h) (by simp)
 
 end ofFramed
 

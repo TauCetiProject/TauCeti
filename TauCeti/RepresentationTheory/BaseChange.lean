@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Flat.Basic
+public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.TensorProduct.Hom
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
@@ -16,6 +17,9 @@ public import TauCeti.RepresentationTheory.RestrictScalars
 -- of finite products (`TensorProduct.piRight`) are used only to construct the invariant and
 -- intertwiner comparisons.
 import Mathlib.RingTheory.Flat.Equalizer
+-- Non-public: injectivity of faithfully flat scalar extension on linear maps
+-- (`LinearMap.baseChange_injective`) is used only to prove `IntertwiningMap.baseChange_injective`.
+import TauCeti.LinearAlgebra.LinearMap.BaseChange
 -- Non-public: bijectivity of the base-changed quotient map (`QuotSMulTop.baseChange_mkQ_bijective`)
 -- is used only to construct `Representation.baseChangeQuotSMulTopEquiv`.
 import TauCeti.LinearAlgebra.TensorProduct.Quotient
@@ -74,6 +78,9 @@ to torsion modules and do not require the coefficient algebra to be flat.
   representation on a flat module.
 * `Representation.asAlgebraHom_baseChange_mapAlgHom`: an element of `R[G]`, with its coefficients
   mapped to `A`, acts on `A ⊗_R V` as the base change of its action on `V`.
+* `Representation.cancelBaseChange_baseChange`: scalar-tower compatibility of base change.
+* `Representation.cancelBaseChangeEquiv`: scalar-tower cancellation as a representation
+  equivalence.
 * `Representation.invariantsBaseChangeEquiv`: flat scalar extension commutes with taking the
   invariants of a finite group.
 * `Representation.invariantsBaseChangeMap`: the comparison map `A ⊗_R V^G → (A ⊗_R V)^G`,
@@ -95,9 +102,12 @@ to torsion modules and do not require the coefficient algebra to be flat.
 * `Representation.intertwiningMapBaseChangeEquiv`: flat scalar extension of commutative rings
   commutes with intertwiner spaces for finite monoids and finite free source modules.
 * `Representation.IntertwiningMap.baseChange`: base change transports an intertwining map.
+* `Representation.IntertwiningMap.baseChange_injective`: base change is faithful on intertwining
+  maps over any faithfully flat algebra.
 * `Representation.IntertwiningMap.coe_equivLinearMapAsModule_baseChange`: the module map of a
   base-changed intertwining map `f` is `A ⊗ f`.
-* `Representation.Equiv.baseChange`: base change transports an equivalence of representations.
+* `Representation.Equiv.baseChange` and `Representation.Equiv.toIntertwiningMap_baseChange`: base
+  change transports an equivalence of representations, compatibly with underlying intertwining maps.
 * `LinearMap.isIntertwiningMap_liftBaseChange_iff`: the `A`-linear extension of an `R`-linear map
   intertwines the base-changed representation exactly when the map intertwines on `V`.
 * `Representation.baseChangeQuotSMulTopEquiv`: if `r` maps to `0` in `A`, the base change of `ρ`
@@ -195,6 +205,75 @@ theorem asAlgebraHom_baseChange_mapAlgHom (ρ : Representation R G V) (a : Monoi
   | single g c => simp [asAlgebraHom_single, LinearMap.baseChange_smul, algebraMap_smul]
 
 end AsAlgebraHom
+
+section Tower
+
+variable {E : Type*} [CommSemiring E] [AddCommMonoid V] [Module E V]
+
+/-- **Scalar-tower compatibility for base change of representations.** For a tower `E → E' → L`,
+the canonical linear equivalence `L ⊗[E'] (E' ⊗[E] V) ≃ₗ[L] L ⊗[E] V` intertwines
+`(ρ.baseChange E').baseChange L` with `ρ.baseChange L`. -/
+theorem cancelBaseChange_baseChange {E' L : Type*} [CommSemiring E'] [Semiring L]
+    [Algebra E E'] [Algebra E L] [Algebra E' L] [IsScalarTower E E' L]
+    (ρ : Representation E G V) (g : G) (x : L ⊗[E'] (E' ⊗[E] V)) :
+    AlgebraTensorModule.cancelBaseChange E E' L L V
+        ((ρ.baseChange E').baseChange L g x) =
+      ρ.baseChange L g (AlgebraTensorModule.cancelBaseChange E E' L L V x) := by
+  simpa only [Representation.baseChange_apply, LinearMap.baseChange_eq_lTensor,
+    LinearMap.comp_apply, LinearEquiv.coe_coe, AlgebraTensorModule.coe_lTensor,
+    show AlgebraTensorModule.lTensor E' E' (ρ g) = (ρ g).baseChange E' from rfl] using
+    (LinearMap.congr_fun (AlgebraTensorModule.lTensor_comp_cancelBaseChange E E' L (ρ g)) x).symm
+
+/-- **Scalar-tower cancellation equivalence for representations.** For a scalar tower `E → E' → L`,
+`AlgebraTensorModule.cancelBaseChange E E' L L V` is an equivalence of `L`-representations
+between `(ρ.baseChange E').baseChange L` and `ρ.baseChange L`. -/
+def cancelBaseChangeEquiv (E' L : Type*) [CommSemiring E'] [Semiring L]
+    [Algebra E E'] [Algebra E L] [Algebra E' L] [IsScalarTower E E' L]
+    (ρ : Representation E G V) :
+    ((ρ.baseChange E').baseChange L).Equiv (ρ.baseChange L) :=
+  .mk (AlgebraTensorModule.cancelBaseChange E E' L L V) fun g ↦
+    LinearMap.ext (cancelBaseChange_baseChange ρ g)
+
+@[simp]
+theorem toLinearEquiv_cancelBaseChangeEquiv {E' L : Type*} [CommSemiring E'] [Semiring L]
+    [Algebra E E'] [Algebra E L] [Algebra E' L] [IsScalarTower E E' L]
+    (ρ : Representation E G V) :
+    (ρ.cancelBaseChangeEquiv E' L).toLinearEquiv =
+      AlgebraTensorModule.cancelBaseChange E E' L L V :=
+  (rfl)
+
+@[simp]
+theorem toLinearMap_cancelBaseChangeEquiv {E' L : Type*} [CommSemiring E'] [Semiring L]
+    [Algebra E E'] [Algebra E L] [Algebra E' L] [IsScalarTower E E' L]
+    (ρ : Representation E G V) :
+    (ρ.cancelBaseChangeEquiv E' L).toLinearMap =
+      (AlgebraTensorModule.cancelBaseChange E E' L L V).toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem toLinearMap_cancelBaseChangeEquiv_symm {E' L : Type*} [CommSemiring E'] [Semiring L]
+    [Algebra E E'] [Algebra E L] [Algebra E' L] [IsScalarTower E E' L]
+    (ρ : Representation E G V) :
+    (ρ.cancelBaseChangeEquiv E' L).symm.toLinearMap =
+      (AlgebraTensorModule.cancelBaseChange E E' L L V).symm.toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem cancelBaseChangeEquiv_apply {E' L : Type*} [CommSemiring E'] [Semiring L]
+    [Algebra E E'] [Algebra E L] [Algebra E' L] [IsScalarTower E E' L]
+    (ρ : Representation E G V) (x : L ⊗[E'] (E' ⊗[E] V)) :
+    ρ.cancelBaseChangeEquiv E' L x = AlgebraTensorModule.cancelBaseChange E E' L L V x :=
+  (rfl)
+
+@[simp]
+theorem cancelBaseChangeEquiv_symm_apply {E' L : Type*} [CommSemiring E'] [Semiring L]
+    [Algebra E E'] [Algebra E L] [Algebra E' L] [IsScalarTower E E' L]
+    (ρ : Representation E G V) (x : L ⊗[E] V) :
+    (ρ.cancelBaseChangeEquiv E' L).symm x =
+      (AlgebraTensorModule.cancelBaseChange E E' L L V).symm x :=
+  (rfl)
+
+end Tower
 
 section Invariants
 
@@ -591,6 +670,13 @@ theorem baseChange_symm_tmul (φ : ρ.Equiv σ) (A : Type*)
     rw [baseChange_tmul, apply_symm_apply]
   rw [← h, symm_apply_apply]
 
+/-- The intertwining map underlying a base-changed equivalence is the base change of the
+underlying intertwining map. -/
+@[simp]
+theorem toIntertwiningMap_baseChange (φ : ρ.Equiv σ) (A : Type*) [Semiring A] [Algebra R A] :
+    (φ.baseChange A).toIntertwiningMap = φ.toIntertwiningMap.baseChange A :=
+  IntertwiningMap.ext <| TensorProduct.AlgebraTensorModule.ext fun _ _ ↦ rfl
+
 end Representation.Equiv
 
 namespace LinearMap
@@ -611,6 +697,24 @@ theorem isIntertwiningMap_liftBaseChange_iff {A : Type*} [CommSemiring A]
 end LinearMap
 
 end Transport
+
+section Faithfulness
+
+variable {R A G V W : Type*} [CommRing R] [Ring A] [Algebra R A] [Module.FaithfullyFlat R A]
+  [Monoid G] [AddCommGroup V] [Module R V] [AddCommGroup W] [Module R W]
+
+/-- **Base change is faithful on intertwining maps** over any faithfully flat algebra. -/
+theorem Representation.IntertwiningMap.baseChange_injective
+    {ρ : Representation R G V} {σ : Representation R G W} :
+    Function.Injective (fun f : IntertwiningMap ρ σ ↦ f.baseChange A) := by
+  intro f g h
+  apply IntertwiningMap.ext
+  have hlin : f.toLinearMap.baseChange A = g.toLinearMap.baseChange A := by
+    simpa only [IntertwiningMap.toLinearMap_baseChange] using
+      congrArg IntertwiningMap.toLinearMap h
+  exact LinearMap.baseChange_injective (R := R) (A := A) hlin
+
+end Faithfulness
 
 section QuotSMulTop
 

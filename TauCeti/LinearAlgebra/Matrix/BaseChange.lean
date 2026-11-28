@@ -25,6 +25,11 @@ In the other direction, the `R`-rational solutions of a system `A x = 0` over `S
 vectors `x : n → R` with `A *ᵥ (algebraMap R S ∘ x) = 0`, form the kernel of the `R`-linear map
 `A.mulVecLin.restrictScalars R ∘ₗ Pi.algebraMap n R S`
 (`Matrix.mem_ker_mulVecLin_restrictScalars_comp_piAlgebraMap_iff`).
+
+Finally, under `TensorProduct.piScalarRight` and basis coordinates `Module.Basis.equivFun`, the
+scalar extension `(Matrix.mulVecLin M).baseChange L` agrees with any linear map `f` whose matrix
+is `M.map (algebraMap E L)` (`TensorProduct.piScalarRight_equivFun_intertwining`), which is used to
+descend intertwining maps between framed representations.
 -/
 
 public section
@@ -104,3 +109,31 @@ theorem cokernelBaseChangeEquiv_symm_mk_single (A : Matrix m n R) (i : m) (s : S
   simp [Pi.single_apply]
 
 end Matrix
+
+namespace TensorProduct
+
+/-- Under `TensorProduct.piScalarRight` and basis coordinates `Module.Basis.equivFun`, the
+scalar extension of `Matrix.mulVecLin M` intertwines with a linear map `f` whose matrix is
+`M.map (algebraMap E L)`. -/
+theorem piScalarRight_equivFun_intertwining {E L V W ιV ιW : Type*}
+    [CommSemiring E] [CommSemiring L] [Algebra E L]
+    [AddCommMonoid V] [Module L V] [AddCommMonoid W] [Module L W]
+    [Fintype ιV] [DecidableEq ιV] [Fintype ιW] [DecidableEq ιW]
+    (bV : Module.Basis ιV L V) (bW : Module.Basis ιW L W)
+    (f : V →ₗ[L] W) (M : Matrix ιW ιV E)
+    (hM : M.map (algebraMap E L) = LinearMap.toMatrix bV bW f)
+    (x : L ⊗[E] (ιV → E)) :
+    bW.equivFun.symm (TensorProduct.piScalarRight E L L ιW ((Matrix.mulVecLin M).baseChange L x)) =
+      f (bV.equivFun.symm (TensorProduct.piScalarRight E L L ιV x)) := by
+  apply bW.equivFun.injective
+  have hcomp := LinearMap.congr_fun (Matrix.piScalarRight_comp_baseChange_mulVecLin (S := L) M) x
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Matrix.mulVecLin_apply] at hcomp
+  rw [LinearEquiv.apply_symm_apply, hcomp, hM]
+  have hrepr : (bV.repr (bV.equivFun.symm (TensorProduct.piScalarRight E L L ιV x)) : ιV → L) =
+      TensorProduct.piScalarRight E L L ιV x := by
+    ext i
+    simp only [← Module.Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
+  rw [← hrepr, LinearMap.toMatrix_mulVec_repr bV bW f, hrepr]
+  exact (Module.Basis.equivFun_apply bW _).symm
+
+end TensorProduct
