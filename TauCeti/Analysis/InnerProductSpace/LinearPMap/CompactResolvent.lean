@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.Analysis.InnerProductSpace.Spectrum
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Constructions
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Resolvent
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.OneAddSq
 
@@ -37,6 +38,9 @@ each of these finite-dimensional invariant subspaces in
   has compact resolvent exactly when its resolvent at a given nonreal point is compact.
 * `IsSelfAdjoint.hasCompactResolvent_iff_isCompactOperator_resolvent_neg_neg`: the same for the
   inverse `(D - z)⁻¹`.
+* `IsSelfAdjoint.hasCompactResolvent_toPMap_top_iff`: a bounded self-adjoint operator on a
+  complex Hilbert space has compact resolvent if and only if the Hilbert space is
+  finite-dimensional.
 * `IsSelfAdjoint.invOneAddSq_eq_adjoint_comp`: `(1 + D²)⁻¹ = R(i)* R(i)`.
 * `IsSelfAdjoint.isPositive_invOneAddSq`: `(1 + D²)⁻¹` is a positive operator.
 * `LinearPMap.HasCompactResolvent.hasOrthogonalProjection_ker`: the finite-dimensional kernel of
@@ -100,6 +104,17 @@ open Complex
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   {A : H →ₗ.[ℂ] H}
+
+/-- A bounded self-adjoint operator on a complex Hilbert space has compact resolvent if and only
+if the Hilbert space is finite-dimensional. -/
+theorem _root_.IsSelfAdjoint.hasCompactResolvent_toPMap_top_iff {T : H →L[ℂ] H}
+    (hT : IsSelfAdjoint T) :
+    ((T : H →ₗ[ℂ] H).toPMap ⊤).HasCompactResolvent ↔ FiniteDimensional ℂ H := by
+  refine ⟨LinearPMap.finiteDimensional_of_hasCompactResolvent_toPMap_top, fun _ ↦ ?_⟩
+  have : ProperSpace H := FiniteDimensional.proper ℂ H
+  rw [(LinearPMap.isSelfAdjoint_toPMap_top hT).hasCompactResolvent_iff_isCompactOperator_resolvent
+    (z := Complex.I) (by simp)]
+  exact isCompactOperator_of_locallyCompactSpace_dom _
 
 /-- For an operator with compact resolvent, the eigenspaces of the compact operator
 `(1 + A²)⁻¹` for nonzero eigenvalues are finite-dimensional. -/

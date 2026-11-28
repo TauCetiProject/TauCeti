@@ -108,36 +108,6 @@ theorem memLp_fderiv_bubble (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t) (b :
   (memLp_two_iff_integrable_sq_norm ((contDiff_bubble (m := 1) t b).continuous_fderiv
     one_ne_zero).aestronglyMeasurable).mpr (integrable_norm_fderiv_bubble_sq μ hn ht b)
 
-include μ in
-/-- The radial identity relating the two radial integrals of the energy identity of a bubble. -/
-private theorem sub_two_mul_integral_radial_bubble (hn : 2 < finrank ℝ E) {t : ℝ} (ht : 0 < t) :
-    ((finrank ℝ E : ℝ) - 2) * ∫ r in Ioi (0 : ℝ), r ^ (finrank ℝ E - 1) *
-        (r ^ 2 * (2 * t / (t ^ 2 + r ^ 2)) ^ finrank ℝ E) =
-      finrank ℝ E * t ^ 2 * ∫ r in Ioi (0 : ℝ),
-        r ^ (finrank ℝ E - 1) * (2 * t / (t ^ 2 + r ^ 2)) ^ finrank ℝ E := by
-  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
-  set n := finrank ℝ E with hn_def
-  set ψ : ℝ → ℝ := fun r ↦ (2 * t / (t ^ 2 + r ^ 2)) ^ n
-  set C : ℝ := (((n : ℝ) - 2) / (2 * t)) ^ 2
-  set φ : ℝ → ℝ := fun r ↦ C * (r ^ 2 * ψ r) with hφ
-  have hC0 : C ≠ 0 := by
-    have : (n : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn.ne')
-    positivity
-  have h₁ : IntegrableOn (fun r : ℝ ↦ r ^ (n - 1) * ψ r) (Ioi 0) := by
-    have h := integrable_bubble_rpow_criticalExponent μ (by omega) hn.ne' ht 0
-    simp_rw [bubble_rpow_criticalExponent hn.ne' ht] at h
-    simp only [sub_zero] at h
-    simpa using (integrable_fun_norm_addHaar μ (f := ψ)).mp h
-  have h₂ : IntegrableOn (fun r : ℝ ↦ r ^ (n - 1) * (r ^ 2 * ψ r)) (Ioi 0) := by
-    have h := integrable_norm_fderiv_bubble_sq μ hn ht 0
-    simp_rw [norm_fderiv_bubble_sq ht, mul_assoc] at h
-    simp only [sub_zero] at h
-    refine IntegrableOn.congr_fun (((integrable_fun_norm_addHaar μ (f := φ)).mp h).const_mul C⁻¹)
-      (fun r _ ↦ ?_) measurableSet_Ioi
-    simp only [hφ, smul_eq_mul, ← hn_def]
-    field_simp
-  exact sub_two_mul_integral_radial hn h₁ h₂
-
 /-- **The energy identity of a bubble**: in dimension `n > 2`,
 `aₙ ∫ ‖dU_{t,b}‖² = n (n - 1) ∫ U_{t,b} ^ pₙ` for every additive Haar measure. In dimension
 `n ≤ 2` both sides vanish by the conventions for division by zero and for the integral of a
@@ -161,7 +131,7 @@ theorem conformalCoefficient_mul_integral_norm_fderiv_bubble_sq {t : ℝ}
       simp only [hcrit, hcoef, Real.rpow_zero, integral_const, measureReal_def,
         measure_univ_of_isAddLeftInvariant μ, ENNReal.toReal_top, smul_eq_mul, mul_zero, zero_mul]
   -- Translate `b` to the origin, pass to polar coordinates, and compare the two radial integrals
-  -- with `sub_two_mul_integral_radial`.
+  -- with `sub_two_mul_integral_pow_mul_div_sq_add_sq_pow`.
   have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
   set n := finrank ℝ E with hn_def
   set ψ : ℝ → ℝ := fun r ↦ (2 * t / (t ^ 2 + r ^ 2)) ^ n
@@ -169,7 +139,7 @@ theorem conformalCoefficient_mul_integral_norm_fderiv_bubble_sq {t : ℝ}
   set φ : ℝ → ℝ := fun r ↦ C * (r ^ 2 * ψ r) with hφ
   have hrad : ((n : ℝ) - 2) * ∫ r in Ioi 0, r ^ (n - 1) * (r ^ 2 * ψ r) =
       n * t ^ 2 * ∫ r in Ioi 0, r ^ (n - 1) * ψ r :=
-    sub_two_mul_integral_radial_bubble μ hn ht
+    sub_two_mul_integral_pow_mul_div_sq_add_sq_pow hn t
   have hgrad (b : E) : (fun x ↦ ‖fderiv ℝ (bubble t b) x‖ ^ 2) = fun x ↦ φ ‖x - b‖ :=
     funext fun x ↦ by rw [norm_fderiv_bubble_sq ht, mul_assoc]
   have hpow (b : E) : (fun x ↦ bubble t b x ^ criticalExponent n) = fun x ↦ ψ ‖x - b‖ :=

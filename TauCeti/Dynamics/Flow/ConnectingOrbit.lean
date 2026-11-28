@@ -30,7 +30,12 @@ logit `s ↦ log (s / (1 - s))`, which reparametrises the open unit interval by 
 completed by its limits at the two ends. Its homotopy class is what parallel transport in a local
 coefficient system needs, for instance for Morse boundaries with twisted coefficients. Reversing
 time reverses this path (`Flow.connectingPath_eq_symm_of_eq_reverse`), which is how transport along
-the trajectories of `-f` compares with transport along those of `f`.
+the trajectories of `-f` compares with transport along those of `f`. Before its end the path stays
+in the unstable set of its start, and after its start in the stable set of its end
+(`Flow.connectingPath_mem_unstableSet`, `Flow.connectingPath_mem_stableSet`), when these sets
+contain the endpoints. A continuous map intertwining two flows carries connecting paths to
+connecting paths (`Flow.connectingPath_map`), for instance the projections of a product flow onto
+its factors, and the path traced by a fixed point is constant (`Flow.connectingPath_eq_refl`).
 -/
 
 public section
@@ -103,6 +108,28 @@ theorem connectingPath_apply_half (hp : y ∈ unstableSet φ p) (hq : y ∈ stab
     (by constructor <;> (rw [← Subtype.coe_lt_coe]; norm_num))]
   norm_num
 
+/-- Before its end, the path traced by a connecting trajectory from `p` lies in the unstable set of
+`p`, provided `p` itself does. -/
+theorem connectingPath_mem_unstableSet (hp : y ∈ unstableSet φ p) (hq : y ∈ stableSet φ q)
+    (hpp : p ∈ unstableSet φ p) {s : unitInterval} (hs : (s : ℝ) < 1) :
+    connectingPath hp hq s ∈ unstableSet φ p := by
+  rcases eq_or_ne s 0 with rfl | hs0
+  · rwa [Path.source]
+  · rw [connectingPath_apply_of_mem_Ioo hp hq ⟨unitInterval.pos_iff_ne_zero.2 hs0, hs⟩,
+      apply_mem_unstableSet_iff]
+    exact hp
+
+/-- After its start, the path traced by a connecting trajectory to `q` lies in the stable set of
+`q`, provided `q` itself does. -/
+theorem connectingPath_mem_stableSet (hp : y ∈ unstableSet φ p) (hq : y ∈ stableSet φ q)
+    (hqq : q ∈ stableSet φ q) {s : unitInterval} (hs : 0 < (s : ℝ)) :
+    connectingPath hp hq s ∈ stableSet φ q := by
+  rcases eq_or_ne s 1 with rfl | hs1
+  · rwa [Path.target]
+  · rw [connectingPath_apply_of_mem_Ioo hp hq ⟨hs, unitInterval.lt_one_iff_ne_one.2 hs1⟩,
+      apply_mem_stableSet_iff]
+    exact hq
+
 /-- **Reversing the flow reverses the connecting path.** If `ψ` is the time reversal of `φ`, a
 point `y` whose `φ`-trajectory runs from `p` to `q` has a `ψ`-trajectory running from `q` to `p`,
 and the path it traces for `ψ` is the reverse of the path it traces for `φ`: the logit
@@ -125,6 +152,37 @@ theorem connectingPath_eq_symm_of_eq_reverse {ψ : _root_.Flow ℝ α} (h : ψ =
   rw [connectingPath_apply_of_mem_Ioo _ _ hs, Path.symm_apply, Function.comp_apply,
     connectingPath_apply_of_mem_Ioo _ _ hs', _root_.Flow.reverse_apply, unitInterval.coe_symm_eq,
     sub_sub_cancel, ← Real.log_inv, inv_div]
+
+/-- **A semiconjugacy carries connecting paths to connecting paths.** If a continuous map `π`
+intertwines `φ` with a flow `ψ`, so that `π (φ t x) = ψ t (π x)`, then the image under `π` of the
+path traced by a connecting trajectory of `φ` through `y` is the path traced by the trajectory of
+`ψ` through `π y`. -/
+theorem connectingPath_map {β : Type*} [TopologicalSpace β] {ψ : _root_.Flow ℝ β} {π : α → β}
+    (hπ : Continuous π) (hφψ : ∀ t x, π (φ t x) = ψ t (π x)) (hp : y ∈ unstableSet φ p)
+    (hq : y ∈ stableSet φ q) (hp' : π y ∈ unstableSet ψ (π p))
+    (hq' : π y ∈ stableSet ψ (π q)) :
+    (connectingPath hp hq).map hπ = connectingPath hp' hq' := by
+  ext s
+  rcases eq_or_ne s 0 with rfl | h0
+  · simp
+  rcases eq_or_ne s 1 with rfl | h1
+  · simp
+  have hs : s ∈ Ioo (0 : unitInterval) 1 :=
+    ⟨unitInterval.pos_iff_ne_zero.2 h0, unitInterval.lt_one_iff_ne_one.2 h1⟩
+  rw [Path.map_coe, Function.comp_apply, connectingPath_apply_of_mem_Ioo _ _ hs,
+    connectingPath_apply_of_mem_Ioo _ _ hs, hφψ]
+
+/-- **The path traced by a fixed point is constant.** If `y` is fixed by the flow, the path traced
+by its trajectory, from `y` to `y`, is the constant path. -/
+theorem connectingPath_eq_refl (hy : ∀ t, φ t y = y) (hp : y ∈ unstableSet φ y)
+    (hq : y ∈ stableSet φ y) : connectingPath hp hq = Path.refl y := by
+  ext s
+  rcases eq_or_ne s 0 with rfl | h0
+  · simp
+  rcases eq_or_ne s 1 with rfl | h1
+  · simp
+  rw [connectingPath_apply_of_mem_Ioo _ _
+    ⟨unitInterval.pos_iff_ne_zero.2 h0, unitInterval.lt_one_iff_ne_one.2 h1⟩, hy, Path.refl_apply]
 
 end ConnectingPath
 

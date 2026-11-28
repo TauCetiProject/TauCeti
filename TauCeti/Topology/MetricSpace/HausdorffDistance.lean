@@ -19,11 +19,26 @@ For a nonempty set in a pseudometric space, the extended distance `Metric.infEDi
 (`Metric.infEDist_eq_ofReal_iff`). For any two sets `S` and `T` in a pseudometric space, the real
 infimum `sInf ((fun z ↦ infDist z T) '' S)` agrees with `(⨅ z ∈ S, ⨅ ζ ∈ T, edist z ζ).toReal`
 (`Metric.sInf_image_infDist_eq_toReal_biInf`), including when `S` or `T` is empty.
+In a seminormed group, `Metric.infDist x s` is the infimum of the norms `‖x - y‖` over `y ∈ s`
+(`Metric.infDist_eq_iInf_norm_sub`).
 
 Hausdorff convergence to zero passes along chains of sets: if `A i` approaches `B i` and `B i`
 approaches `Z` in the Hausdorff extended distance, then `A i` approaches `Z`
 (`Metric.tendsto_hausdorffEDist_of_tendsto_of_tendsto`). If sets `A i` approach a closed set `Z`,
 every limit of points `y i ∈ A i` lies in `Z` (`Metric.mem_of_tendsto_hausdorffEDist`).
+
+The distance functions to two sets with finite Hausdorff extended distance differ pointwise by at
+most their Hausdorff distance (`Metric.abs_infDist_sub_infDist_le_hausdorffDist`). For nonempty
+sets `A` and `B`, `⨆ x, |infDist x A - infDist x B| = hausdorffDist A B`
+(`Metric.iSup_abs_infDist_sub_eq_hausdorffDist`). When `hausdorffEDist A B` is finite, the bound
+is therefore sharp and the Hausdorff distance is the uniform distance between the distance
+functions. When it is infinite, the difference is unbounded and both sides are `0`, by the
+conventions for `hausdorffDist` and for the real supremum of an unbounded family.
+
+A `K`-Lipschitz map with `K ≠ 0` multiplies the extended distance from a point to a set, and the
+Hausdorff extended distance between two sets, by at most `K`
+(`LipschitzWith.infEDist_image_le`, `LipschitzWith.hausdorffEDist_image_le`). This is what makes
+the union-of-images operator of an iterated function system a contraction.
 
 A continuous map from a nonempty compact space into a pseudometric space has a nearest point to
 every point: some value of the map minimises the distance to it
@@ -44,7 +59,7 @@ space `E` back to `D`.
 public section
 
 open Filter Set Topology
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace Metric
 
@@ -71,6 +86,11 @@ theorem sInf_image_infDist_eq_toReal_biInf {X : Type*} [PseudoMetricSpace X] (S 
   · simp_rw [sInf_image', infDist, iInf_subtype',
       ← ENNReal.toReal_iInf (fun _ : S ↦ infEDist_ne_top hT), infEDist, iInf_subtype']
 
+/-- `Metric.infDist x s` as an infimum of norms: the norm form of `Metric.infDist_eq_iInf`. -/
+theorem infDist_eq_iInf_norm_sub {E : Type*} [SeminormedAddCommGroup E] {s : Set E} {x : E} :
+    infDist x s = ⨅ y : s, ‖x - y‖ := by
+  simp [infDist_eq_iInf, dist_eq_norm]
+
 variable {X ι : Type*} [PseudoEMetricSpace X] {l : Filter ι}
 
 /-- If sets `A i` approach `B i` and `B i` approach `Z` in the Hausdorff extended distance, then
@@ -96,7 +116,78 @@ theorem mem_of_tendsto_hausdorffEDist [l.NeBot] {A : ι → Set X} {Z : Set X} (
   exact infEDist_le_edist_add_infEDist.trans
     (add_le_add le_rfl (infEDist_le_hausdorffEDist_of_mem hi))
 
+/-- The distance functions to two sets differ by at most their Hausdorff distance, when their
+Hausdorff extended distance is finite. -/
+theorem abs_infDist_sub_infDist_le_hausdorffDist {X : Type*} [PseudoMetricSpace X] {s t : Set X}
+    (fin : hausdorffEDist s t ≠ ⊤) (x : X) :
+    |infDist x s - infDist x t| ≤ hausdorffDist s t := by
+  have h₁ := infDist_le_infDist_add_hausdorffDist (x := x) fin
+  have h₂ := infDist_le_infDist_add_hausdorffDist (x := x) (by rwa [hausdorffEDist_comm])
+  rw [hausdorffDist_comm] at h₂
+  exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
+
+/-- **Distance functions and the Hausdorff distance.** For nonempty sets `A` and `B` in a
+pseudometric space, the supremum over all points `x` of `|infDist x A - infDist x B|` is the
+Hausdorff distance between `A` and `B`. If the Hausdorff extended distance is infinite, both sides
+are `0`: the real supremum of an unbounded family is `0` by convention. -/
+theorem iSup_abs_infDist_sub_eq_hausdorffDist {X : Type*} [PseudoMetricSpace X] {A B : Set X}
+    (hA : A.Nonempty) (hB : B.Nonempty) :
+    ⨆ x, |infDist x A - infDist x B| = hausdorffDist A B := by
+  -- At a point of `A` (resp. `B`) the difference is the distance to the other set.
+  have hA' : ∀ x ∈ A, |infDist x A - infDist x B| = infDist x B := fun x hx ↦ by
+    simp [infDist_zero_of_mem hx, abs_of_nonneg infDist_nonneg]
+  have hB' : ∀ x ∈ B, |infDist x A - infDist x B| = infDist x A := fun x hx ↦ by
+    simp [infDist_zero_of_mem hx, abs_of_nonneg infDist_nonneg]
+  have : Nonempty X := hA.to_subtype.map (↑)
+  by_cases fin : hausdorffEDist A B = ⊤
+  · -- The family is unbounded: a bound `C` would bound the Hausdorff extended distance.
+    rw [hausdorffDist, fin, ENNReal.toReal_top]
+    refine Real.iSup_of_not_bddAbove fun ⟨C, hC⟩ ↦ absurd fin <|
+      ne_top_of_le_ne_top (ENNReal.ofReal_ne_top (r := C)) <|
+        hausdorffEDist_le_of_infEDist (fun x hx ↦ ?_) fun x hx ↦ ?_
+    · rw [(infEDist_eq_ofReal_iff hB infDist_nonneg).2 rfl, ← hA' x hx]
+      exact ENNReal.ofReal_le_ofReal (hC ⟨x, rfl⟩)
+    · rw [(infEDist_eq_ofReal_iff hA infDist_nonneg).2 rfl, ← hB' x hx]
+      exact ENNReal.ofReal_le_ofReal (hC ⟨x, rfl⟩)
+  have hbdd : BddAbove (range fun x ↦ |infDist x A - infDist x B|) :=
+    ⟨_, forall_mem_range.2 (abs_infDist_sub_infDist_le_hausdorffDist fin)⟩
+  refine le_antisymm (ciSup_le (abs_infDist_sub_infDist_le_hausdorffDist fin)) <|
+    hausdorffDist_le_of_infDist (Real.iSup_nonneg fun _ ↦ abs_nonneg _) (fun x hx ↦ ?_)
+      fun x hx ↦ ?_
+  · exact hA' x hx ▸ le_ciSup hbdd x
+  · exact hB' x hx ▸ le_ciSup hbdd x
+
 end Metric
+
+namespace LipschitzWith
+
+open Metric
+
+variable {X Y : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y] {K : ℝ≥0} {f : X → Y}
+
+/-- A `K`-Lipschitz map with `K ≠ 0` multiplies the extended distance from a point to a set by at
+most `K`. (For `K = 0` and the empty set the right side would be `0 * ∞ = 0`.) -/
+theorem infEDist_image_le (hf : LipschitzWith K f) (hK : K ≠ 0) (x : X) (s : Set X) :
+    infEDist (f x) (f '' s) ≤ K * infEDist x s := by
+  have hK' : (K : ℝ≥0∞) ≠ 0 := by exact_mod_cast hK
+  simp only [infEDist, iInf_image]
+  rw [ENNReal.mul_iInf_of_ne hK' ENNReal.coe_ne_top]
+  refine iInf_mono fun y ↦ ?_
+  rw [ENNReal.mul_iInf_of_ne hK' ENNReal.coe_ne_top]
+  exact iInf_mono fun _ ↦ hf x y
+
+/-- A `K`-Lipschitz map with `K ≠ 0` multiplies the Hausdorff extended distance between two sets
+by at most `K`. -/
+theorem hausdorffEDist_image_le (hf : LipschitzWith K f) (hK : K ≠ 0) (s t : Set X) :
+    hausdorffEDist (f '' s) (f '' t) ≤ K * hausdorffEDist s t := by
+  refine hausdorffEDist_le_of_infEDist ?_ ?_ <;> rintro _ ⟨x, hx, rfl⟩
+  · exact (hf.infEDist_image_le hK x t).trans
+      (mul_le_mul_right (infEDist_le_hausdorffEDist_of_mem hx) _)
+  · rw [hausdorffEDist_comm]
+    exact (hf.infEDist_image_le hK x s).trans
+      (mul_le_mul_right (infEDist_le_hausdorffEDist_of_mem hx) _)
+
+end LipschitzWith
 
 /-- A continuous map `g` from a nonempty compact space into a pseudometric space has a nearest point
 to every `y`: some value `g x` minimises the distance from `y` to the values of `g`. -/

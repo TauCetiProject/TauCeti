@@ -40,12 +40,21 @@ private def fstActionCLM (φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)) : A →L[ℂ] B
   LinearMap.mkContinuous ⟨⟨fun a => (φ a).fst, fun a b => by simp⟩, fun c a => by simp⟩ 1
     fun a => by simpa using (φ a).norm_fst_le.trans (norm_apply_le φ a)
 
+private lemma essentialSubmodule_fstActionCLM (φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)) :
+    (fstActionCLM φ).essentialSubmodule =
+      (Submodule.span ℂ (⋃ a, Set.range (φ a).fst)).topologicalClosure := by
+  rw [ContinuousLinearMap.essentialSubmodule_eq_topologicalClosure_span]
+  congr 2
+  ext z
+  simp [fstActionCLM, Prod.exists]
+
 /-- By Cohen–Hewitt factorization, for any `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` the closed linear span of the
 elements `(φ a).fst b` already equals the bare set of products `⋃ a, Set.range (φ a).fst`. -/
 theorem coe_topologicalClosure_span_range_fst_eq (φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)) :
     ((Submodule.span ℂ (⋃ a, Set.range (φ a).fst)).topologicalClosure : Set B) =
-      ⋃ a, Set.range (φ a).fst :=
-  (fstActionCLM φ).coe_topologicalClosure_span_iUnion_range_eq fun a b z => by
+      ⋃ a, Set.range (φ a).fst := by
+  rw [← essentialSubmodule_fstActionCLM]
+  exact (fstActionCLM φ).coe_essentialSubmodule_eq_iUnion_range fun a b z => by
     simp [fstActionCLM, mul_apply_eq_comp]
 
 /-- By Cohen–Hewitt factorization, for any `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` the closed linear span of the
@@ -87,12 +96,13 @@ theorem isMultiplierNondegenerate_iff_iUnion_range_snd_eq_univ {φ : A →⋆ₙ
 theorem IsMultiplierNondegenerate.exists_fst_apply_eq_of_pos {φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)}
     (hφ : φ.IsMultiplierNondegenerate) (b : B) {ε : ℝ} (hε : 0 < ε) :
     ∃ a y, ‖a‖ ≤ 1 ∧ ‖y - b‖ < ε ∧ (φ a).fst y = b := by
-  have htop : (Submodule.span ℂ (⋃ a, Set.range (fstActionCLM φ a))).topologicalClosure = ⊤ := by
-    simpa [fstActionCLM] using
-      Submodule.dense_iff_topologicalClosure_eq_top.mp (isMultiplierNondegenerate_iff_dense.mp hφ)
+  have hx : b ∈ (fstActionCLM φ).essentialSubmodule := by
+    rw [essentialSubmodule_fstActionCLM,
+      Submodule.dense_iff_topologicalClosure_eq_top.mp (isMultiplierNondegenerate_iff_dense.mp hφ)]
+    exact Submodule.mem_top
   obtain ⟨a, y, ha, -, hy, hfac⟩ :=
-    (fstActionCLM φ).exists_apply_eq_of_mem_topologicalClosure_span_iUnion
-      (fun x y z => by simp [fstActionCLM, mul_apply_eq_comp]) (htop.symm ▸ Submodule.mem_top) hε
+    (fstActionCLM φ).exists_norm_le_one_apply_eq_of_mem_essentialSubmodule
+      (fun x y z => by simp [fstActionCLM, mul_apply_eq_comp]) hx hε
   exact ⟨a, y, ha, hy, hfac⟩
 
 /-- Every `b : B` factors as `b = (φ a).fst y` when `φ : A →⋆ₙₐ[ℂ] 𝓜(ℂ, B)` is nondegenerate. -/

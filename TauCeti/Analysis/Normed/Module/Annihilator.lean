@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.HahnBanach
 public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
+public import TauCeti.Topology.Algebra.Module.Orthogonal
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
@@ -32,6 +33,8 @@ finite-dimensional subspace of the strong dual is the continuous annihilator of 
 preannihilator. As an
 application, `ContinuousLinearMap.surjective_smul_add_apply_iff` decides when the map
 `(τ, ξ) ↦ τ • w + H ξ` onto the dual of a finite-dimensional space is onto, for a symmetric `H`.
+Over the real or complex field, a weak sum of a subfamily lies in the closed linear span of the
+family (`TauCeti.mem_topologicalClosure_span_range_of_forall_hasSum_indicator`).
 
 The analytic input is `exists_dual_vector''`, the norming-functional form of Hahn–Banach,
 applied to the seminormed quotient. In particular, the results also apply to seminormed
@@ -57,20 +60,13 @@ variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 /-- A preannihilator is norm closed in the original space. -/
 theorem isClosed_orthogonalBilin_topDualPairing (G : Submodule 𝕜 (StrongDual 𝕜 E)) :
-    IsClosed (G.orthogonalBilin (topDualPairing 𝕜 E) : Set E) := by
-  have heq : (G.orthogonalBilin (topDualPairing 𝕜 E) : Set E) =
-      ⋂ f ∈ G, {x | f x = 0} := by ext; simp
-  rw [heq]
-  exact isClosed_biInter fun f _ => isClosed_eq f.continuous continuous_const
+    IsClosed (G.orthogonalBilin (topDualPairing 𝕜 E) : Set E) :=
+  G.isClosed_orthogonalBilin _ fun f _ ↦ f.continuous
 
 /-- A continuous annihilator is norm closed in the strong dual. -/
 theorem isClosed_orthogonalBilin_topDualPairing_flip (S : Submodule 𝕜 E) :
-    IsClosed (S.orthogonalBilin (topDualPairing 𝕜 E).flip : Set (StrongDual 𝕜 E)) := by
-  have heq : (S.orthogonalBilin (topDualPairing 𝕜 E).flip : Set (StrongDual 𝕜 E)) =
-      ⋂ x ∈ S, {f | f x = 0} := by ext; simp
-  rw [heq]
-  exact isClosed_biInter fun x _ => isClosed_eq (ContinuousLinearMap.apply 𝕜 𝕜 x).continuous
-    continuous_const
+    IsClosed (S.orthogonalBilin (topDualPairing 𝕜 E).flip : Set (StrongDual 𝕜 E)) :=
+  S.isClosed_orthogonalBilin _ fun x _ ↦ (ContinuousLinearMap.apply 𝕜 𝕜 x).continuous
 
 /-- Passing to norm closure does not change the continuous annihilator. -/
 @[simp]
@@ -216,6 +212,26 @@ theorem finiteDimensional_quotient_of_finiteDimensional_orthogonalBilin (S : Sub
 end RCLike
 
 end Submodule
+
+namespace TauCeti
+
+variable {𝕜 ι E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- A weak sum of a subfamily lies in the norm closure of the linear span of the family: if
+`∑_{i ∈ A} f (u i)` sums to `f y` for every continuous functional `f`, then `y` lies in the closed
+linear span of the `u i`. -/
+theorem mem_topologicalClosure_span_range_of_forall_hasSum_indicator {u : ι → E} {A : Set ι}
+    {y : E} (hy : ∀ f : StrongDual 𝕜 E, HasSum (fun i ↦ f (A.indicator u i)) (f y)) :
+    y ∈ (Submodule.span 𝕜 (Set.range u)).topologicalClosure := by
+  rw [Submodule.mem_topologicalClosure_iff_forall_dual_eq_zero]
+  intro f hf
+  refine (hy f).unique ?_
+  convert hasSum_zero with i
+  by_cases hi : i ∈ A
+  · simp [hi, hf _ (Submodule.subset_span (Set.mem_range_self _))]
+  · simp [hi]
+
+end TauCeti
 
 /-! ### Maps onto the dual of a finite-dimensional space -/
 

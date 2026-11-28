@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Vertex
 
 /-!
@@ -96,5 +97,24 @@ lemma homEquivOfPreorder_apply_coe (f : X ⟶ nerve P) (x : X _⦋0⦌) :
 lemma homEquivOfPreorder_symm_apply (g : {g : X _⦋0⦌ → P // ∀ ⦃x y⦄, X.Edge x y → g x ≤ g y}) :
     homEquivOfPreorder.symm g = homOfVertex g.val g.property :=
   (rfl)
+
+@[simp] theorem representableBy_homEquiv_obj {m n : ℕ} {α : Type u} [Preorder α]
+    (e : α ≃o Fin (n + 1)) (θ : ⦋m⦌ ⟶ ⦋n⦌) (i : Fin (m + 1)) :
+    (objEquiv ((representableBy α e).homEquiv θ)).obj i = e.symm (θ.toOrderHom i) := by
+  -- Unfolds `nerve.representableBy`, `SimplexCategory.homEquivFunctor`, and `homEquivOrderHom`.
+  rw [objEquiv_eq]
+  dsimp [representableBy, SimplexCategory.homEquivFunctor, SimplexCategory.homEquivOrderHom]
+  rfl
+
+@[simp] theorem representableBy_homEquiv_const_zero {n : ℕ} {α : Type u} [Preorder α]
+    (e : α ≃o Fin (n + 1)) (i : Fin (n + 1)) :
+    (representableBy α e).homEquiv (SimplexCategory.const ⦋0⦌ ⦋n⦌ i) =
+      objEquiv.symm (nerveEquiv.symm (e.symm i)) :=
+  objEquiv.injective <| ComposableArrows.ext
+    (fun j ↦ by
+      fin_cases j
+      rw [representableBy_homEquiv_obj, Equiv.apply_symm_apply, nerveEquiv_symm_obj]
+      rfl)
+    (fun _ _ ↦ Subsingleton.elim _ _)
 
 end CategoryTheory.nerve

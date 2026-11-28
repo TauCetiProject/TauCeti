@@ -62,7 +62,7 @@ coefficients and unit discriminant the derivative is a unit, is stated over a co
 
 The cubic bounds apply to the Weierstrass equation: a root of the cubic is integral at every
 prime where its coefficients are integral. The companion estimate, for a polynomial expression
-in an element that is already integral, is `TauCeti.RingTheory.Valuation.Polynomial`.
+in an element that is already integral, is `TauCeti.RingTheory.Valuation.Polynomial.Basic`.
 
 ## Provenance
 

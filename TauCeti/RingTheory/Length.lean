@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Length
 public import Mathlib.RingTheory.LocalRing.Length
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import Mathlib.RingTheory.OrderOfVanishing.Basic
+public import TauCeti.LinearAlgebra.Pi.Detection
 -- Proof-only: `QuotSMulTop` supplies the transport used to prove `length_quotient_lsmul_congr`;
 -- no statement in this file mentions it.
 import Mathlib.Algebra.Module.LocalizedModule.Submodule
@@ -52,6 +53,8 @@ applies to the quotients appearing here without any further appeal to defeq.
 
 * `TauCeti.length_quotient_anti`: `M ⧸ Q` is no longer than `M ⧸ P` when `P ≤ Q`.
 * `LinearMap.length_eq_length_ker_add_length_range`: rank-nullity for length.
+* `LinearMap.length_quotient_range_eq_length_ker`: an endomorphism of a module of finite length
+  has a cokernel and a kernel of the same length.
 * `TauCeti.length_le_add_of_exact`: the middle term of an exact sequence `N ⟶ M ⟶ P` is no longer
   than `N` and `P` together.
 * `TauCeti.length_add_length_add_length_eq_of_exact`: along an exact sequence
@@ -65,6 +68,18 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `TauCeti.length_quotient_eq_length_quotient_comap_subtype_add`: for `P ≤ N`, `M ⧸ P` is filtered
   by `N ⧸ P` and `M ⧸ N`.
 * `TauCeti.length_quotient_comap_subtype_range_map`: an injective `φ` gives `φ(M) ⧸ φ(N) ≃ M ⧸ N`.
+* `TauCeti.length_map_mkQ_eq_add_length_quotient`: for `S ≤ X`, the image of `X` in `M ⧸ P` is
+  filtered by the image of `S` and by `X ⧸ (S + X ⊓ P)`.
+* `TauCeti.length_map_mkQ_le_add_length_quotient`: the image of `X` in `M ⧸ P` is no longer than
+  the image of `S` together with `X ⧸ (X ⊓ S)`.
+* `TauCeti.length_map_mkQ_le_length_quotient`: for `Y ≤ P` and `S ≤ N`, the image of `S` in
+  `M ⧸ P` is no longer than `N ⧸ (N ⊓ Y)`.
+* `TauCeti.length_map_mkQ_add_one_le`: for `N ≤ N'`, the image of `P` in `M ⧸ N'` is shorter by
+  at least one than its image in `M ⧸ N` as soon as `P ⊓ N'` is not contained in `N`.
+* `TauCeti.length_quotient_sup_le`: enlarging `Z` to `Z'` in `N ⧸ (N₁ + Z)` costs at most
+  `length (Z' ⧸ Z)`.
+* `TauCeti.length_quotient_sup_le_of_ker_le`: a map `ρ` on `N` with kernel in `Z'` and image in
+  `T'` bounds `N ⧸ (N₁ + Z')` by `T' ⧸ T` and `T ⧸ ρ(N₁)`.
 * `TauCeti.length_le_of_forall_fg`: a bound on all finitely generated submodules bounds the
   length.
 * `TauCeti.isFiniteLength_of_tower`: finite length over `R` gives finite length over any `A`
@@ -74,16 +89,24 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `TauCeti.surjective_of_injective_of_length_eq` and
   `TauCeti.injective_of_surjective_of_length_eq`: an injective map between modules of the same
   finite length is surjective, and a surjective one is injective.
+* `TauCeti.length_quotient_comap_subtype_map`: an injective `f` identifies `N ⧸ (N ⊓ P)` with
+  `f(N) ⧸ (f(N) ⊓ f(P))`.
+* `TauCeti.length_quotient_comap_subtype_eq_add`: for `P ≤ Q ≤ N`, `N ⧸ P` is filtered by `Q ⧸ P`
+  and `N ⧸ Q`.
 * `TauCeti.map_lsmul_eq_smul` and `TauCeti.range_lsmul_eq_smul_top`: `aN` and `aM` as Mathlib's
   pointwise `a • N` and `a • ⊤`.
 * `TauCeti.comap_subtype_map_lsmul`: `aN` computed inside `N` agrees with `aN` computed in the
   ambient module.
 * `TauCeti.length_quotient_lsmul_congr`: the length of `M ⧸ aM` is a linear-equivalence invariant.
+* `TauCeti.length_quotient_smul_le`: multiplication by `c` maps `N ⧸ (N ⊓ U + N ⊓ Θ)` onto
+  `cN ⧸ (cN ⊓ U + cN ⊓ Θ)`.
 * `TauCeti.length_quotient_lsmul_le_of_forall_fg`: the finite-generation reduction for `M ⧸ aM`.
 * `TauCeti.isFiniteLength_quotient_of_nonZeroDivisor_mem`: over a noetherian ring `A` of dimension
   at most one, `A ⧸ I` has finite length when `I` contains a non-zero-divisor.
 * `TauCeti.isFiniteLength_of_nonZeroDivisor_mem_annihilator`: over a noetherian ring of dimension
-  at most one, a finitely generated module killed by a non-zero-divisor has finite length.
+  at most one, a finitely generated module killed by a non-zero-divisor has finite length; in
+  particular a finitely generated torsion module does (`Module.IsTorsion.isFiniteLength`), such as
+  the kernel of a localization at the non-zero-divisors (`IsLocalizedModule.isFiniteLength_ker`).
 * `LinearMap.ker_mkQ_comp_codRestrict` and `LinearMap.length_quotient_sup_comap_ker`: for a
   linear map `e`, the kernel of the induced map `M → eM ⧸ a·eM`, and the length of the quotient
   of `M` by it.
@@ -109,11 +132,16 @@ applies to the quotients appearing here without any further appeal to defeq.
   `MaximalSpectrum.toNat_length_quotient_eq_finrank_residueField`: for `A` local and a maximal
   ideal `m` of an `A`-algebra `B`, the `A`-length of `B ⧸ m` is the residue degree
   `[κ(B_m) : κ(A)]`, for any chosen localization `B_m`.
+* `Ideal.isFiniteLength_quotient_pow_of_fg`: `A ⧸ 𝔪 ⁿ` has finite length for every `n` when `𝔪` is
+  a finitely generated maximal ideal, with no noetherian hypothesis.
 * `TauCeti.isFiniteLength_quotient_maximalIdeal_pow`: `A ⧸ 𝔪 ⁿ` has finite length for every `n`
   over a noetherian local ring, so it is an Artinian ring
   (`TauCeti.isArtinianRing_quotient_maximalIdeal_pow`).
 * `Submodule.eq_of_le_of_length_eq`: a submodule contained in another of the same finite length
   is equal to it.
+* `Submodule.IsDetectedBy.length_le`: a module `Z` of functions `G → B` detected by a finite set
+  `s` has length at most that of `Z` modulo its `C`-torsion plus `#s` times that of the
+  `C`-torsion of `B`.
 * `LinearMap.length_eq_of_bijective`: a bijective semilinear map along a surjective ring
   homomorphism preserves length.
 * `Ideal.length_quotient_map_of_surjective`: along a surjective ring homomorphism `ψ : A → B`, the
@@ -135,6 +163,15 @@ theorem length_eq_length_ker_add_length_range (f : M →ₗ[A] N) :
     Module.length A M = Module.length A (ker f) + Module.length A (range f) :=
   Module.length_eq_add_of_exact _ _ (ker f).injective_subtype f.surjective_rangeRestrict
     (exact_iff.mpr (by rw [ker_rangeRestrict, Submodule.range_subtype]))
+
+/-- An endomorphism of a module of finite length has a cokernel and a kernel of the same length. -/
+theorem length_quotient_range_eq_length_ker (f : M →ₗ[A] M) (hM : Module.length A M ≠ ⊤) :
+    Module.length A (M ⧸ range f) = Module.length A (ker f) := by
+  have h := Module.length_eq_add_of_exact _ _ (range f).injective_subtype
+    (range f).mkQ_surjective (exact_subtype_mkQ (range f))
+  rw [f.length_eq_length_ker_add_length_range, add_comm] at h
+  refine (WithTop.add_left_cancel ?_ h).symm
+  exact ne_top_of_le_ne_top hM (Module.length_le_of_injective _ (range f).injective_subtype)
 
 end LinearMap
 
@@ -204,6 +241,106 @@ theorem length_quotient_comap_subtype_range_map {M' : Type*} [AddCommGroup M'] [
   ext ⟨x, hx⟩
   simp only [Submodule.mem_map, Submodule.mem_comap, Submodule.subtype_apply,
     LinearEquiv.coe_coe, Subtype.ext_iff, LinearEquiv.ofInjective_apply]
+
+/-- **The colength identity.** For submodules `S ≤ X` and `P`, the image of `X` in `M ⧸ P` is
+filtered by the image of `S` and by `X ⧸ (S ⊔ X ⊓ P)`: in `ℕ∞`,
+`length ((X + P) ⧸ P) = length ((S + P) ⧸ P) + length (X ⧸ (S + X ⊓ P))`. -/
+theorem length_map_mkQ_eq_add_length_quotient {S X : Submodule A M} (P : Submodule A M)
+    (h : S ≤ X) :
+    Module.length A (X.map P.mkQ) = Module.length A (S.map P.mkQ) +
+      Module.length A (↥X ⧸ (S ⊔ X ⊓ P).comap X.subtype) := by
+  have hsup : P.comap X.subtype ⊔ S.comap X.subtype = (S ⊔ X ⊓ P).comap X.subtype := by
+    refine Submodule.map_injective_of_injective X.injective_subtype ?_
+    simp [Submodule.map_sup, Submodule.map_comap_subtype, inf_eq_right.2 h,
+      inf_eq_right.2 (sup_le h inf_le_left), sup_comm]
+  rw [length_map_mkQ X P, length_quotient_eq_length_map_add_length_quotient_sup
+    (S.comap X.subtype) (P.comap X.subtype), length_map_mkQ, length_map_mkQ S P, hsup]
+  congr 1
+  refine (Submodule.Quotient.equiv _ _ (Submodule.comapSubtypeEquivOfLe h) ?_).length_eq
+  ext x
+  simp [Submodule.mem_map_equiv, Submodule.comapSubtypeEquivOfLe_symm_apply]
+
+/-- **Subadditivity of colength.** For any submodules `X, S, P`, in `ℕ∞`,
+`length ((X + P) ⧸ P) ≤ length ((S + P) ⧸ P) + length (X ⧸ (X ⊓ S))`. This is
+`TauCeti.length_map_mkQ_eq_add_length_quotient` applied to `X ⊓ S ≤ X`. -/
+theorem length_map_mkQ_le_add_length_quotient (X S P : Submodule A M) :
+    Module.length A (X.map P.mkQ) ≤
+      Module.length A (S.map P.mkQ) + Module.length A (↥X ⧸ S.comap X.subtype) := by
+  rw [length_map_mkQ_eq_add_length_quotient P (inf_le_left : X ⊓ S ≤ X)]
+  gcongr
+  · exact Module.length_le_of_injective _
+      (Submodule.inclusion_injective (Submodule.map_mono inf_le_right))
+  · exact length_quotient_anti fun x hx ↦ Submodule.mem_sup_left ⟨x.property, hx⟩
+
+/-- **The colength inequality.** If `Y ≤ P` and `S ≤ N`, then
+`length ((S + P) ⧸ P) ≤ length (N ⧸ (N ⊓ Y))`: the image of `S` in `M ⧸ P` lies in that of `N`,
+which is a quotient of `N ⧸ (N ⊓ Y)`. -/
+theorem length_map_mkQ_le_length_quotient {S P Y N : Submodule A M} (hY : Y ≤ P) (hS : S ≤ N) :
+    Module.length A (S.map P.mkQ) ≤ Module.length A (↥N ⧸ Y.comap N.subtype) :=
+  (length_map_mkQ S P).trans_le ((length_quotient_comap_subtype_mono hS P).trans
+    (length_quotient_anti (Submodule.comap_mono hY)))
+
+/-- **Enlarging the submodule quotiented by.** For `N ≤ N'`, if some `u ∈ P` lies in `N'` but not
+in `N`, the image of `P` in `M ⧸ N'` is shorter by at least one than its image in `M ⧸ N`. -/
+theorem length_map_mkQ_add_one_le {N N' P : Submodule A M} (hN : N ≤ N') {u : M} (huP : u ∈ P)
+    (huN' : u ∈ N') (huN : u ∉ N) :
+    Module.length A (P.map N'.mkQ) + 1 ≤ Module.length A (P.map N.mkQ) := by
+  rw [length_map_mkQ, length_map_mkQ,
+    length_quotient_eq_length_quotient_comap_subtype_add (Submodule.comap_mono hN), add_comm]
+  gcongr
+  -- The class of `u` is a nonzero element of the first factor.
+  rw [Order.one_le_iff_ne_zero, ← pos_iff_ne_zero, Module.length_pos_iff]
+  refine nontrivial_of_ne (Submodule.Quotient.mk ⟨⟨u, huP⟩, huN'⟩) 0 ?_
+  rw [ne_eq, Submodule.Quotient.mk_eq_zero]
+  simpa using huN
+
+/-- For submodules `N, N₁, Z, Z'`, enlarging `Z` to `Z'` in the quotient `N ⧸ (N₁ + Z)` costs at
+most `length (Z' ⧸ Z)`: `length (N ⧸ (N₁ + Z)) ≤ length (Z' ⧸ Z) + length (N ⧸ (N₁ + Z'))`, each
+quotient `X ⧸ Y` being `X ⧸ (X ⊓ Y)`. -/
+theorem length_quotient_sup_le (N N₁ Z Z' : Submodule A M) :
+    Module.length A (↥N ⧸ (N₁ ⊔ Z).comap N.subtype) ≤
+      Module.length A (↥Z' ⧸ Z.comap Z'.subtype) +
+        Module.length A (↥N ⧸ (N₁ ⊔ Z').comap N.subtype) := by
+  have hmap : (N₁ ⊔ Z').map (N₁ ⊔ Z).mkQ ≤ Z'.map (N₁ ⊔ Z).mkQ := by
+    rw [Submodule.map_sup]
+    refine sup_le (Submodule.map_le_iff_le_comap.2 ?_) le_rfl
+    rw [Submodule.comap_map_mkQ]
+    exact le_sup_left.trans le_sup_left
+  rw [← length_map_mkQ]
+  refine (length_map_mkQ_le_add_length_quotient N (N₁ ⊔ Z') (N₁ ⊔ Z)).trans (add_le_add ?_ le_rfl)
+  calc Module.length A ((N₁ ⊔ Z').map (N₁ ⊔ Z).mkQ)
+      ≤ Module.length A (Z'.map (N₁ ⊔ Z).mkQ) :=
+        Module.length_le_of_injective _ (Submodule.inclusion_injective hmap)
+    _ ≤ _ := by
+        rw [length_map_mkQ]
+        exact length_quotient_anti (Submodule.comap_mono le_sup_right)
+
+/-- If `ρ : N → W` has kernel in `Z'` and image in `T'`, then for any submodules `N₁` of `M` and
+`T` of `W`, `length (N ⧸ (N₁ + Z')) ≤ length (T' ⧸ T) + length (T ⧸ ρ(N₁))`, where `ρ(N₁)` is the
+image of `N ⊓ N₁` and each quotient `X ⧸ Y` is `X ⧸ (X ⊓ Y)`. -/
+theorem length_quotient_sup_le_of_ker_le {W : Type*} [AddCommGroup W] [Module A W]
+    {N N₁ Z' : Submodule A M} {ρ : ↥N →ₗ[A] W} {T T' : Submodule A W}
+    (hker : LinearMap.ker ρ ≤ Z'.comap N.subtype) (hρ : LinearMap.range ρ ≤ T') :
+    Module.length A (↥N ⧸ (N₁ ⊔ Z').comap N.subtype) ≤
+      Module.length A (↥T' ⧸ T.comap T'.subtype) +
+        Module.length A (↥T ⧸ ((N₁.comap N.subtype).map ρ).comap T.subtype) := by
+  set B := (N₁.comap N.subtype).map ρ
+  have hk : LinearMap.ker (B.mkQ ∘ₗ ρ) ≤ (N₁ ⊔ Z').comap N.subtype := by
+    rw [LinearMap.ker_comp, Submodule.ker_mkQ, Submodule.comap_map_eq]
+    exact sup_le (Submodule.comap_mono le_sup_left)
+      (hker.trans (Submodule.comap_mono le_sup_right))
+  have hr : LinearMap.range (B.mkQ ∘ₗ ρ) ≤ T'.map B.mkQ := by
+    rw [LinearMap.range_comp]
+    exact Submodule.map_mono hρ
+  calc Module.length A (↥N ⧸ (N₁ ⊔ Z').comap N.subtype)
+      ≤ Module.length A (↥N ⧸ LinearMap.ker (B.mkQ ∘ₗ ρ)) := length_quotient_anti hk
+    _ = Module.length A (LinearMap.range (B.mkQ ∘ₗ ρ)) :=
+        (LinearMap.quotKerEquivRange _).length_eq
+    _ ≤ Module.length A (T'.map B.mkQ) :=
+        Module.length_le_of_injective _ (Submodule.inclusion_injective hr)
+    _ ≤ Module.length A (T.map B.mkQ) + Module.length A (↥T' ⧸ T.comap T'.subtype) :=
+        length_map_mkQ_le_add_length_quotient T' T B
+    _ = _ := by rw [length_map_mkQ, add_comm]
 
 /-- **Length is detected by finitely generated submodules.** -/
 theorem length_le_of_forall_fg {c : ℕ∞} (h : ∀ N : Submodule A M, N.FG → Module.length A N ≤ c) :
@@ -301,6 +438,29 @@ theorem length_add_length_add_length_eq_of_exact {A₀ B₀ C₀ A₁ B₁ C₁ 
     (LinearEquiv.ofTop ⊤ rfl).length_eq]
   ring
 
+/-- An injective linear map `f` identifies `N ⧸ (N ⊓ P)` with `f(N) ⧸ (f(N) ⊓ f(P))`, so these
+have the same length. -/
+theorem length_quotient_comap_subtype_map {M' : Type*} [AddCommGroup M'] [Module A M']
+    {f : M →ₗ[A] M'} (hf : Function.Injective f) (N P : Submodule A M) :
+    Module.length A (↥(N.map f) ⧸ (P.map f).comap (N.map f).subtype) =
+      Module.length A (↥N ⧸ P.comap N.subtype) := by
+  have hr : LinearMap.range (f ∘ₗ N.subtype) = N.map f := by
+    rw [LinearMap.range_comp, Submodule.range_subtype]
+  have hc : ((P.comap N.subtype).map (f ∘ₗ N.subtype)).comap (N.map f).subtype =
+      (P.map f).comap (N.map f).subtype := by
+    rw [Submodule.map_comp, Submodule.map_comap_subtype, Submodule.map_inf f hf,
+      Submodule.comap_inf, Submodule.comap_subtype_self, top_inf_eq]
+  have hφ : Function.Injective (f ∘ₗ N.subtype) := hf.comp N.injective_subtype
+  rw [← length_quotient_comap_subtype_range_map hφ, hr, hc]
+
+/-- For submodules `P ≤ Q ≤ N`, the quotient `N ⧸ P` is filtered by `Q ⧸ P` and `N ⧸ Q`. -/
+theorem length_quotient_comap_subtype_eq_add {P Q N : Submodule A M} (hPQ : P ≤ Q) (hQN : Q ≤ N) :
+    Module.length A (↥N ⧸ P.comap N.subtype) =
+      Module.length A (↥Q ⧸ P.comap Q.subtype) + Module.length A (↥N ⧸ Q.comap N.subtype) := by
+  rw [length_quotient_eq_length_quotient_comap_subtype_add (Submodule.comap_mono hPQ),
+    ← length_quotient_comap_subtype_map N.injective_subtype, Submodule.map_comap_subtype,
+    Submodule.map_comap_subtype, inf_eq_right.2 hQN, inf_eq_right.2 (hPQ.trans hQN)]
+
 end Ring
 
 section CommSemiring
@@ -360,6 +520,32 @@ theorem length_quotient_lsmul_congr {N : Type*} [AddCommGroup N] [Module A N] (e
   rw [range_lsmul_eq_smul_top, range_lsmul_eq_smul_top]
   exact (QuotSMulTop.congr a e).length_eq
 
+/-- For submodules `N, U, Θ` and a scalar `c`, multiplication by `c` maps `N ⧸ (N ⊓ U + N ⊓ Θ)`
+onto `cN ⧸ (cN ⊓ U + cN ⊓ Θ)`, so the latter is no longer. -/
+theorem length_quotient_smul_le (c : A) (N U Θ : Submodule A M) :
+    Module.length A (↥(c • N) ⧸ ((c • N) ⊓ U ⊔ (c • N) ⊓ Θ).comap (c • N).subtype) ≤
+      Module.length A (↥N ⧸ (N ⊓ U ⊔ N ⊓ Θ).comap N.subtype) := by
+  -- `c • N` is, by `Submodule.pointwise_smul_def`, the image of `N` under multiplication by `c`
+  let g : ↥N →ₗ[A] ↥(c • N) := (DistribSMul.toLinearMap A M c).submoduleMap N
+  have hgx (x : ↥N) : (g x : M) = c • (x : M) :=
+    (LinearMap.submoduleMap_coe_apply _ x).trans (DistribSMul.toLinearMap_apply ..)
+  have hg : Function.Surjective g := LinearMap.submoduleMap_surjective _ N
+  have hle : (N ⊓ U ⊔ N ⊓ Θ).comap N.subtype ≤
+      (((c • N) ⊓ U ⊔ (c • N) ⊓ Θ).comap (c • N).subtype).comap g := by
+    intro x hx
+    obtain ⟨a, ha, b, hb, hab⟩ := Submodule.mem_sup.1 hx
+    rw [Submodule.mem_comap, Submodule.mem_comap, Submodule.subtype_apply, hgx,
+      ← N.subtype_apply x, ← hab, smul_add]
+    exact add_mem
+      (Submodule.mem_sup_left (Submodule.mem_inf.2
+        ⟨Submodule.smul_mem_pointwise_smul _ c N ha.1, U.smul_mem c ha.2⟩))
+      (Submodule.mem_sup_right (Submodule.mem_inf.2
+        ⟨Submodule.smul_mem_pointwise_smul _ c N hb.1, Θ.smul_mem c hb.2⟩))
+  refine Module.length_le_of_surjective (Submodule.mapQ _ _ g hle) fun y ↦ ?_
+  obtain ⟨y, rfl⟩ := Submodule.mkQ_surjective _ y
+  obtain ⟨x, rfl⟩ := hg y
+  exact ⟨Submodule.Quotient.mk x, Submodule.mapQ_apply _ _ _ x⟩
+
 /-- **Reduction of the length of `M ⧸ aM` to finitely generated submodules.** -/
 theorem length_quotient_lsmul_le_of_forall_fg {a : A} {c : ℕ∞} (h : ∀ N : Submodule A M, N.FG →
       Module.length A (↥N ⧸ LinearMap.range (LinearMap.lsmul A ↥N a)) ≤ c) :
@@ -409,6 +595,24 @@ theorem isFiniteLength_of_nonZeroDivisor_mem_annihilator [IsNoetherianRing A]
     isArtinian_of_surjective_algebraMap (R := A ⧸ Module.annihilator A M)
       Ideal.Quotient.mk_surjective
   exact isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, this⟩
+
+/-- In a Noetherian ring of Krull dimension at most one, a finitely generated torsion module has
+finite length. -/
+theorem _root_.Module.IsTorsion.isFiniteLength [IsNoetherianRing A] [Ring.KrullDimLE 1 A]
+    [Module.Finite A M] (hM : Module.IsTorsion A M) : IsFiniteLength A M := by
+  obtain ⟨x, hxM, hx⟩ := Submodule.annihilator_top_inter_nonZeroDivisors hM
+  rw [SetLike.mem_coe, Submodule.annihilator_top] at hxM
+  exact isFiniteLength_of_nonZeroDivisor_mem_annihilator hxM hx
+
+/-- In a Noetherian ring of Krull dimension at most one, the kernel of a localization `ι : M → V`
+of a finitely generated module at the non-zero-divisors has finite length: it is the torsion of
+`M`. -/
+theorem _root_.IsLocalizedModule.isFiniteLength_ker [IsNoetherianRing A] [Ring.KrullDimLE 1 A]
+    [Module.Finite A M] {V : Type*} [AddCommGroup V] [Module A V] (ι : M →ₗ[A] V)
+    [IsLocalizedModule (nonZeroDivisors A) ι] : IsFiniteLength A (LinearMap.ker ι) := by
+  refine Module.IsTorsion.isFiniteLength fun x ↦ ?_
+  obtain ⟨s, hs⟩ := (IsLocalizedModule.eq_zero_iff (nonZeroDivisors A) ι).1 x.property
+  exact ⟨s, Subtype.ext hs⟩
 
 end CommRing
 
@@ -527,6 +731,44 @@ theorem length_quotient_eq_one (m : Ideal A) [m.IsMaximal] : Module.length A (A 
 
 end Ring
 
+section CommRing
+
+variable {A : Type*} [CommRing A]
+
+/-- **A quotient by a power of a finitely generated maximal ideal has finite length.** If `𝔪` is a
+finitely generated maximal ideal of `A`, then `A ⧸ 𝔪 ⁿ` has finite length over `A` for every `n`,
+with no noetherian hypothesis: each layer `𝔪 ⁿ ⧸ 𝔪 ⁿ⁺¹` is a quotient of `𝔪 ⁿ ⧸ 𝔪 𝔪 ⁿ`, a finite
+vector space over the field `A ⧸ 𝔪`. -/
+theorem isFiniteLength_quotient_pow_of_fg (m : Ideal A) [m.IsMaximal] (hm : m.FG) (n : ℕ) :
+    IsFiniteLength A (A ⧸ m ^ n) := by
+  induction n with
+  | zero =>
+    have : Subsingleton (A ⧸ m ^ 0) := by
+      rw [pow_zero, Ideal.one_eq_top]
+      infer_instance
+    exact .of_subsingleton
+  | succ n ih =>
+    let := Ideal.Quotient.field m
+    set N := (m • ⊤ : Submodule A (m ^ n : Ideal A))
+    -- `𝔪ⁿ ⧸ 𝔪 𝔪ⁿ` is a finite-dimensional vector space over `A ⧸ 𝔪`.
+    have : Module.Finite A (m ^ n : Ideal A) := Module.Finite.iff_fg.mpr (hm.pow (n := n))
+    have : Module.Finite (A ⧸ m) ((m ^ n : Ideal A) ⧸ N) :=
+      Module.Finite.of_restrictScalars_finite A _ _
+    have hQ : Module.length A ((m ^ n : Ideal A) ⧸ N) ≠ ⊤ := by
+      rw [Module.length_eq_of_surjective (R := A ⧸ m) Ideal.Quotient.mk_surjective,
+        Module.length_ne_top_iff]
+      exact ((IsArtinianRing.tfae _ _).out 1 4).mp ‹_›
+    have hle : N ≤ Submodule.comap (m ^ n : Ideal A).subtype (m ^ (n + 1)) :=
+      Submodule.smul_le.mpr fun r hr x _ ↦ by
+        simpa [pow_succ'] using Ideal.mul_mem_mul hr x.property
+    rw [← Module.length_ne_top_iff] at ih ⊢
+    rw [TauCeti.length_quotient_eq_length_quotient_comap_subtype_add
+      (Ideal.pow_le_pow_right (I := m) n.le_succ)]
+    refine WithTop.add_ne_top.mpr ⟨ne_top_of_le_ne_top hQ ?_, ih⟩
+    exact Module.length_le_of_surjective (Submodule.factor hle) (Submodule.factor_surjective hle)
+
+end CommRing
+
 section NoetherianRing
 
 variable {A : Type*} [CommRing A] [IsNoetherianRing A]
@@ -568,18 +810,11 @@ open _root_.IsLocalRing
 
 variable {A : Type*} [CommRing A] [IsNoetherianRing A] [IsLocalRing A]
 
-/-- Every quotient of a noetherian local ring by a power of its maximal ideal has finite length:
-for `n ≠ 0` the power `𝔪 ⁿ` is maximal-primary, and for `n = 0` the quotient is zero. -/
+/-- Every quotient of a noetherian local ring by a power of its maximal ideal has finite length,
+as the maximal ideal is finitely generated. -/
 theorem _root_.TauCeti.isFiniteLength_quotient_maximalIdeal_pow (n : ℕ) :
-    IsFiniteLength A (A ⧸ maximalIdeal A ^ n) := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · have : Subsingleton (A ⧸ maximalIdeal A ^ 0) := by
-      rw [pow_zero, Ideal.one_eq_top]
-      infer_instance
-    exact .of_subsingleton
-  · exact isFiniteLength_quotient_of_isMaximal_radical _ <| by
-      rw [radical_pow _ hn, (maximalIdeal.isMaximal A).isPrime.radical]
-      infer_instance
+    IsFiniteLength A (A ⧸ maximalIdeal A ^ n) :=
+  isFiniteLength_quotient_pow_of_fg _ (IsNoetherian.noetherian _) n
 
 /-- The quotient of a noetherian local ring by a power of its maximal ideal is an Artinian ring,
 being of finite length over the ring. -/
@@ -699,6 +934,35 @@ theorem eq_of_le_of_length_eq {N P : Submodule A M} (h : N ≤ P) (hN : Module.l
   have hs := TauCeti.surjective_of_injective_of_length_eq (inclusion_injective h) hN hlen
   rw [← LinearMap.range_eq_top, range_inclusion, comap_subtype_eq_top] at hs
   exact le_antisymm h hs
+
+section IsDetectedBy
+
+variable {O G B : Type*} [CommRing O] [AddCommGroup B] [Module O B]
+
+/-- A module `Z` of functions detected by a finite set `s` has length at most that of its quotient
+by its `C`-torsion plus `#s` times the length of the `C`-torsion of the values. -/
+theorem IsDetectedBy.length_le {Z : Submodule O (G → B)} {s : Finset G}
+    (hZ : Z.IsDetectedBy s) (C : O) :
+    Module.length O Z ≤
+      Module.length O (Z ⧸ torsionBy O Z C) + s.card • Module.length O (torsionBy O B C) := by
+  rw [Module.length_eq_add_of_exact _ _ (torsionBy O Z C).injective_subtype
+    (torsionBy O Z C).mkQ_surjective (LinearMap.exact_subtype_mkQ _), add_comm]
+  gcongr
+  -- Restriction to `s` embeds the `C`-torsion of `Z` in the functions from `s` to that of `B`.
+  let ρ : torsionBy O Z C →ₗ[O] (s → torsionBy O B C) := LinearMap.pi fun g ↦
+    LinearMap.codRestrict _ (LinearMap.proj (g : G) ∘ₗ Z.subtype ∘ₗ (torsionBy O Z C).subtype)
+      fun x ↦ by
+        rw [mem_torsionBy_iff]
+        exact congr_fun (congrArg Subtype.val ((mem_torsionBy_iff _ _).1 x.property)) g
+  have hρ : Function.Injective ρ := fun x y hxy ↦ by
+    have h0 := isDetectedBy_iff.1 hZ _ (sub_mem (x : Z).property (y : Z).property) fun g hg ↦
+      sub_eq_zero.2 (congrArg Subtype.val (congr_fun hxy ⟨g, hg⟩))
+    exact Subtype.ext (Subtype.ext (sub_eq_zero.1 h0))
+  calc Module.length O (torsionBy O Z C) ≤ Module.length O (s → torsionBy O B C) :=
+        Module.length_le_of_injective ρ hρ
+    _ = s.card • Module.length O (torsionBy O B C) := by simp [nsmul_eq_mul]
+
+end IsDetectedBy
 
 end Submodule
 

@@ -40,8 +40,10 @@ completeness assumption; this is how invertibility of a derivative of a composit
 the factors.
 
 An endomorphism is invertible exactly when it is a unit of the endomorphism ring
-(`ContinuousLinearMap.isInvertible_iff_isUnit`). A map is invertible exactly when its negation is
-(`ContinuousLinearMap.isInvertible_neg_iff`).
+(`ContinuousLinearMap.isInvertible_iff_isUnit`), and two invertible maps determine a transition
+unit (`ContinuousLinearMap.IsInvertible.transitionUnit`). A map is invertible exactly when its
+negation is (`ContinuousLinearMap.isInvertible_neg_iff`), so a difference `f - g` is invertible
+exactly when `g - f` is (`ContinuousLinearMap.isInvertible_sub_comm`).
 
 A map agreeing pointwise with an equality cast is invertible
 (`ContinuousLinearMap.isInvertible_of_eq_cast`), including zero modules.
@@ -104,6 +106,27 @@ theorem isInvertible_iff_isUnit {f : M →L[R] M} : f.IsInvertible ↔ IsUnit f 
 
 end IsUnit
 
+section TransitionUnit
+
+variable {R E F : Type*} [Semiring R]
+  [TopologicalSpace E] [AddCommMonoid E] [Module R E]
+  [TopologicalSpace F] [AddCommMonoid F] [Module R F]
+
+/-- The transition automorphism `S.inverse ∘L T` in `(E →L[R] E)ˣ` between two invertible
+continuous linear maps `S, T : E →L[R] F`. -/
+noncomputable def IsInvertible.transitionUnit {S T : E →L[R] F}
+    (hS : S.IsInvertible) (hT : T.IsInvertible) : (E →L[R] E)ˣ :=
+  (isInvertible_iff_isUnit.1 (hS.inverse.comp hT)).unit
+
+/-- Coercing `hS.transitionUnit hT` to `E →L[R] E` gives `S.inverse ∘L T`. -/
+@[simp]
+theorem IsInvertible.val_transitionUnit {S T : E →L[R] F}
+    (hS : S.IsInvertible) (hT : T.IsInvertible) :
+    ((hS.transitionUnit hT : (E →L[R] E)ˣ) : E →L[R] E) = S.inverse ∘L T :=
+  IsUnit.unit_spec _
+
+end TransitionUnit
+
 section Sub
 
 variable {R E F : Type*} [Ring R]
@@ -130,6 +153,10 @@ variable {R E F : Type*} [Ring R] [TopologicalSpace E] [AddCommGroup E] [Module 
 theorem isInvertible_neg_iff {f : E →L[R] F} : (-f).IsInvertible ↔ f.IsInvertible := by
   have h : -f = (ContinuousLinearEquiv.neg R : F ≃L[R] F) ∘L f := by ext; simp
   rw [h, isInvertible_equiv_comp]
+
+/-- A difference `f - g` is invertible exactly when `g - f` is. -/
+theorem isInvertible_sub_comm {f g : E →L[R] F} : (f - g).IsInvertible ↔ (g - f).IsInvertible := by
+  rw [← isInvertible_neg_iff, neg_sub]
 
 end Neg
 
@@ -325,6 +352,16 @@ theorem inverse_smul_of_isScalarTower {S : Type*} [Semifield S] [Algebra S 𝕜]
     ext; simp [algebraMap_smul]
   rw [show c • f = algebraMap S 𝕜 c • f by ext; simp [algebraMap_smul], inverse_smul, h,
     map_inv₀]
+
+omit [ContinuousConstSMul 𝕜 M] in
+/-- Multiplying a continuous linear map by a nonzero scalar `c` from a subfield `S` of its scalars,
+such as a real multiple of a complex-linear map, does not change its invertibility. -/
+@[simp]
+theorem isInvertible_smul_iff_of_isScalarTower {S : Type*} [Semifield S] [Algebra S 𝕜]
+    [Module S M₂] [IsScalarTower S 𝕜 M₂] [ContinuousConstSMul S M₂] {c : S} (hc : c ≠ 0)
+    {f : M →L[𝕜] M₂} : (c • f).IsInvertible ↔ f.IsInvertible := by
+  rw [show c • f = algebraMap S 𝕜 c • f by ext; simp [algebraMap_smul],
+    isInvertible_smul_iff ((map_ne_zero _).2 hc)]
 
 end Smul
 

@@ -154,6 +154,29 @@ theorem symOpenPartialHomeomorph_symm_apply {ι : Type*} [Fintype ι]
 end SymOpenPartialHomeomorph
 
 variable [TopologicalSpace α] [ChartedSpace K α] {n : ℕ} in
+/-- In the elementary-symmetric chart with one block per point of a tuple `p`, built from disjoint
+coordinate patches `V i` of the charts `φᵢ` of `α` at the points `p i`, a tuple `w` with `w i ∈ V i`
+lies in the source and is read as its negated coordinates `(φᵢ(wᵢ))ᵢ`. -/
+theorem ofFn_mem_source_and_symOpenPartialHomeomorph_ofFn_eq {p : Fin n → α}
+    {V : Fin n → Set α} (hVo : ∀ i, IsOpen (V i))
+    (hVsub : ∀ i, V i ⊆ (chartAt K (p i)).source) (hVdisj : Pairwise (Function.onFun Disjoint V))
+    (hm : ∑ _i : Fin n, 1 = n) (hq : Nonempty (∀ i, Sym ↥(V i) 1)) {w : Fin n → α}
+    (hw : ∀ i, w i ∈ V i) :
+    Sym.ofFn w ∈ (symOpenPartialHomeomorph (fun i => chartAt K (p i)) V (fun _ => 1) hm hVo
+        hVsub hVdisj (Equiv.sigmaUnique (Fin n) fun _ => Fin 1) hq).source ∧
+      symOpenPartialHomeomorph (fun i => chartAt K (p i)) V (fun _ => 1) hm hVo hVsub hVdisj
+        (Equiv.sigmaUnique (Fin n) fun _ => Fin 1) hq (Sym.ofFn w) =
+        -fun j => chartAt K (p j) (w j) := by
+  have hsum : Sym.ofFn w =
+      Sym.sumSubtype V (fun _ => 1) hm fun i => Sym.ofFn fun _ => ⟨w i, hw i⟩ := by
+    rw [Sym.sumSubtype_ofFn hm (Equiv.sigmaUnique (Fin n) fun _ => Fin 1)]
+    simp [Equiv.sigmaUnique_symm_apply]
+  rw [hsum, symOpenPartialHomeomorph_source, symOpenPartialHomeomorph_apply]
+  refine ⟨Set.mem_range_self _, funext fun j => ?_⟩
+  rw [piSigmaConstHomeomorph_apply, Equiv.sigmaUnique_symm_apply]
+  exact Sym.coeffEquiv_one_apply (by simp [Sym.map_ofFn])
+
+variable [TopologicalSpace α] [ChartedSpace K α] {n : ℕ} in
 /-- Near a tuple `p` of points in disjoint coordinate patches `V i`, the elementary-symmetric chart
 with one block per point reads the tuple `w` as its negated coordinates `(φᵢ(wᵢ))ᵢ`, where `φᵢ` is
 the chart of `α` at `p i`. -/
@@ -169,14 +192,8 @@ theorem eventually_mem_source_symOpenPartialHomeomorph_ofFn {p : Fin n → α}
         -fun j => chartAt K (p j) (w j) := by
   filter_upwards [isOpen_set_pi Set.finite_univ (fun i _ => hVo i) |>.mem_nhds
     fun i _ => hpV i] with w hw
-  have hsum : Sym.ofFn w =
-      Sym.sumSubtype V (fun _ => 1) hm fun i => Sym.ofFn fun _ => ⟨w i, hw i trivial⟩ := by
-    rw [Sym.sumSubtype_ofFn hm (Equiv.sigmaUnique (Fin n) fun _ => Fin 1)]
-    rfl
-  rw [hsum, symOpenPartialHomeomorph_source, symOpenPartialHomeomorph_apply]
-  refine ⟨Set.mem_range_self _, funext fun j => ?_⟩
-  rw [piSigmaConstHomeomorph_apply, Equiv.sigmaUnique_symm_apply]
-  exact Sym.coeffEquiv_one_apply (by simp [Sym.map_ofFn])
+  exact ofFn_mem_source_and_symOpenPartialHomeomorph_ofFn_eq hVo hVsub hVdisj hm hq
+    fun i => hw i trivial
 
 section BasepointDivisor
 

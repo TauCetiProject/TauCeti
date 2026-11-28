@@ -13,6 +13,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.PointAction
 public import TauCeti.Algebra.Coalgebra.Comodule.Weight.Space
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 public import Mathlib.LinearAlgebra.Semisimple
 public import Mathlib.LinearAlgebra.Unimodular
@@ -40,8 +41,9 @@ action transports across `R ⊗[R] V ≃ₗ[R] V` to a representation on `V` its
 * `TauCeti.Comodule.pointsAction_corestrict`: compatibility of point actions with
   corestriction and precomposition, also provided for bundled finite comodules by
   `TauCeti.Comodule.pointsAction_corestrict_obj`.
-* `TauCeti.Comodule.basePointsRepresentation`: the action of base-valued points on the original
-  comodule.
+* `TauCeti.Comodule.basePointsRepresentation` and
+  `TauCeti.Comodule.basePointsRepresentation_apply_eq_tensorComponent`: the action of base-valued
+  points on the original comodule, computed by contracting the coefficient leg of the coaction.
 * `TauCeti.Comodule.basePointsRepresentation_apply_of_mem_weightSpace`: base-valued points act on
   a weight vector through the value of the point on its weight.
 * `TauCeti.Comodule.coact_eq_tmul_one_iff_forall_pointsAction_tmul_eq`: geometric fixed-vector
@@ -117,6 +119,15 @@ theorem basePointsRepresentation_apply (g : WithConv (H →ₐ[R] R)) (m : M) :
     (pointsRepresentation (R := R) (H := H) (A := R) M g) m = _
   rw [LinearEquiv.conj_apply_apply, pointsRepresentation_apply]
   simp
+
+/-- A base-valued point acts on `m` by contracting the right factor of `coact m` via
+`LinearMap.tensorComponent`. -/
+theorem basePointsRepresentation_apply_eq_tensorComponent
+    (g : WithConv (H →ₐ[R] R)) (m : M) :
+    basePointsRepresentation (H := H) M g m =
+      LinearMap.tensorComponent g.ofConv.toLinearMap (coact (R := R) (C := H) m) := by
+  rw [basePointsRepresentation_apply, endOfPoint_tmul, one_smul, TensorProduct.lid_comm,
+    LinearMap.tensorComponent_def, LinearMap.comp_apply, LinearEquiv.coe_coe]
 
 /-- Every subcomodule is stable under the action of base-valued points. -/
 theorem basePointsRepresentation_mem (N : Subcomodule R H M)

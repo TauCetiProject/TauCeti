@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Stinespring.Basic
 public import TauCeti.Analysis.CStarAlgebra.Matrix.EuclideanCLM
-public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
+public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace.Basic
 import TauCeti.Analysis.CStarAlgebra.Matrix.HilbertSchmidt
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order

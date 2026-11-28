@@ -42,9 +42,11 @@ coordinate relative to `J₀` is `β(r) • ∑ q, β(σ_q - 1) β(L + 3 - σ_q)
 The comparison family `TauCeti.SmoothTwoForm.Compatible.cappedComparisonAlmostComplex` takes the
 cutoff parameter `3R - 1` and the neck length `TauCeti.Floer.comparisonNeckLength R`. It starts at
 the domain-independent `J₀`, has no necks on the collar `2/3 ≤ R ≤ 3/2`, has necks of length
-`R - 1` for `R ≥ 2`, where on the truncation `S_T` with `T ≤ R + 1` it is the structure with neck
-length `T` (`Compatible.cappedComparisonAlmostComplex_eq_cappedAlmostComplex_of_mem_truncation`),
-and is smooth in `R`.
+`R - 1` for `R ≥ 2`, where up to the necks it is the pair-of-pants structure
+(`Compatible.cappedComparisonAlmostComplex_eq_pairOfPantsAlmostComplex`) and on the truncation
+`S_T` with `T ≤ R + 1` it is the structure with neck length `T`
+(`Compatible.cappedComparisonAlmostComplex_eq_cappedAlmostComplex_of_mem_truncation`), and is
+smooth in `R`.
 
 The structure is the end-weighted structure
 `TauCeti.SmoothTwoForm.Compatible.endWeightedAlmostComplex` with the weights above, so tameness
@@ -301,6 +303,17 @@ theorem cappedComparisonAlmostComplex_of_two_le (hR : 2 ≤ R) :
     h₀.cappedComparisonAlmostComplex J hJ R = h₀.cappedAlmostComplex J hJ 1 (R - 1) := by
   rw [cappedComparisonAlmostComplex_def, Floer.comparisonNeckLength_of_ge hR,
     cappedAlmostComplex_of_one_le h₀ J hJ (by linarith)]
+
+/-- **The comparison family is the pair-of-pants structure up to the necks.** For `R ≥ 2`, at
+points of the pair of pants where the signed longitudinal coordinate of every end is at most
+`R + 1`, such as the points of the truncation `S_T` for `T ≤ R + 1`, the structure is the
+pair-of-pants structure. -/
+theorem cappedComparisonAlmostComplex_eq_pairOfPantsAlmostComplex (hR : 2 ≤ R)
+    {w : ThricePuncturedSphere} (hw : ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ R + 1) :
+    h₀.cappedComparisonAlmostComplex J hJ R w = h₀.pairOfPantsAlmostComplex J hJ w := by
+  rw [cappedComparisonAlmostComplex_of_two_le h₀ J hJ hR]
+  exact cappedAlmostComplex_eq_pairOfPantsAlmostComplex h₀ J hJ le_rfl
+    fun q ↦ (hw q).trans (by linarith)
 
 /-- On the truncation `S_T`, for `R ≥ 2` with `T ≤ R + 1`, the structure is the capped structure
 with neck length `T`: both are the pair-of-pants structure there. -/

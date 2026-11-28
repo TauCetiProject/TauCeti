@@ -54,18 +54,27 @@ is, and for coisotropic `U` it is Lagrangian when `L` is
 Lagrangian submanifolds by a coisotropic one.
 
 The underlying construction, valid for any alternating real bilinear form `B`, is the symplectic
-form on `V ⧸ ker B` (`LinearMap.BilinForm.IsAlt.symplecticFormQuotKer`).
+form on `V ⧸ ker B` (`LinearMap.BilinForm.IsAlt.symplecticFormQuotKer`). A linear equivalence
+`e` with `B' (e v) (e w) = B v w` carries `ker B` onto `ker B'`
+(`LinearMap.BilinForm.map_ker_eq_ker`) and so induces `V ⧸ ker B ≃ W ⧸ ker B'`
+(`LinearMap.BilinForm.quotKerCongr`), a symplectomorphism for alternating forms
+(`LinearMap.BilinForm.IsAlt.isSymplectomorphism_quotKerCongr`).
 
 ## Main definitions
 
 * `LinearMap.BilinForm.IsAlt.symplecticFormQuotKer`: an alternating form descends to a symplectic
   form on the quotient by its kernel.
+* `LinearMap.BilinForm.quotKerCongr`: the equivalence `V ⧸ ker B ≃ W ⧸ ker B'` induced by a
+  form-preserving linear equivalence.
 * `TauCeti.SymplecticForm.ReducedSpace ω U`: the reduced space `U ⧸ (U ∩ U^ω)`.
 * `TauCeti.SymplecticForm.reduction ω U`: its symplectic form `[u], [v] ↦ ω(u, v)`.
 * `TauCeti.SymplecticForm.reducedSpaceTopEquiv ω`: the identification of `V` with the reduced
   space of `⊤`, a symplectomorphism.
 * `TauCeti.SymplecticForm.reducedQuadraticForm ω U Q hQ`: the quadratic form `[u] ↦ Q u` on the
   reduced space, for a quadratic form `Q` whose polar form vanishes on `(U ∩ U^ω) × U`.
+* `TauCeti.SymplecticForm.reducedSpaceEquivOfSlice`: the identification `a ↦ [j a]` of a
+  symplectic slice `j : V₀ → U` with the reduced space, a symplectomorphism
+  (`TauCeti.SymplecticForm.isSymplectomorphism_reducedSpaceEquivOfSlice`).
 * `TauCeti.SymplecticForm.reducedSpaceCongr`: the symplectomorphism of reduced spaces induced by a
   linear symplectomorphism.
 * `TauCeti.SymplecticForm.reducedSpaceRepresentation`: the induced symplectic representation of a
@@ -148,6 +157,67 @@ theorem symplecticFormQuotKer_mk (hB : B.IsAlt) (v w : V) :
 
 end LinearMap.BilinForm.IsAlt
 
+namespace LinearMap.BilinForm
+
+section QuotKerEquiv
+
+variable {R V W : Type*} [CommRing R] [AddCommGroup V] [Module R V] [AddCommGroup W] [Module R W]
+  {B : LinearMap.BilinForm R V} {B' : LinearMap.BilinForm R W}
+
+/-- A linear equivalence `e` with `B' (e v) (e w) = B v w` maps a vector into the kernel of `B'`
+exactly when the vector lies in the kernel of `B`. -/
+theorem apply_mem_ker_iff (e : V ≃ₗ[R] W) (he : ∀ v w, B' (e v) (e w) = B v w) {v : V} :
+    e v ∈ LinearMap.ker B' ↔ v ∈ LinearMap.ker B := by
+  simp only [LinearMap.mem_ker, LinearMap.ext_iff, LinearMap.zero_apply]
+  refine ⟨fun h w ↦ he v w ▸ h (e w), fun h u ↦ ?_⟩
+  rw [← e.apply_symm_apply u, he, h]
+
+/-- A linear equivalence `e` with `B' (e v) (e w) = B v w` carries the kernel of `B` onto the
+kernel of `B'`. -/
+theorem map_ker_eq_ker (e : V ≃ₗ[R] W) (he : ∀ v w, B' (e v) (e w) = B v w) :
+    (LinearMap.ker B).map (e : V →ₗ[R] W) = LinearMap.ker B' := by
+  ext u
+  rw [Submodule.mem_map_equiv, ← apply_mem_ker_iff e he, e.apply_symm_apply]
+
+variable (B B') in
+/-- A linear equivalence `e` with `B' (e v) (e w) = B v w` descends to the linear equivalence
+`V ⧸ ker B ≃ W ⧸ ker B'`, `[v] ↦ [e v]`. -/
+noncomputable def quotKerCongr (e : V ≃ₗ[R] W) (he : ∀ v w, B' (e v) (e w) = B v w) :
+    (V ⧸ LinearMap.ker B) ≃ₗ[R] W ⧸ LinearMap.ker B' :=
+  Submodule.Quotient.equiv _ _ e (map_ker_eq_ker e he)
+
+/-- `quotKerCongr` sends the class of `v` to the class of `e v`. -/
+@[simp]
+theorem quotKerCongr_mk (e : V ≃ₗ[R] W) (he : ∀ v w, B' (e v) (e w) = B v w) (v : V) :
+    quotKerCongr B B' e he (Submodule.Quotient.mk v) = Submodule.Quotient.mk (e v) :=
+  (rfl)
+
+/-- The inverse of `quotKerCongr` sends the class of `u` to the class of `e⁻¹ u`. -/
+@[simp]
+theorem quotKerCongr_symm_mk (e : V ≃ₗ[R] W) (he : ∀ v w, B' (e v) (e w) = B v w) (u : W) :
+    (quotKerCongr B B' e he).symm (Submodule.Quotient.mk u) = Submodule.Quotient.mk (e.symm u) :=
+  (rfl)
+
+end QuotKerEquiv
+
+/-- **Form-preserving maps are symplectic on the quotients by the kernels.** For alternating real
+forms `B`, `B'` and a linear equivalence `e` with `B' (e v) (e w) = B v w`, the induced
+`V ⧸ ker B ≃ W ⧸ ker B'` is a linear symplectomorphism for the symplectic forms that `B` and `B'`
+induce on these quotients. -/
+theorem IsAlt.isSymplectomorphism_quotKerCongr {V W : Type*} [AddCommGroup V] [Module ℝ V]
+    [AddCommGroup W] [Module ℝ W] {B : LinearMap.BilinForm ℝ V} {B' : LinearMap.BilinForm ℝ W}
+    (hB : B.IsAlt) (hB' : B'.IsAlt) (e : V ≃ₗ[ℝ] W) (he : ∀ v w, B' (e v) (e w) = B v w) :
+    TauCeti.SymplecticForm.IsSymplectomorphism hB.symplecticFormQuotKer hB'.symplecticFormQuotKer
+      (quotKerCongr B B' e he) := by
+  rw [TauCeti.SymplecticForm.isSymplectomorphism_iff]
+  intro v w
+  induction v using Submodule.Quotient.induction_on with | H v =>
+  induction w using Submodule.Quotient.induction_on with | H w =>
+  rw [quotKerCongr_mk, quotKerCongr_mk, IsAlt.symplecticFormQuotKer_mk,
+    IsAlt.symplecticFormQuotKer_mk, he]
+
+end LinearMap.BilinForm
+
 namespace TauCeti.SymplecticForm
 
 variable {V V' V'' : Type*} [AddCommGroup V] [Module ℝ V] [AddCommGroup V'] [Module ℝ V']
@@ -169,8 +239,7 @@ theorem mem_ker_restrict_iff {u : U} :
 theorem map_subtype_ker_restrict :
     (LinearMap.ker (ω.toBilinForm.restrict U)).map U.subtype = U ⊓ ω.orthogonal U := by
   ext v
-  simp only [Submodule.mem_map, Submodule.mem_inf, mem_ker_restrict_iff, Submodule.subtype_apply]
-  exact ⟨fun ⟨u, hu, hv⟩ => hv ▸ ⟨u.property, hu⟩, fun ⟨hv, hv'⟩ => ⟨⟨v, hv⟩, hv', rfl⟩⟩
+  rw [LinearMap.BilinForm.mem_map_subtype_ker_restrict_iff, Submodule.mem_inf, mem_orthogonal_iff']
 
 /-- The **reduced space** `U ⧸ (U ∩ U^ω)` of a subspace `U` of a symplectic vector space: the
 quotient of `U` by the kernel of the restriction of `ω`. -/
@@ -183,6 +252,12 @@ noncomputable def reduction : SymplecticForm (ω.ReducedSpace U) :=
   LinearMap.BilinForm.IsAlt.symplecticFormQuotKer (B := ω.toBilinForm.restrict U) <| by
     intro u
     exact ω.self_eq_zero u
+
+/-- The reduction of `ω` along `U` is the symplectic form induced on the quotient by the kernel
+by the (alternating) restriction of `ω` to `U`. -/
+theorem reduction_eq_symplecticFormQuotKer (hB : (ω.toBilinForm.restrict U).IsAlt) :
+    ω.reduction U = hB.symplecticFormQuotKer :=
+  (rfl)
 
 /-- The defining formula `ω_red([u], [v]) = ω(u, v)` of the reduced symplectic form. -/
 @[simp]
@@ -336,22 +411,70 @@ theorem finrank_reducedSpace_orthogonal_add [FiniteDimensional ℝ V] (W : Submo
 
 end Finrank
 
+section Slice
+
+variable {V₀ : Type*} [AddCommGroup V₀] [Module ℝ V₀]
+  {ω : SymplecticForm V} {U : Submodule ℝ V} {ω₀ : SymplecticForm V₀} {j : V₀ →ₗ[ℝ] V}
+
+/-- A linear map `j : V₀ → V` with image in `U` pulling `ω` back to a symplectic form `ω₀` is
+injective modulo `U ∩ U^ω`: the map `a ↦ [j a]` into the reduced space has trivial kernel. -/
+private theorem injective_mkQ_comp_codRestrict (hjU : ∀ a, j a ∈ U)
+    (hjω : ∀ a b, ω (j a) (j b) = ω₀ a b) :
+    Function.Injective ((LinearMap.ker (ω.toBilinForm.restrict U)).mkQ ∘ₗ j.codRestrict U hjU) := by
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+  intro a ha
+  rw [LinearMap.comp_apply, Submodule.mkQ_apply, ReducedSpace.mk_eq_zero_iff,
+    LinearMap.codRestrict_apply] at ha
+  exact ω₀.nondegenerate.1 a fun b ↦ (hjω a b).symm.trans (mem_orthogonal_iff'.1 ha _ (hjU b))
+
+variable (ω U ω₀ j) in
+/-- A **symplectic slice** of the reduced space of `U`: a linear map `j : V₀ → V` with image in
+`U` that pulls `ω` back to a symplectic form `ω₀`, from a space of the dimension of the reduced
+space `U ⧸ (U ∩ U^ω)`, induces the linear equivalence `a ↦ [j a]` onto it. It is a
+symplectomorphism (`TauCeti.SymplecticForm.isSymplectomorphism_reducedSpaceEquivOfSlice`), so the
+reduced space may be computed in the coordinates of `V₀`. -/
+noncomputable def reducedSpaceEquivOfSlice [FiniteDimensional ℝ V₀] [FiniteDimensional ℝ U]
+    (hjU : ∀ a, j a ∈ U) (hjω : ∀ a b, ω (j a) (j b) = ω₀ a b)
+    (hd : finrank ℝ V₀ = finrank ℝ (ω.ReducedSpace U)) : V₀ ≃ₗ[ℝ] ω.ReducedSpace U :=
+  LinearEquiv.ofBijective ((LinearMap.ker (ω.toBilinForm.restrict U)).mkQ ∘ₗ j.codRestrict U hjU)
+    ⟨injective_mkQ_comp_codRestrict hjU hjω,
+      (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hd).1
+        (injective_mkQ_comp_codRestrict hjU hjω)⟩
+
+/-- The symplectic slice sends `a` to the class of `j a` in the reduced space. -/
+@[simp]
+theorem reducedSpaceEquivOfSlice_apply [FiniteDimensional ℝ V₀] [FiniteDimensional ℝ U]
+    (hjU : ∀ a, j a ∈ U) (hjω : ∀ a b, ω (j a) (j b) = ω₀ a b)
+    (hd : finrank ℝ V₀ = finrank ℝ (ω.ReducedSpace U)) (a : V₀) :
+    reducedSpaceEquivOfSlice ω U ω₀ j hjU hjω hd a = Submodule.Quotient.mk ⟨j a, hjU a⟩ :=
+  (rfl)
+
+/-- The identification of a symplectic slice with the reduced space is a symplectomorphism from
+`ω₀` to the reduced form. -/
+theorem isSymplectomorphism_reducedSpaceEquivOfSlice [FiniteDimensional ℝ V₀]
+    [FiniteDimensional ℝ U] (hjU : ∀ a, j a ∈ U) (hjω : ∀ a b, ω (j a) (j b) = ω₀ a b)
+    (hd : finrank ℝ V₀ = finrank ℝ (ω.ReducedSpace U)) :
+    IsSymplectomorphism ω₀ (ω.reduction U) (reducedSpaceEquivOfSlice ω U ω₀ j hjU hjω hd) := by
+  rw [isSymplectomorphism_iff]
+  intro a b
+  rw [reducedSpaceEquivOfSlice_apply, reducedSpaceEquivOfSlice_apply, reduction_mk]
+  exact hjω a b
+
+end Slice
+
 section Functoriality
 
 variable {ω : SymplecticForm V} {ω' : SymplecticForm V'} {ω'' : SymplecticForm V''}
 
-/-- The linear equivalence `U ≃ U'` induced by `e` maps the kernel of the restriction of `ω` to
-`U` onto that of `ω'` on `U'`. -/
-private theorem map_ker_restrict_congr {e : V ≃ₗ[ℝ] V'} (he : IsSymplectomorphism ω ω' e)
-    {U : Submodule ℝ V} {U' : Submodule ℝ V'} (hU : U.map (e : V →ₗ[ℝ] V') = U') :
-    (LinearMap.ker (ω.toBilinForm.restrict U)).map
-        (((e.submoduleMap U).trans (LinearEquiv.ofEq _ _ hU) : U ≃ₗ[ℝ] U') : U →ₗ[ℝ] U') =
-      LinearMap.ker (ω'.toBilinForm.restrict U') := by
-  subst hU
-  ext y
-  rw [Submodule.mem_map_equiv, mem_ker_restrict_iff, mem_ker_restrict_iff,
-    ← he.map_orthogonal U, Submodule.mem_map_equiv]
-  simp [LinearEquiv.submoduleMap_symm_apply]
+/-- A linear symplectomorphism `e` carrying `U` onto `U'` intertwines the restrictions of `ω` and
+`ω'` along the induced equivalence `U ≃ U'`. -/
+private theorem restrict_apply_submoduleMap_trans_ofEq (e : V ≃ₗ[ℝ] V')
+    (he : IsSymplectomorphism ω ω' e) {U : Submodule ℝ V} {U' : Submodule ℝ V'}
+    (hU : U.map (e : V →ₗ[ℝ] V') = U') (u v : U) :
+    ω'.toBilinForm.restrict U' ((e.submoduleMap U).trans (LinearEquiv.ofEq _ _ hU) u)
+        ((e.submoduleMap U).trans (LinearEquiv.ofEq _ _ hU) v) =
+      ω.toBilinForm.restrict U u v := by
+  simpa using he.apply u v
 
 variable (ω ω') in
 /-- A linear symplectomorphism `e : V ≃ V'` carrying `U` onto `U'` induces the linear equivalence
@@ -360,8 +483,8 @@ variable (ω ω') in
 noncomputable def reducedSpaceCongr (e : V ≃ₗ[ℝ] V') (he : IsSymplectomorphism ω ω' e)
     {U : Submodule ℝ V} {U' : Submodule ℝ V'} (hU : U.map (e : V →ₗ[ℝ] V') = U') :
     ω.ReducedSpace U ≃ₗ[ℝ] ω'.ReducedSpace U' :=
-  Submodule.Quotient.equiv _ _ ((e.submoduleMap U).trans (LinearEquiv.ofEq _ _ hU))
-    (map_ker_restrict_congr he hU)
+  LinearMap.BilinForm.quotKerCongr _ _ ((e.submoduleMap U).trans (LinearEquiv.ofEq _ _ hU))
+    (restrict_apply_submoduleMap_trans_ofEq e he hU)
 
 /-- The induced map of reduced spaces is `[u] ↦ [e u]`. -/
 @[simp]
@@ -376,12 +499,11 @@ theorem isSymplectomorphism_reducedSpaceCongr (e : V ≃ₗ[ℝ] V')
     (he : IsSymplectomorphism ω ω' e) {U : Submodule ℝ V} {U' : Submodule ℝ V'}
     (hU : U.map (e : V →ₗ[ℝ] V') = U') :
     IsSymplectomorphism (ω.reduction U) (ω'.reduction U') (reducedSpaceCongr ω ω' e he hU) := by
-  rw [isSymplectomorphism_iff]
-  intro x y
-  induction x using Submodule.Quotient.induction_on with
-  | H u =>
-  induction y using Submodule.Quotient.induction_on with
-  | H v => simpa using he.apply u v
+  have hB : (ω.toBilinForm.restrict U).IsAlt := fun u ↦ by simp
+  have hB' : (ω'.toBilinForm.restrict U').IsAlt := fun u ↦ by simp
+  rw [reducedSpaceCongr, reduction_eq_symplecticFormQuotKer ω U hB,
+    reduction_eq_symplecticFormQuotKer ω' U' hB']
+  exact hB.isSymplectomorphism_quotKerCongr hB' _ (restrict_apply_submoduleMap_trans_ofEq e he hU)
 
 /-- The descent condition of `TauCeti.SymplecticForm.reducedQuadraticForm` transfers along a linear
 symplectomorphism `e` carrying `U` onto `U'`: the pullback `Q ∘ e` vanishes on `(U ∩ U^ω) × U`

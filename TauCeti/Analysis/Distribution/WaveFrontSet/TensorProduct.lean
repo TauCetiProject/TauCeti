@@ -51,7 +51,11 @@ in the directions `(ξ, 0)` with `ξ ≠ 0`.
   smooth at `(x, ξ)` with `ξ ≠ 0`, then `S ⊗ T` is microlocally smooth at `((x, y), (ξ, η))` for
   every `y` and `η`, and symmetrically in `T`.
 * `Distribution.waveFrontSet_transportCLM_tensorProduct_subset`: the wave front set bound for
-  `S ⊗ T`.
+  `S ⊗ T`; `Distribution.waveFrontSet_transportCLM_tensorProduct_subset_tensorCone` restates it
+  with the cone `TauCeti.tensorCone Γ₁ Γ₂`, which contains `WF(S ⊗ T)` whenever `WF(S) ⊆ Γ₁` and
+  `WF(T) ⊆ Γ₂` and does not depend on `S` and `T`. It is a closed cone of nonzero covectors
+  when `Γ₁` and `Γ₂` are (`TauCeti.smul_mem_tensorCone`, `TauCeti.isOpen_diff_tensorCone`,
+  `TauCeti.ne_zero_of_mem_tensorCone`).
 * `Distribution.IsMicrolocallySmoothAt.of_transportCLM_tensorProduct_left`,
   `Distribution.IsMicrolocallySmoothAt.of_transportCLM_tensorProduct_right`: if `S ⊗ T` is
   microlocally smooth at `((x, y), (ξ, 0))` and `y ∈ supp T`, then `S` is microlocally smooth at
@@ -67,6 +71,9 @@ in the directions `(ξ, 0)` with `ξ ≠ 0`.
   `c ≠ 0`.
 * `Distribution.waveFrontSet_transportCLM_tensorProduct_delta_ofFun_one`: the example
   `δ_{x₀} ⊗ 1`.
+* `Distribution.transportCLM_withLpProdComm_transportCLM_tensorProduct`,
+  `TauCeti.preimage_withLpProdComm_tensorCone`: swapping the factors of the Euclidean product
+  carries `T ⊗ S` to `S ⊗ T` and the cone `Γ₂ ⊠ Γ₁` to `Γ₁ ⊠ Γ₂`.
 
 ## Implementation notes
 
@@ -185,7 +192,7 @@ variable {S T}
 at `((x, y), (ξ, η))` for every `y` and `η`. -/
 theorem IsMicrolocallySmoothAt.transportCLM_tensorProduct_left {p ζ : WithLp 2 (E × D)}
     (hS : S.IsMicrolocallySmoothAt p.fst ζ.fst) (hξ : ζ.fst ≠ 0) (hp : p ∈ W) :
-    (transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
+    (Distribution.transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
       (S.tensorProduct T hV.subset)).IsMicrolocallySmoothAt p ζ := by
   obtain ⟨U, hU, Γ, hΓ, hξΓ, hcone, hdecay⟩ := hS.exists_nhds_cone
   obtain ⟨φ, ψ, χ, hφ, -, hχ, hprod⟩ := exists_prod_cutoff S T hV hW hp hU univ_mem
@@ -199,7 +206,7 @@ theorem IsMicrolocallySmoothAt.transportCLM_tensorProduct_left {p ζ : WithLp 2 
 at `((x, y), (ξ, η))` for every `x` and `ξ`. -/
 theorem IsMicrolocallySmoothAt.transportCLM_tensorProduct_right {p ζ : WithLp 2 (E × D)}
     (hT : T.IsMicrolocallySmoothAt p.snd ζ.snd) (hη : ζ.snd ≠ 0) (hp : p ∈ W) :
-    (transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
+    (Distribution.transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
       (S.tensorProduct T hV.subset)).IsMicrolocallySmoothAt p ζ := by
   obtain ⟨U, hU, Γ, hΓ, hηΓ, hcone, hdecay⟩ := hT.exists_nhds_cone
   obtain ⟨φ, ψ, χ, -, hψ, hχ, hprod⟩ := exists_prod_cutoff S T hV hW hp univ_mem hU
@@ -247,7 +254,7 @@ variable {S T}
 `((x, y), (ξ, 0))` and `y` lies in the support of `T`, then `S` is microlocally smooth at
 `(x, ξ)`. -/
 theorem IsMicrolocallySmoothAt.of_transportCLM_tensorProduct_left {p ζ : WithLp 2 (E × D)}
-    (h : (transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
+    (h : (Distribution.transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
       (S.tensorProduct T hV.subset)).IsMicrolocallySmoothAt p ζ)
     (hη : ζ.snd = 0) (hy : p.snd ∈ dsupport T) : S.IsMicrolocallySmoothAt p.fst ζ.fst := by
   obtain ⟨U, hU, Γ, hΓ, hζΓ, hcone, hdecay⟩ := h.exists_nhds_cone
@@ -280,7 +287,7 @@ theorem IsMicrolocallySmoothAt.of_transportCLM_tensorProduct_left {p ζ : WithLp
 `((x, y), (0, η))` and `x` lies in the support of `S`, then `T` is microlocally smooth at
 `(y, η)`. -/
 theorem IsMicrolocallySmoothAt.of_transportCLM_tensorProduct_right {p ζ : WithLp 2 (E × D)}
-    (h : (transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
+    (h : (Distribution.transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
       (S.tensorProduct T hV.subset)).IsMicrolocallySmoothAt p ζ)
     (hξ : ζ.fst = 0) (hx : p.fst ∈ dsupport S) : T.IsMicrolocallySmoothAt p.snd ζ.snd := by
   obtain ⟨U, hU, Γ, hΓ, hζΓ, hcone, hdecay⟩ := h.exists_nhds_cone
@@ -409,5 +416,138 @@ theorem waveFrontSet_transportCLM_tensorProduct_delta_ofFun_one {x₀ : E} (hx�
     waveFrontSet_delta hx₀]
   ext
   simp [and_assoc]
+
+end Distribution
+
+namespace TauCeti
+
+variable {E D : Type*} [NormedAddCommGroup E] [NormedAddCommGroup D]
+
+/-- The cone `Γ₁ ⊠ Γ₂` of the nonzero covectors `((x, y), (ξ, η))` of the Euclidean product
+`WithLp 2 (E × D)` with `ξ = 0` or `(x, ξ) ∈ Γ₁`, and `η = 0` or `(y, η) ∈ Γ₂`. When `Γ₁` and `Γ₂`
+contain the wave front sets of `S` and `T`, it contains that of `S ⊗ T`
+(`Distribution.waveFrontSet_transportCLM_tensorProduct_subset_tensorCone`), and it depends only
+on `Γ₁` and `Γ₂`, not on the supports of `S` and `T`. -/
+def tensorCone (Γ₁ : Set (E × E)) (Γ₂ : Set (D × D)) :
+    Set (WithLp 2 (E × D) × WithLp 2 (E × D)) :=
+  {q | q.2 ≠ 0 ∧ (q.2.fst = 0 ∨ (q.1.fst, q.2.fst) ∈ Γ₁) ∧ (q.2.snd = 0 ∨ (q.1.snd, q.2.snd) ∈ Γ₂)}
+
+@[simp]
+theorem mem_tensorCone {Γ₁ : Set (E × E)} {Γ₂ : Set (D × D)}
+    {q : WithLp 2 (E × D) × WithLp 2 (E × D)} :
+    q ∈ tensorCone Γ₁ Γ₂ ↔ q.2 ≠ 0 ∧ (q.2.fst = 0 ∨ (q.1.fst, q.2.fst) ∈ Γ₁) ∧
+      (q.2.snd = 0 ∨ (q.1.snd, q.2.snd) ∈ Γ₂) :=
+  Iff.rfl
+
+/-- `tensorCone Γ₁ Γ₂` is monotone in `Γ₁` and in `Γ₂`. -/
+theorem tensorCone_mono {Γ₁ Γ₁' : Set (E × E)} {Γ₂ Γ₂' : Set (D × D)} (h₁ : Γ₁ ⊆ Γ₁')
+    (h₂ : Γ₂ ⊆ Γ₂') : tensorCone Γ₁ Γ₂ ⊆ tensorCone Γ₁' Γ₂' :=
+  fun _ ⟨h0, hξ, hη⟩ ↦ ⟨h0, hξ.imp_right (@h₁ _), hη.imp_right (@h₂ _)⟩
+
+/-- The covectors of `tensorCone Γ₁ Γ₂` are nonzero. -/
+theorem ne_zero_of_mem_tensorCone {Γ₁ : Set (E × E)} {Γ₂ : Set (D × D)}
+    {q : WithLp 2 (E × D) × WithLp 2 (E × D)} (hq : q ∈ tensorCone Γ₁ Γ₂) : q.2 ≠ 0 :=
+  hq.1
+
+/-- `tensorCone Γ₁ Γ₂` is a cone when `Γ₁` and `Γ₂` are. -/
+theorem smul_mem_tensorCone [Module ℝ E] [Module ℝ D] {Γ₁ : Set (E × E)} {Γ₂ : Set (D × D)}
+    (hcone₁ : ∀ p ∈ Γ₁, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ₁)
+    (hcone₂ : ∀ p ∈ Γ₂, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ₂)
+    {q : WithLp 2 (E × D) × WithLp 2 (E × D)} (hq : q ∈ tensorCone Γ₁ Γ₂) {t : ℝ} (ht : 0 < t) :
+    (q.1, t • q.2) ∈ tensorCone Γ₁ Γ₂ := by
+  obtain ⟨h0, hξ, hη⟩ := hq
+  refine ⟨smul_ne_zero ht.ne' h0, ?_, ?_⟩
+  · rcases hξ with h | h
+    · exact Or.inl (by simp [h])
+    · exact Or.inr (hcone₁ _ h t ht)
+  · rcases hη with h | h
+    · exact Or.inl (by simp [h])
+    · exact Or.inr (hcone₂ _ h t ht)
+
+/-- `tensorCone Γ₁ Γ₂` is closed in `W × ((E × D) \ {0})` when `Γ₁` and `Γ₂` are closed in
+`Ω × (E \ {0})` and `O × (D \ {0})`, and the components of the points of `W` lie in `Ω` and `O`. -/
+theorem isOpen_diff_tensorCone {Γ₁ : Set (E × E)} {Γ₂ : Set (D × D)} {Ω : Set E} {O : Set D}
+    {W : Set (WithLp 2 (E × D))} (hW : IsOpen W) (hWΩO : ∀ p ∈ W, p.fst ∈ Ω ∧ p.snd ∈ O)
+    (hΓ₁ : IsOpen ((Ω ×ˢ {0}ᶜ) \ Γ₁)) (hΓ₂ : IsOpen ((O ×ˢ {0}ᶜ) \ Γ₂)) :
+    IsOpen ((W ×ˢ {0}ᶜ) \ tensorCone Γ₁ Γ₂) := by
+  -- Off `tensorCone Γ₁ Γ₂`, one of the components of the covector is a direction avoiding `Γ₁`
+  -- or `Γ₂`.
+  have h : (W ×ˢ {0}ᶜ) \ tensorCone Γ₁ Γ₂ = W ×ˢ univ ∩
+      ((fun q ↦ (q.1.fst, q.2.fst)) ⁻¹' ((Ω ×ˢ {0}ᶜ) \ Γ₁) ∪
+        (fun q ↦ (q.1.snd, q.2.snd)) ⁻¹' ((O ×ˢ {0}ᶜ) \ Γ₂)) := by
+    ext ⟨p, ζ⟩
+    have hζ₁ : ζ.fst ≠ 0 → ζ ≠ 0 := fun h hζ ↦ h (by simp [hζ])
+    have hζ₂ : ζ.snd ≠ 0 → ζ ≠ 0 := fun h hζ ↦ h (by simp [hζ])
+    simp only [Set.mem_sdiff, mem_prod, mem_compl_iff, mem_singleton_iff, mem_tensorCone,
+      mem_inter_iff, mem_univ, and_true, mem_union, mem_preimage]
+    constructor
+    · rintro ⟨⟨hp, hζ⟩, h⟩
+      have := hWΩO p hp
+      tauto
+    · rintro ⟨hp, h⟩
+      tauto
+  rw [h]
+  exact (hW.prod isOpen_univ).inter
+    ((hΓ₁.preimage (by fun_prop)).union (hΓ₂.preimage (by fun_prop)))
+
+/-- Swapping the factors of the Euclidean product exchanges `Γ₂ ⊠ Γ₁` and `Γ₁ ⊠ Γ₂`: a covector
+`((x, y), (ξ, η))` lies in `Γ₁ ⊠ Γ₂` exactly when `((y, x), (η, ξ))` lies in `Γ₂ ⊠ Γ₁`. -/
+theorem preimage_withLpProdComm_tensorCone [NormedSpace ℝ E] [NormedSpace ℝ D]
+    (Γ₁ : Set (E × E)) (Γ₂ : Set (D × D)) :
+    Prod.map (LinearIsometryEquiv.withLpProdComm 2 ℝ E D)
+        (LinearIsometryEquiv.withLpProdComm 2 ℝ E D) ⁻¹' tensorCone Γ₂ Γ₁ =
+      tensorCone Γ₁ Γ₂ := by
+  ext ⟨p, ζ⟩
+  simp only [mem_preimage, Prod.map_apply, mem_tensorCone, ne_eq,
+    LinearIsometryEquiv.map_eq_zero_iff]
+  simp only [LinearIsometryEquiv.withLpProdComm_apply, WithLp.toLp_fst, WithLp.toLp_snd]
+  tauto
+
+end TauCeti
+
+namespace Distribution
+
+variable {E D : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup D] [InnerProductSpace ℝ D] [FiniteDimensional ℝ D]
+  {Ω : Opens E} {O : Opens D} {V : Opens (E × D)} {W : Opens (WithLp 2 (E × D))}
+  (S : 𝓓'(Ω, ℂ)) (T : 𝓓'(O, ℂ)) (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D))
+  (hW : MapsTo (prodContinuousLinearEquiv 2 ℝ E D) W V)
+
+/-- **The wave front set of a tensor product in a fixed cone.** If `WF(S) ⊆ Γ₁` and
+`WF(T) ⊆ Γ₂`, then `WF(S ⊗ T)` lies in the cone `Γ₁ ⊠ Γ₂` (`TauCeti.tensorCone`), which does not
+depend on `S` and `T`. -/
+theorem waveFrontSet_transportCLM_tensorProduct_subset_tensorCone {Γ₁ : Set (E × E)}
+    {Γ₂ : Set (D × D)} (hS : S.waveFrontSet ⊆ Γ₁) (hT : T.waveFrontSet ⊆ Γ₂) :
+    (transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
+        (S.tensorProduct T hV.subset)).waveFrontSet ⊆ TauCeti.tensorCone Γ₁ Γ₂ := by
+  intro q hq
+  obtain ⟨h₁, h₂⟩ := waveFrontSet_transportCLM_tensorProduct_subset S T hV hW hq
+  refine ⟨(mem_waveFrontSet_iff.1 hq).2.1, ?_, ?_⟩
+  · rcases h₁ with h | ⟨-, h⟩
+    · exact Or.inr (hS h)
+    · exact Or.inl h
+  · rcases h₂ with h | ⟨-, h⟩
+    · exact Or.inr (hT h)
+    · exact Or.inl h
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] in
+/-- **Commutativity of the tensor product on the Euclidean product.** Swapping the factors of
+`WithLp 2 (E × D)` carries `T ⊗ S`, on `W' ⊆ WithLp 2 (D × E)`, to `S ⊗ T` on `W`. -/
+theorem transportCLM_withLpProdComm_transportCLM_tensorProduct {V' : Opens (D × E)}
+    {W' : Opens (WithLp 2 (D × E))} (hV' : (V' : Set (D × E)) = (O : Set D) ×ˢ (Ω : Set E))
+    (hW' : MapsTo (prodContinuousLinearEquiv 2 ℝ D E) W' V')
+    (h : MapsTo (LinearIsometryEquiv.withLpProdComm 2 ℝ E D).toContinuousLinearEquiv W W') :
+    transportCLM (LinearIsometryEquiv.withLpProdComm 2 ℝ E D).toContinuousLinearEquiv h
+        (transportCLM (prodContinuousLinearEquiv 2 ℝ D E) hW' (T.tensorProduct S hV'.subset)) =
+      transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW (S.tensorProduct T hV.subset) := by
+  have hc : MapsTo (ContinuousLinearEquiv.prodComm ℝ E D) V V' := by
+    rw [hV, hV']
+    exact fun p hp ↦ ⟨hp.2, hp.1⟩
+  rw [← transportCLM_prodComm_tensorProduct S T hV hV' hc]
+  ext φ
+  simp only [transportCLM_apply]
+  congr 1
+  ext p
+  simp [Prod.swap]
 
 end Distribution

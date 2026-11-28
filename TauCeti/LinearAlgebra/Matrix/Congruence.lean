@@ -43,6 +43,14 @@ one factor after the other.
   similitude groups under multiplication and inversion.
 * `Matrix.transpose_mul_mul_eq_smul_of_mul_mul_transpose_eq_smul`: for a form with `J * J = -1`,
   a similitude `M J Mᵀ = r J` with unit multiplier satisfies `Mᵀ J M = r J`.
+* `Matrix.smul_transpose_map_mul_mul_mul_eq` and
+  `Matrix.smul_transpose_map_mul_mul_eq_of_mul_eq_one`: twisted similitudes
+  `a • (g ^ σ)ᵀ Q g = e • Q'` between Gram matrices, possibly on different index types, compose,
+  and a right inverse of one is one in the opposite direction; for `Q = Q'` they are closed under
+  products and right inverses.
+* `Matrix.map_map_algebraMap`, `Matrix.map_transpose_mul_mul_sub_smul` and
+  `Matrix.map_transpose_mul_mul_sub`: a matrix over `R` read in an `R`-algebra, and the defect
+  `gᵀ M g - c M`, under an algebra morphism.
 
 ## References
 
@@ -181,7 +189,70 @@ theorem transpose_mul_mul_eq_smul_of_mul_mul_transpose_eq_smul [DecidableEq n]
     _ = (r : R) • J := by
         rw [hJM, Matrix.mul_smul, Matrix.mul_one, neg_smul, neg_neg]
 
+section Twisted
+
+variable {S : Type*} [CommSemiring S] (σ : S →+* S) {l m p : Type*} [Fintype l] [Fintype m]
+
+/-- **Twisted similitudes compose**: for forms `Q`, `Q'`, `Q''` on `l`, `m`, `p`, if
+`a • σ(g)ᵀ Q g = e • Q'` and `b • σ(h)ᵀ Q' h = f • Q''`, then
+`(a b) • σ(g h)ᵀ Q (g h) = (e f) • Q''`, where `σ(g)` applies `σ` to every entry. -/
+theorem smul_transpose_map_mul_mul_mul_eq {Q : Matrix l l S} {Q' : Matrix m m S}
+    {Q'' : Matrix p p S} {a b e f : S} {g : Matrix l m S} {h : Matrix m p S}
+    (hg : a • ((g.map σ)ᵀ * Q * g) = e • Q') (hh : b • ((h.map σ)ᵀ * Q' * h) = f • Q'') :
+    (a * b) • (((g * h).map σ)ᵀ * Q * (g * h)) = (e * f) • Q'' := by
+  calc (a * b) • (((g * h).map σ)ᵀ * Q * (g * h))
+      = b • ((h.map σ)ᵀ * (a • ((g.map σ)ᵀ * Q * g)) * h) := by
+        rw [transpose_map_mul_mul_mul, mul_comm, mul_smul, Matrix.mul_smul, Matrix.smul_mul]
+    _ = (e * f) • Q'' := by
+        rw [hg, Matrix.mul_smul, Matrix.smul_mul, smul_comm, hh, smul_smul]
+
+/-- **A right inverse of a twisted similitude is a similitude**: for forms `Q` on `l` and `Q'` on
+`m`, if `g g' = 1` and `a • σ(g)ᵀ Q g = e • Q'`, then `e • σ(g')ᵀ Q' g' = a • Q`. -/
+theorem smul_transpose_map_mul_mul_eq_of_mul_eq_one [DecidableEq l] {Q : Matrix l l S}
+    {Q' : Matrix m m S} {a e : S} {g : Matrix l m S} {g' : Matrix m l S} (hgg' : g * g' = 1)
+    (hg : a • ((g.map σ)ᵀ * Q * g) = e • Q') :
+    e • ((g'.map σ)ᵀ * Q' * g') = a • Q := by
+  calc e • ((g'.map σ)ᵀ * Q' * g') = (g'.map σ)ᵀ * (a • ((g.map σ)ᵀ * Q * g)) * g' := by
+        rw [hg, Matrix.mul_smul, Matrix.smul_mul]
+    _ = a • Q := by
+        rw [Matrix.mul_smul, Matrix.smul_mul, ← transpose_map_mul_mul_mul, hgg',
+          Matrix.map_one _ (map_zero σ) (map_one σ), transpose_one, Matrix.one_mul, Matrix.mul_one]
+
+end Twisted
+
 end Similitude
+
+section AlgebraMap
+
+variable {R A B : Type*} [CommSemiring R]
+
+/-- Reading a matrix over `R` in an `R`-algebra `A` and then mapping it by an algebra morphism
+`phi : A → B` reads it in `B`. -/
+theorem map_map_algebraMap {m n : Type*} [Semiring A] [Algebra R A] [Semiring B] [Algebra R B]
+    (phi : A →ₐ[R] B) (M : Matrix m n R) :
+    (M.map (algebraMap R A)).map phi = M.map (algebraMap R B) := by
+  rw [Matrix.map_map]
+  exact congrArg _ (funext phi.commutes)
+
+variable {n : Type*} [Fintype n] [Ring A] [Algebra R A] [Ring B] [Algebra R B]
+
+/-- **The similitude defect `gᵀ M g - c M` under an algebra morphism**: for a matrix `M` over `R`
+read in `A` and in `B`, mapping by `phi : A → B` applies `phi` to `g` and to `c`. -/
+theorem map_transpose_mul_mul_sub_smul (phi : A →ₐ[R] B) (M : Matrix n n R)
+    (g : Matrix n n A) (c : A) :
+    (gᵀ * M.map (algebraMap R A) * g - c • M.map (algebraMap R A)).map phi =
+      (g.map phi)ᵀ * M.map (algebraMap R B) * g.map phi - phi c • M.map (algebraMap R B) := by
+  rw [Matrix.map_sub _ (map_sub phi), Matrix.map_mul, Matrix.map_mul,
+    Matrix.map_smul' _ _ _ (map_mul phi), map_map_algebraMap, Matrix.transpose_map]
+
+/-- The isometry defect `gᵀ M g - M` under an algebra morphism: the case `c = 1` of
+`Matrix.map_transpose_mul_mul_sub_smul`. -/
+theorem map_transpose_mul_mul_sub (phi : A →ₐ[R] B) (M : Matrix n n R) (g : Matrix n n A) :
+    (gᵀ * M.map (algebraMap R A) * g - M.map (algebraMap R A)).map phi =
+      (g.map phi)ᵀ * M.map (algebraMap R B) * g.map phi - M.map (algebraMap R B) := by
+  simpa only [one_smul, map_one] using map_transpose_mul_mul_sub_smul phi M g 1
+
+end AlgebraMap
 
 section BasisSubstitution
 

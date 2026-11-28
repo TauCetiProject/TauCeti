@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.Algebra.Polynomial.Monic
 public import Mathlib.Algebra.Polynomial.Reverse
 import Mathlib.Algebra.Polynomial.Degree.Lemmas
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import TauCeti.Algebra.Ring.Parity
 import TauCeti.RingTheory.TensorProduct.Maps
 
@@ -63,7 +64,8 @@ to be a ring.
 * `TauCeti.Determinant.algHomDet`: the determinant `det ∘ ρ` of a matrix representation
   `ρ : R →ₐ[A] Matrix n n A`, a `card n`-dimensional determinant with value `det (ρ x)`,
   characteristic polynomial `(ρ x).charpoly` and trace `(ρ x).trace`; conjugate representations
-  have the same determinant (`TauCeti.Determinant.algHomDet_innerAut_comp`).
+  have the same determinant (`AlgHom.algHomDet_comp`), as do
+  representations related by any matrix-algebra endomorphism.
 
 ## References
 
@@ -118,6 +120,16 @@ theorem ground_toLaw : D.toLaw.ground = ⇑D :=
 theorem apply_eq_lid_toFun (x : R) :
     D x = TensorProduct.lid A A (D.toLaw.toFun A (1 ⊗ₜ x)) := by
   rw [← ground_toLaw, PolynomialLaw.ground_apply, PolynomialLaw.toFun'_eq_toFun]
+
+/-- Specialising a scalar extension: if an `A`-algebra map `φ : S →ₐ[A] A` sends `z ∈ S ⊗ R` to
+`1 ⊗ x`, then `D x = φ (D(z))`, since the law commutes with `φ`. -/
+theorem apply_eq_rid_toFun_of_rTensor_eq {S : Type*} [CommSemiring S] [Algebra A S]
+    (φ : S →ₐ[A] A) {z : S ⊗[A] R} {x : R} (hz : φ.toLinearMap.rTensor R z = 1 ⊗ₜ x) :
+    D x = φ (Algebra.TensorProduct.rid A A S (D.toLaw.toFun S z)) := by
+  rw [apply_eq_lid_toFun, ← hz, ← PolynomialLaw.isCompat_apply]
+  induction D.toLaw.toFun S z using TensorProduct.inductionOn with
+  | tmul s a => simp [mul_comm]
+  | add y w hy hw => simp only [map_add, hy, hw]
 
 /-- A determinant sends `1` to `1`. -/
 @[simp]
@@ -415,6 +427,17 @@ theorem trace_eq_neg_charpoly_coeff (hd : 0 < d) (x : R) :
   rw [coeff_charpoly, ite_eq_left (Nat.sub_le d 1), Nat.sub_sub_self hd, pow_one, neg_one_mul,
     neg_neg, trace_apply]
 
+/-- The trace is minus the second coefficient (`Polynomial.nextCoeff`) of the characteristic
+polynomial, in every dimension, including zero. -/
+theorem trace_eq_neg_charpoly_nextCoeff (x : R) : D.trace x = -(D.charpoly x).nextCoeff := by
+  nontriviality A
+  rcases Nat.eq_zero_or_pos d with rfl | hd
+  · rw [trace_eq_zero_of_dim_zero, LinearMap.zero_apply,
+      nextCoeff_eq_zero.mpr (Or.inl (D.charpoly_natDegree_eq_dim x)), neg_zero]
+  · rw [trace_eq_neg_charpoly_coeff D hd,
+      nextCoeff_of_natDegree_pos (by rw [charpoly_natDegree_eq_dim]; omega),
+      charpoly_natDegree_eq_dim]
+
 /-- The characteristic polynomial of `1` is `(X - 1) ^ d`. -/
 @[simp]
 theorem charpoly_one : D.charpoly 1 = (X - 1) ^ d := by
@@ -605,13 +628,16 @@ theorem trace_algHomDet (ρ : R →ₐ[A] Matrix n n A) (x : R) :
   · rw [trace_eq_neg_charpoly_coeff _ Fintype.card_pos, charpoly_algHomDet,
       Matrix.trace_eq_neg_charpoly_coeff]
 
-/-- Conjugate matrix representations have the same determinant: `algHomDet` does not change when
-`ρ` is followed by conjugation by an invertible matrix. -/
+/-- Postcomposing a matrix representation with a matrix-algebra endomorphism preserves its
+determinant. In particular, two matrix splittings of the same algebra over a common coefficient
+ring and of the same matrix degree give the same determinant, with the indices identified if
+needed. -/
 @[simp]
-theorem algHomDet_innerAut_comp (g : GL n A) (ρ : R →ₐ[A] Matrix n n A) :
-    algHomDet ((Matrix.GeneralLinearGroup.innerAut g).toAlgHom.comp ρ) = algHomDet ρ := by
+theorem _root_.AlgHom.algHomDet_comp (σ : AlgHom A (Matrix n n A) (Matrix n n A))
+    (ρ : R →ₐ[A] Matrix n n A) : algHomDet (σ.comp ρ) = algHomDet ρ := by
   ext1
-  simp [toLaw_algHomDet, LinearMap.toPolynomialLaw_comp, PolynomialLaw.comp_assoc]
+  simp only [toLaw_algHomDet, AlgHom.comp_toLinearMap, LinearMap.toPolynomialLaw_comp,
+    PolynomialLaw.comp_assoc, AlgHom.det_comp_toPolynomialLaw]
 
 end AlgHomDet
 
