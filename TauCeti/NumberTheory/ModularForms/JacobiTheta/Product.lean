@@ -9,7 +9,6 @@ public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
 public import TauCeti.NumberTheory.ModularForms.DedekindEta.Basic
 import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
 import TauCeti.Analysis.SpecialFunctions.JacobiTripleProduct
-import TauCeti.Analysis.SpecialFunctions.QPochhammer
 
 /-!
 # Jacobi's product formula and nonvanishing of the theta function
@@ -27,7 +26,8 @@ half-plane.
   `∑' k : ℤ, (e^{π i τ}) ^ (k ^ 2)`.
 * `TauCeti.jacobiTheta_eq_tprod`: the infinite product expansion of `jacobiTheta τ` on the upper
   half-plane.
-* `TauCeti.jacobiTheta_ne_zero`: `jacobiTheta τ ≠ 0` whenever `0 < τ.im`.
+* `TauCeti.jacobiTheta_ne_zero`, `TauCeti.jacobiTheta_two_mul_ne_zero`: `jacobiTheta τ ≠ 0` and
+  `jacobiTheta (2 * z) ≠ 0` on the upper half-plane.
 * `TauCeti.jacobiTheta_two_mul_eq_eta_div`:
   `jacobiTheta (2 * τ) = η (2 * τ) ^ 5 / (η τ ^ 2 * η (4 * τ) ^ 2)` for `0 < τ.im`.
 
@@ -40,7 +40,7 @@ half-plane.
 public section
 
 open Complex
-open scoped ModularForm Real
+open scoped ModularForm Real UpperHalfPlane
 
 namespace TauCeti
 
@@ -48,6 +48,7 @@ namespace TauCeti
 /-- `jacobiTheta τ` written as the quadratic nome series `∑' k : ℤ, (e^{π i τ}) ^ (k ^ 2)`. -/
 theorem jacobiTheta_eq_tsum_zpow_sq (τ : ℂ) :
     jacobiTheta τ = ∑' k : ℤ, cexp (π * I * τ) ^ (k ^ 2) := by
+  rw [jacobiTheta]
   refine tsum_congr fun k ↦ ?_
   rw [← Complex.exp_intCast_mul]
   congr 1
@@ -69,6 +70,11 @@ theorem jacobiTheta_ne_zero {τ : ℂ} (hτ : 0 < τ.im) : jacobiTheta τ ≠ 0 
   rw [jacobiTheta_eq_tsum_zpow_sq]
   exact tsum_zpow_sq_ne_zero (UpperHalfPlane.norm_exp_pi_I_lt_one hτ)
 
+/-- `jacobiTheta (2 * z)` does not vanish for `z` in the upper half-plane. -/
+@[simp]
+theorem jacobiTheta_two_mul_ne_zero (z : ℍ) : jacobiTheta (2 * (z : ℂ)) ≠ 0 :=
+  jacobiTheta_ne_zero (by simpa using mul_pos two_pos z.im_pos)
+
 /-- **Theta as a Dedekind eta quotient**: for `τ` in the upper half-plane,
 `θ(2τ) = η(2τ)⁵ / (η(τ)² η(4τ)²)`. -/
 theorem jacobiTheta_two_mul_eq_eta_div {τ : ℂ} (hτ : 0 < τ.im) :
@@ -81,18 +87,12 @@ theorem jacobiTheta_two_mul_eq_eta_div {τ : ℂ} (hτ : 0 < τ.im) :
   have hpi : π * I * (2 * τ) = 2 * π * I * τ := by ring
   have hs2 : cexp (2 * π * I * (2 * τ)) = s ^ 2 := by
     simpa [s, hpi] using UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq (2 * τ)
-  have hsplit : ∏' n : ℕ, (1 + s ^ (n + 1)) =
-      (∏' n : ℕ, (1 + s ^ (2 * n + 1))) * ∏' n : ℕ, (1 + (s ^ 2) ^ (n + 1)) := by
-    have hm1 := multipliable_one_add_pow_odd hs
-    have hm2 := multipliable_one_add_pow (norm_pow_lt_one hs two_ne_zero)
-    rw [← tprod_even_mul_odd hm1 (by simpa [← pow_mul, mul_add] using hm2)]
-    simp [← pow_mul, mul_add]
   have hθ : jacobiTheta (2 * τ) =
       (∏' n : ℕ, (1 + s ^ (2 * n + 1))) ^ 2 * ∏' n : ℕ, (1 - (s ^ 2) ^ (n + 1)) := by
     rw [jacobiTheta_eq_tprod h2τ, hpi, hs2]
   have hη2 : η (2 * τ) = cexp (π * I * τ / 12) * η τ *
       ((∏' n : ℕ, (1 + s ^ (2 * n + 1))) * ∏' n : ℕ, (1 + (s ^ 2) ^ (n + 1))) := by
-    rw [ModularForm.eta_two_mul hτ, hsplit]
+    rw [ModularForm.eta_two_mul hτ, tprod_one_add_pow_eq_tprod_one_add_pow_odd_mul hs]
   have hη4 : η (4 * τ) =
       cexp (π * I * τ / 6) * η (2 * τ) * ∏' n : ℕ, (1 + (s ^ 2) ^ (n + 1)) := by
     have h4 : (4 : ℂ) * τ = 2 * (2 * τ) := by ring

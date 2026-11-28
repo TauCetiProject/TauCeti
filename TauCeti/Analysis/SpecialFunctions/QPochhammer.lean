@@ -397,6 +397,17 @@ theorem tprod_one_sub_pow_eq_tprod_one_sub_pow_odd_mul {q : 𝕜} (hq : ‖q‖ 
     (multipliable_one_sub_pow_odd hq) (by simpa [← pow_mul, mul_add] using hP₂)]
   simp [← pow_mul, mul_add]
 
+/-- The product `∏_{n ≥ 1} (1 + qⁿ)` split into its odd and even factors:
+`∏_{n ≥ 1} (1 + qⁿ) = ∏_{n ≥ 0} (1 + q^{2n+1}) ∏_{n ≥ 1} (1 + q^{2n})` for `‖q‖ < 1`. -/
+theorem tprod_one_add_pow_eq_tprod_one_add_pow_odd_mul {q : 𝕜} (hq : ‖q‖ < 1) :
+    ∏' n : ℕ, (1 + q ^ (n + 1)) =
+      (∏' n : ℕ, (1 + q ^ (2 * n + 1))) * ∏' n : ℕ, (1 + (q ^ 2) ^ (n + 1)) := by
+  have hm₂ : Multipliable fun n : ℕ ↦ 1 + (q ^ 2) ^ (n + 1) :=
+    multipliable_one_add_pow (norm_pow_lt_one hq two_ne_zero)
+  rw [← tprod_even_mul_odd (f := fun n ↦ 1 + q ^ (n + 1))
+    (multipliable_one_add_pow_odd hq) (by simpa [← pow_mul, mul_add] using hm₂)]
+  simp [← pow_mul, mul_add]
+
 /-- `∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 1} (1 - qⁿ) = ∏_{n ≥ 1} (1 - q^{2n})` for `‖q‖ < 1`. -/
 theorem tprod_one_add_pow_mul_tprod_one_sub_pow {q : 𝕜} (hq : ‖q‖ < 1) :
     (∏' n : ℕ, (1 + q ^ (n + 1))) * ∏' n : ℕ, (1 - q ^ (n + 1)) =

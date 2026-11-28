@@ -154,7 +154,9 @@ private theorem e24_neg_three : e24 (-3) = cexp (-(π * I / 4)) := by
   push_cast
   ring
 
-private theorem e24_six : e24 6 = I := by
+/-- `e(6 / 24) = i`. -/
+@[simp]
+theorem e24_six : e24 6 = I := by
   rw [e24, show 2 * π * I * ((6 : ℤ) : ℂ) / 24 = π / 2 * I by push_cast; ring, exp_pi_div_two_mul_I]
 
 private theorem e24_neg_six : e24 (-6) = -I := by

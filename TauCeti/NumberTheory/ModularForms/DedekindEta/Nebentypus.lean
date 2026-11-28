@@ -11,6 +11,8 @@ public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 import TauCeti.Algebra.BigOperators.ZPow
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 import TauCeti.NumberTheory.ModularForms.Basic
+import TauCeti.NumberTheory.ModularForms.DedekindEta.ScaledKronecker
+import TauCeti.NumberTheory.ModularForms.Degeneracy.ConjScale
 
 /-!
 # The eta-quotient criterion
@@ -208,7 +210,7 @@ private theorem etaQuotientMultiplier_eq_symb_of_odd {N : ℕ} {r : ℕ → ℤ}
   have hε (δ : ℕ) (hδ : δ ∈ N.divisors) : etaMultiplier
       (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩) =
       (kroneckerSym ((N / δ : ℕ) * t) (γ 1 1) : ℂ) * e24 (E δ) :=
-    etaMultiplier_conjScaleGamma0_of_nonneg_of_odd (Nat.dvd_of_mem_divisors hδ) hγ ht
+    etaMultiplier_conjScaleGamma0_of_c_nonneg_of_odd_d (Nat.dvd_of_mem_divisors hδ) hγ ht
       (ht ▸ mul_nonneg (Int.natCast_nonneg N) ht0) ⟨v, hv⟩
   -- The exponents sum to `k (12 v)` modulo `24`, and `e(12 v k / 24) = χ₄(d) ^ k = (-1 / d) ^ k`.
   have hsum : ∑ δ ∈ N.divisors, r δ * E δ ≡ k * (12 * v) [ZMOD 24] := by
@@ -243,7 +245,7 @@ private theorem etaQuotientMultiplier_eq_symb_of_even {N : ℕ} {r : ℕ → ℤ
       (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) ⟨γ, hγ⟩) =
       (kroneckerSym (γ 1 1) ((N / δ : ℕ) * t) : ℂ) * e24 (O δ) := by
     obtain ⟨h00, h01, h10, h11⟩ :=
-      conjScaleGamma0_apply_of_eq (Nat.dvd_of_mem_divisors hδ) hγ ht
+      conjScaleGamma0_entries_of_c_eq_mul (Nat.dvd_of_mem_divisors hδ) hγ ht
     have hm : Odd (N / δ) := hNo.of_dvd_nat (Nat.div_dvd_of_dvd (Nat.dvd_of_mem_divisors hδ))
     rw [etaMultiplier_eq_kroneckerSym_mul_of_c_pos_of_odd_c _
       (by rw [h10]; exact mul_pos (by exact_mod_cast hm.pos) ht_pos)

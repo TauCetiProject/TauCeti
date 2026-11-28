@@ -7,15 +7,11 @@ module
 
 public import Mathlib.Analysis.RCLike.Sqrt
 public import Mathlib.NumberTheory.LegendreSymbol.ZModChar
-public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 public import Mathlib.NumberTheory.ModularForms.JacobiTheta.OneVariable
 public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
 public import TauCeti.NumberTheory.ModularForms.DedekindEta.Quotient
 import TauCeti.Analysis.Complex.Sqrt
-import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
-import TauCeti.NumberTheory.ModularForms.DedekindEta.Kronecker
-import TauCeti.NumberTheory.ModularForms.Degeneracy
+import TauCeti.NumberTheory.ModularForms.DedekindEta.ScaledKronecker
 import TauCeti.NumberTheory.ModularForms.JacobiTheta.Product
 
 /-!
@@ -33,7 +29,7 @@ The proof writes `θ(z) = η(2z)⁵ / (η(z)² η(4z)²)`
 (`TauCeti.jacobiTheta_two_mul_eq_eta_div`) as a level-four eta quotient
 (`TauCeti.ModularForm.etaQuotient`), applies its transformation law
 `TauCeti.ModularForm.etaQuotient_smul`, and evaluates the three conjugate eta multipliers via the
-Kronecker-symbol form `TauCeti.ModularForm.etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d`.
+Kronecker-symbol form `TauCeti.ModularForm.etaMultiplier_conjScaleGamma0_of_c_nonneg_of_odd_d`.
 Passing from `γ` to `-γ` extends the formula from `c ≥ 0` to negative `c`.
 
 ## Main definitions
@@ -51,7 +47,7 @@ Passing from `γ` to `-γ` extends the formula from `c ≥ 0` to negative `c`.
   `thetaAutomorphy γ z ≠ 0` for all `γ : SL(2, ℤ)` and `z : ℍ`.
 * `TauCeti.sum_thetaEtaExp`, `TauCeti.jacobiTheta_two_mul_eq_etaQuotient`:
   identification of `jacobiTheta (2 * τ)` with `ModularForm.etaQuotient 4 thetaEtaExp τ` of
-  exponent sum `1` (weight `1 / 2`).
+  exponent sum `1` over the divisors of `4` (weight `1 / 2`).
 * `TauCeti.thetaAutomorphy_eq_of_mem_Gamma0`: Shimura's formula for `j(γ, z)` on `Γ₀(4)`.
 * `TauCeti.thetaAutomorphy_sq_of_mem_Gamma0`: the square law `j(γ, z)² = χ₄(d) (c z + d)`.
 
@@ -236,9 +232,6 @@ theorem thetaAutomorphy_def (γ : SL(2, ℤ)) (z : ℍ) :
       jacobiTheta (2 * ((γ • z : ℍ) : ℂ)) / jacobiTheta (2 * (z : ℂ)) :=
   (rfl)
 
-private theorem jacobiTheta_two_mul_ne_zero (z : ℍ) : jacobiTheta (2 * (z : ℂ)) ≠ 0 :=
-  jacobiTheta_ne_zero (by simpa using mul_pos two_pos z.im_pos)
-
 /-- `thetaAutomorphy γ z ≠ 0` for every `γ ∈ SL(2, ℤ)` and `z ∈ ℍ`. -/
 @[simp]
 theorem thetaAutomorphy_ne_zero (γ : SL(2, ℤ)) (z : ℍ) : thetaAutomorphy γ z ≠ 0 := by
@@ -271,11 +264,13 @@ theorem thetaAutomorphy_inv_smul (γ : SL(2, ℤ)) (z : ℍ) :
     thetaAutomorphy γ⁻¹ (γ • z) = (thetaAutomorphy γ z)⁻¹ := by
   rw [thetaAutomorphy_def, thetaAutomorphy_def, inv_smul_smul, inv_div]
 
-/-- The level-4 eta-quotient exponent vector `r(1) = -2`, `r(2) = 5`, `r(4) = -2` for
-`θ(z) = jacobiTheta (2 * z) = η(2z)⁵ / (η(z)² η(4z)²)`. -/
+/-- The level-4 eta-quotient exponent vector for
+`θ(z) = jacobiTheta (2 * z) = η(2z)⁵ / (η(z)² η(4z)²)`: it sends `2` to `5` and every other
+natural number (in particular `1` and `4`) to `-2`. -/
 def thetaEtaExp : ℕ → ℤ := fun δ ↦ if δ = 2 then 5 else -2
 
-/-- Value of `TauCeti.thetaEtaExp` at a natural divisor `δ`. -/
+/-- Value of `TauCeti.thetaEtaExp` at every natural index `δ : ℕ`: `5` at `δ = 2` and `-2` at
+every `δ ≠ 2`. -/
 theorem thetaEtaExp_def (δ : ℕ) :
     thetaEtaExp δ = if δ = 2 then 5 else -2 :=
   (rfl)
@@ -295,7 +290,8 @@ theorem thetaEtaExp_two : thetaEtaExp 2 = 5 := by
 theorem thetaEtaExp_four : thetaEtaExp 4 = -2 := by
   decide
 
-/-- The exponents of `thetaEtaExp` sum to `1`, corresponding to weight `1 / 2`. -/
+/-- The values of `thetaEtaExp` over the divisors of `4` sum to `1`, corresponding to weight
+`1 / 2`. -/
 theorem sum_thetaEtaExp : ∑ δ ∈ (4 : ℕ).divisors, thetaEtaExp δ = 1 := by
   decide
 
@@ -328,11 +324,6 @@ theorem jacobiTheta_two_mul_eq_etaQuotient {τ : ℂ} (hτ : 0 < τ.im) :
 private theorem kroneckerSym_two_mul_e24 {d : ℤ} (hd : Odd d) :
     (kroneckerSym 2 d : ℂ) * ModularForm.e24 (3 * d - 3) = (thetaEpsilon d)⁻¹ := by
   rw [kroneckerSym_two_left d, ZMod.χ₈_int_eq_if_mod_eight, inv_thetaEpsilon hd]
-  have he24_6 : ModularForm.e24 6 = I := by
-    rw [ModularForm.e24_def]
-    convert Complex.exp_pi_div_two_mul_I using 2
-    push_cast
-    ring
   have h2 : d % 2 ≠ 0 := by
     obtain ⟨k, rfl⟩ := hd
     omega
@@ -347,7 +338,7 @@ private theorem kroneckerSym_two_mul_e24 {d : ℤ} (hd : Odd d) :
   · have he : 3 * d - 3 ≡ 6 [ZMOD 24] := by rw [Int.ModEq]; omega
     have h8 : d % 8 ≠ 1 ∧ d % 8 ≠ 7 := by omega
     have h4 : d % 4 ≠ 1 := by omega
-    rw [ModularForm.e24_congr he, he24_6]
+    rw [ModularForm.e24_congr he, ModularForm.e24_six]
     simp [h2, h8, h4]
   · have he : 3 * d - 3 ≡ 12 * (1 : ℕ) [ZMOD 24] := by rw [Int.ModEq]; omega
     have h8 : d % 8 ≠ 1 ∧ d % 8 ≠ 7 := by omega
@@ -356,49 +347,44 @@ private theorem kroneckerSym_two_mul_e24 {d : ℤ} (hd : Odd d) :
     simp [h2, h8, h4]
   · have he : 3 * d - 3 ≡ 12 * (1 : ℕ) + 6 [ZMOD 24] := by rw [Int.ModEq]; omega
     have h4 : d % 4 ≠ 1 := by omega
-    rw [ModularForm.e24_congr he, ModularForm.e24_add, ModularForm.e24_twelve_mul, he24_6]
+    rw [ModularForm.e24_congr he, ModularForm.e24_add, ModularForm.e24_twelve_mul,
+      ModularForm.e24_six]
     simp [h2, h, h4]
 
-private theorem prod_kroneckerSym_thetaEtaExp (t d : ℤ) :
+private theorem prod_kroneckerSym_thetaEtaExp {t d : ℤ} (hcop : IsCoprime (4 * t) d) :
     ∏ δ ∈ (4 : ℕ).divisors, (kroneckerSym ((4 / δ : ℕ) * t) d : ℂ) ^ thetaEtaExp δ =
       kroneckerSym 2 d * kroneckerSym (4 * t) d := by
   rw [prod_zpow_thetaEtaExp]
   simp only [Nat.reduceDiv, Nat.cast_one, Nat.cast_ofNat, one_mul]
-  by_cases hcop : IsCoprime (4 * t) d
-  · have hcop4 : (4 * t).gcd d = 1 := Int.isCoprime_iff_gcd_eq_one.mp hcop
-    have hcopt : t.gcd d = 1 :=
-      Int.isCoprime_iff_gcd_eq_one.mp (hcop.of_isCoprime_of_dvd_left (dvd_mul_left t 4))
-    have hcop2 : (2 * t).gcd d = 1 :=
-      Int.isCoprime_iff_gcd_eq_one.mp (hcop.of_isCoprime_of_dvd_left ⟨2, by ring⟩)
-    have hcop2d : (2 : ℤ).gcd d = 1 :=
-      Int.isCoprime_iff_gcd_eq_one.mp (hcop.of_isCoprime_of_dvd_left ⟨2 * t, by ring⟩)
-    have h4sq : (kroneckerSym (4 * t) d : ℂ) ^ 2 = 1 := sq_intCast_kroneckerSym_eq_one hcop4
-    have htsq : (kroneckerSym t d : ℂ) ^ 2 = 1 := sq_intCast_kroneckerSym_eq_one hcopt
-    have h2pow : (kroneckerSym (2 * t) d : ℂ) ^ 5 = (kroneckerSym (2 * t) d : ℂ) := by
-      have hsq : (kroneckerSym (2 * t) d : ℂ) ^ 2 = 1 := sq_intCast_kroneckerSym_eq_one hcop2
-      calc (kroneckerSym (2 * t) d : ℂ) ^ 5
-          = ((kroneckerSym (2 * t) d : ℂ) ^ 2) ^ 2 * (kroneckerSym (2 * t) d : ℂ) := by ring
-        _ = (kroneckerSym (2 * t) d : ℂ) := by rw [hsq, one_pow, one_mul]
-    simp only [h4sq, htsq, h2pow, one_mul, div_one]
-    rcases eq_or_ne d (-1) with rfl | hd1
-    · have h4_neg : 4 * t < 0 ↔ 2 * t < 0 := by omega
-      simp [kroneckerSym_neg_one_right, h4_neg]
-    · have h2t : kroneckerSym (2 * t) d = kroneckerSym 2 d * kroneckerSym t d :=
-        kroneckerSym_mul_left_of_ne_neg_one hd1 2 t
-      have h4t : kroneckerSym (4 * t) d = kroneckerSym t d := by
-        have hsq : 4 * t = t * 2 ^ 2 := by ring
-        rw [hsq, kroneckerSym_mul_sq two_ne_zero hcop2d]
-      rw [h2t, h4t, Int.cast_mul]
-  · have hnot2 : ¬ IsCoprime (2 * t) d := fun h ↦
-      hcop (by
-        have h2d : IsCoprime 2 d := h.of_isCoprime_of_dvd_left (dvd_mul_right 2 t)
-        have h4 : 2 * (2 * t) = 4 * t := by ring
-        simpa [h4] using h2d.mul_left h)
-    have h4z : kroneckerSym (4 * t) d = 0 :=
-      kroneckerSym_eq_zero_iff.mpr (mt Int.isCoprime_iff_gcd_eq_one.mpr hcop)
-    have h2z : kroneckerSym (2 * t) d = 0 :=
-      kroneckerSym_eq_zero_iff.mpr (mt Int.isCoprime_iff_gcd_eq_one.mpr hnot2)
-    simp [h4z, h2z]
+  have hcop4 : (4 * t).gcd d = 1 := Int.isCoprime_iff_gcd_eq_one.mp hcop
+  have hcopt : t.gcd d = 1 :=
+    Int.isCoprime_iff_gcd_eq_one.mp (hcop.of_isCoprime_of_dvd_left (dvd_mul_left t 4))
+  have hcop2 : (2 * t).gcd d = 1 :=
+    Int.isCoprime_iff_gcd_eq_one.mp (hcop.of_isCoprime_of_dvd_left ⟨2, by ring⟩)
+  have hcop2d : (2 : ℤ).gcd d = 1 :=
+    Int.isCoprime_iff_gcd_eq_one.mp (hcop.of_isCoprime_of_dvd_left ⟨2 * t, by ring⟩)
+  have h4sq : (kroneckerSym (4 * t) d : ℂ) ^ 2 = 1 := sq_intCast_kroneckerSym_eq_one hcop4
+  have htsq : (kroneckerSym t d : ℂ) ^ 2 = 1 := sq_intCast_kroneckerSym_eq_one hcopt
+  have h2pow : (kroneckerSym (2 * t) d : ℂ) ^ 5 = (kroneckerSym (2 * t) d : ℂ) := by
+    have hsq : (kroneckerSym (2 * t) d : ℂ) ^ 2 = 1 := sq_intCast_kroneckerSym_eq_one hcop2
+    calc (kroneckerSym (2 * t) d : ℂ) ^ 5
+        = ((kroneckerSym (2 * t) d : ℂ) ^ 2) ^ 2 * (kroneckerSym (2 * t) d : ℂ) := by ring
+      _ = (kroneckerSym (2 * t) d : ℂ) := by rw [hsq, one_pow, one_mul]
+  simp only [h4sq, htsq, h2pow, one_mul, div_one]
+  rcases eq_or_ne d (-1) with rfl | hd1
+  · have h4_neg : 4 * t < 0 ↔ 2 * t < 0 := by omega
+    simp [kroneckerSym_neg_one_right, h4_neg]
+  · have h2t : kroneckerSym (2 * t) d = kroneckerSym 2 d * kroneckerSym t d :=
+      kroneckerSym_mul_left_of_ne_neg_one hd1 2 t
+    have h4t : kroneckerSym (4 * t) d = kroneckerSym t d := by
+      have hsq : 4 * t = t * 2 ^ 2 := by ring
+      rw [hsq, kroneckerSym_mul_sq two_ne_zero hcop2d]
+    rw [h2t, h4t, Int.cast_mul]
+
+private theorem odd_apply_one_one_of_mem_Gamma0 {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 4) :
+    Odd (γ 1 1) :=
+  γ.odd_apply_one_of_even_apply_zero
+    (even_iff_two_dvd.mpr (dvd_trans ⟨2, by norm_num⟩ (mem_Gamma0_iff_dvd.mp hγ)))
 
 private theorem etaQuotientMultiplier_thetaEtaExp_of_nonneg {γ : SL(2, ℤ)}
     (hγ : γ ∈ Gamma0 4) (hc : 0 ≤ γ 1 0) :
@@ -406,17 +392,22 @@ private theorem etaQuotientMultiplier_thetaEtaExp_of_nonneg {γ : SL(2, ℤ)}
       (thetaEpsilon (γ 1 1))⁻¹ * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ) := by
   obtain ⟨t, ht⟩ := mem_Gamma0_iff_dvd.mp hγ
   have ht' : γ 1 0 = 4 * t := by simpa using ht
-  have hdo : Odd (γ 1 1) := γ.odd_apply_one_of_even_apply_zero ⟨2 * t, by omega⟩
+  have hdo : Odd (γ 1 1) := odd_apply_one_one_of_mem_Gamma0 hγ
+  have hcop : IsCoprime (4 * t) (γ 1 1) := ht' ▸ γ.isCoprime_row 1
+  have hE :
+      ∑ δ ∈ (4 : ℕ).divisors,
+        thetaEtaExp δ * ((γ 0 0 + γ 1 1) * ((4 / δ : ℕ) * t) -
+          γ 0 1 * δ * γ 1 1 * (((4 / δ : ℕ) * t) ^ 2 - 1) + 3 * γ 1 1 - 3 -
+          3 * ((4 / δ : ℕ) * t) * γ 1 1) =
+        3 * γ 1 1 - 3 := by
+    rw [sum_thetaEtaExp_mul]
+    simp only [Nat.reduceDiv, Nat.cast_one, Nat.cast_ofNat]
+    ring
   rw [ModularForm.etaQuotientMultiplier_eq_prod thetaEtaExp ⟨γ, hγ⟩ fun δ hδ ↦
-      ModularForm.etaMultiplier_conjScaleGamma0_of_nonneg_of_odd
-        (Nat.dvd_of_mem_divisors hδ) hγ ht hc hdo,
-    ModularForm.prod_mul_e24_zpow, prod_kroneckerSym_thetaEtaExp t (γ 1 1), ← ht',
-    mul_comm (kroneckerSym 2 (γ 1 1) : ℂ), mul_assoc,
-    mul_comm (kroneckerSym (γ 1 0) (γ 1 1) : ℂ), ← kroneckerSym_two_mul_e24 hdo]
-  congr 3
-  rw [sum_thetaEtaExp_mul]
-  simp only [Nat.reduceDiv, Nat.cast_one, Nat.cast_ofNat]
-  ring
+      ModularForm.etaMultiplier_conjScaleGamma0_of_c_nonneg_of_odd_d
+        (Nat.dvd_of_mem_divisors hδ) hγ ht' hc hdo,
+    ModularForm.prod_mul_e24_zpow, hE, prod_kroneckerSym_thetaEtaExp hcop, ← ht',
+    mul_right_comm, kroneckerSym_two_mul_e24 hdo]
 
 private theorem thetaAutomorphy_eq_of_mem_Gamma0_of_nonneg {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 4)
     (hc : 0 ≤ γ 1 0) (z : ℍ) :
@@ -458,7 +449,7 @@ theorem thetaAutomorphy_eq_of_mem_Gamma0 {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 
         simpa using mul_neg_of_neg_of_pos (Int.cast_lt_zero.mpr hc) z.im_pos
     have hsym_sq : (kroneckerSym (-1) (γ 1 1) : ℂ) ^ 2 = 1 :=
       sq_intCast_kroneckerSym_eq_one (by simp)
-    rw [hmain, inv_thetaEpsilon_neg, kroneckerSym_neg_neg_of_neg hc, Int.cast_mul, hsqrt]
+    rw [hmain, inv_thetaEpsilon_neg, kroneckerSym_neg_neg_of_left_neg hc, Int.cast_mul, hsqrt]
     calc -I * (kroneckerSym (-1) (γ 1 1) : ℂ) * (thetaEpsilon (γ 1 1))⁻¹ *
           ((kroneckerSym (-1) (γ 1 1) : ℂ) * (kroneckerSym (γ 1 0) (γ 1 1) : ℂ)) *
           (I * Complex.sqrt ((γ 1 0 : ℂ) * z + γ 1 1))
@@ -493,8 +484,7 @@ theorem thetaAutomorphy_sq_of_mem_Gamma0 {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 
 theorem thetaAutomorphy_sq_eq_kroneckerSym_mul {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 4) (z : ℍ) :
     thetaAutomorphy γ z ^ 2 =
       (kroneckerSym (-1) (γ 1 1) : ℂ) * ((γ 1 0 : ℂ) * z + γ 1 1) := by
-  obtain ⟨t, ht⟩ := mem_Gamma0_iff_dvd.mp hγ
-  have hdo : Odd (γ 1 1) := γ.odd_apply_one_of_even_apply_zero ⟨2 * t, by omega⟩
-  rw [thetaAutomorphy_sq_of_mem_Gamma0 hγ z, ← kroneckerSym_neg_one_left_of_odd hdo]
+  rw [thetaAutomorphy_sq_of_mem_Gamma0 hγ z,
+    ← kroneckerSym_neg_one_left_of_odd (odd_apply_one_one_of_mem_Gamma0 hγ)]
 
 end TauCeti
