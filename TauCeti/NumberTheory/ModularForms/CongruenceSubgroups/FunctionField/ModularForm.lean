@@ -7,44 +7,37 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Holomorphic
 public import TauCeti.NumberTheory.ModularForms.WeakForm
-import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.NumberTheory.ModularForms.LevelOne.QExpansion
 
 /-!
-# Galois conjugates of modular forms of level `N` and weight divisible by `12`
+# Galois conjugates of weak forms of level `N` and weight divisible by `12`
 
 Let `σ` be an automorphism of `ℂ`, not necessarily continuous, and expand functions on the upper
-half-plane at `∞` in `q = exp (2πiτ / N)`. For a modular form `f` on `Γ(N)` of weight `12 m`,
-applying `σ` to the coefficients of the `q`-expansion of `f` gives the `q`-expansion of another
-modular form on `Γ(N)` of weight `12 m` (`ModularForm.exists_qExpansion_eq_map`), and the same
-holds for cusp forms (`CuspForm.exists_qExpansion_eq_map`). Since `σ` need not be continuous,
-the conjugate cannot be computed from the values of `f`; it is constructed through the function
-field of `X(N)`, following Shimura.
+half-plane at `∞` in `q = exp (2πiτ / N)`. For a weak form `f` on `Γ(N)` of weight `12 m`,
+applying `σ` to the coefficients of the Laurent expansion of `f` gives the Laurent expansion of
+another weak form on `Γ(N)` of weight `12 m`. Since `σ` need not be continuous, the conjugate
+cannot be computed from the values of `f`; it is constructed through the function field of
+`X(N)`, following Shimura.
 
 The quotient `f / Δ ^ m` has weight zero. It is holomorphic on `ℍ`, since `Δ` has no zero
 there, so it is a meromorphic function on `X(N)` without poles on `Y(N)`. The coefficient action
 `TauCeti.modularFunctionCoeffAction` conjugates its Fourier coefficients, and the conjugate again
 has no poles on `Y(N)` (`TauCeti.forall_ne_infty_modularFunctionCoeffAction_iff`). Multiplying
 back by `Δ ^ m`, whose `q`-expansion has integer coefficients and so is fixed by `σ`, gives a
-weak form of weight `12 m` with the conjugate expansion at `∞`. The same works for weak forms,
-and at every cusp: if `σ ζ_N = ζ_N ^ d`, the expansion of the conjugate at the cusp `γ ∞` is the
-conjugate of the expansion of `f` at `γ' ∞`, where `γ' diag(1, d) = diag(1, d) γ` modulo `N`
-(`TauCeti.IsWeakForm.exists_laurentQExpansion_slash_eq_mapRingHom`). This comes from the twisted
-commutation `TauCeti.modularFunctionCoeffAction_unop_modularFunctionActionZMod` of the
-coefficient action with fractional linear maps. Since `f` is bounded at every cusp, its
-expansions there have no negative powers of `q`, so neither do those of the conjugate. The
-conjugate is therefore bounded at every cusp, and it vanishes at every cusp when `f` does.
+weak form of weight `12 m` with the conjugate expansion at `∞`. This works at every cusp: if
+`σ ζ_N = ζ_N ^ d`, the expansion of the conjugate at the cusp `γ ∞` is the conjugate of the
+expansion of `f` at `γ' ∞`, where `γ' diag(1, d) = diag(1, d) γ` modulo `N`. This comes from the
+twisted commutation `TauCeti.modularFunctionCoeffAction_unop_modularFunctionActionZMod` of the
+coefficient action with fractional linear maps.
 
-Weight divisible by `12` is what the quotient by a power of `Δ` needs. For a form `f` of any
-weight `k`, the forms `f ^ 12` and `f * f₀ ^ 11` have weight `12 k`, which is how the conjugates
-constructed here enter the conjugation of forms of other weights.
+In weight divisible by `12` the twist is only needed modulo `N`. Conjugates in every weight,
+including those of modular forms and cusp forms, are in `FunctionField/GaloisConjugate.lean`,
+where the twist is taken modulo `12 N`.
 
 ## Main results
 
-* `TauCeti.IsWeakForm.exists_laurentQExpansion_slash_eq_mapRingHom`: conjugating the Fourier
-  coefficients of a weak form of weight `12 m` on `Γ(N)`, at every cusp.
-* `ModularForm.exists_qExpansion_eq_map`, `CuspForm.exists_qExpansion_eq_map`: the conjugate of
-  a modular form, resp. a cusp form, on `Γ(N)` of weight divisible by `12`.
+* `TauCeti.IsWeakForm.exists_laurentQExpansion_slash_eq_mapRingHom_twelve_mul`: conjugating the
+  Fourier coefficients of a weak form of weight `12 m` on `Γ(N)`, at every cusp.
 
 ## References
 
@@ -54,7 +47,7 @@ constructed here enter the conjugation of forms of other weights.
 
 public noncomputable section
 
-open CongruenceSubgroup MulOpposite Subgroup.CompactifiedQuotient Filter Matrix.SpecialLinearGroup
+open CongruenceSubgroup MulOpposite Subgroup.CompactifiedQuotient Matrix.SpecialLinearGroup
 open TauCeti.RiemannSurface OnePoint
 open UpperHalfPlane hiding I
 open scoped MatrixGroups ModularForm Manifold
@@ -102,7 +95,7 @@ form `g` of the same weight whose Laurent expansion at every cusp is obtained by
 the coefficients of that of `f` at the cusp twisted by `diag(1, d)`: if
 `γ' diag(1, d) = diag(1, d) γ` modulo `N`, the expansion of `g ∣ γ` at `∞` is the
 `σ`-conjugate of that of `f ∣ γ'`. For `γ = γ' = 1` this is the expansion at `∞`. -/
-theorem IsWeakForm.exists_laurentQExpansion_slash_eq_mapRingHom {m : ℤ} {f : ℍ → ℂ}
+theorem IsWeakForm.exists_laurentQExpansion_slash_eq_mapRingHom_twelve_mul {m : ℤ} {f : ℍ → ℂ}
     (hf : IsWeakForm (Gamma N) (12 * m) f) (σ : ℂ ≃+* ℂ) {d : (ZMod N)ˣ}
     (hσ : σ (ZMod.stdAddChar (1 : ZMod N)) = ZMod.stdAddChar (d : ZMod N)) :
     ∃ g : ℍ → ℂ, IsWeakForm (Gamma N) (12 * m) g ∧ ∀ γ γ' : SL(2, ℤ),
@@ -158,96 +151,5 @@ theorem IsWeakForm.exists_laurentQExpansion_slash_eq_mapRingHom {m : ℤ} {f : �
     _ = _ := by
       rw [← UpperHalfPlane.laurentQExpansion_mul (hmero (-m)) (hmero m), hDD]
       simp only [UpperHalfPlane.laurentQExpansion_one, mul_one]
-
-/-- Every translate of a modular form on `Γ(N)` has a cusp function in `exp (2 π i τ / N)`
-analytic at `0`. -/
-private theorem analyticAt_cuspFunction_slash_Gamma {k : ℤ} {F : Type*} [FunLike F ℍ ℂ]
-    [ModularFormClass F ((Gamma N).map (mapGL ℝ)) k] (f : F) (γ : SL(2, ℤ)) :
-    AnalyticAt ℂ (cuspFunction N (f ∣[k] γ)) 0 := by
-  simpa only [strictLevel_Gamma] using
-    ModularFormClass.analyticAt_cuspFunction_slash (Γ := Gamma N) f γ
-
-/-- The weak-form conjugate of a modular form on `Γ(N)` of weight `12 m`: its expansion at `∞`
-is the conjugate of that of `f`, and at every cusp it tends to the conjugate of the value of `f`
-at a twisted cusp. -/
-private theorem exists_isWeakForm_tendsto_slash_atImInfty {m : ℤ} {F : Type*} [FunLike F ℍ ℂ]
-    [ModularFormClass F ((Gamma N).map (mapGL ℝ)) (12 * m)] (f : F) (σ : ℂ ≃+* ℂ) :
-    ∃ g : ℍ → ℂ, IsWeakForm (Gamma N) (12 * m) g ∧
-      UpperHalfPlane.laurentQExpansion N g =
-        (PowerSeries.map (σ : ℂ →+* ℂ) (qExpansion N f) : LaurentSeries ℂ) ∧
-      ∀ γ : SL(2, ℤ), ∃ γ' : SL(2, ℤ), Tendsto (g ∣[12 * m] γ) atImInfty
-        (nhds (σ ((qExpansion N (f ∣[12 * m] γ')).coeff 0))) := by
-  obtain ⟨d, hd⟩ := ZMod.exists_map_stdAddChar_one_eq (N := N) σ
-  obtain ⟨g, hg, hgσ⟩ :=
-    (ModularFormClass.isWeakForm f).exists_laurentQExpansion_slash_eq_mapRingHom σ hd
-  have hσ (γ γ' : SL(2, ℤ)) (hγ : ((γ' : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)) *
-      Matrix.diagonal ![1, (d : ZMod N)] = Matrix.diagonal ![1, (d : ZMod N)] *
-        (γ : SL(2, ZMod N))) : UpperHalfPlane.laurentQExpansion N (g ∣[12 * m] γ) =
-      (PowerSeries.map (σ : ℂ →+* ℂ) (qExpansion N (f ∣[12 * m] γ')) : LaurentSeries ℂ) := by
-    rw [hgσ γ γ' hγ,
-      UpperHalfPlane.laurentQExpansion_of_analyticAt (analyticAt_cuspFunction_slash_Gamma f γ'),
-      HahnSeries.mapRingHom_apply, HahnSeries.map_ofPowerSeries]
-  refine ⟨g, hg, by simpa using hσ 1 1 (by simp), fun γ ↦ ?_⟩
-  obtain ⟨γ', hγ'⟩ := exists_mul_diagonal_eq_diagonal_mul d γ
-  refine ⟨γ', ?_⟩
-  have h0 : 0 ≤ (UpperHalfPlane.laurentQExpansion N (g ∣[12 * m] γ)).orderTop := by
-    rw [hσ γ γ' hγ', PowerSeries.orderTop_coe]
-    cases (PowerSeries.map (σ : ℂ →+* ℂ) (qExpansion N (f ∣[12 * m] γ'))).order using
-      ENat.recTopCoe <;> simp
-  simpa [strictLevel_Gamma, hσ γ γ' hγ', PowerSeries.coeff_coe] using
-    hg.tendsto_slash_atImInfty γ (by simpa only [strictLevel_Gamma] using h0)
-
-/-- **Galois conjugates of modular forms of weight divisible by `12`.** For every automorphism
-`σ` of `ℂ` and every modular form `f` on `Γ(N)` of weight `k` divisible by `12`, applying `σ` to
-the coefficients of the `q`-expansion of `f` at `∞`, in `q = exp (2πiτ / N)`, gives the
-`q`-expansion of a modular form on `Γ(N)` of the same weight. The automorphism `σ` need not be
-continuous. -/
-theorem _root_.ModularForm.exists_qExpansion_eq_map {k : ℤ} (hk : 12 ∣ k)
-    (f : ModularForm ((Gamma N).map (mapGL ℝ)) k) (σ : ℂ ≃+* ℂ) :
-    ∃ g : ModularForm ((Gamma N).map (mapGL ℝ)) k,
-      qExpansion N g = PowerSeries.map (σ : ℂ →+* ℂ) (qExpansion N f) := by
-  obtain ⟨m, rfl⟩ := hk
-  obtain ⟨g, hg, hg₀, hgσ⟩ := exists_isWeakForm_tendsto_slash_atImInfty f σ
-  have hbdd (γ : SL(2, ℤ)) : IsBoundedAtImInfty (g ∣[12 * m] γ) := by
-    obtain ⟨γ', hγ'⟩ := hgσ γ
-    exact hγ'.isBigO_one ℝ
-  obtain ⟨F, rfl⟩ := exists_modularForm_coe_eq_iff.mpr ⟨hg, hbdd⟩
-  refine ⟨F, HahnSeries.ofPowerSeries_injective (Γ := ℤ) ?_⟩
-  rw [← hg₀, UpperHalfPlane.laurentQExpansion_of_analyticAt]
-  simpa using analyticAt_cuspFunction_slash_Gamma F 1
-
-/-- **Galois conjugates of cusp forms of weight divisible by `12`.** For every automorphism `σ`
-of `ℂ` and every cusp form `f` on `Γ(N)` of weight `k` divisible by `12`, applying `σ` to the
-coefficients of the `q`-expansion of `f` at `∞`, in `q = exp (2πiτ / N)`, gives the
-`q`-expansion of a cusp form on `Γ(N)` of the same weight. The automorphism `σ` need not be
-continuous. -/
-theorem _root_.CuspForm.exists_qExpansion_eq_map {k : ℤ} (hk : 12 ∣ k)
-    (f : CuspForm ((Gamma N).map (mapGL ℝ)) k) (σ : ℂ ≃+* ℂ) :
-    ∃ g : CuspForm ((Gamma N).map (mapGL ℝ)) k,
-      qExpansion N g = PowerSeries.map (σ : ℂ →+* ℂ) (qExpansion N f) := by
-  obtain ⟨m, rfl⟩ := hk
-  have hN : (0 : ℝ) < N := Nat.cast_pos.mpr (NeZero.pos N)
-  obtain ⟨g, hg, hg₀, hgσ⟩ := exists_isWeakForm_tendsto_slash_atImInfty f σ
-  have hzero (γ : SL(2, ℤ)) : IsZeroAtImInfty (g ∣[12 * m] γ) := by
-    obtain ⟨γ', hγ'⟩ := hgσ γ
-    have hf := ModularFormClass.isWeakForm f
-    have hper : Function.Periodic ((f ∣[12 * m] γ') ∘ ofComplex) N := by
-      simpa [strictLevel_Gamma] using periodic_slash_comp_ofComplex hf.slash_eq γ'
-    rwa [qExpansion_coeff_zero hN (analyticAt_cuspFunction_slash_Gamma f γ') hper,
-      (CuspFormClass.zero_at_infty_slash f γ').valueAtInfty_eq_zero, map_zero] at hγ'
-  let G : CuspForm ((Gamma N).map (mapGL ℝ)) (12 * m) :=
-    { toFun := g
-      slash_action_eq' := by
-        rintro _ ⟨γ, hγ, rfl⟩
-        exact hg.slash_eq γ hγ
-      holo' := hg.mdifferentiable
-      zero_at_cusps' := fun {c} hc ↦ by
-        rw [Subgroup.IsArithmetic.isCusp_iff_isCusp_SL2Z] at hc
-        exact (OnePoint.isZeroAt_iff_forall_SL2Z hc).mpr fun γ _ ↦ hzero γ }
-  -- `G` is built from `g` as a structure, so its coercion is `g`
-  have hGg : ⇑G = g := rfl
-  refine ⟨G, HahnSeries.ofPowerSeries_injective (Γ := ℤ) ?_⟩
-  rw [← hg₀, ← hGg, UpperHalfPlane.laurentQExpansion_of_analyticAt]
-  simpa using analyticAt_cuspFunction_slash_Gamma G 1
 
 end TauCeti

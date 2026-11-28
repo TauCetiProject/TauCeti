@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.ModularForms.WeakForm
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Holomorphic
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Invariant
+import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.QExpansion
 import TauCeti.NumberTheory.ModularForms.DedekindEta.Basic
 import TauCeti.NumberTheory.ModularForms.DedekindEta.Galois
 import TauCeti.NumberTheory.ModularForms.LevelOne.QExpansion
@@ -232,14 +233,6 @@ private theorem meromorphicAt_cuspFunction_eta_zpow :
   UpperHalfPlane.meromorphicAt_cuspFunction_of_isBigO_exp twelve_mul_pos periodic_eta_zpow
     (.of_forall (ModularForm.mdifferentiable_eta_zpow _))
     (ModularForm.isBigO_eta_zpow_atImInfty (2 * k))
-
-/-- The pullback to the upper half-plane of a meromorphic function on `X(12 N)`. -/
-private theorem laurentQExpansion_cuspDatumInftyGamma
-    (F : MeromorphicFunction ((Gamma (12 * N)).map sl2zToPSL2R).CompactifiedQuotient) :
-    Subgroup.CompactifiedQuotient.laurentQExpansion (cuspDatumInftyGamma (12 * N)) F =
-      TauCeti.UpperHalfPlane.laurentQExpansion ((12 * N : ℕ) : ℝ)
-        fun τ ↦ F.finitePart (ofQuotient (Quotient.mk _ τ)) := by
-  simpa using Subgroup.CompactifiedQuotient.laurentQExpansion_apply (cuspDatumInftyGamma (12 * N)) F
 
 private theorem meromorphicAt_cuspFunction_finitePart_ofQuotient
     (F : MeromorphicFunction ((Gamma (12 * N)).map sl2zToPSL2R).CompactifiedQuotient) :
