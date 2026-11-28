@@ -16,8 +16,9 @@ import Mathlib.Order.Fin.InsertNth
 # Order characterizations on `Fin`
 
 This file characterizes elements of `Fin (k + 1)` by how they sit relative to the embedded indices
-`i'.castSucc` (`i' : Fin k`), provides monotonicity lemmas for `Fin.snoc`, and records that the
-embedded indices `Fin.castLE` form an initial segment.
+`i'.castSucc` (`i' : Fin k`), records the Galois connections between codegeneracy
+(`Fin.predAbove`) and coface (`Fin.succAbove`) maps, provides monotonicity lemmas for `Fin.snoc`,
+and records that the embedded indices `Fin.castLE` form an initial segment.
 
 ## Main results
 
@@ -26,6 +27,8 @@ embedded indices `Fin.castLE` form an initial segment.
   below every `i'` with `j ≤ i'.castSucc`.
 * `Fin.eq_iff_forall_castSucc_lt_and_le`: two indices `r, j : Fin (k + 1)` are equal if and only
   if they determine the same order cut on the embedded indices `i'.castSucc` (`i' : Fin k`).
+* `Fin.galoisConnection_predAbove_castSucc_succAbove`: `i.predAbove ⊣ i.castSucc.succAbove`.
+* `Fin.galoisConnection_succ_succAbove_predAbove`: `i.succ.succAbove ⊣ i.predAbove`.
 * `Fin.monotone_snoc`, `Fin.strictMono_snoc`: appending a coordinate above (resp. strictly above)
   all previous coordinates preserves monotonicity (resp. strict monotonicity).
 * `Fin.strictMono_of_forall_mem_Ioo`: a tuple separated by a sequence, `a k < w k < a (k + 1)`,
@@ -87,6 +90,30 @@ theorem eq_iff_forall_castSucc_lt_and_le {k : ℕ} {r j : Fin (k + 1)} :
       replace hlt := lt_of_not_ge hlt
       let i' : Fin k := ⟨r.val, by omega⟩
       exact (lt_irrefl r) (hlow i' hlt)
+
+/-- For `i : Fin (n + 1)`, the codegeneracy map `i.predAbove` is left adjoint to the coface map
+`i.castSucc.succAbove`. -/
+theorem galoisConnection_predAbove_castSucc_succAbove {n : ℕ} (i : Fin (n + 1)) :
+    GaloisConnection i.predAbove i.castSucc.succAbove := by
+  refine GaloisConnection.monotone_intro (Fin.succAboveOrderEmb i.castSucc).monotone
+    (Fin.predAbove_right_monotone i) (fun y ↦ ?_) fun x ↦ ?_
+  · by_cases hy : y = i.castSucc
+    · subst hy
+      rw [Fin.predAbove_of_le_castSucc i i.castSucc le_rfl, Fin.castPred_castSucc,
+        Fin.succAbove_castSucc_self]
+      exact Fin.castSucc_le_succ i
+    · rw [Fin.succAbove_predAbove hy]
+  · rw [Fin.predAbove_succAbove]
+
+/-- For `i : Fin (n + 1)`, the coface map `i.succ.succAbove` is left adjoint to the codegeneracy
+map `i.predAbove`. -/
+theorem galoisConnection_succ_succAbove_predAbove {n : ℕ} (i : Fin (n + 1)) :
+    GaloisConnection i.succ.succAbove i.predAbove := by
+  intro x y
+  have h := (galoisConnection_predAbove_castSucc_succAbove i.rev).dual
+    (OrderDual.toDual x.rev) (OrderDual.toDual y.rev)
+  simp only [Function.comp_apply, OrderDual.ofDual_toDual, OrderDual.toDual_le_toDual] at h
+  rw [← Fin.rev_le_rev, Fin.rev_succAbove, Fin.rev_succ, h, ← Fin.rev_predAbove, Fin.rev_le_rev]
 
 /-- Appending a coordinate that bounds all previous coordinates preserves monotonicity. -/
 theorem monotone_snoc {n : ℕ} {α : Type*} [Preorder α] {f : Fin n → α} {a : α}

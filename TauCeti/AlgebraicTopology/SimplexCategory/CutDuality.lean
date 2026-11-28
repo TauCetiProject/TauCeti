@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplicialObject.II
 public import Mathlib.CategoryTheory.IsoCat
 public import TauCeti.AlgebraicTopology.SimplexCategory.Augmented
 public import TauCeti.AlgebraicTopology.SimplexCategory.EndpointPreserving
+public import TauCeti.AlgebraicTopology.SimplicialObject.II
+import TauCeti.Order.Hom.Adjoint
 
 /-!
 # The duality between finite ordinals and their chains of cuts
@@ -53,31 +54,6 @@ the greatest `j` with `β j ≤ i` satisfies the same condition, so it is the in
 public section
 
 open CategoryTheory Opposite Simplicial
-
-namespace SimplexCategory
-
-namespace II
-
-/-- The Galois condition characterizing `II.map' f`: the elements below `II.map' f x` are the
-`i` with `f i < x`. -/
-@[simp]
-lemma castSucc_lt_map'_iff {n m : ℕ} (f : Fin (n + 1) →o Fin (m + 1)) (x : Fin (m + 2))
-    (i : Fin (n + 1)) : i.castSucc < map' f x ↔ (f i).castSucc < x := by
-  constructor
-  · intro h
-    by_contra! hx
-    rw [map'] at h
-    exact h.not_ge (Finset.min'_le _ _ ((castSucc_mem_finset_iff f x i).2 hx))
-  · intro h
-    by_contra! hle
-    obtain ⟨y, hy⟩ := Fin.eq_castSucc_of_ne_last (hle.trans_lt (Fin.castSucc_lt_last i)).ne
-    rw [← hy, Fin.castSucc_le_castSucc_iff] at hle
-    exact h.not_ge (((map'_eq_castSucc_iff f x y).1 hy.symm).1.trans
-      (Fin.castSucc_le_castSucc_iff.2 (f.monotone hle)))
-
-end II
-
-end SimplexCategory
 
 namespace TauCeti.SimplexCategory
 
@@ -142,32 +118,22 @@ lemma cutOrderHom_comp (f : Fin n →o Fin m) (g : Fin m →o Fin p) :
 
 /-! ### The inverse of the cut map -/
 
-/-- The elements `j` with `β j ≤ i`, whose greatest element defines `uncutOrderHom`; it contains
-`0` when `β 0 = 0`. -/
-private lemma filter_le_castSucc_nonempty (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : β 0 = 0)
-    (i : Fin m) : (Finset.univ.filter fun j ↦ β j ≤ i.castSucc).Nonempty :=
-  Finset.filter_nonempty_iff.2 ⟨0, Finset.mem_univ _, by simp [h₀]⟩
-
-/-- The greatest `j` with `β j ≤ i` is not the greatest vertex, since `β` preserves it. -/
-private lemma max'_filter_le_castSucc_ne_last (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : β 0 = 0)
-    (h : β (Fin.last n) = Fin.last m) (i : Fin m) :
-    (Finset.univ.filter fun j ↦ β j ≤ i.castSucc).max' (filter_le_castSucc_nonempty β h₀ i) ≠
-      Fin.last n := fun he ↦ by
-  have hmem := Finset.max'_mem _ (filter_le_castSucc_nonempty β h₀ i)
-  rw [he] at hmem
-  simp [h] at hmem
-
 /-- For a monotone map `β : Fin (n + 1) →o Fin (m + 1)` preserving both endpoints, the monotone
 map `Fin m →o Fin n` sending `i` to the greatest `j` with `β j ≤ i`. It is the inverse of
 `cutOrderHom` (`cutOrderHom_uncutOrderHom`, `uncutOrderHom_cutOrderHom`). -/
 def uncutOrderHom (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : β 0 = 0)
     (h : β (Fin.last n) = Fin.last m) : Fin m →o Fin n where
-  toFun i := ((Finset.univ.filter fun j ↦ β j ≤ i.castSucc).max'
-      (filter_le_castSucc_nonempty β h₀ i)).castPred (max'_filter_le_castSucc_ne_last β h₀ h i)
-  monotone' i i' hii' := by
-    rw [Fin.castPred_le_castPred_iff]
-    exact Finset.max'_subset _ fun j ↦ by
-      simpa using fun hj ↦ hj.trans (Fin.castSucc_le_castSucc_iff.2 hii')
+  toFun i := (β.rightAdjoint h₀ i.castSucc).castPred
+    (β.rightAdjoint_ne_top h₀ h i.castSucc_ne_last)
+  monotone' _ _ hii' := Fin.castPred_le_castPred_iff.mpr
+    ((β.rightAdjoint h₀).monotone (Fin.castSucc_le_castSucc_iff.mpr hii'))
+
+/-- Embedding `uncutOrderHom β h₀ h i` via `Fin.castSucc` recovers
+`β.rightAdjoint h₀ i.castSucc`. -/
+private lemma castSucc_uncutOrderHom (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : β 0 = 0)
+    (h : β (Fin.last n) = Fin.last m) (i : Fin m) :
+    (uncutOrderHom β h₀ h i).castSucc = β.rightAdjoint h₀ i.castSucc :=
+  Fin.castSucc_castPred _ (β.rightAdjoint_ne_top h₀ h i.castSucc_ne_last)
 
 /-- The Galois condition characterizing `uncutOrderHom β h₀ h`: it lies below `j` exactly when
 `i < β j`. -/
@@ -175,16 +141,7 @@ def uncutOrderHom (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : β 0 = 0)
 lemma castSucc_uncutOrderHom_lt_iff (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : β 0 = 0)
     (h : β (Fin.last n) = Fin.last m) (i : Fin m) (j : Fin (n + 1)) :
     (uncutOrderHom β h₀ h i).castSucc < j ↔ i.castSucc < β j := by
-  have hi : (uncutOrderHom β h₀ h i).castSucc =
-      (Finset.univ.filter fun j ↦ β j ≤ i.castSucc).max' (filter_le_castSucc_nonempty β h₀ i) :=
-    Fin.castSucc_castPred _ (max'_filter_le_castSucc_ne_last β h₀ h i)
-  rw [hi, Finset.max'_lt_iff]
-  simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-  refine ⟨fun H ↦ ?_, fun H s hs ↦ ?_⟩
-  · by_contra! hj
-    exact (H j hj).false
-  · by_contra! hjs
-    exact (H.trans_le (β.monotone hjs)).not_ge hs
+  rw [castSucc_uncutOrderHom, ← not_le, OrderHom.le_rightAdjoint_iff, not_le]
 
 /-- `uncutOrderHom β h₀ h i` is the unique `a` satisfying the Galois condition. -/
 lemma eq_uncutOrderHom_apply_iff (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : β 0 = 0)
@@ -202,7 +159,7 @@ lemma uncutOrderHom_id (h₀ : (OrderHom.id : Fin (n + 1) →o Fin (n + 1)) 0 = 
     (h : (OrderHom.id : Fin (n + 1) →o Fin (n + 1)) (Fin.last n) = Fin.last n) :
     uncutOrderHom OrderHom.id h₀ h = OrderHom.id := by
   ext i : 2
-  exact ((eq_uncutOrderHom_apply_iff _ h₀ h i i).2 fun j ↦ Iff.rfl).symm
+  exact Fin.castSucc_inj.mp (by simp [castSucc_uncutOrderHom, OrderHom.rightAdjoint_id])
 
 lemma uncutOrderHom_comp (β : Fin (n + 1) →o Fin (m + 1)) (γ : Fin (m + 1) →o Fin (p + 1))
     (hβ₀ : β 0 = 0) (hβ : β (Fin.last n) = Fin.last m) (hγ₀ : γ 0 = 0)
@@ -210,8 +167,8 @@ lemma uncutOrderHom_comp (β : Fin (n + 1) →o Fin (m + 1)) (γ : Fin (m + 1) �
     (h : (γ.comp β) (Fin.last n) = Fin.last p) :
     uncutOrderHom (γ.comp β) h₀ h = (uncutOrderHom β hβ₀ hβ).comp (uncutOrderHom γ hγ₀ hγ) := by
   ext i : 2
-  refine ((eq_uncutOrderHom_apply_iff _ h₀ h i _).2 fun j ↦ ?_).symm
-  simp
+  exact Fin.castSucc_inj.mp
+    (by simp [castSucc_uncutOrderHom, OrderHom.rightAdjoint_comp hβ₀ hγ₀ h₀])
 
 @[simp]
 lemma cutOrderHom_uncutOrderHom (β : Fin (n + 1) →o Fin (m + 1)) (h₀ : β 0 = 0)
@@ -350,11 +307,18 @@ theorem uncut_comp_cut : uncut ⋙ cut = 𝟭 _ := by
 
 /-- The isomorphism of categories `Δ₊ᵒᵖ ≅ Δ_∂` given by the cut functor and its inverse. The
 underlying equivalence is `cutIsoCat.toEquivalence`. -/
-@[expose, simps functor inverse]
 def cutIsoCat : IsoCat AugmentedSimplexCategoryᵒᵖ EndpointPreserving where
   functor := cut
   inverse := uncut
   unit_eq := cut_comp_uncut.symm
   counit_eq := uncut_comp_cut
+
+/-- Forward functor of `cutIsoCat`. -/
+@[simp]
+theorem cutIsoCat_functor : cutIsoCat.functor = cut := (rfl)
+
+/-- Inverse functor of `cutIsoCat`. -/
+@[simp]
+theorem cutIsoCat_inverse : cutIsoCat.inverse = uncut := (rfl)
 
 end TauCeti.AugmentedSimplexCategory

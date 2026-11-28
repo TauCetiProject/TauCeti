@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplexCategory.Basic
-public import Mathlib.CategoryTheory.Widesubcategory
+public import Mathlib.AlgebraicTopology.SimplexCategory.Rev
+public import TauCeti.CategoryTheory.Widesubcategory
 
 /-!
 # Endpoint-preserving maps in the simplex category
@@ -19,7 +20,7 @@ This file defines three wide subcategories of `SimplexCategory`, all with the ob
   greatest vertex `Fin.last` to the greatest vertex;
 * `TauCeti.SimplexCategory.EndpointPreserving` (often written `Δ_∂`): the monotone maps
   preserving both endpoints. It contains `⦋0⦌`, whose two endpoints coincide, and `⦋0⦌` is
-  terminal in it.
+  terminal in all three subcategories.
 
 They are the wide subcategories `WideSubcategory P` for the multiplicative morphism properties
 `TauCeti.SimplexCategory.preservesBot`, `TauCeti.SimplexCategory.preservesTop` and
@@ -28,6 +29,8 @@ inclusion into `SimplexCategory` come from Mathlib's wide-subcategory API. Every
 preserves both endpoints, while the face `δ i` preserves the least vertex exactly when `i ≠ 0`
 and the greatest one exactly when `i ≠ Fin.last _`; the corresponding restricted faces and
 degeneracies are `BotPreserving.δ`, `TopPreserving.δ`, `EndpointPreserving.δ` and the three `σ`.
+Reversal (`SimplexCategory.rev`) exchanges `preservesBot` and `preservesTop`, and
+`EndpointPreserving` includes faithfully into both `BotPreserving` and `TopPreserving`.
 
 These categories describe the hom-categories of the free adjunction: the hom-categories between
 its two distinct objects are `Δ_⊤` and `Δ_⊥`, and `Δ_∂` is the opposite of the augmented simplex
@@ -86,6 +89,26 @@ instance : preservesTop.IsMultiplicative where
 instance : preservesEndpoints.IsMultiplicative :=
   inferInstanceAs (preservesBot ⊓ preservesTop).IsMultiplicative
 
+/-- Reversal exchanges `preservesBot` with `preservesTop`. -/
+@[simp]
+lemma preservesBot_rev_map_iff (f : x ⟶ y) :
+    preservesBot (SimplexCategory.rev.map f) ↔ preservesTop f := by
+  simp only [preservesBot_iff, preservesTop_iff, SimplexCategory.rev_map_apply,
+    SimplexCategory.rev_obj, ← Fin.rev_last, Fin.rev_rev, Fin.rev_inj]
+
+/-- Reversal exchanges `preservesTop` with `preservesBot`. -/
+@[simp]
+lemma preservesTop_rev_map_iff (f : x ⟶ y) :
+    preservesTop (SimplexCategory.rev.map f) ↔ preservesBot f := by
+  simp only [preservesTop_iff, preservesBot_iff, SimplexCategory.rev_map_apply,
+    SimplexCategory.rev_obj, ← Fin.rev_zero, Fin.rev_rev, Fin.rev_inj]
+
+/-- Reversal preserves `preservesEndpoints`. -/
+@[simp]
+lemma preservesEndpoints_rev_map_iff (f : x ⟶ y) :
+    preservesEndpoints (SimplexCategory.rev.map f) ↔ preservesEndpoints f :=
+  ((preservesBot_rev_map_iff f).and (preservesTop_rev_map_iff f)).trans and_comm
+
 /-! ### Faces and degeneracies -/
 
 lemma toOrderHom_δ_apply {n : ℕ} (i : Fin (n + 2)) (j : Fin (n + 1)) :
@@ -125,6 +148,23 @@ lemma preservesEndpoints_δ_iff {n : ℕ} (i : Fin (n + 2)) :
     preservesEndpoints (δ i) ↔ i ≠ 0 ∧ i ≠ Fin.last _ := by
   rw [preservesEndpoints_iff, preservesBot_δ_iff, preservesTop_δ_iff]
 
+/-- The constant morphism at `0` preserves the least vertex `0`. -/
+lemma preservesBot_const_zero (x y : _root_.SimplexCategory) :
+    preservesBot (const x y 0) :=
+  (preservesBot_iff _).mpr rfl
+
+/-- The constant morphism at `Fin.last y.len` preserves the greatest vertex. -/
+lemma preservesTop_const_last (x y : _root_.SimplexCategory) :
+    preservesTop (const x y (Fin.last y.len)) :=
+  (preservesTop_iff _).mpr rfl
+
+/-- The unique morphism `x ⟶ ⦋0⦌` preserves both endpoints. -/
+@[simp]
+lemma preservesEndpoints_const_to_zero (x : _root_.SimplexCategory) :
+    preservesEndpoints (const x ⦋0⦌ 0) :=
+  ⟨preservesBot_const_zero x ⦋0⦌,
+    (preservesTop_iff _).mpr (Subsingleton.elim (α := Fin 1) _ _)⟩
+
 /-! ### The three wide subcategories -/
 
 /-- The wide subcategory `Δ_⊥` of `SimplexCategory` whose morphisms preserve the least vertex. -/
@@ -137,6 +177,31 @@ abbrev TopPreserving := WideSubcategory preservesTop
 /-- The wide subcategory `Δ_∂` of `SimplexCategory` whose morphisms preserve both the least and
 the greatest vertex. -/
 abbrev EndpointPreserving := WideSubcategory preservesEndpoints
+
+section WideSubcategory
+
+/-- The unique morphism in `WideSubcategory P` to `⟨⦋0⦌⟩`, given that `P` contains every constant
+map to `⦋0⦌`. -/
+def wideSubcategoryToZero {P : MorphismProperty _root_.SimplexCategory} [P.IsMultiplicative]
+    (h0 : ∀ x, P (const x ⦋0⦌ 0)) (X : WideSubcategory P) : X ⟶ ⟨⦋0⦌⟩ :=
+  ⟨const _ _ 0, h0 X.obj⟩
+
+/-- Uniqueness of morphisms to `⟨⦋0⦌⟩` in `WideSubcategory P` whenever `P` contains every
+constant map to `⦋0⦌`. -/
+@[instance_reducible]
+def wideSubcategoryUniqueHomZero {P : MorphismProperty _root_.SimplexCategory} [P.IsMultiplicative]
+    (h0 : ∀ x, P (const x ⦋0⦌ 0)) (X : WideSubcategory P) : Unique (X ⟶ ⟨⦋0⦌⟩) where
+  default := wideSubcategoryToZero h0 X
+  uniq _ := WideSubcategory.hom_ext _ (Subsingleton.elim _ _)
+
+/-- `⟨⦋0⦌⟩` is terminal in `WideSubcategory P` whenever `P` contains every constant map to
+`⦋0⦌`. -/
+def wideSubcategoryIsTerminalZero {P : MorphismProperty _root_.SimplexCategory} [P.IsMultiplicative]
+    (h0 : ∀ x, P (const x ⦋0⦌ 0)) : Limits.IsTerminal (⟨⦋0⦌⟩ : WideSubcategory P) :=
+  letI := wideSubcategoryUniqueHomZero h0
+  Limits.IsTerminal.ofUnique _
+
+end WideSubcategory
 
 namespace BotPreserving
 
@@ -169,6 +234,20 @@ def σ {n : ℕ} (i : Fin (n + 1)) : mk (n + 1) ⟶ mk n :=
 
 @[simp]
 lemma σ_hom {n : ℕ} (i : Fin (n + 1)) : (σ i).hom = SimplexCategory.σ i := (rfl)
+
+/-- The unique morphism of `Δ_⊥` to `⦋0⦌`, the constant map. -/
+abbrev toZero (X : BotPreserving) : X ⟶ mk 0 :=
+  wideSubcategoryToZero
+    (fun x ↦ ((preservesEndpoints_iff _).1 (preservesEndpoints_const_to_zero x)).1) X
+
+instance (X : BotPreserving) : Unique (X ⟶ mk 0) :=
+  wideSubcategoryUniqueHomZero
+    (fun x ↦ ((preservesEndpoints_iff _).1 (preservesEndpoints_const_to_zero x)).1) X
+
+/-- `⦋0⦌` is a terminal object of `Δ_⊥`. -/
+abbrev isTerminalZero : Limits.IsTerminal (mk 0) :=
+  wideSubcategoryIsTerminalZero
+    (fun x ↦ ((preservesEndpoints_iff _).1 (preservesEndpoints_const_to_zero x)).1)
 
 end BotPreserving
 
@@ -205,9 +284,36 @@ def σ {n : ℕ} (i : Fin (n + 1)) : mk (n + 1) ⟶ mk n :=
 @[simp]
 lemma σ_hom {n : ℕ} (i : Fin (n + 1)) : (σ i).hom = SimplexCategory.σ i := (rfl)
 
+/-- The unique morphism of `Δ_⊤` to `⦋0⦌`, the constant map. -/
+abbrev toZero (X : TopPreserving) : X ⟶ mk 0 :=
+  wideSubcategoryToZero
+    (fun x ↦ ((preservesEndpoints_iff _).1 (preservesEndpoints_const_to_zero x)).2) X
+
+instance (X : TopPreserving) : Unique (X ⟶ mk 0) :=
+  wideSubcategoryUniqueHomZero
+    (fun x ↦ ((preservesEndpoints_iff _).1 (preservesEndpoints_const_to_zero x)).2) X
+
+/-- `⦋0⦌` is a terminal object of `Δ_⊤`. -/
+abbrev isTerminalZero : Limits.IsTerminal (mk 0) :=
+  wideSubcategoryIsTerminalZero
+    (fun x ↦ ((preservesEndpoints_iff _).1 (preservesEndpoints_const_to_zero x)).2)
+
+/-- Evaluation of `TopPreserving.δ (0 : Fin 1)` at `0`. -/
+lemma δ_zero_hom_toOrderHom_zero_eq_one :
+    (TopPreserving.δ (0 : Fin 1)).hom.toOrderHom 0 = 1 := by
+  simp [TopPreserving.δ_hom, toOrderHom_δ_apply]
+
 end TopPreserving
 
 namespace EndpointPreserving
+
+/-- The faithful inclusion `Δ_∂ ⥤ Δ_⊥`. -/
+abbrev toBotPreserving : EndpointPreserving ⥤ BotPreserving :=
+  wideSubcategoryInclusionOfLE fun _ _ _ h ↦ ((preservesEndpoints_iff _).1 h).1
+
+/-- The faithful inclusion `Δ_∂ ⥤ Δ_⊤`. -/
+abbrev toTopPreserving : EndpointPreserving ⥤ TopPreserving :=
+  wideSubcategoryInclusionOfLE fun _ _ _ h ↦ ((preservesEndpoints_iff _).1 h).2
 
 /-- The object `⦋n⦌` of `Δ_∂`. -/
 abbrev mk (n : ℕ) : EndpointPreserving := ⟨⦋n⦌⟩
@@ -249,19 +355,22 @@ def σ {n : ℕ} (i : Fin (n + 1)) : mk (n + 1) ⟶ mk n :=
 lemma σ_hom {n : ℕ} (i : Fin (n + 1)) : (σ i).hom = SimplexCategory.σ i := (rfl)
 
 /-- The unique morphism of `Δ_∂` to `⦋0⦌`, the constant map. -/
-def toZero (X : EndpointPreserving) : X ⟶ mk 0 :=
-  ⟨const _ _ 0, (preservesEndpoints_iff _).2 ⟨rfl, Subsingleton.elim (α := Fin 1) _ _⟩⟩
+abbrev toZero (X : EndpointPreserving) : X ⟶ mk 0 :=
+  wideSubcategoryToZero preservesEndpoints_const_to_zero X
 
-instance (X : EndpointPreserving) : Subsingleton (X ⟶ mk 0) where
-  allEq _ _ := WideSubcategory.hom_ext _ (Subsingleton.elim _ _)
-
-instance (X : EndpointPreserving) : Unique (X ⟶ mk 0) where
-  default := toZero X
-  uniq _ := Subsingleton.elim _ _
+instance (X : EndpointPreserving) : Unique (X ⟶ mk 0) :=
+  wideSubcategoryUniqueHomZero preservesEndpoints_const_to_zero X
 
 /-- `⦋0⦌` is a terminal object of `Δ_∂`. -/
-def isTerminalZero : Limits.IsTerminal (mk 0) :=
-  Limits.IsTerminal.ofUnique _
+abbrev isTerminalZero : Limits.IsTerminal (mk 0) :=
+  wideSubcategoryIsTerminalZero preservesEndpoints_const_to_zero
+
+/-- There is no endpoint-preserving map `⦋0⦌ ⟶ ⦋m + 1⦌`. -/
+lemma isEmpty_hom_zero_succ (m : ℕ) : IsEmpty (mk 0 ⟶ mk (m + 1)) :=
+  ⟨fun f ↦ by
+    have h0 : f.hom.toOrderHom 0 = 0 := hom_toOrderHom_zero f
+    have hl : f.hom.toOrderHom 0 = Fin.last (m + 1) := by simpa using hom_toOrderHom_last f
+    exact (Fin.last_pos (n := m)).ne' (hl.symm.trans h0)⟩
 
 end EndpointPreserving
 
