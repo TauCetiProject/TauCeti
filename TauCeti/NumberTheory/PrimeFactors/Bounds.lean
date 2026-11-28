@@ -8,7 +8,9 @@ module
 public import Mathlib.Data.Nat.Factorization.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
+public import Mathlib.NumberTheory.PrimeCounting
 import Mathlib.Analysis.Complex.ExponentialBounds
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.NumberTheory.Chebyshev.Mertens
 
 /-!
@@ -31,6 +33,11 @@ for all `n : ℕ` (with `n = 0, 1` holding via `n.primeFactors = ∅` and `Real.
 only the `log (log n)` order of growth is asymptotically sharp. This controls the deleted-prime
 contribution to logarithmic derivatives `-L'/L(s, χ)` of imprimitive Dirichlet `L`-functions.
 
+The same splitting at a real cutoff `y` bounds the Euler factors `(1 - p⁻¹)⁻¹` of the prime
+divisors of `n`: those with `p ≤ y` by the full Euler product over the primes up to `y`, and
+those with `p > y`, of which there are at most `log n / log y` when `y > 1`, by
+`exp (2 log n / (y log y))`.
+
 ## Main results
 
 * `TauCeti.exists_pow_card_primeFactors_le_mul_rpow`: `C ^ ω(n) ≤ A n ^ ε` for `n ≠ 0`.
@@ -40,6 +47,12 @@ contribution to logarithmic derivatives `-L'/L(s, χ)` of imprimitive Dirichlet 
   `∑_{p ∣ n} log p ≤ log n` and `∑_{p ∣ n} log p / p ≤ log n / 2`.
 * `Nat.sum_primeFactors_filter_ge_log_div_le`, `Nat.sum_primeFactors_filter_lt_log_div_le`:
   bounds above and below a threshold `X`.
+* `Nat.card_primeFactors_filter_gt_mul_log_le`: `#{p ∣ n : y < p} * log y ≤ log n` for `y ≥ 0`,
+  so `n` has at most `log n / log y` prime divisors `p > y` when `y > 1`.
+* `Nat.prod_primeFactors_filter_le_one_sub_inv_inv_le`,
+  `Nat.prod_primeFactors_filter_gt_one_sub_inv_inv_le`: the Euler factors `(1 - p⁻¹)⁻¹` of the
+  prime divisors `p ≤ y` of `n` multiply to at most `∏_{p ≤ y} (1 - p⁻¹)⁻¹`, and those of the
+  prime divisors `p > y` to at most `exp (2 log n / (y log y))`, for `y > 1`.
 * `Nat.sum_primeFactors_log_div_le_log_log_add`:
   `∑_{p ∣ n} log p / p ≤ log (log n) + (log 4 + 5)` for every `n : ℕ`.
 
@@ -138,6 +151,72 @@ theorem sum_primeFactors_filter_ge_log_div_le (n : ℕ) {X : ℝ} (hX : 0 < X) :
           div_nonneg (Real.log_nonneg (mod_cast (prime_of_mem_primeFactors hp).one_lt.le)) hX.le
     _ = (∑ p ∈ n.primeFactors, Real.log p) / X := (sum_div _ _ _).symm
     _ ≤ Real.log n / X := div_le_div_of_nonneg_right (sum_primeFactors_log_le n) hX.le
+
+/-- For every real `y ≥ 0`, the prime divisors `p > y` of `n` satisfy
+`#{p ∣ n : y < p} * log y ≤ log n`: for `n ≠ 0` their product is at most `n`, and each of them
+exceeds `y`. For `y > 1` this bounds their number by `log n / log y`; for `y ≤ 1` the left side is
+nonpositive. -/
+theorem card_primeFactors_filter_gt_mul_log_le (n : ℕ) {y : ℝ} (hy : 0 ≤ y) :
+    (#(n.primeFactors.filter fun p : ℕ ↦ y < p) : ℝ) * Real.log y ≤ Real.log n := by
+  rcases hy.eq_or_lt with rfl | hy
+  · simpa using Real.log_natCast_nonneg n
+  calc (#(n.primeFactors.filter fun p : ℕ ↦ y < p) : ℝ) * Real.log y
+      = ∑ _p ∈ n.primeFactors.filter (fun p : ℕ ↦ y < p), Real.log y := by
+        rw [sum_const, nsmul_eq_mul]
+    _ ≤ ∑ p ∈ n.primeFactors.filter (fun p : ℕ ↦ y < p), Real.log p :=
+        sum_le_sum fun p hp ↦ Real.log_le_log hy (mem_filter.1 hp).2.le
+    _ ≤ ∑ p ∈ n.primeFactors, Real.log p :=
+        sum_le_sum_of_subset_of_nonneg (filter_subset _ _) fun p _ _ ↦ Real.log_natCast_nonneg p
+    _ ≤ Real.log n := sum_primeFactors_log_le n
+
+/-- The Euler factors of the prime divisors `p ≤ y` of `n` are bounded by the full Euler product
+over the primes `p ≤ y`. -/
+theorem prod_primeFactors_filter_le_one_sub_inv_inv_le (n : ℕ) (y : ℝ) :
+    ∏ p ∈ n.primeFactors.filter (fun p : ℕ ↦ (p : ℝ) ≤ y), (1 - (p : ℝ)⁻¹)⁻¹ ≤
+      ∏ p ∈ primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹)⁻¹ := by
+  have hpos : ∀ p : ℕ, p.Prime → 0 < 1 - (p : ℝ)⁻¹ := fun p hp ↦
+    sub_pos.2 (inv_lt_one_of_one_lt₀ (mod_cast hp.one_lt))
+  refine prod_le_prod_of_subset_of_one_le₀ (fun p hp ↦ ?_) (fun p hp ↦ ?_) fun p hp _ ↦ ?_
+  · obtain ⟨hp, hpy⟩ := mem_filter.1 hp
+    exact mem_primesLE.2 ⟨le_floor hpy, prime_of_mem_primeFactors hp⟩
+  · exact (inv_pos.2 (hpos p (prime_of_mem_primeFactors (mem_filter.1 hp).1))).le
+  · exact (one_le_inv₀ (hpos p (prime_of_mem_primesLE hp))).2 (sub_le_self 1 (by positivity))
+
+/-- The Euler factors of the prime divisors `p > y` of `n` multiply to at most
+`exp (2 log n / (y log y))`, for every real `y > 1`. -/
+theorem prod_primeFactors_filter_gt_one_sub_inv_inv_le (n : ℕ) {y : ℝ} (hy : 1 < y) :
+    ∏ p ∈ n.primeFactors.filter (fun p : ℕ ↦ y < p), (1 - (p : ℝ)⁻¹)⁻¹ ≤
+      Real.exp (2 * Real.log n / (y * Real.log y)) := by
+  have hy0 : 0 < y := zero_lt_one.trans hy
+  have hlogy : 0 < Real.log y := Real.log_pos hy
+  have hfactor : ∀ p ∈ n.primeFactors.filter (fun p : ℕ ↦ y < p),
+      (1 - (p : ℝ)⁻¹)⁻¹ ≤ Real.exp (2 / y) := by
+    intro p hp
+    obtain ⟨hp, hyp⟩ := mem_filter.1 hp
+    have hp2 : (2 : ℝ) ≤ p := mod_cast (prime_of_mem_primeFactors hp).two_le
+    have hinv : (p : ℝ)⁻¹ ≤ 1 / 2 := by
+      rw [one_div]
+      exact inv_anti₀ two_pos hp2
+    have hlog := Real.abs_log_le_two_mul_one_sub (x := 1 - (p : ℝ)⁻¹) (by linarith)
+      (sub_le_self 1 (inv_nonneg.2 (zero_le_two.trans hp2)))
+    rw [sub_sub_cancel] at hlog
+    have hpy : (p : ℝ)⁻¹ ≤ y⁻¹ := inv_anti₀ hy0 hyp.le
+    rw [← Real.exp_log (inv_pos.2 (by linarith : 0 < 1 - (p : ℝ)⁻¹)), Real.log_inv]
+    refine Real.exp_le_exp.2 ?_
+    rw [div_eq_mul_inv]
+    linarith [neg_le_abs (Real.log (1 - (p : ℝ)⁻¹))]
+  have hcard : (#(n.primeFactors.filter fun p : ℕ ↦ y < p) : ℝ) * (2 / y) ≤
+      2 * Real.log n / (y * Real.log y) := by
+    rw [le_div_iff₀ (mul_pos hy0 hlogy)]
+    calc (#(n.primeFactors.filter fun p : ℕ ↦ y < p) : ℝ) * (2 / y) * (y * Real.log y)
+        = 2 * ((#(n.primeFactors.filter fun p : ℕ ↦ y < p) : ℝ) * Real.log y) := by field_simp
+      _ ≤ 2 * Real.log n := by gcongr; exact card_primeFactors_filter_gt_mul_log_le n hy0.le
+  calc ∏ p ∈ n.primeFactors.filter (fun p : ℕ ↦ y < p), (1 - (p : ℝ)⁻¹)⁻¹
+      ≤ ∏ p ∈ n.primeFactors.filter (fun p : ℕ ↦ y < p), Real.exp (2 / y) :=
+        prod_le_prod₀ (fun p _ ↦ inv_nonneg.2 (sub_nonneg.2 (cast_inv_le_one p))) hfactor
+    _ = Real.exp ((#(n.primeFactors.filter fun p : ℕ ↦ y < p) : ℝ) * (2 / y)) := by
+        rw [prod_const, ← Real.exp_natCast_mul]
+    _ ≤ Real.exp (2 * Real.log n / (y * Real.log y)) := Real.exp_le_exp.2 hcard
 
 /-- Elementary bound `∑_{p ∣ n} log p / p ≤ log n / 2` for every `n : ℕ`, using `p ≥ 2` on prime
 divisors. -/

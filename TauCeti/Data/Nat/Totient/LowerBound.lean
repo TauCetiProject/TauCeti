@@ -8,11 +8,14 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Data.Nat.Totient
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
+public import Mathlib.NumberTheory.PrimeCounting
 import TauCeti.Algebra.Order.BigOperators.ProdSubOne
+import TauCeti.Data.Nat.Totient
+import TauCeti.NumberTheory.PrimeFactors.Bounds
 import TauCeti.NumberTheory.ArithmeticFunction.Zeta
 
 /-!
-# An elementary lower bound for the totient
+# Elementary lower bounds for the totient
 
 For `0 < n`, Euler's product formula gives `n / φ(n) = ∏_{p ∣ n} p / (p - 1)`. The `k`-th smallest
 prime factor of `n` is at least `k + 1`, so this product is at most
@@ -25,10 +28,17 @@ For `m = q ^ r - 1` this lower bound for `φ(m)` gives the numerical estimate
 the proportion of monic polynomials of degree `r` over `𝔽_q` that are not primitive (that bound
 itself is not proved here).
 
+Splitting the prime divisors of `n` at a real cutoff `y > 1` gives the sharper bound
+`n / φ(n) ≤ ∏_{p ≤ y} (1 - p⁻¹)⁻¹ * exp (2 log n / (y log y))`: the prime divisors `p ≤ y`
+contribute at most the full Euler product up to `y`, and there are at most `log n / log y` prime
+divisors `p > y`, each with Euler factor at most `exp (2 / y)`.
+
 ## Main results
 
 * `Nat.self_le_totient_mul_cardDistinctFactors_add_one`: `n ≤ φ(n) (ω(n) + 1)`.
 * `Nat.self_le_totient_mul_two_mul_log_add_one`: `n ≤ φ(n) (2 log n + 1)`.
+* `Nat.div_totient_le_prod_primesLE_mul_exp`:
+  `n / φ(n) ≤ ∏_{p ≤ y} (1 - p⁻¹)⁻¹ * exp (2 log n / (y log y))` for `y > 1`.
 * `TauCeti.Nat.one_sub_totient_pow_sub_one_div_le_exp`: for `q ≥ 2`,
   `1 - φ(q ^ r - 1) / (r q ^ r) ≤ exp(-1 / (2r (2r log q + 1)))`.
 
@@ -77,6 +87,22 @@ theorem self_le_totient_mul_two_mul_log_add_one (n : ℕ) :
   calc (n : ℝ) ≤ φ n * (ω n + 1) := by
         exact_mod_cast self_le_totient_mul_cardDistinctFactors_add_one n
     _ ≤ φ n * (2 * Real.log n + 1) := by gcongr
+
+/-- **The totient and the Euler product at a cutoff.** For every `n` and every real `y > 1`,
+`n / φ(n) ≤ ∏_{p ≤ y} (1 - p⁻¹)⁻¹ * exp (2 log n / (y log y))`. For `n = 0` the left side is
+`0`. -/
+theorem div_totient_le_prod_primesLE_mul_exp (n : ℕ) {y : ℝ} (hy : 1 < y) :
+    (n : ℝ) / φ n ≤ (∏ p ∈ primesLE ⌊y⌋₊, (1 - (p : ℝ)⁻¹)⁻¹) *
+      Real.exp (2 * Real.log n / (y * Real.log y)) := by
+  have hnonneg : ∀ s : Finset ℕ, 0 ≤ ∏ p ∈ s, (1 - (p : ℝ)⁻¹)⁻¹ := fun s ↦
+    Finset.prod_nonneg fun p _ ↦ inv_nonneg.2 (sub_nonneg.2 (cast_inv_le_one p))
+  rcases eq_or_ne n 0 with rfl | hn
+  · simpa using hnonneg _
+  rw [← TauCeti.Nat.prod_inv_one_sub_inv_eq_div_totient hn,
+    ← Finset.prod_filter_mul_prod_filter_not n.primeFactors (fun p : ℕ ↦ (p : ℝ) ≤ y)]
+  simp only [not_le]
+  exact mul_le_mul (prod_primeFactors_filter_le_one_sub_inv_inv_le n y)
+    (prod_primeFactors_filter_gt_one_sub_inv_inv_le n hy) (hnonneg _) (hnonneg _)
 
 end Nat
 
