@@ -507,12 +507,16 @@ theorem mgf_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) (hab : a < b)
   rw [← mgf_id_map hX.aemeasurable, hX.map_eq,
     TauCeti.Probability.mgf_id_uniformMeasure hab ht]
 
-/-- The cumulant-generating function of an interval-uniform random variable away from zero. -/
+/-- The cumulant-generating function of an interval-uniform random variable. -/
 theorem cgf_uniformMeasure (hX : HasLaw X (uniformMeasure a b) P) (hab : a < b)
-    {t : ℝ} (ht : t ≠ 0) :
+    (t : ℝ) :
     cgf X P t =
       Real.log ((Real.exp (t * b) - Real.exp (t * a)) / ((b - a) * t)) := by
-  rw [cgf, hX.mgf_uniformMeasure hab ht]
+  rcases eq_or_ne t 0 with rfl | ht
+  · have := hX.isProbabilityMeasure_iff.2
+      (TauCeti.Probability.isProbabilityMeasure_uniformMeasure hab)
+    simp
+  · rw [cgf, hX.mgf_uniformMeasure hab ht]
 
 end ProbabilityTheory.HasLaw
 
