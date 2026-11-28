@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.MeasureTheory.Integral.Prod
 public import TauCeti.Analysis.SpecialFunctions.Artanh
 public import TauCeti.MeasureTheory.Integral.Exp.Decay
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The Haagerup–Zsidó kernel
@@ -136,9 +137,28 @@ theorem measurable_weightLaplaceTransform : Measurable weightLaplaceTransform :=
       |>.stronglyMeasurable
   exact hf.integral_prod_right' (ν := volume.restrict (Ioi 0)) |>.measurable
 
-/-- Since the weight is less than `1`, `L(t) ≤ ∫_{y > 0} e^{-|t| y} dy = 1 / |t|`. -/
-theorem weightLaplaceTransform_le_inv_abs {t : ℝ} (ht : t ≠ 0) :
+/-- At `t = 0` the integrand of the Laplace transform of the weight is not integrable on `(0, ∞)`,
+so the Bochner integral is `0`. -/
+@[simp]
+theorem weightLaplaceTransform_zero : weightLaplaceTransform 0 = 0 := by
+  have hnint : ¬ IntegrableOn (fun y ↦ weight y * Real.exp (-(|(0 : ℝ)| * y))) (Ioi 0) := by
+    refine MeasureTheory.not_integrableOn_Ioi_of_eventually_le_norm
+      (ε := weight 1) ?_ 0 ?_
+    · rw [weight_def, ← Real.tanh_zero]
+      exact Real.tanh_strictMono (by positivity)
+    · filter_upwards [Filter.eventually_ge_atTop (1 : ℝ)] with y hy
+      rw [abs_zero, zero_mul, neg_zero, Real.exp_zero, mul_one, Real.norm_eq_abs,
+        abs_of_nonneg (weight_nonneg (zero_le_one.trans hy))]
+      rw [weight_def, weight_def]
+      exact Real.tanh_strictMono.monotone (by nlinarith [Real.pi_pos])
+  rw [weightLaplaceTransform_def, integral_undef hnint]
+
+/-- Since the weight is less than `1`, `L(t) ≤ ∫_{y > 0} e^{-|t| y} dy = 1 / |t|`. At `t = 0` both
+sides are `0`, the integral diverging. -/
+theorem weightLaplaceTransform_le_inv_abs (t : ℝ) :
     weightLaplaceTransform t ≤ |t|⁻¹ := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · simp
   have ht' : 0 < |t| := abs_pos.mpr ht
   have hexp := integral_pow_mul_exp_neg_mul_Ioi 0 ht'
   simp only [pow_zero, one_mul, Nat.factorial_zero, Nat.cast_one, zero_add, pow_one,
@@ -149,9 +169,12 @@ theorem weightLaplaceTransform_le_inv_abs {t : ℝ} (ht : t ≠ 0) :
   exact mul_le_of_le_one_left (Real.exp_pos _).le (weight_lt_one y).le
 
 /-- Since the weight lies below `π y / 2`,
-`L(t) ≤ (π / 2) ∫_{y > 0} y e^{-|t| y} dy = π / (2 t²)`. -/
-theorem weightLaplaceTransform_le_pi_div_two_mul_sq {t : ℝ} (ht : t ≠ 0) :
+`L(t) ≤ (π / 2) ∫_{y > 0} y e^{-|t| y} dy = π / (2 t²)`. At `t = 0` both sides are `0`, the
+integral diverging. -/
+theorem weightLaplaceTransform_le_pi_div_two_mul_sq (t : ℝ) :
     weightLaplaceTransform t ≤ π / (2 * t ^ 2) := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · simp
   have ht' : 0 < |t| := abs_pos.mpr ht
   have hint := integrableOn_pow_mul_exp_neg_mul_Ioi 1 ht'
   have hval := integral_pow_mul_exp_neg_mul_Ioi 1 ht'
@@ -224,7 +247,7 @@ theorem abs_realKernel_le (t : ℝ) : |realKernel t| ≤ π / (2 * (1 + t ^ 2)) 
   · -- Near the origin: `|sin t| * L(t) ≤ |t| * |t|⁻¹ = 1`.
     have hprod : |Real.sin t| * weightLaplaceTransform t ≤ 1 :=
       calc |Real.sin t| * weightLaplaceTransform t ≤ |t| * |t|⁻¹ :=
-            mul_le_mul (Real.abs_sin_le_abs) (weightLaplaceTransform_le_inv_abs ht) hL
+            mul_le_mul (Real.abs_sin_le_abs) (weightLaplaceTransform_le_inv_abs t) hL
               ht'.le
         _ = 1 := mul_inv_cancel₀ ht'.ne'
     have hsq : t ^ 2 ≤ 1 := by
@@ -235,7 +258,7 @@ theorem abs_realKernel_le (t : ℝ) : |realKernel t| ≤ π / (2 * (1 + t ^ 2)) 
   · -- Away from the origin: `|sin t| * L(t) ≤ π / (2 t²)`.
     have hprod : |Real.sin t| * weightLaplaceTransform t ≤ π / (2 * t ^ 2) :=
       calc |Real.sin t| * weightLaplaceTransform t ≤ 1 * (π / (2 * t ^ 2)) :=
-            mul_le_mul (Real.abs_sin_le_one t) (weightLaplaceTransform_le_pi_div_two_mul_sq ht)
+            mul_le_mul (Real.abs_sin_le_one t) (weightLaplaceTransform_le_pi_div_two_mul_sq t)
               hL zero_le_one
         _ = π / (2 * t ^ 2) := one_mul _
     have hsq : 1 ≤ t ^ 2 := by
