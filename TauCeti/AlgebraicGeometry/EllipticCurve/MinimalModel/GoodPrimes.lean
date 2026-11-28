@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import TauCeti.Data.Nat.Prime.Basic
 import Mathlib.Tactic.NormNum.Prime
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.PotentialGoodReduction
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 import TauCeti.NumberTheory.Padics.PadicIntegers
@@ -65,6 +66,27 @@ def HasGoodReductionAt (p : Nat.Primes) : Prop :=
 theorem hasGoodReductionAt_iff {p : Nat.Primes} :
     E.HasGoodReductionAt p ↔ ((E.baseChange ℚ_[p]).minimal ℤ_[p]).HasGoodReduction ℤ_[p] :=
   Iff.rfl
+
+/-- A rational Weierstrass curve with good reduction at a prime is elliptic. -/
+theorem HasGoodReductionAt.isElliptic {E : WeierstrassCurve ℚ} {p : Nat.Primes}
+    (h : E.HasGoodReductionAt p) : E.IsElliptic := by
+  have hgood := (E.hasGoodReductionAt_iff.mp h).isElliptic ℤ_[p]
+  obtain ⟨C, hC⟩ := (E.baseChange ℚ_[p]).exists_smul_eq_minimal ℤ_[p]
+  have hlocal := (isElliptic_smul_iff C _).mp (hC ▸ hgood)
+  exact ⟨IsUnit.of_map (algebraMap ℚ ℚ_[p]) E.Δ (by
+    simpa only [baseChange, map_Δ] using hlocal.isUnit)⟩
+
+/-- At a prime of good reduction, the rational `j`-invariant has nonnegative valuation. -/
+theorem HasGoodReductionAt.padicValRat_j_nonneg {E : WeierstrassCurve ℚ}
+    {p : Nat.Primes} (h : E.HasGoodReductionAt p) :
+    let hE := h.isElliptic
+    0 ≤ padicValRat p E.j := by
+  intro hE
+  have hgood := E.hasGoodReductionAt_iff.mp h
+  obtain ⟨z, hz⟩ := hgood.isInteger_j ℤ_[p]
+  simp only [j_minimal, baseChange, map_j, eq_ratCast, PadicInt.algebraMap_apply] at hz
+  rw [← Padic.valuation_ratCast, ← hz]
+  exact PadicInt.valuation_coe_nonneg
 
 /-- **Good reduction is a property of the curve**: isomorphic equations over `ℚ` have good
 reduction at the same primes. No ellipticity is needed. -/
