@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Field.Rat
 public import Mathlib.Algebra.Order.Hom.Monoid
 public import Mathlib.Data.Rat.Cast.Order
+public import TauCeti.Algebra.Order.Ring.Cast
 import Mathlib.Algebra.Order.Field.Basic
 import Mathlib.Data.Rat.Cast.CharZero
 
@@ -31,6 +32,8 @@ so it bundles as an order-preserving additive monoid homomorphism
   field with `PosMulReflectLT` is monotone.
 * `Rat.castOrderAddMonoidHom`: the rational cast into a partially ordered strictly ordered
   field with `PosMulReflectLT`, as an order-preserving additive monoid homomorphism.
+* `Rat.castOrderAddMonoidHom_comp_intCast`: composing the standard integer-to-rational and
+  rational casts gives the standard integer cast.
 -/
 
 public section
@@ -70,6 +73,16 @@ def castOrderAddMonoidHom : ℚ →+o K :=
 @[simp]
 theorem coe_castOrderAddMonoidHom : ⇑(castOrderAddMonoidHom K) = Rat.cast :=
   (rfl)
+
+/-- Composing the standard integer-to-rational and rational casts gives the standard integer
+cast into the target field. -/
+@[simp]
+theorem castOrderAddMonoidHom_comp_intCast :
+    (castOrderAddMonoidHom K).comp (Int.castOrderAddMonoidHom ℚ) =
+      Int.castOrderAddMonoidHom K := by
+  apply OrderAddMonoidHom.ext
+  intro z
+  simp
 
 end OrderAddMonoidHom
 

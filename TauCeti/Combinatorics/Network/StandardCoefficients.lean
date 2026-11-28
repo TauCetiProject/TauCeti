@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Basic.Real.Basic
-public import TauCeti.Algebra.Order.Ring.Cast
 public import TauCeti.Combinatorics.Network.Coefficients
 public import TauCeti.Data.Rat.Cast.Order
 
@@ -39,20 +38,6 @@ is maximum exactly when either of its standard coefficient images is maximum.
 
 public section
 
-namespace Rat
-
-/-- Composing the standard integer-to-rational and rational-to-real additive order maps gives the
-standard integer-to-real map. -/
-@[simp]
-theorem castOrderAddMonoidHom_comp_intCast :
-    (castOrderAddMonoidHom ℝ).comp (Int.castOrderAddMonoidHom ℚ) =
-      Int.castOrderAddMonoidHom ℝ := by
-  apply OrderAddMonoidHom.ext
-  intro z
-  simp
-
-end Rat
-
 namespace TauCeti
 
 open Finset
@@ -66,8 +51,9 @@ namespace Assignment
 /-- Mapping an integer assignment first to `ℚ` and then to `ℝ` is its direct integer cast. -/
 theorem map_intCast_ratCast (f : Assignment Q ℤ) :
     (f.map (Int.cast : ℤ → ℚ)).map (Rat.cast : ℚ → ℝ) =
-      f.map (Int.cast : ℤ → ℝ) :=
-  rfl
+      f.map (Int.cast : ℤ → ℝ) := by
+  funext x y e
+  simp only [map_apply, Rat.cast_intCast]
 
 /-- Residual capacities commute with the standard embedding `ℤ → ℚ`. -/
 theorem intCast_residualCapacity (lo hi f : Assignment Q ℤ) :
@@ -90,8 +76,12 @@ namespace Network
 /-- Mapping an integer network first to `ℚ` and then to `ℝ` is its direct integer cast. -/
 theorem map_intCast_ratCast (N : Network ℤ V) :
     (N.map (Int.cast : ℤ → ℚ) Int.cast_mono).map (Rat.cast : ℚ → ℝ) Rat.cast_mono =
-      N.map (Int.cast : ℤ → ℝ) Int.cast_mono :=
-  rfl
+      N.map (Int.cast : ℤ → ℝ) Int.cast_mono := by
+  rw [Network.map_map]
+  have hcast : (Rat.cast : ℚ → ℝ) ∘ (Int.cast : ℤ → ℚ) = (Int.cast : ℤ → ℝ) := by
+    funext z
+    exact Rat.cast_intCast z
+  simp only [hcast]
 
 end Network
 
@@ -135,16 +125,6 @@ theorem map_intCast_ratCast_toFun {lo hi : Assignment Q ℤ} (f : BoundedFlow lo
   simp only [map_toFun, Assignment.map_apply, Int.coe_castOrderAddMonoidHom,
     Rat.coe_castOrderAddMonoidHom, Rat.cast_intCast]
 
-/-- Mapping an integer bounded flow to `ℚ` casts its value. -/
-theorem val_map_intCast_rat {lo hi : Assignment Q ℤ} (f : BoundedFlow lo hi s t) :
-    (f.map (Int.castOrderAddMonoidHom ℚ)).val = (f.val : ℚ) :=
-  by simpa only [Int.coe_castOrderAddMonoidHom] using f.val_map (Int.castOrderAddMonoidHom ℚ)
-
-/-- Mapping a rational bounded flow to `ℝ` casts its value. -/
-theorem val_map_ratCast_real {lo hi : Assignment Q ℚ} (f : BoundedFlow lo hi s t) :
-    (f.map (Rat.castOrderAddMonoidHom ℝ)).val = (f.val : ℝ) :=
-  by simpa only [Rat.coe_castOrderAddMonoidHom] using f.val_map (Rat.castOrderAddMonoidHom ℝ)
-
 /-- An integer bounded flow is maximum exactly when its rational image is maximum. -/
 theorem isMaximum_map_intCast_rat_iff {lo hi : Assignment Q ℤ}
     (f : BoundedFlow lo hi s t) (hst : s ≠ t) :
@@ -172,16 +152,6 @@ theorem map_intCast_ratCast_toFun {cap : Assignment Q ℤ} (f : Flow cap s t) :
   funext x y e
   simp only [map_toFun, Assignment.map_apply, Int.coe_castOrderAddMonoidHom,
     Rat.coe_castOrderAddMonoidHom, Rat.cast_intCast]
-
-/-- Mapping an integer flow to `ℚ` casts its value. -/
-theorem val_map_intCast_rat {cap : Assignment Q ℤ} (f : Flow cap s t) :
-    (f.map (Int.castOrderAddMonoidHom ℚ)).val = (f.val : ℚ) :=
-  by simpa only [Int.coe_castOrderAddMonoidHom] using f.val_map (Int.castOrderAddMonoidHom ℚ)
-
-/-- Mapping a rational flow to `ℝ` casts its value. -/
-theorem val_map_ratCast_real {cap : Assignment Q ℚ} (f : Flow cap s t) :
-    (f.map (Rat.castOrderAddMonoidHom ℝ)).val = (f.val : ℝ) :=
-  by simpa only [Rat.coe_castOrderAddMonoidHom] using f.val_map (Rat.castOrderAddMonoidHom ℝ)
 
 /-- An integer flow is maximum exactly when its rational image is maximum. -/
 theorem isMaximum_map_intCast_rat_iff {cap : Assignment Q ℤ} (f : Flow cap s t)
