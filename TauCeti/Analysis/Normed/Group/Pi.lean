@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Constructions
 import Mathlib.Analysis.Normed.Group.Uniform
-import Mathlib.Topology.MetricSpace.Cauchy
-import Mathlib.Topology.Order.Basic
 
 /-!
 # Norms on products
@@ -20,8 +18,8 @@ exponent `n` its `n`-th power is at most the sum of the `n`-th powers of the coo
 about `0` by an element of norm at most `R` stays in that ball (`Pi.norm_update_le`).
 
 Over an arbitrary index type, every coordinate of `Pi.single i c` has norm at most `‖c‖`
-(`Pi.norm_single_apply_le`). Uniformly Cauchy families in weighted coefficient norms have a
-uniform weighted limit (`TauCeti.exists_weighted_uniform_limit`). A uniform limit in nonnegative
+(`Pi.norm_single_apply_le`). For signed weights, `TauCeti.exists_uniform_weighted_error_le` bounds
+the weighted errors uniformly from above. A uniform limit in nonnegative
 weighted coefficient norms preserves decay at infinity
 (`TauCeti.tendsto_zero_of_weighted_uniform_limit`).
 -/
@@ -66,11 +64,11 @@ theorem Pi.norm_update_le {ι : Type*} [Fintype ι] [DecidableEq ι] {E : ι →
     · simpa [Function.update_of_ne hj] using (norm_le_pi_norm x j).trans hx
 
 open Filter Topology in
-/-- A sequence of families that is uniformly Cauchy in the weighted coefficient norms
-`‖A k t‖ * w t` has a family `a` approximating it uniformly in these weighted norms; at indices
-with positive weight `a t` is the coefficientwise limit. No decay, boundedness or positivity
-hypothesis on the weights is needed. -/
-theorem TauCeti.exists_weighted_uniform_limit {ι E : Type*}
+/-- Given uniform upper bounds on the pairwise weighted errors of a sequence of families, there
+is a family `a` such that `‖A k t - a t‖ * w t ≤ ε` eventually in `k`, uniformly in `t`, for
+every positive `ε`. At positive weights the coefficients converge to `a t`. Nonpositive weights
+impose no condition on the coefficients. -/
+theorem TauCeti.exists_uniform_weighted_error_le {ι E : Type*}
     [SeminormedAddCommGroup E] [CompleteSpace E] (w : ι → ℝ) (A : ℕ → ι → E)
     (hC : ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ l ≥ N, ∀ t, ‖A k t - A l t‖ * w t < ε) :
     ∃ a : ι → E, ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t, ‖A k t - a t‖ * w t ≤ ε := by

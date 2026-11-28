@@ -27,7 +27,7 @@ evaluation of bounded series are in `TauCeti.RingTheory.PowerSeries.OpenDisc.Bou
 The norm and completeness constructions follow the restricted-series instances in
 `TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic`, using Mathlib's `PowerSeries.gaussNorm` and
 `PowerSeries.HasGaussNorm`; completeness reuses the uniform weighted limit
-`TauCeti.exists_weighted_uniform_limit`.
+`TauCeti.exists_uniform_weighted_error_le`.
 
 ## Main definitions
 
@@ -179,7 +179,7 @@ instance [NormOneClass R] : NormOneClass (HasGaussNorm.subring R R₀) where
 /-- The Gauss norm on bounded series is complete over a complete coefficient ring. -/
 instance [CompleteSpace R] : CompleteSpace (HasGaussNorm.subring R R₀) := by
   refine Metric.complete_of_cauchySeq_tendsto fun F hF ↦ ?_
-  obtain ⟨a, hunif⟩ := TauCeti.exists_weighted_uniform_limit (R₀ ^ ·)
+  obtain ⟨a, hunif⟩ := TauCeti.exists_uniform_weighted_error_le (R₀ ^ ·)
     (fun k n ↦ coeff n (F k : R⟦X⟧)) (by
       intro ε hε
       obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hF ε hε

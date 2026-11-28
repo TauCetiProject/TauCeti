@@ -209,7 +209,7 @@ theorem _root_.TauCeti.MvPowerSeries.exists_weighted_coefficient_limit {σ E : T
     ∃ a : (σ →₀ ℕ) → E,
       Tendsto (fun t ↦ ‖a t‖ * t.prod (c · ^ ·)) cofinite (𝓝 0) ∧
       ∀ ε > 0, ∃ N, ∀ k ≥ N, ∀ t, ‖A k t - a t‖ * t.prod (c · ^ ·) ≤ ε := by
-  obtain ⟨a, hunif⟩ := TauCeti.exists_weighted_uniform_limit _ A hC
+  obtain ⟨a, hunif⟩ := TauCeti.exists_uniform_weighted_error_le _ A hC
   refine ⟨a, ?_, hunif⟩
   exact TauCeti.tendsto_zero_of_weighted_uniform_limit _
     (fun t ↦ Finset.prod_nonneg fun i _ ↦ pow_nonneg (hc i) _) A a hres hunif
