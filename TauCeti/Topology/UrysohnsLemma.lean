@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.RCLike.ContinuousMap
+public import Mathlib.Topology.Separation.CompletelyRegular
 public import Mathlib.Topology.UrysohnsLemma
 public import Mathlib.Analysis.Normed.Module.Basic
 
 /-!
-# Urysohn cutoffs of continuous maps
+# Urysohn cutoffs of continuous maps, and bump functions
 
 In a normal space, a map into a topological real module that is continuous on an open set `Ω`
 agrees on each closed subset `K ⊆ Ω` with a map continuous everywhere
@@ -20,6 +22,9 @@ In a locally compact regular space, a continuous map `ψ` into a real normed spa
 at infinity is uniformly approximated by continuous compactly supported maps `χ • ψ` of no larger
 norm (`Continuous.exists_hasCompactSupport_norm_sub_le`), where `0 ≤ χ ≤ 1` is a compactly
 supported Urysohn cutoff equal to `1` on a compact set outside which `‖ψ‖ < ε`.
+
+In a completely regular space, every point `x` of an open set `U` carries an `RCLike`-valued Urysohn
+function `g` with `‖g‖ ≤ 1`, `g x = 1` and `g = 0` off `U` (`TauCeti.exists_bump_of_isOpen`).
 -/
 
 public section
@@ -66,3 +71,19 @@ theorem Continuous.exists_hasCompactSupport_norm_sub_le {X E : Type*} [Topologic
         Real.norm_of_nonneg (sub_nonneg.2 (hχI x).2)]
       refine (mul_le_of_le_one_left (norm_nonneg _) (by linarith [(hχI x).1])).trans ?_
       exact (mem_ball_zero_iff.1 (hK hx)).le
+
+namespace TauCeti
+
+/-- An Urysohn function at `x`: `‖g‖ ≤ 1`, `g x = 1`, and `g` vanishes off the open set `U ∋ x`. -/
+theorem exists_bump_of_isOpen {X 𝕜 : Type*} [TopologicalSpace X] [CompletelyRegularSpace X]
+    [RCLike 𝕜] {U : Set X} (hU : IsOpen U) {x : X} (hx : x ∈ U) :
+    ∃ g : C(X, 𝕜), (∀ x', ‖g x'‖ ≤ 1) ∧ g x = 1 ∧ ∀ x', g x' ≠ 0 → x' ∈ U := by
+  obtain ⟨f, hf, hfx, hfU⟩ := CompletelyRegularSpace.completely_regular_isOpen x U hU hx
+  -- The bump is `1 - f`, which is `1` at `x` and `0` off `U`.
+  refine ⟨ContinuousMap.realToRCLike 𝕜 ⟨fun x' ↦ 1 - (f x' : ℝ), by fun_prop⟩, fun x' ↦ ?_,
+    by simp [hfx], fun x' hx' ↦ by_contra fun hU' ↦ hx' (by simp [hfU hU'])⟩
+  rw [ContinuousMap.realToRCLike_apply, RCLike.norm_ofReal]
+  exact abs_sub_le_of_nonneg_of_le zero_le_one le_rfl (unitInterval.nonneg _)
+    (unitInterval.le_one _)
+
+end TauCeti

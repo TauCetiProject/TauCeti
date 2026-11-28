@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Vertex.HasseDeriv
 public import TauCeti.Algebra.Vertex.ResidueProduct
 public import TauCeti.Algebra.Vertex.NormalOrder
 public import Mathlib.Algebra.Lie.OfAssociative
+import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.Data.Nat.Choose.Sum
 import TauCeti.RingTheory.Binomial
 import Mathlib.Tactic.Module
@@ -43,7 +44,9 @@ products (`lie_ncoeff_nthProduct`).
 
 ## Main results
 
-* `VertexOperator.ncoeff_nthProduct_apply_eq_sum`: unified mode formula for all `n, m : ℤ`.
+* `VertexOperator.ncoeff_nthProduct_apply_eq_sum` and
+  `VertexOperator.ncoeff_nthProduct_apply_eq_finsum`: unified mode formula for all `n, m : ℤ` in
+  finite-sum and `finsum` forms.
 * `VertexOperator.comp_ncoeff_nthProduct`: `n`-th products are natural for linear maps
   intertwining the modes of their factors.
 * `VertexOperator.nthProduct_derivative_left`: `(∂A)₍ₙ₎ B = -n • A₍ₙ₋₁₎ B`.
@@ -438,5 +441,24 @@ theorem ncoeff_neg_one_nthProduct_apply {A B : VertexOperator R V} {vac : V}
   rw [ncoeff_nthProduct_apply_eq_sum n A B (-1) vac (K := 1)
     (fun i _ ↦ hA i (Nat.cast_nonneg i)) (fun i hi ↦ hB (-1 + i) (by omega))]
   simp [hA 0 le_rfl]
+
+/-- **Mode iterate formula** (`m = 0` case of the Borcherds identity) for any two vertex operators
+over a commutative ring, in `finsum` form:
+`((A_{(n)} B)_{(r)}) v = ∑ᶠ i : ℕ, (-1)ⁱ (n choose i) (A₍ₙ₋ᵢ₎ (B₍ᵣ₊ᵢ₎ v) - (-1)ⁿ B₍ₙ₊ᵣ₋ᵢ₎ (A₍ᵢ₎ v))`
+for all `A, B : VertexOperator R V`, `n, r : ℤ`, and `v : V`. -/
+theorem ncoeff_nthProduct_apply_eq_finsum (A B : VertexOperator R V) (n r : ℤ) (v : V) :
+    ((nthProduct n A B)[[r]]) v =
+      ∑ᶠ i : ℕ, ((-1 : ℤ) ^ i * Ring.choose n i) •
+        ((A[[n - i]]) ((B[[r + i]]) v) -
+          (n.negOnePow : ℤ) • (B[[n + r - i]]) ((A[[(i : ℤ)]]) v)) := by
+  obtain ⟨P, hP⟩ := B.exists_forall_ncoeff_add_apply_eq_zero v r
+  obtain ⟨Q, hQ⟩ := A.exists_forall_ncoeff_apply_eq_zero v
+  let K := max P Q
+  rw [TauCeti.finsum_eq_sum_range_of_forall_eq_zero (K := K) fun i hi ↦ by
+      simp [hP i (le_trans (le_max_left _ _) hi), hQ i (by omega)],
+    ncoeff_nthProduct_apply_eq_sum n A B r v (K := K) (fun i hi ↦ hQ i (by omega))
+      (fun i hi ↦ hP i (le_trans (le_max_left _ _) hi))]
+  refine sum_congr rfl fun i _ ↦ ?_
+  rw [mul_smul, Units.smul_def]
 
 end VertexOperator

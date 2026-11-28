@@ -10,9 +10,10 @@ import TauCeti.Analysis.Complex.EquivRealProd
 import TauCeti.Analysis.Fredholm.ContinuousFamily
 import TauCeti.Geometry.Symplectic.ExistsCompatible
 import TauCeti.Geometry.Symplectic.Floer.Continuation.Path
+import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
 
 /-!
-# The index of a PSS plane does not depend on the almost complex structure over the disc
+# The index of a PSS plane does not depend on the almost complex structure or the map over the disc
 
 Let `u` be a finite-energy solution of the Floer equation of the positive PSS plane for a
 period-one Hamiltonian `H` on a finite-dimensional symplectic inner product space `(V, ω)`, on the
@@ -23,9 +24,14 @@ on the end to a fixed family `J_q(t)`
 (`TauCeti.SymplecticForm.isFredholm_floerConformalSobolevOperator_of_finite_energy_positive`). This
 file proves that its index is the same for any two such choices that moreover tame `ω` everywhere
 and are `C³` along `u`
-(`TauCeti.SymplecticForm.index_floerConformalSobolevOperator_eq_of_pssPlane_almostComplex`). So the
-index of a PSS plane may be computed for any convenient structure over the disc, one step toward
-expressing it through the asymptotic data of the plane.
+(`TauCeti.SymplecticForm.index_floerConformalSobolevOperator_eq_of_pssPlane_almostComplex`). It
+also does not depend on the map over the disc: along any `C³` map `u'` equal to `u` on the end, for
+structures that are `C³`, and compatible over the disc, at the points of the segments between `u`
+and `u'`, the operator has the same index
+(`TauCeti.SymplecticForm.index_floerConformalSobolevOperator_eq_of_pssPlane_map`); `u'` need not
+solve the Floer equation over the disc. So the index of a PSS plane may be computed for any
+convenient structure and any convenient map over the disc, one step toward expressing it through
+the asymptotic data of the plane.
 
 This is the PSS-plane counterpart of the invariance under the data for the pair of pants
 (`TauCeti.SymplecticForm.index_floerConformalSobolevOperator_eq_of_pairOfPants_data`), and the proof
@@ -39,7 +45,11 @@ form a continuous path of Fredholm operators, along which the index is constant
 (`Continuous.index_eq_of_preconnectedSpace`). The continuity holds for every family of almost
 complex structures indexed by a normed space, jointly `C¹` along `u` and constant on the end,
 whose coefficient fields on conformal jets are essentially bounded
-(`TauCeti.SymplecticForm.continuous_floerConformalSobolevOperator_positive_family`).
+(`TauCeti.SymplecticForm.continuous_floerConformalSobolevOperator_positive_family`). For the map,
+the path is the segment of maps `u + μ (u' - u)`, `0 ≤ μ ≤ 1`: every member agrees with `u` on the
+end, where it inherits the Floer equation and the finite energy of `u`, so its operator is
+Fredholm, and the coefficient fields are jointly continuous in `(μ, z)`
+(`TauCeti.SymplecticForm.continuousAt_floerConformalJetCoeff_add_smul_sub`).
 
 Every PSS plane is the positive plane for a rescaled Hamiltonian
 (`TauCeti.Floer.PSSPlane.perturbation_eq_positive`), so the statement covers the negative plane as
@@ -207,4 +217,207 @@ theorem index_floerConformalSobolevOperator_eq_of_pssPlane_almostComplex (ω : S
   simpa only [hT, pathAlmostComplex_zero, pathAlmostComplex_one] using
     hTc.index_eq_of_preconnectedSpace hFred 1 0
 
+/-- A `C³` map `v` of the plane that agrees with `u` near every point of the end `‖w‖ > r`
+inherits there the Floer equation, the bound and the finite energy of `u`. So for structures that
+are `C³` along `v` and compatible along `v` over the disc, its linearized operator is Fredholm, with
+an essentially bounded coefficient field on conformal jets. -/
+private theorem isFredholm_and_memLp_of_eventuallyEq_end (ω : SymplecticForm V)
+    {H : ℝ → V → ℝ} (hH : Periodic H 1) (hHs : ContDiff ℝ 4 (uncurry H)) {L : ℝ≥0}
+    (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension H)) {K : Set V}
+    (hK : IsCompact K) {Jq : ℝ → V → AlmostComplexStructure V}
+    (hJq : ContDiff ℝ 2 fun q : ℝ × V ↦ (Jq q.1 q.2).toLinearMap.toContinuousLinearMap)
+    (hJqper : Periodic Jq 1) (hJqK : ∀ t, ∀ y ∈ K, ω.Compatible (Jq t y))
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {r : ℝ} {u v : ℝ × ℝ → V}
+    (hJ : ∀ z, ContDiffAt ℝ 3
+      (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) (z, v z))
+    (hJr : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
+      J z = Jq (positive.endCoord (Complex.equivRealProdCLM.symm z)).im)
+    (hv : ContDiff ℝ 3 v) (hvu : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → v =ᶠ[𝓝 z] u)
+    (hc : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ r → ω.Compatible (J z (v z)))
+    (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K)
+    (hF : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv
+          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
+          z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in {z | r < ‖Complex.equivRealProdCLM.symm z‖},
+      ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z) ≠ ⊤)
+    (hnd : ∀ x : ℝ → V, Periodic x 1 →
+      (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) → (∀ t, x t ∈ K) →
+      IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hL 0 1) (x 0)) :
+    (ω.floerConformalSobolevOperator univ cylindricalWeight
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
+      (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+      v).IsFredholm ∧
+      MemLp (ω.floerConformalJetCoeff cylindricalWeight
+        (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
+        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) v) ∞
+        (volume.restrict univ) := by
+  have hEo : IsOpen {z : ℝ × ℝ | r < ‖Complex.equivRealProdCLM.symm z‖} :=
+    isOpen_lt continuous_const (by fun_prop)
+  have hvK (z : ℝ × ℝ) (hz : r < ‖Complex.equivRealProdCLM.symm z‖) : v z ∈ K := by
+    rw [(hvu z hz).eq_of_nhds]
+    exact huK z hz
+  have hvF (z : ℝ × ℝ) (hz : r < ‖Complex.equivRealProdCLM.symm z‖) :
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (v z))
+        (ω.perturbedFDeriv
+          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) v
+          z : ℝ × ℝ →ₗ[ℝ] V) := by
+    rw [ω.perturbedFDeriv_congr_of_eventuallyEq _ _ (hvu z hz), (hvu z hz).eq_of_nhds]
+    exact hF z hz
+  have hvE : ∫⁻ z in {z | r < ‖Complex.equivRealProdCLM.symm z‖},
+      ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        v z) ≠ ⊤ := by
+    rwa [setLIntegral_congr_fun hEo.measurableSet fun z hz ↦ by
+      rw [ω.floerEnergyDensity_congr_of_eventuallyEq _ _ (hvu z hz)]]
+  exact ⟨ω.isFredholm_floerConformalSobolevOperator_of_finite_energy_positive hH hHs hL hK hJq
+      hJqper hJqK hJ hJr hv hc hvK hvF hvE hnd,
+    ω.memLp_floerConformalJetCoeff_of_finite_energy_positive hH (hHs.of_le (by norm_num)) hL hK
+      hJq hJqper (fun t y hy ↦ (hJqK t y hy).tames) (fun z ↦ (hJ z).of_le (by norm_num)) hJr
+      (hv.of_le (by norm_num)) hv.contDiffOn hvK hvF hvE hnd⟩
+
+/-- The maps `u + c(ν) (u' - u)`, reparametrized by `c = projIcc 0 1`, take their values on the
+segments between `u` and `u'`. -/
+private theorem add_projIcc_smul_sub_mem_segment {E : Type*} [AddCommGroup E] [Module ℝ E]
+    (u u' : ℝ × ℝ → E) (ν : ℝ) (z : ℝ × ℝ) :
+    (u + (projIcc 0 1 zero_le_one ν : ℝ) • (u' - u)) z ∈ segment ℝ (u z) (u' z) := by
+  rw [segment_eq_image']
+  exact ⟨_, (projIcc 0 1 zero_le_one ν).prop, rfl⟩
+
+/-- Along the segment of maps `u + c(ν) (u' - u)` from `u` to a map `u'` equal to `u` on the end
+`‖w‖ > r`, reparametrized by `c = projIcc 0 1`, the realizations of the linearized Floer operators
+of the plane depend continuously on `ν` in operator norm, when `J` is `C¹` at the points of the
+segments between `u` and `u'` and the coefficient fields on conformal jets are essentially
+bounded. -/
+private theorem continuous_floerConformalSobolevOperator_projIcc (ω : SymplecticForm V)
+    {H : ℝ → V → ℝ} (hH : Periodic H 1) (hHs : ContDiff ℝ 2 (uncurry H))
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {r : ℝ} {u u' : ℝ × ℝ → V}
+    (hJ : ∀ z, ∀ y ∈ segment ℝ (u z) (u' z), ContDiffAt ℝ 1
+      (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) (z, y))
+    (hu : ContDiff ℝ 1 u) (hu' : ContDiff ℝ 1 u')
+    (hu'r : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u' =ᶠ[𝓝 z] u)
+    (hM : ∀ ν : ℝ, MemLp (ω.floerConformalJetCoeff cylindricalWeight
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
+      (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+      (u + (projIcc 0 1 zero_le_one ν : ℝ) • (u' - u))) ∞ (volume.restrict univ)) :
+    Continuous fun ν : ℝ ↦ ω.floerConformalSobolevOperator univ cylindricalWeight
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
+      (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+      (u + (projIcc 0 1 zero_le_one ν : ℝ) • (u' - u)) := by
+  set c : ℝ → ℝ := fun ν ↦ (projIcc 0 1 zero_le_one ν : ℝ)
+  set M : ℝ → ℝ × ℝ → V × V × V →L[ℝ] V := fun ν ↦
+    ω.floerConformalJetCoeff cylindricalWeight
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
+      (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+      (u + c ν • (u' - u))
+  have hKs (c' : ℂ) (p : (ℝ × ℝ) × V) : ContDiffAt ℝ 2
+      (uncurry fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x c') p :=
+    (contDiff_uncurry_perturbation (p := positive) hH hHs c').contDiffAt
+  -- The coefficient fields are jointly continuous in the parameter and the domain point.
+  have hjoint (ν : ℝ) (z : ℝ × ℝ) : ContinuousAt (uncurry M) (ν, z) :=
+    ContinuousAt.comp (f := fun x : ℝ × (ℝ × ℝ) ↦ (c x.1, x.2)) (x := (ν, z))
+      (ω.continuousAt_floerConformalJetCoeff_add_smul_sub (u := u) (u' := u') (lam := c ν) (z := z)
+        (J := fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
+        (hJ z _ (add_projIcc_smul_sub_mem_segment u u' ν z))
+        (hKs 1 _) (hKs Complex.I _) hu.contDiffAt hu'.contDiffAt
+        continuous_cylindricalWeight.continuousAt (isWeight_cylindricalWeight.pos _ (mem_univ z)))
+      (((continuous_subtypeVal.comp continuous_projIcc).continuousAt.comp
+        continuousAt_fst).prodMk continuousAt_snd)
+  -- Off the compact disc `‖w‖ ≤ r` they do not depend on the parameter.
+  have hoff (ν ν' : ℝ) (z : ℝ × ℝ) (hz : r < ‖Complex.equivRealProdCLM.symm z‖) :
+      M ν' z = M ν z := by
+    have hvE (ν : ℝ) : u + c ν • (u' - u) =ᶠ[𝓝 z] u :=
+      (hu'r z hz).mono fun w hw ↦ by simp [hw]
+    exact (ω.floerConformalJetCoeff_congr_of_eventuallyEq _ _ _ _ (hvE ν')).trans
+      (ω.floerConformalJetCoeff_congr_of_eventuallyEq _ _ _ _ (hvE ν)).symm
+  rw [← continuousOn_univ]
+  simp only [floerConformalSobolevOperator_def]
+  exact (continuousOn_jetOperator (fun ν _ ↦ hM ν) fun ν _ ↦
+    tendsto_nhdsWithin_of_tendsto_nhds (tendsto_eLpNorm_top_sub_of_continuousAt_of_eq
+      (μ := volume) (M := M) MeasurableSet.univ (isCompact_setOf_norm_equivRealProdCLM_symm_le r)
+      (.of_forall fun ν' ↦ (hM ν').aestronglyMeasurable) (fun z _ ↦ hjoint ν z)
+      (.of_forall fun ν' z _ hz ↦ hoff ν ν' z (not_le.1 hz)))).clm_comp continuousOn_const
+
+/-- **The index of a PSS plane does not depend on the map over the disc.** Let `H` be a `C⁴`
+Hamiltonian of period one in time, with globally Lipschitz suspended vector field, whose
+one-periodic orbits in a compact set `K` are nondegenerate. Let `u` be a `C³` map of the plane
+that solves the Floer equation of the positive PSS plane for `H` on the end `‖w‖ > r`, with finite
+energy there and values in `K`, for almost complex structures `J` equal on the end to a `C²` family
+`J_q(t)` of period one compatible with `ω` on `K`. Let `u'` be another `C³` map of the plane, equal
+to `u` on the end, and let `J` be `C³` at the points of the segments between `u` and `u'`, and
+compatible with `ω` at these points over the disc `‖w‖ ≤ r`. Then the realizations
+`D_u, D_{u'} : W^{1,2}(ℂ, V) → L²(ℂ, V)` of the linearized Floer operators along `u` and along
+`u'`, which are Fredholm (`isFredholm_floerConformalSobolevOperator_of_finite_energy_positive`),
+have the same index. The map `u'` need not solve the Floer equation over the disc. -/
+theorem index_floerConformalSobolevOperator_eq_of_pssPlane_map (ω : SymplecticForm V)
+    {H : ℝ → V → ℝ} (hH : Periodic H 1) (hHs : ContDiff ℝ 4 (uncurry H)) {L : ℝ≥0}
+    (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension H)) {K : Set V}
+    (hK : IsCompact K) {Jq : ℝ → V → AlmostComplexStructure V}
+    (hJq : ContDiff ℝ 2 fun q : ℝ × V ↦ (Jq q.1 q.2).toLinearMap.toContinuousLinearMap)
+    (hJqper : Periodic Jq 1) (hJqK : ∀ t, ∀ y ∈ K, ω.Compatible (Jq t y))
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {r : ℝ} {u u' : ℝ × ℝ → V}
+    (hJ : ∀ z, ∀ y ∈ segment ℝ (u z) (u' z), ContDiffAt ℝ 3
+      (fun q : (ℝ × ℝ) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) (z, y))
+    (hJr : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
+      J z = Jq (positive.endCoord (Complex.equivRealProdCLM.symm z)).im)
+    (hu : ContDiff ℝ 3 u) (hu' : ContDiff ℝ 3 u')
+    (hu'r : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u' z = u z)
+    (hc : ∀ z, ‖Complex.equivRealProdCLM.symm z‖ ≤ r → ∀ y ∈ segment ℝ (u z) (u' z),
+      ω.Compatible (J z y))
+    (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K)
+    (hF : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv
+          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
+          z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in {z | r < ‖Complex.equivRealProdCLM.symm z‖},
+      ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z) ≠ ⊤)
+    (hnd : ∀ x : ℝ → V, Periodic x 1 →
+      (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) → (∀ t, x t ∈ K) →
+      IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hL 0 1) (x 0)) :
+    (ω.floerConformalSobolevOperator univ cylindricalWeight
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
+      (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+      u').index =
+      (ω.floerConformalSobolevOperator univ cylindricalWeight
+        (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
+        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u).index := by
+  have hEo : IsOpen {z : ℝ × ℝ | r < ‖Complex.equivRealProdCLM.symm z‖} :=
+    isOpen_lt continuous_const (by fun_prop)
+  -- The maps `u + c(ν) (u' - u)` of the segment, reparametrized by `c = projIcc 0 1` so that
+  -- every member of the family lies on the segment. On the end they agree with `u`, so their
+  -- operators are Fredholm.
+  have hseg := add_projIcc_smul_sub_mem_segment u u'
+  have hu'E (z : ℝ × ℝ) (hz : r < ‖Complex.equivRealProdCLM.symm z‖) : u' =ᶠ[𝓝 z] u :=
+    Filter.eventuallyEq_of_mem (hEo.mem_nhds hz) hu'r
+  have hfam (ν : ℝ) := isFredholm_and_memLp_of_eventuallyEq_end ω hH hHs hL hK hJq hJqper hJqK
+    (fun z ↦ hJ z _ (hseg ν z)) hJr (hu.add ((hu'.sub hu).const_smul _))
+    (fun z hz ↦ (hu'E z hz).mono fun w hw ↦ by simp [hw])
+    (fun z hz ↦ hc z hz _ (hseg ν z)) huK hF hE hnd
+  -- The operators form a continuous path of Fredholm operators from `u` at `0` to `u'` at `1`,
+  -- along which the index is constant.
+  have hT := continuous_floerConformalSobolevOperator_projIcc ω hH (hHs.of_le (by norm_num))
+    (fun z y hy ↦ (hJ z y hy).of_le (by norm_num)) (hu.of_le (by norm_num))
+    (hu'.of_le (by norm_num)) hu'E fun ν ↦ (hfam ν).2
+  simpa only [projIcc_left, projIcc_right, zero_smul, add_zero, one_smul, add_sub_cancel] using
+    hT.index_eq_of_preconnectedSpace (fun ν ↦ (hfam ν).1) 1 0
 end TauCeti.SymplecticForm
