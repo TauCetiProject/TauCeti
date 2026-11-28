@@ -70,7 +70,8 @@ of integrals `∫₀^∞ f(t) h(xt) dt` (DLMF §2.5(iii)) and of the distributio
   holomorphy away from the poles `-α_k` and `β_k`.
 * `TauCeti.tendsto_mellinContAtTop_add_inv_smul`: at a candidate pole `β_j` inside the strip, the
   continuation minus its principal part tends to `mellinContAtTop f b β n β_j`, the finite part
-  (DLMF 2.6.29).
+  (DLMF 2.6.29). `TauCeti.tendsto_mellinContAtTop_add_inv_smul_of_integrableOn`: the same limit
+  within a closed half-plane `σ ≤ Re z`, when `t ^ (σ - 1) f(t)` is integrable on `(0, 1]`.
 * `TauCeti.add_re_pos_of_mellinConvergent`, `TauCeti.re_lt_of_mellinConvergent`: a nonzero
   coefficient bounds the strip of absolute convergence.
 * `TauCeti.mellinContAtZero_spec`, `TauCeti.mellinContAtTop_spec`: these properties assembled
@@ -508,6 +509,14 @@ theorem differentiableAt_mellinContAtTop (hf : LocallyIntegrableOn f (Ioi 0))
         (sub_ne_zero.mpr (hpole k (Finset.mem_range.mp hk)))).smul_const (b k)
   simpa only [add_sub_cancel_right] using h₁.fun_sub h₂
 
+/-- The principal parts at the poles other than `β_j` are continuous at `β_j`. -/
+private theorem continuousAt_sum_erase_inv_smul {j : ℕ} (hβ : ∀ k < n, k ≠ j → β k ≠ β j) :
+    ContinuousAt (fun z ↦ ∑ k ∈ (Finset.range n).erase j, (z - β k)⁻¹ • b k) (β j) :=
+  tendsto_finsetSum _ fun k hk ↦ ContinuousAt.tendsto <|
+    ((continuousAt_id.sub continuousAt_const).inv₀ (sub_ne_zero.mpr
+      (hβ k (Finset.mem_range.mp (Finset.mem_of_mem_erase hk)) (Finset.ne_of_mem_erase hk)).symm
+      )).smul continuousAt_const
+
 /-- **The finite part at a candidate pole** (DLMF 2.5.27, 2.6.29). Let `β_j`, `j < n`, lie in the
 strip `-c < Re z < Re β_n`, and let no other `β_k`, `k < n`, equal it; it is a simple pole when
 `b_j ≠ 0`. Removing the principal part
@@ -527,11 +536,7 @@ theorem tendsto_mellinContAtTop_add_inv_smul (hf : LocallyIntegrableOn f (Ioi 0)
   have h₁ := ((differentiableOn_mellinContAtTop_add_sum hf hn hc).differentiableAt
     (hopen.mem_nhds ⟨hjc, hjn⟩)).continuousAt
   -- and so are the principal parts at the other poles
-  have h₂ : ContinuousAt (fun z ↦ ∑ k ∈ (Finset.range n).erase j, (z - β k)⁻¹ • b k) (β j) :=
-    tendsto_finsetSum _ fun k hk ↦ ContinuousAt.tendsto <|
-      ((continuousAt_id.sub continuousAt_const).inv₀ (sub_ne_zero.mpr
-        (hβ k (Finset.mem_range.mp (Finset.mem_of_mem_erase hk)) (Finset.ne_of_mem_erase hk)).symm
-        )).smul continuousAt_const
+  have h₂ := continuousAt_sum_erase_inv_smul (b := b) hβ
   have hsplit (z : ℂ) : mellinContAtTop f b β n z + (z - β j)⁻¹ • b j =
       (mellinContAtTop f b β n z + ∑ k ∈ Finset.range n, (z - β k)⁻¹ • b k) -
         ∑ k ∈ (Finset.range n).erase j, (z - β k)⁻¹ • b k := by
@@ -540,6 +545,55 @@ theorem tendsto_mellinContAtTop_add_inv_smul (hf : LocallyIntegrableOn f (Ioi 0)
   have h := (h₁.fun_sub h₂).tendsto.mono_left (nhdsWithin_le_nhds (s := {β j}ᶜ))
   rw [← hsplit, sub_self, inv_zero, zero_smul, add_zero] at h
   exact h.congr fun z ↦ (hsplit z).symm
+
+/-- **The finite part from the right** (DLMF 2.6.29). A variant of
+`TauCeti.tendsto_mellinContAtTop_add_inv_smul` that replaces the power bound at `0+` by
+integrability of `t ^ (σ - 1) f(t)` on `(0, 1]`, which makes the integral over `(0, 1]` converge on
+the closed half-plane `σ ≤ Re z` but possibly nowhere to its left. Let `β_j`, `j < n`, satisfy
+`Re β_j < Re β_n`, and let no other `β_k`, `k < n`, equal it. Then removing the principal part
+`-b_j/(z - β_j)` from the continuation at `+∞` leaves a function that tends to
+`mellinContAtTop f b β n β_j` as `z → β_j` within `σ ≤ Re z`. The statement has content when
+`σ ≤ Re β_j`; otherwise `β_j` is not in the closure of the half-plane. -/
+theorem tendsto_mellinContAtTop_add_inv_smul_of_integrableOn (hf : LocallyIntegrableOn f (Ioi 0))
+    (hn : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-β k) • b k) =O[atTop]
+      fun t ↦ (t : ℂ) ^ (-β n))
+    {σ : ℝ} (hσ : IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ ((σ : ℂ) - 1) • f t) (Ioc 0 1)) {j : ℕ}
+    (hj : j < n) (hjn : (β j).re < (β n).re)
+    (hβ : ∀ k < n, k ≠ j → β k ≠ β j) :
+    Tendsto (fun z ↦ mellinContAtTop f b β n z + (z - β j)⁻¹ • b j) (𝓝[{z | σ ≤ z.re}] (β j))
+      (𝓝 (mellinContAtTop f b β n (β j))) := by
+  -- on `σ ≤ Re z` the integral over `(0, 1]` is dominated by `‖t ^ (σ - 1) f(t)‖`
+  have h₀ : ContinuousWithinAt (fun z : ℂ ↦ ∫ t : ℝ in Ioc 0 1, (t : ℂ) ^ (z - 1) • f t)
+      {z | σ ≤ z.re} (β j) := by
+    refine continuousWithinAt_of_dominated (Eventually.of_forall fun z ↦
+      (by fun_prop : Measurable fun t : ℝ ↦ (t : ℂ) ^ (z - 1)).aestronglyMeasurable.smul
+        (hf.aestronglyMeasurable.mono_set Ioc_subset_Ioi_self)) ?_ hσ.norm ?_
+    · filter_upwards [self_mem_nhdsWithin] with z (hz : σ ≤ z.re)
+      filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ⟨ht0, ht1⟩
+      rw [norm_smul, norm_smul, norm_cpow_eq_rpow_re_of_pos ht0,
+        norm_cpow_eq_rpow_re_of_pos ht0, sub_re, sub_re, ofReal_re, one_re]
+      exact mul_le_mul_of_nonneg_right
+        (Real.rpow_le_rpow_of_exponent_ge ht0 ht1 (by linarith)) (norm_nonneg _)
+    · filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
+      exact ((continuous_id.sub continuous_const).const_cpow
+        (Or.inl (ofReal_ne_zero.mpr ht.1.ne'))).continuousWithinAt.smul continuousWithinAt_const
+  -- the remainder integral over `(1, ∞)` is holomorphic at `β j`
+  have h₁ := (differentiableAt_integral_Ioi_cpow_smul_of_isBigO
+    (hf.sub (locallyIntegrableOn_sum_cpow_smul (fun k ↦ -β k) b n))
+    (hn.trans_ofReal_cpow_rpow (eventually_gt_atTop 0) (neg_re (β n))) hjn).continuousAt
+  have hsplit (z : ℂ) : mellinContAtTop f b β n z + (z - β j)⁻¹ • b j =
+      (∫ t : ℝ in Ioc 0 1, (t : ℂ) ^ (z - 1) • f t) +
+        (∫ t : ℝ in Ioi 1, (t : ℂ) ^ (z - 1) •
+          (f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-β k) • b k)) -
+        ∑ k ∈ (Finset.range n).erase j, (z - β k)⁻¹ • b k := by
+    rw [mellinContAtTop_def, ← Finset.add_sum_erase _ _ (Finset.mem_range.mpr hj)]
+    abel
+  have h : ContinuousWithinAt (fun z ↦ mellinContAtTop f b β n z + (z - β j)⁻¹ • b j)
+      {z | σ ≤ z.re} (β j) :=
+    ((h₀.add h₁.continuousWithinAt).sub
+      (continuousAt_sum_erase_inv_smul (b := b) hβ).continuousWithinAt).congr
+      (fun z _ ↦ hsplit z) (hsplit _)
+  simpa only [sub_self, inv_zero, zero_smul, add_zero] using h.tendsto
 
 /-- A nonzero coefficient `b_k` of an expansion of `f` at `+∞` with strictly increasing `Re β_k`
 bounds the strip of absolute convergence of the Mellin transform of `f`: if it converges at `z`,

@@ -7,8 +7,6 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 import Mathlib.Analysis.Calculus.ParametricIntegral
-import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Beta.Basic
@@ -33,10 +31,6 @@ For `0 < α < 1` the Stieltjes transform of `t ^ (-α)` is
 (`Complex.integral_cpow_neg_mul_inv_add`). For positive real `z` this is Euler's integral
 `B(1 - α, α) = π / sin (π α)` after scaling; both sides are holomorphic in `z` on the slit plane,
 so the identity theorem extends it there.
-
-The case `α = 1` diverges at `0`; its model integral over `(c, ∞)`, `c > 0`, is
-`∫_c^∞ t⁻¹ (t + z)⁻¹ dt = z⁻¹ (log (c + z) - log c)` (`Complex.integral_Ioi_inv_mul_inv_add`),
-with the real case `Real.integral_Ioi_inv_mul_add` for `z = r > 0`.
 
 ## References
 
@@ -207,89 +201,6 @@ theorem integral_cpow_neg_mul_inv_add (hα₀ : 0 < α) (hα₁ : α < 1) {z : �
     isOpen_slitPlane).eqOn_slitPlane_of_ofReal_pos_eq (hG.analyticOnNhd isOpen_slitPlane)
     (fun x hx ↦ hreal hx) hz
 
-/-- For `c > 0` and `z` in the slit plane, `t ↦ t⁻¹ (t + z)⁻¹` is integrable on `(c, ∞)`. -/
-theorem integrableOn_Ioi_inv_mul_inv_add {c : ℝ} (hc : 0 < c) {z : ℂ} (hz : z ∈ slitPlane) :
-    IntegrableOn (fun t : ℝ ↦ (t : ℂ)⁻¹ * ((t : ℂ) + z)⁻¹) (Ioi c) := by
-  obtain ⟨b, hb, hbz⟩ := TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add hz
-  refine ((integrableOn_Ioi_rpow_of_lt (by norm_num : (-2 : ℝ) < -1) hc).const_mul b⁻¹).mono' ?_ ?_
-  · exact (by fun_prop : Measurable fun t : ℝ ↦
-      (t : ℂ)⁻¹ * ((t : ℂ) + z)⁻¹).aestronglyMeasurable
-  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : c < t)
-    have ht0 : 0 < t := hc.trans ht
-    rw [norm_mul, norm_inv, norm_inv, norm_real, Real.norm_of_nonneg ht0.le,
-      show (-2 : ℝ) = -((2 : ℕ) : ℝ) by norm_num, Real.rpow_neg ht0.le, Real.rpow_natCast]
-    calc t⁻¹ * ‖(t : ℂ) + z‖⁻¹ ≤ t⁻¹ * (b * (1 + t))⁻¹ := by
-          gcongr
-          exact hbz t ht0.le
-      _ = b⁻¹ * (t⁻¹ * (1 + t)⁻¹) := by rw [mul_inv]; ring
-      _ ≤ b⁻¹ * (t⁻¹ * t⁻¹) := by gcongr; linarith
-      _ = b⁻¹ * (t ^ 2)⁻¹ := by rw [sq, mul_inv]
-
-/-- **The Stieltjes transform of `t⁻¹` on `(c, ∞)`.** For `c > 0` and `z` in the slit plane,
-`∫_c^∞ t⁻¹ (t + z)⁻¹ dt = z⁻¹ (log (c + z) - log c)`, with the principal logarithm. -/
-theorem integral_Ioi_inv_mul_inv_add {c : ℝ} (hc : 0 < c) {z : ℂ} (hz : z ∈ slitPlane) :
-    ∫ t in Ioi c, (t : ℂ)⁻¹ * ((t : ℂ) + z)⁻¹ = z⁻¹ * (log (c + z) - log c) := by
-  have hz0 : z ≠ 0 := slitPlane_ne_zero hz
-  have hmem {t : ℝ} (ht : 0 ≤ t) : (t : ℂ) + z ∈ slitPlane :=
-    TauCeti.ofReal_add_mem_slitPlane hz ht
-  -- the antiderivative `z⁻¹ (log t - log (t + z))` tends to `0` at `+∞`
-  have hderiv : ∀ t ∈ Ici c, HasDerivAt (fun t : ℝ ↦ z⁻¹ * (log (t : ℂ) - log ((t : ℂ) + z)))
-      ((t : ℂ)⁻¹ * ((t : ℂ) + z)⁻¹) t := by
-    intro t (ht : c ≤ t)
-    have ht0 : 0 < t := hc.trans_le ht
-    have hid : HasDerivAt (fun t : ℝ ↦ (t : ℂ)) 1 t := by
-      simpa using (hasDerivAt_id' t).ofReal_comp
-    have h₁ := HasDerivAt.clog_real hid (ofReal_mem_slitPlane.mpr ht0)
-    have h₂ := HasDerivAt.clog_real (hid.add_const z) (hmem ht0.le)
-    have ht' : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr ht0.ne'
-    have htz : (t : ℂ) + z ≠ 0 := slitPlane_ne_zero (hmem ht0.le)
-    refine ((h₁.sub h₂).const_mul z⁻¹).congr_deriv ?_
-    field_simp
-    ring
-  have hlog : ∀ᶠ t : ℝ in atTop, z⁻¹ * (log (t : ℂ) - log ((t : ℂ) + z)) =
-      z⁻¹ * -log (1 + z * ((t⁻¹ : ℝ) : ℂ)) := by
-    filter_upwards [eventually_gt_atTop 0] with t ht
-    have ht' : (t : ℂ) ≠ 0 := ofReal_ne_zero.mpr ht.ne'
-    have hfac : (t : ℂ) + z = t * (1 + z * ((t⁻¹ : ℝ) : ℂ)) := by
-      rw [ofReal_inv]
-      field_simp
-    have hne : 1 + z * ((t⁻¹ : ℝ) : ℂ) ≠ 0 := by
-      intro h
-      exact slitPlane_ne_zero (hmem ht.le) (by rw [hfac, h, mul_zero])
-    rw [hfac, log_ofReal_mul ht hne, ofReal_log ht.le]
-    ring
-  have hlim : Tendsto (fun t : ℝ ↦ z⁻¹ * (log (t : ℂ) - log ((t : ℂ) + z))) atTop (𝓝 0) := by
-    refine Tendsto.congr' (EventuallyEq.symm hlog) ?_
-    have h₁ : Tendsto (fun t : ℝ ↦ 1 + z * ((t⁻¹ : ℝ) : ℂ)) atTop (𝓝 1) := by
-      simpa using (((continuous_ofReal.tendsto 0).comp tendsto_inv_atTop_zero).const_mul
-        z).const_add 1
-    simpa using ((((continuousAt_clog one_mem_slitPlane).tendsto.comp h₁).neg).const_mul z⁻¹)
-  rw [integral_Ioi_of_hasDerivAt_of_tendsto' hderiv (integrableOn_Ioi_inv_mul_inv_add hc hz)
-    hlim]
-  ring
-
 end Stieltjes
 
 end Complex
-
-namespace Real
-
-/-- For `c, r > 0`, `t ↦ (t (t + r))⁻¹` is integrable on `(c, ∞)`. -/
-theorem integrableOn_Ioi_inv_mul_add {c r : ℝ} (hc : 0 < c) (hr : 0 < r) :
-    IntegrableOn (fun t : ℝ ↦ (t * (t + r))⁻¹) (Ioi c) := by
-  have h := (Complex.integrableOn_Ioi_inv_mul_inv_add hc (ofReal_mem_slitPlane.mpr hr)).re
-  refine h.congr_fun (fun t _ ↦ ?_) measurableSet_Ioi
-  simp only [RCLike.re_to_complex, ← ofReal_add, ← ofReal_inv, ← ofReal_mul, ofReal_re, mul_inv]
-
-/-- The real case of `Complex.integral_Ioi_inv_mul_inv_add`: for `c, r > 0`,
-`∫_c^∞ (t (t + r))⁻¹ dt = (log (c + r) - log c) / r`. -/
-theorem integral_Ioi_inv_mul_add {c r : ℝ} (hc : 0 < c) (hr : 0 < r) :
-    ∫ t in Ioi c, (t * (t + r))⁻¹ = (Real.log (c + r) - Real.log c) / r := by
-  have h := Complex.integral_Ioi_inv_mul_inv_add hc (ofReal_mem_slitPlane.mpr hr)
-  rw [setIntegral_congr_fun measurableSet_Ioi (g := fun t : ℝ ↦ (((t * (t + r))⁻¹ : ℝ) : ℂ))
-      (fun t _ ↦ by push_cast; rw [mul_inv]), integral_complex_ofReal, ← ofReal_add,
-    ← ofReal_log hc.le, ← ofReal_log (by positivity), ← ofReal_inv, ← ofReal_sub, ← ofReal_mul,
-    ofReal_inj] at h
-  rw [h, div_eq_inv_mul]
-
-end Real

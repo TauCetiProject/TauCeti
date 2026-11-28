@@ -12,6 +12,8 @@ import TauCeti.Analysis.MellinTransform.Basic
 import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.SpecialFunctions.Beta.Complex
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Integrals.HalfLineRational
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
@@ -42,17 +44,21 @@ are exactly the points `s + 1` where the second sum evaluates it, and `log z` ap
 
 with the same remainder `R_n` and `R_n(z) = O(‖z‖^{-n-1} log ‖z‖)` in closed sectors. The
 constants appear in the statement as `d_s = mellinContAtTop f a (k ↦ k + 1) n (s + 1)`, whose
-defining formula drops the singular term at the candidate pole `w = s + 1`. When moreover
-`f = O(t^c)` as `t → 0+` for some `c > -1`, so that every `s + 1` lies in the strip of the
-continuation, they are the finite parts `d_s = lim_{w → s+1} (𝓜f(w) + a_s / (w - s - 1))`
-(DLMF 2.6.29, `TauCeti.tendsto_mellinContAtTop_add_inv_smul`). Local integrability alone does not
-give this limit at `s = 0`, since `𝓜f(w)` need not be defined for `Re w < 1`.
+defining formula drops the singular term at the candidate pole `w = s + 1`. They are the finite
+parts `d_s = lim_{w → s+1} (𝓜f(w) + a_s / (w - s - 1))` of DLMF 2.6.29, the limit taken within the
+closed half-plane `Re w ≥ 1` (`TauCeti.tendsto_mellinContAtTop_natCast_add_one_add_inv_smul`). This
+half-plane is a neighbourhood of `s + 1` for `s ≥ 1`. At `s = 0` the restriction is needed under
+local integrability alone, since `𝓜f(w)` need not be defined for `Re w < 1`. When moreover
+`f = O(t^c)` as `t → 0+` for some `c > -1`, the limit at `s = 0` is also a limit over a full
+punctured neighbourhood (`TauCeti.tendsto_mellinContAtTop_add_inv_smul`).
 
 ## Main results
 
 * `TauCeti.stieltjes_eq`: the exact identity DLMF 2.6.27, for `z` in the slit plane.
 * `TauCeti.isBigO_stieltjes_remainder`: `R_n(z) = O(‖z‖^{-n-α})` in closed sectors.
 * `TauCeti.stieltjes_eq_log`: the exact identity DLMF 2.6.28 for `α = 1`.
+* `TauCeti.tendsto_mellinContAtTop_natCast_add_one_add_inv_smul`: its constants are the finite
+  parts of DLMF 2.6.29, as limits within `Re w ≥ 1`.
 * `TauCeti.isBigO_stieltjes_log_remainder`: `R_n(z) = O(‖z‖^{-n-1} log ‖z‖)` in closed sectors,
   for `α = 1`.
 
@@ -468,9 +474,9 @@ the slit plane
 with `f_n(t) = f(t) - ∑_{k<n} a_k t^{-k-1}` and the principal logarithm and powers. The constants
 `d_s = mellinContAtTop f a (k ↦ k + 1) n (s + 1)` (DLMF's constants with a tilde, not the `d_s` of
 DLMF 2.6.21) are the values of the continued Mellin transform `𝓜f` at its candidate poles
-`s + 1` with the singular term dropped. When `f = O(t^c)` at `0+` with `c > -1`, they are the finite
-parts `d_s = lim_{w → s+1} (𝓜f(w) + a_s / (w - s - 1))` (DLMF 2.6.29;
-`TauCeti.tendsto_mellinContAtTop_add_inv_smul`).
+`s + 1` with the singular term dropped. They are the finite parts
+`d_s = lim_{w → s+1} (𝓜f(w) + a_s / (w - s - 1))` (DLMF 2.6.29), the limit taken within `Re w ≥ 1`
+(`TauCeti.tendsto_mellinContAtTop_natCast_add_one_add_inv_smul`).
 Explicitly, `d_s = ∫₀¹ tˢ f_s(t) dt + ∫₁^∞ tˢ f_{s+1}(t) dt`. The last term is the remainder
 `R_n(z)` of DLMF 2.6.30, which is `O(‖z‖^{-n-1} log ‖z‖)` in closed sectors
 (`TauCeti.isBigO_stieltjes_log_remainder`). -/
@@ -490,6 +496,26 @@ theorem stieltjes_eq_log [CompleteSpace E] (hf : LocallyIntegrableOn f (Ici 0)) 
     refine ih ?_
     simpa only [ofReal_one] using
       isBigO_sub_sum_of_succ (α := 1) (by simpa only [ofReal_one] using hn)
+
+/-- **The constants of DLMF 2.6.28 are finite parts** (DLMF 2.6.29), under the hypotheses of
+`TauCeti.stieltjes_eq_log`. For `s < n`, `𝓜f(w) + a_s / (w - s - 1)` tends to
+`d_s = mellinContAtTop f a (k ↦ k + 1) n (s + 1)` as `w → s + 1` within the closed half-plane
+`Re w ≥ 1`, where `∫₀¹ t^{w-1} f(t) dt` converges because `f` is integrable on `(0, 1]`. For
+`s ≥ 1` this half-plane is a neighbourhood of `s + 1`; at `s = 0` the continued transform `𝓜f(w)`
+need not be defined for `Re w < 1`. -/
+theorem tendsto_mellinContAtTop_natCast_add_one_add_inv_smul (hf : LocallyIntegrableOn f (Ici 0))
+    {n : ℕ}
+    (hn : (fun t : ℝ ↦ f t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-((k : ℂ) + 1)) • a k) =O[atTop]
+      fun t ↦ (t : ℂ) ^ (-((n : ℂ) + 1)))
+    {s : ℕ} (hs : s < n) :
+    Tendsto (fun w ↦ mellinContAtTop f a (fun k ↦ (k : ℂ) + 1) n w + (w - ((s : ℂ) + 1))⁻¹ • a s)
+      (𝓝[{w | 1 ≤ w.re}] ((s : ℂ) + 1))
+      (𝓝 (mellinContAtTop f a (fun k ↦ (k : ℂ) + 1) n ((s : ℂ) + 1))) := by
+  refine tendsto_mellinContAtTop_add_inv_smul_of_integrableOn (hf.mono_set Ioi_subset_Ici_self) hn
+    (σ := 1) ?_ hs
+    (by simp only [add_re, natCast_re, one_re]; exact_mod_cast Nat.add_lt_add_right hs 1)
+    fun k _ hk h ↦ hk (by exact_mod_cast add_right_cancel h)
+  simpa only [ofReal_one, sub_self, cpow_zero, pow_zero] using integrableOn_Ioc_pow_smul hf 0
 
 /-! ### The remainder bound -/
 
@@ -634,16 +660,6 @@ theorem isBigO_stieltjes_remainder (hα₀ : 0 < α) (hα₁ : α < 1)
 
 /-! ### The remainder bound for `α = 1` -/
 
-/-- `log (T + r) - log T ≤ (log (T + 1) + 1) log r` for `T ≥ 1`, `r ≥ 1` and `log r ≥ 1`. -/
-private theorem log_add_sub_log_le {T r : ℝ} (hT : 1 ≤ T) (hr : 1 ≤ r) (hlog : 1 ≤ Real.log r) :
-    Real.log (T + r) - Real.log T ≤ (Real.log (T + 1) + 1) * Real.log r := by
-  have h₁ : 0 ≤ Real.log T := Real.log_nonneg hT
-  have h₂ : 0 ≤ Real.log (T + 1) := Real.log_nonneg (by linarith)
-  have h₃ : Real.log (T + r) ≤ Real.log (T + 1) + Real.log r := by
-    rw [← Real.log_mul (by positivity) (by positivity)]
-    exact Real.log_le_log (by positivity) (by nlinarith)
-  nlinarith
-
 /-- The integrated bound behind `TauCeti.isBigO_stieltjes_log_remainder`. Let `g = f_n` with
 `‖g t‖ ≤ C t^{-n-1}` for `t ≥ T`, `T ≥ 1`, and let `z` lie in the sector `|arg z| ≤ π - δ` with
 `log ‖z‖ ≥ 1`. Then the remainder integral is at most `K log ‖z‖ / ‖z‖`, where
@@ -693,7 +709,7 @@ private theorem norm_integral_pow_mul_inv_add_smul_le_log {g : ℝ → E} {n : �
       (by simpa only [ofReal_one] using hT t ht.le)
     have he : t⁻¹ / (t + ‖z‖) = (t * (t + ‖z‖))⁻¹ := by rw [mul_inv, div_eq_mul_inv]
     rwa [Real.rpow_neg_one, he] at h
-  have hlogT := log_add_sub_log_le hT1 hr hlog
+  have hlogT := Real.log_add_sub_log_le hT1 hr hlog
   rw [hsplit]
   calc _ ≤ _ := (norm_add_le _ _).trans (add_le_add h₁ h₂)
     _ ≤ (Real.sin (δ / 2))⁻¹ * ((T + 1) *
