@@ -41,6 +41,8 @@ the length of `M` itself, which over a field `A ⧸ I` is its rank.
   of the `M i ⧸ p i`.
 * `TauCeti.length_pi_quotient_smul_top`: the length of `(∀ i, M i) ⧸ I • ⊤` is the sum of the
   lengths of the `M i ⧸ I • ⊤`.
+* `Ideal.length_quotient_pow_succ_smul_top`: the length of the next adic truncation is the sum of
+  the current truncation length and the graded-piece length.
 * `Ideal.isFiniteLength_smul_top_quotient_smul_top` and
   `Ideal.isFiniteLength_quotient_pow_smul_top`: finite colength of `IM` implies finite length of
   `(JM)/I(JM)` for finitely generated `J`, and finite colength of all powers of finitely generated
@@ -154,12 +156,20 @@ theorem isFiniteLength_smul_top_quotient_smul_top (I : Ideal R) {J : Ideal R} (h
   let g := f.codRestrict (J • (⊤ : Submodule R M))
     (fun x ↦ hrange ▸ LinearMap.mem_range_self f x)
   have hf : Function.Surjective g := by
-    intro y
-    have hy : (y : M) ∈ LinearMap.range f := by rw [hrange]; exact y.property
-    obtain ⟨x, hx⟩ := LinearMap.mem_range.mp hy
-    exact ⟨x, Subtype.ext hx⟩
+    rw [← LinearMap.range_eq_top]
+    dsimp only [g]
+    rw [LinearMap.range_codRestrict, hrange, Submodule.comap_subtype_self]
   exact hfin.of_surjective (Submodule.mapQ_surjective _ _ g
     (Submodule.smul_top_le_comap_smul_top I g) hf)
+
+/-- The length of `M / I ^ (n + 1) M` is the length of the degree-`n` adic graded piece plus
+that of `M / I ^ n M`, also when these lengths are infinite. -/
+theorem length_quotient_pow_succ_smul_top (I : Ideal R) (n : ℕ) :
+    Module.length R (M ⧸ (I ^ (n + 1) • (⊤ : Submodule R M))) =
+      Module.length R (↥(I ^ n • (⊤ : Submodule R M)) ⧸
+        (I • ⊤ : Submodule R ↥(I ^ n • (⊤ : Submodule R M)))) +
+      Module.length R (M ⧸ (I ^ n • (⊤ : Submodule R M))) := by
+  rw [pow_succ', Submodule.mul_smul, TauCeti.length_quotient_smul_eq_length_quotient_smul_top_add]
 
 /-- If `I` is finitely generated and `M / IM` has finite length, then `M / I ^ n M` has finite
 length for every `n`. No finiteness assumption on `M` or on the ring is required. -/
@@ -171,8 +181,7 @@ theorem isFiniteLength_quotient_pow_smul_top (I : Ideal R) (hI : I.FG)
     rw [pow_zero, one_smul]
     exact Module.length_ne_top_iff.mp (by simp)
   | succ n ih =>
-    rw [← Module.length_ne_top_iff, pow_succ', Submodule.mul_smul,
-      TauCeti.length_quotient_smul_eq_length_quotient_smul_top_add]
+    rw [← Module.length_ne_top_iff, I.length_quotient_pow_succ_smul_top]
     exact (ENat.add_lt_top.mpr
       ⟨(Module.length_ne_top_iff.mpr
           (I.isFiniteLength_smul_top_quotient_smul_top hI.pow hM)).lt_top,
