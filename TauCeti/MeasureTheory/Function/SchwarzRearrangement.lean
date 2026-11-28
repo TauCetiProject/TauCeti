@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.EssSup
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Topology.EMetricSpace.Weak
 -- Proof-only: Lebesgue measure and ball volumes for an additive Haar measure.
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
@@ -72,7 +73,8 @@ rearrangement, which gives the case `p = ∞`.
 * `TauCeti.addHaar_setOf_lt_schwarzRearrangement`: equimeasurability.
 * `TauCeti.addHaar_inter_setOf_lt_schwarzRearrangement`: intersections of two rearranged
   superlevel sets have the smaller of the original level measures.
-* `TauCeti.lintegral_rpow_schwarzRearrangement`, `TauCeti.eLpNorm_schwarzRearrangement`,
+* `TauCeti.lintegral_rpow_schwarzRearrangement`,
+  `TauCeti.integral_rpow_toReal_schwarzRearrangement`, `TauCeti.eLpNorm_schwarzRearrangement`,
   `TauCeti.memLp_schwarzRearrangement_iff`: equality of integrals of powers and of `Lᵖ`
   seminorms, and preservation of every `Lᵖ` class.
 * `MeasureTheory.Integrable.ae_schwarzRearrangement_ofReal_ne_top`,
@@ -83,6 +85,10 @@ rearrangement, which gives the case `p = ∞`.
   finite measure.
 * `TauCeti.addHaar_setOf_lt_toReal_schwarzRearrangement`: equimeasurability of the real-valued
   rearrangement at nonnegative levels.
+* `TauCeti.exists_radius_schwarzRearrangement_eq_zero`,
+  `TauCeti.hasCompactSupport_schwarzRearrangement`,
+  `TauCeti.hasCompactSupport_toReal_schwarzRearrangement`: compact support of the rearrangement
+  when `{0 < f}` has finite measure.
 * `TauCeti.lintegral_mul_le_lintegral_schwarzRearrangement_mul`: the Hardy--Littlewood
   rearrangement inequality.
 * `TauCeti.schwarzRearrangement_add_const`: rearrangement commutes with adding a constant.
@@ -414,6 +420,29 @@ theorem lintegral_schwarzRearrangement (hf : AEMeasurable f μ) :
     ∫⁻ x, schwarzRearrangement μ f x ∂μ = ∫⁻ x, f x ∂μ := by
   simpa using lintegral_rpow_schwarzRearrangement μ hf one_pos
 
+/-- **Layer cake for the real-valued Schwarz rearrangement.** For `0 < p`, if both `f` and its
+Schwarz rearrangement are finite almost everywhere, their `p`-th powers of `ENNReal.toReal` have
+the same Bochner integral. -/
+theorem integral_rpow_toReal_schwarzRearrangement (hf : AEMeasurable f μ)
+    (hf_top : ∀ᵐ x ∂μ, f x ≠ ∞) (hs_top : ∀ᵐ x ∂μ, schwarzRearrangement μ f x ≠ ∞)
+    {p : ℝ} (hp : 0 < p) :
+    ∫ x, (schwarzRearrangement μ f x).toReal ^ p ∂μ = ∫ x, (f x).toReal ^ p ∂μ := by
+  have hs_meas : AEStronglyMeasurable (fun x ↦ (schwarzRearrangement μ f x).toReal ^ p) μ :=
+    ((measurable_schwarzRearrangement μ f).ennreal_toReal.pow_const p).aestronglyMeasurable
+  have hf_meas : AEStronglyMeasurable (fun x ↦ (f x).toReal ^ p) μ :=
+    (hf.ennreal_toReal.pow_const p).aestronglyMeasurable
+  rw [integral_eq_lintegral_of_nonneg_ae
+      (ae_of_all _ fun _ ↦ Real.rpow_nonneg ENNReal.toReal_nonneg _) hs_meas,
+    integral_eq_lintegral_of_nonneg_ae
+      (ae_of_all _ fun _ ↦ Real.rpow_nonneg ENNReal.toReal_nonneg _) hf_meas]
+  congr 1
+  refine (lintegral_congr_ae ?_).trans ((lintegral_rpow_schwarzRearrangement μ hf hp).trans
+    (lintegral_congr_ae ?_))
+  · filter_upwards [hs_top] with x hx
+    rw [← ENNReal.ofReal_rpow_of_nonneg ENNReal.toReal_nonneg hp.le, ENNReal.ofReal_toReal hx]
+  · filter_upwards [hf_top] with x hx
+    rw [← ENNReal.ofReal_rpow_of_nonneg ENNReal.toReal_nonneg hp.le, ENNReal.ofReal_toReal hx]
+
 variable {μ}
 
 /-- The extended integral of the Schwarz rearrangement of the positive part of an integrable
@@ -486,6 +515,36 @@ theorem addHaar_setOf_lt_toReal_schwarzRearrangement {u : E → ℝ}
         exact ENNReal.ofReal_lt_ofReal_iff_of_nonneg hs
 
 variable (μ)
+
+/-- If `{0 < f}` has finite Haar measure, then the Schwarz rearrangement of `f` vanishes outside
+a closed ball of positive radius. -/
+theorem exists_radius_schwarzRearrangement_eq_zero (hfin0 : μ {y | 0 < f y} ≠ ∞) :
+    ∃ R > 0, ∀ x : E, R ≤ ‖x‖ → schwarzRearrangement μ f x = 0 := by
+  obtain ⟨r, -, hr, -⟩ := exists_setOf_lt_schwarzRearrangement_eq_ball μ f 0 hfin0
+  refine ⟨max 1 r, by positivity, fun x hx ↦ ?_⟩
+  have hxball : x ∉ ball (0 : E) r :=
+    fun h ↦ (mem_ball_zero_iff.1 h).not_ge ((le_max_right _ _).trans hx)
+  rw [← hr] at hxball
+  exact nonpos_iff_eq_zero.1 (not_lt.1 hxball)
+
+/-- If `{0 < f}` has finite Haar measure, then the Schwarz rearrangement of `f` has compact
+support. -/
+theorem hasCompactSupport_schwarzRearrangement (hfin0 : μ {y | 0 < f y} ≠ ∞) :
+    HasCompactSupport (schwarzRearrangement μ f) := by
+  obtain ⟨R, -, hR⟩ := exists_radius_schwarzRearrangement_eq_zero μ hfin0
+  exact HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall (0 : E) R)
+    fun x hx ↦ mem_closedBall_zero_iff.2 (not_lt.1 fun hlt ↦ hx (hR x hlt.le))
+
+/-- If `{0 < u}` has finite Haar measure, then the real-valued Schwarz rearrangement of the
+positive part of `u` has compact support. -/
+theorem hasCompactSupport_toReal_schwarzRearrangement {u : E → ℝ} (hfin0 : μ {y | 0 < u y} ≠ ∞) :
+    HasCompactSupport
+      (fun x ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal (u y)) x).toReal) := by
+  have hfin0' : μ {y | (0 : ℝ≥0∞) < ENNReal.ofReal (u y)} ≠ ∞ := by
+    convert hfin0 using 2
+    ext y
+    exact ENNReal.ofReal_pos
+  exact (hasCompactSupport_schwarzRearrangement μ hfin0').comp_left ENNReal.toReal_zero
 
 /-- The Schwarz rearrangement has the same `Lᵖ` seminorm as `f`, for every exponent
 `p ∈ [0, ∞]`. -/
