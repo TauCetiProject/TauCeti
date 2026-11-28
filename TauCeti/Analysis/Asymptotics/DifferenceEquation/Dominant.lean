@@ -28,11 +28,12 @@ proves that the equation has a solution with the asymptotic expansion
 
   `w n ∼ ρⁿ n^α ∑ aₛ n⁻ˢ`
 
-of DLMF 2.9.8. Together with the recessive solution of
-`TauCeti.exists_eventually_difference_solution_of_norm_sq_lt`, this gives both solutions of
-DLMF 2.9.8 when the characteristic roots have distinct moduli. Unlike the recessive solution, the
-solution here is not unique: adding a multiple of the recessive solution does not change its
-expansion.
+of DLMF 2.9.8. When moreover `g₀ ≠ 0`, the other root `g₀ / ρ` is nonzero, and together with
+the recessive solution of `TauCeti.exists_eventually_difference_solution_of_norm_sq_lt` for that
+root this gives both solutions of DLMF 2.9.8 when the characteristic roots have distinct moduli.
+In that case, unlike the recessive solution, the solution here is not unique even up to eventual
+equality: adding a multiple of the recessive solution does not change its expansion. (When
+`g₀ = 0` the other root is `0`, the recessive theorem does not apply, and no such claim is made.)
 
 ## Main results
 
