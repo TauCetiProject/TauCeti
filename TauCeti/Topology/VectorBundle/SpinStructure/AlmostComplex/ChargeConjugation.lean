@@ -27,9 +27,11 @@ extension `P ×_{det_ℂ⁻¹} U(1)` of the unitary frames along the inverse com
 `TauCeti.Topology.Algebra.CliffordAlgebra.Spin.UnitaryLift`). Its transition functions are
 `det_ℂ(g_αβ)⁻¹`, the inverses of those of `Λ²_ℂ (E, J)`: it is the principal `U(1)`-bundle of
 the canonical line `K = (Λ²_ℂ (E, J))*`, for an almost Hermitian four-manifold with `E` its tangent
-bundle the line `K = Λ^{2,0}`, described through the unitary frames. Its associated line is not
-compared here with the dual of `Λ²_ℂ (E, J)` as a vector bundle. This file identifies the bundles
-of the charge conjugation theorems of
+bundle the line `K = Λ^{2,0}`, described through the unitary frames. Its associated line
+(`TauCeti.OrthonormalFrameBundle.canonicalLine`) is the conjugate of `Λ²_ℂ (E, J)` as a complex
+line bundle, with first Chern class `-c₁(E, J)`, by
+`TauCeti.Topology.VectorBundle.SpinStructure.AlmostComplex.CanonicalLine`. This file identifies the
+bundles of the charge conjugation theorems of
 `TauCeti.Topology.VectorBundle.SpinStructure.Twist.ChargeConjugation` for `s_ω`:
 
 * **`L⁻¹ ≃ K`.** The inverse determinant bundle `P_ω ×_{det⁻¹} U(1)` of `s_ω`

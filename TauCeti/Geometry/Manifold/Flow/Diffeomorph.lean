@@ -107,10 +107,8 @@ theorem apply_flowOf (hY : CMDiff 1 (fun y ↦ (⟨y, Y y⟩ : TangentBundle I' 
     ψ (flowOf X t x) = flowOf Y t (ψ x) := by
   by_cases ht : (t, x) ∈ flowDomain X
   · exact (ψ.mdifferentiable hn).apply_flowOf hY hXY ht
-  · rw [TauCeti.flowOf_apply, TauCeti.flowOf_apply,
-      maximalIntegralCurve_eq_of_not_mem (mt mem_flowDomain.mpr ht),
-      maximalIntegralCurve_eq_of_not_mem
-        (by simpa only [ψ.maximalIntegralCurveInterval_apply hn hXY] using
-          mt mem_flowDomain.mpr ht)]
+  · rw [flowOf_of_notMem ht, flowOf_of_notMem]
+    simpa only [mem_flowDomain, ψ.maximalIntegralCurveInterval_apply hn hXY] using
+      mt mem_flowDomain.mpr ht
 
 end Diffeomorph

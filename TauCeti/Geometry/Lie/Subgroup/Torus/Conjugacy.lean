@@ -47,6 +47,8 @@ cover all of `G` as soon as `lieExp` is known to be surjective, which is a separ
 * `TauCeti.Lie.IsMaximalTorus.exists_mem_connectedComponentIn_mul_mem_normalizer_of_le`: if a
   closed subgroup `K` contains `T` and `g T g⁻¹`, then `c g` normalizes `T` for some `c` in the
   identity component of `K`.
+* `TauCeti.Lie.IsMaximalTorus.exists_mem_normalizer_map_conj_eq_of_map_conj_eq`: closed subgroups
+  that contain a maximal torus `T` and are conjugate are conjugate by the normalizer of `T`.
 * `TauCeti.Lie.IsMaximalTorus.finrank_lieSubalgebraOfSubgroup_eq`: any two maximal tori have the
   same dimension.
 
@@ -210,6 +212,25 @@ theorem IsMaximalTorus.exists_mem_connectedComponentIn_mul_mem_normalizer_of_le
   refine ⟨c, hc, ?_⟩
   rw [Subgroup.mem_normalizer_iff_map_conj_eq, map_mul]
   exact (Subgroup.map_map _ _ _).symm.trans hmap
+
+/-- **Closed subgroups containing a maximal torus that are conjugate are conjugate by its
+normalizer.** If closed subgroups `K` and `K'` of a compact Lie group both contain a maximal torus
+`T` and `g K g⁻¹ = K'`, then `n K n⁻¹ = K'` for some `n` normalizing `T`. Only `K'` needs to be
+closed. -/
+theorem IsMaximalTorus.exists_mem_normalizer_map_conj_eq_of_map_conj_eq {K K' T : Subgroup G}
+    (hK' : IsClosed (K' : Set G)) (hT : IsMaximalTorus T) (hTK : T ≤ K) (hTK' : T ≤ K') {g : G}
+    (hg : K.map (MulAut.conj g).toMonoidHom = K') :
+    ∃ n ∈ Subgroup.normalizer (T : Set G), K.map (MulAut.conj n).toMonoidHom = K' := by
+  -- `T` and `g T g⁻¹` lie in `K'`, so some `c ∈ K'` makes `c g` normalize `T`.
+  obtain ⟨c, hc, hn⟩ := hT.exists_mem_connectedComponentIn_mul_mem_normalizer_of_le I hK' hTK'
+    (hg ▸ Subgroup.map_mono hTK)
+  refine ⟨c * g, hn, ?_⟩
+  -- Conjugation by `c ∈ K'` preserves `K'`.
+  rw [map_mul]
+  refine (Subgroup.map_map _ (MulAut.conj c).toMonoidHom (MulAut.conj g).toMonoidHom).symm.trans ?_
+  rw [hg]
+  exact Subgroup.mem_normalizer_iff_map_conj_eq.1
+    (Subgroup.le_normalizer (connectedComponentIn_subset _ _ hc))
 
 end Conjugacy
 

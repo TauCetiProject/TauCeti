@@ -55,8 +55,6 @@ corresponding finitely many symplectic flows.
   `H₁(M; ℤ)`.
 * `TauCeti.deRhamCohomology.finiteDimensional_of_addGroupFG`: if `H₁(M; ℤ)` is finitely
   generated, then `H¹_dR(M)` is finite-dimensional.
-* `TauCeti.addGroupFG_homology_one`: `H₁(M; ℤ)` is finitely generated for a compact boundaryless
-  manifold.
 * The instance `FiniteDimensional ℝ (deRhamCohomology I M 1)` for a compact boundaryless manifold.
 * `TauCeti.deRhamCohomology.periodHomologyClass`, `TauCeti.deRhamCohomology.periodDualBasis`:
   integral classes on which the periods are coordinates, and the dual basis of `H¹_dR(M)`.
@@ -138,24 +136,12 @@ section Compact
 
 variable [I.Boundaryless] [CompactSpace M]
 
-variable (I) in
-include I in
-omit [FiniteDimensional ℝ E] in
-/-- **The first integral singular homology group of a compact boundaryless manifold is finitely
-generated**, since the manifold has the homotopy type of a finite CW complex. -/
-theorem _root_.TauCeti.addGroupFG_homology_one :
-    AddGroup.FG (((singularChains ℤ).obj (.of M)).homology 1) := by
-  have := FiniteCWType.of_isManifold (I := I) M
-  have h := finite_singularHomology_of_finiteCWType (k := ℤ) M (ModuleCat.of ℤ ℤ) 1
-  rw [singularHomologyFunctor_obj_obj] at h
-  -- `h` uses the `ℤ`-module structure of `ModuleCat ℤ`; the two `ℤ`-module structures agree.
-  exact Module.Finite.iff_addGroup_fg.mp (by convert h; exact Subsingleton.elim _ _)
-
 /-- **The first de Rham cohomology of a compact boundaryless manifold is finite-dimensional.**
 Its first integral singular homology group is finitely generated
-(`TauCeti.addGroupFG_homology_one`). -/
+(`TauCeti.addGroup_fg_singularHomology_of_isManifold`). -/
 instance : FiniteDimensional ℝ (deRhamCohomology I M 1) :=
-  have := addGroupFG_homology_one I (M := M)
+  have : AddGroup.FG (((singularChains ℤ).obj (.of M)).homology 1) :=
+    addGroup_fg_singularHomology_of_isManifold I 1
   finiteDimensional_of_addGroupFG
 
 end Compact

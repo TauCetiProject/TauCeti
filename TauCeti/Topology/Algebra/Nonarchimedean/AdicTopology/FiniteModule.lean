@@ -19,6 +19,8 @@ topology. Consequently it is the quotient topology from any finite free presenta
 the product topology on the source. This description makes the topology independent of the
 chosen generators and allows the general `IsModuleTopology` API to be used for finite adic
 modules. Neither noetherianity nor completeness nor finite generation of `I` is required.
+`IsAdic.isAdic_map_algebraMap` identifies the module topology of a finite algebra with the
+adic topology of the extended ideal.
 
 The argument uses Mathlib's open quotient theorem for natural module topologies and the
 finite-sum description of ideal multiples of a span. It parallels the spanning-lattice
@@ -58,6 +60,19 @@ theorem hasBasis_nhds_zero_pow_smul (hI : IsAdic I)
   rw [← map_zero (Fintype.linearCombination R v), ← hq.map_nhds_eq]
   simpa only [Ideal.image_fintypeLinearCombination_pi, hv] using
     hcube.map (Fintype.linearCombination R v)
+
+/-- The module topology on a finite commutative algebra over an `I`-adic ring is adic
+for the extension of `I` to the algebra. -/
+theorem isAdic_map_algebraMap {A : Type*} [CommRing A] [Algebra R A]
+    [TopologicalSpace A] [IsModuleTopology R A] [Module.Finite R A] (hI : IsAdic I) :
+    IsAdic (I.map (algebraMap R A)) := by
+  have : IsTopologicalRing R := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  apply IsTopologicalAddGroup.ext
+  · exact IsModuleTopology.isTopologicalAddGroup R A
+  · exact (I.map (algebraMap R A)).ringFilterBasis.toAddGroupFilterBasis.isTopologicalAddGroup
+  · apply (hI.hasBasis_nhds_zero_pow_smul (M := A)).eq_of_same_basis
+    simpa only [Ideal.map_pow, Ideal.smul_top_eq_map, Ideal.coe_restrictScalars] using
+      (I.map (algebraMap R A)).hasBasis_nhds_zero_adic
 
 /-- The adic topology on a finite module is its natural module topology. Thus the general
 `IsModuleTopology` continuity and quotient-map theorems apply to finite adic modules. -/
