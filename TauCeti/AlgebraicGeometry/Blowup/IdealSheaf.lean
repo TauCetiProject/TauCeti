@@ -114,11 +114,11 @@ inclusion `Spec Γ(X, U) ≅ U ⟶ X`. -/
 theorem blowupChart_blowupToBase {U : X.Opens} (hU : IsAffineOpen U) :
     I.blowupChart hU ≫ I.blowupToBase =
       Proj.toSpecCoeff (reesAlgebra.grade (I.ideal ⟨U, hU⟩)) ≫ hU.fromSpec := by
-  rw [blowupChart]
-  exact (Category.assoc _ _ _).trans
-    ((congrArg (_ ≫ ·) (I.reesAlgebra.obj.relativeProjCover_f_relativeProjToBase ⟨U, hU⟩)).trans
-      ((Category.assoc _ _ _).symm.trans
-        (congrArg (· ≫ hU.fromSpec) (Over.w (I.reesProjIso hU).hom))))
+  simp only [blowupChart, Functor.mapIso_hom, Over.forget_map]
+  refine (Category.assoc _ _ _).trans ?_
+  refine (congrArg (_ ≫ ·)
+    (I.reesAlgebra.obj.relativeProjCover_f_relativeProjToBase ⟨U, hU⟩)).trans ?_
+  exact Over.w_assoc (I.reesProjIso hU).hom hU.fromSpec
 
 /-- **Pullback of an ideal sheaf to an affine blowup chart.** Over an affine open `U` of `X` and
 `a ∈ I(U)`, pulling back an arbitrary ideal sheaf `L` on `X` to the chart `Spec Γ(X, U)[I(U)/a]`
@@ -153,9 +153,8 @@ theorem isPullback_blowupChart {U : X.Opens} (hU : IsAffineOpen U) :
   refine (I.reesAlgebra.obj.isPullback_relativeProjCover (⟨U, hU⟩ : X.AffineZariskiSite)).of_iso'
     ((Over.forget _).mapIso (I.reesProjIso hU)) (Iso.refl _) (Iso.refl _) (Iso.refl _)
     ?_ (Category.comp_id _).symm (by simp) (by simp)
-  rw [Iso.refl_hom, Category.comp_id]
-  exact (Category.assoc _ _ _).symm.trans
-    (congrArg (· ≫ hU.isoSpec.inv) (Over.w (I.reesProjIso hU).hom))
+  rw [Iso.refl_hom, Category.comp_id, Functor.mapIso_hom, Over.forget_map]
+  simpa only [Over.mk_hom] using Over.w_assoc (I.reesProjIso hU).hom hU.isoSpec.inv
 
 /-- The affine chart of the blowup over `U` is the base change of the blowup along
 `Spec Γ(X, U) ⟶ X`: the form of `isPullback_blowupChart` over the spectrum of the sections. -/
@@ -165,8 +164,8 @@ theorem isPullback_blowupChart_fromSpec {U : X.Opens} (hU : IsAffineOpen U) :
   refine (I.reesAlgebra.obj.isPullback_relativeProjCover_fromSpec ⟨U, hU⟩).of_iso'
     ((Over.forget _).mapIso (I.reesProjIso hU)) (Iso.refl _) (Iso.refl _) (Iso.refl _)
     ?_ (Category.comp_id _).symm (by simp) (by simp)
-  rw [Iso.refl_hom, Category.comp_id]
-  exact Over.w (I.reesProjIso hU).hom
+  rw [Iso.refl_hom, Category.comp_id, Functor.mapIso_hom, Over.forget_map]
+  simpa only [Over.mk_hom] using Over.w (I.reesProjIso hU).hom
 
 /-- **The blowup along an ideal sheaf of finite type is proper.** If the ideal `I(U)` is finitely
 generated for every affine open `U` of `X`, then `Bl_I X ⟶ X` is proper. -/

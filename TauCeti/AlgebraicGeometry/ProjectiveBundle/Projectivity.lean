@@ -55,7 +55,11 @@ theorem isProjectiveOver_affineOpen
   let e : P ≅ Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule Γ(S, U)
       ((Scheme.Modules.sectionsFunctor U).obj F.obj)) :=
     (Over.forget _).mapIso (affineOpenIso F hU)
-  have : e.hom.IsOver (Spec (.of Γ(S, U))) := ⟨Over.w (affineOpenIso F hU).hom⟩
+  have : e.hom.IsOver (Spec (.of Γ(S, U))) := by
+    constructor
+    rw [TauCeti.SymmetricAlgebra.over_eq_projToSpec]
+    rw [Functor.mapIso_hom, Over.forget_map]
+    exact Over.w (affineOpenIso F hU).hom
   exact Scheme.IsProjectiveOver.of_isClosedImmersion Γ(S, U) e.hom
 
 /-- A projective bundle of a finite-type quasi-coherent sheaf is projective over each affine
