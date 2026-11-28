@@ -34,6 +34,8 @@ varying, possibly indefinite, metric and for its first variation.
   family as a map into the tangent bilinear-form bundle of `M`.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.ofContMDiff`: the converse construction.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.metric`: the metric at a fixed parameter.
+* `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.contMDiff_inner_of_eq`: jointly smooth
+  inner-product coefficients for Riemannian metrics representing the family.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.const` and
   `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.comp`: constant families and restriction
   along a smooth parameter map.
@@ -169,6 +171,21 @@ def metric (p : P) : ContMDiffNondegenerateMetric (I := I) (M := M) where
 @[simp]
 theorem metric_apply (p : P) (x : M) : g.metric p x = g (p, x) :=
   (rfl)
+
+/-- Riemannian metrics representing a smooth nondegenerate metric family have jointly
+`C^n` inner-product coefficients for every `n ≤ ∞`. -/
+theorem contMDiff_inner_of_eq {n : ℕ∞ω} (hn : n ≤ ∞)
+    (r : P → ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
+    (hr : ∀ p, g.metric p = (r p).toNondegenerateMetric) :
+    ContMDiff (IP.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
+      (fun q : P × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ)
+        q.2 ((r q.1).inner q.2)) := by
+  have hpair (q : P × M) : g q = (r q.1).inner q.2 := by
+    rw [← metric_apply, hr]
+    ext u v
+    rw [ContMDiffRiemannianMetric.toNondegenerateMetric_apply]
+  simpa only [hpair] using g.contMDiff.of_le hn
 
 /-- A smooth nondegenerate metric family is determined by its metrics at fixed parameters. -/
 theorem metric_injective :

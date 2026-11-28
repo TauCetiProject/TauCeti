@@ -5,6 +5,8 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
+public import TauCeti.Geometry.RicciFlow.Equation
+public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Nondegenerate.ScalarVariation
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ContractedBianchi
 import TauCeti.Topology.Algebra.Module.BilinearForm
@@ -164,5 +166,52 @@ theorem hasDerivAt_scalarCurvature_sum_of_ricciFlow
   have hd := g.hasDerivAt_scalarCurvature_of_ricciFlow r hr hcov hg hflow x
   refine hd.congr_deriv ?_
   exact congrArg (fun z ↦ laplaceBeltrami I (r t).scalarCurvature x + 2 * z) hsq
+
+end TauCeti.Manifold.ContMDiffNondegenerateMetricFamily
+
+
+namespace TauCeti.Manifold.ContMDiffNondegenerateMetricFamily
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  (g : ContMDiffNondegenerateMetricFamily I M 𝓘(ℝ) ℝ)
+  (r : ℝ → ContMDiffRiemannianMetric I ∞ E (TangentSpace I : M → Type _))
+  (hr : ∀ s, g.metric s = (r s).toNondegenerateMetric)
+
+include hr
+
+/-- The native Ricci-flow equation implies the scalar evolution formula with the canonical
+Levi-Civita connections, without requiring a separate family of connections. -/
+theorem hasDerivAt_scalarCurvature_sum_leviCivitaConnection_of_ricciFlow
+    {t : ℝ}
+    (hflow : IsRicciFlowAt r t)
+    (x : M) :
+    let : RiemannianBundle (TangentSpace I : M → Type _) := ⟨(r t).toRiemannianMetric⟩
+    HasDerivAt (fun s ↦ (r s).scalarCurvature x)
+      (laplaceBeltrami I (r t).scalarCurvature x +
+        2 * ∑ i, ∑ j, ((leviCivitaConnection I M).ricciTensor x
+          (stdOrthonormalBasis ℝ (TangentSpace I x) i)
+          (stdOrthonormalBasis ℝ (TangentSpace I x) j)) ^ 2) t := by
+  let cov (s : ℝ) : CovariantDerivative I E (TangentSpace I : M → Type _) :=
+    let : RiemannianBundle (TangentSpace I : M → Type _) := ⟨(r s).toRiemannianMetric⟩
+    leviCivitaConnection I M
+  have (s : ℝ) : ContMDiffCovariantDerivative (cov s) ∞ := by
+    dsimp only [cov]
+    infer_instance
+  have hcov (s : ℝ) : (g.metric s).IsLeviCivitaConnection (cov s) := by
+    rw [hr s]
+    let : RiemannianBundle (TangentSpace I : M → Type _) := ⟨(r s).toRiemannianMetric⟩
+    exact ((r s).toNondegenerateMetric.isLeviCivitaConnection_iff_of_apply_eq_inner
+      (fun y u v ↦ by
+        rw [(r s).toNondegenerateMetric_apply, (r s).inner_eq])).mpr
+      (isLeviCivitaConnection_leviCivitaConnection I)
+  let : RiemannianBundle (TangentSpace I : M → Type _) := ⟨(r t).toRiemannianMetric⟩
+  exact g.hasDerivAt_scalarCurvature_sum_of_ricciFlow r hr hcov
+    (fun y u v ↦ by
+      rw [← metric_apply, hr t, (r t).toNondegenerateMetric_apply, (r t).inner_eq])
+    (fun y u v ↦ by simpa only [← metric_apply, hr, cov,
+      Bundle.ContMDiffRiemannianMetric.toNondegenerateMetric_apply] using hflow.hasDerivAt r y u v)
+    x (stdOrthonormalBasis ℝ (TangentSpace I x))
 
 end TauCeti.Manifold.ContMDiffNondegenerateMetricFamily
