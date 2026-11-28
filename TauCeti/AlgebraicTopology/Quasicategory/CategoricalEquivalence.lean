@@ -165,10 +165,7 @@ lemma nonempty_iso_of_isEquivalence {f g : X ⟶ Y}
   obtain ⟨φ⟩ := HomotopyCategory.nonempty_iso_mk_iff.2 ⟨α, hα⟩
   let ψ : CatEnrichedOrdinary.homEquiv f ≅ CatEnrichedOrdinary.homEquiv g :=
     eqToIso (homEquiv_eq_mk f) ≪≫ φ ≪≫ eqToIso (homEquiv_eq_mk g).symm
-  exact ⟨{ hom := .mk ψ.hom
-           inv := .mk ψ.inv
-           hom_inv_id := CatEnrichedOrdinary.Hom.ext _ _ ψ.hom_inv_id
-           inv_hom_id := CatEnrichedOrdinary.Hom.ext _ _ ψ.inv_hom_id }⟩
+  exact ⟨CatEnrichedOrdinary.isoEquiv.symm ψ⟩
 
 /-- Isomorphic `1`-morphisms of the bicategory of quasicategories induce weak homotopy
 equivalences of right mapping spaces together. -/
