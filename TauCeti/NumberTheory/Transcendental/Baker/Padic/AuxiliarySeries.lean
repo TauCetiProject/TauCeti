@@ -18,7 +18,11 @@ that allows the frequencies `ψ t` to vary independently of the coordinate multi
 `a t` and `c t i`. When `ψ t = a t + ∑ i, c t i` for every `t`, the series gives the mixed
 derivatives of the multivariate sum restricted to the diagonal. For the Baker argument, take
 `ψ t = ∑ o, t o * λ o`, `a t = t 0 * θ` and `c t i = (t i + t 0 * b i) * λ i`,
-where `o` includes coordinate `0` and `i` ranges over the remaining coordinates.
+where `o` includes coordinate `0` and `i` ranges over the remaining coordinates. These satisfy
+`ψ t = a t + ∑ i, c t i` for all grid indices `t` exactly when the relation to be refuted,
+`λ 0 = θ + ∑ i, b i * λ i`, holds. The frequency difference is `t 0` times
+`λ 0 - (θ + ∑ i, b i * λ i)`, and for degree bound at least one the grid contains the unit vector
+in coordinate `0`. The definition assumes no such relation.
 
 The relation `ψ t = a t + ∑ i, c t i` gives
 `TauCeti.Baker.derivative_diagonalAuxiliarySeries`: the derivative on the diagonal is the sum
@@ -97,18 +101,12 @@ theorem derivative_diagonalAuxiliarySeries [DecidableEq ι] {ψ a : T → A}
     have heq : (fun j ↦ c t j ^ Function.update m i (m i + 1) j) =
         Function.update (fun j ↦ c t j ^ m j) i (c t i ^ (m i + 1)) := by
       exact funext (Function.apply_update (fun j n ↦ c t j ^ n) m i (m i + 1))
-    rw [heq, pow_succ']
-    simpa only [MultilinearMap.mkPiAlgebra_apply, smul_eq_mul, RingHom.id_apply,
-      Function.update_eq_self] using
-      (MultilinearMap.mkPiAlgebra A ι A).map_update_smul (fun j ↦ c t j ^ m j) i
-        (c t i) (c t i ^ m i)
+    rw [heq, Finset.prod_update_of_mem (Finset.mem_univ i), pow_succ', mul_assoc,
+      ← Finset.prod_eq_mul_prod_sdiff_singleton_of_mem (Finset.mem_univ i) (fun j ↦ c t j ^ m j)]
   simp only [hprod, ← Finset.sum_smul, ← Finset.sum_mul, Derivation.map_smul,
     PowerSeries.derivative_coe_mul_of_derivative_eq_C_mul (PowerSeries.derivative_rescale_exp _)]
-  simp only [Polynomial.expDerivFactor_one]
-  simp only [Polynomial.expDerivFactor_succ, Polynomial.coe_add, Polynomial.coe_mul,
-    Polynomial.coe_C, Algebra.smul_def, PowerSeries.algebraMap_apply, Algebra.algebraMap_self,
-    RingHom.id_apply, map_mul]
-  rw [hψ t, map_add]
+  rw [Polynomial.expDerivFactor_one, Polynomial.expDerivFactor_succ, hψ t]
+  push_cast [PowerSeries.smul_eq_C_mul, map_add, map_mul]
   ring
 
 /-- Evaluation on the common convergence disc of the exponential factors in the diagonal series. -/
