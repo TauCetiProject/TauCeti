@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.GramForm
+public import TauCeti.LinearAlgebra.ExteriorPower.BaseChange
 public import TauCeti.LinearAlgebra.ExteriorPower.Basic
-public import TauCeti.NumberTheory.NumberField.HermitianBundle.Basic
+public import TauCeti.NumberTheory.NumberField.HermitianBundle.BaseChange
 
 import TauCeti.LinearAlgebra.ExteriorPower.Localization
 
@@ -40,6 +41,8 @@ vector bundle of higher rank.
 * `TauCeti.HermitianMetric.exteriorPower_form_tmul_ιMulti`: the Gram-determinant formula.
 * `TauCeti.HermitianMetric.ext_ιMulti`: metrics on `⋀ⁿ E` are determined by their values on
   decomposable vectors.
+* `TauCeti.HermitianMetric.exteriorPowerBaseChangeIso`: the canonical comparison
+  `TauCeti.exteriorPower.equivBaseChange` preserves the Gram metrics after scalar extension.
 * `TauCeti.HermitianMetric.exteriorPower_rescale`: `⋀ⁿ (Ē(c)) = (⋀ⁿ Ē)(n c)`.
 * `TauCeti.HermitianBundle.rank_det`: the determinant of a hermitian vector bundle is a line.
 
@@ -253,6 +256,58 @@ def isometryEquivExteriorPowerOne : IsometryEquiv (h.exteriorPower 1) h where
 theorem isometryEquivExteriorPowerOne_apply (x : ⋀[𝓞 K]^1 E) :
     h.isometryEquivExteriorPowerOne x = exteriorPower.oneEquiv (𝓞 K) E x :=
   (rfl)
+
+section BaseChange
+
+variable {L : Type*} [Field L] [Algebra K L]
+
+/-- Extension of scalars commutes isometrically with exterior powers. The underlying
+equivalence is the canonical exterior-power comparison for scalar extension. -/
+def exteriorPowerBaseChangeIso (n : ℕ) :
+    IsometryEquiv ((h.exteriorPower n).baseChange (L := L)) (h.baseChange.exteriorPower n) where
+  toLinearEquiv := (TauCeti.exteriorPower.equivBaseChange (𝓞 L) n (R := 𝓞 K) (M := E)).symm
+  form_tmul τ x y := by
+    let W := ⋀[𝓞 K]^n E
+    let v (a : Fin n → E) : Codomain τ ⊗[𝓞 L] (𝓞 L ⊗[𝓞 K] W) :=
+      1 ⊗ₜ ((1 : 𝓞 L) ⊗ₜ exteriorPower.ιMulti (𝓞 K) n a)
+    have hspan : Submodule.span ℂ (Set.range v) = ⊤ := by
+      have hw := span_one_tmul_eq_top (A := 𝓞 L) (exteriorPower.ιMulti_span (𝓞 K) n E)
+      -- `Codomain τ` and `ℂ` act on the fibre by the same scalar action.
+      exact span_one_tmul_eq_top (A := Codomain τ) hw
+    let e := (TauCeti.exteriorPower.equivBaseChange (𝓞 L) n (R := 𝓞 K) (M := E)).symm
+    let f := (e.toLinearMap.baseChange (Codomain τ)).restrictScalars ℂ
+    have he (a : Fin n → E) :
+        e ((1 : 𝓞 L) ⊗ₜ exteriorPower.ιMulti (𝓞 K) n a) =
+          exteriorPower.ιMulti (𝓞 L) n (fun i ↦ (1 : 𝓞 L) ⊗ₜ a i) :=
+      (TauCeti.exteriorPower.equivBaseChange_symm_tmul_ιMulti (𝓞 L) 1 a).trans (one_smul _ _)
+    have hform : (((h.baseChange.exteriorPower n).form τ).comp f).compl₂ f =
+        ((h.exteriorPower n).baseChange (L := L)).form τ := by
+      apply LinearMap.ext_on_range hspan
+      intro a
+      apply LinearMap.ext_on_range hspan
+      intro b
+      simp only [LinearMap.compl₂_apply, LinearMap.comp_apply, v, f,
+        LinearMap.restrictScalars_apply, LinearMap.baseChange_tmul, LinearEquiv.coe_coe, he,
+        exteriorPower_form_tmul_ιMulti, baseChange_form_tmul_tmul, map_one, one_mul]
+    have hxy := DFunLike.congr_fun (DFunLike.congr_fun hform (1 ⊗ₜ x)) (1 ⊗ₜ y)
+    simpa only [f, e, LinearMap.compl₂_apply, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
+      LinearMap.baseChange_tmul, LinearEquiv.coe_coe] using hxy
+
+/-- The underlying linear equivalence is the scalar-extension comparison for exterior powers. -/
+@[simp]
+theorem toLinearEquiv_exteriorPowerBaseChangeIso (n : ℕ) :
+    (h.exteriorPowerBaseChangeIso (L := L) n).toLinearEquiv =
+      (TauCeti.exteriorPower.equivBaseChange (𝓞 L) n (R := 𝓞 K) (M := E)).symm :=
+  (rfl)
+
+/-- The exterior-power isometry sends a tensor of a wedge to the scaled wedge of the images. -/
+@[simp]
+theorem exteriorPowerBaseChangeIso_tmul_ιMulti (n : ℕ) (a : 𝓞 L) (x : Fin n → E) :
+    h.exteriorPowerBaseChangeIso n (a ⊗ₜ exteriorPower.ιMulti (𝓞 K) n x) =
+      a • exteriorPower.ιMulti (𝓞 L) n (fun i ↦ (1 : 𝓞 L) ⊗ₜ x i) :=
+  TauCeti.exteriorPower.equivBaseChange_symm_tmul_ιMulti (𝓞 L) a x
+
+end BaseChange
 
 namespace IsometryEquiv
 
