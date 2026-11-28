@@ -9,7 +9,6 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.Data.Fin.Tuple.Take
-public import Mathlib.Data.Fintype.Sort
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
@@ -84,9 +83,10 @@ Borel measurable structure on the scalar field.
   coordinates of the two blocks of `EuclideanSpace.sumEquivProd`.
 * `EuclideanSpace.sumComplEquivProd`: splitting the coordinates along a predicate `p` identifies
   `EuclideanSpace 𝕜 ι` with `EuclideanSpace 𝕜 {i // p i} × EuclideanSpace 𝕜 {i // ¬p i}`.
-* `EuclideanSpace.finsetComplEquivProd`: splitting the coordinates of `𝕜ⁿ` into those outside a
-  set `Z` of `k` coordinates and those in `Z`, each enumerated in increasing order, identifies
-  `𝕜ⁿ` with `𝕜ⁿ⁻ᵏ × 𝕜ᵏ`.
+* `EuclideanSpace.coordSplitEquiv`, `EuclideanSpace.coordSplitInsert`, and
+  `EuclideanSpace.coordSplitProj`: splitting `EuclideanSpace 𝕜 ι` over an arbitrary finite index
+  type `ι` along a `k`-element finset `Z`, together with zero-insertion outside `Z` and coordinate
+  projection outside `Z`.
 * `EuclideanSpace.take`: the first `m` coordinates of a point of `𝕜ⁿ`, a left inverse of the
   zero extension `LinearIsometry.piLpExtendByZero` along `Fin.castLEEmb`, and its adjoint
   (`EuclideanSpace.adjoint_piLpExtendByZero_castLEEmb_apply`).
@@ -766,83 +766,112 @@ theorem finrank_subtype_not_val_lt (hm : m ≤ n) :
 
 end finCastLE
 
-section finsetCompl
+section coordSplit
 
-open scoped Finset
-
-variable {n k : ℕ}
+variable [DecidableEq ι] {k : ℕ}
 
 variable (𝕜) in
-/-- Splitting the coordinates of `𝕜ⁿ` into those outside a set `Z` of `k` coordinates and those
-in `Z`, each enumerated in increasing order (`Finset.orderEmbOfFin`), identifies `𝕜ⁿ` with
-`𝕜ⁿ⁻ᵏ × 𝕜ᵏ`. This is `EuclideanSpace.sumEquivProd` read through Mathlib's index splitting
-`finSumEquivOfFinset`, with the two factors swapped. -/
-def finsetComplEquivProd (Z : Finset (Fin n)) (hZ : #Z = k) :
-    EuclideanSpace 𝕜 (Fin n) ≃L[𝕜] EuclideanSpace 𝕜 (Fin (n - k)) × EuclideanSpace 𝕜 (Fin k) :=
-  ((LinearIsometryEquiv.piLpCongrLeft 2 𝕜 𝕜 (finSumEquivOfFinset hZ (by
-      rw [Finset.card_compl, Fintype.card_fin, hZ])).symm).toContinuousLinearEquiv.trans
-    sumEquivProd).trans (ContinuousLinearEquiv.prodComm 𝕜 _ _)
+/-- Splitting `EuclideanSpace 𝕜 ι` into the coordinates outside a `k`-element finset `Z` (indexed
+by `Fin (Fintype.card ι - k)`) and the coordinates inside `Z` (indexed by `Fin k`), using
+`EuclideanSpace.sumComplEquivProd` and `Fintype.equivFinOfCardEq`. This applies to any finite index
+type `ι` without requiring a linear order on `ι`. -/
+def coordSplitEquiv (Z : Finset ι) (hcard : Z.card = k) :
+    (EuclideanSpace 𝕜 (Fin (Fintype.card ι - k)) × EuclideanSpace 𝕜 (Fin k)) ≃L[𝕜]
+      EuclideanSpace 𝕜 ι :=
+  let hcardIn : Fintype.card {i : ι // i ∈ Z} = k := by
+    rw [Fintype.card_coe, hcard]
+  let hcardOut : Fintype.card {i : ι // i ∉ Z} = Fintype.card ι - k := by
+    rw [Fintype.card_subtype_compl (· ∈ Z), Fintype.card_coe, hcard]
+  let σ : Fin (Fintype.card ι - k) ≃ {i : ι // i ∉ Z} :=
+    (Fintype.equivFinOfCardEq hcardOut).symm
+  let τ : Fin k ≃ {i : ι // i ∈ Z} :=
+    (Fintype.equivFinOfCardEq hcardIn).symm
+  let eOut : EuclideanSpace 𝕜 (Fin (Fintype.card ι - k)) ≃L[𝕜]
+      EuclideanSpace 𝕜 {i : ι // i ∉ Z} :=
+    (LinearIsometryEquiv.piLpCongrLeft 2 𝕜 𝕜 σ).toContinuousLinearEquiv
+  let eIn : EuclideanSpace 𝕜 (Fin k) ≃L[𝕜] EuclideanSpace 𝕜 {i : ι // i ∈ Z} :=
+    (LinearIsometryEquiv.piLpCongrLeft 2 𝕜 𝕜 τ).toContinuousLinearEquiv
+  ((eOut.prodCongr eIn).trans (ContinuousLinearEquiv.prodComm 𝕜 _ _)).trans
+    (sumComplEquivProd 𝕜 (· ∈ Z)).symm
 
-variable {Z : Finset (Fin n)} {hZ : #Z = k}
+variable (𝕜) in
+/-- Continuous linear insertion of coordinates outside `Z`, setting every coordinate in `Z` to
+`0`. -/
+def coordSplitInsert (Z : Finset ι) (hcard : Z.card = k) :
+    EuclideanSpace 𝕜 (Fin (Fintype.card ι - k)) →L[𝕜] EuclideanSpace 𝕜 ι :=
+  (coordSplitEquiv 𝕜 Z hcard).toContinuousLinearMap.comp (ContinuousLinearMap.inl 𝕜 _ _)
 
+variable (𝕜) in
+/-- Continuous linear projection onto the coordinates outside `Z`. -/
+def coordSplitProj (Z : Finset ι) (hcard : Z.card = k) :
+    EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 (Fin (Fintype.card ι - k)) :=
+  (ContinuousLinearMap.fst 𝕜 _ _).comp (coordSplitEquiv 𝕜 Z hcard).symm.toContinuousLinearMap
+
+variable {Z : Finset ι} {hcard : Z.card = k}
+
+/-- `coordSplitInsert` inserts `(y, 0)` through `coordSplitEquiv`. -/
+theorem coordSplitInsert_apply (y : EuclideanSpace 𝕜 (Fin (Fintype.card ι - k))) :
+    coordSplitInsert 𝕜 Z hcard y = coordSplitEquiv 𝕜 Z hcard (y, 0) :=
+  (rfl)
+
+/-- `coordSplitProj` reads the first factor of `(coordSplitEquiv 𝕜 Z hcard).symm`. -/
+theorem coordSplitProj_apply (z : EuclideanSpace 𝕜 ι) :
+    coordSplitProj 𝕜 Z hcard z = ((coordSplitEquiv 𝕜 Z hcard).symm z).1 :=
+  (rfl)
+
+/-- Projecting onto the coordinates outside `Z` is a left inverse to `coordSplitInsert`. -/
 @[simp]
-theorem finsetComplEquivProd_apply_fst (x : EuclideanSpace 𝕜 (Fin n)) (j : Fin (n - k)) :
-    (finsetComplEquivProd 𝕜 Z hZ x).1 j =
-      x (Zᶜ.orderEmbOfFin (by rw [Finset.card_compl, Fintype.card_fin, hZ]) j) := by
-  simp [finsetComplEquivProd, Equiv.piCongrLeft'_apply]
+theorem coordSplitProj_insert (y : EuclideanSpace 𝕜 (Fin (Fintype.card ι - k))) :
+    coordSplitProj 𝕜 Z hcard (coordSplitInsert 𝕜 Z hcard y) = y := by
+  simp [coordSplitProj_apply, coordSplitInsert_apply]
 
+/-- Inserting a vector outside `Z` sets every coordinate in `Z` to `0`. -/
 @[simp]
-theorem finsetComplEquivProd_apply_snd (x : EuclideanSpace 𝕜 (Fin n)) (j : Fin k) :
-    (finsetComplEquivProd 𝕜 Z hZ x).2 j = x (Z.orderEmbOfFin hZ j) := by
-  simp [finsetComplEquivProd, Equiv.piCongrLeft'_apply]
+theorem coordSplitInsert_apply_of_mem (y : EuclideanSpace 𝕜 (Fin (Fintype.card ι - k)))
+    {i : ι} (hi : i ∈ Z) :
+    coordSplitInsert 𝕜 Z hcard y i = 0 := by
+  simp only [coordSplitInsert_apply, coordSplitEquiv, ContinuousLinearEquiv.trans_apply,
+    ContinuousLinearEquiv.prodComm_apply, ContinuousLinearEquiv.prodCongr_apply, Prod.swap_prod_mk,
+    map_zero, sumComplEquivProd_symm_apply, dite_eq_left hi, PiLp.zero_apply]
 
-theorem finsetComplEquivProd_symm_apply
-    (z : EuclideanSpace 𝕜 (Fin (n - k)) × EuclideanSpace 𝕜 (Fin k)) (i : Fin n) :
-    (finsetComplEquivProd 𝕜 Z hZ).symm z i =
-      if h : i ∈ Z then z.2 ((Z.orderIsoOfFin hZ).symm ⟨i, h⟩)
-      else z.1 ((Zᶜ.orderIsoOfFin (by rw [Finset.card_compl, Fintype.card_fin, hZ])).symm
-        ⟨i, Finset.mem_compl.2 h⟩) := by
-  obtain ⟨x, rfl⟩ := (finsetComplEquivProd 𝕜 Z hZ).surjective z
-  split_ifs with h <;> simp [← Finset.coe_orderIsoOfFin_apply]
+/-- The second component of `(coordSplitEquiv 𝕜 Z hcard).symm z` vanishes exactly when `z` vanishes
+on every coordinate in `Z`. -/
+theorem coordSplitEquiv_symm_snd_eq_zero_iff (z : EuclideanSpace 𝕜 ι) :
+    ((coordSplitEquiv 𝕜 Z hcard).symm z).2 = 0 ↔ ∀ i ∈ Z, z i = 0 := by
+  have hfst : ((coordSplitEquiv 𝕜 Z hcard).symm z).2 = 0 ↔
+      (sumComplEquivProd 𝕜 (· ∈ Z) z).1 = 0 := by
+    simp only [coordSplitEquiv, ContinuousLinearEquiv.symm_trans_apply,
+      ContinuousLinearEquiv.symm_symm, ContinuousLinearEquiv.prodComm_symm,
+      ContinuousLinearEquiv.prodComm_apply, ContinuousLinearEquiv.prodCongr_symm,
+      ContinuousLinearEquiv.prodCongr_apply, Prod.snd_swap,
+      ContinuousLinearEquiv.map_eq_zero_iff]
+  rw [hfst]
+  constructor
+  · intro h i hi
+    simpa [sumComplEquivProd_apply_fst] using
+      congrArg (fun u : EuclideanSpace 𝕜 {j : ι // j ∈ Z} ↦ u ⟨i, hi⟩) h
+  · intro h
+    ext ⟨i, hi⟩
+    simpa [sumComplEquivProd_apply_fst] using h i hi
 
-/-- A property holds at every coordinate of the first factor exactly when it holds at every
-coordinate outside `Z`. -/
-theorem forall_fst_finsetComplEquivProd_iff (P : 𝕜 → Prop) (x : EuclideanSpace 𝕜 (Fin n)) :
-    (∀ j, P ((finsetComplEquivProd 𝕜 Z hZ x).1 j)) ↔ ∀ i ∉ Z, P (x i) := by
-  simp only [finsetComplEquivProd_apply_fst]
-  rw [← Set.forall_mem_range (p := fun i ↦ P (x i)), Finset.range_orderEmbOfFin]
-  simp
+/-- A vector vanishing on `Z` is recovered from its projection onto the coordinates outside `Z`. -/
+theorem coordSplitInsert_proj {z : EuclideanSpace 𝕜 ι} (hz : ∀ i ∈ Z, z i = 0) :
+    coordSplitInsert 𝕜 Z hcard (coordSplitProj 𝕜 Z hcard z) = z := by
+  have h2 : ((coordSplitEquiv 𝕜 Z hcard).symm z).2 = 0 :=
+    (coordSplitEquiv_symm_snd_eq_zero_iff z).2 hz
+  rw [coordSplitInsert_apply, coordSplitProj_apply, ← h2, Prod.mk.eta,
+    ContinuousLinearEquiv.apply_symm_apply]
 
-/-- A property holds at every coordinate of the second factor exactly when it holds at every
-coordinate in `Z`. -/
-theorem forall_snd_finsetComplEquivProd_iff (P : 𝕜 → Prop) (x : EuclideanSpace 𝕜 (Fin n)) :
-    (∀ j, P ((finsetComplEquivProd 𝕜 Z hZ x).2 j)) ↔ ∀ i ∈ Z, P (x i) := by
-  simp only [finsetComplEquivProd_apply_snd]
-  rw [← Set.forall_mem_range (p := fun i ↦ P (x i)), Finset.range_orderEmbOfFin]
-  simp
+/-- The range of `coordSplitInsert` is the subspace of vectors vanishing on `Z`. -/
+theorem mem_range_coordSplitInsert_iff (w : EuclideanSpace 𝕜 ι) :
+    w ∈ (coordSplitInsert 𝕜 Z hcard).range ↔ ∀ i ∈ Z, w i = 0 := by
+  constructor
+  · rintro ⟨y, rfl⟩ i hi
+    exact coordSplitInsert_apply_of_mem y hi
+  · intro hw
+    exact ⟨coordSplitProj 𝕜 Z hcard w, coordSplitInsert_proj hw⟩
 
-/-- A vector vanishing on `Z` is recovered from its coordinates outside `Z`. -/
-theorem finsetComplEquivProd_symm_mk_fst_zero {x : EuclideanSpace 𝕜 (Fin n)}
-    (hx : ∀ i ∈ Z, x i = 0) :
-    (finsetComplEquivProd 𝕜 Z hZ).symm ((finsetComplEquivProd 𝕜 Z hZ x).1, 0) = x := by
-  have h2 : (finsetComplEquivProd 𝕜 Z hZ x).2 = 0 := by
-    ext j
-    exact (forall_snd_finsetComplEquivProd_iff (· = 0) x).2 hx j
-  rw [← h2, Prod.mk.eta, ContinuousLinearEquiv.symm_apply_apply]
-
-/-- Inserting a vector `w` of `𝕜ⁿ⁻ᵏ` outside `Z` gives a vector vanishing on `Z`. -/
-theorem finsetComplEquivProd_symm_mk_zero_apply_of_mem (w : EuclideanSpace 𝕜 (Fin (n - k)))
-    {i : Fin n} (hi : i ∈ Z) : (finsetComplEquivProd 𝕜 Z hZ).symm (w, 0) i = 0 := by
-  simp [finsetComplEquivProd_symm_apply, hi]
-
-/-- A property holds for every coordinate of `w` exactly when it holds for every coordinate
-outside `Z` of its insertion. -/
-theorem forall_finsetComplEquivProd_symm_mk_zero_iff (P : 𝕜 → Prop)
-    (w : EuclideanSpace 𝕜 (Fin (n - k))) :
-    (∀ i ∉ Z, P ((finsetComplEquivProd 𝕜 Z hZ).symm (w, 0) i)) ↔ ∀ j, P (w j) := by
-  rw [← forall_fst_finsetComplEquivProd_iff (hZ := hZ), ContinuousLinearEquiv.apply_symm_apply]
-
-end finsetCompl
+end coordSplit
 
 /-- Expanding `(EuclideanSpace.basisFun ι 𝕜).toBasis.constrL y g` as a coordinate linear
 combination. -/
