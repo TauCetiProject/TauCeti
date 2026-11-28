@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Belyi.Model
+public import TauCeti.FieldTheory.FunctionField.Belyi.Model.Basic
 import TauCeti.FieldTheory.FunctionField.Belyi.BaseChange
 import TauCeti.FieldTheory.Galois.ClosedSubgroup
 import TauCeti.FieldTheory.RatFunc.Transcendental
@@ -169,7 +169,8 @@ private noncomputable def model [Algebra.IsAlgebraic K₀ k] (hE : IsFunctionFie
   { pair :=
       { carrier := E
         isAlgebraicBelyiPair := (isAlgebraicBelyiPair_iff_of_constantCompositum_eq_top
-          (isIntegrallyClosedIn_constants X E) (constantCompositum_eq_top_of_adjoin_eq_top E k X
+          (isIntegrallyClosedIn_constants X E)
+          ((constantCompositum_eq_top_iff_adjoin_range_eq_top E k X).mpr
             ((congrArg (adjoin k) Subtype.range_coe).trans hgen)) hX).mp
           X.isAlgebraicBelyiPair }
     embedding := algebraMap E X

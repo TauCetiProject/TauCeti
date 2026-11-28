@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
+import TauCeti.Topology.Algebra.Group.Cocompact
 
 /-!
 # A number field is discrete in its adele ring
@@ -17,6 +18,13 @@ subgroup of `𝔸[K]`, and the quotient `𝔸[K] / K` is Hausdorff.  An explicit
 meeting `K` only in `0` is the set of adeles of norm less than `1` at every infinite place and
 integral at every finite place.
 
+Consequently a compact set of adeles contains only finitely many elements of `K`, and a compact
+set of adelic vectors `ι → 𝔸[K]`, for a finite index type `ι`, contains only finitely many vectors
+of `K^ι`. This is how lattice counts over a number field are shown to be finite: a condition at
+the finite places that confines the finite adeles to a compact set, such as integrality with
+respect to an adelic lattice, together with a bound at every infinite place, cuts out a compact
+set of adeles.
+
 The infinite component cannot be dropped: `K` is dense in the finite adele ring.  Together with the
 compactness of `𝔸[K] / K`, discreteness says that `K` is a cocompact lattice in `𝔸[K]`, the
 additive fact underlying the compactness of the norm-one idele class group.
@@ -26,9 +34,15 @@ additive fact underlying the compactness of the norm-one idele class group.
 * `TauCeti.GlobalNumberFields.eq_zero_of_forall_norm_lt_one_of_mem_integralAdeles`:
   the only element of `K` whose adele has norm less than `1` at every infinite place and is
   integral at every finite place is `0`.
-* `TauCeti.GlobalNumberFields.discreteTopology_principalSubgroup`: `K` is discrete in `𝔸[K]`.
+* `TauCeti.GlobalNumberFields.discreteTopology_principalSubgroup`: `K` is discrete in `𝔸[K]`;
+  `TauCeti.GlobalNumberFields.exists_mem_nhds_zero_eq_zero_of_algebraMap_mem`: so some
+  neighbourhood of `0` in `𝔸[K]` meets `K` only in `0`.
 * `TauCeti.GlobalNumberFields.isClosed_principalSubgroup`: `K` is closed in `𝔸[K]`.
 * `TauCeti.GlobalNumberFields.t3Space_quotient_principalSubgroup`: `𝔸[K] / K` is Hausdorff.
+* `TauCeti.GlobalNumberFields.finite_preimage_algebraMap_of_isCompact`: a compact set of adeles
+  contains finitely many elements of `K`.
+* `TauCeti.GlobalNumberFields.finite_setOf_comp_mem_of_isCompact`: a compact set of adelic
+  vectors contains finitely many rational vectors.
 
 ## References
 
@@ -39,7 +53,7 @@ additive fact underlying the compactness of the norm-one idele class group.
 public section
 
 open IsDedekindDomain HeightOneSpectrum NumberField
-open scoped NumberField.AdeleRing
+open scoped NumberField.AdeleRing Topology
 
 namespace TauCeti.GlobalNumberFields
 
@@ -92,6 +106,18 @@ instance discreteTopology_principalSubgroup :
   · obtain rfl := eq_zero_of_forall_norm_lt_one_of_mem_integralAdeles h.1 h.2
     simp
 
+/-- **A neighbourhood of `0` in the adeles meeting `K` only in `0`**: the diagonal copy of a
+number field is discrete in `𝔸[K]`, so some neighbourhood of `0` in `𝔸[K]` contains the image of
+no nonzero element of `K`. -/
+theorem exists_mem_nhds_zero_eq_zero_of_algebraMap_mem :
+    ∃ N ∈ 𝓝 (0 : 𝔸[K]), ∀ x : K, algebraMap K 𝔸[K] x ∈ N → x = 0 := by
+  have h0 : ({0} : Set (AdeleRing.principalSubgroup (𝓞 K) K)) ∈ 𝓝 0 := mem_nhds_discrete.2 rfl
+  rw [Topology.IsInducing.subtypeVal.nhds_eq_comap, Filter.mem_comap] at h0
+  obtain ⟨N, hN, hN0⟩ := h0
+  refine ⟨N, hN, fun x hx ↦ AdeleRing.algebraMap_injective (𝓞 K) K ?_⟩
+  have : (⟨algebraMap K 𝔸[K] x, x, rfl⟩ : AdeleRing.principalSubgroup (𝓞 K) K) = 0 := hN0 hx
+  simpa using congrArg Subtype.val this
+
 /-- **`K` is closed in its adele ring**: the diagonal copy of a number field is a closed additive
 subgroup of `𝔸[K]`. -/
 theorem isClosed_principalSubgroup :
@@ -104,5 +130,29 @@ instance t3Space_quotient_principalSubgroup :
     T3Space (𝔸[K] ⧸ AdeleRing.principalSubgroup (𝓞 K) K) :=
   haveI := isClosed_principalSubgroup K
   inferInstance
+
+variable {K}
+
+/-- **A compact set of adeles contains finitely many elements of the number field**, as the
+diagonal copy of `K` is a discrete subgroup of `𝔸[K]`. -/
+theorem finite_preimage_algebraMap_of_isCompact {s : Set 𝔸[K]} (hs : IsCompact s) :
+    (algebraMap K 𝔸[K] ⁻¹' s).Finite := by
+  -- `x ↦ algebraMap x` is an injection `f` of `K` into the principal subgroup, whose points in
+  -- `s` form a finite set; the preimage of that set under `f` is `algebraMap ⁻¹' s` by definition
+  -- of `f`.
+  let f : K → AdeleRing.principalSubgroup (𝓞 K) K := fun x ↦ ⟨algebraMap K 𝔸[K] x, x, rfl⟩
+  have hf : Function.Injective f := fun x y h ↦
+    AdeleRing.algebraMap_injective (𝓞 K) K (congrArg Subtype.val h)
+  exact ((AdeleRing.principalSubgroup (𝓞 K) K).finite_preimage_coe_of_isCompact hs).preimage
+    (f := f) hf.injOn
+
+/-- **A compact set of adelic vectors contains finitely many rational vectors**: for a finite
+index type `ι`, only finitely many `x : ι → K` have their diagonal image in a compact set
+`s ⊆ ι → 𝔸[K]`. -/
+theorem finite_setOf_comp_mem_of_isCompact {ι : Type*} [Finite ι] {s : Set (ι → 𝔸[K])}
+    (hs : IsCompact s) : {x : ι → K | algebraMap K 𝔸[K] ∘ x ∈ s}.Finite := by
+  refine (Set.Finite.pi' fun i ↦ finite_preimage_algebraMap_of_isCompact
+    (hs.image (continuous_apply i))).subset fun x hx i ↦ ?_
+  exact ⟨_, hx, rfl⟩
 
 end TauCeti.GlobalNumberFields

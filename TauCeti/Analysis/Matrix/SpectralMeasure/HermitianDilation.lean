@@ -52,7 +52,8 @@ theorem resolventTransform_spectralMeasure_fromBlocks_zero_conjTranspose
   have hright := resolventTransform_spectralMeasure _ (isHermitian_conjTranspose_mul_self A)
     ((posSemidef_conjTranspose_mul_self A).sq_notMem_spectrum_of_im_ne_zero hz)
   have hd := isHermitian_fromBlocks_zero_conjTranspose A
-  rw [resolventTransform_spectralMeasure _ hd (hd.notMem_spectrum_of_im_ne_zero hz), hright]
+  rw [resolventTransform_spectralMeasure _ hd (hd.notMem_spectrum_of_im_ne_zero hz), hright,
+    normalizedResolventTrace_sum, normalizedResolventTrace_def]
   simp [inv_fromBlocks_zero_conjTranspose_sub_smul_one A hz, trace_fromBlocks, htrace, ← two_mul]
   ring
 

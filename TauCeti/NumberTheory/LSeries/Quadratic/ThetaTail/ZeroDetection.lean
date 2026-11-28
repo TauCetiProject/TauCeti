@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Mollifier
 public import TauCeti.NumberTheory.LSeries.Quadratic.ThetaTail.Basic
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import TauCeti.Analysis.MellinTransform.Folding
 import TauCeti.NumberTheory.DirichletCharacter.ArithmeticFunction
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.GaussianTheta
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.Mollifier
 import TauCeti.NumberTheory.LSeries.ThetaInversion
 
 /-!
@@ -66,6 +66,22 @@ private theorem norm_completedLFunction_div_two_le_tail {N : ℕ} [NeZero N]
     setIntegral_indicator measurableSet_Ioi, inter_eq_right.mpr hsub] at h
   exact h
 
+/-- On the critical line the Gaussian mollifier is bounded by the joint theta tail, with no
+additional constant. This holds for either Gaussian weight, regardless of the character's parity. -/
+theorem norm_gaussianMollifier_le_quadraticTwistGaussianThetaTailIntegral {N : ℕ}
+    (χ : DirichletCharacter ℂ N) (j : Fin 2) {T : ℝ} (hT : 0 < T) {s : ℂ} (hs : s.re = 1 / 2) :
+    ‖χ.gaussianMollifier j.val T⁻¹ s‖ ≤
+      quadraticTwistGaussianThetaTailIntegral j (fun n ↦ χ n) T := by
+  have hi := integrableOn_quadraticTwistGaussianThetaTailIntegrand (j := j)
+    (c := fun n ↦ χ n) (fun n ↦ χ.norm_le_one n) hT
+  have hμ := integrableOn_norm_gaussianThetaSeries_div (j := j)
+    (c := fun n ↦ χ n * μ n) (fun n ↦ χ.norm_mul_moebius_le_one n) (inv_pos.mpr hT)
+  refine (χ.norm_gaussianMollifier_le_moebius_theta_tail j (inv_nonneg.mpr hT.le) hs).trans ?_
+  rw [quadraticTwistGaussianThetaTailIntegral_def]
+  refine setIntegral_mono_on hμ hi measurableSet_Ioi (fun u hu ↦ ?_)
+  have hu₀ : 0 < u := (inv_pos.mpr hT).trans hu
+  gcongr; simp
+
 private theorem thetaTail_mollifier_hypotheses {N : ℕ} [NeZero N]
     {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) (hn : χ ≠ 1) {j : Fin 2}
     (hpar : χ (-1) = (-1) ^ j.val) {T : ℝ} (hT : 0 < T) (hN : (N : ℝ) ≤ T ^ 2) :
@@ -77,18 +93,14 @@ private theorem thetaTail_mollifier_hypotheses {N : ℕ} [NeZero N]
     (c := fun n ↦ χ n) (fun n ↦ χ.norm_le_one n) hT
   have h₁ := integrableOn_norm_gaussianThetaSeries_div (j := j)
     (c := fun n ↦ χ n) (fun n ↦ χ.norm_le_one n) (inv_pos.mpr hT)
-  have h₂ := integrableOn_norm_gaussianThetaSeries_div (j := j)
-    (c := fun n ↦ χ n * μ n) (fun n ↦ χ.norm_mul_moebius_le_one n) (inv_pos.mpr hT)
   refine ⟨fun z hz ↦ (norm_completedLFunction_div_two_le_tail hχ hn hpar hT hN hz).trans
     (mul_le_mul_of_nonneg_left ?_ zero_le_two),
-    fun z hz ↦ (χ.norm_gaussianMollifier_le_moebius_theta_tail j
-      (inv_nonneg.mpr hT.le) hz).trans ?_⟩
-  all_goals
-    dsimp only [J]
-    rw [quadraticTwistGaussianThetaTailIntegral_def]
-    refine setIntegral_mono_on (by assumption) hi measurableSet_Ioi (fun u hu ↦ ?_)
-    have hu₀ : 0 < u := (inv_pos.mpr hT).trans hu
-    gcongr; simp
+    fun z hz ↦ χ.norm_gaussianMollifier_le_quadraticTwistGaussianThetaTailIntegral j hT hz⟩
+  dsimp only [J]
+  rw [quadraticTwistGaussianThetaTailIntegral_def]
+  refine setIntegral_mono_on h₁ hi measurableSet_Ioi (fun u hu ↦ ?_)
+  have hu₀ : 0 < u := (inv_pos.mpr hT).trans hu
+  gcongr; simp
 
 /-- For primitive nonprincipal characters of conductor at most `T²`, if the joint theta tail is
 at most `T^(2δ)`, the square of the half gamma factor at a zero with `Re s ≥ 1/2 + 9δ` is bounded

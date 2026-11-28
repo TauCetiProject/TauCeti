@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.CMField
+public import TauCeti.NumberTheory.NumberField.CMField.AdeleStar
+public import TauCeti.NumberTheory.NumberField.Global.Ideles.Extension
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.GaloisAction
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Relative
 import TauCeti.NumberTheory.ClassFieldTheory.Global.Ideles.Hilbert90
@@ -19,6 +21,11 @@ import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Galois
 The kernel of the idele norm to the maximal real subfield consists of the ideles satisfying
 `x * conj(x) = 1`. These are the adelic points of the norm-one torus. Division by the conjugate
 is a continuous surjection onto this kernel, so pullback distinguishes characters of the torus.
+
+For a CM field `L`, the finite part of the norm `N_{L/L⁺}(y)` of an idele `y`, read in `L`, is
+`y_f · conj y_f`
+(`NumberField.IdeleGroup.coe_toFiniteIdele_ideleExtension_ideleNormMap`), where `conj` is the star
+structure on the finite adeles.
 
 The applications are those of `New.divStar_surjective`,
 `New.exists_snd_div_divStar_finIdeleIncl_eq_one` and `New.AutChar.baseChange_injective` in
@@ -64,6 +71,24 @@ theorem mem_cmNormOneIdeles_iff {x : IdeleGroup (𝓞 E) E} :
     rw [coe_idele_smul, adeleGaloisAction_apply]
     rfl
   rw [hone, hconj]
+
+/-- **The finite part of a CM idele norm.** For an idele `y` of a CM field `L`, the finite part of
+the idele norm `N_{L/L⁺}(y)`, extended to `L`, is `y_f · conj y_f`: the Galois group of `L / L⁺` is
+`{1, conj}`. -/
+theorem _root_.NumberField.IdeleGroup.coe_toFiniteIdele_ideleExtension_ideleNormMap
+    {L : Type*} [Field L] [NumberField L] [IsCMField L] (y : IdeleGroup (𝓞 L) L) :
+    (IdeleGroup.toFiniteIdele (𝓞 L) L
+        (ideleExtension (maximalRealSubfield L) L (ideleNormMap (maximalRealSubfield L) L y)) :
+        FiniteAdeleRing (𝓞 L) L) =
+      IdeleGroup.toFiniteIdele (𝓞 L) L y *
+        star (IdeleGroup.toFiniteIdele (𝓞 L) L y : FiniteAdeleRing (𝓞 L) L) := by
+  classical
+  have hc := complexConj_ne_one L
+  rw [ideleExtension_ideleNormMap,
+    Algebra.IsQuadraticExtension.univ_eq_pair (maximalRealSubfield L) L hc,
+    Finset.prod_pair hc.symm, ← idele_smul_def, ← idele_smul_def, one_smul, map_mul,
+    toFiniteIdele_smul, Units.val_mul, Units.coe_map]
+  simp [finiteAdeleGaloisAction_apply, ← finiteAdeleConj_def]
 
 /-- Division by the complex conjugate, as a continuous homomorphism from the ideles of a CM
 field to the adelic points of its norm-one torus. -/

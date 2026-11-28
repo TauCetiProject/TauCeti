@@ -152,24 +152,26 @@ theorem aeval_one_comp_expPointPolynomial :
   apply WithConv.toConv_injective
   simpa only [expPointAt_def] using expPointAt_one d hd
 
+/-- Evaluating the exponential curve at a base-ring scalar `t : R` agrees with the exponential
+point of the rescaled tangent vector `t • d`. -/
+theorem expPointAt_eq_toConv_expPoint (t : R) :
+    expPointAt d hd t =
+      WithConv.toConv (expPoint (t • d)
+        (exists_iterate_leftInvariantDerivation_smul_eq_zero hd t)) := by
+  apply WithConv.ext
+  ext x
+  rw [expPointAt_apply_eq_counit_taylorExpAt, expPoint_apply]
+  simp only [leftInvariantDerivation_smul]
+  rw [Derivation.taylorExpAt_eq_taylorExp_smul]
+
 /-- The polynomial flow of an invariant vector field is translation by its
 exponential curve. -/
 theorem taylorExpAt_leftInvariantDerivation_apply (t : R) (h : H) :
     (leftInvariantDerivation d).taylorExpAt hd t h =
       tensorComponent (expPointAt d hd t).ofConv.toLinearMap (Coalgebra.comul (R := R) h) := by
-  have hsmul : leftInvariantDerivation (t • d) = t • leftInvariantDerivation d :=
-    (leftInvariantDerivation (R := R) (H := H)).toLinearMap.map_smul t d
-  have ht : ∀ h, ∃ n, (leftInvariantDerivation (t • d))^[n] h = 0 := by
-    simpa only [hsmul] using
-      (leftInvariantDerivation d).exists_iterate_smul_eq_zero hd t
-  have he : expPointAt d hd t = WithConv.toConv (expPoint (t • d) ht) := by
-    apply WithConv.ext
-    ext x
-    rw [expPointAt_apply_eq_counit_taylorExpAt, expPoint_apply]
-    simp only [hsmul]
-    rw [Derivation.taylorExpAt_eq_taylorExp_smul]
-  rw [he, Derivation.taylorExpAt_eq_taylorExp_smul]
-  simpa only [hsmul] using taylorExp_leftInvariantDerivation_apply (t • d) ht h
+  rw [expPointAt_eq_toConv_expPoint, Derivation.taylorExpAt_eq_taylorExp_smul]
+  simpa only [leftInvariantDerivation_smul] using taylorExp_leftInvariantDerivation_apply (t • d)
+    (exists_iterate_leftInvariantDerivation_smul_eq_zero hd t) h
 
 /-- Substitute the sum of two independent parameters in the exponential curve. -/
 private noncomputable def expPointAddPolynomial : H →ₐ[R] R[X][X] :=

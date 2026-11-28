@@ -41,8 +41,10 @@ construction.
 * `TauCeti.IntegralLattice.discriminantQuadraticModule`: the packaged finite quadratic module.
 * `TauCeti.IntegralLattice.isNondegenerate_discriminantQuadraticModule`: nondegeneracy of its
   polar pairing.
-* `TauCeti.IntegralLattice.Isometry.discriminantQuadraticIsometry`: functoriality under lattice
-  isometry.
+* `TauCeti.IntegralLattice.Isometry.discriminantQuadraticIsometry`,
+  `discriminantQuadraticIsometry_refl`, `discriminantQuadraticIsometry_symm`,
+  `discriminantQuadraticIsometry_symm_apply`, `discriminantQuadraticIsometry_trans`:
+  functoriality under lattice isometry.
 
 ## References
 

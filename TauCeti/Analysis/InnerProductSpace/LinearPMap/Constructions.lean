@@ -196,6 +196,40 @@ theorem isSelfAdjoint_conj_iff {A : H →ₗ.[𝕜] H} (U : H ≃ₗᵢ[𝕜] H'
     IsSelfAdjoint (A.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')) ↔ IsSelfAdjoint A :=
   ⟨fun h ↦ by simpa using h.conj U.symm, (·.conj U)⟩
 
+/-- If `T : H →L[𝕜] H` preserves the domain of `D`, then `U.conjStarAlgEquiv T` preserves the
+domain of `D.conj U`. -/
+theorem conjStarAlgEquiv_mem_conj_domain (U : H ≃ₗᵢ[𝕜] H') (D : H →ₗ.[𝕜] H)
+    {T : H →L[𝕜] H} (hT : ∀ {x : H}, x ∈ D.domain → T x ∈ D.domain)
+    {y : H'} (hy : y ∈ (D.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')).domain) :
+    U.conjStarAlgEquiv T y ∈ (D.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')).domain := by
+  rw [LinearIsometryEquiv.conjStarAlgEquiv_apply]
+  exact conj_mem_domain (U : H ≃L[𝕜] H') D hT hy
+
+/-- Evaluating `D.conj U` on `(U.conjStarAlgEquiv T) y` applies `U` to `D (T (U.symm y))`. -/
+theorem conj_apply_conjStarAlgEquiv (U : H ≃ₗᵢ[𝕜] H') (D : H →ₗ.[𝕜] H)
+    {T : H →L[𝕜] H} (hT : ∀ {x : H}, x ∈ D.domain → T x ∈ D.domain)
+    (y : (D.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')).domain)
+    (hmem : U.conjStarAlgEquiv T y ∈ (D.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')).domain :=
+      conjStarAlgEquiv_mem_conj_domain U D hT y.property) :
+    D.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H') ⟨U.conjStarAlgEquiv T y, hmem⟩ =
+      U (D ⟨T (U.symm y), hT (by simpa using (mem_conj_domain_iff
+        (e := ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H'))).1 y.property)⟩) := by
+  simpa only [LinearIsometryEquiv.conjStarAlgEquiv_apply,
+    ← LinearIsometryEquiv.toContinuousLinearEquiv_symm,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv] using
+    conj_apply_comp_conj (U : H ≃L[𝕜] H') D hT y
+
+/-- Evaluating `U.conjStarAlgEquiv T` on `(D.conj U) y` applies `U` to `T (D (U.symm y))`. -/
+theorem conjStarAlgEquiv_apply_conj (U : H ≃ₗᵢ[𝕜] H') (D : H →ₗ.[𝕜] H)
+    (T : H →L[𝕜] H) (y : (D.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H')).domain) :
+    U.conjStarAlgEquiv T (D.conj ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H') y) =
+      U (T (D ⟨U.symm y, by simpa using (mem_conj_domain_iff
+        (e := ((U : H ≃L[𝕜] H') : H ≃ₗ[𝕜] H'))).1 y.property⟩)) := by
+  simpa only [LinearIsometryEquiv.conjStarAlgEquiv_apply,
+    ← LinearIsometryEquiv.toContinuousLinearEquiv_symm,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv] using
+    comp_conj_apply_conj (U : H ≃L[𝕜] H') D T y
+
 end Conj
 
 end HilbertSpace

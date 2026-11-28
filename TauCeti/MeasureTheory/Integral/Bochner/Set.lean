@@ -34,7 +34,8 @@ It also bounds the integral over a measurable set `S` by integrals over unions w
 that a pointwise bound `m ≤ K σ` on `[a, a + K]` gives `m ≤ ∫_a^{a+K} σ`, that a pointwise
 bound `0 ≤ f ≤ c₁ g₁ + c₂ g₂` integrates to the same bound for the integrals, and turns a bound
 on the Lebesgue integral of a nonnegative function into integrability and a bound on its Bochner
-integral.
+integral. Finally, the set integrals of two integrable functions over any set differ by at most
+their `L¹` distance.
 
 ## Main statements
 
@@ -79,6 +80,8 @@ integral.
   `h` with `∫ conj (h x) * h x = 0` vanishes.
 * `MeasureTheory.norm_setIntegral_le_add_of_disjoint`: the integral over `S` is bounded by the
   integrals over `H ∪ (S ∪ T)`, `H` and `T`, for disjoint `H`, `S`, `T`.
+* `MeasureTheory.edist_setIntegral_le_eLpNorm_sub`: on every set, the set integrals of two
+  integrable functions differ by at most their `L¹` distance.
 * `ContinuousOn.integrableOn_insertNth_Icc`: continuity on a closed box `Set.Icc a b` gives
   integrability on every coordinate slice `x i = c` (`c ∈ Set.Icc (a i) (b i)`) against any
   measure finite on compact sets.
@@ -443,6 +446,18 @@ theorem norm_setIntegral_le_add_of_disjoint {f : α → E} {H S T : Set α}
   calc ‖b‖ = ‖a + (b + c) - a - c‖ := by congr 1; abel
     _ ≤ ‖a + (b + c) - a‖ + ‖c‖ := norm_sub_le _ _
     _ ≤ ‖a + (b + c)‖ + ‖a‖ + ‖c‖ := by gcongr; exact norm_sub_le _ _
+
+/-- On every set `A`, the set integrals of two integrable functions differ by at most the `L¹`
+distance of the functions. -/
+theorem edist_setIntegral_le_eLpNorm_sub {f g : α → E} (hf : Integrable f μ)
+    (hg : Integrable g μ) (A : Set α) :
+    edist (∫ x in A, f x ∂μ) (∫ x in A, g x ∂μ) ≤ eLpNorm (f - g) 1 μ := by
+  calc edist (∫ x in A, f x ∂μ) (∫ x in A, g x ∂μ) ≤ ∫⁻ x in A, edist (f x) (g x) ∂μ :=
+        edist_integral_le_lintegral_edist hf.restrict hg.restrict
+    _ = ∫⁻ x in A, ‖f x - g x‖ₑ ∂μ := by simp_rw [eDist_eq_eNorm_sub]
+    _ ≤ ∫⁻ x, ‖f x - g x‖ₑ ∂μ := setLIntegral_le_lintegral _ _
+    _ = eLpNorm (f - g) 1 μ :=
+        (eLpNorm_one_eq_lintegral_eNorm (hf.sub hg).aestronglyMeasurable).symm
 
 end MeasureTheory
 

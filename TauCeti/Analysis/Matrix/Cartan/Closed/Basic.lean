@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Star.Unitary
+public import TauCeti.Algebra.Star.Unitary.Basic
 public import TauCeti.Analysis.Matrix.Cartan.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Units
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.MaximalCompact

@@ -173,13 +173,9 @@ private theorem exists_hilbertSymbol_eq_ite_zero {K₀ : Type} [Field K₀] [Num
   have : Fact (¬IsSquare (b : K₀)) := ⟨hsq⟩
   let L := QuadraticAlgebra K₀ (b : K₀) 0
   have : NumberField L := NumberField.of_module_finite K₀ L
-  have : HasEnoughRootsOfUnity K₀ 2 :=
-    ⟨⟨-1, IsPrimitiveRoot.neg_one 0 (by decide)⟩, inferInstance⟩
-  have hfin : Module.finrank K₀ L = 2 := QuadraticAlgebra.finrank_eq_two _ _
   -- The Kummer case of the second inequality and the first inequality give the norm index.
   have hidx : (GlobalNumberFields.ideleClassNormMap K₀ L).range.index = 2 :=
-    le_antisymm (ClassFieldTheory.index_range_ideleClassNormMap_le_of_finrank_prime K₀ L 2 hfin)
-      (hfin ▸ ClassFieldTheory.finrank_le_index_range_ideleClassNormMap K₀ L)
+    ClassFieldTheory.index_range_ideleClassNormMap_eq_two K₀ L
   have hb : IsSquare (algebraMap K₀ L b) := ⟨QuadraticAlgebra.omega, by
     rw [QuadraticAlgebra.omega_mul_omega_eq_algebraMap, map_zero, zero_mul, add_zero]⟩
   exact exists_hilbertSymbol_eq_ite_of_index_dvd_two hb (hidx ▸ dvd_rfl) S T hS hT hST

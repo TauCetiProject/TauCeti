@@ -11,6 +11,8 @@ public import Mathlib.RingTheory.TensorProduct.Maps
 public import TauCeti.Algebra.Algebra.Subalgebra.Prefix
 public import TauCeti.GroupTheory.SpecificGroups.Braid.Basic
 import TauCeti.Algebra.Algebra.Subalgebra.Lattice
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Module
 
 /-!
 # The infinite type-A Hecke algebra and its finite stages
@@ -98,6 +100,10 @@ Markov traces are multiplicative; that they are injective, so embeddings, is
   the stages and span them.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.commute_shift_of_mem_stage`: disjoint blocks commute.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.algebraMap_injective`: the presentation does not collapse.
+* `TauCeti.InfiniteTypeAHeckeAlgebra.wenzlProjection_eq_one_sub_eigenprojection`,
+  `TauCeti.InfiniteTypeAHeckeAlgebra.isIdempotentElem_wenzlProjection` and
+  `TauCeti.InfiniteTypeAHeckeAlgebra.smul_T_eq_smul_one_sub_wenzlProjection_sub`: Wenzl's
+  projection `(1 + q ^ 2)⁻¹ • (q ^ 2 - q • T i)`, its idempotence and eigenvalue decomposition.
 
 ## References
 
@@ -684,6 +690,52 @@ instance [Nontrivial R] : Nontrivial (InfiniteTypeAHeckeAlgebra R q) :=
   algebraMap_injective.nontrivial
 
 end Characters
+
+section WenzlProjection
+
+/-- **Comparison of Wenzl's projection with the native eigenprojection.** Let `u = 1 + q ^ 2`
+be a unit, so `q⁻¹ * u = q + q⁻¹`. Wenzl's projection `(1 + q ^ 2)⁻¹ • (q ^ 2 - q • T i)` equals
+`1 - P i`, where `P i = (q + q⁻¹)⁻¹ • (T i + q⁻¹)` is the `q`-eigenprojection of `T i`. -/
+theorem wenzlProjection_eq_one_sub_eigenprojection (u : Rˣ) (hu : (u : R) = 1 + (q : R) ^ 2)
+    (i : ℕ) :
+    (↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i) =
+      1 - (↑(q⁻¹ * u)⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R)) := by
+  have hinv : (↑(q⁻¹ * u)⁻¹ : R) = (q : R) * ↑u⁻¹ := by
+    rw [mul_inv_rev, inv_inv, Units.val_mul, mul_comm]
+  have hu' : (↑u⁻¹ : R) * (1 + (q : R) ^ 2) = 1 := hu ▸ u.inv_mul
+  have hq : (q : R) * ↑q⁻¹ = 1 := q.mul_inv
+  rw [hinv]
+  simp only [Algebra.algebraMap_eq_smul_one, smul_sub, smul_add, smul_smul]
+  match_scalars
+  · linear_combination hu' + (↑u⁻¹ : R) * hq
+  · ring
+
+/-- Wenzl's projection `(1 + q ^ 2)⁻¹ • (q ^ 2 - q • T i)` is idempotent whenever `u = 1 + q ^ 2`
+is a unit, directly from the Hecke quadratic relation. -/
+theorem isIdempotentElem_wenzlProjection (u : Rˣ) (hu : (u : R) = 1 + (q : R) ^ 2) (i : ℕ) :
+    IsIdempotentElem ((↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i)) := by
+  have hu' : (↑u⁻¹ : R) * (1 + (q : R) ^ 2) = 1 := hu ▸ u.inv_mul
+  have hq : (q : R) * ↑q⁻¹ = 1 := q.mul_inv
+  simp only [IsIdempotentElem, Algebra.algebraMap_eq_smul_one, sub_mul, mul_sub, smul_mul_assoc,
+    mul_smul_comm, smul_smul, one_mul, mul_one, T_mul_self, smul_add, smul_sub]
+  match_scalars
+  · linear_combination (q : R) ^ 2 * (↑u⁻¹ : R) * hu'
+  · linear_combination -(q : R) * (↑u⁻¹ : R) * hu' - (q : R) * (↑u⁻¹ : R) ^ 2 * hq
+
+/-- **Eigenvalue decomposition of Wenzl's generator `g i = q • T i`.** With `e_i^W` Wenzl's
+projection `(1 + q ^ 2)⁻¹ • (q ^ 2 - q • T i)`, `g i = q ^ 2 • (1 - e_i^W) - e_i^W`. -/
+theorem smul_T_eq_smul_one_sub_wenzlProjection_sub (u : Rˣ) (hu : (u : R) = 1 + (q : R) ^ 2)
+    (i : ℕ) :
+    (q : R) • T q i =
+      ((q : R) ^ 2) • (1 - (↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i)) -
+        (↑u⁻¹ : R) • (algebraMap R _ ((q : R) ^ 2) - (q : R) • T q i) := by
+  have hu' : (↑u⁻¹ : R) * (1 + (q : R) ^ 2) = 1 := hu ▸ u.inv_mul
+  simp only [Algebra.algebraMap_eq_smul_one]
+  match_scalars
+  · linear_combination -(q : R) * hu'
+  · linear_combination (q : R) ^ 2 * hu'
+
+end WenzlProjection
 
 end InfiniteTypeAHeckeAlgebra
 

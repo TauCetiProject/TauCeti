@@ -42,7 +42,7 @@ open CategoryTheory
 
 open scoped ModuleCat.Algebra
 
-universe u v w
+universe u v w z
 
 namespace ModuleCat
 
@@ -70,7 +70,7 @@ theorem homLinearEquiv_comp_rightComp {M N Y : ModuleCat.{w} A} (g : M ⟶ N) :
       g.hom.compRight R ∘ₗ (homLinearEquiv (S := R) : (Y ⟶ M) ≃ₗ[R] (Y →ₗ[A] M)).toLinearMap :=
   LinearMap.ext fun _ ↦ rfl
 
-variable {W : Type w} [AddCommGroup W] [Module A W] [Module R W] [IsScalarTower R A W]
+variable {W : Type z} [AddCommGroup W] [Module A W] [Module R W] [IsScalarTower R A W]
   {B : ModuleCat.{w} A} (eW : W ≃ₗ[A] B)
 
 /-- Morphisms into a bundled module `B` are the `A`-linear maps into `W`, for `W ≃ₗ[A] B`. On the
