@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import TauCeti.Analysis.Normed.Module.DoubleDual
 public import TauCeti.MeasureTheory.Function.Holder
 public import TauCeti.MeasureTheory.Function.Lp.ScalarEvaluation
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Pettis integrals of scalarly `Lᵖ` functions against `L^q` multipliers
@@ -98,17 +99,6 @@ private theorem dunfordLpCLM_apply (f : S → X)
   refine integral_congr_ae ?_
   filter_upwards [coeFn_scalarEvalLp (ι := .id 𝕜 _) (hf := hfp) x'] with s hs
   rw [ContinuousLinearMap.mul_apply', hs, ContinuousLinearMap.id_apply]
-
-/-- Integrating against a constant multiple `c 𝟙_A` of an indicator is `c` times the integral
-over `A`. -/
-private theorem integral_indicatorConstLp_mul {r : ℝ≥0∞} {A : Set S} (hA : MeasurableSet A)
-    (hμA : μ A ≠ ∞) (c : 𝕜) (g : S → 𝕜) :
-    ∫ s, indicatorConstLp r hA hμA c s * g s ∂μ = c * ∫ s in A, g s ∂μ := by
-  rw [← integral_const_mul, ← integral_indicator hA]
-  refine integral_congr_ae ?_
-  filter_upwards [indicatorConstLp_coeFn (p := r) (hs := hA) (hμs := hμA) (c := c)] with s hs
-  rw [hs]
-  by_cases hsA : s ∈ A <;> simp [hsA]
 
 /-- The functional of a constant multiple of an indicator lies in the image of `X` when `f` is
 bounded on the set. -/
