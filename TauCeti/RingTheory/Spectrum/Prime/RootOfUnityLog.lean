@@ -9,24 +9,20 @@ public import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
 public import Mathlib.RingTheory.Spectrum.Prime.Topology
 public import Mathlib.Topology.LocallyConstant.Basic
 
+import TauCeti.RingTheory.Polynomial.Cyclotomic.Roots
+
 /-!
 # Discrete logarithms of roots of unity on a prime spectrum
 
 Let `R` be a commutative ring in which `n : ℕ` is a unit, and let `ζ ∈ R` be a root of the `n`-th
-cyclotomic polynomial `Polynomial.cyclotomic n R`. Then the image of `ζ` under any ring homomorphism
-`f : R →+* S` into an integral domain is a primitive `n`-th root of unity
-(`Polynomial.isPrimitiveRoot_map_of_isRoot_cyclotomic`).
-
-Consequently, if `y ∈ R` satisfies `y ^ n = 1`, then at every prime `p ∈ PrimeSpectrum R` the
-residue class of `y` in the domain `R ⧸ p.asIdeal` is a unique power of `ζ` with exponent `< n`,
-and this exponent defines a locally constant function `e : LocallyConstant (PrimeSpectrum R) ℕ`
-satisfying `e p < n` and `y - ζ ^ e p ∈ p.asIdeal` for every prime `p`
-(`PrimeSpectrum.exists_locallyConstant_sub_pow_mem_of_pow_eq_one`).
+cyclotomic polynomial `Polynomial.cyclotomic n R`. If `y ∈ R` satisfies `y ^ n = 1`, then at every
+prime `p ∈ PrimeSpectrum R` the residue class of `y` in the domain `R ⧸ p.asIdeal` is a unique
+power of `ζ` with exponent `< n`, and this exponent defines a locally constant function
+`e : LocallyConstant (PrimeSpectrum R) ℕ` satisfying `e p < n` and `y - ζ ^ e p ∈ p.asIdeal` for
+every prime `p` (`PrimeSpectrum.exists_locallyConstant_sub_pow_mem_of_pow_eq_one`).
 
 ## Main results
 
-* `Polynomial.isPrimitiveRoot_map_of_isRoot_cyclotomic`: a root of `cyclotomic n R` maps to a
-  primitive `n`-th root of unity in any domain when `n` is a unit in `R`.
 * `PrimeSpectrum.exists_locallyConstant_sub_pow_mem_of_pow_eq_one`: an `n`-th root of unity `y` in
   `R` agrees modulo every prime `p` with `ζ ^ e p` for a locally constant exponent `e` with
   `e p < n`.
@@ -35,24 +31,13 @@ satisfying `e p < n` and `y - ζ ^ e p ∈ p.asIdeal` for every prime `p`
 
 Generalized from `grh-lean` (https://github.com/lsernau/grh-lean at commit
 72fead102f663d5c7a407964a13dc0cf9d977207, Apache 2.0, Copyright 2026 Anthropic, PBC), file
-`src/Lib/Cohomology/ProperBaseChange/LineCharts.lean` (`isPrimitiveRoot_map_of_isRoot_cyclotomic`,
-`exists_locallyConstant_sub_pow_mem_of_pow_eq_one`).
+`src/Lib/Cohomology/ProperBaseChange/LineCharts.lean`
+(`exists_locallyConstant_sub_pow_mem_of_pow_eq_one`).
 -/
 
 public section
 
-universe u v
-
-/-- If `n` is a unit in a commutative ring `R` and `ζ ∈ R` is a root of the `n`-th cyclotomic
-polynomial, then `f ζ` is a primitive `n`-th root of unity for every ring homomorphism `f : R →+* S`
-into an integral domain `S`. -/
-theorem Polynomial.isPrimitiveRoot_map_of_isRoot_cyclotomic {R : Type u} {S : Type v}
-    [CommRing R] [CommRing S] [IsDomain S] {n : ℕ} (hn : IsUnit (n : R)) {ζ : R}
-    (hζ : (Polynomial.cyclotomic n R).IsRoot ζ) (f : R →+* S) :
-    IsPrimitiveRoot (f ζ) n := by
-  have : NeZero (n : S) := ⟨by simpa using (hn.map f).ne_zero⟩
-  rw [← Polynomial.isRoot_cyclotomic_iff, ← Polynomial.map_cyclotomic n f]
-  exact hζ.map f
+universe u
 
 /-- Let `n` be a unit in a commutative ring `R` and `ζ ∈ R` a root of the `n`-th cyclotomic
 polynomial. For every `y ∈ R` with `y ^ n = 1`, there is a locally constant function
@@ -63,8 +48,10 @@ theorem PrimeSpectrum.exists_locallyConstant_sub_pow_mem_of_pow_eq_one {R : Type
     {y : R} (hy : y ^ n = 1) :
     ∃ e : LocallyConstant (PrimeSpectrum R) ℕ,
       ∀ p : PrimeSpectrum R, e p < n ∧ y - ζ ^ e p ∈ p.asIdeal := by
-  have h_prim (p : PrimeSpectrum R) : IsPrimitiveRoot (Ideal.Quotient.mk p.asIdeal ζ) n :=
-    Polynomial.isPrimitiveRoot_map_of_isRoot_cyclotomic hn hζ (Ideal.Quotient.mk p.asIdeal)
+  have h_prim (p : PrimeSpectrum R) : IsPrimitiveRoot (Ideal.Quotient.mk p.asIdeal ζ) n := by
+    have : NeZero (n : R ⧸ p.asIdeal) :=
+      ⟨by simpa using (hn.map (Ideal.Quotient.mk p.asIdeal)).ne_zero⟩
+    exact Polynomial.isPrimitiveRoot_map_of_isRoot_cyclotomic hζ (Ideal.Quotient.mk p.asIdeal)
   have h_exists (p : PrimeSpectrum R) :
       ∃ i < n, Ideal.Quotient.mk p.asIdeal ζ ^ i = Ideal.Quotient.mk p.asIdeal y := by
     have : NeZero n := ⟨fun h0 ↦ by

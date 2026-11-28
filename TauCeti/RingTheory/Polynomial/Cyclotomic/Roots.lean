@@ -94,4 +94,19 @@ theorem roots_X_pow_add_one_mul_X_add_one {K : Type*} [CommRing K] [IsDomain K] 
     List.map_map, List.map_singleton]
   rfl
 
+
+/-- If `ζ ∈ R` is a root of the `n`-th cyclotomic polynomial and `f : R →+* S` is a ring
+homomorphism into an integral domain `S` with `(n : S) ≠ 0`, then `f ζ` is a primitive `n`-th root
+of unity.
+
+Adapted from `grh-lean` (https://github.com/lsernau/grh-lean at commit
+72fead102f663d5c7a407964a13dc0cf9d977207, Apache 2.0, Copyright 2026 Anthropic, PBC), file
+`src/Lib/Cohomology/ProperBaseChange/LineCharts.lean`
+(`isPrimitiveRoot_map_of_isRoot_cyclotomic`). -/
+theorem isPrimitiveRoot_map_of_isRoot_cyclotomic {R S : Type*} [CommRing R] [CommRing S]
+    [IsDomain S] {n : ℕ} [NeZero (n : S)] {ζ : R} (hζ : (cyclotomic n R).IsRoot ζ)
+    (f : R →+* S) : IsPrimitiveRoot (f ζ) n := by
+  rw [← isRoot_cyclotomic_iff, ← map_cyclotomic n f]
+  exact hζ.map f
+
 end Polynomial
