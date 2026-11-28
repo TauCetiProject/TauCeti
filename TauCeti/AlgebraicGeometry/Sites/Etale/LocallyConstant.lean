@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Pullback
 public import TauCeti.CategoryTheory.Sites.LocallyConstant.Basic
 
+import TauCeti.CategoryTheory.Sites.JointlySurjective
+
 /-!
 # Locally constant sheaves on the small étale site
 
@@ -148,12 +150,12 @@ theorem isLocallyConstantIn_smallEtaleTopology_iff_of_etaleCover {ι : Type*} {U
   choose κ W w hw hcov htriv using fun i ↦
     (((u i).smallEtalePullback A).obj F).isLocallyConstantIn_smallEtaleTopology_iff P |>.mp (h i)
   refine .of_etaleCover_constantSheaf (fun p : Σ i, κ i ↦ w p.1 p.2 ≫ u p.1)
-    (Set.eq_univ_of_forall fun s ↦ ?_) fun p ↦ ?_
-  · obtain ⟨i, x, rfl⟩ := Set.mem_iUnion.mp (hu ▸ Set.mem_univ s)
-    obtain ⟨k, z, rfl⟩ := Set.mem_iUnion.mp (hcov i ▸ Set.mem_univ x)
-    exact Set.mem_iUnion.mpr ⟨⟨i, k⟩, z, Scheme.Hom.comp_apply (w i k) (u i) z⟩
-  · obtain ⟨M, hM, ⟨e⟩⟩ := htriv p.1 p.2
-    exact ⟨M, hM, ⟨(Hom.smallEtalePullbackComp (w p.1 p.2) (u p.1) A).app F ≪≫ e⟩⟩
+    (by
+      simp_rw [Scheme.Hom.comp_base, TopCat.coe_comp]
+      exact (Set.iUnion_range_comp_sigma (fun i ↦ ⇑(u i)) hcov).trans hu)
+    fun p ↦ ?_
+  obtain ⟨M, hM, ⟨e⟩⟩ := htriv p.1 p.2
+  exact ⟨M, hM, ⟨(Hom.smallEtalePullbackComp (w p.1 p.2) (u p.1) A).app F ≪≫ e⟩⟩
 
 /-- An étale sheaf `F` on `S` is locally constant with values in `P` if and only if its pullback
 along a surjective étale morphism `u : U ⟶ S` is locally constant. -/

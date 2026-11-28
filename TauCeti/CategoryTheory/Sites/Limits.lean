@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.Grp.Limits
+public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 public import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.BinaryProducts
 public import Mathlib.CategoryTheory.Limits.Types.Products
+public import Mathlib.CategoryTheory.Sites.Abelian
 public import Mathlib.CategoryTheory.Sites.ConstantSheaf
 public import Mathlib.CategoryTheory.Sites.Limits
 public import Mathlib.CategoryTheory.Sites.PreservesSheafification
@@ -26,7 +28,9 @@ Sheafifying sectionwise composition also preserves finite limits when the coeffi
 does (`CategoryTheory.Sheaf.preservesFiniteLimits_composeAndSheafify`), and so does the constant
 sheaf functor when sheafification is left exact
 (`CategoryTheory.Sheaf.preservesFiniteLimits_constantSheaf`). The constant sheaf functor
-preserves all colimits (`CategoryTheory.Sheaf.preservesColimitsOfSize_constantSheaf`).
+preserves all colimits (`CategoryTheory.Sheaf.preservesColimitsOfSize_constantSheaf`), hence
+preserves short exact sequences between abelian categories
+(`CategoryTheory.Sheaf.shortExact_map_constantSheaf`).
 
 For sheaves of types, the sections of a binary product `F ⨯ G` over `W` are pairs of sections:
 any sections `a` of `F` and `b` of `G` over `W` are the projections of a section of `F ⨯ G`
@@ -79,6 +83,13 @@ preserves colimits, followed by sheafification, which is a left adjoint. -/
 instance preservesColimitsOfSize_constantSheaf (A : Type*) [Category* A] [HasWeakSheafify J A] :
     PreservesColimitsOfSize.{w', w''} (constantSheaf J A) :=
   inferInstanceAs (PreservesColimitsOfSize (Functor.const Cᵒᵖ ⋙ presheafToSheaf J A))
+
+/-- The constant sheaf functor on an abelian category with sheafification preserves short exact
+sequences. -/
+theorem shortExact_map_constantSheaf {A : Type*} [Category* A] [Abelian A] [HasSheafify J A]
+    {T : ShortComplex A} (hT : T.ShortExact) :
+    (T.map (constantSheaf J A)).ShortExact :=
+  hT.map_of_exact _
 
 variable {J} in
 /-- Sections `a` of `F` and `b` of `G` over `W` are the projections of a section of `F ⨯ G`. -/

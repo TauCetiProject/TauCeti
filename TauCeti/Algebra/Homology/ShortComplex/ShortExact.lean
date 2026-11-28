@@ -60,6 +60,8 @@ simultaneously.
 * `CategoryTheory.ShortComplex.ShortExact.of_isColimit_cokernelCofork`: the cokernel of a morphism
   of short exact sequences whose third component is a monomorphism is short exact; the source
   only needs to be exact with an epimorphic second map.
+* `CategoryTheory.ShortComplex.ShortExact.of_outerIso`: replacing the outer terms of a short
+  exact sequence by isomorphic objects preserves short exactness.
 * `CategoryTheory.Functor.cokernelMapFToMapX₃`: for a functor `G` and a short complex
   `X ⟶ I ⟶ Q`, the morphism `coker (G X ⟶ G I) ⟶ G Q`, with
   `CategoryTheory.Functor.shortExact_cokernelMapFToMapX₃` the short exactness of
@@ -303,6 +305,14 @@ theorem ShortExact.isSplitMono_f_iff_isSplitEpi_g {C : Type u} [Category.{v} C] 
   · intro hg
     exact (Splitting.ofExactOfSection S hS.exact
       (section_ S.g) (IsSplitEpi.id S.g) hS.mono_f).isSplitMono_f
+
+/-- Replacing the outer terms of a short exact sequence by isomorphic objects preserves short
+exactness. -/
+lemma ShortExact.of_outerIso {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
+    {S : ShortComplex C} (hS : S.ShortExact) {C₁ C₃ : C} (e₁ : S.X₁ ≅ C₁) (e₃ : S.X₃ ≅ C₃) :
+    (ShortComplex.mk (e₁.inv ≫ S.f) (S.g ≫ e₃.hom)
+      (by rw [Category.assoc, ← Category.assoc S.f, S.zero, zero_comp, comp_zero])).ShortExact :=
+  ShortComplex.shortExact_of_iso (ShortComplex.isoMk e₁ (Iso.refl _) e₃ (by simp) (by simp)) hS
 
 variable {C : Type u} [Category.{v} C] [Abelian C]
 

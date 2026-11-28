@@ -228,6 +228,16 @@ lemma constantSheafAdj_homEquiv_apply {T : C} (hT : IsTerminal T) (M : A) (F : S
   change 𝟙 M ≫ _ = _
   exact Category.id_comp _
 
+/-- On a site with a terminal object `T`, the adjunction `constantSheafAdj` sends
+`(constantSheaf J A).map f` to `f` followed by `toSheafify` at `T`. -/
+lemma constantSheafAdj_homEquiv_map {T : C} (hT : IsTerminal T) {M N : A} (f : M ⟶ N) :
+    (constantSheafAdj J A hT).homEquiv M ((constantSheaf J A).obj N)
+        ((constantSheaf J A).map f) =
+      f ≫ (toSheafify J ((Functor.const Cᵒᵖ).obj N)).app (Opposite.op T) := by
+  rw [constantSheafAdj_homEquiv_apply]
+  exact (NatTrans.congr_app (toSheafify_naturality J ((Functor.const Cᵒᵖ).map f))
+    (Opposite.op T)).symm
+
 /-- The constant-sheaf adjunction is compatible with a map of terminal objects. -/
 lemma constantSheafAdj_homEquiv_comp_map {S T : C} (hS : IsTerminal S) (hT : IsTerminal T)
     (i : S ⟶ T) (M : A) (F : Sheaf J A) (f : (constantSheaf J A).obj M ⟶ F) :

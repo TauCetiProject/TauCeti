@@ -14,7 +14,8 @@ Mathlib's `Types.jointlySurjectivePrecoverage.comap F` declares a family of maps
 it is jointly surjective after applying a functor `F : C ⥤ Type u`
 (`Presieve.ofArrows_mem_comap_jointlySurjectivePrecoverage_iff`). This file shows that joint
 surjectivity of a family under `F` depends on `F` only up to natural isomorphism
-(`CategoryTheory.Iso.forall_exists_mem_range_map_iff`).
+(`CategoryTheory.Iso.forall_exists_mem_range_map_iff`), and proves that refining a family of maps
+by jointly surjective families preserves the union of ranges (`Set.iUnion_range_comp_sigma`).
 -/
 
 public section
@@ -38,3 +39,15 @@ theorem forall_exists_mem_range_map_iff {C : Type*} [Category* C] {F F' : C ⥤ 
   rw [← NatTrans.naturality_apply, ht, Iso.inv_hom_id_app_apply]
 
 end CategoryTheory.Iso
+
+/-- Refining a family of functions `u : ∀ i, U i → S` by families `v i : ∀ k, V i k → U i` whose
+ranges cover each `U i` preserves the union of ranges. -/
+theorem _root_.Set.iUnion_range_comp_sigma {S : Type*} {ι : Type*} {U : ι → Type*}
+    (u : ∀ i, U i → S) {κ : ι → Type*} {V : ∀ i, κ i → Type*}
+    {v : ∀ i, ∀ k : κ i, V i k → U i} (hv : ∀ i, ⋃ k, Set.range (v i k) = .univ) :
+    (⋃ p : Σ i, κ i, Set.range (u p.1 ∘ v p.1 p.2)) = ⋃ i, Set.range (u i) := by
+  ext s
+  simp only [Set.mem_iUnion, Set.mem_range, Function.comp_apply, Sigma.exists]
+  refine ⟨fun ⟨i, k, z, hz⟩ ↦ ⟨i, v i k z, hz⟩, fun ⟨i, x, hx⟩ ↦ ?_⟩
+  obtain ⟨k, z, rfl⟩ := Set.mem_iUnion.mp (hv i ▸ Set.mem_univ x)
+  exact ⟨i, k, z, hx⟩

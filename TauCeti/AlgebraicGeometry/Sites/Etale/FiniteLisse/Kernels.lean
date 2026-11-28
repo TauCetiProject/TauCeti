@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.ObjectProperty.Kernels
 public import TauCeti.AlgebraicGeometry.Sites.Etale.ModuleSheaf
 public import TauCeti.CategoryTheory.Sites.LocallyConstant.Module
 
@@ -15,10 +16,12 @@ Let `S` be a scheme and `Λ` a ring. This file shows that finite lisse étale sh
 `Λ`-modules on `S` (`CategoryTheory.Sheaf.IsFiniteLisse`) are closed under cokernels, and under
 kernels when `Λ` is Noetherian (for instance finite):
 
-* `CategoryTheory.Sheaf.IsFiniteLisse.kernel`: the kernel of a morphism of finite lisse sheaves
-  is finite lisse when `Λ` is Noetherian.
-* `CategoryTheory.Sheaf.IsFiniteLisse.cokernel`: the cokernel of a morphism of finite lisse
-  sheaves is finite lisse.
+* `CategoryTheory.Sheaf.IsFiniteLisse.kernel`,
+  `CategoryTheory.Sheaf.isClosedUnderKernels_isFiniteLisse`: the kernel of a morphism of finite
+  lisse sheaves is finite lisse when `Λ` is Noetherian.
+* `CategoryTheory.Sheaf.IsFiniteLisse.cokernel`,
+  `CategoryTheory.Sheaf.isClosedUnderCokernels_isFiniteLisse`: the cokernel of a morphism of
+  finite lisse sheaves is finite lisse.
 
 These are the étale cases of the statements for locally constant sheaves of finite type on a site
 (`CategoryTheory.Sheaf.IsLocallyConstantIn.kernel`,
@@ -56,5 +59,22 @@ sheaves of `Λ`-modules is finite lisse. -/
 theorem IsFiniteLisse.cokernel {F G : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)}
     (hF : F.IsFiniteLisse) (hG : G.IsFiniteLisse) (φ : F ⟶ G) : (cokernel φ).IsFiniteLisse :=
   IsLocallyConstantIn.cokernel hF hG φ
+
+/-- Over any ring `Λ`, finite lisse étale sheaves of `Λ`-modules are closed under cokernels. -/
+instance isClosedUnderCokernels_isFiniteLisse :
+    ObjectProperty.IsClosedUnderCokernels
+      (IsFiniteLisse : ObjectProperty (Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))) where
+  cokernels_le := by
+    rintro _ ⟨φ, k, hk, hF, hG⟩
+    exact (hF.cokernel hG φ).of_iso (hk.coconePointUniqueUpToIso (cokernelIsCokernel φ)).symm
+
+/-- Over a left Noetherian ring `Λ`, finite lisse étale sheaves of `Λ`-modules are closed under
+kernels. -/
+instance isClosedUnderKernels_isFiniteLisse [IsNoetherianRing Λ] :
+    ObjectProperty.IsClosedUnderKernels
+      (IsFiniteLisse : ObjectProperty (Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))) where
+  kernels_le := by
+    rintro _ ⟨φ, k, hk, hF, hG⟩
+    exact (hF.kernel hG φ).of_iso (hk.conePointUniqueUpToIso (kernelIsKernel φ)).symm
 
 end CategoryTheory.Sheaf
