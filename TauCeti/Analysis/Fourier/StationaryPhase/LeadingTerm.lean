@@ -87,7 +87,7 @@ private theorem exists_amplitude_decomposition {E : Type*} [NormedAddCommGroup E
 private theorem integrable_smul_of_eqOn_compact {E V : Type*}
     [TopologicalSpace E] [R1Space E] [MeasurableSpace E] [BorelSpace E]
     {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
-    [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V] {K : Set E} (hK : IsCompact K)
+    [NormedAddCommGroup V] [NormedSpace ℂ V] {K : Set E} (hK : IsCompact K)
     {p p' : E → ℂ} (hp' : Continuous p') (hp : EqOn p p' K) {a : E → V} (ha : Continuous a)
     (has : ∀ x ∉ K, a x = 0) : Integrable (fun x ↦ p x • a x) μ := by
   have h : (fun x ↦ p x • a x) = fun x ↦ p' x • a x := by
