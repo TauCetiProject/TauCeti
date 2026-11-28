@@ -10,7 +10,9 @@ public import Mathlib.AlgebraicGeometry.Fiber
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import Mathlib.FieldTheory.IsSepClosed
+public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 import Mathlib.AlgebraicGeometry.Morphisms.IsIso
+import Mathlib.RingTheory.Unramified.Field
 import TauCeti.AlgebraicGeometry.Morphisms.Epi
 import TauCeti.CategoryTheory.MorphismProperty.Limits
 import TauCeti.FieldTheory.IsSepClosed
@@ -26,6 +28,10 @@ fields, even over a nonreduced or nonnoetherian base and without flatness.
 The affine case uses `Algebra.FormallyUnramified.of_formallyUnramified_baseChange_field`.
 The passage between arbitrary field-valued points and residue-field fibres uses Mathlib's
 factorization of a field-valued point through the residue field of its image.
+
+For a dominant morphism of integral schemes locally of finite type, the generic stalk map is
+formally unramified exactly when the extension of function fields is separable. This uses
+Mathlib's `Algebra.FormallyUnramified.iff_isSeparable` for fields.
 
 Dually to Mathlib's `isClosedImmersion_equalizer_ι_left` for separated targets, the equalizer of
 two morphisms over `S` into a scheme formally unramified and locally of finite type over `S` is an
@@ -83,6 +89,24 @@ end TauCeti
 namespace AlgebraicGeometry
 
 variable {X Y : Scheme.{u}}
+
+/-- For a dominant morphism of integral schemes locally of finite type, the generic stalk map is
+formally unramified precisely when the extension of function fields is separable. -/
+theorem Scheme.Hom.formallyUnramified_stalkMap_genericPoint_iff_isSeparable_functionField
+    [IsIntegral X] [IsIntegral Y] (f : X ⟶ Y) [IsDominant f] [LocallyOfFiniteType f] :
+    (f.stalkMap (genericPoint X)).hom.FormallyUnramified ↔
+      letI := f.functionFieldMap.hom.toAlgebra
+      Algebra.IsSeparable Y.functionField X.functionField := by
+  let := f.functionFieldMap.hom.toAlgebra
+  let e : Arrow.mk f.functionFieldMap ≅ Arrow.mk (f.stalkMap (genericPoint X)) :=
+    Arrow.isoMk (Y.presheaf.stalkCongr (.of_eq f.genericPoint_eq_of_isDominant.symm))
+      (Iso.refl _) (by simpa only [Arrow.mk_hom, Iso.refl_hom, Category.comp_id] using
+        f.stalkCongr_hom_stalkMap_genericPoint)
+  have : Algebra.EssFiniteType Y.functionField X.functionField :=
+    (RingHom.EssFiniteType.respectsIso.arrow_mk_iso_iff e).mpr
+      (LocallyOfFiniteType.stalkMap f (genericPoint X))
+  exact (RingHom.FormallyUnramified.respectsIso.arrow_mk_iso_iff e).symm.trans
+    (Algebra.FormallyUnramified.iff_isSeparable _ _)
 
 /-- A morphism locally of finite type is formally unramified if its base change along every
 field-valued point of the target is formally unramified. -/
