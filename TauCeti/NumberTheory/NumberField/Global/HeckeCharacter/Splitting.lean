@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.CMType.InfinitePlace
+public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.FiniteComponent
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.InfinityType
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.GaloisAction
 
@@ -44,6 +45,8 @@ trivial on `E^×`, the product `∏_w Φ_w(u) / |Φ_w(u)|` is `1` for every unit
 * `TauCeti.GlobalNumberFields.HeckeCharacter.IsSplitting.apply_mul_conj`: `υ(x conj x) = 1`.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.IsSplitting.apply_ofFiniteIdele`: `υ` is trivial on
   the finite ideles in `Ô^×`.
+* `TauCeti.GlobalNumberFields.HeckeCharacter.IsSplitting.finiteComponent_apply_eq_one`: `υ` is
+  unramified, its component at a finite place `v` being trivial on `𝓞_v^×`.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.IsSplitting.infiniteComponent_apply`: the component
   of `υ` at an infinite place `w` is `z ↦ Φ_w(z) / |z|`.
 * `TauCeti.GlobalNumberFields.HeckeCharacter.IsSplitting.prod_embedding_div_norm_eq_one`: the
@@ -104,12 +107,24 @@ theorem apply_ofFiniteIdele (hυ : υ.IsSplitting Φ) {u : (FiniteAdeleRing (�
   rw [hυ.apply_of_mem_integralUnits _ (by rwa [IdeleGroup.toFiniteIdele_ofFiniteIdele])]
   simp
 
+/-- **A splitting character is unramified**: its component at a finite place `v` is trivial on
+the units of `𝓞_v`, the `u ∈ E_v^×` with `|u|_v = 1`. -/
+theorem finiteComponent_apply_eq_one (hυ : υ.IsSplitting Φ) (v : HeightOneSpectrum (𝓞 E))
+    {u : (v.adicCompletion E)ˣ} (hu : Valued.v (u : v.adicCompletion E) = 1) :
+    υ.finiteComponent v u = 1 := by
+  rw [finiteComponent_apply, IdeleClassGroup.ofAdicCompletion_apply]
+  refine Units.ext ?_
+  rw [hυ.apply_of_mem_integralUnits _ (by
+    rw [IdeleGroup.toFiniteIdele_ofAdicCompletion]
+    exact FiniteAdeleRing.unitsOfAdicCompletion_mem_integralUnits_iff.2 hu)]
+  simp
+
 /-- **The component of a splitting character at an infinite place** `w` is `z ↦ Φ_w(z) / |z|`. -/
 theorem infiniteComponent_apply (hυ : υ.IsSplitting Φ) (w : InfinitePlace E)
     (z : w.Completionˣ) :
     (υ.infiniteComponent w z : ℂ) = Φ.completionEmbedding w z / ‖(z : w.Completion)‖ := by
-  rw [HeckeCharacter.infiniteComponent_apply, IdeleClassGroup.ofCompletion,
-    MonoidHom.comp_apply, QuotientGroup.coe_mk', hυ.apply_of_mem_integralUnits _
+  rw [HeckeCharacter.infiniteComponent_apply, IdeleClassGroup.ofCompletion_apply,
+    hυ.apply_of_mem_integralUnits _
       (by rw [IdeleGroup.toFiniteIdele_ofCompletion]; exact one_mem _)]
   -- the idele concentrated at `w` has components `1` away from `w`
   rw [Finset.prod_eq_single w (fun w' _ hw' ↦ by simp [hw']) (by simp)]

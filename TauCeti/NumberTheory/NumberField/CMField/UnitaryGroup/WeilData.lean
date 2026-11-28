@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.NumberTheory.NumberField.CMField.AdeleStar
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.AddChar
-public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.FiniteComponent
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Splitting
-import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.IntegralIdeal
 
 /-!
 # Weil data of a CM field
@@ -35,7 +32,8 @@ turns a hermitian form into the symplectic form of a Heisenberg group, `α` scal
 file records the scalars built from them:
 
 * `c₀ = (1 − j⁻¹)/2`, an algebraic integer with `c₀ + conj c₀ = 1` (`TauCeti.WeilData.traceOne`);
-* the character `ψ₀(z) = ψ_f(j α (conj α) z)` of `𝔸_f`, for which `Ô` is self-dual: `z ∈ Ô`
+* the finite idele `t = j α (conj α)` (`TauCeti.WeilData.scaleIdele`), a generator of `𝔇⁻¹`;
+* the character `ψ₀(z) = ψ_f(t z)` of `𝔸_f`, for which `Ô` is self-dual: `z ∈ Ô`
   exactly when `ψ₀(z u) = 1` for every `u ∈ Ô`
   (`TauCeti.WeilData.forall_selfDualAddChar_mul_eq_one_iff`);
 * the real scale `κ_w = (2π Im Φ_w(j))^{−1/2}` at an infinite place `w`
@@ -54,14 +52,15 @@ of every global unit multiply to one, which fails for `i ∈ ℚ(i)`.
 ## Main definitions
 
 * `TauCeti.WeilData Φ`: Weil data for `E` and the CM type `Φ`.
-* `TauCeti.WeilData.traceOne`, `TauCeti.WeilData.selfDualAddChar`, `TauCeti.WeilData.realScale`,
-  `TauCeti.WeilData.adelicChar`, `TauCeti.WeilData.vacuum`, `TauCeti.WeilData.semichar`: the
-  scalars, characters and functions above.
+* `TauCeti.WeilData.traceOne`, `TauCeti.WeilData.scaleIdele`, `TauCeti.WeilData.selfDualAddChar`,
+  `TauCeti.WeilData.realScale`, `TauCeti.WeilData.adelicChar`, `TauCeti.WeilData.vacuum`,
+  `TauCeti.WeilData.semichar`: the scalars, characters and functions above.
 
 ## Main results
 
 * `TauCeti.WeilData.im_embedding_j`: `Im Φ_w(j) = |j|_w`, so it is positive.
 * `TauCeti.WeilData.traceOne_add_star`: `c₀ + conj c₀ = 1`.
+* `TauCeti.WeilData.toFractionalIdeal_scaleIdele`: `j α (conj α)` generates `𝔇⁻¹`.
 * `TauCeti.WeilData.forall_selfDualAddChar_mul_eq_one_iff`: `Ô` is self-dual for `ψ₀`.
 * `TauCeti.WeilData.vacuum_zero`, `TauCeti.WeilData.norm_vacuum_of_forall_mem`,
   `TauCeti.WeilData.vacuum_of_not_forall_mem`, `TauCeti.WeilData.continuous_vacuum`: the vacuum
@@ -130,6 +129,7 @@ variable {Φ : CMType E} (W : WeilData Φ)
 /-! ### The element `j` -/
 
 /-- `j` is purely imaginary under every complex embedding. -/
+@[simp]
 theorem re_embedding_j (φ : E →+* ℂ) : (φ W.j).re = 0 := by
   have h : conj (φ W.j) = -φ W.j := by
     rw [← complexEmbedding_complexConj, ← star_eq_complexConj, W.star_j, map_neg]
@@ -138,6 +138,7 @@ theorem re_embedding_j (φ : E →+* ℂ) : (φ W.j).re = 0 := by
   linarith
 
 /-- **`Im Φ_w(j) = |j|_w`**: `Φ_w(j)` is purely imaginary with positive imaginary part. -/
+@[simp]
 theorem im_embedding_j (w : InfinitePlace E) : (Φ.embedding w W.j).im = w W.j := by
   have him := W.im_embedding_j_pos _ (Φ.embedding_mem w)
   rw [← Φ.norm_embedding_apply w, Complex.norm_eq_sqrt_sq_add_sq, W.re_embedding_j]
@@ -171,15 +172,35 @@ theorem traceOne_add_star : W.traceOne + star W.traceOne = 1 := by
 
 /-! ### The self-dual character `ψ₀` -/
 
-/-- The character `ψ₀(z) = ψ_f(j α (conj α) z)` of the finite adeles. -/
-def selfDualAddChar : AddChar (FiniteAdeleRing (𝓞 E) E) Circle :=
-  (finiteAdeleAddChar E).compAddMonoidHom
-    (AddMonoidHom.mulLeft (algebraMap E _ W.j * W.α * star (W.α : FiniteAdeleRing (𝓞 E) E)))
+/-- The finite idele `t = j α (conj α)` that scales `ψ_f` to `ψ₀`; it generates the inverse
+different `𝔇⁻¹` (`TauCeti.WeilData.toFractionalIdeal_scaleIdele`). -/
+def scaleIdele : (FiniteAdeleRing (𝓞 E) E)ˣ :=
+  unitEmbedding (𝓞 E) E (Units.mk0 W.j W.j_ne_zero) * (W.α * star W.α)
 
-/-- The defining formula `ψ₀(z) = ψ_f(j α (conj α) z)`. -/
+/-- The finite adele underlying `t` is `j α (conj α)`. -/
+@[simp]
+theorem coe_scaleIdele :
+    (W.scaleIdele : FiniteAdeleRing (𝓞 E) E) =
+      algebraMap E _ W.j * W.α * star (W.α : FiniteAdeleRing (𝓞 E) E) := by
+  rw [scaleIdele, Units.val_mul, Units.val_mul, Units.coe_star, unitEmbedding_apply, Units.val_mk0,
+    mul_assoc]
+
+/-- **`t = j α (conj α)` generates the inverse different**: its fractional ideal is `𝔇⁻¹`. -/
+theorem toFractionalIdeal_scaleIdele :
+    toFractionalIdeal W.scaleIdele = Units.mk0 (FractionalIdeal.dual ℤ ℚ 1)
+      (FractionalIdeal.dual_ne_zero ℤ ℚ one_ne_zero) := by
+  refine Units.ext ?_
+  rw [scaleIdele, map_mul, toFractionalIdeal_unitEmbedding, Units.val_mul, coe_toPrincipalIdeal,
+    Units.val_mk0, Units.val_mk0, W.spanSingleton_mul_toFractionalIdeal]
+
+/-- The character `ψ₀(z) = ψ_f(t z)` of the finite adeles, where `t = j α (conj α)`. -/
+def selfDualAddChar : AddChar (FiniteAdeleRing (𝓞 E) E) Circle :=
+  (finiteAdeleAddChar E).compAddMonoidHom (AddMonoidHom.mulLeft (W.scaleIdele : _))
+
+/-- The defining formula `ψ₀(z) = ψ_f(t z)`, where `t = j α (conj α)`
+(`TauCeti.WeilData.coe_scaleIdele`). -/
 theorem selfDualAddChar_apply (z : FiniteAdeleRing (𝓞 E) E) :
-    W.selfDualAddChar z =
-      finiteAdeleAddChar E (algebraMap E _ W.j * W.α * star (W.α : FiniteAdeleRing (𝓞 E) E) * z) :=
+    W.selfDualAddChar z = finiteAdeleAddChar E (W.scaleIdele * z) :=
   (rfl)
 
 /-- `ψ₀` is continuous. -/
@@ -188,23 +209,13 @@ theorem continuous_selfDualAddChar : Continuous W.selfDualAddChar :=
   continuous_finiteAdeleAddChar.comp (continuous_const.mul continuous_id)
 
 /-- **`Ô` is self-dual for `ψ₀`**: a finite adele `z` is integral exactly when `ψ₀(z u) = 1` for
-every `u ∈ Ô`. -/
+every `u ∈ Ô`, because `t = j α (conj α)` generates the inverse different. -/
 theorem forall_selfDualAddChar_mul_eq_one_iff (z : FiniteAdeleRing (𝓞 E) E) :
     (∀ u ∈ integralAdeles (𝓞 E) E, W.selfDualAddChar (z * u) = 1) ↔
       z ∈ integralAdeles (𝓞 E) E := by
-  -- `t = j α (conj α)` is a finite idele representing the inverse different
-  set t : (FiniteAdeleRing (𝓞 E) E)ˣ := unitEmbedding (𝓞 E) E (Units.mk0 W.j W.j_ne_zero) *
-    (W.α * star W.α)
-  have ht : toFractionalIdeal t = Units.mk0 (FractionalIdeal.dual ℤ ℚ 1)
-      (FractionalIdeal.dual_ne_zero ℤ ℚ one_ne_zero) := by
-    refine Units.ext ?_
-    rw [map_mul, toFractionalIdeal_unitEmbedding, Units.val_mul, coe_toPrincipalIdeal,
-      Units.val_mk0, Units.val_mk0, W.spanSingleton_mul_toFractionalIdeal]
-  have htz : algebraMap E _ W.j * W.α * star (W.α : FiniteAdeleRing (𝓞 E) E) = t := by
-    rw [Units.val_mul, Units.val_mul, Units.coe_star, unitEmbedding_apply, Units.val_mk0,
-      mul_assoc]
-  simp_rw [selfDualAddChar_apply, htz, ← mul_assoc]
-  rw [forall_finiteAdeleAddChar_mul_eq_one_iff, mem_finiteAdelicIdeal_iff t ht,
+  simp_rw [selfDualAddChar_apply, ← mul_assoc]
+  rw [forall_finiteAdeleAddChar_mul_eq_one_iff,
+    mem_finiteAdelicIdeal_iff W.scaleIdele W.toFractionalIdeal_scaleIdele,
     Units.inv_mul_cancel_left]
 
 /-! ### The real scales and the Hecke character `χ_𝔸` -/
