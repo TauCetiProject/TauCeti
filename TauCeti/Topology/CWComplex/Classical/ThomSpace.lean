@@ -5,38 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.CWComplex.Classical.DiscBundle
+public import TauCeti.Topology.CWComplex.Classical.DiscBundle.Basic
 public import TauCeti.Topology.CWComplex.Classical.Pushout
 public import TauCeti.Topology.FiberBundle.Separation
 public import TauCeti.Topology.VectorBundle.Thom.Space
 import TauCeti.Topology.CWComplex.Classical.FiniteCWType
 
 /-!
-# Cell structures of disc-bundle attachments and Thom spaces
+# Cell structures of Thom spaces
 
 Let `E → B` be a real vector bundle of rank `r` over a Hausdorff CW complex `B`, with
 finite-dimensional model fibre and fibre inner products whose norm is continuous on the total
 space. The unit disc bundle `D(E)` is a CW complex relative to the unit sphere bundle `S(E)`, with
 one `(m + r)`-cell for each `m`-cell of `B` (`TauCeti.relCWComplexDiscBundleSphereBundle`, the
-case of an absolute CW complex in `TauCeti.relCWComplexDiscBundle`). This file draws the two
-consequences for spaces built by gluing `D(E)` along `S(E)`.
+case of an absolute CW complex in `TauCeti.relCWComplexDiscBundle`).
 
-* **Attaching a disc bundle.** For any continuous map `g : S(E) → Z`, the space `Z ∪_g D(E)`, or
-  more precisely any pushout `P` of `S(E) → D(E)` along `g`, is a CW complex relative to the image
-  of `Z` (`CategoryTheory.IsPushout.relCWComplex`), whose `n`-cells are the `m`-cells of `B` with
-  `m + r = n` (`TauCeti.discBundleAttachmentCellEquiv`). The characteristic map of each is that of
-  the corresponding cell of `D(E)`, followed by `D(E) → P`
-  (`TauCeti.map_discBundleAttachmentCellEquiv_symm`). No CW structure on `Z` is needed. This is
-  how crossing a critical level of a Morse–Bott function, which attaches the negative disc bundle
-  of each critical submanifold to the sublevel below it, acquires cells: one for each cell of the
-  critical submanifold, raised in dimension by its index.
-* **The Thom space.** The Thom space `Th(E) = D(E)/S(E)` (`TauCeti.thomSpace`) is a CW complex
-  with one `0`-cell, the basepoint, and one `(m + r)`-cell for each `m`-cell of `B`
-  (`TauCeti.thomSpaceCWComplex`, `TauCeti.thomSpaceCWComplexCellEquiv`). It is finite when `B` is
-  (`TauCeti.finite_thomSpaceCWComplex`). Here `S(E)` is glued to a point, whose skeleta contain
-  everything in positive dimensions, so the attaching map is cellular
-  (`CategoryTheory.IsPushout.cwComplexOfMapsToSkeletonLT`). In rank zero the cells are those of
-  `B` together with the basepoint, matching `TauCeti.thomSpaceHomeomorphOfSubsingleton`.
+Gluing `S(E)` to a point (whose skeleta contain everything in positive dimensions, so the attaching
+map is cellular via `CategoryTheory.IsPushout.cwComplexOfMapsToSkeletonLT`), the Thom space
+`Th(E) = D(E)/S(E)` (`TauCeti.thomSpace`) acquires a CW complex structure with one `0`-cell, the
+basepoint, and one `(m + r)`-cell for each `m`-cell of `B` (`TauCeti.thomSpaceCWComplex`,
+`TauCeti.thomSpaceCWComplexCellEquiv`). It is finite when `B` is
+(`TauCeti.finite_thomSpaceCWComplex`). In rank zero the cells are those of `B` together with the
+basepoint, matching `TauCeti.thomSpaceHomeomorphOfSubsingleton`.
 
 No orientation of `E` is used.
 
@@ -52,7 +42,7 @@ public section
 
 noncomputable section
 
-open Bundle CategoryTheory Limits Metric Set Topology Topology.RelCWComplex
+open Bundle Metric Set Topology Topology.RelCWComplex
 
 universe u
 
@@ -62,57 +52,6 @@ variable {B : Type u} [TopologicalSpace B] [T2Space B] (F : Type*) [NormedAddCom
   [NormedSpace ℝ F] [FiniteDimensional ℝ F] (E : B → Type u) [∀ b, NormedAddCommGroup (E b)]
   [∀ b, InnerProductSpace ℝ (E b)] [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
   [VectorBundle ℝ F E] [ContinuousFiberNorm F E] [CWComplex (univ : Set B)]
-
-section Attachment
-
-variable {Z P : TopCat.{u}} {g : TopCat.of (sphereBundle F E) ⟶ Z}
-  {i : TopCat.of (discBundle F E) ⟶ P} {j : Z ⟶ P}
-
-/-- **Attaching a disc bundle.** Let `P` be a pushout of the inclusion `S(E) → D(E)` along a map
-`g : S(E) → Z`, for instance the space obtained from `Z` by attaching `D(E)` along `g`. If `B` is a
-CW complex, then `P` is a CW complex relative to the image of `Z`
-(`CategoryTheory.IsPushout.relCWComplex`) whose `n`-cells are the `m`-cells of `B` with
-`m + r = n`, where `r` is the rank of the bundle. The characteristic maps are those of
-`TauCeti.relCWComplexDiscBundleSphereBundle` followed by the map `D(E) → P`
-(`CategoryTheory.IsPushout.relCWComplex_map_apply`). -/
-def discBundleAttachmentCellEquiv
-    (h : IsPushout (TopCat.ofHom (ContinuousMap.inclusion (sphereBundle_subset_discBundle F E)))
-      g i j) (n : ℕ) :
-    letI := relCWComplexDiscBundleSphereBundle F E
-    letI := h.relCWComplex
-    cell (univ : Set P) n ≃ Σ m : {m : ℕ // m + Module.finrank ℝ F = n}, cell (univ : Set B) m :=
-  letI := relCWComplexDiscBundleSphereBundle F E
-  (h.relCWComplexCellEquiv n).trans (relCWComplexDiscBundleSphereBundleCellEquiv F E n)
-
-variable {F E}
-  (h : IsPushout (TopCat.ofHom (ContinuousMap.inclusion (sphereBundle_subset_discBundle F E)))
-    g i j)
-  {n : ℕ} (c : Σ m : {m : ℕ // m + Module.finrank ℝ F = n}, cell (univ : Set B) m)
-
-/-- The cell of a disc-bundle attachment over an `m`-cell of `B` is the cell of the pushout coming
-from the corresponding cell of the disc bundle. -/
-theorem discBundleAttachmentCellEquiv_symm_apply :
-    letI := relCWComplexDiscBundleSphereBundle F E
-    letI := h.relCWComplex
-    (discBundleAttachmentCellEquiv F E h n).symm c =
-      (h.relCWComplexCellEquiv n).symm
-        ((relCWComplexDiscBundleSphereBundleCellEquiv F E n).symm c) := by
-  rw [discBundleAttachmentCellEquiv, Equiv.symm_trans_apply]
-
-/-- The characteristic map of the cell of a disc-bundle attachment over an `m`-cell of `B` is the
-characteristic map of the corresponding cell of the disc bundle, followed by the map `D(E) → P`. -/
-@[simp]
-theorem map_discBundleAttachmentCellEquiv_symm (x : closedBall (0 : Fin n → ℝ) 1) :
-    letI := relCWComplexDiscBundleSphereBundle F E
-    letI := h.relCWComplex
-    map n ((discBundleAttachmentCellEquiv F E h n).symm c) x =
-      i ⟨map n ((relCWComplexDiscBundleSphereBundleCellEquiv F E n).symm c) x,
-        closedCell_subset_complex n _ (mem_image_of_mem _ x.property)⟩ := by
-  let := relCWComplexDiscBundleSphereBundle F E
-  let := h.relCWComplex
-  rw [h.relCWComplex_map_apply, discBundleAttachmentCellEquiv_symm_apply, Equiv.apply_symm_apply]
-
-end Attachment
 
 section ThomSpace
 

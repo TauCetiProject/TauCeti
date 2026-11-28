@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Homotopy.Contractible
 public import Mathlib.Topology.Homotopy.Equiv
 public import Mathlib.Topology.Homotopy.Path
+import Mathlib.Topology.Homeomorph.Lemmas
 import TauCeti.Topology.Homotopy.Contractible
 
 /-!
@@ -22,7 +23,8 @@ homotopy `e.toFun ∘ e.invFun ≃ id`: evaluated at a point `y`, it is a path f
 This is the prerequisite for the base-point-free homotopy-group statements in
 `TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv`, which need the target space to be path
 connected before base-point change is available there. The file also records that the product
-`ContinuousMap.HomotopyEquiv.prodCongr` of two homotopy equivalences acts componentwise, and that
+`ContinuousMap.HomotopyEquiv.prodCongr` of two homotopy equivalences acts componentwise, that
+`ContinuousMap.HomotopyEquiv.uliftCongr` transports a homotopy equivalence across `ULift`, and that
 the projection `X × Y → X` is a homotopy equivalence when `Y` is contractible.
 
 Finally, the file records that a cylinder `X × [a, b]` is homotopy equivalent to `X`
@@ -39,6 +41,7 @@ homotopy equivalence is one too, with the same homotopy inverse.
 ## Main declarations
 
 * `ContinuousMap.HomotopyEquiv.symm_symm`: the double inverse of a homotopy equivalence is itself.
+* `ContinuousMap.HomotopyEquiv.uliftCongr`: transport of a homotopy equivalence across `ULift`.
 * `ContinuousMap.HomotopyEquiv.nonempty` and `ContinuousMap.HomotopyEquiv.nonempty_iff`:
   nonemptiness is invariant under homotopy equivalence.
 * `ContinuousMap.Homotopic.preconnectedSpace_of_comp_homotopic_id`,
@@ -77,6 +80,8 @@ namespace ContinuousMap
 
 open scoped ContinuousMap
 
+universe v₁ v₂ u₁ u₂
+
 variable {X Y Z Z' : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
   [TopologicalSpace Z']
 
@@ -84,6 +89,24 @@ variable {X Y Z Z' : Type*} [TopologicalSpace X] [TopologicalSpace Y] [Topologic
 @[simp]
 theorem HomotopyEquiv.symm_symm (e : X ≃ₕ Y) : e.symm.symm = e :=
   rfl
+
+/-- Transport a homotopy equivalence `X ≃ₕ Y` across `ULift` to `ULift X ≃ₕ ULift Y`. -/
+def HomotopyEquiv.uliftCongr {X : Type u₁} {Y : Type u₂} [TopologicalSpace X] [TopologicalSpace Y]
+    (e : X ≃ₕ Y) : ULift.{v₁, u₁} X ≃ₕ ULift.{v₂, u₂} Y :=
+  (Homeomorph.ulift.{v₁, u₁}.toHomotopyEquiv.trans e).trans
+    Homeomorph.ulift.{v₂, u₂}.symm.toHomotopyEquiv
+
+@[simp]
+theorem HomotopyEquiv.uliftCongr_apply {X : Type u₁} {Y : Type u₂} [TopologicalSpace X]
+    [TopologicalSpace Y] (e : X ≃ₕ Y) (x : ULift.{v₁, u₁} X) :
+    e.uliftCongr.{v₁, v₂} x = ULift.up (e x.down) :=
+  (rfl)
+
+@[simp]
+theorem HomotopyEquiv.uliftCongr_symm_apply {X : Type u₁} {Y : Type u₂} [TopologicalSpace X]
+    [TopologicalSpace Y] (e : X ≃ₕ Y) (y : ULift.{v₂, u₂} Y) :
+    e.uliftCongr.{v₁, v₂}.symm y = ULift.up (e.symm y.down) :=
+  (rfl)
 
 /-- A space homotopy equivalent to a nonempty space is nonempty. -/
 theorem HomotopyEquiv.nonempty [Nonempty X] (e : X ≃ₕ Y) : Nonempty Y :=

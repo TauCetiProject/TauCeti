@@ -9,10 +9,13 @@ public import TauCeti.AlgebraicTopology.RelativeCellComplex.Pushout
 public import TauCeti.Topology.CWComplex.Abstract.Classical
 public import TauCeti.Topology.CWComplex.Abstract.ClosedEmbedding
 public import TauCeti.Topology.CWComplex.Abstract.Hausdorff
+public import TauCeti.Topology.CWComplex.Classical.Finite
 public import TauCeti.Topology.CWComplex.Classical.Image
 public import TauCeti.Topology.CWComplex.Classical.RelativeCWComplex
 public import TauCeti.Topology.CWComplex.Classical.Trans
+public import TauCeti.Topology.CWComplex.Classical.ULift
 public import TauCeti.Topology.Homotopy.Extension.Pushout
+import Mathlib.Topology.Category.TopCat.ULift
 import TauCeti.Topology.Homotopy.Extension.CWComplex
 
 /-!
@@ -50,7 +53,13 @@ its quotient topology. This file shows:
 * up to homotopy equivalence, `Z ∪_a C` depends only on the homotopy type of `Z`: a homotopy
   equivalence `e : Z ≃ₕ Z'` induces a homotopy equivalence `Z ∪_a C ≃ₕ Z' ∪_{e ∘ a} C` which is
   `e` on `Z` and whose inverse is the inverse of `e` on `Z'`
-  (`ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_relCWAdjunctionSpace`).
+  (`ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_relCWAdjunctionSpace`);
+* when `C` lives in `Type u` and `Z` lives in an independent universe `Type v`, lifting to
+  `Type (max u v)` gives the universe-polymorphic adjunction space `TauCeti.uliftAdjunctionSpace`
+  with inclusions `TauCeti.uliftAdjunctionInl` and `TauCeti.uliftAdjunctionInr`, universal
+  eliminator `TauCeti.uliftAdjunctionDesc`, relative CW model `TauCeti.uliftAdjunctionCWModel`,
+  universe-change homeomorphism `TauCeti.exists_homeomorph_uliftAdjunctionSpace_ulift`, and
+  universe-polymorphic homotopy invariance `TauCeti.exists_homotopyEquiv_uliftAdjunctionSpace`.
 
 Except for the gluing along a cellular map, the space `Z` needs no CW structure. The proof passes
 through the categorical relative CW complexes of Mathlib: `C` is a categorical relative CW complex
@@ -73,6 +82,9 @@ space along maps of their boundary spheres keeps the cells and their characteris
 * `TauCeti.relCWAdjunctionSpace`: the adjunction space `Z ∪_a C`.
 * `TauCeti.relativeCWPushout`: the classical relative CW structure on `Z ∪_a C` relative to `Z`.
 * `TauCeti.relativeCWPushoutCellEquiv`: its `n`-cells are the `n`-cells of `C`.
+* `TauCeti.uliftAdjunctionSpace`, `TauCeti.uliftAdjunctionDesc`, and
+  `TauCeti.uliftAdjunctionCWModel`: the universe-polymorphic adjunction space, its eliminator, and
+  its relative CW structure for `C` in `Type u` and `Z` in `Type v`.
 * `CategoryTheory.IsPushout.relCWComplex`: the relative CW structure on any pushout of `D → C`.
 * `CategoryTheory.IsPushout.relCWComplexOfMapsToSkeletonLT` and
   `CategoryTheory.IsPushout.cwComplexOfMapsToSkeletonLT`: the CW structure on a pushout of a
@@ -89,6 +101,10 @@ space along maps of their boundary spheres keeps the cells and their characteris
 * `TauCeti.t2Space_relCWAdjunctionSpace`: `Z ∪_a C` is Hausdorff when `Z` is.
 * `TauCeti.relativeCWPushout_map_apply`: the characteristic maps of `Z ∪_a C` are those of `C`,
   followed by `C → Z ∪_a C`.
+* `TauCeti.isClosedEmbedding_uliftAdjunctionInr`,
+  `TauCeti.exists_homeomorph_uliftAdjunctionSpace_ulift`, and
+  `TauCeti.exists_homotopyEquiv_uliftAdjunctionSpace`: closed base embedding, universe-change
+  comparison, and homotopy invariance for `TauCeti.uliftAdjunctionSpace`.
 * `CategoryTheory.IsPushout.finite_cwComplexOfMapsToSkeletonLT`: gluing a finite relative CW
   complex to a finite CW complex along a cellular map gives a finite CW complex.
 * `ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_relCWAdjunctionSpace`: a homotopy equivalence
@@ -518,3 +534,532 @@ theorem exists_homotopyEquiv_relCWAdjunctionSpace (e : Z ≃ₕ Z') (C : Set X) 
   rwa [← TopCat.ofHom_comp] at h
 
 end ContinuousMap.HomotopyEquiv
+
+namespace TauCeti
+
+/-! ### Universe-polymorphic adjunction space of a relative CW complex -/
+
+section ULiftAdjunction
+
+open CategoryTheory ContinuousMap Limits Set Topology Topology.RelCWComplex
+
+universe v w
+
+/-- Convert a homeomorphism to a bundled continuous map without requiring a coercion instance. -/
+private abbrev homC {α : Type*} {β : Type*} [TopologicalSpace α] [TopologicalSpace β]
+    (e : α ≃ₜ β) : C(α, β) :=
+  ⟨e, e.continuous⟩
+
+/-- Canonical homeomorphism between a subset `S : Set X` and its universe-lifted preimage
+`ULift.down ⁻¹' S` in `ULift.{v, u} X`. -/
+private def uliftSubsetHomeo {X : Type u} [TopologicalSpace X] (S : Set X) :
+    ↥S ≃ₜ ↥(ULift.down ⁻¹' S : Set (ULift.{v, u} X)) :=
+  (Homeomorph.ulift.{v, u} (X := X)).symm.subtype fun _ ↦ Iff.rfl
+
+/-- Transport `a : C(D, Z)` to the universe-lifted pair `(ULift.down ⁻¹' D, ULift.{u, v} Z)`. -/
+private def liftedBaseMap {X : Type u} [TopologicalSpace X] {D : Set X}
+    {Z : Type v} [TopologicalSpace Z] (a : C(D, Z)) :
+    C(↥(ULift.down ⁻¹' D : Set (ULift.{v, u} X)), ULift.{u, v} Z) :=
+  (homC Homeomorph.ulift.{u, v}.symm).comp
+    (a.comp (homC (uliftSubsetHomeo.{u, v} D).symm))
+
+variable {X : Type u} [TopologicalSpace X] (C : Set X) {D : Set X} [RelCWComplex C D]
+  {Z : Type v} [TopologicalSpace Z] (a : C(D, Z))
+
+/-- **Universe-polymorphic adjunction space `Z ∪_a C`.** The adjunction space obtained by gluing a
+classical relative CW complex `(C, D)` in `Type u` to an arbitrary topological space `Z` in an
+independent universe `Type v` along `a : D → Z`, formed in `TopCat.{max u v}` via
+`RelCWComplex.ulift`. -/
+def uliftAdjunctionSpace : TopCat.{max u v} :=
+  letI := RelCWComplex.ulift.{v, u} (C := C)
+  relCWAdjunctionSpace (ULift.down ⁻¹' C : Set (ULift.{v, u} X)) (liftedBaseMap a)
+
+/-- The canonical base inclusion `Z → Z ∪_a C` into the universe-polymorphic adjunction space. -/
+def uliftAdjunctionInr : C(Z, uliftAdjunctionSpace C a) :=
+  letI := RelCWComplex.ulift.{v, u} (C := C)
+  (pushout.inr (relCWBaseInclusion (ULift.down ⁻¹' C : Set (ULift.{v, u} X)))
+    (TopCat.ofHom (liftedBaseMap a))).hom.comp (homC Homeomorph.ulift.{u, v}.symm)
+
+/-- The canonical complex-side map `C → Z ∪_a C` into the universe-polymorphic adjunction space. -/
+def uliftAdjunctionInl : C(C, uliftAdjunctionSpace C a) :=
+  letI := RelCWComplex.ulift.{v, u} (C := C)
+  (pushout.inl (relCWBaseInclusion (ULift.down ⁻¹' C : Set (ULift.{v, u} X)))
+    (TopCat.ofHom (liftedBaseMap a))).hom.comp (homC (uliftSubsetHomeo.{u, v} C))
+
+private lemma uliftAdjunctionInl_apply (x : C) :
+    uliftAdjunctionInl C a x =
+      letI := RelCWComplex.ulift.{v, u} (C := C)
+      pushout.inl (relCWBaseInclusion (ULift.down ⁻¹' C : Set (ULift.{v, u} X)))
+        (TopCat.ofHom (liftedBaseMap a)) (uliftSubsetHomeo.{u, v} C x) :=
+  rfl
+
+/-- On the base `D`, `uliftAdjunctionInl` agrees with `uliftAdjunctionInr ∘ a`. -/
+theorem uliftAdjunctionInl_eq_inr (d : D) :
+    uliftAdjunctionInl C a ⟨d.val, base_subset_complex d.property⟩ =
+      uliftAdjunctionInr C a (a d) :=
+  letI := RelCWComplex.ulift.{v, u} (C := C)
+  ConcreteCategory.congr_hom (pushout.condition
+    (f := relCWBaseInclusion (ULift.down ⁻¹' C : Set (ULift.{v, u} X)))
+    (g := TopCat.ofHom (liftedBaseMap a))) (uliftSubsetHomeo.{u, v} D d)
+
+private def uliftDescLeft {W : Type w} [TopologicalSpace W] (f : C(C, W)) :
+    TopCat.uliftFunctor.{w, max u v}.obj
+        (TopCat.of ↥(ULift.down ⁻¹' C : Set (ULift.{v, u} X))) ⟶
+      TopCat.of (ULift.{max u v, w} W) :=
+  TopCat.ofHom <| (homC Homeomorph.ulift.{max u v, w}.symm).comp
+    (f.comp ((homC (uliftSubsetHomeo.{u, v} C).symm).comp
+      (homC (TopCat.uliftFunctorObjHomeo.{w} _).symm)))
+
+private lemma uliftDescLeft_apply {W : Type w} [TopologicalSpace W] (f : C(C, W))
+    (x : TopCat.uliftFunctor.{w, max u v}.obj
+      (TopCat.of ↥(ULift.down ⁻¹' C : Set (ULift.{v, u} X)))) :
+    uliftDescLeft.{u, v, w} C f x =
+      ULift.up (f ((uliftSubsetHomeo.{u, v} C).symm
+        ((TopCat.uliftFunctorObjHomeo.{w} _).symm x))) :=
+  rfl
+
+private def uliftDescRight {W : Type w} [TopologicalSpace W] (h : C(Z, W)) :
+    TopCat.uliftFunctor.{w, max u v}.obj (TopCat.of (ULift.{u, v} Z)) ⟶
+      TopCat.of (ULift.{max u v, w} W) :=
+  TopCat.ofHom <| (homC Homeomorph.ulift.{max u v, w}.symm).comp
+    (h.comp ((homC Homeomorph.ulift.{u, v}).comp (homC (TopCat.uliftFunctorObjHomeo.{w} _).symm)))
+
+private lemma uliftDescRight_apply {W : Type w} [TopologicalSpace W] (h : C(Z, W))
+    (x : TopCat.uliftFunctor.{w, max u v}.obj (TopCat.of (ULift.{u, v} Z))) :
+    uliftDescRight.{u, v, w} h x =
+      ULift.up (h (Homeomorph.ulift.{u, v} ((TopCat.uliftFunctorObjHomeo.{w} _).symm x))) :=
+  rfl
+
+private lemma uliftDesc_compat {W : Type w} [TopologicalSpace W]
+    (f : C(C, W)) (h : C(Z, W))
+    (hfa : ∀ d : D, f ⟨d.val, base_subset_complex d.property⟩ = h (a d)) :
+    letI := RelCWComplex.ulift.{v, u} (C := C)
+    TopCat.uliftFunctor.{w, max u v}.map
+        (relCWBaseInclusion (ULift.down ⁻¹' C : Set (ULift.{v, u} X))) ≫
+        uliftDescLeft.{u, v, w} C f =
+      TopCat.uliftFunctor.{w, max u v}.map (TopCat.ofHom (liftedBaseMap a)) ≫
+        uliftDescRight.{u, v, w} h := by
+  let _ := RelCWComplex.ulift.{v, u} (C := C)
+  ext x
+  let y := (TopCat.uliftFunctorObjHomeo.{w} _).symm x
+  have h1 := TopCat.uliftFunctorObjHomeo_symm_naturality_apply.{w}
+    (relCWBaseInclusion (ULift.down ⁻¹' C : Set (ULift.{v, u} X))) x
+  have h2 := TopCat.uliftFunctorObjHomeo_symm_naturality_apply.{w}
+    (TopCat.ofHom (liftedBaseMap a)) x
+  have hL :
+      (TopCat.uliftFunctor.{w, max u v}.map (relCWBaseInclusion _) ≫
+          uliftDescLeft.{u, v, w} C f) x =
+        ULift.up (f ⟨y.val.down, base_subset_complex y.property⟩) := by
+    rw [ConcreteCategory.comp_apply, uliftDescLeft_apply]
+    exact congrArg (fun p : ↥(ULift.down ⁻¹' C : Set (ULift.{v, u} X)) ↦
+      ULift.up (f ((uliftSubsetHomeo.{u, v} C).symm p))) h1
+  have hR :
+      (TopCat.uliftFunctor.{w, max u v}.map (TopCat.ofHom (liftedBaseMap a)) ≫
+          uliftDescRight.{u, v, w} h) x = ULift.up (h (a ⟨y.val.down, y.property⟩)) := by
+    rw [ConcreteCategory.comp_apply, uliftDescRight_apply]
+    exact congrArg (fun z : ULift.{u, v} Z ↦ ULift.up (h z.down)) h2
+  exact congrArg ULift.down
+    (hL.trans <| (congrArg ULift.up (hfa ⟨y.val.down, y.property⟩)).trans hR.symm)
+
+/-- **Universal eliminator for `uliftAdjunctionSpace`.** Compatible continuous maps `f : C → W`
+and `h : Z → W` into an arbitrary universe `W` descend to a continuous map `Z ∪_a C → W`. -/
+def uliftAdjunctionDesc {W : Type w} [TopologicalSpace W]
+    (f : C(C, W)) (h : C(Z, W))
+    (hfa : ∀ d : D, f ⟨d.val, base_subset_complex d.property⟩ = h (a d)) :
+    C(uliftAdjunctionSpace C a, W) :=
+  letI := RelCWComplex.ulift.{v, u} (C := C)
+  let ι := relCWBaseInclusion (ULift.down ⁻¹' C : Set (ULift.{v, u} X))
+  let sq := IsPushout.of_hasPushout ι (TopCat.ofHom (liftedBaseMap a))
+  let dW := (sq.map TopCat.uliftFunctor.{w, max u v}).desc
+    (uliftDescLeft.{u, v, w} C f) (uliftDescRight.{u, v, w} h)
+    (uliftDesc_compat.{u, v, w} C a f h hfa)
+  let eP := TopCat.uliftFunctorObjHomeo.{w} (pushout ι (TopCat.ofHom (liftedBaseMap a)))
+  (homC Homeomorph.ulift.{max u v, w}).comp (dW.hom.comp (homC eP))
+
+/-- Shared evaluation helper for `uliftAdjunctionDesc_inl` and `uliftAdjunctionDesc_inr`. -/
+private lemma uliftDescAux_apply {W : Type w} [TopologicalSpace W]
+    {P A : TopCat.{u}} (k : A ⟶ P)
+    (dW : TopCat.uliftFunctor.{w, u}.obj P ⟶ TopCat.of (ULift.{u, w} W))
+    (l : TopCat.uliftFunctor.{w, u}.obj A ⟶ TopCat.of (ULift.{u, w} W))
+    (hkl : TopCat.uliftFunctor.{w, u}.map k ≫ dW = l) (y : A) :
+    (dW (TopCat.uliftFunctorObjHomeo.{w} P (k y))).down =
+      (l (TopCat.uliftFunctorObjHomeo.{w} A y)).down := by
+  have hcomp := ConcreteCategory.congr_hom hkl (TopCat.uliftFunctorObjHomeo.{w} A y)
+  rw [ConcreteCategory.comp_apply, TopCat.uliftFunctorObjHomeo_naturality_apply.{w} k y] at hcomp
+  exact congrArg ULift.down hcomp
+
+@[simp]
+theorem uliftAdjunctionDesc_inl {W : Type w} [TopologicalSpace W]
+    (f : C(C, W)) (h : C(Z, W))
+    (hfa : ∀ d : D, f ⟨d.val, base_subset_complex d.property⟩ = h (a d)) (x : C) :
+    uliftAdjunctionDesc C a f h hfa (uliftAdjunctionInl C a x) = f x := by
+  let _ := RelCWComplex.ulift.{v, u} (C := C)
+  let ι := relCWBaseInclusion (ULift.down ⁻¹' C : Set (ULift.{v, u} X))
+  let sq := IsPushout.of_hasPushout ι (TopCat.ofHom (liftedBaseMap a))
+  have hval := uliftDescAux_apply (pushout.inl ι (TopCat.ofHom (liftedBaseMap a))) _
+    (uliftDescLeft.{u, v, w} C f)
+    ((sq.map TopCat.uliftFunctor.{w, max u v}).inl_desc (uliftDescLeft.{u, v, w} C f)
+      (uliftDescRight.{u, v, w} h) (uliftDesc_compat.{u, v, w} C a f h hfa))
+    (uliftSubsetHomeo.{u, v} C x)
+  rw [uliftDescLeft_apply, Homeomorph.symm_apply_apply, Homeomorph.symm_apply_apply] at hval
+  exact hval
+
+@[simp]
+theorem uliftAdjunctionDesc_inr {W : Type w} [TopologicalSpace W]
+    (f : C(C, W)) (h : C(Z, W))
+    (hfa : ∀ d : D, f ⟨d.val, base_subset_complex d.property⟩ = h (a d)) (z : Z) :
+    uliftAdjunctionDesc C a f h hfa (uliftAdjunctionInr C a z) = h z := by
+  let _ := RelCWComplex.ulift.{v, u} (C := C)
+  let ι := relCWBaseInclusion (ULift.down ⁻¹' C : Set (ULift.{v, u} X))
+  let sq := IsPushout.of_hasPushout ι (TopCat.ofHom (liftedBaseMap a))
+  have hval := uliftDescAux_apply (pushout.inr ι (TopCat.ofHom (liftedBaseMap a))) _
+    (uliftDescRight.{u, v, w} h)
+    ((sq.map TopCat.uliftFunctor.{w, max u v}).inr_desc (uliftDescLeft.{u, v, w} C f)
+      (uliftDescRight.{u, v, w} h) (uliftDesc_compat.{u, v, w} C a f h hfa))
+    (ULift.up z)
+  rw [uliftDescRight_apply, Homeomorph.symm_apply_apply] at hval
+  exact hval
+
+@[simp]
+theorem uliftAdjunctionDesc_comp_inl {W : Type w} [TopologicalSpace W]
+    (f : C(C, W)) (h : C(Z, W))
+    (hfa : ∀ d : D, f ⟨d.val, base_subset_complex d.property⟩ = h (a d)) :
+    (uliftAdjunctionDesc C a f h hfa).comp (uliftAdjunctionInl C a) = f :=
+  ContinuousMap.ext (uliftAdjunctionDesc_inl C a f h hfa)
+
+@[simp]
+theorem uliftAdjunctionDesc_comp_inr {W : Type w} [TopologicalSpace W]
+    (f : C(C, W)) (h : C(Z, W))
+    (hfa : ∀ d : D, f ⟨d.val, base_subset_complex d.property⟩ = h (a d)) :
+    (uliftAdjunctionDesc C a f h hfa).comp (uliftAdjunctionInr C a) = h :=
+  ContinuousMap.ext (uliftAdjunctionDesc_inr C a f h hfa)
+
+/-- Every point of `uliftAdjunctionSpace` lies in the image of `C` or of `Z`. -/
+theorem exists_uliftAdjunctionInl_or_inr (p : uliftAdjunctionSpace C a) :
+    (∃ x : C, uliftAdjunctionInl C a x = p) ∨ ∃ z : Z, uliftAdjunctionInr C a z = p := by
+  let _ := RelCWComplex.ulift.{v, u} (C := C)
+  dsimp only [uliftAdjunctionSpace] at p
+  rcases Types.eq_or_eq_of_isPushout ((forget TopCat).map_isPushout (IsPushout.of_hasPushout
+    (relCWBaseInclusion (ULift.down ⁻¹' C : Set (ULift.{v, u} X)))
+    (TopCat.ofHom (liftedBaseMap a)))) p with ⟨⟨⟨x⟩, hx⟩, rfl⟩ | ⟨⟨z⟩, rfl⟩
+  · exact Or.inl ⟨⟨x, hx⟩, rfl⟩
+  · exact Or.inr ⟨z, rfl⟩
+
+/-- Induction principle on points of `uliftAdjunctionSpace` by splitting into the images of `C` and
+`Z`. -/
+@[elab_as_elim]
+theorem uliftAdjunctionSpace_induction_on
+    {P : uliftAdjunctionSpace C a → Prop} (p : uliftAdjunctionSpace C a)
+    (hl : ∀ x : C, P (uliftAdjunctionInl C a x))
+    (hr : ∀ z : Z, P (uliftAdjunctionInr C a z)) : P p := by
+  rcases exists_uliftAdjunctionInl_or_inr C a p with ⟨x, rfl⟩ | ⟨z, rfl⟩
+  · exact hl x
+  · exact hr z
+
+/-- The ranges of `uliftAdjunctionInl` and `uliftAdjunctionInr` cover `uliftAdjunctionSpace`. -/
+theorem range_uliftAdjunctionInl_union_range_inr :
+    range (uliftAdjunctionInl C a) ∪ range (uliftAdjunctionInr C a) = univ :=
+  eq_univ_of_forall fun p ↦ exists_uliftAdjunctionInl_or_inr C a p
+
+/-- Two continuous maps out of `uliftAdjunctionSpace` agree as soon as they agree on the images of
+`C` and `Z`. -/
+theorem uliftAdjunctionSpace_continuousMap_ext {W : Type w} [TopologicalSpace W]
+    {f₁ f₂ : C(uliftAdjunctionSpace C a, W)}
+    (hl : ∀ x, f₁ (uliftAdjunctionInl C a x) = f₂ (uliftAdjunctionInl C a x))
+    (hr : ∀ z, f₁ (uliftAdjunctionInr C a z) = f₂ (uliftAdjunctionInr C a z)) : f₁ = f₂ :=
+  ContinuousMap.ext fun p ↦ uliftAdjunctionSpace_induction_on C a p hl hr
+
+/-- A subset of `uliftAdjunctionSpace` is closed if and only if its preimages in `C` and `Z` are
+both closed. -/
+theorem isClosed_iff_uliftAdjunctionSpace (s : Set (uliftAdjunctionSpace C a)) :
+    IsClosed s ↔
+      IsClosed (uliftAdjunctionInl C a ⁻¹' s) ∧ IsClosed (uliftAdjunctionInr C a ⁻¹' s) := by
+  let _ := RelCWComplex.ulift.{v, u} (C := C)
+  let sq := IsPushout.of_hasPushout
+    (relCWBaseInclusion (ULift.down ⁻¹' C : Set (ULift.{v, u} X)))
+    (TopCat.ofHom (liftedBaseMap a))
+  refine (TauCeti.TopCat.isClosed_iff_of_isPushout sq s).trans ?_
+  rw [← (uliftSubsetHomeo.{u, v} C).isClosed_preimage,
+    ← (Homeomorph.ulift.{u, v} (X := Z)).symm.isClosed_preimage]
+  rfl
+
+/-- The canonical map `Z → uliftAdjunctionSpace C a` is a closed embedding. -/
+theorem isClosedEmbedding_uliftAdjunctionInr [T2Space X] :
+    IsClosedEmbedding (uliftAdjunctionInr C a) :=
+  letI := RelCWComplex.ulift.{v, u} (C := C)
+  (isClosedEmbedding_pushout_inr_relCWBaseInclusion
+    (C := (ULift.down ⁻¹' C : Set (ULift.{v, u} X))) (liftedBaseMap a)).comp
+    (Homeomorph.ulift.{u, v} (X := Z)).symm.isClosedEmbedding
+
+/-- When `X` and `Z` are Hausdorff, `uliftAdjunctionSpace C a` is Hausdorff. -/
+instance t2Space_uliftAdjunctionSpace [T2Space X] [T2Space Z] :
+    T2Space (uliftAdjunctionSpace C a) :=
+  letI := RelCWComplex.ulift.{v, u} (C := C)
+  t2Space_relCWAdjunctionSpace (C := (ULift.down ⁻¹' C : Set (ULift.{v, u} X)))
+    (liftedBaseMap a)
+
+private lemma range_uliftAdjunctionInr :
+    letI := RelCWComplex.ulift.{v, u} (C := C)
+    range (pushout.inr (relCWBaseInclusion (ULift.down ⁻¹' C : Set (ULift.{v, u} X)))
+        (TopCat.ofHom (liftedBaseMap a))) = range (uliftAdjunctionInr C a) := by
+  ext p
+  simp only [mem_range, uliftAdjunctionInr]
+  exact ⟨fun ⟨⟨z⟩, hz⟩ ↦ ⟨z, hz⟩, fun ⟨z, hz⟩ ↦ ⟨⟨z⟩, hz⟩⟩
+
+/-- **Relative CW structure on the universe-polymorphic adjunction space.**
+`uliftAdjunctionSpace C a` is a classical relative CW complex relative to
+`range (uliftAdjunctionInr C a)`, with the cells of `C`. -/
+@[instance_reducible]
+def uliftAdjunctionCWModel [T2Space X] :
+    RelCWComplex (univ : Set (uliftAdjunctionSpace C a)) (range (uliftAdjunctionInr C a)) :=
+  letI := RelCWComplex.ulift.{v, u} (C := C)
+  (relativeCWPushout (ULift.down ⁻¹' C : Set (ULift.{v, u} X)) (liftedBaseMap a)).copy univ
+    (range (uliftAdjunctionInr C a)) rfl (range_uliftAdjunctionInr C a)
+
+/-- The `n`-cells of `uliftAdjunctionCWModel` correspond bijectively to the `n`-cells of `C`. -/
+def uliftAdjunctionCellEquiv [T2Space X] (n : ℕ) :
+    letI := uliftAdjunctionCWModel C a
+    cell (univ : Set (uliftAdjunctionSpace C a)) n ≃ cell C n :=
+  letI := RelCWComplex.ulift.{v, u} (C := C)
+  (((relativeCWPushout (ULift.down ⁻¹' C : Set (ULift.{v, u} X))
+    (liftedBaseMap a)).copyCellEquiv univ (range (uliftAdjunctionInr C a)) rfl
+      (range_uliftAdjunctionInr C a) n).trans
+    (relativeCWPushoutCellEquiv (ULift.down ⁻¹' C : Set (ULift.{v, u} X))
+      (liftedBaseMap a) n)).trans (RelCWComplex.uliftCellEquiv.{v, u} (C := C) n)
+
+/-- Each characteristic map of `uliftAdjunctionCWModel` is the characteristic map of the
+corresponding cell of `C` followed by `uliftAdjunctionInl`. -/
+theorem uliftAdjunctionCWModel_map_apply [T2Space X] (n : ℕ)
+    (i : letI := uliftAdjunctionCWModel C a; cell (univ : Set (uliftAdjunctionSpace C a)) n)
+    {x : Fin n → ℝ} (hx : x ∈ closedBall 0 1) :
+    letI := uliftAdjunctionCWModel C a
+    map n i x = uliftAdjunctionInl C a ⟨map n (uliftAdjunctionCellEquiv C a n i) x,
+      closedCell_subset_complex n _ (mem_image_of_mem _ hx)⟩ := by
+  let _ := RelCWComplex.ulift.{v, u} (C := C)
+  let P := relativeCWPushout (ULift.down ⁻¹' C : Set (ULift.{v, u} X)) (liftedBaseMap a)
+  have hcopy := P.map_copy univ (range (uliftAdjunctionInr C a)) rfl
+    (range_uliftAdjunctionInr C a) n i
+  refine (congrArg (fun f : PartialEquiv _ _ ↦ f x) hcopy).trans ?_
+  refine (relativeCWPushout_map_apply (C := (ULift.down ⁻¹' C : Set (ULift.{v, u} X)))
+    (a := liftedBaseMap a) n _ ⟨x, hx⟩).trans ?_
+  rw [uliftAdjunctionInl_apply]
+  congr 1
+  exact Subtype.ext (congrFun (RelCWComplex.coe_map_ulift.{v, u} (C := C) n _) x)
+
+/-- The image of a subset of the closed unit ball under a characteristic map of
+`uliftAdjunctionCWModel` is the image under `uliftAdjunctionInl` of the corresponding image in
+`C`. -/
+theorem image_map_uliftAdjunctionCWModel [T2Space X] (n : ℕ)
+    (i : letI := uliftAdjunctionCWModel C a; cell (univ : Set (uliftAdjunctionSpace C a)) n)
+    (S : Set (Fin n → ℝ)) (hS : S ⊆ closedBall 0 1) :
+    letI := uliftAdjunctionCWModel C a
+    map n i '' S =
+      uliftAdjunctionInl C a ''
+        (Subtype.val ⁻¹' (map n (uliftAdjunctionCellEquiv C a n i) '' S)) := by
+  let _ := uliftAdjunctionCWModel C a
+  ext p
+  simp only [mem_image, mem_preimage]
+  refine ⟨fun ⟨x, hx, hp⟩ ↦ ?_, fun ⟨y, ⟨x, hx, hxy⟩, hp⟩ ↦ ?_⟩
+  · exact ⟨⟨_, closedCell_subset_complex n _ (mem_image_of_mem _ (hS hx))⟩,
+      ⟨x, hx, rfl⟩, hp ▸ (uliftAdjunctionCWModel_map_apply C a n i (hS hx)).symm⟩
+  · refine ⟨x, hx, ?_⟩
+    rw [← hp, uliftAdjunctionCWModel_map_apply C a n i (hS hx)]
+    exact congrArg (uliftAdjunctionInl C a) (Subtype.ext hxy)
+
+@[simp]
+theorem openCell_uliftAdjunctionCWModel [T2Space X] (n : ℕ)
+    (i : letI := uliftAdjunctionCWModel C a; cell (univ : Set (uliftAdjunctionSpace C a)) n) :
+    letI := uliftAdjunctionCWModel C a
+    openCell n i = uliftAdjunctionInl C a ''
+      (Subtype.val ⁻¹' openCell n (uliftAdjunctionCellEquiv C a n i)) :=
+  image_map_uliftAdjunctionCWModel C a n i (ball 0 1) ball_subset_closedBall
+
+@[simp]
+theorem closedCell_uliftAdjunctionCWModel [T2Space X] (n : ℕ)
+    (i : letI := uliftAdjunctionCWModel C a; cell (univ : Set (uliftAdjunctionSpace C a)) n) :
+    letI := uliftAdjunctionCWModel C a
+    closedCell n i = uliftAdjunctionInl C a ''
+      (Subtype.val ⁻¹' closedCell n (uliftAdjunctionCellEquiv C a n i)) :=
+  image_map_uliftAdjunctionCWModel C a n i (closedBall 0 1) Subset.rfl
+
+@[simp]
+theorem cellFrontier_uliftAdjunctionCWModel [T2Space X] (n : ℕ)
+    (i : letI := uliftAdjunctionCWModel C a; cell (univ : Set (uliftAdjunctionSpace C a)) n) :
+    letI := uliftAdjunctionCWModel C a
+    cellFrontier n i = uliftAdjunctionInl C a ''
+      (Subtype.val ⁻¹' cellFrontier n (uliftAdjunctionCellEquiv C a n i)) :=
+  image_map_uliftAdjunctionCWModel C a n i (sphere 0 1) sphere_subset_closedBall
+
+/-- `uliftAdjunctionCWModel` is finite-dimensional when `C` is finite-dimensional. -/
+theorem finiteDimensional_uliftAdjunctionCWModel [T2Space X]
+    [RelCWComplex.FiniteDimensional C] :
+    letI := uliftAdjunctionCWModel C a
+    RelCWComplex.FiniteDimensional (univ : Set (uliftAdjunctionSpace C a)) :=
+  RelCWComplex.finiteDimensional_of_cellEquiv inferInstance (uliftAdjunctionCWModel C a)
+    (uliftAdjunctionCellEquiv C a)
+
+/-- `uliftAdjunctionCWModel` has finite type when `C` has finite type. -/
+theorem finiteType_uliftAdjunctionCWModel [T2Space X] [RelCWComplex.FiniteType C] :
+    letI := uliftAdjunctionCWModel C a
+    RelCWComplex.FiniteType (univ : Set (uliftAdjunctionSpace C a)) :=
+  RelCWComplex.finiteType_of_cellEquiv inferInstance (uliftAdjunctionCWModel C a)
+    (uliftAdjunctionCellEquiv C a)
+
+/-- `uliftAdjunctionCWModel` is finite when `C` is finite. -/
+theorem finite_uliftAdjunctionCWModel [T2Space X] [RelCWComplex.Finite C] :
+    letI := uliftAdjunctionCWModel C a
+    RelCWComplex.Finite (univ : Set (uliftAdjunctionSpace C a)) :=
+  RelCWComplex.finite_of_cellEquiv inferInstance (uliftAdjunctionCWModel C a)
+    (uliftAdjunctionCellEquiv C a)
+
+private def uliftChangeUnivInvL :
+    TopCat.of ↥(ULift.down ⁻¹' C : Set (ULift.{max v w, u} X)) ⟶
+      TopCat.of (ULift.{w, max u v} (uliftAdjunctionSpace C a)) :=
+  TopCat.ofHom <| (homC Homeomorph.ulift.{w, max u v}.symm).comp
+    ((uliftAdjunctionInl C a).comp (homC (uliftSubsetHomeo.{u, max v w} C).symm))
+
+private def uliftChangeUnivInvR :
+    TopCat.of (ULift.{max u w, v} Z) ⟶
+      TopCat.of (ULift.{w, max u v} (uliftAdjunctionSpace C a)) :=
+  TopCat.ofHom <| (homC Homeomorph.ulift.{w, max u v}.symm).comp
+    ((uliftAdjunctionInr C a).comp (homC Homeomorph.ulift.{max u w, v}))
+
+private lemma uliftChangeUnivInv_compat
+    (b : C(↥(ULift.down ⁻¹' D : Set (ULift.{max v w, u} X)), ULift.{max u w, v} Z))
+    (hb : ∀ x, b x = ULift.up (a ((uliftSubsetHomeo.{u, max v w} D).symm x))) :
+    letI := RelCWComplex.ulift.{max v w, u} (C := C)
+    relCWBaseInclusion (ULift.down ⁻¹' C : Set (ULift.{max v w, u} X)) ≫
+        uliftChangeUnivInvL.{u, v, w} C a =
+      TopCat.ofHom b ≫ uliftChangeUnivInvR.{u, v, w} C a := by
+  ext x
+  simp only [ConcreteCategory.comp_apply, TopCat.hom_ofHom, ContinuousMap.coe_comp,
+    uliftChangeUnivInvL, uliftChangeUnivInvR, ContinuousMap.coe_mk, hb]
+  exact uliftAdjunctionInl_eq_inr C a ((uliftSubsetHomeo.{u, max v w} D).symm x)
+
+private def uliftAdjunctionChangeUnivInv
+    (b : C(↥(ULift.down ⁻¹' D : Set (ULift.{max v w, u} X)), ULift.{max u w, v} Z))
+    (hb : ∀ x, b x = ULift.up (a ((uliftSubsetHomeo.{u, max v w} D).symm x))) :
+    letI := RelCWComplex.ulift.{max v w, u} (C := C)
+    C(relCWAdjunctionSpace (ULift.down ⁻¹' C : Set (ULift.{max v w, u} X)) b,
+      uliftAdjunctionSpace C a) :=
+  letI := RelCWComplex.ulift.{max v w, u} (C := C)
+  (homC Homeomorph.ulift.{w, max u v}).comp
+    (pushout.desc (uliftChangeUnivInvL.{u, v, w} C a) (uliftChangeUnivInvR.{u, v, w} C a)
+      (uliftChangeUnivInv_compat.{u, v, w} C a b hb)).hom
+
+private lemma uliftAdjunctionChangeUnivInv_inl
+    (b : C(↥(ULift.down ⁻¹' D : Set (ULift.{max v w, u} X)), ULift.{max u w, v} Z))
+    (hb : ∀ x, b x = ULift.up (a ((uliftSubsetHomeo.{u, max v w} D).symm x))) (x : C) :
+    letI := RelCWComplex.ulift.{max v w, u} (C := C)
+    uliftAdjunctionChangeUnivInv.{u, v, w} C a b hb
+      (pushout.inl (relCWBaseInclusion (ULift.down ⁻¹' C : Set (ULift.{max v w, u} X)))
+        (TopCat.ofHom b) (uliftSubsetHomeo.{u, max v w} C x)) = uliftAdjunctionInl C a x := by
+  let _ := RelCWComplex.ulift.{max v w, u} (C := C)
+  have h := congrArg ULift.down <| ConcreteCategory.congr_hom
+    (pushout.inl_desc (uliftChangeUnivInvL.{u, v, w} C a) (uliftChangeUnivInvR.{u, v, w} C a)
+      (uliftChangeUnivInv_compat.{u, v, w} C a b hb))
+    (uliftSubsetHomeo.{u, max v w} C x)
+  exact h.trans (congrArg (uliftAdjunctionInl C a) (Homeomorph.symm_apply_apply _ x))
+
+private lemma uliftAdjunctionChangeUnivInv_inr
+    (b : C(↥(ULift.down ⁻¹' D : Set (ULift.{max v w, u} X)), ULift.{max u w, v} Z))
+    (hb : ∀ x, b x = ULift.up (a ((uliftSubsetHomeo.{u, max v w} D).symm x))) (z : Z) :
+    letI := RelCWComplex.ulift.{max v w, u} (C := C)
+    uliftAdjunctionChangeUnivInv.{u, v, w} C a b hb
+      (pushout.inr (relCWBaseInclusion (ULift.down ⁻¹' C : Set (ULift.{max v w, u} X)))
+        (TopCat.ofHom b) (ULift.up z)) = uliftAdjunctionInr C a z := by
+  let _ := RelCWComplex.ulift.{max v w, u} (C := C)
+  exact congrArg ULift.down <| ConcreteCategory.congr_hom
+    (pushout.inr_desc (uliftChangeUnivInvL.{u, v, w} C a) (uliftChangeUnivInvR.{u, v, w} C a)
+      (uliftChangeUnivInv_compat.{u, v, w} C a b hb)) (ULift.up z)
+
+/-- **Universe-change comparison for `uliftAdjunctionSpace`.** The adjunction space
+`uliftAdjunctionSpace C a` in `Type (max u v)` is homeomorphic (compatibly with the inclusions of
+`Z`) to the same-universe adjunction space `relCWAdjunctionSpace` formed in `Type (max u v w)`. -/
+theorem exists_homeomorph_uliftAdjunctionSpace_ulift
+    (b : C(↥(ULift.down ⁻¹' D : Set (ULift.{max v w, u} X)), ULift.{max u w, v} Z))
+    (hb : ∀ x, b x = ULift.up (a ⟨x.val.down, x.property⟩)) :
+    letI := RelCWComplex.ulift.{max v w, u} (C := C)
+    ∃ Φ : uliftAdjunctionSpace.{u, v} C a ≃ₜ
+        relCWAdjunctionSpace (ULift.down ⁻¹' C : Set (ULift.{max v w, u} X)) b,
+      (∀ z, Φ (uliftAdjunctionInr C a z) =
+        pushout.inr (relCWBaseInclusion (ULift.down ⁻¹' C : Set (ULift.{max v w, u} X)))
+          (TopCat.ofHom b) (ULift.up z)) ∧
+      ∀ z, Φ.symm (pushout.inr
+          (relCWBaseInclusion (ULift.down ⁻¹' C : Set (ULift.{max v w, u} X)))
+          (TopCat.ofHom b) (ULift.up z)) = uliftAdjunctionInr C a z := by
+  let _ := RelCWComplex.ulift.{max v w, u} (C := C)
+  let ι := relCWBaseInclusion (ULift.down ⁻¹' C : Set (ULift.{max v w, u} X))
+  -- Stage 1: build the forward map from `uliftAdjunctionSpace` into the larger-universe pushout.
+  let inlBig : C(C, relCWAdjunctionSpace (ULift.down ⁻¹' C : Set (ULift.{max v w, u} X)) b) :=
+    (pushout.inl ι (TopCat.ofHom b)).hom.comp (homC (uliftSubsetHomeo.{u, max v w} C))
+  let inrBig : C(Z, relCWAdjunctionSpace (ULift.down ⁻¹' C : Set (ULift.{max v w, u} X)) b) :=
+    (pushout.inr ι (TopCat.ofHom b)).hom.comp (homC Homeomorph.ulift.{max u w, v}.symm)
+  have hcompat :
+      ∀ d : D, inlBig ⟨d.val, base_subset_complex d.property⟩ = inrBig (a d) := fun d ↦ by
+    have hc := ConcreteCategory.congr_hom (pushout.condition (f := ι) (g := TopCat.ofHom b))
+      (uliftSubsetHomeo.{u, max v w} D d)
+    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hc
+    exact hc.trans
+      (congrArg (pushout.inr ι (TopCat.ofHom b)) (hb (uliftSubsetHomeo.{u, max v w} D d)))
+  let toF := uliftAdjunctionDesc C a inlBig inrBig hcompat
+  -- Stage 2: use the extracted inverse map `uliftAdjunctionChangeUnivInv` and verify inverses.
+  let invF := uliftAdjunctionChangeUnivInv.{u, v, w} C a b hb
+  refine ⟨{
+    toFun := toF, invFun := invF
+    left_inv := fun p ↦ uliftAdjunctionSpace_induction_on (P := fun q ↦ invF (toF q) = q) C a p
+      (fun x ↦ (congrArg invF (uliftAdjunctionDesc_inl C a inlBig inrBig hcompat x)).trans
+        (uliftAdjunctionChangeUnivInv_inl C a b hb x))
+      (fun z ↦ (congrArg invF (uliftAdjunctionDesc_inr C a inlBig inrBig hcompat z)).trans
+        (uliftAdjunctionChangeUnivInv_inr C a b hb z))
+    right_inv := fun q ↦ by
+      rcases Types.eq_or_eq_of_isPushout
+        ((forget TopCat).map_isPushout (IsPushout.of_hasPushout ι (TopCat.ofHom b))) q with
+        ⟨⟨⟨x⟩, hx⟩, rfl⟩ | ⟨⟨z⟩, rfl⟩
+      · exact (congrArg toF (uliftAdjunctionChangeUnivInv_inl C a b hb ⟨x, hx⟩)).trans
+          (uliftAdjunctionDesc_inl C a inlBig inrBig hcompat ⟨x, hx⟩)
+      · exact (congrArg toF (uliftAdjunctionChangeUnivInv_inr C a b hb z)).trans
+          (uliftAdjunctionDesc_inr C a inlBig inrBig hcompat z)
+    continuous_toFun := toF.continuous, continuous_invFun := invF.continuous },
+    fun z ↦ uliftAdjunctionDesc_inr C a inlBig inrBig hcompat z,
+    uliftAdjunctionChangeUnivInv_inr C a b hb⟩
+
+/-- **Base homotopy invariance of `uliftAdjunctionSpace`.** A homotopy equivalence `e : Z ≃ₕ Z'`
+(with `Z` and `Z'` in independent universes) induces a homotopy equivalence
+`uliftAdjunctionSpace C a ≃ₕ uliftAdjunctionSpace C (e ∘ a)` compatible with
+`uliftAdjunctionInr`. -/
+theorem exists_homotopyEquiv_uliftAdjunctionSpace [T2Space X]
+    {Z' : Type w} [TopologicalSpace Z'] (e : Z ≃ₕ Z') :
+    ∃ H : uliftAdjunctionSpace.{u, v} C a ≃ₕ
+        uliftAdjunctionSpace.{u, w} C (e.toFun.comp a),
+      (∀ z, H (uliftAdjunctionInr C a z) = uliftAdjunctionInr C (e.toFun.comp a) (e z)) ∧
+      ∀ z', H.symm (uliftAdjunctionInr C (e.toFun.comp a) z') =
+        uliftAdjunctionInr C a (e.symm z') := by
+  let _ := RelCWComplex.ulift.{max v w, u} (C := C)
+  let b : C(↥(ULift.down ⁻¹' D : Set (ULift.{max v w, u} X)), ULift.{max u w, v} Z) :=
+    (homC Homeomorph.ulift.{max u w, v}.symm).comp
+      (a.comp (homC (uliftSubsetHomeo.{u, max v w} D).symm))
+  have hb : ∀ x : ↥(ULift.down ⁻¹' D : Set (ULift.{max v w, u} X)),
+      b x = ULift.up (a ⟨x.val.down, x.property⟩) := fun _ ↦ rfl
+  have heb : ∀ x : ↥(ULift.down ⁻¹' D : Set (ULift.{max v w, u} X)),
+      ((e.uliftCongr.{max u w, max u v}).toFun.comp b) x =
+        ULift.up ((e.toFun.comp a) ⟨x.val.down, x.property⟩) :=
+    fun x ↦ e.uliftCongr_apply.{max u w, max u v} _
+  obtain ⟨Hw, hHw, hHwsymm⟩ :=
+    (e.uliftCongr.{max u w, max u v}).exists_homotopyEquiv_relCWAdjunctionSpace
+      (ULift.down ⁻¹' C : Set (ULift.{max v w, u} X)) b
+  obtain ⟨Φ₁, hΦ₁, hΦ₁s⟩ :=
+    exists_homeomorph_uliftAdjunctionSpace_ulift.{u, v, w} C a b hb
+  obtain ⟨Φ₂, hΦ₂, hΦ₂s⟩ := exists_homeomorph_uliftAdjunctionSpace_ulift.{u, w, v} C
+    (e.toFun.comp a) ((e.uliftCongr.{max u w, max u v}).toFun.comp b) heb
+  refine ⟨(Φ₁.toHomotopyEquiv.trans Hw).trans Φ₂.symm.toHomotopyEquiv,
+    fun z ↦ ?_, fun z' ↦ ?_⟩
+  · simp only [ContinuousMap.HomotopyEquiv.trans_apply, Homeomorph.coe_toHomotopyEquiv,
+      hΦ₁, hHw, ContinuousMap.HomotopyEquiv.uliftCongr_apply, hΦ₂s]
+  · simp only [ContinuousMap.HomotopyEquiv.trans_symm_apply, ← Homeomorph.symm_toHomotopyEquiv,
+      Homeomorph.symm_symm, Homeomorph.coe_toHomotopyEquiv,
+      hΦ₂, hHwsymm, ContinuousMap.HomotopyEquiv.uliftCongr_symm_apply, hΦ₁s]
+
+end ULiftAdjunction
+
+end TauCeti
