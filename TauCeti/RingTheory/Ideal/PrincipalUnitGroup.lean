@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Defs
+public import Mathlib.Algebra.Ring.Action.Basic
 public import Mathlib.RingTheory.Ideal.Defs
 public import Mathlib.RingTheory.Henselian
 public import Mathlib.Topology.Algebra.Constructions
@@ -52,6 +53,9 @@ so `1 + I` is an iterated extension of additive groups.
 
 ## Main results
 
+* `Ideal.mul_inv_mem_principalUnitGroup`, `Ideal.inv_mul_mem_principalUnitGroup`, and
+  `Ideal.unitsMap_mul_inv_mem_principalUnitGroup`: unit ratios in `1 + I`, and displacement of
+  units by elements of `I.inertia G`.
 * `Ideal.principalUnitGroup_ker`: the principal unit group of the kernel of a ring homomorphism
   is the kernel of the induced map on units.
 * `Ideal.unitsMap_quotientMk_surjective`: reduction of units modulo an ideal in the Jacobson
@@ -102,6 +106,35 @@ def principalUnitGroup : Subgroup Rˣ where
 theorem mem_principalUnitGroup {I : Ideal R} {u : Rˣ} :
     u ∈ I.principalUnitGroup ↔ (u : R) - 1 ∈ I :=
   Iff.rfl
+
+/-- For a two-sided ideal `I` and two units `u` and `v` of `R`, `u * v⁻¹` lies in
+`I.principalUnitGroup` if and only if `u - v ∈ I`. -/
+theorem mul_inv_mem_principalUnitGroup {I : Ideal R} [I.IsTwoSided] {u v : Rˣ} :
+    u * v⁻¹ ∈ I.principalUnitGroup ↔ (u : R) - (v : R) ∈ I := by
+  rw [mem_principalUnitGroup, Units.val_mul]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have hv := I.mul_mem_right (v : R) h
+    rwa [sub_mul, mul_assoc, Units.inv_mul, mul_one, one_mul] at hv
+  · have hv := I.mul_mem_right (↑v⁻¹ : R) h
+    rwa [sub_mul, Units.mul_inv] at hv
+
+/-- For two units `u` and `v` of `R`, `u⁻¹ * v` lies in `I.principalUnitGroup` if and only if
+`v - u ∈ I`. -/
+theorem inv_mul_mem_principalUnitGroup {I : Ideal R} {u v : Rˣ} :
+    u⁻¹ * v ∈ I.principalUnitGroup ↔ (v : R) - (u : R) ∈ I := by
+  rw [mem_principalUnitGroup, Units.val_mul]
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have hu := I.mul_mem_left (u : R) h
+    rwa [mul_sub, ← mul_assoc, Units.mul_inv, one_mul, mul_one] at hu
+  · have hu := I.mul_mem_left (↑u⁻¹ : R) h
+    rwa [mul_sub, Units.inv_mul] at hu
+
+/-- An element of `I.inertia G` moves every unit of `R` by a factor in `I.principalUnitGroup`. -/
+theorem unitsMap_mul_inv_mem_principalUnitGroup {G : Type*} [Group G] [MulSemiringAction G R]
+    {I : Ideal R} [I.IsTwoSided] {σ : G} (hσ : σ ∈ I.inertia G) (u : Rˣ) :
+    Units.map (MulSemiringAction.toRingHom G R σ).toMonoidHom u * u⁻¹ ∈ I.principalUnitGroup := by
+  rw [mul_inv_mem_principalUnitGroup]
+  simpa using mem_inertia.mp hσ (u : R)
 
 theorem principalUnitGroup_mono : Monotone (principalUnitGroup (R := R)) :=
   fun _ _ h _ hu ↦ h hu

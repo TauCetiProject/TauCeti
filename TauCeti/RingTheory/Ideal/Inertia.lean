@@ -26,6 +26,8 @@ generator.
 
 * `TauCeti.Ideal.mem_inertia_iff_of_adjoin_eq_top`: membership in `Ideal.inertia G I` is decided
   on a generating set.
+* `TauCeti.Ideal.smul_pow_sub_sub_nsmul_mem_of_inertia`: if `σ ∈ J.inertia G` moves `J` into `I`,
+  then `σ ^ m x - x ≡ m (σ x - x)` modulo `I`.
 * `TauCeti.smul_sub_dvd_smul_sub_of_adjoin_singleton_eq_top`: for a single generator `ξ`, every
   `σ • x - x` is a multiple of `σ • ξ - ξ`.
 
@@ -39,6 +41,25 @@ public section
 namespace TauCeti.Ideal
 
 variable {G : Type*} [Group G] {S : Type*} [Ring S] [MulSemiringAction G S]
+
+/-- If `σ ∈ J.inertia G` moves every element of `J` into `I`, then powers of `σ` act to first
+order modulo `I` like multiples of `σ`: `σ ^ m x - x ≡ m (σ x - x)` modulo `I`. This generalizes
+the former `smul_pow_sub_sub_nsmul_mem` in
+`TauCeti/RingTheory/LocalRing/RamificationGroup/Graded.lean`. -/
+theorem smul_pow_sub_sub_nsmul_mem_of_inertia {I J : Ideal S} {σ : G}
+    (hσ : σ ∈ J.inertia G) (hJ : ∀ w ∈ J, σ • w - w ∈ I) (m : ℕ) (x : S) :
+    σ ^ m • x - x - m • (σ • x - x) ∈ I := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    have hy : σ ^ m • x - x ∈ J := Ideal.mem_inertia.mp (pow_mem hσ m) x
+    have hsplit : σ ^ (m + 1) • x - x - (m + 1) • (σ • x - x) =
+        (σ ^ m • x - x - m • (σ • x - x)) + (σ • (σ ^ m • x - x) - (σ ^ m • x - x)) := by
+      simp only [pow_succ', mul_smul, smul_sub, add_nsmul, one_nsmul]
+      abel
+    rw [hsplit]
+    exact add_mem ih (hJ _ hy)
+
 variable {R : Type*} [CommSemiring R] [Algebra R S] [SMulCommClass G R S]
 
 /-- **Serre's criterion.** When `S` is generated over `R` by a set `s` and `G` acts by `R`-algebra

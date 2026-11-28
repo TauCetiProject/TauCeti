@@ -50,9 +50,8 @@ variable {S : Type*} [CommRing S] [IsDomain S] [_root_.IsDiscreteValuationRing S
 uniformizer `ϖ`. -/
 theorem mem_unitFiltration_iff_mul_irreducible_mem {ϖ : S} (hϖ : Irreducible ϖ) {i : ℕ} {u : Sˣ} :
     u ∈ unitFiltration S i ↔ ((u : S) - 1) * ϖ ∈ maximalIdeal S ^ (i + 1) := by
-  rw [mem_unitFiltration_iff, hϖ.maximalIdeal_eq, Ideal.span_singleton_pow,
-    Ideal.span_singleton_pow, Ideal.mem_span_singleton, Ideal.mem_span_singleton, pow_succ,
-    mul_dvd_mul_iff_right hϖ.ne_zero]
+  rw [mem_unitFiltration_iff, mul_comm, ← pow_one ϖ,
+    hϖ.pow_mul_mem_maximalIdeal_pow_add_iff]
 
 /-- Fixing a uniformizer `π` identifies the `n`-th positive graded piece `U_{n+1} / U_{n+2}` of
 the unit filtration with the additive residue field, sending the class of `u` with

@@ -734,7 +734,7 @@ theorem iInf_upperRamificationGroup_eq_bot [IsNoetherianRing S] [FaithfulSMul G 
 theorem exists_forall_upperRamificationGroup_eq_ker [IsNoetherianRing S] :
     ∃ V : ℝ, ∀ v : ℝ, V ≤ v →
       upperRamificationGroup G S v = MonoidHom.ker (MulSemiringAction.toRingAut G S) := by
-  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_ker G S
+  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_ker_of_finite G S 0
   refine ⟨herbrandFun G S N, fun _ hv ↦ ?_⟩
   rw [upperRamificationGroup_def, ramificationGroupReal_def]
   exact hN _ (Int.le_ceil_iff.2 (by linarith [le_inverseHerbrandFun_iff.2 hv]))

@@ -65,6 +65,7 @@ separable because `𝓀[L]` is finite).
 * `TauCeti.ker_ramificationGroupToUnitFiltrationGraded` and
   `TauCeti.ramificationGroupGradedToUnitFiltrationGraded_injective`: the kernel is exactly
   `G_{i+1}`, and `θ_i` is injective.
+* `TauCeti.coe_tameCharacter_of_val_eq_smul_div`: fraction-field evaluation of the tame character.
 * `TauCeti.isCyclic_ramificationGroupGraded_zero` and
   `TauCeti.card_ramificationGroupGraded_zero_dvd_card_residueField_sub_one`: the tame quotient
   is cyclic, of order dividing `q - 1`.
@@ -162,6 +163,12 @@ theorem coe_uniformizerRatio (hϖ : Irreducible ϖ) (σ : ramificationGroup G �
   rw [mul_div_cancel₀ _ hϖ0, uniformizerRatio, coe_unitFiltrationEquivInteger_symm]
   simp [← Subring.coe_mul, TauCeti.IsDiscreteValuationRing.mul_coe_uniformizerRatio,
     coe_smul_integer]
+
+/-- The uniformizer ratio of the identity element is `1`. -/
+@[simp]
+theorem uniformizerRatio_one (hϖ : Irreducible ϖ) :
+    uniformizerRatio (G := G) i hϖ 1 = 1 := by
+  simp [uniformizerRatio]
 
 /-- For `σ` in the `i`-th ramification group and `ϖ` a uniformizer, the ratio `σ ϖ / ϖ` lies in
 the `i`-th step `U(L,i)` of the unit filtration. -/
@@ -372,6 +379,16 @@ theorem ramificationGroupGradedToUnitFiltrationGraded_eq_of_irreducible {ϖ' : �
     TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToUnitFiltrationGraded_eq_of_irreducible
       i hϖ hϖ']
 
+/-- Computing the tame character in fraction-field coordinates: if `(y : L) = σ • ϖ / ϖ`, then
+`tameCharacter G 𝒪[L] σ = residue 𝒪[L] y`. -/
+theorem coe_tameCharacter_of_val_eq_smul_div (hϖ : Irreducible ϖ)
+    (σ : ramificationGroup G 𝒪[L] (0 : ℤ)) {y : 𝒪[L]}
+    (hy : (y : L) = (σ : G) • (ϖ : L) / (ϖ : L)) :
+    (IsLocalRing.tameCharacter G 𝒪[L] σ : 𝓀[L]) = IsLocalRing.residue 𝒪[L] y := by
+  have hϖ0 : (ϖ : L) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
+  refine IsLocalRing.coe_tameCharacter_of_smul_eq_mul hϖ (Subtype.ext ?_)
+  rw [MulMemClass.coe_mul, coe_smul_integer, hy, mul_div_cancel₀ _ hϖ0]
+
 /-! ### The tame quotient -/
 
 variable (G L) in
@@ -410,6 +427,8 @@ inertia group `G_1` is a `p`-group. This is the local-field case of
 theorem isPGroup_ramificationGroup (p : ℕ) [CharP 𝓀[L] p] [FaithfulSMul G 𝒪[L]]
     [Finite (ramificationGroup G 𝒪[L] 0)] {i : ℤ} (hi : 0 < i) :
     IsPGroup p (ramificationGroup G 𝒪[L] i) :=
+  have : Finite (ramificationGroup G 𝒪[L] i) :=
+    finite_ramificationGroup_of_le hi.le
   IsLocalRing.isPGroup_ramificationGroup G 𝒪[L] p hi
 
 /-! ### Wild inertia as the Sylow subgroup of inertia -/
@@ -432,8 +451,8 @@ theorem natCard_ramificationGroup_one (p : ℕ) [CharP 𝓀[L] p]
     [FaithfulSMul G 𝒪[L]] [Finite (ramificationGroup G 𝒪[L] 0)] :
     Nat.card (ramificationGroup G 𝒪[L] 1) =
       p ^ (Nat.card (ramificationGroup G 𝒪[L] 0)).factorization p := by
-  have : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  exact IsLocalRing.natCard_ramificationGroup_one G 𝒪[L] (FixedPoints.subalgebra ℤ 𝒪[L] G) p
+  let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
+  exact IsLocalRing.natCard_ramificationGroup_one p (not_dvd_index_ramificationGroup_one G p)
 
 variable (G) in
 /-- **Wild inertia is trivial exactly in the tame case.** For the residue characteristic `p`, the

@@ -42,13 +42,9 @@ theorem unitsMap_div_mem_unitFiltration_succ {i : ℕ} {σ : G}
     (hσ : σ ∈ ramificationGroup G S (i : ℤ)) (u : Sˣ) :
     Units.map (MulSemiringAction.toRingHom G S σ).toMonoidHom u / u ∈
       unitFiltration S (i + 1) := by
-  rw [mem_unitFiltration_iff, div_eq_mul_inv]
-  have hsub :
-      ((Units.map (MulSemiringAction.toRingHom G S σ).toMonoidHom u * u⁻¹ : Sˣ) : S) - 1 =
-        (σ • (u : S) - (u : S)) * (u⁻¹ : Sˣ) := by
-    simp [sub_mul]
-  rw [hsub]
-  exact Ideal.mul_mem_right _ _ (mem_ramificationGroup_natCast_iff.mp hσ (u : S))
+  rw [div_eq_mul_inv, unitFiltration_def]
+  exact Ideal.unitsMap_mul_inv_mem_principalUnitGroup
+    (Ideal.mem_inertia.mpr (mem_ramificationGroup_natCast_iff.mp hσ)) u
 
 end Action
 

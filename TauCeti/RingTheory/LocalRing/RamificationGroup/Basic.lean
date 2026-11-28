@@ -52,8 +52,10 @@ integer indexing that Herbrand theory uses. The coset-maximizer lemmas for `lowe
 
 * `TauCeti.IsLocalRing.ramificationGroup_natCast`: at a nonnegative index `G_i` is
   `Ideal.ramificationGroup` of the maximal ideal.
-* `TauCeti.IsLocalRing.ramificationGroup_eq_top_of_le_neg_one` and
-  `TauCeti.IsLocalRing.ramificationGroup_antitone`: the filtration starts at `⊤` and decreases.
+* `TauCeti.IsLocalRing.ramificationGroup_eq_top_of_le_neg_one`,
+  `TauCeti.IsLocalRing.ramificationGroup_antitone`, and
+  `TauCeti.IsLocalRing.finite_ramificationGroup_of_le`: the filtration starts at `⊤`, decreases,
+  and inherits finiteness from earlier steps.
 * `TauCeti.IsLocalRing.ramificationGroup_zero_eq_inertia`: `G_0` is the inertia subgroup of the
   maximal ideal, `TauCeti.IsLocalRing.ramificationGroup_zero_eq_ker_toRingAut` identifies it with
   the kernel of the action on the residue field, and
@@ -64,12 +66,14 @@ integer indexing that Herbrand theory uses. The coset-maximizer lemmas for `lowe
 * `TauCeti.IsLocalRing.ramificationGroupGradedSubgroupHom`: subgroup inclusion induces an
   injective homomorphism `H_i / H_{i+1} → G_i / G_{i+1}` on successive quotients.
 * `TauCeti.IsLocalRing.ramificationGroupGradedConj`: conjugation by an element of the ambient
-  group induces an automorphism of each successive quotient.
+  group induces an automorphism of each successive quotient, and
+  `TauCeti.IsLocalRing.ramificationGroupGradedConj_self` records that elements of `G_i` act
+  trivially whenever `G_i / G_{i+1}` is commutative.
 * `TauCeti.IsLocalRing.iInf_ramificationGroup_eq_ker` and
-  `TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_ker`: over a Noetherian local ring the
-  filtration cuts out the kernel of the action, and reaches it at a finite index once `G_0` is
-  finite; `TauCeti.IsLocalRing.iInf_ramificationGroup_eq_bot` and
-  `TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_bot` are the faithful case.
+  `TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_ker_of_finite`: over a Noetherian local
+  ring the filtration cuts out the kernel of the action, and reaches it at a finite index once
+  some `G_{i₀}` is finite; `TauCeti.IsLocalRing.iInf_ramificationGroup_eq_bot` and
+  `TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_bot_of_finite` are the faithful case.
 * `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_adjoin_eq_top`: when `S` is generated over a
   base ring `R` whose elements `G` fixes by a set `s`, membership in `G_i` is decided on `s`
   alone; `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_adjoin_singleton_eq_top` is the
@@ -104,7 +108,7 @@ integer indexing that Herbrand theory uses. The coset-maximizer lemmas for `lowe
 
 ## References
 
-* [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §1 and §3 (Lemma 4).
+* [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §§1–2 and §3 (Lemma 4).
 -/
 
 public section
@@ -148,6 +152,12 @@ theorem mem_ramificationGroup_natCast_iff {n : ℕ} {σ : G} :
     σ ∈ ramificationGroup G S n ↔ ∀ x : S, σ • x - x ∈ maximalIdeal S ^ (n + 1) := by
   have h : ((n : ℤ) + 1).toNat = n + 1 := by omega
   rw [mem_ramificationGroup_iff, h]
+
+/-- At a shifted nonnegative index `(n : ℤ) + 1`, the membership criterion has exponent `n + 2`. -/
+theorem mem_ramificationGroup_add_one_iff {n : ℕ} {σ : G} :
+    σ ∈ ramificationGroup G S ((n : ℤ) + 1) ↔
+      ∀ x : S, σ • x - x ∈ maximalIdeal S ^ (n + 2) := by
+  rw [← Nat.cast_succ, mem_ramificationGroup_natCast_iff]
 
 /-- At a nonnegative index, the ramification group of the local ring is the ramification group
 `Ideal.ramificationGroup` of its maximal ideal. -/
@@ -195,6 +205,13 @@ theorem ramificationGroup_antitone : Antitone (ramificationGroup G S) := by
   rw [mem_ramificationGroup_iff] at hσ ⊢
   exact fun x ↦ Ideal.pow_le_pow_right (by omega) (hσ x)
 
+variable {G S} in
+/-- If `G_i` is finite and `i ≤ j`, then `G_j` is finite. -/
+theorem finite_ramificationGroup_of_le {i j : ℤ} (h : i ≤ j)
+    [Finite (ramificationGroup G S i)] : Finite (ramificationGroup G S j) :=
+  Finite.of_injective (Subgroup.inclusion (ramificationGroup_antitone G S h))
+    (Subgroup.inclusion_injective _)
+
 end Defs
 
 section Adjoin
@@ -231,6 +248,16 @@ instance instNormalRamificationGroup (G : Type*) [Group G] (S : Type*) [CommRing
     [IsLocalRing S] [MulSemiringAction G S] (i : ℤ) : (ramificationGroup G S i).Normal := by
   simp_rw [ramificationGroup_def, Subgroup.normal_iff_map_conj_eq, ← Ideal.inertia_smul]
   exact fun σ ↦ congrArg (Ideal.inertia G) (smul_maximalIdeal_pow σ _)
+
+/-- Casting a graded ramification quotient class between equal indices preserves its
+representative. -/
+theorem cast_ramificationGroupGraded_mk (G S : Type*) [Group G] [CommRing S]
+    [IsLocalRing S] [MulSemiringAction G S] {i j : ℤ} (h : i = j)
+    (σ : ramificationGroup G S i) :
+    MulEquiv.cast (M := RamificationGroupGraded G S) h (QuotientGroup.mk σ) =
+      QuotientGroup.mk (MulEquiv.cast (M := fun k : ℤ ↦ ↥(ramificationGroup G S k)) h σ) := by
+  subst h
+  rfl
 
 end Normal
 
@@ -303,40 +330,34 @@ theorem iInf_ramificationGroup_eq_bot [FaithfulSMul G S] :
     ⨅ i : ℤ, ramificationGroup G S i = ⊥ := by
   rw [iInf_ramificationGroup_eq_ker, TauCeti.MulSemiringAction.ker_toRingAut_eq_bot]
 
-omit [IsNoetherianRing S] in
-/-- The intersection over the integer indices is already attained over the natural ones, since the
-filtration is constantly `⊤` below `0`. -/
-private theorem iInf_natCast_ramificationGroup :
-    ⨅ n : ℕ, ramificationGroup G S (n : ℤ) = ⨅ i : ℤ, ramificationGroup G S i :=
-  le_antisymm
-    (le_iInf fun i ↦ (iInf_le _ i.toNat).trans
-      (ramificationGroup_antitone G S (Int.self_le_toNat i)))
-    (le_iInf fun n ↦ iInf_le _ (n : ℤ))
-
-/-- Once the zeroth ramification group is finite, the filtration over a Noetherian local ring
+/-- Once some ramification group `G_{i₀}` is finite, the filtration over a Noetherian local ring
 reaches the kernel of the action at a finite index. -/
-theorem exists_forall_ramificationGroup_eq_ker [Finite (ramificationGroup G S 0)] :
+theorem exists_forall_ramificationGroup_eq_ker_of_finite (i₀ : ℤ)
+    [Finite (ramificationGroup G S i₀)] :
     ∃ N : ℤ, ∀ i : ℤ, N ≤ i →
       ramificationGroup G S i = MonoidHom.ker (MulSemiringAction.toRingAut G S) := by
-  have hanti : Antitone fun n : ℕ ↦ ramificationGroup G S (n : ℤ) :=
-    fun _ _ hmn ↦ ramificationGroup_antitone G S (by exact_mod_cast hmn)
-  have h0 : (fun n : ℕ ↦ ramificationGroup G S (n : ℤ)) 0 = ramificationGroup G S 0 := by
-    norm_num
-  have : Finite ((fun n : ℕ ↦ ramificationGroup G S (n : ℤ)) 0) := h0 ▸ ‹_›
-  obtain ⟨N, hN⟩ := TauCeti.Subgroup.exists_forall_eq_iInf_of_antitone _ hanti
-  refine ⟨(N : ℤ), fun i hi ↦ ?_⟩
-  have hi0 : (0 : ℤ) ≤ i := (Int.natCast_nonneg N).trans hi
-  have hcast : (i.toNat : ℤ) = i := Int.toNat_of_nonneg hi0
-  have hiN : N ≤ i.toNat := by omega
-  rw [← hcast, hN i.toNat hiN, iInf_natCast_ramificationGroup, iInf_ramificationGroup_eq_ker]
+  let f : ℕ → Subgroup G := fun d ↦ ramificationGroup G S (i₀ + d)
+  have hanti : Antitone f := fun _ _ hmn ↦ ramificationGroup_antitone G S (by omega)
+  have h0 : f 0 = ramificationGroup G S i₀ := by simp [f]
+  have : Finite (f 0) := h0 ▸ ‹_›
+  obtain ⟨N, hN⟩ := TauCeti.Subgroup.exists_forall_eq_iInf_of_antitone f hanti
+  have hiInf : ⨅ d : ℕ, f d = ⨅ i : ℤ, ramificationGroup G S i :=
+    le_antisymm
+      (le_iInf fun i ↦ (iInf_le f (i - i₀).toNat).trans
+        (ramificationGroup_antitone G S (by omega)))
+      (le_iInf fun d ↦ iInf_le _ (i₀ + d))
+  refine ⟨i₀ + N, fun i hi ↦ ?_⟩
+  have hcast : i₀ + ((i - i₀).toNat : ℤ) = i := by omega
+  have hiN : N ≤ (i - i₀).toNat := by omega
+  simpa only [f, hcast, hiInf, iInf_ramificationGroup_eq_ker] using hN (i - i₀).toNat hiN
 
-/-- For a faithful action whose zeroth ramification group is finite, the ramification groups over
-a Noetherian local ring vanish from some index on. -/
-theorem exists_forall_ramificationGroup_eq_bot [FaithfulSMul G S]
-    [Finite (ramificationGroup G S 0)] :
+/-- For a faithful action with some finite ramification group `G_{i₀}`, the ramification groups
+over a Noetherian local ring vanish from some index on. -/
+theorem exists_forall_ramificationGroup_eq_bot_of_finite (i₀ : ℤ) [FaithfulSMul G S]
+    [Finite (ramificationGroup G S i₀)] :
     ∃ N : ℤ, ∀ i : ℤ, N ≤ i → ramificationGroup G S i = ⊥ := by
   simpa only [TauCeti.MulSemiringAction.ker_toRingAut_eq_bot] using
-    exists_forall_ramificationGroup_eq_ker G S
+    exists_forall_ramificationGroup_eq_ker_of_finite G S i₀
 
 end Separated
 
@@ -499,7 +520,7 @@ theorem sum_addVal_smul_sub_eq_finsum_card_ramificationGroup_sub_one [Fintype G]
   classical
   -- The filtration vanishes from some natural index `N` on.
   obtain ⟨N, hN⟩ : ∃ N : ℕ, ∀ i : ℕ, N ≤ i → ramificationGroup G S i = ⊥ := by
-    obtain ⟨N₀, hN₀⟩ := exists_forall_ramificationGroup_eq_bot G S
+    obtain ⟨N₀, hN₀⟩ := exists_forall_ramificationGroup_eq_bot_of_finite G S 0
     exact ⟨N₀.toNat, fun i hi ↦ hN₀ i (by omega)⟩
   -- For `σ ≠ 1`, the valuation `v (σ • ξ - ξ)` counts the indices `i < N` with `σ ∈ G_i`.
   have hval : ∀ σ ∈ univ.erase (1 : G), IsDiscreteValuationRing.addVal S (σ • ξ - ξ) =
@@ -698,6 +719,19 @@ theorem ramificationGroupGradedConj_mul (g h : G) (i : ℤ)
       ramificationGroupGradedConj G S g i (ramificationGroupGradedConj G S h i x) := by
   induction x using QuotientGroup.induction_on with
   | _ x => simp
+
+/-- When the graded piece `G_i / G_{i+1}` is commutative, conjugation by an element of `G_i` acts
+trivially on it. -/
+@[simp]
+theorem ramificationGroupGradedConj_self (i : ℤ) [IsMulCommutative (RamificationGroupGraded G S i)]
+    (σ : ramificationGroup G S i) (x : RamificationGroupGraded G S i) :
+    ramificationGroupGradedConj G S (σ : G) i x = x := by
+  induction x using QuotientGroup.induction_on with
+  | _ τ =>
+    rw [ramificationGroupGradedConj_mk]
+    have hconj : MulAut.conjNormal (σ : G) τ = σ * τ * σ⁻¹ := Subtype.ext (by simp)
+    rw [hconj, QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv, mul_comm',
+      ← mul_assoc, inv_mul_cancel, one_mul]
 
 end Subgroup
 

@@ -58,6 +58,8 @@ which a natural number generates a positive power of the maximal ideal has chara
   exactly when `ϖ ∣ x`.
 * `Irreducible.smodEq_maximalIdeal_pow_iff_dvd`: for a uniformizer `ϖ`, congruence modulo
   `𝔪 ^ n` is divisibility of the difference by `ϖ ^ n`.
+* `Irreducible.pow_mul_mem_maximalIdeal_pow_add_iff`: multiplying by a uniformizer power
+  shifts maximal-ideal power membership.
 * `Irreducible.notMem_maximalIdeal_sq`: a uniformizer does not lie in `𝔪 ^ 2`.
 * `TauCeti.IsDiscreteValuationRing.infinite`: a discrete valuation ring is infinite, since the
   powers of a uniformizer are pairwise distinct.
@@ -92,14 +94,23 @@ theorem exists_dvd_pow_of_ne_zero_of_not_isUnit {b π : S} (hb : b ≠ 0) (hπ :
     (IsLocalRing.mem_maximalIdeal π).2 hπ
   exact ⟨j, (Units.mul_left_dvd).2 (pow_dvd_pow_of_dvd hϖπ j)⟩
 
+/-- Multiplying by a power of a uniformizer of a discrete valuation ring shifts maximal-ideal power
+membership. -/
+theorem _root_.Irreducible.pow_mul_mem_maximalIdeal_pow_add_iff {ϖ : S} (hϖ : Irreducible ϖ)
+    {k n : ℕ} {x : S} :
+    ϖ ^ k * x ∈ maximalIdeal S ^ (n + k) ↔ x ∈ maximalIdeal S ^ n := by
+  rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.span_singleton_pow,
+    Ideal.mem_span_singleton, Ideal.mem_span_singleton, pow_add, mul_comm (ϖ ^ n),
+    mul_dvd_mul_iff_left (pow_ne_zero k hϖ.ne_zero)]
+
 /-- Cancelling a uniformizer power from membership in the next maximal-ideal power leaves
 the coefficient in the maximal ideal. -/
 theorem mem_maximalIdeal_of_mul_pow_mem_maximalIdeal_pow_succ {ϖ c : S} {n : ℕ}
     (hϖ : Irreducible ϖ) (h : c * ϖ ^ n ∈ maximalIdeal S ^ (n + 1)) :
     c ∈ maximalIdeal S := by
-  rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton, pow_succ',
-    mul_dvd_mul_iff_right (pow_ne_zero n hϖ.ne_zero)] at h
-  rwa [hϖ.maximalIdeal_eq, Ideal.mem_span_singleton]
+  rw [← pow_one (maximalIdeal S)]
+  rw [mul_comm, add_comm n 1] at h
+  exact hϖ.pow_mul_mem_maximalIdeal_pow_add_iff.mp h
 
 /-- Membership in a power of the maximal ideal of a discrete valuation ring, read on the additive
 valuation. -/

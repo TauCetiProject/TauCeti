@@ -31,7 +31,17 @@ uniformizer coordinate `Additive (U_{n+1} / U_{n+2}) ≃+ k` recovers
 When `B` is a local algebra over a local ring `A` fixed by `G` with separable residue extension
 `ResidueField B / ResidueField A`,
 `TauCeti.IsLocalRing.mem_ramificationGroup_natCast_iff_smul_sub_mem` implies that the kernel of
-`G_i →* U_i / U_{i+1}` is `G_{i+1}` and every `θ_i` is injective.
+`G_i →* U_i / U_{i+1}` is `G_{i+1}` and every `θ_i` is injective; in particular, `G_0 / G_1` is
+commutative and `G_0` acts trivially on `G_0 / G_1` by conjugation.
+
+Without any base ring or separability assumption, conjugation equivariance holds for
+`TauCeti.IsLocalRing.tameCharacter`, `TauCeti.IsLocalRing.tameCharacterGraded`, and
+`TauCeti.IsLocalRing.ramificationGroupGradedToResidueField`, and in residue characteristic zero a
+faithful action with finite `G_0` has injective tame character and cyclic inertia `G_0`. The
+conjugation formulas (`ramificationGroupGradedConj_zero`, `tameCharacter_conj`,
+`tameCharacterGraded_ramificationGroupGradedConj`, and `ramificationGroupGradedToResidueField_conj`)
+generalize the local-field formalization in
+`TauCeti/NumberTheory/LocalField/UnitFiltration/Conjugation.lean`.
 
 ## Main definitions
 
@@ -53,16 +63,30 @@ unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_ramificationGroupGradedTo
   (in `TauCeti.IsDiscreteValuationRing`): compatibility of `θ_i` with
   `TauCeti.IsLocalRing.tameCharacter`, `TauCeti.IsLocalRing.tameCharacterGraded`, and
   `TauCeti.IsLocalRing.ramificationGroupGradedToResidueField`.
-* `TauCeti.IsDiscreteValuationRing.ker_ramificationGroupToUnitFiltrationGraded` and
-  `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToUnitFiltrationGraded_injective`:
-  exactness of the kernels and injectivity of `θ_i` under separable residue extension.
+* `TauCeti.IsDiscreteValuationRing.ker_ramificationGroupToUnitFiltrationGraded`,
+  `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToUnitFiltrationGraded_injective`,
+  `TauCeti.IsDiscreteValuationRing.isMulCommutative_ramificationGroupGraded_zero`, and
+  `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedConj_zero`:
+  exactness of the kernels, injectivity of `θ_i`, commutativity of `G_0 / G_1`, and triviality of
+  inertia conjugation on `G_0 / G_1` under separable residue extension.
 * `TauCeti.IsDiscreteValuationRing.mem_ramificationGroup_one_of_pow_sub_one_mem_maximalIdeal`: in
   prime residue characteristic `p`, an element of `G_0` lies in `G_1` once a `p`-power of its
   uniformizer ratio is congruent to `1` modulo `𝔪`.
+* `TauCeti.IsLocalRing.tameCharacter_conj`,
+  `TauCeti.IsLocalRing.tameCharacterGraded_ramificationGroupGradedConj`, and
+  `TauCeti.IsLocalRing.ramificationGroupGradedToResidueField_conj`: conjugation-equivariance
+  formulas on depth `0` and positive-depth graded pieces for any discrete valuation ring.
+* `TauCeti.IsDiscreteValuationRing.mem_ramificationGroup_one_of_charZero`,
+  `TauCeti.IsDiscreteValuationRing.ker_tameCharacter_of_charZero`, and
+  `TauCeti.IsDiscreteValuationRing.isCyclic_ramificationGroup_zero_of_charZero`: in residue
+  characteristic zero, without any base ring or separability assumption, a faithful action with
+  finite `G_0` has injective tame character and cyclic inertia `G_0`.
 
 ## References
 
-* [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §2, Propositions 5–7 and Corollaries.
+* [J.-P. Serre, *Corps Locaux*][serre1968], Chapter IV, §2, Propositions 5–7, 9, and Corollaries.
+* J.-P. Serre, *Sur les corps locaux à corps résiduel algébriquement clos*, Bull. Soc. Math.
+  France **89** (1961), 105–154, n° 3.1, Proposition 1 and Corollaries 1–2.
 -/
 
 public section
@@ -106,6 +130,12 @@ private theorem coe_uniformizerRatio (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
     (hσϖ : Irreducible ((σ : G) • ϖ) := hϖ.smul (σ : G)) :
     (uniformizerRatio i hϖ σ : Bˣ) = uniformizerChangeUnit ϖ ((σ : G) • ϖ) hϖ hσϖ :=
   rfl
+
+/-- The uniformizer ratio of the identity element is `1`. -/
+@[simp]
+theorem uniformizerRatio_one (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ) :
+    uniformizerRatio (G := G) i hϖ 1 = 1 := by
+  exact Subtype.ext (Units.ext (mul_left_cancel₀ hϖ.ne_zero (by simp)))
 
 /-- The 1-cocycle identity `u_{στ} = u_σ * σ(u_τ)` in `Bˣ` for the uniformizer ratio. -/
 theorem coe_uniformizerRatio_mul (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
@@ -154,7 +184,9 @@ theorem ramificationGroupToUnitFiltrationGraded_apply (i : ℕ) {ϖ : B} (hϖ : 
       QuotientGroup.mk (uniformizerRatio i hϖ σ) :=
   (rfl)
 
-private theorem coe_uniformizerRatio_change (i : ℕ) {ϖ ϖ' : B} (hϖ : Irreducible ϖ)
+/-- **Change-of-uniformizer coboundary law** for the uniformizer ratio: if `ϖ' = ϖ * a`, then
+`a * u_σ(ϖ') = u_σ(ϖ) * σ(a)` in `Bˣ`. -/
+theorem coe_uniformizerRatio_change (i : ℕ) {ϖ ϖ' : B} (hϖ : Irreducible ϖ)
     (hϖ' : Irreducible ϖ') (σ : ramificationGroup G B (i : ℤ)) :
     uniformizerChangeUnit ϖ ϖ' hϖ hϖ' * (uniformizerRatio i hϖ' σ : Bˣ) =
       (uniformizerRatio i hϖ σ : Bˣ) *
@@ -349,6 +381,195 @@ theorem mem_ramificationGroup_one_of_pow_sub_one_mem_maximalIdeal
   exact (TauCeti.IsLocalRing.mem_ramificationGroup_natCast_iff_smul_sub_mem A
     hϖ.maximalIdeal_eq hσ (n := 1)).mpr h2
 
+section
+variable (G B)
+include A
+
+/-- The tame quotient `G_0 / G_1` is commutative when the residue extension over `A` is
+separable: it embeds into `UnitFiltrationGraded B 0`, a quotient of `Bˣ`. (At positive depth
+`i = n + 1`, commutativity holds without `A` or DVR hypotheses via
+`TauCeti.IsLocalRing.instIsMulCommutativeRamificationGroupGradedNatCastSucc`.) -/
+theorem isMulCommutative_ramificationGroupGraded_zero
+    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] :
+    IsMulCommutative (RamificationGroupGraded G B (0 : ℤ)) := by
+  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible B
+  have hinj := ramificationGroupGradedToUnitFiltrationGraded_injective (G := G) A 0 hϖ
+  exact IsMulCommutative.of_comm fun _ _ ↦
+    hinj (by rw [map_mul, map_mul]; exact mul_comm (G := UnitFiltrationGraded B 0) _ _)
+
+end
+
+include A in
+/-- Conjugation by an inertia element `σ ∈ G_0` acts trivially on the tame quotient `G_0 / G_1`,
+when the residue extension over `A` is separable. (Not marked `@[simp]` because `A` does not
+appear in the left-hand side; once `isMulCommutative_ramificationGroupGraded_zero G A B` is in
+scope, `TauCeti.IsLocalRing.ramificationGroupGradedConj_self` simplifies this automatically.) -/
+theorem ramificationGroupGradedConj_zero
+    [Algebra.IsSeparable (ResidueField A) (ResidueField B)] (σ : ramificationGroup G B 0)
+    (τ : RamificationGroupGraded G B (0 : ℤ)) :
+    ramificationGroupGradedConj G B (σ : G) 0 τ = τ := by
+  have := isMulCommutative_ramificationGroupGraded_zero G A B
+  exact ramificationGroupGradedConj_self G B 0 σ τ
+
 end Separable
+
+end TauCeti.IsDiscreteValuationRing
+
+namespace TauCeti.IsLocalRing
+
+/-! ### Conjugation equivariance -/
+
+section Conjugation
+
+variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsDomain S]
+  [_root_.IsDiscreteValuationRing S] [MulSemiringAction G S]
+
+/-- **Conjugation equivariance of the tame character** (Serre, *Local Fields*, IV §2,
+Proposition 9): conjugating `σ ∈ G_0` by `g ∈ G` acts on `tameCharacter G S σ` via the induced
+action of `g` on `ResidueField S`. -/
+@[simp]
+theorem tameCharacter_conj (g : G) (σ : ramificationGroup G S (0 : ℤ)) :
+    (tameCharacter G S (MulAut.conjNormal g σ) : ResidueField S) =
+      g • (tameCharacter G S σ : ResidueField S) := by
+  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
+  have hgϖ : Irreducible (g⁻¹ • ϖ) := hϖ.smul g⁻¹
+  rw [coe_tameCharacter_of_smul_eq_mul hgϖ
+      (IsDiscreteValuationRing.mul_coe_uniformizerRatio 0 hgϖ σ).symm,
+    ← ResidueField.residue_smul]
+  refine coe_tameCharacter_of_smul_eq_mul hϖ ?_
+  calc (MulAut.conjNormal g σ : G) • ϖ
+      = g • ((σ : G) • (g⁻¹ • ϖ)) := by
+        rw [MulAut.conjNormal_apply, mul_smul, mul_smul]
+    _ = g • (g⁻¹ • ϖ * ((IsDiscreteValuationRing.uniformizerRatio 0 hgϖ σ : Sˣ) : S)) := by
+        rw [IsDiscreteValuationRing.mul_coe_uniformizerRatio]
+    _ = g • (g⁻¹ • ϖ) * g • ((IsDiscreteValuationRing.uniformizerRatio 0 hgϖ σ : Sˣ) : S) :=
+        smul_mul' g _ _
+    _ = ϖ * g • ((IsDiscreteValuationRing.uniformizerRatio 0 hgϖ σ : Sˣ) : S) := by
+        rw [smul_inv_smul]
+
+/-- Conjugation by `g ∈ G` on `G_0 / G_1` corresponds under `tameCharacterGraded` to the induced
+action of `g` on `ResidueField S`. -/
+@[simp]
+theorem tameCharacterGraded_ramificationGroupGradedConj (g : G)
+    (x : RamificationGroupGraded G S (0 : ℤ)) :
+    (tameCharacterGraded G S (ramificationGroupGradedConj G S g 0 x) : ResidueField S) =
+      g • (tameCharacterGraded G S x : ResidueField S) := by
+  induction x using QuotientGroup.induction_on with
+  | _ σ =>
+    rw [ramificationGroupGradedConj_mk, tameCharacterGraded_mk, tameCharacterGraded_mk,
+      tameCharacter_conj]
+
+private theorem residue_uniformizerChangeUnit_inv_smul {ϖ : S} (hϖ : Irreducible ϖ)
+    (σ : ramificationGroup G S 0) (hσϖ : Irreducible ((σ : G)⁻¹ • ϖ) := hϖ.smul _) :
+    residue S (uniformizerChangeUnit ϖ ((σ : G)⁻¹ • ϖ) hϖ hσϖ : S) =
+      (tameCharacter G S σ : ResidueField S)⁻¹ := by
+  have h1 : (tameCharacter G S σ⁻¹ : ResidueField S) =
+      residue S (uniformizerChangeUnit ϖ ((σ : G)⁻¹ • ϖ) hϖ hσϖ : S) :=
+    coe_tameCharacter_of_smul_eq_mul hϖ
+      (by simp)
+  rw [← h1, map_inv, Units.val_inv_eq_inv_val]
+
+/-- **Conjugation action formula on positive ramification quotients** (Serre, *Local Fields*,
+IV §2, Proposition 9): in the residue coordinate determined by `ϖ`, conjugation by `σ ∈ G_0` acts
+on `G_{n+1} / G_{n+2}` as multiplication by `(tameCharacter G S σ) ^ (n + 1)`. -/
+@[simp]
+theorem ramificationGroupGradedToResidueField_conj (n : ℕ) {ϖ : S} (hϖ : Irreducible ϖ)
+    (σ : ramificationGroup G S 0) (τ : RamificationGroupGraded G S ((n : ℤ) + 1)) :
+    (ramificationGroupGradedToResidueField hϖ n
+        (ramificationGroupGradedConj G S (σ : G) ((n : ℤ) + 1) τ)).toAdd =
+      (tameCharacter G S σ : ResidueField S) ^ (n + 1) *
+        (ramificationGroupGradedToResidueField hϖ n τ).toAdd := by
+  induction τ using QuotientGroup.induction_on with
+  | _ τ =>
+    let g : G := σ
+    let ϖ' : S := g⁻¹ • ϖ
+    have hϖ' : Irreducible ϖ' := hϖ.smul g⁻¹
+    have hmove : (τ : G) • ϖ' - ϖ' ∈ maximalIdeal S ^ (n + 2) :=
+      mem_ramificationGroup_add_one_iff.mp τ.property ϖ'
+    rw [hϖ'.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton'] at hmove
+    obtain ⟨y, hy⟩ := hmove
+    have hτcoord :
+        (ramificationGroupToResidueField hϖ' n τ).toAdd = residue S y := by
+      rw [ramificationGroupToResidueField_apply_of_smul_sub_eq hϖ' (by rw [← hy, mul_comm]),
+        toAdd_ofAdd]
+    have hconjMove :
+        ((MulAut.conjNormal g τ : ramificationGroup G S ((n : ℤ) + 1)) : G) • ϖ - ϖ =
+          ϖ ^ (n + 2) * (g • y) := by
+      calc
+        _ = g • ((τ : G) • ϖ' - ϖ') := by
+          simp [ϖ', MulAut.conjNormal_apply, mul_smul, smul_sub]
+        _ = g • (y * ϖ' ^ (n + 2)) := by rw [hy]
+        _ = ϖ ^ (n + 2) * (g • y) := by simp [ϖ', smul_mul', smul_pow', mul_comm]
+    have hconjCoord :
+        (ramificationGroupToResidueField hϖ n (MulAut.conjNormal g τ)).toAdd =
+          residue S (g • y) := by
+      rw [ramificationGroupToResidueField_apply_of_smul_sub_eq hϖ hconjMove, toAdd_ofAdd]
+    have hresidue : residue S (g • y) = residue S y :=
+      residue_smul_eq_of_mem_ramificationGroup_zero G S σ.property y
+    have hchange := toAdd_ramificationGroupToResidueField_of_mul_eq hϖ hϖ'
+      (mul_uniformizerChangeUnit ϖ ϖ' hϖ hϖ') τ
+    rw [ramificationGroupGradedConj_mk, ramificationGroupGradedToResidueField_mk,
+      ramificationGroupGradedToResidueField_mk, hconjCoord, hresidue, ← hτcoord, hchange,
+      residue_uniformizerChangeUnit_inv_smul hϖ σ hϖ', inv_pow, ← mul_assoc,
+      mul_inv_cancel₀ (pow_ne_zero _ (Units.ne_zero _)), one_mul]
+
+end Conjugation
+
+end TauCeti.IsLocalRing
+
+namespace TauCeti.IsDiscreteValuationRing
+
+/-! ### Residue characteristic zero -/
+
+section CharZero
+
+variable {G : Type*} [Group G] {B : Type*} [CommRing B] [IsDomain B]
+  [_root_.IsDiscreteValuationRing B] [MulSemiringAction G B]
+
+/-- In residue characteristic zero, a finite-order inertia element `σ ∈ G_0` that moves a
+uniformizer `ϖ` by an element of `𝔪 ^ 2` lies in wild inertia `G_1`, with no base ring or
+separability assumption. -/
+theorem mem_ramificationGroup_one_of_charZero [CharZero (ResidueField B)]
+    {ϖ : B} (hϖ : Irreducible ϖ) {σ : G} (hσ : σ ∈ ramificationGroup G B 0)
+    (hfin : IsOfFinOrder σ) (hϖ2 : σ • ϖ - ϖ ∈ maximalIdeal B ^ 2) :
+    σ ∈ ramificationGroup G B 1 := by
+  have h1 : σ ∈ (maximalIdeal B ^ 2).inertia G :=
+    mem_inertia_of_forall_mem_of_pow_mem
+      (Ideal.mem_inertia.mpr (mem_ramificationGroup_zero_iff.mp hσ))
+      (fun w hw ↦ smul_sub_mem_maximalIdeal_pow_succ_of_uniformizer hϖ.maximalIdeal_eq hϖ2
+        (fun y ↦ by simpa only [pow_one] using mem_ramificationGroup_zero_iff.mp hσ y) hw)
+      (Nat.cast_ne_zero.mpr hfin.orderOf_pos.ne')
+      (by rw [pow_orderOf_eq_one]; exact one_mem _)
+  simpa [ramificationGroup_def] using h1
+
+variable (G B) in
+/-- **In residue characteristic zero, the tame character is injective** whenever `G` acts faithfully
+on `B` and `G_0` is finite, with no base ring or separability assumption. -/
+theorem ker_tameCharacter_of_charZero [CharZero (ResidueField B)] [FaithfulSMul G B]
+    [Finite (ramificationGroup G B 0)] :
+    (IsLocalRing.tameCharacter G B).ker = ⊥ := by
+  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible B
+  rw [eq_bot_iff]
+  intro σ hσ
+  rw [MonoidHom.mem_ker, tameCharacter_eq_one_iff_smul_sub_mem hϖ] at hσ
+  have h1 : (σ : G) ∈ ramificationGroup G B 1 :=
+    mem_ramificationGroup_one_of_charZero hϖ σ.property
+      ((ramificationGroup G B 0).subtype.isOfFinOrder (isOfFinOrder_of_finite σ)) hσ
+  have : Finite (ramificationGroup G B 1) :=
+    finite_ramificationGroup_of_le (by omega : (0 : ℤ) ≤ 1)
+  rw [ramificationGroup_eq_bot_of_charZero one_pos (iInf_ramificationGroup_eq_bot G B)] at h1
+  exact Subtype.ext h1
+
+/-- **Inertia `G_0` is cyclic in residue characteristic zero**, whenever `G` acts faithfully on `B`
+and `G_0` is finite, with no base ring or separability assumption. -/
+theorem isCyclic_ramificationGroup_zero_of_charZero [CharZero (ResidueField B)] [FaithfulSMul G B]
+    [Finite (ramificationGroup G B 0)] :
+    IsCyclic (ramificationGroup G B 0) :=
+  isCyclic_of_injective_ringHom
+    ((Units.coeHom (ResidueField B)).comp (IsLocalRing.tameCharacter G B))
+    (Units.val_injective.comp
+      ((MonoidHom.ker_eq_bot_iff _).mp (ker_tameCharacter_of_charZero G B)))
+
+end CharZero
 
 end TauCeti.IsDiscreteValuationRing
