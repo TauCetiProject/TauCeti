@@ -10,7 +10,6 @@ public import TauCeti.NumberTheory.NumberField.CMField.AdeleStar
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.AddChar
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.FiniteComponent
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Splitting
-import TauCeti.NumberTheory.NumberField.CMField.Basic
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.IntegralIdeal
 
 /-!

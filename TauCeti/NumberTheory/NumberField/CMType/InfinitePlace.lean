@@ -31,6 +31,8 @@ identification, as the coordinates `ℂ^Φ` of the infinite adeles.
 * `TauCeti.CMType.embedding_eq_iff`: `Φ_w` is the unique embedding of `Φ` inducing `w`.
 * `TauCeti.CMType.completionEmbedding_algebraMap`: `completionEmbedding Φ w` extends `Φ_w`.
 * `TauCeti.CMType.norm_completionEmbedding`: `completionEmbedding Φ w` is norm-preserving.
+* `TauCeti.CMType.eq_completionEmbedding`: `completionEmbedding Φ w` is the unique continuous
+  extension of `Φ_w`.
 -/
 
 public section
@@ -123,5 +125,17 @@ theorem norm_completionEmbedding (w : InfinitePlace E) (z : w.Completion) :
 theorem continuous_completionEmbedding (w : InfinitePlace E) :
     Continuous (Φ.completionEmbedding w) :=
   (Φ.isometry_completionEmbedding w).continuous
+
+/-- **`completionEmbedding Φ w` is the unique continuous extension of `Φ_w`**: a continuous ring
+homomorphism `E_w →+* ℂ` extending the embedding of `Φ` above `w` is `completionEmbedding Φ w`,
+since `E` is dense in `E_w`. -/
+theorem eq_completionEmbedding {w : InfinitePlace E} {f : w.Completion →+* ℂ}
+    (hf : Continuous f) (h : ∀ x : E, f (algebraMap E w.Completion x) = Φ.embedding w x) :
+    f = Φ.completionEmbedding w :=
+  DFunLike.coe_injective <| AbsoluteValue.Completion.ext hf (Φ.continuous_completionEmbedding w)
+    fun x ↦ by
+      simpa only [AbsoluteValue.Completion.algebraMap_def, WithAbs.algebraMap_right_apply,
+        Algebra.algebraMap_self_apply, WithAbs.toAbs_ofAbs] using
+        (h x.ofAbs).trans (Φ.completionEmbedding_algebraMap w x.ofAbs).symm
 
 end TauCeti.CMType

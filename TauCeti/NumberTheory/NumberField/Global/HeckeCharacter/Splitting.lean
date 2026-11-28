@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.NumberField.CMType.InfinitePlace
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.InfinityType
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.GaloisAction
-import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
 
 /-!
 # Splitting characters of a CM field
@@ -123,9 +122,11 @@ theorem prod_embedding_div_norm_eq_one (hυ : υ.IsSplitting Φ) (u : (𝓞 E)ˣ
   set x := IdeleGroup.unitEmbedding (𝓞 E) E (Units.map (algebraMap (𝓞 E) E : 𝓞 E →* E) u)
   have hx : IdeleGroup.toFiniteIdele (𝓞 E) E x ∈ FiniteAdeleRing.integralUnits (𝓞 E) E := by
     simp [x]
+  -- the principal idele `x` lies in the principal subgroup, so its idele class is trivial
+  have hprincipal : (x : IdeleClassGroup (𝓞 E) E) = 1 :=
+    (QuotientGroup.eq_one_iff _).2 ⟨_, rfl⟩
   have h := hυ.apply_of_mem_integralUnits x hx
-  rw [show (x : IdeleClassGroup (𝓞 E) E) = 1 from
-    (QuotientGroup.eq_one_iff _).2 ⟨_, rfl⟩] at h
+  rw [hprincipal] at h
   simpa [x, ← CMType.norm_completionEmbedding Φ] using h.symm
 
 end IsSplitting
