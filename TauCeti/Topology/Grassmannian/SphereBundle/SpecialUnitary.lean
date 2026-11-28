@@ -15,10 +15,11 @@ vector `e₀` gives the map `SU(1 + n) → S`, `A ↦ A e₀` (`TauCeti.specialU
 unit sphere `S` of `EuclideanSpace 𝕜 (Fin (1 + n))`. Over `ℂ` this sphere is `S^(2n+1)`. The
 fibre of the map over `e₀` is the block subgroup `diag(1, SU(n))`, the image of
 `Matrix.specialUnitaryGroup.fromBlocksOne 𝕜 1 n`. For `n ≥ 1` the map is surjective and a locally
-trivial bundle with fibre `SU(n)`, and hence a Serre fibration. For `n = 2` and `𝕜 = ℂ` this is the
-bundle `SU(2) → SU(3) → S⁵`, with the block inclusion `B ↦ diag(1, B)` and the projection to the
-first column. Over `ℝ` it is the bundle `SO(n) → SO(1 + n) → Sⁿ` of
-`TauCeti.Topology.Grassmannian.SphereBundle.Basic`.
+trivial bundle with fibre `SU(n)`, and hence a Serre fibration. Its nonempty fibres (the fibre
+through each point of `SU(1 + n)`) are path connected whenever `SU(n)` is, as over `ℂ` and over
+`ℝ`. For `n = 2` and `𝕜 = ℂ` this is the bundle `SU(2) → SU(3) → S⁵`, with the block inclusion
+`B ↦ diag(1, B)` and the projection to the first column. Over `ℝ` it is the bundle
+`SO(n) → SO(1 + n) → Sⁿ` of `TauCeti.Topology.Grassmannian.SphereBundle.Basic`.
 
 A unit vector is an orthonormal one-frame (`TauCeti.finiteOrthonormalFrame.sphereHomeomorph`), and
 under this identification `A ↦ A e₀` is the special unitary Stiefel map
@@ -35,11 +36,15 @@ surjective: `SU(1)` is trivial, while the unit sphere of `𝕜` is not a point.
 
 ## Main results
 
+* `TauCeti.specialUnitarySphereMap_eq_specialUnitarySphereMap_iff`: the fibres are the left cosets
+  of the stabilizer of `e₀`.
 * `TauCeti.specialUnitarySphereMap_eq_specialUnitarySphereMap_one_iff`: the fibre over `e₀` is the
   image of `SU(n)`.
 * `TauCeti.exists_trivialization_specialUnitarySphereMap`: a chart with fibre `SU(n)` around each
   point of the sphere.
 * `TauCeti.specialUnitarySphereMap_mem_serreFibrations`: `SU(1 + n) → S` is a Serre fibration.
+* `TauCeti.isPathConnected_specialUnitarySphereMap_preimage_singleton`: the fibre through each
+  point of `SU(1 + n)` is path connected whenever `SU(n)` is.
 
 ## References
 
@@ -102,6 +107,15 @@ theorem ofLp_specialUnitarySphereMap_mul (A B : specialUnitaryGroup (Fin (1 + n)
     WithLp.ofLp_toLp, ← mulVec_single_one, ← mulVec_single_one, Submonoid.coe_mul,
     mulVec_mulVec]
 
+/-- The fibres of `A ↦ A e₀` are the left cosets of the stabilizer of `e₀`. -/
+theorem specialUnitarySphereMap_eq_specialUnitarySphereMap_iff
+    {A B : specialUnitaryGroup (Fin (1 + n)) 𝕜} :
+    specialUnitarySphereMap n A = specialUnitarySphereMap n B ↔
+      A⁻¹ * B ∈ finiteOrthonormalFrame.specialUnitaryStabilizer 𝕜 (Nat.le_add_right 1 n) := by
+  rw [specialUnitarySphereMap, specialUnitarySphereMap,
+    (finiteOrthonormalFrame.sphereHomeomorph 𝕜 (1 + n)).injective.eq_iff,
+    specialUnitaryFrameMap_eq_specialUnitaryFrameMap_iff]
+
 /-- The fibre of `A ↦ A e₀` over `e₀` is the block subgroup `diag(1, SU(n))`. -/
 theorem specialUnitarySphereMap_eq_specialUnitarySphereMap_one_iff
     {A : specialUnitaryGroup (Fin (1 + n)) 𝕜} :
@@ -152,6 +166,30 @@ theorem fromBlocksOne_specialUnitarySphereFiberHomeomorph_symm_apply
 theorem specialUnitarySphereFiberHomeomorph_one :
     specialUnitarySphereFiberHomeomorph 𝕜 n 1 = ⟨1, rfl⟩ :=
   Subtype.ext (by simp)
+
+/-- Every nonempty fibre of `A ↦ A e₀` is path connected whenever `SU(n)` is, for instance over
+`ℂ`: the fibre through `A` is the left translate by `A` of the fibre over `e₀`, which is a copy of
+`SU(n)`. -/
+theorem isPathConnected_specialUnitarySphereMap_preimage_singleton
+    [PathConnectedSpace (specialUnitaryGroup (Fin n) 𝕜)]
+    (A : specialUnitaryGroup (Fin (1 + n)) 𝕜) :
+    IsPathConnected (specialUnitarySphereMap n ⁻¹' {specialUnitarySphereMap n A}) := by
+  have h₁ : IsPathConnected (specialUnitarySphereMap (𝕜 := 𝕜) n ⁻¹'
+      {specialUnitarySphereMap n 1}) :=
+    isPathConnected_iff_pathConnectedSpace.2 <|
+      (specialUnitarySphereFiberHomeomorph 𝕜 n).surjective.pathConnectedSpace
+        (specialUnitarySphereFiberHomeomorph 𝕜 n).continuous
+  convert h₁.image (continuous_const_mul A) using 1
+  ext B
+  simp only [mem_preimage, mem_singleton_iff, mem_image]
+  constructor
+  · intro hB
+    refine ⟨A⁻¹ * B, ?_, mul_inv_cancel_left A B⟩
+    rw [eq_comm, specialUnitarySphereMap_eq_specialUnitarySphereMap_iff, inv_one, one_mul]
+    exact specialUnitarySphereMap_eq_specialUnitarySphereMap_iff.1 hB.symm
+  · rintro ⟨C, hC, rfl⟩
+    rw [eq_comm, specialUnitarySphereMap_eq_specialUnitarySphereMap_iff, inv_mul_cancel_left]
+    simpa using specialUnitarySphereMap_eq_specialUnitarySphereMap_iff.1 hC.symm
 
 /-! ### Local triviality -/
 

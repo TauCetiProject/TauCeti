@@ -45,6 +45,8 @@ constant indicator classes it intersects the supporting sets.
 
 * `TauCeti.indicatorConstLp_eq_zero_iff`: an `Lᵖ` constant indicator class vanishes if and only if
   the set has measure zero or the constant is zero.
+* `TauCeti.memLp_indicator_const_iff`: for `0 < p < ∞`, the indicator of a set with a nonzero
+  constant value is in `Lᵖ` if and only if the set has finite measure.
 * `TauCeti.indicatorConstLp_smul`: the indicator class of `a • c` is `a` times that of `c`.
 * `TauCeti.indicatorConstLpₗ`: the indicator class `indicatorConstLp p hs hμs c` as a linear map
   in `c`.
@@ -52,6 +54,11 @@ constant indicator classes it intersects the supporting sets.
   linear map.
 * `TauCeti.norm_sum_indicatorConstLp_one`: the `L¹` norm of a sum of indicator classes of pairwise
   disjoint sets.
+* `TauCeti.tendsto_indicatorConstLp_of_monotone`: for a finite exponent, the indicator classes of
+  an increasing family of measurable sets converge to the class of their union of finite measure.
+* `TauCeti.indicatorConstLp_sdiff`, `TauCeti.sum_indicatorConstLp`,
+  `TauCeti.hasSum_indicatorConstLp`: indicator classes are subtractive, finitely additive, and for a
+  finite exponent countably additive on pairwise disjoint sets whose union has finite measure.
 * `TauCeti.eq_sum_indicatorConstLp_fiber`: an `Lᵖ` class represented by `φ ∘ G`, for a simple
   function `G`, as a sum of indicator classes of the fibres of `G`.
 * `MeasureTheory.SimpleFunc.memLp_indicator`, `MeasureTheory.SimpleFunc.integrable_indicator`: a
@@ -59,6 +66,8 @@ constant indicator classes it intersects the supporting sets.
 * `TauCeti.linftyIndicator μ s hs`: the class in `L∞(μ)` of the indicator of a measurable set.
 * `MeasureTheory.SimpleFunc.toLpTop_piecewise_const_zero`: the class of a simple function
   `c • 1_s` is `c • linftyIndicator μ s hs`.
+* `ContinuousLinearMap.compLp_indicatorConstLp`: postcomposition with a continuous linear map
+  sends the indicator class of `c` to that of its image.
 * `ContinuousLinearMap.eq_zero_of_apply_indicatorConstLp_singleton`: a continuous linear map out of
   counting-measure `Lᵖ`, `p ≠ ∞`, that vanishes on singleton-supported vectors is zero.
 * `LinearMap.ext_linftyIndicator`: a continuous linear map out of real `L∞` is determined by its
@@ -92,6 +101,17 @@ theorem indicatorConstLp_eq_zero_iff {s : Set α} {hs : MeasurableSet s} {hμs :
     simp
   · simp only [hc, or_false, ← indicatorConstLp_empty (p := p) (μ := μ) (c := c),
       indicatorConstLp_inj hs hμs .empty (by simp) hc, ae_eq_empty]
+
+/-- For an exponent `0 < p < ∞`, the indicator of a set with a constant value is in `Lᵖ` if and
+only if the constant is zero or the set has finite measure. -/
+theorem memLp_indicator_const_iff {s : Set α} (hs : NullMeasurableSet s μ) (hp0 : p ≠ 0)
+    (hp : p ≠ ∞) {c : E} : MemLp (s.indicator fun _ ↦ c) p μ ↔ c = 0 ∨ μ s ≠ ∞ := by
+  refine ⟨fun h ↦ or_iff_not_imp_left.2 fun hc hμs ↦ ?_, memLp_indicator_const p hs c⟩
+  have := h.eLpNorm_lt_top
+  rw [eLpNorm_indicator_const hs hp0 hp, hμs,
+    ENNReal.top_rpow_of_pos (by simp [ENNReal.toReal_pos hp0 hp]),
+    ENNReal.mul_top (eNorm_ne_zero.2 hc)] at this
+  exact lt_irrefl _ this
 
 end Zero
 
@@ -143,6 +163,17 @@ theorem norm_indicatorConstLpL_le [Fact (1 ≤ p)] (hs : MeasurableSet s) (hμs 
   LinearMap.mkContinuous_norm_le _ (Real.rpow_nonneg measureReal_nonneg _) _
 
 end NormedField
+
+/-- The indicator class of a difference `s \ t` with `t ⊆ s` is the difference of the indicator
+classes. -/
+theorem indicatorConstLp_sdiff {s t : Set α} (hs : MeasurableSet s) (ht : MeasurableSet t)
+    (hμs : μ s ≠ ∞) (hts : t ⊆ s) (c : E) :
+    indicatorConstLp p (hs.diff ht) (ne_top_of_le_ne_top hμs (measure_mono Set.sdiff_subset)) c =
+      indicatorConstLp p hs hμs c -
+        indicatorConstLp p ht (ne_top_of_le_ne_top hμs (measure_mono hts)) c := by
+  rw [eq_sub_iff_add_eq, ← indicatorConstLp_disjoint_union _ _ _ _ Set.disjoint_sdiff_left]
+  congr 1
+  exact Set.sdiff_union_of_subset hts
 
 section Disjoint
 
@@ -199,6 +230,74 @@ theorem eq_sum_indicatorConstLp_fiber {F : Type*} {G : SimpleFunc α F} {φ : F 
     simp [hw]
 
 end Disjoint
+
+section Countable
+
+open Filter
+open scoped symmDiff Topology
+
+variable {ι : Type*} {s : ι → Set α}
+
+/-- The indicator class of a finite union of pairwise disjoint sets of finite measure is the sum
+of the indicator classes of the sets. -/
+theorem sum_indicatorConstLp (t : Finset ι) (hs : ∀ i, MeasurableSet (s i))
+    (hμs : ∀ i, μ (s i) ≠ ∞) (hd : (t : Set ι).PairwiseDisjoint s) (c : E) :
+    ∑ i ∈ t, indicatorConstLp p (hs i) (hμs i) c =
+      indicatorConstLp p (t.measurableSet_biUnion fun i _ ↦ hs i)
+        (measure_biUnion_lt_top t.finite_toSet fun i _ ↦ (hμs i).lt_top).ne c := by
+  classical
+  induction t using Finset.induction_on with
+  | empty =>
+    rw [Finset.sum_empty]
+    exact (indicatorConstLp_eq_zero_iff.2 (.inl (by simp))).symm
+  | insert i t hi ih =>
+    have hd' : (t : Set ι).PairwiseDisjoint s :=
+      hd.subset (Finset.coe_subset.2 (Finset.subset_insert i t))
+    rw [Finset.sum_insert hi, ih hd', ← indicatorConstLp_disjoint_union (hs i)
+      (t.measurableSet_biUnion fun j _ ↦ hs j) (hμs i) _
+      (Set.disjoint_iUnion₂_right.2 fun j hj ↦ hd (by simp) (by simp [hj])
+        fun h ↦ hi (h ▸ hj))]
+    congr 1
+    rw [Finset.set_biUnion_insert]
+
+/-- For a finite exponent, the indicator classes of an increasing family of measurable sets
+converge to the indicator class of their union, provided the union has finite measure. -/
+theorem tendsto_indicatorConstLp_of_monotone [Fact (1 ≤ p)] (hp : p ≠ ∞) [Preorder ι]
+    [IsCountablyGenerated (atTop : Filter ι)] {u : Set α} {hu : MeasurableSet u} {hμu : μ u ≠ ∞}
+    {t : ι → Set α} (ht : ∀ i, MeasurableSet (t i)) (hmono : Monotone t) (htu : ⋃ i, t i = u)
+    (c : E) :
+    Tendsto (fun i ↦ indicatorConstLp p (ht i)
+        (ne_top_of_le_ne_top hμu (measure_mono (htu ▸ Set.subset_iUnion t i))) c) atTop
+      (𝓝 (indicatorConstLp p hu hμu c)) := by
+  subst htu
+  have hμt (i : ι) : μ (t i) ≠ ∞ := ne_top_of_le_ne_top hμu (measure_mono (Set.subset_iUnion t i))
+  refine tendsto_indicatorConstLp_set hp ?_
+  have hdiff (i : ι) : μ (t i ∆ ⋃ j, t j) = μ (⋃ j, t j) - μ (t i) := by
+    rw [symmDiff_of_le (Set.subset_iUnion t i),
+      measure_sdiff (Set.subset_iUnion t i) (ht i).nullMeasurableSet (hμt i)]
+  simp_rw [hdiff]
+  have := ENNReal.Tendsto.sub tendsto_const_nhds (tendsto_measure_iUnion_atTop (μ := μ) hmono)
+    (.inl hμu)
+  rwa [tsub_self] at this
+
+/-- **Countable additivity of indicator classes.** For a finite exponent, the classes in `Lᵖ` of
+the indicators of countably many pairwise disjoint measurable sets whose union has finite measure
+sum to the class of the indicator of the union. -/
+theorem hasSum_indicatorConstLp [Countable ι] [Fact (1 ≤ p)] (hp : p ≠ ∞)
+    (hs : ∀ i, MeasurableSet (s i)) (hd : Pairwise (Function.onFun Disjoint s))
+    (hμ : μ (⋃ i, s i) ≠ ∞) (c : E) :
+    HasSum (fun i ↦ indicatorConstLp p (hs i)
+        (ne_top_of_le_ne_top hμ (measure_mono (Set.subset_iUnion s i))) c)
+      (indicatorConstLp p (MeasurableSet.iUnion hs) hμ c) := by
+  have hsum := fun t : Finset ι ↦ sum_indicatorConstLp t hs
+    (fun i ↦ ne_top_of_le_ne_top hμ (measure_mono (Set.subset_iUnion s i)))
+    (hd.set_pairwise (t : Set ι)) c (p := p)
+  simp_rw [HasSum, hsum, SummationFilter.unconditional_filter]
+  exact tendsto_indicatorConstLp_of_monotone hp
+    (fun t : Finset ι ↦ t.measurableSet_biUnion fun i _ ↦ hs i)
+    (fun t t' h ↦ Set.biUnion_subset_biUnion_left h) (Set.iUnion_eq_iUnion_finset s).symm c
+
+end Countable
 
 section IndicatorContinuousOn
 
@@ -386,6 +485,20 @@ namespace ContinuousLinearMap
 
 open MeasureTheory
 open scoped ENNReal
+
+/-- Postcomposition with a continuous (semi)linear map commutes with `indicatorConstLp`. -/
+@[simp]
+theorem compLp_indicatorConstLp {α 𝕜 𝕜' E F : Type*} [MeasurableSpace α] {μ : Measure α}
+    {p : ℝ≥0∞} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜' F] {σ : 𝕜 →+* 𝕜'}
+    [RingHomIsometric σ] (L : E →SL[σ] F) {s : Set α} (hs : MeasurableSet s) (hμs : μ s ≠ ∞)
+    (c : E) : L.compLp (indicatorConstLp p hs hμs c) = indicatorConstLp p hs hμs (L c) := by
+  refine Lp.ext ?_
+  filter_upwards [L.coeFn_compLp (indicatorConstLp p hs hμs c),
+    (indicatorConstLp_coeFn : ⇑(indicatorConstLp p hs hμs c) =ᵐ[μ] _),
+    (indicatorConstLp_coeFn : ⇑(indicatorConstLp p hs hμs (L c)) =ᵐ[μ] _)] with x hx₁ hx₂ hx₃
+  rw [hx₁, hx₂, hx₃]
+  exact (congrFun (Set.indicator_comp_of_zero (f := fun _ ↦ c) (map_zero L)) x).symm
 
 /-- A continuous linear map out of counting-measure `Lᵖ`, `p ≠ ∞`, that vanishes on all
 singleton-supported vectors is zero. No countability of the index space is needed. -/

@@ -30,7 +30,8 @@ once `X.triangles` is nonempty. Moreover, `Cochain.defect` equals an unoriented 
 `X.triangles`, is independent of the vertex `LinearOrder`, and is preserved by vertex relabellings.
 
 Pushing a cochain forward along a norm-nonincreasing homomorphism `φ : G →* H` (`Cochain.map φ`)
-does not increase `defect` or `gaugeDist`. Specializing `φ` to `L.subtype` for a subgroup `L ≤ G`
+does not increase `defect` or `gaugeDist`, and along a norm-preserving isomorphism both are
+unchanged (`Cochain.gaugeDist_map_mulEquiv`). Specializing `φ` to `L.subtype` for a subgroup `L ≤ G`
 shows that embedding `L`-valued cochains into `G` preserves `defect` and `cost` (on embedded gauges)
 and can only decrease `gaugeDist`.
 
@@ -102,54 +103,37 @@ theorem norm_holonomy_of_set_eq {ℓ : GroupNorm G}
     · rw [α.norm_holonomy_swap hℓ v w u, α.norm_holonomy_rotate hℓ u v w]
 
 /-- The gauge cost contribution of an unoriented edge `e`, or `0` if `e ∉ X.edges`. -/
-noncomputable def edgeCost (ℓ : GroupNorm G) (α : Cochain X G) (β : V → G) (e : Finset V) : ℝ := by
-  classical
-  exact if he : e ∈ X.edges then
-    ℓ ((β (X.exists_vertices_of_mem_edges he).choose)⁻¹ *
-      α (X.exists_vertices_of_mem_edges he).choose
-        (X.exists_vertices_of_mem_edges he).choose_spec.choose *
-      β (X.exists_vertices_of_mem_edges he).choose_spec.choose)
-  else 0
+noncomputable def edgeCost (ℓ : GroupNorm G) (α : Cochain X G) (β : V → G) (e : Finset V) : ℝ :=
+  X.edgeEval (fun u v => ℓ ((β u)⁻¹ * α u v * β v)) e
 
 /-- Evaluating `edgeCost` on any edge `e ∈ X.edges` via its two distinct endpoints. -/
 theorem edgeCost_of_mem_edges (ℓ : GroupNorm G) (α : Cochain X G) (β : V → G)
     {e : Finset V} (he : e ∈ X.edges) {u v : V} (huv : u ≠ v) (hu : u ∈ e) (hv : v ∈ e) :
-    α.edgeCost ℓ β e = ℓ ((β u)⁻¹ * α u v * β v) := by
-  classical
-  simp only [edgeCost, he, ↓reduceDIte]
-  obtain ⟨hu'v', hu', hv'⟩ := (X.exists_vertices_of_mem_edges he).choose_spec.choose_spec
-  have he₁ :
-      ({(X.exists_vertices_of_mem_edges he).choose,
-        (X.exists_vertices_of_mem_edges he).choose_spec.choose} : Finset V) = e :=
-    eq_of_subset_of_card_le (insert_subset_iff.mpr ⟨hu', singleton_subset_iff.mpr hv'⟩)
-      (by rw [X.edge_card e he, card_pair hu'v'])
-  have he₂ : ({u, v} : Finset V) = e :=
-    eq_of_subset_of_card_le (by simp [insert_subset_iff, hu, hv])
-      (by rw [X.edge_card e he, card_pair huv])
-  have hpair := he₁.trans he₂.symm
-  rw [← coe_inj, coe_pair, coe_pair, Set.pair_eq_pair_iff] at hpair
-  rcases hpair with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
-  · rw [h₂, h₁]
-  · rw [h₂, h₁]; exact α.norm_inv_mul_apply_mul_swap ℓ β u v
+    α.edgeCost ℓ β e = ℓ ((β u)⁻¹ * α u v * β v) :=
+  X.edgeEval_of_mem_edges (fun _ _ _ => α.norm_inv_mul_apply_mul_swap ℓ β _ _) he huv hu hv
 
 /-- Evaluating `edgeCost` directly on a pair `{u, v} ∈ X.edges`. -/
 @[simp, grind =] theorem edgeCost_pair [DecidableEq V] (ℓ : GroupNorm G) (α : Cochain X G)
     (β : V → G) {u v : V} (he : ({u, v} : Finset V) ∈ X.edges) :
     α.edgeCost ℓ β {u, v} = ℓ ((β u)⁻¹ * α u v * β v) :=
-  α.edgeCost_of_mem_edges ℓ β he ((X.adj_iff_pair_mem_edges u v).mpr he).ne (by simp) (by simp)
+  X.edgeEval_pair (fun _ _ _ => α.norm_inv_mul_apply_mul_swap ℓ β _ _) he
 
 @[simp] theorem edgeCost_of_notMem_edges (ℓ : GroupNorm G) (α : Cochain X G) (β : V → G)
-    {e : Finset V} (he : e ∉ X.edges) : α.edgeCost ℓ β e = 0 := by classical simp [edgeCost, he]
+    {e : Finset V} (he : e ∉ X.edges) : α.edgeCost ℓ β e = 0 :=
+  X.edgeEval_of_notMem_edges _ he
 
 theorem edgeCost_nonneg (ℓ : GroupNorm G) (α : Cochain X G) (β : V → G) (e : Finset V) :
-    0 ≤ α.edgeCost ℓ β e := by
-  classical
-  by_cases he : e ∈ X.edges <;> simp [edgeCost, he, apply_nonneg]
+    0 ≤ α.edgeCost ℓ β e :=
+  X.edgeEval_nonneg (fun _ _ => apply_nonneg ℓ _) e
 
 @[simp] theorem edgeCost_one_one (ℓ : GroupNorm G) (e : Finset V) :
     (1 : Cochain X G).edgeCost ℓ 1 e = 0 := by
   classical
-  by_cases he : e ∈ X.edges <;> simp [edgeCost, he]
+  by_cases he : e ∈ X.edges
+  · obtain ⟨u, v, huv, hu, hv⟩ := X.exists_vertices_of_mem_edges he
+    rw [edgeCost_of_mem_edges ℓ 1 1 he huv hu hv]
+    simp
+  · simp [he]
 
 @[simp] theorem edgeCost_smul (ℓ : GroupNorm G) (α : Cochain X G) (β γ : V → G) (e : Finset V) :
     (β • α).edgeCost ℓ γ e = α.edgeCost ℓ (β * γ) e := by
@@ -233,19 +217,15 @@ theorem triangleDefect_nonneg (ℓ : GroupNorm G) (α : Cochain X G) (t : Finset
 /-- `cost` equals the sum of `edgeCost` over the unoriented edges `X.edges`. -/
 theorem cost_eq_sum_edges [Fintype V] [LinearOrder V] (ℓ : GroupNorm G) (α : Cochain X G)
     (β : V → G) : α.cost ℓ β = ∑ e ∈ X.edges, α.edgeCost ℓ β e := by
-  rw [cost_def]
-  refine sum_bij (fun p _ => ({p.1, p.2} : Finset V)) (fun p hp => (mem_filter.mp hp).2.2) ?_ ?_
-    (fun p hp => (α.edgeCost_pair ℓ β (mem_filter.mp hp).2.2).symm)
-  · rintro ⟨u₁, v₁⟩ hp₁ ⟨u₂, v₂⟩ hp₂ hpair
-    have hlt₁ : u₁ < v₁ := (mem_filter.mp hp₁).2.1
-    have hlt₂ : u₂ < v₂ := (mem_filter.mp hp₂).2.1
-    rw [← coe_inj, coe_pair, coe_pair, Set.pair_eq_pair_iff] at hpair
-    rcases hpair with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
-    · rfl
-    · exact (lt_asymm hlt₁ hlt₂).elim
-  · intro e he
-    obtain ⟨u, v, hlt, hset⟩ := X.exists_increasing_of_mem_edges he
-    exact ⟨(u, v), mem_filter.mpr ⟨mem_univ _, hlt, hset ▸ he⟩, hset⟩
+  rw [cost_def, ← X.orientedEdges_def, ← X.sum_orientedEdges (α.edgeCost ℓ β)]
+  exact sum_congr rfl fun p hp => (α.edgeCost_pair ℓ β (X.mem_orientedEdges.mp hp).2).symm
+
+/-- `gaugeDist ℓ` equals the infimum of unoriented edge-cost sums over `X.edges`. -/
+theorem gaugeDist_eq_ciInf_sum_edgeCost [Fintype V] [LinearOrder V] (ℓ : GroupNorm G)
+    (α : Cochain X G) :
+    α.gaugeDist ℓ = ⨅ β : V → G, ∑ e ∈ X.edges, α.edgeCost ℓ β e := by
+  rw [gaugeDist_def]
+  exact iInf_congr fun β => α.cost_eq_sum_edges ℓ β
 
 /-- Under a conjugation-invariant norm, the holonomy norm around three mutually adjacent vertices
 is bounded above by the cost of any gauge `β`. -/
@@ -386,20 +366,16 @@ def relabelEquiv (X : TwoComplex V) (e : V ≃ W) : Cochain X G ≃ Cochain (X.r
 @[simp] theorem edgeCost_relabel (ℓ : GroupNorm G) (α : Cochain X G) (γ : W → G) (e : V ≃ W)
     (s : Finset W) :
     (α.relabel e).edgeCost ℓ γ s = α.edgeCost ℓ (γ ∘ e) (s.map e.symm.toEmbedding) := by
-  by_cases hs : s ∈ (X.relabel e).edges
-  · obtain ⟨u, v, huv, hu, hv⟩ := (X.relabel e).exists_vertices_of_mem_edges hs
-    rw [(α.relabel e).edgeCost_of_mem_edges ℓ γ hs huv hu hv,
-      α.edgeCost_of_mem_edges ℓ (γ ∘ e) ((X.mem_edges_relabel e s).mp hs)
-        (e.symm.injective.ne huv) (mem_map_of_mem _ hu) (mem_map_of_mem _ hv)]
-    simp
-  · rw [edgeCost_of_notMem_edges _ _ _ hs,
-      edgeCost_of_notMem_edges _ _ _ (mt (X.mem_edges_relabel e s).mpr hs)]
+  rw [edgeCost, edgeCost, X.edgeEval_relabel e
+    (fun u v _ => (α.relabel e).norm_inv_mul_apply_mul_swap ℓ γ u v)]
+  congr 1; funext u v; simp [relabel_apply]
 
 @[simp 1100] theorem edgeCost_relabel_map (ℓ : GroupNorm G) (α : Cochain X G) (γ : W → G)
     (e : V ≃ W) (s : Finset V) :
     (α.relabel e).edgeCost ℓ γ (s.map e.toEmbedding) = α.edgeCost ℓ (γ ∘ e) s := by
-  rw [α.edgeCost_relabel ℓ γ e]
-  congr 1; ext; simp
+  rw [edgeCost, edgeCost, X.edgeEval_relabel_map e
+    (fun u v _ => (α.relabel e).norm_inv_mul_apply_mul_swap ℓ γ u v)]
+  congr 1; funext u v; simp [relabel_apply]
 
 /-- Relabelling a cochain along `e : V ≃ W` pulls the gauge back along `e` in `cost`. -/
 @[simp] theorem cost_relabel [Fintype V] [LinearOrder V] [Fintype W] [LinearOrder W]
@@ -539,7 +515,9 @@ def relabelCompleteEquiv [Fintype V] [Fintype W] (e : V ≃ W) :
     (α : Cochain (complete W) G) :
     (relabelCompleteEquiv e).symm α = α.relabelComplete e.symm := (rfl)
 
-private theorem congr_complex {γ : Sort*} (F : ∀ X : TwoComplex W, Cochain X G → γ)
+/-- Transport a complex-indexed functional across an equality of two-complexes and
+pointwise-equal cochains. -/
+theorem congr_complex {γ : Sort*} (F : ∀ X : TwoComplex W, Cochain X G → γ)
     {X₁ X₂ : TwoComplex W} (hX : X₁ = X₂) {α₁ : Cochain X₁ G} {α₂ : Cochain X₂ G}
     (hα : ∀ u v, α₁ u v = α₂ u v) : F X₁ α₁ = F X₂ α₂ := by
   subst hX; congr 1; ext u v _; exact hα u v
@@ -659,6 +637,16 @@ theorem cost_map_eq {φ : G →* H} {ℓ_G : GroupNorm G} {ℓ_H : GroupNorm H}
     (α.map φ).cost ℓ_H (φ ∘ β) = α.cost ℓ_G β := by
   rw [cost_def, cost_def]; refine sum_congr rfl fun _ _ => ?_
   rw [Function.comp_apply, Function.comp_apply, map_apply, ← map_inv, ← map_mul, ← map_mul, hφ]
+
+/-- Along a norm-preserving isomorphism, `gaugeDist` is unchanged. -/
+theorem gaugeDist_map_mulEquiv {e : G ≃* H} {ℓ_G : GroupNorm G} {ℓ_H : GroupNorm H}
+    (he : ∀ g, ℓ_H (e g) = ℓ_G g) (α : Cochain X G) :
+    (α.map (e : G →* H)).gaugeDist ℓ_H = α.gaugeDist ℓ_G := by
+  refine le_antisymm (α.gaugeDist_map_le fun g => (he g).le) ?_
+  have hα : (α.map (e : G →* H)).map (e.symm : H →* G) = α := by ext u v _; simp
+  calc α.gaugeDist ℓ_G = ((α.map (e : G →* H)).map (e.symm : H →* G)).gaugeDist ℓ_G := by rw [hα]
+    _ ≤ (α.map (e : G →* H)).gaugeDist ℓ_H :=
+      gaugeDist_map_le (fun h => by simpa using (he (e.symm h)).symm.le) _
 
 /-- Embedding an `L`-valued cochain into `G` along a subgroup `L ≤ G` preserves `defect` relative
 to the restricted norm `ℓ.comp L.subtype_injective`. -/

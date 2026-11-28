@@ -10,8 +10,8 @@ public import Mathlib.LinearAlgebra.Dimension.Basic
 public import TauCeti.Topology.FilledIn
 -- Provides `NormedSpace.toLocallyConvexSpace`, hence `LocallyConnectedSpace E`.
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
+import TauCeti.Analysis.Normed.Module.Connected
 import TauCeti.Analysis.Normed.Module.FilledHull
-import TauCeti.Geometry.Manifold.Connected
 
 /-!
 # Normed-space operations on sets filled in an open set
@@ -23,8 +23,8 @@ import TauCeti.Geometry.Manifold.Connected
 
 In a real normed space, boundedness of filled hulls (`TauCeti.isBounded_filledHull`) and
 connectedness of punctured open sets in real dimension greater than one
-(`TauCeti.isPreconnected_sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank`) supply two further
-operations on domain-relative filled sets, independent of compact exhaustions:
+(`IsPreconnected.sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank`) supply two further operations on
+domain-relative filled sets, independent of compact exhaustions:
 
 * In a proper real normed space, filling a compact set `K` inside an open set `Ω` produces a
   compact set (`IsCompact.fillIn`), combining `IsClosed.fillIn` with enclosure inside
@@ -83,9 +83,10 @@ protected theorem IsFilledIn.insert {K Ω : Set E} (h : IsFilledIn K Ω)
   let C := connectedComponentIn (Ω \ K) x
   let C₁ := connectedComponentIn (Ω \ insert z K) x
   have hpre : IsPreconnected (C \ {z}) :=
-    isPreconnected_sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank (E := E) hrank
-      hΩK.connectedComponentIn isPreconnected_connectedComponentIn
-      isClosed_singleton (finite_singleton z).isDiscrete
+    isPreconnected_connectedComponentIn.sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank hrank
+      hΩK.connectedComponentIn (isClosed_singleton.preimage continuous_subtypeVal)
+      ((finite_singleton z).isDiscrete.preimage continuous_subtypeVal.continuousOn
+        Subtype.val_injective)
   have hC_sub : C \ {z} ⊆ C₁ :=
     hpre.subset_connectedComponentIn ⟨mem_connectedComponentIn hxΩK, hxz⟩ fun w ⟨hwC, hwz⟩ =>
       ⟨(connectedComponentIn_subset _ _ hwC).1,

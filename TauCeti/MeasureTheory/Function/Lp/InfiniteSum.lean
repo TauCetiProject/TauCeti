@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSpace.Complete
+public import TauCeti.MeasureTheory.Function.Lp.CompactlySupported
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
+import Mathlib.MeasureTheory.Function.LpSpace.InfiniteSum
 
 /-!
 # Infinite sums in `Lᵖ`: pointwise behaviour and absolutely convergent series in `L^r`
@@ -26,9 +28,16 @@ the tails of the series obey `‖v - ∑_{i ∈ s} xᵢ‖_{L^r} ≤ ∑_{i ∉ 
 * `MeasureTheory.Lp.ae_enorm_le_tsum_enorm_of_hasSum`: the pointwise bound.
 * `MeasureTheory.Lp.ae_eq_of_hasSum_of_ae_hasSum`: for a countable family, the sum in `Lᵖ`
   agrees almost everywhere with the pointwise sum, wherever the latter exists.
+* `MeasureTheory.Lp.ae_hasSum_of_hasSum`: for a countable family in `Lᵖ` with sum `v` and
+  summable `Lᵖ` norms, the pointwise series converges absolutely to `v` almost everywhere.
 * `MeasureTheory.exists_eLpNorm_sub_sum_le_tsum_compl`: a series of `Lᵖ` functions whose `L^r`
   seminorms are summable has a sum in `L^r`, with the tail bound
   `‖v - ∑_{i ∈ s} xᵢ‖_{L^r} ≤ ∑_{i ∉ s} ‖xᵢ‖_{L^r}`.
+* `MeasureTheory.ae_eq_of_tendsto_eLpNorm_sub_sum_of_tendsto_sum`: a sum in `L^r` agrees almost
+  everywhere with a limit in `Lᵖ` of partial sums along an exhausting sequence of finite sets.
+* `CompactlySupportedContinuousMap.ae_hasSum_of_hasSum_toLp`: for a countable family of compactly
+  supported continuous functions whose `Lᵖ` classes sum to `v` with summable `Lᵖ` norms, the
+  pointwise series converges absolutely to `v` almost everywhere.
 -/
 
 public section
@@ -70,6 +79,21 @@ theorem ae_eq_of_hasSum_of_ae_hasSum [Countable κ] {u : κ → Lp E p μ} {v : 
   filter_upwards [hSv, hsum, hg] with x hx hxsum hgx
   simp only [hxsum] at hx
   exact tendsto_nhds_unique hx (hgx.comp hS)
+
+/-- If a countable family `u` in `Lᵖ` has sum `v` with summable `Lᵖ` norms, then at almost every
+point `x` the pointwise series `u i x` converges absolutely to `v x`. -/
+theorem ae_hasSum_of_hasSum [Countable κ] {u : κ → Lp E p μ} {v : Lp E p μ}
+    (hsum : HasSum u v) (hnorm : Summable fun i => ‖u i‖) :
+    ∀ᵐ x ∂μ, HasSum (fun i => u i x) (v x) ∧ Summable fun i => ‖u i x‖ := by
+  have heNorm : ∑' i, ‖u i‖ₑ ≠ ∞ := tsum_eNorm_ne_top_iff_summable_norm.2 hnorm
+  obtain ⟨S, hS, hSv⟩ := (tendstoInMeasure_of_tendsto_Lp hsum).exists_seq_tendsto_ae'
+  have hfin : ∀ᵐ x ∂μ, ∀ n, (⇑(∑ i ∈ S n, u i) : α → E) x = ∑ i ∈ S n, u i x :=
+    ae_all_iff.2 fun n => coeFn_fun_finsetSum (S n) _
+  filter_upwards [hSv, hfin,
+    summable_norm_of_tsum_eLpNorm_ne_top Fact.out (by simpa [Lp.eNorm_def] using heNorm)]
+    with x hx hfx hnx
+  simp only [hfx] at hx
+  exact ⟨hasSum_of_subseq_of_summable hnx hS hx, hnx⟩
 
 end Lp
 
@@ -113,4 +137,40 @@ theorem exists_eLpNorm_sub_sum_le_tsum_compl [CompleteSpace F] {x : ι → Lp F 
     refine hlim.congr fun t ↦ ?_
     rw [eLpNorm_congr_ae ((hcoe t).sub (hcoe s) |>.trans (Lp.coeFn_sub _ _).symm), ← Lp.eNorm_def]
 
+/-- **A sum in `L^r` agrees with a limit in `Lᵖ` of its partial sums.** If the partial sums
+`∑_{i ∈ s} gᵢ` of `gᵢ ∈ Lᵖ(μ)` converge to `U` in `L^r(μ)` along the finite sets `s` of indices,
+and along an exhausting sequence `sₙ` of finite sets they converge to `v` in `Lᵖ(μ)`, then `U = v`
+almost everywhere: both limits are limits in measure. -/
+theorem ae_eq_of_tendsto_eLpNorm_sub_sum_of_tendsto_sum [Fact (1 ≤ p)] {g : ι → Lp F p μ}
+    {U : Lp F r μ}
+    (hU : Tendsto (fun s : Finset ι ↦ eLpNorm (⇑U - ⇑(∑ i ∈ s, g i)) r μ) atTop (𝓝 0))
+    {s : ℕ → Finset ι} (hs : Tendsto s atTop atTop) {v : Lp F p μ}
+    (hv : Tendsto (fun n ↦ ∑ i ∈ s n, g i) atTop (𝓝 v)) :
+    ⇑U =ᵐ[μ] ⇑v := by
+  refine tendstoInMeasure_ae_unique ?_ (tendstoInMeasure_of_tendsto_Lp hv)
+  refine tendstoInMeasure_of_tendsto_eLpNorm (zero_lt_one.trans_le (Fact.out : 1 ≤ r)).ne' ?_
+  refine (hU.comp hs).congr fun n ↦ ?_
+  rw [Function.comp_apply, eLpNorm_sub_comm]
+
 end MeasureTheory
+
+namespace CompactlySupportedContinuousMap
+
+open MeasureTheory
+open scoped CompactlySupported
+
+/-- If a countable family of compactly supported continuous functions has sum `v` in `Lᵖ` with
+summable `Lᵖ` norms, then at almost every point `t` the pointwise series `ψ i t` converges
+absolutely to `v t`. -/
+theorem ae_hasSum_of_hasSum_toLp {X E ι : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] [NormedAddCommGroup E] {μ : Measure X} [IsFiniteMeasureOnCompacts μ]
+    [Countable ι] {p : ℝ≥0∞} [Fact (1 ≤ p)] (𝕜 : Type*) [NormedRing 𝕜] [Module 𝕜 E]
+    [IsBoundedSMul 𝕜 E] {ψ : ι → C_c(X, E)} {v : Lp E p μ}
+    (hsum : HasSum (fun i => toLp p μ 𝕜 (ψ i)) v)
+    (hnorm : Summable fun i => ‖toLp p μ 𝕜 (ψ i)‖) :
+    ∀ᵐ t ∂μ, HasSum (fun i => ψ i t) (v t) ∧ Summable fun i => ‖ψ i t‖ := by
+  filter_upwards [Lp.ae_hasSum_of_hasSum hsum hnorm,
+    ae_all_iff.2 fun i => coeFn_toLp (p := p) (μ := μ) 𝕜 (ψ i)] with t ⟨ht, hnt⟩ hcoe
+  simpa only [hcoe] using And.intro ht hnt
+
+end CompactlySupportedContinuousMap

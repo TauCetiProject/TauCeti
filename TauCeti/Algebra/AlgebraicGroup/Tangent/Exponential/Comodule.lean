@@ -30,9 +30,7 @@ operator exponential `IsNilpotent.exp (differential d)`. More generally, for any
 `H`-comodule `M` and any commutative `R`-algebra `B`, the one-parameter exponential curve
 `t ↦ Bialgebra.expPointAt d hd t` acts on `B ⊗[R] M` as
 `IsNilpotent.exp (t • (Comodule.differential d).baseChange B)`
-(`TauCeti.Comodule.endOfPoint_expPointAt`), and when `M` is a `ℚ`-module its base-valued
-action is `IsNilpotent.exp (t • differential d)`
-(`TauCeti.Comodule.basePointsRepresentation_expPointAt`).
+(`TauCeti.Comodule.endOfPoint_expPointAt`).
 
 ## Main declarations
 
@@ -48,9 +46,8 @@ action is `IsNilpotent.exp (t • differential d)`
 * `TauCeti.Comodule.basePointsRepresentation_expPoint_apply_eq_sum` and
   `TauCeti.Comodule.basePointsRepresentation_expPoint`: `Bialgebra.expPoint d hd` acts on `M` by the
   exponential series of `differential d`.
-* `TauCeti.Comodule.endOfPoint_expPointAt` and
-  `TauCeti.Comodule.basePointsRepresentation_expPointAt`: exponential curves act on finitely
-  generated comodules by `IsNilpotent.exp` of the scaled differentiated action.
+* `TauCeti.Comodule.endOfPoint_expPointAt`: exponential curves act on finitely generated comodules
+  by `IsNilpotent.exp` of the scaled differentiated action.
 
 ## References
 
@@ -250,15 +247,9 @@ theorem basePointsRepresentation_expPoint_apply_eq_sum
     basePointsRepresentation (H := H) M (toConv (Bialgebra.expPoint d hd)) m =
       ∑ i ∈ Finset.range k,
         (i.factorial : ℚ)⁻¹ • ((differential (R := R) (H := H) (M := M) d) ^ i) m := by
-  have hbase : basePointsRepresentation (H := H) M (toConv (Bialgebra.expPoint d hd)) m =
-      LinearMap.tensorComponent (Bialgebra.expPoint d hd).toLinearMap
-        (coact (R := R) (C := H) m) := by
-    rw [basePointsRepresentation_apply, ofConv_toConv, endOfPoint_tmul, one_smul]
-    induction coact (R := R) (C := H) m using TensorProduct.inductionOn with
-    | tmul n h => simp
-    | add x y hx hy => simp [hx, hy]
   obtain ⟨N, hN⟩ := tensorComponent_expPoint_eq_sum hd (coact (R := R) (C := H) m)
-  rw [hbase, hN (max N k) (le_max_left N k)]
+  rw [basePointsRepresentation_apply_eq_tensorComponent, ofConv_toConv,
+    hN (max N k) (le_max_left N k)]
   simp_rw [← pow_differential_apply]
   exact (differential (R := R) (H := H) (M := M) d).sum_range_smul_pow_apply_eq_of_le _ hm
     (le_max_right N k)
@@ -312,22 +303,6 @@ theorem endOfPoint_expPointAt [Module.Finite R M] {B : Type*} [CommRing B] [Alge
       LinearMap.sum_apply]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
     simp [smul_pow, ← LinearMap.baseChange_pow, TensorProduct.smul_tmul', pow_differential_apply]
-
-/-- On a `ℚ`-module comodule, the base-valued action of `expPointAt d hd t` on a finitely
-generated comodule is `exp (t • differential d)`. -/
-theorem basePointsRepresentation_expPointAt {R H M : Type*} [CommRing R] [CommRing H]
-    [HopfAlgebra R H] [Algebra ℚ H] [AddCommGroup M] [Module R M] [Comodule R H M]
-    [Module.Finite R M] [Module ℚ M]
-    (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
-    (hd : ∀ h, ∃ n, (Bialgebra.leftInvariantDerivation d)^[n] h = 0) (t : R) :
-    basePointsRepresentation (R := R) (H := H) M (Bialgebra.expPointAt d hd t) =
-      IsNilpotent.exp (t • differential (R := R) (H := H) (M := M) d) := by
-  rw [Bialgebra.expPointAt_eq_toConv_expPoint_smul d hd t,
-    basePointsRepresentation_expPoint
-      (Bialgebra.exists_iterate_leftInvariantDerivation_smul_eq_zero d hd t)
-      (isNilpotent_differential_of_finite_of_forall_exists_iterate_leftInvariantDerivation_eq_zero
-        (Bialgebra.exists_iterate_leftInvariantDerivation_smul_eq_zero d hd t)),
-    map_smul]
 
 end ExponentialCurve
 

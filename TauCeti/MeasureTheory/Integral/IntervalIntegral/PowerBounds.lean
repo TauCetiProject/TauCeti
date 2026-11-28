@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
@@ -30,12 +31,23 @@ is at most `K * ((b - a) ^ (u + 1) / (u + 1))`. Both use `TauCeti.intervalIntegr
 and `TauCeti.integral_sub_const_rpow`. The `_left` forms treat the singularity at `b`, with bound
 `K * (b - s) ^ u`, using `TauCeti.intervalIntegrable_sub_rpow` and `TauCeti.integral_sub_rpow`.
 
+For a power integrable at infinity,
+`TauCeti.intervalIntegral.norm_integral_le_of_norm_le_mul_rpow_of_lt_neg_one` bounds the integral
+over `[a, b]`, `0 < a ≤ b`, of a function with `‖f s‖ ≤ K * s ^ u`, `u < -1`, by
+`K * ∫_a^∞ s ^ u ds = K * (-a ^ (u + 1) / (u + 1))`, uniformly in `b`.
+
 `TauCeti.norm_intervalIntegral_sub_le_of_sub_le` compares two oriented interval integrals, with
 respect to any measure on `ℝ`, that start at a common endpoint, by splitting both at a common
 point. Each integrand must be interval integrable on its two pieces: from the starting endpoint to
 the split point, and from the split point to its own final endpoint. No ordering of the endpoints
 is assumed. The norm of the difference of the two integrals is then at most a bound for the
 integral of the difference up to the split point plus bounds for the two tails.
+
+`TauCeti.intervalIntegrable_rpow_sub_smul` integrates the endpoint kernel `(x - t)^(μ - 1)`,
+`μ > 0`, against a function integrable near `0` and continuous up to `x`;
+`TauCeti.intervalIntegrable_rpow_sub_smul_of_continuousOn` is the case of a function locally
+integrable on `[0, ∞)` and continuous on `(0, ∞)`. This is the absolute convergence of the
+Riemann–Liouville fractional integral `Γ(μ)⁻¹ ∫₀^x (x - t)^(μ - 1) g(t) dt`.
 -/
 
 public section
@@ -91,6 +103,25 @@ theorem norm_integral_le_of_norm_le_mul_sub_rpow_left {f : ℝ → E} {a b K u :
     ((ae_restrict_iff' measurableSet_Ioc).mp hbound)
     ((TauCeti.intervalIntegrable_sub_rpow hu a b).const_mul K)).trans_eq ?_
   rw [intervalIntegral.integral_const_mul, TauCeti.integral_sub_rpow hu]
+
+/-- A function whose norm is bounded almost everywhere on `(a, b]`, `0 < a ≤ b`, by `K * s ^ u`
+with `u < -1` and `0 ≤ K` has integral over `[a, b]` of norm at most
+`K * ∫_a^∞ s ^ u ds = K * (-a ^ (u + 1) / (u + 1))`, a bound independent of `b`. -/
+theorem norm_integral_le_of_norm_le_mul_rpow_of_lt_neg_one {f : ℝ → E} {a b K u : ℝ}
+    (hu : u < -1) (ha : 0 < a) (hab : a ≤ b) (hK : 0 ≤ K)
+    (hbound : ∀ᵐ s ∂volume.restrict (Ioc a b), ‖f s‖ ≤ K * s ^ u) :
+    ‖∫ s in a..b, f s‖ ≤ K * (-a ^ (u + 1) / (u + 1)) := by
+  have hint := integrableOn_Ioi_rpow_of_lt hu ha
+  refine (intervalIntegral.norm_integral_le_of_norm_le hab
+    ((ae_restrict_iff' measurableSet_Ioc).mp hbound)
+    ((intervalIntegrable_iff_integrableOn_Ioc_of_le hab).2
+      ((hint.mono_set Ioc_subset_Ioi_self).const_mul K))).trans ?_
+  rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_of_le hab,
+    ← integral_Ioi_rpow_of_lt hu ha]
+  refine mul_le_mul_of_nonneg_left (setIntegral_mono_set hint ?_
+    (Filter.Eventually.of_forall Ioc_subset_Ioi_self)) hK
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with s (hs : a < s)
+  exact Real.rpow_nonneg (ha.trans hs).le u
 
 end intervalIntegral
 
@@ -260,5 +291,36 @@ theorem norm_intervalIntegral_sub_le_of_sub_le {V : Type*} [NormedAddCommGroup V
         rw [intervalIntegral.integral_sub hg₁ hg₂]
     _ ≤ D + B₁ + B₂ :=
         (norm_sub_le_of_le (norm_add_le _ _) le_rfl).trans (add_le_add (add_le_add hD h₁) h₂)
+
+section Kernel
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A kernel `(x - t)^(μ - 1)` against a function integrable near `0` and continuous up to `x`. -/
+theorem intervalIntegrable_rpow_sub_smul {h : ℝ → E} {μ x c : ℝ} (hμ : 0 < μ)
+    (hc : 0 < c) (hcx : c < x) (h₀ : IntegrableOn h (Ioc 0 c)) (h₁ : ContinuousOn h (Icc c x)) :
+    IntervalIntegrable (fun t ↦ (x - t) ^ (μ - 1) • h t) volume 0 x := by
+  refine IntervalIntegrable.trans (b := c) ?_ ?_
+  · refine IntervalIntegrable.continuousOn_smul
+      ((intervalIntegrable_iff_integrableOn_Ioc_of_le hc.le).2 h₀) ?_
+    refine ContinuousOn.rpow_const (continuousOn_const.sub continuousOn_id) fun t ht ↦ Or.inl ?_
+    rw [uIcc_of_le hc.le] at ht
+    exact (sub_pos.mpr (ht.2.trans_lt hcx)).ne'
+  · refine IntervalIntegrable.smul_continuousOn ?_ (by rwa [uIcc_of_le hcx.le])
+    have := (intervalIntegral.intervalIntegrable_rpow' (a := 0) (b := x - c)
+      (by linarith : -1 < μ - 1)).comp_sub_left x
+    simpa using this.symm
+
+/-- If `g` is locally integrable on `[0, ∞)` and continuous on `(0, ∞)`, then the integral
+defining `I^μ g(x)`, `μ > 0`, `x > 0`, converges absolutely. -/
+theorem intervalIntegrable_rpow_sub_smul_of_continuousOn {μ x : ℝ} (hμ : 0 < μ) (hx : 0 < x)
+    {g : ℝ → E} (hg : LocallyIntegrableOn g (Ici 0)) (hgc : ContinuousOn g (Ioi 0)) :
+    IntervalIntegrable (fun t ↦ (x - t) ^ (μ - 1) • g t) volume 0 x :=
+  intervalIntegrable_rpow_sub_smul hμ (half_pos hx) (by linarith)
+    ((hg.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc).mono_set
+      Ioc_subset_Icc_self)
+    (hgc.mono fun _ ht ↦ (half_pos hx).trans_le ht.1)
+
+end Kernel
 
 end TauCeti

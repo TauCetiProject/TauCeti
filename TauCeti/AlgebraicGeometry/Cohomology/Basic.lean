@@ -34,7 +34,9 @@ For a scheme `X` and `M : X.Modules`, the main declarations are:
   `Scheme.Modules.cohomologyOnZeroEquiv` the identification of `H⁰(U, M)` with `Γ(M, U)`, and
   `Scheme.Modules.cohomologyOnTopIso` the identification of `Hⁿ(⊤, M)` with `Hⁿ(X, M)`;
 * `Scheme.Modules.subsingleton_cohomology_of_isEmpty`, the vanishing of all cohomology on the
-  empty scheme.
+  empty scheme;
+* `Scheme.Modules.subsingleton_cohomology_congr`, invariance of cohomology vanishing under
+  isomorphisms of `𝒪_X`-modules.
 
 The construction is stated for every sheaf of modules, which is the natural generality of sheaf
 cohomology. In particular it applies to finitely presented sheaves through their underlying
@@ -117,6 +119,36 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_of_isEmp
     ext s
     exact AlgebraicGeometry.Scheme.Modules.section_ext_of_isEmpty _ _
   exact (AddCommGrpCat.isZero_iff_subsingleton).mp ((cohomologyFunctor X i).map_isZero hM)
+
+/-- An isomorphism of `𝒪_X`-modules induces an additive equivalence on cohomology. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyAddEquivOfIso
+    {M N : X.Modules} (e : M ≅ N) (q : ℕ) :
+    Cohomology M q ≃+ Cohomology N q :=
+  ((cohomologyFunctor X q).mapIso e).addCommGroupIsoToAddEquiv
+
+/-- Applying `cohomologyAddEquivOfIso` is the map on cohomology induced by `e.hom`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyAddEquivOfIso_apply
+    {M N : X.Modules} (e : M ≅ N) (q : ℕ) (x : Cohomology M q) :
+    _root_.AlgebraicGeometry.Scheme.Modules.cohomologyAddEquivOfIso e q x =
+      (cohomologyFunctor X q).map e.hom x :=
+  (rfl)
+
+/-- Applying the inverse of `cohomologyAddEquivOfIso` is the map on cohomology induced by
+`e.inv`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyAddEquivOfIso_symm_apply
+    {M N : X.Modules} (e : M ≅ N) (q : ℕ) (x : Cohomology N q) :
+    (_root_.AlgebraicGeometry.Scheme.Modules.cohomologyAddEquivOfIso e q).symm x =
+      (cohomologyFunctor X q).map e.inv x :=
+  (rfl)
+
+/-- Isomorphic sheaves of modules have trivial cohomology in the same degrees. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_congr
+    {M N : X.Modules} (e : M ≅ N) (q : ℕ) :
+    Subsingleton (Cohomology M q) ↔ Subsingleton (Cohomology N q) :=
+  Equiv.subsingleton_congr
+    (_root_.AlgebraicGeometry.Scheme.Modules.cohomologyAddEquivOfIso e q).toEquiv
 
 section Opens
 

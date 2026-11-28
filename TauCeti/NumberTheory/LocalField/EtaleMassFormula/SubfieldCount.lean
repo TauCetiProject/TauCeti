@@ -41,6 +41,8 @@ then turns Serre's `∑ (q ^ f) ^ (-c) = e` into the formula above.
   `q ^ (-f(e - 1))`.
 * `TauCeti.tsum_inertiaDegree_eq`: the subextensions of degree `f * e` and residue degree `f`
   satisfy `∑_L q ^ (-d(L)) = e · q ^ (-f(e - 1))`.
+* `TauCeti.finite_setOf_finrank_eq_and_inertiaDegree_eq`: if `e` is nonzero in `K`, there are
+  finitely many such subextensions, by Serre's finiteness of `σ_{K_f}(e)`.
 
 ## References
 
@@ -144,6 +146,20 @@ theorem map_mem_totallyRamifiedOfDegree_iff (e : ℕ) :
     exact ⟨Nat.eq_of_mul_eq_mul_left Module.finrank_pos he,
       Nat.eq_of_mul_eq_mul_left hf (hi.trans (mul_one _).symm)⟩
 
+/-- Over a finite extension `F / K`, the intermediate fields of `SeparableClosure K` containing `F`,
+of degree `[F : K] * e` and residue degree `f(F / K)` over `K`, correspond to `σ_F(e)`: read them
+over `F` and transport them along `Φ`. -/
+private def subtypeEquivTotallyRamifiedOfDegree (e : ℕ) :
+    {L : IntermediateField K (SeparableClosure K) //
+        (∀ x : F, algebraMap F (SeparableClosure K) x ∈ L) ∧
+          Module.finrank K L = Module.finrank K F * e ∧ L.inertiaDegree = inertiaDegree K F} ≃
+      totallyRamifiedOfDegree F e :=
+  (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm.trans
+    (Equiv.subtypeEquiv ((restrictScalarsOrderIso K).symm.trans
+        (orderIsoMapComap Φ.symm)).toEquiv fun L ↦ by
+      rw [OrderIso.coe_toEquiv, OrderIso.trans_apply, orderIsoMapComap_apply,
+        map_mem_totallyRamifiedOfDegree_iff F Φ _ e, restrictScalars_restrictScalarsOrderIso_symm])
+
 variable [IsUnramified K F]
 
 /-- Over an unramified base `F`, the discriminant exponent of `E.restrictScalars K` over `K` is
@@ -218,27 +234,16 @@ with residue degree `f`, the subextensions of `SeparableClosure K` containing `F
 private theorem tsum_one_div_natCard_residueField_pow_discriminantExponent_eq (e : ℕ) :
     ∑' L : {L : IntermediateField K (SeparableClosure K) //
         (∀ x : F, algebraMap F (SeparableClosure K) x ∈ L) ∧
-          Module.finrank K L = inertiaDegree K F * e ∧ L.inertiaDegree = inertiaDegree K F},
+          Module.finrank K L = Module.finrank K F * e ∧ L.inertiaDegree = inertiaDegree K F},
       1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.discriminantExponent =
       e / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (inertiaDegree K F * (e - 1)) := by
   have := isSepClosure_tower_top K F (SeparableClosure K)
   let Φ := IsSepClosure.equiv F (SeparableClosure F) (SeparableClosure K)
-  have hfr : Module.finrank K F = inertiaDegree K F := IsUnramified.inertiaDegree_eq_finrank.symm
-  -- The intermediate fields of `Kˢ / F` are the intermediate fields of `Kˢ / K` containing `F`.
-  let ρ := restrictScalarsOrderIso K (L' := F) (L := SeparableClosure K)
-  -- Transported to the separable closure of `F`, the subextensions being counted are `σ_F(e)`.
-  let ε : {L : IntermediateField K (SeparableClosure K) //
-      (∀ x : F, algebraMap F (SeparableClosure K) x ∈ L) ∧
-        Module.finrank K L = inertiaDegree K F * e ∧ L.inertiaDegree = inertiaDegree K F} ≃
-      totallyRamifiedOfDegree F e :=
-    (Equiv.subtypeSubtypeEquivSubtypeInter _ _).symm.trans
-      (Equiv.subtypeEquiv (ρ.symm.trans (orderIsoMapComap Φ.symm)).toEquiv fun L ↦ by
-        rw [OrderIso.coe_toEquiv, OrderIso.trans_apply, orderIsoMapComap_apply,
-          map_mem_totallyRamifiedOfDegree_iff F Φ (ρ.symm L) e,
-          restrictScalars_restrictScalarsOrderIso_symm, hfr])
+  let ε := subtypeEquivTotallyRamifiedOfDegree F Φ e
   have hw (L) : 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.discriminantExponent =
       1 / (Nat.card 𝓀[F] : ℝ≥0∞) ^ (ε L).val.wildExponent *
         (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (inertiaDegree K F * (e - 1))) := by
+    let ρ := restrictScalarsOrderIso K (L' := F) (L := SeparableClosure K)
     have hε : (ε L).val = (ρ.symm ⟨L.val, L.property.1⟩).map Φ.symm.toAlgHom
         := orderIsoMapComap_apply _ _
     have hM := (ε L).property
@@ -256,6 +261,22 @@ private theorem tsum_one_div_natCard_residueField_pow_discriminantExponent_eq (e
 
 end Transport
 
+/-- The subextensions of degree `f * e` and residue degree `f ≥ 1` are those of the same degree
+and residue degree that contain the unramified extension of degree `f`. -/
+private def subtypeEquivSubtypeUnramifiedExtension {f : ℕ} (hf : f ≠ 0) (e : ℕ) :
+    {L : IntermediateField K (SeparableClosure K) //
+        Module.finrank K L = f * e ∧ L.inertiaDegree = f} ≃
+      {L : IntermediateField K (SeparableClosure K) //
+        (∀ x : unramifiedExtension K (SeparableClosure K) f,
+          algebraMap (unramifiedExtension K (SeparableClosure K) f) (SeparableClosure K) x ∈ L) ∧
+          Module.finrank K L = f * e ∧ L.inertiaDegree = f} :=
+  Equiv.subtypeEquivRight fun L ↦ ⟨fun h ↦ ⟨fun x ↦ by
+    have : Module.Finite K L := by
+      by_contra h'
+      rw [← inertiaDegree_eq_zero_iff] at h'
+      omega
+    exact L.unramifiedExtension_inertiaDegree_le (h.2 ▸ x.property), h⟩, And.right⟩
+
 /-- **The subfield count by residue degree** ([Bhargava 2007, §2]): for `f ≥ 1`, the
 subextensions `L` of `SeparableClosure K` of degree `f * e` and residue degree `f` satisfy
 `∑_L q ^ (-d(L)) = e · q ^ (-f(e - 1))`, where `q` is the residue cardinality of `K` and `d(L)` the
@@ -272,25 +293,40 @@ theorem tsum_inertiaDegree_eq {f : ℕ} (hf : f ≠ 0) (e : ℕ) :
   have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) U
   have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) U
   have : IsUnramified K U := isUnramified_unramifiedExtension
-  have hUf : inertiaDegree K U = f := by
-    rw [IsUnramified.inertiaDegree_eq_finrank, finrank_unramifiedExtension hf]
-  -- A subextension of residue degree `f` contains `U`.
-  have hle : ∀ {L : IntermediateField K (SeparableClosure K)}, L.inertiaDegree = f → U ≤ L := by
-    intro L hL
-    have : Module.Finite K L := by
-      by_contra h
-      rw [← inertiaDegree_eq_zero_iff] at h
-      omega
-    simpa [U, hL] using L.unramifiedExtension_inertiaDegree_le
-  let τ : {L : IntermediateField K (SeparableClosure K) //
-      Module.finrank K L = f * e ∧ L.inertiaDegree = f} ≃
-      {L : IntermediateField K (SeparableClosure K) //
-        (∀ x : U, algebraMap U (SeparableClosure K) x ∈ L) ∧
-          Module.finrank K L = f * e ∧ L.inertiaDegree = f} :=
-    Equiv.subtypeEquivRight fun L ↦ ⟨fun h ↦ ⟨fun x ↦ hle h.2 x.property, h⟩, And.right⟩
+  have hUr : Module.finrank K U = f := finrank_unramifiedExtension hf
+  have hUf : inertiaDegree K U = f := by rw [IsUnramified.inertiaDegree_eq_finrank, hUr]
   have h := tsum_one_div_natCard_residueField_pow_discriminantExponent_eq (K := K) U e
-  rw [hUf] at h
+  rw [hUr, hUf] at h
   rw [← h]
-  exact τ.tsum_eq (fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.discriminantExponent)
+  exact (subtypeEquivSubtypeUnramifiedExtension hf e).tsum_eq
+    (fun L ↦ 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ L.val.discriminantExponent)
+
+/-- **Finitely many subextensions of a given degree and residue degree**: for `f ≥ 1` and `e`
+nonzero in `K`, `SeparableClosure K` has only finitely many subextensions of degree `f * e` and
+residue degree `f`. They are the totally ramified extensions of degree `e` of the unramified
+extension `K_f` of degree `f`, and `σ_{K_f}(e)` is finite because `e` is nonzero in `K_f`. -/
+theorem finite_setOf_finrank_eq_and_inertiaDegree_eq {f e : ℕ} (hf : f ≠ 0) (he : (e : K) ≠ 0) :
+    {L : IntermediateField K (SeparableClosure K) |
+      Module.finrank K L = f * e ∧ L.inertiaDegree = f}.Finite := by
+  set U := unramifiedExtension K (SeparableClosure K) f
+  let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) U
+  let _ := finiteIntermediateFieldTopology K (SeparableClosure K) U
+  have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) U
+  have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) U
+  have : IsUnramified K U := isUnramified_unramifiedExtension
+  have hUr : Module.finrank K U = f := finrank_unramifiedExtension hf
+  have hUf : inertiaDegree K U = f := by rw [IsUnramified.inertiaDegree_eq_finrank, hUr]
+  have heU : (e : U) ≠ 0 := by
+    rwa [← map_natCast (algebraMap K U), map_ne_zero]
+  have : Finite (totallyRamifiedOfDegree U e) :=
+    ((tsum_one_div_natCard_residueField_pow_wildExponent_ne_top_iff_finite heU).1
+      (by rw [tsum_one_div_natCard_residueField_pow_wildExponent]; exact ENNReal.natCast_ne_top e))
+      |>.to_subtype
+  have := isSepClosure_tower_top K U (SeparableClosure K)
+  let Φ := IsSepClosure.equiv U (SeparableClosure U) (SeparableClosure K)
+  rw [← Set.finite_coe_iff]
+  exact Finite.of_equiv _ ((subtypeEquivSubtypeUnramifiedExtension hf e).trans
+    ((Equiv.subtypeEquivRight fun L ↦ by rw [hUr, hUf]).trans
+      (subtypeEquivTotallyRamifiedOfDegree U Φ e))).symm
 
 end TauCeti

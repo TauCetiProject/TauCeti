@@ -250,8 +250,8 @@ theorem injective_mfderiv_liouvilleGraph {s : S} (hι : MDifferentiableAt J I ι
     (hZι : IsTransverseAlong J Z ι) : Injective (mfderiv J I (liouvilleGraph Z ι f) s) := by
   refine (injective_iff_map_eq_zero _).2 fun w hw ↦ ?_
   rw [mfderiv_liouvilleGraph_apply hZ (hc.mem_flowDomain _ _) hι hf hf₀] at hw
-  exact (hZι.eq_zero_of_smul_add_eq_zero hιs <| injective_mfderiv_flowOf hZ hc
-    (Real.log (f s)) (ι s) (hw.trans (map_zero _).symm)).2
+  exact (hZι.eq_zero_of_smul_add_eq_zero hιs <| (bijective_mfderiv_flowOf hZ
+    (hc.mem_flowDomain (Real.log (f s)) (ι s))).1 (hw.trans (map_zero _).symm)).2
 
 /-- **The graph keeps transversality.** If `ι` is a differentiable immersion transverse to `Z`,
 then `Z` is transverse to the Liouville graph of every differentiable nowhere vanishing function
@@ -269,7 +269,7 @@ theorem isTransverseAlong_liouvilleGraph (hι : MDifferentiable J I ι)
     (mfderiv_flowOf_apply_self hZ (hc.mem_flowDomain t (ι s))).symm
   rw [mfderiv_liouvilleGraph_apply hZ (hc.mem_flowDomain t (ι s)) (hι s) (hf s) (hf₀ s), hZt] at hw
   have h : (a - 1) • Z (ι s) + mfderiv J I ι s w = 0 := by
-    refine injective_mfderiv_flowOf hZ hc t (ι s) ?_
+    refine (bijective_mfderiv_flowOf hZ (hc.mem_flowDomain t (ι s))).1 ?_
     rw [liouvilleGraph_apply] at hw
     -- Keep `mvfderiv` folded, so that its value stays a real scalar.
     simpa [-mvfderiv_apply_eq_mfderiv_apply, sub_smul, sub_add_eq_add_sub, map_sub, a] using
@@ -416,8 +416,8 @@ theorem exists_isMIntegralCurve_reebVectorField_of_hasContractibleClosedCharacte
   have hα : (SmoothForm.mpullback j hj α).IsContactForm :=
     (h.isRestrictedContactType_liouvilleGraph hZ hc hιd hιs hιW hfd fun s ↦ (hf₀ s).ne')
       |>.isContactType.isContactForm_mpullback h.isNondegenerate hj hjs hdim
-  have hαneg : (SmoothForm.mpullback j hj (-α)).IsContactForm := by
-    rwa [map_neg, SmoothForm.isContactForm_neg_iff]
+  have hαneg : (SmoothForm.mpullback j hj (-α)).IsContactForm :=
+    (SmoothForm.isContactForm_mpullback_neg_iff hj α).2 hα
   have hdθ (s : S) : mextDeriv (-α).val (j s) = -ω.val (j s) := by
     rw [NegMemClass.coe_neg, mextDeriv_neg, h.mextDeriv_eq, Pi.neg_apply]
   have hKj (s : S) : (mfderiv J I j s).range = (mvfderiv I K (j s)).ker := by

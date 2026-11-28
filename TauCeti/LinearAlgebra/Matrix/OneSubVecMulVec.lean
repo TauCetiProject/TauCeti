@@ -17,12 +17,12 @@ inverse, the determinant, and the resulting element of the general linear group.
 stated for plain pairs of vectors, and every hypothesis is a value of one of the pairings
 `v ⬝ᵥ u` of the vectors involved.
 
-The products, the commutation and braid relations, the two-sided inverse and the general linear
-group element hold over an arbitrary ring, where the scalar of a product sits between the two
-vectors: `vecMulVec u (c • v)` has entries `u i * c * v j`. The quadratic relation, the
-determinant, the matrix inverse `⁻¹` and the induced linear automorphisms are stated over a
-commutative ring. The action of a scaled perturbation `1 - c • vecMulVec v w` on a column vector
-is computed for vectors in any algebra over a commutative ring.
+The products, the commutation and braid relations, the two-sided inverse, the general linear
+group element and the action on row vectors hold over an arbitrary ring, where the scalar of a
+product sits between the two vectors: `vecMulVec u (c • v)` has entries `u i * c * v j`. The
+quadratic relation, the determinant, the matrix inverse `⁻¹` and the induced linear automorphisms
+are stated over a commutative ring. The action of a scaled perturbation `1 - c • vecMulVec v w` on
+a column vector is computed for vectors in any algebra over a commutative ring.
 
 ## Main definitions
 
@@ -39,7 +39,7 @@ is computed for vectors in any algebra over a commutative ring.
   `1 + c • vecMulVec u v`, and the inverse.
 * `TauCeti.one_sub_vecMulVec_mulVec`, `TauCeti.oneSubVecMulVecGL_toLinearEquiv_apply`, and its
   inverse counterpart compute the matrix-vector product and induced linear automorphism on column
-  vectors.
+  vectors, and `TauCeti.vecMul_one_sub_vecMulVec` the vector-matrix product on row vectors.
 * `Matrix.one_sub_smul_vecMulVec_mulVec`: the matrix `1 - c v wᵀ`, such as a Householder
   reflection, sends `x` to `x - c v (w ⬝ᵥ x)`.
 -/
@@ -116,6 +116,12 @@ theorem coe_oneSubVecMulVecGL (t : Rˣ) (u v : α → R) (h : v ⬝ᵥ u = (t : 
 theorem coe_oneSubVecMulVecGL_inv (t : Rˣ) (u v : α → R) (h : v ⬝ᵥ u = (t : R) + 1) :
     (↑(oneSubVecMulVecGL t u v h)⁻¹ : Matrix α α R) = 1 - vecMulVec u (((t⁻¹ : Rˣ) : R) • v) :=
   (rfl)
+
+/-- A rank-one perturbation of the identity subtracts the column pairing in the row direction:
+`w (1 - u vᵀ) = w - (w ⬝ᵥ u) vᵀ`, the row counterpart of `TauCeti.one_sub_vecMulVec_mulVec`. -/
+theorem vecMul_one_sub_vecMulVec (u v w : α → R) :
+    w ᵥ* (1 - vecMulVec u v) = w - (w ⬝ᵥ u) • v := by
+  rw [vecMul_sub, vecMul_one, vecMul_vecMulVec]
 
 end Ring
 

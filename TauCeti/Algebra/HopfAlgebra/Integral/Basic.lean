@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.HopfAlgebra.Convolution
 public import Mathlib.RingTheory.Bialgebra.Equiv
 public import Mathlib.Algebra.Module.Submodule.Equiv
+public import TauCeti.Algebra.Bialgebra.Coop
+public import TauCeti.Algebra.Bialgebra.MulOpposite
 
 /-!
 # Integral submodules of a bialgebra
@@ -18,6 +20,11 @@ They are defined over a commutative semiring, without a finite generation assump
 
 Bialgebra isomorphisms identify integral submodules. The antipode takes left integrals
 to right integrals and conversely; if it is bijective, it identifies the two submodules.
+For a left integral `t`, `rTensor_mulLeft_lTensor_antipode_comul_of_mem_leftIntegral` gives the
+tensor–antipode commutation identity `(x * t₁) ⊗ S(t₂) = t₁ ⊗ (S(t₂) * x)`, which underlies the
+dual-basis partner formulas. We also record integral correspondences under `TauCeti.Coop`
+(`TauCeti.Coop.mk_mem_leftIntegral_iff`, `TauCeti.Coop.mk_mem_rightIntegral_iff`) and `ᵐᵒᵖ`
+(`MulOpposite.op_mem_leftIntegral_iff`, `MulOpposite.op_mem_rightIntegral_iff`).
 These comparisons allow existence and dimension results for integrals to be transferred
 between presentations and between the two handedness conventions.
 
@@ -31,7 +38,7 @@ public section
 namespace TauCeti
 
 open Coalgebra HopfAlgebra
-open scoped Coalgebra
+open scoped Coalgebra TensorProduct
 
 variable (R H : Type*) [CommSemiring R] [Semiring H]
 
@@ -55,6 +62,13 @@ def rightIntegral : Submodule R H where
   add_mem' ht hu h := by simp [add_mul, ht h, hu h, smul_add]
   smul_mem' r t ht h := by
     rw [smul_mul_assoc, ht h, smul_comm r]
+
+/-- A bialgebra is unimodular when its left and right integral submodules agree. -/
+def IsUnimodular : Prop := leftIntegral R H = rightIntegral R H
+
+/-- Unimodularity is equality of the two integral spaces. -/
+theorem isUnimodular_iff : IsUnimodular R H ↔ leftIntegral R H = rightIntegral R H :=
+  Iff.rfl
 
 variable {R H}
 
@@ -174,9 +188,142 @@ theorem antipode_integralAntipodeEquiv_symm_apply
   simpa only [integralAntipodeEquiv_apply] using
     congrArg Subtype.val ((integralAntipodeEquiv hS).apply_symm_apply t)
 
+private noncomputable def leftIntegralPhi (R H : Type*) [CommSemiring R] [Semiring H]
+    [HopfAlgebra R H] (t : H) : (H ⊗[R] H) ⊗[R] H →ₗ[R] H ⊗[R] H :=
+  TensorProduct.lift <| LinearMap.mk₂ R
+    (fun ab c ↦ (((LinearMap.mul R H).flip c ∘ₗ antipode R).lTensor H)
+      (ab * comul (R := R) t))
+    (fun _ _ _ ↦ by simp [add_mul])
+    (fun _ _ _ ↦ by simp)
+    (fun ab c₁ c₂ ↦ by simp [LinearMap.add_comp, LinearMap.lTensor_add])
+    (fun r ab c ↦ by simp [LinearMap.smul_comp, LinearMap.lTensor_smul])
+
+private theorem leftIntegralPhi_rTensor_comul {t : H} (ht : t ∈ leftIntegral R H)
+    (w : H ⊗[R] H) :
+    leftIntegralPhi R H t ((comul (R := R)).rTensor H w) =
+      (((LinearMap.mul R H).flip (TensorProduct.lid R H ((counit (R := R)).rTensor H w)) ∘ₗ
+        antipode R).lTensor H) (comul t) := by
+  induction w using TensorProduct.inductionOn with
+  | add u v hu hv =>
+    simp only [map_add, hu, hv, LinearMap.add_comp, LinearMap.lTensor_add, LinearMap.add_apply]
+  | tmul d c =>
+    have hdt : comul (R := R) d * comul (R := R) t =
+        counit (R := R) d • comul (R := R) t := by
+      rw [← Bialgebra.comul_mul, (mem_leftIntegral_iff.mp ht) d, map_smul]
+    simp [leftIntegralPhi, hdt, LinearMap.smul_comp, LinearMap.lTensor_smul]
+
+private theorem leftIntegralPhi_assoc_symm_tmul (t a : H) (z : H ⊗[R] H) :
+    leftIntegralPhi R H t ((TensorProduct.assoc R H H H).symm (a ⊗ₜ[R] z)) =
+      (LinearMap.mul R H a).rTensor H
+        ((((LinearMap.mul R H).flip (LinearMap.mul' R H ((antipode R).rTensor H z)) ∘ₗ
+          antipode R).lTensor H) (comul (R := R) t)) := by
+  induction z using TensorProduct.inductionOn with
+  | add u v hu hv =>
+    simp only [TensorProduct.tmul_add, map_add, hu, hv, LinearMap.add_comp, LinearMap.lTensor_add,
+      LinearMap.add_apply]
+  | tmul b c =>
+    simp only [TensorProduct.assoc_symm_tmul, leftIntegralPhi, TensorProduct.lift.tmul,
+      LinearMap.mk₂_apply, LinearMap.rTensor_tmul, LinearMap.mul'_apply]
+    induction comul (R := R) t using TensorProduct.inductionOn with
+    | add u v hu hv => simp only [mul_add, map_add, hu, hv]
+    | tmul u v => simp [antipode_mul_antidistrib, mul_assoc]
+
+private theorem leftIntegralPhi_assoc_symm_lTensor_comul (t : H) (w : H ⊗[R] H) :
+    leftIntegralPhi R H t ((TensorProduct.assoc R H H H).symm
+      ((comul (R := R)).lTensor H w)) =
+      (LinearMap.mul R H (TensorProduct.rid R H
+        ((counit (R := R)).lTensor H w))).rTensor H
+          ((antipode R).lTensor H (comul (R := R) t)) := by
+  induction w using TensorProduct.inductionOn with
+  | add u v hu hv =>
+    simp only [map_add, hu, hv, LinearMap.rTensor_add, LinearMap.add_apply]
+  | tmul a d =>
+    have hmulR (r : R) :
+        (LinearMap.mul R H).flip (algebraMap R H r) ∘ₗ antipode R = r • antipode R :=
+      LinearMap.ext fun y ↦ by simp [Algebra.algebraMap_eq_smul_one]
+    simp [leftIntegralPhi_assoc_symm_tmul, hmulR, LinearMap.lTensor_smul, LinearMap.rTensor_smul]
+
+/-- For a left integral `t`, multiplying the first coproduct leg on the left by `x` after
+applying `S` to the second leg equals multiplying `S(t₂)` on the right by `x`:
+`x * t₁ ⊗ S(t₂) = t₁ ⊗ S(t₂) * x`. -/
+theorem rTensor_mulLeft_lTensor_antipode_comul_of_mem_leftIntegral
+    {t : H} (ht : t ∈ leftIntegral R H) (x : H) :
+    (LinearMap.mulLeft R x).rTensor H ((antipode R).lTensor H (comul t)) =
+      ((LinearMap.mulRight R x ∘ₗ antipode R).lTensor H) (comul t) := by
+  have hL : LinearMap.mulLeft R x = LinearMap.mul R H x := LinearMap.ext fun _ ↦ rfl
+  have hR : LinearMap.mulRight R x = (LinearMap.mul R H).flip x := LinearMap.ext fun _ ↦ rfl
+  have hco : (comul (R := R)).rTensor H (comul x) =
+      (TensorProduct.assoc R H H H).symm ((comul (R := R)).lTensor H (comul x)) := by
+    apply (TensorProduct.assoc R H H H).injective
+    simp [coassoc_apply x]
+  have heq := congrArg (leftIntegralPhi R H t) hco
+  rw [leftIntegralPhi_rTensor_comul ht, leftIntegralPhi_assoc_symm_lTensor_comul,
+    rTensor_counit_comul, lTensor_counit_comul] at heq
+  simpa [hL, hR] using heq.symm
+
 end Antipode
 
 end TauCeti
+
+namespace TauCeti.Coop
+
+open Coalgebra TauCeti
+
+variable {R H : Type*} [CommSemiring R] [Semiring H] [Bialgebra R H]
+
+/-- Left integrals in `Coop H` are the same elements as left integrals in `H`. -/
+@[simp]
+theorem mk_mem_leftIntegral_iff {t : H} :
+    mk t ∈ leftIntegral R (Coop H) ↔ t ∈ leftIntegral R H := by
+  simp only [mem_leftIntegral_iff]
+  constructor
+  · intro ht h
+    simpa only [val_mul, val_smul, val_mk, counit_mk] using congrArg val (ht (mk h))
+  · intro ht h
+    induction h with | mk h =>
+    exact ext (by simpa only [val_mul, val_smul, val_mk, counit_mk] using ht h)
+
+/-- Right integrals in `Coop H` are the same elements as right integrals in `H`. -/
+@[simp]
+theorem mk_mem_rightIntegral_iff {t : H} :
+    mk t ∈ rightIntegral R (Coop H) ↔ t ∈ rightIntegral R H := by
+  simp only [mem_rightIntegral_iff]
+  constructor
+  · intro ht h
+    simpa only [val_mul, val_smul, val_mk, counit_mk] using congrArg val (ht (mk h))
+  · intro ht h
+    induction h with | mk h =>
+    exact ext (by simpa only [val_mul, val_smul, val_mk, counit_mk] using ht h)
+
+end TauCeti.Coop
+
+namespace MulOpposite
+
+open Coalgebra TauCeti
+
+variable {R H : Type*} [CommSemiring R] [Semiring H] [Bialgebra R H]
+
+/-- Left integrals in `Hᵐᵒᵖ` correspond to right integrals in `H`. -/
+@[simp]
+theorem op_mem_leftIntegral_iff {t : H} :
+    op t ∈ leftIntegral R Hᵐᵒᵖ ↔ t ∈ rightIntegral R H := by
+  simp only [mem_leftIntegral_iff, mem_rightIntegral_iff]
+  refine ⟨fun ht h ↦ op_injective (by
+    simpa only [← op_mul, counit_op, op_smul] using ht (op h)), fun ht h ↦ ?_⟩
+  induction h using MulOpposite.rec' with | h h =>
+  simpa only [← op_mul, counit_op, op_smul] using congrArg op (ht h)
+
+/-- Right integrals in `Hᵐᵒᵖ` correspond to left integrals in `H`. -/
+@[simp]
+theorem op_mem_rightIntegral_iff {t : H} :
+    op t ∈ rightIntegral R Hᵐᵒᵖ ↔ t ∈ leftIntegral R H := by
+  simp only [mem_rightIntegral_iff, mem_leftIntegral_iff]
+  refine ⟨fun ht h ↦ op_injective (by
+    simpa only [← op_mul, counit_op, op_smul] using ht (op h)), fun ht h ↦ ?_⟩
+  induction h using MulOpposite.rec' with | h h =>
+  simpa only [← op_mul, counit_op, op_smul] using congrArg op (ht h)
+
+end MulOpposite
 
 namespace BialgEquiv
 

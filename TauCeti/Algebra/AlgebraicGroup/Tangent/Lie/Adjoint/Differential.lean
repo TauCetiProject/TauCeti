@@ -15,11 +15,12 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
 # Differentiating the adjoint comodule
 
 The differentiated action of the adjoint comodule is the Lie bracket on the dual of the
-augmentation cotangent space. This connects the dual-number description of the infinitesimal
-adjoint action with the differentiated representation used to study invariant subspaces.
-Restricting the adjoint comodule to a closed subgroup, the differentiated action of a tangent
-vector of the subgroup is the bracket with its image under the differential of the inclusion
-(`TauCeti.differential_corestrict_adjointComodule`).
+augmentation cotangent space (`Derivation.differential_adjointComodule`, packaged as `LieAlgebra.ad`
+via `TauCeti.differential_adjointComodule_cotangentLinearEquiv`). This connects the dual-number
+description of the infinitesimal adjoint action with the differentiated representation used to study
+invariant subspaces. Restricting the adjoint comodule to a closed subgroup, the differentiated
+action of a tangent vector of the subgroup is the bracket with its image under the differential of
+the inclusion (`TauCeti.differential_corestrict_adjointComodule`).
 
 ## References
 
@@ -86,19 +87,6 @@ theorem differential_adjointComodule (d : Derivation R H (Bialgebra.CounitAlgebr
   rw [pointInCounitAlgebra_eq_pointsMulEquiv_symm, adDerivation_dualNumber_apply]
   simp only [snd_add, snd_inl, snd_inr, zero_add, cotangentDualLieEquiv_apply]
 
-/-- In the cotangent-dual model, the differential of the adjoint comodule along
-`cotangentLinearEquiv x` is the adjoint operator `LieAlgebra.ad R _ x`. -/
-@[simp]
-theorem differential_cotangentLinearEquiv
-    (x : Module.Dual R (Bialgebra.CotangentSpace R H)) :
-    Comodule.differential (R := R) (H := H)
-        (M := Module.Dual R (Bialgebra.CotangentSpace R H))
-        (cotangentLinearEquiv (R := R) (A := H) (B := R) x) =
-      LieAlgebra.ad R (Module.Dual R (Bialgebra.CotangentSpace R H)) x := by
-  ext y
-  rw [differential_adjointComodule, cotangentDualLieEquiv_symm_apply,
-    LinearEquiv.symm_apply_apply, LieAlgebra.ad_apply]
-
 end Derivation
 
 namespace TauCeti
@@ -110,6 +98,18 @@ variable [Module.Finite R (Bialgebra.CotangentSpace R H)]
 variable [Module.Projective R (Bialgebra.CotangentSpace R H)]
 
 attribute [local instance] Derivation.adjointComodule
+
+/-- The differentiated adjoint representation at `cotangentLinearEquiv x` is `ad x`. -/
+@[simp]
+theorem differential_adjointComodule_cotangentLinearEquiv
+    (x : Module.Dual R (Bialgebra.CotangentSpace R H)) :
+    Comodule.differential (R := R) (H := H)
+        (M := Module.Dual R (Bialgebra.CotangentSpace R H))
+        (Derivation.cotangentLinearEquiv (R := R) (A := H) x) =
+      LieAlgebra.ad R (Module.Dual R (Bialgebra.CotangentSpace R H)) x := by
+  ext y
+  rw [Derivation.differential_adjointComodule, ← Derivation.cotangentDualLieEquiv_apply,
+    LieEquiv.symm_apply_apply, LieAlgebra.ad_apply]
 
 /-- **The restricted adjoint representation differentiates to the bracket.** A tangent vector `d`
 of the closed subgroup cut out by `J` acts on `𝔤` by the bracket with its image in `𝔤` under the

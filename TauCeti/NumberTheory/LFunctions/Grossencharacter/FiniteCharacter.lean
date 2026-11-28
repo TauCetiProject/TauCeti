@@ -100,6 +100,8 @@ Accordingly the comparison is stated for nonzero integers only.
 * `TauCeti.LFunctions.Grossencharacter.finiteConductor_dvd_iff_residueCharacter_eq_one`: the
   finite conductor divides `𝔫` exactly when the residue character is trivial on the residue units
   congruent to `1` modulo `𝔫`.
+* `TauCeti.LFunctions.Grossencharacter.existsUnique_finiteCharacterK`: `finiteCharacterK` is the
+  unique multiplicative extension of `finiteCharacter` to `primeToSubgroup 𝔪`.
 
 ## References
 
@@ -390,6 +392,27 @@ theorem residueCharacter_eq_one_of_finitePart_eq_top (χ : Grossencharacter K �
   have : Subsingleton (𝓞 K ⧸ 𝔪.finitePart) := Ideal.Quotient.subsingleton_iff.mpr h
   refine MulChar.ext fun u ↦ ?_
   rw [Subsingleton.elim (u : 𝓞 K ⧸ 𝔪.finitePart) 1, MulChar.map_one, MulChar.map_one]
+
+/-- **Existence and uniqueness of `finiteCharacterK`.** `χ.finiteCharacterK` is the unique group
+homomorphism `primeToSubgroup 𝔪 →* ℂˣ` agreeing with `χ.finiteCharacter` on algebraic integers
+prime to `𝔪`. -/
+theorem existsUnique_finiteCharacterK (χ : Grossencharacter K 𝔪) :
+    ∃! f : primeToSubgroup 𝔪 →* ℂˣ,
+      ∀ (a : 𝓞 K) (x : primeToSubgroup 𝔪),
+        algebraMap (𝓞 K) K a = ((x : Kˣ) : K) → (f x : ℂ) = χ.finiteCharacter a := by
+  refine ⟨χ.finiteCharacterK,
+    fun a x ha ↦ (χ.finiteCharacter_eq_finiteCharacterK x ha).symm,
+    fun f hf ↦ MonoidHom.ext fun x ↦ Units.ext ?_⟩
+  obtain ⟨a, b, xa, xb, ha, hb, hxeq⟩ := exists_primeToSubgroup_eq_mul x
+  have hxa : f xa = f xb * f x := by rw [hxeq, map_mul]
+  have h1 : (f xb : ℂ) * (f x : ℂ) =
+      (χ.finiteCharacterK xb : ℂ) * (χ.finiteCharacterK x : ℂ) := by
+    rw [← Units.val_mul, ← hxa, hf a xa ha, χ.finiteCharacter_eq_finiteCharacterK xa ha, hxeq,
+      map_mul, Units.val_mul]
+  have hb_eq : (f xb : ℂ) = χ.finiteCharacterK xb :=
+    (hf b xb hb).trans (χ.finiteCharacter_eq_finiteCharacterK xb hb)
+  rw [hb_eq] at h1
+  exact mul_left_cancel₀ (χ.finiteCharacterK xb).ne_zero h1
 
 /-! ### The finite character on `K` -/
 

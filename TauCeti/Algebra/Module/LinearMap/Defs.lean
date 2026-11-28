@@ -10,7 +10,8 @@ public import Mathlib.Algebra.Module.LinearMap.Defs
 /-!
 # Composites of semilinear maps
 
-Forgetting scalar compatibility commutes with composition of semilinear maps
+Forgetting scalar compatibility maps `LinearMap.id` to `AddMonoidHom.id`
+(`LinearMap.toAddMonoidHom_id`) and commutes with composition of semilinear maps
 (`LinearMap.toAddMonoidHom_comp`). Composites of injective or surjective semilinear maps are
 injective or surjective (`LinearMap.injective_comp`, `LinearMap.surjective_comp`); these restate
 `Function.Injective.comp` and `Function.Surjective.comp` for the coercion of `g.comp f`, so that
@@ -22,6 +23,8 @@ Pasting a commutative square onto a factorization gives a factorization
 A homotopy between maps of modules with square-zero differentials transfers the property of
 commuting with the differentials from one map to the other
 (`LinearMap.comp_eq_comp_of_comp_add_comp_eq_add`).
+It also provides the identity and composition laws for integer linearization of additive
+homomorphisms (`AddMonoidHom.toIntLinearMap_id` and `AddMonoidHom.toIntLinearMap_comp`).
 -/
 
 public section
@@ -32,6 +35,10 @@ variable {R S T M N P : Type*} [Semiring R] [Semiring S] [Semiring T]
   [AddCommMonoid M] [AddCommMonoid N] [AddCommMonoid P]
   [Module R M] [Module S N] [Module T P]
   {σ : R →+* S} {τ : S →+* T} {υ : R →+* T} [RingHomCompTriple σ τ υ]
+
+/-- The additive map underlying the identity linear map is the identity additive map. -/
+@[simp] theorem toAddMonoidHom_id :
+    (LinearMap.id : M →ₗ[R] M).toAddMonoidHom = AddMonoidHom.id M := rfl
 
 /-- The additive map underlying a composite is the composite of the underlying additive maps. -/
 @[simp] theorem toAddMonoidHom_comp (g : N →ₛₗ[τ] P) (f : M →ₛₗ[σ] N) :
@@ -96,3 +103,21 @@ theorem comp_eq_comp_of_comp_add_comp_eq_add {d₀ : V →ₗ[R] V} {d₁ : W �
 end Homotopy
 
 end LinearMap
+
+namespace AddMonoidHom
+
+/-- Viewing the identity additive homomorphism as a `ℤ`-linear map gives the identity linear map. -/
+@[simp]
+theorem toIntLinearMap_id (M : Type*) [AddCommGroup M] :
+    (AddMonoidHom.id M).toIntLinearMap = LinearMap.id :=
+  LinearMap.ext fun _ ↦ by simp
+
+/-- Viewing a composite of additive homomorphisms as a `ℤ`-linear map gives the composite of
+their `ℤ`-linear maps. -/
+@[simp]
+theorem toIntLinearMap_comp {M N P : Type*} [AddCommGroup M] [AddCommGroup N] [AddCommGroup P]
+    (g : N →+ P) (f : M →+ N) :
+    (g.comp f).toIntLinearMap = g.toIntLinearMap ∘ₗ f.toIntLinearMap :=
+  LinearMap.ext fun _ ↦ by simp
+
+end AddMonoidHom
