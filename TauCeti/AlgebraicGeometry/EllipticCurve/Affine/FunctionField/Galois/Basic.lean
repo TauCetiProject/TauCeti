@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.KrullTopology
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.CoordinateRingMap
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Map.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Translation.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Galois
+import Mathlib.Topology.Algebra.OpenSubgroup
 
 /-!
 # Galois actions on function fields of Weierstrass curves
@@ -112,6 +114,15 @@ theorem functionFieldGaloisAction_genericY (σ : K ≃ₐ[F] K) :
     functionFieldGaloisAction W σ (W⁄K).toAffine.genericY = (W⁄K).toAffine.genericY := by
   rw [Affine.genericY_def, functionFieldGaloisAction_algebraMap_mk, Polynomial.map_X]
 
+/-- For a coefficient automorphism, the function-field map agrees with the coefficient action. -/
+theorem functionFieldMapBaseChange_eq_galoisAction (σ : K ≃ₐ[F] K) :
+    W.functionFieldMapBaseChange σ.toAlgHom = (W.functionFieldGaloisAction σ).toRingHom := by
+  obtain ⟨hc, hx, hy⟩ := W.functionFieldMapBaseChange_spec σ.toAlgHom
+  exact Affine.FunctionField.ringHom_ext
+    (fun a ↦ (hc a).trans (W.functionFieldGaloisAction_algebraMap σ a).symm)
+    (hx.trans (W.functionFieldGaloisAction_genericX σ).symm)
+    (hy.trans (W.functionFieldGaloisAction_genericY σ).symm)
+
 /-- **The Galois action fixes the function field defined over the ground field.** -/
 @[simp]
 theorem functionFieldGaloisAction_map_algebraMap (σ : K ≃ₐ[F] K)
@@ -184,6 +195,36 @@ theorem exists_finset_functionFieldGaloisAction_eq_self (z : (W⁄K).toAffine.Fu
   rw [map_div₀, functionFieldGaloisAction_algebraMap_mk, functionFieldGaloisAction_algebraMap_mk,
     hmap p σ fun x hx ↦ hσ x (Finset.mem_union_left _ hx),
     hmap q σ fun x hx ↦ hσ x (Finset.mem_union_right _ hx)]
+
+/-- The subgroup of coefficient automorphisms fixing a function. -/
+noncomputable def functionFieldGaloisStabilizer (z : (W⁄K).toAffine.FunctionField) :
+    Subgroup (K ≃ₐ[F] K) :=
+  letI : MulAction (K ≃ₐ[F] K) (W⁄K).toAffine.FunctionField :=
+    MulAction.compHom (W⁄K).toAffine.FunctionField W.functionFieldGaloisAction
+  MulAction.stabilizer (K ≃ₐ[F] K) z
+
+/-- Membership in the coefficient stabilizer means fixing the function. -/
+@[simp]
+theorem mem_functionFieldGaloisStabilizer {z : (W⁄K).toAffine.FunctionField} {σ : K ≃ₐ[F] K} :
+    σ ∈ W.functionFieldGaloisStabilizer z ↔ W.functionFieldGaloisAction σ z = z := by
+  let : MulAction (K ≃ₐ[F] K) (W⁄K).toAffine.FunctionField :=
+    MulAction.compHom (W⁄K).toAffine.FunctionField W.functionFieldGaloisAction
+  exact (MulAction.mem_stabilizer_iff (g := σ) (a := z)).trans
+    (by rw [MulAction.compHom_smul_def, RingAut.smul_def])
+
+/-- Over an algebraic extension, the stabilizer of a function under the coefficient action
+is open in the Krull topology: it contains the fixing subgroup of the finite extension generated
+by its coefficients. -/
+theorem isOpen_functionFieldGaloisStabilizer [Algebra.IsAlgebraic F K]
+    (z : (W⁄K).toAffine.FunctionField) :
+    IsOpen (W.functionFieldGaloisStabilizer z : Set (K ≃ₐ[F] K)) := by
+  obtain ⟨s, hs⟩ := W.exists_finset_functionFieldGaloisAction_eq_self z
+  let E := IntermediateField.adjoin F (s : Set K)
+  have hle : E.fixingSubgroup ≤ W.functionFieldGaloisStabilizer z := fun σ hσ ↦
+    W.mem_functionFieldGaloisStabilizer.mpr <| hs σ fun a ha ↦
+      (IntermediateField.mem_fixingSubgroup_iff _ _).mp hσ a
+        (IntermediateField.subset_adjoin F _ ha)
+  exact Subgroup.isOpen_mono hle E.fixingSubgroup_isOpen
 
 variable [DecidableEq K] [W.IsElliptic]
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Endomorphism.Descent
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Frobenius.Subring
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.ComplexMultiplication
 public import TauCeti.AlgebraicGeometry.EllipticCurve.CurveX3SubX
@@ -294,6 +295,23 @@ noncomputable def gaussianIntRingEquivCurveX3AddX :
 theorem coe_gaussianIntRingEquivCurveX3AddX :
     ⇑gaussianIntRingEquivCurveX3AddX = gaussianIntCMActionCurveX3AddX :=
   RingEquiv.coe_ofBijective _ _
+
+/-- The Gaussian-integer action gives the full geometric endomorphism ring of
+`y² = x³ + x` over `𝔽₅` (Silverman V.3). -/
+noncomputable def gaussianIntGeometricEndEquivCurveX3AddX :
+    GaussianInt ≃+* curveX3AddX.GeometricEnd :=
+  gaussianIntRingEquivCurveX3AddX.trans
+    (curveX3AddX.geometricEndEquivOfIsOrdinary isOrdinary_curveX3AddX)
+
+/-- The geometric isomorphism acts by base change of the rational Gaussian-integer action. -/
+@[simp]
+theorem gaussianIntGeometricEndEquivCurveX3AddX_apply (z : GaussianInt) :
+    gaussianIntGeometricEndEquivCurveX3AddX z =
+      (gaussianIntCMActionCurveX3AddX z).map (algebraMap (ZMod 5) (SeparableClosure (ZMod 5))) := by
+  have h := curveX3AddX.baseChangeEndEquivOfIsOrdinary_apply (SeparableClosure (ZMod 5))
+    isOrdinary_curveX3AddX (gaussianIntRingEquivCurveX3AddX z)
+  rw [coe_gaussianIntRingEquivCurveX3AddX] at h
+  exact h
 
 /-- **`ℤ[π₅]` has index `2` in the endomorphism ring of `y² = x³ + x` over `𝔽₅`**: the
 endomorphism ring is `ℤ[i]` and `ℤ[π₅] = ℤ[2i]`. -/
