@@ -37,7 +37,7 @@ coordinate has second moment equal to the one-dimensional Gaussian tail second m
 * `TauCeti.Probability.integrable_tailVec_mul`: integrability of pairwise products of tail
   coordinates.
 * `TauCeti.Probability.integral_tailVec_mul_of_ne`: distinct tail coordinates are uncorrelated.
-* `TauCeti.Probability.integral_tailVec_sq`: diagonal tail second moment.
+* `TauCeti.Probability.integral_tailVec_mul_self`: diagonal tail second moment.
 * `ContinuousLinearMap.integral_sq_apply_tailVec`: second moment of `f (tailVec t g)`.
 -/
 
@@ -158,7 +158,7 @@ theorem integral_tailVec_mul_of_ne (t : ℝ) {i j : ι} (hij : i ≠ j) :
 
 /-- Each coordinate of `EuclideanSpace.tailVec t` has second moment equal to the one-dimensional
 Gaussian tail second moment. -/
-theorem integral_tailVec_sq (t : ℝ) (i : ι) :
+theorem integral_tailVec_mul_self (t : ℝ) (i : ι) :
     ∫ g, EuclideanSpace.tailVec t g i * EuclideanSpace.tailVec t g i
         ∂stdGaussian (EuclideanSpace ℝ ι) =
       ∫ r in {r : ℝ | t < |r|}, r ^ 2 ∂gaussianReal 0 1 := by
@@ -221,7 +221,7 @@ theorem integral_sq_apply_tailVec (f : StrongDual ℝ (EuclideanSpace ℝ ι)) (
         f (EuclideanSpace.basisFun ι ℝ i) ^ 2 *
           (EuclideanSpace.tailVec t g i * EuclideanSpace.tailVec t g i) := by
       simp only [X]; ring
-    simp_rw [hsq, integral_const_mul, TauCeti.Probability.integral_tailVec_sq]
+    simp_rw [hsq, integral_const_mul, TauCeti.Probability.integral_tailVec_mul_self]
   simp_rw [hdiag, ← Finset.sum_mul, ← (EuclideanSpace.basisFun ι ℝ).norm_dual f]
 
 end ContinuousLinearMap

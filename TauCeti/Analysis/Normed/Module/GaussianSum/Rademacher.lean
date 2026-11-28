@@ -18,7 +18,7 @@ Rademacher cotype `2` with constant `C`), then the Gaussian second moment of eve
 `G₂(y) = (𝔼_g ‖∑ i, gᵢ yᵢ‖²)^(1/2) ≤ 4 √3 C R₂(y)`.
 
 The proof applies the threshold comparison `gaussianSecondMoment_le_two_mul_rademacherSecondMoment`
-at `t = 2 √3 C` together with the tail certificate `mul_sqrt_setIntegral_sq_tail_le`
+at `t = 2 √3 C` together with the tail certificate `mul_sqrt_setIntegral_sq_tail_gaussianReal_le`
 (and `subsingleton_of_lt_one` when `C = 0`). Combining this with Gaussian cotype `2` yields
 Rademacher cotype `2` with constant `4 √3 C²`.
 
@@ -62,7 +62,7 @@ theorem HasGaussianCotype.gaussianSecondMoment_le (h : HasGaussianCotype Y 2 C) 
   have htail :
       (C : ℝ) * √(∫ r in {r : ℝ | 2 * √3 * (C : ℝ) < |r|}, r ^ 2 ∂gaussianReal 0 1) ≤
         1 / 2 :=
-    mul_sqrt_setIntegral_sq_tail_le ht (by
+    mul_sqrt_setIntegral_sq_tail_gaussianReal_le ht (by
       rw [show (C : ℝ) * √3 / (2 * √3 * (C : ℝ)) = 1 / 2 by field_simp])
   refine (gaussianSecondMoment_le_two_mul_rademacherSecondMoment h htail y).trans_eq ?_
   ring

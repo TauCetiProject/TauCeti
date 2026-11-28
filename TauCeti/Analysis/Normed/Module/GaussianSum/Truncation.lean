@@ -27,7 +27,7 @@ with Rademacher contraction bounds the truncated term by `t * R₂(y)` whenever 
 
 * `TauCeti.integral_norm_sq_truncVec_le`: `𝔼[‖∑ i, truncVec t g i • y i‖²] ≤ (t * R₂(y))²`
   for `0 ≤ t`.
-* `TauCeti.gaussianSecondMoment_le_trunc_add_tail`: splits `G₂(y)` into its truncated and tail
+* `TauCeti.gaussianSecondMoment_le_truncVec_add_tailVec`: splits `G₂(y)` into its truncated and tail
   `L²` norms.
 -/
 
@@ -65,7 +65,7 @@ theorem integral_norm_sq_truncVec_le [DecidableEq ι] (y : ι → Y) {t : ℝ} (
   rw [Probability.truncVec_signFlip, smul_assoc]
 
 /-- The `L²` Minkowski triangle inequality splits `G₂(y)` into its truncated and tail parts. -/
-theorem gaussianSecondMoment_le_trunc_add_tail (y : ι → Y) (t : ℝ) :
+theorem gaussianSecondMoment_le_truncVec_add_tailVec (y : ι → Y) (t : ℝ) :
     gaussianSecondMoment y ≤
       √(∫ g, ‖∑ i, EuclideanSpace.truncVec t g i • y i‖ ^ 2
           ∂stdGaussian (EuclideanSpace ℝ ι)) +

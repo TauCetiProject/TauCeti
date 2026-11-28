@@ -142,7 +142,7 @@ theorem summingENorm_two_le_ofReal_sixteen_mul_sq_mul_rademacherSecondMoment
   · simpa using summingENorm_two_le_ofReal_four_mul_rademacherSecondMoment hY (t := 0) (by simp) b U
   have : 0 < (C : ℝ) := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hC)
   have ht : (C : ℝ) * √(∫ r in {r : ℝ | 4 * (C : ℝ) < |r|}, r ^ 2 ∂gaussianReal 0 1) ≤ 1 / 2 :=
-    mul_sqrt_setIntegral_sq_tail_le (by positivity) (by
+    mul_sqrt_setIntegral_sq_tail_gaussianReal_le (by positivity) (by
       rw [show (C : ℝ) * √3 / (4 * C) = √3 / 4 by field_simp]
       have h3 : √3 ≤ 2 := Real.sqrt_le_iff.2 ⟨by norm_num, by norm_num⟩
       linarith)

@@ -24,13 +24,13 @@ canonical operator `gaussianSumCLM y : EuclideanSpace ℝ ι →L[ℝ] Y`, and s
 Gaussian coordinate at a threshold `t` with `C * (𝔼[g² 1_{|g| > t}])^(1/2) ≤ 1 / 2`, bounds the
 truncated sum by `t * R₂(y)` (`TauCeti.integral_norm_sq_truncVec_le`) and the tail sum by
 `(1 / 2) * G₂(y)`. Absorption yields `G₂(y) ≤ 2 * t * R₂(y)` (Pisier, Lemma 3.8). We also
-record the tail threshold certificate `TauCeti.mul_sqrt_setIntegral_sq_tail_le` derived from
-`TauCeti.Probability.sqrt_setIntegral_sq_tail_gaussianReal_le`.
+record the tail threshold certificate `TauCeti.mul_sqrt_setIntegral_sq_tail_gaussianReal_le`
+derived from `TauCeti.Probability.sqrt_setIntegral_sq_tail_gaussianReal_le`.
 
 ## Main declarations
 
-* `TauCeti.mul_sqrt_setIntegral_sq_tail_le`: `C * √(∫_{|r| > t} r² dγ₁) ≤ 1 / 2` whenever
-  `0 < t` and `C * √3 / t ≤ 1 / 2`.
+* `TauCeti.mul_sqrt_setIntegral_sq_tail_gaussianReal_le`:
+  `C * √(∫_{|r| > t} r² dγ₁) ≤ 1 / 2` whenever `0 < t` and `C * √3 / t ≤ 1 / 2`.
 * `TauCeti.gaussianSecondMoment_le_two_mul_rademacherSecondMoment`:
   `G₂(y) ≤ 2 * t * R₂(y)` when `C * √(∫_{|r| > t} r² dγ₁) ≤ 1 / 2`.
 
@@ -51,7 +51,7 @@ namespace TauCeti
 
 /-- Tail threshold certificate for Pisier's Gaussian–Rademacher comparison: if `0 < t` and
 `C * √3 / t ≤ 1 / 2`, then `C * √(∫_{|r| > t} r² dγ₁) ≤ 1 / 2`. -/
-theorem mul_sqrt_setIntegral_sq_tail_le {C : ℝ≥0} {t : ℝ} (ht : 0 < t)
+theorem mul_sqrt_setIntegral_sq_tail_gaussianReal_le {C : ℝ≥0} {t : ℝ} (ht : 0 < t)
     (hCt : (C : ℝ) * √3 / t ≤ 1 / 2) :
     (C : ℝ) * √(∫ r in {r : ℝ | t < |r|}, r ^ 2 ∂gaussianReal 0 1) ≤ 1 / 2 :=
   calc
@@ -105,7 +105,7 @@ theorem gaussianSecondMoment_le_two_mul_rademacherSecondMoment
     have : Subsingleton Y := hY.subsingleton_of_lt_one hC1
     have hy : y = 0 := Subsingleton.elim _ _
     simp [hy]
-  · have htri := gaussianSecondMoment_le_trunc_add_tail y t
+  · have htri := gaussianSecondMoment_le_truncVec_add_tailVec y t
     have htrunc :
         √(∫ g, ‖∑ i, EuclideanSpace.truncVec t g i • y i‖ ^ 2
               ∂stdGaussian (EuclideanSpace ℝ ι)) ≤
