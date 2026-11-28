@@ -23,12 +23,16 @@ is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
 ## Main declarations
 
 * `TauCeti.Module.Dual.baseChangeEvaluation`: the canonical scalar-extended evaluation map.
+* `TauCeti.Module.Dual.baseChangeEvaluation_tmul_eq_smul`: evaluation at `a ⊗ φ` is `a` times
+  the base change of `φ`.
 * `TauCeti.Module.Dual.baseChangeEvaluation_one_tmul`: evaluation at a scalar-extended
   functional with coefficient one is its base change.
 * `TauCeti.Module.Dual.baseChangeEvaluation_tmul`: its value on two pure tensors.
 * `AlgHom.baseChangeEvaluation_rTensor`: naturality of evaluation in the scalar algebra.
 * `Module.Dual.baseChangeEvaluation_one_tmul_baseChange`: naturality of evaluation
   with respect to a base-changed linear map.
+* `LinearMap.baseChangeEvaluation_comp_baseChange_dualMap`: naturality of
+  `baseChangeEvaluation` with respect to dual maps.
 * `Module.Dual.baseChange_rTensor`: base change of a functional is compatible with a change of
   coefficients `A ⟶ B`.
 * `Module.Dual.baseChange_apply_one_tmul`, `Module.Dual.baseChange_apply_toAddMonoidHom_mk_one`,
@@ -39,6 +43,8 @@ is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
   form on `f(X)`.
 * `TauCeti.Module.Dual.baseChangeEvaluationEquiv`: scalar extension commutes with the dual of a
   finite projective module.
+* `TauCeti.Module.Dual.baseChangeEvaluationEquiv_toLinearMap`: the underlying linear map of
+  `baseChangeEvaluationEquiv` is `baseChangeEvaluation`.
 * `TauCeti.Module.Dual.baseChange_coord`: base-changed dual basis elements recover the
   coordinates in the base-changed basis.
 * `TauCeti.Module.Dual.eq_of_baseChange_eq`: base changes of all dual elements jointly
@@ -74,6 +80,12 @@ This map needs no finiteness hypothesis; for finite projective `M` it is an equi
 def baseChangeEvaluation :
     A ⊗[R] Module.Dual R M →ₗ[A] Module.Dual A (A ⊗[R] M) :=
   (Module.Dual.baseChange A).liftBaseChange A
+
+/-- Evaluating at the pure tensor `a ⊗ φ` is `a` times the base change of `φ`. -/
+theorem baseChangeEvaluation_tmul_eq_smul (a : A) (φ : Module.Dual R M) :
+    baseChangeEvaluation (R := R) (M := M) (A := A) (a ⊗ₜ[R] φ) =
+      a • Module.Dual.baseChange A φ := by
+  simp only [baseChangeEvaluation, LinearMap.liftBaseChange_tmul]
 
 /-- Evaluating at the pure tensor `1 ⊗ φ` is the base change of `φ`. -/
 theorem baseChangeEvaluation_one_tmul (φ : Module.Dual R M) :
@@ -118,6 +130,16 @@ theorem _root_.Module.Dual.baseChangeEvaluation_one_tmul_baseChange
   induction t using TensorProduct.inductionOn with
   | add s t hs ht => simpa only [map_add] using congrArg₂ (· + ·) hs ht
   | tmul a m => simp [baseChangeEvaluation_tmul]
+
+/-- Scalar-extended evaluation is natural with respect to dual maps: applying `baseChangeEvaluation`
+after the base change of `f.dualMap` agrees with applying `(f.baseChange A).dualMap` after
+`baseChangeEvaluation`. -/
+theorem _root_.LinearMap.baseChangeEvaluation_comp_baseChange_dualMap
+    {N : Type*} [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N) :
+    (baseChangeEvaluation (R := R) (M := M) (A := A)).comp (f.dualMap.baseChange A) =
+      (f.baseChange A).dualMap.comp (baseChangeEvaluation (R := R) (M := N) (A := A)) := by
+  ext a ψ
+  simp
 
 /-- The base change of a functional `φ` takes `1 ⊗ m` to the image of `φ m` in `A`. -/
 theorem _root_.Module.Dual.baseChange_apply_one_tmul (φ : Module.Dual R M) (m : M) :
@@ -194,6 +216,13 @@ theorem baseChangeEvaluationEquiv_apply (z : A ⊗[R] Module.Dual R M) :
     baseChangeEvaluationEquiv (R := R) (A := A) (M := M) z =
       baseChangeEvaluation (R := R) (M := M) (A := A) z :=
   by simp only [baseChangeEvaluationEquiv, LinearEquiv.ofBijective_apply]
+
+/-- The underlying linear map of `baseChangeEvaluationEquiv` is `baseChangeEvaluation`. -/
+@[simp]
+theorem baseChangeEvaluationEquiv_toLinearMap :
+    (baseChangeEvaluationEquiv (R := R) (A := A) (M := M)).toLinearMap =
+      baseChangeEvaluation (R := R) (M := M) (A := A) :=
+  LinearMap.ext baseChangeEvaluationEquiv_apply
 
 end FiniteProjective
 

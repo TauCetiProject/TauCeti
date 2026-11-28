@@ -54,8 +54,9 @@ is supplied here alongside the opposite-ring module structure.
   diagrams.
 * `AuslanderReitenTranspose.prodMapEquiv`: the transpose of a direct sum of arrows is the direct
   sum of their transposes.
-* `AuslanderReitenTranspose.compFstEquiv`: a zero source summand contributes its dual to the
-  transpose.
+* `AuslanderReitenTranspose.compFstEquiv` and `AuslanderReitenTranspose.fstEquiv`: a zero source
+  summand contributes its dual to the transpose (and the transpose of a coordinate projection is the
+  dual of the discarded summand).
 
 ## Main results
 
@@ -140,6 +141,18 @@ theorem op_algebraMap_smul (c : k) (x : AuslanderReitenTranspose p₁) :
 
 end Scalars
 
+section ScalarTower
+
+variable {k R : Type*} [CommSemiring k] [CommSemiring R]
+  [Algebra k R] [Algebra R A] [Algebra k A] [IsScalarTower k R A]
+
+instance : IsScalarTower k R (AuslanderReitenTranspose p₁) :=
+  IsScalarTower.of_algebraMap_smul fun c x ↦ by
+    rw [← op_algebraMap_smul (k := R), ← op_algebraMap_smul (k := k),
+      IsScalarTower.algebraMap_apply k R A]
+
+end ScalarTower
+
 /-- The quotient map from the dual of the first projective onto its Auslander--Reiten transpose. -/
 def mk : Module.Dual A P₁ →ₗ[Aᵐᵒᵖ] AuslanderReitenTranspose p₁ :=
   (LinearMap.range (p₁.lcomp Aᵐᵒᵖ A)).mkQ
@@ -218,6 +231,47 @@ theorem quotientEquiv_symm_mk (Q : Submodule S N) (e : Module.Dual A P₁ ≃ₛ
   simp
 
 end QuotientEquiv
+
+section DualMap
+
+/-- Over a commutative ring `S`, `p.dualMap` and `(mk p).restrictScalars S` form an exact pair,
+identifying `AuslanderReitenTranspose p` with the cokernel of `p.dualMap`. -/
+theorem exact_dualMap_mk {S Q₀ Q₁ : Type*} [CommRing S]
+    [AddCommMonoid Q₀] [Module S Q₀] [AddCommMonoid Q₁] [Module S Q₁]
+    (p : Q₁ →ₗ[S] Q₀) :
+    Function.Exact p.dualMap ((mk p).restrictScalars S) := by
+  rw [LinearMap.exact_iff, LinearMap.ker_restrictScalars, ker_mk]
+  ext φ
+  simp [LinearMap.mem_range, LinearMap.dualMap_eq_lcomp, LinearMap.lcomp_apply']
+
+/-- Over a commutative ring `S`, the Auslander--Reiten transpose of `p : Q₁ →ₗ[S] Q₀` is
+`S`-linearly equivalent to the cokernel of `p.dualMap`. -/
+noncomputable def cokernelDualMapEquiv {S Q₀ Q₁ : Type*} [CommRing S]
+    [AddCommMonoid Q₀] [Module S Q₀] [AddCommMonoid Q₁] [Module S Q₁]
+    (p : Q₁ →ₗ[S] Q₀) :
+    AuslanderReitenTranspose p ≃ₗ[S] Module.Dual S Q₁ ⧸ LinearMap.range p.dualMap :=
+  ((exact_dualMap_mk p).linearEquivOfSurjective (mk_surjective p)).symm
+
+/-- `cokernelDualMapEquiv` sends the class of `φ` in the transpose to its class modulo
+`LinearMap.range p.dualMap`. -/
+@[simp]
+theorem cokernelDualMapEquiv_mk {S Q₀ Q₁ : Type*} [CommRing S]
+    [AddCommMonoid Q₀] [Module S Q₀] [AddCommMonoid Q₁] [Module S Q₁]
+    (p : Q₁ →ₗ[S] Q₀) (φ : Module.Dual S Q₁) :
+    cokernelDualMapEquiv p (mk p φ) = Submodule.Quotient.mk φ :=
+  (exact_dualMap_mk p).linearEquivOfSurjective_symm_apply (mk_surjective p) φ
+
+/-- The inverse of `cokernelDualMapEquiv` sends the quotient class of `φ` modulo
+`LinearMap.range p.dualMap` to `mk p φ`. -/
+@[simp]
+theorem cokernelDualMapEquiv_symm_mk {S Q₀ Q₁ : Type*} [CommRing S]
+    [AddCommMonoid Q₀] [Module S Q₀] [AddCommMonoid Q₁] [Module S Q₁]
+    (p : Q₁ →ₗ[S] Q₀) (φ : Module.Dual S Q₁) :
+    (cokernelDualMapEquiv p).symm (Submodule.Quotient.mk φ) = mk p φ := by
+  apply (cokernelDualMapEquiv p).injective
+  simp
+
+end DualMap
 
 section Lift
 
@@ -371,6 +425,16 @@ theorem subsingleton_of_comp_eq_id {r : P₀ →ₗ[A] P₁} (hr : r ∘ₗ p₁
   ext y
   simpa using LinearMap.congr_fun (congrArg (fun f => φ ∘ₗ f) hr) y
 
+/-- The Auslander--Reiten transpose of the identity map vanishes. -/
+instance subsingleton_id :
+    Subsingleton (AuslanderReitenTranspose (LinearMap.id : P₁ →ₗ[A] P₁)) :=
+  subsingleton_of_comp_eq_id _ (LinearMap.id_comp _)
+
+/-- The Auslander--Reiten transpose of the identity map is a `Unique` type. -/
+instance instUniqueId :
+    Unique (AuslanderReitenTranspose (LinearMap.id : P₁ →ₗ[A] P₁)) :=
+  uniqueOfSubsingleton 0
+
 /-- **A vanishing transpose splits the presenting map.**  If `P₁` is a finitely generated
 projective module and the transpose of `p₁ : P₁ → P₀` vanishes, then `p₁` admits a retraction.
 
@@ -498,6 +562,42 @@ theorem linearEquiv_symm {q₁ : Q₁ →ₗ[A] Q₀} (e₀ : P₀ ≃ₗ[A] Q�
     exact congrArg φ (e₁.apply_symm_apply y).symm
 
 end Equivalence
+
+section Fst
+
+open LinearMap
+
+variable (A₁ C : Type*) [AddCommMonoid A₁] [Module A A₁] [AddCommMonoid C] [Module A C]
+
+/-- **The transpose of a coordinate projection is the dual of the discarded summand.**
+A `compFstEquiv`-style identification for `LinearMap.fst A A₁ C`: the transpose
+`AuslanderReitenTranspose (LinearMap.fst A A₁ C)` is opposite-linearly equivalent to
+`Module.Dual A C`. -/
+def fstEquiv :
+    AuslanderReitenTranspose (fst A A₁ C) ≃ₗ[Aᵐᵒᵖ] Module.Dual A C :=
+  (linearEquiv (q₁ := (LinearMap.id : A₁ →ₗ[A] A₁) ∘ₗ fst A A₁ C)
+    (LinearEquiv.refl A A₁) (LinearEquiv.refl A (A₁ × C))
+    (LinearMap.ext fun _ ↦ rfl)).trans
+    ((compFstEquiv (LinearMap.id : A₁ →ₗ[A] A₁) C).trans LinearEquiv.uniqueProd)
+
+/-- `fstEquiv` restricts a representative functional on `A₁ × C` to the second summand `C`. -/
+@[simp]
+theorem fstEquiv_mk (φ : Module.Dual A (A₁ × C)) :
+    fstEquiv A₁ C (mk (fst A A₁ C) φ) = φ ∘ₗ inr A A₁ C := by
+  simp only [fstEquiv, LinearEquiv.trans_apply]
+  rw [linearEquiv_mk, compFstEquiv_mk]
+  ext x
+  simp [lcomp_apply']
+
+/-- The inverse of `fstEquiv` lifts a functional on `C` to `A₁ × C` via `snd`. -/
+@[simp]
+theorem fstEquiv_symm_apply (ψ : Module.Dual A C) :
+    (fstEquiv A₁ C).symm ψ = mk (fst A A₁ C) (ψ ∘ₗ snd A A₁ C) := by
+  apply (fstEquiv A₁ C).injective
+  ext x
+  simp
+
+end Fst
 
 end AuslanderReitenTranspose
 

@@ -165,17 +165,21 @@ variable {ι R S M M' : Type*} [Semiring R] [Semiring S] {σ : R →+* S} {σ' :
 /-- The image `f ∘ b` of a basis `b` under a `σ`-semilinear equivalence `f`, a basis over the
 target scalars. This is the semilinear version of `Module.Basis.map`. -/
 def mapₛₗ (b : Basis ι R M) (f : M ≃ₛₗ[σ] M') : Basis ι S M' :=
-  .mk (v := f ∘ b)
-    (b.linearIndependent.map_of_injective_injectiveₛ σ' f.toAddEquiv.toAddMonoidHom
-      (fun r s h ↦ by simpa using congrArg σ h) f.injective fun r x ↦ by
-        simp [map_smulₛₗ])
-    (by
-      rw [Set.range_comp, ← LinearEquiv.coe_coe, ← Submodule.map_span, b.span_eq,
-        Submodule.map_top, LinearEquiv.range])
+  let e : R ≃ₛₗ[σ] S :=
+    { (RingHomInvPair.toRingEquiv σ σ').toAddEquiv with
+      map_smul' := fun r x ↦ by simp }
+  Basis.ofRepr (f.symm.trans (b.repr.trans (Finsupp.mapRange.linearEquiv e)))
 
 @[simp]
-theorem mapₛₗ_apply (b : Basis ι R M) (f : M ≃ₛₗ[σ] M') (i : ι) : b.mapₛₗ f i = f (b i) :=
-  mk_apply _ _ _
+theorem mapₛₗ_apply (b : Basis ι R M) (f : M ≃ₛₗ[σ] M') (i : ι) : b.mapₛₗ f i = f (b i) := by
+  simp [mapₛₗ]
+
+/-- The coordinates of a vector in the mapped basis `b.mapₛₗ f` are the `σ`-images of the
+coordinates of `f.symm x` in `b`. -/
+@[simp]
+theorem mapₛₗ_repr (b : Basis ι R M) (f : M ≃ₛₗ[σ] M') (x : M') (i : ι) :
+    (b.mapₛₗ f).repr x i = σ (b.repr (f.symm x) i) := by
+  simp [mapₛₗ]
 
 end Map
 
