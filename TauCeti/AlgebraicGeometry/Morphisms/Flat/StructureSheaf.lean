@@ -25,6 +25,12 @@ affine open `U` of `T` lying over an affine open `V` of `S`, the sections of `T 
 when `Γ(S, V) ⟶ Γ(X, f⁻¹ V)` is an isomorphism. Such opens form a basis of `T`, and a morphism of
 sheaves that is an isomorphism on a basis is an isomorphism.
 
+Over an affine base `Y` only the global sections are needed: if `X` is quasi-compact and
+quasi-separated and `Γ(Y, 𝒪) ≅ Γ(X, 𝒪)`, then `f_* 𝒪_X = 𝒪_Y`, because over a basic open `D(r)`
+both rings of sections are localizations away from `r`. So every flat base change `T ×_Y X ⟶ T`
+induces an isomorphism on global sections. For `X ⟶ Spec Γ(X, 𝒪)` this says that the
+affinization of a quasi-compact quasi-separated scheme commutes with flat base change.
+
 Over a field every base change is flat, so a quasi-compact quasi-separated scheme `X` over a field
 `K` with `Γ(X, 𝒪_X) = K` satisfies `p_* 𝒪_{X_T} = 𝒪_T` for *every* scheme `T` over `K`. This holds
 for a proper (more generally, universally closed and quasi-separated) integral scheme with a
@@ -44,6 +50,10 @@ point is needed in this version.
 * `TauCeti.AlgebraicGeometry.isIso_app_pullback_fst_of_flat` and
   `TauCeti.AlgebraicGeometry.isIso_app_pullback_snd_of_flat`: `f_* 𝒪_X = 𝒪_S` is stable under
   flat base change for quasi-compact quasi-separated `f`.
+* `AlgebraicGeometry.Scheme.Hom.isIso_app_of_isIso_appTop_of_isAffine`: over an affine target,
+  `f_* 𝒪_X = 𝒪_Y` for quasi-compact quasi-separated `X` as soon as `Γ(Y, 𝒪) ≅ Γ(X, 𝒪)`.
+* `TauCeti.AlgebraicGeometry.isIso_appTop_of_isPullback_of_flat`: over an affine base, an
+  isomorphism `Γ(Y, 𝒪) ≅ Γ(X, 𝒪)` for quasi-compact quasi-separated `X` survives flat base change.
 * `TauCeti.AlgebraicGeometry.isIso_app_pullback_fst_of_isIso_appTop`: over a field, a
   quasi-compact quasi-separated scheme with constant global functions satisfies
   `p_* 𝒪_{X_T} = 𝒪_T` after every base change.
@@ -90,6 +100,40 @@ theorem Scheme.Hom.isIso_app_of_isIso_appTop {X Y : Scheme.{u}} [Subsingleton X]
   refine p.isIso_app_of_isBasis (B := fun _ : Unit ↦ ⊤) ?_ (fun _ ↦ ‹_›) U
   refine Opens.isBasis_iff_nbhd.mpr fun {V x} hx ↦ ⟨⊤, ⟨(), rfl⟩, trivial, fun y _ ↦ ?_⟩
   rwa [Subsingleton.elim y x]
+
+/-- A morphism from a quasi-compact quasi-separated scheme to an affine scheme which induces an
+isomorphism on global sections induces isomorphisms on the sections over all opens: `f_* 𝒪_X = 𝒪_Y`.
+For instance this applies to `X ⟶ Spec Γ(X, ⊤)`. -/
+theorem Scheme.Hom.isIso_app_of_isIso_appTop_of_isAffine {X Y : Scheme.{u}} [IsAffine Y]
+    [CompactSpace X] [QuasiSeparatedSpace X] (f : X ⟶ Y) [IsIso f.appTop] (U : Y.Opens) :
+    IsIso (f.app U) := by
+  refine f.isIso_app_of_isBasis (B := Y.basicOpen) (isBasis_basicOpen Y) (fun r ↦ ?_) U
+  -- Over `D(r)` both rings of sections are localizations away from `r`, by the qcqs lemma.
+  have := isLocalization_basicOpen_of_qcqs (X := Y) isCompact_univ isQuasiSeparated_univ r
+  have := isLocalization_basicOpen_of_qcqs (X := X) isCompact_univ isQuasiSeparated_univ
+    (f.appTop r)
+  have e := Scheme.preimage_basicOpen_top f r
+  -- This square is the one in the proof of Mathlib's `Scheme.isPullback_toSpecΓ_toSpecΓ`.
+  have hpush : IsPushout f.appTop (Y.presheaf.map (homOfLE le_top).op)
+      (X.presheaf.map (homOfLE le_top).op) (f.appLE (Y.basicOpen r) (X.basicOpen (f.appTop r))
+        e.ge) := by
+    refine CommRingCat.isPushout_of_isLocalization f.appTop.hom
+      (f.appLE (Y.basicOpen r) (X.basicOpen (f.appTop r)) e.ge).hom ?_ (.powers r)
+    -- The algebra maps of the two localizations are restrictions of sections; `change` exposes
+    -- the compatibility as an equation of composites in `CommRingCat`, which is the naturality
+    -- of `appLE`. The final `rfl` unfolds the abbreviation `appTop = app ⊤`.
+    change CommRingCat.Hom.hom (Y.presheaf.map _ ≫ f.appLE _ _ _) =
+      CommRingCat.Hom.hom (f.appTop ≫ X.presheaf.map _)
+    rw [f.map_appLE, Scheme.Hom.appLE]
+    rfl
+  have happLE := hpush.isIso_inr_of_isIso
+  -- The basic open `X_{f^* r}` is the preimage of `D(r)`, so `appLE` is `app` followed by an
+  -- isomorphism.
+  have : IsIso (X.presheaf.map (homOfLE e.ge).op) := by
+    have : IsIso (homOfLE e.ge) := ⟨homOfLE e.le, Subsingleton.elim _ _, Subsingleton.elim _ _⟩
+    infer_instance
+  rw [Scheme.Hom.appLE] at happLE
+  exact IsIso.of_isIso_comp_right _ (X.presheaf.map (homOfLE e.ge).op)
 
 end AlgebraicGeometry
 
@@ -142,6 +186,19 @@ theorem isIso_app_pullback_snd_of_flat [QuasiCompact f] [QuasiSeparated f] [Flat
   rw [hsymm, Scheme.Hom.comp_app]
   exact (isIso_app_pullback_fst_of_flat f g hf U).comp_isIso'
     ((pullbackSymmetry f g).hom.isIso_app _ fun x _ ↦ ⟨(pullbackSymmetry f g).inv x, by simp⟩)
+
+/-- **Flat base change for `Γ(Y, 𝒪) = Γ(X, 𝒪)`.** Let `f : X ⟶ Y` be a morphism from a
+quasi-compact quasi-separated scheme to an affine scheme which induces an isomorphism on global
+sections, for instance `X ⟶ Spec Γ(X, ⊤)`. Then every base change of `f` along a flat morphism
+`g : T ⟶ Y` again induces an isomorphism on global sections. -/
+theorem isIso_appTop_of_isPullback_of_flat {P Y : Scheme.{u}} {f : X ⟶ Y} {g : T ⟶ Y}
+    {f' : P ⟶ T} {g' : P ⟶ X} (H : IsPullback g' f' f g) [IsAffine Y] [CompactSpace X]
+    [QuasiSeparatedSpace X] [Flat g] [IsIso f.appTop] : IsIso f'.appTop := by
+  have h₁ := isIso_app_pullback_snd_of_flat f g
+    (fun V ↦ f.isIso_app_of_isIso_appTop_of_isAffine V) ⊤
+  have h₂ : IsIso H.isoPullback.hom.appTop := inferInstanceAs (IsIso (H.isoPullback.hom.app ⊤))
+  rw [← H.isoPullback_hom_snd, Scheme.Hom.comp_appTop]
+  exact h₁.comp_isIso' h₂
 
 variable {K : Type u} [Field K]
 

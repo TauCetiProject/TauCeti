@@ -30,9 +30,12 @@ form in which a free action of a finite group on an affine scheme enters the the
 quotients (`TauCeti.AffineInvariantQuotient.etale_projection`), once the group acts on `Γ(X, ⊤)` by
 pullback along inverses (`AlgebraicGeometry.Scheme.globalSectionsMulSemiringAction`).
 
-Morphisms into an affine scheme are determined by their effect on global sections. Hence, over an
-affine base `S`, base change along `j : T ⟶ S` is bijective on morphisms `Y ⟶ Y'` into an affine
-`Y'` whenever it does not change the global sections of `Y`.
+Morphisms into an affine scheme are determined by their effect on global sections. So if
+`j : P ⟶ Q` induces an isomorphism on global sections, as `X ⟶ Spec Γ(X, ⊤)` does, every morphism
+from `P` to an affine scheme extends uniquely along `j`
+(`AlgebraicGeometry.Scheme.Hom.precompEquivOfIsIsoAppTop`). Hence, over an affine base `S`, base
+change along `j : T ⟶ S` is bijective on morphisms `Y ⟶ Y'` into an affine `Y'` whenever it does
+not change the global sections of `Y`.
 
 It also shows that for a compatible tower `R → B ↪ R_a`, localizing `B` at `a` gives `R_a`,
 so `Spec B ⟶ Spec R` is an isomorphism over the basic open `D(a)`. The map from `R` need not
@@ -40,6 +43,9 @@ be injective. This is the local reason why an affine blowup changes nothing away
 
 ## Main definitions
 
+* `AlgebraicGeometry.Scheme.Hom.precompEquivOfIsIsoAppTop`: for `j : P ⟶ Q` inducing an
+  isomorphism on global sections and an affine scheme `Z`, precomposition with `j` is a bijection
+  `(Q ⟶ Z) ≃ (P ⟶ Z)`; injectivity is `AlgebraicGeometry.Scheme.Hom.eq_of_comp_eq_of_isIso_appTop`.
 * `AlgebraicGeometry.Scheme.globalSectionsMulSemiringAction`: a group acting on a scheme `X` acts on
   `Γ(X, ⊤)` by `g • a = (σ g⁻¹)^*(a)`.
 * `AlgebraicGeometry.Scheme.stalkFromSpecTopAlgEquiv`: for an affine scheme `Z` and a prime ideal
@@ -130,6 +136,55 @@ theorem Scheme.isoSpec_inv_appTop (X : Scheme.{u}) [IsAffine X] :
     rw [← Scheme.Hom.comp_appTop, Iso.hom_inv_id, Scheme.Hom.id_appTop]
   rw [← Iso.comp_hom_eq_id]
   simpa [Scheme.isoSpec] using h
+
+/-- The morphism `X ⟶ Spec Γ(X, ⊤)` induces an isomorphism on global sections. -/
+instance Scheme.isIso_toSpecΓ_appTop (X : Scheme.{u}) : IsIso X.toSpecΓ.appTop := by
+  rw [Scheme.toSpecΓ_appTop]
+  infer_instance
+
+/-- A morphism `f : X ⟶ Y` to an affine scheme factors as `X ⟶ Spec Γ(X, ⊤) ⟶ Spec Γ(Y, ⊤) ≅ Y`,
+the middle map being induced by `f` on global sections. -/
+@[reassoc (attr := simp)]
+theorem Scheme.toSpecΓ_SpecMap_appTop_isoSpec_inv {X Y : Scheme.{u}} [IsAffine Y] (f : X ⟶ Y) :
+    X.toSpecΓ ≫ Spec.map f.appTop ≫ Y.isoSpec.inv = f := by
+  rw [← Scheme.toSpecΓ_naturality_assoc, Scheme.toSpecΓ_isoSpec_inv, Category.comp_id]
+
+/-- If `j : P ⟶ Q` induces an isomorphism on global sections, morphisms from `Q` to an affine
+scheme are determined by their composites with `j`. -/
+theorem Scheme.Hom.eq_of_comp_eq_of_isIso_appTop {P Q Z : Scheme.{u}} [IsAffine Z] (j : P ⟶ Q)
+    [IsIso j.appTop] {a b : Q ⟶ Z} (h : j ≫ a = j ≫ b) : a = b :=
+  ext_of_isAffine ((cancel_mono j.appTop).mp (by
+    rw [← Scheme.Hom.comp_appTop, ← Scheme.Hom.comp_appTop, h]))
+
+/-- If `j : P ⟶ Q` induces an isomorphism on global sections, precomposition with `j` is a
+bijection from morphisms `Q ⟶ Z` to morphisms `P ⟶ Z`, for every affine scheme `Z`: every
+morphism from `P` to an affine scheme extends uniquely along `j`. -/
+noncomputable def Scheme.Hom.precompEquivOfIsIsoAppTop {P Q : Scheme.{u}} (j : P ⟶ Q)
+    [IsIso j.appTop] (Z : Scheme.{u}) [IsAffine Z] : (Q ⟶ Z) ≃ (P ⟶ Z) where
+  toFun g := j ≫ g
+  invFun f := Q.toSpecΓ ≫ Spec.map (f.appTop ≫ inv j.appTop) ≫ Z.isoSpec.inv
+  left_inv g := j.eq_of_comp_eq_of_isIso_appTop (by
+    rw [Scheme.toSpecΓ_naturality_assoc, ← Spec.map_comp_assoc, Category.assoc,
+      IsIso.inv_hom_id, Category.comp_id, ← Scheme.toSpecΓ_naturality_assoc,
+      Scheme.toSpecΓ_isoSpec_inv, Category.comp_id])
+  right_inv f := by
+    dsimp only
+    rw [Scheme.toSpecΓ_naturality_assoc, ← Spec.map_comp_assoc, Category.assoc,
+      IsIso.inv_hom_id, Category.comp_id, ← Scheme.toSpecΓ_naturality_assoc,
+      Scheme.toSpecΓ_isoSpec_inv, Category.comp_id]
+
+@[simp]
+theorem Scheme.Hom.precompEquivOfIsIsoAppTop_apply {P Q : Scheme.{u}} (j : P ⟶ Q)
+    [IsIso j.appTop] (Z : Scheme.{u}) [IsAffine Z] (g : Q ⟶ Z) :
+    j.precompEquivOfIsIsoAppTop Z g = j ≫ g :=
+  (rfl)
+
+/-- The extension of a morphism `f : P ⟶ Z` along `j` restricts to `f`. -/
+@[reassoc (attr := simp)]
+theorem Scheme.Hom.comp_precompEquivOfIsIsoAppTop_symm_apply {P Q : Scheme.{u}} (j : P ⟶ Q)
+    [IsIso j.appTop] (Z : Scheme.{u}) [IsAffine Z] (f : P ⟶ Z) :
+    j ≫ (j.precompEquivOfIsIsoAppTop Z).symm f = f :=
+  (j.precompEquivOfIsIsoAppTop Z).apply_symm_apply f
 
 /-- On an affine scheme `Z`, the stalk at `(isAffineOpen_top Z).fromSpec y` is a `Γ(Z, ⊤)`-algebra
 via the germ map on `⊤`. -/
@@ -644,32 +699,22 @@ theorem overPullback_map_bijective_of_isIso_appTop {S T : Scheme.{u}} [IsAffine 
     Function.Bijective (fun g : Y ⟶ Y' ↦ (Over.pullback j).map g) := by
   set e := Limits.pullback.fst Y.hom j
   have := h
-  -- Morphisms from `Y` to an affine scheme are determined by their composites with `e`.
-  have hcancel {Z : Scheme.{u}} [IsAffine Z] {g g' : Y.left ⟶ Z} (hg : e ≫ g = e ≫ g') :
-      g = g' := by
-    refine ext_of_isAffine ((cancel_mono e.appTop).mp ?_)
-    rw [← Scheme.Hom.comp_appTop, ← Scheme.Hom.comp_appTop, hg]
   -- The base change of `g` is determined by its composite with the first projection.
   have hmap (g : Y ⟶ Y') : ((Over.pullback j).map g).left ≫ Limits.pullback.fst Y'.hom j =
       e ≫ g.left :=
     Limits.pullback.lift_fst _ _ _
   refine ⟨fun g g' hgg' ↦ ?_, fun φ ↦ ?_⟩
-  · refine Over.OverMorphism.ext (hcancel ?_)
+  · refine Over.OverMorphism.ext (e.eq_of_comp_eq_of_isIso_appTop ?_)
     rw [← hmap, ← hmap]
     exact congrArg (fun k ↦ k.left ≫ Limits.pullback.fst Y'.hom j) hgg'
-  -- The composite `χ : Y ×_S T ⟶ Y'` corresponds to a ring map `Γ(Y', 𝒪) ⟶ Γ(Y ×_S T, 𝒪)`,
-  -- which factors through the isomorphism `Γ(Y, 𝒪) ≅ Γ(Y ×_S T, 𝒪)`.
+  -- The composite `χ : Y ×_S T ⟶ Y'` extends along `e`, which is an isomorphism on functions.
   set φ' : Limits.pullback Y.hom j ⟶ Limits.pullback Y'.hom j := φ.left
   have hw : φ' ≫ Limits.pullback.snd Y'.hom j = Limits.pullback.snd Y.hom j :=
     Over.w φ
   set χ := φ' ≫ Limits.pullback.fst Y'.hom j with hχ
-  let ψ : Y.left ⟶ Y'.left :=
-    Y.left.toSpecΓ ≫ Spec.map (χ.appTop ≫ inv e.appTop) ≫ Y'.left.isoSpec.inv
-  have hψ : e ≫ ψ = χ := by
-    rw [Scheme.toSpecΓ_naturality_assoc, ← Spec.map_comp_assoc, Category.assoc,
-      IsIso.inv_hom_id, Category.comp_id, ← Scheme.toSpecΓ_naturality_assoc,
-      Scheme.toSpecΓ_isoSpec_inv, Category.comp_id]
-  have hψS : ψ ≫ Y'.hom = Y.hom := hcancel <| by
+  let ψ : Y.left ⟶ Y'.left := (e.precompEquivOfIsIsoAppTop Y'.left).symm χ
+  have hψ : e ≫ ψ = χ := e.comp_precompEquivOfIsIsoAppTop_symm_apply _ _
+  have hψS : ψ ≫ Y'.hom = Y.hom := e.eq_of_comp_eq_of_isIso_appTop <| by
     calc e ≫ ψ ≫ Y'.hom = φ' ≫ Limits.pullback.snd Y'.hom j ≫ j := by
           rw [reassoc_of% hψ, hχ, Category.assoc, Limits.pullback.condition]
       _ = Limits.pullback.snd Y.hom j ≫ j := by rw [reassoc_of% hw]
