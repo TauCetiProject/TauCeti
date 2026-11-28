@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.LFunctions.Continued.Basic
 public import TauCeti.NumberTheory.LFunctions.Data.DedekindZeta
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.LeadingCoefficient
+import TauCeti.NumberTheory.LFunctions.DedekindZeta.TrivialZeros
 
 /-!
 # Zero behavior and reflection symmetry of Dedekind zeta
@@ -27,12 +28,12 @@ when the unit rank is positive, whereas in unit rank `0` (`ℚ` and imaginary qu
 
 ## Main results
 
-* `TauCeti.LFunctions.meromorphicOrderAt_dedekindZetaC_zero`,
+* `TauCeti.LFunctions.meromorphicOrderAt_dedekindZetaC_zero_eq_rank`,
   `TauCeti.LFunctions.analyticOrderAt_dedekindZetaC_zero`,
   `TauCeti.LFunctions.tendsto_dedekindZetaC_div_pow_rank_zero`,
   `TauCeti.LFunctions.dedekindZetaC_zero_of_rank_eq_zero`,
-  `TauCeti.LFunctions.dedekindZetaC_zero_of_rank_pos`: vanishing order `r₁ + r₂ - 1`, leading
-  coefficient `-h R / w`, and value at `s = 0`.
+  `TauCeti.LFunctions.dedekindZetaC_zero_of_rank_pos`: vanishing order `r₁ + r₂ - 1 = rank K`,
+  leading coefficient `-h R / w`, and value at `s = 0`.
 * `TauCeti.LFunctions.dedekindZetaC_one`: canonical normal-form value `0` at `s = 1`.
 * `TauCeti.LFunctions.dedekindZetaC_conj`: reflection symmetry
   `dedekindZetaC K (conj s) = conj (dedekindZetaC K s)`.
@@ -56,19 +57,12 @@ variable {K : Type*} [Field K] [NumberField K]
 /-! ### Vanishing order and leading coefficient at `s = 0` -/
 
 variable (K) in
-/-- **Vanishing order of the Dedekind zeta function at `s = 0`**: `dedekindZetaC K` has meromorphic
-order `r₁ + r₂ - 1 = NumberField.Units.rank K` at `s = 0`. -/
+/-- **Vanishing order of the Dedekind zeta function at `s = 0` in terms of unit rank**:
+`dedekindZetaC K` has meromorphic order `NumberField.Units.rank K = r₁ + r₂ - 1` at `s = 0`. -/
 @[simp]
-theorem meromorphicOrderAt_dedekindZetaC_zero :
+theorem meromorphicOrderAt_dedekindZetaC_zero_eq_rank :
     meromorphicOrderAt (dedekindZetaC K) 0 = (NumberField.Units.rank K : ℤ) := by
-  have h := meromorphicOrderAt_Gammaℝ_pow_mul_Gammaℂ_pow_one_sub_nat
-    (nrRealPlaces K) (nrComplexPlaces K) (n := 1) le_rfl
-  rw [Nat.cast_one, sub_self, ite_eq_right Nat.not_even_one] at h
-  rw [← dedekindZetaData_continuedL K,
-    AnalyticLFunctionData.meromorphicOrderAt_continuedL
-      (dedekindZetaData_hasMeromorphicContinuation K).meromorphic 0,
-    dedekindZetaData_completed, meromorphicOrderAt_completedDedekindZeta_zero,
-    funext (dedekindZetaData_gammaFactor K), h, sub_neg_eq_add, ← WithTop.coe_add]
+  rw [meromorphicOrderAt_dedekindZetaC_zero K]
   congr 1
   have hr := NumberField.Units.rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K
   omega
@@ -80,7 +74,7 @@ variable (K) in
 theorem analyticOrderAt_dedekindZetaC_zero :
     analyticOrderAt (dedekindZetaC K) 0 = NumberField.Units.rank K := by
   have h := (analyticAt_dedekindZetaC K zero_ne_one).meromorphicOrderAt_eq
-  rw [meromorphicOrderAt_dedekindZetaC_zero K, ← ENat.map_natCast] at h
+  rw [meromorphicOrderAt_dedekindZetaC_zero_eq_rank K, ← ENat.map_natCast] at h
   exact ENat.map_natCast_injective h.symm
 
 private theorem inv_two_pow_mul_completedDedekindZeta_residue

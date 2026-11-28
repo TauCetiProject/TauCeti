@@ -51,6 +51,7 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
 * `PowerSeries.derivative_rescale`: the chain rule `(f(a X))' = a f'(a X)` for rescaling.
 * `PowerSeries.rescale_X_mul_derivative`, `PowerSeries.evalNegHom_X_mul_derivative`: rescaling
   and negating the variable commute with the Euler operator `X * d⁄dX`.
+* `PowerSeries.X_mul_derivative_mul`: the product rule for the Euler operator `X * d⁄dX`.
 * `PowerSeries.X_mul_derivative_multiset_prod_rescale`: if `Q G = X Q'`, the logarithmic
   derivative of `∏_{x ∈ s} Q(x t)` is `∑ₘ gₘ pₘ(s) tᵐ`, with `pₘ(s)` the power sums of `s`.
 * `PowerSeries.X_mul_derivative_expand`: the Euler operator `X * d⁄dX` commutes with `X ↦ Xᵖ` up to
@@ -158,6 +159,12 @@ theorem rescale_X_mul_derivative (a : R) (φ : R⟦X⟧) :
     rescale a (X * d⁄dX φ) = X * d⁄dX (rescale a φ) := by
   ext n
   rw [coeff_rescale, coeff_X_mul_derivative, coeff_X_mul_derivative, coeff_rescale]
+  ring
+
+/-- The product rule for the Euler operator `X * d⁄dX`, in multiplicative form. -/
+theorem X_mul_derivative_mul (f g : R⟦X⟧) :
+    X * d⁄dX (f * g) = X * d⁄dX f * g + f * (X * d⁄dX g) := by
+  rw [Derivation.leibniz, smul_eq_mul, smul_eq_mul]
   ring
 
 /-- The shifted coefficient identity when `n + 1` can be cancelled. -/

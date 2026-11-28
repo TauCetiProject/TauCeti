@@ -96,6 +96,12 @@ theorem sideReflection_I_mul (d : Circle) : sideReflection d (I * d) = -(I * d) 
   rw [sideReflection_apply, map_mul, conj_I]
   linear_combination (-I * d) * d.coe_mul_conj_self
 
+/-- The reflection negates the component normal to `d`:
+`Im (conj d · σ_d z) = -Im (conj d · z)`. -/
+theorem im_conj_mul_sideReflection (d : Circle) (z : ℂ) :
+    (conj (d : ℂ) * sideReflection d z).im = -(conj (d : ℂ) * z).im := by
+  simp [sq, ← mul_assoc, Circle.conj_coe_mul_self, add_comm]
+
 /-- The reflection depends on the direction only up to sign. -/
 @[simp]
 theorem sideReflection_neg (d : Circle) : sideReflection (-d) = sideReflection d := by
@@ -179,6 +185,11 @@ theorem coe_directionReflection (d v : Circle) :
     (directionReflection d v : ℂ) = sideReflection d v := by
   rw [directionReflection_apply, div_eq_mul_inv, Circle.coe_mul, Circle.coe_inv_eq_conj,
     Circle.coe_pow, sideReflection_apply]
+
+/-- The reflection on directions negates the component normal to `d`. -/
+theorem im_conj_mul_directionReflection (d v : Circle) :
+    (conj (d : ℂ) * (directionReflection d v : ℂ)).im = -(conj (d : ℂ) * (v : ℂ)).im := by
+  rw [coe_directionReflection, im_conj_mul_sideReflection]
 
 theorem directionReflection_involutive (d : Circle) :
     Function.Involutive (directionReflection d) :=
