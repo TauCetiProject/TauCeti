@@ -55,9 +55,10 @@ No signs appear anywhere: `B` is an endomorphism, so the two blocks are never re
   of the corrected representative `x - θ + q θ` that replaces it. The first is stated in
   simp-normal form and is `@[simp]`; the second carries side conditions `simp` cannot discharge
   and is used by explicit `rw`.
-* `Polynomial.Monic.resultant_eq_zero_iff_dvd`, `Polynomial.resultant_prod_pow_ne_zero_iff` —
-  over an integral domain, `Res(f, g) = 0 ↔ f ∣ g` for monic prime `f`, and
-  `Res(∏ fᵢ ^ nᵢ, g) ≠ 0` iff none of the monic prime factors `fᵢ` divides `g`.
+* `Polynomial.Monic.resultant_eq_zero_iff_dvd_of_prime`,
+  `Polynomial.resultant_prod_pow_ne_zero_iff` — over an integral domain, `Res(f, g) = 0 ↔ f ∣ g`
+  for monic prime `f`, and `Res(∏ fᵢ ^ nᵢ, g) ≠ 0` iff none of the monic prime factors `fᵢ`
+  divides `g`.
 
 ## Provenance
 
@@ -407,8 +408,8 @@ variable {R : Type*} [CommRing R]
 
 /-- Over an integral domain, the resultant of a monic prime polynomial `f` with `g` vanishes if
 and only if `f` divides `g`. -/
-theorem Monic.resultant_eq_zero_iff_dvd [IsDomain R] {f : R[X]} (hf : f.Monic) (hprime : Prime f)
-    (g : R[X]) : f.resultant g = 0 ↔ f ∣ g := by
+protected theorem Monic.resultant_eq_zero_iff_dvd_of_prime [IsDomain R] {f : R[X]} (hf : f.Monic)
+    (hprime : Prime f) (g : R[X]) : f.resultant g = 0 ↔ f ∣ g := by
   have : (Ideal.span {f}).IsPrime := (Ideal.span_singleton_prime hprime.ne_zero).mpr hprime
   have : IsDomain (AdjoinRoot f) := Ideal.Quotient.isDomain (Ideal.span {f})
   let pb := AdjoinRoot.powerBasis' hf
@@ -425,6 +426,6 @@ theorem resultant_prod_pow_ne_zero_iff [IsDomain R] {ι : Type*} (s : Finset ι)
   rw [resultant_prod_left_of_monic s fun i hi ↦ (hf i hi).pow _, Finset.prod_ne_zero_iff]
   refine forall₂_congr fun i hi ↦ ?_
   rw [Polynomial.resultant_pow_left _ _ _ _ (by simp [(hf i hi).leadingCoeff]) le_rfl,
-    pow_ne_zero_iff (hn i hi), ne_eq, (hf i hi).resultant_eq_zero_iff_dvd (hprime i hi)]
+    pow_ne_zero_iff (hn i hi), ne_eq, (hf i hi).resultant_eq_zero_iff_dvd_of_prime (hprime i hi)]
 
 end Polynomial

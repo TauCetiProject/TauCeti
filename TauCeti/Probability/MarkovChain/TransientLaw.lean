@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.MarkovChain.Visits
-public import TauCeti.Probability.Distributions.Geometric.Basic
+public import TauCeti.Probability.Distributions.Geometric.HasLaw
 public import Mathlib.MeasureTheory.MeasurableSpace.NCard
 
 /-!
