@@ -124,6 +124,22 @@ theorem algebraMap_mem_modularFunctionField {c : ℂ} :
       modularFunctionField N ↔ c ∈ Subfield.closure {z : ℂ | z ^ N = 1} :=
   algebraMap_mem_coeffSubfield _
 
+variable (N) in
+/-- The embedding of the cyclotomic constants `ℚ(ζ_N)` into `F_N`. -/
+def modularFunctionFieldConst :
+    Subfield.closure {z : ℂ | z ^ N = 1} →+* modularFunctionField N :=
+  ((algebraMap ℂ _).comp (Subfield.closure {z : ℂ | z ^ N = 1}).subtype).codRestrict _
+    fun c ↦ algebraMap_mem_modularFunctionField.mpr c.property
+
+/-- The cyclotomic constant embedding is the constant meromorphic function. -/
+@[simp]
+theorem coe_modularFunctionFieldConst_apply (c : Subfield.closure {z : ℂ | z ^ N = 1}) :
+    (modularFunctionFieldConst N c :
+      MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) =
+        algebraMap ℂ _ c := by
+  simp only [modularFunctionFieldConst, RingHom.codRestrict_apply,
+    RingHom.comp_apply, Subfield.coe_subtype]
+
 /-- **The pullback from `X(M)` to `X(N)`, for `M ∣ N`.** The pullback of a meromorphic function
 `F` on `X(M)` lies in `F_N` exactly when the Laurent expansion of `F` at `∞`, of width `M`, has
 its coefficients in `ℚ(ζ_N)`. -/
@@ -240,6 +256,21 @@ theorem modularFunctionFieldMap_comp_modularFunctionFieldMapOfLevelOne (h : M �
       modularFunctionFieldMapOfLevelOne N :=
   RingHom.ext fun _ ↦ Subtype.ext (Subgroup.compactifiedQuotientComap_trans _ _ _).symm
 
+/-- As meromorphic functions, `j` and the cyclotomic constants in `F_N` are the pullback of `j`
+and the constant functions with values in `ℚ(ζ_N)`. -/
+theorem image_subtype_insert_range_modularFunctionFieldConst :
+    (modularFunctionField N).subtype '' insert (modularFunctionFieldMapOfLevelOne N
+        ⟨ModularGroup.jMeromorphicFunction,
+          ModularGroup.jMeromorphicFunction_mem_coeffSubfield ⊥⟩)
+      (Set.range (modularFunctionFieldConst N)) =
+      insert (Subgroup.compactifiedQuotientComap
+          (Gamma N).map_sl2zToPSL2R_le_range_psl2zToPSL2R ModularGroup.jMeromorphicFunction)
+        (algebraMap ℂ _ '' Subfield.closure {z : ℂ | z ^ N = 1}) := by
+  rw [Set.image_insert_eq, ← Set.range_comp, Subfield.subtype_apply,
+    coe_modularFunctionFieldMapOfLevelOne_apply]
+  simp only [Function.comp_def, Subfield.subtype_apply, coe_modularFunctionFieldConst_apply,
+    Set.range_comp' (algebraMap ℂ _), Subtype.range_coe_subtype, SetLike.setOfPred_mem_eq]
+
 /-! ### The action of `SL(2, ℤ)` on the function field of `X(N)` -/
 
 section Action
@@ -278,6 +309,27 @@ theorem modularFunctionAction_apply_ofQuotient (γ : SL(2, ℤ))
   rw [unop_modularFunctionAction, Subgroup.compactifiedQuotientConjComap_apply,
     Subgroup.compactifiedQuotientConj_ofQuotient, Subgroup.quotientConjHomeomorph_mk,
     UpperHalfPlane.sl2zToPSL2R_smul]
+
+/-- The finite part of `F ∘ γ` at the orbit of `τ` is the finite part of `F` at the orbit of
+`γ • τ`. -/
+@[simp]
+theorem finitePart_unop_modularFunctionAction (γ : SL(2, ℤ))
+    (F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) (τ : ℍ) :
+    (unop (modularFunctionAction N γ) F).finitePart (ofQuotient (Quotient.mk _ τ)) =
+      F.finitePart (ofQuotient (Quotient.mk _ (γ • τ))) := by
+  rw [MeromorphicFunction.finitePart_def, MeromorphicFunction.finitePart_def,
+    modularFunctionAction_apply_ofQuotient]
+
+open scoped _root_.ModularForm in
+/-- The weight-`0` slash by `γ` of the pullback to `ℍ` of the finite part of `F` is the pullback
+of the finite part of `F ∘ γ`. -/
+theorem finitePart_ofQuotient_slash_zero (γ : SL(2, ℤ))
+    (F : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient) :
+    (fun τ ↦ F.finitePart (ofQuotient (Quotient.mk _ τ))) ∣[(0 : ℤ)] γ =
+      fun τ ↦ (unop (modularFunctionAction N γ) F).finitePart (ofQuotient (Quotient.mk _ τ)) := by
+  rw [ModularForm.SL_slash_zero]
+  funext τ
+  rw [finitePart_unop_modularFunctionAction]
 
 /-- **Multiplication order.** The action is a right action: acting by `γ * δ` is acting by `γ`
 and then by `δ`. -/

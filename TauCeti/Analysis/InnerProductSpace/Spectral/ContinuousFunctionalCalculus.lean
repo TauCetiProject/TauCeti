@@ -15,6 +15,7 @@ import Mathlib.Analysis.InnerProductSpace.Positive
 import Mathlib.Topology.LocallyConstant.Basic
 import Mathlib.Analysis.CStarAlgebra.Spectrum
 import TauCeti.Topology.Algebra.Indicator
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Spectral projections of self-adjoint operators
@@ -48,6 +49,9 @@ with closed range (`IsSelfAdjoint.exists_pos_spectrum_inter_Ioo_subset_of_isClos
   orthogonal projection onto its range.
 * `IsSelfAdjoint.cfc_indicator_eq_starProjection_ker`: the spectral projection for a set meeting the
   spectrum only at `0` is the projection onto the kernel.
+* `IsSelfAdjoint.cfc_indicator_singleton_zero_eq_starProjection_ker`: when `0` is not an
+  accumulation point of the spectrum, the spectral projection for `{0}` is the projection onto the
+  kernel.
 * `ContinuousLinearMap.re_inner_apply_self_nonneg_of_mem_range_cfc_indicator` and
   `ContinuousLinearMap.re_inner_apply_self_neg_of_mem_range_cfc_indicator`: the quadratic form
   `x ↦ re ⟪S x, x⟫` of an operator is nonnegative on its spectral subspace for a set of
@@ -141,6 +145,28 @@ theorem IsSelfAdjoint.cfc_indicator_eq_starProjection_ker {T : H →L[𝕜] H} (
       have h : v - P v = 0 := by simpa [hTv] using congr($hsub v)
       exact (sub_eq_zero.1 h).symm
   exact (T.cfc_indicator_eq_starProjection_range Ω).trans (Submodule.starProjection_inj.2 hrange)
+
+/-- If `0` is not an accumulation point of the spectrum of a self-adjoint operator `T`, the spectral
+projection of `T` for `{0}` is the orthogonal projection onto the kernel of `T`. -/
+theorem IsSelfAdjoint.cfc_indicator_singleton_zero_eq_starProjection_ker {T : H →L[𝕜] H}
+    (hT : IsSelfAdjoint T) (h0 : ∀ᶠ x in 𝓝[≠] (0 : ℝ), x ∉ spectrum ℝ T) :
+    cfc (({0} : Set ℝ).indicator (1 : ℝ → ℝ)) T = T.ker.starProjection := by
+  -- Some `[-ε, ε]` meets the spectrum at most in `0`, and its endpoints avoid the spectrum.
+  obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff.1 (eventually_nhdsWithin_iff.1 h0)
+  have hsub : spectrum ℝ T ∩ Icc (-(ε / 2)) (ε / 2) ⊆ {0} := fun x ⟨hxσ, hx₁, hx₂⟩ ↦
+    by_contra fun hx0 ↦ hball (by rw [Real.dist_eq, sub_zero, abs_lt]; constructor <;> linarith)
+      hx0 hxσ
+  have h0Ω : (0 : ℝ) ∈ Icc (-(ε / 2)) (ε / 2) := by constructor <;> linarith
+  have hfr : Disjoint (frontier (Icc (-(ε / 2)) (ε / 2))) (spectrum ℝ T) :=
+    TauCeti.disjoint_frontier_Icc
+      (fun h ↦ by linarith [mem_singleton_iff.1 (hsub ⟨h, le_rfl, by linarith⟩)])
+      (fun h ↦ by linarith [mem_singleton_iff.1 (hsub ⟨h, by linarith, le_rfl⟩)])
+  rw [← hT.cfc_indicator_eq_starProjection_ker h0Ω hsub hfr]
+  refine cfc_congr fun x hx ↦ ?_
+  by_cases hxΩ : x ∈ Icc (-(ε / 2)) (ε / 2)
+  · rw [mem_singleton_iff.1 (hsub ⟨hx, hxΩ⟩), indicator_of_mem (mem_singleton _),
+      indicator_of_mem h0Ω]
+  · rw [indicator_of_notMem hxΩ, indicator_of_notMem fun h ↦ hxΩ (by rwa [mem_singleton_iff.1 h])]
 
 /-! ### The quadratic form of an operator on its spectral subspaces -/
 

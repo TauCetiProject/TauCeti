@@ -15,6 +15,8 @@ Two additive group norms bounded by constant multiples of one another induce the
 uniformity. `AddGroupNorm.toNormedAddCommGroupOfUniformity` installs a new norm while retaining
 the original uniformity and topology definitionally. In particular, existing completeness
 and continuity proofs remain usable. This construction is shared by adapted and rounded norms.
+`AddGroupSeminorm.toSeminormedAddCommGroupOfUniformity` is the analogous construction for an
+additive group seminorm whose uniformity agrees with a given uniform structure.
 -/
 
 public section
@@ -63,3 +65,23 @@ theorem norm_toNormedAddCommGroupOfUniformity (N : AddGroupNorm M)
     @norm M (N.toNormedAddCommGroupOfUniformity h).toNorm x = N x := (rfl)
 
 end AddGroupNorm
+
+namespace AddGroupSeminorm
+
+variable {M : Type*} [AddCommGroup M] [UniformSpace M]
+
+/-- Install an additive group seminorm whose uniformity agrees with the given uniform structure,
+retaining that uniform structure and its topology definitionally. Thus completeness and
+continuity are unchanged. -/
+noncomputable abbrev toSeminormedAddCommGroupOfUniformity (N : AddGroupSeminorm M)
+    (h : 𝓤 M = @uniformity M N.toSeminormedAddCommGroup.toUniformSpace) :
+    SeminormedAddCommGroup M :=
+  { N.toSeminormedAddCommGroup with
+    toPseudoMetricSpace := N.toSeminormedAddCommGroup.toPseudoMetricSpace.replaceUniformity h }
+
+/-- The compatible structure has the specified additive group seminorm. -/
+theorem norm_toSeminormedAddCommGroupOfUniformity (N : AddGroupSeminorm M)
+    (h : 𝓤 M = @uniformity M N.toSeminormedAddCommGroup.toUniformSpace) (x : M) :
+    @norm M (N.toSeminormedAddCommGroupOfUniformity h).toNorm x = N x := (rfl)
+
+end AddGroupSeminorm

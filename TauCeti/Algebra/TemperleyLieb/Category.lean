@@ -377,6 +377,23 @@ theorem id_eq_diagBasis (X : TLCat R δ) :
     (𝟙 X : X ⟶ X) = diagBasis X X (PlanarMatching.nested X.as) :=
   hom_ext <| by simp
 
+/-- Induction on morphisms of `TLCat R δ` along the diagram basis: a property of morphisms
+`X ⟶ Y` that holds on every basis morphism and is closed under `0`, addition and scalar
+multiplication holds for every morphism. -/
+@[elab_as_elim]
+theorem hom_induction {motive : (X ⟶ Y) → Prop} (zero : motive 0)
+    (add : ∀ f g, motive f → motive g → motive (f + g))
+    (smul : ∀ (r : R) f, motive f → motive (r • f)) (basis : ∀ x, motive (diagBasis X Y x))
+    (f : X ⟶ Y) : motive f := by
+  have hf : f ∈ Submodule.span R (Set.range (diagBasis X Y)) := by
+    rw [(diagBasis X Y).span_eq]
+    exact Submodule.mem_top
+  induction hf using Submodule.span_induction with
+  | mem _ h => obtain ⟨x, rfl⟩ := h; exact basis x
+  | zero => exact zero
+  | add _ _ _ _ h₁ h₂ => exact add _ _ h₁ h₂
+  | smul r _ _ h => exact smul r _ h
+
 /-- **The loop rule.** Composing two planar-matching basis morphisms glues their matchings along
 the middle boundary and multiplies by `δ` raised to the number of closed circles formed there. -/
 @[simp, reassoc]
@@ -494,6 +511,12 @@ theorem linearize_map {X Y : TLDiagCat} (f : X ⟶ Y) :
 theorem linearize_map_mk {n m : ℕ} (x : PlanarMatching (n + m)) (c : ℕ) :
     (linearize R δ).map (TLDiagCat.Hom.mk ⟨x, c⟩ : .of n ⟶ .of m) =
       δ ^ c • diagBasis (of n) (of m) x := (rfl)
+
+/-- Every basis morphism is the image of a circle-free diagram under linearization. -/
+theorem diagBasis_eq_linearize_map (x : PlanarMatching (X.as + Y.as)) :
+    diagBasis X Y x =
+      (linearize R δ).map (TLDiagCat.Hom.mk ⟨x, 0⟩ : TLDiagCat.of X.as ⟶ TLDiagCat.of Y.as) := by
+  simp only [linearize_map_mk, pow_zero, one_smul]
 
 instance : (linearize R δ).EssSurj where
   mem_essImage Y := ⟨.of Y.as, ⟨Iso.refl Y⟩⟩

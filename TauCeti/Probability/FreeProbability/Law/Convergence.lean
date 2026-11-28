@@ -50,7 +50,7 @@ theorem tendsto_law_of_tendsto_apply_pow (φ : (i : ι) → A i →ₚ[ℂ] ℂ)
       (fun i => ⟨(φ i).law (a i), (φ i).isProbabilityMeasure_law (hφ i) (ha i)⟩) l (𝓝 μ) := by
   apply ProbabilityMeasure.tendsto_of_tendsto_integral_pow hK hμK
   · intro n
-    exact Eventually.of_forall fun i => (φ i).integrable_pow_law (a i) n
+    exact Eventually.of_forall fun i => (φ i).integrable_pow_law (a i) (2 * n)
   · intro n
     apply Filter.tendsto_ofReal_iff.mp
     simpa only [ProbabilityMeasure.coe_mk, ofReal_integral_pow_law _ (ha _) n] using hmom n

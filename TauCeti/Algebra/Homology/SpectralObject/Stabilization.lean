@@ -29,8 +29,9 @@ bound, the page-`r` object is `E^{p+q}(⊥ ≤ q ≤ q + 1 ≤ q + r - 1)`
 as a quotient of every page; for filtered complexes of modules whose filtration is moreover
 exhaustive in degree `p + q - 1`,
 `TauCeti.Algebra.Homology.SpectralSequence.Filtered.BoundedBelow` shows that it is their direct
-limit along these maps. The maps `spectralSequencePageXToPageX` are not yet identified with the
-spectral sequence's own maps from page `r` to page `r + 1`.
+limit along these maps. From page `r` to page `r + 1`, the map `spectralSequencePageXToPageX`
+is the spectral sequence's own map, the projection onto the homology of page `r`
+(`TauCeti.Algebra.Homology.SpectralObject.PageHomology`).
 
 ## Main definitions
 
@@ -95,6 +96,22 @@ lemma spectralSequencePageXIsoEBot_inv (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ
         (X.spectralSequencePageXIso coreE₂Cohomological r hr pq ((pq.2 - r + 2 : ℤ) : EInt) pq.2
           ((pq.2 + 1 : ℤ) : EInt) ((pq.2 + r - 1 : ℤ) : EInt) rfl rfl rfl rfl (n - 1) n (n + 1)
           hn).inv :=
+  (rfl)
+
+/-- `X.spectralSequencePageXIsoEBot` is the identification of the page object with
+`E^n(q - r + 2 ≤ q ≤ q + 1 ≤ q + r - 1)`, followed by the inverse of the canonical isomorphism
+`E^n(⊥ ≤ q ≤ q + 1 ≤ q + r - 1) ⟶ E^n(q - r + 2 ≤ q ≤ q + 1 ≤ q + r - 1)`. -/
+lemma spectralSequencePageXIsoEBot_hom (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (n : ℤ)
+    (hn : n = pq.1 + pq.2)
+    (h₀ : IsZero ((X.H (n + 1)).obj
+      (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ((pq.2 - r + 2 : ℤ) : EInt)))))) :
+    (X.spectralSequencePageXIsoEBot r hr pq n hn h₀).hom =
+      (X.spectralSequencePageXIso coreE₂Cohomological r hr pq ((pq.2 - r + 2 : ℤ) : EInt) pq.2
+          ((pq.2 + 1 : ℤ) : EInt) ((pq.2 + r - 1 : ℤ) : EInt) rfl rfl rfl rfl (n - 1) n (n + 1)
+          hn).hom ≫
+        (X.isoMapFourδ₁Toδ₀' ⊥ ((pq.2 - r + 2 : ℤ) : EInt) pq.2 ((pq.2 + 1 : ℤ) : EInt)
+          ((pq.2 + r - 1 : ℤ) : EInt) bot_le (by simp; lia) (coe_le_coe_add_one pq.2)
+          (by simp; lia) (n - 1) n (n + 1) h₀).inv :=
   (rfl)
 
 /-- The object at `pq = (p, q)` on page `r ≥ 2` of the spectral sequence of `X` is

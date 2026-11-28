@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Homotopy.Contractible
 public import Mathlib.Topology.Homotopy.Equiv
 public import Mathlib.Topology.Homotopy.Path
+import TauCeti.Topology.Homotopy.Contractible
 
 /-!
 # Homotopy equivalences: path connectedness, products, and slices of a cylinder
@@ -32,7 +33,8 @@ In the same way, a product `X × E` with a real vector space `E` deforms onto it
 
 It also records that inverting a homotopy equivalence twice gives it back, and that a left and
 a right homotopy inverse of the same map are homotopic, so that a left homotopy inverse of a
-homotopy equivalence is automatically a right homotopy inverse.
+homotopy equivalence is automatically a right homotopy inverse, and that a map homotopic to a
+homotopy equivalence is one too, with the same homotopy inverse.
 
 ## Main declarations
 
@@ -48,8 +50,11 @@ homotopy equivalence is automatically a right homotopy inverse.
   connected space is path connected.
 * `ContinuousMap.HomotopyEquiv.zerothHomotopyCongr`: a homotopy equivalence induces a bijection
   of the sets of path components.
-* `ContinuousMap.HomotopyEquiv.prodCongr_apply`: the product of two homotopy equivalences acts
-  componentwise.
+* `ContinuousMap.HomotopyEquiv.prodCongr_apply`, `ContinuousMap.HomotopyEquiv.prodCongr_symm_apply`:
+  the product of two homotopy equivalences and its homotopy inverse act componentwise.
+* `ContinuousMap.HomotopyEquiv.prodContractibleAt`: for `Y` contractible and any point `y` of `Y`,
+  the inclusion of the slice `x ↦ (x, y)` is a homotopy equivalence `X ≃ₕ X × Y`, with homotopy
+  inverse the projection.
 * `ContinuousMap.HomotopyEquiv.prodContractible`: the homotopy equivalence `X × Y ≃ₕ X` given by
   the projection, for `Y` contractible.
 * `ContinuousMap.HomotopyEquiv.prodIcc`: the slice `x ↦ (x, t)` is a homotopy equivalence
@@ -62,6 +67,8 @@ homotopy equivalence is automatically a right homotopy inverse.
   has a left homotopy inverse itself is a right homotopy inverse.
 * `ContinuousMap.HomotopyEquiv.toFun_comp_homotopic_id_of_comp_toFun_homotopic_id`: a left
   homotopy inverse of a homotopy equivalence is a right homotopy inverse.
+* `ContinuousMap.HomotopyEquiv.ofHomotopic`: a map homotopic to a homotopy equivalence is a
+  homotopy equivalence.
 -/
 
 public section
@@ -181,21 +188,46 @@ theorem HomotopyEquiv.prodCongr_apply (h₁ : X ≃ₕ Y) (h₂ : Z ≃ₕ Z')
     (x : X × Z) : h₁.prodCongr h₂ x = (h₁ x.1, h₂ x.2) :=
   (rfl)
 
+/-- The homotopy inverse of the product of two homotopy equivalences is the product of their
+homotopy inverses, acting componentwise. -/
+@[simp]
+theorem HomotopyEquiv.prodCongr_symm_apply (h₁ : X ≃ₕ Y) (h₂ : Z ≃ₕ Z')
+    (y : Y × Z') : (h₁.prodCongr h₂).symm y = (h₁.symm y.1, h₂.symm y.2) :=
+  (rfl)
+
+variable (X) in
+/-- **Each slice of a product with a contractible space is a homotopy equivalence.** For
+contractible `Y` and a point `y` of `Y`, the inclusion of the slice `x ↦ (x, y)` is a homotopy
+equivalence `X ≃ₕ X × Y`, with homotopy inverse the projection: a homotopy from the constant map
+at `y` to the identity of `Y` moves the second coordinate. This homotopy need not fix the slice. -/
+def HomotopyEquiv.prodContractibleAt [ContractibleSpace Y] (y : Y) : X ≃ₕ X × Y where
+  toFun := (ContinuousMap.id X).prodMk (const X y)
+  invFun := fst
+  left_inv := Homotopic.refl _
+  right_inv := by
+    -- Projecting and then including the slice is `id × const y`, homotopic to `id × id`.
+    have h := (Homotopic.refl (ContinuousMap.id X)).prodMap
+      (homotopic_of_contractibleSpace (const Y y) (ContinuousMap.id Y))
+    convert h using 1 <;> ext <;> rfl
+
+/-- The slice homotopy equivalence sends `x` to `(x, y)`. -/
+@[simp]
+theorem HomotopyEquiv.prodContractibleAt_apply [ContractibleSpace Y] (y : Y) (x : X) :
+    HomotopyEquiv.prodContractibleAt X y x = (x, y) :=
+  (rfl)
+
+/-- The homotopy inverse of the slice homotopy equivalence is the projection. -/
+@[simp]
+theorem HomotopyEquiv.prodContractibleAt_symm_apply [ContractibleSpace Y] (y : Y) (q : X × Y) :
+    (HomotopyEquiv.prodContractibleAt X y).symm q = q.1 :=
+  (rfl)
+
 variable (X Y) in
 /-- The projection `X × Y → X` is a homotopy equivalence when `Y` is contractible: its homotopy
 inverse includes `X` at a point of `Y` to which `Y` contracts. -/
 noncomputable def HomotopyEquiv.prodContractible [ContractibleSpace Y] :
-    (X × Y) ≃ₕ X where
-  toFun := fst
-  invFun := (ContinuousMap.id X).prodMk (const X (id_nullhomotopic Y).choose)
-  left_inv := by
-    obtain ⟨H⟩ := (id_nullhomotopic Y).choose_spec
-    exact Homotopic.symm ⟨{
-      toFun q := (q.2.1, H (q.1, q.2.2))
-      continuous_toFun := by fun_prop
-      map_zero_left _ := by simp
-      map_one_left _ := by simp }⟩
-  right_inv := Homotopic.refl _
+    (X × Y) ≃ₕ X :=
+  (HomotopyEquiv.prodContractibleAt X (id_nullhomotopic Y).choose).symm
 
 /-- The underlying map of the homotopy equivalence `X × Y ≃ₕ X` for contractible `Y` is the
 projection. -/
@@ -298,5 +330,34 @@ theorem HomotopyEquiv.toFun_comp_homotopic_id_of_comp_toFun_homotopic_id
     (e.toFun.comp g).Homotopic (ContinuousMap.id Y) :=
   ((Homotopic.refl e.toFun).comp
     (hg.homotopic_of_comp_homotopic_id e.right_inv)).trans e.right_inv
+
+/-- **A map homotopic to a homotopy equivalence is a homotopy equivalence**, with the same
+homotopy inverse: `e.ofHomotopic f hf` has forward map `f`. -/
+def HomotopyEquiv.ofHomotopic (e : X ≃ₕ Y) (f : C(X, Y)) (hf : f.Homotopic e.toFun) :
+    X ≃ₕ Y where
+  toFun := f
+  invFun := e.invFun
+  left_inv := ((Homotopic.refl e.invFun).comp hf).trans e.left_inv
+  right_inv := (hf.comp (Homotopic.refl e.invFun)).trans e.right_inv
+
+theorem HomotopyEquiv.ofHomotopic_toFun (e : X ≃ₕ Y) (f : C(X, Y)) (hf : f.Homotopic e.toFun) :
+    (e.ofHomotopic f hf).toFun = f :=
+  (rfl)
+
+theorem HomotopyEquiv.ofHomotopic_invFun (e : X ≃ₕ Y) (f : C(X, Y)) (hf : f.Homotopic e.toFun) :
+    (e.ofHomotopic f hf).invFun = e.invFun :=
+  (rfl)
+
+/-- The homotopy equivalence `e.ofHomotopic f hf` is the map `f`. -/
+@[simp]
+theorem HomotopyEquiv.coe_ofHomotopic (e : X ≃ₕ Y) (f : C(X, Y)) (hf : f.Homotopic e.toFun) :
+    ⇑(e.ofHomotopic f hf) = f :=
+  (rfl)
+
+/-- The inverse of `e.ofHomotopic f hf` is the inverse of `e`. -/
+@[simp]
+theorem HomotopyEquiv.coe_ofHomotopic_symm (e : X ≃ₕ Y) (f : C(X, Y))
+    (hf : f.Homotopic e.toFun) : ⇑(e.ofHomotopic f hf).symm = e.symm :=
+  (rfl)
 
 end ContinuousMap

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Weights.InvariantForm
 public import TauCeti.Algebra.Lie.Weights.Integrality
+import TauCeti.Algebra.Lie.Weights.Killing
 
 /-!
 # The invariant form is positive definite on the integral weights
@@ -49,6 +50,8 @@ and nonzero.
 
 * `TauCeti.invForm_eq_sum_root`: the invariant form is the sum over the roots of the products of
   the coordinates the roots define.
+* `TauCeti.sum_sum_mul_star_killingForm_coroot`: for `h = ∑ᵢ aᵢ αᵢ∨`,
+  `∑ᵢ ∑ⱼ aᵢ star(aⱼ) κ(αᵢ∨, αⱼ∨) = ∑_γ γ(h) star(γ(h))`.
 * `TauCeti.exists_pos_rat_invForm_root_self`: a root has positive rational length.
 * `TauCeti.IsIntegralWeight.exists_pos_rat_invForm_self`: the invariant form of a nonzero integral
   weight with itself is a positive rational.
@@ -87,6 +90,30 @@ theorem invForm_eq_sum_root (a b : Module.Dual K H) :
   exact Finset.sum_congr rfl fun α _ ↦ by
     rw [invForm_apply_apply (α : Module.Dual K H) a, invForm_apply_apply (α : Module.Dual K H) b]
     simp only [Weight.toLinear_apply]
+
+/-- **The Gram sum of coroots over the roots**: for `h = ∑ᵢ aᵢ αᵢ∨`,
+`∑ᵢ ∑ⱼ aᵢ star(aⱼ) κ(αᵢ∨, αⱼ∨) = ∑_γ γ(h) star(γ(h))`, since the roots take integer values on the
+coroots. Over `ℂ` the right side is `∑_γ |γ(h)|²`. -/
+theorem sum_sum_mul_star_killingForm_coroot [StarRing K] {ι : Type*} [Fintype ι]
+    (α : ι → Weight K H L) (a : ι → K) :
+    ∑ i, ∑ j, a i * star (a j) * killingForm K L (coroot (α i)) (coroot (α j)) =
+      ∑ γ ∈ H.root, γ (∑ i, a i • coroot (α i)) * star (γ (∑ i, a i • coroot (α i))) := by
+  have hreal (γ : Weight K H L) (i : ι) : star (γ (coroot (α i))) = γ (coroot (α i)) := by
+    rw [apply_coroot_eq_cast]
+    exact star_intCast _
+  calc _ = ∑ i, ∑ j, ∑ γ ∈ H.root, a i * γ (coroot (α i)) * star (a j * γ (coroot (α j))) := by
+          refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+          rw [killingForm_eq_sum_root, Finset.mul_sum]
+          refine Finset.sum_congr rfl fun γ _ ↦ ?_
+          rw [star_mul', hreal]
+          ring
+    _ = ∑ γ ∈ H.root, ∑ i, ∑ j, a i * γ (coroot (α i)) * star (a j * γ (coroot (α j))) := by
+          refine (Finset.sum_congr rfl fun i _ ↦ Finset.sum_comm).trans ?_
+          exact Finset.sum_comm
+    _ = _ := by
+          refine Finset.sum_congr rfl fun γ _ ↦ ?_
+          rw [map_sum, star_sum, Finset.sum_mul_sum]
+          simp only [map_smul, smul_eq_mul]
 
 /-- **A weight orthogonal to every root vanishes.** This is the span of the roots, in the form in
 which the sum-over-roots identity delivers it. -/

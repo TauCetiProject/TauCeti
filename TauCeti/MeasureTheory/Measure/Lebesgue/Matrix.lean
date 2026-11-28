@@ -14,7 +14,9 @@ import TauCeti.MeasureTheory.Constructions.Pi
 # Lebesgue measure under matrix vectorization
 
 Matrices over a measure space inherit the product measure on their entries via
-`Matrix.ofMeasurableEquiv`. This measure is sigma-finite whenever the entry measure is.
+`Matrix.ofMeasurableEquiv`. It is sigma-finite when the entry measure is and inherits additive
+Haar volume from its entries. The volume of the matrices with entries in a set is the volume
+of that set raised to the number of entries.
 
 Column-stacking vectorization preserves product Lebesgue measure, also when either index type
 is empty. Thus a density on Euclidean vector coordinates transfers to a matrix density without
@@ -46,6 +48,31 @@ instance instSigmaFiniteVolume {m n α : Type*} [Fintype m] [Fintype n] [Measure
   rw [← (volume_preserving_ofMeasurableEquiv m n α).map_eq]
   exact (Matrix.ofMeasurableEquiv m n α).sigmaFinite_map
 
+variable {r s A : Type*} [Fintype r] [Fintype s] [MeasureSpace A]
+  [SigmaFinite (volume : Measure A)]
+
+/-- The product volume of the matrices with entries in a set is its volume raised to the number
+of entries. -/
+@[simp]
+theorem _root_.Set.volume_matrix (S : Set A) :
+    volume (S.matrix : Set (Matrix r s A)) = volume S ^ (Fintype.card r * Fintype.card s) := by
+  rw [← (volume_preserving_ofMeasurableEquiv r s A).map_eq, MeasurableEquiv.map_apply,
+    Set.matrix_eq_pi, ← Set.preimage_comp]
+  simp [volume_pi_pi, Function.comp_def, pow_mul, Nat.mul_comm (Fintype.card r)]
+
+/-- Matrices over a group with additive Haar volume inherit additive Haar volume on their
+entries. -/
+instance instIsAddHaarMeasureVolume [AddGroup A] [TopologicalSpace A] [MeasurableAdd A]
+    [Measure.IsAddHaarMeasure (volume : Measure A)] :
+    (volume : Measure (Matrix r s A)).IsAddHaarMeasure := by
+  have : (volume : Measure (s → A)).IsAddHaarMeasure := Measure.pi.isAddHaarMeasure _
+  have : (volume : Measure (r → s → A)).IsAddHaarMeasure := Measure.pi.isAddHaarMeasure _
+  rw [← (volume_preserving_ofMeasurableEquiv r s A).map_eq]
+  -- The matrix and array instances for addition, topology and measurable space coincide.
+  -- On arrays the map underlying `Matrix.ofMeasurableEquiv` is the identity.
+  change ((volume : Measure (r → s → A)).map id).IsAddHaarMeasure
+  rwa [Measure.map_id]
+
 end Matrix
 
 namespace TauCeti
@@ -74,5 +101,41 @@ theorem volume_preserving_matrixVecMeasurableEquiv {m n : Type*} [Fintype m] [Fi
     Matrix.ofMeasurableEquiv_symm_apply, Equiv.piCongrLeft_symm_apply, Prod.swap_prod_mk,
     Equiv.sigmaEquivProd_symm_apply, MeasurableEquiv.piCurry_symm_apply, Sigma.uncurry,
     Matrix.of_symm_apply, Matrix.vec, e]
+
+end TauCeti
+
+namespace TauCeti
+
+variable {ι R : Type*} [Fintype ι] [LinearOrder ι]
+
+/-- Assembling a matrix from its upper and strict lower entries preserves product volume. -/
+theorem measurePreserving_schurMatrixMeasurableEquiv [MeasureSpace R]
+    [SigmaFinite (volume : Measure R)] :
+    MeasurePreserving (schurMatrixMeasurableEquiv (ι := ι) (R := R)) volume volume := by
+  let p (ij : ι × ι) := ij.1 ≤ ij.2
+  have hread := (Matrix.volume_preserving_ofMeasurableEquiv (ι) (ι) R).symm
+    (Matrix.ofMeasurableEquiv (ι) (ι) R)
+  have hflat := (measurePreserving_curry
+    (fun _ _ : ι ↦ (volume : Measure R))).symm (MeasurableEquiv.curry (ι) (ι) R)
+  have hsplit := volume_preserving_piEquivPiSubtypeProd (fun _ : ι × ι ↦ R) p
+  have hswap := (volume_measurePreserving_piCongrLeft (fun _ : {ij // ¬p ij} ↦ R)
+    (schurLowerIndexEquiv ι)).symm (MeasurableEquiv.piCongrLeft _ (schurLowerIndexEquiv ι))
+  have hsplitVolume := ((MeasurePreserving.id (volume : Measure ({ij // p ij} → R))).prod
+    hswap).comp (hsplit.comp (hflat.comp hread))
+  refine (hsplitVolume.congr schurMatrixMeasurableEquiv.symm.measurable
+    (ae_of_all _ fun A ↦ ?_)).symm schurMatrixMeasurableEquiv.symm
+  apply Prod.ext <;> funext ij
+  · simp [Function.comp_apply, MeasurableEquiv.coe_curry_symm, Function.uncurry]
+  · simp [Function.comp_apply, MeasurableEquiv.piCongrLeft, MeasurableEquiv.coe_curry_symm,
+      Function.uncurry]
+
+/-- Linear assembly of a matrix from its upper and strict lower entries preserves product volume. -/
+theorem measurePreserving_schurMatrixEquiv [Semiring R] [MeasureSpace R]
+    [SigmaFinite (volume : Measure R)] :
+    MeasurePreserving (schurMatrixEquiv (ι := ι) (R := R)) volume volume := by
+  have h : (⇑(schurMatrixMeasurableEquiv (ι := ι) (R := R))) = schurMatrixEquiv :=
+    funext schurMatrixMeasurableEquiv_apply
+  rw [← h]
+  exact measurePreserving_schurMatrixMeasurableEquiv
 
 end TauCeti

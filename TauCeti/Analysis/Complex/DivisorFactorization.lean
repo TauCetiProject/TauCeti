@@ -10,13 +10,20 @@ public import TauCeti.Analysis.Meromorphic.Order
 public import TauCeti.Analysis.Meromorphic.Divisor
 public import Mathlib.Analysis.Meromorphic.NormalForm
 public import Mathlib.Analysis.Meromorphic.FactorizedRational
+import Mathlib.Analysis.Complex.CauchyIntegral
+import TauCeti.Analysis.Convex.SimplyConnected
 
 /-!
 # Holomorphic functions with equal divisors differ by an exponential factor
 
 On a simply connected open domain, two holomorphic functions that are nonzero
 somewhere and have equal divisors satisfy `f = g * exp L` for a holomorphic
-function `L`. The equality includes common zeros of `f` and `g`.
+function `L`, unique on any preconnected open domain up to an additive constant
+in `2πiℤ`. The equality includes common zeros of `f` and `g`. Specializing to
+`Set.univ` gives the entire equal-divisor factorization `f z = exp (g z) * F z`
+(either from equal whole-plane divisors or from equal `analyticOrderAt` at every
+point), with `g` entire and unique up to `2πiℤ`. The whole-plane divisor of an entire function
+at a point is its analytic order there.
 
 Equal divisors allow the zeros to cancel, reducing comparison of holomorphic
 functions to a nowhere-zero exponential factor. This is the step that separates
@@ -89,7 +96,100 @@ theorem exists_differentiableOn_eqOn_mul_exp_of_divisor_eq {U : Set ℂ} {f g : 
     f z = g z * q z := hprod z hz
     _ = g z * exp (L z) := congrArg (fun a ↦ g z * a) (heq hz).symm
 
+/-- On a preconnected open domain, the holomorphic exponent in `g · * exp (L ·)` is unique up to
+an integer multiple of `2 * π * I` whenever `g` is continuous on the domain and not identically
+zero there. -/
+theorem exists_int_eqOn_add_mul_two_pi_I_of_eqOn_mul_exp {U : Set ℂ} {g L₁ L₂ : ℂ → ℂ}
+    (hUc : IsPreconnected U) (hUo : IsOpen U) (hg : ContinuousOn g U) (hg0 : ∃ z ∈ U, g z ≠ 0)
+    (hL₁ : DifferentiableOn ℂ L₁ U) (hL₂ : DifferentiableOn ℂ L₂ U)
+    (heq : EqOn (fun z ↦ g z * exp (L₁ z)) (fun z ↦ g z * exp (L₂ z)) U) :
+    ∃ k : ℤ, EqOn L₁ (fun z ↦ L₂ z + k * (2 * Real.pi * I)) U := by
+  obtain ⟨z₀, hz₀U, hgz₀⟩ := hg0
+  have hexp_loc : (fun z ↦ exp (L₁ z)) =ᶠ[𝓝 z₀] fun z ↦ exp (L₂ z) := by
+    filter_upwards [hUo.mem_nhds hz₀U, (hg.continuousAt (hUo.mem_nhds hz₀U)).eventually_ne hgz₀]
+      with w hwU hgw
+    exact mul_left_cancel₀ hgw (heq hwU)
+  have hexp : EqOn (fun z ↦ exp (L₁ z)) (fun z ↦ exp (L₂ z)) U :=
+    ((hL₁.analyticOnNhd hUo).cexp).eqOn_of_preconnected_of_eventuallyEq
+      ((hL₂.analyticOnNhd hUo).cexp) hUc hz₀U hexp_loc
+  obtain ⟨k, hk⟩ := exp_eq_exp_iff_exists_int.mp (hexp hz₀U)
+  refine ⟨k, hL₁.continuousOn.eqOn_of_eqOn_exp_comp (hL₂.add_const _).continuousOn hUc
+    (fun z hz ↦ (hexp hz).trans (exp_eq_exp_iff_exists_int.mpr ⟨k, rfl⟩).symm) hz₀U hk⟩
+
 end TauCeti
+
+namespace Differentiable
+
+/-- If `F` is continuous and not identically zero, two entire functions `g₁` and `g₂` satisfying
+`Complex.exp (g₁ z) * F z = Complex.exp (g₂ z) * F z` everywhere differ by an integer multiple of
+`2 * π * I`. -/
+theorem exists_int_eq_add_mul_two_pi_I_of_exp_mul_eq {F g₁ g₂ : ℂ → ℂ}
+    (hg₁ : Differentiable ℂ g₁) (hg₂ : Differentiable ℂ g₂) (hF : Continuous F)
+    (hF0 : ∃ z, F z ≠ 0) (heq : ∀ z, Complex.exp (g₁ z) * F z = Complex.exp (g₂ z) * F z) :
+    ∃ k : ℤ, ∀ z, g₁ z = g₂ z + k * (2 * Real.pi * I) := by
+  obtain ⟨z₀, hz₀⟩ := hF0
+  obtain ⟨k, hk⟩ := TauCeti.exists_int_eqOn_add_mul_two_pi_I_of_eqOn_mul_exp
+    isPreconnected_univ isOpen_univ hF.continuousOn ⟨z₀, mem_univ z₀, hz₀⟩
+    hg₁.differentiableOn hg₂.differentiableOn
+    (fun z _ ↦ by simpa only [mul_comm] using heq z)
+  exact ⟨k, fun z ↦ hk (mem_univ z)⟩
+
+/-- Two entire functions with equal whole-plane divisors, neither identically zero, satisfy
+`f z = Complex.exp (g z) * F z` for an entire function `g`, unique up to an additive constant in
+`2 * π * I * ℤ`. -/
+theorem exists_differentiable_eq_exp_mul_of_divisor_eq {f F : ℂ → ℂ}
+    (hf : Differentiable ℂ f) (hF : Differentiable ℂ F) (hf0 : ∃ z, f z ≠ 0) (hF0 : ∃ z, F z ≠ 0)
+    (hd : MeromorphicOn.divisor f Set.univ = MeromorphicOn.divisor F Set.univ) :
+    ∃ g : ℂ → ℂ, Differentiable ℂ g ∧ (∀ z, f z = Complex.exp (g z) * F z) ∧
+      ∀ g' : ℂ → ℂ, Differentiable ℂ g' → (∀ z, f z = Complex.exp (g' z) * F z) →
+        ∃ k : ℤ, ∀ z, g' z = g z + k * (2 * Real.pi * I) := by
+  obtain ⟨z₁, hz₁⟩ := hf0
+  obtain ⟨z₂, hz₂⟩ := hF0
+  obtain ⟨g, hg, heq⟩ := TauCeti.exists_differentiableOn_eqOn_mul_exp_of_divisor_eq
+    (convex_univ.isSimplyConnected univ_nonempty) isOpen_univ
+    (fun z _ ↦ hf.analyticAt z) (fun z _ ↦ hF.analyticAt z)
+    ⟨z₁, mem_univ z₁, hz₁⟩ ⟨z₂, mem_univ z₂, hz₂⟩ hd
+  have hg' : Differentiable ℂ g := differentiableOn_univ.mp hg
+  have hfg (z : ℂ) : f z = Complex.exp (g z) * F z := by
+    simpa only [mul_comm] using heq (mem_univ z)
+  refine ⟨g, hg', hfg, fun g₁ hg₁ hfg₁ ↦ ?_⟩
+  exact hg₁.exists_int_eq_add_mul_two_pi_I_of_exp_mul_eq hg' hF.continuous ⟨z₂, hz₂⟩
+    fun z ↦ (hfg₁ z).symm.trans (hfg z)
+
+/-- The whole-plane divisor of an entire function equals its natural-valued analytic order
+`analyticOrderNatAt f z`. -/
+theorem divisor_univ_eq_analyticOrderNatAt {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [CompleteSpace E] {f : ℂ → E} (hf : Differentiable ℂ f) (z : ℂ) :
+    MeromorphicOn.divisor f Set.univ z = (analyticOrderNatAt f z : ℤ) :=
+  (AnalyticOnNhd.meromorphicOn fun w _ ↦ hf.analyticAt w).divisor_eq_analyticOrderNatAt
+    (hf.analyticAt z) (mem_univ z)
+
+/-- The whole-plane divisor of an entire function at `z` is `n` whenever its analytic order at `z`
+is the natural number `n`. -/
+theorem divisor_univ_eq_of_analyticOrderAt_eq {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [CompleteSpace E] {f : ℂ → E} (hf : Differentiable ℂ f) {z : ℂ} {n : ℕ}
+    (hord : analyticOrderAt f z = n) :
+    MeromorphicOn.divisor f Set.univ z = (n : ℤ) := by
+  rw [hf.divisor_univ_eq_analyticOrderNatAt z, analyticOrderNatAt, hord, ENat.toNat_natCast]
+
+/-- Variant of `Differentiable.exists_differentiable_eq_exp_mul_of_divisor_eq` assuming equal
+`analyticOrderAt` at every complex point rather than equality of `MeromorphicOn.divisor`. -/
+theorem exists_differentiable_eq_exp_mul_of_analyticOrderAt_eq {f F : ℂ → ℂ}
+    (hf : Differentiable ℂ f) (hF : Differentiable ℂ F) (hf0 : ∃ z, f z ≠ 0)
+    (hord : ∀ z, analyticOrderAt f z = analyticOrderAt F z) :
+    ∃ g : ℂ → ℂ, Differentiable ℂ g ∧ (∀ z, f z = Complex.exp (g z) * F z) ∧
+      ∀ g' : ℂ → ℂ, Differentiable ℂ g' → (∀ z, f z = Complex.exp (g' z) * F z) →
+        ∃ k : ℤ, ∀ z, g' z = g z + k * (2 * Real.pi * I) := by
+  obtain ⟨z₀, hz₀⟩ := hf0
+  have hF0 : ∃ z, F z ≠ 0 :=
+    ⟨z₀, (hF.analyticAt z₀).analyticOrderAt_eq_zero.mp
+      ((hord z₀).symm.trans ((hf.analyticAt z₀).analyticOrderAt_eq_zero.mpr hz₀))⟩
+  refine hf.exists_differentiable_eq_exp_mul_of_divisor_eq hF ⟨z₀, hz₀⟩ hF0 ?_
+  ext z
+  rw [hf.divisor_univ_eq_analyticOrderNatAt z, hF.divisor_univ_eq_analyticOrderNatAt z,
+    analyticOrderNatAt, analyticOrderNatAt, hord z]
+
+end Differentiable
 
 namespace AnalyticOnNhd
 

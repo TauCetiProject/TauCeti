@@ -34,6 +34,13 @@ matrices in bad characteristic.
   integral exponential of a signed simple root over an arbitrary parameter ring, as a linear
   endomorphism and as a Lie algebra automorphism.
 
+## Implementation notes
+
+The rewriting lemmas about `f4ModularChevalleyBasis` are deliberately not `@[simp]`. Their
+discrimination-tree keys unfold the reducible F₄ carrier types into tens of thousands of keys, and
+the per-module simp summary in the olean then holds a list chain deep enough to overflow the stack
+of `leantar` when the build cache is packed or unpacked. Pass them to `simp` by name.
+
 ## References
 
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80 (1968), §11.
@@ -115,7 +122,7 @@ theorem f4ModularSimpleCoroot_eq_basis (i : Fin F4.rank) :
         (Sum.inr ((F4.lieBasis valid_F4).baseSupportEquiv i)) := by rfl
 
 /-- A simple-coroot basis label reduces to its named modular coroot. -/
-@[simp] theorem f4ModularChevalleyBasis_inr_eq_simpleCoroot (j : f4KillingBase.support) :
+theorem f4ModularChevalleyBasis_inr_eq_simpleCoroot (j : f4KillingBase.support) :
     f4ModularChevalleyBasis (Sum.inr j) =
       f4ModularSimpleCoroot ((F4.lieBasis valid_F4).baseSupportEquiv.symm j) := by
   rw [f4ModularSimpleCoroot_eq_basis, Equiv.apply_symm_apply]
@@ -320,7 +327,7 @@ abbrev f4PinnedRootIndex (α : (F4.cartanSubalgebra valid_F4).root) : Fin 48 :=
   simp only [f4PinnedRootIndex, f4KillingRootLabel, f4RootIndex, Equiv.symm_apply_apply]
   rfl
 
-@[simp] theorem f4ModularChevalleyBasis_inl_eq_rootVector
+theorem f4ModularChevalleyBasis_inl_eq_rootVector
     (α : (F4.cartanSubalgebra valid_F4).root) :
     f4ModularChevalleyBasis (Sum.inl α) =
       f4ModularRootVector (f4PinnedRootIndex α) := by
@@ -433,7 +440,7 @@ theorem f4Modular_lie_simpleCoroot_simpleCoroot_eq_zero (i j : Fin F4.rank) :
     TensorProduct.tmul_zero]
 
 /-- A simple coroot has no root-vector coordinate. -/
-@[simp] theorem f4ModularChevalleyBasis_repr_simpleCoroot_inl
+theorem f4ModularChevalleyBasis_repr_simpleCoroot_inl
     (i : Fin F4.rank) (γ : Fin 48) :
     f4ModularChevalleyBasis.repr (f4ModularSimpleCoroot i)
       (Sum.inl (f4KillingRootLabel γ)) = 0 := by
@@ -441,7 +448,7 @@ theorem f4Modular_lie_simpleCoroot_simpleCoroot_eq_zero (i j : Fin F4.rank) :
   exact Finsupp.single_eq_of_ne (by simp)
 
 /-- A modular coroot has no root-vector coordinate. -/
-@[simp] theorem f4ModularChevalleyBasis_repr_coroot_inl
+theorem f4ModularChevalleyBasis_repr_coroot_inl
     (β γ : Fin 48) :
     f4ModularChevalleyBasis.repr (f4ModularCoroot β)
       (Sum.inl (f4KillingRootLabel γ)) = 0 := by
@@ -450,7 +457,7 @@ theorem f4Modular_lie_simpleCoroot_simpleCoroot_eq_zero (i j : Fin F4.rank) :
     smul_zero, Finset.sum_const_zero]
 
 /-- A root vector has zero coordinate at any different root label. -/
-@[simp] theorem f4ModularChevalleyBasis_repr_rootVector_inl_eq_zero
+theorem f4ModularChevalleyBasis_repr_rootVector_inl_eq_zero
     (ε γ : Fin 48) (hεγ : ε ≠ γ) :
     f4ModularChevalleyBasis.repr (f4ModularRootVector ε)
       (Sum.inl (f4KillingRootLabel γ)) = 0 := by
@@ -458,7 +465,7 @@ theorem f4Modular_lie_simpleCoroot_simpleCoroot_eq_zero (i j : Fin F4.rank) :
   exact Finsupp.single_eq_of_ne (by simpa using hεγ.symm)
 
 /-- The coordinate of a root vector at its own root label is one. -/
-@[simp] theorem f4ModularChevalleyBasis_repr_rootVector_self (β : Fin 48) :
+theorem f4ModularChevalleyBasis_repr_rootVector_self (β : Fin 48) :
     f4ModularChevalleyBasis.repr (f4ModularRootVector β)
       (Sum.inl (f4KillingRootLabel β)) = 1 := by
   simp only [f4ModularRootVector_eq_basis, Basis.repr_self, Finsupp.single_eq_same]
@@ -494,7 +501,7 @@ theorem f4_root_eq_add_of_repr_lie_rootVector_ne_zero
     not_true_eq_false] at hne
 
 /-- The root-vector coordinate of a simple-coroot bracket is its reduced Cartan integer. -/
-@[simp] theorem f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_self
+theorem f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_self
     (i : Fin F4.rank) (β : Fin 48) :
     f4ModularChevalleyBasis.repr
       ⁅f4ModularSimpleCoroot i, f4ModularRootVector β⁆
@@ -505,7 +512,7 @@ theorem f4_root_eq_add_of_repr_lie_rootVector_ne_zero
     f4SimplyConnectedRootDatum_pairing, f4Coroot_castAdd, dotProduct_single_one]
 
 /-- A root-vector bracket has no coordinate at an unrelated root label. -/
-@[simp] theorem f4ModularChevalleyBasis_repr_lie_rootVector_eq_zero
+theorem f4ModularChevalleyBasis_repr_lie_rootVector_eq_zero
     (δ β γ : Fin 48)
     (h : f4Root γ ≠ f4Root β + f4Root δ) :
     f4ModularChevalleyBasis.repr
@@ -516,7 +523,7 @@ theorem f4_root_eq_add_of_repr_lie_rootVector_ne_zero
     f4_root_eq_add_of_repr_lie_rootVector_ne_zero δ β γ hne)
 
 /-- A simple-coroot bracket has no coordinate away from its root label. -/
-@[simp] theorem f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_eq_zero
+theorem f4ModularChevalleyBasis_repr_lie_simpleCoroot_rootVector_eq_zero
     (i : Fin F4.rank) (β γ : Fin 48) (hβγ : β ≠ γ) :
     f4ModularChevalleyBasis.repr
       ⁅f4ModularSimpleCoroot i, f4ModularRootVector β⁆
@@ -525,7 +532,7 @@ theorem f4_root_eq_add_of_repr_lie_rootVector_ne_zero
     f4ModularChevalleyBasis_repr_rootVector_inl_eq_zero β γ hβγ, smul_zero]
 
 /-- A root-vector bracket has zero coordinate at the second factor's root label. -/
-@[simp] theorem f4ModularChevalleyBasis_repr_lie_rootVector_self_eq_zero
+theorem f4ModularChevalleyBasis_repr_lie_rootVector_self_eq_zero
     (δ β : Fin 48) :
     f4ModularChevalleyBasis.repr
       ⁅f4ModularRootVector δ, f4ModularRootVector β⁆

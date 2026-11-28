@@ -298,7 +298,7 @@ has a primitive vector of some weight `n : ℕ`, on which the Casimir operator a
 `n (n + 2) / 2`. If `n = 0` the module is trivial, which is excluded; otherwise that scalar is
 nonzero, so the kernel of the Casimir operator is a proper Lie submodule, hence zero. -/
 theorem sl2Casimir_injective (htop : t.toLieSubalgebra K = ⊤) [FiniteDimensional K M]
-    [IsTriangularizable K L M] [LieModule.IsIrreducible K L M]
+    [LieModule.IsIrreducible K L M]
     (hact : ∃ (x : L) (v : M), ⁅x, v⁆ ≠ 0) :
     Function.Injective (sl2Casimir K h e f M) := by
   have : Nontrivial M := LieModule.nontrivial_of_isIrreducible K L M

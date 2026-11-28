@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Pushforward
+public import TauCeti.AlgebraicTopology.Singular.BettiNumber
 public import TauCeti.CategoryTheory.Preadditive.Injective.Basic
 public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 public import TauCeti.Topology.VectorBundle.Thom.Isomorphism
+import TauCeti.Topology.VectorBundle.ModelFiber
+import TauCeti.Algebra.Category.ModuleCat.Finrank
 import TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion
 
 /-!
@@ -68,7 +71,12 @@ isomorphism in cohomology over an arbitrary base over a field:
    `TauCeti.isColimitMapCoconeSingularHomologyBaseFiniteTrivializingUnion`) then shows that for
    any Thom class `u`, `Φ_u` is an isomorphism `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` over any base `B`
    (`TauCeti.isIso_homologyThomMap`, `TauCeti.homologyThomIso`). For `K = ℤ` and the Thom class of
-   an orientation this is the integral Thom isomorphism `Hₚ₊ᵣ(E, E₀; ℤ) ≅ Hₚ(B; ℤ)`.
+   an orientation this is the integral Thom isomorphism `Hₚ₊ᵣ(E, E₀; ℤ) ≅ Hₚ(B; ℤ)`. The finite
+   trivializing unions form a diagram of pairs in the universe of the base only when the model
+   fibre `F` lies there too; for a model fibre in any universe, such as `Fin r → ℝ` over a base
+   outside `Type`, the statement follows by moving the model fibre to the universe of the base
+   (`VectorBundle.exists_modelFiber_of_continuousLinearEquiv`) along the isomorphism of Thom pairs
+   `TauCeti.thomPairModelFiberIso`, which is the identity on the fibres and over the base.
 5. **Global Thom isomorphism in cohomology over a field**: UCT
    (`TopPair.bijective_pullbackCup_of_isIso_pushforwardCap`) then gives
    `Hᵖ(B; K, M) ≃ₗ[K] Hᵐ(E, E₀; K, M)` for a field `K` (`TauCeti.bijective_thomMap_of_field`,
@@ -86,6 +94,16 @@ isomorphism in cohomology over an arbitrary base over a field:
 * `TauCeti.isIso_homologyThomMap`, `TauCeti.bijective_homologyThomMap`,
   `TauCeti.homologyThomIso`: for a Thom class `u` with coefficients in a commutative ring `K`, the
   homology Thom isomorphism `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` (`A = K`) over any base.
+* `TauCeti.quasiIso_pushforwardCapChainMap_thomPair`: the homology Thom isomorphism at the chain
+  level: for a cocycle `φ` representing a Thom class, `x ↦ ±π_*(x ⌢ φ)` is a quasi-isomorphism from
+  the relative chains of `(E, E₀)` to the chains of `B` shifted up by the rank.
+* `TauCeti.finrank_singularHomology_thomPair_of_isThomClass`: over a commutative ring, for a bundle
+  with a Thom class, `dim Hₘ(E, E₀; K) = bₚ(B; K)`.
+* `TauCeti.finrank_singularHomology_thomPair_of_two_eq_zero`: over a field of characteristic two,
+  such as `ZMod 2`, `dim Hₘ(E, E₀; K) = bₚ(B; K)` for every bundle, oriented or not.
+* `TauCeti.finrank_singularHomology_thomPair_eq_ite`: over a nontrivial commutative ring, the
+  dimensions of the homology of the Thom pair in every degree from those in degrees at least the
+  rank, the homology below the rank vanishing.
 * `TauCeti.bijective_thomMap_of_field`, `TauCeti.thomEquivOfField`: the cohomology Thom isomorphism
   over a field and an arbitrary base with vector-space coefficients `M`.
 * `TauCeti.bijective_homologyThomMap_iff_forall_bijective_thomMap`: over any commutative ring, the
@@ -396,14 +414,16 @@ private def homologyThomMapOverNatIso {p m : ℕ} (h : finrank ℝ F + p = m)
         (W' := ⋃ b ∈ t, (trivializationAt F E b).baseSet)
         (biUnion_subset_biUnion_left (Finset.coe_subset.2 f.le)) h u)]
 
-/-- **The homology Thom isomorphism** (Spanier, Chapter 5, Section 7): for `E → B` over any base
-`B`, a commutative ring `K`, and a Thom class `u ∈ Hʳ(E, E₀; K)` (`r = finrank ℝ F`),
-`homologyThomMap` is an isomorphism `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` (`r + p = m`) in `ModuleCat K`. For
-`K = ℤ` and the Thom class of an orientation this is the integral Thom isomorphism. -/
-theorem isIso_homologyThomMap (p m : ℕ) (h : finrank ℝ F + p = m)
-    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
-    (hu : IsThomClass F E u) :
-    IsIso (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u) := by
+/-- The homology Thom isomorphism for a model fibre in the universe of the base, stated for a class
+of a degree `n` equal to the rank, by its restrictions to the fibres. -/
+private theorem isIso_homologyThomMap_of_finrank_eq {n p m : ℕ} (hn : finrank ℝ F = n)
+    (h : n + p = m) [FiniteDimensional ℝ F]
+    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n}
+    (hgen : ∀ b,
+      Submodule.span K {TopPair.singularCohomologyMap (fiberThomPairMap F E b) n u} = ⊤) :
+    IsIso (homologyThomMap F E (ModuleCat.of K K) n p m h u) := by
+  subst hn
+  have hu : IsThomClass F E u := isThomClass_iff.2 ⟨inferInstance, hgen⟩
   let P₁ := isColimitMapCoconeSingularHomologyThomPairFiniteTrivializingUnion (F := F) (E := E)
     (ModuleCat.of K K) m
   let P₂ := isColimitMapCoconeSingularHomologyBaseFiniteTrivializingUnion F E (ModuleCat.of K K) p
@@ -433,6 +453,42 @@ theorem isIso_homologyThomMap (p m : ℕ) (h : finrank ℝ F + p = m)
     (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u ≫ eqToHom hbase)
   exact IsIso.of_isIso_comp_right _ (eqToHom hbase)
 
+end Isomorphism
+
+section Isomorphism
+
+variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+  {K : Type w} [CommRing K]
+
+/-- **The homology Thom isomorphism** (Spanier, Chapter 5, Section 7): for `E → B` over any base
+`B`, a commutative ring `K`, and a Thom class `u ∈ Hʳ(E, E₀; K)` (`r = finrank ℝ F`),
+`homologyThomMap` is an isomorphism `Hₘ(E, E₀; K) ≅ Hₚ(B; K)` (`r + p = m`) in `ModuleCat K`. The
+model fibre `F` may lie in any universe. For `K = ℤ` and the Thom class of an orientation this is
+the integral Thom isomorphism. -/
+theorem isIso_homologyThomMap (p m : ℕ) (h : finrank ℝ F + p = m)
+    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
+    (hu : IsThomClass F E u) :
+    IsIso (homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u) := by
+  obtain ⟨_, hgen⟩ := isThomClass_iff.1 hu
+  -- Move the model fibre to the universe of the base. The change of model fibre `φ` is the
+  -- identity on the fibres and over the base, so it intertwines the two homology Thom maps.
+  let F' := ULift.{w} (Fin (finrank ℝ F) → ℝ)
+  obtain ⟨_, h_ind, _, _⟩ := VectorBundle.exists_modelFiber_ulift_fin.{w} F (𝕜 := ℝ) (E := E)
+  have hF' : finrank ℝ F' = finrank ℝ F := by simp [F']
+  let φ := thomPairModelFiberIso h_ind
+  have hφ := homologyThomMap_naturality F E (A := ModuleCat.of K K) φ.hom (𝟙 _)
+    ((thomPairModelFiberIso_hom_fst_comp_thomPairProj h_ind).trans (Category.comp_id _).symm) h u
+  rw [CategoryTheory.Functor.map_id, Category.comp_id] at hφ
+  have : IsIso (homologyThomMap F' E (ModuleCat.of K K) (finrank ℝ F) p m h
+      (TopPair.singularCohomologyMap φ.hom _ u)) :=
+    isIso_homologyThomMap_of_finrank_eq hF' h
+      (span_singularCohomologyMap_fiberThomPairMap_eq_top_of_comp_eq φ.hom
+        (fiberThomPairMap_comp_thomPairModelFiberIso_hom h_ind) hgen)
+  rw [hφ, ← TopPair.singularHomologyMapIso_hom] at this
+  exact IsIso.of_isIso_comp_left (TopPair.singularHomologyMapIso (ModuleCat.of K K) φ m).hom _
+
 /-- **The homology Thom map is bijective** on any base `B`: for a Thom class `u ∈ Hʳ(E, E₀; K)`
 with coefficients in a commutative ring `K` (`r = finrank ℝ F`), the homology Thom map with
 coefficients in `K`, `Hₘ(E, E₀; K) ⟶ Hₚ(B; K)` (`r + p = m`), is bijective. -/
@@ -460,11 +516,65 @@ theorem homologyThomIso_hom (p m : ℕ) (h : finrank ℝ F + p = m)
     (homologyThomIso F E p m h u hu).hom =
       homologyThomMap F E (ModuleCat.of K K) (finrank ℝ F) p m h u := (rfl)
 
+/-- **The homology Thom isomorphism at the chain level.** Let `E → B` be a real vector bundle of
+rank `r` over any base, `K` a commutative ring, and `φ` a relative cocycle of degree `r` of the Thom
+pair `(E, E₀)` with coefficients in `K` whose class is a Thom class. Then the chain map
+`x ↦ (-1)^(r p) π_*(x ⌢ φ)` on relative chains of degree `r + p`
+(`TopPair.pushforwardCapChainMap`), from the relative chains of `(E, E₀)` to the chains of `B`
+placed `r` degrees higher, both with coefficients in `K`, is a quasi-isomorphism: below the rank
+the homology of the Thom pair vanishes, and above it the map induces the homology Thom
+isomorphism `TauCeti.homologyThomIso`, up to sign. -/
+theorem quasiIso_pushforwardCapChainMap_thomPair
+    (φ : ((thomPair F E).singularCochainComplex (ModuleCat.of K K) K (ModuleCat.of K K)).cycles
+      (finrank ℝ F))
+    (hφ : IsThomClass F E (((thomPair F E).singularCochainComplex (ModuleCat.of K K) K
+      (ModuleCat.of K K)).homologyπ (finrank ℝ F) φ)) :
+    QuasiIso ((thomPair F E).pushforwardCapChainMap (thomPairProj F E) (ModuleCat.of K K)
+      (finrank ℝ F)
+      (((thomPair F E).singularCochainComplex (ModuleCat.of K K) K (ModuleCat.of K K)).iCycles
+        (finrank ℝ F) φ)
+      (ChainComplex.d_comp_linearYonedaObj_iCycles (finrank ℝ F) (finrank ℝ F + 1) φ)) :=
+  TopPair.quasiIso_pushforwardCapChainMap _ _ _ _ φ
+    (fun _ hm ↦
+      haveI : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
+      isZero_singularHomology_thomPair _ hm)
+    fun p m h ↦ isIso_homologyThomMap p m h hφ
+
+variable (F E) in
+/-- **The homology Thom isomorphism, in dimensions.** Let `E → B` be a real vector bundle with
+fibres of dimension `r` over any base, and `K` a commutative ring. If `E` has a Thom class with
+coefficients in `K`, then `dim Hₘ(E, E₀; K)` is the Betti number `bₚ(B; K)` whenever `r + p = m`
+(`TauCeti.homologyThomIso`). -/
+theorem finrank_singularHomology_thomPair_of_isThomClass (p m : ℕ) (h : finrank ℝ F + p = m)
+    {u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F)}
+    (hu : IsThomClass F E u) :
+    finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) m : ModuleCat K) =
+      bettiNumber K B p := by
+  rw [bettiNumber_def]
+  exact (homologyThomIso F E p m h u hu).toLinearEquiv.finrank_eq
+
+variable (F E) in
+/-- **The dimensions of the homology of a Thom pair in every degree.** Let `E → B` be a real vector
+bundle of rank `r` and `K` a nontrivial commutative ring. If `dim H_{r + p}(E, E₀; K) = d p` for
+every `p`, then `dim Hₙ(E, E₀; K)` is `d (n - r)` when `r ≤ n`, and `0` when `n < r`. -/
+theorem finrank_singularHomology_thomPair_eq_ite [Nontrivial K] {r : ℕ} (hr : finrank ℝ F = r)
+    (d : ℕ → ℕ)
+    (hd : ∀ p, finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) (r + p) :
+      ModuleCat K) = d p) (n : ℕ) :
+    finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) n : ModuleCat K) =
+      if r ≤ n then d (n - r) else 0 := by
+  split_ifs with hrn
+  · rw [← hd, Nat.add_sub_cancel' hrn]
+  · -- Below the rank, which is then positive, the homology vanishes.
+    have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
+    exact ModuleCat.finrank_eq_zero_of_isZero
+      (isZero_singularHomology_thomPair (F := F) (E := E) (ModuleCat.of K K) (by omega))
+
 end Isomorphism
 
 section IsomorphismOfField
 
-variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [NormedSpace ℝ F]
+variable {B : Type w} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommMonoid (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
   {K : Type w} [Field K]
@@ -499,6 +609,20 @@ theorem thomEquivOfField_apply (M : ModuleCat.{w} K) (p m : ℕ) (h : p + finran
     (u : (thomPair F E).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) (finrank ℝ F))
     (hu : IsThomClass F E u) (a : (TopCat.of B).singularCohomology (ModuleCat.of K K) K M p) :
     thomEquivOfField F E M p m h u hu a = thomMap F E M (finrank ℝ F) p m h u a := (rfl)
+
+variable (F E) in
+/-- **The homology Thom isomorphism in characteristic two, in dimensions.** Let `K` be a field of
+characteristic two, such as `ZMod 2`. For a real vector bundle `E → B` with fibres of dimension
+`r`, over any base and with no orientation, `dim Hₘ(E, E₀; K)` is the Betti number `bₚ(B; K)`
+whenever `r + p = m`: the bundle has a Thom class with coefficients in `K`
+(`TauCeti.exists_isThomClass_of_two_eq_zero`), and its homology Thom map is an isomorphism
+(`TauCeti.homologyThomIso`). -/
+theorem finrank_singularHomology_thomPair_of_two_eq_zero [FiniteDimensional ℝ F]
+    (h2 : (2 : K) = 0) (p m : ℕ) (h : finrank ℝ F + p = m) :
+    finrank K ((thomPair F E).singularHomology (ModuleCat.of K K) m : ModuleCat K) =
+      bettiNumber K B p := by
+  obtain ⟨u, hu⟩ := exists_isThomClass_of_two_eq_zero (F := F) (E := E) K h2
+  exact finrank_singularHomology_thomPair_of_isThomClass F E p m h hu
 
 end IsomorphismOfField
 

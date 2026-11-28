@@ -17,12 +17,13 @@ import TauCeti.LinearAlgebra.Determinant.Prod
 # Basic identities for bilinear forms
 
 Away from characteristic two a bilinear form cannot be both symmetric and alternating without
-being zero: symmetry and alternation give `B x y = B y x` and `B x y = -B y x`, so `2 * B x y = 0`,
-and cancelling the `2` leaves `B x y = 0`.
+being zero: alternation at `x + y` gives `B x y + B y x = 0`, symmetry turns this into
+`2 * B x y = 0`, and cancelling the `2` leaves `B x y = 0`.
 
-That cancellation is all the hypothesis on the ring there is: `2` has to be regular, and nothing
-is asked of any other element, so the statement covers rings with zero divisors elsewhere.  Over a
-field, or over any domain, `IsRegular.of_ne_zero` supplies the hypothesis from `(2 : R) ≠ 0`.
+That cancellation is all the hypothesis on the scalars there is: `2` has to be regular, and nothing
+is asked of any other element, so the statement covers commutative semirings, and rings with zero
+divisors elsewhere.  Over a field, or over any domain, `(IsRegular.of_ne_zero h).left` supplies the
+hypothesis from `h : (2 : R) ≠ 0`.
 
 A bilinear map with additively torsion-free values, such as an integral intersection form,
 vanishes on elements of finite additive order, so its values depend on each argument only modulo
@@ -36,8 +37,9 @@ maps valued in an arbitrary module.
 
 ## Main results
 
-* `TauCeti.BilinForm.eq_zero_of_isSymm_of_isAlt`: a symmetric alternating form over a ring in which
-  `2` is regular is zero.
+* `LinearMap.BilinForm.IsAlt.add_flip_eq_zero`: an alternating form and its flip sum to zero.
+* `TauCeti.BilinForm.eq_zero_of_isSymm_of_isAlt`: a symmetric alternating form over a commutative
+  semiring in which `2` is regular is zero.
 * `TauCeti.BilinForm.nondegenerate_smul_iff`: scalar multiplication by a regular element
   preserves nondegeneracy.
 * `TauCeti.BilinForm.nondegenerate_neg_iff`: negating a bilinear form preserves nondegeneracy.
@@ -49,17 +51,21 @@ maps valued in an arbitrary module.
   nondegeneracy without symmetry.
 * `LinearMap.BilinForm.anisotropic_toQuadraticMap_compl₁₂`: injective pullback preserves
   anisotropy of the diagonal.
+* `LinearMap.BilinForm.anisotropic_toQuadraticMap_restrict`: an anisotropic form stays anisotropic
+  on every submodule.
 * `LinearMap.BilinForm.inf_eq_bot_of_forall_apply_self_eq_zero`: a subspace on which the diagonal
   has no nonzero zeros meets every subspace of isotropic vectors trivially.
+* `IsSMulRegular.isSymm_smul_iff`: rescaling by a scalar acting injectively on `R`
+  preserves and reflects symmetry.
 * `LinearMap.BilinForm.exists_smul_eq_of_forall_dvd`: a form all of whose values are divisible
   by a regular element `a` is `a` times a form.
 * `LinearMap.BilinForm.IsRefl.compl₁₂`: pullback preserves reflexivity.
 * `LinearMap.BilinForm.IsSymm.compl₁₂`: pullback preserves symmetry.
-* `LinearMap.BilinForm.IsSymm.of_smul`: cancel a non-zero-divisor from a symmetric scalar
-  multiple of a bilinear form.
 * `LinearMap.BilinForm.IsSymm.apply_add_self`: polarization of a symmetric bilinear form.
-* `LinearMap.BilinForm.IsAlt.exists_sub_flip_eq`: on a free module every alternating form is
-  `B - B.flip` for some form `B`, in every characteristic.
+* `LinearMap.BilinForm.IsSymm.apply_toDual_symm_comm`: the inverse `V* → V` of a symmetric
+  nondegenerate form is symmetric.
+* `LinearMap.BilinForm.IsAlt.exists_sub_flip_eq`: on a projective module every alternating form
+  is `B - B.flip` for some form `B`, in every characteristic.
 * `LinearMap.apply_eq_apply_of_isOfFinAddOrder_sub_left`,
   `LinearMap.apply_eq_apply_of_isOfFinAddOrder_sub_right`: a bilinear map with additively
   torsion-free values sees each argument only modulo elements of finite additive order.
@@ -95,7 +101,7 @@ theorem eq_zero_of_smul_apply_basis_eq_zero {R M N : Type*} [CommSemiring R]
 
 /-- An alternating bilinear map on two combinations `a v + b w` and `c v + d w` of a pair of
 vectors is the determinant `a d - b c` of the coefficient matrix times its value on the pair. -/
-theorem apply_smul_add_smul {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+theorem apply_smul_add_smul {R M N : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
     [AddCommGroup N] [Module R N] {ω : M →ₗ[R] M →ₗ[R] N} (halt : ω.IsAlt) (v w : M)
     (a b c d : R) :
     ω (a • v + b • w) (c • v + d • w) = (a * d - b * c) • ω v w := by
@@ -105,7 +111,7 @@ theorem apply_smul_add_smul {R M N : Type*} [CommRing R] [AddCommGroup M] [Modul
 
 /-- `LinearMap.IsAlt.apply_smul_add_smul` with coefficients the images of the coordinate
 directions under an endomorphism `B` of `R × R`: the coefficient is `det B`. -/
-theorem apply_smul_add_smul_det {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+theorem apply_smul_add_smul_det {R M N : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
     [AddCommGroup N] [Module R N] {ω : M →ₗ[R] M →ₗ[R] N} (halt : ω.IsAlt)
     (B : (R × R) →ₗ[R] R × R) (v w : M) :
     ω ((B (1, 0)).1 • v + (B (1, 0)).2 • w) ((B (0, 1)).1 • v + (B (0, 1)).2 • w) =
@@ -115,6 +121,15 @@ theorem apply_smul_add_smul_det {R M N : Type*} [CommRing R] [AddCommGroup M] [M
 end LinearMap.IsAlt
 
 namespace LinearMap.BilinForm
+
+/-- An alternating bilinear form is skew-symmetric, `B + B.flip = 0`, over any commutative
+semiring (Mathlib's `LinearMap.IsAlt.neg` needs additive inverses). -/
+theorem IsAlt.add_flip_eq_zero {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    {B : LinearMap.BilinForm R M} (hB : B.IsAlt) : B + B.flip = 0 := by
+  ext x y
+  have := hB (x + y)
+  simp only [map_add, LinearMap.add_apply, hB x, hB y, zero_add, add_zero] at this
+  simpa [add_comm] using this
 
 /-- Restriction to a submodule is pullback along its inclusion in both arguments. -/
 theorem restrict_eq_compl₁₂ {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
@@ -144,6 +159,14 @@ theorem anisotropic_toQuadraticMap_compl₁₂ {R M N : Type*} [CommSemiring R]
   rw [LinearMap.BilinMap.toQuadraticMap_comp_same]
   exact hB.comp f hf
 
+/-- An anisotropic form, a positive definite one for instance, stays anisotropic on every
+submodule. -/
+theorem anisotropic_toQuadraticMap_restrict {R M : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] (B : LinearMap.BilinForm R M)
+    (hB : B.toQuadraticMap.Anisotropic) (W : Submodule R M) :
+    (B.restrict W).toQuadraticMap.Anisotropic :=
+  B.anisotropic_toQuadraticMap_compl₁₂ hB _ W.injective_subtype
+
 /-- Restriction to a submodule commutes with scalar multiplication of a bilinear form. -/
 @[simp]
 theorem restrict_smul {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
@@ -158,6 +181,16 @@ theorem forall_dvd_iff_of_smul_eq {R M : Type*} [CommSemiring R] [AddCommMonoid 
     (∀ x, r ∣ C x x) ↔ ∀ x, r * a ∣ B x x := by
   subst B
   simp only [LinearMap.smul_apply, smul_eq_mul, mul_comm r a, ha.dvd_cancel_left]
+
+/-- Rescaling by a scalar `a` that acts injectively on `R`, such as a regular element of `R`,
+neither creates nor destroys symmetry of a bilinear form. -/
+@[simp]
+theorem _root_.IsSMulRegular.isSymm_smul_iff {α R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] [Monoid α] [DistribMulAction α R] [SMulCommClass R α R] {a : α}
+    (ha : IsSMulRegular R a)
+    {C : LinearMap.BilinForm R M} : (a • C).IsSymm ↔ C.IsSymm :=
+  ⟨fun hC ↦ ⟨fun x y ↦ ha (by simpa only [LinearMap.smul_apply] using hC.eq x y)⟩,
+    IsSymm.smul a⟩
 
 /-- If `a` is a regular element dividing every value of `B`, then `B` is `a` times a bilinear
 form. -/
@@ -204,12 +237,6 @@ theorem compl₁₂ {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R
     LinearMap.BilinForm.IsSymm (B.compl₁₂ f f) :=
   ⟨fun x y ↦ hB.eq (f x) (f y)⟩
 
-/-- A form `C` is symmetric when `a • C` is, for a non-zero-divisor `a`. -/
-theorem of_smul {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-    {a : R} (ha : a ∈ nonZeroDivisors R) {C : LinearMap.BilinForm R M}
-    (hC : (a • C).IsSymm) : C.IsSymm :=
-  ⟨fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp (by simpa using hC.eq x y)⟩
-
 /-- Polarization of a symmetric bilinear form over a commutative semiring. -/
 theorem apply_add_self {R M : Type*} [CommSemiring R] [AddCommMonoid M]
     [Module R M] {B : LinearMap.BilinForm R M} (hB : B.IsSymm) (x y : M) :
@@ -217,15 +244,24 @@ theorem apply_add_self {R M : Type*} [CommSemiring R] [AddCommMonoid M]
   simp only [map_add, LinearMap.add_apply, hB.eq y x]
   ring
 
+/-- **The inverse of a symmetric form is symmetric.** For a symmetric nondegenerate form `B` on a
+finite-dimensional space, the inverse of `x ↦ B x` satisfies `ν (B⁻¹ ν') = ν' (B⁻¹ ν)` for all
+covectors `ν` and `ν'`. -/
+theorem apply_toDual_symm_comm {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+    [FiniteDimensional K V] {B : LinearMap.BilinForm K V} (hB : B.IsSymm)
+    (hB' : B.Nondegenerate) (ν ν' : Module.Dual K V) :
+    ν ((B.toDual hB').symm ν') = ν' ((B.toDual hB').symm ν) := by
+  rw [← LinearMap.BilinForm.apply_toDual_symm_apply (hB := hB') ν,
+    ← LinearMap.BilinForm.apply_toDual_symm_apply (hB := hB') ν', hB.eq]
+
 end LinearMap.BilinForm.IsSymm
 
 namespace LinearMap.BilinForm.IsAlt
 
-/-- **Every alternating form on a free module is `B - B.flip` for some form `B`**, in every
-characteristic and in any rank: order a basis and take for `B` the strictly upper triangular part
-of the alternating form in that basis. -/
-theorem exists_sub_flip_eq {R M : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
-    [Module.Free R M] {A : LinearMap.BilinForm R M} (hA : A.IsAlt) :
+/-- On a free module, an alternating form is `B - B.flip` for the strictly upper triangular part
+`B` of the form with respect to a well-ordered basis. -/
+private theorem exists_sub_flip_eq_of_free {R M : Type*} [CommRing R] [AddCommMonoid M]
+    [Module R M] [Module.Free R M] {A : LinearMap.BilinForm R M} (hA : A.IsAlt) :
     ∃ B : LinearMap.BilinForm R M, B - B.flip = A := by
   classical
   let b := Module.Free.chooseBasis R M
@@ -245,6 +281,20 @@ theorem exists_sub_flip_eq {R M : Type*} [CommRing R] [AddCommMonoid M] [Module 
     simp only [h, h.not_gt, ↓reduceIte, zero_sub]
     linear_combination -h0
 
+/-- **Every alternating form on a projective module is `B - B.flip` for some form `B`**, in every
+characteristic and in any rank. -/
+theorem exists_sub_flip_eq {R M : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
+    [Module.Projective R M] {A : LinearMap.BilinForm R M} (hA : A.IsAlt) :
+    ∃ B : LinearMap.BilinForm R M, B - B.flip = A := by
+  -- `M` is a retract `M → (M →₀ R) → M` of a free module, where the strictly upper triangular
+  -- part of the pulled-back form in a well-ordered basis works.
+  obtain ⟨s, hs⟩ := (Module.projective_def' (R := R) (P := M)).mp ‹_›
+  let π := Finsupp.linearCombination R (_root_.id : M → M)
+  obtain ⟨B, hB⟩ := exists_sub_flip_eq_of_free (A := A.compl₁₂ π π) fun z => hA (π z)
+  refine ⟨B.compl₁₂ s s, LinearMap.ext₂ fun x y => ?_⟩
+  have hπ (x : M) : π (s x) = x := LinearMap.congr_fun hs x
+  simpa [hπ] using LinearMap.congr_fun₂ hB (s x) (s y)
+
 end LinearMap.BilinForm.IsAlt
 
 namespace LinearMap
@@ -257,8 +307,7 @@ theorem apply_eq_apply_of_isOfFinAddOrder_sub_left [AddCommGroup M] [Module R M]
     [AddCommMonoid N] [Module R N]
     (B : M →ₗ[R] N →ₗ[R] P) {x x' : M} (h : IsOfFinAddOrder (x - x')) (y : N) :
     B x y = B x' y := by
-  have := ((B.flip y).toAddMonoidHom.isOfFinAddOrder h).eq_zero'
-  simpa [sub_eq_zero] using this
+  simpa [sub_eq_zero] using ((B.flip y).toAddMonoidHom.isOfFinAddOrder h).eq_zero'
 
 /-- A bilinear map with additively torsion-free values sees its right argument only modulo
 elements of finite additive order. -/
@@ -266,8 +315,7 @@ theorem apply_eq_apply_of_isOfFinAddOrder_sub_right [AddCommMonoid M] [Module R 
     [AddCommGroup N] [Module R N]
     (B : M →ₗ[R] N →ₗ[R] P) {y y' : N} (h : IsOfFinAddOrder (y - y')) (x : M) :
     B x y = B x y' := by
-  have := ((B x).toAddMonoidHom.isOfFinAddOrder h).eq_zero'
-  simpa [sub_eq_zero] using this
+  simpa [sub_eq_zero] using ((B x).toAddMonoidHom.isOfFinAddOrder h).eq_zero'
 
 /-- A vector in the kernel of a reflexive sesquilinear form is orthogonal to every vector on
 either side; in particular `B y x = 0`. -/
@@ -315,14 +363,15 @@ namespace BilinForm
 
 /-- **Away from characteristic two a symmetric alternating form is zero**: symmetry and alternation
 force `2 * B x y = 0`, and a regular `2` cancels. -/
-theorem eq_zero_of_isSymm_of_isAlt {R M : Type*} [CommRing R] [AddCommGroup M]
+theorem eq_zero_of_isSymm_of_isAlt {R M : Type*} [CommSemiring R] [AddCommMonoid M]
     [Module R M] (h2 : IsLeftRegular (2 : R)) {B : BilinForm R M} (hsymm : B.IsSymm)
     (halt : B.IsAlt) : B = 0 := by
-  refine LinearMap.ext fun x => LinearMap.ext fun y => ?_
-  have hzero : (2 : R) * B x y = 2 * 0 := by
-    rw [mul_zero]
-    linear_combination hsymm.eq x y - halt.neg_eq x y
-  simpa using h2 hzero
+  refine LinearMap.ext₂ fun x y ↦ h2 ?_
+  -- alternation at `x + y` gives `B x y + B y x = 0`, and symmetry turns `B y x` into `B x y`
+  have h := halt.self_eq_zero (x + y)
+  simp only [map_add, LinearMap.add_apply, halt.self_eq_zero, zero_add, add_zero,
+    hsymm.eq y x] at h
+  simpa [two_mul] using h
 
 /-- A scalar multiple of a bilinear form by a regular element is nondegenerate if and only if
 the original form is nondegenerate. -/
@@ -330,21 +379,10 @@ the original form is nondegenerate. -/
 theorem nondegenerate_smul_iff {R M : Type*} [CommSemiring R] [AddCommMonoid M]
     [Module R M] {B : BilinForm R M} {c : R} (hc : IsRegular c) :
     (c • B).Nondegenerate ↔ B.Nondegenerate := by
-  constructor
-  · rintro ⟨hl, hr⟩
-    refine ⟨fun x hx ↦ hl x fun y ↦ ?_, fun y hy ↦ hr y fun x ↦ ?_⟩
-    · specialize hx y
-      simp only [LinearMap.smul_apply, smul_eq_mul, hx, mul_zero]
-    · specialize hy x
-      simp only [LinearMap.smul_apply, smul_eq_mul, hy, mul_zero]
-  · rintro ⟨hl, hr⟩
-    refine ⟨fun x hx ↦ hl x fun y ↦ ?_, fun y hy ↦ hr y fun x ↦ ?_⟩
-    · specialize hx y
-      simp only [LinearMap.smul_apply, smul_eq_mul, hc.left.mul_left_eq_zero_iff] at hx
-      exact hx
-    · specialize hy x
-      simp only [LinearMap.smul_apply, smul_eq_mul, hc.left.mul_left_eq_zero_iff] at hy
-      exact hy
+  -- `c • B` and `B` vanish at the same pairs, since `c` is regular
+  have h (x y : M) : (c • B) x y = 0 ↔ B x y = 0 := by
+    simp only [LinearMap.smul_apply, smul_eq_mul, hc.left.mul_left_eq_zero_iff]
+  simp only [LinearMap.Nondegenerate, LinearMap.SeparatingLeft, LinearMap.SeparatingRight, h]
 
 /-- Negating a bilinear form preserves nondegeneracy. -/
 @[simp]
@@ -369,17 +407,9 @@ theorem dualBasis_smul_apply {K V ι : Type*} [Field K] [AddCommGroup V]
     LinearMap.BilinForm.dualBasis (c • B)
         ((TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero hc)).mpr hB) b i =
       c⁻¹ • LinearMap.BilinForm.dualBasis B hB b i := by
-  let hBc : (c • B).Nondegenerate :=
-    (TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero hc)).mpr hB
-  apply LinearMap.ker_eq_bot.mp hBc.ker_eq_bot
-  apply b.ext
-  intro j
-  simp only [map_smul]
-  rw [LinearMap.BilinForm.apply_dualBasis_left]
-  simp only [LinearMap.smul_apply, smul_eq_mul]
-  rw [LinearMap.BilinForm.apply_dualBasis_left]
-  split_ifs
-  · simp only [mul_one, inv_mul_cancel₀ hc]
-  · simp only [mul_zero]
+  -- `c⁻¹ • B.dualBasis hB b` pairs with `b` under `c • B` as the dual basis does
+  refine congrFun (((c • B).dualBasis_eq_iff _ b fun i ↦ c⁻¹ • B.dualBasis hB b i).mpr
+    fun i j ↦ ?_) i
+  simp [LinearMap.BilinForm.apply_dualBasis_left, hc]
 
 end Module.Basis

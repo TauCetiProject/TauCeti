@@ -105,6 +105,10 @@ theorem inductionOn {p : Orientation I M ι → Prop} (o : Orientation I M ι)
 theorem card_eq (o : Orientation I M ι) : Fintype.card ι = Module.finrank ℝ E :=
   Quotient.inductionOn o OrientationLift.card_eq
 
+/-- An orientation indexed by the empty finite type has a zero-dimensional model. -/
+theorem finrank_eq_zero (o : Orientation I M (Fin 0)) : Module.finrank ℝ E = 0 :=
+  o.card_eq.symm.trans (Fintype.card_fin 0)
+
 /-- The tangent space has the dimension encoded by the orientation index. -/
 theorem finrank_tangentSpace_eq (o : Orientation I M ι) (x : M) :
     Module.finrank ℝ (TangentSpace I x) = Fintype.card ι :=

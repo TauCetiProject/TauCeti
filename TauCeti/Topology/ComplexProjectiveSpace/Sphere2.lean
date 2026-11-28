@@ -21,7 +21,8 @@ and `[e₁]` to the south pole.
 
 * `TauCeti.hopfSphere2`: the Hopf map `S³ → S²`, with `TauCeti.hopfSphere2_eq_hopfSphere2_iff`
   (its fibres are the circle orbits) and `TauCeti.hopfSphere2_surjective`.
-* `TauCeti.ComplexProjectiveSpace.homeomorphSphere2`: `CP¹ ≃ₜ S²`, induced by the Hopf map.
+* `TauCeti.ComplexProjectiveSpace.homeomorphSphere2`: `CP¹ ≃ₜ S²`, induced by the Hopf map, with
+  `homeomorphSphere2_basePoint` and `homeomorphSphere2_symm_north`.
 
 ## References
 
@@ -249,6 +250,12 @@ theorem homeomorphSphere2_symm_hopfSphere2 (v : sphere (0 : EuclideanSpace ℂ (
 @[simp]
 theorem homeomorphSphere2_basePoint : homeomorphSphere2 (basePoint 1) = Sphere2.north := by
   rw [basePoint_def, homeomorphSphere2_mk, hopfSphere2_single_zero]
+
+/-- The inverse of `CP¹ ≃ₜ S²` sends the north pole to `[e₀]`. -/
+@[simp]
+theorem homeomorphSphere2_symm_north :
+    homeomorphSphere2.symm Sphere2.north = mk 1 ⟨EuclideanSpace.single 0 1, by simp⟩ := by
+  rw [← hopfSphere2_single_zero, homeomorphSphere2_symm_hopfSphere2]
 
 end Sphere2
 

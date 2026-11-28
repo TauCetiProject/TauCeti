@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.BigOperators.Group.List.Basic
+public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Fin.Tuple.Basic
+import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Data.List.OfFn
 
 /-!
@@ -16,7 +19,12 @@ In a monoid, the product of the letters `β (w 0) ⋯ β (w (n + 1))` of a word 
 word `u` of length `n` by inserting two consecutive letters `d, e` at the positions `p` and
 `p + 1` factors as `L * β d * β e * R`, where `L` and `R` depend only on `u` and `p`
 (`List.exists_prod_ofFn_insertNth_insertNth`). This is how a relation among the products
-`β d * β e` passes to the products of all words carrying the letters `d, e` in a fixed position.
+`β d * β e` passes to the products of all words carrying the letters `d, e` in a fixed position:
+in particular, any sum `∑ i ∈ s, β (g₁ i) * β (g₂ i) = 0` in a semiring annihilates the induced sum
+after inserting `g₁ i` and `g₂ i` into any word and applying an additive homomorphism
+(`List.sum_apply_prod_ofFn_insertNth_insertNth_eq_zero`).
+Similarly, moving the first letter of a word to the end corresponds to moving its factor from the
+left to the right (`List.apply_prod_ofFn_snoc`).
 
 A nonempty product `f₀ f₁ ⋯ fₙ` is the left fold of `f₁, …, fₙ` starting from `f₀`
 (`List.prod_ofFn_eq_foldl`), and multiplicative maps, not necessarily unital, preserve such left
@@ -25,6 +33,9 @@ homomorphisms.
 
 The product of a word whose letters all equal `c` except for a single letter `a` in position `p`
 is `c ^ p * a * c ^ (n - p)` (`List.prod_ofFn_ite`).
+
+If two words agree away from two adjacent positions, the product of the first is the product of
+the second with its two adjacent letters replaced (`List.prod_ofFn_eq_take_mul_mul_drop_of_eq`).
 
 A monoid endomorphism fixing every letter of a word, or fixing the product of two adjacent
 letters and every other letter, fixes the product of the word (`List.map_prod_ofFn_of_forall`,
@@ -61,6 +72,40 @@ theorem exists_prod_ofFn_insertNth_insertNth {D M : Type*} [Monoid M] (β : D �
       rw [← Fin.cons_self_tail u, Fin.insertNth_succ_cons, ← Fin.succ_castSucc,
         Fin.insertNth_succ_cons, ofFn_succ, prod_cons]
       simp only [Fin.cons_zero, Fin.cons_succ, h, mul_assoc]
+
+/-- Summing an additive homomorphism of the word product obtained by inserting consecutive letters
+`g₁ i` and `g₂ i` at positions `p` and `p + 1` vanishes whenever `∑ i ∈ s, β (g₁ i) * β (g₂ i) = 0`.
+-/
+theorem sum_apply_prod_ofFn_insertNth_insertNth_eq_zero {D ι B C F : Type*} [Semiring B]
+    [AddCommMonoid C] [FunLike F B C] [AddMonoidHomClass F B C]
+    (β : D → B) (f : F) (s : Finset ι) (g₁ g₂ : ι → D)
+    (hβ : ∑ i ∈ s, β (g₁ i) * β (g₂ i) = 0) {n : ℕ} (p : Fin (n + 1)) (u : Fin n → D) :
+    ∑ i ∈ s, f (ofFn fun t ↦
+      β ((Fin.insertNth p.castSucc (g₁ i) (Fin.insertNth p (g₂ i) u) :
+        Fin (n + 2) → D) t)).prod = 0 := by
+  obtain ⟨L, R, h⟩ := exists_prod_ofFn_insertNth_insertNth β p u
+  simp_rw [h]
+  calc ∑ i ∈ s, f (L * β (g₁ i) * β (g₂ i) * R)
+      = f (L * (∑ i ∈ s, β (g₁ i) * β (g₂ i)) * R) := by
+        rw [Finset.mul_sum, Finset.sum_mul, map_sum]
+        simp only [mul_assoc]
+    _ = 0 := by rw [hβ, mul_zero, zero_mul, map_zero]
+
+/-- Moving the first letter of a word to the end applies `g` to the image of its product under a
+map `f` satisfying `f (y * β e) = g (f (β e * y))`. -/
+theorem apply_prod_ofFn_snoc {D M C : Type*} [Monoid M] (β : D → M) (f : M → C) {g : C → C}
+    (hf : ∀ (e : D) (y : M), f (y * β e) = g (f (β e * y))) {n : ℕ} (u : Fin n → D) (e : D) :
+    f (ofFn fun t ↦ β ((Fin.snoc u e : Fin (n + 1) → D) t)).prod =
+      g (f (ofFn fun t ↦ β ((Fin.cons e u : Fin (n + 1) → D) t)).prod) := by
+  have hsnoc : (ofFn fun t ↦ β ((Fin.snoc u e : Fin (n + 1) → D) t)).prod =
+      (ofFn fun t ↦ β (u t)).prod * β e := by
+    rw [ofFn_succ', concat_eq_append, prod_append, prod_singleton]
+    simp
+  have hcons : (ofFn fun t ↦ β ((Fin.cons e u : Fin (n + 1) → D) t)).prod =
+      β e * (ofFn fun t ↦ β (u t)).prod := by
+    rw [ofFn_succ, prod_cons]
+    simp
+  rw [hsnoc, hcons, hf]
 
 /-- A nonempty product `f₀ f₁ ⋯ fₙ` is the left fold of `f₁, …, fₙ` starting from `f₀`. -/
 theorem prod_ofFn_eq_foldl {M : Type*} [Monoid M] {n : ℕ} (f : Fin (n + 1) → M) :
@@ -111,6 +156,25 @@ theorem prod_ofFn_eq_take_mul_mul_drop {M : Type*} [Monoid M] {k : ℕ} (g : Fin
   conv_lhs => rw [← take_append_drop i (ofFn g), drop_eq_getElem_cons hi₁,
     drop_eq_getElem_cons hi₂]
   simp [hi, mul_assoc]
+
+/-- If two words `f` and `g` agree away from two adjacent positions `i` and `i + 1`, the product of
+`f` is the product of the letters of `g` before `i`, times `f i * f (i + 1)`, times the product of
+the letters of `g` after `i + 1`. -/
+theorem prod_ofFn_eq_take_mul_mul_drop_of_eq {M : Type*} [Monoid M] {k : ℕ} (f g : Fin k → M)
+    {i i' : Fin k} (hi : (i : ℕ) + 1 = i') (hfg : ∀ j, j ≠ i → j ≠ i' → f j = g j) :
+    (ofFn f).prod = ((ofFn g).take i).prod * (f i * f i') * ((ofFn g).drop (i' + 1)).prod := by
+  rw [prod_ofFn_eq_take_mul_mul_drop f hi]
+  have ht : (ofFn f).take i = (ofFn g).take i := by
+    refine ext_getElem (by simp) fun j hj _ ↦ ?_
+    simp only [length_take, length_ofFn, lt_min_iff] at hj
+    simpa only [getElem_take, List.getElem_ofFn] using
+      hfg ⟨j, hj.2⟩ (by simp [Fin.ext_iff]; omega) (by simp [Fin.ext_iff]; omega)
+  have hd : (ofFn f).drop (i' + 1) = (ofFn g).drop (i' + 1) := by
+    refine ext_getElem (by simp) fun j hj _ ↦ ?_
+    simp only [length_drop, length_ofFn] at hj
+    simpa only [getElem_drop, List.getElem_ofFn] using
+      hfg ⟨i'.val + 1 + j, by omega⟩ (by simp [Fin.ext_iff]; omega) (by simp [Fin.ext_iff]; omega)
+  rw [ht, hd]
 
 /-- A monoid endomorphism fixing the product of two adjacent letters of a word, and every other
 letter, fixes the product of the word. -/

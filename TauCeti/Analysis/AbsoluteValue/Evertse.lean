@@ -192,7 +192,7 @@ private theorem exists_sum_smul_sub_eq {T : Set (AbsoluteValue K ℝ)} {R : Set 
     have hw'' (v : AbsoluteValue K ℝ) :
         w' v + ξs • (z v ls - x ls) ∈ span K (z v '' {l | l.val < s}) := by
       refine add_mem (hw' v) (smul_mem _ _ ?_)
-      have := (span_image_Iio_eq_span_image_Iio (hz v) ls).ge (hz v ls)
+      have := (span_image_Iio_eq_span_image_Iio ls (fun l _ ↦ hz v l)).ge (hz v ls)
       rwa [Iio_eq_setOf_val_lt] at this
     obtain ⟨ξ, hξ, he⟩ := exists_sum_smul_sub_eq happrox hz s (Nat.le_of_succ_le hs)
       (fun v ↦ w' v + ξs • (z v ls - x ls)) hw''
@@ -326,7 +326,7 @@ theorem exists_evertse_of_approx {m : ℕ} {T : Set (AbsoluteValue K ℝ)} {R : 
   -- Step 2: glue the local families by simultaneous approximation, one vector at a time.
   have hglue (j : Fin m) := exists_sum_smul_sub_eq happrox hzx j.val j.isLt.le
     (fun v ↦ z v j - x j) fun v ↦ by
-      have := (span_image_Iio_eq_span_image_Iio (hzx v) j).ge (hzx v j)
+      have := (span_image_Iio_eq_span_image_Iio j (fun l _ ↦ hzx v l)).ge (hzx v j)
       rwa [Iio_eq_setOf_val_lt] at this
   choose ξ hξR he using hglue
   have hμ₀ (v : AbsoluteValue K ℝ) (hv : v ∈ T) (l : Fin m) : 0 ≤ μ v l :=

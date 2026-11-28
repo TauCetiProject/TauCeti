@@ -10,9 +10,10 @@ public import Mathlib.RingTheory.PowerSeries.Expand
 public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Evaluation
 public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Series
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
+public import TauCeti.NumberTheory.ModularForms.QExpansion.Laurent
 
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Congruence
-import TauCeti.NumberTheory.ModularForms.LevelOne.GradedRing
+import TauCeti.NumberTheory.Bernoulli.Basic
 import TauCeti.NumberTheory.ModularForms.QExpansion.Graded
 import TauCeti.NumberTheory.ModularForms.QExpansion.Order
 import TauCeti.RingTheory.PowerSeries.SubringCoeff
@@ -56,6 +57,8 @@ The Eisenstein coefficients are `240 σ₃(n)` and `-504 σ₅(n)` (Mathlib's
   of `Δ` is an integer.
 * `TauCeti.ModularForm.qExpansion_natCast_discriminant`: at period `N`, the expansion of `Δ` is
   its expansion at period `1` in the variable `qᴺ`, so it is `qᴺ + ⋯` with integer coefficients.
+* `TauCeti.ModularForm.mapRingHom_laurentQExpansion_discriminant_zpow`: every complex ring
+  endomorphism fixes the Laurent expansion of every integer power of `Δ` at period `N`.
 * `TauCeti.ModularForm.mem_range_map_of_qExpansion_discriminant_mul_mem`: if `Δ Q` is the image
   of a power series over a ring `R` under `R →+* ℂ`, then so is the power series `Q`.
 * `TauCeti.ModularForm.qExpansion_discriminantEquiv_mem_range`: dividing a level-one cusp form by
@@ -76,15 +79,6 @@ open UpperHalfPlane ModularForm EisensteinSeries Filter Topology
 open scoped ArithmeticFunction.sigma MatrixGroups
 
 namespace TauCeti.ModularForm
-
-/- `bernoulli` is computed through `bernoulli'`, which is defined by well-founded recursion, so
-neither `norm_num` nor elaborator-side `decide` can evaluate it; the kernel can. -/
-
-private theorem bernoulli_four : bernoulli 4 = -1 / 30 := by decide +kernel
-
-private theorem bernoulli_six : bernoulli 6 = 1 / 42 := by decide +kernel
-
-private theorem bernoulli_twelve : bernoulli 12 = -691 / 2730 := by decide +kernel
 
 /-- The `q`-expansion of `E₄` is `1 + 240 ∑ σ₃(n) qⁿ`. -/
 theorem qExpansion_E₄_eq :
@@ -355,6 +349,35 @@ theorem qExpansion_natCast_discriminant_coeff_mem {R : Subring ℂ} (i : ℕ) :
     exact intCast_mem R m
   · exact R.zero_mem
 
+/-- The Laurent expansion of `Δ ^ m` at `∞` is fixed by every ring endomorphism of `ℂ`: the
+`q`-expansion of `Δ` has integer coefficients. -/
+theorem mapRingHom_laurentQExpansion_discriminant_zpow (φ : ℂ →+* ℂ) (m : ℤ) :
+    HahnSeries.mapRingHom φ (UpperHalfPlane.laurentQExpansion N
+        fun τ ↦ ModularForm.discriminant τ ^ m) =
+      UpperHalfPlane.laurentQExpansion N fun τ ↦ ModularForm.discriminant τ ^ m := by
+  have hN : (0 : ℝ) < N := Nat.cast_pos.mpr (NeZero.pos N)
+  have hperiodSL : (N : ℝ) ∈ (𝒮ℒ).strictPeriods := by
+    rw [Subgroup.strictPeriods_SL2Z]
+    exact ⟨N, by simp⟩
+  have hΔ : AnalyticAt ℂ (cuspFunction N ModularForm.discriminant) 0 := by
+    simpa only [CuspForm.coe_discriminant] using
+      ModularFormClass.analyticAt_cuspFunction_zero CuspForm.discriminant hN hperiodSL
+  have hfix : HahnSeries.mapRingHom φ
+      (UpperHalfPlane.laurentQExpansion N ModularForm.discriminant) =
+      UpperHalfPlane.laurentQExpansion N ModularForm.discriminant := by
+    rw [UpperHalfPlane.laurentQExpansion_of_analyticAt hΔ]
+    ext n
+    rw [HahnSeries.coeff_mapRingHom, PowerSeries.coeff_coe]
+    split_ifs
+    · exact map_zero φ
+    · exact ModularForm.qExpansion_natCast_discriminant_coeff_mem (N := N)
+        (R := φ.eqLocus (RingHom.id ℂ)) _
+  have hpow : UpperHalfPlane.laurentQExpansion N
+      (fun τ ↦ ModularForm.discriminant τ ^ m) =
+      UpperHalfPlane.laurentQExpansion N ModularForm.discriminant ^ m :=
+    UpperHalfPlane.laurentQExpansion_zpow hΔ.meromorphicAt m
+  rw [hpow, map_zpow₀, hfix]
+
 end Period
 
 /-- If the `q`-expansion of `Δ` times a power series `Q` is the image of a power series over a
@@ -392,18 +415,15 @@ theorem tendsto_discriminant_div_qParam_atImInfty :
         one_mem_strictPeriods_SL).differentiableAt
       discriminant_qExpansion_coeff_zero
 
-/-- **Algebraic independence of the `q`-expansions of `E₄` and `E₆`.** Composing the injective
-evaluation `ModularForm.evalE₄E₆` (`TauCeti.ModularForm.evalE₄E₆_injective`) with the injective
-graded `q`-expansion homomorphism `ModularForm.qExpansionAlgHom` (`qExpansionAlgHom_injective`)
-shows that `qExpansion 1 E₄` and `qExpansion 1 E₆` are algebraically independent over `ℂ`. -/
+/-- **Algebraic independence of the `q`-expansions of `E₄` and `E₆`.** The level-one
+`q`-expansions `qExpansion 1 E₄` and `qExpansion 1 E₆` satisfy no nonzero polynomial relation
+over `ℂ`. -/
 theorem algebraicIndependent_qExpansion_E₄_E₆ :
     AlgebraicIndependent ℂ ![qExpansion 1 E₄, qExpansion 1 E₆] := by
-  rw [algebraicIndependent_iff_injective_aeval]
-  have hcomp : MvPolynomial.aeval ![qExpansion 1 E₄, qExpansion 1 E₆] =
-      (_root_.ModularForm.qExpansionAlgHom 1 one_pos one_mem_strictPeriods_SL).comp evalE₄E₆ := by
-    ext i
-    fin_cases i <;> simp
-  rw [hcomp, AlgHom.coe_comp]
-  exact (qExpansionAlgHom_injective one_pos one_mem_strictPeriods_SL).comp evalE₄E₆_injective
+  convert (AlgHom.algebraicIndependent_iff _
+    (qExpansionAlgHom_injective one_pos one_mem_strictPeriods_SL)).2 algebraicIndependent_E₄_E₆
+    using 1
+  funext i
+  fin_cases i <;> simp
 
 end TauCeti.ModularForm

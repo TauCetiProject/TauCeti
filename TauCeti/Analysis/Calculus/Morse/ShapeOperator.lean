@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.Analysis.InnerProductSpace.ShapeOperator
+import TauCeti.LinearAlgebra.Eigenspace.Smul
 
 /-!
 # Morse index and focal points of squared distance via the shape operator
@@ -94,8 +95,7 @@ theorem isNondegenerateCriticalPoint_norm_sq_sub_add_smul_comp_iff (hi : ContDif
   have ha : i x - (i x + t • ν) ∈ (fderiv ℝ i x).rangeᗮ := by
     simpa using Submodule.smul_mem _ (-t) hν
   rw [isNondegenerateCriticalPoint_norm_sq_sub_comp_iff hi h, and_iff_right ha,
-    add_sub_cancel_left, Module.End.hasEigenvalue_iff, Module.End.hasEigenvalue_iff,
-    shapeOperator_smul, eigenspace, eigenspace, genEigenspace_smul _ ht, mul_one]
+    add_sub_cancel_left, shapeOperator_smul, Module.End.hasEigenvalue_smul_iff_div _ ht, one_div]
 
 /-- Squared distance from `i x` itself has a nondegenerate critical point at `x` along any `C²`
 immersion. -/

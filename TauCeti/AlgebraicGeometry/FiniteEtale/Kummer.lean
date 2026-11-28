@@ -9,7 +9,12 @@ public import Mathlib.RingTheory.RootsOfUnity.Basic
 public import TauCeti.AlgebraicGeometry.FiniteEtale.AffineFiber
 public import TauCeti.RingTheory.AdjoinRoot.StandardTameCover.Basic
 
+import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
+import TauCeti.Algebra.Algebra.NatCast
+import TauCeti.AlgebraicGeometry.FiniteEtale.Conservative
 import TauCeti.RingTheory.AdjoinRoot.Basic
+import TauCeti.RingTheory.RootsOfUnity.PowFiber
+import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
 
 /-!
 # Kummer covers and their geometric fibres
@@ -25,8 +30,9 @@ Tate module of `𝔾_m` over `K`; for `K` of characteristic `p > 0` only the pri
 reached, since `𝔾_m` then also has covers, such as Artin–Schreier covers, which are not Kummer
 covers.
 
-This file constructs the Kummer covers as finite étale `Spec R`-schemes, the maps between them
-and their deck transformations, and computes them on geometric fibres:
+This file constructs the Kummer covers as finite étale `Spec R`-schemes, surjective onto
+`Spec R`, on which `t` acquires an `n`-th root, together with the maps between them and their deck
+transformations, and computes them on geometric fibres:
 
 * for `n ∣ m`, the map `kummerCoverMap` from the cover of degree `m` to the cover of degree `n`
   sends the root `x_n` to `x_m ^ (m / n)`; these maps are compatible with composition;
@@ -35,7 +41,8 @@ and their deck transformations, and computes them on geometric fibres:
   (`kummerCoverDeck`), compatibly with the maps `kummerCoverMap`;
 * at a geometric point `Spec Ω ⟶ Spec R`, given by an `R`-algebra structure on a separably closed
   field `Ω`, the fibre of the cover of degree `n` is the set of `n`-th roots of the image of `t`
-  in `Ω` (`kummerCoverFiberEquiv`). The map `kummerCoverMap` acts on fibres by `ω ↦ ω ^ (m / n)`
+  in `Ω` (`kummerCoverFiberEquiv`), a set with `n` elements (`card_kummerCoverFiber`). The map
+  `kummerCoverMap` acts on fibres by `ω ↦ ω ^ (m / n)`
   and the deck transformation of `ζ` by multiplication by the image of `ζ`. When `t` maps to `1`
   the fibre is the group `μ_n(Ω)` of `n`-th roots of unity of `Ω`
   (`kummerCoverFiberEquivRootsOfUnity`).
@@ -55,6 +62,10 @@ and their deck transformations, and computes them on geometric fibres:
 
 ## Main results
 
+* `TauCeti.FiniteEtaleScheme.surjective_kummerCover_hom`: the Kummer cover is surjective, so it is
+  a finite étale covering of `Spec R`.
+* `TauCeti.FiniteEtaleScheme.exists_pow_eq_kummerCover_appTop`: on the Kummer cover, `t` becomes
+  the `n`-th power of a unit.
 * `TauCeti.FiniteEtaleScheme.kummerCoverMap_comp`: the maps between Kummer covers are compatible
   with composition.
 * `TauCeti.FiniteEtaleScheme.kummerCoverFiberEquiv_map_kummerCoverMap`: on fibres, the map from
@@ -65,6 +76,10 @@ and their deck transformations, and computes them on geometric fibres:
   covers intertwine the deck transformations of `ζ` and of `ζ ^ (m / n)`.
 * `TauCeti.FiniteEtaleScheme.kummerCoverFiberEquiv_map_kummerCoverDeck`: on fibres, the deck
   transformation of `ζ` is multiplication by the image of `ζ`.
+* `TauCeti.FiniteEtaleScheme.card_kummerCoverFiber`: the geometric fibre of the Kummer cover of
+  degree `n` has cardinality `n`.
+* `TauCeti.FiniteEtaleScheme.exists_fiber_map_kummerCoverDeck_eq`: when every `n`-th root of unity
+  of `Ω` comes from `R`, the deck transformations act transitively on the geometric fibre.
 * `TauCeti.FiniteEtaleScheme.kummerCoverFiberEquivRootsOfUnity_map_kummerCoverMap`,
   `TauCeti.FiniteEtaleScheme.kummerCoverFiberEquivRootsOfUnity_map_kummerCoverDeck`: on the
   fibres `μ_n(Ω)` over `1`, the maps between covers are the power maps and the deck
@@ -116,6 +131,56 @@ finite étale `Spec R`-scheme. It is étale because `n` and `t` are invertible i
 /-- The Kummer cover is the spectrum of the Kummer algebra. -/
 theorem kummerCover_def : kummerCover t n hn = (spec R).obj (op (kummerAlgebra t n hn)) :=
   (rfl)
+
+/-- The Kummer cover over `Spec R` is Mathlib's algebraic spectrum of the Kummer algebra. -/
+theorem kummerCover_obj :
+    (kummerCover t n hn).obj = (algSpec R).obj (op (kummerAlgebra t n hn).obj) :=
+  spec_obj_obj R (op (kummerAlgebra t n hn))
+
+/-- The Kummer cover is surjective. For `R ≠ 0` its coordinate algebra is free of rank `n ≥ 1`,
+hence faithfully flat; for `R = 0` the base `Spec R` is empty. -/
+instance surjective_kummerCover_hom : Surjective (kummerCover t n hn).obj.hom := by
+  rw [kummerCover_obj, algSpec_obj_hom]
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · have : IsEmpty (Spec R) := inferInstanceAs (IsEmpty (PrimeSpectrum R))
+    exact ⟨fun x ↦ isEmptyElim x⟩
+  · have hn₀ : n ≠ 0 := by
+      rintro rfl
+      simp at hn
+    obtain ⟨_, hrank⟩ := standardTameCover_free R (t : R) n (Nat.one_le_iff_ne_zero.2 hn₀)
+    have : Nontrivial (standardTameCover R (t : R) n) :=
+      Module.nontrivial_of_finrank_pos (hrank ▸ Nat.pos_of_ne_zero hn₀)
+    exact ((flat_and_surjective_SpecMap_iff _).2
+      (RingHom.faithfullyFlat_algebraMap_iff.2 inferInstance)).2
+
+/-- **The Kummer cover extracts an `n`-th root of `t`.** On the Kummer cover, the pullback of `t`,
+viewed as a global section of `Spec R`, is the `n`-th power of a unit: the root `x` of
+`x ^ n - t`. -/
+theorem exists_pow_eq_kummerCover_appTop :
+    ∃ v : Γ((kummerCover t n hn).obj.left, ⊤)ˣ,
+      v ^ n = Units.map (kummerCover t n hn).obj.hom.appTop.hom.toMonoidHom
+        (Units.map (Scheme.ΓSpecIso R).inv.hom.toMonoidHom t) := by
+  let A := CommRingCat.of (standardTameCover R (t : R) n)
+  -- The root `x` is a unit: its `n`-th power is the unit `t`, and for `n = 0` the ring `R`, in
+  -- which `0` is invertible, is the zero ring.
+  have hx : IsUnit (AdjoinRoot.root (X ^ n - C (t : R))) := by
+    rcases eq_or_ne n 0 with rfl | hn₀
+    · have : Subsingleton R := subsingleton_of_zero_eq_one (by simpa using hn)
+      have : Subsingleton (standardTameCover R (t : R) 0) := Module.subsingleton R _
+      exact isUnit_of_subsingleton _
+    · exact AdjoinRoot.isUnit_root_X_pow_sub_C t.isUnit hn₀
+  have key : ∃ v : Γ(Spec A, ⊤)ˣ, v ^ n =
+      Units.map (Spec.map (CommRingCat.ofHom (algebraMap R A))).appTop.hom.toMonoidHom
+        (Units.map (Scheme.ΓSpecIso R).inv.hom.toMonoidHom t) := by
+    refine ⟨(hx.map (Scheme.ΓSpecIso A).inv.hom).unit, Units.ext ?_⟩
+    have h := congr($(Scheme.ΓSpecIso_inv_naturality (CommRingCat.ofHom (algebraMap R A)))
+      (t : R))
+    rw [Units.val_pow_eq_pow_val, IsUnit.unit_spec, ← map_pow, AdjoinRoot.root_X_pow_sub_C_pow,
+      ← AdjoinRoot.algebraMap_eq]
+    exact h
+  rw [kummerCover_obj]
+  -- `(algSpec R).obj (op A)` is by definition `Spec A` over `Spec R` (`algSpec_obj_hom`).
+  exact key
 
 end Cover
 
@@ -305,7 +370,55 @@ theorem kummerCoverFiberEquiv_map_kummerCoverDeck (ζ : rootsOfUnity n R)
   rw [AlgHom.comp_apply, kummerAlgebraDeck_hom_hom_hom]
   simp [-AdjoinRoot.algebraMap_eq]
 
+/-- The geometric fibre of a Kummer cover is nonempty, since the Kummer cover is surjective. -/
+theorem nonempty_fiber_kummerCover :
+    Nonempty ((fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj (kummerCover t n hn)) :=
+  (nonempty_fiber_obj_iff_range_subset_range _ _).mpr
+    ((kummerCover t n hn).obj.hom.surjective.range_eq ▸ Set.subset_univ _)
+
+/-- The `n`-th roots of `t` in `Ω` attached to points of the geometric fibre are nonzero. -/
+@[simp]
+theorem kummerCoverFiberEquiv_ne_zero
+    (y : (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj (kummerCover t n hn)) :
+    (kummerCoverFiberEquiv t Ω n hn y : Ω) ≠ 0 := by
+  have : NeZero n := .of_neZero_natCast Ω (h := ⟨hn.natCast_ne_zero_of_algebra⟩)
+  refine ne_zero_pow (NeZero.ne n) ?_
+  rw [(kummerCoverFiberEquiv t Ω n hn y).property]
+  exact (t.isUnit.map (algebraMap R Ω)).ne_zero
+
+/-- If every `n`-th root of unity of `Ω` comes from an `n`-th root of unity of `R`, the deck
+transformations of the Kummer cover act transitively on its geometric fibre: any two `n`-th roots
+of `t` in `Ω` differ by an `n`-th root of unity of `R`. -/
+theorem exists_fiber_map_kummerCoverDeck_eq
+    (hμ : Function.Surjective (restrictRootsOfUnity (algebraMap R Ω) n))
+    (y y' : (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj (kummerCover t n hn)) :
+    ∃ ζ : rootsOfUnity n R, (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).map
+      (kummerCoverDeck t hn ζ).hom y = y' := by
+  have : NeZero n := .of_neZero_natCast Ω (h := ⟨hn.natCast_ne_zero_of_algebra⟩)
+  set e := kummerCoverFiberEquiv t Ω n hn
+  obtain ⟨ω, hω⟩ := (pow_eq_pow_iff_exists_rootsOfUnity_smul (NeZero.ne n)).mp
+    ((e y).property.trans (e y').property.symm)
+  obtain ⟨ζ, rfl⟩ := hμ ω
+  refine ⟨ζ, e.injective (Subtype.ext ?_)⟩
+  rw [kummerCoverFiberEquiv_map_kummerCoverDeck, ← hω, rootsOfUnity.smul_eq_mul,
+    restrictRootsOfUnity_coe_apply]
+
 variable (Ω n)
+
+/-- Over a separably closed field `Ω`, the geometric fibre of the degree-`n` Kummer cover has
+cardinality `n`: since `n` is invertible in `R`, hence in `Ω`, the nonzero element
+`algebraMap R Ω t` has exactly `n` distinct `n`-th roots. -/
+theorem card_kummerCoverFiber :
+    Nat.card ((fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj
+      (kummerCover t n hn)) = n := by
+  have : NeZero (n : Ω) := ⟨hn.natCast_ne_zero_of_algebra⟩
+  have : NeZero n := .of_neZero_natCast Ω
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot Ω n
+  obtain ⟨y⟩ := nonempty_fiber_kummerCover t (Ω := Ω) hn
+  rw [Nat.card_congr ((kummerCoverFiberEquiv t Ω n hn).trans (Equiv.subtypeEquivRight
+      fun ω ↦ (Polynomial.mem_nthRootsFinset (NeZero.pos n) _).symm)), Nat.card_eq_finsetCard]
+  exact hζ.card_nthRootsFinset_of_pow_eq (kummerCoverFiberEquiv t Ω n hn y).property
+    (t.isUnit.map (algebraMap R Ω)).ne_zero
 
 /-- **The fibre over `1` of a Kummer cover is `μ_n`.** When `t` maps to `1` in the separably
 closed field `Ω`, for instance for the power map `z ↦ z ^ n` of `𝔾_m` at a geometric point over
@@ -314,8 +427,7 @@ of `Ω`. -/
 noncomputable def kummerCoverFiberEquivRootsOfUnity (h : algebraMap R Ω t = 1) :
     (fiber (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))).obj (kummerCover t n hn) ≃
       rootsOfUnity n Ω :=
-  -- `n ≠ 0`: otherwise `R` would be the zero ring, which has no map to the field `Ω`.
-  haveI : NeZero n := ⟨by rintro rfl; simpa using hn.map (algebraMap R Ω)⟩
+  haveI : NeZero n := .of_neZero_natCast Ω (h := ⟨hn.natCast_ne_zero_of_algebra⟩)
   (kummerCoverFiberEquiv t Ω n hn).trans <|
     (Equiv.subtypeEquivRight fun ω ↦ by rw [mem_nthRoots (NeZero.pos n), h]).trans
       (rootsOfUnityEquivNthRoots Ω n).symm

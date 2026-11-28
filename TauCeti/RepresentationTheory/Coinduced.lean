@@ -6,12 +6,16 @@ Authors: Codex
 module
 
 public import Mathlib.RepresentationTheory.Coinduced
+public import Mathlib.RepresentationTheory.Stabilizer
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 public import Mathlib.Algebra.MonoidAlgebra.MapDomain
+public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.RepresentationTheory.AsModule
 public import TauCeti.RepresentationTheory.OfMulAction
+public import TauCeti.RepresentationTheory.WeightSpace
 public import TauCeti.GroupTheory.GroupAction.PiTransport
+public import TauCeti.Topology.Algebra.Group.LocallyConstant
 
 /-!
 # Coinduction: exactness and coextension of scalars
@@ -36,7 +40,11 @@ identifies the units of a semi-local algebra `K_v ⊗[K] L ≃ ∏_{w ∣ v} L_w
 coinduced from a decomposition group.
 
 Mathlib's coinduced action is evaluated by `Representation.coind_apply_coe_apply`:
-`(h • f) h₁ = f (h₁ * h)`.
+`(h • f) h₁ = f (h₁ * h)`. Coinduction along an open map whose image has finite index preserves
+representations with open kernel (`Representation.isOpen_ker_coind`): the kernel of the
+coinduced action contains the open set of `x` with `t x t⁻¹ ∈ φ(ker ρ)` for `t` in a finite set of
+coset representatives. The stabilizer of a coinduced function is its right-translation
+stabilizer `TauCeti.rightTranslationStabilizer` (`Representation.stabilizer_coind_eq`).
 
 ## References
 
@@ -101,6 +109,74 @@ theorem coind_apply_coe_apply (φ : G →* H) (ρ : Representation k G V) (f : c
   rfl
 
 end Apply
+
+section OpenKernel
+
+variable {k G H V : Type*} [Semiring k] [Group G] [Group H] [AddCommMonoid V] [Module k V]
+  [TopologicalSpace G] [TopologicalSpace H] [SeparatelyContinuousMul H]
+
+/-- **The coinduced action has open kernel.** If `φ : G →* H` is an open map whose image has
+finite index and `ρ` has open kernel, the coinduced representation has open kernel: it contains
+the open set of `x` with `t x t⁻¹ ∈ φ(ker ρ)` for `t` in a finite set of coset representatives. -/
+theorem isOpen_ker_coind {φ : G →* H} (hφ : IsOpenMap φ) [φ.range.FiniteIndex]
+    (ρ : Representation k G V) (hρ : IsOpen (ρ.ker : Set G)) :
+    IsOpen ((coind φ ρ).ker : Set H) := by
+  have : Finite (H ⧸ φ.range) := Subgroup.finite_quotient_of_finiteIndex
+  let t : H ⧸ φ.range → H := fun c ↦ (Quotient.out c)⁻¹
+  let S : Set H := ⋂ c, (fun x ↦ t c * x * (t c)⁻¹) ⁻¹' (φ '' (ρ.ker : Set G))
+  have hS : IsOpen S := isOpen_iInter_of_finite fun c ↦
+    (hφ _ hρ).preimage ((continuous_mul_const _).comp (continuous_const_mul _))
+  have h1 : (1 : H) ∈ S := Set.mem_iInter.mpr fun c ↦ ⟨1, ρ.ker.one_mem, by simp⟩
+  have hSK : S ⊆ (coind φ ρ).ker := by
+    intro x hx
+    rw [SetLike.mem_coe, MonoidHom.mem_ker]
+    refine LinearMap.ext fun F ↦ Subtype.ext (funext fun y ↦ ?_)
+    obtain ⟨⟨_, g, rfl⟩, hmk⟩ := QuotientGroup.mk_out_eq_mul φ.range y⁻¹
+    set c : H ⧸ φ.range := QuotientGroup.mk y⁻¹
+    have hy : y = φ g * t c := by
+      simp only [t, c, hmk, mul_inv_rev, inv_inv, mul_inv_cancel_left]
+    obtain ⟨g', hg', hg'x⟩ := Set.mem_iInter.mp hx c
+    have hyx : y * x = φ (g * g') * t c := by
+      rw [map_mul, hg'x, hy]
+      group
+    have hg'1 : ρ g' = 1 := MonoidHom.mem_ker.mp hg'
+    calc F.val (y * x) = F.val (φ (g * g') * t c) := by rw [hyx]
+      _ = ρ (g * g') (F.val (t c)) := F.property _ _
+      _ = ρ g (F.val (t c)) := by rw [map_mul, hg'1, mul_one]
+      _ = F.val y := by rw [← F.property, ← hy]
+  exact Subgroup.isOpen_of_mem_nhds _ (Filter.mem_of_superset (hS.mem_nhds h1) hSK)
+
+end OpenKernel
+
+section WeightSpace
+
+variable {k G H V : Type*} [CommSemiring k] [Monoid G] [Group H] [AddCommMonoid V] [Module k V]
+  {φ : G →* H} {ρ : Representation k G V}
+
+/-- A coinduced function lies in the character weight space for a subgroup exactly when right
+translation by each subgroup element scales its values by the character. -/
+theorem mem_weightSpace_coind_comp_subtype_iff {K : Subgroup H} {χ : K →* k} {f : coindV φ ρ} :
+    f ∈ weightSpace ((coind φ ρ).comp K.subtype) χ ↔
+      ∀ (h : K) h₁, f.val (h₁ * h) = χ h • f.val h₁ := by
+  simp only [mem_weightSpace, MonoidHom.coe_comp, Function.comp_apply, Subgroup.coe_subtype,
+    Subtype.ext_iff, funext_iff, coind_apply_coe_apply, Submodule.coe_smul, Pi.smul_apply]
+
+end WeightSpace
+
+section Stabilizer
+
+variable {k G H V : Type*} [Semiring k] [Monoid G] [Group H] [AddCommMonoid V] [Module k V]
+  {φ : G →* H} {ρ : Representation k G V}
+
+/-- The stabilizer of a coinduced function `f` is its right-translation stabilizer: `h` stabilizes
+`f` exactly when `f (h₁ * h) = f h₁` for every `h₁`. -/
+theorem stabilizer_coind_eq (f : coindV φ ρ) :
+    (coind φ ρ).stabilizer f = TauCeti.rightTranslationStabilizer f.val := by
+  ext h
+  simp only [mem_stabilizer, TauCeti.mem_rightTranslationStabilizer, Subtype.ext_iff, funext_iff,
+    coind_apply_coe_apply]
+
+end Stabilizer
 
 open scoped MonoidAlgebra
 

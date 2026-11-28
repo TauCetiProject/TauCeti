@@ -8,16 +8,21 @@ module
 public import Mathlib.Geometry.Convex.Cone.Pointed
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.LinearAlgebra.Prod
+import Mathlib.Geometry.Convex.Cone.Dual
 
 /-!
-# Salience of images and products of cones, and the line spanned by a ray
+# Salience and functional-sign bounds for cones, and the line spanned by a ray
 
 Mathlib's `ConvexCone.Salient` records that a convex cone contains no line. This file proves the
 two closure properties of salience that concern standard cone constructions, the image under an
 injective linear map and the product of two pointed cones, together with the salience of the cone
-hull of a single vector. It also computes the dimension of the linear span of the cone hull of a
-single nonzero vector, which is the one-dimensionality making such a cone a ray, and the invariance
-of that dimension under multiplying a cone by the zero cone. None of these statements involves a
+hull of a single vector and of the cone hull of a set on which some linear functional is positive.
+It records the sign bounds behind that salience: a linear functional nonnegative (respectively
+positive) on a set is nonnegative on its cone hull (respectively positive on the nonzero vectors
+of it), and it gives a cone-hull inclusion for the image of a set under an indexing map, splitting
+off one index. It also computes the dimension of the linear span of the cone hull of a single
+nonzero vector, which is the one-dimensionality making such a cone a ray, and the invariance of
+that dimension under multiplying a cone by the zero cone. None of these statements involves a
 lattice, so they belong to the generic convex-cone API rather than to any consumer of it.
 
 ## Main declarations
@@ -26,10 +31,24 @@ lattice, so they belong to the generic convex-cone API rather than to any consum
   salient.
 * `ConvexCone.Salient.prod`: a product of salient pointed cones is salient.
 * `PointedCone.salient_hull_singleton`: the cone hull of a single vector is salient.
+* `PointedCone.apply_nonneg_of_mem_hull`: a linear functional nonnegative on a set is nonnegative
+  on its cone hull.
+* `PointedCone.apply_pos_of_mem_hull` and `PointedCone.salient_hull_of_forall_pos`: a linear
+  functional positive on a set is positive on the nonzero vectors of its cone hull, which is
+  therefore salient; `PointedCone.eq_zero_of_add_eq_zero_of_mem_hull` is the additive form.
+* `PointedCone.hull_image_le_hull_insert`: the cone hull of the image of a set lies in the cone hull
+  of the image of one index together with the image of the other members of the set.
 * `PointedCone.finrank_span_coe_hull_singleton`: the cone hull of a nonzero vector spans a line.
 * `PointedCone.finrank_span_coe_prod_bot` and `PointedCone.finrank_span_coe_bot_prod`:
   multiplying a pointed cone by the zero cone leaves the dimension of the span of the cone
   unchanged.
+* `PointedCone.mapsTo_nsmul_linearMap_id`: multiplication by a natural number carries a pointed
+  cone into itself.
+* `PointedCone.map_linearEquiv_mul`: mapping a pointed cone by a product of linear automorphisms
+  maps it by each factor in turn; `PointedCone.map_map_linearEquiv_inv` and
+  `PointedCone.map_inv_map_linearEquiv` cancel a linear automorphism against its inverse.
+* `PointedCone.map_inf_comap_of_comm`: transporting `σ ⊓ g⁻¹(τ)` by `γ` gives
+  `γ(σ) ⊓ g⁻¹(γ'(τ))` when `g ∘ γ = γ' ∘ g`.
 -/
 
 public section
@@ -75,6 +94,92 @@ theorem salient_hull_singleton (x : V) : (hull R {x} : ConvexCone R V).Salient :
 
 end HullSalient
 
+section HullPos
+
+variable {R V : Type*} [CommSemiring R] [AddCommMonoid V] [Module R V] {s : Set V}
+  {f : Module.Dual R V} {x : V}
+
+section PartialOrder
+
+variable [PartialOrder R] [IsOrderedRing R]
+
+/-- A linear functional that is nonnegative on a set is nonnegative on its cone hull. -/
+theorem apply_nonneg_of_mem_hull (hs : ∀ y ∈ s, 0 ≤ f y) (hx : x ∈ hull R s) : 0 ≤ f x := by
+  have hf : f ∈ dual (Module.Dual.eval R V) (hull R s) := by
+    rw [dual_hull]
+    exact fun y hy => hs y hy
+  exact hf hx
+
+end PartialOrder
+
+variable [LinearOrder R] [IsStrictOrderedRing R]
+
+/-- If a linear functional is positive on a set, then the only vector of its cone hull on which
+the functional vanishes is zero. -/
+theorem eq_zero_of_mem_hull_of_apply_eq_zero (hs : ∀ y ∈ s, 0 < f y) (hx : x ∈ hull R s)
+    (h : f x = 0) : x = 0 := by
+  have hs' : ∀ y ∈ s, 0 ≤ f y := fun y hy => (hs y hy).le
+  induction hx using Submodule.span_induction with
+  | mem x hx => exact ((hs x hx).ne' h).elim
+  | zero => rfl
+  | add x y hxs hys hx hy =>
+    rw [map_add] at h
+    have := (add_eq_zero_iff_of_nonneg (apply_nonneg_of_mem_hull hs' hxs)
+      (apply_nonneg_of_mem_hull hs' hys)).mp h
+    rw [hx this.1, hy this.2, add_zero]
+  | smul c x hxs hx =>
+    obtain ⟨c, hc⟩ := c
+    simp only [Nonneg.mk_smul, map_smul, smul_eq_mul] at h ⊢
+    rcases hc.eq_or_lt with rfl | hc
+    · simp
+    · rw [hx ?_, smul_zero]
+      by_contra hne
+      exact (mul_pos hc ((apply_nonneg_of_mem_hull hs' hxs).lt_of_ne' hne)).ne' h
+
+/-- If a linear functional is positive on a set, then it is positive on every nonzero vector of
+the cone hull of the set. -/
+theorem apply_pos_of_mem_hull (hs : ∀ y ∈ s, 0 < f y) (hx : x ∈ hull R s) (hx₀ : x ≠ 0) :
+    0 < f x :=
+  (apply_nonneg_of_mem_hull (fun y hy => (hs y hy).le) hx).lt_of_ne
+    fun h => hx₀ (eq_zero_of_mem_hull_of_apply_eq_zero hs hx h.symm)
+
+end HullPos
+
+section HullPosSalient
+
+variable {R V : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+  [AddCommGroup V] [Module R V] {s : Set V} {f : Module.Dual R V} {x y : V}
+
+/-- If a linear functional is positive on a set, then the cone hull of the set is salient. -/
+theorem salient_hull_of_forall_pos (hs : ∀ y ∈ s, 0 < f y) :
+    (hull R s : ConvexCone R V).Salient := fun x hx hx₀ hnx => by
+  have h₁ := apply_pos_of_mem_hull hs hx hx₀
+  have h₂ := apply_pos_of_mem_hull hs hnx (neg_ne_zero.mpr hx₀)
+  rw [map_neg] at h₂
+  exact (neg_pos.mp h₂).not_gt h₁
+
+/-- If a linear functional is positive on a set, then two vectors of the cone hull of the set that
+add up to zero vanish. This is the salience of the hull in additive form. -/
+theorem eq_zero_of_add_eq_zero_of_mem_hull (hs : ∀ y ∈ s, 0 < f y) (hx : x ∈ hull R s)
+    (hy : y ∈ hull R s) (h : x + y = 0) : x = 0 := by
+  by_contra hx₀
+  exact salient_hull_of_forall_pos hs x hx hx₀ (neg_eq_of_add_eq_zero_right h ▸ hy)
+
+end HullPosSalient
+
+section HullInsert
+
+variable {ι R V : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
+  [AddCommMonoid V] [Module R V]
+
+/-- The cone hull of the image of a set under a family lies in the cone hull of the image of
+one index together with the image of the other members of the set. -/
+theorem hull_image_le_hull_insert (v : ι → V) (T : Set ι) (i : ι) :
+    hull R (v '' T) ≤ hull R (insert (v i) (v '' (T \ {i}))) :=
+  Submodule.span_mono (Set.image_insert_eq ▸ Set.image_mono (Set.subset_insert_sdiff_singleton i T))
+
+end HullInsert
+
 section HullSpan
 
 variable {R V : Type*} [DivisionRing R] [PartialOrder R] [IsOrderedRing R]
@@ -118,6 +223,45 @@ theorem finrank_span_coe_bot_prod (q : PointedCone R V') :
 
 end Prod
 
+section Map
+
+variable {R V V' : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
+  [AddCommMonoid V] [Module R V] [AddCommMonoid V'] [Module R V']
+
+/-- Mapping a pointed cone by a product of linear automorphisms maps it by each factor in turn. -/
+theorem map_linearEquiv_mul (σ : PointedCone R V) (g h : V ≃ₗ[R] V) :
+    σ.map ((g * h : V ≃ₗ[R] V) : V →ₗ[R] V) = (σ.map (h : V →ₗ[R] V)).map (g : V →ₗ[R] V) := by
+  rw [LinearEquiv.coe_toLinearMap_mul, Module.End.mul_eq_comp, map_map]
+
+/-- Mapping a pointed cone by `g⁻¹` and then by `g` gives back the cone. -/
+@[simp]
+theorem map_map_linearEquiv_inv (σ : PointedCone R V) (g : V ≃ₗ[R] V) :
+    (σ.map ((g⁻¹ : V ≃ₗ[R] V) : V →ₗ[R] V)).map (g : V →ₗ[R] V) = σ := by
+  rw [← map_linearEquiv_mul, mul_inv_cancel, LinearEquiv.coe_toLinearMap_one, map_id]
+
+/-- Mapping a pointed cone by `g` and then by `g⁻¹` gives back the cone. -/
+@[simp]
+theorem map_inv_map_linearEquiv (σ : PointedCone R V) (g : V ≃ₗ[R] V) :
+    (σ.map (g : V →ₗ[R] V)).map ((g⁻¹ : V ≃ₗ[R] V) : V →ₗ[R] V) = σ := by
+  rw [← map_linearEquiv_mul, inv_mul_cancel, LinearEquiv.coe_toLinearMap_one, map_id]
+
+/-- Transporting `σ ⊓ g⁻¹(τ)` by a linear automorphism `γ` gives `γ(σ) ⊓ g⁻¹(γ'(τ))` when
+`g ∘ γ = γ' ∘ g`. -/
+theorem map_inf_comap_of_comm {g : V →ₗ[R] V'} {γ : V ≃ₗ[R] V} {γ' : V' ≃ₗ[R] V'}
+    (h : ∀ x, g (γ x) = γ' (g x)) (σ : PointedCone R V) (τ : PointedCone R V') :
+    (σ ⊓ τ.comap g).map (γ : V →ₗ[R] V) =
+      σ.map (γ : V →ₗ[R] V) ⊓ (τ.map (γ' : V' →ₗ[R] V')).comap g := by
+  ext x
+  simp only [Submodule.mem_inf, mem_comap, mem_map]
+  constructor
+  · rintro ⟨y, ⟨hyσ, hyτ⟩, rfl⟩
+    exact ⟨⟨y, hyσ, rfl⟩, g y, hyτ, (h y).symm⟩
+  · rintro ⟨⟨y, hyσ, rfl⟩, z, hzτ, hz⟩
+    rw [LinearEquiv.coe_coe, LinearEquiv.coe_coe, h, γ'.injective.eq_iff] at hz
+    exact ⟨y, ⟨hyσ, hz ▸ hzτ⟩, rfl⟩
+
+end Map
+
 end PointedCone
 
 namespace LinearMap
@@ -131,3 +275,15 @@ theorem mapsTo_bot_pointedCone (g : V →ₗ[R] V') :
   simp [Set.MapsTo]
 
 end LinearMap
+
+namespace PointedCone
+
+variable {R V : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R] [AddCommMonoid V]
+  [Module R V]
+
+/-- Multiplication by a natural number carries a pointed cone into itself. -/
+theorem mapsTo_nsmul_linearMap_id (q : ℕ) (σ : PointedCone R V) :
+    Set.MapsTo (q • LinearMap.id : V →ₗ[R] V) σ σ := fun x hx ↦ by
+  simpa using σ.nsmul_mem hx q
+
+end PointedCone

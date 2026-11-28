@@ -11,8 +11,10 @@ public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 # Images of symbols under maps of the coefficient spaces
 
 The image of a symbol under a continuous linear map of the coefficient spaces, such as conjugation
-by isomorphisms of `V` and `W`, has the same order (`TauCeti.Symbol.map`), and commutes with
-spatial and frequency derivatives (`TauCeti.Symbol.spatialDeriv_map`,
+by isomorphisms of `V` and `W`, or the passage `ℓ ∘ a ∘ e` to a scalar entry
+(`TauCeti.Symbol.entryMap`) and back (`TauCeti.Symbol.singleEntryMap`), has the same order
+(`TauCeti.Symbol.map`), and commutes with mixed, spatial and frequency derivatives
+(`TauCeti.Symbol.mixedDeriv_map`, `TauCeti.Symbol.spatialDeriv_map`,
 `TauCeti.Symbol.frequencyDeriv_map`). In particular, if every value of a symbol commutes with an
 operator `T`, so do the values of its derivatives
 (`TauCeti.Symbol.commute_coefficient_spatialDeriv`,
@@ -21,6 +23,14 @@ operator `T`, so do the values of its derivatives
 The image of a symbol with estimates uniform in the position, or with compact spatial support, has
 the same property (`TauCeti.Symbol.IsUniform.map`, `TauCeti.Symbol.HasCompactSpatialSupport.map`),
 as does the image of a smoothing symbol (`TauCeti.Symbol.IsSmoothing.map`).
+
+The product `ψ(x) a(x, ξ)` of a symbol with a smooth function of the position
+(`TauCeti.Symbol.smulLeft`, with coefficient `TauCeti.Symbol.coefficient_smulLeft`, and
+`TauCeti.Symbol.coefficient_smulLeft_ofReal` for a real `ψ`) is a symbol of the same order, with
+compact spatial support when `a` or `ψ` has compact support
+(`TauCeti.Symbol.HasCompactSpatialSupport.smulLeft`,
+`TauCeti.Symbol.hasCompactSpatialSupport_smulLeft`), and smoothing when `a` is smoothing
+(`TauCeti.Symbol.IsSmoothing.smulLeft`).
 -/
 
 public section
@@ -57,12 +67,53 @@ theorem coefficient_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : 
     (p : CoordinateSpace n × CoordinateSpace n) : (a.map Φ).coefficient p = Φ (a.coefficient p) :=
   (rfl)
 
+/-- Mixed derivatives commute with the image under a continuous linear map. -/
+@[simp]
+theorem mixedDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m)
+    (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (a.map Φ).coefficient x ξ = Φ (mixedDeriv α β a.coefficient x ξ) :=
+  Φ.mixedDeriv_comp_left a.contDiff_coefficient α β x ξ
+
 /-- The coefficient of the symbol transported by conjugation `T ↦ e₂ ∘ T ∘ e₁⁻¹` along
 isomorphisms `e₁ : V ≃L[ℂ] V'` and `e₂ : W ≃L[ℂ] W'` is the conjugated coefficient. -/
 theorem coefficient_map_arrowCongr (e₁ : V ≃L[ℂ] V') (e₂ : W ≃L[ℂ] W') (a : Symbol n V W m) :
     (a.map ((e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ)).coefficient =
       fun p ↦ e₁.arrowCongr e₂ (a.coefficient p) :=
   funext fun p ↦ by simp
+
+/-- If `Φ` acts on the coefficients by `T ↦ L ∘ T ∘ K`, the coefficient of the image symbol is
+`L ∘ a(x, ξ) ∘ K`. -/
+theorem coefficient_map_eq_comp_comp {Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')} (L : W →L[ℂ] W')
+    (K : V' →L[ℂ] V) (hΦ : ∀ T, Φ T = L ∘L T ∘L K) (a : Symbol n V W m) :
+    (a.map Φ).coefficient = fun p ↦ L ∘L a.coefficient p ∘L K :=
+  funext fun p ↦ by rw [coefficient_map, hΦ]
+
+/-- The map `T ↦ ℓ ∘ T ∘ e` of coefficients, sending an operator `V →L[ℂ] W` to the scalar entry
+determined by a vector `e ∈ V` and a functional `ℓ` on `W`. The image `a.map (entryMap ℓ e)` of a
+symbol is its scalar entry `ℓ ∘ a(x, ξ) ∘ e`, through which a matrix-valued quantization is
+computed componentwise. -/
+def entryMap (ℓ : W →L[ℂ] ℂ) (e : V) : (V →L[ℂ] W) →L[ℝ] (ℂ →L[ℂ] ℂ) :=
+  ((ContinuousLinearMap.compL ℂ ℂ W ℂ ℓ).comp
+    ((ContinuousLinearMap.compL ℂ ℂ V W).flip (ContinuousLinearMap.toSpanSingleton ℂ e))
+    ).restrictScalars ℝ
+
+@[simp]
+theorem entryMap_apply (ℓ : W →L[ℂ] ℂ) (e : V) (T : V →L[ℂ] W) :
+    entryMap ℓ e T = ℓ ∘L T ∘L ContinuousLinearMap.toSpanSingleton ℂ e :=
+  (rfl)
+
+/-- The map `T ↦ w ∘ T ∘ K` of coefficients, placing a scalar entry `T : ℂ →L[ℂ] ℂ` into
+`V →L[ℂ] W` along a functional `K` on `V` and a vector `w ∈ W`; in the opposite direction to
+`TauCeti.Symbol.entryMap`. Summing the images `a.map (singleEntryMap K w)` of scalar symbols over
+dual bases assembles a matrix-valued symbol from its entries. -/
+def singleEntryMap (K : V →L[ℂ] ℂ) (w : W) : (ℂ →L[ℂ] ℂ) →L[ℝ] (V →L[ℂ] W) :=
+  ((ContinuousLinearMap.compL ℂ V ℂ W (ContinuousLinearMap.toSpanSingleton ℂ w)).comp
+    ((ContinuousLinearMap.compL ℂ V ℂ ℂ).flip K)).restrictScalars ℝ
+
+@[simp]
+theorem singleEntryMap_apply (K : V →L[ℂ] ℂ) (w : W) (T : ℂ →L[ℂ] ℂ) :
+    singleEntryMap K w T = ContinuousLinearMap.toSpanSingleton ℂ w ∘L T ∘L K :=
+  (rfl)
 
 theorem HasCompactSpatialSupport.map {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
     (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).HasCompactSpatialSupport := by
@@ -92,9 +143,9 @@ theorem frequencyDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a
     exact Φ.coordinateDeriv_comp_left [j]
       ((a.contDiff_coefficient.comp (contDiff_const.prodMk contDiff_id)).of_le (by simp)) ξ)
 
-/-- A symbol commutes with `T` at every point exactly when its images under right and left
+/-- If every value of a symbol commutes with an operator `T`, its images under right and left
 composition with `T` agree. -/
-private theorem map_compL_flip_eq_map_compL {a : Symbol n V V m} {T : V →L[ℂ] V}
+theorem map_compL_flip_eq_map_compL {a : Symbol n V V m} {T : V →L[ℂ] V}
     (h : ∀ p, Commute (a.coefficient p) T) :
     a.map (((ContinuousLinearMap.compL ℂ V V V).flip T).restrictScalars ℝ) =
       a.map ((ContinuousLinearMap.compL ℂ V V V T).restrictScalars ℝ) :=
@@ -129,11 +180,58 @@ theorem IsUniform.map {a : Symbol n V W m} (ha : a.IsUniform)
   refine isUniform_iff.2 fun α β ↦ ?_
   obtain ⟨C, hC0, hC⟩ := isUniform_iff.1 ha α β
   refine ⟨‖Φ‖ * C, by positivity, fun x ξ ↦ ?_⟩
-  rw [show (a.map Φ).coefficient = Φ ∘ a.coefficient from funext (coefficient_map Φ a),
-    Φ.mixedDeriv_comp_left a.contDiff_coefficient, mul_assoc]
+  rw [mixedDeriv_map, mul_assoc]
   exact Φ.le_opNorm_of_le (hC x ξ)
 
 end Map
+
+section SmulLeft
+
+open scoped ContDiff
+
+/-- The product `ψ(x) a(x, ξ)` of a symbol `a` with a smooth scalar function `ψ` of the position,
+a symbol of the same order as `a`: the composition with the symbol of multiplication by `ψ`. -/
+def smulLeft {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ) (a : Symbol n V W m) :
+    Symbol n V W m :=
+  inclusion (zero_add m).le
+    ((ofSpatial (fun x ↦ ψ x • ContinuousLinearMap.id ℂ W) (hψ.smul contDiff_const)).comp a)
+
+@[simp]
+theorem coefficient_smulLeft {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ)
+    (a : Symbol n V W m) (p : CoordinateSpace n × CoordinateSpace n) :
+    (smulLeft hψ a).coefficient p = ψ p.1 • a.coefficient p := by
+  simp [smulLeft, coefficient_inclusion, ContinuousLinearMap.smul_comp]
+
+/-- `TauCeti.Symbol.coefficient_smulLeft` for a real smooth function `ψ`, viewed in `ℂ`: the
+coefficient of `ψ(x) a(x, ξ)` is the real multiple `ψ(x) • a(x, ξ)`. -/
+theorem coefficient_smulLeft_ofReal {ψ : CoordinateSpace n → ℝ}
+    (hψ : ContDiff ℝ ∞ (Complex.ofRealCLM ∘ ψ)) (a : Symbol n V W m)
+    (p : CoordinateSpace n × CoordinateSpace n) :
+    (smulLeft hψ a).coefficient p = ψ p.1 • a.coefficient p := by
+  simp [Complex.coe_smul]
+
+/-- Multiplying a symbol with compact spatial support by a smooth function of the position keeps
+compact spatial support. -/
+theorem HasCompactSpatialSupport.smulLeft {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
+    {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ) :
+    (Symbol.smulLeft hψ a).HasCompactSpatialSupport := by
+  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.1 ha
+  exact hasCompactSpatialSupport_iff.2 ⟨K, hK, fun x hx ξ ↦ by simp [hKa x hx ξ]⟩
+
+/-- Multiplying any symbol by a compactly supported smooth function of the position gives a symbol
+with compact spatial support. -/
+theorem hasCompactSpatialSupport_smulLeft {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ)
+    (hψc : HasCompactSupport ψ) (a : Symbol n V W m) :
+    (smulLeft hψ a).HasCompactSpatialSupport :=
+  hasCompactSpatialSupport_iff.2
+    ⟨tsupport ψ, hψc, fun x hx ξ ↦ by simp [image_eq_zero_of_notMem_tsupport hx]⟩
+
+/-- Multiplying a smoothing symbol by a smooth function of the position keeps it smoothing. -/
+theorem IsSmoothing.smulLeft {a : Symbol n V W m} (ha : a.IsSmoothing)
+    {ψ : CoordinateSpace n → ℂ} (hψ : ContDiff ℝ ∞ ψ) : (Symbol.smulLeft hψ a).IsSmoothing :=
+  (ha.comp_left _).inclusion _
+
+end SmulLeft
 
 end Symbol
 

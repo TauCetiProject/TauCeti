@@ -11,15 +11,14 @@ import Mathlib.Algebra.MvPolynomial.Basic
 public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 public import Mathlib.Algebra.QuadraticDiscriminant
 import Mathlib.Data.Nat.Choose.Vandermonde
-import Mathlib.FieldTheory.Perfect
+public import Mathlib.FieldTheory.Perfect
 import Mathlib.Tactic.NormDet
 import Mathlib.Tactic.NormNum.IsSquare
-public import Mathlib.FieldTheory.Separable
 public import Mathlib.GroupTheory.Perm.Fin
 public import Mathlib.RingTheory.Discriminant
 public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-import TauCeti.RingTheory.Polynomial.GaussLemma
+import TauCeti.RingTheory.Polynomial.Localization
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.PowerBasis
 public import TauCeti.RingTheory.Polynomial.RootEnumeration
@@ -63,7 +62,9 @@ depressed specialization of that formula is used to compare a quartic with its c
   discriminant is `(-1) ^ (n * (n - 1) / 2)` times the resultant of `f` and its derivative.
 * `Polynomial.Monic.prod_roots_eval_derivative`: the product of the derivative over the root
   multiset, which is the discriminant up to the same sign. This is the shape in which the
-  discriminant of a minimal polynomial is a norm.
+  discriminant of a minimal polynomial is a norm. For a non-monic polynomial of positive degree,
+  `Polynomial.leadingCoeff_pow_mul_prod_roots_eval_derivative` keeps track of the leading
+  coefficient.
 * `Polynomial.Monic.discr_mul`: the product formula for discriminants, with the square of the
   resultant as its cross term.
 * `Polynomial.discr_prod_of_monic`: the same formula for a finite product of monic polynomials,
@@ -92,8 +93,10 @@ depressed specialization of that formula is used to compare a quartic with its c
   exactly when `R` has a repeated element.
 * `Finset.prod_prod_erase_sub_eq_neg_one_pow_mul_discr`: the same product formula for
   `∏_{w ∈ s} (X - g w)`, indexed by a finite set.
-* `Squarefree.discr_ne_zero`: a squarefree polynomial over a GCD domain of characteristic zero
-  has nonzero discriminant.
+* `Squarefree.discr_ne_zero`, `Squarefree.resultant_derivative_ne_zero`: a squarefree polynomial
+  over a domain whose polynomials form a decomposition monoid and whose fraction field is perfect
+  (such as a GCD domain of characteristic zero) has nonzero discriminant, and nonzero resultant with
+  its derivative.
 * `Polynomial.separable_map_iff_map_discr_ne_zero`,
   `Polynomial.separable_map_zmod_iff_not_dvd_discr`,
   `Polynomial.Monic.separable_map_zmod_iff_not_dvd_discr`: the same criterion read along a ring
@@ -441,19 +444,33 @@ theorem discr_prod_of_monic {ι : Type*} [LinearOrder ι] (s : Finset ι) (f : �
     rw [hnew, prod_congr rfl hold]
     ring
 
-namespace Monic
-
 /-! ### The root-product formula -/
 
+/-- For a polynomial of positive degree `n` that splits, the product of the derivative over the
+root multiset, scaled by `lc(f) ^ (n - 1)`, is `lc(f)` times the discriminant, up to the sign
+`(-1) ^ (n * (n - 1) / 2)`. -/
+theorem leadingCoeff_pow_mul_prod_roots_eval_derivative [IsDomain R] {f : R[X]}
+    (hf : 0 < f.degree) (hs : f.Splits) :
+    f.leadingCoeff ^ (f.natDegree - 1) * (f.roots.map fun a ↦ eval a f.derivative).prod =
+      (-1) ^ (f.natDegree * (f.natDegree - 1) / 2) * f.leadingCoeff * f.discr := by
+  rw [← resultant_eq_prod_eval f f.derivative (f.natDegree - 1) (natDegree_derivative_le f) hs,
+    resultant_deriv hf]
+
+namespace Monic
+
 /-- For a monic polynomial that splits, the product of the derivative over the root multiset is
-the discriminant, up to the sign `(-1) ^ (n * (n - 1) / 2)`. After base change and identification
-of the roots with conjugates, this yields the corresponding norm formula. -/
+the discriminant, up to the sign `(-1) ^ (n * (n - 1) / 2)`. This is the monic case of
+`Polynomial.leadingCoeff_pow_mul_prod_roots_eval_derivative`, where the polynomial `1` of degree
+zero is also covered. After base change and identification of the roots with conjugates, this
+yields the corresponding norm formula. -/
 theorem prod_roots_eval_derivative [IsDomain R] {f : R[X]} (hf : f.Monic)
     (hs : f.Splits) : (f.roots.map fun a ↦ eval a f.derivative).prod =
       (-1) ^ (f.natDegree * (f.natDegree - 1) / 2) * f.discr := by
-  have key := resultant_eq_prod_eval f f.derivative (f.natDegree - 1)
-    (natDegree_derivative_le f) hs
-  rwa [hf.resultant_deriv, hf.leadingCoeff, one_pow, one_mul, eq_comm] at key
+  rcases Nat.eq_zero_or_pos f.natDegree with h | h
+  · obtain rfl := eq_one_of_monic_natDegree_zero hf h
+    simpa using (discr_C (R := R) 1).symm
+  · simpa [hf.leadingCoeff] using
+      leadingCoeff_pow_mul_prod_roots_eval_derivative (natDegree_pos_iff_degree_pos.mp h) hs
 
 end Monic
 
@@ -784,15 +801,31 @@ theorem separable_map_iff_map_discr_ne_zero {K : Type*} [Field K]
   rw [← discr_ne_zero_iff hn,
     discr_map_of_natDegree_eq φ (natDegree_map_of_leadingCoeff_ne_zero φ hlc)]
 
-/-- A squarefree polynomial over a GCD domain of characteristic zero has nonzero discriminant. -/
+/-- A squarefree polynomial over a domain whose polynomials form a decomposition monoid and whose
+fraction field is perfect (such as a GCD domain of characteristic zero) has nonzero discriminant. -/
 theorem _root_.Squarefree.discr_ne_zero {D : Type*} [CommRing D] [IsDomain D]
-    [IsGCDMonoid D] [CharZero D] {p : D[X]} (hp : Squarefree p) : p.discr ≠ 0 := by
+    [DecompositionMonoid D[X]] [PerfectField (FractionRing D)] {p : D[X]} (hp : Squarefree p) :
+    p.discr ≠ 0 := by
   have hinj := IsFractionRing.injective D (FractionRing D)
-  have : CharZero (FractionRing D) := charZero_of_injective_algebraMap hinj
   apply (map_ne_zero_iff (algebraMap D (FractionRing D)) hinj).mp
   apply (p.separable_map_iff_map_discr_ne_zero _ ?_).mp
-  · exact PerfectField.separable_iff_squarefree.mpr hp.map_fraction_map
+  · exact PerfectField.separable_iff_squarefree.mpr (hp.map_localization_map (nonZeroDivisors D))
   · exact (map_ne_zero_iff _ hinj).mpr (leadingCoeff_ne_zero.mpr hp.ne_zero)
+
+/-- A squarefree polynomial over a domain whose polynomials form a decomposition monoid and whose
+fraction field is perfect (such as a GCD domain of characteristic zero) has nonzero resultant with
+its derivative: over the fraction field the polynomial is separable, that is, coprime to its
+derivative. -/
+theorem _root_.Squarefree.resultant_derivative_ne_zero {D : Type*} [CommRing D] [IsDomain D]
+    [DecompositionMonoid D[X]] [PerfectField (FractionRing D)] {p : D[X]} (hp : Squarefree p) :
+    resultant p (derivative p) ≠ 0 := by
+  have hinj := IsFractionRing.injective D (FractionRing D)
+  have hsep : (p.map (algebraMap D (FractionRing D))).Separable :=
+    PerfectField.separable_iff_squarefree.mpr (hp.map_localization_map (nonZeroDivisors D))
+  have h := resultant_ne_zero _ _ hsep
+  rw [derivative_map, natDegree_map_eq_of_injective hinj, natDegree_map_eq_of_injective hinj,
+    resultant_map_map] at h
+  exact (map_ne_zero_iff _ hinj).mp h
 
 /-- An integral polynomial whose leading coefficient is not divisible by a prime `p` has separable
 reduction modulo `p` exactly when `p` does not divide its discriminant. -/

@@ -25,7 +25,9 @@ transports it along the diffeomorphism `Φ_c(s, t) = (s + c (1 - μ(|w|)), t)` o
 with slope at most `1/4` (`TauCeti.Floer.exchangeMap`).
 
 * `Φ_c` is the identity near the inputs `0`, `1` and the translation by `c` near the output end
-  (`TauCeti.Floer.exchangeMap_of_norm_le`, `TauCeti.Floer.exchangeMap_of_le_norm`). It keeps
+  (`TauCeti.Floer.exchangeMap_of_norm_le`, `TauCeti.Floer.exchangeMap_of_le_norm`), in
+  particular near every point beyond the height `1` of the output end
+  (`TauCeti.Floer.exchangeMap_eventuallyEq_add_of_one_lt`). It keeps
   the `t` coordinate and, for `c ≥ 0`, moves `s` by an amount between `0` and `c`
   (`TauCeti.Floer.snd_exchangeMap`, `TauCeti.Floer.le_fst_exchangeMap`,
   `TauCeti.Floer.fst_exchangeMap_le`). It is `C²` (`TauCeti.Floer.contDiff_exchangeMap`), and
@@ -50,8 +52,10 @@ with slope at most `1/4` (`TauCeti.Floer.exchangeMap`).
   for `K₀` over `s` (`TauCeti.SmoothTwoForm.integral_floerEnergyDensity_image_exchangeMap`,
   `TauCeti.SmoothTwoForm.integral_area_image_exchangeMap`,
   `TauCeti.SmoothTwoForm.integral_hamiltonianCurvature_image_exchangeMap`), and integrability
-  transfers along `Φ_c` (`TauCeti.Floer.integrableOn_of_integrableOn_image_exchangeMap`,
-  `TauCeti.SmoothTwoForm.floerEnergyDensity_comp_exchangeMap`).
+  transfers along `Φ_c` (`TauCeti.Floer.integrableOn_image_exchangeMap_iff`,
+  `TauCeti.Floer.integrableOn_of_integrableOn_image_exchangeMap`,
+  `TauCeti.SmoothTwoForm.floerEnergyDensity_comp_exchangeMap`,
+  `TauCeti.SmoothTwoForm.integrableOn_hamiltonianCurvature_image_exchangeMap`).
 
 The diffeomorphism is not holomorphic, so `u ∘ Φ_c` need not solve a Floer equation; only the
 energy identity, which holds for every map, is transported.
@@ -256,6 +260,11 @@ theorem exchangeMap_eventuallyEq_add (hy : 8 < ‖Complex.equivRealProdCLM.symm 
     (continuous_norm.comp Complex.equivRealProdCLM.symm.continuous)).mem_nhds hy] with y' hy'
   ext <;> simp [exchangeMap, exchangeShift_of_le_norm (le_of_lt hy')]
 
+/-- Beyond the height `1` of the output end, the map `Φ_c` is the translation by `c` nearby. -/
+theorem exchangeMap_eventuallyEq_add_of_one_lt (hy : 1 < (positiveEndCoord inf y).1) :
+    exchangeMap c =ᶠ[𝓝 y] (· + (c, 0)) :=
+  exchangeMap_eventuallyEq_add (eight_lt_norm_of_one_lt_fst_positiveEndCoord_inf hy)
+
 /-- On the disc `|w| ≤ 3` the map `Φ_c` is the identity. -/
 theorem exchangeMap_of_norm_le (hy : ‖Complex.equivRealProdCLM.symm y‖ ≤ 3) :
     exchangeMap c y = y := by
@@ -439,8 +448,8 @@ theorem image_exchangeMap_truncation (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {R : �
         ⟨by linarith, by linarith, by linarith⟩
     · -- Near the output end `Φ_c` is the translation by `c`.
       rw [exchangeMap_of_le_norm h₈.le]
-      have he : Complex.equivRealProdCLM.symm (y + (c, 0)) = w + c := by
-        apply Complex.ext <;> simp [w]
+      have he : Complex.equivRealProdCLM.symm (y + (c, 0)) = w + c :=
+        TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero y c
       have hw₁ := norm_sub_norm_le w 1
       have hw₂ := norm_sub_norm_le (w + c) 1
       have hw₃ := norm_sub_norm_le w (-(c : ℂ))
@@ -479,22 +488,29 @@ theorem exchangeMap_cylindricalEndLift_inf (c : ℝ) {R : ℝ} (hR : 1 ≤ R) (t
 
 /-! ### Transport of integrals along `Φ_c` -/
 
+/-- A density is integrable over the image of a measurable set under `Φ_c` if and only if the
+density pulled back along `Φ_c` is integrable over the set. -/
+theorem integrableOn_image_exchangeMap_iff (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {s : Set (ℝ × ℝ)}
+    (hs : MeasurableSet s) {g g' : ℝ × ℝ → ℝ}
+    (hg' : ∀ w ∈ s, g' w = (fderiv ℝ (exchangeMap c) w).det * g (exchangeMap c w)) :
+    IntegrableOn g (exchangeMap c '' s) ↔ IntegrableOn g' s := by
+  have hc : |c| ≤ 1 := abs_le.2 ⟨by linarith, hc₁⟩
+  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  have hd (w : ℝ × ℝ) : DifferentiableAt ℝ (exchangeMap c) w :=
+    (contDiff_exchangeMap c).differentiable two_ne_zero w
+  rw [integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume hs
+    (fun w _ ↦ (hd w).hasFDerivAt.hasFDerivWithinAt) (injective_exchangeMap hc).injOn g]
+  refine integrableOn_congr_fun (fun w hw ↦ ?_) hs
+  rw [abs_of_nonneg (det_fderiv_exchangeMap_nonneg hc w), smul_eq_mul, hg' w hw]
+
 /-- Integrability over the image of a measurable set under `Φ_c` transfers to the density
 pulled back along `Φ_c`. -/
 theorem integrableOn_of_integrableOn_image_exchangeMap (hc₀ : 0 ≤ c)
     (hc₁ : c ≤ 1) {s : Set (ℝ × ℝ)} (hs : MeasurableSet s) {g g' : ℝ × ℝ → ℝ}
     (hg : IntegrableOn g (exchangeMap c '' s))
     (hg' : ∀ w ∈ s, g' w = (fderiv ℝ (exchangeMap c) w).det * g (exchangeMap c w)) :
-    IntegrableOn g' s := by
-  have hc : |c| ≤ 1 := abs_le.2 ⟨by linarith, hc₁⟩
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  have hd (w : ℝ × ℝ) : DifferentiableAt ℝ (exchangeMap c) w :=
-    (contDiff_exchangeMap c).differentiable two_ne_zero w
-  refine ((integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume hs
-    (fun w _ ↦ (hd w).hasFDerivAt.hasFDerivWithinAt) (injective_exchangeMap hc).injOn g).1
-    hg).congr_fun (fun w hw ↦ ?_) hs
-  dsimp only
-  rw [abs_of_nonneg (det_fderiv_exchangeMap_nonneg hc w), smul_eq_mul, hg' w hw]
+    IntegrableOn g' s :=
+  (integrableOn_image_exchangeMap_iff hc₀ hc₁ hs hg').1 hg
 
 section Manifold
 
@@ -649,6 +665,37 @@ theorem integral_hamiltonianCurvature_image_exchangeMap (ω : SmoothTwoForm I M)
     (perturbationPullback_exchangeMap_stdComplexLine hpull).1,
     (perturbationPullback_exchangeMap_stdComplexLine hpull).2]
   simp only [comp_apply]
+
+/-- **Integrability of the curvature transfers along `Φ_c`.** For a datum `K₁` which is `C¹` over
+`S` and whose pullback along `Φ_c` is `K₀`, if the curvature of `K₀` along `u ∘ Φ_c` is integrable
+over a measurable part `s` of `S`, then the curvature of `K₁` along `u` is integrable over the
+image of `s` under `Φ_c`. -/
+theorem integrableOn_hamiltonianCurvature_image_exchangeMap (ω : SmoothTwoForm I M)
+    (hK : ∀ z ∈ thricePuncturedSphereReal, ∀ x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
+      (fun p : ℂ × M ↦ K₁ p.1 p.2) (Complex.equivRealProdCLM.symm z, x))
+    (hpull : ∀ v y x, perturbationPullback (exchangeMap c)
+      (fun z x ↦ K₁ (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K₁ (Complex.equivRealProdCLM.symm z) x Complex.I) v y x =
+        K₀ (Complex.equivRealProdCLM.symm y) x (Complex.equivRealProdCLM.symm v))
+    (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) (u : ℝ × ℝ → M) {s : Set (ℝ × ℝ)} (hs : MeasurableSet s)
+    (hsS : s ⊆ thricePuncturedSphereReal)
+    (hint : IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ K₀ (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K₀ (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z ((u ∘ exchangeMap c) z)) s) :
+    IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ K₁ (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K₁ (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z (u z)) (exchangeMap c '' s) := by
+  refine (integrableOn_image_exchangeMap_iff hc₀ hc₁ hs fun w hw ↦ ?_).2 hint
+  have hS := (exchangeMap_mem_thricePuncturedSphereReal_iff hc₀ hc₁ w).2 (hsS hw)
+  rw [← (perturbationPullback_exchangeMap_stdComplexLine hpull).1,
+    ← (perturbationPullback_exchangeMap_stdComplexLine hpull).2]
+  exact ω.hamiltonianCurvature_perturbationPullback (contDiff_exchangeMap c).contDiffAt
+    (differentiableAt_domain_of_contMDiffAt (hK _ hS _) one_ne_zero _)
+    (differentiableAt_domain_of_contMDiffAt (hK _ hS _) one_ne_zero _)
+    (mdifferentiableAt_target_of_contMDiffAt (hK _ hS _) one_ne_zero _)
+    (mdifferentiableAt_target_of_contMDiffAt (hK _ hS _) one_ne_zero _)
 
 end SmoothTwoForm
 

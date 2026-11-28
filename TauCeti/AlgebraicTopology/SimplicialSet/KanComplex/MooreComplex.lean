@@ -320,13 +320,8 @@ private lemma piToHomology_surjective : Function.Surjective (piToHomology (G := 
   -- map complex `(alternatingFaceMapComplex _).obj G`
   have hx₀ : K[G].d (n + 1) n x = 0 := hx
   have hx' : (PInfty.f (n + 1) : G _⦋n + 1⦌ ⟶ G _⦋n + 1⦌) x ∈
-      ⨅ i : Fin (n + 2), LinearMap.ker (G.δ i).hom := by
-    refine (Submodule.mem_iInf _).2 fun i ↦ LinearMap.mem_ker.2 ?_
-    cases i using Fin.cases with
-    | zero =>
-      rw [← alternatingFaceMapComplex_d_apply_of_δ_succ_eq_zero G (δ_succ_PInfty_f_apply G x),
-        HomologicalComplex.Hom.comm_apply, hx₀, map_zero]
-    | succ i => exact δ_succ_PInfty_f_apply G x i
+      ⨅ i : Fin (n + 2), LinearMap.ker (G.δ i).hom :=
+    (Submodule.mem_iInf _).2 fun i ↦ LinearMap.mem_ker.2 (δ_PInfty_f_apply_of_d_eq_zero G hx₀ i)
   refine ⟨.ofMul (KanComplex.π.mk ((ptSimplexEquiv G).symm ⟨_, hx'⟩)), ?_⟩
   rw [piToHomology_mk, Equiv.apply_symm_apply, mooreCyclesHomologyClass,
     HomologicalComplex.moduleCatHomologyClass_apply]

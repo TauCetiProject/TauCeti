@@ -31,6 +31,8 @@ and unipotence of the image remain subsequent steps.
 * `TauCeti.CommHopfAlgCat.normalSemidirectProduct`: the coordinate Hopf algebra of the
   resulting semidirect product.
 * `TauCeti.CommHopfAlgCat.productMapOfNormal`: the coordinate morphism dual to multiplication.
+  Composed with `normalSemidirectProductIso`, on points it is `(u, t) ↦ u * t`
+  (`TauCeti.CommHopfAlgCat.mapPointsFunctor_productMapOfNormal_comp_hom_app_grpObjPointsMulEquiv`).
 * `TauCeti.CommHopfAlgCat.productOfNormal`: the coordinate Hopf algebra of the product image.
 * `TauCeti.CommHopfAlgCat.productOfNormalGrpObjInclusion`: its categorical closed-subgroup
   inclusion.
@@ -288,6 +290,25 @@ theorem mapPointsFunctor_app_grpObjPointsMulEquiv_normalSemidirect
         H J (op A) (q ≫ CartesianMonoidalCategory.snd (CommHopfAlgCat.grpObj (quotient H I))
           (CommHopfAlgCat.grpObj (quotient H J)))
       simpa only [Category.assoc] using congrArg₂ (· * ·) hleft hright
+
+/-- Multiplication from the normal semidirect product, `productMapOfNormal` composed with
+`normalSemidirectProductIso`, sends a pair `(u, t)` of points of the two factors to the product
+`u * t` of their inclusions into the ambient group. -/
+theorem mapPointsFunctor_productMapOfNormal_comp_hom_app_grpObjPointsMulEquiv
+    (H : _root_.CommHopfAlgCat.{u} R) (I J : HopfIdeal R H) (hI : I.IsNormal)
+    (A : CommAlgCat.{u} R)
+    (q : op A ⟶ (quotientNormalConjugation H I J hI).coordinateHopfAlgebra.grpObj) :
+    (mapPointsFunctor (productMapOfNormal H I J hI ≫
+        (normalSemidirectProductIso H I J hI).hom)).app A (grpObjPointsMulEquiv _ (op A) q) =
+      quotientPointsHom H I A
+          (grpObjPointsMulEquiv _ (op A) (q ≫ CartesianMonoidalCategory.fst _ _)) *
+        quotientPointsHom H J A
+          (grpObjPointsMulEquiv _ (op A) (q ≫ CartesianMonoidalCategory.snd _ _)) := by
+  let _ : IsMonHom.Normal (quotientGrpObjInclusion H I) :=
+    (quotientGrpObjInclusion_normal_iff H I).2 hI
+  refine mapPointsFunctor_app_grpObjPointsMulEquiv_normalSemidirect H I J hI A _ ?_ q
+  rw [grpObjMap_comp]
+  exact grpObjMap_productMapOfNormal H I J hI
 
 variable {k : Type u} [Field k]
 

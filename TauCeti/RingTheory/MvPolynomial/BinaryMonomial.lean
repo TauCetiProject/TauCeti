@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.LinearSubst
+public import TauCeti.RingTheory.MvPolynomial.Finrank
 
 /-!
 # Binary monomials
@@ -19,11 +20,14 @@ standard vectors `TauCeti.polynomialAction` scales `x ^ (d - i) * y ^ i` by
 ## Main definitions
 
 * `TauCeti.polynomialMonomial`: the binary monomial `x ^ (d - i) * y ^ i`, zero for `i > d`.
+* `TauCeti.binaryFormMonomialBasis R w`: the monomial basis `Xʲ Yʷ⁻ʲ`, `0 ≤ j ≤ w`.
 
 ## Main results
 
 * `TauCeti.coeff_polynomialMonomial`: the binary monomial has coefficient `1` at the exponent
   `(d - i, i)` when `i ≤ d`, and `0` elsewhere.
+* `TauCeti.sum_coeff_smul_polynomialMonomial`: a form of degree `d` is the combination of the
+  binary monomials with its coefficients.
 * `TauCeti.polynomialAction_diagonal_polynomialMonomial`: the binary monomial has weight
   `(d - i, i)`.
 
@@ -121,6 +125,22 @@ theorem coeff_polynomialMonomial_of_ne {s : Fin 2 →₀ ℕ}
   rw [coeff_polynomialMonomial, ite_eq_right_iff]
   exact fun h ↦ (hs h.2.symm).elim
 
+/-- **A form is the combination of the binary monomials with its coefficients**: a homogeneous
+polynomial `f` of degree `d` in two variables is `∑_{i ≤ d} f_(d - i, i) e_i^d`, where
+`f_(d - i, i)` is its coefficient at the exponent `(d - i, i)`. -/
+theorem sum_coeff_smul_polynomialMonomial {f : MvPolynomial (Fin 2) R} (hf : f.IsHomogeneous d) :
+    ∑ i ∈ Finset.range (d + 1),
+      f.coeff (Finsupp.single 0 (d - i) + Finsupp.single 1 i) • polynomialMonomial R d i = f := by
+  -- Expand `f` in the monomial basis, reindexed by the exponent of `y` through
+  -- `finsuppDegreeFinTwoEquiv` composed with `Fin.revPerm`.
+  refine Eq.trans ?_ (congrArg Subtype.val (((homogeneousMonomialBasis (R := R) d).reindex
+    ((finsuppDegreeFinTwoEquiv d).trans Fin.revPerm)).sum_repr ⟨f, hf⟩))
+  rw [← Fin.sum_univ_eq_sum_range (fun i : ℕ ↦
+    f.coeff (Finsupp.single 0 (d - i) + Finsupp.single 1 i) • polynomialMonomial R d i),
+    Submodule.coe_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simp [polynomialMonomial_eq_monomial i.is_le, Nat.sub_sub_self i.is_le]
+
 variable (R d i) in
 /-- **The weight of `e_i^d` is `(d - i, i)`**: the diagonal matrix `diag(t₀, t₁)` scales the
 binary monomial `e_i^d` by `t₀ ^ (d - i) * t₁ ^ i`. -/
@@ -133,6 +153,22 @@ theorem polynomialAction_diagonal_polynomialMonomial (t : Fin 2 → R) :
       rescale_X, rescale_X, smul_eq_C_mul, mul_pow, mul_pow, map_mul, map_pow, map_pow]
     ring
   · rw [polynomialMonomial_of_lt (not_le.mp h), map_zero, smul_zero]
+
+/-- The monomial basis `Xʲ Yʷ⁻ʲ`, `0 ≤ j ≤ w`, of the binary forms of degree `w`. -/
+noncomputable def binaryFormMonomialBasis (R : Type*) [CommSemiring R] (w : ℕ) :
+    Module.Basis (Fin (w + 1)) R (homogeneousSubmodule (Fin 2) R w) :=
+  (homogeneousMonomialBasis w).reindex (finsuppDegreeFinTwoEquiv w)
+
+@[simp] theorem coe_binaryFormMonomialBasis {R : Type*} [CommSemiring R] {w : ℕ} (j : Fin (w + 1)) :
+    (binaryFormMonomialBasis R w j : MvPolynomial (Fin 2) R) = X 0 ^ (j : ℕ) * X 1 ^ (w - j) := by
+  simp [binaryFormMonomialBasis, X_pow_eq_monomial, monomial_mul_monomial]
+
+/-- The coordinate of a binary form on `Xʲ Yʷ⁻ʲ` in the monomial basis is its coefficient. -/
+theorem binaryFormMonomialBasis_repr_apply {R : Type*} [CommSemiring R] {w : ℕ}
+    (P : homogeneousSubmodule (Fin 2) R w) (j : Fin (w + 1)) :
+    (binaryFormMonomialBasis R w).repr P j =
+      (P : MvPolynomial (Fin 2) R).coeff (Finsupp.single 0 (j : ℕ) + Finsupp.single 1 (w - j)) := by
+  simp [binaryFormMonomialBasis]
 
 end Monomial
 

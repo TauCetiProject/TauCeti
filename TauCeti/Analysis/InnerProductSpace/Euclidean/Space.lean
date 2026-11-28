@@ -21,7 +21,9 @@ The lemma `TauCeti.finrank_real_euclideanSpace_complex` and the instance
 This is the form of the hypothesis `Fact (finrank ℝ E = n + 1)` under which
 Mathlib puts a manifold structure on the unit sphere of `E`
 (`EuclideanSpace.instChartedSpaceSphere`), so instance search finds the sphere of `ℂᵏ⁺¹`, and its
-quotients, to be manifolds of dimension `2k + 1`. Likewise,
+quotients, to be manifolds of dimension `2k + 1`; the instance
+`TauCeti.factFinrankEuclideanSpaceComplexOneAdd` does the same for the index type `Fin (1 + k)` of
+the block decomposition `ℂ¹⁺ᵏ = ℂ ⊕ ℂᵏ`. Likewise,
 `TauCeti.instFactCardEqFinrankEuclideanSpace` records `Fintype.card ι = Module.finrank 𝕜
 (EuclideanSpace 𝕜 ι)` as a `Fact` for rank-indexed APIs such as
 `TauCeti.OrthonormalFrameBundle.orientedFrames`.
@@ -29,10 +31,35 @@ quotients, to be manifolds of dimension `2k + 1`. Likewise,
 The real coordinates of `ℂⁱ` (`TauCeti.complexEuclideanRealCoords`) identify it `ℝ`-linearly with
 `ℝ²ⁱ`, the real parts of the coordinates first and then their imaginary parts. They carry the
 closed disks in which characteristic maps of CW complexes are defined onto complex Euclidean
-disks.
+disks. The real inner product of `ℂⁱ`, the one for which its unit sphere is a manifold, is the real
+part of its complex inner product (`EuclideanSpace.real_inner_eq_re_inner`). Reindexing the
+coordinates of a real Euclidean vector along an equivalence keeps the sum of their squares, the
+squared norm (`EuclideanSpace.sum_sq_apply_equiv`). The self pairing `star x ⬝ᵥ x` of a vector
+of `𝕜ⁱ` is its squared norm (`EuclideanSpace.star_dotProduct_self_eq_norm_sq`).
 -/
 
 public section
+
+open scoped InnerProductSpace
+
+/-- On `EuclideanSpace ℂ ι`, the real inner product, the sum of the real inner products of the
+coordinates, is the real part of the complex inner product. -/
+theorem EuclideanSpace.real_inner_eq_re_inner {ι : Type*} [Fintype ι]
+    (x y : EuclideanSpace ℂ ι) : ⟪x, y⟫_ℝ = (⟪x, y⟫_ℂ).re := by
+  simp [PiLp.inner_apply, Complex.inner, Complex.re_sum]
+
+/-- Reindexing the coordinates of a real Euclidean vector `v` along an equivalence `e` keeps the
+sum of their squares, `‖v‖²`. -/
+theorem EuclideanSpace.sum_sq_apply_equiv {ι κ : Type*} [Fintype ι] [Fintype κ] (e : κ ≃ ι)
+    (v : EuclideanSpace ℝ ι) : ∑ k, v (e k) ^ 2 = ‖v‖ ^ 2 := by
+  rw [EuclideanSpace.real_norm_sq_eq, e.sum_comp (fun i ↦ v i ^ 2)]
+
+/-- The self pairing `star x ⬝ᵥ x` of a vector of Euclidean space is its squared norm. -/
+theorem EuclideanSpace.star_dotProduct_self_eq_norm_sq {ι 𝕜 : Type*} [Fintype ι] [RCLike 𝕜]
+    (x : EuclideanSpace 𝕜 ι) :
+    star (WithLp.ofLp x) ⬝ᵥ WithLp.ofLp x = ((‖x‖ ^ 2 : ℝ) : 𝕜) := by
+  rw [dotProduct_comm, ← inner_eq_star_dotProduct, inner_self_eq_norm_sq_to_K]
+  norm_cast
 
 namespace TauCeti
 
@@ -52,6 +79,13 @@ and quotients of the sphere, are found to be manifolds of dimension `2k + 1`. -/
 instance factFinrankEuclideanSpaceComplex (k : ℕ) :
     Fact (Module.finrank ℝ (EuclideanSpace ℂ (Fin (k + 1))) = 2 * k + 1 + 1) :=
   ⟨finrank_real_euclideanSpace_complex k⟩
+
+/-- The real dimension of `ℂ¹⁺ᵏ`, indexed by `Fin (1 + k)` as in the block decomposition
+`ℂ¹⁺ᵏ = ℂ ⊕ ℂᵏ`, is `2k + 2`, written as `(2k + 1) + 1` so that its unit sphere is found to be a
+manifold of dimension `2k + 1`. -/
+instance factFinrankEuclideanSpaceComplexOneAdd (k : ℕ) :
+    Fact (Module.finrank ℝ (EuclideanSpace ℂ (Fin (1 + k))) = 2 * k + 1 + 1) :=
+  ⟨by rw [add_comm 1 k]; exact finrank_real_euclideanSpace_complex k⟩
 
 /-- The cardinality of `ι` equals the dimension of `EuclideanSpace 𝕜 ι`, recorded as a `Fact` for
 rank-indexed APIs such as `TauCeti.OrthonormalFrameBundle.orientedFrames`. -/

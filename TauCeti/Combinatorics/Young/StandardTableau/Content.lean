@@ -5,17 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Young.StandardTableau.Basic
+public import TauCeti.Combinatorics.Young.StandardTableau.Corner.Basic
 import TauCeti.Combinatorics.Young.HookLength.Basic
 import TauCeti.Combinatorics.Young.StandardTableau.Order
+import TauCeti.Combinatorics.Young.StandardTableau.Separation
 import TauCeti.GroupTheory.Perm.Fin
 
 /-!
-# Contents of nearby labels in standard Young tableaux
+# Contents of labels in standard Young tableaux
 
 The content of a label `k` in a tableau `t` is `YoungTableau.labelContent t k`, the column minus the
-row of the cell carrying `k`. This file records the facts about the contents of the labels
-`k`, `k + 1` and `k + 2` of a standard Young tableau that govern Young's seminormal form, in which
+row of the cell carrying `k`. This file records the facts about the contents of the labels of a
+standard Young tableau that govern Young's seminormal form, chiefly of the nearby labels `k`,
+`k + 1` and `k + 2`: in that form
 the simple transposition of `k` and `k + 1` acts through the *axial distance*
 `labelContent T (k + 1) - labelContent T k`:
 
@@ -38,7 +40,17 @@ the simple transposition of `k` and `k + 1` acts through the *axial distance*
   other in one row or one column (`TauCeti.StandardYoungTableau.swap`); this changes the tableau
   (`TauCeti.StandardYoungTableau.swap_ne_self`) and negates the axial distance
   (`TauCeti.YoungTableau.axialDistance_relabel_swap`); otherwise the exchange is not standard
-  (`TauCeti.StandardYoungTableau.exists_toTableau_eq_relabel_swap_iff`).
+  (`TauCeti.StandardYoungTableau.exists_toTableau_eq_relabel_swap_iff`);
+* restoring a deleted corner with the largest label (`TauCeti.StandardYoungTableau.extend`) keeps
+  the contents and axial distances of the other labels
+  (`TauCeti.StandardYoungTableau.labelContent_extend`,
+  `TauCeti.StandardYoungTableau.axialDistance_extend`) and commutes with exchanging labels
+  (`TauCeti.StandardYoungTableau.extend_swap`), so exchanging two labels other than the largest
+  does not change whether a tableau is obtained by restoring a given corner
+  (`TauCeti.StandardYoungTableau.swap_mem_range_extend_iff`);
+* a standard tableau is determined by the contents of all its labels
+  (`TauCeti.StandardYoungTableau.labelContent_injective`), so the Jucys–Murphy eigenvalues of
+  Young's seminormal basis vectors tell the tableaux apart.
 
 ## References
 
@@ -303,6 +315,89 @@ theorem swap_ne_self (k : ℕ) (hk : k + 1 < μ.card) (h) : T.swap k hk h ≠ T 
 @[simp]
 theorem swap_swap (k : ℕ) (hk : k + 1 < μ.card) (h h') : (T.swap k hk h).swap k hk h' = T :=
   toTableau_injective (by simp)
+
+/-! ### Restoring a deleted corner -/
+
+variable {c : ℕ × ℕ}
+
+/-- Restoring a deleted corner, which carries the new largest label, keeps the contents of the
+other labels. -/
+@[simp]
+theorem labelContent_extend (hc : YoungDiagram.IsCorner μ c)
+    (T : StandardYoungTableau (YoungDiagram.erase μ c)) (k : Fin (YoungDiagram.erase μ c).card) :
+    YoungTableau.labelContent (extend hc T).toTableau (Fin.cast hc.card_erase k.castSucc) =
+      YoungTableau.labelContent T.toTableau k := by
+  obtain ⟨d, rfl⟩ := T.surjective k
+  have hne : d.val ≠ c := (hc.mem_erase_iff.mp d.property).2
+  have hd : Fin.cast hc.card_erase (T d).castSucc =
+      extend hc T ⟨d.val, YoungDiagram.mem_of_mem_erase d.property⟩ :=
+    Fin.ext (by rw [extend_apply_val_of_ne hc T _ hne]; rfl)
+  rw [hd, ← toTableau_apply, ← toTableau_apply, YoungTableau.labelContent_apply,
+    YoungTableau.labelContent_apply]
+
+/-- Restoring a deleted corner keeps the axial distances of the labels of the smaller tableau. -/
+@[simp]
+theorem axialDistance_extend (hc : YoungDiagram.IsCorner μ c)
+    (T : StandardYoungTableau (YoungDiagram.erase μ c)) (k : ℕ)
+    (hk : k + 1 < (YoungDiagram.erase μ c).card) :
+    YoungTableau.axialDistance (extend hc T).toTableau k (by have := hc.card_erase; omega) =
+      YoungTableau.axialDistance T.toTableau k hk := by
+  simp [YoungTableau.axialDistance_def, ← labelContent_extend hc T]
+
+/-- Restoring a deleted corner commutes with exchanging two labels of the smaller tableau. -/
+theorem extend_swap (hc : YoungDiagram.IsCorner μ c)
+    (T : StandardYoungTableau (YoungDiagram.erase μ c)) (k : ℕ)
+    (hk : k + 1 < (YoungDiagram.erase μ c).card)
+    (h : |YoungTableau.axialDistance T.toTableau k hk| ≠ 1) :
+    extend hc (T.swap k hk h) = (extend hc T).swap k (by have := hc.card_erase; omega)
+      (by rwa [axialDistance_extend hc T k hk]) := by
+  have hcard := hc.card_erase
+  refine DFunLike.ext _ _ fun d => Fin.ext ?_
+  rw [swap_apply, ← Fin.val_injective.swap_apply]
+  by_cases hd : d.val = c
+  · rw [extend_apply_val_of_eq hc _ d hd, extend_apply_val_of_eq hc _ d hd]
+    exact (Equiv.swap_apply_of_ne_of_ne (by simp only; omega) (by simp only; omega)).symm
+  · rw [extend_apply_val_of_ne hc _ d hd, extend_apply_val_of_ne hc _ d hd, swap_apply,
+      ← Fin.val_injective.swap_apply]
+
+/-- Exchanging two labels of a tableau that are not its largest one does not change whether that
+tableau is obtained by restoring the corner `c`. -/
+theorem swap_mem_range_extend_iff (hc : YoungDiagram.IsCorner μ c) (T : StandardYoungTableau μ)
+    (k : ℕ) (hk : k + 1 < (YoungDiagram.erase μ c).card)
+    (h : |YoungTableau.axialDistance T.toTableau k (by have := hc.card_erase; omega)| ≠ 1) :
+    T.swap k _ h ∈ Set.range (extend hc) ↔ T ∈ Set.range (extend hc) := by
+  have hcard := hc.card_erase
+  -- in both directions, exchanging the labels in the smaller tableau gives the preimage
+  have key (U : StandardYoungTableau μ) (V : StandardYoungTableau (YoungDiagram.erase μ c))
+      (hV : extend hc V = U) (h' : |YoungTableau.axialDistance U.toTableau k (by omega)| ≠ 1) :
+      U.swap k (by omega) h' ∈ Set.range (extend hc) := by
+    have hV' : |YoungTableau.axialDistance V.toTableau k hk| ≠ 1 := by
+      rwa [← axialDistance_extend hc V k hk, hV]
+    refine ⟨V.swap k hk hV', toTableau_injective ?_⟩
+    rw [extend_swap, toTableau_swap, toTableau_swap, hV]
+  refine ⟨fun ⟨V, hV⟩ => ?_, fun ⟨V, hV⟩ => key T V hV h⟩
+  have h' : |YoungTableau.axialDistance (T.swap k (by omega) h).toTableau k (by omega)| ≠ 1 := by
+    rwa [toTableau_swap, YoungTableau.axialDistance_relabel_swap, abs_neg]
+  simpa using key _ V hV h'
+
+end StandardYoungTableau
+
+/-! ### A standard tableau is determined by the contents of its labels -/
+
+namespace StandardYoungTableau
+
+/-- **A standard Young tableau is determined by the contents of its labels**, as it is by their
+rows (`TauCeti.StandardYoungTableau.rowIndex_injective`). -/
+theorem labelContent_injective (μ : YoungDiagram) :
+    Function.Injective fun T : StandardYoungTableau μ => YoungTableau.labelContent T.toTableau := by
+  have h (p : μ.card.Partition) :
+      Function.Injective (fun T : StandardYoungTableau (YoungDiagram.ofPartition p) =>
+        YoungTableau.labelContent T.toTableau) := by
+    intro T U hTU
+    exact sigma_mk_injective (i := p) (sigma_comp_labelContent_injective_of_injOn_addables id
+      (fun D _ => D.injOn_cellContent) (a₁ := ⟨p, T⟩) (a₂ := ⟨p, U⟩)
+      (funext fun i => congrFun hTU _))
+  exact YoungDiagram.ofPartition_toPartition (μ := μ) rfl ▸ h (μ.toPartition rfl)
 
 end StandardYoungTableau
 

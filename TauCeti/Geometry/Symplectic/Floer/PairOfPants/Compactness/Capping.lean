@@ -9,7 +9,12 @@ public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capping
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Manifold.Capping
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.CappedCylinder
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Compactness
+import TauCeti.Algebra.Ring.Periodic
+import TauCeti.Analysis.Calculus.ContDiff.Pi
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Compactness of the capping family
@@ -50,9 +55,29 @@ a compact `K ⊆ V`, has a subsequence whose neck lengths converge to some `L₀
 converges locally uniformly on `Ω` off a finite set `Z` of bubbling points, with
 `#Z * δ ≤ A + B_1 + (B_0 + B_1 + B_∞)`.
 `exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_cappingAlmostComplex`
-applies it to the structures of the capping family. The regularity of the limit, the bubbles at
-the points of `Z`, breaking at the two ends and the long-neck end `L → ∞` of the family are not
-treated here.
+applies it to the structures of the capping family.
+
+**The long-neck end.** As `L → ∞` the capped plane breaks into the pair of pants and the inserted
+negative plane. Let `ψ_L` be the plumbing chart of the end at `1`, which carries the plane into the
+capped plane. Its pole `0` goes to the capped puncture `1`, and the point `1` of the plane is
+filled in as well, since the plane datum vanishes on the pole disc `‖w‖ ≤ 2 exp (2π)`. Outside the
+circle `s_∞ = -L/2` of the end of the plane, the pullback of `K_L` along `ψ_L` is the negative plane
+datum of `Hb 1` (`TauCeti.Floer.perturbationPullback_realChart_plumbedPerturbation_single_inf`).
+This region contains the pole, and it exhausts the plane as `L → ∞`. Since `ψ_L` is holomorphic,
+`u ∘ ψ_L` solves the Floer equation of the plane there
+(`SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_realChart_plumbingMap_single_inf`), and
+its energy over a region is the energy of `u` over the image
+(`SymplecticForm.integral_floerEnergyDensity_image_plumbingMap_single_inf`). Hence, for solutions
+with Floer energy at most `E` and any neck lengths `Lₖ` that are large enough for a compact window
+`D'` of the plane, the maps `uₖ ∘ ψ_{Lₖ}` converge on `D'` off finitely many bubbling points, the
+pole included (`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_capping_plane`).
+Together with the convergence on a truncation of the pair of pants, which is the plumbed case
+`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_plumbedPerturbation`, this gives
+one subsequence converging on both pieces
+(`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_capping_longNeck`).
+
+The regularity of the limits, the bubbles at the points of `Z`, breaking at the two ends and the
+Floer cylinders that break off along the neck are not treated here.
 
 **Manifold targets.** For a target manifold `M` with a nondegenerate two-form `ω`, such as a
 closed symplectic manifold, the family is built from the structures
@@ -266,6 +291,182 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
     (eq_endCenter_one_or_of_ne_zero hz) x
   exact (hfam.comp (L, z, x)
     contMDiff_prodMap_equivRealProdCLM_symm.contMDiffAt).contDiffAt.contDiffWithinAt
+
+/-! ### The long-neck end of the capping family -/
+
+section LongNeck
+
+open TauCeti.Complex (realChart equivRealProdCLM_symm_realChart realChart_injective)
+open scoped NNReal Real
+open TauCeti.MeasureTheory
+
+/-- **The plane piece at the long-neck end of the capping family.** Let `Hb` be period-one `C³`
+Hamiltonians, and let `K_L` be the capping datum obtained by plumbing the negative plane with
+Hamiltonian `Hb 1` into the input end at `1` of the pair of pants with Hamiltonians `Hb`, along a
+neck of length `L`; let `ψ_L` be the plumbing chart, from the plane into the capped plane
+`ℂ ∖ {0}`. Fix a compact window `D'` of the plane inside the disc `‖w‖ ≤ 2 exp (2πρ)`, a compact
+`K ⊆ V` and a `C²` family `J'` of structures on the plane, tamed by `ω` on `D' × K`. There is a
+threshold `δ > 0` with the following property. Let `uₖ` be `C³` solutions on the capped plane of
+the Floer equation of `K_{Lₖ}`, for structures `Jₖ`, with Floer energy at most `E` and neck lengths
+`Lₖ > 4` with `Lₖ ≥ 2ρ`, and let `Ω' ⊆ D'` be open, with `Jₖ ∘ ψ_{Lₖ} = J'` and
+`uₖ(ψ_{Lₖ}(Ω')) ⊆ K` there. Then the maps `uₖ ∘ ψ_{Lₖ}`, which solve the Floer equation of the
+negative plane datum of `Hb 1`, have a subsequence which converges locally uniformly on `Ω'` off a
+finite set `Z'` of bubbling points, with `#Z' * δ ≤ E`, every disc about a point of `Z'` eventually
+carrying energy at least `δ`, and differentials uniformly bounded on every compact subset of
+`Ω' \ Z'`. The window `D'` may contain the pole `0` of the plane and the point `1`, where the
+capping fills in the punctures of the inserted piece. -/
+theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_capping_plane
+    (ω : SymplecticForm V) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContDiff ℝ 3 (uncurry (Hb r))) {ρ : ℝ}
+    {D' : Set (ℝ × ℝ)} (hD' : IsCompact D')
+    (hD'ρ : ∀ w ∈ D', ‖equivRealProdCLM.symm w‖ ≤ 2 * Real.exp (2 * π * ρ))
+    {K : Set V} (hK : IsCompact K) {J' : ℝ × ℝ → V → AlmostComplexStructure V}
+    (hJ' : ContDiff ℝ 2 fun p : (ℝ × ℝ) × V ↦ (J' p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJ't : ∀ w ∈ D', ∀ x ∈ K, ω.Tames (J' w x)) :
+    ∃ δ > (0 : ℝ), ∀ ⦃Ω' : Set (ℝ × ℝ)⦄ ⦃L : ℕ → ℝ⦄ ⦃u : ℕ → ℝ × ℝ → V⦄
+      ⦃Jk : ℕ → ℝ × ℝ → V → AlmostComplexStructure V⦄ ⦃E : ℝ≥0⦄,
+      IsOpen Ω' → Ω' ⊆ D' → (∀ k, 4 < L k) → (∀ k, 2 * ρ ≤ L k) →
+      (∀ k, ContDiffOn ℝ 3 (u k) {z | equivRealProdCLM.symm z ≠ 0}) →
+      (∀ k z, equivRealProdCLM.symm z ≠ 0 →
+        IsComplexLinearMap (AlmostComplexStructure.product ℝ) (Jk k z (u k z))
+          (ω.perturbedFDeriv
+            (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L k)
+              (equivRealProdCLM.symm z) x 1)
+            (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L k)
+              (equivRealProdCLM.symm z) x I)
+            (u k) z : ℝ × ℝ →ₗ[ℝ] V)) →
+      (∀ k, ∀ w ∈ Ω', Jk k (realChart (one.plumbingMap (L k)) w) = J' w) →
+      (∀ k, ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
+          (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L k)
+            (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L k)
+            (equivRealProdCLM.symm z) x I) (u k) z) ≤ E) →
+      (∀ k, MapsTo (u k ∘ realChart (one.plumbingMap (L k))) Ω' K) →
+      ∃ (φ : ℕ → ℕ) (Z' : Finset (ℝ × ℝ)) (v' : ℝ × ℝ → V), StrictMono φ ∧
+        ↑Z' ⊆ Ω' ∧ Z'.card * δ ≤ E ∧
+        (∀ z ∈ Z', ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω', ω.floerEnergyDensity
+          (fun z x ↦ negativePlanePerturbation (Hb one) (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ negativePlanePerturbation (Hb one) (equivRealProdCLM.symm z) x I)
+          (u (φ n) ∘ realChart (one.plumbingMap (L (φ n)))) y) ∧
+        (∀ C', IsCompact C' → C' ⊆ Ω' \ ↑Z' → ∃ M, ∀ n, ∀ y ∈ C',
+          ‖fderiv ℝ (u (φ n) ∘ realChart (one.plumbingMap (L (φ n)))) y‖ ≤ M) ∧
+        ContinuousOn v' (Ω' \ ↑Z') ∧ MapsTo v' (Ω' \ ↑Z') K ∧
+        TendstoLocallyUniformlyOn (fun n ↦ u (φ n) ∘ realChart (one.plumbingMap (L (φ n)))) v'
+          atTop (Ω' \ ↑Z') := by
+  -- The plane datum is smooth on the whole plane, including the pole.
+  have hKp (v : ℂ) : ContDiffOn ℝ 3
+      (uncurry fun z x ↦ negativePlanePerturbation (Hb one) (equivRealProdCLM.symm z) x v) univ :=
+    (contDiff_negativePlanePerturbation_apply (hHb one) (hHbs one) v).contDiffOn
+  obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
+    isOpen_univ (hKp 1) (hKp I) hJ'.contDiffOn hD' hK (subset_univ _) hJ't
+  refine ⟨δ, hδ, fun Ω' L u Jk E hΩ' hΩ'D hL4 hLρ hu hfl hJΩ' hE huK' ↦ ?_⟩
+  set P : Set (ℝ × ℝ) := {z | equivRealProdCLM.symm z ≠ 0}
+  set ψ : ℕ → ℝ × ℝ → ℝ × ℝ := fun k ↦ realChart (one.plumbingMap (L k))
+  have hψs (k : ℕ) : ContDiff ℝ 3 (ψ k) := contDiff_realChart_plumbingMap one (L k)
+  -- The window `D'` lies outside the circle `s_∞ = -Lₖ/2`, and `ψₖ` carries it into `ℂ ∖ {0}`.
+  have hwL (k : ℕ) {w : ℝ × ℝ} (hw : w ∈ D') :
+      inf.endSign * (inf.endCoord (equivRealProdCLM.symm w)).re ≤ L k / 2 :=
+    endSign_mul_re_endCoord_inf_le (by linarith [hL4 k]) (hLρ k) (hD'ρ w hw)
+  have hψP (k : ℕ) {w : ℝ × ℝ} (hw : w ∈ D') : ψ k w ∈ P := by
+    simp only [P, ψ, mem_ofPred_eq, equivRealProdCLM_symm_realChart]
+    exact plumbingMap_ne_zero_of_endSign_mul_re_endCoord_le (by linarith [hL4 k]) (hwL k hw)
+  have hPo : IsOpen P := isOpen_ne_fun equivRealProdCLM.symm.continuous continuous_const
+  refine hconv hΩ' hΩ'D (fun k ↦ (hu k).comp (hψs k).contDiffOn fun _ hw ↦ hψP k (hΩ'D hw))
+    (fun k w hw ↦ ?_) huK' (fun k ↦ ?_) fun k ↦ ?_
+  · -- `uₖ ∘ ψₖ` solves the Floer equation of the plane datum.
+    have h := hfl k (ψ k w) (hψP k (hΩ'D hw))
+    rw [hJΩ' k w hw] at h
+    exact ω.isComplexLinearMap_perturbedFDeriv_comp_realChart_plumbingMap_single_inf (by simp) hHb
+      (fun r ↦ (hHbs r).of_le (by norm_num)) (hL4 k) (hwL k (hΩ'D hw))
+      (((hu k).differentiableOn (by norm_num)).differentiableAt (hPo.mem_nhds (hψP k (hΩ'D hw))))
+      h
+  · -- Its energy density is continuous on a neighbourhood of `D'`, hence integrable on `Ω'`.
+    refine (((ω.continuousOn_floerEnergyDensity (hPo.preimage (hψs k).continuous)
+      (((hu k).comp (hψs k).contDiffOn fun _ hw ↦ hw).of_le (by norm_num))
+      (((hKp 1).mono (subset_univ _)).of_le (by norm_num))
+      (((hKp I).mono (subset_univ _)).of_le (by norm_num))).mono
+        fun w hw ↦ hψP k hw).integrableOn_compact hD').mono_set hΩ'D
+  · -- Its energy over `Ω'` is the energy of `uₖ` over `ψₖ(Ω')`, at most `E`.
+    rw [← ω.integral_floerEnergyDensity_image_plumbingMap_single_inf (by simp) hHb
+      (fun r ↦ (hHbs r).of_le (by norm_num)) (hL4 k) hΩ'.measurableSet
+      (fun w hw ↦ hwL k (hΩ'D hw)) (((hu k).differentiableOn (by norm_num)).mono
+        fun z hz ↦ hz.elim
+          (fun h ↦ by simp only [P, mem_ofPred_eq, h, endCenter_one]; exact one_ne_zero) And.left)]
+    exact (ENNReal.ofReal_le_ofReal_iff E.coe_nonneg).1 (ofReal_integral_le_lintegral_ofReal.trans
+      ((setLIntegral_le_lintegral _ _).trans ((hE k).trans_eq ENNReal.ofReal_coe_nnreal.symm)))
+
+/-- **Compactness at the long-neck end of the capping family.** In the setting of
+`SymplecticForm.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_capping_plane`, fix
+moreover a truncation `S_R` of the pair of pants and a `C²` family `J` of structures on it, tamed by
+`ω` on `S_R × K`. There is a threshold `δ > 0` with the following property. Let `uₖ` be as there,
+with also `Lₖ ≥ 2R + 2`, and let `Ω ⊆ S_R` be open with `Jₖ = J` and `uₖ(Ω) ⊆ K` there. Then
+along a single subsequence `uₖ` converges locally uniformly on `Ω` off a finite set `Z`, and
+`uₖ ∘ ψ_{Lₖ}` converges locally uniformly on `Ω'` off a finite set `Z'`, with `#Z * δ ≤ E` and
+`#Z' * δ ≤ E`. As the necks stretch, the capping family thus converges on the pair of pants and on
+the inserted plane, including its pole. -/
+theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_capping_longNeck
+    (ω : SymplecticForm V) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContDiff ℝ 3 (uncurry (Hb r))) (R : ℝ) {ρ : ℝ}
+    {D' : Set (ℝ × ℝ)} (hD' : IsCompact D')
+    (hD'ρ : ∀ w ∈ D', ‖equivRealProdCLM.symm w‖ ≤ 2 * Real.exp (2 * π * ρ))
+    {K : Set V} (hK : IsCompact K) {J J' : ℝ × ℝ → V → AlmostComplexStructure V}
+    (hJ : ContDiffOn ℝ 2 (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+      (thricePuncturedSphereReal ×ˢ univ))
+    (hJt : ∀ z ∈ equivRealProdCLM.symm ⁻¹' truncation R, ∀ x ∈ K, ω.Tames (J z x))
+    (hJ' : ContDiff ℝ 2 fun p : (ℝ × ℝ) × V ↦ (J' p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJ't : ∀ w ∈ D', ∀ x ∈ K, ω.Tames (J' w x)) :
+    ∃ δ > (0 : ℝ), ∀ ⦃Ω Ω' : Set (ℝ × ℝ)⦄ ⦃L : ℕ → ℝ⦄ ⦃u : ℕ → ℝ × ℝ → V⦄
+      ⦃Jk : ℕ → ℝ × ℝ → V → AlmostComplexStructure V⦄ ⦃E : ℝ≥0⦄,
+      IsOpen Ω → Ω ⊆ equivRealProdCLM.symm ⁻¹' truncation R → IsOpen Ω' → Ω' ⊆ D' →
+      (∀ k, 4 < L k) → (∀ k, 2 * R + 2 ≤ L k) → (∀ k, 2 * ρ ≤ L k) →
+      (∀ k, ContDiffOn ℝ 3 (u k) {z | equivRealProdCLM.symm z ≠ 0}) →
+      (∀ k z, equivRealProdCLM.symm z ≠ 0 →
+        IsComplexLinearMap (AlmostComplexStructure.product ℝ) (Jk k z (u k z))
+          (ω.perturbedFDeriv
+            (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L k)
+              (equivRealProdCLM.symm z) x 1)
+            (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L k)
+              (equivRealProdCLM.symm z) x I)
+            (u k) z : ℝ × ℝ →ₗ[ℝ] V)) →
+      (∀ k, ∀ z ∈ Ω, Jk k z = J z) →
+      (∀ k, ∀ w ∈ Ω', Jk k (realChart (one.plumbingMap (L k)) w) = J' w) →
+      (∀ k, ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
+          (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L k)
+            (equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one (L k)
+            (equivRealProdCLM.symm z) x I) (u k) z) ≤ E) →
+      (∀ k, MapsTo (u k) Ω K) →
+      (∀ k, MapsTo (u k ∘ realChart (one.plumbingMap (L k))) Ω' K) →
+      ∃ (φ : ℕ → ℕ) (Z Z' : Finset (ℝ × ℝ)) (v v' : ℝ × ℝ → V), StrictMono φ ∧
+        ↑Z ⊆ Ω ∧ Z.card * δ ≤ E ∧ ↑Z' ⊆ Ω' ∧ Z'.card * δ ≤ E ∧
+        ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
+        TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) ∧
+        ContinuousOn v' (Ω' \ ↑Z') ∧ MapsTo v' (Ω' \ ↑Z') K ∧
+        TendstoLocallyUniformlyOn (fun n ↦ u (φ n) ∘ realChart (one.plumbingMap (L (φ n)))) v'
+          atTop (Ω' \ ↑Z') := by
+  -- On the receiving pair of pants, the plumbed theorem applies with no inserted window.
+  obtain ⟨δ₁, hδ₁, hconv₁⟩ :=
+    ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_plumbedPerturbation
+      (Ha := Pi.single inf (Hb one)) (q := one) (by simp) (fun r ↦ (hHb one).piSingle_apply inf r)
+      hHb (fun r ↦ (hHbs one).uncurry_piSingle_apply inf r) hHbs (by simp) R hK hJ hJt hJ hJt
+  obtain ⟨δ₂, hδ₂, hconv₂⟩ :=
+    ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_capping_plane hHb hHbs hD' hD'ρ
+      hK hJ' hJ't
+  refine ⟨min δ₁ δ₂, lt_min hδ₁ hδ₂, fun Ω Ω' L u Jk E hΩ hΩT hΩ' hΩ'D hL4 hLR hLρ hu hfl hJΩ
+    hJΩ' hE huK huK' ↦ ?_⟩
+  obtain ⟨φ, Z, -, v, -, hφ, hZΩ, hZE, -, -, hvc, hvK, hlim, -⟩ := hconv₁ hΩ hΩT isOpen_empty
+    (empty_subset _) hL4 hLR (fun k ↦ (hu k).mono fun _ hz ↦ hz.1.1)
+    (fun k z hz ↦ hfl k z hz.1.1) hJΩ (fun _ _ h ↦ h.elim) hE huK fun _ ↦ mapsTo_empty _ _
+  -- On the inserted plane, along the same subsequence.
+  obtain ⟨φ', Z', v', hφ', hZΩ', hZE', -, -, hvc', hvK', hlim'⟩ := hconv₂ hΩ' hΩ'D
+    (fun n ↦ hL4 (φ n)) (fun n ↦ hLρ (φ n)) (fun n ↦ hu (φ n)) (fun n ↦ hfl (φ n))
+    (fun n ↦ hJΩ' (φ n)) (fun n ↦ hE (φ n)) fun n ↦ huK' (φ n)
+  refine ⟨φ ∘ φ', Z, Z', v, v', hφ.comp hφ', hZΩ,
+    (mul_le_mul_of_nonneg_left (min_le_left δ₁ δ₂) (Nat.cast_nonneg _)).trans hZE, hZΩ',
+    (mul_le_mul_of_nonneg_left (min_le_right δ₁ δ₂) (Nat.cast_nonneg _)).trans hZE', hvc, hvK,
+    hlim.comp_tendsto hφ'.tendsto_atTop, hvc', hvK', hlim'⟩
+
+end LongNeck
 
 end TauCeti.SymplecticForm
 

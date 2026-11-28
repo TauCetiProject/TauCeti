@@ -34,7 +34,8 @@ fillings, along the opposite.
   invariance of boundary extension under reversal.
 * `SSet.horn.opIso`, `SSet.horn.exists_extension_iff_op`: horn reversal `(Λ[n, i])ᵒᵖ ≅ Λ[n, i.rev]`,
   compatible with horn inclusions and edges, and invariance of horn extension under reversal.
-* `SSet.Edge.opEquiv`: the edges of `Xᵒᵖ` are the edges of `X` with source and target exchanged.
+* `SSet.Edge.opEquiv`: the edges of `Xᵒᵖ` are the edges of `X` with source and target exchanged,
+  compatibly with images along maps (`SSet.Edge.opEquiv_map_edge`).
 * `SSet.Edge.CompStruct.opEquiv`: a `2`-simplex of `X` exhibiting `e₀₂` as a composite of `e₀₁`
   and `e₁₂` is a `2`-simplex of `Xᵒᵖ` exhibiting the opposite of `e₀₂` as a composite of the
   opposites of `e₁₂` and `e₀₁`.
@@ -54,6 +55,17 @@ namespace SSet
 faithful. -/
 instance : opFunctor.{u}.IsEquivalence :=
   opEquivalence.isEquivalence_functor
+
+/-- The hom-equivalence of the self-adjunction `SSet.opEquivalence.toAdjunction` of
+`SSet.opFunctor` sends a map `f : Xᵒᵖ ⟶ Y` to the map `X ⟶ Yᵒᵖ` acting on simplices as `f`,
+through the identifications `SSet.opObjEquiv` of the simplices of an opposite. This holds by
+definition: the unit of `SSet.opEquivalence` is the identity on simplices. -/
+lemma opEquivalence_toAdjunction_homEquiv_app {X Y : SSet.{u}} (f : X.op ⟶ Y)
+    {n : SimplexCategoryᵒᵖ} (x : X.obj n) :
+    (Adjunction.homEquiv (F := opFunctor) (G := opFunctor) opEquivalence.toAdjunction X Y
+      f).app n x =
+      opObjEquiv.symm (f.app n (opObjEquiv.symm x)) :=
+  rfl
 
 namespace stdSimplex
 
@@ -380,6 +392,11 @@ lemma opEquiv_id (x : X _⦋0⦌) : opEquiv (id x) = id (X.opObjEquiv.symm x) :=
   ext
   simp
 
+/-- Reversing an edge commutes with taking its image along a map. -/
+lemma opEquiv_map_edge {Y : SSet.{u}} (e : X.Edge x₀ x₁) (g : X ⟶ Y) :
+    (opEquiv (e.map g)).edge = ((opEquiv e).map (opFunctor.map g)).edge := by
+  rw [Edge.map_edge, opEquiv_edge, Edge.map_edge, opEquiv_edge, opFunctor_map]; rfl
+
 namespace CompStruct
 
 variable {e₀₁ : X.Edge x₀ x₁} {e₁₂ : X.Edge x₁ x₂} {e₀₂ : X.Edge x₀ x₂}
@@ -432,6 +449,26 @@ lemma opEquiv_inv (I : e.InvStruct) : (opEquiv I).inv = Edge.opEquiv I.inv :=
 @[simp]
 lemma opEquiv_symm_inv (I : (Edge.opEquiv e).InvStruct) :
     (opEquiv.symm I).inv = Edge.opEquiv.symm I.inv :=
+  (rfl)
+
+@[simp]
+lemma opEquiv_homInvId_simplex (I : e.InvStruct) :
+    (opEquiv I).homInvId.simplex = X.opObjEquiv.symm I.invHomId.simplex :=
+  (rfl)
+
+@[simp]
+lemma opEquiv_invHomId_simplex (I : e.InvStruct) :
+    (opEquiv I).invHomId.simplex = X.opObjEquiv.symm I.homInvId.simplex :=
+  (rfl)
+
+@[simp]
+lemma opEquiv_symm_homInvId_simplex (I : (Edge.opEquiv e).InvStruct) :
+    (opEquiv.symm I).homInvId.simplex = X.opObjEquiv I.invHomId.simplex :=
+  (rfl)
+
+@[simp]
+lemma opEquiv_symm_invHomId_simplex (I : (Edge.opEquiv e).InvStruct) :
+    (opEquiv.symm I).invHomId.simplex = X.opObjEquiv I.homInvId.simplex :=
   (rfl)
 
 end InvStruct

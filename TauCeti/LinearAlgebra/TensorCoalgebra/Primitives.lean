@@ -28,6 +28,11 @@ letter, and cutting is injective, so no component of length at least two can sur
 * `TauCeti.ReducedTensorWords.deconcatenation_prepend`: the cuts of a prepended word.
 * `TauCeti.ReducedTensorWords.prepend_ofLetter` and
   `TauCeti.ReducedTensorWords.deconcatenation_of_two`: the two-letter word and its only cut.
+* `TauCeti.ReducedTensorWords.map_letter_letter_deconcatenation_of_ne_two`: `letter ⊗ letter`
+  annihilates the deconcatenation of any pure word of length other than two.
+* `TauCeti.ReducedTensorWords.eq_zero_of_factor_letter_pair`: any linear map factoring through
+  `(f ∘ₗ letter) ⊗ (g ∘ₗ letter) ∘ₗ deconcatenation` vanishes on pure words of length other than
+  two.
 * `TauCeti.ReducedTensorWords.letter_comp_map`: the letter of a letterwise-mapped word is the
   image of its letter.
 * `TauCeti.ReducedTensorWords.deconcatenation_eq_zero_iff`: the primitives of the reduced tensor
@@ -66,6 +71,12 @@ theorem ofLetter_eq_of_tprod (a : M) :
     ofLetter R M a = of R M 1 (PiTensorProduct.tprod R fun _ ↦ a) := by
   rw [ofLetter, LinearMap.comp_apply, LinearEquiv.coe_coe, TensorPower.oneEquiv_symm_apply]
   rfl
+
+/-- A pure tensor word of length one equals the single letter at index `0`. -/
+theorem of_one_tprod {hn : 0 < 1} (x : Fin 1 → M) :
+    of R M ⟨1, hn⟩ (PiTensorProduct.tprod R x) = ofLetter R M (x 0) := by
+  rw [ofLetter_eq_of_tprod]
+  exact of_tprod_congr R M hn rfl <| Fin.forall_fin_one.2 rfl
 
 /-- The length-one component of a single letter is that letter under the tensor-power
 identification. -/
@@ -201,6 +212,36 @@ theorem letter_of_tprod {n : ℕ} (hn : 0 < n) (z : ℕ → M) :
     rw [subword_one R M _ Nat.one_pos, letter_ofLetter]
   · exact letter_subword_of_ne_one R M _ 0 h
 
+/-- Applying `letter ⊗ letter` to the deconcatenation of a pure word of length other than two gives
+zero, because every nontrivial cut leaves a factor of length at least two. -/
+theorem map_letter_letter_deconcatenation_of_ne_two (n : {n : ℕ // 0 < n}) (hn : n.val ≠ 2)
+    (x : Fin n.val → M) :
+    TensorProduct.map (letter R M) (letter R M)
+      (deconcatenation R M (of R M n (PiTensorProduct.tprod R x))) = 0 := by
+  have hn0 : 0 < n.val := n.property
+  rw [of_tprod_eq_subword R hn0, deconcatenation_subword, map_sum]
+  refine Finset.sum_eq_zero fun d hd ↦ ?_
+  rw [Finset.mem_Ioo] at hd
+  rw [TensorProduct.map_tmul]
+  by_cases hd1 : d = 1
+  · rw [zero_add, letter_subword_of_ne_one R M x d (by omega), TensorProduct.tmul_zero]
+  · rw [letter_subword_of_ne_one R M x 0 hd1, TensorProduct.zero_tmul]
+
+/-- Any linear map factoring through `(letter ⊗ letter) ∘ deconcatenation` vanishes on pure words
+of length other than two. -/
+theorem eq_zero_of_factor_letter_pair {P Q N : Type*}
+    [AddCommMonoid P] [Module R P] [AddCommMonoid Q] [Module R Q]
+    [AddCommMonoid N] [Module R N]
+    {h : ReducedTensorWords R M →ₗ[R] N} (F : P ⊗[R] Q →ₗ[R] N)
+    (f : M →ₗ[R] P) (g : M →ₗ[R] Q)
+    (hfac : h = F ∘ₗ TensorProduct.map (f ∘ₗ letter R M) (g ∘ₗ letter R M) ∘ₗ
+      deconcatenation R M)
+    (n : {n : ℕ // 0 < n}) (hn : n.val ≠ 2) (x : Fin n.val → M) :
+    h (of R M n (PiTensorProduct.tprod R x)) = 0 := by
+  rw [hfac, LinearMap.comp_apply, LinearMap.comp_apply, TensorProduct.map_comp,
+    LinearMap.comp_apply, map_letter_letter_deconcatenation_of_ne_two R M n hn x,
+    map_zero, map_zero]
+
 section Prepend
 
 variable {R M}
@@ -286,10 +327,7 @@ theorem linearMap_ext_ofLetter_prepend {N : Type*} [AddCommMonoid N] [Module R N
     (h2 : ∀ a w, f (prepend R M a w) = g (prepend R M a w)) : f = g :=
   linearMap_ext R M fun ⟨n, hn⟩ x ↦ by match n with
     | 0 => omega
-    | 1 =>
-      have hx : of R M ⟨1, hn⟩ (PiTensorProduct.tprod R x) = ofLetter R M (x 0) := by
-        rw [ofLetter_eq_of_tprod]; exact of_tprod_congr R M hn rfl <| Fin.forall_fin_one.2 rfl
-      rw [hx, h1]
+    | 1 => rw [of_one_tprod, h1]
     | k + 2 =>
       have hx : of R M ⟨k + 2, hn⟩ (PiTensorProduct.tprod R x) = prepend R M (x 0)
           (of R M ⟨k + 1, Nat.succ_pos k⟩ (PiTensorProduct.tprod R fun i ↦ x i.succ)) := by

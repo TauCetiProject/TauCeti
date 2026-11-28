@@ -137,9 +137,11 @@ private theorem forall_mem_linearizedEquation_eq_zero
   · rw [← gaugeFixedOperator_apply_three, hker w, PiLp.zero_apply]
 
 omit [μ.IsAddHaarMeasure] in
-/-- Decomposition `δα = α G + e^ν H` for every element of a space `V` of `C²` solutions of
-`L_x y = 0`. -/
-private theorem exists_decomposition_of_gaugeFixedOperator_eq_zero (hx : ContDiff ℝ 2 x)
+/-- **Decomposition of the kernel.** At a `C²` field satisfying the holomorphicity rows
+`∂bar_a α = 0`, every element of a space `V` of `C²` solutions of `L_x y = 0` has section variation
+`δα = α G + e^ν H` with `G` continuous and `H` entire, where `∂bar ν = (b₂ - i b₁) / 2`. This is the
+hypothesis of `principalPartMap`. -/
+theorem exists_decomposition_of_gaugeFixedOperator_eq_zero (hx : ContDiff ℝ 2 x)
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) {ν : ℂ → ℂ}
     (hν : Differentiable ℝ ν)
     (hνeq : ∀ w, conjWirtingerDeriv ν w 1 = ((x w 1 : ℂ) - I * x w 0) / 2)

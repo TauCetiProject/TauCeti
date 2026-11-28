@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Homotopy.GenLoop.Homotopic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 
 /-!
 # Homotopy of generalized loops
@@ -37,6 +38,8 @@ homomorphisms in positive dimensions.
   homotopy groups.
 * `FundamentalGroup.mapOfEq_eq_of_homotopicRel`: pointed-homotopic maps induce the same
   homomorphism of fundamental groups.
+* `FundamentalGroup.mapOfEq_apply_eq_self_of_homotopicRel`: a self-map pointed-homotopic to the
+  identity induces the identity of the fundamental group.
 -/
 
 public section
@@ -122,5 +125,13 @@ theorem mapOfEq_eq_of_homotopicRel {f g : C(X, Y)} (hf : f x = y) (hg : g x = y)
   obtain ⟨b, rfl⟩ := HomotopyGroup.pi1EquivFundamentalGroup.surjective a
   rw [← HomotopyGroup.pi1EquivFundamentalGroup_map, ← HomotopyGroup.pi1EquivFundamentalGroup_map,
     HomotopyGroup.map_eq_of_homotopicRel hf hx H]
+
+/-- A self-map homotopic to the identity relative to a set containing the basepoint induces the
+identity of the fundamental group. -/
+theorem mapOfEq_apply_eq_self_of_homotopicRel {f : C(X, X)} (hf : f x = x) {S : Set X}
+    (hx : x ∈ S) (H : f.HomotopicRel (ContinuousMap.id X) S) (a : FundamentalGroup X x) :
+    mapOfEq f hf a = a := by
+  rw [mapOfEq_eq_of_homotopicRel hf rfl hx H]
+  exact mapOfEq_id rfl a
 
 end FundamentalGroup

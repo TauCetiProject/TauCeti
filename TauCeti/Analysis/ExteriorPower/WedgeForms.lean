@@ -92,18 +92,6 @@ theorem wedgeGain_of_not_forall_le {k : ℕ} {μ : ℕ → ℝ} {σ : Fin n ≃ 
     wedgeGain k μ σ T = ∏ t ∈ T, μ (σ.symm t) := by
   rw [wedgeGain_def, ite_eq_right hT, one_mul]
 
-/-- The minima attached to a nonempty set of forms, with the gain, are nonnegative when the first
-`n` minima are. -/
-theorem wedgeGain_nonneg {k : ℕ} {μ : ℕ → ℝ} (hμ : ∀ l < n, 0 ≤ μ l) (σ : Fin n ≃ κ)
-    {T : Finset κ} (hT : T.Nonempty) : 0 ≤ wedgeGain k μ σ T := by
-  have hP : 0 ≤ ∏ t ∈ T, μ (σ.symm t) := prod_nonneg fun t _ ↦ hμ _ (σ.symm t).isLt
-  by_cases h : ∀ t ∈ T, k ≤ (σ.symm t : ℕ)
-  · obtain ⟨t, ht⟩ := hT
-    have hk : k < n := (h t ht).trans_lt (σ.symm t).isLt
-    rw [wedgeGain_of_forall_le h]
-    exact mul_nonneg (div_nonneg (hμ _ (by omega)) (hμ _ hk)) hP
-  · rwa [wedgeGain_of_not_forall_le h]
-
 /-- The minima attached to a nonempty set of forms, with the gain, are positive when the first
 `n` minima are. -/
 theorem wedgeGain_pos {k : ℕ} {μ : ℕ → ℝ} (hμ : ∀ l < n, 0 < μ l) (σ : Fin n ≃ κ)
@@ -136,12 +124,14 @@ theorem wedgeGain_congr {k : ℕ} {μ μ' : ℕ → ℝ} (h : ∀ l < n, μ l = 
     rw [wedgeGain_of_forall_le hk, wedgeGain_of_forall_le hk, hP, h k hkn, h (k - 1) (by omega)]
   · rw [wedgeGain_of_not_forall_le hk, wedgeGain_of_not_forall_le hk, hP]
 
-/-- Replacing minima `f`, nonnegative below `n`, by `b · f ^ a`, for `b ≠ 0`, turns the minima
+/-- Replacing minima `f`, nonnegative below `n`, by `b · f ^ a` turns the minima
 attached to a nonempty `T`, with the gain on the top block, into `b ^ #T` times their `a`-th
 power. -/
-theorem wedgeGain_const_mul_rpow {k : ℕ} {b : ℝ} (hb : b ≠ 0) {f : ℕ → ℝ}
+theorem wedgeGain_const_mul_rpow {k : ℕ} {b : ℝ} {f : ℕ → ℝ}
     (hf : ∀ l < n, 0 ≤ f l) {a : ℝ} (σ : Fin n ≃ κ) {T : Finset κ} (hT : T.Nonempty) :
     wedgeGain k (fun l ↦ b * f l ^ a) σ T = b ^ T.card * wedgeGain k f σ T ^ a := by
+  obtain rfl | hb := eq_or_ne b 0
+  · simp [wedgeGain_def, prod_const, hT.card_ne_zero]
   have hf' (t : κ) : 0 ≤ f (σ.symm t) := hf _ (σ.symm t).isLt
   have hP : 0 ≤ ∏ t ∈ T, f (σ.symm t) := prod_nonneg fun t _ ↦ hf' t
   by_cases h : ∀ t ∈ T, k ≤ (σ.symm t : ℕ)

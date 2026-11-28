@@ -16,7 +16,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 -- `TauCeti.jordanGL` occurs in the statements below.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ScalarUnipotent
 -- `TauCeti.GL2NonSplitTorusHom` occurs in the statements below.
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorus
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorus.Basic
 -- `TauCeti.stabilizer_quotientGroup_mk` is the fixed-coset criterion the counts below run on, and
 -- this module re-exports the action of a group on the cosets of a subgroup.
 public import TauCeti.GroupTheory.QuotientGroup.Basic

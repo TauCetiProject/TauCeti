@@ -640,8 +640,8 @@ theorem natCard_torsionBy_dvd_of_isSingular (h : W.toAffine.IsSingular x₀ y₀
     Nat.card (AddSubgroup.torsionBy W.toAffine.Point n) ∣ n := by
   by_cases hc : 2 * α + W.a₁ = 0
   · rw [Nat.card_congr ((cuspAddEquiv h hα hc).torsionByCongr n).toEquiv]
-    have := TauCeti.subsingleton_torsionBy_of_injective_zsmul (V := F) n fun a b hab ↦ by
-      simpa [hn] using hab
+    have := (Submodule.subsingleton_torsionBy_iff_smul_right_injective (M := F)
+      (a := (n : ℤ))).mpr fun a b hab ↦ by simpa [hn] using hab
     rw [Nat.card_of_subsingleton (0 : AddSubgroup.torsionBy F n)]
     exact one_dvd n
   · -- the `n`-torsion of `Additive Fˣ` is the group of `n`-th roots of unity
@@ -687,7 +687,8 @@ theorem torsionBy_eq_bot_of_Δ_eq_zero_of_c₄_eq_zero (hΔ : W.Δ = 0) (hc₄ :
   -- the cusp is the additive group of the algebraic closure, which has no `n`-torsion
   have hn' : (n : AlgebraicClosure F) ≠ 0 := by rwa [← map_natCast f, _root_.map_ne_zero]
   have : Subsingleton (AddSubgroup.torsionBy (W.map f).toAffine.Point n) := by
-    have := TauCeti.subsingleton_torsionBy_of_injective_zsmul (V := AlgebraicClosure F) n
+    have := (Submodule.subsingleton_torsionBy_iff_smul_right_injective
+      (M := AlgebraicClosure F) (a := (n : ℤ))).mpr
       fun a b hab ↦ by simpa [hn'] using hab
     exact ((cuspAddEquiv h hα hc).torsionByCongr n).toEquiv.subsingleton
   have := (W.torsionMapAlong_injective f n).subsingleton

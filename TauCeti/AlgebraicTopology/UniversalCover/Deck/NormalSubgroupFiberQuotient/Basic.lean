@@ -89,7 +89,7 @@ lemma normalizerQuotientEquivQuotientOfNormal_subgroupFiberOrbitQuotientEquiv
         (subgroupFiberOrbitClass H (φ • e))
   rw [TauCeti.MulAction.orbitRelQuotientEquivNormalizerQuotientOfNormal_apply_smul,
     subgroupFiberOrbitQuotientEquivQuotientGroup_apply_smul,
-    Subgroup.normalizerQuotientEquivQuotientOfNormal_mk]
+    ← Subgroup.normalizerQuotientMk_apply, Subgroup.normalizerQuotientEquivQuotientOfNormal_mk]
   rfl
 
 /-- For a regular cover, the normal-subgroup fibre quotient equivalence, followed by the

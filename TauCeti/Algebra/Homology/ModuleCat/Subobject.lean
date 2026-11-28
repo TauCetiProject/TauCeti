@@ -14,6 +14,7 @@ public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.Algebra.Homology.HomologicalComplex.Basic
+import TauCeti.Algebra.Homology.ModuleCat.Cokernel
 
 import TauCeti.Algebra.Homology.HomologicalComplex.Subobject
 
@@ -36,6 +37,8 @@ element of `S`
 
 * `CategoryTheory.Subobject.factors_iff_forall_mem_range`: a morphism factors through a subcomplex
   exactly when it does degreewise.
+* `CategoryTheory.Subobject.exists_comp_arrow_f_eq_of_forall_mem_range`: a morphism into a single
+  term factors through the subcomplex in that degree as soon as its values do.
 -/
 
 public section
@@ -47,16 +50,23 @@ namespace CategoryTheory.Subobject
 variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
   {K L : HomologicalComplex (ModuleCat R) c} (S : Subobject L) (g : K ⟶ L)
 
+/-- A morphism of modules into a term of a complex whose values lie in the range of the
+corresponding component of the inclusion of a subcomplex factors through that component. -/
+theorem exists_comp_arrow_f_eq_of_forall_mem_range {X : ModuleCat R} {n : ι} (φ : X ⟶ L.X n)
+    (h : ∀ x, φ.hom x ∈ LinearMap.range (S.arrow.f n).hom) :
+    ∃ k : X ⟶ (S : HomologicalComplex (ModuleCat R) c).X n, k ≫ S.arrow.f n = φ := by
+  have hinj : Function.Injective (S.arrow.f n).hom :=
+    (ModuleCat.mono_iff_injective _).1 inferInstance
+  -- The lift, through the isomorphism of `S` in degree `n` with the range of its inclusion.
+  exact ⟨ModuleCat.ofHom ((LinearEquiv.ofInjective _ hinj).symm.toLinearMap ∘ₗ
+    φ.hom.codRestrict _ h), ModuleCat.hom_ext (LinearMap.ext fun x ↦ by simp)⟩
+
 /-- A morphism of complexes of modules whose components land in the ranges of the components of
 the inclusion of a subcomplex factors through it. -/
 theorem factors_of_forall_mem_range
-    (h : ∀ n x, (g.f n).hom x ∈ LinearMap.range (S.arrow.f n).hom) : S.Factors g := by
-  refine (factors_iff_forall_exists_comp_arrow_f_eq S g).2 fun n ↦ ?_
-  have hinj : Function.Injective (S.arrow.f n).hom :=
-    (ModuleCat.mono_iff_injective _).1 inferInstance
-  -- The degreewise lift, through the isomorphism of `S` with the range of its inclusion.
-  exact ⟨ModuleCat.ofHom ((LinearEquiv.ofInjective _ hinj).symm.toLinearMap ∘ₗ
-    (g.f n).hom.codRestrict _ (h n)), ModuleCat.hom_ext (LinearMap.ext fun x ↦ by simp)⟩
+    (h : ∀ n x, (g.f n).hom x ∈ LinearMap.range (S.arrow.f n).hom) : S.Factors g :=
+  (factors_iff_forall_exists_comp_arrow_f_eq S g).2 fun n ↦
+    exists_comp_arrow_f_eq_of_forall_mem_range S (g.f n) (h n)
 
 /-- A morphism of complexes of modules factors through a subcomplex exactly when each of its
 components lands in the range of the corresponding component of the inclusion. -/
@@ -105,15 +115,12 @@ theorem exists_sub_d_mem_range_arrow_f_hom_of_isZero_homology_cokernel {T : Subo
     (((cokernel φ).exactAt_iff_isZero_homology j).2 hH)
   rw [ShortComplex.moduleCat_exact_iff] at hQ
   obtain ⟨w, hw⟩ := hQ ((cokernel.π φ).f j z) hc
-  obtain ⟨w, rfl⟩ := (ModuleCat.epi_iff_surjective ((cokernel.π φ).f i)).1 inferInstance w
-  have hS :=
-    (HomologicalComplex.exact_iff_degreewise_exact _).1 (ShortComplex.exact_cokernel φ) j
-  rw [ShortComplex.moduleCat_exact_iff] at hS
-  obtain ⟨u, hu⟩ := hS (z - ((T : HomologicalComplex (ModuleCat R) c).d i j).hom w) (by
+  obtain ⟨w, rfl⟩ := HomologicalComplex.cokernel_π_f_surjective φ i w
+  obtain ⟨u, hu⟩ := (HomologicalComplex.cokernel_π_f_apply_eq_zero_iff φ j
+    (z - ((T : HomologicalComplex (ModuleCat R) c).d i j).hom w)).1 (by
     dsimp at hw ⊢
     rw [map_sub, ← HomologicalComplex.Hom.comm_apply (cokernel.π φ), hw, sub_self])
   refine ⟨(T.arrow.f i).hom w, ⟨w, rfl⟩, u, ?_⟩
-  dsimp at hu
   rw [← Subobject.ofLE_arrow h, HomologicalComplex.comp_f, ModuleCat.comp_apply, hu, map_sub,
     ← HomologicalComplex.Hom.comm_apply T.arrow]
 

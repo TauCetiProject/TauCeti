@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.RingTheory.Idempotents
+public import Mathlib.RingTheory.TensorProduct.Finite
 public import Mathlib.RingTheory.TensorProduct.Pi
 
 /-!
@@ -18,13 +18,13 @@ Tensoring with a `T`-algebra `X` splits `X` accordingly into the product of its 
 the components (`CompleteOrthogonalIdempotents.tensorProductEquiv`). Hence properties of `X` that
 are compatible with finite products and with restriction of scalars along `T → T ⧸ (1 - f i)` can
 be checked on each component; this file records it for module finiteness
-(`TauCeti.Module.Finite.of_completeOrthogonalIdempotents`).
+(`CompleteOrthogonalIdempotents.module_finite_iff`).
 
 ## Main declarations
 
 * `CompleteOrthogonalIdempotents.tensorProductEquiv`: the splitting
   `X ≃ₐ[T] Π i, (T ⧸ (1 - f i)) ⊗[T] X`.
-* `TauCeti.Module.Finite.of_completeOrthogonalIdempotents`: a module is finite if its base
+* `CompleteOrthogonalIdempotents.module_finite_iff`: a module is finite if and only if its base
   change to every component is.
 -/
 
@@ -59,25 +59,23 @@ theorem tensorProductEquiv_apply (hf : CompleteOrthogonalIdempotents f) {X : Typ
     hf.tensorProductEquiv X x i = 1 ⊗ₜ x := by
   simp [tensorProductEquiv]
 
-end CompleteOrthogonalIdempotents
-
 /-- Module finiteness is local for a decomposition of the base by complete orthogonal
-idempotents: if the base change of `M` to every component `T ⧸ (1 - f i)` is finite, then `M` is
-finite over `T`. -/
-theorem TauCeti.Module.Finite.of_completeOrthogonalIdempotents {M : Type*} [AddCommMonoid M]
-    [Module T M] {ι : Type*} [Fintype ι] {f : ι → T} (hf : CompleteOrthogonalIdempotents f)
-    (h : ∀ i, Module.Finite (T ⧸ Ideal.span {1 - f i}) ((T ⧸ Ideal.span {1 - f i}) ⊗[T] M)) :
-    Module.Finite T M := by
+idempotents: `M` is finite over `T` if and only if its base change to every component
+`T ⧸ (1 - f i)` is finite. -/
+theorem module_finite_iff (hf : CompleteOrthogonalIdempotents f) {M : Type*} [AddCommMonoid M]
+    [Module T M] : Module.Finite T M ↔
+      ∀ i, Module.Finite (T ⧸ Ideal.span {1 - f i}) ((T ⧸ Ideal.span {1 - f i}) ⊗[T] M) := by
+  refine ⟨fun _ _ ↦ inferInstance, fun h ↦ ?_⟩
   classical
-  have (i : ι) : Module.Finite T ((T ⧸ Ideal.span {1 - f i}) ⊗[T] M) := by
+  have (i : ι) : Module.Finite T ((T ⧸ Ideal.span {1 - f i}) ⊗[T] M) :=
     have := h i
-    exact Module.Finite.trans (T ⧸ Ideal.span {1 - f i}) _
+    .trans (T ⧸ Ideal.span {1 - f i}) _
   -- Split `M ≃ T ⊗[T] M ≃ (Π i, T ⧸ (1 - f i)) ⊗[T] M ≃ Π i, (T ⧸ (1 - f i)) ⊗[T] M`.
   let e : M ≃ₗ[T] Π i, (T ⧸ Ideal.span {1 - f i}) ⊗[T] M :=
     (TensorProduct.lid T M).symm ≪≫ₗ
-      TensorProduct.congr
-        (AlgEquiv.ofBijective (AlgHom.pi fun _ ↦ Ideal.Quotient.mkₐ T _)
-          hf.bijective_pi).toLinearEquiv
-        (LinearEquiv.refl T M) ≪≫ₗ
+      (AlgEquiv.ofBijective (AlgHom.pi fun _ ↦ Ideal.Quotient.mkₐ T _)
+        hf.bijective_pi).toLinearEquiv.rTensor M ≪≫ₗ
       TensorProduct.piLeft (R := T) (N := M) (fun i ↦ T ⧸ Ideal.span {1 - f i})
   exact .equiv e.symm
+
+end CompleteOrthogonalIdempotents

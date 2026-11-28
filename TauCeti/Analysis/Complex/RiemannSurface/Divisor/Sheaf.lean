@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Meromorphic
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+import TauCeti.Topology.ContinuousOn.PuncturedNhds
 
 /-!
 # The sheaf `𝒪_D` of a divisor on a Riemann surface
@@ -63,6 +64,8 @@ injective on sections, and functorial in the divisor.
   their values outside a closed discrete set.
 * `TauCeti.RiemannSurface.divisorSheafMapOfLE_app_injective`, `divisorSheafMapOfLE_refl` and
   `divisorSheafMapOfLE_comp`: the inclusions are injective and functorial.
+* `TauCeti.RiemannSurface.divisorSheafMapOfLE_app_eventuallyEq`: away from isolated points, the
+  inclusions do not change the values of sections.
 * `TauCeti.RiemannSurface.finrank_divisorSheaf_zero`: `h⁰(0) = 1` on a compact connected
   Riemann surface.
 
@@ -387,6 +390,19 @@ theorem divisorSheafMapOfLE_app {E : WeilDivisor X} (h : D ≤ E) (U : Opens X)
     (no_index (divisorSheafSectionsEquiv E U ((divisorSheafMapOfLE h).hom.app (op U) f))).val =
       {y : U | E y ≤ 0}.indicator (divisorSheafSectionsEquiv D U f).val := (rfl)
 
+/-- On a punctured neighbourhood of each point, the inclusion `𝒪_D ⟶ 𝒪_E` does not change the
+values of a section: the values it sets to `0` lie at the isolated points of the support of
+`E`. -/
+theorem divisorSheafMapOfLE_app_eventuallyEq {E : WeilDivisor X} (h : D ≤ E) (U : Opens X)
+    (f : (divisorSheaf D).obj.obj (op U)) (x : U) :
+    (divisorSheafSectionsEquiv E U ((divisorSheafMapOfLE h).hom.app (op U) f)).val =ᶠ[𝓝[≠] x]
+      (divisorSheafSectionsEquiv D U f).val := by
+  have := ChartedSpace.t1Space ℂ X
+  filter_upwards [(tendsto_subtype_val_nhdsNE x).eventually (E.eventually_eq_zero_nhdsNE x)]
+    with y hy
+  rw [divisorSheafMapOfLE_app]
+  exact Set.indicator_of_mem (s := {y : U | E y ≤ 0}) hy.le _
+
 /-- The inclusion `𝒪_D ⟶ 𝒪_E` is injective on sections. -/
 theorem divisorSheafMapOfLE_app_injective {E : WeilDivisor X} (h : D ≤ E) (U : Opens X) :
     Function.Injective ((divisorSheafMapOfLE h).hom.app (op U)) := by
@@ -395,19 +411,10 @@ theorem divisorSheafMapOfLE_app_injective {E : WeilDivisor X} (h : D ≤ E) (U :
   apply Subtype.ext
   refine eq_of_eventuallyEq_codiscrete (divisorSheafSectionsEquiv D U f).property
     (divisorSheafSectionsEquiv D U g).property ?_
-  have hfg' := congrArg Subtype.val (congrArg (divisorSheafSectionsEquiv E U) hfg)
-  rw [divisorSheafMapOfLE_app, divisorSheafMapOfLE_app] at hfg'
   refine eventuallyEq_codiscreteWithin_iff_forall_eventually_nhdsNE.2 fun x _ ↦ ?_
-  -- Near `x`, every point other than `x` lies off the poles allowed by `E`.
-  have hval : Tendsto (Subtype.val : U → X) (𝓝[≠] x) (𝓝[≠] (x : X)) :=
-    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-      (continuous_subtypeVal.continuousAt.mono_left nhdsWithin_le_nhds)
-      (eventually_nhdsWithin_of_forall fun _ hy ↦ Subtype.coe_injective.ne hy)
-  have := ChartedSpace.t1Space ℂ X
-  have hev : ∀ᶠ y : U in 𝓝[≠] x, E y ≤ 0 :=
-    hval.eventually ((E.eventually_eq_zero_nhdsNE x).mono fun _ hy ↦ hy.le)
-  filter_upwards [hev] with y hy _
-  simpa [Set.indicator_of_mem (s := {y : U | E y ≤ 0}) hy] using congrFun hfg' y
+  filter_upwards [divisorSheafMapOfLE_app_eventuallyEq h U f x,
+    divisorSheafMapOfLE_app_eventuallyEq h U g x] with y hf hg _
+  rw [← hf, ← hg, hfg]
 
 /-- The map `𝒪_D ⟶ 𝒪_D` is the identity. -/
 @[simp]

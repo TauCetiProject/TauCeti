@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Distributions.Bernoulli
 public import Mathlib.Probability.HasLaw
 public import Mathlib.Probability.Moments.Basic
+public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import TauCeti.Probability.GeneratingFunction
 
@@ -21,15 +22,32 @@ This file computes the elementary moments and transforms of the real-valued Bern
 
 ## Main results
 
+* `bernoulliMeasure_singleton_left_ne_zero` and `bernoulliMeasure_singleton_right_ne_zero`:
+  `Ber(x, y, p)` charges `x` when `0 < p` and `y` when `p < 1`;
 * `integral_id_bernoulliMeasure` and `variance_id_bernoulliMeasure` give the mean and variance;
 * `integral_of_hasLaw_bernoulliMeasure` and `variance_of_hasLaw_bernoulliMeasure` give the
   corresponding random-variable statements;
 * `hasLaw_natCast_bernoulliMeasure` and `hasLaw_cast_eval_bernoulliMeasure` relate native
   Bernoulli variables to their real casts;
+* `measureReal_pi_bernoulliMeasure_eval_eq_true` and
+  `iIndepFun_pi_bernoulliMeasure_indicator_eval` give the coordinate marginals and the
+  independence of the coordinate indicators under a product of Boolean Bernoulli laws;
 * `pgf_bernoulliMeasure` computes the probability-generating function on the native carrier;
+* `integrableExpSet_bernoulliMeasure` identifies the exact exponential-integrability domain;
 * `mgf_id_bernoulliMeasure` and `cgf_id_bernoulliMeasure` compute the moment- and
   cumulant-generating functions;
 * `charFun_bernoulliMeasure` computes the characteristic function.
+* `ProbabilityTheory.HasLaw.pgf_bernoulliMeasure` computes the probability-generating function
+  of a natural-valued Bernoulli random variable;
+* `ProbabilityTheory.HasLaw.integrableExpSet_bernoulliMeasure` gives the exact exponential domain
+  of a real-valued two-point random variable;
+* `ProbabilityTheory.HasLaw.mgf_bernoulliMeasure` and
+  `ProbabilityTheory.HasLaw.cgf_bernoulliMeasure` compute the real exponential transforms.
+
+## References
+
+* N. L. Johnson, A. W. Kemp, S. Kotz, *Univariate Discrete Distributions*, 3rd ed., Wiley,
+  2005, Chapter 3.
 -/
 
 public section
@@ -53,6 +71,26 @@ theorem bernoulliMeasure_singleton_zero_lt_one {α : Type*} [MeasurableSpace α]
     (by simpa using ha) rfl]
   exact_mod_cast sub_lt_self (1 : ℝ) hp
 
+/-- The Bernoulli law `Ber(x, y, p)` gives positive mass to `x` when `0 < p`. -/
+theorem bernoulliMeasure_singleton_left_ne_zero {α : Type*} [MeasurableSpace α]
+    [MeasurableSingletonClass α] {x y : α} {p : I} (hp : 0 < (p : ℝ)) :
+    Ber(x, y, p) {x} ≠ 0 := by
+  by_cases h : x = y
+  · simp [h]
+  · rw [bernoulliMeasure_apply_of_mem_of_notMem p (measurableSet_singleton x) rfl
+      (by simpa [eq_comm] using h)]
+    simpa [← NNReal.coe_eq_zero] using hp.ne'
+
+/-- The Bernoulli law `Ber(x, y, p)` gives positive mass to `y` when `p < 1`. -/
+theorem bernoulliMeasure_singleton_right_ne_zero {α : Type*} [MeasurableSpace α]
+    [MeasurableSingletonClass α] {x y : α} {p : I} (hp : (p : ℝ) < 1) :
+    Ber(x, y, p) {y} ≠ 0 := by
+  by_cases h : y = x
+  · simp [h]
+  · rw [bernoulliMeasure_apply_of_notMem_of_mem p (measurableSet_singleton y)
+      (by simpa [eq_comm] using h) rfl]
+    simpa [← NNReal.coe_eq_zero, sub_eq_zero] using hp.ne'
+
 /-- The probability-generating function of a Bernoulli distribution. -/
 @[simp]
 theorem pgf_bernoulliMeasure (p : unitInterval) (t : ℝ) :
@@ -75,6 +113,35 @@ theorem hasLaw_cast_eval_bernoulliMeasure {ι : Type*} [Fintype ι]
   simpa [Function.comp_def] using
     (hasLaw_natCast_bernoulliMeasure (p i)).comp
       (measurePreserving_eval (fun i : ι ↦ Ber((1 : ℕ), 0, p i)) i).hasLaw
+
+/-- Under independent Boolean Bernoulli trials with success probabilities `q`, the
+coordinate at `a` is `true` with probability `q a`. -/
+@[simp]
+theorem measureReal_pi_bernoulliMeasure_eval_eq_true {α : Type*} [Fintype α]
+    (q : α → unitInterval) (a : α) :
+    (Measure.pi fun a ↦ bernoulliMeasure true false (q a)).real {x | x a = true} = q a := by
+  have h : {x : α → Bool | x a = true} = (fun x ↦ x a) ⁻¹' ({true} : Set Bool) := by
+    ext x
+    simp
+  rw [h, measureReal_def,
+    ← Measure.map_apply (measurable_pi_apply a) (measurableSet_singleton _),
+    (measurePreserving_eval (fun a ↦ bernoulliMeasure true false (q a)) a).map_eq,
+    ← measureReal_def]
+  simp
+
+/-- Under independent Boolean Bernoulli trials, the real indicators of the events that the
+individual coordinates are `true` are independent. -/
+theorem iIndepFun_pi_bernoulliMeasure_indicator_eval {α : Type*} [Fintype α]
+    (q : α → unitInterval) :
+    iIndepFun (fun a ↦ {x : α → Bool | x a = true}.indicator (1 : (α → Bool) → ℝ))
+      (Measure.pi fun a ↦ bernoulliMeasure true false (q a)) := by
+  have h (a : α) : {x : α → Bool | x a = true} = (fun x ↦ x a) ⁻¹' ({true} : Set Bool) := by
+    ext x
+    simp
+  simp only [h]
+  exact iIndepFun_pi (μ := fun a ↦ bernoulliMeasure true false (q a))
+    (X := fun _ ↦ ({true} : Set Bool).indicator (1 : Bool → ℝ))
+    (fun _ ↦ (measurable_const.indicator (measurableSet_singleton _)).aemeasurable)
 
 /-- The mean of the real-valued Bernoulli law with success probability `p` is `p`. -/
 @[simp]
@@ -103,6 +170,13 @@ theorem variance_of_hasLaw_bernoulliMeasure {Ω : Type*} [MeasurableSpace Ω] {P
     {X : Ω → ℝ} {p : I} (hX : HasLaw X Ber((1 : ℝ), 0, p) P) :
     Var[X; P] = (p : ℝ) * (1 - p) := by
   rw [hX.variance_eq, variance_id_bernoulliMeasure]
+
+/-- Every real observable of a Bernoulli law has full exponential-integrability domain. -/
+@[simp]
+theorem integrableExpSet_bernoulliMeasure {α : Type*} [MeasurableSpace α]
+    [MeasurableSingletonClass α] (X : α → ℝ) (a b : α) (p : I) :
+    integrableExpSet X Ber(a, b, p) = Set.univ :=
+  Set.eq_univ_of_forall fun _ ↦ integrable_bernoulliMeasure a b p _
 
 /-- The moment-generating function of the real-valued Bernoulli law. -/
 @[simp]
@@ -136,3 +210,46 @@ theorem charFun_bernoulliMeasure (p : I) (t : ℝ) :
 end Probability
 
 end TauCeti
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+
+/-- The probability-generating function of a natural-valued Bernoulli random variable. -/
+theorem pgf_bernoulliMeasure {X : Ω → ℕ} {p : unitInterval}
+    (hX : HasLaw X Ber((1 : ℕ), 0, p) P) (t : ℝ) :
+    pgf X P t = 1 - (p : ℝ) + (p : ℝ) * t :=
+  (TauCeti.Probability.HasLaw.pgf_eq hX t).trans
+    (TauCeti.Probability.pgf_bernoulliMeasure p t)
+
+/-- Every real exponential moment of a real-valued two-point random variable is integrable. -/
+theorem integrable_exp_mul_bernoulliMeasure {X : Ω → ℝ} {a b : ℝ} {p : unitInterval}
+    (hX : HasLaw X Ber(a, b, p) P) (t : ℝ) :
+    Integrable (fun ω ↦ Real.exp (t * X ω)) P := by
+  simpa only [Function.comp_def] using hX.integrable_fun_comp
+    (integrable_bernoulliMeasure a b p fun x ↦ Real.exp (t * x))
+
+/-- The exact exponential-integrability domain of a real-valued two-point random variable is all
+of `ℝ`. -/
+theorem integrableExpSet_bernoulliMeasure {X : Ω → ℝ} {a b : ℝ} {p : unitInterval}
+    (hX : HasLaw X Ber(a, b, p) P) : integrableExpSet X P = Set.univ := by
+  ext t
+  simpa only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_univ, iff_true] using
+    hX.integrable_exp_mul_bernoulliMeasure t
+
+/-- The moment-generating function of a real-valued Bernoulli random variable. -/
+theorem mgf_bernoulliMeasure {X : Ω → ℝ} {p : unitInterval}
+    (hX : HasLaw X Ber((1 : ℝ), 0, p) P) (t : ℝ) :
+    mgf X P t = 1 - (p : ℝ) + (p : ℝ) * Real.exp t := by
+  rw [← mgf_id_map hX.aemeasurable, hX.map_eq]
+  exact TauCeti.Probability.mgf_id_bernoulliMeasure p t
+
+/-- The cumulant-generating function of a real-valued Bernoulli random variable. -/
+theorem cgf_bernoulliMeasure {X : Ω → ℝ} {p : unitInterval}
+    (hX : HasLaw X Ber((1 : ℝ), 0, p) P) (t : ℝ) :
+    cgf X P t = Real.log (1 - (p : ℝ) + (p : ℝ) * Real.exp t) := by
+  rw [cgf, hX.mgf_bernoulliMeasure]
+
+end ProbabilityTheory.HasLaw
