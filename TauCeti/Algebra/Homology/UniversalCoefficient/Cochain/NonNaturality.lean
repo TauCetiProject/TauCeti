@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import TauCeti.Algebra.Homology.UniversalCoefficient.Cochain.Basic
 import Mathlib.Algebra.Homology.Double
 import Mathlib.RingTheory.Finiteness.Basic
+import TauCeti.Algebra.Homology.HomologicalComplex.Double
 import TauCeti.Algebra.Homology.LinearHomComplex.Cohomology
 
 /-!
@@ -87,14 +88,8 @@ private lemma isZero_homology_zero_mulTwoCochainComplex :
         simpa only [mulTwoHom, ModuleCat.hom_ofHom, LinearMap.smul_apply, LinearMap.id_apply,
           smul_eq_mul] using hab
       exact mul_left_cancel₀ (by decide : (2 : ℤ) ≠ 0) h
-  have hmono : Mono (mulTwoCochainComplex.d 0 1) := by
-    rw [double_d mulTwoHom up_rel_zero_one (by decide)]
-    exact mono_comp _ _
-  have hex : mulTwoCochainComplex.ExactAt 0 :=
-    (HomologicalComplex.exactAt_iff' _ (-1) 0 1 (by simp) (by simp)).2
-      (((mulTwoCochainComplex.sc' (-1) 0 1).exact_iff_mono
-        (double_d_eq_zero₀ mulTwoHom up_rel_zero_one (-1) 0 (by decide))).2 hmono)
-  exact hex.isZero_homology
+  exact (isZero_zero _).of_iso
+    (doubleHomologyIso₀ zero_ne_one (kernel.isLimitConeZeroCone mulTwoHom))
 
 private lemma not_exists_leftInverse_mulTwoCochainComplex_d :
     ¬ ∃ g : mulTwoCochainComplex.X 1 ⟶ ModuleCat.of ℤ ℤ,
@@ -188,9 +183,7 @@ theorem not_exists_natural_section_linearHomComplexSingleKronecker :
   rintro ⟨s, hs_sec, hs_nat⟩
   -- Map `mulTwoCochainComplex` to `ℤ[0]` by the identity in degree `0`.
   let φ : mulTwoCochainComplex ⟶ singleIntComplex :=
-    HomologicalComplex.mkHomToSingle (doubleXIso₀ mulTwoHom up_rel_zero_one).hom (fun i hi ↦
-      (mulTwoCochainComplex.isZero_of_isStrictlyGE 0 i
-        (by simp only [ComplexShape.up_Rel] at hi; omega)).eq_of_src _ _)
+    doubleπ₀ mulTwoHom up_rel_zero_one zero_ne_one
   let g₀ : singleIntComplex.homology 0 ⟶ ModuleCat.of ℤ ℤ :=
     (singleObjHomologySelfIso (ComplexShape.up ℤ) 0 (ModuleCat.of ℤ ℤ)).hom
   let L₂ := linearHomComplex ℤ singleIntComplex singleIntComplex
@@ -223,7 +216,7 @@ theorem not_exists_natural_section_linearHomComplexSingleKronecker :
     map_zero, ← hc₂] at hpull
   let y₀ : Cocycle mulTwoCochainComplex singleIntComplex 0 :=
     Cocycle.toSingleMk (doubleXIso₀ mulTwoHom up_rel_zero_one).hom (add_zero 0) (-1) (by decide)
-      (by rw [double_d_eq_zero₀ mulTwoHom up_rel_zero_one (-1) 0 (by decide), zero_comp])
+      (by rw [double_d_to₀_eq_zero mulTwoHom up_rel_zero_one zero_ne_one (-1), zero_comp])
   have hclass := congrArg (homologyLinearEquiv ℤ mulTwoCochainComplex singleIntComplex 0) hpull
   rw [map_zero, homologyLinearEquiv_homologyMap_symm_mk ℤ
       (linearHomComplexPrecomp ℤ φ singleIntComplex) x₀ y₀ (by
@@ -232,11 +225,11 @@ theorem not_exists_natural_section_linearHomComplexSingleKronecker :
           (Cocycle.toSingleMk_precomp
             (singleObjXSelf (ComplexShape.up ℤ) 0 (ModuleCat.of ℤ ℤ)).hom
             (add_zero 0) (-1) (by decide) (by simp) φ)
-        simpa [x₀, y₀, φ] using hpre),
+        simpa [x₀, y₀, φ, doubleπ₀_f₀] using hpre),
     CohomologyClass.mk_eq_zero_iff] at hclass
   exact not_exists_leftInverse_mulTwoCochainComplex_d
     ((Cocycle.toSingleMk_mem_coboundaries_iff _ (add_zero 0) (-1) (by decide)
-      (by rw [double_d_eq_zero₀ mulTwoHom up_rel_zero_one (-1) 0 (by decide), zero_comp])
+      (by rw [double_d_to₀_eq_zero mulTwoHom up_rel_zero_one zero_ne_one (-1), zero_comp])
       1 (by decide)).1 hclass)
 
 end NonNaturality
