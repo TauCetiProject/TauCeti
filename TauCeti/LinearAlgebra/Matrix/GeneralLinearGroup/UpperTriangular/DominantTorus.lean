@@ -23,9 +23,11 @@ to define the Iwahori–Hecke operators `U_t` for dominant `t`.
 
 * `TauCeti.dominantTorus`: the submonoid `{t : m → Rˣ | Monotone fun i ↦ v (t i : R)}`.
 * `TauCeti.mem_dominantTorus_iff`: membership characterization.
-* `TauCeti.eventually_valuation_pow_div_mul_le_one`: for a strictly dominant `t` over a valued
-  division ring with `[MulArchimedean Γ₀ˣ]`, `(t i / t j) ^ k * a i j` is integral for all
-  `i < j` and all sufficiently large `k`.
+* `TauCeti.eventually_valuation_pow_div_mul_le_one_of_lt`: for units `x, y` with
+  `v x < v y` over a valued division ring with `[MulArchimedean Γ₀ˣ]`, `(x / y) ^ k * a` has
+  valuation `≤ 1` for all sufficiently large `k`.
+* `TauCeti.eventually_valuation_pow_div_mul_le_one`: tuple version for a strictly dominant `t`
+  on a finite preordered type `m`.
 * `TauCeti.eventually_pow_mul_mem_dominantTorus`: for strictly dominant `t` and any `s : m → Kˣ`,
   `t ^ k * s ∈ dominantTorus m v` for all sufficiently large `k`.
 
@@ -71,6 +73,34 @@ section DivisionRing
 variable {m K Γ₀ : Type*} [DivisionRing K] [LinearOrderedCommGroupWithZero Γ₀]
   {v : Valuation K Γ₀}
 
+private lemma eventually_le_pow_of_one_lt [MulArchimedean Γ₀ˣ] {u b : Γ₀}
+    (hb : b ≠ 0) (hu : 1 < u) : ∀ᶠ k : ℕ in atTop, b ≤ u ^ k := by
+  let u' : Γ₀ˣ := Units.mk0 u (zero_lt_one.trans hu).ne'
+  let b' : Γ₀ˣ := Units.mk0 b hb
+  have hu' : (1 : Γ₀ˣ) < u' := by
+    rw [← Units.val_lt_val, Units.val_one, Units.val_mk0]
+    exact hu
+  obtain ⟨N, hN⟩ := MulArchimedean.arch b' hu'
+  filter_upwards [eventually_ge_atTop N] with k hk
+  exact_mod_cast hN.trans (pow_le_pow_right' hu'.le hk)
+
+/-- If `x, y : Kˣ` satisfy `v x < v y` over a valued division ring with `[MulArchimedean Γ₀ˣ]`,
+then `x ^ k / y ^ k * a` has valuation `≤ 1` for all sufficiently large `k : ℕ`. -/
+theorem eventually_valuation_pow_div_mul_le_one_of_lt [MulArchimedean Γ₀ˣ]
+    {x y : Kˣ} (h : v (x : K) < v (y : K)) (a : K) :
+    ∀ᶠ k : ℕ in atTop, v ((x : K) ^ k / (y : K) ^ k * a) ≤ 1 := by
+  by_cases ha : v a = 0
+  · filter_upwards with k
+    simp [map_mul, ha]
+  · have hx : (0 : Γ₀) < v (x : K) := pos_iff_ne_zero.mpr (v.ne_zero_iff.mpr x.ne_zero)
+    have hy : (0 : Γ₀) < v (y : K) := pos_iff_ne_zero.mpr (v.ne_zero_iff.mpr y.ne_zero)
+    have hu : (1 : Γ₀) < v (y : K) / v (x : K) := (one_lt_div₀ hx).mpr h
+    filter_upwards [eventually_le_pow_of_one_lt ha hu] with k hk
+    simp only [map_mul, map_div₀, map_pow]
+    rw [div_mul_eq_mul_div, div_le_one₀ (pow_pos hy k)]
+    have hpow := (le_div_iff₀ (pow_pos hx k)).mp (by simpa [div_pow] using hk)
+    simpa [mul_comm] using hpow
+
 /-- If `t : m → Kˣ` has strictly increasing valuations on a finite preordered type `m` and
 `Γ₀ˣ` is multiplicatively Archimedean, then `(t i) ^ k / (t j) ^ k * a i j` has valuation `≤ 1`
 for all `i < j` and all sufficiently large `k : ℕ`. -/
@@ -82,27 +112,8 @@ theorem eventually_valuation_pow_div_mul_le_one [Preorder m] [Finite m] [MulArch
   rw [eventually_all]
   intro j
   by_cases hij : i < j
-  · by_cases ha : v (a i j) = 0
-    · filter_upwards with k _
-      simp [map_mul, ha]
-    · have hti : v (t i : K) ≠ 0 := v.ne_zero_iff.mpr (t i).ne_zero
-      have htj : v (t j : K) ≠ 0 := v.ne_zero_iff.mpr (t j).ne_zero
-      let u : Γ₀ˣ := Units.mk0 (v (t j : K) / v (t i : K)) (div_ne_zero htj hti)
-      let b : Γ₀ˣ := Units.mk0 (v (a i j)) ha
-      have hu : (1 : Γ₀ˣ) < u := by
-        rw [← Units.val_lt_val, Units.val_one, Units.val_mk0]
-        exact (one_lt_div₀ (pos_iff_ne_zero.mpr hti)).mpr (ht hij)
-      obtain ⟨N, hN⟩ := MulArchimedean.arch b hu
-      filter_upwards [eventually_ge_atTop N] with k hk _
-      have hk_le : (b : Γ₀) ≤ (u : Γ₀) ^ k := by
-        exact_mod_cast hN.trans (pow_le_pow_right' hu.le hk)
-      have h_pos : (0 : Γ₀) < (u : Γ₀) ^ k :=
-        pow_pos (pos_iff_ne_zero.mpr (div_ne_zero htj hti)) k
-      have h_div : v ((t i : K) ^ k / (t j : K) ^ k * a i j) = (b : Γ₀) / (u : Γ₀) ^ k := by
-        simp only [u, b, Units.val_mk0, map_mul, map_div₀, map_pow, div_pow]
-        rw [div_div_eq_mul_div, div_mul_eq_mul_div, mul_comm (v (a i j))]
-      rw [h_div, div_le_one₀ h_pos]
-      exact hk_le
+  · filter_upwards [eventually_valuation_pow_div_mul_le_one_of_lt (ht hij) (a i j)] with k hk _
+    exact hk
   · filter_upwards with k h
     exact absurd h hij
 
