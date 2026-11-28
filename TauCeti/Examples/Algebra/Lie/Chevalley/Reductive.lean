@@ -33,6 +33,7 @@ variable {ι X Y : Type*} [IsEmpty ι] [AddCommGroup X] [AddCommGroup Y]
 
 example (x : ℚ ⊗[ℤ] ChevalleyLieAlgebra (ChevalleyConstants.ofIsEmpty P)) :
     x ∈ LieAlgebra.center ℚ (ℚ ⊗[ℤ] ChevalleyLieAlgebra (ChevalleyConstants.ofIsEmpty P)) := by
+  let : Invertible (2 : ℚ) := invertibleOfNonzero two_ne_zero
   apply (mem_center_baseChange_iff _ ℚ x).mpr
   exact ⟨by ext i; exact isEmptyElim i, RootPairing.mem_corootKer.mpr isEmptyElim⟩
 

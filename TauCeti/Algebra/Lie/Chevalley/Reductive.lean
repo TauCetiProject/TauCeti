@@ -265,35 +265,36 @@ theorem baseChange_cartan_mem_center_iff [FaithfulSMul ℤ A] (y : A ⊗[ℤ] Y)
     rw [← lie_skew]
     exact neg_eq_zero.mpr (LinearMap.congr_fun hz x)
 
-variable (K : Type*) [Field K] [CharZero K]
-
 /-- The center consists of the common root kernel in the toral coordinate and zero root
 coordinates. This retains all central directions of the full cocharacter lattice. -/
-theorem mem_center_baseChange_iff (x : K ⊗[ℤ] ChevalleyLieAlgebra c) :
-    x ∈ LieAlgebra.center K (K ⊗[ℤ] ChevalleyLieAlgebra c) ↔
-      (baseChangeEquiv c K x).2 = 0 ∧
-        (baseChangeEquiv c K x).1 ∈ (P.baseChange K).flip.corootKer := by
+theorem mem_center_baseChange_iff [FaithfulSMul ℤ A] [Invertible (2 : A)]
+    (x : A ⊗[ℤ] ChevalleyLieAlgebra c) :
+    x ∈ LieAlgebra.center A (A ⊗[ℤ] ChevalleyLieAlgebra c) ↔
+      (baseChangeEquiv c A x).2 = 0 ∧
+        (baseChangeEquiv c A x).1 ∈ (P.baseChange A).flip.corootKer := by
   have hcoord (y : Y) (i : ι) :
-      (baseChangeEquiv c K ⁅(1 : K) ⊗ₜ[ℤ] cartan c y, x⁆).2 i =
-        (P.toLinearMap (P.root i) y : K) * (baseChangeEquiv c K x).2 i := by
+      (baseChangeEquiv c A ⁅(1 : A) ⊗ₜ[ℤ] cartan c y, x⁆).2 i =
+        (P.toLinearMap (P.root i) y : A) * (baseChangeEquiv c A x).2 i := by
     induction x using TensorProduct.inductionOn with
     | tmul a x => simp [equivProd_cartan_lie_snd, mul_comm, mul_left_comm]
     | add x z hx hz => simp [LieRing.lie_add, hx, hz, mul_add]
   constructor
   · intro hx
-    have hr : (baseChangeEquiv c K x).2 = 0 := by
+    have hr : (baseChangeEquiv c A x).2 = 0 := by
       ext i
       have hi := hcoord (P.coroot i) i
       rw [hx, map_zero] at hi
-      simpa [P.root_coroot_eq_pairing, P.pairing_same] using hi.symm
-    have heq : x = (cartan c).baseChange K (baseChangeEquiv c K x).1 :=
-      (baseChangeEquiv c K).injective (by rw [baseChangeEquiv_cartan]; exact Prod.ext rfl hr)
-    exact ⟨hr, (baseChange_cartan_mem_center_iff c K _).mp (heq ▸ hx)⟩
+      have hi' : (2 : A) * (baseChangeEquiv c A x).2 i = 0 := by
+        simpa [P.root_coroot_eq_pairing, P.pairing_same] using hi.symm
+      exact (isUnit_of_invertible (2 : A)).mul_right_eq_zero.mp hi'
+    have heq : x = (cartan c).baseChange A (baseChangeEquiv c A x).1 :=
+      (baseChangeEquiv c A).injective (by rw [baseChangeEquiv_cartan]; exact Prod.ext rfl hr)
+    exact ⟨hr, (baseChange_cartan_mem_center_iff c A _).mp (heq ▸ hx)⟩
   · rintro ⟨hr, hy⟩
-    have heq : x = (cartan c).baseChange K (baseChangeEquiv c K x).1 :=
-      (baseChangeEquiv c K).injective (by rw [baseChangeEquiv_cartan]; exact Prod.ext rfl hr)
+    have heq : x = (cartan c).baseChange A (baseChangeEquiv c A x).1 :=
+      (baseChangeEquiv c A).injective (by rw [baseChangeEquiv_cartan]; exact Prod.ext rfl hr)
     rw [heq]
-    exact (baseChange_cartan_mem_center_iff c K _).mpr hy
+    exact (baseChange_cartan_mem_center_iff c A _).mpr hy
 
 omit [Free ℤ Y] in
 /-- For flat coefficients, the integral center formula extends to the scalar-extended toral
@@ -307,6 +308,8 @@ theorem center_baseChange_eq_map [Module.Flat ℤ A] :
   calc
     _ = (LieAlgebra.center ℤ (ChevalleyLieAlgebra c)).toSubmodule.baseChange A := h
     _ = _ := by rw [center_eq_map_iInf_ker, Submodule.baseChange_map]
+
+variable (K : Type*) [Field K] [CharZero K]
 
 /-- Over a characteristic-zero field the center and derived ideal of the full Chevalley algebra
 are complementary. The complement is obtained only after extending the cocharacter lattice. -/
