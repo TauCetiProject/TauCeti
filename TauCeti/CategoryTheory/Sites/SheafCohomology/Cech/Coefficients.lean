@@ -47,6 +47,8 @@ scalar multiplies the induced map of Čech complexes by that scalar.
 
 * `TauCeti.CategoryTheory.cechComplexFunctorMapIso_hom_app_f_π`: its factors are the images
   under `F` of the projections of the products.
+* `TauCeti.CategoryTheory.map_cechAugmentation_f_zero_comp_cechComplexFunctorMapIso`:
+  it carries the image of the ordinary Čech augmentation to the augmentation for `P ⋙ F`.
 * `TauCeti.CategoryTheory.cechComplexFunctorMapIso_hom_app_comp_cechComplexMap`: it commutes
   with the maps induced by morphisms of families.
 * `TauCeti.CategoryTheory.cechComplexFunctorMapHomologyIso_hom_comp_homologyMap_cechComplexMap`:
@@ -147,6 +149,23 @@ theorem cechComplexFunctorMapIso_hom_app_f_π (P : Cᵒᵖ ⥤ A) (n : ℕ) (a :
   (_ ≫= (cechXIso_hom_π U (P ⋙ F) n a).symm).trans <|
     (cechComplexFunctorMapXIso_hom_π U F P n a).trans
       (congrArg F.map (cechXIso_hom_π U P n a))
+
+/-- Applying the coefficient functor to the degree-zero Čech augmentation and then the
+coefficient comparison is the degree-zero augmentation for the mapped presheaf. This equation
+expresses compatibility with the augmentation without choosing a comparison of single complexes.
+-/
+@[reassoc]
+theorem map_cechAugmentation_f_zero_comp_cechComplexFunctorMapIso
+    [HasZeroObject A] [HasZeroObject B] {T : C} (hT : IsTerminal T) (P : Cᵒᵖ ⥤ A) :
+    F.map ((cechAugmentation U hT P).f 0) ≫
+        ((cechComplexFunctorMapIso U F).hom.app P).f 0 =
+      (cechAugmentation U hT (P ⋙ F)).f 0 := by
+  refine Pi.hom_ext _ _ fun a ↦ ?_
+  have h₁ := cechComplexFunctorMapIso_hom_app_f_π U F P 0 a
+  have h₂ := congrArg F.map (cechAugmentation_f_zero_comp_π U hT P a)
+  have h₃ := cechAugmentation_f_zero_comp_π U hT (P ⋙ F) a
+  exact (Category.assoc _ _ _).trans <| (_ ≫= h₁).trans <|
+    (F.map_comp _ _).symm.trans <| h₂.trans h₃.symm
 
 /-- **`cechComplexFunctorMapIso` commutes with refinement maps.** For a morphism `φ` from the
 family `U` to a family `V`, applying `F` to the map `Č(V, P) ⟶ Č(U, P)` induced by `φ` and then

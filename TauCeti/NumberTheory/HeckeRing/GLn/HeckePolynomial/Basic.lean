@@ -51,6 +51,8 @@ The exponent `i(i-1)/2` is written `Nat.choose i 2`, so no division appears in t
 
 ## Main results
 
+* `TauCeti.glnHeckePolynomial_succ`: recursive step expressing degree `n + 1` in terms of
+  degree `n`.
 * `TauCeti.coeff_glnHeckePolynomial`: the coefficient of `X^{n-i}` is `(-1)^i q^{i(i-1)/2} Tᵢ`.
 * `TauCeti.monic_glnHeckePolynomial` and `TauCeti.natDegree_glnHeckePolynomial`.
 * `TauCeti.map_glnHeckePolynomial`: compatibility with ring homomorphisms.
@@ -97,6 +99,20 @@ theorem glnHeckePolynomial_def (q : A) (T : Fin (n + 1) → A) :
     glnHeckePolynomial n q T =
       ∑ i : Fin (n + 1), C ((-1) ^ (i : ℕ) * q ^ (i : ℕ).choose 2 * T i) * X ^ (n - i) :=
   (rfl)
+
+/-- Recursive formula for the `GL n` Hecke polynomial:
+`glnHeckePolynomial (n + 1) q T = X * glnHeckePolynomial n q (T ∘ Fin.castSucc) +
+C ((-1) ^ (n + 1) * q ^ (n + 1).choose 2 * T (Fin.last (n + 1)))`. -/
+theorem glnHeckePolynomial_succ (n : ℕ) (q : A) (T : Fin (n + 2) → A) :
+    glnHeckePolynomial (n + 1) q T =
+      X * glnHeckePolynomial n q (fun i ↦ T i.castSucc) +
+        C ((-1) ^ (n + 1) * q ^ (n + 1).choose 2 * T (Fin.last (n + 1))) := by
+  rw [glnHeckePolynomial_def, Fin.sum_univ_castSucc, glnHeckePolynomial_def, Finset.mul_sum]
+  congr 1
+  · refine Finset.sum_congr rfl fun i _ ↦ ?_
+    have hi : n + 1 - (i : ℕ) = (n - (i : ℕ)) + 1 := by omega
+    rw [Fin.val_castSucc, hi, pow_succ', ← mul_assoc, ← mul_assoc, (commute_X _).eq]
+  · simp [Fin.val_last]
 
 /-- The coefficient of `X^{n-i}` in the Hecke polynomial is `(-1)^i q^{i(i-1)/2} Tᵢ`. -/
 theorem coeff_glnHeckePolynomial (q : A) (T : Fin (n + 1) → A) (i : Fin (n + 1)) :

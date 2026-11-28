@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Finrank
+public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.SerreClass
 public import TauCeti.Topology.Order.Sublevel
 
 /-!
@@ -37,9 +38,16 @@ natural number coefficients, when no step has homology in degree `n + 1`
 (`TauCeti.sum_range_neg_one_pow_mul_finrank_singularHomology_eq_sum_sublevelPair` and
 `TauCeti.exists_sum_range_monomial_sum_sublevelPair_eq_add_mul`), and the
 lacunary principle `b = c` when of any two consecutive `cᵢ` one vanishes
-(`TauCeti.finrank_singularHomology_eq_sum_sublevelPair`). These are the filtration statements of
+(`TauCeti.finrank_singularHomology_eq_sum_sublevelPair`). Over any abelian coefficient category the
+weak inequalities hold modulo a Serre class `Q`: if every step lies in `Q`, so does `Hᵢ(X)`
+(`TauCeti.prop_singularHomology_of_forall_sublevelPair`). These are the filtration statements of
 `TauCeti.AlgebraicTopology.Singular.FilteredSpace.Finrank` for the sublevels, read through the
 identification above.
+
+With coefficients in any abelian category, for instance over `ℤ`, the homology of `X` is
+controlled modulo a Serre class: if every step `Hₙ({f ≤ s (j + 1)}, {f ≤ s j})` lies in a Serre
+class, such as the torsion groups or the zero objects, so does `Hₙ(X)`
+(`TauCeti.prop_singularHomology_of_forall_prop_sublevelPair`).
 
 When `f` is a smooth function on a compact manifold cut at regular values between its critical
 values, each step is the relative homology of one critical level, which does not depend on the
@@ -273,6 +281,36 @@ theorem finrank_singularHomology_eq_sum_sublevelPair
   rw [finrank_singularHomology_eq_finrank_sublevelPair hs hs₀ hsN]
   exact finrank_singularHomology_ofInclusion_eq_sum_of_monotone (monotone_sublevel hs) V hfin hc n
 
+/-- **The weak Morse inequalities of a sublevel filtration modulo a Serre class.** Let
+`s 0 ≤ ⋯ ≤ s (N + 1)` with `s 0 < f ≤ s (N + 1)` everywhere, and let `Q` be a Serre class in an
+abelian coefficient category, for instance the zero objects. If every step
+`Hᵢ({f ≤ s (j + 1)}, {f ≤ s j}; R)` lies in `Q`, so does `Hᵢ(X; R)`. -/
+theorem prop_singularHomology_of_forall_sublevelPair {A : Type v} [Category.{w} A] [Abelian A]
+    [HasCoproducts.{u} A] (R : A) (Q : ObjectProperty A) [Q.IsSerreClass] (i : ℕ)
+    (hQ : ∀ j ≤ N, Q ((sublevelPair f (hs j.le_succ)).singularHomology R i)) :
+    Q (((AlgebraicTopology.singularHomologyFunctor A i).obj R).obj (TopCat.of X)) :=
+  Q.prop_of_iso (singularHomologyIsoSublevelPair (hs (Nat.zero_le (N + 1))) hs₀ hsN R i).symm
+    (prop_singularHomology_ofInclusion_of_monotone (monotone_sublevel hs) R Q i hQ)
+
 end Filtration
+
+/-! ### Sublevel filtrations modulo a Serre class -/
+
+section SerreClass
+
+variable {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] (R : A)
+  (P : ObjectProperty A) [P.IsSerreClass] {s : ℕ → β} (hs : Monotone s) {N : ℕ}
+
+/-- **Sublevel filtrations modulo a Serre class.** Let `s 0 ≤ ⋯ ≤ s (N + 1)` with
+`s 0 < f ≤ s (N + 1)` everywhere. If every step `Hₙ({f ≤ s (j + 1)}, {f ≤ s j}; R)` lies in a Serre
+class `P`, for instance the torsion abelian groups, then so does `Hₙ(X; R)`. -/
+theorem prop_singularHomology_of_forall_prop_sublevelPair (hs₀ : ∀ x, s 0 < f x)
+    (hsN : ∀ x, f x ≤ s (N + 1)) (n : ℕ)
+    (h : ∀ j ≤ N, P ((sublevelPair f (hs j.le_succ)).singularHomology R n)) :
+    P (((AlgebraicTopology.singularHomologyFunctor A n).obj R).obj (TopCat.of X)) :=
+  P.prop_of_iso (singularHomologyIsoSublevelPair (hs (Nat.zero_le (N + 1))) hs₀ hsN R n).symm
+    (prop_singularHomology_ofInclusion_of_monotone (monotone_sublevel hs) R P n h)
+
+end SerreClass
 
 end TauCeti

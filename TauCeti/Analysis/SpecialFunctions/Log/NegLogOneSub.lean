@@ -41,6 +41,8 @@ together with its exact domain of summability and truncated power-series remaind
   `Real.neg_log_one_sub_inv_sub_sum_Icc_nonneg`, and `Real.neg_log_one_sub_inv_sub_sum_Icc_le`:
   nonnegativity and geometric upper bounds for the truncated power-series remainder of
   `-log (1 - x)` and `-log (1 - x⁻¹)`.
+* `TauCeti.abs_log_mul_one_sub_sub_le`: scaled Taylor remainder bound for `log (c * (1 - u))` when
+  `c > 0` and `|u| < 1`.
 * `Complex.norm_neg_log_one_sub_sub_le`: for complex `z` with `‖z‖ ≤ 1/2`, the remainder
   `-log (1 - z) - z` has norm at most `‖z‖ ^ 2`.
 
@@ -268,3 +270,19 @@ theorem norm_neg_log_one_sub_sub_le {z : ℂ} (hz : ‖z‖ ≤ 1 / 2) :
     _ = ‖z‖ ^ 2 := by ring
 
 end Complex
+
+namespace TauCeti
+
+open Real in
+/-- For `c > 0`, `|u| < 1`, and `n : ℕ`, the Taylor remainder of `log (c * (1 - u))` around `u = 0`
+satisfies `|log (c * (1 - u)) - (log c - ∑ i ∈ range n, u ^ (i + 1) / (i + 1))| ≤`
+`|u| ^ (n + 1) / (1 - |u|)`. -/
+theorem abs_log_mul_one_sub_sub_le {c u : ℝ} (hc : 0 < c) (hu : |u| < 1) (n : ℕ) :
+    |log (c * (1 - u)) - (log c - ∑ i ∈ Finset.range n, u ^ (i + 1) / ((i : ℝ) + 1))| ≤
+      |u| ^ (n + 1) / (1 - |u|) := by
+  have h1u : 0 < 1 - u := sub_pos.mpr (abs_lt.mp hu).2
+  rw [log_mul hc.ne' h1u.ne']
+  convert abs_log_sub_add_sum_range_le hu n using 2
+  ring
+
+end TauCeti

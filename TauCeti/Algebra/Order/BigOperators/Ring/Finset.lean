@@ -22,6 +22,10 @@ These bounds convert sums of squared partition increments into mesh bounds by te
 a linearly ordered commutative ring: the product of the absolute values is the product times `-1`
 to the number of negative factors.
 
+`TauCeti.eq_zero_of_sum_mul_self_le`: in a linearly ordered ring, a sum of squares that is at most
+one of its terms has every other term zero, as all the other squares are nonnegative; this is how
+a vector of integers of norm `1` is seen to be `±` a basis vector.
+
 `Finset.sum_div_sub_lt_sum_div_sub` is the strict monotonicity of a sum of simple poles
 `∑ i ∈ s, w i / (f i - t)` with nonnegative weights, not all zero, in `t` above every pole.
 
@@ -91,6 +95,18 @@ end Finset
 namespace TauCeti
 
 open Finset
+
+/-- **A sum of squares at most one of its terms.** In a linearly ordered ring, if
+`∑ᵢ cᵢ² ≤ c_{i₀}²`, then `cⱼ = 0` for every `j ≠ i₀`: the squares are nonnegative, so those other
+than `c_{i₀}²` sum to at most `0`, hence all vanish. -/
+theorem eq_zero_of_sum_mul_self_le {ι R : Type*} [Fintype ι] [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] {c : ι → R} {i₀ : ι} (h : ∑ i, c i * c i ≤ c i₀ * c i₀) {j : ι}
+    (hj : j ≠ i₀) : c j = 0 := by
+  classical
+  have hnn : ∀ i ∈ univ.erase i₀, 0 ≤ c i * c i := fun i _ ↦ mul_self_nonneg _
+  rw [← add_sum_erase _ _ (mem_univ i₀), add_le_iff_nonpos_right] at h
+  exact mul_self_eq_zero.mp ((sum_eq_zero_iff_of_nonneg hnn).mp
+    (le_antisymm h (sum_nonneg hnn)) j (mem_erase.mpr ⟨hj, mem_univ j⟩))
 
 /-- Along a sequence in a preordered, not necessarily associative ring with monotone addition
 satisfying `c * f k ≤ f (k + 1)` for `k ∈ Ico M m` (`M ≤ m`),

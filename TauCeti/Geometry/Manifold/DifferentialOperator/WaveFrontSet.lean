@@ -94,6 +94,9 @@ the components `Sᵢ` of `T`.
   sets or singular supports.
 * `TauCeti.BundleTest.chartComponent_localOperatorDualCLM_apply`: the components of the transpose
   in a chart, in terms of the entries of the chart compression.
+* `TauCeti.BundleTest.restrictCLM_chartComponent_localOperatorDualCLM_apply`: for a bundle `W` of
+  rank one, near a point of a chart, the component of the transpose is the transpose of a component
+  by one entry of the chart compression.
 * `TauCeti.BundleTest.IsMicrolocallySmoothAt.of_localOperatorDualCLM`,
   `TauCeti.BundleTest.waveFrontSet_subset_waveFrontSet_localOperatorDualCLM_union`: microlocal
   elliptic regularity for differential operators between bundles, at the covectors where the
@@ -406,6 +409,39 @@ private theorem smoothPrincipalSymbol_sectionChartCompressionDifferentialOperato
     exact (toDual_symm_apply (𝕜 := ℝ) (E := E) (x := mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c x u)).trans
       (congrArg ξ hd)
   exact hcov ▸ h1
+
+/-- **The transpose by an operator into a line in a chart, near a point.** Let `c` be a chart of
+the maximal atlas with frames `tV` and `tW` over its source, `b` a basis of the model fibre of `W`
+indexed by a type with at most one element, and `χ` a cutoff on the chart target equal to `1` on an
+open set `U`. Restricted to `U`, the component along `v` of the transpose `T ∘ P` by a differential
+operator `P` is the transpose `φ ↦ S (D φ)` of the component `S` of `T` along `b i` by the
+`(b i)*, v` entry `D` of the chart compression of `P` by `χ` and `χ`. -/
+theorem restrictCLM_chartComponent_localOperatorDualCLM_apply {r : ℕ}
+    (hP : P ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), M; ℝ⟯ Cₛ^∞⟮𝓘(ℝ, E); F, V⟯
+      Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ r)
+    {c : OpenPartialHomeomorph M E} (he : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
+    {tV : Trivialization F (π F V)} [MemTrivializationAtlas tV] (hV : c.source ⊆ tV.baseSet)
+    {tW : Trivialization F' (π F' W)} [MemTrivializationAtlas tW] (hW : c.source ⊆ tW.baseSet)
+    {χ : 𝓓(⟨c.target, c.open_target⟩, ℝ)} {U : Opens E} (hU : U ≤ ⟨c.target, c.open_target⟩)
+    (hχ : ∀ y ∈ U, χ y = 1) (v : F) {ι : Type*} [Subsingleton ι]
+    (b : Module.Basis ι ℝ F') (i : ι) {φ ψ : 𝓓(U, ℝ)} {f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯} (hf : ⇑f = φ)
+    (hψ : ⇑ψ = (c.sectionChartCompressionDifferentialOperators he tV hV tW hW χ χ
+      (LinearMap.toContinuousLinearMap (b.coord i)) v r ⟨P, hP⟩).val f)
+    (T : BundleTest 𝓘(ℝ, E) F' W →L_c[ℝ] ℝ) :
+    Distribution.restrictCLM (tV.chartComponent c (contMDiffOn_of_mem_maximalAtlas he) hV
+      (localOperatorDualCLM P
+        (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) v) φ =
+      Distribution.restrictCLM
+        (tW.chartComponent c (contMDiffOn_of_mem_maximalAtlas he) hW T (b i)) ψ := by
+  have := Fintype.ofFinite ι
+  let φ' : 𝓓(⟨c.target, c.open_target⟩, ℝ) := TestFunction.monoCLM ℝ φ
+  have hφχ : ∀ z ∈ tsupport φ', χ z = 1 := fun z hz ↦
+    hχ z (φ.tsupport_subset (by simpa [φ', hU] using hz))
+  rw [Distribution.restrictCLM_apply, Distribution.restrictCLM_apply,
+    chartComponent_localOperatorDualCLM_apply _ he hV hW hφχ (φ := φ') (by simpa [φ', hU] using hf)
+      v b (fun _ ↦ TestFunction.monoCLM ℝ ψ) fun j ↦ by
+        rw [Subsingleton.elim j i]
+        simpa [hU] using hψ, Fintype.sum_subsingleton _ i]
 
 /-- **Microlocal elliptic regularity in a chart.** Let `P : Γ(V) → Γ(W)` be a differential
 operator, `c` a chart of the maximal atlas at `x` with frames `tV` and `tW` over its source, and

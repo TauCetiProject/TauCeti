@@ -35,6 +35,8 @@ at most `D` times. This is
 
 * `MeasureTheory.Measure.measure_eq_zero_of_encard_setOf_add_smul_mem_le`: a measurable set
   meeting every line of direction `v` in at most `D` points is null.
+* `MeasureTheory.Measure.measure_setOf_apply_eq_zero`: every coordinate hyperplane
+  `{a | a j = 0}` in `ι → K` is null.
 -/
 
 public section
@@ -75,5 +77,23 @@ theorem measure_eq_zero_of_encard_setOf_add_smul_mem_le (μ : Measure (ι → K)
     · exact encard_le_encard (by rintro _ ⟨t, ht, rfl⟩; exact ht)
     · intro s _ t _ hst
       simpa [pow_ne_zero k₀ hϖ0] using hst
+
+/-- Any locally finite left-invariant measure on `ι → K` (`[Finite ι]`) assigns measure zero to
+every coordinate hyperplane `{a | a j = 0}`. -/
+-- Not `@[grind =]`: `j` only appears inside the `setOf` predicate, so `grind` rejects the pattern.
+@[simp]
+theorem measure_setOf_apply_eq_zero (μ : Measure (ι → K)) [μ.IsAddLeftInvariant]
+    [IsFiniteMeasureOnCompacts μ] (j : ι) :
+    μ {a : ι → K | a j = 0} = 0 := by
+  classical
+  refine μ.measure_eq_zero_of_encard_setOf_add_smul_mem_le
+    (isClosed_eq (continuous_apply j) continuous_const).measurableSet (Pi.single j 1) (D := 1)
+    fun x ↦ ?_
+  have hsub : {t : K | x + t • Pi.single j (1 : K) ∈ {a : ι → K | a j = 0}} ⊆ {-x j} := by
+    intro t ht
+    simp only [mem_ofPred_eq, Pi.add_apply, Pi.smul_apply, Pi.single_eq_same, smul_eq_mul,
+      mul_one, mem_singleton_iff] at ht ⊢
+    exact eq_neg_of_add_eq_zero_right ht
+  exact (encard_le_encard hsub).trans (by simp)
 
 end MeasureTheory.Measure

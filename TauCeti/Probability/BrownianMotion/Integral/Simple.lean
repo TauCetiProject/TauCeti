@@ -179,4 +179,16 @@ theorem coeFn_l2Integral_simpleHolding (hW : IsFilteredPreBrownianReal ℱ W P)
   · have hTj : T ≤ τ j := (not_le.mp ht).le
     simp [min_eq_right hTj, min_eq_right (hTj.trans hle), max_eq_left hTj]
 
+/-- `Lp` form of `coeFn_l2Integral_simpleHolding`. -/
+theorem l2Integral_simpleHolding (hW : IsFilteredPreBrownianReal ℱ W P)
+    {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ}
+    (hτ : MonotoneOn τ (Iic n))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (T : ℝ≥0)
+    (hH : MemLp (Function.uncurry (Finance.simpleHolding τ n a)) 2 (ℱ.predictableMeasure P T))
+    (hg : MemLp (Finance.simpleGains τ n a W T) 2 P) :
+    hW.l2Integral T (hH.toLp (Function.uncurry (Finance.simpleHolding τ n a))) =
+      hg.toLp (Finance.simpleGains τ n a W T) :=
+  Lp.ext ((hW.coeFn_l2Integral_simpleHolding hτ ha T hH).trans hg.coeFn_toLp.symm)
+
 end TauCeti.Probability.IsFilteredPreBrownianReal

@@ -32,8 +32,9 @@ transforms by the same congruence. For a symmetric complex matrix `Ω`, the imag
 * `Matrix.IsHermitian.map_ofReal`: a real symmetric matrix is Hermitian.
 * `Matrix.map_im_map_ofReal_of_transpose_eq`: for a symmetric complex matrix `Ω`, the complex
   matrix of `Im Ω` is `(Ω - Ωᴴ) / 2i`.
-* `Matrix.map_ofReal_mul`, `Matrix.map_ofReal_one`, `Matrix.trace_map_ofReal`: the entrywise
-  coercion is multiplicative, preserves the identity and commutes with the trace.
+* `Matrix.map_ofReal_mul`, `Matrix.map_ofReal_mulVec`, `Matrix.map_ofReal_one`,
+  `Matrix.trace_map_ofReal`: the entrywise coercion is multiplicative, commutes with `mulVec`,
+  preserves the identity and commutes with the trace.
 * `Matrix.isUnit_map_ofReal_iff`: a real matrix is invertible exactly when it is invertible as a
   complex matrix.
 * `Matrix.det_map_ofReal`: the determinant of a real matrix is unchanged as a complex matrix.
@@ -47,6 +48,8 @@ transforms by the same congruence. For a symmetric complex matrix `Ω`, the imag
   matrix.
 * `Matrix.PosDef.map_re_conjTranspose_mul_self`: the real Gram matrix of a complex matrix with
   independent columns is positive definite.
+* `Matrix.PosSemidef.map_re`: the real part of a positive semidefinite complex matrix, over any
+  index type, is positive semidefinite.
 -/
 
 public section
@@ -90,6 +93,12 @@ theorem map_im_map_ofReal_of_transpose_eq {Ω : Matrix n n ℂ} (h : Ωᵀ = Ω)
 theorem map_ofReal_mul [Fintype m] (X : Matrix l m ℝ) (Y : Matrix m n ℝ) :
     (X * Y).map ((↑) : ℝ → ℂ) = X.map (↑) * Y.map (↑) :=
   Matrix.map_mul (f := Complex.ofRealHom)
+
+/-- The entrywise coercion of real matrices to complex matrices commutes with `mulVec`. -/
+@[simp]
+theorem map_ofReal_mulVec [Fintype n] (X : Matrix m n ℝ) (z : n → ℝ) :
+    X.map ((↑) : ℝ → ℂ) *ᵥ (fun i ↦ (z i : ℂ)) = fun i ↦ ((X *ᵥ z) i : ℂ) :=
+  funext fun i ↦ (RingHom.map_mulVec Complex.ofRealHom X z i).symm
 
 /-- The entrywise coercion of the real identity matrix is the complex identity matrix. -/
 theorem map_ofReal_one [DecidableEq n] : (1 : Matrix n n ℝ).map ((↑) : ℝ → ℂ) = 1 :=
@@ -202,5 +211,21 @@ positive definite. -/
 theorem PosDef.map_re_conjTranspose_mul_self [Fintype m] [Fintype n] (M : Matrix m n ℂ)
     (hM : Function.Injective M.mulVec) : ((Mᴴ * M).map Complex.re).PosDef :=
   (PosDef.conjTranspose_mul_self M hM).map_re
+
+/-- The real part of a positive semidefinite complex matrix is positive semidefinite. The index type
+is arbitrary, so this applies to positive-definite kernels on any set. -/
+theorem PosSemidef.map_re {K : Matrix n n ℂ} (hK : K.PosSemidef) :
+    (K.map Complex.re).PosSemidef := by
+  -- Positive semidefiniteness is checked on finite principal submatrices.
+  refine posSemidef_iff_submatrix_finset.2 fun s ↦ ?_
+  have hs := posSemidef_iff_submatrix_finset.1 hK s
+  rw [submatrix_map]
+  refine .of_dotProduct_mulVec_nonneg (hs.isHermitian.map _ fun _ ↦ Complex.conj_re _)
+    fun x ↦ ?_
+  -- The real quadratic form at `x` is the real part of the complex one at `x` viewed in `ℂ`.
+  have hre : (star (fun i ↦ (x i : ℂ)) ⬝ᵥ (K.submatrix (↑) (↑) *ᵥ fun i ↦ (x i : ℂ))).re =
+      star x ⬝ᵥ ((K.submatrix (↑) (↑)).map Complex.re *ᵥ x) := by
+    simp [dotProduct, mulVec, Complex.re_sum, Finset.mul_sum]
+  exact hre ▸ (Complex.nonneg_iff.1 (hs.dotProduct_mulVec_nonneg _)).1
 
 end Matrix

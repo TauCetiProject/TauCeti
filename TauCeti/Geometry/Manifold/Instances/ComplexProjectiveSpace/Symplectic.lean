@@ -76,7 +76,10 @@ under multiplication by `i`, and `ω_FS(v, i v) = Re H(v', v')` is positive for 
 
 * `TauCeti.ComplexProjectiveSpace.ker_bilinFormAt_mpullback_coe_sphere`: the null directions of
   the restriction of `Im ⟪·, ·⟫_ℂ` to `S²ⁿ⁺¹` at `x` are the real multiples of `i x`.
-* `TauCeti.ComplexProjectiveSpace.mpullback_smul_mpullback_coe_sphere`: this restriction is
+* `TauCeti.ComplexProjectiveSpace.mpullback_mpullback_coe_sphere_of_im_inner_map_map`: this
+  restriction is invariant under every map of the sphere induced by a real linear map preserving
+  `Im ⟪·, ·⟫_ℂ`, such as a unitary map.
+* `TauCeti.ComplexProjectiveSpace.mpullback_smul_mpullback_coe_sphere`: in particular it is
   invariant under the circle acting by unit scalars.
 * `TauCeti.ComplexProjectiveSpace.mpullback_mk_fubiniStudyForm`: its pullback to the sphere is
   `π⁻¹` times the restriction of `Im ⟪·, ·⟫_ℂ`.
@@ -162,6 +165,35 @@ theorem ker_bilinFormAt_mpullback_coe_sphere
     (injective_mvfderiv_subtypeVal_sphere x) _).symm.trans ?_
   rw [SymplecticForm.map_ker_bilinFormAt_mpullback_coe_sphere _ (K := (I • ·)) hK x]
 
+/-- **Linear symmetries of `Im ⟪·, ·⟫_ℂ` preserve its restriction to the sphere.** If a smooth map
+`f` of `S²ⁿ⁺¹` is the restriction of a real linear map `L` of `ℂⁿ⁺¹` preserving `Im ⟪·, ·⟫_ℂ`, then
+`f` preserves the restriction of `Im ⟪·, ·⟫_ℂ` to the sphere. -/
+theorem mpullback_mpullback_coe_sphere_of_im_inner_map_map
+    {f : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 →
+      sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1}
+    (hf : ContMDiff (𝓡 (2 * n + 1)) (𝓡 (2 * n + 1)) ∞ f)
+    (L : EuclideanSpace ℂ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℂ (Fin (n + 1)))
+    (hL : ∀ u w, (⟪L u, L w⟫_ℂ).im = (⟪u, w⟫_ℂ).im) (hfL : ∀ z, (f z : _) = L z) :
+    SmoothForm.mpullback f hf
+        (SmoothForm.mpullback
+          ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → EuclideanSpace ℂ (Fin (n + 1)))
+          (contMDiff_coe_sphere (n := 2 * n + 1))
+          (imInnerSymplecticForm (EuclideanSpace ℂ (Fin (n + 1)))).constSmooth) =
+      SmoothForm.mpullback
+        ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → EuclideanSpace ℂ (Fin (n + 1)))
+        contMDiff_coe_sphere
+        (imInnerSymplecticForm (EuclideanSpace ℂ (Fin (n + 1)))).constSmooth := by
+  have hL' : SmoothForm.mpullback L L.contMDiff
+      (imInnerSymplecticForm (EuclideanSpace ℂ (Fin (n + 1)))).constSmooth =
+      (imInnerSymplecticForm (EuclideanSpace ℂ (Fin (n + 1)))).constSmooth := by
+    refine SmoothBundleForm.ext_eval₂ fun p v w ↦ ?_
+    rw [SmoothForm.eval₂_mpullback, SymplecticForm.eval₂_constSmooth_mfderiv_eq,
+      SymplecticForm.fromTangentSpace_constSmooth_apply, mvfderiv_eq_fderiv, L.fderiv]
+    simp only [imInnerSymplecticForm_apply]
+    exact hL _ _
+  rw [SmoothForm.mpullback_mpullback_of_comp_eq _ _ contMDiff_coe_sphere L.contMDiff
+    (funext hfL), hL']
+
 /-- **The restriction of `Im ⟪·, ·⟫_ℂ` to the sphere is invariant under the circle** acting by
 unit scalars, which acts on `ℂⁿ⁺¹` by unitary maps. -/
 theorem mpullback_smul_mpullback_coe_sphere (c : Circle) :
@@ -174,19 +206,13 @@ theorem mpullback_smul_mpullback_coe_sphere (c : Circle) :
       SmoothForm.mpullback
         ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → EuclideanSpace ℂ (Fin (n + 1)))
         contMDiff_coe_sphere
-        (imInnerSymplecticForm (EuclideanSpace ℂ (Fin (n + 1)))).constSmooth := by
+        (imInnerSymplecticForm (EuclideanSpace ℂ (Fin (n + 1)))).constSmooth :=
   -- Multiplication by `c` on `ℂⁿ⁺¹`, as a real linear map.
-  let L : EuclideanSpace ℂ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℂ (Fin (n + 1)) :=
-    ((c : ℂ) • ContinuousLinearMap.id ℂ (EuclideanSpace ℂ (Fin (n + 1)))).restrictScalars ℝ
-  have hL : SmoothForm.mpullback L L.contMDiff
-      (imInnerSymplecticForm (EuclideanSpace ℂ (Fin (n + 1)))).constSmooth =
-      (imInnerSymplecticForm (EuclideanSpace ℂ (Fin (n + 1)))).constSmooth := by
-    refine SmoothBundleForm.ext_eval₂ fun p v w ↦ ?_
-    rw [SmoothForm.eval₂_mpullback, SymplecticForm.eval₂_constSmooth_mfderiv_eq,
-      SymplecticForm.fromTangentSpace_constSmooth_apply, mvfderiv_eq_fderiv, L.fderiv]
-    simpa [L] using congrArg Complex.im (inner_smul_smul_of_norm_eq_one (Circle.norm_coe c) _ _)
-  rw [SmoothForm.mpullback_mpullback_of_comp_eq _ _ contMDiff_coe_sphere L.contMDiff
-    (funext fun z ↦ Circle.coe_smul_sphere c z), hL]
+  mpullback_mpullback_coe_sphere_of_im_inner_map_map _
+    (((c : ℂ) • ContinuousLinearMap.id ℂ (EuclideanSpace ℂ (Fin (n + 1)))).restrictScalars ℝ)
+    (fun u w ↦ by
+      simpa using congrArg Complex.im (inner_smul_smul_of_norm_eq_one (Circle.norm_coe c) u w))
+    (Circle.coe_smul_sphere c)
 
 /-- The restricted form is basic for the Hopf projection: it is invariant under the circle, whose
 orbits are the fibres of `mk`, and the vertical vectors of `mk` are its null directions. -/

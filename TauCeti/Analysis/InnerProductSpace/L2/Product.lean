@@ -31,6 +31,8 @@ The tensor family has dense linear span in `L²(μ ⊗ ν)` for arbitrary factor
 expansions in the product Hilbert basis are available without countability assumptions on either
 basis. The vanishing-integral lemmas relate orthogonality to all elementary tensors to the
 integrals of representatives over finite-measure rectangles and measurable sets.
+For a finite measure on a product `X × Y`, the indicators of measurable rectangles are total in
+`L²` (`MeasureTheory.Lp.eq_zero_of_forall_inner_indicatorConstLp_prod`).
 
 The scalars are generic over `[RCLike 𝕜]`, so a single construction serves both the real and
 complex `L²` spaces.
@@ -55,6 +57,8 @@ complex `L²` spaces.
   implies vanishing integrals over finite-measure rectangles.
 * `TauCeti.setIntegral_eq_zero_of_forall_inner` — orthogonality to every elementary tensor implies
   vanishing integrals over all measurable sets of finite measure.
+* `MeasureTheory.Lp.eq_zero_of_forall_inner_indicatorConstLp_prod` — indicators of measurable
+  rectangles are total in `L²` of a finite measure on a product space.
 * `HilbertBasis.prod_apply` — the `(i, j)` basis vector is the tensor `b₁ i ⊗ b₂ j`;
   `HilbertBasis.coeFn_prod` gives its a.e. representative.
 -/
@@ -217,6 +221,28 @@ theorem setIntegral_eq_zero_of_forall_inner [SigmaFinite μ] [SigmaFinite ν] {h
   exact tendsto_nhds_unique htend tendsto_const_nhds
 
 end TauCeti
+
+namespace MeasureTheory
+
+/-- **Indicators of rectangles are total in `L²` of a product space.** For a finite measure `ρ` on
+`X × Y`, a vector of `L²(ρ)` orthogonal to the indicator of every measurable rectangle `A ×ˢ B`
+vanishes. -/
+theorem Lp.eq_zero_of_forall_inner_indicatorConstLp_prod {X Y : Type*} [MeasurableSpace X]
+    [MeasurableSpace Y] {ρ : Measure (X × Y)} [IsFiniteMeasure ρ] (w : Lp 𝕜 2 ρ)
+    (h : ∀ (A : Set X) (B : Set Y) (hA : MeasurableSet A) (hB : MeasurableSet B),
+      inner 𝕜 (indicatorConstLp 2 (hA.prod hB) (measure_ne_top ρ _) (1 : 𝕜)) w = 0) :
+    w = 0 := by
+  have hint : Integrable w ρ := (Lp.memLp w).integrable one_le_two
+  have hrect : ∀ A, MeasurableSet A → ∀ B, MeasurableSet B → ∫ z in A ×ˢ B, w z ∂ρ = 0 :=
+    fun A hA B hB => by
+      rw [← L2.inner_indicatorConstLp_one (hA.prod hB) (measure_ne_top _ _)]
+      exact h A B hA hB
+  have hset := TauCeti.setIntegral_eq_zero_of_forall_prod hint hrect
+  refine Lp.ext ?_
+  exact (ae_eq_zero_of_forall_setIntegral_eq_of_sigmaFinite (fun s _ _ => hint.integrableOn)
+    fun s hs _ => hset s hs).trans (Lp.coeFn_zero 𝕜 2 _).symm
+
+end MeasureTheory
 
 namespace HilbertBasis
 
