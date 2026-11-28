@@ -392,6 +392,35 @@ theorem comap_waldschmidtPointMap_span_single (b : Fin (n + 1) → R) :
   · rw [Submodule.mem_comap, waldschmidtPointMap_snoc, Submodule.mem_span_singleton]
     exact ⟨-b 0, by rw [← Pi.single_smul, smul_eq_mul, mul_one]⟩
 
+open scoped Pointwise in
+/-- **Injectivity of the grid point map.** Over a field of characteristic zero, the grid point
+map `s ↦ s · y` is injective on a set `A` of indices if `β₀ ≠ 0`, or if no nonzero difference of
+two elements of `A` lies on the line `K c` through the coefficient vector
+`c = (β₁, …, β_{m-1}, -1)`: two indices with the same grid point differ by a multiple `a c`, whose
+grid point is `-a β₀ e₀`. -/
+theorem injOn_waldschmidtPoint {K : Type*} [Field K] [CharZero K] {b : Fin (n + 1) → K}
+    {A : Set (Fin (n + 1) → ℤ)}
+    (hb : b 0 ≠ 0 ∨ ∀ v ∈ A - A,
+      (fun i ↦ (v i : K)) ∈ K ∙ Fin.snoc (fun k : Fin n ↦ b k.succ) (-1) → v = 0) :
+    Set.InjOn (waldschmidtPoint b) A := by
+  intro s hs t ht hst
+  rw [← sub_eq_zero]
+  have hcast : (fun i ↦ ((s - t) i : K)) = (fun i ↦ (s i : K)) - fun i ↦ (t i : K) := by
+    ext i
+    simp
+  have hv : waldschmidtPointMap b (fun i ↦ ((s - t) i : K)) = 0 := by
+    rw [hcast, map_sub, waldschmidtPointMap_intCast, waldschmidtPointMap_intCast, hst, sub_self]
+  have hc := eq_neg_smul_snoc_of_waldschmidtPointMap_mem b (hv ▸ zero_mem _)
+  rcases hb with hb | hb
+  · -- The `z₀`-coordinate `(s - t)ₘ β₀` of the grid point vanishes, so `(s - t)ₘ = 0`.
+    have h0 := congrFun hv 0
+    rw [waldschmidtPointMap_apply_zero, Pi.zero_apply, mul_eq_zero] at h0
+    rw [h0.resolve_right hb, neg_zero, zero_smul] at hc
+    ext i
+    exact_mod_cast (by simpa using congrFun hc i : ((s - t) i : K) = 0)
+  · exact hb _ (Set.sub_mem_sub hs ht) (hc ▸ Submodule.smul_mem _ _
+      (Submodule.mem_span_singleton_self _))
+
 /-- A subspace `V` of indices containing the coefficient vector `c = (β₁, …, β_{m-1}, -1)` is
 recovered from the subspace `V · y + R e₀` spanned by its grid points and the direction `e₀` of
 the derivatives: an index `v` has its grid point in `V · y + R e₀` if and only if `v ∈ V`. -/
