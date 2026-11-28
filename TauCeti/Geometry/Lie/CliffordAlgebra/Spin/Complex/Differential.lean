@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Algebra.Lie.BaseChange.Basic
 import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.UnitsDifferential
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 import TauCeti.LinearAlgebra.Matrix.ToLin
@@ -91,7 +92,7 @@ theorem complexSpinToSpecialOrthogonalCoordinateLieHom_lie_ι
   let X := (complexSpinLieEquivQuadratic (Q := Q)).symm x
   refine ι_mulVec_eq_lie_of_embeddedLieSubgroupData (Q := Q)
     (AlgEquiv.refl : CliffordAlgebra Q ≃ₐ[ℝ] CliffordAlgebra Q) (MulEquiv.refl _) (fun _ ↦ rfl)
-    D (complexSpecialOrthogonalEmbeddedLieSubgroupData Q)
+    D (TauCeti.Lie.complexSpecialOrthogonalEmbeddedLieSubgroupData Q)
     (complexSpinToSpecialOrthogonalSmoothRange (Q := Q))
     (complexSpinToSpecialOrthogonalSmoothRange_apply (Q := Q)) X ?_ ?_ v
   · rw [unitsLieAlgebraLieEquiv_lieMapSubtypeVal_eq_coe_complexSpinLieEquivQuadratic]
@@ -265,12 +266,13 @@ theorem lieMap_complexSpinToSpecialOrthogonalSmoothRange_bijective :
     exact ((complexSpinToSpecialOrthogonalPolarComplexLieEquiv (Q := Q)).restrictScalars
       ℝ).bijective
   have hcomp : ⇑(complexSpinToSpecialOrthogonalPolarCoordinateLieHom (Q := Q)) =
-      ⇑(complexSpecialOrthogonalLieEquivSkewAdjoint (Q := Q)) ∘
+      ⇑(TauCeti.Lie.complexSpecialOrthogonalLieEquivSkewAdjoint (Q := Q)) ∘
         ⇑(lieMap (complexSpinToSpecialOrthogonalSmoothRange (Q := Q))) ∘
           ⇑(complexSpinLieEquivQuadratic (Q := Q)).symm :=
     funext fun x ↦ complexSpinToSpecialOrthogonalPolarCoordinateLieHom_apply (Q := Q) x
   rw [hcomp] at hbij
-  exact ((complexSpecialOrthogonalLieEquivSkewAdjoint (Q := Q)).bijective.of_comp_iff' _).mp
+  exact ((TauCeti.Lie.complexSpecialOrthogonalLieEquivSkewAdjoint (Q := Q)).bijective.of_comp_iff'
+      _).mp
     ((Function.Bijective.of_comp_iff _ (complexSpinLieEquivQuadratic (Q := Q)).symm.bijective).mp
       hbij)
 
