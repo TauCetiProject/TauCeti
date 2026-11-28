@@ -10,6 +10,8 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Action
 -- `OnePoint.instContinuousConstSMul`: `GL (Fin 2) ℂ` acts on the Riemann sphere by homeomorphisms.
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Moebius
 public import TauCeti.Topology.Compactification.OnePoint.Nhds
+import Mathlib.Analysis.Complex.ReImTopology
+import TauCeti.Analysis.Complex.UpperHalfPlane.Compactification
 import TauCeti.Topology.Compactification.OnePoint.Map
 
 /-!
@@ -29,6 +31,9 @@ sets of Fuchsian groups are ideal boundaries of orbits.
 * `TauCeti.UpperHalfPlane.coe_mem_idealBoundary_iff` and
   `TauCeti.UpperHalfPlane.infty_mem_idealBoundary_iff`: a real point is in the ideal boundary of
   `A` when `A` has points arbitrarily close to it, and `∞` is when `A` is unbounded in `ℂ`.
+* `TauCeti.UpperHalfPlane.coe_mem_idealBoundary_preimage_re_iff` computes real ideal points
+  of a set specified by its real coordinates, and `TauCeti.UpperHalfPlane.idealBoundary_univ`
+  computes the ideal boundary of the whole upper half-plane.
 * `TauCeti.UpperHalfPlane.isClosed_idealBoundary`: the ideal boundary is closed in `∂ℍ`.
 * `TauCeti.UpperHalfPlane.idealBoundary_subset_of_forall_exists_dist_le`: a set within bounded
   hyperbolic distance of another has no more ideal boundary points, so sets at finite Hausdorff
@@ -90,6 +95,24 @@ theorem coe_mem_idealBoundary_iff {A : Set ℍ} {x : ℝ} :
     Metric.mem_closure_iff]
   simp [dist_comm]
 
+/-- For a set prescribed by real coordinates, finite ideal-boundary membership is closure
+membership in the real coordinate set. -/
+theorem coe_mem_idealBoundary_preimage_re_iff (s : Set ℝ) {x : ℝ} :
+    (x : OnePoint ℝ) ∈ idealBoundary (UpperHalfPlane.re ⁻¹' s) ↔ x ∈ closure s := by
+  have himage : ((↑) : ℍ → ℂ) '' (UpperHalfPlane.re ⁻¹' s) = s ×ℂ Ioi 0 := by
+    ext z
+    rw [Complex.mem_reProdIm]
+    constructor
+    · rintro ⟨w, hw, rfl⟩
+      exact ⟨hw, w.im_pos⟩
+    · rintro ⟨hz, hpos⟩
+      exact ⟨⟨z, hpos⟩, hz, rfl⟩
+  rw [mem_idealBoundary_iff, OnePoint.map_some, ← mem_preimage,
+    ← OnePoint.isOpenEmbedding_coe.isEmbedding.closure_eq_preimage_closure_image]
+  change (x : ℂ) ∈ closure (((↑) : ℍ → ℂ) '' (UpperHalfPlane.re ⁻¹' s)) ↔ _
+  rw [himage, Complex.closure_reProdIm, closure_Ioi, Complex.mem_reProdIm]
+  simp
+
 /-- The point `∞` is in the ideal boundary of `A` exactly when `A` is unbounded in `ℂ`. -/
 theorem infty_mem_idealBoundary_iff {A : Set ℍ} :
     ∞ ∈ idealBoundary A ↔ ∀ r : ℝ, ∃ z ∈ A, r < ‖(z : ℂ)‖ := by
@@ -115,6 +138,16 @@ theorem idealBoundary_empty : idealBoundary ∅ = ∅ := by
 theorem idealBoundary_union (A B : Set ℍ) :
     idealBoundary (A ∪ B) = idealBoundary A ∪ idealBoundary B := by
   simp [idealBoundary, image_union, closure_union, preimage_union]
+
+/-- The full upper half-plane accumulates at every ideal point. -/
+@[simp]
+theorem idealBoundary_univ : idealBoundary (univ : Set ℍ) = univ := by
+  ext ξ
+  simp only [idealBoundary, image_univ, UpperHalfPlane.range_coe,
+    TauCeti.closure_coe_image_upperHalfPlaneSet, mem_preimage, mem_univ, iff_true]
+  induction ξ using OnePoint.rec with
+  | infty => simp
+  | coe x => simp
 
 /-- If every point of `A` lies within hyperbolic distance `C` of a point of `B`, then every ideal
 point at which `A` accumulates is one at which `B` accumulates. -/
