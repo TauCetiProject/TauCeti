@@ -13,8 +13,8 @@ public import Mathlib.Topology.FiberBundle.Constructions
 The total space of a fibrewise product has the topology induced from the product of total
 spaces, so each of its two components depends continuously on a vector. Its image consists
 exactly of pairs with equal base points. Over a Hausdorff base this gives a closed embedding,
-useful for properness of bundle actions. The coordinate changes of the product trivializations
-are componentwise (`Bundle.Trivialization.coordChange_prod`).
+useful for properness of bundle actions. Preferred fibre coordinates and their changes are
+componentwise (`TauCeti.trivializationAt_prod_snd`, `Bundle.Trivialization.coordChange_prod`).
 -/
 
 public section
@@ -99,3 +99,21 @@ theorem _root_.Bundle.Trivialization.coordChange_prod (e₁ e₁' : Bundle.Trivi
   simp only [coordChange, hsymm, prod_apply, Prod.toFun', ← e₁.mk_symm h₁, ← e₂.mk_symm h₂]
 
 end ProductTrivializations
+
+namespace TauCeti
+
+variable {B F₁ F₂ : Type*} {E₁ E₂ : B → Type*}
+  [TopologicalSpace B] [TopologicalSpace F₁] [TopologicalSpace F₂]
+  [TopologicalSpace (TotalSpace F₁ E₁)] [TopologicalSpace (TotalSpace F₂ E₂)]
+  [∀ b, TopologicalSpace (E₁ b)] [∀ b, TopologicalSpace (E₂ b)]
+  [FiberBundle F₁ E₁] [FiberBundle F₂ E₂] [∀ b, Zero (E₁ b)] [∀ b, Zero (E₂ b)]
+
+/-- The fibre coordinate in the preferred chart of a fibrewise product is the pair of
+preferred fibre coordinates of its components. -/
+theorem trivializationAt_prod_snd (b : B) (z : TotalSpace (F₁ × F₂) (E₁ ×ᵇ E₂)) :
+    (trivializationAt (F₁ × F₂) (E₁ ×ᵇ E₂) b z).2 =
+      ((trivializationAt F₁ E₁ b ⟨z.proj, z.snd.fst⟩).2,
+        (trivializationAt F₂ E₂ b ⟨z.proj, z.snd.snd⟩).2) :=
+  (rfl)
+
+end TauCeti
