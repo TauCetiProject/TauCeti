@@ -6,17 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
-public import Mathlib.LinearAlgebra.Charpoly.Basic
-import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
-import Mathlib.LinearAlgebra.Charpoly.BaseChange
-import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Trace
 import Mathlib.Algebra.DirectSum.LinearMap
 import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 import TauCeti.LinearAlgebra.Eigenspace.Decomposition
 import TauCeti.LinearAlgebra.LinearIndependent.MonoidHom
-import TauCeti.LinearAlgebra.Matrix.Charpoly.Newton
 import TauCeti.LinearAlgebra.Trace.Basic
 
 /-!
@@ -35,12 +30,7 @@ trace of `X|V_μ` is the dimension of `V_μ`.
 
 Together with the independence of the sequences `l ↦ μ ^ l` for distinct `μ`
 (`Finset.apply_eq_of_forall_sum_pow_succ_mul_eq`), these formulas read off the dimensions of the
-generalized eigenspaces of nonzero eigenvalue from the traces of the positive powers of `f`. An
-injective endomorphism has no generalized eigenvectors of eigenvalue `0`, so in characteristic
-zero the traces of its positive powers determine its dimension, and then, by Newton's identities
-(`LinearMap.charpoly_eq_of_trace_pow_eq`), its characteristic polynomial; the trace of the identity
-`f ^ 0` is not needed. Base change to an algebraic closure removes the algebraic closedness from
-this last statement.
+generalized eigenspaces of nonzero eigenvalue from the traces of the positive powers of `f`.
 
 ## Main results
 
@@ -55,9 +45,6 @@ this last statement.
   `f ^ l * X` for `l ≥ 1` determine the trace of `X` on each generalized eigenspace of `f` of
   nonzero eigenvalue; `Module.End.finrank_maxGenEigenspace_eq_of_trace_pow_succ_eq` is the case
   `X = 1`, for the dimensions.
-* `LinearMap.charpoly_eq_of_injective_of_trace_pow_succ_eq`: over a field of characteristic zero,
-  injective endomorphisms of possibly different spaces whose positive powers
-  have the same traces have the same characteristic polynomial.
 -/
 
 public section
@@ -185,58 +172,3 @@ theorem finrank_maxGenEigenspace_eq_of_trace_pow_succ_eq [CharZero K] {f : End K
   exact_mod_cast h
 
 end Module.End
-
-namespace LinearMap
-
-variable {K V V' : Type*} [Field K] [CharZero K] [AddCommGroup V] [Module K V]
-  [FiniteDimensional K V] [AddCommGroup V'] [Module K V'] [FiniteDimensional K V']
-
-/-- The algebraically closed case of `LinearMap.charpoly_eq_of_injective_of_trace_pow_succ_eq`,
-from which the general case follows by base change to an algebraic closure. -/
-private theorem charpoly_eq_of_injective_of_trace_pow_succ_eq_of_isAlgClosed [IsAlgClosed K]
-    {f : Module.End K V} {g : Module.End K V'} (hf : Function.Injective f)
-    (hg : Function.Injective g) (h : ∀ k : ℕ, trace K V (f ^ (k + 1)) = trace K V' (g ^ (k + 1))) :
-    f.charpoly = g.charpoly := by
-  classical
-  let s := f.finite_hasEigenvalue.toFinset ∪ g.finite_hasEigenvalue.toFinset
-  have hdim (μ : K) :
-      (finrank K (f.maxGenEigenspace μ) : K) = finrank K (g.maxGenEigenspace μ) := by
-    rcases eq_or_ne μ 0 with rfl | hμ
-    · rw [Module.End.maxGenEigenspace_zero_eq_bot_of_injective hf,
-        Module.End.maxGenEigenspace_zero_eq_bot_of_injective hg, finrank_bot, finrank_bot]
-    · rw [Module.End.finrank_maxGenEigenspace_eq_of_trace_pow_succ_eq h hμ]
-  have hf₀ := Module.End.trace_pow_eq_sum_finrank f s
-    (fun μ hμ ↦ Finset.mem_union_left _ (f.finite_hasEigenvalue.mem_toFinset.mpr hμ)) 0
-  have hg₀ := Module.End.trace_pow_eq_sum_finrank g s
-    (fun μ hμ ↦ Finset.mem_union_right _ (g.finite_hasEigenvalue.mem_toFinset.mpr hμ)) 0
-  simp only [pow_zero, trace_one, one_mul] at hf₀ hg₀
-  have hrank : finrank K V = finrank K V' := by
-    exact_mod_cast hf₀.trans ((Finset.sum_congr rfl fun μ _ ↦ hdim μ).trans hg₀.symm)
-  refine charpoly_eq_of_trace_pow_eq hrank fun k hk _ ↦ ?_
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk.ne'
-  exact h k
-
-/-- **The traces of the positive powers of an injective endomorphism determine its characteristic
-polynomial.** Over a field of characteristic zero, if injective endomorphisms `f` of `V` and `g`
-of `V'` satisfy `tr (f ^ k) = tr (g ^ k)` for every `k ≥ 1`, then `f` and `g` have the same
-characteristic polynomial (in particular `V` and `V'` have the same dimension). Over an
-algebraically closed field this reads the dimensions of the generalized eigenspaces of nonzero
-eigenvalue off the traces; the general case follows by base change to an algebraic closure. -/
-theorem charpoly_eq_of_injective_of_trace_pow_succ_eq {f : Module.End K V}
-    {g : Module.End K V'} (hf : Function.Injective f) (hg : Function.Injective g)
-    (h : ∀ k : ℕ, trace K V (f ^ (k + 1)) = trace K V' (g ^ (k + 1))) :
-    f.charpoly = g.charpoly := by
-  let L := AlgebraicClosure K
-  have hfL : Function.Injective (f.baseChange L) := by
-    rw [baseChange_eq_lTensor]
-    exact Module.Flat.lTensor_preserves_injective_linearMap f hf
-  have hgL : Function.Injective (g.baseChange L) := by
-    rw [baseChange_eq_lTensor]
-    exact Module.Flat.lTensor_preserves_injective_linearMap g hg
-  have hL : (f.baseChange L).charpoly = (g.baseChange L).charpoly :=
-    charpoly_eq_of_injective_of_trace_pow_succ_eq_of_isAlgClosed hfL hgL fun k ↦ by
-      rw [← baseChange_pow, ← baseChange_pow, trace_baseChange, trace_baseChange, h]
-  rw [charpoly_baseChange, charpoly_baseChange] at hL
-  exact Polynomial.map_injective _ (algebraMap K L).injective hL
-
-end LinearMap

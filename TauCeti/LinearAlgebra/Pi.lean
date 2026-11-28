@@ -98,6 +98,9 @@ weights.
   coordinate.
 * `TauCeti.exists_isRegular_neg_single_add_single_sub_single_add_single`: a negative coordinate
   sum and a coordinate sum differ regularly at some coordinate.
+* `TauCeti.coordEq`, `TauCeti.coordEq_eq_ker`, `TauCeti.mem_coordEq_iff`,
+  `TauCeti.eq_or_eq_of_coordEq_eq`, and `TauCeti.injective_of_forall_proj_sub_proj_ne_zero`: the
+  coordinate-equality hyperplane `{v | v a = v b}` and coordinate-difference injectivity.
 * `TauCeti.piMatrixLinearEquiv`: the `R`-linear equivalence flattening a family of matrices
   `(i : ι) → Matrix (κ i) (μ i) α` to `(Σ i, κ i × μ i) → α`.
 -/
@@ -690,5 +693,43 @@ public theorem piMatrixLinearEquiv_symm_apply (a : (p : Σ i, κ i × μ i) → 
   simp [piMatrixLinearEquiv, Sigma.curry]
 
 end MatrixCoordinates
+
+section CoordEq
+
+/-- The coordinate-equality hyperplane `{v : ι → R | v a = v b}`. -/
+public def coordEq (R : Type*) [Ring R] {ι : Type*} (a b : ι) : Submodule R (ι → R) :=
+  LinearMap.ker ((LinearMap.proj a : (ι → R) →ₗ[R] R) - LinearMap.proj b)
+
+/-- `coordEq R a b` is the kernel of the coordinate-difference functional `proj a - proj b`. -/
+public theorem coordEq_eq_ker (R : Type*) [Ring R] {ι : Type*} (a b : ι) :
+    coordEq R a b = LinearMap.ker ((LinearMap.proj a : (ι → R) →ₗ[R] R) - LinearMap.proj b) :=
+  (rfl)
+
+@[simp]
+public theorem mem_coordEq_iff {R ι : Type*} [Ring R] (a b : ι) (v : ι → R) :
+    v ∈ coordEq R a b ↔ v a = v b := by
+  simp [coordEq, sub_eq_zero]
+
+/-- If `coordEq R a b = coordEq R c d` with `c ≠ d`, then `c` is `a` or `b`. -/
+public theorem eq_or_eq_of_coordEq_eq {R ι : Type*} [Ring R] [Nontrivial R] {a b c d : ι}
+    (hcd : c ≠ d) (heq : coordEq R a b = coordEq R c d) : c = a ∨ c = b := by
+  classical
+  by_contra! hneither
+  have hmem : Pi.single c (1 : R) ∈ coordEq R a b := by
+    rw [mem_coordEq_iff, Pi.single_eq_of_ne hneither.1.symm, Pi.single_eq_of_ne hneither.2.symm]
+  rw [heq, mem_coordEq_iff, Pi.single_eq_same, Pi.single_eq_of_ne hcd.symm] at hmem
+  exact one_ne_zero hmem
+
+/-- A vector on which every coordinate-difference map `proj a - proj b` (`a ≠ b`) is nonzero is
+injective. -/
+public theorem injective_of_forall_proj_sub_proj_ne_zero {R ι M : Type*} [Semiring R]
+    [AddCommGroup M] [Module R M] {p : ι → M}
+    (hp : ∀ a b : ι, a ≠ b →
+      ((LinearMap.proj a : (ι → M) →ₗ[R] M) - (LinearMap.proj b : (ι → M) →ₗ[R] M)) p ≠ 0) :
+    Function.Injective p := fun a b hab => by
+  by_contra hne
+  exact hp a b hne (by simp [hab])
+
+end CoordEq
 
 end TauCeti

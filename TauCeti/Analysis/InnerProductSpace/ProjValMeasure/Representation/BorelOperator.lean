@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Representation.PolarizedMeasure
-public import TauCeti.MeasureTheory.Function.BoundedBorel
+public import TauCeti.MeasureTheory.Function.BoundedBorel.Basic
 import TauCeti.MeasureTheory.Function.ContinuousApproximation
 
 /-!

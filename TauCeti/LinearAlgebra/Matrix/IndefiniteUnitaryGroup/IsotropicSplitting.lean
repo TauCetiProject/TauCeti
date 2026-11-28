@@ -54,6 +54,21 @@ The main results are the laws of these elements:
 * `TauCeti.IsotropicSplitting.exists_eq_unipotent_iff`: the unipotent elements are exactly the
   elements fixing `k` pointwise with core block `1`, the unipotent radical of the parabolic.
 
+Along the way, an invertible `g` with `g k = k a` acts on the frame by a unit `a`
+(`TauCeti.IsotropicSplitting.isUnit_of_mul_k`), and for `g` in the unitary group and `a = t` a unit
+the coordinate `lCoord = kᴴ A` satisfies `lCoord g = (t⁻¹)ᴴ lCoord`
+(`TauCeti.IsotropicSplitting.lCoord_mul_of_mul_k`).
+
+The parabolic subgroup itself is `TauCeti.IsotropicSplitting.parabolic`, the elements `g` with
+`g k = k a` for some `a ∈ GL_p(R)`; its elements are exactly the products `n(c, b) m(a, g₀)`
+(`TauCeti.IsotropicSplitting.mem_parabolic_iff_exists_unipotent_mul_levi`). Exchanging the frames
+`k` and `l` gives the splitting `TauCeti.IsotropicSplitting.swap`, whose parabolic subgroup is the
+opposite parabolic. The **shear** `TauCeti.IsotropicSplitting.shear` by a skew-hermitian
+`X : Matrix p p R` is the element `1 + k X lCoord`; it fixes `k` and `ι`, sends `l` to `l + k X`,
+and needs no inverse of `2`. The shears form a group, lie in the parabolic subgroup, and are the
+unipotent elements `n(0, -j X)` when `2` is invertible
+(`TauCeti.IsotropicSplitting.shear_eq_unipotent`).
+
 The Siegel parabolic of a doubled space, the case of a frame without core in polarization
 coordinates, is treated in module form in
 `TauCeti.LinearAlgebra.SesquilinearForm.Doubling.SiegelParabolic`, and the stabilizer of an
@@ -257,6 +272,39 @@ theorem ιCoord_mul_ι : D.ιCoord * D.ι = 1 := by
     D.ιCoord * (D.ι * X) = X := by
   rw [← Matrix.mul_assoc, ιCoord_mul_ι, Matrix.one_mul]
 
+/-! ### Exchanging the frames -/
+
+/-- The splitting obtained by **exchanging the frames** `k` and `l`, with the same core
+embedding `ι`. Its parabolic subgroup (`TauCeti.IsotropicSplitting.parabolic`) stabilizes the
+span of `l`: it is the parabolic subgroup opposite to that of the original splitting. -/
+def swap : IsotropicSplitting A A₀ p where
+  k := D.l
+  l := D.k
+  ι := D.ι
+  isHermitian := D.isHermitian
+  isUnit_core := D.isUnit_core
+  gram_kk := D.gram_ll
+  gram_ll := D.gram_kk
+  gram_lk := D.gram_kl
+  gram_ιι := D.gram_ιι
+  gram_ιk := D.gram_ιl
+  gram_ιl := D.gram_ιk
+  card_eq := D.card_eq
+
+@[simp] theorem swap_k : D.swap.k = D.l := (rfl)
+
+@[simp] theorem swap_l : D.swap.l = D.k := (rfl)
+
+@[simp] theorem swap_ι : D.swap.ι = D.ι := (rfl)
+
+@[simp] theorem swap_kCoord : D.swap.kCoord = D.lCoord := (rfl)
+
+@[simp] theorem swap_lCoord : D.swap.lCoord = D.kCoord := (rfl)
+
+@[simp] theorem swap_ιCoord : D.swap.ιCoord = D.ιCoord := (rfl)
+
+@[simp] theorem swap_swap : D.swap.swap = D := (rfl)
+
 variable [DecidableEq n]
 
 /-- **The frames span**: `k kCoord + ι ιCoord + l lCoord = 1`, that is every vector is
@@ -282,6 +330,22 @@ theorem k_mul_kCoord_mul_add_ι_mul_ιCoord_mul_add_l_mul_lCoord_mul {m : Type*}
   classical
   simp only [← Matrix.mul_assoc, ← Matrix.add_mul, k_mul_kCoord_add_ι_mul_ιCoord_add_l_mul_lCoord,
     Matrix.one_mul]
+
+/-- **The frames span when the core is trivial**: for an empty `n₀`, `k kCoord + l lCoord = 1`,
+that is every vector is `y = l a + k b` with `a = lCoord y` and `b = kCoord y`. -/
+theorem k_mul_kCoord_add_l_mul_lCoord [IsEmpty n₀] : D.k * D.kCoord + D.l * D.lCoord = 1 := by
+  -- A product through the empty index type `n₀` vanishes.
+  have h : D.ι * D.ιCoord = 0 := by
+    ext
+    simp [Matrix.mul_apply]
+  simpa [h] using D.k_mul_kCoord_add_ι_mul_ιCoord_add_l_mul_lCoord
+
+omit [DecidableEq n] in
+/-- For an empty `n₀`, every matrix `M` with `n` rows is `k (kCoord M) + l (lCoord M)`. -/
+theorem k_mul_kCoord_mul_add_l_mul_lCoord_mul [IsEmpty n₀] {m : Type*} (M : Matrix n m R) :
+    D.k * (D.kCoord * M) + D.l * (D.lCoord * M) = M := by
+  classical
+  simp only [← Matrix.mul_assoc, ← Matrix.add_mul, k_mul_kCoord_add_l_mul_lCoord, Matrix.one_mul]
 
 include D in
 /-- The ambient Gram matrix of a splitting is invertible. -/
@@ -409,6 +473,169 @@ theorem levi_injective : Function.Injective D.levi := by
   have hι := congrArg (fun M ↦ D.ιCoord * (M * D.ι)) h'
   simp only [levi_mul_k, levi_mul_ι, kCoord_mul_k_mul, ιCoord_mul_ι_mul] at hk hι
   exact Prod.ext (Units.ext hk) (unitaryGroupOf.ext hι)
+
+/-! ### Shears along the frame `k` -/
+
+/-- The matrix `1 + k X lCoord` of the shear along `k` by `X`. -/
+private def shearMatrix (X : Matrix p p R) : Matrix n n R := 1 + D.k * X * D.lCoord
+
+private theorem shearMatrix_mul_k (X : Matrix p p R) : D.shearMatrix X * D.k = D.k := by
+  simp [shearMatrix, Matrix.add_mul, Matrix.mul_assoc]
+
+private theorem shearMatrix_mul_ι (X : Matrix p p R) : D.shearMatrix X * D.ι = D.ι := by
+  simp [shearMatrix, Matrix.add_mul, Matrix.mul_assoc]
+
+private theorem shearMatrix_mul_l (X : Matrix p p R) :
+    D.shearMatrix X * D.l = D.l + D.k * X := by
+  simp [shearMatrix, Matrix.add_mul, Matrix.mul_assoc]
+
+private theorem shearMatrix_mem {X : Matrix p p R} (hX : Xᴴ = -X) :
+    star (D.shearMatrix X) * A * D.shearMatrix X = A := by
+  rw [star_eq_conjTranspose]
+  refine D.conjTranspose_mul_mul_eq_of_frames ?_ ?_ ?_ ?_ ?_ ?_ <;>
+    simp [shearMatrix_mul_k, shearMatrix_mul_ι, shearMatrix_mul_l, Matrix.add_mul,
+      Matrix.mul_add, Matrix.mul_assoc, hX]
+
+/-- The **shear** along the frame `k` by a skew-hermitian `X` (`Xᴴ = -X`): the element
+`1 + k X lCoord` of the unitary group of `A`. It fixes the frame `k` and the core `ι` and sends the
+frame `l` to `l + k X`. Unlike the unipotent elements `n(c, b)`, it needs no inverse of `2`; when
+`2` is invertible it is `n(0, -j X)` (`TauCeti.IsotropicSplitting.shear_eq_unipotent`). -/
+def shear (X : Matrix p p R) (hX : Xᴴ = -X) : unitaryGroupOf A :=
+  unitaryGroupOf.ofMatrix D.isUnit (D.shearMatrix X) (D.shearMatrix_mem hX)
+
+private theorem val_shear_eq_shearMatrix (X : Matrix p p R) (hX : Xᴴ = -X) :
+    ((D.shear X hX : GL n R) : Matrix n n R) = D.shearMatrix X :=
+  unitaryGroupOf.val_ofMatrix _ _ _
+
+/-- The matrix of the shear by `X` is `1 + k X lCoord`. -/
+theorem val_shear (X : Matrix p p R) (hX : Xᴴ = -X) :
+    ((D.shear X hX : GL n R) : Matrix n n R) = 1 + D.k * X * D.lCoord := by
+  rw [val_shear_eq_shearMatrix, shearMatrix]
+
+/-- The shear by `X` fixes the frame `k`. -/
+@[simp]
+theorem shear_mul_k (X : Matrix p p R) (hX : Xᴴ = -X) :
+    ((D.shear X hX : GL n R) : Matrix n n R) * D.k = D.k := by
+  rw [val_shear_eq_shearMatrix, shearMatrix_mul_k]
+
+/-- The shear by `X` fixes the core `ι`. -/
+@[simp]
+theorem shear_mul_ι (X : Matrix p p R) (hX : Xᴴ = -X) :
+    ((D.shear X hX : GL n R) : Matrix n n R) * D.ι = D.ι := by
+  rw [val_shear_eq_shearMatrix, shearMatrix_mul_ι]
+
+/-- The shear by `X` sends the frame `l` to `l + k X`. -/
+@[simp]
+theorem shear_mul_l (X : Matrix p p R) (hX : Xᴴ = -X) :
+    ((D.shear X hX : GL n R) : Matrix n n R) * D.l = D.l + D.k * X := by
+  rw [val_shear_eq_shearMatrix, shearMatrix_mul_l]
+
+/-- The shear by `X` changes the coordinate along `k` by `X` times the coordinate along `l`. -/
+@[simp]
+theorem kCoord_mul_shear (X : Matrix p p R) (hX : Xᴴ = -X) :
+    D.kCoord * ((D.shear X hX : GL n R) : Matrix n n R) = D.kCoord + X * D.lCoord := by
+  simp [val_shear, Matrix.mul_add, Matrix.mul_assoc]
+
+/-- The shear by `X` preserves the coordinate along `l`. -/
+@[simp]
+theorem lCoord_mul_shear (X : Matrix p p R) (hX : Xᴴ = -X) :
+    D.lCoord * ((D.shear X hX : GL n R) : Matrix n n R) = D.lCoord := by
+  simp [val_shear, Matrix.mul_add, Matrix.mul_assoc]
+
+/-- The shear by `X` preserves the coordinate along the core. -/
+@[simp]
+theorem ιCoord_mul_shear (X : Matrix p p R) (hX : Xᴴ = -X) :
+    D.ιCoord * ((D.shear X hX : GL n R) : Matrix n n R) = D.ιCoord := by
+  simp [val_shear, Matrix.mul_add, Matrix.mul_assoc]
+
+/-- The shear by `0` is the identity. -/
+@[simp]
+theorem shear_zero (h : (0 : Matrix p p R)ᴴ = -0) : D.shear 0 h = 1 :=
+  unitaryGroupOf.ext (by simp [val_shear])
+
+/-- **The shears form a group**: the shear by `X` followed by the shear by `Y` is the shear by
+`X + Y`. -/
+theorem shear_mul_shear {X Y : Matrix p p R} (hX : Xᴴ = -X) (hY : Yᴴ = -Y) :
+    D.shear X hX * D.shear Y hY =
+      D.shear (X + Y) (by rw [conjTranspose_add, hX, hY, neg_add]) := by
+  -- `(1 + k X lCoord) (1 + k Y lCoord) = 1 + k (X + Y) lCoord`, as `lCoord k = 0`.
+  refine unitaryGroupOf.ext ?_
+  simp only [Subgroup.coe_mul, Units.val_mul, val_shear]
+  simp [Matrix.mul_add, Matrix.add_mul, Matrix.mul_assoc, add_assoc]
+
+/-- The inverse of the shear by `X` is the shear by `-X`. -/
+@[simp]
+theorem shear_inv {X : Matrix p p R} (hX : Xᴴ = -X) :
+    (D.shear X hX)⁻¹ = D.shear (-X) (by rw [conjTranspose_neg, hX]) := by
+  refine inv_eq_of_mul_eq_one_right ?_
+  rw [shear_mul_shear]
+  exact unitaryGroupOf.ext (by simp)
+
+/-! The shears of the swapped splitting are the shears along the frame `l`. -/
+
+/-- A shear along the frame `l` (a shear of the swapped splitting) fixes `l`. -/
+@[simp]
+theorem swap_shear_mul_l (Y : Matrix p p R) (hY : Yᴴ = -Y) :
+    ((D.swap.shear Y hY : GL n R) : Matrix n n R) * D.l = D.l := by
+  simpa using D.swap.shear_mul_k Y hY
+
+/-- A shear along the frame `l` by `Y` sends `k` to `k + l Y`. -/
+@[simp]
+theorem swap_shear_mul_k (Y : Matrix p p R) (hY : Yᴴ = -Y) :
+    ((D.swap.shear Y hY : GL n R) : Matrix n n R) * D.k = D.k + D.l * Y := by
+  simpa using D.swap.shear_mul_l Y hY
+
+/-- A shear along the frame `l` preserves the coordinate along `k`. -/
+@[simp]
+theorem kCoord_mul_swap_shear (Y : Matrix p p R) (hY : Yᴴ = -Y) :
+    D.kCoord * ((D.swap.shear Y hY : GL n R) : Matrix n n R) = D.kCoord := by
+  simpa using D.swap.lCoord_mul_shear Y hY
+
+/-- A shear along the frame `l` by `Y` changes the coordinate along `l` by `Y` times the
+coordinate along `k`. -/
+@[simp]
+theorem lCoord_mul_swap_shear (Y : Matrix p p R) (hY : Yᴴ = -Y) :
+    D.lCoord * ((D.swap.shear Y hY : GL n R) : Matrix n n R) = D.lCoord + Y * D.kCoord := by
+  simpa using D.swap.kCoord_mul_shear Y hY
+
+/-! ### The parabolic subgroup -/
+
+/-- The **parabolic subgroup** of the splitting: the elements `g` of the unitary group of `A`
+stabilizing the isotropic subspace spanned by the frame `k`, that is `g k = k a` for some
+`a ∈ GL_p(R)`. For an empty core it is a Siegel parabolic subgroup. -/
+def parabolic : Subgroup (unitaryGroupOf A) where
+  carrier := {g | ∃ a : GL p R, ((g : GL n R) : Matrix n n R) * D.k = D.k * (a : Matrix p p R)}
+  mul_mem' := by
+    rintro g h ⟨a, ha⟩ ⟨b, hb⟩
+    refine ⟨a * b, ?_⟩
+    simp only [Subgroup.coe_mul, Units.val_mul, Matrix.mul_assoc, hb]
+    rw [← Matrix.mul_assoc, ha, Matrix.mul_assoc]
+  one_mem' := ⟨1, by simp⟩
+  inv_mem' := by
+    rintro g ⟨a, ha⟩
+    refine ⟨a⁻¹, ?_⟩
+    -- `g⁻¹ k = g⁻¹ (g k) a⁻¹ = k a⁻¹`.
+    have hk : D.k = (((g : GL n R)⁻¹ : GL n R) : Matrix n n R) * D.k * (a : Matrix p p R) := by
+      rw [Matrix.mul_assoc, ← ha, ← Matrix.mul_assoc, Units.inv_mul, Matrix.one_mul]
+    rw [Subgroup.coe_inv]
+    conv_rhs => rw [hk]
+    rw [Matrix.mul_assoc, Matrix.mul_assoc, Units.mul_inv, Matrix.mul_one]
+
+/-- Membership in the parabolic subgroup: `g k = k a` for some `a ∈ GL_p(R)`. -/
+theorem mem_parabolic_iff {g : unitaryGroupOf A} :
+    g ∈ D.parabolic ↔
+      ∃ a : GL p R, ((g : GL n R) : Matrix n n R) * D.k = D.k * (a : Matrix p p R) :=
+  Iff.rfl
+
+/-- The Levi elements lie in the parabolic subgroup. -/
+@[simp]
+theorem levi_mem_parabolic (x : GL p R × unitaryGroupOf A₀) : D.levi x ∈ D.parabolic :=
+  ⟨x.1, D.levi_mul_k x⟩
+
+/-- The shears lie in the parabolic subgroup. -/
+@[simp]
+theorem shear_mem_parabolic (X : Matrix p p R) (hX : Xᴴ = -X) : D.shear X hX ∈ D.parabolic :=
+  ⟨1, by simp⟩
 
 /-! ### Unipotent elements -/
 
@@ -620,9 +847,18 @@ theorem levi_mul_unipotent_mul_inv_levi (x : GL p R × unitaryGroupOf A₀) (c :
 /-! ### The Levi decomposition -/
 
 omit [Invertible (2 : R)] in
+/-- An invertible matrix `g` acting on the frame `k` by a matrix `a` (`g k = k a`) acts by a unit:
+`kCoord g⁻¹ k` is a left inverse of `a`. -/
+theorem isUnit_of_mul_k {g : GL n R} {a : Matrix p p R}
+    (hk : (g : Matrix n n R) * D.k = D.k * a) : IsUnit a := by
+  refine IsUnit.of_mul_eq_one_right (D.kCoord * ((g⁻¹ : GL n R) : Matrix n n R) * D.k) ?_
+  rw [Matrix.mul_assoc, Matrix.mul_assoc, ← hk, ← Matrix.mul_assoc _ (g : Matrix n n R),
+    Units.inv_mul, Matrix.one_mul, kCoord_mul_k]
+
+omit [Invertible (2 : R)] in
 /-- An element of the unitary group acting on the frame `k` by `t` acts on the coordinate along
 `l` by `(t⁻¹)ᴴ`. -/
-private theorem lCoord_mul_of_mul_k (g : unitaryGroupOf A) (t : GL p R)
+theorem lCoord_mul_of_mul_k (g : unitaryGroupOf A) (t : GL p R)
     (hk : ((g : GL n R) : Matrix n n R) * D.k = D.k * (t : Matrix p p R)) :
     D.lCoord * ((g : GL n R) : Matrix n n R) = (t : Matrix p p R)⁻¹ᴴ * D.lCoord := by
   set G := ((g : GL n R) : Matrix n n R)
@@ -734,11 +970,7 @@ theorem exists_eq_unipotent_mul_levi (g : unitaryGroupOf A) {a : Matrix p p R}
       g = D.unipotent hj c b * D.levi x ∧ (x.1 : Matrix p p R) = a ∧
         ((x.2 : GL n₀ R) : Matrix n₀ n₀ R) = D.ιCoord * ((g : GL n R) : Matrix n n R) * D.ι := by
   set G := ((g : GL n R) : Matrix n n R)
-  -- `a` is invertible, with left inverse `kCoord g⁻¹ k`.
-  obtain ⟨t, rfl⟩ : IsUnit a := by
-    refine IsUnit.of_mul_eq_one_right (D.kCoord * ((g⁻¹ : GL n R) : Matrix n n R) * D.k) ?_
-    rw [Matrix.mul_assoc, Matrix.mul_assoc, ← hk, ← Matrix.mul_assoc _ G, Units.inv_mul,
-      Matrix.one_mul, kCoord_mul_k]
+  obtain ⟨t, rfl⟩ := D.isUnit_of_mul_k (g := g) hk
   let g₀ : unitaryGroupOf A₀ :=
     unitaryGroupOf.ofMatrix D.isUnit_core _ (D.core_mem_of_mul_k g t hk)
   have hg₀ : ((g₀ : GL n₀ R) : Matrix n₀ n₀ R) = D.ιCoord * G * D.ι :=
@@ -752,6 +984,41 @@ theorem exists_eq_unipotent_mul_levi (g : unitaryGroupOf A) {a : Matrix p p R}
     · rw [← Matrix.mul_assoc, hk, Matrix.mul_assoc, Units.mul_inv, Matrix.mul_one]
     · rw [← Matrix.mul_assoc D.ιCoord G, ← Matrix.mul_assoc, ← hg₀, Units.mul_inv]
   exact ⟨c, b, (t, g₀), mul_inv_eq_iff_eq_mul.mp hcb, rfl, hg₀⟩
+
+/-! ### The parabolic subgroup and the unipotent elements -/
+
+/-- The unipotent elements lie in the parabolic subgroup. -/
+@[simp]
+theorem unipotent_mem_parabolic (c : Matrix n₀ p R) (b : Matrix p p R) :
+    D.unipotent hj c b ∈ D.parabolic :=
+  ⟨1, by simp⟩
+
+/-- **The Levi decomposition of the parabolic subgroup**: its elements are exactly the products
+`n(c, b) m(x)` of a unipotent element and a Levi element. -/
+theorem mem_parabolic_iff_exists_unipotent_mul_levi {g : unitaryGroupOf A} :
+    g ∈ D.parabolic ↔
+      ∃ (c : Matrix n₀ p R) (b : Matrix p p R) (x : GL p R × unitaryGroupOf A₀),
+        g = D.unipotent hj c b * D.levi x := by
+  refine ⟨fun ⟨a, ha⟩ ↦ ?_, ?_⟩
+  · obtain ⟨c, b, x, hg, -⟩ := D.exists_eq_unipotent_mul_levi hj g ha
+    exact ⟨c, b, x, hg⟩
+  · rintro ⟨c, b, x, rfl⟩
+    exact mul_mem (D.unipotent_mem_parabolic hj c b) (D.levi_mem_parabolic x)
+
+/-- When `2` is invertible, the shear by a skew-hermitian `X` is the unipotent element
+`n(0, -j X)`. -/
+theorem shear_eq_unipotent {X : Matrix p p R} (hX : Xᴴ = -X) :
+    D.shear X hX = D.unipotent hj 0 (-((j : R) • X)) := by
+  -- Specialize the existing corner identity to the zero core-column parameter.
+  have hcorner : ⅟(2 : R) • ((↑j⁻¹ : R) • (-((j : R) • X) + (-((j : R) • X))ᴴ) +
+      (0 : Matrix n₀ p R)ᴴ * A₀ * (0 : Matrix n₀ p R)) = -X := by
+    simpa [unipotentCorner] using
+      (unipotentCorner_neg_neg_smul (A₀ := A₀) hj (X := X) (Y := 0) (by simp [hX]))
+  refine unitaryGroupOf.ext (D.ext_mul ?_ ?_ ?_)
+  · simp
+  · simp
+  · rw [shear_mul_l, unipotent_mul_l, hcorner]
+    simp [sub_eq_add_neg]
 
 end IsotropicSplitting
 

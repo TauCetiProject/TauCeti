@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Algebra.Polynomial.Eval.Degree
 import Mathlib.Algebra.Polynomial.FieldDivision
+import TauCeti.Algebra.Polynomial.Eval.Sign
 import TauCeti.Data.Nat.Factorial.NatCast
 
 /-!
@@ -67,8 +68,15 @@ Over a `ℚ≥0`-algebra, such as a division ring of characteristic zero, the de
 characteristic `p` it is not (`Polynomial.derivative_not_surjective_of_charP`), as `X ^ (p - 1)`
 has no antiderivative.
 
+Over an ordered semiring, iterated formal derivatives preserve nonnegativity of coefficients and
+hence take nonnegative values at nonnegative points (`Polynomial.coeff_iterate_derivative_nonneg`,
+`Polynomial.eval_iterate_derivative_nonneg`).
+
 As linear endomorphisms of `R[X]`, the derivative and multiplication by `X` satisfy the Weyl
 relation `d x = x d + 1` (`Polynomial.derivative_mul_mulLeft_X`).
+
+The constant coefficient of `derivative^[k] (X ^ m)` is `m !` when `k = m` and `0` otherwise
+(`Polynomial.coeff_zero_iterate_derivative_X_pow`).
 -/
 
 public section
@@ -373,6 +381,21 @@ theorem derivative_not_surjective_of_charP {R : Type*} [Semiring R] [Nontrivial 
     CharP.cast_eq_zero, mul_zero] at this
   exact zero_ne_one this
 
+/-- Every iterated formal derivative of a polynomial with nonnegative coefficients also has
+nonnegative coefficients. -/
+theorem coeff_iterate_derivative_nonneg {R : Type*} [Semiring R] [PartialOrder R]
+    [IsOrderedRing R] {p : R[X]} (hp : ∀ d, 0 ≤ p.coeff d) (k d : ℕ) :
+    0 ≤ (derivative^[k] p).coeff d := by
+  rw [coeff_iterate_derivative]
+  exact nsmul_nonneg (hp (d + k)) _
+
+/-- Evaluating any iterated formal derivative of a polynomial with nonnegative coefficients at a
+nonnegative element yields a nonnegative value. -/
+theorem eval_iterate_derivative_nonneg {R : Type*} [Semiring R] [PartialOrder R]
+    [IsOrderedRing R] {p : R[X]} (hp : ∀ d, 0 ≤ p.coeff d) (k : ℕ) {x : R} (hx : 0 ≤ x) :
+    0 ≤ (derivative^[k] p).eval x :=
+  eval_nonneg_of_coeff_nonneg (coeff_iterate_derivative_nonneg hp k) hx
+
 /-- **The derivative of a power, without commutativity.**  Over any semiring, the derivative of
 `f ^ n` is the sum over the `n` positions of the factor that is differentiated. Over a commutative
 semiring this is `Polynomial.derivative_pow`. -/
@@ -394,5 +417,18 @@ theorem derivative_mul_mulLeft_X {R : Type*} [CommSemiring R] :
       LinearMap.mulLeft R X * derivative + 1 := by
   refine LinearMap.ext fun p ↦ ?_
   simp [derivative_mul, add_comm]
+
+section
+
+open scoped Nat
+
+/-- The constant coefficient of the `k`-th derivative of `X ^ m` is `m !` when `k = m` and `0`
+otherwise. -/
+theorem coeff_zero_iterate_derivative_X_pow {R : Type*} [Semiring R] (m k : ℕ) :
+    (derivative^[k] (X ^ m : R[X])).coeff 0 = if k = m then (m ! : R) else 0 := by
+  rw [coeff_iterate_derivative, zero_add, Nat.descFactorial_self, coeff_X_pow]
+  split_ifs with h <;> simp [h]
+
+end
 
 end Polynomial

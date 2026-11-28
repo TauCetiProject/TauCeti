@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Constructions
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Reducing
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Map
+public import TauCeti.Topology.Algebra.Module.LinearPMap.Resolvent.OneAddSq
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Resolvent
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion
 
@@ -78,6 +79,8 @@ a resolvent point of the part of `A` in the spectral subspace, with resolvent of
 * `IsSelfAdjoint.integral_spectralPVM_eq_resolvent`,
   `IsSelfAdjoint.integral_spectralPVM_resolventSymbol`: for nonreal `z`,
   `∫ (z - s)⁻¹ dP_A(s) = R(z)`.
+* `LinearPMap.invOneAddSq_eq_spectralPVM_integral`: `(1 + A²)⁻¹` is the spectral integral of
+  `t ↦ (1 + t²)⁻¹`.
 * `IsSelfAdjoint.eq_spectralPVM_iff`: the resolvent formula on the upper half-plane characterizes
   the spectral measure.
 * `IsSelfAdjoint.spectralPVM_toPMap_top`: for a bounded self-adjoint operator, the spectral measure
@@ -266,6 +269,26 @@ theorem _root_.IsSelfAdjoint.integral_spectralPVM_resolventSymbol (hA : IsSelfAd
     (hz : z.im ≠ 0) :
     (A.spectralPVM hA).integral (BoundedBorelFunction.resolventSymbol z hz) = A.resolvent z :=
   hA.integral_spectralPVM_eq_resolvent hz _ (BoundedBorelFunction.resolventSymbol_apply z hz)
+
+/-- **`(1 + A²)⁻¹` is a spectral integral.** For a self-adjoint operator `A`, `(1 + A²)⁻¹` is the
+spectral integral of any bounded Borel symbol equal to `t ↦ (1 + t²)⁻¹`. -/
+theorem invOneAddSq_eq_spectralPVM_integral (hA : IsSelfAdjoint A) (f : BoundedBorelFunction ℝ)
+    (hf : ∀ t : ℝ, f t = ((1 + t ^ 2 : ℝ)⁻¹ : ℂ)) :
+    A.invOneAddSq = (A.spectralPVM hA).integral f := by
+  have hnegI : (-Complex.I).im ≠ 0 := by simp
+  have hI : Complex.I.im ≠ 0 := by simp
+  have hres : A.invOneAddSq = (A.spectralPVM hA).integral
+      (BoundedBorelFunction.resolventSymbol (-Complex.I) hnegI *
+        BoundedBorelFunction.resolventSymbol Complex.I hI) := by
+    simp [invOneAddSq_def, ContinuousLinearMap.mul_def,
+      hA.integral_spectralPVM_resolventSymbol]
+  rw [hres]
+  congr 1
+  ext t
+  simp only [_root_.mul_apply, BoundedBorelFunction.resolventSymbol_apply, hf]
+  have h1 : (-Complex.I - (t : ℂ)) * (Complex.I - (t : ℂ)) = ((1 + t ^ 2 : ℝ) : ℂ) := by
+    push_cast; linear_combination -Complex.I_sq
+  rw [← mul_inv, h1]
 
 /-- The spectral projections of a self-adjoint partial linear map commute with its Cayley
 transform. -/

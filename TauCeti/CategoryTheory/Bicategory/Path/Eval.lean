@@ -194,8 +194,11 @@ lemma comp_evalComp_inv (p : Path a b) (q : Path b c) (r : Path c d) :
         eqToHom (congrArg eval (comp_assoc p q r)).symm :=
   Iso.inv_ext (by simp [comp_evalComp_hom])
 
-example (f : a ⟶ b) (g : b ⟶ c) (h : c ⟶ d) :
-    (evalComp f.toPath (g.toPath.cons h)).hom = (α_ f g h).hom := by
+/-- Splitting a three-arrow path after its first arrow evaluates to the associator. -/
+@[simp]
+lemma evalComp_toPath_cons (f : a ⟶ b) (g : b ⟶ c) (h : c ⟶ d) :
+    evalComp f.toPath (g.toPath.cons h) = α_ f g h := by
+  apply Iso.ext
   simp only [evalComp_cons, evalComp_toPath, Iso.trans_hom, whiskerLeftIso_hom, Iso.symm_hom]
   dsimp only [Quiver.Hom.toPath, eval_cons_nil, comp_cons, comp_nil]
   simp

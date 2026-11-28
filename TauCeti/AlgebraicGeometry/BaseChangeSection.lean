@@ -129,6 +129,14 @@ lemma baseChangeSection_snd (T : Over S) :
     baseChangeSection f x₀ hx₀ T ≫ pullback.snd T.hom f = T.hom ≫ x₀ :=
   graphSection_snd _
 
+open MonoidalCategory CartesianMonoidalCategory in
+/-- The base change of a section `x` to `T` pairs the identity of `T` with the composite
+`T.left ⟶ S ⟶ Y.left`, using the cartesian product in `Over S`. -/
+lemma baseChangeSection_eq_lift_left {Y : Over S} (x : 𝟙_ (Over S) ⟶ Y) (T : Over S) :
+    baseChangeSection Y.hom x.left (x.w.trans Over.tensorUnit_hom) T =
+      (lift (𝟙 T) (toUnit T ≫ x)).left := by
+  apply pullback.hom_ext <;> simp
+
 /-- Over a scheme with at most one point, a point of a base change that projects into the image
 of a section is the value of the base-changed section. -/
 lemma baseChangeSection_eq_of_snd_eq {T : Scheme.{u}} [Subsingleton T] (g : T ⟶ S)
