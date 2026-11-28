@@ -169,6 +169,31 @@ theorem toResolution_app_f_zero (X : C) : (ι.toResolution.app X).f 0 = ι.app X
 
 end Construction
 
+section Preadditive
+
+variable [Preadditive C] [HasCokernels C] {G : C ⥤ C} [G.Additive] (ι : 𝟭 C ⟶ G)
+
+/-- Taking the cokernels of a natural transformation into an additive functor is additive. -/
+instance additive_cokernelFunctor : ι.cokernelFunctor.Additive where
+  map_add {X Y} f g := by
+    rw [← cancel_epi (cokernel.π (ι.app X))]
+    simp only [← ι.toCokernelFunctor_app, Preadditive.comp_add,
+      ← ι.toCokernelFunctor.naturality, Functor.map_add, Preadditive.add_comp]
+
+/-- Iterating the cokernel construction preserves additivity. -/
+instance additive_cosyzygyFunctor (n : ℕ) : (ι.cosyzygyFunctor n).Additive := by
+  induction n with
+  | zero => rw [cosyzygyFunctor_zero]; infer_instance
+  | succ n ih => rw [cosyzygyFunctor_succ]; infer_instance
+
+/-- The functorial resolution of an additive endofunctor is additive. -/
+instance additive_resolution : ι.resolution.Additive where
+  map_add {X Y} f g := by
+    ext1 n
+    simp
+
+end Preadditive
+
 section Abelian
 
 variable [Abelian C] {G : C ⥤ C} (ι : 𝟭 C ⟶ G) [∀ X, Mono (ι.app X)]

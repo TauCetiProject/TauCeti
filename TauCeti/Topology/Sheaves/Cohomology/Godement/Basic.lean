@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Sheaves.Flasque.Resolution
-public import TauCeti.Topology.Sheaves.Godement
+public import TauCeti.Topology.Sheaves.Godement.Basic
 
 /-!
 # Godement sections compute derived global sections

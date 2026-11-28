@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Exactness
 public import TauCeti.Algebra.Homology.Single.Kernel
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.AcyclicResolution
-public import TauCeti.Topology.Sheaves.Cohomology.Godement
+public import TauCeti.Topology.Sheaves.Cohomology.Godement.Basic
 public import TauCeti.Topology.Sheaves.Flasque.Basic
 public import TauCeti.Topology.Sheaves.Cohomology.Restriction
 import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology

@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf
 public import Mathlib.CategoryTheory.Sites.GlobalSections
 public import TauCeti.Topology.Sheaves.Cohomology.Forget
-public import TauCeti.Topology.Sheaves.Godement
+public import TauCeti.Topology.Sheaves.Godement.Basic
 import Mathlib.Algebra.Category.Grp.Zero
 import Mathlib.CategoryTheory.Limits.Constructions.LimitsOfProductsAndEqualizers
 import TauCeti.Algebra.Homology.ShortComplex.ShortExact

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.ComplexShapeSigns
 public import Mathlib.Algebra.Homology.HasNoLoop
+public import Mathlib.CategoryTheory.GradedObject.Monoidal
 
 /-!
 # Computations for additive total-complex shapes
@@ -199,6 +200,12 @@ total complex of a first-quadrant bicomplex with cohomological differentials a c
 indexed by `ℕ`. -/
 instance tensorSignsUpNat : (ComplexShape.up ℕ).TensorSigns :=
   inferInstanceAs (ComplexShape.down ℕ).symm.TensorSigns
+
+/-- The degree map `ComplexShape.π` for first-quadrant cochain bicomplexes is addition,
+so its fibers are finite by finiteness of the additive antidiagonals of `ℕ`. -/
+instance _root_.TauCeti.finite_preimage_complexShapeπ_up_nat (n : ℕ) :
+    Finite (ComplexShape.π (.up ℕ) (.up ℕ) (.up ℕ) ⁻¹' {n}) :=
+  inferInstanceAs (Finite ((fun i : ℕ × ℕ ↦ i.1 + i.2) ⁻¹' {n}))
 
 /-- The sign of `ComplexShape.up ℕ` in degree `n` is `(-1)ⁿ`. -/
 @[simp]
