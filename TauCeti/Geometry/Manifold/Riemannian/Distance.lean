@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Geometry.Manifold.Riemannian.PathELength
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 import TauCeti.Geometry.Manifold.ContMDiff.Defs
 import TauCeti.Geometry.Manifold.Riemannian.Basic
@@ -136,14 +137,9 @@ theorem riemannianEDist_le_mul {f : M → N} (hf : ContMDiff I J 1 f) {C : ℝ�
   rw [ENNReal.div_le_iff' (ENNReal.coe_ne_zero.2 hC0) ENNReal.coe_ne_top]
   refine (riemannianEDist_le_pathELength (hf.comp_contMDiffOn hγ)
     (congrArg f h0) (congrArg f h1) zero_le_one).trans ?_
-  rw [pathELength_eq_lintegral_mfderiv_Ioo, pathELength_eq_lintegral_mfderiv_Ioo,
-    ← MeasureTheory.lintegral_const_mul' _ _ ENNReal.coe_ne_top]
-  refine MeasureTheory.setLIntegral_mono' measurableSet_Ioo fun t ht ↦ ?_
-  have hdiff := (hγ.contMDiffAt (Icc_mem_nhds ht.1 ht.2)).mdifferentiableAt one_ne_zero
-  rw [mfderiv_comp t ((hf _).mdifferentiableAt one_ne_zero) hdiff, ContinuousLinearMap.comp_apply,
-    ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_coe_nnreal,
-    ← ENNReal.ofReal_mul C.coe_nonneg]
-  exact ENNReal.ofReal_le_ofReal (hC _ _)
+  exact pathELength_comp_le_mul_of_norm_mfderiv_le
+    ((hγ.mdifferentiableOn one_ne_zero).mono Ioo_subset_Icc_self)
+    (fun _ _ ↦ (hf _).mdifferentiableAt one_ne_zero) fun _ _ ↦ hC _ _
 
 /-- A map from a normed space whose differential stretches every vector by at least the factor
 `c` at the points of a `C¹` curve `y` maps it to a curve whose Riemannian length is at least `c`
