@@ -27,6 +27,8 @@ and `0` otherwise (`NumberField.FiniteAdeleRing.genIndex`). It is multiplicative
 * `NumberField.FiniteAdeleRing.genIndex`: the generalised index `𝔸_f →*₀ ℚ`.
 * `NumberField.FiniteAdeleRing.genIndex_algebraMap`: `[x] = |N_{K/ℚ} x|` for `x ∈ K`.
 * `NumberField.FiniteAdeleRing.genIndex_eq_cardQuot`: `[g] = [Ô : gÔ]`.
+* `NumberField.FiniteAdeleRing.cardQuot_span_singleton_ne_zero`: `[Ô : gÔ] ≠ 0` for `g` a unit
+  of `𝔸_f`.
 * `NumberField.FiniteAdeleRing.genIndex_map`: invariance under automorphisms preserving `Ô`.
 * `NumberField.FiniteAdeleRing.genIndex_det_map_eq_one`: `[det U] = 1` for `U ∈ GL_r(Ô)`.
 
@@ -129,6 +131,14 @@ theorem genIndex_eq_cardQuot {g : integralAdeles (𝓞 K) K} (hg : IsUnit (g : �
       rw [FractionalIdeal.coeIdeal_absNorm, Ideal.absNorm_apply, Submodule.cardQuot_apply]
     _ = (Ideal.span {g}).cardQuot := by
       rw [h_span, cardQuot_completedIdeal K hN0, Submodule.cardQuot_apply]
+
+/-- An integral finite adele `g` that is a unit of `𝔸_f` generates an ideal of finite index in
+`Ô`: the index is the generalised index of `g` (`genIndex_eq_cardQuot`), which is not zero. -/
+theorem cardQuot_span_singleton_ne_zero {g : integralAdeles (𝓞 K) K} (hg : IsUnit (g : 𝔸ᶠ[K])) :
+    (Ideal.span {g}).cardQuot ≠ 0 := by
+  have h := genIndex_eq_zero_iff.not.2 (not_not.2 hg)
+  rw [genIndex_eq_cardQuot hg] at h
+  exact_mod_cast h
 
 /-- Some positive integer multiple of a finite adele is integral. -/
 theorem exists_natCast_mul_mem_integralAdeles (a : 𝔸ᶠ[K]) :
