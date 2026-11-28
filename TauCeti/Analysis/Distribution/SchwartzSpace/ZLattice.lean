@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.ZLattice.Summable
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import TauCeti.Algebra.Module.ZLattice.Dual
 import TauCeti.Algebra.Module.ZLattice.Summable
+import TauCeti.LinearAlgebra.Basis.RestrictScalars
 
 /-!
 # Summing Schwartz functions over a lattice
@@ -33,6 +34,8 @@ the plain form for a complete codomain, so that each side can be manipulated on 
 
 ## Main statements
 
+* `SchwartzMap.summable_norm_apply_sum_intCast_smul` gives absolute summability in
+  orthonormal coordinates using `ZLattice.summable_norm_poisson_left`.
 * `ZLattice.summable_norm_poisson_left`, `ZLattice.summable_poisson_left`: the translates of a
   Schwartz function are (absolutely) summable over a discrete subgroup `L`.
 * `ZLattice.summable_one_add_norm_pow_mul_norm`: on `L`, a Schwartz function stays summable after
@@ -176,3 +179,38 @@ theorem summable_poisson_right (f : 𝓢(E, ℂ)) (v : E) :
 end Right
 
 end ZLattice
+
+section
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {ι : Type*} [Fintype ι]
+
+/-- The linear equivalence from integer coordinates to the lattice spanned by `o`. -/
+noncomputable def OrthonormalBasis.latticeEquiv (o : OrthonormalBasis ι ℝ E) :
+    (ι → ℤ) ≃ₗ[ℤ] Submodule.span ℤ (Set.range o.toBasis) :=
+  (o.toBasis.restrictScalars ℤ).equivFun.symm
+
+/-- The lattice equivalence is the inverse coordinate map of the restricted basis. -/
+theorem OrthonormalBasis.latticeEquiv_def (o : OrthonormalBasis ι ℝ E) :
+    o.latticeEquiv = (o.toBasis.restrictScalars ℤ).equivFun.symm := (rfl)
+
+/-- The lattice vector with coordinates `n` in the basis `o` is `∑ i, n i • o i`. -/
+theorem OrthonormalBasis.coe_latticeEquiv (o : OrthonormalBasis ι ℝ E) (n : ι → ℤ) :
+    (o.latticeEquiv n : E) = ∑ i, (n i : ℝ) • o i := by
+  rw [o.latticeEquiv_def, Basis.equivFun_symm_apply, Submodule.coe_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Submodule.coe_smul_of_tower, Basis.restrictScalars_apply, o.coe_toBasis,
+    Int.cast_smul_eq_zsmul]
+
+/-- A Schwartz function is absolutely summable over the points `∑ i, n i • o i`, `n ∈ ℤ^ι`, of the
+lattice spanned by an orthonormal basis `o`. -/
+theorem SchwartzMap.summable_norm_apply_sum_intCast_smul {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (f : 𝓢(E, F)) (o : OrthonormalBasis ι ℝ E) :
+    Summable fun n : ι → ℤ ↦ ‖f (∑ i, (n i : ℝ) • o i)‖ := by
+  have : FiniteDimensional ℝ E := o.toBasis.finiteDimensional_of_finite
+  have h := ZLattice.summable_norm_poisson_left (Submodule.span ℤ (Set.range o.toBasis)) f 0
+  simp only [zero_add] at h
+  simpa only [Function.comp_def, LinearEquiv.coe_toEquiv, o.coe_latticeEquiv] using
+    o.latticeEquiv.toEquiv.summable_iff.2 h
+
+end

@@ -59,6 +59,9 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
 
 ## Main declarations
 
+* `SchwartzMap.dilate` precomposes by nonzero real scaling.
+  `SchwartzMap.fourier_dilate_apply` gives its Fourier transform via `TauCeti.fourier_comp_smul`.
+
 * `SchwartzMap.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
 * `SchwartzMap.fourier_fourierMultiplierCLM_apply`: on the Fourier side a Fourier multiplier is
   multiplication by its symbol.
@@ -750,5 +753,31 @@ theorem sum_sum_norm_toLp_lineDerivOp_lineDerivOp_sq {ι : Type*} [Fintype ι]
     simp_rw [mul_pow, ← Finset.mul_sum, ← Finset.sum_mul, b.sum_sq_inner_left, sq]
   simp only [fourier_lineDerivOp_lineDerivOp_apply, fourier_laplacian_apply, norm_smul,
     mul_pow, Real.norm_eq_abs, sq_abs, ← hsum, Finset.mul_sum, Finset.sum_mul]
+
+end SchwartzMap
+
+namespace SchwartzMap
+
+open scoped SchwartzMap FourierTransform
+
+/-- Precompose a Schwartz function on `ℝ` with multiplication by a nonzero real number `c`. -/
+noncomputable def dilate {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (f : 𝓢(ℝ, F)) {c : ℝ} (hc : c ≠ 0) : 𝓢(ℝ, F) :=
+  compCLMOfContinuousLinearEquiv ℝ (ContinuousLinearEquiv.unitsEquivAut ℝ (Units.mk0 c hc)) f
+
+/-- A dilated Schwartz function is evaluated at the rescaled argument. -/
+@[simp] theorem dilate_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (f : 𝓢(ℝ, F)) {c : ℝ} (hc : c ≠ 0) (x : ℝ) : f.dilate hc x = f (c * x) := by
+  simp only [dilate, compCLMOfContinuousLinearEquiv_apply, Function.comp_apply,
+    ContinuousLinearEquiv.unitsEquivAut_apply, Units.val_mk0, mul_comm]
+
+/-- Dilation by `c` rescales the Fourier argument by `1 / c` and the value by `1 / |c|`. -/
+theorem fourier_dilate_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+    (f : 𝓢(ℝ, F)) {c : ℝ} (hc : c ≠ 0) (y : ℝ) :
+    𝓕 (f.dilate hc) y = |c|⁻¹ • 𝓕 f (y / c) := by
+  have he : (f.dilate hc : ℝ → F) = fun x ↦ f (c • x) :=
+    funext fun x ↦ by rw [dilate_apply, smul_eq_mul]
+  rw [fourier_coe, he, TauCeti.fourier_comp_smul, ← fourier_coe]
+  simp only [Module.finrank_self, pow_one, smul_eq_mul, div_eq_inv_mul]
 
 end SchwartzMap
