@@ -39,8 +39,9 @@ its inverse converge to `1` along `Bornology.cobounded`
 (`TauCeti.IsAsymptoticallyEuclideanEnd.tendsto_pullbackMetricCoeff_one`,
 `TauCeti.IsAsymptoticallyEuclideanEnd.tendsto_det_pullbackMetricCoeff_one`,
 `TauCeti.IsAsymptoticallyEuclideanEnd.tendsto_inv_pullbackMetricCoeff_one`), and outside a large
-ball `‖x‖ > R₁` the determinant is uniformly bounded below by `1 / 4` while `g - 1`, `g⁻¹ - 1`,
-and derivatives up to order `2` satisfy uniform `O(‖x‖ ^ (-t - k))` bounds
+ball `‖x‖ > R₁` the determinant is at least `1 / 4` (hence `√(det g) ≥ 1 / 2`), the inverse
+entries satisfy `|g⁻¹_ij| ≤ 2` and `g⁻¹ - 1 = O(‖x‖ ^ (-t))`, and `g - 1` together with its
+derivatives of order `k ≤ 2` satisfies uniform `O(‖x‖ ^ (-t - k))` bounds
 (`TauCeti.IsAsymptoticallyEuclideanEnd.exists_asymptotic_bounds`). These are the estimates by
 which the inverse metric and the Riemannian volume of an end are compared with the Euclidean ones,
 for instance when the ADM flux is related to the scalar curvature.
@@ -238,25 +239,18 @@ theorem exists_asymptotic_bounds (h : IsAsymptoticallyEuclideanEnd I t R φ) (ht
   have hdet_ev : ∀ᶠ x in Bornology.cobounded (EuclideanSpace ℝ (Fin n)),
       (1 / 4 : ℝ) < (pullbackMetricCoeff I φ x).det :=
     (h.tendsto_det_pullbackMetricCoeff_one ht).eventually (Ioi_mem_nhds (by norm_num))
-  have hinv_sym (i j : Fin n) :
-      ∃ C', ∀ᶠ x in Bornology.cobounded (EuclideanSpace ℝ (Fin n)),
-        |((pullbackMetricCoeff I φ x)⁻¹ - 1) i j| ≤ C' * ‖x‖ ^ (-t) := by
-    obtain ⟨C', hC'⟩ := (h.isSymbolAtInfinity_inv_pullbackMetricCoeff_sub_one ht i j).isBigO.bound
-    refine ⟨C', ?_⟩
-    filter_upwards [hC'] with x hx
-    simpa [Real.norm_eq_abs, Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _)] using hx
-  choose C_inv hC_inv using hinv_sym
-  let M_inv : ℝ := ∑ i : Fin n, ∑ j : Fin n, max (C_inv i j) 0
+  have hinv_sym : (fun x (p : Fin n × Fin n) ↦ ((pullbackMetricCoeff I φ x)⁻¹ - 1) p.1 p.2)
+      =O[Bornology.cobounded (EuclideanSpace ℝ (Fin n))] fun x ↦ ‖x‖ ^ (-t) :=
+    isBigO_pi.2 fun p ↦ (h.isSymbolAtInfinity_inv_pullbackMetricCoeff_sub_one ht p.1 p.2).isBigO
+  obtain ⟨M_inv, -, hM_inv⟩ := hinv_sym.exists_nonneg
   have hinv_diff_ev : ∀ᶠ x in Bornology.cobounded (EuclideanSpace ℝ (Fin n)),
       ∀ i j : Fin n, |((pullbackMetricCoeff I φ x)⁻¹ - 1) i j| ≤ M_inv * ‖x‖ ^ (-t) := by
-    rw [eventually_all]; intro i; rw [eventually_all]; intro j
-    filter_upwards [hC_inv i j] with x hx
-    refine hx.trans (mul_le_mul_of_nonneg_right ?_ (Real.rpow_nonneg (norm_nonneg x) _))
-    exact (le_max_left _ _).trans <|
-      (Finset.single_le_sum (f := fun j' ↦ max (C_inv i j') 0)
-        (fun _ _ ↦ le_max_right _ _) (Finset.mem_univ j)).trans <|
-      Finset.single_le_sum (f := fun i' ↦ ∑ j' : Fin n, max (C_inv i' j') 0)
-        (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ le_max_right _ _) (Finset.mem_univ i)
+    filter_upwards [hM_inv.bound] with x hx i j
+    have hnorm : |((pullbackMetricCoeff I φ x)⁻¹ - 1) i j| ≤
+        ‖fun p : Fin n × Fin n ↦ ((pullbackMetricCoeff I φ x)⁻¹ - 1) p.1 p.2‖ :=
+      norm_le_pi_norm (fun p : Fin n × Fin n ↦ ((pullbackMetricCoeff I φ x)⁻¹ - 1) p.1 p.2) (i, j)
+    refine hnorm.trans ?_
+    simpa [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _)] using hx
   have hev := ((hdet_ev.and (h.eventually_abs_inv_pullbackMetricCoeff_le ht)).and
     hinv_diff_ev).and (tendsto_norm_cobounded_atTop.eventually (Ioi_mem_atTop (max R 1)))
   obtain ⟨R₀, -, hR₀⟩ := Filter.hasBasis_cobounded_norm.eventually_iff.1 hev

@@ -168,6 +168,53 @@ theorem mono_radius_of_completeSpace {M : Type*} [PseudoEMetricSpace M] [Charted
           (R' a)).closure, isClosed_closure.isComplete⟩,
       subset_closure⟩
 
+/-- For a positive-order end `φ` on a Riemannian manifold, the closure of the exterior image at
+radius `r + (k + 1)` is contained in the exterior image at radius `r + k`. -/
+private theorem closure_image_compl_closedBall_succ_subset
+    {M : Type*} [MetricSpace M] [ChartedSpace H M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
+    [IsManifold I ∞ M] {r : ℝ} {φ : EuclideanSpace ℝ (Fin n) → M}
+    (h : IsAsymptoticallyEuclideanEnd I t r φ) (ht : 0 < t) (k : ℕ) :
+    closure (φ '' (closedBall (0 : EuclideanSpace ℝ (Fin n)) (r + ((k + 1 : ℕ) : ℝ)))ᶜ) ⊆
+      φ '' (closedBall (0 : EuclideanSpace ℝ (Fin n)) (r + k))ᶜ := by
+  intro p hp
+  -- Since `φ` tends to infinity, preimages of `ball p 1` are bounded within some `closedBall 0 R₀`.
+  have hpre : φ⁻¹' (ball p 1)ᶜ ∈ cobounded (EuclideanSpace ℝ (Fin n)) :=
+    (h.tendsto_cobounded ht) (isBounded_def.1 isBounded_ball)
+  obtain ⟨R₀, -, hR₀⟩ :=
+    (hasBasis_cobounded_compl_closedBall (0 : EuclideanSpace ℝ (Fin n))).mem_iff.1 hpre
+  -- Restrict to the compact annulus `A = {z | r + (k + 1) ≤ ‖z‖ ≤ R₀}`.
+  let A : Set (EuclideanSpace ℝ (Fin n)) :=
+    {z | r + ((k + 1 : ℕ) : ℝ) ≤ ‖z‖ ∧ ‖z‖ ≤ R₀}
+  have hA_comp : IsCompact A := by
+    simpa only [A, sub_zero] using
+      isCompact_setOf_le_norm_sub_le (0 : EuclideanSpace ℝ (Fin n)) (r + ((k + 1 : ℕ) : ℝ)) R₀
+  have hAk : A ⊆ (closedBall (0 : EuclideanSpace ℝ (Fin n)) (r + k))ᶜ := fun z hz ↦ by
+    simp only [mem_compl_iff, mem_closedBall_zero_iff, not_le]
+    have hk : (k : ℝ) < ((k + 1 : ℕ) : ℝ) := by exact_mod_cast Nat.lt_succ_self k
+    linarith [hz.1]
+  have hAR : A ⊆ (closedBall (0 : EuclideanSpace ℝ (Fin n)) r)ᶜ :=
+    hAk.trans (compl_subset_compl.2 (closedBall_subset_closedBall
+      (le_add_of_nonneg_right (Nat.cast_nonneg k))))
+  -- Because `A` is compact and `φ` is continuous on `(closedBall 0 r)ᶜ`, `φ '' A` is closed.
+  have hφA_closed : IsClosed (φ '' A) :=
+    (hA_comp.image_of_continuousOn (h.contMDiffOn.continuousOn.mono hAR)).isClosed
+  -- Every neighbourhood of `p` meets `φ '' (closedBall 0 (r + k + 1))ᶜ` inside `ball p 1`,
+  -- whose preimages lie in `A`; hence `p ∈ closure (φ '' A) = φ '' A`.
+  have hp_cl : p ∈ closure (φ '' A) := by
+    rw [mem_closure_iff_nhds]
+    intro U hU
+    obtain ⟨q, ⟨hqU, hqb⟩, z, hz, rfl⟩ :=
+      mem_closure_iff_nhds.1 hp (U ∩ ball p 1) (inter_mem hU (ball_mem_nhds p one_pos))
+    have hzR₀ : ‖z‖ ≤ R₀ := by
+      by_contra hlt
+      rw [not_le] at hlt
+      exact hR₀ (by simpa using hlt) hqb
+    have hz_gt : r + ((k + 1 : ℕ) : ℝ) < ‖z‖ := by simpa using hz
+    exact ⟨φ z, hqU, z, ⟨hz_gt.le, hzR₀⟩, rfl⟩
+  rw [hφA_closed.closure_eq] at hp_cl
+  exact image_mono hAk hp_cl
+
 /-- A complete finite-ended asymptotically Euclidean manifold of positive order admits a compact
 exhaustion whose `k`-th stage is the complement of the end exteriors at radii `R a + k`. -/
 def compactExhaustion {M : Type*} [MetricSpace M] [ChartedSpace H M]
@@ -182,39 +229,8 @@ def compactExhaustion {M : Type*} [MetricSpace M] [ChartedSpace H M]
   subset_interior_succ' k := by
     have := h.finite
     rw [interior_compl, compl_subset_compl, closure_iUnion_of_finite]
-    refine iUnion_mono fun a p hp ↦ ?_
-    have hpre : (φ a)⁻¹' (ball p 1)ᶜ ∈ cobounded (EuclideanSpace ℝ (Fin n)) :=
-      ((h.isAsymptoticallyEuclideanEnd a).tendsto_cobounded ht) (isBounded_def.1 isBounded_ball)
-    obtain ⟨R₀, -, hR₀⟩ :=
-      (hasBasis_cobounded_compl_closedBall (0 : EuclideanSpace ℝ (Fin n))).mem_iff.1 hpre
-    let A : Set (EuclideanSpace ℝ (Fin n)) :=
-      {z | R a + ((k + 1 : ℕ) : ℝ) ≤ ‖z‖ ∧ ‖z‖ ≤ R₀}
-    have hA_comp : IsCompact A := by
-      simpa only [A, sub_zero] using
-        isCompact_setOf_le_norm_sub_le (0 : EuclideanSpace ℝ (Fin n)) (R a + ((k + 1 : ℕ) : ℝ)) R₀
-    have hAk : A ⊆ (closedBall (0 : EuclideanSpace ℝ (Fin n)) (R a + k))ᶜ := fun z hz ↦ by
-      simp only [mem_compl_iff, mem_closedBall_zero_iff, not_le]
-      have hk : (k : ℝ) < ((k + 1 : ℕ) : ℝ) := by exact_mod_cast Nat.lt_succ_self k
-      linarith [hz.1]
-    have hAR : A ⊆ (closedBall (0 : EuclideanSpace ℝ (Fin n)) (R a))ᶜ :=
-      hAk.trans (compl_subset_compl.2 (closedBall_subset_closedBall
-        (le_add_of_nonneg_right (Nat.cast_nonneg k))))
-    have hφA_closed : IsClosed (φ a '' A) :=
-      (hA_comp.image_of_continuousOn
-        ((h.isAsymptoticallyEuclideanEnd a).contMDiffOn.continuousOn.mono hAR)).isClosed
-    have hp_cl : p ∈ closure (φ a '' A) := by
-      rw [mem_closure_iff_nhds]
-      intro U hU
-      obtain ⟨q, ⟨hqU, hqb⟩, z, hz, rfl⟩ :=
-        mem_closure_iff_nhds.1 hp (U ∩ ball p 1) (inter_mem hU (ball_mem_nhds p one_pos))
-      have hzR₀ : ‖z‖ ≤ R₀ := by
-        by_contra hlt
-        rw [not_le] at hlt
-        exact hR₀ (by simpa using hlt) hqb
-      have hz_gt : R a + ((k + 1 : ℕ) : ℝ) < ‖z‖ := by simpa using hz
-      exact ⟨φ a z, hqU, z, ⟨hz_gt.le, hzR₀⟩, rfl⟩
-    rw [hφA_closed.closure_eq] at hp_cl
-    exact image_mono hAk hp_cl
+    exact iUnion_mono fun a ↦
+      closure_image_compl_closedBall_succ_subset (h.isAsymptoticallyEuclideanEnd a) ht k
   iUnion_eq' := by
     classical
     have := h.finite
