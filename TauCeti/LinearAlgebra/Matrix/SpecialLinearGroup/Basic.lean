@@ -91,8 +91,7 @@ proof is independent of the source's.
   an element of `SL(n, R)` and its inverse multiply to `1` as matrices.
 * `Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one`: the determinant-one identity in
   coordinates, with `intCast_fin_two_mul_sub_mul_eq_one` its cast from `SL₂(ℤ)` to any
-  nonassociative ring and `mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero` its upper-triangular
-  diagonal specialization.
+  nonassociative ring.
 * `Matrix.SpecialLinearGroup.odd_apply_one_of_even_apply_zero`: in a row of an element of
   `SL₂(ℤ)` with even first entry, the second entry is odd.
 * `Matrix.SpecialLinearGroup.coe_GL_eq_mapGL`: the coercion of `SL(n, ℤ)` into `GL(n, S)` is
@@ -124,9 +123,8 @@ proof is independent of the source's.
   exactly when it contains `-I`.
 * `Matrix.SpecialLinearGroup.index_eq_two_mul_index_withCenter_of_neg_one_notMem` and
   `Matrix.SpecialLinearGroup.relIndex_withCenter_eq_two_of_neg_one_notMem`: when `-I ∉ Γ`,
-  `[SL₂(R) : Γ] = 2 · [SL₂(R) : ±Γ]`, alongside the `Subgroup` companions
-  `Subgroup.relIndex_withCenter_eq_one_or_two` and
-  `Subgroup.relIndex_withCenter_mul_card_center_subgroupOf_eq_two`.
+  `[SL₂(R) : Γ] = 2 · [SL₂(R) : ±Γ]`, alongside the `Subgroup` companion
+  `Subgroup.relIndex_withCenter_eq_one_or_two`.
 * `Matrix.SpecialLinearGroup.disjoint_center_iff_neg_one_notMem`: the simp-normal form of the
   `= 1` case, `Disjoint (center _) Γ ↔ -I ∉ Γ`.
 * `Matrix.SpecialLinearGroup.card_center_subgroupOf_eq_two_iff` and
@@ -289,12 +287,6 @@ lemma intCast_fin_two_mul_sub_mul_eq_one {R : Type*} [NonAssocRing R] (g : SL(2,
   exact_mod_cast congrArg (Int.cast : ℤ → R) g.fin_two_mul_sub_mul_eq_one
 
 /-- For an upper-triangular matrix `g ∈ SL₂(R)`, the product of the diagonal entries is `1`. -/
-lemma mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero {R : Type*} [CommRing R] {g : SL(2, R)}
-    (hg : g 1 0 = 0) : g 0 0 * g 1 1 = 1 := by
-  simpa only [hg, mul_zero, sub_zero] using fin_two_mul_sub_mul_eq_one g
-
-/-- In a row of an element of `SL₂(ℤ)`, if the first entry is even then the second is odd, the two
-being coprime. -/
 lemma odd_apply_one_of_even_apply_zero (g : SL(2, ℤ)) {i : Fin 2} (h : Even (g i 0)) :
     Odd (g i 1) := by
   refine (Int.even_or_odd (g i 1)).resolve_left fun he ↦ ?_
@@ -646,7 +638,8 @@ theorem relIndex_withCenter_eq_two_of_neg_one_notMem [NoZeroDivisors R]
     (mem_center_iff_eq_one_or_eq_neg_one.mpr (.inr rfl)) h
     fun _ hc ↦ mem_center_iff_eq_one_or_eq_neg_one.mp hc
 
-/-- The relative index `[±Γ : Γ]` of any subgroup `Γ ≤ SL₂(R)` is either `1` or `2`. -/
+/-- Over a commutative ring `R` without zero divisors, the relative index `[±Γ : Γ]` of any
+subgroup `Γ ≤ SL₂(R)` is either `1` or `2`. -/
 theorem _root_.Subgroup.relIndex_withCenter_eq_one_or_two [NoZeroDivisors R]
     (Γ : Subgroup (SpecialLinearGroup (Fin 2) R)) :
     Γ.relIndex Γ.withCenter = 1 ∨ Γ.relIndex Γ.withCenter = 2 := by
@@ -655,14 +648,6 @@ theorem _root_.Subgroup.relIndex_withCenter_eq_one_or_two [NoZeroDivisors R]
       rw [Subgroup.withCenter_eq_self_iff.mpr (center_le_iff_neg_one_mem.mpr h),
         Subgroup.relIndex_self])
   · exact Or.inr (relIndex_withCenter_eq_two_of_neg_one_notMem h)
-
-/-- When `(2 : R) ≠ 0`, `[±Γ : Γ] · |{±I} ∩ Γ| = 2` for every `Γ ≤ SL₂(R)`. -/
-theorem _root_.Subgroup.relIndex_withCenter_mul_card_center_subgroupOf_eq_two
-    [NoZeroDivisors R] [NeZero (2 : R)] (Γ : Subgroup (SpecialLinearGroup (Fin 2) R)) :
-    Γ.relIndex Γ.withCenter *
-        Nat.card ((Subgroup.center (SpecialLinearGroup (Fin 2) R)).subgroupOf Γ) = 2 := by
-  rw [Γ.relIndex_withCenter_mul_card_center_subgroupOf,
-    card_center_eq_two neg_one_ne_one_of_neZero_two]
 
 /-- **The `±I` factor is `2` exactly when `-I ∈ Γ`.** The part of the centre that `Γ` contains is
 `{I}` or `{±I}` according to whether `Γ` contains `-I`, so the centre factor in the stabiliser

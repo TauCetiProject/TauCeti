@@ -381,7 +381,10 @@ lemma cuspFunction_slash_eventuallyEq_of_apply_one_zero_eq_zero (hh : 0 < h)
     ← _root_.UpperHalfPlane.eq_cuspFunction (M • τ) hh.ne' hg_per,
     UpperHalfPlane.qParam_smul_of_apply_one_zero_eq_zero hdet hM τ]
 
-/-- Analyticity at `q = 0` of `cuspFunction` is preserved under upper-triangular `GL(2, ℝ)`. -/
+/-- Analyticity at `q = 0` of `cuspFunction` is preserved under slashing by an upper-triangular
+matrix `M ∈ GL(2, ℝ)` with positive determinant: for `h > 0` and `h`-periodic `g ∘ ofComplex`,
+if `cuspFunction h g` is analytic at `0`, then `cuspFunction ((M 1 1 / M 0 0) * h) (g ∣[k] M)`
+is analytic at `0`. -/
 lemma analyticAt_cuspFunction_slash_of_apply_one_zero_eq_zero (hh : 0 < h)
     {k : ℤ} {M : GL (Fin 2) ℝ} (hdet : 0 < (M : Matrix (Fin 2) (Fin 2) ℝ).det) (hM : M 1 0 = 0)
     (hg_per : Function.Periodic (g ∘ ofComplex) h) (hg : AnalyticAt ℂ (cuspFunction h g) 0) :

@@ -325,16 +325,21 @@ lemma weightedOrderOfVanishingOnSubgroupOrbit_mk
   rw [weightedOrderOfVanishingOnSubgroupOrbit_def, orderOfVanishingOnSubgroupOrbit_mk,
     cardStabilizerOnOrbit_mk]
 
+/-- Every point of `ℍ` has finite stabiliser in the `GL(2, ℝ)` image of `Γ ≤ SL(2, ℤ)`. -/
+instance instFiniteStabilizerSubgroupMapGL (Γ : Subgroup SL(2, ℤ)) (z : ℍ) :
+    Finite (stabilizer (Γ : Subgroup (GL (Fin 2) ℝ)) z) :=
+  Subgroup.finite_stabilizer_of_le
+    (Subgroup.map_le_range (Matrix.SpecialLinearGroup.mapGL ℝ) Γ) z
+
 /-- Multiplying the weighted order by the stabiliser order recovers twice the plain vanishing
 order. -/
+@[simp]
 lemma cardStabilizerOnOrbit_mul_weightedOrderOfVanishingOnSubgroupOrbit
     [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F)
     (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) :
     (cardStabilizerOnOrbit o : ℚ) * weightedOrderOfVanishingOnSubgroupOrbit f o =
       2 * (orderOfVanishingOnSubgroupOrbit f o : ℚ) := by
   rw [weightedOrderOfVanishingOnSubgroupOrbit_def]
-  have := Subgroup.properlyDiscontinuousSMul_of_le (α := ℍ) inferInstance
-    (Subgroup.map_le_range (Matrix.SpecialLinearGroup.mapGL ℝ) Γ)
   exact mul_div_cancel₀ _ (by exact_mod_cast TauCeti.cardStabilizerOnOrbit_ne_zero o)
 
 /-- The general-level weighted order is nonnegative: a modular form is holomorphic and the
@@ -352,12 +357,9 @@ lemma weightedOrderOfVanishingOnSubgroupOrbit_nonneg
 where the order has none. -/
 lemma hasFiniteSupport_weightedOrderOfVanishingOnSubgroupOrbit [Γ.FiniteIndex]
     [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F) :
-    Function.HasFiniteSupport (weightedOrderOfVanishingOnSubgroupOrbit (Γ := Γ) (k := k) f) := by
-  change Function.HasFiniteSupport fun o ↦
-    weightedOrderOfVanishingOnSubgroupOrbit (Γ := Γ) (k := k) f o
-  simpa only [weightedOrderOfVanishingOnSubgroupOrbit_def, div_eq_mul_inv] using
-    (((hasFiniteSupport_orderOfVanishingOnSubgroupOrbit f).of_eq_zero_iff fun _ ↦
-      Int.cast_eq_zero.symm).fun_mul_right _).fun_mul_left _
+    Function.HasFiniteSupport (weightedOrderOfVanishingOnSubgroupOrbit (Γ := Γ) (k := k) f) :=
+  (hasFiniteSupport_orderOfVanishingOnSubgroupOrbit f).subset fun o ho h0 ↦
+    ho (by simp [weightedOrderOfVanishingOnSubgroupOrbit_def, h0])
 
 end ModularForm
 

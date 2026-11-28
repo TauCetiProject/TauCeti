@@ -135,7 +135,7 @@ theorem coe_scaling_mul_mul_inv (hs : (s : PSL(2, ℝ)) = D.scaling)
 
 /-- If `γ ∈ Γ` carries the cusp of `D` to that of `D'`, then `σ' γ σ⁻¹` fixes `∞`, so its lift
 `s' * h * s⁻¹` is upper triangular. -/
-theorem scaling_mul_mul_inv_apply_one_zero (hs : (s : PSL(2, ℝ)) = D.scaling)
+theorem scaling_mul_mul_inv_apply_one_zero_eq_zero (hs : (s : PSL(2, ℝ)) = D.scaling)
     (hs' : (s' : PSL(2, ℝ)) = D'.scaling) (hh : (h : PSL(2, ℝ)) = γ)
     (hγ : γ • D.cusp = D'.cusp) : (s' * h * s⁻¹) 1 0 = 0 := by
   have hg : ((s' * h * s⁻¹ : SL(2, ℝ)) : PSL(2, ℝ)) • (∞ : OnePoint ℝ) = ∞ := by
@@ -153,7 +153,7 @@ theorem coe_scaling_smul_eq_affine_of_smul (hs : (s : PSL(2, ℝ)) = D.scaling)
     ((D'.scaling • (γ : PSL(2, ℝ)) • x : ℍ) : ℂ) =
       ((s' * h * s⁻¹) 0 0 : ℂ) ^ 2 * (D.scaling • x : ℍ) +
         (s' * h * s⁻¹) 0 0 * (s' * h * s⁻¹) 0 1 := by
-  have ht : (s' * h * s⁻¹) 1 0 = 0 := scaling_mul_mul_inv_apply_one_zero hs hs' hh hγ
+  have ht : (s' * h * s⁻¹) 1 0 = 0 := scaling_mul_mul_inv_apply_one_zero_eq_zero hs hs' hh hγ
   rw [← coe_smul_of_apply_zero_one_eq_zero ht, ← UpperHalfPlane.pslMk_smul,
     coe_scaling_mul_mul_inv hs hs' hh, mul_smul, mul_smul, inv_smul_smul]
 

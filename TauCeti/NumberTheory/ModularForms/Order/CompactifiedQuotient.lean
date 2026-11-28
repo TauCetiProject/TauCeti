@@ -47,8 +47,10 @@ section Slash
 
 variable [SlashInvariantFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k]
 
-/-- **Geometric vanishing order on `(Γ.map sl2zToPSL2R).CompactifiedQuotient`**: the integer
-analytic order on interior points and the rational cusp order at cusps. -/
+/-- **Geometric vanishing order on `(Γ.map sl2zToPSL2R).CompactifiedQuotient`**: at an interior
+orbit `P`, the integer vanishing order `orderOfVanishingAt` at a representative in `ℍ` (before
+dividing by the stabilizer order); at a cusp `C`, the rational cusp order `orderAtCuspOrbit`.
+The zero form is assigned `0` everywhere. -/
 def orderOnCompactifiedQuotient (f : F) : (Γ.map sl2zToPSL2R).CompactifiedQuotient → ℚ
   | .ofQuotient P => orderOfVanishingOnEffectiveOrbit f P
   | .ofCusp C => orderAtCuspOrbit f C
@@ -91,7 +93,7 @@ theorem weightedOrderOnCompactifiedQuotient_def (f : F)
   simp [weightedOrderOnCompactifiedQuotient_def]
 
 /-- Multiplying `weightedOrderOnCompactifiedQuotient f x` by `e_x` recovers `ord_x f`. -/
-theorem effectiveStabilizerOrder_mul_weightedOrderOnCompactifiedQuotient (f : F)
+@[simp] theorem effectiveStabilizerOrder_mul_weightedOrderOnCompactifiedQuotient (f : F)
     (x : (Γ.map sl2zToPSL2R).CompactifiedQuotient) :
     (x.effectiveStabilizerOrder : ℚ) * weightedOrderOnCompactifiedQuotient f x =
       orderOnCompactifiedQuotient f x :=
@@ -165,18 +167,28 @@ theorem orderOnCompactifiedQuotient_pos_iff {f : F} (hf : (⇑f : ℍ → ℂ) �
 theorem hasFiniteSupport_orderOnCompactifiedQuotient (f : F) :
     Function.HasFiniteSupport (orderOnCompactifiedQuotient (Γ := Γ) (k := k) f) := by
   let e := Subgroup.CompactifiedQuotient.equivSum (Γ.map sl2zToPSL2R)
+  have h1 : Function.HasFiniteSupport
+      (fun P ↦ orderOnCompactifiedQuotient f (e.symm (Sum.inl P))) := by
+    simp only [e, Subgroup.CompactifiedQuotient.equivSum_symm_inl,
+      orderOnCompactifiedQuotient_ofQuotient]
+    exact (hasFiniteSupport_orderOfVanishingOnEffectiveOrbit f).of_eq_zero_iff fun _ ↦
+      Int.cast_eq_zero.symm
+  have h2 : Function.HasFiniteSupport
+      (fun C ↦ orderOnCompactifiedQuotient f (e.symm (Sum.inr C))) := by
+    simp only [e, Subgroup.CompactifiedQuotient.equivSum_symm_inr,
+      orderOnCompactifiedQuotient_ofCusp]
+    exact hasFiniteSupport_orderAtCuspOrbit f
   have hg : Function.HasFiniteSupport (orderOnCompactifiedQuotient (Γ := Γ) (k := k) f ∘ e.symm) :=
-    TauCeti.hasFiniteSupport_sum_type
-      ((hasFiniteSupport_orderOfVanishingOnEffectiveOrbit f).subset fun _ h ↦ by simpa [e] using h)
-      (by simpa [e, Function.comp_def] using hasFiniteSupport_orderAtCuspOrbit f)
-  exact (hg.preimage e.injective.injOn).subset fun x hx ↦ by simpa [e] using hx
+    TauCeti.hasFiniteSupport_sum_type h1 h2
+  exact (hg.preimage e.injective.injOn).subset fun x hx ↦ by
+    simpa only [Set.mem_preimage, Function.mem_support, Function.comp_apply,
+      Equiv.symm_apply_apply] using hx
 
 /-- Only finitely many points of the compactified quotient carry nonzero weighted order. -/
 theorem hasFiniteSupport_weightedOrderOnCompactifiedQuotient (f : F) :
-    Function.HasFiniteSupport (weightedOrderOnCompactifiedQuotient (Γ := Γ) (k := k) f) := by
-  change Function.HasFiniteSupport fun x ↦ weightedOrderOnCompactifiedQuotient (Γ := Γ) (k := k) f x
-  simpa only [weightedOrderOnCompactifiedQuotient_def, div_eq_mul_inv] using
-    (hasFiniteSupport_orderOnCompactifiedQuotient f).fun_mul_left _
+    Function.HasFiniteSupport (weightedOrderOnCompactifiedQuotient (Γ := Γ) (k := k) f) :=
+  (hasFiniteSupport_orderOnCompactifiedQuotient f).subset fun x hx h0 ↦
+    hx (by simp [weightedOrderOnCompactifiedQuotient_def, h0])
 
 /-- Splitting the divisor sum over `(Γ.map sl2zToPSL2R).CompactifiedQuotient`. -/
 theorem finsum_weightedOrderOnCompactifiedQuotient_eq_add (f : F) :
@@ -185,12 +197,22 @@ theorem finsum_weightedOrderOnCompactifiedQuotient_eq_add (f : F) :
           weightedOrderOfVanishingOnEffectiveOrbit f P) +
         (∑ᶠ C : (Γ.map sl2zToPSL2R).CuspOrbit, orderAtCuspOrbit f C) := by
   let e := Subgroup.CompactifiedQuotient.equivSum (Γ.map sl2zToPSL2R)
+  have h1 : Function.HasFiniteSupport
+      (fun P ↦ weightedOrderOnCompactifiedQuotient f (e.symm (Sum.inl P))) := by
+    simp only [e, Subgroup.CompactifiedQuotient.equivSum_symm_inl,
+      weightedOrderOnCompactifiedQuotient_ofQuotient]
+    exact hasFiniteSupport_weightedOrderOfVanishingOnEffectiveOrbit f
+  have h2 : Function.HasFiniteSupport
+      (fun C ↦ weightedOrderOnCompactifiedQuotient f (e.symm (Sum.inr C))) := by
+    simp only [e, Subgroup.CompactifiedQuotient.equivSum_symm_inr,
+      weightedOrderOnCompactifiedQuotient_ofCusp]
+    exact hasFiniteSupport_orderAtCuspOrbit f
   rw [← finsum_comp_equiv e.symm,
-    TauCeti.finsum_sum_type (fun s ↦ weightedOrderOnCompactifiedQuotient f (e.symm s))
-      (by simpa [e, Function.comp_def] using
-        hasFiniteSupport_weightedOrderOfVanishingOnEffectiveOrbit f)
-      (by simpa [e, Function.comp_def] using hasFiniteSupport_orderAtCuspOrbit f)]
-  simp [e]
+    TauCeti.finsum_sum_type (fun s ↦ weightedOrderOnCompactifiedQuotient f (e.symm s)) h1 h2]
+  simp only [e, Subgroup.CompactifiedQuotient.equivSum_symm_inl,
+    weightedOrderOnCompactifiedQuotient_ofQuotient,
+    Subgroup.CompactifiedQuotient.equivSum_symm_inr,
+    weightedOrderOnCompactifiedQuotient_ofCusp]
 
 end FiniteIndex
 
@@ -202,7 +224,8 @@ variable [Γ.FiniteIndex] [ModularFormClass F₁ (Γ : Subgroup (GL (Fin 2) ℝ)
   [ModularFormClass F₂ (Γ : Subgroup (GL (Fin 2) ℝ)) k₂]
   [ModularFormClass F₃ (Γ : Subgroup (GL (Fin 2) ℝ)) (k₁ + k₂)]
 
-/-- **Additivity on products (`ModularFormClass` form)** on the compactified quotient. -/
+/-- **Additivity on products of nonzero modular forms (`ModularFormClass` form)** on the
+compactified quotient. -/
 theorem orderOnCompactifiedQuotient_eq_add_of_coe_eq_mul (f : F₁) (g : F₂) (fg : F₃)
     (hfg : ⇑fg = ⇑f * ⇑g) (hf : (⇑f : ℍ → ℂ) ≠ 0) (hg : (⇑g : ℍ → ℂ) ≠ 0)
     (x : (Γ.map sl2zToPSL2R).CompactifiedQuotient) :
@@ -212,7 +235,8 @@ theorem orderOnCompactifiedQuotient_eq_add_of_coe_eq_mul (f : F₁) (g : F₂) (
   | ofQuotient P => simp [orderOfVanishingOnEffectiveOrbit_eq_add_of_coe_eq_mul f g fg hfg hf hg P]
   | ofCusp C => exact orderAtCuspOrbit_eq_add_of_coe_eq_mul f g fg hfg hf hg C
 
-/-- Additivity of the weighted geometric order on products (`ModularFormClass` form). -/
+/-- Additivity of the weighted geometric order on products of nonzero modular forms
+(`ModularFormClass` form). -/
 theorem weightedOrderOnCompactifiedQuotient_eq_add_of_coe_eq_mul (f : F₁) (g : F₂) (fg : F₃)
     (hfg : ⇑fg = ⇑f * ⇑g) (hf : (⇑f : ℍ → ℂ) ≠ 0) (hg : (⇑g : ℍ → ℂ) ≠ 0)
     (x : (Γ.map sl2zToPSL2R).CompactifiedQuotient) :

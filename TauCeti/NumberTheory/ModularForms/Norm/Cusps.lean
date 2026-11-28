@@ -28,14 +28,15 @@ and closes the general-level valence formula (`valence_formula_finiteIndex`).
 ## Indexing the cusp translation orbits
 
 The coset of `x` contributes the factor `f ∣[k] x⁻¹`, which is `f` read at the cusp `x⁻¹ ∞`, and
-two cosets contribute at the same cusp exactly when they differ by left multiplication by an
-element of the stabiliser `⟨T, -I⟩` of `∞` in `SL(2, ℤ)`. Here the cusp term is indexed by the
-orbits of `⟨T⟩` alone (`CuspTranslationOrbit`), so a classical cusp of `𝒢` corresponds to one
-cusp translation orbit or two, according as its `⟨T⟩`-orbit is stable under `-I` or not. That is
-the **full**-coset convention that
-`Norm/Valence.lean` already makes on the interior term — the weight there is read on the
-matrix stabiliser, and the norm's weight is `k · [SL(2, ℤ) : 𝒢]` for the full index — so both
-halves of the identity are read for the full coset space, which is what makes them match.
+two cosets contribute at the same cusp orbit of `𝒢 ⊓ 𝒮ℒ` when they differ by left multiplication
+by an element of the stabiliser `⟨T, -I⟩` of `∞` in `SL(2, ℤ)`. Here the cusp term is indexed by
+the orbits of `⟨T⟩` alone (`CuspTranslationOrbit`), so a projective cusp orbit of `𝒢 ⊓ 𝒮ℒ` (and
+in particular of an integral subgroup `Γ ≤ SL(2, ℤ)`, see
+`cuspOrbitOfTranslationOrbit_eq_cuspOrbitOfSL2Z_iff`) corresponds to one cusp translation orbit or
+two, according as its `⟨T⟩`-orbit is stable under `-I` or not. That is the **full**-coset
+convention that `Norm/Valence.lean` already makes on the interior term — the weight there is read
+on the matrix stabiliser, and the norm's weight is `k · [SL(2, ℤ) : 𝒢]` for the full index — so
+both halves of the identity are read for the full coset space, which is what makes them match.
 
 The **width** of an orbit (`cuspTranslationOrbitWidth`) and its finiteness and index-sum
 properties live in `TauCeti/NumberTheory/ModularForms/Cusps/TranslationOrbit/Basic.lean`.
@@ -134,8 +135,9 @@ lemma periodic_quotientFunc (f : F) (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) :
 /-- Each factor of the norm is periodic with the width of its cusp translation orbit as a
 period. -/
 lemma periodic_quotientFunc_out (f : F) (c : CuspTranslationOrbit 𝒢) :
-    Periodic (quotientFunc f c.out ∘ ofComplex) (cuspTranslationOrbitWidth c : ℝ) :=
-  periodic_quotientFunc f c.out
+    Periodic (quotientFunc f c.out ∘ ofComplex) (cuspTranslationOrbitWidth c : ℝ) := by
+  rw [cuspTranslationOrbitWidth_def]
+  exact periodic_quotientFunc f c.out
 
 /-- The product of the norm factors over one cusp translation orbit is the Galois product of that
 orbit's factor at its own width. -/
@@ -245,9 +247,15 @@ lemma slashInvariantForm_norm_apply_eq_prod_galoisProd (f : F) (τ : ℍ) :
       (fun q ↦ quotientFunc f q τ), Fintype.prod_sigma]
   refine Finset.prod_congr rfl fun c _ ↦ ?_
   rw [← prod_cuspTranslationOrbit_quotientFunc f c τ]
-  exact Finset.prod_congr rfl fun x _ ↦ by
+  have h : ∀ (m : ℕ) [NeZero m], minimalPeriod (TSL • ·) c.out = m →
+      (∏ x : ZMod (minimalPeriod (TSL • ·) c.out),
+          quotientFunc f
+            ((Subgroup.quotientEquivSigmaZMod (𝒢.subgroupOf 𝒮ℒ) TSL).symm ⟨c, x⟩) τ) =
+        ∏ x : ZMod m, quotientFunc f (TSL ^ (ZMod.cast x : ℤ) • c.out) τ := by
+    rintro m _ rfl
+    convert Finset.prod_congr rfl fun x _ ↦ ?_
     rw [Subgroup.quotientEquivSigmaZMod_symm_apply]
-    rfl
+  exact h (cuspTranslationOrbitWidth c) (cuspTranslationOrbitWidth_def c).symm
 
 end Decomposition
 
@@ -390,7 +398,7 @@ lemma sum_div_cuspTranslationOrbitWidth [𝒢.IsFiniteRelIndex 𝒮ℒ]
   have hw : (cuspTranslationOrbitWidth c : ℚ) ≠ 0 := by
     exact_mod_cast (cuspTranslationOrbitWidth_pos c).ne'
   simp only [hc, Finset.sum_const, Finset.card_univ, ZMod.card, nsmul_eq_mul]
-  rw [← cuspTranslationOrbitWidth, mul_div_cancel₀ _ hw]
+  rw [← cuspTranslationOrbitWidth_def, mul_div_cancel₀ _ hw]
 
 variable {Γ : Subgroup SL(2, ℤ)} [Γ.FiniteIndex]
   [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k]
@@ -409,7 +417,8 @@ theorem orderAtCuspTranslationOrbit_mk_inv_eq_qExpansionOrderAtCusp (f : F) (γ 
     _root_.SlashInvariantForm.quotientFunc_mk, MonoidHom.coe_rangeRestrict,
     map_inv (mapGL ℝ) γ, inv_inv]
 
-/-- Negating `γ⁻¹` preserves `orderAtCuspTranslationOrbit` (up to `(-1) ^ k`). -/
+/-- The cusp translation orbits of `-γ⁻¹` and `γ⁻¹` carry the same vanishing order (the slashes
+differ by the nonzero scalar `(-1) ^ k`). -/
 theorem orderAtCuspTranslationOrbit_mk_neg_inv (f : F) (γ : SL(2, ℤ)) :
     orderAtCuspTranslationOrbit f
         (⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict (-γ⁻¹))⟧ :

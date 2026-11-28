@@ -50,7 +50,7 @@ private lemma isRegularAtInfty_conj_of_cuspOrbitOfSL2Z_eq {γ γ' : SL(2, ℤ)}
   set m : SL(2, ℤ) := γ⁻¹ * g₀ * γ' with hm_def
   have hm_10 : (mapGL ℝ m) 1 0 = 0 := by simpa [mapGL_coe_matrix] using hc
   have hm_div : (mapGL ℝ m) 0 0 / (mapGL ℝ m) 1 1 = 1 := by
-    have had := mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero hc
+    have had := apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero hc
     rcases Int.eq_one_or_neg_one_of_mul_eq_one had with h1 | h1 <;>
       · have hm11 : m 1 1 = m 0 0 := by rw [h1] at had ⊢; omega
         simp [mapGL_coe_matrix, h1, hm11]

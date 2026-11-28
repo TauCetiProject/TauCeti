@@ -39,6 +39,26 @@ private lemma coe_inv_TSL_zpow_mul (j : ℤ) (α δ : SL(2, ℤ)) :
   simp only [Subgroup.coe_mul, InvMemClass.coe_inv, coe_TSL_zpow,
     Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, MonoidHom.coe_rangeRestrict, map_mul, map_inv]
 
+private lemma mk_rangeRestrict_eq_iff {H : Subgroup SL(2, ℤ)} {δ α : SL(2, ℤ)} :
+    (⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict δ)⟧ :
+        CuspTranslationOrbit (H.map (mapGL ℝ))) =
+      ⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict α)⟧ ↔
+      ∃ j : ℤ, ∃ h₀ ∈ H, δ = ModularGroup.T ^ j * α * h₀ := by
+  constructor
+  · intro h
+    obtain ⟨⟨_, hg⟩, hgq⟩ := MulAction.orbitRel_apply.mp (Quotient.exact h)
+    obtain ⟨j, rfl⟩ := Subgroup.mem_zpowers_iff.mp hg
+    simp only [Subgroup.mk_smul, MulAction.Quotient.smul_mk, smul_eq_mul] at hgq
+    obtain ⟨h₀, hh₀, he⟩ :=
+      Subgroup.mem_map.mp (Subgroup.mem_subgroupOf.mp (QuotientGroup.eq.mp hgq))
+    refine ⟨j, h₀, hh₀, ?_⟩
+    rw [mapGL_injective (he.trans (coe_inv_TSL_zpow_mul j α δ))]; group
+  · rintro ⟨j, h₀, hh₀, rfl⟩
+    refine Quotient.sound ⟨⟨TSL ^ j, Subgroup.mem_zpowers_iff.mpr ⟨j, rfl⟩⟩, ?_⟩
+    dsimp only; rw [Subgroup.mk_smul, MulAction.Quotient.smul_mk, smul_eq_mul, QuotientGroup.eq,
+      Subgroup.mem_subgroupOf, coe_inv_TSL_zpow_mul, inv_mul_cancel_left]
+    exact Subgroup.mem_map_of_mem _ hh₀
+
 /-- Integral matrices whose cosets lie in the same cusp translation orbit have inverses
 representing the same cusp. -/
 theorem cuspOrbitOfSL2Z_inv_eq_of_cuspTranslationOrbit_mk_eq {H : Subgroup SL(2, ℤ)}
@@ -46,12 +66,7 @@ theorem cuspOrbitOfSL2Z_inv_eq_of_cuspTranslationOrbit_mk_eq {H : Subgroup SL(2,
     (h : (⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ)⟧ : CuspTranslationOrbit (H.map (mapGL ℝ))) =
       ⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ')⟧) :
     H.cuspOrbitOfSL2Z γ⁻¹ = H.cuspOrbitOfSL2Z γ'⁻¹ := by
-  obtain ⟨⟨_, hg⟩, hgq⟩ := MulAction.orbitRel_apply.mp (Quotient.exact h)
-  obtain ⟨j, rfl⟩ := Subgroup.mem_zpowers_iff.mp hg
-  simp only [Subgroup.mk_smul, MulAction.Quotient.smul_mk, smul_eq_mul] at hgq
-  obtain ⟨h₀, hh₀, he⟩ := Subgroup.mem_map.mp (Subgroup.mem_subgroupOf.mp (QuotientGroup.eq.mp hgq))
-  have hγ : γ = ModularGroup.T ^ j * γ' * h₀ := by
-    rw [mapGL_injective (he.trans (coe_inv_TSL_zpow_mul j γ' γ))]; group
+  obtain ⟨j, h₀, hh₀, hγ⟩ := mk_rangeRestrict_eq_iff.mp h
   refine (H.cuspOrbitOfSL2Z_eq_iff _ _).mpr ⟨h₀⁻¹, inv_mem hh₀, ?_⟩
   have hconj : γ⁻¹⁻¹ * h₀⁻¹ * γ'⁻¹ = ModularGroup.T ^ j := by rw [inv_inv, hγ]; group
   rw [hconj]; simp [ModularGroup.coe_T_zpow]
@@ -100,16 +115,6 @@ namespace TauCeti.ModularForm
 
 variable {Γ : Subgroup SL(2, ℤ)}
 
-private lemma mk_rangeRestrict_eq_of_mul_T_zpow {δ α h₀ : SL(2, ℤ)} (hh₀ : h₀ ∈ Γ) (j : ℤ)
-    (hδ : δ = ModularGroup.T ^ j * α * h₀) :
-    (⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict δ)⟧ :
-        CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) =
-      ⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict α)⟧ := by
-  refine Quotient.sound ⟨⟨TSL ^ j, Subgroup.mem_zpowers_iff.mpr ⟨j, rfl⟩⟩, ?_⟩
-  dsimp only; rw [Subgroup.mk_smul, MulAction.Quotient.smul_mk, smul_eq_mul, QuotientGroup.eq,
-    Subgroup.mem_subgroupOf, coe_inv_TSL_zpow_mul, hδ, inv_mul_cancel_left]
-  exact Subgroup.mem_map_of_mem _ hh₀
-
 /-- **Fibre of `Subgroup.cuspOrbitOfTranslationOrbit` over `Γ.cuspOrbitOfSL2Z γ`**: every
 translation orbit mapping to `Γ.cuspOrbitOfSL2Z γ` is the orbit of `γ⁻¹` or `-γ⁻¹`. -/
 theorem cuspOrbitOfTranslationOrbit_eq_cuspOrbitOfSL2Z_iff [Γ.FiniteIndex] (γ : SL(2, ℤ))
@@ -124,21 +129,13 @@ theorem cuspOrbitOfTranslationOrbit_eq_cuspOrbitOfSL2Z_iff [Γ.FiniteIndex] (γ 
     rw [inv_inv] at hm_10
     set m : SL(2, ℤ) := δ * h₀ * γ with hm_def
     rcases TauCeti.ModularGroup.eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero hm_10 with hm | hm
-    · exact Or.inl <| mk_rangeRestrict_eq_of_mul_T_zpow (inv_mem hh₀) (m 0 1)
-        (by rw [← hm, hm_def]; group)
-    · refine Or.inr <| mk_rangeRestrict_eq_of_mul_T_zpow (inv_mem hh₀) (-m 0 1) ?_
+    · exact Or.inl <| mk_rangeRestrict_eq_iff.mpr
+        ⟨m 0 1, h₀⁻¹, inv_mem hh₀, by rw [← hm, hm_def]; group⟩
+    · refine Or.inr <| mk_rangeRestrict_eq_iff.mpr ⟨-m 0 1, h₀⁻¹, inv_mem hh₀, ?_⟩
       rw [mul_neg, ← neg_mul, ← hm, hm_def]; group
   · rintro (rfl | rfl)
     · rw [Subgroup.cuspOrbitOfTranslationOrbit_mk, inv_inv]
     · rw [Subgroup.cuspOrbitOfTranslationOrbit_mk, inv_neg, inv_inv, Γ.cuspOrbitOfSL2Z_neg]
-
-private lemma neg_conj_T_zpow_mem_iff_neg_upperRightHom_mem (γ : SL(2, ℤ)) (j : ℤ) :
-    -(γ * ModularGroup.T ^ j * γ⁻¹) ∈ Γ ↔
-      -Matrix.GeneralLinearGroup.upperRightHom (j : ℝ) ∈
-        ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • (Γ : Subgroup (GL (Fin 2) ℝ)) := by
-  rw [Subgroup.mem_conjAct_smul_iff, inv_inv, ← ModularGroup.mapGL_T_zpow_eq_upperRightHom, mul_neg,
-    neg_mul, ← map_inv, ← map_mul, ← map_mul, ← mapGL_neg,
-    Subgroup.mem_map_iff_mem (mapGL_injective (S := ℝ))]
 
 /-- **Coincidence criterion for the fibre `{c₀, c₁}` over `Γ.cuspOrbitOfSL2Z γ`**: the translation
 orbits of `γ⁻¹` and `-γ⁻¹` coincide iff `-I ∈ Γ` or the cusp is irregular. -/
@@ -152,15 +149,21 @@ theorem cuspTranslationOrbit_mk_inv_eq_mk_neg_inv_iff [Γ.FiniteIndex] (γ : SL(
         CuspTranslationOrbit (Γ : Subgroup (GL (Fin 2) ℝ))) =
       ⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict (-γ⁻¹))⟧ ↔
         ∃ j : ℤ, -Matrix.GeneralLinearGroup.upperRightHom (j : ℝ) ∈ Γγ := by
-    simp_rw [Γγ, ← neg_conj_T_zpow_mem_iff_neg_upperRightHom_mem]
-    refine ⟨fun h ↦ ?_, fun ⟨j, hj⟩ ↦ mk_rangeRestrict_eq_of_mul_T_zpow hj (-j) <| by
-      symm; simp only [mul_neg, neg_mul, neg_neg]; group⟩
-    obtain ⟨⟨_, hg⟩, hgq⟩ := MulAction.orbitRel_apply.mp (Quotient.exact h.symm)
-    obtain ⟨j, rfl⟩ := Subgroup.mem_zpowers_iff.mp hg
-    dsimp only at hgq; rw [Subgroup.mk_smul, MulAction.Quotient.smul_mk, smul_eq_mul,
-      QuotientGroup.eq, Subgroup.mem_subgroupOf, coe_inv_TSL_zpow_mul, _root_.mul_inv_rev, inv_inv,
-      mul_neg, ← _root_.zpow_neg, Subgroup.mem_map_iff_mem (mapGL_injective (S := ℝ))] at hgq
-    exact ⟨-j, hgq⟩
+    simp_rw [Γγ, ← neg_conj_T_zpow_mem_iff_neg_upperRightHom_mem_conj]
+    rw [eq_comm, mk_rangeRestrict_eq_iff]
+    refine ⟨fun ⟨j, h₀, hh₀, hneg⟩ ↦ ⟨-j, ?_⟩,
+      fun ⟨j, hj⟩ ↦ ⟨-j, -(γ * ModularGroup.T ^ j * γ⁻¹), hj, ?_⟩⟩
+    · have hh₀_eq : -(γ * ModularGroup.T ^ (-j) * γ⁻¹) = h₀ := by
+        rw [_root_.zpow_neg]
+        have hneg' : h₀ = (ModularGroup.T ^ j * γ⁻¹)⁻¹ * (-γ⁻¹) :=
+          eq_inv_mul_of_mul_eq (by simpa [mul_assoc] using hneg.symm)
+        rw [hneg']
+        simp only [mul_neg]
+        group
+      exact hh₀_eq ▸ hh₀
+    · rw [_root_.zpow_neg]
+      simp only [mul_neg]
+      group
   rw [hex, Subgroup.isRegularCusp_cuspOrbitOfSL2Z]
   refine ⟨fun ⟨j, hj⟩ ↦ or_iff_not_imp_right.mpr fun hreg ↦ ?_, ?_⟩
   · have hsp : Matrix.GeneralLinearGroup.upperRightHom (j : ℝ) ∈ Γγ := by
@@ -174,7 +177,7 @@ theorem cuspTranslationOrbit_mk_inv_eq_mk_neg_inv_iff [Γ.FiniteIndex] (γ : SL(
       ← Matrix.SpecialLinearGroup.mapGL_neg_one (R := ℤ),
       Subgroup.mem_map_iff_mem (mapGL_injective (S := ℝ))] at hneg'
   · rintro (hneg | hirr)
-    · exact ⟨0, (neg_conj_T_zpow_mem_iff_neg_upperRightHom_mem γ 0).mp (by simpa using hneg)⟩
+    · exact ⟨0, (neg_conj_T_zpow_mem_iff_neg_upperRightHom_mem_conj γ 0).mp (by simpa using hneg)⟩
     · obtain ⟨j, hj, -⟩ := exists_int_eq_and_neg_conj_T_zpow_mem_of_neg_upperRightHom_mem_conj γ
         (Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty Γγ hirr)
       exact ⟨j, hj ▸ Subgroup.neg_upperRightHom_widthInfty_mem_of_not_isRegularAtInfty Γγ hirr⟩

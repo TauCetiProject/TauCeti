@@ -33,7 +33,9 @@ In `PSL(2, ℤ)`, distinct integer powers of `T` are pairwise non-conjugate
 cyclic translation subgroup `⟨T ^ k⟩` has infinite index
 (`TauCeti.ModularGroup.index_zpowers_coe_T_zpow`). In `GL(2, ℝ)`,
 `exists_int_eq_and_conj_mul_T_zpow_mem_of_mapGL_mul_upperRightHom_mem_conj` (with its
-specializations for `±upperRightHom`) extracts integral translations from `γ⁻¹ Γ γ`.
+specializations for `±upperRightHom` and the equivalence
+`neg_conj_T_zpow_mem_iff_neg_upperRightHom_mem_conj`) extracts integral translations from
+`γ⁻¹ Γ γ`.
 
 ## References
 
@@ -212,7 +214,7 @@ theorem exists_int_eq_and_conj_mul_T_zpow_mem_of_mapGL_mul_upperRightHom_mem_con
   have hg_eq' : γ * (s * u) * γ⁻¹ = g := by rw [hu_def]; group
   exact ⟨u 0 1, hw_eq, by rwa [← hT, hg_eq']⟩
 
-/-- A positive shift `upperRightHom w ∈ γ⁻¹ Γ γ` has integer translation `w = j` with
+/-- If the translation `upperRightHom w` lies in `γ⁻¹ Γ γ`, then `w` is an integer `j` and
 `γ * T ^ j * γ⁻¹ ∈ Γ`. -/
 theorem exists_int_eq_and_conj_T_zpow_mem_of_upperRightHom_mem_conj
     {Γ : Subgroup SL(2, ℤ)} (γ : SL(2, ℤ)) {w : ℝ}
@@ -223,8 +225,8 @@ theorem exists_int_eq_and_conj_T_zpow_mem_of_upperRightHom_mem_conj
     exists_int_eq_and_conj_mul_T_zpow_mem_of_mapGL_mul_upperRightHom_mem_conj (Γ := Γ) γ 1
       (by simpa only [map_one, one_mul] using hw)
 
-/-- A negative shift `-upperRightHom w ∈ γ⁻¹ Γ γ` has integer translation `w = j` with
-`-(γ * T ^ j * γ⁻¹) ∈ Γ`. -/
+/-- If the negated translation `-upperRightHom w` lies in `γ⁻¹ Γ γ`, then `w` is an integer `j`
+and `-(γ * T ^ j * γ⁻¹) ∈ Γ`. -/
 theorem exists_int_eq_and_neg_conj_T_zpow_mem_of_neg_upperRightHom_mem_conj
     {Γ : Subgroup SL(2, ℤ)} (γ : SL(2, ℤ)) {w : ℝ}
     (hw : -_root_.Matrix.GeneralLinearGroup.upperRightHom w ∈
@@ -233,6 +235,17 @@ theorem exists_int_eq_and_neg_conj_T_zpow_mem_of_neg_upperRightHom_mem_conj
   simpa only [neg_one_mul, mul_neg, neg_mul, one_mul] using
     exists_int_eq_and_conj_mul_T_zpow_mem_of_mapGL_mul_upperRightHom_mem_conj (Γ := Γ) γ (-1)
       (by simpa only [_root_.Matrix.SpecialLinearGroup.mapGL_neg_one, neg_one_mul] using hw)
+
+/-- The negated conjugate `-(γ * T ^ j * γ⁻¹)` belongs to `Γ` iff `-upperRightHom j` belongs to
+`γ⁻¹ Γ γ`. -/
+theorem neg_conj_T_zpow_mem_iff_neg_upperRightHom_mem_conj
+    {Γ : Subgroup SL(2, ℤ)} (γ : SL(2, ℤ)) (j : ℤ) :
+    -(γ * _root_.ModularGroup.T ^ j * γ⁻¹) ∈ Γ ↔
+      -_root_.Matrix.GeneralLinearGroup.upperRightHom (j : ℝ) ∈
+        ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ.map (mapGL ℝ) := by
+  rw [Subgroup.mem_conjAct_smul_iff, inv_inv, ← ModularGroup.mapGL_T_zpow_eq_upperRightHom, mul_neg,
+    neg_mul, ← map_inv, ← map_mul, ← map_mul, ← mapGL_neg,
+    Subgroup.mem_map_iff_mem (mapGL_injective (S := ℝ))]
 
 end MapGL
 

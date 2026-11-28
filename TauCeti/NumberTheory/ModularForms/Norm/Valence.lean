@@ -117,8 +117,6 @@ private lemma card_fiber_smul_orderOfVanishingOnSubgroupOrbit_mul_ellipticOrder_
   · rw [Set.indicator_of_mem (by simpa using ho), weightedOrderOfVanishingOnSubgroupOrbit_def]
     have hprod := card_fiber_orbitOfCosetTranslate_mul_cardStabilizerOnOrbit_eq p ho
     have hc : (cardStabilizerOnOrbit o : ℚ) ≠ 0 := by
-      have := Subgroup.properlyDiscontinuousSMul_of_le (α := ℍ) inferInstance
-        (Subgroup.map_le_range (Matrix.SpecialLinearGroup.mapGL ℝ) Γ)
       exact_mod_cast TauCeti.cardStabilizerOnOrbit_ne_zero o
     have hprod' : (Nat.card {q : 𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ //
         orbitOfCosetTranslate p q = o} : ℚ) * (cardStabilizerOnOrbit o : ℚ) =
@@ -211,8 +209,9 @@ indexed by the `Γ`-orbits, weighted as the level-one `1 / e_P` up to the factor
 `|Stab_Γ P| = |{±I} ∩ Γ| · e_P` (see `weightedOrderOfVanishingOnSubgroupOrbit`), and the index
 is the **full** coset index, as it must be for odd weight with `-I ∉ Γ`.
 
-The cusp term is still read at level one, on the norm. Distributing it over the cusps of `Γ`,
-each weighted by its width, is carried out and combined in `Norm/Cusps.lean`. -/
+The cusp term is still read at level one, on the norm. Distributing it over the cusp translation
+orbits of `Γ`, each read in its own width parameter and summed without additional weights, is
+carried out and combined in `Norm/Cusps.lean`. -/
 theorem valence_formula_finiteIndex_norm [Γ.FiniteIndex]
     [ModularFormClass F (Γ : Subgroup (GL (Fin 2) ℝ)) k] (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) :
     (∑ᶠ o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ,
@@ -241,9 +240,7 @@ theorem twentyFour_mul_orderOfVanishingOnSubgroupOrbit_le_weight_mul_index_mul_c
       k * Nat.card (𝒮ℒ ⧸ (Γ : Subgroup (GL (Fin 2) ℝ)).subgroupOf 𝒮ℒ) *
         cardStabilizerOnOrbit o := by
   have hc : (0 : ℚ) < (cardStabilizerOnOrbit o : ℚ) := by
-    have := Subgroup.properlyDiscontinuousSMul_of_le (α := ℍ) inferInstance
-      (Subgroup.map_le_range (Matrix.SpecialLinearGroup.mapGL ℝ) Γ)
-    exact_mod_cast Nat.pos_of_ne_zero (TauCeti.cardStabilizerOnOrbit_ne_zero o)
+    exact_mod_cast TauCeti.cardStabilizerOnOrbit_pos o
   have hsingle := single_le_finsum o (hasFiniteSupport_weightedOrderOfVanishingOnSubgroupOrbit f)
     (weightedOrderOfVanishingOnSubgroupOrbit_nonneg f)
   have hcusp : (0 : ℚ) ≤ (qExpansionOrderAtCusp 1 ⇑(_root_.ModularForm.norm 𝒮ℒ f) : ℚ) := by

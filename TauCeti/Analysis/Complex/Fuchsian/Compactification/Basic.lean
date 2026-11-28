@@ -43,8 +43,9 @@ the complex structure at the cusps are not part of this file.
 
 * `Subgroup.CompactifiedQuotient`: the carrier, with its topology for a discrete `Γ`.
 * `Subgroup.CompactifiedQuotient.equivSum`: the identification with the sum type.
-* `Subgroup.CompactifiedQuotient.effectiveStabilizerOrder`: the orbifold stabilizer order (`e_q`
-  at an interior orbit `q`, `1` at an adjoined cusp).
+* `Subgroup.CompactifiedQuotient.effectiveStabilizerOrder`: the stabilizer-order weight
+  (`TauCeti.cardStabilizerOnOrbit q`, i.e. `Nat.card (stabilizer Γ z)` when finite and `0` when
+  infinite, at an interior orbit `q`, and `1` by convention at an adjoined cusp).
 * `Subgroup.CompactifiedQuotient.cuspNhd`: the basic neighbourhoods of a cusp orbit.
 * `Subgroup.CompactifiedQuotient.nhds_basis_cuspNhd`: they form a neighbourhood basis, for
   every cusp datum representing the orbit and every lower bound on the height.
@@ -134,9 +135,10 @@ theorem compl_range_ofQuotient : (range (ofQuotient (Γ := Γ)))ᶜ = range ofCu
   ext x
   cases x <;> simp
 
-/-- The orbifold stabilizer order on `Γ.CompactifiedQuotient`: `cardStabilizerOnOrbit q` at an
-interior orbit `q`, and `1` at an adjoined cusp. -/
-noncomputable def effectiveStabilizerOrder : Γ.CompactifiedQuotient → ℕ
+/-- The stabilizer-order weight on `Γ.CompactifiedQuotient`: `TauCeti.cardStabilizerOnOrbit q`
+(`Nat.card (stabilizer Γ z)` when finite, `0` when infinite) at an interior orbit `q`, and `1` by
+convention at an adjoined cusp. -/
+noncomputable def effectiveStabilizerOrder : Γ.CompactifiedQuotient → ℕ := fun x ↦ match x with
   | ofQuotient q => TauCeti.cardStabilizerOnOrbit q
   | ofCusp _ => 1
 

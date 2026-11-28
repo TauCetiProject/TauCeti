@@ -210,7 +210,10 @@ theorem _root_.Subgroup.orbitRel_map_sl2zToPSL2R_iff (Γ : Subgroup SL(2, ℤ)) 
     exact ⟨⟨sl2zToPSL2R g, Subgroup.mem_map_of_mem _ hg⟩,
       by rwa [Subgroup.smul_def, sl2zToPSL2R_smul]⟩
 
-private lemma orbitRel_subgroup_iff_effective (Γ : Subgroup SL(2, ℤ)) {z w : ℍ} :
+/-- The `mapGL ℝ` image and the effective `sl2zToPSL2R` image of `Γ ≤ SL(2, ℤ)` induce the
+same orbit relation on `ℍ`. -/
+theorem _root_.Subgroup.orbitRel_map_mapGL_iff_orbitRel_map_sl2zToPSL2R (Γ : Subgroup SL(2, ℤ))
+    {z w : ℍ} :
     MulAction.orbitRel (Γ.map (mapGL ℝ)) ℍ z w ↔
       MulAction.orbitRel (Γ.map sl2zToPSL2R) ℍ z w := by
   rw [Subgroup.orbitRel_map_sl2zToPSL2R_iff, MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
@@ -222,7 +225,7 @@ private lemma orbitRel_subgroup_iff_effective (Γ : Subgroup SL(2, ℤ)) {z w : 
 def _root_.Subgroup.subgroupOrbitEquivEffectiveOrbit (Γ : Subgroup SL(2, ℤ)) :
     MulAction.orbitRel.Quotient (Γ.map (mapGL ℝ)) ℍ ≃
       MulAction.orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ :=
-  Quotient.congrRight fun _ _ ↦ orbitRel_subgroup_iff_effective Γ
+  Quotient.congrRight fun _ _ ↦ Subgroup.orbitRel_map_mapGL_iff_orbitRel_map_sl2zToPSL2R Γ
 
 /-- `subgroupOrbitEquivEffectiveOrbit` acts as the identity on orbit representatives. -/
 @[simp]

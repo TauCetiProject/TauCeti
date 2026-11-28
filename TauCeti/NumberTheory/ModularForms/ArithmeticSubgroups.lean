@@ -9,6 +9,8 @@ module
 public import Mathlib.GroupTheory.GroupAction.ConjAct
 -- `Subgroup.adjoinNegOne` occurs in the statements below.
 public import Mathlib.NumberTheory.ModularForms.ArithmeticSubgroups
+-- `Subgroup.withCenter` occurs in the statement of `Subgroup.withCenter_eq_adjoinNegOne`.
+public import TauCeti.GroupTheory.Index.Basic
 -- `Subgroup.index_smul`: conjugation preserves the index.
 import TauCeti.GroupTheory.Index.Map
 -- `card_center_subgroupOf_eq_two_iff` and `mapGL_neg_one` for the `SL` facts.
@@ -55,6 +57,8 @@ arithmeticity under conjugation by `(mapGL ℝ γ)⁻¹`.
   `(mapGL ℝ γ)⁻¹` (`γ ∈ SL(2, ℤ)`) preserves arithmeticity.
 * `Subgroup.card_center_subgroupOf_mul_relIndex_adjoinNegOne`: for `H ≤ SL(2, R)`,
   `|H ∩ {±I}| · [±H : H] = 2`.
+* `Subgroup.withCenter_eq_adjoinNegOne`: over a commutative ring without zero divisors,
+  `H.withCenter = H.adjoinNegOne` for `H ≤ SL(2, R)`.
 * `Subgroup.map_mapGL_adjoinNegOne`: adjoining `-I` commutes with `SL(n, R) → GL(n, S)`.
 
 ## References
@@ -168,6 +172,20 @@ theorem map_mapGL_adjoinNegOne {n R S : Type*} [Fintype n] [DecidableEq n] [Comm
     (H : Subgroup (SpecialLinearGroup n R)) :
     H.adjoinNegOne.map (mapGL S) = (H.map (mapGL S)).adjoinNegOne :=
   map_adjoinNegOne H _ mapGL_neg
+
+/-- Over a commutative ring without zero divisors, adjoining the center of `SL(2, R)` to
+`H ≤ SL(2, R)` is the same as adjoining `-1`. -/
+theorem withCenter_eq_adjoinNegOne {R : Type*} [CommRing R] [NoZeroDivisors R]
+    (H : Subgroup SL(2, R)) : H.withCenter = H.adjoinNegOne := by
+  rw [Subgroup.withCenter_def]
+  refine le_antisymm (sup_le H.le_adjoinNegOne fun g hg ↦ ?_) fun g hg ↦ ?_
+  · rcases mem_center_iff_eq_one_or_eq_neg_one.mp hg with rfl | rfl
+    · exact Subgroup.one_mem _
+    · exact Subgroup.mem_adjoinNegOne_iff.mpr (.inr (by simp))
+  · rcases Subgroup.mem_adjoinNegOne_iff.mp hg with hg | hng
+    · exact Subgroup.mem_sup_left hg
+    · simpa using mul_mem (Subgroup.mem_sup_left hng)
+        (Subgroup.mem_sup_right (mem_center_iff_eq_one_or_eq_neg_one.mpr (.inr rfl)))
 
 end SpecialLinearGroup
 

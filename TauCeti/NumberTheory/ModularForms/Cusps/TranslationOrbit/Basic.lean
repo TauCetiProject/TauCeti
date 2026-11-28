@@ -68,8 +68,9 @@ lemma coe_TSL_zpow (j : ℤ) :
     ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
 
 /-- The **cusp translation orbits** of `𝒢`: the orbits of left translation by `T` on the coset
-space `𝒮ℒ ⧸ 𝒢 ⊓ 𝒮ℒ`. The orbit of the coset of `x` represents the cusp `x⁻¹ ∞` of `𝒢`, indexed
-for the full coset space rather than its projective quotient. -/
+space `𝒮ℒ ⧸ 𝒢 ⊓ 𝒮ℒ`. When `[𝒢.IsFiniteRelIndex 𝒮ℒ]` (or more generally when the orbit period
+is positive), the orbit of the coset of `x` represents the cusp `x⁻¹ ∞` of `𝒢`, indexed for the
+full coset space rather than its projective quotient. -/
 abbrev CuspTranslationOrbit (𝒢 : Subgroup (GL (Fin 2) ℝ)) : Type :=
   orbitRel.Quotient (Subgroup.zpowers TSL) (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)
 
@@ -95,8 +96,12 @@ theorem CuspTranslationOrbit.induction_on {P : CuspTranslationOrbit 𝒢 → Pro
 `[𝒢.IsFiniteRelIndex 𝒮ℒ]`, `minimalPeriod_TSL_dvd_iff` and
 `cuspTranslationOrbitWidth_mk` identify it with the least `m > 0` such that
 `x⁻¹ T ^ m x ∈ 𝒢` for any representative `x` of the orbit. -/
-@[expose] noncomputable def cuspTranslationOrbitWidth (c : CuspTranslationOrbit 𝒢) : ℕ :=
+noncomputable def cuspTranslationOrbitWidth (c : CuspTranslationOrbit 𝒢) : ℕ :=
   minimalPeriod (TSL • ·) c.out
+
+lemma cuspTranslationOrbitWidth_def (c : CuspTranslationOrbit 𝒢) :
+    cuspTranslationOrbitWidth c = minimalPeriod (TSL • ·) c.out :=
+  (rfl)
 
 /-- The width of a cusp translation orbit is the period of the `T`-action at any representative
 coset. -/
@@ -104,7 +109,7 @@ coset. -/
     cuspTranslationOrbitWidth (⟦q⟧ : CuspTranslationOrbit 𝒢) =
       minimalPeriod (TSL • ·) q := by
   obtain ⟨j, hj⟩ := MulAction.exists_zpow_smul_eq_out TSL q
-  rw [cuspTranslationOrbitWidth, ← hj, MulAction.minimalPeriod_zpow_smul]
+  rw [cuspTranslationOrbitWidth_def, ← hj, MulAction.minimalPeriod_zpow_smul]
 
 /-- **What the period of a coset says about the group (integer exponent)**: `T ^ j` fixes the
 coset of `x` exactly when `x⁻¹ T ^ j x ∈ 𝒢`. -/
@@ -118,8 +123,11 @@ lemma intCast_minimalPeriod_TSL_dvd_iff (x : 𝒮ℒ) (j : ℤ) :
 /-- **What the period of a coset says about the group**: `T ^ n` fixes the coset of `x` exactly
 when `x⁻¹ T ^ n x ∈ 𝒢`. Thus the action period is characterized by divisibility of exactly these
 exponents. When the period is positive — in particular under `[𝒢.IsFiniteRelIndex 𝒮ℒ]` — it is
-the least positive such `n`, the classical width of the cusp `x⁻¹ ∞`, read for the full coset
-space rather than its projective quotient. -/
+the least positive integer `n` such that `x⁻¹ T ^ n x ∈ 𝒢`, the integer translation-orbit width
+at `x⁻¹ ∞`. For `𝒢 = Γ.map (mapGL ℝ)` with `Γ ≤ SL(2, ℤ)` this agrees with `strictWidthInfty` of
+`x⁻¹ 𝒢 x` (`natCast_cuspTranslationOrbitWidth_mk_inv_eq_strictWidthInfty`), whereas for general
+subgroups `𝒢 ≤ GL(2, ℝ)` the integer `T`-period can miss smaller non-integer real periods or
+negative lifts `-upperRightHom h ∈ x⁻¹ 𝒢 x`. -/
 lemma minimalPeriod_TSL_dvd_iff (x : 𝒮ℒ) (n : ℕ) :
     minimalPeriod (TSL • ·) (QuotientGroup.mk x : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) ∣ n ↔
       ((x⁻¹ * TSL ^ n * x : 𝒮ℒ) : GL (Fin 2) ℝ) ∈ 𝒢 := by
@@ -199,6 +207,8 @@ lemma cuspTranslationOrbitWidth_mk_inf (𝒢₁ 𝒢₂ : Subgroup (GL (Fin 2) �
     simp only [cuspTranslationOrbitWidth_mk, Nat.lcm_dvd_iff, minimalPeriod_TSL_dvd_iff,
       Subgroup.mem_inf]
 
+/-- Under `[𝒢.IsFiniteRelIndex 𝒮ℒ]`, the coset space `𝒮ℒ ⧸ 𝒢 ⊓ 𝒮ℒ` is finite, so the
+`T`-action permutes a finite type and every cusp translation orbit has nonzero width. -/
 instance [𝒢.IsFiniteRelIndex 𝒮ℒ] (c : CuspTranslationOrbit 𝒢) :
     NeZero (cuspTranslationOrbitWidth c) :=
   inferInstanceAs (NeZero (minimalPeriod (TSL • ·) c.out))
@@ -219,9 +229,11 @@ noncomputable instance fintypeCuspTranslationOrbit [𝒢.IsFiniteRelIndex 𝒮�
 lemma minimalPeriod_TSL_mk_one :
     minimalPeriod (TSL • ·) (QuotientGroup.mk 1 : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) =
       Subgroup.integerCuspWidth 𝒢 := by
-  rw [Subgroup.integerCuspWidth, ← TSL, MulAction.period_eq_minimalPeriod]
+  rw [Subgroup.integerCuspWidth_def, ← TSL, MulAction.period_eq_minimalPeriod]
 
-/-- The orbit of the base coset represents the cusp `∞`, whose width is the integer cusp width. -/
+/-- The width of the cusp translation orbit of the base coset is `Subgroup.integerCuspWidth 𝒢`;
+when this width is positive (e.g. under `[𝒢.IsFiniteRelIndex 𝒮ℒ]`), that orbit represents the
+cusp `∞`. -/
 @[simp 1100] lemma cuspTranslationOrbitWidth_mk_one :
     cuspTranslationOrbitWidth
         (⟦(QuotientGroup.mk 1 : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit 𝒢) =

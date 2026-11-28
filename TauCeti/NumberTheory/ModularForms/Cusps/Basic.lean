@@ -128,9 +128,15 @@ left multiplication on the base coset of `𝒮ℒ ⧸ 𝒢 ⊓ 𝒮ℒ`. When so
 `𝒢` — in particular whenever `𝒢` has finite relative index in `𝒮ℒ`, see
 `Subgroup.integerCuspWidth_pos` — this is the smallest positive integer `n` such that the
 upper-triangular matrix `[1, n; 0, 1]` lies in `𝒢`; otherwise it is `0`. -/
-@[expose] def Subgroup.integerCuspWidth (𝒢 : Subgroup (GL (Fin 2) ℝ)) : ℕ :=
+def Subgroup.integerCuspWidth (𝒢 : Subgroup (GL (Fin 2) ℝ)) : ℕ :=
   MulAction.period ((mapGL ℝ).rangeRestrict (ModularGroup.T : SL(2, ℤ)))
     (QuotientGroup.mk 1 : 𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ))
+
+lemma Subgroup.integerCuspWidth_def (𝒢 : Subgroup (GL (Fin 2) ℝ)) :
+    Subgroup.integerCuspWidth 𝒢 =
+      MulAction.period ((mapGL ℝ).rangeRestrict (ModularGroup.T : SL(2, ℤ)))
+        (QuotientGroup.mk 1 : 𝒮ℒ ⧸ (𝒢.subgroupOf 𝒮ℒ)) :=
+  (rfl)
 
 /-- The natural numbers among the strict periods are exactly the multiples of the
 integer cusp width. -/
@@ -138,7 +144,7 @@ integer cusp width. -/
 -- through `Subgroup.mem_strictPeriods_iff`.
 lemma Subgroup.natCast_mem_strictPeriods_iff {n : ℕ} :
     (n : ℝ) ∈ 𝒢.strictPeriods ↔ Subgroup.integerCuspWidth 𝒢 ∣ n := by
-  rw [← Subgroup.mk_T_pow_eq_iff, Subgroup.integerCuspWidth,
+  rw [← Subgroup.mk_T_pow_eq_iff, Subgroup.integerCuspWidth_def,
     ← MulAction.pow_smul_eq_iff_period_dvd, MulAction.Quotient.smul_mk,
     smul_eq_mul, mul_one]
 

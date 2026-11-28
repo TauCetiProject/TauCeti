@@ -333,7 +333,10 @@ open scoped MatrixGroups
 
 variable {k : ℤ} {M : GL (Fin 2) ℝ} {t : SL(2, ℝ)}
 
-/-- **Upper-triangular `GL(2, ℝ)` scaling invariance of `qExpansionOrderAtCusp`.** -/
+/-- **Upper-triangular `GL(2, ℝ)` scaling invariance of `qExpansionOrderAtCusp`**: for `h > 0`,
+`M ∈ GL(2, ℝ)` upper triangular with `det M > 0`, `g ∘ ofComplex` `h`-periodic, and
+`cuspFunction h g` analytic at `0`, slashing by `M` preserves `qExpansionOrderAtCusp` at the
+rescaled width `(M 1 1 / M 0 0) * h`. -/
 theorem qExpansionOrderAtCusp_slash_of_apply_one_zero_eq_zero (hh : 0 < h)
     (hdet : 0 < (M : Matrix (Fin 2) (Fin 2) ℝ).det) (hM : M 1 0 = 0)
     (hg_per : Periodic (g ∘ ofComplex) h) (hg : AnalyticAt ℂ (cuspFunction h g) 0) :
@@ -356,7 +359,10 @@ theorem qExpansionOrderAtCusp_slash_of_apply_one_zero_eq_zero (hh : 0 < h)
       rw [((hasDerivAt_id' (0 : ℂ)).const_mul ζ).deriv, mul_one]; exact Complex.exp_ne_zero _),
     mul_zero]
 
-/-- **Upper-triangular `GL(2, ℝ)` scaling invariance of `orderAtCusp`.** -/
+/-- **Upper-triangular `GL(2, ℝ)` scaling invariance of `orderAtCusp`**: for `h > 0`,
+`M ∈ GL(2, ℝ)` upper triangular with `det M > 0`, `g ∘ ofComplex` `2 * h`-periodic, and
+`cuspFunction (2 * h) g` analytic at `0`, slashing by `M` preserves `orderAtCusp` at the
+rescaled width `(M 1 1 / M 0 0) * h`. -/
 theorem orderAtCusp_slash_of_apply_one_zero_eq_zero (hh : 0 < h)
     (hdet : 0 < (M : Matrix (Fin 2) (Fin 2) ℝ).det) (hM : M 1 0 = 0)
     (hg_per : Periodic (g ∘ ofComplex) (2 * h : ℝ))
@@ -365,7 +371,10 @@ theorem orderAtCusp_slash_of_apply_one_zero_eq_zero (hh : 0 < h)
   rw [orderAtCusp_def, orderAtCusp_def, mul_left_comm (2 : ℝ),
     qExpansionOrderAtCusp_slash_of_apply_one_zero_eq_zero (by positivity) hdet hM hg_per hg]
 
-/-- **Upper-triangular `SL(2, ℝ)` scaling invariance of `orderAtCusp`.** -/
+/-- **Upper-triangular `SL(2, ℝ)` scaling invariance of `orderAtCusp`**: for `h > 0`,
+`t ∈ SL(2, ℝ)` upper triangular, `g ∘ ofComplex` `2 * h`-periodic, and
+`cuspFunction (2 * h) g` analytic at `0`, slashing by `mapGL ℝ t⁻¹` preserves `orderAtCusp` at
+the rescaled width `t 0 0 ^ 2 * h`. -/
 theorem orderAtCusp_slash_mapGL_inv (hh : 0 < h) (ht : t 1 0 = 0)
     (hg_per : Periodic (g ∘ ofComplex) (2 * h : ℝ))
     (hg : AnalyticAt ℂ (cuspFunction (2 * h) g) 0) :
@@ -374,7 +383,8 @@ theorem orderAtCusp_slash_mapGL_inv (hh : 0 < h) (ht : t 1 0 = 0)
   have hcoe (i j : Fin 2) : M i j = t⁻¹ i j := by dsimp only [M]; rw [mapGL_coe_matrix]; simp
   have hratio : M 1 1 / M 0 0 = t 0 0 ^ 2 := by
     rw [hcoe, hcoe, inv_apply_one_one, inv_apply_zero_zero, div_eq_mul_inv,
-      inv_eq_of_mul_eq_one_left (mul_apply_one_one_eq_one_of_apply_one_zero_eq_zero ht), sq]
+      inv_eq_of_mul_eq_one_left
+        (apply_zero_zero_mul_apply_one_one_of_apply_one_zero_eq_zero ht), sq]
   rw [← hratio]
   exact orderAtCusp_slash_of_apply_one_zero_eq_zero hh
     (by rw [← Matrix.GeneralLinearGroup.val_det_apply, det_mapGL]; exact one_pos)

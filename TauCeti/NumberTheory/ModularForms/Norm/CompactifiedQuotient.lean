@@ -137,8 +137,9 @@ section FiniteIndex
 
 variable [Γ.FiniteIndex]
 
-/-- **Unified projective valence formula on the compactified quotient**:
-`∑_{x ∈ X(Γ)} ord_x(f) / e_x = k · [SL(2, ℤ) : ±Γ] / 12`, with `e_x = 1` at cusps. -/
+/-- **Unified projective valence formula on the compactified quotient** for a nonzero modular form
+`f` on finite-index `Γ`: `∑_{x ∈ X(Γ)} ord_x(f) / e_x = k · [SL(2, ℤ) : ±Γ] / 12`, with `e_x = 1` at
+cusps. -/
 theorem valence_formula_compactifiedQuotient (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) :
     (∑ᶠ x : (Γ.map sl2zToPSL2R).CompactifiedQuotient, weightedOrderOnCompactifiedQuotient f x) =
       (k : ℚ) * Γ.withCenter.index / 12 := by
@@ -146,7 +147,8 @@ theorem valence_formula_compactifiedQuotient (f : F) (hf : (⇑f : ℍ → ℂ) 
 
 /-! ### Unified, single-orbit, and single-cusp vanishing bounds -/
 
-/-- At every point `x` of the compactified quotient, `ord_x f / e_x ≤ k · [SL(2, ℤ) : ±Γ] / 12`. -/
+/-- For a nonzero modular form `f` on finite-index `Γ`, at every point `x` of the compactified
+quotient, `ord_x f / e_x ≤ k · [SL(2, ℤ) : ±Γ] / 12`. -/
 theorem weightedOrderOnCompactifiedQuotient_le_weight_mul_index_withCenter_div_twelve
     (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) (x : (Γ.map sl2zToPSL2R).CompactifiedQuotient) :
     weightedOrderOnCompactifiedQuotient f x ≤ (k : ℚ) * Γ.withCenter.index / 12 :=
@@ -154,7 +156,8 @@ theorem weightedOrderOnCompactifiedQuotient_le_weight_mul_index_withCenter_div_t
     (weightedOrderOnCompactifiedQuotient_nonneg f)).trans_eq
     (valence_formula_compactifiedQuotient f hf)
 
-/-- **Unified projective vanishing bound**: `12 · ord_x f ≤ k · [SL(2, ℤ) : ±Γ] · e_x`. -/
+/-- **Unified projective vanishing bound** for a nonzero modular form `f` on finite-index `Γ`:
+`12 · ord_x f ≤ k · [SL(2, ℤ) : ±Γ] · e_x`. -/
 theorem
   twelve_mul_orderOnCompactifiedQuotient_le_weight_mul_index_withCenter_mul_effectiveStabilizerOrder
     (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) (x : (Γ.map sl2zToPSL2R).CompactifiedQuotient) :
@@ -164,15 +167,17 @@ theorem
   rw [weightedOrderOnCompactifiedQuotient_def] at h
   linarith [(div_le_iff₀ (by exact_mod_cast x.effectiveStabilizerOrder_pos)).mp h]
 
-/-- **Projective interior vanishing bound**: `12 · ord_P f ≤ k · [SL(2, ℤ) : ±Γ] · e_P`. -/
+/-- **Projective interior vanishing bound** for a nonzero modular form `f` on finite-index `Γ`:
+`12 · ord_P f ≤ k · [SL(2, ℤ) : ±Γ] · e_P`. -/
 theorem
     twelve_mul_orderOfVanishingOnEffectiveOrbit_le_weight_mul_index_withCenter_mul_cardStabilizer
     (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) (P : orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ) :
     12 * orderOfVanishingOnEffectiveOrbit f P ≤
       k * Γ.withCenter.index * cardStabilizerOnOrbit P :=
-  (fun h ↦ by exact_mod_cast (by simpa using h :
-    ((12 * orderOfVanishingOnEffectiveOrbit f P : ℤ) : ℚ) ≤
-      ((k * Γ.withCenter.index * cardStabilizerOnOrbit P : ℤ) : ℚ))) <|
+  (fun h ↦ by
+    rw [orderOnCompactifiedQuotient_ofQuotient,
+      Subgroup.CompactifiedQuotient.effectiveStabilizerOrder_ofQuotient] at h
+    exact_mod_cast h) <|
   twelve_mul_orderOnCompactifiedQuotient_le_weight_mul_index_withCenter_mul_effectiveStabilizerOrder
     f hf (.ofQuotient P)
 
@@ -189,7 +194,8 @@ orderOfVanishingOnEffectiveOrbit_eq_zero_of_weight_mul_index_withCenter_mul_card
         f hf P
     have := orderOfVanishingOnEffectiveOrbit_nonneg f P; omega
 
-/-- **Projective cusp vanishing bound**: `12 · ord_C f ≤ k · [SL(2, ℤ) : ±Γ]`. -/
+/-- **Projective cusp vanishing bound** for a nonzero modular form `f` on finite-index `Γ`:
+`12 · ord_C f ≤ k · [SL(2, ℤ) : ±Γ]`. -/
 theorem twelve_mul_orderAtCuspOrbit_le_weight_mul_index_withCenter
     (f : F) (hf : (⇑f : ℍ → ℂ) ≠ 0) (C : (Γ.map sl2zToPSL2R).CuspOrbit) :
     12 * orderAtCuspOrbit f C ≤ (k : ℚ) * Γ.withCenter.index := by

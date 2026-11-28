@@ -742,7 +742,7 @@ theorem automorphyFrame_smul_of_smul_cusp_eq (hs : (s : PSL(2, ℝ)) = D.scaling
             D.width) ^ r) *
         automorphyFrame D s k r τ := by
   set t := s' * h * s⁻¹ with ht_def
-  have ht : t 1 0 = 0 := TauCeti.scaling_mul_mul_inv_apply_one_zero hs hs' hh hγ
+  have ht : t 1 0 = 0 := TauCeti.scaling_mul_mul_inv_apply_one_zero_eq_zero hs hs' hh hγ
   have hdet : (t 0 0 : ℂ) * t 1 1 = 1 := by
     have h := t.det_coe
     rw [Matrix.det_fin_two, ht, mul_zero, sub_zero] at h
@@ -1095,7 +1095,8 @@ theorem exponent_eq_of_smul_cusp_eq
       _root_.Subgroup.CuspDatum.coe_conj_generator, QuotientGroup.mk_mul, QuotientGroup.mk_mul,
       QuotientGroup.mk_inv, hh, hg]
   -- conjugation by the upper triangular `t = s' * h * s⁻¹` keeps the lower-right entry
-  have ht : (s' * h * s⁻¹) 1 0 = 0 := TauCeti.scaling_mul_mul_inv_apply_one_zero hs hs' hh hγ
+  have ht : (s' * h * s⁻¹) 1 0 = 0 :=
+    TauCeti.scaling_mul_mul_inv_apply_one_zero_eq_zero hs hs' hh hγ
   have hM : (s * g * s⁻¹) 1 0 = 0 :=
     (TauCeti.UpperHalfPlane.entries_of_coe_eq_upperRightHom (coe_conj_eq_upperRightHom hs hg)).1
   have hdet : (s' * h * s⁻¹) 0 0 * (s' * h * s⁻¹) 1 1 = 1 := by
