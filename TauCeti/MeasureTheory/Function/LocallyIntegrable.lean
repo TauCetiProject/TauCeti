@@ -39,6 +39,9 @@ positive factor. More generally, precomposition with any continuous map `Φ` wit
 `Φ_* μ ≤ K ν`, `K ≠ ∞`, carries functions locally integrable for `ν` to functions locally
 integrable for `μ`.
 
+Local integrability on an open set `V` pulls back along the first projection to `V × Y`, for a
+product with a measure finite on compact sets (`MeasureTheory.LocallyIntegrableOn.comp_fst`).
+
 In an order with compact closed intervals, a function locally integrable on `[a, ∞)` is
 integrable on every interval `(a, b]`.
 
@@ -336,6 +339,31 @@ theorem LocallyIntegrable.comp_of_map_le {X Y F : Type*} [TopologicalSpace X] [M
   exact (integrable_map_measure hft.aestronglyMeasurable hΦm.aemeasurable).1 hft
 
 end MeasureTheory
+
+namespace MeasureTheory.LocallyIntegrableOn
+
+variable {X Y G : Type*} [MeasurableSpace X] [TopologicalSpace X] [LocallyCompactSpace X]
+  [MeasurableSpace Y] [TopologicalSpace Y] [NormedAddCommGroup G]
+  {μ : Measure X} {ν : Measure Y} [SFinite μ] [SFinite ν] [IsFiniteMeasureOnCompacts ν]
+
+/-- Local integrability on an open set `V` pulls back along the first projection to `V × Y`. -/
+theorem comp_fst [LocallyCompactSpace Y] {f : X → G} {V : Set X}
+    (hV : IsOpen V) (hf : LocallyIntegrableOn f V μ) :
+    LocallyIntegrableOn (fun x : X × Y => f x.1) (Prod.fst ⁻¹' V) (μ.prod ν) := by
+  rw [locallyIntegrableOn_iff (hV.preimage continuous_fst).isLocallyClosed]
+  intro k hkV hk
+  -- `k` lies in the product of its two projections, which are compact.
+  have hk₁ : IsCompact (Prod.fst '' k) := hk.image continuous_fst
+  have hk₂ : IsCompact (Prod.snd '' k) := hk.image continuous_snd
+  have : IsFiniteMeasure (ν.restrict (Prod.snd '' k)) :=
+    isFiniteMeasure_restrict.2 hk₂.measure_lt_top.ne
+  have hint : IntegrableOn (fun x : X × Y => f x.1) ((Prod.fst '' k) ×ˢ (Prod.snd '' k))
+      (μ.prod ν) := by
+    rw [IntegrableOn, ← Measure.prod_restrict]
+    exact (hf.integrableOn_compact_subset (by rintro _ ⟨x, hx, rfl⟩; exact hkV hx) hk₁).comp_fst _
+  exact hint.mono_set fun x hx => ⟨mem_image_of_mem _ hx, mem_image_of_mem _ hx⟩
+
+end MeasureTheory.LocallyIntegrableOn
 
 namespace MeasureTheory
 

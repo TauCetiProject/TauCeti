@@ -67,129 +67,20 @@ theorem norm_logDeriv_one_add_sum_le_of_riesz_increment {N : ℕ} [NeZero N]
       (le_div_iff₀ hh).mpr (by simpa only [mul_comm _ h] using hnorm)
     _ = _ := by rw [add_div, mul_div_cancel_left₀ _ hh.ne']
 
--- Divide the analytic error by the chosen forward step, keeping the power saving.
-private theorem riesz_box_error_div_step_le {x Q δ₀ δ K z η : ℝ} (hx : 1 ≤ x) (hδ₀ : 0 < δ₀)
-    (hδ : 0 ≤ δ) (hK : 0 ≤ K) (hQ : x ^ (1 / δ₀ + 3) ≤ Q) (hlog : 1 / 2 ≤ log Q)
-    (hzx : z = x ^ (1 / δ₀)) (hηx : η = x ^ (-2 : ℝ)) :
-    K * log Q * (η * z ^ (1 - δ₀ + δ) * log Q + z ^ 2 / Q) / (z * η) ≤
-      3 * K * x ^ (-1 + δ / δ₀) * (log Q) ^ 2 := by
-  set E := x ^ (-1 + δ / δ₀) with hE
-  have hx₀ := zero_lt_one.trans_le hx
-  have hz : 0 < z := hzx ▸ rpow_pos_of_pos hx₀ _
-  have hη : 0 < η := hηx ▸ rpow_pos_of_pos hx₀ _
-  have hQ₀ : 0 < Q := (rpow_pos_of_pos hx₀ _).trans_le hQ
-  have he : x ^ (-1 : ℝ) ≤ E :=
-    rpow_le_rpow_of_exponent_le hx (le_add_of_nonneg_right (div_nonneg hδ hδ₀.le))
-  have hratio : z / (Q * η) ≤ x ^ (-1 : ℝ) := by
-    apply (div_le_iff₀ (mul_pos hQ₀ hη)).mpr
-    calc
-      z = x ^ (-1 : ℝ) * (x ^ (1 / δ₀ + 3) * η) := by
-        rw [hzx, hηx, ← rpow_add hx₀, ← rpow_add hx₀]
-        congr 1
-        ring
-      _ ≤ _ := by gcongr
-  have hpow : z ^ (1 - δ₀ + δ) / z = E := by
-    rw [← rpow_sub_one hz.ne', hzx, hE, ← rpow_mul hx₀.le]
-    congr 1
-    field_simp
-    ring
-  calc
-    _ = K * log Q * (E * log Q + z / (Q * η)) := by
-      rw [← hpow]
-      field_simp [hη.ne', hQ₀.ne', hz.ne']
-    _ ≤ K * log Q * (E * log Q + E) := by gcongr; exact hratio.trans he
-    _ ≤ _ := by
-      calc
-        K * log Q * (E * log Q + E) = K * log Q * (E * (log Q + 1)) := by ring
-        _ ≤ K * log Q * (E * (3 * log Q)) := by gcongr; linarith
-        _ = _ := by ring
-
--- The integers in the forward step contribute an error of size `(η + 1/z) log y`.
-private theorem riesz_box_discrete_error_le {x Q δ₀ δ r z η : ℝ} (hx : 2 ≤ x) (hxQ : x ≤ Q)
-    (hδ₀ : 0 < δ₀) (hhalf : δ₀ ≤ 1 / 2) (hδ : 0 ≤ δ) (hlog : 1 / 2 ≤ log Q)
-    (hrδ : r = 1 / δ₀) (hzx : z = x ^ r) (hηx : η = x ^ (-2 : ℝ)) :
-    (z * η + 1) * log (z * (1 + η)) / z ≤ 4 * (r + 1) * x ^ (-1 + δ / δ₀) * (log Q) ^ 2 := by
-  set E := x ^ (-1 + δ / δ₀)
-  have hx₁ : 1 ≤ x := by linarith
-  have hx₀ := zero_lt_one.trans_le hx₁
-  have hr : 2 ≤ r := hrδ ▸ (le_div_iff₀ hδ₀).mpr (by linarith)
-  have hz : 0 < z := hzx ▸ rpow_pos_of_pos hx₀ _
-  have hη : 0 < η := hηx ▸ rpow_pos_of_pos hx₀ _
-  have hinv : z⁻¹ ≤ η := by
-    rw [hzx, hηx, ← rpow_neg hx₀.le]
-    exact rpow_le_rpow_of_exponent_le hx₁ (by linarith)
-  have hηE : η ≤ E := hηx ▸ rpow_le_rpow_of_exponent_le hx₁ (by
-    linarith [div_nonneg hδ hδ₀.le])
-  have hη₁ : η ≤ 1 := hηx ▸ rpow_le_one_of_one_le_of_nonpos hx₁ (by norm_num)
-  have hly : log (z * (1 + η)) ≤ (r + 1) * log Q := by
-    rw [log_mul hz.ne' (by positivity : 1 + η ≠ 0), hzx, log_rpow hx₀]
-    calc
-      _ ≤ r * log x + log x := by gcongr; linarith
-      _ = (r + 1) * log x := by ring
-      _ ≤ _ := by gcongr
-  have hy : 1 ≤ z * (1 + η) := one_le_mul_of_one_le_of_one_le
-    (hzx ▸ one_le_rpow hx₁ (by linarith)) (le_add_of_nonneg_right hη.le)
-  calc
-    _ = (η + z⁻¹) * log (z * (1 + η)) := by field_simp [hz.ne']
-    _ ≤ (2 * E) * ((r + 1) * log Q) := by
-      have := log_nonneg hy
-      gcongr
-      linarith
-    _ ≤ (2 * E) * ((r + 1) * (2 * log Q * log Q)) := by
-      gcongr ?_ * (?_ * ?_)
-      nlinarith only [mul_nonneg (by linarith : 0 ≤ log Q) (by linarith : 0 ≤ 2 * log Q - 1)]
-    _ = _ := by ring
-
-/-- With cutoff `z = x^(1/δ₀)` and relative increment `x⁻²`, a corrected Riesz increment of
-size `K log Q (η z^(1-δ₀+δ) log Q + z²/Q)` yields a truncation error of order
-`x^(-1+δ/δ₀) (log Q)^2`. Only the estimate at this pair of cutoffs is needed. -/
-theorem norm_logDeriv_one_add_sum_le_of_riesz_box_estimate {N : ℕ} [NeZero N]
-    (χ : DirichletCharacter ℂ N) {δ₀ δ x Q K : ℝ} (hδ₀ : 0 < δ₀) (hhalf : δ₀ ≤ 1 / 2)
-    (hδ : 0 ≤ δ) (hx : 2 ≤ x) (hQ : x ^ (1 / δ₀ + 3) ≤ Q)
-    (hR : let z := x ^ (1 / δ₀); let η := x ^ (-2 : ℝ)
-      let a := fun n : ℕ ↦ χ n * (Λ n : ℂ)
-      ‖rieszSum a (z * (1 + η)) - rieszSum a z + (z * η : ℝ) * logDeriv χ.LFunction 1‖ ≤
-        K * log Q * (η * z ^ (1 - δ₀ + δ) * log Q + z ^ 2 / Q)) :
-    ‖logDeriv χ.LFunction 1 + ∑ n ∈ Icc 1 ⌊x ^ (1 / δ₀)⌋₊, χ n * (Λ n : ℂ) / n‖ ≤
-      (3 * K + 4 * (1 / δ₀ + 1)) * x ^ (-1 + δ / δ₀) * (log Q) ^ 2 := by
-  let r := 1 / δ₀
-  let z := x ^ r
-  let η := x ^ (-2 : ℝ)
-  let y := z * (1 + η)
-  let a : ℕ → ℂ := fun n ↦ χ n * (Λ n : ℂ)
-  let B := K * log Q * (η * z ^ (1 - δ₀ + δ) * log Q + z ^ 2 / Q)
-  have hx₁ : 1 ≤ x := by linarith
-  have hx₀ : 0 < x := by linarith
-  have hr : 2 ≤ r := (le_div_iff₀ hδ₀).mpr (by linarith)
-  have hz : 1 ≤ z := one_le_rpow hx₁ (by linarith)
-  have hη : 0 < η := rpow_pos_of_pos hx₀ _
-  have hstep : y - z = z * η := by dsimp only [y]; ring
-  have hR' : ‖rieszSum a y - rieszSum a z + ((y - z : ℝ) : ℂ) * logDeriv χ.LFunction 1‖ ≤ B := by
-    dsimp only at hR
-    rw [hstep]
-    exact hR
-  have hh : 0 < z * η := mul_pos (by linarith) hη
-  have hzy : z < y := sub_pos.mp (hstep ▸ hh)
-  have hxQ : x ≤ Q := by
-    refine le_trans ?_ hQ
-    simpa only [rpow_one] using rpow_le_rpow_of_exponent_le hx₁ (by linarith : 1 ≤ r + 3)
-  have hQ₀ : 0 < Q := hx₀.trans_le hxQ
-  have hz₀ : 0 < z := zero_lt_one.trans_le hz
-  have hlog : 1 / 2 ≤ log Q := by
-    have h := log_le_log (by norm_num : (0 : ℝ) < 2) (hx.trans hxQ)
-    linarith [one_sub_inv_le_log_of_pos (by norm_num : (0 : ℝ) < 2)]
-  have hK : 0 ≤ K := by
-    have hl : 0 < log Q := by linarith
-    have hfac : 0 < log Q * (η * z ^ (1 - δ₀ + δ) * log Q + z ^ 2 / Q) :=
-      mul_pos hl (add_pos_of_pos_of_nonneg (mul_pos (by positivity) hl) (by positivity))
-    apply nonneg_of_mul_nonneg_left _ hfac
-    rw [← mul_assoc]
-    exact (norm_nonneg _).trans hR'
-  have happ := χ.norm_logDeriv_one_add_sum_le_of_riesz_increment hz₀ hzy hR'
-  rw [hstep, max_eq_left (hz.trans hzy.le)] at happ
-  exact happ.trans ((add_le_add
-    (riesz_box_error_div_step_le (z := z) (η := η) hx₁ hδ₀ hδ hK hQ hlog rfl rfl)
-    (riesz_box_discrete_error_le (r := r) (z := z) (η := η) hx hxQ hδ₀ hhalf hδ hlog
-      rfl rfl rfl)).trans_eq (by ring))
+/-- With `z = x^(1/δ₀)` and relative width `η = x⁻²`, the smoothed zero-free-box increment
+bound gives a sharp truncation error of at most `(2K + 2) x^(-1 + δ/δ₀) (log Q)²`. This
+separates the finite-difference argument from the contour estimate supplying the increment;
+it is `Chebyshev.norm_add_sum_div_le_at_rpow` for `c(n) = χ(n) Λ(n)`. -/
+theorem norm_logDeriv_add_sum_vonMangoldt_div_le_at_rpow {q : ℕ} [NeZero q]
+    (χ : DirichletCharacter ℂ q) {x Q δ₀ δ K : ℝ} (hx : 2 ≤ x) (hδ₀ : 0 < δ₀)
+    (hδ₀' : δ₀ ≤ 1) (hδ : 0 ≤ δ) (hQ : x ^ (1 / δ₀ + 3) ≤ Q)
+    (hinc : ‖rieszSum (fun n ↦ χ n * Λ n) (x ^ (1 / δ₀) * (1 + x ^ (-2 : ℝ))) -
+        rieszSum (fun n ↦ χ n * Λ n) (x ^ (1 / δ₀)) +
+        ((x ^ (1 / δ₀) * x ^ (-2 : ℝ) : ℝ) : ℂ) * logDeriv χ.LFunction 1‖ ≤
+      K * log Q * (x ^ (-2 : ℝ) * (x ^ (1 / δ₀)) ^ (1 - δ₀ + δ) * log Q +
+        (x ^ (1 / δ₀)) ^ 2 / Q)) :
+    ‖logDeriv χ.LFunction 1 + ∑ n ∈ Icc 1 ⌊x ^ (1 / δ₀)⌋₊, χ n * Λ n / (n : ℂ)‖ ≤
+      (2 * K + 2) * x ^ (-1 + δ / δ₀) * log Q ^ 2 :=
+  Chebyshev.norm_add_sum_div_le_at_rpow χ.norm_mul_vonMangoldt_le _ hx hδ₀ hδ₀' hδ hQ hinc
 
 end DirichletCharacter

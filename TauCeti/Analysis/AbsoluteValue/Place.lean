@@ -69,8 +69,12 @@ The comparisons with Mathlib's `NumberField.InfinitePlace` and `NumberField.Fini
   is real.
 * `AbsoluteValue.Place.apply_natCast_lt_one_of_under_eq_padic`: a place above `p` is less than one
   at `p`.
+* `AbsoluteValue.Place.exists_prime_apply_natCast_lt_one`: a finite place is less than one at
+  some prime number.
 * `AbsoluteValue.Place.under_smul`: the action does not change the restriction to a subfield that
   the group fixes pointwise.
+* `AbsoluteValue.Place.mem_stabilizer_of_forall_apply_smul_sub_pow_lt_one`: an element satisfying
+  the congruences `w (σ • x - x ^ q) < 1` whenever `w x ≤ 1` fixes the place `w`.
 * `AbsoluteValue.Place.existsUnique_isEquiv_of_isNontrivial_under`,
   `AbsoluteValue.Place.existsUnique_isEquiv`: an absolute value whose restriction to `ℚ` is
   nontrivial, and so, when `L` is algebraic over `ℚ`, every nontrivial absolute value, is
@@ -194,6 +198,13 @@ theorem apply_natCast_lt_one_of_under_eq_padic {w : Place L} {p : ℕ} [Fact p.P
   rw [h1, Rat.AbsoluteValue.padic_eq_padicNorm]
   exact_mod_cast padicNorm.padicNorm_p_lt_one_of_prime
 
+/-- A finite place is less than one at some prime number, the prime `q` for which its restriction
+to `ℚ` is the `q`-adic absolute value. -/
+theorem exists_prime_apply_natCast_lt_one {w : Place L} (hw : IsNonarchimedean w.val) :
+    ∃ q : ℕ, q.Prime ∧ w.val q < 1 := by
+  obtain ⟨q, hq, hwq⟩ := w.isNonarchimedean_iff.mp hw
+  exact ⟨q, hq.out, apply_natCast_lt_one_of_under_eq_padic hwq⟩
+
 /-- A place is infinite if and only if its restriction to `ℚ` is the real absolute value. -/
 theorem not_isNonarchimedean_iff (w : Place L) :
     ¬ IsNonarchimedean w.val ↔ w.val.under ℚ = Rat.AbsoluteValue.real := by
@@ -239,6 +250,12 @@ theorem under_self (w : Place L) : w.under L = w := (rfl)
 theorem under_under (M : Type*) [Field M] [CharZero M] [Algebra K M] [Algebra M L]
     [IsScalarTower K M L] (w : Place L) : (w.under M).under K = w.under K :=
   Subtype.ext <| AbsoluteValue.under_under K M w.val
+
+/-- The restriction of an infinite place to a subfield is an infinite place. -/
+theorem not_isNonarchimedean_under {w : Place L} (hw : ¬ IsNonarchimedean w.val) :
+    ¬ IsNonarchimedean (w.under K).val := by
+  rw [not_isNonarchimedean_iff] at hw ⊢
+  rwa [← val_under, under_under, val_under]
 
 end under
 
@@ -314,6 +331,28 @@ theorem stabilizer_eq (w : Place L) :
     MulAction.stabilizer G w = MulAction.stabilizer G w.val := by
   ext g
   simp [MulAction.mem_stabilizer_iff, ← val_inj]
+
+/-- **Power-map congruences fix the place.** If `w (σ • x - x ^ q) < 1` whenever `w x ≤ 1`, then
+`σ` lies in the decomposition group of the place `w`, for any exponent `q` and any place `w`. -/
+theorem mem_stabilizer_of_forall_apply_smul_sub_pow_lt_one (w : Place L) {σ : G} {q : ℕ}
+    (hσ : ∀ x, w.val x ≤ 1 → w.val (σ • x - x ^ q) < 1) : σ ∈ MulAction.stabilizer G w := by
+  rw [MulAction.mem_stabilizer_iff, smul_eq_iff_eq_inv_smul]
+  refine eq_of_isEquiv (by_contra fun h ↦ ?_)
+  -- Otherwise some `a` has `w a < 1 < w (σ • a)`, and `y = a ^ n` with `w (σ • y) > 2`
+  -- contradicts `w (σ • y) ≤ w (σ • y - y ^ q) + w (y ^ q) < 2`.
+  obtain ⟨a, ha, ha'⟩ := exists_one_lt_lt_one_of_not_isEquiv (σ⁻¹ • w).isNontrivial
+    w.isNontrivial (mt IsEquiv.symm h)
+  rw [val_smul, AbsoluteValue.smul_apply, inv_inv] at ha
+  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt 2 ha
+  have hy : w.val (a ^ n) ≤ 1 := by
+    rw [map_pow]
+    exact pow_le_one₀ (w.val.nonneg a) ha'.le
+  have hyq : w.val ((a ^ n) ^ q) ≤ 1 := by
+    rw [map_pow]
+    exact pow_le_one₀ (w.val.nonneg _) hy
+  have hle := w.val.add_le (σ • a ^ n - (a ^ n) ^ q) ((a ^ n) ^ q)
+  rw [sub_add_cancel] at hle
+  linarith [hσ _ hy, show w.val (σ • a ^ n) = w.val (σ • a) ^ n by rw [smul_pow', map_pow]]
 
 /-- A group fixing a subfield `K` pointwise does not change the restriction of a place to `K`. -/
 @[simp]

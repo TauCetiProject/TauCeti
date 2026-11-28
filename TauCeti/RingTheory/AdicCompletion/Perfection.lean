@@ -26,7 +26,9 @@ When `A` is complete for two ideals `I ≤ J` whose quotients have characteristi
 both sides are isomorphic to `Perfection A p` through `Perfection.quotientMulEquiv`. Specialising to
 `I = (p)` and `J = (ϖ)` for an element `ϖ♭ : PreTilt A p` whose untilt `ϖ = ϖ♭.untilt` divides `p`
 (or has a positive power dividing `p`) and makes `A` `ϖ`-adically complete shows that `PreTilt A p`
-is `ϖ♭`-adically complete.
+is `ϖ♭`-adically complete. In the opposite direction, if `p` divides a power `ϖ ^ n`, then the
+zeroth coordinate of `ϖ♭ ^ n` vanishes and `PreTilt A p` is again `ϖ♭`-adically complete, with no
+completeness assumption on `A` beyond the `p`-adic one.
 
 The same change of ideal works for monoid maps out of a commutative monoid `M` on which `x ↦ x ^ p`
 is bijective, and it allows a larger ideal that is not a defining ideal. If `A` is `I`-adically
@@ -53,6 +55,8 @@ of such a `J` is the ideal of elements with divided powers of a `p`-adically com
 * `IsAdicComplete.bijective_mk_comp_monoidHom`: for `A` complete along `I` and `J ⊇ I` with
   `p ∈ J` and `x ^ p ∈ I` for `x ∈ J`, every monoid map `M →* A ⧸ J` from a monoid on which
   `x ↦ x ^ p` is bijective lifts uniquely to a monoid map `M →* A`.
+* `PreTilt.isAdicComplete_span_singleton_of_dvd_untilt_pow`: `PreTilt A p` is `(ϖ♭)`-adically
+  complete when `p` divides a power of `ϖ♭.untilt`.
 
 ## References
 
@@ -233,6 +237,26 @@ theorem isAdicComplete_span_singleton_of_pow_dvd {ϖ : PreTilt A p} {k : ℕ} [N
     (hdvd : ϖ.untilt ^ k ∣ (p : A)) [IsAdicComplete (span {ϖ.untilt}) A] :
     IsAdicComplete (span {ϖ}) (PreTilt A p) :=
   isAdicComplete_span_singleton ((dvd_pow_self _ (NeZero.ne k)).trans hdvd)
+
+/-- **`PreTilt A p` is `(ϖ)`-adically complete when `p` divides a power of `ϖ.untilt`.** Then the
+zeroth coordinate of some power `ϖ ^ n` vanishes, so the tilt is `(ϖ ^ n)`-adically complete, and
+the `(ϖ)`-adic and `(ϖ ^ n)`-adic filtrations are cofinal. Unlike
+`PreTilt.isAdicComplete_span_singleton`, no completeness of `A` beyond the `p`-adic one is used. -/
+theorem isAdicComplete_span_singleton_of_dvd_untilt_pow {ϖ : PreTilt A p} {n : ℕ}
+    (hdvd : (p : A) ∣ ϖ.untilt ^ n) : IsAdicComplete (span {ϖ}) (PreTilt A p) := by
+  -- `n = 0` would make `p` a unit.
+  have hn : n ≠ 0 := by
+    rintro rfl
+    exact hpu.out (isUnit_of_dvd_one (by simpa using hdvd))
+  have h0 : PreTilt.coeff 0 (ϖ ^ n) = 0 := by
+    rw [← PreTilt.mk_untilt_eq_coeff_zero, map_pow, Ideal.Quotient.eq_zero_iff_mem]
+    exact mem_span_singleton.mpr hdvd
+  have : IsAdicComplete (span {ϖ ^ n}) (PreTilt A p) :=
+    Perfection.isAdicComplete_span_singleton_of_coeff_zero_eq_zero h0
+  refine .of_pow_le_of_pow_le (I := span {ϖ ^ n}) (k := n) (l := 1) ?_ ?_
+  · rw [span_singleton_pow]
+  · rw [pow_one, span_singleton_le_span_singleton]
+    exact dvd_pow_self ϖ hn
 
 end PreTilt
 

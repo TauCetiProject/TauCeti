@@ -45,6 +45,16 @@ namespace TauCeti
 
 variable {N : ℕ} [NeZero N]
 
+/-- The Laurent expansion at `∞` of a function on `X(N)` is the Laurent `q`-expansion, in
+`q = exp (2πiτ / N)`, of its pullback to `ℍ`. -/
+theorem laurentQExpansion_cuspDatumInftyGamma
+    (F : MeromorphicFunction
+      ((CongruenceSubgroup.Gamma N).map sl2zToPSL2R).CompactifiedQuotient) :
+    laurentQExpansion (cuspDatumInftyGamma N) F =
+      UpperHalfPlane.laurentQExpansion N fun τ ↦ F.finitePart (ofQuotient (Quotient.mk _ τ)) := by
+  rw [laurentQExpansion_apply, cuspDatumInftyGamma_width, cuspDatumInftyGamma_scaling]
+  simp
+
 /-- The Laurent expansion of a Fricke function is the product of the expansions of
 `E₄ E₆ / Δ` and the normalized weight-two division value. -/
 theorem laurentQExpansion_frickeMeromorphicFunction (a : Fin 2 → ZMod N) :
