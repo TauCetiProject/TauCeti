@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.LinearMap.Defs
 public import Mathlib.Algebra.Group.Submonoid.Basic
-public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import Mathlib.FieldTheory.IsSepClosed
 public import Mathlib.SetTheory.Cardinal.Finite
 
 import Mathlib.FieldTheory.Finite.Basic
@@ -19,7 +19,7 @@ import Mathlib.LinearAlgebra.FixedSubmodule
 /-!
 # Additive power maps over finite fields
 
-Let `F` be a finite field and `k` an algebraically closed extension of `F`. If the power map
+Let `F` be a finite field and `k` an separably closed extension of `F`. If the power map
 `a ↦ a ^ i` on `k` is `F`-linear, then `i` is a power of `Nat.card F`.
 
 ## Main results
@@ -48,10 +48,10 @@ open Module Polynomial
 
 namespace TauCeti
 
-/-- If the power map `a ↦ a ^ i` is `F`-linear on an algebraically closed extension `k` of a
+/-- If the power map `a ↦ a ^ i` is `F`-linear on an separably closed extension `k` of a
 finite field `F`, then `i` is a power of `Nat.card F`. -/
 theorem mem_powers_card_of_isLinearMap_pow (F : Type*) {k : Type*} {i : ℕ}
-    [Field F] [Finite F] [Field k] [Algebra F k] [IsAlgClosed k]
+    [Field F] [Finite F] [Field k] [Algebra F k] [IsSepClosed k]
     (h_lin : IsLinearMap F fun a : k ↦ a ^ i) :
     i ∈ Submonoid.powers (Nat.card F) := by
   classical
@@ -75,7 +75,8 @@ theorem mem_powers_card_of_isLinearMap_pow (F : Type*) {k : Type*} {i : ℕ}
   let _ : Fintype V := Polynomial.rootSetFintype P k
   have h_card : q * i = q ^ finrank F V := calc
     q * i = P.natDegree := (Polynomial.natDegree_X_pow_sub_X h_two).symm
-    _ = Fintype.card V := (Polynomial.card_rootSet_eq_natDegree h_sep (IsAlgClosed.splits _)).symm
+    _ = Fintype.card V :=
+      (Polynomial.card_rootSet_eq_natDegree h_sep (IsSepClosed.splits_codomain P h_sep)).symm
     _ = q ^ finrank F V := Module.card_eq_pow_finrank
   have h_pos : finrank F V ≠ 0 := fun h_zero ↦ by simp [h_card, h_zero] at h_two
   have h_pow : q * q ^ (finrank F V - 1) = q * i :=
