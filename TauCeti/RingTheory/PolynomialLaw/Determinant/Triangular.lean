@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Block
-public import TauCeti.RingTheory.PolynomialLaw.Determinant
+public import TauCeti.RingTheory.PolynomialLaw.Determinant.Basic
 public import TauCeti.RingTheory.PolynomialLaw.Kernel
 
 /-!

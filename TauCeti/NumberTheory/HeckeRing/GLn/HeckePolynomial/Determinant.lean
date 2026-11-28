@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.HeckeRing.GLn.HeckePolynomial.Basic
-public import TauCeti.RingTheory.PolynomialLaw.Determinant
+public import TauCeti.RingTheory.PolynomialLaw.Determinant.Basic
 
 import Mathlib.Tactic.LinearCombination
 

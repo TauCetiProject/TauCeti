@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.PolynomialLaw.Determinant
+public import TauCeti.RingTheory.PolynomialLaw.Determinant.Basic
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import TauCeti.Algebra.MonoidAlgebra.CharacterTwist
 import TauCeti.RingTheory.TensorProduct.Maps

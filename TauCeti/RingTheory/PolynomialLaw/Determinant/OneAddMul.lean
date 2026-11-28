@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.PolynomialLaw.Determinant
+public import TauCeti.RingTheory.PolynomialLaw.Determinant.Basic
 
 /-!
 # `D(1 + r r') = D(1 + r' r)`
