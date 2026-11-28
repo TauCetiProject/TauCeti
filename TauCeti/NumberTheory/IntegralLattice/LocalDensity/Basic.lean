@@ -16,6 +16,7 @@ import TauCeti.Data.Nat.Choose.Basic
 import TauCeti.Data.ZMod.MulCastHom
 import TauCeti.LinearAlgebra.Matrix.Defs
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
+import TauCeti.LinearAlgebra.Matrix.IdealEntries
 import TauCeti.LinearAlgebra.Matrix.Symmetric
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
@@ -223,24 +224,13 @@ private theorem transpose_add_smul_mul_mul_add_smul {R : Type*} [CommRing R] {A 
 private theorem exists_pow_smul_eq_of_map_eq_zero {ι : Type*}
     {M : Matrix ι ι ℤ_[p]} (hM : Mᵀ = M) {r : ℕ} (h0 : M.map (PadicInt.toZModPow r) = 0) :
     ∃ H : Matrix ι ι ℤ_[p], Hᵀ = H ∧ (p : ℤ_[p]) ^ r • H = M := by
-  choose H hH using fun i j =>
-    (PadicInt.toZModPow_eq_zero_iff_dvd r (M i j)).mp (congrFun (congrFun h0 i) j)
-  have hpH : (p : ℤ_[p]) ^ r • of H = M := by
-    ext i j
-    simp [hH]
+  obtain ⟨H, hH⟩ := exists_eq_smul_of_map_eq_zero (PadicInt.ker_toZModPow r).le h0
   have hp : (p : ℤ_[p]) ^ r ≠ 0 :=
     pow_ne_zero r (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)
-  refine ⟨of H, ?_, hpH⟩
-  ext i j
-  have h' : H j i = H i j := by
-    apply mul_left_cancel₀ hp
-    calc
-      (p : ℤ_[p]) ^ r * H j i = M j i := by
-        simpa using congrFun (congrFun hpH j) i
-      _ = M i j := by simpa using congrFun (congrFun hM i) j
-      _ = (p : ℤ_[p]) ^ r * H i j := by
-        simpa using (congrFun (congrFun hpH i) j).symm
-  simp only [transpose_apply, of_apply, h']
+  have hsymm : (p : ℤ_[p]) ^ r • Hᵀ = (p : ℤ_[p]) ^ r • H := by
+    rw [← transpose_smul, ← hH, hM]
+  refine ⟨H, ext fun i j ↦ mul_left_cancel₀ hp ?_, hH.symm⟩
+  simpa only [Matrix.smul_apply, smul_eq_mul] using congr_fun₂ hsymm i j
 
 /-- A matrix `p ^ s N` over `ℤ_p` vanishes modulo `p ^ r` for `r ≤ s`. -/
 private theorem map_pow_smul_eq_zero {ι κ : Type*} {r s : ℕ} (hrs : r ≤ s)
@@ -695,12 +685,10 @@ theorem localDensity_eq_of_isUnit_det (hp : p ≠ 2) {A : Matrix n n ℤ_[p]} (h
 and nondegenerate, this is the order of the orthogonal group of `Ā`. -/
 theorem localDensityCount_one (A : Matrix n n ℤ_[p]) :
     A.localDensityCount 1 = Nat.card (isometryMatrices (A.map PadicInt.toZMod)) := by
-  set e := ZMod.ringEquivCongr (pow_one p)
-  have he : (e : ZMod (p ^ 1) →+* ZMod p) = ZMod.castHom (dvd_pow_self p one_ne_zero) _ :=
-    RingHom.ext_zmod _ _
-  have hfun : ⇑e ∘ ⇑(PadicInt.toZModPow 1) = ⇑PadicInt.toZMod :=
-    funext fun x => by simp [← RingEquiv.coe_toRingHom, he]
-  rw [localDensityCount_def, ← natCard_isometryMatrices_map_ringEquiv e, Matrix.map_map, hfun]
+  rw [localDensityCount_def,
+    ← natCard_isometryMatrices_map_ringEquiv (ZMod.ringEquivCongr (pow_one p)),
+    Matrix.map_map, ← RingEquiv.coe_toRingHom, ← RingHom.coe_comp,
+    PadicInt.ringEquivCongr_comp_toZModPow_one]
 
 /-- An integer matrix has unit determinant over `ℤ_p` exactly when `p` does not divide its
 determinant. -/

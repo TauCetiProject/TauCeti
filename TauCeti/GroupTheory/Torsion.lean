@@ -314,8 +314,13 @@ end TauCeti
 
 * `IsMulTorsion.exists_prime_orderOf_mem`: a nontrivial subgroup of a torsion group contains an
   element of prime order.
+* `MonoidHom.eq_one_of_isOfFinOrder_of_map_eq_one`: an element of finite order in a
+  torsion-free kernel is the identity.
 * `MonoidHom.injective_domRestrict_of_isMulTorsion`: a homomorphism with torsion-free kernel is
   injective on every torsion subgroup, in particular on every finite subgroup.
+* `MonoidHom.natCard_le_of_isMulTorsionFree_ker`: for such a homomorphism into a finite codomain,
+  the target's cardinality bounds `Nat.card` of every source subgroup. Finite subgroups embed
+  into the target, and infinite subgroups have `Nat.card = 0`.
 -/
 
 section PrimeOrder
@@ -332,19 +337,34 @@ theorem IsMulTorsion.exists_prime_orderOf_mem (hG : IsMulTorsion G) {H : Subgrou
   refine ⟨g ^ (orderOf g / p), H.pow_mem hgH _, ?_⟩
   rwa [orderOf_pow_orderOf_div (hG g).orderOf_pos.ne' hpg]
 
-/-- **Injectivity on torsion subgroups.** A group homomorphism whose kernel is torsion-free is
-injective on every torsion subgroup: two elements with the same image differ by an element of the
-kernel, which has finite order when the subgroup is torsion. -/
-@[to_additive /-- An additive group homomorphism whose kernel is torsion-free is injective on
-every torsion subgroup. -/]
-theorem MonoidHom.injective_domRestrict_of_isMulTorsion {H : Type*} [Group H] (f : G →* H)
+/-- An element of finite order that maps to `1` under a homomorphism with torsion-free kernel
+is `1`. -/
+@[to_additive /-- An element of finite additive order that maps to `0` under a homomorphism with
+torsion-free kernel is `0`. -/]
+theorem MonoidHom.eq_one_of_isOfFinOrder_of_map_eq_one {H : Type*} [MulOneClass H] (f : G →* H)
+    [IsMulTorsionFree f.ker] {x : G} (hx : IsOfFinOrder x) (hfx : f x = 1) : x = 1 := by
+  let y : f.ker := ⟨x, f.mem_ker.mpr hfx⟩
+  have hy : IsOfFinOrder y := f.ker.subtype_injective.isOfFinOrder_iff.mp hx
+  simpa only [Subgroup.coe_subtype, Subgroup.coe_one, y] using congrArg f.ker.subtype hy.eq_one'
+
+/-- **Injectivity on torsion subgroups.** A homomorphism from a group into a `MulOneClass`
+with torsion-free kernel is injective on every torsion subgroup. -/
+@[to_additive /-- A homomorphism from an additive group into an `AddZeroClass` with
+torsion-free kernel is injective on every torsion subgroup. -/]
+theorem MonoidHom.injective_domRestrict_of_isMulTorsion {H : Type*} [MulOneClass H] (f : G →* H)
     [IsMulTorsionFree f.ker] {K : Subgroup G} (hK : IsMulTorsion K) :
     Function.Injective (f.domRestrict K) := by
-  refine (injective_iff_map_eq_one _).mpr fun x hx ↦ ?_
-  have hker : (x : G) ∈ f.ker := f.mem_ker.mpr (by simpa using hx)
-  have hfin : IsOfFinOrder (⟨x, hker⟩ : f.ker) :=
-    Submonoid.isOfFinOrder_coe.1 (Submonoid.isOfFinOrder_coe.2 (hK x) : IsOfFinOrder (x : G))
-  have h1 : (x : G) = 1 := congrArg Subtype.val hfin.eq_one'
-  exact Subtype.ext h1
+  exact (injective_iff_map_eq_one _).mpr fun x hx ↦ Subtype.ext
+    (f.eq_one_of_isOfFinOrder_of_map_eq_one (K.subtype_injective.isOfFinOrder_iff.mpr (hK x)) hx)
+
+/-- For a homomorphism from a group into a finite `MulOneClass` with torsion-free kernel, the
+`Nat.card` of every source subgroup is at most the cardinality of the target. -/
+theorem MonoidHom.natCard_le_of_isMulTorsionFree_ker {H : Type*} [MulOneClass H] (f : G →* H)
+    [IsMulTorsionFree f.ker] [Finite H] (K : Subgroup G) : Nat.card K ≤ Nat.card H := by
+  cases finite_or_infinite K with
+  | inl _ =>
+    exact Nat.card_le_card_of_injective _ (f.injective_domRestrict_of_isMulTorsion
+      (K := K) isMulTorsion_of_finite)
+  | inr _ => simp
 
 end PrimeOrder

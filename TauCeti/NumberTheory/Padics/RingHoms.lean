@@ -61,7 +61,8 @@ to a `p`-adic exponent: `g ^ x.appr n` does not change when `n` grows past the o
 * `PadicInt.toZModPow_eq_one_of_norm_sub_one_le`: a norm bound forcing a `p`-adic integer to
   reduce to `1` modulo `p ^ n`.
 * `PadicInt.cast_toZModPow_eq_toZMod`: reducing the truncation modulo `p ^ n` further modulo `p`
-  recovers `toZMod`.
+  recovers `toZMod`; `PadicInt.ringEquivCongr_comp_toZModPow_one` identifies the two bundled
+  reduction maps at level one.
 * `PadicInt.dvd_sub_appr`: `x - appr x n` is divisible by `p ^ n` in `ℤ_[p]`.
 * `PadicInt.exists_intCast_dvd_sub_and_toZMod_eq`: every `p`-adic integer is congruent modulo
   `p ^ n` to an integer with the same reduction modulo `p`.
@@ -327,6 +328,17 @@ theorem cast_toZModPow_eq_toZMod {n : ℕ} (hn : n ≠ 0) (x : ℤ_[p]) :
     exact Ideal.span_singleton_le_span_singleton.mpr (dvd_pow_self (p : ℤ_[p]) hn) (appr_spec n x)
   rw [map_sub, sub_eq_zero] at h
   rw [h, toZModPow_eq_natCast_appr x n, ZMod.cast_natCast (dvd_pow_self p hn), map_natCast]
+
+/-- Truncation at level one is reduction modulo `p` after identifying `ZMod (p ^ 1)` with
+`ZMod p`. -/
+@[simp]
+theorem ringEquivCongr_comp_toZModPow_one :
+    (ZMod.ringEquivCongr (pow_one p) : ZMod (p ^ 1) →+* ZMod p).comp (toZModPow 1) =
+      (toZMod : ℤ_[p] →+* ZMod p) := by
+  have h : (ZMod.ringEquivCongr (pow_one p) : ZMod (p ^ 1) →+* ZMod p) =
+      ZMod.castHom (dvd_pow_self p one_ne_zero) (ZMod p) := RingHom.ext_zmod _ _
+  ext x
+  rw [RingHom.comp_apply, h, ZMod.castHom_apply, cast_toZModPow_eq_toZMod one_ne_zero]
 
 /-- The truncation `appr x n` agrees with `x` modulo `p ^ n`: the divisibility form of
 `PadicInt.appr_spec`. -/
