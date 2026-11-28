@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.InvariantForm.Basic
-public import TauCeti.Algebra.Lie.Pi
+public import TauCeti.Algebra.Lie.Pi.Basic
 public import TauCeti.Algebra.Lie.BaseChange.Perfect
 import TauCeti.LinearAlgebra.BilinearForm.Basic
 
