@@ -316,10 +316,8 @@ theorem continuous_of_isClosed_graph_of_complete (f : E →ₗ[R] F)
   have hcg : ∀ p : f.graph, ContinuousAt (fun a : R ↦ a • p) 0 := fun p ↦
     Topology.IsInducing.subtypeVal.continuousAt_iff.mpr
       ((hcE (p : E × F).1).prodMk (hcF (p : E × F).2))
-  have hsymm_cont : Continuous (f.graphEquiv.symm : f.graph → E) := by
-    rw [show (f.graphEquiv.symm : f.graph → E) = Prod.fst ∘ Subtype.val from
-      funext f.graphEquiv_symm_apply]
-    exact continuous_fst.comp continuous_subtypeVal
+  have hsymm_cont : Continuous (f.graphEquiv.symm : f.graph → E) :=
+    continuous_subtypeVal.fst.congr fun p ↦ (f.graphEquiv_symm_apply p).symm
   have hopen : IsOpenMap (f.graphEquiv.symm : f.graph → E) :=
     TauCeti.HasZeroSequenceOfUnits.isOpenMap f.graphEquiv.symm.toLinearMap
       f.graphEquiv.symm.surjective hsymm_cont.continuousAt hcg
