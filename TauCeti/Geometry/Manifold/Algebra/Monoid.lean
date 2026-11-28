@@ -24,10 +24,14 @@ monoid homomorphisms `MonoidHom.fst` and `MonoidHom.snd`
 corresponding additive declarations are `ContMDiffAddMonoidMorphism.fst`,
 `ContMDiffAddMonoidMorphism.snd`, `ContMDiffAddMonoidMorphism.coe_fst`,
 `ContMDiffAddMonoidMorphism.coe_snd`, `ContMDiffAddMonoidMorphism.toAddMonoidHom_fst`, and
-`ContMDiffAddMonoidMorphism.toAddMonoidHom_snd`. `ContMDiffMonoidMorphism.toHomUnits` lifts a
+`ContMDiffAddMonoidMorphism.toAddMonoidHom_snd`. `ContMDiffMonoidMorphism.unitsCoeHom`
+bundles `Units.val : Aˣ → A` as a `C^n` morphism, and `ContMDiffMonoidMorphism.toHomUnits` lifts a
 `C^n` morphism from a group `G` into a complete normed ring `A` (over any nontrivially normed field
 `𝕜` and regularity `n : ℕ∞ω`) to a `C^n` morphism into `Aˣ`, with coercion formula
-`ContMDiffMonoidMorphism.coe_toHomUnits`.
+`ContMDiffMonoidMorphism.coe_toHomUnits`, round-trip laws
+`ContMDiffMonoidMorphism.unitsCoeHom_comp_toHomUnits` and
+`ContMDiffMonoidMorphism.toHomUnits_unitsCoeHom_comp`, and uniqueness characterization
+`ContMDiffMonoidMorphism.eq_toHomUnits_iff`.
 
 The inclusions `ContMDiffMonoidMorphism.inl` and `ContMDiffMonoidMorphism.inr` of the two factors
 are smooth monoid morphisms into the product. Two smooth monoid morphisms with commuting images
@@ -258,6 +262,23 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   {A : Type*} [NormedRing A] [NormedSpace 𝕜 A] [CompleteSpace A]
 
+/-- The inclusion `Units.val : Aˣ → A` (`Units.coeHom A`) as a `C^n` monoid morphism. -/
+def unitsCoeHom : ContMDiffMonoidMorphism 𝓘(𝕜, A) 𝓘(𝕜, A) n Aˣ A where
+  toMonoidHom := Units.coeHom A
+  contMDiff_toFun := contMDiff_isOpenEmbedding Units.isOpenEmbedding_val
+
+/-- The underlying monoid homomorphism of `unitsCoeHom` is `Units.coeHom A`. -/
+@[simp]
+theorem toMonoidHom_unitsCoeHom :
+    (unitsCoeHom (𝕜 := 𝕜) (n := n) (A := A)).toMonoidHom = Units.coeHom A :=
+  (rfl)
+
+/-- Coercing `unitsCoeHom` as a function recovers `Units.val`. -/
+@[simp]
+theorem coe_unitsCoeHom :
+    ⇑(unitsCoeHom (𝕜 := 𝕜) (n := n) (A := A)) = Units.val :=
+  (rfl)
+
 /-- Any `C^n` monoid morphism from a group `G` into a complete normed ring `A` lifts to a `C^n`
 monoid morphism into the group of units `Aˣ`. -/
 def toHomUnits (f : ContMDiffMonoidMorphism I 𝓘(𝕜, A) n G A) :
@@ -277,6 +298,34 @@ theorem toMonoidHom_toHomUnits (f : ContMDiffMonoidMorphism I 𝓘(𝕜, A) n G 
 theorem coe_toHomUnits (f : ContMDiffMonoidMorphism I 𝓘(𝕜, A) n G A) (g : G) :
     ((f.toHomUnits g : Aˣ) : A) = f g :=
   (rfl)
+
+/-- Composing `unitsCoeHom` with the lifted morphism `f.toHomUnits` recovers `f`. -/
+@[simp]
+theorem unitsCoeHom_comp_toHomUnits (f : ContMDiffMonoidMorphism I 𝓘(𝕜, A) n G A) :
+    (unitsCoeHom (𝕜 := 𝕜) (n := n) (A := A)).comp f.toHomUnits = f := by
+  apply DFunLike.coe_injective
+  funext g
+  simp only [coe_comp, Function.comp_apply, coe_unitsCoeHom, coe_toHomUnits]
+
+/-- Lifting the composition of `unitsCoeHom` with `g : G → Aˣ` recovers `g`. -/
+@[simp]
+theorem toHomUnits_unitsCoeHom_comp (g : ContMDiffMonoidMorphism I 𝓘(𝕜, A) n G Aˣ) :
+    ((unitsCoeHom (𝕜 := 𝕜) (n := n) (A := A)).comp g).toHomUnits = g := by
+  apply DFunLike.coe_injective
+  funext x
+  apply Units.ext
+  simp only [coe_toHomUnits, coe_comp, Function.comp_apply, coe_unitsCoeHom]
+
+/-- Uniqueness of the smooth lift to `Aˣ`: a smooth morphism `g` into `Aˣ` equals `f.toHomUnits`
+if and only if composing with `unitsCoeHom` yields `f`. -/
+theorem eq_toHomUnits_iff (f : ContMDiffMonoidMorphism I 𝓘(𝕜, A) n G A)
+    (g : ContMDiffMonoidMorphism I 𝓘(𝕜, A) n G Aˣ) :
+    g = f.toHomUnits ↔ (unitsCoeHom (𝕜 := 𝕜) (n := n) (A := A)).comp g = f := by
+  constructor
+  · rintro rfl
+    exact unitsCoeHom_comp_toHomUnits f
+  · rintro rfl
+    exact (toHomUnits_unitsCoeHom_comp g).symm
 
 end ContMDiffMonoidMorphism
 

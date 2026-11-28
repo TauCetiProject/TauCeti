@@ -47,9 +47,13 @@ The linear map `L` is not exposed: once `f` is known to be smooth, it is the dif
   (`TauCeti.Lie.contMDiff_of_surjective_groupLieAlgebraMap`).
 * `ContinuousMonoidHom.toContMDiffMonoidMorphism`: a continuous homomorphism of such Lie groups,
   bundled as a smooth monoid morphism.
-* `ContinuousMonoidHom.toContMDiffMonoidMorphism_fst` and
-  `ContinuousMonoidHom.toContMDiffMonoidMorphism_snd`: converting the continuous product
-  projections recovers `ContMDiffMonoidMorphism.fst` and `ContMDiffMonoidMorphism.snd`.
+* `ContinuousMonoidHom.toContMDiffMonoidMorphism_fst`,
+  `ContinuousMonoidHom.toContMDiffMonoidMorphism_snd`,
+  `ContinuousMonoidHom.toContMDiffMonoidMorphism_inl`, and
+  `ContinuousMonoidHom.toContMDiffMonoidMorphism_inr`: converting the continuous product
+  projections and factor inclusions recovers `ContMDiffMonoidMorphism.fst`,
+  `ContMDiffMonoidMorphism.snd`, `ContMDiffMonoidMorphism.inl`, and
+  `ContMDiffMonoidMorphism.inr`.
 * `ContinuousMulEquiv.toDiffeomorph`: an isomorphism of topological groups between such Lie groups,
   as a diffeomorphism.
 
@@ -219,6 +223,26 @@ theorem toContMDiffMonoidMorphism_snd :
   apply DFunLike.coe_injective
   funext p
   simp [coe_toContMDiffMonoidMorphism, ContMDiffMonoidMorphism.coe_snd]
+
+/-- Converting the continuous first factor inclusion to a smooth morphism recovers
+`ContMDiffMonoidMorphism.inl`. -/
+@[simp]
+theorem toContMDiffMonoidMorphism_inl :
+    (ContinuousMonoidHom.inl G G').toContMDiffMonoidMorphism I (I.prod I') =
+      ContMDiffMonoidMorphism.inl := by
+  apply DFunLike.coe_injective
+  funext g
+  simp [coe_toContMDiffMonoidMorphism, ContMDiffMonoidMorphism.coe_inl]
+
+/-- Converting the continuous second factor inclusion to a smooth morphism recovers
+`ContMDiffMonoidMorphism.inr`. -/
+@[simp]
+theorem toContMDiffMonoidMorphism_inr :
+    (ContinuousMonoidHom.inr G G').toContMDiffMonoidMorphism I' (I.prod I') =
+      ContMDiffMonoidMorphism.inr := by
+  apply DFunLike.coe_injective
+  funext g'
+  simp [coe_toContMDiffMonoidMorphism, ContMDiffMonoidMorphism.coe_inr]
 
 end ContinuousMonoidHom
 

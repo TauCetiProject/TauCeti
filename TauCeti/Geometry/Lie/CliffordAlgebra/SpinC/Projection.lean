@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.CliffordAlgebra.SpinC.LieAlgebra
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Covering
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.LieAlgebra
+public import TauCeti.Algebra.Lie.Abelian
 import TauCeti.Algebra.Lie.Basic
 
 /-!
@@ -27,15 +28,18 @@ and the `𝔰𝔬(n) ⊕ ℝ` connection-lifting isomorphism:
   (its kernel is `range (realDetLieLift n hQ)`) and restricts on `ofSpin_* (Lie(Spin(n)))` to the
   invertible Spin-to-`SO(n)` differential `realSpinToSpecialOrthogonalLieEquiv`;
 * the paired projection `realToSpecialOrthogonalProdDetRange` has bijective Lie map, so it is a
-  smooth local diffeomorphism and a smooth covering map with smooth local sections
-  through every fiber point;
+  smooth local diffeomorphism and a smooth quotient covering map (with the same kernel as the
+  native projection `toSpecialOrthogonal.prod det`) having smooth local sections through every
+  fiber point;
 * combining the inverse Spin-to-`SO(n)` differential with `realSpinProdDetLinearEquiv` produces
-  linear equivalences
+  the Lie-algebra equivalence
+  `realToSoProdDetLieEquiv : Lie(Spinᶜ(n)) ≃ₗ⁅ℝ⁆ 𝔰𝔬(n) × AbelianLieAlgebra ℝ`,
+  together with the linear splittings
   `realSpecialOrthogonalProdDetLinearEquiv : Lie(SO(n)) × ℝ ≃ₗ[ℝ] Lie(Spinᶜ(n))` and
-  `realSoProdDetLinearEquiv : 𝔰𝔬(n) × ℝ ≃ₗ[ℝ] Lie(Spinᶜ(n))` whose inverse sends any
-  `Y ∈ Lie(Spinᶜ(n))` to `(π_*(Y), d det(Y))`, preserves Lie brackets via
-  `⁅(A, a), (B, b)⁆ = (⁅A, B⁆, 0)`, and is `Ad`-equivariant under every `g ∈ Spinᶜ(n)` via
-  `Ad(g) (Y_SO, a) = (Ad(π(g)) Y_SO, a)`.
+  `realSoProdDetLinearEquiv : 𝔰𝔬(n) × ℝ ≃ₗ[ℝ] Lie(Spinᶜ(n))` (derived from
+  `realToSoProdDetLieEquiv`) whose inverse sends any `Y ∈ Lie(Spinᶜ(n))` to `(π_*(Y), d det(Y))`,
+  preserves Lie brackets via `⁅(A, a), (B, b)⁆ = (⁅A, B⁆, 0)`, and is `Ad`-equivariant under every
+  `g ∈ Spinᶜ(n)` via `Ad(g) (Y_SO, a) = (Ad(π(g)) Y_SO, a)`.
 
 ## Main definitions
 
@@ -45,6 +49,8 @@ and the `𝔰𝔬(n) ⊕ ℝ` connection-lifting isomorphism:
   rotation-and-determinant homomorphism `Spinᶜ(n) → SO(n) × Circle`.
 * `CliffordAlgebra.spinCGroup.realToSpecialOrthogonalProdDetLieEquiv`: the Lie-algebra isomorphism
   `Lie(Spinᶜ(n)) ≃ₗ⁅ℝ⁆ Lie(SO(n)) × Lie(Circle)`.
+* `CliffordAlgebra.spinCGroup.realToSoProdDetLieEquiv`: the normalized Lie-algebra isomorphism
+  `Lie(Spinᶜ(n)) ≃ₗ⁅ℝ⁆ 𝔰𝔬(n) × AbelianLieAlgebra ℝ`.
 * `CliffordAlgebra.spinCGroup.realSpecialOrthogonalProdDetLinearEquiv` and
   `realSoProdDetLinearEquiv`: the `Lie(SO(n)) × ℝ` and `𝔰𝔬(n) × ℝ` splittings of `Lie(Spinᶜ(n))`.
 
@@ -59,10 +65,13 @@ and the `𝔰𝔬(n) ⊕ ℝ` connection-lifting isomorphism:
   coordinates.
 * `CliffordAlgebra.spinCGroup.Ad_realSpecialOrthogonalProdDetLinearEquiv`: full `Spinᶜ(n)` adjoint
   equivariance of the `Lie(SO(n)) × ℝ` lift.
-* `CliffordAlgebra.spinCGroup.isLocalDiffeomorph_realToSpecialOrthogonalProdDetRange`,
+* `CliffordAlgebra.spinCGroup.ker_realToSpecialOrthogonalProdDetRange`,
+  `isQuotientCoveringMap_realToSpecialOrthogonalProdDetRange`,
+  `isLocalDiffeomorph_realToSpecialOrthogonalProdDetRange`,
   `isCoveringMap_realToSpecialOrthogonalProdDetRange`, and
-  `exists_realSpinCSmoothCoveringTrivialization`: smooth covering trivializations with smooth local
-  sections through every point of the fiber.
+  `exists_realSpinCSmoothCoveringTrivialization`: kernel comparison, quotient-covering property,
+  local diffeomorphism, and smooth covering trivializations with smooth local sections through
+  every point of the fiber.
 
 ## References
 
@@ -106,14 +115,44 @@ local notation "𝔰" => LeftInvariantDerivation IS (spinGroup (realCliffordForm
 local notation "𝔬" => LeftInvariantDerivation ISO SpecialOrthogonalUnitsRange
 local notation "d" => ContinuousMonoidHom.lieWeight (I := IC) (detContinuousMonoidHom _ hQ)
 
+private def transportSpecialOrthogonalMulEquiv
+    {t₁ t₂ : TopologicalSpace (Matrix (Fin n) (Fin n) ℝ)} (ht : t₁ = t₂)
+    (e : letI := t₁; QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) ≃ₜ*
+      SpecialOrthogonalUnitsRange) :
+    letI := t₂; QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) ≃ₜ*
+      SpecialOrthogonalUnitsRange := by
+  cases ht
+  exact e
+
+private def realSpecialOrthogonalContinuousMulEquivRange :
+    QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) ≃ₜ*
+      SpecialOrthogonalUnitsRange :=
+  transportSpecialOrthogonalMulEquiv n
+    (Matrix.linftyOpTopologicalSpace_eq (Fin n) (Fin n) ℝ).symm
+    (realCliffordSpecialOrthogonalContinuousMulEquivRange n)
+
+private theorem realSpecialOrthogonalContinuousMulEquivRange_apply
+    (g : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)) :
+    realSpecialOrthogonalContinuousMulEquivRange n g =
+      realCliffordSpecialOrthogonalContinuousMulEquivRange n g := by
+  have haux :
+      ∀ {t₁ t₂ : TopologicalSpace (Matrix (Fin n) (Fin n) ℝ)} (ht : t₁ = t₂)
+        (e : letI := t₁; QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) ≃ₜ*
+          SpecialOrthogonalUnitsRange),
+        transportSpecialOrthogonalMulEquiv n ht e g = e g := by
+    rintro _ _ rfl e
+    rfl
+  exact haux (Matrix.linftyOpTopologicalSpace_eq (Fin n) (Fin n) ℝ).symm
+    (realCliffordSpecialOrthogonalContinuousMulEquivRange n)
+
 /-- The rotation homomorphism on compact `Spinᶜ(n)` into the closed `SO(n)` matrix-units
 carrier. -/
 def realToSpecialOrthogonalRange : G →ₜ* SpecialOrthogonalUnitsRange where
   toMonoidHom :=
-    (realCliffordSpecialOrthogonalContinuousMulEquivRange n).toMonoidHom.comp
+    (realSpecialOrthogonalContinuousMulEquivRange n).toMonoidHom.comp
       (toSpecialOrthogonal (realCliffordForm n 0) hQ)
   continuous_toFun :=
-    (realCliffordSpecialOrthogonalContinuousMulEquivRange n).continuous.comp
+    (realSpecialOrthogonalContinuousMulEquivRange n).continuous.comp
       (continuous_toSpecialOrthogonal_pi (realCliffordForm n 0) hQ)
 
 /-- `realToSpecialOrthogonalRange` transports `toSpecialOrthogonal` into the matrix-units range. -/
@@ -121,30 +160,25 @@ theorem realToSpecialOrthogonalRange_apply (g : G) :
     realToSpecialOrthogonalRange n hQ g =
       realCliffordSpecialOrthogonalContinuousMulEquivRange n
         (toSpecialOrthogonal (realCliffordForm n 0) hQ g) :=
-  (rfl)
+  realSpecialOrthogonalContinuousMulEquivRange_apply n
+    (toSpecialOrthogonal (realCliffordForm n 0) hQ g)
 
 /-- On a quotient representative `[s, z]`, `realToSpecialOrthogonalRange` evaluates to the matrix
 of `π(s)`. -/
 @[simp]
 theorem realToSpecialOrthogonalRange_mk (p : spinGroup (realCliffordForm n 0) × Circle) :
     realToSpecialOrthogonalRange n hQ (mk _ hQ p) =
-      ⟨QuadraticMap.specialOrthogonalToGeneralLinear
-          (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)
-          (spinToSpecialOrthogonal (realCliffordForm n 0) p.1),
-        ⟨spinToSpecialOrthogonal (realCliffordForm n 0) p.1, rfl⟩⟩ := by
-  rw [realToSpecialOrthogonalRange_apply, toSpecialOrthogonal_mk,
-    realCliffordSpecialOrthogonalContinuousMulEquivRange_apply]
+      realCliffordSpecialOrthogonalContinuousMulEquivRange n
+        (spinToSpecialOrthogonal (realCliffordForm n 0) p.1) := by
+  rw [realToSpecialOrthogonalRange_apply, toSpecialOrthogonal_mk]
 
 /-- On `ofSpin s`, `realToSpecialOrthogonalRange` evaluates to the matrix of `π(s)`. -/
 @[simp]
 theorem realToSpecialOrthogonalRange_ofSpin (s : spinGroup (realCliffordForm n 0)) :
     realToSpecialOrthogonalRange n hQ (ofSpin _ hQ s) =
-      ⟨QuadraticMap.specialOrthogonalToGeneralLinear
-          (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)
-          (spinToSpecialOrthogonal (realCliffordForm n 0) s),
-        ⟨spinToSpecialOrthogonal (realCliffordForm n 0) s, rfl⟩⟩ := by
-  rw [realToSpecialOrthogonalRange_apply, toSpecialOrthogonal_ofSpin,
-    realCliffordSpecialOrthogonalContinuousMulEquivRange_apply]
+      realCliffordSpecialOrthogonalContinuousMulEquivRange n
+        (spinToSpecialOrthogonal (realCliffordForm n 0) s) := by
+  rw [realToSpecialOrthogonalRange_apply, toSpecialOrthogonal_ofSpin]
 
 /-- On the central circle inclusion `ofCircle z`, `realToSpecialOrthogonalRange` is trivial. -/
 @[simp]
@@ -164,15 +198,18 @@ into `SO(n)`. -/
 @[simp]
 theorem realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom :
     (realToSpecialOrthogonalRange n hQ).comp (ofSpinContinuousMonoidHom _ hQ) =
-      (realCliffordSpinToSpecialOrthogonalContinuousRange n).comp
+      -- `show` selects the operator-norm matrix topology (`Matrix.linftyOpTopologicalSpace_eq`)
+      -- on the codomain so both sides share the same `ContinuousMonoidHom` type.
+      (show SpinUnitsRange →ₜ* SpecialOrthogonalUnitsRange from
+        realCliffordSpinToSpecialOrthogonalRange n).comp
         (realCliffordSpinContinuousMulEquivUnitsRange n :
           spinGroup (realCliffordForm n 0) →ₜ* SpinUnitsRange) := by
   ext1 s
   rw [ContinuousMonoidHom.coe_comp, ContinuousMonoidHom.coe_comp,
     Function.comp_apply, Function.comp_apply, ContinuousMonoidHom.coe_coe,
     ofSpinContinuousMonoidHom_apply, realToSpecialOrthogonalRange_ofSpin,
-    realCliffordSpinContinuousMulEquivUnitsRange_apply,
-    realCliffordSpinToSpecialOrthogonalContinuousRange_apply]
+    realCliffordSpecialOrthogonalContinuousMulEquivRange_apply,
+    realCliffordSpinContinuousMulEquivUnitsRange_apply]
   exact (realCliffordSpinToSpecialOrthogonalRange_apply_toUnits n s).symm
 
 local notation "πO" =>
@@ -213,7 +250,8 @@ theorem lieMap_realToSpecialOrthogonalRange_lieMap_ofSpinContinuousMonoidHom (X 
         (ContinuousMonoidHom.lieMap_comp_apply (I := IS) (I' := IC) (I'' := ISO)
           (ofSpinContinuousMonoidHom _ hQ) (realToSpecialOrthogonalRange n hQ) X).symm
     _ = ContinuousMonoidHom.lieMap (I := IS) (I' := ISO)
-          ((realCliffordSpinToSpecialOrthogonalContinuousRange n).comp
+          ((show SpinUnitsRange →ₜ* SpecialOrthogonalUnitsRange from
+            realCliffordSpinToSpecialOrthogonalRange n).comp
             (realCliffordSpinContinuousMulEquivUnitsRange n :
               spinGroup (realCliffordForm n 0) →ₜ* SpinUnitsRange)) X := by
         rw [realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom]
@@ -221,12 +259,13 @@ theorem lieMap_realToSpecialOrthogonalRange_lieMap_ofSpinContinuousMonoidHom (X 
         symm
         simp only [realSpinToSpecialOrthogonalLieEquiv_apply,
           realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply,
-          realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousRange_lieMap,
+          realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLieMap,
           realSpinLieEquivUnitsRange_apply]
         exact (ContinuousMonoidHom.lieMap_comp_apply (I := IS) (I' := IS) (I'' := ISO)
           (realCliffordSpinContinuousMulEquivUnitsRange n :
             spinGroup (realCliffordForm n 0) →ₜ* SpinUnitsRange)
-          (realCliffordSpinToSpecialOrthogonalContinuousRange n) X).symm
+          (show SpinUnitsRange →ₜ* SpecialOrthogonalUnitsRange from
+            realCliffordSpinToSpecialOrthogonalRange n) X).symm
 
 /-- Evaluating the rotation differential on `realSpinProdDetLinearEquiv (X, a)` projects onto the
 Spin factor via `realSpinToSpecialOrthogonalLieEquiv`. -/
@@ -338,19 +377,140 @@ theorem Ad_realSpecialOrthogonalProdDetLinearEquiv (g : G) (p : 𝔬 × ℝ) :
   · simp only [ContinuousMonoidHom.lieWeight_Ad,
       lieWeight_detContinuousMonoidHom_realSpecialOrthogonalProdDetLinearEquiv]
 
+private def realToSpecialOrthogonalProdCircleLinearEquiv :
+    𝔤 ≃ₗ[ℝ] 𝔬 × LeftInvariantDerivation (𝓡 1) Circle :=
+  (realSpecialOrthogonalProdDetLinearEquiv n hQ).symm.trans
+    (LinearEquiv.prodCongr (LinearEquiv.refl ℝ 𝔬) circleLieAlgebraEquiv.symm)
+
+private theorem prodLieEquiv_lieMap_realToSpecialOrthogonalProdDetRange (Y : 𝔤) :
+    TauCeti.Lie.prodLieEquiv
+        (ContinuousMonoidHom.lieMap (I := IC) (I' := ISP)
+          (realToSpecialOrthogonalProdDetRange n hQ) Y) =
+      realToSpecialOrthogonalProdCircleLinearEquiv n hQ Y := by
+  rw [realToSpecialOrthogonalProdDetRange,
+    TauCeti.Lie.prodLieEquiv_continuousMonoidHom_lieMap_prod,
+    realToSpecialOrthogonalProdCircleLinearEquiv, LinearEquiv.trans_apply,
+    realSpecialOrthogonalProdDetLinearEquiv_symm_apply, LinearEquiv.prodCongr_apply,
+    LinearEquiv.refl_apply, ContinuousMonoidHom.lieWeight_apply, LinearEquiv.symm_apply_apply]
+
+/-- The Lie differential of the paired rotation-and-determinant homomorphism
+`Spinᶜ(n) → SO(n) × Circle` is bijective. -/
+theorem lieMap_realToSpecialOrthogonalProdDetRange_bijective :
+    Function.Bijective
+      (ContinuousMonoidHom.lieMap (I := IC) (I' := ISP)
+        (realToSpecialOrthogonalProdDetRange n hQ)) := by
+  have hcomp :
+      ⇑(TauCeti.Lie.prodLieEquiv (I := ISO) (I' := 𝓡 1)) ∘
+          ContinuousMonoidHom.lieMap (I := IC) (I' := ISP)
+            (realToSpecialOrthogonalProdDetRange n hQ) =
+        realToSpecialOrthogonalProdCircleLinearEquiv n hQ :=
+    funext (prodLieEquiv_lieMap_realToSpecialOrthogonalProdDetRange n hQ)
+  exact (TauCeti.Lie.prodLieEquiv.bijective.of_comp_iff' _).mp
+    (hcomp ▸ (realToSpecialOrthogonalProdCircleLinearEquiv n hQ).bijective)
+
+/-- The Lie-algebra equivalence `Lie(Spinᶜ(n)) ≃ₗ⁅ℝ⁆ Lie(SO(n)) × Lie(Circle)` induced by the
+paired rotation-and-determinant projection. -/
+def realToSpecialOrthogonalProdDetLieEquiv :
+    𝔤 ≃ₗ⁅ℝ⁆ 𝔬 × LeftInvariantDerivation (𝓡 1) Circle :=
+  (LieEquiv.ofBijective
+    (ContinuousMonoidHom.lieMap (I := IC) (I' := ISP)
+      (realToSpecialOrthogonalProdDetRange n hQ))
+    (lieMap_realToSpecialOrthogonalProdDetRange_bijective n hQ)).trans
+      TauCeti.Lie.prodLieEquiv
+
+/-- `realToSpecialOrthogonalProdDetLieEquiv` acts by the rotation and determinant Lie maps. -/
+@[simp]
+theorem realToSpecialOrthogonalProdDetLieEquiv_apply (Y : 𝔤) :
+    realToSpecialOrthogonalProdDetLieEquiv n hQ Y =
+      (πO Y, ContinuousMonoidHom.lieMap (I := IC) (I' := 𝓡 1) (detContinuousMonoidHom _ hQ) Y) := by
+  rw [realToSpecialOrthogonalProdDetLieEquiv, LieEquiv.trans_apply,
+    LieEquiv.ofBijective_apply, prodLieEquiv_lieMap_realToSpecialOrthogonalProdDetRange,
+    realToSpecialOrthogonalProdCircleLinearEquiv, LinearEquiv.trans_apply,
+    realSpecialOrthogonalProdDetLinearEquiv_symm_apply, LinearEquiv.prodCongr_apply,
+    LinearEquiv.refl_apply, ContinuousMonoidHom.lieWeight_apply, LinearEquiv.symm_apply_apply]
+
+/-- Inverse of `realToSpecialOrthogonalProdDetLieEquiv`: it lifts a pair `(W, X)` of
+`Lie(SO(n)) × Lie(Circle)` via `realSpecialOrthogonalProdDetLinearEquiv` and
+`circleLieAlgebraEquiv`. -/
+@[simp]
+theorem realToSpecialOrthogonalProdDetLieEquiv_symm_apply
+    (p : 𝔬 × LeftInvariantDerivation (𝓡 1) Circle) :
+    (realToSpecialOrthogonalProdDetLieEquiv n hQ).symm p =
+      realSpecialOrthogonalProdDetLinearEquiv n hQ (p.1, circleLieAlgebraEquiv p.2) := by
+  apply (realToSpecialOrthogonalProdDetLieEquiv n hQ).symm_apply_eq.mpr
+  symm
+  rw [← LieEquiv.coe_toLinearEquiv]
+  have heq :
+      (realToSpecialOrthogonalProdDetLieEquiv n hQ).toLinearEquiv =
+        realToSpecialOrthogonalProdCircleLinearEquiv n hQ :=
+    LinearEquiv.ext (prodLieEquiv_lieMap_realToSpecialOrthogonalProdDetRange n hQ)
+  rw [heq]
+  simp only [realToSpecialOrthogonalProdCircleLinearEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.prodCongr_apply, LinearEquiv.refl_apply, LinearEquiv.symm_apply_apply]
+
+private def realSpecialOrthogonalProdCircleToSoProdAbelianLieEquiv :
+    (𝔬 × LeftInvariantDerivation (𝓡 1) Circle) ≃ₗ⁅ℝ⁆
+      LieAlgebra.Orthogonal.so (Fin n) ℝ × AbelianLieAlgebra ℝ where
+  __ := LinearEquiv.prodCongr
+    (realCliffordSpecialOrthogonalLieEquivSo n).toLinearEquiv
+    (circleLieAlgebraEquiv.trans (AbelianLieAlgebra.equiv ℝ ℝ).symm)
+  map_lie' {p q} := Prod.ext
+    ((realCliffordSpecialOrthogonalLieEquivSo n).map_lie p.1 q.1)
+    (by
+      change (AbelianLieAlgebra.equiv ℝ ℝ).symm (circleLieAlgebraEquiv ⁅p.2, q.2⁆) =
+        ⁅(AbelianLieAlgebra.equiv ℝ ℝ).symm (circleLieAlgebraEquiv p.2),
+          (AbelianLieAlgebra.equiv ℝ ℝ).symm (circleLieAlgebraEquiv q.2)⁆
+      rw [LieModule.IsTrivial.trivial, map_zero, map_zero, AbelianLieAlgebra.lie_eq_zero])
+
+/-- **The `𝔰𝔬(n) × AbelianLieAlgebra ℝ` Lie-algebra equivalence of `Lie(Spinᶜ(n))`**: it pairs
+the skew-symmetric matrix rotation differential with the normalized determinant weight. -/
+def realToSoProdDetLieEquiv :
+    𝔤 ≃ₗ⁅ℝ⁆ LieAlgebra.Orthogonal.so (Fin n) ℝ × AbelianLieAlgebra ℝ :=
+  (realToSpecialOrthogonalProdDetLieEquiv n hQ).trans
+    (realSpecialOrthogonalProdCircleToSoProdAbelianLieEquiv n)
+
+/-- Forward evaluation of `realToSoProdDetLieEquiv` in skew-matrix and determinant coordinates. -/
+@[simp]
+theorem realToSoProdDetLieEquiv_apply (Y : 𝔤) :
+    realToSoProdDetLieEquiv n hQ Y =
+      (realCliffordSpecialOrthogonalLieEquivSo n (πO Y),
+        (AbelianLieAlgebra.equiv ℝ ℝ).symm (d Y)) := by
+  rw [realToSoProdDetLieEquiv, LieEquiv.trans_apply, realToSpecialOrthogonalProdDetLieEquiv_apply]
+  exact Prod.ext rfl (congrArg (AbelianLieAlgebra.equiv ℝ ℝ).symm
+    (ContinuousMonoidHom.lieWeight_apply _ Y).symm)
+
+/-- Inverse evaluation of `realToSoProdDetLieEquiv`. -/
+@[simp]
+theorem realToSoProdDetLieEquiv_symm_apply
+    (p : LieAlgebra.Orthogonal.so (Fin n) ℝ × AbelianLieAlgebra ℝ) :
+    (realToSoProdDetLieEquiv n hQ).symm p =
+      realSpecialOrthogonalProdDetLinearEquiv n hQ
+        ((realCliffordSpecialOrthogonalLieEquivSo n).symm p.1,
+          AbelianLieAlgebra.equiv ℝ ℝ p.2) := by
+  rw [realToSoProdDetLieEquiv, LieEquiv.symm_trans, LieEquiv.trans_apply,
+    realToSpecialOrthogonalProdDetLieEquiv_symm_apply]
+  change realSpecialOrthogonalProdDetLinearEquiv n hQ
+      ((realCliffordSpecialOrthogonalLieEquivSo n).symm p.1,
+        circleLieAlgebraEquiv
+          (circleLieAlgebraEquiv.symm (AbelianLieAlgebra.equiv ℝ ℝ p.2))) = _
+  rw [LinearEquiv.apply_symm_apply]
+
 /-- **The `𝔰𝔬(n) × ℝ` splitting of `Lie(Spinᶜ(n))`**, lifting a skew-symmetric matrix and a real
-determinant parameter to `Lie(Spinᶜ(n))`. -/
+determinant parameter to `Lie(Spinᶜ(n))`, obtained as the linear view of
+`realToSoProdDetLieEquiv`. -/
 def realSoProdDetLinearEquiv : (LieAlgebra.Orthogonal.so (Fin n) ℝ × ℝ) ≃ₗ[ℝ] 𝔤 :=
-  (LinearEquiv.prodCongr (realCliffordSpecialOrthogonalLieEquivSo n).symm.toLinearEquiv
-    (LinearEquiv.refl ℝ ℝ)).trans (realSpecialOrthogonalProdDetLinearEquiv n hQ)
+  (LinearEquiv.prodCongr (LinearEquiv.refl ℝ _) (AbelianLieAlgebra.equiv ℝ ℝ).symm).trans
+    (realToSoProdDetLieEquiv n hQ).symm.toLinearEquiv
 
 /-- Evaluation of `realSoProdDetLinearEquiv` in terms of
 `realSpecialOrthogonalProdDetLinearEquiv`. -/
 theorem realSoProdDetLinearEquiv_apply (p : LieAlgebra.Orthogonal.so (Fin n) ℝ × ℝ) :
     realSoProdDetLinearEquiv n hQ p =
       realSpecialOrthogonalProdDetLinearEquiv n hQ
-        ((realCliffordSpecialOrthogonalLieEquivSo n).symm p.1, p.2) :=
-  (rfl)
+        ((realCliffordSpecialOrthogonalLieEquivSo n).symm p.1, p.2) := by
+  rw [realSoProdDetLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply,
+    LinearEquiv.refl_apply, LieEquiv.coe_toLinearEquiv, realToSoProdDetLieEquiv_symm_apply,
+    LinearEquiv.apply_symm_apply]
 
 /-- Projecting `realSoProdDetLinearEquiv (A, a)` to `𝔰𝔬(n)` recovers `A`. -/
 @[simp]
@@ -375,11 +535,15 @@ rotation differential together with the normalized determinant weight. -/
 theorem realSoProdDetLinearEquiv_symm_apply (Y : 𝔤) :
     (realSoProdDetLinearEquiv n hQ).symm Y =
       (realCliffordSpecialOrthogonalLieEquivSo n (πO Y), d Y) := by
-  apply (realSoProdDetLinearEquiv n hQ).injective
-  rw [(realSoProdDetLinearEquiv n hQ).apply_symm_apply, realSoProdDetLinearEquiv_apply,
-    (realCliffordSpecialOrthogonalLieEquivSo n).symm_apply_apply,
-    ← realSpecialOrthogonalProdDetLinearEquiv_symm_apply,
-    (realSpecialOrthogonalProdDetLinearEquiv n hQ).apply_symm_apply]
+  rw [realSoProdDetLinearEquiv, LinearEquiv.symm_trans_apply, LinearEquiv.prodCongr_symm,
+    LinearEquiv.prodCongr_apply, LinearEquiv.refl_symm, LinearEquiv.refl_apply,
+    LinearEquiv.symm_symm]
+  have hsymm :
+      ((realToSoProdDetLieEquiv n hQ).symm.toLinearEquiv).symm Y =
+        realToSoProdDetLieEquiv n hQ Y :=
+    (LinearEquiv.symm_apply_eq _).mpr
+      (by rw [LieEquiv.coe_toLinearEquiv, LieEquiv.symm_apply_apply])
+  rw [hsymm, realToSoProdDetLieEquiv_apply, LinearEquiv.apply_symm_apply]
 
 /-- Lie brackets in `𝔰𝔬(n) × ℝ` coordinates preserve the matrix commutator on `𝔰𝔬(n)` and
 annihilate the central determinant parameter. -/
@@ -387,8 +551,15 @@ annihilate the central determinant parameter. -/
 theorem lie_realSoProdDetLinearEquiv (p q : LieAlgebra.Orthogonal.so (Fin n) ℝ × ℝ) :
     ⁅realSoProdDetLinearEquiv n hQ p, realSoProdDetLinearEquiv n hQ q⁆ =
       realSoProdDetLinearEquiv n hQ (⁅p.1, q.1⁆, 0) := by
-  simp only [realSoProdDetLinearEquiv_apply, lie_realSpecialOrthogonalProdDetLinearEquiv,
-    LieEquiv.map_lie]
+  simp only [realSoProdDetLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.prodCongr_apply,
+    LinearEquiv.refl_apply, LieEquiv.coe_toLinearEquiv]
+  rw [← (realToSoProdDetLieEquiv n hQ).symm.map_lie]
+  have hlie :
+      ⁅(p.1, (AbelianLieAlgebra.equiv ℝ ℝ).symm p.2),
+        (q.1, (AbelianLieAlgebra.equiv ℝ ℝ).symm q.2)⁆ =
+      (⁅p.1, q.1⁆, (AbelianLieAlgebra.equiv ℝ ℝ).symm 0) :=
+    Prod.ext rfl ((AbelianLieAlgebra.lie_eq_zero _ _).trans (map_zero _).symm)
+  rw [hlie]
 
 /-- Comparison between `𝔰𝔬(n) × ℝ` coordinates and quadratic Clifford–determinant coordinates on
 `Lie(Spinᶜ(n))` via `CliffordAlgebra.matrixSoEquivQuadratic`. -/
@@ -415,63 +586,6 @@ theorem realSoProdDetLinearEquiv_eq_realQuadraticProdDetLinearEquiv
       LieEquiv.symm_apply_apply, LieEquiv.symm_apply_apply]
   rw [hspin]
 
-/-- The Lie differential of the paired rotation-and-determinant homomorphism
-`Spinᶜ(n) → SO(n) × Circle` is bijective. -/
-theorem lieMap_realToSpecialOrthogonalProdDetRange_bijective :
-    Function.Bijective
-      (ContinuousMonoidHom.lieMap (I := IC) (I' := ISP)
-        (realToSpecialOrthogonalProdDetRange n hQ)) := by
-  let e : 𝔤 ≃ₗ[ℝ] 𝔬 × LeftInvariantDerivation (𝓡 1) Circle :=
-    (realSpecialOrthogonalProdDetLinearEquiv n hQ).symm.trans
-      (LinearEquiv.prodCongr (LinearEquiv.refl ℝ 𝔬) circleLieAlgebraEquiv.symm)
-  have hfun :
-      (fun Y : 𝔤 ↦ (πO Y, ContinuousMonoidHom.lieMap (I := IC) (I' := 𝓡 1)
-          (detContinuousMonoidHom _ hQ) Y)) = ⇑e := by
-    funext Y
-    dsimp only [e]
-    rw [LinearEquiv.trans_apply, realSpecialOrthogonalProdDetLinearEquiv_symm_apply,
-      LinearEquiv.prodCongr_apply, LinearEquiv.refl_apply,
-      ContinuousMonoidHom.lieWeight_apply, LinearEquiv.symm_apply_apply]
-  unfold realToSpecialOrthogonalProdDetRange
-  rw [TauCeti.Lie.bijective_lieMap_prod_iff, hfun]
-  exact e.bijective
-
-/-- The Lie-algebra equivalence `Lie(Spinᶜ(n)) ≃ₗ⁅ℝ⁆ Lie(SO(n)) × Lie(Circle)` induced by the
-paired rotation-and-determinant projection. -/
-def realToSpecialOrthogonalProdDetLieEquiv :
-    𝔤 ≃ₗ⁅ℝ⁆ 𝔬 × LeftInvariantDerivation (𝓡 1) Circle :=
-  (LieEquiv.ofBijective
-    (ContinuousMonoidHom.lieMap (I := IC) (I' := ISP)
-      (realToSpecialOrthogonalProdDetRange n hQ))
-    (lieMap_realToSpecialOrthogonalProdDetRange_bijective n hQ)).trans
-      TauCeti.Lie.prodLieEquiv
-
-/-- `realToSpecialOrthogonalProdDetLieEquiv` acts by the rotation and determinant Lie maps. -/
-@[simp]
-theorem realToSpecialOrthogonalProdDetLieEquiv_apply (Y : 𝔤) :
-    realToSpecialOrthogonalProdDetLieEquiv n hQ Y =
-      (πO Y, ContinuousMonoidHom.lieMap (I := IC) (I' := 𝓡 1) (detContinuousMonoidHom _ hQ) Y) := by
-  rw [realToSpecialOrthogonalProdDetLieEquiv, LieEquiv.trans_apply,
-    LieEquiv.ofBijective_apply, realToSpecialOrthogonalProdDetRange,
-    TauCeti.Lie.prodLieEquiv_continuousMonoidHom_lieMap_prod]
-
-/-- Inverse of `realToSpecialOrthogonalProdDetLieEquiv`: it lifts a pair `(W, X)` of
-`Lie(SO(n)) × Lie(Circle)` via `realSpecialOrthogonalProdDetLinearEquiv` and
-`circleLieAlgebraEquiv`. -/
-@[simp]
-theorem realToSpecialOrthogonalProdDetLieEquiv_symm_apply
-    (p : 𝔬 × LeftInvariantDerivation (𝓡 1) Circle) :
-    (realToSpecialOrthogonalProdDetLieEquiv n hQ).symm p =
-      realSpecialOrthogonalProdDetLinearEquiv n hQ (p.1, circleLieAlgebraEquiv p.2) := by
-  apply EquivLike.injective (realToSpecialOrthogonalProdDetLieEquiv n hQ)
-  rw [LieEquiv.apply_symm_apply, realToSpecialOrthogonalProdDetLieEquiv_apply]
-  refine Prod.ext
-    (lieMap_realToSpecialOrthogonalRange_realSpecialOrthogonalProdDetLinearEquiv n hQ
-      (p.1, circleLieAlgebraEquiv p.2)).symm ?_
-  apply circleLieAlgebraEquiv.injective
-  rw [← ContinuousMonoidHom.lieWeight_apply,
-    lieWeight_detContinuousMonoidHom_realSpecialOrthogonalProdDetLinearEquiv]
-
 /-- The paired rotation-and-determinant homomorphism is a smooth local diffeomorphism. -/
 theorem isLocalDiffeomorph_realToSpecialOrthogonalProdDetRange :
     IsLocalDiffeomorph IC ISP ∞ (realToSpecialOrthogonalProdDetRange n hQ) :=
@@ -483,27 +597,41 @@ private def realSpecialOrthogonalProdCircleHomeomorph :
     QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) × Circle ≃ₜ
       SpecialOrthogonalUnitsRange × Circle :=
   Homeomorph.prodCongr
-    { toEquiv := (realCliffordSpecialOrthogonalContinuousMulEquivRange n).toEquiv
-      continuous_toFun :=
-        (Matrix.linftyOpTopologicalSpace_eq (Fin n) (Fin n) ℝ).symm ▸
-          (realCliffordSpecialOrthogonalContinuousMulEquivRange n).continuous
-      continuous_invFun :=
-        (Matrix.linftyOpTopologicalSpace_eq (Fin n) (Fin n) ℝ).symm ▸
-          (realCliffordSpecialOrthogonalContinuousMulEquivRange n).symm.continuous }
+    (realSpecialOrthogonalContinuousMulEquivRange n).toHomeomorph
     (Homeomorph.refl Circle)
 
 private theorem coe_realToSpecialOrthogonalProdDetRange :
     ⇑(realToSpecialOrthogonalProdDetRange n hQ) =
       realSpecialOrthogonalProdCircleHomeomorph n ∘
         ((toSpecialOrthogonal (realCliffordForm n 0) hQ).prod
-          (det (realCliffordForm n 0) hQ)) :=
-  funext (realToSpecialOrthogonalProdDetRange_apply n hQ)
+          (det (realCliffordForm n 0) hQ)) := by
+  funext g
+  apply Prod.ext
+  · exact (realToSpecialOrthogonalRange_apply n hQ g).trans
+      (realSpecialOrthogonalContinuousMulEquivRange_apply n _).symm
+  · exact detContinuousMonoidHom_apply _ hQ g
 
-private theorem isQuotientCoveringMap_realToSpecialOrthogonalProdDetRange :
-    IsQuotientCoveringMap (realToSpecialOrthogonalProdDetRange n hQ)
+/-- The kernel of the smooth bundled projection `realToSpecialOrthogonalProdDetRange` coincides
+with the kernel of the native rotation-and-determinant projection. -/
+theorem ker_realToSpecialOrthogonalProdDetRange :
+    (realToSpecialOrthogonalProdDetRange n hQ).ker =
       ((toSpecialOrthogonal (realCliffordForm n 0) hQ).prod
         (det (realCliffordForm n 0) hQ)).ker := by
-  rw [coe_realToSpecialOrthogonalProdDetRange]
+  ext g
+  rw [MonoidHom.mem_ker, MonoidHom.mem_ker]
+  change realToSpecialOrthogonalProdDetRange n hQ g = 1 ↔
+    ((toSpecialOrthogonal (realCliffordForm n 0) hQ).prod
+      (det (realCliffordForm n 0) hQ)) g = 1
+  rw [realToSpecialOrthogonalProdDetRange_apply, MonoidHom.prod_apply, Prod.mk_eq_one,
+    Prod.mk_eq_one, realToSpecialOrthogonalRange_apply,
+    map_eq_one_iff _ (realCliffordSpecialOrthogonalContinuousMulEquivRange n).injective]
+
+/-- The paired rotation-and-determinant homomorphism `Spinᶜ(n) → SO(n) × Circle` is a quotient
+covering map by its kernel. -/
+theorem isQuotientCoveringMap_realToSpecialOrthogonalProdDetRange :
+    IsQuotientCoveringMap (realToSpecialOrthogonalProdDetRange n hQ)
+      (realToSpecialOrthogonalProdDetRange n hQ).ker := by
+  rw [ker_realToSpecialOrthogonalProdDetRange, coe_realToSpecialOrthogonalProdDetRange]
   exact (isQuotientCoveringMap_toSpecialOrthogonal_prod_det (realCliffordForm n 0) hQ
     (Or.inl (posDef_realCliffordForm_zero n))).homeomorph_comp
       (realSpecialOrthogonalProdCircleHomeomorph n)
