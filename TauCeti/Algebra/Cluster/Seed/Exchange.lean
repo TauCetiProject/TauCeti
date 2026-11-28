@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Cluster.Seed.Mutation
-public import TauCeti.Algebra.Cluster.OneExchange.BasedChart
+public import TauCeti.Algebra.Cluster.BasedChart.Exchange
 
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -315,14 +315,14 @@ theorem exchangeElement_mul_monomial (s : Seed c row u B) (k : K) {a : I →₀ 
 omit [DecidableEq K] in
 private theorem unit_mul_coordinate_mem (s : Seed c row u B) (k : K)
     (hE : IsUnit (s.exchangeElement k)) :
-    (hE.unit : B) * s.chart.monomial (Finsupp.single (row k) 1) ∈
-      Submodule.span R
-        (Set.range fun a : {a : I →₀ ℤ // a (row k) = 0} ↦ (s.chart.monomial a : B)) := by
-  rw [IsUnit.unit_spec, exchangeElement_def, Finset.sum_mul]
+    ((hE.unit * s.chart.monomial (Finsupp.single (row k) 1) : Bˣ) : B) ∈
+      s.chart.subalgebra (Finsupp.applyAddHom (row k)).ker := by
+  rw [s.chart.mem_subalgebra_iff, Units.val_mul, IsUnit.unit_spec,
+    exchangeElement_def, Finset.sum_mul]
   refine Submodule.sum_mem _ fun l _ ↦ ?_
   rw [smul_mul_assoc, BasedChart.val_monomial_mul]
   exact Submodule.smul_mem _ _ (Submodule.smul_mem _ _
-    (Submodule.subset_span ⟨⟨_, by simp⟩, rfl⟩))
+    (Submodule.subset_span ⟨_, by simp, rfl⟩))
 
 omit [DecidableEq K] in
 private theorem comp_latticeMutation_single_row_self (s : Seed c row u B) (k : K) {a : I →₀ ℤ}
@@ -342,11 +342,14 @@ private theorem isAlt_comp_latticeMutation (s : Seed c row u B) (k : K) :
 omit [DecidableEq K] in
 private theorem unit_mul_monomial (s : Seed c row u B) (k : K)
     (hE : IsUnit (s.exchangeElement k)) {a : I →₀ ℤ} (ha : a (row k) = 0) :
-    (hE.unit : B) * s.chart.monomial a =
-      ((u ^ (2 * s.form.comp (latticeMutation s k) (latticeMutation s k)
-        (Finsupp.single (row k) 1) a) : Rˣ) : R) • ((s.chart.monomial a : B) * hE.unit) := by
-  rw [comp_latticeMutation_single_row_self s k ha, IsUnit.unit_spec]
-  exact s.exchangeElement_mul_monomial k ha
+    hE.unit * s.chart.monomial a =
+      Units.map (algebraMap R B)
+        (u ^ (2 * s.form.comp (latticeMutation s k) (latticeMutation s k)
+          (Finsupp.single (row k) 1) a)) * (s.chart.monomial a * hE.unit) := by
+  apply Units.ext
+  simpa only [Units.val_mul, Units.coe_map, MonoidHom.coe_ofClass, ← Algebra.smul_def,
+    comp_latticeMutation_single_row_self s k ha, IsUnit.unit_spec] using
+    s.exchangeElement_mul_monomial k ha
 
 /-- The mutation of a seed in a direction whose exchange element is a unit. It has the
 mutated state and form and the same weights; its chart replaces the coordinate at `row k`
@@ -362,8 +365,8 @@ noncomputable def mutation (s : Seed c row u B) (k : K) (hE : IsUnit (s.exchange
     rw [toMatrix_comp_latticeMutation, ExchangeData.mutation_exchange,
       ExchangeMatrix.mutation_matrix]
     exact s.isColumnCompatible_formMutation k
-  chart := s.chart.exchange s.isAlt (isAlt_comp_latticeMutation s k) (row k) hE.unit
-    (fun _ _ ha hb ↦ comp_latticeMutation_apply_of_apply_eq_zero s k ha hb)
+  chart := s.chart.exchange (row k) (isAlt_comp_latticeMutation s k)
+    (fun _ _ ha hb ↦ comp_latticeMutation_apply_of_apply_eq_zero s k ha hb) hE.unit
     (fun _ ↦ unit_mul_monomial s k hE) (unit_mul_coordinate_mem s k hE)
 
 section Mutation
@@ -374,8 +377,8 @@ variable (s : Seed c row u B) (k : K)
 element. -/
 private theorem mutation_chart (hE : IsUnit (s.exchangeElement k)) :
     (s.mutation k hE).chart =
-      s.chart.exchange s.isAlt (isAlt_comp_latticeMutation s k) (row k) hE.unit
-        (fun _ _ ha hb ↦ comp_latticeMutation_apply_of_apply_eq_zero s k ha hb)
+      s.chart.exchange (row k) (isAlt_comp_latticeMutation s k)
+        (fun _ _ ha hb ↦ comp_latticeMutation_apply_of_apply_eq_zero s k ha hb) hE.unit
         (fun _ ↦ unit_mul_monomial s k hE)
         (unit_mul_coordinate_mem s k hE) :=
   (rfl)
