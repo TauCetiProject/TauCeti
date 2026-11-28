@@ -112,30 +112,39 @@ theorem star_boundedTransform : star (A.boundedTransform hA) = A.boundedTransfor
 theorem norm_boundedTransform_le_one : ‖A.boundedTransform hA‖ ≤ 1 :=
   (A.spectralPVM hA).norm_integral_le zero_le_one norm_boundedTransformSymbol_le
 
-/-- **`1 - F_A² = (1 + A²)⁻¹`.** -/
-theorem one_sub_boundedTransform_mul_self :
-    1 - A.boundedTransform hA * A.boundedTransform hA = A.invOneAddSq := by
+/-- **`(1 + A²)⁻¹` is a spectral integral.** For a self-adjoint operator `A`, `(1 + A²)⁻¹` is the
+spectral integral of any bounded Borel symbol equal to `t ↦ (1 + t²)⁻¹`. -/
+theorem invOneAddSq_eq_spectralPVM_integral (f : BoundedBorelFunction ℝ)
+    (hf : ∀ t : ℝ, f t = ((1 + t ^ 2 : ℝ)⁻¹ : ℂ)) :
+    A.invOneAddSq = (A.spectralPVM hA).integral f := by
   have hnegI : (-Complex.I).im ≠ 0 := by simp
   have hI : Complex.I.im ≠ 0 := by simp
-  rw [invOneAddSq_def, ← ContinuousLinearMap.mul_def,
-    ← hA.integral_spectralPVM_resolventSymbol hnegI,
-    ← hA.integral_spectralPVM_resolventSymbol hI,
-    boundedTransform, ← map_mul, ← map_mul, ← map_one (A.spectralPVM hA).integral,
-    ← _root_.map_sub (A.spectralPVM hA).integral]
+  have hres : A.invOneAddSq = (A.spectralPVM hA).integral
+      (BoundedBorelFunction.resolventSymbol (-Complex.I) hnegI *
+        BoundedBorelFunction.resolventSymbol Complex.I hI) := by
+    simp [invOneAddSq_def, ContinuousLinearMap.mul_def,
+      hA.integral_spectralPVM_resolventSymbol]
+  rw [hres]
   congr 1
   ext t
-  simp only [_root_.sub_apply, _root_.one_apply, _root_.mul_apply, boundedTransformSymbol,
-    BoundedBorelFunction.ofFunction_apply,
-    BoundedBorelFunction.resolventSymbol_apply (-Complex.I) hnegI,
-    BoundedBorelFunction.resolventSymbol_apply Complex.I hI]
+  simp only [_root_.mul_apply, BoundedBorelFunction.resolventSymbol_apply, hf]
   have h1 : (-Complex.I - (t : ℂ)) * (Complex.I - (t : ℂ)) = ((1 + t ^ 2 : ℝ) : ℂ) := by
     push_cast; linear_combination -Complex.I_sq
   rw [← mul_inv, h1]
+
+/-- **`1 - F_A² = (1 + A²)⁻¹`.** -/
+theorem one_sub_boundedTransform_mul_self :
+    1 - A.boundedTransform hA * A.boundedTransform hA = A.invOneAddSq := by
+  have hlhs : 1 - A.boundedTransform hA * A.boundedTransform hA =
+      (A.spectralPVM hA).integral (1 - boundedTransformSymbol * boundedTransformSymbol) := by
+    simp [boundedTransform]
+  rw [hlhs, ← A.invOneAddSq_eq_spectralPVM_integral hA]
+  intro t
   have hpos : (0 : ℝ) < 1 + t ^ 2 := by positivity
   have hid : 1 - (t / Real.sqrt (1 + t ^ 2)) * (t / Real.sqrt (1 + t ^ 2)) = (1 + t ^ 2)⁻¹ := by
     rw [div_mul_div_comm, Real.mul_self_sqrt hpos.le, ← sq]
     field_simp; ring
-  exact_mod_cast hid
+  simpa [boundedTransformSymbol] using congrArg Complex.ofReal hid
 
 /-- **`F_A² - 1 = -(1 + A²)⁻¹`.** -/
 theorem boundedTransform_mul_self_sub_one :
@@ -201,13 +210,12 @@ private theorem adjoint_resolvent_I_bjShift (hA : IsSelfAdjoint A) (r : ℝ) :
 
 private theorem isSelfAdjoint_bjMulRes (hA : IsSelfAdjoint A) (r : ℝ) :
     IsSelfAdjoint (bjMulRes A r) := by
-  have hadj2 : (A.resolvent (-Complex.I * bjShift r)).adjoint =
-      A.resolvent (Complex.I * bjShift r) := by
-    rw [← adjoint_resolvent_I_bjShift hA r, ContinuousLinearMap.adjoint_adjoint]
-  rw [bjMulRes, ContinuousLinearMap.isSelfAdjoint_iff', ContinuousLinearMap.adjoint.map_smulₛₗ,
-    _root_.map_add ContinuousLinearMap.adjoint, adjoint_resolvent_I_bjShift hA r, hadj2, add_comm]
-  congr 1
-  simp [Complex.ext_iff]
+  simp only [bjMulRes, ContinuousLinearMap.isSelfAdjoint_iff',
+    ContinuousLinearMap.adjoint.map_smulₛₗ, _root_.map_add,
+    hA.adjoint_resolvent (mem_resolventSet_I_bjShift hA r),
+    hA.adjoint_resolvent (mem_resolventSet_neg_I_bjShift hA r)]
+  simp [map_ofNat]
+  abel
 
 private theorem bjMulRes_apply_basis (hA : IsSelfAdjoint A) {ι : Type*} {b : HilbertBasis ι ℂ H}
     {lam : ι → ℝ} (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : ℂ) • b i)
