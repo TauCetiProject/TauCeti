@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
+import TauCeti.Analysis.SpecialFunctions.Complex.Log.Branch
 
 /-!
 # The periods of `exp (π i ·)` and `exp (2 π i ·)`, and branches of the logarithm
@@ -105,7 +106,7 @@ theorem div_two_pi_I_smul_nsmul {E : Type*} [AddCommMonoid E] [Module ℂ E]
 for all nonzero `z₀` and `z`. -/
 theorem exp_log_add_log_div {z₀ z : ℂ} (hz₀ : z₀ ≠ 0) (hz : z ≠ 0) :
     exp (log z₀ + log (z / z₀)) = z := by
-  rw [exp_add, exp_log hz₀, exp_log (div_ne_zero hz hz₀), mul_div_cancel₀ _ hz₀]
+  simpa only [logBranch_apply, exp_log hz₀] using exp_logBranch (a := log z₀) hz
 
 /-- A branch of the `m`-th root near `z₀ ^ m`: `exp (log z₀ + (1 / m) log (t / z₀ ^ m))` is an
 `m`-th root of every `t ≠ 0`. -/

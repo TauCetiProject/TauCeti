@@ -195,7 +195,6 @@ theorem continuous_torusFamilyCyclicQuotientProjection [TopologicalSpace E] :
     (continuous_subtypeVal.pow m)
 
 /-- The punctured cyclic quotient `{t ≠ 0}` as an open subset of the orbit space `Q = X / C_m`. -/
-@[expose]
 noncomputable def torusFamilyCyclicQuotientNonzeroOpens [TopologicalSpace E] :
     letI := periodAddAction P
     letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
@@ -209,7 +208,7 @@ noncomputable def torusFamilyCyclicQuotientNonzeroOpens [TopologicalSpace E] :
 
 /-- A point of the cyclic quotient belongs to `torusFamilyCyclicQuotientNonzeroOpens` iff its
 coordinate `t = z ^ m` is nonzero. -/
-@[simp] theorem mem_torusFamilyCyclicQuotientNonzeroOpens [TopologicalSpace E]
+theorem mem_torusFamilyCyclicQuotientNonzeroOpens [TopologicalSpace E]
     (q : letI := periodAddAction P
       letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
       orbitRel.Quotient (rootsOfUnity m ℂ)
@@ -217,6 +216,20 @@ coordinate `t = z ^ m` is nonzero. -/
     q ∈ torusFamilyCyclicQuotientNonzeroOpens R hone hmul P ρ hequiv b hb hbmul ↔
       torusFamilyCyclicQuotientProjection R hone hmul P ρ hequiv b hb hbmul q ≠ 0 :=
   Iff.rfl
+
+/-- A representative class lies in `torusFamilyCyclicQuotientNonzeroOpens` iff its base
+coordinate `z` is nonzero. -/
+@[simp] theorem mem_torusFamilyCyclicQuotientNonzeroOpens_mk [TopologicalSpace E]
+    (x : letI := periodAddAction P
+      AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) :
+    letI := periodAddAction P
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
+    (Quotient.mk _ x : orbitRel.Quotient (rootsOfUnity m ℂ)
+        (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) ∈
+        torusFamilyCyclicQuotientNonzeroOpens R hone hmul P ρ hequiv b hb hbmul ↔
+      ((torusFamilyProjection P x : rootsOfUnityBall m r) : ℂ) ≠ 0 := by
+  rw [mem_torusFamilyCyclicQuotientNonzeroOpens, ne_eq,
+    torusFamilyCyclicQuotientProjection_eq_zero_iff]
 
 /-! ### Holomorphy of the coordinate `t` -/
 

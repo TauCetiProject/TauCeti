@@ -327,7 +327,6 @@ theorem isOpenMap_torusFamilyProjection [TopologicalSpace Y] [TopologicalSpace E
   IsOpenMap.of_comp continuous_quot_mk Quotient.mk_surjective isOpenMap_fst
 
 /-- The punctured locus `{φ ∘ p ≠ 0}` as an open subset of the torus family `(Y × E) / Λ`. -/
-@[expose, reducible]
 def torusFamilyNonzeroOpens {Y Λ E F : Type*} [AddCommGroup Λ] [AddCommGroup E]
     [TopologicalSpace Y] [TopologicalSpace E] [TopologicalSpace F] [Zero F] [T1Space F]
     (φ : Y → F) (P : Y → Λ →ₗ[ℤ] E) (hφ : Continuous φ) :

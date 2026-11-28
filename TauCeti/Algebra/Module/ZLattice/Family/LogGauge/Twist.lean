@@ -143,6 +143,30 @@ noncomputable def torusFamilyLogTwistDiffeomorph (μ : Λ) :
       torusFamilyLogTwistMap φ P μ y.val :=
   (rfl)
 
+/-- Coercing `torusFamilyLogTwistDiffeomorph` to the ambient torus family agrees with
+`torusFamilyLogTwistEquiv`. -/
+theorem coe_torusFamilyLogTwistDiffeomorph_eq_torusFamilyLogTwistEquiv (μ : Λ)
+    (y : letI := periodAddAction P
+      letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
+      letI := Opens.instChartedSpace (H := ModelProd H E)
+        (torusFamilyNonzeroOpens φ P hφ.continuous)
+      ↥(torusFamilyNonzeroOpens φ P hφ.continuous)) :
+    letI := periodAddAction P
+    letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
+    letI := Opens.instChartedSpace (H := ModelProd H E)
+      (torusFamilyNonzeroOpens φ P hφ.continuous)
+    (torusFamilyLogTwistDiffeomorph φ P hinj hφ hP μ y :
+        AddAction.orbitRel.Quotient Λ (Y × E)) =
+      (torusFamilyLogTwistEquiv φ P μ
+        ⟨y.val, (mem_torusFamilyNonzeroOpens φ P hφ.continuous y.val).1
+          (SetLike.mem_coe.1 y.property)⟩ :
+        AddAction.orbitRel.Quotient Λ (Y × E)) := by
+  let _ := periodAddAction P
+  let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
+  let _ := Opens.instChartedSpace (H := ModelProd H E)
+    (torusFamilyNonzeroOpens φ P hφ.continuous)
+  simp
+
 /-- The logarithmic twist diffeomorphism for `0 : Λ` is the identity. -/
 @[simp] theorem torusFamilyLogTwistDiffeomorph_zero :
     letI := periodAddAction P
@@ -190,6 +214,30 @@ noncomputable def torusFamilyLogTwistDiffeomorph (μ : Λ) :
   refine Diffeomorph.ext fun y ↦ Subtype.ext ?_
   change (torusFamilyLogTwistMap φ P μ).symm y.val = torusFamilyLogTwistMap φ P (-μ) y.val
   rw [torusFamilyLogTwistMap_symm]
+
+/-- Coercing `(torusFamilyLogTwistDiffeomorph).symm` to the ambient torus family agrees with
+`(torusFamilyLogTwistEquiv).symm`. -/
+theorem coe_torusFamilyLogTwistDiffeomorph_symm_eq_torusFamilyLogTwistEquiv_symm (μ : Λ)
+    (y : letI := periodAddAction P
+      letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
+      letI := Opens.instChartedSpace (H := ModelProd H E)
+        (torusFamilyNonzeroOpens φ P hφ.continuous)
+      ↥(torusFamilyNonzeroOpens φ P hφ.continuous)) :
+    letI := periodAddAction P
+    letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
+    letI := Opens.instChartedSpace (H := ModelProd H E)
+      (torusFamilyNonzeroOpens φ P hφ.continuous)
+    ((torusFamilyLogTwistDiffeomorph φ P hinj hφ hP μ).symm y :
+        AddAction.orbitRel.Quotient Λ (Y × E)) =
+      ((torusFamilyLogTwistEquiv φ P μ).symm
+        ⟨y.val, (mem_torusFamilyNonzeroOpens φ P hφ.continuous y.val).1
+          (SetLike.mem_coe.1 y.property)⟩ :
+        AddAction.orbitRel.Quotient Λ (Y × E)) := by
+  let _ := periodAddAction P
+  let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
+  let _ := Opens.instChartedSpace (H := ModelProd H E)
+    (torusFamilyNonzeroOpens φ P hφ.continuous)
+  simp
 
 end LogTwistDiffeomorph
 

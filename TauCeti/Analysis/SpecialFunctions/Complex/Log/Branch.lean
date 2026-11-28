@@ -12,7 +12,8 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 
 For any `a : ℂ`, the branch `Complex.logBranch a v = a + Complex.log (v / Complex.exp a)`
 centred at `a` inverts `Complex.exp` on the strip `-π < (w - a).im ≤ π`
-(`Complex.logBranch_exp`) and is `C^n` (over `ℂ`, hence holomorphic) wherever
+(`Complex.logBranch_exp`) and is a right inverse to `Complex.exp` on `ℂ \ {0}`
+(`Complex.exp_logBranch`), and is `C^n` (over `ℂ`, hence holomorphic) wherever
 `v / Complex.exp a ∈ Complex.slitPlane` (`Complex.contDiffAt_logBranch`). Specializing at
 `a = Complex.log z₀` for `z₀ ≠ 0` gives the centered branch
 `z ↦ Complex.log z₀ + Complex.log (z / z₀)`, which avoids the principal branch cut near `z₀`
@@ -22,6 +23,7 @@ centred at `a` inverts `Complex.exp` on the strip `-π < (w - a).im ≤ π`
 
 * `Complex.logBranch`: the branch of the logarithm centred at `a`.
 * `Complex.logBranch_exp`: `Complex.logBranch a` inverts `Complex.exp` on `-π < (w - a).im ≤ π`.
+* `Complex.exp_logBranch`: `Complex.exp (Complex.logBranch a v) = v` for `v ≠ 0`.
 * `Complex.contDiffAt_logBranch`: `Complex.logBranch a` is `C^n` where `v / exp a ∈ slitPlane`.
 * `Complex.contDiffAt_log_add_log_div`: the centered logarithm branch is `C^n` at `z₀ ≠ 0`.
 -/
@@ -43,6 +45,12 @@ theorem logBranch_exp {a w : ℂ} (h₁ : -Real.pi < (w - a).im) (h₂ : (w - a)
     logBranch a (exp w) = w := by
   rw [logBranch, ← exp_sub, log_exp h₁ h₂]
   ring
+
+/-- **The branch based at `a` is a right inverse to `Complex.exp`** on `ℂ \ {0}`: for any
+`v ≠ 0`, `exp (logBranch a v) = v`. -/
+theorem exp_logBranch {a v : ℂ} (hv : v ≠ 0) : exp (logBranch a v) = v := by
+  rw [logBranch, exp_add, exp_log (div_ne_zero hv (exp_ne_zero a)),
+    mul_div_cancel₀ _ (exp_ne_zero a)]
 
 /-- The branch `Complex.logBranch a` of the logarithm centred at `a` is `C^n` (over `ℂ`, hence
 holomorphic) wherever `v / exp a` lies in the slit plane. -/

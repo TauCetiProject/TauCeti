@@ -81,8 +81,8 @@ theorem torusFamilyLogGaugeEquiv_add_nsmul (l μ : Λ) (hr : 0 ≤ r) :
   ext ⟨q, hq⟩
   obtain ⟨x, rfl⟩ := Quotient.exists_rep q
   have hx : ((torusFamilyProjection (powPullbackPeriod m r P) x :
-      rootsOfUnityBall m r) : ℂ) ≠ 0 := fun h ↦
-    hq (by rw [torusFamilyCyclicQuotientProjection_mk, h, zero_pow (NeZero.ne m)])
+      rootsOfUnityBall m r) : ℂ) ≠ 0 :=
+    mt (torusFamilyCyclicQuotientProjection_eq_zero_iff ..).2 hq
   simp only [Equiv.trans_apply, Equiv.subtypeEquiv_apply, coe_torusFamilyLogTwistEquiv,
     logTranslationQuotientAddNsmulEquiv_mk]
   rw [torusFamilyLogGaugeEquiv_mk P (l + m • μ) hr x, torusFamilyLogGaugeEquiv_mk P l hr x]
@@ -162,37 +162,19 @@ theorem torusFamilyLogGaugeDiffeomorph_add_nsmul (l μ : Λ) (hr : 0 ≤ r)
     (logTranslationQuotientNonzeroOpens P l)
   refine Diffeomorph.ext fun ⟨q, hq⟩ ↦ Subtype.ext ?_
   let _ := logTranslationMulAction P (l + m • μ)
-  obtain ⟨x, rfl⟩ := Quotient.exists_rep q
-  have hx : ((torusFamilyProjection (powPullbackPeriod m r P) x :
-      rootsOfUnityBall m r) : ℂ) ≠ 0 := fun h ↦
-    hq (by rw [torusFamilyCyclicQuotientProjection_mk, h, zero_pow (NeZero.ne m)])
-  rw [Diffeomorph.coe_trans, Diffeomorph.coe_trans, Function.comp_apply, Function.comp_apply,
-    torusFamilyLogGaugeDiffeomorph_mk, coe_torusFamilyLogTwistDiffeomorph]
-  have hsub : (((logTranslationQuotientAddNsmulDiffeomorph P hP hinj l μ hfree).subtype
-      (U := logTranslationQuotientNonzeroOpens P (l + m • μ))
-      (V := logTranslationQuotientNonzeroOpens P l) fun q ↦ by
-        simp only [mem_logTranslationQuotientNonzeroOpens, ← Diffeomorph.coe_toEquiv,
-          logTranslationQuotientAddNsmulDiffeomorph_toEquiv,
-          torusFamilyCyclicQuotientProjection_logTranslationQuotientAddNsmulEquiv])
-      ⟨Quotient.mk _ x, hq⟩ :
-        letI := logTranslationMulAction P l
-        orbitRel.Quotient (rootsOfUnity m ℂ)
-          (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) =
-      (letI := logTranslationMulAction P l; Quotient.mk _ x) := by
-    rw [Diffeomorph.subtype_apply_coe, ← Diffeomorph.coe_toEquiv,
-      logTranslationQuotientAddNsmulDiffeomorph_toEquiv, logTranslationQuotientAddNsmulEquiv_mk]
-  have hq' : (letI := logTranslationMulAction P l; Quotient.mk _ x) ∈
-      logTranslationQuotientNonzeroOpens P l :=
-    hsub ▸ (((logTranslationQuotientAddNsmulDiffeomorph P hP hinj l μ hfree).subtype
-      (U := logTranslationQuotientNonzeroOpens P (l + m • μ))
-      (V := logTranslationQuotientNonzeroOpens P l) _ ⟨Quotient.mk _ x, hq⟩).property)
-  have hsub' : (logTranslationQuotientAddNsmulDiffeomorph P hP hinj l μ hfree).subtype
-      (U := logTranslationQuotientNonzeroOpens P (l + m • μ))
-      (V := logTranslationQuotientNonzeroOpens P l) _ ⟨Quotient.mk _ x, hq⟩ =
-      ⟨letI := logTranslationMulAction P l; Quotient.mk _ x, hq'⟩ :=
-    Subtype.ext hsub
-  rw [hsub', torusFamilyLogGaugeDiffeomorph_mk]
-  exact torusFamilyLogGauge_add_nsmul P l μ hx
+  rw [coe_torusFamilyLogGaugeDiffeomorph, torusFamilyLogGaugeEquiv_add_nsmul P l μ hr,
+    Diffeomorph.coe_trans, Diffeomorph.coe_trans, Function.comp_apply, Function.comp_apply,
+    coe_torusFamilyLogTwistDiffeomorph_eq_torusFamilyLogTwistEquiv]
+  simp only [Equiv.trans_apply, Equiv.subtypeEquiv_apply]
+  congr 2
+  apply Subtype.ext
+  dsimp only
+  rw [coe_torusFamilyLogGaugeDiffeomorph]
+  congr 2
+  apply Subtype.ext
+  dsimp only
+  rw [Diffeomorph.subtype_apply_coe, ← Diffeomorph.coe_toEquiv,
+    logTranslationQuotientAddNsmulDiffeomorph_toEquiv]
 
 end DiffeomorphComparison
 

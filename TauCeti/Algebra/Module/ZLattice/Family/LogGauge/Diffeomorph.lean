@@ -280,12 +280,9 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv :
   obtain ⟨q, hq⟩ := q
   obtain ⟨x, rfl⟩ := Quotient.exists_rep q
   refine contMDiffAt_of_eq_torusFamilyLogGaugeEquiv P hP hinj l hfree _
-    (fun y hy ↦ ?_) fun h ↦
-      (mem_logTranslationQuotientNonzeroOpens P l _).1 (SetLike.mem_coe.1 hq)
-        (by rw [torusFamilyCyclicQuotientProjection_mk, h, zero_pow (NeZero.ne m)])
-  have hmem : Quotient.mk _ y ∈ logTranslationQuotientNonzeroOpens P l := by
-    rw [mem_logTranslationQuotientNonzeroOpens, torusFamilyCyclicQuotientProjection_mk]
-    exact pow_ne_zero m hy
+    (fun y hy ↦ ?_) ((mem_logTranslationQuotientNonzeroOpens_mk P l x).1 (SetLike.mem_coe.1 hq))
+  have hmem : Quotient.mk _ y ∈ logTranslationQuotientNonzeroOpens P l :=
+    (mem_logTranslationQuotientNonzeroOpens_mk P l y).2 hy
   refine (Subtype.val_injective.extend_apply _ _ ⟨Quotient.mk _ y, SetLike.mem_coe.2 hmem⟩).trans ?_
   exact torusFamilyLogGaugeHomeomorph_mk P l hr (fun l' ↦ (hP l').continuous) y _
 
@@ -402,6 +399,59 @@ noncomputable def torusFamilyLogGaugeDiffeomorph :
     (torusFamilyLogGaugeDiffeomorph P hP hinj l hr hfree).toHomeomorph =
       torusFamilyLogGaugeHomeomorph P l hr (fun l' ↦ (hP l').continuous) :=
   Homeomorph.ext fun _ ↦ rfl
+
+/-- Coercing `torusFamilyLogGaugeDiffeomorph` to the ambient torus family agrees with
+`torusFamilyLogGaugeEquiv`. -/
+theorem coe_torusFamilyLogGaugeDiffeomorph
+    (q : letI := periodAddAction (powPullbackPeriod m r P)
+      letI := logTranslationMulAction P l
+      ↥(logTranslationQuotientNonzeroOpens P l)) :
+    letI := periodAddAction P
+    letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
+    letI := periodAddAction (powPullbackPeriod m r P)
+    letI := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
+      (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
+      (fun z ↦ powPullbackPeriod_injective P z (hinj _))
+    letI := logTranslationMulAction P l
+    letI := logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
+    letI := Opens.instChartedSpace (H := ModelProd ℂ E)
+      (logTranslationQuotientNonzeroOpens P l)
+    letI := Opens.instChartedSpace (H := ModelProd ℂ E)
+      (torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)
+    (torusFamilyLogGaugeDiffeomorph P hP hinj l hr hfree q :
+        AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) (r ^ m) × E)) =
+      (torusFamilyLogGaugeEquiv P l hr
+        ⟨q.val, (mem_logTranslationQuotientNonzeroOpens P l q.val).1
+          (SetLike.mem_coe.1 q.property)⟩ :
+        AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) (r ^ m) × E)) :=
+  coe_torusFamilyLogGaugeHomeomorph P l hr (fun l' ↦ (hP l').continuous) q
+
+/-- Coercing `(torusFamilyLogGaugeDiffeomorph).symm` to the ambient cyclic quotient agrees with
+`(torusFamilyLogGaugeEquiv).symm`. -/
+theorem coe_torusFamilyLogGaugeDiffeomorph_symm
+    (y : letI := periodAddAction P
+      ↥(torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)) :
+    letI := periodAddAction P
+    letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
+    letI := periodAddAction (powPullbackPeriod m r P)
+    letI := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
+      (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
+      (fun z ↦ powPullbackPeriod_injective P z (hinj _))
+    letI := logTranslationMulAction P l
+    letI := logTranslationQuotientChartedSpace P hinj (fun l' ↦ (hP l').continuous) l hfree
+    letI := Opens.instChartedSpace (H := ModelProd ℂ E)
+      (logTranslationQuotientNonzeroOpens P l)
+    letI := Opens.instChartedSpace (H := ModelProd ℂ E)
+      (torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal)
+    ((torusFamilyLogGaugeDiffeomorph P hP hinj l hr hfree).symm y :
+        orbitRel.Quotient (rootsOfUnity m ℂ)
+          (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) =
+      ((torusFamilyLogGaugeEquiv P l hr).symm
+        ⟨y.val, (mem_torusFamilyNonzeroOpens Subtype.val P continuous_subtypeVal y.val).1
+          (SetLike.mem_coe.1 y.property)⟩ :
+        orbitRel.Quotient (rootsOfUnity m ℂ)
+          (AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E))) :=
+  coe_torusFamilyLogGaugeHomeomorph_symm P l hr (fun l' ↦ (hP l').continuous) y
 
 /-- The logarithmic gauge on the class of a point over `z ≠ 0`. -/
 @[simp] theorem torusFamilyLogGaugeDiffeomorph_mk
