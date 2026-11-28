@@ -100,7 +100,7 @@ ball `B(y₀, r) ⊆ U'` that `Φ` maps into `W`, the pulled-back coefficient `a
 locally `α`-Hölder derivatives and is uniformly elliptic, and `f ∘ Φ` is `α`-Hölder up to the flat
 boundary near each point of the ball in the closed half-space. -/
 private theorem flat_hypotheses_of_isChangeOfVariables
-    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {Ω W U' U : Opens E} {Φ Ψ : E → E} {L : ℝ}
+    {α : ℝ≥0} (hα1 : α < 1) {Ω W U' U : Opens E} {Φ Ψ : E → E} {L : ℝ}
     (hΦ : Wkp.IsChangeOfVariables 2 U' U Φ L 1) (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L 1)
     (hΨΦ : LeftInvOn Ψ Φ U') (hΦΨ : RightInvOn Ψ Φ U) {ν : E} (hν : ν ≠ 0) {c₀ : ℝ}
     (himage : Φ '' ({x | c₀ < ⟪x, ν⟫_ℝ} ∩ U') = (Ω : Set E) ∩ U)
@@ -131,7 +131,7 @@ private theorem flat_hypotheses_of_isChangeOfVariables
       (by exact_mod_cast hΨ.contDiffOn) ha i j,
     exists_uniformlyEllipticOn_pullbackPrincipal (hΦ.mono one_le_two) (hΨ.mono one_le_two) hΨΦ
       hΦΨ hBU' ⟨y₀, mem_ball_self hr⟩ hBW hell,
-    fun x hx => exists_holderOnWith_fderiv_pullbackPrincipal hα hα1.le hΦ hΨ hΨΦ hΦΨ hT ha hda
+    fun x hx => exists_holderOnWith_fderiv_pullbackPrincipal hα1.le hΦ hΨ hΨΦ hΦΨ hT ha hda
       (hBU' hx) (hBW hx), ?_⟩
   -- `f ∘ Φ` is Hölder near each point: `f` is near `Φ x`, and `Φ` is Lipschitz near `x`.
   rintro x ⟨hxB, hxν⟩
@@ -267,7 +267,7 @@ private theorem exists_flat_of_isChangeOfVariables
   obtain ⟨r, hr, hrB⟩ := nhds_basis_closedBall.mem_iff.1
     ((hΦ.contDiffOn.continuousOn.isOpen_inter_preimage U'.isOpen W.isOpen).mem_nhds ⟨hy₀, hy₀W⟩)
   have hBU' : ball y₀ r ⊆ U' := ball_subset_closedBall.trans (hrB.trans inter_subset_left)
-  obtain ⟨ha', ⟨lam', Lam', hell'⟩, hda', hfH'⟩ := flat_hypotheses_of_isChangeOfVariables hα hα1
+  obtain ⟨ha', ⟨lam', Lam', hell'⟩, hda', hfH'⟩ := flat_hypotheses_of_isChangeOfVariables hα1
     hΦ hΨ hΨΦ hΦΨ hν himage hT ha hell hda hfH hr hBU'
     fun x hx => (hrB (ball_subset_closedBall hx)).2
   obtain ⟨v, hvu, hv, hv0, hf'⟩ :=

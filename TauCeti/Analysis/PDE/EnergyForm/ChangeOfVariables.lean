@@ -18,7 +18,10 @@ import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.FDeriv.EuclideanMatrix
 import TauCeti.Analysis.Calculus.FDeriv.Homothety
-import TauCeti.Analysis.Holder.FDeriv
+import TauCeti.Analysis.Holder.CompLinear
+import TauCeti.Analysis.Holder.FaaDiBruno
+import TauCeti.Analysis.Holder.Jet.Bounds
+import TauCeti.Analysis.Holder.Leibniz
 import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Matrix.EuclideanLin
@@ -1033,62 +1036,94 @@ end Inverse
 
 section HolderFDeriv
 
-open Metric
-open scoped NNReal
+open Filter Metric
+open scoped NNReal Topology
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {U U' W : Opens (EuclideanSpace ℝ ι)}
   {Φ Ψ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {L L' : ℝ} {α : ℝ≥0}
 
-/-- The entries `∑ₖₗ (DΨ(Φ ·) eₖ)ᵢ aₖₗ(Φ ·) (DΨ(Φ ·) eₗ)ⱼ` of the pulled-back principal coefficient
-have `α`-Hölder derivatives near every point `x ∈ U'` with `Φ x ∈ W`, when `D²Ψ` is `α`-Hölder on
-`U` and the entries of `a` are `C¹` on `W` with locally `α`-Hölder derivatives. -/
-private theorem exists_hasHolderFDerivOn_pullbackPrincipal_sum (hα : 0 < α) (hα1 : α ≤ 1)
-    (hΦ : Wkp.IsChangeOfVariables 2 U' U Φ L 1) (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L' 1)
-    {KT : ℝ≥0} (hT : HolderOnWith KT α (fderiv ℝ (fderiv ℝ Ψ)) U)
+omit [DecidableEq ι] in
+/-- A function `g` that is `C¹` on an open set `t`, with first derivative `α`-Hölder on a
+neighbourhood of `Φ x` within `t`, composed with a map `Φ` that is `C²` on an open set `s ∋ x` and
+maps `s` into `t`, is `C¹` with `α`-Hölder first derivative on a neighbourhood of `x`. -/
+private theorem exists_mem_nhds_holderOnWith_iteratedFDeriv_comp {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] (hα1 : α ≤ 1) {s t K : Set (EuclideanSpace ℝ ι)}
+    (hs : IsOpen s) {x : EuclideanSpace ℝ ι} (hx : x ∈ s) (hΦ : ContDiffOn ℝ 2 Φ s)
+    {g : EuclideanSpace ℝ ι → F} (ht : IsOpen t) (hg : ContDiffOn ℝ 1 g t) (hst : MapsTo Φ s t)
+    (hK : K ∈ 𝓝[t] Φ x) {C : ℝ≥0} (hgH : HolderOnWith C α (fderiv ℝ g) K) :
+    ∃ S ∈ 𝓝 x, ContDiffOn ℝ 1 (fun y => g (Φ y)) S ∧
+      ∃ C' : ℝ≥0, HolderOnWith C' α (iteratedFDeriv ℝ 1 fun y => g (Φ y)) S := by
+  have hH : HolderOnWith C α (iteratedFDerivWithin ℝ 1 g t) (K ∩ t) :=
+    ((holderOnWith_iteratedFDeriv_succ_iff.trans holderOnWith_iteratedFDeriv_zero_iff).2
+      (hgH.mono inter_subset_left)).congr fun z hz =>
+        (iteratedFDerivWithin_of_isOpen 1 ht hz.2).symm
+  obtain ⟨r, hr, C', hC'⟩ := exists_holderOnWith_iteratedFDerivWithin_comp (k := 1) hα1
+    (hs.mem_nhds hx) ht.uniqueDiffOn hΦ hg hst (inter_mem hK self_mem_nhdsWithin) hH
+  exact ⟨ball x r ∩ s, inter_mem (ball_mem_nhds x hr) (hs.mem_nhds hx),
+    (hg.comp (hΦ.of_le one_le_two) hst).mono inter_subset_right, C',
+    (hC'.mono inter_subset_left).congr fun y hy => iteratedFDerivWithin_of_isOpen 1 hs hy.2⟩
+
+/-- Each term `(DΨ(Φ ·) eₖ)ᵢ aₖₗ(Φ ·) (DΨ(Φ ·) eₗ)ⱼ` of the entries of the pulled-back principal
+coefficient is `C¹` with `α`-Hölder first derivative on a neighbourhood of every point `x ∈ U'`
+with `Φ x ∈ W`, when `D²Ψ` is `α`-Hölder on `U` and the entries of `a` are `C¹` on `W` with
+locally `α`-Hölder derivatives. -/
+private theorem exists_mem_nhds_holderOnWith_iteratedFDeriv_pullbackPrincipal_term
+    (hα1 : α ≤ 1) (hΦ : Wkp.IsChangeOfVariables 2 U' U Φ L 1)
+    (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L' 1) {KT : ℝ≥0}
+    (hT : HolderOnWith KT α (fderiv ℝ (fderiv ℝ Ψ)) U)
     {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} (ha : ∀ k l, ContDiffOn ℝ 1 (fun y => a y k l) W)
     (hda : ∀ x ∈ W, ∃ ρ > 0, ∃ C : ℝ≥0, ∀ k l,
       HolderOnWith C α (fderiv ℝ fun y => a y k l) (ball x ρ))
-    {x : EuclideanSpace ℝ ι} (hx : x ∈ U') (hxW : Φ x ∈ W) :
-    ∃ ρ > 0, closedBall x ρ ⊆ U' ∧ ∀ i j, HasHolderFDerivOn α (ball x ρ) (closedBall x ρ)
-      fun y => ∑ k, ∑ l, (fderiv ℝ Ψ (Φ y) (EuclideanSpace.single k 1)).ofLp i * a (Φ y) k l *
-        (fderiv ℝ Ψ (Φ y) (EuclideanSpace.single l 1)).ofLp j := by
+    {x : EuclideanSpace ℝ ι} (hx : x ∈ U') (hxW : Φ x ∈ W) (i j k l : ι) :
+    ∃ S ∈ 𝓝 x, ContDiffOn ℝ 1 (fun y => (fderiv ℝ Ψ (Φ y) (EuclideanSpace.single k 1)).ofLp i *
+        a (Φ y) k l * (fderiv ℝ Ψ (Φ y) (EuclideanSpace.single l 1)).ofLp j) S ∧
+      ∃ C : ℝ≥0, HolderOnWith C α (iteratedFDeriv ℝ 1 fun y =>
+        (fderiv ℝ Ψ (Φ y) (EuclideanSpace.single k 1)).ofLp i * a (Φ y) k l *
+          (fderiv ℝ Ψ (Φ y) (EuclideanSpace.single l 1)).ofLp j) S := by
+  -- Products of two such functions are again such, by Leibniz's rule.
+  have hmul {f g : EuclideanSpace ℝ ι → ℝ}
+      (hf : ∃ S ∈ 𝓝 x, ContDiffOn ℝ 1 f S ∧
+        ∃ C : ℝ≥0, HolderOnWith C α (iteratedFDeriv ℝ 1 f) S)
+      (hg : ∃ S ∈ 𝓝 x, ContDiffOn ℝ 1 g S ∧
+        ∃ C : ℝ≥0, HolderOnWith C α (iteratedFDeriv ℝ 1 g) S) :
+      ∃ S ∈ 𝓝 x, ContDiffOn ℝ 1 (fun y => f y * g y) S ∧
+        ∃ C : ℝ≥0, HolderOnWith C α (iteratedFDeriv ℝ 1 fun y => f y * g y) S := by
+    obtain ⟨S, hS, hfc, C, hC⟩ := hf
+    obtain ⟨S', hS', hgc, D, hD⟩ := hg
+    obtain ⟨r, hr, -, h⟩ := (ContinuousLinearMap.mul ℝ ℝ).exists_holderOnWith_iteratedFDeriv_comp₂
+      (inter_mem hS hS') hα1 (hfc.mono inter_subset_left)
+      (hgc.mono inter_subset_right) (hC.mono inter_subset_left) (hD.mono inter_subset_right)
+    exact ⟨ball x r, ball_mem_nhds x hr, h⟩
+  -- The points of `U'` which `Φ` maps into `W`.
+  have hs : IsOpen ((U' : Set (EuclideanSpace ℝ ι)) ∩ Φ ⁻¹' W) :=
+    hΦ.contDiffOn.continuousOn.isOpen_inter_preimage U'.isOpen W.isOpen
+  have hΦ2 : ContDiffOn ℝ 2 Φ ((U' : Set (EuclideanSpace ℝ ι)) ∩ Φ ⁻¹' W) :=
+    (by exact_mod_cast hΦ.contDiffOn : ContDiffOn ℝ 2 Φ U').mono inter_subset_left
+  -- The factors `a(Φ ·)ₖₗ` and `(DΨ(Φ ·) eₖ)ᵢ` are `C¹` with `α`-Hölder derivative near `x`.
   obtain ⟨ρa, hρa, Ca, hCa⟩ := hda (Φ x) hxW
-  -- A closed ball `K` about `x` in `U'` which `Φ` maps into the ball where `Da` is Hölder.
-  have hO : IsOpen ((U' : Set (EuclideanSpace ℝ ι)) ∩ Φ ⁻¹' (ball (Φ x) ρa ∩ W)) :=
-    hΦ.contDiffOn.continuousOn.isOpen_inter_preimage U'.isOpen (isOpen_ball.inter W.isOpen)
-  have hxO : x ∈ (U' : Set (EuclideanSpace ℝ ι)) ∩ Φ ⁻¹' (ball (Φ x) ρa ∩ W) :=
-    ⟨hx, mem_ball_self hρa, hxW⟩
-  obtain ⟨ρ, hρ, hρs⟩ := nhds_basis_closedBall.mem_iff.1 (hO.mem_nhds hxO)
-  have hKU' : closedBall x ρ ⊆ U' := fun y hy => (hρs hy).1
-  have hKU : MapsTo Φ (closedBall x ρ) U := fun y hy => hΦ.mapsTo (hKU' hy)
-  have hΦ2 : ContDiffOn ℝ 2 Φ U' := by exact_mod_cast hΦ.contDiffOn
-  have hΦK : ContDiffOn ℝ 1 Φ (closedBall x ρ) := (hΦ2.mono hKU').of_le one_le_two
-  have hDΦK : ContDiffOn ℝ 1 (fderiv ℝ Φ) (closedBall x ρ) :=
-    (hΦ.contDiffOn_fderiv (k := 1)).mono hKU'
-  -- The entries `a(Φ ·)ₖₗ` and `(DΨ(Φ ·) eₖ)ᵢ` have `α`-Hölder derivatives on the ball.
-  have hA (k l : ι) : HasHolderFDerivOn α (ball x ρ) (closedBall x ρ) fun y => a (Φ y) k l :=
-    hasHolderFDerivOn_comp hα hα1 isOpen_ball ball_subset_closedBall (isCompact_closedBall x ρ)
-      (convex_closedBall x ρ) hΦK hDΦK W.isOpen (ha k l) (fun y hy => (hρs hy).2.2)
-      (fun y hy => (hρs hy).2.1) (hCa k l)
-  have hDΨ : ContDiffOn ℝ 1 (fderiv ℝ Ψ) U := hΨ.contDiffOn_fderiv (k := 1)
-  have hTe (i k : ι) : HasHolderFDerivOn α (ball x ρ) (closedBall x ρ)
-      fun y => (fderiv ℝ Ψ (Φ y) (EuclideanSpace.single k 1)).ofLp i :=
-    (hasHolderFDerivOn_comp hα hα1 isOpen_ball ball_subset_closedBall (isCompact_closedBall x ρ)
-      (convex_closedBall x ρ) hΦK hDΦK U.isOpen hDΨ hKU hKU
-      hT).clm_comp ((EuclideanSpace.proj i).comp
-        (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ ι) (EuclideanSpace.single k (1 : ℝ))))
-  -- The entries of `a'` are sums of products of these.
-  exact ⟨ρ, hρ, hKU', fun i j => HasHolderFDerivOn.sum _ fun k _ => HasHolderFDerivOn.sum _
-    fun l _ => ((hTe i k).comp₂ (ContinuousLinearMap.mul ℝ ℝ) hα (isCompact_closedBall x ρ)
-      (hA k l)).comp₂ (ContinuousLinearMap.mul ℝ ℝ) hα (isCompact_closedBall x ρ) (hTe j l)⟩
+  have hA := exists_mem_nhds_holderOnWith_iteratedFDeriv_comp hα1 hs ⟨hx, hxW⟩ hΦ2 W.isOpen
+    (ha k l) (fun y hy => hy.2) (mem_nhdsWithin_of_mem_nhds (ball_mem_nhds _ hρa)) (hCa k l)
+  obtain ⟨S, hS, hc, C, hC⟩ := exists_mem_nhds_holderOnWith_iteratedFDeriv_comp hα1 hs
+    ⟨hx, hxW⟩ hΦ2 U.isOpen (hΨ.contDiffOn_fderiv (k := 1)) (fun y hy => hΦ.mapsTo hy.1)
+    self_mem_nhdsWithin hT
+  obtain ⟨S₀, hS₀S, hS₀, hxS₀⟩ := _root_.mem_nhds_iff.1 hS
+  have hTe (i k : ι) : ∃ S ∈ 𝓝 x,
+      ContDiffOn ℝ 1 (fun y => (fderiv ℝ Ψ (Φ y) (EuclideanSpace.single k 1)).ofLp i) S ∧
+      ∃ C : ℝ≥0, HolderOnWith C α
+        (iteratedFDeriv ℝ 1 fun y => (fderiv ℝ Ψ (Φ y) (EuclideanSpace.single k 1)).ofLp i) S :=
+    let ℓ := (EuclideanSpace.proj i).comp
+      (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ ι) (EuclideanSpace.single k (1 : ℝ)))
+    ⟨S₀, hS₀.mem_nhds hxS₀, ℓ.contDiff.comp_contDiffOn (hc.mono hS₀S), _,
+      ℓ.holderOnWith_iteratedFDeriv_comp_left hS₀ (hc.mono hS₀S) (hC.mono hS₀S)⟩
+  exact hmul (hmul (hTe i k) hA) (hTe j l)
 
 /-- **The pulled-back principal coefficient has Hölder first derivatives.** Let `Φ` and `Ψ` be
 mutually inverse changes of variables of order two with Jacobian determinant one, with `D²Ψ`
-`α`-Hölder on `U`, `0 < α ≤ 1`. If the entries of `a` are `C¹` on an open set `W` with first
+`α`-Hölder on `U`, `α ≤ 1`. If the entries of `a` are `C¹` on an open set `W` with first
 derivatives locally `α`-Hölder there, then near every point `x ∈ U'` with `Φ x ∈ W` the first
 derivatives of the entries of the pulled-back principal coefficient `DΨ(Φ ·) a(Φ ·) DΨ(Φ ·)ᵀ` are
 `α`-Hölder. That these entries are `C¹` there is `contDiffOn_pullbackPrincipal_apply`. -/
-theorem exists_holderOnWith_fderiv_pullbackPrincipal (hα : 0 < α) (hα1 : α ≤ 1)
+theorem exists_holderOnWith_fderiv_pullbackPrincipal (hα1 : α ≤ 1)
     (hΦ : Wkp.IsChangeOfVariables 2 U' U Φ L 1) (hΨ : Wkp.IsChangeOfVariables 2 U U' Ψ L' 1)
     (hΨΦ : LeftInvOn Ψ Φ U') (hΦΨ : RightInvOn Ψ Φ U) {KT : ℝ≥0}
     (hT : HolderOnWith KT α (fderiv ℝ (fderiv ℝ Ψ)) U)
@@ -1098,23 +1133,33 @@ theorem exists_holderOnWith_fderiv_pullbackPrincipal (hα : 0 < α) (hα1 : α �
     {x : EuclideanSpace ℝ ι} (hx : x ∈ U') (hxW : Φ x ∈ W) :
     ∃ ρ > 0, ∃ C : ℝ≥0, ∀ i j,
       HolderOnWith C α (fderiv ℝ fun y => pullbackPrincipal Φ a y i j) (ball x ρ) := by
-  obtain ⟨ρ, hρ, hKU', hg⟩ :=
-    exists_hasHolderFDerivOn_pullbackPrincipal_sum hα hα1 hΦ hΨ hT ha hda hx hxW
+  choose S hS hc C hC using
+    exists_mem_nhds_holderOnWith_iteratedFDeriv_pullbackPrincipal_term hα1 hΦ hΨ hT ha hda hx hxW
+  -- A ball about `x` in `U'` on which every term is `C¹` with `α`-Hölder derivative.
+  obtain ⟨ρ, hρ, hρS⟩ := nhds_basis_ball.mem_iff.1 (inter_mem (U'.isOpen.mem_nhds hx)
+    (iInter_mem.2 fun i => iInter_mem.2 fun j => iInter_mem.2 fun k => iInter_mem.2 fun l =>
+      hS i j k l))
+  have hsub (i j k l : ι) : ball x ρ ⊆ S i j k l := fun y hy =>
+    mem_iInter.1 (mem_iInter.1 (mem_iInter.1 (mem_iInter.1 (hρS hy).2 i) j) k) l
   have hent (i j : ι) : ∃ C : ℝ≥0,
       HolderOnWith C α (fderiv ℝ fun y => pullbackPrincipal Φ a y i j) (ball x ρ) := by
-    obtain ⟨C, hC⟩ := (hg i j).exists_holderOnWith_fderiv ball_subset_closedBall
-    refine ⟨C, hC.congr fun y hy => ?_⟩
+    have h := holderOnWith_iteratedFDeriv_sum_comp_left (n := 1) (s := ball x ρ)
+      (fun _ : ι × ι => ContinuousLinearMap.id ℝ ℝ)
+      (fun p _ hz =>
+        ((hc i j p.1 p.2).mono (hsub i j p.1 p.2)).contDiffAt (isOpen_ball.mem_nhds hz))
+      fun p => (hC i j p.1 p.2).mono (hsub i j p.1 p.2)
+    refine ⟨_, ((holderOnWith_iteratedFDeriv_succ_iff.trans
+      holderOnWith_iteratedFDeriv_zero_iff).1 h).congr fun y hy => ?_⟩
     -- `a'` is this sum near `y`, since `DΨ(Φ ·)` inverts `DΦ` and `|det DΦ| = 1` on `U'`.
-    refine Filter.EventuallyEq.fderiv_eq (Filter.eventuallyEq_of_mem
-      (U'.isOpen.mem_nhds (hKU' (ball_subset_closedBall hy))) fun z hz => ?_)
+    refine EventuallyEq.fderiv_eq (eventuallyEq_of_mem (isOpen_ball.mem_nhds hy) fun z hz => ?_)
     rw [pullbackPrincipal_apply_apply_of_comp_eq_id a
-      (hΦ.fderiv_comp_fderiv_eq_id hΨ hΨΦ hΦΨ hz) i j,
-      hΦ.abs_det_fderiv_eq_one hΨ hΨΦ hΦΨ hz, one_mul]
-  choose C hC using hent
-  refine ⟨ρ, hρ, ∑ i, ∑ j, C i j, fun i j => (hC i j).mono_const ?_⟩
-  exact (Finset.single_le_sum (f := fun j => C i j) (fun _ _ => zero_le)
-    (Finset.mem_univ j)).trans (Finset.single_le_sum (f := fun i => ∑ j, C i j)
-      (fun _ _ => zero_le) (Finset.mem_univ i))
+      (hΦ.fderiv_comp_fderiv_eq_id hΨ hΨΦ hΦΨ (hρS hz).1) i j,
+      hΦ.abs_det_fderiv_eq_one hΨ hΨΦ hΦΨ (hρS hz).1, one_mul, Fintype.sum_prod_type]
+    rfl
+  obtain ⟨C, hC⟩ := exists_forall_holderOnWith_of_finite
+    (f := fun p : ι × ι => fderiv ℝ fun y => pullbackPrincipal Φ a y p.1 p.2)
+    fun p => hent p.1 p.2
+  exact ⟨ρ, hρ, C, fun i j => hC (i, j)⟩
 
 end HolderFDeriv
 

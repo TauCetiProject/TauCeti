@@ -437,11 +437,11 @@ theorem
           exact ⟨ball p r, ball_mem_nhds p hr, C, hC i j⟩) hg₁ hdg₁H le_rfl le_rfl hx
     obtain ⟨r, hr, hrT⟩ := nhds_basis_ball.mem_iff.1
       (Filter.iInter_mem.2 fun i => Filter.iInter_mem.2 fun j => hT i j)
-    refine ⟨r, hr, ∑ i, ∑ j, C i j, fun i j => ((hC i j).mono
-      (hrT.trans ((iInter_subset _ i).trans (iInter_subset _ j)))).mono_const ?_⟩
-    exact (Finset.single_le_sum (fun _ _ => zero_le) (Finset.mem_univ j)).trans
-      (Finset.single_le_sum (f := fun i => ∑ j, C i j) (fun _ _ => zero_le)
-        (Finset.mem_univ i))
+    obtain ⟨C', hC'⟩ := exists_forall_holderOnWith_of_finite
+      (f := fun p : Fin (n + 1) × Fin (n + 1) => fderiv ℝ fun y => A y (g₁ y) p.1 p.2)
+      fun p => ⟨_, (hC p.1 p.2).mono
+        (hrT.trans ((iInter_subset _ p.1).trans (iInter_subset _ p.2)))⟩
+    exact ⟨r, hr, C', fun i j => hC' (i, j)⟩
   -- `u` solves the linear equation with this coefficient, and the linear theorem applies.
   refine exists_contDiffOn_two_ae_eq_and_holderOnWith_iteratedFDeriv_two_of_contDiffOn hα hα1
     (UniformlyEllipticOn.apply_of_forall hA g₁) ha hda hf hfH fun v => ?_

@@ -114,6 +114,8 @@ positive exponent, is equicontinuous on that set
 * `HolderOnWith.congr`: Hölder continuity on a set transfers to a function agreeing there.
 * `HolderOnWith.prodMk`: a pair of Hölder functions with a common exponent is Hölder.
 * `HolderOnWith.add`: sums of Hölder functions on a set.
+* `TauCeti.exists_forall_holderOnWith_of_finite`: finitely many Hölder functions on a set have
+  a common Hölder constant.
 * `HolderOnWith.smul`: scalar multiples of Hölder functions on a set.
 * `HolderWith.norm_add_add_sub_two_nsmul_le`: the second differences of an `r`-Hölder function
   with constant `C` are at most `2 C ‖h‖ ^ r`.
@@ -473,6 +475,20 @@ theorem HolderOnWith.fintype_sum {ι X Y : Type*} [Fintype ι] [PseudoMetricSpac
     (hf : ∀ i, HolderOnWith C r (f i) t) :
     HolderOnWith (Fintype.card ι * C) r (fun x => ∑ i, f i x) t := by
   simpa using HolderOnWith.sum (s := Finset.univ) fun i _ => hf i
+
+namespace TauCeti
+
+/-- Finitely many functions, each `r`-Hölder on `t` with its own constant, are `r`-Hölder on `t`
+with one common constant. -/
+theorem exists_forall_holderOnWith_of_finite {ι X Y : Type*} [Finite ι]
+    [PseudoEMetricSpace X] [PseudoEMetricSpace Y] {r : ℝ≥0} {f : ι → X → Y} {t : Set X}
+    (hf : ∀ i, ∃ C, HolderOnWith C r (f i) t) : ∃ C, ∀ i, HolderOnWith C r (f i) t := by
+  cases nonempty_fintype ι
+  choose C hC using hf
+  exact ⟨∑ i, C i, fun i => (hC i).mono_const
+    (Finset.single_le_sum (fun _ _ => zero_le) (Finset.mem_univ i))⟩
+
+end TauCeti
 
 /-- A scalar multiple `a • f` of a function that is Hölder on `s` is Hölder on `s`, with the
 constant multiplied by `‖a‖₊`. Compare Mathlib's `HolderWith.smul`. -/
