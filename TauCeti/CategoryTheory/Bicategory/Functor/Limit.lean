@@ -125,6 +125,25 @@ lemma transitionCompIso_hom {i j k : I} (f : i ⟶ j) (g : j ⟶ k) (T : Cᵒᵖ
   -- evaluated at `T`, which is the composite of the components only definitionally.
   rfl
 
+/-- The unit comparison is natural in a morphism of the fibre. -/
+@[reassoc]
+lemma transitionIdIso_hom_naturality (i : I) (T : Cᵒᵖ)
+    {X Y : (D.obj (.mk i)).obj (.mk T)} (φ : X ⟶ Y) :
+    (transition D (𝟙 i) T).map φ ≫ (transitionIdIso D i T Y).hom =
+      (transitionIdIso D i T X).hom ≫ φ := by
+  rw [transitionIdIso_hom, transitionIdIso_hom]
+  exact ((D.mapId (.mk i)).hom.as.app (.mk T)).toNatTrans.naturality φ
+
+/-- The composition comparison is natural in a morphism of the fibre. -/
+@[reassoc]
+lemma transitionCompIso_hom_naturality {i j k : I} (f : i ⟶ j) (g : j ⟶ k) (T : Cᵒᵖ)
+    {X Y : (D.obj (.mk i)).obj (.mk T)} (φ : X ⟶ Y) :
+    (transition D (f ≫ g) T).map φ ≫ (transitionCompIso D f g T Y).hom =
+      (transitionCompIso D f g T X).hom ≫
+        (transition D g T).map ((transition D f T).map φ) := by
+  rw [transitionCompIso_hom, transitionCompIso_hom]
+  exact ((D.mapComp f.toLoc g.toLoc).hom.as.app (.mk T)).toNatTrans.naturality φ
+
 /-- The unit comparisons of the diagram commute with the pullback along `a : T ⟶ T'`. -/
 lemma transitionIdIso_naturality (i : I) {T T' : Cᵒᵖ} (a : T ⟶ T')
     (X : (D.obj (.mk i)).obj (.mk T)) :
@@ -451,26 +470,23 @@ lemma map_map_hom {X Y : LocallyDiscrete Cᵒᵖ} (f : X ⟶ Y) {x y : (limit D)
       ((D.obj (.mk i)).map f).toFunctor.map (Fiber.Hom.hom φ i) :=
   rfl
 
-/-- Two arrows which restrict to the endpoint components of a morphism of pseudo-limit
-objects satisfy transition compatibility after restriction. -/
-lemma map_transition_comp_iso_hom {T T' : Cᵒᵖ} (a : T ⟶ T')
-    {x y : (limit D).obj (.mk T)}
-    (φ : ((limit D).map a.toLoc).toFunctor.obj x ⟶
-      ((limit D).map a.toLoc).toFunctor.obj y)
-    {i j : I} (g : i ⟶ j) (mᵢ : x.obj i ⟶ y.obj i) (mⱼ : x.obj j ⟶ y.obj j)
-    (hᵢ : ((D.obj (.mk i)).map a.toLoc).toFunctor.map mᵢ = φ.hom i)
-    (hⱼ : ((D.obj (.mk j)).map a.toLoc).toFunctor.map mⱼ = φ.hom j) :
+/-- Transition compatibility after restriction is equivalent to the transition square
+for the restricted endpoint morphisms. -/
+lemma map_transition_comp_iso_hom_iff {T T' : Cᵒᵖ} (a : T ⟶ T')
+    {x y : Fiber D T} {i j : I} (g : i ⟶ j)
+    (mᵢ : x.obj i ⟶ y.obj i) (mⱼ : x.obj j ⟶ y.obj j) :
     ((D.obj (.mk j)).map a.toLoc).toFunctor.map
         ((transition D g T).map mᵢ ≫ (y.iso g).hom) =
-      ((D.obj (.mk j)).map a.toLoc).toFunctor.map ((x.iso g).hom ≫ mⱼ) := by
-  have h := φ.comm g
-  simp only [map_obj_iso_hom] at h
-  have hn := ((D.map g.toLoc).naturality a.toLoc).hom.toNatTrans.naturality mᵢ
-  simp only [Cat.Hom.comp_toFunctor, Functor.comp_map] at hn
-  apply (cancel_epi
-    (((D.map g.toLoc).naturality a.toLoc).hom.toNatTrans.app (x.obj i))).mp
-  simp only [Functor.map_comp, ← reassoc_of% hn, hᵢ, hⱼ]
-  exact h.trans (Category.assoc _ _ _)
+      ((D.obj (.mk j)).map a.toLoc).toFunctor.map ((x.iso g).hom ≫ mⱼ) ↔
+    (transition D g T').map (((D.obj (.mk i)).map a.toLoc).toFunctor.map mᵢ) ≫
+        (Fiber.iso (mapObj D a y) g).hom =
+      (Fiber.iso (mapObj D a x) g).hom ≫
+        ((D.obj (.mk j)).map a.toLoc).toFunctor.map mⱼ := by
+  simp only [Iso.trans_hom, Iso.app_hom, Functor.mapIso_hom,
+    Cat.Hom.toNatIso_hom, Functor.map_comp, Category.assoc]
+  simp only [← Pseudofunctor.StrongTrans.naturalityObjIso_hom,
+    Pseudofunctor.StrongTrans.naturalityObjIso_hom_naturality_assoc]
+  exact (cancel_epi ((D.map g.toLoc).naturalityObjIso a.toLoc (x.obj i)).hom).symm
 
 -- In the following lemmas, after `subst`, the comparison `(limit D).mapComp f g` is by
 -- construction the family of the `(D i).mapComp' f g (f ≫ g) rfl`, and similarly for the unit

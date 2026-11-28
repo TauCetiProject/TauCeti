@@ -159,6 +159,15 @@ lemma toDescentData_obj_hom {M : F.obj (.mk (op S))} ⦃Y : C⦄ (q : Y ⟶ S) �
   dsimp [toDescentData, DescentData.ofObj]
   rw [compIso_inv, compIso_hom]
 
+/-- Restricting a fully faithful descent preimage to a chart recovers the given component. -/
+lemma toDescentData_preimage_hom (hF : (F.toDescentData f).FullyFaithful)
+    {M N : F.obj (.mk (op S))}
+    (φ : (F.toDescentData f).obj M ⟶ (F.toDescentData f).obj N) (i : ι) :
+    (F.map (f i).op.toLoc).toFunctor.map (hF.preimage φ) = φ.hom i := by
+  have h := congrArg (fun ψ ↦ ψ.hom i) (hF.map_preimage φ)
+  simp only [toDescentData_map_hom] at h
+  exact h
+
 /-- A compatibility square with `((F.toDescentData f).obj M).hom` on the right-hand side reduces,
 after cancelling the left `compIso`, to matching `compIso.hom` components on both sides. -/
 lemma hom_toDescentData_obj_iff {M : F.obj (.mk (op S))} ⦃Y : C⦄ (q : Y ⟶ S) ⦃i₁ i₂ : ι⦄
