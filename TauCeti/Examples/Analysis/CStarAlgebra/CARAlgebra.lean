@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.CARAlgebra
-public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 
 /-!
 # The CAR algebra as a C⋆-inductive limit

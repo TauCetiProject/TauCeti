@@ -66,11 +66,9 @@ open Fin
 
 namespace Matrix
 
-section Unitary
+section Semiring
 
-section Ring
-
-variable {α : Type*} [Ring α] [StarRing α]
+variable {α : Type*} [Semiring α] [StarRing α]
 
 /-- The block-diagonal matrix `diag(A, B)` is unitary exactly when both blocks are unitary. -/
 theorem fromBlocks_zero_zero_mem_unitary_iff {l n : Type*} [Fintype l] [DecidableEq l]
@@ -91,7 +89,9 @@ theorem reindex_fromBlocks_zero_zero_mem_unitary_iff {l n p : Type*} [Fintype l]
       A ∈ unitary (Matrix l l α) ∧ B ∈ unitary (Matrix n n α) := by
   rw [reindex_apply, submatrix_equiv_mem_unitary, fromBlocks_zero_zero_mem_unitary_iff]
 
-end Ring
+end Semiring
+
+section Unitary
 
 variable {α : Type*} [CommRing α] [StarRing α]
 

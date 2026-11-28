@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.InductiveLimit.Basic
 public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.KZero
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 import TauCeti.Analysis.CStarAlgebra.Matrix.EntryNorm
 import TauCeti.Analysis.CStarAlgebra.Projection.Approximate
 import TauCeti.Analysis.CStarAlgebra.Projection.Perturbation

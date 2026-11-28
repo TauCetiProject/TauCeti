@@ -53,8 +53,9 @@ embeddings into block-diagonal matrices.
 
 ## Main declarations
 
-* `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
-  calculus of `CStarMatrix n n A`, which instance search does not find on its own.
+* `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal` and
+  `CStarMatrix.instContinuousFunctionalCalculusReal`: the non-unital and unital real continuous
+  functional calculi of `CStarMatrix n n A`, which instance search does not find on its own.
 * `CStarMatrix.instIsSimpleRing`: square matrices over a simple ring form a simple ring.
 * `CStarMatrix.instSeparableSpace`: finite matrices over a separable C⋆-algebra form a separable
   space.
@@ -65,11 +66,13 @@ embeddings into block-diagonal matrices.
   rectangular multiplication and conjugate transpose, and sends `star` to conjugate transpose; the
   companions `CStarMatrix.ofMatrix_symm_zero`, `ofMatrix_symm_one`, `ofMatrix_symm_add`,
   `ofMatrix_symm_neg`, `ofMatrix_symm_sub`, `ofMatrix_symm_smul`, `ofMatrix_symm_sum`,
+  `IsSelfAdjoint.conjTranspose_mul_of_mul_eq`,
+  `IsSelfAdjoint.mul_conjTranspose_of_mul_eq`, `continuous_map`,
   `CStarMatrix.ofMatrixL_symm_apply`, `CStarMatrix.trace_ofMatrix_symm_unitary_conj`,
   `CStarMatrix.continuous_trace_ofMatrix_symm`, and
-  `CStarMatrix.eq_zero_of_isIdempotentElem_of_trace_eq_zero` do the same for the other algebraic
-  operations, `CStarMatrix.ofMatrixL.symm`, and unitary invariance, continuity, and the idempotent
-  vanishing criterion of the matrix trace.
+  `CStarMatrix.eq_zero_of_isIdempotentElem_of_trace_eq_zero` handle the remaining algebraic
+  operations, continuity, `CStarMatrix.ofMatrixL.symm`, and unitary invariance, continuity, and
+  the idempotent vanishing criterion of the matrix trace.
 * `Matrix.GeneralLinearGroup.toCStarMatrixUnits`: invertible matrices over a unital C⋆-algebra
   `A` as the invertible elements of `CStarMatrix n n A`, an isomorphism of topological groups.
 * `Matrix.toCStarMatrixUnitary`: unitary matrices over a unital C⋆-algebra `A` as the unitaries
@@ -144,11 +147,6 @@ embeddings into block-diagonal matrices.
   of norm at most `1` is a contraction `Aⁿ → Aᵐ` of Hilbert `A`-modules.
 * `CStarMatrix.norm_compress_le`: compressing `x ∈ M_{m,n}(A)` by pairwise orthogonal scalar
   vectors of norm at most `1` (`CStarMatrix.compress`) does not increase norms.
-* `CStarMatrix.compress_self_nonneg`: compressing a positive matrix by the same scalar vectors on
-  both sides gives a positive matrix, `0 ≤ e x e⋆`.
-* `CStarMatrix.star_compress_one_mul_self`, `CStarMatrix.compress_one_mul_star_self`: for
-  `z = R u⋆ = compress 1 u R` with `R ∈ M_n(A)` and `u ∈ M_n(ℂ)`, `z⋆z = u (R⋆R) u⋆`, and
-  `zz⋆ = RR⋆` when `u⋆u = 1`.
 * `CStarMatrix.norm_sum_smul_le`: compressing `x ∈ M_{m,n}(A)` by scalar vectors `v`, `w` gives
   `‖∑ i j, (vᵢ wⱼ*) xᵢⱼ‖ ≤ ‖v‖ ‖x‖ ‖w‖`. The proof tests `x` against the vectors `(vᵢ a)ᵢ` and
   `(wⱼ b)ⱼ` of `Aᵐ` and `Aⁿ`, which bounds `‖a z b*‖` for the compression `z`, and takes `a = z*`,
@@ -330,7 +328,7 @@ lemma ofMatrix_symm_conjTranspose {m : Type*} [Star A] (M : CStarMatrix m n A) :
 lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
     ofMatrix.symm (star M) = (ofMatrix.symm M)ᴴ := (rfl)
 
-/-- Reading a C⋆-matrix as an ordinary matrix sends `0` to `0`. -/
+/-- Reading a rectangular C⋆-matrix as an ordinary matrix sends `0` to `0`. -/
 @[simp]
 lemma ofMatrix_symm_zero {m : Type*} [Zero A] : ofMatrix.symm (0 : CStarMatrix m n A) = 0 := (rfl)
 
@@ -339,25 +337,38 @@ lemma ofMatrix_symm_zero {m : Type*} [Zero A] : ofMatrix.symm (0 : CStarMatrix m
 lemma ofMatrix_symm_one [DecidableEq n] [Zero A] [One A] :
     ofMatrix.symm (1 : CStarMatrix n n A) = 1 := (rfl)
 
-/-- Reading a C⋆-matrix as an ordinary matrix respects addition. -/
+/-- Reading a rectangular C⋆-matrix as an ordinary matrix respects addition. -/
 @[simp]
-lemma ofMatrix_symm_add [Add A] (M N : CStarMatrix n n A) :
+lemma ofMatrix_symm_add {m : Type*} [Add A] (M N : CStarMatrix m n A) :
     ofMatrix.symm (M + N) = ofMatrix.symm M + ofMatrix.symm N := (rfl)
 
-/-- Reading a C⋆-matrix as an ordinary matrix respects negation. -/
+/-- Reading a rectangular C⋆-matrix as an ordinary matrix respects negation. -/
 @[simp]
-lemma ofMatrix_symm_neg [Neg A] (M : CStarMatrix n n A) :
+lemma ofMatrix_symm_neg {m : Type*} [Neg A] (M : CStarMatrix m n A) :
     ofMatrix.symm (-M) = -ofMatrix.symm M := (rfl)
 
-/-- Reading a C⋆-matrix as an ordinary matrix respects subtraction. -/
+/-- Reading a rectangular C⋆-matrix as an ordinary matrix respects subtraction. -/
 @[simp]
-lemma ofMatrix_symm_sub [Sub A] (M N : CStarMatrix n n A) :
+lemma ofMatrix_symm_sub {m : Type*} [Sub A] (M N : CStarMatrix m n A) :
     ofMatrix.symm (M - N) = ofMatrix.symm M - ofMatrix.symm N := (rfl)
 
-/-- Reading a C⋆-matrix as an ordinary matrix respects scalar multiplication. -/
+/-- Reading a rectangular C⋆-matrix as an ordinary matrix respects scalar multiplication. -/
 @[simp]
-lemma ofMatrix_symm_smul [SMul R A] (r : R) (M : CStarMatrix n n A) :
+lemma ofMatrix_symm_smul {m : Type*} [SMul R A] (r : R) (M : CStarMatrix m n A) :
     ofMatrix.symm (r • M) = r • ofMatrix.symm M := (rfl)
+
+/-- Reading a reindexed C⋆-matrix as an ordinary matrix is `Matrix.reindex`. -/
+@[simp]
+lemma ofMatrix_symm_reindexₐ {m : Type*} [Fintype n] [Fintype m] [Semiring R] [AddCommMonoid A]
+    [Mul A] [Module R A] [Star A] (e : n ≃ m) (M : CStarMatrix n n A) :
+    ofMatrix.symm (reindexₐ R A e M) = Matrix.reindex e e (ofMatrix.symm M) := (rfl)
+
+/-- A C⋆-matrix is idempotent iff its underlying ordinary matrix is idempotent. -/
+@[simp]
+theorem isIdempotentElem_ofMatrix_symm_iff [Fintype n] [Mul A] [AddCommMonoid A]
+    (M : CStarMatrix n n A) :
+    IsIdempotentElem (ofMatrix.symm M) ↔ IsIdempotentElem M := by
+  simp only [IsIdempotentElem, ← ofMatrix.symm.injective.eq_iff, ofMatrix_symm_mul]
 
 /-- Reading the entrywise nonunital star-algebra homomorphism as an ordinary matrix applies
 its underlying star-ring homomorphism to each entry. -/
@@ -407,6 +418,22 @@ lemma conjTranspose_conjTranspose {m : Type*} [InvolutiveStar A] (M : CStarMatri
     M.conjTranspose.conjTranspose = M := by
   apply ofMatrix.symm.injective
   simp only [ofMatrix_symm_conjTranspose, Matrix.conjTranspose_conjTranspose]
+
+/-- If `a * x = x` for a self-adjoint C⋆-matrix `a`, then `xᴴ * a = xᴴ`. -/
+theorem _root_.IsSelfAdjoint.conjTranspose_mul_of_mul_eq {m : Type*} [Fintype m]
+    [NonUnitalNonAssocSemiring A] [StarRing A] {a : CStarMatrix m m A} (ha : IsSelfAdjoint a)
+    {x : CStarMatrix m n A} (hax : a * x = x) :
+    x.conjTranspose * a = x.conjTranspose := by
+  simpa only [conjTranspose_mul, ← star_eq_conjTranspose, ha.star_eq] using
+    congrArg conjTranspose hax
+
+/-- If `x * a = x` for a self-adjoint C⋆-matrix `a`, then `a * xᴴ = xᴴ`. -/
+theorem _root_.IsSelfAdjoint.mul_conjTranspose_of_mul_eq {m : Type*} [Fintype n]
+    [NonUnitalNonAssocSemiring A] [StarRing A] {a : CStarMatrix n n A} (ha : IsSelfAdjoint a)
+    {x : CStarMatrix m n A} (hxa : x * a = x) :
+    a * x.conjTranspose = x.conjTranspose := by
+  simpa only [conjTranspose_mul, ← star_eq_conjTranspose, ha.star_eq] using
+    congrArg conjTranspose hxa
 
 /-- A C⋆-matrix is a star projection exactly when the underlying matrix is. -/
 @[simp]
@@ -947,6 +974,22 @@ instance instNonUnitalContinuousFunctionalCalculusReal :
 instance instNonnegSpectrumClassReal : NonnegSpectrumClass ℝ (CStarMatrix n n A) :=
   CStarAlgebra.instNonnegSpectrumClass'
 
+section UnitalCFC
+
+/-! Like the non-unital case above, the unital real continuous functional calculus of
+`CStarMatrix n n B` is not found by instance search because `CStarMatrix.instAlgebra` gives the
+entrywise `ℝ`-algebra rather than `Algebra.complexToReal` used by
+`IsSelfAdjoint.instContinuousFunctionalCalculus`. Once this instance is registered,
+`Nonneg.instContinuousFunctionalCalculus` synthesizes the `ℝ≥0` instance automatically. -/
+
+/-- Unital real continuous functional calculus on `CStarMatrix n n B`. -/
+instance instContinuousFunctionalCalculusReal {B : Type*} [DecidableEq n] [CStarAlgebra B]
+    [PartialOrder B] [StarOrderedRing B] :
+    ContinuousFunctionalCalculus ℝ (CStarMatrix n n B) IsSelfAdjoint :=
+  IsSelfAdjoint.instContinuousFunctionalCalculus
+
+end UnitalCFC
+
 /-- A matrix over a C⋆-algebra is positive exactly when all its finite quadratic forms are
 positive. -/
 theorem nonneg_iff_forall_sum_nonneg {M : CStarMatrix n n A} :
@@ -1087,6 +1130,18 @@ theorem norm_sq_smul_sub_mulLeft_nonneg (c : A) (a : n → A) :
 theorem norm_diagonalNonUnitalStarAlgHom_le [DecidableEq n] (a : A) :
     ‖diagonalNonUnitalStarAlgHom ℂ n A a‖ ≤ ‖a‖ :=
   NonUnitalStarAlgHom.norm_apply_le _ a
+
+/-- Entrywise application of a continuous map between C⋆-algebras is continuous on
+`CStarMatrix`. -/
+@[continuity, fun_prop]
+theorem continuous_map {m n A B : Type*}
+    [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
+    {f : A → B} (hf : Continuous f) :
+    Continuous (fun M : CStarMatrix m n A => M.map f) := by
+  have h : (fun M : CStarMatrix m n A => M.map f) =
+      fun M => ofMatrixL (Matrix.map (ofMatrixL.symm M) f) := rfl
+  rw [h]
+  exact ofMatrixL.continuous.comp ((continuous_id.matrix_map hf).comp ofMatrixL.symm.continuous)
 
 open scoped ComplexOrder in
 /-- The Kronecker product `[pᵢⱼ b]` of a positive scalar matrix `[pᵢⱼ]` and a positive element `b`
@@ -1261,59 +1316,6 @@ omit [PartialOrder A] [StarOrderedRing A] in
 theorem compress_apply {ι ι' : Type*} (e : ι → m → ℂ) (f : ι' → n → ℂ) (x : CStarMatrix m n A)
     (t : ι) (t' : ι') : compress e f x t t' = ∑ k, ∑ l, (e t k * star (f t' l)) • x k l :=
   (rfl)
-
-omit [PartialOrder A] [StarOrderedRing A] in
-/-- Compressing by the standard basis on the left multiplies by `f⋆` on the right:
-`compress 1 f x = x f⋆`. -/
-theorem compress_one_apply [DecidableEq m] {ι' : Type*} (f : ι' → n → ℂ) (x : CStarMatrix m n A)
-    (k : m) (t' : ι') : compress (1 : CStarMatrix m m ℂ) f x k t' = ∑ l, star (f t' l) • x k l := by
-  simp [compress_apply (1 : CStarMatrix m m ℂ) f, one_apply, ite_smul]
-
-omit [PartialOrder A] [StarOrderedRing A] in
-/-- For `R ∈ M_n(A)` and `u ∈ M_n(ℂ)`, the product `z = R u⋆ = compress 1 u R` satisfies
-`z⋆z = u (R⋆R) u⋆ = compress u u (R⋆R)`. -/
-theorem star_compress_one_mul_self [DecidableEq n] (u : CStarMatrix n n ℂ)
-    (R : CStarMatrix n n A) :
-    star (compress (1 : CStarMatrix n n ℂ) u R) * compress (1 : CStarMatrix n n ℂ) u R =
-      compress u u (star R * R) := by
-  ext t t'
-  simp only [mul_apply, star_apply, compress_one_apply u, compress_apply u u, star_sum, star_smul,
-    star_star, Finset.sum_mul, Finset.mul_sum, smul_mul_smul_comm, Finset.smul_sum]
-  -- Reorder `∑ k, ∑ l, ∑ j` to `∑ j, ∑ l, ∑ k`.
-  exact Finset.sum_comm_cycle.trans (Finset.sum_congr rfl fun _ _ => Finset.sum_comm)
-
-omit [PartialOrder A] [StarOrderedRing A] in
-/-- For `R ∈ M_n(A)` and `u ∈ M_n(ℂ)` with `u⋆u = 1`, the product `z = R u⋆ = compress 1 u R`
-satisfies `zz⋆ = RR⋆`. -/
-theorem compress_one_mul_star_self [DecidableEq n] {u : CStarMatrix n n ℂ} (hu : star u * u = 1)
-    (R : CStarMatrix n n A) :
-    compress (1 : CStarMatrix n n ℂ) u R * star (compress (1 : CStarMatrix n n ℂ) u R) =
-      R * star R := by
-  have h (k l : n) : ∑ t, star (u t k) * u t l = if k = l then 1 else 0 := by
-    simpa [mul_apply, star_apply, one_apply] using CStarMatrix.ext_iff.mpr hu k l
-  ext i j
-  simp only [mul_apply, star_apply, compress_one_apply u, star_sum, star_smul, star_star,
-    Finset.sum_mul, Finset.mul_sum, smul_mul_smul_comm]
-  -- Reorder `∑ t, ∑ k, ∑ l` to `∑ l, ∑ k, ∑ t` and use `u⋆u = 1`.
-  rw [← Finset.sum_comm_cycle]
-  simp_rw [← Finset.sum_smul, h, ite_smul, one_smul, zero_smul, Finset.sum_ite_eq',
-    Finset.mem_univ, ite_true]
-
-/-- **Compression preserves positivity**: `0 ≤ x` gives `0 ≤ compress e e x` for any scalar
-vectors `e t ∈ ℂⁿ`, i.e. `0 ≤ e x e⋆`. -/
-theorem compress_self_nonneg {ι : Type*} [Fintype ι] (e : ι → n → ℂ) {x : CStarMatrix n n A}
-    (hx : 0 ≤ x) : 0 ≤ compress e e x := by
-  refine nonneg_iff_forall_sum_nonneg.mpr fun y => ?_
-  -- The quadratic form at `y` is that of `x` at `w l = ∑ t, star (e t l) • y t`.
-  convert nonneg_iff_forall_sum_nonneg.mp hx fun l => ∑ t, star (e t l) • y t using 1
-  simp only [compress_apply, star_sum, star_smul, star_star, Finset.sum_mul, Finset.mul_sum,
-    smul_mul_assoc, mul_smul_comm, Finset.smul_sum, smul_smul, ← Fintype.sum_prod_type']
-  -- reindex `(t, t', k, l) ↦ (k, l, t', t)`
-  exact Fintype.sum_equiv
-    ⟨fun p => (p.2.2.1, p.2.2.2, p.2.1, p.1), fun q => (q.2.2.2, q.2.2.1, q.1, q.2.1),
-      fun _ => rfl, fun _ => rfl⟩ _ _ fun _ => by
-    dsimp only [Equiv.coe_fn_mk]
-    rw [mul_comm (e _ _)]
 
 /-- Compressing a matrix over a C⋆-algebra by pairwise orthogonal scalar vectors of norm at most
 `1` does not increase norms: `‖compress e f x‖ ≤ ‖x‖`. -/

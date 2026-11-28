@@ -68,6 +68,8 @@ unitization are Murray–von Neumann equivalent in `A`, through the partial isom
   identity and the augmentation (`Unitization.fst_comp_prodAlgEquiv`,
   `Unitization.snd_comp_prodAlgEquiv`).
 * `Unitization.starLift_comp_inr`: the lift of a star homomorphism restricts to it on `A`.
+* `Unitization.inr_snd_mul_inr_mul`: multiplying an embedded element `inr p` on both sides
+  produces an element with zero scalar part, equal to `inr` of its `A`-component.
 * `Unitization.prodStarAlgEquiv`: for a unital star algebra `A`, the splitting
   `Unitization R A ≃⋆ₐ[R] A × R`, `(r, a) ↦ (r • 1 + a, r)`.
 * `Unitization.oneAddInrSubOne`: for unital `B`, the star monoid homomorphism
@@ -530,6 +532,14 @@ theorem starLift_comp_inr (φ : A →⋆ₙₐ[R] C) :
   rw [← starLift_symm_apply, Equiv.symm_apply_apply]
 
 end Unitization
+
+/-- Multiplying an embedded element `(p : Unitization R A)` on both sides in `Unitization R A`
+produces an element with zero scalar part, equal to the embedding of its `A`-component. -/
+theorem Unitization.inr_snd_mul_inr_mul {R A : Type*} [MulZeroClass R] [Add A] [Mul A] [SMul R A]
+    (a : Unitization R A) (p : A) (b : Unitization R A) :
+    (((a * (p : Unitization R A) * b).snd : A) : Unitization R A) =
+      a * (p : Unitization R A) * b :=
+  Unitization.ext (by simp) rfl
 
 namespace Unitization
 

@@ -30,6 +30,8 @@ isometry, `v * vᴴ * v = v`.
 * `IsStarProjection.matrix_map`: the entrywise image of a matrix projection under a star ring
   homomorphism is a matrix projection.
 * `Matrix.isStarProjection_comp_iff`: flattening preserves and reflects matrix projections.
+* `Matrix.mul_conjTranspose_eq_of_isSelfAdjoint`: if `x * a = x` for a self-adjoint matrix `a`,
+  then `a * xᴴ = xᴴ`.
 * `Matrix.conjTranspose_mul_eq_zero_of_mul_eq_zero` and
   `Matrix.mul_conjTranspose_eq_zero_of_mul_eq_zero`: if `a * b = 0` and `a` (respectively `b`)
   is self-adjoint, then rectangular matrices with columns (respectively rows) in the ranges of
@@ -54,6 +56,14 @@ theorem _root_.IsStarProjection.matrix_map {S F : Type*} [NonUnitalNonAssocSemir
     IsStarProjection (p.map f) :=
   ⟨by rw [IsIdempotentElem, ← Matrix.map_mul, hp.isIdempotentElem.eq],
     (IsHermitian.map hp.isSelfAdjoint f fun _ ↦ map_star f _).isSelfAdjoint⟩
+
+omit [Fintype m] in
+/-- If `x * a = x` for a self-adjoint matrix `a`, then `a * xᴴ = xᴴ`. -/
+theorem mul_conjTranspose_eq_of_isSelfAdjoint [NonUnitalNonAssocSemiring R] [StarRing R]
+    {a : Matrix n n R} (ha : IsSelfAdjoint a) {x : Matrix m n R} (hxa : x * a = x) :
+    a * xᴴ = xᴴ := by
+  simpa only [conjTranspose_mul, ← star_eq_conjTranspose, ha.star_eq] using
+    congr_arg conjTranspose hxa
 
 section NonUnitalSemiring
 

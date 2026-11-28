@@ -11,7 +11,7 @@ import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.RCLike.ContinuousMap
 import Mathlib.Topology.ContinuousMap.StarOrdered
 import Mathlib.Topology.PartitionOfUnity
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
 import TauCeti.Analysis.CStarAlgebra.GelfandDuality
 

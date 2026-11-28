@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+public import Mathlib.Analysis.CStarAlgebra.Unitization
 public import TauCeti.Algebra.Star.Projection.Idempotent
 public import TauCeti.Algebra.Ring.Idempotent.Units
 public import TauCeti.Algebra.Star.SelfAdjoint
@@ -23,7 +24,9 @@ projections before using constructions, such as unitary splittings, that make se
 self-adjoint idempotents.
 
 Applied to matrix algebras this converts idempotent representatives of projective modules
-into projection representatives, without changing their range modules.
+into projection representatives, without changing their range modules. Over a non-unital
+C⋆-algebra `B`, every idempotent is likewise similar in the unitization `B⁺¹` to a star projection
+in `B` with the same range (`IsIdempotentElem.exists_isStarProjection_similar_unitization`).
 
 ## References
 
@@ -123,5 +126,32 @@ theorem eq_idempotentRangeProjection_iff (he : IsIdempotentElem e) {q : A}
 theorem isConj_idempotentRangeProjection (he : IsIdempotentElem e) :
     IsConj (idempotentRangeProjection e) e :=
   isConj_of_mul_eq he.mul_idempotentRangeProjection he.idempotentRangeProjection_mul
+
+/-- Every idempotent `e` in a (possibly non-unital) C⋆-algebra `A` is similar in the unitization
+`A⁺¹` to a star projection `p` in `A` with the same range (`e * p = p` and `p * e = e`). -/
+theorem exists_isStarProjection_similar_unitization {B : Type*}
+    [NonUnitalCStarAlgebra B] {e : B} (he : IsIdempotentElem e) :
+    ∃ p : B, IsStarProjection p ∧ e * p = p ∧ p * e = e ∧
+      ∃ s : (Unitization ℂ B)ˣ, (s : Unitization ℂ B) * (e : Unitization ℂ B) * ↑s⁻¹ =
+        (p : Unitization ℂ B) := by
+  -- Descend `TauCeti.idempotentRangeProjection` and `TauCeti.idempotentConjUnit` from `B⁺¹`.
+  let _ := CStarAlgebra.spectralOrder (Unitization ℂ B)
+  let _ := CStarAlgebra.spectralOrderedRing (Unitization ℂ B)
+  have he' : IsIdempotentElem (e : Unitization ℂ B) := by
+    rw [IsIdempotentElem, ← Unitization.inr_mul, he.eq]
+  let p' : Unitization ℂ B := TauCeti.idempotentRangeProjection (e : Unitization ℂ B)
+  have hp' : IsStarProjection p' := he'.isStarProjection_idempotentRangeProjection
+  have hep' : (e : Unitization ℂ B) * p' = p' := he'.mul_idempotentRangeProjection
+  have hpe' : p' * (e : Unitization ℂ B) = (e : Unitization ℂ B) :=
+    he'.idempotentRangeProjection_mul
+  have hp'_fst : p'.fst = 0 := by
+    simpa [Unitization.fst_mul, Unitization.fst_inr] using
+      (congrArg (fun x : Unitization ℂ B => x.fst) hep').symm
+  have hp'_eq : (p'.snd : Unitization ℂ B) = p' := Unitization.ext (by simp [hp'_fst]) rfl
+  refine ⟨p'.snd, IsStarProjection.of_inr (R := ℂ) (hp'_eq.symm ▸ hp'), ?_, ?_,
+    TauCeti.idempotentConjUnit (e : Unitization ℂ B) p' hep' hpe', ?_⟩
+  · exact Unitization.inr_injective (R := ℂ) (by simpa [Unitization.inr_mul, hp'_eq] using hep')
+  · exact Unitization.inr_injective (R := ℂ) (by simpa [Unitization.inr_mul, hp'_eq] using hpe')
+  · simpa [hp'_eq] using TauCeti.idempotentConjUnit_mul_mul_inv (e : Unitization ℂ B) p' hep' hpe'
 
 end IsIdempotentElem

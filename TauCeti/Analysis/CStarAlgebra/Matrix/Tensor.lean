@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 public import Mathlib.RingTheory.TensorProduct.Basic
-public import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 
 /-!
 # `M_n(ℂ) ⊗[ℂ] A` as `M_n(A)`

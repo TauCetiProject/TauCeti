@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
 public import Mathlib.Topology.Algebra.Star.Unitary
+import TauCeti.Analysis.CStarAlgebra.Exponential
 import TauCeti.Analysis.RCLike.Basic
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.RealImaginaryPart
 import Mathlib.Analysis.Normed.Module.Connected
@@ -71,24 +72,8 @@ theorem Unitary.joined_one_of_nonneg_realPart
 /-- A self-adjoint unitary lies in the path component of the identity over the complex field. -/
 theorem Unitary.joined_one_of_isSelfAdjoint
     {A : Type*} [CStarAlgebra A]
-    (u : unitary A) (hu : IsSelfAdjoint (u : A)) : Joined (1 : unitary A) u := by
-  let : PartialOrder A := CStarAlgebra.spectralOrder _
-  let : StarOrderedRing A := CStarAlgebra.spectralOrderedRing _
-  -- Multiplication by i moves the spectrum {1,-1} away from the logarithm's cut.
-  let w : unitary A := ⟨Complex.I • (1 : A), by
-    constructor <;> simp [star_smul, smul_smul]⟩
-  have hw : Joined (1 : unitary A) w := by
-    apply Unitary.joined_one_of_nonneg_realPart
-    dsimp only [w, Subtype.coe_mk]
-    rw [realPart_apply_coe]
-    simp [star_smul]
-  have hwu : Joined (1 : unitary A) (w * u) := by
-    apply Unitary.joined_one_of_nonneg_realPart
-    simp only [Submonoid.coe_mul]
-    dsimp only [w, Subtype.coe_mk]
-    rw [realPart_apply_coe]
-    simp [star_smul, hu.star_eq]
-  simpa using hw.inv.mul hwu
+    (u : unitary A) (hu : IsSelfAdjoint (u : A)) : Joined (1 : unitary A) u :=
+  ⟨Unitary.expUnitaryPathOfIsSelfAdjoint u hu⟩
 
 
 section Spectrum

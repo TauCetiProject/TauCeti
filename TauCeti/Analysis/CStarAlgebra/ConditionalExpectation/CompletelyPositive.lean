@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 public import Mathlib.Analysis.CStarAlgebra.CompletelyPositiveMap
 public import TauCeti.Analysis.CStarAlgebra.ConditionalExpectation.Basic
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 /-! # Complete positivity of C⋆-conditional expectations
 
 Every `CStarConditionalExpectation` `E : A → B` onto `ι : B →⋆ₐ[ℂ] A` is completely positive

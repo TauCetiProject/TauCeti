@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.CompletelyPositiveMap
 public import TauCeti.Analysis.CStarAlgebra.Matrix.Order
 public import TauCeti.LinearAlgebra.Matrix.Choi
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
 import Mathlib.LinearAlgebra.Matrix.Trace
 

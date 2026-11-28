@@ -61,8 +61,9 @@ spectral order (`Matrix.conjTranspose_mul_self_eq_zero`).
   commutativity and associativity of block sums, up to equivalence.
 * `Matrix.isMurrayVonNeumannEquivalent_of_mul_conjTranspose_mul_self_eq`: a rectangular partial
   isometry `v` gives `vᴴ * v ∼ v * vᴴ`. Conversely every equivalence is implemented by a partial
-  isometry (`Matrix.IsMurrayVonNeumannEquivalent.exists_mul_conjTranspose_mul_self_eq`), so for
-  square matrices the implementing elements are Tau Ceti's partial isometries
+  isometry (`Matrix.IsMurrayVonNeumannEquivalent.exists_mul_conjTranspose_mul_self_eq`, and with
+  both support equations in `.exists_mul_conjTranspose_mul_self_eq_support`), so for square matrices
+  the implementing elements are Tau Ceti's partial isometries
   (`Matrix.isMurrayVonNeumannEquivalent_iff_exists_isPartialIsometry`).
 * `Matrix.isMurrayVonNeumannEquivalent_of_isStarProjection`: over a star-ordered proper star
   ring, a matrix `v` with `vᴴ * v` a projection implements `vᴴ * v ∼ v * vᴴ`.
@@ -325,6 +326,16 @@ theorem IsMurrayVonNeumannEquivalent.exists_mul_conjTranspose_mul_self_eq {p : M
       hp.isIdempotentElem.eq, hp.isIdempotentElem.eq]
   · rw [hq', ← hvq, Matrix.mul_assoc, ← Matrix.mul_assoc vᴴ, hvp, ← Matrix.mul_assoc, hvpp]
 
+/-- Every Murray–von Neumann equivalence is implemented by a partial isometry `v` supported on both
+its initial and final projections (`v * p = v` and `q * v = v`). -/
+theorem IsMurrayVonNeumannEquivalent.exists_mul_conjTranspose_mul_self_eq_support
+    {p : Matrix m m R} {q : Matrix n n R} (h : IsMurrayVonNeumannEquivalent p q) :
+    ∃ v : Matrix n m R, vᴴ * v = p ∧ v * vᴴ = q ∧ v * p = v ∧ q * v = v := by
+  obtain ⟨v, hvp, hvq, hv⟩ := h.exists_mul_conjTranspose_mul_self_eq
+  refine ⟨v, hvp, hvq, ?_, ?_⟩
+  · rw [← hvp, ← Matrix.mul_assoc, hv]
+  · rw [← hvq, hv]
+
 /-- Square matrix projections are equivalent exactly when they are the initial and final
 projections of a partial isometry. -/
 theorem isMurrayVonNeumannEquivalent_iff_exists_isPartialIsometry {p q : Matrix m m R} :
@@ -353,13 +364,8 @@ theorem IsMurrayVonNeumannEquivalent.add {p q : Matrix m m R} {p' q' : Matrix n 
       hq'.isSelfAdjoint
   -- Partial isometries `v` and `w` implementing the two equivalences have orthogonal ranges and
   -- orthogonal initial spaces, so `v + w` implements the sum.
-  obtain ⟨v, hvp, hvp', hv⟩ := h₁.exists_mul_conjTranspose_mul_self_eq
-  obtain ⟨w, hwq, hwq', hw⟩ := h₂.exists_mul_conjTranspose_mul_self_eq
-  -- `v` maps the range of `p` onto that of `p'`, and `w` that of `q` onto that of `q'`.
-  have hvr : v * p = v := by rw [← hvp, ← Matrix.mul_assoc, hv]
-  have hvl : p' * v = v := by rw [← hvp', hv]
-  have hwr : w * q = w := by rw [← hwq, ← Matrix.mul_assoc, hw]
-  have hwl : q' * w = w := by rw [← hwq', hw]
+  obtain ⟨v, hvp, hvp', hvr, hvl⟩ := h₁.exists_mul_conjTranspose_mul_self_eq_support
+  obtain ⟨w, hwq, hwq', hwr, hwl⟩ := h₂.exists_mul_conjTranspose_mul_self_eq_support
   refine ⟨hp.add hq hpq, hp'.add hq' hpq', v + w, ?_, ?_⟩
   · rw [conjTranspose_add, Matrix.add_mul, Matrix.mul_add, Matrix.mul_add, hvp, hwq,
       conjTranspose_mul_eq_zero_of_mul_eq_zero hp'.isSelfAdjoint hvl hwl hpq',
@@ -449,11 +455,8 @@ theorem IsMurrayVonNeumannEquivalent.exists_isSelfAdjoint_mem_unitary_mul_fromBl
       w * Matrix.fromBlocks p 0 0 0 * star w = Matrix.fromBlocks 0 0 0 q := by
   have hp := h.isStarProjection_left
   have hq := h.isStarProjection_right
-  obtain ⟨v, hvp, hvq, hv⟩ := h.exists_mul_conjTranspose_mul_self_eq
-  have hbe : v * p = v := by rw [← hvp, ← Matrix.mul_assoc, hv]
-  have hea : p * vᴴ = vᴴ := by
-    simpa [conjTranspose_mul, ← star_eq_conjTranspose, hp.isSelfAdjoint.star_eq] using
-      congr_arg conjTranspose hbe
+  obtain ⟨v, hvp, hvq, hbe, -⟩ := h.exists_mul_conjTranspose_mul_self_eq_support
+  have hea : p * vᴴ = vᴴ := mul_conjTranspose_eq_of_isSelfAdjoint hp.isSelfAdjoint hbe
   have hw : IsSelfAdjoint (Matrix.fromBlocks (1 - p) vᴴ v (1 - q)) :=
     (IsHermitian.fromBlocks (isHermitian_one.sub hp.isSelfAdjoint.isHermitian)
       (conjTranspose_conjTranspose v)

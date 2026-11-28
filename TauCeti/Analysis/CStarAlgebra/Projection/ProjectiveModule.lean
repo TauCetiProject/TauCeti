@@ -9,7 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.CStarMatrix
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Idempotent
 public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.Idempotent
 public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.KZero
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
+import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Basic
 import TauCeti.Analysis.CStarAlgebra.Idempotent
 import TauCeti.Analysis.CStarAlgebra.Unitary.Polar
 
