@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.Polynomial.Truncated.Basic
+import TauCeti.RingTheory.PowerSeries.Jacobson
 
 /-!
 # Finite jets of power series
@@ -108,6 +109,16 @@ theorem jet_coe (p : R[X]) : jet R N (p : R⟦X⟧) = AdjoinRoot.mk _ p :=
 theorem jet_X : jet R N X = AdjoinRoot.root (Polynomial.X ^ N : R[X]) := by
   rw [← Polynomial.coe_X, jet_coe, AdjoinRoot.mk_X]
 
+/-- The first-jet map factors through the constant coefficient and the inclusion of constants. -/
+theorem jet_one_comp_C_constantCoeff :
+    (↑(jet R 1) : R⟦X⟧ →+* AdjoinRoot (Polynomial.X ^ 1 : R[X])).comp
+      ((C : R →+* R⟦X⟧).comp constantCoeff) = ↑(jet R 1) := by
+  ext f
+  apply jet_eq_jet_iff.mpr
+  intro d hd
+  obtain rfl : d = 0 := by omega
+  simp [coeff_zero_eq_constantCoeff]
+
 /-- Every element of `R[X]/(X ^ N)` is the jet of a power series, for instance of a polynomial. -/
 theorem jet_surjective : Function.Surjective (jet R N) := fun y ↦ by
   obtain ⟨p, rfl⟩ := AdjoinRoot.mk_surjective y
@@ -122,6 +133,16 @@ theorem jet_eq_zero_iff {f : R⟦X⟧} : jet R N f = 0 ↔ X ^ N ∣ f := by
 theorem ker_jet : RingHom.ker (jet R N) = Ideal.span {X ^ N} := by
   ext f
   rw [RingHom.mem_ker, jet_eq_zero_iff, Ideal.mem_span_singleton]
+
+/-- Reduction to a positive jet level reflects units, since its kernel lies in the Jacobson
+radical of the power series ring. -/
+instance isLocalHom_jet [NeZero N] :
+    IsLocalHom (↑(jet R N) : R⟦X⟧ →+* AdjoinRoot (Polynomial.X ^ N : R[X])) := by
+  apply (RingHom.isLocalHom_iff_ker_le_jacobson jet_surjective).2
+  intro f hf
+  obtain ⟨g, rfl⟩ := jet_eq_zero_iff.mp hf
+  rw [mem_jacobson_iff]
+  simp [NeZero.ne N]
 
 /-- Jets are compatible with truncation: the image of the `M`-jet of `f` in `R[X]/(X ^ N)`, for
 `N ≤ M`, is the `N`-jet of `f`. -/

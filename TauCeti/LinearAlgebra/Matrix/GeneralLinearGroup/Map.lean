@@ -99,15 +99,21 @@ protected theorem map_neg (f : R →+* S) (g : GL n R) :
   ext i j
   simp [Matrix.GeneralLinearGroup.map_apply]
 
+/-- A general linear matrix maps to the identity exactly when every entry of its difference
+from the identity belongs to the kernel of the scalar map. -/
+theorem mem_ker_map_iff (f : R →+* S) {g : GL n R} :
+    g ∈ (map f).ker ↔ ∀ i j, ((g : Matrix n n R) - 1) i j ∈ RingHom.ker f := by
+  rw [MonoidHom.mem_ker, GeneralLinearGroup.ext_iff]
+  refine forall₂_congr fun i j ↦ ?_
+  simp only [Matrix.sub_apply, RingHom.sub_mem_ker_iff, GeneralLinearGroup.map_apply,
+    GeneralLinearGroup.coe_one, Matrix.one_apply, apply_ite f, map_one, map_zero]
+
 /-- The kernel of reduction `GL n R → GL n (R ⧸ I)`, the principal congruence level of `I`,
 consists of the matrices congruent to the identity matrix entrywise modulo `I`. -/
 theorem mem_ker_map_quotientMk_iff (I : Ideal R) {g : GL n R} :
     g ∈ (Matrix.GeneralLinearGroup.map (n := n) (Ideal.Quotient.mk I)).ker ↔
       ∀ i j, (g : Matrix n n R) i j - (1 : Matrix n n R) i j ∈ I := by
-  rw [MonoidHom.mem_ker, Matrix.GeneralLinearGroup.ext_iff]
-  refine forall₂_congr fun i j ↦ ?_
-  rw [Matrix.GeneralLinearGroup.map_apply, Matrix.GeneralLinearGroup.coe_one, ← Ideal.Quotient.eq,
-    Matrix.one_apply, Matrix.one_apply, apply_ite (Ideal.Quotient.mk I), map_one, map_zero]
+  simp only [mem_ker_map_iff, Ideal.mk_ker, Matrix.sub_apply]
 
 /-- **Principal congruence levels decrease with the ideal**: `I ≤ J` gives
 `ker(GL n R → GL n (R ⧸ I)) ≤ ker(GL n R → GL n (R ⧸ J))`. -/
