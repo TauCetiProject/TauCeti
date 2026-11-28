@@ -37,20 +37,18 @@ variable {K : Type*} [DecidableEq K]
 
 /-- The principal extension with frozen block `diagonal r`. Its symmetrizer is
 that of the original mutable matrix. -/
-def degreePrincipalExtension : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ K) where
-  matrix := fromRows B.matrix (diagonal r)
-  symmetrizer := B.symmetrizer
-  isSkewSymmetrizer := B.isSkewSymmetrizer
+def degreePrincipalExtension : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ K) :=
+  (standardPartsEquiv K K).symm (B, diagonal r)
 
 @[simp]
 theorem degreePrincipalExtension_matrix :
-    (B.degreePrincipalExtension r).matrix = fromRows B.matrix (diagonal r) :=
-  (rfl)
+    (B.degreePrincipalExtension r).matrix = fromRows B.matrix (diagonal r) := by
+  simp only [degreePrincipalExtension, standardPartsEquiv_symm_matrix]
 
 @[simp]
 theorem degreePrincipalExtension_symmetrizer :
-    (B.degreePrincipalExtension r).symmetrizer = B.symmetrizer :=
-  (rfl)
+    (B.degreePrincipalExtension r).symmetrizer = B.symmetrizer := by
+  simp only [degreePrincipalExtension, standardPartsEquiv_symm_symmetrizer]
 
 /-- Taking the mutable block recovers the original matrix, including its symmetrizer. -/
 @[simp]
@@ -66,9 +64,12 @@ theorem dvd_degreePrincipalExtension_column_iff (d : ℤ) (j : K) :
       (∀ i, d ∣ B.matrix i j) ∧ d ∣ r j := by
   constructor
   · intro h
-    exact ⟨fun i ↦ h (Sum.inl i), by simpa [diagonal] using h (Sum.inr j)⟩
+    refine ⟨?_, ?_⟩
+    · intro i
+      simpa only [degreePrincipalExtension_matrix, fromRows_apply_inl] using h (Sum.inl i)
+    · simpa [diagonal] using h (Sum.inr j)
   · rintro ⟨hB, hr⟩ (i | i)
-    · exact hB i
+    · simpa only [degreePrincipalExtension_matrix, fromRows_apply_inl] using hB i
     · by_cases hij : i = j
       · simpa [diagonal, hij] using hr
       · simp [diagonal, hij]

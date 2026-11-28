@@ -41,6 +41,8 @@ entries in transposed positions have opposite signs.
 * `TauCeti.ExchangeMatrix.principal`: the principal block, as a square exchange matrix.
 * `TauCeti.ExchangeMatrix.reindex`: the bijection between exchange matrices induced by
   equivalences of the index types that commute with the mutable embeddings.
+* `TauCeti.ExchangeMatrix.standardPartsEquiv`: standard mutable-first matrices are equivalent
+  to their principal exchange matrix and arbitrary frozen rows.
 * `TauCeti.ExchangeMatrix.sum`: the block diagonal sum of two exchange matrices.
 * `TauCeti.ExchangeMatrix.extendFrozen`: extension by zero along a frozen embedding.
 * `TauCeti.ExchangeMatrix.amalgamate`: block diagonal mutable factors sharing frozen vertices.
@@ -383,6 +385,60 @@ theorem sum_symmetrizer {row₁ : K₁ ↪ I₁} {row₂ : K₂ ↪ I₂} (B₁ 
     (B₁.sum B₂).symmetrizer = Sum.elim B₁.symmetrizer B₂.symmetrizer :=
   (rfl)
 
+section StandardParts
+
+/-- Standard mutable-first exchange matrices are reconstructed from a principal exchange matrix
+and an arbitrary frozen-row matrix, without choosing a complement presentation. -/
+def standardPartsEquiv (K J : Type*) :
+    ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J) ≃
+      ExchangeMatrix (Function.Embedding.refl K) × Matrix J K ℤ where
+  toFun B := (B.principal, B.matrix.submatrix Sum.inr id)
+  invFun p :=
+    { matrix := Matrix.fromRows p.1.matrix p.2
+      symmetrizer := p.1.symmetrizer
+      -- Both row projections use the same chosen witness; do not reconstruct it.
+      isSkewSymmetrizer := p.1.isSkewSymmetrizer }
+  left_inv B := by
+    ext : 1
+    · dsimp only
+      rw [principal_matrix]
+      -- Both projections normalize to the same Matrix.of functions, explicitly including
+      -- the embedding coercion and identity column map.
+      simpa only [Matrix.toRows₁, Matrix.toRows₂, Matrix.submatrix,
+        Function.Embedding.inl_apply, id_eq] using Matrix.fromRows_toRows B.matrix
+    · simp
+  right_inv p := by
+    apply Prod.ext
+    · ext : 1
+      · dsimp only
+        rw [principal_matrix]
+        simpa only [Matrix.toRows₁, Matrix.submatrix, Function.Embedding.inl_apply, id_eq]
+          using Matrix.toRows₁_fromRows p.1.matrix p.2
+      · simp
+    · dsimp only
+      simpa only [Matrix.toRows₂, Matrix.submatrix, id_eq] using
+        Matrix.toRows₂_fromRows p.1.matrix p.2
+
+/-- Decomposing a standard presentation returns its principal and frozen blocks. -/
+@[simp]
+theorem standardPartsEquiv_apply {K J : Type*}
+    (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)) :
+    standardPartsEquiv K J B = (B.principal, B.matrix.submatrix Sum.inr id) := by rfl
+
+/-- The inverse assembles exactly the specified mutable and frozen rows. -/
+@[simp]
+theorem standardPartsEquiv_symm_matrix {K J : Type*}
+    (p : ExchangeMatrix (Function.Embedding.refl K) × Matrix J K ℤ) :
+    ((standardPartsEquiv K J).symm p).matrix = Matrix.fromRows p.1.matrix p.2 := by rfl
+
+/-- The assembled standard presentation retains the principal block's chosen symmetrizer. -/
+@[simp]
+theorem standardPartsEquiv_symm_symmetrizer {K J : Type*}
+    (p : ExchangeMatrix (Function.Embedding.refl K) × Matrix J K ℤ) :
+    ((standardPartsEquiv K J).symm p).symmetrizer = p.1.symmetrizer := by rfl
+
+end StandardParts
+
 section FrozenExtension
 
 variable {J F G : Type*}
@@ -390,21 +446,9 @@ variable {J F G : Type*}
 /-- Extend the frozen rows by zero along an embedding, keeping the principal matrix and its
 chosen symmetrizer. -/
 noncomputable def extendFrozen (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J))
-    (e : J ↪ F) : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ F) where
-  matrix := Matrix.fromRows (B.matrix.submatrix Sum.inl id)
-    (Matrix.of fun f k ↦ Function.extend e (fun j ↦ B.matrix (Sum.inr j) k) 0 f)
-  symmetrizer := B.symmetrizer
-  isSkewSymmetrizer := by
-    have hprincipal :
-        (Matrix.fromRows (B.matrix.submatrix Sum.inl id)
-          (Matrix.of fun f k ↦ Function.extend e (fun j ↦ B.matrix (Sum.inr j) k) 0 f)).submatrix
-            (Function.Embedding.inl : K ↪ K ⊕ F) id =
-          B.matrix.submatrix (Function.Embedding.inl : K ↪ K ⊕ J) id := by
-      ext i k
-      simp only [Matrix.submatrix_apply, Function.Embedding.inl_apply, Matrix.fromRows_apply_inl,
-        id_eq]
-    rw [hprincipal]
-    exact B.isSkewSymmetrizer
+    (e : J ↪ F) : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ F) :=
+  (standardPartsEquiv K F).symm
+    (B.principal, Matrix.of fun f k ↦ Function.extend e (fun j ↦ B.matrix (Sum.inr j) k) 0 f)
 
 variable (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)) (e : J ↪ F)
 
@@ -417,7 +461,8 @@ variable (B : ExchangeMatrix (Function.Embedding.inl : K ↪ K ⊕ J)) (e : J �
 theorem extendFrozen_matrix_frozen (f : F) (k : K) :
     (B.extendFrozen e).matrix (Sum.inr f) k =
       Function.extend e (fun j ↦ B.matrix (Sum.inr j) k) 0 f := by
-  simp only [extendFrozen, Matrix.fromRows_apply_inr, Matrix.of_apply]
+  simp only [extendFrozen, standardPartsEquiv_symm_matrix, Matrix.fromRows_apply_inr,
+    Matrix.of_apply]
 
 /-- The original frozen rows are retained at their embedded vertices. -/
 @[simp] theorem extendFrozen_matrix_inr (j : J) (k : K) :
@@ -431,7 +476,7 @@ theorem extendFrozen_matrix_frozen (f : F) (k : K) :
 
 /-- Extension does not change the chosen symmetrizer. -/
 @[simp] theorem extendFrozen_symmetrizer : (B.extendFrozen e).symmetrizer = B.symmetrizer := by
-  rfl
+  simp only [extendFrozen, standardPartsEquiv_symm_symmetrizer, principal_symmetrizer]
 
 /-- Restriction along the frozen embedding recovers the original exchange matrix. -/
 @[simp] theorem submatrix_extendFrozen :
