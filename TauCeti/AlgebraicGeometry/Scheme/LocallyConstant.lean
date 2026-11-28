@@ -13,8 +13,9 @@ import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 # Affine covers from locally constant labels
 
 The fibres of a locally constant function on an affine scheme are affine clopen subschemes.
-Any finite set containing its image gives a coproduct of fibre spectra isomorphic to the
-original affine scheme. Labels with empty fibres give empty summands. This construction applies
+Any finite injective family of labels containing its image gives a coproduct of fibre spectra
+isomorphic to the original affine scheme. Labels with empty fibres give empty summands.
+This construction applies
 before choosing modules or quotients on the components.
 
 ## References
@@ -24,51 +25,84 @@ before choosing modules or quotients on the components.
 
 public section
 
-universe u v
+universe u v w
 
 open CategoryTheory CategoryTheory.Limits AlgebraicGeometry PrimeSpectrum
 
 namespace LocallyConstant
 
 variable {A : Type u} [CommRing A] {α : Type v}
-  (f : LocallyConstant (PrimeSpectrum A) α) (s : Finset α)
+  (f : LocallyConstant (PrimeSpectrum A) α)
+
+/-- The canonical inclusion of a labelled fibre spectrum is an open immersion. -/
+noncomputable instance isOpenImmersion_specMap_fiberRing (a : α) :
+    IsOpenImmersion (Spec.map (CommRingCat.ofHom (algebraMap A (f.fiberRing a)))) :=
+  IsOpenImmersion.of_isLocalization (fiberIdempotent f.isLocallyConstant a)
+
+/-- The open range of the labelled fibre inclusion is its fibre-idempotent basic open. -/
+@[simp]
+theorem opensRange_specMap_fiberRing (a : α) :
+    -- Give the immersion instance explicitly for the quotient-map simp normal form.
+    @Scheme.Hom.opensRange _ _
+      (Spec.map (CommRingCat.ofHom
+        (Ideal.Quotient.mk (Ideal.span {1 - fiberIdempotent f.isLocallyConstant a}))))
+      (f.isOpenImmersion_specMap_fiberRing a) =
+        basicOpen (fiberIdempotent f.isLocallyConstant a) := by
+  apply TopologicalSpace.Opens.ext
+  -- Spec.map acts on points by comap of the coefficient homomorphism.
+  exact localization_away_comap_range (f.fiberRing a) _
+
+variable {ι : Type w} [Finite ι] (e : ι ↪ α)
 
 /-- The canonical morphism from the coproduct of fibre spectra to the original spectrum. -/
 noncomputable def specCover :
-    (∐ fun a : s ↦ Spec (.of (f.fiberRing a))) ⟶ Spec (.of A) :=
-  Sigma.desc fun a : s ↦ Spec.map (CommRingCat.ofHom (algebraMap A (f.fiberRing a)))
+    (∐ fun i : ι ↦ Spec (.of (f.fiberRing (e i)))) ⟶ Spec (.of A) :=
+  Sigma.desc fun i : ι ↦ Spec.map (CommRingCat.ofHom (algebraMap A (f.fiberRing (e i))))
 
 /-- Restricting the fibre cover to a summand gives its coefficient map. -/
 @[reassoc (attr := simp)]
-theorem ι_specCover (a : s) :
-    Sigma.ι _ a ≫ f.specCover s =
-      Spec.map (CommRingCat.ofHom (algebraMap A (f.fiberRing a))) :=
+theorem ι_specCover (i : ι) :
+    Sigma.ι _ i ≫ f.specCover e =
+      Spec.map (CommRingCat.ofHom (algebraMap A (f.fiberRing (e i)))) :=
   Sigma.ι_comp_desc _ _
 
-/-- A finite set containing every label gives an isomorphism from the coproduct of fibre spectra
-onto the original spectrum. -/
-theorem isIso_specCover (hs : Set.range f ⊆ s) : IsIso (f.specCover s) := by
+/-- A finite injective family containing every label gives an isomorphism from the coproduct
+of fibre spectra onto the original spectrum. -/
+theorem isIso_specCover (hs : Set.range f ⊆ Set.range e) : IsIso (f.specCover e) := by
   classical
-  let F := fun a : s ↦ Spec (.of (f.fiberRing a))
-  let e := (equivShrink.{u} s).symm
-  let := Fintype.ofEquiv s e.symm
-  let g := RingHom.pi fun a : Shrink.{u} s ↦ algebraMap A (f.fiberRing (e a))
-  have hc := completeOrthogonalIdempotents_fiberIdempotent f.isLocallyConstant hs
-  have hf : Function.Bijective (RingHom.pi fun a : s ↦ algebraMap A (f.fiberRing a)) := by
+  let := Fintype.ofFinite ι
+  let F := fun i : ι ↦ Spec (.of (f.fiberRing (e i)))
+  let k := (equivShrink.{u} ι).symm
+  let := Fintype.ofEquiv ι k.symm
+  let g := RingHom.pi fun i : Shrink.{u} ι ↦ algebraMap A (f.fiberRing (e (k i)))
+  have hc₀ := completeOrthogonalIdempotents_fiberIdempotent f.isLocallyConstant
+    (s := Finset.univ.map e) (by simpa using hs)
+  let j : ι ≃ ↥(Finset.univ.map e) := Equiv.ofBijective
+    (fun i ↦ ⟨e i, Finset.mem_map_of_mem _ (Finset.mem_univ i)⟩)
+    ⟨fun _ _ h ↦ e.injective (congrArg Subtype.val h), by
+      rintro ⟨a, ha⟩
+      obtain ⟨i, _, rfl⟩ := Finset.mem_map.mp ha
+      exact ⟨i, rfl⟩⟩
+  have hj (i : ι) : (j i).val = e i := rfl
+  have hc : CompleteOrthogonalIdempotents fun i : ι ↦
+      fiberIdempotent f.isLocallyConstant (e i) := by
+    simpa only [Function.comp_def, hj] using
+      (CompleteOrthogonalIdempotents.equiv j).mpr hc₀
+  have hf : Function.Bijective (RingHom.pi fun i : ι ↦ algebraMap A (f.fiberRing (e i))) := by
     simpa only [Ideal.Quotient.algebraMap_eq] using hc.bijective_pi
   have hg : Function.Bijective g := by
-    have h := (Equiv.piCongrLeft (fun a : s ↦ f.fiberRing a) e).symm.bijective.comp hf
-    have heq : ⇑g = (Equiv.piCongrLeft (fun a : s ↦ f.fiberRing a) e).symm ∘
-        (RingHom.pi fun a : s ↦ algebraMap A (f.fiberRing a)) := by
-      funext x a
+    have h := (Equiv.piCongrLeft (fun i : ι ↦ f.fiberRing (e i)) k).symm.bijective.comp hf
+    have heq : ⇑g = (Equiv.piCongrLeft (fun i : ι ↦ f.fiberRing (e i)) k).symm ∘
+        (RingHom.pi fun i : ι ↦ algebraMap A (f.fiberRing (e i))) := by
+      funext x i
       simp only [g, Function.comp_apply, Equiv.piCongrLeft_symm_apply, RingHom.pi_apply]
     rwa [heq]
   have : IsIso (Spec.map (CommRingCat.ofHom g)) := isIso_SpecMap_iff.mpr hg
-  have heq : (Sigma.reindex e F).hom ≫ f.specCover s =
-      sigmaSpec.{u, u} (fun a : Shrink.{u} s ↦ .of (f.fiberRing (e a))) ≫
+  have heq : (Sigma.reindex k F).hom ≫ f.specCover e =
+      sigmaSpec.{u, u} (fun i : Shrink.{u} ι ↦ .of (f.fiberRing (e (k i)))) ≫
         Spec.map (CommRingCat.ofHom g) := by
     apply Sigma.hom_ext
-    intro a
+    intro i
     dsimp only [F]
     rw [Sigma.ι_reindex_hom_assoc, ι_specCover]
     dsimp only [Function.comp_def]
@@ -76,9 +110,9 @@ theorem isIso_specCover (hs : Set.range f ⊆ s) : IsIso (f.specCover s) := by
     apply congrArg (fun h ↦ Spec.map (CommRingCat.ofHom h))
     ext x
     simp only [g, RingHom.comp_apply, Pi.evalRingHom_apply, RingHom.pi_apply]
-  have : IsIso ((Sigma.reindex e F).hom ≫ f.specCover s) := by
+  have : IsIso ((Sigma.reindex k F).hom ≫ f.specCover e) := by
     rw [heq]
     infer_instance
-  exact IsIso.of_isIso_comp_left (Sigma.reindex e F).hom _
+  exact IsIso.of_isIso_comp_left (Sigma.reindex k F).hom _
 
 end LocallyConstant
