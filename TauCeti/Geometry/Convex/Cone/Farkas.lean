@@ -31,7 +31,9 @@ lemma says that all consequences of the system arise in this way:
   (`Matrix.forall_dotProduct_le_iff_exists_vecMul_add_vecMul_eq`), with the homogeneous special
   case `Matrix.forall_dotProduct_nonpos_iff_exists_vecMul_add_vecMul_eq`;
 * the system has no solution exactly when some certificate has `y ᵥ* A + z ᵥ* E = 0` and
-  `y ⬝ᵥ b + z ⬝ᵥ d < 0` (`Matrix.not_exists_mulVec_le_and_mulVec_eq_iff`).
+  `y ⬝ᵥ b + z ⬝ᵥ d < 0` (`Matrix.not_exists_mulVec_le_and_mulVec_eq_iff`); for the standard
+  system `A *ᵥ x = b`, `0 ≤ x` this reads: there is a solution exactly when no `y` has
+  `0 ≤ Aᵀ *ᵥ y` and `b ⬝ᵥ y < 0` (`Matrix.exists_nonneg_mulVec_eq_iff`);
 * an inequality `c ⬝ᵥ x ≤ δ` that no certificate implies is separated from the system by a
   vector `(u, s)` with `0 ≤ s`, even when the system has no solution
   (`Matrix.exists_dual_of_not_exists_vecMul_add_vecMul_eq_and_le`).
@@ -65,6 +67,10 @@ violates `c ⬝ᵥ x ≤ δ`. No topology or separation theorem is used.
 * J. Farkas, *Theorie der einfachen Ungleichungen*, J. Reine Angew. Math. **124** (1902), 1–27.
 * A. Schrijver, *Theory of Linear and Integer Programming*, Wiley, 1986, §7.3, Corollaries 7.1e
   and 7.1h.
+* J. M. Borwein, A. S. Lewis, *Convex Analysis and Nonlinear Optimization*, 2nd ed., Springer,
+  2006, Lemma 2.2.7 (the standard form `Matrix.exists_nonneg_mulVec_eq_iff`).
+* S. Boyd, L. Vandenberghe, *Convex Optimization*, Cambridge University Press, 2004, §5.8 (the
+  standard form `Matrix.exists_nonneg_mulVec_eq_iff`).
 -/
 
 public section
@@ -238,6 +244,18 @@ theorem not_exists_mulVec_le_and_mulVec_eq_iff [Fintype I] [Fintype J] (A : Matr
     have h := vecMul_add_vecMul_dotProduct_le z hy hA hE
     rw [h0, zero_dotProduct] at h
     exact (h.trans_lt hlt).false
+
+/-- **Farkas' lemma** for the standard system `A *ᵥ x = b`, `0 ≤ x`: it has a solution exactly
+when no `y` has `0 ≤ Aᵀ *ᵥ y` and `b ⬝ᵥ y < 0` (Borwein–Lewis, Lemma 2.2.7; Boyd–Vandenberghe,
+§5.8). -/
+theorem exists_nonneg_mulVec_eq_iff [Fintype I] (A : Matrix I ι K) (b : I → K) :
+    (∃ x, 0 ≤ x ∧ A *ᵥ x = b) ↔ ¬∃ y, 0 ≤ Aᵀ *ᵥ y ∧ b ⬝ᵥ y < 0 := by
+  classical
+  -- Write `0 ≤ x` as the inequality rows `-1 *ᵥ x ≤ 0`; a certificate `(w, y)` of infeasibility
+  -- has `y ᵥ* A = w`, which is nonnegative, and `y ⬝ᵥ b < 0`.
+  rw [← not_iff_not, not_not]
+  simpa [neg_mulVec, vecMul_neg, mulVec_transpose, neg_add_eq_zero, dotProduct_comm b] using
+    not_exists_mulVec_le_and_mulVec_eq_iff (-1 : Matrix ι ι K) 0 A b
 
 /-- Feasibility of a finite system of linear inequalities and equations does not change under an
 order-preserving ring homomorphism out of a linearly ordered field: a Farkas certificate of
