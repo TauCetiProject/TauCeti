@@ -25,8 +25,11 @@ the Galois property `μ.quantile t ≤ x ↔ t ≤ cdf μ x`. At levels `t ≤ 0
 ranges over all of `ℝ` or over the empty set, so the value there is the junk value `0`. The
 endpoint level `t = 1` is not junk: the quantile there is the least point of full cumulative mass
 when such a point exists (for instance `(dirac a).quantile 1 = a`), and `0` when the law has
-unbounded support to the right. The inverse characterizations below use levels in `Ioo 0 1`,
-which is also the interval the uniform law is taken on.
+unbounded support to the right. The Galois characterization and its set-level and strict forms
+hold at every positive level that the cumulative distribution function reaches: every level in
+`Ioo 0 1`, and also the endpoint level `1` for a law reaching full cumulative mass, such as a law
+carried by a finite set. The remaining inverse characterizations below use levels in `Ioo 0 1`,
+which is also the interval the uniform law of inverse transform sampling is taken on.
 
 The *upper quantile* `μ.upperQuantile t = sInf {x | t < cdf μ x}` uses the strict inequality
 instead. Where `cdf μ` has a plateau at the level `t`, the lower and upper quantiles are the two
@@ -54,7 +57,11 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 
 * `MeasureTheory.Measure.quantile_le_iff` — the Galois characterization of the quantile, with
   `MeasureTheory.Measure.setOf_le_cdf_eq_Ici` its set-level form and
-  `MeasureTheory.Measure.lt_quantile_iff` its negation;
+  `MeasureTheory.Measure.lt_quantile_iff` its strict-inequality form, and
+  `MeasureTheory.Measure.quantile_le_iff_of_nonempty`,
+  `MeasureTheory.Measure.setOf_le_cdf_eq_Ici_of_nonempty` and
+  `MeasureTheory.Measure.lt_quantile_iff_of_nonempty` their extensions to every positive level
+  that the cumulative distribution function reaches;
 * `MeasureTheory.Measure.cdf_le_iff_quantile_le` — reversed pointwise comparison of two cdfs is
   equivalent to pointwise comparison of their interior quantiles;
 * `MeasureTheory.Measure.cdf_quantile` and `MeasureTheory.Measure.quantile_cdf` — the exact
@@ -102,11 +109,15 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 * `MeasureTheory.Measure.continuousWithinAt_Iio_quantile` and
   `MeasureTheory.Measure.continuousWithinAt_Ioi_upperQuantile` — left continuity of the lower
   and right continuity of the upper quantile;
-* `MeasureTheory.Measure.measurable_quantile_probabilityMeasure` and
-  `MeasureTheory.Measure.measurable_upperQuantile_probabilityMeasure` — joint measurability of
-  the two quantiles in a probability law and an interior level, with
-  `MeasureTheory.Measure.measurable_quantile_cdf_family` and
-  `MeasureTheory.Measure.measurable_upperQuantile_cdf_family` as parameterized-family forms;
+* `MeasureTheory.FiniteMeasure.measurable_uncurry_measureReal_Iic` — joint measurability of the
+  mass of a closed ray, the cdf of a probability law, in a finite measure and the endpoint;
+* `MeasureTheory.Measure.measurable_uncurry_quantile_probabilityMeasure` — joint measurability of
+  the quantile in a probability law and an arbitrary level, with
+  `MeasureTheory.Measure.measurable_quantile_cdf_family` its parameterized-family form at interior
+  levels;
+* `MeasureTheory.Measure.measurable_upperQuantile_probabilityMeasure` — joint measurability of
+  the upper quantile in a probability law and an interior level, with
+  `MeasureTheory.Measure.measurable_upperQuantile_cdf_family` its parameterized-family form;
 * `MeasureTheory.Measure.map_quantile_volume_Ioo` — inverse transform sampling: the quantile
   function pushes the uniform law on `Ioo 0 1` forward to the original law, packaged as
   `MeasureTheory.Measure.measurePreserving_quantile`;
@@ -231,15 +242,30 @@ theorem quantile_map_abs (μ : Measure ℝ) [IsZeroOrProbabilityMeasure μ] [μ.
       exact measureReal_mono (Iic_subset_Iio.2 (by linarith))
     constructor <;> intro h <;> linarith
 
-/-- The cumulative distribution function at the quantile reaches every level strictly below
-`1`. -/
-theorem le_cdf_quantile (μ : Measure ℝ) (h1 : t < 1) : t ≤ cdf μ (μ.quantile t) := by
+/-- The cumulative distribution function at the quantile reaches the level whenever some point
+reaches it, the endpoint level `1` included. -/
+theorem le_cdf_quantile_of_nonempty (μ : Measure ℝ) (hne : {x : ℝ | t ≤ cdf μ x}.Nonempty) :
+    t ≤ cdf μ (μ.quantile t) := by
   have key : ∀ r : Ioi (μ.quantile t), t ≤ cdf μ r := by
     rintro ⟨r, hr⟩
-    obtain ⟨y, hy, hyr⟩ := exists_lt_of_csInf_lt (nonempty_setOf_le_cdf μ h1) hr
+    rw [mem_Ioi, quantile_def] at hr
+    obtain ⟨y, hy, hyr⟩ := exists_lt_of_csInf_lt hne hr
     exact hy.trans (monotone_cdf μ hyr.le)
   have h := le_ciInf key
   rwa [StieltjesFunction.iInf_Ioi_eq] at h
+
+/-- The cumulative distribution function at the quantile reaches every level strictly below
+`1`. -/
+theorem le_cdf_quantile (μ : Measure ℝ) (h1 : t < 1) : t ≤ cdf μ (μ.quantile t) :=
+  le_cdf_quantile_of_nonempty μ (nonempty_setOf_le_cdf μ h1)
+
+/-- The Galois characterization of the quantile at a positive level that some point reaches. This
+covers the endpoint level `1` for a law reaching full cumulative mass, such as a law carried by a
+finite set. -/
+theorem quantile_le_iff_of_nonempty (μ : Measure ℝ) (h0 : 0 < t)
+    (hne : {x : ℝ | t ≤ cdf μ x}.Nonempty) : μ.quantile t ≤ x ↔ t ≤ cdf μ x :=
+  ⟨fun h ↦ (le_cdf_quantile_of_nonempty μ hne).trans (monotone_cdf μ h),
+    fun h ↦ by rw [quantile_def]; exact csInf_le (bddBelow_setOf_le_cdf μ h0) h⟩
 
 /-- **The Galois characterization of the quantile.** For a level strictly between `0` and `1`,
 the quantile lies below a point exactly when the cumulative distribution function at that point
@@ -247,8 +273,7 @@ reaches the level. -/
 @[simp]
 theorem quantile_le_iff (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
     μ.quantile t ≤ x ↔ t ≤ cdf μ x :=
-  ⟨fun h ↦ (le_cdf_quantile μ h1).trans (monotone_cdf μ h),
-    fun h ↦ csInf_le (bddBelow_setOf_le_cdf μ h0) h⟩
+  quantile_le_iff_of_nonempty μ h0 (nonempty_setOf_le_cdf μ h1)
 
 /-- Reversed pointwise comparison of the cdfs of two real measures is equivalent to pointwise
 comparison of their quantiles at every level strictly between zero and one. -/
@@ -264,19 +289,31 @@ theorem cdf_le_iff_quantile_le (μ ν : Measure ℝ) :
     exact hμu.not_ge ((Measure.quantile_le_iff μ hu0 hu1).1
       ((hquant u hu0 hu1).trans ((Measure.quantile_le_iff ν hu0 hu1).2 huν.le)))
 
+/-- The set of points whose cumulative mass reaches a positive level that some point reaches is
+the closed ray to the right of the quantile at that level, the endpoint level `1` included. -/
+theorem setOf_le_cdf_eq_Ici_of_nonempty (μ : Measure ℝ) (h0 : 0 < t)
+    (hne : {x : ℝ | t ≤ cdf μ x}.Nonempty) : {x : ℝ | t ≤ cdf μ x} = Ici (μ.quantile t) := by
+  ext x
+  exact (quantile_le_iff_of_nonempty μ h0 hne).symm
+
 /-- The set of points whose cumulative mass reaches a level strictly between `0` and `1` is the
 closed ray to the right of the quantile at that level. -/
 theorem setOf_le_cdf_eq_Ici (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
-    {x : ℝ | t ≤ cdf μ x} = Ici (μ.quantile t) := by
-  ext x
-  exact (quantile_le_iff μ h0 h1).symm
+    {x : ℝ | t ≤ cdf μ x} = Ici (μ.quantile t) :=
+  setOf_le_cdf_eq_Ici_of_nonempty μ h0 (nonempty_setOf_le_cdf μ h1)
+
+/-- At a positive level that some point reaches, the endpoint level `1` included, a point lies
+strictly below the quantile exactly when its cumulative mass has not yet reached that level. -/
+theorem lt_quantile_iff_of_nonempty (μ : Measure ℝ) (h0 : 0 < t)
+    (hne : {x : ℝ | t ≤ cdf μ x}.Nonempty) : x < μ.quantile t ↔ cdf μ x < t := by
+  simpa only [not_le] using (quantile_le_iff_of_nonempty (x := x) μ h0 hne).not
 
 /-- A point lies strictly below the quantile at a level exactly when its cumulative mass has not
 yet reached that level. -/
 @[simp]
 theorem lt_quantile_iff (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
-    x < μ.quantile t ↔ cdf μ x < t := by
-  simpa only [not_le] using (quantile_le_iff (x := x) μ h0 h1).not
+    x < μ.quantile t ↔ cdf μ x < t :=
+  lt_quantile_iff_of_nonempty μ h0 (nonempty_setOf_le_cdf μ h1)
 
 /-- If the cdf is everywhere positive, quantiles tend to minus infinity as the level decreases
 to zero. -/
@@ -314,11 +351,17 @@ theorem tendsto_quantile_nhdsLT_one_of_strictMono_cdf (μ : Measure ℝ)
   tendsto_quantile_nhdsLT_one_of_cdf_lt_one μ fun x ↦
     (hμ (by linarith : x < x + 1)).trans_le (cdf_le_one μ (x + 1))
 
+/-- The quantile function is monotone on the positive levels that the cumulative distribution
+function reaches, which include the endpoint level `1` for a law reaching full cumulative mass. -/
+theorem monotoneOn_quantile_of_nonempty (μ : Measure ℝ) :
+    MonotoneOn μ.quantile {t | 0 < t ∧ {x : ℝ | t ≤ cdf μ x}.Nonempty} := by
+  rintro s ⟨hs0, hs⟩ t ⟨_, ht⟩ hst
+  exact (quantile_le_iff_of_nonempty μ hs0 hs).mpr (hst.trans (le_cdf_quantile_of_nonempty μ ht))
+
 /-- The quantile function is monotone on the levels where it is the honest generalized
 inverse. -/
-theorem monotoneOn_quantile (μ : Measure ℝ) : MonotoneOn μ.quantile (Ioo 0 1) := by
-  rintro s ⟨hs0, hs1⟩ t ⟨_, ht1⟩ hst
-  exact (quantile_le_iff μ hs0 hs1).mpr (hst.trans (le_cdf_quantile μ ht1))
+theorem monotoneOn_quantile (μ : Measure ℝ) : MonotoneOn μ.quantile (Ioo 0 1) :=
+  (monotoneOn_quantile_of_nonempty μ).mono fun _ ht ↦ ⟨ht.1, nonempty_setOf_le_cdf μ ht.2⟩
 
 /-- The mass strictly to the left of the quantile does not exceed the level: every point below
 the quantile has cumulative mass below the level. For `0 < t < 1`, together with
@@ -832,28 +875,76 @@ theorem measurable_upperQuantile (μ : Measure ℝ) : Measurable μ.upperQuantil
 
 /-! ### Measurability in the law and the level -/
 
-/-- The lower quantile is jointly measurable in a probability measure and a level in `(0, 1)`. -/
+/-- The mass of the closed ray `Iic t` is jointly measurable in a finite measure on `ℝ` and the
+point `t`. For a probability measure it is the cumulative distribution function. -/
 @[fun_prop]
-theorem measurable_quantile_probabilityMeasure :
-    Measurable fun q : ProbabilityMeasure ℝ × Ioo (0 : ℝ) 1 ↦
-      (q.1 : Measure ℝ).quantile q.2 := by
-  -- The Giry measurable structure is generated by evaluation on measurable sets, and
-  -- `quantile_le_iff` expresses each sublevel set using evaluation on a closed ray.
-  apply measurable_of_Iic
-  intro x
-  have hcdf : Measurable fun P : ProbabilityMeasure ℝ ↦ cdf (P : Measure ℝ) x := by
+theorem _root_.MeasureTheory.FiniteMeasure.measurable_uncurry_measureReal_Iic :
+    Measurable (Function.uncurry fun (μ : FiniteMeasure ℝ) (t : ℝ) ↦
+      (μ : Measure ℝ).real (Iic t)) := by
+  -- The finite measure, as a kernel from (measure, point) pairs, evaluated on the moving section
+  -- `Iic t` of a measurable set.
+  let η : Kernel (FiniteMeasure ℝ × ℝ) ℝ :=
+    Kernel.mk (fun q ↦ (q.1 : Measure ℝ)) (measurable_subtypeVal.comp measurable_fst)
+  have hηq (q : FiniteMeasure ℝ × ℝ) : η q = (q.1 : Measure ℝ) := congrFun (Kernel.coe_mk _ _) q
+  have hsec (q : FiniteMeasure ℝ × ℝ) :
+      Prod.mk q ⁻¹' {r : (FiniteMeasure ℝ × ℝ) × ℝ | r.2 ≤ r.1.2} = Iic q.2 := by
+    ext r
+    simp
+  have hη := Kernel.measurable_kernel_prodMk_left_of_finite (κ := η)
+    (measurableSet_le measurable_snd (measurable_snd.comp measurable_fst))
+    fun q ↦ hηq q ▸ inferInstance
+  have h : (Function.uncurry fun (μ : FiniteMeasure ℝ) (t : ℝ) ↦ (μ : Measure ℝ).real (Iic t)) =
+      fun q ↦ (η q (Prod.mk q ⁻¹' {r : (FiniteMeasure ℝ × ℝ) × ℝ | r.2 ≤ r.1.2})).toReal := by
+    ext ⟨μ, t⟩
+    rw [Function.uncurry_apply_pair, measureReal_def, hηq, hsec]
+  rw [h]
+  exact hη.ennreal_toReal
+
+/-- The lower quantile is jointly measurable in a probability measure and an arbitrary level, the
+endpoint level `1` and the junk levels included. -/
+@[fun_prop]
+theorem measurable_uncurry_quantile_probabilityMeasure :
+    Measurable (Function.uncurry fun (P : ProbabilityMeasure ℝ) (t : ℝ) ↦
+      (P : Measure ℝ).quantile t) := by
+  -- The Giry measurable structure is generated by evaluation on measurable sets. At a positive
+  -- level that the cdf reaches, which can be tested at the natural numbers,
+  -- `quantile_le_iff_of_nonempty` expresses each sublevel set using evaluation on a closed ray;
+  -- at the other levels the quantile is the junk value `0`.
+  have hcdf (x : ℝ) : Measurable fun P : ProbabilityMeasure ℝ ↦ cdf (P : Measure ℝ) x := by
     simp only [cdf_eq_real, Measure.real]
     exact ((Measure.measurable_coe measurableSet_Iic).comp
       measurable_subtypeVal).ennreal_toReal
-  have hset :
-      (fun q : ProbabilityMeasure ℝ × Ioo (0 : ℝ) 1 ↦
-        (q.1 : Measure ℝ).quantile q.2) ⁻¹' Iic x =
-        {q | (q.2 : ℝ) ≤ cdf (q.1 : Measure ℝ) x} := by
+  let R : Set (ProbabilityMeasure ℝ × ℝ) :=
+    {q | 0 < q.2 ∧ ∃ n : ℕ, q.2 ≤ cdf (q.1 : Measure ℝ) n}
+  have hR : MeasurableSet R := by
+    simp only [R, ofPred_and, ofPred_exists]
+    exact (measurableSet_lt measurable_const measurable_snd).inter
+      (MeasurableSet.iUnion fun n : ℕ ↦
+        measurableSet_le measurable_snd ((hcdf n).comp measurable_fst))
+  have hreach (q : ProbabilityMeasure ℝ × ℝ) :
+      {x : ℝ | q.2 ≤ cdf (q.1 : Measure ℝ) x}.Nonempty ↔ ∃ n : ℕ, q.2 ≤ cdf (q.1 : Measure ℝ) n :=
+    ⟨fun ⟨x, hx⟩ ↦ ⟨⌈x⌉₊, hx.trans (monotone_cdf _ (Nat.le_ceil x))⟩,
+      fun ⟨n, hn⟩ ↦ ⟨n, hn⟩⟩
+  refine measurable_of_Iic fun x ↦ ?_
+  have hset : Function.uncurry (fun (P : ProbabilityMeasure ℝ) (t : ℝ) ↦
+      (P : Measure ℝ).quantile t) ⁻¹' Iic x =
+      R ∩ {q | q.2 ≤ cdf (q.1 : Measure ℝ) x} ∪ Rᶜ ∩ {_q | 0 ≤ x} := by
     ext q
-    exact quantile_le_iff (q.1 : Measure ℝ) q.2.property.1 q.2.property.2
+    simp only [mem_preimage, Function.uncurry, mem_Iic, mem_union, mem_inter_iff,
+      mem_compl_iff, mem_ofPred_eq]
+    by_cases hq : q ∈ R
+    · simp only [hq, true_and, not_true_eq_false, false_and, or_false]
+      exact quantile_le_iff_of_nonempty _ hq.1 ((hreach q).2 hq.2)
+    · have h0 : (q.1 : Measure ℝ).quantile q.2 = 0 := by
+        rcases le_or_gt q.2 0 with hq0 | hq0
+        · exact quantile_of_nonpos _ hq0
+        · have hempty : {y : ℝ | q.2 ≤ cdf (q.1 : Measure ℝ) y} = ∅ :=
+            not_nonempty_iff_eq_empty.1 fun hne ↦ hq ⟨hq0, (hreach q).1 hne⟩
+          rw [quantile_def, hempty, Real.sInf_empty]
+      simp only [hq, h0, false_and, not_false_eq_true, true_and, false_or]
   rw [hset]
-  exact measurableSet_le (measurable_subtypeVal.comp measurable_snd)
-    (hcdf.comp measurable_fst)
+  exact (hR.inter (measurableSet_le measurable_snd ((hcdf x).comp measurable_fst))).union
+    (hR.compl.inter (MeasurableSet.const _))
 
 /-- The upper quantile is jointly measurable in a probability measure and a level in `(0, 1)`. -/
 @[fun_prop]
@@ -887,8 +978,8 @@ theorem measurable_quantile_cdf_family {α : Type*} [MeasurableSpace α]
     Measurable fun q : α × Ioo (0 : ℝ) 1 ↦ (μ q.1).quantile q.2 := by
   let P : α → ProbabilityMeasure ℝ := fun a ↦ ⟨μ a, hprob a⟩
   have hP : Measurable P := hμ.subtype_mk
-  exact measurable_quantile_probabilityMeasure.comp
-    ((hP.comp measurable_fst).prodMk measurable_snd)
+  exact measurable_uncurry_quantile_probabilityMeasure.comp
+    ((hP.comp measurable_fst).prodMk (measurable_subtypeVal.comp measurable_snd))
 
 /-- Upper quantiles of a measurable family of probability measures are jointly measurable in the
 family parameter and an interior level. -/

@@ -54,7 +54,9 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   the cdf vanishes strictly below such a point;
 * `MeasureTheory.Measure.cdf_eq_zero_of_ae_lt` and `MeasureTheory.Measure.cdf_eq_one_of_ae_le`
   show that the cdf is zero at a point below almost every sample and one at a point bounding
-  almost every sample from above;
+  almost every sample from above, so that by
+  `MeasureTheory.Measure.nonempty_setOf_le_cdf_of_ae_le` an almost surely bounded law reaches
+  every level at most `1`;
 * `MeasureTheory.Measure.measureReal_Iio_le_iff_forall_cdf_le` characterizes an upper bound on the
   mass of an open ray by the same upper bound on the cdf at every point strictly to its left,
   `MeasureTheory.Measure.measureReal_Ioc_eq_cdf_sub` computes the mass of a half-open interval as
@@ -510,6 +512,13 @@ theorem cdf_eq_one_of_ae_le (ν : Measure ℝ) [IsProbabilityMeasure ν] {x : �
     (hν : ∀ᵐ y ∂ν, y ≤ x) : cdf ν x = 1 := by
   have heq : Iic x =ᵐ[ν] univ := Filter.eventuallyEqSet_univ.2 hν
   rw [cdf_eq_real, measureReal_congr heq, probReal_univ]
+
+/-- A probability law almost surely bounded above reaches full cumulative mass at the bound, so
+the cumulative distribution function reaches every level at most `1`, the endpoint level `1`
+included. -/
+theorem nonempty_setOf_le_cdf_of_ae_le (ν : Measure ℝ) [IsProbabilityMeasure ν] {b t : ℝ}
+    (hν : ∀ᵐ y ∂ν, y ≤ b) (ht : t ≤ 1) : {x : ℝ | t ≤ cdf ν x}.Nonempty :=
+  ⟨b, ht.trans_eq (cdf_eq_one_of_ae_le ν hν).symm⟩
 
 /-- A half-open interval has positive mass exactly when the cdf strictly increases across its
 endpoints. -/

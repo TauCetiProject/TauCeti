@@ -101,6 +101,22 @@ theorem empiricalFiniteMeasure_apply {x : κ → α} {s : Set α} (hs : Measurab
   simp only [FunLike.coe_sum, FunLike.coe_smul, Finset.sum_apply, Pi.smul_apply,
     smul_eq_mul, Measure.dirac_apply' _ hs, Finset.mul_sum]
 
+/-- Evaluation of an empirical finite measure on a measurable set is the proportion of the
+family lying in it, counted with multiplicity. -/
+theorem empiricalFiniteMeasure_apply_eq_card_filter {x : κ → α} {s : Set α}
+    [DecidablePred (· ∈ s)] (hs : MeasurableSet s) :
+    (empiricalFiniteMeasure x : Measure α) s =
+      ((Fintype.card κ : ℕ) : ℝ≥0∞)⁻¹ * (Finset.univ.filter fun i ↦ x i ∈ s).card := by
+  rw [empiricalFiniteMeasure_apply hs]
+  simp [Set.indicator_apply]
+
+/-- An empirical finite measure is carried by the finite set of values of the family. -/
+theorem ae_mem_image_empiricalFiniteMeasure [MeasurableSingletonClass α] [DecidableEq α]
+    (x : κ → α) : ∀ᵐ y ∂(empiricalFiniteMeasure x : Measure α), y ∈ Finset.univ.image x := by
+  rw [empiricalFiniteMeasure_toMeasure, ae_finsetSum_measure_iff]
+  intro i _
+  exact Measure.ae_smul_measure (by simp) _
+
 /-- A nonempty family has an empirical probability measure. -/
 instance isProbabilityMeasure_empiricalFiniteMeasure [Nonempty κ] (x : κ → α) :
     IsProbabilityMeasure (empiricalFiniteMeasure x : Measure α) := by
@@ -350,19 +366,15 @@ theorem empiricalMeasureOfFintype_eq_map_uniformOn [MeasurableSpace κ] [Measura
     (empiricalMeasureOfFintype x : Measure α) =
       (ProbabilityTheory.uniformOn (Set.univ : Set κ)).map x := by
   ext s hs
-  rw [empiricalMeasureOfFintype_apply hs, Measure.map_apply (measurable_of_countable x) hs,
-    ProbabilityTheory.uniformOn_univ]
   classical
   have hpreimage :
       x ⁻¹' s = (Finset.univ.filter fun i => x i ∈ s : Finset κ) := by
     ext i
     simp
-  rw [hpreimage, Measure.count_apply_finset]
-  simp only [Set.indicator_apply, Pi.one_apply]
-  rw [← ENNReal.div_eq_inv_mul]
-  congr 1
-  norm_cast
-  simp
+  rw [← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
+    toFiniteMeasure_empiricalMeasureOfFintype, empiricalFiniteMeasure_apply_eq_card_filter hs,
+    Measure.map_apply (measurable_of_countable x) hs, ProbabilityTheory.uniformOn_univ,
+    hpreimage, Measure.count_apply_finset, ENNReal.div_eq_inv_mul]
 
 /-- Integrating against a finite empirical population is averaging over its values. -/
 theorem integral_empiricalMeasureOfFintype [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -401,9 +413,9 @@ theorem exists_finset_ae_mem_empiricalMeasureOfFintype [MeasurableSingletonClass
     ∃ s : Finset α, ∀ᵐ y ∂(empiricalMeasureOfFintype x : Measure α), y ∈ s := by
   classical
   refine ⟨Finset.univ.image x, ?_⟩
-  rw [empiricalMeasureOfFintype_toMeasure, ae_finsetSum_measure_iff]
-  intro i _
-  exact Measure.ae_smul_measure (by simp) _
+  rw [← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
+    toFiniteMeasure_empiricalMeasureOfFintype]
+  exact ae_mem_image_empiricalFiniteMeasure x
 
 end FinitePopulation
 
@@ -413,6 +425,15 @@ This is the `κ := Fin (n + 1)` case of `empiricalMeasureOfFintype`; the success
 supplies the `Nonempty` instance, so no side condition is needed. -/
 def empiricalMeasure (x : ℕ → α) (n : ℕ) : ProbabilityMeasure α :=
   empiricalMeasureOfFintype (fun i : Fin (n + 1) => x i)
+
+/-- The finite measure underlying the empirical measure of the first `n + 1` terms of a sequence is
+the empirical finite measure of those terms. -/
+@[simp]
+theorem toFiniteMeasure_empiricalMeasure (x : ℕ → α) (n : ℕ) :
+    (empiricalMeasure x n).toFiniteMeasure =
+      empiricalFiniteMeasure (fun i : Fin (n + 1) => x i) := by
+  rw [empiricalMeasure]
+  exact toFiniteMeasure_empiricalMeasureOfFintype _
 
 /-- The measure underlying an empirical measure is the uniform finite sum of Dirac measures. -/
 @[simp]
