@@ -215,6 +215,12 @@ theorem linearIndependent_e : LinearIndependent R D.e :=
 theorem linearIndependent_f : LinearIndependent R D.f :=
   D.linearIndependent_e_f.comp _ Sum.inr_injective
 
+/-- The vectors `e₋ℓ, …, e₋₁, e₁, …, e_ℓ` of a Bessel datum span a space of dimension `2ℓ`. -/
+theorem finrank_span_e_f [Nontrivial R] :
+    finrank R (Submodule.span R (Set.range D.e ∪ Set.range D.f)) = 2 * ℓ := by
+  rw [← Set.Sum.elim_range, finrank_span_eq_card D.linearIndependent_e_f]
+  simp [two_mul]
+
 /-- The span of the vectors `e₋ℓ, …, e₋₁, e₁, …, e_ℓ` of a Bessel datum and its middle space are
 complementary: `V = ⟨e₋ℓ, …, e_ℓ⟩ ⊕ V_ℓ`. -/
 theorem isCompl_span_middleSpace :
@@ -267,6 +273,54 @@ theorem mem_besselSpace_iff {x : M} :
 /-- The Bessel space lies in the middle space. -/
 theorem besselSpace_le_middleSpace : D.besselSpace ≤ D.middleSpace :=
   fun _ hx ↦ (D.mem_besselSpace_iff.mp hx).1
+
+/-- The Bessel space of a Bessel datum in a regular quadratic space over an integral domain is
+regular. -/
+theorem nondegenerate_restrict_besselSpace [IsDomain R] (hQ : Q.Nondegenerate) :
+    (Q.restrict D.besselSpace).Nondegenerate := by
+  rw [← nondegenerate_associated_iff] at hQ ⊢
+  -- `associated (Q.restrict W)` is definitionally `(associated Q).restrict W`.
+  refine LinearMap.BilinForm.nondegenerate_restrict_of_disjoint_orthogonal _
+    (QuadraticForm.associated_isSymm R Q).isRefl (Submodule.disjoint_def.mpr fun x hx hxo ↦ ?_)
+  obtain ⟨hxm, hxw⟩ := D.mem_besselSpace_iff.mp hx
+  obtain ⟨hxe, hxf⟩ := D.mem_middleSpace_iff.mp hxm
+  refine hQ.2 x fun v ↦ (mul_eq_zero.mp ?_).resolve_left D.apply_w_ne_zero
+  -- Removing from `Q w • v` its components along the `e±ᵢ` and `w` lands in the Bessel space.
+  have hy : Q D.w • v - ∑ k, (Q D.w * associated Q (D.f k) v) • D.e k -
+      ∑ k, (Q D.w * associated Q (D.e k) v) • D.f k - associated Q D.w v • D.w ∈
+        D.besselSpace := by
+    simp [mem_besselSpace_iff, Finset.sum_ite_eq, associated_eq_self_apply, mul_comm]
+  have h := LinearMap.BilinForm.mem_orthogonal_iff.mp hxo _ hy
+  simpa [hxe, hxf, hxw] using h
+
+/-- The Bessel space of a Bessel datum of index `ℓ` over an integral domain has codimension
+`2ℓ + 1`. -/
+theorem finrank_besselSpace [IsDomain R] [Module.Finite R M] :
+    finrank R D.besselSpace + (2 * ℓ + 1) = finrank R M := by
+  -- The Bessel space is the kernel of the pairing with the `e∓ₖ` and `w`, whose range has rank
+  -- `2ℓ + 1` since it contains the vectors `B(e∓ₖ, e±ᵢ) = δᵢₖ` and `B(w, w) = Q w ≠ 0`.
+  let φ : M →ₗ[R] (Fin ℓ ⊕ Fin ℓ) ⊕ Unit → R := LinearMap.pi
+    (Sum.elim (Sum.elim (fun k ↦ associated Q (D.f k)) fun k ↦ associated Q (D.e k))
+      fun _ ↦ associated Q D.w)
+  have hker : LinearMap.ker φ = D.besselSpace := by
+    ext x
+    simp only [φ, LinearMap.mem_ker, funext_iff, Sum.forall, LinearMap.pi_apply, Sum.elim_inl,
+      Sum.elim_inr, Pi.zero_apply, mem_besselSpace_iff, mem_middleSpace_iff]
+    exact ⟨fun ⟨⟨hf, he⟩, hw⟩ ↦ ⟨⟨he, hf⟩, hw ()⟩, fun ⟨⟨he, hf⟩, hw⟩ ↦ ⟨⟨hf, he⟩, fun _ ↦ hw⟩⟩
+  let v : (Fin ℓ ⊕ Fin ℓ) ⊕ Unit → M := Sum.elim (Sum.elim D.e D.f) fun _ ↦ D.w
+  have hφ : (fun i ↦ φ (v i)) = fun i ↦ Pi.single i (Sum.elim (fun _ ↦ 1) (fun _ ↦ Q D.w) i) := by
+    funext i k
+    rcases i with (i | i) | - <;> rcases k with (k | k) | - <;>
+      simp [φ, v, Pi.single_apply, eq_comm, associated_eq_self_apply]
+  have hli : LinearIndependent R fun i ↦ (⟨φ (v i), φ.mem_range_self _⟩ : LinearMap.range φ) := by
+    refine LinearIndependent.of_comp (LinearMap.range φ).subtype ?_
+    change LinearIndependent R fun i ↦ φ (v i)
+    rw [hφ]
+    exact Pi.linearIndependent_single_of_ne_zero (by rintro (_ | -) <;> simp [D.apply_w_ne_zero])
+  have hrange : finrank R (LinearMap.range φ) = 2 * ℓ + 1 := by
+    refine le_antisymm ((Submodule.finrank_le _).trans (by simp [two_mul])) ?_
+    simpa [two_mul] using hli.fintype_card_le_finrank
+  rw [← hker, ← hrange, add_comm, φ.finrank_range_add_finrank_ker]
 
 /-! ### Transport along isometries -/
 
@@ -382,12 +436,6 @@ include D in
 theorem two_mul_add_one_le_finrank [FiniteDimensional K V] : 2 * ℓ + 1 ≤ finrank K V := by
   simpa [two_mul] using D.linearIndependent.fintype_card_le_finrank
 
-/-- The vectors `e₋ℓ, …, e₋₁, e₁, …, e_ℓ` of a Bessel datum span a space of dimension `2ℓ`. -/
-theorem finrank_span_e_f :
-    finrank K (Submodule.span K (Set.range D.e ∪ Set.range D.f)) = 2 * ℓ := by
-  rw [← Set.Sum.elim_range, finrank_span_eq_card D.linearIndependent_e_f]
-  simp [two_mul]
-
 /-- The middle space of a Bessel datum of index `ℓ` has codimension `2ℓ`. -/
 theorem finrank_middleSpace [FiniteDimensional K V] :
     finrank K D.middleSpace + 2 * ℓ = finrank K V := by
@@ -412,24 +460,6 @@ theorem isCompl_span_besselSpace :
   convert h using 1
   ext x
   simp [Submodule.mem_iInf, Sum.forall, D.apply_w_ne_zero, and_comm]
-
-/-- The Bessel space of a Bessel datum in a regular quadratic space is regular. -/
-theorem nondegenerate_restrict_besselSpace (hQ : Q.Nondegenerate) :
-    (Q.restrict D.besselSpace).Nondegenerate := by
-  rw [← nondegenerate_associated_iff] at hQ ⊢
-  -- `associated (Q.restrict W)` is definitionally `(associated Q).restrict W`.
-  exact LinearMap.BilinForm.nondegenerate_restrict_orthogonal_of_isCompl
-    (QuadraticForm.associated_isSymm K Q).isRefl hQ D.isCompl_span_besselSpace
-
-/-- The Bessel space of a Bessel datum of index `ℓ` has codimension `2ℓ + 1`. -/
-theorem finrank_besselSpace [FiniteDimensional K V] :
-    finrank K D.besselSpace + (2 * ℓ + 1) = finrank K V := by
-  have hspan : finrank K (Submodule.span K (Set.range D.e ∪ Set.range D.f ∪ {D.w})) =
-      2 * ℓ + 1 := by
-    rw [← Set.range_const (c := D.w) (ι := Unit), ← Set.Sum.elim_range, ← Set.Sum.elim_range,
-      finrank_span_eq_card D.linearIndependent]
-    simp [two_mul]
-  rw [← hspan, add_comm, Submodule.finrank_add_eq_of_isCompl D.isCompl_span_besselSpace]
 
 end Field
 
