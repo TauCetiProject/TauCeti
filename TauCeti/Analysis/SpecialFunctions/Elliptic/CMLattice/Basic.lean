@@ -45,7 +45,9 @@ All three conditions depend only on the lattice of the period pair
 * `PeriodPair.IsCMLattice.pow_four_eq_one`: for `d ≡ 7 mod 8`, if `c Λ_C = Λ_D` for two CM
   lattices `C` and `D`, then `c⁴ = 1`.
 * `PeriodPair.complexOrder_le_leftOrder_of_cmOmega_mul_mem`: a lattice stable under `ω` is a
-  module over the embedded quadratic order `TauCeti.QuadraticOrder.complexOrder (-d)`.
+  module over the embedded quadratic order `TauCeti.QuadraticOrder.complexOrder (-d)`; for `d`
+  squarefree this order is its whole multiplier ring
+  (`PeriodPair.leftOrder_eq_complexOrder_of_cmOmega_mul_mem`).
 
 ## References
 
@@ -110,6 +112,22 @@ theorem cmOmega_eq_complexGenerator_add :
   push_cast
   rw [neg_neg]
   ring
+
+/-- For `d ≡ 3 mod 4`, the generator `TauCeti.QuadraticOrder.complexGenerator (-d)` of the embedded
+quadratic order is `ω - (d + 1) / 2`. -/
+theorem complexGenerator_eq_cmOmega_sub (hd : d % 4 = 3) :
+    QuadraticOrder.complexGenerator (-d) = cmOmega d - ((d + 1) / 2 : ℕ) := by
+  obtain ⟨e, he⟩ : ∃ e : ℕ, d + 1 = 2 * e := ⟨(d + 1) / 2, by omega⟩
+  have he' : ((d : ℂ) + 1) = 2 * e := by exact_mod_cast he
+  have he'' : (d + 1) / 2 = e := by omega
+  rw [cmOmega_eq_complexGenerator_add, he', he'']
+  ring
+
+/-- For `d ≡ 3 mod 4`, `ω` lies in the embedded quadratic order `ℤ[ω]` of discriminant `-d`. -/
+theorem cmOmega_mem_complexOrder (hd : d % 4 = 3) {hD : (-d : ℤ) % 4 = 0 ∨ (-d : ℤ) % 4 = 1} :
+    cmOmega d ∈ QuadraticOrder.complexOrder (-d) (by simp) hD := by
+  rw [← sub_add_cancel (cmOmega d) ((d + 1) / 2 : ℕ), ← complexGenerator_eq_cmOmega_sub hd]
+  exact add_mem (QuadraticOrder.complexGenerator_mem_complexOrder _ _ _) (natCast_mem _ _)
 
 end TauCeti
 
@@ -231,6 +249,17 @@ private theorem cmOmega_mul_conj_mul_mem_of_even {n : ℕ}
   rw [← mul_assoc, ← hn]
   convert L.lattice.smul_mem (m : ℤ) hz using 1
   rw [zsmul_eq_mul]
+  push_cast
+  ring
+
+/-- For `d ≡ 7 mod 8`, `ω conj(ω) = (d + 1) / 4` is even, so it kills every half-period of a
+lattice. -/
+theorem cmOmega_mul_conj_mul_mem (hd : d % 8 = 7) {z : ℂ} (hz : 2 * z ∈ L.lattice) :
+    cmOmega d * ((starRingEnd ℂ) (cmOmega d) * z) ∈ L.lattice := by
+  obtain ⟨k, hk⟩ : ∃ k : ℕ, d + 1 = 8 * k := ⟨(d + 1) / 8, by omega⟩
+  have hk' : ((d : ℂ) + 1) = 8 * k := by exact_mod_cast hk
+  refine cmOmega_mul_conj_mul_mem_of_even (n := 2 * k) ?_ (even_two_mul k) hz
+  rw [cmOmega_mul_conj, hk']
   push_cast
   ring
 
@@ -426,21 +455,83 @@ theorem complexOrder_le_leftOrder_of_cmOmega_mul_mem
     (hD : (-d : ℤ) % 4 = 0 ∨ (-d : ℤ) % 4 = 1) :
     QuadraticOrder.complexOrder (-d) (by simp) hD ≤ L.lattice.leftOrder := by
   intro x hx
-  rw [Submodule.mem_leftOrder_iff]
-  intro l hl
   obtain ⟨m, k, rfl⟩ := (QuadraticOrder.mem_complexOrder_iff _ _ _).mp hx
-  obtain ⟨j, hj⟩ : ∃ j : ℕ, d + 1 = 2 * j :=
-    ⟨(d + 1) / 2, by have := mod_four_eq_three_of_cmOmega_mul_mem hL; omega⟩
-  have hg : QuadraticOrder.complexGenerator (-d) = cmOmega d - j := by
-    rw [cmOmega_eq_complexGenerator_add]
-    have : ((d : ℂ) + 1) = 2 * j := by exact_mod_cast hj
-    rw [this]
+  rw [complexGenerator_eq_cmOmega_sub (mod_four_eq_three_of_cmOmega_mul_mem hL)]
+  exact add_mem (intCast_mem _ m) (mul_mem (intCast_mem _ k)
+    (sub_mem (Submodule.mem_leftOrder_iff.mpr hL) (natCast_mem _ _)))
+
+/-- A multiplier `α` of a lattice stable under `ω`, for `d` squarefree, is `j + m ω` with integers
+`j`, `m`: the integers `2 Re α`, `2 Re (α conj(ω))` and `|α|²` force `2 Im α = m √d`, with
+`2 Re α ≡ m mod 2`. -/
+private theorem exists_intCast_add_intCast_mul_cmOmega (hsq : Squarefree d)
+    (hL : ∀ l ∈ L.lattice, cmOmega d * l ∈ L.lattice) {α : ℂ} (hα : α ∈ L.lattice.leftOrder) :
+    ∃ j m : ℤ, α = j + m * cmOmega d := by
+  have hd4 := mod_four_eq_three_of_cmOmega_mul_mem hL
+  have hω' : (starRingEnd ℂ) (cmOmega d) ∈ L.lattice.leftOrder :=
+    Submodule.mem_leftOrder_iff.mpr fun _ ↦ conj_cmOmega_mul_mem_of_forall hL
+  obtain ⟨t₁, n, -, ht₁, hn⟩ := L.exists_sq_sub_intCast_mul_add_intCast_eq_zero hα
+  obtain ⟨t₂, -, -, ht₂, -⟩ := L.exists_sq_sub_intCast_mul_add_intCast_eq_zero (mul_mem hα hω')
+  have hs : √(d : ℝ) * √(d : ℝ) = d := Real.mul_self_sqrt (Nat.cast_nonneg d)
+  have hs0 : √(d : ℝ) ≠ 0 := Real.sqrt_ne_zero'.mpr (by exact_mod_cast (by omega : 0 < d))
+  -- `k = 2 t₂ - t₁ = 2 (Im α) √d`
+  have hk : ((2 * t₂ - t₁ : ℤ) : ℝ) = 2 * α.im * √(d : ℝ) := by
+    push_cast
+    rw [ht₁, ht₂]
+    simp only [Complex.mul_re, Complex.conj_re, Complex.conj_im, re_cmOmega, im_cmOmega]
     ring
-  rw [hg]
-  convert add_mem (L.lattice.smul_mem (m - k * j : ℤ) hl)
-    (L.lattice.smul_mem k (hL l hl)) using 1
-  rw [zsmul_eq_mul, zsmul_eq_mul]
-  push_cast
-  ring
+  -- `4 d n = d t₁² + k²`, so `d ∣ k²`, hence `d ∣ k`
+  have hkey : 4 * (d : ℤ) * n = d * t₁ ^ 2 + (2 * t₂ - t₁) ^ 2 := by
+    have : 4 * (d : ℝ) * n = d * t₁ ^ 2 + ((2 * t₂ - t₁ : ℤ) : ℝ) ^ 2 := by
+      rw [hk, hn, ht₁, Complex.normSq_apply]
+      linear_combination (-4 * α.im ^ 2) * hs
+    exact_mod_cast this
+  obtain ⟨m, hm⟩ : (d : ℤ) ∣ 2 * t₂ - t₁ :=
+    ((Int.squarefree_natCast.mpr hsq).dvd_pow_iff_dvd two_ne_zero).mp
+      ⟨4 * n - t₁ ^ 2, by linear_combination -hkey⟩
+  have hd0 : (d : ℤ) ≠ 0 := by exact_mod_cast (by omega : d ≠ 0)
+  have h4n : 4 * n = t₁ ^ 2 + d * m ^ 2 := by
+    refine mul_left_cancel₀ hd0 ?_
+    rw [hm] at hkey
+    linear_combination hkey
+  -- `t₁ ≡ m mod 2`: modulo `4`, `0 ≡ t₁² + d m² ≡ (t₁ mod 2) + 3 (m mod 2)`
+  obtain ⟨j, hj⟩ : ∃ j : ℤ, t₁ = m + 2 * j := by
+    have ht₁ := Int.sq_emod_four t₁
+    have hd4' : (d : ℤ) % 4 = 3 := by omega
+    have hdm : d * m ^ 2 % 4 = 3 * (m % 2) % 4 := by rw [Int.mul_emod, Int.sq_emod_four, hd4']
+    refine ⟨(t₁ - m) / 2, ?_⟩
+    generalize t₁ ^ 2 = A at h4n ht₁
+    generalize (d : ℤ) * m ^ 2 = B at h4n hdm
+    omega
+  refine ⟨j, m, Complex.ext ?_ ?_⟩
+  · simp only [Complex.add_re, Complex.intCast_re, Complex.mul_re, Complex.intCast_im, re_cmOmega,
+      zero_mul, sub_zero]
+    have : (t₁ : ℝ) = m + 2 * j := by exact_mod_cast hj
+    linarith
+  · simp only [Complex.add_im, Complex.intCast_im, Complex.mul_im, Complex.intCast_re, im_cmOmega,
+      zero_mul, add_zero, zero_add]
+    have hkm : 2 * α.im * √(d : ℝ) = d * m := by rw [← hk, hm]; push_cast; ring
+    refine mul_right_cancel₀ hs0 ?_
+    linear_combination hkm / 2 - m * hs / 2
+
+/-- **The multiplier ring of a lattice stable under `ω`.** For `d` squarefree, a lattice stable
+under `ω = (1 + √-d) / 2` has multiplier ring (`Submodule.leftOrder`) exactly the quadratic order
+`ℤ[ω]` of discriminant `-d`: this order is the ring of integers of `ℚ(√-d)`, so no larger order
+can occur. -/
+theorem leftOrder_eq_complexOrder_of_cmOmega_mul_mem (hsq : Squarefree d)
+    (hL : ∀ l ∈ L.lattice, cmOmega d * l ∈ L.lattice)
+    (hD : (-d : ℤ) % 4 = 0 ∨ (-d : ℤ) % 4 = 1) :
+    L.lattice.leftOrder = QuadraticOrder.complexOrder (-d) (by simp) hD := by
+  refine le_antisymm (fun α hα ↦ ?_) (complexOrder_le_leftOrder_of_cmOmega_mul_mem hL hD)
+  obtain ⟨j, m, rfl⟩ := exists_intCast_add_intCast_mul_cmOmega hsq hL hα
+  exact add_mem (intCast_mem _ j)
+    (mul_mem (intCast_mem _ m) (cmOmega_mem_complexOrder (mod_four_eq_three_of_cmOmega_mul_mem hL)))
+
+/-- A lattice whose multiplier ring is the quadratic order of discriminant `-d` is stable under
+`ω = (1 + √-d) / 2`, for `d ≡ 3 mod 4`. -/
+theorem cmOmega_mul_mem_of_leftOrder_eq (hd : d % 4 = 3)
+    {hD : (-d : ℤ) % 4 = 0 ∨ (-d : ℤ) % 4 = 1}
+    (hL : L.lattice.leftOrder = QuadraticOrder.complexOrder (-d) (by simp) hD) {l : ℂ}
+    (hl : l ∈ L.lattice) : cmOmega d * l ∈ L.lattice :=
+  Submodule.mem_leftOrder_iff.mp (hL ▸ cmOmega_mem_complexOrder hd) l hl
 
 end PeriodPair

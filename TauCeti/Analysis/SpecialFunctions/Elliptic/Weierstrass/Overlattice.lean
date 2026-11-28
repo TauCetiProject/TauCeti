@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
+import TauCeti.Algebra.Module.ZLattice.Basic
+import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
+import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Pair
 import TauCeti.Topology.Algebra.InfiniteSum.Basic
 
 /-!
@@ -17,8 +20,12 @@ Let `Λ` be a lattice, `u ∉ Λ`, and let `M` be a period pair whose lattice co
 the lattice sums over the two disjoint cosets `Λ` and `Λ - u` gives
 `℘_M(z) = ℘_Λ(z) + ℘_Λ(z + u) - ℘_Λ(u)` and `℘'_M(z) = ℘'_Λ(z) + ℘'_Λ(z + u)`.
 
+Conversely, for every `u` with `2 u ∈ Λ` such a period pair exists
+(`PeriodPair.exists_mem_lattice_iff_of_two_mul_mem`).
+
 ## Main results
 
+* `PeriodPair.exists_mem_lattice_iff_of_two_mul_mem`: the lattice `Λ ∪ (Λ - u) = Λ + ℤ u` exists.
 * `PeriodPair.two_mul_mem_lattice_of_mem_iff`: `u` has order two modulo `Λ`.
 * `PeriodPair.weierstrassP_eq_add_sub_of_mem_iff`: `℘_M(z) = ℘_Λ(z) + ℘_Λ(z + u) - ℘_Λ(u)`.
 * `PeriodPair.derivWeierstrassP_eq_add_of_mem_iff`: `℘'_M(z) = ℘'_Λ(z) + ℘'_Λ(z + u)`.
@@ -33,6 +40,46 @@ open scoped Pointwise
 namespace PeriodPair
 
 variable {L M : PeriodPair} {u : ℂ}
+
+/-- **The lattice `Λ + ℤ u`.** If `2 u ∈ Λ`, then `Λ + ℤ u = Λ ∪ (Λ - u)` is the lattice of a period
+pair: it lies between `Λ` and `Λ / 2`. -/
+theorem exists_mem_lattice_iff_of_two_mul_mem (L : PeriodPair) {u : ℂ} (hu : 2 * u ∈ L.lattice) :
+    ∃ M : PeriodPair, ∀ x, x ∈ M.lattice ↔ x ∈ L.lattice ∨ x + u ∈ L.lattice := by
+  set Λ := L.lattice ⊔ Submodule.span ℤ {u}
+  have hmem (x : ℂ) : x ∈ Λ ↔ x ∈ L.lattice ∨ x + u ∈ L.lattice := by
+    simp only [Λ, Submodule.mem_sup, Submodule.mem_span_singleton]
+    constructor
+    · rintro ⟨l, hl, _, ⟨n, rfl⟩, rfl⟩
+      -- `n u` lies in `Λ` for even `n`, and `(n + 1) u` for odd `n`
+      obtain ⟨k, rfl | rfl⟩ := Int.even_or_odd' n
+      · refine .inl (add_mem hl ?_)
+        convert L.lattice.smul_mem k hu using 1
+        simp only [zsmul_eq_mul]
+        push_cast
+        ring
+      · refine .inr ?_
+        convert add_mem hl (L.lattice.smul_mem (k + 1) hu) using 1
+        simp only [zsmul_eq_mul]
+        push_cast
+        ring
+    · rintro (h | h)
+      · exact ⟨x, h, 0, ⟨0, zero_smul ℤ u⟩, add_zero x⟩
+      · exact ⟨x + u, h, -u, ⟨-1, by simp⟩, add_neg_cancel_right x u⟩
+  -- `Λ` lies in the lattice `Λ / 2` of `2⁻¹ • L`
+  let c : ℂˣ := Units.mk0 2⁻¹ (by norm_num)
+  have hle : (Λ : Set ℂ) ⊆ ((c • L).lattice : Set ℂ) := fun x hx ↦ by
+    have h2x : 2 * x ∈ L.lattice := by
+      rcases (hmem x).mp hx with h | h
+      · simpa [two_mul] using add_mem h h
+      · convert sub_mem (add_mem h h) hu using 1
+        ring
+    convert (L.mul_mem_lattice_smul_iff c).mpr h2x using 1
+    simp [c]
+  have : DiscreteTopology Λ := DiscreteTopology.of_subset (inferInstance : DiscreteTopology
+    (c • L).lattice) hle
+  have : IsZLattice ℝ Λ := IsZLattice.of_le (L₁ := L.lattice) le_sup_left
+  obtain ⟨M, hM⟩ := Λ.exists_periodPair_lattice_eq_of_isZLattice
+  exact ⟨M, fun x ↦ by rw [hM, hmem]⟩
 
 /-- If the lattice of `M` is `Λ ∪ (Λ - u)`, then `u` has order two modulo `Λ`: `-u ∈ Λ_M`, so
 `-2 u ∈ Λ_M`, and `-2 u + u = -u ∉ Λ`. -/
