@@ -35,6 +35,8 @@ along the differential-symbol presentation `Sₙ ⧸ Rₙ ≃ₗ[A] Ωⁿ`
 
 * `TauCeti.DeRham.freeDifferential_relations`: the free differential kills every relation.
 * `TauCeti.DeRham.d_elementary`: the value of `d` on elementary forms.
+* `TauCeti.DeRham.d_smul_of_D_eq_zero`: `d` commutes with multiplication by scalars
+  with vanishing Kähler differential.
 * `TauCeti.DeRham.d_unique`: the elementary-form rule determines `d`.
 * `TauCeti.DeRham.d_comp_d`: `d ∘ d = 0`.
 * `TauCeti.DeRham.oneEquiv_d_zeroEquiv_symm`: in degree zero, `d` is the universal derivation.
@@ -131,6 +133,24 @@ theorem d_elementary (c : B) (v : Fin n → B) :
   rw [← symbolMap_sym, ← symbolQuotientEquiv_mk]
   simp only [d, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply,
     Submodule.liftQ_apply, freeDifferential_sym]
+
+/-- The de Rham differential commutes with multiplication by a scalar whose Kähler
+differential vanishes. -/
+theorem d_smul_of_D_eq_zero {b : B} (hb : D A B b = 0) (ω : Forms A B n) :
+    d A B n (b • ω) = b • d A B n ω := by
+  have hcomm :
+      d A B n ∘ₗ DistribSMul.toLinearMap A (Forms A B n) b =
+        DistribSMul.toLinearMap A (Forms A B (n + 1)) b ∘ₗ d A B n := by
+    refine forms_hom_ext fun c v => ?_
+    have hsmul : b • elementary A c v = elementary A (b * c) v := by
+      simp only [elementary_def, mul_smul]
+    simp only [LinearMap.comp_apply, DistribSMul.toLinearMap_apply, hsmul,
+      d_elementary, Derivation.leibniz, hb, smul_zero, add_zero]
+    simpa only [Fin.update_cons_zero] using
+      (ιMulti B (n + 1)).map_update_smul (Fin.cons (D A B c) fun i => D A B (v i)) 0 b
+        (D A B c)
+  simpa only [LinearMap.comp_apply, DistribSMul.toLinearMap_apply] using
+    LinearMap.congr_fun hcomm ω
 
 /-- `d` composed with the evaluation of symbols is the free differential. -/
 theorem d_comp_symbolMap : d A B n ∘ₗ symbolMap A B n = freeDifferential A B n :=
