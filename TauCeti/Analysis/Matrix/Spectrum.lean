@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import TauCeti.Algebra.Algebra.Spectrum
 import Mathlib.Analysis.InnerProductSpace.Positive
 import TauCeti.Analysis.Matrix.LDL
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
@@ -73,6 +74,11 @@ symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻�
   determinant is `∏ j, (1 - c * hB.eigenvalues j)`;
 * `Matrix.IsHermitian.trace_pow_eq_sum_eigenvalues_pow` — the trace of `B ^ k` is
   `∑ j, hB.eigenvalues j ^ k` for every natural `k`;
+* `Matrix.IsHermitian.sSup_spectrum_real_eq_eigenvalues₀_zero`,
+  `Matrix.IsHermitian.sSup_spectrum_real_eq_ciSup_eigenvalues`,
+  `Matrix.IsHermitian.sInf_spectrum_real_eq_eigenvalues₀_last`,
+  `Matrix.IsHermitian.sInf_spectrum_real_eq_ciInf_eigenvalues` — the extreme points of
+  `spectrum ℝ B` in terms of `eigenvalues₀` and `eigenvalues`;
 * `Matrix.IsHermitian.map_eigenvalues_of_charpoly_eq_X_pow_mul` — if
   `A.charpoly = X ^ k * B.charpoly`, the eigenvalue multiset of `A` is that of `B` plus `k`
   zeros;
@@ -598,6 +604,40 @@ theorem det_scalar_eigenvalues₀_sub_eq_zero (hA : A.IsHermitian)
     rw [hA.roots_charpoly_eq_eigenvalues₀]
     exact Multiset.mem_map_of_mem _ (Finset.mem_univ_val i)
   rw [← eval_charpoly, ((Polynomial.mem_roots (charpoly_monic _).ne_zero).1 hroot).eq_zero]
+
+/-- On a nonempty index type, the supremum of the real spectrum of a Hermitian matrix is its
+largest sorted eigenvalue `eigenvalues₀ 0`. -/
+theorem sSup_spectrum_real_eq_eigenvalues₀_zero [Nonempty ι] (hB : A.IsHermitian) :
+    sSup (spectrum ℝ A) = hB.eigenvalues₀ ⟨0, Fintype.card_pos⟩ := by
+  let e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))
+  rw [hB.spectrum_real_eq_range_eigenvalues]
+  refine IsGreatest.csSup_eq ⟨⟨e ⟨0, Fintype.card_pos⟩, hB.eigenvalues_apply_equivOfCardEq _⟩, ?_⟩
+  rintro _ ⟨i, rfl⟩
+  rw [← e.apply_symm_apply i, hB.eigenvalues_apply_equivOfCardEq]
+  exact hB.eigenvalues₀_antitone (Fin.zero_le _)
+
+/-- The supremum of the real spectrum of a Hermitian matrix equals `⨆ i, hB.eigenvalues i`. -/
+theorem sSup_spectrum_real_eq_ciSup_eigenvalues (hB : A.IsHermitian) :
+    sSup (spectrum ℝ A) = ⨆ i, hB.eigenvalues i := by
+  rw [hB.spectrum_real_eq_range_eigenvalues, sSup_range]
+
+/-- On a nonempty index type, the infimum of the real spectrum of a Hermitian matrix is its
+smallest sorted eigenvalue `eigenvalues₀ (card ι - 1)`. -/
+theorem sInf_spectrum_real_eq_eigenvalues₀_last [Nonempty ι] (hB : A.IsHermitian) :
+    sInf (spectrum ℝ A) =
+      hB.eigenvalues₀ ⟨Fintype.card ι - 1, Nat.sub_lt Fintype.card_pos one_pos⟩ := by
+  let e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))
+  let last : Fin (Fintype.card ι) := ⟨Fintype.card ι - 1, Nat.sub_lt Fintype.card_pos one_pos⟩
+  rw [hB.spectrum_real_eq_range_eigenvalues]
+  refine IsLeast.csInf_eq ⟨⟨e last, hB.eigenvalues_apply_equivOfCardEq last⟩, ?_⟩
+  rintro _ ⟨i, rfl⟩
+  rw [← e.apply_symm_apply i, hB.eigenvalues_apply_equivOfCardEq]
+  exact hB.eigenvalues₀_antitone (Nat.le_sub_one_of_lt (e.symm i).isLt)
+
+/-- The infimum of the real spectrum of a Hermitian matrix equals `⨅ i, hB.eigenvalues i`. -/
+theorem sInf_spectrum_real_eq_ciInf_eigenvalues (hB : A.IsHermitian) :
+    sInf (spectrum ℝ A) = ⨅ i, hB.eigenvalues i := by
+  rw [hB.spectrum_real_eq_range_eigenvalues, sInf_range]
 
 end Matrix.IsHermitian
 

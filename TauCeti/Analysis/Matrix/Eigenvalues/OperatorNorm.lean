@@ -7,21 +7,31 @@ module
 
 public import Mathlib.Analysis.Matrix.PosDef
 public import TauCeti.Analysis.Matrix.EuclideanLin
-import TauCeti.Analysis.Matrix.Spectrum
+public import TauCeti.Analysis.Matrix.L2OpNorm
+public import TauCeti.Analysis.Matrix.Spectrum
+import TauCeti.Analysis.Matrix.Eigenvalues.Basic
 import TauCeti.Analysis.Normed.Group.Pi
 
 /-!
-# Euclidean operator norms and the largest Gram eigenvalue
+# Euclidean operator norms and extreme real eigenvalues
 
-For a rectangular matrix `A`, the square of its Euclidean operator norm is the largest
-real eigenvalue of its source Gram matrix `Aᴴ * A`. We express this both with the decreasing
-eigenvalue list and as an `IsGreatest` statement about the real spectrum. A unit eigenvector
-for this eigenvalue attains the operator norm, including when `A = 0`.
+For a rectangular matrix `A` with nonempty source type (`[Nonempty n]`), the square of its
+Euclidean operator norm is the largest real eigenvalue of its source Gram matrix `Aᴴ * A`. We
+express this both with the decreasing eigenvalue list and as an `IsGreatest` statement about the
+real spectrum. A unit eigenvector for this eigenvalue attains the operator norm, including when
+`A = 0`. When the source type is empty, the operator norm is `0` while the Gram spectrum is empty.
 
 The source must be nonempty for a largest eigenvalue or a unit attaining vector to exist.
 For an empty source the operator norm is zero by subsingleton elimination, and
 `spectrum.of_subsingleton` gives the empty Gram spectrum. Conversely, a positive operator norm
 forces a nonempty source.
+
+For a Hermitian matrix on a nonempty carrier, `sSup (spectrum ℝ A)` and `sInf (spectrum ℝ A)`
+agree with the first and last entries of `eigenvalues₀` (proved in
+`TauCeti.Analysis.Matrix.Spectrum`), and the Euclidean operator norm equals
+`max (sSup (spectrum ℝ A)) (sSup (spectrum ℝ (-A)))`. For the Hermitian dilation
+`fromBlocks 0 A Aᴴ 0` (`A.hermitianDilation`) of a rectangular matrix `A`, symmetry of the
+spectrum under negation shows that `sSup (spectrum ℝ (fromBlocks 0 A Aᴴ 0)) = ‖A‖`.
 
 For a Hermitian matrix, each ordered eigenvalue is bounded in absolute value by the operator
 norm, and the `2 * k`-th power of the operator norm is bounded by the real trace of the
@@ -38,7 +48,7 @@ native maps on `EuclideanSpace`. The proof uses Mathlib's
 
 public section
 
-open scoped Matrix.Norms.L2Operator InnerProductSpace ComplexOrder
+open scoped Matrix.Norms.L2Operator InnerProductSpace ComplexOrder Pointwise
 
 namespace Matrix
 
@@ -71,18 +81,17 @@ theorem PosSemidef.l2_opNorm_eq_eigenvalues₀_zero [Nonempty n] {B : Matrix n n
     (hB : B.PosSemidef) :
     ‖B‖ = hB.isHermitian.eigenvalues₀ ⟨0, Fintype.card_pos⟩ := by
   let e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n))
-  have he (i : Fin (Fintype.card n)) : hB.isHermitian.eigenvalues (e i) =
-      hB.isHermitian.eigenvalues₀ i := by
-    simp [IsHermitian.eigenvalues, e]
   have hnonneg : 0 ≤ hB.isHermitian.eigenvalues₀ ⟨0, Fintype.card_pos⟩ := by
-    rw [← he]
+    rw [← hB.isHermitian.eigenvalues_apply_equivOfCardEq]
     exact hB.eigenvalues_nonneg _
   rw [hB.isHermitian.l2_opNorm_eq_norm_eigenvalues]
   apply le_antisymm
   · refine (pi_norm_le_iff_of_nonneg hnonneg).2 fun i ↦ ?_
-    rw [Real.norm_of_nonneg (hB.eigenvalues_nonneg i)]
+    rw [Real.norm_of_nonneg (hB.eigenvalues_nonneg i), ← e.apply_symm_apply i,
+      hB.isHermitian.eigenvalues_apply_equivOfCardEq]
     exact hB.isHermitian.eigenvalues₀_antitone (Fin.zero_le (e.symm i))
-  · simpa only [he, Real.norm_of_nonneg hnonneg] using
+  · simpa only [e, hB.isHermitian.eigenvalues_apply_equivOfCardEq,
+      Real.norm_of_nonneg hnonneg] using
       norm_le_pi_norm hB.isHermitian.eigenvalues (e ⟨0, Fintype.card_pos⟩)
 
 /-- Every power of the Euclidean operator norm of a positive-semidefinite matrix, that is of its
@@ -120,10 +129,10 @@ theorem isGreatest_spectrum_conjTranspose_mul_self [Nonempty n] (A : Matrix m n 
   let e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card n))
   rw [l2_opNorm_sq_eq_eigenvalues₀_conjTranspose_mul_self,
     hG.spectrum_real_eq_range_eigenvalues]
-  refine ⟨⟨e ⟨0, Fintype.card_pos⟩, ?_⟩, ?_⟩
-  · simp [IsHermitian.eigenvalues, e]
-  · rintro _ ⟨i, rfl⟩
-    exact hG.eigenvalues₀_antitone (Fin.zero_le (e.symm i))
+  refine ⟨⟨e ⟨0, Fintype.card_pos⟩, hG.eigenvalues_apply_equivOfCardEq _⟩, ?_⟩
+  rintro _ ⟨i, rfl⟩
+  rw [← e.apply_symm_apply i, hG.eigenvalues_apply_equivOfCardEq]
+  exact hG.eigenvalues₀_antitone (Fin.zero_le (e.symm i))
 
 /-- The largest real Gram eigenvalue is attained by a unit vector on which `A` attains
 its Euclidean operator norm. The statement also applies to the zero matrix. -/
@@ -154,6 +163,57 @@ theorem exists_unit_eigenvector_conjTranspose_mul_self [Nonempty n]
       simpa using hinner
     exact_mod_cast hcast
   exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp hsq
+
+/-- On a nonempty index type, the `ℓ²` operator norm of a Hermitian matrix is
+`max (λ_max A) (λ_max (-A))`. -/
+theorem IsHermitian.l2_opNorm_eq_max_sSup_spectrum_real [Nonempty n] {A : Matrix n n 𝕜}
+    (hA : A.IsHermitian) :
+    ‖A‖ = max (sSup (spectrum ℝ A)) (sSup (spectrum ℝ (-A))) := by
+  have hmem (i : n) := hA.eigenvalues_mem_spectrum_real i
+  have hle (i : n) : hA.eigenvalues i ≤ sSup (spectrum ℝ A) :=
+    le_csSup A.finite_real_spectrum.bddAbove (hmem i)
+  have hge (i : n) : sInf (spectrum ℝ A) ≤ hA.eigenvalues i :=
+    csInf_le A.finite_real_spectrum.bddBelow (hmem i)
+  rw [hA.l2_opNorm_eq_norm_eigenvalues, TauCeti.sSup_spectrum_real_neg A]
+  apply le_antisymm
+  · refine (pi_norm_le_iff_of_nonneg ?_).2 fun i ↦ by
+      rw [Real.norm_eq_abs, abs_le]
+      exact ⟨by linarith [hge i, le_max_right (sSup (spectrum ℝ A)) (-sInf (spectrum ℝ A))],
+        (hle i).trans (le_max_left _ _)⟩
+    have hi := Classical.arbitrary n
+    linarith [hle hi, hge hi, le_max_left (sSup (spectrum ℝ A)) (-sInf (spectrum ℝ A)),
+      le_max_right (sSup (spectrum ℝ A)) (-sInf (spectrum ℝ A))]
+  · refine max_le (hA.sSup_spectrum_real_eq_ciSup_eigenvalues ▸ ciSup_le fun i ↦
+        (le_abs_self _).trans (by simpa using norm_le_pi_norm hA.eigenvalues i))
+      (hA.sInf_spectrum_real_eq_ciInf_eigenvalues ▸ neg_le.2 (le_ciInf fun i ↦ by
+        have h := norm_le_pi_norm hA.eigenvalues i
+        rw [Real.norm_eq_abs] at h; linarith [neg_abs_le (hA.eigenvalues i)]))
+
+/-- On a nonempty sum index type `m ⊕ p`, the largest eigenvalue of the Hermitian dilation
+`fromBlocks 0 A Aᴴ 0` equals the `ℓ²` operator norm of `A`. -/
+@[simp]
+theorem sSup_spectrum_real_fromBlocks_zero_diagonal {p : Type*}
+    [Fintype p] [DecidableEq m] [DecidableEq p] [Nonempty (m ⊕ p)] (A : Matrix m p 𝕜) :
+    sSup (spectrum ℝ (fromBlocks (0 : Matrix m m 𝕜) A Aᴴ 0)) = ‖A‖ := by
+  let D : Matrix (m ⊕ p) (m ⊕ p) 𝕜 := fromBlocks 0 A Aᴴ 0
+  let J : (Matrix (m ⊕ p) (m ⊕ p) 𝕜)ˣ :=
+    ⟨fromBlocks 1 0 0 (-1), fromBlocks 1 0 0 (-1),
+      by simp [fromBlocks_multiply, fromBlocks_one], by simp [fromBlocks_multiply, fromBlocks_one]⟩
+  have hD : D.IsHermitian := isHermitian_zero.fromBlocks rfl isHermitian_zero
+  have hspec : spectrum ℝ (-D) = spectrum ℝ D := by
+    have hJDJ : (J : Matrix (m ⊕ p) (m ⊕ p) 𝕜) * D * (↑J⁻¹ : Matrix (m ⊕ p) (m ⊕ p) 𝕜) = -D := by
+      simp [J, D, fromBlocks_multiply, fromBlocks_neg]
+    rw [← hJDJ, spectrum.units_conjugate]
+  rw [← l2_opNorm_fromBlocks_zero_diagonal, hD.l2_opNorm_eq_max_sSup_spectrum_real, hspec,
+    max_self]
+
+/-- On a nonempty sum index type `m ⊕ p`, the largest eigenvalue of `A.hermitianDilation` equals
+the `ℓ²` operator norm of `A`. -/
+@[simp]
+theorem sSup_spectrum_real_hermitianDilation {p : Type*}
+    [Fintype p] [DecidableEq m] [DecidableEq p] [Nonempty (m ⊕ p)] (A : Matrix m p 𝕜) :
+    sSup (spectrum ℝ A.hermitianDilation) = ‖A‖ := by
+  rw [hermitianDilation_def, A.sSup_spectrum_real_fromBlocks_zero_diagonal]
 
 /-- The absolute value of each ordered Hermitian eigenvalue is bounded by the Euclidean
 operator norm. -/

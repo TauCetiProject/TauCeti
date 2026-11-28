@@ -9,18 +9,22 @@ public import Mathlib.LinearAlgebra.Matrix.Vec
 public import TauCeti.Analysis.Matrix.Entropy
 import TauCeti.Analysis.Matrix.Exponential.Log
 import TauCeti.Analysis.Matrix.Kronecker
+import TauCeti.Analysis.Matrix.L2OpNorm
 import TauCeti.Analysis.Matrix.OperatorJensen
 import TauCeti.Analysis.Matrix.Sqrt
 import TauCeti.LinearAlgebra.Matrix.DotProduct
+import TauCeti.LinearAlgebra.Matrix.OfReal
+import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 import TauCeti.LinearAlgebra.Matrix.Vec
 import TauCeti.Topology.Instances.Matrix
 
 /-!
-# Monotonicity of the relative entropy and strong subadditivity
+# Monotonicity of the relative entropy, joint convexity, and strong subadditivity
 
 This file proves that the Umegaki relative entropy of positive definite matrices does not increase
-under the partial trace, and deduces the strong subadditivity of the von Neumann entropy.
+under the partial trace, and deduces both the joint convexity of the relative entropy and the
+strong subadditivity of the von Neumann entropy.
 
 We follow Petz's proof through the relative modular operator. Matrices `X : Matrix m m 𝕜` form a
 Hilbert space under the Hilbert–Schmidt inner product `⟪X, Y⟫ = Tr (Xᴴ * Y)`; in column-stacked
@@ -41,7 +45,11 @@ Jensen's operator inequality for the operator concave logarithm and the isometry
 (`Matrix.PosDef.conjTranspose_mul_log_mul_le_log`) gives
 `Vᴴ * log Δ(ρ, σ) * V ≤ log Δ(ρ_A, σ_A)`. Evaluating both quadratic forms at `ρ_A^(1/2)` is the
 monotonicity `D(ρ_A ‖ σ_A) ≤ D(ρ ‖ σ)`. The logarithm is operator concave on complex matrices,
-which carry a C⋆-algebra structure, so the monotonicity and its consequences are stated over `ℂ`.
+which carry a C⋆-algebra structure, so the monotonicity and strong subadditivity are stated over
+`ℂ`. Applying monotonicity to two-block diagonal matrices yields subadditivity
+`D(ρ₁ + ρ₂ ‖ σ₁ + σ₂) ≤ D(ρ₁ ‖ σ₁) + D(ρ₂ ‖ σ₂)` and, combined with positive homogeneity, the
+**joint convexity** of the relative entropy; entrywise embedding via `RCLike.map 𝕜 ℂ` transfers
+these inequalities to every `RCLike` scalar field (`ℝ` or `ℂ`).
 
 Monotonicity applied to a positive definite state `ρ` of a tripartite system and the reference
 `1 ⊗ₖ ρ_BC`, tracing out the third factor, is the **strong subadditivity** of the entropy,
@@ -63,6 +71,9 @@ it extends to every positive semidefinite `ρ` by letting `t → 0⁺` in `ρ + 
   compression identity `Vᴴ * Δ(ρ, σ) * V = Δ(ρ_A, σ_A)`.
 * `Matrix.PosDef.relativeEntropy_partialTraceRight_le`: monotonicity of the relative entropy under
   the partial trace, `D(Tr₂ ρ ‖ Tr₂ σ) ≤ D(ρ ‖ σ)`, for positive definite `ρ` and `σ`.
+* `Matrix.PosDef.relativeEntropy_add_le` and `Matrix.PosDef.relativeEntropy_smul_add_smul_le`:
+  subadditivity and joint convexity of the relative entropy for positive definite matrices over
+  any `RCLike` field.
 * `Matrix.PosSemidef.vonNeumannEntropy_strong_subadditivity`: strong subadditivity,
   `S(ρ) + S(ρ_B) ≤ S(ρ_AB) + S(ρ_BC)`.
 
@@ -338,5 +349,65 @@ theorem PosSemidef.vonNeumannEntropy_strong_subadditivity
         fun τ h ↦ (hreindex τ h).partialTraceLeft))
     (eventually_nhdsWithin_of_forall fun t ht ↦ ?_)
   exact PosDef.vonNeumannEntropy_add_le (PosDef.posSemidef_add hρ (PosDef.one.smul ht))
+
+/-! ### Joint convexity of the relative entropy -/
+
+/-- **Subadditivity of the relative entropy** for positive definite matrices over `ℂ`, by
+partial-trace monotonicity on two-block diagonal matrices. -/
+private theorem PosDef.relativeEntropy_add_le_complex {ρ₁ ρ₂ σ₁ σ₂ : Matrix m m ℂ}
+    (hρ₁ : ρ₁.PosDef) (hρ₂ : ρ₂.PosDef) (hσ₁ : σ₁.PosDef) (hσ₂ : σ₂.PosDef) :
+    relativeEntropy (ρ₁ + ρ₂) (σ₁ + σ₂) ≤ relativeEntropy ρ₁ σ₁ + relativeEntropy ρ₂ σ₂ := by
+  have hP := (posDef_blockDiagonal_iff ![ρ₁, ρ₂]).2 (Fin.forall_fin_two.2 ⟨hρ₁, hρ₂⟩)
+  have hQ := (posDef_blockDiagonal_iff ![σ₁, σ₂]).2 (Fin.forall_fin_two.2 ⟨hσ₁, hσ₂⟩)
+  have hmono := hP.relativeEntropy_partialTraceRight_le hQ
+  simp only [partialTraceRight_blockDiagonal, Fin.sum_univ_two, Matrix.cons_val_zero,
+    Matrix.cons_val_one] at hmono
+  refine hmono.trans_eq ?_
+  rw [relativeEntropy_of_posDef hQ, relativeEntropy_of_posDef hσ₁, relativeEntropy_of_posDef hσ₂,
+    ← EReal.coe_add]
+  congr 1
+  rw [TauCeti.cfc_blockDiagonal_of_isHermitian Real.log (Fin.forall_fin_two.2 ⟨hρ₁.1, hρ₂.1⟩),
+    TauCeti.cfc_blockDiagonal_of_isHermitian Real.log (Fin.forall_fin_two.2 ⟨hσ₁.1, hσ₂.1⟩),
+    ← blockDiagonal_sub, ← blockDiagonal_mul, trace_blockDiagonal, Fin.sum_univ_two, map_add]
+  simp only [Pi.sub_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
+
+/-- **Subadditivity of the relative entropy.** For positive definite matrices over any `RCLike`
+field, `D(ρ₁ + ρ₂ ‖ σ₁ + σ₂) ≤ D(ρ₁ ‖ σ₁) + D(ρ₂ ‖ σ₂)`. -/
+theorem PosDef.relativeEntropy_add_le {ρ₁ ρ₂ σ₁ σ₂ : Matrix m m 𝕜}
+    (hρ₁ : ρ₁.PosDef) (hρ₂ : ρ₂.PosDef) (hσ₁ : σ₁.PosDef) (hσ₂ : σ₂.PosDef) :
+    relativeEntropy (ρ₁ + ρ₂) (σ₁ + σ₂) ≤ relativeEntropy ρ₁ σ₁ + relativeEntropy ρ₂ σ₂ := by
+  let Φ := TauCeti.mapToComplexStarAlgHom (n := m) (𝕜 := 𝕜)
+  have hD (ρ σ : Matrix m m 𝕜) (hρ : ρ.PosDef) (hσ : σ.PosDef) :
+      relativeEntropy (Φ ρ) (Φ σ) = relativeEntropy ρ σ := by
+    rw [relativeEntropy_of_posDef hσ.mapToComplexStarAlgHom, relativeEntropy_of_posDef hσ]
+    congr 1
+    have hlog (A : Matrix m m 𝕜) (hA : A.PosDef) : cfc Real.log (Φ A) = Φ (cfc Real.log A) :=
+      (StarAlgHom.map_cfc Φ Real.log A (A.finite_real_spectrum.continuousOn _)
+        TauCeti.continuous_mapToComplexStarAlgHom hA.1.isSelfAdjoint
+        (hA.1.isSelfAdjoint.map Φ)).symm
+    rw [hlog ρ hρ, hlog σ hσ, ← map_sub, ← map_mul]
+    simp only [Matrix.trace, Matrix.diag_apply, map_sum, Φ, TauCeti.mapToComplexStarAlgHom_apply]
+    simp
+  have h := hρ₁.mapToComplexStarAlgHom.relativeEntropy_add_le_complex
+    hρ₂.mapToComplexStarAlgHom hσ₁.mapToComplexStarAlgHom hσ₂.mapToComplexStarAlgHom
+  rwa [← map_add Φ ρ₁ ρ₂, ← map_add Φ σ₁ σ₂,
+    hD _ _ (hρ₁.add hρ₂) (hσ₁.add hσ₂), hD _ _ hρ₁ hσ₁, hD _ _ hρ₂ hσ₂] at h
+
+/-- **Joint convexity of the Umegaki relative entropy.** For positive definite matrices `ρ₁, ρ₂,
+σ₁, σ₂` over any `RCLike` field and nonnegative real weights `a, b`,
+`D(a ρ₁ + b ρ₂ ‖ a σ₁ + b σ₂) ≤ a D(ρ₁ ‖ σ₁) + b D(ρ₂ ‖ σ₂)`. -/
+theorem PosDef.relativeEntropy_smul_add_smul_le {ρ₁ ρ₂ σ₁ σ₂ : Matrix m m 𝕜}
+    (hρ₁ : ρ₁.PosDef) (hρ₂ : ρ₂.PosDef) (hσ₁ : σ₁.PosDef) (hσ₂ : σ₂.PosDef)
+    {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
+    relativeEntropy (a • ρ₁ + b • ρ₂) (a • σ₁ + b • σ₂) ≤
+      (a : EReal) * relativeEntropy ρ₁ σ₁ + (b : EReal) * relativeEntropy ρ₂ σ₂ := by
+  rcases ha.eq_or_lt with rfl | ha <;> rcases hb.eq_or_lt with rfl | hb
+  · rw [relativeEntropy_of_posDef hσ₁, relativeEntropy_of_posDef hσ₂]; simp
+  · rw [zero_smul, zero_add, zero_smul, zero_add, hρ₂.relativeEntropy_smul hσ₂ hb,
+      relativeEntropy_of_posDef hσ₁]; simp
+  · rw [zero_smul, add_zero, zero_smul, add_zero, hρ₁.relativeEntropy_smul hσ₁ ha,
+      relativeEntropy_of_posDef hσ₂]; simp
+  · exact ((hρ₁.smul ha).relativeEntropy_add_le (hρ₂.smul hb) (hσ₁.smul ha) (hσ₂.smul hb)).trans_eq
+      (by rw [hρ₁.relativeEntropy_smul hσ₁ ha, hρ₂.relativeEntropy_smul hσ₂ hb])
 
 end Matrix

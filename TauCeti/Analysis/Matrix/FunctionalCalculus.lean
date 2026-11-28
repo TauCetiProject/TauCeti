@@ -66,8 +66,8 @@ with a measurable random matrix `ω ↦ A ω` gives measurability of `ω ↦ cfc
 ## Main results
 
 * `Matrix.IsHermitian.cfc_mul_eq_mul_cfc` — `A * V = V * B` implies `cfc f A * V = V * cfc f B`;
-* `Matrix.cfc_transpose`, `Matrix.cfc_reindex` — the functional calculus commutes with
-  transposition and with reindexing;
+* `Matrix.cfc_transpose`, `Matrix.cfc_reindex`, `TauCeti.cfc_blockDiagonal_of_isHermitian` — the
+  functional calculus commutes with transposition, reindexing, and block-diagonal assembly;
 * `Matrix.IsHermitian.toEuclideanLin_cfc_apply_of_apply_eq_smul` — `cfc f A` acts by `f μ` on an
   eigenvector of `A` with eigenvalue `μ`;
 * `Matrix.IsHermitian.toEuclideanLin_cfc` — the Euclidean operator of `cfc f A` is the symmetric
@@ -329,6 +329,27 @@ end Matrix
 namespace TauCeti
 
 variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
+
+/-- **The functional calculus acts blockwise on a block-diagonal Hermitian matrix.** -/
+theorem cfc_blockDiagonal_of_isHermitian {o : Type*} [Fintype o] [DecidableEq o]
+    (f : ℝ → ℝ) {M : o → Matrix n n 𝕜} (hM : ∀ k, (M k).IsHermitian) :
+    cfc f (Matrix.blockDiagonal M) = Matrix.blockDiagonal fun k ↦ cfc f (M k) := by
+  have hBM : (Matrix.blockDiagonal M).IsHermitian := by
+    rw [Matrix.IsHermitian, Matrix.blockDiagonal_conjTranspose]
+    exact congrArg Matrix.blockDiagonal (funext fun k ↦ (hM k).eq)
+  let V (k : o) : Matrix (n × o) n 𝕜 := Matrix.of fun p j ↦ if p = (j, k) then 1 else 0
+  have hint (k : o) : Matrix.blockDiagonal M * V k = V k * M k := by
+    ext ⟨i, l⟩ j
+    by_cases hlk : l = k <;> simp [V, Matrix.mul_apply, Matrix.blockDiagonal_apply, hlk]
+  ext ⟨i, l⟩ ⟨j, k⟩
+  have hcfc := congrFun (congrFun (hBM.cfc_mul_eq_mul_cfc (hM k) (hint k) f) (i, l)) j
+  have hL : (cfc f (Matrix.blockDiagonal M) * V k) (i, l) j =
+      cfc f (Matrix.blockDiagonal M) (i, l) (j, k) := by
+    simp [V, Matrix.mul_apply]
+  have hR : (V k * cfc f (M k)) (i, l) j =
+      (Matrix.blockDiagonal fun r ↦ cfc f (M r)) (i, l) (j, k) := by
+    by_cases hlk : l = k <;> simp [V, Matrix.mul_apply, Matrix.blockDiagonal_apply, hlk]
+  rw [← hL, hcfc, hR]
 
 /-- **Continuity of the Hermitian functional calculus.** For a continuous `f : ℝ → ℝ`, the map
 `A ↦ cfc f A` is continuous on the Hermitian matrices. -/

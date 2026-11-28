@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Spectrum.Basic
+public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Basic
+import Mathlib.Basic.Real.Pointwise
 import Mathlib.FieldTheory.IsAlgClosed.Spectrum
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 
@@ -33,6 +35,11 @@ An integral element over a field has finite spectrum (`IsIntegral.finite_spectru
 consists of roots of a monic annihilating polynomial. In particular every element of a
 finite-dimensional algebra over a field has finite spectrum
 (`spectrum.finite_of_finiteDimensional`).
+
+Over `ℝ`, negating, zeroing, or nonnegatively scaling an algebra element transforms the endpoints
+`sSup (spectrum ℝ a)` and `sInf (spectrum ℝ a)` accordingly (`TauCeti.sSup_spectrum_real_neg`,
+`TauCeti.sInf_spectrum_real_neg`, `TauCeti.sSup_spectrum_real_zero`,
+`TauCeti.sInf_spectrum_real_zero`, `TauCeti.sSup_spectrum_real_smul_of_nonneg`).
 
 ## References
 
@@ -117,3 +124,49 @@ theorem finite_of_finiteDimensional {𝕜 A : Type*} [Field 𝕜] [Ring A] [Alge
   (IsIntegral.of_finite 𝕜 a).finite_spectrum
 
 end spectrum
+
+namespace TauCeti
+
+variable {A : Type*} [Ring A] [Algebra ℝ A]
+
+/-- Negating an element of a real algebra negates its extreme real spectral values:
+`sSup (spectrum ℝ (-a)) = -sInf (spectrum ℝ a)`. -/
+@[simp]
+theorem sSup_spectrum_real_neg (a : A) : sSup (spectrum ℝ (-a)) = -sInf (spectrum ℝ a) := by
+  rw [← spectrum.neg_eq, Real.sSup_neg]
+
+/-- Negating an element of a real algebra negates its extreme real spectral values:
+`sInf (spectrum ℝ (-a)) = -sSup (spectrum ℝ a)`. -/
+@[simp]
+theorem sInf_spectrum_real_neg (a : A) : sInf (spectrum ℝ (-a)) = -sSup (spectrum ℝ a) := by
+  rw [← spectrum.neg_eq, Real.sInf_neg]
+
+/-- The supremum of the real spectrum of `0` in any real algebra (including trivial ones) is
+`0`. -/
+@[simp]
+theorem sSup_spectrum_real_zero {A : Type*} [Ring A] [Algebra ℝ A] :
+    sSup (spectrum ℝ (0 : A)) = 0 := by
+  rcases subsingleton_or_nontrivial A with _ | _
+  · simp [spectrum.of_subsingleton]
+  · simp [spectrum.zero_eq]
+
+/-- The infimum of the real spectrum of `0` in any real algebra (including trivial ones) is
+`0`. -/
+@[simp]
+theorem sInf_spectrum_real_zero {A : Type*} [Ring A] [Algebra ℝ A] :
+    sInf (spectrum ℝ (0 : A)) = 0 := by
+  have h := sSup_spectrum_real_neg (0 : A)
+  rw [neg_zero, sSup_spectrum_real_zero] at h
+  linarith
+
+/-- Scaling an element of a real algebra by a nonnegative real scalar scales the supremum of its
+real spectrum. -/
+theorem sSup_spectrum_real_smul_of_nonneg (a : A) {θ : ℝ} (hθ : 0 ≤ θ) :
+    sSup (spectrum ℝ (θ • a)) = θ * sSup (spectrum ℝ a) := by
+  rcases hθ.eq_or_lt with rfl | hθ
+  · rw [zero_smul, sSup_spectrum_real_zero, zero_mul]
+  · simpa [Units.smul_def] using
+      (congrArg sSup (spectrum.unit_smul_eq_smul a (Units.mk0 θ hθ.ne'))).trans
+        (Real.sSup_smul_of_nonneg hθ.le _)
+
+end TauCeti

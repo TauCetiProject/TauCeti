@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Matrix
-public import Mathlib.Analysis.Matrix.PosDef
+public import Mathlib.Analysis.Matrix.Order
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
 public import TauCeti.Analysis.Matrix.EntrywiseOpNorm
 import TauCeti.Analysis.InnerProductSpace.Spectrum
@@ -75,7 +75,8 @@ at most `r` positive eigenvalues, so a perturbation `A - B` of rank at most `r` 
 interlacing `λ_{i+r}(A) ≤ λᵢ(B)`. Consequently the numbers of eigenvalues of `A` and `B` in
 `(-∞, t]`, counted with multiplicity, differ by at most `rank (A - B)` for every `t`. Divided by
 the size, this is the uniform bound on the difference of the distribution functions of the
-empirical spectral measures that drives truncation arguments for random matrices.
+empirical spectral measures that drives truncation arguments for random matrices. Sorted
+eigenvalues are also monotone in the Loewner order (`Matrix.IsHermitian.eigenvalues₀_mono`).
 
 ## References
 
@@ -465,6 +466,20 @@ theorem IsHermitian.le_eigenvalues₀_add (hA : A.IsHermitian) (hB : B.IsHermiti
     (isSymmetric_toEuclideanLin_iff.mpr (hA.add hB))] at h
   -- The matrix enumeration is defined using the symmetric Euclidean operator.
   simpa only [Matrix.IsHermitian.eigenvalues₀] using h
+
+open scoped MatrixOrder in
+/-- **Loewner monotonicity of sorted eigenvalues.** If `A ≤ B` in the Loewner order for Hermitian
+matrices `A` and `B`, then every sorted eigenvalue of `A` is at most the corresponding sorted
+eigenvalue of `B`. -/
+theorem IsHermitian.eigenvalues₀_mono (hA : A.IsHermitian) (hB : B.IsHermitian)
+    (hle : A ≤ B) (k : Fin (Fintype.card ι)) :
+    hA.eigenvalues₀ k ≤ hB.eigenvalues₀ k := by
+  obtain ⟨C, rfl⟩ : ∃ C, B = A + C := ⟨B - A, (add_sub_cancel A B).symm⟩
+  have hC : C.PosSemidef := by simpa [add_sub_cancel_left] using le_iff.1 hle
+  let last : Fin (Fintype.card ι) := ⟨Fintype.card ι - 1, by have := k.isLt; omega⟩
+  exact (le_add_of_nonneg_right (hC.eigenvalues₀_nonneg last)).trans <|
+    hA.le_eigenvalues₀_add hC.isHermitian (i := k) (j := last) (k := k)
+      (by dsimp [last]; have := k.isLt; omega)
 
 /-- A Hermitian matrix of rank at most `r` has at most `r` positive eigenvalues: its sorted
 eigenvalues are nonpositive from index `r` on. -/

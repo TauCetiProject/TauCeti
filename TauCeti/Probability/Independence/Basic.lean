@@ -36,6 +36,11 @@ everywhere at each index, preserving independence and identical distribution
 sets under the coordinates of an independent family are independent events, whether or not the
 coordinates are measurable (`ProbabilityTheory.iIndepFun.iIndepSet_preimage`).
 
+Finset-restricted variants of Mathlib's `indepFun_finsetProd_of_notMem₀` /
+`indepFun_finsetSum_of_notMem₀` require a.e. measurability only on `s` and at the excluded index
+`i` (`ProbabilityTheory.iIndepFun.indepFun_finsetProd_of_notMem₀_on` and
+`ProbabilityTheory.iIndepFun.indepFun_finsetSum_of_notMem₀_on`).
+
 Under a finite measure, two measurable random variables with countably many values are independent
 as soon as every cell `f ⁻¹' {a} ∩ g ⁻¹' {b}` has the product mass of `f ⁻¹' {a}` and `g ⁻¹' {b}`
 (`TauCeti.Probability.indepFun_of_measureReal_preimage_singleton_inter_eq_mul`).
@@ -206,6 +211,32 @@ theorem iIndepFun.exists_measurable_ae_eq_of_identDistrib {Ω ι α : Type*}
     fun i ↦ ((hid i).aemeasurable_fst.identDistrib_mk.symm.trans (hid i)).trans
       (hid i₀).aemeasurable_fst.identDistrib_mk,
     fun i ↦ (hid i).aemeasurable_fst.identDistrib_mk.symm⟩
+
+/-- Finset-restricted variant of `ProbabilityTheory.iIndepFun.indepFun_finsetProd_of_notMem₀`:
+for an independent family `f` in a commutative monoid with jointly measurable multiplication,
+`∏ j ∈ s, f j` and `f i` are independent when `i ∉ s`, assuming a.e. measurability only on `s`
+and at `i`. -/
+@[to_additive /-- Finset-restricted variant of
+`ProbabilityTheory.iIndepFun.indepFun_finsetSum_of_notMem₀`: for an independent family `f` in a
+commutative additive monoid with jointly measurable addition, `∑ j ∈ s, f j` and `f i` are
+independent when `i ∉ s`, assuming a.e. measurability only on `s` and at `i`. -/]
+theorem iIndepFun.indepFun_finsetProd_of_notMem₀_on {Ω ι β : Type*} [MeasurableSpace Ω]
+    [MeasurableSpace β] [CommMonoid β] [MeasurableMul₂ β] {μ : Measure Ω}
+    {f : ι → Ω → β} (hf_indep : iIndepFun f μ) {s : Finset ι} {i : ι} (hi : i ∉ s)
+    (hf_meas : ∀ j ∈ s, AEMeasurable (f j) μ) (hf_i : AEMeasurable (f i) μ) :
+    IndepFun (∏ j ∈ s, f j) (f i) μ := by
+  classical
+  let t : Finset ↥(insert i s) := s.subtype (· ∈ insert i s)
+  have hi' : (⟨i, Finset.mem_insert_self i s⟩ : ↥(insert i s)) ∉ t := by
+    simp [t, Finset.mem_subtype, hi]
+  have hmeas_ins : ∀ k : ↥(insert i s), AEMeasurable (f k.val) μ := fun k ↦ by
+    rcases Finset.mem_insert.1 k.property with hk | hk
+    · rw [hk]; exact hf_i
+    · exact hf_meas k.val hk
+  have h := (hf_indep.precomp Subtype.val_injective).indepFun_finsetProd_of_notMem₀ hmeas_ins hi'
+  have hprod : (∏ k ∈ t, f k.val) = ∏ j ∈ s, f j := by
+    simpa [t] using Finset.prod_subtype_of_mem f fun _ hj ↦ Finset.mem_insert_of_mem hj
+  rwa [hprod] at h
 
 /-- Preimages of measurable sets under the coordinates of an independent family are independent
 events. The coordinates need not be measurable, so these events need not be measurable in the
