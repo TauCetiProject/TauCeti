@@ -11,6 +11,7 @@ import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Algebra.ContinuedFractions.ReductionOfOrder
 import TauCeti.Analysis.PSeries
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.SpecificLimits.ForcedIncrements
 
 /-!
 # Dominant solutions of second-order linear difference equations
@@ -54,11 +55,12 @@ at two consecutive indices `n₀` and `n₀ + 1`, and write `x = v / u`. The dif
   `δ (n + 1) * u (n + 2) = g n * u n * δ n - r n * x (n + 1)`,
 
 and since `‖g n u n‖ ≤ q ‖u (n + 2)‖` with `q < 1` (because `‖g₀‖ < ‖ρ‖²`), the forcing term
-controls `δ` by induction from `n₀`. So `x` tends to a nonzero limit `L` with
-`x n - L = O(n^{1 - M})`, and `v / L` is a solution close to `u`. Each order of the expansion needs
-its own `M`. The solutions so obtained differ by solutions that are `o(ρⁿ n^α)`, and such a
-solution is exponentially smaller than `ρⁿ n^α` by `TauCeti.isBigO_div_pow_of_tendsto_div`: the
-Casoratian of two solutions is multiplied by `g n` at each step, so it is `O(γⁿ)`.
+controls `δ` by induction from `n₀` (`TauCeti.norm_sub_le_mul_of_norm_sub_add_two_le`). So `x`
+tends to a nonzero limit `L` with `x n - L = O(n^{1 - M})`, and `v / L` is a solution close to
+`u`. Each order of the expansion needs its own `M`. The solutions so obtained differ by solutions
+that are `o(ρⁿ n^α)`, and such a solution is exponentially smaller than `ρⁿ n^α` by
+`TauCeti.isBigO_div_pow_of_tendsto_div`: the Casoratian of two solutions is multiplied by `g n` at
+each step, so it is `O(γⁿ)`.
 
 ## References
 
@@ -201,48 +203,6 @@ private lemma norm_div_sub_div_le {f g u v : ℕ → ℂ} {φ : ℕ → ℝ} {q 
           (mul_le_mul_of_nonneg_right (hr k) (norm_nonneg _))
     _ = (q * ‖x (k + 1) - x k‖ + B * φ k * ‖x (k + 1)‖) * ‖u (k + 2)‖ := by ring
 
-/-- Let `x 0 = x 1 = 1` and `‖x (k + 2) - x (k + 1)‖ ≤ q ‖x (k + 1) - x k‖ + B φ k ‖x (k + 1)‖`,
-where `φ ≥ 0` is summable with `θ φ k ≤ φ (k + 1)` and `0 ≤ q < θ`. If
-`2B / (θ - q) ∑ φ ≤ 1/2`, then `‖x (k + 1) - x k‖ ≤ 2B / (θ - q) φ k` for every `k`. -/
-private lemma norm_sub_le_of_forward_bound {x : ℕ → ℂ} {φ : ℕ → ℝ} {q θ B : ℝ}
-    (hx0 : x 0 = 1) (hx1 : x 1 = 1)
-    (hx : ∀ k, ‖x (k + 2) - x (k + 1)‖ ≤ q * ‖x (k + 1) - x k‖ + B * φ k * ‖x (k + 1)‖)
-    (hφ0 : ∀ k, 0 ≤ φ k) (hφθ : ∀ k, θ * φ k ≤ φ (k + 1)) (hφ : Summable φ) (hq : 0 ≤ q)
-    (hqθ : q < θ) (hB : 0 ≤ B) (hsmall : 2 * B / (θ - q) * ∑' k, φ k ≤ 1 / 2) (k : ℕ) :
-    ‖x (k + 1) - x k‖ ≤ 2 * B / (θ - q) * φ k := by
-  set D := 2 * B / (θ - q)
-  have hD : 0 ≤ D := div_nonneg (by positivity) (sub_pos.2 hqθ).le
-  have hDθ : D * q + 2 * B = D * θ := by
-    simp only [D]
-    field_simp [(sub_pos.2 hqθ).ne']
-    ring
-  -- strong induction: the bound up to `k` makes `‖x (k + 1)‖ ≤ 2`
-  induction k using Nat.strong_induction_on with
-  | _ k ih =>
-  rcases k with _ | k
-  · rw [hx1, hx0, sub_self, norm_zero]
-    exact mul_nonneg hD (hφ0 0)
-  have hxk : ‖x (k + 1)‖ ≤ 2 := by
-    rw [← sub_add_cancel (x (k + 1)) (x 0), ← sum_range_sub x (k + 1), hx0]
-    calc ‖∑ j ∈ range (k + 1), (x (j + 1) - x j) + 1‖
-        ≤ ∑ j ∈ range (k + 1), D * φ j + 1 := by
-          refine (norm_add_le _ _).trans ?_
-          rw [norm_one]
-          gcongr
-          exact (norm_sum_le _ _).trans (sum_le_sum fun j hj ↦ ih j (mem_range.1 hj))
-      _ ≤ D * ∑' j, φ j + 1 := by
-          rw [← mul_sum]
-          gcongr
-          exact hφ.sum_le_tsum _ fun j _ ↦ hφ0 j
-      _ ≤ 2 := by linarith
-  calc ‖x (k + 1 + 1) - x (k + 1)‖ ≤ q * ‖x (k + 1) - x k‖ + B * φ k * ‖x (k + 1)‖ := hx k
-    _ ≤ q * (D * φ k) + B * φ k * 2 := by
-        gcongr
-        · exact ih k (by omega)
-        · exact mul_nonneg hB (hφ0 k)
-    _ = D * (θ * φ k) := by linear_combination φ k * hDθ
-    _ ≤ D * φ (k + 1) := by gcongr; exact hφθ k
-
 /-- **A solution near an approximate solution.** Let `u` vanish nowhere, with
 `‖g k‖ ‖u k‖ ≤ q ‖u (k + 2)‖`, and let the residual of `u` be at most `B φ k ‖u (k + 2)‖`, where
 `φ ≥ 0` is summable with `θ φ k ≤ φ (k + 1)` and `q < θ`. If `2B / (θ - q) ∑ φ ≤ 1/2`, the
@@ -265,10 +225,17 @@ private theorem exists_solution_of_forward_bounds {f g u : ℕ → ℂ} {φ : �
     (mul_nonneg (norm_nonneg (g 0)) (norm_nonneg (u 0))).trans (hgu 0)) (norm_pos_iff.2 (hu 2))
   -- the increments `δ k = x (k + 1) - x k` are at most `D φ k`, so `x` tends to `L ≠ 0`
   have hx0 : x 0 = 1 := by simp [hx_def, hv_def, forwardSolution, div_self (hu 0)]
+  have hx1 : x 1 = 1 := by simp [hx_def, hv_def, forwardSolution, div_self (hu 1)]
+  have hD : 0 ≤ D := div_nonneg (by positivity) (sub_pos.2 hqθ).le
+  have hDθ : q * D + B * 2 = D * θ := by
+    simp only [D]
+    field_simp [(sub_pos.2 hqθ).ne']
+    ring
   have hδφ : ∀ k, ‖x (k + 1) - x k‖ ≤ D * φ k :=
-    norm_sub_le_of_forward_bound hx0
-      (by simp [hx_def, hv_def, forwardSolution, div_self (hu 1)])
-      (norm_div_sub_div_le hu hv hgu hr) hφ0 hφθ hφ hq hqθ hB hsmall
+    norm_sub_le_mul_of_norm_sub_add_two_le (M := 2) (norm_div_sub_div_le hu hv hgu hr) hφ0 hφ hq hB
+      hD (by rw [hx1, hx0, sub_self, norm_zero]; exact mul_nonneg hD (hφ0 0))
+      (by rw [hx0, norm_one]; linarith)
+      fun k ↦ by rw [hDθ, mul_assoc]; gcongr; exact hφθ k
   set δ : ℕ → ℂ := fun k ↦ x (k + 1) - x k
   have hδs : Summable δ := Summable.of_norm_bounded (hφ.mul_left D) hδφ
   set L := 1 + ∑' j, δ j with hL_def
