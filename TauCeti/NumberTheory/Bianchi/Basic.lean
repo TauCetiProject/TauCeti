@@ -105,7 +105,7 @@ theorem bianchiGamma_mono : Monotone (bianchiGamma F ι) := by
   have h : (Matrix.SpecialLinearGroup.map (n := Fin 2)
       (Ideal.Quotient.mk (⊥ : Ideal (𝓞 F)))).ker = ⊥ :=
     MonoidHom.ker_eq_bot _ (Matrix.SpecialLinearGroup.map_injective
-      ((RingHom.injective_iff_ker_eq_bot _).mpr Ideal.mk_ker))
+      (RingEquiv.quotientBot (𝓞 F)).symm.injective)
   simp [bianchiGamma_def, h]
 
 /-- At the unit ideal every integral matrix satisfies the congruence condition. -/

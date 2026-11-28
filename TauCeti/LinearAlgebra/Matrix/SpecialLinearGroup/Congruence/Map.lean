@@ -28,9 +28,8 @@ variable {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
       (map (Ideal.Quotient.mk (I.map e))).ker := by
   let q := Ideal.quotientEquiv I (I.map e) e rfl
   have hq : (q.symm : _ →+* _).comp (Ideal.Quotient.mk (I.map e)) =
-      (Ideal.Quotient.mk I).comp (e.symm : S →+* R) := RingHom.ext fun x ↦ by
-    simpa only [RingHom.comp_apply, RingEquiv.coe_toRingHom, q] using
-      Ideal.quotientEquiv_symm_mk I (I.map e) e rfl x
+      (Ideal.Quotient.mk I).comp (e.symm : S →+* R) :=
+    Ideal.quotientMap_comp_mk (f := (e.symm : S →+* R)) (Ideal.map_comap_of_equiv (I := I) e).le
   have hcomm :
       (map (n := n) (Ideal.Quotient.mk I)).comp (mapEquiv n e).symm =
         ((mapEquiv n q).symm : _ →* _).comp (map (n := n) (Ideal.Quotient.mk (I.map e))) := by
