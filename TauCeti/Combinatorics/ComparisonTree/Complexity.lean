@@ -35,6 +35,8 @@ admissible ranking. With no admissible ranking no number is the comparison compl
 
 ## Main results
 
+* `TauCeti.CompTree.Solves.injOn_eval`: a tree that solves a problem in which an output is correct
+  for at most one admissible ranking gives pairwise different outputs on the admissible rankings.
 * `TauCeti.IsComparisonComplexity.unique`: a problem has at most one comparison complexity.
 * `TauCeti.isComparisonComplexity_iff_isLeast`: for nonempty `A`, the comparison complexity is
   the least depth of a tree that solves the problem.
@@ -71,6 +73,18 @@ theorem Solves.of_eval_eq {t t' : CompTree n α} {A : Set (Equiv.Perm (Fin n))}
     {R : Equiv.Perm (Fin n) → α → Prop} (ht : t.Solves A R)
     (h : ∀ σ ∈ A, t'.eval ⇑σ = t.eval ⇑σ) : t'.Solves A R :=
   fun σ hσ => (h σ hσ).symm ▸ ht σ hσ
+
+/-- If a tree solves a problem in which an output is correct for at most one admissible ranking,
+then it gives pairwise different outputs on the admissible rankings. -/
+theorem Solves.injOn_eval {t : CompTree n α} {A : Set (Equiv.Perm (Fin n))}
+    {R : Equiv.Perm (Fin n) → α → Prop} (ht : t.Solves A R)
+    (hR : ∀ σ ∈ A, ∀ τ ∈ A, ∀ a, R σ a → R τ a → σ = τ) :
+    Set.InjOn (fun σ : Equiv.Perm (Fin n) => t.eval ⇑σ) A := by
+  intro σ hσ τ hτ h
+  dsimp only at h
+  have hτ' := solves_iff.1 ht τ hτ
+  rw [← h] at hτ'
+  exact hR σ hσ τ hτ _ (solves_iff.1 ht σ hσ) hτ'
 
 /-- Pruning for rankings: a tree that solves a problem with a nonempty set of admissible rankings
 can be replaced by a tree that solves it, has the same cost on every admissible ranking, and has

@@ -9,7 +9,7 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Analysis.SpecialFunctions.Log.Base
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Data.Nat.Log
-public import TauCeti.Combinatorics.ComparisonTree.Basic
+public import TauCeti.Combinatorics.ComparisonTree.Complexity
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Analysis.Convex.Jensen
@@ -32,6 +32,10 @@ inputs with different outputs end in different leaves. Hence some input of `A` c
   `Nat.clog 2 |A| = ⌈log₂ |A|⌉`.
 * `TauCeti.CompTree.card_mul_logb_card_le_sum_cost`: the total cost over `A` is at least
   `|A| log₂ |A|`.
+* `TauCeti.CompTree.Solves.exists_clog_card_le_cost`,
+  `TauCeti.CompTree.Solves.card_mul_logb_card_le_sum_cost`: the same two bounds for a tree that
+  solves a problem in which an output is correct for at most one admissible ranking, over a finite
+  set `A` of admissible rankings.
 
 ## References
 
@@ -119,6 +123,41 @@ theorem card_mul_logb_card_le_sum_cost (t : CompTree n α) {A : Finset (Fin n �
   rw [inv_mul_le_iff₀ hc] at h
   rw [Real.logb, ← mul_div_assoc, div_le_iff₀ (Real.log_pos one_lt_two)]
   linarith
+
+section Solves
+
+variable {t : CompTree n α} {R : Equiv.Perm (Fin n) → α → Prop}
+  {A : Finset (Equiv.Perm (Fin n))}
+
+/-- If a tree solves a problem in which an output is correct for at most one admissible ranking,
+then the rankings of a finite set `A` of admissible rankings, seen as inputs, receive pairwise
+different outputs. -/
+private theorem Solves.injOn_eval_map (ht : t.Solves ↑A R)
+    (hR : ∀ σ ∈ A, ∀ τ ∈ A, ∀ a, R σ a → R τ a → σ = τ) :
+    Set.InjOn t.eval
+      ((A.map ⟨fun σ : Equiv.Perm (Fin n) => ⇑σ, DFunLike.coe_injective⟩ :
+        Finset (Fin n → Fin n)) : Set (Fin n → Fin n)) := by
+  rw [coe_map]
+  exact (ht.injOn_eval hR).image_of_comp
+
+/-- If a tree solves a problem in which an output is correct for at most one admissible ranking,
+then it costs at least `⌈log₂ |A|⌉` comparisons on some ranking of a nonempty finite set `A` of
+admissible rankings. -/
+theorem Solves.exists_clog_card_le_cost (ht : t.Solves ↑A R)
+    (hR : ∀ σ ∈ A, ∀ τ ∈ A, ∀ a, R σ a → R τ a → σ = τ) (hne : A.Nonempty) :
+    ∃ σ ∈ A, Nat.clog 2 #A ≤ t.cost ⇑σ := by
+  obtain ⟨x, hx, hcost⟩ := t.exists_clog_card_le_cost (ht.injOn_eval_map hR) hne.map
+  obtain ⟨σ, hσ, rfl⟩ := mem_map.1 hx
+  exact ⟨σ, hσ, by simpa using hcost⟩
+
+/-- If a tree solves a problem in which an output is correct for at most one admissible ranking,
+then its total cost over a finite set `A` of admissible rankings is at least `|A| log₂ |A|`. -/
+theorem Solves.card_mul_logb_card_le_sum_cost (ht : t.Solves ↑A R)
+    (hR : ∀ σ ∈ A, ∀ τ ∈ A, ∀ a, R σ a → R τ a → σ = τ) :
+    (#A : ℝ) * Real.logb 2 #A ≤ ∑ σ ∈ A, (t.cost ⇑σ : ℝ) := by
+  simpa using t.card_mul_logb_card_le_sum_cost (ht.injOn_eval_map hR)
+
+end Solves
 
 end CompTree
 
