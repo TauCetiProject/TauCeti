@@ -65,26 +65,47 @@ private theorem lie_restrictScalars_update_smul {ι : Type*} [Fintype ι] [Decid
       Function.update_comm hji.symm y ⁅x, v j⁆ v, ω.map_update_smul]
   rw [hval, hsum]; simp only [restrictScalars_apply, smul_eq_mul, mul_sub]; ring
 
+private def lieDerivAux {ι : Type*} [Fintype ι] [inst₀ : DecidableEq ι]
+    (x : L) (ω : L [⋀^ι]→ₗ[A] A) : L [⋀^ι]→ₗ[A] A where
+  toFun := ⇑⁅x, ω.restrictScalars R⁆
+  map_update_add' := fun {inst} m i x₁ y ↦ by
+    cases Subsingleton.elim inst inst₀; exact ⁅x, ω.restrictScalars R⁆.map_update_add ..
+  map_update_smul' := fun {inst} v i a y ↦ by
+    cases Subsingleton.elim inst inst₀; exact lie_restrictScalars_update_smul R x ω v i a y
+  map_eq_zero_of_eq' := ⁅x, ω.restrictScalars R⁆.map_eq_zero_of_eq
+
+private theorem restrictScalars_lieDerivAux {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (x : L) (ω : L [⋀^ι]→ₗ[A] A) :
+    (lieDerivAux R x ω).restrictScalars R = ⁅x, ω.restrictScalars R⁆ := by
+  ext v; simp [lieDerivAux]
+
+private def lieDerivLinear {ι : Type*} [Fintype ι] [DecidableEq ι] (x : L) :
+    (L [⋀^ι]→ₗ[A] A) →ₗ[R] L [⋀^ι]→ₗ[A] A where
+  toFun := lieDerivAux R x
+  map_add' _ _ := restrictScalars_injective R <| by
+    simp [restrictScalars_lieDerivAux, lie_add]
+  map_smul' c ω := restrictScalars_injective R <| by
+    simpa only [restrictScalars_lieDerivAux, restrictScalars_smul, RingHom.id_apply] using
+      lie_smul c x (ω.restrictScalars R)
+
 /-- The Lie derivative of an `A`-multilinear alternating form `ω` along `x : L`, bundled as an
 `R`-bilinear map. -/
-def lieDeriv {ι : Type*} [Fintype ι] [inst₀ : DecidableEq ι] :
+def lieDeriv {ι : Type*} [Fintype ι] [DecidableEq ι] :
     L →ₗ[R] (L [⋀^ι]→ₗ[A] A) →ₗ[R] L [⋀^ι]→ₗ[A] A where
-  toFun x :=
-    { toFun ω :=
-        { toFun := ⇑⁅x, ω.restrictScalars R⁆
-          map_update_add' := fun {inst} m i x₁ y ↦ by
-            cases Subsingleton.elim inst inst₀; exact ⁅x, ω.restrictScalars R⁆.map_update_add ..
-          map_update_smul' := fun {inst} v i a y ↦ by
-            cases Subsingleton.elim inst inst₀; exact lie_restrictScalars_update_smul R x ω v i a y
-          map_eq_zero_of_eq' := ⁅x, ω.restrictScalars R⁆.map_eq_zero_of_eq }
-      map_add' _ _ := by ext v; simp [add_apply, restrictScalars_add, lie_add]
-      map_smul' c ω := by ext v; simp [congr($(lie_smul c x (ω.restrictScalars R)) v)] }
-  map_add' x y := by ext ω v; exact congr($(add_lie x y (ω.restrictScalars R)) v)
-  map_smul' c x := by ext ω v; exact congr($(smul_lie c x (ω.restrictScalars R)) v)
+  toFun := lieDerivLinear R
+  map_add' x y := LinearMap.ext fun ω ↦ restrictScalars_injective R <| by
+    simpa only [LinearMap.add_apply, LinearMap.coe_mk, AddHom.coe_mk, lieDerivLinear,
+      restrictScalars_add, restrictScalars_lieDerivAux] using add_lie x y (ω.restrictScalars R)
+  map_smul' c x := LinearMap.ext fun ω ↦ restrictScalars_injective R <| by
+    simpa only [RingHom.id_apply, LinearMap.smul_apply, LinearMap.coe_mk, AddHom.coe_mk,
+      lieDerivLinear, restrictScalars_smul, restrictScalars_lieDerivAux] using
+      smul_lie c x (ω.restrictScalars R)
 
 @[simp] theorem restrictScalars_lieDeriv {ι : Type*} [Fintype ι] [DecidableEq ι]
     (x : L) (ω : L [⋀^ι]→ₗ[A] A) :
-    (lieDeriv R x ω).restrictScalars R = ⁅x, ω.restrictScalars R⁆ := by ext v; simp [lieDeriv]
+    (lieDeriv R x ω).restrictScalars R = ⁅x, ω.restrictScalars R⁆ :=
+  restrictScalars_lieDerivAux R x ω
+
 @[simp] theorem lieDeriv_apply {ι : Type*} [Fintype ι] [DecidableEq ι]
     (x : L) (ω : L [⋀^ι]→ₗ[A] A) (v : ι → L) :
     lieDeriv R x ω v = ⁅x, ω v⁆ - ∑ i, ω (Function.update v i ⁅x, v i⁆) := by
@@ -102,12 +123,22 @@ theorem curryLeft_lieDeriv {n : ℕ} (x y : L) (ω : L [⋀^Fin (n + 1)]→ₗ[A
   restrictScalars_injective R <| by
     simpa only [restrictScalars_curryLeft, restrictScalars_lieDeriv, restrictScalars_sub] using
       AlternatingMap.curryLeft_lie x (ω.restrictScalars R) y
+variable {R} in
+private theorem lie_smul_right {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (x : L) (a : A) (η : L [⋀^ι]→ₗ[R] A) :
+    ⁅x, a • η⁆ = a • ⁅x, η⁆ + ⁅x, a⁆ • η := by
+  ext v
+  simp only [AlternatingMap.lie_apply, smul_apply, add_apply, smul_eq_mul,
+    LieRinehartRing.leibniz_mul_right]
+  rw [← Finset.mul_sum]
+  ring
 /-- Scalar derivation formula for the Lie derivative on `a • ω`. -/
 @[simp] theorem lieDeriv_smul_right {ι : Type*} [Fintype ι] [DecidableEq ι]
     (x : L) (a : A) (ω : L [⋀^ι]→ₗ[A] A) :
-    lieDeriv R x (a • ω) = a • lieDeriv R x ω + ⁅x, a⁆ • ω := by
-  ext v; simp only [lieDeriv_apply, smul_apply, add_apply, smul_eq_mul,
-    LieRinehartRing.leibniz_mul_right]; rw [← Finset.mul_sum]; ring
+    lieDeriv R x (a • ω) = a • lieDeriv R x ω + ⁅x, a⁆ • ω :=
+  restrictScalars_injective R <| by
+    simp only [restrictScalars_lieDeriv, restrictScalars_smul, restrictScalars_add,
+      lie_smul_right]
 end LieDeriv
 
 section Differential
@@ -127,8 +158,7 @@ theorem lieModule_d_smul_apply :
   | n + 1, a, η, v => by
     obtain ⟨x, w, rfl⟩ : ∃ x w, v = Matrix.vecCons x w := ⟨v 0, tail v, (cons_self_tail v).symm⟩
     have hlie : ⁅x, a • η⁆ w = a * ⁅x, η⁆ w + ⁅x, a⁆ * η w := by
-      simp only [AlternatingMap.lie_apply, smul_apply, smul_eq_mul,
-        LieRinehartRing.leibniz_mul_right]; rw [← Finset.mul_sum]; ring
+      simp only [lie_smul_right, add_apply, smul_apply, smul_eq_mul]
     have hsum : ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) •
           (⁅Matrix.vecCons x w i, a⁆ * η (i.removeNth (Matrix.vecCons x w))) =
         ⁅x, a⁆ * η w - ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j : ℕ) •

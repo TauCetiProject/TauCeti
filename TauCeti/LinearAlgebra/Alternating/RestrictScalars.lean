@@ -97,6 +97,13 @@ variable {R A M N : Type*} [CommSemiring R] [Semiring A]
   [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module A M] [Module R N] [Module A N]
   {n : ℕ}
 
+private theorem map_update_zero_smul (f : M [⋀^Fin (n + 1)]→ₗ[R] N)
+    (hf : ∀ (a : A) (m : M) (w : Fin n → M), f.curryLeft (a • m) w = a • f.curryLeft m w)
+    (v : Fin (n + 1) → M) (a : A) (m : M) :
+    f (Function.update v 0 (a • m)) = a • f (Function.update v 0 m) := by
+  rw [← Fin.cons_self_tail v, Fin.update_cons_zero, Fin.update_cons_zero]
+  simpa only [curryLeft_apply_apply, Matrix.vecCons] using hf a m (Fin.tail v)
+
 /-- Build an `A`-multilinear alternating map from an `R`-multilinear alternating map that is
 `A`-homogeneous in its first argument. -/
 def ofCurryLeftSMul (f : M [⋀^Fin (n + 1)]→ₗ[R] N)
@@ -106,22 +113,13 @@ def ofCurryLeftSMul (f : M [⋀^Fin (n + 1)]→ₗ[R] N)
   map_update_add' := fun {inst} m i x y ↦ by
     cases Subsingleton.elim inst _; exact f.map_update_add m i x y
   map_update_smul' := fun {inst} v i a m ↦ by
-    obtain rfl : inst = instDecidableEqFin (n + 1) := Subsingleton.elim _ _; by_cases hi : i = 0
-    · subst hi; have hupd (x : M) : Function.update v 0 x = Matrix.vecCons x (Fin.tail v) :=
-        funext fun j ↦ Fin.cases (by simp) (fun _ ↦ by simp [Fin.tail]) j
-      rw [hupd, hupd]; exact hf a m (Fin.tail v)
+    obtain rfl : inst = instDecidableEqFin (n + 1) := Subsingleton.elim _ _
+    by_cases hi : i = 0
+    · subst hi; exact map_update_zero_smul f hf v a m
     · set u₁ := Function.update v i (a • m); set u₂ := Function.update v i m
       have hswap : f (u₁ ∘ Equiv.swap 0 i) = a • f (u₂ ∘ Equiv.swap 0 i) := by
-        have hu₁ :
-            u₁ ∘ Equiv.swap 0 i = Matrix.vecCons (a • m) (Fin.tail (u₂ ∘ Equiv.swap 0 i)) := by
-          ext j; refine Fin.cases (by simp [u₁]) (fun j ↦ ?_) j
-          have hne : Equiv.swap 0 i j.succ ≠ i := fun h ↦
-            Fin.succ_ne_zero j <|
-              (Equiv.swap 0 i).injective <| h.trans (Equiv.swap_apply_left 0 i).symm
-          simp [u₁, u₂, Fin.tail, hne]
-        have hu₂ : u₂ ∘ Equiv.swap 0 i = Matrix.vecCons m (Fin.tail (u₂ ∘ Equiv.swap 0 i)) := by
-          ext j; refine Fin.cases (by simp [u₂]) (fun _ ↦ by simp [Fin.tail]) j
-        rw [hu₁, hu₂]; exact hf a m (Fin.tail (u₂ ∘ Equiv.swap 0 i))
+        simp only [u₁, u₂, Function.update_comp_equiv, Equiv.symm_swap, Equiv.swap_apply_right]
+        exact map_update_zero_smul f hf (v ∘ Equiv.swap 0 i) a m
       have h₁ : f (u₁ ∘ Equiv.swap 0 i) + f u₁ = 0 := f.map_swap_add u₁ (Ne.symm hi)
       have h₂ : f (u₁ ∘ Equiv.swap 0 i) + a • f u₂ = 0 := by
         rw [hswap, ← smul_add, f.map_swap_add u₂ (Ne.symm hi), smul_zero]
