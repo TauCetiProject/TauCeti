@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
-public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.PowerSeries.Inverse
 
@@ -15,6 +14,7 @@ import Mathlib.Algebra.CharP.Lemmas
 import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Polynomial.Distinguished
 import TauCeti.RingTheory.PowerSeries.AdicComplete
+import TauCeti.RingTheory.PowerSeries.CyclotomicSeries
 import TauCeti.RingTheory.PowerSeries.Ideal
 import TauCeti.RingTheory.RegularLocalRing.PowerSeries
 
@@ -28,7 +28,7 @@ an ideal `I` of `O` containing `p`, `ω_n` lies in the `(n + 1)`-st power of the
 `I.comap constantCoeff` of series with constant coefficient in `I` (over a local ring in which `p`
 is not a unit, the maximal ideal of `O⟦X⟧`), so when `O` is `I`-adically Hausdorff, for instance
 when `O` is a complete local ring or, by Krull's intersection theorem, a noetherian local ring and
-`I` its maximal ideal, the principal ideals `(ω_n)` meet in zero. Over a local domain with a prime
+`I` its maximal ideal, the principal ideals `(ω_n)` meet in zero. Over a domain with a prime
 `ϖ`, every `(1 + X) ^ N - 1` with `N ≠ 0` acts injectively on `O⟦X⟧ ⧸ (ϖ ^ m)`.
 
 The polynomial counterparts, in particular that `(1 + X) ^ pⁿ - 1` is distinguished at every ideal
@@ -39,7 +39,7 @@ containing `p`, are in `TauCeti.RingTheory.Polynomial.Distinguished`.
 * `PowerSeries.one_add_X_pow_sub_one_eq_X_pow`: in characteristic `p`, `ω_n = X ^ pⁿ`.
 * `PowerSeries.one_add_X_pow_sub_one_ne_zero`: `(1 + X) ^ N - 1 ≠ 0` for `N ≠ 0`.
 * `PowerSeries.torsionBy_quotient_span_C_pow_one_add_X_pow_sub_one_eq_bot`: for a prime `ϖ` of a
-  local domain `O` and `N ≠ 0`, `(1 + X) ^ N - 1` has no nonzero torsion on `O⟦X⟧ ⧸ (ϖ ^ m)`.
+  domain `O` and `N ≠ 0`, `(1 + X) ^ N - 1` has no nonzero torsion on `O⟦X⟧ ⧸ (ϖ ^ m)`.
 * `PowerSeries.one_add_X_pow_sub_one_mem_comap_constantCoeff_pow`: `ω_n` lies in the
   `(n + 1)`-st power of `I.comap constantCoeff`, the ideal of series with constant coefficient in
   `I`, for an ideal `I` containing `p`.
@@ -52,6 +52,7 @@ containing `p`, are in `TauCeti.RingTheory.Polynomial.Distinguished`.
 public section
 
 open IsLocalRing
+open scoped Polynomial
 
 namespace PowerSeries
 
@@ -73,17 +74,17 @@ theorem one_add_X_pow_sub_one_ne_zero [Nontrivial O] {N : ℕ} (hN : N ≠ 0) :
   rw [← Polynomial.coe_eq_zero_iff]
   simpa using h
 
-/-- Over a local domain `O` with a prime `ϖ`, `(1 + X) ^ N - 1` acts injectively on
+/-- Over a domain `O` with a prime `ϖ`, `(1 + X) ^ N - 1` acts injectively on
 `O⟦X⟧ ⧸ (ϖ ^ m)` for `N ≠ 0`; in particular `(O⟦X⟧ ⧸ (ϖ ^ m))[ω_n] = 0` for
 `ω_n = (1 + X) ^ pⁿ - 1`. -/
-theorem torsionBy_quotient_span_C_pow_one_add_X_pow_sub_one_eq_bot [IsDomain O] [IsLocalRing O]
+theorem torsionBy_quotient_span_C_pow_one_add_X_pow_sub_one_eq_bot [IsDomain O]
     {ϖ : O} (hϖ : Prime ϖ) {N : ℕ} (hN : N ≠ 0) (m : ℕ) :
     Submodule.torsionBy O⟦X⟧ (O⟦X⟧ ⧸ Ideal.span {C (ϖ ^ m)}) ((1 + X) ^ N - 1) = ⊥ := by
-  refine torsionBy_quotient_span_C_pow_eq_bot hϖ (fun h ↦ ?_) m
-  -- Over the residue field, `(1 + X) ^ N - 1` is the image of a monic polynomial of degree `N`.
-  refine (TauCeti.Polynomial.monic_one_add_X_pow_sub_one (R := ResidueField O) hN).ne_zero ?_
-  rw [← Polynomial.coe_eq_zero_iff]
-  simpa using h
+  refine torsionBy_quotient_span_C_pow_eq_bot_of_not_dvd hϖ (fun ⟨k, hk⟩ ↦ hϖ.not_isUnit ?_) m
+  have hcoeff := congrArg (coeff N) hk
+  rw [map_sub, coeff_one_add_X_pow, Nat.choose_self, Nat.cast_one, coeff_one,
+    ite_eq_right fun h ↦ absurd h hN, sub_zero, coeff_C_mul] at hcoeff
+  exact IsUnit.of_mul_eq_one _ hcoeff.symm
 
 /-- For an ideal `I` of `O` containing `p`, the series `ω_n = (1 + X) ^ pⁿ - 1` lies in the
 `(n + 1)`-st power of the ideal `I.comap constantCoeff` of series with constant coefficient in `I`.

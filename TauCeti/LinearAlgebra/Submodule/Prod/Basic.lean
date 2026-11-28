@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.Order.SupIndep
+import Mathlib.Basic.Finite.Prod
 
 /-!
 # Products of submodules
@@ -23,6 +24,7 @@ coordinate.
   when both families of factors are.
 * `Submodule.mem_fst_iff`, `Submodule.mem_snd_iff`: membership in the coordinate copies of the
   factors.
+* `Submodule.finite_prod_iff`: a product of two submodules is finite iff both factors are.
 -/
 
 public section
@@ -43,6 +45,11 @@ coordinate vanishes. -/
 @[simp]
 theorem mem_snd_iff {x : M × N} : x ∈ Submodule.snd R M N ↔ x.1 = 0 :=
   mem_comap.trans (mem_bot R)
+
+/-- A product of two submodules is finite if and only if both factor submodules are finite. -/
+theorem finite_prod_iff (S : Submodule R M) (T : Submodule R N) :
+    Finite ↥(S.prod T) ↔ Finite S ∧ Finite T :=
+  (Equiv.finite_iff (Submodule.prodEquiv S T).toEquiv).trans Prod.finite_iff
 
 end Submodule
 

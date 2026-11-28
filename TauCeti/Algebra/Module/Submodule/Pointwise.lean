@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.Group.Submonoid.Units
 public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.Algebra.Ring.Subring.Basic
+public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Ideal.Span
@@ -50,6 +51,9 @@ this file to restate both.
 
 * `Submodule.mem_pointwise_smul_iff_inv_smul_mem`: membership in `g • N` is equivalent to
   membership of `g⁻¹ • x` in `N`.
+* `Submodule.smul_prod`, `Submodule.smul_pi_univ`: pointwise scalar multiplication distributes
+  over binary products and unrestricted dependent products of submodules.
+* `Submodule.finite_smul_top_subtype_iff`: `r • (⊤ : Submodule R S)` is finite iff `r • S` is.
 * `Submodule.comap_restrictScalars_units_smul`: pulling back along a `K`-linear map commutes with
   the homothety by `t ∈ Kˣ`.
 * `Submodule.finite_pointwise_smul_of_finite_quotient`: if `M ⧸ I` and `a • (I ⊓ D)` are finite,
@@ -95,6 +99,36 @@ theorem mem_pointwise_smul_iff_inv_smul_mem {R M G : Type*} [Semiring R] [AddCom
     [Module R M] [Group G] [DistribMulAction G M] [SMulCommClass G R M]
     {N : Submodule R M} {g : G} {x : M} : x ∈ g • N ↔ g⁻¹ • x ∈ N := by
   rw [← SetLike.mem_coe, coe_pointwise_smul, Set.mem_smul_set_iff_inv_smul_mem, SetLike.mem_coe]
+
+/-- Pointwise scalar multiplication distributes over the product of two submodules. -/
+theorem smul_prod {α R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] [Monoid α] [DistribMulAction α M] [DistribMulAction α N]
+    [SMulCommClass α R M] [SMulCommClass α R N] (a : α) (S : Submodule R M) (T : Submodule R N) :
+    a • S.prod T = (a • S).prod (a • T) :=
+  SetLike.coe_injective <| by
+    rw [coe_pointwise_smul, prod_coe, prod_coe, coe_pointwise_smul, coe_pointwise_smul]
+    exact Set.smul_set_prod a (S : Set M) (T : Set N)
+
+/-- Pointwise scalar multiplication distributes over the unrestricted dependent product
+`Submodule.pi Set.univ S`. -/
+theorem smul_pi_univ {α R ι : Type*} {M : ι → Type*} [Semiring R] [∀ i, AddCommMonoid (M i)]
+    [∀ i, Module R (M i)] [Monoid α] [∀ i, DistribMulAction α (M i)]
+    [∀ i, SMulCommClass α R (M i)] (a : α) (S : ∀ i, Submodule R (M i)) :
+    a • Submodule.pi Set.univ S = Submodule.pi Set.univ fun i ↦ a • S i :=
+  SetLike.coe_injective <| by
+    rw [coe_pointwise_smul, coe_pi, coe_pi, Set.smul_set_univ_pi]
+    simp only [coe_pointwise_smul, Pi.smul_def]
+
+/-- Inside a submodule `S`, the scaled submodule `r • (⊤ : Submodule R S)` is finite if and only
+if `r • S` is finite in the ambient module. -/
+theorem finite_smul_top_subtype_iff {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    (r : R) (S : Submodule R M) :
+    Finite ↥(r • (⊤ : Submodule R S)) ↔ Finite ↥(r • S) := by
+  have hmap : (r • (⊤ : Submodule R S)).map S.subtype = r • S := by
+    rw [Submodule.map_pointwise_smul, Submodule.map_subtype_top]
+  exact Equiv.finite_iff
+    ((Submodule.equivMapOfInjective S.subtype S.subtype_injective _).trans
+      (LinearEquiv.ofEq _ _ hmap)).toEquiv
 
 /-- Pulling back along a `K`-linear map commutes with homotheties: `f⁻¹(tS) = t · f⁻¹(S)` for an
 `O`-submodule `S` and `t ∈ Kˣ`. -/

@@ -48,6 +48,8 @@ weights.
 * `Submodule.span_image_map_pi_bot`: over a finite index type, the families vanishing on `J` with
   coefficients in `S` are spanned by the coordinatewise images under a ring map `R →+* S` of
   those with coefficients in `R`.
+* `Submodule.finite_pi_univ_iff`: a finite dependent product `Submodule.pi Set.univ S` is finite
+  if and only if every factor submodule `S i` is finite.
 * `Submodule.isCompl_pi_bot_of_single_mem`: a submodule of `ι → R` containing `Pi.single i 1` at
   every coordinate `i` where it does not vanish is complemented by the families vanishing there.
 * `LinearEquiv.piCongrLeft_apply_apply` and `LinearEquiv.piCongrLeft_single`: reindexing the
@@ -219,6 +221,16 @@ public theorem infinite_pi_of_infinite {R ι : Type*} [Semiring R] [Nontrivial R
   obtain ⟨a, ha⟩ := mem_span_singleton.mp hmem
   have := congrFun ha i
   simp [hij] at this
+
+/-- A finite dependent product `Submodule.pi Set.univ S` is finite if and only if every factor
+submodule `S i` is finite. -/
+public theorem finite_pi_univ_iff {R ι : Type*} {M : ι → Type*} [Semiring R] [Finite ι]
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (S : ∀ i, Submodule R (M i)) :
+    Finite ↥(Submodule.pi Set.univ S) ↔ ∀ i, Finite (S i) := by
+  have hne : (Set.univ.pi fun i ↦ (S i : Set (M i))).Nonempty :=
+    ⟨0, fun i _ ↦ (S i).zero_mem⟩
+  simp_rw [← SetLike.coe_sort_coe, Submodule.coe_pi, Set.finite_coe_iff,
+    ← Set.forall_finite_image_eval_iff, Set.eval_image_univ_pi hne]
 
 end Submodule
 

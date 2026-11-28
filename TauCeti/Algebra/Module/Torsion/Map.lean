@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 import TauCeti.Algebra.Exact.Ladder
+import TauCeti.LinearAlgebra.LinearMap.Cardinality
 
 /-!
 # Linear maps on scalar and ideal torsion
@@ -37,7 +38,8 @@ annihilated by `I`. For a maximal ideal this gives maps on socles over the resid
 
 ## Main results
 
-* `TauCeti.injective_torsionByMap`, `TauCeti.exact_torsionByMap`: `M[r]` is left exact.
+* `TauCeti.injective_torsionByMap`, `TauCeti.exact_torsionByMap`,
+  `TauCeti.finite_ker_torsionByMap`: `M[r]` is left exact and preserves finite kernels.
 * `TauCeti.injective_torsionByMap_of_injective_smul`: along an exact sequence `0 → M₁ → M₂ → M₃`,
   the map `M₂[r] → M₃[r]` is injective when multiplication by `r` is injective on `M₁`.
 * `TauCeti.surjective_torsionByMap_of_surjective_smul`: along an exact sequence
@@ -120,6 +122,13 @@ theorem exact_torsionByMap {f : M →ₗ[R] N} {g : N →ₗ[R] P} (hfg : Exact 
     exact ⟨⟨x, (mem_torsionBy_iff _ _).2 hrx⟩, Subtype.ext hx⟩
   · rintro ⟨x, rfl⟩
     exact Subtype.ext <| hfg.apply_apply_eq_zero x
+
+/-- If `φ : M → N` has finite kernel, then its restriction `M[r] → N[r]` to the `r`-torsion has
+finite kernel. -/
+theorem finite_ker_torsionByMap (r : R) (φ : M →ₗ[R] N) [Finite (LinearMap.ker φ)] :
+    Finite (LinearMap.ker (torsionByMap r φ)) := by
+  unfold torsionByMap
+  exact φ.finite_ker_restrict _
 
 end Map
 

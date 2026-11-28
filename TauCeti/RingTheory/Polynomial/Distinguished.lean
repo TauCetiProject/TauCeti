@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Coeff
+public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.Data.Nat.Multiplicity
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
 import Mathlib.RingTheory.IntegralClosure.GoingDown
+
+import TauCeti.RingTheory.Polynomial.Resultant.RootCoordinates
 
 /-!
 # The polynomial `(1 + X) ^ n - 1`
@@ -38,6 +41,8 @@ polynomials at `I` are closed under finite products, including the empty product
   to `n` (at `n = 0` the polynomial is `0`, whose `natDegree` is `0` by convention).
 * `TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one`: `(1 + X) ^ (p ^ m) - 1` is
   distinguished at every ideal containing `p`.
+* `TauCeti.Polynomial.squarefree_one_add_X_pow_sub_one`: over a domain in which `(m : R) ≠ 0`,
+  `(1 + X) ^ m - 1` is squarefree.
 * `Polynomial.IsDistinguishedAt.natCast_dvd_pow_of_aeval_eq_zero`: a root `t` of a polynomial `F`
   distinguished at `I`, with `I ^ e ⊆ (p)`, satisfies `p ∣ t ^ (deg F * e)`.
 * `Polynomial.IsDistinguishedAt.of_dvd`: a monic divisor of a polynomial distinguished at a radical
@@ -93,6 +98,16 @@ theorem isDistinguishedAt_one_add_X_pow_sub_one {p : ℕ} (hp : p.Prime) {I : Id
   · simp [coeff_one_add_X_pow]
   · rw [coeff_sub, coeff_one_add_X_pow, coeff_one, ite_eq_right hk0.ne', sub_zero]
     exact I.mem_of_dvd (Nat.cast_dvd_cast (hp.dvd_choose_pow hk0.ne' hk.ne)) hI
+
+/-- Over an integral domain `R`, if `(m : R) ≠ 0`, then `(1 + X) ^ m - 1` is squarefree. -/
+theorem squarefree_one_add_X_pow_sub_one [IsDomain R] {m : ℕ} (hm : (m : R) ≠ 0) :
+    Squarefree ((1 + X) ^ m - 1 : R[X]) := by
+  have hm0 : m ≠ 0 := by rintro rfl; exact hm (by simp)
+  refine (monic_one_add_X_pow_sub_one hm0).squarefree_of_discr_ne_zero ?_
+  have heq : ((1 + X) ^ m - 1 : R[X]) = (X ^ m - C (1 : R)).comp (X + C 1) := by
+    simp [add_comm]
+  rw [heq, discr_comp_X_add_C, discr_X_pow_sub_C]
+  simp [hm]
 
 end Polynomial
 

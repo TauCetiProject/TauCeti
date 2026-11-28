@@ -7,424 +7,302 @@ module
 
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 public import TauCeti.RingTheory.Iwasawa.Delta
+public import TauCeti.RingTheory.Iwasawa.EulerQuotient
 public import TauCeti.RingTheory.Iwasawa.GrowthFormula
 
-import Mathlib.Algebra.CharP.Algebra
-import Mathlib.Algebra.Field.ZMod
-import Mathlib.RingTheory.OrderOfVanishing.Basic
-import Mathlib.RingTheory.PowerSeries.Inverse
+import TauCeti.Algebra.Module.Submodule.Pointwise
+import TauCeti.LinearAlgebra.Pi
+import TauCeti.LinearAlgebra.Submodule.Prod.Basic
 import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
-import TauCeti.RingTheory.Ideal.Quotient.Operations
-import TauCeti.RingTheory.Iwasawa.EulerQuotient
-import TauCeti.RingTheory.Polynomial.Cyclotomic.Basic
+import TauCeti.RingTheory.Norm.Cokernel
 import TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow
-import TauCeti.RingTheory.Polynomial.Resultant.Basic
+import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 import TauCeti.RingTheory.PowerSeries.AdicComplete
+import TauCeti.RingTheory.PowerSeries.Ideal
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Norm
-import TauCeti.RingTheory.QuotSMulTop
 import TauCeti.RingTheory.RegularLocalRing.PowerSeries
 
 /-!
 # The cyclotomic cutoff for transition quotients of an Iwasawa module
 
 Let `O` be a discrete valuation ring, complete for its maximal ideal, with finite residue field,
-let `Λ = O⟦X⟧`, and let `M` be a finitely generated torsion `Λ`-module with characteristic
-polynomial `F_M` (`TauCeti.Iwasawa.charPoly`). Write `ν_{n₀,k}`
+let `Λ = O⟦X⟧`, let `p : ℕ`, and let `M` be a finitely generated torsion `Λ`-module with
+characteristic polynomial `F_M` (`TauCeti.Iwasawa.charPoly`). Write `ν_{n₀,k}`
 (`TauCeti.Iwasawa.growthTransition`) for the cyclotomic transition polynomial
 `∏_{n₀ ≤ j ≤ k} ξ_j`, where `ξ_j = Φ_{p ^ j}(X + 1)`.
 
 This file characterizes the cutoff levels `n₀` above which every transition quotient
-`M ⧸ ν_{n₀,k} M` (`k ≥ n₀`) is finite:
+`M ⧸ ν_{n₀,k} M` (`k ≥ n₀`, equivalently for every `n`) is finite:
 
-1. Over any such `O` (with no characteristic assumption), `M ⧸ ν_{n₀,k} M` is finite for every
-   `k ≥ n₀` if and only if `Res(F_M, ξ_j) ≠ 0` for every `j ≥ n₀`
+1. Over any such `O` (with no characteristic assumption on `O` and no primality assumption on `p`),
+   `M ⧸ ν_{n₀,n} M` is finite for every `n` if and only if `Res(F_M, ξ_j) ≠ 0` for every `j ≥ n₀`
    (`TauCeti.Iwasawa.finite_quotSMulTop_growthTransition_iff_resultant_charPoly_ne_zero`).
-2. When `O` has characteristic zero, the shifted cyclotomic polynomials `ξ_j` are pairwise coprime
-   over the fraction field of `O`. Consequently an irreducible distinguished factor `F` of `F_M`
-   divides `ξ_j` for some `j ≥ n₀` if and only if it divides some `ω_m` while dividing none of the
-   factors `ξ_i` (`i < n₀`) of `ω_{n₀ - 1} = ∏_{i < n₀} ξ_i`, which happens exactly when
-   `ω_{n₀ - 1} • M_δ` is infinite on the corresponding horizontal block `Λ ⧸ (F ^ n)`. Passing
-   along a pseudo-isomorphism to an elementary module yields the intrinsic *cyclotomic cutoff*
-   (`TauCeti.Iwasawa.finite_quotient_growthTransition_iff`): all quotients `M ⧸ ν_{n₀,k} M`
-   (`k ≥ n₀`) are finite if and only if `(∏_{j < n₀} ν_{j,j}) • M_δ` is finite, where
-   `M_δ = ⨆_m M[ν_{0,m}]` is `TauCeti.Iwasawa.deltaSubmodule`.
+2. Whenever `p` is prime and `(p : O) ≠ 0`, a nonunit polynomial divides at most one shifted
+   prime-power cyclotomic polynomial `ξ_j`. Passing along a pseudo-isomorphism to an elementary
+   module yields the intrinsic *cyclotomic cutoff*
+   (`TauCeti.Iwasawa.finite_quotSMulTop_growthTransition_iff`): all quotients `M ⧸ ν_{n₀,n} M`
+   are finite if and only if `(∏_{j < n₀} ξ_j) • M_δ` is finite, where
+   `M_δ = ⨆_m M[ω_m]` is `TauCeti.Iwasawa.deltaSubmodule`. At `n₀ = 0`, `M ⧸ ω_n M` is finite
+   for all `n` iff `M_δ` is finite (`TauCeti.Iwasawa.finite_quotSMulTop_one_add_X_pow_sub_one_iff`).
 3. Since `M_δ = M[ω_m]` for some `m` on the noetherian module `M`, taking `n₀ = m + 1` makes
-   `(∏_{j < n₀} ν_{j,j}) • M_δ = ω_m • M[ω_m] = 0`, so every finitely generated torsion module in
-   characteristic zero admits a cutoff `n₀`
+   `ω_m • M_δ = ω_m • M[ω_m] = 0`, so every finitely generated torsion module with `p` prime and
+   `(p : O) ≠ 0` admits a cutoff `n₀`
    (`TauCeti.Iwasawa.exists_finite_quotSMulTop_growthTransition`). Combining this cutoff with
    Iwasawa's conditional growth formula
-   (`TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition_eq`) yields the
-   unconditional mixed-characteristic growth formula for every finitely generated torsion module
-   (`TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition_eq_of_isTorsion`, and
+   (`TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition_eq`) supplies a cutoff
+   `n₀` and an integer constant `ν` for which the unconditional growth formula holds for all
+   sufficiently large `k` whenever `p` is prime and `(p) = 𝔪 ^ e` with `e > 0`
+   (`TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition_eq_of_isTorsion`,
+   `TauCeti.Iwasawa.exists_natCard_quotSMulTop_growthTransition_of_isTorsion`, and
    `TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition_eq_padicInt_of_isTorsion`
    over `ℤ_p`).
 
-Two equal-characteristic `𝔽_p⟦ϖ⟧` examples at the end show that `[CharZero O]` is essential:
-`ξ_1 = X ^ (p - 1)` is not coprime to `ξ_0 = X`, so on `M = 𝔽_p⟦ϖ⟧⟦X⟧ ⧸ (X)` the element
-`ω_0 = X` annihilates `M_δ = M` while `M ⧸ ξ_1 M = M` is infinite; and on
-`M = 𝔽_p⟦ϖ⟧⟦X⟧ ⧸ (X - ϖ)`, `μ = 0` and `λ = 1` while `#(M ⧸ ω_n M) = p ^ p ^ n`.
+The hypothesis `(p : O) ≠ 0` is sharp: in equal characteristic `p` (`O = 𝔽_p⟦t⟧`), every shifted
+cyclotomic polynomial `Φ_{p ^ j}(X + 1)` is a power of `X`, so `X` kills the delta submodule of
+`Λ ⧸ (X)` yet `Λ ⧸ (X, ν_{n₀, n})` is infinite for every `n₀` and `n ≥ n₀`.
 
 ## Main results
 
-* `TauCeti.Iwasawa.finite_quotSMulTop_growthTransition_iff_resultant_charPoly_ne_zero`: all
-  `M ⧸ ν_{n₀,k} M` (`k ≥ n₀`) are finite iff `Res(F_M, ξ_j) ≠ 0` for all `j ≥ n₀`.
-* `TauCeti.Iwasawa.finite_prod_growthTransition_smul_deltaSubmodule_iff_resultant_charPoly_ne_zero`
-  — in characteristic zero, `(∏_{j < n₀} ν_{j,j}) • M_δ` is finite iff `Res(F_M, ξ_j) ≠ 0` for all
-  `j ≥ n₀`.
-* `TauCeti.Iwasawa.finite_quotient_growthTransition_iff`: in characteristic zero, all
-  `M ⧸ ν_{n₀,k} M` (`k ≥ n₀`) are finite iff `(∏_{j < n₀} ν_{j,j}) • M_δ` is finite.
-* `TauCeti.Iwasawa.exists_finite_quotSMulTop_growthTransition`: in characteristic zero, every
-  finitely generated torsion module has a cutoff `n₀` above which all `M ⧸ ν_{n₀,k} M` are finite.
-* `TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition_eq_of_isTorsion` and
+* `TauCeti.Iwasawa.iSup_torsionBy_growthTransition_zero`: for prime `p`, `⨆ m, M[ν_{0,m}] = M_δ`.
+* `TauCeti.Iwasawa.finite_quotSMulTop_growthTransition_iff_resultant_charPoly_ne_zero`: without
+  assuming `p` is prime or `(p : O) ≠ 0`, all `M ⧸ ν_{n₀,n} M` are finite iff
+  `Res(F_M, ξ_j) ≠ 0` for all `j ≥ n₀`.
+* `TauCeti.Iwasawa.finite_prod_growthTransition_smul_deltaSubmodule_iff_resultant_charPoly_ne_zero`:
+  when `p` is prime and `(p : O) ≠ 0`, `(∏_{j < n₀} ν_{j,j}) • M_δ` is finite iff
+  `Res(F_M, ξ_j) ≠ 0` for all `j ≥ n₀`.
+* `TauCeti.Iwasawa.finite_quotSMulTop_growthTransition_iff`,
+  `TauCeti.Iwasawa.finite_quotSMulTop_one_add_X_pow_sub_one_iff`,
+  `TauCeti.Iwasawa.finite_quotSMulTop_growthTransition_succ_iff`: when `p` is prime and
+  `(p : O) ≠ 0`, the cyclotomic cutoff equivalence.
+* `TauCeti.Iwasawa.exists_finite_quotSMulTop_growthTransition`: when `p` is prime and
+  `(p : O) ≠ 0`, every finitely generated torsion module has a cutoff `n₀` above which all
+  `M ⧸ ν_{n₀,k} M` are finite.
+* `TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition_eq_of_isTorsion`,
+  `TauCeti.Iwasawa.exists_natCard_quotSMulTop_growthTransition_of_isTorsion`, and
   `TauCeti.Iwasawa.exists_eventually_natCard_quotSMulTop_growthTransition_eq_padicInt_of_isTorsion`:
-  the unconditional growth formula `#(M ⧸ ν_{n₀,k} M) = q ^ (μ p ^ k + e λ k + ν)` for every
-  finitely generated torsion module over a mixed-characteristic coefficient ring (and over `ℤ_p`).
+  for every finitely generated torsion module when `p` is prime and `(p) = 𝔪 ^ e` with `e > 0`
+  (and over `ℤ_p`), these supply a cutoff `n₀` and an integer constant `ν` such that the
+  unconditional growth formula `#(M ⧸ ν_{n₀,k} M) = q ^ (μ p ^ k + e λ k + ν)` holds for all
+  sufficiently large `k`.
 
 ## References
 
-* J. Neukirch, A. Schmidt, K. Wingberg, *Cohomology of Number Fields*, second edition,
-  Grundlehren 323, Proposition 5.3.17.
+* J. Neukirch, A. Schmidt and K. Wingberg, *Cohomology of Number Fields*, second edition,
+  Grundlehren 323, Proposition 5.3.17 and (5.3.17)–(5.3.18).
 * L. Washington, *Introduction to Cyclotomic Fields*, second edition, GTM 83, §13.3.
 -/
 
 public noncomputable section
 
-open IsLocalRing PowerSeries Submodule
+open IsLocalRing PowerSeries Submodule Filter
 open scoped Pointwise Polynomial PowerSeries
 
 namespace TauCeti.Iwasawa
 
-/-- The supremum of the kernels `M[ν_{0,m}]` is `deltaSubmodule p O M`. -/
+section TransitionHelpers
+
+/-- For prime `p`, the supremum of the kernels `M[ν_{0,m}]` is `deltaSubmodule p O M`. -/
 theorem iSup_torsionBy_growthTransition_zero (p : ℕ) [Fact p.Prime] (O M : Type*) [CommRing O]
     [AddCommGroup M] [Module O⟦X⟧ M] :
     (⨆ m, torsionBy O⟦X⟧ M (growthTransition p O 0 m : O⟦X⟧)) = deltaSubmodule p O M := by
   simp_rw [growthTransition_zero_left, Polynomial.coe_sub, Polynomial.coe_pow,
     Polynomial.coe_add, Polynomial.coe_one, Polynomial.coe_X, deltaSubmodule_def]
 
+end TransitionHelpers
+
 section Blocks
 
-variable {p : ℕ} [Fact p.Prime] {O : Type*} [CommRing O] [IsDomain O]
-  [IsDiscreteValuationRing O] [IsAdicComplete (maximalIdeal O) O]
+variable {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
+  [IsAdicComplete (maximalIdeal O) O]
 
-/-- On a horizontal block `O⟦X⟧ ⧸ (F ^ n)`, if `Res(F ^ n, ξ_j) ≠ 0` for all `j ≥ n₀`, then
-`∏_{j < n₀} ν_{j,j}` annihilates the delta submodule. -/
-private theorem smul_deltaSubmodule_quotient_span_pow_eq_bot {F : O[X]}
-    (hF : F.IsDistinguishedAt (maximalIdeal O)) (n n₀ : ℕ)
-    (hres : ∀ j, n₀ ≤ j →
-      (F ^ n).resultant ((Polynomial.cyclotomic (p ^ j) O).comp (Polynomial.X + 1)) ≠ 0) :
-    ((∏ j ∈ Finset.range n₀, growthTransition p O j j : O[X]) : O⟦X⟧) •
-      deltaSubmodule p O (O⟦X⟧ ⧸ Ideal.span {((F ^ n : O[X]) : O⟦X⟧)}) = ⊥ := by
-  rw [eq_bot_iff]
-  rintro _ ⟨x, hx, rfl⟩
-  obtain ⟨m, hm⟩ := (mem_deltaSubmodule p O _ x).mp hx
-  have hω (l : ℕ) : ((growthTransition p O 0 l : O[X]) : O⟦X⟧) = (1 + X) ^ p ^ l - 1 := by
-    simp [growthTransition_zero_left]
-  rw [← hω m] at hm
-  let k := max m n₀
-  obtain ⟨q, hq⟩ := _root_.map_dvd Polynomial.coeToPowerSeries.ringHom
-    (growthTransition_dvd_growthTransition (p := p) (O := O) 0 (le_max_left m n₀))
-  have hxk : (growthTransition p O 0 k : O⟦X⟧) • x = 0 := by
-    simpa only [Polynomial.coeToPowerSeries.ringHom_apply, mul_comm, mul_smul, hm,
-      smul_zero] using congrArg (· • x) hq
-  have hkres : (F ^ n).resultant (growthTransition p O n₀ k) ≠ 0 := by
-    rw [growthTransition_def, (hF.pow n).monic.resultant_prod_right, Finset.prod_ne_zero_iff]
-    exact fun j hj ↦ hres j (Finset.mem_Icc.mp hj).1
-  have H := (hF.pow n).isWeierstrassFactorizationAt
-  have hbot : torsionBy O⟦X⟧ (O⟦X⟧ ⧸ Ideal.span {((F ^ n : O[X]) : O⟦X⟧)})
-      (growthTransition p O n₀ k : O⟦X⟧) = ⊥ :=
-    H.torsionBy_eq_bot_iff _ |>.mpr (H.norm_mk_coe_eq_resultant _ ▸ hkres)
-  have hmem : ((∏ j ∈ Finset.range n₀, growthTransition p O j j : O[X]) : O⟦X⟧) • x ∈
-      torsionBy O⟦X⟧ (O⟦X⟧ ⧸ Ideal.span {((F ^ n : O[X]) : O⟦X⟧)})
-        (growthTransition p O n₀ k : O⟦X⟧) := by
-    rw [mem_torsionBy_iff, smul_smul, mul_comm, ← Polynomial.coe_mul,
-      prod_range_mul_growthTransition (le_trans (le_max_right m n₀) (Nat.le_succ k)),
-      ← growthTransition_zero_left (p := p) (O := O) k, hxk]
-  rwa [hbot, mem_bot] at hmem
-
-/-- On a horizontal block `O⟦X⟧ ⧸ (F ^ n)` (`n ≠ 0`) in characteristic zero, if `F ∣ ξ_{j₀}` for
-some `j₀ ≥ n₀`, then `(∏_{j < n₀} ν_{j,j}) • M_δ` is infinite. -/
-private theorem infinite_smul_deltaSubmodule_quotient_span_pow_of_dvd [CharZero O] {F : O[X]}
-    (hF : F.IsDistinguishedAt (maximalIdeal O)) (hirr : Irreducible F) {n n₀ j₀ : ℕ}
-    (hn : n ≠ 0) (hj₀ : n₀ ≤ j₀)
-    (hdvd : F ∣ (Polynomial.cyclotomic (p ^ j₀) O).comp (Polynomial.X + 1)) :
-    Infinite ↥(((∏ j ∈ Finset.range n₀, growthTransition p O j j : O[X]) : O⟦X⟧) •
-      deltaSubmodule p O (O⟦X⟧ ⧸ Ideal.span {((F ^ n : O[X]) : O⟦X⟧)})) := by
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn
-  have hspan : Ideal.span {((F ^ (m + 1) : O[X]) : O⟦X⟧)} =
-      ((F : O⟦X⟧) ^ m) • Ideal.span {(F : O⟦X⟧)} := by
-    rw [Polynomial.coe_pow, pow_succ, ← Ideal.span_singleton_mul_span_singleton,
-      ← smul_eq_mul, Submodule.ideal_span_singleton_smul]
-  rw [hspan]
-  set W : O[X] := ∏ j ∈ Finset.range n₀, growthTransition p O j j
-  have hWres : F.resultant W ≠ 0 := by
-    rw [hF.monic.resultant_prod_right, Finset.prod_ne_zero_iff]
-    intro j hj
-    rw [growthTransition_self, Ne, hF.monic.resultant_eq_zero_iff_dvd hirr]
-    have hne : j ≠ j₀ := by have := Finset.mem_range.mp hj; omega
-    exact Polynomial.not_dvd_cyclotomic_comp_X_add_one_of_dvd hirr.not_isUnit
-      ((Nat.pow_right_injective (Fact.out : p.Prime).one_lt).ne hne) hdvd
-  have hQtor : torsionBy O⟦X⟧ (O⟦X⟧ ⧸ Ideal.span {(F : O⟦X⟧)}) (W : O⟦X⟧) = ⊥ :=
-    hF.isWeierstrassFactorizationAt.torsionBy_eq_bot_iff _ |>.mpr
-      (hF.isWeierstrassFactorizationAt.norm_mk_coe_eq_resultant _ ▸ hWres)
-  have hFm_ne : (F : O⟦X⟧) ^ m ≠ 0 :=
-    pow_ne_zero m ((Polynomial.coe_eq_zero_iff).not.mpr hF.monic.ne_zero)
-  let ι := Ideal.mulQuot ((F : O⟦X⟧) ^ m) (Ideal.span {(F : O⟦X⟧)})
-  let ψ := ι ∘ₗ LinearMap.lsmul O⟦X⟧ _ (W : O⟦X⟧)
-  have hψ_inj : Function.Injective ψ :=
-    (Ideal.mulQuot_injective _ (mem_nonZeroDivisors_of_ne_zero hFm_ne)).comp
-      ((isSMulRegular_iff_torsionBy_eq_bot _ _).mpr hQtor)
-  obtain ⟨u, hu⟩ : F ∣ (1 + Polynomial.X) ^ p ^ j₀ - 1 := by
-    rw [← growthTransition_zero_left (p := p) (O := O) j₀, growthTransition_def]
-    exact hdvd.trans (Finset.dvd_prod_of_mem _ (Finset.mem_Icc.mpr ⟨Nat.zero_le _, le_rfl⟩))
-  have hcoe : ((1 + X) ^ p ^ j₀ - 1 : O⟦X⟧) = (F : O⟦X⟧) * (u : O⟦X⟧) := by
-    simpa using congrArg (Polynomial.coeToPowerSeries.ringHom (R := O)) hu
-  have hι_delta (q : O⟦X⟧ ⧸ Ideal.span {(F : O⟦X⟧)}) : ι q ∈ deltaSubmodule p O _ := by
-    obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective q
-    refine (mem_deltaSubmodule p O _ _).mpr ⟨j₀, ?_⟩
-    -- `Ideal.mulQuot` in Mathlib has no `@[simp]` evaluation lemma, and reduces to `Quotient.mk`
-    -- by definition (`Submodule.mapQ_apply`).
-    have hι_mk : ι (Ideal.Quotient.mk (Ideal.span {(F : O⟦X⟧)}) s) =
-        Ideal.Quotient.mk (((F : O⟦X⟧) ^ m) • Ideal.span {(F : O⟦X⟧)}) (((F : O⟦X⟧) ^ m) * s) := rfl
-    rw [hι_mk, Ideal.Quotient.smul_mk, Ideal.Quotient.eq_zero_iff_mem, ← hspan,
-      Polynomial.coe_pow, pow_succ, Ideal.mem_span_singleton, hcoe]
-    exact ⟨(u : O⟦X⟧) * s, by ring⟩
-  have hψ_mem (q : O⟦X⟧ ⧸ Ideal.span {(F : O⟦X⟧)}) :
-      ψ q ∈ (W : O⟦X⟧) • deltaSubmodule p O _ := by
-    simpa only [ψ, LinearMap.comp_apply, LinearMap.lsmul_apply, map_smul] using
-      Submodule.smul_mem_pointwise_smul (ι q) (W : O⟦X⟧) _ (hι_delta q)
-  have hdeg : 0 < F.natDegree := Nat.pos_of_ne_zero fun h0 ↦
-    hirr.not_isUnit (Polynomial.eq_one_of_monic_natDegree_zero hF.monic h0 ▸ isUnit_one)
-  have := hF.isWeierstrassFactorizationAt.infinite_quotient hdeg
-  exact Infinite.of_injective (fun q ↦ (⟨ψ q, hψ_mem q⟩ : _)) fun q₁ q₂ h ↦
-    hψ_inj (congrArg Subtype.val h)
-
-/-- On an elementary module `E = Elementary O ϖ r m F n` with distinguished `Fᵢ`, if
-`Res(∏ᵢ Fᵢ ^ nᵢ, ξ_j) ≠ 0` for all `j ≥ n₀`, then `(∏_{j < n₀} ν_{j,j}) • M_δ = ⊥`. -/
-private theorem smul_deltaSubmodule_elementary_eq_bot {ϖ : O} (hϖ : Irreducible ϖ) {r a b : ℕ}
-    (m : Fin a → ℕ) {F : Fin b → O[X]} (hF : ∀ i, (F i).IsDistinguishedAt (maximalIdeal O))
-    (n : Fin b → ℕ) (n₀ : ℕ)
-    (hres : ∀ j, n₀ ≤ j →
-      (∏ i, F i ^ n i).resultant
-        ((Polynomial.cyclotomic (p ^ j) O).comp (Polynomial.X + 1)) ≠ 0) :
-    ((∏ j ∈ Finset.range n₀, growthTransition p O j j : O[X]) : O⟦X⟧) •
-      deltaSubmodule p O (Elementary O ϖ r m F n) = ⊥ := by
-  have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
-  rw [eq_bot_iff]
-  rintro _ ⟨⟨x₀, x₁, x₂⟩, hx, rfl⟩
-  refine Prod.ext (funext fun k ↦ ?_) (Prod.ext (funext fun i ↦ ?_) (funext fun i ↦ ?_))
-  · let π₀ : Elementary O ϖ r m F n →ₗ[O⟦X⟧] O⟦X⟧ :=
-      (LinearMap.proj k).comp (LinearMap.fst O⟦X⟧ _ _)
-    have hx₀ : x₀ k ∈ deltaSubmodule p O O⟦X⟧ :=
-      π₀.map_deltaSubmodule_le p ⟨(x₀, x₁, x₂), hx, rfl⟩
-    rw [deltaSubmodule_eq_bot, mem_bot] at hx₀
-    simp [hx₀]
-  · let π₁ : Elementary O ϖ r m F n →ₗ[O⟦X⟧] O⟦X⟧ ⧸ Ideal.span {C (ϖ ^ m i)} :=
-      (LinearMap.proj i).comp ((LinearMap.fst O⟦X⟧ _ _).comp (LinearMap.snd O⟦X⟧ _ _))
-    have hx₁ : x₁ i ∈ deltaSubmodule p O (O⟦X⟧ ⧸ Ideal.span {C (ϖ ^ m i)}) :=
-      π₁.map_deltaSubmodule_le p ⟨(x₀, x₁, x₂), hx, rfl⟩
-    rw [deltaSubmodule_quotient_span_C_pow_eq_bot hϖ.prime (m i), mem_bot] at hx₁
-    simp [hx₁]
-  · let π₂ : Elementary O ϖ r m F n →ₗ[O⟦X⟧] O⟦X⟧ ⧸ Ideal.span {((F i ^ n i : O[X]) : O⟦X⟧)} :=
-      (LinearMap.proj i).comp ((LinearMap.snd O⟦X⟧ _ _).comp (LinearMap.snd O⟦X⟧ _ _))
-    have hx₂ : x₂ i ∈ deltaSubmodule p O _ := π₂.map_deltaSubmodule_le p ⟨(x₀, x₁, x₂), hx, rfl⟩
-    have hires (j : ℕ) (hj : n₀ ≤ j) :
-        (F i ^ n i).resultant ((Polynomial.cyclotomic (p ^ j) O).comp (Polynomial.X + 1)) ≠ 0 := by
-      have h := hres j hj
-      rw [Polynomial.resultant_prod_left_of_monic _ fun l _ ↦ (hF l).monic.pow _,
-        Finset.prod_ne_zero_iff] at h
-      exact h i (Finset.mem_univ i)
-    have hmem : ((∏ j ∈ Finset.range n₀, growthTransition p O j j : O[X]) : O⟦X⟧) • x₂ i ∈
-        ((∏ j ∈ Finset.range n₀, growthTransition p O j j : O[X]) : O⟦X⟧) •
-          deltaSubmodule p O _ := ⟨x₂ i, hx₂, rfl⟩
-    rwa [smul_deltaSubmodule_quotient_span_pow_eq_bot (hF i) (n i) n₀ hires, mem_bot] at hmem
-
-/-- On an elementary module `E = Elementary O ϖ r m F n` with irreducible distinguished `Fᵢ` and
-`nᵢ ≠ 0` over a characteristic-zero ring `O`, `(∏_{j < n₀} ν_{j,j}) • M_δ` is finite iff
-`Res(∏ᵢ Fᵢ ^ nᵢ, ξ_j) ≠ 0` for all `j ≥ n₀`. -/
-private theorem finite_smul_deltaSubmodule_elementary_iff [CharZero O] {ϖ : O}
-    (hϖ : Irreducible ϖ) {r a b : ℕ} (m : Fin a → ℕ) {F : Fin b → O[X]}
-    (hF : ∀ i, (F i).IsDistinguishedAt (maximalIdeal O)) (hirr : ∀ i, Irreducible (F i))
-    {n : Fin b → ℕ} (hn : ∀ i, n i ≠ 0) (n₀ : ℕ) :
-    Finite ↥(((∏ j ∈ Finset.range n₀, growthTransition p O j j : O[X]) : O⟦X⟧) •
-        deltaSubmodule p O (Elementary O ϖ r m F n)) ↔
-      ∀ j, n₀ ≤ j →
-        (∏ i, F i ^ n i).resultant
-          ((Polynomial.cyclotomic (p ^ j) O).comp (Polynomial.X + 1)) ≠ 0 := by
-  refine ⟨fun hfin j hj hzero ↦ ?_, fun hres ↦ ?_⟩
-  · rw [Polynomial.resultant_prod_left_of_monic _ fun i _ ↦ (hF i).monic.pow _,
-      Finset.prod_eq_zero_iff] at hzero
-    obtain ⟨i, -, hi⟩ := hzero
-    rw [Polynomial.resultant_pow_left (F i) _ (n i) _ (by simp [(hF i).monic.leadingCoeff]) le_rfl,
-      pow_eq_zero_iff (hn i), (hF i).monic.resultant_eq_zero_iff_dvd (hirr i)] at hi
-    let H (j : Fin b) := O⟦X⟧ ⧸ Ideal.span {((F j ^ n j : O[X]) : O⟦X⟧)}
-    let ι : H i →ₗ[O⟦X⟧] Elementary O ϖ r m F n :=
-      (LinearMap.inr O⟦X⟧ _ _).comp ((LinearMap.inr O⟦X⟧ _ _).comp (LinearMap.single O⟦X⟧ H i))
-    have hι : Function.Injective ι := fun x y hxy ↦ by
-      simpa [ι] using congrFun (congrArg (Prod.snd ∘ Prod.snd) hxy) i
-    have : Subsingleton (LinearMap.ker ι) :=
-      Submodule.subsingleton_iff_eq_bot.mpr (LinearMap.ker_eq_bot.mpr hι)
-    exact not_finite_iff_infinite.mpr
-      (infinite_smul_deltaSubmodule_quotient_span_pow_of_dvd (hF i) (hirr i) (hn i) hj hi)
-      (finite_smul_deltaSubmodule_of_finite_ker (f := ι) inferInstance _ hfin)
-  · rw [smul_deltaSubmodule_elementary_eq_bot hϖ m hF n n₀ hres]
-    infer_instance
+/-- Helper: finiteness of `g • M_δ` on an elementary module `Elementary O ϖ r m F n`. -/
+private theorem finite_smul_deltaSubmodule_elementary_iff {p : ℕ} (hp : p.Prime)
+    (hp0 : (p : O) ≠ 0) {ϖ : O} (hϖ : Irreducible ϖ) {r a b : ℕ} (m : Fin a → ℕ)
+    {F : Fin b → O[X]} {n : Fin b → ℕ}
+    (hF : ∀ j, (F j).IsDistinguishedAt (maximalIdeal O)) (hirr : ∀ j, Irreducible (F j))
+    (hn : ∀ j, n j ≠ 0) (g : O[X]) :
+    Finite ↥((g : O⟦X⟧) • deltaSubmodule p O (Elementary O ϖ r m F n)) ↔
+      ∀ j : Fin b, ∀ k,
+        F j ∣ (Polynomial.cyclotomic (p ^ k) O).comp (Polynomial.X + 1) → F j ∣ g := by
+  have : NeZero p := ⟨hp.ne_zero⟩
+  have : Infinite O := TauCeti.IsDiscreteValuationRing.infinite
+  have hfree : deltaSubmodule p O (Fin r → O⟦X⟧) = ⊥ := deltaSubmodule_eq_bot p O _
+  dsimp only [Elementary]
+  simp only [deltaSubmodule_prod, deltaSubmodule_pi, hfree,
+    deltaSubmodule_quotient_span_C_pow_eq_bot (p := p) hϖ.prime, Submodule.smul_prod,
+    Submodule.smul_pi_univ, Submodule.smul_bot', Submodule.finite_prod_iff,
+    Submodule.finite_pi_univ_iff,
+    finite_smul_deltaSubmodule_quotient_span_pow_iff hp hp0 (hF _) (hirr _).prime (hn _)]
+  exact ⟨fun h ↦ h.2.2, fun h ↦ ⟨inferInstance, fun _ ↦ inferInstance, h⟩⟩
 
 end Blocks
 
 section Cutoff
 
-variable {p : ℕ} [Fact p.Prime] {O : Type*} [CommRing O] [IsDomain O]
-  [IsDiscreteValuationRing O] [IsAdicComplete (maximalIdeal O) O] [Finite (ResidueField O)]
-
-/-- When `(p : O) ∉ maximalIdeal O`, a finitely generated torsion `O⟦X⟧`-module `M` has finite
-quotients `M ⧸ ν_{n₀,k} M` for all `k ≥ n₀` if and only if `Res(F_M, Φ_{p ^ j}(X + 1)) ≠ 0` for all
-`j ≥ n₀`. -/
-private theorem finite_quotSMulTop_growthTransition_iff_of_notMem {M : Type*} [AddCommGroup M]
-    [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M] (hM : Module.IsTorsion O⟦X⟧ M)
-    (hpO : (p : O) ∉ maximalIdeal O) (n₀ : ℕ) :
-    (∀ k, n₀ ≤ k → Finite (QuotSMulTop (growthTransition p O n₀ k : O⟦X⟧) M)) ↔
-      ∀ j, n₀ ≤ j →
-        (charPoly O M).resultant
-          ((Polynomial.cyclotomic (p ^ j) O).comp (Polynomial.X + 1)) ≠ 0 := by
-  have hpu : IsUnit (p : O) := notMem_maximalIdeal.mp hpO
-  have hunit_gt {m k : ℕ} (hm : 0 < m) : IsUnit (growthTransition p O m k : O⟦X⟧) := by
-    rw [PowerSeries.isUnit_iff_constantCoeff, Polynomial.constantCoeff_coe,
-      coeff_zero_growthTransition hm]
-    exact hpu.pow _
-  have hres_pos {j : ℕ} (hj : 0 < j) :
-      (charPoly O M).resultant
-        ((Polynomial.cyclotomic (p ^ j) O).comp (Polynomial.X + 1)) ≠ 0 := by
-    obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hj.ne'
-    exact (isDistinguishedAt_charPoly.isUnit_resultant_of_isUnit_coeff_zero
-      (ringJacobson_eq_maximalIdeal (R := O)).ge (by simpa)).ne_zero
-  rcases Nat.eq_zero_or_pos n₀ with rfl | hn₀
-  · have hXdist : (Polynomial.X : O[X]).IsDistinguishedAt (maximalIdeal O) :=
-      ⟨⟨fun {k} hk ↦ by rw [Polynomial.natDegree_X, Nat.lt_one_iff] at hk; simp [hk]⟩,
-        Polynomial.monic_X⟩
-    have hξ₀ : (Polynomial.cyclotomic (p ^ 0) O).comp (Polynomial.X + 1) = Polynomial.X := by
-      simp [Polynomial.cyclotomic_one]
-    have hmul (k : ℕ) : growthTransition p O 0 k =
-        Polynomial.X * growthTransition p O 1 k := by
-      rw [growthTransition_zero_left,
-        ← prod_range_mul_growthTransition (p := p) (O := O) (Nat.succ_le_succ (Nat.zero_le k)),
-        Finset.prod_range_one, growthTransition_self, hξ₀]
-    have hsmul (k : ℕ) :
-        (growthTransition p O 0 k : O⟦X⟧) • (⊤ : Submodule O⟦X⟧ M) =
-          ((Polynomial.X : O[X]) : O⟦X⟧) • ⊤ := by
-      rw [hmul, Polynomial.coe_mul, mul_smul,
-        Submodule.smul_eq_self_of_isUnit (hunit_gt Nat.one_pos)]
-    refine ⟨fun hfin j _ ↦ ?_, fun hres k _ ↦ ?_⟩
-    · rcases Nat.eq_zero_or_pos j with rfl | hj
-      · have h0 := hfin 0 le_rfl
-        rw [QuotSMulTop, hsmul 0] at h0
-        rwa [hξ₀, ← finite_quotSMulTop_iff_resultant_charPoly_ne_zero hM hXdist]
-      · exact hres_pos hj
-    · rw [QuotSMulTop, hsmul k]
-      exact (finite_quotSMulTop_iff_resultant_charPoly_ne_zero hM hXdist).mpr
-        (hξ₀ ▸ hres 0 (Nat.zero_le 0))
-  · refine ⟨fun _ j hj ↦ hres_pos (hn₀.trans_le hj), fun _ k _ ↦ ?_⟩
-    have := QuotSMulTop.subsingleton_of_isUnit (M := M) (hunit_gt (k := k) hn₀)
-    infer_instance
+variable {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
+  [IsAdicComplete (maximalIdeal O) O] [Finite (ResidueField O)]
+  {M : Type*} [AddCommGroup M] [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M]
 
 /-- **Resultant criterion for finite transition quotients.** For a finitely generated torsion
-`O⟦X⟧`-module `M` (with no characteristic assumption on `O`), the quotients `M ⧸ ν_{n₀,k} M` are
-finite for all `k ≥ n₀` if and only if `Res(F_M, Φ_{p ^ j}(X + 1)) ≠ 0` for all `j ≥ n₀`. -/
-theorem finite_quotSMulTop_growthTransition_iff_resultant_charPoly_ne_zero {M : Type*}
-    [AddCommGroup M] [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M] (hM : Module.IsTorsion O⟦X⟧ M)
-    (n₀ : ℕ) :
-    (∀ k, n₀ ≤ k → Finite (QuotSMulTop (growthTransition p O n₀ k : O⟦X⟧) M)) ↔
+`O⟦X⟧`-module `M` (with no characteristic assumption on `O` and no primality assumption on `p`),
+the quotients `M ⧸ ν_{n₀, n} M` are finite for every `n` if and only if
+`Res(F_M, Φ_{p ^ j}(X + 1)) ≠ 0` for all `j ≥ n₀`. -/
+theorem finite_quotSMulTop_growthTransition_iff_resultant_charPoly_ne_zero {p : ℕ}
+    (hM : Module.IsTorsion O⟦X⟧ M) (n₀ : ℕ) :
+    (∀ n, Finite (QuotSMulTop (growthTransition p O n₀ n : O⟦X⟧) M)) ↔
       ∀ j, n₀ ≤ j →
         (charPoly O M).resultant
           ((Polynomial.cyclotomic (p ^ j) O).comp (Polynomial.X + 1)) ≠ 0 := by
-  by_cases hpO : (p : O) ∈ maximalIdeal O
-  · refine ⟨fun hfin j hj ↦ ?_, fun hres k _ ↦ ?_⟩
-    · have h := resultant_charPoly_ne_zero_of_finite_quotSMulTop (hfin j hj)
-      rw [growthTransition_def, monic_charPoly.resultant_prod_right, Finset.prod_ne_zero_iff] at h
-      exact h j (Finset.mem_Icc.mpr ⟨hj, le_rfl⟩)
-    · rw [finite_quotSMulTop_iff_resultant_charPoly_ne_zero hM
-          (isDistinguishedAt_growthTransition hpO n₀ k),
-        growthTransition_def, monic_charPoly.resultant_prod_right, Finset.prod_ne_zero_iff]
-      exact fun j hj ↦ hres j (Finset.mem_Icc.mp hj).1
-  · exact finite_quotSMulTop_growthTransition_iff_of_notMem hM hpO n₀
+  have hiff (k : ℕ) : Finite (QuotSMulTop (growthTransition p O n₀ k : O⟦X⟧) M) ↔
+      ∏ j ∈ Finset.Icc n₀ k,
+        (charPoly O M).resultant ((Polynomial.cyclotomic (p ^ j) O).comp (Polynomial.X + 1)) ≠ 0 :=
+    by
+    rw [finite_quotSMulTop_iff_resultant_charPoly_ne_zero hM
+        ((monic_growthTransition (p := p) (O := O) n₀ k).map _).ne_zero,
+      growthTransition_def, monic_charPoly.resultant_prod_right]
+  simp_rw [hiff, Finset.prod_ne_zero_iff, Finset.mem_Icc]
+  exact ⟨fun h j hj ↦ h j j ⟨hj, le_rfl⟩, fun h n j hj ↦ h j hj.1⟩
 
-/-- **Resultant criterion for the delta submodule.** Over a characteristic-zero ring `O`, for a
+/-- **Resultant criterion for the delta submodule.** When `p` is prime and `(p : O) ≠ 0`, for a
 finitely generated `O⟦X⟧`-module `M`, `(∏_{j < n₀} ν_{j,j}) • M_δ` is finite if and only if
 `Res(F_M, Φ_{p ^ j}(X + 1)) ≠ 0` for all `j ≥ n₀`. -/
 theorem finite_prod_growthTransition_smul_deltaSubmodule_iff_resultant_charPoly_ne_zero
-    [CharZero O] {M : Type*} [AddCommGroup M] [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M] (n₀ : ℕ) :
+    {p : ℕ} (hp : p.Prime) (hp0 : (p : O) ≠ 0) (n₀ : ℕ) :
     Finite ↥(((∏ j ∈ Finset.range n₀, growthTransition p O j j : O[X]) : O⟦X⟧) •
         deltaSubmodule p O M) ↔
       ∀ j, n₀ ≤ j →
         (charPoly O M).resultant
           ((Polynomial.cyclotomic (p ^ j) O).comp (Polynomial.X + 1)) ≠ 0 := by
+  have : Fact p.Prime := ⟨hp⟩
+  set g : O[X] := ∏ j ∈ Finset.range n₀, growthTransition p O j j
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
   obtain ⟨r, a, b, m, F, n, -, hFn, f, hf⟩ := exists_isPseudoIsomorphism_elementary (M := M) hϖ
-  have hF (i : Fin b) := (hFn i).1
-  have hirr (i : Fin b) := (hFn i).2.1
-  have hn (i : Fin b) := (hFn i).2.2
+  have hF (j : Fin b) := (hFn j).1
+  have hirr (j : Fin b) := (hFn j).2.1
+  have hn (j : Fin b) := (hFn j).2.2
   have hdim := TauCeti.PowerSeries.ringKrullDim_of_isDiscreteValuationRing (R := O)
-  rw [hf.finite_smul_deltaSubmodule_iff hdim, hf.charPoly_eq_prod hϖ hF hirr]
-  exact finite_smul_deltaSubmodule_elementary_iff hϖ m hF hirr hn n₀
+  rw [hf.finite_smul_deltaSubmodule_iff hdim (g : O⟦X⟧), hf.charPoly_eq_prod hϖ hF hirr,
+    finite_smul_deltaSubmodule_elementary_iff hp hp0 hϖ m hF hirr hn g]
+  simp_rw [Polynomial.resultant_prod_pow_ne_zero_iff Finset.univ (fun j _ ↦ (hF j).monic)
+    (fun j _ ↦ (hirr j).prime) (fun j _ ↦ hn j), Finset.mem_univ, true_implies]
+  refine ⟨fun h k hk j hjk ↦ ?_, fun h j k hk ↦ ?_⟩
+  · obtain ⟨i, hi, hij⟩ := (Prime.dvd_finsetProd_iff (hirr j).prime _).mp (h j k hjk)
+    rw [growthTransition_self] at hij
+    have heq := Polynomial.eq_of_dvd_cyclotomic_prime_pow_comp_X_add_one p hp0 (hirr j).not_isUnit
+      hjk hij
+    rw [heq] at hk
+    exact (Finset.mem_range.mp hi).not_ge hk
+  · have hklt : k < n₀ := by
+      by_contra hge
+      exact h k (not_lt.mp hge) j hk
+    exact hk.trans ((growthTransition_self (p := p) (O := O) k).symm ▸
+      Finset.dvd_prod_of_mem _ (Finset.mem_range.mpr hklt))
 
 end Cutoff
 
-/-- **The cyclotomic cutoff** (Neukirch–Schmidt–Wingberg, Proposition 5.3.17): over a
-characteristic-zero coefficient ring `O`, for a finitely generated torsion `O⟦X⟧`-module `M`, the
-quotients by the transitions `ν_{n₀,k}` (`k ≥ n₀`) are all finite if and only if
-`∏_{j < n₀} ν_{j,j}` carries `M_δ` to a finite submodule. -/
-theorem finite_quotient_growthTransition_iff (p : ℕ) [Fact p.Prime] (O : Type*) [CommRing O]
-    [IsDomain O] [IsDiscreteValuationRing O] [IsAdicComplete (maximalIdeal O) O]
-    [Finite (ResidueField O)] [CharZero O] (M : Type*) [AddCommGroup M]
-    [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M]
-    (hM : Module.IsTorsion O⟦X⟧ M) (n₀ : ℕ) :
-    (∀ k, n₀ ≤ k → Finite (QuotSMulTop (growthTransition p O n₀ k : O⟦X⟧) M)) ↔
-      Finite ↥(((∏ j ∈ Finset.range n₀, growthTransition p O j j : O[X]) : O⟦X⟧) •
-        deltaSubmodule p O M) :=
-  (finite_quotSMulTop_growthTransition_iff_resultant_charPoly_ne_zero hM n₀).trans
-    (finite_prod_growthTransition_smul_deltaSubmodule_iff_resultant_charPoly_ne_zero n₀).symm
+section CyclotomicCutoff
 
-/-- Every finitely generated torsion `O⟦X⟧`-module over a characteristic-zero complete discrete
-valuation ring with finite residue field admits a cutoff `n₀` above which all transition quotients
-`M ⧸ ν_{n₀,k} M` (`k ≥ n₀`) are finite. -/
-theorem exists_finite_quotSMulTop_growthTransition (p : ℕ) [Fact p.Prime] {O : Type*} [CommRing O]
-    [IsDomain O] [IsDiscreteValuationRing O] [IsAdicComplete (maximalIdeal O) O]
-    [Finite (ResidueField O)] [CharZero O] {M : Type*} [AddCommGroup M]
-    [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M] (hM : Module.IsTorsion O⟦X⟧ M) :
+variable {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
+  [IsAdicComplete (maximalIdeal O) O] [Finite (ResidueField O)]
+  {M : Type*} [AddCommGroup M] [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M]
+
+/-- **The cyclotomic cutoff criterion** (Neukirch–Schmidt–Wingberg, Proposition 5.3.17). Let `O` be
+a complete discrete valuation ring with finite residue field, `p` a prime with `(p : O) ≠ 0`, and
+`M` a finitely generated torsion `O⟦X⟧`-module. Then `M ⧸ ν_{n₀, n} M` is finite for every `n` if
+and only if `(∏_{j < n₀} Φ_{p ^ j}(X + 1)) • M_δ` is finite. -/
+theorem finite_quotSMulTop_growthTransition_iff {p : ℕ} (hp : p.Prime) (hp0 : (p : O) ≠ 0)
+    (hM : Module.IsTorsion O⟦X⟧ M) (n₀ : ℕ) :
+    (∀ n, Finite (QuotSMulTop (growthTransition p O n₀ n : O⟦X⟧) M)) ↔
+      Finite ↥(((∏ j ∈ Finset.range n₀,
+        (Polynomial.cyclotomic (p ^ j) O).comp (Polynomial.X + 1) : O[X]) : O⟦X⟧) •
+          deltaSubmodule p O M) := by
+  have : Fact p.Prime := ⟨hp⟩
+  simp_rw [← growthTransition_self (p := p) (O := O)]
+  rw [finite_quotSMulTop_growthTransition_iff_resultant_charPoly_ne_zero hM n₀]
+  exact (finite_prod_growthTransition_smul_deltaSubmodule_iff_resultant_charPoly_ne_zero
+    hp hp0 n₀).symm
+
+/-- At `n₀ = 0`, for a prime `p` with `(p : O) ≠ 0` and a finitely generated torsion
+`O⟦X⟧`-module `M`, `M ⧸ ω_n M` is finite for every `n` iff the delta submodule `M_δ` is finite. -/
+theorem finite_quotSMulTop_one_add_X_pow_sub_one_iff {p : ℕ} (hp : p.Prime) (hp0 : (p : O) ≠ 0)
+    (hM : Module.IsTorsion O⟦X⟧ M) :
+    (∀ n, Finite (QuotSMulTop ((1 + X) ^ p ^ n - 1 : O⟦X⟧) M)) ↔
+      Finite (deltaSubmodule p O M) := by
+  simpa only [coe_growthTransition_zero p O hp, Finset.range_zero, Finset.prod_empty,
+    Polynomial.coe_one, one_smul] using finite_quotSMulTop_growthTransition_iff hp hp0 hM 0
+
+/-- At `n₀ = m + 1`, for a prime `p` with `(p : O) ≠ 0` and a finitely generated torsion
+`O⟦X⟧`-module `M`, `M ⧸ ν_{m + 1, n} M` is finite for every `n` iff `ω_m • M_δ` is finite. -/
+theorem finite_quotSMulTop_growthTransition_succ_iff {p : ℕ} (hp : p.Prime) (hp0 : (p : O) ≠ 0)
+    (hM : Module.IsTorsion O⟦X⟧ M) (m : ℕ) :
+    (∀ n, Finite (QuotSMulTop (growthTransition p O (m + 1) n : O⟦X⟧) M)) ↔
+      Finite ↥(((1 + X) ^ p ^ m - 1 : O⟦X⟧) • deltaSubmodule p O M) := by
+  have : Fact p.Prime := ⟨hp⟩
+  have h := finite_quotSMulTop_growthTransition_iff hp hp0 hM (m + 1)
+  simpa only [Polynomial.prod_range_cyclotomic_prime_pow_comp_X_add_one p m, Polynomial.coe_sub,
+    Polynomial.coe_pow, Polynomial.coe_add, Polynomial.coe_one, Polynomial.coe_X] using h
+
+/-- **Existence of a cyclotomic cutoff.** For a prime `p` with `(p : O) ≠ 0`, every finitely
+generated torsion `O⟦X⟧`-module over a complete discrete valuation ring with finite residue field
+admits a level `n₀` from which all quotients `M ⧸ ν_{n₀, k} M` (`k ≥ n₀`) are finite. -/
+theorem exists_finite_quotSMulTop_growthTransition (p : ℕ) [Fact p.Prime] (hp0 : (p : O) ≠ 0)
+    (hM : Module.IsTorsion O⟦X⟧ M) :
     ∃ n₀ : ℕ, ∀ k, n₀ ≤ k → Finite (QuotSMulTop (growthTransition p O n₀ k : O⟦X⟧) M) := by
+  have : IsNoetherian O⟦X⟧ M := isNoetherian_of_isNoetherianRing_of_finite O⟦X⟧ M
   obtain ⟨m, hm⟩ := exists_deltaSubmodule_eq_torsionBy p O M
-  refine ⟨m + 1, (finite_quotient_growthTransition_iff p O M hM (m + 1)).mpr ?_⟩
-  have hprod : ((∏ j ∈ Finset.range (m + 1), growthTransition p O j j : O[X]) : O⟦X⟧) =
-      (1 + X) ^ p ^ m - 1 := by
-    have h := prod_range_mul_growthTransition (p := p) (O := O) (n₀ := m + 1) (n := m) le_rfl
-    rw [growthTransition_of_lt (Nat.lt_succ_self m), mul_one] at h
-    simpa only [Polynomial.coe_sub, Polynomial.coe_pow, Polynomial.coe_add, Polynomial.coe_one,
-      Polynomial.coe_X] using congrArg ((↑) : O[X] → O⟦X⟧) h
-  suffices ((∏ j ∈ Finset.range (m + 1), growthTransition p O j j : O[X]) : O⟦X⟧) •
-      deltaSubmodule p O M = ⊥ by
-    rw [this]
-    infer_instance
-  rw [hm, hprod, eq_bot_iff]
-  rintro _ ⟨x, hx, rfl⟩
-  exact (mem_torsionBy_iff _ _).mp hx
+  refine ⟨m + 1, fun k _ ↦
+    (finite_quotSMulTop_growthTransition_succ_iff Fact.out hp0 hM m).mpr ?_ k⟩
+  have hbot : ((1 + X) ^ p ^ m - 1 : O⟦X⟧) • deltaSubmodule p O M = ⊥ := by
+    rw [hm, eq_bot_iff]
+    rintro _ ⟨x, hx, rfl⟩
+    exact (mem_torsionBy_iff _ _).mp hx
+  rw [hbot]
+  infer_instance
+
+end CyclotomicCutoff
+
+section TorsionGrowthFormula
+
+variable {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
+  [IsAdicComplete (maximalIdeal O) O] [Finite (ResidueField O)]
+  {M : Type*} [AddCommGroup M] [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M]
 
 /-- **Unconditional Iwasawa growth formula.** Let `O` be a complete discrete valuation ring with
 finite residue field of cardinality `q`, in which `(p) = 𝔪 ^ e` for a prime `p` and some `e > 0`,
 and let `M` be a finitely generated torsion `O⟦X⟧`-module with Iwasawa invariants `μ = μ(M)` and
 `λ = λ(M)`. Then there exist a cutoff level `n₀` and an integer `ν` such that
 `#(M ⧸ ν_{n₀,k} M) = q ^ (μ p ^ k + e λ k + ν)` for all sufficiently large `k`. -/
-theorem exists_eventually_natCard_quotSMulTop_growthTransition_eq_of_isTorsion {p : ℕ}
-    [Fact p.Prime] {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
-    [IsAdicComplete (maximalIdeal O) O] [Finite (ResidueField O)] {e : ℕ} (he : 0 < e)
-    (hpe : Ideal.span {(p : O)} = maximalIdeal O ^ e) {M : Type*} [AddCommGroup M]
-    [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M] (hM : Module.IsTorsion O⟦X⟧ M) :
+theorem exists_eventually_natCard_quotSMulTop_growthTransition_eq_of_isTorsion {p e : ℕ}
+    [Fact p.Prime] (he : 0 < e) (hpe : Ideal.span {(p : O)} = maximalIdeal O ^ e)
+    (hM : Module.IsTorsion O⟦X⟧ M) :
     ∃ n₀ : ℕ, ∃ ν : ℤ, ∀ᶠ k in Filter.atTop,
       (Nat.card (QuotSMulTop (growthTransition p O n₀ k : O⟦X⟧) M) : ℚ) =
         (Nat.card (ResidueField O) : ℚ) ^
           (((muInvariant O M * p ^ k + e * lambdaInvariant O M * k : ℕ) : ℤ) + ν) := by
   have := TauCeti.IsDiscreteValuationRing.charZero_of_span_natCast_eq_maximalIdeal_pow he hpe
-  obtain ⟨n₀, hn₀⟩ := exists_finite_quotSMulTop_growthTransition p hM
+  obtain ⟨n₀, hn₀⟩ := exists_finite_quotSMulTop_growthTransition p (Nat.cast_ne_zero.mpr
+    (Fact.out : p.Prime).ne_zero) hM
   exact ⟨n₀, exists_eventually_natCard_quotSMulTop_growthTransition_eq he hpe n₀
+    (Filter.eventually_atTop.mpr ⟨n₀, hn₀⟩)⟩
+
+/-- **Unconditional Iwasawa growth formula (natural-number cardinality form).**
+Every finitely generated torsion `O⟦X⟧`-module over a complete discrete valuation ring with finite
+residue field of cardinality `q`, in which `(p) = 𝔪 ^ e` for a prime `p` and some `e > 0`, admits
+a cutoff `n₀`, an integer `ν`, and a threshold `N` such that for all `k ≥ N`,
+`0 ≤ μ p ^ k + e λ k + ν` and `#(M ⧸ ν_{n₀, k} M) = q ^ (μ p ^ k + e λ k + ν)`. -/
+theorem exists_natCard_quotSMulTop_growthTransition_of_isTorsion {p e : ℕ} [Fact p.Prime]
+    (he : 0 < e) (hpe : Ideal.span {(p : O)} = maximalIdeal O ^ e)
+    (hM : Module.IsTorsion O⟦X⟧ M) :
+    ∃ (n₀ : ℕ) (ν : ℤ) (N : ℕ), ∀ k ≥ N,
+      0 ≤ (muInvariant O M * p ^ k + e * lambdaInvariant O M * k : ℤ) + ν ∧
+      Nat.card (QuotSMulTop (growthTransition p O n₀ k : O⟦X⟧) M) =
+        Nat.card (ResidueField O) ^
+          ((muInvariant O M * p ^ k + e * lambdaInvariant O M * k : ℤ) + ν).toNat := by
+  have := TauCeti.IsDiscreteValuationRing.charZero_of_span_natCast_eq_maximalIdeal_pow he hpe
+  obtain ⟨n₀, hn₀⟩ := exists_finite_quotSMulTop_growthTransition p (Nat.cast_ne_zero.mpr
+    (Fact.out : p.Prime).ne_zero) hM
+  exact ⟨n₀, exists_natCard_quotSMulTop_growthTransition he hpe n₀
     (Filter.eventually_atTop.mpr ⟨n₀, hn₀⟩)⟩
 
 /-- **Unconditional Iwasawa growth formula over `ℤ_p`.** For any finitely generated torsion
@@ -440,70 +318,157 @@ theorem exists_eventually_natCard_quotSMulTop_growthTransition_eq_padicInt_of_is
     exists_eventually_natCard_quotSMulTop_growthTransition_eq_of_isTorsion one_pos
       (by rw [pow_one, PadicInt.maximalIdeal_eq_span_p]) hM
 
--- Equal characteristic: over `O = 𝔽_p⟦ϖ⟧` and `M = O⟦X⟧ ⧸ (X)`, `ω_0 = X` kills `M_δ = M`, yet
--- `M ⧸ ξ_1 M = M` is infinite, since `ξ_1 = X ^ (p - 1)`: the cutoff criterion needs
--- characteristic zero.
-example (p : ℕ) [Fact p.Prime] :
-    let O := PowerSeries (ZMod p)
-    let M := O⟦X⟧ ⧸ Ideal.span {(X : O⟦X⟧)}
-    (growthTransition p O 0 0 : O⟦X⟧) • deltaSubmodule p O M = ⊥ ∧
-      ¬ Finite (QuotSMulTop (growthTransition p O 1 1 : O⟦X⟧) M) := by
-  intro O M
-  have hX0 : (growthTransition p O 0 0 : O⟦X⟧) = X := by
-    rw [growthTransition_zero_left]
-    simp
-  have hXsmul : (X : O⟦X⟧) • (⊤ : Submodule O⟦X⟧ M) = ⊥ := by
-    simp [M, Ideal.Quotient.smul_top]
-  refine ⟨eq_bot_iff.mpr ((smul_mono_right _ le_top).trans_eq (by rw [hX0, hXsmul])), ?_⟩
-  have : CharP O p := charP_of_injective_ringHom C_injective p
-  have hξ : (growthTransition p O 1 1 : O⟦X⟧) = X ^ (p ^ 1).totient := by
-    rw [growthTransition_self, Polynomial.cyclotomic_prime_pow_comp_X_add_one_eq_X_pow]
-    simp
-  have hpos : 0 < (p ^ 1).totient :=
-    Nat.totient_pos.mpr (pow_pos (Fact.out : p.Prime).pos 1)
-  have hsmul₁ : (growthTransition p O 1 1 : O⟦X⟧) • (⊤ : Submodule O⟦X⟧ M) = ⊥ := by
-    rw [hξ, ← Nat.sub_add_cancel hpos, pow_succ, mul_smul, hXsmul]
-    simp
-  refine not_finite_iff_infinite.mpr
-    (Infinite.of_injective
-      (fun b : O ↦ Submodule.Quotient.mk (Ideal.Quotient.mk _ (C b))) fun b₁ b₂ hb ↦ ?_)
-  rw [Submodule.Quotient.eq, hsmul₁, mem_bot, sub_eq_zero, Ideal.Quotient.eq,
-    Ideal.mem_span_singleton] at hb
-  simpa [PowerSeries.X_dvd_iff, sub_eq_zero] using hb
+end TorsionGrowthFormula
 
--- Equal characteristic: `O = 𝔽_p⟦ϖ⟧` and `M = O⟦X⟧ ⧸ (X - ϖ)` have `μ = 0` and `λ = 1`, yet
--- `ω_n = ϖ ^ p ^ n` on `M ≅ O` and `#(M ⧸ ω_n M) = p ^ p ^ n`.
+/-! ### Sharpness checks and concrete examples
+
+1. **Equal characteristic breaks the cyclotomic cutoff.** Over `O = (ZMod p)⟦t⟧` and
+   `M = O⟦X⟧ ⧸ (X)`, `ω_0 = X` kills `M_δ = M`, yet `ν_{1, 1} = X ^ (p - 1)` acts as `0` on `M`,
+   so `M ⧸ ν_{1, 1} M ≃ O` is infinite.
+2. **Equal characteristic breaks linear `λ`-growth.** Over `O = (ZMod p)⟦t⟧` and
+   `M = O⟦X⟧ ⧸ (X - t)` (`μ = 0, λ = 1`), `ω_n = X ^ p ^ n` acts by `t ^ p ^ n`, giving
+   `#(M ⧸ ω_n M) = p ^ (p ^ n)` instead of linear growth in `n`.
+3. **Ramified `p = 2, π² = 2` small-index check.** In a discrete valuation ring with residue field
+   of cardinality `2` and uniformiser `π` satisfying `π² = 2`, `(1 + π)² - 1 = π² (1 + π)` has
+   unit factor `1 + π` and quotient cardinality `4 = 2 ^ 2`.
+4. **Explicit `ℤ_p` cutoff.** On `M = ℤ_p⟦X⟧ ⧸ (X)` (`μ = 0, λ = 1`), `M ⧸ ω_k M` is infinite for
+   every `k`, while stripping `ξ_0 = X` gives `#(M ⧸ ν_{1, k} M) = p ^ k` for all `k`. -/
+
+section Examples
+
+-- 1. Equal characteristic breaks the cyclotomic cutoff (`(p : O) = 0`).
 example (p : ℕ) [Fact p.Prime] :
+    let M := ((ZMod p)⟦X⟧)⟦X⟧ ⧸ Ideal.span {(X : ((ZMod p)⟦X⟧)⟦X⟧)}
+    ((1 + X) ^ p ^ 0 - 1 : ((ZMod p)⟦X⟧)⟦X⟧) • deltaSubmodule p (ZMod p)⟦X⟧ M = ⊥ ∧
+      Infinite (QuotSMulTop (growthTransition p (ZMod p)⟦X⟧ 1 1 : ((ZMod p)⟦X⟧)⟦X⟧) M) := by
+  intro M
+  dsimp only [M]
+  have hp : p.Prime := Fact.out
+  have : CharP (ZMod p)⟦X⟧ p :=
+    charP_of_injective_ringHom (Function.LeftInverse.injective (constantCoeff_C (R := ZMod p))) p
+  have hX : (X : ((ZMod p)⟦X⟧)⟦X⟧) •
+      (⊤ : Submodule ((ZMod p)⟦X⟧)⟦X⟧ (((ZMod p)⟦X⟧)⟦X⟧ ⧸ Ideal.span {(X : ((ZMod p)⟦X⟧)⟦X⟧)})) =
+      ⊥ := by
+    rw [Ideal.Quotient.smul_top, Submodule.span_singleton_eq_bot, Submodule.Quotient.mk_eq_zero]
+    exact Ideal.mem_span_singleton_self _
+  refine ⟨?_, ?_⟩
+  · have hω : ((1 + X) ^ p ^ 0 - 1 : ((ZMod p)⟦X⟧)⟦X⟧) = X := by simp
+    rw [hω]
+    exact eq_bot_iff.mpr ((smul_mono_right _ le_top).trans_eq hX)
+  · -- In char `p`, `ν_{1, 1} = Φ_p(X + 1) = X ^ (p - 1)` kills `M`, so `M ⧸ ν_{1, 1} M ≃ M`.
+    have hν : (growthTransition p (ZMod p)⟦X⟧ 1 1 : ((ZMod p)⟦X⟧)⟦X⟧) = X ^ (p - 1) := by
+      rw [growthTransition_self, Polynomial.cyclotomic_prime_pow_comp_X_add_one_eq_X_pow,
+        pow_one, Nat.totient_prime hp, Polynomial.coe_pow, Polynomial.coe_X]
+    have hsmul : (growthTransition p (ZMod p)⟦X⟧ 1 1 : ((ZMod p)⟦X⟧)⟦X⟧) •
+        (⊤ : Submodule ((ZMod p)⟦X⟧)⟦X⟧
+          (((ZMod p)⟦X⟧)⟦X⟧ ⧸ Ideal.span {(X : ((ZMod p)⟦X⟧)⟦X⟧)})) = ⊥ := by
+      rw [hν, Ideal.Quotient.smul_top, Submodule.span_singleton_eq_bot,
+        Submodule.Quotient.mk_eq_zero, Ideal.mem_span_singleton]
+      exact dvd_pow_self _ (Nat.sub_pos_of_lt hp.one_lt).ne'
+    have hO : Infinite (ZMod p)⟦X⟧ := TauCeti.IsDiscreteValuationRing.infinite
+    have hM : Infinite (((ZMod p)⟦X⟧)⟦X⟧ ⧸ Ideal.span {(X : ((ZMod p)⟦X⟧)⟦X⟧)}) := by
+      let : Algebra (ZMod p)⟦X⟧ ((ZMod p)⟦X⟧)⟦X⟧ := MvPowerSeries.instAlgebra
+      exact (Equiv.infinite_iff (PowerSeries.quotientSpanXAlgEquiv (ZMod p)⟦X⟧).toEquiv).mpr hO
+    exact (Equiv.infinite_iff (Submodule.quotEquivOfEqBot _ hsmul).toEquiv).mpr hM
+
+-- 2. Equal characteristic breaks linear `λ`-growth:
+-- `M = O⟦X⟧ ⧸ (X - t)` has `#(M / ω_n M) = p ^ p ^ n`.
+example (p : ℕ) [Fact p.Prime] (n : ℕ) :
     let O := PowerSeries (ZMod p)
-    let M := O⟦X⟧ ⧸ Ideal.span {(X - C (X : O) : O⟦X⟧)}
-    ∀ n : ℕ, Nat.card (QuotSMulTop (growthTransition p O 0 n : O⟦X⟧) M) = p ^ (p ^ n) := by
-  intro O M n
+    let M := O⟦X⟧ ⧸ Ideal.span {((Polynomial.X - Polynomial.C (X : O) : O[X]) : O⟦X⟧)}
+    Nat.card (QuotSMulTop ((1 + X) ^ p ^ n - 1 : O⟦X⟧) M) = p ^ p ^ n := by
+  intro O M
+  dsimp only [O, M]
+  have : CharP (ZMod p)⟦X⟧ p :=
+    charP_of_injective_ringHom (Function.LeftInverse.injective (constantCoeff_C (R := ZMod p))) p
   have : IsAdicComplete (maximalIdeal (ZMod p)) (ZMod p) := by
     rw [IsLocalRing.maximalIdeal_eq_bot]
     infer_instance
-  let F : O[X] := Polynomial.X - Polynomial.C (X : O)
-  have hF : F.IsDistinguishedAt (maximalIdeal O) := by
+  have : IsAdicComplete (maximalIdeal (ZMod p)⟦X⟧) (ZMod p)⟦X⟧ :=
+    PowerSeries.isAdicComplete_maximalIdeal
+  have hF : (Polynomial.X - Polynomial.C (X : (ZMod p)⟦X⟧)).IsDistinguishedAt
+      (maximalIdeal (ZMod p)⟦X⟧) := by
     refine ⟨⟨fun {k} hk ↦ ?_⟩, Polynomial.monic_X_sub_C _⟩
     rw [Polynomial.natDegree_X_sub_C, Nat.lt_one_iff] at hk
     subst hk
-    simpa [F, mem_maximalIdeal, mem_nonunits_iff] using
-      (PowerSeries.irreducible_X (R := ZMod p)).not_isUnit
-  have hFcoe : (F : O⟦X⟧) = X - C (X : O) := by simp [F]
-  have : CharP O p := charP_of_injective_ringHom C_injective p
-  have : CharP O[X] p := charP_of_injective_ringHom Polynomial.C_injective p
-  have hG : growthTransition p O 0 n = Polynomial.X ^ p ^ n := by
-    rw [growthTransition_zero_left, add_pow_char_pow, one_pow, add_sub_cancel_left]
-  have H : (X - C (X : O) : O⟦X⟧).IsWeierstrassFactorizationAt F 1 (maximalIdeal O) :=
-    hFcoe ▸ hF.isWeierstrassFactorizationAt
-  have hres : F.resultant (growthTransition p O 0 n) = (X : O) ^ p ^ n := by
-    dsimp only [F]
-    rw [hG, Polynomial.natDegree_X_sub_C, Polynomial.resultant_X_sub_C_left _ _ _ le_rfl]
-    simp
-  have hnorm := (H.norm_mk_coe_eq_resultant (growthTransition p O 0 n)).trans hres
-  have hne : (X : O) ^ p ^ n ≠ 0 := pow_ne_zero _ (PowerSeries.irreducible_X (R := ZMod p)).ne_zero
-  have hcard := H.natCard_quotSMulTop (hnorm.symm ▸ hne)
-  rw [hcard, hnorm, ← Ideal.span_singleton_pow, ← PowerSeries.maximalIdeal_eq_span_X,
+    simp only [Polynomial.coeff_sub, Polynomial.coeff_X_zero, Polynomial.coeff_C_zero, zero_sub,
+      neg_mem_iff]
+    exact (PowerSeries.irreducible_X (R := ZMod p)).maximalIdeal_eq ▸
+      Ideal.mem_span_singleton_self _
+  have H := hF.isWeierstrassFactorizationAt
+  have hcoe : (((1 + Polynomial.X) ^ p ^ n - 1 : ((ZMod p)⟦X⟧)[X]) : ((ZMod p)⟦X⟧)⟦X⟧) =
+      (1 + X) ^ p ^ n - 1 := by simp
+  have hnorm := H.norm_mk_coe_eq_resultant ((1 + Polynomial.X) ^ p ^ n - 1)
+  rw [hcoe, Polynomial.natDegree_X_sub_C,
+    Polynomial.resultant_X_sub_C_left _ _ (X : (ZMod p)⟦X⟧) le_rfl] at hnorm
+  simp only [Polynomial.eval_pow, Polynomial.eval_X, add_pow_char_pow, one_pow,
+    add_sub_cancel_left] at hnorm
+  have hne : (X : (ZMod p)⟦X⟧) ^ p ^ n ≠ 0 := pow_ne_zero _ PowerSeries.X_ne_zero
+  rw [H.natCard_quotSMulTop (hnorm ▸ hne), hnorm, ← Ideal.span_singleton_pow,
+    ← (PowerSeries.irreducible_X (R := ZMod p)).maximalIdeal_eq,
     TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow,
-    Nat.card_congr PowerSeries.residueFieldOfPowerSeries.toEquiv, Nat.card_zmod]
+    Nat.card_congr (PowerSeries.residueFieldOfPowerSeries (k := ZMod p)).toEquiv, Nat.card_zmod]
+
+-- 3. Ramified `p = 2, π² = 2` small-index check: `(1 + π)² - 1 = π² (1 + π)` has index `4`.
+example {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
+    (hq : Nat.card (ResidueField O) = 2) {π : O} (hπ : Irreducible π) (h2 : π ^ 2 = 2) :
+    (1 + π) ^ 2 - 1 = π ^ 2 * (1 + π) ∧ IsUnit (1 + π) ∧
+      Nat.card (O ⧸ Ideal.span {(1 + π) ^ 2 - 1}) = 4 := by
+  have heq : (1 + π) ^ 2 - 1 = π ^ 2 * (1 + π) := by
+    calc (1 + π) ^ 2 - 1 = 2 * π + π ^ 2 := by ring
+      _ = π ^ 2 * π + π ^ 2 := by rw [← h2]
+      _ = π ^ 2 * (1 + π) := by ring
+  have hu : IsUnit (1 + π) := by
+    rw [← IsLocalRing.residue_ne_zero_iff_isUnit, map_add, map_one,
+      (IsLocalRing.residue_eq_zero_iff π).mpr
+        (hπ.maximalIdeal_eq ▸ Ideal.mem_span_singleton_self π), add_zero]
+    exact one_ne_zero
+  refine ⟨heq, hu, ?_⟩
+  rw [heq, Ideal.span_singleton_mul_right_unit hu, ← Ideal.span_singleton_pow, ← hπ.maximalIdeal_eq,
+    TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow, hq]
+  norm_num
+
+-- 4. Explicit `ℤ_p` cutoff on `ℤ_p⟦X⟧ ⧸ (X)`: `n₀ = 0` (`ω_k`) fails, while `n₀ = 1` gives `p ^ k`.
+example (p : ℕ) [Fact p.Prime] (k : ℕ) :
+    let M := ℤ_[p]⟦X⟧ ⧸ Ideal.span {(X : ℤ_[p]⟦X⟧)}
+    Infinite (QuotSMulTop (growthTransition p ℤ_[p] 0 k : ℤ_[p]⟦X⟧) M) ∧
+      Nat.card (QuotSMulTop (growthTransition p ℤ_[p] 1 k : ℤ_[p]⟦X⟧) M) = p ^ k := by
+  intro M
+  dsimp only [M]
+  refine ⟨?_, ?_⟩
+  · have hsmul : (growthTransition p ℤ_[p] 0 k : ℤ_[p]⟦X⟧) •
+        (⊤ : Submodule ℤ_[p]⟦X⟧ (ℤ_[p]⟦X⟧ ⧸ Ideal.span {(X : ℤ_[p]⟦X⟧)})) = ⊥ := by
+      rw [Ideal.Quotient.smul_top, Submodule.span_singleton_eq_bot, Submodule.Quotient.mk_eq_zero,
+        Ideal.mem_span_singleton]
+      have hX : (Polynomial.X : ℤ_[p][X]) ∣ (1 + Polynomial.X) ^ p ^ k - 1 := by
+        rw [Polynomial.X_dvd_iff, Polynomial.coeff_sub, Polynomial.coeff_zero_eq_eval_zero]
+        simp
+      simpa [growthTransition_zero_left] using map_dvd Polynomial.coeToPowerSeries.ringHom hX
+    exact (Equiv.infinite_iff ((Submodule.quotEquivOfEqBot _ hsmul).toEquiv.trans
+      (PowerSeries.quotientSpanXAlgEquiv ℤ_[p]).toEquiv)).mpr
+      TauCeti.IsDiscreteValuationRing.infinite
+  · have hX : (Polynomial.X : ℤ_[p][X]).IsDistinguishedAt (maximalIdeal ℤ_[p]) := by
+      refine ⟨⟨fun {i} hi ↦ ?_⟩, Polynomial.monic_X⟩
+      rw [Polynomial.natDegree_X, Nat.lt_one_iff] at hi
+      simp [hi]
+    have H := hX.isWeierstrassFactorizationAt
+    have hres_eval (P : ℤ_[p][X]) : (Polynomial.X : ℤ_[p][X]).resultant P = P.coeff 0 := by
+      have h := Polynomial.resultant_X_pow_left P 1 _ le_rfl
+      rw [pow_one, pow_one] at h
+      rwa [Polynomial.natDegree_X]
+    have hXcoe : (X : ℤ_[p]⟦X⟧) = ((Polynomial.X : ℤ_[p][X]) : ℤ_[p]⟦X⟧) := Polynomial.coe_X.symm
+    rw [hXcoe]
+    have hnorm : Algebra.norm ℤ_[p]
+        (Ideal.Quotient.mk (Ideal.span {((Polynomial.X : ℤ_[p][X]) : ℤ_[p]⟦X⟧)})
+          (growthTransition p ℤ_[p] 1 k : ℤ_[p]⟦X⟧)) = (p : ℤ_[p]) ^ k := by
+      rw [H.norm_mk_coe_eq_resultant, hres_eval,
+        coeff_zero_growthTransition Nat.one_pos, Nat.add_sub_cancel]
+    have hne : ((p : ℤ_[p]) ^ k) ≠ 0 :=
+      pow_ne_zero k (PadicInt.irreducible_p (p := p)).ne_zero
+    rw [H.natCard_quotSMulTop (hnorm ▸ hne), hnorm, ← Ideal.span_singleton_pow,
+      ← (PadicInt.irreducible_p (p := p)).maximalIdeal_eq,
+      TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow, PadicInt.card_residueField]
+
+end Examples
 
 end TauCeti.Iwasawa

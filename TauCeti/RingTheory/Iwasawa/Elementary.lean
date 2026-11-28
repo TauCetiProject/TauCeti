@@ -42,6 +42,8 @@ characteristic polynomial is `∏ Fⱼ ^ nⱼ`.
 * `TauCeti.Iwasawa.exists_isPseudoIsomorphism_elementary`: every finitely generated
   `O⟦X⟧`-module admits a pseudo-isomorphism onto an elementary module, with every exponent
   positive and every `Fⱼ` irreducible and distinguished.
+* `TauCeti.Iwasawa.exists_isPseudoIsomorphism_elementary_of_isTorsion`: for a torsion module, the
+  free rank vanishes (`r = 0`).
 
 ## References
 
@@ -138,5 +140,16 @@ theorem exists_isPseudoIsomorphism_elementary (hϖ : Irreducible ϖ) [Module.Fin
         (by rw [(hG _).2.2, Ideal.span_singleton_pow, Polynomial.coe_pow])
   exact ⟨((LinearEquiv.refl _ _).prodCongr (split ≪≫ₗ eVert.prodCongr eHor)).toLinearMap ∘ₗ f,
     (IsPseudoIsomorphism.of_bijective (LinearEquiv.bijective _)).comp hf⟩
+
+/-- **The structure theorem for torsion Iwasawa modules.** Every finitely generated torsion
+`O⟦X⟧`-module admits a pseudo-isomorphism onto an elementary module with zero free rank. -/
+theorem exists_isPseudoIsomorphism_elementary_of_isTorsion (hϖ : Irreducible ϖ)
+    [Module.Finite O⟦X⟧ M] (hM : Module.IsTorsion O⟦X⟧ M) :
+    ∃ (a b : ℕ) (m : Fin a → ℕ) (F : Fin b → O[X]) (n : Fin b → ℕ), (∀ i, m i ≠ 0) ∧
+      (∀ j, (F j).IsDistinguishedAt (maximalIdeal O) ∧ Irreducible (F j) ∧ n j ≠ 0) ∧
+        ∃ f : M →ₗ[O⟦X⟧] Elementary O ϖ 0 m F n, IsPseudoIsomorphism f := by
+  obtain ⟨r, a, b, m, F, n, hm, hFn, f, hf⟩ := exists_isPseudoIsomorphism_elementary (M := M) hϖ
+  obtain rfl := eq_zero_of_isTorsion_elementary (hf.isTorsion_iff.mp hM)
+  exact ⟨a, b, m, F, n, hm, hFn, f, hf⟩
 
 end TauCeti.Iwasawa

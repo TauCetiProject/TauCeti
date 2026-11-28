@@ -55,6 +55,10 @@ No signs appear anywhere: `B` is an endomorphism, so the two blocks are never re
   of the corrected representative `x - θ + q θ` that replaces it. The first is stated in
   simp-normal form and is `@[simp]`; the second carries side conditions `simp` cannot discharge
   and is used by explicit `rw`.
+* `Polynomial.Monic.resultant_eq_zero_iff_dvd_of_prime`,
+  `Polynomial.resultant_prod_pow_ne_zero_iff` — over an integral domain, `Res(f, g) = 0 ↔ f ∣ g`
+  for monic prime `f`, and `Res(∏ fᵢ ^ nᵢ, g) ≠ 0` iff none of the monic prime factors `fᵢ`
+  divides `g`.
 
 ## Provenance
 
@@ -397,3 +401,31 @@ theorem norm_mk_C_sub_X_add {q : R[X]} {x : R} (hq : q.Monic) (hgq : g = q * (X 
   ring
 
 end AdjoinRoot
+
+namespace Polynomial
+
+variable {R : Type*} [CommRing R]
+
+/-- Over an integral domain, the resultant of a monic prime polynomial `f` with `g` vanishes if
+and only if `f` divides `g`. -/
+protected theorem Monic.resultant_eq_zero_iff_dvd_of_prime [IsDomain R] {f : R[X]} (hf : f.Monic)
+    (hprime : Prime f) (g : R[X]) : f.resultant g = 0 ↔ f ∣ g := by
+  have : (Ideal.span {f}).IsPrime := (Ideal.span_singleton_prime hprime.ne_zero).mpr hprime
+  have : IsDomain (AdjoinRoot f) := Ideal.Quotient.isDomain (Ideal.span {f})
+  let pb := AdjoinRoot.powerBasis' hf
+  have : Module.Free R (AdjoinRoot f) := Module.Free.of_basis pb.basis
+  have : Module.Finite R (AdjoinRoot f) := pb.finite
+  rw [← AdjoinRoot.norm_mk_eq_resultant hf, Algebra.norm_eq_zero_iff, AdjoinRoot.mk_eq_zero]
+
+/-- Over an integral domain, the resultant of a finite product of positive powers of monic prime
+polynomials against `g` is nonzero if and only if none of those prime factors divides `g`. -/
+theorem resultant_prod_pow_ne_zero_iff [IsDomain R] {ι : Type*} (s : Finset ι) {f : ι → R[X]}
+    {n : ι → ℕ} (hf : ∀ i ∈ s, (f i).Monic) (hprime : ∀ i ∈ s, Prime (f i))
+    (hn : ∀ i ∈ s, n i ≠ 0) (g : R[X]) :
+    (∏ i ∈ s, f i ^ n i).resultant g ≠ 0 ↔ ∀ i ∈ s, ¬ f i ∣ g := by
+  rw [resultant_prod_left_of_monic s fun i hi ↦ (hf i hi).pow _, Finset.prod_ne_zero_iff]
+  refine forall₂_congr fun i hi ↦ ?_
+  rw [Polynomial.resultant_pow_left _ _ _ _ (by simp [(hf i hi).leadingCoeff]) le_rfl,
+    pow_ne_zero_iff (hn i hi), ne_eq, (hf i hi).resultant_eq_zero_iff_dvd_of_prime (hprime i hi)]
+
+end Polynomial

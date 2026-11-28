@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import Mathlib.LinearAlgebra.Prod
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.GroupTheory.Index.Exact
 
 /-!
 # Exact sequences of linear maps
@@ -30,7 +31,11 @@ exactness of products with an identity factor (`Function.Exact.prodMap_id_comp_f
 `TauCeti.exact_ker_comp` attached to a surjection and a further map, the exact sequence
 `G ⊓ P → G → G ⧸ (G ⊓ P)` for submodules `G` and `P`
 (`Submodule.exists_exact_codRestrict_mkQ`), the short exact sequence `0 → ker f → M → range f → 0`
-of a linear map (`LinearMap.exact_subtype_rangeRestrict`), the isomorphisms on kernels and cokernels
+of a linear map (`LinearMap.exact_subtype_rangeRestrict`), the finiteness of the cokernel
+`N ⧸ LinearMap.range f` in an exact pair `f, g` when `range g` is finite
+(`Function.Exact.finite_quotient_range`), the preservation of finiteness by a linear map with
+finite kernel and cokernel (`LinearMap.finite_iff_of_finite_ker_of_finite_coker`), the isomorphisms
+on kernels and cokernels
 induced by a map of two-term complexes whose cone `K₀ → C₀ × K₁ → C₁` is short exact
 (`Function.Exact.bijective_restrict_ker_of_prod_coprod`,
 `Function.Exact.bijective_mapQ_range_of_prod_coprod`), the exact sequence
@@ -650,6 +655,26 @@ the inclusion of the kernel and the corestriction `f.rangeRestrict`. -/
 theorem exact_subtype_rangeRestrict (f : M →ₗ[R] N) :
     Function.Exact (ker f).subtype f.rangeRestrict := by
   rw [exact_iff, ker_rangeRestrict, Submodule.range_subtype]
+
+/-- In an exact pair `M --f--> N --g--> P` of linear maps, if the range of `g` is finite, then
+the cokernel `N ⧸ LinearMap.range f` is finite. -/
+theorem _root_.Function.Exact.finite_quotient_range {M' : Type*} [AddCommMonoid M'] [Module R M']
+    {f : M' →ₗ[R] N} {g : N →ₗ[R] P} (h : Function.Exact f g) [Finite (LinearMap.range g)] :
+    Finite (N ⧸ LinearMap.range f) :=
+  Finite.of_equiv _
+    (Submodule.quotEquivOfEq _ _ h.linearMap_ker_eq.symm ≪≫ₗ g.quotKerEquivRange).symm.toEquiv
+
+/-- A linear map with finite kernel and cokernel preserves finiteness of the ambient module:
+`M` is finite if and only if `N` is. -/
+theorem finite_iff_of_finite_ker_of_finite_coker (φ : M →ₗ[R] N)
+    [Finite (ker φ)] [Finite (N ⧸ range φ)] :
+    Finite M ↔ Finite N :=
+  ⟨fun _ ↦
+    have : Finite (range φ) := Finite.of_surjective _ φ.surjective_rangeRestrict
+    (exact_subtype_mkQ (range φ)).finite,
+  fun _ ↦
+    have : Finite (range φ) := Finite.of_injective _ (range φ).injective_subtype
+    φ.exact_subtype_rangeRestrict.finite⟩
 
 /-- For linear maps `f : M → N` and `g : M → P`, the kernel of `g` contains that of `(f, g)` with
 quotient the range of `f` on it: the inclusion `ker (f, g) → ker g` followed by the restriction of

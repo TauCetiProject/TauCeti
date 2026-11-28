@@ -51,6 +51,8 @@ The file also records the coefficient below the leading one of `Φ_{p ^ (m + 1)}
   every ideal containing `p`.
 * `Polynomial.irreducible_cyclotomic_prime_pow_comp_X_add_one`: over a domain in which `p` is
   prime, `ξ_n` is irreducible.
+* `Polynomial.eq_of_dvd_cyclotomic_prime_pow_comp_X_add_one`: over a domain with `(p : R) ≠ 0`,
+  a non-unit polynomial divides at most one `ξ_n`.
 * `Polynomial.sq_dvd_eval_cyclotomic_prime_pow_comp_X_add_one_sub`: if `p ∣ t ^ p ^ k`, then
   `ξ_{n+1}(t) ≡ p` modulo `p ^ 2` for every `n > k`.
 * `Polynomial.IsDistinguishedAt.sq_dvd_aeval_cyclotomic_prime_pow_comp_X_add_one_sub`: at a root
@@ -182,6 +184,28 @@ theorem sq_dvd_eval_cyclotomic_prime_pow_comp_X_add_one_sub {t : R} {k n : ℕ}
     simp [sum_sub_distrib, ← pow_mul, mul_comm]
   rw [hsum]
   exact dvd_sum fun i _ ↦ hn.trans (sub_one_dvd_pow_sub_one _ i)
+
+/-- For a prime `p`, over an integral domain `R` with `(p : R) ≠ 0`, a non-unit polynomial
+divides at most one shifted prime-power cyclotomic polynomial `Φ_{p ^ j}(X + 1)`. -/
+theorem eq_of_dvd_cyclotomic_prime_pow_comp_X_add_one [IsDomain R] (hp0 : (p : R) ≠ 0)
+    {F : R[X]} (hF : ¬ IsUnit F) {i j : ℕ}
+    (hi : F ∣ (cyclotomic (p ^ i) R).comp (X + 1))
+    (hj : F ∣ (cyclotomic (p ^ j) R).comp (X + 1)) : i = j := by
+  by_contra hij
+  let n := max i j
+  have hsub : ({i, j} : Finset ℕ) ⊆ range (n + 1) := by
+    intro k hk
+    simp only [mem_insert, mem_singleton] at hk
+    rw [mem_range]
+    rcases hk with rfl | rfl <;> omega
+  have hprod :
+      ((cyclotomic (p ^ i) R).comp (X + 1)) * ((cyclotomic (p ^ j) R).comp (X + 1)) ∣
+        (1 + X) ^ p ^ n - 1 := by
+    rw [← prod_range_cyclotomic_prime_pow_comp_X_add_one p n,
+      ← prod_pair (f := fun k ↦ (cyclotomic (p ^ k) R).comp (X + 1)) hij]
+    exact prod_dvd_prod_of_subset _ _ _ hsub
+  exact hF (TauCeti.Polynomial.squarefree_one_add_X_pow_sub_one (m := p ^ n)
+    (by simpa using pow_ne_zero n hp0) F ((mul_dvd_mul hi hj).trans hprod))
 
 /-- The coefficient below the leading one of the cyclotomic polynomial of order `p ^ (m + 1)`
 is `1` for `m = 0` and `0` otherwise. -/
