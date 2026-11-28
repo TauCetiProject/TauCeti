@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Order.Floor.Semiring
 public import Mathlib.NumberTheory.PrimeCounting
 public import Mathlib.Topology.Algebra.GroupWithZero
 import Mathlib.Tactic.Linarith
+import TauCeti.Data.Nat.Count
 import TauCeti.Order.Filter.AtTopBot
 
 /-!
@@ -157,27 +158,7 @@ theorem primeCounting_le_self (n : ℕ) : primeCounting n ≤ n := by
 are zero. -/
 theorem card_filter_Icc_prime (l u : ℕ) :
     #{p ∈ Icc l u | p.Prime} = primeCounting u - primeCounting' l := by
-  rw [primeCounting_eq_primeCounting'_succ, primeCounting', count_eq_card_filter_range,
-    count_eq_card_filter_range]
-  rcases le_or_gt l (u + 1) with h | h
-  · have hsplit : {p ∈ range (u + 1) | p.Prime} =
-        {p ∈ range l | p.Prime} ∪ {p ∈ Icc l u | p.Prime} := by
-      ext p
-      simp only [mem_filter, mem_range, mem_union, mem_Icc]
-      constructor
-      · rintro ⟨hp, hprime⟩
-        rcases lt_or_ge p l with h' | h'
-        · exact Or.inl ⟨h', hprime⟩
-        · exact Or.inr ⟨⟨h', by omega⟩, hprime⟩
-      · rintro (⟨hp, hprime⟩ | ⟨hp, hprime⟩) <;> exact ⟨by omega, hprime⟩
-    have hdisj : Disjoint {p ∈ range l | p.Prime} {p ∈ Icc l u | p.Prime} :=
-      disjoint_filter_filter (disjoint_left.2 fun p hp hp' ↦ by
-        rw [mem_range] at hp
-        rw [mem_Icc] at hp'
-        omega)
-    rw [hsplit, card_union_of_disjoint hdisj, Nat.add_sub_cancel_left]
-  · rw [Icc_eq_empty (by omega), filter_empty, card_empty, eq_comm, Nat.sub_eq_zero_iff_le]
-    exact card_le_card (filter_subset_filter _ (range_mono (by omega)))
+  rw [primeCounting_eq_primeCounting'_succ, primeCounting', card_filter_Icc_eq_count_sub]
 
 /-- In an ordered commutative ring with a floor, an interval `(x, x + y]` of length `y ≥ 0`
 contains at most `y + 1` primes. -/
