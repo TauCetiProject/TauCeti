@@ -318,6 +318,37 @@ lemma map_ι (p : X ⟶ S) :
         (by rw [Category.id_comp, Edge.map_edge, ← yonedaEquiv_symm_comp]) :=
   Subcomplex.lift_ι _ _
 
+/-- The identity simplicial map induces the identity on composition spaces. -/
+@[simp]
+lemma map_id : dsimp% map x g (𝟙 X) = 𝟙 _ := by
+  -- The image of g under the identity agrees definitionally with g.
+  apply (cancel_mono (postcompSpace x g).ι).1
+  erw [map_ι, slice.map_id]
+  simp
+
+/-- Applying a composite simplicial map is the composite of the induced maps on composition
+spaces. -/
+@[simp]
+lemma map_comp {T : SSet.{u}} (p : X ⟶ S) (q : S ⟶ T) :
+    dsimp% map x g (p ≫ q) = map x g p ≫ map (p.app _ x) (g.map p) q := by
+  -- The iterated image of g agrees definitionally with its image under p ≫ q.
+  apply (cancel_mono (postcompSpace ((p ≫ q).app _ x) (g.map (p ≫ q))).ι).1
+  erw [map_ι, Category.assoc, map_ι, map_ι_assoc, slice.map_comp]
+  simp
+
+/-- Source restriction commutes with applying a simplicial map. -/
+@[reassoc (attr := simp)]
+lemma map_src (p : X ⟶ S) :
+    map x g p ≫ src (p.app _ x) (g.map p) = src x g ≫ rightMappingSpace.map x y p := by
+  rw [← cancel_mono ((sliceFiberIso (p.app _ x) (p.app _ y)).inv ≫
+    (fiber (slice.π (yonedaEquiv.symm (p.app _ y))) (p.app _ x)).ι)]
+  simp only [Category.assoc, ← sliceFiberIso_inv_comp_map]
+  dsimp only [src, postcompSpace]
+  simp only [Category.assoc, Iso.hom_inv_id_assoc, Subcomplex.fromPreimage_ι,
+    Subcomplex.fromPreimage_ι_assoc]
+  erw [map_ι_assoc, slice.map_comp]
+  simp [postcompSpace]
+
 /-- Target restriction commutes with applying a simplicial map. -/
 @[reassoc (attr := simp)]
 lemma map_tgt (p : X ⟶ S) :
