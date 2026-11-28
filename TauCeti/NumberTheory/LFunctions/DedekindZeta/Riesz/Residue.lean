@@ -30,10 +30,12 @@ theorem residue_rieszRemainderMellin_dedekindZetaC_zero {y : ℂ} (hy : y ≠ 0)
     residue (fun s ↦ rieszRemainderMellin (dedekindZetaC K) s * y ^ s) 0 =
       logDerivFinitePart (dedekindZetaC K) 0 +
         ((nrRealPlaces K : ℂ) + nrComplexPlaces K - 1) * (1 + log y) := by
+  have hrank : (NumberField.Units.rank K : ℂ) = nrRealPlaces K + nrComplexPlaces K - 1 := by
+    have h : (NumberField.Units.rank K : ℂ) + 1 = nrRealPlaces K + nrComplexPlaces K := by
+      exact_mod_cast NumberField.Units.rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K
+    linear_combination h
   rw [(meromorphic_dedekindZetaC K).residue_rieszRemainderMellin_mul_cpow_zero
-    (meromorphicOrderAt_dedekindZetaC_zero K) hy]
-  push_cast
-  norm_num
+    (meromorphicOrderAt_dedekindZetaC_zero K) hy, Int.cast_natCast, hrank]
 
 /-- At `1 - n < 0`, the first Riesz kernel for Dedekind zeta contributes the archimedean zero
 multiplicity times `y ^ (1 - n) / ((1 - n) * n)`. The formula includes the zero contribution
