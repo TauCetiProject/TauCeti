@@ -60,6 +60,10 @@ factor `u`, with `t = σ = 1`.
   `g = u * t * σ * k`.
 * `TauCeti.exists_eq_mul_diagGL_mul_permutationGL_mul_and_isLowerTriangular`: the same
   decomposition, with `u ∈ I₁` and `u⁻¹ * g` lower triangular when `g ∈ I₁`.
+* `ValuationSubring.exists_map_iwahoriOne_split`: every `c ∈ I₁` factors as `c = a * b` such that
+  `diagGL t * a * (diagGL t)⁻¹ ∈ I₁` and `(diagGL t')⁻¹ * b * diagGL t' ∈ I₁` simultaneously for
+  all dominant diagonal matrices `t, t'` (those with weakly increasing multiplicative valuations
+  `i ≤ j → v (t i) ≤ v (t j)`).
 
 ## References
 
@@ -389,6 +393,27 @@ theorem exists_eq_mul_diagGL_mul_permutationGL_mul (g : GL m K) :
   · rw [hk, Equiv.ofBijective_apply, inv_mul_cancel₀ (hpiv i).1, sub_self, map_zero]
     exact zero_lt_one
 
+/-- **Iwahori factorization of `I₁` in `GL_m(K)`.** Every `g` in the image `I₁` of the pro-`p`
+Iwahori subgroup of `GL_m(𝒪)` admits an upper-unitriangular factor `u ∈ I₁` such that `u⁻¹ * g`
+is lower triangular (and lies in `I₁`). -/
+theorem _root_.ValuationSubring.exists_mem_upperUnitriangularGroup_isLowerTriangular_inv_mul
+    {g : GL m K} (hg : g ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K))) :
+    ∃ u ∈ upperUnitriangularGroup m K,
+      u ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)) ∧
+      ((u⁻¹ * g : GL m K) : Matrix m m K).IsLowerTriangular := by
+  obtain ⟨g', hg', rfl⟩ := Subgroup.mem_map.mp hg
+  obtain ⟨u', hu', hl⟩ := TauCeti.exists_mem_upperUnitriangularGroup_isLowerTriangular_inv_mul
+    (IsLocalRing.ringJacobson_eq_maximalIdeal A).ge (iwahoriOne_le_iwahori hg')
+  have hu'1 : u' ∈ iwahoriOne m A := by
+    rw [← upperUnitriangularCongruenceSubgroup_bot] at hu'
+    exact upperUnitriangularCongruenceSubgroup_mono bot_le hu'
+  have hu : GeneralLinearGroup.map (algebraMap A K) u' ∈ upperUnitriangularGroup m K := by
+    simpa only [UpperUnitriangularGroup.coe_map] using
+      (UpperUnitriangularGroup.map (algebraMap A K) ⟨u', hu'⟩).property
+  refine ⟨GeneralLinearGroup.map (algebraMap A K) u', hu, Subgroup.mem_map_of_mem _ hu'1, ?_⟩
+  rw [← map_inv, ← map_mul]
+  exact Matrix.BlockTriangular.map (algebraMap A K) hl
+
 /-- **The Iwasawa–Bruhat decomposition with the Iwahori factorization.** Every `g ∈ GL_m(K)` is
 `u * t * σ * k` as in `TauCeti.exists_eq_mul_diagGL_mul_permutationGL_mul`, where moreover, if
 `g` lies in the image `I₁` of the pro-`p` Iwahori subgroup of `GL_m(𝒪)`, then so does `u`, and
@@ -401,22 +426,32 @@ theorem exists_eq_mul_diagGL_mul_permutationGL_mul_and_isLowerTriangular (g : GL
             u ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)) ∧
               ((u⁻¹ * g : GL m K) : Matrix m m K).IsLowerTriangular) := by
   by_cases hg : g ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K))
-  · obtain ⟨g', hg', rfl⟩ := Subgroup.mem_map.mp hg
-    obtain ⟨u', hu', hl⟩ := exists_mem_upperUnitriangularGroup_isLowerTriangular_inv_mul
-      (IsLocalRing.ringJacobson_eq_maximalIdeal A).ge (iwahoriOne_le_iwahori hg')
-    have hu'1 : u' ∈ iwahoriOne m A := by
-      rw [← upperUnitriangularCongruenceSubgroup_bot] at hu'
-      exact upperUnitriangularCongruenceSubgroup_mono bot_le hu'
-    have hu : GeneralLinearGroup.map (algebraMap A K) u' ∈ upperUnitriangularGroup m K := by
-      simpa only [UpperUnitriangularGroup.coe_map] using
-        (UpperUnitriangularGroup.map (algebraMap A K) ⟨u', hu'⟩).property
-    refine ⟨GeneralLinearGroup.map (algebraMap A K) u',
-      hu, 1, 1,
-      GeneralLinearGroup.map (algebraMap A K) (u'⁻¹ * g'),
-      Subgroup.mem_map_of_mem _ (mul_mem (inv_mem hu'1) hg'), by simp,
-      fun _ ↦ ⟨Subgroup.mem_map_of_mem _ hu'1, fun i j hij ↦ ?_⟩⟩
-    rw [← map_inv, ← map_mul, GeneralLinearGroup.map_apply, hl hij, map_zero]
+  · obtain ⟨u, hu, hu1, hl⟩ :=
+      A.exists_mem_upperUnitriangularGroup_isLowerTriangular_inv_mul hg
+    exact ⟨u, hu, 1, 1, u⁻¹ * g, mul_mem (inv_mem hu1) hg, by simp, fun _ ↦ ⟨hu1, hl⟩⟩
   · obtain ⟨u, hu, t, σ, k, hk, h⟩ := exists_eq_mul_diagGL_mul_permutationGL_mul A g
     exact ⟨u, hu, t, σ, k, hk, h, fun h' ↦ absurd h' hg⟩
+
+/-- The pro-`p` Iwahori subgroup `I₁ ⊆ GL_m(K)` admits a uniform splitting along all dominant
+diagonal matrices: every `c ∈ I₁` factors as `c = a * b` with `diagGL t * a * (diagGL t)⁻¹ ∈ I₁`
+and `(diagGL t')⁻¹ * b * diagGL t' ∈ I₁` for every `t, t' : m → Kˣ` with weakly increasing
+multiplicative valuations (`i ≤ j → A.valuation (t i) ≤ A.valuation (t j)`). -/
+theorem _root_.ValuationSubring.exists_map_iwahoriOne_split {c : GL m K}
+    (hc : c ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K))) :
+    ∃ a b : GL m K, c = a * b ∧
+      (∀ t : m → Kˣ, (Monotone fun i ↦ A.valuation (t i : K)) →
+        diagGL t * a * (diagGL t)⁻¹ ∈
+          (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K))) ∧
+      (∀ t' : m → Kˣ, (Monotone fun i ↦ A.valuation (t' i : K)) →
+        (diagGL t')⁻¹ * b * diagGL t' ∈
+          (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K))) := by
+  obtain ⟨u, hu_ut, hu_mem, hlow⟩ :=
+    A.exists_mem_upperUnitriangularGroup_isLowerTriangular_inv_mul hc
+  have hu_tri : (u : Matrix m m K).IsUpperTriangular :=
+    (UpperUnitriangularGroup.mem_iff.mp hu_ut).isUpperTriangular
+  refine ⟨u, u⁻¹ * c, (mul_inv_cancel_left u c).symm,
+    fun t ht ↦ diagGL_mul_mul_inv_mem_map_iwahoriOne_of_isUpperTriangular A ht hu_mem hu_tri,
+    fun t' ht' ↦ diagGL_inv_mul_mul_mem_map_iwahoriOne_of_isLowerTriangular A ht'
+      (mul_mem (inv_mem hu_mem) hc) hlow⟩
 
 end TauCeti
