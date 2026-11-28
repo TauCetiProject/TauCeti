@@ -47,8 +47,9 @@ assumed: the only input is that all sufficiently small admissible steps are acce
 
 ## References
 
-* E. Süli, *Numerical Solution of Ordinary Differential Equations*, lecture notes, University of
-  Oxford, 2022, Section 5: embedded error estimates and local step-size proposals.
+* E. Süli, *B6.1 Numerical Solution of Differential Equations I: Initial-value problems*,
+  lecture notes, University of Oxford, 25 February 2022, Section 5: embedded error estimates and
+  local step-size proposals. <https://people.maths.ox.ac.uk/suli/nsde.pdf>
 -/
 
 public section
