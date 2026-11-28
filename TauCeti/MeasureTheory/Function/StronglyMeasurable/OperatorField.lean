@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
-public import Mathlib.Analysis.Normed.Operator.NormedSpace
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import TauCeti.MeasureTheory.Function.StronglyMeasurable.Caratheodory
-import TauCeti.Analysis.Normed.Operator.Norming
+import Mathlib.Analysis.Normed.Operator.NNNorm
 
 /-!
 # Orbitwise measurability of operator fields
@@ -21,10 +20,10 @@ strong measurability of its image for arbitrary measures: linear operators prese
 Over a densely normed field, a strongly measurable operator field `G : S → E →L[𝕜] F` admits
 measurable almost norming vectors: for every `c < 1` there is a strongly measurable, countably
 valued `x : S → E` with `‖x s‖ ≤ 1` and `c ‖G s‖ ≤ ‖G s (x s)‖` for every `s`
-(`MeasureTheory.StronglyMeasurable.exists_stronglyMeasurable_norming`). The construction fixes a
-countable dense subset `{yₙ}` of the range of `G` together with `0`, a norming vector `vₙ` for
-each `yₙ`, and sets `x s = v_{n(s)}` for the least `n(s)` such that `yₙ` is relatively close to
-`G s`.
+(`MeasureTheory.StronglyMeasurable.exists_stronglyMeasurable_norming`). The open sets
+`{T | c ‖T‖ < ‖T v‖}`, for `‖v‖ ≤ 1`, cover the nonzero operators in the separable range of `G`,
+so countably many vectors `vₙ` suffice (`TopologicalSpace.isOpen_iUnion_countable`), and
+`x s = v_{n(s)}` for the least `n(s)` with `c ‖G s‖ ≤ ‖G s v_{n(s)}‖`.
 
 For composition of operator fields, apply the evaluation lemma as
 `(hB x).clm_apply_of_forall hA` for each fixed vector `x`.
@@ -95,49 +94,36 @@ theorem StronglyMeasurable.exists_stronglyMeasurable_norming {G : S → E →L[�
     ∃ x : S → E, StronglyMeasurable x ∧ (range x).Countable ∧ (∀ s, ‖x s‖ ≤ 1) ∧
       ∀ s, c * ‖G s‖ ≤ ‖G s (x s)‖ := by
   classical
-  -- Work with `m = max c 0 ∈ [0, 1)`, a norming ratio `c' = (1 + m) / 2` for each `yₙ` and a
-  -- relative approximation error `δ = (1 - m) / 4`, so that `c' - 2 δ = m`.
-  set m := max c 0
-  have hm1 : m < 1 := max_lt hc one_pos
-  have hm0 : 0 ≤ m := le_max_right c 0
-  set c' := (1 + m) / 2
-  set δ := (1 - m) / 4
-  have hδ : 0 < δ := by simp only [δ]; linarith
-  -- A norming vector of ratio `c'` for every single operator.
-  have hnorming : ∀ T : E →L[𝕜] F, ∃ v : E, ‖v‖ ≤ 1 ∧ c' * ‖T‖ ≤ ‖T v‖ := by
-    intro T
-    rcases (norm_nonneg T).eq_or_lt with h0 | hpos
-    · exact ⟨0, by simp, by simp [← h0]⟩
-    · obtain ⟨v, hv1, hv⟩ := T.exists_lt_apply_of_lt_opNorm (r := c' * ‖T‖)
-        (by simp only [c']; nlinarith)
-      exact ⟨v, hv1.le, hv.le⟩
-  choose v hv1 hv using hnorming
-  -- A countable dense subset `range y` of `range G ∪ {0}`.
-  obtain ⟨t, -, htc, hdense⟩ := hG.isSeparable_range.exists_countable_dense_subset
-  obtain ⟨y, hy⟩ := (htc.insert 0).exists_eq_range (insert_nonempty 0 t)
-  have hex : ∀ s, ∃ n, ‖G s - y n‖ ≤ δ * ‖G s‖ := by
+  -- On the second-countable range of `G`, countably many unit-ball vectors `v` suffice to cover
+  -- the open sets `{T | c ‖T‖ < ‖T v‖}`.
+  have := hG.isSeparable_range.secondCountableTopology
+  obtain ⟨V, hVc, hV⟩ := isOpen_iUnion_countable
+    (fun v : Metric.closedBall (0 : E) 1 ↦ {T : range G | c * ‖(T : E →L[𝕜] F)‖ < ‖T.val v‖})
+    fun v ↦ isOpen_lt (by fun_prop)
+      (((continuous_eval_const (v : E)).comp continuous_subtypeVal).norm)
+  obtain ⟨w, hw⟩ := (hVc.insert ⟨0, by simp⟩).exists_eq_range (insert_nonempty _ _)
+  have hw1 : ∀ n, ‖(w n : E)‖ ≤ 1 := fun n ↦ mem_closedBall_zero_iff.1 (w n).property
+  have hex : ∀ s, ∃ n, c * ‖G s‖ ≤ ‖G s (w n)‖ := by
     intro s
     rcases (norm_nonneg (G s)).eq_or_lt with h0 | hGs
-    · obtain ⟨n, hn⟩ : (0 : E →L[𝕜] F) ∈ range y := hy ▸ mem_insert 0 t
-      exact ⟨n, by simp [← h0, hn]⟩
-    · obtain ⟨z, hz, hzs⟩ := Metric.mem_closure_iff.1 (hdense (mem_range_self s)) _
-        (mul_pos hδ hGs)
-      obtain ⟨n, rfl⟩ : z ∈ range y := hy ▸ mem_insert_of_mem 0 hz
-      exact ⟨n, by rw [← dist_eq_norm]; exact hzs.le⟩
+    · exact ⟨0, by simp [← h0]⟩
+    -- A nonzero `G s` is almost normed by some unit-ball vector, hence by one of the `w n`.
+    obtain ⟨v, hv1, hv⟩ := (G s).exists_lt_apply_of_lt_opNorm (r := c * ‖G s‖) (by nlinarith)
+    have hmem : (⟨G s, mem_range_self s⟩ : range G) ∈ ⋃ v : Metric.closedBall (0 : E) 1,
+        {T : range G | c * ‖(T : E →L[𝕜] F)‖ < ‖T.val v‖} :=
+      mem_iUnion.2 ⟨⟨v, by simpa using hv1.le⟩, hv⟩
+    rw [← hV] at hmem
+    obtain ⟨u, hu, hTu⟩ := mem_iUnion₂.1 hmem
+    obtain ⟨n, hn⟩ : u ∈ range w := hw ▸ mem_insert_of_mem _ hu
+    exact ⟨n, by rw [hn]; exact hTu.le⟩
   have hN : Measurable fun s ↦ Nat.find (hex s) :=
-    measurable_find hex fun n ↦ _root_.measurableSet_le
-      (hG.sub stronglyMeasurable_const).norm.measurable (measurable_const.mul hG.norm.measurable)
-  -- Choose `x s = v (y n)` for the least `n` with `y n` relatively close to `G s`.
-  refine ⟨fun s ↦ v (y (Nat.find (hex s))),
-    (StronglyMeasurable.of_discrete (f := fun n : ℕ ↦ v (y n))).comp_measurable hN,
-    (countable_range fun n ↦ v (y n)).mono (by rintro _ ⟨s, rfl⟩; exact mem_range_self _),
-    fun s ↦ hv1 _, fun s ↦ ?_⟩
-  calc c * ‖G s‖ ≤ (c' - 2 * δ) * ‖G s‖ := by
-        refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
-        simp only [c', δ, m]
-        linarith [le_max_left c 0]
-    _ ≤ _ := ContinuousLinearMap.mul_norm_le_norm_apply_of_norm_sub_le (by simp only [c']; linarith)
-        (by simp only [c']; linarith) hδ.le (hv1 _) (hv _) (Nat.find_spec (hex s))
+    measurable_find hex fun n ↦ _root_.measurableSet_le (measurable_const.mul hG.norm.measurable)
+      ((continuous_eval_const (w n : E)).comp_stronglyMeasurable hG).norm.measurable
+  -- Choose `x s = w n` for the least `n` with `c ‖G s‖ ≤ ‖G s (w n)‖`.
+  exact ⟨fun s ↦ w (Nat.find (hex s)),
+    (StronglyMeasurable.of_discrete (f := fun n : ℕ ↦ (w n : E))).comp_measurable hN,
+    (countable_range fun n ↦ (w n : E)).mono (by rintro _ ⟨s, rfl⟩; exact mem_range_self _),
+    fun s ↦ hw1 _, fun s ↦ Nat.find_spec (hex s)⟩
 
 /-- **Measurable norming vectors, almost everywhere version.** For an almost everywhere strongly
 measurable operator field `G : S → E →L[𝕜] F` and `c < 1`, there is a strongly measurable,

@@ -7,15 +7,9 @@ module
 
 public import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.BochnerDual
-import Mathlib.Analysis.InnerProductSpace.Convex
-import Mathlib.Analysis.InnerProductSpace.Dual
-import Mathlib.MeasureTheory.Function.Holder
-import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Function.Lp.UniformConvex
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.Basic
-import TauCeti.MeasureTheory.Function.Holder
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!
 # Representation of continuous functionals on `Lᵖ`
@@ -28,12 +22,12 @@ injectivity of the reversed integral pairing.
 
 This representation passes distributional test-function bounds to actual `Lᵖ` weak derivatives.
 
-The same holds for functions with values in a Hilbert space `H`, where `Lᵖ(μ; H⋆)` represents the
-continuous dual of `Lᵠ(μ; H)` by `g ↦ (f ↦ ∫ g x (f x) dμ)`, with `H⋆ = StrongDual 𝕜 H`
-(`MeasureTheory.Lp.strongDualEquiv`). The pairing is bilinear, with no complex conjugation. It is
-the Bochner integral pairing `TauCeti.bochnerDualMap`, an isometry on σ-finite measure spaces
-whose range norms `Lᵠ(μ; H)`, and surjectivity again follows from reflexivity of `Lᵠ(μ; H)`,
-which is uniformly convex.
+The same holds for functions with values in a Hilbert space `H`, on an arbitrary measure space,
+where `Lᵖ(μ; H⋆)` represents the continuous dual of `Lᵠ(μ; H)` by `g ↦ (f ↦ ∫ g x (f x) dμ)`,
+with `H⋆ = StrongDual 𝕜 H` (`MeasureTheory.Lp.strongDualEquiv`). The pairing is bilinear, with no
+complex conjugation. It is the Bochner integral pairing `TauCeti.bochnerDualMap`, an isometry for
+finite exponents whose range norms `Lᵠ(μ; H)`, and surjectivity again follows from reflexivity of
+`Lᵠ(μ; H)`, which is uniformly convex.
 
 For a real inner product space `E` with a finite orthonormal basis `b`, the dual of the product
 `(Lᵠ)ᶥ` is represented by `Lᵖ(α; E)`: a functional `Λ` is `g ↦ ∑ᵢ ∫ ⟪H, bᵢ⟫ gᵢ` for a field
@@ -62,7 +56,11 @@ open scoped ENNReal InnerProductSpace
 namespace MeasureTheory.Lp
 
 variable {α 𝕜 : Type*} [RCLike 𝕜] {mα : MeasurableSpace α} {μ : Measure α}
-  [SigmaFinite μ] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q]
+  {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q]
+
+section Scalar
+
+variable [SigmaFinite μ]
 
 /-- Every continuous scalar functional on `Lᵠ` is integration against an `Lᵖ` function,
 for conjugate exponents strictly between one and infinity. -/
@@ -142,6 +140,8 @@ theorem exists_memLp_forall_dual_pi_apply_eq {ι E : Type*} [Fintype ι] [Normed
     simp_rw [hinner]
     exact (integral_dualEquiv_symm_mul (p := p) hq hq_top (Λc i) (g i)).symm
 
+end Scalar
+
 /-! ### Functionals on `Lᵠ` with values in a Hilbert space -/
 
 section StrongDual
@@ -150,19 +150,19 @@ variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [Complete
 
 variable (𝕜 μ p q) in
 /-- The integral pairing `g ↦ (f ↦ ∫ g x (f x) dμ)` as a linear isometry from `Lᵖ(μ; H⋆)` to the
-continuous dual of `Lᵠ(μ; H)`. -/
-private noncomputable def toStrongDual :
+continuous dual of `Lᵠ(μ; H)`, for `p < ∞`. -/
+private noncomputable def toStrongDual (hp : p ≠ ∞) :
     Lp (StrongDual 𝕜 H) p μ →ₗᵢ[𝕜] StrongDual 𝕜 (Lp H q μ) where
   toLinearMap := TauCeti.bochnerDualMap 𝕜 H μ q p
-  norm_map' := TauCeti.norm_bochnerDualMap
+  norm_map' := TauCeti.norm_bochnerDualMap_of_ne_top hp
 
 omit [CompleteSpace H] in
-private theorem toStrongDual_apply (g : Lp (StrongDual 𝕜 H) p μ) (f : Lp H q μ) :
-    toStrongDual 𝕜 μ p q g f = TauCeti.bochnerDualMap 𝕜 H μ q p g f :=
+private theorem toStrongDual_apply (hp : p ≠ ∞) (g : Lp (StrongDual 𝕜 H) p μ) (f : Lp H q μ) :
+    toStrongDual 𝕜 μ p q hp g f = TauCeti.bochnerDualMap 𝕜 H μ q p g f :=
   rfl
 
-private theorem toStrongDual_surjective (hq : 1 < q) (hq_top : q ≠ ∞) :
-    Function.Surjective (toStrongDual 𝕜 μ p q (H := H)) := by
+private theorem toStrongDual_surjective (hp : p ≠ ∞) (hq : 1 < q) (hq_top : q ≠ ∞) :
+    Function.Surjective (toStrongDual 𝕜 μ p q hp (H := H)) := by
   -- `Lᵠ(μ; H)` is reflexive, since `H` is uniformly convex.
   have : UniformConvexSpace H := by
     let := InnerProductSpace.rclikeToReal 𝕜 H
@@ -170,18 +170,20 @@ private theorem toStrongDual_surjective (hq : 1 < q) (hq_top : q ≠ ∞) :
   refine LinearIsometry.surjective_of_surjective_inclusionInDoubleDual _
     (surjective_inclusionInDoubleDual (𝕜 := 𝕜) (μ := μ) hq hq_top)
     fun f hf ↦ norm_le_zero_iff.1 <|
-      TauCeti.norm_le_of_dual_pairing_bound (𝕜 := 𝕜) (q := p) f le_rfl fun g ↦ ?_
-  rw [← toStrongDual_apply, hf g]
+      TauCeti.norm_le_of_dual_pairing_bound_of_ne_top (𝕜 := 𝕜) (q := p) hq_top f le_rfl
+        fun g ↦ ?_
+  rw [← toStrongDual_apply hp, hf g]
   simp
 
 variable (𝕜 μ p q) in
-/-- **Duality of Lebesgue–Bochner spaces with values in a Hilbert space.** On a σ-finite measure
+/-- **Duality of Lebesgue–Bochner spaces with values in a Hilbert space.** On an arbitrary measure
 space, for Hölder conjugate exponents `1 < p, q < ∞` and a Hilbert space `H`, the integral pairing
 `g ↦ (f ↦ ∫ g x (f x) dμ)` identifies `Lᵖ(μ; H⋆)`, `H⋆ = StrongDual 𝕜 H`, linearly and
 isometrically with the continuous dual of `Lᵠ(μ; H)`. -/
 noncomputable def strongDualEquiv (hq : 1 < q) (hq_top : q ≠ ∞) :
     Lp (StrongDual 𝕜 H) p μ ≃ₗᵢ[𝕜] StrongDual 𝕜 (Lp H q μ) :=
-  LinearIsometryEquiv.ofSurjective _ (toStrongDual_surjective hq hq_top)
+  LinearIsometryEquiv.ofSurjective _
+    (toStrongDual_surjective ((ENNReal.HolderConjugate.lt_top_iff_one_lt p q).2 hq).ne hq hq_top)
 
 /-- Evaluation of the integral representation of functionals on `Lᵠ(μ; H)`. -/
 @[simp]

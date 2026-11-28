@@ -19,8 +19,9 @@ seminorms `eLpNorm (fun s ↦ G s (x s)) r μ` over strongly measurable, countab
 (`MeasureTheory.AEStronglyMeasurable.eLpNorm_le_of_forall_eLpNorm_apply_le`).
 
 Taking `F` to be the scalar field, this tests a strongly measurable family of functionals
-against measurable unit vector fields. Through the isometric embedding of a normed space into
-its bidual, it also tests a vector-valued function against measurable fields of functionals.
+against measurable unit vector fields. When the canonical embedding of a normed space into its
+bidual is isometric, in particular over `ℝ` or `ℂ`, it also tests a vector-valued function
+against measurable fields of functionals.
 These are the pointwise test functions used to compute the norm of the integral pairing between
 Bochner spaces `Lᵖ(μ; X)` and `L^q(μ; X⋆)`.
 
