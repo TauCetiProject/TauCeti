@@ -283,16 +283,6 @@ lemma ofAlternatingFaceMapComplexHomotopyEquiv_inv {X Y : SimplicialObject C} (f
       N.fullyFaithful.preimage (inclusionN.app Y ≫ e.inv ≫ PInftyToN.app X) :=
   (rfl)
 
-/-- The inverse morphism of `ofAlternatingFaceMapComplexHomotopyEquiv f e he` maps under `N` to
-`inclusionN.app Y ≫ e.inv ≫ PInftyToN.app X`. -/
-lemma N_map_ofAlternatingFaceMapComplexHomotopyEquiv_inv {X Y : SimplicialObject C} (f : X ⟶ Y)
-    (e : _root_.HomotopyEquiv ((alternatingFaceMapComplex C).obj X)
-      ((alternatingFaceMapComplex C).obj Y))
-    (he : e.hom = (alternatingFaceMapComplex C).map f) :
-    N.map (ofAlternatingFaceMapComplexHomotopyEquiv f e he).inv =
-      inclusionN.app Y ≫ e.inv ≫ PInftyToN.app X :=
-  N.fullyFaithful.map_preimage _
-
 end HomotopyEquiv
 
 /-- A morphism `f : X ⟶ Y` of simplicial objects in an idempotent-complete preadditive category

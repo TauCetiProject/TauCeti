@@ -267,13 +267,11 @@ lemma refl_inv (X : SimplicialObject C) : (refl X).inv = 𝟙 X := (rfl)
 
 @[simp]
 lemma refl_homotopyHomInvId_h (X : SimplicialObject C) {n : ℕ} (i : Fin (n + 1)) :
-    (refl X).homotopyHomInvId.h i = X.σ i := by
-  simp [refl]
+    (refl X).homotopyHomInvId.h i = X.σ i := by simp [refl]
 
 @[simp]
 lemma refl_homotopyInvHomId_h (X : SimplicialObject C) {n : ℕ} (i : Fin (n + 1)) :
-    (refl X).homotopyInvHomId.h i = X.σ i := by
-  simp [refl]
+    (refl X).homotopyInvHomId.h i = X.σ i := by simp [refl]
 
 instance (X : SimplicialObject C) : Inhabited (HomotopyEquiv X X) :=
   ⟨refl X⟩
@@ -319,13 +317,11 @@ lemma ofIso_inv (e : X ≅ Y) : (ofIso e).inv = e.inv := (rfl)
 
 @[simp]
 lemma ofIso_homotopyHomInvId_h (e : X ≅ Y) {n : ℕ} (i : Fin (n + 1)) :
-    (ofIso e).homotopyHomInvId.h i = X.σ i := by
-  simp [ofIso]
+    (ofIso e).homotopyHomInvId.h i = X.σ i := by simp [ofIso]
 
 @[simp]
 lemma ofIso_homotopyInvHomId_h (e : X ≅ Y) {n : ℕ} (i : Fin (n + 1)) :
-    (ofIso e).homotopyInvHomId.h i = Y.σ i := by
-  simp [ofIso]
+    (ofIso e).homotopyInvHomId.h i = Y.σ i := by simp [ofIso]
 
 /-- Any functor `F : C ⥤ D` applied levelwise preserves combinatorial simplicial homotopy
 equivalences, with no additivity assumption on `F`. -/
@@ -398,6 +394,30 @@ lemma whiskerRight_ofFullyFaithful_inv {D : Type u'} [Category.{v'} D] (F : C �
     Functor.whiskerRight (e.ofFullyFaithful F).inv F = e.inv :=
   ((whiskering C D).obj F).map_preimage e.inv
 
+/-- Each component of the forward map of `HomotopyEquiv.ofFullyFaithful` is the `F`-preimage of
+the corresponding component. -/
+@[simp]
+lemma ofFullyFaithful_hom_app {D : Type u'} [Category.{v'} D] (F : C ⥤ D)
+    [F.Full] [F.Faithful]
+    (e : HomotopyEquiv (((whiskering C D).obj F).obj X) (((whiskering C D).obj F).obj Y))
+    (m : SimplexCategoryᵒᵖ) :
+    (e.ofFullyFaithful F).hom.app m = F.preimage (e.hom.app m) :=
+  F.map_injective <| by
+    rw [F.map_preimage]
+    exact NatTrans.congr_app (whiskerRight_ofFullyFaithful_hom F e) m
+
+/-- Each component of the backward map of `HomotopyEquiv.ofFullyFaithful` is the `F`-preimage of
+the corresponding component. -/
+@[simp]
+lemma ofFullyFaithful_inv_app {D : Type u'} [Category.{v'} D] (F : C ⥤ D)
+    [F.Full] [F.Faithful]
+    (e : HomotopyEquiv (((whiskering C D).obj F).obj X) (((whiskering C D).obj F).obj Y))
+    (m : SimplexCategoryᵒᵖ) :
+    (e.ofFullyFaithful F).inv.app m = F.preimage (e.inv.app m) :=
+  F.map_injective <| by
+    rw [F.map_preimage]
+    exact NatTrans.congr_app (whiskerRight_ofFullyFaithful_inv F e) m
+
 @[simp]
 lemma ofFullyFaithful_homotopyHomInvId_h {D : Type u'} [Category.{v'} D] (F : C ⥤ D)
     [F.Full] [F.Faithful]
@@ -429,11 +449,7 @@ functor recovers the original homotopy equivalence. -/
 lemma ofFullyFaithful_whiskerRight {D : Type u'} [Category.{v'} D] (F : C ⥤ D)
     [F.Full] [F.Faithful] (e : HomotopyEquiv X Y) :
     (e.whiskerRight F).ofFullyFaithful F = e :=
-  ext (((whiskering C D).obj F).map_injective
-      (((whiskering C D).obj F).map_preimage (e.whiskerRight F).hom))
-    (((whiskering C D).obj F).map_injective
-      (((whiskering C D).obj F).map_preimage (e.whiskerRight F).inv))
-    (by ext n i; simp) (by ext n i; simp)
+  ext (by ext m; simp) (by ext m; simp) (by ext n i; simp) (by ext n i; simp)
 
 section Preadditive
 
