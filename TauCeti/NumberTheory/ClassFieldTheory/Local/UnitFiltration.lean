@@ -54,6 +54,10 @@ At `n = 0`, `U(K, 0) = 𝒪[K]ˣ` and `G_K^0 = inertiaSubgroup K`, recovering
   `Gal(M/K)^n` over all finite Galois subextensions `M` of `K^{ab}/K`.
 * `TauCeti.ClassFieldTheory.map_artinMap_unitFiltration_eq_upper`: in `G_K^ab`, the Artin image of
   `U(K, n)` equals the image of `localAbsoluteUpperRamificationGroup K n`.
+* `IntermediateField.map_restrictNormal_abelian_unitFiltration`: in any abelian
+  intermediate extension, the Artin image of `U(K, n)` is the intersection of the pullbacks
+  of the finite upper groups, by absolute reciprocity and
+  `map_restrictNormalHom_localAbsoluteUpperRamificationGroup_eq_iInf`.
 * `TauCeti.ClassFieldTheory.isClosed_map_artinMap_unitFiltration`: the Artin image of `U(K, n)` is a
   closed subgroup of `G_K^ab`.
 
@@ -317,6 +321,38 @@ theorem map_artinMap_unitFiltration_eq_upper (n : ℕ) :
         ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩)
   exact (map_topologicalAbelianizationEquivMaximalAbelianExtension_artinMap_unitFiltration K
     n).trans hrhs.symm
+
+variable {K} in
+/-- For an abelian intermediate extension `E/K`, possibly infinite, the Artin image of
+`U(K, n)` in `Gal(E/K)` is the intersection of the pullbacks of `Gal(M/K)^n` over all finite
+Galois subextensions `M/K` of `E/K` (Serre, *Local Fields*, Chapter XV, §2). -/
+theorem _root_.IntermediateField.map_restrictNormal_abelian_unitFiltration
+    (E : IntermediateField K (AlgebraicClosure K)) [IsAbelianGalois K E] (n : ℕ) :
+    ((unitFiltration K n).map (artinMap K)).map
+        ((IntermediateField.inclusion E.le_maximalAbelianExtension).restrictNormalHom.comp
+          (topologicalAbelianizationEquivMaximalAbelianExtension K
+            (AlgebraicClosure K)).toMonoidHom) =
+      ⨅ M : FiniteGaloisIntermediateField K E,
+        (finiteGaloisUpperRamificationGroup K E M ⟨n, Nat.cast_mem_ramificationIndexDomain n⟩).comap
+          (AlgEquiv.restrictNormalHom M) := by
+  let Kab := maximalAbelianExtension K (AlgebraicClosure K)
+  let i : E →ₐ[K] Kab := IntermediateField.inclusion E.le_maximalAbelianExtension
+  let e := topologicalAbelianizationEquivMaximalAbelianExtension K (AlgebraicClosure K)
+  have hi : Kab.val.comp i = E.val := AlgHom.ext fun _ ↦ rfl
+  have hcomp : (i.restrictNormalHom.comp e.toMonoidHom).comp
+      (QuotientGroup.mk' (commutator Gal(AlgebraicClosure K/K)).topologicalClosure) =
+        AlgEquiv.restrictNormalHom E := by
+    apply MonoidHom.ext
+    intro σ
+    simp only [MonoidHom.comp_apply, QuotientGroup.mk'_apply]
+    refine (congrArg i.restrictNormalHom
+      (AlgEquiv.topologicalAbelianizationEquivMaximalAbelianExtension_mk σ)).trans ?_
+    rw [← IntermediateField.restrictNormalHom_val Kab, AlgHom.restrictNormalHom_restrictNormalHom,
+      hi, IntermediateField.restrictNormalHom_val]
+  rw [map_artinMap_unitFiltration_eq_upper]
+  refine (Subgroup.map_map _ _ _).trans ?_
+  exact (congrArg (localAbsoluteUpperRamificationGroup K _).map hcomp).trans
+    (map_restrictNormalHom_localAbsoluteUpperRamificationGroup_eq_iInf E _)
 
 /-- The image of `U(K, n)` under the absolute local Artin map is a closed subgroup of `G_K^ab`,
 since it equals the image of the closed subgroup `localAbsoluteUpperRamificationGroup K n` of the
