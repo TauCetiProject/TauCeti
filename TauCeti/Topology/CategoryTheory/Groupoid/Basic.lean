@@ -25,7 +25,9 @@ same topology when their smooth structure is forgotten.
 
 When the source is an open map, composition is open: every arrow near a composite `a ≫ b` is a
 composite of an arrow near `a` with an arrow near `b` (`TauCeti.eventually_exists_comp_eq`). The
-proof factors a nearby arrow through an arrow near `a` with the same source.
+proof factors a nearby arrow through an arrow near `a` with the same source. Two arrow families
+continuous at a point whose endpoints match on a neighbourhood compose locally to an arrow family
+continuous at that point (`TauCeti.IsTopologicalGroupoid.exists_continuousAt_comp`).
 
 Composition follows categorical order: `a.comp b h` first traverses `a`, then `b`.
 Thus the product written `gh` in the opposite, geometric order is `h.comp g`.
@@ -118,6 +120,32 @@ theorem isOpenMap_target_of_local_source_sections
         (∀ᶠ x in 𝓝 a.left, (σ x).left = x)) :
     IsOpenMap (Quiver.Total.right : Quiver.Total C → C) :=
   (isOpenMap_source_iff_target C).mp (.of_local_sections h)
+
+/-- Given two arrow families continuous at `x₀` whose endpoints match on a neighbourhood of `x₀`,
+there is an arrow family continuous at `x₀` agreeing with their composite near `x₀`. -/
+theorem exists_continuousAt_comp {C : Type*} [Category C] [IsGroupoid C] [TopologicalSpace C]
+    [TopologicalSpace (Quiver.Total C)] [IsTopologicalGroupoid C]
+    {X : Type*} [TopologicalSpace X] {α β : X → Quiver.Total C} {x₀ : X}
+    (hα : ContinuousAt α x₀) (hβ : ContinuousAt β x₀)
+    (heq : ∀ᶠ x in 𝓝 x₀, (α x).right = (β x).left) :
+    ∃ γ : X → Quiver.Total C, ContinuousAt γ x₀ ∧
+      ∀ᶠ x in 𝓝 x₀, ∀ h : (α x).right = (β x).left, γ x = (α x).comp (β x) h := by
+  obtain ⟨U, hUsub, hUo, hx₀U⟩ := mem_nhds_iff.mp heq
+  let pair : U → {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} :=
+    fun z ↦ ⟨(α z, β z), hUsub z.property⟩
+  let compU : U → Quiver.Total C :=
+    fun z ↦ (pair z).val.1.comp (pair z).val.2 (pair z).property
+  let γ : X → Quiver.Total C := Function.extend Subtype.val compU fun _ ↦ α x₀
+  have hpair : ContinuousAt pair ⟨x₀, hx₀U⟩ := by
+    rw [ContinuousAt, tendsto_subtype_rng]
+    exact (hα.comp continuous_subtypeVal.continuousAt).prodMk
+      (hβ.comp continuous_subtypeVal.continuousAt)
+  have hγ_sub : ContinuousAt (γ ∘ (Subtype.val : U → X)) ⟨x₀, hx₀U⟩ := by
+    rw [Function.extend_comp Subtype.val_injective]
+    exact IsTopologicalGroupoid.continuous_comp.continuousAt.comp hpair
+  refine ⟨γ, hUo.isOpenEmbedding_subtypeVal.continuousAt_iff.mp hγ_sub,
+    Filter.eventually_of_mem (hUo.mem_nhds hx₀U) fun x hx _ ↦ ?_⟩
+  exact congrFun (Function.extend_comp Subtype.val_injective compU fun _ ↦ α x₀) ⟨x, hx⟩
 
 end IsTopologicalGroupoid
 

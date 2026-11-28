@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Category.QuiverTotal
 public import TauCeti.CategoryTheory.IsomorphismClasses
+public import TauCeti.Topology.CategoryTheory.IsomorphismClasses
 public import Mathlib.Topology.Homeomorph.Lemmas
 public import Mathlib.Topology.Constructions
+public import Mathlib.Topology.Maps.Proper.Basic
 
 /-!
 # Coarse maps of refinement functors
@@ -120,6 +123,31 @@ theorem isHomeomorph_isomorphismClasses_map (F : C ⥤ D) [F.Full] [F.ReflectsIs
     exact hF' _ (hW.preimage continuous_quotient_mk')
   bijective := ⟨F.isomorphismClasses_map_injective, F.isomorphismClasses_map_surjective⟩
 
+/-- A full, essentially surjective functor reflecting isomorphisms whose object map is
+continuous and open into a groupoid with continuous source and open target induces a homeomorphism
+on isomorphism classes. -/
+theorem isHomeomorph_isomorphismClasses_map_of_isOpenMap [IsGroupoid D]
+    [TopologicalSpace (Quiver.Total D)] (F : C ⥤ D) [F.Full] [F.EssSurj]
+    [F.ReflectsIsomorphisms]
+    (hs : Continuous (Quiver.Total.left : Quiver.Total D → D))
+    (ht : IsOpenMap (Quiver.Total.right : Quiver.Total D → D))
+    (hF : Continuous F.obj) (hF' : IsOpenMap F.obj) :
+    IsHomeomorph (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom) :=
+  -- `IsGroupoid D` is required so `isOpenQuotientMap_isomorphismClassesMk` applies via
+  -- `Groupoid.isIsomorphic_iff_nonempty_hom`.
+  F.isHomeomorph_isomorphismClasses_map hF
+    ((@TauCeti.isOpenQuotientMap_isomorphismClassesMk _ Groupoid.ofIsGroupoid _ _
+      hs ht).isOpenMap.comp hF')
+
+/-- The identity functor induces a proper map (the identity) on isomorphism classes. -/
+theorem isProperMap_isomorphismClasses_map_id :
+    IsProperMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid C)) (isomorphismClasses.map (𝟭 C).toCatHom) := by
+  have hid : (𝟭 C).toCatHom = 𝟙 (Cat.of C) := Cat.ext (by simp)
+  rw [hid, isomorphismClasses.map_id]
+  exact isProperMap_id
+
 /-- A full functor reflecting isomorphisms, for instance a fully faithful functor, with quotient
 object map identifies the spaces of isomorphism classes homeomorphically. For groupoids this is
 the coarse homeomorphism of the refinement. -/
@@ -186,3 +214,19 @@ theorem isomorphismClassesHomeomorph_eq_of_iso (F : C ⥤ D) (G : C ⥤ D)
   exact ConcreteCategory.congr_hom (F.isomorphismClasses_map_eq_of_iso e) q
 
 end CategoryTheory.Functor
+
+open CategoryTheory in
+/-- Composing functors whose induced coarse maps are proper yields a functor with proper
+induced coarse map. -/
+theorem IsProperMap.isomorphismClasses_map_comp {C D E : Type u} [Category.{v} C] [Category.{v} D]
+    [Category.{v} E] [TopologicalSpace C] [TopologicalSpace D] [TopologicalSpace E]
+    {F : C ⥤ D} {G : D ⥤ E}
+    (hF : IsProperMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid D)) (isomorphismClasses.map F.toCatHom))
+    (hG : IsProperMap (X := Quotient (isIsomorphicSetoid D))
+      (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map G.toCatHom)) :
+    IsProperMap (X := Quotient (isIsomorphicSetoid C))
+      (Y := Quotient (isIsomorphicSetoid E)) (isomorphismClasses.map (F ⋙ G).toCatHom) := by
+  have hcomp : (F ⋙ G).toCatHom = F.toCatHom ≫ G.toCatHom := Cat.ext (by simp)
+  rw [hcomp, isomorphismClasses.map_comp]
+  exact hG.comp hF

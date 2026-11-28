@@ -99,6 +99,20 @@ theorem mapIic_symm_apply (p : Submodule R M) (N : Set.Iic p) :
     p.mapIic.symm N = (N : Submodule R M).comap p.subtype :=
   rfl
 
+/-- Coercing an image under `Submodule.submoduleOfEquivOfLe` to the ambient module agrees with
+coercing the input through the larger submodule. -/
+@[simp]
+theorem submoduleOfEquivOfLe_apply_coe {p q : Submodule R M} (h : p ≤ q) (x : p.submoduleOf q) :
+    ((submoduleOfEquivOfLe h x : p) : M) = ((x : q) : M) :=
+  rfl
+
+/-- Coercing an inverse image under `Submodule.submoduleOfEquivOfLe` to the ambient module agrees
+with coercing the input directly. -/
+@[simp]
+theorem submoduleOfEquivOfLe_symm_apply_coe {p q : Submodule R M} (h : p ≤ q) (x : p) :
+    (((submoduleOfEquivOfLe h).symm x : q) : M) = (x : M) :=
+  rfl
+
 section Equiv
 
 variable {τ₁₂ : R →+* R₂} {τ₂₁ : R₂ →+* R} [RingHomInvPair τ₁₂ τ₂₁] [RingHomInvPair τ₂₁ τ₁₂]

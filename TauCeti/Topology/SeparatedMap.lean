@@ -33,6 +33,8 @@ Hausdorff total space, two sections over a preconnected set that are continuous 
 agree at one of its points agree on all of it (`IsSeparatedMap.eqOn_of_leftInvOn`). Two lifts of a
 map injective on a preconnected set, different at one of its points, have disjoint images on it
 (`IsSeparatedMap.disjoint_image_of_eqOn_comp`).
+Without separation, local injectivity still cancels a map on germs of continuous maps agreeing at
+a point (`IsLocallyInjective.eventuallyEq_of_comp`).
 
 ## References
 
@@ -170,5 +172,17 @@ theorem IsSeparatedMap.disjoint_image_of_eqOn_comp {A : Type*} [TopologicalSpace
   -- Both lifts lie over `f b = f c`, so `b = c`, and the lifts agree at `b`, hence everywhere.
   obtain rfl : c = b := hf hc hb (((he₂ hc).symm.trans (congrArg p hcb)).trans (he₁ hb))
   exact hne (sep.eqOn_of_comp_eqOn hinj hS h₁ h₂ (he₁.trans he₂.symm) hb hcb.symm ha)
+
+/-- If `p : E → B` is locally injective and two maps continuous at `a` agree at `a` and have
+eventually equal compositions with `p` near `a`, then they agree on a neighbourhood of `a`. No
+topology on the codomain `B` is needed. -/
+theorem IsLocallyInjective.eventuallyEq_of_comp {A : Type*} [TopologicalSpace A]
+    (hp : IsLocallyInjective p) {g₁ g₂ : A → E} {a : A}
+    (hg₁ : ContinuousAt g₁ a) (hg₂ : ContinuousAt g₂ a)
+    (h0 : g₁ a = g₂ a) (hcomp : ∀ᶠ z in 𝓝 a, p (g₁ z) = p (g₂ z)) : g₁ =ᶠ[𝓝 a] g₂ := by
+  obtain ⟨U, hUo, haU, hUinj⟩ := hp (g₁ a)
+  filter_upwards [hg₁.preimage_mem_nhds (hUo.mem_nhds haU),
+    hg₂.preimage_mem_nhds (hUo.mem_nhds (h0 ▸ haU)), hcomp] with z hz₁ hz₂ hfz
+  exact hUinj hz₁ hz₂ hfz
 
 end IsLocallyInjective
