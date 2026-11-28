@@ -103,6 +103,10 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
 * `ZMod.mul_val_inv_modEq_one` — for `m` coprime to `n`, `(m⁻¹ : ZMod n).val` is an inverse of
   `m` modulo `n`, as a `Nat.ModEq`. Its consumer is the distribution relation for `1 - ζ` in
   `TauCeti/NumberTheory/Cyclotomic/DistributionRelation.lean`.
+* `ZMod.sum_units_val_eq_sum_filter_coprime` — a sum over the units of `ZMod n` of a function of
+  the least nonnegative representative is the sum over the residues `b < n` coprime to `n`. Its
+  consumer is the large sieve over reduced residues in
+  `TauCeti/Analysis/Fourier/LargeSieve/ReducedFractions.lean`.
 -/
 
 public section
@@ -387,3 +391,17 @@ theorem ZMod.unitsMap_eq_of_zpow_of_unitsMap_eq {p m n : ℕ} (hp : 1 < p)
   have hkj : k = (p ^ n).totient * j + 1 := by omega
   rw [hra, map_zpow, hkj, zpow_add_one, zpow_mul, zpow_natCast, ZMod.pow_totient, one_zpow,
     one_mul]
+
+/-- A sum over the units of `ZMod n` of a function of the least nonnegative representative is the
+sum over the natural numbers below `n` that are coprime to `n`. -/
+theorem ZMod.sum_units_val_eq_sum_filter_coprime (n : ℕ) [NeZero n] {M : Type*} [AddCommMonoid M]
+    (f : ℕ → M) :
+    ∑ u : (ZMod n)ˣ, f (u : ZMod n).val = ∑ b ∈ (Finset.range n).filter (·.Coprime n), f b := by
+  refine Finset.sum_nbij (fun u ↦ (u : ZMod n).val) (fun u _ ↦ ?_) (fun u _ v _ huv ↦ ?_)
+    (fun b hb ↦ ?_) fun _ _ ↦ rfl
+  · exact Finset.mem_filter.2 ⟨Finset.mem_range.2 (ZMod.val_lt _), ZMod.val_coe_unit_coprime u⟩
+  · exact Units.ext (ZMod.val_injective n huv)
+  · obtain ⟨hb, hbn⟩ := Finset.mem_filter.1 hb
+    refine ⟨ZMod.unitOfCoprime b hbn, Finset.mem_coe.2 (Finset.mem_univ _), ?_⟩
+    change ((ZMod.unitOfCoprime b hbn : (ZMod n)ˣ) : ZMod n).val = b
+    rw [ZMod.coe_unitOfCoprime, ZMod.val_natCast_of_lt (Finset.mem_range.1 hb)]
