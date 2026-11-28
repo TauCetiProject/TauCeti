@@ -114,17 +114,133 @@ def discBundleFibreCoord :
     (Fin (Module.finrank ℝ F) → ℝ) ≃ₜ EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) :=
   (EuclideanSpace.equiv (Fin (Module.finrank ℝ F)) ℝ).symm.unitBallHomeomorph
 
-private theorem norm_discBundleFibreCoord_le_one_iff {z : Fin (Module.finrank ℝ F) → ℝ} :
+/-- Forward evaluation formula for `TauCeti.discBundleFibreCoord`: it rescales the Euclidean vector
+`WithLp.toLp 2 z` so that its Euclidean norm equals the sup norm `‖z‖`. -/
+theorem discBundleFibreCoord_apply (z : Fin (Module.finrank ℝ F) → ℝ) :
+    discBundleFibreCoord F z =
+      (‖z‖ / ‖(WithLp.toLp 2 z : EuclideanSpace ℝ (Fin (Module.finrank ℝ F)))‖) •
+        WithLp.toLp 2 z := by
+  let L : (Fin (Module.finrank ℝ F) → ℝ) ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) :=
+    (EuclideanSpace.equiv (Fin (Module.finrank ℝ F)) ℝ).symm
+  have hgauge : gauge (L '' closedBall 0 1) (L z) = ‖z‖ := by
+    rw [← div_one ‖z‖, ← gauge_closedBall zero_le_one z, gauge_def', gauge_def']
+    congr 2
+    ext r
+    exact and_congr_right fun _ ↦ by rw [← map_smul, L.injective.mem_set_image]
+  rw [discBundleFibreCoord, ContinuousLinearEquiv.unitBallHomeomorph_apply, gaugeRescale_def,
+    hgauge, gauge_closedBall zero_le_one, div_one]
+  rfl
+
+/-- `TauCeti.discBundleFibreCoord` sends zero to zero. -/
+@[simp]
+theorem discBundleFibreCoord_zero : discBundleFibreCoord F 0 = 0 := by
+  simp [discBundleFibreCoord_apply]
+
+/-- Inverse evaluation formula for `TauCeti.discBundleFibreCoord`: it rescales `w.ofLp` so that its
+sup norm equals the Euclidean norm `‖w‖`. -/
+theorem discBundleFibreCoord_symm_apply (w : EuclideanSpace ℝ (Fin (Module.finrank ℝ F))) :
+    (discBundleFibreCoord F).symm w = (‖w‖ / ‖w.ofLp‖) • w.ofLp := by
+  rw [(discBundleFibreCoord F).symm_apply_eq, discBundleFibreCoord_apply]
+  by_cases hw : w = 0
+  · simp [hw]
+  · have hwn : ‖w‖ ≠ 0 := norm_ne_zero_iff.2 hw
+    have hofn : ‖w.ofLp‖ ≠ 0 := norm_ne_zero_iff.2 (fun h ↦ hw (by ext i; exact congrFun h i))
+    have hc : 0 < ‖w‖ / ‖w.ofLp‖ := div_pos (norm_pos_iff.2 hw) (norm_pos_iff.2
+      (fun h ↦ hw (by ext i; exact congrFun h i)))
+    have hsmul :
+        (WithLp.toLp 2 ((‖w‖ / ‖w.ofLp‖) • w.ofLp) :
+            EuclideanSpace ℝ (Fin (Module.finrank ℝ F))) =
+          (‖w‖ / ‖w.ofLp‖) • w := by
+      ext i
+      simp
+    rw [hsmul, norm_smul, norm_smul, Real.norm_of_nonneg hc.le, smul_smul]
+    have hcoeff :
+        ((‖w‖ / ‖w.ofLp‖) * ‖w.ofLp‖ / ((‖w‖ / ‖w.ofLp‖) * ‖w‖)) * (‖w‖ / ‖w.ofLp‖) = 1 := by
+      field_simp [hwn, hofn]
+    simp [hcoeff]
+
+/-- The inverse of `TauCeti.discBundleFibreCoord` sends zero to zero. -/
+@[simp]
+theorem discBundleFibreCoord_symm_zero : (discBundleFibreCoord F).symm 0 = 0 := by
+  simp [discBundleFibreCoord_symm_apply]
+
+/-- `TauCeti.discBundleFibreCoord` carries the closed unit ball of the sup norm onto the closed
+Euclidean unit ball. -/
+@[simp]
+theorem image_discBundleFibreCoord_closedBall :
+    discBundleFibreCoord F '' closedBall 0 1 = closedBall 0 1 :=
+  ContinuousLinearEquiv.image_unitBallHomeomorph_closedBall _
+
+/-- `TauCeti.discBundleFibreCoord` carries the open unit ball of the sup norm onto the open
+Euclidean unit ball. -/
+@[simp]
+theorem image_discBundleFibreCoord_ball :
+    discBundleFibreCoord F '' ball 0 1 = ball 0 1 :=
+  ContinuousLinearEquiv.image_unitBallHomeomorph_ball _
+
+/-- `TauCeti.discBundleFibreCoord` carries the unit sphere of the sup norm onto the Euclidean unit
+sphere. -/
+@[simp]
+theorem image_discBundleFibreCoord_sphere :
+    discBundleFibreCoord F '' sphere 0 1 = sphere 0 1 :=
+  ContinuousLinearEquiv.image_unitBallHomeomorph_sphere _
+
+/-- Preimage of the closed Euclidean unit ball under `TauCeti.discBundleFibreCoord`. -/
+@[simp]
+theorem preimage_discBundleFibreCoord_closedBall :
+    discBundleFibreCoord F ⁻¹' closedBall 0 1 = closedBall 0 1 := by
+  rw [← image_discBundleFibreCoord_closedBall, Homeomorph.preimage_image]
+
+/-- Preimage of the open Euclidean unit ball under `TauCeti.discBundleFibreCoord`. -/
+@[simp]
+theorem preimage_discBundleFibreCoord_ball :
+    discBundleFibreCoord F ⁻¹' ball 0 1 = ball 0 1 := by
+  rw [← image_discBundleFibreCoord_ball, Homeomorph.preimage_image]
+
+/-- Preimage of the Euclidean unit sphere under `TauCeti.discBundleFibreCoord`. -/
+@[simp]
+theorem preimage_discBundleFibreCoord_sphere :
+    discBundleFibreCoord F ⁻¹' sphere 0 1 = sphere 0 1 := by
+  rw [← image_discBundleFibreCoord_sphere, Homeomorph.preimage_image]
+
+/-- `TauCeti.discBundleFibreCoord` preserves the closed unit ball (`‖z‖ ≤ 1`). -/
+@[simp]
+theorem norm_discBundleFibreCoord_le_one_iff {z : Fin (Module.finrank ℝ F) → ℝ} :
     ‖discBundleFibreCoord F z‖ ≤ 1 ↔ ‖z‖ ≤ 1 :=
   ContinuousLinearEquiv.norm_unitBallHomeomorph_le_one_iff _
 
-private theorem norm_discBundleFibreCoord_lt_one_iff {z : Fin (Module.finrank ℝ F) → ℝ} :
+/-- `TauCeti.discBundleFibreCoord` preserves the open unit ball (`‖z‖ < 1`). -/
+@[simp]
+theorem norm_discBundleFibreCoord_lt_one_iff {z : Fin (Module.finrank ℝ F) → ℝ} :
     ‖discBundleFibreCoord F z‖ < 1 ↔ ‖z‖ < 1 :=
   ContinuousLinearEquiv.norm_unitBallHomeomorph_lt_one_iff _
 
-private theorem norm_discBundleFibreCoord_eq_one_iff {z : Fin (Module.finrank ℝ F) → ℝ} :
+/-- `TauCeti.discBundleFibreCoord` preserves the unit sphere (`‖z‖ = 1`). -/
+@[simp]
+theorem norm_discBundleFibreCoord_eq_one_iff {z : Fin (Module.finrank ℝ F) → ℝ} :
     ‖discBundleFibreCoord F z‖ = 1 ↔ ‖z‖ = 1 :=
   ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff _
+
+/-- The inverse of `TauCeti.discBundleFibreCoord` preserves the closed unit ball (`‖w‖ ≤ 1`). -/
+@[simp]
+theorem norm_discBundleFibreCoord_symm_le_one_iff
+    {w : EuclideanSpace ℝ (Fin (Module.finrank ℝ F))} :
+    ‖(discBundleFibreCoord F).symm w‖ ≤ 1 ↔ ‖w‖ ≤ 1 :=
+  ContinuousLinearEquiv.norm_unitBallHomeomorph_symm_le_one_iff _
+
+/-- The inverse of `TauCeti.discBundleFibreCoord` preserves the open unit ball (`‖w‖ < 1`). -/
+@[simp]
+theorem norm_discBundleFibreCoord_symm_lt_one_iff
+    {w : EuclideanSpace ℝ (Fin (Module.finrank ℝ F))} :
+    ‖(discBundleFibreCoord F).symm w‖ < 1 ↔ ‖w‖ < 1 :=
+  ContinuousLinearEquiv.norm_unitBallHomeomorph_symm_lt_one_iff _
+
+/-- The inverse of `TauCeti.discBundleFibreCoord` preserves the unit sphere (`‖w‖ = 1`). -/
+@[simp]
+theorem norm_discBundleFibreCoord_symm_eq_one_iff
+    {w : EuclideanSpace ℝ (Fin (Module.finrank ℝ F))} :
+    ‖(discBundleFibreCoord F).symm w‖ = 1 ↔ ‖w‖ = 1 :=
+  ContinuousLinearEquiv.norm_unitBallHomeomorph_symm_eq_one_iff _
 
 /-- The splitting of the coordinates of an `n`-cell of the disc bundle into the coordinates of the
 cell of `C` and the fibre coordinates. -/

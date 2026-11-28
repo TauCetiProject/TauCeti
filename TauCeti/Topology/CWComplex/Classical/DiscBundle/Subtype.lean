@@ -171,15 +171,17 @@ def relCWComplexDiscBundleSubtypeRel :
       rintro ⟨n, c⟩ - ⟨n', c'⟩ - hne
       simp only [Function.onFun, coe_discSubtypeMap,
         image_discSubtypeFun F E A _ ball_subset_closedBall]
-      have hdisj := pairwiseDisjoint (C := discBundle F E) (mem_univ _) (mem_univ _)
-        (show (⟨n, (relCWComplexDiscBundleRelCellEquiv F E A n).symm c⟩ :
-            Σ k, cell (discBundle F E) k) ≠
-            ⟨n', (relCWComplexDiscBundleRelCellEquiv F E A n').symm c'⟩ by
-          intro h
-          apply hne
-          obtain ⟨rfl, hc⟩ := Sigma.mk.inj_iff.1 h
-          exact congrArg (Sigma.mk n)
-            ((relCWComplexDiscBundleRelCellEquiv F E A n).symm.injective (eq_of_heq hc)))
+      -- Transport cell inequality from the subtype structure back to `relCWComplexDiscBundleRel`.
+      have hne' :
+          (⟨n, (relCWComplexDiscBundleRelCellEquiv F E A n).symm c⟩ :
+              Σ k, cell (discBundle F E) k) ≠
+            ⟨n', (relCWComplexDiscBundleRelCellEquiv F E A n').symm c'⟩ := by
+        intro h
+        apply hne
+        obtain ⟨rfl, hc⟩ := Sigma.mk.inj_iff.1 h
+        exact congrArg (Sigma.mk n)
+          ((relCWComplexDiscBundleRelCellEquiv F E A n).symm.injective (eq_of_heq hc))
+      have hdisj := pairwiseDisjoint (C := discBundle F E) (mem_univ _) (mem_univ _) hne'
       exact hdisj.preimage _
     disjointBase' := fun n c ↦ by
       rw [coe_discSubtypeMap, image_discSubtypeFun F E A c ball_subset_closedBall,
@@ -208,25 +210,9 @@ def relCWComplexDiscBundleSubtypeRel :
       refine RelCWComplex.closed' (C := discBundle F E) (Subtype.val '' K)
         (Subtype.coe_image_subset (discBundle F E) K) ⟨fun n i ↦ ?_, ?_⟩
       · obtain ⟨c, rfl⟩ := (relCWComplexDiscBundleRelCellEquiv F E A n).symm.surjective i
-        have himg : Subtype.val '' K ∩
-            map n ((relCWComplexDiscBundleRelCellEquiv F E A n).symm c) '' closedBall 0 1 =
-            Subtype.val '' (K ∩ discSubtypeMap F E A c '' closedBall 0 1) := by
-          rw [coe_discSubtypeMap, image_discSubtypeFun F E A c Subset.rfl]
-          ext w
-          simp only [mem_inter_iff, mem_image, mem_preimage]
-          exact ⟨fun ⟨⟨v, hv, hv'⟩, hw⟩ ↦ ⟨v, ⟨hv, hv' ▸ hw⟩, hv'⟩,
-            fun ⟨v, ⟨hv, hw⟩, hv'⟩ ↦ ⟨⟨v, hv, hv'⟩, hv' ▸ hw⟩⟩
-        rw [himg]
+        rw [← image_inter_preimage, ← image_discSubtypeFun F E A c Subset.rfl, ← coe_discSubtypeMap]
         exact hemb.isClosedMap _ (hK.1 n c)
-      · have himg : Subtype.val '' K ∩
-            (sphereBundle F E ∪ discBundle F E ∩ TotalSpace.proj ⁻¹' A) =
-            Subtype.val '' (K ∩ (Subtype.val ⁻¹' sphereBundle F E ∪ discBundleProj F E ⁻¹' A)) := by
-          rw [discSubtypeBase_eq_preimage]
-          ext w
-          simp only [mem_inter_iff, mem_image, mem_preimage]
-          exact ⟨fun ⟨⟨v, hv, hv'⟩, hw⟩ ↦ ⟨v, ⟨hv, hv' ▸ hw⟩, hv'⟩,
-            fun ⟨v, ⟨hv, hw⟩, hv'⟩ ↦ ⟨⟨v, hv, hv'⟩, hv' ▸ hw⟩⟩
-        rw [himg]
+      · rw [← image_inter_preimage, ← discSubtypeBase_eq_preimage]
         exact hemb.isClosedMap _ hK.2
     isClosedBase := by
       rw [discSubtypeBase_eq_preimage]
@@ -265,6 +251,15 @@ theorem isEmpty_cell_relCWComplexDiscBundleSubtypeRel_of_lt {n : ℕ} (hn : n < 
 
 variable {n : ℕ} (c : Σ m : {m : ℕ // m + Module.finrank ℝ F = n}, cell (univ : Set B) m)
 
+/-- The characteristic map of a cell of `relCWComplexDiscBundleSubtypeRel` is `discSubtypeFun`.
+This unfolds the `map` field of `relCWComplexDiscBundleSubtypeRel` and
+`relCWComplexDiscBundleSubtypeRelCellEquiv`, which is `Equiv.refl`. -/
+private theorem coe_map_relCWComplexDiscBundleSubtypeRel :
+    letI := relCWComplexDiscBundleSubtypeRel F E A
+    ⇑(map n ((relCWComplexDiscBundleSubtypeRelCellEquiv F E A n).symm c)) =
+      discSubtypeFun F E A c :=
+  coe_discSubtypeMap F E A c
+
 /-- On the closed unit ball, each characteristic map of `relCWComplexDiscBundleSubtypeRel`
 coerces to the corresponding characteristic map of `TauCeti.relCWComplexDiscBundleRel`. -/
 theorem coe_map_relCWComplexDiscBundleSubtypeRel_of_mem {x : Fin n → ℝ} (hx : x ∈ closedBall 0 1) :
@@ -272,8 +267,7 @@ theorem coe_map_relCWComplexDiscBundleSubtypeRel_of_mem {x : Fin n → ℝ} (hx 
     letI := relCWComplexDiscBundleRel F E A
     (map n ((relCWComplexDiscBundleSubtypeRelCellEquiv F E A n).symm c) x : TotalSpace F E) =
       map n ((relCWComplexDiscBundleRelCellEquiv F E A n).symm c) x := by
-  change (discSubtypeMap F E A c x : TotalSpace F E) = _
-  rw [coe_discSubtypeMap]
+  rw [coe_map_relCWComplexDiscBundleSubtypeRel]
   exact coe_discSubtypeFun_of_mem F E A c hx
 
 /-- Each characteristic map of `relCWComplexDiscBundleSubtypeRel` projects to the characteristic map
@@ -292,9 +286,10 @@ theorem closedCell_relCWComplexDiscBundleSubtypeRel :
     letI := relCWComplexDiscBundleSubtypeRel F E A
     closedCell n ((relCWComplexDiscBundleSubtypeRelCellEquiv F E A n).symm c) =
       discBundleProj F E ⁻¹' closedCell c.1.val c.2 := by
+  let _ := relCWComplexDiscBundleSubtypeRel F E A
   let _ := relCWComplexDiscBundleRel F E A
-  change discSubtypeMap F E A c '' closedBall 0 1 = _
-  rw [coe_discSubtypeMap, image_discSubtypeFun F E A c Subset.rfl, ← closedCell,
+  rw [closedCell, coe_map_relCWComplexDiscBundleSubtypeRel,
+    image_discSubtypeFun F E A c Subset.rfl, ← closedCell,
     closedCell_relCWComplexDiscBundleRel]
   ext v
   simp [discBundleProj_apply]
@@ -307,9 +302,10 @@ theorem openCell_relCWComplexDiscBundleSubtypeRel :
     openCell n ((relCWComplexDiscBundleSubtypeRelCellEquiv F E A n).symm c) =
       {v : discBundle F E | ‖(v : TotalSpace F E).snd‖ < 1} ∩
         discBundleProj F E ⁻¹' openCell c.1.val c.2 := by
+  let _ := relCWComplexDiscBundleSubtypeRel F E A
   let _ := relCWComplexDiscBundleRel F E A
-  change discSubtypeMap F E A c '' ball 0 1 = _
-  rw [coe_discSubtypeMap, image_discSubtypeFun F E A c ball_subset_closedBall, ← openCell,
+  rw [openCell, coe_map_relCWComplexDiscBundleSubtypeRel,
+    image_discSubtypeFun F E A c ball_subset_closedBall, ← openCell,
     openCell_relCWComplexDiscBundleRel]
   ext v
   simp [discBundleProj_apply]
@@ -322,9 +318,10 @@ theorem cellFrontier_relCWComplexDiscBundleSubtypeRel :
     cellFrontier n ((relCWComplexDiscBundleSubtypeRelCellEquiv F E A n).symm c) =
       Subtype.val ⁻¹' sphereBundle F E ∩ discBundleProj F E ⁻¹' closedCell c.1.val c.2 ∪
         discBundleProj F E ⁻¹' cellFrontier c.1.val c.2 := by
+  let _ := relCWComplexDiscBundleSubtypeRel F E A
   let _ := relCWComplexDiscBundleRel F E A
-  change discSubtypeMap F E A c '' sphere 0 1 = _
-  rw [coe_discSubtypeMap, image_discSubtypeFun F E A c sphere_subset_closedBall, ← cellFrontier,
+  rw [cellFrontier, coe_map_relCWComplexDiscBundleSubtypeRel,
+    image_discSubtypeFun F E A c sphere_subset_closedBall, ← cellFrontier,
     cellFrontier_relCWComplexDiscBundleRel]
   ext v
   simp [discBundleProj_apply]
@@ -424,10 +421,6 @@ theorem coe_map_relCWComplexDiscBundleSubtypeSphereBundle_of_mem {x : Fin n → 
   have hcopy := I.map_copy (univ : Set (discBundle F E)) (Subtype.val ⁻¹' sphereBundle F E) rfl
     (subtype_sphereBundle_union_empty F E) n
     ((relCWComplexDiscBundleSubtypeSphereBundleCellEquiv F E n).symm c)
-  change ((@map _ _ _ _ (I.copy (univ : Set (discBundle F E)) (Subtype.val ⁻¹' sphereBundle F E)
-      rfl (subtype_sphereBundle_union_empty F E)) n
-      ((relCWComplexDiscBundleSubtypeSphereBundleCellEquiv F E n).symm c) x :
-      TotalSpace F E)) = _
   refine (congrArg (fun f : PartialEquiv (Fin n → ℝ) (discBundle F E) ↦ (f x : TotalSpace F E))
     hcopy).trans ?_
   rw [relCWComplexDiscBundleSubtypeSphereBundleCellEquiv, Equiv.symm_trans_apply,

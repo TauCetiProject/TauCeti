@@ -173,16 +173,16 @@ theorem radialBundleMap_symm_radialBundleMap (Φ : ∀ b, E₁ b ≃L[ℝ] E₂ 
   · simp [hu]
   · have hu_norm : ‖u‖ ≠ 0 := norm_ne_zero_iff.2 hu
     have hΦu_norm : ‖Φ b u‖ ≠ 0 := norm_ne_zero_iff.2 ((map_ne_zero_iff _ (Φ b).injective).2 hu)
-    have hnorm : ‖(radialBundleMap F₁ F₂ Φ ⟨b, u⟩).snd‖ = ‖u‖ :=
-      norm_radialBundleMap F₁ F₂ Φ ⟨b, u⟩
-    rw [radialBundleMap_mk] at hnorm ⊢
-    dsimp only at hnorm ⊢
-    rw [radialBundleMap_mk]
-    dsimp only
+    have hcoeff :
+        (‖u‖ / ‖(‖u‖ / ‖Φ b u‖) • u‖) * (‖u‖ / ‖Φ b u‖) = 1 := by
+      rw [norm_smul, Real.norm_of_nonneg (by positivity)]
+      field_simp [hu_norm, hΦu_norm]
+    have hnorm : ‖(‖u‖ / ‖Φ b u‖) • Φ b u‖ = ‖u‖ := by
+      rw [norm_smul, Real.norm_of_nonneg (by positivity), div_mul_cancel₀ _ hΦu_norm]
+    simp only [radialBundleMap_mk]
     congr 1
-    rw [hnorm, map_smul, ContinuousLinearEquiv.symm_apply_apply, norm_smul,
-      Real.norm_of_nonneg (by positivity), smul_smul, mul_comm (‖u‖ / ‖Φ b u‖), ← div_div,
-      div_self hu_norm, one_div, inv_mul_cancel₀ (div_ne_zero hu_norm hΦu_norm), one_smul]
+    rw [hnorm, map_smul, ContinuousLinearEquiv.symm_apply_apply, smul_smul]
+    simp [hcoeff]
 
 end Algebraic
 
