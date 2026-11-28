@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Preadditive.Radical.Basic
+public import TauCeti.CategoryTheory.Preadditive.Radical.Functor
 -- Finiteness of the irreducible-morphism space between each pair of objects.
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.Noetherian.Defs
@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Noetherian.Defs
 -- here standing in for them, and the dimension bound only inside proofs.
 import Mathlib.LinearAlgebra.Quotient.Basic
 import Mathlib.LinearAlgebra.Dimension.Constructions
+import TauCeti.CategoryTheory.Linear.FullyFaithful
 
 /-!
 # The space of irreducible morphisms of a linear category
@@ -362,6 +363,52 @@ theorem irreducibleMorphismSpaceCongr_symm (e : X ≅ X') (e' : Y ≅ Y') :
   exact congrArg _ (Subtype.ext (by simp))
 
 end Congr
+
+/-! ### Invariance under linear equivalences -/
+
+section Equivalence
+
+variable {D : Type*} [Category* D] [Preadditive D]
+variable (e : C ≌ D) (k : Type*) [Ring k] [Linear k C] [Linear k D]
+  [e.functor.Additive] [e.functor.Linear k]
+
+/-- A linear equivalence of categories induces a linear equivalence on spaces of irreducible
+morphisms. Its action is induced by mapping the radical morphisms that represent the classes. -/
+noncomputable def _root_.CategoryTheory.Equivalence.irreducibleMorphismSpaceEquiv
+    (X Y : C) :
+    irreducibleMorphismSpace k X Y ≃ₗ[k]
+      irreducibleMorphismSpace k (e.functor.obj X) (e.functor.obj Y) := by
+  let l := e.functor.homLinearEquiv k X Y
+  have hl : (jacobsonRadicalSubmodule k X Y).map l.toLinearMap =
+      jacobsonRadicalSubmodule k (e.functor.obj X) (e.functor.obj Y) := by
+    ext f
+    rw [Submodule.mem_map_equiv, mem_jacobsonRadicalSubmodule, mem_jacobsonRadicalSubmodule,
+      ← e.functor.map_mem_jacobsonRadical_iff]
+    simp only [l, Functor.homLinearEquiv_symm_apply, Functor.map_preimage]
+  refine Submodule.Quotient.equiv _ _ (l.ofSubmodules _ _ hl) ?_
+  ext f
+  rw [Submodule.mem_map_equiv, mem_jacobsonRadicalSqSubmoduleIn,
+    mem_jacobsonRadicalSqSubmoduleIn, ← jacobsonRadicalIdeal_sq_hom,
+    ← jacobsonRadicalIdeal_sq_hom, ← e.jacobsonRadicalIdeal_pow_comap 2,
+    MorphismIdeal.mem_comap_hom]
+  simp only [LinearEquiv.ofSubmodules_symm_apply, l, Functor.homLinearEquiv_symm_apply,
+    Functor.map_preimage]
+
+/-- On a radical morphism class the induced equivalence is given by the functor's morphism map. -/
+@[simp]
+theorem _root_.CategoryTheory.Equivalence.irreducibleMorphismSpaceEquiv_mk
+    {X Y : C} (f : jacobsonRadicalSubmodule k X Y) :
+    e.irreducibleMorphismSpaceEquiv k X Y (irreducibleMorphismMk k X Y f) =
+      irreducibleMorphismMk k (e.functor.obj X) (e.functor.obj Y)
+        ⟨e.functor.map f, mem_jacobsonRadicalSubmodule.mpr
+          ((e.functor.map_mem_jacobsonRadical_iff (f : X ⟶ Y)).mpr
+            (mem_jacobsonRadicalSubmodule.mp f.property))⟩ := by
+  simp only [Equivalence.irreducibleMorphismSpaceEquiv, irreducibleMorphismMk]
+  exact congrArg Submodule.Quotient.mk <|
+    Subtype.ext ((LinearEquiv.ofSubmodules_apply _ _ f).trans
+      (e.functor.homLinearEquiv_apply k (f : X ⟶ Y)))
+
+end Equivalence
 
 /-! ### Finiteness -/
 
