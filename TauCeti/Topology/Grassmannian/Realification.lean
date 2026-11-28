@@ -84,8 +84,8 @@ theorem coe_realify (V : finiteGrassmannian ℂ r N) :
 to the original plane. -/
 @[simp] theorem mem_realify {V : finiteGrassmannian ℂ r N} {x : Fin (2 * N) → ℝ} :
     x ∈ V.realify.val ↔ (complexPiEquivRealPi N).symm x ∈ V.val := by
-  rw [coe_realify, Submodule.mem_map_equiv, Submodule.restrictScalars_mem]
-  rfl
+  simp only [coe_realify, Submodule.mem_map_equiv, ContinuousLinearEquiv.coe_symm_toLinearEquiv,
+    Submodule.restrictScalars_mem]
 
 /-- Realifying a spanning frame spans the underlying real plane. -/
 @[simp] theorem frameSpan_realify (v : finiteFullRankFrame ℂ r N) :
@@ -159,12 +159,17 @@ noncomputable def realifyTautologicalEquiv (V : finiteGrassmannian ℂ r N) :
     (v : Tautological ℂ r N V) :
     (V.realifyTautologicalEquiv v).val =
       WithLp.toLp 2 (complexPiEquivRealPi N (WithLp.ofLp v.val)) := by
+  let u : V.val.restrictScalars ℝ := (tautologicalEquiv ℂ r N V).restrictScalars ℝ v
   simp only [realifyTautologicalEquiv, LinearEquiv.coe_toContinuousLinearEquiv',
     LinearEquiv.trans_apply, tautologicalEquiv_symm_apply]
-  -- The restricted complex submodule has the same vectors as the original submodule.
-  erw [LinearEquiv.trans_apply, LinearEquiv.ofSubmodules_apply, LinearEquiv.restrictScalars_apply,
-    tautologicalEquiv_apply]
-  rfl
+  calc
+    _ = WithLp.toLp 2 (complexPiEquivRealPi N u.val) :=
+      congrArg (WithLp.toLp 2) (LinearEquiv.ofSubmodules_apply
+        (e := (complexPiEquivRealPi N).toLinearEquiv) (coe_realify V).symm u)
+    _ = _ := by
+      -- Restricting scalars keeps the underlying subtype value.
+      have hu : u.val = WithLp.ofLp v.val := tautologicalEquiv_apply ℂ r N V v
+      rw [hu]
 
 /-- The inverse fibre equivalence recombines each pair of adjacent real coordinates. -/
 @[simp] theorem realifyTautologicalEquiv_symm_apply (V : finiteGrassmannian ℂ r N)
