@@ -13,6 +13,7 @@ public import Mathlib.Algebra.Polynomial.Monic
 public import Mathlib.Algebra.Polynomial.Reverse
 import Mathlib.Algebra.Polynomial.Degree.Lemmas
 import TauCeti.Algebra.Ring.Parity
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
@@ -368,6 +369,27 @@ theorem charpoly_eq_sum (x : R) :
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Algebra.TensorProduct.rid_tmul, smul_eq_C_mul, C_mul, C_pow, C_neg, C_1]
   ring
+
+/-- Evaluating the characteristic polynomial at a scalar `s` computes the law at
+`s ⊗ 1 - 1 ⊗ x` over that scalar algebra. -/
+theorem aeval_charpoly {S : Type*} [CommRing S] [Algebra A S] (x : R) (s : S) :
+    aeval s (D.charpoly x) =
+      Algebra.TensorProduct.rid A A S (D.toLaw.toFun S (s ⊗ₜ 1 - 1 ⊗ₜ x)) := by
+  rw [charpoly_def, PolynomialLaw.toFun'_eq_toFun]
+  simp only [Algebra.TensorProduct.coe_rid]
+  change (aeval s).toLinearMap (TensorProduct.rid A A[X] _) = _
+  rw [← LinearMap.rid_rTensor_apply (aeval s).toLinearMap, PolynomialLaw.isCompat_apply]
+  simp only [map_sub, LinearMap.rTensor_tmul, AlgHom.toLinearMap_apply, aeval_X, _root_.map_one]
+
+/-- Over the base ring, evaluating the characteristic polynomial at `s` gives the
+determinant of `s • 1 - x`. -/
+theorem eval_charpoly {R : Type*} [Ring R] [Algebra A R] (D : Determinant A R d) (x : R)
+    (s : A) : (D.charpoly x).eval s = D (algebraMap A R s - x) := by
+  change aeval s (D.charpoly x) = _
+  have hs : s ⊗ₜ[A] (1 : R) = 1 ⊗ₜ[A] algebraMap A R s :=
+    Algebra.TensorProduct.algebraMap_apply' s
+  rw [D.aeval_charpoly, hs, ← tmul_sub, ← PolynomialLaw.one_tmul_ground]
+  simp
 
 /-- The coefficient of `X ^ j` in the characteristic polynomial is `(-1)^(d - j) Λ_(d - j)(x)`
 for `j ≤ d`, and `0` above the dimension. -/
