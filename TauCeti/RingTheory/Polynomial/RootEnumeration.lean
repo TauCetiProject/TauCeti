@@ -45,6 +45,7 @@ including annihilating base change in degree zero.
 ## Main definitions
 
 * `Polynomial.IsRootEnumeration f x`: `x` lists the roots of `f` in `L`, with multiplicity.
+* `Polynomial.rootEnumeration f L ι`: a chosen such listing indexed by `ι`, when one exists.
 
 ## Main results
 
@@ -60,6 +61,10 @@ including annihilating base change in degree zero.
   type whose size is the degree of its image in `L` if and only if it splits in `L`.
 * `Polynomial.Monic.exists_isRootEnumeration`: in particular a monic polynomial has a
   degree-sized enumeration in every algebraically closed field.
+* `Polynomial.isRootEnumeration_rootEnumeration`,
+  `Polynomial.Monic.isRootEnumeration_rootEnumeration`: the chosen family
+  `Polynomial.rootEnumeration f L ι` is a root enumeration whenever one exists, in particular for
+  a monic polynomial of degree `Fintype.card ι` in an algebraically closed field.
 * `Polynomial.IsRootEnumeration.injective_iff_separable_map`: an enumeration in a field `E` with
   as many entries as the degree of the nonzero image of `f` in `E` is injective if and only if
   that image is separable.
@@ -237,6 +242,20 @@ theorem exists_isRootEnumeration_iff_splits
   rw [← Multiset.map_univ_val_equiv e, Multiset.map_map] at h
   exact h.symm
 
+variable (L ι) in
+/-- **A chosen root enumeration.** When `f` has a root enumeration in `L` indexed by `ι`,
+`f.rootEnumeration L ι` is one (`Polynomial.isRootEnumeration_rootEnumeration`); otherwise it is an
+unspecified family. It numbers the roots of `f` once and for all, so that data indexed by `ι` can
+be attached to the roots of `f`. -/
+noncomputable def rootEnumeration (f : R[X]) : ι → L :=
+  Classical.epsilon (IsRootEnumeration f)
+
+/-- If `f` has a root enumeration in `L` indexed by `ι`, then the chosen one is a root
+enumeration. -/
+theorem isRootEnumeration_rootEnumeration (h : ∃ x : ι → L, IsRootEnumeration f x) :
+    IsRootEnumeration f (f.rootEnumeration L ι) :=
+  Classical.epsilon_spec h
+
 namespace IsRootEnumeration
 
 /-- **Vieta's formulas, read through a root enumeration.** If `x` enumerates the roots in `L` of
@@ -269,6 +288,13 @@ elements. -/
 theorem Monic.exists_isRootEnumeration [IsAlgClosed E] (hf : f.Monic)
     (hdeg : f.natDegree = Fintype.card ι) : ∃ y : ι → E, IsRootEnumeration f y :=
   (exists_isRootEnumeration_iff_splits (by rw [hf.natDegree_map, hdeg])).2 (IsAlgClosed.splits _)
+
+/-- In an algebraically closed field `E`, the chosen enumeration `f.rootEnumeration E ι` of the
+roots of a monic polynomial `f` with `f.natDegree` equal to the size of `ι` is a root
+enumeration. -/
+theorem Monic.isRootEnumeration_rootEnumeration [IsAlgClosed E] (hf : f.Monic)
+    (hdeg : f.natDegree = Fintype.card ι) : IsRootEnumeration f (f.rootEnumeration E ι) :=
+  Polynomial.isRootEnumeration_rootEnumeration (hf.exists_isRootEnumeration hdeg)
 
 namespace IsRootEnumeration
 

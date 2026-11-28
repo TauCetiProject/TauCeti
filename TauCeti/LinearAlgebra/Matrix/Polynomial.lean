@@ -37,7 +37,8 @@ Right multiplication by a pencil `A + X B` sends coefficient `d + 1` to the comb
 coefficients `d + 1` and `d` against `A` and `B` (`Matrix.map_coeff_mul_map_C_add_X_smul`).
 
 Evaluating a polynomial in a matrix commutes with applying a ring homomorphism to the coefficients
-and to the entries (`Matrix.aeval_map`), and a rectangular matrix intertwining two square matrices
+and to the entries (`Matrix.aeval_map`), and with conjugate transposition
+(`Matrix.conjTranspose_aeval`), and a rectangular matrix intertwining two square matrices
 intertwines every polynomial in them (`Matrix.aeval_mul_eq_mul_aeval`). A polynomial in a diagonal
 matrix is the diagonal matrix of its values (`Matrix.aeval_diagonal`). Natural matrix identities
 valid at unit parameters extend to all parameters by polynomial specialization
@@ -99,6 +100,16 @@ theorem aeval_mul_eq_mul_aeval {m : Type*} [Fintype m] [DecidableEq m] [CommSemi
   apply toLin'.injective
   rw [toLin'_mul, toLin'_mul, hA, hB, ← aeval_algHom_apply, ← aeval_algHom_apply]
   exact Module.End.aeval_comp_of_comp_eq hAV q
+
+/-- The conjugate transpose of a polynomial `p` evaluated at a square matrix `A` is the polynomial
+with conjugated coefficients evaluated at the conjugate transpose of `A`. -/
+theorem conjTranspose_aeval [CommSemiring R] [StarRing R] (A : Matrix n n R) (p : R[X]) :
+    (aeval A p)ᴴ = aeval Aᴴ (p.map (starRingEnd R)) := by
+  induction p using Polynomial.induction_on' with
+  | add p q hp hq => rw [map_add, conjTranspose_add, hp, hq, Polynomial.map_add, map_add]
+  | monomial k a =>
+    simp only [aeval_monomial, Polynomial.map_monomial, Algebra.algebraMap_eq_smul_one,
+      Matrix.smul_mul, Matrix.one_mul, conjTranspose_smul, conjTranspose_pow, starRingEnd_apply]
 
 /-- A polynomial evaluated at a diagonal matrix is the diagonal matrix of its values at the
 diagonal entries. -/
