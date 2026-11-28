@@ -94,7 +94,7 @@ line `span {x, J x}`.
   complex orientation to a frame calibrated by `ω ^ r / r!`.
 * `TauCeti.AlmostComplexStructure.kahlerPowerForm_compContinuousLinearMap_eq`,
   `TauCeti.AlmostComplexStructure.kahlerPowerForm_comp_linearIsometry`, and
-  `TauCeti.AlmostComplexStructure.kahlerPowerForm_compContinuousLinearMap`:
+  `TauCeti.kahlerPowerForm_comp_linearIsometry`:
   pullback and naturality under complex-linear isometries.
 * `TauCeti.AlmostComplexStructure.sqrt_alternatingFormInner_kahlerPowerForm` and
   `TauCeti.sqrt_alternatingFormInner_kahlerPowerForm`: Hilbert norm `√(n choose r)`.
@@ -677,22 +677,6 @@ theorem exists_basis_orientation_eq_and_isCalibratedFrame_kahlerPowerForm {U : T
       simp [ε]
       omega
   rw [← j.orientation_reindex hB hr (Nat.mul_comm r 2), hb']
-
-/-- **Naturality of the normalized Kähler powers**: a complex-linear isometric equivalence pulls
-the normalized Kähler powers back to the normalized Kähler powers. In particular they are
-invariant under the unitary group of `J`. -/
-theorem kahlerPowerForm_compContinuousLinearMap {V' : Type*} [NormedAddCommGroup V']
-    [InnerProductSpace ℝ V'] [FiniteDimensional ℝ V'] {J' : AlmostComplexStructure V'}
-    {f : V ≃ₗᵢ[ℝ] V'} (hfJ : IsComplexLinearMap J J' f.toLinearMap) (r : ℕ) :
-    (J'.kahlerPowerForm r).compContinuousLinearMap f.toLinearIsometry.toContinuousLinearMap =
-      J.kahlerPowerForm r := by
-  have hω : (alternatingFormEquiv V' 2 J'.kahlerForm).compContinuousLinearMap
-      f.toLinearIsometry.toContinuousLinearMap = alternatingFormEquiv V 2 J.kahlerForm := by
-    rw [← map_kahlerForm_of_isComplexLinearMap hJ hfJ]
-    exact LinearIsometry.alternatingFormEquiv_map f.toLinearIsometry J.kahlerForm
-  ext v
-  simp only [kahlerPowerForm_def, compContinuousLinearMap_apply,
-    ContinuousAlternatingMap.smul_apply, ← hω, ← wedgePow_compContinuousLinearMap]
 
 end Orthogonal
 
