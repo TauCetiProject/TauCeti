@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Parameters
-import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.SparseExponents
-import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.SparsePlaceScales
+import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Sparse.Exponents
+import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Sparse.PlaceScales
 
 /-!
 # Digit boxes at large cyclotomic towers
