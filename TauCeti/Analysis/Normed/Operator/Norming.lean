@@ -103,14 +103,14 @@ the dual unit ball, with any loss `A > 1`. This also covers the zero subspace. -
 theorem Submodule.exists_finset_strongDual_norming (F : Submodule 𝕜 E) [FiniteDimensional 𝕜 F]
     {A : ℝ} (hA : 1 < A) :
     ∃ t : Finset (StrongDual 𝕜 E), (∀ g ∈ t, ‖g‖ ≤ 1) ∧ ∀ x ∈ F, ∃ g ∈ t, ‖x‖ ≤ A * ‖g x‖ := by
-  -- Apply the operator statement to the image of `F` in the bidual.
-  let J := NormedSpace.inclusionInDoubleDual 𝕜 E
-  obtain ⟨t, ht, hnorm⟩ :=
-    (F.map (J : E →ₗ[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E))).exists_finset_norming hA
+  -- Apply the operator statement to the image of `F` under the isometric bidual inclusion.
+  let J := NormedSpace.inclusionInDoubleDualLi (E := E) 𝕜
+  -- `J x` evaluates functionals at `x`; this holds by definition of the bidual inclusion.
+  have hJ (x : E) (g : StrongDual 𝕜 E) : J x g = g x := rfl
+  obtain ⟨t, ht, hnorm⟩ := (F.map J.toLinearMap).exists_finset_norming hA
   refine ⟨t, ht, fun x hx ↦ ?_⟩
   obtain ⟨g, hg, hxg⟩ := hnorm (J x) (Submodule.mem_map_of_mem hx)
-  have hJx : ‖J x‖ = ‖x‖ := (NormedSpace.inclusionInDoubleDualLi 𝕜).norm_map x
-  exact ⟨g, hg, by rwa [hJx, NormedSpace.dual_def] at hxg⟩
+  exact ⟨g, hg, by rwa [J.norm_map, hJ] at hxg⟩
 
 end Finite
 

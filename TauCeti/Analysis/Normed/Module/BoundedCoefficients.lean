@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Group.InfiniteSum
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.RCLike.Basic
+import Mathlib.Topology.Algebra.InfiniteSum.Real
 import TauCeti.Analysis.Normed.Module.RCLike.Basic
 
 /-!
@@ -30,6 +33,17 @@ indexed by `ℕ`, a uniform bound `S` on `±1`-signed combinations along initial
 `Finset.range N` gives the same bounds `t * S` and `2 * t * S` over arbitrary finite sets
 (`TauCeti.norm_sum_ofReal_smul_le_of_forall_range_abs_eq_one` and
 `TauCeti.norm_sum_smul_le_two_mul_of_forall_range_abs_eq_one`).
+
+For a family `x` all of whose finite subsums have norm at most `C`, these estimates hold over
+every finite set, with the following consequences:
+
+* `TauCeti.sum_norm_apply_le_of_forall_norm_sum_le` and
+  `TauCeti.summable_norm_apply_of_forall_norm_sum_le`: every continuous linear functional `f` is
+  absolutely summable along `x`, with absolute sums at most `4 * C * ‖f‖`;
+* `TauCeti.summable_smul_of_forall_norm_sum_le`: in a complete space, `∑ i, a i • x i` converges
+  unconditionally for coefficients `a` tending to zero along the cofinite filter;
+* `TauCeti.norm_tsum_smul_le_of_forall_norm_sum_le`: for coefficients of norm at most `M`, the
+  sum `∑' i, a i • x i` has norm at most `4 * C * M`, also without completeness.
 
 The first estimate peels off the smallest coefficient, which multiplies the full sum; the others
 split coefficients into positive and negative parts, into signs and magnitudes, and into real and
@@ -241,5 +255,68 @@ theorem norm_sum_smul_le_two_mul_of_forall_range_abs_eq_one
     ht ha
 
 end InitialSegments
+
+section FiniteSubsums
+
+open Filter Topology
+
+/-- If every finite subsum of a family `x` has norm at most `C`, then the values of a continuous
+linear functional `f` along `x` have absolute sums at most `4 * C * ‖f‖`. -/
+theorem sum_norm_apply_le_of_forall_norm_sum_le {x : ι → E} {C : ℝ}
+    (hx : ∀ s : Finset ι, ‖∑ i ∈ s, x i‖ ≤ C) (f : StrongDual 𝕜 E) (s : Finset ι) :
+    ∑ i ∈ s, ‖f (x i)‖ ≤ 4 * C * ‖f‖ := by
+  -- Rotate each value `f (x i)` onto the nonnegative real axis.
+  choose c hc hfc using fun i ↦ RCLike.exists_norm_eq_mul_self (f (x i))
+  calc ∑ i ∈ s, ‖f (x i)‖ = RCLike.re (f (∑ i ∈ s, c i • x i)) := by
+        simp only [map_sum, map_smul, smul_eq_mul, ← hfc, RCLike.ofReal_re]
+    _ ≤ ‖f (∑ i ∈ s, c i • x i)‖ := RCLike.re_le_norm _
+    _ ≤ ‖f‖ * ‖∑ i ∈ s, c i • x i‖ := f.le_opNorm _
+    _ ≤ ‖f‖ * (4 * 1 * C) := by
+        gcongr
+        exact norm_sum_smul_le_four_mul (fun u _ ↦ hx u) zero_le_one fun i _ ↦ (hc i).le
+    _ = 4 * C * ‖f‖ := by ring
+
+/-- A family with uniformly bounded finite subsums is absolutely summable against every continuous
+linear functional. -/
+theorem summable_norm_apply_of_forall_norm_sum_le {x : ι → E} {C : ℝ}
+    (hx : ∀ s : Finset ι, ‖∑ i ∈ s, x i‖ ≤ C) (f : StrongDual 𝕜 E) :
+    Summable fun i ↦ ‖f (x i)‖ :=
+  summable_of_sum_le (fun _ ↦ norm_nonneg _) (sum_norm_apply_le_of_forall_norm_sum_le hx f)
+
+/-- If the finite subsums of `x` are bounded, then the series `∑ i, a i • x i` with coefficients
+tending to zero along the cofinite filter converges unconditionally in a complete space. -/
+theorem summable_smul_of_forall_norm_sum_le [CompleteSpace E] {x : ι → E} {C : ℝ}
+    (hx : ∀ s : Finset ι, ‖∑ i ∈ s, x i‖ ≤ C) {a : ι → 𝕜} (ha : Tendsto a cofinite (𝓝 0)) :
+    Summable fun i ↦ a i • x i := by
+  classical
+  have hC : 0 ≤ C := by simpa using hx ∅
+  refine summable_iff_vanishing_norm.2 fun δ hδ ↦ ?_
+  -- Only finitely many coefficients exceed `η`; the remaining terms have small sums.
+  set η := δ / (4 * C + 1) with hη
+  have hη0 : 0 < η := by positivity
+  have hfin : {i | ¬‖a i‖ ≤ η}.Finite := eventually_cofinite.1 <|
+    (tendsto_zero_iff_norm_tendsto_zero.1 ha).eventually (eventually_le_nhds hη0)
+  refine ⟨hfin.toFinset, fun t ht ↦ ?_⟩
+  have hat (i : ι) (hi : i ∈ t) : ‖a i‖ ≤ η :=
+    not_not.1 fun h ↦ Finset.disjoint_left.1 ht hi (hfin.mem_toFinset.2 h)
+  calc ‖∑ i ∈ t, a i • x i‖ ≤ 4 * η * C := norm_sum_smul_le_four_mul (fun u _ ↦ hx u) hη0.le hat
+    _ = δ * (4 * C / (4 * C + 1)) := by rw [hη]; field_simp
+    _ < δ * 1 := by gcongr; exact (div_lt_one (by positivity)).2 (lt_add_one _)
+    _ = δ := mul_one δ
+
+/-- If the finite subsums of `x` have norm at most `C` and the coefficients `a i` have norm at most
+`M`, then `‖∑' i, a i • x i‖ ≤ 4 * C * M`. No completeness is needed, since a series that does not
+converge has sum zero. -/
+theorem norm_tsum_smul_le_of_forall_norm_sum_le {x : ι → E} {C M : ℝ}
+    (hx : ∀ s : Finset ι, ‖∑ i ∈ s, x i‖ ≤ C) {a : ι → 𝕜} (hM : 0 ≤ M) (ha : ∀ i, ‖a i‖ ≤ M) :
+    ‖∑' i, a i • x i‖ ≤ 4 * C * M := by
+  by_cases hs : Summable fun i ↦ a i • x i
+  · exact le_of_tendsto' hs.hasSum.norm fun s ↦
+      (norm_sum_smul_le_four_mul (fun u _ ↦ hx u) hM fun i _ ↦ ha i).trans_eq (by ring)
+  · have hC : 0 ≤ C := by simpa using hx ∅
+    rw [tsum_eq_zero_of_not_summable hs, norm_zero]
+    positivity
+
+end FiniteSubsums
 
 end TauCeti

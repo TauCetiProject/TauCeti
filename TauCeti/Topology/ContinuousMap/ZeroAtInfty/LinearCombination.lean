@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Lp.lpSpace
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import TauCeti.Analysis.Normed.Operator.RingOpNorm.Banach
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
+import TauCeti.Analysis.Normed.Module.BoundedCoefficients
 
 /-!
 # The universal property of the model space `C₀(I, R)`
@@ -38,10 +40,28 @@ norm identity is stated for Mathlib's operator norm (`opNorm_linearCombination`)
 This is the basic way to construct continuous linear maps out of the model spaces `C₀(I, R)` of
 nonarchimedean functional analysis, for instance from bounded lifts of the coordinate vectors.
 
+Both the ultrametric map and its real or complex counterpart below are instances of
+`ZeroAtInftyContinuousMap.linearCombinationOfSummable`, the map `a ↦ ∑' i, a i • e i` for any
+family `e` whose series converge with sums bounded by a constant times `‖a‖`; its application,
+expansion and coordinate lemmas serve both regimes.
+
+Over `ℝ` or `ℂ` the terms tending to zero no longer suffice for convergence. Instead, a family `v`
+in a Banach space whose finite subsums `∑ i ∈ s, v i` are uniformly bounded, by `C` say, gives the
+bounded operator `ZeroAtInftyContinuousMap.linearCombinationOfBddSums 𝕜 v hv : C₀(I, 𝕜) →L[𝕜] X`,
+`a ↦ ∑' i, a i • v i`, of operator norm at most `4 * C`
+(`ZeroAtInftyContinuousMap.opNorm_linearCombinationOfBddSums_le`). The bounded-coefficient
+estimates behind it are `TauCeti.summable_smul_of_forall_norm_sum_le` and
+`TauCeti.norm_tsum_smul_le_of_forall_norm_sum_le`.
+
 ## Main definitions
 
+* `ZeroAtInftyContinuousMap.linearCombinationOfSummable`: the continuous linear map
+  `a ↦ ∑' i, a i • e i` for a family `e` whose series converge with linearly bounded sums.
 * `ZeroAtInftyContinuousMap.linearCombination`: the continuous linear map `C₀(I, R) →L[R] M`
   attached to a bounded family in `M`.
+* `ZeroAtInftyContinuousMap.linearCombinationOfBddSums`: the bounded operator
+  `C₀(I, 𝕜) →L[𝕜] X` attached to a family with bounded finite subsums in a real or complex Banach
+  space.
 * `ZeroAtInftyContinuousMap.linearCombinationEquiv`: over a commutative ring with a multiplicative
   pseudo-uniformiser, bounded families correspond isometrically to continuous linear maps.
 
@@ -93,6 +113,49 @@ theorem norm_tsum_smul_le [IsUltrametricDist M] (a : C₀(I, R)) (e : lp (fun _ 
       gcongr
       exacts [lp.norm_apply_le_norm ENNReal.top_ne_zero e i, norm_coe_le_norm a i]
 
+variable (R) in
+/-- The continuous linear map `C₀(I, R) →L[R] M` sending `a` to `∑' i, a i • e i`, for a family
+`e` such that each of these series converges and their sums are bounded by a constant times
+`‖a‖`. The ultrametric `linearCombination` and the real or complex `linearCombinationOfBddSums`
+are both built from it. -/
+noncomputable def linearCombinationOfSummable (e : I → M)
+    (he : ∀ a : C₀(I, R), Summable fun i ↦ a i • e i)
+    (hC : ∃ C, ∀ a : C₀(I, R), ‖∑' i, a i • e i‖ ≤ C * ‖a‖) : C₀(I, R) →L[R] M :=
+  LinearMap.mkContinuousOfExistsBound
+    { toFun a := ∑' i, a i • e i
+      map_add' a b := by
+        simp only [FunLike.coe_add, Pi.add_apply, add_smul]
+        exact (he a).tsum_add (he b)
+      map_smul' c a := by
+        simp only [FunLike.coe_smul, Pi.smul_apply, smul_eq_mul, mul_smul, RingHom.id_apply]
+        exact (he a).tsum_const_smul c }
+    hC
+
+section OfSummable
+
+variable {e : I → M} (he : ∀ a : C₀(I, R), Summable fun i ↦ a i • e i)
+  (hC : ∃ C, ∀ a : C₀(I, R), ‖∑' i, a i • e i‖ ≤ C * ‖a‖)
+
+/-- The value of `linearCombinationOfSummable` is the sum `∑' i, a i • e i`. -/
+theorem linearCombinationOfSummable_apply (a : C₀(I, R)) :
+    linearCombinationOfSummable R e he hC a = ∑' i, a i • e i :=
+  (rfl)
+
+/-- The series `∑ i, a i • e i` converges unconditionally to `linearCombinationOfSummable` at
+`a`. -/
+theorem hasSum_linearCombinationOfSummable (a : C₀(I, R)) :
+    HasSum (fun i ↦ a i • e i) (linearCombinationOfSummable R e he hC a) :=
+  (he a).hasSum
+
+/-- `linearCombinationOfSummable` sends the coordinate vector `single i r` to `r • e i`. -/
+@[simp]
+theorem linearCombinationOfSummable_single [DiscreteTopology I] [DecidableEq I] (i : I) (r : R) :
+    linearCombinationOfSummable R e he hC (single i r) = r • e i := by
+  rw [linearCombinationOfSummable_apply, tsum_eq_single i fun j hj ↦ by simp [single_eq_of_ne hj],
+    single_eq_same]
+
+end OfSummable
+
 variable [DiscreteTopology I]
 
 /-- On a discrete index, the terms `a i • e i` of a family `a` vanishing at infinity against a
@@ -117,15 +180,8 @@ variable (R) in
 continuous linear map `C₀(I, R) →L[R] M` sending `a` to the unconditional sum `∑' i, a i • e i`.
 It sends the coordinate vector `single i 1` to `e i`. -/
 noncomputable def linearCombination (e : lp (fun _ : I ↦ M) ∞) : C₀(I, R) →L[R] M :=
-  LinearMap.mkContinuous
-    { toFun a := ∑' i, a i • e i
-      map_add' a b := by
-        simp only [FunLike.coe_add, Pi.add_apply, add_smul]
-        exact (summable_smul a e).tsum_add (summable_smul b e)
-      map_smul' c a := by
-        simp only [FunLike.coe_smul, Pi.smul_apply, smul_eq_mul, mul_smul, RingHom.id_apply]
-        exact (summable_smul a e).tsum_const_smul c }
-    ‖e‖ fun a ↦ a.norm_tsum_smul_le e
+  linearCombinationOfSummable R (fun i ↦ e i) (summable_smul · e)
+    ⟨‖e‖, fun a ↦ a.norm_tsum_smul_le e⟩
 
 /-- The value of the linear combination map is the sum `∑' i, a i • e i`. -/
 theorem linearCombination_apply (e : lp (fun _ : I ↦ M) ∞) (a : C₀(I, R)) :
@@ -141,9 +197,8 @@ theorem hasSum_linearCombination (e : lp (fun _ : I ↦ M) ∞) (a : C₀(I, R))
 /-- The linear combination map sends the coordinate vector `single i r` to `r • e i`. -/
 @[simp]
 theorem linearCombination_single [DecidableEq I] (e : lp (fun _ : I ↦ M) ∞) (i : I) (r : R) :
-    linearCombination R e (single i r) = r • e i := by
-  rw [linearCombination_apply, tsum_eq_single i fun j hj ↦ by simp [single_eq_of_ne hj],
-    single_eq_same]
+    linearCombination R e (single i r) = r • e i :=
+  linearCombinationOfSummable_single _ _ i r
 
 /-- The linear combination map of a bounded family is the unique continuous linear map
 sending each unit coordinate vector `single i 1` to `e i`. -/
@@ -303,5 +358,56 @@ theorem linearCombinationEquiv_symm_apply (u : C₀(I, R) →L[R] M) (i : I) :
   (rfl)
 
 end CommRing
+
+section BoundedSubsums
+
+variable {𝕜 X : Type*} [RCLike 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X] [CompleteSpace X]
+  [DiscreteTopology I]
+
+variable (𝕜) in
+/-- The **linear combination map** of a family `v` with bounded finite subsums in a real or complex
+Banach space: the bounded operator `C₀(I, 𝕜) →L[𝕜] X` sending `a` to `∑' i, a i • v i`. It is the
+real or complex counterpart of the ultrametric `linearCombination`, on whose construction and API
+it is modelled; both are instances of `linearCombinationOfSummable`. -/
+noncomputable def linearCombinationOfBddSums (v : I → X)
+    (hv : ∃ C, ∀ s : Finset I, ‖∑ i ∈ s, v i‖ ≤ C) : C₀(I, 𝕜) →L[𝕜] X :=
+  linearCombinationOfSummable 𝕜 v
+    (fun a ↦ TauCeti.summable_smul_of_forall_norm_sum_le hv.choose_spec a.tendsto_cofinite)
+    ⟨4 * hv.choose, fun a ↦ TauCeti.norm_tsum_smul_le_of_forall_norm_sum_le hv.choose_spec
+      (norm_nonneg a) (norm_coe_le_norm a)⟩
+
+variable {v : I → X} (hv : ∃ C, ∀ s : Finset I, ‖∑ i ∈ s, v i‖ ≤ C)
+
+/-- The linear combination map at `a` is the sum `∑' i, a i • v i`. -/
+theorem linearCombinationOfBddSums_apply (a : C₀(I, 𝕜)) :
+    linearCombinationOfBddSums 𝕜 v hv a = ∑' i, a i • v i :=
+  (rfl)
+
+/-- The series `∑ i, a i • v i` converges unconditionally to the linear combination map at `a`. -/
+theorem hasSum_linearCombinationOfBddSums (a : C₀(I, 𝕜)) :
+    HasSum (fun i ↦ a i • v i) (linearCombinationOfBddSums 𝕜 v hv a) :=
+  hasSum_linearCombinationOfSummable _ _ a
+
+/-- The linear combination map sends the coordinate vector `single i r` to `r • v i`. -/
+@[simp]
+theorem linearCombinationOfBddSums_single [DecidableEq I] (i : I) (r : 𝕜) :
+    linearCombinationOfBddSums 𝕜 v hv (single i r) = r • v i :=
+  linearCombinationOfSummable_single _ _ i r
+
+/-- The linear combination map of a family with bounded finite subsums is the unique continuous
+linear map sending each unit coordinate vector `single i 1` to `v i`. -/
+theorem eq_linearCombinationOfBddSums_iff [DecidableEq I] {u : C₀(I, 𝕜) →L[𝕜] X} :
+    u = linearCombinationOfBddSums 𝕜 v hv ↔ ∀ i, u (single i 1) = v i :=
+  ⟨by rintro rfl i; simp, fun h ↦ continuousLinearMap_ext_single_one fun i ↦ by simp [h]⟩
+
+/-- The linear combination map has operator norm at most `4 * C` when the finite subsums of `v`
+have norm at most `C`. -/
+theorem opNorm_linearCombinationOfBddSums_le {C : ℝ} (hC : ∀ s : Finset I, ‖∑ i ∈ s, v i‖ ≤ C) :
+    ‖linearCombinationOfBddSums 𝕜 v hv‖ ≤ 4 * C := by
+  have hC0 : 0 ≤ C := by simpa using hC ∅
+  exact ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun a ↦
+    TauCeti.norm_tsum_smul_le_of_forall_norm_sum_le hC (norm_nonneg a) (norm_coe_le_norm a)
+
+end BoundedSubsums
 
 end ZeroAtInftyContinuousMap

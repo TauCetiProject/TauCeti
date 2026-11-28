@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Analysis.RCLike.Basic
+import TauCeti.Algebra.Order.Field.RatioMonotone
 import TauCeti.Analysis.Normed.Operator.Norming
 
 /-!
@@ -23,14 +24,16 @@ finite combinations are dominated by the whole combination,
 with norms bounded below by any `ε` with `ε ≤ ‖u k‖` for infinitely many `k`.
 
 The selection rests on **Mazur's lemma** (`TauCeti.exists_ge_norm_le_mul_norm_add_smul`): for a
-finite-dimensional subspace `F` and a loss `B > 1`, every late enough term `u k` of norm at least
-`ε` satisfies `‖y‖ ≤ B * ‖y + c • u k‖` for all `y ∈ F` and scalars `c`. Indeed `F` is normed, up
-to a small loss, by finitely many functionals, and these are almost zero at late terms. Choosing
-the losses `Bⱼ = bⱼ / bⱼ₊₁` with `bⱼ = 1 + (1 / 2) ^ j` makes `‖∑ i ∈ range n, a i • v i‖ / bₙ`
-increasing in `n`, which gives the constant `b₀ / 1 = 2`.
+finite-dimensional subspace `F`, a loss `B > 1` and any cutoff `N`, there is a term `u k` with
+`k ≥ N` and norm at least `ε` such that `‖y‖ ≤ B * ‖y + c • u k‖` for all `y ∈ F` and scalars `c`.
+Indeed `F` is normed, up to a small loss, by finitely many functionals, and these are almost zero
+at late terms. Choosing the losses `Bⱼ = bⱼ / bⱼ₊₁` with `bⱼ = 1 + (1 / 2) ^ j` makes
+`‖∑ i ∈ range n, a i • v i‖ / bₙ` increasing in `n`
+(`TauCeti.le_div_mul_of_forall_le_div_mul_succ`), which gives the constant `b₀ / 1 = 2`.
 
-Such subsequences are the source of copies of `c₀` and `ℓ¹` in Banach spaces, through the
-Bessaga–Pełczyński selection principle.
+If moreover the finite subsums of the selected subsequence are uniformly bounded, its closed
+linear span is isomorphic to `c₀`; this is the Bessaga–Pełczyński argument of
+`TauCeti.summable_of_forall_not_antilipschitzWith`.
 
 ## References
 
@@ -93,27 +96,6 @@ theorem exists_ge_norm_le_mul_norm_add_smul {u : ℕ → X}
     rw [div_mul_eq_mul_div, div_le_iff₀ hB0] at key
     nlinarith
 
-/-- If `w n ≤ bₙ / bₙ₊₁ * w (n + 1)` for the weights `bₙ = 1 + (1 / 2) ^ n`, which decrease from
-`2` to `1`, then `w n / bₙ` increases, so `w m ≤ 2 * w n` for `m ≤ n`. -/
-private theorem le_two_mul_of_forall_le_mul {w : ℕ → ℝ} (hw0 : ∀ n, 0 ≤ w n)
-    (hw : ∀ n, w n ≤ (1 + (1 / 2 : ℝ) ^ n) / (1 + (1 / 2) ^ (n + 1)) * w (n + 1)) {m n : ℕ}
-    (hmn : m ≤ n) : w m ≤ 2 * w n := by
-  set b : ℕ → ℝ := fun j ↦ 1 + (1 / 2 : ℝ) ^ j
-  have hb1 (j : ℕ) : 1 ≤ b j := le_add_of_nonneg_right (by positivity)
-  have hb2 (j : ℕ) : b j ≤ 2 := by
-    have : (1 / 2 : ℝ) ^ j ≤ 1 := pow_le_one₀ (by norm_num) (by norm_num)
-    simp only [b]
-    linarith
-  have hb0 (j : ℕ) : 0 < b j := zero_lt_one.trans_le (hb1 j)
-  have hmono : Monotone fun n ↦ w n / b n := monotone_nat_of_le_succ fun n ↦ by
-    have h := hw n
-    rw [div_mul_eq_mul_div, le_div_iff₀ (hb0 _)] at h
-    rw [div_le_div_iff₀ (hb0 _) (hb0 _)]
-    linarith
-  have h := hmono hmn
-  simp only [div_le_div_iff₀ (hb0 _) (hb0 _)] at h
-  nlinarith [hw0 m, hw0 n, hb1 n, hb2 m]
-
 /-- **Basic subsequences of weakly null sequences.** A weakly null sequence `u` with `ε ≤ ‖u k‖`
 for infinitely many `k` has a subsequence `u ∘ φ`, all of whose terms have norm at least `ε`,
 which is a basic sequence with basis constant at most `2`: for all scalars `a` and `m ≤ n`,
@@ -150,15 +132,23 @@ theorem exists_strictMono_norm_sum_range_le_two_mul {u : ℕ → X}
     have := hge (j + 1) (q (j + 1)).1 (q (j + 1)).2
     rw [hq] at this
     exact this
-  refine ⟨φ, hφ, fun j ↦ hnorm _ _ _, fun a m n hmn ↦
-    le_two_mul_of_forall_le_mul (w := fun n ↦ ‖∑ i ∈ range n, a i • u (φ i)‖)
-      (fun _ ↦ norm_nonneg _) (fun n ↦ ?_) hmn⟩
+  refine ⟨φ, hφ, fun j ↦ hnorm _ _ _, fun a m n hmn ↦ ?_⟩
   -- Each partial sum lies in the span of the terms chosen before the next one.
-  have hmem : ∑ i ∈ range n, a i • u (φ i) ∈ Submodule.span 𝕜 (u '' ((q n).1 : Set ℕ)) := by
-    refine Submodule.sum_mem _ fun i hi ↦ Submodule.smul_mem _ _ (Submodule.subset_span ?_)
-    rw [hq₁]
-    exact ⟨φ i, by simpa using mem_image_of_mem φ hi, rfl⟩
-  rw [sum_range_succ]
-  exact hnext n (q n).1 (q n).2 _ hmem (a n)
+  have hw (n : ℕ) : ‖∑ i ∈ range n, a i • u (φ i)‖ ≤
+      b n / b (n + 1) * ‖∑ i ∈ range (n + 1), a i • u (φ i)‖ := by
+    have hmem : ∑ i ∈ range n, a i • u (φ i) ∈ Submodule.span 𝕜 (u '' ((q n).1 : Set ℕ)) := by
+      refine Submodule.sum_mem _ fun i hi ↦ Submodule.smul_mem _ _ (Submodule.subset_span ?_)
+      rw [hq₁]
+      exact ⟨φ i, by simpa using mem_image_of_mem φ hi, rfl⟩
+    rw [sum_range_succ]
+    exact hnext n (q n).1 (q n).2 _ hmem (a n)
+  -- The weights lie between `1` and `2`, so the accumulated loss is at most `2`.
+  have hb1 (j : ℕ) : 1 ≤ b j := le_add_of_nonneg_right (by positivity)
+  have hb2 : b m ≤ 2 * b n := by
+    have : (1 / 2 : ℝ) ^ m ≤ 1 := pow_le_one₀ (by norm_num) (by norm_num)
+    linarith [hb1 n]
+  refine (le_div_mul_of_forall_le_div_mul_succ (fun j ↦ by positivity) hw hmn).trans ?_
+  gcongr
+  exact (div_le_iff₀ (zero_lt_one.trans_le (hb1 n))).2 hb2
 
 end TauCeti
