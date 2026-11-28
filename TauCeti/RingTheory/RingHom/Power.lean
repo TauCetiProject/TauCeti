@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 public import Mathlib.RingTheory.Spectrum.Prime.RingHom
-import TauCeti.RingTheory.FiniteType.AlgHom
 
 /-!
 # Ring homomorphisms followed by a power map
@@ -62,6 +61,9 @@ variable {R A B : Type*} [CommRing R] [CommRing A] [CommRing B] [Algebra R A] [A
 finite morphism. No field or characteristic hypothesis is needed. -/
 theorem finite_of_comp_eq_pow [Algebra.FiniteType R B] (f : A →ₐ[R] B) {g : B → A}
     {n : ℕ} (hn : 0 < n) (hfg : ∀ x, f (g x) = x ^ n) : f.Finite := by
-  exact (f.toRingHom.isIntegral_of_comp_eq_pow hn hfg).to_finite f.finiteType
+  apply (f.toRingHom.isIntegral_of_comp_eq_pow hn hfg).to_finite
+  apply RingHom.FiniteType.of_comp_finiteType (f := algebraMap R A)
+  simpa only [AlgHom.toRingHom_eq_coe, AlgHom.comp_algebraMap,
+    RingHom.finiteType_algebraMap] using (inferInstance : Algebra.FiniteType R B)
 
 end AlgHom

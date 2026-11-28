@@ -12,7 +12,6 @@ public import TauCeti.RingTheory.MvPolynomial.Jacobian.Basic
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 import Mathlib.RingTheory.FiniteStability
 import Mathlib.RingTheory.Spectrum.Prime.Chevalley
-import TauCeti.RingTheory.FiniteType.AlgHom
 import TauCeti.RingTheory.FiniteType.FaithfullyFlatPoints
 import TauCeti.RingTheory.Spectrum.Prime.Topology
 import TauCeti.Topology.Constructible.Basic
@@ -131,7 +130,9 @@ theorem exists_ne_zero_setOf_eval_ne_zero_subset_range [Finite σ] [Finite ι]
     ∃ g : MvPolynomial ι K, g ≠ 0 ∧
       {y | eval y g ≠ 0} ⊆ Set.range fun x i ↦ eval x (p i) := by
   set f : MvPolynomial ι K →ₐ[K] MvPolynomial σ K := aeval p
-  have hft : f.FiniteType := f.finiteType
+  have hft : f.FiniteType :=
+    RingHom.FiniteType.of_comp_finiteType (f := algebraMap K _) (g := f.toRingHom)
+      (f.comp_algebraMap.symm ▸ RingHom.finiteType_algebraMap.mpr inferInstance)
   -- Chevalley: the spectral image is constructible; it is dense, so it has dense interior
   have hU := (PrimeSpectrum.isConstructible_range_comap
     (RingHom.FinitePresentation.of_finiteType.mp hft)).dense_interior

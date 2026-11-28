@@ -12,7 +12,6 @@ public import TauCeti.RingTheory.FiniteType.FaithfullyFlatPoints
 public import TauCeti.Topology.Constructible.Basic
 public import Mathlib.RingTheory.Spectrum.Prime.Chevalley
 import Mathlib.RingTheory.FiniteStability
-import TauCeti.RingTheory.FiniteType.AlgHom
 import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
@@ -51,7 +50,11 @@ field is surjective on rational points, without a flatness or reducedness hypoth
 theorem mapPointsFunctor_app_surjective_of_dominant (f : H ⟶ K)
     (hf : DenseRange (PrimeSpectrum.comap f.hom.toAlgHom.toRingHom)) :
     Function.Surjective ((CommHopfAlgCat.Hom.mapPointsFunctor f).app (CommAlgCat.of k k)) := by
-  have hft : f.hom.toAlgHom.FiniteType := f.hom.toAlgHom.finiteType
+  have hft : f.hom.toAlgHom.FiniteType := by
+    exact RingHom.FiniteType.of_comp_finiteType (f := algebraMap k H)
+      (g := f.hom.toAlgHom.toRingHom)
+      (f.hom.toAlgHom.comp_algebraMap.symm ▸ RingHom.finiteType_algebraMap.mpr
+        (inferInstance : Algebra.FiniteType k K))
   let : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
   have hfp := RingHom.FinitePresentation.of_finiteType.mp hft
   have hU := (PrimeSpectrum.isConstructible_range_comap hfp).dense_interior hf

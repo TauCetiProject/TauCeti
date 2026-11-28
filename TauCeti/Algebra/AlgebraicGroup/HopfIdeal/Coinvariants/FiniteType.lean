@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.FiniteType
-import TauCeti.RingTheory.FiniteType.AlgHom
 
 /-!
 # Finite generation of normal coinvariants
@@ -67,7 +66,10 @@ theorem finitePresentation_coinvariantsι (hI : I.IsNormal) :
   let : IsNoetherianRing (coinvariants hI) :=
     Algebra.FiniteType.isNoetherianRing k (coinvariants hI)
   apply RingHom.FinitePresentation.of_finiteType.mp
-  exact (coinvariantsι hI).hom.toAlgHom.finiteType
+  exact RingHom.FiniteType.of_comp_finiteType (f := algebraMap k (coinvariants hI))
+    (g := (coinvariantsι hI).hom.toAlgHom.toRingHom)
+    ((coinvariantsι hI).hom.toAlgHom.comp_algebraMap.symm ▸
+      RingHom.finiteType_algebraMap.mpr (inferInstance : Algebra.FiniteType k H))
 
 end CommHopfAlgCat
 
