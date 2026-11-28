@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.CMField.AdeleStar
+public import TauCeti.NumberTheory.NumberField.CMField.FinitePlace
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 
 /-!
@@ -29,7 +29,6 @@ is an involution and moves the residue of every integer `y` with `y - conj y ∉
 public section
 
 open IsDedekindDomain NumberField NumberField.IsCMField
-open scoped NumberField.AdeleRing
 
 namespace IsDedekindDomain.HeightOneSpectrum
 

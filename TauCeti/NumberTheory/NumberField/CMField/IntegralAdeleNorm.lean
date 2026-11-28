@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.NumberField.CMField.AdeleStar
 public import TauCeti.NumberTheory.NumberField.CMField.ConjCompletion
 import TauCeti.NumberTheory.NumberField.CMField.ResidueField
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
