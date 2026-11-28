@@ -19,7 +19,7 @@ import Mathlib.RingTheory.Regular.Category
 import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.Algebra.Module.Projective.Quotient
 import TauCeti.RingTheory.Flat.NonZeroDivisors
-import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.QuotSMulTop.Basic
 
 /-!
 # Projective dimension along the quotient by a nonzerodivisor

@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicTopology.Cellular.RealProjective.Homology
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 import TauCeti.AlgebraicTopology.Cohomology.Cup.SquareModTwo
-import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.QuotSMulTop.Basic
 
 /-!
 # The singular cohomology of real projective space

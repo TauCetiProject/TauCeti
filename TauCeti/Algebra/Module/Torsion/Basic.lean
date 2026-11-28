@@ -436,6 +436,14 @@ theorem IsSMulRegular.torsion'_powers_eq_bot {R M : Type*} [CommSemiring R] [Add
   rintro x ⟨⟨_, k, rfl⟩, hk⟩
   exact ha.pow k (by simpa [Submonoid.smul_def] using hk)
 
+/-- The torsion submodule for a fixed scalar is stable under a semilinear endomorphism. -/
+theorem LinearMap.mapsTo_torsionBy_of_fixed {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {σ : R →+* R} (f : M →ₛₗ[σ] M) {a : R} (ha : σ a = a) :
+    Set.MapsTo f (Submodule.torsionBy R M a) (Submodule.torsionBy R M a) := by
+  intro x hx
+  exact (Submodule.mem_torsionBy_iff a (f x)).mpr (by
+    rw [← ha, ← map_smulₛₗ, (Submodule.mem_torsionBy_iff a x).mp hx, map_zero])
+
 namespace Submodule
 
 /-- The `a`-torsion submodule of an `R`-module `M` is the kernel of left scalar multiplication by

@@ -11,14 +11,14 @@ public import Mathlib.RingTheory.QuotSMulTop
 import TauCeti.RingTheory.AdicCompletion.Basic
 import TauCeti.RingTheory.AdicCompletion.Exactness
 import TauCeti.RingTheory.AdicCompletion.Regular.Basic
-import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.QuotSMulTop.Basic
 
 /-!
 # Isomorphisms modulo a regular element and principal-adic completion
 
 Let `r` be an element of a commutative ring `R` and `M` an `R`-module on which `r` is regular.
 A linear map `f : N → M` which is bijective modulo `r` is then bijective modulo every power `rⁿ`
-(`IsSMulRegular.bijective_quotSMulTop_map_pow`, in `TauCeti.RingTheory.QuotSMulTop`), so it
+(`IsSMulRegular.bijective_quotSMulTop_map_pow`, in `TauCeti.RingTheory.QuotSMulTop.Basic`), so it
 induces an isomorphism of
 `(r)`-adic completions (`IsSMulRegular.bijective_adicCompletion_map`). The typical `f` is the map
 `Rᵗ → M` given by lifts of a basis of `M ⧸ r M` over `R ⧸ r`: then each `M ⧸ rⁿ M` is isomorphic
@@ -29,7 +29,7 @@ The completion of `M` only sees `M` modulo `D = ⋂ₙ rⁿ M`, the kernel of `M
 (`IsSMulRegular.smul_iInf_pow_smul_top`). If `N` is `(r)`-adically Hausdorff, then `f` is
 injective and its range `P` meets `D` trivially; multiplication by `r` is bijective on
 `M ⧸ (P + D)` (`IsSMulRegular.bijective_smul_quotient_range_sup_iInf`, in
-`TauCeti.RingTheory.QuotSMulTop`) and on the cokernel of `M → M̂`
+`TauCeti.RingTheory.QuotSMulTop.Basic`) and on the cokernel of `M → M̂`
 (`IsSMulRegular.bijective_smul_quotient_range_adicCompletionOf`). These two quotients record what
 a lattice of lifts and the completion fail to see; neither inclusion `P → M` nor `M → M̂` need
 split.

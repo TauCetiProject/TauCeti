@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Algebra.Module.LinearMap.Defs
 public import Mathlib.Algebra.Module.Rat
+import TauCeti.GroupTheory.GroupAction.Hom
 
 /-!
 # Iterates of additive and linear maps
@@ -21,6 +23,8 @@ later iterate kills it too.
 * `TauCeti.iterate_map_eq_zero_of_le`: an iterate killing a vector is followed by iterates
   killing it.
 * `TauCeti.iterate_map_sum`: the iterates of an additive map preserve finite sums.
+* `LinearMap.iterate_map_sum_smulₛₗ`: a semilinear iterate acts on a finite linear combination
+  by iterating the map on vectors and the scalar endomorphism on coefficients.
 * `TauCeti.iterate_map_rat_smul`: the iterates of an additive map between `ℚ`-modules preserve
   rational scalar multiplication.
 -/
@@ -53,3 +57,11 @@ theorem iterate_map_rat_smul [AddCommGroup M] [Module ℚ M] [AddMonoidHomClass 
   | succ n ih => rw [Function.iterate_succ_apply', ih, map_rat_smul, Function.iterate_succ_apply']
 
 end TauCeti
+
+/-- Iterating a semilinear endomorphism acts on a finite linear combination by iterating
+the scalar endomorphism on each coefficient and the semilinear endomorphism on each vector. -/
+theorem LinearMap.iterate_map_sum_smulₛₗ {R M ι : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    {σ : R →+* R} (f : M →ₛₗ[σ] M) (n : ℕ) (s : Finset ι) (a : ι → R) (v : ι → M) :
+    f^[n] (∑ i ∈ s, a i • v i) = ∑ i ∈ s, σ^[n] (a i) • f^[n] (v i) := by
+  rw [TauCeti.iterate_map_sum]
+  simp only [TauCeti.iterate_map_smulₛₗ (σ := σ)]

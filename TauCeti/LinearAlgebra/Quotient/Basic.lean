@@ -91,3 +91,52 @@ theorem smul_quotient_comap_eq_zero {p : O} (hpN : ∀ v, Φ (p • v) ∈ N)
   simpa using hpN v
 
 end Submodule
+
+namespace LinearMap
+
+open Function Set
+
+variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M] {σ : R →+* R}
+  {F : M →ₛₗ[σ] M}
+
+/-- The map induced by a semilinear endomorphism on the quotient of a stable submodule
+`P` by its intersection with another stable submodule `Q`. -/
+def subquotientMap (F : M →ₛₗ[σ] M) (P Q : Submodule R M)
+    (hP : MapsTo F P P) (hQ : MapsTo F Q Q) :
+    (P ⧸ Q.comap P.subtype) →ₛₗ[σ] (P ⧸ Q.comap P.subtype) :=
+  (Q.comap P.subtype).mapQ _ (F.restrict hP)
+    (Semiconj.mapsTo_preimage (coe_restrict_apply hP : Semiconj P.subtype (F.restrict hP) F) hQ)
+
+/-- The stable subquotient map is the quotient map induced by the restriction to its numerator. -/
+theorem subquotientMap_eq_mapQ (F : M →ₛₗ[σ] M) (P Q : Submodule R M)
+    (hP : MapsTo F P P) (hQ : MapsTo F Q Q) :
+    F.subquotientMap P Q hP hQ =
+      (Q.comap P.subtype).mapQ (Q.comap P.subtype) (F.restrict hP)
+        (Semiconj.mapsTo_preimage
+          (coe_restrict_apply hP : Semiconj P.subtype (F.restrict hP) F) hQ) :=
+  (rfl)
+
+/-- The stable subquotient map sends the class of a vector to the class of its image. -/
+@[simp]
+theorem subquotientMap_mk (P Q : Submodule R M)
+    (hP : MapsTo F P P) (hQ : MapsTo F Q Q) (x : P) :
+    F.subquotientMap P Q hP hQ (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk (F.restrict hP x) := by
+  rw [subquotientMap_eq_mapQ]
+  exact Submodule.mapQ_apply _ _ (F.restrict hP) x
+
+/-- The induced map on a stable subquotient is bijective if the endomorphism is surjective
+on the numerator and reflects membership in the denominator within the numerator. -/
+theorem bijective_subquotientMap (P Q : Submodule R M)
+    (hP : MapsTo F P P) (hQ : MapsTo F Q Q)
+    (hs : SurjOn F P P) (hi : ∀ x ∈ P, F x ∈ Q → x ∈ Q) :
+    Bijective (F.subquotientMap P Q hP hQ) := by
+  rw [subquotientMap_eq_mapQ]
+  refine ⟨(Submodule.mapQ_injective_iff _ _ _ _).mpr ?_,
+    Submodule.mapQ_surjective _ _ _ _ (hP.restrict_surjective_iff.mpr hs)⟩
+  intro x hx
+  simpa only [Submodule.mem_comap, Submodule.subtype_apply] using
+    hi x x.property (by
+      simpa only [Submodule.mem_comap, Submodule.subtype_apply, coe_restrict_apply hP] using hx)
+
+end LinearMap

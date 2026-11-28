@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.FiniteAbelian.Basic
 public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.Algebra.Module.Torsion.Basic
-public import TauCeti.RingTheory.QuotSMulTop
+public import TauCeti.RingTheory.QuotSMulTop.Basic
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.Data.ZMod.QuotientRing
 import Mathlib.FieldTheory.Finiteness

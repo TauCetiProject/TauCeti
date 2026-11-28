@@ -11,7 +11,7 @@ import Mathlib.Algebra.Module.Submodule.Pointwise
 import Mathlib.RingTheory.QuotSMulTop
 import Mathlib.Tactic.LinearCombination
 import TauCeti.NumberTheory.Padics.RingHoms
-import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.QuotSMulTop.Basic
 
 /-!
 # Reduction modulo `p` of finite free `ℤ_p`-modules

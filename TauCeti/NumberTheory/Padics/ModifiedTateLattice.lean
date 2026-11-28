@@ -12,7 +12,7 @@ public import Mathlib.RingTheory.QuotSMulTop
 import Mathlib.Data.Nat.Prime.Factorial
 import Mathlib.RingTheory.Ideal.Colon
 import TauCeti.NumberTheory.Padics.PadicIntegers
-import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.QuotSMulTop.Basic
 
 /-!
 # Ordinary and modified Tate lattices

@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.GroupAction.QuotientAddGroup
 public import TauCeti.Algebra.Module.Torsion.Int
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.LatticeDefect.Basic
-public import TauCeti.RingTheory.QuotSMulTop
+public import TauCeti.RingTheory.QuotSMulTop.Basic
 
 /-!
 # Vanishing of the lattice defect for finite modules

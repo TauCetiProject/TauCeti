@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.Depth.WeaklyRegular
 public import TauCeti.RingTheory.Regular.RegularSequence
 public import TauCeti.RingTheory.Flat.Noetherian
 public import TauCeti.RingTheory.Flat.QuotSMulTop
-public import TauCeti.RingTheory.QuotSMulTop
+public import TauCeti.RingTheory.QuotSMulTop.Basic
 
 /-!
 # Depth along flat local homomorphisms

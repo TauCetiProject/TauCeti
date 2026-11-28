@@ -17,7 +17,7 @@ import Mathlib.RingTheory.Localization.Ideal
 import TauCeti.RingTheory.AdicCompletion.Algebra
 import TauCeti.RingTheory.AdicCompletion.Noetherian
 import TauCeti.RingTheory.Ideal.Maps
-import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.QuotSMulTop.Basic
 
 import TauCeti.RingTheory.Regular.Pair
 

@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Module.Torsion.Int
 public import TauCeti.LinearAlgebra.IntegralLattice.AntipodalPairs.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.AntipodalPairs
-public import TauCeti.RingTheory.QuotSMulTop
+public import TauCeti.RingTheory.QuotSMulTop.Basic
 
 /-!
 # Minimal-vector pairs modulo twice a lattice

@@ -13,7 +13,7 @@ public import Mathlib.RingTheory.QuotSMulTop
 
 import TauCeti.RingTheory.AdjoinRoot.Minpoly
 import TauCeti.RingTheory.PowerBasis
-import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.QuotSMulTop.Basic
 
 /-!
 # Multiplication by `X` on a quotient of a power series ring
