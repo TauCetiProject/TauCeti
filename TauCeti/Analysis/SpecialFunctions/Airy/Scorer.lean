@@ -127,17 +127,20 @@ private theorem pow_mul_cexp_neg_cube_div_three_add_mul_eq (n : ℕ) (z : ℂ) (
     (t : ℂ) ^ n * cexp (-(t : ℂ) ^ 3 / 3 + z * t) =
       (t : ℂ) ^ (n : ℂ) * cexp (z * t - (1 / 3 : ℂ) * (t : ℂ) ^ ((3 : ℝ) : ℂ)) := by
   have hexp : -(t : ℂ) ^ 3 / 3 + z * t = z * t - (1 / 3 : ℂ) * (t : ℂ) ^ ((3 : ℝ) : ℂ) := by
-    rw [show ((3 : ℝ) : ℂ) = ((3 : ℕ) : ℂ) by norm_num, cpow_natCast]
+    rw [ofReal_ofNat, cpow_ofNat]
     ring
   rw [cpow_natCast, hexp]
 
 /-- For every natural number `n` and complex `z`, the moment integrand
 `t ↦ tⁿ exp(−t³/3 + z t)` is Bochner integrable on `(0, ∞)`. -/
 theorem _root_.Nat.integrableOn_pow_mul_cexp_neg_cube_div_three_add_mul (n : ℕ) (z : ℂ) :
-    IntegrableOn (fun t : ℝ => (t : ℂ) ^ n * cexp (-(t : ℂ) ^ 3 / 3 + z * t)) (Ioi 0) :=
-  (integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := 3) (b := 1 / 3) (s := n)
+    IntegrableOn (fun t : ℝ => (t : ℂ) ^ n * cexp (-(t : ℂ) ^ 3 / 3 + z * t)) (Ioi 0) := by
+  refine (integrableOn_cpow_mul_cexp_mul_sub_mul_pow_Ioi (n := 3) (b := 1 / 3) (s := n)
     (by norm_num) (by norm_num) (by simp; linarith [n.cast_nonneg (α := ℝ)]) z).congr_fun
-    (fun t _ => (pow_mul_cexp_neg_cube_div_three_add_mul_eq n z t).symm) measurableSet_Ioi
+    (fun t _ => ?_) measurableSet_Ioi
+  dsimp only
+  rw [cpow_natCast]
+  ring_nf
 
 /-- The integrand `t ↦ exp(−t³/3 + z t)` of `Hi` is Bochner integrable on `(0, ∞)`. -/
 theorem _root_.Complex.integrableOn_cexp_neg_cube_div_three_add_mul (z : ℂ) :

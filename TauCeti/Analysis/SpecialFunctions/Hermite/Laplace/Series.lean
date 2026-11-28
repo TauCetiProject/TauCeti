@@ -173,9 +173,9 @@ theorem integrableOn_rpow_mul_exp_mul_tsum_pow_div_Gamma_Ioc {σ : ℝ} {M : ℕ
     exact integrableOn_empty
   let C₀ : ℝ := 2 * rexp ((q * a / √2) ^ 2) / a ^ M
   have hmaj : IntegrableOn
-      (fun u : ℝ => C₀ * (u ^ (σ + (M : ℝ) - 1) * rexp (-x * u - 1 / 2 * u ^ (2 : ℝ))))
+      (fun u : ℝ => C₀ * (u ^ (σ + (M : ℝ) - 1) * rexp (-x * u - 1 / 2 * u ^ 2)))
       (Ioc 0 a) :=
-    ((integrableOn_rpow_mul_exp_mul_sub_mul_rpow one_lt_two (by linarith)
+    ((integrableOn_rpow_mul_exp_mul_sub_mul_pow (n := 2) (by norm_num) (by linarith)
       (by norm_num : (0 : ℝ) < 1 / 2) (-x)).mono_set Ioc_subset_Ioi_self).const_mul C₀
   refine hmaj.mono'
     (measurable_rpow_mul_exp_mul_tsum_pow_div_Gamma σ x q M).aestronglyMeasurable ?_
@@ -201,10 +201,9 @@ theorem integrableOn_rpow_mul_exp_mul_tsum_pow_div_Gamma_Ioc {σ : ℝ} {M : ℕ
       ≤ u ^ (σ - 1) * rexp (-u ^ 2 / 2 - x * u) * (C₀ * u ^ M) :=
         mul_le_mul_of_nonneg_left hS_le (by positivity)
     _ = C₀ * ((u ^ (σ - 1) * u ^ M) * rexp (-u ^ 2 / 2 - x * u)) := by ring
-    _ = C₀ * (u ^ (σ + (M : ℝ) - 1) * rexp (-x * u - 1 / 2 * u ^ (2 : ℝ))) := by
-        have hexp : -u ^ 2 / 2 - x * u = -x * u - 1 / 2 * u ^ (2 : ℝ) := by
-          rw [Real.rpow_two]; ring
-        rw [hrpow, hexp]
+    _ = C₀ * (u ^ (σ + (M : ℝ) - 1) * rexp (-x * u - 1 / 2 * u ^ 2)) := by
+        rw [hrpow]
+        ring_nf
 
 /-- For `0 < a`, any `σ : ℝ`, and any shift `M : ℕ`, the `M`-shifted half-Gamma Laplace majorant
 `u ↦ u^{σ - 1} exp(-u² / 2 - x u) ∑_{k ≥ 0} (q u / √2)^{k + M} / Γ((k + M) / 2 + 1)` is integrable
@@ -278,10 +277,9 @@ private theorem norm_integrand_le_majorantTerm (s x r : ℂ) (y : ℝ) (m : ℕ)
       majorantTerm s.re x.re ‖r‖ y m u := by
   have h1 : ‖(u : ℂ) ^ (s - 1) * cexp (-(u : ℂ) ^ 2 / 2 - x * u)‖ =
       u ^ (s.re - 1) * rexp (-u ^ 2 / 2 - x.re * u) := by
-    have hnorm := norm_cpow_mul_cexp_mul_sub_mul_cpow 2 (1 / 2) (s - 1) (-x) hu
+    have hnorm := norm_cpow_mul_cexp_mul_sub_mul_pow 2 (1 / 2) (s - 1) (-x) hu
     have hhalf : (1 / 2 : ℂ).re = 1 / 2 := by norm_num
-    simp only [Complex.ofReal_ofNat, Complex.cpow_two, Real.rpow_two, Complex.neg_re,
-      Complex.sub_re, Complex.one_re, hhalf] at hnorm
+    simp only [Complex.neg_re, Complex.sub_re, Complex.one_re, hhalf] at hnorm
     have hc : -(u : ℂ) ^ 2 / 2 - x * u = -x * u - (1 / 2 : ℂ) * (u : ℂ) ^ 2 := by ring
     have hr : -x.re * u - 1 / 2 * u ^ 2 = -u ^ 2 / 2 - x.re * u := by ring
     rw [hc, hnorm, hr]
@@ -301,15 +299,14 @@ private theorem integrableOn_majorantTerm {σ : ℝ} {m : ℕ} (hσ : 0 < σ + (
     IntegrableOn (majorantTerm σ x q y m) (Ioi 0) := by
   let C₁ : ℝ := rexp (y ^ 2 / 2) * ((q / √2) ^ m / Real.Gamma ((m : ℝ) / 2 + 1))
   have hmaj : IntegrableOn
-      (fun u : ℝ => C₁ * (u ^ (σ + (m : ℝ) - 1) * rexp (-x * u - 1 / 2 * u ^ (2 : ℝ)))) (Ioi 0) :=
-    (integrableOn_rpow_mul_exp_mul_sub_mul_rpow one_lt_two (by linarith)
+      (fun u : ℝ => C₁ * (u ^ (σ + (m : ℝ) - 1) * rexp (-x * u - 1 / 2 * u ^ 2))) (Ioi 0) :=
+    (integrableOn_rpow_mul_exp_mul_sub_mul_pow (n := 2) (by norm_num) (by linarith)
       (by norm_num : (0 : ℝ) < 1 / 2) (-x)).const_mul C₁
   refine IntegrableOn.congr_fun hmaj ?_ measurableSet_Ioi
   intro u (hu : 0 < u)
   have hrpow : u ^ (σ + (m : ℝ) - 1) = u ^ (σ - 1) * u ^ m := by
     rw [add_sub_right_comm, Real.rpow_add hu, Real.rpow_natCast]
-  have hexp : -x * u - 1 / 2 * u ^ (2 : ℝ) = -u ^ 2 / 2 - x * u := by
-    rw [Real.rpow_two]; ring
+  have hexp : -x * u - 1 / 2 * u ^ 2 = -u ^ 2 / 2 - x * u := by ring
   unfold majorantTerm
   dsimp [C₁]
   rw [hrpow, hexp, mul_div_right_comm q u, mul_pow]

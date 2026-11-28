@@ -49,9 +49,6 @@ functions, which is `π ^ (-3 / 2)` times the integral with `b = 1/12` and `s = 
   counterpart of Mathlib's `integral_rpow_mul_exp_neg_mul_rpow`.
 * `TauCeti.hasSum_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi`: the everywhere convergent
   Maclaurin series in `z` of the half-line superlinear exponential-power Laplace integral.
-
-The norm, integrability, differentiation and series arguments are extracted and generalized from the
-proofs for the integral of `Ai² + Bi²` in `TauCeti.Analysis.SpecialFunctions.Airy.Product.Integral`.
 -/
 
 public section
@@ -133,14 +130,14 @@ theorem tendsto_cpow_mul_cexp_mul_sub_mul_cpow_atTop {p : ℝ} (hp : 1 < p) {b :
 /-- For `0 < p`, `0 < b.re`, and `-1 < s.re`,
 `∫ t in Ioi 0, (t : ℂ) ^ s * exp (-b * (t : ℂ) ^ (p : ℂ)) =
   b ^ (-(s + 1) / p) * (1 / p) * Γ ((s + 1) / p)`,
-the complex-exponent and complex-rate counterpart of Mathlib's `integral_rpow_mul_exp_neg_mul_rpow`.
-The proof follows Mathlib's `integral_rpow_mul_exp_neg_rpow` via the reciprocal-power
-substitution `t = x ^ (1 / p)` and evaluates the resulting integral with
-`Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos`. -/
+the complex-exponent and complex-rate counterpart of Mathlib's
+`integral_rpow_mul_exp_neg_mul_rpow`. -/
 theorem integral_cpow_mul_cexp_neg_mul_cpow_Ioi {p : ℝ} (hp : 0 < p) {b s : ℂ}
     (hb : 0 < b.re) (hs : -1 < s.re) :
     ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ s * cexp (-b * (t : ℂ) ^ (p : ℂ)) =
       b ^ (-(s + 1) / p) * (1 / (p : ℂ)) * Complex.Gamma ((s + 1) / p) := by
+  -- Follow Mathlib's `integral_rpow_mul_exp_neg_rpow` via the substitution `t = x ^ (1 / p)` and
+  -- evaluate the resulting integral with `Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos`.
   have hp_ne : (p : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hp.ne'
   have hre : 0 < ((s + 1) / (p : ℂ)).re := by
     rw [Complex.div_ofReal_re, Complex.add_re, Complex.one_re]

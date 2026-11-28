@@ -72,6 +72,15 @@ open scoped Topology
 
 namespace TauCeti
 
+/-- On `(0, ∞)`, `u ↦ u ^ s * exp (-b u² - c u)` is integrable whenever `0 < b` and `-1 < s`. -/
+private theorem integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi {b s : ℝ} (hb : 0 < b)
+    (hs : -1 < s) (c : ℝ) :
+    IntegrableOn (fun u : ℝ => u ^ s * rexp (-b * u ^ 2 - c * u)) (Ioi 0) := by
+  refine (integrableOn_rpow_mul_exp_mul_sub_mul_pow (n := 2) (by norm_num) hs hb (-c)).congr_fun
+    (fun u _ => ?_) measurableSet_Ioi
+  dsimp only
+  ring_nf
+
 /-- For `0 < a` and `0 < b`, `u ↦ u ^ s * exp (-b u² - c u)` is integrable on `(a, ∞)` for every
 real exponent `s` and linear parameter `c`. -/
 theorem integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi_of_pos {a b : ℝ} (ha : 0 < a)
@@ -80,8 +89,8 @@ theorem integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi_of_pos {a b : ℝ} (ha 
   set m := max s 0
   have hm : -1 < m := lt_of_lt_of_le neg_one_lt_zero (le_max_right s 0)
   have hmaj : IntegrableOn
-      (fun u : ℝ => a ^ (s - m) * (u ^ m * rexp (-c * u - b * u ^ (2 : ℝ)))) (Ioi a) :=
-    ((integrableOn_rpow_mul_exp_mul_sub_mul_rpow one_lt_two hm hb (-c)).mono_set
+      (fun u : ℝ => a ^ (s - m) * (u ^ m * rexp (-b * u ^ 2 - c * u))) (Ioi a) :=
+    ((integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi hb hm c).mono_set
       (Ioi_subset_Ioi ha.le)).const_mul _
   refine hmaj.mono'
     (by fun_prop : Measurable fun u : ℝ => u ^ s * rexp (-b * u ^ 2 - c * u)).aestronglyMeasurable
@@ -95,10 +104,7 @@ theorem integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi_of_pos {a b : ℝ} (ha 
           (Real.rpow_le_rpow_sub_mul_rpow hu0
             (Real.rpow_le_rpow_of_nonpos ha hu.le (sub_nonpos.2 (le_max_left s 0))))
           (Real.exp_pos _).le
-    _ = a ^ (s - m) * (u ^ m * rexp (-c * u - b * u ^ (2 : ℝ))) := by
-        have hexp : -b * u ^ 2 - c * u = -c * u - b * u ^ (2 : ℝ) := by
-          rw [Real.rpow_two]; ring
-        rw [hexp]; ring
+    _ = a ^ (s - m) * (u ^ m * rexp (-b * u ^ 2 - c * u)) := by ring
 
 /-- For `0 < a` and `0 ≤ b`, `u ↦ u ^ s * exp (-b u² - c u)` is integrable on `(a, ∞)` whenever
 `0 < c`, or `0 ≤ c` and `s < -1`. -/
@@ -113,6 +119,18 @@ theorem integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi_of_nonneg {a b s c : �
   exact mul_le_mul_of_nonneg_left
     (Real.exp_le_exp.mpr (by nlinarith [sq_nonneg u])) (by positivity)
 
+/-- For `0 < u` and any `b s z : ℂ`, the norm of
+`(u : ℂ) ^ s * cexp (-b * (u : ℂ) ^ 2 - z * u)` is
+`u ^ s.re * exp (-b.re * u ^ 2 - z.re * u)`. -/
+private theorem norm_cpow_mul_cexp_neg_mul_sq_sub_mul (b s z : ℂ) {u : ℝ} (hu : 0 < u) :
+    ‖(u : ℂ) ^ s * cexp (-b * (u : ℂ) ^ 2 - z * u)‖ =
+      u ^ s.re * rexp (-b.re * u ^ 2 - z.re * u) := by
+  have hnorm := norm_cpow_mul_cexp_mul_sub_mul_pow 2 b s (-z) hu
+  have h1 : -b * (u : ℂ) ^ 2 - z * u = -z * u - b * (u : ℂ) ^ 2 := by ring
+  have h2 : (-z).re * u - b.re * u ^ 2 = -b.re * u ^ 2 - z.re * u := by
+    rw [Complex.neg_re]; ring
+  rw [h1, hnorm, h2]
+
 /-- For `0 < a` and `0 < b.re`, `u ↦ (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u)` is
 integrable on `(a, ∞)` for every `s z : ℂ`. -/
 theorem integrableOn_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi_of_pos {a : ℝ} {b : ℂ} (ha : 0 < a)
@@ -122,12 +140,8 @@ theorem integrableOn_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi_of_pos {a : ℝ} {b : 
   have hmaj := integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi_of_pos ha hb (s.re - 1) z.re
   refine hmaj.mono' (Measurable.aestronglyMeasurable (by fun_prop)) ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : a < u)
-  have hnorm := norm_cpow_mul_cexp_mul_sub_mul_cpow 2 b (s - 1) (-z) (ha.trans hu)
-  simp only [Complex.ofReal_ofNat, Complex.cpow_two, Real.rpow_two, Complex.neg_re,
-    Complex.sub_re, Complex.one_re] at hnorm
-  have h1 : -b * (u : ℂ) ^ 2 - z * u = -z * u - b * (u : ℂ) ^ 2 := by ring
-  have h2 : -z.re * u - b.re * u ^ 2 = -b.re * u ^ 2 - z.re * u := by ring
-  rw [h1, hnorm, h2]
+  rw [norm_cpow_mul_cexp_neg_mul_sq_sub_mul b (s - 1) z (ha.trans hu)]
+  simp
 
 /-- On any vertical strip `σ₁ ≤ s.re ≤ σ₂` (`0 < σ₁`, `0 < b.re`), the norm of the complex
 Gaussian–Laplace integral is bounded by the sum of the two real endpoint integrals at `σ₁` and
@@ -137,25 +151,14 @@ theorem norm_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi_le_add {b s : ℂ} {�
     ‖∫ u in Ioi (0 : ℝ), (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u)‖ ≤
       (∫ u in Ioi (0 : ℝ), u ^ (σ₁ - 1) * rexp (-b.re * u ^ 2 - z.re * u)) +
         ∫ u in Ioi (0 : ℝ), u ^ (σ₂ - 1) * rexp (-b.re * u ^ 2 - z.re * u) := by
-  have hint (σ : ℝ) (hσ : 0 < σ) :
-      IntegrableOn (fun u : ℝ => u ^ (σ - 1) * rexp (-b.re * u ^ 2 - z.re * u)) (Ioi 0) := by
-    refine (integrableOn_rpow_mul_exp_mul_sub_mul_rpow (p := 2) (q := σ - 1) (b := b.re)
-      one_lt_two (by linarith) hb (-z.re)).congr_fun (fun u _ => ?_) measurableSet_Ioi
-    have hexp : -z.re * u - b.re * u ^ (2 : ℝ) = -b.re * u ^ 2 - z.re * u := by
-      rw [Real.rpow_two]; ring
-    dsimp only
-    rw [hexp]
-  have hint₁ := hint σ₁ hσ₁
-  have hint₂ := hint σ₂ (hσ₁.trans_le (hlo.trans hhi))
+  have hint₁ := integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi hb (by linarith : -1 < σ₁ - 1) z.re
+  have hint₂ := integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi hb
+    (by linarith : -1 < σ₂ - 1) z.re
   rw [← integral_add hint₁ hint₂]
   refine norm_integral_le_of_norm_le (hint₁.add hint₂) ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : 0 < u)
-  have hnorm := norm_cpow_mul_cexp_mul_sub_mul_cpow 2 b (s - 1) (-z) hu
-  simp only [Complex.ofReal_ofNat, Complex.cpow_two, Real.rpow_two, Complex.neg_re,
-    Complex.sub_re, Complex.one_re] at hnorm
-  have h1 : -b * (u : ℂ) ^ 2 - z * u = -z * u - b * (u : ℂ) ^ 2 := by ring
-  have h2 : -z.re * u - b.re * u ^ 2 = -b.re * u ^ 2 - z.re * u := by ring
-  rw [h1, hnorm, h2, ← add_mul]
+  rw [norm_cpow_mul_cexp_neg_mul_sq_sub_mul b (s - 1) z hu, Complex.sub_re, Complex.one_re,
+    ← add_mul]
   exact mul_le_mul_of_nonneg_right
     (Real.rpow_le_rpow_add_rpow_of_mem_Icc hu ⟨by linarith, by linarith⟩) (Real.exp_pos _).le
 
@@ -188,21 +191,19 @@ theorem hasDerivAt_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi {b s : ℂ} (hb
       (-∫ u in Ioi (0 : ℝ), (u : ℂ) ^ s * cexp (-b * (u : ℂ) ^ 2 - z * u)) z := by
   have hball : Metric.ball z 1 ∈ 𝓝 z := Metric.ball_mem_nhds z zero_lt_one
   have hb_int : IntegrableOn
-      (fun u : ℝ => u ^ s.re * rexp (-(z.re - 1) * u - b.re * u ^ (2 : ℝ))) (Ioi 0) :=
-    integrableOn_rpow_mul_exp_mul_sub_mul_rpow one_lt_two (by linarith) hb (-(z.re - 1))
+      (fun u : ℝ => u ^ s.re * rexp (-b.re * u ^ 2 - (z.re - 1) * u)) (Ioi 0) :=
+    integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi hb (by linarith) (z.re - 1)
   have hf_int : IntegrableOn
       (fun u : ℝ => (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - z * u)) (Ioi 0) := by
-    refine (integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := 2) (s := s - 1) one_lt_two hb
+    refine (integrableOn_cpow_mul_cexp_mul_sub_mul_pow_Ioi (n := 2) (s := s - 1) (by norm_num) hb
       (by simp [hs]) (-z)).congr_fun (fun u _ => ?_) measurableSet_Ioi
-    have hexp : -z * u - b * (u : ℂ) ^ ((2 : ℝ) : ℂ) = -b * (u : ℂ) ^ 2 - z * u := by
-      rw [Complex.ofReal_ofNat, Complex.cpow_two]; ring
     dsimp only
-    rw [hexp]
+    ring_nf
   have h := hasDerivAt_integral_of_dominated_loc_of_deriv_le
     (μ := volume.restrict (Ioi 0))
     (F := fun w (u : ℝ) => (u : ℂ) ^ (s - 1) * cexp (-b * (u : ℂ) ^ 2 - w * u))
     (F' := fun w (u : ℝ) => -((u : ℂ) ^ s * cexp (-b * (u : ℂ) ^ 2 - w * u)))
-    (bound := fun u : ℝ => u ^ s.re * rexp (-(z.re - 1) * u - b.re * u ^ (2 : ℝ)))
+    (bound := fun u : ℝ => u ^ s.re * rexp (-b.re * u ^ 2 - (z.re - 1) * u))
     hball
     (Eventually.of_forall fun _ => Measurable.aestronglyMeasurable (by fun_prop))
     hf_int
@@ -210,10 +211,7 @@ theorem hasDerivAt_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi {b s : ℂ} (hb
   · simpa only [integral_neg] using h.2
   · filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : 0 < u) w hw
     have hw_re : z.re - 1 < w.re := (RCLike.re_mem_Ioo_of_mem_ball hw).1
-    have hnorm := norm_cpow_mul_cexp_mul_sub_mul_cpow 2 b s (-w) hu
-    simp only [Complex.ofReal_ofNat, Complex.cpow_two, Complex.neg_re] at hnorm
-    have h1 : -b * (u : ℂ) ^ 2 - w * u = -w * u - b * (u : ℂ) ^ 2 := by ring
-    rw [norm_neg, h1, hnorm]
+    rw [norm_neg, norm_cpow_mul_cexp_neg_mul_sq_sub_mul b s w hu]
     gcongr
   · filter_upwards [ae_restrict_mem measurableSet_Ioi] with u (hu : 0 < u) w _
     have hu0 : (u : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hu.ne'
@@ -257,13 +255,10 @@ theorem hasDerivAt_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi_left {b s₀ : 
     refine ⟨rexp (z.re ^ 2 / (2 * b.re)), ?_⟩
     filter_upwards [Filter.eventually_ge_atTop (1 : ℝ)] with u (hu : 1 ≤ u)
     have hu_sq : u ≤ u ^ 2 := by nlinarith
-    have hnorm := norm_cpow_mul_cexp_mul_sub_mul_cpow 2 b 0 (-z) (zero_lt_one.trans_le hu)
-    simp only [Complex.cpow_zero, one_mul, Complex.zero_re, Real.rpow_zero,
-      Complex.ofReal_ofNat, Complex.cpow_two, Real.rpow_two, Complex.neg_re] at hnorm
-    have h1 : -b * (u : ℂ) ^ 2 - z * u = -z * u - b * (u : ℂ) ^ 2 := by ring
-    have h2 : -z.re * u - b.re * u ^ 2 = -b.re * u ^ 2 - z.re * u := by ring
+    have hnorm := norm_cpow_mul_cexp_neg_mul_sq_sub_mul b 0 z (zero_lt_one.trans_le hu)
+    simp only [Complex.cpow_zero, one_mul, Complex.zero_re, Real.rpow_zero] at hnorm
     dsimp only [f]
-    rw [h1, hnorm, h2, Real.norm_of_nonneg (Real.exp_pos _).le]
+    rw [hnorm, Real.norm_of_nonneg (Real.exp_pos _).le]
     refine (exp_neg_mul_sq_sub_mul_le hb z.re u).trans ?_
     exact mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr (by nlinarith)) (Real.exp_pos _).le
   have hf_rpow : f =O[atTop] fun u : ℝ => u ^ (-(s₀.re + 1)) :=

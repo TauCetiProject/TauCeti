@@ -36,13 +36,17 @@ inclusion.
 ## Main results
 
 * `TauCeti.integrableOn_pow_mul_exp_neg_mul_Ioi`: integrability on `(0, ∞)`.
-* `TauCeti.integrableOn_rpow_mul_exp_mul_sub_mul_rpow`: integrability of
-  `t ^ q * exp (a * t - b * t ^ p)` on `(0, ∞)` when `1 < p`, `-1 < q`, and `0 < b`.
-* `TauCeti.norm_cpow_mul_cexp_mul_sub_mul_cpow`: pointwise norm formula on `(0, ∞)` for
-  `(t : ℂ) ^ s * Complex.exp (z * t - b * t ^ p)`.
-* `TauCeti.integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi`: complex integrability of
-  `t ↦ (t : ℂ) ^ s * Complex.exp (z * t - b * t ^ p)` on `(0, ∞)` for `1 < p`, `0 < b.re`,
-  `-1 < s.re`.
+* `TauCeti.integrableOn_rpow_mul_exp_mul_sub_mul_rpow`,
+  `TauCeti.integrableOn_rpow_mul_exp_mul_sub_mul_pow`: integrability of
+  `t ^ q * exp (a * t - b * t ^ p)` (and `t ^ q * exp (a * t - b * t ^ n)`) on `(0, ∞)` when
+  `1 < p` (resp. `1 < n`), `-1 < q`, and `0 < b`.
+* `TauCeti.norm_cpow_mul_cexp_mul_sub_mul_cpow`, `TauCeti.norm_cpow_mul_cexp_mul_sub_mul_pow`:
+  pointwise norm formula on `(0, ∞)` for `(t : ℂ) ^ s * Complex.exp (z * t - b * t ^ p)` (and
+  natural-power `t ^ n`).
+* `TauCeti.integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi`,
+  `TauCeti.integrableOn_cpow_mul_cexp_mul_sub_mul_pow_Ioi`: complex integrability of
+  `t ↦ (t : ℂ) ^ s * Complex.exp (z * t - b * t ^ p)` (and natural-power `t ^ n`) on `(0, ∞)` for
+  `1 < p` (resp. `1 < n`), `0 < b.re`, `-1 < s.re`.
 * `TauCeti.integral_pow_mul_exp_neg_mul_Ioi`: evaluation in terms of a factorial.
 * `TauCeti.lintegral_ofReal_exp_neg_mul_mul_lintegral`: an iterated exponential integral is a
   Stieltjes-kernel integral.
@@ -172,6 +176,33 @@ theorem integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi {p : ℝ} (hp : 1 < p) {
   refine hmaj.mono' (Measurable.aestronglyMeasurable (by fun_prop)) ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
   rw [norm_cpow_mul_cexp_mul_sub_mul_cpow p b s z ht]
+
+/-- For `1 < n`, `-1 < q`, and `0 < b`, a linear drift `a * t` in the exponent is dominated by
+`-b * t ^ n`, so `t ^ q * exp (a * t - b * t ^ n)` is integrable on `(0, ∞)`. -/
+theorem integrableOn_rpow_mul_exp_mul_sub_mul_pow {n : ℕ} (hn : 1 < n) {q b : ℝ} (hq : -1 < q)
+    (hb : 0 < b) (a : ℝ) :
+    IntegrableOn (fun t : ℝ => t ^ q * Real.exp (a * t - b * t ^ n)) (Set.Ioi 0) := by
+  simpa only [Real.rpow_natCast] using
+    integrableOn_rpow_mul_exp_mul_sub_mul_rpow (p := n) (by exact_mod_cast hn) hq hb a
+
+/-- For `0 < t`, any `n : ℕ`, and any `b s z : ℂ`, the norm of
+`(t : ℂ) ^ s * Complex.exp (z * t - b * (t : ℂ) ^ n)` is
+`t ^ s.re * Real.exp (z.re * t - b.re * t ^ n)`. -/
+theorem norm_cpow_mul_cexp_mul_sub_mul_pow (n : ℕ) (b s z : ℂ) {t : ℝ} (ht : 0 < t) :
+    ‖(t : ℂ) ^ s * Complex.exp (z * t - b * (t : ℂ) ^ n)‖ =
+      t ^ s.re * Real.exp (z.re * t - b.re * t ^ n) := by
+  simpa only [Complex.ofReal_natCast, Complex.cpow_natCast, Real.rpow_natCast] using
+    norm_cpow_mul_cexp_mul_sub_mul_cpow n b s z ht
+
+/-- For `1 < n`, `0 < b.re`, and `-1 < s.re`, the complex integrand
+`t ↦ (t : ℂ) ^ s * Complex.exp (z * t - b * (t : ℂ) ^ n)` is integrable on `(0, ∞)` for every
+`z : ℂ`. -/
+theorem integrableOn_cpow_mul_cexp_mul_sub_mul_pow_Ioi {n : ℕ} (hn : 1 < n) {b s : ℂ}
+    (hb : 0 < b.re) (hs : -1 < s.re) (z : ℂ) :
+    IntegrableOn (fun t : ℝ => (t : ℂ) ^ s * Complex.exp (z * t - b * (t : ℂ) ^ n))
+      (Ioi 0) := by
+  simpa only [Complex.ofReal_natCast, Complex.cpow_natCast] using
+    integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := n) (by exact_mod_cast hn) hb hs z
 
 /-- The integral of a natural power times an exponentially decaying factor on `(0, ∞)`. -/
 theorem integral_pow_mul_exp_neg_mul_Ioi (n : ℕ) {a : ℝ} (ha : 0 < a) :

@@ -113,6 +113,12 @@ theorem airyAi_sq_add_airyBi_sq_eq_regularizedHGFun (z : ℂ) :
 
 /-! ### Integrability and moment evaluation on `(0, ∞)` -/
 
+/-- Rewrite the cubic exponent `z * t - t ^ 3 / 12` in `PowerDecay` kernel form. -/
+private theorem sub_cube_div_twelve_eq (z : ℂ) (t : ℝ) :
+    z * t - (t : ℂ) ^ 3 / 12 = z * t - (1 / 12 : ℂ) * (t : ℂ) ^ ((3 : ℝ) : ℂ) := by
+  rw [ofReal_ofNat, cpow_ofNat]
+  ring
+
 /-- On `(0, ∞)` the moment integrand of DLMF 9.11.4 is the power-decay kernel with `p = 3`,
 `s = n - 1/2` and `b = 1/12`. -/
 private theorem pow_mul_cexp_sub_cube_div_twelve_mul_cpow_eq {t : ℝ} (ht : 0 < t) (n : ℕ)
@@ -123,10 +129,7 @@ private theorem pow_mul_cexp_sub_cube_div_twelve_mul_cpow_eq {t : ℝ} (ht : 0 <
   have hpow : (t : ℂ) ^ n * (t : ℂ) ^ (-1 / 2 : ℂ) = (t : ℂ) ^ ((n : ℂ) - 1 / 2) := by
     rw [← cpow_natCast, ← cpow_add _ _ (ofReal_ne_zero.mpr ht.ne')]
     ring_nf
-  have hexp : z * t - (t : ℂ) ^ 3 / 12 = z * t - (1 / 12 : ℂ) * (t : ℂ) ^ ((3 : ℝ) : ℂ) := by
-    rw [show ((3 : ℝ) : ℂ) = ((3 : ℕ) : ℂ) by norm_num, cpow_natCast]
-    ring
-  rw [mul_right_comm, hpow, hexp]
+  rw [mul_right_comm, hpow, sub_cube_div_twelve_eq]
 
 private theorem norm_pow_mul_cexp_sub_cube_div_twelve_mul_cpow {t : ℝ} (ht : 0 < t) (n : ℕ)
     (z : ℂ) :
@@ -141,11 +144,17 @@ private theorem norm_pow_mul_cexp_sub_cube_div_twelve_mul_cpow {t : ℝ} (ht : 0
 theorem integrableOn_pow_mul_cexp_sub_cube_div_twelve_mul_cpow (n : ℕ) (z : ℂ) :
     IntegrableOn
       (fun t : ℝ => (t : ℂ) ^ n * cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ))
-      (Ioi 0) :=
-  (integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := 3) (b := 1 / 12)
+      (Ioi 0) := by
+  refine (integrableOn_cpow_mul_cexp_mul_sub_mul_pow_Ioi (n := 3) (b := 1 / 12)
     (s := (n : ℂ) - 1 / 2) (by norm_num) (by norm_num)
     (by simp; linarith [n.cast_nonneg (α := ℝ)]) z).congr_fun
-    (fun _ ht => (pow_mul_cexp_sub_cube_div_twelve_mul_cpow_eq ht n z).symm) measurableSet_Ioi
+    (fun t (ht : 0 < t) => ?_) measurableSet_Ioi
+  have hpow : (t : ℂ) ^ n * (t : ℂ) ^ (-1 / 2 : ℂ) = (t : ℂ) ^ ((n : ℂ) - 1 / 2) := by
+    rw [← cpow_natCast, ← cpow_add _ _ (ofReal_ne_zero.mpr ht.ne')]
+    ring_nf
+  dsimp only
+  rw [mul_right_comm, hpow]
+  ring_nf
 
 /-- The integrand `t ↦ exp(z t − t³ / 12) t^{−1/2}` of DLMF 9.11.4 is Bochner integrable on
 `(0, ∞)` for every complex `z`. -/
@@ -590,11 +599,8 @@ private theorem integral_product_equation_kernel (z : ℂ) :
     filter_upwards [eventually_gt_atTop 0] with t ht
     have hsqrt : ((Real.sqrt t : ℝ) : ℂ) = (t : ℂ) ^ (1 / 2 : ℂ) := by
       rw [Real.sqrt_eq_rpow, show (1 / 2 : ℂ) = ((1 / 2 : ℝ) : ℂ) by norm_num, ofReal_cpow ht.le]
-    have hexp : z * t - (t : ℂ) ^ 3 / 12 = z * t - (1 / 12 : ℂ) * (t : ℂ) ^ ((3 : ℝ) : ℂ) := by
-      rw [show ((3 : ℝ) : ℂ) = ((3 : ℕ) : ℂ) by norm_num, cpow_natCast]
-      ring
     dsimp only [g]
-    rw [hsqrt, hexp]
+    rw [hsqrt, sub_cube_div_twelve_eq]
     ring
   have hibp := integral_Ioi_of_hasDerivAt_of_tendsto hcont.continuousWithinAt
     (fun t (ht : 0 < t) => hasDerivAt_neg_four_mul_sqrt_mul_cexp_sub_cube_div_twelve ht z) hint

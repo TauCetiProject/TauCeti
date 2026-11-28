@@ -133,16 +133,12 @@ private theorem pow_div_factorial_mul_cexp_ofReal (n : ℕ) (x t : ℝ) :
 /-- The defining integral of `Hh_n(z)` converges absolutely, for every `n` and `z`. -/
 theorem integrableOn_repeatedGaussianIntegral_integrand (n : ℕ) (z : ℂ) :
     IntegrableOn (fun t : ℝ => (t : ℂ) ^ n / n ! * cexp (-((z + t) ^ 2) / 2)) (Ioi 0) := by
-  have h := (integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := 2) (b := 1 / 2) (s := n)
-    one_lt_two (by norm_num) (by rw [natCast_re]; linarith [n.cast_nonneg (α := ℝ)])
+  have h := (integrableOn_cpow_mul_cexp_mul_sub_mul_pow_Ioi (n := 2) (b := 1 / 2) (s := n)
+    (by norm_num) (by norm_num) (by rw [natCast_re]; linarith [n.cast_nonneg (α := ℝ)])
     (-z)).const_mul (cexp (-z ^ 2 / 2) / n !)
   refine IntegrableOn.congr_fun h (fun t _ => ?_) measurableSet_Ioi
   rw [pow_div_factorial_mul_cexp_eq, cpow_natCast]
-  have hexp : -z * (t : ℂ) - (1 / 2 : ℂ) * (t : ℂ) ^ ((2 : ℝ) : ℂ) =
-      -(1 / 2) * (t : ℂ) ^ 2 - z * t := by
-    rw [ofReal_ofNat, cpow_two]
-    ring
-  rw [hexp]
+  ring_nf
 
 /-- On the real line, the real integrand `t ↦ tⁿ/n! e^{-(x+t)²/2}` of `Hh_n(x)` is integrable on
 `(0, ∞)`. -/
