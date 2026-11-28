@@ -195,7 +195,7 @@ theorem standardBasis_repr_standardVector_same_deg {i' i : Fin m.card} {b : ℤ}
 -- Not `@[simp]`: `standardBasis_repr_apply` simplifies the LHS.
 /-- The coefficient of `standardVector m i' a` at `(i, b)` in `standardBasis m` vanishes whenever
 `a ≠ b`. -/
-theorem standardBasis_repr_standardVector_of_ne {i' i : Fin m.card} {a b : ℤ}
+theorem standardBasis_repr_standardVector_eq_zero_of_degree_ne {i' i : Fin m.card} {a b : ℤ}
     (hab : a ≠ b) (hb : b ∈ occurrenceInterval m i) :
     (standardBasis m).repr (standardVector m i' a) (StandardIndex.mk i b hb) = 0 := by
   by_cases ha : a ∈ occurrenceInterval m i'

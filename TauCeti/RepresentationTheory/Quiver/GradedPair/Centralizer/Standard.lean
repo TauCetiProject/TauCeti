@@ -88,7 +88,8 @@ theorem AllowedPair.precedes {m : Multisegment} (p : AllowedPair m) :
   p.property
 
 /-- The degree-`-1` block shift operator sending each standard vector `(j, a)` of block `j` to
-`(i, a - 1)` in block `i`, and killing all other occurrence blocks. -/
+`standardVector m i (a - 1)` (which vanishes when `a - 1` lies outside occurrence interval `i`),
+and sending all other source blocks `k ≠ j` to `0`. -/
 noncomputable def blockOperator (i j : Fin m.card) :
     Module.End ℂ (standardSpace m).Carrier :=
   (standardBasis m).constr ℂ fun x ↦
@@ -244,6 +245,48 @@ private theorem expand_of_isHomogeneous {L : Module.End ℂ (standardSpace m).Ca
       simp [hne]
     · rw [standardVector_of_notMem hai, map_zero, Finsupp.coe_zero, Pi.zero_apply, mul_zero]
 
+/-- Applying the standard raising operator shifts the `(i, a)` coordinate from `(i, a - 1)`. -/
+private theorem standardBasis_repr_operator_apply (v : (standardSpace m).Carrier)
+    {i : Fin m.card} {a : ℤ} (haI : a ∈ occurrenceInterval m i) :
+    (standardBasis m).repr ((standardPair m .up).operator v) (StandardIndex.mk i a haI) =
+      if h : a - 1 ∈ occurrenceInterval m i then
+        (standardBasis m).repr v (StandardIndex.mk i (a - 1) h)
+      else 0 := by
+  conv_lhs => rw [← (standardBasis m).sum_repr v]
+  rw [map_sum, map_sum, Finsupp.coe_finsetSum, Finset.sum_apply]
+  have hterm (x : StandardIndex m) :
+      (standardBasis m).repr
+          ((standardBasis m).repr v x • (standardPair m .up).operator (standardBasis m x))
+          (StandardIndex.mk i a haI) =
+        if x.1 = i ∧ (x.2 : ℤ) + 1 = a then (standardBasis m).repr v x else 0 := by
+    rw [map_smul, Finsupp.smul_apply, smul_eq_mul, standardPair_operator_standardBasis,
+      StepDirection.step_up]
+    by_cases hxa : (x.2 : ℤ) + 1 = a
+    · rw [hxa, standardBasis_repr_standardVector_same_deg haI]
+      split_ifs <;> simp_all
+    · rw [standardBasis_repr_standardVector_eq_zero_of_degree_ne hxa haI, mul_zero]
+      split_ifs with hcond
+      · exact absurd hcond.2 hxa
+      · rfl
+  simp only [LinearMap.map_smul, hterm]
+  by_cases ha1 : a - 1 ∈ occurrenceInterval m i
+  · simp only [ha1, ↓reduceDIte]
+    rw [Finset.sum_eq_single (StandardIndex.mk i (a - 1) ha1)]
+    · simp
+    · intro x _ hxne
+      split_ifs with hcond
+      · exact absurd (by simp [Sigma.subtype_ext_iff, hcond.1]; omega) hxne
+      · rfl
+    · intro hmem
+      exact absurd (Finset.mem_univ _) hmem
+  · simp only [ha1, ↓reduceDIte]
+    refine Finset.sum_eq_zero fun x _ ↦ ?_
+    split_ifs with hcond
+    · have hmem : (x.2 : ℤ) ∈ occurrenceInterval m i := hcond.1 ▸ x.mem_occurrenceInterval
+      have heq : (x.2 : ℤ) = a - 1 := by omega
+      exact absurd (heq ▸ hmem) ha1
+    · rfl
+
 /-- Matrix entry of `T ∘ L` at `(i, a) ← (j, a)`. -/
 private theorem standardBasis_repr_operator_comp_standardVector
     (L : (standardPair m .up).centralizer) {i j : Fin m.card} {a : ℤ}
@@ -252,26 +295,10 @@ private theorem standardBasis_repr_operator_comp_standardVector
         ((standardPair m .up).operator ((L : Module.End ℂ (standardSpace m).Carrier)
           (standardVector m j a))) (StandardIndex.mk i a haI) =
       if a - 1 ∈ occurrenceInterval m i then blockEntry m L i j a else 0 := by
-  rw [expand_of_isHomogeneous (GradedPair.isHomogeneous_coe_centralizer L) haJ, map_sum, map_sum,
-    Finsupp.coe_finsetSum, Finset.sum_apply]
-  have hterm (k : Fin m.card) :
-      (standardBasis m).repr
-          (blockEntry m L k j a •
-            (standardPair m .up).operator (standardVector m k (a - 1)))
-          (StandardIndex.mk i a haI) =
-        if k = i ∧ a - 1 ∈ occurrenceInterval m i then blockEntry m L i j a else 0 := by
-    rw [map_smul, Finsupp.smul_apply, smul_eq_mul]
-    by_cases hk : a - 1 ∈ occurrenceInterval m k
-    · rw [standardPair_operator_standardVector .up hk, StepDirection.step_up, sub_add_cancel,
-        standardBasis_repr_standardVector_same_deg haI]
-      split_ifs with hki h1 h2 <;> simp_all
-    · rw [standardVector_of_notMem hk, map_zero, map_zero, Finsupp.coe_zero, Pi.zero_apply,
-        mul_zero]
-      split_ifs with hcond
-      · exact absurd (hcond.1 ▸ hcond.2) hk
-      · rfl
-  simp only [LinearMap.map_smul, hterm]
-  rw [Finset.sum_eq_single i] <;> simp_all
+  rw [standardBasis_repr_operator_apply _ haI]
+  split_ifs with ha1
+  · exact (blockEntry_of_mem haJ ha1).symm
+  · rfl
 
 /-- Matrix entry of `L ∘ T` at `(i, a) ← (j, a)`. -/
 private theorem standardBasis_repr_comp_operator_standardVector
@@ -285,13 +312,9 @@ private theorem standardBasis_repr_comp_operator_standardVector
   rw [standardPair_operator_standardVector .up haJ, StepDirection.step_up]
   by_cases ha1 : a + 1 ∈ occurrenceInterval m j
   · simp only [ha1, ↓reduceIte]
-    rw [expand_of_isHomogeneous (GradedPair.isHomogeneous_coe_centralizer L) ha1, map_sum,
-      Finsupp.coe_finsetSum, Finset.sum_apply]
-    simp only [map_smul, Finsupp.smul_apply, smul_eq_mul, add_sub_cancel_right,
-      standardBasis_repr_standardVector_same_deg haI, mul_ite, mul_one, mul_zero,
-      Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
-  · simp only [ha1, ↓reduceIte, standardVector_of_notMem ha1, map_zero, Finsupp.coe_zero,
-      Pi.zero_apply]
+    simpa only [add_sub_cancel_right] using
+      (blockEntry_of_mem ha1 (by simpa only [add_sub_cancel_right] using haI)).symm
+  · simp [ha1]
 
 private theorem centralizer_blockEntry_step_eq (L : (standardPair m .up).centralizer)
     {i j : Fin m.card} {a : ℤ}
@@ -299,7 +322,7 @@ private theorem centralizer_blockEntry_step_eq (L : (standardPair m .up).central
     (if a - 1 ∈ occurrenceInterval m i then blockEntry m L i j a else 0) =
       (if a + 1 ∈ occurrenceInterval m j then blockEntry m L i j (a + 1) else 0) := by
   have hNL := congrArg (fun v ↦ (standardBasis m).repr v (StandardIndex.mk i a haI))
-    (GradedPair.centralizer_operator_apply L (standardVector m j a)).symm
+    (GradedPair.coe_centralizer_operator_apply_comm L (standardVector m j a)).symm
   rw [← standardBasis_repr_operator_comp_standardVector L haJ haI,
     ← standardBasis_repr_comp_operator_standardVector L haJ haI, hNL]
 
@@ -453,37 +476,63 @@ private noncomputable def centralizerCoord (L : Module.End ℂ (standardSpace m)
     (StandardIndex.mk p.val.fst ((occurrenceInterval m p.val.snd).fst - 1)
       p.property.fst_sub_one_mem)
 
+/-- Evaluating an allowed-pair linear combination of block operators on `standardVector m j a`
+(with `a ∈ occurrenceInterval m j`) sums over preceding target blocks. -/
+private theorem sum_smul_blockOperator_apply_standardVector (c : AllowedPair m → ℂ)
+    {j : Fin m.card} {a : ℤ} (ha : a ∈ occurrenceInterval m j) :
+    (∑ p : AllowedPair m, c p • blockOperator m p.val.fst p.val.snd) (standardVector m j a) =
+      ∑ i : Fin m.card,
+        if h : (occurrenceInterval m i).Precedes (occurrenceInterval m j) then
+          c (AllowedPair.mk h) • standardVector m i (a - 1)
+        else 0 := by
+  rw [LinearMap.coe_sum, Finset.sum_apply]
+  simp only [LinearMap.smul_apply]
+  rw [sum_allowedPair (fun p ↦
+    c p • blockOperator m p.val.fst p.val.snd (standardVector m j a))]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [Finset.sum_eq_single j]
+  · split_ifs with h
+    · simp only [blockOperator_standardVector_self i ha]
+    · rfl
+  · intro k _ hkj
+    dsimp only
+    rw [blockOperator_standardVector_of_ne i hkj.symm]
+    split_ifs <;> simp
+  · intro hjmem
+    exact absurd (Finset.mem_univ j) hjmem
+
+/-- Every element of `(standardPair m .up).centralizer` acts on `standardVector m j a` via its
+cut-entry coordinates `centralizerCoord`. -/
+private theorem centralizer_apply_standardVector_coord
+    (L : (standardPair m .up).centralizer) {j : Fin m.card} {a : ℤ}
+    (ha : a ∈ occurrenceInterval m j) :
+    (L : Module.End ℂ (standardSpace m).Carrier) (standardVector m j a) =
+      ∑ i : Fin m.card,
+        if h : (occurrenceInterval m i).Precedes (occurrenceInterval m j) then
+          centralizerCoord (L : Module.End ℂ (standardSpace m).Carrier) (AllowedPair.mk h) •
+            standardVector m i (a - 1)
+        else 0 := by
+  rw [expand_of_isHomogeneous (GradedPair.isHomogeneous_coe_centralizer L) ha]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  by_cases h : (occurrenceInterval m i).Precedes (occurrenceInterval m j)
+  · simp only [h, ↓reduceDIte]
+    by_cases haI : a - 1 ∈ occurrenceInterval m i
+    · rw [blockEntry_eq_fst_of_precedes L h ha haI,
+        blockEntry_of_mem (Set.left_mem_Icc.mpr (occurrenceInterval m j).fst_le_snd)
+          h.fst_sub_one_mem]
+      rfl
+    · simp [standardVector_of_notMem haI]
+  · simp [h, blockEntry_eq_zero_of_not_precedes L h a]
+
 /-- Left-inverse law for `centralizerEquivCoords`: reconstructing `L` from its cut entries. -/
 private theorem sum_blockOperator_centralizer_eq (L : (standardPair m .up).centralizer) :
     (∑ p : AllowedPair m,
         centralizerCoord (L : Module.End ℂ (standardSpace m).Carrier) p •
           blockOperator m p.val.fst p.val.snd) = L := by
   refine (standardBasis m).ext fun x ↦ ?_
-  rw [standardBasis_eq_standardVector]
-  have hx : (x.2 : ℤ) ∈ occurrenceInterval m x.1 := x.mem_occurrenceInterval
-  rw [LinearMap.coe_sum, Finset.sum_apply]
-  simp only [LinearMap.smul_apply]
-  rw [sum_allowedPair (fun p ↦
-    centralizerCoord (L : Module.End ℂ (standardSpace m).Carrier) p •
-      blockOperator m p.val.fst p.val.snd (standardVector m x.1 x.2)),
-    expand_of_isHomogeneous (GradedPair.isHomogeneous_coe_centralizer L) hx]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [Finset.sum_eq_single x.1]
-  · by_cases hp : (occurrenceInterval m i).Precedes (occurrenceInterval m x.1)
-    · simp only [hp, ↓reduceDIte, blockOperator_standardVector_self i hx]
-      by_cases hxI : (x.2 : ℤ) - 1 ∈ occurrenceInterval m i
-      · rw [blockEntry_eq_fst_of_precedes L hp hx hxI,
-          blockEntry_of_mem (Set.left_mem_Icc.mpr (occurrenceInterval m x.1).fst_le_snd)
-            hp.fst_sub_one_mem]
-        rfl
-      · simp [standardVector_of_notMem hxI]
-    · simp [hp, blockEntry_eq_zero_of_not_precedes L hp x.2]
-  · intro j _ hjx
-    dsimp only
-    rw [blockOperator_standardVector_of_ne i hjx.symm]
-    split_ifs <;> simp
-  · intro hxmem
-    exact absurd (Finset.mem_univ x.1) hxmem
+  rw [standardBasis_eq_standardVector,
+    sum_smul_blockOperator_apply_standardVector _ x.mem_occurrenceInterval,
+    centralizer_apply_standardVector_coord L x.mem_occurrenceInterval]
 
 /-- Right-inverse law for `centralizerEquivCoords`: extracting the cut entry at `p` from
 `∑ q, c q • blockOperator m q.1 q.2`. -/
@@ -527,6 +576,8 @@ noncomputable def centralizerEquivCoords :
   left_inv L := Subtype.ext (sum_blockOperator_centralizer_eq L)
   right_inv c := funext (repr_sum_smul_blockOperator c)
 
+/-- Extracting the coordinate at `p = (i, j)` evaluates `L` on the left-endpoint standard vector
+of source block `j` and reads the cut entry at `(i, j.fst - 1)`. -/
 @[simp]
 theorem centralizerEquivCoords_apply (L : (standardPair m .up).centralizer) (p : AllowedPair m) :
     centralizerEquivCoords m L p =
@@ -537,6 +588,8 @@ theorem centralizerEquivCoords_apply (L : (standardPair m .up).centralizer) (p :
           p.property.fst_sub_one_mem) :=
   (rfl)
 
+/-- Reconstructing a centralizer element from a coordinate function `c` yields the weighted sum
+of `blockOperator m p.val.fst p.val.snd` over all allowed pairs `p`. -/
 @[simp]
 theorem coe_centralizerEquivCoords_symm_apply (c : AllowedPair m → ℂ) :
     ((centralizerEquivCoords m).symm c : Module.End ℂ (standardSpace m).Carrier) =
@@ -561,17 +614,7 @@ theorem centralizer_standardPair_up_apply_standardVector (L : (standardPair m .u
         if h : (occurrenceInterval m i).Precedes (occurrenceInterval m j) then
           centralizerEquivCoords m L (AllowedPair.mk h) • standardVector m i (a - 1)
         else 0 := by
-  rw [expand_of_isHomogeneous (GradedPair.isHomogeneous_coe_centralizer L) ha]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  by_cases h : (occurrenceInterval m i).Precedes (occurrenceInterval m j)
-  · simp only [h, ↓reduceDIte]
-    by_cases haI : a - 1 ∈ occurrenceInterval m i
-    · rw [blockEntry_eq_fst_of_precedes L h ha haI,
-        blockEntry_of_mem (Set.left_mem_Icc.mpr (occurrenceInterval m j).fst_le_snd)
-          h.fst_sub_one_mem]
-      rfl
-    · simp [standardVector_of_notMem haI]
-  · simp [h, blockEntry_eq_zero_of_not_precedes L h a]
+  exact centralizer_apply_standardVector_coord L ha
 
 private theorem standardBasis_repr_standardVector_of_deg_eq {i : Fin m.card} {a : ℤ}
     {y : StandardIndex m} (hy : (y.2 : ℤ) = a) :
@@ -611,7 +654,8 @@ theorem standardBasis_repr_centralizer_apply (L : (standardPair m .up).centraliz
     refine Finset.sum_eq_zero fun i _ ↦ ?_
     split_ifs
     · rw [map_smul, Finsupp.smul_apply, smul_eq_mul, ← StandardIndex.mk_fst_snd y,
-        standardBasis_repr_standardVector_of_ne (Ne.symm hy) y.mem_occurrenceInterval, mul_zero]
+        standardBasis_repr_standardVector_eq_zero_of_degree_ne (Ne.symm hy)
+          y.mem_occurrenceInterval, mul_zero]
     · simp
 
 /-- The dimension of `(standardPair m .up).centralizer` equals the number of allowed interval

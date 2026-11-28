@@ -523,18 +523,25 @@ noncomputable def imageEquiv (e : GradedPairEquiv P Q)
     GradedPairEquiv M.pair N.pair :=
   ((M.map e).congr e.map_range_operator).gradedPairEquiv N
 
+/-- The induced image equivalence forms a commuting square with the embeddings into the ambient
+spaces. -/
 @[simp]
 theorem embed_imageEquiv_apply (e : GradedPairEquiv P Q)
     (M : P.ImageModel) (N : Q.ImageModel) (v : M.space.Carrier) :
     N.embed (e.imageEquiv M N v) = e (M.embed v) :=
   ((M.map e).congr e.map_range_operator).embed_gradedPairEquiv_apply N v
 
+/-- The image equivalence induced by the identity graded equivalence on a shared image model is
+the identity. -/
 @[simp]
 theorem imageEquiv_refl (P : GradedPair S d) (M : P.ImageModel) :
     (refl P).imageEquiv M M = refl M.pair := by
   refine ext fun v ↦ M.embed_injective ?_
   rw [embed_imageEquiv_apply, refl_apply, refl_apply]
 
+/-- Inverting an induced image equivalence yields the image equivalence of the inverse graded
+equivalence between the swapped image models. -/
+@[simp]
 theorem imageEquiv_symm (e : GradedPairEquiv P Q) (M : P.ImageModel) (N : Q.ImageModel) :
     (e.imageEquiv M N).symm = e.symm.imageEquiv N M := by
   refine ext fun w ↦ M.embed_injective ?_
@@ -546,6 +553,8 @@ theorem imageEquiv_symm (e : GradedPairEquiv P Q) (M : P.ImageModel) (N : Q.Imag
     _ = e.symm (N.embed w) := by rw [apply_symm_apply]
     _ = M.embed (e.symm.imageEquiv N M w) := (embed_imageEquiv_apply e.symm N M w).symm
 
+/-- Induced image equivalences compose functorially across any shared intermediate image model
+`N`. -/
 theorem imageEquiv_trans (e : GradedPairEquiv P Q) (f : GradedPairEquiv Q R)
     (M : P.ImageModel) (N : Q.ImageModel) (K : R.ImageModel) :
     (e.trans f).imageEquiv M K = (e.imageEquiv M N).trans (f.imageEquiv N K) := by
