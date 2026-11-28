@@ -80,4 +80,22 @@ theorem l2Integral_compMeasurePreserving_fst (hW : IsFilteredPreBrownianReal ℱ
     Lp.compMeasurePreservingₗᵢ_apply] using
     congrArg (fun J : Lp ℝ 2 (timeMeasure T) →L[ℝ] Lp ℝ 2 P ↦ J f) hmap
 
+/-- Any `L²` representative of a deterministic integrand lifted to the predictable time-product
+measure has the same `l2Integral` as its `wienerIntegral`. -/
+theorem l2Integral_uncurry_eq_wienerIntegral (hW : IsFilteredPreBrownianReal ℱ W P)
+    (T : ℝ≥0) {h : ℝ≥0 → ℝ} (hh : MemLp h 2 (timeMeasure T))
+    (hh_pred : MemLp (Function.uncurry fun t (_ : Ω) ↦ h t) 2 (ℱ.predictableMeasure P T)) :
+    letI := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+    hW.l2Integral T (hh_pred.toLp (Function.uncurry fun t (_ : Ω) ↦ h t)) =
+      hW.toIsPreBrownianReal.wienerIntegral T (hh.toLp h) := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  have hcomp : hh_pred.toLp (Function.uncurry fun t (_ : Ω) ↦ h t) =
+      Lp.compMeasurePreserving Prod.fst (ℱ.measurePreserving_fst_predictableMeasure P T)
+        (hh.toLp h) := by
+    rw [Lp.toLp_compMeasurePreserving hh (ℱ.measurePreserving_fst_predictableMeasure P T)]
+    exact MemLp.toLp_congr hh_pred
+      (hh.comp_measurePreserving (ℱ.measurePreserving_fst_predictableMeasure P T))
+      Filter.EventuallyEq.rfl
+  rw [hcomp, hW.l2Integral_compMeasurePreserving_fst T (hh.toLp h)]
+
 end TauCeti.Probability.IsFilteredPreBrownianReal

@@ -9,6 +9,7 @@ public import TauCeti.Probability.BrownianMotion.Integral.Energy.Bound
 public import TauCeti.Probability.Finance.SimpleStrategy.Energy
 public import TauCeti.MeasureTheory.Measure.NNReal
 import TauCeti.Analysis.Normed.Group.Real
+import TauCeti.MeasureTheory.Measure.Prod
 
 /-!
 # Representation independence of elementary square energy
@@ -65,13 +66,12 @@ theorem elementaryEnergy_congr_of_ae_eq (hτ : MonotoneOn τ (Set.Iic n))
 
 /-- Time-product-a.e. equal elementary holdings have a.e. equal square energies.
 No measurability or moment conditions on the heights are required for this implication. -/
-theorem elementaryEnergy_congr_of_ae_eq_prod {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+theorem elementaryEnergy_congr_of_ae_eq_prod {_mΩ : MeasurableSpace Ω} {P : Measure Ω}
     [SFinite P] (hτ : MonotoneOn τ (Set.Iic n)) (hρ : MonotoneOn ρ (Set.Iic m))
     (hab : Function.uncurry (simpleHolding τ n a) =ᵐ[TauCeti.nnvolume.prod P]
       Function.uncurry (simpleHolding ρ m b)) :
-    elementaryEnergy τ a n =ᵐ[P] elementaryEnergy ρ b m := by
-  have hswap := Measure.ae_ae_of_ae_prod
-    (Measure.measurePreserving_swap.quasiMeasurePreserving.ae hab)
-  exact hswap.mono fun ω hω ↦ elementaryEnergy_congr_of_ae_eq hτ hρ ω hω
+    elementaryEnergy τ a n =ᵐ[P] elementaryEnergy ρ b m :=
+  (Measure.ae_ae_eq_flip_of_ae_eq_uncurry hab).mono fun ω hω ↦
+    elementaryEnergy_congr_of_ae_eq hτ hρ ω hω
 
 end TauCeti.Probability

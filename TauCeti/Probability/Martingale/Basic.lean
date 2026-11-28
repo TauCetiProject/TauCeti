@@ -45,7 +45,9 @@ nonnegative real submartingale — in particular the norm of a Banach-valued mar
 integrable power `p ≥ 1` gives a submartingale (`MeasureTheory.Submartingale.rpow` and
 `MeasureTheory.Martingale.norm_rpow`). A square-integrable real
 martingale has conditional square equal to its current square plus the conditional square
-of its future increment (`MeasureTheory.Martingale.condExp_sq`). For a real submartingale,
+of its future increment (`MeasureTheory.Martingale.condExp_sq`), and the integral of its squared
+increment on an earlier event equals the integral of the difference of its squares
+(`MeasureTheory.Martingale.setIntegral_sub_sq`). For a real submartingale,
 multiplication by a nonnegative position known at an earlier date preserves the expectation
 inequality when both products are integrable (`MeasureTheory.Submartingale.integral_mul_le`).
 In particular, positions need not be bounded. A predictable height times a later martingale
@@ -292,6 +294,32 @@ theorem Martingale.condExp_sq (hY : Martingale Y ℱ μ) {i j : ι}
   rw [Pi.pow_def] at h₁
   rw [← h₂, h₁, h₃]
   ring
+
+/-- On any event known at time `i`, the integral of the squared increment `(Y j - Y i) ^ 2` of
+a square-integrable real martingale equals the integral of the difference of squares
+`Y j ^ 2 - Y i ^ 2`. -/
+theorem Martingale.setIntegral_sub_sq (hY : Martingale Y ℱ μ) {i j : ι} (hij : i ≤ j)
+    (hj : MemLp (Y j) 2 μ) {A : Set Ω} (hA : MeasurableSet[ℱ i] A) :
+    ∫ ω in A, (Y j ω - Y i ω) ^ 2 ∂μ = ∫ ω in A, (Y j ω ^ 2 - Y i ω ^ 2) ∂μ := by
+  by_cases hμ : SigmaFinite (μ.trim (ℱ.le i))
+  · have hi : MemLp (Y i) 2 μ :=
+      (hj.condExp (m := ℱ i) one_le_two).ae_eq (hY.condExp_ae_eq hij)
+    have hj2 : Integrable (fun ω ↦ Y j ω ^ 2) μ := hj.integrable_sq
+    have hi2 : Integrable (fun ω ↦ Y i ω ^ 2) μ := hi.integrable_sq
+    have hdiff2 : Integrable (fun ω ↦ (Y j ω - Y i ω) ^ 2) μ := (hj.sub hi).integrable_sq
+    have hint := setIntegral_congr_ae (ℱ.le i A hA)
+      ((hY.condExp_sq hij hj).mono fun _ hω _ ↦ hω)
+    rw [setIntegral_condExp (ℱ.le i) hj2 hA,
+      integral_add hi2.integrableOn integrable_condExp.integrableOn,
+      setIntegral_condExp (ℱ.le i) hdiff2 hA] at hint
+    rw [integral_sub hj2.integrableOn hi2.integrableOn, hint, add_sub_cancel_left]
+  · have hc := hY.condExp_ae_eq hij
+    rw [condExp_of_not_sigmaFinite (ℱ.le i) hμ] at hc
+    have hcongr : ∀ g : Ω → ℝ, (∀ ω, Y i ω = 0 → g ω = Y j ω ^ 2) →
+        ∫ ω in A, g ω ∂μ = ∫ ω in A, Y j ω ^ 2 ∂μ := fun g hg ↦
+      setIntegral_congr_ae (ℱ.le i A hA) (hc.symm.mono fun ω hω _ ↦ hg ω (by simpa using hω))
+    exact (hcongr _ fun ω hω ↦ by simp [hω]).trans
+      (hcongr _ fun ω hω ↦ by simp [hω]).symm
 
 /-- A nonnegative position known at time `i` preserves a submartingale's expectation inequality
 between `i` and `j`, provided its products with both values are integrable. -/

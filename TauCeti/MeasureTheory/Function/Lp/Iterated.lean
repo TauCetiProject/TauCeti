@@ -8,7 +8,9 @@ module
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Measure.WithDensityFinite
 public import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
+import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
+import TauCeti.MeasureTheory.Function.LpSeminorm.SquaredNorm
 
 /-!
 # Iterated `Lᵖ` seminorms on a product measure
@@ -31,6 +33,11 @@ Only the second measure needs to be s-finite.
   is the iterated integral of the squared extended norm, integrating over `μ` first.
 * `TauCeti.tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm` — convergence to zero in
   `L²(μ ⊗ ν)` makes the section square energies over `μ` converge to zero in `ν`-measure.
+* `TauCeti.eLpNorm_integral_le_eLpNorm_prod` and
+  `TauCeti.eLpNorm_integral_sub_integral_le_eLpNorm_prod` — Fubini `L¹` bounds comparing
+  pathwise integrals with the `L¹(μ ⊗ ν)` seminorm.
+* `TauCeti.tendsto_eLpNorm_integral_norm_sq_sub` — `L²(μ ⊗ ν)` convergence implies `L¹(ν)`
+  convergence of section square integrals.
 * `TauCeti.eLpNorm_prod_smul` — the `Lᵖ(μ ⊗ ν)` seminorm of `(x, y) ↦ f x • g y` is the product
   of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`.
 * `MeasureTheory.MemLp.ae_memLp_prod_right` — for `f ∈ Lᵖ(μ ⊗ ν)`, almost every section is in
@@ -210,6 +217,59 @@ theorem tendsto_measure_le_lintegral_enorm_sq_of_tendsto_eLpNorm [SFinite μ] [S
       (Or.inr hc)
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ ↦ bot_le)
     hbound
+
+/-- **Fubini's inequality in `L¹`.** The `L¹(ν)` seminorm of the `μ`-integral `y ↦ ∫ x, f x y ∂μ`
+is at most the `L¹(μ ⊗ ν)` seminorm of `Function.uncurry f`. -/
+theorem eLpNorm_integral_le_eLpNorm_prod [SFinite μ] [SFinite ν] {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : α → β → E}
+    (hprod : AEStronglyMeasurable (Function.uncurry f) (μ.prod ν)) :
+    eLpNorm (fun y ↦ ∫ x, f x y ∂μ) 1 ν ≤
+      eLpNorm (Function.uncurry f) 1 (μ.prod ν) := by
+  have hsec : AEStronglyMeasurable (fun y ↦ ∫ x, f x y ∂μ) ν :=
+    hprod.prod_swap.integral_prod_right'
+  rw [eLpNorm_one_eq_lintegral_eNorm hsec, eLpNorm_one_eq_lintegral_eNorm hprod,
+    lintegral_prod_symm _ hprod.eNorm]
+  exact lintegral_mono fun y ↦ eNorm_integral_le_lintegral_eNorm _
+
+/-- **Fubini's `L¹` estimate for a difference of section integrals.** When almost every
+`μ`-section of `f` and `g` is integrable, the `L¹(ν)` seminorm of
+`y ↦ (∫ x, f x y ∂μ) - ∫ x, g x y ∂μ` is at most the `L¹(μ ⊗ ν)` seminorm of
+`(x, y) ↦ f x y - g x y`. -/
+theorem eLpNorm_integral_sub_integral_le_eLpNorm_prod [SFinite μ] [SFinite ν] {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f g : α → β → E}
+    (hf : ∀ᵐ y ∂ν, Integrable (fun x ↦ f x y) μ)
+    (hg : ∀ᵐ y ∂ν, Integrable (fun x ↦ g x y) μ)
+    (hprod : AEStronglyMeasurable (fun p : α × β ↦ f p.1 p.2 - g p.1 p.2) (μ.prod ν)) :
+    eLpNorm (fun y ↦ (∫ x, f x y ∂μ) - ∫ x, g x y ∂μ) 1 ν ≤
+      eLpNorm (fun p : α × β ↦ f p.1 p.2 - g p.1 p.2) 1 (μ.prod ν) := by
+  have hae : (fun y ↦ (∫ x, f x y ∂μ) - ∫ x, g x y ∂μ) =ᵐ[ν]
+      fun y ↦ ∫ x, (f x y - g x y) ∂μ :=
+    hf.mp (hg.mono fun y hgy hfy ↦ (integral_sub hfy hgy).symm)
+  rw [eLpNorm_congr_ae hae]
+  exact eLpNorm_integral_le_eLpNorm_prod hprod
+
+/-- If `K k → f` in `L²(μ ⊗ ν)` over s-finite measures `μ` and `ν`, then the section square
+integrals `y ↦ ∫ x, ‖K k x y‖ ^ 2 ∂μ` converge to `y ↦ ∫ x, ‖f x y‖ ^ 2 ∂μ` in `L¹(ν)`. -/
+theorem tendsto_eLpNorm_integral_norm_sq_sub [SFinite μ] [SFinite ν] {E ι : Type*}
+    [NormedAddCommGroup E] {l : Filter ι} {K : ι → α → β → E} {f : α → β → E}
+    (hf : MemLp (Function.uncurry f) 2 (μ.prod ν))
+    (hK_lim : Tendsto (fun k ↦ eLpNorm (Function.uncurry (K k) - Function.uncurry f) 2
+      (μ.prod ν)) l (𝓝 0)) :
+    Tendsto (fun k ↦ eLpNorm
+      (fun y ↦ (∫ x, ‖K k x y‖ ^ 2 ∂μ) - ∫ x, ‖f x y‖ ^ 2 ∂μ) 1 ν) l (𝓝 0) := by
+  have hf_sq : Integrable (fun p : α × β ↦ ‖f p.1 p.2‖ ^ 2) (μ.prod ν) :=
+    (memLp_two_iff_integrable_sq_norm hf.aestronglyMeasurable).mp hf
+  have hK_sq : ∀ᶠ k in l, Integrable (fun p : α × β ↦ ‖K k p.1 p.2‖ ^ 2) (μ.prod ν) := by
+    filter_upwards [hK_lim.eventually (eventually_lt_nhds ENNReal.zero_lt_top)] with k hk
+    have hk_mem : MemLp (Function.uncurry (K k)) 2 (μ.prod ν) := by
+      simpa only [sub_add_cancel] using MemLp.add hk hf
+    exact (memLp_two_iff_integrable_sq_norm hk_mem.aestronglyMeasurable).mp hk_mem
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (tendsto_eLpNorm_norm_sq_sub hf hK_lim) (.of_forall fun _ ↦ zero_le) ?_
+  filter_upwards [hK_sq] with k hk
+  exact eLpNorm_integral_sub_integral_le_eLpNorm_prod
+    hk.prod_left_ae hf_sq.prod_left_ae
+    (hk.aestronglyMeasurable.sub hf_sq.aestronglyMeasurable)
 
 /-- **The `Lᵖ` seminorm of a tensor product.** The `Lᵖ(μ ⊗ ν)` seminorm of `(x, y) ↦ f x • g y`
 is the product of the `Lᵖ(μ)` seminorm of `f` and the `Lᵖ(ν)` seminorm of `g`, for every

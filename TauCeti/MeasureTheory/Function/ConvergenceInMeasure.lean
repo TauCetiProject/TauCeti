@@ -61,6 +61,9 @@ between equivalent finite measures.
   bounded function preserves convergence in measure without measurability or finiteness.
 * `MeasureTheory.tendstoInMeasure_of_tendsto_integral_norm_sq`: convergence in mean square
   implies convergence in measure for any measure and filter.
+* `MeasureTheory.tendsto_measure_compl_of_ae_eventually_mem`: on a finite measure space, the
+  complements of measurable events containing almost every point eventually along a countably
+  generated filter have measure tending to zero.
 * `MeasureTheory.tendsto_measure_ge_of_ae_eventually_le`: fixed-threshold tail convergence to
   zero of measurable `ℝ≥0∞`-valued errors transfers along a countably generated filter on a
   finite measure space to a measurable family dominated eventually in the filter for almost every
@@ -91,6 +94,8 @@ between equivalent finite measures.
   term tending to zero for every `δ > 0` tends to zero.
 * `TauCeti.tendsto_measure_lt_of_tendstoInMeasure`: real functions tending to zero in measure
   have upper tails of measure tending to zero.
+* `TauCeti.tendsto_measure_of_subset_union`: sets eventually covered by a null set and two
+  halves of measure at most `δ i / 2 → 0` have measure tending to zero.
 * `MeasureTheory.TendstoInMeasure.prodMk`: convergence in measure of paired functions,
   for arbitrary measures and filters, without measurability assumptions.
 * `MeasureTheory.TendstoInMeasure.continuous_comp`: continuous unary transformations on
@@ -226,6 +231,25 @@ theorem tendsto_measure_lt_of_tendstoInMeasure {f : ι → α → ℝ}
     (fun _ ↦ zero_le) fun i ↦ measure_mono fun x hx ↦ by
       simp only [Set.mem_ofPred_eq] at hx ⊢
       exact hx.le.trans (le_abs_self _)
+
+/-- If `A i` is eventually covered by a null set `N` together with `B i ∪ C i`, where both
+`μ (B i)` and `μ (C i)` are eventually at most `δ i / 2` for some `δ i → 0` along `l`,
+then `μ (A i)` tends to zero along `l`. -/
+theorem tendsto_measure_of_subset_union {δ : ι → ℝ≥0∞}
+    (hδ : Tendsto δ l (𝓝 0)) {N : Set α} (hN : μ N = 0)
+    {A B C : ι → Set α}
+    (hB : ∀ᶠ i in l, μ (B i) ≤ δ i / 2) (hC : ∀ᶠ i in l, μ (C i) ≤ δ i / 2)
+    (hsub : ∀ᶠ i in l, A i ⊆ N ∪ (B i ∪ C i)) :
+    Tendsto (fun i ↦ μ (A i)) l (𝓝 0) := by
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hδ
+    (Eventually.of_forall fun _ ↦ zero_le) ?_
+  filter_upwards [hB, hC, hsub] with i hiB hiC hisub
+  calc μ (A i) ≤ μ N + (μ (B i) + μ (C i)) :=
+        (measure_mono hisub).trans ((measure_union_le _ _).trans
+          (add_le_add le_rfl (measure_union_le _ _)))
+    _ ≤ 0 + (δ i / 2 + δ i / 2) := by
+        rw [hN]; exact add_le_add le_rfl (add_le_add hiB hiC)
+    _ = δ i := by rw [zero_add, ENNReal.add_halves]
 
 end TauCeti
 
@@ -674,6 +698,17 @@ theorem TendstoInMeasure.mul [Zero R] [Mul R] [PseudoMetricSpace R] [IsBoundedSM
 
 end Algebra
 
+/-- On a finite measure space, the complements of measurable events containing almost every point
+eventually along a countably generated filter have measure tending to `0`. -/
+theorem tendsto_measure_compl_of_ae_eventually_mem {α ι : Type*} {mα : MeasurableSpace α}
+    {μ : Measure α} [IsFiniteMeasure μ] {l : Filter ι} [l.IsCountablyGenerated]
+    {G : ι → Set α} (hG : ∀ i, MeasurableSet (G i))
+    (hmem : ∀ᵐ x ∂μ, ∀ᶠ i in l, x ∈ G i) :
+    Tendsto (fun i ↦ μ (G i)ᶜ) l (𝓝 0) := by
+  simpa using tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure (As := fun i ↦ (G i)ᶜ) l
+    MeasurableSet.empty (fun i ↦ (hG i).compl) <| hmem.mono fun x hx ↦ hx.mono fun i hi ↦ by
+      simp [hi]
+
 /-- On a finite measure space, fixed-threshold tail convergence to `0` of measurable `ℝ≥0∞`-valued
 errors transfers along any countably generated filter to another measurable error family that is
 dominated by it eventually in the filter for almost every sample point. -/
@@ -685,14 +720,10 @@ theorem tendsto_measure_ge_of_ae_eventually_le {α ι : Type*} {mα : Measurable
     Tendsto (fun i ↦ μ {x | ε ≤ E i x}) l (𝓝 0) := by
   let B (i : ι) : Set α := {x | ε ≤ E i x} \ {x | ε ≤ F i x}
   have hB : Tendsto (fun i ↦ μ (B i)) l (𝓝 0) := by
-    simpa using tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure (As := B) l
-      MeasurableSet.empty
-      (fun i ↦ (measurableSet_le measurable_const (hE i)).diff
-        (measurableSet_le measurable_const (hF i)))
-      (hle.mono fun x hx ↦ hx.mono fun i hi ↦ by
-        simp only [B, Set.mem_sdiff, Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false,
-          not_and, not_not]
-        exact fun hεE ↦ hεE.trans hi)
+    simpa only [compl_compl] using tendsto_measure_compl_of_ae_eventually_mem
+      (fun i ↦ ((measurableSet_le measurable_const (hE i)).diff
+        (measurableSet_le measurable_const (hF i))).compl)
+      (hle.mono fun x hx ↦ hx.mono fun i hi hmem ↦ hmem.2 (hmem.1.trans hi))
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     (by simpa only [add_zero] using hlim.add hB) (fun _ ↦ zero_le) fun i ↦
     (measure_mono fun x hx ↦ by simp only [B, Set.mem_union, Set.mem_sdiff]; tauto).trans

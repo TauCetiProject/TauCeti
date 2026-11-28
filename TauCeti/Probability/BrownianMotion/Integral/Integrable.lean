@@ -11,6 +11,9 @@ public import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 public import TauCeti.Probability.Process.TimeMeasure
 import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
+import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Measure.Prod
+import TauCeti.Order.Interval.Set.LinearOrder
 import TauCeti.Probability.Finance.SimpleStrategy.Energy
 
 /-!
@@ -22,9 +25,11 @@ pathwise, on every finite horizon outside one common null set. These are domains
 stochastic integration, not assertions that a stochastic integral has already been constructed.
 
 For s-finite `P`, the expected-energy domain embeds into the pathwise-energy domain by Tonelli
-and a countable cofinal family of horizons. Both are closed under addition, scaling and
-restriction to predictable sets. The expected-energy domain is also closed under multiplication
-by predictable processes that are essentially bounded on each finite horizon.
+and a countable cofinal family of horizons, and integrating elapsed square energy over an event
+known at `s` reduces to the predictable-measure set integral over `(s,t] × A`
+(`TauCeti.BrownianIntegrable.setIntegral_sq_timeMeasure_sub`). Both are closed under addition,
+scaling and restriction to predictable sets. The expected-energy domain is also closed under
+multiplication by predictable processes that are essentially bounded on each finite horizon.
 Product-almost-everywhere replacement by predictable processes preserves the expected-energy
 domain, and, for s-finite `P`, the pathwise-energy domain. A finite initial-measurable random
 variable, held constant in time, belongs to the pathwise domain without any moment assumption,
@@ -121,6 +126,11 @@ theorem BrownianIntegrable.memLp_timeMeasure (h : BrownianIntegrable ℱ P H) (T
     MemLp (Function.uncurry H) 2 ((Probability.timeMeasure T).prod P) := by
   simpa only [NNReal.comap_volume_restrict_Ioc, Probability.timeMeasure_def] using h.memLp T
 
+/-- A Brownian-integrable process belongs to `L²` of the finite-horizon predictable measure. -/
+theorem BrownianIntegrable.memLp_predictableMeasure (h : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
+    MemLp (Function.uncurry H) 2 (ℱ.predictableMeasure P T) :=
+  (ℱ.memLp_predictableMeasure_iff P h.isStronglyPredictable T 2).mpr (h.memLp_timeMeasure T)
+
 /-- Finite expected energy on every finite horizon gives finite pathwise energy on all
 finite horizons simultaneously. -/
 theorem BrownianIntegrable.locallyBrownianIntegrable [SFinite P]
@@ -130,11 +140,51 @@ theorem BrownianIntegrable.locallyBrownianIntegrable [SFinite P]
   exact ((h.memLp n).comp_measurePreserving
     (Measure.measurePreserving_swap (μ := P) (ν := _))).ae_memLp_prod_right
 
-/-- `BrownianIntegrable` expressed as `L²` membership for the trimmed predictable measure
-`ℱ.predictableMeasure P T`. -/
-theorem BrownianIntegrable.memLp_predictableMeasure (h : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
-    MemLp (Function.uncurry H) 2 (ℱ.predictableMeasure P T) :=
-  (ℱ.memLp_predictableMeasure_iff P h.isStronglyPredictable T 2).mpr (h.memLp_timeMeasure T)
+/-- For a Brownian-integrable integrand, integrating the elapsed square energy over `(s, t]`
+and an `ℱ s`-measurable event `A` equals the predictable-measure set integral over `Ioc s t ×ˢ A`
+at any horizon `T ≥ t`. -/
+theorem BrownianIntegrable.setIntegral_sq_timeMeasure_sub [SFinite P]
+    (hH : BrownianIntegrable ℱ P H) {s t T : ℝ≥0} (hst : s ≤ t) (htT : t ≤ T)
+    {A : Set Ω} (hA : MeasurableSet[ℱ s] A) :
+    ∫ ω in A, ((∫ r, H r ω ^ 2 ∂Probability.timeMeasure t) -
+      ∫ r, H r ω ^ 2 ∂Probability.timeMeasure s) ∂P =
+      ∫ p in Ioc s t ×ˢ A, H p.fst p.snd ^ 2 ∂ℱ.predictableMeasure P T := by
+  have hsT : s ≤ T := hst.trans htT
+  have hsec : ∀ᵐ ω ∂P,
+      ((∫ r, H r ω ^ 2 ∂Probability.timeMeasure t) -
+        ∫ r, H r ω ^ 2 ∂Probability.timeMeasure s) =
+        ∫ r in Ioc s t, H r ω ^ 2 ∂Probability.timeMeasure T := by
+    filter_upwards [hH.locallyBrownianIntegrable.ae_memLp] with ω hω
+    have hHT : IntegrableOn (fun r ↦ H r ω ^ 2) (Ioc 0 t) (Probability.timeMeasure T) := by
+      have h : Integrable (fun r ↦ H r ω ^ 2) (Probability.timeMeasure t) := by
+        simpa only [NNReal.comap_volume_restrict_Ioc, Probability.timeMeasure_def] using
+          (hω t).integrable_sq
+      rwa [← Probability.timeMeasure_restrict_of_le htT] at h
+    rw [← Probability.timeMeasure_restrict_of_le htT,
+      ← Probability.timeMeasure_restrict_of_le hsT,
+      ← setIntegral_sdiff measurableSet_Ioc hHT (Ioc_subset_Ioc_right hst),
+      Set.Ioc_sdiff_Ioc_of_le zero_le]
+  have hprod_int : IntegrableOn (fun z : Ω × ℝ≥0 ↦ H z.2 z.1 ^ 2)
+      (A ×ˢ Ioc s t) (P.prod (Probability.timeMeasure T)) :=
+    ((hH.memLp_timeMeasure T).comp_measurePreserving
+      (Measure.measurePreserving_swap (μ := P) (ν := Probability.timeMeasure T))).integrable_sq
+      |>.integrableOn
+  have hmeas_ind : StronglyMeasurable[ℱ.predictable]
+      ((Ioc s t ×ˢ A).indicator (fun p : ℝ≥0 × Ω ↦ H p.1 p.2 ^ 2)) :=
+    (hH.isStronglyPredictable.pow 2).indicator (measurableSet_predictable_Ioc_prod s t hA)
+  calc
+    ∫ ω in A, ((∫ r, H r ω ^ 2 ∂Probability.timeMeasure t) -
+        ∫ r, H r ω ^ 2 ∂Probability.timeMeasure s) ∂P
+      = ∫ ω in A, ∫ r in Ioc s t, H r ω ^ 2 ∂Probability.timeMeasure T ∂P :=
+        setIntegral_congr_ae (ℱ.le s A hA) (hsec.mono fun _ hω _ ↦ hω)
+    _ = ∫ z in A ×ˢ Ioc s t, H z.snd z.fst ^ 2 ∂P.prod (Probability.timeMeasure T) :=
+        (setIntegral_prod (fun z : Ω × ℝ≥0 ↦ H z.2 z.1 ^ 2) hprod_int).symm
+    _ = ∫ p in Ioc s t ×ˢ A, H p.fst p.snd ^ 2 ∂(Probability.timeMeasure T).prod P :=
+        setIntegral_prod_swap (Ioc s t) A (fun p : ℝ≥0 × Ω ↦ H p.1 p.2 ^ 2)
+    _ = ∫ p in Ioc s t ×ˢ A, H p.fst p.snd ^ 2 ∂ℱ.predictableMeasure P T := by
+        rw [← integral_indicator (measurableSet_Ioc.prod (ℱ.le s A hA)),
+          ← ℱ.integral_predictableMeasure P hmeas_ind T,
+          integral_indicator (measurableSet_predictable_Ioc_prod s t hA)]
 
 /-- The expected-energy domain is closed under addition. -/
 theorem BrownianIntegrable.add (hH : BrownianIntegrable ℱ P H)
@@ -235,10 +285,7 @@ theorem LocallyBrownianIntegrable.congr_prod [SFinite P] (h : LocallyBrownianInt
       ((volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ)).prod P]
         Function.uncurry K) : LocallyBrownianIntegrable ℱ P K := by
   refine locallyBrownianIntegrable_iff_nat.2 ⟨hK, fun n ↦ ?_⟩
-  have heq' := Measure.ae_ae_of_ae_prod
-    ((Measure.measurePreserving_swap (μ := P) (ν := _)).quasiMeasurePreserving.ae_eq_comp
-      (heq n))
-  filter_upwards [h.ae_memLp, heq'] with ω hω heqω
+  filter_upwards [h.ae_memLp, Measure.ae_ae_eq_flip_of_ae_eq_uncurry (heq n)] with ω hω heqω
   exact (hω n).ae_eq heqω
 
 /-- A time-constant finite random variable belongs to the pathwise domain exactly when it
@@ -282,6 +329,30 @@ theorem brownianIntegrable_const_iff [SFinite P] {ξ : Ω → ℝ} :
   · rintro ⟨hξ, hξ₂⟩
     exact ⟨((locallyBrownianIntegrable_const_iff (P := P)).2 hξ).isStronglyPredictable,
       fun _ ↦ hξ₂.comp_snd _⟩
+
+/-- An indicator on `(s, u]` with an `ℱ s`-measurable, square-integrable height belongs to
+the expected-energy domain. -/
+theorem brownianIntegrable_indicator_Ioc [SFinite P] {s u : ℝ≥0} {ξ : Ω → ℝ}
+    (hξ : StronglyMeasurable[ℱ s] ξ) (hξ₂ : MemLp ξ 2 P) :
+    BrownianIntegrable ℱ P (fun t ω ↦ (Ioc s u).indicator (fun _ ↦ ξ ω) t) where
+  isStronglyPredictable := ℱ.stronglyMeasurable_indicator_Ioc_predictable s u hξ
+  memLp T := by
+    rw [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def]
+    exact (ℱ.memLp_predictableMeasure_iff P
+      (ℱ.stronglyMeasurable_indicator_Ioc_predictable s u hξ) T 2).mp
+      (ℱ.memLp_indicator_Ioc_predictableMeasure T s u hξ hξ₂)
+
+/-- A deterministic measurable function that is square integrable on every finite horizon belongs
+to the expected-energy domain. -/
+theorem brownianIntegrable_fst [IsFiniteMeasure P] {h : ℝ≥0 → ℝ}
+    (hm : Measurable h) (hLp : ∀ T : ℝ≥0, MemLp h 2 (Probability.timeMeasure T)) :
+    BrownianIntegrable ℱ P (fun t _ ↦ h t) where
+  isStronglyPredictable := by
+    simpa only [IsStronglyPredictable, Function.uncurry_def, Function.comp_def] using
+      hm.stronglyMeasurable.comp_measurable ℱ.measurable_fst_predictable
+  memLp T := by
+    rw [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def]
+    simpa only [Function.uncurry_def] using (hLp T).comp_fst P
 
 /-- Left-measurable `L²` heights on any finite deterministic grid produce an integrand in the
 expected-square-energy domain `BrownianIntegrable ℱ P`, for any `SFinite` measure `P` and with no

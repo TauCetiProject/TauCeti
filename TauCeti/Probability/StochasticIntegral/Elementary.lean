@@ -61,23 +61,54 @@ namespace ElementaryIntegrand
 
 variable {ℱ : Filtration ℝ≥0 mΩ} (K : ElementaryIntegrand ℱ)
 
--- The old sum API has natural-number indices. Extend the finite data canonically;
--- these extensions carry no extra data in an elementary-integrand presentation.
-private def dates (j : ℕ) : ℝ≥0 := K.grid ⟨min j K.n, by omega⟩
+/-- Canonical total-index grid dates, clamped at the terminal endpoint beyond `K.n`. -/
+def dates (j : ℕ) : ℝ≥0 := K.grid ⟨min j K.n, by omega⟩
 
-private def positions (j : ℕ) : Ω → ℝ :=
+/-- Canonical total-index positions, extended by zero beyond `K.n`. -/
+def positions (j : ℕ) : Ω → ℝ :=
   if h : j < K.n then K.height ⟨j, h⟩ else 0
 
-private theorem monotone_dates : Monotone K.dates := by
+/-- The extended grid dates are nondecreasing on `ℕ`. -/
+theorem monotone_dates : Monotone K.dates := by
   intro i j hij
   exact K.monotone_grid (min_le_min_right _ hij)
 
-private theorem measurable_positions (j : ℕ) (hj : j < K.n) :
+/-- In-range formula for the extended grid dates. -/
+theorem dates_of_le {j : ℕ} (hj : j ≤ K.n) :
+    K.dates j = K.grid ⟨j, Nat.lt_succ_of_le hj⟩ := by
+  simp [dates, Nat.min_eq_left hj]
+
+/-- On `Fin (K.n + 1)`, the extended grid dates agree with `K.grid`. -/
+@[simp]
+theorem dates_coe (i : Fin (K.n + 1)) : K.dates i = K.grid i :=
+  K.dates_of_le (Fin.is_le i)
+
+/-- At or beyond `K.n`, the extended grid dates are clamped at the terminal grid point. -/
+@[simp]
+theorem dates_of_ge {j : ℕ} (hj : K.n ≤ j) : K.dates j = K.grid (Fin.last K.n) := by
+  simp [dates, Nat.min_eq_right hj, Fin.last]
+
+/-- In-range formula for the extended positions. -/
+theorem positions_of_lt {j : ℕ} (hj : j < K.n) : K.positions j = K.height ⟨j, hj⟩ := by
+  simp [positions, hj]
+
+/-- On `Fin K.n`, the extended positions agree with `K.height`. -/
+@[simp]
+theorem positions_coe (i : Fin K.n) : K.positions i = K.height i :=
+  K.positions_of_lt i.isLt
+
+/-- At or beyond `K.n`, the extended positions vanish. -/
+@[simp]
+theorem positions_of_ge {j : ℕ} (hj : K.n ≤ j) : K.positions j = 0 := by
+  simp [positions, not_lt.mpr hj]
+
+/-- Each extended position up to `K.n` is strongly measurable at its left grid date. -/
+theorem measurable_positions (j : ℕ) (hj : j < K.n) :
     StronglyMeasurable[ℱ (K.dates j)] (K.positions j) := by
   have hd : K.dates j = K.grid (⟨j, hj⟩ : Fin K.n).castSucc := by
-    simp [dates, Nat.min_eq_left hj.le, Fin.castSucc]
-  rw [hd]
-  simpa only [positions, dite_eq_left hj] using K.measurable_height ⟨j, hj⟩
+    simpa [Fin.castSucc] using K.dates_of_le hj.le
+  rw [hd, K.positions_of_lt hj]
+  exact K.measurable_height ⟨j, hj⟩
 
 /-- The predictable process represented by the bounded positions and their half-open
 trading intervals. It vanishes outside the finite grid. -/
@@ -88,6 +119,57 @@ def toProcess : ℝ≥0 → Ω → ℝ :=
 intervals truncated at the evaluation time. -/
 def integral (X : ℝ≥0 → Ω → ℝ) : ℝ≥0 → Ω → ℝ :=
   Finance.simpleGains K.dates K.n K.positions X
+
+/-- `Finance.simpleHolding` on the canonical extended dates and positions equals `K.toProcess`. -/
+theorem simpleHolding_dates_positions :
+    Finance.simpleHolding K.dates K.n K.positions = K.toProcess := by
+  rw [toProcess]
+
+/-- `Finance.simpleGains` on the canonical extended dates and positions equals `K.integral X`. -/
+theorem simpleGains_dates_positions (X : ℝ≥0 → Ω → ℝ) :
+    Finance.simpleGains K.dates K.n K.positions X = K.integral X := by
+  rw [integral]
+
+/-- Construct an `ElementaryIntegrand` from total-index grid and height data on `ℕ`. -/
+@[expose]
+def ofTotal (n : ℕ) (τ : ℕ → ℝ≥0) (a : ℕ → Ω → ℝ)
+    (hτ : MonotoneOn τ (Set.Iic n))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hb : ∀ j < n, ∃ C : ℝ, ∀ ω, |a j ω| ≤ C) :
+    ElementaryIntegrand ℱ where
+  n := n
+  grid := fun i ↦ τ i.val
+  monotone_grid := fun i j hij ↦ hτ (Fin.is_le i) (Fin.is_le j) hij
+  height := fun i ↦ a i.val
+  measurable_height := fun i ↦ ha i.val i.isLt
+  bounded_height := fun i ↦ hb i.val i.isLt
+
+/-- The number of intervals of `ofTotal` equals `n`. -/
+@[simp]
+theorem n_ofTotal {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
+    (hτ : MonotoneOn τ (Set.Iic n))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hb : ∀ j < n, ∃ C : ℝ, ∀ ω, |a j ω| ≤ C) :
+    (ofTotal n τ a hτ ha hb).n = n :=
+  rfl
+
+/-- The grid points of `ofTotal` agree with `τ` on `Fin (n + 1)`. -/
+@[simp]
+theorem grid_ofTotal {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
+    (hτ : MonotoneOn τ (Set.Iic n))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hb : ∀ j < n, ∃ C : ℝ, ∀ ω, |a j ω| ≤ C) (i : Fin (n + 1)) :
+    (ofTotal n τ a hτ ha hb).grid i = τ i.val :=
+  rfl
+
+/-- The heights of `ofTotal` agree with `a` on `Fin n`. -/
+@[simp]
+theorem height_ofTotal {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
+    (hτ : MonotoneOn τ (Set.Iic n))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hb : ∀ j < n, ∃ C : ℝ, ∀ ω, |a j ω| ≤ C) (i : Fin n) :
+    (ofTotal n τ a hτ ha hb).height i = a i.val :=
+  rfl
 
 /-- Finite-sum formula for the represented predictable process. -/
 theorem toProcess_def (t : ℝ≥0) (ω : Ω) :
@@ -106,6 +188,26 @@ theorem integral_def (X : ℝ≥0 → Ω → ℝ) (t : ℝ≥0) (ω : Ω) :
   apply sum_congr rfl
   intro i _
   simp [dates, positions, i.isLt, Fin.castSucc, Fin.castAdd, Fin.castLE, Fin.succ]
+
+/-- The predictable process of `ofTotal` equals `Finance.simpleHolding τ n a`. -/
+theorem toProcess_ofTotal {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
+    (hτ : MonotoneOn τ (Set.Iic n))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hb : ∀ j < n, ∃ C : ℝ, ∀ ω, |a j ω| ≤ C) :
+    (ofTotal n τ a hτ ha hb).toProcess = Finance.simpleHolding τ n a := by
+  ext t ω
+  rw [toProcess_def, Finance.simpleHolding_def, ← Fin.sum_univ_eq_sum_range]
+  exact sum_congr rfl fun i _ ↦ rfl
+
+/-- The elementary integral of `ofTotal` equals `Finance.simpleGains τ n a X`. -/
+theorem integral_ofTotal {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
+    (hτ : MonotoneOn τ (Set.Iic n))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hb : ∀ j < n, ∃ C : ℝ, ∀ ω, |a j ω| ≤ C) (X : ℝ≥0 → Ω → ℝ) :
+    (ofTotal n τ a hτ ha hb).integral X = Finance.simpleGains τ n a X := by
+  ext t ω
+  rw [integral_def, Finance.simpleGains_def, ← Fin.sum_univ_eq_sum_range]
+  exact sum_congr rfl fun i _ ↦ rfl
 
 /-- On a trading interval the represented process equals its height. -/
 theorem toProcess_of_mem_Ioc (i : Fin K.n) {t : ℝ≥0}

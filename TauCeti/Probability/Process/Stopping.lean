@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.Probability.Process.Stopping
+public import Mathlib.Probability.Process.Indistinguishable
 public import TauCeti.Topology.Order.Cadlag
 
 /-!
@@ -32,9 +33,11 @@ restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`).
 membership up to the random time also passes to the stopped process, and, under a finite
 measure, almost-sure agreements with almost-everywhere strongly measurable stage variables along
 random times diverging to `⊤` converge in measure to the unstopped slice
-(`MeasureTheory.tendstoInMeasure_of_stoppedProcess_ae_eq`). Under a finite measure, truncating an
-almost-everywhere measurable `WithTop ℝ≥0`-valued time at a deterministic bound `T : ℝ≥0` yields an
-integrable finite approximation (`MeasureTheory.integrable_untopA_const_min`).
+(`MeasureTheory.tendstoInMeasure_of_stoppedProcess_ae_eq`). Stopping also preserves
+indistinguishability (`ProbabilityTheory.Indistinguishable.stoppedProcess`). Under a finite
+measure, truncating an almost-everywhere measurable `WithTop ℝ≥0`-valued time at a deterministic
+bound `T : ℝ≥0` yields an integrable finite approximation
+(`MeasureTheory.integrable_untopA_const_min`).
 -/
 
 public section
@@ -184,6 +187,16 @@ theorem stoppedProcess_indicator_pos_apply {ι Ω E : Type*} [LinearOrder ι] [O
   rw [stoppedProcess_indicator_comm]
   simp only [Set.indicator_apply, Set.mem_ofPred_eq, stoppedProcess]
 
+/-- Stopping the `{⊥ < τ}`-indicator restriction of a process agrees with stopping the process
+itself when `τ` is everywhere strictly positive. -/
+theorem stoppedProcess_indicator_pos {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    [Zero E] (X : ι → Ω → E) {τ : Ω → WithTop ι} (hτ : ∀ ω, (⊥ : WithTop ι) < τ ω) :
+    stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (X t)) τ =
+      stoppedProcess X τ := by
+  ext t ω
+  simp only [stoppedProcess_indicator_comm']
+  exact Set.indicator_of_mem (hτ ω) _
+
 /-- Pointwise evaluation of a stopped process. -/
 theorem stoppedProcess_apply {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
     (u : ι → Ω → E) (τ : Ω → WithTop ι) (i : ι) (ω : Ω) :
@@ -254,3 +267,17 @@ theorem integrable_untopA_const_min {Ω : Type*} {_ : MeasurableSpace Ω} {P : M
       exact WithTop.untopA_le (min_le_left _ _))
 
 end MeasureTheory
+
+namespace ProbabilityTheory.Indistinguishable
+
+open MeasureTheory
+
+/-- Stopping preserves indistinguishability of processes at any random time. -/
+theorem stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X Y : ι → Ω → E}
+    (hXY : X ≡ᵐ[P] Y) (τ : Ω → WithTop ι) :
+    MeasureTheory.stoppedProcess X τ ≡ᵐ[P] MeasureTheory.stoppedProcess Y τ := by
+  filter_upwards [hXY] with ω hω t
+  simp only [MeasureTheory.stoppedProcess_apply, hω]
+
+end ProbabilityTheory.Indistinguishable

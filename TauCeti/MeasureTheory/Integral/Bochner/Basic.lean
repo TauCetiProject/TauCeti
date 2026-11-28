@@ -13,6 +13,8 @@ import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Order.Interval.Set.Pi
 import TauCeti.Analysis.Normed.Module.Basic
@@ -99,6 +101,9 @@ for set and probability integrals.
   integral of `‖f‖ₑ ^ 2`.
 * `toReal_lintegral_coe_eq_integral` identifies `(∫⁻ ω, (f ω : ℝ≥0∞) ∂μ).toReal` with
   `∫ ω, (f ω : ℝ) ∂μ` for any almost-everywhere measurable `f : Ω → ℝ≥0`.
+* `MeasureTheory.integral_norm_sq_eq_toReal_lintegral_enorm` and
+  `MeasureTheory.integral_sq_eq_toReal_lintegral_enorm` express `∫ ‖f‖²` and `∫ f²` as the real
+  part of `∫⁻ ‖f‖ₑ²` for any a.e. strongly measurable function.
 
 ## Exponentials
 
@@ -1342,3 +1347,22 @@ theorem aestronglyMeasurable_of_integrableOn_sub_pow_smul {E : Type*} [Seminorme
         exact pow_ne_zero _ (sub_pos.mpr ht).ne')).mp hf.aestronglyMeasurable
 
 end TauCeti
+
+namespace MeasureTheory
+
+/-- The integral of the squared pointwise norm of an a.e. strongly measurable function is the
+real part of the lower integral of its squared extended norm. -/
+theorem integral_norm_sq_eq_toReal_lintegral_enorm {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [SeminormedAddGroup F] {f : alpha → F} (hf : AEStronglyMeasurable f m) :
+    ∫ x, ‖f x‖ ^ 2 ∂m = (∫⁻ x, ‖f x‖ₑ ^ 2 ∂m).toReal := by
+  rw [integral_norm_sq_eq_toReal_eLpNorm_sq hf, ← ENNReal.toReal_pow,
+    TauCeti.eLpNorm_two_sq_eq_lintegral hf]
+
+/-- The integral of the square of an a.e. strongly measurable real-valued function is the real
+part of the lower integral of its squared extended norm. -/
+theorem integral_sq_eq_toReal_lintegral_enorm {alpha : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} {f : alpha → ℝ} (hf : AEStronglyMeasurable f m) :
+    ∫ x, f x ^ 2 ∂m = (∫⁻ x, ‖f x‖ₑ ^ 2 ∂m).toReal := by
+  simpa only [Real.norm_eq_abs, sq_abs] using integral_norm_sq_eq_toReal_lintegral_enorm hf
+
+end MeasureTheory

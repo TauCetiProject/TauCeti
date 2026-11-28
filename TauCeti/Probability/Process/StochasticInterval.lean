@@ -151,10 +151,6 @@ theorem setLIntegral_ite_le_eq_stoppedProcess (f : ι → Ω → ℝ≥0∞)
     rw [he, lintegral_indicator measurableSet_Iic, Measure.restrict_restrict measurableSet_Iic,
       Iic_inter_Ioc_of_le hut]
 
-end TauCeti
-
-namespace TauCeti
-
 /-- A half-open stochastic interval `[σ, τ)` restricted to an event `A` is the difference of the
 closed stochastic ray `[σ, ∞)` restricted to `A` and the closed stochastic ray `[τ, ∞)`. -/
 theorem stochasticIco_inter_eq_sdiff {ι Ω : Type*} [LinearOrder ι]

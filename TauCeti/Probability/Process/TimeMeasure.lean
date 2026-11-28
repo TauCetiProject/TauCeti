@@ -11,19 +11,23 @@ public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 public import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Measure.Prod
 
 /-!
 # Lebesgue time measure on a finite nonnegative horizon
 
 `TauCeti.Probability.timeMeasure T` is Lebesgue measure on `(0,T]` in nonnegative real
-time, obtained by pulling back real Lebesgue measure along the coercion to `ℝ`.
+time, obtained by pulling back real Lebesgue measure along the coercion to `ℝ`, which is
+measure-preserving onto `volume.restrict (Ioc 0 (T : ℝ))` (`measurePreserving_coe_timeMeasure`).
 The origin has zero mass. Interval masses, monotonicity in the horizon and restriction to
 shorter horizons are recorded explicitly for time-product measures used in stochastic
 integration; on `(0, t]` (and `(0, t] × Ω`), cutting off at `(s, ∞)` agrees almost everywhere
 with cutting off at `(s, t]` (`indicator_Ioi_ae_eq_indicator_Ioc_timeMeasure`,
 `indicator_Ioi_ae_eq_indicator_Ioc_timeMeasure_prod`). Integrals for time measure are interval
 integrals over `(0,T]` (`TauCeti.Probability.integral_timeMeasure`), and continuous functions lie
-in every `Lᵖ` space of a finite horizon (`Continuous.memLp_timeMeasure`).
+in every `Lᵖ` space of a finite horizon (`Continuous.memLp_timeMeasure`). Moving interval-rectangle
+indicators converge almost everywhere under the time-product measure
+(`TauCeti.Probability.tendsto_indicator_Ioc_prod_ae`).
 The isometry `timeMeasureExtendLp` extends finite-horizon `Lᵖ` functions by zero to
 longer horizons. Initial-interval indicator classes depend only on their endpoint
 clipped to the horizon; the extension lemmas describe their images. The `L²` inner product of
@@ -33,8 +37,8 @@ shorter horizon (`TauCeti.Probability.inner_timeMeasureExtendLp`).
 
 public section
 
-open MeasureTheory Set
-open scoped NNReal ENNReal InnerProductSpace
+open MeasureTheory Set Filter
+open scoped NNReal ENNReal InnerProductSpace Topology
 
 namespace TauCeti.Probability
 
@@ -92,24 +96,26 @@ theorem timeMeasure_univ (T : ℝ≥0) : timeMeasure T univ = T := by
       rw [timeMeasure_def, Measure.restrict_apply_univ, Measure.restrict_apply_self]
     _ = T := by simp
 
+/-- Coercion from `ℝ≥0` to `ℝ` is measure-preserving from `timeMeasure T` to real Lebesgue
+measure restricted to `(0, (T : ℝ)]`. -/
+theorem measurePreserving_coe_timeMeasure (T : ℝ≥0) :
+    MeasurePreserving ((↑) : ℝ≥0 → ℝ) (timeMeasure T) (volume.restrict (Ioc 0 (T : ℝ))) := by
+  refine ⟨NNReal.isClosedEmbedding_coe.measurableEmbedding.measurable, ?_⟩
+  have hsub : Ioc 0 (T : ℝ) ⊆ Set.range ((↑) : ℝ≥0 → ℝ) := fun x hx ↦ ⟨⟨x, hx.1.le⟩, rfl⟩
+  have hcomap : (volume.restrict (Ioc 0 (T : ℝ))).comap ((↑) : ℝ≥0 → ℝ) = timeMeasure T := by
+    rw [NNReal.isClosedEmbedding_coe.measurableEmbedding.comap_restrict, timeMeasure_def]
+    congr 1
+  rw [← hcomap, NNReal.isClosedEmbedding_coe.measurableEmbedding.map_comap,
+    Measure.restrict_restrict
+      NNReal.isClosedEmbedding_coe.measurableEmbedding.measurableSet_range,
+    inter_eq_self_of_subset_right hsub]
+
 /-- Integration against time measure is the interval integral over `(0,T]` of the function
 extended to real time by truncation at zero. -/
 theorem integral_timeMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (T : ℝ≥0)
     (g : ℝ≥0 → E) : ∫ s, g s ∂timeMeasure T = ∫ r in (0 : ℝ)..T, g r.toNNReal := by
-  have he : MeasurableEmbedding ((↑) : ℝ≥0 → ℝ) :=
-    NNReal.isClosedEmbedding_coe.measurableEmbedding
-  have hmap : (timeMeasure T).map ((↑) : ℝ≥0 → ℝ) = volume.restrict (Ioc (0 : ℝ) T) := by
-    ext s hs
-    rw [he.map_apply, timeMeasure_apply T (he.measurable hs), Measure.restrict_apply hs]
-    congr 1
-    ext x
-    simp only [mem_image, mem_inter_iff, mem_preimage, mem_Ioc]
-    refine ⟨?_, fun hx ↦ ⟨x.toNNReal, ?_, Real.coe_toNNReal x hx.2.1.le⟩⟩
-    · rintro ⟨y, ⟨hy, hy0, hyT⟩, rfl⟩
-      exact ⟨hy, NNReal.coe_pos.2 hy0, NNReal.coe_le_coe.2 hyT⟩
-    · rw [Real.coe_toNNReal x hx.2.1.le]
-      exact ⟨hx.1, Real.toNNReal_pos.2 hx.2.1, Real.toNNReal_le_iff_le_coe.2 hx.2.2⟩
-  rw [intervalIntegral.integral_of_le T.coe_nonneg, ← hmap, he.integral_map]
+  rw [intervalIntegral.integral_of_le T.coe_nonneg, ← (measurePreserving_coe_timeMeasure T).map_eq,
+    NNReal.isClosedEmbedding_coe.measurableEmbedding.integral_map]
   simp
 
 /-- Finite time horizons have finite time mass. -/
@@ -141,10 +147,24 @@ theorem _root_.Continuous.memLp_timeMeasure {E : Type*} [NormedAddCommGroup E] {
 theorem timeMeasure_zero : timeMeasure 0 = 0 := by
   simp [timeMeasure_def]
 
-/-- The initial time carries no mass, independently of the horizon. -/
-@[simp]
-theorem timeMeasure_singleton_zero (T : ℝ≥0) : timeMeasure T {0} = 0 := by
-  simp [timeMeasure_apply T (measurableSet_singleton 0)]
+/-- Every singleton time carries no mass, independently of the horizon. -/
+instance (T : ℝ≥0) : NullSingletonClass (timeMeasure T) where
+  measure_singleton t := by
+    rw [timeMeasure_apply T (measurableSet_singleton t)]
+    exact (Set.subsingleton_singleton.image _ |>.anti
+      (Set.image_mono inter_subset_left)).measure_zero _
+
+/-- For any `s`-finite measure `P`, moving the right endpoint of an interval rectangle
+`Ioc a s ×ˢ A` converges pointwise almost everywhere under `(timeMeasure T).prod P` as
+`s → t`, because the boundary slice `{t} ×ˢ univ` is null. -/
+theorem tendsto_indicator_Ioc_prod_ae {Ω E : Type*} {mΩ : MeasurableSpace Ω}
+    [TopologicalSpace E] [Zero E] (P : Measure Ω) [SFinite P] (T a t : ℝ≥0) (A : Set Ω)
+    (f : ℝ≥0 × Ω → E) :
+    ∀ᵐ p ∂((timeMeasure T).prod P),
+      Tendsto (fun s ↦ (Ioc a s ×ˢ A).indicator f p)
+        (𝓝 t) (𝓝 ((Ioc a t ×ˢ A).indicator f p)) :=
+  Measure.tendsto_indicator_Ioc_prod_ae
+    (by rw [Measure.prod_prod, measure_singleton, zero_mul]) a A f
 
 /-- Restricting time measure again clips the horizon to the smaller endpoint. -/
 @[simp]

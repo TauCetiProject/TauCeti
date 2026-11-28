@@ -65,10 +65,16 @@ invariant (`MeasureTheory.Measure.map_div_prod_eq_map_div_abs`).
 
 A coupling that moves almost every point by less than `r` and is carried in its second marginal
 by a set `s` gives no first-marginal mass to a point at distance at least `r` from every point of
-`s` (`MeasureTheory.measure_fst_singleton_eq_zero_of_ae_edist_lt`).
+`s` (`MeasureTheory.measure_fst_singleton_eq_zero_of_ae_edist_lt`). For product-almost-everywhere
+equal binary functions, swapping factors gives section-wise almost-everywhere equality in the first
+argument (`MeasureTheory.Measure.ae_ae_eq_flip_of_ae_eq_uncurry`).
 
 Projecting the graph pushforward along `(T, id)` onto the second coordinate recovers the original
 measure (`MeasureTheory.Measure.snd_map_prodMk_id₀` and `MeasureTheory.Measure.snd_map_prodMk_id`).
+
+If a joint measure assigns zero mass to a boundary slice `{t} ×ˢ univ`, then moving the right
+endpoint of an interval-rectangle indicator `Ioc a s ×ˢ A` converges almost everywhere as
+`s → t` (`MeasureTheory.Measure.tendsto_indicator_Ioc_prod_ae`).
 -/
 
 public section
@@ -455,6 +461,16 @@ theorem map_prod_swap_apply_eq {Z Y β : Type*} [MeasurableSpace Z] [MeasurableS
     Measure.map_map hF' (hsw.prodMap measurable_id), hfun,
     ← Measure.map_map (hsw.prodMap measurable_swap) hF, hJ]
 
+/-- Swapping factors in `MeasureTheory.Measure.ae_ae_eq_of_ae_eq_uncurry`: if `Function.uncurry f`
+agrees with `Function.uncurry g` `μ.prod ν`-almost everywhere, then for `ν`-almost every `y`, the
+sections `x ↦ f x y` and `x ↦ g x y` agree `μ`-almost everywhere. -/
+theorem ae_ae_eq_flip_of_ae_eq_uncurry {α β γ : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    {μ : Measure α} {ν : Measure β} [SFinite μ] [SFinite ν] {f g : α → β → γ}
+    (h : Function.uncurry f =ᵐ[μ.prod ν] Function.uncurry g) :
+    ∀ᵐ y ∂ν, (fun x ↦ f x y) =ᵐ[μ] fun x ↦ g x y :=
+  ae_ae_eq_of_ae_eq_uncurry
+    ((measurePreserving_swap (μ := ν) (ν := μ)).quasiMeasurePreserving.ae_eq_comp h)
+
 end MeasureTheory.Measure
 
 namespace MeasureTheory
@@ -551,5 +567,40 @@ theorem snd_map_prodMk_id {X S : Type*} [MeasurableSpace X] [MeasurableSpace S]
     {μ : Measure X} {T : X → S} (hT : Measurable T) :
     (μ.map fun x ↦ (T x, x)).snd = μ :=
   snd_map_prodMk_id₀ hT.aemeasurable
+
+section IndicatorTendsto
+
+open Filter
+open scoped Topology
+
+/-- If a joint measure assigns zero mass to the boundary slice `{t} ×ˢ univ`, then moving the
+right endpoint of an interval-rectangle indicator `Ioc a s ×ˢ A` converges pointwise almost
+everywhere as `s → t`. -/
+theorem tendsto_indicator_Ioc_prod_ae {α Ω E : Type*}
+    [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
+    [TopologicalSpace E] [Zero E]
+    {_ : MeasurableSpace (α × Ω)} {μ : Measure (α × Ω)} {t : α}
+    (hμ : μ ({t} ×ˢ (Set.univ : Set Ω)) = 0)
+    (a : α) (A : Set Ω) (f : α × Ω → E) :
+    ∀ᵐ p ∂μ,
+      Tendsto (fun s ↦ (Set.Ioc a s ×ˢ A).indicator f p)
+        (𝓝 t) (𝓝 ((Set.Ioc a t ×ˢ A).indicator f p)) := by
+  have hnull : ∀ᵐ p ∂μ, p ∉ ({t} ×ˢ (Set.univ : Set Ω)) :=
+    measure_eq_zero_iff_ae_notMem.mp hμ
+  filter_upwards [hnull] with p hp
+  by_cases hbase : a < p.fst ∧ p.snd ∈ A
+  · have hne : p.fst ≠ t := fun h ↦ hp ⟨h, Set.mem_univ _⟩
+    rcases hne.lt_or_gt with hlt | hgt
+    · refine tendsto_const_nhds.congr' ?_
+      filter_upwards [Ioi_mem_nhds hlt] with s (hs : p.fst < s)
+      simp [hbase.1, hbase.2, hlt.le, hs.le]
+    · refine tendsto_const_nhds.congr' ?_
+      filter_upwards [Iio_mem_nhds hgt] with s (hs : s < p.fst)
+      simp [hgt.not_ge, hs.not_ge]
+  · refine tendsto_const_nhds.congr fun s ↦ ?_
+    have hnot (u : α) : p ∉ Set.Ioc a u ×ˢ A := fun h ↦ hbase ⟨h.1.1, h.2⟩
+    simp [hnot]
+
+end IndicatorTendsto
 
 end MeasureTheory.Measure

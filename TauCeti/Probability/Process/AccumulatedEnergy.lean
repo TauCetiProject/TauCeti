@@ -7,11 +7,16 @@ module
 
 public import TauCeti.MeasureTheory.Integral.Lebesgue.Cumulative
 public import TauCeti.MeasureTheory.Integral.Lebesgue.CumulativeRepair
+public import TauCeti.MeasureTheory.Measure.NNReal
 public import TauCeti.Probability.Process.Predictable.Basic
+public import TauCeti.Probability.Process.TimeMeasure
 public import Mathlib.MeasureTheory.Measure.Prod
+public import Mathlib.Probability.Process.Stopping
 import Mathlib.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Function.LpSeminorm.SquaredNorm
 import TauCeti.MeasureTheory.Integral.Bochner.UniformInMeasure
+import TauCeti.Probability.Process.StochasticInterval
 
 /-!
 # Predictable accumulated energy and finite-energy cutoffs
@@ -23,10 +28,13 @@ filtration are required.
 
 For a predictable process `H` valued in a normed additive commutative group, this makes the
 set where its accumulated square energy is finite predictable. Cutting `H` off on the complement
-therefore preserves predictability, and changes no values up to a horizon with finite square
-energy. Its accumulated energy is continuous, even on paths with immediate right-hand
-explosion of the original energy. The lower integral retains infinite energy instead of the
-fallback zero of a nonintegrable Bochner integral.
+therefore preserves predictability, and changes no values or accumulated energies up to a
+horizon with finite square energy. Its accumulated energy is continuous, even on paths with
+immediate right-hand explosion of the original energy. Stopping `H` at an arbitrary random time
+identifies the stopped cutoff's `(0, T]` square energy with the stopped accumulated energy
+(`MeasureTheory.Measure.setLIntegral_enorm_sq_ite_le_eq_stoppedProcess_accumulatedEnergy`).
+The lower integral retains infinite energy instead of the fallback zero of a nonintegrable
+Bochner integral.
 
 L² convergence on a time-product measure implies uniform convergence in outer probability
 of the accumulated energies. Restricting the time measure to a horizon gives the
@@ -86,6 +94,21 @@ theorem accumulatedEnergy_eq_setLIntegral_Ioc (μ : Measure ℝ≥0) [NullSingle
     simpa only [← bot_eq_zero, Icc_bot] using
       (Ioc_ae_eq_Icc (μ := μ) (a := 0) (b := t)).symm
   simp only [accumulatedEnergy_def, Measure.restrict_congr_set heq]
+
+/-- Stopping an integrand at any random time equates its `(0, T]` square-energy integral with the
+stopped accumulated energy at `T` under any atomless time measure. -/
+theorem setLIntegral_enorm_sq_ite_le_eq_stoppedProcess_accumulatedEnergy
+    (μ : Measure ℝ≥0) [NullSingletonClass μ] (H : ℝ≥0 → Ω → E)
+    (τ : Ω → WithTop ℝ≥0) (T : ℝ≥0) (ω : Ω) :
+    (∫⁻ t in Ioc 0 T, ‖if (t : WithTop ℝ≥0) ≤ τ ω then H t ω else 0‖ₑ ^ 2 ∂μ) =
+      stoppedProcess (μ.accumulatedEnergy H) τ T ω := by
+  have hclock : (fun u ω ↦ ∫⁻ s in Ioc 0 u, ‖H s ω‖ₑ ^ 2 ∂μ) = μ.accumulatedEnergy H := by
+    funext u ω
+    exact (μ.accumulatedEnergy_eq_setLIntegral_Ioc _ u ω).symm
+  have heq := TauCeti.setLIntegral_ite_le_eq_stoppedProcess
+    (fun t ω ↦ ‖H t ω‖ₑ ^ 2) τ μ 0 T ω
+  rw [hclock] at heq
+  simpa only [apply_ite, eNorm_zero, ite_pow, zero_pow (by norm_num : 2 ≠ 0)] using heq
 
 /-- Accumulated square energy is nondecreasing on every path. -/
 theorem monotone_accumulatedEnergy (μ : Measure ℝ≥0) (H : ℝ≥0 → Ω → E) (ω : Ω) :
@@ -155,6 +178,17 @@ theorem accumulatedEnergy_finiteEnergyCutoff_le (μ : Measure ℝ≥0)
   intro s
   simp only [finiteEnergyCutoff_def]
   split_ifs <;> simp
+
+/-- Up to any horizon with finite original accumulated energy, the finite-energy cutoff has the
+same accumulated energy as the original integrand. -/
+theorem accumulatedEnergy_finiteEnergyCutoff_of_lt_top (μ : Measure ℝ≥0) [NullSingletonClass μ]
+    {H : ℝ≥0 → Ω → E} {t : ℝ≥0} {ω : Ω} (h : μ.accumulatedEnergy H t ω < ∞) :
+    μ.accumulatedEnergy (μ.finiteEnergyCutoff H) t ω = μ.accumulatedEnergy H t ω := by
+  rw [μ.accumulatedEnergy_eq_setLIntegral_Ioc _ t ω, μ.accumulatedEnergy_eq_setLIntegral_Ioc H t ω]
+  exact setLIntegral_congr_fun measurableSet_Ioc fun s hs ↦ by
+    have hfe := μ.finiteEnergyCutoff_eqOn h hs.2
+    dsimp only at hfe
+    rw [hfe]
 
 /-- Product-space L² convergence implies uniform convergence in outer probability over all
 times of the real-valued accumulated square energies obtained via `ENNReal.toReal`. -/
@@ -287,5 +321,75 @@ theorem finiteEnergyCutoff (hH : IsStronglyPredictable ℱ H) :
   simp only [finiteEnergyCutoff_def]
   exact hH.ite (hH.isStronglyProgressive.measurableSet_accumulatedEnergy_lt_top μ)
     stronglyMeasurable_zero
+
+/-- Pathwise Bochner square energy on `timeMeasure t` equals the real part of the `nnvolume`
+accumulated energy. -/
+theorem integral_sq_timeMeasure_eq_toReal_accumulatedEnergy {H : ℝ≥0 → Ω → ℝ}
+    (hH : IsStronglyPredictable ℱ H) (t : ℝ≥0) (ω : Ω) :
+    (∫ s, H s ω ^ 2 ∂TauCeti.Probability.timeMeasure t) =
+      (TauCeti.nnvolume.accumulatedEnergy H t ω).toReal := by
+  have hHmeas : Measurable (fun s ↦ H s ω) :=
+    ((hH.mono ℱ.predictable_le_prod).comp_measurable measurable_prodMk_right).measurable
+  rw [integral_sq_eq_toReal_lintegral_enorm hHmeas.aestronglyMeasurable,
+    TauCeti.nnvolume.accumulatedEnergy_eq_setLIntegral_Ioc,
+    TauCeti.Probability.timeMeasure_def, ← TauCeti.nnvolume_def]
+
+/-- Stopping the finite-energy cutoff at a random time equates its `timeMeasure t` Bochner
+square energy with the stopped elapsed square energy on any path with finite energy on every
+finite horizon. -/
+theorem stoppedProcess_integral_sq_timeMeasure_eq {H : ℝ≥0 → Ω → ℝ}
+    (hH : IsStronglyPredictable ℱ H) (τ : Ω → WithTop ℝ≥0) (t : ℝ≥0) {ω : Ω}
+    (hfin : ∀ u : ℝ≥0, TauCeti.nnvolume.accumulatedEnergy H u ω < ∞) :
+    (∫ s, (if (s : WithTop ℝ≥0) ≤ τ ω then
+        TauCeti.nnvolume.finiteEnergyCutoff H s ω else 0) ^ 2
+      ∂TauCeti.Probability.timeMeasure t) =
+      stoppedProcess (fun u ω' ↦ ∫ s, H s ω' ^ 2 ∂TauCeti.Probability.timeMeasure u) τ t ω := by
+  have hcut_meas : Measurable (fun s : ℝ≥0 ↦
+      if (s : WithTop ℝ≥0) ≤ τ ω then TauCeti.nnvolume.finiteEnergyCutoff H s ω else 0) := by
+    have hfe : Measurable (fun s : ℝ≥0 ↦ TauCeti.nnvolume.finiteEnergyCutoff H s ω) :=
+      (((hH.finiteEnergyCutoff TauCeti.nnvolume).mono ℱ.predictable_le_prod).comp_measurable
+        measurable_prodMk_right).measurable
+    have hset : MeasurableSet {s : ℝ≥0 | (s : WithTop ℝ≥0) ≤ τ ω} :=
+      measurableSet_Iic.preimage WithTop.measurable_coe
+    exact Measurable.ite hset hfe measurable_const
+  have hacc : ∀ u, TauCeti.nnvolume.accumulatedEnergy (TauCeti.nnvolume.finiteEnergyCutoff H) u ω =
+      TauCeti.nnvolume.accumulatedEnergy H u ω := fun u ↦
+    TauCeti.nnvolume.accumulatedEnergy_finiteEnergyCutoff_of_lt_top (hfin u)
+  have hLHS :
+      (∫ s, (if (s : WithTop ℝ≥0) ≤ τ ω then
+          TauCeti.nnvolume.finiteEnergyCutoff H s ω else 0) ^ 2
+        ∂TauCeti.Probability.timeMeasure t) =
+        (stoppedProcess (TauCeti.nnvolume.accumulatedEnergy H) τ t ω).toReal := by
+    rw [integral_sq_eq_toReal_lintegral_enorm hcut_meas.aestronglyMeasurable,
+      TauCeti.Probability.timeMeasure_def, ← TauCeti.nnvolume_def,
+      TauCeti.nnvolume.setLIntegral_enorm_sq_ite_le_eq_stoppedProcess_accumulatedEnergy
+        (TauCeti.nnvolume.finiteEnergyCutoff H) τ t ω]
+    simp only [stoppedProcess_eq_stoppedValue_apply, stoppedValue, hacc]
+  have hRHS :
+      stoppedProcess (fun u ω' ↦ ∫ s, H s ω' ^ 2 ∂TauCeti.Probability.timeMeasure u) τ t ω =
+        (stoppedProcess (TauCeti.nnvolume.accumulatedEnergy H) τ t ω).toReal := by
+    simp only [stoppedProcess_eq_stoppedValue_apply, stoppedValue,
+      hH.integral_sq_timeMeasure_eq_toReal_accumulatedEnergy]
+  exact hLHS.trans hRHS.symm
+
+/-- The elapsed pathwise Bochner square energy of a predictable process is again predictable. -/
+theorem isStronglyPredictable_integral_sq_timeMeasure {H : ℝ≥0 → Ω → ℝ}
+    (hH : IsStronglyPredictable ℱ H) :
+    IsStronglyPredictable ℱ (fun t ω ↦ ∫ s, H s ω ^ 2 ∂TauCeti.Probability.timeMeasure t) := by
+  have hpred : IsStronglyPredictable ℱ
+      (fun t ω ↦ (TauCeti.nnvolume.accumulatedEnergy H t ω).toReal) :=
+    (ENNReal.measurable_toReal.comp
+      (hH.isStronglyProgressive.isStronglyPredictable_accumulatedEnergy
+        TauCeti.nnvolume).measurable).stronglyMeasurable
+  have hfun : (fun t ω ↦ ∫ s, H s ω ^ 2 ∂TauCeti.Probability.timeMeasure t) =
+      fun t ω ↦ (TauCeti.nnvolume.accumulatedEnergy H t ω).toReal :=
+    funext fun t ↦ funext fun ω ↦ hH.integral_sq_timeMeasure_eq_toReal_accumulatedEnergy t ω
+  rwa [hfun]
+
+/-- The elapsed pathwise Bochner square energy of a predictable process is strongly adapted. -/
+theorem stronglyAdapted_integral_sq_timeMeasure {H : ℝ≥0 → Ω → ℝ}
+    (hH : IsStronglyPredictable ℱ H) :
+    StronglyAdapted ℱ (fun t ω ↦ ∫ s, H s ω ^ 2 ∂TauCeti.Probability.timeMeasure t) :=
+  hH.isStronglyPredictable_integral_sq_timeMeasure.isStronglyProgressive.stronglyAdapted
 
 end MeasureTheory.IsStronglyPredictable
