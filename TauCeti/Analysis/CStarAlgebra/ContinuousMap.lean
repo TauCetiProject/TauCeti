@@ -17,21 +17,16 @@ public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Star
 
 For a non-unital complex C⋆-algebra `A` and an open embedding `e : X → Y` into an `R₁` space `Y`
 whose image omits a single point `y₀`, extension by zero identifies `C₀(X, A)` with the closed
-two-sided kernel ideal of point evaluation at `y₀` in `C₀(Y, A)` (and in `C(Y, A)` when `Y` is
-compact). Moreover, on any compact space `X`, point evaluation at `x : X` is surjective, so
-`C(X, A) ⧸ ker (ev_x)` is `⋆`-isomorphic to `A`.
+two-sided kernel ideal of point evaluation at `y₀` in `C₀(Y, A)`. Moreover, on any compact space
+`X`, point evaluation at `x : X` is surjective, so `C(X, A) ⧸ ker (ev_x)` is `⋆`-isomorphic to
+`A`.
 
 ## Main declarations
 
 * `ContinuousMap.quotientKerEvalEquiv`: `⋆`-isomorphism
   `C(X, A) ⧸ TwoSidedIdeal.ker (evalNonUnitalStarAlgHom ℂ A x) ≃⋆ₐ[ℂ] A` for compact `X`.
-* `ZeroAtInftyContinuousMap.kerContinuousMapEvalEquiv`: on a compact space `Y`, the
-  `⋆`-isomorphism between evaluation kernels in `C(Y, A)` and `C₀(Y, A)` induced by
-  `ContinuousMap.liftZeroAtInftyStarAlgEquiv`.
 * `ZeroAtInftyContinuousMap.equivKerEvalOfNotMemRange`: `⋆`-algebra equivalence
   `C₀(X, A) ≃⋆ₐ[ℂ] TwoSidedIdeal.ker (evalNonUnitalStarAlgHom ℂ A y₀)`.
-* `ZeroAtInftyContinuousMap.equivKerContinuousMapEvalOfNotMemRange`: compact-codomain variant
-  `C₀(X, A) ≃⋆ₐ[ℂ] TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀)`.
 -/
 
 public section
@@ -63,54 +58,6 @@ noncomputable def quotientKerEvalEquiv (X A : Type*) [TopologicalSpace X] [Compa
 end ContinuousMap
 
 namespace ZeroAtInftyContinuousMap
-
-section CompactKerEval
-
-variable {Y : Type*} [TopologicalSpace Y] [CompactSpace Y]
-
-/-- On a compact space `Y`, `ContinuousMap.liftZeroAtInftyStarAlgEquiv ℂ Y A` restricts to a
-`⋆`-isomorphism between the evaluation kernels at `y₀` in `C(Y, A)` and `C₀(Y, A)`. -/
-noncomputable def kerContinuousMapEvalEquiv (A : Type*) [NonUnitalCStarAlgebra A] (y₀ : Y) :
-    TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀) ≃⋆ₐ[ℂ]
-      TwoSidedIdeal.ker (evalNonUnitalStarAlgHom ℂ A y₀) where
-  toFun g := ⟨ContinuousMap.liftZeroAtInftyStarAlgEquiv ℂ Y A g, by
-    rw [TwoSidedIdeal.mem_ker, evalNonUnitalStarAlgHom_apply]
-    have hg := (TwoSidedIdeal.mem_ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀)).mp g.property
-    simpa [ContinuousMap.evalNonUnitalStarAlgHom_apply] using hg⟩
-  invFun g := ⟨(ContinuousMap.liftZeroAtInftyStarAlgEquiv ℂ Y A).symm g, by
-    rw [TwoSidedIdeal.mem_ker, ContinuousMap.evalNonUnitalStarAlgHom_apply]
-    have hg := (TwoSidedIdeal.mem_ker (evalNonUnitalStarAlgHom ℂ A y₀)).mp g.property
-    simpa [evalNonUnitalStarAlgHom_apply] using hg⟩
-  left_inv g := Subtype.ext ((ContinuousMap.liftZeroAtInftyStarAlgEquiv ℂ Y A).symm_apply_apply g)
-  right_inv g := Subtype.ext ((ContinuousMap.liftZeroAtInftyStarAlgEquiv ℂ Y A).apply_symm_apply g)
-  map_mul' _ _ := Subtype.ext (map_mul _ _ _)
-  map_add' _ _ := Subtype.ext (map_add _ _ _)
-  map_smul' _ _ := Subtype.ext (map_smul _ _ _)
-  map_star' _ := Subtype.ext (map_star _ _)
-
-@[simp] theorem coe_kerContinuousMapEvalEquiv_apply {A : Type*} [NonUnitalCStarAlgebra A] (y₀ : Y)
-    (g : TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀)) :
-    ((kerContinuousMapEvalEquiv A y₀ g :
-      TwoSidedIdeal.ker (evalNonUnitalStarAlgHom ℂ A y₀)) : C₀(Y, A)) =
-      ContinuousMap.liftZeroAtInftyStarAlgEquiv ℂ Y A g := (rfl)
-
-private theorem coe_kerContinuousMapEvalEquiv_symm_apply_def {A : Type*}
-    [NonUnitalCStarAlgebra A] (y₀ : Y)
-    (g : TwoSidedIdeal.ker (evalNonUnitalStarAlgHom ℂ A y₀)) :
-    (((kerContinuousMapEvalEquiv A y₀).symm g :
-      TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀)) : C(Y, A)) =
-      (ContinuousMap.liftZeroAtInftyStarAlgEquiv ℂ Y A).symm g := (rfl)
-
-@[simp]
-theorem coe_kerContinuousMapEvalEquiv_symm_apply {A : Type*} [NonUnitalCStarAlgebra A] (y₀ : Y)
-    (g : TwoSidedIdeal.ker (evalNonUnitalStarAlgHom ℂ A y₀)) :
-    (((kerContinuousMapEvalEquiv A y₀).symm g :
-      TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀)) : C(Y, A)) =
-      (g : C₀(Y, A)).toContinuousMap := by
-  rw [coe_kerContinuousMapEvalEquiv_symm_apply_def]
-  simp
-
-end CompactKerEval
 
 section KerEval
 
@@ -147,30 +94,6 @@ noncomputable def equivKerEvalOfNotMemRange (A : Type*) [NonUnitalCStarAlgebra A
     (g : TwoSidedIdeal.ker (evalNonUnitalStarAlgHom ℂ A y₀)) (x : X) :
     (equivKerEvalOfNotMemRange A he hcompl).symm g x = (g : C₀(Y, A)) (e x) :=
   restrictOfEqZero_apply he.isEmbedding (g : C₀(Y, A)) _ x
-
-/-- Compact-codomain variant of `equivKerEvalOfNotMemRange` landing in the kernel of
-`ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀` inside `C(Y, A)`. -/
-noncomputable def equivKerContinuousMapEvalOfNotMemRange [CompactSpace Y]
-    (A : Type*) [NonUnitalCStarAlgebra A]
-    (he : IsOpenEmbedding e) (hcompl : ∀ y, y ∉ range e ↔ y = y₀) :
-    C₀(X, A) ≃⋆ₐ[ℂ] TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀) :=
-  (equivKerEvalOfNotMemRange A he hcompl).trans (kerContinuousMapEvalEquiv A y₀).symm
-
-@[simp] theorem coe_equivKerContinuousMapEvalOfNotMemRange_apply [CompactSpace Y]
-    {A : Type*} [NonUnitalCStarAlgebra A]
-    (he : IsOpenEmbedding e) (hcompl : ∀ y, y ∉ range e ↔ y = y₀) (f : C₀(X, A)) :
-    ((equivKerContinuousMapEvalOfNotMemRange A he hcompl f :
-      TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀)) : C(Y, A)) =
-      (extendByZero he f : C(Y, A)) := by
-  ext y
-  simp [equivKerContinuousMapEvalOfNotMemRange]
-
-@[simp] theorem equivKerContinuousMapEvalOfNotMemRange_symm_apply [CompactSpace Y]
-    {A : Type*} [NonUnitalCStarAlgebra A]
-    (he : IsOpenEmbedding e) (hcompl : ∀ y, y ∉ range e ↔ y = y₀)
-    (g : TwoSidedIdeal.ker (ContinuousMap.evalNonUnitalStarAlgHom ℂ A y₀)) (x : X) :
-    (equivKerContinuousMapEvalOfNotMemRange A he hcompl).symm g x = (g : C(Y, A)) (e x) := by
-  simp [equivKerContinuousMapEvalOfNotMemRange]
 
 end KerEval
 

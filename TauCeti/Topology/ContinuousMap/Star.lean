@@ -27,7 +27,7 @@ cones), we need the corresponding non-unital `⋆`-algebra homomorphisms (`A →
   continuous `φ : A →⋆ₙₐ[𝕜] B`.
 * `ContinuousMap.evalNonUnitalStarAlgHom` and `ContinuousMap.constNonUnitalStarAlgHom`: evaluation
   `C(X, A) →⋆ₙₐ[𝕜] A` at `x : X` and constant inclusion `A →⋆ₙₐ[𝕜] C(X, A)`.
-* `Homeomorph.compNonUnitalStarAlgEquiv'`: transport `C(Y, A) ≃⋆ₐ[𝕜] C(X, A)` along `X ≃ₜ Y` for
+* `Homeomorph.compStarAlgEquivₙ'`: transport `C(Y, A) ≃⋆ₐ[𝕜] C(X, A)` along `X ≃ₜ Y` for
   possibly non-unital `A`.
 * `ContinuousMap.curryStarAlgEquiv`: currying `C(X × Y, A) ≃⋆ₐ[𝕜] C(X, C(Y, A))` when `Y` is
   locally compact.
@@ -219,7 +219,7 @@ variable (𝕜 A : Type*) [TopologicalSpace A] [Add A] [ContinuousAdd A] [Mul A]
 
 /-- Precomposition along a homeomorphism `f : X ≃ₜ Y` as a `⋆`-algebra equivalence
 `C(Y, A) ≃⋆ₐ[𝕜] C(X, A)` for possibly non-unital `A`. -/
-def compNonUnitalStarAlgEquiv' (f : X ≃ₜ Y) : C(Y, A) ≃⋆ₐ[𝕜] C(X, A) where
+def compStarAlgEquivₙ' (f : X ≃ₜ Y) : C(Y, A) ≃⋆ₐ[𝕜] C(X, A) where
   toFun g := g.comp (f : C(X, Y))
   invFun g := g.comp (f.symm : C(Y, X))
   left_inv g := by ext y; simp
@@ -229,22 +229,22 @@ def compNonUnitalStarAlgEquiv' (f : X ≃ₜ Y) : C(Y, A) ≃⋆ₐ[𝕜] C(X, A
   map_smul' _ _ := rfl
   map_star' _ := rfl
 
-@[simp] theorem compNonUnitalStarAlgEquiv'_apply (f : X ≃ₜ Y) (g : C(Y, A)) :
-    f.compNonUnitalStarAlgEquiv' 𝕜 A g = g.comp (f : C(X, Y)) := (rfl)
+@[simp] theorem compStarAlgEquivₙ'_apply (f : X ≃ₜ Y) (g : C(Y, A)) :
+    f.compStarAlgEquivₙ' 𝕜 A g = g.comp (f : C(X, Y)) := (rfl)
 
-@[simp] theorem compNonUnitalStarAlgEquiv'_symm_apply (f : X ≃ₜ Y) (g : C(X, A)) :
-    (f.compNonUnitalStarAlgEquiv' 𝕜 A).symm g = g.comp (f.symm : C(Y, X)) := (rfl)
+@[simp] theorem compStarAlgEquivₙ'_symm_apply (f : X ≃ₜ Y) (g : C(X, A)) :
+    (f.compStarAlgEquivₙ' 𝕜 A).symm g = g.comp (f.symm : C(Y, X)) := (rfl)
 
-@[simp] theorem compNonUnitalStarAlgEquiv'_refl :
-    (Homeomorph.refl X).compNonUnitalStarAlgEquiv' 𝕜 A = StarAlgEquiv.refl 𝕜 C(X, A) :=
+@[simp] theorem compStarAlgEquivₙ'_refl :
+    (Homeomorph.refl X).compStarAlgEquivₙ' 𝕜 A = StarAlgEquiv.refl 𝕜 C(X, A) :=
   StarAlgEquiv.ext fun _ => ContinuousMap.ext fun _ => rfl
 
-theorem compNonUnitalStarAlgEquiv'_symm (f : X ≃ₜ Y) :
-    (f.compNonUnitalStarAlgEquiv' 𝕜 A).symm = f.symm.compNonUnitalStarAlgEquiv' 𝕜 A := (rfl)
+theorem compStarAlgEquivₙ'_symm (f : X ≃ₜ Y) :
+    (f.compStarAlgEquivₙ' 𝕜 A).symm = f.symm.compStarAlgEquivₙ' 𝕜 A := (rfl)
 
-theorem compNonUnitalStarAlgEquiv'_trans {Z : Type*} [TopologicalSpace Z]
+theorem compStarAlgEquivₙ'_trans {Z : Type*} [TopologicalSpace Z]
     (f : X ≃ₜ Y) (g : Y ≃ₜ Z) :
-    (f.trans g).compNonUnitalStarAlgEquiv' 𝕜 A =
-      (g.compNonUnitalStarAlgEquiv' 𝕜 A).trans (f.compNonUnitalStarAlgEquiv' 𝕜 A) := (rfl)
+    (f.trans g).compStarAlgEquivₙ' 𝕜 A =
+      (g.compStarAlgEquivₙ' 𝕜 A).trans (f.compStarAlgEquivₙ' 𝕜 A) := (rfl)
 
 end Homeomorph

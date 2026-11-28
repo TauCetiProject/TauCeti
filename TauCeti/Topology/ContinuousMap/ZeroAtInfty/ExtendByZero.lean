@@ -208,6 +208,30 @@ end Algebraic
 
 end Topological
 
+section PseudoMetric
+
+variable {X Y β : Type*} [TopologicalSpace X] [TopologicalSpace Y] [PseudoMetricSpace β] [Zero β]
+  {e : X → Y}
+
+theorem isometry_extendByZero [R1Space Y] (he : IsOpenEmbedding e) :
+    Isometry (extendByZero (R := β) he) :=
+  Isometry.of_dist_eq fun f g => by
+    refine le_antisymm ?_ ?_
+    · rw [← dist_toBCF_eq_dist]
+      refine (BoundedContinuousFunction.dist_le dist_nonneg).mpr fun y => ?_
+      by_cases hy : y ∈ range e
+      · obtain ⟨x, rfl⟩ := hy
+        simpa only [toBCF_apply, extendByZero_apply_mem, ← dist_toBCF_eq_dist] using
+          BoundedContinuousFunction.dist_coe_le_dist (f := f.toBCF) (g := g.toBCF) x
+      · simp [extendByZero_apply_of_notMem he _ hy, dist_nonneg]
+    · rw [← dist_toBCF_eq_dist]
+      refine (BoundedContinuousFunction.dist_le dist_nonneg).mpr fun x => ?_
+      simpa only [toBCF_apply, extendByZero_apply_mem, ← dist_toBCF_eq_dist] using
+        BoundedContinuousFunction.dist_coe_le_dist
+          (f := (extendByZero he f).toBCF) (g := (extendByZero he g).toBCF) (e x)
+
+end PseudoMetric
+
 section Normed
 
 variable {X Y E : Type*} [TopologicalSpace X] [TopologicalSpace Y] [SeminormedAddCommGroup E]
@@ -215,18 +239,7 @@ variable {X Y E : Type*} [TopologicalSpace X] [TopologicalSpace Y] [SeminormedAd
 
 @[simp] theorem norm_extendByZero [R1Space Y] (he : IsOpenEmbedding e) (f : C₀(X, E)) :
     ‖extendByZero he f‖ = ‖f‖ :=
-  le_antisymm ((norm_le (norm_nonneg f)).mpr fun y => by
-    by_cases hy : y ∈ range e
-    · obtain ⟨x, rfl⟩ := hy
-      simpa only [extendByZero_apply_mem] using norm_coe_le_norm f x
-    · simp [extendByZero_apply_of_notMem he f hy])
-    ((norm_le (norm_nonneg _)).mpr fun x => by
-      simpa only [extendByZero_apply_mem] using norm_coe_le_norm (extendByZero he f) (e x))
-
-theorem isometry_extendByZero [R1Space Y] (he : IsOpenEmbedding e) :
-    Isometry (extendByZero (R := E) he) :=
-  Isometry.of_dist_eq fun f g => by
-    rw [dist_eq_norm, dist_eq_norm, ← extendByZero_sub, norm_extendByZero]
+  (isometry_extendByZero he).norm_map_of_map_zero (extendByZero_zero he) f
 
 @[simp]
 theorem norm_restrictOfEqZero (he : IsEmbedding e) (g : C₀(Y, E)) (hg : ∀ y ∉ range e, g y = 0) :

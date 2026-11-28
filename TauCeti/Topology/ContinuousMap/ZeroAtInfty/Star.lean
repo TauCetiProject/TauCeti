@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.ContinuousMap.Star
+public import TauCeti.Topology.ContinuousMap.Ideals
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.ExtendByZero
 
 /-!
@@ -24,6 +25,9 @@ C⋆-algebras of functions vanishing at infinity:
   `C₀(X, A) →⋆ₙₐ[𝕜] C₀(X, B)` with a continuous `φ : A →⋆ₙₐ[𝕜] B`.
 * `ZeroAtInftyContinuousMap.extendByZeroNonUnitalStarAlgHom`: extension by zero
   `C₀(X, A) →⋆ₙₐ[𝕜] C₀(Y, A)` along an open embedding `e : X → Y` into an `R₁` space `Y`.
+* `ContinuousMap.restrictStarAlgEquivOfNotMemRange`: `⋆`-algebra isomorphism
+  `evalKerSubalgebra S A y₀ ≃⋆ₐ[S] C₀(X, A)` for a compact `R₁` space `Y` and an open embedding
+  `e : X → Y` omitting only `y₀`.
 -/
 
 public section
@@ -152,3 +156,92 @@ noncomputable def extendByZeroNonUnitalStarAlgHom (he : IsOpenEmbedding e) :
 end ExtendByZero
 
 end ZeroAtInftyContinuousMap
+
+namespace ContinuousMap
+
+section RestrictOfNotMemRange
+
+variable {X Y S A E : Type*} [TopologicalSpace X] [TopologicalSpace Y] [CompactSpace Y] [R1Space Y]
+
+variable (S A) in
+/-- Restriction along an open embedding `e : X → Y` into a compact `R₁` space omitting only `y₀`
+is a `⋆`-algebra isomorphism from `evalKerSubalgebra S A y₀` onto `C₀(X, A)`, with inverse given by
+extension by zero. -/
+noncomputable def restrictStarAlgEquivOfNotMemRange [CommSemiring S]
+    [NonUnitalNonAssocSemiring A] [TopologicalSpace A] [IsTopologicalSemiring A]
+    [StarAddMonoid A] [ContinuousStar A] [Module S A] [ContinuousConstSMul S A]
+    {e : X → Y} {y₀ : Y} (he : IsOpenEmbedding e) (hcompl : ∀ y, y ∉ Set.range e ↔ y = y₀) :
+    evalKerSubalgebra S A y₀ ≃⋆ₐ[S] C₀(X, A) where
+  toFun F := ZeroAtInftyContinuousMap.restrictOfEqZero he.isEmbedding
+    (ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty F.val) fun y hy => by
+      rw [(hcompl y).mp hy]
+      exact mem_evalKerSubalgebra.mp F.property
+  invFun g :=
+    ⟨(ZeroAtInftyContinuousMap.extendByZero he g).toContinuousMap,
+      mem_evalKerSubalgebra.mpr
+        (ZeroAtInftyContinuousMap.extendByZero_apply_of_notMem he g ((hcompl y₀).mpr rfl))⟩
+  left_inv F := Subtype.ext <| ContinuousMap.ext fun y => by
+    simp
+  right_inv g := ZeroAtInftyContinuousMap.restrictOfEqZero_extendByZero he g
+  map_smul' _ _ := by ext x; simp
+  map_add' _ _ := by ext x; simp
+  map_mul' _ _ := by ext x; simp
+  map_star' _ := by ext x; simp
+
+@[simp]
+theorem restrictStarAlgEquivOfNotMemRange_apply [CommSemiring S] [NonUnitalNonAssocSemiring A]
+    [TopologicalSpace A] [IsTopologicalSemiring A] [StarAddMonoid A] [ContinuousStar A]
+    [Module S A] [ContinuousConstSMul S A] {e : X → Y} {y₀ : Y} (he : IsOpenEmbedding e)
+    (hcompl : ∀ y, y ∉ Set.range e ↔ y = y₀) (F : evalKerSubalgebra S A y₀) (x : X) :
+    restrictStarAlgEquivOfNotMemRange S A he hcompl F x = F.val (e x) := by
+  have h : restrictStarAlgEquivOfNotMemRange S A he hcompl F =
+      ZeroAtInftyContinuousMap.restrictOfEqZero he.isEmbedding
+        (ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty F.val)
+        (fun y hy => by rw [(hcompl y).mp hy]; exact mem_evalKerSubalgebra.mp F.property) := rfl
+  rw [h, ZeroAtInftyContinuousMap.restrictOfEqZero_apply]
+  simp
+
+@[simp]
+theorem coe_restrictStarAlgEquivOfNotMemRange_symm_apply [CommSemiring S]
+    [NonUnitalNonAssocSemiring A] [TopologicalSpace A] [IsTopologicalSemiring A]
+    [StarAddMonoid A] [ContinuousStar A] [Module S A] [ContinuousConstSMul S A]
+    {e : X → Y} {y₀ : Y} (he : IsOpenEmbedding e) (hcompl : ∀ y, y ∉ Set.range e ↔ y = y₀)
+    (g : C₀(X, A)) :
+    ((restrictStarAlgEquivOfNotMemRange S A he hcompl).symm g : C(Y, A)) =
+      (ZeroAtInftyContinuousMap.extendByZero he g).toContinuousMap := (rfl)
+
+theorem norm_restrictStarAlgEquivOfNotMemRange [CommRing S] [NonUnitalSeminormedRing E]
+    [StarAddMonoid E] [ContinuousStar E] [Module S E] [ContinuousConstSMul S E]
+    {e : X → Y} {y₀ : Y} (he : IsOpenEmbedding e) (hcompl : ∀ y, y ∉ Set.range e ↔ y = y₀)
+    (F : evalKerSubalgebra S E y₀) :
+    ‖restrictStarAlgEquivOfNotMemRange S E he hcompl F‖ = ‖F‖ := by
+  have h : restrictStarAlgEquivOfNotMemRange S E he hcompl F =
+      ZeroAtInftyContinuousMap.restrictOfEqZero he.isEmbedding
+        (ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty F.val)
+        (fun y hy => by rw [(hcompl y).mp hy]; exact mem_evalKerSubalgebra.mp F.property) := rfl
+  rw [h, ZeroAtInftyContinuousMap.norm_restrictOfEqZero, norm_liftZeroAtInfty]
+  rfl
+
+theorem isometry_restrictStarAlgEquivOfNotMemRange [CommSemiring S] [NonUnitalNonAssocSemiring A]
+    [PseudoMetricSpace A] [IsTopologicalSemiring A] [StarAddMonoid A] [ContinuousStar A]
+    [Module S A] [ContinuousConstSMul S A] {e : X → Y} {y₀ : Y} (he : IsOpenEmbedding e)
+    (hcompl : ∀ y, y ∉ Set.range e ↔ y = y₀) :
+    Isometry (restrictStarAlgEquivOfNotMemRange S A he hcompl) :=
+  Isometry.of_dist_eq fun F G => by
+    have h := (ZeroAtInftyContinuousMap.isometry_extendByZero (β := A) he).dist_eq
+      (restrictStarAlgEquivOfNotMemRange S A he hcompl F)
+      (restrictStarAlgEquivOfNotMemRange S A he hcompl G)
+    rw [← ZeroAtInftyContinuousMap.dist_toBCF_eq_dist,
+      ← ZeroAtInftyContinuousMap.dist_toBCF_eq_dist] at h
+    have heq (H : evalKerSubalgebra S A y₀) :
+        ZeroAtInftyContinuousMap.extendByZero he
+            (restrictStarAlgEquivOfNotMemRange S A he hcompl H) =
+          ZeroAtInftyContinuousMap.ContinuousMap.liftZeroAtInfty H.val :=
+      ZeroAtInftyContinuousMap.extendByZero_restrictOfEqZero he _ _
+    rw [heq F, heq G] at h
+    simpa only [ZeroAtInftyContinuousMap.dist_toBCF_eq_dist,
+      isometry_liftZeroAtInfty.dist_eq, Subtype.dist_eq] using h.symm
+
+end RestrictOfNotMemRange
+
+end ContinuousMap

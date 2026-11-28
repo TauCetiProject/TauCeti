@@ -28,8 +28,9 @@ the supremum product norm `‖(a, f)‖ = max ‖a‖ ‖f‖` (Blackadar, *Oper
   positive linear section `a ↦ (a, t ↦ t • φ a)` of `fstHom φ`, together with
   `TauCeti.MappingCone.sectionCLM_map_mul_eq_iff` showing that it preserves multiplication on a pair
   `(a, b)` if and only if `φ (a * b) = 0`.
-* `TauCeti.MappingCone.idEquivCone`, `TauCeti.MappingCone.isContractible_id`,
-  `TauCeti.MappingCone.zeroEquivProd`, `TauCeti.MappingCone.not_isContractible_zero_of_nontrivial`,
+* `TauCeti.MappingCone.idEquivCone`, `TauCeti.MappingCone.isContractibleCStarAlgebra_id`,
+  `TauCeti.MappingCone.zeroEquivProd`,
+  `TauCeti.MappingCone.not_isContractibleCStarAlgebra_zero_of_nontrivial`,
   and `TauCeti.MappingCone.isEmpty_starHomotopyEquiv_id_zero`: special cases `φ = id` and
   `φ = 0`.
 
@@ -337,7 +338,7 @@ def equivKerFstHom (φ : A →⋆ₙₐ[ℂ] B) :
 
 /-- Linear section `a ↦ (a, t ↦ t • φ a)` of `fstHom φ`, bundled as a `ℂ`-linear map. -/
 private def sectionLinearMap (φ : A →⋆ₙₐ[ℂ] B) : A →ₗ[ℂ] MappingCone φ where
-  toFun a := mk φ a (CStarCone.linearPath (φ a)) (CStarCone.evalOne_linearPath (φ a)).symm
+  toFun a := mk φ a (CStarCone.linear (φ a)) (CStarCone.evalOne_linear (φ a)).symm
   map_add' a₁ a₂ := by refine ext rfl ?_; ext t; simp [map_add, smul_add]
   map_smul' c a := by
     refine ext rfl ?_; ext t
@@ -347,11 +348,11 @@ private def sectionLinearMap (φ : A →⋆ₙₐ[ℂ] B) : A →ₗ[ℂ] Mappin
     (sectionLinearMap φ a).fst = a := (rfl)
 
 @[simp] private theorem snd_sectionLinearMap_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
-    (sectionLinearMap φ a).snd = CStarCone.linearPath (φ a) := (rfl)
+    (sectionLinearMap φ a).snd = CStarCone.linear (φ a) := (rfl)
 
 @[simp] private theorem norm_sectionLinearMap_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
     ‖sectionLinearMap φ a‖ = ‖a‖ := by
-  rw [norm_eq, fst_sectionLinearMap_apply, snd_sectionLinearMap_apply, CStarCone.norm_linearPath]
+  rw [norm_eq, fst_sectionLinearMap_apply, snd_sectionLinearMap_apply, CStarCone.norm_linear]
   exact max_eq_left (NonUnitalStarAlgHom.norm_apply_le φ a)
 
 private theorem isometry_sectionLinearMap (φ : A →⋆ₙₐ[ℂ] B) : Isometry (sectionLinearMap φ) :=
@@ -364,7 +365,7 @@ def sectionCLM (φ : A →⋆ₙₐ[ℂ] B) : A →L[ℂ] MappingCone φ :=
 @[simp] theorem fst_sectionCLM_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) : (sectionCLM φ a).fst = a := (rfl)
 
 @[simp] theorem snd_sectionCLM_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) :
-    (sectionCLM φ a).snd = CStarCone.linearPath (φ a) := (rfl)
+    (sectionCLM φ a).snd = CStarCone.linear (φ a) := (rfl)
 
 @[simp] theorem norm_sectionCLM_apply (φ : A →⋆ₙₐ[ℂ] B) (a : A) : ‖sectionCLM φ a‖ = ‖a‖ :=
   norm_sectionLinearMap_apply φ a
@@ -391,40 +392,40 @@ def quotientKerFstHomEquiv (φ : A →⋆ₙₐ[ℂ] B) :
 
 /-- Square-root cone element `t ↦ √t • b` in `CStarCone B`, used to factor `sectionLinearMap` on
 positive matrices `star R * R`. -/
-private def sqrtConePath (b : B) : CStarCone B :=
-  CStarCone.ofPathEqZero
+private def sqrtCone (b : B) : CStarCone B :=
+  CStarCone.ofUnitIntervalMapEqZero
     ⟨fun t : I => Real.sqrt (t : ℝ) • b,
       (Real.continuous_sqrt.comp continuous_subtypeVal).smul continuous_const⟩
     (by simp)
 
-private theorem sqrtConePath_apply (b : B) (t : Ioc (0 : ℝ) 1) :
-    sqrtConePath b t = Real.sqrt (t : ℝ) • b := by simp [sqrtConePath]
+private theorem sqrtCone_apply (b : B) (t : Ioc (0 : ℝ) 1) :
+    sqrtCone b t = Real.sqrt (t : ℝ) • b := by simp [sqrtCone]
 
-private theorem evalOne_sqrtConePath (b : B) : CStarCone.evalOne (sqrtConePath b) = b := by
-  simp [sqrtConePath_apply]
+private theorem evalOne_sqrtCone (b : B) : CStarCone.evalOne (sqrtCone b) = b := by
+  simp [sqrtCone_apply]
 
-private theorem star_sqrtConePath_mul_sqrtConePath_apply (b₁ b₂ : B) (t : Ioc (0 : ℝ) 1) :
-    star (sqrtConePath b₁ t) * sqrtConePath b₂ t = (t : ℝ) • (star b₁ * b₂) := by
-  simp [sqrtConePath_apply, smul_mul_smul_comm, Real.mul_self_sqrt t.property.1.le]
+private theorem star_sqrtCone_mul_sqrtCone_apply (b₁ b₂ : B) (t : Ioc (0 : ℝ) 1) :
+    star (sqrtCone b₁ t) * sqrtCone b₂ t = (t : ℝ) • (star b₁ * b₂) := by
+  simp [sqrtCone_apply, smul_mul_smul_comm, Real.mul_self_sqrt t.property.1.le]
 
 private theorem map_star_mul_self_sectionCLM (φ : A →⋆ₙₐ[ℂ] B) {k : ℕ}
     (R : CStarMatrix (Fin k) (Fin k) A) :
     (star R * R).map (sectionCLM φ).toLinearMap =
       star (CStarMatrix.ofMatrix fun l j =>
-        mk φ (R l j) (sqrtConePath (φ (R l j))) (evalOne_sqrtConePath _).symm) *
+        mk φ (R l j) (sqrtCone (φ (R l j))) (evalOne_sqrtCone _).symm) *
       (CStarMatrix.ofMatrix fun l j =>
-        mk φ (R l j) (sqrtConePath (φ (R l j))) (evalOne_sqrtConePath _).symm) := by
+        mk φ (R l j) (sqrtCone (φ (R l j))) (evalOne_sqrtCone _).symm) := by
   set S : CStarMatrix (Fin k) (Fin k) (MappingCone φ) :=
     CStarMatrix.ofMatrix fun l j =>
-      mk φ (R l j) (sqrtConePath (φ (R l j))) (evalOne_sqrtConePath _).symm
+      mk φ (R l j) (sqrtCone (φ (R l j))) (evalOne_sqrtCone _).symm
   have hS (l j : Fin k) :
-      S l j = mk φ (R l j) (sqrtConePath (φ (R l j))) (evalOne_sqrtConePath _).symm := rfl
+      S l j = mk φ (R l j) (sqrtCone (φ (R l j))) (evalOne_sqrtCone _).symm := rfl
   ext i j : 1
   refine ext ?_ ?_
   · simp [CStarMatrix.mul_apply, CStarMatrix.star_apply, hS]
   · ext t
     simp [CStarMatrix.mul_apply, CStarMatrix.star_apply, hS,
-      star_sqrtConePath_mul_sqrtConePath_apply, map_star]
+      star_sqrtCone_mul_sqrtCone_apply, map_star]
 
 /-- Completely positive contractive (in fact, isometric) linear section
 `a ↦ (a, t ↦ t • φ a)` of `fstHom φ : MappingCone φ →⋆ₙₐ[ℂ] A`. -/
@@ -493,9 +494,10 @@ theorem snd_idEquivCone_symm_apply {A : Type*} [NonUnitalCStarAlgebra A] (f : CS
     ((idEquivCone A).symm f).snd = f := (rfl)
 
 /-- `MappingCone (.id ℂ A)` is contractible. -/
-theorem isContractible_id (A : Type*) [NonUnitalCStarAlgebra A] :
+theorem isContractibleCStarAlgebra_id (A : Type*) [NonUnitalCStarAlgebra A] :
     IsContractibleCStarAlgebra (MappingCone (.id ℂ A)) :=
-  (IsContractibleCStarAlgebra.iff_of_starAlgEquiv (idEquivCone A)).mpr (CStarCone.isContractible A)
+  (IsContractibleCStarAlgebra.iff_of_starAlgEquiv (idEquivCone A)).mpr
+    (CStarCone.isContractibleCStarAlgebra A)
 
 /-- The mapping cone of `0 : A →⋆ₙₐ[ℂ] B` splits as `A × CStarSuspension B`. -/
 def zeroEquivProd (A B : Type*) [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B] :
@@ -524,8 +526,8 @@ theorem zeroEquivProd_apply (A B : Type*) [NonUnitalCStarAlgebra A] [NonUnitalCS
 
 /-- When `A` is a nontrivial unital C⋆-algebra, `MappingCone (0 : A →⋆ₙₐ[ℂ] B)` contains the
 nonzero projection `(1, 0)` and is therefore not contractible. -/
-theorem not_isContractible_zero_of_nontrivial (A B : Type*) [CStarAlgebra A] [Nontrivial A]
-    [NonUnitalCStarAlgebra B] :
+theorem not_isContractibleCStarAlgebra_zero_of_nontrivial (A B : Type*) [CStarAlgebra A]
+    [Nontrivial A] [NonUnitalCStarAlgebra B] :
     ¬IsContractibleCStarAlgebra (MappingCone (0 : A →⋆ₙₐ[ℂ] B)) := by
   intro h
   have hprod : IsContractibleCStarAlgebra (A × CStarSuspension B) :=
@@ -539,8 +541,9 @@ theorem not_isContractible_zero_of_nontrivial (A B : Type*) [CStarAlgebra A] [No
 theorem isEmpty_starHomotopyEquiv_id_zero (A B : Type*) [CStarAlgebra A] [Nontrivial A]
     [NonUnitalCStarAlgebra B] :
     IsEmpty (StarHomotopyEquiv (MappingCone (.id ℂ A)) (MappingCone (0 : A →⋆ₙₐ[ℂ] B))) :=
-  ⟨fun e => not_isContractible_zero_of_nontrivial A B
-    ((IsContractibleCStarAlgebra.iff_of_starHomotopyEquiv e).mp (isContractible_id A))⟩
+  ⟨fun e => not_isContractibleCStarAlgebra_zero_of_nontrivial A B
+    ((IsContractibleCStarAlgebra.iff_of_starHomotopyEquiv e).mp
+      (isContractibleCStarAlgebra_id A))⟩
 
 end SpecialCases
 
