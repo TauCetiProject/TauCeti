@@ -30,11 +30,15 @@ two colourings are mutually inverse and conjugate
 ## Main results
 
 * `RootPairing.graph_coxeterMatrixOfBase`: the Coxeter graph of a base is its Dynkin diagram.
-* `RootPairing.isAcyclic_graph_coxeterMatrixOfBase` and
-  `RootPairing.nonempty_coloring_graph_coxeterMatrixOfBase`: for a root system it is a forest, and
-  so has a two-colouring.
+* `RootPairing.isAcyclic_graph_coxeterMatrixOfBase_of_isFiniteType`,
+  `RootPairing.nonempty_coloring_graph_coxeterMatrixOfBase_of_isFiniteType`,
+  `RootPairing.isAcyclic_graph_coxeterMatrixOfBase`, and
+  `RootPairing.nonempty_coloring_graph_coxeterMatrixOfBase`: when the Cartan matrix is of finite
+  type (in particular, for a root system), the Coxeter graph is a forest and has a two-colouring.
 * `RootPairing.preconnected_graph_coxeterMatrixOfBase`: for an irreducible reduced root pairing it
   is connected.
+* `RootPairing.Base.cartanMatrix_eq_zero_of_color_eq`: distinct simple roots of the same colour
+  in a two-colouring of the Coxeter graph have vanishing Cartan entry.
 * `RootPairing.colorClassProd_smul`: the product of the simple reflections of one colour subtracts
   from a vector its components along the simple roots of that colour.
 
@@ -61,25 +65,43 @@ theorem graph_coxeterMatrixOfBase :
   simp only [CoxeterMatrix.graph_adj, diagramGraph_adj, ne_eq, coxeterMatrixOfBase_eq_two_iff,
     ← cartanMatrix_mul_cartanMatrix_eq_zero_iff_isOrthogonal, mul_eq_zero, not_or]
 
+/-- **The Coxeter graph of a base with finite-type Cartan matrix is a forest.** -/
+theorem isAcyclic_graph_coxeterMatrixOfBase_of_isFiniteType (hft : IsFiniteType b.cartanMatrix) :
+    (coxeterMatrixOfBase P b).graph.IsAcyclic :=
+  graph_coxeterMatrixOfBase P b ▸ hft.isAcyclic_diagramGraph
+
+/-- **The Coxeter graph of a base with finite-type Cartan matrix has a two-colouring**: its simple
+roots can be coloured by `Bool` so that simple roots of the same colour are orthogonal. -/
+theorem nonempty_coloring_graph_coxeterMatrixOfBase_of_isFiniteType
+    (hft : IsFiniteType b.cartanMatrix) :
+    Nonempty ((coxeterMatrixOfBase P b).graph.Coloring Bool) :=
+  Nonempty.map ((coxeterMatrixOfBase P b).graph.recolorOfEquiv finTwoEquiv)
+    (isAcyclic_graph_coxeterMatrixOfBase_of_isFiniteType P b hft).isBipartite
+
 /-- **The Coxeter graph of a base of a root system is a forest.** -/
 theorem isAcyclic_graph_coxeterMatrixOfBase [P.IsRootSystem] :
-    (coxeterMatrixOfBase P b).graph.IsAcyclic := by
-  rw [graph_coxeterMatrixOfBase]
-  exact (isFiniteType_cartanMatrix b).isAcyclic_diagramGraph
+    (coxeterMatrixOfBase P b).graph.IsAcyclic :=
+  isAcyclic_graph_coxeterMatrixOfBase_of_isFiniteType P b (isFiniteType_cartanMatrix b)
 
 /-- **The Dynkin diagram of a root system has a two-colouring**: its simple roots can be coloured
 by `Bool` so that simple roots of the same colour are orthogonal. -/
 theorem nonempty_coloring_graph_coxeterMatrixOfBase [P.IsRootSystem] :
     Nonempty ((coxeterMatrixOfBase P b).graph.Coloring Bool) :=
-  Nonempty.map ((coxeterMatrixOfBase P b).graph.recolorOfEquiv finTwoEquiv)
-    (isAcyclic_graph_coxeterMatrixOfBase P b).isBipartite
+  nonempty_coloring_graph_coxeterMatrixOfBase_of_isFiniteType P b (isFiniteType_cartanMatrix b)
 
 /-- **The Coxeter graph of a base of an irreducible reduced root pairing is connected**, so its
 two-colourings agree up to exchanging the colours. -/
 theorem preconnected_graph_coxeterMatrixOfBase [P.IsReduced] [P.IsIrreducible] :
-    (coxeterMatrixOfBase P b).graph.Preconnected := by
-  rw [graph_coxeterMatrixOfBase]
-  exact preconnected_diagramGraph_cartanMatrix b
+    (coxeterMatrixOfBase P b).graph.Preconnected :=
+  graph_coxeterMatrixOfBase P b ▸ preconnected_diagramGraph_cartanMatrix b
+
+/-- Distinct simple roots of the same colour in a two-colouring of the Coxeter graph are
+orthogonal. -/
+theorem Base.cartanMatrix_eq_zero_of_color_eq {P : RootPairing ι R M N} [P.IsCrystallographic]
+    (b : P.Base) (col : (coxeterMatrixOfBase P b).graph.Coloring Bool) {p q : b.support}
+    (hpq : p ≠ q) (hc : col p = col q) : b.cartanMatrix p q = 0 :=
+  by_contra fun hne ↦ col.valid ((graph_coxeterMatrixOfBase P b).symm ▸ (diagramGraph_adj ..).mpr
+    ⟨hpq, hne, fun hqp ↦ hne (b.cartanMatrix_apply_eq_zero_iff_symm.mpr hqp)⟩) hc
 
 /-! ### The action of a colour class -/
 
@@ -107,12 +129,8 @@ theorem noncommProd_ofIdx_smul (s : Finset b.support) (f : b.support → P.weylG
 
 /-- Distinct simple roots of the same colour are orthogonal. -/
 theorem pairingIn_eq_zero_of_color_eq (c : (coxeterMatrixOfBase P b).graph.Coloring Bool)
-    {i j : b.support} (hij : i ≠ j) (h : c i = c j) : P.pairingIn ℤ i j = 0 := by
-  have hadj : ¬ (coxeterMatrixOfBase P b).graph.Adj i j := fun hadj ↦ c.valid hadj h
-  rw [graph_coxeterMatrixOfBase, diagramGraph_adj] at hadj
-  rw [← Base.cartanMatrixIn_def]
-  by_contra hne
-  exact hadj ⟨hij, hne, fun h' ↦ hne (b.cartanMatrix_apply_eq_zero_iff_symm.2 h')⟩
+    {i j : b.support} (hij : i ≠ j) (h : c i = c j) : P.pairingIn ℤ i j = 0 :=
+  (b.cartanMatrixIn_def ℤ i j).symm ▸ b.cartanMatrix_eq_zero_of_color_eq c hij h
 
 /-- The product of the simple reflections of colour `x` subtracts from `m` its components along
 the simple roots of colour `x`. -/

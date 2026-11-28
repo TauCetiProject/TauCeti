@@ -48,7 +48,7 @@ namespace RootPairing
 
 variable {ι K M N κ : Type*} [Field K] [CharZero K] [Algebra ℝ K] [IsAlgClosed K]
   [AddCommGroup M] [Module K M] [FiniteDimensional K M] [AddCommGroup N] [Module K N]
-  (P : RootPairing ι K M N) [Finite ι] [Nonempty ι] [P.IsCrystallographic] [P.IsReduced]
+  (P : RootPairing ι K M N) [Finite ι] [P.IsCrystallographic] [P.IsReduced]
   [P.IsIrreducible]
 
 /-- **The eigenvalues of the bipartite Coxeter element are powers of a primitive root of unity by

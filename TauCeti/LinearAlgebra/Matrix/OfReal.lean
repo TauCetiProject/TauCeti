@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.LinearAlgebra.Matrix.DetDescent
@@ -17,7 +18,9 @@ import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 A real matrix `N` is viewed as a complex matrix through the entrywise coercion
 `N.map ((↑) : ℝ → ℂ)`. This file records that a real orthogonal matrix is unitary, a real
 symmetric matrix Hermitian and a real positive definite matrix positive definite as a complex
-matrix, that the determinant does not change, and how the real Gram matrix `Re (Mᴴ M)` of the
+matrix, that the determinant does not change, how a real rotation pair `(e₁, e₂)` satisfies the
+eigenspace identity `(A.map (↑)) *ᵥ (e₁ + I • e₂) = exp (α I) • (e₁ + I • e₂)` (giving an
+`exp (α I)`-eigenvector whenever `(e₁, e₂) ≠ 0`), and how the real Gram matrix `Re (Mᴴ M)` of the
 columns of a complex matrix `M` behaves: it transforms by congruence under a real change of basis,
 and it is positive definite when `Mᴴ M` is, in particular when `M` has independent columns. The
 imaginary part `Im (Mᴴ M)`, the matrix of the symplectic form `Im ⟪·, ·⟫` on the columns,
@@ -30,6 +33,9 @@ transforms by the same congruence. For a symmetric complex matrix `Ω`, the imag
   `O Oᵀ = 1` as a complex matrix.
 * `Matrix.map_ofReal_mem_unitaryGroup`: an orthogonal real matrix is unitary.
 * `Matrix.IsHermitian.map_ofReal`: a real symmetric matrix is Hermitian.
+* `Matrix.map_ofReal_mulVec_of_rotation`: for a real rotation pair `(e₁, e₂)`,
+  `(A.map (↑)) *ᵥ (e₁ + I • e₂) = exp (α I) • (e₁ + I • e₂)` (an `exp (α I)`-eigenvector when
+  `(e₁, e₂) ≠ 0`).
 * `Matrix.map_im_map_ofReal_of_transpose_eq`: for a symmetric complex matrix `Ω`, the complex
   matrix of `Im Ω` is `(Ω - Ωᴴ) / 2i`.
 * `Matrix.map_ofReal_mul`, `Matrix.map_ofReal_mulVec`, `Matrix.map_ofReal_one`,
@@ -80,6 +86,27 @@ theorem map_ofReal_mem_unitaryGroup [Fintype n] [DecidableEq n] {O : Matrix n n 
 theorem IsHermitian.map_ofReal {A : Matrix n n ℝ} (hA : A.IsHermitian) :
     (A.map ((↑) : ℝ → ℂ)).IsHermitian :=
   hA.map _ fun _ ↦ by simp
+
+/-- If a real matrix `A` rotates `(e₁, e₂)` by `-α` (`A *ᵥ e₁ = cos α • e₁ - sin α • e₂` and
+`A *ᵥ e₂ = sin α • e₁ + cos α • e₂`), then `e₁ + I • e₂` satisfies the eigenspace identity
+`(A.map (↑)) *ᵥ (e₁ + I • e₂) = exp (α I) • (e₁ + I • e₂)` (and is an `exp (α I)`-eigenvector
+when `(e₁, e₂) ≠ 0`). -/
+theorem map_ofReal_mulVec_of_rotation [Fintype n] {A : Matrix n n ℝ} {e₁ e₂ : n → ℝ} {α : ℝ}
+    (he₁ : A *ᵥ e₁ = Real.cos α • e₁ - Real.sin α • e₂)
+    (he₂ : A *ᵥ e₂ = Real.sin α • e₁ + Real.cos α • e₂) :
+    (A.map ((↑) : ℝ → ℂ)) *ᵥ (fun i ↦ (e₁ i : ℂ) + Complex.I * (e₂ i : ℂ)) =
+      Complex.exp ((α : ℂ) * Complex.I) • (fun i ↦ (e₁ i : ℂ) + Complex.I * (e₂ i : ℂ)) := by
+  have hv : (fun i ↦ (e₁ i : ℂ) + Complex.I * (e₂ i : ℂ)) =
+      (Complex.ofRealHom ∘ e₁) + Complex.I • (Complex.ofRealHom ∘ e₂) :=
+    funext fun _ ↦ by simp [smul_eq_mul]
+  have hmul (u : n → ℝ) :
+      (A.map ((↑) : ℝ → ℂ)) *ᵥ (Complex.ofRealHom ∘ u) = Complex.ofRealHom ∘ (A *ᵥ u) :=
+    funext fun i ↦ (Complex.ofRealHom.map_mulVec A u i).symm
+  rw [hv, mulVec_add, mulVec_smul, hmul, hmul, he₁, he₂, Complex.exp_mul_I]
+  ext i; simp only [Function.comp_apply, Complex.ofRealHom_eq_coe, Pi.add_apply, Pi.smul_apply,
+    Pi.sub_apply, smul_eq_mul, Complex.ofReal_sub, Complex.ofReal_add, Complex.ofReal_mul,
+    ← Complex.ofReal_cos, ← Complex.ofReal_sin]
+  linear_combination -↑(Real.sin α) * (e₂ i : ℂ) * Complex.I_sq
 
 /-- For a symmetric complex matrix `Ω`, the complex matrix of `Im Ω` is `(Ω - Ωᴴ) / 2i`. -/
 theorem map_im_map_ofReal_of_transpose_eq {Ω : Matrix n n ℂ} (h : Ωᵀ = Ω) :

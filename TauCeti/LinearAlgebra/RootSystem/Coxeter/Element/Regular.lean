@@ -6,27 +6,35 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import Mathlib.RingTheory.RootsOfUnity.Complex
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.GroupTheory.Coxeter.Bipartite
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Bipartite
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
-import Mathlib.Algebra.QuadraticDiscriminant
-import TauCeti.Algebra.Group.Action.Pow
-import TauCeti.LinearAlgebra.RootSystem.FiniteType.Perron
-import TauCeti.LinearAlgebra.RootSystem.Weyl.Chamber
-import TauCeti.RingTheory.RootsOfUnity.PrimitiveRoots
+public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
+public import TauCeti.RepresentationTheory.BaseChange
+import Mathlib.Algebra.CharP.Algebra
+import Mathlib.LinearAlgebra.Complex.Module
+import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Plane
 
 /-!
-# A regular eigenvector of the bipartite Coxeter element
+# Regular eigenvectors of Coxeter elements
 
-Let `b` be a base of a finite irreducible reduced crystallographic root system, and colour its
-Dynkin diagram, which is a tree, by `Bool`. The bipartite Coxeter element `c` is the product of
-the simple reflections of colour `true`, followed by those of colour `false`. Over a
-field `K` containing `ℝ` and algebraically closed, such as `ℂ`, this file proves Steinberg's
-theorem that `c` has a **regular eigenvector**, lying on no reflecting hyperplane, whose
-eigenvalue is a primitive root of unity of order exactly the order `h` of `c`
-(`RootPairing.exists_isRegularWeight_bipartiteCoxeterElement_smul_eq_smul_isPrimitiveRoot`).
+Let `b` be a base of a finite, reduced, crystallographic root pairing `P` whose Cartan matrix is of
+finite type with preconnected Dynkin diagram (or `[P.IsIrreducible]`), and let `c = wordProd P b l`
+be any Coxeter element (with `l` duplicate-free and containing every simple root) of order `h`. This
+file proves Steinberg's theorem in three forms:
+
+1. **Complexified weight space (`ℂ ⊗[R] M`)**: over any characteristic-zero domain `R` with
+   `[Algebra R ℂ]`, `c` has a regular `exp (2πi / h)`-eigenvector in `ℂ ⊗[R] M` with trivial Weyl
+   stabilizer.
+2. **Fields `K` equipped with `φ : ℂ →+* K` and algebraically closed fields containing `ℝ`**: in
+   `M` itself, `c` has a regular eigenvector with trivial Weyl stabilizer whose eigenvalue is
+   `φ (exp (2πi / h))` (specializing to `exp (2πi / h)` over `ℂ` via `RingHom.id ℂ`, and to a
+   primitive `h`-th root of unity `μ : K` over any algebraically closed field containing `ℝ`).
+3. **Bipartite Coxeter element corollary**: specializing to
+   `(weylCoxeterSystem P b).bipartiteCoxeterElement col`.
 
 This is the geometric input of the uniform identification of the eigenvalues of a Coxeter element
 with `ζ ^ (dᵢ - 1)` for the invariant degrees `dᵢ`: at a regular eigenvector, the invariant
@@ -34,23 +42,26 @@ degrees compute the characteristic polynomial.
 
 ## The argument
 
-The Cartan matrix `C` of `b` is indecomposable and of finite type, so it has a left eigenvector
-`y` with strictly positive real entries, for an eigenvalue `κ` with `0 < κ < 2` (when `b` has at
-least two simple roots). Write `u₀` and `u₁` for the parts `∑ yᵢ αᵢ` of colour `true` and
-`false`. Since simple roots of equal colour are orthogonal, the product of the reflections of one
-colour negates the part of that colour and adds `λ = 2 - κ` times it to the other part. Hence `c`
-preserves the real plane spanned by `u₀` and `u₁`, acting there by a matrix of trace `λ² - 2` and
-determinant `1`. As `0 < λ < 2` its eigenvalues `μ` and `μ⁻¹` are not real, and the eigenvector
-`(1 + μ) u₀ + λ u₁` is regular: every coroot takes real values on `u₀` and `u₁` whose sum, the
-value on `u₀ + u₁`, is nonzero because `u₀ + u₁ = ∑ yᵢ αᵢ` is strictly positive on every simple
-coroot. Finally if `μ ^ l = 1` then `c ^ l` fixes both eigenvectors, hence fixes `u₀ + u₁`, so
-`c ^ l = 1` because the Weyl group acts freely on such vectors. With a single simple root `α`,
-the element `c` is the reflection in `α` and `α` is a regular eigenvector for `-1`.
+By `RootPairing.Base.exists_eigenvector_exp_two_pi_I_div_orderOf_wordProd_of_isFiniteType`, the
+integer matrix of `c` in the simple-root basis already has a complex regular primitive `h`-th-root
+eigenvector `v : b.support → ℂ` (constructed via Coleman's real Coxeter plane in rank ≥ 2, and `-1`
+on the unique simple root in rank 1). Given any ring homomorphism `φ : ℂ →+* K` (either
+`RingHom.id ℂ` or `Complex.liftAux i _` for `i : K` with `i * i = -1`), `∑ j, φ (v j) • P.root j`
+is the desired regular eigenvector in `M`, and nonsingularity of `b.cartanMatrix` yields trivial
+Weyl stabilizer.
 
 ## Main results
 
-* `RootPairing.exists_isRegularWeight_bipartiteCoxeterElement_smul_eq_smul_isPrimitiveRoot`: the
-  bipartite Coxeter element has a regular eigenvector whose eigenvalue is a primitive root of
+* `RootPairing.Base.exists_eigenvector_baseChange_weylGroupRootRep_wordProd` / `_of_isFiniteType`:
+  regular `exp (2πi / h)`-eigenvector of any Coxeter element in `ℂ ⊗[R] M` with trivial stabilizer.
+* `RootPairing.Base.exists_isRegularWeight_eigenvector_wordProd_of_ringHom` and
+  `RootPairing.Base.exists_isRegularWeight_eigenvector_wordProd_of_ringHom_of_isFiniteType`:
+  regular `φ (exp (2πi / h))`-eigenvector of any Coxeter element in `M` along any ring homomorphism
+  `φ : ℂ →+* K`, with trivial Weyl stabilizer.
+* `RootPairing.Base.exists_isRegularWeight_eigenvector_wordProd` / `_of_isFiniteType`:
+  specialization to algebraically closed fields `K` containing `ℝ`.
+* `RootPairing.exists_isRegularWeight_bipartiteCoxeterElement_smul_eq_smul_isPrimitiveRoot`:
+  the bipartite Coxeter element has a regular eigenvector whose eigenvalue is a primitive root of
   unity of order equal to the order of the element.
 
 ## References
@@ -63,295 +74,233 @@ the element `c` is the reflection in `α` and `α` is a regular eigenvector for 
 
 public section
 
-open Finset TauCeti
+open Matrix Submodule TauCeti TensorProduct
+
+namespace RootPairing.Base
+
+/-! ### Complexified weight-space regular primitive-root eigenvector -/
+
+section BaseChangeWeightSpace
+
+variable {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R] [Algebra R ℂ]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {P : RootPairing ι R M N} [Finite ι] [P.IsCrystallographic] [P.IsReduced]
+
+private theorem exists_eigenvector_baseChange_isEmpty [P.IsIrreducible] [IsEmpty ι] (b : P.Base)
+    (l : List b.support) :
+    let c := wordProd P b l
+    let ζ := Complex.exp (2 * Real.pi * Complex.I / orderOf c)
+    ∃ v : ℂ ⊗[R] M,
+      v ≠ 0 ∧ P.weylGroupRootRep.baseChange ℂ c v = ζ • v ∧ IsPrimitiveRoot ζ (orderOf c) ∧
+      (∀ j : ι, LinearMap.liftBaseChange ℂ (Algebra.linearMap R ℂ ∘ₗ P.coroot' j) v ≠ 0) ∧
+      (∀ g : P.weylGroup, P.weylGroupRootRep.baseChange ℂ g v = v → g = 1) := by
+  dsimp only; have : IsEmpty b.support := ⟨(IsEmpty.false ·.val)⟩
+  have := IsIrreducible.nontrivial (P := P); obtain ⟨m₀, hm₀⟩ := exists_ne (0 : M)
+  obtain ⟨n₀, hr₀⟩ : ∃ n₀ : N, P.toLinearMap m₀ n₀ ≠ 0 := by
+    by_contra! h; exact hm₀ ((LinearMap.IsPerfPair.bijective_left P.toLinearMap).injective
+      (by ext n; simp [h]))
+  set r₀ := P.toLinearMap m₀ n₀
+  have hS_top : LinearMap.range (LinearMap.lsmul R M r₀) = ⊤ :=
+    IsIrreducible.eq_top_of_invtSubmodule_reflection (P := P) _ (fun i ↦ (IsEmpty.false i).elim)
+      fun hbot ↦ hr₀ <| mul_self_eq_zero.mp (by
+        simpa [r₀] using congrArg (fun f : N →ₗ[R] R ↦ f n₀) (congrArg P.toLinearMap
+          ((Submodule.mem_bot R).mp (hbot.le (LinearMap.mem_range_self _ m₀)))))
+  obtain ⟨m₁, hm₁⟩ : ∃ m₁ : M, r₀ • m₁ = m₀ := LinearMap.mem_range.mp (hS_top ▸ Submodule.mem_top)
+  have hp₁ : P.toLinearMap m₁ n₀ = 1 := mul_left_cancel₀ hr₀ <| by
+    simpa [hm₁] using (congrArg (fun f ↦ f n₀) (P.toLinearMap.map_smul r₀ m₁)).symm
+  have hl_nil (lg : List b.support) : lg = [] := List.eq_nil_iff_forall_not_mem.mpr (by simp)
+  refine ⟨1 ⊗ₜ[R] m₁, fun hv0 ↦ one_ne_zero (α := ℂ) <| by simpa [hp₁] using (congrArg
+      (LinearMap.liftBaseChange ℂ (Algebra.linearMap R ℂ ∘ₗ P.toLinearMap.flip n₀)) hv0).symm,
+    by simp [hl_nil l], by simp [hl_nil l], fun j ↦ (IsEmpty.false j).elim,
+    fun g _ ↦ by obtain ⟨lg, rfl⟩ := exists_wordProd_eq P b g; simp [hl_nil lg]⟩
+
+omit [CharZero R] [IsDomain R] [Finite ι] [P.IsReduced] in
+private theorem sum_tmul_root_injective_of_isFiniteType (b : P.Base)
+    (hft : IsFiniteType b.cartanMatrix) :
+    Function.Injective (fun u : b.support → ℂ ↦ ∑ i : b.support, u i ⊗ₜ[R] P.root i) := by
+  classical
+  refine fun u₁ u₂ h ↦ Matrix.mulVec_injective_of_isUnit (hft.transpose.isUnit_map ℂ)
+    (funext fun k ↦ by
+      have hk := congrArg (LinearMap.liftBaseChange ℂ
+        (Algebra.linearMap R ℂ ∘ₗ P.coroot' (k : ι))) h
+      simp only [b.liftBaseChange_coroot'_sum_tmul_root, corootEval_coe_support] at hk
+      simpa [mulVec, dotProduct] using hk)
+
+/-- **Complexified weight-space regular primitive-root eigenvector** (Cartan-matrix form): for a
+base `b` of a nonempty finite crystallographic reduced root pairing over a char-0 domain `R` with
+`[Algebra R ℂ]`, when `b.cartanMatrix` is of finite type with preconnected Dynkin diagram, every
+Coxeter element `c = wordProd P b l` (with `l` duplicate-free and containing every simple root) of
+order `h = orderOf c` has a nonzero `exp (2πi / h)`-eigenvector `v : ℂ ⊗[R] M` lying outside every
+complexified coroot hyperplane with trivial Weyl stabilizer. -/
+theorem exists_eigenvector_baseChange_weylGroupRootRep_wordProd_of_isFiniteType
+    [Nonempty ι] (b : P.Base) (hft : IsFiniteType b.cartanMatrix)
+    (hconn : (diagramGraph b.cartanMatrix).Preconnected)
+    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
+    let c := wordProd P b l
+    let ζ := Complex.exp (2 * Real.pi * Complex.I / orderOf c)
+    ∃ v : ℂ ⊗[R] M,
+      v ≠ 0 ∧ P.weylGroupRootRep.baseChange ℂ c v = ζ • v ∧
+      IsPrimitiveRoot ζ (orderOf c) ∧
+      (∀ j : ι, LinearMap.liftBaseChange ℂ (Algebra.linearMap R ℂ ∘ₗ P.coroot' j) v ≠ 0) ∧
+      (∀ g : P.weylGroup, P.weylGroupRootRep.baseChange ℂ g v = v → g = 1) := by
+  classical
+  dsimp only; set c := wordProd P b l; have hW := b.actsBy_wordProd l
+  obtain ⟨y, -, hy_eig, hprim, hy_reg, hy_stab⟩ :=
+    b.exists_eigenvector_exp_two_pi_I_div_orderOf_wordProd_of_isFiniteType hft hconn hnd hall hW
+  let v : ℂ ⊗[R] M := ∑ i : b.support, y i ⊗ₜ[R] P.root i; obtain ⟨j₀⟩ := ‹Nonempty ι›
+  refine ⟨v, fun hv0 ↦ hy_reg j₀ ((b.liftBaseChange_coroot'_sum_tmul_root j₀ y).symm.trans <|
+      (congrArg _ hv0).trans (map_zero _)),
+    by rw [Representation.baseChange_apply, hW.baseChange_weylGroupRootRep_sum_tmul_root y, hy_eig]
+       simp [c, v, Finset.smul_sum, smul_tmul'],
+    hprim, fun j ↦ b.liftBaseChange_coroot'_sum_tmul_root j y ▸ hy_reg j, fun g hg ↦ ?_⟩
+  obtain ⟨lg, rfl⟩ := exists_wordProd_eq P b g; have hG := b.actsBy_wordProd lg
+  rw [Representation.baseChange_apply, hG.baseChange_weylGroupRootRep_sum_tmul_root y] at hg
+  exact hy_stab _ _ hG (b.sum_tmul_root_injective_of_isFiniteType hft hg)
+
+/-- **Complexified weight-space regular primitive-root eigenvector**: for any finite, reduced,
+irreducible, crystallographic root pairing `P` over a char-0 domain `R` with `[Algebra R ℂ]`, every
+Coxeter element `c = wordProd P b l` (with `l` duplicate-free and containing every simple root) of
+order `h = orderOf c` has a nonzero `exp (2πi / h)`-eigenvector `v : ℂ ⊗[R] M` lying outside every
+complexified coroot hyperplane with trivial Weyl stabilizer. -/
+theorem exists_eigenvector_baseChange_weylGroupRootRep_wordProd [P.IsIrreducible] (b : P.Base)
+    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
+    let c := wordProd P b l
+    let ζ := Complex.exp (2 * Real.pi * Complex.I / orderOf c)
+    ∃ v : ℂ ⊗[R] M,
+      v ≠ 0 ∧ P.weylGroupRootRep.baseChange ℂ c v = ζ • v ∧
+      IsPrimitiveRoot ζ (orderOf c) ∧
+      (∀ j : ι, LinearMap.liftBaseChange ℂ (Algebra.linearMap R ℂ ∘ₗ P.coroot' j) v ≠ 0) ∧
+      (∀ g : P.weylGroup, P.weylGroupRootRep.baseChange ℂ g v = v → g = 1) := by
+  by_cases hne : Nonempty ι
+  · have : NeZero (2 : R) := ⟨by norm_num⟩
+    exact b.exists_eigenvector_baseChange_weylGroupRootRep_wordProd_of_isFiniteType
+      (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) hnd hall
+  · have : IsEmpty ι := not_nonempty_iff.mp hne; exact exists_eigenvector_baseChange_isEmpty b l
+
+end BaseChangeWeightSpace
+
+/-! ### Weight-space regular primitive-root eigenvectors over `K` and `ℂ` -/
+
+section FieldRootSystem
+
+variable {ι K M N : Type*} [Field K] [AddCommGroup M] [Module K M]
+  [AddCommGroup N] [Module K N] {P : RootPairing ι K M N} [Finite ι] [P.IsCrystallographic]
+  [P.IsReduced]
+
+omit [Finite ι] [P.IsReduced] in
+private theorem sum_map_smul_root_injective_of_isFiniteType (b : P.Base)
+    (hft : IsFiniteType b.cartanMatrix) (φ : ℂ →+* K) :
+    Function.Injective (fun u : b.support → ℂ ↦ ∑ i : b.support, φ (u i) • P.root i) := by
+  classical
+  refine fun u₁ u₂ h ↦ Matrix.mulVec_injective_of_isUnit (hft.transpose.isUnit_map ℂ)
+    (funext fun k ↦ φ.injective <| by
+      have hk := congrArg (P.coroot' (k : ι)) h
+      simp only [b.coroot'_sum_map_smul_root, corootEval_coe_support] at hk
+      simpa [mulVec, dotProduct] using hk)
+
+/-- **Steinberg's regular primitive-root eigenvector in `M` along a ring homomorphism `ℂ →+* K`**
+(Cartan-matrix form): for a base `b` of a nonempty finite crystallographic reduced root pairing over
+a field `K` equipped with `φ : ℂ →+* K`, when `b.cartanMatrix` is of finite type with preconnected
+Dynkin diagram, every Coxeter element `c = wordProd P b l` of order `h = orderOf c` has a regular
+`φ (exp (2πi / h))`-eigenvector in `M` with trivial Weyl stabilizer. -/
+theorem exists_isRegularWeight_eigenvector_wordProd_of_ringHom_of_isFiniteType [Nonempty ι]
+    (b : P.Base) (hft : IsFiniteType b.cartanMatrix)
+    (hconn : (diagramGraph b.cartanMatrix).Preconnected)
+    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) (φ : ℂ →+* K) :
+    let c := wordProd P b l
+    let μ := φ (Complex.exp (2 * Real.pi * Complex.I / orderOf c))
+    ∃ v : M, v ≠ 0 ∧ c • v = μ • v ∧ IsPrimitiveRoot μ (orderOf c) ∧
+      P.IsRegularWeight v ∧ MulAction.stabilizer P.weylGroup v = ⊥ := by
+  classical
+  have := charZero_of_injective_ringHom φ.injective
+  dsimp only; set c := wordProd P b l; have hW := b.actsBy_wordProd l
+  obtain ⟨y, -, hy_eig, hprim, hy_reg, hy_stab⟩ :=
+    b.exists_eigenvector_exp_two_pi_I_div_orderOf_wordProd_of_isFiniteType hft hconn hnd hall hW
+  let v : M := ∑ i : b.support, φ (y i) • P.root i; obtain ⟨j₀⟩ := ‹Nonempty ι›
+  refine ⟨v, fun hv0 ↦ (map_ne_zero φ).mpr (hy_reg j₀)
+      ((b.coroot'_sum_map_smul_root φ j₀ y).symm.trans ((congrArg _ hv0).trans (map_zero _))),
+    by rw [hW.smul_sum_map_smul_root φ y, hy_eig, Finset.smul_sum]
+       refine Finset.sum_congr rfl fun k _ ↦ ?_
+       rw [Pi.smul_apply, smul_eq_mul, map_mul, smul_smul],
+    hprim.map_of_injective φ.injective,
+    (P.isRegularWeight_iff v).mpr fun j ↦ by
+      rw [b.coroot'_sum_map_smul_root φ j y]; exact (map_ne_zero φ).mpr (hy_reg j),
+    eq_bot_iff.mpr fun g hg ↦ ?_⟩
+  obtain ⟨lg, rfl⟩ := exists_wordProd_eq P b g; have hG := b.actsBy_wordProd lg
+  rw [MulAction.mem_stabilizer_iff, hG.smul_sum_map_smul_root φ y] at hg
+  exact hy_stab _ _ hG (b.sum_map_smul_root_injective_of_isFiniteType hft φ hg)
+
+private theorem exists_isRegularWeight_eigenvector_isEmpty [CharZero K] [P.IsIrreducible]
+    [IsEmpty ι] (b : P.Base) (l : List b.support) :
+    let c := wordProd P b l
+    ∃ v : M, v ≠ 0 ∧ c • v = (1 : K) • v ∧ IsPrimitiveRoot (1 : K) (orderOf c) ∧
+      P.IsRegularWeight v ∧ MulAction.stabilizer P.weylGroup v = ⊥ := by
+  have := IsIrreducible.nontrivial (P := P); obtain ⟨v, hv⟩ := exists_ne (0 : M)
+  have hl_nil (lg : List b.support) : lg = [] := List.eq_nil_iff_forall_not_mem.mpr (by simp)
+  refine ⟨v, hv, by simp [hl_nil l], by simp [hl_nil l], (P.isRegularWeight_iff v).mpr
+    fun j ↦ (IsEmpty.false j).elim, eq_bot_iff.mpr fun g _ ↦ by
+      obtain ⟨lg, rfl⟩ := exists_wordProd_eq P b g; simp [hl_nil lg]⟩
+
+/-- **Steinberg's regular primitive-root eigenvector in `M` along a ring homomorphism `ℂ →+* K`**:
+every Coxeter element of an irreducible finite crystallographic reduced root pairing over a field
+`K` equipped with `φ : ℂ →+* K` has a regular `φ (exp (2πi / h))`-eigenvector with trivial Weyl
+stabilizer. -/
+theorem exists_isRegularWeight_eigenvector_wordProd_of_ringHom [P.IsIrreducible] (b : P.Base)
+    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) (φ : ℂ →+* K) :
+    let c := wordProd P b l
+    let μ := φ (Complex.exp (2 * Real.pi * Complex.I / orderOf c))
+    ∃ v : M, v ≠ 0 ∧ c • v = μ • v ∧ IsPrimitiveRoot μ (orderOf c) ∧
+      P.IsRegularWeight v ∧ MulAction.stabilizer P.weylGroup v = ⊥ := by
+  have := charZero_of_injective_ringHom φ.injective
+  by_cases hne : Nonempty ι
+  · exact b.exists_isRegularWeight_eigenvector_wordProd_of_ringHom_of_isFiniteType
+      (isFiniteType_cartanMatrix b) (preconnected_diagramGraph_cartanMatrix b) hnd hall φ
+  · have : IsEmpty ι := not_nonempty_iff.mp hne
+    have hl_nil : l = [] := List.eq_nil_iff_forall_not_mem.mpr fun i _ ↦ IsEmpty.false i.val
+    simpa [hl_nil, Complex.exp_two_pi_mul_I] using exists_isRegularWeight_eigenvector_isEmpty b l
+
+section AlgClosed
+
+variable [Algebra ℝ K] [IsAlgClosed K]
+
+/-- **Steinberg's regular primitive-root eigenvector in `M`** (Cartan-matrix form): for a base `b`
+of a nonempty finite crystallographic reduced root pairing over an algebraically closed field `K`
+containing `ℝ`, when `b.cartanMatrix` is of finite type with preconnected Dynkin diagram, every
+Coxeter element `c = wordProd P b l` of order `h = orderOf c` has a regular eigenvector in `M` with
+trivial Weyl stabilizer whose eigenvalue is a primitive `h`-th root of unity. -/
+theorem exists_isRegularWeight_eigenvector_wordProd_of_isFiniteType [Nonempty ι] (b : P.Base)
+    (hft : IsFiniteType b.cartanMatrix) (hconn : (diagramGraph b.cartanMatrix).Preconnected)
+    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
+    let c := wordProd P b l
+    ∃ (v : M) (μ : K), v ≠ 0 ∧ c • v = μ • v ∧ IsPrimitiveRoot μ (orderOf c) ∧
+      P.IsRegularWeight v ∧ MulAction.stabilizer P.weylGroup v = ⊥ := by
+  obtain ⟨i, hi⟩ := IsAlgClosed.exists_pow_nat_eq (-1 : K) two_pos
+  obtain ⟨v, hv_ne, hv_eig, hprim, hv_reg, hv_stab⟩ :=
+    b.exists_isRegularWeight_eigenvector_wordProd_of_ringHom_of_isFiniteType hft hconn hnd hall
+      (Complex.liftAux i (sq i ▸ hi)).toRingHom
+  exact ⟨v, _, hv_ne, hv_eig, hprim, hv_reg, hv_stab⟩
+
+/-- **Every Coxeter element of an irreducible finite crystallographic reduced root pairing over an
+algebraically closed field `K` containing `ℝ` has a regular primitive-root eigenvector with trivial
+Weyl stabilizer.** -/
+theorem exists_isRegularWeight_eigenvector_wordProd [P.IsIrreducible] (b : P.Base)
+    {l : List b.support} (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
+    let c := wordProd P b l
+    ∃ (v : M) (μ : K), v ≠ 0 ∧ c • v = μ • v ∧ IsPrimitiveRoot μ (orderOf c) ∧
+      P.IsRegularWeight v ∧ MulAction.stabilizer P.weylGroup v = ⊥ := by
+  obtain ⟨i, hi⟩ := IsAlgClosed.exists_pow_nat_eq (-1 : K) two_pos
+  obtain ⟨v, hv_ne, hv_eig, hprim, hv_reg, hv_stab⟩ :=
+    b.exists_isRegularWeight_eigenvector_wordProd_of_ringHom hnd hall
+      (Complex.liftAux i (sq i ▸ hi)).toRingHom
+  exact ⟨v, _, hv_ne, hv_eig, hprim, hv_reg, hv_stab⟩
+
+end AlgClosed
+
+end FieldRootSystem
+
+end RootPairing.Base
 
 namespace RootPairing
-
-variable {ι K M N : Type*} [Field K] [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
-  (P : RootPairing ι K M N) (b : P.Base)
-
-variable [P.IsCrystallographic]
-
-/-- The value of a coroot on a real combination of the simple roots is real. -/
-private theorem coroot'_sum_algebraMap_smul_root [Algebra ℝ K] (a : b.support → ℝ) (j : ι) :
-    P.coroot' j (∑ i : b.support, algebraMap ℝ K (a i) • P.root i) =
-      algebraMap ℝ K (∑ i : b.support, a i * P.pairingIn ℤ i j) := by
-  simp only [map_sum, map_smul, root_coroot'_eq_pairing, smul_eq_mul, map_mul, map_intCast,
-    ← P.algebraMap_pairingIn ℤ, algebraMap_int_eq, eq_intCast]
-
-variable [CharZero K] [Finite ι] [P.IsReduced]
-
-/-! ### The Coxeter plane -/
-
-section Plane
-
-variable [Algebra ℝ K]
-
-/-- The part `∑ yᵢ αᵢ` of colour `x` of a real combination of the simple roots. -/
-private noncomputable def colorPart (c : b.support → Bool) (y : b.support → ℝ) (x : Bool) : M :=
-  ∑ i : b.support, algebraMap ℝ K (if c i = x then y i else 0) • P.root i
-
-variable {P b} {c : (coxeterMatrixOfBase P b).graph.Coloring Bool} {y : b.support → ℝ} {κ : ℝ}
-
-omit [P.IsCrystallographic] [CharZero K] [Finite ι] [P.IsReduced] in
-/-- The two colour parts add up to the whole combination. -/
-private theorem colorPart_add (c : b.support → Bool) (y : b.support → ℝ) :
-    colorPart P b c y true + colorPart P b c y false =
-      ∑ i : b.support, algebraMap ℝ K (y i) • P.root i := by
-  rw [colorPart, colorPart, ← sum_add_distrib]
-  refine sum_congr rfl fun i _ ↦ ?_
-  cases c i <;> simp
-
-omit [CharZero K] [Finite ι] [P.IsReduced] in
-/-- The value of a coroot on a colour part. -/
-private theorem coroot'_colorPart_eq (c : b.support → Bool) (y : b.support → ℝ) (z : Bool)
-    (i : ι) :
-    P.coroot' i (colorPart P b c y z) =
-      algebraMap ℝ K (∑ k : b.support, (if c k = z then y k else 0) * P.pairingIn ℤ k i) := by
-  rw [colorPart, coroot'_sum_algebraMap_smul_root]
-
-omit [CharZero K] [Finite ι] [P.IsReduced] in
-/-- The value of a simple coroot on the sum of the two colour parts of a left eigenvector of the
-Cartan matrix. -/
-private theorem coroot'_colorPart_add
-    (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j) (j : b.support) :
-    P.coroot' j (colorPart P b c y true + colorPart P b c y false) =
-      algebraMap ℝ K (κ * y j) := by
-  rw [colorPart_add, coroot'_sum_algebraMap_smul_root, hy]
-
-omit [P.IsReduced] in
-/-- The value of a simple coroot of colour `x` on the colour part of colour `z`. -/
-private theorem coroot'_colorPart
-    (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j) {x : Bool}
-    {j : b.support} (hj : c j = x) (z : Bool) :
-    P.coroot' j (colorPart P b c y z) = algebraMap ℝ K ((if z = x then 2 else κ - 2) * y j) := by
-  classical
-  rw [colorPart, coroot'_sum_algebraMap_smul_root]
-  congr 1
-  -- On its own colour class the sum sees only the diagonal entry `2`.
-  have hsame (z : Bool) (hz : c j = z) :
-      ∑ i : b.support, (if c i = z then y i else 0) * P.pairingIn ℤ i j = 2 * y j := by
-    rw [sum_eq_single j (fun i _ hij ↦ ?_) (by simp), ite_eq_left hz, P.pairingIn_same]
-    · push_cast
-      ring
-    · split_ifs with hi
-      · rw [pairingIn_eq_zero_of_color_eq P b c hij (hi.trans hz.symm)]
-        simp
-      · simp
-  split_ifs with hzx
-  · exact hsame z (hj.trans hzx.symm)
-  · have htotal : ∑ i : b.support, (if c i = z then y i else 0) * P.pairingIn ℤ i j +
-        ∑ i : b.support, (if c i = !z then y i else 0) * P.pairingIn ℤ i j = κ * y j := by
-      rw [← hy j, ← sum_add_distrib]
-      refine sum_congr rfl fun i _ ↦ ?_
-      cases c i <;> cases z <;> simp
-    rw [hsame (!z) (by cases z <;> cases x <;> simp_all)] at htotal
-    linarith
-
-/-- The product of the simple reflections of colour `x` negates the colour part of colour `x`,
-and adds `2 - κ` times it to the colour part of the other colour. -/
-private theorem colorClassProd_smul_colorPart
-    (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j) (x z : Bool) :
-    (weylCoxeterSystem P b).colorClassProd c x • colorPart P b c y z =
-      colorPart P b c y z - algebraMap ℝ K (if z = x then 2 else κ - 2) • colorPart P b c y x := by
-  rw [colorClassProd_smul]
-  congr 1
-  conv_rhs => rw [colorPart, smul_sum]
-  refine sum_congr rfl fun j _ ↦ ?_
-  rw [smul_smul]
-  by_cases hj : c j = x
-  · simp only [hj, ↓reduceIte, coroot'_colorPart hy hj, map_mul]
-  · simp only [hj, ↓reduceIte, map_zero, mul_zero]
-
-/-- The bipartite Coxeter element maps the colour part `u₀` of colour `true` to
-`(λ ^ 2 - 1) u₀ + λ u₁`, where `λ = 2 - κ` and `u₁` is the colour part of colour `false`. -/
-private theorem bipartiteCoxeterElement_smul_colorPart_true
-    (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j) :
-    (weylCoxeterSystem P b).bipartiteCoxeterElement c • colorPart P b c y true =
-      (algebraMap ℝ K (2 - κ) ^ 2 - 1) • colorPart P b c y true +
-        algebraMap ℝ K (2 - κ) • colorPart P b c y false := by
-  rw [CoxeterSystem.bipartiteCoxeterElement_def, mul_smul,
-    colorClassProd_smul_colorPart hy false true, smul_sub, smul_comm,
-    colorClassProd_smul_colorPart hy true true, colorClassProd_smul_colorPart hy true false]
-  simp only [Bool.true_eq_false, Bool.false_eq_true, ↓reduceIte, map_sub, map_ofNat]
-  module
-
-/-- The bipartite Coxeter element maps the colour part `u₁` of colour `false` to `-u₁ - λ u₀`,
-where `λ = 2 - κ` and `u₀` is the colour part of colour `true`. -/
-private theorem bipartiteCoxeterElement_smul_colorPart_false
-    (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j) :
-    (weylCoxeterSystem P b).bipartiteCoxeterElement c • colorPart P b c y false =
-      -colorPart P b c y false - algebraMap ℝ K (2 - κ) • colorPart P b c y true := by
-  rw [CoxeterSystem.bipartiteCoxeterElement_def, mul_smul,
-    colorClassProd_smul_colorPart hy false false, smul_sub, smul_comm,
-    colorClassProd_smul_colorPart hy true false]
-  simp only [Bool.false_eq_true, ↓reduceIte, map_sub, map_ofNat]
-  module
-
-/-- For a root `μ` of `X ^ 2 + (2 - λ ^ 2) X + 1`, the vector `(1 + μ) u₀ + λ u₁` of the Coxeter
-plane is an eigenvector of the bipartite Coxeter element for `μ`. -/
-private theorem bipartiteCoxeterElement_smul_eigen
-    (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j) {μ : K}
-    (hμ : μ ^ 2 + (2 - algebraMap ℝ K (2 - κ) ^ 2) * μ + 1 = 0) :
-    (weylCoxeterSystem P b).bipartiteCoxeterElement c •
-        ((1 + μ) • colorPart P b c y true + algebraMap ℝ K (2 - κ) • colorPart P b c y false) =
-      μ • ((1 + μ) • colorPart P b c y true +
-        algebraMap ℝ K (2 - κ) • colorPart P b c y false) := by
-  rw [smul_add, smul_comm _ (1 + μ), smul_comm _ (algebraMap ℝ K (2 - κ)),
-    bipartiteCoxeterElement_smul_colorPart_true hy, bipartiteCoxeterElement_smul_colorPart_false hy]
-  linear_combination (norm := module) (-1 : K) • hμ • colorPart P b c y true
-
-omit [P.IsCrystallographic] [Finite ι] [P.IsReduced] in
-/-- For `0 < κ < 2`, the polynomial `X ^ 2 + (2 - (2 - κ) ^ 2) X + 1` has no real root, its
-discriminant being negative. -/
-private theorem ne_algebraMap_of_quadratic (hκ : 0 < κ) (hκ2 : κ < 2) {μ : K}
-    (hμ : μ ^ 2 + (2 - algebraMap ℝ K (2 - κ) ^ 2) * μ + 1 = 0) (r : ℝ) :
-    μ ≠ algebraMap ℝ K r := by
-  rintro rfl
-  have h : r ^ 2 + (2 - (2 - κ) ^ 2) * r + 1 = 0 :=
-    (algebraMap ℝ K).injective (by simpa [map_ofNat] using hμ)
-  nlinarith [sq_nonneg (2 * r + 2 - (2 - κ) ^ 2),
-    mul_pos (mul_pos (pow_pos (sub_pos.2 hκ2) 2) hκ) (by linarith : (0 : ℝ) < 4 - κ)]
-
-omit [P.IsCrystallographic] [Finite ι] [P.IsReduced] in
-/-- The value `(1 + μ) p + λ q` of a coroot on the eigenvector `(1 + μ) u₀ + λ u₁`, where `p` and
-`q` are the real values on `u₀` and `u₁`, is nonzero as soon as `p + q` is: otherwise `μ` would
-be real. -/
-private theorem one_add_mul_add_mul_ne_zero (hκ : 0 < κ) (hκ2 : κ < 2) {μ : K}
-    (hμ : μ ^ 2 + (2 - algebraMap ℝ K (2 - κ) ^ 2) * μ + 1 = 0) {p q : ℝ} (hpq : p + q ≠ 0) :
-    (1 + μ) * algebraMap ℝ K p + algebraMap ℝ K (2 - κ) * algebraMap ℝ K q ≠ 0 := by
-  intro h
-  by_cases hp : p = 0
-  · subst hp
-    rw [map_zero, mul_zero, zero_add, ← map_mul, map_eq_zero] at h
-    rcases mul_eq_zero.1 h with h' | h'
-    · linarith
-    · exact hpq (by simp [h'])
-  · refine ne_algebraMap_of_quadratic hκ hκ2 hμ (-(p + (2 - κ) * q) / p) ?_
-    rw [map_div₀, map_neg, map_add, map_mul, eq_div_iff ((map_ne_zero _).2 hp)]
-    linear_combination h
-
-omit [CharZero K] [Finite ι] [P.IsReduced] in
-/-- The sum `u₀ + u₁ = ∑ yᵢ αᵢ` of the two colour parts of a positive left eigenvector of the
-Cartan matrix, for a positive eigenvalue, takes a positive real value on every simple coroot. -/
-private theorem exists_pos_coroot'_colorPart_add
-    (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j)
-    (hy0 : ∀ i, 0 < y i) (hκ : 0 < κ) :
-    ∀ j ∈ b.support, ∃ t : ℝ, 0 < t ∧
-      P.coroot' j (colorPart P b c y true + colorPart P b c y false) = algebraMap ℝ K t :=
-  fun j hj ↦ ⟨κ * y ⟨j, hj⟩, mul_pos hκ (hy0 _), coroot'_colorPart_add hy ⟨j, hj⟩⟩
-
-/-- For `0 < κ < 2` and a root `ν` of `X ^ 2 + (2 - λ ^ 2) X + 1`, where `λ = 2 - κ`, the
-eigenvector `(1 + ν) u₀ + λ u₁` of the Coxeter plane is regular. -/
-private theorem isRegularWeight_one_add_smul_colorPart_add_smul
-    (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j)
-    (hy0 : ∀ i, 0 < y i) (hκ : 0 < κ) (hκ2 : κ < 2) {ν : K}
-    (hν : ν ^ 2 + (2 - algebraMap ℝ K (2 - κ) ^ 2) * ν + 1 = 0) :
-    P.IsRegularWeight
-      ((1 + ν) • colorPart P b c y true + algebraMap ℝ K (2 - κ) • colorPart P b c y false) := by
-  refine (P.isRegularWeight_iff _).2 fun i ↦ ?_
-  -- The values `p` and `q` of the coroot on `u₀` and `u₁` are real, and `p + q ≠ 0`.
-  obtain ⟨t, ht, hxt⟩ :=
-    exists_ne_zero_coroot'_eq P b (algebraMap ℝ K) (exists_pos_coroot'_colorPart_add hy hy0 hκ) i
-  rw [map_add, coroot'_colorPart_eq, coroot'_colorPart_eq, ← map_add] at hxt
-  have hpq := (algebraMap ℝ K).injective hxt
-  rw [map_add, map_smul, map_smul, coroot'_colorPart_eq, coroot'_colorPart_eq, smul_eq_mul,
-    smul_eq_mul]
-  exact one_add_mul_add_mul_ne_zero hκ hκ2 hν (by rw [hpq]; exact ht)
-
-omit [P.IsCrystallographic] [Finite ι] [P.IsReduced] in
-/-- For `0 < κ < 2`, the two roots `μ` and `μ⁻¹` of `X ^ 2 + (2 - (2 - κ) ^ 2) X + 1` are
-distinct, since its only candidates for a double root, `±1`, are real. -/
-private theorem ne_inv_of_quadratic (hκ : 0 < κ) (hκ2 : κ < 2) {μ : K}
-    (hμ : μ ^ 2 + (2 - algebraMap ℝ K (2 - κ) ^ 2) * μ + 1 = 0) : μ ≠ μ⁻¹ := by
-  intro h
-  have h1 : (μ - 1) * (μ + 1) = 0 := by
-    have := mul_inv_cancel₀ fun h0 : μ = 0 ↦ by simp [h0] at hμ
-    rw [← h] at this
-    linear_combination this
-  rcases mul_eq_zero.1 h1 with h1 | h1
-  · exact ne_algebraMap_of_quadratic hκ hκ2 hμ 1 (by rw [map_one]; linear_combination h1)
-  · exact ne_algebraMap_of_quadratic hκ hκ2 hμ (-1)
-      (by rw [map_neg, map_one]; linear_combination h1)
-
-/-- If `μ ^ l = 1` for the eigenvalue `μ` of the bipartite Coxeter element `c` on the Coxeter
-plane, then `c ^ l = 1`: the power fixes both eigenvectors `(1 + μ) u₀ + λ u₁` and
-`(1 + μ⁻¹) u₀ + λ u₁`, hence `u₀` and `u₁`, hence `u₀ + u₁`, on which the Weyl group acts freely. -/
-private theorem pow_eq_one_of_pow_eq_one
-    (hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j)
-    (hy0 : ∀ i, 0 < y i) (hκ : 0 < κ) (hκ2 : κ < 2) {μ : K}
-    (hμ : μ ^ 2 + (2 - algebraMap ℝ K (2 - κ) ^ 2) * μ + 1 = 0) {l : ℕ} (hl : μ ^ l = 1) :
-    (weylCoxeterSystem P b).bipartiteCoxeterElement c ^ l = 1 := by
-  set g := (weylCoxeterSystem P b).bipartiteCoxeterElement c
-  set L := algebraMap ℝ K (2 - κ)
-  set u₀ := colorPart P b c y true
-  set u₁ := colorPart P b c y false
-  have hμ' : μ⁻¹ ^ 2 + (2 - L ^ 2) * μ⁻¹ + 1 = 0 := by
-    have hμ0 : μ ≠ 0 := fun h0 ↦ by simp [h0] at hμ
-    field_simp
-    linear_combination hμ
-  have h1 : g ^ l • ((1 + μ) • u₀ + L • u₁) = (1 + μ) • u₀ + L • u₁ := by
-    rw [pow_smul_eq_of_smul_eq (bipartiteCoxeterElement_smul_eigen hy hμ), hl, one_smul]
-  have h2 : g ^ l • ((1 + μ⁻¹) • u₀ + L • u₁) = (1 + μ⁻¹) • u₀ + L • u₁ := by
-    rw [pow_smul_eq_of_smul_eq (bipartiteCoxeterElement_smul_eigen hy hμ'), inv_pow, hl,
-      inv_one, one_smul]
-  -- The difference of the two eigenvectors is a nonzero multiple of `u₀`.
-  have hg₀ : g ^ l • u₀ = u₀ := by
-    have h3 : g ^ l • ((μ - μ⁻¹) • u₀) = (μ - μ⁻¹) • u₀ := by
-      have : (μ - μ⁻¹) • u₀ = ((1 + μ) • u₀ + L • u₁) - ((1 + μ⁻¹) • u₀ + L • u₁) := by module
-      rw [this, smul_sub, h1, h2]
-    rw [smul_comm] at h3
-    exact smul_right_injective M (sub_ne_zero.2 (ne_inv_of_quadratic hκ hκ2 hμ)) h3
-  have hg₁ : g ^ l • u₁ = u₁ := by
-    have h4 : g ^ l • (L • u₁) = L • u₁ := by
-      have : L • u₁ = ((1 + μ) • u₀ + L • u₁) - (1 + μ) • u₀ := by module
-      rw [this, smul_sub, h1, smul_comm, hg₀]
-    rw [smul_comm] at h4
-    exact smul_right_injective M ((map_ne_zero _).2 (sub_ne_zero.2 hκ2.ne')) h4
-  exact P.eq_one_of_isRegularWeight_of_smul_eq b
-    (isRegularWeight_of_forall_exists_pos_coroot'_eq P b _ (algebraMap ℝ K).injective
-      (exists_pos_coroot'_colorPart_add hy hy0 hκ))
-    (by rw [smul_add, hg₀, hg₁])
-
-end Plane
-
-omit [P.IsCrystallographic] [Finite ι] [P.IsReduced] in
-/-- Over an algebraically closed field of characteristic zero, `X ^ 2 + (2 - L ^ 2) X + 1` has a
-root. -/
-private theorem exists_quadratic_root [IsAlgClosed K] (L : K) :
-    ∃ μ : K, μ ^ 2 + (2 - L ^ 2) * μ + 1 = 0 := by
-  obtain ⟨s, hs⟩ := IsAlgClosed.isSquare (discrim (1 : K) (2 - L ^ 2) 1)
-  obtain ⟨μ, hμ⟩ := exists_quadratic_eq_zero one_ne_zero ⟨s, hs⟩
-  exact ⟨μ, by linear_combination hμ⟩
-
-variable [Algebra ℝ K]
-
-/-- With a single simple root `α`, the bipartite Coxeter element is the reflection in `α`, and `α`
-is a regular eigenvector for `-1`. -/
-private theorem exists_isRegularWeight_smul_eq_of_subsingleton
-    [Nonempty ι] [Subsingleton b.support] (c : (coxeterMatrixOfBase P b).graph.Coloring Bool) :
-    ∃ (x : M) (μ : K), P.IsRegularWeight x ∧
-      (weylCoxeterSystem P b).bipartiteCoxeterElement c • x = μ • x ∧
-      IsPrimitiveRoot μ (orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement c)) := by
-  -- The constant vector `1` is a left eigenvector of the Cartan matrix `(2)` for `κ = 2`.
-  have hy : ∀ j : b.support, ∑ i : b.support, (1 : ℝ) * P.pairingIn ℤ i j = 2 * 1 := by
-    intro j
-    rw [sum_eq_single j (fun i _ hij ↦ absurd (Subsingleton.elim i j) hij) (by simp),
-      P.pairingIn_same]
-    push_cast
-    ring
-  have hx := exists_pos_coroot'_colorPart_add (c := c) hy (fun _ ↦ one_pos) two_pos
-  set x := colorPart P b c (fun _ ↦ 1) true + colorPart P b c (fun _ ↦ 1) false with hxdef
-  have hgx : (weylCoxeterSystem P b).bipartiteCoxeterElement c • x = (-1 : K) • x := by
-    rw [hxdef, smul_add, bipartiteCoxeterElement_smul_colorPart_true hy,
-      bipartiteCoxeterElement_smul_colorPart_false hy]
-    simp only [sub_self, map_zero]
-    module
-  have hreg : P.IsRegularWeight x :=
-    isRegularWeight_of_forall_exists_pos_coroot'_eq P b _ (algebraMap ℝ K).injective hx
-  exact ⟨x, -1, hreg, hgx, isPrimitiveRoot_orderOf_of_smul_eq hreg.ne_zero hgx fun l hl ↦
-    P.eq_one_of_isRegularWeight_of_smul_eq b hreg
-      (by rw [pow_smul_eq_of_smul_eq hgx, hl, one_smul])⟩
 
 /-- **Steinberg's regular eigenvector of the bipartite Coxeter element.** Let `b` be a base of a
 finite irreducible reduced crystallographic root system over a field `K` which contains `ℝ` and is
@@ -359,23 +308,19 @@ algebraically closed, such as `ℂ`. For every colouring of its Dynkin diagram b
 bipartite Coxeter element `c` has a regular eigenvector, one on which no coroot vanishes, whose
 eigenvalue is a primitive root of unity of order exactly the order of `c`. -/
 theorem exists_isRegularWeight_bipartiteCoxeterElement_smul_eq_smul_isPrimitiveRoot
-    [IsAlgClosed K] [Nonempty ι] [P.IsIrreducible]
+    {ι K M N : Type*} [Field K] [CharZero K] [Algebra ℝ K] [IsAlgClosed K]
+    [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
+    (P : RootPairing ι K M N) (b : P.Base) [Finite ι]
+    [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible]
     (c : (coxeterMatrixOfBase P b).graph.Coloring Bool) :
     ∃ (x : M) (μ : K), P.IsRegularWeight x ∧
       (weylCoxeterSystem P b).bipartiteCoxeterElement c • x = μ • x ∧
       IsPrimitiveRoot μ (orderOf ((weylCoxeterSystem P b).bipartiteCoxeterElement c)) := by
-  rcases subsingleton_or_nontrivial b.support with hs | hs
-  · exact exists_isRegularWeight_smul_eq_of_subsingleton P b c
-  -- At least two simple roots: the Perron eigenvector of the Cartan matrix spans the plane.
-  obtain ⟨κ, hκ, hκ2, y, hy0, hyC⟩ :=
-    (isFiniteType_cartanMatrix b).exists_pos_vecMul_eq_smul b.cartanMatrix_isIndecomposable
-  have hy : ∀ j : b.support, ∑ i : b.support, y i * P.pairingIn ℤ i j = κ * y j := fun j ↦ by
-    simpa [Matrix.vecMul, dotProduct, Base.cartanMatrixIn_def] using congrFun hyC j
-  obtain ⟨μ, hμ⟩ := exists_quadratic_root (algebraMap ℝ K (2 - κ))
-  have hreg := isRegularWeight_one_add_smul_colorPart_add_smul (c := c) hy hy0 hκ hκ2 hμ
-  have hgv := bipartiteCoxeterElement_smul_eigen (c := c) hy hμ
-  set v := (1 + μ) • colorPart P b c y true + algebraMap ℝ K (2 - κ) • colorPart P b c y false
-  exact ⟨v, μ, hreg, hgv, isPrimitiveRoot_orderOf_of_smul_eq hreg.ne_zero hgv fun l hl ↦
-    pow_eq_one_of_pow_eq_one hy hy0 hκ hκ2 hμ hl⟩
+  obtain ⟨l₁, l₂, -, -, hnd, hall, hw⟩ :=
+    (weylCoxeterSystem P b).exists_wordProd_eq_bipartiteCoxeterElement c
+  rw [weylCoxeterSystem_wordProd] at hw
+  obtain ⟨x, μ, -, hx_eig, hμ, hx_reg, -⟩ :=
+    b.exists_isRegularWeight_eigenvector_wordProd hnd hall
+  exact ⟨x, μ, hx_reg, hw ▸ hx_eig, hw ▸ hμ⟩
 
 end RootPairing

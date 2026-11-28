@@ -35,9 +35,12 @@ type counts the components of the represented link.
   Mathlib's `Equiv.Perm.IsCycle.pow_eq_one_iff'`, this needs no finiteness of the underlying type.
 * `Equiv.Perm.IsCycle.cycleType_pow_of_not_dvd`: for `n ∤ k`, the cycle type of `f ^ k` is
   `gcd n k` copies of `n / gcd n k`.
+* `Equiv.Perm.SameCycle.exists_fin_pow_map_eq`: if `x` and `y` lie in the same cycle of `f c`
+  for a monoid homomorphism `f : G →* Equiv.Perm α` and `0 < orderOf c`, then
+  `f (c ^ (m : ℕ)) x = y` for some `m : Fin (orderOf c)`.
 
-The declarations are stated in the `Equiv.Perm.IsCycle` namespace, giving dot notation from
-`hf : f.IsCycle`, as upstream candidates.
+The declarations are stated in the `Equiv.Perm.IsCycle` and `Equiv.Perm.SameCycle` namespaces,
+giving dot notation from `hf : f.IsCycle` and `h : SameCycle (f c) x y`.
 
 ## References
 
@@ -69,6 +72,21 @@ theorem _root_.Equiv.Perm.IsCycle.pow_apply_eq_self_iff {β : Type*} {f : Perm �
   · -- `y = (f ^ i) x` for some `i`, and powers of `f` commute, so `f ^ n` also fixes `y`
     obtain ⟨i, rfl⟩ := hf.exists_zpow_eq hx hy
     rw [← zpow_natCast, zpow_apply_comm, zpow_natCast, h, Perm.one_apply]
+
+/-- If `x` and `y` lie in the same cycle of `f c` for a monoid homomorphism `f : G →* Perm α`
+and an element `c : G` of positive order `orderOf c`, then `f (c ^ (m : ℕ)) x = y` for some
+`m : Fin (orderOf c)`. -/
+theorem _root_.Equiv.Perm.SameCycle.exists_fin_pow_map_eq {G α : Type*} [Monoid G]
+    {f : G →* Perm α} {c : G} {x y : α} (h : SameCycle (f c) x y) (hc : 0 < orderOf c) :
+    ∃ m : Fin (orderOf c), f (c ^ (m : ℕ)) x = y := by
+  obtain ⟨k, rfl⟩ := h
+  have hpos : 0 < orderOf (f c) := Nat.pos_of_dvd_of_pos (orderOf_map_dvd f c) hc
+  have hnonneg : 0 ≤ k % (orderOf (f c) : ℤ) := Int.emod_nonneg k (by exact_mod_cast hpos.ne')
+  refine ⟨⟨(k % (orderOf (f c) : ℤ)).natAbs, (?_ : _ < orderOf (f c)).trans_le
+    (Nat.le_of_dvd hc (orderOf_map_dvd f c))⟩, ?_⟩
+  · rw [← Int.ofNat_lt, Int.natAbs_of_nonneg hnonneg]
+    exact Int.emod_lt_of_pos k (by exact_mod_cast hpos)
+  · rw [map_pow, ← zpow_natCast, Int.natAbs_of_nonneg hnonneg, zpow_mod_orderOf]
 
 variable {α : Type*} [DecidableEq α] [Fintype α] {f : Perm α}
 
