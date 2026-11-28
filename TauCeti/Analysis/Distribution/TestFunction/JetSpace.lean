@@ -75,8 +75,7 @@ theorem jetRestrictionCLM_eq_zero_of_tsupport_subset_compl {Ω : Opens E} {K : S
     jetRestrictionCLM Ω K m hm φ = 0 :=
   TauCeti.JetSpace.ext fun k x ↦ by
     simp only [eval_jetRestrictionCLM, TauCeti.JetSpace.eval_zero, FunLike.coe_zero, Pi.zero_apply]
-    have hx : x.val ∉ tsupport (φ : E → F) := fun hmem ↦ hφ hmem x.property
-    have hev : (φ : E → F) =ᶠ[𝓝 x.val] (0 : E → F) := notMem_tsupport_iff_eventuallyEq.1 hx
-    simpa using (hev.iteratedFDeriv (𝕜 := ℝ) (k : ℕ)).eq_of_nhds
+    exact image_eq_zero_of_notMem_tsupport fun h ↦
+      hφ (tsupport_iteratedFDeriv_subset k h) x.property
 
 end TestFunction

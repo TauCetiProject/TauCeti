@@ -124,8 +124,8 @@ theorem norm_iteratedFDeriv_smulOfContDiffOn_sub_le (χ : 𝓓^{n}(Ω, ℝ)) {U 
     (ψ₂.contDiff.contDiffAt.of_le hk')]
   by_cases hy : y ∈ tsupport (χ : E → ℝ)
   · have hsub_eq : ((ψ₁ : E → F) - (ψ₂ : E → F)) = fun z ↦ χ z • (g₁ - g₂) z := by
-      ext z
-      simp [ψ₁, ψ₂, smul_sub]
+      rw [← FunLike.coe_sub, ← smulOfContDiffOn_sub χ hU hχU hg₁ hg₂]
+      exact funext (χ.smulOfContDiffOn_apply hU hχU (hg₁.sub hg₂))
     have hyU : y ∈ U := hχU hy
     have hle := TauCeti.norm_iteratedFDeriv_smul_le_of_isOpen hU χ.contDiff.contDiffOn
       (hg₁.sub hg₂) hyU hk'

@@ -98,11 +98,10 @@ theorem divergenceCLM_apply (φ : 𝓓(Ω, E)) (x : E) :
 /-- The support of the divergence of a test vector field is contained in the support of the vector
 field. -/
 theorem tsupport_divergenceCLM_subset (φ : 𝓓(Ω, E)) :
-    tsupport (divergenceCLM φ : E → ℝ) ⊆ tsupport (φ : E → E) :=
-  closure_minimal (fun x hx ↦ by
-    by_contra hmem
-    have h0 : (φ : E → E) =ᶠ[𝓝 x] 0 := notMem_tsupport_iff_eventuallyEq.1 hmem
-    exact hx (by simp [divergenceCLM_apply, h0.fderiv_eq])) (isClosed_tsupport (φ : E → E))
+    tsupport (divergenceCLM φ : E → ℝ) ⊆ tsupport (φ : E → E) := by
+  rw [show (divergenceCLM φ : E → ℝ) = fun x ↦ TauCeti.traceCLM ℝ E (fderiv ℝ (φ : E → E) x) from
+    funext fun x ↦ by simp [divergenceCLM_apply]]
+  exact (tsupport_comp_subset (map_zero (TauCeti.traceCLM ℝ E)) _).trans (tsupport_fderiv_subset ℝ)
 
 /-- The divergence of a test vector field extended from `Ω'` to a larger open set `Ω` is the
 divergence of the original field. -/

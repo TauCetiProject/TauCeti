@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
-import Mathlib.Analysis.Normed.Module.TransferInstance
 
 /-!
 # Spaces of continuous `m`-jets
@@ -50,38 +49,17 @@ interact with elements through `JetSpace.eval`, `JetSpace.evalEquiv`, and
 def JetSpace (K : Set E) (m : ℕ) : Type _ :=
   Π k : Fin (m + 1), K →ᵇ (E [×(k : ℕ)]→L[ℝ] F)
 
-private def JetSpace.equivPi (K : Set E) (m : ℕ) :
-    JetSpace E F K m ≃ Π k : Fin (m + 1), K →ᵇ (E [×(k : ℕ)]→L[ℝ] F) where
-  toFun := id
-  invFun := id
-  left_inv _ := rfl
-  right_inv _ := rfl
-
 @[implicit_reducible]
 def JetSpace.instNormedAddCommGroup (K : Set E) (m : ℕ) :
     NormedAddCommGroup (JetSpace E F K m) :=
-  letI := (JetSpace.equivPi E F K m).addCommGroup
-  NormedAddCommGroup.induced (JetSpace E F K m)
-    (Π k : Fin (m + 1), K →ᵇ (E [×(k : ℕ)]→L[ℝ] F))
-    ({ JetSpace.equivPi E F K m with map_add' _ _ := by rfl } :
-      JetSpace E F K m ≃+ Π k : Fin (m + 1), K →ᵇ (E [×(k : ℕ)]→L[ℝ] F))
-    (JetSpace.equivPi E F K m).injective
+  inferInstanceAs (NormedAddCommGroup (Π k : Fin (m + 1), K →ᵇ (E [×(k : ℕ)]→L[ℝ] F)))
 
 attribute [instance] JetSpace.instNormedAddCommGroup
 
 @[implicit_reducible]
 def JetSpace.instNormedSpace (K : Set E) (m : ℕ) :
     NormedSpace ℝ (JetSpace E F K m) :=
-  letI : SMul ℝ (JetSpace E F K m) :=
-    ⟨fun c J ↦ (JetSpace.equivPi E F K m).symm (c • JetSpace.equivPi E F K m J)⟩
-  letI : Module ℝ (JetSpace E F K m) :=
-    Function.Injective.module (M := Π k : Fin (m + 1), K →ᵇ (E [×(k : ℕ)]→L[ℝ] F)) ℝ
-      { toFun := JetSpace.equivPi E F K m
-        map_zero' := by rfl
-        map_add' _ _ := by rfl }
-      (JetSpace.equivPi E F K m).injective
-      (fun _ _ ↦ by rfl)
-  { norm_smul_le c J := by exact norm_smul_le c (JetSpace.equivPi E F K m J) }
+  inferInstanceAs (NormedSpace ℝ (Π k : Fin (m + 1), K →ᵇ (E [×(k : ℕ)]→L[ℝ] F)))
 
 attribute [instance] JetSpace.instNormedSpace
 
@@ -91,7 +69,7 @@ variable {E F} {K : Set E} {m : ℕ}
 
 /-- Evaluate a continuous `m`-jet at derivative order `k : Fin (m + 1)`. -/
 def eval (J : JetSpace E F K m) (k : Fin (m + 1)) : K →ᵇ (E [×(k : ℕ)]→L[ℝ] F) :=
-  JetSpace.equivPi E F K m J k
+  J k
 
 @[ext]
 theorem ext {J₁ J₂ : JetSpace E F K m}
@@ -122,7 +100,7 @@ continuous component spaces `Π k : Fin (m + 1), K →ᵇ (E [×k]→L[ℝ] F)`.
 def evalEquiv :
     JetSpace E F K m ≃ₗᵢ[ℝ] Π k : Fin (m + 1), K →ᵇ (E [×(k : ℕ)]→L[ℝ] F) where
   toFun := eval
-  invFun := (JetSpace.equivPi E F K m).symm
+  invFun := id
   left_inv _ := by rfl
   right_inv _ := by rfl
   map_add' _ _ := by rfl
@@ -165,7 +143,7 @@ private theorem coe_fin_le {m : ℕ} (k : Fin (m + 1)) :
 neighbourhood `U` of `K`. -/
 def ofContDiffOn {U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) (m : ℕ)
     {g : E → F} (hg : ContDiffOn ℝ m g U) : JetSpace E F K m :=
-  (JetSpace.equivPi E F K m).symm fun k ↦ by
+  fun k ↦ by
     haveI : CompactSpace K := isCompact_iff_compactSpace.1 hK
     have hcont : ContinuousOn (iteratedFDeriv ℝ (k : ℕ) g) U :=
       (hg.continuousOn_iteratedFDerivWithin (coe_fin_le k) hU.uniqueDiffOn).congr fun y hy ↦

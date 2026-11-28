@@ -223,10 +223,8 @@ def cutoffConvolutionCLM {Ω' : Opens E} (χ : 𝓓(Ω, ℝ)) {K₀ : E → ℝ}
     [SFinite μ] [μ.IsAddLeftInvariant] (hK₀ : LocallyIntegrable K₀ μ) :
     𝓓(Ω', F) →L[ℝ] 𝓓(Ω, F) :=
   TestFunction.limitCLM ℝ
-    (fun φ ↦ ⟨fun x ↦ χ x • (K₀ ⋆[lsmul ℝ ℝ, μ] (φ : E → F)) x,
-      χ.contDiff.smul (φ.hasCompactSupport.contDiff_convolution_right (lsmul ℝ ℝ) hK₀ φ.contDiff),
-      χ.hasCompactSupport.smul_right,
-      (tsupport_smul_subset_left _ _).trans χ.tsupport_subset⟩)
+    (fun φ ↦ χ.smulOfContDiffOn isOpen_univ (subset_univ _)
+      (φ.hasCompactSupport.contDiff_convolution_right (lsmul ℝ ℝ) hK₀ φ.contDiff).contDiffOn)
     (fun K _ ↦
       -- On `tsupport χ`, convolving with `K₀` against tests in `K` only sees `K₀` on the compact
       -- difference set `tsupport χ - K`.
@@ -240,7 +238,7 @@ def cutoffConvolutionCLM {Ω' : Opens E} (χ : 𝓓(Ω, ℝ)) {K₀ : E → ℝ}
         ContDiffMapSupportedIn.convolutionCLM K hS hκi Set.support_indicator_subset)
     (fun K _ f ↦ TestFunction.ext fun x ↦ by
       simp only [comp_apply, cutoffTopCLM_apply, coe_ofSupportedInCLM, coe_ofSupportedIn,
-        ContDiffMapSupportedIn.convolutionCLM_apply, coe_mk]
+        ContDiffMapSupportedIn.convolutionCLM_apply, smulOfContDiffOn_apply]
       by_cases hx : x ∈ tsupport χ
       · congr 1
         rw [convolution_def, convolution_def]
@@ -255,7 +253,7 @@ def cutoffConvolutionCLM {Ω' : Opens E} (χ : 𝓓(Ω, ℝ)) {K₀ : E → ℝ}
 theorem cutoffConvolutionCLM_apply {Ω' : Opens E} (χ : 𝓓(Ω, ℝ)) {K₀ : E → ℝ} {μ : Measure E}
     [SFinite μ] [μ.IsAddLeftInvariant] (hK₀ : LocallyIntegrable K₀ μ) (φ : 𝓓(Ω', F)) (x : E) :
     cutoffConvolutionCLM χ hK₀ φ x = χ x • (K₀ ⋆[lsmul ℝ ℝ, μ] (φ : E → F)) x := by
-  rw [cutoffConvolutionCLM, TestFunction.limitCLM_apply, coe_mk]
+  rw [cutoffConvolutionCLM, TestFunction.limitCLM_apply, smulOfContDiffOn_apply]
 
 /-- The support of `cutoffConvolutionCLM χ hK₀ φ` is contained in the support of the cutoff `χ`. -/
 theorem tsupport_cutoffConvolutionCLM_subset {Ω' : Opens E} (χ : 𝓓(Ω, ℝ)) {K₀ : E → ℝ}

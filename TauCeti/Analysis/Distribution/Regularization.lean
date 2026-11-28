@@ -65,9 +65,8 @@ derivatives are `o(‖h‖)` uniformly, so its image under `T` is `o(‖h‖)` a
 
 * `Distribution.translatePairing`: the regularization `x ↦ T (ρ (· - x))`.
 * `Distribution.fderiv_translatePairing_apply`: the derivative identity.
-* `Distribution.translatePairing_lineDerivOp`,
-  `Distribution.translatePairing_iteratedLineDerivOp`: moving directional and iterated directional
-  derivatives from `T` onto the kernel `ρ`.
+* `Distribution.translatePairing_iteratedLineDerivOp`: moving iterated directional derivatives
+  from `T` onto the kernel `ρ`.
 * `Distribution.iteratedFDerivAlong_translatePairing`,
   `Distribution.iteratedFDerivAlong_translatePairing_eq`: iterated directional derivatives of the
   regularization are given by `(∂^{vs.get} T).translatePairing ρ`, equivalently by pairing `T` with
@@ -194,7 +193,7 @@ private theorem exists_cthickening_tsupport_translateOfMapsTo_subset (ρ : 𝓓(
     |>.exists_cthickening_subset_open Ω.isOpen (ρ.translateOfMapsTo hx).tsupport_subset
   refine ⟨δ, hδ, hδΩ, fun h hh z hz => hδΩ ?_⟩
   refine mem_cthickening_of_dist_le _ (z + x) δ _ ?_ ?_
-  · rw [funext (ρ.translateOfMapsTo_apply hx), TauCeti.tsupport_comp_sub_right]
+  · rw [ρ.tsupport_translateOfMapsTo hx]
     simpa using hz
   · simpa [dist_eq_norm, ← add_assoc] using hh
 
@@ -273,17 +272,6 @@ theorem fderiv_translatePairing_apply (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {x 
     fderiv ℝ (T.translatePairing ρ) x v = (∂_{v} T).translatePairing ρ x := by
   obtain ⟨L, hL, hLv⟩ := exists_hasFDerivAt_translatePairing T ρ hx
   rw [hL.fderiv, hLv]
-
-/-- On admissible translations, regularizing `∂_{v} T` by `ρ` agrees with regularizing `T` by
-`-∂_{v} ρ`. -/
-theorem translatePairing_lineDerivOp (T : 𝓓'(Ω, F)) (ρ : 𝓓(V, ℝ)) {x : E}
-    (hx : MapsTo (· + x) (tsupport ρ) Ω) (v : E) :
-    (∂_{v} T).translatePairing ρ x = T.translatePairing (-∂_{v} ρ) x := by
-  rw [translatePairing_eq _ (ρ.translateOfMapsTo_apply hx), lineDerivOp_apply_apply,
-    TestFunction.lineDerivOp_translateOfMapsTo,
-    translatePairing_eq T (φ := -((∂_{v} ρ).translateOfMapsTo
-      (hx.mono_left (TestFunction.tsupport_lineDerivOp_subset ρ v)))) fun y ↦ by simp,
-    map_neg]
 
 /-- On admissible translations, regularizing an iterated distributional derivative `∂^{m} T` by `ρ`
 moves the derivatives onto `ρ` with sign `(-1)^k`. -/
