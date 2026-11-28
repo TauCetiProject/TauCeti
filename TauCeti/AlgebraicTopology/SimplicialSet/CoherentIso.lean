@@ -41,12 +41,16 @@ def edgeInclusion : Δ[1] ⟶ coherentIso.{u} := yonedaEquiv.symm hom.edge
 lemma yonedaEquiv_edgeInclusion : yonedaEquiv edgeInclusion = hom.edge :=
   yonedaEquiv.apply_symm_apply _
 
-/-- The vertices of the standard edge are the two objects of the walking isomorphism. -/
+/-- The `k`th vertex of the image of a simplex `s` is labeled `false` or `true`
+according to whether `s k` is `0` or `1`. -/
 @[simp]
 lemma edgeInclusion_app_obj {n : ℕ} (s : (Δ[1] : SSet.{u}) _⦋n⦌) (k : Fin (n + 1)) :
     ((edgeInclusion.app _ s).obj k).as = ULift.up (decide (s k = 1)) := by
-  -- The nerve operator reindexes the two-object string defining the forward edge.
-  change (hom.edge.obj ((stdSimplex.objEquiv s).toOrderHom k)).as = _
+  rw [edgeInclusion, yonedaEquiv_symm_app]
+  -- Nerve reindexing is precomposition; no object-evaluation lemma is exposed for it.
+  have hobj : ((coherentIso.map (stdSimplex.objEquiv s).op hom.edge).obj k).as =
+      (hom.edge.obj (s k)).as := rfl
+  rw [hobj]
   generalize hs : s k = a at *
   fin_cases a <;> rfl
 
@@ -107,19 +111,30 @@ lemma edgeInclusion_contraction :
   funext ⟨⟨n⟩⟩
   apply ConcreteCategory.hom_ext
   rintro ⟨s, t⟩
-  apply Codiscrete.equivFun.injective
-  funext k
-  -- Both contractions replace a vertex by zero when the interval coordinate is zero.
-  change (if stdSimplex.asOrderHom t k = 0 then ULift.up false else
-      ((edgeInclusion.app _ s).obj k).as) =
-    ((edgeInclusion.app _ ((stdSimplex.contraction 1).h.app _ (s, t))).obj k).as
-  rw [edgeInclusion_app_obj, edgeInclusion_app_obj]
-  -- Retype the component equality before rewriting so the implicit product types agree.
-  have hc : (stdSimplex.contraction 1).h.app _ (s, t) k =
-      if stdSimplex.asOrderHom t k = 0 then 0 else stdSimplex.asOrderHom s k :=
-    stdSimplex.contraction_h_app_apply (s, t) k
-  rw [hc]
-  split_ifs <;> rfl
+  calc
+    _ = contraction.h.app _ ((edgeInclusion ▷ Δ[1]).app _ (s, t)) :=
+      NatTrans.comp_app_apply _ _ _ _
+    _ = contraction.h.app _ (edgeInclusion.app _ s, t) :=
+      congrArg (contraction.h.app _) (whiskerRight_app_apply _ _ _)
+    _ = edgeInclusion.app _ ((stdSimplex.contraction 1).h.app _ (s, t)) := by
+      apply Codiscrete.equivFun.injective
+      funext k
+      have hc : (stdSimplex.contraction 1).h.app _ (s, t) k =
+          if stdSimplex.asOrderHom t k = 0 then 0 else stdSimplex.asOrderHom s k :=
+        stdSimplex.contraction_h_app_apply (s, t) k
+      apply (Codiscrete.equivFun_apply _ _).trans
+      refine Eq.trans (contraction_h_app_obj _ k) ?_
+      calc
+        _ = if stdSimplex.asOrderHom t k = 0 then ULift.up false else
+            ULift.up (decide (s k = 1)) :=
+          congrArg (fun a ↦ if stdSimplex.asOrderHom t k = 0 then ULift.up false else a)
+            (edgeInclusion_app_obj s k)
+        _ = ULift.up (decide ((if stdSimplex.asOrderHom t k = 0 then 0 else
+            stdSimplex.asOrderHom s k) = 1)) := by split_ifs <;> rfl
+        _ = ULift.up (decide ((stdSimplex.contraction 1).h.app _ (s, t) k = 1)) :=
+          congrArg (fun a : Fin 2 ↦ ULift.up (decide (a = 1))) hc.symm
+        _ = _ := (edgeInclusion_app_obj _ k).symm.trans (Codiscrete.equivFun_apply _ _).symm
+    _ = _ := (NatTrans.comp_app_apply _ _ _ _).symm
 
 /-- The standard edge is a left anodyne subcomplex of the coherent isomorphism. -/
 theorem leftAnodyneExtensions_edgeInclusion : leftAnodyneExtensions edgeInclusion.{u} := by
