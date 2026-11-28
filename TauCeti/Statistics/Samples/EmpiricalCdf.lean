@@ -8,6 +8,7 @@ module
 public import TauCeti.Data.Fin.Tuple.OrderStatistic
 public import TauCeti.Probability.Process.EmpiricalMeasure
 public import TauCeti.Probability.Quantile
+import TauCeti.Probability.Quantile.Finite
 
 /-!
 # The empirical distribution function and the sample quantile
@@ -50,8 +51,8 @@ of an i.i.d. sample of size `n` is a function of `x : Fin n → ℝ`, and the se
   formulas of the empirical distribution function and the sample quantile;
 * `TauCeti.cdf_empiricalFiniteMeasure` — for a nonempty sample, the empirical distribution
   function is the distribution function of the empirical distribution;
-* `TauCeti.cdf_empiricalMeasure` and `TauCeti.empiricalCdf_fin_eq_card_filter_range_div` — the
-  sequence forms;
+* `TauCeti.cdf_empiricalMeasure`, `TauCeti.cdf_empiricalMeasure_sub_one` and
+  `TauCeti.empiricalCdf_fin_eq_card_filter_range_div` — the sequence forms;
 * `TauCeti.monotone_empiricalCdf`, `TauCeti.continuousWithinAt_Ici_empiricalCdf`,
   `TauCeti.tendsto_empiricalCdf_atBot` and `TauCeti.tendsto_empiricalCdf_atTop` — the empirical
   distribution function of a nonempty sample is a distribution function;
@@ -102,10 +103,8 @@ theorem empiricalCdf_def (x : κ → ℝ) (t : ℝ) :
 /-- The empirical distribution function is the proportion of observations at most `t`. -/
 theorem empiricalCdf_eq_card_filter_div (x : κ → ℝ) (t : ℝ) :
     empiricalCdf x t = (#{i | x i ≤ t} : ℝ) / Fintype.card κ := by
-  have hsum : ∑ i, (Iic t).indicator (1 : ℝ → ℝ≥0∞) (x i) = (#{i | x i ≤ t} : ℝ≥0∞) := by
-    simp [indicator_apply]
-  rw [empiricalCdf_def, measureReal_def, Probability.empiricalFiniteMeasure_apply measurableSet_Iic,
-    hsum]
+  rw [empiricalCdf_def, measureReal_def,
+    Probability.empiricalFiniteMeasure_apply_eq_card_filter measurableSet_Iic]
   simp [div_eq_inv_mul]
 
 /-- The empirical distribution function of an empty sample is the junk value `0`. -/
@@ -114,16 +113,19 @@ theorem empiricalCdf_of_isEmpty [IsEmpty κ] (x : κ → ℝ) (t : ℝ) : empiri
   simp [empiricalCdf_def]
 
 /-- The empirical distribution function is nonnegative. -/
-theorem empiricalCdf_nonneg (x : κ → ℝ) (t : ℝ) : 0 ≤ empiricalCdf x t :=
-  measureReal_nonneg
+theorem empiricalCdf_nonneg (x : κ → ℝ) (t : ℝ) : 0 ≤ empiricalCdf x t := by
+  rw [empiricalCdf_def]
+  exact measureReal_nonneg
 
 /-- The empirical distribution function is at most `1`. -/
 theorem empiricalCdf_le_one (x : κ → ℝ) (t : ℝ) : empiricalCdf x t ≤ 1 := by
-  rw [empiricalCdf_eq_card_filter_div]
-  exact div_le_one_of_le₀ (by exact_mod_cast card_le_univ _) (Nat.cast_nonneg _)
+  rcases isEmpty_or_nonempty κ with hκ | hκ
+  · simp
+  · rw [empiricalCdf_def]
+    exact measureReal_le_one
 
-/-- The values of the empirical distribution function are the multiples of `1 / card κ`: scaled
-by the sample size it counts the observations at most `t`. -/
+/-- Scaled by the sample size, the empirical distribution function counts the observations at
+most `t`: its value at `t` is `k / card κ`, where `k` is the number of observations at most `t`. -/
 theorem card_mul_empiricalCdf (x : κ → ℝ) (t : ℝ) :
     (Fintype.card κ : ℝ) * empiricalCdf x t = #{i | x i ≤ t} := by
   rcases isEmpty_or_nonempty κ with hκ | hκ
@@ -134,8 +136,8 @@ theorem card_mul_empiricalCdf (x : κ → ℝ) (t : ℝ) :
 /-- The empirical distribution function is monotone. -/
 theorem monotone_empiricalCdf (x : κ → ℝ) : Monotone (empiricalCdf x) := by
   intro s t hst
-  rw [empiricalCdf_eq_card_filter_div, empiricalCdf_eq_card_filter_div]
-  gcongr
+  rw [empiricalCdf_def, empiricalCdf_def]
+  exact measureReal_mono (Iic_subset_Iic.2 hst)
 
 /-- The empirical distribution function vanishes exactly below every observation. -/
 @[simp]
@@ -150,10 +152,11 @@ observation. -/
 @[simp]
 theorem empiricalCdf_eq_one_iff [Nonempty κ] {x : κ → ℝ} {t : ℝ} :
     empiricalCdf x t = 1 ↔ ∀ i, x i ≤ t := by
+  have hcount : #{i | x i ≤ t} = Fintype.card κ ↔ ∀ i, x i ≤ t := by
+    rw [← card_univ, card_filter_eq_iff]
+    simp
   rw [empiricalCdf_eq_card_filter_div,
-    div_eq_one_iff_eq (by exact_mod_cast Fintype.card_ne_zero), Nat.cast_inj, ← card_univ,
-    card_filter_eq_iff]
-  simp
+    div_eq_one_iff_eq (by exact_mod_cast Fintype.card_ne_zero), Nat.cast_inj, hcount]
 
 /-- The empirical distribution function is invariant under reindexing the sample. -/
 @[simp]
@@ -168,6 +171,12 @@ theorem cdf_empiricalFiniteMeasure [Nonempty κ] (x : κ → ℝ) (t : ℝ) :
     cdf (empiricalFiniteMeasure x : Measure ℝ) t = empiricalCdf x t := by
   rw [cdf_eq_real, empiricalCdf_def]
 
+/-- The function form of `TauCeti.cdf_empiricalFiniteMeasure`, through which the empirical
+distribution function of a nonempty sample inherits the properties of `ProbabilityTheory.cdf`. -/
+private theorem empiricalCdf_eq_cdf [Nonempty κ] (x : κ → ℝ) :
+    empiricalCdf x = cdf (empiricalFiniteMeasure x : Measure ℝ) :=
+  funext fun t ↦ (cdf_empiricalFiniteMeasure x t).symm
+
 /-- **Sequence form.** The empirical probability measure of the first `n + 1` terms of a real
 sequence has as distribution function the empirical distribution function of those terms. -/
 theorem cdf_empiricalMeasure (x : ℕ → ℝ) (n : ℕ) (t : ℝ) :
@@ -175,12 +184,22 @@ theorem cdf_empiricalMeasure (x : ℕ → ℝ) (n : ℕ) (t : ℝ) :
   rw [← ProbabilityMeasure.toMeasure_comp_toFiniteMeasure_eq_toMeasure,
     Probability.toFiniteMeasure_empiricalMeasure, cdf_empiricalFiniteMeasure]
 
+/-- **Sequence form, indexed by the sample size.** For `n > 0`, the empirical probability measure
+`empiricalMeasure x (n - 1)` of the first `n` terms of a real sequence has as distribution function
+the empirical distribution function of those terms. -/
+theorem cdf_empiricalMeasure_sub_one (x : ℕ → ℝ) {n : ℕ} (hn : 0 < n) (t : ℝ) :
+    cdf (empiricalMeasure x (n - 1) : Measure ℝ) t = empiricalCdf (fun i : Fin n ↦ x i) t := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn.ne'
+  exact cdf_empiricalMeasure x m t
+
 /-- **Sequence form.** The empirical distribution function of the first `n` terms of a real
 sequence is `#{i < n | x i ≤ t} / n`. -/
 theorem empiricalCdf_fin_eq_card_filter_range_div (x : ℕ → ℝ) (n : ℕ) (t : ℝ) :
     empiricalCdf (fun i : Fin n ↦ x i) t = (#{i ∈ range n | x i ≤ t} : ℝ) / n := by
-  rw [empiricalCdf_eq_card_filter_div, Fintype.card_fin, card_filter, card_filter,
-    Fin.sum_univ_eq_sum_range (fun i ↦ if x i ≤ t then 1 else 0) n]
+  have hcount : #{i : Fin n | x i ≤ t} = #{i ∈ range n | x i ≤ t} := by
+    simp only [card_filter]
+    exact Fin.sum_univ_eq_sum_range (fun i ↦ if x i ≤ t then 1 else 0) n
+  rw [empiricalCdf_eq_card_filter_div, Fintype.card_fin, hcount]
 
 /-- The empirical distribution function is right continuous. -/
 theorem continuousWithinAt_Ici_empiricalCdf (x : κ → ℝ) (t : ℝ) :
@@ -189,37 +208,44 @@ theorem continuousWithinAt_Ici_empiricalCdf (x : κ → ℝ) (t : ℝ) :
   · have h : empiricalCdf x = fun _ ↦ 0 := funext (empiricalCdf_of_isEmpty x)
     rw [h]
     exact continuousWithinAt_const
-  · have h : empiricalCdf x = cdf (empiricalFiniteMeasure x : Measure ℝ) :=
-      funext fun s ↦ (cdf_empiricalFiniteMeasure x s).symm
-    rw [h]
+  · rw [empiricalCdf_eq_cdf]
     exact (cdf _).right_continuous t
 
-/-- The empirical distribution function vanishes below the least observation. -/
+/-- The empirical distribution function of any sample tends to `0` at `-∞`. -/
 theorem tendsto_empiricalCdf_atBot (x : κ → ℝ) : Tendsto (empiricalCdf x) atBot (𝓝 0) := by
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [eventually_all.2 fun i ↦ eventually_lt_atBot (x i)] with t ht
-  exact (empiricalCdf_eq_zero_iff.2 ht).symm
+  rcases isEmpty_or_nonempty κ with hκ | hκ
+  · have h : empiricalCdf x = fun _ ↦ 0 := funext (empiricalCdf_of_isEmpty x)
+    rw [h]
+    exact tendsto_const_nhds
+  · rw [empiricalCdf_eq_cdf]
+    exact tendsto_cdf_atBot _
 
-/-- The empirical distribution function of a nonempty sample is `1` above the greatest
-observation. -/
+/-- The empirical distribution function of a nonempty sample tends to `1` at `+∞`. -/
 theorem tendsto_empiricalCdf_atTop [Nonempty κ] (x : κ → ℝ) :
     Tendsto (empiricalCdf x) atTop (𝓝 1) := by
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [eventually_all.2 fun i ↦ eventually_ge_atTop (x i)] with t ht
-  exact (empiricalCdf_eq_one_iff.2 ht).symm
+  rw [empiricalCdf_eq_cdf]
+  exact tendsto_cdf_atTop _
 
 /-- The empirical distribution function is jointly measurable in the sample and the point. -/
 @[fun_prop]
 theorem measurable_uncurry_empiricalCdf :
     Measurable (Function.uncurry (empiricalCdf : (κ → ℝ) → ℝ → ℝ)) := by
+  -- The empirical distribution of the sample, as a kernel from (sample, point) pairs, evaluated
+  -- on the moving section `Iic t` of a measurable set.
+  let η : Kernel ((κ → ℝ) × ℝ) ℝ :=
+    ⟨fun q ↦ (empiricalFiniteMeasure q.1 : Measure ℝ),
+      (measurable_subtypeVal.comp Probability.measurable_empiricalFiniteMeasure).comp
+        measurable_fst⟩
+  have hη := Kernel.measurable_kernel_prodMk_left_of_finite (κ := η)
+    (measurableSet_le measurable_snd (measurable_snd.comp measurable_fst))
+    fun q ↦ (inferInstance : IsFiniteMeasure (empiricalFiniteMeasure q.1 : Measure ℝ))
   have h : Function.uncurry (empiricalCdf : (κ → ℝ) → ℝ → ℝ) =
-      fun q ↦ (∑ i, {q : (κ → ℝ) × ℝ | q.1 i ≤ q.2}.indicator (1 : (κ → ℝ) × ℝ → ℝ) q) /
-        Fintype.card κ := by
+      fun q ↦ (η q (Prod.mk q ⁻¹' {r : ((κ → ℝ) × ℝ) × ℝ | r.2 ≤ r.1.2})).toReal := by
     ext ⟨x, t⟩
-    simp [empiricalCdf_eq_card_filter_div, indicator_apply]
+    rw [Function.uncurry_apply_pair, empiricalCdf_def, measureReal_def]
+    rfl
   rw [h]
-  exact (Finset.measurable_sum _ fun i _ ↦ measurable_const.indicator
-    (measurableSet_le ((measurable_pi_apply i).comp measurable_fst) measurable_snd)).div_const _
+  exact hη.ennreal_toReal
 
 /-- At each point, the empirical distribution function is a measurable function of the
 sample. -/
@@ -248,13 +274,15 @@ theorem sampleQuantile_eq_quantile (x : κ → ℝ) (p : ℝ) :
 
 /-- At a nonpositive level the sample quantile takes the junk value `0`. -/
 @[simp]
-theorem sampleQuantile_of_nonpos (x : κ → ℝ) {p : ℝ} (hp : p ≤ 0) : sampleQuantile x p = 0 :=
-  Measure.quantile_of_nonpos _ hp
+theorem sampleQuantile_of_nonpos (x : κ → ℝ) {p : ℝ} (hp : p ≤ 0) : sampleQuantile x p = 0 := by
+  rw [sampleQuantile_eq_quantile]
+  exact Measure.quantile_of_nonpos _ hp
 
 /-- Above the level `1` the sample quantile takes the junk value `0`. -/
 @[simp]
-theorem sampleQuantile_of_one_lt (x : κ → ℝ) {p : ℝ} (hp : 1 < p) : sampleQuantile x p = 0 :=
-  Measure.quantile_of_one_lt _ hp
+theorem sampleQuantile_of_one_lt (x : κ → ℝ) {p : ℝ} (hp : 1 < p) : sampleQuantile x p = 0 := by
+  rw [sampleQuantile_eq_quantile]
+  exact Measure.quantile_of_one_lt _ hp
 
 /-- The sample quantile of an empty sample takes the junk value `0`. -/
 @[simp]
@@ -285,35 +313,26 @@ private theorem setOf_le_empiricalCdf_eq_Ici_orderStatistic {n : ℕ} (x : Fin n
     (hp : 0 < p) (k : Fin n) (hk : (k : ℕ) = ⌈n * p⌉₊ - 1) :
     {t | p ≤ empiricalCdf x t} = Ici (orderStatistic k x) := by
   have hn : (0 : ℝ) < n := by exact_mod_cast k.pos
-  have hceil : 0 < ⌈n * p⌉₊ := Nat.ceil_pos.2 (mul_pos hn hp)
+  have hpos : 0 < ⌈n * p⌉₊ := Nat.ceil_pos.2 (mul_pos hn hp)
+  -- A count `m` of observations reaches the level `p` exactly when `⌈n p⌉ ≤ m`.
+  have hceil (m : ℕ) : p ≤ (m : ℝ) / n ↔ ⌈n * p⌉₊ ≤ m := by
+    rw [le_div_iff₀ hn, mul_comm, Nat.ceil_le]
   ext t
-  rw [Set.mem_ofPred_eq, Set.mem_Ici, orderStatistic_le_iff, empiricalCdf_eq_card_filter_div,
-    Fintype.card_fin, le_div_iff₀ hn, mul_comm, ← Nat.ceil_le, hk]
+  simp only [Set.mem_ofPred_eq, Set.mem_Ici, orderStatistic_le_iff,
+    empiricalCdf_eq_card_filter_div, Fintype.card_fin, hceil, hk]
   omega
-
-/-- At a level `p ∈ (0, 1]`, the points at which the empirical distribution function of a
-nonempty sample reaches `p` form the closed ray above one of the observations: after listing the
-sample along `Fintype.equivFin κ`, the order statistic in position `⌈(card κ) p⌉ - 1`. -/
-private theorem exists_setOf_le_empiricalCdf_eq_Ici [Nonempty κ] (x : κ → ℝ) {p : ℝ} (hp0 : 0 < p)
-    (hp1 : p ≤ 1) : ∃ i, {t | p ≤ empiricalCdf x t} = Ici (x i) := by
-  set e := Fintype.equivFin κ
-  have hk : ⌈Fintype.card κ * p⌉₊ - 1 < Fintype.card κ :=
-    Nat.sub_one_lt_of_le (Nat.ceil_pos.2 (mul_pos (by exact_mod_cast Fintype.card_pos) hp0))
-      (Nat.ceil_le.2 (mul_le_of_le_one_right (Nat.cast_nonneg _) hp1))
-  refine ⟨e.symm (Tuple.sort (x ∘ e.symm) ⟨_, hk⟩), ?_⟩
-  rw [← empiricalCdf_comp_equiv e.symm x,
-    setOf_le_empiricalCdf_eq_Ici_orderStatistic (x ∘ e.symm) hp0 ⟨_, hk⟩ rfl, orderStatistic_def,
-    Function.comp_apply]
 
 /-- **The Galois inequality.** For a nonempty sample and a level `p ∈ (0, 1]`, the sample
 `p`-quantile is at most `t` exactly when the empirical distribution function reaches `p` at `t`.
 Unlike `MeasureTheory.Measure.quantile_le_iff` for an arbitrary law, this includes the endpoint
-level `p = 1`. -/
+level `p = 1`: the empirical distribution is carried by the finite set of observations, so it
+reaches every level `p ≤ 1` (`MeasureTheory.Measure.quantile_le_iff_of_nonempty`). -/
 @[simp]
 theorem sampleQuantile_le_iff [Nonempty κ] (x : κ → ℝ) {p : ℝ} (hp0 : 0 < p) (hp1 : p ≤ 1)
     {t : ℝ} : sampleQuantile x p ≤ t ↔ p ≤ empiricalCdf x t := by
-  obtain ⟨i, hi⟩ := exists_setOf_le_empiricalCdf_eq_Ici x hp0 hp1
-  rw [sampleQuantile_eq_sInf, hi, csInf_Ici, ← Set.mem_Ici, ← hi, Set.mem_ofPred_eq]
+  rw [sampleQuantile_eq_quantile, ← cdf_empiricalFiniteMeasure,
+    Measure.quantile_le_iff_of_nonempty _ hp0 (Measure.nonempty_setOf_le_cdf_of_ae_mem_finset _
+      (Probability.ae_mem_image_empiricalFiniteMeasure x) hp1)]
 
 /-- The set-level form of the Galois inequality `TauCeti.sampleQuantile_le_iff`: at a level
 `p ∈ (0, 1]`, the empirical distribution function of a nonempty sample reaches `p` exactly on the
@@ -322,7 +341,9 @@ theorem setOf_le_empiricalCdf_eq_Ici [Nonempty κ] (x : κ → ℝ) {p : ℝ} (h
     (hp1 : p ≤ 1) : {t | p ≤ empiricalCdf x t} = Ici (sampleQuantile x p) :=
   Set.ext fun _ ↦ (sampleQuantile_le_iff x hp0 hp1).symm
 
-/-- The negation of the Galois inequality `TauCeti.sampleQuantile_le_iff`. -/
+/-- The strict form of the Galois inequality `TauCeti.sampleQuantile_le_iff`: for a nonempty
+sample and a level `p ∈ (0, 1]`, a point lies below the sample quantile exactly when the empirical
+distribution function there is below `p`. -/
 @[simp]
 theorem lt_sampleQuantile_iff [Nonempty κ] (x : κ → ℝ) {p : ℝ} (hp0 : 0 < p) (hp1 : p ≤ 1)
     {t : ℝ} : t < sampleQuantile x p ↔ empiricalCdf x t < p := by
@@ -349,8 +370,9 @@ theorem monotoneOn_sampleQuantile (x : κ → ℝ) : MonotoneOn (sampleQuantile 
 observations. -/
 theorem sampleQuantile_mem_range [Nonempty κ] (x : κ → ℝ) {p : ℝ} (hp0 : 0 < p) (hp1 : p ≤ 1) :
     sampleQuantile x p ∈ range x := by
-  obtain ⟨i, hi⟩ := exists_setOf_le_empiricalCdf_eq_Ici x hp0 hp1
-  exact ⟨i, by rw [sampleQuantile_eq_sInf, hi, csInf_Ici]⟩
+  obtain ⟨i, -, hi⟩ := Finset.mem_image.1 (Measure.quantile_mem_finset _
+    (Probability.ae_mem_image_empiricalFiniteMeasure x) ⟨hp0, hp1⟩)
+  exact ⟨i, hi.trans (sampleQuantile_eq_quantile x p).symm⟩
 
 /-- **The sample quantile is an order statistic.** For `n > 0` observations and a level
 `p ∈ (0, 1]`, the sample `p`-quantile is the order statistic in position `⌈n p⌉ - 1` (counted
@@ -373,26 +395,45 @@ theorem measurable_uncurry_sampleQuantile :
       simp
     rw [h]
     exact measurable_const
-  refine measurable_of_Iic fun t ↦ ?_
-  have h : Function.uncurry (sampleQuantile : (κ → ℝ) → ℝ → ℝ) ⁻¹' Iic t =
-      {q : (κ → ℝ) × ℝ | q.2 ∈ Set.Ioc 0 1 ∧ q.2 ≤ empiricalCdf q.1 t} ∪
-        {q | q.2 ∉ Set.Ioc 0 1 ∧ 0 ≤ t} := by
-    ext ⟨x, p⟩
-    by_cases hp : p ∈ Set.Ioc 0 1
-    · simp only [Set.mem_preimage, Function.uncurry_apply_pair, Set.mem_Iic, Set.mem_union,
-        Set.mem_ofPred_eq, hp, true_and, not_true_eq_false, false_and, or_false,
-        sampleQuantile_le_iff x hp.1 hp.2]
-    · have h0 : sampleQuantile x p = 0 := by
-        rcases le_or_gt p 0 with hp0 | hp0
+  -- At the endpoint level `1`, the Galois inequality cuts out each sublevel set.
+  have hone : Measurable fun x : κ → ℝ ↦ sampleQuantile x 1 := by
+    refine measurable_of_Iic fun t ↦ ?_
+    have h : (fun x : κ → ℝ ↦ sampleQuantile x 1) ⁻¹' Iic t = {x | 1 ≤ empiricalCdf x t} :=
+      Set.ext fun x ↦ sampleQuantile_le_iff x one_pos le_rfl
+    rw [h]
+    exact measurableSet_le measurable_const (measurable_empiricalCdf t)
+  set S : Set ((κ → ℝ) × ℝ) := {q | q.2 ∈ Set.Ioo 0 1}
+  have hS : MeasurableSet S := measurable_snd measurableSet_Ioo
+  refine measurable_of_restrict_of_restrict_compl hS ?_ ?_
+  · -- At the interior levels, this is the quantile of a measurable family of laws.
+    have hμ : Measurable fun x : κ → ℝ ↦ (empiricalFiniteMeasure x : Measure ℝ) :=
+      measurable_subtypeVal.comp Probability.measurable_empiricalFiniteMeasure
+    have h : S.domRestrict (Function.uncurry sampleQuantile) =
+        (fun q : (κ → ℝ) × Set.Ioo (0 : ℝ) 1 ↦
+          (empiricalFiniteMeasure q.1 : Measure ℝ).quantile q.2) ∘
+          fun q : S ↦ ((q : (κ → ℝ) × ℝ).1, ⟨(q : (κ → ℝ) × ℝ).2, q.property⟩) := by
+      ext q
+      exact sampleQuantile_eq_quantile _ _
+    rw [h]
+    exact (Measure.measurable_quantile_cdf_family _ hμ fun _ ↦ inferInstance).comp
+      ((measurable_fst.comp measurable_subtypeVal).prodMk
+        (measurable_snd.comp measurable_subtypeVal).subtype_mk)
+  · -- At the other levels, this is the endpoint level `1` or the junk value `0`.
+    have h : Sᶜ.domRestrict (Function.uncurry sampleQuantile) =
+        fun q : ↥Sᶜ ↦ if (q : (κ → ℝ) × ℝ).2 = 1 then sampleQuantile (q : (κ → ℝ) × ℝ).1 1
+          else 0 := by
+      ext ⟨⟨x, p⟩, hp⟩
+      simp only [Set.domRestrict_apply, Function.uncurry_apply_pair]
+      split_ifs with h1
+      · rw [h1]
+      · rcases le_or_gt p 0 with hp0 | hp0
         · exact sampleQuantile_of_nonpos x hp0
-        · exact sampleQuantile_of_one_lt x (lt_of_not_ge fun hp1 ↦ hp ⟨hp0, hp1⟩)
-      simp only [Set.mem_preimage, Function.uncurry_apply_pair, Set.mem_Iic, Set.mem_union,
-        Set.mem_ofPred_eq, hp, false_and, not_false_eq_true, true_and, false_or, h0]
-  have hI : MeasurableSet {q : (κ → ℝ) × ℝ | q.2 ∈ Set.Ioc 0 1} :=
-    measurable_snd measurableSet_Ioc
-  rw [h]
-  exact (hI.inter (measurableSet_le measurable_snd ((measurable_empiricalCdf t).comp
-    measurable_fst))).union (hI.compl.inter (MeasurableSet.const _))
+        · exact sampleQuantile_of_one_lt x
+            (lt_of_le_of_ne (not_lt.1 fun hp1 ↦ hp ⟨hp0, hp1⟩) (Ne.symm h1))
+    rw [h]
+    exact Measurable.ite
+      (measurableSet_eq_fun (measurable_snd.comp measurable_subtypeVal) measurable_const)
+      (hone.comp (measurable_fst.comp measurable_subtypeVal)) measurable_const
 
 /-- At each level, the sample quantile is a measurable function of the sample. -/
 @[fun_prop]

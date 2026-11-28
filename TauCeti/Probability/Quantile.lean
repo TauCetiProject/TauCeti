@@ -54,7 +54,9 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 
 * `MeasureTheory.Measure.quantile_le_iff` — the Galois characterization of the quantile, with
   `MeasureTheory.Measure.setOf_le_cdf_eq_Ici` its set-level form and
-  `MeasureTheory.Measure.lt_quantile_iff` its negation;
+  `MeasureTheory.Measure.lt_quantile_iff` its negation, and
+  `MeasureTheory.Measure.quantile_le_iff_of_nonempty` its extension to every positive level that
+  the cumulative distribution function reaches;
 * `MeasureTheory.Measure.cdf_le_iff_quantile_le` — reversed pointwise comparison of two cdfs is
   equivalent to pointwise comparison of their interior quantiles;
 * `MeasureTheory.Measure.cdf_quantile` and `MeasureTheory.Measure.quantile_cdf` — the exact
@@ -231,15 +233,29 @@ theorem quantile_map_abs (μ : Measure ℝ) [IsZeroOrProbabilityMeasure μ] [μ.
       exact measureReal_mono (Iic_subset_Iio.2 (by linarith))
     constructor <;> intro h <;> linarith
 
-/-- The cumulative distribution function at the quantile reaches every level strictly below
-`1`. -/
-theorem le_cdf_quantile (μ : Measure ℝ) (h1 : t < 1) : t ≤ cdf μ (μ.quantile t) := by
+/-- The cumulative distribution function at the quantile reaches the level whenever some point
+reaches it, the endpoint level `1` included. -/
+theorem le_cdf_quantile_of_nonempty (μ : Measure ℝ) (hne : {x : ℝ | t ≤ cdf μ x}.Nonempty) :
+    t ≤ cdf μ (μ.quantile t) := by
   have key : ∀ r : Ioi (μ.quantile t), t ≤ cdf μ r := by
     rintro ⟨r, hr⟩
-    obtain ⟨y, hy, hyr⟩ := exists_lt_of_csInf_lt (nonempty_setOf_le_cdf μ h1) hr
+    obtain ⟨y, hy, hyr⟩ := exists_lt_of_csInf_lt hne hr
     exact hy.trans (monotone_cdf μ hyr.le)
   have h := le_ciInf key
   rwa [StieltjesFunction.iInf_Ioi_eq] at h
+
+/-- The cumulative distribution function at the quantile reaches every level strictly below
+`1`. -/
+theorem le_cdf_quantile (μ : Measure ℝ) (h1 : t < 1) : t ≤ cdf μ (μ.quantile t) :=
+  le_cdf_quantile_of_nonempty μ (nonempty_setOf_le_cdf μ h1)
+
+/-- The Galois characterization of the quantile at a positive level that some point reaches. This
+covers the endpoint level `1` for a law reaching full cumulative mass, such as a law carried by a
+finite set. -/
+theorem quantile_le_iff_of_nonempty (μ : Measure ℝ) (h0 : 0 < t)
+    (hne : {x : ℝ | t ≤ cdf μ x}.Nonempty) : μ.quantile t ≤ x ↔ t ≤ cdf μ x :=
+  ⟨fun h ↦ (le_cdf_quantile_of_nonempty μ hne).trans (monotone_cdf μ h),
+    fun h ↦ csInf_le (bddBelow_setOf_le_cdf μ h0) h⟩
 
 /-- **The Galois characterization of the quantile.** For a level strictly between `0` and `1`,
 the quantile lies below a point exactly when the cumulative distribution function at that point
@@ -247,8 +263,7 @@ reaches the level. -/
 @[simp]
 theorem quantile_le_iff (μ : Measure ℝ) (h0 : 0 < t) (h1 : t < 1) :
     μ.quantile t ≤ x ↔ t ≤ cdf μ x :=
-  ⟨fun h ↦ (le_cdf_quantile μ h1).trans (monotone_cdf μ h),
-    fun h ↦ csInf_le (bddBelow_setOf_le_cdf μ h0) h⟩
+  quantile_le_iff_of_nonempty μ h0 (nonempty_setOf_le_cdf μ h1)
 
 /-- Reversed pointwise comparison of the cdfs of two real measures is equivalent to pointwise
 comparison of their quantiles at every level strictly between zero and one. -/
