@@ -21,6 +21,7 @@ nonzero width `h` factors through its cusp function along the parameter.
 
 ## Main declarations
 
+* `TauCeti.Periodic.qParam_zpow`: `𝕢 h z ^ n = exp (2 π I n z / h)`.
 * `TauCeti.Periodic.qParam_sub`: `𝕢 h (z - j) = 𝕢 h z * exp (-2 π I j / h)`.
 * `TauCeti.Periodic.periodic_qParam`: the parameter `𝕢 h` has period `h`.
 * `TauCeti.Periodic.qParam_add_half`: translation by half a period negates the parameter.
@@ -55,6 +56,12 @@ open Function.Periodic
 local notation "𝕢" => Function.Periodic.qParam
 
 variable {h : ℝ}
+
+/-- An integer power of the local parameter `𝕢 h z` is `exp (2 π I n z / h)`. -/
+theorem qParam_zpow (z : ℂ) (n : ℤ) : 𝕢 h z ^ n = exp (2 * π * I * n * z / h) := by
+  rw [qParam, ← Complex.exp_intCast_mul]
+  congr 1
+  ring
 
 /-- Translation by `j` in the argument of `qParam` corresponds to multiplication by
 `exp (-2 π I j / h)`. -/

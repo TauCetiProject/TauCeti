@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
 import TauCeti.Analysis.Normed.Group.AddCircle.Trigonometric
+import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 
 /-!
 # The additive character `e(α) = exp(2πiα)` and geometric sums
@@ -118,10 +119,8 @@ theorem expTwoPiI_intCast_mul (m : ℤ) (α : ℝ) : expTwoPiI (m * α) = expTwo
 
 /-- `e(α) = 1` exactly when `α` is an integer. -/
 theorem expTwoPiI_eq_one_iff {α : ℝ} : expTwoPiI α = 1 ↔ ∃ m : ℤ, α = m := by
-  rw [expTwoPiI_def, Complex.exp_eq_one_iff]
-  have h2πI : (2 * π * I : ℂ) ≠ 0 := by simp [Real.pi_ne_zero, I_ne_zero]
-  refine ⟨fun ⟨m, hm⟩ ↦ ⟨m, ?_⟩, fun ⟨m, hm⟩ ↦ ⟨m, by rw [hm]; push_cast; ring⟩⟩
-  exact_mod_cast mul_left_cancel₀ h2πI (hm.trans (mul_comm _ _))
+  rw [expTwoPiI_def]
+  exact Complex.exp_two_pi_mul_I_mul_ofReal_eq_one_iff α
 
 @[simp]
 theorem expTwoPiI_intCast (m : ℤ) : expTwoPiI m = 1 :=

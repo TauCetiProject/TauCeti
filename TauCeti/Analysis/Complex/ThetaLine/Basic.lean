@@ -12,24 +12,30 @@ public import TauCeti.Analysis.Complex.Wirtinger.Basic
 import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
+import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
 
 /-!
 # The level-`k` theta line on a complex torus
 
-Fix `τ ∈ ℂ`, an integer level `k` and real characteristics `α, β`. The lattice `ℤ + τ ℤ` acts on
-`ℂ × ℂ` by `(z, v) ↦ (z + m + n τ, e_(m,n)(z) v)` through the factor of automorphy
+Fix `τ ∈ ℂ`, an integer level `k` and real characteristics `α, β`. The group `ℤ × ℤ` acts on
+`ℂ × ℂ` by `(m, n) · (z, v) = (z + m + n τ, e_(m,n)(z) v)` through the factor of automorphy
 (`TauCeti.thetaFactor`)
 
 `e_(m,n)(z) = exp (2πi(mα + nβ) - πikn²τ - 2πiknz)`,
 
 whose generators are `e_(1,0)(z) = exp (2πiα)` and `e_(0,1)(z) = exp (2πiβ - πikτ - 2πikz)`.
-The cocycle law `e_(λ + μ)(z) = e_λ(z + μ) e_μ(z)` (`TauCeti.thetaFactor_add`) makes this an action,
-and the quotient is the theta line of level `k` and characteristics `(α, β)` on the torus
-`ℂ / (ℤ + τℤ)`. The law uses that `k` is an integer: the two ways of translating by `1 + τ`
-differ by `exp (-2πik)`. Its sections are the functions `s` on `ℂ` with
-`s (z + m + nτ) = e_(m,n)(z) s z`, and these are exactly the functions satisfying the two generator
-laws (`TauCeti.forall_add_eq_thetaFactor_mul_iff`). Tensor product of theta lines adds levels and
-characteristics (`TauCeti.thetaFactor_mul_thetaFactor`).
+The cocycle law `e_(m + m', n + n')(z) = e_(m,n)(z + m' + n' τ) e_(m',n')(z)`
+(`TauCeti.thetaFactor_add`) makes this a `ℤ²`-action for every `τ ∈ ℂ`. When `Im τ ≠ 0`, `ℤ + τℤ`
+is a lattice in `ℂ` and the quotient of `ℂ × ℂ` by this action is the theta line of level `k` and
+characteristics `(α, β)` on the complex torus `ℂ / (ℤ + τℤ)`. The cocycle law uses that `k` is an
+integer: for an arbitrary real level `k : ℝ`, the two ways of composing the `1`- and
+`τ`-translations differ by `exp (-2πik)` (`TauCeti.exp_mul_exp_comm_eq_exp_neg_mul`), so they
+commute if and only if `k` is an integer (`TauCeti.exp_mul_exp_comm_iff_exists_intCast_eq`).
+Shifting `(α, β)` by integers leaves `thetaFactor` invariant (`TauCeti.thetaFactor_add_int`).
+Functions `s` on `ℂ` satisfying `s (z + m + nτ) = e_(m,n)(z) s z` for all `(m, n) ∈ ℤ²` are
+precisely those satisfying the two generator laws (`TauCeti.forall_add_eq_thetaFactor_mul_iff`).
+Multiplying factors adds levels and characteristics (`TauCeti.thetaFactor_mul_thetaFactor`),
+corresponding to the tensor product of theta lines when `Im τ ≠ 0`.
 
 For `Im τ ≠ 0` the function `h(z) = exp (-2πk (Im z)² / Im τ)` (`TauCeti.thetaMetric`) satisfies
 `h(z + λ) |e_λ(z)|² = h(z)` (`TauCeti.thetaMetric_add_mul_norm_thetaFactor_sq`), so it is a
@@ -61,7 +67,14 @@ of level `k` is a prequantum line of `ω`.
 ## Main results
 
 * `TauCeti.thetaFactor_add`: the cocycle law.
-* `TauCeti.forall_add_eq_thetaFactor_mul_iff`: the lattice automorphy law is equivalent to the
+* `TauCeti.thetaFactor_add_int_left`, `TauCeti.thetaFactor_add_int_right`, and
+  `TauCeti.thetaFactor_add_int`: shifting characteristics by integers leaves `thetaFactor`
+  unchanged.
+* `TauCeti.thetaFactor_mul_thetaFactor`: multiplying factors adds levels and characteristics.
+* `TauCeti.exp_mul_exp_comm_eq_exp_neg_mul` and
+  `TauCeti.exp_mul_exp_comm_iff_exists_intCast_eq`: integrality obstruction at
+  real level.
+* `TauCeti.forall_add_eq_thetaFactor_mul_iff`: the `ℤ²`-automorphy law is equivalent to the
   two generator laws.
 * `TauCeti.thetaMetric_add_mul_norm_thetaFactor_sq`, `TauCeti.thetaMetric_add_mul_mul_conj`,
   `TauCeti.thetaMetric_add_mul_norm_sq`: the metric descends to the torus.
@@ -88,9 +101,10 @@ namespace TauCeti
 
 variable (k : ℤ) (τ : ℂ) (α β : ℝ)
 
-/-- The **factor of automorphy** of the level-`k` theta line with characteristics `(α, β)` on the
-torus `ℂ / (ℤ + τℤ)`: the multiplier `e_(m,n)(z) = exp (2πi(mα + nβ) - πikn²τ - 2πiknz)` by which
-a section changes under translation by the lattice vector `m + nτ`. -/
+/-- The **factor of automorphy** `e_(m,n)(z) = exp (2πi(mα + nβ) - πikn²τ - 2πiknz)` for the
+`ℤ²`-action `(m, n) · z = z + m + nτ` of level `k` and characteristics `(α, β)`. When `Im τ ≠ 0`,
+`ℤ + τℤ` is a lattice and this is the transition multiplier defining the level-`k` theta line on
+the complex torus `ℂ / (ℤ + τℤ)`. -/
 noncomputable def thetaFactor (m n : ℤ) (z : ℂ) : ℂ :=
   cexp (2 * π * I * (m * α + n * β) - π * I * k * n ^ 2 * τ - 2 * π * I * k * n * z)
 
@@ -109,19 +123,48 @@ theorem thetaFactor_ne_zero (m n : ℤ) (z : ℂ) : thetaFactor k τ α β m n z
 theorem thetaFactor_zero_zero (z : ℂ) : thetaFactor k τ α β 0 0 z = 1 := by
   simp [thetaFactor_def]
 
-/-- The factor of the generator `1` of the lattice. -/
+/-- The factor of the first generator `(1, 0)` (translation by `1`). -/
 @[simp]
 theorem thetaFactor_one_zero (z : ℂ) : thetaFactor k τ α β 1 0 z = cexp (2 * π * I * α) := by
   simp [thetaFactor_def]
 
-/-- The factor of the generator `τ` of the lattice. -/
+/-- The factor of the second generator `(0, 1)` (translation by `τ`). -/
 @[simp]
 theorem thetaFactor_zero_one (z : ℂ) :
     thetaFactor k τ α β 0 1 z = cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) := by
   simp [thetaFactor_def]
 
-/-- **The cocycle law** `e_(λ + μ)(z) = e_λ(z + μ) e_μ(z)` for the lattice vectors `λ = m + nτ`
-and `μ = m' + n'τ`. It holds because the level `k` is an integer. -/
+/-- Shifting the first characteristic `α` by an integer leaves `thetaFactor` unchanged. -/
+@[simp]
+theorem thetaFactor_add_int_left (k : ℤ) (τ : ℂ) (α β : ℝ) (a m n : ℤ) (z : ℂ) :
+    thetaFactor k τ (α + a) β m n z = thetaFactor k τ α β m n z := by
+  simp only [thetaFactor_def]
+  have h1 : cexp (((m * a : ℤ) : ℂ) * (2 * π * I)) = 1 :=
+    Complex.exp_int_mul_two_pi_mul_I (m * a)
+  conv_rhs => rw [← mul_one (cexp _), ← h1, ← Complex.exp_add]
+  congr 1
+  push_cast
+  ring
+
+/-- Shifting the second characteristic `β` by an integer leaves `thetaFactor` unchanged. -/
+@[simp]
+theorem thetaFactor_add_int_right (k : ℤ) (τ : ℂ) (α β : ℝ) (b m n : ℤ) (z : ℂ) :
+    thetaFactor k τ α (β + b) m n z = thetaFactor k τ α β m n z := by
+  simp only [thetaFactor_def]
+  have h1 : cexp (((n * b : ℤ) : ℂ) * (2 * π * I)) = 1 :=
+    Complex.exp_int_mul_two_pi_mul_I (n * b)
+  conv_rhs => rw [← mul_one (cexp _), ← h1, ← Complex.exp_add]
+  congr 1
+  push_cast
+  ring
+
+/-- Shifting the characteristics `(α, β)` by integers leaves `thetaFactor` unchanged. -/
+theorem thetaFactor_add_int (k : ℤ) (τ : ℂ) (α β : ℝ) (a b m n : ℤ) (z : ℂ) :
+    thetaFactor k τ (α + a) (β + b) m n z = thetaFactor k τ α β m n z := by
+  rw [thetaFactor_add_int_left, thetaFactor_add_int_right]
+
+/-- **The cocycle law** `e_(m + m', n + n')(z) = e_(m,n)(z + m' + n'τ) e_(m',n')(z)` for
+`(m, n), (m', n') ∈ ℤ²`. It holds because the level `k` is an integer. -/
 theorem thetaFactor_add (m n m' n' : ℤ) (z : ℂ) :
     thetaFactor k τ α β (m + m') (n + n') z =
       thetaFactor k τ α β m n (z + m' + n' * τ) * thetaFactor k τ α β m' n' z := by
@@ -129,8 +172,8 @@ theorem thetaFactor_add (m n m' n' : ℤ) (z : ℂ) :
     Complex.exp_eq_exp_iff_exists_int]
   exact ⟨k * n * m', by push_cast; ring⟩
 
-/-- The tensor product of two theta lines is a theta line: factors of automorphy multiply by
-adding the levels and the characteristics. -/
+/-- Multiplying factors of automorphy adds levels and characteristics (corresponding to tensor
+product of theta lines when `Im τ ≠ 0`). -/
 theorem thetaFactor_mul_thetaFactor (k' : ℤ) (α' β' : ℝ) (m n : ℤ) (z : ℂ) :
     thetaFactor k τ α β m n z * thetaFactor k' τ α' β' m n z =
       thetaFactor (k + k') τ (α + α') (β + β') m n z := by
@@ -167,18 +210,46 @@ theorem logDeriv_thetaFactor (m n : ℤ) (z : ℂ) :
   rw [logDeriv_apply, (hasDerivAt_thetaFactor m n z).deriv,
     mul_div_cancel_right₀ _ (thetaFactor_ne_zero m n z)]
 
-/-- The automorphy law at one lattice vector propagates along the cocycle law: if it holds at
-`λ` and `μ` it holds at `λ + μ`. -/
+/-- For an arbitrary real level `k : ℝ`, composing the `z ↦ z + 1` and `z ↦ z + τ` automorphy
+factors in the two orders differs by the constant phase `exp (-2πik)`. -/
+theorem exp_mul_exp_comm_eq_exp_neg_mul (k : ℝ) (τ : ℂ) (α β : ℝ) (z : ℂ) :
+    cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * (z + 1)) * cexp (2 * π * I * α) =
+      cexp (-2 * π * I * k) *
+        (cexp (2 * π * I * α) * cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z)) := by
+  simp only [← Complex.exp_add]
+  congr 1
+  ring
+
+/-- **Integrality obstruction for the torus automorphy factor.** The `z ↦ z + 1` and `z ↦ z + τ`
+generator factors at real level `k : ℝ` satisfy the abelian compatibility relation if and only if
+`k` is an integer. -/
+theorem exp_mul_exp_comm_iff_exists_intCast_eq (k : ℝ) (τ : ℂ) (α β : ℝ)
+    (z : ℂ) :
+    cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * (z + 1)) * cexp (2 * π * I * α) =
+        cexp (2 * π * I * α) * cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) ↔
+      ∃ n : ℤ, (n : ℝ) = k := by
+  rw [exp_mul_exp_comm_eq_exp_neg_mul]
+  have hne :
+      cexp (2 * π * I * α) * cexp (2 * π * I * β - π * I * k * τ - 2 * π * I * k * z) ≠ 0 :=
+    mul_ne_zero (Complex.exp_ne_zero _) (Complex.exp_ne_zero _)
+  rw [mul_eq_right₀ hne, neg_mul, neg_mul, neg_mul, Complex.exp_neg, inv_eq_one,
+    Complex.exp_two_pi_mul_I_mul_ofReal_eq_one_iff]
+  exact exists_congr fun _ => eq_comm
+
+/-- The automorphy law propagates along the cocycle law: if it holds at `(m, n)` and `(m', n')`
+it holds at `(m + m', n + n')`. -/
 private theorem add_eq_thetaFactor_mul_of_add {s : ℂ → ℂ} {m n m' n' : ℤ}
     (h : ∀ z, s (z + m + n * τ) = thetaFactor k τ α β m n z * s z)
     (h' : ∀ z, s (z + m' + n' * τ) = thetaFactor k τ α β m' n' z * s z) (z : ℂ) :
     s (z + ↑(m + m') + ↑(n + n') * τ) = thetaFactor k τ α β (m + m') (n + n') z * s z := by
-  have := h (z + m' + n' * τ)
-  rw [show z + m' + n' * τ + m + n * τ = z + ↑(m + m') + ↑(n + n') * τ by push_cast; ring,
-    h' z] at this
-  rw [this, thetaFactor_add, mul_assoc]
+  have hz := h (z + m' + n' * τ)
+  have harg : z + m' + n' * τ + m + n * τ = z + ↑(m + m') + ↑(n + n') * τ := by
+    push_cast
+    ring
+  rw [harg, h' z] at hz
+  rw [hz, thetaFactor_add, mul_assoc]
 
-/-- The lattice vectors at which a function satisfies the automorphy law form a subgroup. -/
+/-- The pairs `(m, n) ∈ ℤ²` at which a function satisfies the automorphy law form a subgroup. -/
 private noncomputable def automorphySubgroup (s : ℂ → ℂ) : AddSubgroup (ℤ × ℤ) where
   carrier := {p | ∀ z, s (z + p.1 + p.2 * τ) = thetaFactor k τ α β p.1 p.2 z * s z}
   zero_mem' := fun z ↦ by simp
@@ -187,7 +258,10 @@ private noncomputable def automorphySubgroup (s : ℂ → ℂ) : AddSubgroup (�
     have h0 := thetaFactor_add (k := k) (τ := τ) (α := α) (β := β) p.1 p.2 (-p.1) (-p.2) z
     have hs := hp (z + ↑(-p.1) + ↑(-p.2) * τ)
     simp only [add_neg_cancel, thetaFactor_zero_zero] at h0
-    rw [show z + ↑(-p.1) + ↑(-p.2) * τ + p.1 + p.2 * τ = z by push_cast; ring] at hs
+    have harg : z + ↑(-p.1) + ↑(-p.2) * τ + p.1 + p.2 * τ = z := by
+      push_cast
+      ring
+    rw [harg] at hs
     have hne := thetaFactor_ne_zero (k := k) (τ := τ) (α := α) (β := β) p.1 p.2
       (z + ↑(-p.1) + ↑(-p.2) * τ)
     simp only [Prod.fst_neg, Prod.snd_neg]
@@ -199,9 +273,11 @@ private theorem mem_automorphySubgroup {s : ℂ → ℂ} {p : ℤ × ℤ} :
       ∀ z, s (z + p.1 + p.2 * τ) = thetaFactor k τ α β p.1 p.2 z * s z :=
   Iff.rfl
 
-/-- **Sections of the theta line.** A function satisfies the automorphy law
-`s (z + m + nτ) = e_(m,n)(z) s z` for every lattice vector exactly when it satisfies it for the
-generators: `s (z + 1) = exp (2πiα) s z` and `s (z + τ) = exp (2πiβ - πikτ - 2πikz) s z`. -/
+/-- **Generator criterion for `ℤ²`-automorphy.** For any `τ : ℂ`, a function satisfies the
+`ℤ²`-automorphy law `s (z + m + nτ) = e_(m,n)(z) s z` for every `(m, n) ∈ ℤ²` exactly when it
+satisfies it for the generators: `s (z + 1) = exp (2πiα) s z` and
+`s (z + τ) = exp (2πiβ - πikτ - 2πikz) s z` (defining a section of the theta line when
+`Im τ ≠ 0`). -/
 theorem forall_add_eq_thetaFactor_mul_iff {s : ℂ → ℂ} :
     (∀ (m n : ℤ) z, s (z + m + n * τ) = thetaFactor k τ α β m n z * s z) ↔
       (∀ z, s (z + 1) = cexp (2 * π * I * α) * s z) ∧
@@ -284,11 +360,13 @@ theorem exists_thetaMetric_mul_norm_sq_le (hτ : τ.im ≠ 0) {s : ℂ → ℂ} 
     intro z w hw
     obtain ⟨n, m, rfl⟩ := PeriodPair.mem_lattice.mp hw
     have hεε : (ε : ℂ) * ε = 1 := by rcases hε with rfl | rfl <;> norm_num
-    have := thetaMetric_add_mul_norm_sq hτ (hs m (ε * n) z)
-    rwa [show z + m + ↑(ε * n) * (ε * σ) = z + (n * σ.periodPair.ω₁ + m * σ.periodPair.ω₂) by
+    have hnorm := thetaMetric_add_mul_norm_sq hτ (hs m (ε * n) z)
+    have harg : z + m + ↑(ε * n) * (ε * σ) =
+        z + (n * σ.periodPair.ω₁ + m * σ.periodPair.ω₂) := by
       simp only [UpperHalfPlane.periodPair_ω₁, UpperHalfPlane.periodPair_ω₂]
       push_cast
-      linear_combination (n * σ : ℂ) * hεε] at this
+      linear_combination (n * σ : ℂ) * hεε
+    rwa [harg] at hnorm
   obtain ⟨C, hC⟩ := (IsZLattice.isCompact_range_of_periodic σ.periodPair.lattice _
     (continuous_thetaMetric.mul (hc.norm.pow 2)) hper).isBounded.bddAbove
   exact ⟨C, fun z ↦ hC ⟨z, rfl⟩⟩

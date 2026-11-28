@@ -43,6 +43,8 @@ Two logarithms of the same number differ by `2 π i k` for an integer `k`, so di
 * `Complex.exp_two_pi_mul_I_mul_pow`: `(exp (2π i a)) ^ n = exp (2π i n a)` for `a : ℂ` and `n : ℕ`.
 * `Complex.norm_exp_two_pi_mul_I_mul_ofReal`: `‖exp (2 π i x)‖ = 1` for real `x`.
 * `Complex.norm_exp_two_pi_mul_ofReal_mul_I`: the same with the factors ordered `2 π x i`.
+* `Complex.exp_two_pi_mul_I_mul_ofReal_eq_one_iff`: `exp (2 π i x) = 1` for real `x` if and
+  only if `x` is an integer.
 * `Complex.exists_div_two_pi_I_smul_eq_add_zsmul`: if `exp a = exp b`, then
   `(a / 2πi) • v = (b / 2πi) • v + k • v` for an integer `k`.
 * `Complex.exp_log_add_inv_mul_log_div_pow`: `exp (log z₀ + (1 / m) log (t / z₀ ^ m))` is an
@@ -163,6 +165,12 @@ theorem norm_exp_two_pi_mul_I_mul_ofReal (x : ℝ) : ‖cexp (2 * π * I * x)‖
 the order of the holonomies `exp (2 π θ i)` of flat lines. -/
 theorem norm_exp_two_pi_mul_ofReal_mul_I (x : ℝ) : ‖cexp (2 * π * x * I)‖ = 1 := by
   rw [mul_right_comm, norm_exp_two_pi_mul_I_mul_ofReal]
+
+/-- `exp (2 π i x) = 1` for real `x` if and only if `x` is an integer. -/
+theorem exp_two_pi_mul_I_mul_ofReal_eq_one_iff (x : ℝ) :
+    cexp (2 * π * I * x) = 1 ↔ ∃ n : ℤ, x = n := by
+  rw [exp_two_pi_mul_I_mul_eq_one_iff (z := (x : ℂ))]
+  exact_mod_cast Iff.rfl
 
 /-- Two logarithms of the same number, divided by `2πi`, differ by an integer; so the vectors
 `(a / 2πi) • v` and `(b / 2πi) • v` differ by an integer multiple of `v`. -/
