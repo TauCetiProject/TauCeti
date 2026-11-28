@@ -310,9 +310,8 @@ theorem homologyEulerChar_morseComplex :
     (h.morseComplex hf).homologyEulerChar =
       ∑ i ∈ Finset.range (finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount 𝓘(ℝ, E) f i).toNat := by
   rw [← HomologicalComplex.eulerChar_eq_homologyEulerChar _
-      (Filter.eventually_cofinite.1 (by
-        rw [Nat.cofinite_eq_atTop]
-        exact Filter.eventually_atTop.2 ⟨finrank ℝ E + 1, fun _ hn ↦
+      ((h.morseComplex hf).finite_not_isZero_X_of_eventually_isZero
+        (Filter.eventually_atTop.2 ⟨finrank ℝ E + 1, fun _ hn ↦
           h.isZero_morseComplex_X_of_finrank_lt hf hn⟩)),
     h.eulerChar_morseComplex hf]
 

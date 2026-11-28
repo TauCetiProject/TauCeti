@@ -13,11 +13,14 @@ public import TauCeti.Topology.Category.TopCat.Monoidal
 # Fibre inclusions of trivializations in `TopCat`
 
 For a morphism `p : E ⟶ B` in `TopCat`, a trivialization `t` of `p` with model fibre `F` and a point
-`x` of the base set of `t`, `Bundle.Trivialization.fiberInclusion t hx : F ⟶ E` is the inclusion
-`f ↦ t⁻¹(x, f)` of the model fibre as the fibre of `p` over `x`: Mathlib's
-`Bundle.Trivialization.preimageSingletonHomeomorph` followed by the fibre inclusion
-`TopCat.Hom.fiberι`. Its composite with `p` is the constant map at
-`x`.
+`x` of the base set of `t`:
+
+* `Bundle.Trivialization.fiberIso t hx : p.fiber x ≅ F` is the homeomorphism
+  `Bundle.Trivialization.preimageSingletonHomeomorph` as an isomorphism in `TopCat`.
+* `Bundle.Trivialization.fiberInclusion t hx : F ⟶ E` is the inclusion `f ↦ t⁻¹(x, f)` of the
+  model fibre as the fibre of `p` over `x`, namely `(t.fiberIso hx).inv ≫ p.fiberι x`
+  (`Bundle.Trivialization.fiberIso_inv_comp_fiberι`). Its composite with `p` is the constant map
+  at `x`.
 
 Over a subset `S` of the base set of `t`, `Bundle.Trivialization.preimageIso t hS : S ⊗ F ≅ p⁻¹ S`
 is the homeomorphism `p⁻¹ S ≃ S × F` of `t` as an isomorphism in `TopCat`. It identifies the
@@ -37,10 +40,23 @@ namespace Bundle.Trivialization
 
 variable {E B F : TopCat.{u}} {p : E ⟶ B}
 
+/-- The isomorphism `p.fiber x ≅ F` in `TopCat` between the fibre of `p` over a point `x` of the
+base set of a trivialization `t` and the model fibre `F`, given by
+`Bundle.Trivialization.preimageSingletonHomeomorph`. -/
+def fiberIso (t : Bundle.Trivialization F p) {x : B} (hx : x ∈ t.baseSet) : p.fiber x ≅ F :=
+  isoOfHomeo (t.preimageSingletonHomeomorph hx)
+
 /-- The inclusion `f ↦ t⁻¹(x, f)` of the model fibre `F` into `E` as the fibre of `p` over a point
 `x` of the base set of a trivialization `t` of `p`. -/
 def fiberInclusion (t : Bundle.Trivialization F p) {x : B} (hx : x ∈ t.baseSet) : F ⟶ E :=
-  (isoOfHomeo (t.preimageSingletonHomeomorph hx)).inv ≫ p.fiberι x
+  (t.fiberIso hx).inv ≫ p.fiberι x
+
+/-- The inverse of `Bundle.Trivialization.fiberIso`, followed by the fibre inclusion `p.fiberι x`,
+is the trivialization's fibre inclusion `t.fiberInclusion hx`. -/
+@[reassoc (attr := simp)]
+theorem fiberIso_inv_comp_fiberι (t : Bundle.Trivialization F p) {x : B} (hx : x ∈ t.baseSet) :
+    (t.fiberIso hx).inv ≫ p.fiberι x = t.fiberInclusion hx :=
+  (rfl)
 
 @[simp]
 theorem fiberInclusion_apply (t : Bundle.Trivialization F p) {x : B} (hx : x ∈ t.baseSet) (f : F) :

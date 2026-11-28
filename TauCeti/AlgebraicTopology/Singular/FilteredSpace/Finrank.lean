@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.SerreClass
 public import TauCeti.AlgebraicTopology.Singular.Triple.Finrank
 import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
+import TauCeti.Algebra.Category.ModuleCat.Colimits
 import TauCeti.Algebra.Homology.EulerCharacteristic.MorseInequalities
 
 /-!
@@ -336,9 +337,7 @@ theorem finrank_singularHomology_eq_sum_finrank_filteredSpaceSpectralSequence_pa
   rw [← e.toLinearEquiv.finrank_eq, (filteredSpaceSpectralObject V hX).finrank_abutment_eq_sum_Ico
     (b := b)
     (CochainComplex.isZero_filtrationAbutmentFiltration _ _ (singularChainFiltration_eq_bot V ha) _)
-    fun q _ ↦ Module.Finite.of_surjective
-      (cokernel.π ((filteredSpaceSpectralObject V hX).abutmentFiltrationMap q (-n))).hom
-      ((ModuleCat.epi_iff_surjective _).1 inferInstance)]
+    fun _ _ ↦ inferInstance]
   -- On the page `r` each object of total degree `-n` is the corresponding graded piece.
   refine Finset.sum_congr rfl fun q hq ↦ ?_
   obtain ⟨hq₁, hq₂⟩ := Finset.mem_Ico.1 hq

@@ -24,12 +24,13 @@ draws the numerical and finiteness consequences.
 * The Euler characteristic of a relative CW complex is the alternating count of its cells
   (`TauCeti.cwEulerChar`).
 * The cellular chain group is finitely generated when `M` is and there are finitely many `n`-cells
-  (`TauCeti.finite_cellularChainGroup`). For free `M` it satisfies
-  `finrank = #(n-cells) · finrank M` with no finiteness hypothesis
-  (`TauCeti.finrank_cellularChainGroup`, `TauCeti.finrank_cellularChainComplex_X`); both sides are
-  `0` in the infinite case. For finitely generated (not necessarily free) `M` over a ring
-  satisfying the strong rank condition and rank--nullity, the same formula holds in any degree
-  with finitely many cells (`TauCeti.finrank_cellularChainGroup_of_finite`,
+  (`TauCeti.finite_cellularChainGroup`). For free `M` over a ring satisfying the strong rank
+  condition it satisfies `finrank = #(n-cells) · finrank M` with no finiteness hypothesis on
+  either `M` or the cell set (`TauCeti.finrank_cellularChainGroup`,
+  `TauCeti.finrank_cellularChainComplex_X`); both sides are `0` in the infinite case. For finitely
+  generated (not necessarily free) `M` over a ring satisfying the strong rank condition and
+  rank--nullity, the same formula holds in any degree with finitely many cells
+  (`TauCeti.finrank_cellularChainGroup_of_finite`,
   `TauCeti.finrank_cellularChainComplex_X_of_finite`).
 * The Euler characteristic of the cellular chain complex is `finrank M · cwEulerChar C`, both for
   free coefficients over a ring with the strong rank condition with no finiteness hypothesis
@@ -114,19 +115,20 @@ theorem finite_cellularChainComplex_X [Module.Finite k M] (i : ℕ) [Finite (cel
   rw [cellularChainComplex_X]
   infer_instance
 
-/-- For free coefficients `M`, the cellular chain group in degree `n` satisfies
-`finrank = Nat.card (cell C n) * finrank k M`. No finiteness is assumed: if there are infinitely
-many `n`-cells or `M` is not finitely generated, both sides are `0` by the conventions for
-`Module.finrank` and `Nat.card`. -/
+/-- For free coefficients `M` over a ring satisfying the strong rank condition, the cellular chain
+group in degree `n` satisfies `finrank = Nat.card (cell C n) * finrank k M`. Neither `M` nor the
+set of `n`-cells is assumed finite: if there are infinitely many `n`-cells or `M` is not finitely
+generated, both sides are `0` by the conventions for `Module.finrank` and `Nat.card`. -/
 theorem finrank_cellularChainGroup [StrongRankCondition k] [Module.Free k M] (n : ℕ) :
     finrank k (cellularChainGroup C M n : ModuleCat k) = Nat.card (cell C n) * finrank k M := by
   rw [(cellularChainGroupLinearEquiv C M n).finrank_eq, Module.finrank, rank_directSum,
     Cardinal.sum_const, Cardinal.toNat_mul, Cardinal.toNat_lift, Cardinal.toNat_lift,
     Module.finrank, Nat.card]
 
-/-- For free coefficients `M`, the degree-`i` term of the cellular chain complex satisfies
-`finrank = Nat.card (cell C i) * finrank k M`. No finiteness is assumed: if there are infinitely
-many `i`-cells or `M` is not finitely generated, both sides are `0`. -/
+/-- For free coefficients `M` over a ring satisfying the strong rank condition, the degree-`i` term
+of the cellular chain complex satisfies `finrank = Nat.card (cell C i) * finrank k M`. Neither `M`
+nor the set of `i`-cells is assumed finite: if there are infinitely many `i`-cells or `M` is not
+finitely generated, both sides are `0`. -/
 theorem finrank_cellularChainComplex_X [StrongRankCondition k] [Module.Free k M] (i : ℕ) :
     finrank k ((cellularChainComplex C M).X i) = Nat.card (cell C i) * finrank k M := by
   rw [cellularChainComplex_X, finrank_cellularChainGroup]
@@ -232,9 +234,8 @@ theorem homologyEulerChar_cellularChainComplex [RelCWComplex.Finite C] :
     have := FiniteType.finite_cell (C := C) (D := D) i
     finite_cellularChainComplex_X C M i
   rw [← HomologicalComplex.eulerChar_eq_homologyEulerChar (cellularChainComplex C M)
-      (Filter.eventually_cofinite.1 (by
-        rw [Nat.cofinite_eq_atTop]
-        simpa [cellularChainComplex_X] using eventually_isZero_cellularChainGroup C M)),
+      ((cellularChainComplex C M).finite_not_isZero_X_of_eventually_isZero
+        (by simpa [cellularChainComplex_X] using eventually_isZero_cellularChainGroup C M)),
     eulerChar_cellularChainComplex_of_finiteType]
 
 end RankNullity

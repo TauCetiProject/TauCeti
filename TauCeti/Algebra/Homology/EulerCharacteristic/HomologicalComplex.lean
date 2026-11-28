@@ -33,6 +33,9 @@ Noetherian assumption), using
 * `HomologicalComplex.eulerChar_eq_homologyEulerChar`: if every term `K.X i` is finitely generated
   and `K.X i` is nonzero for only finitely many indices `i`, then
   `K.eulerChar = K.homologyEulerChar`.
+* `HomologicalComplex.finite_not_isZero_X_of_eventually_isZero`: for an `ℕ`-indexed homological
+  complex in any category with zero morphisms, eventual vanishing of the terms implies that only
+  finitely many terms are nonzero.
 
 ## References
 
@@ -48,6 +51,22 @@ open CategoryTheory Limits Module
 universe u v
 
 namespace HomologicalComplex
+
+section Support
+
+variable {A : Type*} [Category* A] [HasZeroMorphisms A] {c : ComplexShape ℕ}
+  (K : HomologicalComplex A c)
+
+/-- An `ℕ`-indexed homological complex whose terms eventually vanish has only finitely many nonzero
+terms. -/
+theorem finite_not_isZero_X_of_eventually_isZero
+    (hK : ∀ᶠ n in Filter.atTop, IsZero (K.X n)) :
+    {n : ℕ | ¬ IsZero (K.X n)}.Finite := by
+  obtain ⟨N, hN⟩ := Filter.eventually_atTop.1 hK
+  exact (Finset.range N).finite_toSet.subset fun n hn ↦
+    Finset.mem_coe.2 <| Finset.mem_range.2 <| by by_contra! h; exact hn (hN n h)
+
+end Support
 
 section RankNullity
 

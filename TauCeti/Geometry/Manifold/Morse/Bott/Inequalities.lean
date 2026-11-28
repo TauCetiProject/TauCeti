@@ -421,7 +421,7 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_finrank_thomPair
     ).singularHomology (ModuleCat.of K K) n
   have := finite_singularHomology_sublevelPair_of_criticalValue (ModuleCat.of K K) h.contMDiff
     h.contMDiff.continuous.isProperMap hac hcb hcrit n
-  exact ModuleCat.finrank_eq_sum_of_iso_sigma (W := V) e
+  exact ModuleCat.finrank_eq_sum_of_iso_sigma (Module.rank_lt_aleph0 _ _) (W := V) e
 
 variable (hV : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)

@@ -26,9 +26,10 @@ gives, as for constant coefficients:
 * over a noetherian ring, with finitely generated fibres, the singular homology `Hₙ(C; L)` of a CW
   complex is finitely generated in every degree with finitely many cells;
 * over any ring, `Hₙ(C; L)` vanishes in every degree without cells;
-* over a division ring, for a finite CW complex and a system whose fibres all have dimension `r`,
-  the alternating sum of the dimensions of `Hᵢ(C; L)` is `r` times the alternating count of the
-  cells (Euler--Poincaré).
+* over a ring satisfying the strong rank condition and rank--nullity (such as a division ring or
+  a commutative domain), for a finite CW complex and a system of finitely generated fibres all of
+  rank `r`, the alternating sum of the dimensions of `Hᵢ(C; L)` is `r` times the alternating count
+  of the cells (Euler--Poincaré).
 
 Homology with local coefficients is a homotopy invariant
 (`ContinuousMap.HomotopyEquiv.isIso_twistedHomologyMap`), so the same holds for every space `X` of
@@ -172,14 +173,16 @@ theorem eventually_isZero_twistedHomology_complexBasePair [FiniteDimensional C] 
 
 end Ring
 
-section DivisionRing
+section RankNullity
 
-variable {k : Type u} [DivisionRing k] (L : LocalCoefficientSystem.{u, w, max w v} k (TopCat.of C))
+variable {k : Type u} [Ring k] [StrongRankCondition k] [HasRankNullity.{max w v} k]
+  (L : LocalCoefficientSystem.{u, w, max w v} k (TopCat.of C))
   [∀ x, Module.Finite k (L.obj x)] {r : ℕ}
 
 /-- **Euler--Poincaré for cellular chains with local coefficients.** For a finite relative CW
-complex and a local system whose fibres all have dimension `r`, the alternating sum of the
-dimensions of the cellular homology groups is `r` times the alternating count of the cells. -/
+complex and a local system of finitely generated modules whose fibres all have rank `r` over a ring
+satisfying the strong rank condition and rank--nullity, the alternating sum of the ranks of the
+cellular homology groups is `r` times the alternating count of the cells. -/
 theorem homologyEulerChar_twistedCellularChainComplex [RelCWComplex.Finite C]
     (hL : ∀ x, finrank k (L.obj x) = r) :
     (twistedCellularChainComplex C L).homologyEulerChar = r * cwEulerChar C := by
@@ -191,18 +194,22 @@ theorem homologyEulerChar_twistedCellularChainComplex [RelCWComplex.Finite C]
       have : IsEmpty (cell C n) := hn
       isZero_twistedCellularChainComplex_X C L n
   rw [← HomologicalComplex.eulerChar_eq_homologyEulerChar _
-      (Filter.eventually_cofinite.1 (by rwa [Nat.cofinite_eq_atTop])),
+      ((twistedCellularChainComplex C L).finite_not_isZero_X_of_eventually_isZero hzero),
     ChainComplex.eulerChar_eq_finsum_finrank, cwEulerChar_def, mul_finsum]
   refine finsum_congr fun i ↦ ?_
   have := FiniteType.finite_cell (C := C) (D := D) i
-  rw [twistedCellularChainComplex_X, finrank_twistedCellularChainGroup C L hL]
+  let _ := Fintype.ofFinite (cell C i)
+  rw [twistedCellularChainComplex_X,
+    (twistedCellularChainGroupIso C L i).toLinearEquiv.finrank_eq,
+    ModuleCat.finrank_sigma _ fun _ ↦ Module.rank_lt_aleph0 _ _]
+  simp only [hL, Finset.sum_const, Finset.card_univ, smul_eq_mul, ← Nat.card_eq_fintype_card]
   push_cast
   ring
 
 /-- **Euler--Poincaré for relative homology with local coefficients.** For a finite relative CW
-complex and a local system whose fibres all have dimension `r`, the alternating sum of the
-dimensions of the relative homology groups is `r` times the alternating count of the relative
-cells. -/
+complex and a local system of finitely generated modules whose fibres all have rank `r` over a ring
+satisfying the strong rank condition and rank--nullity, the alternating sum of the ranks of the
+relative homology groups is `r` times the alternating count of the relative cells. -/
 theorem finsum_finrank_twistedHomology_complexBasePair [RelCWComplex.Finite C]
     (hL : ∀ x, finrank k (L.obj x) = r) :
     ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank k ((complexBasePair C).twistedHomology L i) =
@@ -211,7 +218,7 @@ theorem finsum_finrank_twistedHomology_complexBasePair [RelCWComplex.Finite C]
   rw [← ChainComplex.homologyEulerChar_eq_finsum_finrank]
   exact homologyEulerChar_twistedCellularChainComplex C L hL
 
-end DivisionRing
+end RankNullity
 
 end Relative
 
@@ -261,10 +268,12 @@ theorem isZero_twistedHomology_of_isEmpty_cell (n : ℕ) [IsEmpty (cell C n)] :
 end Ring
 
 /-- **Euler--Poincaré for homology with local coefficients.** For a finite CW complex and a local
-system whose fibres all have dimension `r`, the alternating sum of the dimensions of the homology
-groups with coefficients in the system is `r` times the alternating count of the cells. -/
+system of finitely generated modules whose fibres all have rank `r` over a ring satisfying the
+strong rank condition and rank--nullity, the alternating sum of the ranks of the homology groups
+with coefficients in the system is `r` times the alternating count of the cells. -/
 theorem finsum_finrank_twistedHomology_of_finite_cwComplex [RelCWComplex.Finite C] {k : Type u}
-    [DivisionRing k] (L : LocalCoefficientSystem.{u, w, max w v} k (TopCat.of C))
+    [Ring k] [StrongRankCondition k] [HasRankNullity.{max w v} k]
+    (L : LocalCoefficientSystem.{u, w, max w v} k (TopCat.of C))
     [∀ x, Module.Finite k (L.obj x)] {r : ℕ} (hL : ∀ x, finrank k (L.obj x) = r) :
     ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank k (L.twistedHomology i) = r * cwEulerChar C := by
   simp_rw [finrank_twistedHomology_eq_complexBasePair C L]
@@ -300,9 +309,11 @@ theorem eventually_isZero_twistedHomology_of_finiteCWType
       (e.symm.twistedHomologyIso L n).symm
 
 /-- **Euler--Poincaré for homology with local coefficients of a space of finite CW type.** If
-every fibre of the local system `L` has dimension `r`, the alternating sum of the dimensions of the
+every fibre of the local system `L` of finitely generated modules has rank `r` over a ring
+satisfying the strong rank condition and rank--nullity, the alternating sum of the ranks of the
 homology groups of `X` with coefficients in `L` is `r` times the Euler characteristic of `X`. -/
-theorem finsum_finrank_twistedHomology_of_finiteCWType {k : Type u} [DivisionRing k]
+theorem finsum_finrank_twistedHomology_of_finiteCWType {k : Type u} [Ring k]
+    [StrongRankCondition k] [HasRankNullity.{max w v} k]
     (L : LocalCoefficientSystem.{u, w, max w v} k (TopCat.of X)) [∀ x, Module.Finite k (L.obj x)]
     {r : ℕ} (hL : ∀ x, finrank k (L.obj x) = r) :
     ∑ᶠ i : ℕ, (-1 : ℤ) ^ i * finrank k (L.twistedHomology i) = r * eulerChar X := by
