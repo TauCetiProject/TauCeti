@@ -92,9 +92,8 @@ theorem linearIndependent_schurPoly_of_card_le {σ : Type*} [Fintype σ] [IsCanc
         (fun h => hνξ (Subtype.ext h))
       rw [kostkaNumber_eq_zero_of_lt hlt, Nat.cast_zero, mul_zero]
     · rw [kostkaNumber_self, Nat.cast_one, mul_one]
-  change ∑ ν ∈ t, g ν * (kostkaNumber ν.val ξ.val : R) =
-      ∑ ν ∈ t, g' ν * (kostkaNumber ν.val ξ.val : R) at hcoeff
-  rw [htop g, htop g'] at hcoeff
+  have ht_eq : s.filter (fun ν => ¬g ν = g' ν) = t := by simp only [t, ne_eq]
+  rw [ht_eq, htop g, htop g'] at hcoeff
   exact hξne hcoeff
 
 /-- Over an additively cancellative commutative semiring, in an alphabet with at least `n` letters,
@@ -217,17 +216,25 @@ theorem linearIndependent_diagramSchurPoly [IsCancelAdd R] {N : ℕ} :
           (fun ν : YoungDiagram => ν.colLen 0 ≤ N)).symm)).trans
       (Equiv.subtypeEquiv YoungDiagram.equivPartition fun ν => by
         simp [YoungDiagram.equivPartition])
+  -- `fiberEquiv n` transports the degree-`n` slice of bounded-row Young diagrams to partitions of
+  -- `n` with at most `N` rows, preserving the underlying Young diagram.
+  have hfiber (n : ℕ) (μ : {μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} // μ.val.card = n}) :
+      YoungDiagram.ofPartition (fiberEquiv n μ).val = μ.val.val := by
+    simp [fiberEquiv, YoungDiagram.equivPartition]
   let f (n : ℕ) (μ : {μ : {μ : YoungDiagram // μ.colLen 0 ≤ N} // μ.val.card = n}) : V n :=
     ⟨diagramSchurPoly N R μ.val.val, (mem_homogeneousSubmodule _ _).mpr <| by
       have h := isHomogeneous_diagramSchurPoly (N := N) (R := R) (μ := μ.val.val)
       rwa [μ.property] at h⟩
   have hf (n : ℕ) : LinearIndependent R (f n) := by
-    have hli : LinearIndependent R ((V n).subtype ∘ f n) := by
-      rw [show (V n).subtype ∘ f n =
+    have hcomp :
+        (V n).subtype ∘ f n =
           (fun ν : {ν : n.Partition // (YoungDiagram.ofPartition ν).colLen 0 ≤ N} =>
-            diagramSchurPoly N R (YoungDiagram.ofPartition ν.val)) ∘ fiberEquiv n by
-        funext μ
-        simp [f, fiberEquiv, YoungDiagram.equivPartition]]
+            diagramSchurPoly N R (YoungDiagram.ofPartition ν.val)) ∘ fiberEquiv n := by
+      funext μ
+      dsimp only [Function.comp_apply, Submodule.subtype_apply, f]
+      rw [hfiber]
+    have hli : LinearIndependent R ((V n).subtype ∘ f n) := by
+      rw [hcomp]
       exact (linearIndependent_diagramSchurPoly_of_colLen_le
         (R := R) (n := n) (N := N)).comp (fiberEquiv n) (fiberEquiv n).injective
     exact hli.of_comp (V n).subtype
