@@ -29,8 +29,9 @@ identification `Rep.FiniteCyclicGroup.groupCohomologyEvenEquivTorsionBy` with
 ## Main results
 
 * `Rep.FiniteCyclicGroup.natCard_groupCohomologyTwoInv`,
-  `Rep.FiniteCyclicGroup.groupCohomologyTwoInvEquivZModTwo_groupCohomologyπEven`: cardinality and
-  evaluation of `H²(C₂, C_{2n}^{inv}) ≃+ ZMod 2`.
+  `Rep.FiniteCyclicGroup.groupCohomologyTwoInvEquivZModTwo_groupCohomologyπEven`,
+  `Rep.FiniteCyclicGroup.groupCohomologyTwoInvEquivZModTwo_symm_apply`: cardinality and
+  forward/inverse evaluation of `H²(C₂, C_{2n}^{inv}) ≃+ ZMod 2`.
 -/
 
 public section
@@ -97,6 +98,27 @@ theorem groupCohomologyTwoInvEquivZModTwo_groupCohomologyπEven (n : ℕ) [NeZer
   rw [groupCohomologyEvenEquivTorsionBy_groupCohomologyπEven,
     zmodTorsionByEquiv_symm_apply_eq_iff]
   simp [AddEquiv.additiveMultiplicative_apply, -Rep.toAdditive_apply]
+
+/-- Under `(groupCohomologyTwoInvEquivZModTwo n).symm`, a residue `x : ZMod 2` maps to the
+periodic-resolution class of the `1`-fixed element `(x.val * n : ℕ)` in `ZMod (2 * n)`. -/
+@[simp]
+theorem groupCohomologyTwoInvEquivZModTwo_symm_apply (n : ℕ) [NeZero n] (x : ZMod 2) :
+    (groupCohomologyTwoInvEquivZModTwo n).symm x =
+      groupCohomologyπEven
+        (Rep.ofMulDistribMulAction (Multiplicative (ZMod 2)) (Multiplicative (ZMod (2 * n))))
+        (Multiplicative.ofAdd (1 : ZMod 2)) Multiplicative.mem_zpowers_ofAdd_one 2 even_two
+        ⟨(Rep.toAdditive (M := Multiplicative (ZMod 2))
+              (G := Multiplicative (ZMod (2 * n)))).symm
+            (Additive.ofMul (Multiplicative.ofAdd ((x.val * n : ℕ) : ZMod (2 * n)))),
+          Rep.mem_ker_applyAsHom_sub_of_smul_eq_self (by
+            rw [invMulDistribMulAction_ofAdd_one_smul, ← ofAdd_neg]
+            congr 1
+            rw [neg_eq_iff_add_eq_zero]
+            norm_cast
+            have hmul : x.val * n + x.val * n = x.val * (2 * n) := by ring
+            rw [hmul, Nat.cast_mul, ZMod.natCast_self, mul_zero])⟩ := by
+  rw [AddEquiv.symm_apply_eq, eq_comm, groupCohomologyTwoInvEquivZModTwo_groupCohomologyπEven]
+  simp
 
 end Inversion
 

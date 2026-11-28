@@ -194,6 +194,7 @@ theorem _root_.GroupExtension.Section.factorSetFun_one_right (σ : S.Section)
 
 /-- Relabelling a section transforms its bare factor set by precomposing with `eG.symm` and
 postcomposing with `eM.symm`. -/
+@[simp]
 theorem _root_.GroupExtension.Section.factorSetFun_relabel {M' G' : Type*} [Group M'] [Group G']
     (σ : S.Section) (eM : M' ≃* M) (eG : G ≃* G') (g' h' : G') :
     factorSetFun (σ.relabel eM eG) (g', h') =

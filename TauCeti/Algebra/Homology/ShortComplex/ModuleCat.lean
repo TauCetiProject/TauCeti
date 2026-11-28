@@ -19,7 +19,9 @@ For a short complex `X₁ ⟶ X₂ ⟶ X₃` of modules, its homology is the ker
 modulo the range of the first.  The projection of Mathlib's explicit left homology data
 `S.moduleCatLeftHomologyData` from the kernel onto the homology is surjective, and identifies two
 elements exactly when their difference is in the range of the first map
-(`CategoryTheory.ShortComplex.moduleCatLeftHomologyData_π_hom_eq_iff`).  A cycle `c` gives the
+(`CategoryTheory.ShortComplex.moduleCatLeftHomologyData_π_hom_eq_iff`), while maps out of
+`S.homology` evaluate on quotient classes through `S.moduleCatCyclesIso.inv ≫ S.homologyπ`
+(`CategoryTheory.ShortComplex.moduleCatCyclesIso_inv_homologyπ_comp_apply`).  A cycle `c` gives the
 linear map `r ↦ [r • c]` into the homology (`CategoryTheory.ShortComplex.moduleCatCycleMap`), whose
 kernel consists of the `r` with `r • c` a boundary, and which is onto when every cycle differs
 from a multiple of `c` by a boundary.  When the third term is
@@ -196,6 +198,17 @@ theorem moduleCatCycleMap_surjective (c : LinearMap.ker S.g.hom)
   refine ⟨r, ?_⟩
   rw [moduleCatCycleMap_apply, ← (S.moduleCatLeftHomologyData_π_hom_eq_iff w (r • c)).2 ⟨b, hb⟩,
     hw, Iso.hom_inv_id_apply]
+
+/-- Evaluating a map out of `S.homology` on the quotient class of a cycle `x` factors through
+the canonical map `S.moduleCatCyclesIso.inv ≫ S.homologyπ` from
+`S.moduleCatLeftHomologyData.K`. -/
+lemma moduleCatCyclesIso_inv_homologyπ_comp_apply {H : ModuleCat.{v} R} (f : S.homology ⟶ H)
+    (x : S.moduleCatLeftHomologyData.K) :
+    (S.moduleCatCyclesIso.inv ≫ S.homologyπ ≫ f).hom x =
+      f.hom (S.moduleCatHomologyIso.inv.hom (Submodule.Quotient.mk x)) := by
+  rw [← Category.assoc, moduleCatCyclesIso_inv_π, Category.assoc, ModuleCat.hom_comp,
+    ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply,
+    moduleCatLeftHomologyData_π_hom, Submodule.mkQ_apply]
 
 end LeftHomologyData
 

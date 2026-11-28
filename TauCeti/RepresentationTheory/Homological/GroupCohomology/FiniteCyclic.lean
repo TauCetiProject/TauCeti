@@ -15,6 +15,7 @@ public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Log
 public import TauCeti.RepresentationTheory.Cyclic.Norm
 public import TauCeti.RepresentationTheory.Invariants
 import TauCeti.Algebra.BigOperators.Finset.Range
+import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.Data.Nat.Carry
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Functoriality
 import TauCeti.RepresentationTheory.Homological.GroupCohomology.Resolution
@@ -911,17 +912,6 @@ theorem groupCohomologyEvenEquivTorsionBy_groupCohomologyπEven (hord : Even (or
       ⟨x.val, (Rep.mem_ker_applyAsHom_sub_iff_of_ρ_eq_neg A g hneg x.val).1 x.property⟩ := by
   rw [← LinearEquiv.eq_symm_apply, groupCohomologyEvenEquivTorsionBy_symm_apply]
 
-/-- Evaluating a map out of `S.homology` on the quotient class of a cycle `x` factors through
-the canonical map `S.moduleCatCyclesIso.inv ≫ S.homologyπ` from `S.moduleCatLeftHomologyData.K`. -/
-private theorem homologyπ_moduleCatCyclesIso_inv_eq {k : Type u} [CommRing k]
-    (S : ShortComplex (ModuleCat.{u} k)) {H : ModuleCat.{u} k} (f : S.homology ⟶ H)
-    (x : S.moduleCatLeftHomologyData.K) :
-    (S.moduleCatCyclesIso.inv ≫ S.homologyπ ≫ f).hom x =
-      f.hom (S.moduleCatHomologyIso.inv.hom (Submodule.Quotient.mk x)) := by
-  rw [← Category.assoc, ShortComplex.moduleCatCyclesIso_inv_π, Category.assoc,
-    ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply,
-    ShortComplex.moduleCatLeftHomologyData_π_hom, Submodule.mkQ_apply]
-
 /-- `simp`-normal form of `groupCohomologyEvenEquivTorsionBy_groupCohomologyπEven`. -/
 @[simp]
 theorem groupCohomologyEvenEquivTorsionBy_groupCohomologyIsoEven_inv (hord : Even (orderOf g))
@@ -946,7 +936,7 @@ theorem groupCohomologyEvenEquivTorsionBy_groupCohomologyIsoEven_inv (hord : Eve
             (Submodule.Quotient.mk x))) =
       ⟨x.val, (Rep.mem_ker_applyAsHom_sub_iff_of_ρ_eq_neg A g hneg x.val).1 x.property⟩ :=
   (congrArg (groupCohomologyEvenEquivTorsionBy A g hg hord hneg i hi)
-    (homologyπ_moduleCatCyclesIso_inv_eq (normHomCompSub A g)
+    ((normHomCompSub A g).moduleCatCyclesIso_inv_homologyπ_comp_apply
       (groupCohomologyIsoEven A g hg i hi).inv x).symm).trans
     (groupCohomologyEvenEquivTorsionBy_groupCohomologyπEven A g hg hord hneg i hi x)
 
@@ -1019,7 +1009,7 @@ theorem groupCohomologyOddEquivQuotSMulTop_groupCohomologyIsoOdd_inv (hord : Eve
             (Submodule.Quotient.mk x))) =
       Submodule.Quotient.mk (x : A) :=
   (congrArg (groupCohomologyOddEquivQuotSMulTop A g hg hord hneg i hi)
-    (homologyπ_moduleCatCyclesIso_inv_eq (subCompNormHom A g)
+    ((subCompNormHom A g).moduleCatCyclesIso_inv_homologyπ_comp_apply
       (groupCohomologyIsoOdd A g hg i hi).inv x).symm).trans
     (groupCohomologyOddEquivQuotSMulTop_groupCohomologyπOdd A g hg hord hneg i hi x)
 
