@@ -458,6 +458,53 @@ theorem mem_washnitzerAlgebra_iff_exists_pow_eq_norm {f : MvPowerSeries σ K} :
   rw [hpow]
   exact hm.le
 
+omit [IsUltrametricDist K] in
+/-- The series `∑ₖ c^⌊√k⌋ Xᵢᵏ` for `‖c‖ < 1` is restricted at unit radius. -/
+private theorem isRestricted_one_sqrtSeries [DecidableEq σ] {c : K} (hc1 : ‖c‖ < 1) (i : σ)
+    {f : MvPowerSeries σ K}
+    (hcoeff : ∀ t, coeff t f = if t = Finsupp.single i (t i) then c ^ Nat.sqrt (t i) else 0) :
+    IsRestricted (fun _ : σ ↦ (1 : ℝ)) f := by
+  refine isRestricted_one_iff.2 (NormedAddGroup.tendsto_nhds_zero.2 fun ε hε ↦ ?_)
+  obtain ⟨n, hn⟩ := (tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg c) hc1).eventually
+    (gt_mem_nhds hε) |>.exists
+  -- The coefficients of norm at least `ε` sit at the exponents `k • eᵢ` with `k < n²`.
+  refine eventually_cofinite.2 (((Set.finite_Iio (n ^ 2)).image
+    fun k ↦ Finsupp.single i k).subset fun t ht ↦ ?_)
+  simp only [Set.mem_ofPred_eq, not_lt, norm_norm, hcoeff] at ht
+  split_ifs at ht with h
+  · refine ⟨t i, Set.mem_Iio.2 (not_le.1 fun hk ↦ ?_), h.symm⟩
+    rw [norm_pow] at ht
+    exact (pow_le_pow_of_le_one (norm_nonneg c) hc1.le (Nat.le_sqrt'.2 hk)).not_gt
+      (hn.trans_le ht)
+  · rw [norm_zero] at ht
+    exact absurd ht (not_le.2 hε)
+
+/-- The series `∑ₖ c^⌊√k⌋ Xᵢᵏ` for `0 < ‖c‖ < 1` is not overconvergent: its weighted coefficients at
+radius `ρ > 1` grow along `k = m²` like `(‖c‖ ρ^m)^m`. -/
+private theorem sqrtSeries_notMem_washnitzerAlgebra [DecidableEq σ] {c : K} (hc0 : 0 < ‖c‖)
+    (i : σ) {f : MvPowerSeries σ K}
+    (hcoeff : ∀ t, coeff t f = if t = Finsupp.single i (t i) then c ^ Nat.sqrt (t i) else 0) :
+    f ∉ washnitzerAlgebra σ K := by
+  rintro ⟨ρ, hρ, hf⟩
+  have hinj : Function.Injective fun m : ℕ ↦ Finsupp.single i (m ^ 2) :=
+    (Finsupp.single_injective i).comp (Nat.pow_left_injective two_ne_zero)
+  have hlim := (isRestricted_const_iff.1 hf).comp hinj.tendsto_cofinite
+  rw [Nat.cofinite_eq_atTop] at hlim
+  obtain ⟨M, hM⟩ := pow_unbounded_of_one_lt ‖c‖⁻¹ hρ
+  -- Along `k = m²` the weighted coefficient norm is `(‖c‖ ρ^m)^m ≥ 1` once `m ≥ M`.
+  have hge : ∀ m ≥ M, 1 ≤ ‖coeff (Finsupp.single i (m ^ 2)) f‖ * ρ ^ (m ^ 2) := by
+    intro m hm
+    have hcm : 1 ≤ ‖c‖ * ρ ^ m := by
+      rw [← inv_mul_le_iff₀ hc0, mul_one]
+      exact hM.le.trans (pow_le_pow_right₀ hρ.le hm)
+    simp only [hcoeff, Finsupp.single_eq_same, ↓reduceIte, Nat.sqrt_eq', norm_pow]
+    rw [sq, pow_mul, ← mul_pow]
+    exact one_le_pow₀ hcm
+  obtain ⟨m, hm1, hm2⟩ :=
+    ((hlim.eventually (gt_mem_nhds one_pos)).and (eventually_ge_atTop M)).exists
+  simp only [Function.comp_apply, Finsupp.degree_single] at hm1
+  exact (hge m hm2).not_gt hm1
+
 /-- A unit-radius restricted series which is not overconvergent: `∑ₖ c^⌊√k⌋ Xᵢᵏ` for any
 `0 < ‖c‖ < 1`, whose weighted coefficients at radius `ρ > 1` grow along `k = m²` like
 `(‖c‖ ρ^m)^m`. -/
@@ -472,40 +519,8 @@ private theorem exists_isRestricted_one_notMem_washnitzerAlgebra [Nonempty σ] :
   have hcoeff (t : σ →₀ ℕ) :
       coeff t f = if t = Finsupp.single i (t i) then c ^ Nat.sqrt (t i) else 0 :=
     coeff_apply f t
-  refine ⟨f, isRestricted_one_iff.2 ?_, ?_⟩
-  · refine NormedAddGroup.tendsto_nhds_zero.2 fun ε hε ↦ ?_
-    obtain ⟨n, hn⟩ := (tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg c) hc1).eventually
-      (gt_mem_nhds hε) |>.exists
-    -- The coefficients of norm at least `ε` sit at the exponents `k • eᵢ` with `k < n²`.
-    refine eventually_cofinite.2 (((Set.finite_Iio (n ^ 2)).image
-      fun k ↦ Finsupp.single i k).subset fun t ht ↦ ?_)
-    simp only [Set.mem_ofPred_eq, not_lt, norm_norm, hcoeff] at ht
-    split_ifs at ht with h
-    · refine ⟨t i, Set.mem_Iio.2 (not_le.1 fun hk ↦ ?_), h.symm⟩
-      rw [norm_pow] at ht
-      exact (pow_le_pow_of_le_one (norm_nonneg c) hc1.le (Nat.le_sqrt'.2 hk)).not_gt
-        (hn.trans_le ht)
-    · rw [norm_zero] at ht
-      exact absurd ht (not_le.2 hε)
-  · rintro ⟨ρ, hρ, hf⟩
-    have hinj : Function.Injective fun m : ℕ ↦ Finsupp.single i (m ^ 2) :=
-      (Finsupp.single_injective i).comp (Nat.pow_left_injective two_ne_zero)
-    have hlim := (isRestricted_const_iff.1 hf).comp hinj.tendsto_cofinite
-    rw [Nat.cofinite_eq_atTop] at hlim
-    obtain ⟨M, hM⟩ := pow_unbounded_of_one_lt ‖c‖⁻¹ hρ
-    -- Along `k = m²` the weighted coefficient norm is `(‖c‖ ρ^m)^m ≥ 1` once `m ≥ M`.
-    have hge : ∀ m ≥ M, 1 ≤ ‖coeff (Finsupp.single i (m ^ 2)) f‖ * ρ ^ (m ^ 2) := by
-      intro m hm
-      have hcm : 1 ≤ ‖c‖ * ρ ^ m := by
-        rw [← inv_mul_le_iff₀ hc0, mul_one]
-        exact hM.le.trans (pow_le_pow_right₀ hρ.le hm)
-      simp only [hcoeff, Finsupp.single_eq_same, ↓reduceIte, Nat.sqrt_eq', norm_pow]
-      rw [sq, pow_mul, ← mul_pow]
-      exact one_le_pow₀ hcm
-    obtain ⟨m, hm1, hm2⟩ :=
-      ((hlim.eventually (gt_mem_nhds one_pos)).and (eventually_ge_atTop M)).exists
-    simp only [Function.comp_apply, Finsupp.degree_single] at hm1
-    exact (hge m hm2).not_gt hm1
+  exact ⟨f, isRestricted_one_sqrtSeries hc1 i hcoeff,
+    sqrtSeries_notMem_washnitzerAlgebra hc0 i hcoeff⟩
 
 /-- Over a nontrivially normed field, the Monsky–Washnitzer algebra in at least one variable is
 a proper subring of the Tate algebra. -/
@@ -552,27 +567,18 @@ theorem isUnit_washnitzerAlgebra_iff (f : washnitzerAlgebra σ K) :
   have hmem : (f : MvPowerSeries σ K) - C a ∈ washnitzerAlgebra σ K :=
     sub_mem f.property (C_mem_washnitzerAlgebra a)
   obtain ⟨ρ, hρ, hsubρ, hρt⟩ := exists_isRestricted_forall_norm_coeff_mul_pow_lt hmem hsub
-  obtain ⟨ρ', hρ', hf⟩ := f.property
-  -- At the radius `min ρ ρ' > 1`, `f` is a unit of the restricted series by the Tate-algebra
-  -- unit criterion, and its inverse there is again overconvergent.
-  have hm1 : 1 < min ρ ρ' := lt_min hρ hρ'
-  have : Fact (0 < min ρ ρ') := ⟨zero_lt_one.trans hm1⟩
-  let g : IsRestricted.subring (R := K) (fun _ : σ ↦ min ρ ρ') :=
-    ⟨f, (isRestricted_min_of_one_lt hρ hρ' hsubρ hf).2⟩
+  have : Fact (0 < ρ) := ⟨zero_lt_one.trans hρ⟩
+  have hfr : IsRestricted (fun _ : σ ↦ ρ) (f : MvPowerSeries σ K) := by
+    simpa using hsubρ.add (isRestricted_C (fun _ : σ ↦ ρ) a)
+  let g : IsRestricted.subring (R := K) (fun _ : σ ↦ ρ) := ⟨f, hfr⟩
   have hg : IsUnit g := by
     refine (isUnit_iff_constantCoeff_ne_zero_and_norm_coeff_mul_prod_lt g).2
       ⟨h0, fun t ht ↦ ?_⟩
-    have := hρt t
-    simp only [map_sub, coeff_C, ht, ↓reduceIte, sub_zero] at this
-    rw [Finsupp.prod_pow_eq_pow_degree]
-    exact (mul_le_mul_of_nonneg_left
-      (pow_le_pow_left₀ (zero_lt_one.trans hm1).le (min_le_left _ _) _)
-      (norm_nonneg _)).trans_lt this
-  obtain ⟨u, hu⟩ := hg
-  let v : IsRestricted.subring (R := K) (fun _ : σ ↦ min ρ ρ') := ↑u⁻¹
-  refine ⟨⟨f, ⟨v, min ρ ρ', hm1, v.property⟩, ?_, ?_⟩, rfl⟩
-  · exact Subtype.ext (by simpa [hu, g, v] using congrArg Subtype.val u.mul_inv)
-  · exact Subtype.ext (by simpa [hu, g, v] using congrArg Subtype.val u.inv_mul)
+    simpa only [map_sub, coeff_C, ht, ↓reduceIte, sub_zero,
+      Finsupp.prod_pow_eq_pow_degree] using hρt t
+  have hfg : washnitzerAlgebra.ofRestricted hρ (fun _ ↦ le_rfl) g = f :=
+    Subtype.ext (washnitzerAlgebra.coe_ofRestricted _ _ g)
+  exact hfg ▸ hg.map _
 
 /-- An overconvergent series is a unit of the Tate algebra iff it is a unit of the
 Monsky–Washnitzer algebra: the Tate-algebra inverse of an overconvergent series, when it exists, is

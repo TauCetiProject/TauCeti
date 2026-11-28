@@ -158,7 +158,7 @@ private theorem lift_preparation {g : W} {s : ℕ} {ρ r : ℝ} [Fact (0 < ρ)]
   let Ω := ω.map b
   refine ⟨E, Ω, ?_, ?_, ?_⟩
   · exact (he.map (restrictedOptionEquiv (c := c)).symm.toRingHom).map a
-  · exact ⟨(hm.monic.natDegree_map b).trans hm.natDegree_eq, hm.monic.map b⟩
+  · exact hm.map b
   refine toTate_injective (restrictedOptionEquiv.injective (Subtype.ext ?_))
   rw [restrictedOptionEquiv_toTate_mul_polynomialToOption]
   -- Compare in formal series, where coefficient inclusions do not involve norms.
