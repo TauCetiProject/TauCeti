@@ -11,34 +11,29 @@ import TauCeti.Topology.Algebra.Ring.Ideal
 /-!
 # Canonical transition maps for simple Laurent covers
 
-This file constructs the unique continuous `A`-algebra transition homomorphisms from models of the
-two pieces `A⟨{f, 1}/1⟩` and `A⟨{1}/f⟩` of a simple Laurent cover to a model of their overlap
-`A⟨{f², 1}/f⟩` (`IsRationalCompletion.existsUnique_continuous_algHom_laurentLeft` and
-`IsRationalCompletion.existsUnique_continuous_algHom_laurentRight`), together with the canonical
-`ratLoc` maps `laurentLeftAlgHom` and `laurentRightAlgHom`, their computation rules on dense
-images of the uncompleted localisations, and the induced overlap algebra structures and scalar
-towers.
+This file constructs the unique continuous `A`-algebra transition homomorphisms from models of
+`A⟨{f, 1}/1⟩` and `A⟨{1}/f⟩` to a model of `A⟨{f², 1}/f⟩`
+(`IsRationalCompletion.existsUnique_continuous_algHom_laurentLeft` and
+`IsRationalCompletion.existsUnique_continuous_algHom_laurentRight`), exposes the named transition
+maps `IsRationalCompletion.laurentLeftAlgHom` and `laurentRightAlgHom` with their continuity,
+algebra, and scalar-tower API, and specializes them to the canonical `ratLoc` models.
 
 ## Main definitions
 
-* `TauCeti.Huber.laurentLeftAlgHom` and `TauCeti.Huber.laurentRightAlgHom`: the canonical
-  continuous `A`-algebra transition maps `A⟨{f, 1}/1⟩ →ₐ[A] A⟨{f², 1}/f⟩` and
-  `A⟨{1}/f⟩ →ₐ[A] A⟨{f², 1}/f⟩`.
-* `TauCeti.Huber.laurentLeftAlgebra` and `TauCeti.Huber.laurentRightAlgebra`: the overlap algebra
-  structures on `A⟨{f², 1}/f⟩` induced by `laurentLeftAlgHom` and `laurentRightAlgHom`
-  (registered as `scoped[TauCeti.Huber.Laurent]` instances).
+* `TauCeti.Huber.IsRationalCompletion.laurentLeftAlgHom`, `laurentRightAlgHom`,
+  `laurentLeftAlgebra`, and `laurentRightAlgebra`: model transition maps and overlap algebras.
+* `TauCeti.Huber.laurentLeftAlgHom`, `laurentRightAlgHom`, `laurentLeftAlgebra`, and
+  `laurentRightAlgebra`: specializations to `ratLoc` (with `scoped[TauCeti.Huber.Laurent]`
+  instances).
 
 ## Main results
 
-* `TauCeti.Huber.IsRationalCompletion.existsUnique_continuous_algHom_laurentLeft` and
-  `existsUnique_continuous_algHom_laurentRight`: unique continuous transition maps from models of
-  `A⟨{f, 1}/1⟩` and `A⟨{1}/f⟩` to a model of `A⟨{f², 1}/f⟩`.
-* `TauCeti.Huber.continuous_laurentLeftAlgHom` and `continuous_laurentRightAlgHom`: continuity of
-  the canonical transition maps.
-* `TauCeti.Huber.laurentLeftAlgHom_coe` and `laurentRightAlgHom_coe`: computation rules on dense
-  images of the uncompleted localisations.
-* `TauCeti.Huber.isScalarTower_laurentLeft` and `isScalarTower_laurentRight`: scalar tower
-  compatibility of `laurentLeftAlgebra` and `laurentRightAlgebra` over `A`.
+* `TauCeti.Huber.IsRationalCompletion.existsUnique_continuous_algHom_laurentLeft`,
+  `existsUnique_continuous_algHom_laurentRight`, `continuous_laurentLeftAlgHom`,
+  `continuous_laurentRightAlgHom`, `isScalarTower_laurentLeft`, and `isScalarTower_laurentRight`.
+* `TauCeti.Huber.continuous_laurentLeftAlgHom`, `continuous_laurentRightAlgHom`,
+  `laurentLeftAlgHom_coe`, `laurentRightAlgHom_coe`, `isScalarTower_laurentLeft`, and
+  `isScalarTower_laurentRight`.
 -/
 
 public section
@@ -53,52 +48,121 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [De
   {P : PairOfDefinition A} {f : A} {B₁₂ : Type*} [CommRing B₁₂] [TopologicalSpace B₁₂]
   [Algebra A B₁₂] {hT₁₂ : IsOpen (Ideal.span (({f * f, 1} : Finset A) : Set A) : Set A)}
 
-/-- There is a unique continuous `A`-algebra transition map `B₁ →ₐ[A] B₁₂` from any model `B₁` of
-`A⟨{f, 1}/1⟩` to any model `B₁₂` of `A⟨{f², 1}/f⟩`: in `B₁₂`, `f = f² / f` is a distinguished
-fraction and `1 / 1 = 1`. -/
-theorem IsRationalCompletion.existsUnique_continuous_algHom_laurentLeft {B₁ : Type*} [CommRing B₁]
-    [TopologicalSpace B₁] [Algebra A B₁]
-    {hT₁ : IsOpen (Ideal.span (({f, 1} : Finset A) : Set A) : Set A)}
+section Models
+
+variable {B₁ B₂ : Type*} [CommRing B₁] [TopologicalSpace B₁] [Algebra A B₁]
+  [CommRing B₂] [TopologicalSpace B₂] [Algebra A B₂]
+  {hT₁ : IsOpen (Ideal.span (({f, 1} : Finset A) : Set A) : Set A)}
+  {hT₂ : IsOpen (Ideal.span (({1} : Finset A) : Set A) : Set A)}
+
+/-- Unique continuous `A`-algebra map `B₁ →ₐ[A] B₁₂` from a model of `A⟨{f, 1}/1⟩` to a model of
+`A⟨{f², 1}/f⟩`. -/
+theorem IsRationalCompletion.existsUnique_continuous_algHom_laurentLeft
     (h₁ : IsRationalCompletion P {f, 1} 1 hT₁ B₁)
-    (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ B₁₂) :
-    ∃! ρ₁ : B₁ →ₐ[A] B₁₂, Continuous ρ₁ :=
+    (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ B₁₂) : ∃! ρ₁ : B₁ →ₐ[A] B₁₂, Continuous ρ₁ :=
   h₁.existsUnique_continuous_algHom_of_refines h₁₂ (one_mul f).symm fun t ht ↦
     (Finset.mem_insert.mp ht).elim (fun h ↦ Or.inr (by simp [h]))
       (fun h ↦ Or.inl (Finset.mem_singleton.mp h))
 
-/-- There is a unique continuous `A`-algebra transition map `B₂ →ₐ[A] B₁₂` from any model `B₂` of
-`A⟨{1}/f⟩` to any model `B₁₂` of `A⟨{f², 1}/f⟩`. -/
-theorem IsRationalCompletion.existsUnique_continuous_algHom_laurentRight {B₂ : Type*} [CommRing B₂]
-    [TopologicalSpace B₂] [Algebra A B₂]
-    {hT₂ : IsOpen (Ideal.span (({1} : Finset A) : Set A) : Set A)}
+/-- Unique continuous `A`-algebra map `B₂ →ₐ[A] B₁₂` from a model of `A⟨{1}/f⟩` to a model of
+`A⟨{f², 1}/f⟩`. -/
+theorem IsRationalCompletion.existsUnique_continuous_algHom_laurentRight
     (h₂ : IsRationalCompletion P {1} f hT₂ B₂)
-    (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ B₁₂) :
-    ∃! ρ₂ : B₂ →ₐ[A] B₁₂, Continuous ρ₂ :=
+    (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ B₁₂) : ∃! ρ₂ : B₂ →ₐ[A] B₁₂, Continuous ρ₂ :=
   h₂.existsUnique_continuous_algHom_of_refines h₁₂ (mul_one f).symm fun t ht ↦
     Or.inr (by rw [Finset.mem_singleton.mp ht]; simp)
 
-/-- The canonical continuous `A`-algebra transition map `A⟨{f, 1}/1⟩ →ₐ[A] A⟨{f², 1}/f⟩` between
-the canonical `ratLoc` models of the first Laurent piece and the overlap. -/
+/-- Canonical continuous `A`-algebra map `B₁ →ₐ[A] B₁₂` from a model of `A⟨{f, 1}/1⟩` to a model
+of `A⟨{f², 1}/f⟩`. -/
+noncomputable def IsRationalCompletion.laurentLeftAlgHom
+    (h₁ : IsRationalCompletion P {f, 1} 1 hT₁ B₁)
+    (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ B₁₂) : B₁ →ₐ[A] B₁₂ :=
+  (h₁.existsUnique_continuous_algHom_laurentLeft h₁₂).choose
+
+/-- `IsRationalCompletion.laurentLeftAlgHom` is continuous. -/
+theorem IsRationalCompletion.continuous_laurentLeftAlgHom
+    (h₁ : IsRationalCompletion P {f, 1} 1 hT₁ B₁)
+    (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ B₁₂) : Continuous (h₁.laurentLeftAlgHom h₁₂) :=
+  (h₁.existsUnique_continuous_algHom_laurentLeft h₁₂).choose_spec.1
+
+/-- Canonical `B₁`-algebra structure on `B₁₂` induced by
+`IsRationalCompletion.laurentLeftAlgHom`. -/
+@[instance_reducible] noncomputable def IsRationalCompletion.laurentLeftAlgebra
+    (h₁ : IsRationalCompletion P {f, 1} 1 hT₁ B₁)
+    (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ B₁₂) : Algebra B₁ B₁₂ :=
+  (h₁.laurentLeftAlgHom h₁₂).toRingHom.toAlgebra
+
+/-- The structure map of `IsRationalCompletion.laurentLeftAlgebra` is `laurentLeftAlgHom`. -/
+theorem IsRationalCompletion.algebraMap_laurentLeftAlgebra
+    (h₁ : IsRationalCompletion P {f, 1} 1 hT₁ B₁)
+    (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ B₁₂) :
+    letI := h₁.laurentLeftAlgebra h₁₂
+    algebraMap B₁ B₁₂ = (h₁.laurentLeftAlgHom h₁₂).toRingHom := by rfl
+
+/-- `IsRationalCompletion.laurentLeftAlgebra` makes `A → B₁ → B₁₂` a scalar tower. -/
+theorem IsRationalCompletion.isScalarTower_laurentLeft
+    (h₁ : IsRationalCompletion P {f, 1} 1 hT₁ B₁)
+    (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ B₁₂) :
+    letI := h₁.laurentLeftAlgebra h₁₂; IsScalarTower A B₁ B₁₂ :=
+  let _ := h₁.laurentLeftAlgebra h₁₂
+  IsScalarTower.of_algebraMap_eq fun r ↦ ((h₁.laurentLeftAlgHom h₁₂).commutes r).symm
+
+/-- Canonical continuous `A`-algebra map `B₂ →ₐ[A] B₁₂` from a model of `A⟨{1}/f⟩` to a model of
+`A⟨{f², 1}/f⟩`. -/
+noncomputable def IsRationalCompletion.laurentRightAlgHom
+    (h₂ : IsRationalCompletion P {1} f hT₂ B₂)
+    (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ B₁₂) : B₂ →ₐ[A] B₁₂ :=
+  (h₂.existsUnique_continuous_algHom_laurentRight h₁₂).choose
+
+/-- `IsRationalCompletion.laurentRightAlgHom` is continuous. -/
+theorem IsRationalCompletion.continuous_laurentRightAlgHom
+    (h₂ : IsRationalCompletion P {1} f hT₂ B₂)
+    (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ B₁₂) :
+    Continuous (h₂.laurentRightAlgHom h₁₂) :=
+  (h₂.existsUnique_continuous_algHom_laurentRight h₁₂).choose_spec.1
+
+/-- Canonical `B₂`-algebra structure on `B₁₂` induced by
+`IsRationalCompletion.laurentRightAlgHom`. -/
+@[instance_reducible] noncomputable def IsRationalCompletion.laurentRightAlgebra
+    (h₂ : IsRationalCompletion P {1} f hT₂ B₂)
+    (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ B₁₂) : Algebra B₂ B₁₂ :=
+  (h₂.laurentRightAlgHom h₁₂).toRingHom.toAlgebra
+
+/-- The structure map of `IsRationalCompletion.laurentRightAlgebra` is `laurentRightAlgHom`. -/
+theorem IsRationalCompletion.algebraMap_laurentRightAlgebra
+    (h₂ : IsRationalCompletion P {1} f hT₂ B₂)
+    (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ B₁₂) :
+    letI := h₂.laurentRightAlgebra h₁₂
+    algebraMap B₂ B₁₂ = (h₂.laurentRightAlgHom h₁₂).toRingHom := by rfl
+
+/-- `IsRationalCompletion.laurentRightAlgebra` makes `A → B₂ → B₁₂` a scalar tower. -/
+theorem IsRationalCompletion.isScalarTower_laurentRight
+    (h₂ : IsRationalCompletion P {1} f hT₂ B₂)
+    (h₁₂ : IsRationalCompletion P {f * f, 1} f hT₁₂ B₁₂) :
+    letI := h₂.laurentRightAlgebra h₁₂; IsScalarTower A B₂ B₁₂ :=
+  let _ := h₂.laurentRightAlgebra h₁₂
+  IsScalarTower.of_algebraMap_eq fun r ↦ ((h₂.laurentRightAlgHom h₁₂).commutes r).symm
+
+end Models
+
+/-- Canonical continuous `A`-algebra transition map `A⟨{f, 1}/1⟩ →ₐ[A] A⟨{f², 1}/f⟩` between
+`ratLoc` models. -/
 noncomputable def laurentLeftAlgHom (P : PairOfDefinition A) (f : A)
     {hden₁ : P.HasDenominatorPower ({f, 1} : Finset A) 1 (Localization.Away (1 : A))}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
     ratLoc P {f, 1} 1 hden₁ →ₐ[A] ratLoc P {f * f, 1} f hden₁₂ :=
-  ((isRationalCompletion_ratLoc P {f, 1} 1
-      (isOpen_span_of_one_mem (by simp))).existsUnique_continuous_algHom_laurentLeft
-    (isRationalCompletion_ratLoc P {f * f, 1} f (isOpen_span_of_one_mem (by simp)))).choose
+  (isRationalCompletion_ratLoc P {f, 1} 1 (isOpen_span_of_one_mem (by simp))).laurentLeftAlgHom
+    (isRationalCompletion_ratLoc P {f * f, 1} f (isOpen_span_of_one_mem (by simp)))
 
 /-- `laurentLeftAlgHom` is continuous. -/
 theorem continuous_laurentLeftAlgHom (P : PairOfDefinition A) (f : A)
     {hden₁ : P.HasDenominatorPower ({f, 1} : Finset A) 1 (Localization.Away (1 : A))}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
     Continuous (laurentLeftAlgHom P f (hden₁ := hden₁) (hden₁₂ := hden₁₂)) :=
-  ((isRationalCompletion_ratLoc P {f, 1} 1
-      (isOpen_span_of_one_mem (by simp))).existsUnique_continuous_algHom_laurentLeft
-    (isRationalCompletion_ratLoc P {f * f, 1} f
-      (isOpen_span_of_one_mem (by simp)))).choose_spec.1
+  (isRationalCompletion_ratLoc P {f, 1} 1
+    (isOpen_span_of_one_mem (by simp))).continuous_laurentLeftAlgHom _
 
-/-- On the dense image of `A₁`, `laurentLeftAlgHom` acts by the localisation map sending `1` to
-`f / f`. -/
+/-- On the dense image of `A₁`, `laurentLeftAlgHom` sends `1` to `f / f`. -/
 @[simp] theorem laurentLeftAlgHom_coe (P : PairOfDefinition A) (f : A)
     {hden₁ : P.HasDenominatorPower ({f, 1} : Finset A) 1 (Localization.Away (1 : A))}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)}
@@ -110,43 +174,37 @@ theorem continuous_laurentLeftAlgHom (P : PairOfDefinition A) (f : A)
         (P.locUniformSpace ({f * f, 1} : Finset A) f (Localization.Away f) hden₁₂)
         (IsLocalization.Away.lift (1 : A)
           (IsLocalization.Away.isUnit_of_dvd f ⟨f, (one_mul f).symm⟩) x) := by
-  let _ := P.locUniformSpace _ 1 _ hden₁
-  have _ := P.isUniformAddGroup_locUniformSpace _ 1 _ hden₁
-  have _ := P.isTopologicalRing_locUniformSpace _ 1 _ hden₁
-  let _ := P.locUniformSpace _ f _ hden₁₂
+  let _ := P.locUniformSpace _ 1 _ hden₁; have _ := P.isUniformAddGroup_locUniformSpace _ 1 _ hden₁
+  have _ := P.isTopologicalRing_locUniformSpace _ 1 _ hden₁; let _ := P.locUniformSpace _ f _ hden₁₂
   have _ := P.isUniformAddGroup_locUniformSpace _ f _ hden₁₂
   have _ := P.isTopologicalRing_locUniformSpace _ f _ hden₁₂
   have h : (laurentLeftAlgHom P f (hden₁ := hden₁) (hden₁₂ := hden₁₂)).toRingHom.comp
-      UniformSpace.Completion.coeRingHom = UniformSpace.Completion.coeRingHom.comp
-      (IsLocalization.Away.lift (1 : A)
+      UniformSpace.Completion.coeRingHom =
+      UniformSpace.Completion.coeRingHom.comp (IsLocalization.Away.lift (1 : A)
         (IsLocalization.Away.isUnit_of_dvd f ⟨f, (one_mul f).symm⟩)) := by
     refine IsLocalization.ringHom_ext (Submonoid.powers (1 : A)) (RingHom.ext fun a ↦ ?_)
     simp only [RingHom.coe_comp, Function.comp_apply, UniformSpace.Completion.coe_coeRingHom,
       AlgHom.toRingHom_eq_coe, RingHom.coe_coe, IsLocalization.Away.lift_eq]
-    rw [← P.toCompletionLoc_apply ({f, 1} : Finset A) 1 (Localization.Away (1 : A)) hden₁ a,
-      ← algebraMap_ratLoc, (laurentLeftAlgHom P f).commutes a, algebraMap_ratLoc,
-      P.toCompletionLoc_apply]
+    rw [← P.toCompletionLoc_apply ({f, 1} : Finset A) 1 _ hden₁ a, ← algebraMap_ratLoc,
+      (laurentLeftAlgHom P f).commutes a, algebraMap_ratLoc, P.toCompletionLoc_apply]
   exact RingHom.congr_fun h x
 
-/-- The canonical continuous `A`-algebra transition map `A⟨{1}/f⟩ →ₐ[A] A⟨{f², 1}/f⟩` between
-the canonical `ratLoc` models of the second Laurent piece and the overlap. -/
+/-- Canonical continuous `A`-algebra transition map `A⟨{1}/f⟩ →ₐ[A] A⟨{f², 1}/f⟩` between `ratLoc`
+models. -/
 noncomputable def laurentRightAlgHom (P : PairOfDefinition A) (f : A)
     {hden₂ : P.HasDenominatorPower ({1} : Finset A) f (Localization.Away f)}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
     ratLoc P {1} f hden₂ →ₐ[A] ratLoc P {f * f, 1} f hden₁₂ :=
-  ((isRationalCompletion_ratLoc P {1} f
-      (isOpen_span_of_one_mem (by simp))).existsUnique_continuous_algHom_laurentRight
-    (isRationalCompletion_ratLoc P {f * f, 1} f (isOpen_span_of_one_mem (by simp)))).choose
+  (isRationalCompletion_ratLoc P {1} f (isOpen_span_of_one_mem (by simp))).laurentRightAlgHom
+    (isRationalCompletion_ratLoc P {f * f, 1} f (isOpen_span_of_one_mem (by simp)))
 
 /-- `laurentRightAlgHom` is continuous. -/
 theorem continuous_laurentRightAlgHom (P : PairOfDefinition A) (f : A)
     {hden₂ : P.HasDenominatorPower ({1} : Finset A) f (Localization.Away f)}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
     Continuous (laurentRightAlgHom P f (hden₂ := hden₂) (hden₁₂ := hden₁₂)) :=
-  ((isRationalCompletion_ratLoc P {1} f
-      (isOpen_span_of_one_mem (by simp))).existsUnique_continuous_algHom_laurentRight
-    (isRationalCompletion_ratLoc P {f * f, 1} f
-      (isOpen_span_of_one_mem (by simp)))).choose_spec.1
+  (isRationalCompletion_ratLoc P {1} f
+    (isOpen_span_of_one_mem (by simp))).continuous_laurentRightAlgHom _
 
 /-- On the dense image of `A_f`, `laurentRightAlgHom` fixes each fraction elementwise. -/
 @[simp] theorem laurentRightAlgHom_coe (P : PairOfDefinition A) (f : A)
@@ -169,41 +227,35 @@ theorem continuous_laurentRightAlgHom (P : PairOfDefinition A) (f : A)
   have h : (laurentRightAlgHom P f (hden₂ := hden₂) (hden₁₂ := hden₁₂)).toRingHom.comp c₂ =
       c₁₂ := by
     refine IsLocalization.ringHom_ext (Submonoid.powers f) (RingHom.ext fun a ↦ ?_)
-    have hc₂ : c₂ (algebraMap A (Localization.Away f) a) = algebraMap A (ratLoc P {1} f hden₂) a :=
+    have hc₂ : c₂ (algebraMap A _ a) = algebraMap A (ratLoc P {1} f hden₂) a :=
       (P.toCompletionLoc_apply _ f _ hden₂ a).symm.trans
         (RingHom.congr_fun (algebraMap_ratLoc ..) a).symm
-    have hc₁₂ : c₁₂ (algebraMap A (Localization.Away f) a) =
-        algebraMap A (ratLoc P {f * f, 1} f hden₁₂) a :=
+    have hc₁₂ : c₁₂ (algebraMap A _ a) = algebraMap A (ratLoc P {f * f, 1} f hden₁₂) a :=
       (P.toCompletionLoc_apply _ f _ hden₁₂ a).symm.trans
         (RingHom.congr_fun (algebraMap_ratLoc ..) a).symm
     simp only [RingHom.coe_comp, Function.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
       hc₂, hc₁₂, (laurentRightAlgHom P f).commutes]
   exact RingHom.congr_fun h x
 
-/-- The canonical `A⟨{f, 1}/1⟩`-algebra structure on the overlap `A⟨{f², 1}/f⟩` induced by
-`laurentLeftAlgHom`. -/
-@[instance_reducible]
-noncomputable def laurentLeftAlgebra (P : PairOfDefinition A) (f : A)
+/-- Canonical `A⟨{f, 1}/1⟩`-algebra structure on `A⟨{f², 1}/f⟩` induced by `laurentLeftAlgHom`. -/
+@[instance_reducible] noncomputable def laurentLeftAlgebra (P : PairOfDefinition A) (f : A)
     {hden₁ : P.HasDenominatorPower ({f, 1} : Finset A) 1 (Localization.Away (1 : A))}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
     Algebra (ratLoc P {f, 1} 1 hden₁) (ratLoc P {f * f, 1} f hden₁₂) :=
-  (laurentLeftAlgHom P f).toRingHom.toAlgebra
-
+  (isRationalCompletion_ratLoc P {f, 1} 1 (isOpen_span_of_one_mem (by simp))).laurentLeftAlgebra
+    (isRationalCompletion_ratLoc P {f * f, 1} f (isOpen_span_of_one_mem (by simp)))
 scoped[TauCeti.Huber.Laurent] attribute [instance] TauCeti.Huber.laurentLeftAlgebra
 
-/-- The canonical `A⟨{1}/f⟩`-algebra structure on the overlap `A⟨{f², 1}/f⟩` induced by
-`laurentRightAlgHom`. -/
-@[instance_reducible]
-noncomputable def laurentRightAlgebra (P : PairOfDefinition A) (f : A)
+/-- Canonical `A⟨{1}/f⟩`-algebra structure on `A⟨{f², 1}/f⟩` induced by `laurentRightAlgHom`. -/
+@[instance_reducible] noncomputable def laurentRightAlgebra (P : PairOfDefinition A) (f : A)
     {hden₂ : P.HasDenominatorPower ({1} : Finset A) f (Localization.Away f)}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
     Algebra (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂) :=
-  (laurentRightAlgHom P f).toRingHom.toAlgebra
-
+  (isRationalCompletion_ratLoc P {1} f (isOpen_span_of_one_mem (by simp))).laurentRightAlgebra
+    (isRationalCompletion_ratLoc P {f * f, 1} f (isOpen_span_of_one_mem (by simp)))
 scoped[TauCeti.Huber.Laurent] attribute [instance] TauCeti.Huber.laurentRightAlgebra
 
 section ScopedAPI
-
 open scoped TauCeti.Huber.Laurent
 
 /-- The structure map of `laurentLeftAlgebra` is `laurentLeftAlgHom`. -/
@@ -238,22 +290,23 @@ theorem continuous_algebraMap_laurentRightAlgebra (P : PairOfDefinition A) (f : 
 theorem isScalarTower_laurentLeft (P : PairOfDefinition A) (f : A)
     {hden₁ : P.HasDenominatorPower ({f, 1} : Finset A) 1 (Localization.Away (1 : A))}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
-    IsScalarTower A (ratLoc P {f, 1} 1 hden₁) (ratLoc P {f * f, 1} f hden₁₂) :=
-  IsScalarTower.of_algebraMap_eq fun r ↦ ((laurentLeftAlgHom P f).commutes r).symm
-
+    IsScalarTower A (ratLoc P {f, 1} 1 hden₁) (ratLoc P {f * f, 1} f hden₁₂) := by
+  exact (isRationalCompletion_ratLoc P {f, 1} 1
+    (isOpen_span_of_one_mem (by simp))).isScalarTower_laurentLeft
+    (isRationalCompletion_ratLoc P {f * f, 1} f (isOpen_span_of_one_mem (by simp)))
 scoped[TauCeti.Huber.Laurent] attribute [instance] TauCeti.Huber.isScalarTower_laurentLeft
 
 /-- `laurentRightAlgebra` makes `A → A⟨{1}/f⟩ → A⟨{f², 1}/f⟩` a scalar tower. -/
 theorem isScalarTower_laurentRight (P : PairOfDefinition A) (f : A)
     {hden₂ : P.HasDenominatorPower ({1} : Finset A) f (Localization.Away f)}
     {hden₁₂ : P.HasDenominatorPower ({f * f, 1} : Finset A) f (Localization.Away f)} :
-    IsScalarTower A (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂) :=
-  IsScalarTower.of_algebraMap_eq fun r ↦ ((laurentRightAlgHom P f).commutes r).symm
-
+    IsScalarTower A (ratLoc P {1} f hden₂) (ratLoc P {f * f, 1} f hden₁₂) := by
+  exact (isRationalCompletion_ratLoc P {1} f
+    (isOpen_span_of_one_mem (by simp))).isScalarTower_laurentRight
+    (isRationalCompletion_ratLoc P {f * f, 1} f (isOpen_span_of_one_mem (by simp)))
 scoped[TauCeti.Huber.Laurent] attribute [instance] TauCeti.Huber.isScalarTower_laurentRight
 
 end ScopedAPI
-
 end LaurentTransition
 
 end TauCeti.Huber

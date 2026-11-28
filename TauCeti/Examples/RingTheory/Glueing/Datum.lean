@@ -24,19 +24,15 @@ open TensorProduct
 
 namespace TauCeti.GlueingDatumChecks
 
-/-- **Positive section check**: `((1, 2), (1, 2))` satisfies the cocycle condition for the trivial
-glueing datum of `ℚ × ℚ` over `ℚ`. -/
-example :
-    (((1 : ℚ) ⊗ₜ[ℚ] ((1 : ℚ), (2 : ℚ)), (1 : ℚ) ⊗ₜ[ℚ] ((1 : ℚ), (2 : ℚ))) :
+/-- Positive section check: `((1, 2), (1, 2))` lies in sections of `ℚ × ℚ` over `ℚ`. -/
+example : (((1 : ℚ) ⊗ₜ[ℚ] ((1 : ℚ), (2 : ℚ)), (1 : ℚ) ⊗ₜ[ℚ] ((1 : ℚ), (2 : ℚ))) :
       (ℚ ⊗[ℚ] (ℚ × ℚ)) × (ℚ ⊗[ℚ] (ℚ × ℚ))) ∈
-      (GlueingDatum.ofModule ℚ ℚ ℚ ℚ (ℚ × ℚ)).sections ℚ := by simp
+    (GlueingDatum.ofModule ℚ ℚ ℚ ℚ (ℚ × ℚ)).sections ℚ := by simp
 
-/-- **Sign / cocycle check**: `((1, 2), (2, 1))` does *not* lie in the sections of the glueing datum
-of `ℚ × ℚ` over `ℚ`. -/
-example :
-    (((1 : ℚ) ⊗ₜ[ℚ] ((1 : ℚ), (2 : ℚ)), (1 : ℚ) ⊗ₜ[ℚ] ((2 : ℚ), (1 : ℚ))) :
+/-- Cocycle non-membership check: `((1, 2), (2, 1))` does not lie in sections. -/
+example : (((1 : ℚ) ⊗ₜ[ℚ] ((1 : ℚ), (2 : ℚ)), (1 : ℚ) ⊗ₜ[ℚ] ((2 : ℚ), (1 : ℚ))) :
       (ℚ ⊗[ℚ] (ℚ × ℚ)) × (ℚ ⊗[ℚ] (ℚ × ℚ))) ∉
-      (GlueingDatum.ofModule ℚ ℚ ℚ ℚ (ℚ × ℚ)).sections ℚ := fun hmem ↦ by
+    (GlueingDatum.ofModule ℚ ℚ ℚ ℚ (ℚ × ℚ)).sections ℚ := fun hmem ↦ by
   simp only [GlueingDatum.mem_sections_iff, GlueingDatum.ofModule_ψ₁_tmul,
     GlueingDatum.ofModule_ψ₂_tmul, one_smul] at hmem
   simpa using congrArg (TensorProduct.lid ℚ (ℚ × ℚ)) hmem

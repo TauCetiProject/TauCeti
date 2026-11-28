@@ -349,28 +349,20 @@ theorem exists_rationalSubset_superset_laurentPiece_mul_inverse (Aplus : Subring
       @TauCeti.ValuativeRel.not_vle_zero_of_isUnit A _ v.toValuativeRel _ (hu m m.property)⟩⟩
 
 open scoped Pointwise in
-/-- The basic open `R({f², 1}/f)` equals the intersection `R({f, 1}/1) ⊓ R({1}/f)` of the two
-pieces of the simple Laurent cover of `Spa(A, A⁺)`. -/
+/-- The basic open `R({f², 1}/f)` equals `R({f, 1}/1) ⊓ R({1}/f)`. -/
 theorem spaBasicOpen_mul_self_one_eq_inf [DecidableEq A] (Aplus : Subring A) (f : A) :
     spaBasicOpen Aplus {f * f, 1} f =
       spaBasicOpen Aplus {f, 1} 1 ⊓ spaBasicOpen Aplus {1} f := by
-  -- Intersecting `{f, 1}/1` and `{1}/f` gives `{f², f, 1}/(1 · f)`, and the denominator `f` may
-  -- be dropped from `{f², f, 1}` by `rationalSubset_insert_self`.
   have hrat : rationalSubset Aplus {f * f, 1} f =
       rationalSubset Aplus {f, 1} 1 ∩ rationalSubset Aplus {1} f := by
     rw [rationalSubset_inter, one_mul, ← rationalSubset_insert_self Aplus {f * f, 1} f]
     congr 1; ext x; simp [Finset.mem_mul, eq_comm]; tauto
-  ext v
-  simp only [Opens.coe_inf, Set.mem_inter_iff, SetLike.mem_coe, mem_spaBasicOpen]
+  ext v; simp only [Opens.coe_inf, Set.mem_inter_iff, SetLike.mem_coe, mem_spaBasicOpen]
   rw [← Set.mem_inter_iff, ← hrat]
 
 open scoped Classical in
-/-- **The two Laurent pieces cover the adic spectrum.** For `f ∈ A`, every point of
-`Spa(A, A⁺)` lies in `U₁ = R({f, 1}/1)` or in `U₂ = R({1}/f)`, indexed here by `Bool` so that
-the two pieces form a single family. Every point lies in `R({f, 1}/f)` or in `R({f, 1}/1)`, and
-the first of these lies in `R({1}/f)`.
-
-This is the geometric half of the two-piece Laurent cover. -/
+/-- **The two Laurent pieces cover the adic spectrum**: every point of `Spa(A, A⁺)` lies in
+`R({f, 1}/1)` (`true`) or `R({1}/f)` (`false`). -/
 theorem spa_subset_iUnion_laurentCover (Aplus : Subring A) (f : A) :
     spa Aplus ⊆ ⋃ b : Bool, rationalSubset Aplus (cond b ({f, 1} : Finset A) ({1} : Finset A))
         (cond b 1 f) := by
@@ -382,8 +374,7 @@ theorem spa_subset_iUnion_laurentCover (Aplus : Subring A) (f : A) :
   · refine Set.mem_iUnion.2 ⟨false, ?_⟩
     rw [mem_rationalSubset_iff] at hvs ⊢
     exact ⟨hvs.1, fun t ht ↦ hvs.2.1 t (by simp_all), hvs.2.2⟩
-  · rw [Finset.mem_singleton.1 hs] at hvs
-    exact Set.mem_iUnion.2 ⟨true, hvs⟩
+  · rw [Finset.mem_singleton.1 hs] at hvs; exact Set.mem_iUnion.2 ⟨true, hvs⟩
 
 section SimpleLaurentOpen
 
@@ -391,25 +382,20 @@ variable {Aplus : Subring A}
 
 open scoped Classical in
 variable (Aplus) in
-/-- **The Laurent cover of `f`**: the rational opens `R({f, 1}/1) = {|f| ≤ 1}` (at `true`) and
-`R({1}/f) = {|f| ≥ 1}` (at `false`) of `Spa(A, A⁺)`, indexed by `Bool` so that they form one
-family. They cover the adic spectrum (`spa_subset_iUnion_laurentCover`). Since this is an
-`abbrev` for `spaBasicOpen`, the `spaBasicOpen` API (such as `mem_spaBasicOpen`) applies to it
-directly. -/
+/-- **The Laurent cover of `f`**: `R({f, 1}/1) = {|f| ≤ 1}` (at `true`) and `R({1}/f) = {|f| ≥ 1}`
+(at `false`), an `abbrev` for `spaBasicOpen`. -/
 noncomputable abbrev laurentCoverOpen (f : A) (b : Bool) : Opens ↥(spa Aplus) :=
   spaBasicOpen Aplus (cond b ({f, 1} : Finset A) ({1} : Finset A)) (cond b 1 f)
 
 open scoped Classical in
 variable (Aplus) in
-/-- Each piece of the Laurent cover is a rational open: its numerators contain `1`, so they span
-the unit ideal, which is open. -/
+/-- Each piece of the Laurent cover is a rational open (`1` lies in its numerator set). -/
 theorem laurentCoverOpen_mem_spaRationalOpens (f : A) (b : Bool) :
     laurentCoverOpen Aplus f b ∈ spaRationalOpens Aplus :=
   spaBasicOpen_mem_spaRationalOpens (isOpen_span_of_one_mem (by cases b <;> simp))
 
 variable (Aplus) in
-/-- **The Laurent cover of `u⁻¹ g` for a unit `u`, first piece**: `{|u⁻¹ g| ≤ 1}` is
-`R({g, u}/u) = {|g| ≤ |u|}`. -/
+/-- **First piece of `laurentCoverOpen (u⁻¹ g)`**: `{|u⁻¹ g| ≤ 1} = R({g, u}/u)`. -/
 theorem laurentCoverOpen_inv_mul_true [DecidableEq A] (u : Aˣ) (g : A) :
     laurentCoverOpen Aplus (↑u⁻¹ * g) true = spaBasicOpen Aplus {g, ↑u} u := by
   ext v
@@ -419,8 +405,7 @@ theorem laurentCoverOpen_inv_mul_true [DecidableEq A] (u : Aˣ) (g : A) :
 
 open scoped Classical in
 variable (Aplus) in
-/-- **The Laurent cover of `u⁻¹ g` for a unit `u`, second piece**: `{|u⁻¹ g| ≥ 1}` is
-`R({u}/g) = {|g| ≥ |u|}`. -/
+/-- **Second piece of `laurentCoverOpen (u⁻¹ g)`**: `{|u⁻¹ g| ≥ 1} = R({u}/g)`. -/
 theorem laurentCoverOpen_inv_mul_false (u : Aˣ) (g : A) :
     laurentCoverOpen Aplus (↑u⁻¹ * g) false = spaBasicOpen Aplus {↑u} g := by
   ext v

@@ -15,14 +15,12 @@ import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Laurent.Basic
 # Proper ideals on simple Laurent covers
 
 For a simple Laurent cover `{|f| ≤ 1}`, `{|f| ≥ 1}` of `Spa(A, A⁺)`, every maximal ideal of `A`
-is the support of a point of `Spa(A, A⁺)`, lies in one of the two rational subsets `R({f, 1}/1)`
-or `R({1}/f)`, and therefore contracts from a prime ideal of `B₁ × B₂` for any rational-completion
-models `B₁`, `B₂`.
+contracts from a prime ideal of `B₁ × B₂` for any rational-completion models `B₁`, `B₂`.
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.exists_prime_comap_eq_of_simpleLaurent`: every maximal ideal of `A`
-  contracts from a prime ideal of `B₁ × B₂` for models of a simple Laurent cover.
+* `TauCeti.ValuationSpectrum.exists_prime_comap_eq_of_simpleLaurent`: maximal-ideal contraction for
+  a simple Laurent cover.
 
 ## References
 
@@ -40,9 +38,8 @@ open TauCeti.Huber
 variable {A : Type*} [CommRing A] [UniformSpace A] [T2Space A] [CompleteSpace A]
   [IsTopologicalRing A] [IsUniformAddGroup A] [IsHuberRing A]
 
-/-- Maximal-ideal prime contraction for a simple Laurent cover: every maximal ideal of `A` is the
-contraction of a prime ideal of `B₁ × B₂` via a point of `Spa(A, A⁺)`, given a compatible pair of
-definition `P₀`. -/
+/-- Every maximal ideal of `A` contracts from a prime ideal of `B₁ × B₂` for models of a simple
+Laurent cover `{|f| ≤ 1}`, `{|f| ≥ 1}` given a compatible pair of definition `P₀`. -/
 theorem exists_prime_comap_eq_of_simpleLaurent [DecidableEq A] {P P₀ : PairOfDefinition A}
     (Aplus : Subring A) (hplus : IsRingOfIntegralElements Aplus)
     (hP₀ : P₀.ringOfDefinition ≤ Aplus) (f : A)
@@ -51,8 +48,7 @@ theorem exists_prime_comap_eq_of_simpleLaurent [DecidableEq A] {P P₀ : PairOfD
     {hT₁ : IsOpen (Ideal.span (({f, 1} : Finset A) : Set A) : Set A)}
     {hT₂ : IsOpen (Ideal.span (({1} : Finset A) : Set A) : Set A)}
     (h₁ : IsRationalCompletion P {f, 1} 1 hT₁ B₁)
-    (h₂ : IsRationalCompletion P {1} f hT₂ B₂)
-    (m : Ideal A) (hm : m.IsMaximal) :
+    (h₂ : IsRationalCompletion P {1} f hT₂ B₂) (m : Ideal A) (hm : m.IsMaximal) :
     ∃ p : Ideal (B₁ × B₂), p.IsPrime ∧
       p.comap ((algebraMap A B₁).prod (algebraMap A B₂)) = m := by
   obtain ⟨v, hv, rfl⟩ := exists_mem_spa_supp_eq_of_isMaximal Aplus hplus m
