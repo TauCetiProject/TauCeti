@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.AlgebraicGeometry.Pullbacks
-public import Mathlib.CategoryTheory.Comma.Over.Pullback
+public import TauCeti.CategoryTheory.Comma.Over.Pullback
 
 /-!
 # The Néron mapping property
@@ -198,18 +198,9 @@ property exactly when, for every test object `Y`, precomposition with the counit
 theorem mappingProperty_iff_bijective_counit_comp {P : ∀ ⦃X Y : Scheme.{u}⦄, (X ⟶ Y) → Prop}
     {j : η ⟶ S} {X : Over S} :
     MappingProperty P j X ↔ ∀ (Y : Over S), P Y.hom →
-      Function.Bijective fun f : Y ⟶ X ↦ (Over.mapPullbackAdj j).counit.app Y ≫ f := by
-  -- Precomposition with the counit is base change followed by the adjunction bijection.
-  have key (Y : Over S) : (fun f : Y ⟶ X ↦ (Over.mapPullbackAdj j).counit.app Y ≫ f) =
-      ((Over.mapPullbackAdj j).homEquiv _ _).symm ∘ (Over.pullback j).map := by
-    ext1 f
-    rw [Function.comp_apply, Adjunction.homEquiv_counit]
-    exact ((Over.mapPullbackAdj j).counit.naturality f).symm
-  refine ⟨fun h Y hY ↦ ?_, fun h ↦ ⟨fun Y hY ↦ ?_⟩⟩
-  · rw [key]
-    exact (Equiv.bijective _).comp (h.bijective Y hY)
-  · rw [← (Equiv.bijective ((Over.mapPullbackAdj j).homEquiv _ _).symm).of_comp_iff', ← key]
-    exact h Y hY
+      Function.Bijective fun f : Y ⟶ X ↦ (Over.mapPullbackAdj j).counit.app Y ≫ f :=
+  ⟨fun h Y hY ↦ (Over.bijective_pullback_map_iff_bijective_counit_comp j Y X).1 (h.bijective Y hY),
+    fun h ↦ ⟨fun Y hY ↦ (Over.bijective_pullback_map_iff_bijective_counit_comp j Y X).2 (h Y hY)⟩⟩
 
 /-- The Néron mapping property implies the weak Néron mapping property: étale test objects are
 smooth. -/

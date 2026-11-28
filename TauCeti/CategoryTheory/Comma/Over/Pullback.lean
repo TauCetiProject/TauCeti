@@ -56,11 +56,15 @@ It also establishes faithfulness and epimorphism preservation for the base-chang
   `X ⨯ -` does (in particular when epimorphisms in `C` are stable under base change).
 
 For a monomorphism `g`, the unit of `Over.map g ⊣ Over.pullback g` is an isomorphism
-(`CategoryTheory.Over.isIso_mapPullbackAdj_unit_app`).
+(`CategoryTheory.Over.isIso_mapPullbackAdj_unit_app`). Base change along `f` is bijective on
+morphisms out of `A` exactly when precomposition with the counit of `Over.map f ⊣ Over.pullback f`
+at `A` is (`CategoryTheory.Over.bijective_pullback_map_iff_bijective_counit_comp`).
 
 Finally, `CategoryTheory.IsPullback.overPullbackCompMapIso` is the Beck–Chevalley isomorphism of a
 pullback square `fst ≫ f = snd ≫ g`: `Over.pullback fst ⋙ Over.map snd ≅ Over.map f ⋙
-Over.pullback g`.
+Over.pullback g`. Consequently base change along `fst` is bijective on morphisms `B ⟶ f^* A`
+exactly when base change along `g` is bijective on morphisms `f_! B ⟶ A`
+(`CategoryTheory.Over.bijective_pullback_map_iff_of_isPullback`).
 -/
 
 public section
@@ -304,6 +308,21 @@ instance isIso_mapPullbackAdj_unit_app {X Y : C} (g : X ⟶ Y) [HasPullbacksAlon
     infer_instance
   exact isIso_of_reflects_iso _ (forget X)
 
+/-- Base change along `f` is bijective on morphisms `A ⟶ B` exactly when precomposition with the
+counit `(Over.map f).obj ((Over.pullback f).obj A) ⟶ A` of `Over.map f ⊣ Over.pullback f` is a
+bijection onto the morphisms `(Over.map f).obj ((Over.pullback f).obj A) ⟶ B`. -/
+theorem bijective_pullback_map_iff_bijective_counit_comp {X Y : C} (f : X ⟶ Y)
+    [HasPullbacksAlong f] (A B : Over Y) :
+    Function.Bijective ((pullback f).map : (A ⟶ B) → _) ↔
+      Function.Bijective fun u : A ⟶ B ↦ (mapPullbackAdj f).counit.app A ≫ u := by
+  -- Precomposition with the counit is base change followed by the adjunction bijection.
+  have key : (fun u : A ⟶ B ↦ (mapPullbackAdj f).counit.app A ≫ u) =
+      ((mapPullbackAdj f).homEquiv _ _).symm ∘ (pullback f).map := by
+    ext1 u
+    rw [Function.comp_apply, Adjunction.homEquiv_counit]
+    exact ((mapPullbackAdj f).counit.naturality u).symm
+  rw [key, (Equiv.bijective _).of_comp_iff']
+
 section HasBinaryProducts
 
 variable [HasBinaryProducts C]
@@ -431,5 +450,39 @@ theorem overPullbackCompMapIso_hom_app_left_snd (sq : IsPullback fst snd f g) (A
   simp [overPullbackCompMapIso]
 
 end IsPullback
+
+namespace Over
+
+variable {C : Type u} [Category.{v} C] {P X Y Z : C} {fst : P ⟶ X} {snd : P ⟶ Y} {f : X ⟶ Z}
+  {g : Y ⟶ Z} [HasPullbacksAlong fst] [HasPullbacksAlong f] [HasPullbacksAlong g]
+
+/-- Base change along the side `fst` of a pullback square `fst ≫ f = snd ≫ g` is base change
+along `g` of the same object viewed over `Z`: for `A` over `Z` and `B` over `X`, base change along
+`fst` is bijective on morphisms `B ⟶ f^* A` exactly when base change along `g` is bijective on
+morphisms `f_! B ⟶ A`. -/
+theorem bijective_pullback_map_iff_of_isPullback (sq : IsPullback fst snd f g) (A : Over Z)
+    (B : Over X) :
+    Function.Bijective ((pullback fst).map : (B ⟶ (pullback f).obj A) → _) ↔
+      Function.Bijective ((pullback g).map : ((map f).obj B ⟶ A) → _) := by
+  rw [bijective_pullback_map_iff_bijective_counit_comp,
+    bijective_pullback_map_iff_bijective_counit_comp]
+  -- Pushed forward along `f`, the counit for `fst` at `B` is the counit for `g` at `B` viewed
+  -- over `Z`, up to the Beck–Chevalley isomorphism of the square.
+  obtain ⟨e, he⟩ : ∃ e : (map f).obj ((map fst).obj ((pullback fst).obj B)) ≅
+      (map g).obj ((pullback g).obj ((map f).obj B)),
+      e.hom ≫ (mapPullbackAdj g).counit.app ((map f).obj B) =
+        (map f).map ((mapPullbackAdj fst).counit.app B) :=
+    ⟨isoMk ((forget _).mapIso (sq.overPullbackCompMapIso.app B)) (by simp [sq.w]),
+      by ext1; simp⟩
+  have he' : Function.Bijective
+      fun u : (map g).obj ((pullback g).obj ((map f).obj B)) ⟶ A ↦ e.hom ≫ u :=
+    ⟨fun a b hab ↦ (cancel_epi _).1 hab, fun b ↦ ⟨e.inv ≫ b, by simp⟩⟩
+  -- Under `Over.map f ⊣ Over.pullback f`, precomposition with the counit for `fst` becomes
+  -- precomposition with `e.hom` and the counit for `g`.
+  rw [← (mapPullbackAdj f).map_comp_bijective_iff, ← he]
+  simp_rw [Category.assoc]
+  exact he'.of_comp_iff' _
+
+end Over
 
 end CategoryTheory

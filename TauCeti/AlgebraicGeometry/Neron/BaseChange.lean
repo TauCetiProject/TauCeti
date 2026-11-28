@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Neron.Model
-public import TauCeti.CategoryTheory.Comma.Over.Pullback
 
 /-!
 # Smooth base change of Néron models
@@ -56,34 +55,10 @@ relative to `j : η ⟶ S`, `g : S' ⟶ S` is smooth and `j' : η' ⟶ S'`, `g' 
 as the pullback of `j` along `g`, then `X ×_S S'` has the property relative to `j'`
 (Bosch–Lütkebohmert–Raynaud, *Néron Models*, §1.2, Proposition 2(c), for étale `g`). -/
 theorem NeronMappingProperty.pullback [Smooth g] (sq : IsPullback j' g' g j) {X : Over S}
-    (h : NeronMappingProperty j X) : NeronMappingProperty j' ((Over.pullback g).obj X) := by
-  replace h := mappingProperty_iff_bijective_counit_comp.1 h
-  refine mappingProperty_iff_bijective_counit_comp.2 fun Y _ ↦ ?_
-  have : Smooth ((Over.map g).obj Y).hom := by dsimp; infer_instance
-  -- Pushed forward along `g`, the counit for `j'` at `Y` is the counit for `j` at `Y` viewed
-  -- over `S`, up to the Beck–Chevalley isomorphism of the square.
-  obtain ⟨e, he⟩ : ∃ e : (Over.map g).obj ((Over.map j').obj ((Over.pullback j').obj Y)) ≅
-      (Over.map j).obj ((Over.pullback j).obj ((Over.map g).obj Y)),
-      e.hom ≫ (Over.mapPullbackAdj j).counit.app ((Over.map g).obj Y) =
-        (Over.map g).map ((Over.mapPullbackAdj j').counit.app Y) :=
-    ⟨Over.isoMk ((Over.forget _).mapIso (sq.overPullbackCompMapIso.app Y))
-      (by simp [sq.w]), by ext1; simp⟩
-  -- Under the adjunction `Over.map g ⊣ Over.pullback g`, precomposition with the counit for `j'`
-  -- becomes precomposition with `e.hom` and the counit for `j`.
-  have key : ((Over.mapPullbackAdj g).homEquiv _ _).symm ∘
-      (fun f : Y ⟶ (Over.pullback g).obj X ↦ (Over.mapPullbackAdj j').counit.app Y ≫ f) =
-      (fun f ↦ e.hom ≫ f) ∘
-        (fun f ↦ (Over.mapPullbackAdj j).counit.app ((Over.map g).obj Y) ≫ f) ∘
-          ((Over.mapPullbackAdj g).homEquiv _ _).symm := by
-    ext1 f
-    rw [Function.comp_apply, Adjunction.homEquiv_naturality_left_symm, ← he, Category.assoc]
-    -- The two sides differ only by `(𝟭 (Over S')).obj Y = Y` in an implicit argument of
-    -- `homEquiv`, which `rw` cannot reach.
-    rfl
-  rw [← (Equiv.bijective ((Over.mapPullbackAdj g).homEquiv _ _).symm).of_comp_iff', key]
-  refine Function.Bijective.comp ?_
-    ((h ((Over.map g).obj Y) inferInstance).comp (Equiv.bijective _))
-  exact ⟨fun a b hab ↦ (cancel_epi _).1 hab, fun b ↦ ⟨e.inv ≫ b, by simp⟩⟩
+    (h : NeronMappingProperty j X) : NeronMappingProperty j' ((Over.pullback g).obj X) where
+  bijective Y (_ : Smooth Y.hom) := by
+    have : Smooth ((Over.map g).obj Y).hom := by dsimp; infer_instance
+    exact (Over.bijective_pullback_map_iff_of_isPullback sq X Y).2 (h.bijective _ this)
 
 namespace NeronModel
 
