@@ -114,6 +114,8 @@ let alone a holomorphic map.
   lies in the larger set's interior when the two frontiers are disjoint.
 * `TauCeti.frontier_image_subset_of_closure_subset` — for an open map whose image closure adds at
   most a set `t`, the frontier of an image lies on the image of the frontier, together with `t`.
+* `IsOpenMap.isClosed_preimage_iff_disjoint_frontier` — the preimage of an open set under a
+  continuous open map is closed exactly when the range is disjoint from its frontier.
 * `TauCeti.le_of_mem_frontier_inter_preimage_Ioi` — a function continuous on an open set and at most
   `a` on its frontier is at most `a` on the frontier of its superlevel set `{a < f}` in that set.
 * `TauCeti.eq_of_mem_frontier_of_mem_iff_le` — a function whose superlevel set `{a ≤ f}` agrees
@@ -296,6 +298,18 @@ theorem frontier_image_subset_of_closure_subset (hf : IsOpenMap f)
   refine (Set.sdiff_subset_sdiff hcl (hf.image_interior_subset s)).trans ?_
   rw [Set.union_sdiff_distrib]
   exact Set.union_subset_union (Set.subset_image_sdiff f _ _) Set.sdiff_subset
+
+/-- The preimage of an open set under a continuous open map is closed exactly when the range
+of the map is disjoint from the frontier of the set. -/
+theorem _root_.IsOpenMap.isClosed_preimage_iff_disjoint_frontier (hf : IsOpenMap f)
+    (hfc : Continuous f) (ht : IsOpen t) :
+    IsClosed (f ⁻¹' t) ↔ Disjoint (range f) (frontier t) := by
+  have hopen : IsOpen (f ⁻¹' t) := ht.preimage hfc
+  calc
+    _ ↔ IsClopen (f ⁻¹' t) := ⟨fun h ↦ ⟨h, hopen⟩, IsClopen.isClosed⟩
+    _ ↔ f ⁻¹' frontier t = ∅ := by
+      rw [hf.preimage_frontier_eq_frontier_preimage hfc, isClopen_iff_frontier_eq_empty]
+    _ ↔ _ := Set.preimage_eq_empty_iff.trans disjoint_comm
 
 end OpenImage
 
