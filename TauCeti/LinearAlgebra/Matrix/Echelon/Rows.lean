@@ -9,8 +9,7 @@ public import Mathlib.Data.Fintype.Pi
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 import Mathlib.Data.Fin.Rev
 import Mathlib.FieldTheory.Finiteness
-import Mathlib.LinearAlgebra.Dimension.DivisionRing
-import Mathlib.LinearAlgebra.Dimension.RankNullity
+import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.Order.Interval.Finset.Fin
 
 /-!
@@ -101,11 +100,10 @@ theorem card_echelonRows_mem_submodule [DecidableEq k] (r : Fin N) (L : Submodul
   · push Not at hzero
     obtain ⟨v₀, hv₀L, hv₀r⟩ := hzero
     let p : L →ₗ[k] k := (LinearMap.proj r).comp L.subtype
-    have hp_surj : Function.Surjective p := fun c ↦
-      ⟨(c * (v₀ r)⁻¹) • ⟨v₀, hv₀L⟩, by simp [p, hv₀r]⟩
+    have hp : p ≠ 0 := fun h ↦ hv₀r (by simpa [p] using LinearMap.congr_fun h ⟨v₀, hv₀L⟩)
+    have hp_surj : Function.Surjective p := LinearMap.surjective hp
     have h_dim : Module.finrank k (LinearMap.ker p) = Module.finrank k L - 1 := by
-      have h_rk := Submodule.finrank_quotient_add_finrank (LinearMap.ker p)
-      rw [(p.quotKerEquivOfSurjective hp_surj).finrank_eq, Module.finrank_self] at h_rk
+      have := Module.Dual.finrank_ker_add_one_of_ne_zero hp
       omega
     have h_card_ker : Nat.card (LinearMap.ker p) = Fintype.card k ^ (Module.finrank k L - 1) := by
       rw [Module.natCard_eq_pow_finrank (K := k), Nat.card_eq_fintype_card, h_dim]
