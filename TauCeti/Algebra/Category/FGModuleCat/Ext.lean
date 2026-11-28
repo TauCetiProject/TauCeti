@@ -84,15 +84,20 @@ theorem toExt_ext1LinearEquiv {M N : FGModuleCat.{w} A}
   simp only [ext1LinearEquiv, LinearEquiv.trans_apply, Ext1.toExt_abelianLinearEquiv_symm,
     Ext1.abelianLinearEquiv_apply, LinearEquiv.ofBijective_apply, Functor.mapExtLinearMap_apply]
 
-/-- On a representative the comparison takes the extension class of the same short exact
+/-- On a representative the comparison takes the Yoneda class of the same short exact
 sequence in the ambient module category. -/
 @[simp]
-theorem toExt_ext1LinearEquiv_mk {M N : FGModuleCat.{w} A}
+theorem ext1LinearEquiv_mk {M N : FGModuleCat.{w} A}
     (e : (ExactStructure.abelian _).Extension M N) :
-    (ext1LinearEquiv R M N (Ext1.mk e)).toExt =
-      (e.isKernelCokernelPair.shortExact.map_of_exact
-        (forget₂ (FGModuleCat.{w} A) (ModuleCat.{w} A))).extClass := by
-  simp only [toExt_ext1LinearEquiv, Ext1.toExt_mk, Ext.mapExactFunctor_extClass]
+    ext1LinearEquiv R M N (Ext1.mk e) =
+      Ext1.mk (E := ExactStructure.abelian (ModuleCat.{w} A)) (Z := M.obj) (X := N.obj)
+        ⟨e.obj.obj, (forget₂ (FGModuleCat.{w} A) (ModuleCat.{w} A)).map e.f,
+          (forget₂ (FGModuleCat.{w} A) (ModuleCat.{w} A)).map e.g,
+          by rw [← Functor.map_comp, e.zero, Functor.map_zero],
+          (ExactStructure.abelian_conflation _).mpr (e.isKernelCokernelPair.shortExact.map_of_exact
+            (forget₂ (FGModuleCat.{w} A) (ModuleCat.{w} A)))⟩ :=
+  Ext1.toExt_injective (by
+    simp only [toExt_ext1LinearEquiv, Ext1.toExt_mk, Ext.mapExactFunctor_extClass])
 
 /-- The inclusion comparison commutes with base change in the first argument. -/
 @[simp]

@@ -176,20 +176,22 @@ noncomputable def abelianLinearEquiv [EnoughProjectives C] (Z X : C) :
 /-- The comparison equivalence sends an extension to its derived class. -/
 @[simp]
 theorem abelianLinearEquiv_apply [EnoughProjectives C] (ξ : (ExactStructure.abelian C).Ext1 Z X) :
-    abelianLinearEquiv R Z X ξ = ξ.toExt := (rfl)
+    abelianLinearEquiv R Z X ξ = ξ.toExt := by
+  unfold abelianLinearEquiv
+  exact LinearEquiv.ofBijective_apply ..
 
 /-- The inverse comparison recovers a Yoneda class from its derived class. -/
 @[simp]
 theorem abelianLinearEquiv_symm_toExt [EnoughProjectives C]
     (ξ : (ExactStructure.abelian C).Ext1 Z X) :
-    (abelianLinearEquiv R Z X).symm ξ.toExt = ξ :=
-  (abelianLinearEquiv R Z X).symm_apply_apply ξ
+    (abelianLinearEquiv R Z X).symm ξ.toExt = ξ := by
+  simpa only [abelianLinearEquiv_apply] using (abelianLinearEquiv R Z X).symm_apply_apply ξ
 
 /-- The inverse comparison represents the given derived extension class. -/
 @[simp]
 theorem toExt_abelianLinearEquiv_symm [EnoughProjectives C] (α : Ext.{w} Z X 1) :
-    ((abelianLinearEquiv R Z X).symm α).toExt = α :=
-  (abelianLinearEquiv R Z X).apply_symm_apply α
+    ((abelianLinearEquiv R Z X).symm α).toExt = α := by
+  simpa only [abelianLinearEquiv_apply] using (abelianLinearEquiv R Z X).apply_symm_apply α
 
 end Ext1
 
