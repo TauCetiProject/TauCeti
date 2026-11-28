@@ -16,6 +16,7 @@ import TauCeti.RingTheory.LocalRing.Basic
 import TauCeti.RingTheory.PowerSeries.Basic
 import TauCeti.RingTheory.PowerSeries.Dvd
 import TauCeti.RingTheory.PowerSeries.Order
+import TauCeti.RingTheory.PowerSeries.SubringCoeff
 import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
@@ -102,15 +103,13 @@ private theorem coeff_mem_range_of_rescale_eq [IsLocalRing O] {π : O} (hπ : π
   rw [hY', subst_map_algebraMap (.of_constantCoeff_zero' hH₀)] at hs
   -- the coefficient of `Xⁿ` in the equation: `πⁿ yₙ = π (wₙ + g₁ yₙ)`
   have h := congrArg (coeff n) hY
-  rw [coeff_rescale, coeff_smul, hs, map_add, coeff_map, coeff_X_pow_mul', Algebra.smul_def] at h
-  simp only [le_refl, ite_true, Nat.sub_self, coeff_zero_eq_constantCoeff_apply, hs₀,
-    constantCoeff_mk, zero_add] at h
+  rw [coeff_rescale, coeff_smul, hs] at h
   -- so `(πⁿ⁻¹ - g₁) yₙ = wₙ`, and `πⁿ⁻¹ - g₁` is a unit of `O`
   have key : c (π ^ (n - 1) - coeff 1 G) * coeff n Y = c (coeff n (G.subst H)) := by
     have h' : c π * (c π ^ (n - 1) * coeff n Y) =
         c π * (c (coeff n (G.subst H)) + c (coeff 1 G) * coeff n Y) := by
       rw [← mul_assoc, ← pow_succ', Nat.sub_add_cancel (by omega)]
-      exact h
+      simpa [coeff_X_pow_mul', hs₀, Algebra.smul_def] using h
     rw [map_sub, map_pow, sub_mul, hπR h']
     ring
   have hv : IsUnit (π ^ (n - 1) - coeff 1 G) :=
@@ -129,9 +128,7 @@ theorem exists_map_eq_of_rescale_eq_smul_subst [IsLocalRing O] {π : O}
     (hY₁ : coeff 1 Y ∈ Set.range (algebraMap O R))
     (hY : rescale (algebraMap O R π) Y = π • G.subst Y) :
     ∃ H : O⟦X⟧, map (algebraMap O R) H = Y := by
-  suffices h : ∀ n, coeff n Y ∈ Set.range (algebraMap O R) by
-    choose c hc using h
-    exact ⟨mk c, ext fun n ↦ by simp [hc]⟩
+  suffices h : ∀ n, coeff n Y ∈ Set.range (algebraMap O R) from (mem_map_range _).mpr h
   intro n
   induction n using Nat.strong_induction_on with
   | _ n ih =>
@@ -163,8 +160,8 @@ theorem C_dvd_sub_pow_sub_X_of_rescale_eq {π : O} (hπ : IsLeftRegular π) {q :
     · simp [hH₁, W]
     · simp [W, coeff_rescale, pow_add]
       ring
-  rw [hres, subst_add hH, subst_sub hH, subst_smul hH, subst_pow hH, subst_X hH, smul_eq_C_mul,
-    smul_eq_C_mul] at h
+  rw [hres, subst_add hH, subst_sub hH, subst_smul hH, subst_pow hH, subst_X hH] at h
+  simp only [smul_eq_C_mul] at h
   -- so `π (H - H ^ q - X) = π (π (W - E(H)))`, and `π` can be cancelled
   refine ⟨W - E.subst H, isSMulRegular_C_iff.mpr hπ.isSMulRegular ?_⟩
   simp only [smul_eq_mul]
@@ -184,8 +181,8 @@ theorem exists_map_eq_and_C_dvd_sub_pow_sub_X [IsLocalRing O] [FaithfulSMul O R]
   -- comparing linear coefficients, `G = X - X ^ q + π E` has linear coefficient `1`
   have hG₁ : coeff 1 (X - X ^ q + π • E) = 1 := by
     have h := congrArg (coeff 1) hY
-    rw [coeff_rescale, coeff_smul, coeff_one_subst hY₀, hY₁, pow_one, mul_one, mul_one,
-      Algebra.smul_def] at h
+    rw [coeff_rescale, coeff_smul, coeff_one_subst hY₀, hY₁, Algebra.smul_def] at h
+    simp only [pow_one, mul_one] at h
     have h' : c π * c (coeff 1 (X - X ^ q + π • E)) = c π * c 1 := by rw [map_one, mul_one, ← h]
     exact hinj (hπR h')
   obtain ⟨H, rfl⟩ := exists_map_eq_of_rescale_eq_smul_subst hπ hπR (hG₁ ▸ isUnit_one) hY₀
@@ -196,8 +193,7 @@ theorem exists_map_eq_and_C_dvd_sub_pow_sub_X [IsLocalRing O] [FaithfulSMul O R]
   refine ⟨H, rfl, C_dvd_sub_pow_sub_X_of_rescale_eq (E := E) hπO hH₀ hH₁ (map_injective _ hinj ?_)⟩
   -- the equation over `R` is the image of the equation over `O`
   rw [← rescale_map, hY, subst_map_algebraMap (.of_constantCoeff_zero' hH₀)]
-  ext n
-  rw [coeff_smul, coeff_map, coeff_map, coeff_smul, Algebra.smul_def, smul_eq_mul, map_mul]
+  rw [Algebra.smul_def, algebraMap_apply, ← map_C, ← map_mul, ← smul_eq_C_mul]
 
 end Integrality
 
@@ -268,9 +264,7 @@ theorem C_dvd_sub_mk_of_C_dvd_sub_pow_sub_X {O : Type*} [CommRing O] {π : O} (h
   -- for `k = 0` the hypothesis would say that `π` divides the linear coefficient `-1` of `-X`
   have hk : k ≠ 0 := by
     rintro rfl
-    have h := (C_dvd_iff_dvd_coeff _ _).mp hS 1
-    rw [pow_zero, pow_one, sub_self, zero_sub, map_neg, coeff_one_X, dvd_neg] at h
-    exact hπ (isUnit_of_dvd_one h)
+    exact hπ (isUnit_of_dvd_one (by simpa using (C_dvd_iff_dvd_coeff _ _).mp hS 1))
   -- reduce modulo `π`, a ring of characteristic `p`
   set I := Ideal.span {π}
   have : Nontrivial (O ⧸ I) :=

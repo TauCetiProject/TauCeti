@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.PiTopology
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 import Mathlib.RingTheory.PowerSeries.Inverse
+import TauCeti.RingTheory.PowerSeries.SubringCoeff
 import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
@@ -121,8 +122,8 @@ coefficients read in `R`. -/
 theorem subst_subst_inv_eq_map (G : O⟦X⟧) :
     PowerSeries.subst φ⁻¹.toPowerSeries (G.subst φ.toPowerSeries) =
       PowerSeries.map (algebraMap O R) G := by
-  rw [subst_comp_subst_apply φ.hasSubst φ⁻¹.hasSubst, ← toPowerSeries_mul, mul_inv_cancel,
-    toPowerSeries_one, map_algebraMap_eq_subst_X]
+  rw [subst_comp_subst_apply φ.hasSubst φ⁻¹.hasSubst, ← toPowerSeries_mul, toPowerSeries_mul_inv,
+    map_algebraMap_eq_subst_X]
 
 /-- **Substitution of a formal coordinate is injective** on power series over `O` when `O → R` is
 injective: `G` is recovered from `G(φ)` by substituting `φ⁻¹`. -/
@@ -137,14 +138,14 @@ coefficients in `O`. -/
 theorem mem_substSubalgebra_iff_coeff_subst_inv_mem {f : R⟦X⟧} :
     f ∈ φ.substSubalgebra O ↔
       ∀ n, coeff n (f.subst φ⁻¹.toPowerSeries) ∈ Set.range (algebraMap O R) := by
-  refine ⟨fun hf n ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨G, rfl⟩ := mem_substSubalgebra.mp hf
-    exact ⟨coeff n G, by rw [subst_subst_inv_eq_map, coeff_map]⟩
-  · choose c hc using h
-    refine mem_substSubalgebra.mpr ⟨PowerSeries.mk c, φ⁻¹.substAlgEquiv.injective ?_⟩
-    rw [substAlgEquiv_apply, substAlgEquiv_apply, subst_subst_inv_eq_map]
-    ext n
-    simp [hc]
+  -- `G(φ) = f` exactly when `G`, read in `R`, is `f(φ⁻¹)`, since substituting `φ⁻¹` is injective
+  have h : f ∈ φ.substSubalgebra O ↔
+      f.subst φ⁻¹.toPowerSeries ∈ (PowerSeries.map (algebraMap O R)).range := by
+    rw [mem_substSubalgebra, RingHom.mem_range]
+    refine exists_congr fun G ↦ ?_
+    rw [← subst_subst_inv_eq_map, ← substAlgEquiv_apply, ← substAlgEquiv_apply,
+      φ⁻¹.substAlgEquiv.injective.eq_iff]
+  exact h.trans (mem_map_range _)
 
 open PowerSeries.WithPiTopology in
 /-- **Closure under coefficientwise limits.** If `O` is closed in the topological ring `R`, then
@@ -234,7 +235,7 @@ theorem coeff_two_mem_range_of_mem (hφ : coeff 1 φ.toPowerSeries ∈ Set.range
       coeff 2 φ.toPowerSeries + algebraMap O R (coeff 2 G) * coeff 1 φ.toPowerSeries ^ 2 := by
     simp [coeff_subst_eq_sum_range _ φ.constantCoeff_toPowerSeries, Finset.sum_range_succ, sq,
       coeff_mul, Finset.Nat.antidiagonal_succ, Algebra.smul_def, coeff_one]
-  exact ⟨coeff 2 G * u ^ 2, by rw [h₂, h₁, zero_mul, zero_add, map_mul, map_pow, hu]⟩
+  exact ⟨coeff 2 G * u ^ 2, by simp [h₂, h₁, hu]⟩
 
 /-- An element of `O[[φ]]` without constant coefficient is `G(φ)` for a series `G` over `O`
 without constant coefficient. -/
@@ -263,8 +264,8 @@ theorem subst_mem_substSubalgebra_of_mem {a : R⟦X⟧} (ha : HasSubst a)
   intro n
   rw [← φ.subst_inv_subst hb, ← subst_comp_subst_apply φ⁻¹.hasSubst (φ.hasSubst_subst hb)]
   refine coeff_subst_mem (A := (algebraMap O R).range) (φ.hasSubst_subst hb) (fun d ↦ ?_) hf _
-  rw [Finsupp.unique_single d]
-  exact hφa _
+  rw [← coeff_def rfl]
+  exact hφa (d ())
 
 /-- **Stability under rescaling.** If `φ(c X)` is a power series in `φ` with coefficients in `O`,
 then so is `f(c X)` for every power series `f` in `φ` with coefficients in `O`. -/
@@ -318,7 +319,7 @@ theorem substSubalgebra_eq_iff [FaithfulSMul O R] {ψ : FormalCoordinate R} :
     -- `φ = Γ⁻¹(Γ(φ)) = Γ⁻¹(ψ)`
     have hφ : Γ⁻¹.toPowerSeries.subst ψ.toPowerSeries = φ.toPowerSeries := by
       rw [← hG, ← hΓ, ← subst_comp_subst_apply Γ.hasSubst φ.hasSubst, ← toPowerSeries_mul,
-        inv_mul_cancel, toPowerSeries_one, subst_X φ.hasSubst]
+        toPowerSeries_inv_mul, subst_X φ.hasSubst]
     exact hφ ▸ subst_mem_substSubalgebra _
 
 end TauCeti.FormalCoordinate
