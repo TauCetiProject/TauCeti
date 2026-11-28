@@ -493,6 +493,16 @@ theorem coe_rootLatticeAction_apply (w : R.weylGroup hA) (φ : R.rootLattice) :
     (R.rootLatticeAction hA w φ : Dual K H) = (w : Dual K H ≃ₗ[K] Dual K H) φ :=
   Submodule.coe_restrictLinearEquivHom_apply _ _ _ w φ
 
+/-- In `R.weylGroup hA`, the product of two simple generators has order
+`TauCeti.coxeterMatrixOfGeneralizedCartanMatrix A i j`. -/
+@[simp]
+theorem orderOf_weylSimple_mul_weylSimple [DecidableEq I] [CharZero K] {i j : I}
+    (hzero : A i j = 0 ↔ A j i = 0) :
+    orderOf (R.weylSimple hA i * R.weylSimple hA j) =
+      coxeterMatrixOfGeneralizedCartanMatrix A i j := by
+  rw [← orderOf_injective (R.weylGroup hA).subtype Subtype.val_injective, map_mul]
+  exact R.orderOf_simpleReflection_mul_simpleReflection hA hzero
+
 end RootLattice
 
 namespace CoweightLattice

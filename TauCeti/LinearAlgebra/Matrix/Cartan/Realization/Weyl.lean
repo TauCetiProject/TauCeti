@@ -31,11 +31,10 @@ For an integral matrix `A` whose vanishing entries come in transposed pairs, the
 satisfy the relations of the Coxeter matrix `TauCeti.coxeterMatrixOfGeneralizedCartanMatrix A`:
 `(sᵢ sⱼ)^mᵢⱼ = 1`, where `mᵢⱼ = 2, 3, 4, 6` for `Aᵢⱼ Aⱼᵢ = 0, 1, 2, 3` and `mᵢⱼ = ∞` otherwise. This
 gives a homomorphism from the Coxeter group onto the Weyl group. Over a field of characteristic
-zero, and when the Cartan products are nonnegative as for a generalized Cartan matrix, the
-product `sᵢ sⱼ` of two simple reflections has order exactly `mᵢⱼ`, including the infinite order
-`mᵢⱼ = ∞` of affine type `A₁⁽¹⁾`. That the homomorphism is injective over a field of characteristic
-zero for a generalized Cartan matrix, so that the Weyl group is a Coxeter group on the simple
-reflections, is Kac's Proposition 3.13, proved in
+zero, the product `sᵢ sⱼ` of two simple reflections has order `mᵢⱼ`, including the infinite order
+`mᵢⱼ = ∞` outside `Aᵢⱼ Aⱼᵢ ∈ {0, 1, 2, 3}` (as in affine type `A₁⁽¹⁾`). That the homomorphism is
+injective over a field of characteristic zero for a generalized Cartan matrix, so that the Weyl
+group is a Coxeter group on the simple reflections, is Kac's Proposition 3.13, proved in
 `TauCeti.LinearAlgebra.Matrix.Cartan.Realization.CoxeterSystem`.
 
 ## Main definitions
@@ -306,6 +305,28 @@ private theorem cartan_product_cases {i j : I} (hzero : A i j = 0 ↔ A j i = 0)
     exact .inl ⟨hij0, hzero.mp hij0⟩
   · omega
 
+private theorem orderOf_simpleReflection_mul_simpleReflection_of_neg [CharZero K] {i j : I}
+    (hij : i ≠ j) (hneg : A i j * A j i < 0) :
+    orderOf (R.simpleReflection hA i * R.simpleReflection hA j) = 0 := by
+  have hli := R.linearIndependent_root_pair hij
+  have hc := R.dual_eval_mul_dual_eval i j
+  rw [simpleReflection, simpleReflection]
+  refine orderOf_eq_zero_iff'.mpr fun n hn hpow ↦ ?_
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
+  have hcoord := ((Module.reflection_mul_reflection_pow_apply_self_eq_self_iff hli (k + 1)).mp
+    (LinearEquiv.congr_fun hpow (R.root i))).right
+  have hk1 : (((k + 1 : ℕ) : ℤ) - 1) = (k : ℤ) := by omega
+  rw [show Dual.eval K H (R.coroot i) (R.root j) * Dual.eval K H (R.coroot j) (R.root i) - 2 =
+      ((A i j * A j i - 2 : ℤ) : K) by rw [hc]; push_cast; ring,
+    hk1, Polynomial.Chebyshev.S_eval_intCast, R.dual_eval_coroot_root j i] at hcoord
+  have habs : (2 : ℤ) ≤ |A i j * A j i - 2| := by rw [le_abs]; omega
+  have hbound := Polynomial.Chebyshev.natCast_add_one_le_abs_S_eval habs k
+  have hSk : (((Polynomial.Chebyshev.S ℤ k).eval (A i j * A j i - 2) : ℤ) : K) ≠ 0 :=
+    Int.cast_ne_zero.mpr fun h0 ↦ by rw [h0, abs_zero] at hbound; omega
+  have haji : (A j i : K) ≠ 0 :=
+    Int.cast_ne_zero.mpr fun h0 ↦ by simp [h0] at hneg
+  exact mul_ne_zero hSk haji hcoord
+
 variable [DecidableEq I]
 
 /-- **The Coxeter relations.** If the entries `A i j` and `A j i` of the integral matrix `A`
@@ -341,16 +362,21 @@ theorem pow_simpleReflection_mul_simpleReflection_eq_one {i j : I}
     exact Module.reflection_mul_reflection_pow_six_eq_one _ _ (by rw [hc, h]; norm_num)
 
 /-- **The order of a product of two simple reflections is the Coxeter matrix entry.** Over a field
-of characteristic zero, for an integral matrix whose vanishing entries come in transposed pairs
-and whose Cartan products `A i j * A j i` are nonnegative, as for a generalized Cartan matrix, the
-product `sᵢ sⱼ` has order exactly `TauCeti.coxeterMatrixOfGeneralizedCartanMatrix A i j`. When
-`A i j * A j i ≥ 4` that entry is `0`: the product has infinite order. -/
+of characteristic zero, for any integral matrix whose vanishing entries come in transposed pairs,
+the product `sᵢ sⱼ` has order `TauCeti.coxeterMatrixOfGeneralizedCartanMatrix A i j`. Outside
+`A i j * A j i ∈ {0, 1, 2, 3}` (whether `A i j * A j i ≥ 4` or `A i j * A j i < 0`), that entry is
+`0` and the product has infinite order. -/
 theorem orderOf_simpleReflection_mul_simpleReflection [CharZero K] {i j : I}
-    (hzero : A i j = 0 ↔ A j i = 0) (hprod : 0 ≤ A i j * A j i) :
+    (hzero : A i j = 0 ↔ A j i = 0) :
     orderOf (R.simpleReflection hA i * R.simpleReflection hA j) =
       coxeterMatrixOfGeneralizedCartanMatrix A i j := by
   rcases eq_or_ne i j with rfl | hij
   · simp
+  rcases lt_or_ge (A i j * A j i) 0 with hneg | hprod
+  · rw [coxeterMatrixOfGeneralizedCartanMatrix_apply_of_lt_four A hij (by omega),
+      coxeterOrder_eq_zero_iff.mpr
+        (by simp only [Set.mem_insert_iff, Set.mem_singleton_iff]; omega)]
+    exact R.orderOf_simpleReflection_mul_simpleReflection_of_neg hA hij hneg
   have hli := R.linearIndependent_root_pair hij
   have hc := R.dual_eval_mul_dual_eval i j
   rw [simpleReflection, simpleReflection]
@@ -459,7 +485,7 @@ example {K H : Type*} [Field K] [CharZero K] [AddCommGroup H] [Module K H]
     (R : CartanRealization ((!![2, -2; -2, 2] : Matrix (Fin 2) (Fin 2) ℤ).map (Int.cast : ℤ → K)) H)
     (hA : ∀ i, (!![2, -2; -2, 2] : Matrix (Fin 2) (Fin 2) ℤ).map (Int.cast : ℤ → K) i i = 2) :
     orderOf (R.simpleReflection hA 0 * R.simpleReflection hA 1) = 0 := by
-  rw [R.orderOf_simpleReflection_mul_simpleReflection hA (by decide) (by decide)]
+  rw [R.orderOf_simpleReflection_mul_simpleReflection hA (by decide)]
   simp
 
 /-- Type `B₂`, with `A = [[2, -2], [-1, 2]]`: the Cartan product is `2`, so the product of the two
@@ -468,7 +494,7 @@ example {K H : Type*} [Field K] [CharZero K] [AddCommGroup H] [Module K H]
     (R : CartanRealization ((!![2, -2; -1, 2] : Matrix (Fin 2) (Fin 2) ℤ).map (Int.cast : ℤ → K)) H)
     (hA : ∀ i, (!![2, -2; -1, 2] : Matrix (Fin 2) (Fin 2) ℤ).map (Int.cast : ℤ → K) i i = 2) :
     orderOf (R.simpleReflection hA 0 * R.simpleReflection hA 1) = 4 := by
-  rw [R.orderOf_simpleReflection_mul_simpleReflection hA (by decide) (by decide)]
+  rw [R.orderOf_simpleReflection_mul_simpleReflection hA (by decide)]
   simp
 
 end Examples

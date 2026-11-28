@@ -5,28 +5,34 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Ring.Abs
 public import Mathlib.RingTheory.Polynomial.Chebyshev
-public import Mathlib.Algebra.Order.Ring.Defs
 
 /-!
-# Growth of the rescaled Chebyshev polynomials of the second kind from `2` on
+# Parity and growth of the rescaled Chebyshev polynomials of the second kind
 
-Mathlib's rescaled Chebyshev polynomials of the second kind `Polynomial.Chebyshev.S R n` take the
-value `n + 1` at `2` (`Polynomial.Chebyshev.S_eval_two`). This file shows that at every point
-`t ≥ 2` of an ordered commutative ring they grow at least as fast: the values `Sₙ(t)`, `n ≥ 0`,
-increase by at least `1` at each step, so `n + 1 ≤ Sₙ(t)`. In particular `1 ≤ Sₙ(t)`, the map
-`n ↦ Sₙ(t)` is monotone (strictly so in a nontrivial ring), and `0 ≤ Sₙ₋₁(t)` for all `n ≥ 0`.
+Mathlib's rescaled Chebyshev polynomials of the second kind `Polynomial.Chebyshev.S R n` satisfy
+parity `Sₙ(-x) = n.negOnePow * Sₙ(x)` (`Polynomial.Chebyshev.S_eval_neg`) and take the value
+`n + 1` at `2` (`Polynomial.Chebyshev.S_eval_two`). This file shows that at every point `t ≥ 2` of
+an ordered commutative ring they grow at least as fast: the values `Sₙ(t)`, `n ≥ 0`, increase by at
+least `1` at each step, so `n + 1 ≤ Sₙ(t)`, and by parity `n + 1 ≤ |Sₙ(t)|` whenever `2 ≤ |t|` in a
+linearly ordered commutative ring (`Polynomial.Chebyshev.natCast_add_one_le_abs_S_eval`). In
+particular `1 ≤ Sₙ(t)`, the map `n ↦ Sₙ(t)` is monotone (strictly so in a nontrivial ring), and
+`0 ≤ Sₙ₋₁(t)` for all `n ≥ 0`.
 
 The values `Sₙ(t)` are the coefficients of the powers of a product of two reflections whose
-Cartan product is `t + 2`. For `t ≥ 2` the product is a shear or a hyperbolic transformation,
-and the growth proved here shows that it has infinite order. The file also records the value
-`S₃(1) = -1`, which rules out the order `3` for Cartan product `3`, and the value of `Sₙ` at the
-image of an integer, which transports the growth bound from `ℤ` to any ring.
+Cartan product is `t + 2`. Outside `{0, 1, 2, 3}` (`2 ≤ |t|`), the growth proved here shows that
+the product has infinite order. The file also records the value `S₃(1) = -1`, which rules out the
+order `3` for Cartan product `3`, and the value of `Sₙ` at the image of an integer, which
+transports the growth bound from `ℤ` to any ring.
 
 ## Main results
 
+* `Polynomial.Chebyshev.S_eval_neg`: `Sₙ(-x) = (-1)ⁿ Sₙ(x)` over any commutative ring.
 * `Polynomial.Chebyshev.S_eval_add_one_le`: `Sₙ(t) + 1 ≤ Sₙ₊₁(t)` for `t ≥ 2` and `n ≥ 0`.
 * `Polynomial.Chebyshev.natCast_add_one_le_S_eval`: `n + 1 ≤ Sₙ(t)` for `t ≥ 2` and `n ≥ 0`.
+* `Polynomial.Chebyshev.natCast_add_one_le_abs_S_eval`: `n + 1 ≤ |Sₙ(t)|` for `2 ≤ |t|` and
+  `n ≥ 0`.
 * `Polynomial.Chebyshev.one_le_S_eval`, `Polynomial.Chebyshev.nonneg_S_eval_sub_one`: `1 ≤ Sₙ(t)`
   and `0 ≤ Sₙ₋₁(t)` for `t ≥ 2` and `n ≥ 0`.
 * `Polynomial.Chebyshev.monotone_S_eval`, `Polynomial.Chebyshev.strictMono_S_eval`: `n ↦ Sₙ(t)` is
@@ -40,6 +46,28 @@ public section
 
 namespace Polynomial.Chebyshev
 
+/-- **Parity of `Sₙ`.** Evaluating `Sₙ` at `-x` multiplies its value at `x` by `(-1)ⁿ`. -/
+theorem S_eval_neg {R : Type*} [CommRing R] (n : ℤ) (x : R) :
+    (S R n).eval (-x) = (n.negOnePow : R) * (S R n).eval x := by
+  induction n using Polynomial.Chebyshev.induct with
+  | zero => simp
+  | one => simp
+  | add_two n ih1 ih2 =>
+    have h2 : (Int.negOnePow 2 : ℤ) = 1 := by decide
+    simp only [S_add_two, Polynomial.eval_sub, Polynomial.eval_mul, Polynomial.eval_X, ih1, ih2,
+      Int.negOnePow_add, Int.negOnePow_one, Units.val_mul, Units.val_neg, Units.val_one, h2,
+      Int.cast_mul, Int.cast_neg, Int.cast_one]
+    ring
+  | neg_add_one n ih1 ih2 =>
+    have hpow : (-(n : ℤ) - 1).negOnePow = -(n : ℤ).negOnePow := by
+      rw [← Int.negOnePow_neg, neg_sub, sub_neg_eq_add, add_comm, Int.negOnePow_succ]
+    have hidx : (-(n : ℤ) - 1) = -(n : ℤ) + 1 - 2 := by omega
+    rw [hpow, hidx, S_sub_two]
+    simp only [add_sub_cancel_right, Polynomial.eval_sub, Polynomial.eval_mul,
+      Polynomial.eval_X, ih1, ih2, Int.negOnePow_add, Int.negOnePow_neg, Int.negOnePow_one,
+      Units.val_mul, Units.val_neg, Units.val_one, Int.cast_mul, Int.cast_neg, Int.cast_one]
+    ring
+
 /-- `S₃(1) = -1`: at `t = 1` the values `Sₙ(t)` run through `1, 1, 0, -1`. -/
 theorem S_three_eval_one (R : Type*) [CommRing R] : (S R 3).eval (1 : R) = -1 := by
   have h : S R (3 : ℤ) = X * S R 2 - S R 1 := by simpa using S_add_two R (1 : ℤ)
@@ -50,6 +78,8 @@ at `c`. -/
 theorem S_eval_intCast (R : Type*) [CommRing R] (n c : ℤ) :
     (S R n).eval (c : R) = (((S ℤ n).eval c : ℤ) : R) := by
   rw [← map_S (Int.castRingHom R), eval_intCast_map, eq_intCast, Int.cast_id]
+
+section PartialOrder
 
 variable {R : Type*} [CommRing R] [PartialOrder R] [IsOrderedRing R] {t : R}
 
@@ -85,7 +115,7 @@ private theorem one_le_S_eval_and_step (ht : 2 ≤ t) :
 /-- At a point `t ≥ 2` the values `Sₙ(t)` increase by at least `1` at each step. -/
 theorem S_eval_add_one_le (ht : 2 ≤ t) (n : ℕ) :
     (S R n).eval t + 1 ≤ (S R (n + 1)).eval t := by
-  simpa using (one_le_S_eval_and_step ht n).2
+  simpa using (one_le_S_eval_and_step ht n).right
 
 /-- At a point `t ≥ 2` the value `Sₙ(t)` is at least its value `n + 1` at `2`. -/
 theorem natCast_add_one_le_S_eval (ht : 2 ≤ t) : ∀ n : ℕ, (n + 1 : R) ≤ (S R n).eval t
@@ -97,18 +127,18 @@ theorem natCast_add_one_le_S_eval (ht : 2 ≤ t) : ∀ n : ℕ, (n + 1 : R) ≤ 
 
 /-- At a point `t ≥ 2` every value `Sₙ(t)`, `n ≥ 0`, is at least `1`. -/
 theorem one_le_S_eval (ht : 2 ≤ t) (n : ℕ) : 1 ≤ (S R n).eval t :=
-  (one_le_S_eval_and_step ht n).1
+  (one_le_S_eval_and_step ht n).left
 
 /-- At a point `t ≥ 2`, `n ↦ Sₙ(t)` is monotone on `ℕ`. -/
 theorem monotone_S_eval (ht : 2 ≤ t) : Monotone fun n : ℕ ↦ (S R n).eval t :=
   monotone_nat_of_le_succ fun n ↦
-    le_trans (le_add_of_nonneg_right zero_le_one) (one_le_S_eval_and_step ht n).2
+    le_trans (le_add_of_nonneg_right zero_le_one) (one_le_S_eval_and_step ht n).right
 
 /-- At a point `t ≥ 2` of a nontrivial ordered commutative ring, `n ↦ Sₙ(t)` is strictly monotone
 on `ℕ`. -/
 theorem strictMono_S_eval [Nontrivial R] (ht : 2 ≤ t) : StrictMono fun n : ℕ ↦ (S R n).eval t :=
   strictMono_nat_of_lt_succ fun n ↦
-    lt_of_lt_of_le (lt_add_of_pos_right _ zero_lt_one) (one_le_S_eval_and_step ht n).2
+    lt_of_lt_of_le (lt_add_of_pos_right _ zero_lt_one) (one_le_S_eval_and_step ht n).right
 
 /-- At a point `t ≥ 2` every value `Sₙ₋₁(t)`, `n ≥ 0`, is nonnegative: it vanishes at `n = 0` and
 is at least `1` for `n ≥ 1`. -/
@@ -116,5 +146,24 @@ theorem nonneg_S_eval_sub_one (ht : 2 ≤ t) : ∀ n : ℕ, 0 ≤ (S R ((n : ℤ
   | 0 => by simp
   | n + 1 => by
     simpa [Nat.cast_add, add_sub_cancel_right] using le_trans zero_le_one (one_le_S_eval ht n)
+
+end PartialOrder
+
+section LinearOrder
+
+variable {R : Type*} [CommRing R] [LinearOrder R] [IsOrderedRing R]
+
+/-- **Linear lower bound outside `(-2, 2)`.** For `2 ≤ |t|` and `n : ℕ`, `n + 1 ≤ |Sₙ(t)|`. -/
+theorem natCast_add_one_le_abs_S_eval {t : R} (ht : 2 ≤ |t|) (n : ℕ) :
+    (n + 1 : R) ≤ |(S R n).eval t| := by
+  rcases le_abs.mp ht with ht' | ht'
+  · exact (natCast_add_one_le_S_eval ht' n).trans (le_abs_self _)
+  · have hneg := natCast_add_one_le_S_eval ht' n
+    rw [S_eval_neg] at hneg
+    rcases Int.units_eq_one_or (n : ℤ).negOnePow with hp | hp <;> simp [hp] at hneg
+    · exact hneg.trans (le_abs_self _)
+    · exact hneg.trans (neg_le_abs _)
+
+end LinearOrder
 
 end Polynomial.Chebyshev

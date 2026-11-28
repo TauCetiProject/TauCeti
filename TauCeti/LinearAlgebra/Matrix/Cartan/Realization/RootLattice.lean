@@ -129,6 +129,16 @@ instance isAddFG_posRootCone [Finite I] : IsAddFG R.posRootCone.toAddSubmonoid :
   rw [posRootCone_def, Submodule.span_nat_eq_addSubmonoidClosure]
   infer_instance
 
+/-- Every element of the root lattice vanishes on `R.cartanCenter`. -/
+theorem apply_eq_zero_of_mem_rootLattice_of_mem_cartanCenter {φ : Dual K H}
+    (hφ : φ ∈ R.rootLattice) {z : H} (hz : z ∈ R.cartanCenter) : φ z = 0 := by
+  rw [R.rootLattice_def] at hφ
+  induction hφ using Submodule.span_induction with
+  | mem _ hx => obtain ⟨i, rfl⟩ := hx; exact (R.mem_cartanCenter_iff z).mp hz i
+  | zero => simp
+  | add _ _ _ _ ihx ihy => simp [ihx, ihy]
+  | smul _ _ _ ih => simp [ih]
+
 section Restrict
 
 variable (M : Submodule K H) (hc : R.corootSpan ≤ M) (hs : M ⊔ R.cartanCenter = ⊤)
@@ -149,17 +159,10 @@ noncomputable def restrictRootLatticeEquiv :
     R.rootLattice ≃ₗ[ℤ] (R.restrict M hc hs).rootLattice :=
   (LinearEquiv.ofInjective ((M.dualRestrict.restrictScalars ℤ).domRestrict R.rootLattice) <|
     (injective_iff_map_eq_zero _).mpr fun φ hφ ↦ Subtype.ext <| by
-      have hker : ∀ ξ ∈ R.rootLattice, ∀ z ∈ R.cartanCenter, ξ z = 0 := fun ξ hξ ↦ by
-        rw [rootLattice_def] at hξ
-        induction hξ using Submodule.span_induction with
-        | mem _ hα => obtain ⟨i, rfl⟩ := hα; exact fun z hz ↦ (R.mem_cartanCenter_iff z).mp hz i
-        | zero => exact fun _ _ ↦ rfl
-        | add _ _ _ _ ih₁ ih₂ => exact fun z hz ↦ by simp [ih₁ z hz, ih₂ z hz]
-        | smul _ _ _ ih => exact fun z hz ↦ by simp [ih z hz]
       ext x
       obtain ⟨m, hm, z, hz, rfl⟩ := Submodule.mem_sup.mp (hs ▸ Submodule.mem_top : x ∈ _)
       have hm' : (φ : Dual K H) m = 0 := congr($(hφ) ⟨m, hm⟩)
-      simp [hm', hker φ φ.property z hz]).trans
+      simp [hm', R.apply_eq_zero_of_mem_rootLattice_of_mem_cartanCenter φ.property hz]).trans
     (LinearEquiv.ofEq _ _ (R.range_domRestrict_dualRestrict_rootLattice M hc hs))
 
 /-- Under `restrictRootLatticeEquiv`, a root-lattice functional is restricted along `M.subtype`. -/
@@ -189,6 +192,25 @@ theorem linearIndependent_nat_root : LinearIndependent ℕ R.root :=
 /-- **The positive root cone is pointed**: `Q₊ ∩ (-Q₊) = 0`, even for a singular matrix. -/
 theorem isPointed_posRootCone : R.posRootCone.toAddSubmonoid.IsPointed :=
   fun _ h h' ↦ R.linearIndependent_nat_root.eq_zero_of_mem_natSpan_of_neg_mem h h'
+
+/-- If `α, β ∈ Q₊` sum to `k • αᵢ`, then `α` is itself a natural multiple of `αᵢ`. -/
+theorem exists_nsmul_root_of_add_eq_nsmul_root {α β : Dual K H}
+    (hα : α ∈ R.posRootCone) (hβ : β ∈ R.posRootCone) {i : I} {k : ℕ}
+    (hsum : α + β = k • R.root i) : ∃ c : ℕ, α = c • R.root i := by
+  let hli := R.linearIndependent_nat_root
+  let x : Submodule.span ℕ (Set.range R.root) := ⟨α, R.posRootCone_def ▸ hα⟩
+  let y : Submodule.span ℕ (Set.range R.root) := ⟨β, R.posRootCone_def ▸ hβ⟩
+  have hxy : x + y = k • ⟨R.root i, R.posRootCone_def ▸ R.root_mem_posRootCone i⟩ :=
+    Subtype.ext hsum
+  have hrepr : hli.repr x + hli.repr y = Finsupp.single i k := by
+    rw [← map_add, hxy, map_nsmul, hli.repr_eq_single i _ rfl, Finsupp.smul_single_one]
+  have hx_single : hli.repr x = Finsupp.single i (hli.repr x i) := by
+    ext j; rcases eq_or_ne j i with rfl | hji
+    · simp
+    · have hj := congrArg (fun f : I →₀ ℕ ↦ f j) hrepr
+      simp only [Finsupp.add_apply, Finsupp.single_eq_of_ne hji] at hj ⊢; omega
+  exact ⟨hli.repr x i, ((Finsupp.linearCombination_single _ _ _).symm.trans
+    (hx_single ▸ hli.linearCombination_repr x)).symm⟩
 
 /-- The **height** `ht(∑ᵢ nᵢ αᵢ) = ∑ᵢ nᵢ` of an element of the positive root cone, the sum of its
 unique natural coordinates in the simple roots. -/

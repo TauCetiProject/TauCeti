@@ -739,3 +739,12 @@ theorem derivedLength_dihedralGroup {n : ℕ} (h1 : n ≠ 1) (h2 : n ≠ 2) :
 end Center
 
 end TauCeti
+
+namespace DihedralGroup
+/-- Casting a rotation across equal dihedral parameters applies `ZMod.ringEquivCongr`. -/
+@[simp] theorem cast_r {m n : ℕ} (h : m = n) (i : ZMod m) :
+    cast (congrArg DihedralGroup h) (r i) = r (ZMod.ringEquivCongr h i) := by subst h; simp
+/-- Casting a reflection across equal dihedral parameters applies `ZMod.ringEquivCongr`. -/
+@[simp] theorem cast_sr {m n : ℕ} (h : m = n) (i : ZMod m) :
+    cast (congrArg DihedralGroup h) (sr i) = sr (ZMod.ringEquivCongr h i) := by subst h; simp
+end DihedralGroup

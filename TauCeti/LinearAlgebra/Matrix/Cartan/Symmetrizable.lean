@@ -427,6 +427,15 @@ theorem posDef_symmetrizedMatrix_toSymmetrizableDatum (hM : M.IsFiniteCartan) :
 
 end Matrix.IsFiniteCartan
 
+namespace TauCeti.SymmetrizableDatum
+
+/-- The Cartan matrix of a `TauCeti.SymmetrizableDatum` is a generalized Cartan matrix. -/
+theorem isGeneralizedCartan {I : Type*} (D : SymmetrizableDatum I) :
+    D.cartan.IsGeneralizedCartan :=
+  ⟨D.diag, D.offDiag_nonpos, D.zero_comm⟩
+
+end TauCeti.SymmetrizableDatum
+
 /-! ### Examples -/
 
 /-- Type `A₁`: the matrix `(2)` with symmetrizer `(1)` has symmetrized matrix `(2)`. -/
