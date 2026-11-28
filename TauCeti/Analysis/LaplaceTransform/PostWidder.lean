@@ -66,11 +66,11 @@ theorem integral_gammaMeasure_eq_smul_iteratedDeriv {E : Type*} [NormedAddCommGr
 
 /-- The Post–Widder coefficient of degree `k` at a positive rate `a` approximates the original
 function at `(k + 1) / a` with error at most `K * √(k + 1) / a`, where `K` is a Lipschitz
-constant on the nonnegative ray. -/
+constant on the positive ray. -/
 theorem norm_smul_iteratedDeriv_sub_le_of_hasLaplace {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℂ E] [CompleteSpace E] {f : ℝ → E} {F : ℂ → E} {a : ℝ} (ha : 0 < a)
     (hF : ∀ᶠ z in 𝓝 (a : ℂ), HasLaplace f z (F z)) {K : ℝ≥0}
-    (hf : LipschitzOnWith K f (Ici 0)) (k : ℕ) :
+    (hf : LipschitzOnWith K f (Ioi 0)) (k : ℕ) :
     ‖(((a : ℂ) ^ (k + 1) * (-1) ^ k / k !) • iteratedDeriv k F a) -
       f ((k + 1 : ℕ) / a)‖ ≤ (K : ℝ) * √(k + 1 : ℕ) / a := by
   rw [← integral_gammaMeasure_eq_smul_iteratedDeriv ha.le hF]
