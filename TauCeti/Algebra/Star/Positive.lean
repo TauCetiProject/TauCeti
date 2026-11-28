@@ -43,12 +43,14 @@ theorem starModule_of_trace_mul_star_pos {E : Type*} [Ring E] [Algebra ℝ E] [S
     set u : E := star (algebraMap ℝ E r) - algebraMap ℝ E r
     have hsq : star (algebraMap ℝ E (r * r)) - algebraMap ℝ E (r * r) =
         (2 * r) • u + u * u := by
-      have hmul : (algebraMap ℝ E r + u) * (algebraMap ℝ E r + u) -
-          algebraMap ℝ E r * algebraMap ℝ E r =
-          algebraMap ℝ E r * u + u * algebraMap ℝ E r + u * u := by noncomm_ring
       have hstar_r : star (algebraMap ℝ E r) = algebraMap ℝ E r + u := by simp [u]
-      rw [map_mul, star_mul, hstar_r,
-        hmul, (Algebra.commutes r u).symm, ← Algebra.smul_def, two_mul, add_smul]
+      have hcomm : algebraMap ℝ E r * u + u * algebraMap ℝ E r = (2 * r) • u := by
+        rw [← Algebra.commutes, ← Algebra.smul_def, two_mul, add_smul]
+      calc star (algebraMap ℝ E (r * r)) - algebraMap ℝ E (r * r)
+        _ = (algebraMap ℝ E r + u) * (algebraMap ℝ E r + u) -
+              algebraMap ℝ E r * algebraMap ℝ E r := by rw [map_mul, star_mul, hstar_r]
+        _ = (algebraMap ℝ E r * u + u * algebraMap ℝ E r) + u * u := by noncomm_ring
+        _ = (2 * r) • u + u * u := by rw [hcomm]
     have htu2 : t (u * u) = 0 := by
       have h0 : t (star (algebraMap ℝ E (r * r)) - algebraMap ℝ E (r * r)) = 0 := by
         rw [map_sub, htf, sub_self]

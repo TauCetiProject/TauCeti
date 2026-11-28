@@ -79,6 +79,11 @@ private theorem exists_starAlgEquiv_matrix_of_hermitian_unit {D : Type*} [Divisi
   have huinvH : (↑u⁻¹ : Matrix n n D)ᴴ = ↑u⁻¹ := IsSelfAdjoint.of_mul_eq_one huH u.mul_inv
   have hre1 : rePart 1 = 1 :=
     ((algebraMap ℝ D).injective (by simpa using hre_sa 1 (IsSelfAdjoint.one D))).symm
+  have hre_mul {a b : D} (ha : IsSelfAdjoint a) (hb : IsSelfAdjoint b) :
+      rePart (a * b) = rePart a * rePart b := by
+    conv_lhs => rw [hre_sa a ha, hre_sa b hb]
+    rw [← map_mul, Algebra.algebraMap_eq_smul_one]
+    simp [hre1]
   let v₀ : n → D := Pi.single (Classical.arbitrary n) 1
   have hv₀ : v₀ ≠ 0 := fun h ↦ by simpa [v₀] using congrFun h (Classical.arbitrary n)
   set α : ℝ := rePart (star v₀ ⬝ᵥ ((↑u⁻¹ : Matrix n n D) *ᵥ v₀))
@@ -86,9 +91,8 @@ private theorem exists_starAlgEquiv_matrix_of_hermitian_unit {D : Type*} [Divisi
     have h1 := comp_traceLinearMap_conj_pos_of_trace_eq φ t c hc ht hpos u hσ
       (Matrix.vecMulVec v₀ (star w)) (by simp [hv₀, hw])
     rwa [LinearMap.comp_traceLinearMap_vecMulVec_mul_mul_conjTranspose_mul hre_cyc,
-      hre_sa _ (Matrix.IsHermitian.star_dotProduct_mulVec_comm huinvH v₀ v₀),
-      hre_sa _ (Matrix.IsHermitian.star_dotProduct_mulVec_comm huH w w), ← map_mul,
-      Algebra.algebraMap_eq_smul_one, map_smul, smul_eq_mul, hre1, mul_one] at h1
+      hre_mul (Matrix.IsHermitian.star_dotProduct_mulVec_comm huinvH v₀ v₀)
+        (Matrix.IsHermitian.star_dotProduct_mulVec_comm huH w w)] at h1
   let a : (Matrix n n D)ˣ := if α < 0 then -u else u
   have haPos : IsRosatiPositive T (a : Matrix n n D) := by
     refine (Matrix.isRosatiPositive_comp_traceLinearMap_iff _ hre_cyc).mpr ⟨by
@@ -121,6 +125,13 @@ private theorem exists_starAlgEquiv_matrix_of_hermitian_unit {D : Type*} [Divisi
   exact and_congr_right fun _ ↦ forall₂_congr fun _ _ ↦
     ⟨fun h ↦ pos_of_mul_pos_right h hc.le, fun h ↦ mul_pos hc h⟩
 
+private theorem map_trace_smul_one {D : Type*} [Ring D] [Algebra ℝ D] {n : Type*} [Fintype n]
+    [DecidableEq n] (τ : D →ₗ[ℝ] ℝ) (c : D) :
+    τ (Matrix.trace (c • (1 : Matrix n n D))) = (Fintype.card n : ℝ) * τ c := by
+  have htr : Matrix.trace (c • (1 : Matrix n n D)) = (Fintype.card n : ℝ) • c := by
+    simp [Matrix.trace_smul, Algebra.smul_def, Nat.cast_comm]
+  rw [htr, map_smul, smul_eq_mul]
+
 private theorem exists_cyclic_trace_pos {D : Type*} [Ring D] [Nontrivial D] [Algebra ℝ D]
     [Nonempty n] (φ : A ≃ₐ[ℝ] Matrix n n D) (t : A →ₗ[ℝ] ℝ)
     (hcyc : ∀ x y, t (x * y) = t (y * x)) (hpos : ∀ x, x ≠ 0 → 0 < t (x * star x)) :
@@ -130,8 +141,8 @@ private theorem exists_cyclic_trace_pos {D : Type*} [Ring D] [Nontrivial D] [Alg
     (t.comp φ.symm.toLinearMap) fun _ _ ↦ by simp [hcyc]
   have htpos : 0 < (Fintype.card n : ℝ) * τ 1 := by
     have h := hτ 1
-    simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_one, Matrix.trace_one] at h
-    rw [← nsmul_one (Fintype.card n), ← Nat.cast_smul_eq_nsmul ℝ, map_smul, smul_eq_mul] at h
+    simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_one] at h
+    rw [← one_smul D (1 : Matrix n n D), map_trace_smul_one] at h
     exact h ▸ by simpa using hpos 1 fun h0 ↦
       (one_ne_zero : (1 : Matrix n n D) ≠ 0) (by simpa using congrArg φ h0)
   exact ⟨τ, pos_of_mul_pos_right htpos (Nat.cast_pos.mpr Fintype.card_pos).le, hτ_cyc,
@@ -237,8 +248,7 @@ private theorem trace_eq_mul_comp_traceLinearMap_complex {A : Type*} [Ring A] [A
   have hτI : τ Complex.I = 0 := by
     have h2 : t' (φ.symm (Complex.I • 1)) = -t' (φ.symm (Complex.I • 1)) := by
       conv_lhs => rw [← hstar', ← AlgEquiv.symm_apply_apply φ (star _), hI, map_neg, map_neg]
-    rw [hτ, AlgEquiv.apply_symm_apply, Matrix.trace_smul, Matrix.trace_one, smul_eq_mul,
-      mul_comm, ← Complex.ofReal_natCast, ← Complex.real_smul, map_smul, smul_eq_mul] at h2
+    rw [hτ, AlgEquiv.apply_symm_apply, map_trace_smul_one] at h2
     exact (mul_eq_zero.mp (by linarith : (Fintype.card n : ℝ) * τ Complex.I = 0)).resolve_left
       (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
   refine ⟨τ 1, hc, fun x ↦ ?_⟩

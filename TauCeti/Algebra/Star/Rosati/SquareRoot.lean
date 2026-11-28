@@ -36,13 +36,22 @@ namespace TauCeti
 open scoped Polynomial
 
 private theorem hasEigenvalue_lmul_pos {E : Type*} [Ring E] [Algebra ℝ E] [StarRing E]
-    (t : E →ₗ[ℝ] ℝ) (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) {s : E}
-    (hs : IsRosatiPositive t s) {μ : ℝ} (hμ : (Algebra.lmul ℝ E s).HasEigenvalue μ) : 0 < μ := by
+    (t : E →ₗ[ℝ] ℝ) (hstar : ∀ x : E, t (star x) = t x)
+    (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) {s : E}
+    (hs : IsRosatiPositive t s) {μ : ℝ}
+    (hμ : Module.End.HasEigenvalue (RosatiSpace.lmul t hstar hpos s) μ) : 0 < μ := by
   obtain ⟨v, hv⟩ := hμ.exists_hasEigenvector
-  have h1 := hs.trace_mul_mul_star_pos hv.2
-  have hsv : s * v = μ • v := by simpa using Module.End.mem_eigenspace_iff.mp hv.1
+  obtain ⟨v, rfl⟩ := (RosatiSpace.of t hstar hpos).surjective v
+  have hsv : s * v = μ • v := by
+    have hv1 : RosatiSpace.lmul t hstar hpos s (RosatiSpace.of t hstar hpos v) =
+        μ • RosatiSpace.of t hstar hpos v := by
+      simpa using Module.End.mem_eigenspace_iff.mp hv.1
+    rw [RosatiSpace.lmul_apply, ← map_smul] at hv1
+    exact (RosatiSpace.of t hstar hpos).injective hv1
+  have hvne : v ≠ 0 := fun h ↦ hv.2 (by simp [h])
+  have h1 := hs.trace_mul_mul_star_pos hvne
   rw [hsv, smul_mul_assoc, map_smul, smul_eq_mul] at h1
-  exact pos_of_mul_pos_left h1 (hpos v hv.2).le
+  exact pos_of_mul_pos_left h1 (hpos v hvne).le
 
 private theorem rosatiPositiveSquareRoot_of_star_invariant {E : Type*} [Ring E] [Algebra ℝ E]
     [StarRing E] [Module.Finite ℝ E] (t : E →ₗ[ℝ] ℝ)
@@ -53,8 +62,6 @@ private theorem rosatiPositiveSquareRoot_of_star_invariant {E : Type*} [Ring E] 
       ((r⁻¹ : Eˣ) : E) ∈ Algebra.adjoin ℝ ({s} : Set E) ∧
       (∀ x : E, Commute x s → Commute x r ∧ Commute x ((r⁻¹ : Eˣ) : E)) ∧
       ∀ r' : E, IsRosatiPositive t r' → r' * r' = s → r' = r := by
-  let core := rosatiInnerProductCore t hstar hpos
-  let _ := core.toNormedAddCommGroup; let _ := InnerProductSpace.ofCore core.toCore
   have hT := isPositive_lmul_of_isRosatiPositive t hcyc hstar hpos hs
   have hsqrt : hT.sqrt = hT.isSymmetric.cfc Real.sqrt :=
     (hT.isSymmetric.eq_cfc_iff Real.sqrt).mpr fun _ _ hx ↦ hT.sqrt_apply_of_apply_eq_smul hx
@@ -62,30 +69,38 @@ private theorem rosatiPositiveSquareRoot_of_star_invariant {E : Type*} [Ring E] 
   obtain ⟨q, hq⟩ := hT.isSymmetric.exists_aeval_eq_cfc (fun μ ↦ (Real.sqrt μ)⁻¹)
   simp only [Algebra.algebraMap_self, Polynomial.map_id] at hp hq
   set r : E := Polynomial.aeval s p; set rInv : E := Polynomial.aeval s q
-  have hlmul_r : Algebra.lmul ℝ E r = hT.sqrt := by
-    rw [hsqrt, ← hp]; exact (Polynomial.aeval_algHom_apply (Algebra.lmul ℝ E) s p).symm
-  have hrInv : Algebra.lmul ℝ E rInv = hT.isSymmetric.cfc (fun μ ↦ (Real.sqrt μ)⁻¹) :=
-    hq ▸ (Polynomial.aeval_algHom_apply (Algebra.lmul ℝ E) s q).symm
-  have hmul {f g : ℝ → ℝ} {a b : E} (ha : Algebra.lmul ℝ E a = hT.isSymmetric.cfc f)
-      (hb : Algebra.lmul ℝ E b = hT.isSymmetric.cfc g)
-      (hfg : ∀ μ, (Algebra.lmul ℝ E s).HasEigenvalue μ → f μ * g μ = 1) : a * b = 1 :=
-    Algebra.lmul_injective (R := ℝ) (by
+  let L := RosatiSpace.lmul t hstar hpos
+  have hlmul_r : L r = hT.sqrt := by
+    rw [hsqrt, ← hp]; exact (Polynomial.aeval_algHom_apply L s p).symm
+  have hrInv : L rInv = hT.isSymmetric.cfc (fun μ ↦ (Real.sqrt μ)⁻¹) :=
+    hq ▸ (Polynomial.aeval_algHom_apply L s q).symm
+  have hmul {f g : ℝ → ℝ} {a b : E} (ha : L a = hT.isSymmetric.cfc f)
+      (hb : L b = hT.isSymmetric.cfc g)
+      (hfg : ∀ μ, Module.End.HasEigenvalue (L s) μ → f μ * g μ = 1) : a * b = 1 :=
+    RosatiSpace.lmul_injective t hstar hpos (by
       rw [map_mul, map_one, ha, hb, ← hT.isSymmetric.cfc_mul, ← hT.isSymmetric.cfc_one]
       exact hT.isSymmetric.cfc_congr hfg)
   let u : Eˣ := ⟨r, rInv,
     hmul (hlmul_r.trans hsqrt) hrInv
-      fun _ hμ ↦ mul_inv_cancel₀ (Real.sqrt_ne_zero'.mpr (hasEigenvalue_lmul_pos t hpos hs hμ)),
+      fun _ hμ ↦ mul_inv_cancel₀
+        (Real.sqrt_ne_zero'.mpr (hasEigenvalue_lmul_pos t hstar hpos hs hμ)),
     hmul hrInv (hlmul_r.trans hsqrt)
-      fun _ hμ ↦ inv_mul_cancel₀ (Real.sqrt_ne_zero'.mpr (hasEigenvalue_lmul_pos t hpos hs hμ))⟩
+      fun _ hμ ↦ inv_mul_cancel₀
+        (Real.sqrt_ne_zero'.mpr (hasEigenvalue_lmul_pos t hstar hpos hs hμ))⟩
   have hadj (f : ℝ[X]) : Polynomial.aeval s f ∈ Algebra.adjoin ℝ ({s} : Set E) :=
     Polynomial.aeval_mem_adjoin_singleton ℝ s
   have hcom {x a : E} (ha : a ∈ Algebra.adjoin ℝ ({s} : Set E)) (hx : Commute x s) :
       Commute x a := Algebra.commute_of_mem_adjoin_of_forall_mem_commute ha (by simpa using hx)
+  have hinj_r : Function.Injective (L r) := fun x y h ↦ by
+    have h1 := congrArg (L (↑u⁻¹ : E)) h
+    have hinv : (↑u⁻¹ : E) * r = 1 := u.inv_mul
+    simpa [← LinearMap.comp_apply, ← Module.End.mul_eq_comp, ← map_mul, hinv] using h1
   refine ⟨hs.isUnit, u, isRosatiPositive_of_isPositive_lmul t hcyc hstar hpos
-      (hlmul_r ▸ hT.sqrt_isPositive) (fun _ _ h ↦ by simpa using congrArg ((↑u⁻¹ : E) * ·) h),
-    Algebra.lmul_injective (R := ℝ) (by rw [map_mul, hlmul_r, Module.End.mul_eq_comp, hT.sqrt_sq]),
+      (hlmul_r ▸ hT.sqrt_isPositive) hinj_r,
+    RosatiSpace.lmul_injective t hstar hpos
+      (by rw [map_mul, hlmul_r, Module.End.mul_eq_comp, hT.sqrt_sq]),
     hadj p, hadj q, fun _ hx ↦ ⟨hcom (hadj p) hx, hcom (hadj q) hx⟩,
-    fun r' hr' hr'sq ↦ Algebra.lmul_injective (R := ℝ) <| by
+    fun r' hr' hr'sq ↦ RosatiSpace.lmul_injective t hstar hpos <| by
       rw [hlmul_r]; exact hT.sqrt_unique (isPositive_lmul_of_isRosatiPositive t hcyc hstar hpos hr')
         (by rw [← Module.End.mul_eq_comp, ← map_mul, hr'sq])⟩
 

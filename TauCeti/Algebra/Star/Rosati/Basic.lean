@@ -19,9 +19,10 @@ import TauCeti.Algebra.Star.SelfAdjoint.LinearMap
 # Positive traces, the Rosati inner product, and the trace regular representation
 
 Defines `TauCeti.IsRosatiPositive` and its cone, unit, and transport properties, and constructs
-the trace inner product `TauCeti.rosatiInnerProductCore` (when `t` is star-invariant and strictly
-positive on `x * star x`) and faithful star regular representation
-`TauCeti.rosatiRegularRepresentation` (when `E` is finite-dimensional and `t` is cyclic).
+the trace inner product `TauCeti.rosatiInnerProductCore` and inner product space
+`TauCeti.RosatiSpace` (when `t` is star-invariant and strictly positive on `x * star x`) and
+faithful star regular representation `TauCeti.rosatiRegularRepresentation` (when `E` is
+finite-dimensional and `t` is cyclic).
 
 ## References
 
@@ -166,118 +167,212 @@ abbrev rosatiInnerProductCore (t : E →ₗ[ℝ] ℝ) (hstar : ∀ x : E, t (sta
     (hstar : ∀ x : E, t (star x) = t x) (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) (x y : E) :
     (rosatiInnerProductCore t hstar hpos).inner x y = t (x * star y) := rfl
 
-/-- Evaluation of the inner product installed from `TauCeti.rosatiInnerProductCore`. -/
-@[simp] theorem rosatiInnerProductCore_inner_eq (t : E →ₗ[ℝ] ℝ)
-    (hstar : ∀ x : E, t (star x) = t x) (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) (x y : E) :
-    letI := (rosatiInnerProductCore t hstar hpos).toNormedAddCommGroup
-    letI := InnerProductSpace.ofCore (rosatiInnerProductCore t hstar hpos).toCore
-    ⟪x, y⟫_ℝ = t (x * star y) := rfl
-
 end Core
+
+/-- Type synonym for `E` carrying the real inner product `⟪x, y⟫ = t (x * star y)` determined by
+a star-invariant linear functional `t : E →ₗ[ℝ] ℝ` strictly positive on `x * star x`. -/
+@[expose]
+def RosatiSpace {E : Type*} [AddCommMonoid E] [Mul E] [Module ℝ E] [Star E]
+    (t : E →ₗ[ℝ] ℝ) (_hstar : ∀ x : E, t (star x) = t x)
+    (_hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) : Type _ := E
+
+namespace RosatiSpace
+
+section Instances
+
+variable {E : Type*} [AddCommGroup E] [Mul E] [Module ℝ E] [Star E]
+
+instance (t : E →ₗ[ℝ] ℝ) (hstar : ∀ x : E, t (star x) = t x)
+    (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) :
+    AddCommGroup (RosatiSpace t hstar hpos) :=
+  inferInstanceAs (AddCommGroup E)
+
+instance (t : E →ₗ[ℝ] ℝ) (hstar : ∀ x : E, t (star x) = t x)
+    (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) :
+    Module ℝ (RosatiSpace t hstar hpos) :=
+  inferInstanceAs (Module ℝ E)
+
+instance [FiniteDimensional ℝ E] (t : E →ₗ[ℝ] ℝ) (hstar : ∀ x : E, t (star x) = t x)
+    (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) :
+    FiniteDimensional ℝ (RosatiSpace t hstar hpos) :=
+  inferInstanceAs (FiniteDimensional ℝ E)
+
+/-- The canonical `ℝ`-linear equivalence identifying `E` with `TauCeti.RosatiSpace t hstar hpos`. -/
+def of (t : E →ₗ[ℝ] ℝ) (hstar : ∀ x : E, t (star x) = t x)
+    (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) :
+    E ≃ₗ[ℝ] RosatiSpace t hstar hpos :=
+  LinearEquiv.refl ℝ E
+
+end Instances
+
+section Inner
+
+variable {E : Type*} [NonUnitalNonAssocRing E] [Module ℝ E] [IsScalarTower ℝ E E] [StarRing E]
+
+/-- The inner product core on `TauCeti.RosatiSpace t hstar hpos`, induced by `t (x * star y)`. -/
+@[instance_reducible]
+noncomputable def core (t : E →ₗ[ℝ] ℝ) (hstar : ∀ x : E, t (star x) = t x)
+    (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) :
+    InnerProductSpace.Core ℝ (RosatiSpace t hstar hpos) :=
+  let c := rosatiInnerProductCore t hstar hpos
+  { inner x y := c.inner ((of t hstar hpos).symm x) ((of t hstar hpos).symm y)
+    conj_inner_symm _ _ := c.conj_inner_symm _ _
+    re_inner_nonneg _ := c.re_inner_nonneg _
+    add_left _ _ _ := c.add_left _ _ _
+    smul_left _ _ r := c.smul_left _ _ r
+    definite _ hx := (of t hstar hpos).symm.injective (c.definite _ hx) }
+
+noncomputable instance (t : E →ₗ[ℝ] ℝ) (hstar : ∀ x : E, t (star x) = t x)
+    (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) :
+    NormedAddCommGroup (RosatiSpace t hstar hpos) :=
+  (core t hstar hpos).toNormedAddCommGroup
+
+noncomputable instance (t : E →ₗ[ℝ] ℝ) (hstar : ∀ x : E, t (star x) = t x)
+    (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) :
+    InnerProductSpace ℝ (RosatiSpace t hstar hpos) :=
+  InnerProductSpace.ofCore (core t hstar hpos).toCore
+
+/-- Evaluation of the inner product on `TauCeti.RosatiSpace` via `TauCeti.RosatiSpace.of`. -/
+@[simp] theorem inner_of (t : E →ₗ[ℝ] ℝ) (hstar : ∀ x : E, t (star x) = t x)
+    (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) (x y : E) :
+    ⟪of t hstar hpos x, of t hstar hpos y⟫_ℝ = t (x * star y) := (rfl)
+
+/-- Evaluation of the inner product on `TauCeti.RosatiSpace`. -/
+theorem inner_def (t : E →ₗ[ℝ] ℝ) (hstar : ∀ x : E, t (star x) = t x)
+    (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) (x y : RosatiSpace t hstar hpos) :
+    ⟪x, y⟫_ℝ = t ((of t hstar hpos).symm x * star ((of t hstar hpos).symm y)) := (rfl)
+
+end Inner
+
+section Lmul
+
+variable {E : Type*} [Ring E] [Algebra ℝ E] [Star E]
+
+/-- Left multiplication by elements of `E` acting as `ℝ`-linear endomorphisms on
+`TauCeti.RosatiSpace t hstar hpos`. -/
+def lmul (t : E →ₗ[ℝ] ℝ) (hstar : ∀ x : E, t (star x) = t x)
+    (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) :
+    E →ₐ[ℝ] (RosatiSpace t hstar hpos →ₗ[ℝ] RosatiSpace t hstar hpos) where
+  toFun s :=
+    (of t hstar hpos).toLinearMap.comp
+      ((Algebra.lmul ℝ E s).comp (of t hstar hpos).symm.toLinearMap)
+  map_one' := by ext x; simp
+  map_mul' a b := by ext x; simp [mul_assoc]
+  map_zero' := by ext x; simp
+  map_add' a b := by ext x; simp
+  commutes' r := by ext x; simp
+
+/-- Evaluation of `TauCeti.RosatiSpace.lmul` on `TauCeti.RosatiSpace.of`. -/
+@[simp] theorem lmul_apply (t : E →ₗ[ℝ] ℝ) (hstar : ∀ x : E, t (star x) = t x)
+    (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) (s x : E) :
+    lmul t hstar hpos s (of t hstar hpos x) = of t hstar hpos (s * x) := (rfl)
+
+/-- `TauCeti.RosatiSpace.lmul` is injective. -/
+theorem lmul_injective (t : E →ₗ[ℝ] ℝ) (hstar : ∀ x : E, t (star x) = t x)
+    (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) :
+    Function.Injective (lmul t hstar hpos) :=
+  fun _ _ h ↦ by
+    simpa using (of t hstar hpos).injective
+      (by simpa using LinearMap.congr_fun h (of t hstar hpos 1))
+
+end Lmul
+
+end RosatiSpace
 
 variable {E : Type*} [Ring E] [Algebra ℝ E] [StarRing E]
 
-/-- Left multiplication by `s` has `star s` as its formal adjoint for the trace inner product
+/-- Left multiplication by `s` has `star s` as its formal adjoint on `TauCeti.RosatiSpace`
 whenever `t` is cyclic. -/
 theorem inner_lmul_left (t : E →ₗ[ℝ] ℝ) (hcyc : ∀ x y : E, t (x * y) = t (y * x))
     (hstar : ∀ x : E, t (star x) = t x) (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x))
-    (s x y : E) :
-    letI := (rosatiInnerProductCore t hstar hpos).toNormedAddCommGroup
-    letI := InnerProductSpace.ofCore (rosatiInnerProductCore t hstar hpos).toCore
-    ⟪Algebra.lmul ℝ E s x, y⟫_ℝ = ⟪x, Algebra.lmul ℝ E (star s) y⟫_ℝ := by
-  let _ := (rosatiInnerProductCore t hstar hpos).toNormedAddCommGroup
-  let _ := InnerProductSpace.ofCore (rosatiInnerProductCore t hstar hpos).toCore
-  simp only [rosatiInnerProductCore_inner_eq, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply',
-    star_mul, star_star, mul_assoc]; rw [hcyc s (x * star y), mul_assoc]
+    (s : E) (x y : RosatiSpace t hstar hpos) :
+    ⟪RosatiSpace.lmul t hstar hpos s x, y⟫_ℝ =
+      ⟪x, RosatiSpace.lmul t hstar hpos (star s) y⟫_ℝ := by
+  obtain ⟨x, rfl⟩ := (RosatiSpace.of t hstar hpos).surjective x
+  obtain ⟨y, rfl⟩ := (RosatiSpace.of t hstar hpos).surjective y
+  simp only [RosatiSpace.lmul_apply, RosatiSpace.inner_of, star_mul, star_star, mul_assoc]
+  rw [hcyc s (x * star y), mul_assoc]
 
-/-- In finite dimension, the Hilbert-space adjoint of `Algebra.lmul ℝ E s` on the trace inner
-product space is `Algebra.lmul ℝ E (star s)`. -/
+/-- In finite dimension, the Hilbert-space adjoint of `TauCeti.RosatiSpace.lmul t hstar hpos s`
+on `TauCeti.RosatiSpace` is `TauCeti.RosatiSpace.lmul t hstar hpos (star s)`. -/
 theorem adjoint_lmul_eq_lmul_star [FiniteDimensional ℝ E] (t : E →ₗ[ℝ] ℝ)
     (hcyc : ∀ x y : E, t (x * y) = t (y * x)) (hstar : ∀ x : E, t (star x) = t x)
     (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) (s : E) :
-    letI := (rosatiInnerProductCore t hstar hpos).toNormedAddCommGroup
-    letI := InnerProductSpace.ofCore (rosatiInnerProductCore t hstar hpos).toCore
-    (Algebra.lmul ℝ E s).adjoint = Algebra.lmul ℝ E (star s) := by
-  let _ := (rosatiInnerProductCore t hstar hpos).toNormedAddCommGroup
-  let _ := InnerProductSpace.ofCore (rosatiInnerProductCore t hstar hpos).toCore
-  exact ((LinearMap.eq_adjoint_iff (Algebra.lmul ℝ E (star s)) (Algebra.lmul ℝ E s)).mpr
-    fun x y ↦ by simpa only [star_star] using inner_lmul_left t hcyc hstar hpos (star s) x y).symm
+    (RosatiSpace.lmul t hstar hpos s).adjoint = RosatiSpace.lmul t hstar hpos (star s) :=
+  ((LinearMap.eq_adjoint_iff (RosatiSpace.lmul t hstar hpos (star s))
+    (RosatiSpace.lmul t hstar hpos s)).mpr
+      fun x y ↦ by simpa only [star_star] using inner_lmul_left t hcyc hstar hpos (star s) x y).symm
 
 /-- The left-regular representation as a faithful star algebra homomorphism from `E` into the
-endomorphisms of the trace inner product space. -/
+endomorphisms of `TauCeti.RosatiSpace t hstar hpos`. -/
 noncomputable def rosatiRegularRepresentation [FiniteDimensional ℝ E]
     (t : E →ₗ[ℝ] ℝ) (hcyc : ∀ x y : E, t (x * y) = t (y * x))
     (hstar : ∀ x : E, t (star x) = t x) (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) :
-    letI := (rosatiInnerProductCore t hstar hpos).toNormedAddCommGroup
-    letI := InnerProductSpace.ofCore (rosatiInnerProductCore t hstar hpos).toCore
-    E →⋆ₐ[ℝ] (E →ₗ[ℝ] E) :=
-  let _ := (rosatiInnerProductCore t hstar hpos).toNormedAddCommGroup
-  let _ := InnerProductSpace.ofCore (rosatiInnerProductCore t hstar hpos).toCore
-  { Algebra.lmul ℝ E with
-    map_star' := fun s ↦ ((LinearMap.star_eq_adjoint (Algebra.lmul ℝ E s)).trans
+    E →⋆ₐ[ℝ] (RosatiSpace t hstar hpos →ₗ[ℝ] RosatiSpace t hstar hpos) :=
+  { RosatiSpace.lmul t hstar hpos with
+    map_star' := fun s ↦ ((LinearMap.star_eq_adjoint (RosatiSpace.lmul t hstar hpos s)).trans
       (adjoint_lmul_eq_lmul_star t hcyc hstar hpos s)).symm }
 
+/-- Evaluation of `TauCeti.rosatiRegularRepresentation` as `TauCeti.RosatiSpace.lmul`. -/
 @[simp] theorem rosatiRegularRepresentation_apply [FiniteDimensional ℝ E] (t : E →ₗ[ℝ] ℝ)
     (hcyc : ∀ x y : E, t (x * y) = t (y * x)) (hstar : ∀ x : E, t (star x) = t x)
     (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) (s : E) :
-    rosatiRegularRepresentation t hcyc hstar hpos s = Algebra.lmul ℝ E s := (rfl)
+    rosatiRegularRepresentation t hcyc hstar hpos s = RosatiSpace.lmul t hstar hpos s := (rfl)
 
+/-- `TauCeti.rosatiRegularRepresentation` is injective. -/
 theorem rosatiRegularRepresentation_injective [FiniteDimensional ℝ E] (t : E →ₗ[ℝ] ℝ)
     (hcyc : ∀ x y : E, t (x * y) = t (y * x)) (hstar : ∀ x : E, t (star x) = t x)
     (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) :
     Function.Injective (rosatiRegularRepresentation t hcyc hstar hpos) :=
-  fun _ _ h ↦ Algebra.lmul_injective (R := ℝ) (by
-    simpa only [rosatiRegularRepresentation_apply] using h)
+  RosatiSpace.lmul_injective t hstar hpos
 
-/-- Left multiplication by `s` is symmetric on the trace inner product space iff `s` is
-self-adjoint. -/
+/-- Left multiplication by `s` is symmetric on `TauCeti.RosatiSpace` iff `s` is self-adjoint. -/
 theorem isSymmetric_lmul_iff (t : E →ₗ[ℝ] ℝ) (hcyc : ∀ x y : E, t (x * y) = t (y * x))
     (hstar : ∀ x : E, t (star x) = t x) (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x))
     (s : E) :
-    letI := (rosatiInnerProductCore t hstar hpos).toNormedAddCommGroup
-    letI := InnerProductSpace.ofCore (rosatiInnerProductCore t hstar hpos).toCore
-    (Algebra.lmul ℝ E s).IsSymmetric ↔ IsSelfAdjoint s := by
-  let _ := (rosatiInnerProductCore t hstar hpos).toNormedAddCommGroup
-  let _ := InnerProductSpace.ofCore (rosatiInnerProductCore t hstar hpos).toCore
-  refine ⟨fun hsym ↦ (sub_eq_zero.mp ((inner_self_eq_zero (𝕜 := ℝ)).mp ?_)).symm,
+    (RosatiSpace.lmul t hstar hpos s).IsSymmetric ↔ IsSelfAdjoint s := by
+  refine ⟨fun hsym ↦ (sub_eq_zero.mp ((RosatiSpace.of t hstar hpos).injective
+      ((inner_self_eq_zero (𝕜 := ℝ)).mp ?_))).symm,
     fun hs x y ↦ by rw [inner_lmul_left t hcyc hstar hpos s x y, hs.star_eq]⟩
-  rw [inner_sub_left, sub_eq_zero]
-  simpa using (hsym 1 (s - star s)).trans (by simpa [star_star] using
-    (inner_lmul_left t hcyc hstar hpos (star s) 1 (s - star s)).symm)
+  rw [map_sub, inner_sub_left, sub_eq_zero]
+  simpa [RosatiSpace.lmul_apply, mul_one, one_mul] using
+    (hsym (RosatiSpace.of t hstar hpos 1) (RosatiSpace.of t hstar hpos (s - star s))).trans
+      (by simpa [star_star] using (inner_lmul_left t hcyc hstar hpos (star s)
+        (RosatiSpace.of t hstar hpos 1) (RosatiSpace.of t hstar hpos (s - star s))).symm)
 
-/-- A Rosati-positive element acts as a positive operator on the trace inner product space. -/
+/-- A Rosati-positive element acts as a positive operator on `TauCeti.RosatiSpace`. -/
 theorem isPositive_lmul_of_isRosatiPositive (t : E →ₗ[ℝ] ℝ)
     (hcyc : ∀ x y : E, t (x * y) = t (y * x)) (hstar : ∀ x : E, t (star x) = t x)
     (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) {s : E} (hs : IsRosatiPositive t s) :
-    letI := (rosatiInnerProductCore t hstar hpos).toNormedAddCommGroup
-    letI := InnerProductSpace.ofCore (rosatiInnerProductCore t hstar hpos).toCore
-    (Algebra.lmul ℝ E s).IsPositive := by
-  let _ := (rosatiInnerProductCore t hstar hpos).toNormedAddCommGroup
-  let _ := InnerProductSpace.ofCore (rosatiInnerProductCore t hstar hpos).toCore
+    (RosatiSpace.lmul t hstar hpos s).IsPositive := by
   refine ⟨(isSymmetric_lmul_iff t hcyc hstar hpos s).mpr hs.1, fun x ↦ ?_⟩
-  rw [RCLike.re_to_real, rosatiInnerProductCore_inner_eq, Algebra.coe_lmul_eq_mul,
-    LinearMap.mul_apply']
+  obtain ⟨x, rfl⟩ := (RosatiSpace.of t hstar hpos).surjective x
+  rw [RCLike.re_to_real, RosatiSpace.lmul_apply, RosatiSpace.inner_of]
   rcases eq_or_ne x 0 with rfl | hx <;> [simp; exact (hs.2 x hx).le]
 
-/-- An element whose left-multiplication operator is injective and positive on the trace inner
-product space is Rosati-positive. -/
+/-- An element whose left-multiplication operator is injective and positive on `TauCeti.RosatiSpace`
+is Rosati-positive. -/
 theorem isRosatiPositive_of_isPositive_lmul (t : E →ₗ[ℝ] ℝ)
     (hcyc : ∀ x y : E, t (x * y) = t (y * x)) (hstar : ∀ x : E, t (star x) = t x)
     (hpos : ∀ x : E, x ≠ 0 → 0 < t (x * star x)) {s : E}
-    (hsPos :
-      letI := (rosatiInnerProductCore t hstar hpos).toNormedAddCommGroup
-      letI := InnerProductSpace.ofCore (rosatiInnerProductCore t hstar hpos).toCore
-      (Algebra.lmul ℝ E s).IsPositive)
-    (hinj : Function.Injective (Algebra.lmul ℝ E s)) : IsRosatiPositive t s := by
-  let _ := (rosatiInnerProductCore t hstar hpos).toNormedAddCommGroup
-  let _ := InnerProductSpace.ofCore (rosatiInnerProductCore t hstar hpos).toCore
-  refine ⟨(isSymmetric_lmul_iff t hcyc hstar hpos s).mp hsPos.isSymmetric, fun x hx ↦
-    lt_of_le_of_ne (hsPos.re_inner_nonneg_left x) fun hzero ↦ hx ?_⟩
-  let B := (innerₗ E).compl₁₂ (Algebra.lmul ℝ E s) LinearMap.id
-  exact hinj (by simpa [B] using congrArg (· (Algebra.lmul ℝ E s x)) (LinearMap.mem_ker.mp
-    ((LinearMap.BilinForm.apply_apply_same_eq_zero_iff B hsPos.re_inner_nonneg_left
-      ⟨fun a b ↦ by simpa [B] using (hsPos.isSymmetric a b).trans (real_inner_comm _ _)⟩).mp
-      hzero.symm)))
+    (hsPos : (RosatiSpace.lmul t hstar hpos s).IsPositive)
+    (hinj : Function.Injective (RosatiSpace.lmul t hstar hpos s)) : IsRosatiPositive t s := by
+  refine ⟨(isSymmetric_lmul_iff t hcyc hstar hpos s).mp hsPos.isSymmetric, fun x hx ↦ ?_⟩
+  have hne : RosatiSpace.of t hstar hpos x ≠ 0 :=
+    fun h ↦ hx ((RosatiSpace.of t hstar hpos).injective (by simpa using h))
+  refine lt_of_le_of_ne (by simpa [RosatiSpace.lmul_apply, RosatiSpace.inner_of] using
+      hsPos.re_inner_nonneg_left (RosatiSpace.of t hstar hpos x)) fun hzero ↦ hne ?_
+  let B := (innerₗ (RosatiSpace t hstar hpos)).compl₁₂
+    (RosatiSpace.lmul t hstar hpos s) LinearMap.id
+  have hzero' : B (RosatiSpace.of t hstar hpos x) (RosatiSpace.of t hstar hpos x) = 0 := by
+    simpa [B, RosatiSpace.lmul_apply, RosatiSpace.inner_of] using hzero.symm
+  have hlmul0 : RosatiSpace.lmul t hstar hpos s (RosatiSpace.of t hstar hpos x) = 0 :=
+    (inner_self_eq_zero (𝕜 := ℝ)).mp (by
+      simpa [B] using LinearMap.congr_fun (LinearMap.mem_ker.mp
+        ((LinearMap.BilinForm.apply_apply_same_eq_zero_iff B hsPos.re_inner_nonneg_left
+          ⟨fun a b ↦ by simpa [B] using (hsPos.isSymmetric a b).trans (real_inner_comm _ _)⟩).mp
+          hzero')) (RosatiSpace.lmul t hstar hpos s (RosatiSpace.of t hstar hpos x)))
+  exact hinj (by simpa using hlmul0)
 
 end InnerProduct
 
