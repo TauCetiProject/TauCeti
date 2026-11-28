@@ -191,8 +191,8 @@ def normalFrameSelfDual (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientatio
     (h₀ : J (e 0) = e 1) (h₂₃ : J (e 2) = e 3) (L A : EuclideanSpace ℝ (Fin 4)) :
     Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 :=
   L 1 • J.kahlerSelfDual o hkl (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he) +
-    A 0 • AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he +
-    A 1 • AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he
+    A 0 • AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl +
+    A 1 • AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl
 
 omit [FiniteDimensional ℂ W] in variable (o) in
 /-- Definitional unfolding of `normalFrameSelfDual`. -/
@@ -200,8 +200,8 @@ theorem normalFrameSelfDual_def (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.or
     (h₀ : J (e 0) = e 1) (h₂₃ : J (e 2) = e 3) (L A : EuclideanSpace ℝ (Fin 4)) :
     normalFrameSelfDual o hkl he h₀ h₂₃ L A =
       L 1 • J.kahlerSelfDual o hkl (AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he) +
-        A 0 • AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he +
-        A 1 • AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he :=
+        A 0 • AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl +
+        A 1 • AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl :=
   (rfl)
 
 omit [FiniteDimensional ℂ W] in variable (o) in
@@ -430,8 +430,8 @@ private def normalTargetInv (u₀ : positiveHalfSpinors o ρ)
         q.snd.fst⟫,
       (⟪halfSpinCliffordMul o ρ 1 (e 2) (positiveHalfSpinorsEquiv o ρ u₀), q.snd.snd⟫_ℂ).re / 2,
       (⟪halfSpinCliffordMul o ρ 1 (e 2) (positiveHalfSpinorsEquiv o ρ u₀), q.snd.snd⟫_ℂ).im / 2],
-   !₂[⟪AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he, q.snd.fst⟫,
-      ⟪AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he, q.snd.fst⟫,
+   !₂[⟪AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl, q.snd.fst⟫,
+      ⟪AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl, q.snd.fst⟫,
       -(⟪halfSpinCliffordMul o ρ 1 (e 0) (positiveHalfSpinorsEquiv o ρ u₀), q.snd.snd⟫_ℂ).re / 2,
       -(⟪halfSpinCliffordMul o ρ 1 (e 0) (positiveHalfSpinorsEquiv o ρ u₀),
         q.snd.snd⟫_ℂ).im / 2])
@@ -535,8 +535,8 @@ theorem normalTargetEquiv_symm_apply
             q.snd.fst⟫,
           (⟪halfSpinCliffordMul o ρ 1 (e 2) (ePos u₀), q.snd.snd⟫_ℂ).re / 2,
           (⟪halfSpinCliffordMul o ρ 1 (e 2) (ePos u₀), q.snd.snd⟫_ℂ).im / 2],
-       !₂[⟪AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he, q.snd.fst⟫,
-          ⟪AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he, q.snd.fst⟫,
+       !₂[⟪AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl, q.snd.fst⟫,
+          ⟪AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl, q.snd.fst⟫,
           -(⟪halfSpinCliffordMul o ρ 1 (e 0) (ePos u₀), q.snd.snd⟫_ℂ).re / 2,
           -(⟪halfSpinCliffordMul o ρ 1 (e 0) (ePos u₀), q.snd.snd⟫_ℂ).im / 2]) :=
   (rfl)

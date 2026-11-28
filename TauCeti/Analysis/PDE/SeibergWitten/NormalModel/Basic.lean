@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Curl
 import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
+import TauCeti.Analysis.PDE.SeibergWitten.Normal.Frame
 
 /-!
 # The gauge-fixed normal model at a plane vortex
@@ -145,15 +146,14 @@ variable (e) in
 along the base factor; together with the section `η₂ + i η₃` on the paired spinor it is the
 variation through which the plane vortex adjoint operator enters the normal model. -/
 def pairedConnection (η : ℂ → EuclideanSpace ℝ (Fin 4)) (y : V) : V [⋀^Fin 1]→L[ℝ] ℝ :=
-  ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)
-    (η (normalCoord e y) 0 • innerSL ℝ (e 0) - η (normalCoord e y) 1 • innerSL ℝ (e 1))
+  normalFrameForm e 0 (-η (normalCoord e y))
 
 /-- The paired connection evaluated on a vector `v`: `η₀(z) ⟪e₀, v⟫ - η₁(z) ⟪e₁, v⟫`. -/
 @[simp]
 theorem pairedConnection_apply (η : ℂ → EuclideanSpace ℝ (Fin 4)) (y v : V) :
     pairedConnection e η y (fun _ ↦ v) =
       η (normalCoord e y) 0 * ⟪e 0, v⟫ - η (normalCoord e y) 1 * ⟪e 1, v⟫ := by
-  simp [pairedConnection]
+  simp [pairedConnection]; ring
 
 /-- The paired connection is differentiable where the plane field is. -/
 theorem differentiableAt_pairedConnection {η : ℂ → EuclideanSpace ℝ (Fin 4)} {y : V}
@@ -161,6 +161,13 @@ theorem differentiableAt_pairedConnection {η : ℂ → EuclideanSpace ℝ (Fin 
     DifferentiableAt ℝ (pairedConnection e η) y := by
   have hc (i : Fin 4) : DifferentiableAt ℝ (fun y' ↦ η (normalCoord e y') i) y :=
     (differentiableAt_euclidean.1 hη i).comp y (normalCoord e).differentiableAt
+  have hfn : pairedConnection e η = fun y' ↦ ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)
+      (η (normalCoord e y') 0 • innerSL ℝ (e 0) - η (normalCoord e y') 1 • innerSL ℝ (e 1)) := by
+    funext y'
+    rw [pairedConnection, normalFrameForm_def]
+    congr 1
+    simp [sub_eq_add_neg]
+  rw [hfn]
   exact (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ)
     (0 : Fin 1)).differentiableAt.comp y (((hc 0).smul_const _).sub ((hc 1).smul_const _))
 
@@ -168,7 +175,6 @@ theorem differentiableAt_pairedConnection {η : ℂ → EuclideanSpace ℝ (Fin 
 @[simp]
 theorem pairedConnection_zero : pairedConnection e (0 : ℂ → EuclideanSpace ℝ (Fin 4)) = 0 := by
   funext y
-  ext v
   simp [pairedConnection]
 
 end Pullback
@@ -180,10 +186,11 @@ section NormalModel
 variable (e) in
 /-- The **connection of the normal model** of a pair of plane fields `(ξ, η)`: the normal
 connection `ξ₀(z) e² + ξ₁(z) e³` of `ξ` (`normalConnection`) plus the paired connection
-`η₀(z) e⁰ - η₁(z) e¹` of `η` (`pairedConnection`), pulled back along the normal coordinate `z`. -/
+`η₀(z) e⁰ - η₁(z) e¹` of `η` (`pairedConnection`), pulled back along the normal coordinate `z` via
+`normalFrameForm`. -/
 def normalModelConnection (ξ η : ℂ → EuclideanSpace ℝ (Fin 4)) (y : V) :
     V [⋀^Fin 1]→L[ℝ] ℝ :=
-  normalConnection e ξ y + pairedConnection e η y
+  normalFrameForm e (ξ (normalCoord e y)) (-η (normalCoord e y))
 
 /-- The connection of the normal model on a vector:
 `b(v) = η₀(z) ⟪e₀, v⟫ - η₁(z) ⟪e₁, v⟫ + ξ₀(z) ⟪e₂, v⟫ + ξ₁(z) ⟪e₃, v⟫`. -/
@@ -192,8 +199,7 @@ theorem normalModelConnection_apply (ξ η : ℂ → EuclideanSpace ℝ (Fin 4))
     normalModelConnection e ξ η y (fun _ ↦ v) =
       η (normalCoord e y) 0 * ⟪e 0, v⟫ - η (normalCoord e y) 1 * ⟪e 1, v⟫ +
         ξ (normalCoord e y) 0 * ⟪e 2, v⟫ + ξ (normalCoord e y) 1 * ⟪e 3, v⟫ := by
-  simp only [normalModelConnection, ContinuousAlternatingMap.add_apply, normalConnection_apply,
-    pairedConnection_apply, normalCoord_re, normalCoord_im]
+  simp [normalModelConnection]
   ring
 
 /-- The connection of the normal model of `(ξ, 0)` is the normal connection of `ξ`. -/
@@ -201,7 +207,7 @@ theorem normalModelConnection_apply (ξ η : ℂ → EuclideanSpace ℝ (Fin 4))
 theorem normalModelConnection_zero_right (ξ : ℂ → EuclideanSpace ℝ (Fin 4)) :
     normalModelConnection e ξ 0 = normalConnection e ξ := by
   funext y
-  simp [normalModelConnection]
+  apply normalFrameForm_eq_of_apply <;> simp [normalConnection_apply]
 
 /-- The connection of the normal model on `e₀` is `η₀(z)`. -/
 -- These four frame values take priority over the general `normalModelConnection_apply`.
@@ -233,25 +239,29 @@ variable [Fact (finrank ℝ V = 4)]
 variable (e) in
 /-- The **spinor of the normal model** of a pair of plane fields `(ξ, η)`: the section
 `α_ξ = 2 (ξ₂ + i ξ₃)` of `ξ` on the canonical spinor `u₀` plus the section `α_η` of `η` on the
-paired spinor `β₀ = c(e₂) c(e₀) u₀` (`pairedSpinor`), pulled back along the normal coordinate. For
-`η = 0` this is the pullback `α_ξ u₀` of `TauCeti.Analysis.PDE.SeibergWitten.Flat.Limit`. -/
+paired spinor `β₀ = c(e₂) c(e₀) u₀` (`pairedSpinor`), pulled back along the normal coordinate via
+`normalFrameSpinor`. For `η = 0` this is the pullback `α_ξ u₀` of
+`TauCeti.Analysis.PDE.SeibergWitten.Flat.Limit`. -/
 def normalModelSpinor (u₀ : positiveHalfSpinors o ρ) (ξ η : ℂ → EuclideanSpace ℝ (Fin 4))
     (y : V) : positiveHalfSpinors o ρ :=
-  Vortex.sectionValue ξ (normalCoord e y) • u₀ +
-    Vortex.sectionValue η (normalCoord e y) • pairedSpinor e u₀
+  normalFrameSpinor o ρ e u₀ (ξ (normalCoord e y)) (-η (normalCoord e y))
 
 theorem normalModelSpinor_apply (u₀ : positiveHalfSpinors o ρ)
     (ξ η : ℂ → EuclideanSpace ℝ (Fin 4)) (y : V) :
     normalModelSpinor e u₀ ξ η y = Vortex.sectionValue ξ (normalCoord e y) • u₀ +
-      Vortex.sectionValue η (normalCoord e y) • pairedSpinor e u₀ :=
-  (rfl)
+      Vortex.sectionValue η (normalCoord e y) • pairedSpinor e u₀ := by
+  simp only [normalModelSpinor, normalFrameSpinor_def, Vortex.sectionValue_apply, PiLp.neg_apply,
+    ofReal_neg]
+  rw [sub_eq_add_neg, ← neg_smul]
+  congr 2
+  ring
 
 /-- The spinor of the normal model as a spinor of `W`. -/
 theorem coe_normalModelSpinor (u₀ : positiveHalfSpinors o ρ)
     (ξ η : ℂ → EuclideanSpace ℝ (Fin 4)) (y : V) :
     (normalModelSpinor e u₀ ξ η y : W) = Vortex.sectionValue ξ (normalCoord e y) • (u₀ : W) +
-      Vortex.sectionValue η (normalCoord e y) • (pairedSpinor e u₀ : W) :=
-  (rfl)
+      Vortex.sectionValue η (normalCoord e y) • (pairedSpinor e u₀ : W) := by
+  rw [normalModelSpinor_apply, Submodule.coe_add, Submodule.coe_smul, Submodule.coe_smul]
 
 /-- The spinor of the normal model of `(ξ, 0)` is `α_ξ u₀`. -/
 @[simp]
@@ -418,7 +428,7 @@ theorem familyNormalModelSpinor_apply (u₀ : positiveHalfSpinors o ρ)
     familyNormalModelSpinor e u₀ Ξ Η y =
       Vortex.sectionValue (fun z ↦ Ξ (baseCoord e y, z)) (normalCoord e y) • u₀ +
         Vortex.sectionValue (fun z ↦ Η (baseCoord e y, z)) (normalCoord e y) • pairedSpinor e u₀ :=
-  (rfl)
+  normalModelSpinor_apply u₀ _ _ y
 
 /-- The spinor of the normal model of a family as a spinor of `W`. -/
 theorem coe_familyNormalModelSpinor (u₀ : positiveHalfSpinors o ρ)
@@ -427,7 +437,7 @@ theorem coe_familyNormalModelSpinor (u₀ : positiveHalfSpinors o ρ)
       Vortex.sectionValue (fun z ↦ Ξ (baseCoord e y, z)) (normalCoord e y) • (u₀ : W) +
         Vortex.sectionValue (fun z ↦ Η (baseCoord e y, z)) (normalCoord e y) •
           (pairedSpinor e u₀ : W) :=
-  (rfl)
+  coe_normalModelSpinor u₀ _ _ y
 
 omit [Fact (finrank ℝ V = 4)] in
 /-- The section `α_Ξ (w, z) = 2 (Ξ₂ + i Ξ₃)` of a family, as a function of `(w, z)`, is
@@ -582,8 +592,14 @@ variable {ξ η : ℂ → EuclideanSpace ℝ (Fin 4)} {Ξ Η : ℂ × ℂ → Eu
 /-- The connection of the normal model is differentiable where its plane fields are. -/
 theorem differentiableAt_normalModelConnection (hξ : DifferentiableAt ℝ ξ (normalCoord e y))
     (hη : DifferentiableAt ℝ η (normalCoord e y)) :
-    DifferentiableAt ℝ (normalModelConnection e ξ η) y :=
-  (differentiableAt_normalConnection hξ).add (differentiableAt_pairedConnection hη)
+    DifferentiableAt ℝ (normalModelConnection e ξ η) y := by
+  have hadd : normalModelConnection e ξ η = normalConnection e ξ + pairedConnection e η := by
+    funext y'
+    rw [← normalModelConnection_zero_right]
+    simp only [Pi.add_apply, normalModelConnection, pairedConnection, Pi.zero_apply, neg_zero,
+      ← normalFrameForm_add, add_zero, zero_add]
+  rw [hadd]
+  exact (differentiableAt_normalConnection hξ).add (differentiableAt_pairedConnection hη)
 
 variable [Fact (finrank ℝ V = 4)] [FiniteDimensional ℂ W] (hQ : ∀ v, Q v = -‖v‖ ^ 2)
   (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o)

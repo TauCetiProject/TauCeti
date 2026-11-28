@@ -69,7 +69,8 @@ of `(V, J)`, and its component along `ψ` is minus the Hermitian product of `v, 
 Clifford algebra behind the splitting `W⁺ = Λ⁰'⁰ ⊕ Λ⁰'²` of the canonical `Spinᶜ` structure.
 
 The **paired spinor** `β₀ = c(e₂) c(e₀) u₀` of a canonical spinor `u₀` is orthogonal to `u₀` and
-has its norm, so `(u₀, β₀)` is a unitary frame of `W⁺` when `W⁺` has rank two. Clifford
+has its norm, so under the Hermitian and adapted-frame hypotheses a unit canonical spinor `u₀`
+gives a unitary frame `(u₀, β₀)` of `W⁺` when `W⁺` has complex dimension two. Clifford
 multiplication of a complex covector on `β₀` sees only its `∂`-components,
 
 `∑ₖ y_k c(e_k) β₀ = (y₀ - i y₁) c(e₂) u₀ - (y₂ - i y₃) c(e₀) u₀`,
@@ -106,8 +107,9 @@ The formulas for Clifford multiplication on any eigenvector of `c₂(ω)`, in pa
   `TauCeti.SeibergWitten.norm_pairedSpinor_eq_one`,
   `TauCeti.SeibergWitten.inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self`,
   `TauCeti.SeibergWitten.bivectorExterior_kahlerForm_pairedSpinor`, and
-  `TauCeti.SeibergWitten.eq_inner_smul_add_inner_pairedSpinor_smul`: the paired spinor completes
-  `u₀` to a unitary frame of `W⁺`.
+  `TauCeti.SeibergWitten.eq_inner_smul_add_inner_pairedSpinor_smul`: under the Hermitian and
+  adapted-frame hypotheses, the paired spinor of a unit canonical spinor `u₀` completes `u₀` to a
+  unitary frame of `W⁺` when `W⁺` has complex dimension two.
 * `TauCeti.SeibergWitten.sum_smul_ι_apply_pairedSpinor_of_cliffordProjection_apply_eq_self`: the
   Dirac symbol on the paired spinor in terms of the two `∂`-components.
 * `cliffordRestriction_ιMulti_zero_one_apply_of_cliffordProjection_apply_eq_self`,
@@ -345,9 +347,10 @@ variable {K W : Type*} [CommRing K] [Algebra ℝ K] [AddCommGroup W] [Module K W
 
 variable (e) in
 /-- The **paired spinor** `c(e₂) c(e₀) u₀` of a positive spinor `u₀`, for an orthonormal frame
-`e`. When `u₀` spans the canonical eigenspace, it spans the complementary eigenspace of `W⁺`, and
-together with `u₀` it gives a unitary frame of `W⁺` when `W⁺` has rank two (`norm_pairedSpinor`,
-`inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self`). -/
+`e`. Under the Hermitian and adapted-frame hypotheses, when `u₀` is a unit canonical spinor and
+`W⁺` has complex dimension two, `(u₀, β₀)` is a unitary frame of `W⁺` (`norm_pairedSpinor_eq_one`,
+`inner_pairedSpinor_eq_zero_of_cliffordProjection_apply_eq_self`,
+`eq_inner_smul_add_inner_pairedSpinor_smul`). -/
 def pairedSpinor (u₀ : positiveHalfSpinors o ρ) : positiveHalfSpinors o ρ :=
   ⟨ρ (ι Q (e 2)) (ρ (ι Q (e 0)) u₀), by
     simpa [map_mul, mul_apply_eq_comp] using
@@ -636,8 +639,8 @@ theorem smul_quadraticTwoFormPolar_smul_pairedSpinor
     (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v)) {u₀ : positiveHalfSpinors o ρ}
     (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) (hu₀₁ : ‖u₀‖ = 1) (α β : ℂ) :
     (√2 / 4 : ℝ) • quadraticTwoFormPolar o ρ hkl (α • u₀) (β • pairedSpinor e u₀) =
-      (-((conj α * β).im / 4)) • AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he +
-        ((conj α * β).re / 4) • AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he := by
+      (-((conj α * β).im / 4)) • AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl +
+        ((conj α * β).re / 4) • AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl := by
   have hω_sd := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
   set q := quadraticTwoFormPolar o ρ hkl (α • u₀) (β • pairedSpinor e u₀)
   have hq : β • pairedSpinor e u₀ = (0 : ℂ) • u₀ + β • pairedSpinor e u₀ := by simp
@@ -647,13 +650,13 @@ theorem smul_quadraticTwoFormPolar_smul_pairedSpinor
     dsimp only [q]
     rw [hq, inner_quadraticTwoFormPolar_ιMulti_zero_one hQ hkl h₀ h₂₃ hρ hu₀ hu₀₁]
     simp
-  have hρ₁ : ⟪AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl he, q⟫ =
+  have hρ₁ : ⟪AlmostComplexStructure.antiInvariantSelfDual₁ o e hkl, q⟫ =
       √2 * ((α * conj β).im / 2) := by
     rw [AlmostComplexStructure.antiInvariantSelfDual₁_eq_selfDualWedge,
       o.inner_selfDualWedge_left hkl q]
     dsimp only [q]
     rw [hq, inner_quadraticTwoFormPolar_ιMulti_zero_two hQ hkl h₀ h₂₃ hρ hu₀ hu₀₁]
-  have hρ₂ : ⟪AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl he, q⟫ =
+  have hρ₂ : ⟪AlmostComplexStructure.antiInvariantSelfDual₂ o e hkl, q⟫ =
       √2 * ((α * conj β).re / 2) := by
     rw [AlmostComplexStructure.antiInvariantSelfDual₂_eq_selfDualWedge,
       o.inner_selfDualWedge_left hkl q]

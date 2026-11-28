@@ -381,9 +381,8 @@ then `Q (L_x ψ) = ψ - P_{K_x} ψ` in `L²` for every compactly supported `C¹`
 theorem apply_toLp_gaugeFixedOperator_eq_sub_starProjection (hx : Continuous x)
     {Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) →L[ℝ]
       Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)}
-    (hQsol : ∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
-      ∫ z, ⟪Q f z, gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪f z, η z⟫)
-    (hQorth : ∀ f u, u ∈ weakGaugeFixedKernel x → ∫ z, ⟪Q f z, u z⟫ = 0)
+    (hQsol : ∀ f, IsGaugeFixedWeakSolution volume x f (Q f))
+    (hQorth : ∀ f, Q f ∈ (weakGaugeFixedKernel x)ᗮ)
     {ψ : ℂ → EuclideanSpace ℝ (Fin 4)} (hψ : ContDiff ℝ 1 ψ) (hψc : HasCompactSupport ψ) :
     let hψ_lp : MemLp ψ 2 volume := hψ.continuous.memLp_of_hasCompactSupport hψc
     let hLψ_lp : MemLp (gaugeFixedOperator x ψ) 2 volume :=
@@ -392,28 +391,25 @@ theorem apply_toLp_gaugeFixedOperator_eq_sub_starProjection (hx : Continuous x)
     Q (hLψ_lp.toLp (gaugeFixedOperator x ψ)) =
       hψ_lp.toLp ψ - (weakGaugeFixedKernel x).starProjection (hψ_lp.toLp ψ) := by
   intro hψ_lp hLψ_lp
-  set q := Q (hLψ_lp.toLp (gaugeFixedOperator x ψ))
-  set p := hψ_lp.toLp ψ - (weakGaugeFixedKernel x).starProjection (hψ_lp.toLp ψ)
-  have hq_orth : q ∈ (weakGaugeFixedKernel x)ᗮ :=
-    (Submodule.mem_orthogonal' _ _).2 fun u hu ↦ by rw [L2.inner_def]; exact hQorth _ u hu
-  have hp_orth : p ∈ (weakGaugeFixedKernel x)ᗮ := Submodule.sub_starProjection_mem_orthogonal _
-  have hqp_orth : q - p ∈ (weakGaugeFixedKernel x)ᗮ := Submodule.sub_mem _ hq_orth hp_orth
-  have hqp_ker : q - p ∈ weakGaugeFixedKernel x := by
-    rw [mem_weakGaugeFixedKernel_iff hx]
-    intro η hη hηc
-    have hη_lp : MemLp (gaugeFixedAdjoint x η) 2 volume :=
-      memLp_gaugeFixedAdjoint hx (hη.of_le (by simp)) hηc
-    rw [← L2.inner_toLp (q - p) hη_lp, inner_sub_left, L2.inner_toLp q hη_lp,
-      hQsol _ η (hη.of_le (by simp)) hηc]
-    have hproj : ⟪(weakGaugeFixedKernel x).starProjection (hψ_lp.toLp ψ),
-        hη_lp.toLp (gaugeFixedAdjoint x η)⟫ = 0 := by
-      rw [L2.inner_toLp _ hη_lp]
-      exact (mem_weakGaugeFixedKernel_iff hx).1 (Submodule.starProjection_apply_mem _ _) η hη hηc
-    dsimp only [p]
-    rw [inner_sub_left, hproj, sub_zero, L2.inner_toLp _ hη_lp, hLψ_lp.integral_inner_toLp_left,
-      hψ_lp.integral_inner_toLp_left,
-      integral_inner_gaugeFixedOperator hψ (hη.of_le (by simp)) (.inl hψc), sub_self]
-  exact sub_eq_zero.1 (inner_self_eq_zero.1 ((Submodule.mem_orthogonal _ _).1 hqp_orth _ hqp_ker))
+  set f := hLψ_lp.toLp (gaugeFixedOperator x ψ)
+  have hq : IsMinimalGaugeFixedWeakSolution volume x f (Q f) :=
+    (isMinimalGaugeFixedWeakSolution_iff_mem_orthogonal hx).2 ⟨hQsol f, hQorth f⟩
+  have hψ_sol : IsGaugeFixedWeakSolution volume x f (hψ_lp.toLp ψ) :=
+    isGaugeFixedWeakSolution_iff.2 fun η hη _hηc ↦ by
+      rw [hψ_lp.integral_inner_toLp_left, hLψ_lp.integral_inner_toLp_left,
+        integral_inner_gaugeFixedOperator hψ (hη.of_le one_le_two) (.inl hψc)]
+  have hproj_sol : IsGaugeFixedWeakSolution volume x 0
+      ((weakGaugeFixedKernel x).starProjection (hψ_lp.toLp ψ)) :=
+    (isGaugeFixedWeakSolution_zero_iff_mem_weakGaugeFixedKernel hx).2
+      (Submodule.starProjection_apply_mem _ _)
+  have hp_sol : IsGaugeFixedWeakSolution volume x f
+      (hψ_lp.toLp ψ - (weakGaugeFixedKernel x).starProjection (hψ_lp.toLp ψ)) := by
+    simpa only [sub_zero] using hψ_sol.sub hx hproj_sol
+  have hp : IsMinimalGaugeFixedWeakSolution volume x f
+      (hψ_lp.toLp ψ - (weakGaugeFixedKernel x).starProjection (hψ_lp.toLp ψ)) :=
+    (isMinimalGaugeFixedWeakSolution_iff_mem_orthogonal hx).2
+      ⟨hp_sol, Submodule.sub_starProjection_mem_orthogonal _⟩
+  exact hq.unique hx hp
 
 /-! ### From the classical kernel to the weak kernel -/
 

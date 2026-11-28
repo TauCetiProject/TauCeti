@@ -341,8 +341,8 @@ theorem deformationSymbol_apply_two :
       (0, (√2 / 2) • (ιMulti ℝ 2 ![e 0, e 2] - ιMulti ℝ 2 ![e 1, e 3])) := by
   refine Prod.ext (by simp) ?_
   rw [deformationSymbol_apply_snd_eq_selfDualWedge,
-    ← AlmostComplexStructure.antiInvariantSelfDual₁_eq_selfDualWedge (he := he),
-    AlmostComplexStructure.coe_antiInvariantSelfDual₁]
+    ← AlmostComplexStructure.antiInvariantSelfDual₁_eq_selfDualWedge,
+    AlmostComplexStructure.coe_antiInvariantSelfDual₁ he]
 
 /-- At `ξ = e₀` the symbol sends `e₃` to `(0, ρ₂)`, `ρ₂ = (√2 / 2) (e₀ ∧ e₃ + e₁ ∧ e₂)`, since
 `⋆(e₀ ∧ e₃) = e₁ ∧ e₂` in a positively oriented orthonormal basis. -/
@@ -351,8 +351,8 @@ theorem deformationSymbol_apply_three :
       (0, (√2 / 2) • (ιMulti ℝ 2 ![e 0, e 3] + ιMulti ℝ 2 ![e 1, e 2])) := by
   refine Prod.ext (by simp) ?_
   rw [deformationSymbol_apply_snd_eq_selfDualWedge,
-    ← AlmostComplexStructure.antiInvariantSelfDual₂_eq_selfDualWedge (he := he),
-    AlmostComplexStructure.coe_antiInvariantSelfDual₂]
+    ← AlmostComplexStructure.antiInvariantSelfDual₂_eq_selfDualWedge,
+    AlmostComplexStructure.coe_antiInvariantSelfDual₂ he]
 
 end Coframe
 

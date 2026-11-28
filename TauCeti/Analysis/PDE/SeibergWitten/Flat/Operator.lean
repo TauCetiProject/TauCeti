@@ -11,6 +11,7 @@ public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
 public import TauCeti.Analysis.PDE.SeibergWitten.Flat.Weitzenbock
 public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.Calculus.Deriv.Mul
 import TauCeti.Analysis.Calculus.FDeriv.Submodule
 import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 
@@ -19,13 +20,14 @@ import TauCeti.Analysis.InnerProductSpace.Trace.Basic
 
 On an oriented four-dimensional real inner product space `V` with Clifford module `W = W⁺ ⊕ W⁻`
 and compatible almost complex structure `J`, this file defines the chiral restriction
-`flatChiralDirac` (`W⁺ → W⁻`) of `TauCeti.SeibergWitten.flatDirac`, the unit-symbol
-self-dual curvature defect `flatCurvatureDefect`, the gauge-fixing, curvature, and Dirac rows
-`flatDeformationGauge`, `flatDeformationCurvature`, and `flatDeformationDirac` of the linearized
-equations (`hasDerivAt_flatCurvatureDefect`, `hasDerivAt_flatChiralDirac`,
-`mul_flatDeformationGauge_eq`), and the combined eight-real-component linearized gauge-fixed
-operator `gaugeFixedFlatOperator`, together with orthonormal-frame independence and linearity
-properties.
+`flatChiralDirac` of `TauCeti.SeibergWitten.flatDirac` (a first-order operator on positive
+half-spinor fields producing negative half-spinor fields, evaluated at `p`), the flat curvature
+`flatCurvature` and unit-symbol self-dual curvature defect `flatCurvatureDefect`, the
+gauge-fixing, curvature, and Dirac rows `flatDeformationGauge`, `flatDeformationCurvature`, and
+`flatDeformationDirac` of the linearized equations (`hasDerivAt_flatCurvatureDefect`,
+`hasDerivAt_flatChiralDirac`, `mul_flatDeformationGauge_eq`), and the combined
+eight-real-component linearized gauge-fixed operator `gaugeFixedFlatOperator`, together with
+orthonormal-frame independence and linearity properties.
 
 ## References
 
@@ -62,8 +64,9 @@ private theorem covariantDeriv_coe_positiveHalfSpinors (b : V → V [⋀^Fin 1]�
     Submodule.coe_add, Submodule.coe_smul_of_tower]
 
 variable (o ρ) in
-/-- **The flat chiral Dirac operator** `D_b⁺ χ = D_b χ : W⁺ → W⁻`, restricting
-`TauCeti.SeibergWitten.flatDirac` to positive half-spinor fields. -/
+/-- **The flat chiral Dirac operator** `D_b⁺`: a first-order operator on positive half-spinor
+fields `χ : V → W⁺` producing negative half-spinor fields in `W⁻`, evaluated at `p : V` as
+`TauCeti.SeibergWitten.flatDirac ρ b (fun q ↦ (χ q : W)) p`. -/
 def flatChiralDirac (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (χ : V → positiveHalfSpinors o ρ) (p : V) :
     Module.End.eigenspace (ρ (chirality Q o)) (-1) :=
   ⟨flatDirac ρ b (fun q ↦ (χ q : W)) p, by
@@ -122,23 +125,72 @@ theorem coe_flatChiralDirac_smul_const (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) {�
       ∑ k, covariantDeriv b α p (e k) • ρ (ι Q (e k)) ψ₀ := by
   simpa [coe_flatChiralDirac] using flatDirac_smul_const ρ hα (ψ₀ : W) e
 
+variable (o ρ) in
+/-- The **curvature side of the flat limiting curvature equation** at a pair `(b, ψ)`:
+`F + ⋆F + q(ψ) / 2`, with the real curvature `F = -db` read as a two-vector. The flat limiting
+curvature equation is `flatCurvature b ψ x = ω / 8` (`flatCurvature_eq_iff`). -/
+def flatCurvature (hkl : 2 + 2 = finrank ℝ V) (b : V → V [⋀^Fin 1]→L[ℝ] ℝ)
+    (ψ : V → positiveHalfSpinors o ρ) (x : V) : ⋀[ℝ]^2 V :=
+  (alternatingFormEquiv V 2).symm (-extDeriv b x) +
+      o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (-extDeriv b x)) +
+    (2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl (ψ x) : ⋀[ℝ]^2 V)
+
+theorem flatCurvature_def (hkl : 2 + 2 = finrank ℝ V) (b : V → V [⋀^Fin 1]→L[ℝ] ℝ)
+    (ψ : V → positiveHalfSpinors o ρ) (x : V) :
+    flatCurvature o ρ hkl b ψ x =
+      (alternatingFormEquiv V 2).symm (-extDeriv b x) +
+          o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (-extDeriv b x)) +
+        (2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl (ψ x) : ⋀[ℝ]^2 V) :=
+  (rfl)
+
+/-- The flat limiting curvature equation `flatCurvature b ψ x = ω / 8` is the equation
+`F + ⋆F = ω / 8 - q(ψ) / 2` of the rescaled limits. -/
+theorem flatCurvature_eq_iff (hkl : 2 + 2 = finrank ℝ V) {b : V → V [⋀^Fin 1]→L[ℝ] ℝ}
+    {ψ : V → positiveHalfSpinors o ρ} {x : V} (ω : ⋀[ℝ]^2 V) :
+    flatCurvature o ρ hkl b ψ x = (8⁻¹ : ℝ) • ω ↔
+      (alternatingFormEquiv V 2).symm (-extDeriv b x) +
+          o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (-extDeriv b x)) =
+        (8⁻¹ : ℝ) • ω - (2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl (ψ x) : ⋀[ℝ]^2 V) := by
+  rw [flatCurvature_def, eq_sub_iff_add_eq]
+
+/-- The curvature side of the flat limiting curvature equation is self-dual. -/
+@[simp]
+theorem hodgeStar_flatCurvature (hkl : 2 + 2 = finrank ℝ V) (b : V → V [⋀^Fin 1]→L[ℝ] ℝ)
+    (ψ : V → positiveHalfSpinors o ρ) (x : V) :
+    o.hodgeStar hkl (flatCurvature o ρ hkl b ψ x) = flatCurvature o ρ hkl b ψ x := by
+  rw [flatCurvature_def, map_add, map_add, map_smul,
+    o.hodgeStar_hodgeStar_of_even even_two hkl, o.hodgeStar_coe_of_mem_eigenspace_one hkl]
+  abel
+
 variable (o ρ J) in
-/-- **Self-dual curvature defect** `(√2 / 2) (F + ⋆F - ω / 8 + q(χ) / 2) ∈ Λ⁺ V`, `F = -db`. -/
+/-- **Self-dual curvature defect** `(√2 / 2) (F + ⋆F - ω / 8 + q(χ) / 2) ∈ Λ⁺ V`, defined as the
+self-dual restriction of `(√2 / 2) • (flatCurvature o ρ hkl b χ p - ω / 8)`. -/
 def flatCurvatureDefect (hkl : 2 + 2 = finrank ℝ V)
     (hω : o.hodgeStar hkl J.kahlerForm = J.kahlerForm)
     (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (χ : V → positiveHalfSpinors o ρ) (p : V) :
     Module.End.eigenspace (o.hodgeStar hkl : Module.End ℝ (⋀[ℝ]^2 V)) 1 :=
-  (√2 : ℝ) • o.selfDualProj even_two hkl ((alternatingFormEquiv V 2).symm (-extDeriv b p)) -
-    (8⁻¹ : ℝ) • J.kahlerSelfDual o hkl hω + (√2 / 4 : ℝ) • quadraticTwoForm o ρ hkl (χ p)
+  ⟨(√2 / 2 : ℝ) • (flatCurvature o ρ hkl b χ p - (8⁻¹ : ℝ) • J.kahlerForm),
+    Submodule.smul_mem _ _ <| Submodule.sub_mem _
+      (Module.End.mem_eigenspace_iff.2 <| by simp [hodgeStar_flatCurvature])
+      (Submodule.smul_mem _ _ <| Module.End.mem_eigenspace_iff.2 <| by simp [hω])⟩
+
+/-- Ambient self-dual expression for `flatCurvatureDefect`. -/
+@[simp] theorem coe_flatCurvatureDefect (hkl : 2 + 2 = finrank ℝ V)
+    (hω : o.hodgeStar hkl J.kahlerForm = J.kahlerForm)
+    (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (χ : V → positiveHalfSpinors o ρ) (p : V) :
+    (flatCurvatureDefect o ρ J hkl hω b χ p : ⋀[ℝ]^2 V) =
+      (√2 / 2 : ℝ) • (flatCurvature o ρ hkl b χ p - (8⁻¹ : ℝ) • J.kahlerForm) :=
+  (rfl)
 
 /-- Unfolding formula for `flatCurvatureDefect`. -/
 theorem flatCurvatureDefect_apply (hkl : 2 + 2 = finrank ℝ V)
     (hω : o.hodgeStar hkl J.kahlerForm = J.kahlerForm)
     (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (χ : V → positiveHalfSpinors o ρ) (p : V) :
     flatCurvatureDefect o ρ J hkl hω b χ p =
-      (√2 : ℝ) • o.selfDualProj even_two hkl ((alternatingFormEquiv V 2).symm (-extDeriv b p)) -
-        (8⁻¹ : ℝ) • J.kahlerSelfDual o hkl hω +
-        (√2 / 4 : ℝ) • quadraticTwoForm o ρ hkl (χ p) :=
+      ⟨(√2 / 2 : ℝ) • (flatCurvature o ρ hkl b χ p - (8⁻¹ : ℝ) • J.kahlerForm),
+        Submodule.smul_mem _ _ <| Submodule.sub_mem _
+          (Module.End.mem_eigenspace_iff.2 <| by simp [hodgeStar_flatCurvature])
+          (Submodule.smul_mem _ _ <| Module.End.mem_eigenspace_iff.2 <| by simp [hω])⟩ :=
   (rfl)
 
 /-- `flatCurvatureDefect` vanishes iff `F + ⋆F = ω / 8 - q(χ) / 2` for `F = -db`. -/
@@ -149,14 +201,8 @@ theorem flatCurvatureDefect_eq_zero_iff (hkl : 2 + 2 = finrank ℝ V)
       let F := (alternatingFormEquiv V 2).symm (-extDeriv b p)
       F + o.hodgeStar hkl F =
         (8⁻¹ : ℝ) • J.kahlerForm - (2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl (χ p) : ⋀[ℝ]^2 V) := by
-  set F := (alternatingFormEquiv V 2).symm (-extDeriv b p)
-  have hcoe : (flatCurvatureDefect o ρ J hkl hω b χ p : ⋀[ℝ]^2 V) =
-      (√2 / 2 : ℝ) • ((F + o.hodgeStar hkl F) - ((8⁻¹ : ℝ) • J.kahlerForm -
-        (2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl (χ p) : ⋀[ℝ]^2 V))) := by
-    simp only [flatCurvatureDefect, Submodule.coe_add, Submodule.coe_sub, Submodule.coe_smul,
-      Orientation.coe_selfDualProj_apply, AlmostComplexStructure.coe_kahlerSelfDual, F]
-    module
-  rw [← Submodule.coe_eq_zero, hcoe, smul_eq_zero_iff_right (by positivity), sub_eq_zero]
+  rw [← Submodule.coe_eq_zero, coe_flatCurvatureDefect, smul_eq_zero_iff_right (by positivity),
+    sub_eq_zero, flatCurvature_eq_iff]
 
 /-! ### The gauge-fixed linearization of the flat limiting equations -/
 
@@ -299,6 +345,71 @@ theorem hodgeStar_flatDeformationCurvature (hkl : 2 + 2 = finrank ℝ V)
     simpa using extDeriv_smul (0 : ℝ) (0 : V → V [⋀^Fin 1]→L[ℝ] ℝ) (x := y)
   simp [flatDeformationCurvature, h0]
 
+/-- The curvature row of the normal model is linear in the variation `(b', ζ)`: scaling both by
+`t` scales the row by `t`. -/
+theorem flatDeformationCurvature_smul (hkl : 2 + 2 = finrank ℝ V)
+    {b' : V → V [⋀^Fin 1]→L[ℝ] ℝ} {ψ ζ : V → positiveHalfSpinors o ρ} {x : V} (t : ℝ) :
+    flatDeformationCurvature o ρ hkl (t • b') ψ (t • ζ) x =
+      t • flatDeformationCurvature o ρ hkl b' ψ ζ x := by
+  simp only [flatDeformationCurvature_def, extDeriv_smul, ← smul_neg, map_smul, Pi.smul_apply,
+    Submodule.coe_smul, smul_add, smul_comm t (2⁻¹ : ℝ)]
+
+/-- The curvature row of the normal model is additive in the variation `(b', ζ)`, for connection
+variations differentiable at the point. -/
+theorem flatDeformationCurvature_add (hkl : 2 + 2 = finrank ℝ V)
+    {b₁ b₂ : V → V [⋀^Fin 1]→L[ℝ] ℝ} {ψ ζ₁ ζ₂ : V → positiveHalfSpinors o ρ} {x : V}
+    (hb₁ : DifferentiableAt ℝ b₁ x) (hb₂ : DifferentiableAt ℝ b₂ x) :
+    flatDeformationCurvature o ρ hkl (b₁ + b₂) ψ (ζ₁ + ζ₂) x =
+      flatDeformationCurvature o ρ hkl b₁ ψ ζ₁ x + flatDeformationCurvature o ρ hkl b₂ ψ ζ₂ x := by
+  simp only [flatDeformationCurvature_def, extDeriv_add hb₁ hb₂, Pi.add_apply, neg_add, map_add,
+    Submodule.coe_add, smul_add]
+  abel
+
+/-- **The exact expansion of the flat curvature equation**: for connection forms `b` and `b'`
+differentiable at `x`,
+
+`flatCurvature (b + b') (ψ + ζ) = flatCurvature b ψ + F'_ψ(b', ζ) + q(ζ) / 2`,
+
+where `F'` is the curvature row of the normal model (`flatDeformationCurvature`). -/
+theorem flatCurvature_add (hkl : 2 + 2 = finrank ℝ V)
+    {b b' : V → V [⋀^Fin 1]→L[ℝ] ℝ} {ψ ζ : V → positiveHalfSpinors o ρ} {x : V}
+    (hb : DifferentiableAt ℝ b x) (hb' : DifferentiableAt ℝ b' x) :
+    flatCurvature o ρ hkl (b + b') (ψ + ζ) x =
+      flatCurvature o ρ hkl b ψ x + flatDeformationCurvature o ρ hkl b' ψ ζ x +
+        (2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl (ζ x) : ⋀[ℝ]^2 V) := by
+  rw [flatCurvature_def, flatCurvature_def, flatDeformationCurvature_def, extDeriv_add hb hb',
+    Pi.add_apply, quadraticTwoForm_add]
+  simp only [neg_add, map_add, Submodule.coe_add, smul_add]
+  abel
+
+/-- **The flat curvature equation along a line is quadratic**: for connection forms `b` and `b'`
+differentiable at `x` and every real `t`,
+
+`flatCurvature (b + t b') (ψ + t ζ) = flatCurvature b ψ + t F'_ψ(b', ζ) + t² q(ζ) / 2`. -/
+theorem flatCurvature_add_smul (hkl : 2 + 2 = finrank ℝ V)
+    {b b' : V → V [⋀^Fin 1]→L[ℝ] ℝ} {ψ ζ : V → positiveHalfSpinors o ρ} {x : V}
+    (hb : DifferentiableAt ℝ b x) (hb' : DifferentiableAt ℝ b' x) (t : ℝ) :
+    flatCurvature o ρ hkl (b + t • b') (ψ + t • ζ) x =
+      flatCurvature o ρ hkl b ψ x + t • flatDeformationCurvature o ρ hkl b' ψ ζ x +
+        t ^ 2 • (2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl (ζ x) : ⋀[ℝ]^2 V) := by
+  have hq : quadraticTwoForm o ρ hkl ((t • ζ) x) = t ^ 2 • quadraticTwoForm o ρ hkl (ζ x) := by
+    rw [Pi.smul_apply, ← Complex.coe_smul, quadraticTwoForm_smul, Complex.norm_real,
+      Real.norm_eq_abs, sq_abs]
+  rw [flatCurvature_add hkl hb (hb'.const_smul t), flatDeformationCurvature_smul, hq,
+    Submodule.coe_smul, smul_comm (2⁻¹ : ℝ)]
+
+/-- **The curvature row of the normal model is the first variation of the flat curvature
+equation**: for connection forms differentiable at `x`, the derivative of
+`t ↦ flatCurvature (b + t b') (ψ + t ζ) x` at `t = 0` is `flatDeformationCurvature` at `ψ`
+applied to `(b', ζ)`. -/
+theorem hasDerivAt_flatCurvature_add_smul (hkl : 2 + 2 = finrank ℝ V)
+    {b b' : V → V [⋀^Fin 1]→L[ℝ] ℝ} {ψ ζ : V → positiveHalfSpinors o ρ} {x : V}
+    (hb : DifferentiableAt ℝ b x) (hb' : DifferentiableAt ℝ b' x) :
+    HasDerivAt (fun t : ℝ ↦ flatCurvature o ρ hkl (b + t • b') (ψ + t • ζ) x)
+      (flatDeformationCurvature o ρ hkl b' ψ ζ x) 0 := by
+  simp_rw [flatCurvature_add_smul hkl hb hb']
+  exact hasDerivAt_add_smul_add_sq_smul _ _ _
+
 /-- `(√2 / 2) • flatDeformationCurvature` is the directional derivative of `flatCurvatureDefect`
 along `(b + t • δb, χ + t • ζ)` at `t = 0`. -/
 theorem hasDerivAt_flatCurvatureDefect (hkl : 2 + 2 = finrank ℝ V)
@@ -310,47 +421,35 @@ theorem hasDerivAt_flatCurvatureDefect (hkl : 2 + 2 = finrank ℝ V)
         Submodule.smul_mem _ _ (by
           rw [Module.End.mem_eigenspace_iff, one_smul]
           exact hodgeStar_flatDeformationCurvature hkl δb χ ζ p)⟩ 0 := by
-  let L := (((√2 : ℝ) • o.selfDualProj even_two hkl).toContinuousLinearMap).comp
-    (LinearEquiv.toContinuousLinearEquiv (alternatingFormEquiv V 2).symm).toContinuousLinearMap
-  have hcurv (t : ℝ) :
-      (√2 : ℝ) • o.selfDualProj even_two hkl
-        ((alternatingFormEquiv V 2).symm (-extDeriv (b + t • δb) p)) =
-      L (-extDeriv b p) + t • L (-extDeriv δb p) := by
-    have hd : -extDeriv (b + t • δb) p = -extDeriv b p + t • (-extDeriv δb p) := by
-      rw [extDeriv_add hb (hδb.const_smul t), extDeriv_smul]; module
-    rw [hd, map_add, map_smul, map_add, map_smul, smul_add, smul_comm (√2 : ℝ) t]
-    simp [L]
-  have hL (α : V [⋀^Fin 2]→L[ℝ] ℝ) : (L α : ⋀[ℝ]^2 V) =
-      (√2 / 2 : ℝ) • ((alternatingFormEquiv V 2).symm α +
-        o.hodgeStar hkl ((alternatingFormEquiv V 2).symm α)) := by
-    simp only [L, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      LinearEquiv.coe_toContinuousLinearEquiv', LinearMap.coe_toContinuousLinearMap',
-      LinearMap.smul_apply, Submodule.coe_smul, Orientation.coe_selfDualProj_apply]
+  have hexp (t : ℝ) :
+      flatCurvatureDefect o ρ J hkl hω (b + t • δb) (χ + t • ζ) p =
+        flatCurvatureDefect o ρ J hkl hω b χ p +
+          t • ⟨(√2 / 2 : ℝ) • flatDeformationCurvature o ρ hkl δb χ ζ p,
+            Submodule.smul_mem _ _ (by
+              rw [Module.End.mem_eigenspace_iff, one_smul]
+              exact hodgeStar_flatDeformationCurvature hkl δb χ ζ p)⟩ +
+          t ^ 2 • ⟨(√2 / 4 : ℝ) • (quadraticTwoForm o ρ hkl (ζ p) : ⋀[ℝ]^2 V),
+            Submodule.smul_mem _ _ (by
+              rw [Module.End.mem_eigenspace_iff, one_smul]
+              exact o.hodgeStar_coe_of_mem_eigenspace_one hkl _)⟩ := by
+    apply Subtype.ext
+    simp only [Submodule.coe_add, Submodule.coe_smul, coe_flatCurvatureDefect,
+      flatCurvature_add_smul hkl hb hδb]
     module
-  have hF : HasFDerivAt (quadraticTwoForm o ρ hkl) (quadraticTwoFormPolar o ρ hkl (χ p))
-      (χ p + (0 : ℝ) • ζ p) := by simpa using hasFDerivAt_quadraticTwoForm o ρ hkl (χ p)
-  have hcurvDeriv : HasDerivAt
-      (fun t : ℝ ↦
-        L (-extDeriv b p) + t • L (-extDeriv δb p) - (8⁻¹ : ℝ) • J.kahlerSelfDual o hkl hω)
-      (L (-extDeriv δb p)) 0 := by
-    simpa using (((hasDerivAt_id (0 : ℝ)).smul_const (L (-extDeriv δb p))).const_add
-      (L (-extDeriv b p))).sub_const ((8⁻¹ : ℝ) • J.kahlerSelfDual o hkl hω)
-  have hquadDeriv : HasDerivAt
-      (fun t : ℝ ↦ (√2 / 4 : ℝ) • quadraticTwoForm o ρ hkl (χ p + t • ζ p))
-      ((√2 / 4 : ℝ) • quadraticTwoFormPolar o ρ hkl (χ p) (ζ p)) 0 := by
-    have hspin : HasDerivAt (fun t : ℝ ↦ χ p + t • ζ p) (ζ p) 0 := by
-      simpa using ((hasDerivAt_id (0 : ℝ)).smul_const (ζ p)).const_add (χ p)
-    exact (hF.comp_hasDerivAt (0 : ℝ) hspin).const_smul (√2 / 4 : ℝ)
-  refine ((hcurvDeriv.fun_add hquadDeriv).congr_deriv ?_).congr_of_eventuallyEq ?_
-  · refine Subtype.ext ?_
-    simp only [Submodule.coe_add, Submodule.coe_smul, hL, flatDeformationCurvature]
-    module
-  · exact Filter.Eventually.of_forall fun t ↦ by
-      simp only [flatCurvatureDefect, Pi.add_apply, Pi.smul_apply, hcurv t]
+  simp_rw [hexp]
+  exact hasDerivAt_add_smul_add_sq_smul _ _ _
 
 section
 
 omit [FiniteDimensional ℂ W]
+
+private theorem coe_comp_add (ψ ζ : V → positiveHalfSpinors o ρ) :
+    (fun y ↦ ((ψ + ζ) y : W)) = (fun y ↦ (ψ y : W)) + fun y ↦ (ζ y : W) :=
+  rfl
+
+private theorem coe_comp_smul (t : ℝ) (ζ : V → positiveHalfSpinors o ρ) :
+    (fun y ↦ ((t • ζ) y : W)) = (t : ℂ) • fun y ↦ (ζ y : W) :=
+  funext fun _ ↦ (Complex.coe_smul t _).symm
 
 variable (e) in
 /-- The **Dirac row** of the linearized flat limiting equations at a pair `(b, ψ)`, applied to a
@@ -368,6 +467,96 @@ theorem flatDeformationDirac_def (b b' : V → V [⋀^Fin 1]→L[ℝ] ℝ)
       ∑ k, ρ (ι Q (e k)) (fderiv ℝ (fun y' ↦ (ζ y' : W)) y (e k) +
         (I * b y (fun _ ↦ e k)) • (ζ y : W) + (I * b' y (fun _ ↦ e k)) • (ψ y : W)) :=
   (rfl)
+
+variable (ρ) in
+/-- **The Dirac row of the normal model through the flat Dirac operator**:
+`flatDeformationDirac` at `(b, ψ)` applied to `(b', ζ)` is `D_b ζ + i c(b') ψ`, the flat Dirac
+operator of `ζ` plus the Clifford multiplication of `ψ` by `b'`. -/
+theorem flatDeformationDirac_eq_flatDirac_add_flatDirac (b b' : V → V [⋀^Fin 1]→L[ℝ] ℝ)
+    (ψ ζ : V → positiveHalfSpinors o ρ) (x : V) :
+    flatDeformationDirac e b b' ψ ζ x =
+      flatDirac ρ b (fun y ↦ (ζ y : W)) x + flatDirac ρ b' (fun _ ↦ (ψ x : W)) x := by
+  rw [flatDeformationDirac_def, flatDirac_eq_sum ρ e, flatDirac_eq_sum ρ e,
+    ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  simp only [covariantDeriv_apply, fderiv_fun_const, Pi.zero_apply, zero_apply, zero_add,
+    ← map_add, mul_comm I, mul_smul, Complex.coe_smul]
+
+/-- The Dirac row of the normal model is linear in the variation `(b', ζ)`: scaling both by
+`t` scales the row by `t`. -/
+theorem flatDeformationDirac_smul {b b' : V → V [⋀^Fin 1]→L[ℝ] ℝ}
+    {ψ ζ : V → positiveHalfSpinors o ρ} {x : V} (t : ℝ) :
+    flatDeformationDirac e b (t • b') ψ (t • ζ) x = t • flatDeformationDirac e b b' ψ ζ x := by
+  rw [flatDeformationDirac_eq_flatDirac_add_flatDirac ρ, coe_comp_smul, flatDirac_smul,
+    Complex.coe_smul, flatDirac_smul_connection_const,
+    flatDeformationDirac_eq_flatDirac_add_flatDirac ρ, smul_add]
+
+/-- The Dirac row of the normal model is additive in the variation `(b', ζ)`, for spinor
+variations differentiable at the point. -/
+theorem flatDeformationDirac_add {b b₁ b₂ : V → V [⋀^Fin 1]→L[ℝ] ℝ}
+    {ψ ζ₁ ζ₂ : V → positiveHalfSpinors o ρ} {x : V}
+    (hζ₁ : DifferentiableAt ℝ (fun y ↦ (ζ₁ y : W)) x)
+    (hζ₂ : DifferentiableAt ℝ (fun y ↦ (ζ₂ y : W)) x) :
+    flatDeformationDirac e b (b₁ + b₂) ψ (ζ₁ + ζ₂) x =
+      flatDeformationDirac e b b₁ ψ ζ₁ x + flatDeformationDirac e b b₂ ψ ζ₂ x := by
+  simp only [flatDeformationDirac_eq_flatDirac_add_flatDirac ρ]
+  rw [coe_comp_add, flatDirac_add ρ hζ₁ hζ₂, flatDirac_add_connection]
+  abel
+
+variable (e) in
+/-- **The exact expansion of the flat Dirac operator**: for spinor fields `ψ` and `ζ`
+differentiable at `x`,
+
+`D_{b + b'} (ψ + ζ) = D_b ψ + D'_{(b, ψ)}(b', ζ) + i c(b') ζ`,
+
+where `D'` is the Dirac row of the normal model (`flatDeformationDirac`) and the remainder
+`i c(b') ζ` is the flat Dirac operator of the constant field with value `ζ x` for the
+connection `b'`. -/
+theorem flatDirac_add_eq_add_flatDeformationDirac_add
+    {b b' : V → V [⋀^Fin 1]→L[ℝ] ℝ} {ψ ζ : V → positiveHalfSpinors o ρ} {x : V}
+    (hψ : DifferentiableAt ℝ (fun y ↦ (ψ y : W)) x)
+    (hζ : DifferentiableAt ℝ (fun y ↦ (ζ y : W)) x) :
+    flatDirac ρ (b + b') (fun y ↦ ((ψ + ζ) y : W)) x =
+      flatDirac ρ b (fun y ↦ (ψ y : W)) x + flatDeformationDirac e b b' ψ ζ x +
+        flatDirac ρ b' (fun _ ↦ (ζ x : W)) x := by
+  have hconst : flatDirac ρ b' (fun _ ↦ (ψ x : W) + (ζ x : W)) x =
+      flatDirac ρ b' (fun _ ↦ (ψ x : W)) x + flatDirac ρ b' (fun _ ↦ (ζ x : W)) x :=
+    flatDirac_add ρ (differentiableAt_const _) (differentiableAt_const _)
+  rw [coe_comp_add, flatDirac_add_connection, flatDirac_add ρ hψ hζ, Pi.add_apply, hconst,
+    flatDeformationDirac_eq_flatDirac_add_flatDirac ρ]
+  abel
+
+variable (e) in
+/-- **The flat Dirac operator along a line is quadratic**: for spinor fields `ψ` and `ζ`
+differentiable at `x` and every real `t`,
+
+`D_{b + t b'} (ψ + t ζ) = D_b ψ + t D'_{(b, ψ)}(b', ζ) + t² i c(b') ζ`. -/
+theorem flatDirac_add_smul {b b' : V → V [⋀^Fin 1]→L[ℝ] ℝ} {ψ ζ : V → positiveHalfSpinors o ρ}
+    {x : V} (hψ : DifferentiableAt ℝ (fun y ↦ (ψ y : W)) x)
+    (hζ : DifferentiableAt ℝ (fun y ↦ (ζ y : W)) x) (t : ℝ) :
+    flatDirac ρ (b + t • b') (fun y ↦ ((ψ + t • ζ) y : W)) x =
+      flatDirac ρ b (fun y ↦ (ψ y : W)) x + t • flatDeformationDirac e b b' ψ ζ x +
+        t ^ 2 • flatDirac ρ b' (fun _ ↦ (ζ x : W)) x := by
+  have htζ : DifferentiableAt ℝ (fun y ↦ ((t • ζ) y : W)) x := by
+    rw [coe_comp_smul]
+    exact hζ.const_smul _
+  have hconst : (fun _ : V ↦ ((t • ζ) x : W)) = (t : ℂ) • fun _ ↦ (ζ x : W) :=
+    coe_comp_smul t fun _ ↦ ζ x
+  rw [flatDirac_add_eq_add_flatDeformationDirac_add e hψ htζ, flatDeformationDirac_smul, hconst,
+    flatDirac_smul, Complex.coe_smul, flatDirac_smul_connection_const, smul_smul, ← sq]
+
+variable (e) in
+/-- **The Dirac row of the normal model is the first variation of the flat Dirac operator**:
+for spinor fields differentiable at `x`, the derivative of `t ↦ D_{b + t b'} (ψ + t ζ)` at `x`
+at `t = 0` is `flatDeformationDirac` at `(b, ψ)` applied to `(b', ζ)`. -/
+theorem hasDerivAt_flatDirac_add_smul {b b' : V → V [⋀^Fin 1]→L[ℝ] ℝ}
+    {ψ ζ : V → positiveHalfSpinors o ρ} {x : V}
+    (hψ : DifferentiableAt ℝ (fun y ↦ (ψ y : W)) x)
+    (hζ : DifferentiableAt ℝ (fun y ↦ (ζ y : W)) x) :
+    HasDerivAt (fun t : ℝ ↦ flatDirac ρ (b + t • b') (fun y ↦ ((ψ + t • ζ) y : W)) x)
+      (flatDeformationDirac e b b' ψ ζ x) 0 := by
+  simp_rw [flatDirac_add_smul e hψ hζ]
+  exact hasDerivAt_add_smul_add_sq_smul _ _ _
 
 end
 
@@ -436,46 +625,21 @@ theorem hasDerivAt_flatChiralDirac (b δb : V → V [⋀^Fin 1]→L[ℝ] ℝ)
     HasDerivAt (fun t : ℝ ↦ flatChiralDirac o ρ (b + t • δb) (χ + t • ζ) p)
       ⟨flatDeformationDirac e b δb χ ζ p,
         mem_eigenspace_flatDeformationDirac b δb χ ζ p⟩ 0 := by
-  have : FiniteDimensional ℝ (positiveHalfSpinors o ρ) := FiniteDimensional.trans ℝ ℂ _
-  let C (k : Fin 4) :
-      positiveHalfSpinors o ρ →L[ℝ] Module.End.eigenspace (ρ (chirality Q o)) (-1) :=
-    (((halfSpinCliffordMul o ρ 1 (e k)).comp
-      (LinearEquiv.ofEq _ _ (positiveHalfSpinors_eq_eigenspace o ρ)).toLinearMap).restrictScalars
-      ℝ).toContinuousLinearMap
-  let d₁ (k : Fin 4) := covariantDeriv b ζ p (e k) + δb p (fun _ ↦ e k) • (I • χ p)
-  let d₂ (k : Fin 4) := δb p (fun _ ↦ e k) • (I • ζ p)
-  have hcov (t : ℝ) (k : Fin 4) : covariantDeriv (b + t • δb) (χ + t • ζ) p (e k) =
-      covariantDeriv b χ p (e k) + t • d₁ k + (t * t) • d₂ k := by
-    rw [covariantDeriv_apply, (hχ.hasFDerivAt.add (hζ.hasFDerivAt.const_smul t)).fderiv]
-    simp only [d₁, d₂, covariantDeriv_apply, add_apply, smul_apply, Pi.add_apply,
-      Pi.smul_apply, ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply,
-      smul_eq_mul, ← Complex.coe_smul]; push_cast; module
-  have hcovDeriv (k : Fin 4) : HasDerivAt
-      (fun t : ℝ ↦ covariantDeriv b χ p (e k) + t • d₁ k + (t * t) • d₂ k) (d₁ k) 0 := by
-    have hlin : HasDerivAt (fun t : ℝ ↦ covariantDeriv b χ p (e k) + t • d₁ k) (d₁ k) 0 := by
-      simpa using ((hasDerivAt_id (0 : ℝ)).smul_const (d₁ k)).const_add (covariantDeriv b χ p (e k))
-    have hquad : HasDerivAt (fun t : ℝ ↦ (t * t) • d₂ k) (0 : positiveHalfSpinors o ρ) 0 := by
-      have hsq : HasDerivAt (fun t : ℝ ↦ t * t) 0 0 := by
-        simpa using (hasDerivAt_id (0 : ℝ)).fun_mul (hasDerivAt_id (0 : ℝ))
-      simpa using hsq.smul_const (d₂ k)
-    simpa using hlin.fun_add hquad
-  have hterm (k : Fin 4) : HasDerivAt
-      (fun t : ℝ ↦ C k (covariantDeriv (b + t • δb) (χ + t • ζ) p (e k))) (C k (d₁ k)) 0 :=
-    ((C k).hasFDerivAt.comp_hasDerivAt (0 : ℝ) (hcovDeriv k)).congr_of_eventuallyEq <|
-      Filter.Eventually.of_forall fun t ↦ congrArg (C k) (hcov t k)
-  have hlin : (⟨flatDeformationDirac e b δb χ ζ p,
-      mem_eigenspace_flatDeformationDirac b δb χ ζ p⟩ :
-      Module.End.eigenspace (ρ (chirality Q o)) (-1)) = ∑ k : Fin 4, C k (d₁ k) := by
+  have hχ' : DifferentiableAt ℝ (fun q ↦ (χ q : W)) p :=
+    ((positiveHalfSpinors o ρ).subtypeL.restrictScalars ℝ).differentiableAt.comp p hχ
+  have hζ' : DifferentiableAt ℝ (fun q ↦ (ζ q : W)) p :=
+    ((positiveHalfSpinors o ρ).subtypeL.restrictScalars ℝ).differentiableAt.comp p hζ
+  have hexp (t : ℝ) :
+      flatChiralDirac o ρ (b + t • δb) (χ + t • ζ) p =
+        flatChiralDirac o ρ b χ p +
+          t • ⟨flatDeformationDirac e b δb χ ζ p,
+            mem_eigenspace_flatDeformationDirac b δb χ ζ p⟩ +
+          t ^ 2 • flatChiralDirac o ρ δb (fun _ ↦ ζ p) p := by
     apply Subtype.ext
-    dsimp only
-    rw [flatDeformationDirac_eq_coe_flatChiralDirac_add, flatChiralDirac_eq_sum e,
-      Submodule.coe_sum, Submodule.coe_sum, ← Finset.sum_add_distrib]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    simp [C, d₁]
-  rw [hlin]
-  exact (HasDerivAt.fun_sum fun k (_ : k ∈ Finset.univ) ↦ hterm k).congr_of_eventuallyEq <|
-    Filter.Eventually.of_forall fun t ↦ by
-      simp [C, flatChiralDirac_eq_sum e]
+    simp only [Submodule.coe_add, Submodule.coe_smul_of_tower, coe_flatChiralDirac,
+      flatDirac_add_smul e hχ' hζ']
+  simp_rw [hexp]
+  exact hasDerivAt_add_smul_add_sq_smul _ _ _
 
 end Deformation
 
@@ -539,17 +703,16 @@ theorem gaugeFixedFlatOperator_add (hkl : 2 + 2 = finrank ℝ V) (b : V → V [�
     gaugeFixedFlatOperator o ρ e hkl b χ (δb₁ + δb₂) (ζ₁ + ζ₂) p =
       gaugeFixedFlatOperator o ρ e hkl b χ δb₁ ζ₁ p +
         gaugeFixedFlatOperator o ρ e hkl b χ δb₂ ζ₂ p := by
+  have hζ₁' : DifferentiableAt ℝ (fun q ↦ (ζ₁ q : W)) p :=
+    ((positiveHalfSpinors o ρ).subtypeL.restrictScalars ℝ).differentiableAt.comp p hζ₁
+  have hζ₂' : DifferentiableAt ℝ (fun q ↦ (ζ₂ q : W)) p :=
+    ((positiveHalfSpinors o ρ).subtypeL.restrictScalars ℝ).differentiableAt.comp p hζ₂
   rw [gaugeFixedFlatOperator_apply, gaugeFixedFlatOperator_apply, gaugeFixedFlatOperator_apply]
   refine Prod.ext (flatDeformationGauge_add χ ζ₁ ζ₂ hb₁ hb₂) <|
     Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)
-  · simp only [Prod.snd_add, Prod.fst_add, Submodule.coe_add, flatDeformationCurvature,
-      Pi.add_apply, extDeriv_add hb₁ hb₂, neg_add, map_add, smul_add]
-    abel
-  · simp only [Prod.snd_add, Submodule.coe_add, flatDeformationDirac_eq_coe_flatChiralDirac_add,
-      flatChiralDirac_add b hζ₁ hζ₂]
-    simp only [Pi.add_apply, ContinuousAlternatingMap.add_apply, add_smul, map_add,
-      Submodule.coe_add, Finset.sum_add_distrib]
-    abel
+  · simp only [Prod.snd_add, Prod.fst_add, Submodule.coe_add,
+      flatDeformationCurvature_add hkl hb₁ hb₂, smul_add]
+  · simp only [Prod.snd_add, Submodule.coe_add, flatDeformationDirac_add hζ₁' hζ₂']
 
 /-- `gaugeFixedFlatOperator` commutes with real scalar multiplication of `(δb, ζ)`. -/
 theorem gaugeFixedFlatOperator_smul (hkl : 2 + 2 = finrank ℝ V) (b : V → V [⋀^Fin 1]→L[ℝ] ℝ)
@@ -560,18 +723,9 @@ theorem gaugeFixedFlatOperator_smul (hkl : 2 + 2 = finrank ℝ V) (b : V → V [
   rw [gaugeFixedFlatOperator_apply, gaugeFixedFlatOperator_apply]
   refine Prod.ext (flatDeformationGauge_smul r δb χ ζ p) <|
     Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)
-  · simp only [Prod.smul_snd, Prod.smul_fst, Submodule.coe_smul, flatDeformationCurvature,
-      Pi.smul_apply, extDeriv_smul, ← smul_neg, map_smul, smul_add]
-    module
-  · have hζ : r • ζ = (r : ℂ) • ζ := funext fun q ↦ (Complex.coe_smul (r : ℝ) (ζ q)).symm
-    simp only [Prod.smul_snd, Submodule.coe_smul_of_tower]
-    rw [flatDeformationDirac_eq_coe_flatChiralDirac_add,
-      flatDeformationDirac_eq_coe_flatChiralDirac_add, hζ, flatChiralDirac_smul,
-      Complex.coe_smul, Submodule.coe_smul_of_tower, smul_add, Finset.smul_sum]
-    congr 1
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    simp only [Pi.smul_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
-      ← mul_smul, ← Complex.coe_smul, map_smul, Submodule.coe_smul_of_tower, ofReal_mul, mul_assoc]
+  · simp only [Prod.smul_snd, Prod.smul_fst, Submodule.coe_smul,
+      flatDeformationCurvature_smul hkl r, smul_comm r (√2 / 2 : ℝ)]
+  · simp only [Prod.smul_snd, Submodule.coe_smul_of_tower, flatDeformationDirac_smul r]
 
 /-- `gaugeFixedFlatOperator` sends the zero perturbation to zero. -/
 @[simp] theorem gaugeFixedFlatOperator_zero (hkl : 2 + 2 = finrank ℝ V)
