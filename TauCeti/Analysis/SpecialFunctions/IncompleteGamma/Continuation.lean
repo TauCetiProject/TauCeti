@@ -45,9 +45,11 @@ continuation formulas DLMF 8.2.9–8.2.11.
 * `Complex.exp_mul_upperIncompleteGammaLog_add_pi_mul_I_sub`: DLMF 8.2.10 for every `a`;
 * `Complex.upperIncompleteGammaLog_log_add_pi_mul_I`,
   `Complex.upperIncompleteGammaLog_log_sub_pi_mul_I`: DLMF 8.2.11, both signs, for `a ∉ −ℕ`;
-* `Complex.tendsto_upperIncompleteGamma_neg_add_mul_I`,
-  `Complex.tendsto_upperIncompleteGamma_neg_sub_mul_I`: the values on the two banks of the cut,
-  `Γ(a, −x ± iy) → upperIncompleteGammaLog a (ln x ± πi)` as `y → 0+`, for every `a`;
+* `Complex.tendsto_upperIncompleteGamma_nhdsWithin_im_pos`,
+  `Complex.tendsto_upperIncompleteGamma_nhdsWithin_im_neg`: the values on the two banks of the cut,
+  `Γ(a, z) → upperIncompleteGammaLog a (ln x ± πi)` as `z → −x` from the upper or lower
+  half-plane, for every `a`; `Complex.tendsto_upperIncompleteGamma_neg_add_mul_I` and
+  `Complex.tendsto_upperIncompleteGamma_neg_sub_mul_I` are the limits along `y ↦ −x ± iy`;
 * `Complex.upperIncompleteGammaLog_one_left`: `upperIncompleteGammaLog 1 w = e^{−e^w}`.
 
 ## Implementation notes
@@ -342,8 +344,8 @@ theorem upperIncompleteGammaLog_log_add_pi_mul_I {a : ℂ} (ha : ∀ n : ℕ, a 
     upperIncompleteGammaLog a (Complex.log z + π * I) =
       Gamma a * (1 - z ^ a * cexp (π * I * a) * tricomiIncompleteGamma a (-z)) := by
   have he : a * (Complex.log z + π * I) = Complex.log z * a + π * I * a := by ring
-  rw [upperIncompleteGammaLog_eq_Gamma_sub ha, exp_add, exp_log hz, exp_pi_mul_I, mul_neg_one,
-    he, exp_add, cpow_def_of_ne_zero hz]
+  rw [upperIncompleteGammaLog_eq_Gamma_sub ha, exp_add_pi_mul_I, exp_log hz, he, exp_add,
+    cpow_def_of_ne_zero hz]
   ring
 
 /-- **DLMF 8.2.11** (lower sign): `Γ(a, z e^{−πi}) = Γ(a) (1 − z^a e^{−πia} γ*(a, −z))` for
@@ -353,8 +355,8 @@ theorem upperIncompleteGammaLog_log_sub_pi_mul_I {a : ℂ} (ha : ∀ n : ℕ, a 
     upperIncompleteGammaLog a (Complex.log z - π * I) =
       Gamma a * (1 - z ^ a * cexp (-(π * I * a)) * tricomiIncompleteGamma a (-z)) := by
   have he : a * (Complex.log z - π * I) = Complex.log z * a + -(π * I * a) := by ring
-  rw [upperIncompleteGammaLog_eq_Gamma_sub ha, exp_sub, exp_log hz, exp_pi_mul_I, div_neg, div_one,
-    he, exp_add, cpow_def_of_ne_zero hz]
+  rw [upperIncompleteGammaLog_eq_Gamma_sub ha, exp_sub_pi_mul_I, exp_log hz, he, exp_add,
+    cpow_def_of_ne_zero hz]
   ring
 
 /-- **DLMF 8.2.10**, for every `a`:
@@ -380,25 +382,51 @@ theorem exp_mul_upperIncompleteGammaLog_add_pi_mul_I_sub (a w : ℂ) :
   have hr : (Gamma b)⁻¹ * (Gamma (1 - b))⁻¹ = Complex.sin (π * b) / π := by
     rw [← mul_inv, Gamma_mul_Gamma_one_sub, inv_div]
   have hG := Gamma_ne_zero hb'
-  have hp : cexp (w + π * I) = -cexp w := by rw [exp_add, exp_pi_mul_I, mul_neg_one]
-  have hm : cexp (w - π * I) = -cexp w := by rw [exp_sub, exp_pi_mul_I, div_neg, div_one]
   have e₁ : cexp (-(π * I * b)) * cexp (b * (w + π * I)) = cexp (b * w) := by
     rw [← exp_add]; ring_nf
   have e₂ : cexp (π * I * b) * cexp (b * (w - π * I)) = cexp (b * w) := by
     rw [← exp_add]; ring_nf
-  simp only [upperIncompleteGammaLog_eq_Gamma_sub hb', hp, hm]
-  rw [Complex.sin, eq_div_iff (ofReal_ne_zero.2 Real.pi_ne_zero)] at hr
-  have hr' : (Gamma (1 - b))⁻¹ * π =
-      Gamma b * ((cexp (-(π * b) * I) - cexp (π * b * I)) * I / 2) := by
+  simp only [upperIncompleteGammaLog_eq_Gamma_sub hb', exp_add_pi_mul_I, exp_sub_pi_mul_I]
+  -- `2 sin (πb) = (e^{−πib} − e^{πib}) i`, rewritten in the exponents of the goal
+  have hs : 2 * Complex.sin (π * b) = (cexp (-(π * I * b)) - cexp (π * I * b)) * I := by
+    rw [two_sin]; ring_nf
+  -- clear the denominators of the reflection formula `hr`
+  have hr' : (Gamma (1 - b))⁻¹ * π = Gamma b * Complex.sin (π * b) := by
+    rw [eq_div_iff (ofReal_ne_zero.2 Real.pi_ne_zero)] at hr
     rw [← hr]; field_simp
-  have e₃ : cexp (-(π * b) * I) = cexp (-(π * I * b)) := by ring_nf
-  have e₄ : cexp (π * b * I) = cexp (π * I * b) := by ring_nf
-  rw [e₃, e₄] at hr'
   linear_combination (-(Gamma b * tricomiIncompleteGamma b (-cexp w))) * e₁ +
-    Gamma b * tricomiIncompleteGamma b (-cexp w) * e₂ + 2 * I * hr' +
+    Gamma b * tricomiIncompleteGamma b (-cexp w) * e₂ + 2 * I * hr' + Gamma b * I * hs +
     Gamma b * (cexp (-(π * I * b)) - cexp (π * I * b)) * I_sq
 
 /-! ### The two banks of the cut -/
+
+/-- **The upper bank of the cut**, as a limit from the upper half-plane: for `x > 0` and every
+`a`, `Γ(a, z) → upperIncompleteGammaLog a (ln x + πi)` as `z → −x` with `Im z > 0`. The half-plane
+is open because on the cut itself `Γ(a, ·)` takes the principal value `Γ(a, −x)`, which is the
+limit from below. -/
+theorem tendsto_upperIncompleteGamma_nhdsWithin_im_pos (a : ℂ) {x : ℝ} (hx : 0 < x) :
+    Tendsto (upperIncompleteGamma a) (𝓝[{z : ℂ | 0 < z.im}] (-(x : ℂ)))
+      (𝓝 (upperIncompleteGammaLog a (Real.log x + π * I))) := by
+  have hlog := (tendsto_log_nhdsWithin_im_nonneg_of_re_neg_of_im_zero (z := -(x : ℂ))
+    (by simpa using hx) (by simp)).mono_left
+      (nhdsWithin_mono (s := {z : ℂ | 0 < z.im}) _ fun z (hz : 0 < z.im) ↦
+        show 0 ≤ z.im from hz.le)
+  rw [norm_neg, norm_real, Real.norm_of_nonneg hx.le] at hlog
+  refine (((differentiable_upperIncompleteGammaLog a).continuous.tendsto _).comp hlog).congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with z hz
+  exact upperIncompleteGammaLog_log (mem_slitPlane_iff.2 (Or.inr hz.ne')) a
+
+/-- **The lower bank of the cut**, as a limit from the lower half-plane: for `x > 0` and every
+`a`, `Γ(a, z) → upperIncompleteGammaLog a (ln x − πi)` as `z → −x` with `Im z < 0`. -/
+theorem tendsto_upperIncompleteGamma_nhdsWithin_im_neg (a : ℂ) {x : ℝ} (hx : 0 < x) :
+    Tendsto (upperIncompleteGamma a) (𝓝[{z : ℂ | z.im < 0}] (-(x : ℂ)))
+      (𝓝 (upperIncompleteGammaLog a (Real.log x - π * I))) := by
+  have hlog := tendsto_log_nhdsWithin_im_neg_of_re_neg_of_im_zero (z := -(x : ℂ))
+    (by simpa using hx) (by simp)
+  rw [norm_neg, norm_real, Real.norm_of_nonneg hx.le] at hlog
+  refine (((differentiable_upperIncompleteGammaLog a).continuous.tendsto _).comp hlog).congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with z hz
+  exact upperIncompleteGammaLog_log (mem_slitPlane_iff.2 (Or.inr hz.ne)) a
 
 /-- **The upper bank of the cut**: for `x > 0` and every `a`,
 `Γ(a, −x + iy) → upperIncompleteGammaLog a (ln x + πi)` as `y → 0+`. -/
@@ -406,19 +434,12 @@ theorem tendsto_upperIncompleteGamma_neg_add_mul_I (a : ℂ) {x : ℝ} (hx : 0 <
     Tendsto (fun y : ℝ => upperIncompleteGamma a (-x + y * I)) (𝓝[>] 0)
       (𝓝 (upperIncompleteGammaLog a (Real.log x + π * I))) := by
   -- the path `y ↦ −x + iy` approaches `−x` from the upper half-plane
-  have hpath : Tendsto (fun y : ℝ => -(x : ℂ) + y * I) (𝓝[>] 0)
-      (𝓝[{z : ℂ | 0 ≤ z.im}] (-(x : ℂ))) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
-    · simpa using ((by fun_prop : Continuous fun y : ℝ => -(x : ℂ) + y * I).tendsto 0).mono_left
-        nhdsWithin_le_nhds
-    · filter_upwards [self_mem_nhdsWithin] with y hy
-      simpa using hy.le
-  have hlog := (tendsto_log_nhdsWithin_im_nonneg_of_re_neg_of_im_zero (z := -(x : ℂ))
-    (by simpa using hx) (by simp)).comp hpath
-  rw [norm_neg, norm_real, Real.norm_of_nonneg hx.le] at hlog
-  refine (((differentiable_upperIncompleteGammaLog a).continuous.tendsto _).comp hlog).congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with y hy
-  exact upperIncompleteGammaLog_log (mem_slitPlane_iff.2 (Or.inr (by simpa using hy.ne'))) a
+  refine (tendsto_upperIncompleteGamma_nhdsWithin_im_pos a hx).comp
+    (tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩)
+  · simpa using ((by fun_prop : Continuous fun y : ℝ => -(x : ℂ) + y * I).tendsto 0).mono_left
+      nhdsWithin_le_nhds
+  · filter_upwards [self_mem_nhdsWithin] with y hy
+    simpa using hy
 
 /-- **The lower bank of the cut**: for `x > 0` and every `a`,
 `Γ(a, −x − iy) → upperIncompleteGammaLog a (ln x − πi)` as `y → 0+`. -/
@@ -426,18 +447,11 @@ theorem tendsto_upperIncompleteGamma_neg_sub_mul_I (a : ℂ) {x : ℝ} (hx : 0 <
     Tendsto (fun y : ℝ => upperIncompleteGamma a (-x - y * I)) (𝓝[>] 0)
       (𝓝 (upperIncompleteGammaLog a (Real.log x - π * I))) := by
   -- the path `y ↦ −x − iy` approaches `−x` from the lower half-plane
-  have hpath : Tendsto (fun y : ℝ => -(x : ℂ) - y * I) (𝓝[>] 0)
-      (𝓝[{z : ℂ | z.im < 0}] (-(x : ℂ))) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
-    · simpa using ((by fun_prop : Continuous fun y : ℝ => -(x : ℂ) - y * I).tendsto 0).mono_left
-        nhdsWithin_le_nhds
-    · filter_upwards [self_mem_nhdsWithin] with y hy
-      simpa using hy
-  have hlog := (tendsto_log_nhdsWithin_im_neg_of_re_neg_of_im_zero (z := -(x : ℂ))
-    (by simpa using hx) (by simp)).comp hpath
-  rw [norm_neg, norm_real, Real.norm_of_nonneg hx.le] at hlog
-  refine (((differentiable_upperIncompleteGammaLog a).continuous.tendsto _).comp hlog).congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with y hy
-  exact upperIncompleteGammaLog_log (mem_slitPlane_iff.2 (Or.inr (by simpa using hy.ne'))) a
+  refine (tendsto_upperIncompleteGamma_nhdsWithin_im_neg a hx).comp
+    (tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩)
+  · simpa using ((by fun_prop : Continuous fun y : ℝ => -(x : ℂ) - y * I).tendsto 0).mono_left
+      nhdsWithin_le_nhds
+  · filter_upwards [self_mem_nhdsWithin] with y hy
+    simpa using hy
 
 end Complex
