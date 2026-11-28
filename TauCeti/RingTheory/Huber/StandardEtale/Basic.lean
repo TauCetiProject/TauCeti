@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import TauCeti.RingTheory.Huber.QuotientMapping
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.TateSeries.Basic
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Polydisc
 import Mathlib.Topology.Algebra.Group.Neighborhood
-import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
 import TauCeti.Topology.Algebra.IsUniformGroup.Quotient
 
@@ -45,9 +43,10 @@ of `C⁺`, and `k` feeds into `TauCeti.Huber.existsUnique_weightedEval_tateSerie
   open quotient map and a quotient mapping of Huber pairs.
 * `TauCeti.Huber.StandardEtalePresentation.t2Space` and `completeSpace`: any Huber ring admitting a
   standard étale presentation over a complete Hausdorff Tate ring is complete and Hausdorff.
-* `TauCeti.Huber.StandardEtalePresentation.ringHom_ext_of_continuous` and `lift_unique`:
-  uniqueness of continuous base-algebra homomorphisms out of a presented Huber ring from their
-  values on the coordinates `P.π (tateSeries.X P.N A i)`.
+* `TauCeti.Huber.StandardEtalePresentation.toRingHom_π`, `toRingHom_π_X_mem_plus`,
+  `weightedEval_F_of_hom`, `ringHom_ext_of_continuous`, and `lift_unique`: coordinate-evaluation
+  description and uniqueness of Huber-pair and continuous base-algebra homomorphisms out of a
+  presented Huber ring from their values on the coordinates `P.π (tateSeries.X P.N A i)`.
 
 ## References
 
@@ -57,7 +56,7 @@ of `C⁺`, and `k` feeds into `TauCeti.Huber.existsUnique_weightedEval_tateSerie
 
 public section
 
-open Filter Matrix Topology
+open Filter Topology
 
 namespace TauCeti.Huber
 
@@ -92,7 +91,7 @@ structure StandardEtalePresentation {A : Type*} [CommRing A] [UniformSpace A]
   mem_plus_iff : ∀ c : C, c ∈ Cplus.plus ↔
     ((tateSeriesPlus N A Aplus.plus).map (π : tateSeries N A →+* C)).subtype.IsIntegralElem c
   /-- The formal Jacobian determinant maps to a unit `u ∈ Cˣ` with `ϖ ^ k · u⁻¹ ∈ C⁺`. -/
-  exists_unit_jacobian : ∃ u : Cˣ,
+  exists_unit_π_jacobian : ∃ u : Cˣ,
     (u : C) = π (tateSeries.jacobian F) ∧ algebraMap A C (ϖ ^ k) * ↑u⁻¹ ∈ Cplus.plus
 
 namespace StandardEtalePresentation
@@ -137,7 +136,7 @@ theorem jacobian_mem_plus (P : StandardEtalePresentation Aplus ϖ Cplus) :
 /-- The image `P.π P.jacobian` of the formal Jacobian determinant is a unit of `C`. -/
 theorem isUnit_π_jacobian (P : StandardEtalePresentation Aplus ϖ Cplus) :
     IsUnit (P.π P.jacobian) := by
-  obtain ⟨u, hu, -⟩ := P.exists_unit_jacobian
+  obtain ⟨u, hu, -⟩ := P.exists_unit_π_jacobian
   exact hu ▸ u.isUnit
 
 /-- Each defining series `P.F i` vanishes in `C` under `P.π`. -/
@@ -325,10 +324,58 @@ theorem ringHom_ext_of_continuous (P : StandardEtalePresentation Aplus ϖ Cplus)
     obtain ⟨f, rfl⟩ := P.surjective_π c
     exact RingHom.congr_fun hcomp f
 
+/-- Under any Huber-pair morphism `h : Pair.Hom Cplus Uplus`, the image of every coordinate
+`P.π (tateSeries.X P.N A i)` lies in `Uplus.plus`. -/
+theorem toRingHom_π_X_mem_plus (P : StandardEtalePresentation Aplus ϖ Cplus)
+    {U : Type*} [CommRing U] [TopologicalSpace U] [IsTopologicalRing U] [IsHuberRing U]
+    {Uplus : Pair U} (h : Pair.Hom Cplus Uplus) (i : Fin P.N) :
+    h.toRingHom (P.π (tateSeries.X P.N A i)) ∈ Uplus.plus := by
+  rw [← AlgHom.coe_toRingHom, ← P.toPairHom_toRingHom]
+  exact h.map_mem_plus _ (P.toPairHom.map_mem_plus _
+    (by rw [tateSeriesPair_plus]; exact tateSeries.X_mem_tateSeriesPlus Aplus.plus i))
+
 section UniversalProperty
 
 variable {U : Type*} [CommRing U] [UniformSpace U] [IsUniformAddGroup U] [IsTopologicalRing U]
   [IsHuberRing U] [CompleteSpace U] [T0Space U] {Uplus : Pair U}
+
+/-- Every Huber-pair morphism `h : Pair.Hom Cplus Uplus` out of a standard étale presentation `P`
+into a complete Hausdorff Huber pair evaluates on `P.π f` as `weightedEval` along
+`h.comp P.toBasePairHom` at the coordinate images `h.toRingHom (P.π (tateSeries.X P.N A i))`. -/
+theorem toRingHom_π (P : StandardEtalePresentation Aplus ϖ Cplus)
+    (h : Pair.Hom Cplus Uplus) (f : tateSeries P.N A) :
+    h.toRingHom (P.π f) =
+      weightedEval (h.comp P.toBasePairHom).toRingHom
+        (fun i ↦ h.toRingHom (P.π (tateSeries.X P.N A i)))
+        (f : MvPowerSeries (Fin P.N) A) := by
+  let u : Fin P.N → Uplus.plus :=
+    fun i ↦ ⟨h.toRingHom (P.π (tateSeries.X P.N A i)), P.toRingHom_π_X_mem_plus h i⟩
+  have hext : (h.comp P.toPairHom).toRingHom =
+      (tateSeriesPair.evalHom (h.comp P.toBasePairHom) u).toRingHom := by
+    refine weightedRestrictedSubring_ringHom_ext_of_continuous isWeightFamily_one_weight
+      (h.comp P.toPairHom).continuous_toRingHom
+      (tateSeriesPair.evalHom (h.comp P.toBasePairHom) u).continuous_toRingHom
+      (fun a ↦ ?_) (fun i ↦ ?_)
+    · simp only [Pair.Hom.toRingHom_comp, RingHom.comp_apply, toPairHom_toRingHom,
+        AlgHom.coe_toRingHom, ← algebraMap_weightedRestrictedSubring, P.π.commutes,
+        tateSeriesPair.toRingHom_evalHom, tateSeries.coe_algebraMap, weightedEval_C,
+        toBasePairHom_toRingHom]
+    · rw [← tateSeries.X_eq_weightedX, Pair.Hom.toRingHom_comp, RingHom.comp_apply,
+        toPairHom_toRingHom, tateSeriesPair.toRingHom_evalHom, tateSeries.coe_X, weightedEval_X]
+      rfl
+  rw [← AlgHom.coe_toRingHom, ← P.toPairHom_toRingHom, ← RingHom.comp_apply h.toRingHom,
+    ← Pair.Hom.toRingHom_comp, hext, tateSeriesPair.toRingHom_evalHom]
+  rfl
+
+/-- Under any Huber-pair morphism `h : Pair.Hom Cplus Uplus` into a complete Hausdorff Huber pair,
+the coordinate images `h.toRingHom (P.π (tateSeries.X P.N A j))` solve the defining equations
+`P.F` after base change along `h.comp P.toBasePairHom`. -/
+theorem weightedEval_F_of_hom (P : StandardEtalePresentation Aplus ϖ Cplus)
+    (h : Pair.Hom Cplus Uplus) (i : Fin P.N) :
+    weightedEval (h.comp P.toBasePairHom).toRingHom
+      (fun j ↦ h.toRingHom (P.π (tateSeries.X P.N A j)))
+      (P.F i : MvPowerSeries (Fin P.N) A) = 0 := by
+  rw [← P.toRingHom_π h (P.F i), P.π_F i, map_zero]
 
 /-- **Universal coordinate lift for a standard étale presentation:** given a base morphism
 `z : Pair.Hom Aplus Uplus` into a complete Hausdorff Huber pair and a tuple `u : Fin P.N → U`
@@ -340,16 +387,12 @@ noncomputable def lift (P : StandardEtalePresentation Aplus ϖ Cplus)
     (hFu : ∀ i, weightedEval z.toRingHom u (P.F i : MvPowerSeries (Fin P.N) A) = 0) :
     Pair.Hom Cplus Uplus :=
   let evPair : Pair.Hom (tateSeriesPair P.N A Aplus) Uplus :=
-    (Pair.polydisc.evalHom z (fun i ↦ ⟨u i, hu i⟩)).comp
-      (Aplus.weighted isWeightFamily_one_weight).completionHom
+    tateSeriesPair.evalHom z (fun i ↦ ⟨u i, hu i⟩)
   have hker : P.ideal ≤ RingHom.ker evPair.toRingHom := by
     rw [P.ideal_def]
     exact Ideal.closure_le_ker_of_continuous evPair.continuous_toRingHom
-      (Ideal.span_le.mpr (Set.range_subset_iff.mpr fun i ↦ RingHom.mem_ker.mpr <| by
-        simpa only [evPair, Pair.Hom.toRingHom_comp, RingHom.comp_apply,
-          Pair.Hom.toRingHom_completionHom, UniformSpace.Completion.coeRingHom_apply] using
-          (Pair.polydisc.toRingHom_evalHom_coe z (fun i ↦ ⟨u i, hu i⟩) (P.F i)).trans
-            (hFu i)))
+      (Ideal.span_le.mpr (Set.range_subset_iff.mpr fun i ↦ RingHom.mem_ker.mpr <|
+        (tateSeriesPair.toRingHom_evalHom z (fun i ↦ ⟨u i, hu i⟩) (P.F i)).trans (hFu i)))
   (evPair.quotientLift P.ideal hker).comp P.targetToQuotient
 
 /-- On an element `P.π f`, `P.lift z u hu hFu` evaluates the restricted series `f` at `u` along
@@ -362,9 +405,8 @@ theorem toRingHom_lift_π (P : StandardEtalePresentation Aplus ϖ Cplus)
       weightedEval z.toRingHom u (f : MvPowerSeries (Fin P.N) A) := by
   dsimp only [lift]
   rw [Pair.Hom.toRingHom_comp, RingHom.comp_apply, P.targetToQuotient_π,
-    Pair.Hom.toRingHom_quotientLift, Ideal.Quotient.lift_mk, Pair.Hom.toRingHom_comp,
-    RingHom.comp_apply, Pair.Hom.toRingHom_completionHom, UniformSpace.Completion.coeRingHom_apply]
-  exact Pair.polydisc.toRingHom_evalHom_coe z (fun i ↦ ⟨u i, hu i⟩) f
+    Pair.Hom.toRingHom_quotientLift, Ideal.Quotient.lift_mk]
+  exact tateSeriesPair.toRingHom_evalHom z (fun i ↦ ⟨u i, hu i⟩) f
 
 /-- On the `i`-th coordinate `P.π (tateSeries.X P.N A i)`, `P.lift z u hu hFu` takes the value
 `u i`. -/
@@ -452,7 +494,7 @@ noncomputable def ofQuotient (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUniformize
       RingHom.ext fun x ↦ Algebra.algebraMap_ofSubsemiring_apply _ x
     rw [Pair.quotient_plus, tateSeriesPair_plus, Subalgebra.mem_toSubring, mem_integralClosure_iff,
       IsIntegral, hmk, halg]
-  exists_unit_jacobian := hu
+  exists_unit_π_jacobian := hu
 
 @[simp]
 theorem ofQuotient_N (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
@@ -518,7 +560,7 @@ noncomputable def identity (Aplus : Pair A) (ϖ : A) (hϖ : IsPseudoUniformizer 
       exact ⟨fun ha ↦ isIntegral_algebraMap (R := Aplus.plus) (x := ⟨a, ha⟩),
         fun hx ↦ Subring.isIntegrallyClosedIn_iff.mp
           Aplus.isRingOfIntegralElements.isIntegrallyClosedIn hx⟩
-    exists_unit_jacobian :=
+    exists_unit_π_jacobian :=
       ⟨1, by simp [tateSeries.jacobian_fin_zero], by simp [Aplus.plus.one_mem]⟩ }
 
 @[simp]

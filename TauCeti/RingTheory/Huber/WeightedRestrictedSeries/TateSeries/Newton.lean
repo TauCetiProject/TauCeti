@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.TateSeries.Basic
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.TateSeries.Eval
 public import TauCeti.RingTheory.Huber.WeightedEval.Newton
 
 /-!
@@ -17,21 +17,36 @@ definition `C₀` contains a pseudouniformiser `ϖ` of `C`. Given `F : Fin N →
 `M * J(t) = ϖ ^ k • 1`, and a residual bound `Fᵢ(t) ∈ ϖ ^ e • C₀` (`2 * k + 1 ≤ e`), this file
 specialises `TauCeti.Huber.existsUnique_weightedEval_eq_zero`,
 `TauCeti.Huber.pow_dvd_sub_of_weightedEval_eq_zero`, and `TauCeti.Huber.eq_of_weightedEval_eq_zero`
-to `tateSeries N C` and establishes functoriality under continuous ring homomorphisms:
+to `tateSeries N C`, provides an adjugate constructor for scaled Jacobian inverses, treats
+coefficientwise `ϖ ^ e`-perturbations of the defining system, and establishes functoriality of
+Newton roots under continuous ring homomorphisms:
 
-1. **Existence, uniqueness, and error bound** (`existsUnique_weightedEval_tateSeries_eq_zero`): `F`
-   has a unique zero `u ∈ C₀^N` with `u ≡ t mod ϖ ^ (k + 1)`, and `u ≡ t mod ϖ ^ (e - k)`.
-2. **Functoriality** (`map_weightedEval_tateSeries`, `map_weightedEval_tateSeries_eq_zero`):
-   continuous ring homomorphisms commute with `weightedEval` at power-bounded tuples and preserve
-   Newton roots.
+1. **Adjugate scaled inverse** (`tateSeries.adjugateJacobianMatrixInv`,
+   `tateSeries.adjugateJacobianMatrixInv_mul`): given a subring `R ≤ C` containing the evaluated
+   Jacobian entries and a scaled scalar inverse `s` of `weightedEval φ x (tateSeries.jacobian F)`,
+   constructs an `R`-valued matrix `M` with `M * J(x) = (s * weightedEval φ x (jacobian F)) • 1`.
+2. **Existence, uniqueness, and error bound** (`existsUnique_weightedEval_tateSeries_eq_zero` and
+   `existsUnique_weightedEval_tateSeries_eq_zero_of_coeff_sub`): `F` (or any coefficientwise
+   `ϖ ^ e`-perturbation `G`) has a unique zero `u ∈ C₀^N` with `u ≡ t mod ϖ ^ (k + 1)`, and
+   `u ≡ t mod ϖ ^ (e - k)`.
+3. **Functoriality** (`map_weightedEval_tateSeries_eq_zero`): continuous ring homomorphisms
+   preserve Newton roots.
+
+## Main definitions
+
+* `TauCeti.Huber.tateSeries.adjugateJacobianMatrixInv`: integral `s`-scaled inverse of the
+  evaluated Jacobian matrix via the adjugate.
 
 ## Main results
 
+* `TauCeti.Huber.tateSeries.adjugateJacobianMatrixInv_mul`: left inverse identity for
+  `tateSeries.adjugateJacobianMatrixInv`.
 * `TauCeti.Huber.existsUnique_weightedEval_tateSeries_eq_zero`: multivariable Newton–Hensel lifting
   and quantitative error bound `u ≡ t mod ϖ ^ (e - k)` on `tateSeries N C`.
-* `TauCeti.Huber.map_weightedEval_tateSeries` and
-  `TauCeti.Huber.map_weightedEval_tateSeries_eq_zero`: compatibility of evaluation and Newton roots
-  with continuous ring homomorphisms.
+* `TauCeti.Huber.existsUnique_weightedEval_tateSeries_eq_zero_of_coeff_sub`: Newton–Hensel lifting
+  after a coefficientwise `ϖ ^ e`-perturbation of the defining series.
+* `TauCeti.Huber.map_weightedEval_tateSeries_eq_zero`: compatibility of Newton roots with
+  continuous ring homomorphisms.
 
 ## References
 
@@ -46,6 +61,55 @@ public section
 open Matrix Pointwise
 
 namespace TauCeti.Huber
+
+section Adjugate
+
+/-- **Adjugate construction of an integral scaled Jacobian inverse:** given a subring `R` of `C`
+containing every evaluated partial derivative `weightedEval φ x (∂ⱼFᵢ)` and a scalar `s ∈ R`,
+this defines the `R`-valued matrix `s • adjugate J(x)`. -/
+noncomputable def tateSeries.adjugateJacobianMatrixInv
+    {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
+    {C : Type*} [CommRing C] [TopologicalSpace C] (R : Subring C)
+    (φ : A →+* C) {N : ℕ} (x : Fin N → C) (F : Fin N → tateSeries N A)
+    (hJ : ∀ i j, weightedEval φ x
+      (MvPowerSeries.pderiv j (F i : MvPowerSeries (Fin N) A)) ∈ R)
+    {s : C} (hs : s ∈ R) : Matrix (Fin N) (Fin N) R :=
+  (⟨s, hs⟩ : R) • (Matrix.of fun i j ↦ ⟨weightedEval φ x
+    (MvPowerSeries.pderiv j (F i : MvPowerSeries (Fin N) A)), hJ i j⟩).adjugate
+
+/-- **Scaled inverse identity for `tateSeries.adjugateJacobianMatrixInv`:** over `C`,
+`(tateSeries.adjugateJacobianMatrixInv R φ x F hJ hs) * J(x)` equals
+`(s * weightedEval φ x (tateSeries.jacobian F)) • 1`. -/
+theorem tateSeries.adjugateJacobianMatrixInv_mul
+    {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
+    {C : Type*} [CommRing C] [UniformSpace C] [IsUniformAddGroup C]
+    [NonarchimedeanRing C] [CompleteSpace C] [T3Space C]
+    {R : Subring C} {φ : A →+* C} (hφ : ContinuousAt φ 0)
+    {N : ℕ} {x : Fin N → C} (hx : ∀ i, IsPowerBounded (x i))
+    (F : Fin N → tateSeries N A)
+    (hJ : ∀ i j, weightedEval φ x
+      (MvPowerSeries.pderiv j (F i : MvPowerSeries (Fin N) A)) ∈ R)
+    {s : C} (hs : s ∈ R) :
+    (tateSeries.adjugateJacobianMatrixInv R φ x F hJ hs).map Subtype.val *
+        Matrix.of (fun i j ↦ weightedEval φ x
+          (MvPowerSeries.pderiv j (F i : MvPowerSeries (Fin N) A))) =
+      (s * weightedEval φ x (tateSeries.jacobian F : MvPowerSeries (Fin N) A)) •
+        (1 : Matrix (Fin N) (Fin N) C) := by
+  let JR : Matrix (Fin N) (Fin N) R :=
+    Matrix.of fun i j ↦ ⟨weightedEval φ x
+      (MvPowerSeries.pderiv j (F i : MvPowerSeries (Fin N) A)), hJ i j⟩
+  let J : Matrix (Fin N) (Fin N) C :=
+    Matrix.of fun i j ↦ weightedEval φ x
+      (MvPowerSeries.pderiv j (F i : MvPowerSeries (Fin N) A))
+  have hJR_map : JR.map R.subtype = J := rfl
+  have hadj : (tateSeries.adjugateJacobianMatrixInv R φ x F hJ hs).map Subtype.val =
+      s • J.adjugate := by
+    change ((⟨s, hs⟩ : R) • JR.adjugate).map R.subtype = s • J.adjugate
+    rw [Matrix.map_smul' _ _ _ (map_mul R.subtype), ← RingHom.mapMatrix_apply,
+      RingHom.map_adjugate, RingHom.mapMatrix_apply, hJR_map]; rfl
+  rw [hadj, Matrix.smul_mul, Matrix.adjugate_mul, smul_smul, weightedEval_tateSeries_jacobian hφ hx]
+
+end Adjugate
 
 section Newton
 
@@ -97,35 +161,95 @@ theorem existsUnique_weightedEval_tateSeries_eq_zero
     pow_dvd_sub_of_weightedEval_eq_zero P hϖ.isUnit hFres hF₀ hJ hFt_smul hu_mod hu_zero⟩,
     fun v hv_mod hv_zero ↦ hu_uniq v ⟨hv_mod, hv_zero⟩⟩
 
+/-- **Newton–Hensel lifting for a coefficientwise `ϖ ^ e`-perturbed `tateSeries` system:**
+if `F : Fin N → tateSeries N C` has coefficients in `P.ringOfDefinition`, `M * J_F(t) = ϖ ^ k • 1`,
+`F(t) ≡ 0 mod ϖ ^ e` with `2 * k + 1 ≤ e`, and `G : Fin N → tateSeries N C` satisfies
+`Gᵢ - Fᵢ ≡ 0 mod ϖ ^ e` coefficientwise in `P.ringOfDefinition`, then `G` has a unique zero `u` in
+`P.ringOfDefinition^N` congruent to `t` modulo `ϖ ^ (k + 1)`, and `u` satisfies
+`u ≡ t mod ϖ ^ (e - k)`. -/
+theorem existsUnique_weightedEval_tateSeries_eq_zero_of_coeff_sub
+    (P : PairOfDefinition C) (ϖ : P.ringOfDefinition) (hϖ : IsPseudoUniformizer (ϖ : C))
+    (N : ℕ) (F G : Fin N → tateSeries N C)
+    (hF : ∀ i, F i ∈ tateSeriesPlus N C P.ringOfDefinition)
+    (t : Fin N → P.ringOfDefinition) (k e : ℕ) (he : 2 * k + 1 ≤ e)
+    (M : Matrix (Fin N) (Fin N) P.ringOfDefinition)
+    (hJ : M.map Subtype.val *
+        Matrix.of (fun i j ↦ weightedEval (RingHom.id C) (fun l ↦ (t l : C))
+          (MvPowerSeries.pderiv j (F i : MvPowerSeries (Fin N) C))) =
+      (ϖ : C) ^ k • (1 : Matrix (Fin N) (Fin N) C))
+    (hFt : ∀ i, ∃ r : P.ringOfDefinition,
+      weightedEval (RingHom.id C) (fun l ↦ (t l : C)) (F i : MvPowerSeries (Fin N) C) =
+        (ϖ : C) ^ e * (r : C))
+    (hFG : ∀ i ν, ∃ r : P.ringOfDefinition,
+      MvPowerSeries.coeff ν ((G i - F i : tateSeries N C) : MvPowerSeries (Fin N) C) =
+        (ϖ : C) ^ e * (r : C)) :
+    ∃ u : Fin N → P.ringOfDefinition,
+      ((∀ i, ϖ ^ (k + 1) ∣ u i - t i) ∧
+      (∀ i, weightedEval (RingHom.id C) (fun l ↦ (u l : C))
+        (G i : MvPowerSeries (Fin N) C) = 0) ∧
+      (∀ i, ϖ ^ (e - k) ∣ u i - t i)) ∧
+      ∀ v : Fin N → P.ringOfDefinition,
+        (∀ i, ϖ ^ (k + 1) ∣ v i - t i) →
+        (∀ i, weightedEval (RingHom.id C) (fun l ↦ (v l : C))
+          (G i : MvPowerSeries (Fin N) C) = 0) →
+        v = u := by
+  have hke : k + 1 ≤ e := by omega
+  have hG : ∀ i, G i ∈ tateSeriesPlus N C P.ringOfDefinition := by
+    intro i
+    rw [mem_tateSeriesPlus_iff]
+    intro ν
+    obtain ⟨r, hr⟩ := hFG i ν
+    have hsub : MvPowerSeries.coeff ν
+        ((G i : MvPowerSeries (Fin N) C) - (F i : MvPowerSeries (Fin N) C)) ∈
+        P.ringOfDefinition := by
+      rw [← AddSubgroupClass.coe_sub (G i) (F i), hr]
+      exact mul_mem (pow_mem ϖ.property e) r.property
+    rw [map_sub] at hsub
+    simpa only [sub_add_cancel] using add_mem hsub (mem_tateSeriesPlus_iff.mp (hF i) ν)
+  have hFG_mem : ∀ i ν, MvPowerSeries.coeff ν
+      ((G i : MvPowerSeries (Fin N) C) - (F i : MvPowerSeries (Fin N) C)) ∈
+      (ϖ : C) ^ (k + 1) • (P.ringOfDefinition : Set C) := by
+    intro i ν
+    obtain ⟨r, hr⟩ := hFG i ν
+    refine ⟨(ϖ ^ (e - (k + 1)) * r : P.ringOfDefinition), SetLike.coe_mem _, ?_⟩
+    change (ϖ : C) ^ (k + 1) • ((ϖ ^ (e - (k + 1)) * r : P.ringOfDefinition) : C) = _
+    push_cast
+    rw [← AddSubgroupClass.coe_sub (G i) (F i), hr, smul_eq_mul, ← mul_assoc, ← pow_add,
+      Nat.add_sub_of_le hke]
+  obtain ⟨M', -, hJM', -⟩ := exists_mul_jacobianMatrix_eq_pow_smul_one_of_coeff_mem P hϖ
+    (fun i ↦ mem_weightedRestrictedSubring.mp (F i).property)
+    (fun i ↦ mem_tateSeriesPlus_iff.mp (hF i))
+    (fun i ↦ mem_weightedRestrictedSubring.mp (G i).property)
+    (fun i ↦ mem_tateSeriesPlus_iff.mp (hG i))
+    hFG_mem hJ
+  have hGt : ∀ i, ∃ r : P.ringOfDefinition,
+      weightedEval (RingHom.id C) (fun l ↦ (t l : C)) (G i : MvPowerSeries (Fin N) C) =
+        (ϖ : C) ^ e * (r : C) := by
+    intro i
+    have hid : ContinuousAt (RingHom.id C) 0 := continuous_id.continuousAt
+    have ht_bd := (isWeightBounded_one_weight_iff_forall_isPowerBounded (RingHom.id C)
+      (fun l ↦ (t l : C))).mpr fun l ↦
+        P.isBounded_ringOfDefinition.isPowerBounded_of_mem (t l).property
+    have hdiff_eval : weightedEval (RingHom.id C) (fun l ↦ (t l : C))
+        ((G i - F i : tateSeries N C) : MvPowerSeries (Fin N) C) ∈
+        (ϖ : C) ^ e • (P.ringOfDefinition : Set C) := by
+      refine weightedEval_mem_pow_smul_of_coeff P hϖ.isUnit
+        (mem_weightedRestrictedSubring.mp (G i - F i).property) (fun ν ↦ ?_) t
+      obtain ⟨r, hr⟩ := hFG i ν
+      exact ⟨r, r.property, hr.symm⟩
+    obtain ⟨r₁, hr₁, hdiff_eq⟩ := Set.mem_smul_set.mp hdiff_eval
+    obtain ⟨r₂, hFt_eq⟩ := hFt i
+    have hadd := weightedEval_add hid ht_bd
+      (mem_weightedRestrictedSubring.mp (G i - F i).property)
+      (mem_weightedRestrictedSubring.mp (F i).property)
+    rw [← AddMemClass.coe_add, sub_add_cancel] at hadd
+    refine ⟨⟨r₁, hr₁⟩ + r₂, ?_⟩
+    rw [hadd, ← hdiff_eq, hFt_eq, smul_eq_mul, AddMemClass.coe_add, mul_add]
+  exact existsUnique_weightedEval_tateSeries_eq_zero P ϖ hϖ N G hG t k e he M' hJM' hGt
+
 end Newton
 
 section Functoriality
-
-/-- **Compatibility of `weightedEval` on `tateSeries` with continuous ring homomorphisms:** if
-`φ : C →+* C'` is continuous into a Hausdorff nonarchimedean ring `C'` and `x : Fin N → C` consists
-of power-bounded elements, then evaluating `g : tateSeries N C` at `x` and applying `φ` agrees with
-evaluating `tateSeries.mapRingHom hφ g` at `φ ∘ x`. -/
-theorem map_weightedEval_tateSeries
-    {C : Type*} [CommRing C] [UniformSpace C] [IsUniformAddGroup C]
-    [NonarchimedeanRing C] [CompleteSpace C]
-    {C' : Type*} [CommRing C'] [TopologicalSpace C'] [NonarchimedeanRing C'] [T2Space C']
-    {φ : C →+* C'} (hφ : Continuous φ)
-    {N : ℕ} {x : Fin N → C} (hx : ∀ l, IsPowerBounded (x l)) (g : tateSeries N C) :
-    φ (weightedEval (RingHom.id C) x (g : MvPowerSeries (Fin N) C)) =
-      weightedEval (RingHom.id C') (fun l ↦ φ (x l))
-        (tateSeries.mapRingHom hφ g : MvPowerSeries (Fin N) C') := by
-  have hid : ContinuousAt (RingHom.id C) 0 := continuous_id.continuousAt
-  have hsum := (hasSum_weightedEval_of_forall_isPowerBounded hid hx
-    (mem_weightedRestrictedSubring.mp g.property)).map φ hφ
-  have hsum' : HasSum (weightedEvalTerm (RingHom.id C') (fun l ↦ φ (x l))
-      (tateSeries.mapRingHom hφ g : MvPowerSeries (Fin N) C'))
-      (φ (weightedEval (RingHom.id C) x (g : MvPowerSeries (Fin N) C))) := by
-    convert hsum using 1
-    ext ν
-    simp [weightedEvalTerm_def, map_prod]
-  symm
-  rw [weightedEval_def]
-  exact hsum'.tsum_eq
 
 /-- **Functoriality of Newton roots along a continuous ring homomorphism:** if `u ∈ C₀^N` is a
 zero of `F` congruent to `t` modulo `ϖ ^ (k + 1)` under the Newton hypotheses over `(C, P, ϖ)`,
@@ -182,18 +306,23 @@ theorem map_weightedEval_tateSeries_eq_zero
       Matrix.of (fun i j ↦ weightedEval (RingHom.id C') (fun l ↦ (t' l : C'))
         (MvPowerSeries.pderiv j (tateSeries.mapRingHom hφ (F i) : MvPowerSeries (Fin N) C'))) =
       (ϖ' : C') ^ k • (1 : Matrix (Fin N) (Fin N) C') := by
-    ext i j
-    have hij := congrArg φ (congrFun (congrFun hJ i) j)
-    simp only [Matrix.mul_apply, Matrix.map_apply, Matrix.of_apply, Matrix.smul_apply,
-      Matrix.one_apply, smul_eq_mul, map_sum, map_mul, map_pow] at hij ⊢
-    convert hij using 1
-    · refine Finset.sum_congr rfl fun l _ ↦ congrArg (φ (M i l : C) * ·) ?_
-      rw [← tateSeries.coe_pderiv, tateSeries.pderiv_mapRingHom,
-        ← map_weightedEval_tateSeries hφ
-          (fun m ↦ P.isBounded_ringOfDefinition.isPowerBounded_of_mem (t m).property)
-          (tateSeries.pderiv j (F l)),
-        tateSeries.coe_pderiv]
-    · split_ifs <;> simp [ϖ']
+    have hJφ : (Matrix.of fun i j ↦ weightedEval (RingHom.id C') (fun l ↦ (t' l : C'))
+          (MvPowerSeries.pderiv j (tateSeries.mapRingHom hφ (F i) : MvPowerSeries (Fin N) C'))) =
+        (Matrix.of fun i j ↦ weightedEval (RingHom.id C) (fun l ↦ (t l : C))
+          (MvPowerSeries.pderiv j (F i : MvPowerSeries (Fin N) C))).map φ := by
+      ext i j
+      simp only [Matrix.map_apply, Matrix.of_apply, ← tateSeries.coe_pderiv,
+        tateSeries.pderiv_mapRingHom]
+      exact (map_weightedEval_tateSeries hφ
+        (fun m ↦ P.isBounded_ringOfDefinition.isPowerBounded_of_mem (t m).property)
+        (tateSeries.pderiv j (F i))).symm
+    have hM' : M'.map Subtype.val = (M.map Subtype.val).map φ := rfl
+    have h := congrArg φ.mapMatrix hJ
+    rw [map_mul, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply,
+      Matrix.map_smul' _ _ _ (map_mul _), Matrix.map_one _ (map_zero _) (map_one _),
+      map_pow] at h
+    rw [hM', hJφ]
+    exact h
   exact eq_of_weightedEval_eq_zero P' (hϖ.map hφ)
     (fun i ↦ mem_weightedRestrictedSubring.mp (tateSeries.mapRingHom hφ (F i)).property)
     (fun i ↦ mem_tateSeriesPlus_iff.mp (hF' i))

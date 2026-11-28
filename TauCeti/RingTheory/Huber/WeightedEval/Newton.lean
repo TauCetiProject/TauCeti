@@ -47,11 +47,14 @@ the Jacobian matrix `(∂ⱼFᵢ(t))`, if `M J(t) = ϖᵏ` for an integral matri
   `F(x') - F(x) - ∑ⱼ ∂ⱼF(t) (x'ⱼ - xⱼ) ∈ ϖ^(a + b) A₀`.
 * `TauCeti.Huber.weightedEval_sub_mem_pow_smul`: first-order congruence
   `g(u) - g(t) ∈ ϖ^m A₀` for `u ≡ t mod ϖ^m`.
+* `TauCeti.Huber.weightedEval_mem_pow_smul_of_coeff`: `g(t) ∈ ϖ^m A₀` when all coefficients of `g`
+  lie in `ϖ^m A₀`.
 * `TauCeti.Huber.existsUnique_weightedEval_eq_zero`: Newton's method, the existence and
   uniqueness of a zero in `t + ϖ^(k + 1) A₀^N`.
 * `TauCeti.Huber.pow_dvd_sub_of_weightedEval_eq_zero`: the error bound `u ≡ t mod ϖ^(e - k)`.
-* `TauCeti.Huber.exists_mul_jacobian_eq_pow_smul_of_dvd`: stability of a `ϖᵏ`-scaled Jacobian
-  inverse under `ϖ^(k + 1)`-perturbations.
+* `TauCeti.Huber.exists_mul_jacobianMatrix_eq_pow_smul_one_of_dvd` and
+  `TauCeti.Huber.exists_mul_jacobianMatrix_eq_pow_smul_one_of_coeff_mem`: stability of a
+  `ϖᵏ`-scaled Jacobian inverse under `ϖ^(k + 1)`-perturbations of the point or coefficients.
 * `TauCeti.Huber.eq_of_weightedEval_eq_zero`: local uniqueness of zeros in `t + ϖ^(k + 1) A₀^N`
   without a residual hypothesis on `F(t)`.
 
@@ -157,6 +160,27 @@ theorem weightedEval_sub_mem_pow_smul {ϖ : P.ringOfDefinition} (hϖ : IsUnit (�
   exact (SubsemiringClass.coe_mem_smul_iff_dvd P.ringOfDefinition).mpr
     (sub_add_cancel (gu - gt) lin ▸ dvd_add hrem hlin)
 
+/-- **Coefficientwise divisibility passes to evaluation:** if `g` is unit-weight restricted and
+every coefficient of `g` lies in `ϖ ^ m • A₀`, then `g(t) ∈ ϖ ^ m • A₀` for every
+`t : Fin N → A₀`. -/
+theorem weightedEval_mem_pow_smul_of_coeff {ϖ : P.ringOfDefinition} (hϖ : IsUnit (ϖ : C))
+    {g : MvPowerSeries (Fin N) C}
+    (hg : IsWeightedRestricted (fun _ : Fin N ↦ ({1} : Set C)) g)
+    {m : ℕ} (hg₀ : ∀ ν, MvPowerSeries.coeff ν g ∈ (ϖ : C) ^ m • (P.ringOfDefinition : Set C))
+    (t : Fin N → P.ringOfDefinition) :
+    weightedEval (RingHom.id C) (fun l ↦ (t l : C)) g ∈
+      (ϖ : C) ^ m • (P.ringOfDefinition : Set C) := by
+  have := P.toNonarchimedeanRing
+  have hsum := hasSum_weightedEval_of_forall_isPowerBounded (φ := RingHom.id C)
+    continuous_id.continuousAt
+    (fun i ↦ P.isBounded_ringOfDefinition.isPowerBounded_of_mem (t i).property) hg
+  refine P.mem_smul_of_hasSum (hϖ.pow m) hsum fun ν ↦ ?_
+  obtain ⟨r, hr, hcoeff⟩ := Set.mem_smul_set.mp (hg₀ ν)
+  refine ⟨r * ∏ i, (t i : C) ^ ν i,
+    mul_mem hr (prod_mem fun i _ ↦ pow_mem (t i).property _), ?_⟩
+  dsimp only at hcoeff ⊢
+  rw [weightedEvalTerm_def, RingHom.id_apply, ← hcoeff, smul_eq_mul, smul_eq_mul, mul_assoc]
+
 section Newton
 
 variable {ϖ : P.ringOfDefinition} {F : Fin N → MvPowerSeries (Fin N) C}
@@ -222,15 +246,14 @@ private theorem mul_jacobianOD_eq
       weightedEval (RingHom.id C) (fun l ↦ (t l : C)) (MvPowerSeries.pderiv j (F i))) =
         (ϖ : C) ^ k • (1 : Matrix (Fin N) (Fin N) C)) :
     M * jacobianOD P hF₀ t = ϖ ^ k • (1 : Matrix (Fin N) (Fin N) P.ringOfDefinition) := by
-  ext i j
-  have h := congrFun (congrFun hM i) j
-  simp only [Matrix.mul_apply, Matrix.map_apply, Matrix.of_apply, Matrix.smul_apply,
-    Matrix.one_apply, smul_eq_mul] at h
-  simp only [Matrix.mul_apply, Matrix.smul_apply, Matrix.one_apply, smul_eq_mul]
-  push_cast
-  convert h using 2
-  · simp
-  · split_ifs <;> simp
+  apply Matrix.map_injective Subtype.coe_injective
+  have h : P.ringOfDefinition.subtype.mapMatrix (M * jacobianOD P hF₀ t) =
+      P.ringOfDefinition.subtype.mapMatrix (ϖ ^ k • 1) := by
+    rw [map_mul, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply,
+      Matrix.map_smul' _ _ _ (map_mul _), Matrix.map_one _ (map_zero _) (map_one _), map_pow,
+      Subring.coe_subtype]
+    exact hM
+  simpa only [RingHom.mapMatrix_apply, Subring.coe_subtype] using h
 
 /-- **Error bound in Newton's method for restricted series.** Let `ϖ ∈ A₀` be a unit of `C`, and
 let `M` be an integral matrix with `M J(t) = ϖᵏ`, where `J(t) = (∂ⱼFᵢ(t))` is the Jacobian matrix
@@ -277,10 +300,64 @@ theorem existsUnique_weightedEval_eq_zero [T0Space C] (hϖ : IsPseudoUniformizer
     (fun i ↦ (SubsemiringClass.coe_mem_smul_iff_dvd P.ringOfDefinition).mp (ht i))
     fun x x' hx _ n hn hxx' ↦ pow_dvd_evalOD_sub P hF hF₀ hϖ.isUnit x x' hx n hn hxx'
 
+/-- **Matrix perturbation for `ϖ ^ k`-scaled inverses over `A₀`:** if `M * J₁ = ϖ ^ k • 1`
+and `J₂ ≡ J₁ mod ϖ ^ (k + 1)` entrywise over `A₀`, then there is `M' ≡ M mod ϖ` satisfying
+`M' * J₂ = ϖ ^ k • 1` and `J₂ * M' = ϖ ^ k • 1` over `C`. -/
+private theorem exists_mul_eq_pow_smul_one_of_matrix_dvd [T0Space C]
+    (hϖ : IsPseudoUniformizer (ϖ : C)) {k : ℕ}
+    {M J₁ J₂ : Matrix (Fin N) (Fin N) P.ringOfDefinition}
+    (hJ₁ : M * J₁ = ϖ ^ k • 1)
+    (hJdiff : ∀ i j, ϖ ^ (k + 1) ∣ J₂ i j - J₁ i j) :
+    ∃ M' : Matrix (Fin N) (Fin N) P.ringOfDefinition,
+      (∀ i j, ϖ ∣ M' i j - M i j) ∧
+      M'.map ((↑) : P.ringOfDefinition → C) * J₂.map ((↑) : P.ringOfDefinition → C) =
+        (ϖ : C) ^ k • (1 : Matrix (Fin N) (Fin N) C) ∧
+      J₂.map ((↑) : P.ringOfDefinition → C) * M'.map ((↑) : P.ringOfDefinition → C) =
+        (ϖ : C) ^ k • (1 : Matrix (Fin N) (Fin N) C) := by
+  have := P.isAdicComplete_span_singleton ϖ hϖ
+  -- Stage 1: Perturbation `J₂ = J₁ + ϖ ^ (k + 1) • Δ`, so `M * J₂ = ϖ ^ k • U`.
+  choose Δ hΔ using hJdiff
+  have hJ₂_eq : J₂ = J₁ + ϖ ^ (k + 1) • Matrix.of Δ := by
+    apply Matrix.ext; intro i j
+    simp only [Matrix.add_apply, Matrix.smul_apply, Matrix.of_apply, smul_eq_mul]
+    linear_combination hΔ i j
+  let U : Matrix (Fin N) (Fin N) P.ringOfDefinition := 1 + ϖ • (M * Matrix.of Δ)
+  have hMJ₂ : M * J₂ = ϖ ^ k • U := by
+    dsimp only [U]
+    rw [hJ₂_eq, Matrix.mul_add, hJ₁, Matrix.mul_smul, pow_succ, mul_comm (ϖ ^ k) ϖ,
+      ← smul_smul, smul_add]; simp [smul_smul, mul_comm]
+  -- Stage 2: Invertibility of `U` over the `ϖ`-adically complete ring `A₀`.
+  have hUdet : IsUnit U.det :=
+    Matrix.isUnit_det_one_add_smul
+      (IsAdicComplete.le_jacobson (Ideal.span ({ϖ} : Set P.ringOfDefinition))
+        (Ideal.mem_span_singleton_self ϖ)) _
+  -- Stage 3: Corrected left inverse `M' := U⁻¹ * M` and congruence `M' ≡ M mod ϖ`.
+  let M' : Matrix (Fin N) (Fin N) P.ringOfDefinition := U⁻¹ * M
+  have hUM' : U * M' = M := by
+    rw [← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hUdet, Matrix.one_mul]
+  have hM'mod (i j) : ϖ ∣ M' i j - M i j := ⟨-((M * Matrix.of Δ * M') i j), by
+    have hij := congrFun (congrFun hUM' i) j
+    simp only [U, Matrix.add_mul, Matrix.smul_mul, Matrix.one_mul,
+      Matrix.add_apply, Matrix.smul_apply, smul_eq_mul] at hij
+    linear_combination hij⟩
+  have hM'J₂ : M' * J₂ = ϖ ^ k • (1 : Matrix (Fin N) (Fin N) P.ringOfDefinition) := by
+    rw [Matrix.mul_assoc, hMJ₂, Matrix.mul_smul, Matrix.nonsing_inv_mul _ hUdet]
+  have hleft : M'.map ((↑) : P.ringOfDefinition → C) * J₂.map ((↑) : P.ringOfDefinition → C) =
+      (ϖ : C) ^ k • (1 : Matrix (Fin N) (Fin N) C) := by
+    have h := congrArg P.ringOfDefinition.subtype.mapMatrix hM'J₂
+    rw [map_mul, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply, RingHom.mapMatrix_apply,
+      Matrix.map_smul' _ _ _ (map_mul _), Matrix.map_one _ (map_zero _) (map_one _), map_pow,
+      Subring.coe_subtype] at h
+    exact h
+  -- Stage 4: Two-sidedness of the `ϖ ^ k`-scaled inverse.
+  exact ⟨M', hM'mod, hleft,
+    (Matrix.mul_eq_smul_one_comm
+      (isRegular_iff_mem_nonZeroDivisors.mp (hϖ.isUnit.pow k).isRegular)).mp hleft⟩
+
 /-- **Stability of the `ϖ ^ k`-scaled Jacobian inverse under `ϖ ^ (k + 1)`-perturbations:** if
 `M * J(t) = ϖ ^ k • 1` and `u ≡ t mod ϖ ^ (k + 1)` in `A₀^N`, then there is an integral matrix
 `M' ≡ M mod ϖ` satisfying both `M' * J(u) = ϖ ^ k • 1` and `J(u) * M' = ϖ ^ k • 1`. -/
-theorem exists_mul_jacobian_eq_pow_smul_of_dvd [T0Space C]
+theorem exists_mul_jacobianMatrix_eq_pow_smul_one_of_dvd [T0Space C]
     (hϖ : IsPseudoUniformizer (ϖ : C))
     (hF : ∀ i, IsWeightedRestricted (fun _ : Fin N ↦ ({1} : Set C)) (F i))
     (hF₀ : ∀ i ν, MvPowerSeries.coeff ν (F i) ∈ P.ringOfDefinition)
@@ -300,58 +377,66 @@ theorem exists_mul_jacobian_eq_pow_smul_of_dvd [T0Space C]
       Matrix.of (fun i j ↦ weightedEval (RingHom.id C) (fun l ↦ (u l : C))
           (MvPowerSeries.pderiv j (F i))) *
         M'.map ((↑) : P.ringOfDefinition → C) =
+        (ϖ : C) ^ k • (1 : Matrix (Fin N) (Fin N) C) :=
+  exists_mul_eq_pow_smul_one_of_matrix_dvd P hϖ (J₂ := jacobianOD P hF₀ u)
+    (mul_jacobianOD_eq P hF₀ hJ) fun i j ↦
+      (SubsemiringClass.coe_mem_smul_iff_dvd P.ringOfDefinition).mp <| by
+        simpa only [AddSubgroupClass.coe_sub, jacobianOD_apply, Subring.coe_pow] using
+          weightedEval_sub_mem_pow_smul P hϖ.isUnit ((hF i).pderiv_one_weight j)
+            (MvPowerSeries.coeff_pderiv_mem (hF₀ i) j) hu
+
+/-- **Stability of the `ϖ ^ k`-scaled Jacobian inverse under `ϖ ^ (k + 1)`-perturbations of the
+defining series:** if `M * J_F(t) = ϖ ^ k • 1` and `Gᵢ - Fᵢ` has all coefficients in
+`ϖ ^ (k + 1) • A₀`, then there is an integral matrix `M' ≡ M mod ϖ` satisfying both
+`M' * J_G(t) = ϖ ^ k • 1` and `J_G(t) * M' = ϖ ^ k • 1`. -/
+theorem exists_mul_jacobianMatrix_eq_pow_smul_one_of_coeff_mem [T0Space C]
+    (hϖ : IsPseudoUniformizer (ϖ : C))
+    (hF : ∀ i, IsWeightedRestricted (fun _ : Fin N ↦ ({1} : Set C)) (F i))
+    (hF₀ : ∀ i ν, MvPowerSeries.coeff ν (F i) ∈ P.ringOfDefinition)
+    {G : Fin N → MvPowerSeries (Fin N) C}
+    (hG : ∀ i, IsWeightedRestricted (fun _ : Fin N ↦ ({1} : Set C)) (G i))
+    (hG₀ : ∀ i ν, MvPowerSeries.coeff ν (G i) ∈ P.ringOfDefinition)
+    {k : ℕ} (hFG : ∀ i ν, MvPowerSeries.coeff ν (G i - F i) ∈
+      (ϖ : C) ^ (k + 1) • (P.ringOfDefinition : Set C))
+    {t : Fin N → P.ringOfDefinition}
+    {M : Matrix (Fin N) (Fin N) P.ringOfDefinition}
+    (hJ : M.map ((↑) : P.ringOfDefinition → C) *
+        Matrix.of (fun i j ↦ weightedEval (RingHom.id C) (fun l ↦ (t l : C))
+          (MvPowerSeries.pderiv j (F i))) =
+      (ϖ : C) ^ k • (1 : Matrix (Fin N) (Fin N) C)) :
+    ∃ M' : Matrix (Fin N) (Fin N) P.ringOfDefinition,
+      (∀ i j, ϖ ∣ M' i j - M i j) ∧
+      M'.map ((↑) : P.ringOfDefinition → C) *
+        Matrix.of (fun i j ↦ weightedEval (RingHom.id C) (fun l ↦ (t l : C))
+          (MvPowerSeries.pderiv j (G i))) =
+        (ϖ : C) ^ k • (1 : Matrix (Fin N) (Fin N) C) ∧
+      Matrix.of (fun i j ↦ weightedEval (RingHom.id C) (fun l ↦ (t l : C))
+          (MvPowerSeries.pderiv j (G i))) *
+        M'.map ((↑) : P.ringOfDefinition → C) =
         (ϖ : C) ^ k • (1 : Matrix (Fin N) (Fin N) C) := by
-  have := P.isAdicComplete_span_singleton ϖ hϖ
-  -- Stage 1: Perturbation of `J`: `J₀ u = J₀ t + ϖ ^ (k + 1) • Δ`, so `M * J₀ u = ϖ ^ k • U`.
-  let J₀ := jacobianOD P hF₀
-  have hJdiff (i j) : ϖ ^ (k + 1) ∣ J₀ u i j - J₀ t i j :=
-    (SubsemiringClass.coe_mem_smul_iff_dvd P.ringOfDefinition).mp <| by
-      simpa only [J₀, AddSubgroupClass.coe_sub, jacobianOD_apply, Subring.coe_pow] using
-        weightedEval_sub_mem_pow_smul P hϖ.isUnit ((hF i).pderiv_one_weight j)
-          (MvPowerSeries.coeff_pderiv_mem (hF₀ i) j) hu
-  choose Δ hΔ using hJdiff
-  have hJu_eq : J₀ u = J₀ t + ϖ ^ (k + 1) • Matrix.of Δ := by
-    apply Matrix.ext; intro i j
-    simp only [Matrix.add_apply, Matrix.smul_apply, Matrix.of_apply, smul_eq_mul]
-    linear_combination hΔ i j
-  have hMJt : M * J₀ t = ϖ ^ k • (1 : Matrix (Fin N) (Fin N) P.ringOfDefinition) :=
-    mul_jacobianOD_eq P hF₀ hJ
-  let U : Matrix (Fin N) (Fin N) P.ringOfDefinition := 1 + ϖ • (M * Matrix.of Δ)
-  have hMJu : M * J₀ u = ϖ ^ k • U := by
-    dsimp only [U]
-    rw [hJu_eq, Matrix.mul_add, hMJt, Matrix.mul_smul, pow_succ, mul_comm (ϖ ^ k) ϖ,
-      ← smul_smul, smul_add]; simp [smul_smul, mul_comm]
-  -- Stage 2: Invertibility of `U` over the `ϖ`-adically complete ring `A₀`.
-  have hUdet : IsUnit U.det :=
-    Matrix.isUnit_det_one_add_smul
-      (IsAdicComplete.le_jacobson (Ideal.span ({ϖ} : Set P.ringOfDefinition))
-        (Ideal.mem_span_singleton_self ϖ)) _
-  -- Stage 3: Corrected left inverse `M' := U⁻¹ * M` and congruence `M' ≡ M mod ϖ`.
-  let M' : Matrix (Fin N) (Fin N) P.ringOfDefinition := U⁻¹ * M
-  have hUM' : U * M' = M := by
-    rw [← Matrix.mul_assoc, Matrix.mul_nonsing_inv _ hUdet, Matrix.one_mul]
-  have hM'mod (i j) : ϖ ∣ M' i j - M i j := ⟨-((M * Matrix.of Δ * M') i j), by
-    have hij := congrFun (congrFun hUM' i) j
-    simp only [U, Matrix.add_mul, Matrix.smul_mul, Matrix.one_mul,
-      Matrix.add_apply, Matrix.smul_apply, smul_eq_mul] at hij
-    linear_combination hij⟩
-  have hM'Ju₀ : M' * J₀ u = ϖ ^ k • (1 : Matrix (Fin N) (Fin N) P.ringOfDefinition) := by
-    rw [Matrix.mul_assoc, hMJu, Matrix.mul_smul, Matrix.nonsing_inv_mul _ hUdet]
-  have hleft : M'.map ((↑) : P.ringOfDefinition → C) *
-      Matrix.of (fun i j ↦ weightedEval (RingHom.id C) (fun l ↦ (u l : C))
-        (MvPowerSeries.pderiv j (F i))) =
-      (ϖ : C) ^ k • (1 : Matrix (Fin N) (Fin N) C) := by
-    ext i j
-    have hij := congrArg Subtype.val (congrFun (congrFun hM'Ju₀ i) j)
-    simp only [J₀, Matrix.mul_apply, Matrix.map_apply, Matrix.of_apply, Matrix.smul_apply,
-      Matrix.one_apply, smul_eq_mul] at hij ⊢
-    push_cast at hij
-    simp only [jacobianOD_apply] at hij
-    convert hij; split_ifs <;> simp
-  -- Stage 4: Two-sidedness of the `ϖ ^ k`-scaled inverse.
-  exact ⟨M', hM'mod, hleft,
-    (Matrix.mul_eq_smul_one_comm
-      (isRegular_iff_mem_nonZeroDivisors.mp (hϖ.isUnit.pow k).isRegular)).mp hleft⟩
+  have := P.toNonarchimedeanRing
+  have hid : ContinuousAt (RingHom.id C) 0 := continuous_id.continuousAt
+  have ht_bd := (isWeightBounded_one_weight_iff_forall_isPowerBounded (RingHom.id C)
+    (fun l ↦ (t l : C))).mpr fun l ↦
+      P.isBounded_ringOfDefinition.isPowerBounded_of_mem (t l).property
+  refine exists_mul_eq_pow_smul_one_of_matrix_dvd P hϖ (J₂ := jacobianOD P hG₀ t)
+    (mul_jacobianOD_eq P hF₀ hJ) fun i j ↦
+      (SubsemiringClass.coe_mem_smul_iff_dvd P.ringOfDefinition).mp ?_
+  have hGF_res : IsWeightedRestricted (fun _ : Fin N ↦ ({1} : Set C)) (G i - F i) := by
+    rw [sub_eq_add_neg]; exact (hG i).add (hF i).neg
+  have hadd := weightedEval_add hid ht_bd (hGF_res.pderiv_one_weight j)
+    ((hF i).pderiv_one_weight j)
+  rw [← map_add (MvPowerSeries.pderiv j), sub_add_cancel] at hadd
+  rw [AddSubgroupClass.coe_sub, jacobianOD_apply, jacobianOD_apply, Subring.coe_pow,
+    hadd, add_sub_cancel_right]
+  refine weightedEval_mem_pow_smul_of_coeff P hϖ.isUnit (hGF_res.pderiv_one_weight j)
+    (fun ν ↦ ?_) t
+  obtain ⟨r, hr, hcoeff⟩ := Set.mem_smul_set.mp (hFG i (ν + Finsupp.single j 1))
+  refine ⟨((ν j + 1 : ℕ) : C) * r, mul_mem (natCast_mem P.ringOfDefinition _) hr, ?_⟩
+  dsimp only at hcoeff ⊢
+  rw [MvPowerSeries.coeff_pderiv, ← hcoeff, smul_eq_mul, smul_eq_mul]
+  push_cast
+  ring
 
 /-- **Uniqueness of zeros in `t + ϖ ^ (k + 1) A₀^N`:** any two zeros `u, u' ∈ A₀^N` of `F`
 congruent to `t` modulo `ϖ ^ (k + 1)` are equal, provided the Jacobian of `F` at `t` has an
@@ -372,7 +457,7 @@ theorem eq_of_weightedEval_eq_zero [T0Space C]
     (hu' : ∀ i, ϖ ^ (k + 1) ∣ u' i - t i)
     (hFu' : ∀ i, weightedEval (RingHom.id C) (fun l ↦ (u' l : C)) (F i) = 0) :
     u = u' := by
-  obtain ⟨Mu, -, hMu, -⟩ := exists_mul_jacobian_eq_pow_smul_of_dvd P hϖ hF hF₀ hJ hu
+  obtain ⟨Mu, -, hMu, -⟩ := exists_mul_jacobianMatrix_eq_pow_smul_one_of_dvd P hϖ hF hF₀ hJ hu
   exact (existsUnique_weightedEval_eq_zero P hϖ hF hF₀ u hMu
     (fun i ↦ by rw [hFu i]; exact ⟨0, P.ringOfDefinition.zero_mem, by simp⟩)).unique
     ⟨fun _ ↦ by simp, hFu⟩
@@ -381,3 +466,4 @@ theorem eq_of_weightedEval_eq_zero [T0Space C]
 end Newton
 
 end TauCeti.Huber
+

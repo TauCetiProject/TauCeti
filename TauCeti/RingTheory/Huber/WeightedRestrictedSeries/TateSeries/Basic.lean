@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
-public import TauCeti.RingTheory.Huber.WeightedEval.Hom
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PDeriv
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Polydisc
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Basic
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Rename
 
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.GaussValuation
@@ -23,17 +22,13 @@ Over a nonarchimedean commutative ring `A`, `TauCeti.Huber.tateSeries N A` is th
 restricted power series in `N` variables — the specialization of
 `TauCeti.Huber.weightedRestrictedSubring` to the trivial weight family `Tᵢ = {1}`, with coordinate
 variables `TauCeti.Huber.tateSeries.X` and coefficientwise subring
-`TauCeti.Huber.tateSeriesPlus N A Aplus`. When `A` is complete and Hausdorff, `tateSeries N A` is
-complete and Hausdorff, so `TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv` identifies
-`restrictedMvPowerSeriesCompletion N A` with `tateSeries N A` while retaining termwise formal
-partial derivatives `MvPowerSeries.pderiv` and formal Jacobian determinants
+`TauCeti.Huber.tateSeriesPlus N A Aplus`, carrying termwise formal partial derivatives
+`TauCeti.Huber.tateSeries.pderiv` and formal Jacobian determinants
 `TauCeti.Huber.tateSeries.jacobian`.
 
 For a Huber pair `S = (A, A⁺)`, `TauCeti.Huber.tateSeriesPair N A S` is the uncompleted unit-weight
 Huber pair `S.weighted isWeightFamily_one_weight`, whose plus ring equals
-`tateSeriesPlus N A S.plus` (`TauCeti.Huber.tateSeriesPair_plus`) and maps under
-`(restrictedMvPowerSeriesCompletionEquiv N A).symm` onto `S.polydiscPlus N`
-(`TauCeti.Huber.map_symm_tateSeriesPlus_eq_polydiscPlus`).
+`tateSeriesPlus N A S.plus` (`TauCeti.Huber.tateSeriesPair_plus`).
 
 ## Main definitions
 
@@ -53,7 +48,6 @@ Huber pair `S.weighted isWeightFamily_one_weight`, whose plus ring equals
 * `TauCeti.Huber.tateSeries.pderiv_mem_tateSeriesPlus` and
   `TauCeti.Huber.tateSeries.jacobian_mem_tateSeriesPlus`: `∂/∂Tⱼ` and formal Jacobians preserve
   `tateSeriesPlus`.
-* `TauCeti.Huber.map_symm_tateSeriesPlus_eq_polydiscPlus`: comparison with `S.polydiscPlus N`.
 * `TauCeti.Huber.exists_pow_smul_mem_tateSeriesPlus`: rescaling into an open subring by `ϖ ^ m`.
 * `TauCeti.Huber.tateSeriesPlus_map_le_of_continuous`: preservation of `tateSeriesPlus` under
   continuous ring homomorphisms.
@@ -103,6 +97,13 @@ theorem tateSeries.coe_X (i : Fin N) :
     (tateSeries.X N A i : MvPowerSeries (Fin N) A) = MvPowerSeries.X i := by
   rw [tateSeries.X_eq_weightedX, coe_weightedX]
 
+/-- Transporting a coordinate variable `tateSeries.X n A (Fin.cast h.symm j)` along `h : n = m`.
+-/
+theorem tateSeries.X_cast {n m : ℕ} (h : n = m) (j : Fin m) :
+    tateSeries.X n A (Fin.cast h.symm j) =
+      cast (congrArg (tateSeries · A) h.symm) (tateSeries.X m A j) := by
+  subst h; rfl
+
 theorem tateSeries.coe_algebraMap (a : A) :
     (algebraMap A (tateSeries N A) a : MvPowerSeries (Fin N) A) = MvPowerSeries.C a := by
   rw [algebraMap_weightedRestrictedSubring, coe_weightedC]
@@ -112,14 +113,6 @@ theorem tateSeries.isPseudoUniformizer_algebraMap {ϖ : A} (hϖ : IsPseudoUnifor
     IsPseudoUniformizer (algebraMap A (tateSeries N A) ϖ) := by
   rw [algebraMap_weightedRestrictedSubring]
   exact hϖ.map (continuous_weightedC isWeightFamily_one_weight)
-
-/-- Under the canonical inclusion into the completion `restrictedMvPowerSeriesCompletion N A`,
-`tateSeries.X N A i` is `Pair.polydiscVar N A i`. -/
-@[simp]
-theorem tateSeries.coe_X_completion (i : Fin N) :
-    ((tateSeries.X N A i : tateSeries N A) : restrictedMvPowerSeriesCompletion N A) =
-      Pair.polydiscVar N A i := by
-  rw [tateSeries.X_eq_weightedX]
 
 /-- Over a nonzero base ring, no coordinate variable `Tᵢ` is a unit of `A⟨T₁, …, T_N⟩`. -/
 theorem tateSeries.not_isUnit_X [Nontrivial A] (i : Fin N) :
@@ -495,19 +488,6 @@ integral closure needed. -/
 theorem tateSeriesPair_plus (N : ℕ) (S : Pair A) :
     (tateSeriesPair N A S).plus = tateSeriesPlus N A S.plus :=
   Pair.weighted_plus_one_weight S
-
-/-- **Comparison with `Pair.polydiscPlus`:** when `tateSeries N A` is complete and Hausdorff, the
-inverse completion equivalence `(restrictedMvPowerSeriesCompletionEquiv N A).symm` maps
-`tateSeriesPlus N A S.plus` onto `S.polydiscPlus N`. -/
-theorem map_symm_tateSeriesPlus_eq_polydiscPlus (N : ℕ) (S : Pair A)
-    [CompleteSpace (tateSeries N A)] [T0Space (tateSeries N A)] :
-    (tateSeriesPlus N A S.plus).map
-        ((restrictedMvPowerSeriesCompletionEquiv N A).symm :
-          tateSeries N A →+* restrictedMvPowerSeriesCompletion N A) =
-      S.polydiscPlus N := by
-  dsimp only [tateSeriesPlus]
-  rw [← S.map_polydiscPlus_equiv N, Subring.map_map]
-  ext x; simp
 
 /-- A continuous ring homomorphism `tateSeries N A →+* B` mapping `Aplus.plus` (via constants) and
 every coordinate `tateSeries.X N A i` into `Bplus.plus` carries all of
