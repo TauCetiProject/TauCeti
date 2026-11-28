@@ -288,15 +288,23 @@ theorem hammingNorm_eq_domRestrict_add_domRestrict_compl {A : ι → Type*} [Fin
   simp only [hammingNorm, Finset.card_filter]
   exact (Fintype.sum_subtype_add_sum_subtype (· ∈ s) _).symm
 
+open Finset in
+/-- The coordinates where two words agree, together with the coordinates where they differ,
+number `n`. -/
+theorem card_filter_eq_add_hammingDist {β : ι → Type*} [Fintype ι] [∀ i, DecidableEq (β i)]
+    (x y : ∀ i, β i) : #{i | x i = y i} + hammingDist x y = Fintype.card ι := by
+  rw [hammingDist, ← card_univ]
+  exact card_filter_add_card_filter_not _
+
 /-- A product over the coordinates which takes the value `a` at the zero coordinates of a word
 and `b` elsewhere is `a ^ (n - wt x) * b ^ (wt x)`, where `n` is the length and `wt` is the
 Hamming weight. -/
 @[simp] theorem prod_ite_eq_zero_eq_pow_mul_pow_hammingNorm {M : Type*} {β : ι → Type*} [Fintype ι]
     [∀ i, Zero (β i)] [∀ i, DecidableEq (β i)] [CommMonoid M] (x : ∀ i, β i) (a b : M) :
     ∏ i, (if x i = 0 then a else b) = a ^ (Fintype.card ι - hammingNorm x) * b ^ hammingNorm x := by
-  have h := Finset.card_filter_add_card_filter_not (s := Finset.univ) (fun i ↦ x i = 0)
-  rw [Finset.card_univ] at h
-  rw [Finset.prod_ite, Finset.prod_const, Finset.prod_const, hammingNorm, ← h, Nat.add_sub_cancel]
+  have h := card_filter_eq_add_hammingDist x 0
+  simp only [Pi.zero_apply, hammingDist_zero_right] at h
+  rw [Finset.prod_ite, Finset.prod_const, Finset.prod_const, ← h, Nat.add_sub_cancel, hammingNorm]
 
 /-! ### Binary words and greedy codes -/
 
@@ -338,14 +346,6 @@ theorem exists_finset_pairwise_lt_hammingDist_forall_exists {ι : Type*} {β : �
   · simpa [SetRel.IsSeparated, R] using hN.1.2
   · obtain ⟨x, hx, hxy⟩ := hcover (Set.mem_univ y)
     exact ⟨x, by simpa using hx, hxy⟩
-
-/-- The coordinates where two words agree, together with the coordinates where they differ,
-number `n`. -/
-theorem card_filter_eq_add_hammingDist {ι : Type*} {β : ι → Type*} [Fintype ι]
-    [∀ i, DecidableEq (β i)] (x y : ∀ i, β i) :
-    #{i | x i = y i} + hammingDist x y = Fintype.card ι := by
-  rw [hammingDist, ← card_univ]
-  exact card_filter_add_card_filter_not _
 
 /-- The sum of the distances over the ordered pairs of words of a code `C`, plus the number of
 pairs that agree in each coordinate, summed over the coordinates, is `n |C|²`. The pairs that agree

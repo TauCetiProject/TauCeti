@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Perm.MovedNorm
+import TauCeti.InformationTheory.Hamming
 
 /-!
 # The distance with errors between permutations of different degrees
@@ -93,8 +94,8 @@ theorem agreeCount_eq_card_eq (σ τ : Perm (Fin n)) :
 /-- In equal degree, the agreements and the Hamming distance partition the points. -/
 theorem agreeCount_add_hammingDist (σ τ : Perm (Fin n)) :
     agreeCount σ τ + hammingDist ⇑σ ⇑τ = n := by
-  rw [agreeCount_eq_card_eq, hammingDist, card_filter_add_card_filter_not, card_univ,
-    Fintype.card_fin]
+  simpa only [agreeCount_eq_card_eq, Fintype.card_fin] using
+    TauCeti.card_filter_eq_add_hammingDist (⇑σ) (⇑τ)
 
 /-- The distance with errors is symmetric. -/
 theorem distErr_comm (σ : Perm (Fin n)) (τ : Perm (Fin m)) : distErr σ τ = distErr τ σ := by
