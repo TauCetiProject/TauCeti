@@ -344,6 +344,12 @@ theorem toCompletion_of (i : ι) (a : A i) :
 theorem of_f {i j : ι} (h : i ≤ j) (a : A i) : of A f j (f i j h a) = of A f i a := by
   rw [← toCompletion_of, CStarSeminormedDirectLimit.of_f, toCompletion_of]
 
+omit [IsDirectedOrder ι] [Nonempty ι] in
+/-- The star homomorphism underlying the connecting map from a stage to itself is the identity. -/
+theorem ofClass_f_self (i : ι) :
+    NonUnitalStarRingHom.ofClass (f i i le_rfl) = NonUnitalStarRingHom.id (A i) :=
+  NonUnitalStarRingHom.ext fun a ↦ DirectedSystem.map_self (f := (f · · ·)) a
+
 /-- **The norm formula.** The norm of the image of `a ∈ A i` in the C⋆-inductive limit is the
 infimum of the norms of its images in the later stages, which decrease along `ι`. -/
 theorem norm_of (i : ι) (a : A i) : ‖of A f i a‖ = ⨅ j : {j // i ≤ j}, ‖f i j j.property a‖ := by

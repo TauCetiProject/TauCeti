@@ -25,7 +25,8 @@ The rounding `Q = χ_{[1/2, ∞)}(h)` of an element `h` of a (not necessarily un
 has `|t - t²| ≤ δ`, so `t` lies within `2δ` of `0` (when `t < 1/2`) or of `1` (when `t ≥ 1/2`).
 For `δ < 1/4` the (quasi)spectrum therefore avoids `1/2`, the indicator of `[1/2, ∞)` is continuous
 on it, and for self-adjoint `h` we get `‖h - Q‖ ≤ 2δ` and (in the unital case) `‖(1 - Q)h‖ ≤ 2δ`,
-as well as normalizing `h` to `Q` in closed corners via `cfcₙ ((Ici (1/2)).indicator (√·)⁻¹) h`.
+`‖(1 - Q)h(1 - Q)‖ ≤ 2δ`, and `Q ≠ 0` as soon as `‖h‖ > 2δ`, as well as normalizing `h` to `Q` in
+closed corners via `cfcₙ ((Ici (1/2)).indicator (√·)⁻¹) h`.
 The bound `δ < 1/4` is sharp: for `h = id` in `C([0, 1], ℂ)`, `‖h - h²‖ = 1/4` and the rounding is
 the junk value `0`.
 
@@ -41,7 +42,10 @@ the junk value `0`.
   `IsSelfAdjoint.continuousOn_roundProjection_indicator_quasispectrum`: continuity of the indicator
   of `[1/2, ∞)` on the (quasi)spectrum of an almost-projection.
 * `IsSelfAdjoint.norm_sub_roundProjection_le`, `TauCeti.norm_sub_roundProjection_le`,
-  `TauCeti.norm_one_sub_roundProjection_mul_le`: `‖h - Q‖ ≤ 2δ` and `‖(1 - Q)h‖ ≤ 2δ`.
+  `TauCeti.norm_one_sub_roundProjection_mul_le`,
+  `TauCeti.norm_one_sub_roundProjection_mul_mul_one_sub_le`,
+  `TauCeti.roundProjection_ne_zero`: `‖h - Q‖ ≤ 2δ`, `‖(1 - Q)h‖ ≤ 2δ`,
+  `‖(1 - Q)h(1 - Q)‖ ≤ 2δ`, and `Q ≠ 0` when `‖h‖ > 2δ`.
 * `IsSelfAdjoint.cfcₙ_indicator_Ici_half_inv_sqrt_mul_self_mul`,
   `IsSelfAdjoint.roundProjection_eq_of_mul_eq`, `IsSelfAdjoint.exists_mem_corner_of_norm_sub_le`,
   `IsStarProjection.roundProjection_eq`: corner normalization and projection fixed-point property.
@@ -370,6 +374,23 @@ theorem norm_one_sub_roundProjection_mul_le (hh : IsSelfAdjoint h) (hδ : ‖h -
   rw [he]
   exact (norm_mul_le_of_norm_le_one_left hQ.one_sub.norm_le _).trans
     (norm_sub_roundProjection_le hh hδ hδ4)
+
+/-- If `h` is self-adjoint with `‖h - h²‖ ≤ δ < 1/4`, then the compression of `h` off its rounding
+is small: `‖(1 - χ_{[1/2, ∞)}(h)) h (1 - χ_{[1/2, ∞)}(h))‖ ≤ 2δ`. -/
+theorem norm_one_sub_roundProjection_mul_mul_one_sub_le (hh : IsSelfAdjoint h)
+    (hδ : ‖h - h ^ 2‖ ≤ δ) (hδ4 : δ < 1 / 4) :
+    ‖(1 - roundProjection h) * h * (1 - roundProjection h)‖ ≤ 2 * δ :=
+  (norm_mul_le_of_norm_le_one_right (isStarProjection_roundProjection h).one_sub.norm_le _).trans
+    (norm_one_sub_roundProjection_mul_le hh hδ hδ4)
+
+/-- A rounding is nonzero as soon as `‖h‖ > 2δ`: if `h` is self-adjoint with
+`‖h - h²‖ ≤ δ < 1/4` and `2δ < ‖h‖`, then `χ_{[1/2, ∞)}(h) ≠ 0`. -/
+theorem roundProjection_ne_zero (hh : IsSelfAdjoint h) (hδ : ‖h - h ^ 2‖ ≤ δ)
+    (hδ4 : δ < 1 / 4) (hlt : 2 * δ < ‖h‖) : roundProjection h ≠ 0 := by
+  intro h0
+  have := norm_sub_roundProjection_le hh hδ hδ4
+  rw [h0, sub_zero] at this
+  linarith
 
 end CStarAlgebra
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Units.Opposite
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.Algebra.Module.LinearMap.End
+public import Mathlib.LinearAlgebra.Prod
 
 /-!
 # Actions as module endomorphisms
@@ -18,6 +19,8 @@ Supplements to `Mathlib.Algebra.Module.LinearMap.End`.
 
 * `DistribSMul.coe_toLinearMap`: the linear map `DistribSMul.toLinearMap R M s` is, as a
   function, multiplication by `s`.
+* `DistribSMul.toLinearMap_prod`: the scalar action on `M × N` is the product of the scalar
+  actions on `M` and `N`.
 * `LinearEquiv.isUnit_apply_one`: a linear automorphism of the free module `A` of rank one sends
   `1` to a unit.
 -/
@@ -33,6 +36,12 @@ variable (R M : Type*) {S : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
 unapplied form of `DistribSMul.toLinearMap_apply`. -/
 theorem coe_toLinearMap (s : S) : ⇑(toLinearMap R M s) = fun m : M ↦ s • m :=
   funext (toLinearMap_apply R M s)
+
+/-- The scalar action on a product is the product of the scalar actions on the factors. -/
+theorem toLinearMap_prod {N : Type*} [AddCommMonoid N] [Module R N] [DistribSMul S N]
+    [SMulCommClass S R N] (s : S) :
+    toLinearMap R (M × N) s = (toLinearMap R M s).prodMap (toLinearMap R N s) :=
+  LinearMap.ext fun _ ↦ Prod.smul_def _ _
 
 end DistribSMul
 

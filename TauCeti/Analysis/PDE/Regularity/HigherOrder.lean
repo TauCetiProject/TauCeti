@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Normed.Operator.Banach
+import TauCeti.Analysis.PDE.Regularity.Interior.Estimate
 import TauCeti.Analysis.Sobolev.Wkp.BoundedMultiplication
 import TauCeti.Analysis.Sobolev.Wkp.Leibniz
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
@@ -80,16 +81,24 @@ lies in `W^{k+3,2}(V)` (`TauCeti.Wkp.exists_value_eq_of_forall_hasWeakLineDerivO
 
 ## The estimate
 
-The regularity statement comes with an estimate: for `V` as above there is a constant `C`,
-depending on `k`, `V`, `Ω` and the coefficients, with
-`‖u‖_{W^{k+2,2}(V)} ≤ C (‖F‖_{W^{k,2}(Ω)} + ‖u‖_{H¹(Ω)})` for every weak solution `u` with forcing
-`F`; Evans (§6.3.1, Theorem 2) has `‖u‖_{L²(Ω)}` in place of `‖u‖_{H¹(Ω)}`. It follows from
-regularity by the closed graph theorem. On an open `W` between `V` and `Ω` with compact closure
-in `Ω` the coefficients are bounded, so the energy form is continuous on `H¹(W)` and the
-solution-forcing pairs `(u, F)` on `W` form a closed subspace of `H¹(W) × W^{k,2}(W)`, a Banach
-space. Regularity on `W` sends each pair to the element of `W^{k+2,2}(V)` with the value of `u`,
-and this map has a closed graph because the value map on `W^{k+2,2}(V)` is continuous and
-injective (`ContinuousLinearMap.exists_norm_le_of_range_le_range`).
+The regularity statement comes with the estimate of Evans (§6.3.1, Theorem 2): for `V` as above
+there is a constant `C`, depending on `k`, `V`, `Ω` and the coefficients, with
+`‖u‖_{W^{k+2,2}(V)} ≤ C (‖F‖_{W^{k,2}(Ω)} + ‖u‖_{L²(Ω)})` for every weak solution `u` with forcing
+`F`. It is proved in two steps.
+
+* **With `‖u‖_{H¹}` on the right.** The bound with `‖u‖_{H¹(W)}` in place of `‖u‖_{L²(Ω)}`, on an
+  open `W` between `V` and `Ω` with compact closure in `Ω`, follows from regularity by the closed
+  graph theorem. On `W` the coefficients are bounded, so the energy form is continuous on `H¹(W)`
+  and the solution-forcing pairs `(u, F)` on `W` form a closed subspace of `H¹(W) × W^{k,2}(W)`,
+  a Banach space. Regularity on `W` sends each pair to the element of `W^{k+2,2}(V)` with the
+  value of `u`, and this map has a closed graph because the value map on `W^{k+2,2}(V)` is
+  continuous and injective (`ContinuousLinearMap.exists_norm_le_of_range_le_range`).
+* **Removing the gradient.** Caccioppoli's inequality with lower-order terms, on a set at positive
+  distance `δ` from `∂Ω` (`TauCeti.PDE.exists_toReal_eLpNorm_gradient_le_of_thickening`), bounds
+  `‖∇u‖_{L²(W)}` by `C (δ ‖F‖_{L²(Ω)} / λ + ‖u‖_{L²(Ω)} / δ)`, with `C` depending on the dimension
+  and the bounds of the coefficients on a compact neighbourhood of `closure W` in `Ω`, where they
+  are bounded. Hence `‖u‖_{H¹(W)} ≤ C (‖F‖_{L²(Ω)} + ‖u‖_{L²(Ω)})`
+  (`TauCeti.PDE.UniformlyEllipticOn.exists_norm_restrictL_le_of_continuousOn`).
 
 ## Main declarations
 
@@ -123,7 +132,7 @@ injective (`ContinuousLinearMap.exists_norm_le_of_range_le_range`).
 * `TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_restrictL`: its constant-coefficient
   case.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_of_value_eq_value_restrictL_of_contDiffOn`: the
-  interior `H^{k+2}` estimate `‖u‖_{W^{k+2,2}(V)} ≤ C (‖F‖_{W^{k,2}(Ω)} + ‖u‖_{H¹(Ω)})` under
+  interior `H^{k+2}` estimate `‖u‖_{W^{k+2,2}(V)} ≤ C (‖F‖_{W^{k,2}(Ω)} + ‖u‖_{L²(Ω)})` under
   the same hypotheses.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_of_value_eq_value_restrictL`: its
   constant-coefficient case.
@@ -654,20 +663,10 @@ private theorem exists_isClosed_and_mem_iff_energyFormH1_eq {W : Opens (Euclidea
       RCLike.inner_apply, conj_trivial]
   rw [hφ, sub_eq_zero]
 
-/-- **The interior `H^{k+2}` estimate.** Let `a` be uniformly elliptic on `Ω`, with entries of
-class `C^{k+1}` on `Ω`, let the drift `b` and the mass `c` be of class `Cᵏ` on `Ω`, and let `V` be
-an open set whose closure is compact and contained in `Ω`. Then there is a constant `C`, depending
-on `k`, `V`, `Ω` and the coefficients, such that every weak solution `u ∈ H¹(Ω)` of
-
-`-∂ᵢ(aⁱʲ ∂ⱼu) + ⟪b, ∇u⟫ + c u = F` in `Ω`, with `F ∈ W^{k,2}(Ω)`,
-
-satisfies `‖u‖_{W^{k+2,2}(V)} ≤ C (‖F‖_{W^{k,2}(Ω)} + ‖u‖_{H¹(Ω)})`. Here the restriction of `u` to
-`V` is identified with the element `U` of `W^{k+2,2}(V)` that has the same value, which exists by
-`TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_restrictL_of_contDiffOn`.
-
-As for the regularity statement, no regularity of `∂Ω`, sign of `c` or smallness of `b` is
-assumed, and the coefficients need not be bounded on `Ω`. -/
-theorem UniformlyEllipticOn.exists_norm_le_of_value_eq_value_restrictL_of_contDiffOn
+/-- The interior `H^{k+2}` estimate with the `H¹` norm of the solution on the right: there is an
+open `W` between `V` and `Ω`, with compact closure in `Ω`, such that
+`‖u‖_{W^{k+2,2}(V)} ≤ C (‖F‖_{W^{k,2}(Ω)} + ‖u‖_{H¹(W)})`, by the closed graph theorem. -/
+private theorem UniformlyEllipticOn.exists_norm_le_norm_add_norm_of_value_eq_value_restrictL
     [DecidableEq ι] {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
     (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam) (k : ℕ)
     (hdiff : ∀ i j, ContDiffOn ℝ (k + 1) (fun x => a x i j) Omega)
@@ -675,12 +674,15 @@ theorem UniformlyEllipticOn.exists_norm_le_of_value_eq_value_restrictL_of_contDi
     (hb : ContDiffOn ℝ k b Omega) (hc : ContDiffOn ℝ k c Omega)
     {V : Opens (EuclideanSpace ℝ ι)} (hV : IsCompact (closure (V : Set (EuclideanSpace ℝ ι))))
     (hVΩ : closure (V : Set (EuclideanSpace ℝ ι)) ⊆ Omega) :
-    ∃ C, 0 ≤ C ∧ ∀ (F : Wkp mu Omega 2 k) (u : W1p mu Omega 2),
-      (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
-        ∫ x in Omega, Wkp.value k F x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
-      ∀ U : Wkp mu V 2 (k + 2), Wkp.value (k + 2) U =
-        W1p.value (W1p.restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hVΩ)) u) →
-      ‖U‖ ≤ C * (‖F‖ + ‖u‖) := by
+    ∃ (W : Opens (EuclideanSpace ℝ ι)) (hWΩ : closure (W : Set (EuclideanSpace ℝ ι)) ⊆ Omega),
+      IsCompact (closure (W : Set (EuclideanSpace ℝ ι))) ∧ ∃ C, 0 ≤ C ∧
+      ∀ (F : Wkp mu Omega 2 k) (u : W1p mu Omega 2),
+        (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
+          ∫ x in Omega, Wkp.value k F x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
+        ∀ U : Wkp mu V 2 (k + 2), Wkp.value (k + 2) U =
+          W1p.value (W1p.restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hVΩ)) u) →
+        ‖U‖ ≤ C * (‖F‖ +
+          ‖W1p.restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hWΩ)) u‖) := by
   -- An intermediate open set `W`, on which the coefficients are bounded.
   obtain ⟨W₀, hW₀, hVW₀, hWΩ₀, hWc⟩ :=
     exists_open_between_and_isCompact_closure hV Omega.isOpen hVΩ
@@ -714,7 +716,7 @@ theorem UniformlyEllipticOn.exists_norm_le_of_value_eq_value_restrictL_of_contDi
     fun U U' h => Wkp.ext (k + 2) (by rwa [Wkp.valueL_apply, Wkp.valueL_apply] at h)
   obtain ⟨C, hC0, hC⟩ := ContinuousLinearMap.exists_norm_le_of_range_le_range (𝕜 := ℝ) (E := S)
     (F := Lp ℝ 2 (mu.restrict V)) (G := Wkp mu V 2 (k + 2)) f (Wkp.valueL (k + 2)) hinj hrange
-  refine ⟨C, hC0, fun F u hu U hU => ?_⟩
+  refine ⟨W, hWΩ₀, hWc, C, hC0, fun F u hu U hU => ?_⟩
   -- The restriction of a solution on `Ω` is a solution on `W`.
   have hp : (W1p.restrictL hWΩ u, Wkp.restrictL hWΩ k F) ∈ S := by
     refine (hmem _).2 fun v => ?_
@@ -725,8 +727,52 @@ theorem UniformlyEllipticOn.exists_norm_le_of_value_eq_value_restrictL_of_contDi
   have hle := hC ⟨_, hp⟩ U (by rw [Wkp.valueL_apply, hf, W1p.restrictL_restrictL, hU])
   refine hle.trans (mul_le_mul_of_nonneg_left ?_ hC0)
   rw [← Submodule.norm_coe, Prod.norm_def]
-  exact max_le ((W1p.norm_restrictL_le hWΩ u).trans (le_add_of_nonneg_left (norm_nonneg F)))
-    ((Wkp.norm_restrictL_le hWΩ k F).trans (le_add_of_nonneg_right (norm_nonneg u)))
+  exact max_le (le_add_of_nonneg_left (norm_nonneg F))
+    ((Wkp.norm_restrictL_le hWΩ k F).trans (le_add_of_nonneg_right (norm_nonneg _)))
+
+/-- **The interior `H^{k+2}` estimate** (Evans, §6.3.1, Theorem 2). Let `a` be uniformly elliptic
+on `Ω`, with entries of class `C^{k+1}` on `Ω`, let the drift `b` and the mass `c` be of class `Cᵏ`
+on `Ω`, and let `V` be an open set whose closure is compact and contained in `Ω`. Then there is a
+constant `C`, depending on `k`, `V`, `Ω` and the coefficients, such that every weak solution
+`u ∈ H¹(Ω)` of
+
+`-∂ᵢ(aⁱʲ ∂ⱼu) + ⟪b, ∇u⟫ + c u = F` in `Ω`, with `F ∈ W^{k,2}(Ω)`,
+
+satisfies `‖u‖_{W^{k+2,2}(V)} ≤ C (‖F‖_{W^{k,2}(Ω)} + ‖u‖_{L²(Ω)})`. Here the restriction of `u` to
+`V` is identified with the element `U` of `W^{k+2,2}(V)` that has the same value, which exists by
+`TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_restrictL_of_contDiffOn`.
+
+As for the regularity statement, no regularity of `∂Ω`, sign of `c` or smallness of `b` is
+assumed, and the coefficients need not be bounded on `Ω`. -/
+theorem UniformlyEllipticOn.exists_norm_le_of_value_eq_value_restrictL_of_contDiffOn
+    [DecidableEq ι] {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
+    (ha : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam) (k : ℕ)
+    (hdiff : ∀ i j, ContDiffOn ℝ (k + 1) (fun x => a x i j) Omega)
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
+    (hb : ContDiffOn ℝ k b Omega) (hc : ContDiffOn ℝ k c Omega)
+    {V : Opens (EuclideanSpace ℝ ι)} (hV : IsCompact (closure (V : Set (EuclideanSpace ℝ ι))))
+    (hVΩ : closure (V : Set (EuclideanSpace ℝ ι)) ⊆ Omega) :
+    ∃ C, 0 ≤ C ∧ ∀ (F : Wkp mu Omega 2 k) (u : W1p mu Omega 2),
+      (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
+        ∫ x in Omega, Wkp.value k F x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
+      ∀ U : Wkp mu V 2 (k + 2), Wkp.value (k + 2) U =
+        W1p.value (W1p.restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hVΩ)) u) →
+      ‖U‖ ≤ C * (‖F‖ + ‖W1p.value u‖) := by
+  -- The `H^{k+2}(V)` norm is bounded by the `H¹(W)` norm, and that by the `L²(Ω)` norms.
+  obtain ⟨W, hWΩ, hWc, C₁, hC₁, hW⟩ :=
+    ha.exists_norm_le_norm_add_norm_of_value_eq_value_restrictL (mu := mu) k hdiff hb hc hV hVΩ
+  obtain ⟨C₂, hC₂, hH1⟩ := ha.exists_norm_restrictL_le_of_continuousOn (mu := mu)
+    ((continuousOn_pi.2 fun i => continuousOn_pi.2 fun j => (hdiff i j).continuousOn)
+      |>.aestronglyMeasurable Omega.isOpen.measurableSet) hb.continuousOn hc.continuousOn hWc hWΩ
+  refine ⟨C₁ * (1 + C₂), by positivity, fun F u hu U hU => ?_⟩
+  calc ‖U‖ ≤ _ := hW F u hu U hU
+    _ ≤ C₁ * (‖F‖ + C₂ * (‖F‖ + ‖W1p.value u‖)) := by
+        gcongr
+        exact (hH1 _ u hu).trans (by gcongr; exact Wkp.norm_value_le k F)
+    _ ≤ C₁ * ((1 + C₂) * (‖F‖ + ‖W1p.value u‖)) := by
+        gcongr
+        linarith [norm_nonneg (W1p.value u)]
+    _ = C₁ * (1 + C₂) * (‖F‖ + ‖W1p.value u‖) := by ring
 
 /-- **The interior `H^{k+2}` estimate for a constant principal coefficient.** Let `A` be a
 constant, uniformly elliptic matrix, let the drift `b` and the mass `c` be of class `Cᵏ` on `Ω`,
@@ -735,7 +781,7 @@ constant `C` such that every weak solution `u ∈ H¹(Ω)` of
 
 `-∂ᵢ(Aⁱʲ ∂ⱼu) + ⟪b, ∇u⟫ + c u = F` in `Ω`, with `F ∈ W^{k,2}(Ω)`,
 
-satisfies `‖u‖_{W^{k+2,2}(V)} ≤ C (‖F‖_{W^{k,2}(Ω)} + ‖u‖_{H¹(Ω)})`. This is the constant case of
+satisfies `‖u‖_{W^{k+2,2}(V)} ≤ C (‖F‖_{W^{k,2}(Ω)} + ‖u‖_{L²(Ω)})`. This is the constant case of
 `TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_of_value_eq_value_restrictL_of_contDiffOn`. -/
 theorem UniformlyEllipticOn.exists_norm_le_of_value_eq_value_restrictL {lam : ℝ} (hlam : 0 < lam)
     (hA : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ dotProduct ξ (Matrix.mulVec A ξ))
@@ -748,7 +794,7 @@ theorem UniformlyEllipticOn.exists_norm_le_of_value_eq_value_restrictL {lam : �
         ∫ x in Omega, Wkp.value k F x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
       ∀ U : Wkp mu V 2 (k + 2), Wkp.value (k + 2) U =
         W1p.value (W1p.restrictL (SetLike.coe_subset_coe.mp (subset_closure.trans hVΩ)) u) →
-      ‖U‖ ≤ C * (‖F‖ + ‖u‖) := by
+      ‖U‖ ≤ C * (‖F‖ + ‖W1p.value u‖) := by
   classical
   exact (uniformlyEllipticOn_const _ hlam hA)
     |>.exists_norm_le_of_value_eq_value_restrictL_of_contDiffOn k (fun _ _ => contDiffOn_const)

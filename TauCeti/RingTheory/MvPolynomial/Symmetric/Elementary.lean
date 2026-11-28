@@ -33,7 +33,8 @@ product in elementary symmetric polynomials.
 * `Multiset.esymm_replicate_zero`: the positive-degree elementary symmetric functions of a
   multiset of zeros vanish.
 * `Multiset.esymm_one`: `e₁(s)` is the sum of `s`.
-* `MvPolynomial.esymm_card`: `e_n(X₁, …, X_n)` is the product of the variables.
+* `MvPolynomial.esymm_card`: `e_n(X₁, …, X_n)` is the product of the variables, and
+  `MvPolynomial.esymm_eq_zero_of_card_lt`: `e_k(X₁, …, X_n)` vanishes for `k > n`.
 * `Multiset.esymm_map`: elementary symmetric functions commute with ring homomorphisms.
 * `Multiset.esymm_nonneg`, `Multiset.esymm_eq_zero_of_le`: for a multiset of nonnegative elements
   of an ordered semiring, every `eₙ(s)` is nonnegative, and once one vanishes so do all those of
@@ -57,6 +58,9 @@ product in elementary symmetric polynomials.
   `∑ₙ (-1)ⁿ eₙ tⁿ = ∏ᵢ (1 - xᵢ t)`.
 * `TauCeti.eval_add_smul_one_esymm`: the shift expansion
   `e_k(μ + t·(1, …, 1)) = ∑_{j ≤ k} binom(n - j, k - j) e_j(μ) t^(k - j)` in `n` variables.
+* `TauCeti.eval_one_esymm`, `TauCeti.eval_comp_perm_esymm`, `TauCeti.eval_esymm_card`: `e_k` at
+  `(1, …, 1)` is `binom(n, k)`, `e_k` is invariant under permuting the entries, and
+  `e_n(μ) = ∏ᵢ μᵢ`.
 * `TauCeti.aeval_update_zero_esymm`: `σ_{k;i}(μ)`, the value of `e_k` with the `i`-th entry of
   `μ` set to zero, is `e_k` of the entries other than the `i`-th.
 * `TauCeti.aeval_esymm_succ_eq_mul_add`: `σ_{k+1} = μ_i σ_{k;i} + σ_{k+1;i}`, for values in any
@@ -252,6 +256,12 @@ theorem MvPolynomial.esymm_card (σ : Type*) [Fintype σ] (R : Type*) [CommSemir
     MvPolynomial.esymm σ R (Fintype.card σ) = ∏ i, MvPolynomial.X i := by
   rw [MvPolynomial.esymm, ← Finset.card_univ, Finset.powersetCard_self, Finset.sum_singleton]
 
+/-- The elementary symmetric polynomial `e_k` vanishes when `k` exceeds the number of variables. -/
+theorem MvPolynomial.esymm_eq_zero_of_card_lt {σ : Type*} [Fintype σ] {R : Type*}
+    [CommSemiring R] {k : ℕ} (h : Fintype.card σ < k) : MvPolynomial.esymm σ R k = 0 := by
+  rw [MvPolynomial.esymm_eq_multiset_esymm]
+  exact Multiset.esymm_of_card_lt (by simpa using h)
+
 namespace TauCeti
 
 section esymmInt
@@ -322,8 +332,8 @@ exceeds the number of variables. -/
 theorem symmetricEsymm_eq_zero_of_lt {k : ℕ} (h : Fintype.card σ < k) :
     symmetricEsymm σ R k = 0 := by
   ext1
-  rw [coe_symmetricEsymm, MvPolynomial.esymm_eq_multiset_esymm]
-  exact Multiset.esymm_of_card_lt (by simpa using h)
+  rw [coe_symmetricEsymm, ZeroMemClass.coe_zero]
+  exact MvPolynomial.esymm_eq_zero_of_card_lt h
 
 end symmetricEsymm
 
@@ -457,6 +467,29 @@ theorem eval_add_smul_one_esymm {σ R : Type*} [Fintype σ] [CommSemiring R] (μ
         rw [filter_filter, hset]
         refine sum_congr rfl fun u hu ↦ ?_
         rw [(mem_powersetCard.mp hu).2]
+
+section Evaluation
+
+open MvPolynomial
+
+variable {σ R : Type*} [Fintype σ] [CommSemiring R]
+
+/-- `e_k(1, …, 1) = binom(n, k)`, where `n = |σ|`. -/
+@[simp]
+theorem eval_one_esymm (k : ℕ) : eval 1 (esymm σ R k) = (Fintype.card σ).choose k := by
+  simp [esymm, card_powersetCard]
+
+/-- `e_k` is symmetric: `e_k(μ ∘ e) = e_k(μ)` for every permutation `e` of the variables. -/
+@[simp]
+theorem eval_comp_perm_esymm (e : Equiv.Perm σ) (μ : σ → R) (k : ℕ) :
+    eval (μ ∘ e) (esymm σ R k) = eval μ (esymm σ R k) := by
+  rw [← eval_rename, esymm_isSymmetric σ R k e]
+
+/-- `e_n(μ) = ∏ᵢ μᵢ`, where `n = |σ|`. -/
+theorem eval_esymm_card (μ : σ → R) : eval μ (esymm σ R (Fintype.card σ)) = ∏ i, μ i := by
+  simp [esymm_card]
+
+end Evaluation
 
 section DeletedEntry
 
