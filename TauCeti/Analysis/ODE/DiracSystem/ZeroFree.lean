@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.HermiteBiehler
 public import TauCeti.Analysis.ODE.DiracSystem.ChristoffelDarboux
+public import TauCeti.Analysis.ODE.DiracSystem.HermiteBiehler.Basic
 public import TauCeti.Analysis.ODE.DiracSystem.Symmetry
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -33,7 +34,9 @@ scattering data and de Branges spaces are built.
   `∫₀ᵗ |X(s, z)|² ds` is positive (`TauCeti.integral_norm_sq_diracFundamentalMatrix_pos`).
 * `TauCeti.diracFundamentalMatrix_sub_I_mul_ne_zero`: for `t ≥ 0`, `E(t, ·)` and `F(t, ·)` have
   no zeros in the closed upper half-plane. In the open half-plane this is the Hermite–Biehler
-  property; on the real axis `X₀` and `X₁` are real and do not vanish together.
+  property; on the real axis `X₀` and `X₁` are real and do not vanish together. In terms of
+  `TauCeti.diracHermiteBiehler` and `TauCeti.diracHermiteBiehlerDirichlet` this is
+  `TauCeti.diracHermiteBiehler_ne_zero` and `TauCeti.diracHermiteBiehlerDirichlet_ne_zero`.
 
 ## References
 
@@ -136,5 +139,17 @@ theorem diracFundamentalMatrix_sub_I_mul_ne_zero (hq : LocallyIntegrableOn q (Ic
   have := norm_sq_add_norm_sq_diracFundamentalMatrix_pos (hq.integrableOn_uIcc_of_Ici ht) z j
   rw [← normSq_eq_norm_sq, ← normSq_eq_norm_sq, normSq_apply, normSq_apply, hreal, hreal] at this
   nlinarith
+
+/-- `E(t, z)` does not vanish in the closed upper half-plane `0 ≤ Im z`. -/
+theorem diracHermiteBiehler_ne_zero (hq : LocallyIntegrableOn q (Ici 0)) (ht : 0 ≤ t) {z : ℂ}
+    (hz : 0 ≤ z.im) : diracHermiteBiehler q t z ≠ 0 := by
+  rw [diracHermiteBiehler_def]
+  exact diracFundamentalMatrix_sub_I_mul_ne_zero hq ht hz 0
+
+/-- `E~(t, z)` does not vanish in the closed upper half-plane `0 ≤ Im z`. -/
+theorem diracHermiteBiehlerDirichlet_ne_zero (hq : LocallyIntegrableOn q (Ici 0)) (ht : 0 ≤ t)
+    {z : ℂ} (hz : 0 ≤ z.im) : diracHermiteBiehlerDirichlet q t z ≠ 0 := by
+  rw [diracHermiteBiehlerDirichlet_def]
+  exact diracFundamentalMatrix_sub_I_mul_ne_zero hq ht hz 1
 
 end TauCeti

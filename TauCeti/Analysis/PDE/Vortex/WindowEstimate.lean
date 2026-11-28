@@ -327,12 +327,6 @@ end Bootstrap
 
 /-! ### The elliptic estimates with constants depending on derivative bounds -/
 
-/-- The coordinates of the vacuum, a constant field, have bounded derivatives of every order. -/
-private theorem exists_norm_iteratedFDeriv_vacuumField_apply_le (i : Fin 4) (n : ℕ) :
-    ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ vacuumField z i) z‖ ≤ C := by
-  rw [vacuumField_eq_const]
-  exact ⟨_, norm_iteratedFDeriv_const_le n (vacuumField 0 i)⟩
-
 /-- **The elliptic estimate for `L_x - A`, uniformly in the field.** For every order `k` and bound
 `B` there is a constant `K` with the following property. Let `x` be a smooth field and `A` a
 `4 × 4` matrix of smooth real functions, all of whose coordinates and entries have derivatives

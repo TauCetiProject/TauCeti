@@ -10,9 +10,9 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.FixedPoints.Submanifold
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Hessian
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson
-import TauCeti.Analysis.Calculus.Deriv.OperatorCurve
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
 import TauCeti.Geometry.Manifold.Riemannian.Invariant
+import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Slice.MomentMap
 import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Polar
 import TauCeti.Topology.Algebra.ConstMulAction
 
@@ -60,7 +60,10 @@ coindex of `μ^ξ` at every critical point `p` are even (`even_manifoldMorseInde
 action `A` of `ξ` on `T_p M`
 (`TauCeti.SmoothTwoForm.IsMomentMap.criticalHessian_apply_eq_eval₂_deriv`). Being the derivative of
 a curve of symplectic maps commuting with an invariant compatible complex structure `J_p`, `A` lies
-in `sp(T_p M, σ_p)` and is complex linear for `J_p`, so it rotates the planes of a Darboux basis
+in `sp(T_p M, σ_p)` and is complex linear for `J_p`, as is the linearized action of every element
+of the isotropy algebra of `p`
+(`exists_compatible_forall_mem_skewAdjointLieSubalgebra_isComplexLinearMap` in the namespace
+`TauCeti.SmoothTwoForm.IsNondegenerate`), so it rotates the planes of a Darboux basis
 and its quadratic Hamiltonian has indices of inertia twice the numbers of its negative and
 positive rotation frequencies (`TauCeti.SymplecticForm.even_sigNeg_hamiltonianEndEquiv_symm`).
 
@@ -76,7 +79,7 @@ Neither closedness of `σ`, equivariance of `μ` nor compactness of `M` is used.
 
 ## Main results
 
-All declarations are in the namespace `TauCeti.SmoothTwoForm.IsMomentMap`.
+Unless otherwise noted, declarations are in the namespace `TauCeti.SmoothTwoForm.IsMomentMap`.
 
 * `isNondegenerateCriticalSubmanifold_of_fixedTangentSubspace_le`: a smooth embedding into
   `M^{T_ξ}` whose tangent images contain the fixed tangent subspaces of `T_ξ` is a Morse–Bott
@@ -97,6 +100,10 @@ All declarations are in the namespace `TauCeti.SmoothTwoForm.IsMomentMap`.
 * `even_manifoldMorseIndex`, `even_manifoldMorseIndex_neg`: for a compact group acting by
   symplectomorphisms on a σ-compact manifold, the index and the coindex of `μ^ξ` at every critical
   point are even.
+* `exists_compatible_forall_mem_skewAdjointLieSubalgebra_isComplexLinearMap`, in the namespace
+  `TauCeti.SmoothTwoForm.IsNondegenerate`: for a compact group preserving `σ`, the linearized
+  isotropy action at `p` lies in `sp(T_p M, σ_p)` and is complex linear for a complex structure
+  compatible with `σ_p`.
 
 ## References
 
@@ -112,6 +119,54 @@ public section
 
 open Bundle Manifold Set
 open scoped Manifold ContDiff
+
+namespace TauCeti.SmoothTwoForm.IsNondegenerate
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+attribute [local instance] ContMDiffMul.boundarylessManifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G] [T2Space G]
+  [IsTopologicalGroup G] [CompactSpace G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [CompleteSpace E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  [I'.Boundaryless] {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M]
+  [T2Space M] [SigmaCompactSpace M] [MulAction G M] [ContMDiffSMul I I' ∞ G M]
+  {σ : SmoothTwoForm I' M}
+
+/-- **The linearized isotropy action is complex linear for an invariant complex structure.** Let a
+compact group act on a σ-compact manifold, preserving a nondegenerate two-form `σ`. Then `T_p M`
+has a complex structure `J`, compatible with `σ_p`, such that for every `ξ` in the isotropy algebra
+of `p` the linearized isotropy action `A_ξ` (`TauCeti.isotropyLinearization`) lies in
+`sp(T_p M, σ_p)` and is complex linear for `J`. Here `J` is the value at `p` of an invariant
+compatible almost complex structure. -/
+theorem exists_compatible_forall_mem_skewAdjointLieSubalgebra_isComplexLinearMap
+    (hσ : σ.IsNondegenerate)
+    (hσG : ∀ (a : G) (x : M) (u v : TangentSpace I' x),
+      σ.eval₂ (a • x) (mfderiv I' I' (a • ·) x u) (mfderiv I' I' (a • ·) x v) = σ.eval₂ x u v)
+    (p : M) :
+    ∃ J : AlmostComplexStructure (TangentSpace I' p), (hσ.symplecticFormAt p).Compatible J ∧
+      ∀ ξ : (InfinitesimalAction.fundamental I G I' M).isotropy p,
+        ((isotropyLinearization I' p ξ : E' →ₗ[ℝ] E') : Module.End ℝ (TangentSpace I' p)) ∈
+            skewAdjointLieSubalgebra (hσ.symplecticFormAt p).toBilinForm ∧
+          IsComplexLinearMap J J
+            ((isotropyLinearization I' p ξ : E' →ₗ[ℝ] E') : Module.End ℝ (TangentSpace I' p)) := by
+  obtain ⟨J, hJ, hJG⟩ := hσ.exists_compatible_mfderiv_smul_apply_of_compactSpace (IG := I) hσG
+  -- Every element of `G`, in particular of the stabilizer of `p`, preserves `σ`.
+  have hσp (g : G) (_ : g ∈ MulAction.stabilizer G p) : SmoothForm.mpullback (fun y : M ↦ g • y)
+      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ :=
+    SmoothBundleForm.ext_eval₂ fun x u v ↦ by rw [SmoothForm.eval₂_mpullback]; exact hσG g x u v
+  refine ⟨J.almostComplexStructureAt p, hJ.compatibleAt p, fun ξ ↦ ⟨?_, ?_⟩⟩
+  · exact hσ.coe_isotropySkewAdjoint hσp ξ ▸ (hσ.isotropySkewAdjoint hσp ξ).property
+  · refine (isComplexLinearMap_iff_apply _ _ _).2 fun v ↦ ?_
+    rw [J.almostComplexStructureAt_apply, J.almostComplexStructureAt_apply]
+    refine isotropyLinearization_apply_apply_eq_of_forall_mem_stabilizer ξ (J.toEndomorphism p)
+      (fun g hg u ↦ ?_) v
+    have := hJG g p u
+    rwa [hg] at this
+
+end TauCeti.SmoothTwoForm.IsNondegenerate
 
 namespace TauCeti.SmoothTwoForm.IsMomentMap
 
@@ -190,53 +245,27 @@ private theorem exists_toQuadraticMap_criticalHessian_eq
         IsComplexLinearMap J J (A : Module.End ℝ (TangentSpace I' p)) ∧
         (criticalHessian I' (fun y ↦ μ y ξ) p).toBilinForm.toQuadraticMap =
           (2 : ℝ) • (hσ.symplecticFormAt p).hamiltonianEndEquiv.symm A := by
-  have hp0 := h.fundamentalVectorField_eq_zero_of_mem_criticalPoints hσ hp
-  have hfix : ∀ t : ℝ, mulInvariantExp (I := I) (t • ξ) • p = p :=
-    (mulInvariantExp_smul_smul_eq_iff (I' := I')).2 hp0
-  obtain ⟨J, hJ, hJG⟩ := hσ.exists_compatible_mfderiv_smul_apply_of_compactSpace (IG := I) hσG
-  -- The differentials `D t = d(exp (t ξ))_p` of the isotropy action and their derivative `A`, as
-  -- operators on the model space `E'` of `T_p M`.
-  set D : ℝ → E' →L[ℝ] E' := fun t ↦
-    mfderiv I' I' (fun y : M ↦ mulInvariantExp (I := I) (t • ξ) • y) p
-  set A : E' →L[ℝ] E' := deriv D 0
-  have hD : HasDerivAt D A 0 :=
-    (hasDerivAt_mfderiv_mulInvariantExp_smul_smul hp0).differentiableAt.hasDerivAt
-  have hD₀ : D 0 = 1 := mfderiv_mulInvariantExp_zero_smul_smul ξ p
-  -- Each `D t` preserves `σ_p` and commutes with `J_p`, since `exp (t ξ)` fixes `p`; so `A` is
-  -- skew for `σ_p` and commutes with `J_p`. Here `β` is `σ_p` read on the model space `E'`.
-  let β : LinearMap.BilinForm ℝ E' := (hσ.symplecticFormAt p).toBilinForm
-  have hβ (u v : E') : β u v = σ.eval₂ p u v := hσ.symplecticFormAt_apply p u v
-  have hskew (u v : E') : β (A u) v = -β u (A v) := by
-    simpa only [LinearMap.toContinuousBilinearMap_apply] using
-      hD.apply_left_eq_neg_of_eventually_apply_apply_eq hD₀ β.toContinuousBilinearMap
-        (Filter.Eventually.of_forall fun t u v ↦ by
-          have := hσG (mulInvariantExp (I := I) (t • ξ)) p u v
-          rw [hfix t] at this
-          rw [LinearMap.toContinuousBilinearMap_apply, LinearMap.toContinuousBilinearMap_apply,
-            hβ, hβ]
-          exact this) u v
-  have hcomm := hD.apply_apply_eq_of_eventually_apply_apply_eq (J.toEndomorphism p)
-    (Filter.Eventually.of_forall fun t v ↦ by
-      have := hJG (mulInvariantExp (I := I) (t • ξ)) p v
-      rwa [hfix t] at this)
-  -- The same operator `A` as an endomorphism of `T_p M`: `A' v` is `A v` read in `T_p M`.
-  let A' : Module.End ℝ (TangentSpace I' p) := (A : E' →ₗ[ℝ] E')
-  have hA'v (v : TangentSpace I' p) : A' v = A v := rfl
-  have hA' : A' ∈ skewAdjointLieSubalgebra (hσ.symplecticFormAt p).toBilinForm := by
-    refine (LinearMap.mem_skewAdjointSubmodule _).2 fun u v ↦ ?_
-    rw [Pi.neg_apply, map_neg, hA'v, hA'v]
-    exact hskew u v
-  have hAJ : IsComplexLinearMap (J.almostComplexStructureAt p) (J.almostComplexStructureAt p) A' :=
-    (isComplexLinearMap_iff_apply _ _ _).2 fun v ↦ by
-      rw [J.almostComplexStructureAt_apply, J.almostComplexStructureAt_apply, hA'v, hA'v]
-      exact hcomm v
-  refine ⟨J.almostComplexStructureAt p, ⟨A', hA'⟩, hJ.compatibleAt p, hAJ, ?_⟩
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  have : CompleteSpace E' := FiniteDimensional.completeSpace ℝ E'
+  -- At the critical point `p`, `ξ` lies in the isotropy algebra and acts on `T_p M` by `A_ξ`.
+  have hξ : ξ ∈ (InfinitesimalAction.fundamental I G I' M).isotropy p :=
+    (h.mem_criticalPoints_iff_mem_isotropy (hσ.nondegenerate_bilinFormAt p) ξ).1 hp
+  obtain ⟨J, hJ, hA⟩ :=
+    hσ.exists_compatible_forall_mem_skewAdjointLieSubalgebra_isComplexLinearMap (I := I) hσG p
+  refine ⟨J, ⟨_, (hA ⟨ξ, hξ⟩).1⟩, hJ, (hA ⟨ξ, hξ⟩).2, ?_⟩
   -- The Hessian is `σ_p(A v, v)`, twice the quadratic Hamiltonian `½ σ_p(A v, v)` of `A`.
   ext v
-  rw [LinearMap.BilinMap.toQuadraticMap_apply, ContinuousLinearMap.toBilinForm_apply,
-    h.criticalHessian_apply_eq_eval₂_deriv hσ hp0, smul_apply,
-    SymplecticForm.hamiltonianEndEquiv_symm_apply_apply, SymplecticForm.linearMomentMap_apply,
-    hσ.symplecticFormAt_apply, smul_eq_mul, mul_div_cancel₀ _ two_ne_zero, hA'v]
+  have hH : criticalHessian I' (fun y ↦ μ y ξ) p v v =
+      σ.eval₂ p (isotropyLinearization I' p ⟨ξ, hξ⟩ v) v :=
+    h.criticalHessian_apply_eq_eval₂_isotropyLinearization hσ ⟨ξ, hξ⟩ v v
+  rw [LinearMap.BilinMap.toQuadraticMap_apply, ContinuousLinearMap.toBilinForm_apply, hH,
+    smul_apply, SymplecticForm.hamiltonianEndEquiv_symm_apply_apply,
+    SymplecticForm.linearMomentMap_apply, hσ.symplecticFormAt_apply, smul_eq_mul,
+    mul_div_cancel₀ _ two_ne_zero]
+  -- The element of `sp(T_p M, σ_p)` is `A_ξ` coerced to a linear map; `coe_coe` drops the
+  -- coercion.
+  exact congrArg (σ.eval₂ p · v)
+    (congrFun (ContinuousLinearMap.coe_coe (isotropyLinearization I' p ⟨ξ, hξ⟩)) v).symm
 
 /-- **Moment map components have even Morse index.** For a compact Lie group acting smoothly by
 symplectomorphisms of a σ-compact manifold, with moment map `μ`, the Morse index of the component

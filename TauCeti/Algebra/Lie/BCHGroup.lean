@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Free.BCH
+public import TauCeti.Algebra.Lie.InnerAutomorphism
 public import TauCeti.Algebra.Lie.LowerCentralSeries
 
 /-!
@@ -55,6 +56,8 @@ this map is injective, which gives associativity there; evaluating the three gen
   of elements whose bracket commutes with both, and of commuting elements.
 * `TauCeti.bch_mem`: Lie subalgebras are closed under the BCH product.
 * `TauCeti.BCHGroup.exp_mul_exp_eq_exp_mul_exp_lie_mul_exp`: the commutator formula.
+* `TauCeti.BCHGroup.conj_exp_exp`: conjugation by `exp x` acts on logarithms by `expAd x`,
+  using the associative conjugation formula `TauCeti.exp_mul_exp_mul_exp_neg_eq_exp_expAd`.
 
 ## References
 
@@ -358,6 +361,74 @@ theorem map_surjective [LieRing.IsNilpotent L'] {f : L →ₗ⁅ℚ⁆ L'} (hf :
     Function.Surjective (map f) := fun a => by
   obtain ⟨x, hx⟩ := hf (log a)
   exact ⟨exp x, by rw [map_exp, hx, exp_log]⟩
+
+section Conjugation
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+local notation "𝔣" => _root_.FreeLieAlgebra ℚ (Fin 2)
+local notation "Q[" c "]" => 𝔣 ⧸ LieModule.lowerCentralSeries ℚ 𝔣 𝔣 c
+
+/-- Conjugation on the free nilpotent Lie algebra of class at most `c`, as detected in the
+truncation of the enveloping algebra of the free Lie algebra. -/
+private theorem conj_exp_exp_free (c : ℕ) (x y : Q[c]) :
+    MulAut.conj (exp x) (exp y) =
+      exp (expAd x
+        (LieModule.isNilpotent_toEnd_of_isNilpotent ℚ Q[c] Q[c] x).exists_pow_apply_eq_zero y) := by
+  let ι := UniversalEnvelopingAlgebra.lowerCentralQuotientι ℚ 𝔣 c
+  let z := expAd (K := ℚ) x
+    (LieModule.isNilpotent_toEnd_of_isNilpotent ℚ Q[c] Q[c] x).exists_pow_apply_eq_zero y
+  have hn (a : Q[c]) : IsNilpotent (ι a) :=
+    UniversalEnvelopingAlgebra.isNilpotent_lowerCentralQuotientι ℚ 𝔣 c a
+  have hιz : ι z = expAd (K := ℚ) (ι x)
+      (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) (hn x)).exists_pow_apply_eq_zero (ι y) :=
+    ι.map_expAd _ _ y
+  have hmul (a b : Q[c]) : IsNilpotent.exp (ι (bch a b)) =
+      IsNilpotent.exp (ι a) * IsNilpotent.exp (ι b) :=
+    exp_lowerCentralQuotientι_bch 𝔣 c a b
+  have hconj : IsNilpotent.exp (ι (bch (bch x y) (-x))) = IsNilpotent.exp (ι z) := by
+    rw [hmul, hmul, map_neg, hιz, exp_mul_exp_mul_exp_neg_eq_exp_expAd (K := ℚ) (hn x)]
+  have h := congrArg IsNilpotent.log hconj
+  rw [IsNilpotent.log_exp (hn _), IsNilpotent.log_exp (hn _)] at h
+  have hι : Function.Injective ι := FreeLieAlgebra.lowerCentralQuotientι_injective ℚ (Fin 2)
+    (UniversalEnvelopingAlgebra.ι_injective ℚ 𝔣) c
+  apply log.injective
+  simpa only [MulAut.conj_apply, log_mul, log_inv, log_exp] using hι h
+
+/-- In the BCH group of a nilpotent rational Lie algebra, conjugation by `exp x` carries
+`exp y` to the exponential of `exp (ad x) y`. -/
+theorem conj_exp_exp (x y : L) :
+    MulAut.conj (exp x) (exp y) =
+      exp (expAd x
+        (LieModule.isNilpotent_toEnd_of_isNilpotent ℚ L L x).exists_pow_apply_eq_zero y) := by
+  obtain ⟨c, hc⟩ := LieModule.IsNilpotent.nilpotent ℚ L L
+  -- Evaluate the free nilpotent Lie algebra on the two elements being conjugated.
+  let g : Q[c] →ₗ⁅ℚ⁆ L := LieIdeal.liftQ _ (_root_.FreeLieAlgebra.lift ℚ ![x, y])
+    (LieHom.lowerCentralSeries_le_ker _ hc)
+  let x₀ : Q[c] := LieIdeal.mkQ _ (_root_.FreeLieAlgebra.of ℚ (0 : Fin 2))
+  let y₀ : Q[c] := LieIdeal.mkQ _ (_root_.FreeLieAlgebra.of ℚ (1 : Fin 2))
+  have hx : g x₀ = x := by
+    simp only [g, x₀, LieIdeal.mkQ_apply, LieIdeal.liftQ_apply, _root_.FreeLieAlgebra.lift_of_apply,
+      Matrix.cons_val_zero]
+  have hy : g y₀ = y := by
+    simp only [g, y₀, LieIdeal.mkQ_apply, LieIdeal.liftQ_apply, _root_.FreeLieAlgebra.lift_of_apply,
+      Matrix.cons_val_one, Matrix.cons_val_zero]
+  have had := g.map_expAd (K := ℚ)
+    (LieModule.isNilpotent_toEnd_of_isNilpotent ℚ Q[c] Q[c] x₀).exists_pow_apply_eq_zero
+    (LieModule.isNilpotent_toEnd_of_isNilpotent ℚ L L (g x₀)).exists_pow_apply_eq_zero y₀
+  have h := congrArg (map g) (conj_exp_exp_free c x₀ y₀)
+  simpa only [MulAut.conj_apply, map_mul, map_inv, map_exp, had, hx, hy] using h
+
+/-- Logarithms turn conjugation in the BCH group into the adjoint exponential.
+This states the identity in the simplifier's normal form for the logarithm of a conjugate. -/
+@[simp]
+theorem _root_.TauCeti.bch_bch_neg_eq_expAd (x y : L) :
+    bch (bch x y) (-x) =
+      expAd x (LieModule.isNilpotent_toEnd_of_isNilpotent ℚ L L x).exists_pow_apply_eq_zero y := by
+  simpa only [MulAut.conj_apply, log_mul, log_inv, log_exp] using
+    congrArg log (conj_exp_exp x y)
+
+end Conjugation
 
 /-- The exponentials of commuting elements commute. -/
 theorem commute_exp_of_lie_eq_zero {x y : L} (h : ⁅x, y⁆ = 0) : Commute (exp x) (exp y) := by

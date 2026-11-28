@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MonoidAlgebra.Basic
+public import TauCeti.Algebra.Group.Subgroup.Normalizer
 public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.Basic
 
 /-!
@@ -26,6 +27,11 @@ normalized by `H`, and idempotent because the Brauer projection is multiplicativ
 is a defect group of a block idempotent `e_B` it is nonzero. That at `H = N_G(D)` it is then a block
 idempotent of `R[N_G(D)]` with defect group `D`, the idempotent of the Brauer correspondent of
 `B`, is Brauer's first main theorem, not proved here.
+
+For `D = 1` the normalizer `N_G(1)` is all of `G` and the Brauer projection at `1` keeps every
+coefficient, so the Brauer correspondent at `1` is the transport of `e` along `G ≃* N_G(1)`
+(`TauCeti.brauerCorrespondent_bot`). Hence at `D = 1` Brauer correspondence takes blocks of
+defect zero to blocks of defect zero.
 
 ## Main definitions
 
@@ -52,6 +58,11 @@ idempotent of `R[N_G(D)]` with defect group `D`, the idempotent of the Brauer co
 * `TauCeti.centerBrauerCorrespondent_one`, `TauCeti.centerBrauerCorrespondent_mul`: on centres it is
   unital, and multiplicative for a `p`-subgroup `D` in characteristic `p`.
 * `TauCeti.IsDefectGroup.brauerCorrespondent_ne_zero`: it is nonzero at a defect group.
+* `TauCeti.brauerCorrespondent_bot`: the Brauer correspondent at `1` is the transport along
+  `G ≃* N_G(1)`.
+* `TauCeti.IsBlockIdempotent.isBlockIdempotent_brauerCorrespondent_bot`,
+  `TauCeti.IsDefectGroup.isDefectGroup_brauerCorrespondent_bot`: blocks of defect zero go to blocks
+  of defect zero.
 
 ## References
 
@@ -240,5 +251,39 @@ theorem isIdempotentElem_centerBrauerCorrespondent [Finite G] {p : ℕ} [Fact p.
     (hD : IsPGroup p D) {e : Subalgebra.center R (MonoidAlgebra R G)} (he : IsIdempotentElem e) :
     IsIdempotentElem (centerBrauerCorrespondent hCH hHN e) := by
   rw [IsIdempotentElem, ← centerBrauerCorrespondent_mul hCH hHN hD, he.eq]
+
+/-! ### The Brauer correspondent at `D = 1` -/
+
+/-- **The Brauer correspondent at `D = 1`** is the transport along `G ≃* N_G(1)`: the Brauer
+projection at the trivial subgroup keeps every coefficient. -/
+theorem brauerCorrespondent_bot (x : MonoidAlgebra R G) :
+    brauerCorrespondent (Subgroup.centralizer_le_normalizer ((⊥ : Subgroup G) : Set G)) x =
+      domCongr R R (Subgroup.normalizerEquivOfNormal ⊥) x := by
+  ext n
+  rw [coeff_brauerCorrespondent_of_mem _ _ (Subgroup.mem_centralizer_iff.2 (by simp)),
+    coeff_domCongr, Subgroup.normalizerEquivOfNormal_symm_apply]
+
+/-- The Brauer correspondent at `1` of a block idempotent of `R[G]` is a block idempotent of
+`R[N_G(1)]`. -/
+theorem IsBlockIdempotent.isBlockIdempotent_brauerCorrespondent_bot
+    {b : Subalgebra.center R (MonoidAlgebra R G)} (hb : IsBlockIdempotent b) :
+    ∃ b' : Subalgebra.center R (MonoidAlgebra R (Subgroup.normalizer ((⊥ : Subgroup G) : Set G))),
+      IsBlockIdempotent b' ∧
+        (b' : MonoidAlgebra R (Subgroup.normalizer ((⊥ : Subgroup G) : Set G))) =
+          brauerCorrespondent (Subgroup.centralizer_le_normalizer ((⊥ : Subgroup G) : Set G))
+            (b : MonoidAlgebra R G) := by
+  refine ⟨_, hb.domCongr (Subgroup.normalizerEquivOfNormal ⊥), ?_⟩
+  rw [brauerCorrespondent_bot]
+  exact Subalgebra.centerCongr_apply_coe _ b
+
+/-- **Defect zero is preserved at `D = 1`.** If `1` is a defect group of `x ∈ R[G]`, it is a defect
+group of the Brauer correspondent of `x` at `1`. -/
+theorem IsDefectGroup.isDefectGroup_brauerCorrespondent_bot {p : ℕ} {x : MonoidAlgebra R G}
+    (h : IsDefectGroup R p x ⊥) :
+    IsDefectGroup R p
+      (brauerCorrespondent (Subgroup.centralizer_le_normalizer ((⊥ : Subgroup G) : Set G)) x)
+      ⊥ := by
+  rw [brauerCorrespondent_bot, ← Subgroup.map_bot (Subgroup.normalizerEquivOfNormal ⊥).toMonoidHom]
+  exact h.domCongr_map _
 
 end TauCeti

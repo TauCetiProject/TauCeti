@@ -39,7 +39,7 @@ characteristic covectors so that the division by `2` has the expected integer me
   numerator even.
 * `TauCeti.PlumbingGraph.two_mul_characteristicWeight`: the defining equation
   `2 * χ_k(x) = - (⟨k, x⟩ + x · x)`.
-* `TauCeti.PlumbingGraph.characteristicWeight_add_two_mul`: shifting a covector by `2l`
+* `TauCeti.PlumbingGraph.characteristicWeight_addTwoMul`: shifting a covector by `2l`
   subtracts `⟨l, x⟩` from the weight.
 * `TauCeti.PlumbingGraph.characteristicWeight_canonical_single`: the canonical characteristic
   covector gives weight `1` on each basis sphere.
@@ -152,10 +152,10 @@ theorem characteristicWeightNumerator_add_two_mul (k l x : V → ℤ) :
 
 /-- Shifting a covector by `2l` subtracts the linear pairing `⟨l, x⟩` from the
 characteristic weight. -/
-theorem characteristicWeight_add_two_mul (k : P.characteristicVectors) (l x : V → ℤ) :
-    P.characteristicWeight ⟨fun v => k.val v + 2 * l v, k.property.add_two_mul⟩ x =
+theorem characteristicWeight_addTwoMul (k : P.characteristicVectors) (l x : V → ℤ) :
+    P.characteristicWeight (P.addTwoMul k l) x =
       P.characteristicWeight k x - ∑ v, l v * x v := by
-  rw [characteristicWeight_def, characteristicWeight_def,
+  rw [characteristicWeight_def, characteristicWeight_def, addTwoMul_val,
     characteristicWeightNumerator_add_two_mul]
   rw [Int.add_mul_ediv_left _ _ (by norm_num : (2 : ℤ) ≠ 0)]
   ring

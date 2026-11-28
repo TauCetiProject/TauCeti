@@ -126,17 +126,16 @@ theorem IsPositiveRecurrent.isRecurrent {κ : Kernel α α} [IsMarkovKernel κ] 
     (hx : κ.IsPositiveRecurrent x) : κ.IsRecurrent x :=
   isRecurrent_of_meanReturnTime_ne_top hx.meanReturnTime_ne_top
 
-/-- Started at a positive recurrent state `x`, the chain returns to `x` almost surely. -/
-theorem IsPositiveRecurrent.ae_hittingAfter_ne_top [MeasurableSingletonClass α]
-    {κ : Kernel α α} [IsMarkovKernel κ] {x : α} (hx : κ.IsPositiveRecurrent x) :
-    ∀ᵐ w ∂markovChainLaw (Measure.dirac x) κ, hittingAfter (fun n w => w n) {x} 1 w ≠ ⊤ := by
-  have hτ : Measurable (hittingAfter (fun n (w : ℕ → α) => w n) {x} 1) :=
-    (Filtration.adapted_piLE.isStoppingTime_hittingAfter
-      (f := Filtration.piLE (X := fun _ : ℕ => α)) (measurableSet_singleton x)).measurable'
-  have hA : MeasurableSet {w : ℕ → α | hittingAfter (fun n w => w n) {x} 1 w = ⊤} :=
-    (measurableSet_singleton ⊤).preimage hτ
-  rw [ae_iff]
-  simpa [Set.compl_def] using (prob_compl_eq_one_iff hA).1 (isRecurrent_iff.mp hx.isRecurrent)
+/-- A positive recurrent state is not transient. -/
+theorem IsPositiveRecurrent.not_isTransient {κ : Kernel α α} [IsMarkovKernel κ] {x : α}
+    (hx : κ.IsPositiveRecurrent x) : ¬ κ.IsTransient x := by
+  rw [isTransient_iff, not_not]
+  exact hx.isRecurrent
+
+/-- A transient state is not positive recurrent. -/
+theorem IsTransient.not_isPositiveRecurrent {κ : Kernel α α} [IsMarkovKernel κ] {x : α}
+    (hx : κ.IsTransient x) : ¬ κ.IsPositiveRecurrent x :=
+  fun h => h.not_isTransient hx
 
 /-- A positive recurrent state has divergent Green function `∑' n, (κ ^ n) x {x} = ∞`. -/
 theorem IsPositiveRecurrent.tsum_pow_apply_singleton_self_eq_top [MeasurableSingletonClass α]
@@ -234,6 +233,50 @@ theorem cycleOccupation_univ [MeasurableSingletonClass α] (κ : Kernel α α) [
     κ.cycleOccupation x Set.univ = κ.meanReturnTime x := by
   rw [cycleOccupation_apply _ _ .univ, meanReturnTime_eq_tsum]
   simp
+
+/-- The total mass of the cycle occupation measure around `x` is at least `κ.meanReturnTime x`,
+even without measurable singletons. -/
+theorem meanReturnTime_le_cycleOccupation_univ (κ : Kernel α α) [IsMarkovKernel κ] (x : α) :
+    κ.meanReturnTime x ≤ κ.cycleOccupation x Set.univ := by
+  refine (meanReturnTime_def.trans_le (lintegral_enat_le_tsum _ _)).trans_eq ?_
+  rw [κ.cycleOccupation_apply x MeasurableSet.univ]
+  refine tsum_congr fun n => congrArg (markovChainLaw (Measure.dirac x) κ) (Set.ext fun w => ?_)
+  -- `ℕ∞` is `WithTop ℕ`, so the `ℕ∞` cast comparison in `lintegral_enat_le_tsum` agrees with
+  -- the `WithTop ℕ` cast comparison from `hittingAfter`.
+  simp only [Set.mem_ofPred_eq, Set.mem_univ, true_and]
+  cases hittingAfter (fun k w => w k) {x} 1 w <;> norm_cast
+
+/-- At any state that is not positive recurrent, the cycle occupation measure has infinite total
+mass, even without measurable singletons. -/
+theorem cycleOccupation_univ_eq_top_of_not_isPositiveRecurrent {κ : Kernel α α} [IsMarkovKernel κ]
+    {x : α} (hx : ¬ κ.IsPositiveRecurrent x) :
+    κ.cycleOccupation x Set.univ = ∞ :=
+  top_unique ((not_lt_top_iff.mp ((isPositiveRecurrent_iff κ x).not.mp hx)) ▸
+    κ.meanReturnTime_le_cycleOccupation_univ x)
+
+/-- At any state that is not positive recurrent, the cycle occupation measure is not finite. -/
+theorem not_isFiniteMeasure_cycleOccupation_of_not_isPositiveRecurrent {κ : Kernel α α}
+    [IsMarkovKernel κ] {x : α} (hx : ¬ κ.IsPositiveRecurrent x) :
+    ¬ IsFiniteMeasure (κ.cycleOccupation x) :=
+  fun _ => (measure_lt_top (κ.cycleOccupation x) Set.univ).ne
+    (cycleOccupation_univ_eq_top_of_not_isPositiveRecurrent hx)
+
+/-- If `x` does not reach `y`, the cycle occupation measure around `x` assigns mass zero to `{y}`.
+No measurability of singletons is needed. -/
+theorem cycleOccupation_singleton_eq_zero_of_not_reaches {κ : Kernel α α} [IsMarkovKernel κ]
+    {x y : α} (hxy : ¬ κ.Reaches x y) :
+    κ.cycleOccupation x {y} = 0 := by
+  rw [cycleOccupation_def, Measure.sum_apply_eq_zero]
+  intro n
+  have hle : ((markovChainLaw (Measure.dirac x) κ).restrict
+      {w | (n : WithTop ℕ) < hittingAfter (fun k w => w k) {x} 1 w}).map (fun w => w n) {y} ≤
+      (κ ^ n) x {y} := by
+    have hres : (markovChainLaw (Measure.dirac x) κ).restrict
+        {w | (n : WithTop ℕ) < hittingAfter (fun k w => w k) {x} 1 w} ≤
+        markovChainLaw (Measure.dirac x) κ := Measure.restrict_le_self
+    simpa only [Measure.markovChainLaw_map_eval, Measure.dirac_bind (κ ^ n).measurable] using
+      Measure.map_mono hres (measurable_pi_apply n) ({y} : Set α)
+  exact nonpos_iff_eq_zero.mp (hle.trans (not_lt.mp fun hn => hxy ((reaches_def x y).mpr ⟨n, hn⟩)))
 
 private theorem cycleStep_zero (κ : Kernel α α) [IsMarkovKernel κ] (x : α) :
     cycleStep κ x 0 = Measure.dirac x := by
@@ -531,6 +574,22 @@ theorem Invariant.apply_singleton_eq_zero_of_not_isPositiveRecurrent [Measurable
   rw [htop, ENNReal.mul_top hne] at hle
   exact (measure_lt_top μ Set.univ).not_ge hle
 
+/-- On a countable state space with measurable singletons, if no state is positive recurrent under
+`κ`, then every finite `κ`-invariant measure vanishes. -/
+theorem Invariant.eq_zero_of_forall_not_isPositiveRecurrent [Countable α]
+    [MeasurableSingletonClass α] {κ : Kernel α α} [IsMarkovKernel κ] {μ : Measure α}
+    [IsFiniteMeasure μ] (hμ : κ.Invariant μ) (h : ∀ x, ¬ κ.IsPositiveRecurrent x) :
+    μ = 0 :=
+  Measure.ext_of_singleton fun x => hμ.apply_singleton_eq_zero_of_not_isPositiveRecurrent (h x)
+
+/-- On a countable state space with measurable singletons, a Markov kernel with no positive
+recurrent states admits no invariant probability measure. -/
+theorem not_invariant_of_forall_not_isPositiveRecurrent [Countable α] [MeasurableSingletonClass α]
+    {κ : Kernel α α} [IsMarkovKernel κ] (h : ∀ x, ¬ κ.IsPositiveRecurrent x)
+    (π : Measure α) [IsProbabilityMeasure π] :
+    ¬ κ.Invariant π :=
+  fun hπ => IsProbabilityMeasure.ne_zero π (hπ.eq_zero_of_forall_not_isPositiveRecurrent h)
+
 /-- If a finite `κ`-invariant measure assigns positive mass to `{x}`, then `x` is positive
 recurrent. -/
 theorem Invariant.isPositiveRecurrent_of_apply_singleton_pos [MeasurableSingletonClass α]
@@ -670,6 +729,12 @@ theorem exists_invariant_probability_iff_forall_isPositiveRecurrent (κ : Kernel
   obtain ⟨x⟩ := ‹Nonempty α›
   exact ⟨x, h x⟩
 
+/-- Positive recurrence of a counting-measure-irreducible chain does not depend on the state. -/
+theorem isPositiveRecurrent_iff_isPositiveRecurrent {κ : Kernel α α} [IsMarkovKernel κ]
+    [IsIrreducible Measure.count κ] (x y : α) :
+    κ.IsPositiveRecurrent x ↔ κ.IsPositiveRecurrent y :=
+  Communicates.isPositiveRecurrent_iff (isIrreducible_count_iff_forall_communicates.mp ‹_› x y)
+
 /-- **Existence and uniqueness of the invariant probability measure** from a positive recurrent
 state of a counting-measure-irreducible chain. -/
 theorem IsPositiveRecurrent.existsUnique_invariant_probability {κ : Kernel α α} [IsMarkovKernel κ]
@@ -717,12 +782,12 @@ section Deterministic
 
 variable [MeasurableSingletonClass α]
 
-open scoped Classical in
 /-- Under `deterministic f hf`, `x` is positive recurrent if and only if `x` is a periodic point of
 `f`. -/
 @[simp]
 theorem isPositiveRecurrent_deterministic {f : α → α} (hf : Measurable f) (x : α) :
     (deterministic f hf).IsPositiveRecurrent x ↔ x ∈ Function.periodicPts f := by
+  classical
   rw [isPositiveRecurrent_iff, meanReturnTime_deterministic]
   split_ifs with hx <;> simp [hx]
 
@@ -772,6 +837,20 @@ theorem isPositiveRecurrent_const_dirac (a x : α) :
   classical
   rw [isPositiveRecurrent_iff, meanReturnTime_const_dirac]
   split_ifs with hxa <;> simp [hxa]
+
+/-- Under `const α (Measure.dirac a)`, `x` is recurrent if and only if `x = a`. -/
+@[simp]
+theorem isRecurrent_const_dirac (a x : α) :
+    (const α (Measure.dirac a)).IsRecurrent x ↔ x = a := by
+  rw [isRecurrent_congr (const_dirac_eq_deterministic a), isRecurrent_deterministic,
+    ← isPositiveRecurrent_deterministic measurable_const x,
+    ← isPositiveRecurrent_congr (const_dirac_eq_deterministic a), isPositiveRecurrent_const_dirac]
+
+/-- Under `const α (Measure.dirac a)`, `x` is transient if and only if `x ≠ a`. -/
+@[simp]
+theorem isTransient_const_dirac (a x : α) :
+    (const α (Measure.dirac a)).IsTransient x ↔ x ≠ a := by
+  rw [isTransient_iff, isRecurrent_const_dirac]
 
 end Deterministic
 
