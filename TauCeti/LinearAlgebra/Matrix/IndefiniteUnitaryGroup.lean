@@ -12,7 +12,6 @@ public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.UnitaryTransvection
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
 import Mathlib.Tactic.LinearCombination
-import TauCeti.Algebra.Star.Pi
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 
@@ -55,7 +54,9 @@ The basic structure of these groups is recorded here.
 * Over a field of characteristic zero, the centre of `U(p, q)` is the group of unit scalars
   `λ • 1` with `star λ * λ = 1`. The proof uses the reflections
   `1 - (2 / ⟨v, v⟩) • vecMulVec v (star v ᵥ* A)` in the non-isotropic vectors `v`, which lie in
-  `unitaryGroupOf A` for every Hermitian invertible `A` (`Matrix.unitaryGroupOf.reflection`): a
+  `unitaryGroupOf A` for every Hermitian `A` (`Matrix.unitaryGroupOf.reflection`, defined in
+  `TauCeti.LinearAlgebra.Matrix.UnitaryGroup.UnitaryTransvection` for every vector, as the
+  identity at isotropic vectors): a
   central element commutes with the rank-one matrices `vecMulVec v (star v ᵥ* A)`, and for `A = J`
   testing this on the vectors `eₖ` and `eᵢ + 2 eₖ` forces it to be scalar.
 
@@ -66,8 +67,6 @@ The basic structure of these groups is recorded here.
   `g ↦ b⁻¹ g b` from `unitaryGroupOf A` onto `unitaryGroupOf A'`.
 * `Matrix.unitaryGroupOf.transport`: for such `b` and `a b ∈ unitaryGroupOf A'`, the bijection
   `g ↦ a g b` from `unitaryGroupOf A` onto `unitaryGroupOf A'`.
-* `Matrix.unitaryGroupOf.reflection`: the reflection in a non-isotropic vector, for a Hermitian
-  invertible Gram matrix `A`.
 * `TauCeti.Matrix.indefiniteUnitaryGroup p q R`: the group `U(p, q)` of invertible matrices
   preserving the Hermitian form of Gram matrix `diag(1, …, 1, -1, …, -1)`.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.fromBlocksHom`: the block-diagonal embedding of
@@ -330,54 +329,7 @@ section Field
 
 variable {K : Type*} [Field K] [StarRing K] {A : Matrix n n K}
 
-omit [DecidableEq n] in
-/-- The reflection parameter is admissible, including when its denominator is zero. -/
-private theorem reflection_param_admissible (hA : A.IsHermitian) (v : n → K) :
-    let a := -(2 / (star v ⬝ᵥ A *ᵥ v))
-    a + star a + a * star a * (star v ⬝ᵥ A *ᵥ v) = 0 := by
-  dsimp only
-  simp only [star_neg, star_div₀, star_ofNat, hA.star_dotProduct_mulVec_comm v v]
-  by_cases hv : star v ⬝ᵥ A *ᵥ v = 0
-  · simp [hv]
-  · field_simp
-    ring
-
 namespace unitaryGroupOf
-
-/-- **The reflection in a vector**, for a Hermitian Gram matrix `A`. For
-`v` with `⟨v, v⟩ ≠ 0`, the element `1 - (2 / ⟨v, v⟩) • v (star v ᵥ* A)` of `unitaryGroupOf A`,
-which sends `v` to `-v` (`reflection_mulVec_self`) and fixes the vectors orthogonal to `v` for the
-form (`reflection_mulVec_of_dotProduct_eq_zero`). For isotropic `v` it is the identity. -/
-noncomputable def reflection (hA : A.IsHermitian) (v : n → K) : unitaryGroupOf A :=
-  unitaryTransvection hA v (-(2 / (star v ⬝ᵥ A *ᵥ v))) (reflection_param_admissible hA v)
-
-@[simp]
-theorem val_reflection (hA : A.IsHermitian) (v : n → K) :
-    ((reflection hA v : GL n K) : Matrix n n K) =
-      1 - (2 / (star v ⬝ᵥ A *ᵥ v)) • vecMulVec v (star v ᵥ* A) := by
-  simp [reflection, Matrix.unitaryTransvection_def, TauCeti.starRingEnd_comp_eq_star,
-    sub_eq_add_neg]
-
-/-- The reflection in `v` sends `x` to `x - (2 ⟨v, x⟩ / ⟨v, v⟩) v`. -/
-theorem reflection_mulVec (hA : A.IsHermitian) (v : n → K) (x : n → K) :
-    ((reflection hA v : GL n K) : Matrix n n K) *ᵥ x =
-      x - (2 / (star v ⬝ᵥ A *ᵥ v) * (star v ⬝ᵥ A *ᵥ x)) • v := by
-  rw [reflection, unitaryTransvection_mulVec]
-  simp [sub_eq_add_neg]
-
-/-- The reflection in `v` sends `v` to `-v`. -/
-theorem reflection_mulVec_self (hA : A.IsHermitian) (v : n → K)
-    (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) :
-    ((reflection hA v : GL n K) : Matrix n n K) *ᵥ v = -v := by
-  rw [reflection_mulVec]
-  simp [div_mul_cancel₀ _ hv, two_smul]
-
-/-- The reflection in `v` fixes every vector `w` orthogonal to `v` for the form. -/
-theorem reflection_mulVec_of_dotProduct_eq_zero (hA : A.IsHermitian) (v : n → K)
-    {w : n → K} (hw : star v ⬝ᵥ A *ᵥ w = 0) :
-    ((reflection hA v : GL n K) : Matrix n n K) *ᵥ w = w := by
-  rw [reflection_mulVec]
-  simp [hw]
 
 /-- For a Hermitian Gram matrix `A`, an element of the centre of `unitaryGroupOf A`
 commutes with the rank-one matrix `v (star v ᵥ* A)` of every non-isotropic vector `v`, since it

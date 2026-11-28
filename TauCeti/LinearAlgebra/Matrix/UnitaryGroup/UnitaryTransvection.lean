@@ -8,47 +8,60 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Form
 public import TauCeti.LinearAlgebra.Matrix.UnitaryTransvection
+import Mathlib.LinearAlgebra.Matrix.SemiringInverse
 import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Star.Basic
 import TauCeti.Algebra.Star.Pi
 
 /-!
-# Unitary transvections and quasi-reflections in the unitary group of a Hermitian matrix
+# Admissible unitary transvections in the unitary group of a Hermitian matrix
 
 Let `R` be a commutative semiring with involution `star`, `A` a Hermitian matrix over `R` and
 `⟨x, y⟩ = star x ⬝ᵥ A *ᵥ y` its form. For a vector `v` and a scalar `a`, the unitary transvection
 `τ_{v,a} = 1 + a • v (star v ᵥ* A) : x ↦ x + a ⟨v, x⟩ v` is
 `Matrix.unitaryTransvection A (starRingEnd R) v a`. It preserves the form when the coefficient
 `a + star a + a star a ⟨v, v⟩` of its isometry defect vanishes; call such a parameter `a`
-admissible for `v`. For isotropic `v` the admissible parameters are those with `a + star a = 0`,
-giving the unitary transvections. Over a field, `a = -s⁻¹` is admissible whenever
-`s + star s = ⟨v, v⟩`, giving the quasi-reflections `x ↦ x - s⁻¹ ⟨v, x⟩ v`; if `2 ≠ 0` and
-`⟨v, v⟩ ≠ 0`, the choice `s = ⟨v, v⟩ / 2` gives the reflection in `v`. This file bundles the
-admissible unitary transvections as elements of `Matrix.unitaryGroupOf A`; `A` need not be
-invertible. The inverse of `τ_{v,a}` is `τ_{v,star a}`, by the product formula
+admissible for `v`, and `τ_{v,a}` an admissible transvection. For isotropic `v` the admissible
+parameters are those with `a + star a = 0`, giving the unitary transvections. This file bundles
+the admissible transvections as elements of `Matrix.unitaryGroupOf A`; `A` need not be invertible.
+The inverse of `τ_{v,a}` is `τ_{v,star a}`, by the product formula
 `Matrix.unitaryTransvection_mul_unitaryTransvection_eq`.
 
-Over a field in which `2 ≠ 0`, one quasi-reflection carries an isotropic vector `y` to any
+Over a field, with the convention `0⁻¹ = 0`, the parameter `a = -s⁻¹` is admissible whenever
+`s + star s = ⟨v, v⟩`. For `s ≠ 0` this is the quasi-reflection `x ↦ x - s⁻¹ ⟨v, x⟩ v`; for
+`s = 0` it is the identity. If `2 ≠ 0`, the choice `s = ⟨v, v⟩ / 2` gives
+`Matrix.unitaryGroupOf.reflection`, defined for every vector `v`: the reflection in `v` when
+`⟨v, v⟩ ≠ 0`, and the identity when `v` is isotropic.
+
+Over a field in which `2 ≠ 0`, one admissible transvection carries an isotropic vector `y` to any
 isotropic `x` with `⟨x, y⟩ ≠ 0`: it is the transvection along `x - y` with parameter
 `(⟨x, y⟩ - ⟨x, x⟩ / 2)⁻¹`, which is admissible for every `x`, isotropic or not
-(`Matrix.unitaryGroupOf.orbitSection`). As a function of `x` it is a section of the orbit map
-`g ↦ g y` over these isotropic vectors, given by rational functions of the coordinates of `x` and
-their conjugates; this is how smooth local sections of the isotropic orbit are obtained over `ℝ`
-and `ℂ`.
+(`Matrix.unitaryGroupOf.orbitSection`). Where the denominator `⟨x, y⟩ - ⟨x, x⟩ / 2` is nonzero it
+is a quasi-reflection, and where the denominator vanishes it is the identity. As a function of `x`
+it is a section of the orbit map `g ↦ g y` over these isotropic vectors, given on the nonvanishing
+locus of the denominator by rational functions of the coordinates of `x` and their conjugates;
+this is how smooth local sections of the isotropic orbit are obtained over `ℝ` and `ℂ`.
 
 ## Main definitions
 
-* `Matrix.unitaryGroupOf.unitaryTransvection`: the element `τ_{v,a}` of `unitaryGroupOf A`, for
-  Hermitian `A` and admissible `a`.
-* `Matrix.unitaryGroupOf.orbitSection`: the quasi-reflection along `x - y` with parameter
-  `(⟨x, y⟩ - ⟨x, x⟩ / 2)⁻¹`, for isotropic `y`.
+* `Matrix.unitaryGroupOf.unitaryTransvection`: the admissible transvection `τ_{v,a}` as an element
+  of `unitaryGroupOf A`, for Hermitian `A` and admissible `a`.
+* `Matrix.unitaryGroupOf.reflection`: the reflection in a non-isotropic vector `v`, extended by the
+  identity to isotropic `v`.
+* `Matrix.unitaryGroupOf.orbitSection`: the admissible transvection along `x - y` with parameter
+  `(⟨x, y⟩ - ⟨x, x⟩ / 2)⁻¹`, for isotropic `y`; a quasi-reflection where the denominator is nonzero
+  and the identity where it vanishes.
 
 ## Main results
 
-* `Matrix.star_unitaryTransvection_mul_mul_self_of_eq_zero`: `star τ_{v,a} * A * τ_{v,a} = A` for
-  Hermitian `A` and admissible `a`.
 * `Matrix.unitaryGroupOf.inv_unitaryTransvection`: the inverse of `τ_{v,a}` is `τ_{v,star a}`.
 * `Matrix.unitaryGroupOf.unitaryTransvection_mulVec`: `τ_{v,a}` sends `x` to `x + a ⟨v, x⟩ v`.
+* `Matrix.unitaryGroupOf.reflection_mulVec_self` and
+  `Matrix.unitaryGroupOf.reflection_mulVec_of_dotProduct_eq_zero`: the reflection in a
+  non-isotropic `v` sends `v` to `-v` and fixes the vectors orthogonal to `v`.
+* `Matrix.unitaryGroupOf.inv_reflection` and
+  `Matrix.unitaryGroupOf.reflection_eq_one_of_dotProduct_self_eq_zero`: the reflection is an
+  involution, and is the identity at isotropic vectors.
 * `Matrix.unitaryTransvection_sub_mulVec_eq`: if `a B(x - y, y) = 1`, the raw transvection
   `τ_{x - y,a}` sends `y` to `x`.
 * `Matrix.unitaryGroupOf.orbitSection_mulVec`: the orbit section sends `y` to every isotropic `x`
@@ -61,7 +74,7 @@ Quasi-reflections and their use to carry one isotropic vector to another follow
 (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), file
 `src/Lib/Adelic/Witt/WittTheorem.lean`; the module-level version is
 `TauCeti.SignedHermitianSpace.quasiReflection`. The parameter `(⟨x, y⟩ - ⟨x, x⟩ / 2)⁻¹`, which
-keeps the quasi-reflection unitary off the isotropic cone, is particular to this file.
+keeps the transvection unitary off the isotropic cone, is particular to this file.
 
 ## References
 
@@ -73,21 +86,6 @@ keeps the quasi-reflection unitary off the isotropic cone, is particular to this
 
 public section
 
-namespace TauCeti
-
-/-- Inverting a scalar with `b + star b + c = 0` gives an admissible parameter for `c`,
-including at `b = 0` with the field's total inverse. -/
-theorem inv_param_admissible {K : Type*} [Field K] [StarRing K] {b c : K}
-    (h : b + star b + c = 0) : b⁻¹ + star (b⁻¹) + b⁻¹ * star (b⁻¹) * c = 0 := by
-  rw [star_inv₀]
-  rcases eq_or_ne b 0 with h0 | h0
-  · simp [h0]
-  · have h0' : star b ≠ 0 := star_ne_zero.mpr h0
-    field_simp
-    linear_combination h
-
-end TauCeti
-
 namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
@@ -95,28 +93,6 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 section CommSemiring
 
 variable {R : Type*} [CommSemiring R] [StarRing R] {A : Matrix n n R} {v : n → R} {a : R}
-
-/-- **Admissible unitary transvections preserve a Hermitian form.** For Hermitian `A`, the unitary
-transvection `τ_{v,a} = 1 + a • v (star v ᵥ* A)` satisfies `star τ_{v,a} * A * τ_{v,a} = A` when
-`a + star a + a * star a * ⟨v, v⟩ = 0`. This is
-`Matrix.transpose_map_unitaryTransvection_mul_mul_self_of_eq_zero` for `σ = starRingEnd R` and
-`ε = 1`. -/
-theorem star_unitaryTransvection_mul_mul_self_of_eq_zero (hA : A.IsHermitian)
-    (ha : a + star a + a * star a * (star v ⬝ᵥ A *ᵥ v) = 0) :
-    star (A.unitaryTransvection (starRingEnd R) v a) * A *
-      A.unitaryTransvection (starRingEnd R) v a = A := by
-  have h := transpose_map_unitaryTransvection_mul_mul_self_of_eq_zero (v := v) (a := a)
-    starRingEnd_self_apply (by rw [one_smul, transpose_map_starRingEnd, hA.eq])
-    (by rwa [one_mul, one_mul, TauCeti.starRingEnd_comp_eq_star, starRingEnd_apply])
-  rwa [transpose_map_starRingEnd, ← star_eq_conjTranspose] at h
-
-/-- For admissible `a`, the unitary transvection `τ_{v,star a}` inverts `τ_{v,a}`. -/
-theorem unitaryTransvection_mul_unitaryTransvection_star_param_eq_one_of_eq_zero
-    (ha : a + star a + a * star a * (star v ⬝ᵥ A *ᵥ v) = 0) :
-    A.unitaryTransvection (starRingEnd R) v a * A.unitaryTransvection (starRingEnd R) v (star a) =
-      1 := by
-  rw [unitaryTransvection_mul_unitaryTransvection_eq, TauCeti.starRingEnd_comp_eq_star, ha,
-    unitaryTransvection_zero]
 
 omit [DecidableEq n] in
 /-- The parameter `star a` is admissible for `v` when `a` is. -/
@@ -127,17 +103,14 @@ private theorem unitaryTransvection_star_param_admissible
 
 namespace unitaryGroupOf
 
-/-- **The unitary transvection, or quasi-reflection, `τ_{v,a}` as an element of the unitary group**
-of a Hermitian matrix `A`, for a parameter `a` with `a + star a + a * star a * ⟨v, v⟩ = 0`. It acts
-by `x ↦ x + a ⟨v, x⟩ v` (`unitaryTransvection_mulVec`), and its inverse is `τ_{v,star a}`
+/-- **The admissible transvection `τ_{v,a}` as an element of the unitary group** of a Hermitian
+matrix `A`, for a parameter `a` with `a + star a + a * star a * ⟨v, v⟩ = 0`. It acts by
+`x ↦ x + a ⟨v, x⟩ v` (`unitaryTransvection_mulVec`), and its inverse is `τ_{v,star a}`
 (`inv_unitaryTransvection`). -/
 def unitaryTransvection (hA : A.IsHermitian) (v : n → R) (a : R)
     (ha : a + star a + a * star a * (star v ⬝ᵥ A *ᵥ v) = 0) : unitaryGroupOf A :=
-  have hinv := unitaryTransvection_mul_unitaryTransvection_star_param_eq_one_of_eq_zero ha
-  ⟨⟨_, _, hinv, by
-      simpa only [star_star] using
-        unitaryTransvection_mul_unitaryTransvection_star_param_eq_one_of_eq_zero
-          (unitaryTransvection_star_param_admissible ha)⟩,
+  ⟨Units.mkOfMulEqOne _ _
+      (unitaryTransvection_mul_unitaryTransvection_star_param_eq_one_of_eq_zero ha),
     mem_unitaryGroupOf_iff.2 (star_unitaryTransvection_mul_mul_self_of_eq_zero hA ha)⟩
 
 variable (hA : A.IsHermitian) (ha : a + star a + a * star a * (star v ⬝ᵥ A *ᵥ v) = 0)
@@ -147,7 +120,7 @@ variable (hA : A.IsHermitian) (ha : a + star a + a * star a * (star v ⬝ᵥ A *
 theorem val_unitaryTransvection :
     ((unitaryTransvection hA v a ha : GL n R) : Matrix n n R) =
       A.unitaryTransvection (starRingEnd R) v a :=
-  (rfl)
+  Units.val_mkOfMulEqOne _
 
 /-- The inverse of the unitary transvection `τ_{v,a}` is `τ_{v,star a}`. -/
 @[simp]
@@ -213,6 +186,80 @@ end CommSemiring
 
 section Field
 
+variable {K : Type*} [Field K] [StarRing K] {A : Matrix n n K}
+
+omit [DecidableEq n] in
+/-- The reflection parameter is admissible, including when its denominator is zero. -/
+private theorem reflection_param_admissible (hA : A.IsHermitian) (v : n → K) :
+    let a := -(2 / (star v ⬝ᵥ A *ᵥ v))
+    a + star a + a * star a * (star v ⬝ᵥ A *ᵥ v) = 0 := by
+  dsimp only
+  simp only [star_neg, star_div₀, star_ofNat, hA.star_dotProduct_mulVec_comm v v]
+  by_cases hv : star v ⬝ᵥ A *ᵥ v = 0
+  · simp [hv]
+  · field_simp
+    ring
+
+namespace unitaryGroupOf
+
+/-- **The reflection in a vector**, for a Hermitian Gram matrix `A`: the admissible transvection
+`1 - (2 / ⟨v, v⟩) • v (star v ᵥ* A)` in `unitaryGroupOf A`, defined for every `v`. For
+non-isotropic `v`, it sends `v` to `-v` (`reflection_mulVec_self`) and fixes the vectors orthogonal
+to `v` for the form (`reflection_mulVec_of_dotProduct_eq_zero`). For isotropic `v` it is the
+identity (`reflection_eq_one_of_dotProduct_self_eq_zero`). -/
+noncomputable def reflection (hA : A.IsHermitian) (v : n → K) : unitaryGroupOf A :=
+  unitaryTransvection hA v (-(2 / (star v ⬝ᵥ A *ᵥ v))) (reflection_param_admissible hA v)
+
+@[simp]
+theorem val_reflection (hA : A.IsHermitian) (v : n → K) :
+    ((reflection hA v : GL n K) : Matrix n n K) =
+      1 - (2 / (star v ⬝ᵥ A *ᵥ v)) • vecMulVec v (star v ᵥ* A) := by
+  simp [reflection, Matrix.unitaryTransvection_def, TauCeti.starRingEnd_comp_eq_star,
+    sub_eq_add_neg]
+
+/-- The reflection in `v` sends `x` to `x - (2 ⟨v, x⟩ / ⟨v, v⟩) v`. -/
+theorem reflection_mulVec (hA : A.IsHermitian) (v : n → K) (x : n → K) :
+    ((reflection hA v : GL n K) : Matrix n n K) *ᵥ x =
+      x - (2 / (star v ⬝ᵥ A *ᵥ v) * (star v ⬝ᵥ A *ᵥ x)) • v := by
+  rw [reflection, unitaryTransvection_mulVec]
+  simp [sub_eq_add_neg]
+
+/-- The reflection in a non-isotropic vector `v`, `⟨v, v⟩ ≠ 0`, sends `v` to `-v`. -/
+theorem reflection_mulVec_self (hA : A.IsHermitian) (v : n → K)
+    (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) :
+    ((reflection hA v : GL n K) : Matrix n n K) *ᵥ v = -v := by
+  rw [reflection_mulVec]
+  simp [div_mul_cancel₀ _ hv, two_smul]
+
+/-- The reflection in `v` fixes every vector `w` orthogonal to `v` for the form. -/
+theorem reflection_mulVec_of_dotProduct_eq_zero (hA : A.IsHermitian) (v : n → K)
+    {w : n → K} (hw : star v ⬝ᵥ A *ᵥ w = 0) :
+    ((reflection hA v : GL n K) : Matrix n n K) *ᵥ w = w := by
+  rw [reflection, val_unitaryTransvection]
+  exact Matrix.unitaryTransvection_mulVec_of_dotProduct_eq_zero _
+    (by rwa [TauCeti.starRingEnd_comp_eq_star])
+
+/-- The reflection in an isotropic vector is the identity. -/
+@[simp]
+theorem reflection_eq_one_of_dotProduct_self_eq_zero (hA : A.IsHermitian) {v : n → K}
+    (hv : star v ⬝ᵥ A *ᵥ v = 0) : reflection hA v = 1 := by
+  apply unitaryGroupOf.ext
+  simp [hv]
+
+/-- The reflection in `v` is its own inverse. -/
+@[simp]
+theorem inv_reflection (hA : A.IsHermitian) (v : n → K) :
+    (reflection hA v)⁻¹ = reflection hA v := by
+  rw [reflection, inv_unitaryTransvection]
+  congr 1
+  rw [star_neg, star_div₀, star_ofNat, hA.star_dotProduct_mulVec_comm v v]
+
+end unitaryGroupOf
+
+end Field
+
+section NeZeroTwo
+
 variable {K : Type*} [Field K] [StarRing K] [NeZero (2 : K)] {A : Matrix n n K} {y : n → K}
 
 omit [DecidableEq n] in
@@ -237,15 +284,17 @@ private theorem orbitSection_param_admissible (hA : A.IsHermitian)
     rw [hsb, hc, hb_def]
     field_simp
     ring
-  exact TauCeti.inv_param_admissible hb
+  exact TauCeti.inv_add_star_inv_add_mul_eq_zero_of_add_star_add_eq_zero hb
 
 namespace unitaryGroupOf
 
-/-- **A section of the isotropic orbit by quasi-reflections.** For Hermitian `A`, isotropic `y` and
-any `x`, the unitary transvection along `x - y` with parameter `(⟨x, y⟩ - ⟨x, x⟩ / 2)⁻¹`, an element
-of `unitaryGroupOf A`. When `x` is isotropic and `⟨x, y⟩ ≠ 0` it sends `y` to `x`
-(`orbitSection_mulVec`), so `x ↦ orbitSection hA hy x` is a section of the orbit map `g ↦ g y` over
-these vectors. -/
+/-- **A section of the isotropic orbit by admissible transvections.** For Hermitian `A`, isotropic
+`y` and any `x`, the admissible transvection along `x - y` with parameter
+`(⟨x, y⟩ - ⟨x, x⟩ / 2)⁻¹`, an element of `unitaryGroupOf A`. Where the denominator
+`⟨x, y⟩ - ⟨x, x⟩ / 2` is nonzero it is a quasi-reflection, and where the denominator vanishes it is
+the identity (`orbitSection_eq_one_of_denominator_eq_zero`). When `x` is isotropic and
+`⟨x, y⟩ ≠ 0` it sends `y` to `x` (`orbitSection_mulVec`), so `x ↦ orbitSection hA hy x` is a
+section of the orbit map `g ↦ g y` over these vectors. -/
 noncomputable def orbitSection (hA : A.IsHermitian) (hy : star y ⬝ᵥ A *ᵥ y = 0) (x : n → K) :
     unitaryGroupOf A :=
   unitaryTransvection hA (x - y) _
@@ -262,6 +311,7 @@ theorem val_orbitSection (hA : A.IsHermitian) (hy : star y ⬝ᵥ A *ᵥ y = 0) 
   exact val_unitaryTransvection _ _
 
 /-- The total orbit section is the identity where its denominator vanishes. -/
+@[simp]
 theorem orbitSection_eq_one_of_denominator_eq_zero (hA : A.IsHermitian)
     (hy : star y ⬝ᵥ A *ᵥ y = 0) {x : n → K}
     (hx : star x ⬝ᵥ A *ᵥ y - star x ⬝ᵥ A *ᵥ x / 2 = 0) : orbitSection hA hy x = 1 := by
@@ -269,7 +319,6 @@ theorem orbitSection_eq_one_of_denominator_eq_zero (hA : A.IsHermitian)
   simp [hx]
 
 /-- The orbit section takes its source vector to the identity element. -/
-@[simp]
 theorem orbitSection_self (hA : A.IsHermitian) (hy : star y ⬝ᵥ A *ᵥ y = 0) :
     orbitSection hA hy y = 1 :=
   orbitSection_eq_one_of_denominator_eq_zero hA hy (by simp [hy])
@@ -285,6 +334,6 @@ theorem orbitSection_mulVec (hA : A.IsHermitian) (hy : star y ⬝ᵥ A *ᵥ y = 
 
 end unitaryGroupOf
 
-end Field
+end NeZeroTwo
 
 end Matrix

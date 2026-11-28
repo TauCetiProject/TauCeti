@@ -52,6 +52,8 @@ equivalence of complex vector spaces is real-linear.
 * `TauCeti.mul_smul_comm_of_starModule`: in a star module with a multiplicative star and a scalar
   tower, scalars commute with left multiplication, so no `SMulCommClass` assumption is needed
   there.
+* `TauCeti.inv_add_star_inv_add_mul_eq_zero_of_add_star_add_eq_zero`: in a field with
+  involution, `b + star b + c = 0` implies `b⁻¹ + star b⁻¹ + b⁻¹ star b⁻¹ c = 0`, also at `b = 0`.
 * `LinearEquiv.restrictScalarsₛₗ`: a star-linear equivalence over `S` is `R`-linear when `R` acts
   on `S` with trivial star.
 * `Units.star_neg`: in a star ring, `star (-u) = -star u` for a unit `u`; in particular `star`
@@ -161,6 +163,27 @@ theorem mul_smul_comm_of_starModule (c : R) (x y : A) : x * (c • y) = c • (x
   -- star c • (star y * star x)`, an instance of `IsScalarTower R A A`
   apply star_injective
   rw [star_mul, star_smul, smul_mul_assoc, star_smul, star_mul]
+
+end TauCeti
+
+namespace TauCeti
+
+/-- **Inverting a solution of `b + star b + c = 0`.** In a field with involution, if
+`b + star b + c = 0`, then `b⁻¹ + star b⁻¹ + b⁻¹ * star b⁻¹ * c = 0`; this also holds at `b = 0`,
+where `b⁻¹ = 0`. For `c = ⟨v, v⟩` the value of a Hermitian form, it says that `b⁻¹` is an
+admissible parameter for a unitary transvection along `v`. -/
+theorem inv_add_star_inv_add_mul_eq_zero_of_add_star_add_eq_zero {K : Type*} [Field K]
+    [StarRing K] {b c : K} (h : b + star b + c = 0) :
+    b⁻¹ + star b⁻¹ + b⁻¹ * star b⁻¹ * c = 0 := by
+  rw [star_inv₀]
+  rcases eq_or_ne b 0 with rfl | h0
+  · simp
+  have h0' : star b ≠ 0 := star_ne_zero.mpr h0
+  calc
+    _ = b⁻¹ * (star b)⁻¹ * (b + star b + c) := by
+      rw [mul_add, mul_add, mul_right_comm b⁻¹ (star b)⁻¹ b, inv_mul_cancel₀ h0, one_mul,
+        inv_mul_cancel_right₀ h0', add_comm b⁻¹]
+    _ = 0 := by rw [h, mul_zero]
 
 end TauCeti
 
