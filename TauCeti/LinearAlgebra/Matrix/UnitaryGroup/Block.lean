@@ -275,8 +275,11 @@ theorem mem_range_prodBlockSucc_iff {A : unitaryGroup (Fin (m + 1)) α} :
   have hAB : A.val = reindex (TauCeti.finOneSumEquiv m) (TauCeti.finOneSumEquiv m)
       (fromBlocks (diagonal fun _ ↦ A.val 0 0) 0 0 B) := by
     ext p q
-    refine Fin.cases ?_ (fun i ↦ ?_) p <;> refine Fin.cases ?_ (fun j ↦ ?_) q <;>
-      simp [hrow, hA]; rfl
+    refine Fin.cases ?_ (fun i ↦ ?_) p <;> refine Fin.cases ?_ (fun j ↦ ?_) q
+    · simp
+    · simp [hrow]
+    · simp [hA]
+    · simp; simp [B]
   have hB : B ∈ unitaryGroup (Fin m) α :=
     ((reindex_fromBlocks_zero_zero_mem_unitary_iff _).1 (hAB ▸ A.property)).2
   exact ⟨(⟨A.val 0 0, Unitary.mem_iff_star_mul_self.2 hc⟩, ⟨B, hB⟩), Subtype.ext hAB.symm⟩

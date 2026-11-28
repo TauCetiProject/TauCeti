@@ -142,10 +142,7 @@ theorem orderEmbOfFin_permOfDisjoint_singleton_erase (i : I) (s : Finset I) {n :
     (Set.powersetCard.disjUnion hdisj).val.orderEmbOfFin (Set.powersetCard.disjUnion hdisj).prop
       (Set.powersetCard.permOfDisjoint hdisj ((finCongr (Nat.add_comm 1 n)).symm j)) =
     (Fin.cons i ((s.erase i).orderEmbOfFin hn) : Fin (n + 1) → I) j := by
-  rw [orderEmbOfFin_permOfDisjoint,
-    show finSumFinEquiv.symm ((finCongr (Nat.add_comm 1 n)).symm j) =
-        (TauCeti.finOneSumEquiv n).symm j by
-      simp only [TauCeti.finOneSumEquiv, Equiv.symm_trans_apply]]
+  rw [orderEmbOfFin_permOfDisjoint, ← Equiv.symm_trans_apply, ← TauCeti.finOneSumEquiv]
   cases j using Fin.cases with
   | zero =>
       rw [TauCeti.finOneSumEquiv_symm_zero, Fin.cons_zero, Sum.elim_inl]

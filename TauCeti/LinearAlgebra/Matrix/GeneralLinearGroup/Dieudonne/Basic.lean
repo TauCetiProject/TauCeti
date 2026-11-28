@@ -13,12 +13,9 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability.Surjective
 
 Extending `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.DieudonneDeterminant`, this file proves
 further formulas and corollaries for `TauCeti.dieudonneDet : GL n D →* Group.Abelianization Dˣ`:
-membership in the elementary subgroup, scalar and block-unipotent matrices, normality of
-`TauCeti.elementarySubgroup n D` at every finite matrix size, and the finite-rank quotient
-isomorphism `GL n D ⧸ TauCeti.elementarySubgroup n D ≃* Group.Abelianization Dˣ`.
-
-For stabilization invariance and further properties on `AlgebraicK₁`, see
-`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Dieudonne.AlgebraicK1`.
+membership in the elementary subgroup, scalar, stabilization, and block-unipotent matrices,
+normality of `TauCeti.elementarySubgroup n D` at every finite matrix size, and the finite-rank
+quotient isomorphism `GL n D ⧸ TauCeti.elementarySubgroup n D ≃* Group.Abelianization Dˣ`.
 
 ## Main definitions
 
@@ -29,8 +26,9 @@ For stabilization invariance and further properties on `AlgebraicK₁`, see
 
 * `TauCeti.elementarySubgroup_normal`: `TauCeti.elementarySubgroup n D` is normal in `GL n D`.
 * `TauCeti.dieudonneDet_eq_one_iff`: membership in `elementarySubgroup n D` vs. `dieudonneDet = 1`.
-* `TauCeti.dieudonneDet_scalar`, `Matrix.dieudonneDet_upperBlockGL`,
-  `Matrix.dieudonneDet_lowerBlockGL`: values on scalar and block-unipotent matrices.
+* `TauCeti.dieudonneDet_scalar`, `TauCeti.dieudonneDet_stabilizeGL`,
+  `Matrix.dieudonneDet_upperBlockGL`, `Matrix.dieudonneDet_lowerBlockGL`: values on scalar,
+  stabilized, and block-unipotent matrices.
 
 ## References
 
@@ -70,6 +68,13 @@ theorem dieudonneDet_scalar (u : Dˣ) :
     AlgebraicK1.divisionRingEquiv_ofUnits]
 
 end DivisionRing
+
+/-- Stabilization `u ↦ u ⊕ 1` preserves the Dieudonné determinant. -/
+@[simp]
+theorem dieudonneDet_stabilizeGL {D : Type*} [DivisionRing D] {a b : ℕ} (h : a ≤ b)
+    (u : GL (Fin a) D) :
+    dieudonneDet (Fin b) D (stabilizeGL D h u) = dieudonneDet (Fin a) D u := by
+  simp [dieudonneDet_fin_apply]
 
 /-! ## Finite-rank quotient by the elementary subgroup -/
 
