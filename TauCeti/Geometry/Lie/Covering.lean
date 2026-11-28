@@ -80,16 +80,8 @@ theorem isLocalDiffeomorph_of_isLocalHomeomorph [FiniteDimensional ℝ E]
   let _ : ChartedSpace H' G := hf.chartedSpaceComap
   let _ : LieGroup J ∞ G :=
     hf.lieGroup_chartedSpaceComap (I := J) (n := ∞) (map_mul f)
-  let e : Diffeomorph I J G G ∞ :=
-    { toEquiv := Equiv.refl G
-      contMDiff_toFun := TauCeti.Lie.contMDiff_of_continuous_monoidHom
-        (I := I) (I' := J) (ContinuousMonoidHom.id G) continuous_id
-      contMDiff_invFun := TauCeti.Lie.contMDiff_of_continuous_monoidHom
-        (I := J) (I' := I) (ContinuousMonoidHom.id G) continuous_id }
-  -- The comparison diffeomorphism is the identity on the underlying group.
-  have he : (e : G → G) = _root_.id := by
-    rw [← Diffeomorph.coe_toEquiv]
-    rfl
+  let e : Diffeomorph I J G G ∞ := (ContinuousMulEquiv.refl G).toDiffeomorph I J
+  have he : (e : G → G) = _root_.id := ContinuousMulEquiv.coe_toDiffeomorph _
   intro x
   simpa only [he, Function.comp_id, id_eq] using
     (e.isLocalDiffeomorph x).comp J K

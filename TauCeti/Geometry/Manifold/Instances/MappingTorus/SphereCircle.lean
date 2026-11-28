@@ -52,6 +52,8 @@ oriented manifold can have nonorientable trajectory spaces between oriented crit
 
 * `TauCeti.isOrientationPreservingAt_sphereCircleReflection`: `τ` preserves the product
   orientation of `S² × S¹`.
+* `TauCeti.det_mfderiv_sphereCircleReflection_pos`: at a fixed point of `τ` its differential has
+  positive determinant.
 * `TauCeti.orientable_smoothMappingTorus_sphereCircleReflection`: its mapping torus is
   orientable; it is compact by `TauCeti.SmoothMappingTorus.instCompactSpace`.
 * `TauCeti.not_orientable_smoothMappingTorus_prodCongr_refl`: the mapping torus of the reflection
@@ -136,6 +138,35 @@ theorem isOrientationPreservingAt_sphereCircleReflection (hv : v ≠ 0)
     (e := Complex.conjLIE) (by rw [Complex.det_conjLIE]; exact neg_one_lt_zero) x.2
   rw [coe_sphereCircleReflection]
   exact hρ.prodMap hκ
+
+/-- **At a fixed point of `τ` its differential has positive determinant.** Both factors fix their
+coordinate of the point and are restrictions of linear isometries of determinant `-1`, so their
+differentials have negative determinant (for `E = ℝ³` and `v` the second coordinate vector,
+`dτ = diag(1, -1, -1)` at the poles and at `w = ±1`). -/
+theorem det_mfderiv_sphereCircleReflection_pos (hv : v ≠ 0)
+    {x : sphere (0 : E) 1 × sphere (0 : ℂ) 1}
+    (hx : Function.IsFixedPt (sphereCircleReflection v) x) :
+    0 < LinearMap.det ((mfderiv ((𝓡 2).prod (𝓡 1)) ((𝓡 2).prod (𝓡 1)) (sphereCircleReflection v)
+      x).toLinearMap :
+        EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 1) →ₗ[ℝ]
+          EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 1)) := by
+  have hρ := det_mfderiv_unitSphereEquiv_neg (n := 2) (e := (ℝ ∙ v)ᗮ.reflection)
+    (by rw [← LinearEquiv.coe_det, linearEquiv_det_reflection_orthogonal_singleton hv]
+        exact neg_one_lt_zero)
+    (u := x.1) (by rw [← coe_sphereCircleReflection_apply_fst, hx])
+  have hκ := det_mfderiv_unitSphereEquiv_neg (n := 1) (e := Complex.conjLIE)
+    (by rw [Complex.det_conjLIE]; exact neg_one_lt_zero)
+    (u := x.2) (by simpa using
+      (coe_sphereCircleReflection_apply_snd v x).symm.trans (congrArg (fun y ↦ (y.2 : ℂ)) hx))
+  rw [coe_sphereCircleReflection, mfderiv_prodMap
+    ((LinearIsometryEquiv.contMDiff_unitSphereEquiv (n := 2) (k := 2) (m := 1)
+      _).mdifferentiableAt one_ne_zero)
+    ((LinearIsometryEquiv.contMDiff_unitSphereEquiv (n := 1) (k := 1) (m := 1)
+      _).mdifferentiableAt one_ne_zero)]
+  -- `rw [LinearMap.det_prodMap]` cannot fire: the factors map `T_{x.i}` to `T_{τ x.i}`, which
+  -- agree only definitionally, so the product formula is applied as a term.
+  simp only [ContinuousLinearMap.coe_prodMap]
+  exact (mul_pos_of_neg_of_neg hρ hκ).trans_eq (LinearMap.det_prodMap _ _).symm
 
 namespace sphereCircleReflection
 

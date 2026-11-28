@@ -75,6 +75,24 @@ theorem mem_ramifiedSupport_iff_exists {v : HeightOneSpectrum (𝓞 K)} :
   rw [mem_ramifiedSupport]
   exact dvd_relDiscr_iff_exists_one_lt_ramificationIdx
 
+/-- A prime `v` lies outside the ramified support whenever every prime of `𝓞 L` above `v` has
+ramification index `1`. -/
+theorem notMem_ramifiedSupport_of_forall_ramificationIdx_eq_one {v : HeightOneSpectrum (𝓞 K)}
+    (h : ∀ P : (v.asIdeal).primesOver (𝓞 L), (P : Ideal (𝓞 L)).ramificationIdx (𝓞 K) = 1) :
+    v ∉ ramifiedSupport K L := by
+  rw [mem_ramifiedSupport_iff_exists]
+  rintro ⟨P, hP⟩
+  exact hP.ne' (h P)
+
+/-- A prime `v` lies outside the ramified support whenever `𝓞 L` is unramified over `𝓞 K` at
+`v`. -/
+theorem notMem_ramifiedSupport_of_isUnramifiedIn {v : HeightOneSpectrum (𝓞 K)}
+    (h : Algebra.IsUnramifiedIn (𝓞 L) v.asIdeal) :
+    v ∉ ramifiedSupport K L :=
+  notMem_ramifiedSupport_of_forall_ramificationIdx_eq_one fun P ↦
+    have := P.property.1
+    h.ramificationIdx_eq_one P.property.2
+
 variable (K) in
 /-- **Nothing ramifies in the identity extension**: the ramified support of `K / K` is empty. -/
 @[simp]

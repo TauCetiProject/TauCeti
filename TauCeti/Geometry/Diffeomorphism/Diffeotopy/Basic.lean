@@ -55,6 +55,8 @@ specialization to bundled smooth embeddings, used for geometric knot presentatio
 * `TauCeti.Diffeotopy.comp_cylinderMap_of_semiconj`: a map intertwining two diffeotopies at every
   time intertwines their motions on the cylinders; `semiconj_symm_timeSlice_transDiffeomorph`
   is the instance `f⁻¹` for a conjugated diffeotopy.
+* `TauCeti.Diffeotopy.eqOn_id_trans`, `eqOn_id_symm` and `eqOn_id_transDiffeomorph`: being the
+  identity outside a set at every time passes to composites, inverses and conjugates.
 * `TauCeti.Diffeotopy.toAmbientIsotopy_final_apply`: forgetting smoothness preserves the final
   action.
 * `TauCeti.Diffeotopy.final_eq_of_homotopy`: diffeotopies whose motions are joined by a homotopy
@@ -475,6 +477,28 @@ theorem symm_apply_eq_self_iff {t : I} {x : M} : Φ.symm (t, x) = x ↔ Φ (t, x
   · intro h
     conv_lhs => rw [← h]
     exact (Φ.timeSlice t).symm_apply_apply x
+
+/-- If two diffeotopies are the identity outside `K` and outside `L` at every time, their
+pointwise composite is the identity outside `K ∪ L` at every time. -/
+theorem eqOn_id_trans {Φ Ψ : Diffeotopy J n M} {K L : Set M}
+    (hΦ : ∀ t, Set.EqOn (fun x ↦ Φ (t, x)) id Kᶜ) (hΨ : ∀ t, Set.EqOn (fun x ↦ Ψ (t, x)) id Lᶜ)
+    (t : I) : Set.EqOn (fun x ↦ Φ.trans Ψ (t, x)) id (K ∪ L)ᶜ := fun x hx ↦ by
+  rw [Set.compl_union] at hx
+  simp only [trans_apply, hΦ t hx.1, id_eq]
+  exact hΨ t hx.2
+
+/-- If a diffeotopy is the identity outside `K` at every time, so is its pointwise inverse. -/
+theorem eqOn_id_symm {Φ : Diffeotopy J n M} {K : Set M}
+    (hΦ : ∀ t, Set.EqOn (fun x ↦ Φ (t, x)) id Kᶜ) (t : I) :
+    Set.EqOn (fun x ↦ Φ.symm (t, x)) id Kᶜ := fun _ hx ↦ Φ.symm_apply_eq_self_iff.2 (hΦ t hx)
+
+/-- If a diffeotopy is the identity outside `K` at every time, its conjugate `f ∘ φ_t ∘ f⁻¹` by
+a diffeomorphism `f` is the identity outside `f '' K` at every time. -/
+theorem eqOn_id_transDiffeomorph {Φ : Diffeotopy J n M} {K : Set M} (f : M ≃ₘ^n⟮J, J⟯ P)
+    (hΦ : ∀ t, Set.EqOn (fun x ↦ Φ (t, x)) id Kᶜ) (t : I) :
+    Set.EqOn (fun x ↦ Φ.transDiffeomorph f (t, x)) id (f '' K)ᶜ := fun x hx ↦ by
+  have hx' : f.symm x ∉ K := fun h ↦ hx ⟨_, h, f.apply_symm_apply x⟩
+  simp only [transDiffeomorph_apply, hΦ t hx', id_eq, Diffeomorph.apply_symm_apply]
 
 /-- Forgetting smoothness turns a diffeotopy into a continuous ambient isotopy. -/
 def toAmbientIsotopy : AmbientIsotopy M where

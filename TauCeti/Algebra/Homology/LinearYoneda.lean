@@ -8,10 +8,12 @@ module
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.CategoryTheory.Abelian.Ext
+public import Mathlib.GroupTheory.OrderOfElement
 import Mathlib.Algebra.Category.ModuleCat.EpiMono
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import Mathlib.CategoryTheory.Limits.Preserves.Opposites
 import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Products
+import TauCeti.Algebra.Homology.Linear
 import TauCeti.Algebra.Homology.ModuleCat.Basic
 import TauCeti.CategoryTheory.Linear.Yoneda
 
@@ -73,6 +75,10 @@ singular cohomology is obtained from the one of chain complexes.
 * `ChainComplex.exactAt_linearYonedaObj_zero_iff` and
   `ChainComplex.exactAt_linearYonedaObj_succ_iff`: exactness of `Hom(K, Y)` for a chain complex
   `K` indexed by `ℕ`, in terms of morphisms out of the terms of `K`.
+* `ChainComplex.bijective_smul_homology_linearYonedaObj`: multiplication by a scalar `r` on the
+  cohomology of `Hom(X, Y)` is bijective when `r • 𝟙 Y` is an isomorphism, and
+  `ChainComplex.eq_zero_of_isOfFinAddOrder_homology_linearYonedaObj`: so this cohomology has no
+  torsion when every positive integer acts invertibly on `Y`.
 -/
 
 public section
@@ -329,6 +335,16 @@ lemma _root_.ChainComplex.iCycles_cyclesMap_linearYonedaObjMap_apply
   (ConcreteCategory.congr_hom (HomologicalComplex.cyclesMap_i _ i) a).trans
     (X.linearYonedaObjMap_f_hom_apply k g i _)
 
+/-- The identity of a chain complex `X` induces the identity on the cohomology of `Hom(X, Y)`.
+The map is typed between `linearYonedaObj` complexes, as in the statements downstream that
+`rw` with it; the identity morphism's type is matched only up to unfolding
+`linearYonedaFunctor`. -/
+lemma _root_.ChainComplex.homologyMap_linearYonedaFunctor_map_id (X : ChainComplex C α) (i : α) :
+    HomologicalComplex.homologyMap (K := X.linearYonedaObj k Y) (L := X.linearYonedaObj k Y)
+      ((linearYonedaFunctor k Y).map (𝟙 X).op) i = 𝟙 _ := by
+  rw [op_id, CategoryTheory.Functor.map_id]
+  exact HomologicalComplex.homologyMap_id _ _
+
 section Elementwise
 
 variable {k Y} {X : ChainComplex C α}
@@ -551,5 +567,38 @@ theorem _root_.ChainComplex.exactAt_linearYonedaObj_succ_iff (n : ℕ) :
   rfl
 
 end Exactness
+
+section Scalar
+
+variable {k} [Abelian C] {S : Type*} [CommRing S] [Linear S C] {Y : C}
+
+/-- **A scalar acting invertibly on the coefficients acts invertibly on cohomology.** If `r • 𝟙 Y`
+is an isomorphism, then multiplication by `r` on the cohomology of `Hom(X, Y)` is bijective: it is
+the map induced by the coefficient map `r • 𝟙 Y`. -/
+theorem _root_.ChainComplex.bijective_smul_homology_linearYonedaObj (X : _root_.ChainComplex C α)
+    (i : α) {r : S} (hr : IsIso (r • 𝟙 Y)) :
+    Function.Bijective (fun x : (X.linearYonedaObj S Y).homology i ↦ r • x) := by
+  have h : HomologicalComplex.homologyMap (X.linearYonedaObjMap S (r • 𝟙 Y)) i = r • 𝟙 _ := by
+    rw [_root_.ChainComplex.linearYonedaObjMap_smul, _root_.ChainComplex.linearYonedaObjMap_id,
+      HomologicalComplex.homologyMap_smul, HomologicalComplex.homologyMap_id]
+  have hiso : IsIso (HomologicalComplex.homologyMap (X.linearYonedaObjMap S (r • 𝟙 Y)) i) :=
+    Functor.map_isIso (X.linearYonedaObjFunctor S ⋙ HomologicalComplex.homologyFunctor _ _ i)
+      (r • 𝟙 Y)
+  rw [h] at hiso
+  simpa only [ModuleCat.hom_smul, ModuleCat.hom_id, LinearMap.coe_smul, LinearMap.id_coe,
+    Pi.smul_def, id_eq] using
+    ConcreteCategory.bijective_of_isIso (r • 𝟙 ((X.linearYonedaObj S Y).homology i))
+
+/-- **Cohomology with uniquely divisible coefficients has no torsion.** If multiplication by every
+positive integer is an automorphism of `Y`, then every class of finite additive order in the
+cohomology of `Hom(X, Y)` vanishes. -/
+theorem _root_.ChainComplex.eq_zero_of_isOfFinAddOrder_homology_linearYonedaObj
+    (hY : ∀ m : ℕ, m ≠ 0 → IsIso ((m : S) • 𝟙 Y)) (X : _root_.ChainComplex C α) {i : α}
+    {x : (X.linearYonedaObj S Y).homology i} (hx : IsOfFinAddOrder x) : x = 0 := by
+  obtain ⟨m, hm, hmx⟩ := isOfFinAddOrder_iff_nsmul_eq_zero.1 hx
+  refine (X.bijective_smul_homology_linearYonedaObj i (hY m hm.ne')).1 ?_
+  simp only [smul_zero, Nat.cast_smul_eq_nsmul, hmx]
+
+end Scalar
 
 end TauCeti.ChainComplex

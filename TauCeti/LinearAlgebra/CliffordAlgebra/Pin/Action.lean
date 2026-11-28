@@ -53,7 +53,7 @@ variable {Q}
 variable (Q)
 
 /-- The twisted-conjugation homomorphism `Pin(Q) → O(Q)`. -/
-def pinToOrthogonal : pinGroup Q →* QuadraticMap.orthogonalGroup Q :=
+noncomputable def pinToOrthogonal : pinGroup Q →* QuadraticMap.orthogonalGroup Q :=
   (lipschitzToOrthogonal Q).comp (pinToLipschitz Q)
 
 variable {Q}

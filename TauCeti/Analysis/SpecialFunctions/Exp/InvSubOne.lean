@@ -25,9 +25,13 @@ decays like `exp (-t)` at `+∞`, and for `t > 0` it is the geometric series
 ## Main results
 
 * `Real.exp_sub_one_ne_zero`: `exp t - 1 ≠ 0` for `t ≠ 0`, so `g` is defined away from `0`.
+* `Real.exp_sub_one_eq_one_sub_exp_neg_mul`: `exp t - 1 = (1 - exp (-t)) * exp t`.
+* `Real.one_sub_exp_neg_mul_exp_le_exp_sub_one`: `(1 - exp (-s)) * exp t ≤ exp t - 1` for `s ≤ t`.
 * `Real.hasDerivAt_inv_exp_sub_one`: `g' = -(g + g²)` away from `0`.
 * `Real.isBigO_inv_exp_sub_one`: `g(t) = O(exp (-t))` as `t → ∞`.
 * `Real.hasSum_exp_neg_nat_succ_mul`: `g(t) = ∑_{k ≥ 0} exp (-((k + 1) t))` for `t > 0`.
+* `Real.hasSum_mul_exp_neg_nat_succ_mul`: `a / (exp t - 1) = ∑_{k ≥ 0} a * exp (-((k + 1) t))`
+  for `t > 0`.
 -/
 
 public section
@@ -39,6 +43,17 @@ namespace Real
 /-- `exp t - 1` vanishes only at `t = 0`. -/
 theorem exp_sub_one_ne_zero {t : ℝ} (ht : t ≠ 0) : exp t - 1 ≠ 0 :=
   sub_ne_zero.2 ((exp_eq_one_iff t).not.2 ht)
+
+/-- Factorization `exp t - 1 = (1 - exp (-t)) * exp t`. -/
+theorem exp_sub_one_eq_one_sub_exp_neg_mul (t : ℝ) :
+    exp t - 1 = (1 - exp (-t)) * exp t := by
+  rw [sub_mul, one_mul, ← exp_add, neg_add_cancel, exp_zero]
+
+/-- For `s ≤ t`, `(1 - exp (-s)) * exp t ≤ exp t - 1`. -/
+theorem one_sub_exp_neg_mul_exp_le_exp_sub_one {s t : ℝ} (hst : s ≤ t) :
+    (1 - exp (-s)) * exp t ≤ exp t - 1 := by
+  rw [exp_sub_one_eq_one_sub_exp_neg_mul t]
+  gcongr
 
 /-- The derivative of `g = (exp t - 1)⁻¹` is `-(g + g²)`. -/
 theorem hasDerivAt_inv_exp_sub_one {t : ℝ} (ht : t ≠ 0) :
@@ -69,5 +84,11 @@ theorem hasSum_exp_neg_nat_succ_mul {t : ℝ} (ht : 0 < t) :
   · have h2 : exp t - 1 ≠ 0 := by linarith
     rw [exp_neg]
     field_simp
+
+/-- For `t > 0` and any scalar `a : ℝ`, the scaled geometric expansion
+`a / (exp t - 1) = ∑_{k ≥ 0} a * exp (-((k + 1) * t))`. -/
+theorem hasSum_mul_exp_neg_nat_succ_mul (a : ℝ) {t : ℝ} (ht : 0 < t) :
+    HasSum (fun k : ℕ ↦ a * exp (-((k + 1) * t))) (a / (exp t - 1)) := by
+  simpa [div_eq_mul_inv] using (hasSum_exp_neg_nat_succ_mul ht).mul_left a
 
 end Real

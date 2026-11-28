@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 import TauCeti.Analysis.Calculus.ContDiff.IsOpen
+import TauCeti.Analysis.Normed.Group.Prod
 
 /-!
 # Extending finite-dimensional smooth germs
@@ -29,7 +30,9 @@ and a representative of order at least one is moreover globally Lipschitz.
 Dually, a function smooth outside a compact set agrees near every point outside a larger compact
 set with a globally smooth function, obtained by cutting it off near the origin
 (`TauCeti.exists_contDiff_eventually_eventuallyEq`). This lets estimates at infinity be proved for
-globally smooth functions only.
+globally smooth functions only. The same holds for a family of functions on a product `P × E`
+which is smooth where `‖p‖ < r₁` and `‖z‖ > R₀`: it agrees near every point of a smaller such
+region with a globally smooth family (`TauCeti.exists_contDiff_forall_eventuallyEq_prod`).
 
 A function which is `C^n` at every point of a sphere can be filled in across the open ball it
 bounds: it agrees near every point outside the ball with a function which is `C^n` at every point
@@ -135,6 +138,49 @@ theorem exists_contDiff_eventually_eventuallyEq [FiniteDimensional ℝ E] {n : �
   · filter_upwards [(tendsto_norm_cocompact_atTop (E := E)).eventually_gt_atTop (r + 1)] with x hx
     filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hx] with y hy
     rw [b.zero_of_le_dist (by simpa using hy.le), sub_zero, one_smul]
+
+/-- **Smoothing a family away from an edge.** A family of functions on a product `P × E` of
+finite-dimensional spaces, smooth on the region `‖p‖ < r₁`, `‖z‖ > R₀`, agrees with a globally
+smooth family near every point of a region `‖p‖ < r₂`, `‖z‖ > R₁`, for some `r < r₂ < r₁` and
+`R₁ ≥ R₀`. -/
+theorem exists_contDiff_forall_eventuallyEq_prod {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] [FiniteDimensional ℝ P] [FiniteDimensional ℝ E] {n : ℕ∞} {f : P × E → F}
+    {r r₁ R₀ : ℝ} (hr₀ : 0 ≤ r) (hr : r < r₁)
+    (hf : ∀ w : P × E, ‖w.1‖ < r₁ → R₀ < ‖w.2‖ → ContDiffAt ℝ n f w) :
+    ∃ g : P × E → F, ContDiff ℝ n g ∧ ∃ r₂ R₁, r < r₂ ∧ r₂ < r₁ ∧ R₀ ≤ R₁ ∧
+      ∀ w : P × E, ‖w.1‖ < r₂ → R₁ < ‖w.2‖ → g =ᶠ[𝓝 w] f := by
+  obtain ⟨r₂, hr₂, hr₂₃⟩ : ∃ r₂, r < r₂ ∧ r₂ < (r + 3 * r₁) / 4 :=
+    ⟨(r + r₁) / 2, by linarith, by linarith⟩
+  obtain ⟨R, hR₀, hR⟩ : ∃ R, R₀ ≤ R ∧ 0 ≤ R := ⟨max R₀ 0, le_max_left _ _, le_max_right _ _⟩
+  -- A smooth cutoff, equal to one where `‖p‖ ≤ r₂` and `‖z‖ ≥ R + 2`, and vanishing where
+  -- `‖p‖ ≥ (r + 3 r₁) / 4` or `‖z‖ ≤ R + 1`.
+  let bP : ContDiffBump (0 : P) := ⟨r₂, (r + 3 * r₁) / 4, by linarith, hr₂₃⟩
+  let bE : ContDiffBump (0 : E) := ⟨R + 1, R + 2, by linarith, by linarith⟩
+  have hχc : ContDiff ℝ n fun w : P × E ↦ bP w.1 * (1 - bE w.2) :=
+    (bP.contDiff.comp contDiff_fst).mul (contDiff_const.sub (bE.contDiff.comp contDiff_snd))
+  refine ⟨fun w ↦ (bP w.1 * (1 - bE w.2)) • f w, contDiff_iff_contDiffAt.2 fun w ↦ ?_, r₂,
+    R + 2, hr₂, by linarith, by linarith, fun w hw₁ hw₂ ↦ ?_⟩
+  · by_cases h₁ : ‖w.1‖ < r₁
+    · by_cases h₂ : R₀ < ‖w.2‖
+      · exact hχc.contDiffAt.smul (hf w h₁ h₂)
+      -- Near `w` the cutoff in `z` vanishes.
+      refine contDiffAt_const (c := (0 : F)).congr_of_eventuallyEq ?_
+      have hopen : IsOpen {v : P × E | ‖v.2‖ < R + 1} :=
+        isOpen_lt (continuous_norm.comp continuous_snd) continuous_const
+      filter_upwards [hopen.mem_nhds (show ‖w.2‖ < R + 1 by linarith [not_lt.1 h₂])] with v hv
+      rw [bE.one_of_mem_closedBall (by simpa using hv.le), sub_self, mul_zero, zero_smul]
+    -- Near `w` the cutoff in `p` vanishes.
+    refine contDiffAt_const (c := (0 : F)).congr_of_eventuallyEq ?_
+    have hopen : IsOpen {v : P × E | (r + 3 * r₁) / 4 < ‖v.1‖} :=
+      isOpen_lt continuous_const (continuous_norm.comp continuous_fst)
+    filter_upwards [hopen.mem_nhds (show (r + 3 * r₁) / 4 < ‖w.1‖ by linarith [not_lt.1 h₁])]
+      with v hv
+    rw [bP.zero_of_le_dist (by simpa using hv.le), zero_mul, zero_smul]
+  · -- Near `w` the cutoff is one.
+    filter_upwards [(isOpen_setOf_norm_fst_lt_and_lt_norm_snd r₂ (R + 2)).mem_nhds ⟨hw₁, hw₂⟩]
+      with v hv
+    rw [bP.one_of_mem_closedBall (by simpa using hv.1.le),
+      bE.zero_of_le_dist (by simpa using hv.2.le), sub_zero, one_mul, one_smul]
 
 open Metric
 

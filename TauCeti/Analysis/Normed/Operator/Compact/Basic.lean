@@ -20,7 +20,8 @@ spaces. These give the subsequence and separation arguments used in Riesz theory
 perturbations of the identity. It also shows that the compact operators form a two-sided ideal of
 the algebra of bounded operators, that a compact operator descends to a compact operator on the
 quotient by a submodule of its kernel, and characterizes compact operators into complete spaces by
-total boundedness of the image of a closed ball.
+total boundedness of the image of a closed ball; in particular the range of a compact operator is
+separable.
 
 The ideal property also controls perturbations that are compact only relative to an operator `T`:
 if `K T` is compact, then replacing `F` by `F + K` keeps `(F² - 1) T` compact, provided `[F, T]`
@@ -43,6 +44,7 @@ the compact perturbations of Fredholm modules.
   submodule of its kernel is compact.
 * `IsCompactOperator.totallyBounded_image_closedBall`: a compact operator maps closed balls to
   totally bounded sets.
+* `IsCompactOperator.isSeparable_range`: the range of a compact operator is separable.
 * `ContinuousLinearMap.norm_mkQL_span_comp_le_of_isCover`: quotienting the target by the span of
   the centres of an `ε`-cover of the image of the unit ball leaves an operator of norm at most
   `‖c‖ ε`, for any scalar `c` with `1 < ‖c‖`.
@@ -50,6 +52,9 @@ the compact perturbations of Fredholm modules.
   arbitrarily small after quotienting its target by a finite-dimensional subspace.
 * `isCompactOperator_iff_totallyBounded_image_closedBall`: a linear map into a complete space is
   compact exactly when it maps a closed ball of positive radius to a totally bounded set.
+* `isCompactOperator_of_denseRange_of_forall_exists_dist_le`: an operator into a complete space
+  is compact when, for every `ε > 0`, its values on the points of norm less than `1` of a dense
+  family lie within `ε` of a totally bounded set.
 -/
 
 public section
@@ -189,6 +194,13 @@ theorem isCompactOperator_iff_totallyBounded_image_closedBall [CompleteSpace M�
     (isCompactOperator_iff_image_closedBall_subset_compact f hr).mpr
       ⟨_, hf.closure.isCompact_of_isClosed isClosed_closure, subset_closure⟩⟩
 
+/-- The range of a compact operator into a space with countably generated uniformity is separable:
+it is the union of the images of the closed balls of integer radii, which are totally bounded. -/
+theorem IsCompactOperator.isSeparable_range [(uniformity M₂).IsCountablyGenerated]
+    (hf : IsCompactOperator f) : TopologicalSpace.IsSeparable (Set.range f) := by
+  rw [← Set.image_univ, ← Metric.iUnion_closedBall_nat 0, Set.image_iUnion]
+  exact .iUnion fun n ↦ (hf.totallyBounded_image_closedBall n).isSeparable
+
 end TotallyBounded
 
 namespace ContinuousLinearMap
@@ -237,5 +249,47 @@ theorem exists_finiteDimensional_quotient_norm_le (K : E →L[𝕜] F)
   field_simp
 
 end ContinuousLinearMap
+
+section DenseApproximation
+
+open Metric Set
+
+variable {𝕜 E F α : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+
+/-- **Compactness from approximation on a dense family.** Let `j` have dense range in `E`. If, for
+every `ε > 0`, the values `T (j a)` at the points `j a` of norm less than `1` all lie within `ε` of
+one totally bounded set, then `T` is a compact operator. This is the shape of Rellich-type
+arguments: classical functions are dense, and their values are approximated, up to an error
+controlled by the norm, by a family that is totally bounded by an Arzelà–Ascoli or
+Fréchet–Kolmogorov criterion. -/
+theorem isCompactOperator_of_denseRange_of_forall_exists_dist_le (T : E →L[𝕜] F) {j : α → E}
+    (hj : DenseRange j)
+    (h : ∀ ε > 0, ∃ t : Set F, TotallyBounded t ∧ ∀ a, ‖j a‖ < 1 → ∃ y ∈ t, dist (T (j a)) y ≤ ε) :
+    IsCompactOperator T := by
+  -- The values at the points `j a` of norm less than `1` are totally bounded.
+  have hS : TotallyBounded ((fun a ↦ T (j a)) '' {a | ‖j a‖ < 1}) := by
+    refine Metric.totallyBounded_iff.2 fun ε hε ↦ ?_
+    obtain ⟨t, ht, happrox⟩ := h (ε / 2) (by positivity)
+    obtain ⟨c, hc, hcover⟩ := Metric.totallyBounded_iff.1 ht (ε / 2) (by positivity)
+    refine ⟨c, hc, ?_⟩
+    rintro _ ⟨a, ha, rfl⟩
+    obtain ⟨y, hy, hdist⟩ := happrox a ha
+    obtain ⟨z, hz, hyz⟩ := mem_iUnion₂.1 (hcover hy)
+    refine mem_iUnion₂.2 ⟨z, hz, ?_⟩
+    rw [mem_ball] at hyz ⊢
+    linarith [dist_triangle (T (j a)) y z]
+  refine (isCompactOperator_iff_exists_mem_nhds_image_subset_compact _).2
+    ⟨ball 0 1, ball_mem_nhds 0 one_pos, _, hS.closure.isCompact_of_isClosed isClosed_closure, ?_⟩
+  rintro _ ⟨x, hx, rfl⟩
+  -- A point of the open unit ball is a limit of points `j a` of norm less than `1`.
+  have hxc : x ∈ closure (j '' {a | ‖j a‖ < 1}) := by
+    refine closure_mono ?_ (isOpen_ball.inter_closure ⟨hx, hj x⟩)
+    rintro _ ⟨hb, a, rfl⟩
+    exact ⟨a, by simpa using hb, rfl⟩
+  have himage := image_closure_subset_closure_image T.continuous ⟨x, hxc, rfl⟩
+  rwa [image_image] at himage
+
+end DenseApproximation
 
 end

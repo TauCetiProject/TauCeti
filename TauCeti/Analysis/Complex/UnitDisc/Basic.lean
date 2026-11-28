@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
 public import Mathlib.Analysis.Normed.Module.Connected
+public import Mathlib.Topology.EMetricSpace.Paracompact
 import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 
 /-!
@@ -28,7 +29,9 @@ This file collects small API lemmas for Mathlib's `Complex.UnitDisc` and
 * The inclusion of the open unit disc into `ℂ` is an open embedding
   (`Complex.UnitDisc.isOpenEmbedding_coe`), so the open unit disc is Hausdorff; it is connected
   (`Complex.UnitDisc.instConnectedSpace`) and not compact
-  (`Complex.UnitDisc.instNoncompactSpace`). It is homeomorphic to the subtype
+  (`Complex.UnitDisc.instNoncompactSpace`); it is contractible, metrizable and paracompact
+  (`Complex.UnitDisc.instContractibleSpace`, `Complex.UnitDisc.instParacompactSpace`), so vector
+  bundles pulled back to it are trivial. It is homeomorphic to the subtype
   `Metric.ball 0 1` it is a type synonym of (`Complex.UnitDisc.homeomorphBall`). A point outside
   a set of the disc with closed image in `ℂ` is the centre of a round disc missing that set
   (`Complex.UnitDisc.exists_pos_forall_notMem_ball`); in particular every point of the disc is
@@ -162,6 +165,20 @@ theorem coe_homeomorphBall (z : 𝔻) : (homeomorphBall z : ℂ) = z :=
 @[simp]
 theorem coe_homeomorphBall_symm (z : ball (0 : ℂ) 1) : (homeomorphBall.symm z : ℂ) = z :=
   (rfl)
+
+/-- The open unit disc is contractible, being an open ball. -/
+instance instContractibleSpace : ContractibleSpace 𝔻 :=
+  have := contractibleSpace_ball (x := (0 : ℂ)) zero_lt_one
+  homeomorphBall.contractibleSpace
+
+/-- The open unit disc is metrizable, as a subspace of `ℂ`. -/
+instance instMetrizableSpace : TopologicalSpace.MetrizableSpace 𝔻 :=
+  isEmbedding_coe.metrizableSpace
+
+/-- The open unit disc is paracompact, being metrizable. -/
+instance instParacompactSpace : ParacompactSpace 𝔻 :=
+  letI := TopologicalSpace.metrizableSpaceMetric 𝔻
+  inferInstance
 
 end Complex.UnitDisc
 

@@ -39,6 +39,9 @@ half-plane (`Complex.re_one_sub_conj_mul_nonneg`; strictly inside it for `z` in 
 As a continuous real-linear equivalence, conjugation is its own inverse (`Complex.conjCLE_symm`,
 the counterpart of Mathlib's `Complex.conjLIE_symm`).
 
+If `c * a = conj c * b` for every complex `c`, then `a = b = 0`
+(`Complex.eq_zero_of_forall_mul_eq_conj_mul`).
+
 The real part of `exp (θ * I) ^ j` is `cos (j θ)` (`Complex.re_exp_ofReal_mul_I_pow`), the real
 part of de Moivre's formula.
 
@@ -101,7 +104,12 @@ On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at l
 At height `1 ≤ |Im s|`, a point `s` is at distance at least `1` from `1`
 (`Complex.one_le_norm_sub_one`), so `s ≠ 1` (`Complex.ne_one_of_one_le_abs_im`) and
 `‖(s - 1)⁻¹‖ ≤ 1` (`Complex.norm_inv_sub_one_le_one`). For real `1 ≤ r`,
-`‖(r : ℂ) - 1‖ = r - 1` (`Complex.norm_ofReal_sub_one`).
+`‖(r : ℂ) - 1‖ = r - 1` (`Complex.norm_ofReal_sub_one`). For real `0 ≤ c ≤ 2`, the point `c` lies
+in the closed unit disc about `1` (`Complex.norm_one_sub_ofReal_le_one`), so every point is at most
+`1` farther from `c` than from `1` (`Complex.norm_sub_ofReal_le_norm_sub_one_add_one`).
+
+Any point `w` on the boundary of the square `[-ε, ε] × [-ε, ε]` satisfies `ε ≤ ‖w‖ ≤ 2 * ε`
+(`Complex.norm_bounds_of_abs_re_le_of_abs_im_le`).
 
 A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
 
@@ -371,6 +379,16 @@ theorem re_exp_ofReal_mul_I_pow (θ : ℝ) (j : ℕ) : (exp (θ * I) ^ j).re = R
 theorem conjCLE_symm : conjCLE.symm = conjCLE := by
   rw [← conjLIE_toCLE, ← LinearIsometryEquiv.toContinuousLinearEquiv_symm, conjLIE_symm]
 
+/-- If `c * a = conj c * b` for every complex `c`, then `a = 0` and `b = 0`: the cases `c = 1` and
+`c = I` separate the two numbers. -/
+theorem eq_zero_of_forall_mul_eq_conj_mul {a b : ℂ} (h : ∀ c : ℂ, c * a = conj c * b) :
+    a = 0 ∧ b = 0 := by
+  have h₁ := h 1
+  have h₂ := h I
+  simp only [one_mul, map_one, conj_I] at h₁ h₂
+  exact ⟨by linear_combination (h₁ - I * h₂) / 2 + (a + b) / 2 * I_sq,
+    by linear_combination (-h₁ - I * h₂) / 2 + (a + b) / 2 * I_sq⟩
+
 /-- The imaginary part of a conjugate product is bounded by the product of the norms. -/
 theorem abs_im_conj_mul_le (u e : ℂ) : |(conj u * e).im| ≤ ‖u‖ * ‖e‖ := by
   simpa [norm_mul] using abs_im_le_norm (conj u * e)
@@ -588,12 +606,34 @@ theorem norm_inv_sub_one_le_one {s : ℂ} (ht : 1 ≤ |s.im|) : ‖(s - 1)⁻¹�
 theorem norm_ofReal_sub_one {r : ℝ} (h : 1 ≤ r) : ‖(r : ℂ) - 1‖ = r - 1 := by
   rw [← ofReal_one, ← ofReal_sub, norm_real, Real.norm_of_nonneg (sub_nonneg.mpr h)]
 
+/-- For `0 ≤ c ≤ 2`, the real point `c` lies in the closed unit disc about `1`. -/
+theorem norm_one_sub_ofReal_le_one {c : ℝ} (hc₀ : 0 ≤ c) (hc₂ : c ≤ 2) : ‖(1 : ℂ) - c‖ ≤ 1 := by
+  rw [← ofReal_one, ← ofReal_sub, norm_real, Real.norm_eq_abs, abs_le]
+  constructor <;> linarith
+
+/-- For `0 ≤ c ≤ 2`, every point is at most `1` farther from the real point `c` than from `1`. -/
+theorem norm_sub_ofReal_le_norm_sub_one_add_one {c : ℝ} (hc₀ : 0 ≤ c) (hc₂ : c ≤ 2) (v : ℂ) :
+    ‖v - c‖ ≤ ‖v - 1‖ + 1 := by
+  have h := norm_add_le (v - 1) (1 - c)
+  rw [sub_add_sub_cancel] at h
+  linarith [norm_one_sub_ofReal_le_one hc₀ hc₂]
+
 /-- A shift `s + μ` stays off the real axis when `|Im μ| < |Im s|`. -/
 theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + μ).im ≠ 0 :=
   fun h0 ↦ by
     rw [add_im, ← eq_neg_iff_add_eq_zero] at h0
     rw [h0, abs_neg] at h
     exact h.false
+
+/-- Any point `w` on the boundary of the square `[-ε, ε] × [-ε, ε]` satisfies
+`ε ≤ ‖w‖ ≤ 2 * ε`. -/
+theorem norm_bounds_of_abs_re_le_of_abs_im_le (w : ℂ) (ε : ℝ) (hre : |w.re| ≤ ε)
+    (him : |w.im| ≤ ε) (hside : |w.re| = ε ∨ |w.im| = ε) :
+    ε ≤ ‖w‖ ∧ ‖w‖ ≤ 2 * ε := by
+  refine ⟨?_, (norm_le_abs_re_add_abs_im w).trans (by linarith)⟩
+  rcases hside with h | h
+  · exact h ▸ abs_re_le_norm w
+  · exact h ▸ abs_im_le_norm w
 
 /-- There is no ring homomorphism from `ℂ` to a semireal semiring `R` (one in which `1 + s ≠ 0`
 for every sum of squares `s`), such as `ℝ` or any linearly ordered ring: it would send
