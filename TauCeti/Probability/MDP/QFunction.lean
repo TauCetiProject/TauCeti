@@ -37,6 +37,8 @@ value, and the optimal value is its maximum over the actions.
 * `MDP.maxQ_optimalQ`: `maxQ (M.optimalQ γ) = M.optimalValue γ`.
 * `MDP.isGreedy_optimalValue_iff`: a deterministic policy is greedy for the optimal value if and
   only if each of its actions maximizes the optimal Q-function.
+* `MDP.value_ofDet_eq_optimalValue_iff`: a deterministic policy is optimal if and only if each of
+  its actions maximizes the optimal Q-function.
 
 ## References
 
@@ -257,6 +259,14 @@ state, its action maximizes the optimal Q-function. -/
 theorem isGreedy_optimalValue_iff (hγ : γ < 1) (π : S → A) :
     M.IsGreedy γ (M.optimalValue γ) π ↔ ∀ s a, M.optimalQ γ (s, a) ≤ M.optimalQ γ (s, π s) := by
   simp only [isGreedy_iff, M.optimalQ_apply hγ]
+
+/-- For `γ < 1` a deterministic policy is optimal if and only if, at every state, its action
+maximizes the optimal Q-function. -/
+theorem value_ofDet_eq_optimalValue_iff (hγ : γ < 1) (π : S → A) :
+    M.value γ (ofDet π) = M.optimalValue γ ↔
+      ∀ s a, M.optimalQ γ (s, a) ≤ M.optimalQ γ (s, π s) := by
+  rw [← M.isGreedy_optimalValue_iff hγ, ← M.bellmanEval_ofDet_eq_bellman_iff,
+    M.bellman_optimalValue hγ, M.bellmanEval_eq_self_iff hγ, eq_comm]
 
 end Fintype
 
