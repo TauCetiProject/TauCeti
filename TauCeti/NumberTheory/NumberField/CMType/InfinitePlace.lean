@@ -35,6 +35,10 @@ into local components through its inverse.
 * `TauCeti.CMType.norm_completionEmbedding`: `completionEmbedding Φ w` is norm-preserving.
 * `TauCeti.CMType.eq_completionEmbedding`: `completionEmbedding Φ w` is the unique continuous
   extension of `Φ_w`.
+* `TauCeti.CMType.isometry_completionRingEquiv_symm`: the inverse identification `ℂ → E_w` is an
+  isometry.
+* `TauCeti.CMType.re_completionEmbedding`: the real part of a component read through `Φ_w` does
+  not depend on the choice of `Φ`.
 -/
 
 public section
@@ -53,6 +57,15 @@ extension `extensionEmbedding w` of `w.embedding` when `w.embedding ∈ Φ`, and
 otherwise. -/
 def completionEmbedding (w : InfinitePlace E) : w.Completion →+* ℂ :=
   if w.embedding ∈ Φ then extensionEmbedding w else (starRingEnd ℂ).comp (extensionEmbedding w)
+
+open scoped Classical in
+/-- `completionEmbedding Φ w` is `extensionEmbedding w` when `w.embedding ∈ Φ`, and its complex
+conjugate otherwise. -/
+theorem completionEmbedding_def (w : InfinitePlace E) :
+    Φ.completionEmbedding w =
+      if w.embedding ∈ Φ then extensionEmbedding w
+      else (starRingEnd ℂ).comp (extensionEmbedding w) :=
+  (rfl)
 
 /-- `completionEmbedding Φ w` extends `Φ_w`, stated for the coercion `WithAbs w.val → E_w`. -/
 @[simp]
@@ -121,5 +134,25 @@ def completionRingEquiv (w : InfinitePlace E) : w.Completion ≃+* ℂ :=
 theorem completionRingEquiv_apply (w : InfinitePlace E) (z : w.Completion) :
     Φ.completionRingEquiv w z = Φ.completionEmbedding w z :=
   (rfl)
+
+/-- The inverse of `completionRingEquiv Φ w` is an isometry `ℂ → E_w`. -/
+theorem isometry_completionRingEquiv_symm (w : InfinitePlace E) :
+    Isometry (Φ.completionRingEquiv w).symm :=
+  (Φ.isometry_completionEmbedding w).right_inv (Φ.completionRingEquiv w).right_inv
+
+/-- The inverse of `completionRingEquiv Φ w` is continuous. -/
+@[fun_prop, continuity]
+theorem continuous_completionRingEquiv_symm (w : InfinitePlace E) :
+    Continuous (Φ.completionRingEquiv w).symm :=
+  (Φ.isometry_completionRingEquiv_symm w).continuous
+
+/-- `completionEmbedding Φ w` and Mathlib's `extensionEmbedding w` have the same real part: they
+agree or differ by complex conjugation. -/
+@[simp]
+theorem re_completionEmbedding (w : InfinitePlace E) (z : w.Completion) :
+    (Φ.completionEmbedding w z).re = (extensionEmbedding w z).re := by
+  by_cases h : w.embedding ∈ Φ
+  · simp [completionEmbedding, h]
+  · simp [completionEmbedding, h]
 
 end TauCeti.CMType
