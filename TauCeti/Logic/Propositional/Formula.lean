@@ -21,13 +21,6 @@ negations and replaces a negated constant by the other constant. It is computed 
 `PropForm.toNNF b` with a polarity `b : Bool`: `φ.toNNF true` is equivalent to `φ` and
 `φ.toNNF false` to its negation, and the negation normal form of `φ` is `φ.toNNF true`.
 
-Mathlib and Lean core have no type of propositional formulas over a type of variables. The
-nearest types serve tactics and solvers: `Mathlib.Tactic.ITauto.IProp` has variables indexed by
-`ℕ` and the connectives of intuitionistic logic, `Sat.Fmla` (for the `lrat_proof` command) is a
-list of clauses, `Std.Tactic.BVDecide.BVLogicalExpr` has bit-vector predicates as atoms and `xor`,
-`beq` and `ite` gates, and `Std.Sat.AIG` is an and-inverter graph. Tau Ceti's
-`FirstOrder.Language.BoundedFormula.PropRealize` reads first-order formulas propositionally.
-
 ## Main definitions
 
 * `TauCeti.Propositional.PropForm V`: propositional formulas over the variables `V`.
@@ -337,6 +330,21 @@ theorem mem_subformulas_of_or_mem_left (h : or ψ χ ∈ φ.subformulas) : ψ �
 theorem mem_subformulas_of_or_mem_right (h : or ψ χ ∈ φ.subformulas) : χ ∈ φ.subformulas :=
   subformulas_subset_of_mem h (by simp)
 
+/-- A variable `var v` is a subformula of `φ` exactly when `v` is a variable of `φ`. -/
+@[simp]
+theorem var_mem_subformulas_iff : var v ∈ φ.subformulas ↔ v ∈ φ.vars := by
+  induction φ <;> simp_all
+
+/-- The `Finset` step of `card_subformulas_sdiff_le` for a binary connective. -/
+private theorem card_insert_union_sdiff_le {α : Type*} [DecidableEq α] (a : α)
+    (s t u w : Finset α) :
+    (insert a (s ∪ t) \ (u ∪ w)).card ≤ (s \ u).card + (t \ w).card + 1 := by
+  refine (Finset.card_le_card ?_).trans
+    ((Finset.card_insert_le a _).trans (Nat.add_le_add_right (Finset.card_union_le _ _) 1))
+  intro x
+  simp only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_union]
+  tauto
+
 /-- The subformulas of `φ` that are not variables are at most `φ.size` many: each constant and
 each connective contributes at most one. -/
 private theorem card_subformulas_sdiff_le (φ : PropForm V) :
@@ -351,20 +359,10 @@ private theorem card_subformulas_sdiff_le (φ : PropForm V) :
     intro x
     simp only [Finset.mem_sdiff, Finset.mem_insert]
     tauto
-  | and φ ψ ihφ ihψ =>
-    rw [subformulas_and, vars_and, size_and, Finset.image_union]
-    refine (Finset.card_le_card ?_).trans ((Finset.card_insert_le (and φ ψ) _).trans
-      (Nat.add_le_add_right ((Finset.card_union_le _ _).trans (Nat.add_le_add ihφ ihψ)) 1))
-    intro x
-    simp only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_union]
-    tauto
-  | or φ ψ ihφ ihψ =>
-    rw [subformulas_or, vars_or, size_or, Finset.image_union]
-    refine (Finset.card_le_card ?_).trans ((Finset.card_insert_le (or φ ψ) _).trans
-      (Nat.add_le_add_right ((Finset.card_union_le _ _).trans (Nat.add_le_add ihφ ihψ)) 1))
-    intro x
-    simp only [Finset.mem_sdiff, Finset.mem_insert, Finset.mem_union]
-    tauto
+  | and φ ψ ihφ ihψ | or φ ψ ihφ ihψ =>
+    simp only [subformulas_and, subformulas_or, vars_and, vars_or, size_and, size_or,
+      Finset.image_union]
+    exact (card_insert_union_sdiff_le _ _ _ _ _).trans (by omega)
 
 /-- A formula has at most `φ.size + m` subformulas, where `m` is the number of its distinct
 variables. -/
@@ -413,7 +411,7 @@ inductive IsNNF : PropForm V → Prop
   /-- A disjunction of formulas in negation normal form is in negation normal form. -/
   | or {φ ψ : PropForm V} : IsNNF φ → IsNNF ψ → IsNNF (or φ ψ)
 
-attribute [simp] IsNNF.var IsNNF.neg_var IsNNF.tru IsNNF.fls
+attribute [simp] IsNNF.var IsNNF.tru IsNNF.fls
 
 /-- The number of occurrences of **atoms**, that is of variables and constants, in a
 formula. -/
