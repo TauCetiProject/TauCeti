@@ -66,15 +66,13 @@ theorem finStronglyMeasurable_tsum_indicator_const {M : Type*} [AddCommMonoid M]
     obtain ⟨n, hn, hxn⟩ := Finset.exists_ne_zero_of_sum_ne_zero (by simpa using hx)
     rw [SimpleFunc.restrict_apply _ (hA n)] at hxn
     exact mem_biUnion (Finset.mem_coe.2 hn) (mem_of_indicator_ne_zero hxn)
-  · have hsum : HasSum (fun n ↦ (A n).indicator (fun _ ↦ c n) x)
-        (∑' n, (A n).indicator (fun _ ↦ c n) x) := by
-      by_cases hx : ∃ n, x ∈ A n
-      · obtain ⟨n, hn⟩ := hx
-        rw [hAd.tsum_indicator_apply_of_mem _ hn]
-        exact hAd.hasSum_indicator_apply_of_mem _ hn
-      · simp only [not_exists] at hx
-        simp [indicator_of_notMem (hx _)]
-    simpa [SimpleFunc.restrict_apply _ (hA _), ← Function.const_def] using hsum.tendsto_sum_nat
+  · have hpart (N : ℕ) : (∑ n ∈ Finset.range N, (SimpleFunc.const α (c n)).restrict (A n)) x =
+        ∑ n ∈ Finset.range N, (A n).indicator (fun _ ↦ c n) x := by
+      rw [sum_apply]
+      refine Finset.sum_congr rfl fun n _ ↦ ?_
+      simp only [SimpleFunc.restrict_apply _ (hA n), indicator_apply, SimpleFunc.const_apply]
+    simp only [hpart]
+    exact (hAd.hasSum_indicator_apply _ x).tendsto_sum_nat
 
 variable {E : Type*} [NormedAddCommGroup E]
 

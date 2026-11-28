@@ -67,11 +67,9 @@ theorem exists_ae_eq_tsum_indicator_const_dist_lt {f : Lp E ∞ μ} (hf : f ∈ 
   set G : α → E := fun x ↦ ∑' n, (A n).indicator (fun _ ↦ c n) x
   have hG : FinStronglyMeasurable G μ := finStronglyMeasurable_tsum_indicator_const hA hμA hAd c
   have hGf (x : α) : ‖G x‖ ≤ ‖f‖ := by
-    by_cases hx : ∃ n, x ∈ A n
-    · obtain ⟨n, hn⟩ := hx
-      simpa [G, hAd.tsum_indicator_apply_of_mem _ hn] using hc n
-    · simp only [not_exists] at hx
-      simp [G, indicator_of_notMem (hx _)]
+    rcases hAd.tsum_indicator_apply_mem (fun n _ ↦ c n) x with h | ⟨n, h⟩
+    · simp [G, h]
+    · simpa [G, ← h] using hc n
   have hGmem : MemLp G ∞ μ :=
     memLp_top_of_bound hG.stronglyMeasurable.aestronglyMeasurable ‖f‖ (.of_forall hGf)
   refine ⟨A, c, hA, hμA, hAd, hc, hGmem.toLp G, ?_, hGmem.coeFn_toLp, ?_, ?_⟩
