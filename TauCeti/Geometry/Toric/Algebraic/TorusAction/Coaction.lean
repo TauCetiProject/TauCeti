@@ -48,6 +48,12 @@ noncomputable def affineCoordinateRingCoaction (hi : IsIntegralLattice i)
   MonoidAlgebra.gradedCoaction ℂ (AddMonoidHom.toMultiplicative
     (AddSubmonoid.inclusion (dualSemigroup_anti hi bot_le)))
 
+/-- Explicit definition of `affineCoordinateRingCoaction`. -/
+theorem affineCoordinateRingCoaction_def (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
+    affineCoordinateRingCoaction hi σ =
+      MonoidAlgebra.gradedCoaction ℂ (AddMonoidHom.toMultiplicative
+        (AddSubmonoid.inclusion (dualSemigroup_anti hi bot_le))) := (rfl)
+
 /-- The torus coaction records the character of a monomial in its first factor and retains the
 monomial, including its coefficient, in its second factor. -/
 @[simp]
@@ -56,7 +62,7 @@ theorem affineCoordinateRingCoaction_single (hi : IsIntegralLattice i)
     affineCoordinateRingCoaction hi σ (MonoidAlgebra.single (ofAdd m) z) =
       MonoidAlgebra.single (ofAdd (⟨m, by simp⟩ : dualSemigroup hi ⊥)) 1 ⊗ₜ[ℂ]
         MonoidAlgebra.single (ofAdd m) z := by
-  simp [affineCoordinateRingCoaction, AddSubmonoid.inclusion]
+  simp [affineCoordinateRingCoaction_def, AddSubmonoid.inclusion]
 
 /-- Evaluation at the identity of the dense torus recovers the original coordinate function. -/
 @[simp]
@@ -67,7 +73,7 @@ theorem affineCoordinateRingCoaction_counit (hi : IsIntegralLattice i)
         (Bialgebra.counitAlgHom ℂ (affineCoordinateRing hi (⊥ : PointedCone ℝ V)))
         (AlgHom.id ℂ (affineCoordinateRing hi σ)))).comp
           (affineCoordinateRingCoaction hi σ) = AlgHom.id ℂ (affineCoordinateRing hi σ) := by
-  rw [AlgHom.comp_assoc]
+  rw [AlgHom.comp_assoc, affineCoordinateRingCoaction_def]
   exact MonoidAlgebra.lid_comp_map_counit_gradedCoaction ℂ (AddMonoidHom.toMultiplicative
     (AddSubmonoid.inclusion (dualSemigroup_anti hi bot_le)))
 
@@ -86,7 +92,7 @@ theorem affineCoordinateRingCoaction_coassoc (hi : IsIntegralLattice i)
       (Algebra.TensorProduct.map
         (AlgHom.id ℂ (affineCoordinateRing hi (⊥ : PointedCone ℝ V)))
         (affineCoordinateRingCoaction hi σ)).comp (affineCoordinateRingCoaction hi σ) := by
-  rw [AlgHom.comp_assoc]
+  rw [AlgHom.comp_assoc, affineCoordinateRingCoaction_def]
   exact MonoidAlgebra.assoc_comp_map_gradedCoaction ℂ (AddMonoidHom.toMultiplicative
     (AddSubmonoid.inclusion (dualSemigroup_anti hi bot_le)))
 
@@ -99,8 +105,8 @@ theorem affineCoordinateRingCoaction_comp_face (hi : IsIntegralLattice i)
       (Algebra.TensorProduct.map
         (AlgHom.id ℂ (affineCoordinateRing hi (⊥ : PointedCone ℝ V)))
         (faceAffineCoordinateRingMap hi hτσ)).comp (affineCoordinateRingCoaction hi σ) := by
-  rw [affineCoordinateRingCoaction, affineCoordinateRingCoaction, faceAffineCoordinateRingMap_def,
-    affineCoordinateRingMap_def]
+  rw [affineCoordinateRingCoaction_def, affineCoordinateRingCoaction_def,
+    faceAffineCoordinateRingMap_def, affineCoordinateRingMap_def]
   simpa only [MonoidAlgebra.mapDomainAlgHom_id] using
     (MonoidAlgebra.map_mapDomain_comp_gradedCoaction ℂ
       (g := MonoidHom.id (Multiplicative (dualSemigroup hi ⊥))) (by ext m; simp)).symm
@@ -110,7 +116,7 @@ theorem affineCoordinateRingCoaction_comp_face (hi : IsIntegralLattice i)
 theorem affineCoordinateRingCoaction_bot (hi : IsIntegralLattice i) :
     affineCoordinateRingCoaction hi (⊥ : PointedCone ℝ V) =
       Bialgebra.comulAlgHom ℂ (affineCoordinateRing hi (⊥ : PointedCone ℝ V)) := by
-  rw [affineCoordinateRingCoaction,
+  rw [affineCoordinateRingCoaction_def,
     show AddMonoidHom.toMultiplicative (AddSubmonoid.inclusion (dualSemigroup_anti hi bot_le)) =
       MonoidHom.id _ from by ext m; simp,
     MonoidAlgebra.gradedCoaction_id]
@@ -132,8 +138,8 @@ theorem affineCoordinateRingCoaction_comp_map
         (affineCoordinateRingMap hi hi' f g hfg hστ)).comp
           (affineCoordinateRingCoaction hi' τ) := by
   have hbot : Set.MapsTo g (⊥ : PointedCone ℝ V) (⊥ : PointedCone ℝ V') := by simp [Set.MapsTo]
-  rw [affineCoordinateRingCoaction, affineCoordinateRingCoaction, affineCoordinateRingMap_def,
-    affineCoordinateRingMap_def]
+  rw [affineCoordinateRingCoaction_def, affineCoordinateRingCoaction_def,
+    affineCoordinateRingMap_def, affineCoordinateRingMap_def]
   exact (MonoidAlgebra.map_mapDomain_comp_gradedCoaction ℂ
     (g := AddMonoidHom.toMultiplicative (dualSemigroupMap hi hi' f g hfg hbot))
     (by ext m; simp)).symm

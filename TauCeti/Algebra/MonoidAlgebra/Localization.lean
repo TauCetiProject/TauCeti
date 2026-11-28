@@ -169,18 +169,14 @@ theorem isLocalization_mapDomain_of_single {M H R : Type*} [AddCommMonoid M]
       obtain ⟨a, s, hs⟩ := hsurj g
       exact ⟨⟨single a 1, s⟩, by simpa [halg, mapDomain_single] using hs⟩
     | add p q hp hq =>
-      obtain ⟨⟨a, s⟩, ha⟩ := hp
-      obtain ⟨⟨b, t⟩, hb⟩ := hq
+      obtain ⟨⟨a, s⟩, ha⟩ := hp; obtain ⟨⟨b, t⟩, hb⟩ := hq
       refine ⟨⟨a * t + b * s, s * t⟩, ?_⟩
-      simp only [map_add, map_mul, Submonoid.coe_mul]
-      rw [← ha, ← hb]; ring
+      simp only [map_add, map_mul, Submonoid.coe_mul]; rw [← ha, ← hb]; ring
     | smul r p hp =>
       obtain ⟨⟨a, s⟩, ha⟩ := hp
       exact ⟨⟨r • a, s⟩, by
-        rw [smul_mul_assoc, ha]
-        exact ((mapDomainAlgHom R R f).toLinearMap.map_smul r a).symm⟩
-  · rw [halg, halg] at hab
-    exact ⟨1, by simp [mapDomain_injective hf hab]⟩
+        rw [smul_mul_assoc, ha]; exact ((mapDomainAlgHom R R f).toLinearMap.map_smul r a).symm⟩
+  · rw [halg, halg] at hab; exact ⟨1, by simp [mapDomain_injective hf hab]⟩
 
 /-- If `f : M →+ H` is an injective additive homomorphism from a finitely generated additive monoid
 `M` into an abelian group `H` such that every element of `H` can be shifted into `f '' M`, then
@@ -195,11 +191,9 @@ theorem exists_isLocalization_away_of_exists_add_eq {M H : Type*}
   obtain ⟨u, hu⟩ := htop.exists_forall_exists_add_eq_nsmul
   refine ⟨u.val, TauCeti.AddMonoidAlgebra.isLocalization_away_mapDomainRingHom R f hf u.val
     (AddGroup.isAddUnit (f u.val)) fun y ↦ ?_⟩
-  obtain ⟨a, b, hab⟩ := hshift y
-  obtain ⟨n, c, hbc⟩ := hu ⟨b, trivial⟩
-  have hnu : y + n • f u.val = f (a + c.val) := by
-    have hbc' : b + c.val = n • u.val := congrArg Subtype.val hbc
-    rw [← map_nsmul, ← hbc', map_add, ← add_assoc, hab, ← map_add]
-  exact ⟨n, a + c.val, hnu.symm⟩
+  obtain ⟨a, b, hab⟩ := hshift y; obtain ⟨n, c, hbc⟩ := hu ⟨b, trivial⟩
+  refine ⟨n, a + c.val, Eq.symm ?_⟩
+  have hbc' : b + c.val = n • u.val := congrArg Subtype.val hbc
+  rw [← map_nsmul, ← hbc', map_add, ← add_assoc, hab, ← map_add]
 
 end AddMonoidAlgebra

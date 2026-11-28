@@ -12,19 +12,15 @@ public import TauCeti.Algebra.Group.Submonoid.NSMulSaturation
 # Positive-power saturation of subgroups
 
 Given a subgroup `H` of a commutative group `G`, its *positive-power saturation* `H.powSaturation`
-is the subgroup of elements `g : G` such that `g ^ n ∈ H` for some `n > 0` (additively
-`H.nsmulSaturation`). Every element of the quotient `H.powSaturation ⧸ H.subgroupOf H.powSaturation`
-has finite order (`Subgroup.isMulTorsion_quotient_powSaturation`), and when `H.powSaturation` is
-finitely generated, this quotient is finite (`Subgroup.finite_quotient_powSaturation`).
+is the subgroup of elements `g : G` with `g ^ n ∈ H` for some `n > 0` (additively
+`H.nsmulSaturation`). Every element of `H.powSaturation ⧸ H.subgroupOf H.powSaturation` has finite
+order (`Subgroup.isMulTorsion_quotient_powSaturation`), and for finitely generated
+`H.powSaturation`, this quotient is finite (`Subgroup.finite_quotient_powSaturation`).
 
 ## Main declarations
 
-* `Subgroup.powSaturation`, `AddSubgroup.nsmulSaturation`: positive-power / positive-multiple
-  saturation of a subgroup.
-* `Subgroup.isMulTorsion_quotient_powSaturation`,
-  `AddSubgroup.isAddTorsion_quotient_nsmulSaturation`: the saturation quotient is torsion.
-* `Subgroup.finite_quotient_powSaturation`, `AddSubgroup.finite_quotient_nsmulSaturation`:
-  finiteness of the saturation quotient when `H.powSaturation` is finitely generated.
+* `Subgroup.powSaturation`, `AddSubgroup.nsmulSaturation`,
+  `Subgroup.isMulTorsion_quotient_powSaturation`, `Subgroup.finite_quotient_powSaturation`.
 
 ## References
 
@@ -82,21 +78,20 @@ theorem powSaturation_mono {H₁ H₂ : Subgroup G} (h : H₁ ≤ H₂) :
 @[to_additive
 /-- Every element of `H.nsmulSaturation ⧸ H.addSubgroupOf H.nsmulSaturation` is torsion. -/]
 theorem isMulTorsion_quotient_powSaturation :
-    IsMulTorsion (H.powSaturation ⧸ H.subgroupOf H.powSaturation) :=
-  fun q ↦ QuotientGroup.induction_on q fun x ↦ by
-    obtain ⟨n, hn, hxn⟩ := (mem_powSaturation H).1 x.property
-    exact isOfFinOrder_iff_pow_eq_one.2
-      ⟨n, hn, by rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]; exact hxn⟩
+    IsMulTorsion (H.powSaturation ⧸ H.subgroupOf H.powSaturation) := fun q ↦
+  QuotientGroup.induction_on q fun x ↦
+    have ⟨n, hn, hxn⟩ := (mem_powSaturation H).1 x.property
+    isOfFinOrder_iff_pow_eq_one.2 ⟨n, hn, by rwa [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]⟩
 
 /-- When `H.powSaturation` is finitely generated, `H` has finite index in `H.powSaturation`. -/
 @[to_additive
 /-- When `H.nsmulSaturation` is FG, `H` has finite quotient in `H.nsmulSaturation`. -/]
 theorem finite_quotient_powSaturation (hfg : H.powSaturation.FG) :
-    Finite (H.powSaturation ⧸ H.subgroupOf H.powSaturation) := by
+    Finite (H.powSaturation ⧸ H.subgroupOf H.powSaturation) :=
   have : Group.FG H.powSaturation := (Group.fg_iff_subgroup_fg H.powSaturation).2 hfg
   have : Group.FG (H.powSaturation ⧸ H.subgroupOf H.powSaturation) :=
     Group.fg_of_surjective (QuotientGroup.mk'_surjective _)
-  exact CommGroup.finite_of_fg_isMulTorsion _ H.isMulTorsion_quotient_powSaturation
+  CommGroup.finite_of_fg_isMulTorsion _ H.isMulTorsion_quotient_powSaturation
 
 /-- The saturation quotient `H.powSaturation ⧸ H.subgroupOf H.powSaturation` is subsingleton iff
 `H` equals its positive-power saturation. -/

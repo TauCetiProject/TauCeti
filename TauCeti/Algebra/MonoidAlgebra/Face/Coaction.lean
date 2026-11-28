@@ -25,37 +25,29 @@ import TauCeti.Algebra.MonoidAlgebra.Localization
 Let `S` be an additive submonoid of an abelian group `G` and `F : SaturatedAddSubmonoid S` a face
 of `S`.
 
-1. **Orbit localizations.** Inverting all coefficient-one monomials of `R[F]` yields
-   `R[F.faceSubgroup]` (`SaturatedAddSubmonoid.isLocalization_addMonoidAlgebra_faceSubgroup`). When
-   `S.FG`, `R[F.faceSubgroup]` over `R[F]` is a principal localization
-   `IsLocalization.Away (single u 1)` at an interior monomial
-   (`SaturatedAddSubmonoid.exists_isLocalization_away_faceSubgroup`). Composing face restriction
-   with `F.toFaceSubgroup` gives `F.orbitMap R : R[S] →ₐ[R] R[F.faceSubgroup]` with kernel
-   `F.toAddSubmonoid.faceIdeal R` (`SaturatedAddSubmonoid.ker_orbitMap`).
-2. **Diagonalizable-group coaction.** Specializing `AddMonoidAlgebra.gradedCoaction` to
-   `S.toGroupClosure` gives `S.torusCoaction R`, the native coaction of the diagonalizable-group
-   algebra `R[AddSubgroup.closure S]` on `R[S]` (which is a split torus when
-   `AddSubgroup.closure S` is finite-rank free abelian, e.g. when `S.FG` and `G` is
-   torsion-free). Face restriction, `F.orbitMap R`, and the positive-multiple saturation inclusion
-   `R[S] →ₐ[R] R[S.nsmulSaturation ⊓ AddSubgroup.closure S]` are equivariant for this coaction.
-3. **Krull dimensions and ranks.** Over a field `k` and torsion-free `G`, for `S.FG` we prove
-   `ringKrullDim k[F] = ringKrullDim k[F.faceSubgroup] = Module.finrank ℤ F.faceSubgroup`
-   (`SaturatedAddSubmonoid.ringKrullDim_addMonoidAlgebra` and
-   `SaturatedAddSubmonoid.ringKrullDim_addMonoidAlgebra_faceSubgroup`). For any abelian group `G`,
-   `S.FG` gives strict monotonicity of `F ↦ Module.finrank ℤ F.faceSubgroup`
-   (`SaturatedAddSubmonoid.finrank_faceSubgroup_strictMono`).
+1. **Orbit localizations.** Inverting coefficient-one monomials of `R[F]` gives
+   `R[F.faceSubgroup]` (`SaturatedAddSubmonoid.isLocalization_addMonoidAlgebra_faceSubgroup`), and
+   `S.FG` gives a principal `IsLocalization.Away`
+   (`SaturatedAddSubmonoid.exists_isLocalization_away_faceSubgroup`). Face restriction composed with
+   `F.toFaceSubgroup` defines `F.orbitMap R` with kernel `F.faceIdeal R`
+   (`SaturatedAddSubmonoid.ker_orbitMap`).
+2. **Diagonalizable-group coaction.** `S.diagonalizableCoaction R` (`gradedCoaction R`
+   `S.toGroupClosure`) coacts natively via `R[AddSubgroup.closure S]` on `R[S]`; face
+   restriction, `F.orbitMap R`, and the saturation inclusion are equivariant.
+3. **Krull dimensions and ranks.** Over a field `k` and torsion-free `G`, `S.FG` yields
+   `ringKrullDim k[F] = ringKrullDim k[F.faceSubgroup] = Module.finrank ℤ F.faceSubgroup`, and in
+   any abelian group `G`, `S.FG` gives strict rank monotonicity
+   `SaturatedAddSubmonoid.finrank_faceSubgroup_strictMono`.
 
 ## Main declarations
 
-* `SaturatedAddSubmonoid.isLocalization_addMonoidAlgebra_faceSubgroup` and
-  `SaturatedAddSubmonoid.exists_isLocalization_away_faceSubgroup`: orbit localizations.
-* `SaturatedAddSubmonoid.orbitMap` and `SaturatedAddSubmonoid.ker_orbitMap`: orbit coordinate hom.
-* `AddSubmonoid.torusCoaction` and `AddMonoidAlgebra.map_faceRestriction_comp_gradedCoaction`:
-  native diagonalizable-group coaction and equivariance.
+* `SaturatedAddSubmonoid.isLocalization_addMonoidAlgebra_faceSubgroup`,
+  `SaturatedAddSubmonoid.exists_isLocalization_away_faceSubgroup`, `SaturatedAddSubmonoid.orbitMap`,
+  `SaturatedAddSubmonoid.ker_orbitMap`
+* `AddSubmonoid.diagonalizableCoaction`, `AddMonoidAlgebra.map_faceRestriction_comp_gradedCoaction`
 * `SaturatedAddSubmonoid.ringKrullDim_addMonoidAlgebra`,
-  `SaturatedAddSubmonoid.ringKrullDim_addMonoidAlgebra_faceSubgroup`, and
-  `SaturatedAddSubmonoid.finrank_faceSubgroup_strictMono`: Krull dimensions and strict rank
-  monotonicity of faces.
+  `SaturatedAddSubmonoid.ringKrullDim_addMonoidAlgebra_faceSubgroup`,
+  `SaturatedAddSubmonoid.finrank_faceSubgroup_strictMono`
 
 ## References
 
@@ -81,8 +73,8 @@ theorem isLocalization_addMonoidAlgebra_faceSubgroup (R : Type*) [CommSemiring R
     letI := (mapDomainRingHom R F.toFaceSubgroup).toAlgebra
     IsLocalization (MonoidHom.mrange (of R F)) (AddMonoidAlgebra R F.faceSubgroup) :=
   isLocalization_mapDomain_of_single F.toFaceSubgroup_injective
-    (fun s ↦ by
-      obtain ⟨m, hm⟩ := s.property
+    (fun y ↦ by
+      obtain ⟨m, hm⟩ := y.property
       rw [← hm, of_apply, mapDomain_single]
       exact (Group.isUnit (Multiplicative.ofAdd (F.toFaceSubgroup m.toAdd))).map
         (of R F.faceSubgroup))
@@ -95,9 +87,9 @@ algebra `R[F]` away from a single monomial `single u 1`. -/
 theorem exists_isLocalization_away_faceSubgroup (hS : S.FG) (R : Type*) [CommSemiring R] :
     ∃ u : F,
       letI := (mapDomainRingHom R F.toFaceSubgroup).toAlgebra
-      IsLocalization.Away (single u (1 : R)) (AddMonoidAlgebra R F.faceSubgroup) := by
+      IsLocalization.Away (single u (1 : R)) (AddMonoidAlgebra R F.faceSubgroup) :=
   have : AddMonoid.FG S := (AddMonoid.fg_iff_addSubmonoid_fg S).2 hS
-  exact exists_isLocalization_away_of_exists_add_eq F.toFaceSubgroup_injective
+  exists_isLocalization_away_of_exists_add_eq F.toFaceSubgroup_injective
     F.exists_add_toFaceSubgroup_eq R
 
 /-- Coordinate-ring homomorphism of the diagonalizable-group orbit associated to a face `F` of `S`,
@@ -158,31 +150,33 @@ end AddMonoidAlgebra
 
 namespace AddSubmonoid
 
-section TorusCoaction
+section DiagonalizableCoaction
 
 variable {G : Type*} [AddCommGroup G] (S : AddSubmonoid G) (R : Type*) [CommSemiring R]
 
 /-- The native coaction of the diagonalizable-group algebra `R[AddSubgroup.closure S]` on `R[S]`
 (which is a split-torus coaction when `AddSubgroup.closure S` is finite-rank free abelian, e.g.
 when `S.FG` and `G` is torsion-free). -/
-noncomputable def torusCoaction :
+noncomputable def diagonalizableCoaction :
     AddMonoidAlgebra R S →ₐ[R]
       AddMonoidAlgebra R (AddSubgroup.closure (S : Set G)) ⊗[R] AddMonoidAlgebra R S :=
   gradedCoaction R S.toGroupClosure
 
-/-- Explicit definition of `AddSubmonoid.torusCoaction`. -/
-theorem torusCoaction_def : S.torusCoaction R = gradedCoaction R S.toGroupClosure := (rfl)
+/-- Explicit definition of `AddSubmonoid.diagonalizableCoaction`. -/
+theorem diagonalizableCoaction_def :
+    S.diagonalizableCoaction R = gradedCoaction R S.toGroupClosure := (rfl)
 
-/-- `S.torusCoaction R` sends `single s r` to `single (S.toGroupClosure s) 1 ⊗ₜ single s r`. -/
+/-- `S.diagonalizableCoaction R` sends `single s r` to
+`single (S.toGroupClosure s) 1 ⊗ₜ single s r`. -/
 @[simp]
-theorem torusCoaction_single (s : S) (r : R) :
-    S.torusCoaction R (single s r) = single (S.toGroupClosure s) 1 ⊗ₜ[R] single s r :=
+theorem diagonalizableCoaction_single (s : S) (r : R) :
+    S.diagonalizableCoaction R (single s r) = single (S.toGroupClosure s) 1 ⊗ₜ[R] single s r :=
   gradedCoaction_single R S.toGroupClosure s r
 
 /-- For any face `F` of `S`, `F.orbitMap R` is equivariant for the diagonalizable-group coaction
 of `R[AddSubgroup.closure S]`. -/
-theorem map_orbitMap_comp_torusCoaction (F : SaturatedAddSubmonoid S) :
-    (Algebra.TensorProduct.map (AlgHom.id R _) (F.orbitMap R)).comp (S.torusCoaction R) =
+theorem map_orbitMap_comp_diagonalizableCoaction (F : SaturatedAddSubmonoid S) :
+    (Algebra.TensorProduct.map (AlgHom.id R _) (F.orbitMap R)).comp (S.diagonalizableCoaction R) =
       (gradedCoaction R F.faceSubgroup.subtype).comp (F.orbitMap R) := by
   ext s; by_cases hs : s ∈ F
   · simp [F.orbitMap_single_of_mem R hs]
@@ -191,18 +185,18 @@ theorem map_orbitMap_comp_torusCoaction (F : SaturatedAddSubmonoid S) :
 /-- The positive-multiple saturation inclusion from `R[S]` to
 `R[S.nsmulSaturation ⊓ AddSubgroup.closure S]` is equivariant for the diagonalizable-group
 algebra `R[AddSubgroup.closure S]`. -/
-theorem map_inclusion_nsmulSaturation_comp_torusCoaction :
+theorem map_inclusion_nsmulSaturation_comp_diagonalizableCoaction :
     (Algebra.TensorProduct.map (AlgHom.id R _)
       (mapDomainAlgHom R R
         (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)))).comp
-      (S.torusCoaction R) =
+      (S.diagonalizableCoaction R) =
       (gradedCoaction R S.nsmulSaturationInfClosureToGroupClosure).comp
         (mapDomainAlgHom R R
           (inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))) := by
-  simpa [torusCoaction] using map_mapDomain_comp_gradedCoaction R (g := .id _)
+  simpa [diagonalizableCoaction] using map_mapDomain_comp_gradedCoaction R (g := .id _)
     (AddMonoidHom.ext fun s ↦ S.nsmulSaturationInfClosureToGroupClosure_inclusion_apply s)
 
-end TorusCoaction
+end DiagonalizableCoaction
 
 end AddSubmonoid
 
@@ -268,9 +262,7 @@ theorem finrank_faceSubgroup_strictMono (hS : S.FG) :
     (Submodule.comapSubtypeEquivOfLe hle).finrank_eq
   let q : F₂.faceSubgroup ⧸ H := Submodule.Quotient.mk (F₂.toFaceSubgroup ⟨s, hs₂⟩)
   have hq_ind : LinearIndependent ℤ (fun _ : Unit ↦ q) := by
-    rw [Fintype.linearIndependent_iff]
-    intro c hc _
-    by_contra hc0
+    rw [Fintype.linearIndependent_iff]; intro c hc _; by_contra hc0
     have hc_mem : (c () • F₂.toFaceSubgroup ⟨s, hs₂⟩) ∈ H :=
       (Submodule.Quotient.mk_eq_zero H).1 (by simpa [q] using hc)
     have hzsmul : c () • S.toGroupClosure s ∈ F₁.faceSubgroup := by

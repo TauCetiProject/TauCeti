@@ -17,52 +17,22 @@ public import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 /-!
 # Diagonalizable-group orbits, stabilizers, and orbit normalization of semigroup algebras
 
-Let `S` be an additive submonoid of an abelian group `G` and `R` a commutative semiring. For any
-commutative `R`-algebra `A`, `Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ` acts on
-`A`-points `AddMonoidAlgebra R S →ₐ[R] A` via `S.torusCoaction R`.
+For an additive submonoid `S` of an abelian group `G` and a face `F : SaturatedAddSubmonoid S`,
+`Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ` acts on `AddMonoidAlgebra R S →ₐ[R] A`
+via `S.diagonalizableCoaction R`.
 
-1. **Distinguished points and stabilizer quotients.** Each face `F : SaturatedAddSubmonoid S`
-   defines `F.distinguishedPoint R A` (`1` on `F`, `0` outside `F`), the bialgebra quotient
-   `F.stabilizerBialgHom R` inducing a trivial coaction on `F.orbitMap R`, and the stabilizer
-   isomorphism `SaturatedAddSubmonoid.stabilizerDistinguishedPointMulEquiv`.
-2. **Orbit–face bijection on geometric points.** Over a nontrivial domain `A`, `S.pointSupport x`
-   is orbit-invariant and recovers `F` on `F.distinguishedPoint R A`. Over any field `K`,
-   `SaturatedAddSubmonoid.pointSupportSubtypeEquivChar` identifies the `F`-stratum with
-   `Multiplicative F.faceSubgroup →* Kˣ`. When `[RootableBy Kˣ ℕ]`,
-   `SaturatedAddSubmonoid.setOf_pointSupport_eq_orbit` and `S.faceOrbitEquiv R K` give the
-   geometric orbit–face bijection.
-3. **Positive-multiple saturation comparison.** Here
-   `S_sat = S.nsmulSaturation ⊓ (AddSubgroup.closure S).toAddSubmonoid`,
-   `F_sat = (S.nsmulSaturationInfClosureFaceOrderIso).symm F`, and
-   `Q_F = F.faceSubgroup.nsmulSaturation ⧸ F.faceSubgroup.addSubgroupOf`
-   `F.faceSubgroup.nsmulSaturation`. Precomposition with `R[S] →ₐ[R] R[S_sat]` pulls
-   `S.nsmulSaturationInfClosureFaceOrderIso` and corresponds via
-   `SaturatedAddSubmonoid.fiberMapDomainAlgHomEquivOrbitSaturationCharHom` to
-   `F.orbitSaturationCharHom U`, yielding surjectivity under `[RootableBy U ℕ]`, fiber
-   cardinality `Nat.card Q_F` when invertible in an algebraically closed field `K`, char-`0`
-   injectivity iff `F.faceSubgroup` is saturated, and char-`p` bijectivity when `Q_F` is
-   `p`-primary.
-4. **Comparison with normalization.** Under `[IsDomain R] [IsIntegrallyClosed R]` and
-   `[Module.IsTorsionFree ℤ G]`, `AddSubmonoid.fiberIntegralClosureEquivMapDomainAlgHom` (in
-   `TauCeti.Algebra.MonoidAlgebra.IntegrallyClosed`) transports these fiber results to any
-   integral closure `B` of `R[S]` in its fraction ring `L`.
-
-## Main declarations
-
-* `AddSubmonoid.instMulActionCharAlgHom`, `SaturatedAddSubmonoid.distinguishedPoint`,
-  `SaturatedAddSubmonoid.stabilizerBialgHom`,
-  `SaturatedAddSubmonoid.stabilizerDistinguishedPointMulEquiv`
-* `AddSubmonoid.pointSupport`, `SaturatedAddSubmonoid.pointOfChar`,
+* **Distinguished points and stabilizers:** `F.distinguishedPoint R A`, `F.stabilizerBialgHom R`,
+  and `SaturatedAddSubmonoid.stabilizerDistinguishedPointMulEquiv`.
+* **Orbit–face bijection:** `S.pointSupport x`, `F.pointOfChar R`,
   `SaturatedAddSubmonoid.pointSupportSubtypeEquivChar`,
-  `SaturatedAddSubmonoid.setOf_pointSupport_eq_orbit`, `AddSubmonoid.faceOrbitEquiv`
-* `SaturatedAddSubmonoid.orbitSaturationCharHom`,
-  `SaturatedAddSubmonoid.card_fiber_orbitSaturationCharHom`,
-  `SaturatedAddSubmonoid.fiberMapDomainAlgHomEquivOrbitSaturationCharHom`,
-  `SaturatedAddSubmonoid.card_fiber_mapDomainAlgHom_inclusion_nsmulSaturation`
-* `AddSubmonoid.exists_ringHom_comp_algebraMap_eq_of_isIntegralClosure`,
+  `SaturatedAddSubmonoid.setOf_pointSupport_eq_orbit`, and `AddSubmonoid.faceOrbitEquiv`.
+* **Saturation comparison:** `SaturatedAddSubmonoid.orbitSaturationCharHom`,
+  `SaturatedAddSubmonoid.fiberMapDomainAlgHomEquivOrbitSaturationCharHom`, and fiber cardinality /
+  char-`0` / char-`p` theorems via `F.orbitMap R` and `S.nsmulSaturationInfClosureFaceOrderIso`.
+* **Normalization fibers:** `AddSubmonoid.exists_ringHom_comp_algebraMap_eq_of_isIntegralClosure`,
   `SaturatedAddSubmonoid.card_fiber_ringHom_of_isIntegralClosure`,
-  `SaturatedAddSubmonoid.subsingleton_fiber_ringHom_iff_of_charZero`,
-  `SaturatedAddSubmonoid.existsUnique_ringHom_of_isIntegralClosure_of_charP`
+  `SaturatedAddSubmonoid.subsingleton_fiber_ringHom_iff_of_charZero`, and
+  `SaturatedAddSubmonoid.existsUnique_ringHom_of_isIntegralClosure_of_charP`.
 
 ## References
 
@@ -78,20 +48,20 @@ open AddMonoidAlgebra
 
 namespace AddSubmonoid
 
-section TorusAction
+section DiagonalizableAction
 
 variable {G : Type*} [AddCommGroup G] (S : AddSubmonoid G)
   {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
 
 /-- Scalar action of `A`-points `Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ` on
-`AddMonoidAlgebra R S →ₐ[R] A` induced by `S.torusCoaction R`. -/
+`AddMonoidAlgebra R S →ₐ[R] A` induced by `S.diagonalizableCoaction R`. -/
 noncomputable instance instSMulCharAlgHom :
     SMul (Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ)
       (AddMonoidAlgebra R S →ₐ[R] A) where
   smul χ x :=
     (Algebra.TensorProduct.lift
       (AddMonoidAlgebra.lift R A _ ((Units.coeHom A).comp χ)) x
-      fun _ _ ↦ Commute.all _ _).comp (S.torusCoaction R)
+      fun _ _ ↦ Commute.all _ _).comp (S.diagonalizableCoaction R)
 
 /-- Explicit definition of the diagonalizable-group action on `A`-points. -/
 theorem smul_algHom_def {S : AddSubmonoid G}
@@ -100,7 +70,7 @@ theorem smul_algHom_def {S : AddSubmonoid G}
     χ • x =
       (Algebra.TensorProduct.lift
         (AddMonoidAlgebra.lift R A _ ((Units.coeHom A).comp χ)) x
-        fun _ _ ↦ Commute.all _ _).comp (S.torusCoaction R) := (rfl)
+        fun _ _ ↦ Commute.all _ _).comp (S.diagonalizableCoaction R) := (rfl)
 
 /-- Acting by `χ` scales `x (single s r)` by `χ (S.toGroupClosure s)`. -/
 @[simp]
@@ -111,14 +81,14 @@ theorem smul_algHom_single_apply {S : AddSubmonoid G}
   rw [smul_algHom_def, AlgHom.comp_apply]; simp
 
 /-- Multiplicative action of `A`-points `Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ`
-on `AddMonoidAlgebra R S →ₐ[R] A` via `S.torusCoaction R`. -/
+on `AddMonoidAlgebra R S →ₐ[R] A` via `S.diagonalizableCoaction R`. -/
 noncomputable instance instMulActionCharAlgHom :
     MulAction (Multiplicative (AddSubgroup.closure (S : Set G)) →* Aˣ)
       (AddMonoidAlgebra R S →ₐ[R] A) where
   one_smul x := by ext; simp
   mul_smul χ₁ χ₂ x := by ext; simp [mul_assoc]
 
-end TorusAction
+end DiagonalizableAction
 
 end AddSubmonoid
 
@@ -150,8 +120,7 @@ theorem distinguishedPoint_single_of_mem (R A : Type*) [CommSemiring R] [CommSem
 @[simp]
 theorem distinguishedPoint_single_of_notMem (R A : Type*) [CommSemiring R] [CommSemiring A]
     [Algebra R A] {s : S} (hs : s ∉ F) (r : R) :
-    F.distinguishedPoint R A (single s r) = 0 := by
-  simp [distinguishedPoint, F.orbitMap_single_of_notMem R hs]
+    F.distinguishedPoint R A (single s r) = 0 := by simp [distinguishedPoint, hs]
 
 /-- The surjective bialgebra quotient
 `R[AddSubgroup.closure S] →ₐc[R] R[AddSubgroup.closure S ⧸ F.faceSubgroup]`. -/
@@ -175,11 +144,11 @@ theorem stabilizerBialgHom_surjective (R : Type*) [CommSemiring R] :
     Function.Surjective (F.stabilizerBialgHom R) :=
   mapDomain_surjective (QuotientAddGroup.mk'_surjective F.faceSubgroup)
 
-/-- Pushing `S.torusCoaction R` forward via `F.stabilizerBialgHom R` and `F.orbitMap R` factors
-through the right tensor inclusion `Algebra.TensorProduct.includeRight`. -/
-theorem map_stabilizerBialgHom_orbitMap_comp_torusCoaction (R : Type*) [CommSemiring R] :
+/-- Pushing `S.diagonalizableCoaction R` forward via `F.stabilizerBialgHom R` and `F.orbitMap R`
+factors through the right tensor inclusion `Algebra.TensorProduct.includeRight`. -/
+theorem map_stabilizerBialgHom_orbitMap_comp_diagonalizableCoaction (R : Type*) [CommSemiring R] :
     (Algebra.TensorProduct.map (F.stabilizerBialgHom R).toAlgHom (F.orbitMap R)).comp
-      (S.torusCoaction R) = Algebra.TensorProduct.includeRight.comp (F.orbitMap R) := by
+      (S.diagonalizableCoaction R) = Algebra.TensorProduct.includeRight.comp (F.orbitMap R) := by
   ext s; by_cases hs : s ∈ F
   · have hq : QuotientAddGroup.mk (S.toGroupClosure s) =
         (0 : AddSubgroup.closure (S : Set G) ⧸ F.faceSubgroup) :=
@@ -195,7 +164,7 @@ theorem mem_stabilizer_distinguishedPoint_iff {R A : Type*} [CommSemiring R] [Co
       ∀ g ∈ F.faceSubgroup, χ (.ofAdd g) = 1 := by
   rw [MulAction.mem_stabilizer_iff]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · have hker : F.faceSubgroup ≤ (AddMonoidHom.ker χ.toAdditiveRight) := by
+  · have hker : F.faceSubgroup ≤ AddMonoidHom.ker χ.toAdditiveRight := by
       rw [faceSubgroup_def, AddSubgroup.closure_le]
       rintro _ ⟨a, haF, rfl⟩
       have eval := AlgHom.congr_fun h (single a (1 : R))
@@ -203,10 +172,9 @@ theorem mem_stabilizer_distinguishedPoint_iff {R A : Type*} [CommSemiring R] [Co
         mul_one] at eval
       exact Additive.toMul.injective (Units.ext eval)
     exact fun g hg ↦ Additive.toMul.injective (hker hg)
-  · ext s
-    by_cases hs : s ∈ F
-    · rw [S.smul_algHom_single_apply, h (S.toGroupClosure s)
-        (F.toGroupClosure_mem_faceSubgroup_iff.2 hs), Units.val_one, one_mul]
+  · ext s; by_cases hs : s ∈ F
+    · rw [S.smul_algHom_single_apply,
+        h (S.toGroupClosure s) (F.toGroupClosure_mem_faceSubgroup_iff.2 hs), Units.val_one, one_mul]
     · simp [F.distinguishedPoint_single_of_notMem R A hs]
 
 /-- Canonical multiplicative isomorphism between the stabilizer of `F.distinguishedPoint R A` and
@@ -280,8 +248,8 @@ theorem pointSupport_smul {S : AddSubmonoid G}
 /-- The support of `F.distinguishedPoint R A` is `F`. -/
 @[simp]
 theorem _root_.SaturatedAddSubmonoid.pointSupport_distinguishedPoint (F : SaturatedAddSubmonoid S) :
-    S.pointSupport (F.distinguishedPoint R A) = F := SetLike.ext fun s ↦ by
-  by_cases hs : s ∈ F <;> simp [hs, F.distinguishedPoint_single_of_notMem]
+    S.pointSupport (F.distinguishedPoint R A) = F :=
+  SetLike.ext fun s ↦ by by_cases hs : s ∈ F <;> simp [hs, F.distinguishedPoint_single_of_notMem]
 
 /-- An `A`-point `x : R[S] →ₐ[R] A` factors through the closed face subscheme `V(F.faceIdeal R)` if
 and only if `S.pointSupport x ≤ F`. -/
@@ -289,9 +257,8 @@ theorem faceIdeal_le_ker_iff_pointSupport_le (F : SaturatedAddSubmonoid S)
     (x : AddMonoidAlgebra R S →ₐ[R] A) :
     F.toAddSubmonoid.faceIdeal R ≤ RingHom.ker x ↔ S.pointSupport x ≤ F := by
   rw [F.toAddSubmonoid.faceIdeal_def, Ideal.span_le]
-  refine ⟨fun h s hs ↦ by_contra fun hnot ↦ hs (h ⟨s, hnot, of'_apply s⟩), ?_⟩
-  rintro h _ ⟨s, hnot, rfl⟩
-  rw [SetLike.mem_coe, RingHom.mem_ker, of'_apply]; exact by_contra fun hne ↦ hnot (h hne)
+  exact ⟨fun h s hs ↦ by_contra fun hnot ↦ hs (h ⟨s, hnot, of'_apply s⟩), fun h _ ⟨s, hnot, hm⟩ ↦
+    by rw [← hm, SetLike.mem_coe, RingHom.mem_ker, of'_apply]; exact by_contra (hnot <| h ·)⟩
 
 end PointSupport
 
@@ -350,8 +317,8 @@ theorem smul_pointOfChar (R : Type*) [CommSemiring R] {A : Type*} [CommSemiring 
 @[simp]
 theorem pointSupport_pointOfChar (R : Type*) [CommSemiring R] {A : Type*} [CommSemiring A]
     [NoZeroDivisors A] [Nontrivial A] [Algebra R A] (ψ : Multiplicative F.faceSubgroup →* Aˣ) :
-    S.pointSupport (F.pointOfChar R ψ) = F := SetLike.ext fun s ↦ by
-  by_cases hs : s ∈ F <;> simp [hs, (ψ _).ne_zero]
+    S.pointSupport (F.pointOfChar R ψ) = F :=
+  SetLike.ext fun s ↦ by by_cases hs : s ∈ F <;> simp [hs, (ψ _).ne_zero]
 
 /-- `F.pointOfChar R` is injective over any commutative `R`-algebra `A`. -/
 theorem pointOfChar_injective (R A : Type*) [CommSemiring R] [CommSemiring A] [Algebra R A] :
@@ -378,9 +345,8 @@ theorem exists_pointOfChar_eq_of_pointSupport_eq {R K : Type*} [CommSemiring R] 
   let xF : AddMonoidAlgebra R F →ₐ[R] K := x.comp (mapDomainAlgHom R R F.toAddSubmonoid.subtype)
   have hxF_unit (y : MonoidHom.mrange (of R F)) : IsUnit (xF y) := by
     obtain ⟨m, hm⟩ := y.property
-    have hy : (y : AddMonoidAlgebra R F) = single m.toAdd (1 : R) := by rw [← hm, of_apply]
-    rw [hy]; simp only [xF, AlgHom.comp_apply, mapDomainAlgHom_apply, mapDomain_single]
-    exact (S.mem_pointSupport_iff.1 (hx ▸ m.toAdd.property)).isUnit
+    rw [show (y : AddMonoidAlgebra R F) = single m.toAdd (1 : R) by rw [← hm, of_apply]]
+    simpa [xF] using (S.mem_pointSupport_iff.1 (hx ▸ m.toAdd.property)).isUnit
   let xgp : AddMonoidAlgebra R F.faceSubgroup →ₐ[R] K := IsLocalization.liftAlgHom hxF_unit
   let ψ : Multiplicative F.faceSubgroup →* Kˣ :=
     ((AddMonoidAlgebra.lift R K F.faceSubgroup).symm xgp).toHomUnits
@@ -394,8 +360,7 @@ theorem exists_pointOfChar_eq_of_pointSupport_eq {R K : Type*} [CommSemiring R] 
       simp [← halg, xgp, xF, IsLocalization.lift_eq, hsub]
     rw [F.pointOfChar_single_of_mem R ψ hs, one_smul]
     simpa [ψ, AddMonoidAlgebra.lift_symm_apply] using hxgp
-  · have hx0 : x (single s 1) = 0 := by_contra fun hne ↦ hs (hx ▸ hne)
-    rw [F.pointOfChar_single_of_notMem R ψ hs, hx0]
+  · rw [F.pointOfChar_single_of_notMem R ψ hs, by_contra fun hne ↦ hs (hx ▸ hne)]
 
 /-- Bijection between `K`-points of `Spec R[S]` with support `F` and characters on
 `F.faceSubgroup`. -/
@@ -441,9 +406,8 @@ theorem setOf_pointSupport_eq_orbit (R K : Type*) [CommSemiring R] [Field K] [Ro
   refine ⟨fun hx ↦ ?_,
     fun ⟨χ, hχ⟩ ↦ hχ ▸ (S.pointSupport_smul χ _).trans F.pointSupport_distinguishedPoint⟩
   let ψ := F.pointSupportSubtypeEquivChar R K ⟨x, hx⟩
-  obtain ⟨χ, hχ⟩ :=
-    TauCeti.exists_monoidHom_comp_toMultiplicative_eq_of_rootableBy
-      F.faceSubgroup.subtype_injective ψ
+  obtain ⟨χ, hχ⟩ := TauCeti.exists_monoidHom_comp_toMultiplicative_eq_of_rootableBy
+    F.faceSubgroup.subtype_injective ψ
   exact ⟨χ, by
     rw [← F.pointOfChar_one R K, F.smul_pointOfChar, hχ, mul_one ψ]
     exact F.pointOfChar_pointSupportSubtypeEquivChar R K ⟨x, hx⟩⟩
@@ -463,19 +427,16 @@ faces `SaturatedAddSubmonoid S` correspond bijectively to orbits of
 `Multiplicative (AddSubgroup.closure (S : Set G)) →* Kˣ` on `AddMonoidAlgebra R S →ₐ[R] K`. -/
 noncomputable def faceOrbitEquiv (R K : Type*) [CommSemiring R] [Field K] [RootableBy Kˣ ℕ]
     [Algebra R K] :
-    SaturatedAddSubmonoid S ≃
-      MulAction.orbitRel.Quotient
-        (Multiplicative (AddSubgroup.closure (S : Set G)) →* Kˣ)
-        (AddMonoidAlgebra R S →ₐ[R] K) where
+    SaturatedAddSubmonoid S ≃ MulAction.orbitRel.Quotient
+      (Multiplicative (AddSubgroup.closure (S : Set G)) →* Kˣ) (AddMonoidAlgebra R S →ₐ[R] K) where
   toFun F := ⟦F.distinguishedPoint R K⟧
   invFun := Quotient.lift (S.pointSupport (R := R) (A := K)) fun _ y ⟨χ, hχ⟩ ↦
     hχ ▸ S.pointSupport_smul χ y
   left_inv F := F.pointSupport_distinguishedPoint
   right_inv q := by
-    obtain ⟨x, rfl⟩ := Quotient.exists_rep q; apply Quotient.sound
-    have hx : x ∈ {y : AddMonoidAlgebra R S →ₐ[R] K | S.pointSupport y = S.pointSupport x} := rfl
-    rw [(S.pointSupport x).setOf_pointSupport_eq_orbit R K] at hx
-    exact MulAction.mem_orbit_symm.1 hx
+    obtain ⟨x, rfl⟩ := Quotient.exists_rep q
+    exact Quotient.sound <| MulAction.mem_orbit_symm.1 <|
+      ((S.pointSupport x).setOf_pointSupport_eq_orbit R K).subset rfl
 
 /-- `S.faceOrbitEquiv R K` sends `F` to the orbit of `F.distinguishedPoint R K`. -/
 @[simp]
@@ -508,16 +469,14 @@ theorem _root_.AddSubmonoid.pointSupport_comp_mapDomainAlgHom_inclusion_nsmulSat
       ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid) →ₐ[R] A) :
     S.pointSupport (y.comp (mapDomainAlgHom R R
       (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)))) =
-      S.nsmulSaturationInfClosureFaceOrderIso
-        ((S.nsmulSaturation ⊓
-          (AddSubgroup.closure (S : Set G)).toAddSubmonoid).pointSupport y) :=
+      S.nsmulSaturationInfClosureFaceOrderIso ((S.nsmulSaturation ⊓
+        (AddSubgroup.closure (S : Set G)).toAddSubmonoid).pointSupport y) :=
   SetLike.ext fun _ ↦ by simp [SaturatedAddSubmonoid.mem_comap]
 
 /-- Restriction of `U`-valued characters from `F.faceSubgroup.nsmulSaturation` to
 `F.faceSubgroup`. -/
 def orbitSaturationCharHom (F : SaturatedAddSubmonoid S) (U : Type*) [CommGroup U] :
-    (Multiplicative F.faceSubgroup.nsmulSaturation →* U) →*
-      (Multiplicative F.faceSubgroup →* U) :=
+    (Multiplicative F.faceSubgroup.nsmulSaturation →* U) →* (Multiplicative F.faceSubgroup →* U) :=
   MonoidHom.compHom' (AddSubgroup.inclusion F.faceSubgroup.le_nsmulSaturation).toMultiplicative
 
 /-- Evaluating `orbitSaturationCharHom` restricts along
@@ -527,6 +486,38 @@ theorem orbitSaturationCharHom_apply (F : SaturatedAddSubmonoid S) {U : Type*} [
     (ψ : Multiplicative F.faceSubgroup.nsmulSaturation →* U) (g : F.faceSubgroup) :
     F.orbitSaturationCharHom U ψ (.ofAdd g) =
       ψ (.ofAdd (AddSubgroup.inclusion F.faceSubgroup.le_nsmulSaturation g)) := (rfl)
+
+/-- Under `faceSubgroupNSMulSaturationEquiv`, `F_sat.orbitMap R` and `F.orbitMap R` commute with
+the saturation inclusion `R[S] →ₐ[R] R[S_sat]` and the transported face-subgroup inclusion
+`F.faceSubgroup →+ F_sat.faceSubgroup`. -/
+theorem orbitMap_comp_mapDomainAlgHom_inclusion_nsmulSaturation (F : SaturatedAddSubmonoid S)
+    (R : Type*) [CommSemiring R] :
+    (((S.nsmulSaturationInfClosureFaceOrderIso).symm F).orbitMap R).comp (mapDomainAlgHom R R
+        (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))) =
+      (mapDomainAlgHom R R (F.faceSubgroupNSMulSaturationEquiv.symm.toAddMonoidHom.comp
+        (AddSubgroup.inclusion F.faceSubgroup.le_nsmulSaturation))).comp (F.orbitMap R) := by
+  let inc := AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)
+  let Fsat := (S.nsmulSaturationInfClosureFaceOrderIso).symm F
+  have hmem_iff (s : S) : inc s ∈ Fsat ↔ s ∈ F := by
+    rw [← SaturatedAddSubmonoid.mem_comap, ← S.nsmulSaturationInfClosureFaceOrderIso_apply,
+      S.nsmulSaturationInfClosureFaceOrderIso.apply_symm_apply]
+  refine AddMonoidAlgebra.algHom_ext (fun s ↦ ?_) (Subsingleton.elim _ _)
+  by_cases hs : s ∈ F
+  · have hs_sat : inc s ∈ Fsat := (hmem_iff s).2 hs
+    have heq : Fsat.toFaceSubgroup ⟨inc s, hs_sat⟩ =
+        F.faceSubgroupNSMulSaturationEquiv.symm.toAddMonoidHom
+          (AddSubgroup.inclusion F.faceSubgroup.le_nsmulSaturation (F.toFaceSubgroup ⟨s, hs⟩)) :=
+      F.faceSubgroupNSMulSaturationEquiv.eq_symm_apply.2 <| Subtype.ext <| Subtype.ext <| by
+        rw [F.coe_faceSubgroupNSMulSaturationEquiv_apply, Fsat.coe_toFaceSubgroup,
+          AddSubmonoid.coe_toGroupClosure, AddSubgroup.coe_inclusion, F.coe_toFaceSubgroup,
+          AddSubmonoid.coe_toGroupClosure]; rfl
+    rw [AlgHom.comp_apply, mapDomainAlgHom_apply, mapDomain_single,
+      Fsat.orbitMap_single_of_mem R hs_sat, AlgHom.comp_apply, F.orbitMap_single_of_mem R hs,
+      mapDomainAlgHom_apply, mapDomain_single, heq]
+    rfl
+  · rw [AlgHom.comp_apply, mapDomainAlgHom_apply, mapDomain_single,
+      Fsat.orbitMap_single_of_notMem R (fun h ↦ hs ((hmem_iff s).1 h)), AlgHom.comp_apply,
+      F.orbitMap_single_of_notMem R hs, map_zero]
 
 /-- Under `faceSubgroupNSMulSaturationEquiv`, precomposition with the saturation inclusion on
 `A`-points of `Spec R[F_sat.faceSubgroup]` corresponds to `F.orbitSaturationCharHom Aˣ`. -/
@@ -538,26 +529,10 @@ theorem pointOfChar_comp_mapDomainAlgHom_inclusion_nsmulSaturation (F : Saturate
       (mapDomainAlgHom R R
         (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))) =
       F.pointOfChar R (F.orbitSaturationCharHom Aˣ ψ) := by
-  let inc := AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure)
-  let Fsat := (S.nsmulSaturationInfClosureFaceOrderIso).symm F
-  have hmem_iff (s : S) : inc s ∈ Fsat ↔ s ∈ F := by
-    rw [← SaturatedAddSubmonoid.mem_comap, ← S.nsmulSaturationInfClosureFaceOrderIso_apply,
-      S.nsmulSaturationInfClosureFaceOrderIso.apply_symm_apply]
-  ext s; by_cases hs : s ∈ F
-  · have hs_sat : inc s ∈ Fsat := (hmem_iff s).2 hs
-    have heq : F.faceSubgroupNSMulSaturationEquiv (Fsat.toFaceSubgroup ⟨inc s, hs_sat⟩) =
-        AddSubgroup.inclusion F.faceSubgroup.le_nsmulSaturation (F.toFaceSubgroup ⟨s, hs⟩) :=
-      Subtype.ext <| Subtype.ext <| by
-        simp only [F.coe_faceSubgroupNSMulSaturationEquiv_apply, Fsat.coe_toFaceSubgroup,
-          AddSubmonoid.coe_toGroupClosure, AddSubmonoid.coe_inclusion, AddSubgroup.coe_inclusion,
-          F.coe_toFaceSubgroup, inc]
-    rw [AlgHom.comp_apply, mapDomainAlgHom_apply, mapDomain_single,
-      Fsat.pointOfChar_single_of_mem R _ hs_sat, F.pointOfChar_single_of_mem R _ hs,
-      one_smul, one_smul]
-    exact congrArg (fun z ↦ (ψ (.ofAdd z) : A)) heq
-  · rw [AlgHom.comp_apply, mapDomainAlgHom_apply, mapDomain_single,
-      Fsat.pointOfChar_single_of_notMem R _ fun h ↦ hs ((hmem_iff s).1 h),
-      F.pointOfChar_single_of_notMem R _ hs]
+  rw [pointOfChar_def, AlgHom.comp_assoc,
+    F.orbitMap_comp_mapDomainAlgHom_inclusion_nsmulSaturation R, ← AlgHom.comp_assoc,
+    pointOfChar_def]
+  congr 1; ext g; simp [AddMonoidHom.toMultiplicative]
 
 /-- Under `[RootableBy U ℕ]`, `F.orbitSaturationCharHom U` is surjective. -/
 theorem orbitSaturationCharHom_surjective (F : SaturatedAddSubmonoid S) (U : Type*)
@@ -586,8 +561,7 @@ theorem orbitSaturationCharHomKerEquiv_symm_apply_coe (F : SaturatedAddSubmonoid
     [CommGroup U] (η : Multiplicative (F.faceSubgroup.nsmulSaturation ⧸
       F.faceSubgroup.addSubgroupOf F.faceSubgroup.nsmulSaturation) →* U) :
     ((F.orbitSaturationCharHomKerEquiv U).symm η :
-      Multiplicative F.faceSubgroup.nsmulSaturation →* U) =
-      η.comp (QuotientAddGroup.mk'
+      Multiplicative F.faceSubgroup.nsmulSaturation →* U) = η.comp (QuotientAddGroup.mk'
         (F.faceSubgroup.addSubgroupOf F.faceSubgroup.nsmulSaturation)).toMultiplicative :=
   AddSubgroup.kerCompHomInclusionMulEquiv_symm_apply_coe F.faceSubgroup.le_nsmulSaturation U η
 
@@ -596,9 +570,8 @@ theorem orbitSaturationCharHomKerEquiv_symm_apply_coe (F : SaturatedAddSubmonoid
 theorem card_orbitSaturationCharHom_ker (hS : S.FG) (F : SaturatedAddSubmonoid S) (K : Type*)
     [Field K] [IsAlgClosed K] [NeZero ((Nat.card (F.faceSubgroup.nsmulSaturation ⧸
       F.faceSubgroup.addSubgroupOf F.faceSubgroup.nsmulSaturation) : ℕ) : K)] :
-    Nat.card (F.orbitSaturationCharHom Kˣ).ker =
-      Nat.card (F.faceSubgroup.nsmulSaturation ⧸
-        F.faceSubgroup.addSubgroupOf F.faceSubgroup.nsmulSaturation) := by
+    Nat.card (F.orbitSaturationCharHom Kˣ).ker = Nat.card (F.faceSubgroup.nsmulSaturation ⧸
+      F.faceSubgroup.addSubgroupOf F.faceSubgroup.nsmulSaturation) := by
   let Q := F.faceSubgroup.nsmulSaturation ⧸
     F.faceSubgroup.addSubgroupOf F.faceSubgroup.nsmulSaturation
   have : Finite Q := F.finite_quotient_nsmulSaturation_faceSubgroup hS
@@ -640,8 +613,7 @@ theorem orbitSaturationCharHom_injective_iff_of_charZero (hS : S.FG)
     fun h1 ↦ eq_bot_iff.2 fun ψ hψ ↦ MonoidHom.ext fun g ↦ ?_⟩
   have heq := F.faceSubgroup.subsingleton_quotient_nsmulSaturation_iff.1
     (Finite.card_le_one_iff_subsingleton.1 h1)
-  rw [← ofAdd_toAdd g]
-  exact DFunLike.congr_fun hψ (.ofAdd ⟨g.toAdd.val, heq.ge g.toAdd.property⟩)
+  exact ofAdd_toAdd g ▸ DFunLike.congr_fun hψ (.ofAdd ⟨g.toAdd.val, heq.ge g.toAdd.property⟩)
 
 /-- In char `p`, if the saturation quotient is `p`-primary, then `F.orbitSaturationCharHom Kˣ` is
 bijective over any char-`p` field `K` with `[RootableBy Kˣ ℕ]`. -/
@@ -742,23 +714,10 @@ theorem coe_fiberMapDomainAlgHomEquivOrbitSaturationCharHom_symm_apply
     (F : SaturatedAddSubmonoid S) (R K : Type*) [CommSemiring R] [Field K] [Algebra R K]
     {x : AddMonoidAlgebra R S →ₐ[R] K} (hx : S.pointSupport x = F)
     (ψ : (F.orbitSaturationCharHom Kˣ) ⁻¹' {F.pointSupportSubtypeEquivChar R K ⟨x, hx⟩}) :
-    ((F.fiberMapDomainAlgHomEquivOrbitSaturationCharHom R K hx).symm ψ :
-        AddMonoidAlgebra R
-          ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid) →ₐ[R] K) =
+    ((F.fiberMapDomainAlgHomEquivOrbitSaturationCharHom R K hx).symm ψ : AddMonoidAlgebra R
+        ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid) →ₐ[R] K) =
       ((S.nsmulSaturationInfClosureFaceOrderIso).symm F).pointOfChar R
         (ψ.val.comp F.faceSubgroupNSMulSaturationEquiv.toAddMonoidHom.toMultiplicative) := (rfl)
-
-/-- Over a field `K` with `[RootableBy Kˣ ℕ]`, every `K`-point of `R[S]` lifts to `R[S_sat]`. -/
-theorem exists_comp_mapDomainAlgHom_inclusion_nsmulSaturation (R K : Type*) [CommSemiring R]
-    [Field K] [RootableBy Kˣ ℕ] [Algebra R K] (x : AddMonoidAlgebra R S →ₐ[R] K) :
-    ∃ y : AddMonoidAlgebra R
-        ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid) →ₐ[R] K,
-      y.comp (mapDomainAlgHom R R
-        (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))) = x := by
-  let F := S.pointSupport x
-  obtain ⟨ψ, hψ⟩ :=
-    F.orbitSaturationCharHom_surjective Kˣ (F.pointSupportSubtypeEquivChar R K ⟨x, rfl⟩)
-  exact ⟨_, ((F.fiberMapDomainAlgHomEquivOrbitSaturationCharHom R K rfl).symm ⟨ψ, hψ⟩).property⟩
 
 /-- When `S.FG` and `Nat.card Q_F` is invertible in an algebraically closed field `K`, the fiber
 of `R[S_sat] →ₐ[R] K` over `x` with `S.pointSupport x = F` has cardinality `Nat.card Q_F`. -/
@@ -776,6 +735,19 @@ theorem card_fiber_mapDomainAlgHom_inclusion_nsmulSaturation (hS : S.FG)
   rw [Nat.card_congr (F.fiberMapDomainAlgHomEquivOrbitSaturationCharHom R K hx),
     F.card_fiber_orbitSaturationCharHom hS K]
 
+/-- Over a field `K` with `[RootableBy Kˣ ℕ]`, every `K`-point of `R[S]` lifts to `R[S_sat]`. -/
+theorem _root_.AddSubmonoid.exists_comp_mapDomainAlgHom_inclusion_nsmulSaturation
+    (S : AddSubmonoid G) (R K : Type*) [CommSemiring R] [Field K] [RootableBy Kˣ ℕ] [Algebra R K]
+    (x : AddMonoidAlgebra R S →ₐ[R] K) :
+    ∃ y : AddMonoidAlgebra R
+        ↥(S.nsmulSaturation ⊓ (AddSubgroup.closure (S : Set G)).toAddSubmonoid) →ₐ[R] K,
+      y.comp (mapDomainAlgHom R R
+        (AddSubmonoid.inclusion (le_inf S.le_nsmulSaturation AddSubgroup.subset_closure))) = x :=
+  let F := S.pointSupport x
+  have ⟨ψ, hψ⟩ :=
+    F.orbitSaturationCharHom_surjective Kˣ (F.pointSupportSubtypeEquivChar R K ⟨x, rfl⟩)
+  ⟨_, ((F.fiberMapDomainAlgHomEquivOrbitSaturationCharHom R K rfl).symm ⟨ψ, hψ⟩).property⟩
+
 end OrbitSaturation
 
 section OrbitNormalization
@@ -783,15 +755,15 @@ section OrbitNormalization
 variable {G : Type*} [AddCommGroup G] [Module.IsTorsionFree ℤ G] {S : AddSubmonoid G}
 
 /-- Under `[RootableBy Kˣ ℕ]`, every `K`-point `x : R[S] →ₐ[R] K` lifts along `R[S] →+* B`. -/
-theorem exists_ringHom_comp_algebraMap_eq_of_isIntegralClosure (R L B K : Type*) [CommRing R]
-    [IsDomain R] [IsIntegrallyClosed R] [CommRing L] [Algebra (AddMonoidAlgebra R S) L]
-    [IsFractionRing (AddMonoidAlgebra R S) L] [CommRing B] [Algebra (AddMonoidAlgebra R S) B]
-    [Algebra B L] [IsScalarTower (AddMonoidAlgebra R S) B L]
-    [IsIntegralClosure B (AddMonoidAlgebra R S) L] [Field K] [RootableBy Kˣ ℕ] [Algebra R K]
-    (x : AddMonoidAlgebra R S →ₐ[R] K) :
-    ∃ z : B →+* K, z.comp (algebraMap (AddMonoidAlgebra R S) B) = x.toRingHom := by
-  obtain ⟨y, hy⟩ := exists_comp_mapDomainAlgHom_inclusion_nsmulSaturation R K x
-  exact ⟨_, ((S.fiberIntegralClosureEquivMapDomainAlgHom R L B K x).symm ⟨y, hy⟩).property⟩
+theorem _root_.AddSubmonoid.exists_ringHom_comp_algebraMap_eq_of_isIntegralClosure
+    (S : AddSubmonoid G) (R L B K : Type*) [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
+    [CommRing L] [Algebra (AddMonoidAlgebra R S) L] [IsFractionRing (AddMonoidAlgebra R S) L]
+    [CommRing B] [Algebra (AddMonoidAlgebra R S) B] [Algebra B L]
+    [IsScalarTower (AddMonoidAlgebra R S) B L] [IsIntegralClosure B (AddMonoidAlgebra R S) L]
+    [Field K] [RootableBy Kˣ ℕ] [Algebra R K] (x : AddMonoidAlgebra R S →ₐ[R] K) :
+    ∃ z : B →+* K, z.comp (algebraMap (AddMonoidAlgebra R S) B) = x.toRingHom :=
+  have ⟨y, hy⟩ := S.exists_comp_mapDomainAlgHom_inclusion_nsmulSaturation R K x
+  ⟨_, ((S.fiberIntegralClosureEquivMapDomainAlgHom R L B K x).symm ⟨y, hy⟩).property⟩
 
 /-- When `S.FG` and `Nat.card Q_F` is invertible in an algebraically closed field `K`, the
 normalization fiber over `x` with `S.pointSupport x = F` has cardinality `Nat.card Q_F`. -/

@@ -22,23 +22,19 @@ import TauCeti.Geometry.Convex.Cone.Face.Finite
 Faces of an additive monoid `S` (`SaturatedAddSubmonoid S`) and of a pointed cone `C` (`C.Face`)
 compare as follows:
 
-1. Over any ordered semiring `R`, restricting faces of `C` and pulling back along `i : M →+ V`
-   give order embeddings `PointedCone.faceOrderEmbeddingSaturatedAddSubmonoid` and
-   `PointedCone.hullFaceOrderEmbedding`.
-2. Over `ℚ`, every saturated additive submonoid of `C` spans a face of `C`
-   (`PointedCone.isFaceOf_hull_rat_of_saturatedAddSubmonoid`), so
-   `PointedCone.faceOrderIsoSaturatedAddSubmonoid` is an order isomorphism, yielding
-   `(PointedCone.hull ℚ (i '' S)).Face ≃o SaturatedAddSubmonoid S`
-   (`PointedCone.hullRatFaceOrderIso`) for injective `i` without finite-generation assumptions.
-3. For FG `S` in a free abelian group `L`, Tucker's theorem over `ℤ` exposes every face by an
-   integral functional (`SaturatedAddSubmonoid.exists_addMonoidHom_nonneg_and_eq_zero_iff`), giving
+1. Over any ordered semiring `R`, `PointedCone.faceOrderEmbeddingSaturatedAddSubmonoid` and
+   `PointedCone.hullFaceOrderEmbedding` embed cone faces into monoid faces.
+2. Over `ℚ`, `PointedCone.faceOrderIsoSaturatedAddSubmonoid` and `PointedCone.hullRatFaceOrderIso`
+   give order isomorphisms `(PointedCone.hull ℚ (i '' S)).Face ≃o SaturatedAddSubmonoid S`.
+3. For FG `S` in a free abelian group `L`, Tucker's theorem over `ℤ`
+   (`SaturatedAddSubmonoid.exists_addMonoidHom_nonneg_and_eq_zero_iff`) yields
    `PointedCone.hullFaceOrderIsoOfDualExt` and `PointedCone.hullBaseChangeFaceOrderIso` over any
    strictly ordered commutative ring `R`.
 
 ## Main declarations
 
-* `PointedCone.faceOrderEmbeddingSaturatedAddSubmonoid`, `PointedCone.hullFaceOrderEmbedding`
-* `PointedCone.faceOrderIsoSaturatedAddSubmonoid`, `PointedCone.hullRatFaceOrderIso`
+* `PointedCone.faceOrderEmbeddingSaturatedAddSubmonoid`, `PointedCone.hullFaceOrderEmbedding`,
+  `PointedCone.faceOrderIsoSaturatedAddSubmonoid`, `PointedCone.hullRatFaceOrderIso`
 * `SaturatedAddSubmonoid.exists_addMonoidHom_nonneg_and_eq_zero_iff`,
   `SaturatedAddSubmonoid.exists_addMonoidHom_closure_nonneg_and_eq_zero_iff`
 * `PointedCone.hullFaceOrderIsoOfDualExt`, `PointedCone.hullBaseChangeFaceOrderIso`
@@ -51,6 +47,33 @@ compare as follows:
 -/
 
 public section
+
+namespace AddSubmonoid
+
+variable {M : Type*} [AddCommMonoid M]
+
+/-- Canonical additive monoid homomorphism from `S : AddSubmonoid M` into the pointed cone hull
+`PointedCone.hull R (i '' (S : Set M))` along `i : M →+ V`. -/
+def toHull (S : AddSubmonoid M) (R : Type*) [Semiring R] [PartialOrder R] [IsOrderedRing R]
+    {V : Type*} [AddCommGroup V] [Module R V] (i : M →+ V) :
+    S →+ PointedCone.hull R (i '' (S : Set M)) where
+  toFun s := ⟨i s.val, PointedCone.subset_hull ⟨s.val, s.property, rfl⟩⟩
+  map_zero' := Subtype.ext (map_zero i)
+  map_add' a b := Subtype.ext (map_add i a.val b.val)
+
+/-- `AddSubmonoid.toHull` sends `s : S` to `i s` in the ambient module `V`. -/
+@[simp]
+theorem coe_toHull (S : AddSubmonoid M) (R : Type*) [Semiring R] [PartialOrder R] [IsOrderedRing R]
+    {V : Type*} [AddCommGroup V] [Module R V] (i : M →+ V) (s : S) :
+    (S.toHull R i s : V) = i s.val := (rfl)
+
+/-- `AddSubmonoid.toHull` is injective whenever `i` is injective. -/
+theorem toHull_injective (S : AddSubmonoid M) (R : Type*) [Semiring R] [PartialOrder R]
+    [IsOrderedRing R] {V : Type*} [AddCommGroup V] [Module R V] {i : M →+ V}
+    (hi : Function.Injective i) : Function.Injective (S.toHull R i) :=
+  fun _ _ h ↦ Subtype.ext (hi (congrArg Subtype.val h))
+
+end AddSubmonoid
 
 namespace PointedCone
 
@@ -73,29 +96,7 @@ def faceOrderEmbeddingSaturatedAddSubmonoid (C : PointedCone R V) :
 vector in `τ`. -/
 @[simp]
 theorem mem_faceOrderEmbeddingSaturatedAddSubmonoid {C : PointedCone R V} (τ : C.Face) (x : C) :
-    x ∈ C.faceOrderEmbeddingSaturatedAddSubmonoid τ ↔ (x : V) ∈ τ :=
-  Iff.rfl
-
-variable (R) in
-/-- Canonical additive monoid homomorphism from `S : AddSubmonoid M` into the pointed cone hull
-`PointedCone.hull R (i '' (S : Set M))` along `i : M →+ V`. -/
-def toHull (i : M →+ V) (S : AddSubmonoid M) :
-    S →+ PointedCone.hull R (i '' (S : Set M)) where
-  toFun s := ⟨i s.val, PointedCone.subset_hull ⟨s.val, s.property, rfl⟩⟩
-  map_zero' := Subtype.ext (map_zero i)
-  map_add' a b := Subtype.ext (map_add i a.val b.val)
-
-variable (R) in
-/-- `PointedCone.toHull` sends `s : S` to `i s` in the ambient module `V`. -/
-@[simp]
-theorem coe_toHull (i : M →+ V) (S : AddSubmonoid M) (s : S) :
-    (toHull R i S s : V) = i s.val := (rfl)
-
-variable (R) in
-/-- `PointedCone.toHull` is injective whenever `i` is injective. -/
-theorem toHull_injective {i : M →+ V} (hi : Function.Injective i) (S : AddSubmonoid M) :
-    Function.Injective (toHull R i S) :=
-  fun _ _ h ↦ Subtype.ext (hi (congrArg Subtype.val h))
+    x ∈ C.faceOrderEmbeddingSaturatedAddSubmonoid τ ↔ (x : V) ∈ τ := Iff.rfl
 
 variable (R) in
 /-- Pulling back faces of `PointedCone.hull R (i '' (S : Set M))` along `i` embeds its face lattice
@@ -105,7 +106,7 @@ def hullFaceOrderEmbedding (i : M →+ V) (S : AddSubmonoid M) :
   OrderEmbedding.ofMapLEIff
     (fun τ ↦
       ((PointedCone.hull R (i '' (S : Set M))).faceOrderEmbeddingSaturatedAddSubmonoid τ).comap
-        (toHull R i S))
+        (S.toHull R i))
     fun {τ₁ τ₂} ↦ by
       refine ⟨fun h ↦ ?_, fun h s hs ↦ ?_⟩
       · have hτ₁ : τ₁.toPointedCone = PointedCone.hull R ((i '' (S : Set M)) ∩ τ₁) :=
@@ -115,18 +116,17 @@ def hullFaceOrderEmbedding (i : M →+ V) (S : AddSubmonoid M) :
         rintro _ ⟨⟨x, hxS, rfl⟩, hx⟩
         have hx' := @h ⟨x, hxS⟩
         simp only [SaturatedAddSubmonoid.mem_comap,
-          mem_faceOrderEmbeddingSaturatedAddSubmonoid, coe_toHull] at hx'
+          mem_faceOrderEmbeddingSaturatedAddSubmonoid, AddSubmonoid.coe_toHull] at hx'
         exact hx' hx
       · simp only [SaturatedAddSubmonoid.mem_comap,
-          mem_faceOrderEmbeddingSaturatedAddSubmonoid, coe_toHull] at hs ⊢
+          mem_faceOrderEmbeddingSaturatedAddSubmonoid, AddSubmonoid.coe_toHull] at hs ⊢
         exact h hs
 
 /-- An element `s : S` belongs to `hullFaceOrderEmbedding R i S τ` iff `i s ∈ τ`. -/
 @[simp]
 theorem mem_hullFaceOrderEmbedding {i : M →+ V} {S : AddSubmonoid M}
     (τ : (PointedCone.hull R (i '' (S : Set M))).Face) (s : S) :
-    s ∈ hullFaceOrderEmbedding R i S τ ↔ i s.val ∈ τ := by
-  simp [hullFaceOrderEmbedding]
+    s ∈ hullFaceOrderEmbedding R i S τ ↔ i s.val ∈ τ := by simp [hullFaceOrderEmbedding]
 
 /-- Any cone face `τ` of `PointedCone.hull R (i '' S)` whose pullback to `S` equals `F` is the cone
 hull of the image of `F`. -/
@@ -136,9 +136,7 @@ theorem toPointedCone_eq_hull_image_of_hullFaceOrderEmbedding_eq {i : M →+ V} 
     τ.toPointedCone = PointedCone.hull R ((i ∘ S.subtype) '' (F : Set S)) := by
   have hτ : τ.toPointedCone = PointedCone.hull R ((i '' (S : Set M)) ∩ τ) :=
     τ.isFaceOf.eq_hull_inter_of_eq_hull rfl
-  rw [hτ]
-  congr 1
-  ext v
+  rw [hτ]; congr 1; ext v
   simp only [Set.mem_inter_iff, Set.mem_image, SetLike.mem_coe, Function.comp_apply,
     AddSubmonoid.coe_subtype]
   refine ⟨?_, ?_⟩
@@ -158,9 +156,7 @@ private theorem mem_hull_rat_image_saturated_iff (C : PointedCone ℚ V)
     (x : V) ∈ PointedCone.hull ℚ (C.toAddSubmonoid.subtype '' (F : Set C)) ↔ x ∈ F := by
   have hmem := mem_hull_rat_image_iff_mem_nsmulSaturation (S := F.toAddSubmonoid)
     C.toAddSubmonoid.subtype_injective (x := x)
-  rw [AddSubmonoid.nsmulSaturation_eq_self F.nsmulSaturated] at hmem
-  rw [AddSubmonoid.coe_subtype] at hmem
-  exact hmem
+  rwa [AddSubmonoid.nsmulSaturation_eq_self F.nsmulSaturated, AddSubmonoid.coe_subtype] at hmem
 
 /-- Every saturated additive submonoid `F` of a rational pointed cone `C : PointedCone ℚ V` spans a
 face of `C`. -/
@@ -168,24 +164,20 @@ theorem isFaceOf_hull_rat_of_saturatedAddSubmonoid (C : PointedCone ℚ V)
     (F : SaturatedAddSubmonoid C) :
     (PointedCone.hull ℚ (C.toAddSubmonoid.subtype '' (F : Set C))).IsFaceOf C := by
   have hle : PointedCone.hull ℚ (C.toAddSubmonoid.subtype '' (F : Set C)) ≤ C := by
-    refine Submodule.span_le.2 ?_
-    rintro _ ⟨x, -, rfl⟩
-    exact x.property
+    refine Submodule.span_le.2 ?_; rintro _ ⟨x, -, rfl⟩; exact x.property
   refine ⟨hle, fun {x y a} hx hy ha hxy ↦ (mem_hull_rat_image_saturated_iff C F ⟨x, hx⟩).2 ?_⟩
   let q : ℕ := a.den
   let p : ℕ := a.num.toNat
   have hp_pos : 0 < p := Int.lt_toNat.2 (Rat.num_pos.2 ha)
-  have hp_cast : (p : ℚ) = a.num := by
-    exact_mod_cast Int.toNat_of_nonneg (Rat.num_nonneg.2 ha.le)
+  have hp_cast : (p : ℚ) = a.num := by exact_mod_cast Int.toNat_of_nonneg (Rat.num_nonneg.2 ha.le)
   have hqa : (q : ℚ) * a = p := by rw [mul_comm, hp_cast]; exact a.mul_den_eq_num
   have hq_mem : p • x + q • y ∈
       PointedCone.hull ℚ (C.toAddSubmonoid.subtype '' (F : Set C)) := by
     have hsmul := Submodule.smul_mem
       (PointedCone.hull ℚ (C.toAddSubmonoid.subtype '' (F : Set C)))
       (⟨q, Nat.cast_nonneg q⟩ : {c : ℚ // 0 ≤ c}) hxy
-    rw [← Nonneg.coe_smul, smul_add, smul_smul, hqa, Nat.cast_smul_eq_nsmul,
+    rwa [← Nonneg.coe_smul, smul_add, smul_smul, hqa, Nat.cast_smul_eq_nsmul,
       Nat.cast_smul_eq_nsmul] at hsmul
-    exact hsmul
   have hsumF : p • (⟨x, hx⟩ : C) + q • (⟨y, hy⟩ : C) ∈ F :=
     (mem_hull_rat_image_saturated_iff C F (p • ⟨x, hx⟩ + q • ⟨y, hy⟩)).1 hq_mem
   exact (F.nsmulSaturated ((F.addSaturated hsumF).1)).resolve_left hp_pos.ne'
@@ -198,15 +190,9 @@ def faceOrderIsoSaturatedAddSubmonoid (C : PointedCone ℚ V) :
   invFun F :=
     ⟨PointedCone.hull ℚ (C.toAddSubmonoid.subtype '' (F : Set C)),
       isFaceOf_hull_rat_of_saturatedAddSubmonoid C F⟩
-  left_inv τ := by
-    apply C.faceOrderEmbeddingSaturatedAddSubmonoid.injective
-    refine SetLike.ext fun x ↦ ?_
-    rw [mem_faceOrderEmbeddingSaturatedAddSubmonoid]
-    exact mem_hull_rat_image_saturated_iff C (C.faceOrderEmbeddingSaturatedAddSubmonoid τ) x
-  right_inv F := by
-    refine SetLike.ext fun x ↦ ?_
-    rw [mem_faceOrderEmbeddingSaturatedAddSubmonoid]
-    exact mem_hull_rat_image_saturated_iff C F x
+  left_inv τ := C.faceOrderEmbeddingSaturatedAddSubmonoid.injective <| SetLike.ext fun x ↦
+    mem_hull_rat_image_saturated_iff C (C.faceOrderEmbeddingSaturatedAddSubmonoid τ) x
+  right_inv F := SetLike.ext fun x ↦ mem_hull_rat_image_saturated_iff C F x
   map_rel_iff' := C.faceOrderEmbeddingSaturatedAddSubmonoid.map_rel_iff
 
 /-- Membership in `C.faceOrderIsoSaturatedAddSubmonoid τ` is membership of the underlying vector in
@@ -230,7 +216,7 @@ finite-generation hypothesis on `S`. -/
 def hullRatFaceOrderIso {i : M →+ V} (hi : Function.Injective i) (S : AddSubmonoid M) :
     (PointedCone.hull ℚ (i '' (S : Set M))).Face ≃o SaturatedAddSubmonoid S :=
   (PointedCone.hull ℚ (i '' (S : Set M))).faceOrderIsoSaturatedAddSubmonoid.trans
-    (SaturatedAddSubmonoid.comapOrderIsoOfNSMulSaturation (toHull_injective ℚ hi S) fun y ↦ by
+    (SaturatedAddSubmonoid.comapOrderIsoOfNSMulSaturation (S.toHull_injective ℚ hi) fun y ↦ by
       have hy : y.val ∈ (AddSubmonoid.closure (i '' (S : Set M))).nsmulSaturation :=
         (mem_hull_rat_iff_mem_nsmulSaturation_closure (i '' (S : Set M))).1 y.property
       rw [← AddMonoidHom.map_mclosure, S.closure_eq] at hy
@@ -242,8 +228,8 @@ def hullRatFaceOrderIso {i : M →+ V} (hi : Function.Injective i) (S : AddSubmo
 @[simp]
 theorem hullRatFaceOrderIso_apply {i : M →+ V} (hi : Function.Injective i) (S : AddSubmonoid M)
     (τ : (PointedCone.hull ℚ (i '' (S : Set M))).Face) :
-    hullRatFaceOrderIso hi S τ = hullFaceOrderEmbedding ℚ i S τ :=
-  SetLike.ext fun _ ↦ by simp [hullRatFaceOrderIso]
+    hullRatFaceOrderIso hi S τ = hullFaceOrderEmbedding ℚ i S τ := SetLike.ext fun _ ↦ by
+  simp [hullRatFaceOrderIso]
 
 /-- An element `s : S` belongs to `hullRatFaceOrderIso hi S τ` iff `i s ∈ τ`. -/
 theorem mem_hullRatFaceOrderIso {i : M →+ V} (hi : Function.Injective i) (S : AddSubmonoid M)
@@ -258,9 +244,8 @@ theorem toPointedCone_hullRatFaceOrderIso_symm {i : M →+ V} (hi : Function.Inj
     (S : AddSubmonoid M) (F : SaturatedAddSubmonoid S) :
     ((hullRatFaceOrderIso hi S).symm F).toPointedCone =
       PointedCone.hull ℚ ((i ∘ S.subtype) '' (F : Set S)) :=
-  toPointedCone_eq_hull_image_of_hullFaceOrderEmbedding_eq
-    (by simpa only [← hullRatFaceOrderIso_apply hi] using
-      (hullRatFaceOrderIso hi S).apply_symm_apply F)
+  toPointedCone_eq_hull_image_of_hullFaceOrderEmbedding_eq (by
+    simpa only [← hullRatFaceOrderIso_apply hi] using (hullRatFaceOrderIso hi S).apply_symm_apply F)
 
 end Rational
 
@@ -328,9 +313,8 @@ theorem exists_addMonoidHom_closure_nonneg_and_eq_zero_iff {G : Type*} [AddCommG
   let F' : SaturatedAddSubmonoid (S.comap (AddSubgroup.closure (S : Set G)).subtype) :=
     F.comap S.toGroupClosureEquiv.symm.toAddMonoidHom
   obtain ⟨m, hm, hm0⟩ := exists_addMonoidHom_nonneg_and_eq_zero_iff hS.comap_subtype_closure F'
-  refine ⟨m, fun s ↦ hm (S.toGroupClosure s) ?_,
+  exact ⟨m, fun s ↦ hm _ (by simp [S.coe_toGroupClosure]),
     fun s ↦ by simpa [F', SaturatedAddSubmonoid.mem_comap] using hm0 (S.toGroupClosureEquiv s)⟩
-  rw [AddSubmonoid.mem_comap, AddSubgroup.coe_subtype, S.coe_toGroupClosure]; exact s.property
 
 end IntegralExposure
 
@@ -356,11 +340,7 @@ noncomputable def hullFaceOrderIsoOfDualExt {i : L →+ V}
     have hφC : ∀ v ∈ PointedCone.hull R (i '' (S : Set L)), 0 ≤ φ v := fun _ hv ↦
       PointedCone.apply_nonneg_of_mem_hull
         (by rintro _ ⟨x, hxS, rfl⟩; rw [hφ]; exact_mod_cast hmS x hxS) hv
-    have hface : (PointedCone.hull R (i '' (S : Set L)) ⊓
-        PointedCone.ofSubmodule (LinearMap.ker φ)).IsFaceOf
-        (PointedCone.hull R (i '' (S : Set L))) :=
-      PointedCone.isFaceOf_inf_ker_of_posMulStrictMono hφC
-    refine ⟨⟨_, hface⟩, SetLike.ext fun s ↦ ?_⟩
+    refine ⟨⟨_, PointedCone.isFaceOf_inf_ker_of_posMulStrictMono hφC⟩, SetLike.ext fun s ↦ ?_⟩
     simp only [mem_hullFaceOrderEmbedding, ← Face.mem_toPointedCone, Face.toPointedCone,
       Submodule.mem_inf, mem_ofSubmodule_iff, LinearMap.mem_ker, hφ, Int.cast_eq_zero, hmF]
     exact ⟨fun h ↦ h.2, fun hsF ↦ ⟨PointedCone.subset_hull ⟨s.val, s.property, rfl⟩, hsF⟩⟩
@@ -380,8 +360,8 @@ theorem toPointedCone_hullFaceOrderIsoOfDualExt_symm {i : L →+ V}
     {S : AddSubmonoid L} (hS : S.FG) (F : SaturatedAddSubmonoid S) :
     ((hullFaceOrderIsoOfDualExt hext hS).symm F).toPointedCone =
       PointedCone.hull R ((i ∘ S.subtype) '' (F : Set S)) :=
-  toPointedCone_eq_hull_image_of_hullFaceOrderEmbedding_eq
-    (by simpa only [← hullFaceOrderIsoOfDualExt_apply hext hS] using
+  toPointedCone_eq_hull_image_of_hullFaceOrderEmbedding_eq (by
+    simpa only [← hullFaceOrderIsoOfDualExt_apply hext hS] using
       (hullFaceOrderIsoOfDualExt hext hS).apply_symm_apply F)
 
 /-- Over any strictly ordered commutative ring `R` (such as `ℝ`, `ℚ`, or `ℤ`), the faces of the
@@ -392,9 +372,7 @@ noncomputable def hullBaseChangeFaceOrderIso (R : Type*) [CommRing R] [PartialOr
     (PointedCone.hull R (TensorProduct.mk ℤ R L 1 '' (S : Set L))).Face ≃o
       SaturatedAddSubmonoid S :=
   hullFaceOrderIsoOfDualExt (i := (TensorProduct.mk ℤ R L 1).toAddMonoidHom)
-    (fun m ↦ ⟨(((Int.castAddHom R).comp m).toIntLinearMap).liftBaseChange R,
-      fun x ↦ by simp⟩)
-    hS
+    (fun m ↦ ⟨(((Int.castAddHom R).comp m).toIntLinearMap).liftBaseChange R, fun _ ↦ by simp⟩) hS
 
 /-- `hullBaseChangeFaceOrderIso` agrees with `hullFaceOrderEmbedding` along `1 ⊗ ·`. -/
 @[simp]
@@ -402,8 +380,7 @@ theorem hullBaseChangeFaceOrderIso_apply (R : Type*) [CommRing R] [PartialOrder 
     [IsStrictOrderedRing R] {S : AddSubmonoid L} (hS : S.FG)
     (τ : (PointedCone.hull R (TensorProduct.mk ℤ R L 1 '' (S : Set L))).Face) :
     hullBaseChangeFaceOrderIso R hS τ =
-      hullFaceOrderEmbedding R (TensorProduct.mk ℤ R L 1).toAddMonoidHom S τ :=
-  (rfl)
+      hullFaceOrderEmbedding R (TensorProduct.mk ℤ R L 1).toAddMonoidHom S τ := (rfl)
 
 /-- The inverse of `hullBaseChangeFaceOrderIso` sends a monoid face `F` to the cone generated by
 the image of `F` in `R ⊗[ℤ] L`. -/

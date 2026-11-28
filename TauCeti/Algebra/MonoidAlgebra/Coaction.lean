@@ -53,6 +53,14 @@ noncomputable def gradedCoaction {M L : Type*} [Monoid M] [Monoid L] (w : M →*
   (Algebra.TensorProduct.map (mapDomainAlgHom R R w) (AlgHom.id R _)).comp
     (Bialgebra.comulAlgHom R (MonoidAlgebra R M))
 
+/-- Explicit definition of `MonoidAlgebra.gradedCoaction`. -/
+@[to_additive (dont_translate := R)
+/-- Explicit definition of `AddMonoidAlgebra.gradedCoaction`. -/]
+theorem gradedCoaction_def {M L : Type*} [Monoid M] [Monoid L] (w : M →* L) :
+    gradedCoaction R w =
+      (Algebra.TensorProduct.map (mapDomainAlgHom R R w) (AlgHom.id R _)).comp
+        (Bialgebra.comulAlgHom R (MonoidAlgebra R M)) := (rfl)
+
 /-- `gradedCoaction R w` sends `single m r` to `single (w m) 1 ⊗ₜ single m r`. -/
 @[to_additive (dont_translate := R) (attr := simp)
 /-- `gradedCoaction R w` sends `single m r` to `single (w m) 1 ⊗ₜ single m r`. -/]
