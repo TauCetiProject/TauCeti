@@ -39,7 +39,9 @@ evaluation of the first Chern class.
   Chern number is at least `n - 1` (`TauCeti.Floer.isWPlusMonotone_of_forall_sub_one_le_chern`),
   when `c` vanishes, as on a spherically aspherical manifold
   (`TauCeti.Floer.isWPlusMonotone_of_chern_eq_zero`), and in dimensions `2` and `4`, where the
-  range is empty (`TauCeti.Floer.isWPlusMonotone_of_le_two`).
+  range is empty (`TauCeti.Floer.isWPlusMonotone_of_le_two`). When every first Chern number is
+  even, as on a product of spheres, it holds vacuously in dimension `6` as well
+  (`TauCeti.Floer.isWPlusMonotone_of_even_of_le_three`).
 * A positively monotone manifold, `ω = τ c` with `τ > 0`, is w⁺-monotone
   (`TauCeti.Floer.isWPlusMonotone_of_area_eq_mul_chern`).
 * The condition pulls back along homomorphisms of class groups and descends along surjective
@@ -144,6 +146,14 @@ theorem isWPlusMonotone_of_chern_eq_zero (h : ∀ s, c s = 0) : IsWPlusMonotone 
 `(0, n - 2]` when `n ≤ 2`. -/
 theorem isWPlusMonotone_of_le_two (hn : n ≤ 2) : IsWPlusMonotone ω c n :=
   isWPlusMonotone_of_forall_sub_one_le_chern fun _ hc ↦ by omega
+
+/-- **Data with even first Chern numbers are w⁺-monotone in dimension at most `6`**: an even
+integer in `(0, n - 2]` needs `n ≥ 4`. -/
+theorem isWPlusMonotone_of_even_of_le_three (hc : ∀ s, Even (c s)) (hn : n ≤ 3) :
+    IsWPlusMonotone ω c n :=
+  isWPlusMonotone_of_forall_sub_one_le_chern fun s hs ↦ by
+    obtain ⟨k, hk⟩ := hc s
+    omega
 
 /-- **Positively monotone data are w⁺-monotone**: if `ω = τ c` with `τ > 0`, every class of
 positive first Chern number has positive area. -/

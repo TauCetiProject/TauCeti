@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Closed
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Manifold.LeftCapping
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.LeftCapping
-import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Compactness of the input-exchange family capped at `0` in a closed manifold
@@ -40,7 +39,8 @@ applies once its hypotheses are checked for the family.
   `abs_integral_floerEnergyDensity_cappedExchangePerturbation_sub_le`). The energy density of a
   solution is nonnegative wherever the structures are tamed and the capped puncture `0` is a null
   set, so this bounds the energy over every part of the capped domain, which may contain the
-  capped puncture: bubbling at the inserted plane is covered.
+  capped puncture: bubbling at the inserted plane is covered (in the same namespace,
+  `setIntegral_floerEnergyDensity_cappedExchangePerturbation_le`).
 * **The almost complex structures of the family.** For the structures
   `TauCeti.SmoothTwoForm.Compatible.cappedExchangeAlmostComplex` of the family, built from a
   compatible base structure and period-one `C²` end structures, the structures read in the charts
@@ -191,9 +191,7 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
       ContMDiffAt (𝓘(ℝ, ℝ × (ℝ × ℝ)).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1)
         (uncurry fun (p : ℝ × (ℝ × ℝ)) x ↦
           cappedExchangePerturbation H L p.1 (equivRealProdCLM.symm p.2) x w) (p, x) :=
-    (((contMDiffAt_cappedExchangePerturbation hH hHs hL p.1 hp.2 x).comp (p, x)
-      contMDiff_prodMk_equivRealProdCLM_symm.contMDiffAt).clm_apply contMDiffAt_const).of_le
-        (by norm_num)
+    (contMDiffAt_uncurry_cappedExchangePerturbation_apply hH hHs hL w hp.2 x).of_le (by norm_num)
   have hS₁ : IsOpen S₁ := isOpen_ne_fun equivRealProdCLM.symm.continuous continuous_const
   have hWS : IsOpen (W ∩ univ ×ˢ S₁) := hW.inter (isOpen_univ.prod hS₁)
   have hCDWS : C ×ˢ D ⊆ W ∩ univ ×ˢ S₁ :=
@@ -216,15 +214,12 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
     filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz _ using hz
   -- The Floer energy over `Ω` is at most the energy over `S`, which exceeds the topological
   -- energy by at most `B_0 + (B_0 + B_1 + B_∞)`.
-  refine hconv hΩ hΩD hcC (fun k ↦ (hu k).mono hΩS₁) (fun k z hz ↦ hfl k z (hΩS₁ hz))
-    (fun k ↦ (hint k).mono_set_ae hΩS) fun k ↦ ?_
-  have habs := hω.abs_integral_floerEnergyDensity_cappedExchangePerturbation_sub_le hH
-    (fun q ↦ (hHs q).of_le (by norm_num)) hB hL (hC₀₁ (hcC k)).1 (hC₀₁ (hcC k)).2
-    (((hu k).of_le (by norm_num)).mono fun _ hz ↦ hz.2) (hx₁ k) (hxinf k) (hint k) (harea k)
-  refine (setIntegral_mono_set (hint k) (ae_restrict_of_forall_mem
-    isOpen_thricePuncturedSphereReal.measurableSet fun z hz ↦ floerEnergyDensity_nonneg hω
-      (hJt _ (hcC k) z hz.2 _) (hfl k z hz.2)) hΩS).trans ?_
-  linarith [(abs_sub_le_iff.1 habs).1, hA k]
+  exact hconv hΩ hΩD hcC (fun k ↦ (hu k).mono hΩS₁) (fun k z hz ↦ hfl k z (hΩS₁ hz))
+    (fun k ↦ (hint k).mono_set_ae hΩS) fun k ↦
+      hω.setIntegral_floerEnergyDensity_cappedExchangePerturbation_le hH
+        (fun q ↦ (hHs q).of_le (by norm_num)) hB hL (hC₀₁ (hcC k)).1 (hC₀₁ (hcC k)).2
+        (((hu k).of_le (by norm_num)).mono fun _ hz ↦ hz.2) (hx₁ k) (hxinf k) (hint k) (harea k)
+        (fun z hz ↦ hJt _ (hcC k) z hz.2 _) (fun z hz ↦ hfl k z hz.2) (hA k) Ω
 
 end IsNondegenerate
 

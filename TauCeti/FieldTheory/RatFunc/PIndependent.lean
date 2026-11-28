@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Frobenius.PIndependent
-public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
 public import TauCeti.FieldTheory.RatFunc.Valuation
 import TauCeti.Algebra.CharP.Two
+import TauCeti.FieldTheory.RatFunc.Kaehler
+import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
 # Two independent nonsquares in a rational function field
@@ -77,10 +78,9 @@ variable {k : Type*} [Field k] [CharP k 2]
 
 /-- The two variables of `k(s)(u)` in characteristic two are `2`-independent. Equivalently,
 `1, s, u, s u` are linearly independent over the subfield of squares. -/
-theorem isPIndependentPair_ratFunc_C_X_X :
-    IsPIndependentPair 2 (RatFunc.C (RatFunc.X : RatFunc k))
-      (RatFunc.X : RatFunc (RatFunc k)) := by
-  rw [isPIndependentPair_iff]
+theorem isPIndependent_ratFunc_C_X_X :
+    IsPIndependent 2 ![RatFunc.C (RatFunc.X : RatFunc k), (RatFunc.X : RatFunc (RatFunc k))] := by
+  rw [isPIndependent_pair_iff]
   intro c hc i hi j hj
   have hsum : c 0 0 ^ 2 + c 0 1 ^ 2 * RatFunc.X +
       (c 1 0 ^ 2 * RatFunc.C (RatFunc.X : RatFunc k) +

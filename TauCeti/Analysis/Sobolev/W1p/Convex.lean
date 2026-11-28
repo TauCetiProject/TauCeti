@@ -10,6 +10,7 @@ import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Sobolev.Mollification.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Convex.Topology
@@ -284,7 +285,7 @@ theorem W1p.exists_holderOnWith_preciseRepresentative_of_ae_norm_gradient_le {p 
     have hle := norm_le_add_toReal_eLpNorm_div_of_ae_dist_le
       (zero_lt_one.trans_le Fact.out).ne'
       (Measure.restrict_eq_zero.not.2 (measure_ball_pos μ x (by positivity)).ne')
-      (W1p.eLpNorm_value_restrict_ne_top u hxΩ) hosc
+      (Lp.eLpNorm_restrict_ne_top (W1p.value u) hxΩ) hosc
     rw [Measure.restrict_apply_univ, Measure.addHaar_ball_center] at hle
     exact hle.trans (by gcongr; exact W1p.toReal_eLpNorm_value_le_norm u hxΩ)
   have hρ2 : ((ρ / 2).toNNReal : ℝ) = ρ / 2 := Real.coe_toNNReal _ (by positivity)

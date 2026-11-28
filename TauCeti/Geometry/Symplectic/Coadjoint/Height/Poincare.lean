@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Coadjoint.Height.Perfect
 public import TauCeti.Geometry.Symplectic.Coadjoint.Height.Weyl
 
-import TauCeti.Geometry.Lie.Subgroup.Torus.RootPlane
+import TauCeti.Geometry.Lie.Subgroup.Torus.Root.Plane
 
 /-!
 # The Poincaré polynomial and Euler characteristic of a coadjoint orbit

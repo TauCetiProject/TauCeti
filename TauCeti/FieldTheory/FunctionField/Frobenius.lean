@@ -9,7 +9,9 @@ public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
 public import TauCeti.FieldTheory.FunctionField.Place.Basic
 public import TauCeti.FieldTheory.RatFunc.PowerTower
 public import TauCeti.RingTheory.Valuation.Discrete.Frobenius
+import TauCeti.FieldTheory.Frobenius.Range
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Transcendental
+import TauCeti.RingTheory.Kaehler.PBasis
 
 /-!
 # Frobenius and separating elements of a function field
@@ -19,19 +21,19 @@ one-variable function field `F / k` over a perfect field of exponential characte
 element outside the subfield `F^p` of Frobenius powers is separating.  Consequently, a place at
 which the order of `x` is not divisible by `p` certifies that `x` is separating.
 
-The proof combines three ingredients.  A separating parameter exists over a perfect field; the
-rational function field has degree `p` over its `p`-th-power subfield; and the kernel of a nonzero
-derivation is an intermediate field.  The first two facts give `[F : F^p] = p`.  Since this degree
-is prime in positive characteristic, the kernel of a nonzero derivation that contains `F^p` must
-equal `F^p`.
+A separating parameter exists over a perfect field, which makes the Kähler differentials `Ω[F⁄k]`
+one-dimensional; in positive characteristic, the finiteness criterion
+`TauCeti.finiteDimensional_kaehlerDifferential_iff` and the degree–dimension formula
+`TauCeti.finrank_fieldRange_frobenius_eq_pow_finrank_kaehlerDifferential` then give
+`[F : F^p] = p`. Combined with `TauCeti.D_eq_zero_iff_mem_fieldRange_frobenius` for the kernel
+identification `ker (D k F) = F^p` and the differential separability criterion, this characterizes
+separating elements in positive characteristic as the elements outside `F^p`.
 
 ## Main results
 
 * `TauCeti.IsFunctionField.finrank_fieldRange_frobenius`: `[F : F^p] = p`.
-* `TauCeti.IsFunctionField.D_eq_zero_iff_mem_fieldRange_frobenius`: the kernel of the universal
-  derivation is exactly `F^p`.
-* `TauCeti.IsFunctionField.isSeparable_adjoin_iff_notMem_fieldRange_frobenius`: `x` is separating
-  exactly when it lies outside `F^p`.
+* `TauCeti.IsFunctionField.isSeparable_adjoin_iff_notMem_fieldRange_frobenius`: in prime
+  characteristic `p`, `x` is separating exactly when it lies outside `F^p`.
 * `TauCeti.IsFunctionField.transcendental_and_isSeparable_adjoin_of_notMem_fieldRange_frobenius`:
   an element outside `F^p` is transcendental and separating.
 * `TauCeti.IsFunctionField.exists_pow_eq_and_adjoin_eq_top_of_finrank_prime_of_not_isSeparable`:
@@ -64,110 +66,29 @@ variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F]
 
 namespace IsFunctionField
 
-/-- The degree of a one-variable function field over its subfield of `p`-th powers is `p`.
-This is the degree computation underlying the fixed-parameter separability criterion. -/
+/-- The degree of a one-variable function field over a perfect field over its subfield of
+`p`-th powers is `p`, for any exponential characteristic `p`. -/
 theorem finrank_fieldRange_frobenius [PerfectField k] (hF : TauCeti.IsFunctionField k F)
     (p : ℕ) [ExpChar F p] :
     Module.finrank (frobenius F p).fieldRange F = p := by
-  let _ : ExpChar k p := (algebraMap k F).expChar (algebraMap k F).injective p
-  obtain ⟨y, hy⟩ := hF.exists_transcendental
-  have hA : k⟮y⟯.toSubfield.map (frobenius F p) = k⟮y ^ p⟯.toSubfield := by
-    -- Both inclusions use `adjoin_simple_le_iff` for subfields containing the scalars.
-    -- Passing between subfield and intermediate-field membership is definitional.
-    -- Comap membership is definitionally membership of the Frobenius image, and
-    -- `frobenius F p y = y ^ p` holds by `rfl`, also giving the map witness below.
-    have hk (c : k) : algebraMap k F c ∈ k⟮y⟯.toSubfield.map (frobenius F p) := by
-      obtain ⟨d, rfl⟩ := surjective_frobenius k p c
-      exact ⟨algebraMap k F d, k⟮y⟯.algebraMap_mem d, (RingHom.map_frobenius _ _ _).symm⟩
-    have hk' (c : k) : algebraMap k F c ∈ k⟮y ^ p⟯.toSubfield.comap (frobenius F p) := by
-      rw [Subfield.mem_comap, ← RingHom.map_frobenius]
-      exact k⟮y ^ p⟯.algebraMap_mem _
-    refine le_antisymm (Subfield.map_le_iff_le_comap.mpr fun z hz ↦ ?_) fun z hz ↦ ?_
-    · exact (IntermediateField.adjoin_simple_le_iff (K := Subfield.toIntermediateField _ hk')).mpr
-        (IntermediateField.mem_adjoin_simple_self k (y ^ p)) hz
-    · exact (IntermediateField.adjoin_simple_le_iff (K := Subfield.toIntermediateField _ hk)).mpr
-        ⟨y, IntermediateField.mem_adjoin_simple_self k y, rfl⟩ hz
-  have hAB : k⟮y⟯.toSubfield.map (frobenius F p) ≤ k⟮y⟯.toSubfield := by
-    rintro _ ⟨z, hz, rfl⟩
-    simpa [frobenius_def] using k⟮y⟯.toSubfield.pow_mem hz p
-  have hAC : k⟮y⟯.toSubfield.map (frobenius F p) ≤ (frobenius F p).fieldRange := by
-    rw [RingHom.fieldRange_eq_map]
-    rintro _ ⟨z, _, rfl⟩
-    exact ⟨z, trivial, rfl⟩
-  have hrelAB : Subfield.relfinrank (k⟮y⟯.toSubfield.map (frobenius F p)) k⟮y⟯.toSubfield = p := by
-    rw [hA]
-    exact hy.relfinrank_adjoin_pow_adjoin p
-  have hrelAC : Subfield.relfinrank (k⟮y⟯.toSubfield.map (frobenius F p))
-      (frobenius F p).fieldRange = Subfield.relfinrank k⟮y⟯.toSubfield ⊤ := by
-    rw [RingHom.fieldRange_eq_map]
-    exact Subfield.relfinrank_map_map k⟮y⟯.toSubfield ⊤ (frobenius F p)
-  let _ : FiniteDimensional k⟮y⟯ F := hF.finiteDimensional_adjoin hy
-  have hn : Subfield.relfinrank k⟮y⟯.toSubfield ⊤ ≠ 0 := by
-    rw [Subfield.relfinrank_top_right]
-    exact Module.finrank_pos.ne'
-  have hABF := Subfield.relfinrank_mul_finrank_top hAB
-  have hACF := Subfield.relfinrank_mul_finrank_top hAC
-  rw [hrelAB] at hABF
-  rw [← Subfield.relfinrank_top_right] at hABF
-  rw [hrelAC] at hACF
-  apply Nat.eq_of_mul_eq_mul_left (Nat.zero_lt_of_ne_zero hn)
-  calc
-    Subfield.relfinrank k⟮y⟯.toSubfield ⊤ * Module.finrank (frobenius F p).fieldRange F =
-        Module.finrank (k⟮y⟯.toSubfield.map (frobenius F p)) F := hACF
-    _ = p * Subfield.relfinrank k⟮y⟯.toSubfield ⊤ := hABF.symm
-    _ = Subfield.relfinrank k⟮y⟯.toSubfield ⊤ * p := Nat.mul_comm _ _
-
-/-- **The kernel of the universal derivation is the Frobenius subfield**: in a one-variable
-function field over a perfect field, `d x = 0` exactly when `x` is a `p`-th power. This identifies
-differential nonvanishing with the Frobenius-subfield obstruction used by separating criteria. -/
-theorem D_eq_zero_iff_mem_fieldRange_frobenius [PerfectField k]
-    (hF : TauCeti.IsFunctionField k F) (p : ℕ) [ExpChar F p] [Fact p.Prime] (x : F) :
-    D k F x = 0 ↔ x ∈ (frobenius F p).fieldRange := by
-  let _ : ExpChar k p := (algebraMap k F).expChar (algebraMap k F).injective p
-  let _ : CharP F p := by
-    cases (inferInstance : ExpChar F p) with
-    | zero => exact (Nat.not_prime_one Fact.out).elim
-    | prime _ => infer_instance
-  have hk : ∀ c : k, algebraMap k F c ∈ (frobenius F p).fieldRange := by
-    intro c
-    obtain ⟨d, hd⟩ := surjective_frobenius k p c
-    exact ⟨algebraMap k F d, by rw [← RingHom.map_frobenius, hd]⟩
-  let C : IntermediateField k F := (frobenius F p).fieldRange.toIntermediateField hk
-  have hmemC (z : F) : z ∈ C ↔ z ∈ (frobenius F p).fieldRange := Iff.rfl
-  let Z : Subfield F :=
-    { carrier := {z | D k F z = 0}
-      zero_mem' := by simp
-      one_mem' := by simp
-      add_mem' := fun ha hb ↦ by simp_all
-      neg_mem' := fun ha ↦ by simp_all
-      mul_mem' := fun ha hb ↦ by simp_all [Derivation.leibniz]
-      inv_mem' := fun a ha ↦ by simp_all [Derivation.leibniz_inv] }
-  have hkZ : ∀ c : k, algebraMap k F c ∈ Z := fun c ↦ by simp [Z]
-  let K : IntermediateField k F := Z.toIntermediateField hkZ
-  have hmemK (z : F) : z ∈ K ↔ D k F z = 0 := Iff.rfl
-  have hCK : C ≤ K := by
-    intro z hz
-    obtain ⟨a, rfl⟩ := (hmemC z).mp hz
-    rw [hmemK, frobenius_def, Derivation.leibniz_pow, ← Nat.cast_smul_eq_nsmul F,
-      CharP.cast_eq_zero, zero_smul]
-  have hK_ne_top : K ≠ ⊤ := by
-    obtain ⟨y, hy, hsep⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
-    let _ := hsep
-    intro hK
-    have hyK : y ∈ K := hK.symm ▸ IntermediateField.mem_top
-    exact D_ne_zero_of_separating hy ((hmemK y).mp hyK)
-  have hdeg : Module.finrank C F = p := hF.finrank_fieldRange_frobenius p
-  have hdiv : IntermediateField.relfinrank C K ∣ p := by
-    rw [← hdeg]
-    exact IntermediateField.relfinrank_dvd_finrank_top_of_le hCK
-  have hrel : IntermediateField.relfinrank C K = 1 := by
-    refine ((Fact.out : p.Prime).eq_one_or_self_of_dvd _ hdiv).resolve_right fun h ↦ hK_ne_top ?_
-    have htower := IntermediateField.relfinrank_mul_finrank_top hCK
-    rw [h, hdeg] at htower
-    exact IntermediateField.finrank_eq_one_iff_eq_top.mp
-      (Nat.eq_of_mul_eq_mul_left (Fact.out : p.Prime).pos (by simpa using htower))
-  have hKC : K ≤ C := IntermediateField.relfinrank_eq_one_iff.mp hrel
-  exact ⟨fun h ↦ (hmemC x).mp (hKC ((hmemK x).mpr h)), fun h ↦ (hmemK x).mp (hCK ((hmemC x).mpr h))⟩
+  cases (inferInstance : ExpChar F p) with
+  | zero =>
+    have htop : (frobenius F 1).fieldRange = ⊤ :=
+      eq_top_iff.mpr fun x _ ↦ ⟨x, by rw [frobenius_def, pow_one]⟩
+    rw [htop, ← Subfield.relfinrank_top_right, Subfield.relfinrank_top_left]
+  | prime hp =>
+    let _ : Fact p.Prime := ⟨hp⟩
+    have : ExpChar k p := (algebraMap k F).expChar (algebraMap k F).injective p
+    have : PerfectRing k p := PerfectField.toPerfectRing p
+    obtain ⟨_, hy, hsep⟩ := hF.exists_transcendental_and_isSeparable_adjoin_of_perfectField
+    have hdim : Module.finrank F Ω[F⁄k] = 1 :=
+      finrank_kaehlerDifferential_eq_one_of_separating hy
+    have : FiniteDimensional F Ω[F⁄k] := Module.finite_of_finrank_pos (by simp [hdim])
+    have : FiniteDimensional (frobenius F p).fieldRange F :=
+      (finiteDimensional_kaehlerDifferential_iff p k F
+        (fun c ↦ algebraMap_mem_fieldRange_frobenius_of_perfectRing p c)).mp ‹_›
+    rw [finrank_fieldRange_frobenius_eq_pow_finrank_kaehlerDifferential p k F
+      (fun c ↦ algebraMap_mem_fieldRange_frobenius_of_perfectRing p c), hdim, pow_one]
 
 /-- **Separating elements are the elements outside `F^p`** (Stichtenoth, Proposition 3.10.2(a)):
 in a one-variable function field over a perfect field of characteristic `p`, `F / k(x)` is
@@ -175,7 +96,11 @@ separable exactly when `x` is not a `p`-th power in `F`. -/
 theorem isSeparable_adjoin_iff_notMem_fieldRange_frobenius [PerfectField k]
     (hF : TauCeti.IsFunctionField k F) (p : ℕ) [ExpChar F p] [Fact p.Prime] (x : F) :
     Algebra.IsSeparable k⟮x⟯ F ↔ x ∉ (frobenius F p).fieldRange := by
-  rw [hF.isSeparable_adjoin_iff_D_ne_zero, ne_eq, hF.D_eq_zero_iff_mem_fieldRange_frobenius p x]
+  have : ExpChar k p := (algebraMap k F).expChar (algebraMap k F).injective p
+  have : PerfectRing k p := PerfectField.toPerfectRing p
+  rw [hF.isSeparable_adjoin_iff_D_ne_zero, ne_eq,
+    TauCeti.D_eq_zero_iff_mem_fieldRange_frobenius
+      (fun c ↦ algebraMap_mem_fieldRange_frobenius_of_perfectRing p c) x]
 
 /-- **An element outside `F^p` is separating** (Stichtenoth, Proposition 3.10.2(a)): in a
 one-variable function field over a perfect field of exponential characteristic `p`, an element
@@ -189,7 +114,10 @@ theorem transcendental_and_isSeparable_adjoin_of_notMem_fieldRange_frobenius [Pe
   | zero => exact (hx ⟨x, by rw [frobenius_def, pow_one]⟩).elim
   | prime hp =>
     let _ : Fact p.Prime := ⟨hp⟩
-    have hDx : D k F x ≠ 0 := fun h ↦ hx ((hF.D_eq_zero_iff_mem_fieldRange_frobenius p x).mp h)
+    have : ExpChar k p := (algebraMap k F).expChar (algebraMap k F).injective p
+    have : PerfectRing k p := PerfectField.toPerfectRing p
+    have hDx : D k F x ≠ 0 := fun h ↦ hx ((TauCeti.D_eq_zero_iff_mem_fieldRange_frobenius
+      (fun c ↦ algebraMap_mem_fieldRange_frobenius_of_perfectRing p c) x).mp h)
     exact ⟨transcendental_of_D_ne_zero hDx, hF.isSeparable_adjoin_iff_D_ne_zero.mpr hDx⟩
 
 /-- **An inseparable subextension of prime degree comes from a `p`-th root.** Over a perfect

@@ -28,7 +28,8 @@ ray `{i} × ℕ` to its starting values. Shifting the index of an alternating pr
 product; this is how changes of boundary bases cancel in Reidemeister torsion.
 On pairwise disjoint sets, a product of indicators glues different functions on the pieces.
 A sum weighted by a finitely supported family of scalars, such as the translates of a cutoff
-function, is a finite sum over the support of the weights.
+function, is a finite sum over the support of the weights, and it cancels against its shift by
+`r` when the weights change sign under that shift.
 A product over a finset is compared with the `finprod` of a finitely supported family whose
 factors off the finset are all at least `1`, or all at most `1`. A `finsum` whose terms are fixed by
 multiplication by an element is fixed by it. Over a ring with no zero divisors, a product of two
@@ -61,6 +62,9 @@ by a left-regular element commutes with `finsum` even when the support is infini
   family has finite multiplicative support jointly in both variables.
 * `TauCeti.finprod_mem_eq_prod_filter_of_mulSupport_subset`: a product over `s` of a family
   supported in a finset `t` is the product over the elements of `t` that lie in `s`.
+* `TauCeti.hasFiniteMulSupport_of_forall_eq_one` and
+  `TauCeti.hasFiniteSupport_of_forall_eq_zero`: a sequence on `ℕ` whose values from `K` onwards
+  are `1` (or `0`) has finite multiplicative (or additive) support.
 * `TauCeti.finprod_eq_prod_range_of_forall_eq_one` and
   `TauCeti.finsum_eq_sum_range_of_forall_eq_zero`: a product over `ℕ` whose factors from `K`
   onwards are `1` equals the finite product over `Finset.range K`, and likewise for sums.
@@ -79,6 +83,8 @@ by a left-regular element commutes with `finsum` even when the support is infini
   finite sum over the support of the weights.
 * `TauCeti.finsum_smul_inv_smul`: translating the point of a sum weighted by the translates of a
   function translates the summation variable.
+* `TauCeti.finsum_smul_add_finsum_comp_add_right_smul_eq_zero`: a finitely supported weighted
+  sum cancels against its shift by `r` when the weights change sign under that shift.
 * `Finset.prod_le_finprod_of_one_le₀` and `Finset.finprod_le_prod_of_le_one₀`: a product over a
   finset is at most, respectively at least, the `finprod` when the factors off the finset are at
   least, respectively at most, `1`.
@@ -282,6 +288,13 @@ theorem finprod_mem_eq_prod_filter_of_mulSupport_subset (f : α → M) (s : Set 
     simp only [mem_inter_iff, Finset.coe_filter, mem_ofPred_eq]
     exact ⟨fun h ↦ ⟨⟨ht h.2, h.1⟩, h.2⟩, fun h ↦ ⟨h.1.2, h.2⟩⟩
 
+/-- A sequence on `ℕ` whose values from `K` onwards are `1` has finite multiplicative support. -/
+@[to_additive /-- A sequence on `ℕ` whose values from `K` onwards are `0` has finite support. -/]
+theorem hasFiniteMulSupport_of_forall_eq_one {M : Type*} [One M] {f : ℕ → M} (K : ℕ)
+    (hf : ∀ i : ℕ, K ≤ i → f i = 1) : HasFiniteMulSupport f :=
+  (Finset.finite_toSet (Finset.range K)).subset fun i hi ↦ by
+    simpa only [Finset.mem_coe, Finset.mem_range] using lt_of_not_ge fun hle ↦ hi (hf i hle)
+
 /-- A product over `ℕ` whose factors from `K` onwards are `1` equals the finite product over
 `Finset.range K`. -/
 @[to_additive /-- A sum over `ℕ` whose terms from `K`
@@ -379,6 +392,23 @@ theorem finsum_smul_inv_smul {G X R V : Type*} [Group G] [MulAction G X] [AddCom
     ∑ᶠ g : G, c (g • a⁻¹ • x) • v g = ∑ᶠ g : G, c (g • x) • v (g * a) := by
   rw [← finsum_comp_equiv (Equiv.mulRight a)]
   simp [mul_smul]
+
+/-- A sum weighted by a finitely supported family of scalars `b` cancels against its shift by `r`
+when the weights `w` change sign under that shift: `∑ᶠ p, b p • w p + ∑ᶠ p, b (p + r) • w p = 0`.
+-/
+theorem finsum_smul_add_finsum_comp_add_right_smul_eq_zero {ι R A : Type*} [AddGroup ι]
+    [Semiring R] [AddCommGroup A] [Module R A] {b : ι → R} (hb : HasFiniteSupport b) {r : ι}
+    {w : ι → A} (hw : ∀ p, w (p + r) = -w p) :
+    ∑ᶠ p, b p • w p + ∑ᶠ p, b (p + r) • w p = 0 := by
+  have hfin : ∀ u : ι → A, HasFiniteSupport fun p ↦ b p • u p := fun u ↦
+    hb.subset fun p hp h0 ↦ hp (by simp [h0])
+  rw [← finsum_comp_equiv (Equiv.subRight r) (f := fun p ↦ b (p + r) • w p)]
+  simp only [Equiv.subRight_apply, sub_add_cancel]
+  rw [← finsum_add_distrib (hfin _) (hfin _)]
+  refine finsum_eq_zero_of_forall_eq_zero fun q ↦ ?_
+  have hq := hw (q - r)
+  rw [sub_add_cancel] at hq
+  rw [← smul_add, hq, neg_add_cancel, smul_zero]
 
 end WeightedSum
 
