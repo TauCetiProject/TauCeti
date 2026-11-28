@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.HeisenbergModel.Fock.Moment
-public import TauCeti.RingTheory.MvPolynomial.JetPairing
+public import TauCeti.RingTheory.MvPolynomial.JetPairing.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Star
 import TauCeti.Analysis.Complex.Basic
