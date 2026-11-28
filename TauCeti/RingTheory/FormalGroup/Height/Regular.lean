@@ -13,7 +13,7 @@ public import TauCeti.RingTheory.FormalGroup.Height.Ideal
 import Mathlib.RingTheory.Regular.Flat
 import Mathlib.Tactic.Algebraize
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
-import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.QuotSMulTop.Basic
 import TauCeti.RingTheory.Regular.Flat
 
 /-!

@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.Algebra.Module.LocalizedModule.Map
 public import TauCeti.Algebra.Module.Torsion.Essential
-import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.QuotSMulTop.Basic
 
 /-!
 # Detecting isomorphisms modulo a regular element
@@ -22,7 +22,7 @@ regular on `N`. Write `f mod r : M ⧸ rM → N ⧸ rN` for the reduction `QuotS
 * If moreover every element of `N` is carried into the range of `f` by a power of `r` (the
   cokernel is `r`-power torsion), then `f` is surjective exactly when `f mod r` is injective.
   These two facts are `TauCeti.isSMulRegular_quotient_range_iff_injective_quotSMulTop_map` and
-  `TauCeti.surjective_iff_injective_quotSMulTop_map` in `TauCeti.RingTheory.QuotSMulTop`.
+  `TauCeti.surjective_iff_injective_quotSMulTop_map` in `TauCeti.RingTheory.QuotSMulTop.Basic`.
 * If `M ⧸ rM` is `I`-power torsion for an ideal `I`, injectivity of `f mod r` may be tested on
   the `I`-torsion `(M ⧸ rM)[I]`, which is essential in `M ⧸ rM`.
 

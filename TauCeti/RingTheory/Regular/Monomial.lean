@@ -7,7 +7,8 @@ module
 
 public import Mathlib.RingTheory.Regular.RegularSequence
 import TauCeti.LinearAlgebra.Quotient.Map
-import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.QuotSMulTop.Basic
+import TauCeti.RingTheory.QuotSMulTop.Graded
 
 /-!
 # The monomial property of regular sequences

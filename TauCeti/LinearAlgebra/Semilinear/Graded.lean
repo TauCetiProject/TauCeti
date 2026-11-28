@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Semilinear.Filtration
 public import TauCeti.RingTheory.QuotSMulTop.Graded
 
 /-!
@@ -45,8 +46,10 @@ theorem smulPowGraded_eq_subquotientMap (f : M →ₛₗ[σ] M) (ha : σ a = a) 
 @[simp]
 theorem smulPowGraded_mk (f : M →ₛₗ[σ] M) (ha : σ a = a) (i : ℕ) (x : P i) :
     f.smulPowGraded ha i (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk ⟨f x, f.mapsTo_pow_smul_top_of_fixed ha i x.property⟩ :=
-  subquotientMap_mk (P i) (P (i + 1)) _ _ x
+      Submodule.Quotient.mk ⟨f x, f.mapsTo_pow_smul_top_of_fixed ha i x.property⟩ := by
+  rw [smulPowGraded_eq_subquotientMap]
+  exact (subquotientMap_mk (P i) (P (i + 1)) _ _ x).trans
+    (congrArg Submodule.Quotient.mk (restrict_apply (f.mapsTo_pow_smul_top_of_fixed ha i) x))
 
 /-- Multiplication by `a^i` intertwines the induced maps on `M / aM` and `a^i M / a^{i+1} M`. -/
 theorem smulPowQuotientMap_semiconj (f : M →ₛₗ[σ] M) (ha : σ a = a) (i : ℕ) :
@@ -78,8 +81,8 @@ theorem bijective_of_smulPowGraded (ha : σ a = a) {n : ℕ} (hbot : P n = ⊥)
   have h₀ := bijective_restrict_of_filtration P (f.mapsTo_pow_smul_top_of_fixed ha)
     (Submodule.antitone_pow_smul_top a) hbot
     (fun i hi ↦ by simpa only [smulPowGraded_eq_subquotientMap] using h i hi)
-  have hs : Surjective (P 0).subtype := fun x ↦ ⟨⟨x, by simp⟩, rfl⟩
-  have he : Bijective (P 0).subtype := ⟨(P 0).subtype_injective, hs⟩
+  have htop : P 0 = ⊤ := by simp
+  have he : Bijective (P 0).subtype := htop.symm ▸ Submodule.topEquiv.bijective
   exact (Bijective.of_comp_iff f he).mp (he.comp h₀)
 
 end LinearMap

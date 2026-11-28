@@ -426,23 +426,21 @@ variable {A V : Type*} [CommSemiring A] [AddCommMonoid V] [Module A V] {τ : A �
 
 /-- The image of multiplication by a fixed scalar is stable under a semilinear endomorphism. -/
 theorem mapsTo_smul_top_of_fixed (f : V →ₛₗ[τ] V) {a : A} (ha : τ a = a) :
-    MapsTo f (a • (⊤ : Submodule A V)) (a • (⊤ : Submodule A V)) := by
-  -- Express the pointwise scalar image as a set so the equivariant image lemma applies.
-  change MapsTo f (a • (univ : Set V)) (a • univ)
-  rw [Set.mapsTo_iff_image_subset, image_smul_setₛₗ (σ := τ), ha]
+    MapsTo f ↑(a • (⊤ : Submodule A V)) ↑(a • (⊤ : Submodule A V)) := by
+  rw [Submodule.coe_pointwise_smul, Submodule.top_coe, Set.mapsTo_iff_image_subset,
+    image_smul_setₛₗ (σ := τ), ha]
   exact smul_set_mono (subset_univ _)
 
 /-- The power filtration of a fixed scalar is stable under a semilinear endomorphism. -/
 theorem mapsTo_pow_smul_top_of_fixed (f : V →ₛₗ[τ] V) {a : A} (ha : τ a = a) (i : ℕ) :
-    MapsTo f (a ^ i • (⊤ : Submodule A V)) (a ^ i • (⊤ : Submodule A V)) :=
+    MapsTo f ↑(a ^ i • (⊤ : Submodule A V)) ↑(a ^ i • (⊤ : Submodule A V)) :=
   f.mapsTo_smul_top_of_fixed (by rw [map_pow, ha])
 
 /-- A surjective semilinear endomorphism is surjective on the image of multiplication
 by a fixed scalar. -/
 theorem surjOn_smul_top_of_fixed (f : V →ₛₗ[τ] V) (hf : Surjective f) {a : A} (ha : τ a = a) :
-    SurjOn f (a • (⊤ : Submodule A V)) (a • (⊤ : Submodule A V)) := by
-  -- Express the pointwise scalar image as a set so the equivariant image lemma applies.
-  change SurjOn f (a • (univ : Set V)) (a • univ)
-  rw [SurjOn, image_smul_setₛₗ (σ := τ), ha, Set.image_univ_of_surjective hf]
+    SurjOn f ↑(a • (⊤ : Submodule A V)) ↑(a • (⊤ : Submodule A V)) := by
+  rw [Submodule.coe_pointwise_smul, Submodule.top_coe, SurjOn, image_smul_setₛₗ (σ := τ), ha,
+    Set.image_univ_of_surjective hf]
 
 end LinearMap

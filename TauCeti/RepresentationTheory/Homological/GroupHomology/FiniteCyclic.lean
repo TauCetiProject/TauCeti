@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.RepresentationTheory.Homological.GroupHomology.FiniteCyclic
 public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.RepresentationTheory.Invariants
-import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.QuotSMulTop.Basic
 
 /-!
 # Homology of a finite cyclic group with trivial coefficients

@@ -128,8 +128,9 @@ theorem isAlgebraic_iff_restrict_and_mapQ (P : Submodule R M) (hP : MapsTo F P P
     F.IsAlgebraic ↔ (F.restrict hP).IsAlgebraic ∧ (P.mapQ P F (fun _ hx ↦ hP hx)).IsAlgebraic := by
   let F₁ := F.restrict hP
   let F₂ := P.mapQ P F (fun _ hx ↦ hP hx)
-  have hi : Semiconj P.subtype F₁ F := fun _ ↦ rfl
-  have hq : Semiconj P.mkQ F F₂ := fun x ↦ (Submodule.mapQ_apply P P F x).symm
+  have hi : Semiconj P.subtype F₁ F := coe_restrict_apply hP
+  have hq : Semiconj P.mkQ F F₂ := fun x ↦
+    DFunLike.congr_fun (Submodule.mapQ_mkQ P P F (h := hP)).symm x
   -- Name both induced maps so the iterate identity and the quotient relation use the same map.
   change F.IsAlgebraic ↔ F₁.IsAlgebraic ∧ F₂.IsAlgebraic
   refine ⟨fun h ↦ ⟨h.of_injective P.subtype hi P.subtype_injective,
@@ -183,7 +184,10 @@ theorem isAlgebraic_iff_smulPowGraded (f : V →ₛₗ[τ] V) {a : A} (ha : τ a
   have h₀ := isAlgebraic_restrict_of_filtration P (f.mapsTo_pow_smul_top_of_fixed ha)
     (Submodule.antitone_pow_smul_top a) hbot
     (fun i hi ↦ by simpa only [smulPowGraded_eq_subquotientMap] using h i hi)
-  exact h₀.of_surjective (P 0).subtype (fun _ ↦ rfl) fun x ↦ ⟨⟨x, by simp [P]⟩, rfl⟩
+  have htop : P 0 = ⊤ := by simp [P]
+  have hs : Surjective (P 0).subtype := htop.symm ▸ Submodule.topEquiv.surjective
+  exact h₀.of_surjective (P 0).subtype
+    (coe_restrict_apply (f.mapsTo_pow_smul_top_of_fixed ha 0)) hs
 
 /-- If the scalar-power filtration terminates, algebraicity is equivalent to algebraicity of
 the induced map on `V / aV`. -/
@@ -204,7 +208,7 @@ theorem isAlgebraic_iff_restrict_torsionBy (f : V →ₛₗ[τ] V)
     f.IsAlgebraic ↔ (f.restrict (f.mapsTo_torsionBy_of_fixed ha)).IsAlgebraic := by
   let K := Submodule.torsionBy A V a
   let fK := f.restrict (f.mapsTo_torsionBy_of_fixed ha)
-  have hKi : Semiconj K.subtype fK f := fun _ ↦ rfl
+  have hKi : Semiconj K.subtype fK f := coe_restrict_apply (f.mapsTo_torsionBy_of_fixed ha)
   refine ⟨fun h ↦ h.of_injective K.subtype hKi K.subtype_injective, ?_⟩
   intro h
   let g := DistribSMul.toLinearMap A V a

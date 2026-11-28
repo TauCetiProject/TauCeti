@@ -13,7 +13,7 @@ import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.Algebra.Module.Torsion.Snake
 import TauCeti.RingTheory.Flat.NonZeroDivisors
-import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.QuotSMulTop.Basic
 
 /-!
 # Injective dimension along the quotient by a nonzerodivisor

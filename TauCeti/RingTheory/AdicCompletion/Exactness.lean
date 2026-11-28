@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AdicCompletion.Exactness
-public import TauCeti.RingTheory.QuotSMulTop
+public import TauCeti.RingTheory.QuotSMulTop.Basic
 import TauCeti.LinearAlgebra.Exact
 import TauCeti.LinearAlgebra.Quotient.BoundedTorsion
 
@@ -45,7 +45,7 @@ completed-ring module structure and functorial maps. The filtration-shift proofs
 `AdicCompletion.map_injective` and `AdicCompletion.map_exact` in
 `Mathlib.RingTheory.AdicCompletion.Exactness`, isolating the uniform shift from the Noetherian
 Artin–Rees input. The finite-level exactness results are those of
-`TauCeti.RingTheory.QuotSMulTop`; no new completion carrier is introduced.
+`TauCeti.RingTheory.QuotSMulTop.Basic`; no new completion carrier is introduced.
 
 ## References
 

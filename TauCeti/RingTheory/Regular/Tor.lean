@@ -13,7 +13,7 @@ public import Mathlib.RingTheory.Regular.Category
 public import TauCeti.Algebra.Module.Torsion.LTensor
 public import TauCeti.Algebra.Module.Torsion.Map
 public import TauCeti.CategoryTheory.Monoidal.Tor.Basic
-public import TauCeti.RingTheory.QuotSMulTop
+public import TauCeti.RingTheory.QuotSMulTop.Basic
 public import TauCeti.Algebra.Homology.SquareZero.Cone
 import TauCeti.Algebra.Module.Torsion.Basic
 

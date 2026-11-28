@@ -22,7 +22,7 @@ import TauCeti.RingTheory.Polynomial.Cyclotomic.PrimePow
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.PowerSeries.AdicComplete
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Norm
-import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.QuotSMulTop.Basic
 import TauCeti.RingTheory.RegularLocalRing.PowerSeries
 
 /-!

@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.Regular.RegularSequence
 import TauCeti.RingTheory.Ideal.AssociatedPrime.Basic
 import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Localization.Away.Basic
-import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.QuotSMulTop.Basic
 import TauCeti.RingTheory.Regular.Pair
 
 /-!

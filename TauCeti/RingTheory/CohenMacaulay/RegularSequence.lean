@@ -15,7 +15,7 @@ import TauCeti.RingTheory.IntegralClosure.GoingDown
 import TauCeti.RingTheory.KrullDimension.Fiber
 import TauCeti.RingTheory.KrullDimension.Module
 import TauCeti.RingTheory.LocalRing.Quotient
-import TauCeti.RingTheory.QuotSMulTop
+import TauCeti.RingTheory.QuotSMulTop.Basic
 
 /-!
 # Regular sequences in Cohen–Macaulay modules

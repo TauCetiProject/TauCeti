@@ -106,8 +106,9 @@ noncomputable def wittFrobeniusModP (F : M →ₛₗ[φ] M) :
 
 @[simp]
 theorem wittFrobeniusModP_mk (F : M →ₛₗ[φ] M) (x : M) :
-    F.wittFrobeniusModP (Submodule.Quotient.mk x) = Submodule.Quotient.mk (F x) :=
-  (rfl)
+    F.wittFrobeniusModP (Submodule.Quotient.mk x) = Submodule.Quotient.mk (F x) := by
+  rw [wittFrobeniusModP]
+  exact Submodule.mapQ_apply _ _ F x
 
 /-- The monic relation condition over truncated Witt vectors is equivalent to that for the
 induced Frobenius on `M / pM`. -/
@@ -122,8 +123,9 @@ noncomputable def wittFrobeniusPTorsion (F : M →ₛₗ[φ] M) :=
 @[simp]
 theorem coe_wittFrobeniusPTorsion_apply (F : M →ₛₗ[φ] M)
     (x : Submodule.torsionBy W M (p : W)) :
-    ↑(F.wittFrobeniusPTorsion x) = F x :=
-  (rfl)
+    ↑(F.wittFrobeniusPTorsion x) = F x := by
+  rw [wittFrobeniusPTorsion]
+  exact coe_restrict_apply (F.mapsTo_torsionBy_of_fixed (map_natCast φ p)) x
 
 /-- The monic relation condition over truncated Witt vectors is equivalent to that for the
 restricted Frobenius on the submodule killed by `p`. -/
