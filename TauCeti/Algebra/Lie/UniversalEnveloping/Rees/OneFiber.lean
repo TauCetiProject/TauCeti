@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Functoriality
 public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.UnitFiber
-import TauCeti.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # The PBW Rees fibre at one
@@ -20,7 +19,7 @@ its inverse sends `ι(x)` to the specialized Rees generator.
 
 These comparisons require neither freeness of the Lie algebra nor a characteristic hypothesis.
 They use the exhaustive PBW filtration. They are natural with respect to Lie algebra
-homomorphisms via `quotientReesParameterSubOneMap` and `reesMap`.
+homomorphisms via `reesQuotientMap` and `reesMap`.
 
 ## References
 
@@ -34,7 +33,7 @@ open scoped TensorProduct
 
 namespace TauCeti.UniversalEnvelopingAlgebra
 
-universe u v w x
+universe u v w
 
 variable (R : Type u) (L : Type v) [CommRing R] [LieRing L] [LieAlgebra R L]
 
@@ -90,45 +89,17 @@ theorem reesOneFiberEquiv_symm_ι (x : L) :
 
 section Functoriality
 
-variable {L} {M : Type w} {N : Type x}
-variable [LieRing M] [LieAlgebra R M]
-variable [LieRing N] [LieAlgebra R N]
+variable {L} {M : Type w} [LieRing M] [LieAlgebra R M]
 
-/-- The `R`-algebra map on `t = 1` Rees quotients induced by a Lie algebra homomorphism. -/
-noncomputable def quotientReesParameterSubOneMap (f : L →ₗ⁅R⁆ M) :
-    (reesAlgebra R L ⧸ Ideal.span {reesParameter R L - 1}) →ₐ[R]
-      (reesAlgebra R M ⧸ Ideal.span {reesParameter R M - 1}) :=
-  Ideal.quotientMapₐ (Ideal.span {reesParameter R M - 1}) ((reesMap R f).restrictScalars R) <|
-    Ideal.span_le.mpr <| by
-      rintro p (rfl : p = reesParameter R L - 1)
-      simp
-
-@[simp]
-theorem quotientReesParameterSubOneMap_mk (f : L →ₗ⁅R⁆ M) (p : reesAlgebra R L) :
-    quotientReesParameterSubOneMap R f (Ideal.Quotient.mk _ p) =
-      Ideal.Quotient.mk _ (reesMap R f p) :=
-  (rfl)
-
-@[simp]
-theorem quotientReesParameterSubOneMap_id :
-    quotientReesParameterSubOneMap R (LieHom.id : L →ₗ⁅R⁆ L) =
-      AlgHom.id R (reesAlgebra R L ⧸ Ideal.span {reesParameter R L - 1}) := by
-  refine Ideal.Quotient.algHom_ext R ?_
-  ext p
-  simp
-
-@[simp]
-theorem quotientReesParameterSubOneMap_comp (f : L →ₗ⁅R⁆ M) (g : M →ₗ⁅R⁆ N) :
-    quotientReesParameterSubOneMap R (g.comp f) =
-      (quotientReesParameterSubOneMap R g).comp (quotientReesParameterSubOneMap R f) := by
-  simp only [quotientReesParameterSubOneMap, Ideal.quotientMapₐ_comp, reesMap_comp]
-  rfl
-
+/-- Naturality of `quotientReesParameterSubOneEquiv` via `reesQuotientMap` at `a = 1`. -/
 @[simp]
 theorem quotientReesParameterSubOneEquiv_map (f : L →ₗ⁅R⁆ M)
-    (q : reesAlgebra R L ⧸ Ideal.span {reesParameter R L - 1}) :
-    quotientReesParameterSubOneEquiv R M (quotientReesParameterSubOneMap R f q) =
-      map R f (quotientReesParameterSubOneEquiv R L q) := by
+    (q : reesAlgebra R L ⧸ Ideal.span {reesParameter R L - algebraMap R _ (1 : R)}) :
+    quotientReesParameterSubOneEquiv R M
+        (Ideal.quotientEquivAlgOfEq R (by rw [map_one]) (reesQuotientMap R 1 f q)) =
+      map R f
+        (quotientReesParameterSubOneEquiv R L
+          (Ideal.quotientEquivAlgOfEq R (by rw [map_one]) q)) := by
   obtain ⟨p, rfl⟩ := Ideal.Quotient.mk_surjective q
   simp [coeffSubalgebra.evalOne_eq_eval]
 

@@ -69,10 +69,8 @@ private theorem gradientScalarTower (ξ : Module.Dual R M) :
     letI := gradientModule ξ
     IsScalarTower R (SymmetricAlgebra R M) M :=
   letI := gradientModule ξ
-  { smul_assoc := fun r p m ↦ by
-      have h : (r • p) • m = lift ξ (r • p) • m := rfl
-      have h' : r • (p • m) = r • (lift ξ p • m) := rfl
-      rw [h, h', map_smul, smul_assoc] }
+  IsScalarTower.of_algebraMap_smul fun r m ↦ by
+    simp [MulAction.compHom_smul_def, (lift ξ).commutes]
 
 private noncomputable def gradientDerivation (ξ : Module.Dual R M) :
     letI := gradientModule ξ
