@@ -18,7 +18,7 @@ element `r : SymmetricAlgebra 𝕜 E` evaluates to a `C^n` polynomial function
 
 Combining the algebraic linear Poisson evaluation formula `lift_reesZeroFiberBracket_apply` with
 gradient naturality and the Fréchet derivative identification
-`Module.Basis.evalEquiv_symm_fderiv_contMDiffEval` expresses the smooth evaluation of
+`SymmetricAlgebra.evalEquiv_symm_fderiv_contMDiffEval` expresses the smooth evaluation of
 `reesZeroFiberBracket 𝕜 L p q` at `ξ : StrongDual 𝕜 E` directly in terms of the two Fréchet
 derivatives at `ξ` transported back to `L` through finite-dimensional biduality
 `Module.evalEquiv 𝕜 E`, without defining a bracket on all smooth functions.
@@ -65,15 +65,14 @@ theorem contMDiffEval_reesZeroFiberBracket_apply
           ((fderiv 𝕜 (⇑(SymmetricAlgebra.contMDiffEval 𝕜 E n
             (SymmetricAlgebra.map 𝕜 e.toLinearMap q))) ξ).toLinearMap.comp
             LinearMap.toContinuousLinearMap.toLinearMap))⁆) := by
-  let := Fintype.ofFinite (Module.Basis.ofVectorSpaceIndex 𝕜 E)
-  let b := Module.Basis.ofVectorSpace 𝕜 E
-  let bL := b.map e.symm
   rw [SymmetricAlgebra.contMDiffEval_apply, SymmetricAlgebra.lift_map_apply,
-    lift_reesZeroFiberBracket_apply L bL p q (ξ.toLinearMap ∘ₗ e.toLinearMap),
-    b.evalEquiv_symm_fderiv_contMDiffEval n (SymmetricAlgebra.map 𝕜 e.toLinearMap p) ξ,
-    b.evalEquiv_symm_fderiv_contMDiffEval n (SymmetricAlgebra.map 𝕜 e.toLinearMap q) ξ,
-    bL.symmetricGradient_map b e.toLinearMap p ξ.toLinearMap,
-    bL.symmetricGradient_map b e.toLinearMap q ξ.toLinearMap]
+    lift_reesZeroFiberBracket_apply L p q (ξ.toLinearMap ∘ₗ e.toLinearMap),
+    SymmetricAlgebra.evalEquiv_symm_fderiv_contMDiffEval n
+      (SymmetricAlgebra.map 𝕜 e.toLinearMap p) ξ,
+    SymmetricAlgebra.evalEquiv_symm_fderiv_contMDiffEval n
+      (SymmetricAlgebra.map 𝕜 e.toLinearMap q) ξ,
+    SymmetricAlgebra.gradient_map e.toLinearMap p ξ.toLinearMap,
+    SymmetricAlgebra.gradient_map e.toLinearMap q ξ.toLinearMap]
   simp only [LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply, LinearMap.comp_apply,
     ContinuousLinearMap.coe_coe]
 

@@ -11,25 +11,25 @@ public import TauCeti.Geometry.Manifold.Algebra.SymmetricAlgebra.Basic
 /-!
 # Fréchet and directional derivatives of smooth symmetric-algebra evaluations
 
-Whenever a normed vector space `E` over a nontrivially normed field `𝕜` has a finite basis `b`,
-combining `SymmetricAlgebra.contMDiffEval_apply` with the manifold-free derivative formulas in
+Combining `SymmetricAlgebra.contMDiffEval_apply` with the manifold-free derivative formulas in
 `TauCeti.Analysis.Calculus.SymmetricAlgebra` identifies the Fréchet derivative of
 `SymmetricAlgebra.contMDiffEval 𝕜 E n p` at `ξ : StrongDual 𝕜 E` with evaluation at the gradient
-vector `b.symmetricGradient p ξ.toLinearMap`, and its directional derivative along `t ↦ ξ + t • η`
-at `t = 0` with `η (b.symmetricGradient p ξ.toLinearMap)`.
+vector `p.gradient ξ.toLinearMap`, and its directional derivative along `t ↦ ξ + t • η` at `t = 0`
+with `η (p.gradient ξ.toLinearMap)`.
 
-When `𝕜` is complete, transporting `fderiv 𝕜 (⇑(SymmetricAlgebra.contMDiffEval 𝕜 E n p)) ξ` back
-to `E` via finite-dimensional biduality (`Module.evalEquiv 𝕜 E`) recovers
-`b.symmetricGradient p ξ.toLinearMap`.
+When `𝕜` is complete and `E` is finite-dimensional, transporting
+`fderiv 𝕜 (⇑(SymmetricAlgebra.contMDiffEval 𝕜 E n p)) ξ` back to `E` via finite-dimensional
+biduality (`Module.evalEquiv 𝕜 E`) recovers `p.gradient ξ.toLinearMap`.
 
 ## Main results
 
-* `Module.Basis.hasFDerivAt_contMDiffEval`, `Module.Basis.fderiv_contMDiffEval`,
-  `Module.Basis.fderiv_contMDiffEval_apply`, `Module.Basis.hasDerivAt_contMDiffEval_add_smul_zero`:
-  Fréchet and directional derivatives of smooth polynomial evaluation on `StrongDual 𝕜 E`,
-  identified via `ContinuousLinearMap.apply` with `b.symmetricGradient`.
-* `Module.Basis.evalEquiv_symm_fderiv_contMDiffEval`: transporting the Fréchet derivative back to
-  `E` through finite-dimensional biduality yields `b.symmetricGradient`.
+* `SymmetricAlgebra.hasFDerivAt_contMDiffEval`, `SymmetricAlgebra.fderiv_contMDiffEval`,
+  `SymmetricAlgebra.fderiv_contMDiffEval_apply`,
+  `SymmetricAlgebra.hasDerivAt_contMDiffEval_add_smul_zero`: Fréchet and directional derivatives of
+  smooth polynomial evaluation on `StrongDual 𝕜 E`, identified via `ContinuousLinearMap.apply`
+  with `p.gradient`.
+* `SymmetricAlgebra.evalEquiv_symm_fderiv_contMDiffEval`: transporting the Fréchet derivative back
+  to `E` through finite-dimensional biduality yields `p.gradient`.
 
 ## References
 
@@ -42,60 +42,59 @@ public section
 
 open scoped ContDiff Manifold
 
-namespace Module.Basis
+namespace SymmetricAlgebra
 
 section FDeriv
 
-variable {𝕜 E ι : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [Fintype ι]
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 /-- **Fréchet derivative of `SymmetricAlgebra.contMDiffEval`.** -/
-theorem hasFDerivAt_contMDiffEval (b : Module.Basis ι 𝕜 E) (n : ℕ∞ω) (p : SymmetricAlgebra 𝕜 E)
+theorem hasFDerivAt_contMDiffEval (n : ℕ∞ω) (p : SymmetricAlgebra 𝕜 E)
     (ξ : StrongDual 𝕜 E) :
-    HasFDerivAt (⇑(SymmetricAlgebra.contMDiffEval 𝕜 E n p))
-      (ContinuousLinearMap.apply 𝕜 𝕜 (b.symmetricGradient p ξ.toLinearMap)) ξ := by
-  rw [SymmetricAlgebra.coe_contMDiffEval]
-  exact b.hasFDerivAt_lift p ξ
+    HasFDerivAt (⇑(contMDiffEval 𝕜 E n p))
+      (ContinuousLinearMap.apply 𝕜 𝕜 (p.gradient ξ.toLinearMap)) ξ := by
+  rw [coe_contMDiffEval]
+  exact hasFDerivAt_lift p ξ
 
 /-- The Fréchet derivative of `SymmetricAlgebra.contMDiffEval 𝕜 E n p` at `ξ` is
-`ContinuousLinearMap.apply 𝕜 𝕜 (b.symmetricGradient p ξ.toLinearMap)`. -/
-theorem fderiv_contMDiffEval (b : Module.Basis ι 𝕜 E) (n : ℕ∞ω) (p : SymmetricAlgebra 𝕜 E)
+`ContinuousLinearMap.apply 𝕜 𝕜 (p.gradient ξ.toLinearMap)`. -/
+theorem fderiv_contMDiffEval (n : ℕ∞ω) (p : SymmetricAlgebra 𝕜 E)
     (ξ : StrongDual 𝕜 E) :
-    fderiv 𝕜 (⇑(SymmetricAlgebra.contMDiffEval 𝕜 E n p)) ξ =
-      ContinuousLinearMap.apply 𝕜 𝕜 (b.symmetricGradient p ξ.toLinearMap) :=
-  (b.hasFDerivAt_contMDiffEval n p ξ).fderiv
+    fderiv 𝕜 (⇑(contMDiffEval 𝕜 E n p)) ξ =
+      ContinuousLinearMap.apply 𝕜 𝕜 (p.gradient ξ.toLinearMap) :=
+  (hasFDerivAt_contMDiffEval n p ξ).fderiv
 
 /-- Applying the Fréchet derivative of `SymmetricAlgebra.contMDiffEval 𝕜 E n p` at `ξ` to `η`
-gives `η (b.symmetricGradient p ξ.toLinearMap)`. -/
-theorem fderiv_contMDiffEval_apply (b : Module.Basis ι 𝕜 E) (n : ℕ∞ω) (p : SymmetricAlgebra 𝕜 E)
+gives `η (p.gradient ξ.toLinearMap)`. -/
+theorem fderiv_contMDiffEval_apply (n : ℕ∞ω) (p : SymmetricAlgebra 𝕜 E)
     (ξ η : StrongDual 𝕜 E) :
-    fderiv 𝕜 (⇑(SymmetricAlgebra.contMDiffEval 𝕜 E n p)) ξ η =
-      η (b.symmetricGradient p ξ.toLinearMap) := by
-  rw [b.fderiv_contMDiffEval, ContinuousLinearMap.apply_apply]
+    fderiv 𝕜 (⇑(contMDiffEval 𝕜 E n p)) ξ η =
+      η (p.gradient ξ.toLinearMap) := by
+  rw [fderiv_contMDiffEval, ContinuousLinearMap.apply_apply]
 
 /-- At `t = 0`, the directional derivative of
 `t ↦ SymmetricAlgebra.contMDiffEval 𝕜 E n p (ξ + t • η)` is
-`η (b.symmetricGradient p ξ.toLinearMap)`. -/
-theorem hasDerivAt_contMDiffEval_add_smul_zero (b : Module.Basis ι 𝕜 E) (n : ℕ∞ω)
+`η (p.gradient ξ.toLinearMap)`. -/
+theorem hasDerivAt_contMDiffEval_add_smul_zero (n : ℕ∞ω)
     (p : SymmetricAlgebra 𝕜 E) (ξ η : StrongDual 𝕜 E) :
-    HasDerivAt (fun t : 𝕜 ↦ SymmetricAlgebra.contMDiffEval 𝕜 E n p (ξ + t • η))
-      (η (b.symmetricGradient p ξ.toLinearMap)) 0 := by
-  simpa [SymmetricAlgebra.contMDiffEval_apply, ContinuousLinearMap.toLinearMap_add,
-    FunLike.coe_smul] using b.hasDerivAt_lift_add_smul_zero p ξ.toLinearMap η.toLinearMap
+    HasDerivAt (fun t : 𝕜 ↦ contMDiffEval 𝕜 E n p (ξ + t • η))
+      (η (p.gradient ξ.toLinearMap)) 0 := by
+  simpa [contMDiffEval_apply, ContinuousLinearMap.toLinearMap_add,
+    FunLike.coe_smul] using hasDerivAt_lift_add_smul_zero p ξ.toLinearMap η.toLinearMap
 
 /-- Transporting the Fréchet derivative of `SymmetricAlgebra.contMDiffEval 𝕜 E n p` at `ξ` back
-to `E` through finite-dimensional biduality recovers `b.symmetricGradient p ξ.toLinearMap`. -/
+to `E` through finite-dimensional biduality recovers `p.gradient ξ.toLinearMap`. -/
 theorem evalEquiv_symm_fderiv_contMDiffEval [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
-    (b : Module.Basis ι 𝕜 E) (n : ℕ∞ω) (p : SymmetricAlgebra 𝕜 E) (ξ : StrongDual 𝕜 E) :
+    (n : ℕ∞ω) (p : SymmetricAlgebra 𝕜 E) (ξ : StrongDual 𝕜 E) :
     (Module.evalEquiv 𝕜 E).symm
-      ((fderiv 𝕜 (⇑(SymmetricAlgebra.contMDiffEval 𝕜 E n p)) ξ).toLinearMap.comp
+      ((fderiv 𝕜 (⇑(contMDiffEval 𝕜 E n p)) ξ).toLinearMap.comp
         LinearMap.toContinuousLinearMap.toLinearMap) =
-      b.symmetricGradient p ξ.toLinearMap := by
+      p.gradient ξ.toLinearMap := by
   apply (Module.evalEquiv 𝕜 E).injective
   rw [LinearEquiv.apply_symm_apply]
   ext η
-  simp [b.fderiv_contMDiffEval_apply]
+  simp [fderiv_contMDiffEval_apply]
 
 end FDeriv
 
-end Module.Basis
+end SymmetricAlgebra

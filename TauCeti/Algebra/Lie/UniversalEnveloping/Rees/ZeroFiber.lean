@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Functoriality
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Injective
 public import TauCeti.Algebra.WordFiltration.Rees
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # The symmetric-algebra fibre of the PBW Rees algebra
@@ -91,9 +92,8 @@ theorem reesZeroFiberMap_id :
 theorem reesZeroFiberMap_comp (f : L →ₗ⁅R⁆ M) (g : M →ₗ⁅R⁆ N) :
     reesZeroFiberMap R (g.comp f) =
       (reesZeroFiberMap R g).comp (reesZeroFiberMap R f) := by
-  refine Ideal.Quotient.algHom_ext R ?_
-  ext p
-  simp
+  simp only [reesZeroFiberMap, Ideal.quotientMapₐ_comp, reesMap_comp]
+  rfl
 
 end ZeroFiberMap
 

@@ -17,17 +17,17 @@ Computes the explicit symmetric gradient `2ξ(h)h + 4ξ(f)e + 4ξ(e)f` of
 
 public section
 
-namespace Module.Basis
+namespace TauCeti
 
 /-- Gradient of `TauCeti.sl2CasimirSymbol R L h e f` at `ξ : Module.Dual R L`:
 `(2 * ξ h) • h + (4 * ξ f) • e + (4 * ξ e) • f`. -/
-theorem symmetricGradient_sl2CasimirSymbol {R L ι : Type*}
-    [CommSemiring R] [AddCommMonoid L] [Module R L] [Fintype ι]
-    (b : Module.Basis ι R L) (h e f : L) (ξ : Module.Dual R L) :
-    b.symmetricGradient (TauCeti.sl2CasimirSymbol R L h e f) ξ =
+theorem gradient_sl2CasimirSymbol {R L : Type*}
+    [CommSemiring R] [AddCommMonoid L] [Module R L]
+    (h e f : L) (ξ : Module.Dual R L) :
+    (sl2CasimirSymbol R L h e f).gradient ξ =
       (2 * ξ h) • h + (4 * ξ f) • e + (4 * ξ e) • f := by
-  rw [TauCeti.sl2CasimirSymbol_def]
+  rw [sl2CasimirSymbol_def]
   simp [nsmul_eq_mul, smul_smul, map_ofNat, mul_comm (ξ f) 4]
   abel
 
-end Module.Basis
+end TauCeti

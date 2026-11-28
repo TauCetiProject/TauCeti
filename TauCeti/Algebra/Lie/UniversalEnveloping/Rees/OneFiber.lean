@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Rees.Functoriality
 public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.UnitFiber
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # The PBW Rees fibre at one
@@ -120,9 +121,8 @@ theorem quotientReesParameterSubOneMap_id :
 theorem quotientReesParameterSubOneMap_comp (f : L →ₗ⁅R⁆ M) (g : M →ₗ⁅R⁆ N) :
     quotientReesParameterSubOneMap R (g.comp f) =
       (quotientReesParameterSubOneMap R g).comp (quotientReesParameterSubOneMap R f) := by
-  refine Ideal.Quotient.algHom_ext R ?_
-  ext p
-  simp
+  simp only [quotientReesParameterSubOneMap, Ideal.quotientMapₐ_comp, reesMap_comp]
+  rfl
 
 @[simp]
 theorem quotientReesParameterSubOneEquiv_map (f : L →ₗ⁅R⁆ M)

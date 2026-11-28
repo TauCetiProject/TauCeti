@@ -281,11 +281,13 @@ theorem reesDividedCommutator_jacobi (a b c : reesAlgebra R L) :
     reesDividedCommutator R L (reesDividedCommutator R L a b) c +
       reesDividedCommutator R L (reesDividedCommutator R L b c) a +
       reesDividedCommutator R L (reesDividedCommutator R L c a) b = 0 := by
+  let : LieRing (reesAlgebra R L) := LieRing.ofAssociativeRing
   rw [← reesParameter_mul_right_inj R L, ← reesParameter_mul_right_inj R L]
-  simp only [mul_zero, mul_add, mul_sub, reesParameter_mul_reesDividedCommutator,
-    reesParameter_mul_mul_reesDividedCommutator, reesParameter_mul_reesDividedCommutator_mul]
-  simp only [sub_mul, mul_assoc]
-  abel
+  simp only [mul_zero, mul_add, reesParameter_mul_reesDividedCommutator, mul_sub]
+  simp only [reesParameter_mul_mul_reesDividedCommutator,
+    reesParameter_mul_reesDividedCommutator_mul, ← Ring.lie_def]
+  rw [← lie_skew ⁅a, b⁆ c, ← lie_skew ⁅b, c⁆ a, ← lie_skew ⁅c, a⁆ b,
+    ← neg_add, ← neg_add, neg_eq_zero, add_rotate, lie_jacobi]
 
 end DividedCommutator
 
