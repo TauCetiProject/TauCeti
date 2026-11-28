@@ -187,8 +187,9 @@ theorem ker_mk_eq_span :
         {z | ∃ a b : Rˣ, (a : R) + b = 1 ∧
           z = ι ℤ (Additive.ofMul a) * ι ℤ (Additive.ofMul b)}).asIdeal := by
   ext z
-  rw [RingHom.mem_ker, ← map_zero (mk (R := R)), mk_eq_mk_iff, ← ringCon_eq,
-    ringCon_eq_span_ringCon, TwoSidedIdeal.mem_asIdeal, TwoSidedIdeal.mem_iff]
+  have h : mk z = mk 0 ↔ ringCon R z 0 := (ringCon R).eq
+  rw [RingHom.mem_ker, ← map_zero (mk (R := R)), h, ringCon_eq_span_ringCon]
+  simp [TwoSidedIdeal.mem_iff]
 
 /-- The Steinberg products vanish in the Milnor K-ring. -/
 theorem mk_ι_mul_ι_of_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) :

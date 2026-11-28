@@ -383,11 +383,9 @@ theorem quotient_linearMap_ext {A : Type*} [AddCommMonoid A] [Module ℤ A] {n :
       φ (Submodule.Quotient.mk (PiTensorProduct.tprod ℤ x)) =
         ψ (Submodule.Quotient.mk (PiTensorProduct.tprod ℤ x))) :
     φ = ψ := by
-  refine LinearMap.ext fun q ↦ ?_
-  obtain ⟨t, rfl⟩ := Submodule.Quotient.mk_surjective _ q
-  induction t using PiTensorProduct.induction_on with
-  | smul_tprod r x => simp only [Submodule.Quotient.mk_smul, map_smul, h x]
-  | add _ _ hx hy => simp only [Submodule.Quotient.mk_add, map_add, hx, hy]
+  have hcomp : φ.comp (steinbergRelations R n).mkQ = ψ.comp (steinbergRelations R n).mkQ :=
+    PiTensorProduct.ext (MultilinearMap.ext h)
+  exact LinearMap.ext fun q ↦ Submodule.Quotient.induction_on _ q (LinearMap.congr_fun hcomp)
 
 /-! ### The direct sum decomposition -/
 
