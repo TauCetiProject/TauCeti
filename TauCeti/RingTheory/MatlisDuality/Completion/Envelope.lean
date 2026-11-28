@@ -20,16 +20,17 @@ element of `E` is killed by a power of `𝔪`, `E` carries a canonical `R̂`-mod
 (`TauCeti.AdicCompletion.torsionModule`), and `ι` induces an `R̂`-linear map
 `TauCeti.IsInjectiveEnvelope.adicCompletionResidueMap` from the residue field of `R̂` into `E`.
 
-This file shows that `E`, with that `R̂`-module structure, is an injective envelope of the residue
-field of `R̂` (`TauCeti.IsInjectiveEnvelope.adicCompletion`), without needing complete Matlis
-biduality.
+This file shows that when `[Small.{v} R]` holds (for `E : Type v`), `E`, with that `R̂`-module
+structure, is an injective envelope of the residue field of `R̂`
+(`TauCeti.IsInjectiveEnvelope.adicCompletion`), without needing complete Matlis biduality. Note
+that `TauCeti.IsInjectiveEnvelope.adicCompletionResidueMap` does not require `[Small.{v} R]`.
 
 ## Main results
 
 * `TauCeti.IsInjectiveEnvelope.adicCompletionResidueMap`: the induced embedding of the residue field
-  of `R̂` into `E`.
-* `TauCeti.IsInjectiveEnvelope.adicCompletion`: `E`, with its canonical `R̂`-module structure, is
-  an injective envelope of the residue field of `R̂`.
+  of `R̂` into `E` (without `[Small.{v} R]`).
+* `TauCeti.IsInjectiveEnvelope.adicCompletion`: assuming `[Small.{v} R]` for `E : Type v`, `E`
+  with its canonical `R̂`-module structure is an injective envelope of the residue field of `R̂`.
 
 ## References
 
@@ -94,7 +95,7 @@ theorem adicCompletionResidueMap_residue_algebraMap (r : R) :
 variable [Small.{v} R]
 
 /-- **The injective hull of `κ` over `R` is also an injective hull of the residue field of `R̂`
-over `R̂`** (Stacks Remark 47.7.9, Tag 0EGL). -/
+over `R̂`** (Stacks Remark 47.7.9, Tag 0EGL), assuming `[Small.{v} R]` for `E : Type v`. -/
 theorem adicCompletion :
     letI := AdicCompletion.torsionModule hι.mem_primaryComponent
     IsInjectiveEnvelope hι.adicCompletionResidueMap := by

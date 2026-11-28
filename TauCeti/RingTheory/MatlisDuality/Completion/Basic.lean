@@ -15,24 +15,28 @@ import TauCeti.RingTheory.Artinian.LocalRing
 # General Matlis duality over the completion
 
 Let `R` be a commutative Noetherian local ring with maximal ideal `𝔪`, residue field `κ`, and
-`𝔪`-adic completion `R̂`, and let `ι : κ →ₗ[R] E` be an injective envelope of `κ`. This file
-establishes the general Matlis duality between Artinian `R`-modules and finitely generated
-`R̂`-modules without assuming that `R` is complete or that `κ` is finite.
+`𝔪`-adic completion `R̂`, and let `ι : κ →ₗ[R] E` be an injective envelope of `κ` with `E : Type v`
+and `[Small.{v} R]`. This file establishes the general Matlis duality between Artinian `R`-modules
+and finitely generated `R̂`-modules without assuming that `R` is complete or that `κ` is finite.
 
 Over an arbitrary Noetherian local ring `R`, the canonical `R̂`-module structure on `E` makes `E`
 an injective envelope of the residue field of `R̂` (`TauCeti.IsInjectiveEnvelope.adicCompletion`,
-in `TauCeti/RingTheory/MatlisDuality/Completion/Envelope.lean`). Applying complete Matlis duality
-over `R̂` and the identification of `R`-linear and `R̂`-linear maps on `𝔪`-power-torsion modules
-then yields the anti-equivalence between Artinian `R`-modules and finite `R̂`-modules, and
-identifies the double Matlis dual `Hom_R(Hom_R(N, E), E)` of any finite `R`-module `N` with its
-`𝔪`-adic completion `AdicCompletion 𝔪 N`
+in `TauCeti/RingTheory/MatlisDuality/Completion/Envelope.lean`, under `[Small.{v} R]`). Applying
+complete Matlis duality over `R̂` and the identification of `R`-linear and `R̂`-linear maps on
+`𝔪`-power-torsion modules then yields the anti-equivalence between Artinian `R`-modules and finite
+`R̂`-modules, and identifies the double Matlis dual `Hom_R(Hom_R(N, E), E)` of any finite
+`R`-module `N` with its `𝔪`-adic completion `AdicCompletion 𝔪 N`
 (`TauCeti.IsInjectiveEnvelope.adicCompletionEquivBidualOfFinite`).
 
-The bundled categorical anti-equivalence and its exactness lemmas live in
-`TauCeti/Algebra/Category/ModuleCat/MatlisDuality/Completion.lean`
-(`TauCeti.IsInjectiveEnvelope.adicCompletionMatlisDuality`).
+The bundled categorical functors `matlisDualAdicCompletion` and `matlisDualOfAdicCompletion` live
+in `TauCeti/Algebra/Category/ModuleCat/MatlisDuality/Completion.lean` and do not require
+`[Small.{v} R]`, whereas their exactness (`PreservesFiniteColimits`, `PreservesHomology`) and the
+restricted anti-equivalence `TauCeti.IsInjectiveEnvelope.adicCompletionMatlisDuality` require
+`[Small.{v} R]`.
 
 ## Main results
+
+Assuming `[Small.{v} R]` for `E : Type v`:
 
 * `TauCeti.IsInjectiveEnvelope.isArtinian_adicCompletion_linearMap_of_finite`,
   `TauCeti.IsInjectiveEnvelope.isArtinian_adicCompletion_linearMap_iff_finite`,
@@ -101,8 +105,9 @@ theorem isArtinian_adicCompletion_linearMap_iff_finite (N : Type w) [AddCommGrou
     isArtinian_of_tower R inferInstance
   exact (hι.adicCompletion.finite_iff_isArtinian_linearMap N).mpr this
 
-/-- **General Matlis biduality for Artinian `R`-modules**: over any Noetherian local ring `R`,
-evaluation identifies an Artinian `R`-module `M` with `Hom_{R̂}(Hom_R(M, E), E)`. -/
+/-- **General Matlis biduality for Artinian `R`-modules**: over any Noetherian local ring `R`
+(assuming `[Small.{v} R]` for `E : Type v`), evaluation identifies an Artinian `R`-module `M` with
+`Hom_{R̂}(Hom_R(M, E), E)`. -/
 def evalEquivAdicCompletionOfIsArtinian (M : Type w) [AddCommGroup M] [Module R M]
     [IsArtinian R M] :
     letI := AdicCompletion.torsionModule hι.mem_primaryComponent
@@ -142,8 +147,9 @@ theorem evalEquivAdicCompletionOfIsArtinian_symm_apply_apply (M : Type w) [AddCo
     congrArg (fun ψ : (M →ₗ[R] E) →ₗ[_root_.AdicCompletion (maximalIdeal R) R] E ↦ ψ f)
       ((hι.evalEquivAdicCompletionOfIsArtinian M).apply_symm_apply φ)
 
-/-- **General Matlis biduality for finite `R̂`-modules**: over any Noetherian local ring `R`,
-evaluation identifies a finitely generated `R̂`-module `N` with `Hom_R(Hom_{R̂}(N, E), E)`. -/
+/-- **General Matlis biduality for finite `R̂`-modules**: over any Noetherian local ring `R`
+(assuming `[Small.{v} R]` for `E : Type v`), evaluation identifies a finitely generated `R̂`-module
+`N` with `Hom_R(Hom_{R̂}(N, E), E)`. -/
 def evalEquivOfFiniteAdicCompletion (N : Type w) [AddCommGroup N]
     [Module (_root_.AdicCompletion (maximalIdeal R) R) N]
     [Module.Finite (_root_.AdicCompletion (maximalIdeal R) R) N] :
@@ -208,9 +214,9 @@ theorem bijective_lcomp_of_finite_adicCompletion (M : Type w) [AddCommGroup M]
 /-! ### Double Matlis dual of a finite module as its completion -/
 
 /-- **The double Matlis dual of a finite module is its `𝔪`-adic completion.** For any finitely
-generated module `N` over a Noetherian local ring `R`, there is a canonical `R̂`-linear isomorphism
-`AdicCompletion 𝔪 N ≃ₗ[R̂] Hom_R(Hom_R(N, E), E)` intertwining `AdicCompletion.of` with evaluation
-(`adicCompletionEquivBidualOfFinite_of`). -/
+generated module `N` over a Noetherian local ring `R` (assuming `[Small.{v} R]` for `E : Type v`),
+there is a canonical `R̂`-linear isomorphism `AdicCompletion 𝔪 N ≃ₗ[R̂] Hom_R(Hom_R(N, E), E)`
+intertwining `AdicCompletion.of` with evaluation (`adicCompletionEquivBidualOfFinite_of`). -/
 def adicCompletionEquivBidualOfFinite (N : Type w) [AddCommGroup N] [Module R N]
     [Module.Finite R N] :
     letI := AdicCompletion.torsionModule hι.mem_primaryComponent

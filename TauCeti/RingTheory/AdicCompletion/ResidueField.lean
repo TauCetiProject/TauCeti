@@ -61,18 +61,15 @@ theorem mem_primaryComponent_maximalIdeal_residueField
     (x : ResidueField (AdicCompletion (maximalIdeal R) R)) :
     x ∈ (maximalIdeal R).primaryComponent
       (ResidueField (AdicCompletion (maximalIdeal R) R)) := by
-  have htop : (maximalIdeal R).primaryComponent
-      (ResidueField (AdicCompletion (maximalIdeal R) R)) = ⊤ :=
-    Ideal.primaryComponent_eq_top_of_le_annihilator _ (n := 1) (by
-      rw [pow_one]
-      exact fun r hr ↦
-        Module.mem_annihilator.mpr fun y ↦ by
-          rw [← algebraMap_smul (AdicCompletion (maximalIdeal R) R),
-            Algebra.smul_def, ResidueField.algebraMap_eq,
-            (residue_eq_zero_iff (R := AdicCompletion (maximalIdeal R) R) _).mpr
-              ((_root_.AdicCompletion.maximalIdeal_eq_map (R := R)).ge
-                (Ideal.mem_map_of_mem _ hr)), zero_mul])
-  exact htop.ge Submodule.mem_top
+  have htop : (maximalIdeal (AdicCompletion (maximalIdeal R) R)).primaryComponent
+      (ResidueField (AdicCompletion (maximalIdeal R) R)) = ⊤ := by
+    have h := Ideal.primaryComponent_quotient_pow_eq_top
+      (maximalIdeal (AdicCompletion (maximalIdeal R) R)) 1
+    rw [pow_one] at h
+    exact h
+  rw [← Ideal.mem_primaryComponent_map_iff (S := AdicCompletion (maximalIdeal R) R),
+    ← _root_.AdicCompletion.maximalIdeal_eq_map, htop]
+  exact Submodule.mem_top
 
 end
 

@@ -38,6 +38,10 @@ corresponding sequence of the underlying `R`-linear maps
 When `S` is a finite `R`-module, the kernel and cokernel of the underlying `R`-linear map are
 finite over `R` as soon as those of `f` are finite over `S`
 (`LinearMap.finite_ker_restrictScalars`, `LinearMap.finite_quotient_range_restrictScalars`).
+
+When every `R`-linear map `M → N` between two `S`-modules automatically commutes with `S`,
+`LinearMap.restrictScalarsEquivOfMapSmul` upgrades `LinearMap.restrictScalarsₗ` to an `R₁`-linear
+equivalence `(M →ₗ[S] N) ≃ₗ[R₁] (M →ₗ[R] N)`.
 -/
 
 public section
@@ -252,5 +256,40 @@ instance finite_quotient_range_restrictScalars [Ring R] [Ring S] [Module R S]
   Module.Finite.equiv (f.cokerRestrictScalarsEquiv R).symm
 
 end Finite
+
+section Equiv
+
+variable {R S M N : Type*} [Semiring R] [Semiring S] [AddCommMonoid M] [AddCommMonoid N]
+  [Module R M] [Module R N] [Module S M] [Module S N] [LinearMap.CompatibleSMul M N R S]
+  (R₁ : Type*) [Semiring R₁] [Module R₁ N] [SMulCommClass S R₁ N] [SMulCommClass R R₁ N]
+
+/-- When every `R`-linear map `M → N` automatically commutes with `S`-scalar multiplication,
+restriction of scalars gives an `R₁`-linear equivalence `(M →ₗ[S] N) ≃ₗ[R₁] (M →ₗ[R] N)`. -/
+def restrictScalarsEquivOfMapSmul
+    (hsmul : ∀ (f : M →ₗ[R] N) (s : S) (x : M), f (s • x) = s • f x) :
+    (M →ₗ[S] N) ≃ₗ[R₁] (M →ₗ[R] N) :=
+  { LinearMap.restrictScalarsₗ R S M N R₁ with
+    invFun := fun f ↦
+      { toFun := f
+        map_add' := f.map_add
+        map_smul' := hsmul f }
+    left_inv := fun _ ↦ by ext; rfl
+    right_inv := fun _ ↦ by ext; rfl }
+
+/-- The forward map of `restrictScalarsEquivOfMapSmul` is restriction of scalars. -/
+@[simp]
+theorem restrictScalarsEquivOfMapSmul_apply
+    (hsmul : ∀ (f : M →ₗ[R] N) (s : S) (x : M), f (s • x) = s • f x) (f : M →ₗ[S] N) :
+    restrictScalarsEquivOfMapSmul R₁ hsmul f = f.restrictScalars R := by
+  rfl
+
+/-- The inverse of `restrictScalarsEquivOfMapSmul` preserves underlying values. -/
+@[simp]
+theorem restrictScalarsEquivOfMapSmul_symm_apply
+    (hsmul : ∀ (f : M →ₗ[R] N) (s : S) (x : M), f (s • x) = s • f x) (f : M →ₗ[R] N) (x : M) :
+    (restrictScalarsEquivOfMapSmul R₁ hsmul).symm f x = f x := by
+  rfl
+
+end Equiv
 
 end LinearMap

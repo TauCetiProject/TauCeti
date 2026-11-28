@@ -11,7 +11,6 @@ public import Mathlib.LinearAlgebra.Dual.Defs
 public import TauCeti.LinearAlgebra.Exact
 public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 public import Mathlib.Algebra.Category.ModuleCat.Projective
-public import Mathlib.Algebra.Module.Injective
 
 /-!
 # Homology of short complexes of modules
@@ -30,12 +29,9 @@ two finiteness consequences of that description:
   of the range of the first map is the rank of the kernel of the second.
 
 It also defines the `A`-dual `X₃* ⟶ X₂* ⟶ X₁*` of a short complex of left `A`-modules, a short
-complex of right `A`-modules (`CategoryTheory.ShortComplex.moduleCatOpDual`), shows that the
+complex of right `A`-modules (`CategoryTheory.ShortComplex.moduleCatOpDual`), and shows that the
 dual of a short exact sequence is short exact when every functional on `X₁` extends to `X₂`
-(`CategoryTheory.ShortComplex.ShortExact.moduleCatOpDual`), and records that any functor
-`(ModuleCat A)ᵒᵖ ⥤ ModuleCat B` naturally isomorphic to `Hom_A(-, E)` with `E` injective sends
-short exact sequences to short exact sequences
-(`CategoryTheory.ShortComplex.ShortExact.op_map_of_lcomp`). Finally, it identifies the two maps of
+(`CategoryTheory.ShortComplex.ShortExact.moduleCatOpDual`). Finally, it identifies the two maps of
 Mathlib's conjugated short complex `ModuleCat.shortComplexOfConj`
 (`ModuleCat.shortComplexOfConj_f`, `ModuleCat.shortComplexOfConj_g`); the first is a monomorphism
 when the original map is injective (`ModuleCat.mono_shortComplexOfConj_f`).
@@ -49,7 +45,7 @@ public section
 
 open CategoryTheory Limits Module Cardinal
 
-universe u v w t
+universe u v
 
 namespace CategoryTheory.ShortComplex
 
@@ -145,47 +141,6 @@ theorem ShortExact.moduleCatOpDual (hS : S.ShortExact)
     (((ShortExact.moduleCat_exact_iff_function_exact S).1 hS.exact).lcomp_of_surjective A
       hS.moduleCat_surjective_g)
     (LinearMap.lcomp_injective_of_surjective _ hS.moduleCat_surjective_g) hext
-
-/-- **Dualizing a short exact sequence by an injective module**: any zero-preserving functor
-`(ModuleCat A)ᵒᵖ ⥤ ModuleCat B` naturally isomorphic to `Hom_A(-, E)` for an injective `A`-module
-`E` sends every short exact sequence of `A`-modules to a short exact sequence of `B`-modules. -/
-theorem ShortExact.op_map_of_lcomp {B : Type*} [Ring B] {E : Type t} [AddCommGroup E]
-    [Module A E] [Module B E] [SMulCommClass A B E] [Small.{t} A] [Module.Injective A E]
-    (hS : S.ShortExact) (F : (ModuleCat.{v} A)ᵒᵖ ⥤ ModuleCat.{w} B) [F.PreservesZeroMorphisms]
-    (e : ∀ M : ModuleCat.{v} A, F.obj (Opposite.op M) ≃ₗ[B] (M →ₗ[A] E))
-    (he : ∀ {M M' : ModuleCat.{v} A} (g : M ⟶ M') (φ : F.obj (Opposite.op M')) (x : M),
-      e M (F.map g.op φ) x = e M' φ (g x)) :
-    (S.op.map F).ShortExact := by
-  have hf := hS.moduleCat_injective_f
-  have hg := hS.moduleCat_surjective_g
-  have hex := (ShortExact.moduleCat_exact_iff_function_exact S).1 hS.exact
-  have h₁₂ : (S.op.map F).f.hom ∘ₗ (e S.X₃).symm.toLinearMap =
-      (e S.X₂).symm.toLinearMap ∘ₗ S.g.hom.lcomp B E := by
-    ext ψ
-    apply (e S.X₂).injective
-    ext x
-    simpa [ShortComplex.map_f] using he S.g ((e S.X₃).symm ψ) x
-  have h₂₃ : (S.op.map F).g.hom ∘ₗ (e S.X₂).symm.toLinearMap =
-      (e S.X₁).symm.toLinearMap ∘ₗ S.f.hom.lcomp B E := by
-    ext ψ
-    apply (e S.X₁).injective
-    ext x
-    simpa [ShortComplex.map_g] using he S.f ((e S.X₂).symm ψ) x
-  refine ModuleCat.shortComplex_shortExact _
-    ((hex.lcomp_of_surjective E hg).of_ladder_linearEquiv_of_exact h₁₂ h₂₃) ?_ ?_
-  · have hinj : Function.Injective ((S.op.map F).f.hom ∘ₗ (e S.X₃).symm.toLinearMap) := by
-      rw [h₁₂]
-      exact (e S.X₂).symm.injective.comp (LinearMap.lcomp_injective_of_surjective _ hg)
-    intro φ₁ φ₂ hφ
-    obtain ⟨ψ₁, rfl⟩ := (e S.X₃).symm.surjective φ₁
-    obtain ⟨ψ₂, rfl⟩ := (e S.X₃).symm.surjective φ₂
-    exact congrArg (e S.X₃).symm (hinj hφ)
-  · intro φ
-    obtain ⟨ψ, hψ⟩ := Module.Injective.extension_property A E S.X₁ S.X₂ S.f.hom hf (e S.X₁ φ)
-    refine ⟨(e S.X₂).symm ψ, ?_⟩
-    have h2 := LinearMap.congr_fun h₂₃ ψ
-    dsimp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap] at h2
-    rw [h2, LinearMap.lcomp_apply', hψ, LinearEquiv.symm_apply_apply]
 
 end OpDual
 

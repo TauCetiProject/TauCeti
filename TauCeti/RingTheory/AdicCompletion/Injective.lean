@@ -16,16 +16,16 @@ import TauCeti.RingTheory.AdicCompletion.Torsion
 # Injective ideal-power-torsion modules over the completion
 
 Let `I` be a finitely generated ideal of a commutative ring `R` whose `I`-adic completion
-`R̂ = AdicCompletion I R` is Noetherian. If `E` is an injective `R`-module in which every element
-is killed by a power of `I`, equipped with a compatible `R̂`-action (such as
-`TauCeti.AdicCompletion.torsionModule`), then `E` remains an injective `R̂`-module
-(`TauCeti.AdicCompletion.moduleInjective_of_primaryComponent`).
+`R̂ = AdicCompletion I R` is Noetherian. If `E : Type v` is an injective `R`-module in which every
+element is killed by a power of `I`, equipped with a compatible `R̂`-action (such as
+`TauCeti.AdicCompletion.torsionModule`), and `[Small.{v} R]` holds, then `E` remains an injective
+`R̂`-module (`TauCeti.AdicCompletion.moduleInjective_of_primaryComponent`).
 
 ## Main results
 
 * `TauCeti.AdicCompletion.moduleInjective_of_primaryComponent`: injectivity transfers from `R` to
-  `AdicCompletion I R` for `I`-power-torsion modules when `I` is finitely generated and
-  `AdicCompletion I R` is Noetherian.
+  `AdicCompletion I R` for `I`-power-torsion modules when `I` is finitely generated,
+  `AdicCompletion I R` is Noetherian, and `[Small.{v} R]` holds (`E : Type v`).
 
 ## References
 
@@ -44,8 +44,9 @@ universe u v
 
 /-- **An `I`-power-torsion injective module remains injective over the `I`-adic completion.**
 Let `I` be a finitely generated ideal whose completion `R̂ = AdicCompletion I R` is Noetherian.
-If `E` is an injective `R`-module in which every element is killed by a power of `I`, equipped
-with a compatible `R̂`-action (such as `torsionModule`), then `E` is an injective `R̂`-module. -/
+If `E : Type v` is an injective `R`-module in which every element is killed by a power of `I`,
+equipped with a compatible `R̂`-action (such as `torsionModule`), and `[Small.{v} R]` holds, then
+`E` is an injective `R̂`-module. -/
 theorem moduleInjective_of_primaryComponent {R : Type u} [CommRing R] {I : Ideal R}
     {E : Type v} [AddCommGroup E] [Module R E] [Small.{v} R] [Module.Injective R E]
     [Module (_root_.AdicCompletion I R) E] [IsScalarTower R (_root_.AdicCompletion I R) E]
@@ -78,9 +79,9 @@ theorem moduleInjective_of_primaryComponent {R : Type u} [CommRing R] {I : Ideal
     obtain ⟨r, hr⟩ := exists_sub_algebraMap_mem_map_pow hI m a
     have hzero : h ((a - algebraMap R Rhat r) * b) = 0 :=
       hhI _ (Ideal.mul_mem_right b _ (Ideal.map_pow (algebraMap R Rhat) I m ▸ hr))
+    rw [sub_mul, map_sub] at hzero
     have hlhs : h (a • b) = r • h b := by
-      rw [smul_eq_mul, ← sub_add_cancel a (algebraMap R Rhat r), add_mul, map_add, hzero, zero_add,
-        ← Algebra.smul_def, map_smul]
+      rw [smul_eq_mul, sub_eq_zero.mp hzero, ← Algebra.smul_def, map_smul]
     exact hlhs.trans (a.smul_eq_of_sub_mem_map_pow r hb hr).symm
   exact ⟨{ h with map_smul' := hsmul }, hhJ⟩
 
