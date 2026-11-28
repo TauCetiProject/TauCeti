@@ -18,8 +18,9 @@ the equivalence of categories `TopologicalSpace.Opens.mapMapIso`; this file reco
 round trips as equalities of opens, the form met when an open of `Y` is compared with the preimage
 of its preimage.
 
-For opens `V ≤ W` of `X`, an open `Q` of `W` pulled back to `V` along the inclusion and pushed
-forward to `X` lies in the image of `Q` in `X`. The inclusion of `V` into `W` is an open embedding,
+The image in `X` of an open subset of an open set `U` lies in `U`. For opens `V ≤ W` of `X`, an
+open `Q` of `W` pulled back to `V` along the inclusion and pushed forward to `X` lies in the image
+of `Q` in `X`. The inclusion of `V` into `W` is an open embedding,
 and an open subset of a Hausdorff space is Hausdorff. A compact subset of `X` lying in an open set
 `U` is the image of a compact subset of `U`. For an injective open map `f`, the point `f y` lies in
 the image of an open `V` exactly when `y` lies in `V`.
@@ -33,6 +34,8 @@ homeomorphic to `V`. The two descriptions agree, as do the resulting image opens
 * `TopologicalSpace.Opens.map_hom_obj_map_inv_obj`,
   `TopologicalSpace.Opens.map_inv_obj_map_hom_obj`: the preimage along `f.hom` of the preimage
   along `f.inv` of an open is that open, and the other way round.
+* `TopologicalSpace.Opens.isOpenEmbedding_obj_le`: the image in `X` of an open of `U` lies in
+  `U`.
 * `TopologicalSpace.Opens.functor_obj_map_homOfLE_obj_le`: for opens `V ≤ W`, the image in `X`
   of the preimage in `V` of an open of `W` lies in the image of that open.
 * `TopologicalSpace.Opens.isOpenEmbedding_toTopCat_map`: the inclusion of `V` into `W` is an open
@@ -78,6 +81,12 @@ theorem map_hom_obj_map_inv_obj (U : Opens X) :
 theorem map_inv_obj_map_hom_obj (U : Opens Y) :
     (Opens.map f.inv).obj ((Opens.map f.hom).obj U) = U := by
   rw [← map_comp_obj, f.inv_hom_id, map_id_obj]
+
+/-- The image in `X` of an open subset of an open set `U` lies in `U`. -/
+theorem isOpenEmbedding_obj_le (U : Opens X) (V : Opens ((toTopCat X).obj U)) :
+    U.isOpenEmbedding.functor.obj V ≤ U := by
+  rintro _ ⟨x, -, rfl⟩
+  exact x.property
 
 /-- For opens `V ≤ W` of `X` and an open `Q` of `W`, the image in `X` of the preimage of `Q` in `V`
 lies in the image of `Q` in `X`. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Geometry.Manifold.ChartedSpace
+public import Mathlib.Topology.FiberBundle.Basic
 public import Mathlib.Topology.Sets.OpenCover
 public import TauCeti.Topology.OpenPartialHomeomorph.ChartOpens
 import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
@@ -33,7 +34,9 @@ Hausdorff and the model space is proper, `OpenPartialHomeomorph.isCompact_closur
 and `OpenPartialHomeomorph.closure_preimageBall_subset` show that for radii `ρ < σ ≤ K * r i` the
 coordinate ball of radius `ρ` has compact closure inside that of radius `σ`. For `K = 3`, the radii
 `r i`, `2 * r i` and `3 * r i` give three nested finite covers, each closure compact in the next;
-such nested covers carry compact restriction maps between Čech cochain spaces.
+such nested covers carry compact restriction maps between Čech cochain spaces. For a fibre bundle
+over `X`, the coordinate balls of radius at most `K * r i` can be taken inside the base set of a
+single trivialization, so that the bundle is trivial over each of the nested covers.
 
 ## Main results
 
@@ -41,6 +44,9 @@ such nested covers carry compact restriction maps between Čech cochain spaces.
   point of an open set `U`.
 * `Set.Finite.exists_isOpenEmbedding_prod_ball`: the open embedding of `S × ball 0 r`.
 * `TauCeti.exists_finite_preimageBall_cover`: the finite cover by coordinate balls.
+* `TauCeti.exists_finite_preimageBall_cover_baseSet`: for a fibre bundle over `X`, the finite
+  cover by coordinate balls whose concentric balls of radius at most `K * r i` lie in the base set
+  of a trivialization.
 -/
 
 public section
@@ -170,5 +176,34 @@ theorem exists_finite_preimageBall_cover [CompactSpace X] (K : ℝ) {κ : Type*}
     fun i ↦ chart_mem_atlas H i.val, fun i ↦ hr i.val,
     fun i ↦ (hKr i.val).trans fun z hz ↦ (hεV i.val hz).1,
     fun i ↦ ⟨k i.val, by rintro _ ⟨z, hz, rfl⟩; exact (hεV i.val (hKr i.val hz)).2⟩, hs.iSup_eq_top⟩
+
+/-- **Finite covers by coordinate balls inside trivializations.** A compact charted space carrying
+a fibre bundle is covered by finitely many coordinate balls `(e i).preimageBall (c i) (r i)` of
+atlas charts with `closedBall (c i) (K * r i) ⊆ (e i).target`, whose concentric coordinate balls of
+radius `a * r i`, for `a ≤ K`, lie in the base set of the trivialization at a point `k i`. -/
+theorem exists_finite_preimageBall_cover_baseSet [CompactSpace X] (K : ℝ)
+    {F : Type*} [TopologicalSpace F] {V : X → Type*} [TopologicalSpace (Bundle.TotalSpace F V)]
+    [∀ x, TopologicalSpace (V x)] [FiberBundle F V] :
+    ∃ (ι : Type u) (_ : Finite ι) (e : ι → OpenPartialHomeomorph X H) (c : ι → H) (r : ι → ℝ)
+      (k : ι → X), (∀ i, e i ∈ atlas H X) ∧ (∀ i, 0 < r i) ∧
+        (∀ i, closedBall (c i) (K * r i) ⊆ (e i).target) ∧
+        (∀ i, ∀ a ≤ K, (e i).source ∩ e i ⁻¹' eball (c i) (.ofReal (a * r i)) ⊆
+          (trivializationAt F V (k i)).baseSet) ∧
+        ⨆ i, (e i).preimageBall (c i) (r i) = ⊤ := by
+  let T : X → Opens X := fun x ↦ ⟨(trivializationAt F V x).baseSet,
+    (trivializationAt F V x).open_baseSet⟩
+  have hT : IsOpenCover T := .mk <| eq_top_iff.2 fun x _ ↦
+    Opens.mem_iSup.2 ⟨x, FiberBundle.mem_baseSet_trivializationAt' x⟩
+  obtain ⟨ι, _, e, c, r, hatlas, hr, hK, hKT, hcov⟩ :=
+    exists_finite_preimageBall_cover (H := H) K hT
+  choose k hk using hKT
+  refine ⟨ι, inferInstance, e, c, r, k, hatlas, hr, hK, fun i a ha x ⟨hx, hxB⟩ ↦ ?_, hcov⟩
+  rw [mem_preimage, eball_ofReal] at hxB
+  have hxB' : e i x ∈ closedBall (c i) (K * r i) :=
+    closedBall_subset_closedBall (mul_le_mul_of_nonneg_right ha (hr i).le)
+      (ball_subset_closedBall hxB)
+  have := hk i ⟨e i x, hxB', rfl⟩
+  rw [(e i).left_inv hx] at this
+  exact this
 
 end TauCeti
