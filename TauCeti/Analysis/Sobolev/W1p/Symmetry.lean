@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.W1p.Basic
+public import TauCeti.Analysis.Sobolev.W1p.Zero
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
 
@@ -17,7 +17,8 @@ weak derivatives of `u` itself, so the commutation of weak derivatives
 (`TauCeti.HasWeakLineDerivOn.comm`) applies to them: if `∂_y u` has a weak derivative `G` in the
 direction `w`, then `∂_w u` has the same weak derivative `G` in the direction `y`. Tested against
 a test function `ψ`, the first weak derivatives of `u` pair symmetrically with those of `ψ`:
-`∫ (∂_v ψ) ∂_w u = ∫ (∂_w ψ) ∂_v u`, as both equal `-∫ (∂_v ∂_w ψ) u`.
+`∫ (∂_v ψ) ∂_w u = ∫ (∂_w ψ) ∂_v u`, as both equal `-∫ (∂_v ∂_w ψ) u`. Both sides are continuous
+in `ψ` for the `W^{1,q}` norm, so the symmetry extends from test functions to `W^{1,q}_0(Ω)`.
 
 ## Main declarations
 
@@ -29,6 +30,9 @@ a test function `ψ`, the first weak derivatives of `u` pair symmetrically with 
   derivatives given as elements `d, d'` of `W^{1,p}(Ω)`, `∂_w d = ∂_y d'`.
 * `TauCeti.W1p.integral_lineDeriv_smul_inner_gradient_comm`: first derivatives of a test function
   and of a `W^{1,p}` function pair symmetrically.
+* `TauCeti.W1p.setIntegral_inner_gradient_mul_inner_gradient_comm`: the same symmetry for the first
+  derivatives of `f ∈ W^{1,p}(Ω)` and `g ∈ W^{1,q}_0(Ω)`, `∫ ∂_v f ∂_w g = ∫ ∂_w f ∂_v g`, by
+  density of test functions in `W^{1,q}_0(Ω)`.
 -/
 
 public section
@@ -83,5 +87,43 @@ theorem W1p.integral_lineDeriv_smul_inner_gradient_comm (U : W1p μ Ω p) (ψ : 
   rw [← neg_neg (∫ x, _ ∂μ), ← h w v]
   simp_rw [TestFunction.lineDeriv_lineDerivOp_comm ψ v w]
   rw [h v w, neg_neg]
+
+open LineDeriv in
+/-- **Symmetric pairing of first weak derivatives.** For `f ∈ W^{1,p}(Ω)`, `g ∈ W^{1,q}_0(Ω)`
+with Hölder conjugate exponents and directions `v`, `w`, `∫_Ω ∂_v f ∂_w g = ∫_Ω ∂_w f ∂_v g`. On the
+whole space every `g ∈ W^{1,q}` qualifies for `q < ∞` (`TauCeti.w1p0Submodule_top_eq_top`). -/
+theorem W1p.setIntegral_inner_gradient_mul_inner_gradient_comm [BorelSpace E] {q : ENNReal}
+    [Fact (1 ≤ q)] [p.HolderConjugate q] (f : W1p μ Ω p) {g : W1p μ Ω q}
+    (hg : g ∈ w1p0Submodule μ Ω q) (v w : E) :
+    ∫ x in Ω, ⟪W1p.gradient f x, v⟫_ℝ * ⟪W1p.gradient g x, w⟫_ℝ ∂μ =
+      ∫ x in Ω, ⟪W1p.gradient f x, w⟫_ℝ * ⟪W1p.gradient g x, v⟫_ℝ ∂μ := by
+  -- The pairing `h ↦ ∫_Ω ∂_a f ∂_b h` is a continuous linear functional on `W^{1,q}(Ω)`.
+  let Φ : E → E → W1p μ Ω q →L[ℝ] ℝ := fun a b ↦
+    ((ContinuousLinearMap.mul ℝ ℝ).lpPairing (μ.restrict Ω) p q
+      ((innerSL ℝ a).compLp (W1p.gradient f))).comp
+      ((ContinuousLinearMap.compLpL q (μ.restrict Ω) (innerSL ℝ b)).comp W1p.gradientL)
+  have hΦ (a b : E) (h : W1p μ Ω q) : Φ a b h =
+      ∫ x in Ω, ⟪W1p.gradient f x, a⟫_ℝ * ⟪W1p.gradient h x, b⟫_ℝ ∂μ := by
+    simp only [Φ, ContinuousLinearMap.comp_apply, ContinuousLinearMap.lpPairing_eq_integral,
+      W1p.gradientL_apply]
+    refine integral_congr_ae ?_
+    filter_upwards [(innerSL ℝ a).coeFn_compLp (W1p.gradient f),
+      (innerSL ℝ b).coeFn_compLpL (W1p.gradient h)] with x h₁ h₂
+    rw [ContinuousLinearMap.mul_apply', h₁, h₂, innerSL_apply_apply, innerSL_apply_apply,
+      real_inner_comm a, real_inner_comm b]
+  -- Both functionals agree on test functions, hence on their closure `W^{1,q}_0(Ω)`.
+  have key := w1p0Submodule_subset_of_isClosed
+    (isClosed_eq (Φ v w).continuous (Φ w v).continuous) (fun φ ↦ ?_) hg
+  · simpa only [Set.mem_ofPred_eq, hΦ] using key
+  have hφ (a b : E) : Φ a b (W1p.ofTestFunctionₗ μ Ω q φ) =
+      ∫ x, lineDeriv ℝ (φ : E → ℝ) x b • ⟪W1p.gradient f x, a⟫_ℝ ∂μ := by
+    rw [hΦ, ← setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul]
+    refine integral_congr_ae ?_
+    filter_upwards [W1p.gradient_ofTestFunctionₗ (mu := μ) (Omega := Ω) (p := q) φ ▸
+      gradientTestFunctionLp_apply_ae (mu := μ) q φ] with x hx
+    rw [hx, TestFunction.lineDeriv_eq_fderiv, smul_eq_mul, mul_comm, _root_.gradient,
+      InnerProductSpace.toDual_symm_apply]
+  simp only [Set.mem_ofPred_eq, hφ]
+  exact W1p.integral_lineDeriv_smul_inner_gradient_comm f φ w v
 
 end TauCeti

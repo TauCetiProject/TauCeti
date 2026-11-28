@@ -38,6 +38,9 @@ the diagonal it is the square of the Frobenius seminorm
 * `ContinuousLinearMap.hilbertSchmidtInner_self_eq_sq_frobenius` and
   `ContinuousLinearMap.hilbertSchmidtInner_self_eq_sq_hilbertSchmidtNorm`: `⟪A, A⟫_HS = ‖A‖_F²`
   and `⟪A, A⟫_HS = ‖A‖_HS²`.
+* `ContinuousLinearMap.hilbertSchmidtInner_adjoint_right`: `⟪A, B†⟫_HS = tr (B ∘ A)`.
+* `ContinuousLinearMap.sq_hilbertSchmidtNorm_sub_adjoint`:
+  `‖A - A†‖_HS² = 2 ‖A‖_HS² - 2 tr (A²)`.
 * `ContinuousLinearMap.hilbertSchmidtInner_self_nonneg` and
   `ContinuousLinearMap.hilbertSchmidtInner_self_eq_zero_iff`: positive definiteness.
 -/
@@ -189,5 +192,33 @@ theorem hilbertSchmidtInner_self_eq_zero_iff (A : W →L[ℝ] V) :
   refine ⟨fun h ↦ ext fun v ↦ ?_, fun h i ↦ by simp [h]⟩
   rw [← b.sum_repr' v]
   simp [h]
+
+section Adjoint
+
+variable [CompleteSpace V]
+
+/-- Pairing with an adjoint is a trace: `⟪A, B†⟫_HS = tr (B ∘ A)`. -/
+theorem hilbertSchmidtInner_adjoint_right (A : W →L[ℝ] V) (B : V →L[ℝ] W) :
+    A.hilbertSchmidtInner (adjoint B) = LinearMap.trace ℝ W (B ∘L A).toLinearMap := by
+  set b := stdOrthonormalBasis ℝ W
+  rw [hilbertSchmidtInner_eq_sum _ _ b, LinearMap.trace_eq_sum_inner _ b]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [adjoint_inner_right, real_inner_comm, coe_coe, comp_apply]
+
+end Adjoint
+
+/-- **The antisymmetric part of an operator.** For `A` on a finite-dimensional real inner product
+space, `‖A - A†‖_HS² = 2 ‖A‖_HS² - 2 tr (A²)`. -/
+theorem sq_hilbertSchmidtNorm_sub_adjoint (A : W →L[ℝ] W) :
+    (A - adjoint A).hilbertSchmidtNorm ^ 2 =
+      2 * A.hilbertSchmidtNorm ^ 2 - 2 * LinearMap.trace ℝ W (A ∘L A).toLinearMap := by
+  have h := hilbertSchmidtInner_comm (adjoint A) A
+  rw [← hilbertSchmidtInner_self_eq_sq_hilbertSchmidtNorm,
+    ← hilbertSchmidtInner_self_eq_sq_hilbertSchmidtNorm, hilbertSchmidtInner_sub_left,
+    hilbertSchmidtInner_sub_right, hilbertSchmidtInner_sub_right, h,
+    hilbertSchmidtInner_adjoint_right,
+    hilbertSchmidtInner_self_eq_sq_hilbertSchmidtNorm (adjoint A), hilbertSchmidtNorm_adjoint,
+    hilbertSchmidtInner_self_eq_sq_hilbertSchmidtNorm]
+  ring
 
 end ContinuousLinearMap

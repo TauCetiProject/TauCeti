@@ -62,6 +62,8 @@ results that identify the operator as the derivative of the gradient and prove s
 * `ContDiff.contDiff_hessianOperator`: the Hessian operator of a `C^{m+2}` function is `Cᵐ`.
 * `ContDiffAt.isSelfAdjoint_hessianOperator`: symmetry of the second derivative becomes
   self-adjointness of the Hessian operator.
+* `ContDiffAt.hessianOperator_sub_adjoint`: the Hessian operator of a `C²` function has no
+  antisymmetric part.
 * `ContDiffAt.hasFDerivAt_neg_gradient`: the derivative of `-∇ f` is the negative Hessian
   operator.
 * `ContDiffAt.hasDerivAt_gradient_comp`: the derivative of the gradient along a curve is the
@@ -242,6 +244,12 @@ theorem isSelfAdjoint_hessianOperator (hf : ContDiffAt ℝ 2 f x) :
     _ = ⟪(hessianOperator f x : E → E) w, v⟫_ℝ :=
       (inner_hessianOperator_left f x w v).symm
     _ = ⟪v, (hessianOperator f x : E → E) w⟫_ℝ := real_inner_comm _ _
+
+/-- The Hessian operator of a function `C²` at `x` has no antisymmetric part:
+`D²f x - (D²f x)† = 0`. -/
+theorem hessianOperator_sub_adjoint (hf : ContDiffAt ℝ 2 f x) :
+    hessianOperator f x - ContinuousLinearMap.adjoint (hessianOperator f x) = 0 := by
+  rw [hf.isSelfAdjoint_hessianOperator.adjoint_eq, sub_self]
 
 /-- In an orthonormal basis, the matrix of the Hessian operator of a function `C²` at `x` is
 symmetric, since the Hessian operator is self-adjoint. -/
