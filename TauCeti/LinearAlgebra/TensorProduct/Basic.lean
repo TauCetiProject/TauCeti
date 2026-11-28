@@ -48,6 +48,8 @@ across `M ⊗[R] N` can also be moved across `M ⊗[R] (N ⊗[K] P)`.
 * `LinearMap.comp_tensorComponent`: contraction commutes with a functional on the left.
 * `LinearMap.tensorComponent_comp_tensorComponent`: successive contractions combine after
   reassociation.
+* `LinearMap.tensorComponent_comp_tensorComponent_assoc_symm_comm`: successive contractions
+  after reordering equal contraction by a pure dual.
 * `LinearMap.tensorComponent_mul`: contracting a product in an algebra tensor product against a
   functional which splits on products splits the contraction accordingly.
 * `LinearMap.lid_lTensor_apply` and `LinearMap.rid_rTensor_apply`: naturality of the left and
@@ -277,6 +279,19 @@ theorem tensorComponent_comp_tensorComponent (phi : N →ₗ[R] R) (psi : P →�
         (TensorProduct.assoc R M N P).toLinearMap := by
   refine TensorProduct.ext_threefold fun m n p ↦ ?_
   simp [smul_smul]
+
+/-- Successive contractions after moving the last factor to the front equal contraction
+of the first two factors by their pure dual. The remaining factor is an arbitrary module. -/
+theorem tensorComponent_comp_tensorComponent_assoc_symm_comm
+    (α : Module.Dual R M) (β : Module.Dual R N) :
+    tensorComponent (M := P) α ∘ₗ tensorComponent β ∘ₗ
+        (TensorProduct.assoc R P M N).symm.toLinearMap ∘ₗ
+        (TensorProduct.comm R (M ⊗[R] N) P).toLinearMap =
+      (TensorProduct.lid R P).toLinearMap ∘ₗ
+        TensorProduct.map (TensorProduct.dualDistrib R M N (α ⊗ₜ[R] β)) id := by
+  rw [← LinearMap.comp_assoc, tensorComponent_comp_tensorComponent]
+  ext m n p
+  simp [mul_comm]
 
 /-- Applying functionals to both factors is independent of the order of contraction. -/
 theorem comp_tensorComponent (psi : M →ₗ[R] R) (phi : N →ₗ[R] R) :

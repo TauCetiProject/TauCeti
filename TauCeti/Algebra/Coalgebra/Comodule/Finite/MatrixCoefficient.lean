@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Abelian
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Monoidal
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Morphism
-public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.TensorProduct
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Tensor.Product
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Trivial
 public import TauCeti.CategoryTheory.Monoidal.TensorPow.Basic
 
