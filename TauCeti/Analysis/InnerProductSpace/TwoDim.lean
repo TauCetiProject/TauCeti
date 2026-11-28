@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.TwoDim
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Analysis.InnerProductSpace.Orientation
+import Mathlib.Analysis.InnerProductSpace.Trace
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.StrictCauchySchwarz
 import TauCeti.LinearAlgebra.Matrix.Alternating.Basic
@@ -27,6 +29,13 @@ The area form `ω(x, y)` is nonzero exactly when `x` is nonzero and `y` is not a
 For unit vectors `a`, `b` the inner product and the area form `ω` are the cosine and the sine of
 the angle from `a` to `b`: `√(1 - ⟪a, b⟫²) = |ω(a, b)|`, so `⟪a, b⟫ ∈ (-1, 1)` whenever
 `ω(a, b) ≠ 0`.
+
+For a unit vector `e`, the pair `(e, J e)` is a positively oriented orthonormal frame. Every vector
+expands in it (`Orientation.eq_inner_smul_add_inner_smul`), an operator is determined by its matrix
+entries in it (`Orientation.ext_inner_frame`), and the trace is the sum of its diagonal entries
+(`Orientation.trace_eq_inner_add_inner`). The quarter turn is trace-free
+(`Orientation.trace_rightAngleRotation`), and every operator `A` satisfies
+`J A + A† J = (trace A) J` (`Orientation.rightAngleRotation_comp_add_adjoint_comp`).
 
 On the complex plane, the continuous oriented volume form is normalized on the standard complex
 basis `(1, I)`. On a pair of vectors it is the area form `dx ∧ dy`, `(v, w) ↦ Im (conj v * w)`, and
@@ -121,6 +130,72 @@ theorem inner_mem_Ioo_of_areaForm_ne_zero {a b : E} (ha : ‖a‖ = 1) (hb : ‖
   rw [ha, hb, one_pow, one_mul] at hsq
   have hlt : inner ℝ a b ^ 2 < 1 := by nlinarith [sq_pos_of_ne_zero h]
   exact abs_lt.1 ((sq_lt_one_iff_abs_lt_one _).1 hlt)
+
+section Frame
+
+open Module
+open scoped InnerProductSpace
+
+attribute [local instance] FiniteDimensional.of_fact_finrank_eq_two
+
+local notation "J" => o.rightAngleRotation
+
+/-- The trace in the positively oriented orthonormal frame `(e, J e)` of an oriented plane:
+`trace T = ⟪e, T e⟫ + ⟪J e, T (J e)⟫`. -/
+theorem trace_eq_inner_add_inner {e : E} (he : ‖e‖ = 1) (T : E →ₗ[ℝ] E) :
+    LinearMap.trace ℝ E T = ⟪e, T e⟫_ℝ + ⟪J e, T (J e)⟫_ℝ := by
+  have hon : Orthonormal ℝ ![e, J e] := by
+    rw [orthonormal_iff_ite]
+    intro i j
+    fin_cases i <;> fin_cases j <;> simp [he]
+  let b : OrthonormalBasis (Fin 2) ℝ E :=
+    (o.basisRightAngleRotation e (by rintro rfl; simp at he)).toOrthonormalBasis
+      (by simpa using hon)
+  rw [LinearMap.trace_eq_sum_inner _ b, Fin.sum_univ_two]
+  simp [b]
+
+/-- Two linear maps of an oriented plane agree once their matrix entries in the frame `(e, J e)`
+agree, for any nonzero `e`. -/
+theorem ext_inner_frame {e : E} (he : e ≠ 0) {X Y : E →ₗ[ℝ] E}
+    (h : ∀ v ∈ ({e, J e} : Set E), ∀ w ∈ ({e, J e} : Set E), ⟪X v, w⟫_ℝ = ⟪Y v, w⟫_ℝ) :
+    X = Y := by
+  set b := o.basisRightAngleRotation e he
+  refine b.ext fun i ↦ InnerProductSpace.ext_inner_right_basis b fun j ↦ ?_
+  have hb : ∀ k, b k ∈ ({e, J e} : Set E) := fun k ↦ by fin_cases k <;> simp [b]
+  exact h _ (hb i) _ (hb j)
+
+/-- Every vector of an oriented plane expands in the positively oriented orthonormal frame
+`(e, J e)`: `v = ⟪e, v⟫ e + ⟪J e, v⟫ J e`. -/
+theorem eq_inner_smul_add_inner_smul {e : E} (he : ‖e‖ = 1) (v : E) :
+    v = ⟪e, v⟫_ℝ • e + ⟪J e, v⟫_ℝ • J e := by
+  have he0 : e ≠ 0 := by rintro rfl; simp at he
+  refine InnerProductSpace.ext_inner_left_basis (o.basisRightAngleRotation e he0) fun i ↦ ?_
+  fin_cases i <;>
+    simp [inner_add_right, inner_smul_right, he, real_inner_comm e]
+
+/-- The quarter turn of an oriented plane is trace-free. -/
+theorem trace_rightAngleRotation :
+    LinearMap.trace ℝ E ((J : E →L[ℝ] E) : E →ₗ[ℝ] E) = 0 := by
+  simp [LinearMap.trace_eq_sum_inner _ (stdOrthonormalBasis ℝ E)]
+
+/-- In an oriented plane, `J A + A† J = (trace A) J` for every operator `A`. -/
+theorem rightAngleRotation_comp_add_adjoint_comp (A : E →L[ℝ] E) :
+    (J : E →L[ℝ] E) ∘L A + ContinuousLinearMap.adjoint A ∘L (J : E →L[ℝ] E) =
+      LinearMap.trace ℝ E (A : E →ₗ[ℝ] E) • (J : E →L[ℝ] E) := by
+  obtain ⟨e, he⟩ : ∃ e : E, ‖e‖ = 1 :=
+    ⟨_, (o.finOrthonormalBasis two_pos Fact.out).orthonormal.1 0⟩
+  have he0 : e ≠ 0 := by rintro rfl; simp at he
+  rw [o.trace_eq_inner_add_inner he]
+  obtain ⟨a, c, h₁⟩ : ∃ a c : ℝ, A e = a • e + c • J e :=
+    ⟨_, _, o.eq_inner_smul_add_inner_smul he _⟩
+  obtain ⟨b, d, h₂⟩ : ∃ b d : ℝ, A (J e) = b • e + d • J e :=
+    ⟨_, _, o.eq_inner_smul_add_inner_smul he _⟩
+  refine ContinuousLinearMap.coe_injective (o.ext_inner_frame he0 ?_)
+  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, forall_eq_or_imp, forall_eq]
+  simp [ContinuousLinearMap.adjoint_inner_left, h₁, h₂, inner_add_left, inner_add_right,
+    inner_smul_left, inner_smul_right, he, real_inner_comm e (J e)]
+
+end Frame
 
 end Orientation
 
