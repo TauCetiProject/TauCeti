@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
 public import TauCeti.Geometry.Manifold.DifferentialForm.Support
+import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
 # Differential forms under an involution
@@ -15,7 +17,13 @@ This file defines, for an arbitrary self-map `τ`, the two averaging operators
 These are linear for every `τ`, and their sum is the identity.  When `τ` is a differentiable
 involution, they are complementary projectors onto the `+1` and `-1` eigenspaces of pullback:
 the first lands in the forms fixed by pullback, the second in the forms negated by it.  Proper
-self-maps preserve compact topological support under both operators.
+self-maps preserve compact topological support under both operators.  These facts hold for
+coefficients in any real topological vector space.
+
+For coefficients in a normed real vector space, a `C²` self-map of a `C²` manifold, and `C¹`
+forms, both operators commute with the exterior derivative
+(`TauCeti.mextDeriv_invariantPart`, `TauCeti.mextDeriv_antiInvariantPart`), whether or not `τ` is
+an involution, with pointwise versions under pointwise regularity hypotheses.
 
 These projectors give the descent decomposition used for differential forms on a two-sheeted
 cover.  The construction is the usual averaging by a finite group action; see Bott and Tu,
@@ -31,10 +39,13 @@ open scoped Manifold Topology
 
 namespace TauCeti
 
-variable {E H X F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace X] [ChartedSpace H X]
-  [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
-  [ContinuousConstSMul ℝ F] {k : ℕ}
+variable {E H X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace X] [ChartedSpace H X] {k : ℕ}
+
+section TopologicalCoefficients
+
+variable {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+  [ContinuousConstSMul ℝ F]
 
 /-- The average `(φ + τ⁎φ) / 2` of a rough form with its pullback by a self-map `τ`.  When `τ`
 is a differentiable involution, this is the part of `φ` fixed by pullback
@@ -251,5 +262,64 @@ theorem isCompact_tsupport_antiInvariantPart {τ : X → X} (hτ : IsProperMap �
     (_root_.isClosed_tsupport (α := E [⋀^Fin k]→L[ℝ] F) _)
     ((RoughForm.tsupport_smul_subset _ _).trans
       (tsupport_sub (α := E [⋀^Fin k]→L[ℝ] F) _ _))
+
+end TopologicalCoefficients
+
+section ExtDeriv
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [IsManifold I 2 X]
+  {τ : X → X} {φ : RoughForm I X F k}
+
+/-- On a `C²` manifold, at a point `x` where the self-map `τ` is `C²` and the form `φ`, with
+coefficients in a normed real vector space, is `C¹` at `x` and at `τ x`, the exterior derivative
+of the invariant part of `φ` is the invariant part of `dφ`. -/
+theorem mextDeriv_invariantPart_apply {x : X} (hτ : ContMDiffAt I I 2 τ x)
+    (hφ : ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) 1
+      (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) x)
+    (hφτ : ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) 1
+      (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) (τ x)) :
+    mextDeriv (invariantPart τ φ) x = invariantPart τ (mextDeriv φ) x := by
+  -- Both summands have differentiable coordinate expressions at `x`.
+  have hφd := (φ.contDiffWithinAt_range_inChartAt_of_contMDiffAt hφ).differentiableWithinAt
+    one_ne_zero
+  have hpulld := ((mpullback I I τ φ).contDiffWithinAt_range_inChartAt_of_contMDiffAt
+    (hφτ.mpullback_form hτ (by norm_num))).differentiableWithinAt one_ne_zero
+  -- So `d` is linear on their average, and commutes with the pullback.
+  simp only [invariantPart, mextDeriv_smul, Pi.smul_apply, mextDeriv_add hφd hpulld, Pi.add_apply,
+    mpullback_mextDeriv_at hτ hφτ]
+
+/-- On a `C²` manifold, at a point `x` where the self-map `τ` is `C²` and the form `φ`, with
+coefficients in a normed real vector space, is `C¹` at `x` and at `τ x`, the exterior derivative
+of the anti-invariant part of `φ` is the anti-invariant part of `dφ`. -/
+theorem mextDeriv_antiInvariantPart_apply {x : X} (hτ : ContMDiffAt I I 2 τ x)
+    (hφ : ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) 1
+      (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) x)
+    (hφτ : ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) 1
+      (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) (τ x)) :
+    mextDeriv (antiInvariantPart τ φ) x = antiInvariantPart τ (mextDeriv φ) x := by
+  -- Both terms have differentiable coordinate expressions at `x`.
+  have hφd := (φ.contDiffWithinAt_range_inChartAt_of_contMDiffAt hφ).differentiableWithinAt
+    one_ne_zero
+  have hpulld := ((mpullback I I τ φ).contDiffWithinAt_range_inChartAt_of_contMDiffAt
+    (hφτ.mpullback_form hτ (by norm_num))).differentiableWithinAt one_ne_zero
+  -- So `d` is linear on their half-difference, and commutes with the pullback.
+  simp only [antiInvariantPart, mextDeriv_smul, Pi.smul_apply, mextDeriv_sub hφd hpulld,
+    Pi.sub_apply, mpullback_mextDeriv_at hτ hφτ]
+
+/-- On a `C²` manifold, for a `C²` self-map `τ`, the exterior derivative of the invariant part
+`(φ + τ⁎φ) / 2` of a `C¹` form `φ` with coefficients in a normed real vector space is the
+invariant part of `dφ`. -/
+theorem mextDeriv_invariantPart (hτ : ContMDiff I I 2 τ) (hφ : IsSmoothForm I 1 φ) :
+    mextDeriv (invariantPart τ φ) = invariantPart τ (mextDeriv φ) :=
+  funext fun x ↦ mextDeriv_invariantPart_apply (hτ x) (hφ.contMDiff x) (hφ.contMDiff (τ x))
+
+/-- On a `C²` manifold, for a `C²` self-map `τ`, the exterior derivative of the anti-invariant
+part `(φ - τ⁎φ) / 2` of a `C¹` form `φ` with coefficients in a normed real vector space is the
+anti-invariant part of `dφ`. -/
+theorem mextDeriv_antiInvariantPart (hτ : ContMDiff I I 2 τ) (hφ : IsSmoothForm I 1 φ) :
+    mextDeriv (antiInvariantPart τ φ) = antiInvariantPart τ (mextDeriv φ) :=
+  funext fun x ↦ mextDeriv_antiInvariantPart_apply (hτ x) (hφ.contMDiff x) (hφ.contMDiff (τ x))
+
+end ExtDeriv
 
 end TauCeti
