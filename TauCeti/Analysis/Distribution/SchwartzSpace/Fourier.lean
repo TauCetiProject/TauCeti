@@ -18,9 +18,6 @@ import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 /-!
 # Derivatives of Schwartz functions on the Fourier side
 
-`SchwartzMap.fourier_dilate_apply` gives the Fourier transform of a nonzero scalar dilation
-using `TauCeti.fourier_comp_smul`.
-
 The Fourier transform turns the directional derivative `∂_v` on Schwartz space into
 multiplication by `2πi ⟪ξ, v⟫` (Mathlib's `SchwartzMap.fourier_lineDerivOp_eq`). This file
 records the pointwise consequences for second-order operators: with Mathlib's normalization of the
@@ -63,9 +60,8 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
 
 ## Main declarations
 
-* `SchwartzMap.dilate` precomposes by nonzero real scaling.
-  `SchwartzMap.fourier_dilate_apply` gives its Fourier transform via `TauCeti.fourier_comp_smul`.
-
+* `SchwartzMap.fourier_dilate_apply`: the Fourier transform of a nonzero scalar dilation is
+  `|c ^ d|⁻¹ • 𝓕 f (c⁻¹ • y)` in dimension `d`, via `TauCeti.fourier_comp_smul`.
 * `SchwartzMap.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
 * `SchwartzMap.fourier_fourierMultiplierCLM_apply`: on the Fourier side a Fourier multiplier is
   multiplication by its symbol.
