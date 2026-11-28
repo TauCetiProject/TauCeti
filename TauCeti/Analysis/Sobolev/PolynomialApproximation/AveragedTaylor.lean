@@ -42,7 +42,7 @@ compact support:
    Lp ℝ p μ →L[ℝ] polynomialsDegLE ι m` (`[IsFiniteMeasureOnCompacts μ]`, `1 ≤ p`, agreeing with
    `averagedTaylorPolynomial` at `p = 1`).
 3. Both operators expand into the weighted `iteratedFDeriv` pairing form matching
-   `TauCeti.Wkp.fullContractL_iteratedGradientChain_sum_setIntegral_iteratedFDeriv`, using only
+   `TauCeti.Wkp.iteratedFDeriv_sum_setIntegral_iteratedFDeriv`, using only
    `L¹`/`Lᵖ` membership and cutoff regularity.
 4. On an additive Haar measure `μ`, when `u` is `C^m` at every point of `tsupport φ`, integration
    by parts gives `Q^m f (x) = ∫ y, taylorPolynomial m u y x * φ y ∂μ`, reproducing every
@@ -399,7 +399,7 @@ theorem setIntegral_mul_averagedTaylorKernel_eq_integral
 
 /-- Express pairing against `averagedTaylorKernel` on a set `s` containing `tsupport φ` in the
 weighted `iteratedFDeriv` pairing form matching
-`TauCeti.Wkp.fullContractL_iteratedGradientChain_sum_setIntegral_iteratedFDeriv`,
+`TauCeti.Wkp.iteratedFDeriv_sum_setIntegral_iteratedFDeriv`,
 assuming only local integrability of `f` on `s` and `C^m` compact support of `φ`. -/
 theorem setIntegral_mul_averagedTaylorKernel_eq_sum_setIntegral_iteratedFDeriv
     {μ : Measure (EuclideanSpace ℝ ι)} {s : Set (EuclideanSpace ℝ ι)}
@@ -497,7 +497,7 @@ theorem averagedTaylorPolynomial_eq_sum_integral_iteratedFDeriv
 
 /-- Weighted `iteratedFDeriv` pairing evaluation formula for `averagedTaylorPolynomial` on
 `L¹(μ.restrict Ω)` when `tsupport φ ⊆ Ω`, matching
-`TauCeti.Wkp.fullContractL_iteratedGradientChain_sum_setIntegral_iteratedFDeriv`. -/
+`TauCeti.Wkp.iteratedFDeriv_sum_setIntegral_iteratedFDeriv`. -/
 theorem averagedTaylorPolynomial_restrict_eq_sum_setIntegral_iteratedFDeriv
     {μ : Measure (EuclideanSpace ℝ ι)} {Ω : Set (EuclideanSpace ℝ ι)} {m : ℕ}
     {φ : EuclideanSpace ℝ ι → ℝ} (hφ : ContDiff ℝ m φ) (hsupp : HasCompactSupport φ)
@@ -795,7 +795,7 @@ theorem averagedTaylorPolynomialLp_eq_sum_integral_iteratedFDeriv
 
 /-- Weighted `iteratedFDeriv` pairing evaluation formula for `averagedTaylorPolynomialLp` on
 `Lᵖ(μ.restrict Ω)` when `tsupport φ ⊆ Ω`, matching
-`TauCeti.Wkp.fullContractL_iteratedGradientChain_sum_setIntegral_iteratedFDeriv`. -/
+`TauCeti.Wkp.iteratedFDeriv_sum_setIntegral_iteratedFDeriv`. -/
 theorem averagedTaylorPolynomialLp_restrict_eq_sum_setIntegral_iteratedFDeriv
     {μ : Measure (EuclideanSpace ℝ ι)} [IsFiniteMeasureOnCompacts μ]
     (p : ℝ≥0∞) [Fact (1 ≤ p)] {Ω : Set (EuclideanSpace ℝ ι)} {m : ℕ}

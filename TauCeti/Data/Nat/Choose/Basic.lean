@@ -23,7 +23,8 @@ import Mathlib.Tactic.Ring
 
 This file records arithmetic identities involving natural-number binomial coefficients.
 
-Besides four identities and a parity formula for the second binomial coefficient, the sum
+Besides four identities and a parity formula for the second binomial coefficient, the
+difference `C(n + 3, 3) - C(n + 1, 3) = (n + 1)²` of third binomial coefficients, the sum
 `2ⁿ - 2` of the inner binomial coefficients `C(n, i)`, `0 < i < n`, and the sum `2ⁿ` of all of
 them over the antidiagonal, it develops Vandermonde's convolution
 `∑ i, C(A, i) * C(B, r - i) = C(A + B, r)` in the shape taken by factorial moments of a law
@@ -38,10 +39,13 @@ the summation index. The weighted sum is again a single binomial coefficient,
 * `Nat.mul_add_succ_self_div_two_eq_succ_choose_two_add`:
   `p * (q + (p + 1)) / 2 = C(p + 1, 2) + p * q / 2`.
 * `Nat.add_choose_two`: the second binomial coefficient of a sum, with its cross term.
+* `Nat.add_three_choose_three`: `C(n + 3, 3) = C(n + 1, 3) + (n + 1)²`.
 * `Nat.two_mul_choose_two_add_mul`: `2 C(a, 2) + ab = a(a + b - 1)`, and its form
   `Nat.two_mul_choose_two_add_mul_sub`: `2 C(i, 2) + i (n - i) = (n - 1) i` for `i ≤ n`.
 * `Nat.add_choose_two_add_choose_two`: `C(m + i, 2) + C(i, 2) = (m + i - 1) i + C(m, 2)`.
 * `Nat.pow_three_sub_self_eq_mul_choose_two`: `g³ - g = (2g + 2) · C(g, 2)`.
+* `Nat.six_mul_choose_three`, `Nat.twentyFour_mul_choose_four`: the closed forms
+  `6 C(n + 3, 3) = (n + 3)(n + 2)(n + 1)` and `24 C(n + 4, 4) = (n + 4)(n + 3)(n + 2)(n + 1)`.
 * `Nat.even_choose_two_iff`, `Nat.neg_one_pow_choose_two`: `C(m, 2)` and `⌊m / 2⌋` have the same
   parity, so `(-1) ^ C(m, 2) = (-1) ^ ⌊m / 2⌋`.
 * `Nat.neg_one_pow_succ_choose_two_mul_neg_one_pow`: the step
@@ -110,6 +114,17 @@ theorem add_choose_two (m n : ℕ) : (m + n).choose 2 = m.choose 2 + n.choose 2 
       rw [h1, h2, ih, choose_one_right, choose_one_right]
       ring
 
+/-- Raising the upper index of `C(·, 3)` by two adds a square:
+`C(n + 3, 3) = C(n + 1, 3) + (n + 1)²`, that is `C(n + 3, 3) - C(n + 1, 3) = (n + 1)²`. -/
+theorem add_three_choose_three (n : ℕ) : (n + 3).choose 3 = (n + 1).choose 3 + (n + 1) ^ 2 := by
+  have h₃ := choose_succ_succ' (n + 2) 2
+  have h₂ := choose_succ_succ' (n + 1) 2
+  have h₁ := choose_succ_succ' (n + 1) 1
+  have h := add_one_mul_choose_eq n 1
+  simp only [add_assoc, Nat.reduceAdd, choose_one_right] at h₃ h₂ h₁ h
+  rw [h₃, h₂, h₁]
+  nlinarith [h]
+
 /-- Twice `C(a, 2)`, plus `ab`, is `a(a + b - 1)`, with truncated subtraction. -/
 theorem two_mul_choose_two_add_mul (a b : ℕ) : 2 * a.choose 2 + a * b = a * (a + b - 1) := by
   rcases a with _ | a
@@ -145,6 +160,20 @@ theorem pow_three_sub_self_eq_mul_choose_two (g : ℕ) :
       ring
     rw [h]
     exact Nat.sub_eq_of_eq_add (by ring)
+
+/-- The closed form `6 C(n + 3, 3) = (n + 3)(n + 2)(n + 1)`. -/
+theorem six_mul_choose_three (n : ℕ) :
+    6 * (n + 3).choose 3 = (n + 3) * (n + 2) * (n + 1) := by
+  rw [show (6 : ℕ) = (3 : ℕ).factorial from rfl, ← descFactorial_eq_factorial_mul_choose]
+  simp [descFactorial_succ]
+  ring
+
+/-- The closed form `24 C(n + 4, 4) = (n + 4)(n + 3)(n + 2)(n + 1)`. -/
+theorem twentyFour_mul_choose_four (n : ℕ) :
+    24 * (n + 4).choose 4 = (n + 4) * (n + 3) * (n + 2) * (n + 1) := by
+  rw [show (24 : ℕ) = (4 : ℕ).factorial from rfl, ← descFactorial_eq_factorial_mul_choose]
+  simp [descFactorial_succ]
+  ring
 
 /-- `C(m, 2)` and `⌊m / 2⌋` have the same parity: going from `m` to `m + 2` adds `2m + 1` to the
 first and `1` to the second. -/

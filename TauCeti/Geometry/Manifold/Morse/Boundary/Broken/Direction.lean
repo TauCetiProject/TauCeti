@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Broken.Comparison
+import TauCeti.Geometry.Manifold.Morse.Stable.Broken.Crossing
 
 /-!
 # The gluing direction at a broken trajectory points outward
@@ -13,18 +14,19 @@ public import TauCeti.Geometry.Manifold.Morse.Boundary.Broken.Comparison
 Let `X` be a pseudo-gradient adapted to a Morse function `f` on a compact manifold, linear in Morse
 charts `φp`, `φr`, `φq` at critical points `p`, `r`, `q`. Consider a broken trajectory `(u, v)`,
 with `u` from `p` to `r` through `y₀` and `v` from `r` to `q` through `z₀`, and trajectories from
-`p` to `q` through points `yₙ → y₀` whose orbits reach points `zₙ → z₀` at times `Tₙ → ∞`, crossing
-the Morse chart of `r` linearly in between, as in
-`TauCeti.IsAdaptedPseudoGradient.tendsto_trajectoryComparison_of_broken`. Their comparison maps
-tend to `G = (id × B₂) ∘ A`, where `A = C_{pr}(y₀)` and `B = (B₁, B₂) = C_{rq}(z₀)`. When `X` is
-Morse–Smale and `ind p = ind r + 1 = ind q + 2`, the maps `A` and `B` are isomorphisms
+`p` to `q` through points `yₙ → y₀` whose orbits reach points `zₙ → z₀` at times `Tₙ → ∞`, as in
+`TauCeti.IsAdaptedPseudoGradient.tendsto_trajectoryComparison_of_broken`; such orbits cross the
+Morse chart of `r` along its linear flow
+(`TauCeti.IsAdaptedPseudoGradient.eventually_forall_linearFlow_mem_target_of_broken`). Their
+comparison maps tend to `G = (id × B₂) ∘ A`, where `A = C_{pr}(y₀)` and `B = (B₁, B₂) = C_{rq}(z₀)`.
+When `X` is Morse–Smale and `ind p = ind r + 1 = ind q + 2`, the maps `A` and `B` are isomorphisms
 (`TauCeti.IsAdaptedPseudoGradient.bijective_trajectoryComparison`) and the line `ker G` is spanned
 by the **gluing direction** `g`, the vector with `A g = (0, w)` and `B w = (1, 0)`;
 `TauCeti.LinearAlgebra.Orientation.Breaking` orients `ker G` by `-ε(u) ε(v)` times `g`. This file
 shows on which side of `y₀` the trajectories `yₙ` lie: the function `y ↦ ℓ (n(y))` below, for a
 linear form `ℓ` positive on the leaving direction, vanishes at `y₀`, is eventually positive at the
-`yₙ` and decreases along `g`. In this sense `g` points from the nearby
-trajectories towards `y₀`, out of the space of unbroken trajectories at the broken end.
+`yₙ` and decreases along `g`. In this sense `g` points from the nearby trajectories towards `y₀`,
+out of the space of unbroken trajectories at the broken end.
 
 Fix a time `a` of linear forward flow of `y₀` and a time `b` of linear backward flow of `z₀` in the
 chart `φr`, and read the coordinates of negative weight `n(y) = N(φr (Φ_a y))` of points near `y₀`.
@@ -107,20 +109,17 @@ include hφr
 
 /-! ### Trajectories near a broken trajectory -/
 
-/-- **Trajectories near a broken trajectory leave `r` along its second component.** Let `a` be a
-time of linear forward flow of `y₀` and `b` a time of linear backward flow of `z₀` in the Morse
-chart `φr`. Let `yₙ → y₀` and `Tₙ → ∞` with `Φ_{Tₙ} yₙ → z₀`, the orbits crossing the chart of `r`
-linearly between the times `a` and `Tₙ - b`. Then `e^{Tₙ - a - b}` times the coordinates of negative
+/-- **Trajectories near a broken trajectory leave `r` along its second component.** Let `y₀` be a
+point of `W^s(r)` with a time `a` of linear forward flow in the Morse chart `φr`, and `z₀` a point
+of `W^u(r)` with a time `b` of linear backward flow. Let `yₙ → y₀` and `Tₙ → ∞` with
+`Φ_{Tₙ} yₙ → z₀`. Then `e^{Tₙ - a - b}` times the coordinates of negative
 weight of `Φ_a yₙ` tend to the leaving direction, the coordinates of negative weight of
 `Φ_{-b} z₀`. -/
-theorem tendsto_exp_smul_negativeCoord_toChart_flow_of_broken {y₀ z₀ : M} {a b : ℝ}
-    (ha : a ∈ hX.linearForwardTimes φr y₀) (hb : b ∈ hX.linearBackwardTimes φr z₀)
+theorem tendsto_exp_smul_negativeCoord_toChart_flow_of_broken (hf : IsMorse 𝓘(ℝ, E) f)
+    {y₀ z₀ : M} {a b : ℝ} (hy₀r : y₀ ∈ hX.flow.stableSet r) (ha : a ∈ hX.linearForwardTimes φr y₀)
+    (hz₀r : z₀ ∈ hX.flow.unstableSet r) (hb : b ∈ hX.linearBackwardTimes φr z₀)
     {ι : Type*} {l : Filter ι} {y : ι → M} {T : ι → ℝ} (hy : Tendsto y l (𝓝 y₀))
-    (hT : Tendsto T l atTop)
-    (hcross : ∀ᶠ n in l, ∀ t ∈ Icc 0 (T n - a - b),
-      φr.coord.symm (φr.linearFlow t (φr.coord (φr.toChart (hX.flow a (y n))))) ∈
-        φr.toChart.target)
-    (hz : Tendsto (fun n ↦ hX.flow (T n) (y n)) l (𝓝 z₀)) :
+    (hT : Tendsto T l atTop) (hz : Tendsto (fun n ↦ hX.flow (T n) (y n)) l (𝓝 z₀)) :
     Tendsto (fun n ↦ Real.exp (T n - a - b) • φr.negativeCoord (φr.toChart (hX.flow a (y n)))) l
       (𝓝 (φr.negativeCoord (φr.toChart (hX.flow (-b) z₀)))) := by
   -- The rescaled coordinates are those of `Φ_{-b} zₙ`, which tends to `Φ_{-b} z₀` in the chart.
@@ -134,7 +133,9 @@ theorem tendsto_exp_smul_negativeCoord_toChart_flow_of_broken {y₀ z₀ : M} {a
     (((hX.contMDiff_flow_apply a).continuous.tendsto y₀).comp hy).eventually
       (φr.toChart.open_source.mem_nhds ((hX.mem_linearForwardTimes φr).1 ha).1)
   refine hcont.congr' ?_
-  filter_upwards [hya, hcross, hT.eventually (eventually_ge_atTop (a + b))] with n hn hcn hTn
+  filter_upwards [hya,
+    eventually_forall_linearFlow_mem_target_of_broken hφr hf hy₀r ha hz₀r hb hy hz,
+    hT.eventually (eventually_ge_atTop (a + b))] with n hn hcn hTn
   -- Across the chart the linear flow multiplies the coordinates of negative weight by `e^{t}`.
   rw [← Flow.map_add, show -b + T n = T n - a - b + a by ring]
   refine φr.negativeCoord_eq_exp_smul_of_coord_eq
@@ -145,20 +146,17 @@ theorem tendsto_exp_smul_negativeCoord_toChart_flow_of_broken {y₀ z₀ : M} {a
 hypotheses of `tendsto_exp_smul_negativeCoord_toChart_flow_of_broken`, for every linear form `ℓ`
 positive on the leaving direction, `ℓ` is eventually positive on the coordinates of negative weight
 of `Φ_a yₙ`. -/
-theorem eventually_pos_negativeCoord_toChart_flow_of_broken {y₀ z₀ : M} {a b : ℝ}
-    (ha : a ∈ hX.linearForwardTimes φr y₀) (hb : b ∈ hX.linearBackwardTimes φr z₀)
+theorem eventually_pos_negativeCoord_toChart_flow_of_broken (hf : IsMorse 𝓘(ℝ, E) f)
+    {y₀ z₀ : M} {a b : ℝ} (hy₀r : y₀ ∈ hX.flow.stableSet r) (ha : a ∈ hX.linearForwardTimes φr y₀)
+    (hz₀r : z₀ ∈ hX.flow.unstableSet r) (hb : b ∈ hX.linearBackwardTimes φr z₀)
     {ι : Type*} {l : Filter ι} {y : ι → M} {T : ι → ℝ} (hy : Tendsto y l (𝓝 y₀))
-    (hT : Tendsto T l atTop)
-    (hcross : ∀ᶠ n in l, ∀ t ∈ Icc 0 (T n - a - b),
-      φr.coord.symm (φr.linearFlow t (φr.coord (φr.toChart (hX.flow a (y n))))) ∈
-        φr.toChart.target)
-    (hz : Tendsto (fun n ↦ hX.flow (T n) (y n)) l (𝓝 z₀))
+    (hT : Tendsto T l atTop) (hz : Tendsto (fun n ↦ hX.flow (T n) (y n)) l (𝓝 z₀))
     (ℓ : ({i // φr.weight i < 0} → ℝ) →ₗ[ℝ] ℝ)
     (hℓ : 0 < ℓ (φr.negativeCoord (φr.toChart (hX.flow (-b) z₀)))) :
     ∀ᶠ n in l, 0 < ℓ (φr.negativeCoord (φr.toChart (hX.flow a (y n)))) := by
   have h := ((ℓ.continuous_of_finiteDimensional.tendsto _).comp
-    (tendsto_exp_smul_negativeCoord_toChart_flow_of_broken hφr ha hb hy hT hcross hz)).eventually
-      (lt_mem_nhds hℓ)
+    (tendsto_exp_smul_negativeCoord_toChart_flow_of_broken hφr hf hy₀r ha hz₀r hb hy hT
+      hz)).eventually (lt_mem_nhds hℓ)
   filter_upwards [h] with n hn
   rw [comp_apply, map_smul, smul_eq_mul] at hn
   exact pos_of_mul_pos_right hn (Real.exp_pos _).le

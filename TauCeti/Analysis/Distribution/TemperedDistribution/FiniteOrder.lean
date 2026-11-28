@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Duality
 public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.Analysis.Sobolev.BesselPotential.Embedding.Schwartz
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 
@@ -100,19 +101,9 @@ theorem exists_seminorm_smulLeftCLM_one_add_norm_sq_rpow_neg_le (K : ℕ) {k l :
     simp only [w, weight_eq K]
     exact TauCeti.exists_norm_pow_mul_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le hks i
   choose Cw hCw using hxw
-  obtain ⟨Cg, hCg0, hCg⟩ :=
-    exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpace (F := ℂ) (k := l) ht
+  obtain ⟨Cg, hCg0, hD⟩ :=
+    exists_norm_iteratedFDeriv_le_mul_norm_toBesselPotentialSpaceCLM (F := ℂ) (k := l) ht
   refine ⟨(∑ i ∈ Finset.range (l + 1), (l.choose i : ℝ) * |Cw i|) * Cg, fun φ ↦ ?_⟩
-  have hφ : MemSobolev t 2 ((φ.toLp 2 : Lp ℂ 2 (volume : Measure E)) : 𝓢'(E, ℂ)) := by
-    rw [Lp.toTemperedDistribution_toLp_eq]
-    exact φ.memSobolev
-  have hφB : hφ.toBesselPotentialSpace = SchwartzMap.toBesselPotentialSpaceCLM t 2 φ :=
-    BesselPotentialSpace.ext (by
-      rw [MemSobolev.toBesselPotentialSpace_toDistr, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
-        Lp.toTemperedDistribution_toLp_eq])
-  have hD (j : ℕ) (hj : j ≤ l) (x : E) :
-      ‖iteratedFDeriv ℝ j φ x‖ ≤ Cg * ‖SchwartzMap.toBesselPotentialSpaceCLM t 2 φ‖ :=
-    hφB ▸ hCg hφ φ.continuous (φ.coeFn_toLp 2 volume) j hj x
   have hcoe : ⇑(SchwartzMap.smulLeftCLM ℂ w φ) = fun x ↦ w x * φ x :=
     funext fun x ↦ SchwartzMap.smulLeftCLM_apply_apply hw φ x
   refine SchwartzMap.seminorm_le_bound ℂ k l _ (by positivity) fun x ↦ ?_
@@ -128,7 +119,7 @@ theorem exists_seminorm_smulLeftCLM_one_add_norm_sq_rpow_neg_le (K : ℕ) {k l :
     _ ≤ (l.choose i : ℝ) * |Cw i| * (Cg * ‖SchwartzMap.toBesselPotentialSpaceCLM t 2 φ‖) := by
         gcongr
         · exact (hCw i x).trans (le_abs_self _)
-        · exact hD _ hil x
+        · exact hD φ _ hil x
     _ = _ := by ring
 
 end SchwartzMap

@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
 public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Section
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Section
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.LocalOperator
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.LocalSobolev
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.SobolevWaveFrontSet
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.WaveFrontSet
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.WaveFrontSet.DifferentialOperator
@@ -31,14 +33,26 @@ singular support of `T ∘ P` lies in that of `T`
 differential operators of the microlocality of properly supported pseudodifferential operators on
 bundles.
 
-Conversely, when `W` has rank one, `T` is as regular as `T ∘ P` at the covectors where `P` is
-elliptic: if the principal symbol `σ(P)(ξ) : V_x → W_x` (`TauCeti.sectionPrincipalSymbol`) does
-not vanish and `T ∘ P` is microlocally smooth at `ξ`, then so is `T`
+Conversely, `T` is as regular as `T ∘ P` at the covectors where `P` is elliptic for this action:
+if the principal symbol `σ(P)(ξ) : V_x → W_x` (`TauCeti.sectionPrincipalSymbol`) is surjective
+and `T ∘ P` is microlocally smooth at `ξ`, then so is `T`
 (`TauCeti.BundleTest.IsMicrolocallySmoothAt.of_localOperatorDualCLM`), and
-`WF(T) ⊆ WF(T ∘ P) ∪ Char(P)`
-(`TauCeti.BundleTest.waveFrontSet_subset_waveFrontSet_localOperatorDualCLM_union`). This covers
-scalar operators, acting on the sections of the trivial line bundle. For a bundle `W` of higher
-rank the same statement for systems needs the matrix-valued form of the Euclidean theorem.
+`WF(T) ⊆ WF(T ∘ P) ∪ Char(P)`, where `Char(P)` is the set of covectors at which `σ(P)(ξ)` is not
+surjective (`TauCeti.BundleTest.waveFrontSet_subset_waveFrontSet_localOperatorDualCLM_union`).
+Since `T ∘ P` is the transpose of `P` applied to `T`, surjectivity of `σ(P)(ξ)` is injectivity of
+the principal symbol of the transpose. When `V` and `W` have the same rank this is invertibility of
+`σ(P)(ξ)`, the usual ellipticity of `P`, and when `W` has rank one it says that `σ(P)(ξ)` does not
+vanish; scalar operators act on the sections of the trivial line bundle.
+
+A differential operator of order at most `r` costs at most `r` orders of Sobolev regularity: if `T`
+is microlocally `H^s` at a covector, then `T ∘ P` is microlocally `H^(s - r)` there
+(`TauCeti.BundleTest.IsMicrolocallySobolevAt.localOperatorDualCLM`), so that
+`WF_(s - r)(T ∘ P) ⊆ WF_s(T)`
+(`TauCeti.BundleTest.sobolevWaveFrontSet_localOperatorDualCLM_subset`), and if `T` is `H^s` near a
+point, then `T ∘ P` is `H^(s - r)` near it
+(`TauCeti.BundleTest.IsLocallySobolevAt.localOperatorDualCLM`), so that the `H^(s - r)` singular
+support of `T ∘ P` lies in the `H^s` singular support of `T`
+(`TauCeti.BundleTest.sobolevSingularSupport_localOperatorDualCLM_subset`).
 
 ## The argument
 
@@ -53,16 +67,21 @@ function whose coefficient along a basis vector `bᵢ` of the model fibre of `W`
 `v` is `∑ᵢ (φ ↦ Sᵢ (Dᵢ φ))`, where `Sᵢ` is the component of `T` along `bᵢ`. Each `Dᵢ` is a
 differential operator on `C^∞(E)`
 (`OpenPartialHomeomorph.sectionChartCompression_mem_differentialOperators`), so the Euclidean
-statement
-`Distribution.exists_forall_apply_eq_and_isMicrolocallySmoothAt_of_mem_differentialOperators`
-applies to every term (`TauCeti.BundleTest.chartComponent_localOperatorDualCLM_apply`).
+statements
+`Distribution.exists_forall_apply_eq_and_isMicrolocallySmoothAt_of_mem_differentialOperators` and
+`Distribution.exists_forall_apply_eq_and_isMicrolocallySobolevAt_of_mem_differentialOperators`
+apply to every term (`TauCeti.BundleTest.chartComponent_localOperatorDualCLM_apply`).
 
-When the model fibre of `W` is a line with basis `b₀`, the sum has one term: over `B` the component
-of `T ∘ P` along `v` is `φ ↦ S (D φ)` for the component `S` of `T` along `b₀`. The principal symbol
-of `D` at `c x` is the `b₀` coordinate of `σ(P)(ξ)` applied to the vector of `V_x` with coefficients
-`v` (`OpenPartialHomeomorph.smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators`),
-nonzero for a suitable `v` when `σ(P)(ξ) ≠ 0`. So the Euclidean elliptic regularity
-`Distribution.IsMicrolocallySmoothAt.of_mem_differentialOperators` applies to `S`.
+If `σ(P)(ξ)` is surjective, choose vectors `v k` of the model fibre of `V` such that `σ(P)(ξ)`
+sends the vector of `V_x` with coefficients `v k` to the vector of `W_x` with coefficients `b k`.
+Over `B`, the components of `T ∘ P` along the `v k` form the square system
+`φ ↦ ∑ᵢ Sᵢ (D i k φ)`, for the `(bᵢ*, v k)` entries `D i k` of the chart compression. The
+principal symbol of `D i k` at `c x` is the `bᵢ` coordinate of `σ(P)(ξ)` applied to the vector of
+`V_x` with coefficients `v k`
+(`OpenPartialHomeomorph.smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators`), so
+the principal symbol matrix of the system is the identity, and microlocal elliptic regularity for
+systems (`Distribution.IsMicrolocallySmoothAt.of_forall_mem_differentialOperators`) applies to
+the components `Sᵢ` of `T`.
 
 ## Main results
 
@@ -75,9 +94,19 @@ nonzero for a suitable `v` when `σ(P)(ξ) ≠ 0`. So the Euclidean elliptic reg
   sets or singular supports.
 * `TauCeti.BundleTest.chartComponent_localOperatorDualCLM_apply`: the components of the transpose
   in a chart, in terms of the entries of the chart compression.
+* `TauCeti.BundleTest.restrictCLM_chartComponent_localOperatorDualCLM_apply`: for a bundle `W` of
+  rank one, near a point of a chart, the component of the transpose is the transpose of a component
+  by one entry of the chart compression.
 * `TauCeti.BundleTest.IsMicrolocallySmoothAt.of_localOperatorDualCLM`,
   `TauCeti.BundleTest.waveFrontSet_subset_waveFrontSet_localOperatorDualCLM_union`: microlocal
-  elliptic regularity for differential operators into a bundle of rank one.
+  elliptic regularity for differential operators between bundles, at the covectors where the
+  principal symbol is surjective.
+* `TauCeti.BundleTest.IsMicrolocallySobolevAt.localOperatorDualCLM`,
+  `TauCeti.BundleTest.sobolevWaveFrontSet_localOperatorDualCLM_subset`: a differential operator of
+  order at most `r` costs at most `r` orders of microlocal Sobolev regularity.
+* `TauCeti.BundleTest.IsLocallySobolevAt.localOperatorDualCLM`,
+  `TauCeti.BundleTest.sobolevSingularSupport_localOperatorDualCLM_subset`: it costs at most `r`
+  orders of local Sobolev regularity.
 
 ## References
 
@@ -85,6 +114,8 @@ nonzero for a suitable `v` when `σ(P)(ξ) ≠ 0`. So the Euclidean elliptic reg
   Springer, 1990, §8.1 (differential operators with smooth coefficients do not enlarge wave front
   sets), Theorem 8.3.1 (microlocal elliptic regularity) and §8.2 (wave front sets on manifolds and
   bundles).
+* L. Hörmander, *Lectures on Nonlinear Hyperbolic Differential Equations*, Springer, 1997,
+  §11.1 (the `H^s` wave front set and its behaviour under differential operators).
 * M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, §7.
 -/
 
@@ -206,6 +237,59 @@ theorem chartComponent_localOperatorDualCLM_apply
     localOperatorCLM_chartTestCLM hP he hV hW hχ hf v b ψ hψ]
   simp [chartComponent_apply]
 
+/-- **A differential operator in a chart.** Let `c` be a chart of the maximal atlas with frames `tV`
+and `tW` over its source, and `y` a point of its target. Over some open neighbourhood `B` of `y`,
+the component along `v` of the local representative of the transpose `T ∘ P` by a differential
+operator `P` of order at most `r` is a sum of transposes of the components of `T` along the basis
+vectors `b i` of the model fibre of `W`, by differential operators `D i` of order at most `r` on
+`C^∞(E)`: those of any distributions `R i` with `R i φ = S_{b i} (D i φ)` agree over `B` with it. -/
+private theorem exists_restrictCLM_chartComponent_localOperatorDualCLM_eq_sum {r : ℕ}
+    (hP : P ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), M; ℝ⟯ Cₛ^∞⟮𝓘(ℝ, E); F, V⟯
+      Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ r)
+    {c : OpenPartialHomeomorph M E} (he : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
+    {tV : Trivialization F (π F V)} [MemTrivializationAtlas tV] (hV : c.source ⊆ tV.baseSet)
+    {tW : Trivialization F' (π F' W)} [MemTrivializationAtlas tW] (hW : c.source ⊆ tW.baseSet)
+    (T : BundleTest 𝓘(ℝ, E) F' W →L_c[ℝ] ℝ) {y : E} (hy : y ∈ c.target) (v : F) :
+    ∃ B : Opens E, B ≤ ⟨c.target, c.open_target⟩ ∧ y ∈ B ∧
+      ∃ D : Fin (Module.finrank ℝ F') → C^∞⟮𝓘(ℝ, E), E; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, E), E; ℝ⟯,
+        (∀ i, D i ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), E; ℝ⟯ C^∞⟮𝓘(ℝ, E), E; ℝ⟯
+          C^∞⟮𝓘(ℝ, E), E; ℝ⟯ r) ∧
+        ∀ R : Fin (Module.finrank ℝ F') → 𝓓'(⟨c.target, c.open_target⟩, ℂ),
+          (∀ i (φ ψ : 𝓓(⟨c.target, c.open_target⟩, ℝ)) (f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯), ⇑f = φ →
+            ⇑ψ = D i f → R i φ = tW.chartComponent c (contMDiffOn_of_mem_maximalAtlas he) hW T
+              (Module.finBasis ℝ F' i) ψ) →
+          (Distribution.restrictCLM (tV.chartComponent c (contMDiffOn_of_mem_maximalAtlas he) hV
+            (localOperatorDualCLM P
+              (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) v) :
+              𝓓'(B, ℂ)) = ∑ i, Distribution.restrictCLM (R i) := by
+  have hloc : ∀ (s : Cₛ^∞⟮𝓘(ℝ, E); F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0 :=
+    fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP
+  -- A cutoff `χ` equal to `1` on a neighbourhood `B` of `y` in the chart target.
+  obtain ⟨χ, B, hBt, hyB, hB1⟩ :=
+    TestFunction.exists_opens_le_forall_eq_one (n := ⊤) (Ω := ⟨c.target, c.open_target⟩) hy
+  -- The entries of the chart compression of `P` by `χ` act on the components of `T`.
+  let b := Module.finBasis ℝ F'
+  let D (i : Fin (Module.finrank ℝ F')) := c.sectionChartCompression he tV hV tW hW χ χ
+    (LinearMap.toContinuousLinearMap (b.coord i)) v P
+  refine ⟨B, hBt, hyB, D, fun i ↦ c.sectionChartCompression_mem_differentialOperators he tV
+    hV tW hW χ χ (LinearMap.toContinuousLinearMap (b.coord i)) v hP, fun R hR ↦ ?_⟩
+  -- Over `B`, the component of `T ∘ P` along `v` is the sum of the `R i`.
+  ext φ'
+  let φ : 𝓓(⟨c.target, c.open_target⟩, ℝ) := TestFunction.monoCLM ℝ φ'
+  let f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ := ⟨φ, contMDiff_iff_contDiff.2 φ.contDiff⟩
+  have hφχ : ∀ z ∈ tsupport φ, χ z = 1 := fun z hz ↦
+    hB1 z (φ'.tsupport_subset (by simpa [φ, hBt] using hz))
+  have hD (i) : tsupport (D i f) ⊆ tsupport χ := by
+    rw [show ⇑(D i f) = fun z ↦ χ z * _ from
+      funext (c.sectionChartCompression_apply he tV hV tW hW χ χ _ v P _)]
+    exact tsupport_mul_subset_left
+  choose ψ hψ using fun i ↦ TestFunction.exists_coe_eq_of_tsupport_subset
+    (contMDiff_iff_contDiff.1 (D i f).contMDiff) (hD i)
+  rw [Distribution.restrictCLM_apply,
+    chartComponent_localOperatorDualCLM_apply hloc he hV hW hφχ rfl v b ψ hψ T]
+  simp only [_root_.sum_apply, Distribution.restrictCLM_apply]
+  exact Finset.sum_congr rfl fun i _ ↦ (hR i φ (ψ i) _ rfl (hψ i)).symm
+
 /-- **A differential operator in a chart.** In a chart `c` of the maximal atlas with frames `tV` and
 `tW` over its source, if every component of the local representative of `T` is microlocally smooth
 at `(y, η)`, then so is every component of that of its transpose `T ∘ P` by a differential
@@ -223,42 +307,15 @@ private theorem isMicrolocallySmoothAt_chartComponent_localOperatorDualCLM {r : 
       (localOperatorDualCLM P
         (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) v)
       |>.IsMicrolocallySmoothAt y η := by
-  have hc := contMDiffOn_of_mem_maximalAtlas he
-  have hloc : ∀ (s : Cₛ^∞⟮𝓘(ℝ, E); F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0 :=
-    fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP
-  -- A cutoff `χ` equal to `1` on a neighbourhood `B` of `y` in the chart target.
-  obtain ⟨χ, B, hBt, hyB, hB1⟩ :=
-    TestFunction.exists_opens_le_forall_eq_one (n := ⊤) (Ω := ⟨c.target, c.open_target⟩) hy
-  -- The entries of the chart compression of `P` by `χ` act on the components of `T`.
-  let b := Module.finBasis ℝ F'
-  let D (i : Fin (Module.finrank ℝ F')) := c.sectionChartCompression he tV hV tW hW χ χ
-    (LinearMap.toContinuousLinearMap (b.coord i)) v P
+  obtain ⟨B, hBt, hyB, D, hD, hsum⟩ :=
+    exists_restrictCLM_chartComponent_localOperatorDualCLM_eq_sum hP he hV hW T hy v
   choose R hR hR' using fun i ↦
     Distribution.exists_forall_apply_eq_and_isMicrolocallySmoothAt_of_mem_differentialOperators
-      (c.sectionChartCompression_mem_differentialOperators he tV hV tW hW χ χ
-        (LinearMap.toContinuousLinearMap (b.coord i)) v hP) (tW.chartComponent c hc hW T (b i))
-  -- Over `B`, the component of `T ∘ P` along `v` is the sum of the `R i`.
-  have hsum : (Distribution.restrictCLM
-      (tV.chartComponent c hc hV (localOperatorDualCLM P hloc T) v) : 𝓓'(B, ℂ)) =
-        ∑ i, Distribution.restrictCLM (R i) := by
-    ext φ'
-    let φ : 𝓓(⟨c.target, c.open_target⟩, ℝ) := TestFunction.monoCLM ℝ φ'
-    let f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯ := ⟨φ, contMDiff_iff_contDiff.2 φ.contDiff⟩
-    have hφχ : ∀ z ∈ tsupport φ, χ z = 1 := fun z hz ↦
-      hB1 z (φ'.tsupport_subset (by simpa [φ, hBt] using hz))
-    have hD (i) : tsupport (D i f) ⊆ tsupport χ := by
-      rw [show ⇑(D i f) = fun z ↦ χ z * _ from
-        funext (c.sectionChartCompression_apply he tV hV tW hW χ χ _ v P _)]
-      exact tsupport_mul_subset_left
-    choose ψ hψ using fun i ↦ TestFunction.exists_coe_eq_of_tsupport_subset
-      (contMDiff_iff_contDiff.1 (D i f).contMDiff) (hD i)
-    rw [Distribution.restrictCLM_apply,
-      chartComponent_localOperatorDualCLM_apply hloc he hV hW hφχ rfl v b ψ hψ T]
-    simp only [_root_.sum_apply, Distribution.restrictCLM_apply]
-    exact Finset.sum_congr rfl fun i _ ↦ (hR i φ (ψ i) _ rfl (hψ i)).symm
-  rw [← Distribution.isMicrolocallySmoothAt_restrictCLM_iff hBt hyB, hsum]
+      (hD i) (tW.chartComponent c (contMDiffOn_of_mem_maximalAtlas he) hW T
+        (Module.finBasis ℝ F' i))
+  rw [← Distribution.isMicrolocallySmoothAt_restrictCLM_iff hBt hyB, hsum R hR]
   exact Distribution.IsMicrolocallySmoothAt.sum _ hyB fun i _ ↦
-    (Distribution.isMicrolocallySmoothAt_restrictCLM_iff hBt hyB).2 (hR' i _ _ (hT (b i)))
+    (Distribution.isMicrolocallySmoothAt_restrictCLM_iff hBt hyB).2 (hR' i _ _ (hT _))
 
 /-- **Differential operators do not enlarge wave front sets.** If a functional `T` on the bundle
 tests of `W` is microlocally smooth at a covector `ξ`, then so is its transpose `T ∘ P` by a
@@ -272,7 +329,7 @@ theorem IsMicrolocallySmoothAt.localOperatorDualCLM {r : ℕ}
       (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) x ξ := by
   -- A chart of the maximal atlas at `x` over which both bundles are trivial.
   obtain ⟨c, he, hxc, hV, hW⟩ :=
-    exists_mem_maximalAtlas_source_subset_baseSet F 𝓘(ℝ, E) (n := ∞) V F' W x
+    exists_mem_maximalAtlas_source_subset_baseSet 𝓘(ℝ, E) ∞ F V F' W x
   have hc := contMDiffOn_of_mem_maximalAtlas he
   have hcs := contMDiffOn_symm_of_mem_maximalAtlas he
   -- Microlocal smoothness is read on the components in this chart and these frames.
@@ -309,47 +366,39 @@ theorem singularSupport_localOperatorDualCLM_subset [MeasurableSpace E] [BorelSp
 /-! ### Microlocal elliptic regularity -/
 
 omit [LindelofSpace M] in
-/-- **The entries of the chart compression of an operator into a line bundle are elliptic.** Let
-`P : Γ(V) → Γ(W)` be a differential operator into a bundle `W` of rank one, with basis `b 0` of the
-model fibre, and `c` a chart of the maximal atlas at `x` with frames `tV` and `tW` over its source.
-If the principal symbol of `P` at a covector `ξ` at `x` does not kill the vector of `V_x` with
-coefficients `v` in the frame `tV`, then the `(b 0)*, v` entry of the chart compression of `P` by a
-cutoff `χ` with `χ (c x) = 1` has nonzero principal symbol at `c x`, at `ξ` read in the chart. -/
-private theorem smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators_ne_zero
-    {r : ℕ} (hF' : Module.finrank ℝ F' = 1)
+/-- **The principal symbols of the entries of the chart compression.** Let `P : Γ(V) → Γ(W)` be a
+differential operator and `c` a chart of the maximal atlas at `x` with frames `tV` and `tW` over
+its source. The `(b i)*, v` entry of the chart compression of `P` by a cutoff `χ` with
+`χ (c x) = 1` has principal symbol at `c x`, at a covector `ξ` at `x` read in the chart, the
+`b i` coordinate in the frame `tW` of `σ(P)(ξ)` applied to the vector of `V_x` with coefficients
+`v` in the frame `tV`. -/
+private theorem smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators_eq {r : ℕ}
     (hP : P ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), M; ℝ⟯ Cₛ^∞⟮𝓘(ℝ, E); F, V⟯
       Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ r)
     {c : OpenPartialHomeomorph M E} (he : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
     {tV : Trivialization F (π F V)} [MemTrivializationAtlas tV] (hV : c.source ⊆ tV.baseSet)
     {tW : Trivialization F' (π F' W)} [MemTrivializationAtlas tW] (hW : c.source ⊆ tW.baseSet)
-    {x : M} (hx : x ∈ c.source) {ξ : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ} {v : F}
-    (hσ : sectionPrincipalSymbol 𝓘(ℝ, E) BoundarylessManifold.isInteriorPoint ⟨P, hP⟩ ξ
-      (tV.symmL ℝ x v) ≠ 0)
-    {χ : 𝓓(⟨c.target, c.open_target⟩, ℝ)} (hχ : χ (c x) = 1) :
+    {x : M} (hx : x ∈ c.source) (ξ : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ)
+    {χ : 𝓓(⟨c.target, c.open_target⟩, ℝ)} (hχ : χ (c x) = 1) {ι : Type*}
+    (b : Module.Basis ι ℝ F') (i : ι) (v : F) :
     smoothPrincipalSymbol 𝓘(ℝ, E) (x := c x) BoundarylessManifold.isInteriorPoint
       (c.sectionChartCompressionDifferentialOperators he tV hV tW hW χ χ
-        (LinearMap.toContinuousLinearMap ((Module.finBasisOfFinrankEq ℝ F' hF').coord 0)) v r
-        ⟨P, hP⟩)
+        (LinearMap.toContinuousLinearMap (b.coord i)) v r ⟨P, hP⟩)
       (innerSL ℝ ((toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c.symm (c x))) :
-        E →L[ℝ] ℝ) ≠ 0 := by
+        E →L[ℝ] ℝ) =
+      b.coord i (tW.continuousLinearMapAt ℝ x (sectionPrincipalSymbol 𝓘(ℝ, E)
+        BoundarylessManifold.isInteriorPoint ⟨P, hP⟩ ξ (tV.symmL ℝ x v))) := by
   have hc := contMDiffOn_of_mem_maximalAtlas he
   have hcs := contMDiffOn_symm_of_mem_maximalAtlas he
   have hy : c x ∈ c.target := c.map_source hx
   set η := (toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c.symm (c x))
-  let b := Module.finBasisOfFinrankEq ℝ F' hF'
-  -- The principal symbol of the entry is the `b 0` coordinate of `σ(P)(⟪η, ·⟫ ∘ dc)` applied to
-  -- the vector with coefficients `v`, and `b 0` spans the model fibre of `W`.
-  intro h0
   have h1 :=
-    (OpenPartialHomeomorph.smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators
-      he tV hV tW hW χ χ (LinearMap.toContinuousLinearMap (b.coord 0)) v ⟨P, hP⟩ hy
-      (innerSL ℝ η : E →L[ℝ] ℝ)).symm.trans h0
+    OpenPartialHomeomorph.smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators
+      he tV hV tW hW χ χ (LinearMap.toContinuousLinearMap (b.coord i)) v ⟨P, hP⟩ hy
+      (innerSL ℝ η : E →L[ℝ] ℝ)
   simp only [hχ, one_mul, LinearMap.coe_toContinuousLinearMap'] at h1
-  have h2 := b.forall_coord_eq_zero_iff.1 fun i ↦ Subsingleton.elim i 0 ▸ h1
-  have h3 := (tW.symmL_continuousLinearMapAt (R := ℝ) (hW (c.map_target hy)) _).symm.trans
-    ((congrArg (tW.symmL ℝ (c.symm (c x))) h2).trans (map_zero _))
   -- Read at `x`, the covector `⟪η, ·⟫ ∘ dc` is `ξ`.
-  rw [c.left_inv hx] at h3
+  rw [c.left_inv hx] at h1
   have hcov : (innerSL ℝ η : E →L[ℝ] ℝ).comp (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c x) = ξ := by
     ext u
     have hd := congr($((OpenPartialHomeomorph.MDifferentiable.symm_comp_deriv
@@ -359,28 +408,63 @@ private theorem smoothPrincipalSymbol_sectionChartCompressionDifferentialOperato
     -- tangent spaces of the chart target with `E`, so the two equalities are composed as terms.
     exact (toDual_symm_apply (𝕜 := ℝ) (E := E) (x := mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c x u)).trans
       (congrArg ξ hd)
-  exact hσ (hcov ▸ h3)
+  exact hcov ▸ h1
 
-/-- **Microlocal elliptic regularity in a chart.** Let `P : Γ(V) → Γ(W)` be a differential operator
-into a bundle `W` of rank one, and `c` a chart of the maximal atlas at `x` with frames `tV` and `tW`
-over its source. If the principal symbol of `P` at a covector `ξ` at `x` does not kill the vector
-of `V_x` with coefficients `v` in the frame `tV`, and the component along `v` of the transpose
-`T ∘ P` is microlocally smooth at `c x` in the direction of `ξ` read in the chart, then so is every
-component of `T`. -/
+/-- **The transpose by an operator into a line in a chart, near a point.** Let `c` be a chart of
+the maximal atlas with frames `tV` and `tW` over its source, `b` a basis of the model fibre of `W`
+indexed by a type with at most one element, and `χ` a cutoff on the chart target equal to `1` on an
+open set `U`. Restricted to `U`, the component along `v` of the transpose `T ∘ P` by a differential
+operator `P` is the transpose `φ ↦ S (D φ)` of the component `S` of `T` along `b i` by the
+`(b i)*, v` entry `D` of the chart compression of `P` by `χ` and `χ`. -/
+theorem restrictCLM_chartComponent_localOperatorDualCLM_apply {r : ℕ}
+    (hP : P ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), M; ℝ⟯ Cₛ^∞⟮𝓘(ℝ, E); F, V⟯
+      Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ r)
+    {c : OpenPartialHomeomorph M E} (he : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
+    {tV : Trivialization F (π F V)} [MemTrivializationAtlas tV] (hV : c.source ⊆ tV.baseSet)
+    {tW : Trivialization F' (π F' W)} [MemTrivializationAtlas tW] (hW : c.source ⊆ tW.baseSet)
+    {χ : 𝓓(⟨c.target, c.open_target⟩, ℝ)} {U : Opens E} (hU : U ≤ ⟨c.target, c.open_target⟩)
+    (hχ : ∀ y ∈ U, χ y = 1) (v : F) {ι : Type*} [Subsingleton ι]
+    (b : Module.Basis ι ℝ F') (i : ι) {φ ψ : 𝓓(U, ℝ)} {f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯} (hf : ⇑f = φ)
+    (hψ : ⇑ψ = (c.sectionChartCompressionDifferentialOperators he tV hV tW hW χ χ
+      (LinearMap.toContinuousLinearMap (b.coord i)) v r ⟨P, hP⟩).val f)
+    (T : BundleTest 𝓘(ℝ, E) F' W →L_c[ℝ] ℝ) :
+    Distribution.restrictCLM (tV.chartComponent c (contMDiffOn_of_mem_maximalAtlas he) hV
+      (localOperatorDualCLM P
+        (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) v) φ =
+      Distribution.restrictCLM
+        (tW.chartComponent c (contMDiffOn_of_mem_maximalAtlas he) hW T (b i)) ψ := by
+  have := Fintype.ofFinite ι
+  let φ' : 𝓓(⟨c.target, c.open_target⟩, ℝ) := TestFunction.monoCLM ℝ φ
+  have hφχ : ∀ z ∈ tsupport φ', χ z = 1 := fun z hz ↦
+    hχ z (φ.tsupport_subset (by simpa [φ', hU] using hz))
+  rw [Distribution.restrictCLM_apply, Distribution.restrictCLM_apply,
+    chartComponent_localOperatorDualCLM_apply _ he hV hW hφχ (φ := φ') (by simpa [φ', hU] using hf)
+      v b (fun _ ↦ TestFunction.monoCLM ℝ ψ) fun j ↦ by
+        rw [Subsingleton.elim j i]
+        simpa [hU] using hψ, Fintype.sum_subsingleton _ i]
+
+/-- **Microlocal elliptic regularity in a chart.** Let `P : Γ(V) → Γ(W)` be a differential
+operator, `c` a chart of the maximal atlas at `x` with frames `tV` and `tW` over its source, and
+`b` the basis `Module.finBasis` of the model fibre of `W`. Let `v k` be vectors of the model fibre
+of `V` such that the principal symbol of `P` at a covector `ξ` at `x` sends the vector of `V_x`
+with coefficients `v k` to the vector of `W_x` with coefficients `b k`. If the components along
+every `v k` of the
+transpose `T ∘ P` are microlocally smooth at `c x` in the direction of `ξ` read in the chart, then
+so is every component of `T`: the chart compression of `P` is a square system of differential
+operators whose principal symbol matrix at `c x` is the identity. -/
 private theorem isMicrolocallySmoothAt_chartComponent_of_localOperatorDualCLM {r : ℕ}
-    (hF' : Module.finrank ℝ F' = 1)
     (hP : P ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), M; ℝ⟯ Cₛ^∞⟮𝓘(ℝ, E); F, V⟯
       Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ r)
     {c : OpenPartialHomeomorph M E} (he : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
     {tV : Trivialization F (π F V)} [MemTrivializationAtlas tV] (hV : c.source ⊆ tV.baseSet)
     {tW : Trivialization F' (π F' W)} [MemTrivializationAtlas tW] (hW : c.source ⊆ tW.baseSet)
     {T : BundleTest 𝓘(ℝ, E) F' W →L_c[ℝ] ℝ} {x : M} (hx : x ∈ c.source)
-    {ξ : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ} {v : F}
-    (hσ : sectionPrincipalSymbol 𝓘(ℝ, E) BoundarylessManifold.isInteriorPoint ⟨P, hP⟩ ξ
-      (tV.symmL ℝ x v) ≠ 0)
-    (h : (tV.chartComponent c (contMDiffOn_of_mem_maximalAtlas he) hV
+    {ξ : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ} (v : Fin (Module.finrank ℝ F') → F)
+    (hσ : ∀ k, sectionPrincipalSymbol 𝓘(ℝ, E) BoundarylessManifold.isInteriorPoint ⟨P, hP⟩ ξ
+      (tV.symmL ℝ x (v k)) = tW.symmL ℝ x (Module.finBasis ℝ F' k))
+    (h : ∀ k, (tV.chartComponent c (contMDiffOn_of_mem_maximalAtlas he) hV
       (localOperatorDualCLM P
-        (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) v)
+        (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) (v k))
       |>.IsMicrolocallySmoothAt (c x)
         ((toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c.symm (c x))))
     (w : F') :
@@ -388,84 +472,227 @@ private theorem isMicrolocallySmoothAt_chartComponent_of_localOperatorDualCLM {r
       ((toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c.symm (c x))) := by
   have hc := contMDiffOn_of_mem_maximalAtlas he
   have hy : c x ∈ c.target := c.map_source hx
+  let b := Module.finBasis ℝ F'
   have hloc : ∀ (s : Cₛ^∞⟮𝓘(ℝ, E); F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0 :=
     fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP
   -- A cutoff `χ` equal to `1` on a neighbourhood `B` of `c x` in the chart target.
   obtain ⟨χ, B, hBt, hyB, hB1⟩ :=
     TestFunction.exists_opens_le_forall_eq_one (n := ⊤) (Ω := ⟨c.target, c.open_target⟩) hy
-  -- The model fibre of `W` is a line, with basis `b 0`.
-  let b := Module.finBasisOfFinrankEq ℝ F' hF'
-  -- Over `B`, the component of `T ∘ P` along `v` is the transpose of the component of `T` along
-  -- `b 0` by the `(b 0)*, v` entry of the chart compression of `P`, which is elliptic at `c x`.
-  have hS : (tW.chartComponent c hc hW T (b 0)).IsMicrolocallySmoothAt (c x)
+  -- Over `B`, the component of `T ∘ P` along `v k` is `φ ↦ ∑ i, S i (D i k φ)`, for the
+  -- components `S i` of `T` along `b i` and the `(b i)*, v k` entries `D i k` of the chart
+  -- compression of `P`, whose principal symbol matrix at `c x` is the identity.
+  have hS (i : Fin (Module.finrank ℝ F')) :
+      (tW.chartComponent c hc hW T (b i)).IsMicrolocallySmoothAt (c x)
       ((toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c.symm (c x))) := by
     rw [← Distribution.isMicrolocallySmoothAt_restrictCLM_iff hBt hyB]
-    refine Distribution.IsMicrolocallySmoothAt.of_mem_differentialOperators
-      (c.sectionChartCompressionDifferentialOperators he tV hV tW hW χ χ
-        (LinearMap.toContinuousLinearMap (b.coord 0)) v r ⟨P, hP⟩).property
-      (R := Distribution.restrictCLM (tV.chartComponent c hc hV
-        (localOperatorDualCLM P hloc T) v)) (fun φ' ψ' f hf hψ' ↦ ?_)
-      (smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators_ne_zero hF' hP he hV hW
-        hx hσ (hB1 _ hyB))
-      ((Distribution.isMicrolocallySmoothAt_restrictCLM_iff hBt hyB).2 h)
-    let φ : 𝓓(⟨c.target, c.open_target⟩, ℝ) := TestFunction.monoCLM ℝ φ'
-    have hφχ : ∀ z ∈ tsupport φ, χ z = 1 := fun z hz ↦
-      hB1 z (φ'.tsupport_subset (by simpa [φ, hBt] using hz))
-    rw [Distribution.restrictCLM_apply, Distribution.restrictCLM_apply,
-      chartComponent_localOperatorDualCLM_apply hloc he hV hW hφχ (φ := φ)
-        (by simpa [φ, hBt] using hf) v b (fun _ ↦ TestFunction.monoCLM ℝ ψ') fun i ↦ by
-          rw [Subsingleton.elim i 0]
-          simpa [hBt] using hψ']
-    simp
+    refine Distribution.IsMicrolocallySmoothAt.of_forall_mem_differentialOperators
+      (fun i k ↦ (c.sectionChartCompressionDifferentialOperators he tV hV tW hW χ χ
+        (LinearMap.toContinuousLinearMap (b.coord i)) (v k) r ⟨P, hP⟩).property)
+      (S := fun i ↦ Distribution.restrictCLM (tW.chartComponent c hc hW T (b i)))
+      (R := fun k ↦ Distribution.restrictCLM (tV.chartComponent c hc hV
+        (localOperatorDualCLM P hloc T) (v k))) (fun k φ' ψ' f hf hψ' ↦ ?_) ?_
+      (fun k ↦ (Distribution.isMicrolocallySmoothAt_restrictCLM_iff hBt hyB).2 (h k)) i
+    · let φ : 𝓓(⟨c.target, c.open_target⟩, ℝ) := TestFunction.monoCLM ℝ φ'
+      have hφχ : ∀ z ∈ tsupport φ, χ z = 1 := fun z hz ↦
+        hB1 z (φ'.tsupport_subset (by simpa [φ, hBt] using hz))
+      rw [Distribution.restrictCLM_apply, chartComponent_localOperatorDualCLM_apply hloc he hV hW
+        hφχ (φ := φ) (by simpa [φ, hBt] using hf) (v k) b (fun i ↦ TestFunction.monoCLM ℝ (ψ' i))
+        fun i ↦ by simpa [hBt] using hψ' i]
+      simp
+    · have hmat : (Matrix.of fun i k ↦ smoothPrincipalSymbol 𝓘(ℝ, E) (x := c x)
+          BoundarylessManifold.isInteriorPoint
+          ⟨_, (c.sectionChartCompressionDifferentialOperators he tV hV tW hW χ χ
+            (LinearMap.toContinuousLinearMap (b.coord i)) (v k) r ⟨P, hP⟩).property⟩
+          (innerSL ℝ ((toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c.symm (c x))) :
+            E →L[ℝ] ℝ)) = 1 := by
+        ext i k
+        rw [Matrix.of_apply, smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators_eq
+          hP he hV hW hx ξ (hB1 _ hyB) b i (v k), hσ k,
+          tW.continuousLinearMapAt_symmL (R := ℝ) (hW hx)]
+        simp [b, Matrix.one_apply, Finsupp.single_apply, eq_comm]
+      rw [hmat, Matrix.det_one]
+      exact one_ne_zero
   rw [chartComponent_eq_sum tW c hc hW b T w]
-  exact Distribution.IsMicrolocallySmoothAt.sum _ hy fun i _ ↦ by
-    rw [Subsingleton.elim i 0]
-    exact hS.smul _
+  exact Distribution.IsMicrolocallySmoothAt.sum _ hy fun i _ ↦ (hS i).smul _
 
-/-- **Microlocal elliptic regularity for differential operators into a line bundle** (Hörmander I,
-Theorem 8.3.1 and §8.2). Let `P : Γ(V) → Γ(W)` be a differential operator of order at most `r` into
-a bundle `W` of rank one, and `ξ` a covector at `x` at which the principal symbol
-`σ(P)(ξ) : V_x → W_x` does not vanish. If the transpose `T ∘ P` of a functional `T` on the bundle
-tests of `W` is microlocally smooth at `ξ`, then so is `T`. -/
-theorem IsMicrolocallySmoothAt.of_localOperatorDualCLM {r : ℕ} (hF' : Module.finrank ℝ F' = 1)
+/-- **Microlocal elliptic regularity for differential operators between bundles** (Hörmander I,
+Theorem 8.3.1 and §8.2). Let `P : Γ(V) → Γ(W)` be a differential operator of order at most `r`,
+and `ξ` a covector at `x` at which the principal symbol `σ(P)(ξ) : V_x → W_x` is surjective. If
+the transpose `T ∘ P` of a functional `T` on the bundle tests of `W` is microlocally smooth at
+`ξ`, then so is `T`. Surjectivity of `σ(P)(ξ)` is injectivity of the principal symbol of the
+transpose, so this is microlocal elliptic regularity for the transpose; when `V` and `W` have the
+same rank it says that `σ(P)(ξ)` is invertible, and when `W` has rank one that it does not
+vanish. -/
+theorem IsMicrolocallySmoothAt.of_localOperatorDualCLM {r : ℕ}
     (hP : P ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), M; ℝ⟯ Cₛ^∞⟮𝓘(ℝ, E); F, V⟯
       Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ r)
     {T : BundleTest 𝓘(ℝ, E) F' W →L_c[ℝ] ℝ} {x : M} {ξ : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ}
-    (hσ : sectionPrincipalSymbol 𝓘(ℝ, E) BoundarylessManifold.isInteriorPoint ⟨P, hP⟩ ξ ≠ 0)
+    (hσ : Function.Surjective
+      (sectionPrincipalSymbol 𝓘(ℝ, E) BoundarylessManifold.isInteriorPoint ⟨P, hP⟩ ξ))
     (h : IsMicrolocallySmoothAt (BundleTest.localOperatorDualCLM P
       (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) x ξ) :
     IsMicrolocallySmoothAt T x ξ := by
   -- A chart of the maximal atlas at `x` over which both bundles are trivial.
   obtain ⟨c, he, hxc, hV, hW⟩ :=
-    exists_mem_maximalAtlas_source_subset_baseSet F 𝓘(ℝ, E) (n := ∞) V F' W x
+    exists_mem_maximalAtlas_source_subset_baseSet 𝓘(ℝ, E) ∞ F V F' W x
   have hc := contMDiffOn_of_mem_maximalAtlas he
   have hcs := contMDiffOn_symm_of_mem_maximalAtlas he
-  -- A vector `u ∈ V_x` with `σ(P)(ξ) u ≠ 0`, whose coefficients in the frame `tV` are `v`.
-  obtain ⟨u, hu⟩ : ∃ u, sectionPrincipalSymbol 𝓘(ℝ, E) BoundarylessManifold.isInteriorPoint
-      ⟨P, hP⟩ ξ u ≠ 0 := by
-    by_contra! h0
-    exact hσ (LinearMap.ext h0)
-  rw [← (trivializationAt F V x).symmL_continuousLinearMapAt (R := ℝ) (hV hxc) u] at hu
-  exact (isMicrolocallySmoothAt_iff T hc hcs hW hxc ξ).2
-    (isMicrolocallySmoothAt_chartComponent_of_localOperatorDualCLM hF' hP he hV hW hxc hu
-      ((isMicrolocallySmoothAt_iff _ hc hcs hV hxc ξ).1 h _))
+  -- Vectors `u k ∈ V_x`, with coefficients `v k` in the frame of `V`, which `σ(P)(ξ)` sends to
+  -- the vectors of `W_x` with coefficients `b k` in the frame of `W`.
+  let b := Module.finBasis ℝ F'
+  choose u hu using fun k ↦ hσ ((trivializationAt F' W x).symmL ℝ x (b k))
+  refine (isMicrolocallySmoothAt_iff T hc hcs hW hxc ξ).2
+    (isMicrolocallySmoothAt_chartComponent_of_localOperatorDualCLM hP he hV hW hxc
+      (fun k ↦ (trivializationAt F V x).continuousLinearMapAt ℝ x (u k)) (fun k ↦ ?_)
+      fun k ↦ (isMicrolocallySmoothAt_iff _ hc hcs hV hxc ξ).1 h _)
+  rw [(trivializationAt F V x).symmL_continuousLinearMapAt (R := ℝ) (hV hxc), hu k]
 
-/-- **Microlocal elliptic regularity for differential operators into a line bundle**: if
-`P : Γ(V) → Γ(W)` is a differential operator into a bundle `W` of rank one, then
-`WF(T) ⊆ WF(T ∘ P) ∪ Char(P)` for every functional `T` on the bundle tests of `W`, where `Char(P)`
-is the set of covectors at which the principal symbol of `P` vanishes. -/
+/-- **Microlocal elliptic regularity for differential operators between bundles**: if
+`P : Γ(V) → Γ(W)` is a differential operator, then `WF(T) ⊆ WF(T ∘ P) ∪ Char(P)` for every
+functional `T` on the bundle tests of `W`, where `Char(P)` is the set of covectors at which the
+principal symbol `σ(P)(ξ) : V_x → W_x` is not surjective. -/
 theorem waveFrontSet_subset_waveFrontSet_localOperatorDualCLM_union {r : ℕ}
-    (hF' : Module.finrank ℝ F' = 1)
     (hP : P ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), M; ℝ⟯ Cₛ^∞⟮𝓘(ℝ, E); F, V⟯
       Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ r)
     (T : BundleTest 𝓘(ℝ, E) F' W →L_c[ℝ] ℝ) :
     waveFrontSet 𝓘(ℝ, E) T ⊆ waveFrontSet 𝓘(ℝ, E) (localOperatorDualCLM P
         (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) ∪
-      {p | sectionPrincipalSymbol 𝓘(ℝ, E) (x := p.proj) BoundarylessManifold.isInteriorPoint
-        ⟨P, hP⟩ p.snd = 0} := by
+      {p | ¬Function.Surjective (sectionPrincipalSymbol 𝓘(ℝ, E) (x := p.proj)
+        BoundarylessManifold.isInteriorPoint ⟨P, hP⟩ p.snd)} := by
   intro p hp
   obtain ⟨hp0, hpT⟩ := mem_waveFrontSet_iff.1 hp
   refine or_iff_not_imp_right.2 fun hσ ↦ mem_waveFrontSet_iff.2 ⟨hp0, fun h ↦ hpT ?_⟩
-  exact IsMicrolocallySmoothAt.of_localOperatorDualCLM hF' hP hσ h
+  exact IsMicrolocallySmoothAt.of_localOperatorDualCLM hP (not_not.1 hσ) h
+
+/-! ### Sobolev regularity -/
+
+section Sobolev
+
+variable [MeasurableSpace E] [BorelSpace E]
+
+/-- **A differential operator in a chart costs its order in microlocal Sobolev regularity.** In a
+chart `c` of the maximal atlas with frames `tV` and `tW` over its source, if every component of the
+local representative of `T` is microlocally `H^s` at `(y, η)`, then every component of that of its
+transpose `T ∘ P` by a differential operator `P` of order at most `r` is microlocally `H^(s - r)`
+there. -/
+private theorem isMicrolocallySobolevAt_chartComponent_localOperatorDualCLM {r : ℕ}
+    (hP : P ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), M; ℝ⟯ Cₛ^∞⟮𝓘(ℝ, E); F, V⟯
+      Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ r)
+    {c : OpenPartialHomeomorph M E} (he : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
+    {tV : Trivialization F (π F V)} [MemTrivializationAtlas tV] (hV : c.source ⊆ tV.baseSet)
+    {tW : Trivialization F' (π F' W)} [MemTrivializationAtlas tW] (hW : c.source ⊆ tW.baseSet)
+    {T : BundleTest 𝓘(ℝ, E) F' W →L_c[ℝ] ℝ} {s : ℝ} {y η : E} (hy : y ∈ c.target)
+    (hT : ∀ w, (tW.chartComponent c (contMDiffOn_of_mem_maximalAtlas he) hW T w)
+      |>.IsMicrolocallySobolevAt s y η) (v : F) :
+    (tV.chartComponent c (contMDiffOn_of_mem_maximalAtlas he) hV
+      (localOperatorDualCLM P
+        (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) v)
+      |>.IsMicrolocallySobolevAt (s - r) y η := by
+  obtain ⟨B, hBt, hyB, D, hD, hsum⟩ :=
+    exists_restrictCLM_chartComponent_localOperatorDualCLM_eq_sum hP he hV hW T hy v
+  choose R hR hR' _ using fun i ↦
+    Distribution.exists_forall_apply_eq_and_isMicrolocallySobolevAt_of_mem_differentialOperators
+      (hD i) (tW.chartComponent c (contMDiffOn_of_mem_maximalAtlas he) hW T
+        (Module.finBasis ℝ F' i))
+  rw [← Distribution.isMicrolocallySobolevAt_restrictCLM_iff hBt hyB, hsum R hR]
+  exact Distribution.IsMicrolocallySobolevAt.sum _ hyB fun i _ ↦
+    (Distribution.isMicrolocallySobolevAt_restrictCLM_iff hBt hyB).2 (hR' i s y η (hT _))
+
+/-- **A differential operator in a chart costs its order in local Sobolev regularity.** In a chart
+`c` of the maximal atlas with frames `tV` and `tW` over its source, if every component of the local
+representative of `T` is `H^s` near `y`, then every component of that of its transpose `T ∘ P` by a
+differential operator `P` of order at most `r` is `H^(s - r)` near `y`. -/
+private theorem isLocallySobolevAt_chartComponent_localOperatorDualCLM {r : ℕ}
+    (hP : P ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), M; ℝ⟯ Cₛ^∞⟮𝓘(ℝ, E); F, V⟯
+      Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ r)
+    {c : OpenPartialHomeomorph M E} (he : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
+    {tV : Trivialization F (π F V)} [MemTrivializationAtlas tV] (hV : c.source ⊆ tV.baseSet)
+    {tW : Trivialization F' (π F' W)} [MemTrivializationAtlas tW] (hW : c.source ⊆ tW.baseSet)
+    {T : BundleTest 𝓘(ℝ, E) F' W →L_c[ℝ] ℝ} {s : ℝ} {y : E} (hy : y ∈ c.target)
+    (hT : ∀ w, (tW.chartComponent c (contMDiffOn_of_mem_maximalAtlas he) hW T w)
+      |>.IsLocallySobolevAt s y) (v : F) :
+    (tV.chartComponent c (contMDiffOn_of_mem_maximalAtlas he) hV
+      (localOperatorDualCLM P
+        (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) v)
+      |>.IsLocallySobolevAt (s - r) y := by
+  obtain ⟨B, hBt, hyB, D, hD, hsum⟩ :=
+    exists_restrictCLM_chartComponent_localOperatorDualCLM_eq_sum hP he hV hW T hy v
+  choose R hR _ hR' using fun i ↦
+    Distribution.exists_forall_apply_eq_and_isMicrolocallySobolevAt_of_mem_differentialOperators
+      (hD i) (tW.chartComponent c (contMDiffOn_of_mem_maximalAtlas he) hW T
+        (Module.finBasis ℝ F' i))
+  rw [← Distribution.isLocallySobolevAt_restrictCLM_iff hBt hyB, hsum R hR]
+  exact Distribution.IsLocallySobolevAt.sum hyB fun i _ ↦
+    (Distribution.isLocallySobolevAt_restrictCLM_iff hBt hyB).2 (hR' i s y (hT _))
+
+/-- **Differential operators cost their order in microlocal Sobolev regularity.** If a functional
+`T` on the bundle tests of `W` is microlocally `H^s` at a covector `ξ`, then its transpose `T ∘ P`
+by a differential operator `P : Γ(V) → Γ(W)` of order at most `r` is microlocally `H^(s - r)`
+there. -/
+theorem IsMicrolocallySobolevAt.localOperatorDualCLM {r : ℕ}
+    (hP : P ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), M; ℝ⟯ Cₛ^∞⟮𝓘(ℝ, E); F, V⟯
+      Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ r)
+    {s : ℝ} {T : BundleTest 𝓘(ℝ, E) F' W →L_c[ℝ] ℝ} {x : M}
+    {ξ : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ} (h : IsMicrolocallySobolevAt s T x ξ) :
+    IsMicrolocallySobolevAt (s - r) (localOperatorDualCLM P
+      (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) x ξ := by
+  -- A chart of the maximal atlas at `x` over which both bundles are trivial.
+  obtain ⟨c, he, hxc, hV, hW⟩ :=
+    exists_mem_maximalAtlas_source_subset_baseSet 𝓘(ℝ, E) ∞ F V F' W x
+  have hc := contMDiffOn_of_mem_maximalAtlas he
+  have hcs := contMDiffOn_symm_of_mem_maximalAtlas he
+  -- Microlocal Sobolev regularity is read on the components in this chart and these frames.
+  exact (isMicrolocallySobolevAt_iff _ hc hcs hV hxc ξ).2
+    (isMicrolocallySobolevAt_chartComponent_localOperatorDualCLM hP he hV hW
+      (c.map_source hxc) ((isMicrolocallySobolevAt_iff T hc hcs hW hxc ξ).1 h))
+
+/-- **Differential operators shift the Sobolev wave front set by their order** (Hörmander,
+*Lectures on Nonlinear Hyperbolic Differential Equations*, §11.1). The `H^(s - r)` wave front set
+of the transpose `T ∘ P` of a functional `T` on the bundle tests of `W` by a differential operator
+`P : Γ(V) → Γ(W)` of order at most `r` lies in the `H^s` wave front set of `T`. -/
+theorem sobolevWaveFrontSet_localOperatorDualCLM_subset {r : ℕ}
+    (hP : P ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), M; ℝ⟯ Cₛ^∞⟮𝓘(ℝ, E); F, V⟯
+      Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ r)
+    (s : ℝ) (T : BundleTest 𝓘(ℝ, E) F' W →L_c[ℝ] ℝ) :
+    sobolevWaveFrontSet 𝓘(ℝ, E) (s - r) (localOperatorDualCLM P
+        (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) ⊆
+      sobolevWaveFrontSet 𝓘(ℝ, E) s T :=
+  fun _ hp ↦ mem_sobolevWaveFrontSet_iff.2 ⟨(mem_sobolevWaveFrontSet_iff.1 hp).1,
+    fun h ↦ (mem_sobolevWaveFrontSet_iff.1 hp).2 (h.localOperatorDualCLM hP)⟩
+
+/-- **Differential operators cost their order in local Sobolev regularity.** If a functional `T` on
+the bundle tests of `W` is `H^s` near `x`, then its transpose `T ∘ P` by a differential operator
+`P : Γ(V) → Γ(W)` of order at most `r` is `H^(s - r)` near `x`. -/
+theorem IsLocallySobolevAt.localOperatorDualCLM {r : ℕ}
+    (hP : P ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), M; ℝ⟯ Cₛ^∞⟮𝓘(ℝ, E); F, V⟯
+      Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ r)
+    {s : ℝ} {T : BundleTest 𝓘(ℝ, E) F' W →L_c[ℝ] ℝ} {x : M} (h : IsLocallySobolevAt s T x) :
+    IsLocallySobolevAt (s - r) (localOperatorDualCLM P
+      (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) x := by
+  -- A chart of the maximal atlas at `x` over which both bundles are trivial.
+  obtain ⟨c, he, hxc, hV, hW⟩ :=
+    exists_mem_maximalAtlas_source_subset_baseSet 𝓘(ℝ, E) ∞ F V F' W x
+  have hc := contMDiffOn_of_mem_maximalAtlas he
+  have hcs := contMDiffOn_symm_of_mem_maximalAtlas he
+  -- Local Sobolev regularity is read on the components in this chart and these frames.
+  exact (isLocallySobolevAt_iff _ hc hcs hV hxc).2
+    (isLocallySobolevAt_chartComponent_localOperatorDualCLM hP he hV hW
+      (c.map_source hxc) ((isLocallySobolevAt_iff T hc hcs hW hxc).1 h))
+
+/-- **Differential operators shift the Sobolev singular support by their order.** The
+`H^(s - r)` singular support of the transpose `T ∘ P` of a functional `T` on the bundle tests of
+`W` by a differential operator `P : Γ(V) → Γ(W)` of order at most `r` lies in the `H^s` singular
+support of `T`. -/
+theorem sobolevSingularSupport_localOperatorDualCLM_subset {r : ℕ}
+    (hP : P ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), M; ℝ⟯ Cₛ^∞⟮𝓘(ℝ, E); F, V⟯
+      Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ r)
+    (s : ℝ) (T : BundleTest 𝓘(ℝ, E) F' W →L_c[ℝ] ℝ) :
+    sobolevSingularSupport 𝓘(ℝ, E) (s - r) (localOperatorDualCLM P
+        (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) ⊆
+      sobolevSingularSupport 𝓘(ℝ, E) s T :=
+  fun _ hx ↦ mem_sobolevSingularSupport_iff.2 fun h ↦
+    mem_sobolevSingularSupport_iff.1 hx (h.localOperatorDualCLM hP)
+
+end Sobolev
 
 end TauCeti.BundleTest
