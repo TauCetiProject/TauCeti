@@ -90,7 +90,8 @@ theorem inv (h : HasNormUpToPower N c f) : HasNormUpToPower N c⁻¹ f⁻¹ := b
   simp [norm_inv, inv_pow, hk, zpow_neg, mul_comm, mul_left_comm]
 
 /-- A nonzero reference value at which `N` and `f` both equal `1` removes the constant factor.
-The absolute value allows the squared modulus to have any choice of sign in the input. -/
+The conclusion uses `|f i|` because `f` may take negative values. The exponent is `k / 2`
+for an integer `k`. -/
 theorem exists_norm_div_eq (h : HasNormUpToPower N c f) {i₀ : ι} (hN : N i₀ = 1)
     (hf : f i₀ = 1) (hc : c i₀ ≠ 0) :
     ∃ k : ℤ, ∀ i, ‖c i / c i₀‖ = ((N i : ℕ) : ℝ) ^ ((k : ℝ) / 2) * |f i| := by
