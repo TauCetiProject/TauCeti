@@ -11,7 +11,6 @@ import Mathlib.Analysis.LocallyConvex.WithSeminorms
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.PlaneSeparation.RiemannSphere
 import TauCeti.Analysis.Normed.Field.Inversion
-import TauCeti.Analysis.Normed.Module.FilledHull
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.Compactification.OnePoint.FilledHull
 import TauCeti.Topology.Frontier

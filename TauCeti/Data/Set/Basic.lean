@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Set.Basic
-import Mathlib.Data.Set.Insert
 import Mathlib.Order.BooleanAlgebra.Set
 
 /-!
