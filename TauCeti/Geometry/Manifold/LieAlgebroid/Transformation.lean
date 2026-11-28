@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.AffineLine
 public import TauCeti.Geometry.Lie.FundamentalVectorField
-public import TauCeti.Geometry.Manifold.LieAlgebroid.LieAlgebraBundle
+public import TauCeti.Geometry.Manifold.LieAlgebroid.LieAlgebraBundle.Basic
 public import TauCeti.Geometry.Manifold.LieAlgebroid.Tangent
 import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar

@@ -170,7 +170,7 @@ theorem delBar_wedgeWithType (μ : F₁ →L[ℂ] F₂ →L[ℂ] F₃) (p q r s 
             φ.val (J.delBar ψ.val)) := by
   rw [coe_wedgeWithType, delBar_cast,
     delBar_wedgeWith _ (fun _ _ _ ↦ by simp) (fun _ _ _ ↦ by simp)]
-  simp only [map_add, map_smul, SmoothForm.cast_cast]
+  simp only [map_add, map_smul, LinearEquiv.cast_cast]
 
 end SmoothAlmostComplexStructure
 

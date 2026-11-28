@@ -124,7 +124,7 @@ private theorem exists_delBar_eventually_eq_of_sum_wedgeWith {M : Type*} [Topolo
         (Nat.add_comm 1 (m + 1))
           (SmoothForm.wedgeWith μ (w i) ((ofComplexManifold E M).delBar (g i))) := by
     simp only [map_smul, map_sum, delBar_cast, delBar_wedgeWith _ hμ₁ hμ₂, hwc,
-      map_zero, LinearMap.zero_apply, zero_add, cast_cast, pow_one]
+      map_zero, LinearMap.zero_apply, zero_add, LinearEquiv.cast_cast, pow_one]
     -- `simp` does not match `neg_one_smul` against the real action on smooth forms directly.
     have hneg (φ : SmoothForm 𝓘(ℝ, E) M F (m + 1 + 1)) : (-1 : ℝ) • φ = -φ :=
       neg_one_smul ℝ φ

@@ -6,8 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
+public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
+public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
+import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
+import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
+import TauCeti.Topology.VectorBundle.Hom
 
 /-!
 # Smooth bundles of continuous alternating maps
@@ -26,6 +31,12 @@ bundle of bilinear maps is itself a `C^n` section of the alternating-map bundle
 (`TauCeti.contMDiffAt_continuousAlternatingMap_bundle_of_bilinear`). This lets a two-form be
 built from a smooth bilinear tensor field without repeating a coordinate computation.
 
+Given a `C^n` fibrewise bilinear pairing of target bundles, the fibrewise paired wedge of two `C^n`
+alternating-bundle sections on an arbitrary source vector bundle is again `C^n`
+(`ContMDiffWithinAt.pairedWedge_bundle`, `ContMDiffOn.pairedWedge_bundle`,
+`ContMDiffAt.pairedWedge_bundle`), computed in coordinates by
+`ContinuousAlternatingMap.inCoordinates_pairedWedge`.
+
 The coordinate-change proof follows Floris van Doorn's smooth Hom-bundle construction
 in `Mathlib.Geometry.Manifold.VectorBundle.Hom`, using the topological alternating-map
 bundle of Yury Kudryashov, Heather Macbeth, and Floris van Doorn. Its domain pullback is
@@ -41,7 +52,7 @@ public section
 noncomputable section
 
 open Bundle Set Pretrivialization
-open scoped Manifold Bundle ContDiff
+open scoped Manifold Bundle ContDiff Topology
 
 namespace TauCeti
 
@@ -194,5 +205,109 @@ theorem contMDiffAt_continuousAlternatingMap_bundle_of_bilinear
   exact e'.continuousLinearMapAt_apply_of_mem 𝕜 hy' _
 
 end Bilinear
+
+section PairedWedge
+
+variable {E H M F₀ F₁ F₂ F₃ : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  [TopologicalSpace M] [ChartedSpace H M] {I : ModelWithCorners ℝ E H}
+  [NormedAddCommGroup F₀] [NormedSpace ℝ F₀]
+  [NormedAddCommGroup F₁] [NormedSpace ℝ F₁]
+  [NormedAddCommGroup F₂] [NormedSpace ℝ F₂]
+  [NormedAddCommGroup F₃] [NormedSpace ℝ F₃]
+  {V₀ V₁ V₂ V₃ : M → Type*}
+  [∀ x, AddCommGroup (V₀ x)] [∀ x, Module ℝ (V₀ x)] [∀ x, TopologicalSpace (V₀ x)]
+  [∀ x, AddCommGroup (V₁ x)] [∀ x, Module ℝ (V₁ x)] [∀ x, TopologicalSpace (V₁ x)]
+  [∀ x, AddCommGroup (V₂ x)] [∀ x, Module ℝ (V₂ x)] [∀ x, TopologicalSpace (V₂ x)]
+  [∀ x, AddCommGroup (V₃ x)] [∀ x, Module ℝ (V₃ x)] [∀ x, TopologicalSpace (V₃ x)]
+  [TopologicalSpace (TotalSpace F₀ V₀)] [FiberBundle F₀ V₀] [VectorBundle ℝ F₀ V₀]
+  [TopologicalSpace (TotalSpace F₁ V₁)] [FiberBundle F₁ V₁] [VectorBundle ℝ F₁ V₁]
+  [TopologicalSpace (TotalSpace F₂ V₂)] [FiberBundle F₂ V₂] [VectorBundle ℝ F₂ V₂]
+  [TopologicalSpace (TotalSpace F₃ V₃)] [FiberBundle F₃ V₃] [VectorBundle ℝ F₃ V₃]
+  [∀ x, IsTopologicalAddGroup (V₃ x)] [∀ x, ContinuousSMul ℝ (V₃ x)]
+  {k l : ℕ} {n : WithTop ℕ∞} {s : Set M} {x : M}
+
+section Regularity
+
+variable [∀ x, IsTopologicalAddGroup (V₁ x)] [∀ x, ContinuousSMul ℝ (V₁ x)]
+  [∀ x, IsTopologicalAddGroup (V₂ x)] [∀ x, ContinuousSMul ℝ (V₂ x)]
+
+/-- A `C^n` bundle pairing takes two `C^n` alternating-bundle sections on an arbitrary source
+bundle to a `C^n` section within an arbitrary set. -/
+theorem _root_.ContMDiffWithinAt.pairedWedge_bundle
+    {μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y}
+    (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b))
+    (hpair : ContMDiffWithinAt I (I.prod 𝓘(ℝ, F₁ →L[ℝ] F₂ →L[ℝ] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃) y (μ y)) s x)
+    {φ : ∀ y : M, V₀ y [⋀^Fin k]→L[ℝ] V₁ y}
+    {ψ : ∀ y : M, V₀ y [⋀^Fin l]→L[ℝ] V₂ y}
+    (hφ : ContMDiffWithinAt I (I.prod 𝓘(ℝ, F₀ [⋀^Fin k]→L[ℝ] F₁)) n
+      (fun y ↦ TotalSpace.mk' (F₀ [⋀^Fin k]→L[ℝ] F₁) y (φ y)) s x)
+    (hψ : ContMDiffWithinAt I (I.prod 𝓘(ℝ, F₀ [⋀^Fin l]→L[ℝ] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₀ [⋀^Fin l]→L[ℝ] F₂) y (ψ y)) s x) :
+    ContMDiffWithinAt I (I.prod 𝓘(ℝ, F₀ [⋀^Fin (k + l)]→L[ℝ] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₀ [⋀^Fin (k + l)]→L[ℝ] F₃) y
+        (ContinuousAlternatingMap.pairedWedge (μ y) (hμ y) (φ y) (ψ y))) s x := by
+  rw [contMDiffWithinAt_hom_bundle] at hpair
+  rw [contMDiffWithinAt_continuousAlternatingMap_bundle] at hφ hψ ⊢
+  refine ⟨hφ.1, ?_⟩
+  have h := (((ContinuousAlternatingMap.pairedWedgeCLM
+    (E := F₀) (k := k) (l := l)).contDiff.comp_contMDiffWithinAt hpair.2).clm_apply
+      hφ.2).clm_apply hψ.2
+  have heq : (fun y ↦ ContinuousAlternatingMap.inCoordinates F₀ F₃ x y x y
+      (ContinuousAlternatingMap.pairedWedge (μ y) (hμ y) (φ y) (ψ y))) =ᶠ[𝓝 x]
+      (fun y ↦ ContinuousAlternatingMap.pairedWedgeCLM
+        (ContinuousLinearMap.inCoordinates F₁ V₁ (F₂ →L[ℝ] F₃)
+          (fun z ↦ V₂ z →L[ℝ] V₃ z) x y x y (μ y))
+        (ContinuousAlternatingMap.inCoordinates F₀ F₁ x y x y (φ y))
+        (ContinuousAlternatingMap.inCoordinates F₀ F₂ x y x y (ψ y))) := by
+    filter_upwards [(trivializationAt F₁ V₁ x).open_baseSet.mem_nhds
+        (FiberBundle.mem_baseSet_trivializationAt F₁ V₁ x),
+      (trivializationAt F₂ V₂ x).open_baseSet.mem_nhds
+        (FiberBundle.mem_baseSet_trivializationAt F₂ V₂ x),
+      (trivializationAt F₃ V₃ x).open_baseSet.mem_nhds
+        (FiberBundle.mem_baseSet_trivializationAt F₃ V₃ x)] with y h₁ h₂ h₃
+    exact ContinuousAlternatingMap.inCoordinates_pairedWedge μ hμ φ ψ x y h₁ h₂ h₃
+  exact h.congr_of_eventuallyEq (heq.filter_mono nhdsWithin_le_nhds) heq.eq_of_nhds
+
+/-- A `C^n` bundle pairing takes `C^n` alternating-bundle sections on an arbitrary source bundle
+to a `C^n` section on a set. -/
+theorem _root_.ContMDiffOn.pairedWedge_bundle
+    {μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y}
+    (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b))
+    (hpair : ContMDiffOn I (I.prod 𝓘(ℝ, F₁ →L[ℝ] F₂ →L[ℝ] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃) y (μ y)) s)
+    {φ : ∀ y : M, V₀ y [⋀^Fin k]→L[ℝ] V₁ y}
+    {ψ : ∀ y : M, V₀ y [⋀^Fin l]→L[ℝ] V₂ y}
+    (hφ : ContMDiffOn I (I.prod 𝓘(ℝ, F₀ [⋀^Fin k]→L[ℝ] F₁)) n
+      (fun y ↦ TotalSpace.mk' (F₀ [⋀^Fin k]→L[ℝ] F₁) y (φ y)) s)
+    (hψ : ContMDiffOn I (I.prod 𝓘(ℝ, F₀ [⋀^Fin l]→L[ℝ] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₀ [⋀^Fin l]→L[ℝ] F₂) y (ψ y)) s) :
+    ContMDiffOn I (I.prod 𝓘(ℝ, F₀ [⋀^Fin (k + l)]→L[ℝ] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₀ [⋀^Fin (k + l)]→L[ℝ] F₃) y
+        (ContinuousAlternatingMap.pairedWedge (μ y) (hμ y) (φ y) (ψ y))) s :=
+  fun y hy ↦ ContMDiffWithinAt.pairedWedge_bundle hμ (hpair y hy) (hφ y hy) (hψ y hy)
+
+/-- Pointwise regularity of a fibrewise paired wedge on an arbitrary source bundle follows from
+regularity of both sections and the pairing. -/
+theorem _root_.ContMDiffAt.pairedWedge_bundle
+    {μ : (y : M) → V₁ y →L[ℝ] V₂ y →L[ℝ] V₃ y}
+    (hμ : ∀ y, Continuous (Function.uncurry fun a b ↦ μ y a b))
+    (hpair : ContMDiffAt I (I.prod 𝓘(ℝ, F₁ →L[ℝ] F₂ →L[ℝ] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[ℝ] F₂ →L[ℝ] F₃) y (μ y)) x)
+    {φ : ∀ y : M, V₀ y [⋀^Fin k]→L[ℝ] V₁ y}
+    {ψ : ∀ y : M, V₀ y [⋀^Fin l]→L[ℝ] V₂ y}
+    (hφ : ContMDiffAt I (I.prod 𝓘(ℝ, F₀ [⋀^Fin k]→L[ℝ] F₁)) n
+      (fun y ↦ TotalSpace.mk' (F₀ [⋀^Fin k]→L[ℝ] F₁) y (φ y)) x)
+    (hψ : ContMDiffAt I (I.prod 𝓘(ℝ, F₀ [⋀^Fin l]→L[ℝ] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₀ [⋀^Fin l]→L[ℝ] F₂) y (ψ y)) x) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, F₀ [⋀^Fin (k + l)]→L[ℝ] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₀ [⋀^Fin (k + l)]→L[ℝ] F₃) y
+        (ContinuousAlternatingMap.pairedWedge (μ y) (hμ y) (φ y) (ψ y))) x :=
+  ContMDiffWithinAt.pairedWedge_bundle hμ hpair hφ hψ
+
+end Regularity
+
+end PairedWedge
 
 end TauCeti

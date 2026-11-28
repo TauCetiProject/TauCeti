@@ -21,10 +21,10 @@ the fibrewise pairings are smooth sections with matching composites, specializin
 
 public section
 
-namespace TauCeti
-
 open Bundle
 open scoped ContDiff Manifold
+
+namespace TauCeti
 
 variable {E H M F₁ F₂ F₃ F₁₂ F₂₃ G : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]

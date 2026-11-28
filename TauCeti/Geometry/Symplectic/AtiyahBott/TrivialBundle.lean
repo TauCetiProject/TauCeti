@@ -167,7 +167,7 @@ theorem atiyahBottFormWith_nondegenerate (hB : ∀ u v, B u v = B v u)
       (show 1 + 1 = 2 from rfl) hB' (isClosed_tsupport _).isCompact hne
     have h := ha b
     rw [atiyahBottFormWith_apply] at h
-    exact hb (by rwa [SmoothForm.cast_refl, SmoothForm.coe_wedgeWith])
+    exact hb (by rwa [LinearEquiv.cast_refl_apply, SmoothForm.coe_wedgeWith])
   refine ⟨hleft, fun b hb ↦ hleft b fun a ↦ ?_⟩
   rw [atiyahBottFormWith_swap B o hB, hb, neg_zero]
 
@@ -181,7 +181,7 @@ theorem atiyahBottMomentWith_eq_zero_iff (hB' : ∀ u, (∀ z, B u z = 0) → u 
       (show 2 + 0 = 2 from rfl) hB' (isClosed_tsupport _).isCompact hne
     have hμ := LinearMap.congr_fun h ξ
     rw [atiyahBottMomentWith_apply, LinearMap.zero_apply] at hμ
-    exact hξ (by rwa [SmoothForm.cast_refl, SmoothForm.coe_wedgeWith])
+    exact hξ (by rwa [LinearEquiv.cast_refl_apply, SmoothForm.coe_wedgeWith])
   · rw [atiyahBottMomentWith, h, map_zero, LinearMap.comp_zero]
 
 /-! ### The moment map equation and equivariance -/
