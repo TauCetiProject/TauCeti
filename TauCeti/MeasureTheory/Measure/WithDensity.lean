@@ -512,25 +512,16 @@ theorem map_withDensity_abs_deriv_mul (hs : MeasurableSet s)
     (hφ' : ∀ x ∈ s, HasDerivWithinAt φ (φ' x) s x) (hinj : InjOn φ s) :
     ((volume.restrict s).withDensity fun t ↦ ENNReal.ofReal |φ' t| * f (φ t)).map φ =
       (volume.restrict (φ '' s)).withDensity f := by
-  classical
-  -- `φ` agrees on `s` with the measurable `ψ`, which changes neither side.
-  set ψ := s.piecewise φ 0
-  have hψ : Measurable ψ := ContinuousOn.measurable_piecewise
-    (fun x hx ↦ (hφ' x hx).continuousWithinAt) continuous_zero.continuousOn hs
-  have he : ∀ᵐ t ∂volume.restrict s, ψ t = φ t := by
-    filter_upwards [ae_restrict_mem hs] with t ht using piecewise_eq_of_mem _ _ _ ht
-  rw [← Measure.map_congr ((withDensity_absolutelyContinuous _ _).ae_eq he),
-    withDensity_congr_ae (g := fun t ↦ ENNReal.ofReal |φ' t| * f (ψ t))
-      (by filter_upwards [he] with t ht; rw [ht]),
-    ← image_congr (piecewise_eqOn s φ 0)]
-  replace hφ' x (hx : x ∈ s) : HasDerivWithinAt ψ (φ' x) s x :=
-    (hφ' x hx).congr (fun y hy ↦ piecewise_eq_of_mem _ _ _ hy) (piecewise_eq_of_mem _ _ _ hx)
-  replace hinj : InjOn ψ s := hinj.congr (piecewise_eqOn s φ 0).symm
+  have hφ : AEMeasurable φ (volume.restrict s) :=
+    ContinuousOn.aemeasurable (fun x hx ↦ (hφ' x hx).continuousWithinAt) hs
   ext A hA
-  rw [Measure.map_apply hψ hA, withDensity_apply _ (hψ hA), withDensity_apply _ hA,
-    Measure.restrict_restrict (hψ hA), Measure.restrict_restrict hA,
-    ← image_preimage_inter ψ s A, lintegral_image_eq_lintegral_abs_deriv_mul ((hψ hA).inter hs)
-    (fun x hx ↦ (hφ' x hx.2).mono inter_subset_right) (hinj.mono inter_subset_right)]
+  rw [Measure.map_apply_of_aemeasurable (hφ.mono_ac (withDensity_absolutelyContinuous _ _)) hA,
+    withDensity_apply' _ _, withDensity_apply _ hA,
+    ← lintegral_indicator₀ (hφ.nullMeasurableSet_preimage hA), ← lintegral_indicator hA,
+    lintegral_image_eq_lintegral_abs_deriv_mul hs hφ' hinj]
+  congr 1
+  funext t
+  by_cases ht : φ t ∈ A <;> simp [ht]
 
 /-- **The substitution `x = t ^ 2` on the positive half-line.** Weighting Lebesgue measure on
 `Ioi 0` by `2 * t * f (t ^ 2)` and pushing forward along squaring gives Lebesgue measure on
