@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Bott.Count
+public import TauCeti.Geometry.Manifold.Morse.Bott.Naturality
+public import TauCeti.Geometry.Manifold.Morse.Bott.TwistedInequalities
 import Mathlib.Topology.Homeomorph.Lemmas
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.Morse.LocalDiffeomorph
@@ -44,6 +46,21 @@ function exactly when the family `i = σ⁻¹ ∘ i'`, with the same pieces, exh
 (`TauCeti.IsMorseBottFamily.index_comp_diffeomorph`), and the Morse–Bott counts of the two
 families agree (`TauCeti.IsMorseBottFamily.morseBottCount_comp_diffeomorph`).
 
+The twisted homology of the pieces is invariant as well, over every ring. The contribution of a
+piece to the first page of the critical-band spectral sequence over a ring `K` is its homology with
+coefficients in the orientation local system `o(ν⁻)` of its negative normal bundle, tensored with
+`K`. The differential of `σ` identifies the negative normal bundle of a piece of `f ∘ σ` with that
+of the corresponding piece of `f`
+(`TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.negativeNormalSpaceEquivOfComp`),
+whatever fibre metrics define them, so their orientation local systems, and the twisted homologies
+of the piece with these coefficients, are isomorphic over every ring `K`, `ℤ` included
+(`TauCeti.IsMorseBottFamily.twistedHomologyIsoCompDiffeomorph`). Hence the twisted Betti numbers
+over a field (`TauCeti.IsMorseBottFamily.twistedBettiNumber`), which enter the Morse–Bott
+inequalities, agree for the two families
+(`TauCeti.IsMorseBottFamily.twistedBettiNumber_comp_diffeomorph`). This holds even for
+non-orientable negative normal bundles, where the twisted homology can differ from the ordinary
+homology of the pieces.
+
 ## Main results
 
 * `TauCeti.SmoothEmbedding.isCriticalSubmanifold_comp_iff_of_isLocalDiffeomorphAt`: critical
@@ -55,6 +72,11 @@ families agree (`TauCeti.IsMorseBottFamily.morseBottCount_comp_diffeomorph`).
 * `TauCeti.isMorseBottFamily_comp_diffeomorph_iff`: the two families are Morse–Bott together.
 * `TauCeti.IsMorseBottFamily.index_comp_diffeomorph`: the pieces keep their indices.
 * `TauCeti.IsMorseBottFamily.morseBottCount_comp_diffeomorph`: the Morse–Bott counts agree.
+* `TauCeti.IsMorseBottFamily.twistedHomologyIsoCompDiffeomorph`: over every ring, the homologies of
+  the pieces with coefficients in the orientation local systems of their negative normal bundles
+  are isomorphic.
+* `TauCeti.IsMorseBottFamily.twistedBettiNumber_comp_diffeomorph`: the twisted Betti numbers of
+  the pieces over a field agree.
 
 ## References
 
@@ -241,3 +263,199 @@ theorem IsMorseBottFamily.morseBottCount_comp_diffeomorph {S : ι → Type u}
 end Family
 
 end TauCeti
+
+/-! ### Twisted homology under a diffeomorphism
+
+The twisted homologies take the manifolds, their models, the pieces and the coefficient ring in
+one universe, as the twisted identification across a critical level does. -/
+
+open Bundle CategoryTheory Module TauCeti.VectorBundleOrientationCover
+  TauCeti.LocalCoefficientSystem
+
+namespace TauCeti.IsMorseBottFamily
+
+variable {E M E' M' : Type u} {H H' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H']
+  {I' : ModelWithCorners ℝ E' H'} [I'.Boundaryless] [TopologicalSpace M'] [ChartedSpace H' M']
+  [IsManifold I' ∞ M']
+  {ι : Type*} {F G P P' : ι → Type*} {S : ι → Type u}
+  [∀ j, NormedAddCommGroup (F j)] [∀ j, NormedSpace ℝ (F j)] [∀ j, FiniteDimensional ℝ (F j)]
+  [∀ j, TopologicalSpace (G j)] {J : ∀ j, ModelWithCorners ℝ (F j) (G j)}
+  [∀ j, TopologicalSpace (S j)] [∀ j, ChartedSpace (G j) (S j)] [∀ j, IsManifold (J j) ∞ (S j)]
+  [∀ j, NormedAddCommGroup (P j)] [∀ j, NormedSpace ℝ (P j)] [∀ j, FiniteDimensional ℝ (P j)]
+  [∀ j, NormedAddCommGroup (P' j)] [∀ j, NormedSpace ℝ (P' j)] [∀ j, FiniteDimensional ℝ (P' j)]
+  {f : M' → ℝ} {i : ∀ j, SmoothEmbedding (J j) I ∞ (S j) M}
+  {i' : ∀ j, SmoothEmbedding (J j) I' ∞ (S j) M'} {m : ℕ∞ω}
+
+variable (hn : (∞ : ℕ∞ω) ≠ 0) (h : IsMorseBottFamily i' f) (σ : M ≃ₘ^m⟮I, I'⟯ M') (hm : ∞ ≤ m)
+  (hi : ∀ j, ⇑(i' j) = σ ∘ i j)
+  (hdim : ∀ j, finrank ℝ (P j) = finrank ℝ E - finrank ℝ (F j))
+  (g : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+    ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn)
+  {r : ι → ℕ}
+  (hV : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+    ∀ j, HasLocalSubbundleFrames (P j) (Fin (r j))
+      (((h.comp_diffeomorph σ hm hn hi).isNondegenerateCriticalSubmanifold j).negativeNormalSpace
+        hn (g j).toRiemannianMetric))
+  (hdim' : ∀ j, finrank ℝ (P' j) = finrank ℝ E' - finrank ℝ (F j))
+  (g' : letI : ∀ j, FiberBundle (P' j) fun s ↦ (i' j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i' j).normalSpaceFiberBundle hn (hdim' j)
+    letI : ∀ j, VectorBundle ℝ (P' j) fun s ↦ (i' j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i' j).normalSpaceVectorBundle hn (hdim' j)
+    ∀ j, ContMDiffRiemannianMetric (J j) ∞ (P' j) fun s ↦ (i' j).isImmersion.NormalSpace s hn)
+  (hV' : letI : ∀ j, FiberBundle (P' j) fun s ↦ (i' j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i' j).normalSpaceFiberBundle hn (hdim' j)
+    letI : ∀ j, VectorBundle ℝ (P' j) fun s ↦ (i' j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i' j).normalSpaceVectorBundle hn (hdim' j)
+    ∀ j, HasLocalSubbundleFrames (P' j) (Fin (r j))
+      ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+        (g' j).toRiemannianMetric))
+
+/-- **The twisted homology of the pieces is invariant under diffeomorphisms, over every ring.** Let
+`σ : M → M'` be a smooth diffeomorphism and let the family `i'` exhibit `f` as a Morse–Bott
+function, so that the family `i = σ⁻¹ ∘ i'` of the same pieces exhibits `f ∘ σ` as one
+(`TauCeti.IsMorseBottFamily.comp_diffeomorph`). Choose smooth fibre metrics `g` and `g'` on the
+normal bundles of the pieces of `i` and of `i'`, whose negative normal spaces form bundles `ν⁻ j`
+and `ν'⁻ j` of rank `r j`. Then `Hₖ(S j; o(ν⁻ j) ⊗ K) ≅ Hₖ(S j; o(ν'⁻ j) ⊗ K)` for every piece,
+every degree and every ring `K`, `ℤ` included: the homologies with coefficients in the orientation
+local systems of the negative normal bundles, which describe the first page of the critical-band
+spectral sequence over `K`
+(`nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_twistedHomology`),
+are isomorphic for `f ∘ σ` and for `f`, even when the bundles are not orientable. The metrics `g`
+and `g'` need not correspond under `σ`.
+
+The isomorphism is induced by the isomorphism of orientation local systems
+(`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise`) that transports orientations
+along the inverses of the fibrewise isomorphisms
+`TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.negativeNormalSpaceEquivOfComp`
+(`twistedHomologyIsoCompDiffeomorph_hom`). -/
+noncomputable def twistedHomologyIsoCompDiffeomorph (K : Type u) [Ring K] (j : ι) (k : ℕ) :
+    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+    letI : ∀ j, FiberBundle (P' j) fun s ↦ (i' j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i' j).normalSpaceFiberBundle hn (hdim' j)
+    letI : ∀ j, VectorBundle ℝ (P' j) fun s ↦ (i' j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i' j).normalSpaceVectorBundle hn (hdim' j)
+    letI := subbundleTopology (P j) (F' := Fin (r j) → ℝ)
+      (((h.comp_diffeomorph σ hm hn hi).isNondegenerateCriticalSubmanifold j).negativeNormalSpace
+        hn (g j).toRiemannianMetric)
+    letI := (hV j).fiberBundle
+    haveI := (hV j).vectorBundle
+    letI := subbundleTopology (P' j) (F' := Fin (r j) → ℝ)
+      ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g' j).toRiemannianMetric)
+    letI := (hV' j).fiberBundle
+    haveI := (hV' j).vectorBundle
+    twistedHomology (signLocalSystem (Fin (r j) → ℝ)
+        (fun s ↦ ((h.comp_diffeomorph σ hm hn hi).isNondegenerateCriticalSubmanifold
+          j).negativeNormalSpace hn (g j).toRiemannianMetric s) K
+        ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) k ≅
+      twistedHomology (signLocalSystem (Fin (r j) → ℝ)
+        (fun s ↦ (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+          (g' j).toRiemannianMetric s) K
+        ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) k :=
+  letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+    fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+  letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+    fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+  letI : ∀ j, FiberBundle (P' j) fun s ↦ (i' j).isImmersion.NormalSpace s hn :=
+    fun j ↦ (i' j).normalSpaceFiberBundle hn (hdim' j)
+  letI : ∀ j, VectorBundle ℝ (P' j) fun s ↦ (i' j).isImmersion.NormalSpace s hn :=
+    fun j ↦ (i' j).normalSpaceVectorBundle hn (hdim' j)
+  haveI : IsManifold I (∞ + 2) M := .of_le (n := ∞) (by simp)
+  haveI : IsManifold I' (∞ + 2) M' := .of_le (n := ∞) (by simp)
+  haveI : IsManifold (J j) (∞ + 1) (S j) := by
+    simpa using (inferInstance : IsManifold (J j) ∞ (S j))
+  letI := subbundleTopology (P j) (F' := Fin (r j) → ℝ)
+    (((h.comp_diffeomorph σ hm hn hi).isNondegenerateCriticalSubmanifold j).negativeNormalSpace
+      hn (g j).toRiemannianMetric)
+  letI := (hV j).fiberBundle
+  haveI := (hV j).vectorBundle
+  letI := subbundleTopology (P' j) (F' := Fin (r j) → ℝ)
+    ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g' j).toRiemannianMetric)
+  letI := (hV' j).fiberBundle
+  haveI := (hV' j).vectorBundle
+  have hσi : σ ∘ i j = i' j := (hi j).symm
+  have hσ : ContMDiff I I' (∞ + 2) σ :=
+    σ.contMDiff.of_le ((by simp : (∞ : ℕ∞ω) + 2 ≤ ∞).trans hm)
+  have hσs (s : S j) : IsRegularPoint I I' σ (i j s) := isRegularPoint_iff.2
+    (σ.isInvertible_mfderiv (two_pos.trans_le ((by simp : (2 : ℕ∞ω) ≤ ∞).trans hm)).ne').surjective
+  have hf (s : S j) : ContMDiffAt I' 𝓘(ℝ) (∞ + 2) f (i' j s) :=
+    h.contMDiff.contMDiffAt.of_le (by simp)
+  have hr :=
+    (h.isNondegenerateCriticalSubmanifold j).manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _
+      (hV' j)
+  -- `dσ` identifies the negative normal bundles, hence their orientation local systems.
+  asIso (twistedHomologyCoefficientMap (signLocalSystemIsoOfFiberwise K _ _
+    (φ := fun s ↦ (((h.comp_diffeomorph σ hm hn hi).isNondegenerateCriticalSubmanifold
+      j).negativeNormalSpaceEquivOfComp hn hn hσi (h.isNondegenerateCriticalSubmanifold j)
+        (g j).toRiemannianMetric (g' j).toRiemannianMetric ((hσ (i j s)).of_le le_add_self)
+        (hσs s)).toContinuousLinearEquiv.symm)
+    (((h.comp_diffeomorph σ hm hn hi).isNondegenerateCriticalSubmanifold
+      j).continuous_negativeNormalSpaceEquivOfComp_symm hn hn hσi
+        (h.isNondegenerateCriticalSubmanifold j) (by simp) (by simp) hσ hσs hf (hdim j)
+        (hdim' j) (g j) (g' j) hr)).hom k)
+
+/-- The isomorphism `twistedHomologyIsoCompDiffeomorph` is the map of twisted homologies induced by
+the isomorphism of orientation local systems
+(`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise`) that transports orientations
+along the inverses of the fibrewise isomorphisms
+`TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.negativeNormalSpaceEquivOfComp`. -/
+theorem twistedHomologyIsoCompDiffeomorph_hom (K : Type u) [Ring K] (j : ι) (k : ℕ)
+    (hσi : σ ∘ i j = i' j) (hσ : ContMDiff I I' (∞ + 2) σ)
+    (hσs : ∀ s, IsRegularPoint I I' σ (i j s)) (hf : ∀ s, ContMDiffAt I' 𝓘(ℝ) (∞ + 2) f (i' j s))
+    (hr : ∀ s, manifoldMorseIndex I' f (i' j s) = r j) :
+    letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
+    letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
+    letI : ∀ j, FiberBundle (P' j) fun s ↦ (i' j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i' j).normalSpaceFiberBundle hn (hdim' j)
+    letI : ∀ j, VectorBundle ℝ (P' j) fun s ↦ (i' j).isImmersion.NormalSpace s hn :=
+      fun j ↦ (i' j).normalSpaceVectorBundle hn (hdim' j)
+    haveI : IsManifold I (∞ + 2) M := .of_le (n := ∞) (by simp)
+    haveI : IsManifold I' (∞ + 2) M' := .of_le (n := ∞) (by simp)
+    haveI : IsManifold (J j) (∞ + 1) (S j) := by
+      simpa using (inferInstance : IsManifold (J j) ∞ (S j))
+    letI := subbundleTopology (P j) (F' := Fin (r j) → ℝ)
+      (((h.comp_diffeomorph σ hm hn hi).isNondegenerateCriticalSubmanifold j).negativeNormalSpace
+        hn (g j).toRiemannianMetric)
+    letI := (hV j).fiberBundle
+    haveI := (hV j).vectorBundle
+    letI := subbundleTopology (P' j) (F' := Fin (r j) → ℝ)
+      ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g' j).toRiemannianMetric)
+    letI := (hV' j).fiberBundle
+    haveI := (hV' j).vectorBundle
+    (h.twistedHomologyIsoCompDiffeomorph hn σ hm hi hdim g hV hdim' g' hV' K j k).hom =
+      twistedHomologyCoefficientMap (signLocalSystemIsoOfFiberwise K _ _
+        (φ := fun s ↦ (((h.comp_diffeomorph σ hm hn hi).isNondegenerateCriticalSubmanifold
+          j).negativeNormalSpaceEquivOfComp hn hn hσi (h.isNondegenerateCriticalSubmanifold j)
+            (g j).toRiemannianMetric (g' j).toRiemannianMetric ((hσ (i j s)).of_le le_add_self)
+            (hσs s)).toContinuousLinearEquiv.symm)
+        (((h.comp_diffeomorph σ hm hn hi).isNondegenerateCriticalSubmanifold
+          j).continuous_negativeNormalSpaceEquivOfComp_symm hn hn hσi
+            (h.isNondegenerateCriticalSubmanifold j) (by simp) (by simp) hσ hσs hf (hdim j)
+            (hdim' j) (g j) (g' j) hr)).hom k :=
+  (rfl)
+
+/-- **The twisted Betti numbers are invariant under diffeomorphisms.** In the setting of
+`twistedHomologyIsoCompDiffeomorph`, `dim Hₖ(S j; o(ν⁻ j) ⊗ K) = dim Hₖ(S j; o(ν'⁻ j) ⊗ K)` for
+every piece, every degree and every field `K`: the twisted Morse–Bott counts of `f ∘ σ` and of `f`
+agree. The metrics `g` and `g'` need not correspond under `σ`. -/
+theorem twistedBettiNumber_comp_diffeomorph (K : Type u) [Field K] (j : ι) (k : ℕ) :
+    (h.comp_diffeomorph σ hm hn hi).twistedBettiNumber hn hdim g hV K j k =
+      h.twistedBettiNumber hn hdim' g' hV' K j k := by
+  rw [twistedBettiNumber_def, twistedBettiNumber_def]
+  exact (h.twistedHomologyIsoCompDiffeomorph hn σ hm hi hdim g hV hdim' g' hV' K j
+    k).toLinearEquiv.finrank_eq
+
+end TauCeti.IsMorseBottFamily

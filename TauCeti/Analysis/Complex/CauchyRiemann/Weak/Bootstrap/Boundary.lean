@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.Analysis.InnerProductSpace.ProdL2
-import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HalfPlane.HigherOrder
+import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HalfPlane.HigherOrder.Basic
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap.HalfPlane
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Invariance
@@ -63,6 +63,8 @@ axis, and away from it to the interior theorem `TauCeti.memWkpLoc_of_isWeakCauch
   boundary condition is in `W^{ℓ+1,p}_loc` up to the boundary for `C^ℓ` data.
 * `TauCeti.forall_memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane`: for smooth data it is in
   `W^{k,p}_loc` up to the boundary for every `k`, also for `p = ∞`.
+* `TauCeti.contDiffOn_of_isWeakCauchyRiemannOn_halfPlane`: by Morrey's embedding up to the axis,
+  a weak solution is `C^ℓ` up to the boundary for `C^ℓ` data, `ℓ ≤ ∞`.
 * `TauCeti.memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane_prod`: the same bootstrap in the adapted
   coordinates `F × F` of a totally real submanifold, for a finite-dimensional normed space `F`,
   with boundary values on the zero section `F × {0}` and the standard structure
@@ -190,6 +192,33 @@ theorem forall_memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane (hp : 2 < p)
     exact (hfin (q := 3) (by norm_num) (by norm_num) le_top k).memWkpLoc_top_inter_setOf_im_nonneg
       (by norm_num)
   · exact (hfin hp hp' le_rfl k).of_succ
+
+/-- **Regularity of weak solutions up to a totally real boundary.** Under the hypotheses of
+`TauCeti.memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane`, for `2 < p ≤ ∞` and `J` and `η` of class
+`C^ℓ`, `ℓ ≤ ∞`, up to the axis, a weak solution `u` is of class `C^ℓ` on `Ω ∩ {0 ≤ im z}`,
+including at the points of the real axis. This is the boundary counterpart of
+`TauCeti.contDiffOn_of_isWeakCauchyRiemannOn`. -/
+theorem contDiffOn_of_isWeakCauchyRiemannOn_halfPlane (hp : 2 < p) {ℓ : ℕ∞} (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ ℓ (fun x : ℂ × V => J x.1 x.2) (W ∩ {x | 0 ≤ x.1.im}))
+    (hη : ContDiffOn ℝ ℓ (fun x : ℂ × V => η x.1 x.2) (W ∩ {x | 0 ≤ x.1.im}))
+    (huW : ∀ z ∈ (Ω : Set ℂ) ∩ {z | 0 ≤ z.im}, (z, u z) ∈ W)
+    (hJ2 : ∀ᵐ z ∂volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}),
+      J z (u z) * J z (u z) = -1)
+    (hR : Function.Involutive R) (huR : ∀ s : ℝ, (s : ℂ) ∈ Ω → R (u s) = u s)
+    (hJR : ∀ s : ℝ, (s : ℂ) ∈ Ω → ∀ v, R (J s (u s) v) = -J s (u s) (R v))
+    (h : IsWeakCauchyRiemannOn p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) J η u) :
+    ContDiffOn ℝ ℓ u ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) := by
+  -- Pass to the finite exponent `q = min p 3 > 2`.
+  have hq : 2 < min p 3 := lt_min hp (by norm_num)
+  have hq' : min p 3 ≠ ⊤ := ((min_le_right _ _).trans_lt (by norm_num)).ne
+  have hC (n : ℕ) (hn : (n : ℕ∞) ≤ ℓ) : ContDiffOn ℝ n u ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) := by
+    have hnℓ : (n : WithTop ℕ∞) ≤ ℓ := by exact_mod_cast hn
+    exact (memWkpLoc_of_isWeakCauchyRiemannOn_halfPlane (ℓ := n) hq hq' hW (hJ.of_le hnℓ)
+      (hη.of_le hnℓ) huW hJ2 hR huR hJR (h.mono_exponent (min_le_left _ _))
+      ).contDiffOn_of_continuousOn_inter_setOf_im_nonneg hq h.continuousOn
+  induction ℓ using ENat.recTopCoe with
+  | top => exact contDiffOn_infty.2 fun n => hC n le_top
+  | coe n => exact_mod_cast hC n le_rfl
 
 /-! ### Adapted coordinates -/
 

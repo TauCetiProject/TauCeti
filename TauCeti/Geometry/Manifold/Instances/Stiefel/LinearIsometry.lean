@@ -78,6 +78,12 @@ theorem stiefelMap_orthogonalGroup_smul (A : orthogonalGroup (Fin k) ℝ) (v : s
   Subtype.ext <| funext fun j ↦ by
     simp [map_smul, map_sum]
 
+/-- Mapping a frame by a linear isometry commutes with rotating its basis. -/
+@[simp]
+theorem stiefelMap_specialOrthogonalGroup_smul (A : specialOrthogonalGroup (Fin k) ℝ)
+    (v : stiefel E k) : f.stiefelMap k (A • v) = A • f.stiefelMap k v := by
+  simp only [stiefel.specialOrthogonalGroup_smul_def, stiefelMap_orthogonalGroup_smul]
+
 end LinearIsometry
 
 namespace LinearIsometryEquiv
@@ -135,7 +141,7 @@ theorem stiefelHomeomorph_orthogonalGroup_smul (e : E ≃ₗᵢ[ℝ] F) {k : ℕ
 @[simp]
 theorem stiefelHomeomorph_specialOrthogonalGroup_smul (e : E ≃ₗᵢ[ℝ] F) {k : ℕ}
     (A : specialOrthogonalGroup (Fin k) ℝ) (v : stiefel E k) :
-    e.stiefelHomeomorph k (A • v) = A • e.stiefelHomeomorph k v := by
-  simp only [stiefel.specialOrthogonalGroup_smul_def, stiefelHomeomorph_orthogonalGroup_smul]
+    e.stiefelHomeomorph k (A • v) = A • e.stiefelHomeomorph k v :=
+  e.toLinearIsometry.stiefelMap_specialOrthogonalGroup_smul k A v
 
 end LinearIsometryEquiv

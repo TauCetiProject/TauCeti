@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.AbsoluteValue.Equivalence
 public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import Mathlib.Topology.Algebra.Valued.NormedValued
+public import TauCeti.Analysis.AbsoluteValue.Action
 public import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
 public import TauCeti.RingTheory.Valuation.AbsoluteValue
 public import TauCeti.Topology.Algebra.Valued.NormedValued
@@ -54,8 +55,9 @@ explicit argument, as in `AbsoluteValue.nonarchRpow`, rather than an instance.
   most one) and `NormedField.valuationSubring_toAbsoluteValue` (the norm of a nonarchimedean
   normed field, through `NormedField.toValuation_toAbsoluteValue`).
 
-The action of a group on absolute values and the corresponding equivariance of
-`AbsoluteValue.valuationSubring` are not treated here.
+* `AbsoluteValue.valuationSubring_smul`: for a group acting on `K` by ring automorphisms, the
+  valuation subring of `g • w` is the image under `g` of that of `w`, so the stabiliser of `w`
+  stabilises its valuation subring (`AbsoluteValue.stabilizer_le_stabilizer_valuationSubring`).
 
 ## References
 
@@ -186,6 +188,31 @@ theorem LiesOver.valuationSubring_eq_comap {L : Type*} [Field L] [Algebra L K]
     v.valuationSubring hv = (w.valuationSubring hw).comap (algebraMap L K) := by
   obtain rfl := LiesOver.under_eq w v
   exact valuationSubring_under hw
+
+section Action
+
+open scoped Pointwise
+
+variable {G : Type*} [Group G] [MulSemiringAction G K]
+
+/-- **Equivariance of the valuation subring.** The valuation subring of `g • w` is the image under
+`g` of the valuation subring of `w`. -/
+@[simp]
+theorem valuationSubring_smul (g : G) (hw : IsNonarchimedean w) :
+    (g • w).valuationSubring (isNonarchimedean_smul_iff.mpr hw) = g • w.valuationSubring hw := by
+  ext x
+  rw [ValuationSubring.mem_pointwise_smul_iff_inv_smul_mem, mem_valuationSubring_iff,
+    mem_valuationSubring_iff, smul_apply]
+
+/-- The stabiliser of a nonarchimedean absolute value stabilises its valuation subring. The
+converse fails for absolute values in general (an automorphism may move `w` to an equivalent
+absolute value), but holds for places (`AbsoluteValue.Place.stabilizer_valuationSubring`). -/
+theorem stabilizer_le_stabilizer_valuationSubring (hw : IsNonarchimedean w) :
+    MulAction.stabilizer G w ≤ MulAction.stabilizer G (w.valuationSubring hw) := fun g hg ↦ by
+  rw [MulAction.mem_stabilizer_iff, ← valuationSubring_smul]
+  simp_rw [MulAction.mem_stabilizer_iff.mp hg]
+
+end Action
 
 end Field
 

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Instances.Stiefel.FrameAction.Smooth
 public import TauCeti.Geometry.Manifold.Instances.Stiefel.OrientedGrassmannian.Basic
 import TauCeti.Data.Nat.Choose.Basic
 import TauCeti.Geometry.Lie.Subgroup.Unitary.SpecialOrthogonal
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # The smooth oriented Grassmannian
@@ -40,13 +41,15 @@ variable (E) (r : ℕ+)
 
 local notation "SO(" r ")" => specialOrthogonalGroup (Fin r) ℝ
 local notation "𝓢𝓞(" r ")" => specialUnitaryGroup.model (Fin r) ℝ
-local notation "StiefelModel(" E ", " r ")" => Fin (r * finrank ℝ E - Nat.choose (r + 1) 2) → ℝ
+local notation "𝓥(" E ", " r ")" => 𝓘(ℝ, stiefel.Model E r)
 
 /-- The Euclidean model of the oriented Grassmannian, obtained by subtracting the dimension of
 the rotation group from the dimension of the Stiefel manifold. -/
 abbrev Model :=
-  EuclideanSpace ℝ
-    (Fin (finrank ℝ (StiefelModel(E, (r : ℕ))) - finrank ℝ (GroupLieAlgebra 𝓢𝓞(r) (SO(r)))))
+  let quotientModel {V H : Type} [NormedAddCommGroup V] [NormedSpace ℝ V] [TopologicalSpace H]
+      (_ : ModelWithCorners ℝ V H) :=
+    ProperSMul.QuotientModelSpace V (stiefel.Model E r)
+  quotientModel 𝓢𝓞(r)
 
 /-- The quotient model has dimension `r (dim E - r)`. -/
 theorem finrank_model : finrank ℝ (Model E r) = (r : ℕ) * (finrank ℝ E - r) := by
@@ -54,25 +57,33 @@ theorem finrank_model : finrank ℝ (Model E r) = (r : ℕ) * (finrank ℝ E - r
     finrank_specialOrthogonalLieAlgebra
   have h (k : ℕ) : (k + 1).choose 2 + k.choose 2 = k * k := by
     simpa [Nat.add_comm 1 k] using Nat.add_choose_two_add_choose_two 1 k
-  simp only [Model, finrank_euclideanSpace_fin, hSO, Fintype.card_fin, Module.finrank_fin_fun,
+  rw [ProperSMul.finrank_quotientModelSpace,
+    ← finrank_tangentSpace (I := 𝓢𝓞(r)) (1 : SO(r))]
+  simp only [stiefel.Model, hSO, Fintype.card_fin, Module.finrank_fin_fun,
     Nat.sub_sub, h, Nat.mul_sub_left_distrib]
 
 variable [FiniteDimensional ℝ E]
 
 /-- The oriented Grassmannian has the slice charts for the change-of-basis action. -/
 instance instChartedSpace : ChartedSpace (Model E r) (orientedGrassmannian E r) :=
-  ProperSMul.orbitRelQuotientChartedSpace 𝓢𝓞(r) (SO(r)) 𝓘(ℝ, StiefelModel(E, (r : ℕ)))
+  ProperSMul.orbitRelQuotientChartedSpace 𝓢𝓞(r) (SO(r)) 𝓥(E, (r : ℕ))
     (stiefel E r)
 
 /-- The slice atlas makes the oriented Grassmannian a smooth manifold. -/
 instance instIsManifold : IsManifold 𝓘(ℝ, Model E r) ∞ (orientedGrassmannian E r) :=
   ProperSMul.instIsManifoldOrbitRelQuotient
-    (I := 𝓢𝓞(r)) (I' := 𝓘(ℝ, StiefelModel(E, (r : ℕ))))
+    (I := 𝓢𝓞(r)) (I' := 𝓥(E, (r : ℕ)))
 
 /-- The projection from the Stiefel manifold to the oriented Grassmannian is a smooth submersion. -/
 theorem isSubmersion_ofFrame :
-    Manifold.IsSubmersion 𝓘(ℝ, StiefelModel(E, (r : ℕ))) 𝓘(ℝ, Model E r) ∞
+    Manifold.IsSubmersion 𝓥(E, (r : ℕ)) 𝓘(ℝ, Model E r) ∞
       (ofFrame : stiefel E r → orientedGrassmannian E r) := by
   rw [ofFrame_eq_quotientMk]
-  exact ProperSMul.isSubmersion_quotientMk (I := 𝓢𝓞(r)) (I' := 𝓘(ℝ, StiefelModel(E, (r : ℕ))))
+  exact ProperSMul.isSubmersion_quotientMk (I := 𝓢𝓞(r)) (I' := 𝓥(E, (r : ℕ)))
+
+/-- The frame projection is continuously differentiable at every order up to `∞`. -/
+theorem contMDiff_ofFrame {n : ℕ∞ω} (hn : n ≤ ∞) :
+    ContMDiff 𝓥(E, (r : ℕ)) 𝓘(ℝ, Model E r) n (ofFrame : stiefel E r → orientedGrassmannian E r) :=
+  (isSubmersion_ofFrame E r).contMDiff.of_le hn
+
 end TauCeti.orientedGrassmannian
