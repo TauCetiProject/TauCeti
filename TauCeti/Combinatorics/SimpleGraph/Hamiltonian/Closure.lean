@@ -42,7 +42,7 @@ and Dirac follow, because under their degree conditions the closure is the compl
 ## References
 
 * J. A. Bondy and U. S. R. Murty, *Graph Theory with Applications*, North-Holland, 1976,
-  Section 4.4.
+  Section 4.2, Lemma 4.4.2, Theorem 4.4 and Corollary 4.4, pp. 56-57.
 * J. A. Bondy and V. Chvátal, *A method in graph theory*, Discrete Math. 15 (1976).
 * O. Ore, *Note on Hamilton circuits*, Amer. Math. Monthly 67 (1960).
 * G. A. Dirac, *Some theorems on abstract graphs*, Proc. London Math. Soc. 2 (1952).
@@ -78,19 +78,23 @@ itself degree-closed. -/
 def degreeClosure (G : SimpleGraph V) : SimpleGraph V :=
   sInf {H | G ≤ H ∧ IsDegreeClosed H}
 
+/-- The infimum of a set of degree-closed graphs is degree-closed. -/
+theorem isDegreeClosed_sInf {s : Set (SimpleGraph V)} (hs : ∀ H ∈ s, IsDegreeClosed H) :
+    IsDegreeClosed (sInf s) := by
+  classical
+  intro u v huv hK
+  -- Some `H ∈ s` does not join `u` and `v`; its degrees bound those of the infimum.
+  obtain ⟨H, hHs, hHuv⟩ : ∃ H ∈ s, ¬H.Adj u v := by
+    simpa [sInf_adj, huv] using hK
+  have hu := degree_le_of_le (v := u) (sInf_le hHs)
+  have hv := degree_le_of_le (v := v) (sInf_le hHs)
+  have := hs H hHs u v huv hHuv
+  omega
+
 /-- The closure is the least degree-closed graph that contains `G`. -/
 theorem isLeast_degreeClosure (G : SimpleGraph V) :
-    IsLeast {H | G ≤ H ∧ IsDegreeClosed H} (degreeClosure G) := by
-  classical
-  refine ⟨⟨le_sInf fun H hH ↦ hH.1, fun u v huv hK ↦ ?_⟩, fun H hH ↦ sInf_le hH⟩
-  -- Some degree-closed `H ≥ G` does not join `u` and `v`; its degrees bound those of the closure.
-  obtain ⟨H, hGH, hH, hHuv⟩ : ∃ H, G ≤ H ∧ IsDegreeClosed H ∧ ¬H.Adj u v := by
-    simpa [degreeClosure, sInf_adj, huv] using hK
-  have hle : degreeClosure G ≤ H := sInf_le ⟨hGH, hH⟩
-  have hu := degree_le_of_le (v := u) hle
-  have hv := degree_le_of_le (v := v) hle
-  have := hH u v huv hHuv
-  omega
+    IsLeast {H | G ≤ H ∧ IsDegreeClosed H} (degreeClosure G) :=
+  ⟨⟨le_sInf fun _ hH ↦ hH.1, isDegreeClosed_sInf fun _ hH ↦ hH.2⟩, fun _ hH ↦ sInf_le hH⟩
 
 /-- The closure contains the graph. -/
 theorem le_degreeClosure (G : SimpleGraph V) : G ≤ degreeClosure G :=
@@ -106,17 +110,25 @@ theorem degreeClosure_le {G H : SimpleGraph V} (hGH : G ≤ H) (hH : IsDegreeClo
     degreeClosure G ≤ H :=
   (isLeast_degreeClosure G).2 ⟨hGH, hH⟩
 
+/-- The closure is monotone. -/
+theorem degreeClosure_mono {G G' : SimpleGraph V} (h : G ≤ G') :
+    degreeClosure G ≤ degreeClosure G' :=
+  degreeClosure_le (h.trans (le_degreeClosure G')) (isDegreeClosed_degreeClosure G')
+
 /-- A graph is its own closure if and only if it is degree-closed. -/
 theorem degreeClosure_eq_self_iff {G : SimpleGraph V} : degreeClosure G = G ↔ IsDegreeClosed G :=
   ⟨fun h ↦ h ▸ isDegreeClosed_degreeClosure G,
     fun h ↦ (degreeClosure_le le_rfl h).antisymm (le_degreeClosure G)⟩
 
 open Classical in
-/-- Each graph reached from `G` by one-edge additions contains `G` and lies below the closure. -/
-private theorem le_and_le_degreeClosure_of_reflTransGen {G K : SimpleGraph V}
+/-- A degree-closed graph reached from `G` by one-edge additions is the closure of `G`. -/
+private theorem eq_degreeClosure_of_reflTransGen {G K : SimpleGraph V}
     (hK : Relation.ReflTransGen (fun K K' : SimpleGraph V ↦ ∃ u v, u ≠ v ∧ ¬K.Adj u v ∧
-      Fintype.card V ≤ K.degree u + K.degree v ∧ K' = K ⊔ edge u v) G K) :
-    G ≤ K ∧ K ≤ degreeClosure G := by
+      Fintype.card V ≤ K.degree u + K.degree v ∧ K' = K ⊔ edge u v) G K)
+    (hKc : IsDegreeClosed K) : K = degreeClosure G := by
+  -- Each graph on the way contains `G` and lies below the closure.
+  suffices h : G ≤ K ∧ K ≤ degreeClosure G from h.2.antisymm (degreeClosure_le h.1 hKc)
+  clear hKc
   induction hK with
   | refl => exact ⟨le_rfl, le_degreeClosure G⟩
   | tail _ hstep ih =>
@@ -152,16 +164,10 @@ theorem eq_degreeClosure_iff_reflTransGen (G H : SimpleGraph V) :
     H = degreeClosure G ↔ IsDegreeClosed H ∧ Relation.ReflTransGen
       (fun K K' : SimpleGraph V ↦ ∃ u v, u ≠ v ∧ ¬K.Adj u v ∧
         Fintype.card V ≤ K.degree u + K.degree v ∧ K' = K ⊔ edge u v) G H := by
-  have key : ∀ H, IsDegreeClosed H → Relation.ReflTransGen
-      (fun K K' : SimpleGraph V ↦ ∃ u v, u ≠ v ∧ ¬K.Adj u v ∧
-        Fintype.card V ≤ K.degree u + K.degree v ∧ K' = K ⊔ edge u v) G H →
-      H = degreeClosure G := fun H hH hc ↦
-    have h := le_and_le_degreeClosure_of_reflTransGen hc
-    h.2.antisymm (degreeClosure_le h.1 hH)
-  refine ⟨?_, fun h ↦ key H h.1 h.2⟩
+  refine ⟨?_, fun h ↦ eq_degreeClosure_of_reflTransGen h.2 h.1⟩
   rintro rfl
   obtain ⟨H, hH, hc⟩ := exists_isDegreeClosed_reflTransGen G
-  exact key H hH hc ▸ ⟨hH, hc⟩
+  exact eq_degreeClosure_of_reflTransGen hc hH ▸ ⟨hH, hc⟩
 
 section Hamiltonian
 
