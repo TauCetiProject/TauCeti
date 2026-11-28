@@ -16,10 +16,12 @@ determinants completed by auxiliary vectors. It uses the same index budget for t
 opposite prime-adic embeddings and the pairing bound
 `PrimePadicIso.heightLe_scaled_det_gram`.
 
-The estimate is the finite-place step of `New.TwistedLattice.covolume_add_index_nonneg`
-in `New/Reduction/Lattices/TwistedLattice.lean` of [lsernau/grh-lean][short-proof] (Apache 2.0).
+The estimate adapts `New.TwistedLattice.heightLe_pow_mul_det_gram` from
+[TwistedLattice.lean in lsernau/grh-lean][short-proof] (Apache 2.0), the finite-place step of
+`New.TwistedLattice.covolume_add_index_nonneg`.
 
-[short-proof]: https://github.com/lsernau/grh-lean/tree/72fead1/grh
+[short-proof]:
+https://github.com/lsernau/grh-lean/blob/72fead1/grh/src/New/Reduction/Lattices/TwistedLattice.lean
 -/
 
 public section
@@ -29,11 +31,12 @@ open scoped InnerProductSpace
 
 namespace TauCeti.PrimePadicIso
 
-/-- For a family `y` of index at most `δ`, append auxiliary vectors `z` and map the completed
-family by the local lift `f`. If the pairings of vectors integral at opposite embeddings are
-integral, and scaling the auxiliary vectors by `γ` makes them integral on both sides, then the
-scaled Gram determinants have height at most `2 * δ`. The left index witness is read at the
-embedding obtained by precomposing `ι` with complex conjugation. -/
+/-- Suppose `y` has index at most `δ` relative to the submodules `L`. For each embedding `ι`,
+let `L₁ ι` contain the index submodule at the embedding obtained by precomposing `ι` with
+complex conjugation, and let `L₂ ι` contain `L ι`. Suppose both sets contain every scaled
+auxiliary vector `γ ι • z j`, and the pairing of `f ι u` with `f ι v` is integral at `ι` for
+every `u ∈ L₁ ι` and `v ∈ L₂ ι`. Then the scaled Gram determinants of the lifted family
+completed by `z` have height at most `2 * δ`. -/
 theorem IndexLe.heightLe_scaled_det_gram {V I J : Type*} [AddCommMonoid V] [Module ℂ V]
     [Fintype I] [DecidableEq I] [Fintype J] [DecidableEq J]
     {E : PrimePadicIso → Type*} [∀ ι, SeminormedAddCommGroup (E ι)]
@@ -58,7 +61,9 @@ theorem IndexLe.heightLe_scaled_det_gram {V I J : Type*} [AddCommMonoid V] [Modu
       (D.map η.integers.subtype).det = (D.det : ℂ) :=
     (RingHom.map_det η.integers.subtype D).symm
   refine ⟨A.map κ.integers.subtype, B.map ι.integers.subtype, ?_, ?_, ?_⟩
-  · have hκ (w : ℂ) : ‖κ.iso w‖ = ‖ι.iso (star w)‖ := (rfl)
+  · have hκ (w : ℂ) : ‖κ.iso w‖ = ‖ι.iso (star w)‖ := by
+      simp only [κ, RingEquiv.trans_apply, AlgEquiv.coe_toRingEquiv, Complex.conjAe_coe,
+        Complex.star_def]
     have hprime : κ.prime = ι.prime := (rfl)
     simpa only [hdet κ A, hκ, hprime] using hA
   · simpa only [hdet ι B] using hB
