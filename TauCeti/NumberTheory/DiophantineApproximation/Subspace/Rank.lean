@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Span
+public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Volume
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SuccessiveMinima
 
 import TauCeti.Algebra.Order.BigOperators.Min
+import TauCeti.NumberTheory.DiophantineApproximation.Subspace.SuccessiveMinima
 
 /-!
 # The rank of an approximation domain
@@ -21,7 +23,9 @@ spans of domains use the geometry of their successive minima without choosing a 
 Equivalently, below the ambient dimension a successive minimum is at most one exactly when its
 index is below the rank (`TauCeti.NumberField.successiveMinimum_approx_le_one_iff`); these minima
 are positive (`TauCeti.NumberField.successiveMinimum_approx_pos`) and nondecreasing
-(`TauCeti.NumberField.monotoneOn_successiveMinimum_approx`).
+(`TauCeti.NumberField.monotoneOn_successiveMinimum_approx`). Combining monotonicity with
+`le_prod_successiveMinimum_approx` bounds the last minimum from below
+(`TauCeti.NumberField.exists_pos_mul_rpow_le_last_successiveMinimum_pow`).
 
 The threshold is non-strict: vectors on the boundary of the closed approximation body belong
 to the domain. Only indices below the ambient dimension are counted, since later successive
@@ -155,6 +159,34 @@ theorem approxSpan_eq_span_image {S₀ : Finset (FinitePlace K)}
   rw [← hcoe] at hxB
   rw [hspan]
   exact Submodule.span_setOf_mem_eq_span_image hB (t := (1 : ℝ)) zero_lt_one hx hxΛ hxB
+
+/-- The largest successive minimum, raised to the real dimension, bounds the inverse
+weight factor in Minkowski's second theorem (Bombieri–Gubler, Theorem C.2.11). The positive
+constant is uniform in the exponents and the positive level. -/
+theorem exists_pos_mul_rpow_le_last_successiveMinimum_pow {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) :
+    ∃ A : ℝ, 0 < A ∧ ∀ (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}, 0 < Q →
+      A * Q ^ (-approxWeight S₀ c) ≤
+        (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
+          (Fintype.card ι - 1) ^ (finrank ℚ K * Fintype.card ι) := by
+  have := approxConst_pos hLinf hLfin
+  have := zero_lt_one.trans_le (one_le_integralBasisHouse (K := K))
+  refine ⟨_, by positivity, fun c Q hQ ↦
+    (le_prod_successiveMinimum_approx hLinf hLfin c hQ).trans ?_⟩
+  set μ := (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
+  set N := Fintype.card ι
+  have hbound (l : Fin N) : μ l ≤ μ (N - 1) := by
+    have hl : (l : ℕ) < N := l.isLt
+    have hlast : N - 1 ∈ Set.Iio N := Nat.sub_lt (Nat.zero_lt_of_lt hl) Nat.one_pos
+    have hle : (l : ℕ) ≤ N - 1 := Nat.le_sub_one_of_lt hl
+    exact monotoneOn_successiveMinimum_approx hLinf hLfin c hQ hl hlast hle
+  calc
+    (∏ l : Fin N, μ l ^ finrank ℚ K) ≤ ∏ _ : Fin N, μ (N - 1) ^ finrank ℚ K :=
+      Finset.prod_le_prod₀ (fun _ _ ↦ pow_nonneg (Submodule.successiveMinimum_nonneg _ _ _) _)
+        (fun l _ ↦ pow_le_pow_left₀ (Submodule.successiveMinimum_nonneg _ _ _) (hbound l) _)
+    _ = _ := by rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin, pow_mul]
 
 /-- **A jump among the successive minima beyond the rank** (Bombieri–Gubler (7.41)). Let the
 approximation domain at a positive level span a nonzero proper subspace, of rank `R`, and let

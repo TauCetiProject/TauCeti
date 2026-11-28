@@ -44,6 +44,11 @@ has rank exactly `M - 1`.
 
 ## Main results
 
+* `TauCeti.NumberField.exists_pos_mul_approxWeight_wedgeExponent_le`: a quantitative upper
+  bound on the wedge weight after a large jump, using `rpow_approxWeight_wedgeExponent_le`
+  and the Minkowski lower bound on the last minimum.
+* `TauCeti.NumberField.eventually_approxWeight_wedgeExponent_le`: a uniform negative margin
+  for the wedge weight when the original weight is bounded away from zero.
 * `TauCeti.NumberField.exists_successiveMinimum_wedge`: Lemma 7.5.31, the successive minima of
   the wedge domain.
 * `TauCeti.NumberField.exists_successiveMinimum_wedge_pow`: Lemma 7.5.31 combined with (7.41).
@@ -88,6 +93,120 @@ private theorem exists_pos_rpow_approxWeight_wedgeExponent_le {S₀ : Finset (Fi
       exact_mod_cast (HeightOneSpectrum.one_lt_absNorm v.maximalIdeal).pos) _
   exact ⟨_, by positivity, fun c Q hQ hQ₁ σ ↦
     rpow_approxWeight_wedgeExponent_le hLinf hLfin c hp hkp σ hC hQ hQ₁⟩
+
+/-- A large jump between successive minima forces a weight gap for the wedge exponents
+(Bombieri–Gubler, 7.5.30–7.5.32). For `N = card ι`, the wedge weight multiplied by `N²` is
+bounded above by the original weight plus `logb Q D`. For nonzero wedge constant, `D > 0`
+is independent of the exponents, the level, the jump index and the bijections. The jump bound
+follows from `exists_div_pow_le_inv`, since its power and ratio are at most `card ι` and `1`,
+respectively. -/
+theorem exists_pos_mul_approxWeight_wedgeExponent_le {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) {C : ℝ} (hC : C ≠ 0) :
+    ∃ D : ℝ, 0 < D ∧ ∀ (c : AbsoluteValue K ℝ → ι → ℝ) {Q : ℝ}, 1 < Q →
+      ∀ {k p : ℕ}, 0 < p → k + p = Fintype.card ι →
+      ∀ σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι,
+        ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) (k - 1) /
+          (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) k) ^ Fintype.card ι ≤
+          ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
+            (Fintype.card ι - 1))⁻¹ →
+        (Fintype.card ι : ℝ) ^ 2 * approxWeight S₀ (wedgeExponent c p k σ
+          ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) ≤
+          approxWeight S₀ c + Real.logb Q D := by
+  let N := Fintype.card ι
+  let d := finrank ℚ K
+  obtain ⟨A, hA, hlast⟩ := exists_pos_mul_rpow_le_last_successiveMinimum_pow hLinf hLfin
+  let B (p : ℕ) : ℝ :=
+    ((2 : ℝ) ^ (d * N) * (∏ v ∈ S₀, (v.maximalIdeal.asIdeal.absNorm : ℝ) ^ N) /
+      approxConst S₀ L) ^ (N - 1).choose (p - 1) * |C| ^ (N.choose p * d)
+  let U := max 1 ((range (N + 1)).sup' nonempty_range_add_one B)
+  have hU : 0 < U := lt_max_of_lt_left one_pos
+  refine ⟨U ^ (N ^ 2) / A, by positivity, fun c Q hQ k p hp hkp σ hjump ↦ ?_⟩
+  set μ := (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
+  set r := μ (k - 1) / μ k
+  set w := approxWeight S₀ c
+  set W := approxWeight S₀ (wedgeExponent c p k σ μ C Q)
+  have hQ₀ : 0 < Q := zero_lt_one.trans hQ
+  have hμ (l : ℕ) (hl : l < N) : 0 < μ l := successiveMinimum_approx_pos hLinf hLfin c hQ₀ hl
+  have hr : 0 < r := div_pos (hμ _ (by omega)) (hμ _ (by omega))
+  have h₁ : Real.logb Q A - w ≤ ((d * N : ℕ) : ℝ) * Real.logb Q (μ (N - 1)) := by
+    have h := Real.logb_le_logb_of_le hQ (mul_pos hA (Real.rpow_pos_of_pos hQ₀ _))
+      (hlast c hQ₀)
+    rwa [Real.logb_mul hA.ne' (Real.rpow_pos_of_pos hQ₀ _).ne',
+      Real.logb_rpow hQ₀ hQ.ne', Real.logb_pow, ← sub_eq_add_neg] at h
+  have h₂ : W ≤ Real.logb Q U + d * Real.logb Q r := by
+    have hBU : B p ≤ U :=
+      (le_sup' B (mem_range.2 (by omega))).trans (le_max_right _ _)
+    have h : Q ^ W ≤ B p * r ^ d := by
+      simpa only [wedgeExponent_abs] using
+        rpow_approxWeight_wedgeExponent_le hLinf hLfin c hp hkp σ (abs_pos.2 hC) hQ₀ hQ.ne'
+    have h' := h.trans (mul_le_mul_of_nonneg_right hBU (pow_nonneg hr.le d))
+    rw [← Real.logb_pow, ← Real.logb_mul hU.ne' (pow_ne_zero _ hr.ne')]
+    exact (Real.le_logb_iff_rpow_le hQ (mul_pos hU (pow_pos hr _))).2 h'
+  have h₃ : (N : ℝ) * Real.logb Q r ≤ -Real.logb Q (μ (N - 1)) := by
+    have h := Real.logb_le_logb_of_le hQ (pow_pos hr _) hjump
+    rwa [Real.logb_pow, Real.logb_inv] at h
+  have h₄ : (N : ℝ) ^ 2 * W ≤ w + (N : ℝ) ^ 2 * Real.logb Q U - Real.logb Q A := by
+    calc
+      (N : ℝ) ^ 2 * W ≤ (N : ℝ) ^ 2 * (Real.logb Q U + d * Real.logb Q r) := by gcongr
+      _ = (N : ℝ) ^ 2 * Real.logb Q U + ((d * N : ℕ) : ℝ) * (N * Real.logb Q r) := by
+        push_cast
+        ring
+      _ ≤ (N : ℝ) ^ 2 * Real.logb Q U - ((d * N : ℕ) : ℝ) * Real.logb Q (μ (N - 1)) := by
+        rw [sub_eq_add_neg, ← mul_neg]
+        gcongr
+      _ ≤ _ := by linarith
+  rw [Real.logb_div (pow_ne_zero _ hU.ne') hA.ne', Real.logb_pow]
+  push_cast
+  linarith
+
+/-- Beyond a level uniform in the exponents and bijections, a sufficiently large jump yields
+wedge weight at most `-ε / (2 * (card ι)^2)` when the original weight is at most `-ε`.
+This margin allows an upward perturbation of the wedge exponents while keeping negative weight
+(Bombieri–Gubler, 7.5.30–7.5.32). -/
+theorem eventually_approxWeight_wedgeExponent_le {S₀ : Finset (FinitePlace K)}
+    {L : AbsoluteValue K ℝ → ι → Dual K (ι → K)}
+    (hLinf : ∀ v : InfinitePlace K, LinearIndependent K (L v.val))
+    (hLfin : ∀ v ∈ S₀, LinearIndependent K (L v.val)) (C : ℝ) {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ Q : ℝ in Filter.atTop,
+      ∀ (c : AbsoluteValue K ℝ → ι → ℝ), approxWeight S₀ c ≤ -ε →
+      ∀ {k p : ℕ}, 0 < p → k + p = Fintype.card ι →
+      ∀ σ : AbsoluteValue K ℝ → Fin (Fintype.card ι) ≃ ι,
+        ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) (k - 1) /
+          (approxModule S₀ L c Q).successiveMinimum (approxBody L c Q) k) ^ Fintype.card ι ≤
+          ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)
+            (Fintype.card ι - 1))⁻¹ →
+        approxWeight S₀ (wedgeExponent c p k σ
+          ((approxModule S₀ L c Q).successiveMinimum (approxBody L c Q)) C Q) ≤
+          -ε / (2 * (Fintype.card ι : ℝ) ^ 2) := by
+  by_cases hC : C = 0
+  · subst C
+    apply Filter.Eventually.of_forall
+    intro Q c hc k p hp hkp σ _
+    rw [approxWeight_wedgeExponent_zero hp]
+    have he : 1 ≤ (Fintype.card ι - 1).choose (p - 1) :=
+      Nat.choose_pos (by omega)
+    have hN : 1 ≤ Fintype.card ι := by omega
+    have he' : (1 : ℝ) ≤ ((Fintype.card ι - 1).choose (p - 1) : ℝ) := Nat.one_le_cast.mpr he
+    have hN' : (1 : ℝ) ≤ Fintype.card ι := Nat.one_le_cast.mpr hN
+    have hdenom : (1 : ℝ) ≤ 2 * (Fintype.card ι : ℝ) ^ 2 := by nlinarith
+    have hw := mul_le_mul_of_nonpos_right he' (hc.trans (neg_nonpos.mpr hε.le))
+    apply (le_div_iff₀ (zero_lt_one.trans_le hdenom)).2
+    nlinarith only [hw, hc, hdenom, hε]
+  obtain ⟨D, -, hD⟩ := exists_pos_mul_approxWeight_wedgeExponent_le hLinf hLfin hC
+  filter_upwards [Filter.eventually_gt_atTop (1 : ℝ),
+    Real.tendsto_log_atTop.eventually_ge_atTop (2 * Real.log D / ε)]
+    with Q hQ hlog c hc k p hp hkp σ hjump
+  have hlogb : Real.logb Q D ≤ ε / 2 := by
+    rw [← Real.log_div_log, div_le_iff₀ (Real.log_pos hQ)]
+    have h := (div_le_iff₀ hε).1 hlog
+    linarith
+  have hcard : 0 < Fintype.card ι := by omega
+  have hN : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.mpr hcard
+  have h := hD c hQ hp hkp σ hjump
+  apply (le_div_iff₀ (mul_pos (by norm_num) (pow_pos hN 2))).2
+  nlinarith only [h, hc, hlogb]
 
 variable [LinearOrder ι]
 

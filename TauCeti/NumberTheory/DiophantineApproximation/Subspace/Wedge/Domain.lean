@@ -61,6 +61,8 @@ large jump between consecutive minima makes the wedge domain small.
   corrected minimal vectors lie in the wedge domain.
 * `TauCeti.NumberField.approxWeight_wedgeExponent` and
   `TauCeti.NumberField.rpow_approxWeight_wedgeExponent`: the exact weight of the wedge domain.
+* `TauCeti.NumberField.wedgeExponent_abs` and `TauCeti.NumberField.approxWeight_wedgeExponent_zero`:
+  the sign of the wedge constant does not matter, and a zero constant removes the correction.
 * `TauCeti.NumberField.rpow_approxWeight_wedgeExponent_le`: for the successive minima, the
   wedge domain has weight at most a constant times `(μ (k - 1) / μ k) ^ [K : ℚ]`.
 
@@ -117,6 +119,15 @@ theorem wedgeExponent_of_not_isNonarchimedean (hv : ¬IsNonarchimedean v)
       Real.logb Q (C * ((if ∀ t ∈ (T : Finset ι), k ≤ ((σ v).symm t : ℕ) then μ (k - 1) / μ k
         else 1) * ∏ t ∈ (T : Finset ι), μ ((σ v).symm t))) := by
   simp [wedgeExponent, hv]
+
+/-- Taking the absolute value of the wedge constant does not change the exponents. -/
+@[simp]
+theorem wedgeExponent_abs : wedgeExponent c p k σ μ |C| Q = wedgeExponent c p k σ μ C Q := by
+  funext v T
+  by_cases hv : IsNonarchimedean v
+  · simp only [wedgeExponent_of_isNonarchimedean hv]
+  · simp only [wedgeExponent_of_not_isNonarchimedean hv, ← Real.logb_abs Q (C * _),
+      abs_mul, ← Real.logb_abs Q (|C| * _), abs_abs]
 
 /-- The product of the minima attached to a nonempty set of forms, with the gain on the top
 block, is positive when the first `card ι` minima are. -/
@@ -358,6 +369,22 @@ theorem approxWeight_wedgeExponent (S₀ : Finset (FinitePlace K)) (c : Absolute
     ring
   rw [← InfinitePlace.sum_mult_eq, Nat.cast_sum]
   exact key _ _ (fun v ↦ (v.mult : ℝ)) (fun v ↦ ∑ i, c v.val i) fun v ↦ ∑ i, c v.val i
+
+/-- With zero wedge constant, the weight is the original weight times the number of
+`p`-subsets containing each index. No condition on the minima is needed. -/
+@[simp]
+theorem approxWeight_wedgeExponent_zero {S₀ : Finset (FinitePlace K)} (hp : 0 < p) :
+    approxWeight S₀ (wedgeExponent c p k σ μ 0 Q) =
+      (Fintype.card ι - 1).choose (p - 1) * approxWeight S₀ c := by
+  have h (v : InfinitePlace K) :
+      ∑ T : Set.powersetCard ι p, wedgeExponent c p k σ μ 0 Q v.val T =
+        (Fintype.card ι - 1).choose (p - 1) * ∑ i, c v.val i := by
+    simp_rw [wedgeExponent_of_not_isNonarchimedean v.not_isNonarchimedean, zero_mul,
+      Real.logb_zero, add_zero]
+    rw [Set.powersetCard.sum_sum hp, nsmul_eq_mul]
+  simp only [approxWeight_def]
+  simp_rw [h, sum_wedgeExponent_of_isNonarchimedean (FinitePlace.add_le _) hp,
+    mul_left_comm (_ : ℝ) ((Fintype.card ι - 1).choose (p - 1) : ℝ), ← mul_sum, mul_add]
 
 /-- **The weight of the wedge domain, multiplicatively** (Bombieri–Gubler 7.5.30). For
 `0 < Q ≠ 1`, `0 < p`, `k + p = card ι`, positive minima `μ l`, `l < card ι`, and `0 < C`,
