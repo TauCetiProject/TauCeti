@@ -62,6 +62,8 @@ nilpotent does not change the Fredholm series.
   `dim M_(≤h) = N_h`.
 * `ContinuousLinearMap.IsPrCompact.range_le_range_of_le`: the finite-slope summands increase with
   the cutoff.
+* `ContinuousLinearMap.IsPrCompact.exists_isRieszColemanProjection_of_isCoprime_mul_eq`: a coprime
+  factor of the polynomial in an entire preparation cuts out a summand of dimension its degree.
 * `ContinuousLinearMap.IsPrCompact.exists_isRieszColemanProjection_pureSlope`: the summand of a
   single slope `σ ≤ h`, of dimension its multiplicity, inside the finite-slope summand at `h`.
 * `ContinuousLinearMap.IsPrCompact.isEntirePreparation_of_split`: a slope-separated invariant
@@ -123,6 +125,24 @@ variable {K M : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Comple
   (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
   (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀))
   [SeminormedAddCommGroup M] [Module K M] [IsBoundedSMul K M] {u : M →L[K] M}
+
+/-- If the polynomial factor of a normalised Fredholm preparation is the coprime product
+`g * a`, the projection for `g` has range of dimension `g.natDegree`. -/
+theorem IsPrCompact.exists_isRieszColemanProjection_of_isCoprime_mul_eq (hu : u.IsPrCompact)
+    {c : ℝ} (hc : 0 < c) {N : ℕ} {Q g a : K[X]} {S : K⟦X⟧}
+    (hQS : IsEntirePreparation c N u.charPowerSeries Q S)
+    (hN : IsMulDistinguished c N u.charPowerSeries) (hga : IsCoprime g a) (hprod : g * a = Q) :
+    ∃ E : M →L[K] M, IsRieszColemanProjection u g E ∧ Module.finrank K E.range = g.natDegree := by
+  have hg : g ≠ 0 := by
+    intro hz
+    exact hQS.coe_ne_zero (by simp [← hprod, hz])
+  have haS : ((a : K⟦X⟧) * S).IsEntire := (PowerSeries.isEntire_coe a).mul hQS.isEntire
+  have hH : u.charPowerSeries = (g : K⟦X⟧) * ((a : K⟦X⟧) * S) := by
+    rw [hQS.eq_mul, ← hprod, Polynomial.coe_mul, mul_assoc]
+  have hcop := hQS.isCoprime_of_isCoprime_mul_eq hN hc hga hprod
+  obtain ⟨E, hE⟩ := hu.exists_isRieszColemanProjection
+    (isUnit_iff_ne_zero.mpr (leadingCoeff_ne_zero.mpr hg)) haS hH hcop
+  exact ⟨E, hE, hE.finrank_range_of_isPrCompact hu haS hH hcop⟩
 
 include hb hv
 
@@ -206,16 +226,11 @@ theorem IsPrCompact.exists_isRieszColemanProjection_pureSlope (hu : u.IsPrCompac
     rw [hg.natDegree_apply (fun _ ↦ v.top_iff.mp), ← Polynomial.newtonSlopeMultiplicity_coe,
       hQS.newtonSlopeMultiplicity_left v hb hv hN.toIsDistinguished]
     simp [hσh]
-  have hlc : IsUnit (g σ).leadingCoeff :=
-    isUnit_iff_ne_zero.mpr (leadingCoeff_ne_zero.mpr (hg.apply_ne_zero σ))
-  have hcS : ((c : K⟦X⟧) * S).IsEntire := (PowerSeries.isEntire_coe c).mul hQS.isEntire
-  have hH : u.charPowerSeries = (g σ : K⟦X⟧) * ((c : K⟦X⟧) * S) := by
-    rw [hQS.eq_mul, ← hgcQ, Polynomial.coe_mul, mul_assoc]
-  have hcop := hQS.isCoprime_of_isCoprime_mul_eq hN hc hgc hgcQ
-  obtain ⟨E, hE⟩ := hu.exists_isRieszColemanProjection hlc hcS hH hcop
-  refine ⟨g σ, E, hg.coeff_zero σ, hg.newtonSlopes_eq σ, hdeg, ⟨c, hgcQ.symm⟩, hE, ?_,
-    fun E' hE' ↦ hE.range_le_range_of_dvd hE' hlc ⟨c, hgcQ.symm⟩⟩
-  rw [hE.finrank_range_of_isPrCompact hu hcS hH hcop, hdeg]
+  obtain ⟨E, hE, hdim⟩ :=
+    hu.exists_isRieszColemanProjection_of_isCoprime_mul_eq hc hQS hN hgc hgcQ
+  exact ⟨g σ, E, hg.coeff_zero σ, hg.newtonSlopes_eq σ, hdeg, ⟨c, hgcQ.symm⟩, hE, hdim.trans hdeg,
+    fun E' hE' ↦ hE.range_le_range_of_dvd hE'
+      (isUnit_iff_ne_zero.mpr (leadingCoeff_ne_zero.mpr (hg.apply_ne_zero σ))) ⟨c, hgcQ.symm⟩⟩
 
 section Summand
 
