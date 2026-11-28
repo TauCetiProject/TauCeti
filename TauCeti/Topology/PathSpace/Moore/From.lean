@@ -153,6 +153,11 @@ def endpoint : C(MoorePathFrom X b, X) :=
 theorem endpoint_apply (γ : MoorePathFrom X b) : endpoint X b γ = γ.toMoorePath.target :=
   (rfl)
 
+/-- The constant path of length zero at `b` ends at `b`. -/
+@[simp]
+theorem endpoint_refl : endpoint X b (refl X b) = b := by
+  rw [endpoint_apply, toMoorePath_refl, MoorePath.target_refl]
+
 /-- Concatenating a loop in front does not move the end point. -/
 @[simp]
 theorem endpoint_leftAct (ω : MooreLoopSpace X b) (γ : MoorePathFrom X b) :

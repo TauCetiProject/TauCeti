@@ -27,8 +27,10 @@ the two points of `S⁰`.
   unit cube onto the complement of the pole.
 * `TauCeti.sphereCWComplex h`: the CW structure, which is finite
   (`TauCeti.finite_sphereCWComplex`) with one cell in dimension `0` and one in dimension `n`
-  (`TauCeti.nat_card_cell_sphereCWComplex`); for `1 ≤ k ≤ n`, `skeletonLT k` (the
-  `(k - 1)`-skeleton) is the pole (`TauCeti.skeletonLT_sphereCWComplex`).
+  (`TauCeti.nat_card_cell_sphereCWComplex`), unique for `n ≠ 0`
+  (`TauCeti.uniqueCellZeroSphereCWComplex`, `TauCeti.uniqueCellSphereCWComplex`); for
+  `1 ≤ k ≤ n`, `skeletonLT k` (the `(k - 1)`-skeleton) is the pole
+  (`TauCeti.skeletonLT_sphereCWComplex`).
 * `TauCeti.finiteCWType_sphere`: the unit sphere of every finite-dimensional real normed space has
   finite CW type.
 * `TauCeti.finiteCWType_onePoint`: so has the one-point compactification of every
@@ -299,6 +301,26 @@ theorem isEmpty_cell_sphereCWComplex {m : ℕ} (hm : n + 1 ≤ m) :
     letI := sphereCWComplex h
     IsEmpty (cell (sphere (0 : EuclideanSpace ℝ ι) 1) m) :=
   isEmpty_sphereCell hm
+
+/-- For `n ≠ 0`, the CW structure on `Sⁿ` has a unique `0`-cell, the pole. -/
+@[instance_reducible]
+def uniqueCellZeroSphereCWComplex (hn : n ≠ 0) :
+    letI := sphereCWComplex h
+    Unique (cell (sphere (0 : EuclideanSpace ℝ ι) 1) 0) :=
+  -- `CWComplex.mkFinite` takes the supplied family as its `cell` field, so the `0`-cells are
+  -- `SphereCell n 0` by definition.
+  { default := (⟨.inl ⟨rfl⟩⟩ : SphereCell.{u} n 0)
+    uniq := fun ⟨i⟩ ↦ by rcases i with ⟨⟨⟩⟩ | ⟨⟨h₁⟩⟩; exacts [rfl, absurd h₁.symm hn] }
+
+/-- For `n ≠ 0`, the CW structure on `Sⁿ` has a unique `n`-cell, the top cell. -/
+@[instance_reducible]
+def uniqueCellSphereCWComplex (hn : n ≠ 0) :
+    letI := sphereCWComplex h
+    Unique (cell (sphere (0 : EuclideanSpace ℝ ι) 1) n) :=
+  -- `CWComplex.mkFinite` takes the supplied family as its `cell` field, so the `n`-cells are
+  -- `SphereCell n n` by definition.
+  { default := (⟨.inr ⟨rfl⟩⟩ : SphereCell.{u} n n)
+    uniq := fun ⟨i⟩ ↦ by rcases i with ⟨⟨h₀⟩⟩ | ⟨⟨⟩⟩; exacts [absurd h₀ hn, rfl] }
 
 /-- For `1 ≤ k ≤ n`, `skeletonLT k` of the CW structure on `Sⁿ`, the `(k - 1)`-skeleton (the union
 of the cells of dimension less than `k`), is the pole. -/
