@@ -29,6 +29,9 @@ is represented by `Over.mk (hU₀.from X)`, then `F` itself is represented by `X
 
 * `CategoryTheory.Adjunction.representableByComp`: `L.op ⋙ F` is represented by `R.obj Y`
   when `F` is represented by `Y`.
+* `CategoryTheory.Adjunction.compYonedaIso_hom_app_app_apply` and
+  `CategoryTheory.Adjunction.compYonedaIso_inv_app_app_apply`: evaluation formulas for
+  `Adjunction.compYonedaIso`.
 * `CategoryTheory.Functor.RepresentableBy.ofOverIsTerminal`: `F` is represented by `X` when its
   restriction to `Over U₀` at a terminal object `U₀` is represented by `Over.mk (hU₀.from X)`.
 -/
@@ -42,6 +45,8 @@ universe w v₁ v₂ u₁ u₂
 variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
 
 namespace Adjunction
+
+section RepresentableBy
 
 variable {L : C ⥤ D} {R : D ⥤ C} (adj : L ⊣ R) {F : Dᵒᵖ ⥤ Type w} {Y : D}
 
@@ -59,9 +64,34 @@ lemma representableByComp_homEquiv_apply (e : F.RepresentableBy Y) {X : C} (φ :
     (adj.representableByComp e).homEquiv φ = e.homEquiv ((adj.homEquiv _ _).symm φ) :=
   (rfl)
 
+end RepresentableBy
+
+/-- Evaluating the forward component of `adj.compYonedaIso` at `X` and `W` applies the inverse
+adjunction equivalence `(adj.homEquiv W.unop X).symm`. -/
+@[simp]
+lemma compYonedaIso_hom_app_app_apply {C : Type u₁} [Category.{v₁} C] {D : Type u₂}
+    [Category.{v₁} D] {L : C ⥤ D} {R : D ⥤ C} (adj : L ⊣ R) (X : D) (W : Cᵒᵖ)
+    (s : W.unop ⟶ R.obj X) :
+    dsimp% ((adj.compYonedaIso.hom.app X).app W) s = (adj.homEquiv W.unop X).symm s := by
+  simp only [compYonedaIso, NatIso.ofComponents_hom_app, Iso.symm_hom, Equiv.toIso_inv_hom_apply]
+
+/-- Evaluating the inverse component of `adj.compYonedaIso` at `X` and `W` applies the
+adjunction equivalence `adj.homEquiv W.unop X`. -/
+@[simp]
+lemma compYonedaIso_inv_app_app_apply {C : Type u₁} [Category.{v₁} C] {D : Type u₂}
+    [Category.{v₁} D] {L : C ⥤ D} {R : D ⥤ C} (adj : L ⊣ R) (X : D) (W : Cᵒᵖ)
+    (s : L.obj W.unop ⟶ X) :
+    dsimp% ((adj.compYonedaIso.inv.app X).app W) s = adj.homEquiv W.unop X s := by
+  simp only [compYonedaIso, NatIso.ofComponents_inv_app, Iso.symm_inv, Equiv.toIso_hom_hom_apply]
+
 end Adjunction
 
 namespace Functor.RepresentableBy
+
+private lemma ofIso_homEquiv_apply {F F' : Cᵒᵖ ⥤ Type w} {Y : C}
+    (e : F.RepresentableBy Y) (e' : F ≅ F') {X : C} (φ : X ⟶ Y) :
+    (e.ofIso e').homEquiv φ = (e'.hom.app (Opposite.op X)) (e.homEquiv φ) :=
+  rfl
 
 private def ofOverIsTerminalIso {U₀ : C} (hU₀ : Limits.IsTerminal U₀)
     (F : Cᵒᵖ ⥤ Type w) :
@@ -108,13 +138,17 @@ lemma ofOverIsTerminal_homEquiv_apply {U₀ : C} (hU₀ : Limits.IsTerminal U₀
       e.homEquiv (Over.homMk φ (hU₀.hom_ext _ _) :
         Over.mk (hU₀.from Y) ⟶ Over.mk (hU₀.from X)) := by
   let ψ : Y ⟶ (Over.equivalenceOfIsTerminal hU₀).symm.inverse.obj (Over.mk (hU₀.from X)) := φ
+  -- `ofOverIsTerminal` identifies `(Over.equivalenceOfIsTerminal hU₀).symm.inverse.obj`
+  -- `(Over.mk (hU₀.from X))` with `X` definitionally via `Equivalence.symm_inverse` and
+  -- `Over.forget_obj`, so `rw` cannot cross the representing-object index of `homEquiv`.
+  have h0 : (ofOverIsTerminal hU₀ e).homEquiv φ =
+      (((Over.equivalenceOfIsTerminal hU₀).symm.toAdjunction.representableByComp e).ofIso
+        (ofOverIsTerminalIso hU₀ F)).homEquiv ψ :=
+    rfl
   have h1 : (ofOverIsTerminal hU₀ e).homEquiv φ =
       e.homEquiv (((Over.equivalenceOfIsTerminal hU₀).symm.toAdjunction.homEquiv _ _).symm ψ) := by
-    change ((ofOverIsTerminalIso hU₀ F).app (Opposite.op Y)).hom
-      ((((Over.equivalenceOfIsTerminal hU₀).symm.toAdjunction.representableByComp e).homEquiv) ψ) =
-      _
-    rw [Iso.app_hom, ofOverIsTerminalIso_hom_app_apply hU₀ F Y]
-    exact Adjunction.representableByComp_homEquiv_apply _ e ψ
+    rw [h0, ofIso_homEquiv_apply, ofOverIsTerminalIso_hom_app_apply,
+      Adjunction.representableByComp_homEquiv_apply]
   have h2 :
       (((Over.equivalenceOfIsTerminal hU₀).symm.toAdjunction.homEquiv Y
           (Over.mk (hU₀.from X))).symm ψ) =

@@ -14,6 +14,7 @@ public import Mathlib.CategoryTheory.Limits.EssentiallySmall
 public import Mathlib.CategoryTheory.Sites.Pullback
 public import Mathlib.CategoryTheory.Sites.Subcanonical
 public import TauCeti.CategoryTheory.Sites.Continuous
+import TauCeti.CategoryTheory.Adjunction.Representable
 
 /-!
 # Functoriality, exactness, and existence of sheaf pullback
@@ -629,25 +630,6 @@ private lemma homEquiv_sheafPullbackIso_inv_comp_yonedaCompSheafPullbackIso_hom 
           dsimp only [adj₁, Functor.comp_obj]
           rw [Functor.yonedaCompSheafPullbackIso_hom_app, Equiv.apply_symm_apply]
 
-omit [J'.Subcanonical] [K'.Subcanonical]
-  [(G'.sheafPushforwardContinuous (Type v) K' J').IsRightAdjoint] in
-include hG' in
-private lemma sheafPushforwardContinuous_map_hom_app_apply
-    {F₁ F₂ : Sheaf J' (Type v)} (ψ : F₁ ⟶ F₂) (Y : D')
-    (s : ((G'.sheafPushforwardContinuous (Type v) K' J').obj F₁).obj.obj (Opposite.op Y))
-    (s' : F₁.obj.obj (Opposite.op (G'.obj Y))) (hs : s = s') :
-    (((G'.sheafPushforwardContinuous (Type v) K' J').map ψ).hom.app (Opposite.op Y)) s =
-      (ψ.hom.app (Opposite.op (G'.obj Y))) s' :=
-  hs ▸ rfl
-
-private lemma compYonedaIso_symm_hom_app_apply {C₁ : Type*} [Category.{v} C₁] {D₁ : Type*}
-    [Category.{v} D₁] {F₁ : C₁ ⥤ D₁} {G₁ : D₁ ⥤ C₁} (adj₁ : F₁ ⊣ G₁) (X : D₁) (W : C₁)
-    (s : F₁.obj W ⟶ X) :
-    (((adj₁.compYonedaIso.app X).symm.hom.app (Opposite.op W)) s) = adj₁.homEquiv W X s := by
-  rw [Iso.symm_hom]
-  simp only [Adjunction.compYonedaIso, NatIso.ofComponents.app, NatIso.ofComponents_inv_app,
-    Iso.symm_inv, Opposite.unop_op, Equiv.toIso_hom_hom_apply]
-
 omit [(G'.sheafPushforwardContinuous (Type v) K' J').IsRightAdjoint] in
 include adj' hF' in
 private lemma homEquiv_preimageIso_compYonedaIso_symm_hom (X : D') :
@@ -675,14 +657,18 @@ private lemma homEquiv_preimageIso_compYonedaIso_symm_hom (X : D') :
   apply K'.yonedaEquiv.injective
   refine .trans ?_ (Equiv.apply_symm_apply _ _).symm
   rw [adj₂.homEquiv_unit, K'.yonedaEquiv_comp, K'.yonedaEquiv_apply,
-    sheafPushforwardContinuous_map_hom_app_apply J' K' _ X _ (adj'.counit.app X)
-      (sheafPushforwardContinuous_unit_app_yoneda_hom_app_id adj' J' K' X),
-    hφ]
+    Functor.sheafPushforwardContinuous_map_hom_app, hφ]
+  have hunit : (e.hom.app (Opposite.op (G'.obj X)))
+        (((adj₂.unit.app (K'.yoneda.obj X)).hom.app (Opposite.op X)) (𝟙 X)) =
+      (e.hom.app (Opposite.op (G'.obj X))) (adj'.counit.app X) :=
+    congrArg (e.hom.app (Opposite.op (G'.obj X)))
+      (sheafPushforwardContinuous_unit_app_yoneda_hom_app_id adj' J' K' X)
   have he : (e.hom.app (Opposite.op (G'.obj X))) (adj'.counit.app X) =
       adj'.homEquiv (G'.obj X) X (adj'.counit.app X) := by
     dsimp only [e]
-    exact compYonedaIso_symm_hom_app_apply adj' X (G'.obj X) (adj'.counit.app X)
-  exact he.trans ((adj'.homEquiv_unit _ _ _).trans (adj'.right_triangle_components X))
+    rw [Iso.symm_hom, Iso.app_inv]
+    exact adj'.compYonedaIso_inv_app_app_apply X (Opposite.op (G'.obj X)) (adj'.counit.app X)
+  exact hunit.trans (he.trans ((adj'.homEquiv_unit _ _ _).trans (adj'.right_triangle_components X)))
 
 include adj' hF' in
 private lemma sheafPullbackIso_symm_trans_yonedaCompSheafPullbackIso_eq (X : D') :

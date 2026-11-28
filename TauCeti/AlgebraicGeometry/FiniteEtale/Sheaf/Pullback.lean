@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Sheaf.Basic
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Pullback
+import TauCeti.CategoryTheory.Sites.Subcanonical
 
 /-!
 # Base change of sheaves of sections of finite étale schemes
@@ -149,12 +150,6 @@ lemma toSheafCompSmallEtaleMapPushforwardIso_inv_app (p : T ⟶ S) [Etale p]
   simp [toSheafCompSmallEtaleMapPushforwardIso, toSheafCompSmallEtalePullbackIso, toSheaf,
     yonedaCompSmallEtalePullbackIso_inv_app_of_etale]
 
-private lemma yoneda_map_hom_app_apply {C : Type*} [Category* C] (J : GrothendieckTopology C)
-    [J.Subcanonical] {X Y W : C} (g : X ⟶ Y) (f : W ⟶ X) :
-    ((J.yoneda.map g).hom.app (Opposite.op W)) f = f ≫ g := by
-  rw [GrothendieckTopology.yoneda_map_hom, yoneda_map_app, ConcreteCategory.hom_ofHom,
-    TypeCat.Fun.coe_mk]
-
 /-- Transporting a section of `(toSheaf S).obj X` along
 `p.toSheafCompSmallEtaleMapPushforwardIso` applies the base-change adjunction
 `p.smallEtaleMapBaseChangeAdj`. -/
@@ -177,7 +172,7 @@ lemma toSheafCompSmallEtaleMapPushforwardIso_hom_app_hom_app_apply (p : T ⟶ S)
     congrArg (fun η ↦ (η.hom.app (Opposite.op W)) s)
       (p.toSheafCompSmallEtaleMapPushforwardIso_hom_app X)
   rw [hs, p.yonedaCompSmallEtaleMapPushforwardIso_hom_app_hom_app_apply,
-    yoneda_map_hom_app_apply (smallEtaleTopology T)
+    GrothendieckTopology.yoneda_map_hom_app_apply (smallEtaleTopology T)
       ((toEtaleCompSmallEtaleBaseChangeIso p).hom.app X)]
   apply MorphismProperty.Over.Hom.ext
   rw [Etale.comp_left, toEtaleCompSmallEtaleBaseChangeIso_hom_app_left]
@@ -202,7 +197,7 @@ lemma toSheafCompSmallEtaleMapPushforwardIso_inv_app_hom_app_apply (p : T ⟶ S)
             ((toEtaleCompSmallEtaleBaseChangeIso p).inv.app X)).hom.app (Opposite.op W) t) :=
     congrArg (fun η ↦ (η.hom.app (Opposite.op W)) t)
       (p.toSheafCompSmallEtaleMapPushforwardIso_inv_app X)
-  rw [ht, yoneda_map_hom_app_apply (smallEtaleTopology T)
+  rw [ht, GrothendieckTopology.yoneda_map_hom_app_apply (smallEtaleTopology T)
       ((toEtaleCompSmallEtaleBaseChangeIso p).inv.app X),
     p.yonedaCompSmallEtaleMapPushforwardIso_inv_app_hom_app_apply]
   refine congrArg (p.smallEtaleMapBaseChangeAdj.homEquiv W ((toEtale S).obj X)).symm ?_
