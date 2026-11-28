@@ -11,6 +11,7 @@ import Mathlib.Algebra.Order.Star.Rat
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
 import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # Positive definiteness over the rationals
@@ -27,13 +28,22 @@ it as `Bᴴ * B` for an explicit `B`, and check that it is invertible. One gener
 `Matrix.PosDef` over any ring is recorded alongside, since Mathlib does not state it: a matrix on
 an empty index type is positive definite, which is what the rank-zero members of the classical
 Cartan families need. So is the `1 × 1` criterion: such a matrix over a nontrivial star-ordered
-ring without zero divisors is positive definite exactly when its single entry is positive.
+ring without zero divisors is positive definite exactly when its single entry is positive. So is
+the positive definiteness of `1 + A Aᴴ` over a star-ordered ring with a proper star, such as `ℝ`.
+On at most two indices over a linearly ordered ring with trivial star, a symmetric
+matrix is positive definite if its diagonal entries and order-two principal minors are positive.
 
 ## Main results
 
 * `Matrix.PosDef.of_isEmpty`: a matrix on an empty index type is positive definite.
 * `Matrix.posDef_fin_one_iff`: a `1 × 1` matrix is positive definite exactly when its single
   entry is positive.
+* `Matrix.IsSymm.posDef_of_card_le_two`: positive diagonal entries and order-two principal
+  minors imply positive definiteness on at most two indices.
+* `Matrix.posDef_one_add_mul_conjTranspose`: `1 + A Aᴴ` is positive definite over a star-ordered
+  ring with a proper star.
+* `Matrix.IsHermitian.posDef_one_add_mul_self`: `1 + A²` is positive definite for Hermitian `A`
+  over such a ring.
 * `TauCeti.Matrix.posDef_map_intCast`: an integer matrix that is positive definite over `ℤ` is
   positive definite over `ℚ`.
 * `TauCeti.Matrix.posDef_map_intCast_iff`: positive definiteness over `ℤ` and over `ℚ` agree.
@@ -47,6 +57,12 @@ ring without zero divisors is positive definite exactly when its single entry is
   vectors `c` with `c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w` have uniformly bounded coordinates.
 * `Matrix.PosDef.eq_of_eq_smul_of_trace_eq_trace_inv`: two positive definite scalar multiples
   with `Tr M = Tr M⁻¹` are equal.
+* `Matrix.PosDef.mul_mul_conjTranspose_same_eq_zero_iff`: for positive definite `S`, the
+  congruence `M S Mᴴ` vanishes exactly when `M` does.
+* `Matrix.PosDef.inv_add_conjTranspose_mul_inv_mul`: for positive definite `P` and positive
+  semidefinite `R`, the information matrix `P⁻¹ + Cᴴ R⁻¹ C` is positive definite.
+* `Matrix.PosSemidef.mul_mul_transpose_same`: over a ring with trivial star, a congruence
+  `M S Mᵀ` of a positive semidefinite matrix is positive semidefinite.
 -/
 
 public section
@@ -86,6 +102,20 @@ theorem _root_.Matrix.PosDef.of_isEmpty {R : Type*} [Ring R] [PartialOrder R] [S
   ⟨_root_.Matrix.ext fun i _ ↦ isEmptyElim i,
     fun _ hx ↦ (hx (Finsupp.ext fun i ↦ isEmptyElim i)).elim⟩
 
+/-- **`1 + A Aᴴ` is positive definite** for every matrix `A` over a star-ordered ring with a
+proper star, such as `ℝ` or `ℂ`: it is the identity plus the positive semidefinite `A Aᴴ`. -/
+theorem _root_.Matrix.posDef_one_add_mul_conjTranspose {m R : Type*} [Ring R] [PartialOrder R]
+    [StarRing R] [StarOrderedRing R] [IsProperStar R] [Fintype m] [DecidableEq n]
+    (A : _root_.Matrix n m R) : (1 + A * Aᴴ).PosDef :=
+  _root_.Matrix.PosDef.one.add_posSemidef (_root_.Matrix.posSemidef_self_mul_conjTranspose A)
+
+/-- **`1 + A²` is positive definite** for every Hermitian matrix `A` over a star-ordered ring with
+a proper star, such as a real symmetric matrix: it is `1 + A Aᴴ`. -/
+theorem _root_.Matrix.IsHermitian.posDef_one_add_mul_self {R : Type*} [Ring R] [PartialOrder R]
+    [StarRing R] [StarOrderedRing R] [IsProperStar R] [Fintype n] [DecidableEq n]
+    {A : _root_.Matrix n n R} (hA : A.IsHermitian) : (1 + A * A).PosDef := by
+  simpa only [hA.eq] using _root_.Matrix.posDef_one_add_mul_conjTranspose A
+
 /-- A `1 × 1` matrix over a nontrivial star-ordered ring without zero divisors, such as `ℝ` or
 `ℂ`, is positive definite exactly when its single entry is positive. -/
 @[simp]
@@ -99,6 +129,50 @@ theorem _root_.Matrix.posDef_fin_one_iff {R : Type*} [Ring R] [PartialOrder R] [
     simp
   rw [hdiag, _root_.Matrix.posDef_diagonal_iff]
   simp
+
+/-- A symmetric matrix on at most two indices over a linearly ordered ring with
+trivial star is positive definite if its diagonal entries and order-two principal minors are
+positive. The minor condition is vacuous on an empty or singleton index type. -/
+theorem _root_.Matrix.IsSymm.posDef_of_card_le_two {R : Type*} [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [StarRing R] [TrivialStar R] [Finite n] {M : Matrix n n R}
+    (hM : M.IsSymm) (hn : Nat.card n ≤ 2) (hdiag : ∀ i, 0 < M i i)
+    (hminor : ∀ i j, i ≠ j → 0 < M i i * M j j - M i j * M j i) : M.PosDef := by
+  classical
+  let : CommRing R := {
+    ‹Ring R› with
+    mul_comm := fun a b ↦ by simpa only [star_trivial] using star_mul a b }
+  let := Fintype.ofFinite n
+  refine _root_.Matrix.PosDef.of_dotProduct_mulVec_pos
+    (_root_.Matrix.isHermitian_iff_isSymm.mpr hM) ?_
+  intro x hx
+  obtain ⟨i, hxi⟩ : ∃ i, x i ≠ 0 := by
+    by_contra! h
+    exact hx (funext h)
+  by_cases hpair : ∃ j, j ≠ i
+  · obtain ⟨j, hji⟩ := hpair
+    have hij := hji.symm
+    simp only [dotProduct, _root_.Matrix.mulVec, Pi.star_apply, star_trivial,
+      Fintype.sum_eq_add_of_natCard_le_two hn hij]
+    -- Multiplying by the first diagonal entry completes the square without division.
+    have hquad :
+        M i i * (x i * (M i i * x i + M i j * x j) +
+          x j * (M j i * x i + M j j * x j)) =
+        (M i i * x i + M i j * x j) ^ 2 +
+          (M i i * M j j - M i j * M j i) * (x j) ^ 2 := by
+      rw [hM.apply i j]
+      ring
+    apply (mul_pos_iff_of_pos_left (hdiag i)).mp
+    rw [hquad]
+    by_cases hxj : x j = 0
+    · simpa only [hxj, mul_zero, zero_pow (by decide : (2 : ℕ) ≠ 0), add_zero] using
+        sq_pos_of_ne_zero (mul_ne_zero (hdiag i).ne' hxi)
+    · exact add_pos_of_nonneg_of_pos (sq_nonneg _)
+        (mul_pos (hminor i j hij) (sq_pos_of_ne_zero hxj))
+  · have hi (j : n) : j = i := not_not.mp fun hji ↦ hpair ⟨j, hji⟩
+    let : Subsingleton n := ⟨fun j k ↦ (hi j).trans (hi k).symm⟩
+    simpa only [dotProduct, _root_.Matrix.mulVec, Pi.star_apply, star_trivial,
+      Fintype.sum_subsingleton _ i, mul_left_comm] using
+      mul_pos (hdiag i) (mul_self_pos.mpr hxi)
 
 /-- The finite case of `TauCeti.Matrix.posDef_map_intCast`, where positive definiteness can be
 tested against ordinary vectors. -/
@@ -297,4 +371,46 @@ theorem eq_of_eq_smul_of_trace_eq_trace_inv {n K : Type*} [Fintype n] [Decidable
         rw [hFG, neg_one_smul, Matrix.trace_neg, neg_add_cancel]
       exact (add_pos hFtr hGtr).ne' hsum
 
+section MulMulConjTranspose
+
+variable {m n R : Type*} [Fintype n] [Ring R] [PartialOrder R] [StarRing R]
+
+/-- A congruence `M S Mᴴ` of a positive definite matrix `S` vanishes only when `M` does: the
+diagonal entry in row `i` is the quadratic form of `S` at the conjugate of the `i`-th row. -/
+theorem mul_mul_conjTranspose_same_eq_zero_iff {S : Matrix n n R} (hS : S.PosDef)
+    {M : Matrix m n R} : M * S * Mᴴ = 0 ↔ M = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  ext i j
+  by_contra hij
+  have hi : star (M i) ≠ 0 := fun h0 ↦ hij <| by
+    simpa using congr_fun (star_eq_zero.mp h0) j
+  have hdiag := congr_fun (congr_fun h i) i
+  rw [mul_mul_apply] at hdiag
+  have hpos := hS.dotProduct_mulVec_pos hi
+  rw [star_star] at hpos
+  have hrow : (Mᴴ)ᵀ i = star (M i) := by ext; simp
+  rw [hrow] at hdiag
+  simp [hdiag] at hpos
+
+end MulMulConjTranspose
+
+/-- If `P` is positive definite and `R` positive semidefinite, the information matrix
+`P⁻¹ + Cᴴ R⁻¹ C` is positive definite. -/
+theorem inv_add_conjTranspose_mul_inv_mul {m n K : Type*} [Fintype m] [Fintype n]
+    [DecidableEq m] [DecidableEq n] [Field K] [PartialOrder K] [StarRing K] [AddLeftMono K]
+    {P : Matrix n n K} (hP : P.PosDef) {R : Matrix m m K} (hR : R.PosSemidef)
+    (C : Matrix m n K) : (P⁻¹ + Cᴴ * R⁻¹ * C).PosDef :=
+  hP.inv.add_posSemidef (hR.inv.conjTranspose_mul_mul_same C)
+
 end Matrix.PosDef
+
+namespace Matrix.PosSemidef
+
+/-- Over a ring with trivial star, a congruence `M S Mᵀ` of a positive semidefinite matrix `S` is
+positive semidefinite: this is `Matrix.PosSemidef.mul_mul_conjTranspose_same` with `Mᴴ = Mᵀ`. -/
+theorem mul_mul_transpose_same {m n R : Type*} [Fintype n] [Ring R] [PartialOrder R]
+    [StarRing R] [TrivialStar R] {S : Matrix n n R} (hS : S.PosSemidef) (M : Matrix m n R) :
+    (M * S * Mᵀ).PosSemidef := by
+  simpa only [conjTranspose_eq_transpose_of_trivial] using hS.mul_mul_conjTranspose_same M
+
+end Matrix.PosSemidef

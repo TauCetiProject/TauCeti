@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
-import Mathlib.Algebra.BigOperators.Intervals
+public import Mathlib.Algebra.BigOperators.Intervals
 
 /-!
-# Bounds on finite sums of squares, signs of finite products, and sums of simple poles
+# Bounds on sums of squares, multiplicative-growth sums, simple poles, and signs of products
 
 `Finset.sum_sq_le_sum_mul` bounds the sum of squares of nonnegative elements by their sum
 times a common upper bound, in a partially ordered semiring.
@@ -22,8 +22,17 @@ These bounds convert sums of squared partition increments into mesh bounds by te
 a linearly ordered commutative ring: the product of the absolute values is the product times `-1`
 to the number of negative factors.
 
+`TauCeti.eq_zero_of_sum_mul_self_le`: in a linearly ordered ring, a sum of squares that is at most
+one of its terms has every other term zero, as all the other squares are nonnegative; this is how
+a vector of integers of norm `1` is seen to be `±` a basis vector.
+
 `Finset.sum_div_sub_lt_sum_div_sub` is the strict monotonicity of a sum of simple poles
 `∑ i ∈ s, w i / (f i - t)` with nonnegative weights, not all zero, in `t` above every pole.
+
+`TauCeti.sub_one_mul_sum_Ico_add_le_of_mul_le` derives the finite-horizon telescoping bound
+`(c - 1) * ∑ j ∈ Finset.Ico M m, f j + f M ≤ f m` for a sequence `f : ℕ → R` in a preordered,
+not necessarily associative ring with monotone addition satisfying `c * f k ≤ f (k + 1)` on
+`Finset.Ico M m` (`M ≤ m`).
 -/
 
 public section
@@ -82,3 +91,35 @@ theorem sum_div_sub_lt_sum_div_sub {ι K : Type*} [Field K] [LinearOrder K] [IsS
   · simp [← h]
 
 end Finset
+
+namespace TauCeti
+
+open Finset
+
+/-- **A sum of squares at most one of its terms.** In a linearly ordered ring, if
+`∑ᵢ cᵢ² ≤ c_{i₀}²`, then `cⱼ = 0` for every `j ≠ i₀`: the squares are nonnegative, so those other
+than `c_{i₀}²` sum to at most `0`, hence all vanish. -/
+theorem eq_zero_of_sum_mul_self_le {ι R : Type*} [Fintype ι] [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] {c : ι → R} {i₀ : ι} (h : ∑ i, c i * c i ≤ c i₀ * c i₀) {j : ι}
+    (hj : j ≠ i₀) : c j = 0 := by
+  classical
+  have hnn : ∀ i ∈ univ.erase i₀, 0 ≤ c i * c i := fun i _ ↦ mul_self_nonneg _
+  rw [← add_sum_erase _ _ (mem_univ i₀), add_le_iff_nonpos_right] at h
+  exact mul_self_eq_zero.mp ((sum_eq_zero_iff_of_nonneg hnn).mp
+    (le_antisymm h (sum_nonneg hnn)) j (mem_erase.mpr ⟨hj, mem_univ j⟩))
+
+/-- Along a sequence in a preordered, not necessarily associative ring with monotone addition
+satisfying `c * f k ≤ f (k + 1)` for `k ∈ Ico M m` (`M ≤ m`),
+`(c - 1) * ∑ j ∈ Ico M m, f j + f M ≤ f m`. -/
+theorem sub_one_mul_sum_Ico_add_le_of_mul_le {R : Type*} [NonAssocRing R] [Preorder R]
+    [IsOrderedAddMonoid R] {f : ℕ → R} {c : R} {M m : ℕ} (hm : M ≤ m)
+    (hstep : ∀ k ∈ Ico M m, c * f k ≤ f (k + 1)) :
+    (c - 1) * ∑ j ∈ Ico M m, f j + f M ≤ f m := by
+  have hle : ∑ k ∈ Ico M m, (c - 1) * f k ≤ ∑ k ∈ Ico M m, (f (k + 1) - f k) :=
+    sum_le_sum fun k hk ↦ by
+      rw [sub_mul, one_mul]
+      exact sub_le_sub_right (hstep k hk) (f k)
+  rw [← mul_sum, sum_Ico_sub f hm] at hle
+  exact (add_le_add_left hle (f M)).trans_eq (sub_add_cancel (f m) (f M))
+
+end TauCeti

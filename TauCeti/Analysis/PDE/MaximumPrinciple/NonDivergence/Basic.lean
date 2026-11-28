@@ -12,8 +12,10 @@ public import TauCeti.Analysis.InnerProductSpace.SquaredDistance
 public import TauCeti.Analysis.PDE.Ellipticity.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Positive
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.Calculus.ContDiff.Differentiable
 import TauCeti.Analysis.Calculus.DerivativeTest
+import TauCeti.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Topology.Frontier
 
@@ -83,10 +85,16 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
 * `TauCeti.PDE.sum_coefficientSymmetricPart_mul_fderiv_fderiv`: the principal part only sees the
   symmetric part of the coefficient matrix.
 * `TauCeti.PDE.sum_mul_fderiv_fderiv_mul`: the principal part of a product.
+* `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_comp`: the chain rule for
+  `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to `F ∘ f` with scalar `F`.
+* `TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_log`: the operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied
+  to a logarithm.
 * `TauCeti.PDE.exp_mul_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq`: conjugation of
   `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_b + c` by a weight `exp ∘ ℓ`, for functions that are `C²` at a point.
 * `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`: **the weak maximum
   principle** for `-L + c`, `c ≥ 0`.
+* `TauCeti.PDE.le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier_of_pos`: the weak
+  maximum principle for `-L + c` with `c > 0`, for degenerate `a` and arbitrary drift.
 * `TauCeti.PDE.ge_of_sum_mul_fderiv_fderiv_add_fderiv_le_mul_ge_frontier`: the weak minimum
   principle.
 * `TauCeti.PDE.abs_le_of_sum_mul_fderiv_fderiv_add_fderiv_eq_mul_abs_le_frontier`: the two-sided
@@ -101,6 +109,9 @@ compares `u` with `m + (F / λ) (exp (α d) - exp (α (⟪e, ·⟫ - s)))`, wher
   lower bound.
 * `TauCeti.PDE.abs_le_add_of_abs_sum_mul_fderiv_fderiv_add_fderiv_sub_mul_le_abs_le_frontier`: the
   a priori bound on `sup |u|`.
+* `TauCeti.PDE.abs_le_mul_of_abs_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le_of_eq_zero_frontier`:
+  the same bound for zero boundary values on the closure of a bounded domain `Ω` with
+  `interior (closure Ω) = Ω`, for the operator `L u + c u` with `c ≤ 0`.
 
 ## References
 
@@ -331,6 +342,50 @@ theorem sum_mul_fderiv_fderiv_mul (A : Matrix ι ι ℝ) {η u : EuclideanSpace 
   simp only [fderiv_fderiv_mul_apply hη hu, Finset.mul_sum, ← Finset.sum_add_distrib]
   exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
 
+/-- **The chain rule for `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`.** For a function `f` that is `C²` at `x` and a
+scalar function `F` that is `C²` at `f x`, with `L = ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`,
+
+`L (F ∘ f) = F' (f) L f + F'' (f) ∑ᵢⱼ Aᵢⱼ ∂ᵢf ∂ⱼf`
+
+at `x`. For `A = 1` and `v = 0` this is `ContDiffAt.laplacian_comp`. -/
+theorem sum_mul_fderiv_fderiv_add_fderiv_comp (A : Matrix ι ι ℝ) {F : ℝ → ℝ}
+    {f : EuclideanSpace ℝ ι → ℝ} {x : EuclideanSpace ℝ ι} (hF : ContDiffAt ℝ 2 F (f x))
+    (hf : ContDiffAt ℝ 2 f x) (v : EuclideanSpace ℝ ι) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ (F ∘ f)) x (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ (F ∘ f) x v =
+      deriv F (f x) * (∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+          (EuclideanSpace.single j 1) + fderiv ℝ f x v) +
+        deriv (deriv F) (f x) * ∑ i, ∑ j, A i j * (fderiv ℝ f x (EuclideanSpace.single i 1) *
+          fderiv ℝ f x (EuclideanSpace.single j 1)) := by
+  have hD1 : fderiv ℝ (F ∘ f) x v = deriv F (f x) * fderiv ℝ f x v := by
+    rw [fderiv_comp x (hF.differentiableAt two_ne_zero) (hf.differentiableAt two_ne_zero),
+      ContinuousLinearMap.comp_apply, fderiv_eq_smul_deriv, smul_eq_mul, mul_comm]
+  simp only [hD1, fderiv_fderiv_scalar_comp_apply hF hf, iteratedDeriv_succ, iteratedDeriv_zero,
+    smul_eq_mul, Finset.mul_sum, mul_add]
+  rw [add_right_comm, ← Finset.sum_add_distrib]
+  refine congrArg (· + _) <| Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [← Finset.sum_add_distrib]
+  exact Finset.sum_congr rfl fun j _ ↦ by ring
+
+/-- **The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to a logarithm.** For a function `f` that is `C²`
+at `x` with `f x ≠ 0`, with `L = ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`,
+
+`L (log f) = L f / f - ∑ᵢⱼ Aᵢⱼ ∂ᵢf ∂ⱼf / f²`
+
+at `x`. For `A = 1` and `v = 0` this is `ContDiffAt.laplacian_log`. -/
+theorem sum_mul_fderiv_fderiv_add_fderiv_log (A : Matrix ι ι ℝ) {f : EuclideanSpace ℝ ι → ℝ}
+    {x : EuclideanSpace ℝ ι} (hf : ContDiffAt ℝ 2 f x) (hfx : f x ≠ 0) (v : EuclideanSpace ℝ ι) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun y ↦ Real.log (f y)) x (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ (fun y ↦ Real.log (f y)) x v =
+      (∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+          (EuclideanSpace.single j 1) + fderiv ℝ f x v) / f x -
+        (∑ i, ∑ j, A i j * (fderiv ℝ f x (EuclideanSpace.single i 1) *
+          fderiv ℝ f x (EuclideanSpace.single j 1))) / f x ^ 2 := by
+  have h := sum_mul_fderiv_fderiv_add_fderiv_comp A (Real.contDiffAt_log.mpr hfx) hf v
+  rw [Real.deriv_log', deriv_inv, Function.comp_def] at h
+  rw [h]
+  ring
+
 omit [DecidableEq ι] in
 /-- The algebra behind conjugation by a weight `W = exp ℓ`. Writing `A`, `c` for the
 coefficients, `L = ∂ℓ`, `M = ∂²ℓ`, `D`, `H`, `V` for the gradient, Hessian and value of `v`, and
@@ -407,6 +462,37 @@ theorem exp_mul_sum_mul_fderiv_fderiv_add_fderiv_add_mul_eq (A : Matrix ι ι �
     (fun i j ↦ fderiv ℝ (fderiv ℝ ℓ) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1))
     (fun i ↦ fderiv ℝ ℓ x (EuclideanSpace.single i 1))
     (fun i ↦ fderiv ℝ v x (EuclideanSpace.single i 1))
+
+/-- **The weak maximum principle with a positive zeroth-order coefficient.** Let `K` be compact,
+and on its interior let `a` have nonnegative quadratic form, `0 ≤ ξᵀ a(x) ξ`, and let `c > 0`. If
+`f` is continuous on `K`, `C²` on its interior, and satisfies
+`c f ≤ ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼf + bⁱ ∂ᵢf` there, then every nonnegative bound `m` for `f` on `frontier K`
+bounds `f` on `K`.
+
+Unlike `le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`, the operator may be
+degenerate, the drift `b` is arbitrary and the index type may be empty: the positivity of `c`
+alone rules out an interior maximum above `m`. -/
+theorem le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier_of_pos
+    {K : Set (EuclideanSpace ℝ ι)} (hK : IsCompact K) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c f : EuclideanSpace ℝ ι → ℝ} {m : ℝ}
+    (ha : ∀ ⦃x⦄, x ∈ interior K → ∀ ξ : EuclideanSpace ℝ ι, 0 ≤ (a x).toQuadraticForm' ξ)
+    (hc : ∀ ⦃x⦄, x ∈ interior K → 0 < c x) (hm : 0 ≤ m) (hcont : ContinuousOn f K)
+    (hcd : ∀ ⦃x⦄, x ∈ interior K → ContDiffAt ℝ 2 f x)
+    (hsub : ∀ ⦃x⦄, x ∈ interior K → c x * f x ≤
+      ∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ f x (b x))
+    (hbdry : ∀ ⦃x⦄, x ∈ frontier K → f x ≤ m) :
+    ∀ ⦃x⦄, x ∈ K → f x ≤ m := by
+  intro x hx
+  obtain ⟨z, hzK, hzmax⟩ := hK.exists_isMaxOn ⟨x, hx⟩ hcont
+  refine (isMaxOn_iff.mp hzmax x hx).trans (not_lt.mp fun hlt ↦ ?_)
+  -- A maximizer above `m` lies in the interior, where `L f ≥ c f > 0` forbids a local maximum.
+  have hzint : z ∈ interior K := by
+    by_contra hz
+    exact hlt.not_ge (hbdry ⟨subset_closure hzK, hz⟩)
+  exact not_isLocalMax_of_sum_mul_fderiv_fderiv_add_fderiv_pos (ha hzint) (hcd hzint)
+    ((mul_pos (hc hzint) (hm.trans_lt hlt)).trans_le (hsub hzint))
+    (hzmax.isLocalMax (mem_interior_iff_mem_nhds.mp hzint))
 
 variable [Nonempty ι]
 
@@ -740,6 +826,39 @@ theorem abs_le_add_of_abs_sum_mul_fderiv_fderiv_add_fderiv_sub_mul_le_abs_le_fro
     hβ (neg_nonpos.mpr hM) hF hcont hcd (fun _ hy ↦ by linarith [(abs_le.mp (hL hy)).2])
     (fun _ hy ↦ (abs_le.mp (hbdry hy)).1) hx
   exact abs_le.mpr ⟨by linarith, hle⟩
+
+/-- **The bound on `sup |u|` for zero boundary values.** Let `Ω` be a bounded subset of
+`ℝⁿ = EuclideanSpace ℝ ι` that is the interior of its closure, for instance a Lipschitz domain
+(`Set.IsLipschitzDomain.interior_closure`). Let `a` be elliptic with constant `λ > 0`, let the drift
+`b` be bounded by `β` and let `c ≤ 0`, all on `Ω`. If `f` is continuous on `closure Ω`, `C²` on `Ω`
+and zero on `frontier Ω`, and `|∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼf + bⁱ ∂ᵢf + c f| ≤ F` on `Ω`, then
+
+`|f| ≤ (exp ((β / λ + 1) diam (closure Ω)) - 1) / λ * F` on `closure Ω`.
+
+This is `abs_le_add_of_abs_sum_mul_fderiv_fderiv_add_fderiv_sub_mul_le_abs_le_frontier` on the
+compact set `closure Ω`, for the operator `L f + c f` with `c ≤ 0`, the sign convention of the
+Schauder theory. -/
+theorem abs_le_mul_of_abs_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le_of_eq_zero_frontier
+    {Ω : Set (EuclideanSpace ℝ ι)} (hΩ : Bornology.IsBounded Ω) (hint : interior (closure Ω) = Ω)
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    {c f : EuclideanSpace ℝ ι → ℝ} {lam β F : ℝ} (hlam : 0 < lam)
+    (ha : ∀ ⦃x⦄, x ∈ Ω → ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ (a x).toQuadraticForm' ξ)
+    (hb : ∀ ⦃x⦄, x ∈ Ω → ‖b x‖ ≤ β) (hc : ∀ ⦃x⦄, x ∈ Ω → c x ≤ 0) (hβ : 0 ≤ β) (hF : 0 ≤ F)
+    (hcont : ContinuousOn f (closure Ω)) (hcd : ∀ ⦃x⦄, x ∈ Ω → ContDiffAt ℝ 2 f x)
+    (hL : ∀ ⦃x⦄, x ∈ Ω →
+      |∑ i, ∑ j, a x i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ f x (b x) + c x * f x| ≤ F)
+    (hbdry : ∀ ⦃x⦄, x ∈ frontier Ω → f x = 0) :
+    ∀ ⦃x⦄, x ∈ closure Ω →
+      |f x| ≤ (Real.exp ((β / lam + 1) * Metric.diam (closure Ω)) - 1) / lam * F := by
+  intro x hx
+  have h := abs_le_add_of_abs_sum_mul_fderiv_fderiv_add_fderiv_sub_mul_le_abs_le_frontier
+    (c := -c) (M := 0) hΩ.isCompact_closure hlam (fun _ hy ↦ ha (hint ▸ hy))
+    (fun _ hy ↦ hb (hint ▸ hy)) (fun _ hy ↦ neg_nonneg.2 (hc (hint ▸ hy))) hβ hF hcont
+    (fun _ hy ↦ hcd (hint ▸ hy))
+    (fun _ hy ↦ by simpa only [Pi.neg_apply, neg_mul, sub_neg_eq_add] using hL (hint ▸ hy))
+    (fun _ hy ↦ by rw [hbdry (frontier_closure_subset hy), abs_zero]) hx
+  rwa [zero_add, mul_div_right_comm] at h
 
 end PDE
 

@@ -31,9 +31,12 @@ to almost-everywhere classes. In particular, degree zero means exactly the const
 also when the coordinate type is empty.
 
 Evaluating a real multilinear map on the diagonal gives a polynomial function of degree at most
-the number of its arguments (`MultilinearMap.apply_const_mem_polynomialsDegLE`), and hence every
-partial sum of a real formal multilinear series belongs to `polynomialsDegLE ι (N - 1)`
-(`FormalMultilinearSeries.partialSum_mem_polynomialsDegLE`).
+the number of its arguments (`MultilinearMap.apply_const_mem_polynomialsDegLE`); this covers
+finite products of linear inner-product forms (`TauCeti.prod_inner_mem_polynomialsDegLE`), and
+every partial sum of a real formal multilinear series belongs to `polynomialsDegLE ι (N - 1)`
+(`FormalMultilinearSeries.partialSum_mem_polynomialsDegLE`). Polynomial functions of bounded degree
+are closed under pointwise products (`TauCeti.mul_mem_polynomialsDegLE`,
+`TauCeti.finset_prod_mem_polynomialsDegLE`, `TauCeti.prod_coord_mem_polynomialsDegLE`).
 
 The file also develops the foundational calculus of these polynomial functions on
 `EuclideanSpace ℝ ι`:
@@ -68,6 +71,7 @@ noncomputable section
 namespace TauCeti
 
 open MvPolynomial
+open scoped InnerProductSpace
 
 section Basic
 
@@ -213,6 +217,52 @@ theorem _root_.FormalMultilinearSeries.partialSum_mem_polynomialsDegLE {ι : Typ
     polynomialsDegLE_mono ι (Nat.le_sub_one_of_lt (Finset.mem_range.1 hk)) ?_
   simpa using (p k).toMultilinearMap.apply_const_mem_polynomialsDegLE
 
+section Operations
+
+variable {ι}
+
+/-- The product of two polynomial functions has degree at most the sum of their degree bounds. -/
+theorem mul_mem_polynomialsDegLE {m k : ℕ} {f g : EuclideanSpace ℝ ι → ℝ}
+    (hf : f ∈ polynomialsDegLE ι m) (hg : g ∈ polynomialsDegLE ι k) :
+    f * g ∈ polynomialsDegLE ι (m + k) := by
+  obtain ⟨p, hp, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hf
+  obtain ⟨q, hq, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hg
+  exact (mem_polynomialsDegLE_iff ι).2
+    ⟨p * q, (totalDegree_mul p q).trans (add_le_add hp hq), by
+      ext x; simp only [Pi.mul_apply, polynomialEvalₗ_apply, MvPolynomial.eval_mul]⟩
+
+/-- A finite product of polynomial functions has degree at most the sum of their degree bounds. -/
+theorem finset_prod_mem_polynomialsDegLE {α : Type*} (s : Finset α)
+    {d : α → ℕ} {f : α → EuclideanSpace ℝ ι → ℝ}
+    (hf : ∀ a ∈ s, f a ∈ polynomialsDegLE ι (d a)) :
+    (∏ a ∈ s, f a) ∈ polynomialsDegLE ι (∑ a ∈ s, d a) := by
+  classical
+  have hrep : ∀ a, ∃ p : MvPolynomial ι ℝ,
+      a ∈ s → p.totalDegree ≤ d a ∧ polynomialEvalₗ ι p = f a := fun a ↦ by
+    by_cases ha : a ∈ s
+    · obtain ⟨p, hp, hpe⟩ := (mem_polynomialsDegLE_iff ι).1 (hf a ha)
+      exact ⟨p, fun _ ↦ ⟨hp, hpe⟩⟩
+    · exact ⟨1, fun h ↦ absurd h ha⟩
+  choose p hp using hrep
+  refine (mem_polynomialsDegLE_iff ι).2 ⟨∏ a ∈ s, p a,
+    (MvPolynomial.totalDegree_finsetProd s p).trans
+      (Finset.sum_le_sum fun a ha ↦ (hp a ha).1), ?_⟩
+  ext x
+  simp only [Finset.prod_apply, polynomialEvalₗ_apply, MvPolynomial.eval_prod]
+  exact Finset.prod_congr rfl fun a ha ↦ by
+    simpa [polynomialEvalₗ_apply] using congrFun (hp a ha).2 x
+
+/-- A finite product of coordinate projections indexed by `S : Finset α` has total degree at most
+`S.card`. -/
+theorem prod_coord_mem_polynomialsDegLE {α : Type*} (S : Finset α) (I : α → ι) :
+    (fun x : EuclideanSpace ℝ ι ↦ ∏ l ∈ S, x (I l)) ∈ polynomialsDegLE ι S.card := by
+  convert finset_prod_mem_polynomialsDegLE S fun l _ ↦
+    (coordinate_mem_polynomialsDegLE_iff ι 1 (I l)).2 le_rfl using 1
+  · simp
+  · ext x; simp
+
+end Operations
+
 /-- Bounded-degree polynomial functions form a finite-dimensional space. -/
 instance [Finite ι] (m : ℕ) : FiniteDimensional ℝ (polynomialsDegLE ι m) :=
   inferInstanceAs (Module.Finite ℝ ((restrictTotalDegree ι ℝ m).map (polynomialEvalₗ ι)))
@@ -227,6 +277,18 @@ theorem finrank_polynomialsDegLE [Fintype ι] (m : ℕ) :
     finrank_restrictTotalDegree]
 
 end Basic
+
+/-- A finite product of at most `m` linear inner-product forms on `EuclideanSpace ℝ ι` belongs to
+`TauCeti.polynomialsDegLE ι m`. -/
+theorem prod_inner_mem_polynomialsDegLE {ι α : Type*} [Fintype ι] (s : Finset α)
+    (a : α → EuclideanSpace ℝ ι) {m : ℕ} (hm : s.card ≤ m) :
+    (fun x : EuclideanSpace ℝ ι => ∏ l ∈ s, ⟪a l, x⟫_ℝ) ∈ polynomialsDegLE ι m := by
+  let M := (MultilinearMap.mkPiAlgebra ℝ s ℝ).compLinearMap fun l =>
+    (innerSL ℝ (a l.val)).toLinearMap
+  have hfn : (fun x : EuclideanSpace ℝ ι => M fun _ => x) = fun x => ∏ l ∈ s, ⟪a l, x⟫_ℝ := by
+    ext x; simpa [M] using Finset.prod_attach s fun l => ⟪a l, x⟫_ℝ
+  exact hfn ▸ polynomialsDegLE_mono ι (by simpa [Fintype.card_coe] using hm)
+    M.apply_const_mem_polynomialsDegLE
 
 section Calculus
 

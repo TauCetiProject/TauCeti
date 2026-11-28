@@ -59,6 +59,8 @@ its infinite coordinate is the identity point, not zero.
   `TauCeti.AdelicPoints.InfinitePoints`, `TauCeti.AdelicPoints.LocalPoints`.
 * `TauCeti.AdelicPoints.diagonal`, `TauCeti.AdelicPoints.finiteDiagonal`,
   `TauCeti.AdelicPoints.infiniteDiagonal`: the rational diagonals.
+* `TauCeti.AdelicPoints.diagonal_injective`: for a number field the rational diagonal into the
+  adelic points is injective.
 * `TauCeti.AdelicPoints.finiteProjection`, `TauCeti.AdelicPoints.infiniteProjection`: the finite
   and infinite components.
 * `TauCeti.AdelicPoints.localProjection`, `TauCeti.AdelicPoints.infinitePlaceProjection`: the
@@ -71,6 +73,11 @@ its infinite coordinate is the identity point, not zero.
   `TauCeti.AdelicPoints.prodContinuousMulEquiv_finiteEmbed`.
 * `TauCeti.AdelicPoints.finiteEmbed`, with `TauCeti.AdelicPoints.finiteProjection_finiteEmbed`
   and `TauCeti.AdelicPoints.infiniteProjection_finiteEmbed`.
+* `TauCeti.AdelicPoints.ext_iff_projection`: an adelic point is determined by its infinite and
+  finite components.
+* `TauCeti.AdelicPoints.exists_finiteEmbed_eq_iff`, `TauCeti.AdelicPoints.mrange_finiteEmbed`,
+  `TauCeti.AdelicPoints.isEmbedding_finiteEmbed`: `finiteEmbed` is a topological embedding onto
+  the adelic points with trivial infinite component.
 
 ## References
 
@@ -127,7 +134,23 @@ noncomputable def finiteDiagonal : WithConv (H →ₐ[K] K) →* FiniteAdelicPoi
 noncomputable def infiniteDiagonal : WithConv (H →ₐ[K] K) →* InfinitePoints K H :=
   AlgHom.mapValue (Algebra.ofId K _)
 
+/-- The rational diagonal is change of coefficients along the diagonal embedding `K → 𝔸_K`. -/
+theorem diagonal_def : diagonal R K H = AlgHom.mapValue (Algebra.ofId K (AdeleRing R K)) := (rfl)
+
+/-- The finite rational diagonal is change of coefficients along `K → 𝔸_{K,f}`. -/
+theorem finiteDiagonal_def :
+    finiteDiagonal R K H = AlgHom.mapValue (Algebra.ofId K (FiniteAdeleRing R K)) := (rfl)
+
+/-- The infinite rational diagonal is change of coefficients along `K → K_∞`. -/
+theorem infiniteDiagonal_def :
+    infiniteDiagonal K H = AlgHom.mapValue (Algebra.ofId K (InfiniteAdeleRing K)) := (rfl)
+
 variable {R K H}
+
+/-- The rational diagonal is post-composition with the structure map `K → 𝔸_K`. -/
+theorem diagonal_eq_mapValue :
+    diagonal R K H = AlgHom.mapValue (Algebra.ofId K (AdeleRing R K)) :=
+  (rfl)
 
 @[simp]
 theorem diagonal_apply_apply (g : WithConv (H →ₐ[K] K)) (h : H) :
@@ -144,6 +167,11 @@ theorem infiniteDiagonal_apply_apply (g : WithConv (H →ₐ[K] K)) (h : H) :
     infiniteDiagonal K H g h = algebraMap K (InfiniteAdeleRing K) (g h) := by
   simp [infiniteDiagonal]
 
+/-- For a number field `K`, the rational diagonal `G(K) → G(𝔸_K)` is injective, since `K` embeds
+in `𝔸_K`. -/
+theorem diagonal_injective [NumberField K] : Function.Injective (diagonal R K H) :=
+  AlgHom.mapValue_injective (AdeleRing.algebraMap_injective R K)
+
 /-! ### Finite and infinite components -/
 
 variable (R K H)
@@ -155,6 +183,16 @@ noncomputable def finiteProjection : AdelicPoints R K H →* FiniteAdelicPoints 
 /-- The infinite component `G(𝔸_K) → G(K_∞)`, along the projection `𝔸_K → K_∞`. -/
 noncomputable def infiniteProjection : AdelicPoints R K H →* InfinitePoints K H :=
   AlgHom.mapValue (AlgHom.fst K _ _)
+
+/-- The finite component projection is change of coefficients along `𝔸_K → 𝔸_{K,f}`. -/
+theorem finiteProjection_def :
+    finiteProjection R K H =
+      AlgHom.mapValue (AlgHom.snd K (InfiniteAdeleRing K) (FiniteAdeleRing R K)) := (rfl)
+
+/-- The infinite component projection is change of coefficients along `𝔸_K → K_∞`. -/
+theorem infiniteProjection_def :
+    infiniteProjection R K H =
+      AlgHom.mapValue (AlgHom.fst K (InfiniteAdeleRing K) (FiniteAdeleRing R K)) := (rfl)
 
 variable {R K H}
 
@@ -220,6 +258,15 @@ infinite component followed by `TauCeti.AdelicPoints.infiniteLocalProjection`. -
 noncomputable def infinitePlaceProjection (w : InfinitePlace K) :
     AdelicPoints R K H →* WithConv (H →ₐ[K] w.Completion) :=
   (infiniteLocalProjection K H w).comp (infiniteProjection R K H)
+
+/-- The finite local projection is change of coefficients along `𝔸_{K,f} → K_v`. -/
+theorem finiteLocalProjection_def (v : HeightOneSpectrum R) :
+    finiteLocalProjection R K H v = AlgHom.mapValue (FiniteAdeleRing.proj K v).toAlgHom := (rfl)
+
+/-- The infinite local projection is change of coefficients along `K_∞ → K_w`. -/
+theorem infiniteLocalProjection_def (w : InfinitePlace K) :
+    infiniteLocalProjection K H w =
+      AlgHom.mapValue (Pi.evalAlgHom K (fun u : InfinitePlace K ↦ u.Completion) w) := (rfl)
 
 variable {R K H}
 
@@ -381,6 +428,61 @@ theorem infiniteProjection_finiteEmbed (x : FiniteAdelicPoints R K H) :
 @[fun_prop]
 theorem continuous_finiteEmbed : Continuous (finiteEmbed R K H) :=
   (prodContinuousMulEquiv R K H).symm.continuous.comp (continuous_const.prodMk continuous_id)
+
+/-- An adelic point is determined by its infinite and finite components. -/
+theorem ext_iff_projection {x y : AdelicPoints R K H} :
+    x = y ↔ infiniteProjection R K H x = infiniteProjection R K H y ∧
+      finiteProjection R K H x = finiteProjection R K H y := by
+  rw [← (prodContinuousMulEquiv R K H).injective.eq_iff, prodContinuousMulEquiv_apply,
+    prodContinuousMulEquiv_apply, Prod.ext_iff]
+
+/-- An adelic point is determined by its infinite and finite components. -/
+theorem ext_projection {x y : AdelicPoints R K H}
+    (h₁ : infiniteProjection R K H x = infiniteProjection R K H y)
+    (h₂ : finiteProjection R K H x = finiteProjection R K H y) : x = y :=
+  ext_iff_projection.mpr ⟨h₁, h₂⟩
+
+/-- The component of `finiteEmbed x` at a finite place `v` is the component of `x` at `v`. -/
+@[simp]
+theorem localProjection_finiteEmbed (v : HeightOneSpectrum R) (x : FiniteAdelicPoints R K H) :
+    localProjection R K H v (finiteEmbed R K H x) = finiteLocalProjection R K H v x := by
+  rw [localProjection_apply, finiteProjection_finiteEmbed]
+
+/-- The component of `finiteEmbed x` at an infinite place `w` is the identity point. -/
+@[simp]
+theorem infinitePlaceProjection_finiteEmbed (w : InfinitePlace K) (x : FiniteAdelicPoints R K H) :
+    infinitePlaceProjection R K H w (finiteEmbed R K H x) = 1 := by
+  rw [infinitePlaceProjection_apply, infiniteProjection_finiteEmbed, map_one]
+
+/-- `finiteEmbed` is injective: `finiteProjection` is a left inverse. -/
+theorem finiteEmbed_injective : Function.Injective (finiteEmbed R K H) :=
+  Function.LeftInverse.injective finiteProjection_finiteEmbed
+
+/-- The image of `finiteEmbed` consists of the adelic points with trivial infinite component. -/
+theorem mrange_finiteEmbed :
+    MonoidHom.mrange (finiteEmbed R K H) = MonoidHom.mker (infiniteProjection R K H) := by
+  ext y
+  rw [MonoidHom.mem_mker]
+  constructor
+  · rintro ⟨x, rfl⟩
+    exact infiniteProjection_finiteEmbed x
+  · intro h
+    exact ⟨finiteProjection R K H y, ext_projection (by rw [h, infiniteProjection_finiteEmbed])
+      (finiteProjection_finiteEmbed _)⟩
+
+/-- An adelic point is in the image of `finiteEmbed` exactly when its infinite component is the
+identity point. As a simp lemma, it rewrites the existence of a finite adelic preimage to the
+condition that the infinite component is the identity point. -/
+@[simp]
+theorem exists_finiteEmbed_eq_iff {y : AdelicPoints R K H} :
+    (∃ x, finiteEmbed R K H x = y) ↔ infiniteProjection R K H y = 1 := by
+  rw [← MonoidHom.mem_mrange, mrange_finiteEmbed, MonoidHom.mem_mker]
+
+/-- `finiteEmbed` is a topological embedding: it has the continuous left inverse
+`finiteProjection`. -/
+theorem isEmbedding_finiteEmbed : Topology.IsEmbedding (finiteEmbed R K H) :=
+  Function.LeftInverse.isEmbedding finiteProjection_finiteEmbed continuous_finiteProjection
+    continuous_finiteEmbed
 
 end AdelicPoints
 

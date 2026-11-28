@@ -13,6 +13,7 @@ import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
 import TauCeti.Analysis.SpecialFunctions.Pow.Scaling
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.LpSeminorm.HolderOnWith
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.InterBall
@@ -967,8 +968,7 @@ theorem
   have hdecx : ∀ x ∈ S, ∀ t, 0 < t → t ≤ θ * R →
       ∫ y in ball x t ∩ H, ‖W1p.gradient u y - ⨍ w in ball x t ∩ H, W1p.gradient u w‖ ^ 2 ≤
         C₀ * V * (t / R) ^ ((n : ℝ) + 1 + 2 * β) := fun x hx t ht htθ => by
-    have hfin : IsFiniteMeasure (volume.restrict (ball x R ∩ H)) :=
-      isFiniteMeasure_restrict.2 measure_ball_inter_ne_top
+    have hfin := isFiniteMeasure_restrict_ball_inter volume x R H
     refine hdec (hell.mono_set (hxR x hx)) hν hH (hS x hx)
       (haK.mono (hxR x hx)) (hGK.mono (hxR x hx)) hu0 hu
       ((hf.mono_measure (Measure.restrict_mono (inter_subset_inter_left _ (hxR x hx))

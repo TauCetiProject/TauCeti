@@ -277,9 +277,8 @@ noncomputable instance instSMulSlodowySlice :
       have hg :=
         (mem_quotientPointsSubgroup_tripleCentralizerHopfIdeal_iff_basePointsRepresentation _).mp
           g.property
-      simpa using LieHom.apply_mem_slodowySlice
-        (Derivation.basePointsAdjointLieEquiv (R := k) (H := H) g : 𝔤 →ₗ⁅k⁆ 𝔤)
-        (by simpa using hg.2.1) (by simpa using hg.2.2) x.property⟩
+      simpa [hg.2.1, hg.2.2] using LieHom.apply_mem_slodowySlice
+        (Derivation.basePointsAdjointLieEquiv (R := k) (H := H) g : 𝔤 →ₗ⁅k⁆ 𝔤) x.property⟩
 
 /-- The centralizer of `(h, e, f)` acts on the Slodowy slice by the adjoint action. -/
 @[simp]
@@ -311,8 +310,9 @@ theorem _root_.IsSl2Triple.basePointsRepresentation_contractingAction_apply [Cha
     Comodule.basePointsRepresentation 𝔤 g (t.contractingAction c x) =
       t.contractingAction c (Comodule.basePointsRepresentation 𝔤 g x) := by
   rw [mem_quotientPointsSubgroup_centralizerHopfIdeal_iff_basePointsRepresentation] at hg
-  simpa using t.map_contractingAction_apply
-    (Derivation.basePointsAdjointLieEquiv (R := k) (H := H) g : 𝔤 →ₗ⁅k⁆ 𝔤) (by simpa using hg) c x
+  simpa using LieHom.map_contractingAction
+    (Derivation.basePointsAdjointLieEquiv (R := k) (H := H) g : 𝔤 →ₗ⁅k⁆ 𝔤) t t
+    (by simpa using hg) c x
 
 end Slice
 

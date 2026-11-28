@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.GroupTheory.Index
 public import Mathlib.LinearAlgebra.Dimension.Free
+public import TauCeti.Data.ZMod.Two
 import Mathlib.GroupTheory.OrderOfElement
 import TauCeti.LinearAlgebra.FreeModule.Int
 
@@ -36,6 +37,11 @@ pull them back bijectively, and the double cover defined by a sign line `ι` tri
 not trivialized, and they have the same pullback
 (`TauCeti.setOf_domRestrict_ker_ne_zero_eq_of_finrank_eq_two`).
 
+A homomorphism `φ : ker ι → ℤ/2` on the double cover is pulled back from `G` exactly when it
+vanishes at `g₀ + g₀` for some, equivalently every, `g₀` with `ι g₀ = 1`
+(`AddMonoidHom.exists_domRestrict_ker_eq_iff_zmod_two`). The sign lines of the double cover not
+pulled back from `C` are those with `φ (g₀ + g₀) = 1`.
+
 ## Main results
 
 * `MonoidHom.domRestrictHom_bijective_of_bijective_pow`,
@@ -50,6 +56,8 @@ not trivialized, and they have the same pullback
 * `AddMonoidHom.eq_of_ker_eq_zmod_two`: homomorphisms to `ℤ/2` with equal kernels are equal.
 * `AddMonoidHom.domRestrict_ker_eq_zero_iff_zmod_two`: the homomorphisms to `ℤ/2` vanishing on the
   kernel of a nonzero `ι` are `0` and `ι`.
+* `AddMonoidHom.exists_domRestrict_ker_eq_iff_zmod_two`: a homomorphism `ker ι → ℤ/2` is a
+  restriction exactly when it vanishes at `g₀ + g₀`, for `ι g₀ = 1`.
 * `TauCeti.setOf_domRestrict_ker_ne_zero_eq_of_finrank_eq_two`: on a lattice of rank two, the
   homomorphisms to `ℤ/2` not vanishing on the kernel of a nonzero `ι` are `χ` and `χ + ι`.
 -/
@@ -99,6 +107,39 @@ theorem domRestrictHom_zmod_bijective_of_coprime {n : ℕ} (H : AddSubgroup G)
     simp [nsmul_eq_mul]
   rw [this]
   exact (Units.mulLeft _).bijective
+
+/-- **Homomorphisms on a double cover pulled back from the base.** Let `ι : G →+ ℤ/2` and
+`g₀ : G` with `ι g₀ = 1`, so that `ker ι` has index two and `g₀ + g₀ ∈ ker ι`. A homomorphism
+`φ : ker ι →+ ℤ/2` is the restriction of a homomorphism `G →+ ℤ/2` if and only if it vanishes at
+`g₀ + g₀`. -/
+theorem exists_domRestrict_ker_eq_iff_zmod_two {ι : G →+ ZMod 2} {g₀ : G} (hg₀ : ι g₀ = 1)
+    {φ : ι.ker →+ ZMod 2} :
+    (∃ χ : G →+ ZMod 2, χ.domRestrict ι.ker = φ) ↔
+      φ ⟨g₀ + g₀, add_self_mem_ker_zmod_two ι g₀⟩ = 0 := by
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro ⟨χ, rfl⟩
+    simpa using add_self_mem_ker_zmod_two χ g₀
+  -- The extension is `g ↦ φ (g - n • g₀)` with `n ∈ {0, 1}` the value of `ι g`. It is additive
+  -- because the two corrections at `g` and `g'` add up to that at `g + g'` plus a multiple of
+  -- `g₀ + g₀`, where `φ` vanishes.
+  have hmem : ∀ g, g - (ι g).val • g₀ ∈ ι.ker := fun g ↦ by simp [hg₀]
+  refine ⟨AddMonoidHom.mk' (fun g ↦ φ ⟨_, hmem g⟩) fun g g' ↦ ?_, ?_⟩
+  · have e : (⟨_, hmem (g + g')⟩ : ι.ker) = ⟨_, hmem g⟩ + ⟨_, hmem g'⟩ +
+        (((ι g).val + (ι g').val) / 2) • ⟨g₀ + g₀, add_self_mem_ker_zmod_two ι g₀⟩ := by
+      ext
+      simp only [AddSubgroup.coe_add, AddSubgroup.coe_nsmul, map_add, ZMod.val_add]
+      have key : (((ι g).val + (ι g').val) % 2) • g₀ =
+          (ι g).val • g₀ + (ι g').val • g₀ - (((ι g).val + (ι g').val) / 2) • (g₀ + g₀) := by
+        rw [← add_nsmul]
+        generalize (ι g).val + (ι g').val = n
+        have hn : n • g₀ = (n % 2 + n / 2 * 2) • g₀ := by rw [Nat.mod_add_div']
+        rw [hn]
+        module
+      rw [key]
+      abel
+    rw [e, map_add, map_nsmul, h, smul_zero, add_zero, map_add]
+  · ext ⟨g, hg⟩
+    simp [mem_ker.1 hg]
 
 end Comm
 

@@ -137,16 +137,12 @@ section Compact
 variable [I.Boundaryless] [CompactSpace M]
 
 /-- **The first de Rham cohomology of a compact boundaryless manifold is finite-dimensional.**
-The manifold has the homotopy type of a finite CW complex, so its first integral singular homology
-group is finitely generated. -/
-instance : FiniteDimensional ℝ (deRhamCohomology I M 1) := by
-  have := FiniteCWType.of_isManifold (I := I) M
-  have h := finite_singularHomology_of_finiteCWType (k := ℤ) M (ModuleCat.of ℤ ℤ) 1
-  rw [singularHomologyFunctor_obj_obj] at h
-  -- `h` uses the `ℤ`-module structure of `ModuleCat ℤ`; the two `ℤ`-module structures agree.
+Its first integral singular homology group is finitely generated
+(`TauCeti.addGroup_fg_singularHomology_of_isManifold`). -/
+instance : FiniteDimensional ℝ (deRhamCohomology I M 1) :=
   have : AddGroup.FG (((singularChains ℤ).obj (.of M)).homology 1) :=
-    Module.Finite.iff_addGroup_fg.mp (by convert h; exact Subsingleton.elim _ _)
-  exact finiteDimensional_of_addGroupFG
+    addGroup_fg_singularHomology_of_isManifold I 1
+  finiteDimensional_of_addGroupFG
 
 end Compact
 

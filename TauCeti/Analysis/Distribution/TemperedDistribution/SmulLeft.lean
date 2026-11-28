@@ -37,6 +37,8 @@ a function of temperate growth. By duality this is the Leibniz rule for Schwartz
   tempered distributions extends multiplication by `g` on Schwartz functions.
 * `TemperedDistribution.lineDerivOp_smulLeftCLM`: the Leibniz rule for the product of a tempered
   distribution with a function of temperate growth.
+* `TemperedDistribution.lineDerivOp_smulLeftCLM_schwartzMap`: the Leibniz rule for a Schwartz
+  multiplier, with its derivative written as the Schwartz function `∂_v φ`.
 * `TemperedDistribution.smulLeftCLM_delta`: multiplication of the Dirac mass by a function of
   temperate growth, `g • δ_ξ = g(ξ) δ_ξ`.
 -/
@@ -60,7 +62,7 @@ theorem smulLeftCLM_eq_zero_of_not_hasTemperateGrowth {g : E → ℂ}
     (hg : ¬ g.HasTemperateGrowth) : smulLeftCLM F g = 0 := by
   refine ContinuousLinearMap.ext fun u => ?_
   ext f'
-  simp [SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hg]
+  simp [hg]
 
 /-- **Multiplication by a function equal to `1` on an open set.** If `g` has temperate growth
 and `g = 1` on an open set `O`, then `u - g u` vanishes on `O`, for every tempered distribution
@@ -92,7 +94,16 @@ theorem lineDerivOp_smulLeftCLM {g : E → ℂ} (hg : g.HasTemperateGrowth) (f :
     ∂_{v} (smulLeftCLM F g f) =
       smulLeftCLM F (fun x ↦ fderiv ℝ g x v) f + smulLeftCLM F g (∂_{v} f) := by
   ext u
-  simp [SchwartzMap.lineDerivOp_smulLeftCLM hg, ← map_add]
+  simp [SchwartzMap.lineDerivOp_smulLeftCLM _ hg, ← map_add]
+
+/-- **The Leibniz rule for a Schwartz multiplier**: for a Schwartz function `φ`,
+`∂_v (φ f) = (∂_v φ) f + φ ∂_v f`, with `∂_v φ` the line derivative of `φ` as a Schwartz
+function. -/
+theorem lineDerivOp_smulLeftCLM_schwartzMap (φ : 𝓢(E, ℂ)) (f : 𝓢'(E, F)) (v : E) :
+    ∂_{v} (smulLeftCLM F (φ : E → ℂ) f) =
+      smulLeftCLM F ((∂_{v} φ : 𝓢(E, ℂ)) : E → ℂ) f + smulLeftCLM F (φ : E → ℂ) (∂_{v} f) := by
+  simp only [lineDerivOp_smulLeftCLM φ.hasTemperateGrowth,
+    ← SchwartzMap.lineDerivOp_apply_eq_fderiv]
 
 end Deriv
 
@@ -124,6 +135,6 @@ theorem smulLeftCLM_toTemperedDistributionCLM_eq {μ : Measure E} [μ.HasTempera
   by_cases hg : g.HasTemperateGrowth
   · simp only [smulLeftCLM_apply_apply, SchwartzMap.toTemperedDistributionCLM_apply_apply,
       SchwartzMap.smulLeftCLM_apply_apply hg, smul_smul, smul_eq_mul, mul_comm]
-  · simp [SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hg]
+  · simp [hg]
 
 end TemperedDistribution

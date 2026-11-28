@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.Fredholm.CompactPerturbation
 public import TauCeti.Analysis.Fredholm.IndexRange
-public import TauCeti.Analysis.InnerProductSpace.UnitaryPath
 import Mathlib.Tactic.Abel
+import TauCeti.Analysis.InnerProductSpace.Polar.Connected
 
 /-!
 # Norm-path classification of Fredholm operators
@@ -127,7 +127,8 @@ theorem ContinuousLinearMap.IsFredholm.exists_path_of_index_eq {T₀ T₁ : E �
       map_sub]
     abel
   have hpath₀ := hT₀.joinedIn_of_isCompactOperator_sub hdiff
-  obtain ⟨γC, hγC⟩ := hC.exists_path_to_id
+  obtain ⟨γC, hγC⟩ := hC.joinedIn (T := ContinuousLinearMap.id ℂ E)
+    ⟨ContinuousLinearEquiv.refl ℂ E, rfl⟩
   let γ₁ : Path (T₁.comp C) T₁ :=
     (γC.map (f := fun A ↦ T₁.comp A)
       (continuous_const.clm_comp continuous_id)).cast rfl T₁.comp_id.symm
@@ -153,7 +154,6 @@ theorem ContinuousLinearMap.nonempty_path_iff_index_eq
 
 /-- Two Fredholm operators from a complex Hilbert space to a complex normed space define the same
 path component in `ZerothHomotopy` if and only if they have the same Fredholm index. -/
-@[simp]
 theorem ContinuousLinearMap.zerothHomotopy_mk_eq_mk_iff_index_eq
     (S T : {T : E →L[ℂ] F // T.IsFredholm}) :
     ZerothHomotopy.mk S = ZerothHomotopy.mk T ↔ S.val.index = T.val.index :=

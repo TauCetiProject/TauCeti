@@ -12,12 +12,12 @@ public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.EqToHom
 public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Map
 
 /-!
-# Base change in over categories: coherence, faithfulness, and epimorphism preservation
+# Base change in over categories: coherence, commuting squares, faithfulness, and epimorphisms
 
 Mathlib identifies base change `Over.pullback` along an identity with the identity functor
 (`Over.pullbackId`) and base change along a composite with the composite of base changes
 (`Over.pullbackComp`). This file records that these identifications are coherent, up to the
-equalities `f ≫ 𝟙 Y = f` and `f ≫ g ≫ h = (f ≫ g) ≫ h`:
+equalities `f ≫ 𝟙 Y = f`, `𝟙 X ≫ f = f` and `f ≫ g ≫ h = (f ≫ g) ≫ h`:
 
 * `CategoryTheory.Over.mapPullbackAdj_homEquiv_apply_left`,
   `CategoryTheory.Over.mapPullbackAdj_homEquiv_symm_left`,
@@ -26,7 +26,9 @@ equalities `f ≫ 𝟙 Y = f` and `f ≫ g ≫ h = (f ≫ g) ≫ h`:
   and `Over.pullback`;
 * `CategoryTheory.Over.pullbackComp_id_inv_app_comp_eqToHom`: `pullbackComp f (𝟙 Y)` is the base
   change along `f` of `pullbackId`;
-* `CategoryTheory.Over.pullbackComp_comp_inv_app_comp_eqToHom`: the two identifications of base
+* `CategoryTheory.Over.pullbackComp_id_left_hom_app_comp_pullbackId`: `pullbackComp (𝟙 X) f`
+  followed by `pullbackId` is the identity of base change along `f`;
+* `CategoryTheory.Over.pullbackCompIsoOfEq_hom_app_eq`: the two identifications of base
   change along `f ≫ g ≫ h` with the composite of the three base changes agree;
 * `CategoryTheory.Over.pullbackCongr` and `CategoryTheory.Over.pullbackCompIsoOfEq`: natural
   isomorphisms of `Over.pullback` along equal base morphisms and along factorizations `f ≫ g = fg`,
@@ -40,6 +42,22 @@ equalities `f ≫ 𝟙 Y = f` and `f ≫ g ≫ h = (f ≫ g) ≫ h`:
   counit built from `pullbackId` and `pullbackComp` satisfy the triangle identity for
   `pullback e.hom` and `pullback e.inv`.
 
+For a commuting square `i' ≫ g = t ≫ i`, the natural isomorphism
+`CategoryTheory.Over.pullbackPullbackIsoOfComm` identifies base change along `g` and then along
+`i'` with base change along `i` and then along `t`;
+when `i` and `i'` are points, this says the fiber at `i'` of the base change along `g` is the base
+change along `t` of the fiber at `i`. For a commuting triangle `a ≫ b = d`, the natural isomorphism
+`CategoryTheory.Over.pullbackCompIsoOfEq` identifies base change along `b` and then along `a` with
+base change along `d`, coherently for three composable morphisms
+(`CategoryTheory.Over.pullbackCompIsoOfEq_hom_app_eq`); in particular, morphisms which agree after
+base change along `b` agree after base change along `d`
+(`CategoryTheory.Over.pullback_map_eq_map_of_comp_eq`). For a cone `c` over a diagram `D`, the
+predicate `CategoryTheory.Limits.Cone.LiftsAlong` says that a morphism between base changes to the
+cone point is, up to these identifications, the base change of a morphism between base changes to a
+member of `D`; lifts are stable under passage to later members
+(`CategoryTheory.Limits.Cone.LiftsAlong.precomp`) and under composition
+(`CategoryTheory.Limits.Cone.liftsAlong_comp`).
+
 It also establishes faithfulness and epimorphism preservation for the base-change functors
 `Over.pullback f : Over Y ⥤ Over X` and `Over.star X : C ⥤ Over X`:
 
@@ -50,6 +68,13 @@ It also establishes faithfulness and epimorphism preservation for the base-chang
   family `U` whose second projections are jointly epimorphic);
 * `CategoryTheory.Over.preservesEpimorphisms_star`: `Over.star X` preserves epimorphisms whenever
   `X ⨯ -` does (in particular when epimorphisms in `C` are stable under base change).
+
+For a monomorphism `g`, the unit of `Over.map g ⊣ Over.pullback g` is an isomorphism
+(`CategoryTheory.Over.isIso_mapPullbackAdj_unit_app`).
+
+Finally, `CategoryTheory.IsPullback.overPullbackCompMapIso` is the Beck–Chevalley isomorphism of a
+pullback square `fst ≫ f = snd ≫ g`: `Over.pullback fst ⋙ Over.map snd ≅ Over.map f ⋙
+Over.pullback g`.
 -/
 
 public section
@@ -129,19 +154,19 @@ theorem pullbackComp_id_inv_app_comp_eqToHom {X Y : C} (f : X ⟶ Y) [HasPullbac
   · simp [pullbackComp, pullbackId, eqToHom_comp_pullback_fst A.hom (Category.comp_id f)]
   · simp [pullbackComp, pullbackId, eqToHom_comp_pullback_snd A.hom (Category.comp_id f)]
 
-/-- The two ways of identifying base change along `f ≫ g ≫ h` with the composite of the base
-changes along `h`, `g` and `f` agree, up to the equality `f ≫ g ≫ h = (f ≫ g) ≫ h`. -/
+/-- Base change along `f` followed by base change along `𝟙 X` is base change along `𝟙 X ≫ f`: the
+composition isomorphism `pullbackComp (𝟙 X) f` followed by `pullbackId` is the identity, up to the
+equality `𝟙 X ≫ f = f`. -/
 @[reassoc]
-theorem pullbackComp_comp_inv_app_comp_eqToHom {W X Y Z : C} (f : W ⟶ X) (g : X ⟶ Y)
-    (h : Y ⟶ Z) [HasPullbacksAlong f] [HasPullbacksAlong g] [HasPullbacksAlong h] (A : Over Z) :
-    (pullbackComp f (g ≫ h)).inv.app A ≫ eqToHom (by simp) =
-      (pullback f).map ((pullbackComp g h).hom.app A) ≫
-        (pullbackComp f g).inv.app ((pullback h).obj A) ≫ (pullbackComp (f ≫ g) h).inv.app A := by
-  -- As above, the identity is checked on the two projections out of `A ×_Z W`.
+theorem pullbackComp_id_left_hom_app_comp_pullbackId {X Y : C} (f : X ⟶ Y) [HasPullbacksAlong f]
+    (A : Over Y) :
+    (pullbackComp (𝟙 X) f).hom.app A ≫ pullbackId.hom.app ((pullback f).obj A) =
+      eqToHom (by simp) := by
+  -- As above, the identity is checked on the two projections out of `A ×_Y X`.
   ext1
   apply pullback.hom_ext
-  · simp [pullbackComp, eqToHom_comp_pullback_fst A.hom (Category.assoc f g h).symm]
-  · simp [pullbackComp, eqToHom_comp_pullback_snd A.hom (Category.assoc f g h).symm]
+  · simp [pullbackComp, pullbackId, eqToHom_comp_pullback_fst A.hom (Category.id_comp f)]
+  · simp [pullbackComp, pullbackId, eqToHom_comp_pullback_snd A.hom (Category.id_comp f)]
 
 /-- For an isomorphism `e : X ≅ Y`, the unit and counit built from `pullbackId` and `pullbackComp`
 for `pullback e.hom` and `pullback e.inv` satisfy the triangle identity on every object `A` of
@@ -211,134 +236,218 @@ theorem pullbackCongr_inv_app (h : f₁ = f₂) (A : Over Y) :
 
 end Congr
 
-/-- Natural isomorphism `pullback g ⋙ pullback f ≅ pullback fg` from `f ≫ g = fg`. -/
-noncomputable def pullbackCompIsoOfEq {W X Y : C} (f : W ⟶ X) (g : X ⟶ Y) (fg : W ⟶ Y)
-    [HasPullbacksAlong f] [HasPullbacksAlong g] [HasPullbacksAlong fg] (h : f ≫ g = fg) :
-    pullback g ⋙ pullback f ≅ pullback fg := (pullbackComp f g).symm ≪≫ pullbackCongr h
+section CommSquare
 
-variable {W X Y : C} {f : W ⟶ X} {g : X ⟶ Y} {fg : W ⟶ Y}
-  [HasPullbacksAlong f] [HasPullbacksAlong g] [HasPullbacksAlong fg]
+variable {S S' s s' : C} {g : S' ⟶ S} {i : s ⟶ S} {i' : s' ⟶ S'} {t : s' ⟶ s}
+  [HasPullbacksAlong g] [HasPullbacksAlong i] [HasPullbacksAlong i'] [HasPullbacksAlong t]
 
-/-- Forward component of `pullbackCompIsoOfEq` at `A`. -/
-theorem pullbackCompIsoOfEq_hom_app (h : f ≫ g = fg) (A : Over Y) :
-    (pullbackCompIsoOfEq f g fg h).hom.app A =
-      (pullbackComp f g).inv.app A ≫ (pullbackCongr h).hom.app A := (rfl)
+/-- For a commuting square `i' ≫ g = t ≫ i`, base change along `g : S' ⟶ S` and then along
+`i' : s' ⟶ S'` is naturally isomorphic to base change along `i : s ⟶ S` and then along
+`t : s' ⟶ s`. When `i` and `i'` are points, this is the **fiber of a base change**: the fiber at
+`i'` of the base change of `A` along `g` is the base change along `t` of the fiber of `A` at `i`. -/
+noncomputable def pullbackPullbackIsoOfComm (h : i' ≫ g = t ≫ i) :
+    pullback g ⋙ pullback i' ≅ pullback i ⋙ pullback t :=
+  (pullbackComp i' g).symm ≪≫ eqToIso (by simp only [h]) ≪≫ pullbackComp t i
 
-/-- Inverse component of `pullbackCompIsoOfEq` at `A`. -/
-theorem pullbackCompIsoOfEq_inv_app (h : f ≫ g = fg) (A : Over Y) :
-    (pullbackCompIsoOfEq f g fg h).inv.app A =
-      (pullbackCongr h).inv.app A ≫ (pullbackComp f g).hom.app A := (rfl)
+/-- `pullbackPullbackIsoOfComm` is `pullbackComp i' g` inverted, followed by `pullbackComp t i`,
+up to the equality `i' ≫ g = t ≫ i`. -/
+theorem pullbackPullbackIsoOfComm_hom_app (h : i' ≫ g = t ≫ i) (A : Over S) :
+    (pullbackPullbackIsoOfComm h).hom.app A =
+      (pullbackComp i' g).inv.app A ≫ eqToHom (by simp only [h]) ≫
+        (pullbackComp t i).hom.app A := by
+  simp [pullbackPullbackIsoOfComm, eqToHom_app]
 
-/-- First projection of `(pullbackCompIsoOfEq f g fg h).hom.app A`. -/
-@[reassoc (attr := simp)] theorem pullbackCompIsoOfEq_hom_app_left_fst (h : f ≫ g = fg)
-    (A : Over Y) :
-    ((pullbackCompIsoOfEq f g fg h).hom.app A).left ≫ Limits.pullback.fst A.hom fg =
-      Limits.pullback.fst (Limits.pullback.snd A.hom g) f ≫ Limits.pullback.fst A.hom g := by
-  subst h; simp [pullbackCompIsoOfEq_hom_app, pullbackComp]
+/-- `pullbackPullbackIsoOfComm` commutes with the projections to `A`. -/
+@[reassoc (attr := simp)]
+theorem pullbackPullbackIsoOfComm_hom_app_left_fst (h : i' ≫ g = t ≫ i) (A : Over S) :
+    ((pullbackPullbackIsoOfComm h).hom.app A).left ≫ pullback.fst (pullback.snd A.hom i) t ≫
+        pullback.fst A.hom i =
+      pullback.fst (pullback.snd A.hom g) i' ≫ pullback.fst A.hom g := by
+  simp only [pullbackPullbackIsoOfComm_hom_app, comp_left, eqToHom_left, Category.assoc]
+  have h₁ : ((pullbackComp t i).hom.app A).left ≫ pullback.fst (pullback.snd A.hom i) t ≫
+      pullback.fst A.hom i = pullback.fst A.hom (t ≫ i) := by
+    simp [pullbackComp]
+  have h₂ : ((pullbackComp i' g).inv.app A).left ≫ pullback.fst A.hom (i' ≫ g) =
+      pullback.fst (pullback.snd A.hom g) i' ≫ pullback.fst A.hom g := by
+    simp [pullbackComp]
+  rw [h₁, eqToHom_comp_pullback_fst A.hom h, h₂]
 
-/-- Second projection of `(pullbackCompIsoOfEq f g fg h).hom.app A`. -/
-@[reassoc (attr := simp)] theorem pullbackCompIsoOfEq_hom_app_left_snd (h : f ≫ g = fg)
-    (A : Over Y) :
-    ((pullbackCompIsoOfEq f g fg h).hom.app A).left ≫ Limits.pullback.snd A.hom fg =
-      Limits.pullback.snd (Limits.pullback.snd A.hom g) f := by
-  subst h; simp [pullbackCompIsoOfEq_hom_app, pullbackComp]
+/-- `pullbackPullbackIsoOfComm` commutes with the projections to `s'`. -/
+@[reassoc (attr := simp)]
+theorem pullbackPullbackIsoOfComm_hom_app_left_snd (h : i' ≫ g = t ≫ i) (A : Over S) :
+    ((pullbackPullbackIsoOfComm h).hom.app A).left ≫ pullback.snd (pullback.snd A.hom i) t =
+      pullback.snd (pullback.snd A.hom g) i' :=
+  Over.w ((pullbackPullbackIsoOfComm h).hom.app A)
 
-/-- First projection of `(pullbackCompIsoOfEq f g fg h).inv.app A`. -/
-@[reassoc (attr := simp)] theorem pullbackCompIsoOfEq_inv_app_left_fst (h : f ≫ g = fg)
-    (A : Over Y) :
-    ((pullbackCompIsoOfEq f g fg h).inv.app A).left ≫
-      Limits.pullback.fst (Limits.pullback.snd A.hom g) f =
-      Limits.pullback.map A.hom fg A.hom g (𝟙 _) f (𝟙 _) (by simp) (by simp [h]) := by
-  subst h; apply Limits.pullback.hom_ext <;> simp [pullbackCompIsoOfEq_inv_app, pullbackComp]
+end CommSquare
 
-/-- Second projection of `(pullbackCompIsoOfEq f g fg h).inv.app A`. -/
-@[reassoc (attr := simp)] theorem pullbackCompIsoOfEq_inv_app_left_snd (h : f ≫ g = fg)
-    (A : Over Y) :
-    ((pullbackCompIsoOfEq f g fg h).inv.app A).left ≫
-      Limits.pullback.snd (Limits.pullback.snd A.hom g) f = Limits.pullback.snd A.hom fg := by
-  subst h; simp [pullbackCompIsoOfEq_inv_app, pullbackComp]
+section Triangle
+
+variable {X Y Z : C} {a : X ⟶ Y} {b : Y ⟶ Z} {d : X ⟶ Z} [HasPullbacksAlong a]
+  [HasPullbacksAlong b] [HasPullbacksAlong d]
+
+/-- For a commuting triangle `a ≫ b = d`, base change along `b` and then along `a` is naturally
+isomorphic to base change along `d`. This is `pullbackComp a b`, inverted and transported along
+the equality `a ≫ b = d`. -/
+noncomputable def pullbackCompIsoOfEq (h : a ≫ b = d) : pullback b ⋙ pullback a ≅ pullback d :=
+  (pullbackComp a b).symm ≪≫ eqToIso (by subst h; rfl)
+
+/-- For a reflexive triangle, the comparison is the inverse of `pullbackComp`. -/
+@[simp]
+theorem pullbackCompIsoOfEq_rfl :
+    pullbackCompIsoOfEq (a := a) (b := b) rfl = (pullbackComp a b).symm := by
+  simp [pullbackCompIsoOfEq]
+
+/-- The component of the triangle comparison is `pullbackComp` inverted, followed by transport
+along the triangle equality. -/
+theorem pullbackCompIsoOfEq_hom_app (h : a ≫ b = d) (A : Over Z) :
+    (pullbackCompIsoOfEq h).hom.app A =
+      (pullbackComp a b).inv.app A ≫ eqToHom (by subst h; rfl) := by
+  simp [pullbackCompIsoOfEq, eqToHom_app]
+
+/-- The inverse component of the triangle comparison is transport along the triangle equality,
+followed by `pullbackComp`. -/
+theorem pullbackCompIsoOfEq_inv_app (h : a ≫ b = d) (A : Over Z) :
+    (pullbackCompIsoOfEq h).inv.app A =
+      eqToHom (by subst h; rfl) ≫ (pullbackComp a b).hom.app A := by
+  simp [pullbackCompIsoOfEq, eqToHom_app]
+
+/-- `pullbackCompIsoOfEq` commutes with the projections to `A`. -/
+@[reassoc (attr := simp)]
+theorem pullbackCompIsoOfEq_hom_app_left_fst (h : a ≫ b = d) (A : Over Z) :
+    ((pullbackCompIsoOfEq h).hom.app A).left ≫ pullback.fst A.hom d =
+      pullback.fst (pullback.snd A.hom b) a ≫ pullback.fst A.hom b := by
+  subst h
+  simp [pullbackCompIsoOfEq, pullbackComp]
+
+/-- `pullbackCompIsoOfEq` commutes with the projections to `X`. -/
+@[reassoc (attr := simp)]
+theorem pullbackCompIsoOfEq_hom_app_left_snd (h : a ≫ b = d) (A : Over Z) :
+    ((pullbackCompIsoOfEq h).hom.app A).left ≫ pullback.snd A.hom d =
+      pullback.snd (pullback.snd A.hom b) a :=
+  Over.w ((pullbackCompIsoOfEq h).hom.app A)
+
+/-- The inverse of `pullbackCompIsoOfEq` commutes with the projections to `A`. -/
+@[reassoc]
+theorem pullbackCompIsoOfEq_inv_app_left_fst_fst (h : a ≫ b = d) (A : Over Z) :
+    ((pullbackCompIsoOfEq h).inv.app A).left ≫ pullback.fst (pullback.snd A.hom b) a ≫
+      pullback.fst A.hom b = pullback.fst A.hom d := by
+  subst h
+  simp [pullbackCompIsoOfEq, pullbackComp]
+
+/-- First projection of `(pullbackCompIsoOfEq h).inv.app A`. -/
+@[reassoc (attr := simp)]
+theorem pullbackCompIsoOfEq_inv_app_left_fst (h : a ≫ b = d) (A : Over Z) :
+    ((pullbackCompIsoOfEq h).inv.app A).left ≫ Limits.pullback.fst (Limits.pullback.snd A.hom b) a =
+      Limits.pullback.map A.hom d A.hom b (𝟙 _) a (𝟙 _) (by simp) (by simp [h]) := by
+  subst h; apply Limits.pullback.hom_ext <;> simp [pullbackCompIsoOfEq, pullbackComp]
+
+/-- The inverse of `pullbackCompIsoOfEq` commutes with the projections to `X`. -/
+@[reassoc (attr := simp)]
+theorem pullbackCompIsoOfEq_inv_app_left_snd (h : a ≫ b = d) (A : Over Z) :
+    ((pullbackCompIsoOfEq h).inv.app A).left ≫ pullback.snd (pullback.snd A.hom b) a =
+      pullback.snd A.hom d :=
+  Over.w ((pullbackCompIsoOfEq h).inv.app A)
 
 /-- First projection of a morphism between pullbacks conjugated along `pullbackCompIsoOfEq`. -/
-@[reassoc] theorem pullbackCompIsoOfEq_conj_left_fst
-    {A B : Over Y} (h : f ≫ g = fg) (β : (pullback g).obj A ⟶ (pullback g).obj B) :
-    ((pullbackCompIsoOfEq f g fg h).inv.app A ≫ (pullback f).map β ≫
-        (pullbackCompIsoOfEq f g fg h).hom.app B).left ≫
-      Limits.pullback.fst B.hom fg =
-      Limits.pullback.map A.hom fg A.hom g (𝟙 _) f (𝟙 _) (by simp) (by simp [h]) ≫
-        β.left ≫ Limits.pullback.fst B.hom g := by
+@[reassoc]
+theorem pullbackCompIsoOfEq_conj_left_fst {A B : Over Z} (h : a ≫ b = d)
+    (β : (pullback b).obj A ⟶ (pullback b).obj B) :
+    ((pullbackCompIsoOfEq h).inv.app A ≫ (pullback a).map β ≫
+        (pullbackCompIsoOfEq h).hom.app B).left ≫
+      Limits.pullback.fst B.hom d =
+      Limits.pullback.map A.hom d A.hom b (𝟙 _) a (𝟙 _) (by simp) (by simp [h]) ≫
+        β.left ≫ Limits.pullback.fst B.hom b := by
   simp
+
+/-- The identifications `pullbackCompIsoOfEq` are coherent for three composable morphisms
+`x ≫ a ≫ b`: identifying base change along `x ≫ (a ≫ b)` in one step agrees with identifying it
+first along `a ≫ b` and then along `(x ≫ a) ≫ b`. -/
+theorem pullbackCompIsoOfEq_hom_app_eq {W : C} {x : W ⟶ X} {y : W ⟶ Y} {v : X ⟶ Z} {w : W ⟶ Z}
+    [HasPullbacksAlong x] [HasPullbacksAlong y] [HasPullbacksAlong v] [HasPullbacksAlong w]
+    (hxa : x ≫ a = y) (hab : a ≫ b = v) (hyb : y ≫ b = w) (hxv : x ≫ v = w) (A : Over Z) :
+    (pullbackCompIsoOfEq hxv).hom.app A =
+      (pullback x).map ((pullbackCompIsoOfEq hab).inv.app A) ≫
+        (pullbackCompIsoOfEq hxa).hom.app ((pullback b).obj A) ≫
+          (pullbackCompIsoOfEq hyb).hom.app A := by
+  -- The identity is checked on the two projections out of `A ×_Z W`; the projection lemmas for
+  -- the middle factor are stated for `A ×_Z Y` as an object of `Over Y`.
+  have h₁ := pullbackCompIsoOfEq_hom_app_left_fst_assoc hxa ((pullback b).obj A)
+    (pullback.fst A.hom b)
+  have h₂ := pullbackCompIsoOfEq_hom_app_left_snd hxa ((pullback b).obj A)
+  dsimp only [pullback_obj_hom] at h₁ h₂
+  ext1
+  apply pullback.hom_ext
+  · simp [h₁]
+  · simp [h₂]
+
+/-- Associativity of `pullbackCompIsoOfEq.hom`: composing `pullbackCompIsoOfEq hfg` and
+`pullbackCompIsoOfEq hfgh₂` agrees with `pullbackCompIsoOfEq hgh` and
+`pullbackCompIsoOfEq hfgh₁`. -/
+@[reassoc]
+theorem pullbackCompIsoOfEq_comp_hom_app {W : C} {f : W ⟶ X} {g : X ⟶ Y} {h : Y ⟶ Z}
+    {fg : W ⟶ Y} {gh : X ⟶ Z} {fgh : W ⟶ Z}
+    [HasPullbacksAlong f] [HasPullbacksAlong g] [HasPullbacksAlong h]
+    [HasPullbacksAlong fg] [HasPullbacksAlong gh] [HasPullbacksAlong fgh]
+    (hfg : f ≫ g = fg) (hgh : g ≫ h = gh) (hfgh₁ : f ≫ gh = fgh) (hfgh₂ : fg ≫ h = fgh)
+    (A : Over Z) :
+    (pullbackCompIsoOfEq hfg).hom.app ((pullback h).obj A) ≫
+        (pullbackCompIsoOfEq hfgh₂).hom.app A =
+      (pullback f).map ((pullbackCompIsoOfEq hgh).hom.app A) ≫
+        (pullbackCompIsoOfEq hfgh₁).hom.app A := by
+  rw [pullbackCompIsoOfEq_hom_app_eq hfg hgh hfgh₂ hfgh₁ A, ← Functor.map_comp_assoc,
+    Iso.hom_inv_id_app, Functor.map_id, Category.id_comp]
 
 /-- Associativity of `pullbackCompIsoOfEq.inv`: decomposing `pullback fgh` via `fg ≫ h = fgh`
 and `f ≫ g = fg` agrees with decomposing via `f ≫ gh = fgh` and `g ≫ h = gh`. -/
 @[reassoc]
-theorem pullbackCompIsoOfEq_comp_inv_app {W X Y Z : C} {f : W ⟶ X} {g : X ⟶ Y} {h : Y ⟶ Z}
+theorem pullbackCompIsoOfEq_comp_inv_app {W : C} {f : W ⟶ X} {g : X ⟶ Y} {h : Y ⟶ Z}
     {fg : W ⟶ Y} {gh : X ⟶ Z} {fgh : W ⟶ Z}
     [HasPullbacksAlong f] [HasPullbacksAlong g] [HasPullbacksAlong h]
     [HasPullbacksAlong fg] [HasPullbacksAlong gh] [HasPullbacksAlong fgh]
     (hfg : f ≫ g = fg) (hgh : g ≫ h = gh) (hfgh₁ : f ≫ gh = fgh) (hfgh₂ : fg ≫ h = fgh)
     (A : Over Z) :
-    (pullbackCompIsoOfEq fg h fgh hfgh₂).inv.app A ≫
-        (pullbackCompIsoOfEq f g fg hfg).inv.app ((pullback h).obj A) =
-      (pullbackCompIsoOfEq f gh fgh hfgh₁).inv.app A ≫
-        (pullback f).map ((pullbackCompIsoOfEq g h gh hgh).inv.app A) := by
-  subst hfg hgh hfgh₁
-  simp only [pullbackCompIsoOfEq_inv_app, pullbackCongr_refl, pullbackCongr_inv_app, Iso.refl_inv,
-    NatTrans.id_app, Category.id_comp]
-  rw [← cancel_epi ((pullbackComp f (g ≫ h)).inv.app A), Iso.inv_hom_id_app_assoc,
-    ← Category.assoc ((pullbackComp f (g ≫ h)).inv.app A),
-    pullbackComp_comp_inv_app_comp_eqToHom_assoc f g h A]
-  simp
+    (pullbackCompIsoOfEq hfgh₂).inv.app A ≫
+        (pullbackCompIsoOfEq hfg).inv.app ((pullback h).obj A) =
+      (pullbackCompIsoOfEq hfgh₁).inv.app A ≫
+        (pullback f).map ((pullbackCompIsoOfEq hgh).inv.app A) := by
+  rw [← cancel_mono ((pullbackCompIsoOfEq hfg).hom.app ((pullback h).obj A) ≫
+    (pullbackCompIsoOfEq hfgh₂).hom.app A), Category.assoc, Iso.inv_hom_id_app_assoc,
+    Iso.inv_hom_id_app, Category.assoc, pullbackCompIsoOfEq_comp_hom_app hfg hgh hfgh₁ hfgh₂ A,
+    ← Functor.map_comp_assoc, Iso.inv_hom_id_app, Functor.map_id, Category.id_comp,
+    Iso.inv_hom_id_app]
 
-/-- Associativity of `pullbackCompIsoOfEq.hom`: composing `pullbackCompIsoOfEq f g fg` and
-`pullbackCompIsoOfEq fg h fgh` agrees with `pullbackCompIsoOfEq g h gh` and
-`pullbackCompIsoOfEq f gh fgh`. -/
-@[reassoc]
-theorem pullbackCompIsoOfEq_comp_hom_app {W X Y Z : C} {f : W ⟶ X} {g : X ⟶ Y} {h : Y ⟶ Z}
-    {fg : W ⟶ Y} {gh : X ⟶ Z} {fgh : W ⟶ Z}
-    [HasPullbacksAlong f] [HasPullbacksAlong g] [HasPullbacksAlong h]
-    [HasPullbacksAlong fg] [HasPullbacksAlong gh] [HasPullbacksAlong fgh]
-    (hfg : f ≫ g = fg) (hgh : g ≫ h = gh) (hfgh₁ : f ≫ gh = fgh) (hfgh₂ : fg ≫ h = fgh)
-    (A : Over Z) :
-    (pullbackCompIsoOfEq f g fg hfg).hom.app ((pullback h).obj A) ≫
-        (pullbackCompIsoOfEq fg h fgh hfgh₂).hom.app A =
-      (pullback f).map ((pullbackCompIsoOfEq g h gh hgh).hom.app A) ≫
-        (pullbackCompIsoOfEq f gh fgh hfgh₁).hom.app A := by
-  apply (cancel_epi ((pullbackCompIsoOfEq fg h fgh hfgh₂).inv.app A ≫
-    (pullbackCompIsoOfEq f g fg hfg).inv.app ((pullback h).obj A))).mp
-  have hL : ((pullbackCompIsoOfEq fg h fgh hfgh₂).inv.app A ≫
-        (pullbackCompIsoOfEq f g fg hfg).inv.app ((pullback h).obj A)) ≫
-      (pullbackCompIsoOfEq f g fg hfg).hom.app ((pullback h).obj A) ≫
-        (pullbackCompIsoOfEq fg h fgh hfgh₂).hom.app A = 𝟙 _ := by
-    simp
-  have hR : ((pullbackCompIsoOfEq fg h fgh hfgh₂).inv.app A ≫
-        (pullbackCompIsoOfEq f g fg hfg).inv.app ((pullback h).obj A)) ≫
-      (pullback f).map ((pullbackCompIsoOfEq g h gh hgh).hom.app A) ≫
-        (pullbackCompIsoOfEq f gh fgh hfgh₁).hom.app A = 𝟙 _ := by
-    rw [pullbackCompIsoOfEq_comp_inv_app hfg hgh hfgh₁ hfgh₂ A]
-    simp [← Functor.map_comp_assoc]
-  exact hL.trans hR.symm
+/-- For a commuting triangle `a ≫ b = d`, morphisms which agree after base change along `b` agree
+after base change along `d`. -/
+theorem pullback_map_eq_map_of_comp_eq (h : a ≫ b = d) {A B : Over Z} {u v : A ⟶ B}
+    (huv : (pullback b).map u = (pullback b).map v) : (pullback d).map u = (pullback d).map v := by
+  rw [← cancel_epi ((pullbackCompIsoOfEq h).hom.app A), ← (pullbackCompIsoOfEq h).hom.naturality,
+    ← (pullbackCompIsoOfEq h).hom.naturality]
+  simp [huv]
 
 section IdLeft
 
 attribute [local instance] hasPullback_of_right_iso
 
-/-- Forward component of `pullbackCompIsoOfEq (𝟙 X) g g` is `pullbackId.hom`. -/
-@[simp] theorem pullbackCompIsoOfEq_id_left_hom_app {X Y : C} (g : X ⟶ Y) [HasPullbacksAlong g]
+/-- Forward component of `pullbackCompIsoOfEq (Category.id_comp g)` is `pullbackId.hom`. -/
+@[simp] theorem pullbackCompIsoOfEq_id_left_hom_app (g : X ⟶ Y) [HasPullbacksAlong g]
     (A : Over Y) :
-    (pullbackCompIsoOfEq (𝟙 X) g g (Category.id_comp g)).hom.app A =
+    (pullbackCompIsoOfEq (Category.id_comp g)).hom.app A =
       pullbackId.hom.app ((pullback g).obj A) := by
   apply pullback_hom_ext
   simp [pullbackId]
 
-/-- Inverse component of `pullbackCompIsoOfEq (𝟙 X) g g` is `pullbackId.inv`. -/
-@[simp] theorem pullbackCompIsoOfEq_id_left_inv_app {X Y : C} (g : X ⟶ Y) [HasPullbacksAlong g]
+/-- Inverse component of `pullbackCompIsoOfEq (Category.id_comp g)` is `pullbackId.inv`. -/
+@[simp] theorem pullbackCompIsoOfEq_id_left_inv_app (g : X ⟶ Y) [HasPullbacksAlong g]
     (A : Over Y) :
-    (pullbackCompIsoOfEq (𝟙 X) g g (Category.id_comp g)).inv.app A =
+    (pullbackCompIsoOfEq (Category.id_comp g)).inv.app A =
       pullbackId.inv.app ((pullback g).obj A) := by
-  rw [← cancel_epi ((pullbackCompIsoOfEq (𝟙 X) g g (Category.id_comp g)).hom.app A),
+  rw [← cancel_epi ((pullbackCompIsoOfEq (Category.id_comp g)).hom.app A),
     Iso.hom_inv_id_app, pullbackCompIsoOfEq_id_left_hom_app, Iso.hom_inv_id_app]; rfl
 
 end IdLeft
+
+end Triangle
 
 section Transport
 
@@ -352,8 +461,8 @@ noncomputable def pullbackTransport {A B S₁ S₂ : C} {m : A ⟶ B}
     {Y₁ : Over S₁} {Y₂ : Over S₂}
     (φ : (pullback g₁).obj Y₁ ⟶ (pullback g₂).obj Y₂) :
     (pullback a₁).obj Y₁ ⟶ (pullback a₂).obj Y₂ :=
-  (pullbackCompIsoOfEq m g₁ a₁ h₁).inv.app Y₁ ≫ (pullback m).map φ ≫
-    (pullbackCompIsoOfEq m g₂ a₂ h₂).hom.app Y₂
+  (pullbackCompIsoOfEq h₁).inv.app Y₁ ≫ (pullback m).map φ ≫
+    (pullbackCompIsoOfEq h₂).hom.app Y₂
 
 /-- Transport an isomorphism between `Over.pullback`s along `m : A ⟶ B` using identifications
 `h₁ : m ≫ g₁ = a₁` and `h₂ : m ≫ g₂ = a₂`. -/
@@ -365,8 +474,8 @@ noncomputable def pullbackTransportIso {A B S₁ S₂ : C} {m : A ⟶ B}
     {Y₁ : Over S₁} {Y₂ : Over S₂}
     (e : (pullback g₁).obj Y₁ ≅ (pullback g₂).obj Y₂) :
     (pullback a₁).obj Y₁ ≅ (pullback a₂).obj Y₂ :=
-  ((pullbackCompIsoOfEq m g₁ a₁ h₁).app Y₁).symm ≪≫ (pullback m).mapIso e ≪≫
-    (pullbackCompIsoOfEq m g₂ a₂ h₂).app Y₂
+  ((pullbackCompIsoOfEq h₁).app Y₁).symm ≪≫ (pullback m).mapIso e ≪≫
+    (pullbackCompIsoOfEq h₂).app Y₂
 
 /-- Unfolding equation for `pullbackTransport`. -/
 theorem pullbackTransport_def {A B S₁ S₂ : C} {m : A ⟶ B}
@@ -377,8 +486,8 @@ theorem pullbackTransport_def {A B S₁ S₂ : C} {m : A ⟶ B}
     {Y₁ : Over S₁} {Y₂ : Over S₂}
     (φ : (pullback g₁).obj Y₁ ⟶ (pullback g₂).obj Y₂) :
     pullbackTransport h₁ h₂ φ =
-      (pullbackCompIsoOfEq m g₁ a₁ h₁).inv.app Y₁ ≫ (pullback m).map φ ≫
-        (pullbackCompIsoOfEq m g₂ a₂ h₂).hom.app Y₂ :=
+      (pullbackCompIsoOfEq h₁).inv.app Y₁ ≫ (pullback m).map φ ≫
+        (pullbackCompIsoOfEq h₂).hom.app Y₂ :=
   (rfl)
 
 /-- The forward morphism of `pullbackTransportIso h₁ h₂ e` is `pullbackTransport h₁ h₂ e.hom`. -/
@@ -486,9 +595,9 @@ theorem pullbackTransport_comp {A B D S₁ S₂ : C}
   rw [← pullbackCompIsoOfEq_comp_inv_app_assoc hm hm₂₁ hm₁₁ ha₁,
     ← pullbackCompIsoOfEq_comp_hom_app hm hm₂₂ hm₁₂ ha₂]
   have hnat : (pullback m₁).map ((pullback m₂).map φ) ≫
-      (pullbackCompIsoOfEq m₁ m₂ m hm).hom.app ((pullback g₂).obj Y₂) =
-      (pullbackCompIsoOfEq m₁ m₂ m hm).hom.app ((pullback g₁).obj Y₁) ≫ (pullback m).map φ :=
-    (pullbackCompIsoOfEq m₁ m₂ m hm).hom.naturality φ
+      (pullbackCompIsoOfEq hm).hom.app ((pullback g₂).obj Y₂) =
+      (pullbackCompIsoOfEq hm).hom.app ((pullback g₁).obj Y₁) ≫ (pullback m).map φ :=
+    (pullbackCompIsoOfEq hm).hom.naturality φ
   rw [reassoc_of% hnat, Iso.inv_hom_id_app_assoc]
 
 /-- Transporting a morphism between pullbacks along a morphism equal to the identity recovers the
@@ -518,11 +627,11 @@ theorem pullbackTransport_pullbackCompIsoOfEq_conj {A B D S₁ S₂ : C}
     {Y₁ : Over S₁} {Y₂ : Over S₂}
     (φ : (pullback b).obj ((pullback f₁).obj Y₁) ⟶ (pullback b).obj ((pullback f₂).obj Y₂)) :
     pullbackTransport habf₁ habf₂
-        ((pullbackCompIsoOfEq b f₁ bf₁ hbf₁).inv.app Y₁ ≫ φ ≫
-          (pullbackCompIsoOfEq b f₂ bf₂ hbf₂).hom.app Y₂) =
-      (pullbackCompIsoOfEq ab f₁ abf₁ hflat₁).inv.app Y₁ ≫
+        ((pullbackCompIsoOfEq hbf₁).inv.app Y₁ ≫ φ ≫
+          (pullbackCompIsoOfEq hbf₂).hom.app Y₂) =
+      (pullbackCompIsoOfEq hflat₁).inv.app Y₁ ≫
         pullbackTransport hab hab φ ≫
-        (pullbackCompIsoOfEq ab f₂ abf₂ hflat₂).hom.app Y₂ := by
+        (pullbackCompIsoOfEq hflat₂).hom.app Y₂ := by
   simp only [pullbackTransport, Functor.map_comp, Category.assoc]
   rw [← pullbackCompIsoOfEq_comp_inv_app_assoc hab hbf₁ habf₁ hflat₁ Y₁,
     ← pullbackCompIsoOfEq_comp_hom_app hab hbf₂ habf₂ hflat₂ Y₂]
@@ -538,12 +647,12 @@ theorem pullbackTransport_comp_map_inv {A B D E S₂ : C}
     (h₂ : m ≫ g₂ = a₂) {Y₁ : Over E} {Y₂ : Over S₂}
     {V : Over D} (e : (pullback j₁).obj Y₁ ⟶ V)
     (φ : (pullback i₁).obj V ⟶ (pullback g₂).obj Y₂) :
-    (pullbackCompIsoOfEq g₁ j₁ gj₁ hgj).inv.app Y₁ ≫ (pullback g₁).map e ≫
+    (pullbackCompIsoOfEq hgj).inv.app Y₁ ≫ (pullback g₁).map e ≫
         pullbackTransport hmi h₂ φ =
       pullbackTransport hmij h₂
-        ((pullbackCompIsoOfEq i₁ j₁ ij₁ hij).inv.app Y₁ ≫ (pullback i₁).map e ≫ φ) := by
+        ((pullbackCompIsoOfEq hij).inv.app Y₁ ≫ (pullback i₁).map e ≫ φ) := by
   simp only [pullbackTransport]
-  rw [reassoc_of% ((pullbackCompIsoOfEq m i₁ g₁ hmi).inv.naturality e),
+  rw [reassoc_of% ((pullbackCompIsoOfEq hmi).inv.naturality e),
     pullbackCompIsoOfEq_comp_inv_app_assoc hmi hij hmij hgj Y₁,
     ← (pullback m).map_comp_assoc, ← (pullback m).map_comp_assoc, Category.assoc]
 
@@ -658,7 +767,7 @@ noncomputable def pullbackLeftSymmIso {X Y : C} (f : X ⟶ Y) [HasPullbacksAlong
     apply Limits.pullback.hom_ext <;> simp
   simp [pullbackLeftSymmIso, pullbackLeftSymm, h₁, h₂]
 
-/-- Conjugating `pullbackHomOfFstEq g b hb` along `pullbackCompIsoOfEq m g mg h` yields on
+/-- Conjugating `pullbackHomOfFstEq g b hb` along `pullbackCompIsoOfEq h` yields on
 underlying objects the `pullbackRightPullbackFstIsoOfEq`-conjugate of the raw pullback map of `b`,
 conjugated by `pullbackSymmetry`. -/
 theorem pullbackCompIsoOfEq_conj_left_eq_pullbackMap
@@ -671,9 +780,9 @@ theorem pullbackCompIsoOfEq_conj_left_eq_pullbackMap
     [HasPullback mg Y₁.hom] [HasPullback mg Y₂.hom]
     (b : Limits.pullback g Y₁.hom ⟶ Limits.pullback g Y₂.hom)
     (hb : b ≫ Limits.pullback.fst g Y₂.hom = Limits.pullback.fst g Y₁.hom) :
-    ((pullbackCompIsoOfEq m g mg h).inv.app Y₁ ≫
+    ((pullbackCompIsoOfEq h).inv.app Y₁ ≫
         (pullback m).map (pullbackHomOfFstEq g b hb) ≫
-        (pullbackCompIsoOfEq m g mg h).hom.app Y₂).left =
+        (pullbackCompIsoOfEq h).hom.app Y₂).left =
       (Limits.pullbackSymmetry Y₁.hom mg).hom ≫
         (Limits.pullbackRightPullbackFstIsoOfEq m g mg h Y₁.hom).inv ≫
         Limits.pullback.map m (Limits.pullback.fst g Y₁.hom)
@@ -681,9 +790,9 @@ theorem pullbackCompIsoOfEq_conj_left_eq_pullbackMap
         (Limits.pullbackRightPullbackFstIsoOfEq m g mg h Y₂.hom).hom ≫
         (Limits.pullbackSymmetry mg Y₂.hom).hom := by
   apply Limits.pullback.hom_ext
-  · have hLHS : ((pullbackCompIsoOfEq m g mg h).inv.app Y₁ ≫
+  · have hLHS : ((pullbackCompIsoOfEq h).inv.app Y₁ ≫
           (pullback m).map (pullbackHomOfFstEq g b hb) ≫
-          (pullbackCompIsoOfEq m g mg h).hom.app Y₂).left ≫
+          (pullbackCompIsoOfEq h).hom.app Y₂).left ≫
         Limits.pullback.fst Y₂.hom mg =
         (Limits.pullbackSymmetry Y₁.hom mg).hom ≫
           Limits.pullback.map mg Y₁.hom g Y₁.hom m (𝟙 _) (𝟙 _) (by simp [h]) (by simp) ≫
@@ -702,13 +811,13 @@ theorem pullbackCompIsoOfEq_conj_left_eq_pullbackMap
           b ≫ Limits.pullback.snd g Y₂.hom := by
       simp
     exact hLHS.trans hRHS.symm
-  · have hw := Over.w ((pullbackCompIsoOfEq m g mg h).inv.app Y₁ ≫
+  · have hw := Over.w ((pullbackCompIsoOfEq h).inv.app Y₁ ≫
         (pullback m).map (pullbackHomOfFstEq g b hb) ≫
-        (pullbackCompIsoOfEq m g mg h).hom.app Y₂)
+        (pullbackCompIsoOfEq h).hom.app Y₂)
     refine hw.trans ?_
     simp
 
-/-- Conjugating `pullbackHomOfFstEq g b hb` along `pullbackCompIsoOfEq m g mg h` recovers
+/-- Conjugating `pullbackHomOfFstEq g b hb` along `pullbackCompIsoOfEq h` recovers
 `pullbackHomOfFstEq mg a ha` whenever `b` and `a` commute with the pullback transition map. -/
 theorem pullbackCompIsoOfEq_conj_hom_of_fstEq
     {A B S : C} {m : A ⟶ B} {g : B ⟶ S} {mg : A ⟶ S}
@@ -724,9 +833,9 @@ theorem pullbackCompIsoOfEq_conj_hom_of_fstEq
     (ha : a ≫ Limits.pullback.fst mg Y₂.hom = Limits.pullback.fst mg Y₁.hom)
     (hcomp : Limits.pullback.map mg Y₁.hom g Y₁.hom m (𝟙 _) (𝟙 _) (by simp [h]) (by simp) ≫ b =
       a ≫ Limits.pullback.map mg Y₂.hom g Y₂.hom m (𝟙 _) (𝟙 _) (by simp [h]) (by simp)) :
-    (pullbackCompIsoOfEq m g mg h).inv.app Y₁ ≫
+    (pullbackCompIsoOfEq h).inv.app Y₁ ≫
         (pullback m).map (pullbackHomOfFstEq g b hb) ≫
-        (pullbackCompIsoOfEq m g mg h).hom.app Y₂ =
+        (pullbackCompIsoOfEq h).hom.app Y₂ =
       pullbackHomOfFstEq mg a ha := by
   ext1
   rw [pullbackCompIsoOfEq_conj_left_eq_pullbackMap h b hb,
@@ -734,13 +843,13 @@ theorem pullbackCompIsoOfEq_conj_hom_of_fstEq
   simp
 
 /-- Projection cancellation for an isomorphism `e : (Over.pullback j).obj V' ≅ V` transported
-along `pullbackCompIsoOfEq f j ij h`. -/
+along `pullbackCompIsoOfEq h`. -/
 @[reassoc]
 theorem pullbackCompIsoOfEq_inv_map_hom_fst_inv_fst
     {Inf U UW : C} {f : Inf ⟶ U} {j : U ⟶ UW} {ij : Inf ⟶ UW}
     [HasPullbacksAlong f] [HasPullbacksAlong j] [HasPullbacksAlong ij]
     (h : f ≫ j = ij) {V' : Over UW} {V : Over U} (e : (pullback j).obj V' ≅ V) :
-    ((pullbackCompIsoOfEq f j ij h).inv.app V' ≫ (pullback f).map e.hom).left ≫
+    ((pullbackCompIsoOfEq h).inv.app V' ≫ (pullback f).map e.hom).left ≫
         Limits.pullback.fst V.hom f ≫ e.inv.left ≫ Limits.pullback.fst V'.hom j =
       Limits.pullback.fst V'.hom ij := by
   rw [Over.comp_left, Category.assoc, pullback_map_left_fst_assoc]
@@ -751,8 +860,6 @@ theorem pullbackCompIsoOfEq_inv_map_hom_fst_inv_fst
     Limits.pullback.lift_fst, Category.comp_id]
 
 end SymmetryBridge
-
-
 
 /-- Transporting `((Over.pullback g).map φ).left` along identifications `Y₁ = Over.mk p₁` and
 `Y₂ = Over.mk p₂` yields the canonical `Limits.pullback.lift` on the underlying pullbacks. -/
@@ -767,6 +874,21 @@ theorem pullback_map_left_of_eq_mk {S T : C} (g : T ⟶ S) [HasPullbacksAlong g]
           simp only [Over.mk_left, Over.mk_hom] at hw; simp [hw, Limits.pullback.condition]) := by
   subst h₁ h₂; simp
 
+/-- Two arrows agree after base change precisely when their underlying arrows agree after
+precomposition with the projection from the base-changed source. -/
+theorem pullback_map_eq_map_iff {X Y : C} (f : X ⟶ Y) [HasPullbacksAlong f]
+    {A B : Over Y} (u v : A ⟶ B) :
+    (pullback f).map u = (pullback f).map v ↔
+      pullback.fst A.hom f ≫ u.left = pullback.fst A.hom f ≫ v.left := by
+  constructor
+  · intro h
+    simpa using congrArg (fun w ↦ w.left ≫ pullback.fst B.hom f) h
+  · intro h
+    ext1
+    apply pullback.hom_ext
+    · simpa using h
+    · simp
+
 /-- Base change `Over.pullback f : Over Y ⥤ Over X` preserves epimorphisms whenever `Over.forget Y`
 does and epimorphisms in `C` are stable under base change. -/
 instance preservesEpimorphisms_pullback {X Y : C} (f : X ⟶ Y) [HasPullbacksAlong f]
@@ -778,6 +900,19 @@ instance preservesEpimorphisms_pullback {X Y : C} (f : X ⟶ Y) [HasPullbacksAlo
     (forget X).epi_of_epi_map <|
       MorphismProperty.of_isPullback (P := MorphismProperty.epimorphisms C)
         (isPullback_pullback_map_left f k).flip ‹_›
+
+/-- For a monomorphism `g`, the unit `A ⟶ g^*(g_! A)` of `Over.map g ⊣ Over.pullback g` is an
+isomorphism: the square with sides `𝟙 A`, `A ⟶ X`, `A ⟶ Y` and `g` is a pullback. -/
+instance isIso_mapPullbackAdj_unit_app {X Y : C} (g : X ⟶ Y) [HasPullbacksAlong g] [Mono g]
+    (A : Over X) : IsIso ((mapPullbackAdj g).unit.app A) := by
+  have h : IsPullback (𝟙 A.left) A.hom (A.hom ≫ g) g :=
+    IsPullback.of_horiz_isIso_mono ⟨by simp⟩
+  have hl : ((mapPullbackAdj g).unit.app A).left = h.isoPullback.hom := by
+    apply pullback.hom_ext <;> simp
+  have : IsIso ((forget X).map ((mapPullbackAdj g).unit.app A)) := by
+    rw [forget_map, hl]
+    infer_instance
+  exact isIso_of_reflects_iso _ (forget X)
 
 section HasBinaryProducts
 
@@ -812,5 +947,99 @@ instance preservesEpimorphisms_star (X : C) [(prod.functor.obj X).PreservesEpimo
 end HasBinaryProducts
 
 end Over
+
+namespace Limits.Cone
+
+variable {C : Type u} [Category.{v} C] [HasPullbacks C] {J : Type*} [Category* J] {D : J ⥤ C}
+
+section LiftsAlong
+
+variable (c : Cone D)
+
+/-- The morphism `u` between base changes to the cone point lifts to a morphism between the base
+changes to `D.obj k` along `g : k ⟶ i`: the base change of the lift to the cone point is `u`, up to
+the comparison isomorphisms `Over.pullbackCompIsoOfEq`. -/
+def LiftsAlong {i : J} {A B : Over (D.obj i)}
+    (u : (Over.pullback (c.π.app i)).obj A ⟶ (Over.pullback (c.π.app i)).obj B) {k : J}
+    (g : k ⟶ i) : Prop :=
+  ∃ v : (Over.pullback (D.map g)).obj A ⟶ (Over.pullback (D.map g)).obj B,
+    (Over.pullback (c.π.app k)).map v ≫ (Over.pullbackCompIsoOfEq (c.w g)).hom.app B =
+      (Over.pullbackCompIsoOfEq (c.w g)).hom.app A ≫ u
+
+variable {c}
+
+/-- A lift is a morphism whose base change agrees with the given arrow under the canonical
+comparison isomorphisms. -/
+theorem liftsAlong_iff {i : J} {A B : Over (D.obj i)}
+    (u : (Over.pullback (c.π.app i)).obj A ⟶ (Over.pullback (c.π.app i)).obj B) {k : J}
+    (g : k ⟶ i) : c.LiftsAlong u g ↔
+      ∃ v : (Over.pullback (D.map g)).obj A ⟶ (Over.pullback (D.map g)).obj B,
+        (Over.pullback (c.π.app k)).map v ≫ (Over.pullbackCompIsoOfEq (c.w g)).hom.app B =
+          (Over.pullbackCompIsoOfEq (c.w g)).hom.app A ≫ u := Iff.rfl
+
+/-- Identity morphisms lift along every morphism to `i`. -/
+@[simp]
+theorem liftsAlong_id {i : J} (A : Over (D.obj i)) {k : J} (g : k ⟶ i) :
+    c.LiftsAlong (𝟙 ((Over.pullback (c.π.app i)).obj A)) g :=
+  ⟨𝟙 _, by simp⟩
+
+/-- Lifts of two composable morphisms along the same morphism to `i` compose to a lift of their
+composite. -/
+theorem liftsAlong_comp {i : J} {A B E : Over (D.obj i)}
+    {u : (Over.pullback (c.π.app i)).obj A ⟶ (Over.pullback (c.π.app i)).obj B}
+    {u' : (Over.pullback (c.π.app i)).obj B ⟶ (Over.pullback (c.π.app i)).obj E} {k : J}
+    {g : k ⟶ i} (hu : c.LiftsAlong u g) (hu' : c.LiftsAlong u' g) :
+    c.LiftsAlong (u ≫ u') g := by
+  obtain ⟨v, hv⟩ := hu
+  obtain ⟨v', hv'⟩ := hu'
+  exact ⟨v ≫ v', by simp [hv', reassoc_of% hv]⟩
+
+/-- A lift along `g` base changes to a lift along `h ≫ g`. -/
+theorem LiftsAlong.precomp {i : J} {A B : Over (D.obj i)}
+    {u : (Over.pullback (c.π.app i)).obj A ⟶ (Over.pullback (c.π.app i)).obj B} {k l : J}
+    {g : k ⟶ i} (h : l ⟶ k) (hg : c.LiftsAlong u g) : c.LiftsAlong u (h ≫ g) := by
+  obtain ⟨v, hv⟩ := hg
+  let C := Over.pullbackCompIsoOfEq (D.map_comp h g).symm
+  refine ⟨C.inv.app A ≫ (Over.pullback (D.map h)).map v ≫ C.hom.app B, ?_⟩
+  have hcoh (Z : Over (D.obj i)) := Over.pullbackCompIsoOfEq_hom_app_eq (c.w h)
+    (D.map_comp h g).symm (c.w g) (c.w (h ≫ g)) Z
+  have hnat := (Over.pullbackCompIsoOfEq (c.w h)).hom.naturality v
+  dsimp only [Functor.comp_map] at hnat
+  rw [hcoh, hcoh]
+  simp [C, reassoc_of% hnat, hv]
+
+end LiftsAlong
+
+end Limits.Cone
+
+namespace IsPullback
+
+variable {C : Type u} [Category.{v} C] {P X Y Z : C} {fst : P ⟶ X} {snd : P ⟶ Y} {f : X ⟶ Z}
+  {g : Y ⟶ Z} [HasPullbacksAlong fst] [HasPullbacksAlong g]
+
+/-- The Beck–Chevalley isomorphism of a pullback square `fst ≫ f = snd ≫ g`: base change along
+`fst` followed by composition with `snd` is composition with `f` followed by base change along
+`g`. On an object `A ⟶ X` it identifies `A ×_X P`, regarded over `Y` through `snd`, with
+`A ×_Z Y`. -/
+noncomputable def overPullbackCompMapIso (sq : IsPullback fst snd f g) :
+    Over.pullback fst ⋙ Over.map snd ≅ Over.map f ⋙ Over.pullback g :=
+  NatIso.ofComponents
+    (fun A ↦ Over.isoMk ((IsPullback.of_hasPullback A.hom fst).paste_vert sq).isoPullback
+      (by simp))
+    (fun u ↦ by ext1; apply pullback.hom_ext <;> simp)
+
+@[reassoc (attr := simp)]
+theorem overPullbackCompMapIso_hom_app_left_fst (sq : IsPullback fst snd f g) (A : Over X) :
+    (sq.overPullbackCompMapIso.hom.app A).left ≫ pullback.fst (A.hom ≫ f) g =
+      pullback.fst A.hom fst := by
+  simp [overPullbackCompMapIso]
+
+@[reassoc (attr := simp)]
+theorem overPullbackCompMapIso_hom_app_left_snd (sq : IsPullback fst snd f g) (A : Over X) :
+    (sq.overPullbackCompMapIso.hom.app A).left ≫ pullback.snd (A.hom ≫ f) g =
+      pullback.snd A.hom fst ≫ snd := by
+  simp [overPullbackCompMapIso]
+
+end IsPullback
 
 end CategoryTheory

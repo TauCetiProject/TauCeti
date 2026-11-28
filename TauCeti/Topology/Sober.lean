@@ -5,18 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.NoetherianSpace
 public import Mathlib.Topology.Sober
 public import TauCeti.Logic.Equiv.Set
+
+import TauCeti.Topology.Closure
 
 /-!
 # Generic points and generizations
 
 In a sober space, the generic points of irreducible components are precisely the points
 with no proper generization. Every point of a closed subset is a specialization of such a
-generic point of that subset; in particular, every proper open `U ≠ ⊤` misses a point whose
-strict generizations all lie in `U` (`TopologicalSpace.Opens.exists_notMem_specializes_imp_mem`).
-These facts let one choose component-generic points without Noetherianity or a dimension
-argument.
+generic point of that subset, which has no proper generization in the subset
+(`IsClosed.exists_maximal_specializes`); in particular, every proper open `U ≠ ⊤` misses a point
+whose strict generizations all lie in `U`
+(`TopologicalSpace.Opens.exists_notMem_specializes_imp_mem`). These facts let one choose
+component-generic points without Noetherianity or a dimension argument. In a Noetherian space,
+every dense open set contains all the component-generic points.
+
+In a quasi-sober space where the closure of every component-generic point has nonempty
+interior, a generization-stable subset is dense exactly when it contains all component-generic
+points.
 
 In a sober space, `x ↦ closure {x}` is a bijection from component-generic points onto
 irreducible components. For a continuous map between sober spaces, bijections on
@@ -32,9 +41,16 @@ public section
 
 open Set Topology
 
+variable {X : Type*} [TopologicalSpace X]
+
+/-- A generization of a component-generic point has the same closure as that point. -/
+theorem Specializes.closure_eq_of_mem_genericPoints {x y : X}
+    (hy : y ⤳ x) (hx : x ∈ genericPoints X) : _root_.closure {y} = _root_.closure {x} :=
+  (hx.2 isIrreducible_singleton.closure hy.closure_subset).antisymm hy.closure_subset
+
 namespace TauCeti
 
-variable {X : Type*} [TopologicalSpace X] [QuasiSober X] [T0Space X]
+variable [QuasiSober X] [T0Space X]
 
 /-- In a sober space, the generic points of irreducible components are exactly the points
 with no proper generization. -/
@@ -42,10 +58,8 @@ theorem mem_genericPoints_iff {x : X} :
     x ∈ genericPoints X ↔ ∀ y : X, y ⤳ x → y = x := by
   constructor
   · intro hx y hy
-    have hle : closure ({x} : Set X) ⊆ closure {y} :=
-      specializes_iff_closure_subset.mp hy
-    exact (hy.antisymm (specializes_iff_closure_subset.mpr
-      (hx.2 isIrreducible_singleton.closure hle))).eq
+    exact (inseparable_iff_closure_eq.mpr
+      (hy.closure_eq_of_mem_genericPoints hx)).eq
   · intro hx
     refine ⟨isIrreducible_singleton.closure, fun t ht hxt ↦ ?_⟩
     have hgen := ht.isGenericPoint_genericPoint_closure
@@ -66,6 +80,32 @@ theorem bijOn_closure_singleton_genericPoints :
 
 end TauCeti
 
+/-- The component-generic points are stable under generization. -/
+theorem TauCeti.stableUnderGeneralization_genericPoints {X : Type*} [TopologicalSpace X] :
+    StableUnderGeneralization (genericPoints X) := by
+  intro x y hyx hx
+  rw [genericPoints, mem_ofPred_eq,
+    hyx.closure_eq_of_mem_genericPoints hx]
+  exact hx
+
+/-- If every component-generic point has closure with nonempty interior, a dense set stable
+under generization contains every component-generic point. -/
+theorem Dense.genericPoints_subset_of_nonempty_interior
+    {X : Type*} [TopologicalSpace X] {s : Set X} (hd : Dense s)
+    (hinterior : ∀ x ∈ genericPoints X, (interior (closure {x})).Nonempty)
+    (hs : StableUnderGeneralization s) : genericPoints X ⊆ s :=
+  fun x hx ↦ hd.mem_of_nonempty_interior_closure_singleton hs (hinterior x hx)
+
+/-- In a quasi-sober space where each component-generic point has closure with nonempty
+interior, a set stable under generization is dense exactly when it contains all
+component-generic points. -/
+theorem TauCeti.dense_iff_genericPoints_subset_of_nonempty_interior
+    {X : Type*} [TopologicalSpace X] [QuasiSober X] {s : Set X}
+    (hinterior : ∀ x ∈ genericPoints X, (interior (closure {x})).Nonempty)
+    (hs : StableUnderGeneralization s) : Dense s ↔ genericPoints X ⊆ s :=
+  ⟨fun hd ↦ hd.genericPoints_subset_of_nonempty_interior hinterior hs,
+    fun h ↦ (dense_iff_closure_eq.mpr genericPoints.closure).mono h⟩
+
 /-- Every point of a closed subset of a quasi-sober space is a specialization of a generic
 point of an irreducible component of that subset. -/
 theorem IsClosed.exists_genericPoint_specializes {X : Type*} [TopologicalSpace X]
@@ -78,6 +118,18 @@ theorem IsClosed.exists_genericPoint_specializes {X : Type*} [TopologicalSpace X
   exact ((genericPoints.isGenericPoint_ofComponent C).specializes mem_irreducibleComponent).map
     continuous_subtypeVal
 
+/-- Every point of a closed subset of a quasi-sober `T₀` space is a specialization of a point of
+the subset with no proper generization in the subset, namely the generic point of an irreducible
+component of the subset. -/
+theorem IsClosed.exists_maximal_specializes {X : Type*} [TopologicalSpace X] [QuasiSober X]
+    [T0Space X] {s : Set X} (hs : IsClosed s) {x : X} (hx : x ∈ s) :
+    ∃ z ∈ s, z ⤳ x ∧ ∀ y ∈ s, y ⤳ z → y = z := by
+  let : QuasiSober s := hs.isClosedEmbedding_subtypeVal.quasiSober
+  obtain ⟨z, hz, hzx⟩ := hs.exists_genericPoint_specializes hx
+  refine ⟨z, z.property, hzx, fun y hy hyz ↦ ?_⟩
+  exact congrArg Subtype.val ((TauCeti.mem_genericPoints_iff.mp hz) ⟨y, hy⟩
+    ((subtype_specializes_iff _ _).mpr hyz))
+
 /-- Every proper open `U ≠ ⊤` of a sober space `X` misses the generic point `s` of an irreducible
 component of `X \ U`; every strict generization of `s` lies in `U`. -/
 theorem TopologicalSpace.Opens.exists_notMem_specializes_imp_mem {X : Type*} [TopologicalSpace X]
@@ -85,18 +137,39 @@ theorem TopologicalSpace.Opens.exists_notMem_specializes_imp_mem {X : Type*} [To
     ∃ s : X, s ∉ U ∧ ∀ ⦃t : X⦄, t ⤳ s → t ≠ s → t ∈ U := by
   obtain ⟨z₀, hz₀⟩ : ((U : Set X)ᶜ).Nonempty :=
     Set.nonempty_compl.mpr fun h ↦ hU (SetLike.ext' (h.trans TopologicalSpace.Opens.coe_top.symm))
-  let : QuasiSober ((U : Set X)ᶜ : Set X) :=
-    U.isOpen.isClosed_compl.isClosedEmbedding_subtypeVal.quasiSober
-  obtain ⟨s, hs, -⟩ := U.isOpen.isClosed_compl.exists_genericPoint_specializes hz₀
-  refine ⟨s.val, s.property, fun t hts hne ↦ ?_⟩
-  by_contra htU
-  have hts' : (⟨t, htU⟩ : ((U : Set X)ᶜ : Set X)) ⤳ s :=
-    Topology.IsInducing.subtypeVal.specializes_iff.mp hts
-  exact hne (congrArg Subtype.val ((TauCeti.mem_genericPoints_iff.mp hs) ⟨t, htU⟩ hts'))
+  obtain ⟨s, hs, -, hgen⟩ := U.isOpen.isClosed_compl.exists_maximal_specializes hz₀
+  exact ⟨s, hs, fun t hts hne ↦ by_contra fun htU ↦ hne (hgen t htU hts)⟩
+
+/-- In a Noetherian space, a dense open set contains the generic point of every irreducible
+component. -/
+theorem Dense.genericPoints_subset {X : Type*} [TopologicalSpace X]
+    [TopologicalSpace.NoetherianSpace X] {U : Set X} (hU : Dense U) (hUo : IsOpen U) :
+    genericPoints X ⊆ U := by
+  -- Each irreducible component contains a nonempty open set, which meets `U`.
+  intro η hη
+  obtain ⟨o, ho, hne, hoC⟩ :=
+    TopologicalSpace.NoetherianSpace.exists_isOpen_nonempty_subset_irreducibleComponent _ hη
+  obtain ⟨y, hyo, hyU⟩ := hU.inter_open_nonempty o ho hne
+  exact (isGenericPoint_closure (x := η)).mem_open_set_iff hUo |>.mpr ⟨y, hoC hyo, hyU⟩
 
 section Maps
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- A continuous generalizing map into a quasi-sober space sends component-generic points to
+component-generic points. -/
+theorem GeneralizingMap.mapsTo_genericPoints [QuasiSober Y] {f : X → Y}
+    (hf : GeneralizingMap f) (hc : Continuous f) :
+    MapsTo f (genericPoints X) (genericPoints Y) := by
+  intro x hx
+  refine ⟨isIrreducible_singleton.closure, fun Z hZ hxZ ↦ ?_⟩
+  have hη := hZ.isGenericPoint_genericPoint_closure
+  obtain ⟨x', hx'x, hx'⟩ := hf (hη.specializes
+    (subset_closure (hxZ (subset_closure (mem_singleton _)))))
+  have hxx' : x ⤳ x' := specializes_iff_closure_subset.mpr
+    (hx'x.closure_eq_of_mem_genericPoints hx).le
+  have hfx : f x ⤳ hZ.genericPoint := hx' ▸ hxx'.map hc
+  exact subset_closure.trans (hη.def ▸ hfx.closure_subset)
 
 /-- A point is component-generic if and only if its image under an open embedding is
 component-generic in the ambient space. -/

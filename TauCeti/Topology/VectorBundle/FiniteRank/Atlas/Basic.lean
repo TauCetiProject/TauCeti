@@ -7,6 +7,10 @@ module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
+import TauCeti.Topology.Constructions.SumProd
+
+import TauCeti.Topology.FiberBundle.Sigma
+import TauCeti.Topology.LocallyConstant.Fiber
 
 /-!
 # Small variable-rank vector-bundle atlases
@@ -60,8 +64,8 @@ abbrev Fiber (x : X) := Fin (A.rank x) → 𝕜
 
 /-- Package the point-indexed coordinate core on the rank-`n` clopen stratum of `A` as a
 `FiniteRankBundleCore`. -/
--- Expose the rank projection so the dependent coordinate model reduces to `Fin n → 𝕜`.
-@[expose]
+-- Reduce the rank also during implicit-argument matching of coordinate-map simp lemmas.
+@[expose, implicit_reducible]
 def stratumCore (n : ℕ) : FiniteRankBundleCore 𝕜 {x : X // A.rank x = n} where
   rank := n
   core := A.charts n
@@ -154,6 +158,13 @@ theorem range_stratum (n : ℕ) :
       cases hp
       exact ⟨⟨⟨x, rfl⟩, v⟩, rfl⟩
 
+/-- Including a single fibre into the reconstructed total space of a variable-rank atlas is
+inducing. -/
+theorem isInducing_mk (x : X) :
+    IsInducing (fun v : A.Fiber x ↦ (⟨x, v⟩ : TotalSpace Unit A.Fiber)) :=
+  FiberBundle.isInducing_of_comp_eq_sigmaMk_totalSpaceMk (A.rank x) ⟨x, rfl⟩
+    A.totalSpaceHomeomorph.symm.isInducing fun v ↦ A.totalSpaceHomeomorph_symm_apply ⟨x, v⟩
+
 section Continuity
 
 variable {Y : Type*} [TopologicalSpace Y] {b : Y → X}
@@ -163,26 +174,11 @@ to the rank strata, read in the native core total spaces, are continuous. -/
 theorem continuous_mk_iff_rankStrata (hb : Continuous b) (s : ∀ y, A.Fiber (b y)) :
     Continuous (fun y => (⟨b y, s y⟩ : TotalSpace Unit A.Fiber)) ↔
       ∀ n : ℕ, Continuous (fun y : {y : Y // A.rank (b y) = n} =>
-        (⟨⟨b y, y.property⟩, fun i => s y (Fin.cast y.property.symm i)⟩ : (A.charts n).TotalSpace))
-            := by
-  constructor
-  · intro hs n
-    apply (IsEmbedding.sigmaMk (σ := fun n => (A.charts n).TotalSpace)).continuous_iff.2
-    convert A.totalSpaceHomeomorph.symm.continuous.comp (hs.comp continuous_subtypeVal) using 1
-    funext ⟨y, hy⟩
-    cases hy
-    simp only [Function.comp_apply, totalSpaceHomeomorph_symm_apply, Fin.cast_refl, id_eq]
-  · intro hs
-    apply continuous_of_cover_nhds (s := fun n : ℕ => {y : Y | A.rank (b y) = n})
-    · intro y
-      exact ⟨A.rank (b y), ((A.rank.isLocallyConstant.isOpen_fiber _).preimage hb).mem_nhds rfl⟩
-    · intro n
-      rw [continuousOn_iff_continuous_domRestrict]
-      convert A.totalSpaceHomeomorph.continuous.comp (continuous_sigmaMk.comp (hs n)) using 1
-      funext ⟨y, hy⟩
-      cases hy
-      simp only [Set.domRestrict_apply, Function.comp_apply, totalSpaceHomeomorph_apply,
-        Fin.cast_refl, id_eq]
+        (⟨⟨b y, y.property⟩, fun i => s y (Fin.cast y.property.symm i)⟩ :
+          (A.charts n).TotalSpace)) := by
+  rw [A.totalSpaceHomeomorph.symm.isInducing.continuous_iff]
+  exact (A.rank.isLocallyConstant.comp_continuous hb).continuous_iff_of_eq_sigmaMk _
+    fun n ⟨y, hy⟩ ↦ by cases hy; simp
 
 /-- The zero section of a variable-rank atlas is continuous. -/
 @[fun_prop]
@@ -283,12 +279,8 @@ stratum trivialization domain at `z`. -/
   rw [VectorBundleCore.baseSet_at, pointIndexedCore_localTriv_baseSet]
 
 private noncomputable def gluedReconstructionHomeomorph :
-    (ofBundles 𝕜 r E).GluedTotalSpace ≃ₜ Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n) where
-  toEquiv := Equiv.sigmaCongrRight fun n => (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).toEquiv
-  continuous_toFun := continuous_sigma fun n => continuous_sigmaMk.comp
-    (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).continuous
-  continuous_invFun := continuous_sigma fun n => continuous_sigmaMk.comp
-    (pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).symm.continuous
+    (ofBundles 𝕜 r E).GluedTotalSpace ≃ₜ Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n) :=
+  Homeomorph.sigmaCongrRight fun n => pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)
 
 /-- The reconstructed atlas is homeomorphic, over the base, to the disjoint union
 of the original bundles. The fibre maps are the preferred-chart continuous linear
@@ -302,19 +294,35 @@ noncomputable def reconstructionHomeomorph :
     reconstructionHomeomorph 𝕜 r E p =
       ⟨r p.proj, ⟨⟨p.proj, rfl⟩,
         pointIndexedCoreFiberEquiv 𝕜 (Fin (r p.proj) → 𝕜) (E (r p.proj)) ⟨p.proj, rfl⟩ p.snd⟩⟩ := by
-  -- The sigma equivalence applies the existing reconstruction on the selected stratum.
-  exact congrArg (Sigma.mk (r p.proj))
-    (pointIndexedCoreHomeomorph_apply 𝕜 (Fin (r p.proj) → 𝕜) (E (r p.proj)) _)
+  simp only [reconstructionHomeomorph, Homeomorph.trans_apply, totalSpaceHomeomorph_symm_apply,
+    gluedReconstructionHomeomorph]
+  -- `gluedReconstructionHomeomorph` has domain `(ofBundles 𝕜 r E).GluedTotalSpace` with
+  -- `charts` = `pointIndexedCore`; align the domain type so `Homeomorph.sigmaCongrRight_apply`
+  -- matches at reducible transparency.
+  change (Homeomorph.sigmaCongrRight fun n => pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n))
+    ⟨r p.proj, ⟨⟨p.proj, rfl⟩, p.snd⟩⟩ = _
+  rw [Homeomorph.sigmaCongrRight_apply, pointIndexedCoreHomeomorph_apply]
 
 /-- The inverse comparison is the inverse preferred-chart fibre equivalence, followed
 by the canonical inclusion of that stratum into the reconstructed total space. -/
 @[simp] theorem reconstructionHomeomorph_symm_apply
-    (n : ℕ) (p : TotalSpace (Fin n → 𝕜) (E n)) :
-    (reconstructionHomeomorph 𝕜 r E).symm ⟨n, p⟩ =
+    (p : Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n)) :
+    (reconstructionHomeomorph 𝕜 r E).symm p =
       (ofBundles 𝕜 r E).totalSpaceHomeomorph
-        ⟨n, ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) (E n) p.proj).symm p.snd⟩⟩ := by
-  exact congrArg (fun q => (ofBundles 𝕜 r E).totalSpaceHomeomorph ⟨n, q⟩)
-    (pointIndexedCoreHomeomorph_symm_apply 𝕜 (Fin n → 𝕜) (E n) p)
+        ⟨p.1, ⟨p.2.proj,
+          (pointIndexedCoreFiberEquiv 𝕜 (Fin p.1 → 𝕜) (E p.1) p.2.proj).symm p.2.snd⟩⟩ := by
+  simp only [reconstructionHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.symm_symm,
+    gluedReconstructionHomeomorph]
+  refine congrArg (ofBundles 𝕜 r E).totalSpaceHomeomorph ?_
+  -- Align the codomain `(ofBundles 𝕜 r E).GluedTotalSpace` with
+  -- `Σ n, (pointIndexedCore ...).TotalSpace` so `Homeomorph.sigmaCongrRight_symm` matches.
+  change (Homeomorph.sigmaCongrRight fun n =>
+    pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)).symm p = _
+  rw [Homeomorph.sigmaCongrRight_symm, Homeomorph.sigmaCongrRight_apply,
+    pointIndexedCoreHomeomorph_symm_apply]
+  -- `Sigma.mk` on `(ofBundles 𝕜 r E).GluedTotalSpace` identifies `(pointIndexedCore ...).Fiber`
+  -- with `(ofBundles 𝕜 r E).charts p.1 |>.Fiber`.
+  rfl
 
 /-- The reconstruction comparison covers the identity map on the original base. -/
 @[simp] theorem proj_reconstructionHomeomorph

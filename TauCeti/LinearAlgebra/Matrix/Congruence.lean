@@ -37,6 +37,20 @@ one factor after the other.
   entries of congruence under the basis substitution `r ↦ r + a + b`.
 * `Matrix.transpose_map_mul_mul_mul` — `((M N) ^ σ)ᵀ Q (M N) = (N ^ σ)ᵀ ((M ^ σ)ᵀ Q M) N`.
 * `Matrix.mul_mul_transpose_apply` — entrywise expansion of `(P * M * Qᵀ) i j` as a double sum.
+* `Matrix.mul_mul_mul_transpose_sub_mul_smul` and
+  `Matrix.mul_mul_transpose_sub_smul_of_mul_eq_one`: the similitude defect
+  `f(X, r) = X D Xᵀ - r D` of a product and of a left inverse, the identities behind closure of
+  similitude groups under multiplication and inversion.
+* `Matrix.transpose_mul_mul_eq_smul_of_mul_mul_transpose_eq_smul`: for a form with `J * J = -1`,
+  a similitude `M J Mᵀ = r J` with unit multiplier satisfies `Mᵀ J M = r J`.
+* `Matrix.smul_transpose_map_mul_mul_mul_eq` and
+  `Matrix.smul_transpose_map_mul_mul_eq_of_mul_eq_one`: twisted similitudes
+  `a • (g ^ σ)ᵀ Q g = e • Q'` between Gram matrices, possibly on different index types, compose,
+  and a right inverse of one is one in the opposite direction; for `Q = Q'` they are closed under
+  products and right inverses.
+* `Matrix.map_map_algebraMap`, `Matrix.map_transpose_mul_mul_sub_smul` and
+  `Matrix.map_transpose_mul_mul_sub`: a matrix over `R` read in an `R`-algebra, and the defect
+  `gᵀ M g - c M`, under an algebra morphism.
 
 ## References
 
@@ -125,6 +139,120 @@ theorem mul_mul_transpose_apply {l m n p R : Type*} [Fintype m] [Fintype n]
     (P * M * Qᵀ) i j = ∑ x : m, ∑ y : n, P i x * M x y * Q j y := by
   simp only [Matrix.mul_apply, transpose_apply, Finset.sum_mul]
   exact Finset.sum_comm
+
+/-- Congruence by a left inverse undoes congruence: if `W X = 1`, then `W (X D Xᵀ) Wᵀ = D`. -/
+theorem mul_mul_mul_transpose_mul_transpose_of_mul_eq_one {n R : Type*} [Fintype n]
+    [DecidableEq n] [CommSemiring R] {W X : Matrix n n R} (hW : W * X = 1) (D : Matrix n n R) :
+    W * (X * D * Xᵀ) * Wᵀ = D := by
+  rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hW, Matrix.one_mul, Matrix.mul_assoc,
+    ← Matrix.transpose_mul, hW, Matrix.transpose_one, Matrix.mul_one]
+
+section Similitude
+
+variable {n R : Type*} [Fintype n] [CommRing R]
+
+/-- **The similitude defect of a product**: for `f(X, r) = X D Xᵀ - r D`,
+`f(Y Z, r₁ r₂) = Y f(Z, r₂) Yᵀ + r₂ f(Y, r₁)`. -/
+theorem mul_mul_mul_transpose_sub_mul_smul (Y Z D : Matrix n n R) (r₁ r₂ : R) :
+    Y * Z * D * (Y * Z)ᵀ - (r₁ * r₂) • D =
+      Y * (Z * D * Zᵀ - r₂ • D) * Yᵀ + r₂ • (Y * D * Yᵀ - r₁ • D) := by
+  rw [Matrix.transpose_mul, Matrix.mul_sub, Matrix.sub_mul, smul_sub, Matrix.mul_smul,
+    Matrix.smul_mul, smul_smul, mul_comm r₂ r₁]
+  simp only [Matrix.mul_assoc]
+  abel
+
+/-- **The similitude defect of a left inverse**: for `f(X, r) = X D Xᵀ - r D`, if `W X = 1` and
+`s r = 1`, then `f(W, s) = -(s W f(X, r) Wᵀ)`. -/
+theorem mul_mul_transpose_sub_smul_of_mul_eq_one [DecidableEq n] {W X : Matrix n n R} {r s : R}
+    (hW : W * X = 1) (hs : s * r = 1) (D : Matrix n n R) :
+    W * D * Wᵀ - s • D = -(s • (W * (X * D * Xᵀ - r • D) * Wᵀ)) := by
+  rw [Matrix.mul_sub, Matrix.sub_mul, mul_mul_mul_transpose_mul_transpose_of_mul_eq_one hW,
+    Matrix.mul_smul, Matrix.smul_mul, smul_sub, smul_smul, hs, one_smul, neg_sub]
+
+/-- **Row and column similitudes agree for a form squaring to `-1`**: if `J * J = -1` and
+`M J Mᵀ = r J` with `r` a unit, then `Mᵀ J M = r J`. -/
+theorem transpose_mul_mul_eq_smul_of_mul_mul_transpose_eq_smul [DecidableEq n]
+    {J M : Matrix n n R} (hJ : J * J = -1) (r : Rˣ) (h : M * J * Mᵀ = (r : R) • J) :
+    Mᵀ * J * M = (r : R) • J := by
+  -- `M (J Mᵀ J) = r J J = -r`, so `-r⁻¹ J Mᵀ J` is a right, hence a left, inverse of `M`.
+  have hright : M * (-((r⁻¹ : Rˣ) : R) • (J * Mᵀ * J)) = 1 := by
+    rw [Matrix.mul_smul, ← Matrix.mul_assoc, ← Matrix.mul_assoc, h]
+    simp [hJ, smul_smul]
+  have hleft := mul_eq_one_comm.mp hright
+  rw [Matrix.smul_mul] at hleft
+  -- Cancelling the unit `-r⁻¹`: `J Mᵀ J M = -r`.
+  have hJM : J * Mᵀ * J * M = (-(r : R)) • (1 : Matrix n n R) := by
+    rw [← hleft, smul_smul, neg_mul_neg, Units.mul_inv, one_smul]
+  calc Mᵀ * J * M
+      = -(J * (J * Mᵀ * J * M)) := by
+        simp only [← Matrix.mul_assoc, hJ, Matrix.neg_mul, Matrix.one_mul, neg_neg]
+    _ = (r : R) • J := by
+        rw [hJM, Matrix.mul_smul, Matrix.mul_one, neg_smul, neg_neg]
+
+section Twisted
+
+variable {S : Type*} [CommSemiring S] (σ : S →+* S) {l m p : Type*} [Fintype l] [Fintype m]
+
+/-- **Twisted similitudes compose**: for forms `Q`, `Q'`, `Q''` on `l`, `m`, `p`, if
+`a • σ(g)ᵀ Q g = e • Q'` and `b • σ(h)ᵀ Q' h = f • Q''`, then
+`(a b) • σ(g h)ᵀ Q (g h) = (e f) • Q''`, where `σ(g)` applies `σ` to every entry. -/
+theorem smul_transpose_map_mul_mul_mul_eq {Q : Matrix l l S} {Q' : Matrix m m S}
+    {Q'' : Matrix p p S} {a b e f : S} {g : Matrix l m S} {h : Matrix m p S}
+    (hg : a • ((g.map σ)ᵀ * Q * g) = e • Q') (hh : b • ((h.map σ)ᵀ * Q' * h) = f • Q'') :
+    (a * b) • (((g * h).map σ)ᵀ * Q * (g * h)) = (e * f) • Q'' := by
+  calc (a * b) • (((g * h).map σ)ᵀ * Q * (g * h))
+      = b • ((h.map σ)ᵀ * (a • ((g.map σ)ᵀ * Q * g)) * h) := by
+        rw [transpose_map_mul_mul_mul, mul_comm, mul_smul, Matrix.mul_smul, Matrix.smul_mul]
+    _ = (e * f) • Q'' := by
+        rw [hg, Matrix.mul_smul, Matrix.smul_mul, smul_comm, hh, smul_smul]
+
+/-- **A right inverse of a twisted similitude is a similitude**: for forms `Q` on `l` and `Q'` on
+`m`, if `g g' = 1` and `a • σ(g)ᵀ Q g = e • Q'`, then `e • σ(g')ᵀ Q' g' = a • Q`. -/
+theorem smul_transpose_map_mul_mul_eq_of_mul_eq_one [DecidableEq l] {Q : Matrix l l S}
+    {Q' : Matrix m m S} {a e : S} {g : Matrix l m S} {g' : Matrix m l S} (hgg' : g * g' = 1)
+    (hg : a • ((g.map σ)ᵀ * Q * g) = e • Q') :
+    e • ((g'.map σ)ᵀ * Q' * g') = a • Q := by
+  calc e • ((g'.map σ)ᵀ * Q' * g') = (g'.map σ)ᵀ * (a • ((g.map σ)ᵀ * Q * g)) * g' := by
+        rw [hg, Matrix.mul_smul, Matrix.smul_mul]
+    _ = a • Q := by
+        rw [Matrix.mul_smul, Matrix.smul_mul, ← transpose_map_mul_mul_mul, hgg',
+          Matrix.map_one _ (map_zero σ) (map_one σ), transpose_one, Matrix.one_mul, Matrix.mul_one]
+
+end Twisted
+
+end Similitude
+
+section AlgebraMap
+
+variable {R A B : Type*} [CommSemiring R]
+
+/-- Reading a matrix over `R` in an `R`-algebra `A` and then mapping it by an algebra morphism
+`phi : A → B` reads it in `B`. -/
+theorem map_map_algebraMap {m n : Type*} [Semiring A] [Algebra R A] [Semiring B] [Algebra R B]
+    (phi : A →ₐ[R] B) (M : Matrix m n R) :
+    (M.map (algebraMap R A)).map phi = M.map (algebraMap R B) := by
+  rw [Matrix.map_map]
+  exact congrArg _ (funext phi.commutes)
+
+variable {n : Type*} [Fintype n] [Ring A] [Algebra R A] [Ring B] [Algebra R B]
+
+/-- **The similitude defect `gᵀ M g - c M` under an algebra morphism**: for a matrix `M` over `R`
+read in `A` and in `B`, mapping by `phi : A → B` applies `phi` to `g` and to `c`. -/
+theorem map_transpose_mul_mul_sub_smul (phi : A →ₐ[R] B) (M : Matrix n n R)
+    (g : Matrix n n A) (c : A) :
+    (gᵀ * M.map (algebraMap R A) * g - c • M.map (algebraMap R A)).map phi =
+      (g.map phi)ᵀ * M.map (algebraMap R B) * g.map phi - phi c • M.map (algebraMap R B) := by
+  rw [Matrix.map_sub _ (map_sub phi), Matrix.map_mul, Matrix.map_mul,
+    Matrix.map_smul' _ _ _ (map_mul phi), map_map_algebraMap, Matrix.transpose_map]
+
+/-- The isometry defect `gᵀ M g - M` under an algebra morphism: the case `c = 1` of
+`Matrix.map_transpose_mul_mul_sub_smul`. -/
+theorem map_transpose_mul_mul_sub (phi : A →ₐ[R] B) (M : Matrix n n R) (g : Matrix n n A) :
+    (gᵀ * M.map (algebraMap R A) * g - M.map (algebraMap R A)).map phi =
+      (g.map phi)ᵀ * M.map (algebraMap R B) * g.map phi - M.map (algebraMap R B) := by
+  simpa only [one_smul, map_one] using map_transpose_mul_mul_sub_smul phi M g 1
+
+end AlgebraMap
 
 section BasisSubstitution
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.CompactOpen
+public import Mathlib.Topology.Connected.LocallyPathConnected
 public import Mathlib.Topology.Connected.PathConnected
 public import Mathlib.Topology.Homotopy.Contractible
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
@@ -48,6 +49,8 @@ the universal property `TauCeti.WedgeSum.lift`.
 * `TauCeti.WedgeSum.proj`: the retraction of a wedge sum onto one summand, collapsing the others
   to the base point. The retractions separate points, so a wedge sum of Hausdorff spaces is
   Hausdorff.
+* `TauCeti.WedgeSum.locallyPathConnectedSpace`: a wedge sum of locally path-connected spaces is
+  locally path-connected.
 * `TauCeti.WedgeSum.contractibleSpace`: a wedge sum of spaces which deformation retract onto their
   base points is contractible.
 
@@ -498,6 +501,12 @@ instance [∀ i, PathConnectedSpace (X i)] : PathConnectedSpace (WedgeSum x) := 
       rw [← incl_apply_self (x := x) i]
       exact (PathConnectedSpace.joined (x i) y).map (incl x i).continuous
   exact ⟨⟨base x⟩, fun v w => (h v).symm.trans (h w)⟩
+
+/-- **A wedge sum of locally path-connected spaces is locally path-connected**, as a quotient of
+the disjoint union of a point and the summands. -/
+instance locallyPathConnectedSpace [∀ i, LocallyPathConnectedSpace (X i)] :
+    LocallyPathConnectedSpace (WedgeSum x) :=
+  isQuotientMap_sumElim.locallyPathConnectedSpace
 
 /-- **A wedge sum of spaces which deformation retract onto their base points is contractible.**
 The contraction moves each summand `X i` by a deformation retraction onto `x i` relative to `x i`;

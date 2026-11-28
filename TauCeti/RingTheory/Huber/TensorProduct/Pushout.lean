@@ -96,6 +96,25 @@ theorem hom_ext {a b : Pair.Hom W V} (hi : a.comp i = b.comp i)
         by rw [Pair.Hom.comp_assoc, hj, Pair.Hom.comp_assoc]⟩ ⟨rfl, rfl⟩
   exact Pair.Hom.ext_of_completionHom_comp key
 
+include h in
+/-- A completed pushout transfers along mutually inverse morphisms of Huber pairs. -/
+theorem of_iso {E' : Type u} [CommRing E'] [TopologicalSpace E'] [IsTopologicalRing E']
+    [IsHuberRing E'] {W' : Pair E'} (e : Pair.Hom W W') (e' : Pair.Hom W' W)
+    (he'e : e'.comp e = Pair.Hom.id W) (hee' : e.comp e' = Pair.Hom.id W') :
+    IsCompletedPushout f g (e.comp i) (e.comp j) := by
+  refine ⟨by rw [Pair.Hom.comp_assoc, h.condition, ← Pair.Hom.comp_assoc],
+    fun D' _ _ _ _ _ _ _ V' a b hab ↦ ?_⟩
+  obtain ⟨h₀, ⟨hh₀l, hh₀r⟩, hh₀uniq⟩ := h.existsUnique_desc D' V' a b hab
+  refine ⟨h₀.comp e',
+    ⟨by rw [Pair.Hom.comp_assoc, ← Pair.Hom.comp_assoc e' e, he'e, Pair.Hom.id_comp, hh₀l],
+      by rw [Pair.Hom.comp_assoc, ← Pair.Hom.comp_assoc e' e, he'e, Pair.Hom.id_comp, hh₀r]⟩,
+    fun k ⟨hkl, hkr⟩ ↦ ?_⟩
+  have hk : k.comp e = h₀ :=
+    hh₀uniq (k.comp e) ⟨by rwa [Pair.Hom.comp_assoc], by rwa [Pair.Hom.comp_assoc]⟩
+  calc k = k.comp (e.comp e') := by rw [hee', Pair.Hom.comp_id]
+    _ = (k.comp e).comp e' := (Pair.Hom.comp_assoc k e e').symm
+    _ = h₀.comp e' := by rw [hk]
+
 end IsCompletedPushout
 
 /-- The existing completed tensor pair is a completed pushout of any compatible base pair.

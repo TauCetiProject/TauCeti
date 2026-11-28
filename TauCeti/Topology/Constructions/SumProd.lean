@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Constructions.SumProd
 public import Mathlib.Topology.ClusterPt
 public import Mathlib.Topology.Homeomorph.Lemmas
+public import Mathlib.Topology.Order.OrderClosed
 
 /-!
 # Interiors and fibres in product spaces
@@ -22,15 +23,21 @@ The interior of the preimage of a set under a projection is the preimage of its 
 horizontal lines through non-isolated points have empty interior.
 
 The file also records the underlying function of the homeomorphism between functions on a
-sum type and pairs of functions, and identifies a disjoint union of copies of one space, indexed by
-a discrete space, with a product (`Homeomorph.sigmaEquivProd`).
+sum type and pairs of functions, identifies a disjoint union of copies of one space, indexed by
+a discrete space, with a product (`Homeomorph.sigmaEquivProd`), and bundles a family of fibre
+homeomorphisms into a homeomorphism of sigma types (`Homeomorph.sigmaCongrRight`).
 
 Finally, a function on a product that is eventually constant near a point has eventually constant
 slices through that point (`Filter.EventuallyEq.prodMk_right_nhds`,
-`Filter.EventuallyEq.prodMk_left_nhds`), and a function on a product that is continuous at every
+`Filter.EventuallyEq.prodMk_left_nhds`). A map on `α × β`, with `α` linearly ordered, that is
+equal to `(s, t) ↦ g t` on a closed half-space `s ≤ a` or `s ≥ a` agrees with it near every point
+of the open half-space (`TauCeti.eventuallyEq_comp_snd_of_lt`,
+`TauCeti.eventuallyEq_comp_snd_of_gt`). A function on a product that is continuous at every
 point of the graph of a map over a set, where the map is continuous, restricts to a continuous map
 on that graph (`TauCeti.continuousOn_comp_prodMk_of_continuousAt`,
-`TauCeti.continuous_comp_prodMk_of_continuousAt`).
+`TauCeti.continuous_comp_prodMk_of_continuousAt`). A map of `X × Y` continuous on `univ ×ˢ S`
+and sending it into `univ ×ˢ S'` restricts to a continuous map `X × S → X' × S'`
+(`ContinuousOn.continuous_restrict_univ_prod`).
 -/
 
 public section
@@ -66,6 +73,60 @@ theorem Homeomorph.sigmaEquivProd_symm_apply {ι X : Type*} [TopologicalSpace ι
     (Homeomorph.sigmaEquivProd ι X).symm p = ⟨p.1, p.2⟩ :=
   (rfl)
 
+/-- A family of homeomorphisms `∀ a, β₁ a ≃ₜ β₂ a` induces a homeomorphism between
+`Σ a, β₁ a` and `Σ a, β₂ a`. -/
+def Homeomorph.sigmaCongrRight {α : Type*} {β₁ β₂ : α → Type*}
+    [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
+    (F : ∀ a, β₁ a ≃ₜ β₂ a) : (Σ a, β₁ a) ≃ₜ Σ a, β₂ a where
+  toEquiv := Equiv.sigmaCongrRight fun a ↦ (F a).toEquiv
+  continuous_toFun := Continuous.sigma_map (f₁ := id) fun a ↦ (F a).continuous
+  continuous_invFun := Continuous.sigma_map (f₁ := id) fun a ↦ (F a).symm.continuous
+
+/-- The underlying equivalence of `Homeomorph.sigmaCongrRight F` is `Equiv.sigmaCongrRight` of
+the underlying equivalences. -/
+@[simp]
+theorem Homeomorph.sigmaCongrRight_toEquiv {α : Type*} {β₁ β₂ : α → Type*}
+    [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
+    (F : ∀ a, β₁ a ≃ₜ β₂ a) :
+    (Homeomorph.sigmaCongrRight F).toEquiv = Equiv.sigmaCongrRight fun a ↦ (F a).toEquiv :=
+  (rfl)
+
+/-- `Homeomorph.sigmaCongrRight F` applies `F a` on each summand `a`. -/
+@[simp]
+theorem Homeomorph.sigmaCongrRight_apply {α : Type*} {β₁ β₂ : α → Type*}
+    [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
+    (F : ∀ a, β₁ a ≃ₜ β₂ a) (p : Σ a, β₁ a) :
+    Homeomorph.sigmaCongrRight F p = ⟨p.1, F p.1 p.2⟩ :=
+  (rfl)
+
+/-- Bundled `Homeomorph.sigmaCongrRight` of identity homeomorphisms is the identity. -/
+@[simp]
+theorem Homeomorph.sigmaCongrRight_refl {α : Type*} {β : α → Type*}
+    [∀ a, TopologicalSpace (β a)] :
+    (Homeomorph.sigmaCongrRight fun a ↦ Homeomorph.refl (β a)) =
+      Homeomorph.refl (Σ a, β a) :=
+  Homeomorph.ext fun p ↦ by simp
+
+/-- The inverse of `Homeomorph.sigmaCongrRight F` is `Homeomorph.sigmaCongrRight` of the
+componentwise inverses. -/
+@[simp]
+theorem Homeomorph.sigmaCongrRight_symm {α : Type*} {β₁ β₂ : α → Type*}
+    [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
+    (F : ∀ a, β₁ a ≃ₜ β₂ a) :
+    (Homeomorph.sigmaCongrRight F).symm = Homeomorph.sigmaCongrRight fun a ↦ (F a).symm :=
+  Homeomorph.ext fun _ ↦ rfl
+
+/-- Composing two `Homeomorph.sigmaCongrRight` homeomorphisms composes the component
+homeomorphisms. -/
+@[simp]
+theorem Homeomorph.sigmaCongrRight_trans {α : Type*} {β₁ β₂ β₃ : α → Type*}
+    [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
+    [∀ a, TopologicalSpace (β₃ a)]
+    (F : ∀ a, β₁ a ≃ₜ β₂ a) (G : ∀ a, β₂ a ≃ₜ β₃ a) :
+    (Homeomorph.sigmaCongrRight F).trans (Homeomorph.sigmaCongrRight G) =
+      Homeomorph.sigmaCongrRight fun a ↦ (F a).trans (G a) :=
+  Homeomorph.ext fun p ↦ by simp
+
 /-- If `f` is eventually constant near `(x, y)`, then its slice `y' ↦ f (x, y')` is eventually
 equal to `f (x, y)` near `y`. -/
 theorem Filter.EventuallyEq.prodMk_right_nhds {X Y A : Type*} [TopologicalSpace X]
@@ -81,6 +142,17 @@ theorem Filter.EventuallyEq.prodMk_left_nhds {X Y A : Type*} [TopologicalSpace X
     (fun x' ↦ f (x', y)) =ᶠ[𝓝 x] fun _ ↦ f (x, y) := by
   rw [h.self_of_nhds]
   exact h.comp_tendsto ((Continuous.prodMk_left y).tendsto x)
+
+/-- A map `f : X × Y → X' × Y'` that is continuous on `univ ×ˢ S` and sends it into
+`univ ×ˢ S'` restricts to a continuous map `X × S → X' × S'`. -/
+theorem ContinuousOn.continuous_restrict_univ_prod {X Y X' Y' : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [TopologicalSpace X'] [TopologicalSpace Y'] {S : Set Y} {S' : Set Y'}
+    {f : X × Y → X' × Y'} (hf : ContinuousOn f (univ ×ˢ S))
+    (hmaps : ∀ x : X × S, (f (x.1, x.2)).2 ∈ S') :
+    Continuous fun x : X × S ↦ ((f (x.1, x.2)).1, (⟨(f (x.1, x.2)).2, hmaps x⟩ : S')) := by
+  have h := hf.comp_continuous (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
+    fun x ↦ ⟨mem_univ _, x.2.property⟩
+  exact (continuous_fst.comp h).prodMk ((continuous_snd.comp h).subtype_mk hmaps)
 
 namespace TauCeti
 
@@ -100,6 +172,24 @@ theorem continuous_comp_prodMk_of_continuousAt {Z : Type*} [TopologicalSpace Z] 
     Continuous fun x ↦ F (x, u x) :=
   continuousOn_univ.1 <|
     continuousOn_comp_prodMk_of_continuousAt (fun x _ ↦ hF x) hu.continuousOn
+
+/-- If `f (s, t) = g t` for `s ≤ a`, then `f` agrees with `(s, t) ↦ g t` near every point with
+`s < a`. -/
+theorem eventuallyEq_comp_snd_of_lt {α E : Type*} [TopologicalSpace α] [LinearOrder α]
+    [OrderClosedTopology α] {f : α × Y → E} {g : Y → E} {a : α}
+    (h : ∀ s ≤ a, ∀ t, f (s, t) = g t) {z : α × Y} (hz : z.1 < a) :
+    f =ᶠ[𝓝 z] fun w ↦ g w.2 :=
+  Filter.eventually_of_mem ((isOpen_lt continuous_fst continuous_const).mem_nhds
+    (show z ∈ {w : α × Y | w.1 < a} from hz)) fun w hw ↦ h w.1 (le_of_lt hw) w.2
+
+/-- If `f (s, t) = g t` for `s ≥ a`, then `f` agrees with `(s, t) ↦ g t` near every point with
+`s > a`. -/
+theorem eventuallyEq_comp_snd_of_gt {α E : Type*} [TopologicalSpace α] [LinearOrder α]
+    [OrderClosedTopology α] {f : α × Y → E} {g : Y → E} {a : α}
+    (h : ∀ s, a ≤ s → ∀ t, f (s, t) = g t) {z : α × Y} (hz : a < z.1) :
+    f =ᶠ[𝓝 z] fun w ↦ g w.2 :=
+  Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_fst).mem_nhds
+    (show z ∈ {w : α × Y | a < w.1} from hz)) fun w hw ↦ h w.1 (le_of_lt hw) w.2
 
 /-- A subset of a product has empty interior if its vertical fibres over a dense set of base
 points have empty interior. -/

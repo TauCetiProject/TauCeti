@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Topology.Order.IntermediateValue
+import Mathlib.Order.Interval.Set.ProjIcc
 
 /-!
 # Order consequences of the intermediate value theorem
@@ -17,16 +19,29 @@ uniform order statements:
   strictly ordered on all of `s`, one way or the other.
 * `IsPreconnected.forall_le_or_forall_lt`, `IsPreconnected.forall_lt_of_lt`: the same for two
   continuous functions which either agree on all of `s` or never agree there.
+* `IsPreconnected.forall_mem_Ioo_of_mem_Icc`: a continuous function on `s` which takes neither
+  the value `a` nor the value `b`, and lies in `Icc a b` at one point, lies in `Ioo a b` on all
+  of `s`.
 * `IsPreconnected.forall_le_or_forall_ge`: a continuous function on `s` which never takes a value
   in the open interval `Ioo a b`, with `a < b`, lies below `a` on all of `s` or above `b` on all
   of `s`.
+* `ContinuousOn.nonneg_or_nonpos_of_monotoneOn_abs` and its antitone counterpart: a continuous
+  function whose absolute value is monotone on a preconnected subset of a linearly ordered space
+  has constant weak sign.
 * `IsPreconnected.subsingleton_of_interior_eq_empty`: a preconnected subset of a linearly ordered
   space with empty interior has at most one point.
 * `IsPreconnected.subsingleton_image_of_interior_eq_empty`: a continuous function on `s` with values
   in a set with empty interior, for instance a null set of `ℝ`, is constant on `s`.
 
 A continuous function on `Ioo a b` which lies above `c` just to the right of `a` and is at most
-`c` somewhere in `Ioo a b` has a least such point, `ContinuousOn.exists_mem_Ioo_le_and_forall_gt`.
+`c` somewhere in `Ioo a b` has a least such point, `ContinuousOn.exists_mem_Ioo_le_and_forall_gt`;
+over a densely ordered domain it takes the value `c` there,
+`ContinuousOn.exists_mem_Ioo_eq_and_forall_gt`.
+
+If `[a, b]` is covered by `P ∪ N`, `a` is adherent to `P` and `b` is not, then some point of
+`[a, b)` adherent to both `P` and `N` is followed by a segment contained in `N`,
+`TauCeti.exists_mem_closure_inter_closure_Ioc_subset`; the mirror image is
+`TauCeti.exists_mem_closure_inter_closure_Ico_subset`.
 
 A continuous function with values in `Icc l u` near `a⁺` that tends neither to `l` nor to `u` at
 `a⁺` takes values in a fixed subinterval `Icc c d`, with `l < c` and `d < u`, arbitrarily close to
@@ -35,6 +50,9 @@ in small balls takes intermediate values at arbitrarily small radii unless it te
 
 A function continuous and strictly monotone on a neighbourhood `s` of `x` maps it onto a
 neighbourhood of `f x`, `StrictMonoOn.image_mem_nhds`.
+
+A continuous antiperiodic function, `f (x + c) = -f x`, vanishes somewhere on `[[a, a + c]]` for
+every `a`, `Function.Antiperiodic.exists_mem_uIcc_eq_zero`.
 -/
 
 public section
@@ -72,6 +90,17 @@ theorem IsPreconnected.forall_lt_of_lt (hs : IsPreconnected s) {f g : X → α}
   (hs.forall_le_or_forall_lt hg hf (hfg.imp EqOn.symm fun h y hy ↦ (h y hy).symm)).resolve_left
     fun h ↦ (h x hx).not_gt hlt
 
+/-- A continuous function on a preconnected set which takes neither the value `a` nor the value
+`b` there, and lies in `Icc a b` at one point of the set, lies in `Ioo a b` on the whole set. -/
+theorem IsPreconnected.forall_mem_Ioo_of_mem_Icc (hs : IsPreconnected s) {f : X → α}
+    (hf : ContinuousOn f s) {a b : α} (hne : ∀ x ∈ s, f x ≠ a ∧ f x ≠ b) {x : X} (hx : x ∈ s)
+    (hfx : f x ∈ Icc a b) : ∀ y ∈ s, f y ∈ Ioo a b := by
+  have ha := hs.forall_lt_of_lt continuousOn_const hf (.inr fun y hy ↦ (hne y hy).1.symm) hx
+    (hfx.1.lt_of_ne (hne x hx).1.symm)
+  have hb := hs.forall_lt_of_lt hf continuousOn_const (.inr fun y hy ↦ (hne y hy).2) hx
+    (hfx.2.lt_of_ne (hne x hx).2)
+  exact fun y hy ↦ ⟨ha y hy, hb y hy⟩
+
 /-- A continuous function on a preconnected set which never takes a value in `Ioo a b`, where
 `a < b`, lies below `a` on the whole set or above `b` on the whole set. -/
 theorem IsPreconnected.forall_le_or_forall_ge (hs : IsPreconnected s)
@@ -87,6 +116,62 @@ theorem IsPreconnected.forall_le_or_forall_ge (hs : IsPreconnected s)
   exact (isPreconnected_iff_subset_of_disjoint_closed.1 (hs.image f hf) _ _ isClosed_Iic
     isClosed_Ici hcover hdisj).imp (fun h x hx ↦ h (mem_image_of_mem f hx))
     fun h x hx ↦ h (mem_image_of_mem f hx)
+
+/-- A continuous function whose absolute value is monotone on a preconnected subset of a
+linearly ordered space has constant weak sign. -/
+theorem ContinuousOn.nonneg_or_nonpos_of_monotoneOn_abs
+    {X β : Type*} [TopologicalSpace X] [LinearOrder X] [OrderClosedTopology X]
+    [AddGroup β] [LinearOrder β] [AddLeftMono β] [TopologicalSpace β]
+    [OrderClosedTopology β] {s : Set X} {g : X → β}
+    (hg : ContinuousOn g s) (hs : IsPreconnected s)
+    (hm : MonotoneOn (fun x ↦ |g x|) s) :
+    (∀ x ∈ s, 0 ≤ g x) ∨ (∀ x ∈ s, g x ≤ 0) := by
+  by_cases hn : ∃ x ∈ s, g x < 0
+  · right
+    obtain ⟨x, hx, hnx⟩ := hn
+    intro y hy
+    by_contra! hpy
+    let p : X → X := fun z ↦ projIcc (min x y) (max x y) min_le_max z
+    have hp (z : X) : p z ∈ uIcc x y :=
+      (projIcc (min x y) (max x y) min_le_max z).property
+    have hfix {z : X} (hz : z ∈ uIcc x y) : p z = z :=
+      congrArg Subtype.val (projIcc_of_mem min_le_max hz)
+    have hpc : Continuous p := by
+      simp only [p, coe_projIcc]
+      exact continuous_const.max (continuous_const.min continuous_id)
+    have hsub : uIcc x y ⊆ s := hs.ordConnected.uIcc_subset hx hy
+    have himage : p '' s = uIcc x y := by
+      apply Subset.antisymm
+      · rintro _ ⟨z, _, rfl⟩
+        exact hp z
+      · intro z hz
+        exact ⟨z, hsub hz, hfix hz⟩
+    -- Clamping retracts the preconnected set onto the interval between the two points.
+    have hconn : IsPreconnected (uIcc x y) := himage ▸
+      hs.image p hpc.continuousOn
+    have hzero : 0 ∈ Icc (g x) (g y) := ⟨hnx.le, hpy.le⟩
+    obtain ⟨z, hz, hgz⟩ := hconn.intermediate_value left_mem_uIcc right_mem_uIcc
+      (hg.mono hsub) hzero
+    have ha : |g z| ∈ uIcc |g x| |g y| := (hm.mono hsub).mapsTo_uIcc hz
+    have hp' : 0 < min |g x| |g y| :=
+      lt_min (abs_pos.mpr hnx.ne) (abs_pos.mpr hpy.ne')
+    have hal : min |g x| |g y| ≤ |g z| := ha.1
+    rw [hgz, abs_zero] at hal
+    exact (not_lt_of_ge hal) hp'
+  · left
+    push Not at hn
+    exact hn
+
+/-- A continuous function whose absolute value is antitone on a preconnected subset of a
+linearly ordered space has constant weak sign. -/
+theorem ContinuousOn.nonneg_or_nonpos_of_antitoneOn_abs
+    {X β : Type*} [TopologicalSpace X] [LinearOrder X] [OrderClosedTopology X]
+    [AddGroup β] [LinearOrder β] [AddLeftMono β] [TopologicalSpace β]
+    [OrderClosedTopology β] {s : Set X} {g : X → β}
+    (hg : ContinuousOn g s) (hs : IsPreconnected s)
+    (hm : AntitoneOn (fun x ↦ |g x|) s) :
+    (∀ x ∈ s, 0 ≤ g x) ∨ (∀ x ∈ s, g x ≤ 0) :=
+  ContinuousOn.nonneg_or_nonpos_of_monotoneOn_abs (X := Xᵒᵈ) hg hs hm.dual_left
 
 /-- A preconnected subset with empty interior of a linearly ordered space has at most one
 point. -/
@@ -134,6 +219,20 @@ theorem ContinuousOn.exists_mem_Ioo_le_and_forall_gt
   exact ContinuousWithinAt.closure_le (csInf_mem_closure hZ hbdd)
     ((hf _ ht₁).mono inter_subset_left) continuousWithinAt_const fun _ hz ↦ hz.2
 
+/-- A continuous function on `Ioo a b` which lies above `c` just to the right of `a` and is at most
+`c` somewhere in `Ioo a b` takes the value `c` at a first point: there is `t₁ ∈ Ioo a b` with
+`f t₁ = c` and `c < f` on `Ioo a t₁`. -/
+theorem ContinuousOn.exists_mem_Ioo_eq_and_forall_gt
+    [ConditionallyCompleteLinearOrder X] [OrderTopology X] [DenselyOrdered X] {f : X → α}
+    {a b : X} {c : α} (hf : ContinuousOn f (Ioo a b)) (hpos : ∀ᶠ r in 𝓝[>] a, c < f r)
+    (hne : ∃ t ∈ Ioo a b, f t ≤ c) : ∃ t₁ ∈ Ioo a b, f t₁ = c ∧ ∀ r ∈ Ioo a t₁, c < f r := by
+  obtain ⟨t₁, ht₁, hle, hgt⟩ := hf.exists_mem_Ioo_le_and_forall_gt hpos hne
+  -- `f t₁` is a limit of values above `c`.
+  refine ⟨t₁, ht₁, le_antisymm hle (ContinuousWithinAt.closure_le ?_ continuousWithinAt_const
+    ((hf t₁ ht₁).mono (Ioo_subset_Ioo_right ht₁.2.le)) fun r hr ↦ (hgt r hr).le), hgt⟩
+  rw [closure_Ioo ht₁.1.ne]
+  exact right_mem_Icc.2 ht₁.1.le
+
 /-- A function continuous on `Ioi a`, with values eventually in `Icc l u` to the right of `a`,
 which tends neither to `l` nor to `u` at `a⁺`, takes values in a fixed interval `Icc c d` with
 `l < c` and `d < u` at points arbitrarily close to `a` from the right. -/
@@ -175,3 +274,55 @@ theorem StrictMonoOn.image_mem_nhds [ConditionallyCompleteLinearOrder X] [OrderT
   exact Filter.mem_of_superset (Icc_mem_nhds (hf (hab ⟨le_rfl, (hax.trans hxb).le⟩) hx hax)
     (hf hx (hab ⟨(hax.trans hxb).le, le_rfl⟩) hxb))
     ((intermediate_value_Icc (hax.trans hxb).le (hcont.mono hab)).trans (image_mono hab))
+
+/-- A function `f` with `f (x + c) = -f x` for all `x`, with values in an ordered additive group,
+vanishes somewhere on `[[a, a + c]]` if it is continuous there. -/
+theorem Function.Antiperiodic.exists_mem_uIcc_eq_zero [ConditionallyCompleteLinearOrder X]
+    [OrderTopology X] [DenselyOrdered X] [Add X] [AddGroup α] [AddLeftMono α] {f : X → α} {c : X}
+    (h : Function.Antiperiodic f c) (a : X) (hf : ContinuousOn f (uIcc a (a + c))) :
+    ∃ x ∈ uIcc a (a + c), f x = 0 := by
+  -- The values at the two ends are negatives of each other.
+  have h0 : (0 : α) ∈ uIcc (f a) (f (a + c)) := by
+    rw [h a, mem_uIcc]
+    rcases le_total 0 (f a) with h' | h'
+    · exact .inr ⟨Left.neg_nonpos_iff.2 h', h'⟩
+    · exact .inl ⟨h', Left.nonneg_neg_iff.2 h'⟩
+  exact intermediate_value_uIcc hf h0
+
+namespace TauCeti
+
+/-- If `[a, b]` is covered by `P ∪ N`, `a` is adherent to `P` and `b` is not, then some point
+`c ∈ [a, b)` is adherent to both `P` and `N`, and `(c, b]` lies in `N`. -/
+theorem exists_mem_closure_inter_closure_Ioc_subset [ConditionallyCompleteLinearOrder X]
+    [OrderTopology X] [DenselyOrdered X] {P N : Set X} {a b : X} (hab : a < b)
+    (ha : a ∈ closure P) (hb : b ∉ closure P) (hcover : Icc a b ⊆ P ∪ N) :
+    ∃ c ∈ Ico a b, c ∈ closure P ∩ closure N ∧ Ioc c b ⊆ N := by
+  set K := closure P ∩ Icc a b
+  have hKbdd : BddAbove K := ⟨b, fun t ht ↦ ht.2.2⟩
+  have hcK : sSup K ∈ K :=
+    (isClosed_closure.inter isClosed_Icc).csSup_mem ⟨a, ha, left_mem_Icc.2 hab.le⟩ hKbdd
+  have hcb : sSup K < b := lt_of_le_of_ne hcK.2.2 fun h ↦ hb (h ▸ hcK.1)
+  -- after the last point of `closure P` in `[a, b]`, the cover leaves only `N`
+  have hN : Ioc (sSup K) b ⊆ N := fun t ht ↦ by
+    have htI : t ∈ Icc a b := ⟨hcK.2.1.trans ht.1.le, ht.2⟩
+    have htP : t ∉ closure P := fun h ↦ (not_le.2 ht.1) (le_csSup hKbdd ⟨h, htI⟩)
+    exact (hcover htI).resolve_left fun h ↦ htP (subset_closure h)
+  have hcl : sSup K ∈ closure (Ioo (sSup K) b) := by
+    rw [closure_Ioo hcb.ne]
+    exact left_mem_Icc.2 hcb.le
+  exact ⟨sSup K, ⟨hcK.2.1, hcb⟩, ⟨hcK.1, closure_mono (Ioo_subset_Ioc_self.trans hN) hcl⟩, hN⟩
+
+/-- If `[a, b]` is covered by `P ∪ N`, `b` is adherent to `P` and `a` is not, then some point
+`c ∈ (a, b]` is adherent to both `P` and `N`, and `[a, c)` lies in `N`. This is the mirror image
+of `exists_mem_closure_inter_closure_Ioc_subset`. -/
+theorem exists_mem_closure_inter_closure_Ico_subset [ConditionallyCompleteLinearOrder X]
+    [OrderTopology X] [DenselyOrdered X] {P N : Set X} {a b : X} (hab : a < b)
+    (hb : b ∈ closure P) (ha : a ∉ closure P) (hcover : Icc a b ⊆ P ∪ N) :
+    ∃ c ∈ Ioc a b, c ∈ closure P ∩ closure N ∧ Ico a c ⊆ N := by
+  obtain ⟨c, hc, hcPN, hN⟩ := exists_mem_closure_inter_closure_Ioc_subset (X := Xᵒᵈ)
+    (P := OrderDual.ofDual ⁻¹' P) (N := OrderDual.ofDual ⁻¹' N) (a := OrderDual.toDual b)
+    (b := OrderDual.toDual a) hab hb ha (by rw [Icc_toDual]; exact preimage_mono hcover)
+  refine ⟨OrderDual.ofDual c, ⟨hc.2, hc.1⟩, hcPN, fun t ht ↦ ?_⟩
+  exact hN (a := OrderDual.toDual t) ⟨ht.2, ht.1⟩
+
+end TauCeti

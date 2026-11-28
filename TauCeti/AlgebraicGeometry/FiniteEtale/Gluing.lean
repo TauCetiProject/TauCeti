@@ -75,8 +75,13 @@ private lemma isPullback_overlap (e : (pullback i₁).obj Y₁ ≅ (pullback i�
   IsPullback.of_iso_pullback ⟨by rw [Category.assoc, Limits.pullback.condition,
     reassoc_of% overlapIso_hom_snd e]⟩ (overlapIso e) rfl (overlapIso_hom_snd e)
 
-/-- Raw pushout-embedding form of gluing finite étale covers along two opens. -/
-private theorem exists_pullback_iso_of_isPullback (h : IsPullback i₁ i₂ j₁ j₂)
+/-- **Gluing finite étale covers along two opens.** Let `j₁ : W₁ ⟶ S` and `j₂ : W₂ ⟶ S` be open
+immersions covering `S`, with overlap `W₁₂` given by a cartesian square `i₁ ≫ j₁ = i₂ ≫ j₂`. Let
+`Y₁` and `Y₂` be finite étale covers of `W₁` and `W₂`, and `e` an isomorphism between their
+restrictions to `W₁₂`. Then there is a finite étale cover `Y` of `S` whose restrictions to `W₁` and
+`W₂` are isomorphic to `Y₁` and `Y₂`, such that the two resulting embeddings of the overlap
+`Y₁ ×_{W₁} W₁₂` into `Y`, directly and through `e`, agree. -/
+theorem exists_pullback_iso_of_isPullback (h : IsPullback i₁ i₂ j₁ j₂)
     (hcover : j₁.opensRange ⊔ j₂.opensRange = ⊤)
     (e : (pullback i₁).obj Y₁ ≅ (pullback i₂).obj Y₂) :
     ∃ (Y : FiniteEtaleScheme S) (e₁ : (pullback j₁).obj Y ≅ Y₁)

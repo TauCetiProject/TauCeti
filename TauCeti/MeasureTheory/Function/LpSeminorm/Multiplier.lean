@@ -13,9 +13,12 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 /-!
 # Essential bounds from multiplier estimates
 
-If multiplication by a function `a` increases `Lᵖ` norms by at most a factor `C`, for some
-finite exponent `p`, then `a` is essentially bounded by `C`. This file proves two forms of this
-multiplier criterion on a sigma-finite measure space:
+Multiplication by a function `φ` with `‖φ‖ ≤ C` almost everywhere increases `Lᵖ` seminorms by
+at most a factor `C` (`MeasureTheory.eLpNorm_smul_le_of_ae_norm_le`).
+
+Conversely, if multiplication by a function `a` increases `Lᵖ` norms by at most a factor `C`, for
+some finite exponent `p`, then `a` is essentially bounded by `C`. This file proves two forms of
+this multiplier criterion on a sigma-finite measure space:
 
 * `MeasureTheory.eLpNorm_top_le_of_forall_eLpNorm_indicator_le`: it suffices to test the
   estimate on indicators of sets of finite measure, that is, to know
@@ -41,6 +44,17 @@ open scoped ENNReal
 namespace MeasureTheory
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {p : ℝ≥0∞}
+
+/-- **Multiplication by an essentially bounded factor.** If `‖φ‖ ≤ C` almost everywhere, then
+multiplying by `φ` scales the `Lᵖ` seminorm by at most `C`. This is the easy converse of the
+multiplier criteria below. -/
+theorem eLpNorm_smul_le_of_ae_norm_le {𝕜 F : Type*} [NormedRing 𝕜] [NormedAddCommGroup F]
+    [MulActionWithZero 𝕜 F] [IsBoundedSMul 𝕜 F] {φ : α → 𝕜} (hφ : AEStronglyMeasurable φ μ)
+    {C : ℝ} (hC : ∀ᵐ x ∂μ, ‖φ x‖ ≤ C) (f : α → F) (p : ℝ≥0∞) :
+    eLpNorm (fun x ↦ φ x • f x) p μ ≤ ENNReal.ofReal C * eLpNorm f p μ := by
+  refine (eLpNorm_smul_le_eLpNorm_top_mul_eLpNorm p hφ).trans (mul_le_mul_left ?_ _)
+  rw [eLpNorm_exponent_top hφ]
+  exact eLpNormEssSup_le_of_ae_bound hC
 
 /-- **Multiplier criterion, indicator form.** On a sigma-finite measure space, if for some
 exponent `0 < p < ∞` every set `s` of finite measure satisfies `‖a 𝟙_s‖_p ≤ C μ(s) ^ (1 / p)`,

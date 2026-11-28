@@ -29,6 +29,8 @@ set.
 
 * `TauCeti.singularModelPresentation k`, `TauCeti.cubicalModelPresentation k`: the two functors
   are free on models.
+* `TauCeti.rawCubicalModelPresentation k`: the raw cubical chains, degenerate cubes included, are
+  free on the cubes.
 
 ## Main results
 
@@ -194,6 +196,42 @@ theorem cubicalModelPresentation_gen (n : ℕ) :
 
 theorem cubicalModelPresentation_coord (X : TopCat.{u}) (n : ℕ) :
     (cubicalModelPresentation k).coord X n = cubicalCoord k X n :=
+  (rfl)
+
+/-- **The raw cubical chains are free on the cubes**: a chain is the combination of the images of
+the identity cube of `Iⁿ` under the cubes of its support. -/
+@[expose] def rawCubicalModelPresentation :
+    AcyclicModels.ModelPresentation (rawCubicalChainComplex k) where
+  model := cubeModel
+  gen n := rawCubicalChainOfCube (upCube n)
+  coord X n := (lmapDomain k k cubeToHom : (SingularCube X n →₀ k) →ₗ[k] ((cubeModel n ⟶ X) →₀ k))
+  coord_map {X Y} f n x := (mapDomain_comp (f := f.hom.comp) (g := cubeToHom) (v := x)).symm.trans
+    (mapDomain_comp (f := cubeToHom) (g := fun s : cubeModel n ⟶ X ↦ s ≫ f) (v := x))
+  sum_coord X n x := by
+    let F := fun s : cubeModel n ⟶ X ↦
+      ((rawCubicalChainComplex k).map s).f n (rawCubicalChainOfCube (upCube n))
+    have h : linearCombination k F ∘ₗ
+        (lmapDomain k k cubeToHom :
+          ((rawCubicalChainComplex k).obj X).X n →ₗ[k] ((cubeModel n ⟶ X) →₀ k)) =
+            LinearMap.id :=
+      rawCubicalChainComplex_X_linearMap_ext fun c ↦
+        (congrArg (linearCombination k F) (mapDomain_single (f := cubeToHom) (a := c)
+          (b := (1 : k)))).trans ((linearCombination_single k 1 _).trans ((one_smul k _).trans
+            (rawCubicalChainComplex_map_f_rawCubicalChainOfCube _ _)))
+    exact (linearCombination_apply k _).symm.trans (LinearMap.congr_fun h x)
+
+@[simp]
+theorem rawCubicalModelPresentation_model (n : ℕ) :
+    (rawCubicalModelPresentation k).model n = cubeModel n :=
+  (rfl)
+
+theorem rawCubicalModelPresentation_gen (n : ℕ) :
+    (rawCubicalModelPresentation k).gen n = rawCubicalChainOfCube (upCube n) :=
+  (rfl)
+
+theorem rawCubicalModelPresentation_coord (X : TopCat.{u}) (n : ℕ) :
+    (rawCubicalModelPresentation k).coord X n =
+      (lmapDomain k k cubeToHom : (SingularCube X n →₀ k) →ₗ[k] ((cubeModel n ⟶ X) →₀ k)) :=
   (rfl)
 
 /-- The cube models are contractible. -/

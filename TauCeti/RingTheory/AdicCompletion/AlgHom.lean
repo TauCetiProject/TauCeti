@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.AdicCompletion.Algebra
+public import Mathlib.RingTheory.AdicCompletion.RingHom
 
 /-!
 # Adic completions along algebra homomorphisms
@@ -22,6 +23,8 @@ at a prime.
 
 * `AdicCompletion.factor_evalₐ`: the projections `evalₐ I n` are compatible with the transition
   maps `S ⧸ I ^ n → S ⧸ I ^ m`; in terms of representatives, `AdicCompletion.evalₐ_eq_mk_of_le`.
+* `AdicCompletion.toQuotient`: the projection to a quotient by an ideal containing a power
+  of the completion ideal, computed using `AdicCompletion.factor_evalₐ`.
 * `AdicCompletion.mapₐ`: the map of completions induced by an algebra homomorphism, with
   `AdicCompletion.evalₐ_mapₐ`, `AdicCompletion.mapₐ_of`, `AdicCompletion.mapₐ_congr`, and the
   functoriality laws `AdicCompletion.mapₐ_id` and `AdicCompletion.mapₐ_comp`.
@@ -33,14 +36,19 @@ at a prime.
   with `AdicCompletion.toAlgHom_congrₐ` (it is `mapₐ` of the underlying homomorphism),
   `AdicCompletion.evalₐ_congrₐ`, `AdicCompletion.congrₐ_of`, and the laws
   `AdicCompletion.congrₐ_refl`, `AdicCompletion.congrₐ_symm` and `AdicCompletion.congrₐ_trans`.
+* `IsAdicComplete.liftAlgHomSucc`: the algebra map to an `I`-adically complete ring assembled from
+  compatible algebra maps to the quotients `S ⧸ I ^ (n + 1)`, a reindexing of Mathlib's
+  `IsAdicComplete.liftAlgHom` convenient when level `0` should be `S ⧸ I` rather than the zero
+  ring, with `IsAdicComplete.mk_liftAlgHomSucc`.
 -/
 
 public section
 
 namespace AdicCompletion
 
-variable {R S S' S'' : Type*} [CommRing R] [CommRing S] [CommRing S'] [CommRing S'']
-  [Algebra R S] [Algebra R S'] [Algebra R S''] {I : Ideal S} {I' : Ideal S'} {I'' : Ideal S''}
+section Evaluation
+
+variable {S : Type*} [CommRing S] {I : Ideal S}
 
 /-- The projections of the adic completion to `S ⧸ I ^ n` are compatible with the transition maps
 `S ⧸ I ^ n → S ⧸ I ^ m` for `m ≤ n`. -/
@@ -55,6 +63,54 @@ theorem factor_evalₐ {m n : ℕ} (hle : m ≤ n) (x : AdicCompletion I S) :
 theorem evalₐ_eq_mk_of_le {m n : ℕ} (hle : m ≤ n) {x : AdicCompletion I S} {a : S}
     (h : evalₐ I n x = Ideal.Quotient.mk _ a) : evalₐ I m x = Ideal.Quotient.mk _ a := by
   rw [← factor_evalₐ hle x, h, Ideal.Quotient.factor_mk]
+
+end Evaluation
+
+section Quotient
+
+variable {R : Type*} [CommRing R] (I : Ideal R)
+
+/-- Projection of the `I`-adic completion onto a quotient by an ideal containing a power of `I`.
+The map does not depend on the power used to construct it. -/
+noncomputable def toQuotient {K : Ideal R} (hK : ∃ n : ℕ, I ^ n ≤ K) :
+    AdicCompletion I R →+* R ⧸ K :=
+  (Ideal.Quotient.factor hK.choose_spec).comp (evalₐ I hK.choose).toRingHom
+
+/-- The projection to an open ideal quotient can be computed at any sufficiently deep level. -/
+theorem toQuotient_eq {K : Ideal R} (hK : ∃ n : ℕ, I ^ n ≤ K) {n : ℕ} (hn : I ^ n ≤ K) :
+    toQuotient I hK = (Ideal.Quotient.factor hn).comp (evalₐ I n).toRingHom := by
+  ext x
+  have h₁ := factor_evalₐ (I := I) (le_max_left hK.choose n) x
+  have h₂ := factor_evalₐ (I := I) (le_max_right hK.choose n) x
+  unfold toQuotient
+  simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
+  rw [← h₁, ← h₂, Ideal.Quotient.factor_comp_apply, Ideal.Quotient.factor_comp_apply]
+
+/-- On elements of the original ring, projection to a quotient is the quotient map. -/
+@[simp]
+theorem toQuotient_of {K : Ideal R} (hK : ∃ n : ℕ, I ^ n ≤ K) (r : R) :
+    toQuotient I hK (of I R r) = Ideal.Quotient.mk K r := by
+  simp [toQuotient]
+
+/-- Projection onto open ideal quotients commutes with reduction. -/
+@[simp]
+theorem factor_toQuotient {K L : Ideal R} (hK : ∃ n : ℕ, I ^ n ≤ K)
+    (hL : ∃ n : ℕ, I ^ n ≤ L) (hKL : K ≤ L) (x : AdicCompletion I R) :
+    Ideal.Quotient.factor hKL (toQuotient I hK x) = toQuotient I hL x := by
+  rw [toQuotient_eq I hK hK.choose_spec,
+    toQuotient_eq I hL (hK.choose_spec.trans hKL)]
+  simp only [RingHom.comp_apply, Ideal.Quotient.factor_comp_apply]
+
+/-- The projection onto a power quotient is the usual evaluation map. -/
+@[simp]
+theorem toQuotient_pow (n : ℕ) (h : ∃ k : ℕ, I ^ k ≤ I ^ n) :
+    toQuotient I h = (evalₐ I n : AdicCompletion I R →+* R ⧸ I ^ n) := by
+  simp [toQuotient_eq I h le_rfl]
+
+end Quotient
+
+variable {R S S' S'' : Type*} [CommRing R] [CommRing S] [CommRing S'] [CommRing S'']
+  [Algebra R S] [Algebra R S'] [Algebra R S''] {I : Ideal S} {I' : Ideal S'} {I'' : Ideal S''}
 
 private theorem mapₐ_aux (f : S →ₐ[R] S') (hf : I ≤ I'.comap f) {m n : ℕ} (hle : m ≤ n) :
     (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right hle)).comp
@@ -247,3 +303,39 @@ theorem congrₐ_symm_of (e : S ≃ₐ[R] S') (he : I.map e = I') (x : S') :
   mapₐ_of (e.symm : S' →ₐ[R] S) (he ▸ (Ideal.comap_symm (e : S ≃+* S')).ge) x
 
 end AdicCompletion
+
+namespace IsAdicComplete
+
+variable {R S A : Type*} [CommRing R] [CommRing S] [Algebra R S] (I : Ideal S) [CommRing A]
+  [Algebra R A] (f : ∀ n : ℕ, A →ₐ[R] S ⧸ I ^ (n + 1))
+  (hf : ∀ {m n : ℕ} (h : m ≤ n),
+    (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right (I := I) (Nat.succ_le_succ h))).comp (f n) =
+      f m)
+
+include hf in
+/-- A family of algebra maps to the quotients `S ⧸ I ^ (n + 1)`, compatible with the transitions,
+gives a family to the quotients `S ⧸ I ^ n`, compatible as in `IsAdicComplete.liftAlgHom`. -/
+private theorem factorₐ_comp_factorₐ_comp {m n : ℕ} (h : m ≤ n) :
+    (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right (I := I) h)).comp
+        ((Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right n.le_succ)).comp (f n)) =
+      (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right m.le_succ)).comp (f m) := by
+  rw [← hf h, ← AlgHom.comp_assoc, ← AlgHom.comp_assoc, Ideal.Quotient.factorₐ_comp,
+    Ideal.Quotient.factorₐ_comp]
+
+variable [IsAdicComplete I S]
+
+/-- The algebra map to an `I`-adically complete ring assembled from compatible algebra maps to its
+quotients `S ⧸ I ^ (n + 1)`. This is Mathlib's `IsAdicComplete.liftAlgHom`, reindexed so that the
+family starts at `S ⧸ I`. -/
+noncomputable def liftAlgHomSucc : A →ₐ[R] S :=
+  liftAlgHom I (fun n ↦ (Ideal.Quotient.factorₐ R (Ideal.pow_le_pow_right n.le_succ)).comp (f n))
+    (factorₐ_comp_factorₐ_comp I f hf)
+
+/-- Modulo `I ^ (n + 1)`, the map `liftAlgHomSucc I f hf` is `f n`. -/
+@[simp]
+theorem mk_liftAlgHomSucc (n : ℕ) (x : A) :
+    Ideal.Quotient.mk (I ^ (n + 1)) (liftAlgHomSucc I f hf x) = f n x := by
+  rw [liftAlgHomSucc, mk_liftAlgHom _ _ (factorₐ_comp_factorₐ_comp I f hf), AlgHom.comp_apply,
+    ← hf n.le_succ, AlgHom.comp_apply]
+
+end IsAdicComplete

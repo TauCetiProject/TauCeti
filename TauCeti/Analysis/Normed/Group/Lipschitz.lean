@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Group.Constructions
 public import Mathlib.Topology.MetricSpace.Lipschitz
 import Mathlib.Analysis.Normed.Group.Continuity
+import Mathlib.Analysis.Normed.Group.Uniform
 
 /-!
 # Limits of translates of uniformly Lipschitz maps
@@ -22,6 +23,7 @@ converges.
   along shifts with convergent difference are translates of each other.
 * `TauCeti.apply_eq_apply_add_prodMk_zero_of_tendsto_sub`: the same for maps on a product
   translated in the first coordinate.
+* `LipschitzWith.norm_comp`: postcomposing a `K`-Lipschitz map with `‖·‖` is `K`-Lipschitz.
 -/
 
 public section
@@ -65,5 +67,12 @@ theorem apply_eq_apply_add_prodMk_zero_of_tendsto_sub {ι E E' F : Type*}
     (hg' : ∀ z, Tendsto (fun i ↦ u i (z + (σ' i, 0))) l (𝓝 (g' z))) (z : E × E') :
     g' z = g (z + (δ, 0)) :=
   apply_eq_apply_add_of_tendsto_sub hu (by simpa using hδ.prodMk_nhds tendsto_const_nhds) hg hg' z
+
+/-- Postcomposing a `K`-Lipschitz map with `‖·‖` is `K`-Lipschitz. -/
+theorem _root_.LipschitzWith.norm_comp {α F : Type*} [PseudoEMetricSpace α]
+    [SeminormedAddGroup F] {K : ℝ≥0} {u : α → F} (hu : LipschitzWith K u) :
+    LipschitzWith K fun x ↦ ‖u x‖ := by
+  simpa only [one_mul, Function.comp_def] using
+    (lipschitzWith_one_norm : LipschitzWith 1 (norm : F → ℝ)).comp hu
 
 end TauCeti

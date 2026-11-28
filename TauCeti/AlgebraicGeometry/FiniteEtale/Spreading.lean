@@ -112,7 +112,7 @@ theorem exists_pullback_map_eq_of_isLimit (hc : Limits.IsLimit c) {i₀ : I}
   have : QuasiCompact Y₁.obj.hom := inferInstance
   have : LocallyOfFiniteType Y₂.obj.hom := inferInstance
   obtain ⟨k, fk, hk⟩ :=
-    hc.exists_overPullback_map_eq_of_isLimit β₁.hom β₂.hom (congrArg (·.hom) h)
+    hc.exists_overPullback_map_eq_map β₁.hom β₂.hom (congrArg (·.hom) h)
   exact ⟨k, fk, ObjectProperty.hom_ext _ hk⟩
 
 /-- Along a cofiltered limit of quasi-compact quasi-separated schemes with affine transition

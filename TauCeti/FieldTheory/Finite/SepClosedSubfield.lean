@@ -28,8 +28,9 @@ extension of the prime field.
 
 ## Main results
 
-* `TauCeti.finite_frobeniusFixedSubfield` and `TauCeti.finite_frobeniusFixedSubring`: over any field
-  of characteristic `p` and for `n ≠ 0` it is finite, being a set of roots of `X ^ p ^ n - X`.
+* `TauCeti.finite_frobeniusFixedSubfield`: over any field of characteristic `p` and for `n ≠ 0` it
+  is finite, being a set of roots of `X ^ p ^ n - X`; `TauCeti.finite_frobeniusFixedSubring` is the
+  same statement for the subring of any domain.
 * `TauCeti.card_frobeniusFixedSubfield`: over a separably closed field and for `n ≠ 0` it has
   exactly `p ^ n` elements.
 * `TauCeti.eq_frobeniusFixedSubfield_of_natCard`: it is the unique subfield with that many elements.
@@ -37,6 +38,10 @@ extension of the prime field.
   `GaloisField p n`.
 * `TauCeti.exists_mem_frobeniusFixedSubfield`: an algebraic closure of the prime field is the union
   of these subfields.
+* `TauCeti.fixedField_zpowers_frobeniusAlgEquivOfAlgebraic`: over a finite field `k`,
+  the fixed field in an algebraic extension of the arithmetic Frobenius is `k`.
+* `TauCeti.restrictNormalHom_frobeniusAlgEquivOfAlgebraic`: the arithmetic Frobenius
+  restricts to the arithmetic Frobenius of any normal subextension.
 * `TauCeti.natCard_fixedField_zpowers_frobeniusAlgEquivOfAlgebraic_pow` and
   `TauCeti.finrank_fixedField_zpowers_frobeniusAlgEquivOfAlgebraic_pow`: over a finite field `k`
   with `q` elements, the fixed field in a separable closure of the `r`-th power of the arithmetic
@@ -78,29 +83,13 @@ theorem coe_frobeniusFixedSubfield_eq_rootSet (hn : n ≠ 0) :
   ext a
   simp [Polynomial.mem_rootSet, hne, sub_eq_zero]
 
-/-- The equivalence used to count the Frobenius-fixed subfield: its elements are exactly the roots
-of `X ^ p ^ n - X`, a separable polynomial of degree `p ^ n`. The public form of this is
-`coe_frobeniusFixedSubfield_eq_rootSet`. -/
-private noncomputable def frobeniusFixedSubfieldEquivRootSet (hn : n ≠ 0) :
-    frobeniusFixedSubfield K p n ≃ (X ^ p ^ n - X : K[X]).rootSet K :=
-  Set.equivOfEq (coe_frobeniusFixedSubfield_eq_rootSet K p n hn)
-
 /-- The Frobenius-fixed subfield of a field of characteristic `p` is finite once `n ≠ 0`, being a
 set of roots of a nonzero polynomial. This is not an instance: at `n = 0` the subfield is the whole
 of `K`, which need not be finite. -/
-theorem finite_frobeniusFixedSubfield (hn : n ≠ 0) : Finite (frobeniusFixedSubfield K p n) :=
-  .of_equiv _ (frobeniusFixedSubfieldEquivRootSet K p n hn).symm
-
-/-- The Frobenius-fixed *subring* of a field of characteristic `p` is finite once `n ≠ 0`. This is
-`TauCeti.finite_frobeniusFixedSubfield` read through
-`TauCeti.toSubring_frobeniusFixedSubfield`, the two having the same elements; it is the form a
-consumer working with `TauCeti.frobeniusFixedSubring` over a field asks for. Not an instance, for
-the reason given at `TauCeti.finite_frobeniusFixedSubfield`. -/
-theorem finite_frobeniusFixedSubring (hn : n ≠ 0) : Finite ↥(frobeniusFixedSubring K p n) :=
-  have := finite_frobeniusFixedSubfield K p n hn
-  .of_equiv _ (Equiv.subtypeEquivRight fun a =>
-    by rw [← Subfield.mem_toSubring, toSubring_frobeniusFixedSubfield] :
-      ↥(frobeniusFixedSubfield K p n) ≃ ↥(frobeniusFixedSubring K p n))
+theorem finite_frobeniusFixedSubfield (hn : n ≠ 0) : Finite (frobeniusFixedSubfield K p n) := by
+  have := finite_frobeniusFixedSubring K p n hn
+  exact .of_equiv _ (Equiv.subtypeEquivRight fun a ↦ by
+    rw [← Subfield.mem_toSubring, toSubring_frobeniusFixedSubfield]).symm
 
 /-- **Uniqueness of the subfield of `q` elements.** A subfield with `p ^ n` elements of a field of
 characteristic `p` is the subfield fixed by the `p ^ n`-power Frobenius.
@@ -136,11 +125,11 @@ theorem card_frobeniusFixedSubfield (hn : n ≠ 0) :
     Nat.card (frobeniusFixedSubfield K p n) = p ^ n := by
   have hsep : Separable (X ^ p ^ n - X : K[X]) :=
     galois_poly_separable p (p ^ n) (dvd_pow_self p hn)
-  have hsplit : ((X ^ p ^ n - X : K[X]).map (algebraMap K K)).Splits :=
-    IsSepClosed.splits_domain _ hsep
-  rw [Nat.card_congr (frobeniusFixedSubfieldEquivRootSet K p n hn), Nat.card_eq_fintype_card,
-    card_rootSet_eq_natDegree hsep hsplit,
-    natDegree_X_pow_sub_X (Nat.one_lt_pow hn (Fact.out (p := p.Prime)).one_lt)]
+  have hsplit : (X ^ p ^ n - X : K[X]).Splits :=
+    IsSepClosed.splits_of_separable _ hsep
+  rw [Nat.card_congr (Equiv.subtypeEquivRight fun a ↦ by
+    rw [← Subfield.mem_toSubring, toSubring_frobeniusFixedSubfield])]
+  exact natCard_frobeniusFixedSubring_of_splits K p hn hsplit
 
 /-- The Frobenius-fixed subfield of a separably closed field is a copy of Mathlib's
 `GaloisField p n`, the two being finite fields of the same cardinality. The isomorphism is not
@@ -163,7 +152,29 @@ section FrobeniusPow
 open IntermediateField
 
 variable (k L : Type*) [Field k] [Fintype k] [Field L] [Algebra k L] [Algebra.IsAlgebraic k L]
-  [IsSepClosed L]
+
+/-- The fixed field of the arithmetic Frobenius of `L` is `k`. -/
+theorem fixedField_zpowers_frobeniusAlgEquivOfAlgebraic :
+    fixedField (Subgroup.zpowers (FiniteField.frobeniusAlgEquivOfAlgebraic k L)) = ⊥ := by
+  refine eq_bot_iff.2 fun x hx ↦ ?_
+  rw [mem_fixedField_zpowers_iff, FiniteField.coe_frobeniusAlgEquivOfAlgebraic] at hx
+  rw [IntermediateField.mem_bot]
+  exact (FiniteField.pow_natCard_eq_self_iff_mem_range_algebraMap x).1
+    (by rwa [Nat.card_eq_fintype_card])
+
+/-- **Restricting Frobenius to a normal subextension gives its Frobenius.** For a tower
+`L / E / k` with `E / k` normal, the restriction to `E` of the arithmetic Frobenius `x ↦ x ^ q` of
+`L` is the arithmetic Frobenius of `E`. -/
+@[simp]
+theorem restrictNormalHom_frobeniusAlgEquivOfAlgebraic (E : Type*) [Field E]
+    [Algebra k E] [Algebra E L] [IsScalarTower k E L] [Normal k E] :
+    AlgEquiv.restrictNormalHom E (FiniteField.frobeniusAlgEquivOfAlgebraic k L) =
+      FiniteField.frobeniusAlgEquivOfAlgebraic k E := by
+  ext x
+  apply (algebraMap E L).injective
+  simp [AlgEquiv.restrictNormalHom]
+
+variable [IsSepClosed L]
 
 /-- **The extension of degree `r` inside a separable closure has `q ^ r` elements.** Let `k` be a
 finite field with `q` elements and `L` an algebraic extension of `k` that is separably closed, for

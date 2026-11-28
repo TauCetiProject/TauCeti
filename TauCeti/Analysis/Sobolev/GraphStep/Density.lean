@@ -35,6 +35,8 @@ compactly supported field has its classical derivative as weak derivative
 
 * `TauCeti.WeakDerivStep.dense_setOf_exists_contDiff_hasCompactSupport`: the fields with a smooth
   compactly supported representative are dense.
+* `TauCeti.WeakDerivStep.induction_on_contDiff_hasCompactSupport`: a closed property that holds for
+  the fields with a smooth compactly supported representative holds for all fields.
 
 ## References
 
@@ -144,6 +146,22 @@ theorem dense_setOf_exists_contDiff_hasCompactSupport (hp : p ≠ ∞) :
   refine closure_closure.subset (mem_closure_of_tendsto hv (Eventually.of_forall fun k ↦ ?_))
   obtain ⟨g, hg, hvg, hdg⟩ := hsmooth k
   exact mem_closure_setOf_exists_contDiff_hasCompactSupport hp hg hvg hdg
+
+/-- **Induction on smooth compactly supported fields.** For a real Banach space `F` and
+`1 ≤ p < ∞`, a closed property of the weak-derivative graph over `Lᵖ(ℝⁿ, F)` that holds for every
+element represented by a smooth compactly supported field holds for every element. -/
+theorem induction_on_contDiff_hasCompactSupport (hp : p ≠ ∞)
+    {P : WeakDerivStep mu ⊤ p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict (⊤ : Opens E)))) →
+      Prop}
+    (u : WeakDerivStep mu ⊤ p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict (⊤ : Opens E)))))
+    (hP : IsClosed {u | P u})
+    (ih : ∀ (v : WeakDerivStep mu ⊤ p
+        (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict (⊤ : Opens E))))) (φ : E → F),
+      ContDiff ℝ (⊤ : ℕ∞) φ → HasCompactSupport φ →
+        ⇑(prev _ v) =ᵐ[mu.restrict (⊤ : Opens E)] φ → P v) :
+    P u :=
+  (dense_setOf_exists_contDiff_hasCompactSupport hp).induction
+    (by rintro v ⟨φ, hφ, hφc, hv⟩; exact ih v φ hφ hφc hv) hP u
 
 end Density
 

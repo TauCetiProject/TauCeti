@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.Basic
 public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.Chains
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Equivalence
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Zero
 import TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport.Basic
 import TauCeti.Topology.CWComplex.Classical.CompactSupport
 
@@ -35,7 +36,9 @@ triples `(Xⁿ⁺¹, Xⁿ, X⁻¹)`.
   (`TauCeti.isIso_twistedHomologySkeletonBasePairToComplex`), with no dimension bound on the
   complex.
 * So the cellular homology is the twisted relative singular homology `Hₙ(C, D; L)` of the complex
-  (`TauCeti.twistedCellularSingularHomologyIso`).
+  (`TauCeti.twistedCellularSingularHomologyIso`). In degree zero it sends the cellular class of a
+  coefficient over a point of the `0`-skeleton to the singular class of the same coefficient
+  (`TauCeti.ιTwistedHomology₀_comp_twistedCellularSingularHomologyIso_hom`).
 
 The comparison with the whole complex is the compact-support argument of
 `TauCeti.AlgebraicTopology.Singular.Twisted.CompactSupport.Basic`, made on relative chains. A
@@ -554,7 +557,8 @@ private lemma exists_twistedChainSkeletonBasePairToComplex_f_eq (n : ℕ) {k : �
   obtain ⟨c, rfl⟩ := (complexBasePair C).twistedChainComplexπ_f_surjective L y
   -- The chain `c` is supported in a compact subset `K` of the complex, which lies in a skeleton.
   obtain ⟨K, hK, hc⟩ :=
-    LocalCoefficientSystem.exists_isCompact_forall_mem_range_twistedChainComplexMap_f L c
+    LocalCoefficientSystem.exists_isCompact_forall_subset_iff_mem_range_twistedChainComplexMap_f
+      L c
   obtain ⟨d, hd⟩ := exists_subset_skeletonLT_of_isCompact (C := C)
     (hK.image continuous_subtypeVal) (by rintro _ ⟨x, -, rfl⟩; exact x.property)
   set m := n + d
@@ -572,7 +576,7 @@ private lemma exists_twistedChainSkeletonBasePairToComplex_f_eq (n : ℕ) {k : �
     erw [LocalCoefficientSystem.range_twistedChainComplexMap_f ι L
       (Topology.IsEmbedding.inclusion (skeletonLT C ((m + 1 : ℕ) : ℕ∞)).subset_complex).isInducing,
       hι, ← LocalCoefficientSystem.range_twistedChainComplexMap_subtypeVal_f]
-    exact hc _ fun x hx ↦
+    exact (hc _).1 fun x hx ↦
       skeletonLT_mono (by exact_mod_cast (by lia : d ≤ m + 1)) (hd ⟨x, hx, rfl⟩)
   let e := (skeletonBasePair C m).twistedChainComplexCoefficientIso
     (eqToIso (skeletonSystem_eq_pullback C L m))
@@ -695,5 +699,55 @@ lemma homologyπ_comp_twistedCellularSingularHomologyIso_hom :
   rw [twistedCellularSingularHomologyIso, Iso.trans_hom, asIso_hom,
     homologyπ_comp_twistedCellularHomologyIso_hom_assoc,
     twistedHomologySkeletonBasePairToSucc_comp_twistedHomologySkeletonBasePairToComplex]
+
+
+/-- **The cellular–singular comparison in degree zero on the class of a coefficient.** The class
+in the cellular chain group `H₀(X⁰, X⁻¹; L)` of a coefficient over a point `y` of the `0`-skeleton,
+projected to cellular homology in degree zero and compared with singular homology, is the class in
+`H₀(C, X⁻¹; L)` of the same coefficient over `y`. -/
+@[reassoc]
+lemma ιTwistedHomology₀_comp_twistedCellularSingularHomologyIso_hom (y : skeletonObj C 1) :
+    LocalCoefficientSystem.ιTwistedHomology₀ (skeletonSystem C L 1) y ≫
+        (skeletonPair C 0).twistedHomologyπ _ 0 ≫
+        cokernel.π (twistedCellularDifferential C L 0) ≫
+        (twistedCellularChainComplexHomologyZeroIso C L).inv ≫
+        (twistedCellularSingularHomologyIso C L 0).hom =
+      LocalCoefficientSystem.ιTwistedHomology₀ L
+          (Set.inclusion (skeletonLT C ((1 : ℕ) : ℕ∞)).subset_complex y) ≫
+        (complexBasePair C).twistedHomologyπ L 0 := by
+  -- In degree zero the cellular cycles are the whole chain group, so the projection of the chains
+  -- onto cellular homology is the inclusion of the `0`-skeleton into the complex.
+  have hπ : cokernel.π (twistedCellularDifferential C L 0) ≫
+      (twistedCellularChainComplexHomologyZeroIso C L).inv ≫
+      (twistedCellularSingularHomologyIso C L 0).hom =
+      twistedHomologySkeletonBasePairToComplex C L 0 0 := by
+    have h := twistedCellularCyclesIso_inv_comp_iCycles C L 0
+    rw [twistedCellularCyclesι_zero, Category.id_comp] at h
+    have hZ := (twistedCellularCyclesIso C L 0).inv ≫=
+      homologyπ_comp_twistedCellularChainComplexHomologyZeroIso_hom C L
+    rw [reassoc_of% h, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp] at hZ
+    rw [← hZ, Category.assoc, Category.assoc, Iso.hom_inv_id_assoc,
+      homologyπ_comp_twistedCellularSingularHomologyIso_hom, Iso.inv_hom_id_assoc]
+  -- The coefficient identification of `skeletonSystem C L 1` with the pullback of `L` along the
+  -- inclusion of the `0`-skeleton is an `eqToHom` between fibres over the same point of `C`.
+  have hy : Set.inclusion (skeletonLT C ((1 : ℕ) : ℕ∞)).subset_complex y =
+      TopPair.Hom.fst (skeletonBasePairToComplex C 0) y := by
+    rw [skeletonBasePairToComplex_fst]
+    rfl
+  have hι : (eqToHom (skeletonSystem_eq_pullback C L 0)).app (FundamentalGroupoid.mk y) ≫
+      LocalCoefficientSystem.ιTwistedHomology₀ L
+        (TopPair.Hom.fst (skeletonBasePairToComplex C 0) y) =
+      LocalCoefficientSystem.ιTwistedHomology₀ L
+        (Set.inclusion (skeletonLT C ((1 : ℕ) : ℕ∞)).subset_complex y) :=
+    (congrArg (· ≫ _) (eqToHom_app _ _)).trans
+      (LocalCoefficientSystem.eqToHom_comp_ιTwistedHomology₀ L hy)
+  rw [hπ, twistedHomologySkeletonBasePairToComplex_def]
+  -- The pairs `(X⁰, X⁻¹)` of `skeletonPair` and `skeletonBasePair` agree only up to unfolding, so
+  -- the naturality lemmas are applied by `erw`.
+  erw [TopPair.twistedHomologyπ_comp_twistedHomologyCoefficientMap_assoc,
+    LocalCoefficientSystem.ιTwistedHomology₀_coefficientMap_assoc,
+    ← TopPair.twistedHomologyπ_naturality,
+    LocalCoefficientSystem.ιTwistedHomology₀_homologyMap_assoc]
+  exact (reassoc_of% hι) _
 
 end TauCeti
