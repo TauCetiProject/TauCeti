@@ -8,8 +8,9 @@ Namespace or GitHub-hosted runners. The picker still falls back to GitHub-hosted
 and builds without an immutable PR head (manual dispatches without `label_head`, merge
 groups) stay on GitHub-hosted runners. Maintenance builds (bot Mathlib bump and lint-repair
 PRs and their dispatched rebuilds) target the Fleet PR pool directly. Namespace is
-disabled (see `scripts/namespace-controls.md`). The nightly clean build and its reference build use the Fleet PR pool;
-staging-only and queue-control reservations cannot be taken by that class.
+disabled (see `scripts/namespace-controls.md`). The nightly clean build and its reference
+build run on Fleet's protected nightly slot (the `TauCetiNightly` runner group), not the
+Fleet PR pool.
 
 Staging runs only on tauchonki2. It prefers the exact available staging guest and
 otherwise waits for the next guest with tauchonki2's permanent machine and staging

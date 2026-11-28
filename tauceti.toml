@@ -66,8 +66,9 @@ mode = "hosted"
 url = "https://fleet.taucetiproject.org"
 # PR builds run only on the Fleet PR pool. Namespace is off, and saturated PR builds
 # wait for the next Fleet PR runner instead of spilling onto GitHub-hosted runners.
-# The NAMESPACE_ENABLED and NAMESPACE_BUILD_CAP repository variables still override
-# the Namespace default; see scripts/namespace-controls.md.
+# The NAMESPACE_ENABLED and NAMESPACE_BUILD_CAP repository variables override the
+# Namespace default, but take effect only while pr_order lists "namespace";
+# see scripts/namespace-controls.md.
 namespace_enabled = false
 namespace_build_cap = 8
 pr_order = ["fleet"]

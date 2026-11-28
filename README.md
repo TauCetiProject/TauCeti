@@ -89,8 +89,9 @@ the CI machinery. Those suites live with the shared tooling and run in
 [TauCetiTools](https://github.com/TauCetiProject/TauCetiTools) CI. Their results do not
 gate content builds, merge statuses, lint, or cache publication.
 
-Namespace runners are off. Operators can [re-enable or resize them](scripts/namespace-controls.md)
-through Actions variables, without a source PR or staging batch.
+Namespace runners are off, and PR routing no longer lists them. Turning them back on
+needs a `tauceti.toml` change as well as the Actions variables; see
+[Namespace runner controls](scripts/namespace-controls.md).
 
 Human-owned infrastructure changes still require human review. After reviewing a PR,
 repository admins can issue `bors r+` or `bors merge`: bors records approval
