@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Huber.WeightedEval.Map
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Completion
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Rename
@@ -394,6 +395,15 @@ theorem Pair.polydisc.toRingHom_evalHom_polydiscVar {S : Pair A}
     (Pair.polydisc.evalHom z t).toRingHom (Pair.polydiscVar n A i) = (t i : C) := by
   rw [Pair.polydisc.evalHom, Pair.polydiscVar, weightedEvalHomCompletion_coe,
     weightedEvalHom_weightedX]
+
+/-- On the image of an uncompleted restricted power series `f`, `Pair.polydisc.evalHom z t`
+evaluates the power series `f` at `t` along `z.toRingHom`. -/
+theorem Pair.polydisc.toRingHom_evalHom_coe {S : Pair A} {U : Pair C}
+    (z : Pair.Hom S U) {n : ℕ} (t : Fin n → U.plus)
+    (f : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    (Pair.polydisc.evalHom z t).toRingHom (f : restrictedMvPowerSeriesCompletion n A) =
+      weightedEval z.toRingHom (fun i ↦ (t i : C)) (f : MvPowerSeries (Fin n) A) := by
+  rw [Pair.polydisc.evalHom, weightedEvalHomCompletion_coe, coe_weightedEvalHom]
 
 @[simp]
 theorem Pair.polydisc.evalHom_comp_weightedCompletionHom {S : Pair A} {U : Pair C}

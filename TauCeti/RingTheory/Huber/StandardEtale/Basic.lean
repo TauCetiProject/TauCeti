@@ -9,7 +9,6 @@ public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import TauCeti.RingTheory.Huber.QuotientMapping
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.TateSeries.Basic
 import Mathlib.Topology.Algebra.Group.Neighborhood
-import TauCeti.RingTheory.Huber.WeightedEval.Continuous
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
 import TauCeti.Topology.Algebra.IsUniformGroup.Quotient
@@ -340,27 +339,17 @@ noncomputable def lift (P : StandardEtalePresentation Aplus ϖ Cplus)
     (z : Pair.Hom Aplus Uplus) (u : Fin P.N → U) (hu : ∀ i, u i ∈ Uplus.plus)
     (hFu : ∀ i, weightedEval z.toRingHom u (P.F i : MvPowerSeries (Fin P.N) A) = 0) :
     Pair.Hom Cplus Uplus :=
-  let hb := isWeightBounded_one_weight_of_mem_plus z.toRingHom Uplus hu
-  let ev : tateSeries P.N A →+* U :=
-    weightedEvalHom isWeightFamily_one_weight z.continuous_toRingHom.continuousAt hb
-  have hev_cont : Continuous ev :=
-    continuous_weightedEvalHom isWeightFamily_one_weight z.continuous_toRingHom.continuousAt hb
   let evPair : Pair.Hom (tateSeriesPair P.N A Aplus) Uplus :=
-    { toRingHom := ev
-      continuous_toRingHom := hev_cont
-      map_mem_plus := fun f hf ↦
-        tateSeriesPlus_map_le_of_continuous Aplus Uplus hev_cont
-          (fun a ha ↦ by
-            simpa only [ev, algebraMap_weightedRestrictedSubring, weightedEvalHom_weightedC] using
-              z.map_mem_plus a ha)
-          (fun i ↦ by
-            simpa only [ev, tateSeries.X_eq_weightedX, weightedEvalHom_weightedX] using hu i)
-          (Subring.mem_map.mpr ⟨f, by simpa only [tateSeriesPair_plus] using hf, rfl⟩) }
+    (Pair.polydisc.evalHom z (fun i ↦ ⟨u i, hu i⟩)).comp
+      (Aplus.weighted isWeightFamily_one_weight).completionHom
   have hker : P.ideal ≤ RingHom.ker evPair.toRingHom := by
     rw [P.ideal_def]
-    exact Ideal.closure_le_ker_of_continuous hev_cont
+    exact Ideal.closure_le_ker_of_continuous evPair.continuous_toRingHom
       (Ideal.span_le.mpr (Set.range_subset_iff.mpr fun i ↦ RingHom.mem_ker.mpr <| by
-        simpa only [evPair, ev, coe_weightedEvalHom] using hFu i))
+        simpa only [evPair, Pair.Hom.toRingHom_comp, RingHom.comp_apply,
+          Pair.Hom.toRingHom_completionHom, UniformSpace.Completion.coeRingHom_apply] using
+          (Pair.polydisc.toRingHom_evalHom_coe z (fun i ↦ ⟨u i, hu i⟩) (P.F i)).trans
+            (hFu i)))
   (evPair.quotientLift P.ideal hker).comp P.targetToQuotient
 
 /-- On an element `P.π f`, `P.lift z u hu hFu` evaluates the restricted series `f` at `u` along
@@ -373,8 +362,9 @@ theorem toRingHom_lift_π (P : StandardEtalePresentation Aplus ϖ Cplus)
       weightedEval z.toRingHom u (f : MvPowerSeries (Fin P.N) A) := by
   dsimp only [lift]
   rw [Pair.Hom.toRingHom_comp, RingHom.comp_apply, P.targetToQuotient_π,
-    Pair.Hom.toRingHom_quotientLift, Ideal.Quotient.lift_mk]
-  exact coe_weightedEvalHom _ _ _ f
+    Pair.Hom.toRingHom_quotientLift, Ideal.Quotient.lift_mk, Pair.Hom.toRingHom_comp,
+    RingHom.comp_apply, Pair.Hom.toRingHom_completionHom, UniformSpace.Completion.coeRingHom_apply]
+  exact Pair.polydisc.toRingHom_evalHom_coe z (fun i ↦ ⟨u i, hu i⟩) f
 
 /-- On the `i`-th coordinate `P.π (tateSeries.X P.N A i)`, `P.lift z u hu hFu` takes the value
 `u i`. -/

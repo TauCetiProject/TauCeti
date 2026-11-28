@@ -486,13 +486,12 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [Is
 
 /-- **The uncompleted unit-weight restricted power-series Huber pair `(A⟨T⟩, A⁺⟨T⟩)`** over a Huber
 pair `S = (A, A⁺)`. -/
-noncomputable def tateSeriesPair (N : ℕ) (A : Type*) [CommRing A] [TopologicalSpace A]
+noncomputable abbrev tateSeriesPair (N : ℕ) (A : Type*) [CommRing A] [TopologicalSpace A]
     [IsTopologicalRing A] [IsHuberRing A] (S : Pair A) : Pair (tateSeries N A) :=
   S.weighted (k := N) isWeightFamily_one_weight
 
 /-- The plus ring of `tateSeriesPair N A S` is `tateSeriesPlus N A S.plus` on the nose, with no
 integral closure needed. -/
-@[simp]
 theorem tateSeriesPair_plus (N : ℕ) (S : Pair A) :
     (tateSeriesPair N A S).plus = tateSeriesPlus N A S.plus :=
   Pair.weighted_plus_one_weight S
