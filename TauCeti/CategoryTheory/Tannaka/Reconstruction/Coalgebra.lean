@@ -303,11 +303,11 @@ theorem lTensor_reconstructionTransition_comp_coact {s t : Finset (SmallModel.{u
     (h' : subquotientHull (smallModelBiproduct C t) Y) :
     (ω.reconstructionTransition s t hst).toLinearMap.lTensor (ω.obj Y) ∘ₗ
         (ω.reconstructionStageComodule h).coact = (ω.reconstructionStageComodule h').coact := by
+  let := Comodule.ofAlgebraAction (ω.hullAction h)
   have hc := congrArg (·.coact) (Comodule.corestrict_ofAlgebraAction
     (ω.hullRestrict (subquotientHull_smallModelBiproduct_of_le hst)) (ω.hullAction h))
-  rw [ω.hullAction_comp_hullRestrict] at hc
-  -- `hc` is the same equation, with the coaction of the corestriction unfolded to
-  -- `lTensor ∘ coact` and the stage written as the convolution dual it is defined to be.
+  rw [ω.hullAction_comp_hullRestrict, Comodule.corestrict_coact,
+    Comodule.corestrictCoact_eq_lTensor] at hc
   exact hc
 
 /-- A linear map between the fibres of two members of the hull of `X_s` is a morphism of the
@@ -382,8 +382,8 @@ theorem map_comp_reconstructionComodule_coact {Y Y' : C} (g : Y ⟶ Y') :
       TensorProduct.map (ω.map g).hom LinearMap.id =
         TensorProduct.map (ω.map g).hom LinearMap.id ∘ₗ
           (ω.toReconstructionCoalgebra s).toLinearMap.lTensor (ω.obj Y) :=
-    (LinearMap.lTensor_comp_rTensor _ _ _).trans
-      (LinearMap.rTensor_comp_lTensor _ _ _).symm
+    by simp only [LinearMap.lTensor_comp_map, LinearMap.map_comp_lTensor,
+      LinearMap.comp_id, LinearMap.id_comp]
   rw [ω.reconstructionComodule_coact h, ω.reconstructionComodule_coact h',
     ← LinearMap.comp_assoc, ← hcomm, LinearMap.comp_assoc,
     ω.map_comp_reconstructionStageComodule_coact h h' g, LinearMap.comp_assoc]
@@ -411,7 +411,6 @@ the coaction `reconstructionComodule` of the coalgebra of `ω`, and a morphism `
     exact (ComoduleCat.id_apply K ω.reconstructionCoalgebra _ y).symm
   map_comp g g' := by
     ext y
-    simp
     simp [← ComoduleCat.ofHom_comp]
 
 /-- The comodule attached to `Y` has the coaction `reconstructionComodule`. -/

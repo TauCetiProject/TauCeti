@@ -132,6 +132,8 @@ instance : ω.toReconstructionComodule.EssSurj where
   mem_essImage M := by
     let := Module.addCommMonoidToAddCommGroup K (M := M)
     obtain ⟨s, σ, hσ⟩ := ω.exists_reconstructionStage_comodule M
+    -- Unfold `ReconstructionStage` to view `σ` as a comodule over the convolution dual,
+    -- so the algebra-action dictionary applies.
     let : Comodule K (ConvolutionDual K (ω.hullAlgebra (smallModelBiproduct C s))) M := σ
     let ρ := (Comodule.algebraAction (R := K) (A := ω.hullAlgebra (smallModelBiproduct C s))
       (M := M)).comp (ω.hullEndAlgEquiv (smallModelBiproduct C s)).toAlgHom
@@ -150,9 +152,7 @@ instance : ω.toReconstructionComodule.EssSurj where
     let e' : ((subquotientHull (smallModelBiproduct C s)).ι ⋙ ω).obj Y ≃ₗ[
         End ((subquotientHull (smallModelBiproduct C s)).ι ⋙ ω)] M :=
       ((ModuleCat.isFG _).ι.mapIso e).toLinearEquiv
-    let ℓ : ((subquotientHull (smallModelBiproduct C s)).ι ⋙ ω).obj Y ≃ₗ[K] M :=
-      e'.restrictScalars K
-    refine ⟨Y.obj, ⟨FGComoduleCat.isoOfLinearEquiv ℓ ?_⟩⟩
+    let ℓ : ω.obj Y.obj ≃ₗ[K] M := e'.restrictScalars K
     have key : TensorProduct.map ℓ.toLinearMap LinearMap.id ∘ₗ
         (ω.reconstructionStageComodule Y.property).coact = σ.coact ∘ₗ ℓ.toLinearMap := by
       have := (Comodule.map_coact_ofAlgebraAction_iff (ω.hullAction Y.property)
@@ -168,14 +168,15 @@ instance : ω.toReconstructionComodule.EssSurj where
         TensorProduct.map ℓ.toLinearMap LinearMap.id =
           TensorProduct.map ℓ.toLinearMap LinearMap.id ∘ₗ
             (ω.toReconstructionCoalgebra s).toLinearMap.lTensor (ω.obj Y.obj) :=
-      (LinearMap.lTensor_comp_rTensor _ _ _).trans
-        (LinearMap.rTensor_comp_lTensor _ _ _).symm
-    rw [coact_toReconstructionComodule_obj, ω.reconstructionComodule_coact Y.property, ← hσ]
-    refine LinearMap.ext fun y ↦ ?_
-    have h₁ := LinearMap.congr_fun hcomm ((ω.reconstructionStageComodule Y.property).coact y)
-    have h₂ := LinearMap.congr_fun key y
-    simp only [LinearMap.comp_apply] at h₁ h₂
-    exact h₁.symm.trans (congrArg _ h₂)
+      by simp only [LinearMap.lTensor_comp_map, LinearMap.map_comp_lTensor,
+        LinearMap.comp_id, LinearMap.id_comp]
+    have hℓ : TensorProduct.map ℓ.toLinearMap LinearMap.id ∘ₗ
+        (ω.reconstructionComodule Y.obj).coact = Comodule.coact ∘ₗ ℓ.toLinearMap := by
+      rw [ω.reconstructionComodule_coact Y.property, ← hσ, ← LinearMap.comp_assoc,
+        ← hcomm, LinearMap.comp_assoc, key, LinearMap.comp_assoc]
+    refine ⟨Y.obj, ⟨FGComoduleCat.isoOfLinearEquiv ℓ ?_⟩⟩
+    rw [coact_toReconstructionComodule_obj]
+    exact hℓ
 
 /-- The lift of `ω` to comodules is an equivalence of categories. -/
 instance : ω.toReconstructionComodule.IsEquivalence where
