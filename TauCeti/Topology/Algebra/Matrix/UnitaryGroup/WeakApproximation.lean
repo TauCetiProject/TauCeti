@@ -171,16 +171,16 @@ theorem topologicalClosure_map_eq [T2Space S] [Infinite (unitary K)]
 
 /-- Over a Hausdorff finite product of fields, the closure of the image of the source
 unitary group equals the unitary group of the extended nondegenerate hermitian form,
-when the source has characteristic zero and nontrivial involution and the dense
-homomorphism preserves the involutions. -/
-theorem topologicalClosure_map_eq_of_exists_star_ne [T2Space S] [CharZero K]
+when the source is an infinite field of characteristic different from two with
+nontrivial involution and the dense homomorphism preserves the involutions. -/
+theorem topologicalClosure_map_eq_of_exists_star_ne [T2Space S] [Infinite K]
     {I : Type*} [Finite I] {L : I → Type*} [∀ i, Field (L i)] (e : S ≃+* ∀ i, L i)
     (hf : DenseRange f) (hfstar : ∀ x, f (star x) = star (f x))
-    (hstar : ∃ x : K, star x ≠ x) (hA : A.IsHermitian) (hA' : IsUnit A) :
+    (h2 : (2 : K) ≠ 0) (hstar : ∃ x : K, star x ≠ x) (hA : A.IsHermitian) (hA' : IsUnit A) :
     ((unitaryGroupOf A).map (GeneralLinearGroup.map f)).topologicalClosure =
       unitaryGroupOf (A.map f) := by
-  have := infinite_unitary_of_exists_star_ne hstar
-  exact topologicalClosure_map_eq e hf hfstar two_ne_zero hA hA'
+  have := Unitary.infinite_of_exists_star_ne hstar
+  exact topologicalClosure_map_eq e hf hfstar h2 hA hA'
 
 end unitaryGroupOf
 end Matrix
