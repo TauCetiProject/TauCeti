@@ -250,8 +250,12 @@ variable {E E' : SpectralSequence C c r₀}
 lemma StabilizesAt.of_iso {pq : κ} {s : ℤ} (h : E.StabilizesAt pq s) (e : E ≅ E') :
     E'.StabilizesAt pq s where
   le := h.le
-  dFrom_eq_zero _ hr hsr := d_eq_zero_of_iso e hr (h.dFrom_eq_zero hr hsr)
-  dTo_eq_zero _ hr hsr := d_eq_zero_of_iso e hr (h.dTo_eq_zero hr hsr)
+  dFrom_eq_zero _ hr hsr :=
+    HomologicalComplex.d_eq_zero_of_iso ((pageFunctor C c r₀ _ hr).mapIso e)
+      (h.dFrom_eq_zero hr hsr)
+  dTo_eq_zero _ hr hsr :=
+    HomologicalComplex.d_eq_zero_of_iso ((pageFunctor C c r₀ _ hr).mapIso e)
+      (h.dTo_eq_zero hr hsr)
 
 lemma stabilizesAt_iff_of_iso (e : E ≅ E') (pq : κ) (s : ℤ) :
     E.StabilizesAt pq s ↔ E'.StabilizesAt pq s :=
@@ -259,14 +263,16 @@ lemma stabilizesAt_iff_of_iso (e : E ≅ E') (pq : κ) (s : ℤ) :
 
 lemma IsRegularAt.of_iso {pq : κ} (h : E.IsRegularAt pq) (e : E ≅ E') : E'.IsRegularAt pq :=
   let ⟨s, hs, h'⟩ := h
-  ⟨s, hs, fun _ hr hsr ↦ d_eq_zero_of_iso e hr (h' hr hsr)⟩
+  ⟨s, hs, fun _ hr hsr ↦
+    HomologicalComplex.d_eq_zero_of_iso ((pageFunctor C c r₀ _ hr).mapIso e) (h' hr hsr)⟩
 
 lemma isRegularAt_iff_of_iso (e : E ≅ E') (pq : κ) : E.IsRegularAt pq ↔ E'.IsRegularAt pq :=
   ⟨fun h ↦ h.of_iso e, fun h ↦ h.of_iso e.symm⟩
 
 lemma IsCoregularAt.of_iso {pq : κ} (h : E.IsCoregularAt pq) (e : E ≅ E') : E'.IsCoregularAt pq :=
   let ⟨s, hs, h'⟩ := h
-  ⟨s, hs, fun _ hr hsr ↦ d_eq_zero_of_iso e hr (h' hr hsr)⟩
+  ⟨s, hs, fun _ hr hsr ↦
+    HomologicalComplex.d_eq_zero_of_iso ((pageFunctor C c r₀ _ hr).mapIso e) (h' hr hsr)⟩
 
 lemma isCoregularAt_iff_of_iso (e : E ≅ E') (pq : κ) :
     E.IsCoregularAt pq ↔ E'.IsCoregularAt pq :=
@@ -274,7 +280,9 @@ lemma isCoregularAt_iff_of_iso (e : E ≅ E') (pq : κ) :
 
 lemma DegeneratesAt.of_iso {s : ℤ} (h : E.DegeneratesAt s) (e : E ≅ E') : E'.DegeneratesAt s where
   le := h.le
-  d_eq_zero _ hr hsr pq pq' := d_eq_zero_of_iso e hr (h.d_eq_zero hr hsr pq pq')
+  d_eq_zero _ hr hsr pq pq' :=
+    HomologicalComplex.d_eq_zero_of_iso ((pageFunctor C c r₀ _ hr).mapIso e)
+      (h.d_eq_zero hr hsr pq pq')
 
 lemma degeneratesAt_iff_of_iso (e : E ≅ E') (s : ℤ) : E.DegeneratesAt s ↔ E'.DegeneratesAt s :=
   ⟨fun h ↦ h.of_iso e, fun h ↦ h.of_iso e.symm⟩

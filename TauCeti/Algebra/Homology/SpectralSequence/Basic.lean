@@ -12,10 +12,9 @@ public import Mathlib.Algebra.Homology.SpectralSequence.Basic
 
 The components of an isomorphism `e : E ≅ E'` of spectral sequences at each position of each page
 are inverse to each other (`CategoryTheory.SpectralSequence.hom_inv_id_hom_f`,
-`CategoryTheory.SpectralSequence.inv_hom_id_hom_f`), and carry vanishing differentials to vanishing
-differentials (`CategoryTheory.SpectralSequence.d_eq_zero_of_iso`). A morphism of spectral
-sequences also commutes with the inverses of the isomorphisms between the homology of a page and
-the next page (`CategoryTheory.SpectralSequence.Hom.hom_f_comp_iso_inv`).
+`CategoryTheory.SpectralSequence.inv_hom_id_hom_f`). A morphism of spectral sequences also commutes
+with the inverses of the isomorphisms between the homology of a page and the next page
+(`CategoryTheory.SpectralSequence.Hom.hom_f_comp_iso_inv`).
 
 A spectral sequence `E` starting on page `r₀` can be restricted to start on any later page `s ≥ r₀`
 (`CategoryTheory.SpectralSequence.fromPage`), preserving all pages and homology identifications from
@@ -47,16 +46,6 @@ lemma inv_hom_id_hom_f (e : E ≅ E') (r : ℤ) (hr : r₀ ≤ r) (pq : κ) :
     (e.inv.hom r hr).f pq ≫ (e.hom.hom r hr).f pq = 𝟙 _ := by
   rw [← HomologicalComplex.comp_f, ← comp_hom _ _ r hr, e.inv_hom_id, id_hom,
     HomologicalComplex.id_f]
-
-/-- An isomorphism of spectral sequences carries a vanishing page differential to a vanishing
-differential. -/
-lemma d_eq_zero_of_iso (e : E ≅ E') {r : ℤ} (hr : r₀ ≤ r) {i j : κ}
-    (h : (E.page r hr).d i j = 0) : (E'.page r hr).d i j = 0 := by
-  calc (E'.page r hr).d i j
-      = ((e.inv.hom r hr).f i ≫ (e.hom.hom r hr).f i) ≫ (E'.page r hr).d i j := by simp
-    _ = (e.inv.hom r hr).f i ≫ (E.page r hr).d i j ≫ (e.hom.hom r hr).f j := by
-        rw [Category.assoc, (e.hom.hom r hr).comm]
-    _ = 0 := by simp [h]
 
 /-- A morphism of spectral sequences commutes with the inverses of the isomorphisms between the
 homology of a page and the next page: this is the inverse form of `Hom.comm`. -/
@@ -124,10 +113,22 @@ lemma fromPageMap_fromPageMap {E E' : SpectralSequence C c r₀} {s t : ℤ}
 
 variable (C c r₀) in
 /-- Restricting spectral sequences from page `r₀` to start on page `s ≥ r₀`, as a functor. -/
-@[expose, simps]
 def fromPageFunctor (s : ℤ) (hs : r₀ ≤ s) : SpectralSequence C c r₀ ⥤ SpectralSequence C c s where
   obj E := E.fromPage s hs
   map f := fromPageMap s hs f
+
+@[simp]
+lemma fromPageFunctor_obj (s : ℤ) (hs : r₀ ≤ s) (E : SpectralSequence C c r₀) :
+    (fromPageFunctor C c r₀ s hs).obj E = E.fromPage s hs :=
+  (rfl)
+
+@[simp]
+lemma fromPageFunctor_map {E E' : SpectralSequence C c r₀} (s : ℤ) (hs : r₀ ≤ s) (f : E ⟶ E') :
+    (fromPageFunctor C c r₀ s hs).map f =
+      eqToHom (fromPageFunctor_obj s hs E) ≫ fromPageMap s hs f ≫
+        eqToHom (fromPageFunctor_obj s hs E').symm := by
+  change fromPageMap s hs f = eqToHom rfl ≫ fromPageMap s hs f ≫ eqToHom rfl
+  simp
 
 @[simp]
 lemma fromPageFunctor_self :

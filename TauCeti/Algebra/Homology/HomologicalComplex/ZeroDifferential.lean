@@ -23,10 +23,11 @@ a quasi-isomorphism when every `e i ≫ K.homologyπ i` is an isomorphism
 construction of resolutions by attaching cells.
 
 More generally, the homology of any complex in a degree where both differentials vanish is the
-term in that degree (`HomologicalComplex.XIsoHomologyOfDEqZero`), so it is projective when that
-term is (`HomologicalComplex.projective_homology_of_d_eq_zero`).  These identifications are
-natural (`HomologicalComplex.XIsoHomologyOfDEqZero_hom_naturality`), so a quasi-isomorphism
-between complexes with zero differentials is an isomorphism
+terms in that degree (`HomologicalComplex.XIsoHomologyOfDEqZero`), so it is projective when that
+term is (`HomologicalComplex.projective_homology_of_d_eq_zero`), and vanishing differentials are
+preserved by isomorphisms of complexes (`HomologicalComplex.d_eq_zero_of_iso`). These
+identifications are natural (`HomologicalComplex.XIsoHomologyOfDEqZero_hom_naturality`), so a
+quasi-isomorphism between complexes with zero differentials is an isomorphism
 (`HomologicalComplex.isIso_of_quasiIso_of_d_eq_zero`).
 -/
 
@@ -77,6 +78,13 @@ instance hasHomology_graded (E : ι → C) (i : ι) : (graded c E).HasHomology i
   ShortComplex.hasHomology_of_zeros _ _ _
 
 variable {c}
+
+/-- An isomorphism of homological complexes carries a vanishing differential to a vanishing
+differential. -/
+lemma d_eq_zero_of_iso {K L : HomologicalComplex C c} (e : K ≅ L) {i j : ι}
+    (h : K.d i j = 0) : L.d i j = 0 := by
+  rw [← Category.id_comp (L.d i j), ← (Hom.isoApp e i).inv_hom_id, Hom.isoApp_inv,
+    Hom.isoApp_hom, Category.assoc, e.hom.comm, h, Limits.zero_comp, Limits.comp_zero]
 
 /-- If the differentials into and out of degree `i` vanish, the term in degree `i` is isomorphic
 to the homology in degree `i`: every element is a cycle, and none but zero is a boundary. -/

@@ -304,6 +304,7 @@ section Rebase
 /-- **Rebasing the presentations.** Composing the presentation of the page `s` of `E` with the
 presentation of the page `r ≥ s` of `E` rebased at `s` gives the presentation of the page `r` of
 `E`. -/
+@[simp]
 lemma pagePresentation_trans_fromPage (s : ℤ) (hs : r₀ ≤ s) (r : ℤ) (hsr : s ≤ r) :
     (E.pagePresentation pq s hs).trans ((E.fromPage s hs).pagePresentation pq r hsr) =
       E.pagePresentation pq r (hs.trans hsr) := by

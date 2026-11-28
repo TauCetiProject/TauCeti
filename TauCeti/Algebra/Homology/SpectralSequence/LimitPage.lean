@@ -394,6 +394,19 @@ noncomputable def StabilizesAt.limitPageIso (h : E.StabilizesAt pq s)
       ((h.cyclesSubobject_eq hr hsr).trans
         (h.cyclesInf_eq.symm.trans (E.limitPagePresentation_Z pq).symm)))
 
+/-- Compatibility of `StabilizesAt.limitPageIso` with the page presentation projection and
+`limitPageπ`. -/
+@[reassoc]
+lemma StabilizesAt.π_limitPageIso_hom (h : E.StabilizesAt pq s)
+    [E.HasCyclesInf pq] [E.HasBoundariesSup pq]
+    (r : ℤ) (hr : r₀ ≤ r) (hsr : s ≤ r) :
+    (E.pagePresentation pq r hr).π ≫ (h.limitPageIso r hr hsr).hom =
+      ofLE (E.pagePresentation pq r hr).Z (E.cyclesInf pq)
+        (by rw [E.pagePresentation_Z pq r hr, h.cyclesSubobject_eq hr hsr, h.cyclesInf_eq]) ≫
+        E.limitPageπ pq := by
+  rw [StabilizesAt.limitPageIso, SubquotientPresentation.π_isoOfEq_hom, limitPageπ_eq,
+    ofLE_comp_ofLE_assoc]
+
 /-- `StabilizesAt.pageXIso` followed by `StabilizesAt.limitPageIso` agrees with
 `StabilizesAt.limitPageIso` at the starting page `s`. -/
 lemma StabilizesAt.pageXIso_comp_limitPageIso (h : E.StabilizesAt pq s)
@@ -632,13 +645,27 @@ end Iso
 
 /-- Taking the limit page at `pq` as a functor `SpectralSequence C c r₀ ⥤ C`, when `C` has
 countable products and countable coproducts. -/
-@[expose, simps]
 noncomputable def limitPageFunctor (C : Type*) [Category* C] [Abelian C]
     [HasCountableProducts C] [HasCountableCoproducts C]
     {κ : Type*} (c : ℤ → ComplexShape κ) (r₀ : ℤ) (pq : κ) :
     SpectralSequence C c r₀ ⥤ C where
   obj E := E.limitPage pq
   map f := limitPageMap f pq
+
+@[simp]
+lemma limitPageFunctor_obj [HasCountableProducts C] [HasCountableCoproducts C]
+    (E : SpectralSequence C c r₀) (pq : κ) :
+    (limitPageFunctor C c r₀ pq).obj E = E.limitPage pq :=
+  (rfl)
+
+@[simp]
+lemma limitPageFunctor_map [HasCountableProducts C] [HasCountableCoproducts C]
+    {E E' : SpectralSequence C c r₀} (f : E ⟶ E') (pq : κ) :
+    (limitPageFunctor C c r₀ pq).map f =
+      eqToHom (limitPageFunctor_obj E pq) ≫ limitPageMap f pq ≫
+        eqToHom (limitPageFunctor_obj E' pq).symm := by
+  change limitPageMap f pq = eqToHom rfl ≫ limitPageMap f pq ≫ eqToHom rfl
+  simp
 
 end Naturality
 
