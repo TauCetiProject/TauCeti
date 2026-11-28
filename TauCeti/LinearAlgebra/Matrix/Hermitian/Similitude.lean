@@ -9,6 +9,8 @@ public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.FieldTheory.Separable
+import TauCeti.Algebra.Polynomial.AlgebraMap
+import TauCeti.LinearAlgebra.Matrix.Charpoly.CayleyHamilton
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Diagonal
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Separable
 import TauCeti.LinearAlgebra.Matrix.Polynomial
@@ -39,6 +41,13 @@ with diagonal entries `b i * δ (d i)`: passing from `β` to `β * δ(y)` multip
 entries by the `δ (d i)`. When these are real, as for a Hermitian `β` and real-valued `δ (d i)`,
 this multiplies their signs.
 
+Frames that are polynomials in `y` change the form in the same way. If `y * c(y) = ν • 1` for a
+polynomial `c` and `ν` can be cancelled, then `c(y)` is the adjoint of `y` for `β`, so
+`star (g(y)) * β = β * (conj g)(c(y))` for a polynomial `g`, where `conj g` has the conjugated
+coefficients of `g`. Hence if `(conj g)(c) * g ≡ δ` modulo the characteristic polynomial of `y`,
+the Gram matrix of `β` in the frame `g(y)` is `β * δ(y)`. The polynomial `g` may have coefficients
+in any commutative algebra with a compatible involution, such as the finite adeles of a CM field.
+
 This is the linear algebra behind the change of signs of an elliptic similitude at the infinite
 places of a CM field (`Matrix.IsEllipticSimilitude`), where `y` has irreducible characteristic
 polynomial and its complex eigenvalues all have absolute value `√ν`.
@@ -58,6 +67,11 @@ polynomial and its complex eigenvalues all have absolute value `√ν`.
   basis, `β * p(y)` is diagonal with entries `b i * p (d i)`, and, over a nontrivial star-ordered
   commutative ring without zero divisors, it is positive definite iff these are positive.
 * `Matrix.conjTranspose_mul_mul_aeval_mul_eq_smul`: `y` is a similitude of `β * δ(y)`.
+* `Matrix.mul_aeval_eq_conjTranspose_mul`: if `y * c(y) = ν • 1`, then `c(y)` is the adjoint of
+  `y` for `β`.
+* `Matrix.conjTranspose_aeval_mul_map_mul_aeval_eq_map_mul_aeval`: if `X * c ≡ ν` and
+  `(conj g)(c) * g ≡ δ` modulo the characteristic polynomial of `y`, then the Gram matrix of `β`
+  in the frame `g(y)` over an algebra with involution is `β * δ(y)`.
 -/
 
 public section
@@ -121,6 +135,19 @@ theorem conjTranspose_mul_mul_aeval_mul_eq_smul {y β : Matrix n n R} {ν : R}
     _ = ν • (β * aeval y p) := by
         rw [hβ, Matrix.smul_mul]
 
+/-- **A polynomial adjoint of a similitude.** If `y` is a similitude of `β` with a left-regular
+multiplier `ν` and `y * c(y) = ν • 1` for a polynomial `c`, then `c(y)` is the adjoint of `y` for
+the form `β`: `β * c(y) = yᴴ * β`. -/
+theorem mul_aeval_eq_conjTranspose_mul {y β : Matrix n n R} {ν : R} (hν : IsLeftRegular ν)
+    (hβ : yᴴ * β * y = ν • β) {c : R[X]} (hc : y * aeval y c = ν • 1) :
+    β * aeval y c = yᴴ * β := by
+  have h : ν • (β * aeval y c) = ν • (yᴴ * β) := by
+    rw [← Matrix.smul_mul, ← hβ, Matrix.mul_assoc, hc, Matrix.mul_smul, Matrix.mul_one]
+  ext i j
+  have hij := Matrix.ext_iff.2 h i j
+  rw [Matrix.smul_apply, Matrix.smul_apply] at hij
+  exact hν hij
+
 /-- In a family of eigenvectors of `y` in which the form `β` is diagonal, the form `β * p(y)` is
 diagonal with entries `b i * p (d i)`. -/
 theorem conjTranspose_mul_mul_aeval_mul_eq_diagonal {y β : Matrix n n R} {P : Matrix n m R}
@@ -176,5 +203,42 @@ theorem exists_mul_eq_mul_diagonal_and_conjTranspose_mul_mul_eq_diagonal {y β :
   exact ⟨P, d, _, hP, hdiag.diagonal_diag.symm, hd⟩
 
 end Field
+
+section PolynomialFrame
+
+variable [CommRing R] [StarRing R] {A : Type*} [CommRing A] [StarRing A] [Algebra R A]
+  [StarModule R A]
+
+/-- **The Gram matrix of a similitude form in a polynomial frame.** Let `y` be a similitude of `β`
+over `R` with left-regular multiplier `ν`, and let `A` be a commutative `R`-algebra with a
+compatible involution. Let `c`, `δ` be polynomials over `R` and `g` a polynomial over `A` such
+that `X * c ≡ ν` modulo the characteristic polynomial `P` of `y`, and `(conj g)(c) * g ≡ δ` modulo
+the image of `P` in `A[X]`, where `conj g` has the conjugated coefficients of `g`. Then the Gram
+matrix of `β` in the frame `g(y)` over `A` is the image of `β * δ(y)`. -/
+theorem conjTranspose_aeval_mul_map_mul_aeval_eq_map_mul_aeval {y β : Matrix n n R} {ν : R}
+    (hν : IsLeftRegular ν) (hβ : yᴴ * β * y = ν • β) {c δ : R[X]} {g : A[X]}
+    (hc : y.charpoly ∣ X * c - C ν)
+    (hg : y.charpoly.map (algebraMap R A) ∣
+      (g.map (starRingEnd A)).comp (c.map (algebraMap R A)) * g - δ.map (algebraMap R A)) :
+    (aeval (y.map (algebraMap R A)) g)ᴴ * β.map (algebraMap R A) *
+        aeval (y.map (algebraMap R A)) g =
+      (β * aeval y δ).map (algebraMap R A) := by
+  set ι := algebraMap R A
+  set Y := y.map ι
+  -- By Cayley–Hamilton the congruence `X * c ≡ ν` becomes `y * c(y) = ν • 1`.
+  have hmul : y * aeval y c = ν • 1 := by
+    have h := aeval_eq_aeval_of_dvd_sub (aeval_self_charpoly y) hc
+    rwa [map_mul, aeval_X, aeval_C, Algebra.algebraMap_eq_smul_one] at h
+  -- `c(Y)` is the adjoint of `Y` for the form `β` over `A`.
+  have hadj : Yᴴ * β.map ι = β.map ι * aeval Y (c.map ι) := by
+    rw [aeval_map, ← conjTranspose_map ι fun r ↦ algebraMap_star_comm r, ← Matrix.map_mul,
+      ← Matrix.map_mul, mul_aeval_eq_conjTranspose_mul hν hβ hmul]
+  calc (aeval Y g)ᴴ * β.map ι * aeval Y g
+      = β.map ι * aeval (aeval Y (c.map ι)) (g.map (starRingEnd A)) * aeval Y g := by
+        rw [conjTranspose_aeval, aeval_mul_eq_mul_aeval hadj]
+    _ = (β * aeval y δ).map ι := by
+        rw [Matrix.mul_assoc, ← aeval_comp, aeval_map_mul_aeval_map_of_dvd hg, Matrix.map_mul]
+
+end PolynomialFrame
 
 end Matrix

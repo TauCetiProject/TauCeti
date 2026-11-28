@@ -16,6 +16,7 @@ import Mathlib.RingTheory.Polynomial.Vieta
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Resultant
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Reverse
+import TauCeti.LinearAlgebra.Matrix.Polynomial
 import TauCeti.RingTheory.Polynomial.Roots
 
 /-!
@@ -71,6 +72,12 @@ over `E` into linear factors.
   closed field, listed by the index type of `A`.
 * `Matrix.exists_charpoly_map_eq_prod_X_sub_C`: over an algebraically closed field, `χ_A` is
   `∏ (X - βᵢ)` for some family `β` indexed by the index type of `A`.
+* `Matrix.isUnit_aeval_iff_forall_eval_rootEnumeration_ne_zero`: `p(A)` is invertible if and only
+  if `p` vanishes at none of the numbered characteristic roots in an algebraically closed field.
+* `Matrix.isRootEnumeration_rootEnumeration_charpoly_map`,
+  `Matrix.injective_rootEnumeration_charpoly_map`: the chosen numbering of the roots of the image
+  of `χ_A` in an algebraically closed field lists them, and is injective when that image is
+  separable.
 * `Matrix.coeff_charpolyRev_eq_esymm_roots_charpoly_of_splits`: Vieta's formula for
   `det (1 - X A)`, whose `r`-th coefficient is `(-1) ^ r` times the `r`-th elementary symmetric
   function of the characteristic roots.
@@ -263,5 +270,48 @@ theorem det_aeval_eq_prod_roots_charpoly (A : Matrix n n K) (p : K[X]) :
   det_aeval_eq_prod_roots_charpoly_of_splits (IsAlgClosed.splits _) p
 
 end IsAlgClosed
+
+section RootNumbering
+
+variable {n R F K : Type*} [Fintype n] [DecidableEq n] [CommRing R] [Field F] [Field K]
+  [IsAlgClosed K]
+
+/-- The chosen numbering `Polynomial.rootEnumeration` lists, with multiplicity, the roots of the
+image of the characteristic polynomial of `A` under a ring homomorphism `φ` to an algebraically
+closed field. -/
+theorem isRootEnumeration_rootEnumeration_charpoly_map (φ : R →+* K) (A : Matrix n n R) :
+    (A.charpoly.map φ).IsRootEnumeration ((A.charpoly.map φ).rootEnumeration K n) :=
+  have := φ.domain_nontrivial
+  ((charpoly_monic A).map φ).isRootEnumeration_rootEnumeration
+    (by rw [(charpoly_monic A).natDegree_map, charpoly_natDegree_eq_dim])
+
+/-- If the image of the characteristic polynomial of `A` under `φ` is separable, the numbered
+roots `Polynomial.rootEnumeration` of that image are distinct. -/
+theorem injective_rootEnumeration_charpoly_map {φ : R →+* K} {A : Matrix n n R}
+    (hA : (A.charpoly.map φ).Separable) :
+    Function.Injective ((A.charpoly.map φ).rootEnumeration K n) :=
+  have := φ.domain_nontrivial
+  ((isRootEnumeration_rootEnumeration_charpoly_map φ A).injective_iff_separable
+    (by rw [(charpoly_monic A).natDegree_map, charpoly_natDegree_eq_dim])
+    ((charpoly_monic A).map φ).ne_zero).2 hA
+
+/-- **Invertibility of `p(A)`, read on the roots.** For a ring homomorphism `φ` from a field to an
+algebraically closed field, `p(A)` is invertible if and only if `p^φ` vanishes at none of the
+numbered roots `Polynomial.rootEnumeration` of the image under `φ` of the characteristic
+polynomial of `A`. -/
+theorem isUnit_aeval_iff_forall_eval_rootEnumeration_ne_zero (φ : F →+* K) (A : Matrix n n F)
+    (p : F[X]) :
+    IsUnit (aeval A p) ↔ ∀ i, (p.map φ).eval ((A.charpoly.map φ).rootEnumeration K n i) ≠ 0 := by
+  have hroots : (A.map φ).charpoly.roots =
+      Finset.univ.val.map ((A.charpoly.map φ).rootEnumeration K n) := by
+    rw [charpoly_map,
+      ← isRootEnumeration_iff.mp (isRootEnumeration_rootEnumeration_charpoly_map φ A),
+      Algebra.algebraMap_self, Polynomial.map_id]
+  rw [isUnit_iff_isUnit_det, isUnit_iff_ne_zero, ← map_ne_zero φ, RingHom.map_det,
+    RingHom.mapMatrix_apply, ← aeval_map, det_aeval_eq_prod_roots_charpoly, hroots,
+    Multiset.map_map, ← Finset.prod_eq_multiset_prod, Finset.prod_ne_zero_iff]
+  simp
+
+end RootNumbering
 
 end Matrix

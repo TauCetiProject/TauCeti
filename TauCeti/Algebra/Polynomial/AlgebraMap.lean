@@ -27,7 +27,8 @@ For an idempotent `e` commuting with `u`, evaluating a polynomial `P` at `u e` o
 splits as `P(u) e + P(0) • (1 - e)` or `P(u) (1 - e) + P(0) • e`
 (`Polynomial.aeval_mul_of_isIdempotentElem`, `Polynomial.aeval_mul_one_sub_of_isIdempotentElem`),
 and when `P(0)` is a unit and `P(u)` is invertible modulo `e`, `P(u (1 - e))` is a unit
-(`Polynomial.isUnit_aeval_mul_one_sub_of_isIdempotentElem`).
+(`Polynomial.isUnit_aeval_mul_one_sub_of_isIdempotentElem`). Polynomials congruent modulo a
+polynomial vanishing at `x` take the same value at `x` (`Polynomial.aeval_eq_aeval_of_dvd_sub`).
 
 For an `R[X]`-algebra `S` compatible with its `R`-algebra structure, the algebra map `R[X] → S` is
 evaluation at the image of `X` (`Polynomial.algebraMap_eq_aeval`).
@@ -136,6 +137,13 @@ theorem Monic.faithfulSMul_of_dvd {A B : Type*} [CommRing A] [Ring B] [Algebra A
   by_contra ha0
   exact hp.not_dvd_of_natDegree_lt (C_ne_zero.mpr ha0) (by rwa [natDegree_C])
     (hdvd _ (by rwa [aeval_C]))
+
+/-- Two polynomials congruent modulo a polynomial `r` vanishing at `x` take the same value at `x`:
+if `r(x) = 0` and `r ∣ p - q`, then `p(x) = q(x)`. -/
+theorem aeval_eq_aeval_of_dvd_sub {R A : Type*} [CommRing R] [Ring A] [Algebra R A] {x : A}
+    {r p q : R[X]} (hr : aeval x r = 0) (h : r ∣ p - q) : aeval x p = aeval x q := by
+  rw [← sub_eq_zero, ← map_sub]
+  exact aeval_eq_zero_of_dvd_aeval_eq_zero h hr
 
 /-- Evaluating `1 - C c * P` at `u` satisfies `1 - aeval u (1 - C c * P) = c • aeval u P`. -/
 theorem one_sub_aeval_one_sub_C_mul {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
