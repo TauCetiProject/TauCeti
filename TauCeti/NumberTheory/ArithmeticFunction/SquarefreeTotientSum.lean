@@ -11,7 +11,7 @@ public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 
 import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.Data.Nat.Totient
-import TauCeti.NumberTheory.SmoothNumbers
+import TauCeti.NumberTheory.SmoothNumbers.Basic
 
 /-!
 # The squarefree reciprocal-totient sum over integers coprime to a modulus

@@ -7,20 +7,25 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.NumberTheory.SmoothNumbers.Count
-import TauCeti.NumberTheory.SmoothNumbers
+import TauCeti.NumberTheory.SmoothNumbers.Basic
 
 /-!
 # Rankin's upper bound for the number of smooth integers
 
 Rankin's trick bounds the number `Ψ(x, y)` of `y`-smooth positive integers up to `x` by a finite
-Euler product: for every `σ > 0`,
+Euler product: for every real `x ≥ 0` and every `σ > 0`,
 
   `Ψ(x, y) ≤ x ^ σ * ∏_{p ≤ y} (1 - p ^ (-σ))⁻¹`.
 
-Each counted `n` satisfies `1 ≤ (x / n) ^ σ`, so `Ψ(x, y) ≤ x ^ σ ∑ n ^ (-σ)`, the sum being over
-the `y`-smooth `n ≤ x`; enlarging it to all `y`-smooth integers gives the Euler product
-(`TauCeti.hasSum_rpow_neg_smoothNumbers`). The bound holds for every `σ > 0`, with no condition
-`σ > 1`, because only the finitely many primes `p ≤ y` occur.
+The exponent `σ` is a free parameter, and the bound is valid for every `σ > 0`, with no condition
+`σ > 1`, because only the finitely many primes `p ≤ y` occur (the Euler product is
+`TauCeti.hasSum_rpow_neg_smoothNumbers`). Decreasing `σ` makes `x ^ σ` smaller and every factor
+of the product larger, so to use the bound one chooses `σ` to balance the two. At `σ = 1` the
+right side is `x ∏_{p ≤ y} (1 - 1 / p)⁻¹ ≥ x`, which is no better than `Ψ(x, y) ≤ x`; the bound
+only helps for `σ < 1`. For `σ = 1 - c / log y` with a constant `c > 0`, one has
+`p ^ (-σ) ≤ e ^ c / p` for all primes `p ≤ y`, which controls the factors of the product, while
+`x ^ σ = x * exp (-c log x / log y)` for `x > 0` gains a factor exponentially small in
+`log x / log y`.
 
 ## Main results
 

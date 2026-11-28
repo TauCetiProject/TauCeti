@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.Height.NumberField
 public import TauCeti.Data.Nat.Prime.Basic
 public import TauCeti.NumberTheory.Padics.HeightOneSpectrum
-public import TauCeti.NumberTheory.SmoothNumbers
+public import TauCeti.NumberTheory.SmoothNumbers.Basic
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit
 
 import TauCeti.NumberTheory.NumberField.SUnits.Rat.Basic
