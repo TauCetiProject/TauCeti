@@ -8,6 +8,8 @@ module
 public import Mathlib.CategoryTheory.Abelian.Subcategory
 public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.Basic
 
+import TauCeti.CategoryTheory.Preadditive.Projective.Basic
+
 /-!
 # Modules over a preadditive category
 
@@ -130,13 +132,10 @@ instance (X : C) : Projective ((yoneda C).obj X) where
 
 variable {C} in
 /-- A coproduct of representable modules indexed by a type in the morphism universe is
-projective. Mathlib's coproduct projectivity instance uses the module category's morphism
-universe, so the index is first moved along `ULift`. -/
+projective. -/
 instance projective_sigma_yoneda {I : Type v} (X : I → C) :
     Projective (∐ fun i ↦ (yoneda C).obj (X i)) :=
-  let e := Sigma.reindex (Equiv.ulift : ULift.{u} I ≃ I) (fun i ↦ (yoneda C).obj (X i))
-  have hProjective (i : ULift.{u} I) : Projective ((yoneda C).obj (X i.down)) := inferInstance
-  Projective.of_iso e (@Projective.instSigmaObj _ _ _ _ _ hProjective)
+  Projective.of_isColimit_cofan (coproductIsCoproduct _)
 
 variable {C} in
 /-- The inclusion into all functors sends a coproduct of representable modules to the coproduct
