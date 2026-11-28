@@ -11,6 +11,7 @@ public import Mathlib.SetTheory.Cardinal.Finite
 
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.RingTheory.IntegralDomain
+import TauCeti.Algebra.Group.Units.PowEq
 import TauCeti.GroupTheory.Coset.Fiber
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.PowMonoidHom
 
@@ -30,15 +31,14 @@ bounds.
 
 ## Main results
 
-* `Units.natCard_pow_eq_val`: in a monoid, for `d ≠ 0`, the roots of `y ^ d = u` with `u` a unit
-  are units, so they are as many as the roots of `y ^ d = u` in the unit group.
 * `TauCeti.natCard_pow_eq_of_ne_zero`: the number of roots of `y ^ d = a` for `a ≠ 0`.
 * `TauCeti.card_filter_pow_eq_eq_card_filter_zero_add_mul`: the number of points of
   `y ^ d = g(x)`.
 
 ## Implementation notes
 
-The unit group `Fˣ` is cyclic of order `q - 1`. Mathlib's `IsCyclic.card_powMonoidHom_ker` gives
+The roots of `y ^ d = a` with `a ≠ 0` are units (`Units.natCard_pow_eq_val`), and the unit group
+`Fˣ` is cyclic of order `q - 1`. Mathlib's `IsCyclic.card_powMonoidHom_ker` gives
 the `d'` elements of the kernel of the `d`-th power map, every nonempty fiber has as many
 elements as the kernel (`MonoidHom.card_fiber_eq_card_ker`), and
 `IsCyclic.mem_range_powMonoidHom_iff` decides which fibers are nonempty.
@@ -52,16 +52,6 @@ elements as the kernel (`MonoidHom.card_fiber_eq_card_ker`), and
 public section
 
 open Finset
-
-/-- **The roots of a unit are units.** In a monoid `M`, for `n ≠ 0`, every root of `x ^ n = u`
-with `u` a unit is a unit (Mathlib's `Units.ofPow`). Thus the roots of `x ^ n = u` in `M` are as
-many as the roots of `y ^ n = u` in `Mˣ`. -/
-theorem Units.natCard_pow_eq_val {M : Type*} [Monoid M] {n : ℕ} (hn : n ≠ 0) (u : Mˣ) :
-    Nat.card {x : M // x ^ n = u} = Nat.card {y : Mˣ // y ^ n = u} :=
-  Nat.card_congr <| .symm <| .ofBijective
-    (fun y => ⟨(y.val : M), by rw [← val_pow_eq_pow_val, y.property]⟩)
-    ⟨fun _ _ h => Subtype.ext <| Units.ext <| congrArg Subtype.val h, fun x =>
-      ⟨⟨u.ofPow x hn x.property, Units.ext <| by rw [val_pow_eq_pow_val]; exact x.property⟩, rfl⟩⟩
 
 namespace TauCeti
 

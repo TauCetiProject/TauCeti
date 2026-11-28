@@ -9,7 +9,7 @@ public import TauCeti.GroupTheory.Coset.Fiber
 public import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
 public import TauCeti.NumberTheory.MulChar.Basic
 public import TauCeti.NumberTheory.MulChar.Duality
-import TauCeti.Algebra.GroupWithZero.Units.CardPowEq
+import TauCeti.Algebra.Group.Units.PowEq
 import TauCeti.RingTheory.RootsOfUnity.Basic
 
 /-!
