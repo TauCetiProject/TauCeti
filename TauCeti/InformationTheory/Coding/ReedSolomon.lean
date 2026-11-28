@@ -85,11 +85,7 @@ theorem grsEval_mem_grsCode {k : ℕ} {p : F[X]} (hp : p ∈ degreeLT F k) :
 /-- With parameter `0` the code is zero: the only polynomial of degree less than `0` is `0`. -/
 @[simp]
 theorem grsCode_zero (a v : ι → F) : grsCode a v 0 = ⊥ := by
-  refine eq_bot_iff.2 fun x hx ↦ ?_
-  obtain ⟨p, hp, rfl⟩ := mem_grsCode_iff.1 hx
-  rw [mem_degreeLT, Nat.cast_zero, Nat.WithBot.lt_zero_iff, degree_eq_bot] at hp
-  rw [hp, map_zero]
-  exact zero_mem _
+  ext x; simp [mem_degreeLT, eq_comm (a := (0 : ι → F))]
 
 /-- The code grows with the parameter `k`. -/
 theorem grsCode_mono {k l : ℕ} (h : k ≤ l) : grsCode a v k ≤ grsCode a v l :=
