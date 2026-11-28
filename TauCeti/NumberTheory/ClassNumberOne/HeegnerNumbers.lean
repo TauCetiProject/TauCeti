@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.NumberTheory.FundamentalDiscriminant
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.ClassNumber
-import TauCeti.NumberTheory.FundamentalDiscriminant
+import TauCeti.NumberTheory.FundamentalDiscriminant.Basic
 import TauCeti.NumberTheory.NumberField.Quadratic.ClassNumber
 
 /-!

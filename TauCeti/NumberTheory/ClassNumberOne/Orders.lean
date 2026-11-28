@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ClassNumberOne.HeegnerNumbers
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Quadratic.ClassNumberOne
 import TauCeti.NumberTheory.ClassNumberOne.SmallDiscriminant
-import TauCeti.NumberTheory.FundamentalDiscriminant
+import TauCeti.NumberTheory.FundamentalDiscriminant.Basic
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 /-!

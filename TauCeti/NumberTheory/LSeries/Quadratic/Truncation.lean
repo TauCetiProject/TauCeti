@@ -11,7 +11,7 @@ public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
 import TauCeti.NumberTheory.ArithmeticFunction.Zeta
 import TauCeti.NumberTheory.DirichletCharacter.PolyaVinogradov
-import TauCeti.NumberTheory.FundamentalDiscriminant
+import TauCeti.NumberTheory.FundamentalDiscriminant.Basic
 import TauCeti.NumberTheory.LSeries.BoundaryConvergence.DirichletEulerProduct
 import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Realization
 
