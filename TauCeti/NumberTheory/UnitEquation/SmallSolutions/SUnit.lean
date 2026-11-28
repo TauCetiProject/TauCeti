@@ -96,8 +96,10 @@ theorem encard_isNondegenerateSolution_le_of_absoluteLogHeightAff_le {n : ℕ}
                   (fun _ ↦ Algebra.IsAlgebraic.isAlgebraic _)
             _ < 1 / (2 * q) + 1 / (2 * q) := add_lt_add hxb hz
             _ = 1 / q := by rw [div_mul_eq_div_div_swap, add_halves]
-        · rw [hy, ← mul_assoc]
-          exact congrArg (fun t ↦ v t * z) (mul_div_cancel b x).symm
+        · have hv : v (b * (x / b)) = v b * v (x / b) := by
+            funext i
+            simp only [v, Pi.mul_apply, Subgroup.coe_mul, Units.val_mul]
+          rw [hy, ← mul_assoc, ← hv, mul_div_cancel]
     _ ≤ #(B.image v) * ⨆ b ∈ B.image v,
         {w | IsNondegenerateSolution (a * b) w ∧ w ∈ {w | scalarSumHeight w < 1 / q}}.encard :=
         encard_isNondegenerateSolution_le_card_mul _ _ _

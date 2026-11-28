@@ -159,15 +159,6 @@ theorem _root_.TauCeti.isNondegenerateSolution_mul_iff [Semiring R] {α c x : ι
     simp only [Pi.mul_apply, mul_assoc]
   simp only [isNondegenerateSolution_iff, h]
 
-/-- Moving nonzero factors `cᵢ` from the unknowns to the coefficients: `x / c` is a nondegenerate
-solution of `∑ αᵢ cᵢ wᵢ = 1` exactly when `x` is one of `∑ αᵢ xᵢ = 1`. -/
-@[simp]
-theorem _root_.TauCeti.isNondegenerateSolution_mul_div_iff [Semifield R] {α x c : ι → R}
-    (hc : ∀ i, c i ≠ 0) :
-    IsNondegenerateSolution (α * c) (x / c) ↔ IsNondegenerateSolution α x := by
-  have hcUnit : IsUnit c := Pi.isUnit_iff.mpr fun i ↦ isUnit_iff_ne_zero.mpr (hc i)
-  rw [isNondegenerateSolution_mul_iff, hcUnit.mul_div_cancel x]
-
 /-- With a single unknown, `α x = 1` is a nondegenerate solution. -/
 theorem _root_.TauCeti.isNondegenerateSolution_of_subsingleton [Semiring R] [Nontrivial R]
     [Subsingleton ι] {α x : ι → R} (i : ι) (h : α i * x i = 1) :
@@ -255,16 +246,6 @@ theorem isNondegenerateHomogeneousSolution_mul_iff [Semiring R] {α c x : ι →
   have h (i : ι) : (α * c) i * x i = α i * (c * x) i := by
     simp only [Pi.mul_apply, mul_assoc]
   simp only [isNondegenerateHomogeneousSolution_iff, h]
-
-/-- Moving nonzero factors `cᵢ` from the unknowns to the coefficients: `x / c` is a nondegenerate
-solution of `∑ αᵢ cᵢ wᵢ = 0` exactly when `x` is one of `∑ αᵢ xᵢ = 0`. -/
-@[simp]
-theorem isNondegenerateHomogeneousSolution_mul_div_iff [Semifield R] {α x c : ι → R}
-    (hc : ∀ i, c i ≠ 0) :
-    IsNondegenerateHomogeneousSolution (α * c) (x / c) ↔
-      IsNondegenerateHomogeneousSolution α x := by
-  have hcUnit : IsUnit c := Pi.isUnit_iff.mpr fun i ↦ isUnit_iff_ne_zero.mpr (hc i)
-  rw [isNondegenerateHomogeneousSolution_mul_iff, hcUnit.mul_div_cancel x]
 
 namespace IsNondegenerateHomogeneousSolution
 
