@@ -28,7 +28,9 @@ by an elementary matrix, which lifts to `St(R)` and fixes the central commutator
 The Steinberg symbol `{u, v}` of commuting units is the star product of `diag(u, u⁻¹, 1)` and
 `diag(v, 1, v⁻¹)`. The star product calculus therefore makes the Steinberg symbol bimultiplicative
 for pairwise commuting units and skew-symmetric, the latter by conjugating with the permutation
-matrix exchanging the last two coordinates.
+matrix exchanging the last two coordinates. Conjugating by a permutation matrix moving `(i, j, k)`
+to `(0, 1, 2)` likewise identifies the commutator `⁅h_{ij}(u), h_{ik}(v)⁆` at any pairwise distinct
+indices with `{u, v}`.
 
 ## Main definitions
 
@@ -50,6 +52,8 @@ matrix exchanging the last two coordinates.
 * `TauCeti.steinbergSymbol_mul_left`, `TauCeti.steinbergSymbol_mul_right`,
   `TauCeti.steinbergSymbol_inv`: the Steinberg symbol is bimultiplicative for pairwise commuting
   units, and `{u, v}⁻¹ = {v, u}`.
+* `TauCeti.SteinbergGroup.commutatorElement_h_h_eq_steinbergSymbol`: for pairwise distinct
+  `i, j, k` and commuting units `u` and `v`, `⁅h_{ij}(u), h_{ik}(v)⁆ = {u, v}`.
 
 ## References
 
@@ -253,14 +257,14 @@ private def diagOneInv (v : Rˣ) : StableGeneralLinearGroup.elementarySubgroup R
     StableGeneralLinearGroup.of_mem_elementarySubgroup (diagGL_one_inv_mem_elementarySubgroup v)⟩
 
 /-- Diagonal matrices with entrywise commuting entries commute in `E_∞(R)`. -/
-private theorem commute_of_diagGL {A B : StableGeneralLinearGroup.elementarySubgroup R}
-    {s t : Fin 3 → Rˣ} (hA : (A : StableGeneralLinearGroup R) =
-      StableGeneralLinearGroup.of R 3 (diagGL s))
-    (hB : (B : StableGeneralLinearGroup R) = StableGeneralLinearGroup.of R 3 (diagGL t))
+private theorem commute_of_diagGL {n : ℕ} {A B : StableGeneralLinearGroup.elementarySubgroup R}
+    {s t : Fin n → Rˣ} (hA : (A : StableGeneralLinearGroup R) =
+      StableGeneralLinearGroup.of R n (diagGL s))
+    (hB : (B : StableGeneralLinearGroup R) = StableGeneralLinearGroup.of R n (diagGL t))
     (h : ∀ i, Commute (s i) (t i)) : Commute A B := by
   refine Commute.of_map (f := Subgroup.subtype _) Subtype.coe_injective ?_
   rw [Subgroup.coe_subtype, hA, hB]
-  exact ((Pi.commute_iff.2 h).map diagGL).map (StableGeneralLinearGroup.of R 3)
+  exact ((Pi.commute_iff.2 h).map diagGL).map (StableGeneralLinearGroup.of R n)
 
 private theorem commute_diagInvOne_diagOneInv {u v : Rˣ} (h : Commute u v) :
     Commute (diagInvOne u) (diagOneInv v) :=
@@ -335,5 +339,72 @@ theorem steinbergSymbol_mul_right {u v₁ v₂ : Rˣ} (h₁₂ : Commute v₁ v�
     steinbergSymbol_mul_left h₁₂ h₁.symm h₂.symm, mul_inv, steinbergSymbol_inv, steinbergSymbol_inv]
 
 end SteinbergSymbol
+
+/-! ## Symbols at arbitrary indices -/
+
+namespace SteinbergGroup
+
+open IndexedSteinbergGroup
+
+/-- Conjugating the image in `GL_∞(R)` of `h_{ab}(w)` by the permutation matrix of `σ` gives the
+image of `h_{σ a, σ b}(w)`. -/
+private theorem conj_toStableGL_h {n : ℕ} (σ : Equiv.Perm (Fin n)) {a b : Fin n} (hab : a ≠ b)
+    (w : Rˣ) :
+    StableGeneralLinearGroup.of R n (permutationGL σ) *
+        toStableGL R (h (Fin.val_ne_of_ne hab) w) *
+        (StableGeneralLinearGroup.of R n (permutationGL σ))⁻¹ =
+      toStableGL R (h (Fin.val_ne_of_ne (σ.injective.ne hab)) w) := by
+  rw [toStableGL_h _ w a.isLt b.isLt, toStableGL_h _ w (σ a).isLt (σ b).isLt, ← map_inv,
+    ← map_mul, ← map_mul, permutationGL_mul_diagGL_mul_inv]
+  congr 2
+  simp only [Fin.eta]
+  -- Reindexing a product of single-coordinate functions along `σ⁻¹` moves their coordinates by `σ`.
+  rw [← Function.comp_def, Pi.mul_comp, Equiv.Perm.inv_def, Pi.mulSingle_comp_equiv,
+    Pi.mulSingle_comp_equiv, Equiv.symm_symm]
+
+/-- **Symbols at arbitrary indices.** For pairwise distinct `i, j, k` and commuting units `u` and
+`v`, the commutator of the diagonal elements `h_{ij}(u)` and `h_{ik}(v)` is the Steinberg symbol
+`{u, v}`. -/
+theorem commutatorElement_h_h_eq_steinbergSymbol {i j k : ℕ} (hij : i ≠ j) (hik : i ≠ k)
+    (hjk : j ≠ k) {u v : Rˣ} (huv : Commute u v) :
+    ⁅h hij u, h hik v⁆ = (steinbergSymbol u v huv : SteinbergGroup R) := by
+  set n := max i (max j k) + 1
+  -- A permutation `σ` of `Fin n` sending `i, j, k` to `0, 1, 2`.
+  let e₁ : Fin 3 → Fin n := ![⟨i, by omega⟩, ⟨j, by omega⟩, ⟨k, by omega⟩]
+  let e₂ : Fin 3 ↪ Fin n := Fin.castLEEmb (by omega)
+  have he₁ : Function.Injective e₁ := by
+    refine Fin.cons_injective_iff.2 ⟨?_, Matrix.injective_pair_iff_ne.2 ?_⟩
+    · simp [Fin.ext_iff, hij, hik]
+    · simp [Fin.ext_iff, hjk]
+  obtain ⟨σ, hσ⟩ := Equiv.Perm.exists_extending_pair e₁ e₂ he₁ e₂.injective
+  let g := StableGeneralLinearGroup.of R n (permutationGL σ)
+  -- Conjugation by `g` turns `h_{ij}(u)` and `h_{ik}(v)` into `h_{01}(u)` and `h_{02}(v)`.
+  have hconj {a b : Fin 3} (hab : a ≠ b) (w : Rˣ) :
+      toElementarySubgroup R (h (Fin.val_ne_of_ne (e₂.injective.ne hab)) w) =
+        MulAut.conjNormal g (toElementarySubgroup R (h (Fin.val_ne_of_ne (he₁.ne hab)) w)) := by
+    refine Subtype.ext ?_
+    rw [MulAut.conjNormal_apply, coe_toElementarySubgroup, coe_toElementarySubgroup,
+      conj_toStableGL_h σ (he₁.ne hab) w]
+    exact congrArg _ (h_congr (congrArg Fin.val (hσ a).symm) (congrArg Fin.val (hσ b).symm) rfl)
+  -- The images of `h_{ij}(u)` and `h_{ik}(v)` are commuting diagonal matrices.
+  have hcomm : Commute (toElementarySubgroup R (h hij u)) (toElementarySubgroup R (h hik v)) := by
+    refine commute_of_diagGL
+      (by rw [coe_toElementarySubgroup, toStableGL_h hij u (n := n) (by omega) (by omega)])
+      (by rw [coe_toElementarySubgroup, toStableGL_h hik v (n := n) (by omega) (by omega)])
+      fun m ↦ ?_
+    simp only [Pi.mul_apply, Pi.mulSingle_apply, Fin.ext_iff]
+    split_ifs <;> simp_all [huv.inv_left]
+  calc ⁅h hij u, h hik v⁆
+      = (AlgebraicK2.starProduct _ _ hcomm : SteinbergGroup R) :=
+        (AlgebraicK2.coe_starProduct_toElementarySubgroup hcomm).symm
+    _ = (AlgebraicK2.starProduct _ _ (hcomm.map (MulAut.conjNormal g)) : SteinbergGroup R) := by
+        rw [AlgebraicK2.starProduct_conjNormal]
+    _ = ⁅h (by decide : (0 : ℕ) ≠ 1) u, h (by decide : (0 : ℕ) ≠ 2) v⁆ :=
+        AlgebraicK2.coe_starProduct_eq_commutatorElement _
+          (hconj (a := 0) (b := 1) (by decide) u) (hconj (a := 0) (b := 2) (by decide) v)
+    _ = (steinbergSymbol u v huv : SteinbergGroup R) :=
+        (coe_steinbergSymbol_eq_commutatorElement_h _).symm
+
+end SteinbergGroup
 
 end TauCeti
