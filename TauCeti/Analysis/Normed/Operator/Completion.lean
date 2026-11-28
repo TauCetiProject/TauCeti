@@ -68,6 +68,8 @@ space `V` and `c < s`, then `ContinuousLinearMap.denseRange_comp` and rescaling 
 
 * `ContinuousLinearMap.norm_completion`: `‖f.completion‖ = ‖f‖`.
 * `ContinuousLinearMap.norm_fromCompletion`: `‖f.fromCompletion‖ = ‖f‖`.
+* `ContinuousLinearMap.fromCompletionL`: bounded linear operator extending
+  `E →SL[σ₁₂] F` to `Completion E →SL[σ₁₂] F`.
 * `ContinuousLinearMap.norm_toComplL_comp` and `ContinuousLinearMap.eNorm_toComplL_comp`:
   composing with the embedding of the codomain into its completion preserves the operator norm.
 * `ContinuousLinearMap.ball_subset_image_completion_ball` and
@@ -138,6 +140,25 @@ theorem norm_fromCompletion [T0Space F] [CompleteSpace F] (f : E →SL[σ₁₂]
   · induction x using Completion.induction_on with
     | hp => exact isClosed_le (by fun_prop) (by fun_prop)
     | ih x => simpa only [fromCompletion_apply_coe, Completion.norm_coe] using h x
+
+/-- Extending a bounded semilinear map into a complete Hausdorff space to the completion of its
+domain, as a continuous `𝕜₂`-linear operator between operator spaces. -/
+noncomputable def fromCompletionL [T0Space F] [CompleteSpace F] :
+    (E →SL[σ₁₂] F) →L[𝕜₂] (Completion E →SL[σ₁₂] F) :=
+  LinearMap.mkContinuous
+    { toFun := ContinuousLinearMap.fromCompletion
+      map_add' := fun f g ↦ fromCompletion_unique (f + g) _ fun v ↦ by simp
+      map_smul' := fun c f ↦ fromCompletion_unique (c • f) _ fun v ↦ by simp }
+    1 fun f ↦ by simp
+
+@[simp]
+theorem fromCompletionL_apply [T0Space F] [CompleteSpace F] (f : E →SL[σ₁₂] F) :
+    fromCompletionL (σ₁₂ := σ₁₂) f = f.fromCompletion :=
+  LinearMap.mkContinuous_apply _ _ _ f
+
+theorem fromCompletionL_apply_coe [T0Space F] [CompleteSpace F] (f : E →SL[σ₁₂] F) (x : E) :
+    fromCompletionL (σ₁₂ := σ₁₂) f (x : Completion E) = f x := by
+  rw [fromCompletionL_apply, f.fromCompletion_apply_coe]
 
 /-- If `f` lifts every vector of norm less than `r` to a vector of norm less than `r`, then so
 does its extension `f.completion` to the completions. -/

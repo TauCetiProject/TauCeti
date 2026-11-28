@@ -14,15 +14,16 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 
 Let `a(x, y, ξ)` be an amplitude of order `m` with proper input support: it vanishes for input
 positions `y` outside a compact set as long as the output position `x` stays in a compact set. Its
-left symbol `c = a.leftSymbol ha`, the symbol of order `m` with the same quantization
-(`TauCeti.Amplitude.quantizeSchwartzValue_leftSymbol`), has the asymptotic expansion obtained by
+left symbol `c = a.leftSymbol ha`, the symbol of order `m` with the same quantization when `V` is
+complete (with both quantizations vanishing when `W` is incomplete;
+`TauCeti.Amplitude.quantizeSchwartzValue_leftSymbol`), has the asymptotic expansion obtained by
 Taylor expanding `a` in `y` at the diagonal `y = x`:
 
 `c(x, ξ) ∼ ∑_γ (1 / γ!) ∂_ξ^γ D_y^γ a(x, y, ξ)|_{y = x}`, with `D_y = -i ∂_y`,
 
 meaning that after removing the terms with `|γ| < N` the remainder is a symbol of order `m - N`.
-This file proves this, with an actual remainder symbol. In particular `c` agrees with the
-restriction `a(x, x, ξ)` of `a` to the diagonal up to a symbol of order `m - 1`.
+This file proves this, with an actual remainder symbol when `W` is complete. In particular `c`
+agrees with the restriction `a(x, x, ξ)` of `a` to the diagonal up to a symbol of order `m - 1`.
 
 Summing over words `w = [j₁, …, j_k]` of coordinate indices instead of multi-indices absorbs the
 multinomial coefficients, so the term of order `m - k` is
@@ -36,19 +37,21 @@ restriction `leftTerm a 0 = a.diagonal` of `a` to the diagonal (`TauCeti.Amplitu
 ## Main results
 
 * `TauCeti.Amplitude.leftTerm`: the terms of the expansion, with their closed form
-  `TauCeti.Amplitude.coefficient_leftTerm` and the Leibniz rules
+  `TauCeti.Amplitude.coefficient_leftTerm`, Leibniz rules
   `TauCeti.Amplitude.spatialDeriv_leftTerm` and
-  `TauCeti.Amplitude.coefficient_frequencyDeriv_leftTerm`. They only depend on the amplitude near
-  the diagonal (`TauCeti.Amplitude.leftTerm_smulPositions`), and for the amplitude `b(y, ξ)` of a
-  right quantization they are `((-i)^k / k!) ∑_{|w| = k} ∂_x^w ∂_ξ^w b`
-  (`TauCeti.Amplitude.coefficient_leftTerm_ofRight`).
+  `TauCeti.Amplitude.coefficient_frequencyDeriv_leftTerm`, vanishing for left symbols
+  `TauCeti.Amplitude.leftTerm_ofLeft_succ`, local congruence
+  `TauCeti.Amplitude.coefficient_leftTerm_congr_of_eventuallyEq_snd`, diagonal dependence
+  `TauCeti.Amplitude.leftTerm_smulPositions`, and right-quantization formula
+  `TauCeti.Amplitude.coefficient_leftTerm_ofRight`.
 * `TauCeti.Amplitude.leftRemainder a ha N`: the remainder `c - ∑_{k < N} leftTerm a k`, a symbol of
-  order `m - N`.
+  order `m - N` (requiring `[CompleteSpace W]`).
 * `TauCeti.Amplitude.leftSymbol_eq_sum_leftTerm_add_leftRemainder`: **the expansion**
-  `c = ∑_{k < N} leftTerm a k + leftRemainder a ha N`, for every `N`; in the vocabulary of
-  asymptotic sums, `TauCeti.Amplitude.isAsymptoticSum_leftSymbol`.
+  `c = ∑_{k < N} leftTerm a k + leftRemainder a ha N`, for every `N` (requiring
+  `[CompleteSpace W]`); in the vocabulary of asymptotic sums,
+  `TauCeti.Amplitude.isAsymptoticSum_leftSymbol`.
 * `TauCeti.Amplitude.leftSymbol_eq_diagonal_add_leftRemainder_one`: `c` is `a(x, x, ξ)` up to a
-  symbol of order `m - 1`.
+  symbol of order `m - 1` (requiring `[CompleteSpace W]`).
 
 ## Proof outline
 
@@ -57,10 +60,10 @@ Interpolate between the restriction to the diagonal and the left symbol by the f
 `c_t(x, ξ) = ∫ exp(2πi ⟪θ, x⟫) â(x, θ, ξ + 2π t θ) dθ`, `t ∈ [0, 1]`,
 
 whose integrand is `TauCeti.Amplitude.leftIntegrand a (2πt)`, so that `c_1 = c`, and
-`c_0(x, ξ) = a(x, x, ξ)` by Fourier inversion in `y`. Differentiating under the integral sign, and
-using `2π θⱼ ∂_{ξ_j} â = -i (∂_{y_j} ∂_{ξ_j} a)^`, `d/dt c_t(a) = -i ∑ⱼ c_t(∂_{y_j} ∂_{ξ_j} a)`.
-The recursion defining `leftTerm` is the matching identity for the polynomial
-`∑_{k < N} t^k leftTerm a k`. So the derivative of the remainder
+`c_0(x, ξ) = a(x, x, ξ)` by Fourier inversion in `y` (requiring `[CompleteSpace W]`).
+Differentiating under the integral sign, and using `2π θⱼ ∂_{ξ_j} â = -i (∂_{y_j} ∂_{ξ_j} a)^`,
+`d/dt c_t(a) = -i ∑ⱼ c_t(∂_{y_j} ∂_{ξ_j} a)`. The recursion defining `leftTerm` is the matching
+identity for the polynomial `∑_{k < N} t^k leftTerm a k`. So the derivative of the remainder
 `c_t(a) - ∑_{k < N + 1} t^k leftTerm a k` is `-i` times the sum over `j` of the remainders with `N`
 terms of `∂_{y_j} ∂_{ξ_j} a`, and this remainder vanishes at `t = 0`. By induction on `N` and the
 mean value inequality on `[0, 1]`, the remainder is bounded by `C ⟨ξ⟩ ^ (m - N)`, locally
@@ -80,6 +83,8 @@ expansion of `TauCeti.Analysis.Pseudodifferential.Composition.Expansion`.
 
 * M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I,
   (1.21)–(1.28).
+* M. E. Taylor, *Pseudodifferential Operators*, Princeton University Press, 1981, Chapter II,
+  §§1–2.
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Theorem 18.1.7.
 -/
 
@@ -169,23 +174,57 @@ theorem coefficient_leftTerm (a : Amplitude n V W m) (k : ℕ) (x ξ : Coordinat
       simp only [List.cons_append, List.nil_append]
       exact List.Perm.cons _ List.perm_middle.symm
 
-/-- The terms of the expansion only depend on the amplitude near the diagonal: multiplying by a
-smooth function `φ(x, y)` equal to `1` near every point `(x, x)` of the diagonal does not change
-them. -/
-theorem leftTerm_smulPositions {φ : CoordinateSpace n × CoordinateSpace n → ℂ}
-    (hφ : ContDiff ℝ ∞ φ) (hφ₁ : ∀ x, φ =ᶠ[𝓝 (x, x)] 1) (a : Amplitude n V W m) (k : ℕ) :
-    (a.smulPositions φ hφ).leftTerm k = a.leftTerm k := by
+@[simp]
+theorem zero_leftTerm (k : ℕ) : (0 : Amplitude n V W m).leftTerm k = 0 := by
   ext1
   funext ⟨x, ξ⟩
-  rw [coefficient_leftTerm, coefficient_leftTerm]
-  refine congrArg _ (Finset.sum_congr rfl fun w _ ↦ ?_)
-  have h : (a.smulPositions φ hφ).coefficient =ᶠ[𝓝 (x, x, ξ)] a.coefficient := by
-    have hp : Filter.Tendsto (fun p : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n ↦
-        (p.1, p.2.1)) (𝓝 (x, x, ξ)) (𝓝 (x, x)) :=
-      (continuous_fst.prodMk (continuous_fst.comp continuous_snd)).tendsto (x, x, ξ)
-    filter_upwards [hp.eventually (hφ₁ x)] with p hp
-    rw [coefficient_smulPositions, hp, Pi.one_apply, one_smul]
-  exact (h.iteratedFDerivAlong _).eq_of_nhds
+  simp [coefficient_leftTerm, iteratedFDerivAlong_zero]
+
+/-- Positive-index expansion terms of a left symbol `ofLeft b` vanish identically. -/
+@[simp]
+theorem leftTerm_ofLeft_succ (b : Symbol n V W m) (k : ℕ) :
+    (ofLeft b).leftTerm (k + 1) = 0 := by
+  rw [leftTerm_succ]
+  simp [spatialDerivSnd_frequencyDeriv_comm]
+
+/-- If two amplitudes have identical `(y, ξ)`-slices on a neighborhood of `(x, ξ)` at a fixed
+output position `x`, all of their left-symbol expansion terms agree at `(x, ξ)`. -/
+theorem coefficient_leftTerm_congr_of_eventuallyEq_snd {a b : Amplitude n V W m}
+    {x ξ : CoordinateSpace n}
+    (h : (fun q : CoordinateSpace n × CoordinateSpace n ↦ a.coefficient (x, q.1, q.2))
+        =ᶠ[𝓝 (x, ξ)] fun q ↦ b.coefficient (x, q.1, q.2))
+    (k : ℕ) :
+    (a.leftTerm k).coefficient (x, ξ) = (b.leftTerm k).coefficient (x, ξ) := by
+  simp only [coefficient_leftTerm]
+  congr 1
+  refine Finset.sum_congr rfl fun w _ ↦ ?_
+  have hφ : ∀ q : CoordinateSpace n × CoordinateSpace n,
+      HasFDerivAt (fun q : CoordinateSpace n × CoordinateSpace n ↦ (x, q))
+        (ContinuousLinearMap.inr ℝ (CoordinateSpace n) _) q :=
+    fun q ↦ hasFDerivAt_prodMk_right x q
+  have ha_eq := iteratedFDerivAlong_comp_of_hasFDerivAt hφ a.contDiff_coefficient
+    (mixedDirections (List.ofFn w) (List.ofFn w)) (by simp) (x, ξ)
+  have hb_eq := iteratedFDerivAlong_comp_of_hasFDerivAt hφ b.contDiff_coefficient
+    (mixedDirections (List.ofFn w) (List.ofFn w)) (by simp) (x, ξ)
+  have hmap : (mixedDirections (List.ofFn w) (List.ofFn w)).map
+      (ContinuousLinearMap.inr ℝ (CoordinateSpace n) _) =
+      amplitudeDirections [] (List.ofFn w) (List.ofFn w) := by
+    simp [amplitudeDirections_def, mixedDirections_def, Function.comp_def]
+  rw [← hmap, ← ha_eq, ← hb_eq]
+  exact (h.iteratedFDerivAlong (𝕜 := ℝ) _).eq_of_nhds
+
+/-- The terms of the expansion only depend on the amplitude near the diagonal: multiplying by a
+smooth function `φ(x, y)` equal to `1` near `x` in the second variable for every `x` does not
+change them. -/
+theorem leftTerm_smulPositions {φ : CoordinateSpace n × CoordinateSpace n → ℂ}
+    (hφ : ContDiff ℝ ∞ φ) (hφ₁ : ∀ x, (fun y ↦ φ (x, y)) =ᶠ[𝓝 x] 1) (a : Amplitude n V W m)
+    (k : ℕ) : (a.smulPositions φ hφ).leftTerm k = a.leftTerm k := by
+  ext1
+  funext ⟨x, ξ⟩
+  refine coefficient_leftTerm_congr_of_eventuallyEq_snd ?_ k
+  filter_upwards [(continuous_fst.tendsto (x, ξ)).eventually (hφ₁ x)] with q hq
+  simp only [Pi.one_apply] at hq
+  rw [coefficient_smulPositions, hq, one_smul]
 
 /-- **The terms of the expansion of a right quantization.** For the amplitude `b(y, ξ)` of the
 right quantization of a symbol `b`, the term of order `m - k` is

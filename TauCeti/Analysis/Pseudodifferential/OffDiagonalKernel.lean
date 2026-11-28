@@ -58,6 +58,9 @@ in `TauCeti.Analysis.Pseudodifferential.StandardKernel`.
 * `TauCeti.Symbol.exists_norm_offDiagonalKernel_le`: `‖K(x, y)‖ ≤ C ‖x - y‖^(-2N)` for `x` in a
   compact set, for every `N` with `m - 2N < -n`; in particular the kernel decays faster than any
   power of `‖x - y‖` as `y → ∞`.
+* `TauCeti.Symbol.localizedOffDiagonalKernel`, `TauCeti.Symbol.contDiff_localizedOffDiagonalKernel`:
+  multiplying `K_a` by `1 - χ` for a smooth cutoff `χ` equal to `1` near the diagonal yields a
+  globally `C^∞` residual kernel on `ℝⁿ × ℝⁿ`.
 * `TauCeti.Symbol.offDiagonalKernel_congr`: the kernel at `(x, y)` only depends on the coefficient
   of the symbol at `x`, whatever its order.
 * `TauCeti.Symbol.IsSmoothing.offDiagonalKernel_eq_quantizationKernel`: for a smoothing symbol it
@@ -68,6 +71,8 @@ in `TauCeti.Analysis.Pseudodifferential.StandardKernel`.
 ## References
 
 * M. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI* (2008), Lecture I, §1.
+* M. E. Taylor, *Pseudodifferential Operators*, Princeton University Press, 1981, Chapter II,
+  §§1–2.
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1.
 * E. M. Stein, *Harmonic Analysis*, Princeton University Press, 1993, Chapter VI, §4.1,
   Proposition 1 (the kernel estimates for symbols of order `m`, by dyadic decomposition).
@@ -75,7 +80,7 @@ in `TauCeti.Analysis.Pseudodifferential.StandardKernel`.
 
 public section
 
-open scoped FourierTransform SchwartzMap RealInnerProductSpace ContDiff LineDeriv
+open scoped FourierTransform SchwartzMap RealInnerProductSpace ContDiff LineDeriv Topology
 open MeasureTheory Real FourierTransform Module
 
 noncomputable section
@@ -303,6 +308,41 @@ theorem exists_norm_offDiagonalKernel_le (a : Symbol n V W m) {K : Set (Coordina
     one_div_mul_eq_div]
   gcongr
   exact hk.trans (mul_le_mul_of_nonneg_left hint (by positivity))
+
+/-- The product `(1 - χ(x, y)) • K_a(x, y)` of `1 - χ` with the off-diagonal kernel of `a`;
+when `χ = 1` on a neighborhood of every diagonal point `(x, x)`, this cuts out a neighborhood of
+the diagonal and yields a globally smooth residual kernel
+(`contDiff_localizedOffDiagonalKernel`). -/
+def localizedOffDiagonalKernel (a : Symbol n V W m)
+    (χ : CoordinateSpace n → CoordinateSpace n → ℝ) (x y : CoordinateSpace n) : V →L[ℂ] W :=
+  (1 - χ x y) • a.offDiagonalKernel x y
+
+@[simp]
+theorem localizedOffDiagonalKernel_apply (a : Symbol n V W m)
+    (χ : CoordinateSpace n → CoordinateSpace n → ℝ) (x y : CoordinateSpace n) :
+    a.localizedOffDiagonalKernel χ x y = (1 - χ x y) • a.offDiagonalKernel x y :=
+  (rfl)
+
+theorem localizedOffDiagonalKernel_self (a : Symbol n V W m)
+    (χ : CoordinateSpace n → CoordinateSpace n → ℝ) (x : CoordinateSpace n) :
+    a.localizedOffDiagonalKernel χ x x = 0 := by
+  simp
+
+/-- **Global smoothness of the localized off-diagonal kernel.** Because `1 - χ` vanishes on a
+neighborhood of every diagonal point `(x, x)` and `offDiagonalKernel a` is `C^∞` away from the
+diagonal, `(x, y) ↦ (1 - χ(x, y)) • K_a(x, y)` is `C^∞` on the *entire* product `ℝⁿ × ℝⁿ`. -/
+theorem contDiff_localizedOffDiagonalKernel (a : Symbol n V W m)
+    {χ : CoordinateSpace n → CoordinateSpace n → ℝ} (hχ : ContDiff ℝ ∞ (Function.uncurry χ))
+    (hχ_diag : ∀ x, Function.uncurry χ =ᶠ[𝓝 (x, x)] 1) :
+    ContDiff ℝ ∞ (Function.uncurry (a.localizedOffDiagonalKernel χ)) := by
+  refine contDiff_iff_contDiffAt.2 fun ⟨x, y⟩ ↦ ?_
+  rcases eq_or_ne x y with rfl | hxy
+  · refine (contDiffAt_const (c := (0 : V →L[ℂ] W))).congr_of_eventuallyEq ?_
+    filter_upwards [hχ_diag x] with ⟨x', y'⟩ h1
+    have h1' : χ x' y' = 1 := by simpa [Function.uncurry] using h1
+    simp [localizedOffDiagonalKernel, h1']
+  · exact ((contDiff_const.sub hχ).contDiffAt (x := (x, y))).smul
+      (a.contDiffOn_offDiagonalKernel.contDiffAt (isClosed_diagonal.isOpen_compl.mem_nhds hxy))
 
 /-- The off-diagonal kernel at `(x, y)` only depends on the coefficient of the symbol at the
 position `x`, and not on the order at which the symbol is regarded. -/
