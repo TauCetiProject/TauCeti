@@ -59,7 +59,9 @@ potentials `TauCeti.IsSpectralFlowPotential` of the bounded spectral flow in
   unchanged by a continuous change of parameter `φ` with `φ a ≤ φ b`
   (`TauCeti.domainSpectralFlow_comp_of_mapsTo`), and changes sign when `φ b ≤ φ a`
   (`TauCeti.domainSpectralFlow_comp_of_mapsTo_of_ge`), in particular under reversal
-  (`TauCeti.domainSpectralFlow_comp_neg`).
+  (`TauCeti.domainSpectralFlow_comp_neg`). Negating the path negates the spectral flow up to the
+  kernels at the endpoints (`TauCeti.domainSpectralFlow_neg`, in
+  `TauCeti.Analysis.Fredholm.Spectral.CommonDomain.Neg`).
 * A path of invertible operators `A t : D → H` has no spectral flow
   (`TauCeti.domainSpectralFlow_eq_zero_of_forall_isInvertible`): every transform is invertible.
   Nor has a constant path (`TauCeti.domainSpectralFlow_eq_zero_of_forall_eq`).

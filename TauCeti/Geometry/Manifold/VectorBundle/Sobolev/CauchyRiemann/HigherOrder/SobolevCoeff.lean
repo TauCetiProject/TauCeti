@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.HigherOrder.Estimate
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.HigherOrder.Perturbation
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Perturbation.SobolevCoeff
-import TauCeti.Analysis.Normed.Operator.Compact.Estimate
+import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.HigherOrder.SemiFredholm
 
 /-!
 # Real Cauchy–Riemann operators below the top Sobolev order
@@ -21,8 +21,9 @@ the Sobolev orders `2 ≤ m < ℓ` of McDuff–Salamon Theorem C.1.10, as bounde
 
 `W^{m,q}(Σ, V) → W^{m-1,q}(Σ, Λ^{0,1} ⊗ V)`
 
-for every `q > 1`, shows that `D - D₀` is compact (McDuff–Salamon Lemma C.2.2) and proves the
-elliptic estimate `‖ξ‖_{W^{m,q}} ≤ C (‖D ξ‖_{W^{m-1,q}} + ‖ξ‖_{L^q})`.
+for every `q > 1`, shows that `D - D₀` is compact (McDuff–Salamon Lemma C.2.2), proves the
+elliptic estimate `‖ξ‖_{W^{m,q}} ≤ C (‖D ξ‖_{W^{m-1,q}} + ‖ξ‖_{L^q})` and deduces that the
+realization has finite-dimensional kernel and closed range.
 
 Below the top order the admissibility condition `m - 2/q ≤ ℓ - 2/p` of Theorem C.1.10 holds for
 every `q`, since `m - 2/q < m ≤ ℓ - 1 < ℓ - 2/p`. So, unlike the top order `m = ℓ` of
@@ -42,11 +43,9 @@ Since `p ≥ 2` is at least the dimension of the base, the coefficient embedding
 chart data, for every finite `r`. With `r = p + q`, the coefficient is a `W^{k+1,r}` coefficient
 with `2 < r` and `q ≤ r`, and the realization is the top-order realization
 `TauCeti.IsRealCauchyRiemannOperator.perturbedSobolevSuccL` at the exponent `r`, whose zeroth-order
-term is compact. The elliptic estimate of `D₀`,
-`TauCeti.IsRealCauchyRiemannOperator.exists_norm_le_norm_sobolevSuccL_add_norm`, has the compact
-error `‖ξ‖_{L^q}` (Rellich), so it survives the compact perturbation, and the compact error is
-replaced by the `L^q` norm, which is injective (the abstract estimates of
-`TauCeti.Analysis.Normed.Operator.Compact.Estimate`).
+term is compact. The elliptic estimate, finite-dimensional kernel and closed range are those of
+the top-order realization at the exponent `r`
+(`TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.HigherOrder.SemiFredholm`).
 
 ## Main definitions
 
@@ -71,6 +70,9 @@ replaced by the `L^q` norm, which is injective (the abstract estimates of
   coefficient.
 * `IsRealCauchyRiemannOperator.exists_norm_le_norm_sobolevCoeffPerturbedSobolevSuccL_add_norm`:
   the elliptic estimate.
+* `TauCeti.IsRealCauchyRiemannOperator.finiteDimensional_ker_sobolevCoeffPerturbedSobolevSuccL`,
+  `TauCeti.IsRealCauchyRiemannOperator.isClosed_range_sobolevCoeffPerturbedSobolevSuccL`: the
+  realization has finite-dimensional kernel and closed range.
 
 ## References
 
@@ -115,12 +117,6 @@ namespace IsRealCauchyRiemannOperator
 local instance instFactOneLeAddSucc : Fact (1 ≤ ((p + q : ℝ≥0) : ℝ≥0∞)) :=
   ⟨(Fact.out : (1 : ℝ≥0∞) ≤ q).trans (ENNReal.coe_le_coe.2 le_add_self)⟩
 
-omit [Fact (1 ≤ (p : ℝ≥0∞))] [Fact (1 ≤ (q : ℝ≥0∞))] in
-/-- For `p ≥ 2` and `q > 1`, the exponent `p + q` lies above `2`, as multiplication by `W^{k+1,p+q}`
-coefficients requires. -/
-private theorem two_lt_add (hp : 2 ≤ p) (hq : 1 < q) : 2 < p + q :=
-  hp.trans_lt (lt_add_of_pos_right p (zero_lt_one.trans hq))
-
 /-- **The zeroth-order term of class `W^{k+2,p}`.** For `p ≥ 2`, every finite `q > 1` and a
 `W^{k+2,p}` section `α` of the real hom bundle `x ↦ V x →L[ℝ] (T_x M →L[ℝ] V x)`, the bounded
 operator sending a `W^{k+2,q}` section `ξ` of `V` to the `(0,1)`-part of the one-form `α ξ`, a
@@ -132,7 +128,7 @@ def sobolevCoeffPerturbationSuccL (hp : 2 ≤ p) (hq : 1 < q)
     (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
       (k + 1 + 1)) :
     SobolevSection A volume q (k + 1 + 1) →L[ℝ] zeroOneSobolevSections A volume q (k + 1) :=
-  perturbationSuccL A k (two_lt_add hp hq) hq le_add_self
+  perturbationSuccL A k (lt_add_of_le_of_pos hp (zero_lt_one.trans hq)) hq le_add_self
     (coefficientL A volume hp (p + q) (k + 1) α)
 
 /-- **Compact perturbation** (McDuff–Salamon, Lemma C.2.2, below the top order). For a fixed
@@ -159,7 +155,8 @@ theorem chartValueL_sobolevCoeffPerturbationSuccL_ae (hp : 2 ≤ p) (hq : 1 < q)
         ((A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet).sectionChartData.chartValueL
           volume p (k + 1 + 1) i α y
             (A.sectionChartData.chartValueL volume q (k + 1 + 1) i ξ y)) := by
-  filter_upwards [chartValueL_perturbationSuccL_ae A k (two_lt_add hp hq) hq le_add_self
+  filter_upwards [chartValueL_perturbationSuccL_ae A k
+      (lt_add_of_le_of_pos hp (zero_lt_one.trans hq)) hq le_add_self
       (coefficientL A volume hp (p + q) (k + 1) α) ξ i,
     chartValueL_coefficientL_ae A volume hp (p + q) (k + 1) α i] with y h₁ h₂
   -- `sobolevCoeffPerturbationSuccL` is `perturbationSuccL` of `coefficientL α` by definition.
@@ -179,7 +176,7 @@ def sobolevCoeffPerturbedSobolevSuccL (hp : 2 ≤ p) (hq : 1 < q)
     (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
       (k + 1 + 1)) :
     SobolevSection A volume q (k + 1 + 1) →L[ℝ] zeroOneSobolevSections A volume q (k + 1) :=
-  hD.perturbedSobolevSuccL A hDs k (two_lt_add hp hq) hq le_add_self
+  hD.perturbedSobolevSuccL A hDs k (lt_add_of_le_of_pos hp (zero_lt_one.trans hq)) hq le_add_self
     (coefficientL A volume hp (p + q) (k + 1) α)
 
 /-- The realization of `D₀ + α` is the realization of `D₀` plus the zeroth-order term. -/
@@ -225,8 +222,9 @@ theorem chartValueL_sobolevCoeffPerturbedSobolevSuccL_ae (hp : 2 ≤ p) (hq : 1 
           ((A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet).sectionChartData.chartValueL
             volume p (k + 1 + 1) i α y
               (A.sectionChartData.chartValueL volume q (k + 1 + 1) i ξ y)) := by
-  filter_upwards [hD.chartValueL_perturbedSobolevSuccL_ae A hDs k (two_lt_add hp hq) hq
-      le_add_self (coefficientL A volume hp (p + q) (k + 1) α) ξ hDu,
+  filter_upwards [hD.chartValueL_perturbedSobolevSuccL_ae A hDs k
+      (lt_add_of_le_of_pos hp (zero_lt_one.trans hq)) hq le_add_self
+      (coefficientL A volume hp (p + q) (k + 1) α) ξ hDu,
     chartValueL_coefficientL_ae A volume hp (p + q) (k + 1) α i] with y h₁ h₂
   -- `sobolevCoeffPerturbedSobolevSuccL` is `perturbedSobolevSuccL` of `coefficientL α` by
   -- definition.
@@ -308,43 +306,42 @@ theorem exists_norm_le_norm_sobolevCoeffPerturbedSobolevSuccL_add_norm (hp : 2 �
       (k + 1 + 1)) :
     ∃ C : ℝ, ∀ ξ : SobolevSection A volume q (k + 1 + 1),
       ‖ξ‖ ≤ C * (‖hD.sobolevCoeffPerturbedSobolevSuccL A hDs k hp hq α ξ‖ +
-        ‖A.sectionChartData.lowerToZeroL volume q (k + 1 + 1) ξ‖) := by
-  obtain ⟨C, hC⟩ := exists_norm_le_norm_sobolevSuccL_add_norm A hD hDs
-    (by exact_mod_cast hq) ENNReal.coe_ne_top (k + 1)
-  set L := A.sectionChartData.lowerToZeroL volume q (k + 1 + 1)
-  -- `L` forgets the highest derivative first, which is compact by Rellich's theorem.
-  have hL : IsCompactOperator L := by
-    convert (SobolevSection.isCompactOperator_lowerOrderL A volume q (k + 1)).clm_comp
-      (A.sectionChartData.lowerToZeroL volume q (k + 1)) using 1
-    funext ξ
-    exact (SectionChartData.lowerToZeroL_lowerOrderL (w := ξ)).symm
-  -- The estimate for `D₀` with its error term written as the compact operator `|C| • L`.
-  have hbound (ξ : SobolevSection A volume q (k + 1 + 1)) :
-      ‖ξ‖ ≤ |C| * ‖hD.sobolevSuccL A hDs volume q (k + 1) ξ‖ + ‖(|C| • L) ξ‖ := by
-    simp only [smul_apply, norm_smul, Real.norm_eq_abs, abs_abs, ← mul_add]
-    exact (hC ξ).trans (by gcongr; exact le_abs_self C)
-  have hST := isCompactOperator_sobolevCoeffPerturbedSobolevSuccL_sub A hD hDs k hp hq α
-  -- The abstract estimates are applied with their type arguments named, so that instance search on
-  -- the Sobolev section spaces runs first (see `CauchyRiemann/SemiFredholm.lean`).
-  have h₁ := ContinuousLinearMap.exists_compact_estimate_of_isCompactOperator_sub (𝕜 := ℝ)
-    (E := SobolevSection A volume q (k + 1 + 1)) (F := zeroOneSobolevSections A volume q (k + 1))
-    (G := SobolevSection A volume q 0) (C := |C|) (T := hD.sobolevSuccL A hDs volume q (k + 1))
-    (S := hD.sobolevCoeffPerturbedSobolevSuccL A hDs k hp hq α) (K := |C| • L)
-  obtain ⟨C', K', hK', hC'⟩ :=
-    h₁ (hL.smul |C|) hbound (by simpa only [FunLike.coe_sub, Pi.sub_def] using hST)
-  -- `L` is injective: it keeps the chart data, which determine the section.
-  have hker : L.ker = ⊥ := LinearMap.ker_eq_bot.2 fun ξ ξ' h ↦
-    A.sectionChartData.chartValuesL_injective volume q (k + 1 + 1) (by
-      rw [← SectionChartData.chartValuesL_lowerToZeroL,
-        ← SectionChartData.chartValuesL_lowerToZeroL (w := ξ')]
-      exact congrArg _ h)
-  have h₂ := ContinuousLinearMap.exists_norm_le_mul_norm_add_norm_of_compact_estimate (𝕜 := ℝ)
-    (E := SobolevSection A volume q (k + 1 + 1)) (F := zeroOneSobolevSections A volume q (k + 1))
-    (G := zeroOneSobolevSections A volume q (k + 1) × SobolevSection A volume q 0)
-    (Z := SobolevSection A volume q 0) (C := C')
-    (hD.sobolevCoeffPerturbedSobolevSuccL A hDs k hp hq α) (K := K') (j := L)
-  obtain ⟨C'', -, hC''⟩ := h₂ hK' hC' (by rw [hker]; exact disjoint_bot_right)
-  exact ⟨C'', hC''⟩
+        ‖A.sectionChartData.lowerToZeroL volume q (k + 1 + 1) ξ‖) :=
+  -- `sobolevCoeffPerturbedSobolevSuccL` is `perturbedSobolevSuccL` of `coefficientL α` by
+  -- definition.
+  exists_norm_le_norm_perturbedSobolevSuccL_add_norm A hD hDs k
+    (lt_add_of_le_of_pos hp (zero_lt_one.trans hq)) hq le_add_self
+    (coefficientL A volume hp (p + q) (k + 1) α)
+
+include hD hDs in
+/-- **Finite-dimensional kernel below the top order.** The realization
+`D₀ + α : W^{k+2,q}(Σ, V) → W^{k+1,q}(Σ, Λ^{0,1} ⊗ V)` of a real Cauchy–Riemann operator with a
+`W^{k+2,p}` zeroth-order term, `p ≥ 2` and `1 < q < ∞`, on a closed surface has
+finite-dimensional kernel. -/
+theorem finiteDimensional_ker_sobolevCoeffPerturbedSobolevSuccL (hp : 2 ≤ p) (hq : 1 < q)
+    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
+      (k + 1 + 1)) :
+    FiniteDimensional ℝ (hD.sobolevCoeffPerturbedSobolevSuccL A hDs k hp hq α).ker :=
+  -- `sobolevCoeffPerturbedSobolevSuccL` is `perturbedSobolevSuccL` of `coefficientL α` by
+  -- definition.
+  finiteDimensional_ker_perturbedSobolevSuccL A hD hDs k
+    (lt_add_of_le_of_pos hp (zero_lt_one.trans hq)) hq le_add_self
+    (coefficientL A volume hp (p + q) (k + 1) α)
+
+include hD hDs in
+/-- **Closed range below the top order.** The realization
+`D₀ + α : W^{k+2,q}(Σ, V) → W^{k+1,q}(Σ, Λ^{0,1} ⊗ V)` of a real Cauchy–Riemann operator with a
+`W^{k+2,p}` zeroth-order term, `p ≥ 2` and `1 < q < ∞`, on a closed surface has closed range. -/
+theorem isClosed_range_sobolevCoeffPerturbedSobolevSuccL (hp : 2 ≤ p) (hq : 1 < q)
+    (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p
+      (k + 1 + 1)) :
+    IsClosed ((hD.sobolevCoeffPerturbedSobolevSuccL A hDs k hp hq α).range :
+      Set (zeroOneSobolevSections A volume q (k + 1))) :=
+  -- `sobolevCoeffPerturbedSobolevSuccL` is `perturbedSobolevSuccL` of `coefficientL α` by
+  -- definition.
+  isClosed_range_perturbedSobolevSuccL A hD hDs k
+    (lt_add_of_le_of_pos hp (zero_lt_one.trans hq)) hq le_add_self
+    (coefficientL A volume hp (p + q) (k + 1) α)
 
 /-- **Check.** The zeroth-order term of a `W^{2,3}` coefficient (`ℓ = 3`) is compact from `W^{2,4}`
 to `W^{1,4}`, an exponent above `3` excluded at the top order, and from `W^{2,3/2}` to `W^{1,3/2}`,

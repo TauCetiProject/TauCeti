@@ -49,6 +49,9 @@ point is needed in this version.
   `p_* 𝒪_{X_T} = 𝒪_T` after every base change.
 * `TauCeti.AlgebraicGeometry.isIso_app_pullback_fst_of_section`: the same for a universally
   closed quasi-separated integral scheme with a rational point, such as a proper one.
+* `TauCeti.AlgebraicGeometry.appTop_eq_of_comp_snd_eq`: for `X` quasi-compact and
+  quasi-separated over a field `K` with constant global functions, a regular function on
+  `X ×_K T` takes equal values at any two points with the same image in `T`.
 * `AlgebraicGeometry.Scheme.Hom.isIso_app_of_universallyClosed_of_geometricallyIntegral`: over a
   field, a universally closed geometrically integral morphism satisfies `f_* 𝒪_X = 𝒪_{Spec K}`
   without requiring quasi-separatedness or a rational point.
@@ -161,6 +164,21 @@ theorem isIso_app_pullback_fst_of_section (f : X ⟶ Spec (.of K)) [IsIntegral X
   have : IsIso f.appTop :=
     (ConcreteCategory.isIso_iff_bijective _).mpr (appTop_bijective_of_section hs)
   isIso_app_pullback_fst_of_isIso_appTop f g U
+
+/-- **Regular functions on a base change are constant along the fibres.** Let `X` be quasi-compact
+and quasi-separated over a field `K` with constant global functions, and `T` a scheme over `K`.
+A regular function `φ` on `X ×_K T` takes equal values at any two points `u`, `v` of `X ×_K T`
+with the same image in `T`: their pullbacks `u^*φ` and `v^*φ` agree. -/
+theorem appTop_eq_of_comp_snd_eq {Y : Scheme.{u}} (f : X ⟶ Spec (.of K)) [QuasiCompact f]
+    [QuasiSeparated f] [IsIso f.appTop] (g : T ⟶ Spec (.of K)) {u v : Y ⟶ pullback f g}
+    (h : u ≫ pullback.snd f g = v ≫ pullback.snd f g) (φ : Γ(pullback f g, ⊤)) :
+    u.appTop φ = v.appTop φ := by
+  have : IsIso (pullback.snd f g).appTop :=
+    isIso_app_pullback_snd_of_flat f g (fun V ↦ f.isIso_app_of_isIso_appTop V) ⊤
+  -- `φ` is the pullback of a function `c` on `T`, and `u^*φ = (u ≫ pr₂)^*c = (v ≫ pr₂)^*c`.
+  obtain ⟨c, rfl⟩ := (ConcreteCategory.bijective_of_isIso (pullback.snd f g).appTop).2 φ
+  have hc := congrArg (fun w : Y ⟶ T ↦ w.appTop c) h
+  simpa only [Scheme.Hom.comp_appTop, CommRingCat.comp_apply] using hc
 
 end AlgebraicGeometry
 

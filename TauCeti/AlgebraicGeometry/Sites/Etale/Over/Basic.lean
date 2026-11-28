@@ -138,9 +138,8 @@ lemma smallEtaleBaseChange_map_left {V W : Y.Etale} (g : V ⟶ W) :
 `𝟙 X`. -/
 lemma smallEtaleBaseChange_map_left_eq_pullback_map {V W : Y.Etale} (g : V ⟶ W) :
     (f.smallEtaleBaseChange.map g).left =
-      pullback.map V.hom f W.hom f g.left (𝟙 X) (𝟙 Y) (by simp) (by simp) := by
-  rw [smallEtaleBaseChange_map_left]
-  apply pullback.hom_ext <;> simp
+      pullback.map V.hom f W.hom f g.left (𝟙 X) (𝟙 Y) (by simp) (by simp) :=
+  MorphismProperty.Over.pullback_map_left_eq_pullback_map _ _ f g
 
 /-- On underlying schemes over `X`, `smallEtaleBaseChange f` is base change along `f`. -/
 noncomputable def smallEtaleBaseChangeCompForgetIso :

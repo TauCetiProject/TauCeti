@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 public import Mathlib.AlgebraicGeometry.ZariskisMainTheorem
 import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
 import TauCeti.AlgebraicGeometry.Morphisms.Dominant
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Over
 import TauCeti.AlgebraicGeometry.ResidueDegree
 import Mathlib.FieldTheory.FinTrdeg
 import TauCeti.Topology.NoetherianSpace.ClosedPoints
@@ -288,10 +289,7 @@ theorem finite_preimage_singleton_of_height_eq {Y : Scheme.{u}} [Y.Over (Spec (.
     (f : X ⟶ Y) [f.IsOver (Spec (.of k))] [QuasiCompact f] (y : Y)
     (h : ∀ x, f x = y → Order.height x = Order.height y) :
     (f ⁻¹' {y}).Finite := by
-  have : LocallyOfFiniteType f := by
-    have : LocallyOfFiniteType (f ≫ Y ↘ Spec (.of k)) := by
-      rw [CategoryTheory.comp_over]; infer_instance
-    exact locallyOfFiniteType_of_comp f (Y ↘ Spec (.of k))
+  have := f.locallyOfFiniteType_of_isOver (Spec (.of k))
   have : T1Space (f ⁻¹' {y}) := by
     refine t1Space_iff_specializes_imp_eq.2 fun a b hab ↦ Subtype.ext ?_
     have hab : (a : X) ⤳ b := Topology.IsInducing.subtypeVal.specializes_iff.2 hab

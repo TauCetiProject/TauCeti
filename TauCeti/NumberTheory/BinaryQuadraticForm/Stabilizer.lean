@@ -56,6 +56,9 @@ transport along an equality of discriminants.
   norm-one element `x + y ω`.
 * `TauCeti.BinaryQuadraticForm.map_stabilizerEquivUnitary_symm_apply`: naturality in the
   coefficient ring.
+* `TauCeti.BinaryQuadraticForm.forall_coe_stabilizerEquivUnitary_symm_apply_mem_iff`: for primitive
+  `f`, the automorph of a norm-one element has entries in a subring exactly when its coordinates
+  do.
 * `TauCeti.BinaryQuadraticForm.stabilizerEquivNormOneUnits`: over `ℤ`, the automorphs of `f` are
   the norm-one units of the order of discriminant `D`.
 * `TauCeti.BinaryQuadraticForm.map_stabilizerEquivNormOneUnits_symm_apply`: the automorph attached
@@ -347,6 +350,60 @@ theorem map_stabilizerEquivUnitary_symm_apply {S : Type*} [CommRing S] (φ : R �
   rw [SpecialLinearGroup.map_apply_coe,
     coe_stabilizerEquivUnitary_symm_apply, coe_stabilizerEquivUnitary_symm_apply]
   fin_cases i <;> fin_cases j <;> simp [hre, him]
+
+/-- **Integral automorphs are integral norm-one elements.** For a primitive form `f`, the automorph
+attached to a norm-one element `z` has all its entries in a subring `S` of `R` exactly when both
+coordinates of `z` lie in `S`. The entries `a y`, `b y` and `c y` recover `y` through a Bézout
+relation among the coefficients, which is where primitivity enters. For instance, over `R = ℚ_p`
+and `S = ℤ_p`, the automorphs in `SL(2, ℤ_p)` are the norm-one elements of the order with
+coefficients in `ℤ_p`. -/
+theorem forall_coe_stabilizerEquivUnitary_symm_apply_mem_iff (hf : f.IsPrimitive)
+    (hfD : f.discrim = D) (h2 : IsLeftRegular (2 : R)) (S : Subring R)
+    (z : unitary (QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D)) :
+    (∀ i j, (((stabilizerEquivUnitary hf.span_intCast_eq_top hfD h2).symm z : SL(2, R)) :
+        Matrix (Fin 2) (Fin 2) R) i j ∈ S) ↔
+      (z : QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D).re ∈ S ∧
+        (z : QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D).im ∈ S := by
+  set x := (z : QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D).re
+  set y := (z : QuadraticAlgebra R (((D - D ^ 2) / 4 : ℤ) : R) D).im
+  have hb : (D + f.b) / 2 - (D - f.b) / 2 = f.b := by
+    have := two_mul_ediv_two_of_discrim_eq (discrim_eq_sq_sub_four_mul f hfD)
+    omega
+  rw [coe_stabilizerEquivUnitary_symm_apply]
+  constructor
+  · intro h
+    have h00 := h 0 0
+    have h01 := h 0 1
+    have h10 := h 1 0
+    have h11 := h 1 1
+    simp only [of_apply, cons_val', cons_val_zero, cons_val_one, empty_val',
+      cons_val_fin_one] at h00 h01 h10 h11
+    -- The entries give `a y`, `b y` and `c y` in `S`, hence `y` by the Bézout relation.
+    have hcy : (f.c : R) * y ∈ S := by simpa only [neg_mul, neg_mem_iff] using h01
+    have hby : (f.b : R) * y ∈ S := by
+      have := S.sub_mem h11 h00
+      rwa [add_sub_add_left_eq_sub, ← mul_sub, ← Int.cast_sub, hb, mul_comm] at this
+    obtain ⟨u, v, w, huvw⟩ := hf.exists_linearCombination_eq_one
+    have hy : y ∈ S := by
+      have hsum := S.add_mem (S.add_mem (S.mul_mem (intCast_mem S u) h10)
+        (S.mul_mem (intCast_mem S v) hby)) (S.mul_mem (intCast_mem S w) hcy)
+      have hy' : (u : R) * ((f.a : R) * y) + (v : R) * ((f.b : R) * y) + (w : R) * ((f.c : R) * y)
+          = y := by
+        have := congrArg (Int.cast : ℤ → R) huvw
+        push_cast at this
+        linear_combination y * this
+      rwa [hy'] at hsum
+    refine ⟨?_, hy⟩
+    have := S.sub_mem h00 (S.mul_mem hy (intCast_mem S ((D - f.b) / 2)))
+    rwa [add_sub_cancel_right] at this
+  · rintro ⟨hx, hy⟩ i j
+    fin_cases i <;> fin_cases j <;>
+      simp only [of_apply, cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one,
+        Fin.zero_eta, Fin.mk_one, Fin.isValue]
+    · exact S.add_mem hx (S.mul_mem hy (intCast_mem S _))
+    · exact S.mul_mem (S.neg_mem (intCast_mem S _)) hy
+    · exact S.mul_mem (intCast_mem S _) hy
+    · exact S.add_mem hx (S.mul_mem hy (intCast_mem S _))
 
 /-! ### Integral automorphs and norm-one units -/
 

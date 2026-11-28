@@ -37,6 +37,8 @@ into the Hilbert–Schmidt operators. For the rank-one kernel `w ⊗ star u`
 * `TauCeti.integralOperatorL2HS`: the kernel-to-operator map as a linear isometry into the
   normed Hilbert–Schmidt ideal.
 * `TauCeti.integralOperatorL2_injective`: equal operators have equal kernel classes.
+* `TauCeti.hasSum_inner_integralOperatorL2_apply`: the Hilbert–Schmidt pairing
+  `∑ⱼ ⟪T_K bⱼ, T_L bⱼ⟫` of two integral operators is the pairing `⟪K, L⟫` of their kernels.
 
 ## Implementation notes
 
@@ -99,6 +101,23 @@ theorem integralOperatorL2_mem_finiteSubmodule_hilbertSchmidt (K : Lp 𝕜 2 (μ
   rw [OperatorIdealFamily.mem_finiteSubmodule_hilbertSchmidt_iff _ b,
     hilbertSchmidtEnergy_integralOperatorL2]
   exact ENNReal.pow_ne_top eNorm_ne_top
+
+/-- **The Hilbert–Schmidt pairing of integral operators is the pairing of their kernels.** For
+`K, L ∈ L²(μ ⊗ ν)` and any Hilbert basis `(bⱼ)` of `L²(ν)`, `∑ⱼ ⟪T_K bⱼ, T_L bⱼ⟫ = ⟪K, L⟫`. -/
+theorem hasSum_inner_integralOperatorL2_apply {ι : Type*} (K L : Lp 𝕜 2 (μ.prod ν))
+    (b : HilbertBasis ι 𝕜 (Lp 𝕜 2 ν)) :
+    HasSum (fun j ↦ ⟪integralOperatorL2 μ ν K (b j), integralOperatorL2 μ ν L (b j)⟫_𝕜)
+      ⟪K, L⟫_𝕜 := by
+  obtain ⟨κ, a, -⟩ := exists_hilbertBasis 𝕜 (Lp 𝕜 2 μ)
+  let e := HilbertBasis.prod a b.star
+  have hsum : HasSum (fun p : ι × κ ↦ ⟪K, e p.swap⟫_𝕜 * ⟪e p.swap, L⟫_𝕜) ⟪K, L⟫_𝕜 :=
+    (Equiv.prodComm ι κ).hasSum_iff.2 (e.hasSum_inner_mul_inner K L)
+  refine hsum.prod_fiberwise fun j ↦ ?_
+  convert a.hasSum_inner_mul_inner (integralOperatorL2 μ ν K (b j))
+    (integralOperatorL2 μ ν L (b j)) using 2 with i
+  simp only [e, Prod.swap_prod_mk, HilbertBasis.prod_apply, HilbertBasis.star_apply]
+  rw [← inner_integralOperatorL2, ← inner_conj_symm K, ← inner_integralOperatorL2,
+    inner_conj_symm]
 
 variable (μ ν) in
 /-- **The kernel-to-operator map as a linear isometry** from `L²(μ ⊗ ν)` into the Hilbert–Schmidt

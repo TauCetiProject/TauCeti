@@ -91,6 +91,8 @@ coordinates of Taubes's gluing read off fields close to the vortex orbits of a c
 
 ## Main results
 
+* `TauCeti.Vortex.SobolevFieldSpace.sobolevVortexDivisor_normalizedVortex`: the zero divisor of
+  the normalized vortex `y_c` has coefficients `c`.
 * `TauCeti.Vortex.SobolevFieldSpace.vortexModuliHomeomorph_symm_coeffHomeomorph_symm`: the vortex
   orbit with divisor coefficients `c` is the orbit of the normalized vortex `y_c`.
 * `TauCeti.Vortex.SobolevFieldSpace.exists_contDiffAt_coeffEquiv_sobolevVortexDivisor`: near every
@@ -295,6 +297,25 @@ variable {f : ContDiffBump (0 : ℝ)} {m k : ℕ}
 
 /-! ### The normalized vortices as points of the moduli space -/
 
+/-- The real coordinates `y_c - x_m` of the normalized vortex `y_c` in `A_m^s`, `s ≥ 0`, depend
+smoothly on its divisor coefficients `c ∈ ℂᵐ`, collisions of zeros included. -/
+theorem contDiff_realSubRef_normalizedVortex (hm : 0 < m) (f : ContDiffBump (0 : ℝ)) {s : ℝ}
+    (hs : 0 ≤ s) : ContDiff ℝ ∞ fun c ↦ (normalizedVortex hm f s c).realSubRef hs := by
+  simp_rw [realSubRef_eq_realPartCLM_subRef]
+  exact contDiff_pi.2 fun j ↦ (BesselPotentialSpace.realPartCLM ℂ _).contDiff.comp
+    ((contDiff_apply ℝ _ j).comp (contDiff_subRef_normalizedVortex hm f hs))
+
+/-- **The divisor of the normalized vortex.** For `k ≥ 4`, the zero divisor of the normalized
+vortex `y_c` of `A_m^k` is the point of `Sym ℂ m` with coefficients `c`. -/
+@[simp]
+theorem sobolevVortexDivisor_normalizedVortex [Fact (1 < k)] (hm : 0 < m) (hk : 3 < k)
+    (c : Fin m → ℂ) :
+    sobolevVortexDivisor ⟨_, toFramedFieldSpace_mem_sobolevVortices hk
+      (equation_normalizedVortex hm f k c)⟩ = (Sym.coeffEquiv ℂ m).symm c :=
+  sobolevVortexDivisor_eq_iff.2 <| by
+    simpa only [coe_toFramedFieldSpace, coe_normalizedVortex] using
+      isZeroMultiplicity_sectionValue_normalizedVortex c
+
 variable [Fact (1 < k)] {hs : 1 < (k : ℝ) + 1}
 
 /-- **The vortex orbit with divisor coefficients `c`** is the orbit of the normalized vortex `y_c`,
@@ -306,9 +327,7 @@ theorem vortexModuliHomeomorph_symm_coeffHomeomorph_symm (hm : 0 < m) (hk : 3 < 
         mk_mem_vortexModuli (equation_normalizedVortex hm f k c)⟩ := by
   rw [Sym.coeffHomeomorph_symm_apply]
   exact vortexModuliHomeomorph_symm_apply_mk hk (equation_normalizedVortex hm f k c)
-    (sobolevVortexDivisor_eq_iff.2 <| by
-    simpa only [coe_toFramedFieldSpace, coe_normalizedVortex] using
-      isZeroMultiplicity_sectionValue_normalizedVortex c)
+    (sobolevVortexDivisor_normalizedVortex hm hk c)
 
 /-! ### The divisor coefficients as smooth functions of the field -/
 
@@ -463,11 +482,7 @@ private theorem contDiffAt_chart_mk_normalizedVortex (hm : 0 < m)
   obtain ⟨F, hF, hFev⟩ := he.exists_contDiffAt_eventually_eq _
     (equation_normalizedVortex hm f k c₀) hc₀
   have hy := continuous_normalizedVortex hm f (s := k) (Nat.cast_nonneg k)
-  -- The real coordinates of `y_c` are smooth in `c`.
-  have hu : ContDiff ℝ ∞ fun c ↦ (normalizedVortex hm f k c).realSubRef (Nat.cast_nonneg k) := by
-    simp_rw [realSubRef_eq_realPartCLM_subRef]
-    exact contDiff_pi.2 fun j ↦ (BesselPotentialSpace.realPartCLM ℂ _).contDiff.comp
-      ((contDiff_apply ℝ _ j).comp (contDiff_subRef_normalizedVortex hm f (Nat.cast_nonneg k)))
+  have hu := contDiff_realSubRef_normalizedVortex hm f (Nat.cast_nonneg k)
   have hq : Continuous q := (continuous_quotient_mk'.comp hy).subtype_mk _
   refine (hF.comp c₀ hu.contDiffAt).congr_of_eventuallyEq ?_
   filter_upwards [hy.continuousAt.eventually hFev, hq.continuousAt.eventually

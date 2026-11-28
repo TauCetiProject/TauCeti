@@ -59,7 +59,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   (hf : f' ∘ σ = f) (hσX : ∀ y, mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) σ y (X y) = X' (σ y))
   (𝔬' : MorseOrientation f' X')
 
-omit [FiniteDimensional ℝ E] [CompactSpace M] [T2Space M] [CompactSpace M'] [T2Space M'] in
+omit [FiniteDimensional ℝ E] [CompactSpace M] [T2Space M] [IsManifold 𝓘(ℝ, E) ∞ M']
+  [CompactSpace M'] [T2Space M'] in
 /-- **Augmentation signs pull back.** The augmentation sign of the orientation data pulled back
 along `σ` at a critical point `p` is the augmentation sign of `𝔬'` at `σ p`. -/
 @[simp]
@@ -83,7 +84,8 @@ theorem MorseOrientation.augmentationSign_pullback (p : criticalPoints 𝓘(ℝ,
   · rw [augmentationSign_of_morseIndex_ne_zero _ hp,
       augmentationSign_of_morseIndex_ne_zero _ (hind ▸ hp)]
 
-omit [FiniteDimensional ℝ E] [CompactSpace M] [T2Space M] [CompactSpace M'] [T2Space M'] in
+omit [FiniteDimensional ℝ E] [CompactSpace M] [T2Space M] [IsManifold 𝓘(ℝ, E) ∞ M']
+  [CompactSpace M'] [T2Space M'] in
 /-- **The augmentations are natural**: the bijection between the critical points of `f` and of
 `f'` induced by `σ` intertwines the augmentation of the pulled-back orientation data with that of
 `𝔬'`, over every ring of coefficients. -/

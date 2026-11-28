@@ -22,7 +22,10 @@ No finite presentation or smoothness hypothesis is needed.
 More generally, the equality holds whenever the coordinate map satisfies
 `Algebra.IsEffective`. The kernel-invariance characterization identifies invariant functions
 with functions constant on fibers over every value algebra, connecting the functor-of-points
-and coordinate-algebra descriptions of affine-group quotients.
+and coordinate-algebra descriptions of affine-group quotients. As a consequence, under flatness
+hypotheses a faithfully flat morphism `f : H ⟶ K` satisfies the quotient universal property
+`existsUnique_comp_iff_kernelHopfIdeal_le_of_faithfullyFlat`: a morphism `g : M ⟶ K` factors
+uniquely through `f` iff `kernelHopfIdeal g ≤ kernelHopfIdeal f`.
 
 ## References
 
@@ -151,6 +154,33 @@ theorem bijective_liftCoinvariants_of_faithfullyFlat
     obtain ⟨y, hy⟩ := hx
     refine ⟨y, Subtype.ext ?_⟩
     exact (coe_liftCoinvariants_apply hI f hker.le y).trans hy
+
+/-- A faithfully flat affine-group morphism satisfies the quotient universal property with respect
+to its scheme-theoretic kernel: a morphism `g : M ⟶ K` factors uniquely through `f : H ⟶ K` iff
+`kernelHopfIdeal g ≤ kernelHopfIdeal f`. -/
+theorem existsUnique_comp_iff_kernelHopfIdeal_le_of_faithfullyFlat
+    {M : _root_.CommHopfAlgCat.{v} R} (f : H ⟶ K) (g : M ⟶ K)
+    [Module.Flat R K] [Module.Flat R (kernelHopfIdeal f).coinvariants]
+    [Module.Flat R (K ⧸ Subalgebra.toSubmodule (kernelHopfIdeal f).coinvariants)]
+    (hf : (f.hom.toAlgHom : H →+* K).FaithfullyFlat) :
+    (∃! ψ : M ⟶ H, ψ ≫ f = g) ↔ kernelHopfIdeal g ≤ kernelHopfIdeal f := by
+  refine ⟨fun ⟨ψ, hψ, _⟩ ↦ hψ ▸ kernelHopfIdeal_comp_le ψ f, fun hg ↦ ?_⟩
+  let hI := isNormal_kernelHopfIdeal f
+  let _ := (coinvariants hI).hopfAlgebra
+  have hbij := bijective_liftCoinvariants_of_faithfullyFlat hI f hf rfl
+  let e : H ≃ₐc[R] coinvariants hI := BialgEquiv.ofBijective (liftCoinvariants hI f le_rfl).hom hbij
+  let i : H ≅ coinvariants hI := _root_.CommHopfAlgCat.isoMk e
+  have hi : i.hom = liftCoinvariants hI f le_rfl := by
+    rw [_root_.CommHopfAlgCat.isoMk_hom]
+    exact _root_.CommHopfAlgCat.hom_ext (BialgHom.ext fun x ↦
+      congrFun (BialgEquiv.coe_ofBijective (liftCoinvariants hI f le_rfl).hom hbij) x)
+  let ψ₀ : M ⟶ H := liftCoinvariants hI g hg ≫ i.inv
+  have hψ₀ : ψ₀ ≫ f = g := by
+    rw [← liftCoinvariants_comp_coinvariantsι hI f le_rfl, ← hi, Category.assoc,
+      Iso.inv_hom_id_assoc, liftCoinvariants_comp_coinvariantsι]
+  exact ⟨ψ₀, hψ₀, fun ψ hψ ↦ _root_.CommHopfAlgCat.hom_ext (BialgHom.ext fun x ↦
+    hf.injective
+      (DFunLike.congr_fun (congrArg _root_.CommHopfAlgCat.Hom.hom (hψ.trans hψ₀.symm)) x))⟩
 
 end TauCeti.CommHopfAlgCat
 

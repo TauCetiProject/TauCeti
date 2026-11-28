@@ -7,25 +7,31 @@ module
 
 public import TauCeti.MeasureTheory.Measure.IntegerHarmonic
 public import Mathlib.Probability.Kernel.Invariance
+public import TauCeti.Probability.MarkovChain.Examples.IntegerWalk.Basic
+import TauCeti.Probability.MarkovChain.Examples.IntegerWalk.Classification
+import TauCeti.Probability.MarkovChain.Invariant
 
 /-!
-# No finite invariant law for symmetric integer walk
+# No finite invariant law for nearest-neighbor integer walks
 
-For the kernel taking a unit step in either direction with equal probability,
-every finite invariant measure is zero. In particular there is no invariant
-probability. The statement uses the kernel's rows directly, so it applies to any
-construction of this walk, without introducing a second transition kernel.
+For any kernel on `ℤ` taking a unit step in either direction with equal probability, every finite
+invariant measure is zero (`ProbabilityTheory.Kernel.Invariant.eq_zero_of_symmetric_int_steps`);
+this row-level criterion applies to any construction of the symmetric walk directly from integer
+harmonicity.
 
-Together with recurrence and the invariant-probability characterization of
-positive recurrence, this obstruction distinguishes null recurrence of symmetric
-integer walk from positive recurrence. Recurrence itself is not asserted here.
+More generally, because every nearest-neighbor integer walk `integerWalk p` (`p : unitInterval`)
+has no positive recurrent states (`TauCeti.Probability.integerWalk_not_isPositiveRecurrent`),
+every finite `(integerWalk p)`-invariant measure is zero
+(`ProbabilityTheory.Kernel.Invariant.eq_zero_of_integerWalk`) and no `integerWalk p` admits an
+invariant probability law (`TauCeti.Probability.integerWalk_not_invariant_of_isProbabilityMeasure`),
+for symmetric and biased parameters alike (including the deterministic endpoints `0` and `1`).
 
 See J. R. Norris, *Markov Chains* (1997), §§1.6–1.7.
 -/
 
 public section
 
-open MeasureTheory
+open MeasureTheory ProbabilityTheory TauCeti.Probability
 open scoped ENNReal
 
 namespace ProbabilityTheory.Kernel.Invariant
@@ -52,4 +58,20 @@ theorem eq_zero_of_symmetric_int_steps {κ : Kernel ℤ ℤ} {μ : Measure ℤ}
         rw [← Measure.bind_apply hs (measurable_of_countable _).aemeasurable,
           Measure.bind_dirac_eq_map μ (measurable_of_countable _)]
 
+/-- Every finite invariant measure of any nearest-neighbor integer walk is zero. -/
+theorem eq_zero_of_integerWalk {p : unitInterval} {μ : Measure ℤ} [IsFiniteMeasure μ]
+    (hμ : (integerWalk p).Invariant μ) :
+    μ = 0 :=
+  hμ.eq_zero_of_forall_not_isPositiveRecurrent (integerWalk_not_isPositiveRecurrent p)
+
 end ProbabilityTheory.Kernel.Invariant
+
+namespace TauCeti.Probability
+
+/-- No nearest-neighbor integer walk admits an invariant probability measure. -/
+theorem integerWalk_not_invariant_of_isProbabilityMeasure (p : unitInterval) (μ : Measure ℤ)
+    [IsProbabilityMeasure μ] :
+    ¬ (integerWalk p).Invariant μ :=
+  Kernel.not_invariant_of_forall_not_isPositiveRecurrent (integerWalk_not_isPositiveRecurrent p) μ
+
+end TauCeti.Probability

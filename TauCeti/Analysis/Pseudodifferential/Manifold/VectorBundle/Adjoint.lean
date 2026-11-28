@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Adjoint
-public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
+public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.PrincipalSymbol
 public import TauCeti.Geometry.Manifold.DifferentialOperator.FormalAdjoint.Basic
 import TauCeti.Analysis.InnerProductSpace.Complex
 import TauCeti.Geometry.Manifold.DifferentialOperator.FormalAdjoint.Complex
@@ -36,6 +36,13 @@ form of the scalar theorem
 reduced. As there, proper support of `Q` is a hypothesis: the adjoint identity only involves the
 values of `Q` on compactly supported sections.
 
+Its principal symbol is the adjoint of that of `P`: for every covector `ξ ∈ T*ₓM`,
+`⟪σ_m(P)(x, ξ) u, w⟫ = ⟪u, σ_m(Q)(x, ξ) w⟫` for `u ∈ E_x` and `w ∈ F_x`
+(`TauCeti.inner_sectionClassicalPrincipalSymbol_eq_of_isFormalAdjoint`). This is the bundle form
+of the scalar `TauCeti.classicalPrincipalSymbol_eq_conj_of_forall_integral_inner_eq`, where the
+adjoint of a complex number is its conjugate. Consequently `Q` is elliptic exactly where `P` is,
+and a formally self-adjoint operator has symmetric principal symbols.
+
 ## The argument
 
 An entry `f ↦ χ ℓ(t' (Q (f ψ t⁻¹ w)))` of `Q` (`TauCeti.sectionEntry`) is read on functions `f`
@@ -60,11 +67,27 @@ pairing with `σ` is a sum of cut-off frame coefficients with smooth coefficient
 `TauCeti.cutoffFrameCoeff_comp_comp_toSpanSingleton_mem_classicalPseudodifferentialOperators`.
 The scalar theorem then applies.
 
+For the principal symbols, extend `u ∈ E_x` and `w ∈ F_x` to compactly supported sections `s` and
+`σ`. Near `x` the pairing with `σ` is a combination of the frame coefficients of a trivialization
+of `F` at `x`, so the principal symbol of `f ↦ ⟪σ, P (f s)⟫_ℂ` at `ξ` is
+`⟪σ(x), σ_m(P)(x, ξ) s(x)⟫_ℂ`, by
+`TauCeti.classicalPrincipalSymbol_cutoffFrameCoeff_comp_comp_toSpanSingleton`; likewise that of
+`g ↦ ⟪s, Q (g σ)⟫_ℂ` is `⟪s(x), σ_m(Q)(x, ξ) σ(x)⟫_ℂ`. These two scalar operators are formal
+adjoints of each other, so their principal symbols are complex conjugate, and taking real parts
+gives the identity for the fibre inner products.
+
 ## Main results
 
 * `TauCeti.mem_sectionClassicalPseudodifferentialOperators_of_isFormalAdjoint`: a properly
   supported formal adjoint of a classical pseudodifferential operator of order `m` between vector
   bundles is a classical pseudodifferential operator of order `m`.
+* `TauCeti.inner_sectionClassicalPrincipalSymbol_eq_of_isFormalAdjoint`: its principal symbol is
+  the adjoint of the principal symbol of `P`.
+* `TauCeti.isSymmetric_sectionClassicalPrincipalSymbol_of_isFormalAdjoint`: a formally
+  self-adjoint operator has symmetric principal symbols.
+* `TauCeti.isSectionClassicalEllipticAt_iff_of_isFormalAdjoint`,
+  `TauCeti.isSectionClassicalElliptic_iff_of_isFormalAdjoint`: the formal adjoint is elliptic
+  exactly where `P` is.
 
 ## References
 
@@ -148,26 +171,24 @@ private theorem complexInnerSection_comp_comp_toSpanSingleton_mem [FiniteDimensi
     (cutoffFrameCoeff_comp_comp_toSpanSingleton_mem_classicalPseudodifferentialOperators _ _ _ _
       hP s) _
 
-/-- Reading `Q` along a compactly supported section `σ` of `F` and pairing the result with a
-compactly supported section `s` of `E`, `f ↦ ⟪s, Q (f · σ)⟫_ℂ`, gives a classical
-pseudodifferential operator of order `m`: it is a properly supported formal adjoint of the
-operator `g ↦ ⟪σ, P (g · s)⟫_ℂ` of `TauCeti.complexInnerSection_comp_comp_toSpanSingleton_mem`. -/
-private theorem complexInnerSection_comp_comp_toSpanSingleton_mem_of_isFormalAdjoint
-    [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] [MeasurableSpace M] [OpensMeasurableSpace M]
-    {μ : Measure M} [IsFiniteMeasureOnCompacts μ]
-    (hμ : HasSmoothPositiveDensity (CoordinateSpace n) μ)
+omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
+  [ContMDiffVectorBundle ∞ V E 𝓘(ℝ, CoordinateSpace n)]
+  [ContMDiffVectorBundle ∞ W F 𝓘(ℝ, CoordinateSpace n)] in
+/-- Pairing with compactly supported sections turns the formal adjoint identity of `P` and `Q` into
+a scalar one: `g ↦ ⟪s, Q (g · σ)⟫_ℂ` is a formal adjoint of `f ↦ ⟪σ, P (f · s)⟫_ℂ`, for the complex
+inner product of `ℂ` and `μ`. -/
+private theorem integral_inner_complexInnerSection_comp_comp_toSpanSingleton_eq
+    [MeasurableSpace M] [OpensMeasurableSpace M] {μ : Measure M} [IsFiniteMeasureOnCompacts μ]
     (hE : ∀ x (v w : E x), ⟪Complex.I • v, Complex.I • w⟫ = ⟪v, w⟫)
     (hF : ∀ x (v w : F x), ⟪Complex.I • v, Complex.I • w⟫ = ⟪v, w⟫)
-    (hP : P ∈ sectionClassicalPseudodifferentialOperators m) (hQ : IsSectionProperlySupported Q)
     (hPQ : (P.restrictScalars ℝ).IsFormalAdjoint (Q.restrictScalars ℝ) μ)
     {s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯} (hs : IsCompact s.tsupport)
-    {σ : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯} (hσ : IsCompact σ.tsupport) :
-    complexInnerSection s ∘ₗ Q ∘ₗ
-      (LinearMap.toSpanSingleton _ _ σ).restrictScalars ℂ ∈
-        classicalPseudodifferentialOperators m := by
-  refine mem_classicalPseudodifferentialOperators_of_forall_integral_inner_eq hμ
-    (complexInnerSection_comp_comp_toSpanSingleton_mem hP s hσ)
-    (hQ.comp_comp_toSpanSingleton (fun r x h ↦ by simp [h]) σ) fun u v _ _ ↦ ?_
+    {σ : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯} (hσ : IsCompact σ.tsupport)
+    (u v : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    ∫ x, inner ℂ ((complexInnerSection σ ∘ₗ P ∘ₗ
+        (LinearMap.toSpanSingleton _ _ s).restrictScalars ℂ) u x) (v x) ∂μ =
+      ∫ x, inner ℂ (u x) ((complexInnerSection s ∘ₗ Q ∘ₗ
+        (LinearMap.toSpanSingleton _ _ σ).restrictScalars ℂ) v x) ∂μ := by
   have ha : IsCompact (u • s).tsupport := hs.of_isClosed_subset
     (ContMDiffSection.isClosed_tsupport _)
     ((ContMDiffSection.tsupport_smul_function_subset_of_normedAlgebra u s).trans inter_subset_right)
@@ -188,6 +209,28 @@ private theorem complexInnerSection_comp_comp_toSpanSingleton_mem_of_isFormalAdj
   simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply,
     LinearMap.toSpanSingleton_apply, h₁, h₂]
   exact hPQ.integral_complexInnerSection_eq ha hb
+
+/-- Reading `Q` along a compactly supported section `σ` of `F` and pairing the result with a
+compactly supported section `s` of `E`, `f ↦ ⟪s, Q (f · σ)⟫_ℂ`, gives a classical
+pseudodifferential operator of order `m`: it is a properly supported formal adjoint of the
+operator `g ↦ ⟪σ, P (g · s)⟫_ℂ` of `TauCeti.complexInnerSection_comp_comp_toSpanSingleton_mem`. -/
+private theorem complexInnerSection_comp_comp_toSpanSingleton_mem_of_isFormalAdjoint
+    [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] [MeasurableSpace M] [OpensMeasurableSpace M]
+    {μ : Measure M} [IsFiniteMeasureOnCompacts μ]
+    (hμ : HasSmoothPositiveDensity (CoordinateSpace n) μ)
+    (hE : ∀ x (v w : E x), ⟪Complex.I • v, Complex.I • w⟫ = ⟪v, w⟫)
+    (hF : ∀ x (v w : F x), ⟪Complex.I • v, Complex.I • w⟫ = ⟪v, w⟫)
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m) (hQ : IsSectionProperlySupported Q)
+    (hPQ : (P.restrictScalars ℝ).IsFormalAdjoint (Q.restrictScalars ℝ) μ)
+    {s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯} (hs : IsCompact s.tsupport)
+    {σ : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯} (hσ : IsCompact σ.tsupport) :
+    complexInnerSection s ∘ₗ Q ∘ₗ
+      (LinearMap.toSpanSingleton _ _ σ).restrictScalars ℂ ∈
+        classicalPseudodifferentialOperators m :=
+  mem_classicalPseudodifferentialOperators_of_forall_integral_inner_eq hμ
+    (complexInnerSection_comp_comp_toSpanSingleton_mem hP s hσ)
+    (hQ.comp_comp_toSpanSingleton (fun r x h ↦ by simp [h]) σ) fun u v _ _ ↦
+      integral_inner_complexInnerSection_comp_comp_toSpanSingleton_eq hE hF hPQ hs hσ u v
 
 /-- **Formal adjoints of pseudodifferential operators between vector bundles.** Let `E` and `F` be
 smooth complex vector bundles of finite rank over a manifold `M` modelled on `ℝⁿ`, whose fibres
@@ -253,6 +296,177 @@ theorem mem_sectionClassicalPseudodifferentialOperators_of_isFormalAdjoint
   rw [← h]
   refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun a _ ↦ ?_
   simp [coef, ContMDiffMap.complex_smul_apply, mul_assoc]
+
+/-! ### The principal symbol of a formal adjoint -/
+
+omit [∀ x, IsScalarTower ℝ ℂ (E x)] [IsContMDiffRiemannianBundle 𝓘(ℝ, CoordinateSpace n) ∞ V E] in
+/-- The principal symbol at `ξ ∈ T*ₓM` of `f ↦ ⟪σ, P (f · s)⟫_ℂ`
+(`TauCeti.complexInnerSection_comp_comp_toSpanSingleton_mem`) is `⟪σ(x), σ_m(P)(x, ξ) s(x)⟫_ℂ`:
+near `x` the pairing with `σ` is a combination of the frame coefficients of the preferred
+trivialization of `F` at `x`, whose principal symbols are read off from `σ_m(P)` by
+`TauCeti.classicalPrincipalSymbol_cutoffFrameCoeff_comp_comp_toSpanSingleton`. -/
+private theorem classicalPrincipalSymbol_complexInnerSection_comp_comp_toSpanSingleton
+    [FiniteDimensional ℂ V] [FiniteDimensional ℂ W]
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
+    (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) {σ : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
+    (hσ : IsCompact σ.tsupport) (x : M) (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (complexInnerSection σ ∘ₗ P ∘ₗ
+        (LinearMap.toSpanSingleton _ _ s).restrictScalars ℂ) x ξ =
+      Module.Dual.extendRCLike (𝕜 := ℂ) (innerₗ _ (σ x))
+        (sectionClassicalPrincipalSymbol m P x ξ (s x)) := by
+  set t' := trivializationAt W F x
+  set b := Module.finBasis ℂ W
+  have hx : x ∈ t'.baseSet := FiberBundle.mem_baseSet_trivializationAt W F x
+  obtain ⟨ρ, hρ, hρx⟩ := ContMDiffMap.exists_tsupport_subset_eventually_eq_one
+    (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞) (t'.open_baseSet.mem_nhds hx)
+  -- Near `x`, where `ρ = 1`, the pairing with `σ` is the combination of the frame coefficients
+  -- `ρ bⱼ*(t' ·)` with the smooth coefficients `gⱼ = ⟪σ, ρ t'⁻¹ bⱼ⟫_ℂ`.
+  set g : Fin (Module.finrank ℂ W) → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ :=
+    fun j ↦ complexInnerSection σ (t'.cutoffFrameSection ρ hρ (b j))
+  have hA (j : Fin (Module.finrank ℂ W)) :=
+    cutoffFrameCoeff_comp_comp_toSpanSingleton_mem_classicalPseudodifferentialOperators t' ρ hρ
+      (b.coord j).toContinuousLinearMap hP s
+  have hloc : ∀ᶠ y in 𝓝 x, ∀ f, (complexInnerSection σ ∘ₗ P ∘ₗ
+      (LinearMap.toSpanSingleton C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ _ s).restrictScalars
+        ℂ) f y =
+      (∑ j, LinearMap.mulLeft ℂ (g j) ∘ₗ t'.cutoffFrameCoeff ρ hρ (b.coord j).toContinuousLinearMap
+        ∘ₗ P ∘ₗ (LinearMap.toSpanSingleton _ _ s).restrictScalars ℂ) f y := by
+    filter_upwards [hρx, t'.open_baseSet.mem_nhds hx] with y hρy hy f
+    simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply,
+      LinearMap.toSpanSingleton_apply, LinearMap.sum_apply, LinearMap.mulLeft_apply,
+      ContMDiffMap.coe_sum, Finset.sum_apply, ContMDiffMap.coe_mul, Pi.mul_apply,
+      complexInnerSection_apply, g, Trivialization.cutoffFrameCoeff_apply,
+      Trivialization.cutoffFrameSection_apply, hρy, one_smul]
+    conv_lhs => rw [← t'.sum_repr_smul_symmL b hy (P (f • s) y)]
+    simp [t'.symmL_apply (R := ℂ) hy, mul_comm]
+  rw [classicalPrincipalSymbol_eq_of_eventually_apply_eq
+      (complexInnerSection_comp_comp_toSpanSingleton_mem hP s hσ)
+      (Submodule.sum_mem _ fun j _ ↦ mulLeft_comp_mem_classicalPseudodifferentialOperators (hA j) _)
+      hloc ξ,
+    classicalPrincipalSymbol_sum _
+      fun j _ ↦ mulLeft_comp_mem_classicalPseudodifferentialOperators (hA j) _]
+  conv_rhs => rw [← t'.sum_repr_smul_symmL b hx (sectionClassicalPrincipalSymbol m P x ξ (s x))]
+  simp only [map_sum, map_smul, smul_eq_mul]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [classicalPrincipalSymbol_mulLeft_comp (hA j),
+    classicalPrincipalSymbol_cutoffFrameCoeff_comp_comp_toSpanSingleton hP]
+  simp [g, hρx.self_of_nhds, t'.symmL_apply (R := ℂ) hx, mul_comm]
+
+/-- **The principal symbol of a formal adjoint is the adjoint of the principal symbol.** Under the
+hypotheses of `TauCeti.mem_sectionClassicalPseudodifferentialOperators_of_isFormalAdjoint`, if `Q`
+is a properly supported formal adjoint of the classical pseudodifferential operator `P` of order
+`m`, then at every covector `ξ ∈ T*ₓM` the principal symbol `σ_m(Q)(x, ξ) : F_x → E_x` is the
+adjoint of `σ_m(P)(x, ξ) : E_x → F_x` for the inner products of the fibres:
+`⟪σ_m(P)(x, ξ) u, w⟫ = ⟪u, σ_m(Q)(x, ξ) w⟫`. -/
+theorem inner_sectionClassicalPrincipalSymbol_eq_of_isFormalAdjoint
+    [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] [MeasurableSpace M] [OpensMeasurableSpace M]
+    {μ : Measure M} [IsFiniteMeasureOnCompacts μ]
+    (hμ : HasSmoothPositiveDensity (CoordinateSpace n) μ)
+    (hE : ∀ x (v w : E x), ⟪Complex.I • v, Complex.I • w⟫ = ⟪v, w⟫)
+    (hF : ∀ x (v w : F x), ⟪Complex.I • v, Complex.I • w⟫ = ⟪v, w⟫)
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m) (hQ : IsSectionProperlySupported Q)
+    (hPQ : (P.restrictScalars ℝ).IsFormalAdjoint (Q.restrictScalars ℝ) μ) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) (u : E x) (w : F x) :
+    ⟪sectionClassicalPrincipalSymbol m P x ξ u, w⟫ =
+      ⟪u, sectionClassicalPrincipalSymbol m Q x ξ w⟫ := by
+  -- Extend `u` and `w` to compactly supported sections `s` and `σ`.
+  obtain ⟨s, rfl, hs, -⟩ := ContMDiffSection.exists_apply_eq_isCompact_tsupport_subset
+    (I := 𝓘(ℝ, CoordinateSpace n)) (F := V) (n := ∞) x u Filter.univ_mem
+  obtain ⟨σ, rfl, hσ, -⟩ := ContMDiffSection.exists_apply_eq_isCompact_tsupport_subset
+    (I := 𝓘(ℝ, CoordinateSpace n)) (F := W) (n := ∞) x w Filter.univ_mem
+  -- The scalar operators `f ↦ ⟪σ, P (f s)⟫_ℂ` and `g ↦ ⟪s, Q (g σ)⟫_ℂ` are formal adjoints of each
+  -- other, so their principal symbols at `ξ` are complex conjugate.
+  have h := classicalPrincipalSymbol_eq_conj_of_forall_integral_inner_eq hμ
+    (complexInnerSection_comp_comp_toSpanSingleton_mem hP s hσ)
+    (hQ.comp_comp_toSpanSingleton (fun r y h ↦ by simp [h]) σ)
+    (fun u v _ _ ↦ integral_inner_complexInnerSection_comp_comp_toSpanSingleton_eq hE hF hPQ hs hσ
+      u v) x ξ
+  rw [classicalPrincipalSymbol_complexInnerSection_comp_comp_toSpanSingleton
+      (mem_sectionClassicalPseudodifferentialOperators_of_isFormalAdjoint hμ hE hF hP hQ hPQ) σ hs,
+    classicalPrincipalSymbol_complexInnerSection_comp_comp_toSpanSingleton hP s hσ,
+    conj_extendRCLike_innerₗ (hF x)] at h
+  -- The real inner products are the real parts of the complex pairings.
+  simpa [extendRCLike_innerₗ_apply] using (congrArg Complex.re h).symm
+
+/-- **Formally self-adjoint operators have symmetric principal symbols.** If a classical
+pseudodifferential operator `R : Γ(E) → Γ(E)` of order `m` is its own formal adjoint, for fibre
+inner products invariant under multiplication by `i` and a measure `μ` with a smooth positive
+density, then at every covector `ξ ∈ T*ₓM` its principal symbol `σ_m(R)(x, ξ)` is a symmetric
+endomorphism of `E_x`. -/
+theorem isSymmetric_sectionClassicalPrincipalSymbol_of_isFormalAdjoint
+    [FiniteDimensional ℂ V] [MeasurableSpace M] [OpensMeasurableSpace M]
+    {μ : Measure M} [IsFiniteMeasureOnCompacts μ]
+    (hμ : HasSmoothPositiveDensity (CoordinateSpace n) μ)
+    (hE : ∀ x (v w : E x), ⟪Complex.I • v, Complex.I • w⟫ = ⟪v, w⟫)
+    {R : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯}
+    (hR : R ∈ sectionClassicalPseudodifferentialOperators m)
+    (hRR : (R.restrictScalars ℝ).IsFormalAdjoint (R.restrictScalars ℝ) μ) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    ((sectionClassicalPrincipalSymbol m R x ξ).restrictScalars ℝ).IsSymmetric := fun u v ↦
+  inner_sectionClassicalPrincipalSymbol_eq_of_isFormalAdjoint hμ hE hE hR
+    (mem_sectionClassicalPseudodifferentialOperators_iff.1 hR).1 hRR x ξ u v
+
+/-- The formal adjoint of an operator elliptic at `x` is elliptic at `x`: a linear map between
+fibres of finite dimension is bijective when its adjoint is. -/
+private theorem IsSectionClassicalEllipticAt.of_isFormalAdjoint
+    [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] [MeasurableSpace M] [OpensMeasurableSpace M]
+    {μ : Measure M} [IsFiniteMeasureOnCompacts μ]
+    (hμ : HasSmoothPositiveDensity (CoordinateSpace n) μ)
+    (hE : ∀ x (v w : E x), ⟪Complex.I • v, Complex.I • w⟫ = ⟪v, w⟫)
+    (hF : ∀ x (v w : F x), ⟪Complex.I • v, Complex.I • w⟫ = ⟪v, w⟫)
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m) (hQ : IsSectionProperlySupported Q)
+    (hPQ : (P.restrictScalars ℝ).IsFormalAdjoint (Q.restrictScalars ℝ) μ) {x : M}
+    (hPx : IsSectionClassicalEllipticAt m P x) : IsSectionClassicalEllipticAt m Q x := by
+  refine isSectionClassicalEllipticAt_iff.2 fun ξ hξ ↦ ?_
+  have hA := isSectionClassicalEllipticAt_iff.1 hPx ξ hξ
+  have := ((trivializationAt V E x).continuousLinearEquivAt ℂ x
+    (FiberBundle.mem_baseSet_trivializationAt V E x)).toLinearEquiv.symm.finiteDimensional
+  have := ((trivializationAt W F x).continuousLinearEquivAt ℂ x
+    (FiberBundle.mem_baseSet_trivializationAt W F x)).toLinearEquiv.symm.finiteDimensional
+  -- `σ_m(Q)(x, ξ)` is injective because `σ_m(P)(x, ξ)` is surjective, and the fibres have the
+  -- same dimension because `σ_m(P)(x, ξ)` is bijective.
+  have hinj : Function.Injective (sectionClassicalPrincipalSymbol m Q x ξ) := by
+    refine (injective_iff_map_eq_zero _).2 fun w hw ↦ ?_
+    obtain ⟨u, rfl⟩ := hA.2 w
+    have h := inner_sectionClassicalPrincipalSymbol_eq_of_isFormalAdjoint hμ hE hF hP hQ hPQ x ξ u
+      (sectionClassicalPrincipalSymbol m P x ξ u)
+    rwa [hw, inner_zero_right, inner_self_eq_zero] at h
+  exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+    (LinearEquiv.ofBijective _ hA).finrank_eq.symm).1 hinj⟩
+
+/-- **The formal adjoint of an elliptic operator is elliptic.** Under the hypotheses of
+`TauCeti.mem_sectionClassicalPseudodifferentialOperators_of_isFormalAdjoint`, the formal adjoint
+`Q` of `P` is elliptic at `x` exactly when `P` is, since its principal symbol is the adjoint of
+that of `P` (`TauCeti.inner_sectionClassicalPrincipalSymbol_eq_of_isFormalAdjoint`). -/
+theorem isSectionClassicalEllipticAt_iff_of_isFormalAdjoint
+    [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] [MeasurableSpace M] [OpensMeasurableSpace M]
+    {μ : Measure M} [IsFiniteMeasureOnCompacts μ]
+    (hμ : HasSmoothPositiveDensity (CoordinateSpace n) μ)
+    (hE : ∀ x (v w : E x), ⟪Complex.I • v, Complex.I • w⟫ = ⟪v, w⟫)
+    (hF : ∀ x (v w : F x), ⟪Complex.I • v, Complex.I • w⟫ = ⟪v, w⟫)
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m) (hQ : IsSectionProperlySupported Q)
+    (hPQ : (P.restrictScalars ℝ).IsFormalAdjoint (Q.restrictScalars ℝ) μ) (x : M) :
+    IsSectionClassicalEllipticAt m Q x ↔ IsSectionClassicalEllipticAt m P x :=
+  ⟨IsSectionClassicalEllipticAt.of_isFormalAdjoint hμ hF hE
+      (mem_sectionClassicalPseudodifferentialOperators_of_isFormalAdjoint hμ hE hF hP hQ hPQ)
+      (mem_sectionClassicalPseudodifferentialOperators_iff.1 hP).1 hPQ.symm,
+    IsSectionClassicalEllipticAt.of_isFormalAdjoint hμ hE hF hP hQ hPQ⟩
+
+/-- **The formal adjoint of an elliptic operator is elliptic.** Under the hypotheses of
+`TauCeti.mem_sectionClassicalPseudodifferentialOperators_of_isFormalAdjoint`, the formal adjoint
+`Q` of `P` is elliptic exactly when `P` is. -/
+theorem isSectionClassicalElliptic_iff_of_isFormalAdjoint
+    [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] [MeasurableSpace M] [OpensMeasurableSpace M]
+    {μ : Measure M} [IsFiniteMeasureOnCompacts μ]
+    (hμ : HasSmoothPositiveDensity (CoordinateSpace n) μ)
+    (hE : ∀ x (v w : E x), ⟪Complex.I • v, Complex.I • w⟫ = ⟪v, w⟫)
+    (hF : ∀ x (v w : F x), ⟪Complex.I • v, Complex.I • w⟫ = ⟪v, w⟫)
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m) (hQ : IsSectionProperlySupported Q)
+    (hPQ : (P.restrictScalars ℝ).IsFormalAdjoint (Q.restrictScalars ℝ) μ) :
+    IsSectionClassicalElliptic m Q ↔ IsSectionClassicalElliptic m P := by
+  simp only [isSectionClassicalElliptic_iff,
+    isSectionClassicalEllipticAt_iff_of_isFormalAdjoint hμ hE hF hP hQ hPQ]
+
 
 end Adjoint
 
