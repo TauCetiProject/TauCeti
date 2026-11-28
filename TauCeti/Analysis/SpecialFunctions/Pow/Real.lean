@@ -195,6 +195,8 @@ with the corresponding integral of `q`-th powers.
   `1 ≤ r` and `0 ≤ y, z ≤ n`, the step turning an `Lʳ` trace inequality into a linear bound.
 * `Finsupp.prod_pow_rpow`: `(μ.prod (c · ^ ·)) ^ a = μ.prod fun i k ↦ (c i ^ a) ^ k` for `c`
   nonnegative on `μ.support`.
+* `TauCeti.continuousOn_rpow_mul_comp_add`: continuity on `(0, ∞)` of
+  `t ↦ t ^ q * g (c * t ^ p + φ)` for any continuous `g : ℝ → ℝ`.
 -/
 
 public section
@@ -773,5 +775,14 @@ theorem rpow_mul_pow_le_rpow_of_log_le {x q B d e : ℝ} {k : ℕ} (hx : 1 ≤ x
   rw [← Real.rpow_natCast, Real.rpow_def_of_pos hx₀, Real.rpow_def_of_pos hq,
     ← Real.exp_add, Real.rpow_def_of_pos hx₀, Real.exp_le_exp]
   nlinarith [mul_le_mul_of_nonpos_right hk hqlog, mul_le_mul_of_nonneg_right he hlog]
+
+/-- Continuity on `(0, ∞)` of a power-weighted composition `t ↦ t ^ q * g (c * t ^ p + φ)`
+for any continuous function `g : ℝ → ℝ`. -/
+theorem continuousOn_rpow_mul_comp_add {c p q φ : ℝ} {g : ℝ → ℝ} (hg : Continuous g) :
+    ContinuousOn (fun t : ℝ ↦ t ^ q * g (c * t ^ p + φ)) (Set.Ioi 0) :=
+  (ContinuousOn.rpow_const continuousOn_id fun _ ht ↦ Or.inl (Set.mem_Ioi.mp ht).ne').mul
+    (hg.comp_continuousOn ((continuousOn_const.mul
+      (ContinuousOn.rpow_const continuousOn_id fun _ ht ↦ Or.inl (Set.mem_Ioi.mp ht).ne')).add
+      continuousOn_const))
 
 end TauCeti
