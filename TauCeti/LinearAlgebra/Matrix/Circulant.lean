@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.LinearAlgebra.Matrix.Circulant
 import Mathlib.Data.ZMod.Basic
+import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
 
 /-!
 # The commutant of the cyclic shift
@@ -20,8 +21,10 @@ with the cyclic shift are exactly the circulant matrices. The vector `circulant 
 cyclic convolution of `v` and `x`, so the linear maps of `ZMod N → α` given by matrices that
 commute with the cyclic shift are exactly the convolutions.
 
-The coefficients lie in any `NonAssocSemiring`: the shift has entries `0` and `1` only, so no
-commutativity of the coefficients is needed.
+The commutant results hold over any `NonAssocSemiring`, the entry lemmas over any
+`NonUnitalNonAssocSemiring`, and the characterization of circulant matrices needs no hypothesis on
+the coefficients. The shift has entries `0` and `1` only, so no commutativity of the coefficients
+is needed.
 
 ## Main results
 
@@ -106,10 +109,9 @@ theorem commute_circulant_single_iff_of_zmultiples_eq_top {g : n}
     (hg : AddSubgroup.zmultiples g = ⊤) (M : Matrix n n α) :
     Commute M (circulant (Pi.single g 1)) ↔ ∃ v, M = circulant v := by
   -- A cyclic group is commutative.
-  have hcomm (x y : n) : x + y = y + x := by
-    obtain ⟨a, rfl⟩ := AddSubgroup.mem_zmultiples_iff.1 (hg ▸ AddSubgroup.mem_top x)
-    obtain ⟨b, rfl⟩ := AddSubgroup.mem_zmultiples_iff.1 (hg ▸ AddSubgroup.mem_top y)
-    exact (AddCommute.zsmul_zsmul_self g a b).eq
+  have : IsAddCyclic n :=
+    ⟨g, fun x => AddSubgroup.mem_zmultiples_iff.1 (hg ▸ AddSubgroup.mem_top x)⟩
+  have hcomm (x y : n) : x + y = y + x := (IsAddCyclic.addCommGroup (α := n)).add_comm x y
   rw [commute_circulant_single_iff_apply_add_add, exists_eq_circulant_iff]
   refine ⟨fun h i j k => ?_, fun h i j => by rw [hcomm g i, hcomm g j, h]⟩
   -- The translations under which the entries of `M` are invariant form a subgroup, which
