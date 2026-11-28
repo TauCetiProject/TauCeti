@@ -13,14 +13,14 @@ public import TauCeti.Analysis.Normed.Ring.Basic
 /-!
 # Normed star algebra perturbation and symmetrization bounds
 
-Elementary norm estimates for self-adjoint symmetrization (`selfAdjointPart`), skew-adjointness
+Elementary norm estimates for self-adjoint symmetrization (`selfAdjointPart`), self-adjointness
 defects under perturbation, and star-product defects in seminormed star rings and star modules.
 
 ## Main results
 
 * `TauCeti.norm_selfAdjointPart_sub`, `TauCeti.norm_selfAdjointPart_mul_self_sub_le`:
   distance and idempotency-defect bounds for `selfAdjointPart ℝ e`.
-* `TauCeti.norm_sub_star_le_of_norm_sub`: skew-adjointness defect under perturbation.
+* `TauCeti.norm_sub_star_le_of_norm_sub`: self-adjointness defect under perturbation.
 * `TauCeti.norm_mul_star_sub_mul_star_le`, `TauCeti.norm_star_mul_sub_star_mul_le`:
   starred-product perturbation bounds.
 * `TauCeti.norm_star_mul_self_sub_le`, `TauCeti.norm_star_mul_self_sub_lt_of_norm_le`:
@@ -62,7 +62,7 @@ theorem norm_selfAdjointPart_mul_self_sub_le {A : Type*} [NonUnitalSeminormedRin
     linarith [norm_add_le (e * e - e) (star (e * e - e)), norm_star (e * e - e)]
   · rw [norm_smul, Real.norm_of_nonneg (by positivity), one_div, sq]; gcongr; exact norm_mul_le _ _
 
-/-- Skew-adjointness defect under perturbation:
+/-- Self-adjointness defect under perturbation:
 `‖y - star y‖ ≤ ‖x - star x‖ + 2 * ‖y - x‖`. -/
 theorem norm_sub_star_le_of_norm_sub {A : Type*} [SeminormedAddCommGroup A] [StarAddMonoid A]
     [NormedStarGroup A] (x y : A) :

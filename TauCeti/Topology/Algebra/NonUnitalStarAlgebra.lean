@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Module.ClosedSubmodule
 public import Mathlib.Topology.Algebra.NonUnitalStarAlgebra
-public import TauCeti.Algebra.Star.Subalgebra
+public import TauCeti.Algebra.Star.NonUnitalSubalgebra
 public import TauCeti.Algebra.Star.Opposite
 
 /-!

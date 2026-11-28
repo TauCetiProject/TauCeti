@@ -46,10 +46,12 @@ public section
 
 open Function
 
-/-- Star projections `p ≤ q` in a star-ordered C⋆-algebra with `‖p - q‖ < 1` are equal. -/
-theorem IsStarProjection.eq_of_le_of_norm_sub_lt_one {A : Type*} [NonUnitalCStarAlgebra A]
-    [PartialOrder A] [StarOrderedRing A] {p q : A} (hp : IsStarProjection p)
-    (hq : IsStarProjection q) (hle : p ≤ q) (h : ‖p - q‖ < 1) : p = q :=
+/-- Star projections `p ≤ q` in a star-ordered normed star ring with proper star and `‖p - q‖ < 1`
+are equal. -/
+theorem IsStarProjection.eq_of_le_of_norm_sub_lt_one {A : Type*} [NonUnitalNormedRing A]
+    [StarRing A] [IsProperStar A] [PartialOrder A] [StarOrderedRing A] {p q : A}
+    (hp : IsStarProjection p) (hq : IsStarProjection q) (hle : p ≤ q) (h : ‖p - q‖ < 1) :
+    p = q :=
   hp.eq_of_mul_eq_left_of_norm_sub_lt_one hq ((hp.le_iff_mul_eq_left hq).mp hle) h
 
 namespace TauCeti
