@@ -36,7 +36,7 @@ weights `e.q` summing to `1` on each block. Its linear map `e.toLinearMap`,
 simplex on `Fin n` and `simplexTangent m` into `simplexTangent n`; being linear, it is its own
 derivative (`CongruentEmbedding.hasFDerivAt_toLinearMap`). Every permutation of `Fin m`, with
 unit weights, is a congruent embedding (`CongruentEmbedding.ofPerm`), and every congruent
-self-embedding with unit weights arises in this way (`CongruentEmbedding.exists_eq_ofPerm`).
+self-embedding arises in this way (`CongruentEmbedding.exists_eq_ofPerm`).
 
 ## Main definitions
 
@@ -408,12 +408,24 @@ theorem toLinearMap_ofPerm_apply (σ : Equiv.Perm (Fin m)) (p : Fin m → ℝ) :
   ext j
   simp [ofPerm]
 
-/-- Every congruent self-embedding with unit weights is the embedding of a permutation: its
-block map is a surjection of `Fin m` onto itself, hence a bijection. -/
-theorem exists_eq_ofPerm (e : CongruentEmbedding m m) (he : e.q = 1) :
-    ∃ σ : Equiv.Perm (Fin m), e = ofPerm σ := by
-  refine ⟨Equiv.ofBijective e.block ⟨Finite.injective_iff_surjective.2 e.surjective,
-    e.surjective⟩, ?_⟩
+/-- The block map of a congruent self-embedding is a surjection of `Fin m` onto itself, hence
+injective. -/
+theorem injective_block (e : CongruentEmbedding m m) : Function.Injective e.block :=
+  Finite.injective_iff_surjective.2 e.surjective
+
+/-- A congruent self-embedding has unit weights: each of its blocks is a single coordinate. -/
+theorem q_eq_one (e : CongruentEmbedding m m) : e.q = 1 := by
+  funext j
+  have h : univ.filter (fun k ↦ e.block k = e.block j) = {j} := by
+    ext k
+    simp [e.injective_block.eq_iff]
+  simpa [h] using e.sum_q (e.block j)
+
+/-- Every congruent self-embedding is the embedding of a permutation: its block map is a
+bijection of `Fin m` and its weights are `1`. -/
+theorem exists_eq_ofPerm (e : CongruentEmbedding m m) : ∃ σ : Equiv.Perm (Fin m), e = ofPerm σ := by
+  refine ⟨Equiv.ofBijective e.block ⟨e.injective_block, e.surjective⟩, ?_⟩
+  have he := e.q_eq_one
   cases e
   subst he
   rfl
