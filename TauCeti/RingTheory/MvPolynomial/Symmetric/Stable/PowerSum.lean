@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum.Elementary
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Stable.Generators
 import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.RingTheory.GradedAlgebra.DirectSum
-import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Basic
 
 /-!
 # The rational power-sum presentation of the symmetric functions

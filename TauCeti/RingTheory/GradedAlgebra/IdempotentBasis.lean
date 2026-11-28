@@ -11,7 +11,7 @@ import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 import TauCeti.LinearAlgebra.LinearIndependent.BaseChange
 import TauCeti.LinearAlgebra.Matrix.Idempotent.Basic
 import TauCeti.LinearAlgebra.Matrix.Triangular
-import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.OrderedWeight
 
 /-!
 # Homogeneous bases of images of graded idempotents
@@ -313,7 +313,9 @@ theorem exists_weightedHomogeneous_basis_range_idempotent {σ : Type*} (w : σ �
   have := (MvPolynomial.WeightedHomogeneousSubmodule.gradedMonoid (R := R) (w := w)).toGradedOne
   exists_homogeneous_basis_range_idempotent _
     (fun _ hn ↦ MvPolynomial.weightedHomogeneousSubmodule_eq_bot_of_neg (fun i ↦ (hw i).le) hn)
-    (fun _ ↦ MvPolynomial.mem_bot_of_mem_weightedHomogeneousSubmodule_zero hw)
+    (fun _ hx ↦ by
+      rw [MvPolynomial.weightedHomogeneousSubmodule_zero_eq_range R hw] at hx
+      exact Algebra.mem_bot.mpr (by simpa [Algebra.linearMap_apply] using hx))
     (MvPolynomial.C_injective σ R) s p hp hhom
 
 end TauCeti

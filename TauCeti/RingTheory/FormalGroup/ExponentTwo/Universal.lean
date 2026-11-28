@@ -16,7 +16,7 @@ public import TauCeti.RingTheory.FormalGroup.ExponentTwo.Iso
 -- homogeneous polynomials in graded rings.
 import TauCeti.Data.Nat.Pow
 import TauCeti.RingTheory.FormalGroup.ExponentTwo.Graded
-import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Basic
 
 /-!
 # The universal formal group law of exponent two

@@ -8,7 +8,7 @@ module
 public import Mathlib.Data.NNRat.BigOperators
 public import Mathlib.Algebra.Polynomial.RingDivision
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
-public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Basic
 public import TauCeti.Data.Finsupp.ENNReal
 public import TauCeti.Data.Finsupp.Weight
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.Taylor

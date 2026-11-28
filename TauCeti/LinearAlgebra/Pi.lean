@@ -98,6 +98,8 @@ weights.
   coordinate.
 * `TauCeti.exists_isRegular_neg_single_add_single_sub_single_add_single`: a negative coordinate
   sum and a coordinate sum differ regularly at some coordinate.
+* `TauCeti.idempotent_of_apply_eq_smul`: a rank-one coordinate-evaluation map `v ↦ v i₀ • w`
+  with `w i₀ = 1` is idempotent.
 * `TauCeti.coordEq`, `TauCeti.coordEq_eq_ker`, `TauCeti.mem_coordEq_iff`,
   `TauCeti.eq_or_eq_of_coordEq_eq`, and `TauCeti.injective_of_forall_proj_sub_proj_ne_zero`: the
   coordinate-equality hyperplane `{v | v a = v b}` and coordinate-difference injectivity.
@@ -666,6 +668,13 @@ public theorem exists_isRegular_neg_single_add_single_sub_single_add_single
   · exact ⟨i, by convert hneg2 using 1; norm_num [hai, hbi, hij]⟩
   · exact ⟨i, by convert hneg2 using 1; norm_num [hai, hbi, hij]⟩
   · exact ⟨i, by simpa [hai, hbi, hij] using h1⟩
+
+/-- Any `A`-linear endomorphism `p : (I → A) →ₗ[A] (I → A)` of the form `p v = v i₀ • w` with
+`w i₀ = 1` is idempotent. -/
+public theorem idempotent_of_apply_eq_smul {A I : Type*} [Semiring A] {p : (I → A) →ₗ[A] (I → A)}
+    (i₀ : I) {w : I → A} (hp : ∀ v, p v = v i₀ • w) (hw₀ : w i₀ = 1) : p.comp p = p := by
+  ext v j
+  simp [hp, hw₀]
 
 section MatrixCoordinates
 

@@ -9,9 +9,8 @@ public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.AbelianImages
-public import TauCeti.Algebra.Category.GradedModuleCat.Basic
+public import TauCeti.Algebra.Category.GradedModuleCat.Submodule
 public import TauCeti.Algebra.Module.GradedModule.DirectSum
-public import TauCeti.Algebra.Module.GradedModule.Quotient
 
 /-!
 # The category of graded modules is abelian
@@ -83,23 +82,18 @@ section Kernel
 
 /-- The kernel of a morphism of graded modules: the kernel of the underlying linear map, with
 the grading of the source. -/
-noncomputable abbrev kernelObj : GradedModuleCat.{v} 𝒜 where
-  carrier := LinearMap.ker f.hom
-  grading := M.grading.ker f.isHomogeneous
-  gradedSMul := ⟨fun {_ _} _ _ ha hz ↦ by
-    rw [InternalGrading.mem_ker_piece] at hz ⊢
-    exact SetLike.GradedSMul.smul_mem (B := M.grading.piece) ha hz⟩
+noncomputable abbrev kernelObj : GradedModuleCat.{v} 𝒜 :=
+  M.submoduleObj (LinearMap.ker f.hom) f.isHomogeneous.isHomogeneous_ker
 
 /-- The inclusion of the kernel of a morphism of graded modules. -/
 @[expose]
 noncomputable def kernelι : kernelObj f ⟶ M :=
-  ofHom (M := kernelObj f) (LinearMap.ker f.hom).subtype <|
-    LinearMap.isHomogeneous_def.2 fun _ _ hz ↦ by simpa [kernelObj] using hz
+  M.submoduleι (LinearMap.ker f.hom) f.isHomogeneous.isHomogeneous_ker
 
 /-- The underlying linear map of the kernel inclusion is the submodule inclusion. -/
 @[simp]
 theorem hom_kernelι : (kernelι f).hom = (LinearMap.ker f.hom).subtype :=
-  rfl
+  M.hom_submoduleι _ _
 
 @[reassoc (attr := simp)]
 theorem kernelι_comp : kernelι f ≫ f = 0 :=
@@ -118,17 +112,15 @@ theorem hom_kernelCone_ι : (kernelCone f).ι.hom = (LinearMap.ker f.hom).subtyp
 @[simp]
 theorem mem_kernelCone_pt_piece_iff {p : ℤ} {z : (kernelCone f).pt} :
     z ∈ (kernelCone f).pt.grading.piece p ↔ (kernelCone f).ι.hom z ∈ M.grading.piece p :=
-  InternalGrading.mem_ker_piece _ _
+  mem_submoduleObj_piece_iff M _ _
 
 /-- The kernel of a morphism of graded modules is a limit. -/
 noncomputable def kernelIsLimit : IsLimit (kernelCone f) :=
   KernelFork.IsLimit.ofι (kernelι f) (kernelι_comp f)
-    (fun g hg ↦ ofHom (N := kernelObj f)
-      (LinearMap.codRestrict _ g.hom fun x ↦
-        LinearMap.mem_ker.2 (by simpa using LinearMap.congr_fun (congr_arg Hom.hom hg) x))
-      (LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
-        simpa [kernelObj] using map_mem g hx))
-    (fun _ _ ↦ rfl) fun g hg m hm ↦ by subst hm; rfl
+    (fun g hg ↦ submoduleCodRestrict (LinearMap.ker f.hom) f.isHomogeneous.isHomogeneous_ker g
+      fun x ↦ LinearMap.mem_ker.2 (by simpa using LinearMap.congr_fun (congr_arg Hom.hom hg) x))
+    (fun _ _ ↦ submoduleCodRestrict_comp_submoduleι ..)
+    fun _ _ _ hm ↦ eq_submoduleCodRestrict_of_comp_submoduleι _ _ _ hm
 
 instance : HasKernels (GradedModuleCat.{v} 𝒜) :=
   ⟨fun f ↦ HasLimit.mk ⟨_, kernelIsLimit f⟩⟩

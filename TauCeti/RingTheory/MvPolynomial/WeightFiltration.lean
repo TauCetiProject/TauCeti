@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.FilteredAlgebra.Basic
 public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.Basic
-public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Basic
 
 /-!
 # The weight filtration of a polynomial ring and its Rees algebra

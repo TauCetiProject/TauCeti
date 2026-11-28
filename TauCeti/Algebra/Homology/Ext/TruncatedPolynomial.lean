@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Concentrated
-public import TauCeti.Algebra.Category.GradedModuleCat.Free
+public import TauCeti.Algebra.Category.GradedModuleCat.Free.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.Head
 public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.MinimalResolution

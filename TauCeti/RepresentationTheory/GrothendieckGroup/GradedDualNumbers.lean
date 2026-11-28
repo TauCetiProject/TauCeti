@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughProjectives
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Matrix
-public import TauCeti.Algebra.Category.GradedModuleCat.Free
+public import TauCeti.Algebra.Category.GradedModuleCat.Free.Basic
 public import TauCeti.Algebra.DualNumber.Basic
 public import TauCeti.Algebra.DualNumber.Grading
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.ModuleResolution

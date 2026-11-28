@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.MvPolynomial.Block.Homogenize
 public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
 public import TauCeti.RingTheory.MvPolynomial.MultiHomogeneous
 public import TauCeti.RingTheory.MvPolynomial.RestrictSupport
-import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Basic
 
 /-!
 # Dehomogenization of two-coordinate blocks

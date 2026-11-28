@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.MvPolynomial.EulerIdentity
 public import TauCeti.Geometry.Variational.PolynomialJet.Euler
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Derivation
 import TauCeti.Data.Finsupp.Multiset
-import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Basic
 
 /-!
 # Field degree and the nonlinearity of Euler expressions

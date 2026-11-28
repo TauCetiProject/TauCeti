@@ -6,14 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.GradedAlgebra.Basic
+import TauCeti.Algebra.DirectSum.Supported
 
 /-!
 # Basic results on graded algebras
 
 For a `ℤ`-graded algebra concentrated in nonnegative degrees, the degree-zero component of a
 product is the product of the degree-zero components, as for gradings by a canonically ordered
-monoid (`GradedRing.projZeroRingHom`). Consequently an idempotent with no degree-zero component
-vanishes: its powers have no components below any given degree.
+monoid (`GradedRing.projZeroRingHom`). Bundling `a ↦ decompose 𝒜 a 0` therefore gives an
+`R`-algebra homomorphism `projZeroAlgHom : A →ₐ[R] 𝒜 0` vanishing on positive-degree elements.
+Consequently an idempotent with no degree-zero component vanishes: its powers have no components
+below any given degree.
 
 In any graded ring, multiplication by a homogeneous element `a` of degree `i` shifts every
 homogeneous component by `i`. If `a` is moreover left regular, then the components of `b` can be
@@ -22,6 +25,11 @@ read off from those of `a * b`; in particular, if `a * b` is homogeneous of degr
 that divides it produces a homogeneous polynomial of one degree less. Pairing against a functional
 that vanishes off a single degree `d` sees, against an element of degree `l`, only the component
 of degree `i` with `i + l = d`.
+
+## Main definitions
+
+* `TauCeti.GradedAlgebra.projZeroAlgHom`: degree-zero projection `A →ₐ[R] 𝒜 0` for a nonnegatively
+  `ℤ`-graded `R`-algebra.
 
 ## Main results
 
@@ -50,7 +58,7 @@ public section
 
 namespace TauCeti.GradedAlgebra
 
-open DirectSum
+open _root_.DirectSum
 
 section Mul
 
@@ -101,6 +109,38 @@ theorem coe_decompose_mul_zero_of_nonneg (hneg : ∀ p < 0, 𝒜 p = ⊥) (x y :
         rcases eq_or_ne i 0 with rfl | h'
         · rw [decompose_of_mem_ne 𝒜 hc' (by omega), mul_zero]
         · rw [decompose_of_mem_ne 𝒜 hc h', zero_mul]
+
+/-- Projection onto the degree-zero subalgebra `𝒜 0` of a nonnegatively `ℤ`-graded `R`-algebra.
+This is the `ℤ`-graded algebra counterpart of `GradedRing.projZeroRingHom`. -/
+noncomputable def projZeroAlgHom (hneg : ∀ i < 0, 𝒜 i = ⊥) : A →ₐ[R] 𝒜 0 where
+  toFun a := decompose 𝒜 a 0
+  map_one' := Subtype.ext (decompose_of_mem_same 𝒜 SetLike.GradedOne.one_mem)
+  map_zero' := Subtype.ext (by simp)
+  map_add' a b := Subtype.ext (by simp)
+  map_mul' x y := Subtype.ext (coe_decompose_mul_zero_of_nonneg hneg x y)
+  commutes' c := Subtype.ext <| by
+    simpa using decompose_of_mem_same 𝒜 (SetLike.algebraMap_mem_graded 𝒜 c)
+
+/-- Applying `projZeroAlgHom` extracts the degree-zero component `decompose 𝒜 a 0`. -/
+@[simp]
+theorem projZeroAlgHom_apply (hneg : ∀ i < 0, 𝒜 i = ⊥) (a : A) :
+    projZeroAlgHom hneg a = decompose 𝒜 a 0 :=
+  (rfl)
+
+/-- The underlying element of `projZeroAlgHom hneg a` is the degree-zero component of `a`. -/
+theorem coe_projZeroAlgHom_apply (hneg : ∀ i < 0, 𝒜 i = ⊥) (a : A) :
+    (projZeroAlgHom hneg a : A) = decompose 𝒜 a 0 :=
+  (rfl)
+
+/-- `projZeroAlgHom` restricts to the identity on `𝒜 0`. -/
+theorem projZeroAlgHom_apply_coe (hneg : ∀ i < 0, 𝒜 i = ⊥) (a : 𝒜 0) :
+    projZeroAlgHom hneg (a : A) = a :=
+  Subtype.ext (decompose_of_mem_same 𝒜 a.property)
+
+/-- Homogeneous elements of strictly positive degree map to zero under `projZeroAlgHom`. -/
+theorem projZeroAlgHom_eq_zero_of_mem_pos (hneg : ∀ i < 0, 𝒜 i = ⊥) {i : ℤ} (hi : 0 < i)
+    {a : A} (ha : a ∈ 𝒜 i) : projZeroAlgHom hneg a = 0 :=
+  Subtype.ext (decompose_of_mem_ne 𝒜 ha (ne_of_gt hi))
 
 /-- **An idempotent with no degree-zero component vanishes** in nonnegative degrees. -/
 theorem eq_zero_of_isIdempotentElem_of_decompose_zero (hneg : ∀ p < 0, 𝒜 p = ⊥) {f : A}

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Ideal
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.ProjectiveBasis
-import TauCeti.Algebra.Category.GradedModuleCat.Free
+import TauCeti.Algebra.Category.GradedModuleCat.Free.Basic
 import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.Head
 import TauCeti.CategoryTheory.Preadditive.Indecomposable
 import TauCeti.CategoryTheory.ObjectProperty.Retract

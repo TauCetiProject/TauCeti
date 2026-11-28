@@ -12,7 +12,7 @@ public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.RingTheory.FormalGroup.BaseChange
 public import TauCeti.RingTheory.FormalGroup.Rescale.Basic
 public import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
-public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Basic
 import TauCeti.RingTheory.FormalGroup.Basic
 
 /-!

@@ -10,6 +10,9 @@ public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.Converse
 public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.Simple
 public import TauCeti.Algebra.Module.GradedModule.Nakayama
 public import TauCeti.RingTheory.SimpleModule.Basic
+import TauCeti.Algebra.Module.GradedModule.PieceQuotient
+import TauCeti.RingTheory.GradedAlgebra.Basic
+import TauCeti.RingTheory.GradedAlgebra.PositivePart
 
 /-!
 # Minimal graded projective surjections and resolutions
@@ -154,22 +157,15 @@ degree-zero multiple of that generator. -/
 private theorem exists_smul_coverGen_sub_mem (j : J) (a : A) :
     ∃ c : SetLike.GradeZero.subalgebra 𝒜, a • coverGen he₀ d j - c • coverGen he₀ d j ∈
       (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k (coverObj he₀ d)) := by
-  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
-  | zero => exact ⟨0, by simp⟩
-  | add a b ha hb =>
-    obtain ⟨c, hc⟩ := ha
-    obtain ⟨c', hc'⟩ := hb
-    exact ⟨c + c', by simpa [add_smul, sub_add_sub_comm] using add_mem hc hc'⟩
-  | @homogeneous r a =>
-    obtain ⟨a, ha⟩ := a
-    rcases lt_trichotomy r 0 with hr | rfl | hr
-    · rw [hneg r hr, Submodule.mem_bot] at ha
-      exact ⟨0, by simp [ha]⟩
-    · exact ⟨⟨a, ha⟩, by simp [Subalgebra.smul_def]⟩
-    · have hmem : a ∈ ⨆ (i : ℤ) (_ : 0 < i), 𝒜 i :=
-        Submodule.mem_iSup_of_mem r (Submodule.mem_iSup_of_mem (i := hr) ha)
-      have h := Submodule.smul_mem_smul hmem (Submodule.mem_top (R := k) (x := coverGen he₀ d j))
-      exact ⟨0, by simpa using h⟩
+  let c := GradedAlgebra.projZeroAlgHom hneg a
+  refine ⟨⟨(c : A), c.property⟩, ?_⟩
+  have hmem : a - (c : A) ∈ positivePart 𝒜 := by
+    rw [← GradedAlgebra.projZeroAlgHom_eq_zero_iff hneg, map_sub,
+      GradedAlgebra.projZeroAlgHom_apply_coe hneg c, sub_self]
+  have hmem' : a - (c : A) ∈ ⨆ (i : ℤ) (_ : 0 < i), 𝒜 i :=
+    (positivePart_le_iff.mpr fun i hi ↦ le_iSup₂ (f := fun (i : ℤ) (_ : 0 < i) ↦ 𝒜 i) i hi) hmem
+  simpa [Subalgebra.smul_def, sub_smul] using
+    Submodule.smul_mem_smul hmem' (Submodule.mem_top (R := k) (x := coverGen he₀ d j))
 
 include hneg he in
 /-- Modulo the positive-degree action, every element of the cover is a combination of its
@@ -205,10 +201,8 @@ private theorem mem_positive_smul_top_of_coverLift_eq_zero {M : GradedModuleCat.
   obtain ⟨c, hc⟩ := exists_sub_linearCombination_mem hneg he he₀ d x
   set π := (coverLift he₀ d m hm).hom.restrictScalars (SetLike.GradeZero.subalgebra 𝒜)
   have hmap : π (x - Finsupp.linearCombination _ (coverGen he₀ d) c) ∈
-      (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) := by
-    refine Submodule.smul_induction_on hc (fun a ha y _ => ?_) (fun y z hy hz => ?_)
-    · simpa [π] using Submodule.smul_mem_smul ha (Submodule.mem_top (R := k) (x := π y))
-    · simpa only [map_add] using add_mem hy hz
+      (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) :=
+    InternalGrading.map_mem_positive_smul_top (coverLift he₀ d m hm).hom hc
   have hlc : π (Finsupp.linearCombination _ (coverGen he₀ d) c) =
       Finsupp.linearCombination _ m c := by
     rw [Finsupp.apply_linearCombination]
@@ -262,68 +256,6 @@ section Generators
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [GradedAlgebra 𝒜]
 
-/-- The homogeneous piece `Mₚ`, as a module over the degree-zero subalgebra. -/
-private def pieceSubmodule (M : GradedModuleCat.{v} 𝒜) (p : ℤ) :
-    Submodule (SetLike.GradeZero.subalgebra 𝒜) M where
-  __ := M.grading.piece p
-  smul_mem' c x hx := by
-    have hx : x ∈ M.grading.piece p := hx
-    rw [Subalgebra.smul_def]
-    simpa using SetLike.GradedSMul.smul_mem (A := 𝒜) c.property hx
-
-private theorem mem_pieceSubmodule {M : GradedModuleCat.{v} 𝒜} {p : ℤ} {x : M} :
-    x ∈ pieceSubmodule M p ↔ x ∈ M.grading.piece p :=
-  Iff.rfl
-
-/-- The positive-degree action `A₊ M`, as a module over the degree-zero subalgebra. -/
-private def positiveSubmodule (M : GradedModuleCat.{v} 𝒜) :
-    Submodule (SetLike.GradeZero.subalgebra 𝒜) M where
-  __ := (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)
-  smul_mem' c x hx := by
-    rw [Subalgebra.smul_def]
-    exact InternalGrading.smul_mem_positive_smul_top c.property hx
-
-private theorem mem_positiveSubmodule {M : GradedModuleCat.{v} 𝒜} {x : M} :
-    x ∈ positiveSubmodule M ↔ x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) :=
-  Iff.rfl
-
-/-- The homogeneous piece `(M / A₊ M)ₚ`, as a module over the degree-zero subalgebra. -/
-private abbrev PieceQuotient (M : GradedModuleCat.{v} 𝒜) (p : ℤ) :=
-  pieceSubmodule M p ⧸ (positiveSubmodule M).comap (pieceSubmodule M p).subtype
-
-/-- Projection to the degree-`p` piece of `M / A₊ M`. -/
-private def pieceQuotientMap (M : GradedModuleCat.{v} 𝒜) (p : ℤ) :
-    M →ₗ[SetLike.GradeZero.subalgebra 𝒜] PieceQuotient M p :=
-  Submodule.mkQ _ ∘ₗ
-    { toFun x := ⟨decompose M.grading.piece x p, (decompose M.grading.piece x p).property⟩
-      map_add' x y := by ext; simp
-      map_smul' c x := by
-        ext
-        -- Multiplication by a degree-zero scalar is homogeneous of degree zero.
-        have hf : LinearMap.IsHomogeneous (Algebra.lsmul k k M (c : A))
-            M.grading.piece M.grading.piece 0 :=
-          LinearMap.isHomogeneous_def.mpr fun q z hz => by
-            simpa [add_comm] using SetLike.GradedSMul.smul_mem (A := 𝒜) c.property hz
-        have h := hf.map_decompose p x
-        rw [add_zero] at h
-        simpa [Subalgebra.smul_def] using h.symm }
-
-private theorem pieceQuotientMap_of_mem {M : GradedModuleCat.{v} 𝒜} {p : ℤ} {x : M}
-    (hx : x ∈ M.grading.piece p) :
-    pieceQuotientMap M p x = Submodule.Quotient.mk ⟨x, mem_pieceSubmodule.mpr hx⟩ := by
-  simp [pieceQuotientMap, decompose_of_mem_same _ hx]
-
-private theorem pieceQuotientMap_of_mem_ne {M : GradedModuleCat.{v} 𝒜} {p q : ℤ} {x : M}
-    (hx : x ∈ M.grading.piece q) (hqp : q ≠ p) : pieceQuotientMap M p x = 0 := by
-  simp [pieceQuotientMap, decompose_of_mem_ne _ hx hqp]
-
-private theorem pieceQuotientMap_eq_zero {M : GradedModuleCat.{v} 𝒜} {p : ℤ} {x : M}
-    (hx : x ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M)) :
-    pieceQuotientMap M p x = 0 := by
-  simp only [pieceQuotientMap, LinearMap.coe_comp, Function.comp_apply, Submodule.mkQ_apply,
-    Submodule.Quotient.mk_eq_zero, Submodule.mem_comap]
-  exact InternalGrading.isHomogeneous_positive_smul_top 𝒜 p hx
-
 variable [IsSemisimpleRing (𝒜 0)]
 
 /-- Homogeneous generators of `M`, each fixed by an idempotent of degree zero, whose images
@@ -343,10 +275,11 @@ private theorem exists_generators (M : GradedModuleCat.{v} 𝒜) :
   have : IsSemisimpleRing (SetLike.GradeZero.subalgebra 𝒜) := ‹IsSemisimpleRing (𝒜 0)›
   -- Decompose each homogeneous piece of `M / A₊ M` into simple submodules, choose a nonzero
   -- element `q` of each, an idempotent `f` with `A₀ f ≅ A₀ q`, and a homogeneous lift of `q`.
+  have := M.gradedSMul
   choose s hs using fun p => IsSemisimpleModule.exists_sSupIndep_sSup_simples_eq_top
-    (SetLike.GradeZero.subalgebra 𝒜) (PieceQuotient M p)
+    (SetLike.GradeZero.subalgebra 𝒜) (M.grading.PieceQuotient 𝒜 p)
   have hne (p : ℤ) (S : s p) :
-      (S : Submodule (SetLike.GradeZero.subalgebra 𝒜) (PieceQuotient M p)) ≠ ⊥ :=
+      (S : Submodule (SetLike.GradeZero.subalgebra 𝒜) (M.grading.PieceQuotient 𝒜 p)) ≠ ⊥ :=
     (isSimpleModule_iff_isAtom.mp ((hs p).2.2 S S.property)).1
   choose q hqS hq0 using fun p (S : s p) => Submodule.exists_mem_ne_zero_of_ne_bot (hne p S)
   -- Each simple summand is spanned by its chosen nonzero element.
@@ -358,15 +291,20 @@ private theorem exists_generators (M : GradedModuleCat.{v} 𝒜) :
     IsSemisimpleRing.exists_isIdempotentElem_smul_eq_zero_iff
       (R := SetLike.GradeZero.subalgebra 𝒜) (q p S)
   choose y hy using fun p (S : s p) => Submodule.Quotient.mk_surjective _ (q p S)
-  let m : (Σ p, s p) → M := fun j => ((f j.1 j.2 • y j.1 j.2 : pieceSubmodule M j.1) : M)
-  have hmq (p : ℤ) (S : s p) : pieceQuotientMap M p (m ⟨p, S⟩) = q p S := by
-    rw [pieceQuotientMap_of_mem (f p S • y p S).property]
+  let m : (Σ p, s p) → M :=
+    fun j => ((f j.1 j.2 • y j.1 j.2 : M.grading.pieceSubmodule 𝒜 j.1) : M)
+  have hmq (p : ℤ) (S : s p) : M.grading.pieceQuotientMap 𝒜 p (m ⟨p, S⟩) = q p S := by
+    rw [InternalGrading.pieceQuotientMap_of_mem
+      (InternalGrading.mem_pieceSubmodule.mp (f p S • y p S).property)]
     simp only [Subtype.coe_eta, Submodule.Quotient.mk_smul, hy, hfq]
-  have hmq_ne {p p' : ℤ} (S : s p') (h : p' ≠ p) : pieceQuotientMap M p (m ⟨p', S⟩) = 0 :=
-    pieceQuotientMap_of_mem_ne (f p' S • y p' S).property h
+  have hmq_ne {p p' : ℤ} (S : s p') (h : p' ≠ p) :
+      M.grading.pieceQuotientMap 𝒜 p (m ⟨p', S⟩) = 0 :=
+    InternalGrading.pieceQuotientMap_of_mem_ne
+      (InternalGrading.mem_pieceSubmodule.mp (f p' S • y p' S).property) h
   refine ⟨Σ p, s p, fun j => (f j.1 j.2 : A), fun j => j.1, m,
     fun j => (hf j.1 j.2).map (SetLike.GradeZero.subalgebra 𝒜).val, fun j => (f j.1 j.2).property,
-    fun j => (f j.1 j.2 • y j.1 j.2).property, fun j => ?_, fun ⟨p, S⟩ h => hq0 p S ?_, ?_, ?_⟩
+    fun j => InternalGrading.mem_pieceSubmodule.mp (f j.1 j.2 • y j.1 j.2).property, fun j => ?_,
+    fun ⟨p, S⟩ h => hq0 p S ?_, ?_, ?_⟩
   · simp only [m, ← Subalgebra.smul_def, ← Submodule.coe_smul, smul_smul, (hf j.1 j.2).eq]
   · rw [← hmq, h, map_zero]
   · -- Independence: project to the degree-`p` piece of `M / A₊ M`, where the summands are
@@ -375,8 +313,9 @@ private theorem exists_generators (M : GradedModuleCat.{v} 𝒜) :
     by_cases hcS : (⟨p, S⟩ : Σ p, s p) ∈ c.support
     swap
     · rw [Finsupp.notMem_support_iff.mp hcS, ZeroMemClass.coe_zero, zero_mul]
-    let F : (Σ p, s p) → Submodule (SetLike.GradeZero.subalgebra 𝒜) (PieceQuotient M p) :=
-      fun j => Submodule.span _ {pieceQuotientMap M p (m j)}
+    let F : (Σ p, s p) →
+        Submodule (SetLike.GradeZero.subalgebra 𝒜) (M.grading.PieceQuotient 𝒜 p) :=
+      fun j => Submodule.span _ {M.grading.pieceQuotientMap 𝒜 p (m j)}
     have hF : iSupIndep F := by
       refine iSupIndep_def.mpr fun ⟨p', S'⟩ => ?_
       by_cases hp : p' = p
@@ -391,9 +330,9 @@ private theorem exists_generators (M : GradedModuleCat.{v} 𝒜) :
           · simp only [F, hmq, hspanq, le_refl]
         · simp [F, hmq_ne S'' hp'']
       · simp [F, hmq_ne S' hp]
-    have hsum : ∑ j ∈ c.support, c j • pieceQuotientMap M p (m j) = 0 := by
-      rw [← pieceQuotientMap_eq_zero (p := p) hc, Finsupp.linearCombination_apply, map_finsuppSum,
-        Finsupp.sum]
+    have hsum : ∑ j ∈ c.support, c j • M.grading.pieceQuotientMap 𝒜 p (m j) = 0 := by
+      rw [← InternalGrading.pieceQuotientMap_eq_zero (p := p) hc,
+        Finsupp.linearCombination_apply, map_finsuppSum, Finsupp.sum]
       simp only [map_smul]
     have h := (iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero F).mp hF c.support _
       (fun j _ => Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self _)) hsum _ hcS
@@ -401,7 +340,7 @@ private theorem exists_generators (M : GradedModuleCat.{v} 𝒜) :
     simpa using congrArg Subtype.val ((hfann p S _).mp h)
   · -- Generation: `Mₚ / A₊ Mₚ` is the sum of the simple summands, each spanned by its element.
     intro p x hx
-    have hq : Submodule.Quotient.mk ⟨x, mem_pieceSubmodule.mpr hx⟩ ∈
+    have hq : Submodule.Quotient.mk ⟨x, InternalGrading.mem_pieceSubmodule.mpr hx⟩ ∈
         Submodule.span (SetLike.GradeZero.subalgebra 𝒜) (Set.range (q p)) := by
       refine (sSup_le fun S hS => ?_ : sSup (s p) ≤ _) ((hs p).2.1 ▸ Submodule.mem_top)
       exact (hspanq p ⟨S, hS⟩).ge.trans
@@ -412,8 +351,8 @@ private theorem exists_generators (M : GradedModuleCat.{v} 𝒜) :
       congr 1
       funext S
       simp [hy, hfq]
-    have hq' : (⟨x, mem_pieceSubmodule.mpr hx⟩ : pieceSubmodule M p) ∈
-        (positiveSubmodule M).comap (pieceSubmodule M p).subtype ⊔
+    have hq' : (⟨x, InternalGrading.mem_pieceSubmodule.mpr hx⟩ : M.grading.pieceSubmodule 𝒜 p) ∈
+        (InternalGrading.positiveSubmodule M 𝒜).comap (M.grading.pieceSubmodule 𝒜 p).subtype ⊔
           Submodule.span (SetLike.GradeZero.subalgebra 𝒜)
             (Set.range fun S : s p => f p S • y p S) := by
       rw [← Submodule.comap_map_mkQ, Submodule.mem_comap, Submodule.map_span, ← hrange]
@@ -421,11 +360,11 @@ private theorem exists_generators (M : GradedModuleCat.{v} 𝒜) :
     obtain ⟨u, hu, z, hz, huz⟩ := Submodule.mem_sup.mp hq'
     have hz' : (z : M) ∈ Submodule.span (SetLike.GradeZero.subalgebra 𝒜) (Set.range m) := by
       refine Submodule.span_mono ?_ (Submodule.apply_mem_span_image_of_mem_span
-        (pieceSubmodule M p).subtype hz)
+        (M.grading.pieceSubmodule 𝒜 p).subtype hz)
       rintro _ ⟨_, ⟨S, rfl⟩, rfl⟩
       exact ⟨⟨p, S⟩, rfl⟩
     have hu' : (u : M) ∈ (⨆ (i : ℤ) (_ : 0 < i), 𝒜 i) • (⊤ : Submodule k M) :=
-      mem_positiveSubmodule.mp (Submodule.mem_comap.mp hu)
+      InternalGrading.mem_positiveSubmodule.mp (Submodule.mem_comap.mp hu)
     have hzu : (z : M) + u = x := by
       rw [add_comm]
       exact congrArg Subtype.val huz
@@ -537,7 +476,7 @@ theorem exists_isMinimal (M : GradedModuleCat.{max uA v} 𝒜) (b : ℤ)
       refine ⟨P, π, hP, hπ, hmin, hPb, fun p hp => ?_⟩
       rw [Submodule.eq_bot_iff]
       intro z hz
-      rw [InternalGrading.mem_ker_piece, hPb p hp, Submodule.mem_bot] at hz
+      rw [mem_submoduleObj_piece_iff, hPb p hp, Submodule.mem_bot] at hz
       exact Subtype.ext hz) M hb
 
 variable [HasExt.{w} (GradedModuleCat.{max uA v} 𝒜)]

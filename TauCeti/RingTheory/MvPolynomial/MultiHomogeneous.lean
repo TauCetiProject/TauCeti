@@ -12,7 +12,7 @@ public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.WeightedHomogeneous
 import TauCeti.Data.Finsupp.MapDomain
 
 import TauCeti.Algebra.MvPolynomial.Division
-import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Basic
 
 /-!
 # Multihomogeneous polynomials

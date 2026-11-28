@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Resolution
-public import TauCeti.Algebra.Category.GradedModuleCat.Free
+public import TauCeti.Algebra.Category.GradedModuleCat.Free.Basic
 
 /-!
 # Finite projective dimension and the graded Cartan map

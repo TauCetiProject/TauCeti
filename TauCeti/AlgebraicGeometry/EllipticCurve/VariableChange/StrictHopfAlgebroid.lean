@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.HopfAlgebroid
 public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.SemidirectProduct
-import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.Basic
 
 /-!
 # The strict Weierstrass Hopf algebroid in Bauer's convention
