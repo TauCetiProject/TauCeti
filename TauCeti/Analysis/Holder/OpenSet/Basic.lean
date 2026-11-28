@@ -941,6 +941,10 @@ theorem norm_restrictL_le_one (h : Ω' ≤ Ω) :
     ‖restrictL (k := k) (α := α) (F := F) h‖ ≤ 1 :=
   LinearMap.mkContinuous_norm_le _ zero_le_one _
 
+/-- Restricting to the same open set is the identity. -/
+@[simp] theorem restrictL_self (f : CkHolderSpaceOn k α Ω F) :
+    restrictL le_rfl f = f := ext fun x ↦ by simp
+
 /-- Restricting twice along `Ω'' ≤ Ω' ≤ Ω` agrees with restricting directly to `Ω''`. -/
 @[simp] theorem restrictL_restrictL {Ω'' : Opens E} (h₁ : Ω'' ≤ Ω') (h₂ : Ω' ≤ Ω)
     (f : CkHolderSpaceOn k α Ω F) :
