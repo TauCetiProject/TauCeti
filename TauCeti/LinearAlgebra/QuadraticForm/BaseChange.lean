@@ -15,19 +15,24 @@ import Mathlib.LinearAlgebra.TensorProduct.Prod
 public import Mathlib.RingTheory.Flat.Basic
 import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 import TauCeti.LinearAlgebra.TensorProduct.Basis
+import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
 # Base change of quadratic forms
 
 This file supplies the functorial API for extending quadratic spaces along a commutative algebra.
 The pure-tensor map also restricts to the polar kernel of a vector, so orthogonal parameters can
-be extended before passing to quotient spaces.
+be extended before passing to quotient spaces. Over a field extension in characteristic not two,
+base change commutes with taking the polar orthogonal complement of a finite-dimensional
+nondegenerate submodule (`QuadraticForm.orthogonal_baseChange`) or the range of an isometric
+embedding (`QuadraticMap.Isometry.orthogonal_range_baseChange`).
 It lifts isometries and isometric equivalences by extending their underlying linear maps, records
 the interaction with the additive operations on forms, compares direct and successive extension
 through a scalar tower, and proves that, over a ring in which `2` is invertible, nondegenerate
 forms remain nondegenerate under any free scalar extension (in particular over a field extension in
 characteristic not two), with no finiteness assumption. It also
-identifies the base change of a diagonal form with the diagonal form obtained by mapping its
+identifies the base change of a diagonal form (and in particular of a rank-one form
+`QuadraticForm.baseChangeLine`) with the diagonal form obtained by mapping its
 coefficients into the target algebra, extends orthogonal and special orthogonal automorphisms so a
 quadratic space's rational symmetries act on each scalar extension, and shows that extending scalars
 carries the reflection in a vector `v` to the reflection in `1 ⊗ₜ v`, so that a reflection
@@ -303,6 +308,26 @@ theorem baseChangeWeightedSumSquares_apply (w : ι → R) (x : A ⊗[R] (ι → 
   rfl
 
 end Diagonal
+
+/-- Base change carries a rank-one diagonal form `c • sq` to `algebraMap R A c • sq`. -/
+def baseChangeLine (c : R) (A : Type uA) [CommRing A] [Algebra R A] :
+    (QuadraticForm.baseChange A (c • (QuadraticMap.sq : QuadraticForm R R))).IsometryEquiv
+      (algebraMap R A c • (QuadraticMap.sq : QuadraticForm A A)) where
+  toLinearEquiv := TensorProduct.AlgebraTensorModule.rid R A A
+  map_app' x := by
+    have h : (algebraMap R A c • (QuadraticMap.sq : QuadraticForm A A)).comp
+          (TensorProduct.AlgebraTensorModule.rid R A A).toLinearMap =
+        QuadraticForm.baseChange A (c • (QuadraticMap.sq : QuadraticForm R R)) := by
+      apply baseChange_ext
+      intro r
+      simp [TensorProduct.AlgebraTensorModule.rid_tmul, Algebra.smul_def]
+    exact DFunLike.congr_fun h x
+
+/-- On pure tensors, `baseChangeLine` scales the algebra element by the base scalar. -/
+@[simp]
+theorem baseChangeLine_tmul (c : R) (A : Type uA) [CommRing A] [Algebra R A] (a : A) (r : R) :
+    baseChangeLine c A (a ⊗ₜ r) = r • a :=
+  TensorProduct.AlgebraTensorModule.rid_tmul A r a
 
 /-- The canonical equivalence distributing tensor product over a product identifies the base
 change of an orthogonal sum with the orthogonal sum of the base changes. -/
@@ -873,9 +898,98 @@ theorem anisotropic_baseChange_iff_of_finrank_le_one [Invertible (2 : K)]
   refine hx.resolve_left fun h ↦ b.ne_zero i (hQ _ ?_)
   exact (FaithfulSMul.algebraMap_injective K A).eq_iff.mp (h.trans (map_zero _).symm)
 
+/-- Extending scalars along a field extension commutes with taking the polar orthogonal complement
+of a finite-dimensional nondegenerate submodule. -/
+theorem orthogonal_baseChange (Q : QuadraticForm K V) (S : Submodule K V)
+    [Invertible (2 : K)] [Invertible (2 : L)] [FiniteDimensional K S]
+    (hS : (Q.restrict S).Nondegenerate) :
+    (LinearMap.BilinForm.orthogonal Q.polarBilin S).baseChange L =
+      LinearMap.BilinForm.orthogonal (Q.baseChange L).polarBilin (S.baseChange L) := by
+  set U := LinearMap.BilinForm.orthogonal Q.polarBilin S
+  set U_L := LinearMap.BilinForm.orthogonal (Q.baseChange L).polarBilin (S.baseChange L)
+  -- First inclusion (`U.baseChange L ≤ U_L`): check on pure tensors `1 ⊗ₜ v` with `v ∈ U`.
+  have hle : U.baseChange L ≤ U_L := by
+    rw [Submodule.baseChange_le_iff_le_comap]
+    intro v hv
+    rw [Submodule.mem_comap]
+    -- Expose `Submodule.toBaseChange` as the pure tensor `(1 : L) ⊗ₜ[K] v`.
+    change (1 : L) ⊗ₜ[K] v ∈ U_L
+    rw [LinearMap.BilinForm.mem_orthogonal_iff]
+    intro x hx
+    have hker :
+        S.baseChange L ≤ LinearMap.ker ((Q.baseChange L).polarBilin.flip (1 ⊗ₜ v)) := by
+      rw [Submodule.baseChange_le_iff_le_comap]
+      intro s hs
+      rw [Submodule.mem_comap]
+      -- Expose `Submodule.toBaseChange` as `(1 : L) ⊗ₜ[K] s`.
+      change (1 : L) ⊗ₜ[K] s ∈ LinearMap.ker ((Q.baseChange L).polarBilin.flip (1 ⊗ₜ v))
+      simp only [LinearMap.mem_ker, LinearMap.flip_apply, QuadraticMap.polarBilin_apply_apply,
+        QuadraticForm.polar_baseChange_tmul]
+      have hsv : QuadraticMap.polar Q s v = 0 := by
+        simpa [QuadraticMap.polarBilin_apply_apply] using
+          LinearMap.BilinForm.mem_orthogonal_iff.mp hv s hs
+      rw [hsv, zero_smul]
+    exact hker hx
+  -- Second inclusion (`U_L ≤ U.baseChange L`): `S.baseChange L` and `U.baseChange L` span the
+  -- ambient space, while `S.baseChange L` and `U_L` are disjoint by regularity on `S.baseChange L`.
+  refine le_antisymm hle fun x hx ↦ ?_
+  have hcompK : IsCompl S U := hS.isCompl_orthogonal
+  have hsup : S.baseChange L ⊔ U.baseChange L = ⊤ := by
+    rw [← Submodule.baseChange_sup, hcompK.sup_eq_top, Submodule.baseChange_top]
+  let eS :
+      (QuadraticForm.baseChange L (Q.restrict S)).IsometryEquiv
+        ((Q.baseChange L).restrict (S.baseChange L)) :=
+    { toLinearEquiv := Submodule.toBaseChange.toLinearEquiv L S
+      map_app' y := by
+        have h : ((Q.baseChange L).restrict (S.baseChange L)).comp
+              (Submodule.toBaseChange.toLinearEquiv L S).toLinearMap =
+            QuadraticForm.baseChange L (Q.restrict S) := by
+          apply baseChange_ext
+          intro s
+          simp
+        exact DFunLike.congr_fun h y }
+  have : FiniteDimensional L (S.baseChange L) := Module.Finite.equiv eS.toLinearEquiv
+  have hndSL : ((Q.baseChange L).restrict (S.baseChange L)).Nondegenerate :=
+    (QuadraticMap.IsometryEquiv.nondegenerate_iff
+      (R := L) (M₁ := L ⊗[K] ↥S) (M₂ := ↥(S.baseChange L)) (N := L) eS).mp
+      (Nondegenerate.baseChange (A := L) hS)
+  have hcompL : IsCompl (S.baseChange L) U_L := hndSL.isCompl_orthogonal
+  obtain ⟨s, hs, u, hu, rfl⟩ := Submodule.mem_sup.mp (hsup ▸ Submodule.mem_top (x := x))
+  have hsU : s ∈ U_L := by
+    have : s = (s + u) - u := (add_sub_cancel_right s u).symm
+    rw [this]
+    exact U_L.sub_mem hx (hle hu)
+  have hs0 : s = 0 := Submodule.disjoint_def.mp hcompL.disjoint s hs hsU
+  simpa [hs0] using hu
+
 end QuadraticForm
 
 end Field
+
+section RangeBaseChange
+
+/-- Extending scalars along a field extension commutes with taking the polar orthogonal complement
+of the range of an isometric embedding with finite-dimensional nondegenerate domain. -/
+theorem _root_.QuadraticMap.Isometry.orthogonal_range_baseChange
+    {K : Type uR} {V : Type uM} {W : Type*} [Field K] [Invertible (2 : K)]
+    [AddCommGroup V] [Module K V] [AddCommGroup W] [Module K W] [FiniteDimensional K W]
+    {Q_W : QuadraticForm K W} {Q_V : QuadraticForm K V}
+    (f : Q_W →qᵢ Q_V) (hW : Q_W.Nondegenerate)
+    (L : Type uA) [Field L] [Algebra K L] [Invertible (2 : L)] :
+    (LinearMap.BilinForm.orthogonal Q_V.polarBilin (LinearMap.range f.toLinearMap)).baseChange L =
+      LinearMap.BilinForm.orthogonal (Q_V.baseChange L).polarBilin
+        (LinearMap.range (f.baseChange L).toLinearMap) := by
+  set S := LinearMap.range f.toLinearMap
+  have hinj : Function.Injective f := f.injective_of_radical_eq_bot hW.radical_eq_bot
+  let e : Q_W.IsometryEquiv (Q_V.restrict S) :=
+    { toLinearEquiv := LinearEquiv.ofInjective f.toLinearMap hinj
+      map_app' w := f.map_app w }
+  have : FiniteDimensional K S := Module.Finite.equiv e.toLinearEquiv
+  have hS : (Q_V.restrict S).Nondegenerate := e.nondegenerate_iff.mp hW
+  rw [QuadraticForm.orthogonal_baseChange Q_V S hS, LinearMap.baseChange_range,
+    ← QuadraticMap.Isometry.baseChange_toLinearMap]
+
+end RangeBaseChange
 
 section PolarKernel
 

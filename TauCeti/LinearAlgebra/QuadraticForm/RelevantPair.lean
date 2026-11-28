@@ -15,7 +15,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.RelevantPair.OfProd
 
 This module re-exports the orthogonal relevant pair API:
 
-* `TauCeti.LinearAlgebra.QuadraticForm.RelevantPair.Basic`: split hyperbolic sums,
+* `TauCeti.LinearAlgebra.QuadraticForm.RelevantPair.Basic`:
   `OrthogonalRelevantPair`, `FramedOrthogonalRelevantPair`, orthogonal complement geometry,
   ambient splitting, and framing accessors.
 * `TauCeti.LinearAlgebra.QuadraticForm.RelevantPair.Stabilizer`: the stabilizer embedding

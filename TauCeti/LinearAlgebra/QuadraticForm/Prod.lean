@@ -799,6 +799,61 @@ theorem mem_range_specialOrthogonalGroupProd_iff {g : specialOrthogonalGroup (Q�
   exact ⟨(⟨f.1, mem_specialOrthogonalGroup_iff.mpr ⟨f.1.property, d₁⟩⟩,
     ⟨f.2, mem_specialOrthogonalGroup_iff.mpr ⟨f.2.property, d₂⟩⟩), Subtype.ext hg⟩
 
+/-- A special orthogonal transformation of `Q₁.prod Q₂` that maps the first summand into itself
+and fixes the second summand pointwise is the orthogonal sum `(g₁, 1)` for some
+`g₁ ∈ SO(Q₁)`. -/
+theorem exists_specialOrthogonalGroupProd_one_of_fix
+    (h' : specialOrthogonalGroup (Q₁.prod Q₂))
+    (hinvariant :
+      ∀ m₁ : M₁, ((h' : (M₁ × M₂) ≃ₗ[R] M₁ × M₂) (m₁, 0)).2 = 0)
+    (hfix : ∀ m₂ : M₂,
+      (h' : (M₁ × M₂) ≃ₗ[R] M₁ × M₂) (0, m₂) = (0, m₂)) :
+    ∃ g₁ : specialOrthogonalGroup Q₁, specialOrthogonalGroupProd Q₁ Q₂ (g₁, 1) = h' := by
+  have hblock2 :
+      LinearMap.snd R M₁ M₂ ∘ₗ
+        (h' : (M₁ × M₂) ≃ₗ[R] M₁ × M₂).toLinearMap ∘ₗ
+          LinearMap.inr R M₁ M₂ = LinearMap.id := by
+    ext m₂
+    simp [hfix m₂]
+  have hmemO :
+      (⟨h', specialOrthogonalGroup_le_orthogonalGroup _ h'.property⟩ :
+          orthogonalGroup (Q₁.prod Q₂)) ∈
+        (orthogonalGroupProd Q₁ Q₂).range :=
+    (mem_range_orthogonalGroupProd_iff Q₁ Q₂).mpr
+      ⟨hinvariant, fun m₂ ↦ by simp [hfix m₂]⟩
+  obtain ⟨⟨f₁, f₂⟩, hf⟩ := hmemO
+  have hcoe : (h' : (M₁ × M₂) ≃ₗ[R] M₁ × M₂) =
+      (f₁ : M₁ ≃ₗ[R] M₁).prodCongr (f₂ : M₂ ≃ₗ[R] M₂) := by
+    have hval := (congrArg Subtype.val hf).symm
+    rwa [coe_orthogonalGroupProd] at hval
+  have hf₂ : (f₂ : M₂ ≃ₗ[R] M₂) = LinearEquiv.refl R M₂ := by
+    ext m₂
+    have hm₂ := congrArg
+      (fun φ : (M₁ × M₂) ≃ₗ[R] M₁ × M₂ ↦ (φ (0, m₂)).2) hcoe
+    simpa [hfix m₂] using hm₂.symm
+  have hdet : LinearEquiv.det (f₁ : M₁ ≃ₗ[R] M₁) = 1 := by
+    have hdet' := det_coe_specialOrthogonalGroup h'
+    rw [hcoe, LinearEquiv.det_prodCongr, hf₂, LinearEquiv.det_refl, mul_one] at hdet'
+    exact hdet'
+  have hblock1 :
+      LinearMap.fst R M₁ M₂ ∘ₗ
+        (h' : (M₁ × M₂) ≃ₗ[R] M₁ × M₂).toLinearMap ∘ₗ
+          LinearMap.inl R M₁ M₂ = (f₁ : M₁ ≃ₗ[R] M₁).toLinearMap := by
+    ext m₁
+    simp [hcoe]
+  have hprod : h' ∈ (specialOrthogonalGroupProd Q₁ Q₂).range := by
+    refine (mem_range_specialOrthogonalGroupProd_iff Q₁ Q₂).mpr
+      ⟨hinvariant, fun m₂ ↦ by simp [hfix m₂], ?_, by simp [hblock2]⟩
+    rw [hblock1, ← LinearEquiv.coe_det, hdet, Units.val_one]
+  obtain ⟨⟨g₁, g₂⟩, hg⟩ := hprod
+  have hg₂ : g₂ = 1 := by
+    ext m₂
+    have hm₂ := congrArg
+      (fun φ : specialOrthogonalGroup (Q₁.prod Q₂) ↦
+        ((φ : (M₁ × M₂) ≃ₗ[R] M₁ × M₂) (0, m₂)).2) hg
+    simpa [hfix m₂] using hm₂
+  exact ⟨g₁, by simpa [hg₂] using hg⟩
+
 /-- `specialOrthogonalGroupProd` is natural with respect to products of isometric equivalences. -/
 @[simp]
 theorem specialOrthogonalGroupCongr_prod_specialOrthogonalGroupProd

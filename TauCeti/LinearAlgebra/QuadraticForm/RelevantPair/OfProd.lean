@@ -24,9 +24,6 @@ witnesses.
 
 * `TauCeti.FramedOrthogonalRelevantPair.ofProd_stabilizerHom`: `stabilizerHom` on `ofProd` is the
   product inclusion `(g, 1)`.
-* `TauCeti.FramedOrthogonalRelevantPair.finrank_ofProd_zero_zero`,
-  `TauCeti.FramedOrthogonalRelevantPair.finrank_ofProd_hyperbolicPlane_one`: non-vacuous
-  dimension witnesses.
 -/
 
 public section
@@ -45,6 +42,20 @@ variable {K : Type*} [Field K] [Invertible (2 : K)]
   {W : Type*} [AddCommGroup W] [Module K W]
   (Q_W : QuadraticForm K W) (hW : Q_W.Nondegenerate) (j : ℕ) (c : Kˣ)
 
+private theorem fst_eq_zero_of_mem_orthogonal
+    {Q_W : QuadraticForm K W} (hW : Q_W.Nondegenerate) {j : ℕ} {c : Kˣ}
+    (x : LinearMap.BilinForm.orthogonal
+      (Q_W.prod ((hyperbolicSum K j).prod ((c : K) • QuadraticMap.sq))).polarBilin
+      (LinearMap.range
+        (QuadraticMap.Isometry.inl Q_W
+          ((hyperbolicSum K j).prod ((c : K) • QuadraticMap.sq))).toLinearMap)) :
+    (x : W × (Fin j → Fin 2 → K) × K).1 = 0 := by
+  have hpol := LinearMap.BilinForm.mem_orthogonal_iff.mp x.property
+  refine (nondegenerate_polar_iff.mpr hW).1 _ fun w ↦ ?_
+  have hw := hpol (w, 0) ⟨w, rfl⟩
+  rw [QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_comm] at hw
+  simpa [QuadraticMap.polar] using hw
+
 /-- The canonical framed orthogonal relevant pair embedding `(W, Q_W)` as the first summand of
 `Q_W ⊥ (H^j ⊥ ⟨c⟩)`. -/
 noncomputable def ofProd :
@@ -59,25 +70,13 @@ noncomputable def ofProd :
         rw [LinearMap.BilinForm.mem_orthogonal_iff]
         rintro _ ⟨w, rfl⟩
         simp [QuadraticMap.polar]⟩
-      left_inv x := by
-        have hx1 : (x : W × (Fin j → Fin 2 → K) × K).1 = 0 := by
-          have hpol := LinearMap.BilinForm.mem_orthogonal_iff.mp x.property
-          refine (nondegenerate_polar_iff.mpr hW).1 _ fun w ↦ ?_
-          have hw := hpol (w, 0) ⟨w, rfl⟩
-          rw [QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_comm] at hw
-          simpa [QuadraticMap.polar] using hw
-        exact Subtype.ext (Prod.ext hx1.symm rfl)
+      left_inv x :=
+        Subtype.ext (Prod.ext (fst_eq_zero_of_mem_orthogonal hW x).symm rfl)
       right_inv _ := rfl
       map_add' _ _ := rfl
       map_smul' _ _ := rfl
       map_app' x := by
-        have hx1 : (x : W × (Fin j → Fin 2 → K) × K).1 = 0 := by
-          have hpol := LinearMap.BilinForm.mem_orthogonal_iff.mp x.property
-          refine (nondegenerate_polar_iff.mpr hW).1 _ fun w ↦ ?_
-          have hw := hpol (w, 0) ⟨w, rfl⟩
-          rw [QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_comm] at hw
-          simpa [QuadraticMap.polar] using hw
-        simp [hx1] }
+        simp [fst_eq_zero_of_mem_orthogonal hW x] }
 
 @[simp]
 theorem ofProd_embed (w : W) : (ofProd Q_W hW j c).embed w = (w, (0, 0)) :=
@@ -88,9 +87,13 @@ theorem ofProd_lineCoeff : (ofProd Q_W hW j c).lineCoeff = c :=
   (rfl)
 
 @[simp]
+theorem ofProd_complementEquiv_symm_apply (y : (Fin j → Fin 2 → K) × K) :
+    ((ofProd Q_W hW j c).complementEquiv.symm y : W × (Fin j → Fin 2 → K) × K) = (0, y) :=
+  (rfl)
+
+@[simp]
 theorem ofProd_lineVector : (ofProd Q_W hW j c).lineVector = (0, (0, 1)) := by
-  rw [lineVector_eq]
-  rfl
+  simp [lineVector_eq]
 
 @[simp]
 theorem ofProd_stabilizerHom [FiniteDimensional K W] (g : specialOrthogonalGroup Q_W) :
@@ -117,27 +120,27 @@ end OfProd
 
 /-! ### Non-vacuous dimension witnesses -/
 
-/-- For a zero-dimensional smaller space `W = Fin 0 → K` and `j = 0`, the canonical relevant pair
-has trivial stabilizer group `SO(Q_W)` and ambient dimension `1`. -/
-theorem finrank_ofProd_zero_zero (K : Type*) [Field K] [Invertible (2 : K)] (c : Kˣ) :
+-- Witness for a zero-dimensional smaller space `W = Fin 0 → K` and `j = 0`: trivial stabilizer
+-- `SO(Q_W)` and ambient dimension `1`.
+example (K : Type*) [Field K] [Invertible (2 : K)] (c : Kˣ) :
     Module.finrank K ((Fin 0 → K) × ((Fin 0 → Fin 2 → K) × K)) = 1 ∧
       Subsingleton (specialOrthogonalGroup (0 : QuadraticForm K (Fin 0 → K))) ∧
-      (Module.finrank K ((Fin 0 → K) × ((Fin 0 → Fin 2 → K) × K)) -
-        Module.finrank K (Fin 0 → K)) % 2 = 1 := by
+      Odd (Module.finrank K ((Fin 0 → K) × ((Fin 0 → Fin 2 → K) × K)) -
+        Module.finrank K (Fin 0 → K)) := by
   refine ⟨by simp [Module.finrank_prod, Module.finrank_pi_fintype, Module.finrank_self], ?_, ?_⟩
   · refine ⟨fun g₁ g₂ ↦ Subtype.ext (LinearEquiv.ext fun x ↦ Subsingleton.elim _ _)⟩
   · exact (ofProd (0 : QuadraticForm K (Fin 0 → K))
       (by rw [nondegenerate_iff_radical_eq_bot]; exact Submodule.eq_bot_of_subsingleton)
       0 c).toOrthogonalRelevantPair.odd_codimension
 
-/-- A positive-dimension witness with `dim W = 2`, `j = 1`, and ambient dimension `d = 5`. -/
-theorem finrank_ofProd_hyperbolicPlane_one (K : Type*) [Field K] [Invertible (2 : K)] (c : Kˣ) :
+-- Positive-dimension witness with `dim W = 2`, `j = 1`, and ambient dimension `d = 5`.
+example (K : Type*) [Field K] [Invertible (2 : K)] (c : Kˣ) :
     let F := ofProd (hyperbolicPlane K) nondegenerate_hyperbolicPlane 1 c
     Module.finrank K ((Fin 2 → K) × ((Fin 1 → Fin 2 → K) × K)) = 5 ∧
       ((hyperbolicPlane K).prod ((hyperbolicSum K 1).prod ((c : K) • QuadraticMap.sq)))
         F.lineVector ≠ 0 ∧
-      (Module.finrank K ((Fin 2 → K) × ((Fin 1 → Fin 2 → K) × K)) -
-        Module.finrank K (Fin 2 → K)) % 2 = 1 := by
+      Odd (Module.finrank K ((Fin 2 → K) × ((Fin 1 → Fin 2 → K) × K)) -
+        Module.finrank K (Fin 2 → K)) := by
   let F := ofProd (hyperbolicPlane K) nondegenerate_hyperbolicPlane 1 c
   refine ⟨by simp [Module.finrank_prod, Module.finrank_pi_fintype, Module.finrank_self],
     F.apply_lineVector_ne_zero, F.toOrthogonalRelevantPair.odd_codimension⟩

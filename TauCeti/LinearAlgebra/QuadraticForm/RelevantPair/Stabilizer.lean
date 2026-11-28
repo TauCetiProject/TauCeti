@@ -32,7 +32,10 @@ framed relevant pairs along isometric equivalences intertwines these stabilizer 
 * `TauCeti.OrthogonalRelevantPair.stabilizerHom_injective`,
   `TauCeti.OrthogonalRelevantPair.mem_range_stabilizerHom_iff`: `stabilizerHom` is injective, with
   image the subgroup of `SO(Q_V)` fixing `W^⊥` pointwise.
-* `TauCeti.OrthogonalRelevantPair.stabilizerHom_specialOrthogonalGroupCongr`: any intertwining pair
+* `TauCeti.OrthogonalRelevantPair.orthogonal_map`,
+  `TauCeti.OrthogonalRelevantPair.mapOrthogonalEquiv`: transporting a relevant pair carries `W^⊥`
+  to the transported orthogonal complement.
+* `TauCeti.OrthogonalRelevantPair.specialOrthogonalGroupCongr_stabilizerHom`: any intertwining pair
   of isometries intertwines the stabilizer embeddings.
 * `TauCeti.OrthogonalRelevantPair.stabilizerHom_map`: transporting a relevant pair intertwines its
   stabilizer embedding.
@@ -109,60 +112,6 @@ private theorem mem_range_embed_of_fix_orthogonal {h : specialOrthogonalGroup Q_
     P.mem_orthogonal_iff.mp hu w] at hpol
   simpa [QuadraticMap.polarBilin_apply_apply] using hpol
 
-private theorem exists_specialOrthogonalGroupProd_one_of_fix
-    [FiniteDimensional K P.orthogonal]
-    (h' : specialOrthogonalGroup (Q_W.prod (Q_V.restrict P.orthogonal)))
-    (hinvariant :
-      ∀ w : W, ((h' : (W × P.orthogonal) ≃ₗ[K] W × P.orthogonal) (w, 0)).2 = 0)
-    (hfix' : ∀ u : P.orthogonal,
-      (h' : (W × P.orthogonal) ≃ₗ[K] W × P.orthogonal) (0, u) = (0, u)) :
-    ∃ g₁ : specialOrthogonalGroup Q_W,
-      specialOrthogonalGroupProd Q_W (Q_V.restrict P.orthogonal) (g₁, 1) = h' := by
-  have hblock2 :
-      LinearMap.snd K W P.orthogonal ∘ₗ
-        (h' : (W × P.orthogonal) ≃ₗ[K] W × P.orthogonal).toLinearMap ∘ₗ
-          LinearMap.inr K W P.orthogonal = LinearMap.id := by
-    ext u
-    simp [hfix' u]
-  have hmemO :
-      (⟨h', specialOrthogonalGroup_le_orthogonalGroup _ h'.property⟩ :
-          orthogonalGroup (Q_W.prod (Q_V.restrict P.orthogonal))) ∈
-        (orthogonalGroupProd Q_W (Q_V.restrict P.orthogonal)).range :=
-    (mem_range_orthogonalGroupProd_iff Q_W (Q_V.restrict P.orthogonal)).mpr
-      ⟨hinvariant, fun u ↦ by simp [hfix' u]⟩
-  obtain ⟨⟨f₁, f₂⟩, hf⟩ := hmemO
-  have hcoe : (h' : (W × P.orthogonal) ≃ₗ[K] W × P.orthogonal) =
-      (f₁ : W ≃ₗ[K] W).prodCongr (f₂ : P.orthogonal ≃ₗ[K] P.orthogonal) := by
-    have hval := (congrArg Subtype.val hf).symm
-    rwa [coe_orthogonalGroupProd] at hval
-  have hf₂ : (f₂ : P.orthogonal ≃ₗ[K] P.orthogonal) = LinearEquiv.refl K P.orthogonal := by
-    ext u
-    have hu := congrArg
-      (fun φ : (W × P.orthogonal) ≃ₗ[K] W × P.orthogonal ↦ (φ (0, u)).2) hcoe
-    simpa [hfix' u] using hu.symm
-  have hdet : LinearEquiv.det (f₁ : W ≃ₗ[K] W) = 1 := by
-    have hdet' := det_coe_specialOrthogonalGroup h'
-    rw [hcoe, LinearEquiv.det_prodCongr, hf₂, LinearEquiv.det_refl, mul_one] at hdet'
-    exact hdet'
-  have hblock1 :
-      LinearMap.fst K W P.orthogonal ∘ₗ
-        (h' : (W × P.orthogonal) ≃ₗ[K] W × P.orthogonal).toLinearMap ∘ₗ
-          LinearMap.inl K W P.orthogonal = (f₁ : W ≃ₗ[K] W).toLinearMap := by
-    ext w
-    simp [hcoe]
-  have hprod : h' ∈ (specialOrthogonalGroupProd Q_W (Q_V.restrict P.orthogonal)).range := by
-    refine (mem_range_specialOrthogonalGroupProd_iff Q_W (Q_V.restrict P.orthogonal)).mpr
-      ⟨hinvariant, fun u ↦ by simp [hfix' u], ?_, by simp [hblock2]⟩
-    rw [hblock1, ← LinearEquiv.coe_det, hdet, Units.val_one]
-  obtain ⟨⟨g₁, g₂⟩, hg⟩ := hprod
-  have hg₂ : g₂ = 1 := by
-    ext u
-    have hu := congrArg
-      (fun φ : specialOrthogonalGroup (Q_W.prod (Q_V.restrict P.orthogonal)) ↦
-        ((φ : (W × P.orthogonal) ≃ₗ[K] W × P.orthogonal) (0, u)).2) hg
-    simpa [hfix' u] using hu
-  exact ⟨g₁, by simpa [hg₂] using hg⟩
-
 /-- **Image of the stabilizer embedding.** An element of `SO(Q_V)` lies in the image of
 `P.stabilizerHom` if and only if it fixes `W^⊥` pointwise. -/
 theorem mem_range_stabilizerHom_iff {h : specialOrthogonalGroup Q_V} :
@@ -174,34 +123,24 @@ theorem mem_range_stabilizerHom_iff {h : specialOrthogonalGroup Q_V} :
     have := P.finiteDimensional_orthogonal
     set e := P.ambientIsometryEquiv
     set h' : specialOrthogonalGroup (Q_W.prod (Q_V.restrict P.orthogonal)) :=
-      e.symm.specialOrthogonalGroupCongr h
+      e.specialOrthogonalGroupCongr.symm h
     have hinvariant :
         ∀ w : W, ((h' : (W × P.orthogonal) ≃ₗ[K] W × P.orthogonal) (w, 0)).2 = 0 := by
       intro w
       obtain ⟨w', hw'⟩ := P.mem_range_embed_of_fix_orthogonal hfix w
-      have heq : (h : V ≃ₗ[K] V) (e (w, 0)) = e (w', 0) := by
-        simpa [e] using hw'.symm
       have h'' : (h' : (W × P.orthogonal) ≃ₗ[K] W × P.orthogonal) (w, 0) = (w', 0) := by
-        simp only [h']
-        rw [IsometryEquiv.coe_specialOrthogonalGroupCongr_apply, IsometryEquiv.symm_symm,
-          heq, e.symm_apply_apply]
+        simp [h', e, ← hw']
       rw [h'']
     have hfix' : ∀ u : P.orthogonal,
         (h' : (W × P.orthogonal) ≃ₗ[K] W × P.orthogonal) (0, u) = (0, u) := by
       intro u
-      have heq : (h : V ≃ₗ[K] V) (e (0, u)) = e (0, u) := by
-        simpa [e] using hfix u u.property
-      simp only [h']
-      rw [IsometryEquiv.coe_specialOrthogonalGroupCongr_apply, IsometryEquiv.symm_symm,
-        heq, e.symm_apply_apply]
-    obtain ⟨g₁, hmain⟩ := P.exists_specialOrthogonalGroupProd_one_of_fix h' hinvariant hfix'
+      simp [h', e, hfix u u.property]
+    obtain ⟨g₁, hmain⟩ :=
+      QuadraticMap.exists_specialOrthogonalGroupProd_one_of_fix Q_W (Q_V.restrict P.orthogonal)
+        h' hinvariant hfix'
     refine ⟨g₁, ?_⟩
     have hcongr := congrArg e.specialOrthogonalGroupCongr hmain
-    apply Subtype.ext
-    apply LinearEquiv.ext
-    intro v
-    have hv := congrArg (fun φ : specialOrthogonalGroup Q_V ↦ (φ : V ≃ₗ[K] V) v) hcongr
-    simpa [stabilizerHom, h', e, IsometryEquiv.coe_specialOrthogonalGroupCongr_apply] using hv
+    simpa [stabilizerHom, h'] using hcongr
 
 end Stabilizer
 
@@ -253,37 +192,8 @@ noncomputable def map (P : OrthogonalRelevantPair Q_W Q_V j)
   embed := e_V.toIsometry.comp (P.embed.comp e_W.symm.toIsometry)
   nondegenerate_domain := e_W.nondegenerate_iff.mp P.nondegenerate_domain
   exists_complement := by
-    have hrange :
-        LinearMap.range (e_V.toIsometry.comp (P.embed.comp e_W.symm.toIsometry)).toLinearMap =
-          (LinearMap.range P.embed.toLinearMap).map e_V.toLinearMap := by
-      ext v'
-      simp only [QuadraticMap.Isometry.toLinearMap_comp, LinearMap.mem_range,
-        LinearMap.comp_apply, QuadraticMap.Isometry.coe_toLinearMap, LinearEquiv.coe_toLinearMap,
-        Submodule.mem_map]
-      refine ⟨fun ⟨w', hw'⟩ ↦ ?_, ?_⟩
-      · exact ⟨P.embed (e_W.symm w'), ⟨e_W.symm w', rfl⟩, hw'⟩
-      · rintro ⟨_, ⟨w, rfl⟩, rfl⟩
-        exact ⟨e_W w, by simp⟩
-    have horth :
-        P.orthogonal.map e_V.toLinearMap =
-          LinearMap.BilinForm.orthogonal Q_V'.polarBilin
-            (LinearMap.range
-              (e_V.toIsometry.comp (P.embed.comp e_W.symm.toIsometry)).toLinearMap) := by
-      rw [hrange]
-      exact e_V.map_orthogonal_polarBilin (LinearMap.range P.embed.toLinearMap)
-    have hsub : (Q_V.restrict P.orthogonal).IsometryEquiv
-        (Q_V'.restrict
-          (LinearMap.BilinForm.orthogonal Q_V'.polarBilin
-            (LinearMap.range
-              (e_V.toIsometry.comp (P.embed.comp e_W.symm.toIsometry)).toLinearMap))) :=
-      { toLinearEquiv := e_V.toLinearEquiv.ofSubmodules _ _ horth
-        map_app' u := by
-          -- Expose the restricted form evaluation on the submodule isomorphism.
-          change Q_V' (e_V.toLinearEquiv.ofSubmodules _ _ horth u : V') = Q_V (u : V)
-          rw [LinearEquiv.ofSubmodules_apply]
-          exact e_V.map_app (u : V) }
     obtain ⟨c, ⟨e⟩⟩ := P.exists_complement
-    exact ⟨c, ⟨hsub.symm.trans e⟩⟩
+    exact ⟨c, ⟨(e_V.orthogonalRangeCompEquiv P.embed e_W).symm.trans e⟩⟩
 
 @[simp]
 theorem map_embed (P : OrthogonalRelevantPair Q_W Q_V j)
@@ -304,29 +214,46 @@ theorem map_trans {W'' V'' : Type*} [AddCommGroup W''] [Module K W'']
     (e_W' : Q_W'.IsometryEquiv Q_W'') (e_V' : Q_V'.IsometryEquiv Q_V'') :
     (P.map e_W e_V).map e_W' e_V' = P.map (e_W.trans e_W') (e_V.trans e_V') := by
   ext w''
-  simp only [map_embed]
   have hsymm : (e_W.trans e_W').symm w'' = e_W.symm (e_W'.symm w'') :=
     (e_W.trans e_W').symm_apply_eq.mpr (by simp)
-  rw [hsymm]
-  rfl
+  simp [hsymm, IsometryEquiv.trans_apply]
+
+/-- Transporting a relevant pair maps its orthogonal complement by the codomain equivalence. -/
+theorem orthogonal_map (P : OrthogonalRelevantPair Q_W Q_V j)
+    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V') :
+    (P.map e_W e_V).orthogonal = P.orthogonal.map e_V.toLinearMap :=
+  (P.embed.map_orthogonal_comp_isometryEquiv e_W e_V).symm
+
+/-- The codomain equivalence restricts to an isometric equivalence between the orthogonal
+complements of `P` and `P.map e_W e_V`. -/
+noncomputable def mapOrthogonalEquiv (P : OrthogonalRelevantPair Q_W Q_V j)
+    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V') :
+    (Q_V.restrict P.orthogonal).IsometryEquiv
+      (Q_V'.restrict (P.map e_W e_V).orthogonal) :=
+  e_V.ofSubmodules P.orthogonal (P.map e_W e_V).orthogonal (P.orthogonal_map e_W e_V).symm
+
+@[simp]
+theorem coe_mapOrthogonalEquiv_apply (P : OrthogonalRelevantPair Q_W Q_V j)
+    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V') (u : P.orthogonal) :
+    ((P.mapOrthogonalEquiv e_W e_V u : (P.map e_W e_V).orthogonal) : V') = e_V (u : V) :=
+  e_V.coe_ofSubmodules_apply (P.orthogonal_map e_W e_V).symm u
+
+@[simp]
+theorem coe_mapOrthogonalEquiv_symm_apply (P : OrthogonalRelevantPair Q_W Q_V j)
+    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V')
+    (u : (P.map e_W e_V).orthogonal) :
+    (((P.mapOrthogonalEquiv e_W e_V).symm u : P.orthogonal) : V) = e_V.symm (u : V') :=
+  e_V.coe_ofSubmodules_symm_apply (P.orthogonal_map e_W e_V).symm u
 
 theorem mem_map_orthogonal_iff (P : OrthogonalRelevantPair Q_W Q_V j)
     (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V') {v' : V'} :
     v' ∈ (P.map e_W e_V).orthogonal ↔ e_V.symm v' ∈ P.orthogonal := by
-  simp only [mem_orthogonal_iff, map_embed]
-  refine ⟨fun h w ↦ ?_, fun h w' ↦ ?_⟩
-  · have hw := h (e_W w)
-    rw [e_W.symm_apply_apply] at hw
-    rw [← e_V.polar_apply, e_V.apply_symm_apply]
-    exact hw
-  · conv_lhs => rw [← e_V.apply_symm_apply v']
-    rw [e_V.polar_apply]
-    exact h (e_W.symm w')
+  simp [P.orthogonal_map e_W e_V]
 
 /-- **Intertwining of stabilizer embeddings.** Any pair of isometric equivalences `(e_W, e_V)`
 intertwining the embeddings of two relevant pairs `P` and `P'` intertwines their stabilizer
 embeddings `SO(Q_W) →* SO(Q_V)` and `SO(Q_W') →* SO(Q_V')`. -/
-theorem stabilizerHom_specialOrthogonalGroupCongr [FiniteDimensional K W] [FiniteDimensional K W']
+theorem specialOrthogonalGroupCongr_stabilizerHom [FiniteDimensional K W] [FiniteDimensional K W']
     {j' : ℕ} (P : OrthogonalRelevantPair Q_W Q_V j)
     (P' : OrthogonalRelevantPair Q_W' Q_V' j')
     (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V')
@@ -363,7 +290,7 @@ theorem stabilizerHom_map [FiniteDimensional K W] [FiniteDimensional K W']
     (g : specialOrthogonalGroup Q_W) :
     (P.map e_W e_V).stabilizerHom (e_W.specialOrthogonalGroupCongr g) =
       e_V.specialOrthogonalGroupCongr (P.stabilizerHom g) := by
-  refine (stabilizerHom_specialOrthogonalGroupCongr P (P.map e_W e_V) e_W e_V ?_ g).symm
+  refine (specialOrthogonalGroupCongr_stabilizerHom P (P.map e_W e_V) e_W e_V ?_ g).symm
   ext w
   simp
 
@@ -381,51 +308,6 @@ variable {K : Type*} [Field K] [Invertible (2 : K)]
   {Q_W : QuadraticForm K W} {Q_V : QuadraticForm K V}
   {Q_W' : QuadraticForm K W'} {Q_V' : QuadraticForm K V'} {j : ℕ}
 
-private theorem map_orthogonal_eq (F : FramedOrthogonalRelevantPair Q_W Q_V j)
-    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V') :
-    (LinearMap.BilinForm.orthogonal Q_V.polarBilin (LinearMap.range F.embed.toLinearMap)).map
-        e_V.toLinearMap =
-      LinearMap.BilinForm.orthogonal Q_V'.polarBilin
-        (LinearMap.range
-          (e_V.toIsometry.comp (F.embed.comp e_W.symm.toIsometry)).toLinearMap) := by
-  have hrange :
-      LinearMap.range (e_V.toIsometry.comp (F.embed.comp e_W.symm.toIsometry)).toLinearMap =
-        (LinearMap.range F.embed.toLinearMap).map e_V.toLinearMap := by
-    ext v'
-    simp only [QuadraticMap.Isometry.toLinearMap_comp, LinearMap.mem_range,
-      LinearMap.comp_apply, QuadraticMap.Isometry.coe_toLinearMap, LinearEquiv.coe_toLinearMap,
-      Submodule.mem_map]
-    refine ⟨fun ⟨w', hw'⟩ ↦ ⟨F.embed (e_W.symm w'), ⟨e_W.symm w', rfl⟩, hw'⟩, ?_⟩
-    rintro ⟨_, ⟨w, rfl⟩, rfl⟩
-    exact ⟨e_W w, by simp⟩
-  rw [hrange]
-  exact e_V.map_orthogonal_polarBilin (LinearMap.range F.embed.toLinearMap)
-
-private noncomputable def mapSubmoduleEquiv (F : FramedOrthogonalRelevantPair Q_W Q_V j)
-    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V') :
-    (Q_V.restrict
-        (LinearMap.BilinForm.orthogonal Q_V.polarBilin
-          (LinearMap.range F.embed.toLinearMap))).IsometryEquiv
-      (Q_V'.restrict
-        (LinearMap.BilinForm.orthogonal Q_V'.polarBilin
-          (LinearMap.range
-            (e_V.toIsometry.comp (F.embed.comp e_W.symm.toIsometry)).toLinearMap))) where
-  toFun u := ⟨e_V u, by
-    rw [← map_orthogonal_eq F e_W e_V]
-    exact Submodule.mem_map_of_mem u.property⟩
-  invFun u' := ⟨e_V.symm u', by
-    rw [LinearMap.BilinForm.mem_orthogonal_iff]
-    rintro _ ⟨w, rfl⟩
-    have hu' := LinearMap.BilinForm.mem_orthogonal_iff.mp u'.property
-      ((e_V.toIsometry.comp (F.embed.comp e_W.symm.toIsometry)) (e_W w)) ⟨e_W w, rfl⟩
-    rw [QuadraticMap.polarBilin_apply_apply, ← e_V.polar_apply, e_V.apply_symm_apply]
-    simpa [QuadraticMap.polarBilin_apply_apply] using hu'⟩
-  left_inv _ := Subtype.ext (e_V.symm_apply_apply _)
-  right_inv _ := Subtype.ext (e_V.apply_symm_apply _)
-  map_add' _ _ := Subtype.ext (e_V.map_add _ _)
-  map_smul' _ _ := Subtype.ext (e_V.map_smul _ _)
-  map_app' u := e_V.map_app (u : V)
-
 /-- Transport a framed orthogonal relevant pair along isometric equivalences `(e_W, e_V)`. -/
 noncomputable def map (F : FramedOrthogonalRelevantPair Q_W Q_V j)
     (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V') :
@@ -433,7 +315,13 @@ noncomputable def map (F : FramedOrthogonalRelevantPair Q_W Q_V j)
   embed := e_V.toIsometry.comp (F.embed.comp e_W.symm.toIsometry)
   nondegenerate_domain := e_W.nondegenerate_iff.mp F.nondegenerate_domain
   lineCoeff := F.lineCoeff
-  complementEquiv := (mapSubmoduleEquiv F e_W e_V).symm.trans F.complementEquiv
+  complementEquiv := (e_V.orthogonalRangeCompEquiv F.embed e_W).symm.trans F.complementEquiv
+
+@[simp]
+theorem map_embed (F : FramedOrthogonalRelevantPair Q_W Q_V j)
+    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V') (w' : W') :
+    (F.map e_W e_V).embed w' = e_V (F.embed (e_W.symm w')) :=
+  (rfl)
 
 @[simp]
 theorem map_toOrthogonalRelevantPair (F : FramedOrthogonalRelevantPair Q_W Q_V j)
@@ -442,13 +330,6 @@ theorem map_toOrthogonalRelevantPair (F : FramedOrthogonalRelevantPair Q_W Q_V j
       F.toOrthogonalRelevantPair.map e_W e_V := by
   ext w'
   simp
-  rfl
-
-@[simp]
-theorem map_embed (F : FramedOrthogonalRelevantPair Q_W Q_V j)
-    (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V') (w' : W') :
-    (F.map e_W e_V).embed w' = e_V (F.embed (e_W.symm w')) :=
-  (rfl)
 
 @[simp]
 theorem map_lineCoeff (F : FramedOrthogonalRelevantPair Q_W Q_V j)
@@ -461,17 +342,11 @@ theorem map_complementEquiv_symm (F : FramedOrthogonalRelevantPair Q_W Q_V j)
     (e_W : Q_W.IsometryEquiv Q_W') (e_V : Q_V.IsometryEquiv Q_V')
     (y : (Fin j → Fin 2 → K) × K) :
     ((F.map e_W e_V).complementEquiv.symm y : V') = e_V (F.complementEquiv.symm y : V) := by
-  set u : LinearMap.BilinForm.orthogonal Q_V.polarBilin (LinearMap.range F.embed.toLinearMap) :=
-    F.complementEquiv.symm y
-  have hu : e_V (u : V) ∈ LinearMap.BilinForm.orthogonal Q_V'.polarBilin
-      (LinearMap.range (e_V.toIsometry.comp (F.embed.comp e_W.symm.toIsometry)).toLinearMap) := by
-    rw [← map_orthogonal_eq F e_W e_V]
-    exact Submodule.mem_map_of_mem u.property
-  have hinv : (mapSubmoduleEquiv F e_W e_V).symm ⟨e_V (u : V), hu⟩ = u :=
-    Subtype.ext (e_V.symm_apply_apply (u : V))
-  have hsub_u : (F.map e_W e_V).complementEquiv ⟨e_V (u : V), hu⟩ = y :=
-    (congrArg F.complementEquiv hinv).trans (F.complementEquiv.apply_symm_apply y)
-  exact congrArg Subtype.val ((F.map e_W e_V).complementEquiv.symm_apply_eq.mpr hsub_u.symm)
+  let eSub := e_V.orthogonalRangeCompEquiv F.embed e_W
+  have hu : (eSub.symm.trans F.complementEquiv) (eSub (F.complementEquiv.symm y)) = y := by
+    rw [IsometryEquiv.trans_apply, eSub.symm_apply_apply, F.complementEquiv.apply_symm_apply]
+  have hsymm := congrArg Subtype.val ((F.map e_W e_V).complementEquiv.symm_apply_eq.mpr hu.symm)
+  exact hsymm.trans (e_V.coe_orthogonalRangeCompEquiv_apply F.embed e_W _)
 
 @[simp]
 theorem map_lineVector (F : FramedOrthogonalRelevantPair Q_W Q_V j)
@@ -494,12 +369,10 @@ theorem map_trans {W'' V'' : Type*} [AddCommGroup W''] [Module K W'']
     (e_W' : Q_W'.IsometryEquiv Q_W'') (e_V' : Q_V'.IsometryEquiv Q_V'') :
     (F.map e_W e_V).map e_W' e_V' = F.map (e_W.trans e_W') (e_V.trans e_V') := by
   ext y
-  · simp only [map_embed]
-    have hsymm : (e_W.trans e_W').symm y = e_W.symm (e_W'.symm y) :=
+  · have hsymm : (e_W.trans e_W').symm y = e_W.symm (e_W'.symm y) :=
       (e_W.trans e_W').symm_apply_eq.mpr (by simp)
-    rw [hsymm]
-    rfl
-  · simp
+    simp [hsymm, IsometryEquiv.trans_apply]
+  · simp [IsometryEquiv.trans_apply]
 
 end Map
 

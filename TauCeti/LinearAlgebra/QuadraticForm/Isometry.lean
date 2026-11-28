@@ -28,8 +28,13 @@ This file records general properties of quadratic-map isometries.
 * `QuadraticMap.IsometryEquiv.polar_apply`: an isometric equivalence preserves polarization.
 * `QuadraticMap.IsometryEquiv.polarBilin_compl₁₂`: an isometric equivalence pulls the polar
   bilinear form of the target back to that of the source.
+* `QuadraticMap.Isometry.range_comp_isometryEquiv`: transporting an isometry on both sides by
+  isometric equivalences maps its range by the codomain equivalence.
 * `QuadraticMap.IsometryEquiv.map_orthogonal_polarBilin`: an isometric equivalence maps polar
   orthogonal complements to polar orthogonal complements.
+* `QuadraticMap.IsometryEquiv.ofSubmodules`,
+  `QuadraticMap.IsometryEquiv.orthogonalRangeCompEquiv`: restricting an isometric equivalence to
+  matching submodules and to the orthogonal complements of transported embeddings.
 * `QuadraticMap.IsometryEquiv.polarKernelEquiv`: an isometric equivalence restricts to an
   equivalence of the kernels of polarization against corresponding vectors.
 * `QuadraticMap.IsometryEquiv.refl_apply`, `QuadraticMap.IsometryEquiv.symm_symm`, and
@@ -160,6 +165,129 @@ theorem _root_.QuadraticMap.IsometryEquiv.map_orthogonal_polarBilin
     exact h _ hx
   · rw [← e.polar_apply, e.apply_symm_apply]
     exact h (e x) (by simpa using hx)
+
+/-- Transporting an isometry on the left and right by isometric equivalences maps its range by
+the codomain equivalence. -/
+theorem _root_.QuadraticMap.Isometry.range_comp_isometryEquiv
+    {R M₁ M₂ M₁' M₂' N : Type*} [CommSemiring R]
+    [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
+    [AddCommMonoid M₁'] [Module R M₁'] [AddCommMonoid M₂'] [Module R M₂']
+    [AddCommMonoid N] [Module R N]
+    {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+    {Q₁' : QuadraticMap R M₁' N} {Q₂' : QuadraticMap R M₂' N}
+    (f : Q₁ →qᵢ Q₂) (e₁ : Q₁.IsometryEquiv Q₁') (e₂ : Q₂.IsometryEquiv Q₂') :
+    LinearMap.range (e₂.toIsometry.comp (f.comp e₁.symm.toIsometry)).toLinearMap =
+      (LinearMap.range f.toLinearMap).map e₂.toLinearMap := by
+  ext y'
+  simp only [QuadraticMap.Isometry.toLinearMap_comp, LinearMap.mem_range,
+    LinearMap.comp_apply, QuadraticMap.Isometry.coe_toLinearMap, LinearEquiv.coe_toLinearMap,
+    Submodule.mem_map]
+  refine ⟨fun ⟨x', hx'⟩ ↦ ⟨f (e₁.symm x'), ⟨e₁.symm x', rfl⟩, hx'⟩, ?_⟩
+  rintro ⟨_, ⟨x, rfl⟩, rfl⟩
+  exact ⟨e₁ x, by simp⟩
+
+/-- Restrict an isometric equivalence to submodules identified by `S₁.map e = S₂`. -/
+def _root_.QuadraticMap.IsometryEquiv.ofSubmodules
+    {R M₁ M₂ N : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup N] [Module R N]
+    {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+    (e : Q₁.IsometryEquiv Q₂) (S₁ : Submodule R M₁) (S₂ : Submodule R M₂)
+    (h : S₁.map e.toLinearMap = S₂) :
+    (Q₁.restrict S₁).IsometryEquiv (Q₂.restrict S₂) where
+  toLinearEquiv := e.toLinearEquiv.ofSubmodules S₁ S₂ h
+  map_app' u := by
+    -- Expose the coercion of the restricted linear equivalence to `M₂`.
+    change Q₂ ((e.toLinearEquiv.ofSubmodules S₁ S₂ h u : S₂) : M₂) = Q₁ (u : M₁)
+    rw [e.toLinearEquiv.ofSubmodules_apply h u]
+    exact e.map_app (u : M₁)
+
+/-- The restricted isometric equivalence acts as `e` on underlying vectors. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.coe_ofSubmodules_apply
+    {R M₁ M₂ N : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup N] [Module R N]
+    {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+    (e : Q₁.IsometryEquiv Q₂) {S₁ : Submodule R M₁} {S₂ : Submodule R M₂}
+    (h : S₁.map e.toLinearMap = S₂) (u : S₁) :
+    ((e.ofSubmodules S₁ S₂ h u : S₂) : M₂) = e (u : M₁) :=
+  e.toLinearEquiv.ofSubmodules_apply h u
+
+/-- The inverse of the restricted isometric equivalence acts as `e.symm` on underlying vectors. -/
+@[simp]
+theorem _root_.QuadraticMap.IsometryEquiv.coe_ofSubmodules_symm_apply
+    {R M₁ M₂ N : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup N] [Module R N]
+    {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+    (e : Q₁.IsometryEquiv Q₂) {S₁ : Submodule R M₁} {S₂ : Submodule R M₂}
+    (h : S₁.map e.toLinearMap = S₂) (u : S₂) :
+    (((e.ofSubmodules S₁ S₂ h).symm u : S₁) : M₁) = e.symm (u : M₂) :=
+  e.toLinearEquiv.ofSubmodules_symm_apply h u
+
+/-- Transporting an isometry on both sides maps the orthogonal complement of its range by the
+codomain equivalence. -/
+theorem _root_.QuadraticMap.Isometry.map_orthogonal_comp_isometryEquiv
+    {R M₁ M₂ M₁' M₂' : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup M₁'] [Module R M₁'] [AddCommGroup M₂'] [Module R M₂']
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    {Q₁' : QuadraticForm R M₁'} {Q₂' : QuadraticForm R M₂'}
+    (f : Q₁ →qᵢ Q₂) (e₁ : Q₁.IsometryEquiv Q₁') (e₂ : Q₂.IsometryEquiv Q₂') :
+    (LinearMap.BilinForm.orthogonal Q₂.polarBilin (LinearMap.range f.toLinearMap)).map
+        e₂.toLinearMap =
+      LinearMap.BilinForm.orthogonal Q₂'.polarBilin
+        (LinearMap.range (e₂.toIsometry.comp (f.comp e₁.symm.toIsometry)).toLinearMap) := by
+  rw [f.range_comp_isometryEquiv e₁ e₂]
+  exact e₂.map_orthogonal_polarBilin (LinearMap.range f.toLinearMap)
+
+/-- Restrict an isometric equivalence `e₂ : Q₂ ≃qᵢ Q₂'` to an isometric equivalence between the
+orthogonal complements of `range f` and of `range (e₂ ∘ f ∘ e₁⁻¹)`. -/
+def _root_.QuadraticMap.IsometryEquiv.orthogonalRangeCompEquiv
+    {R M₁ M₂ M₁' M₂' : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup M₁'] [Module R M₁'] [AddCommGroup M₂'] [Module R M₂']
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    {Q₁' : QuadraticForm R M₁'} {Q₂' : QuadraticForm R M₂'}
+    (e₂ : Q₂.IsometryEquiv Q₂') (f : Q₁ →qᵢ Q₂) (e₁ : Q₁.IsometryEquiv Q₁') :
+    (Q₂.restrict
+        (LinearMap.BilinForm.orthogonal Q₂.polarBilin
+          (LinearMap.range f.toLinearMap))).IsometryEquiv
+      (Q₂'.restrict
+        (LinearMap.BilinForm.orthogonal Q₂'.polarBilin
+          (LinearMap.range (e₂.toIsometry.comp (f.comp e₁.symm.toIsometry)).toLinearMap))) :=
+  e₂.ofSubmodules _ _ (f.map_orthogonal_comp_isometryEquiv e₁ e₂)
+
+/-- Evaluation of `orthogonalRangeCompEquiv` on underlying vectors. -/
+theorem _root_.QuadraticMap.IsometryEquiv.coe_orthogonalRangeCompEquiv_apply
+    {R M₁ M₂ M₁' M₂' : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup M₁'] [Module R M₁'] [AddCommGroup M₂'] [Module R M₂']
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    {Q₁' : QuadraticForm R M₁'} {Q₂' : QuadraticForm R M₂'}
+    (e₂ : Q₂.IsometryEquiv Q₂') (f : Q₁ →qᵢ Q₂) (e₁ : Q₁.IsometryEquiv Q₁')
+    (u : LinearMap.BilinForm.orthogonal Q₂.polarBilin (LinearMap.range f.toLinearMap)) :
+    ((e₂.orthogonalRangeCompEquiv f e₁ u :
+        LinearMap.BilinForm.orthogonal Q₂'.polarBilin
+          (LinearMap.range (e₂.toIsometry.comp (f.comp e₁.symm.toIsometry)).toLinearMap)) : M₂') =
+      e₂ (u : M₂) :=
+  e₂.coe_ofSubmodules_apply (f.map_orthogonal_comp_isometryEquiv e₁ e₂) u
+
+/-- Evaluation of the inverse of `orthogonalRangeCompEquiv` on underlying vectors. -/
+theorem _root_.QuadraticMap.IsometryEquiv.coe_orthogonalRangeCompEquiv_symm_apply
+    {R M₁ M₂ M₁' M₂' : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup M₁'] [Module R M₁'] [AddCommGroup M₂'] [Module R M₂']
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+    {Q₁' : QuadraticForm R M₁'} {Q₂' : QuadraticForm R M₂'}
+    (e₂ : Q₂.IsometryEquiv Q₂') (f : Q₁ →qᵢ Q₂) (e₁ : Q₁.IsometryEquiv Q₁')
+    (u : LinearMap.BilinForm.orthogonal Q₂'.polarBilin
+      (LinearMap.range (e₂.toIsometry.comp (f.comp e₁.symm.toIsometry)).toLinearMap)) :
+    (((e₂.orthogonalRangeCompEquiv f e₁).symm u :
+        LinearMap.BilinForm.orthogonal Q₂.polarBilin (LinearMap.range f.toLinearMap)) : M₂) =
+      e₂.symm (u : M₂') :=
+  e₂.coe_ofSubmodules_symm_apply (f.map_orthogonal_comp_isometryEquiv e₁ e₂) u
 
 /-- The restriction of an isometric equivalence to the kernels of polarization against
 corresponding vectors. -/

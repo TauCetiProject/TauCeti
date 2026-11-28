@@ -26,8 +26,6 @@ so `V` is itself finite-dimensional and nondegenerate of dimension `dim W + 2j +
 
 ## Main definitions
 
-* `TauCeti.hyperbolicSum R j`: the orthogonal sum of `j` copies of the hyperbolic plane
-  `⟨1, -1⟩`.
 * `TauCeti.OrthogonalRelevantPair Q_W Q_V j`: an isometric embedding `W →qᵢ Q_V` with
   nondegenerate domain whose orthogonal complement is isometric to `H^j ⊥ ⟨c⟩`.
 * `TauCeti.FramedOrthogonalRelevantPair Q_W Q_V j`: an orthogonal relevant pair equipped with a
@@ -37,7 +35,6 @@ so `V` is itself finite-dimensional and nondegenerate of dimension `dim W + 2j +
 
 ## Main results
 
-* `TauCeti.nondegenerate_hyperbolicSum`: `hyperbolicSum R j` is nondegenerate.
 * `TauCeti.OrthogonalRelevantPair.finrank_eq`, `TauCeti.OrthogonalRelevantPair.odd_codimension`:
   the ambient dimension satisfies `dim V = dim W + 2j + 1`, so `dim V - dim W` is odd.
 
@@ -55,84 +52,6 @@ public section
 open Module QuadraticMap QuadraticForm TauCeti.QuadraticMap
 
 namespace TauCeti
-
-/-! ### Split hyperbolic sums -/
-
-section HyperbolicSum
-
-variable {R : Type*} [CommRing R] [Invertible (2 : R)]
-
-/-- The orthogonal sum of `j` copies of the hyperbolic plane `⟨1, -1⟩` over a commutative ring
-in which two is invertible. -/
-def hyperbolicSum (R : Type*) [CommRing R] [_i2 : Invertible (2 : R)] (j : ℕ) :
-    QuadraticForm R (Fin j → Fin 2 → R) :=
-  QuadraticMap.pi fun _ : Fin j ↦ hyperbolicPlane R
-
-/-- Evaluation of `hyperbolicSum` in its coordinate pairs. -/
-@[simp]
-theorem hyperbolicSum_apply (j : ℕ) (x : Fin j → Fin 2 → R) :
-    hyperbolicSum R j x = ∑ i : Fin j, (x i 0 ^ 2 - x i 1 ^ 2) := by
-  simp [hyperbolicSum]
-
-/-- The polar form of `hyperbolicSum` in its coordinate pairs. -/
-@[simp]
-theorem polar_hyperbolicSum (j : ℕ) (x y : Fin j → Fin 2 → R) :
-    polar (hyperbolicSum R j) x y = 2 * ∑ i : Fin j, (x i 0 * y i 0 - x i 1 * y i 1) := by
-  simp only [QuadraticMap.polar, hyperbolicSum_apply, Pi.add_apply, Finset.mul_sum]
-  rw [← Finset.sum_sub_distrib, ← Finset.sum_sub_distrib]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  ring
-
-/-- The zero-fold hyperbolic sum is the zero quadratic form. -/
-@[simp]
-theorem hyperbolicSum_zero : hyperbolicSum R 0 = 0 := by
-  ext x
-  simp
-
-/-- The split hyperbolic sum `hyperbolicSum R j` is nondegenerate when two is invertible. -/
-theorem nondegenerate_hyperbolicSum (j : ℕ) : (hyperbolicSum R j).Nondegenerate :=
-  nondegenerate_polar_iff.mp <|
-    QuadraticMap.nondegenerate_polarBilin_pi_iff.mpr fun _ ↦
-      nondegenerate_polar_iff.mpr nondegenerate_hyperbolicPlane
-
-/-- Peeling off the first hyperbolic plane from `hyperbolicSum R (j + 1)`. -/
-def hyperbolicSumSuccIsometryEquiv (j : ℕ) :
-    ((hyperbolicPlane R).prod (hyperbolicSum R j)).IsometryEquiv (hyperbolicSum R (j + 1)) :=
-  QuadraticMap.IsometryEquiv.consPi fun _ : Fin (j + 1) ↦ hyperbolicPlane R
-
-@[simp]
-theorem hyperbolicSumSuccIsometryEquiv_apply (j : ℕ) (x : Fin 2 → R)
-    (y : Fin j → Fin 2 → R) :
-    hyperbolicSumSuccIsometryEquiv (R := R) j (x, y) = Fin.cons x y := by
-  dsimp only [hyperbolicSumSuccIsometryEquiv]
-  exact QuadraticMap.IsometryEquiv.consPi_apply (fun _ : Fin (j + 1) ↦ hyperbolicPlane R) x y
-
-end HyperbolicSum
-
-section HyperbolicSumField
-
-variable {K : Type*} [Field K] [Invertible (2 : K)]
-
-/-- Over a field of characteristic not two, `hyperbolicSum K j` has class
-`j • hyperbolicClass K`. -/
-@[simp]
-theorem formClass_hyperbolicSum (j : ℕ) :
-    formClass (hyperbolicSum K j) (nondegenerate_hyperbolicSum j) = j • hyperbolicClass K := by
-  induction j with
-  | zero =>
-    rw [zero_nsmul, formClass_eq_zero_iff]
-    exact Module.finrank_zero_of_subsingleton
-  | succ j ih =>
-    have heq :=
-      (formClass_eq_iff (hyperbolicSum K (j + 1)) (nondegenerate_hyperbolicSum (j + 1))
-        ((hyperbolicPlane K).prod (hyperbolicSum K j))
-        (nondegenerate_hyperbolicPlane.prod (nondegenerate_hyperbolicSum j))).mpr
-        ⟨(hyperbolicSumSuccIsometryEquiv (R := K) j).symm⟩
-    rw [heq,
-      formClass_prod _ nondegenerate_hyperbolicPlane _ (nondegenerate_hyperbolicSum j),
-      formClass_hyperbolicPlane, ih, succ_nsmul']
-
-end HyperbolicSumField
 
 /-! ### Orthogonal relevant pairs and framed complements -/
 
@@ -196,9 +115,9 @@ theorem toOrthogonalRelevantPair_embed (F : FramedOrthogonalRelevantPair Q_W Q_V
     F.toOrthogonalRelevantPair.embed = F.embed :=
   (rfl)
 
-/-- Two framed relevant pairs agree if and only if they share the same isometric embedding and their
-inverse framing maps take the same values in `V`. (The scalar `lineCoeff` is then forced by the
-quadratic value at `(0, 1)`.) -/
+/-- Two framed relevant pairs are equal if they share the same isometric embedding and their inverse
+framing maps agree in `V`. (The scalar `lineCoeff` is then forced by the quadratic value at
+`(0, 1)`.) -/
 @[ext (iff := false)]
 theorem ext {F₁ F₂ : FramedOrthogonalRelevantPair Q_W Q_V j}
     (hembed : F₁.embed = F₂.embed)
@@ -273,7 +192,7 @@ theorem nondegenerate_restrict_range :
     (Q_V.restrict (LinearMap.range P.embed.toLinearMap)).Nondegenerate :=
   P.domainRangeEquiv.nondegenerate_iff.mp P.nondegenerate_domain
 
-/-- The orthogonal complement `W^⊥` is finite-dimensional of dimension `2j + 1`. -/
+/-- The orthogonal complement `W^⊥` is finite-dimensional. -/
 theorem finiteDimensional_orthogonal : FiniteDimensional K P.orthogonal := by
   obtain ⟨c, ⟨e⟩⟩ := P.exists_complement
   exact Module.Finite.equiv e.toLinearEquiv.symm
@@ -281,18 +200,8 @@ theorem finiteDimensional_orthogonal : FiniteDimensional K P.orthogonal := by
 /-- The restriction of `Q_V` to `W^⊥` is nondegenerate. -/
 theorem nondegenerate_restrict_orthogonal : (Q_V.restrict P.orthogonal).Nondegenerate := by
   obtain ⟨c, ⟨e⟩⟩ := P.exists_complement
-  refine e.nondegenerate_iff.mpr ?_
-  have hsq : (QuadraticMap.sq : QuadraticForm K K).Nondegenerate := by
-    rw [← nondegenerate_polar_iff, LinearMap.IsRefl.nondegenerate_iff_separatingLeft
-      (QuadraticMap.sq : QuadraticForm K K).isRefl_polarBilin]
-    intro x hx
-    have h1 := hx 1
-    simp only [QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar, QuadraticMap.sq_apply,
-      mul_one] at h1
-    have h2 : 2 * x = 0 := by linear_combination h1
-    exact (mul_eq_zero.mp h2).resolve_left (Invertible.ne_zero (2 : K))
-  exact (nondegenerate_hyperbolicSum j).prod
-    ((QuadraticMap.nondegenerate_smul_iff c.isUnit _).mpr hsq)
+  exact e.nondegenerate_iff.mpr
+    ((nondegenerate_hyperbolicSum j).prod (QuadraticMap.nondegenerate_smul_sq c.ne_zero))
 
 /-- The dimension of the orthogonal complement `W^⊥` is `2j + 1`. -/
 theorem finrank_orthogonal : Module.finrank K P.orthogonal = 2 * j + 1 := by
@@ -363,9 +272,9 @@ theorem finrank_eq :
 
 include P in
 /-- The codimension `dim V - dim W` of a relevant pair is odd. -/
-theorem odd_codimension : (Module.finrank K V - Module.finrank K W) % 2 = 1 := by
+theorem odd_codimension : Odd (Module.finrank K V - Module.finrank K W) := by
   rw [P.finrank_eq, add_assoc, Nat.add_sub_cancel_left]
-  omega
+  exact ⟨j, rfl⟩
 
 include P in
 /-- The ambient form `Q_V` is isometric to `Q_W ⊥ H^j ⊥ ⟨c⟩` for some nonzero scalar `c`. -/
