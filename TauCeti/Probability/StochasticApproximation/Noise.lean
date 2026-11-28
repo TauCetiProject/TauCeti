@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecificLimits.Averaging
-public import TauCeti.Probability.Martingale.DifferenceSeries
+public import TauCeti.Probability.Martingale.Difference.Series
 import TauCeti.MeasureTheory.Function.ConditionalExpectation
 
 /-!

@@ -15,6 +15,8 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Comp
+import TauCeti.Analysis.Calculus.Morse.GradientFlow
+import TauCeti.Analysis.Calculus.Morse.OneDimensional
 
 /-!
 # Nondegenerate critical points of separated sums
@@ -50,10 +52,17 @@ pair of gradients. The results above transfer to it through
   Hessian operator of the corresponding summand.
 * `IsIntegralCurve.separatedSum` and `TauCeti.isIntegralCurve_separatedSum_iff`: the negative
   gradient trajectories of the separated sum are the pairs of negative gradient trajectories of
-  the summands.
+  the summands. `IsIntegralCurve.fst_of_separatedSum` and `IsIntegralCurve.snd_of_separatedSum`
+  project a trajectory of the separated sum to one factor when only the other summand is
+  differentiable along the curve, and
+  `IsIntegralCurve.exists_eq_toLp_comp_add_of_separatedSum` finds the trajectories between two
+  points with the same second component.
 * `TauCeti.isNondegenerateCriticalPoint_separatedSum_iff` and `TauCeti.morseIndex_separatedSum`:
   its nondegenerate critical points are the pairs of nondegenerate critical points, with additive
   Morse index.
+* `TauCeti.morseIndex_separatedSum_toLp_of_neg` and `TauCeti.morseIndex_separatedSum_toLp_of_pos`:
+  adding a real variable at a local maximum of a nondegenerate one-variable function raises the
+  Morse index by one, and adding it at a local minimum leaves it unchanged.
 
 ## References
 
@@ -257,6 +266,48 @@ theorem _root_.IsIntegralCurve.separatedSum {γ₁ : ℝ → E} {γ₂ : ℝ →
   rw [gradient_separatedSum (z := WithLp.toLp 2 (γ₁ s, γ₂ s)) (hf s) (hg s), WithLp.toLp_fst,
     WithLp.toLp_snd, ← Prod.neg_mk, WithLp.toLp_neg]
 
+/-- **The first component of a negative gradient trajectory of a separated sum** is a negative
+gradient trajectory of `f`, as soon as `g` is differentiable along the second component. No
+differentiability of `f` is needed: where `f` is not differentiable, neither is the separated sum,
+and both gradients vanish. -/
+theorem _root_.IsIntegralCurve.fst_of_separatedSum {z : ℝ → WithLp 2 (E × F)}
+    (hg : ∀ s, DifferentiableAt ℝ g (z s).snd)
+    (hz : IsIntegralCurve z fun _ w ↦ -∇ (separatedSum f g) w) :
+    IsIntegralCurve (fun s ↦ (z s).fst) fun _ x ↦ -∇ f x := by
+  intro s
+  by_cases hf : DifferentiableAt ℝ f (z s).fst
+  · simpa [Function.comp_def, gradient_separatedSum hf (hg s)] using
+      (WithLp.fstL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (hz s)
+  -- `f` is the separated sum along the slice through `z s`, up to a constant.
+  have hS : ¬DifferentiableAt ℝ (separatedSum f g) (z s) := fun h ↦ hf <| by
+    have hslice : DifferentiableAt ℝ (fun a ↦ WithLp.toLp 2 (a, (z s).snd)) (z s).fst :=
+      ((WithLp.prodContinuousLinearEquiv 2 ℝ E F).symm.differentiable.comp
+        (differentiable_id.prodMk (differentiable_const _))) _
+    simpa using (DifferentiableAt.comp (z s).fst h hslice).sub_const (g (z s).snd)
+  simpa [Function.comp_def, gradient_eq_zero_of_not_differentiableAt hS,
+    gradient_eq_zero_of_not_differentiableAt hf] using
+    (WithLp.fstL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (hz s)
+
+/-- **The second component of a negative gradient trajectory of a separated sum** is a negative
+gradient trajectory of `g`, as soon as `f` is differentiable along the first component. -/
+theorem _root_.IsIntegralCurve.snd_of_separatedSum {z : ℝ → WithLp 2 (E × F)}
+    (hf : ∀ s, DifferentiableAt ℝ f (z s).fst)
+    (hz : IsIntegralCurve z fun _ w ↦ -∇ (separatedSum f g) w) :
+    IsIntegralCurve (fun s ↦ (z s).snd) fun _ y ↦ -∇ g y := by
+  intro s
+  by_cases hg : DifferentiableAt ℝ g (z s).snd
+  · simpa [Function.comp_def, gradient_separatedSum (hf s) hg] using
+      (WithLp.sndL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (hz s)
+  -- `g` is the separated sum along the slice through `z s`, up to a constant.
+  have hS : ¬DifferentiableAt ℝ (separatedSum f g) (z s) := fun h ↦ hg <| by
+    have hslice : DifferentiableAt ℝ (fun b ↦ WithLp.toLp 2 ((z s).fst, b)) (z s).snd :=
+      ((WithLp.prodContinuousLinearEquiv 2 ℝ E F).symm.differentiable.comp
+        ((differentiable_const _).prodMk differentiable_id)) _
+    simpa using (DifferentiableAt.comp (z s).snd h hslice).sub_const (f (z s).fst)
+  simpa [Function.comp_def, gradient_eq_zero_of_not_differentiableAt hS,
+    gradient_eq_zero_of_not_differentiableAt hg] using
+    (WithLp.sndL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (hz s)
+
 /-- **Negative gradient trajectories of a separated sum are pairs of trajectories.** A curve in the
 `L²` product, along which both summands are differentiable, is a negative gradient trajectory of
 `separatedSum f g` exactly when its two components are negative gradient trajectories of `f` and of
@@ -265,14 +316,42 @@ theorem isIntegralCurve_separatedSum_iff {z : ℝ → WithLp 2 (E × F)}
     (hf : ∀ s, DifferentiableAt ℝ f (z s).fst) (hg : ∀ s, DifferentiableAt ℝ g (z s).snd) :
     IsIntegralCurve z (fun _ w ↦ -∇ (separatedSum f g) w) ↔
       IsIntegralCurve (fun s ↦ (z s).fst) (fun _ x ↦ -∇ f x) ∧
-        IsIntegralCurve (fun s ↦ (z s).snd) (fun _ y ↦ -∇ g y) := by
+        IsIntegralCurve (fun s ↦ (z s).snd) (fun _ y ↦ -∇ g y) :=
   -- Conversely, `WithLp.toLp 2 ((z s).fst, (z s).snd)` is `z s` by structure eta for `WithLp` and
   -- `Prod`, so the pair of trajectories is `z` itself.
-  refine ⟨fun hz ↦ ⟨fun s ↦ ?_, fun s ↦ ?_⟩, fun ⟨h₁, h₂⟩ ↦ h₁.separatedSum h₂ hf hg⟩
-  · simpa [Function.comp_def, gradient_separatedSum (hf s) (hg s)] using
-      (WithLp.fstL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (hz s)
-  · simpa [Function.comp_def, gradient_separatedSum (hf s) (hg s)] using
-      (WithLp.sndL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (hz s)
+  ⟨fun hz ↦ ⟨hz.fst_of_separatedSum hg, hz.snd_of_separatedSum hf⟩,
+    fun ⟨h₁, h₂⟩ ↦ h₁.separatedSum h₂ hf hg⟩
+
+open Filter in
+/-- **Trajectories of a separated sum with the same second component at both ends.** Suppose that
+every negative gradient trajectory of `f` from `p` to `q` is a time translate of `γ`, that `f` is
+differentiable along `γ`, and that `g` is differentiable. Then every negative gradient trajectory of
+the separated sum from `(p, b)` to `(q, b)` is a time translate of `σ ↦ (γ σ, b)`: its first
+component is a trajectory of `f` from `p` to `q`, and its second component is a trajectory of `g`
+with the same limit `b` at both ends, hence constant. -/
+theorem _root_.IsIntegralCurve.exists_eq_toLp_comp_add_of_separatedSum (hg : Differentiable ℝ g)
+    {γ : ℝ → E} {p q : E} {b : F} (hγ : ∀ σ, DifferentiableAt ℝ f (γ σ))
+    (huniq : ∀ δ : ℝ → E, IsIntegralCurve δ (fun _ x ↦ -∇ f x) → Tendsto δ atBot (𝓝 p) →
+      Tendsto δ atTop (𝓝 q) → ∃ τ, δ = fun σ ↦ γ (σ + τ))
+    {z : ℝ → WithLp 2 (E × F)} (hz : IsIntegralCurve z fun _ w ↦ -∇ (separatedSum f g) w)
+    (hbot : Tendsto z atBot (𝓝 (WithLp.toLp 2 (p, b))))
+    (htop : Tendsto z atTop (𝓝 (WithLp.toLp 2 (q, b)))) :
+    ∃ τ, z = fun σ ↦ WithLp.toLp 2 (γ (σ + τ), b) := by
+  have hfst := (WithLp.fstL 2 ℝ E F).continuous.tendsto
+  have hsnd := (WithLp.sndL 2 ℝ E F).continuous.tendsto
+  obtain ⟨τ, hτ⟩ := huniq _ (hz.fst_of_separatedSum fun _ ↦ hg _)
+    (by simpa [Function.comp_def] using (hfst _).comp hbot)
+    (by simpa [Function.comp_def] using (hfst _).comp htop)
+  have hzd (σ : ℝ) : DifferentiableAt ℝ f (z σ).fst := by
+    rw [show (z σ).fst = γ (σ + τ) from congrFun hτ σ]
+    exact hγ _
+  have hb := (hz.snd_of_separatedSum hzd).eq_const_of_tendsto
+    (fun _ ↦ hg _) (hg b).continuousAt
+    (by simpa [Function.comp_def] using (hsnd _).comp hbot)
+    (by simpa [Function.comp_def] using (hsnd _).comp htop)
+  refine ⟨τ, funext fun σ ↦ WithLp.ofLp_injective 2 (Prod.ext ?_ ?_)⟩
+  · simpa using congrFun hτ σ
+  · simpa using congrFun hb σ
 
 /-- **The Hessian operator of a separated sum** acts on each factor by the Hessian operator of the
 corresponding summand. -/
@@ -362,6 +441,24 @@ theorem morseIndex_separatedSum [FiniteDimensional ℝ E] [FiniteDimensional ℝ
     morseIndex_def]
   exact (QuadraticMap.Equivalent.sigNeg_eq
     ⟨QuadraticMap.isometryEquivOfCompLinearEquiv _ e.toLinearEquiv⟩).symm
+
+/-- **Adding a real variable at a nondegenerate maximum raises the Morse index by one.** If
+`φ : ℝ → ℝ` is `C²` at `p` with `φ''(p) < 0`, then the Morse index of the separated sum
+`(a, b) ↦ φ a + g b` at `(p, b)` is `ind_g(b) + 1`. -/
+theorem morseIndex_separatedSum_toLp_of_neg [FiniteDimensional ℝ F] {φ : ℝ → ℝ} {p : ℝ} {b : F}
+    (hp : ContDiffAt ℝ 2 φ p) (hdp : deriv (deriv φ) p < 0) (hb : ContDiffAt ℝ 2 g b) :
+    morseIndex (separatedSum φ g) (WithLp.toLp 2 (p, b)) = morseIndex g b + 1 := by
+  rw [morseIndex_separatedSum hp hb, morseIndex_real_of_neg (by
+    rwa [iteratedDeriv_succ, iteratedDeriv_one]), add_comm, WithLp.toLp_snd]
+
+/-- **Adding a real variable at a nondegenerate minimum preserves the Morse index.** If
+`φ : ℝ → ℝ` is `C²` at `q` with `0 < φ''(q)`, then the Morse index of the separated sum
+`(a, b) ↦ φ a + g b` at `(q, b)` is `ind_g(b)`. -/
+theorem morseIndex_separatedSum_toLp_of_pos [FiniteDimensional ℝ F] {φ : ℝ → ℝ} {q : ℝ} {b : F}
+    (hq : ContDiffAt ℝ 2 φ q) (hdq : 0 < deriv (deriv φ) q) (hb : ContDiffAt ℝ 2 g b) :
+    morseIndex (separatedSum φ g) (WithLp.toLp 2 (q, b)) = morseIndex g b := by
+  rw [morseIndex_separatedSum hq hb, morseIndex_real_of_pos (by
+    rwa [iteratedDeriv_succ, iteratedDeriv_one]), zero_add, WithLp.toLp_snd]
 
 end Critical
 

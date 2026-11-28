@@ -63,6 +63,8 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.abs_arg_div_comm`: swapping numerator and denominator preserves `|arg (x / y)|`.
 * `Complex.exists_norm_eq_one_mul_sq_eq_neg_norm`: every `c` has a unit `ω` with `c ω² = -‖c‖`.
 * `Complex.exp_arg_mul_I`: `exp (i arg z) = z / |z|` for `z ≠ 0`.
+* `Complex.conj_div_eq_exp_of_eq_norm_mul_exp`: `conj w / w = exp (-2 i θ)` for
+  `w = ‖w‖ · exp (i θ) ≠ 0`.
 * `Complex.contDiffOn_div_norm_pow`: `(z / |z|)^m` is smooth away from the origin.
 * `TauCeti.image_polar_rectangle_eq`: in polar coordinates about `v`, rotated and scaled by `b`,
   the punctured truncated sector `{|arg ((z - v) / b)| < α}` is the image of an open rectangle.
@@ -73,11 +75,21 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.abs_arg_lt_pi_of_mem_slitPlane`, `Complex.abs_arg_div_two_le_pi_div_two`,
   `Complex.abs_arg_div_two_lt_pi_div_two`: `|arg z / 2| ≤ π / 2` for every `z`, with strict
   inequality when `arg z ≠ π` and `|arg z| < π` on `slitPlane`.
+* `Complex.exists_ball_slitPlane_norm_arg_le`: around `w₀ ∈ slitPlane`, an open ball stays in
+  `slitPlane` with `‖w‖` within a factor of `2` of `‖w₀‖` and `|w.arg| ≤ θ` for any `|w₀.arg| < θ`.
+* `Complex.isOpen_slitPlane_inter_abs_arg_lt`: for any `α : ℝ`, the sector
+  `{w : ℂ | w ∈ slitPlane ∧ |arg w| < α}` in the slit plane is open.
+* `Complex.exists_mem_nhds_slitPlane_norm_and_arg_lt`: a point `w₀ ∈ slitPlane` with `|arg w₀| < α`
+  has a neighborhood in `slitPlane` with norm bounded away from `0` and `∞` and `|arg w| ≤ α' < α`.
 * `Complex.one_add_mul_cos_div_two_le_norm_one_add_ofReal_mul_exp_mul_I`,
   `Complex.norm_one_add_ofReal_mul_exp_mul_I_le`,
   `Complex.one_add_ofReal_mul_exp_mul_I_mem_slitPlane`: along polar rays `1 + r e^{iθ}`,
   the norm lies between `(1 + r) cos (θ / 2)` and `1 + |r|`, and `1 + r e^{iθ} ∈ slitPlane`
   when `|θ| < π` and `0 ≤ r`.
+* `Complex.sq_norm_ofReal_add_mul_exp`, `Complex.norm_ofReal_add_mul_exp_lt_iff`,
+  `Complex.lt_norm_ofReal_add_mul_exp_iff`: for real `x`, `y`,
+  `‖x + y e^{iθ}‖² = x² + y² + 2 x y cos θ`, so for `x, y, r > 0` which of `‖x + y e^{iθ}‖` and
+  `r` is larger is decided by comparing `cos θ` with `(r² − y² − x²) / (2 y x)`.
 * `Complex.re_mul_exp_ofReal_mul_I_eq_norm_mul_cos`,
   `Complex.re_mul_exp_neg_arg_div_two_mul_I_pos`,
   `Complex.abs_arg_add_lt_pi_div_two_of_abs_le_of_re_mul_exp_mul_I_pos`,
@@ -95,6 +107,9 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.im_zpow`: `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.sin_arg_sub_arg_one_sub`: `sin (arg ξ - arg (1 - ξ)) = Im ξ / (|ξ| |1 - ξ|)`; for `ξ`
   in the upper half-plane, the sine of the angle at `ξ` of the triangle `0, 1, ξ`.
+* `Complex.toLex_norm_arg_injective`, `Complex.polarLt`, `Complex.instIsStrictTotalOrderPolarLt`:
+  the lexicographic norm–argument key `z ↦ toLex (‖z‖, arg z)` is injective on `ℂ` and induces the
+  polar-lexicographic strict total order `Complex.polarLt` on `ℂ`.
 * `HasDerivAt.hasFDerivAt_arg`: the real derivative of `arg ∘ f` on the slit plane is the
   imaginary part of the logarithmic derivative of `f`.
 * `ContDiff.contDiffAt_comp_arg`: a smooth `2π`-periodic function of the argument is smooth away
@@ -244,6 +259,20 @@ theorem exp_arg_mul_I {z : ℂ} (hz : z ≠ 0) : exp (arg z * I) = z / (‖z‖ 
   rw [eq_div_iff (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)), mul_comm]
   exact norm_mul_exp_arg_mul_I z
 
+open ComplexConjugate in
+/-- **The phase of `conj w / w`.** If `w = ‖w‖ · exp (i θ)` is nonzero, then
+`conj w / w = exp (-2 i θ)`. -/
+theorem conj_div_eq_exp_of_eq_norm_mul_exp {w : ℂ} (hw : w ≠ 0) {θ : ℝ}
+    (h : w = ‖w‖ * exp (I * θ)) : conj w / w = exp (-2 * I * θ) := by
+  have he : conj (exp (I * θ)) = exp (-2 * I * θ) * exp (I * θ) := by
+    rw [← exp_conj, map_mul, conj_I, conj_ofReal, ← exp_add]
+    ring_nf
+  rw [div_eq_iff hw]
+  conv_lhs => rw [h]
+  conv_rhs => rw [h]
+  rw [map_mul, conj_ofReal, he]
+  ring
+
 /-- The unit direction `z / |z|` is homogeneous of degree `0` under positive dilations. -/
 theorem smul_div_norm_smul {t : ℝ} (ht : 0 < t) (z : ℂ) :
     t • z / (‖t • z‖ : ℂ) = z / (‖z‖ : ℂ) := by
@@ -309,6 +338,59 @@ theorem arg_sub_one_add_arg_add_one_mem_Ioc {z : ℂ} (hre : 0 < z.re) :
     rw [(arg_eq_zero_iff (z := z + 1)).2 ⟨by simp; linarith, by simp [him]⟩, add_zero]
     exact arg_mem_Ioc _
 
+/-- Around any `w₀ ∈ slitPlane` and for any `θ` with `|w₀.arg| < θ`, there is `ρ > 0` such that
+every `w ∈ Metric.ball w₀ ρ` stays in `slitPlane` with `‖w₀‖ / 2 ≤ ‖w‖ ≤ 2 * ‖w₀‖` and
+`|w.arg| ≤ θ`. -/
+theorem exists_ball_slitPlane_norm_arg_le {w₀ : ℂ} (hw₀ : w₀ ∈ slitPlane) {θ : ℝ}
+    (hθ : |w₀.arg| < θ) :
+    ∃ ρ : ℝ, 0 < ρ ∧ ∀ w ∈ Metric.ball w₀ ρ,
+      w ∈ slitPlane ∧ ‖w₀‖ / 2 ≤ ‖w‖ ∧ ‖w‖ ≤ 2 * ‖w₀‖ ∧ |w.arg| ≤ θ := by
+  obtain ⟨ρ₁, hρ₁, hsub₁⟩ := Metric.isOpen_iff.1 isOpen_slitPlane w₀ hw₀
+  have hcont_arg : ContinuousAt (fun w : ℂ ↦ |w.arg|) w₀ :=
+    continuous_abs.continuousAt.comp (continuousAt_arg hw₀)
+  obtain ⟨ρ₂, hρ₂, hsub₂⟩ := Metric.eventually_nhds_iff_ball.1
+    (hcont_arg.eventually (gt_mem_nhds hθ))
+  have hw₀_pos : 0 < ‖w₀‖ := norm_pos_iff.2 (slitPlane_ne_zero hw₀)
+  refine ⟨min (‖w₀‖ / 2) (min ρ₁ ρ₂), lt_min (by positivity) (lt_min hρ₁ hρ₂), fun w hw ↦ ?_⟩
+  have hwn : ‖w - w₀‖ < ‖w₀‖ / 2 := (mem_ball_iff_norm.1 hw).trans_le (min_le_left _ _)
+  have hlt := hsub₂ w (Metric.ball_subset_ball ((min_le_right _ _).trans (min_le_right _ _)) hw)
+  exact ⟨hsub₁ (Metric.ball_subset_ball ((min_le_right _ _).trans (min_le_left _ _)) hw),
+    by linarith [norm_sub_norm_le w₀ w, norm_sub_rev w₀ w],
+    by linarith [norm_le_norm_sub_add w w₀], hlt.le⟩
+
+/-- For any `α : ℝ`, the sector `{w : ℂ | w ∈ slitPlane ∧ |arg w| < α}` in the slit plane is
+open. -/
+theorem isOpen_slitPlane_inter_abs_arg_lt (α : ℝ) :
+    IsOpen {w : ℂ | w ∈ slitPlane ∧ |arg w| < α} :=
+  continuousOn_arg.abs.isOpen_inter_preimage isOpen_slitPlane isOpen_Iio
+
+open Filter Topology in
+/-- Around any point `w₀ ∈ slitPlane` with `|arg w₀| < α`, there is a neighborhood contained in
+`slitPlane` on which the norm is bounded away from `0` and `∞` and `|arg w|` stays bounded by a
+constant `α' < α`. -/
+theorem exists_mem_nhds_slitPlane_norm_and_arg_lt {w₀ : ℂ} {α : ℝ}
+    (hw₀ : w₀ ∈ slitPlane) (harg : |arg w₀| < α) :
+    ∃ U ∈ 𝓝 w₀, ∃ r₀ r₁ α' : ℝ,
+      0 < r₀ ∧ α' < α ∧
+      ∀ w ∈ U, w ∈ slitPlane ∧ r₀ ≤ ‖w‖ ∧ ‖w‖ ≤ r₁ ∧ |arg w| ≤ α' := by
+  have hnorm_pos : 0 < ‖w₀‖ := norm_pos_iff.mpr (slitPlane_ne_zero hw₀)
+  let r₀ := ‖w₀‖ / 2
+  let r₁ := 2 * ‖w₀‖
+  let α' := (|arg w₀| + α) / 2
+  have hα'_gt : |arg w₀| < α' := by dsimp [α']; linarith
+  have hU_slit : slitPlane ∈ 𝓝 w₀ := isOpen_slitPlane.mem_nhds hw₀
+  have hU_lo : {w : ℂ | r₀ < ‖w‖} ∈ 𝓝 w₀ :=
+    (isOpen_lt continuous_const continuous_norm).mem_nhds (by dsimp [r₀]; linarith)
+  have hU_hi : {w : ℂ | ‖w‖ < r₁} ∈ 𝓝 w₀ :=
+    (isOpen_lt continuous_norm continuous_const).mem_nhds (by dsimp [r₁]; linarith)
+  have hU_arg : {w : ℂ | |arg w| < α'} ∈ 𝓝 w₀ :=
+    (continuousAt_arg hw₀).abs.preimage_mem_nhds (Iio_mem_nhds hα'_gt)
+  refine ⟨slitPlane ∩ {w | r₀ < ‖w‖} ∩ {w | ‖w‖ < r₁} ∩ {w | |arg w| < α'},
+    inter_mem (inter_mem (inter_mem hU_slit hU_lo) hU_hi) hU_arg,
+    r₀, r₁, α', by positivity, by dsimp [α']; linarith, ?_⟩
+  rintro w ⟨⟨⟨hslit, hlo⟩, hhi⟩, harg'⟩
+  exact ⟨hslit, le_of_lt hlo, le_of_lt hhi, le_of_lt harg'⟩
+
 /-- The exponential of a point of the horizontal strip `|im x| < π` lies in the slit plane. -/
 theorem exp_mem_slitPlane_of_abs_im_lt {x : ℂ} (hx : |x.im| < π) : exp x ∈ slitPlane := by
   obtain ⟨h₁, h₂⟩ := abs_lt.1 hx
@@ -366,6 +448,32 @@ theorem one_add_mul_cos_div_two_le_norm_one_add_ofReal_mul_exp_mul_I (θ r : ℝ
 theorem norm_one_add_ofReal_mul_exp_mul_I_le (θ r : ℝ) :
     ‖1 + (r : ℂ) * exp ((θ : ℂ) * I)‖ ≤ 1 + |r| :=
   (norm_add_le _ _).trans_eq (by simp [norm_exp_ofReal_mul_I])
+
+/-- `‖x + y e^{iθ}‖² = x² + y² + 2 x y cos θ` for real `x`, `y`. -/
+theorem sq_norm_ofReal_add_mul_exp (x y θ : ℝ) :
+    ‖(x : ℂ) + y * exp (θ * I)‖ ^ 2 = x ^ 2 + y ^ 2 + 2 * x * y * Real.cos θ := by
+  rw [Complex.sq_norm, normSq_apply]
+  simp only [add_re, add_im, mul_re, mul_im, ofReal_re, ofReal_im, exp_ofReal_mul_I_re,
+    exp_ofReal_mul_I_im, zero_mul, sub_zero, add_zero, zero_add]
+  linear_combination y ^ 2 * Real.sin_sq_add_cos_sq θ
+
+/-- For `x, y, r > 0`, `‖x + y e^{iθ}‖ < r` if and only if
+`cos θ < (r² − y² − x²) / (2 y x)`. -/
+theorem norm_ofReal_add_mul_exp_lt_iff {x y r : ℝ} (hx : 0 < x) (hy : 0 < y) (hr : 0 < r)
+    (θ : ℝ) :
+    ‖(x : ℂ) + y * exp (θ * I)‖ < r ↔ Real.cos θ < (r ^ 2 - y ^ 2 - x ^ 2) / (2 * y * x) := by
+  rw [← pow_lt_pow_iff_left₀ (norm_nonneg _) hr.le two_ne_zero, sq_norm_ofReal_add_mul_exp,
+    lt_div_iff₀ (by positivity)]
+  constructor <;> intro h <;> linarith
+
+/-- For `x, y, r > 0`, `r < ‖x + y e^{iθ}‖` if and only if
+`(r² − y² − x²) / (2 y x) < cos θ`. -/
+theorem lt_norm_ofReal_add_mul_exp_iff {x y r : ℝ} (hx : 0 < x) (hy : 0 < y) (hr : 0 < r)
+    (θ : ℝ) :
+    r < ‖(x : ℂ) + y * exp (θ * I)‖ ↔ (r ^ 2 - y ^ 2 - x ^ 2) / (2 * y * x) < Real.cos θ := by
+  rw [← pow_lt_pow_iff_left₀ hr.le (norm_nonneg _) two_ne_zero, sq_norm_ofReal_add_mul_exp,
+    div_lt_iff₀ (by positivity)]
+  constructor <;> intro h <;> linarith
 
 /-- Along any ray avoiding the negative real axis (`|θ| < π`, `0 ≤ r`), `1 + r * exp (θ * I)` lies
 in the slit plane. -/
@@ -473,6 +581,70 @@ theorem sin_arg_sub_arg_one_sub (ξ : ℂ) :
   field_simp
   simp
   ring
+
+/-- Injectivity of the lexicographic norm–argument key `z ↦ toLex (‖z‖, arg z)` on `ℂ`. -/
+theorem toLex_norm_arg_injective : Function.Injective fun z : ℂ ↦ toLex (‖z‖, arg z) :=
+  fun _ _ h ↦ let ⟨h₁, h₂⟩ := Prod.ext_iff.1 (toLex.injective h); ext_norm_arg h₁ h₂
+
+/-- Polar-lexicographic strict order on `ℂ`: `w.polarLt z` holds when `‖w‖ < ‖z‖`, or when
+`‖w‖ = ‖z‖` and `w.arg < z.arg`. -/
+def polarLt (w z : ℂ) : Prop :=
+  toLex (‖w‖, w.arg) < toLex (‖z‖, z.arg)
+
+/-- `Complex.polarLt` is comparison of the lexicographic norm–argument key
+`z ↦ toLex (‖z‖, z.arg)`. -/
+theorem polarLt_iff_toLex_norm_arg (w z : ℂ) :
+    w.polarLt z ↔ toLex (‖w‖, w.arg) < toLex (‖z‖, z.arg) :=
+  Iff.rfl
+
+/-- Unfolding lemma for `Complex.polarLt`. -/
+@[grind =]
+theorem polarLt_def (w z : ℂ) :
+    w.polarLt z ↔ ‖w‖ < ‖z‖ ∨ ‖w‖ = ‖z‖ ∧ w.arg < z.arg :=
+  Prod.Lex.toLex_lt_toLex
+
+/-- `Complex.polarLt` is a strict total order on `ℂ`. -/
+instance instIsStrictTotalOrderPolarLt : IsStrictTotalOrder ℂ polarLt :=
+  toLex_norm_arg_injective.isStrictTotalOrder_onFun (· < ·)
+
+/-- Strict norm inequality implies `Complex.polarLt`. -/
+theorem polarLt_of_norm_lt {w z : ℂ} (h : ‖w‖ < ‖z‖) : w.polarLt z :=
+  Prod.Lex.toLex_lt_toLex.mpr (.inl h)
+
+/-- Equal norms and strict argument inequality imply `Complex.polarLt`. -/
+theorem polarLt_of_norm_eq_of_arg_lt {w z : ℂ} (hn : ‖w‖ = ‖z‖) (ha : w.arg < z.arg) :
+    w.polarLt z :=
+  Prod.Lex.toLex_lt_toLex.mpr (.inr ⟨hn, ha⟩)
+
+/-- `Complex.polarLt` is compatible with nondecreasing norms. -/
+theorem polarLt.norm_le {w z : ℂ} (h : w.polarLt z) : ‖w‖ ≤ ‖z‖ :=
+  ((polarLt_def w z).mp h).elim le_of_lt fun h' => h'.1.le
+
+/-- Nothing precedes `0` in `Complex.polarLt`. -/
+@[simp]
+theorem not_polarLt_zero (w : ℂ) : ¬ w.polarLt 0 := by
+  rw [polarLt_def]
+  rintro (h | ⟨hn, ha⟩)
+  · exact (norm_nonneg w).not_gt (by simpa using h)
+  · rw [norm_zero, norm_eq_zero] at hn
+    subst hn
+    exact lt_irrefl _ ha
+
+/-- `0` precedes every nonzero complex number in `Complex.polarLt`. -/
+@[simp]
+theorem zero_polarLt_iff {z : ℂ} : (0 : ℂ).polarLt z ↔ z ≠ 0 :=
+  ⟨fun h hz => not_polarLt_zero 0 (hz ▸ h),
+    fun hz => polarLt_of_norm_lt (by simpa using norm_pos_iff.mpr hz)⟩
+
+/-- Along a single ray (`w.arg = z.arg`), `Complex.polarLt` reduces to strict norm comparison. -/
+theorem polarLt_iff_of_arg_eq {w z : ℂ} (h : w.arg = z.arg) : w.polarLt z ↔ ‖w‖ < ‖z‖ :=
+  ⟨fun hp => ((polarLt_def w z).mp hp).elim id fun ⟨_, ha⟩ => absurd (h ▸ ha) (lt_irrefl _),
+    polarLt_of_norm_lt⟩
+
+/-- On a circle (`‖w‖ = ‖z‖`), `Complex.polarLt` reduces to strict argument comparison. -/
+theorem polarLt_iff_of_norm_eq {w z : ℂ} (h : ‖w‖ = ‖z‖) : w.polarLt z ↔ w.arg < z.arg :=
+  ⟨fun hp => ((polarLt_def w z).mp hp).elim (fun hn => absurd (h ▸ hn) (lt_irrefl _)) And.right,
+    polarLt_of_norm_eq_of_arg_lt h⟩
 
 end Complex
 

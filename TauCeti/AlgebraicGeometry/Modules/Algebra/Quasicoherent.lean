@@ -17,6 +17,12 @@ For a quasi-compact quasi-separated morphism `f : X ⟶ S`, the actual direct im
 This bundle supplies the regular-function algebra to constructions requiring quasi-coherence,
 such as algebra pullback and relative spectra.
 
+## Main declarations
+
+* `AlgebraicGeometry.Scheme.Hom.isQuasicoherent_pushforwardStructureAlgebra`: the function
+  algebra of a quasi-compact quasi-separated (e.g. affine) morphism is quasi-coherent;
+* `AlgebraicGeometry.Scheme.Hom.pushforwardAlgebra`: that algebra as a quasi-coherent algebra.
+
 ## References
 
 * The Stacks Project, Lemma 26.24.1 (01LC), quasi-coherence of direct images.
@@ -35,12 +41,17 @@ namespace AlgebraicGeometry.Scheme.Hom
 
 variable {X S : Scheme.{u}}
 
+/-- The function algebra `f_* 𝒪_X` of a quasi-compact quasi-separated (e.g. affine) morphism
+`f : X ⟶ S` is quasi-coherent (Stacks Project, Tag 01LC). -/
+instance isQuasicoherent_pushforwardStructureAlgebra (f : X ⟶ S) [QuasiCompact f]
+    [QuasiSeparated f] : f.pushforwardStructureAlgebra.X.IsQuasicoherent :=
+  inferInstanceAs ((Scheme.Modules.pushforward f).obj (𝟙_ X.Modules)).IsQuasicoherent
+
 /-- The quasi-coherent direct-image algebra of a quasi-compact quasi-separated morphism,
 carried by the actual direct image of its structure sheaf. -/
 def pushforwardAlgebra (f : X ⟶ S) [QuasiCompact f] [QuasiSeparated f] :
     QuasicoherentAlgebra S :=
-  ⟨f.pushforwardStructureAlgebra,
-    inferInstanceAs (((Scheme.Modules.pushforward f).obj (𝟙_ X.Modules)).IsQuasicoherent)⟩
+  ⟨f.pushforwardStructureAlgebra, inferInstance⟩
 
 /-- Forgetting quasi-coherence recovers the canonical direct-image structure algebra. -/
 @[simp]

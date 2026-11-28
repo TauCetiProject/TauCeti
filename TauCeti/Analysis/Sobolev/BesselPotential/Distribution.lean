@@ -61,6 +61,17 @@ theorem toDistrCLM_apply {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : H^{s, 
     toDistrCLM E F s p u = u.toDistr := by
   simp [toDistrCLM]
 
+/-- Pairing the tempered distribution of `u ∈ H^{s,p}` with a Schwartz function `φ`, as a
+continuous linear functional on `H^{s,p}`: evaluation at `φ` after `toDistrCLM`. -/
+theorem evalCLM_comp_toDistrCLM_apply {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (φ : 𝓢(E, ℂ))
+    (u : H^{s, p}(E, F)) :
+    (PointwiseConvergenceCLM.evalCLM (RingHom.id ℂ) F φ ∘L toDistrCLM E F s p) u = u.toDistr φ := by
+  rw [ContinuousLinearMap.comp_apply, toDistrCLM_apply]
+  -- `PointwiseConvergenceCLM.evalCLM` evaluates through the coercion of `𝓢(E, ℂ) →L[ℂ] F`, while
+  -- `𝓢'(E, F)` is the type synonym `𝓢(E, ℂ) →Lₚₜ[ℂ] F` with its own coercion to functions; the
+  -- two agree by definition.
+  rfl
+
 theorem toDistrCLM_injective {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] :
     Function.Injective (toDistrCLM E F s p) := fun u v h ↦
   ext (by simpa using h)
