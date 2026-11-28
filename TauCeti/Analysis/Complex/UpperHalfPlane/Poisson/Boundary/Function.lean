@@ -35,6 +35,8 @@ For `F` holomorphic and bounded on `ℂ₊`, by `‖F‖ ≤ S` say:
 * `F ↦ F*` is linear and multiplicative almost everywhere on bounded holomorphic functions
   (`TauCeti.upperHalfPlaneBoundaryFun_add_ae_eq`, `TauCeti.upperHalfPlaneBoundaryFun_smul_ae_eq`,
   `TauCeti.upperHalfPlaneBoundaryFun_mul_ae_eq`).
+* Under an affine map `z ↦ a + b z`, `b > 0`, the boundary function of `w ↦ F(a + b w)` is
+  `x ↦ F*(a + b x)` almost everywhere (`TauCeti.upperHalfPlaneBoundaryFun_comp_add_mul_ae_eq`).
 
 If `F` is continuous at `x` within the closed half-plane, then `F*(x) = F(x)`
 (`TauCeti.upperHalfPlaneBoundaryFun_eq_of_continuousWithinAt`); in particular the boundary
@@ -206,6 +208,21 @@ theorem upperHalfPlaneBoundaryFun_smul_ae_eq (hF : DifferentiableOn ℂ F upperH
     upperHalfPlaneBoundaryFun (c • F) =ᵐ[volume] c • upperHalfPlaneBoundaryFun F := by
   filter_upwards [ae_tendsto_nontangentialFilter_upperHalfPlaneBoundaryFun hF hS] with x hFx
   exact upperHalfPlaneBoundaryFun_eq_of_tendsto le_rfl ((hFx 1).const_smul c)
+
+/-- **Boundary functions under affine maps.** If `F` is holomorphic and bounded on `ℂ₊` and
+`b > 0`, then the boundary function of `w ↦ F(a + b w)` is `x ↦ F*(a + b x)` almost everywhere. -/
+theorem upperHalfPlaneBoundaryFun_comp_add_mul_ae_eq (hF : DifferentiableOn ℂ F upperHalfPlaneSet)
+    (hS : ∀ z ∈ upperHalfPlaneSet, ‖F z‖ ≤ S) (a : ℝ) {b : ℝ} (hb : 0 < b) :
+    upperHalfPlaneBoundaryFun (fun w ↦ F ((a : ℂ) + b * w)) =ᵐ[volume]
+      fun x ↦ upperHalfPlaneBoundaryFun F (a + b * x) := by
+  -- `x ↦ a + b x` pulls almost-everywhere statements back to almost-everywhere statements
+  have hqmp : QuasiMeasurePreserving (fun x : ℝ ↦ a + b * x) :=
+    (measurePreserving_add_left volume a).quasiMeasurePreserving.comp
+      (Measure.quasiMeasurePreserving_smul volume hb.ne')
+  filter_upwards [hqmp.ae (ae_tendsto_nontangentialFilter_upperHalfPlaneBoundaryFun hF hS)]
+    with x hx
+  exact upperHalfPlaneBoundaryFun_eq_of_tendsto le_rfl
+    ((hx 1).comp (tendsto_add_mul_nontangentialFilter a hb 1 x))
 
 end Bounded
 

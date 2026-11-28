@@ -35,7 +35,14 @@ locally constant function with compact support, which vanishes off a compact set
 (`TauCeti.isOpen_rightTranslationStabilizer_of_hasCompactSupport`). On an additive group the
 stabilizer is the subgroup of periods of `f`, `TauCeti.addRightTranslationStabilizer f`, so a
 locally constant compactly supported function is periodic under an open subgroup
-(`TauCeti.isOpen_addRightTranslationStabilizer_of_hasCompactSupport`).
+(`TauCeti.isOpen_addRightTranslationStabilizer_of_hasCompactSupport`). Both statements, and
+invariance under small left translations
+(`TauCeti.eventually_forall_mul_left_eq_of_hasCompactSupport`), are cases of the invariance of a
+compactly supported locally constant function under any jointly continuous family of maps
+`act · g` with `act z 1 = z` and `act (act z g) g⁻¹ = z`, for `g` near `1`
+(`TauCeti.eventually_forall_apply_act_eq_of_hasCompactSupport`). Conversely, on any group with
+separately continuous multiplication, a function whose right-translation stabilizer is open is
+locally constant (`TauCeti.isLocallyConstant_of_isOpen_rightTranslationStabilizer`).
 
 Uniform local constancy is what makes the coinduced module of locally constant equivariant maps a
 *discrete* `G`-module, its right-translation stabilizers being open. Since an open subgroup of a
@@ -166,6 +173,17 @@ def rightTranslationStabilizer (f : G → A) : Subgroup G where
 theorem mem_rightTranslationStabilizer {f : G → A} {g : G} :
     g ∈ rightTranslationStabilizer f ↔ ∀ x : G, f (x * g) = f x := Iff.rfl
 
+/-- A function whose right-translation stabilizer is open is locally constant: it is constant on
+the open neighbourhood `x U` of each point `x`, where `U` is the stabilizer. -/
+theorem isLocallyConstant_of_isOpen_rightTranslationStabilizer [TopologicalSpace G]
+    [SeparatelyContinuousMul G] {f : G → A} (hf : IsOpen (rightTranslationStabilizer f : Set G)) :
+    IsLocallyConstant f := by
+  refine (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦ ?_
+  have hU : IsOpen ((x⁻¹ * ·) ⁻¹' (rightTranslationStabilizer f : Set G)) :=
+    hf.preimage (continuous_const_mul _)
+  filter_upwards [hU.mem_nhds (by simp [one_mem])] with y hy
+  simpa using mem_rightTranslationStabilizer.1 hy x
+
 /-- A locally constant function on a compact topological group is *uniformly* locally constant:
 its right-translation stabilizer is an open subgroup, so a single open neighbourhood of `1` makes
 `f (x * g) = f x` hold for every `x` simultaneously. -/
@@ -179,6 +197,35 @@ theorem isOpen_rightTranslationStabilizer [TopologicalSpace G] [ContinuousMul G]
     fun g hg x => ?_)
   simpa using hV g hg x
 
+/-- **Uniform invariance of a test function under small translations.** Let `act : Z → G → Z` be
+jointly continuous with `act z 1 = z` and `act (act z g) g⁻¹ = z`, for instance a continuous right
+action. A locally constant function with compact support on `Z` is invariant under `act · g`,
+uniformly in the point, for all `g` near `1`. -/
+@[to_additive eventually_forall_apply_addAct_eq_of_hasCompactSupport /-- **Uniform invariance of a
+test function under small translations.** Let `act : Z → G → Z` be jointly continuous with
+`act z 0 = z` and `act (act z g) (-g) = z`, for instance a continuous additive right action. A
+locally constant function with compact support on `Z` is invariant under `act · g`, uniformly in the
+point, for all `g` near `0`. -/]
+theorem eventually_forall_apply_act_eq_of_hasCompactSupport [TopologicalSpace G] [ContinuousInv G]
+    {Z : Type*} [TopologicalSpace Z] [Zero A] {f : Z → A} (hf : IsLocallyConstant f)
+    (hfc : HasCompactSupport f) {act : Z → G → Z} (hact : Continuous (Function.uncurry act))
+    (hone : ∀ z, act z 1 = z) (hinv : ∀ z g, act (act z g) g⁻¹ = z) :
+    ∀ᶠ g in nhds (1 : G), ∀ z, f (act z g) = f z := by
+  -- Uniform local constancy on the compact support, near `1`.
+  obtain ⟨V, hVopen, hV1, hV⟩ :=
+    (hf.comp_continuous hact).exists_isOpen_forall_mem_eq hfc.isCompact (1 : G)
+  have hVn : V ∈ nhds (1 : G) := hVopen.mem_nhds hV1
+  have hVinv : Inv.inv ⁻¹' V ∈ nhds (1 : G) :=
+    continuous_inv.continuousAt.preimage_mem_nhds (by rwa [inv_one])
+  filter_upwards [hVn, hVinv] with g hg hg' z
+  -- If `z` or `act z g` lies in the support, translate from that point; otherwise both values
+  -- vanish.
+  by_cases hz : z ∈ tsupport f
+  · simpa [hone] using hV g hg z hz
+  by_cases hzg : act z g ∈ tsupport f
+  · simpa [hone, hinv] using (hV g⁻¹ hg' _ hzg).symm
+  rw [image_eq_zero_of_notMem_tsupport hz, image_eq_zero_of_notMem_tsupport hzg]
+
 /-- A locally constant function with compact support on a topological group is *uniformly*
 locally constant: its right-translation stabilizer is an open subgroup. The group need not be
 compact, since the function vanishes off its compact support. -/
@@ -187,19 +234,20 @@ function with compact support on a topological additive group is *uniformly* loc
 additive subgroup of periods is open. -/]
 theorem isOpen_rightTranslationStabilizer_of_hasCompactSupport [TopologicalSpace G]
     [IsTopologicalGroup G] [Zero A] {f : G → A} (hf : IsLocallyConstant f)
-    (hfc : HasCompactSupport f) : IsOpen (rightTranslationStabilizer f : Set G) := by
-  -- Uniform local constancy on the compact support, near `1`.
-  obtain ⟨V, hVopen, hV1, hV⟩ :=
-    hf.exists_isOpen_forall_mem_mul_right_eq hfc.isCompact (1 : G) continuous_id.continuousAt
-  have hVn : V ∈ nhds (1 : G) := hVopen.mem_nhds hV1
-  refine Subgroup.isOpen_of_mem_nhds _ (Filter.mem_of_superset (Filter.inter_mem hVn
-    (inv_mem_nhds_one G hVn)) fun g hg x => ?_)
-  -- If `x` or `x * g` lies in the support, translate from that point; otherwise both values vanish.
-  by_cases hx : x ∈ tsupport f
-  · simpa using hV g hg.1 x hx
-  by_cases hxg : x * g ∈ tsupport f
-  · simpa using (hV g⁻¹ hg.2 (x * g) hxg).symm
-  rw [image_eq_zero_of_notMem_tsupport hx, image_eq_zero_of_notMem_tsupport hxg]
+    (hfc : HasCompactSupport f) : IsOpen (rightTranslationStabilizer f : Set G) :=
+  Subgroup.isOpen_of_mem_nhds _ <| (eventually_forall_apply_act_eq_of_hasCompactSupport hf hfc
+    continuous_mul mul_one mul_inv_cancel_right).mono fun _ hg =>
+      mem_rightTranslationStabilizer.2 hg
+
+/-- A locally constant function with compact support on a topological group is invariant under left
+translation by every `g` near `1`, uniformly in the point. -/
+@[to_additive /-- A locally constant function with compact support on a topological additive group
+is invariant under left translation by every `g` near `0`, uniformly in the point. -/]
+theorem eventually_forall_mul_left_eq_of_hasCompactSupport [TopologicalSpace G]
+    [IsTopologicalGroup G] [Zero A] {f : G → A} (hf : IsLocallyConstant f)
+    (hfc : HasCompactSupport f) : ∀ᶠ g in nhds (1 : G), ∀ x, f (g * x) = f x :=
+  eventually_forall_apply_act_eq_of_hasCompactSupport (act := fun x g => g * x) hf hfc
+    (by fun_prop) one_mul fun _ _ => inv_mul_cancel_left _ _
 
 end TauCeti
 

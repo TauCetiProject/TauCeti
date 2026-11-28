@@ -150,7 +150,8 @@ variable {A : Type u} {B : Type v} [CStarAlgebra A] [CStarAlgebra B]
 
 /-- The unital star homomorphism `B/J → (A ⊗max B)/(A ⊗max J)`, `b ↦ 1 ⊗ b`. -/
 def quotientIncludeRight : B ⧸ J →⋆ₐ[ℂ] MaxTensorProduct A B ⧸ rangeIdeal A J :=
-  liftUnitalStarAlgHom J ((mkUnitalStarAlgHom (rangeIdeal A J)).comp (includeRight A B))
+  liftUnitalStarAlgHom J
+    ((mkUnitalStarAlgHom (rangeIdeal A J)).comp (includeRight (maxCStarTensorNorm A B)))
     fun j hj ↦ by
       rw [StarAlgHom.comp_apply, mkUnitalStarAlgHom_apply, eq_zero_iff_mem, mem_rangeIdeal,
         includeRight_apply]
@@ -167,13 +168,14 @@ theorem quotientIncludeRight_mk (b : B) :
 of `a ⊗ b`. -/
 def liftQuotient :
     MaxTensorProduct A (B ⧸ J) →⋆ₙₐ[ℂ] MaxTensorProduct A B ⧸ rangeIdeal A J :=
-  lift ((mkUnitalStarAlgHom (rangeIdeal A J)).comp (includeLeft A B)).toNonUnitalStarAlgHom
+  lift ((mkUnitalStarAlgHom (rangeIdeal A J)).comp
+      (includeLeft (maxCStarTensorNorm A B))).toNonUnitalStarAlgHom
     (quotientIncludeRight J).toNonUnitalStarAlgHom fun a b ↦ by
       obtain ⟨b, rfl⟩ := mk_surjective J b
       -- `lift` sees the quotients through their non-unital C*-algebra instances, which agree
       -- with the unital ones only up to unfolding, so `StarAlgHom.coe_toNonUnitalStarAlgHom`
       -- does not rewrite here
-      change Commute (mkUnitalStarAlgHom (rangeIdeal A J) (includeLeft A B a))
+      change Commute (mkUnitalStarAlgHom (rangeIdeal A J) (includeLeft (maxCStarTensorNorm A B) a))
         (quotientIncludeRight J (mk J b))
       rw [quotientIncludeRight_mk, ← includeRight_apply, ← mkUnitalStarAlgHom_apply]
       exact (commute_includeLeft_includeRight a b).map (mkUnitalStarAlgHom (rangeIdeal A J))
@@ -185,7 +187,8 @@ theorem liftQuotient_of_tmul (a : A) (b : B) :
       mk (rangeIdeal A J) (of (maxCStarTensorNorm A B) (a ⊗ₜ b)) := by
   refine (lift_of_tmul _ _ _ _ _).trans ?_
   -- as in `liftQuotient`, the coercions of the unital homomorphisms only unfold by `change`
-  change mkUnitalStarAlgHom _ (includeLeft A B a) * quotientIncludeRight J (mk J b) = _
+  change mkUnitalStarAlgHom _ (includeLeft (maxCStarTensorNorm A B) a) *
+    quotientIncludeRight J (mk J b) = _
   rw [quotientIncludeRight_mk, ← includeRight_apply, ← mkUnitalStarAlgHom_apply, ← map_mul,
     includeLeft_mul_includeRight, mkUnitalStarAlgHom_apply]
 

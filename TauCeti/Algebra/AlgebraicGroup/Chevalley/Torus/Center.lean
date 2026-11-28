@@ -89,6 +89,21 @@ theorem torusPoints_mem_centralizer_rootTorusSubgroup_iff (s : Fin t.rank → A�
       (D.rootSubgroupPoints_mem_rootTorusSubgroup γ A (Multiplicative.ofAdd 1))).symm
   · exact D.torusPoints_mem_centralizer_rootTorusSubgroup_of_root_eq_one s
 
+/-- An ambient point lies in the toral centralizer if and only if it is a torus point whose
+coordinate root characters are all trivial. -/
+theorem mem_range_torusPoints_inf_centralizer_rootTorusSubgroup_iff (g : D.points A) :
+    g ∈ (D.torusPoints A).range ⊓
+        Subgroup.centralizer (D.rootTorusSubgroup A : Set (D.points A)) ↔
+      ∃ s : Fin t.rank → Aˣ,
+        g = D.torusPoints A s ∧
+          ∀ γ, torusCharacter s (D.coordinateRoot γ) = 1 := by
+  rw [Subgroup.mem_inf]
+  constructor
+  · rintro ⟨⟨s, rfl⟩, hC⟩
+    exact ⟨s, rfl, (D.torusPoints_mem_centralizer_rootTorusSubgroup_iff s).mp hC⟩
+  · rintro ⟨s, rfl, hχ⟩
+    exact ⟨⟨s, rfl⟩, (D.torusPoints_mem_centralizer_rootTorusSubgroup_iff s).mpr hχ⟩
+
 /-- In actual character-lattice coordinates, the toral part of the centralizer of the generated
 group is exactly the image of the annihilator of the root lattice. -/
 theorem map_torusAnnihilator_eq_range_inf_centralizer_rootTorusSubgroup :
