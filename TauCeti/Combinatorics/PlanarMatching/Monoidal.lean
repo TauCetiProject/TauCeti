@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Category
+public import TauCeti.CategoryTheory.Monoidal.Scalar
 public import TauCeti.Combinatorics.PlanarMatching.Category
 public import TauCeti.Combinatorics.PlanarMatching.Tensor
 
@@ -23,6 +24,11 @@ The axioms of a monoidal category come from the laws of `TauCeti.TLDiagram.tenso
 law `TauCeti.TLDiagram.tensor_comp_tensor` makes the tensor product a functor, and associativity and
 unitality of the tensor product of diagrams give the naturality of the associators and unitors.
 
+Every endomorphism `a : 𝟙_ TLDiagCat ⟶ 𝟙_ TLDiagCat` of the unit is a collection of closed circles,
+and tensoring it on the left or on the right of any object `X` adds the same number of circles to
+`𝟙 X`. In particular, every scalar — including `TLDiagCat.circle` and `TLDiagCat.cup ≫
+TLDiagCat.cap` — is central at every object (`TauCeti.TLDiagCat.circlesCommuteAt_scalar`).
+
 ## Main definitions
 
 * `TauCeti.TLDiagCat.instMonoidalCategory`: the monoidal structure on `TLDiagCat`.
@@ -34,6 +40,8 @@ unitality of the tensor product of diagrams give the naturality of the associato
 * `TauCeti.TLDiagCat.associator_hom`, `TauCeti.TLDiagCat.leftUnitor_hom`,
   `TauCeti.TLDiagCat.rightUnitor_hom` and their inverses: the structure isomorphisms are transports
   along equalities of objects, so the monoidal structure is strict.
+* `TauCeti.TLDiagCat.circlesCommuteAt_scalar`, `TauCeti.TLDiagCat.circlesCommuteAt_circle`: every
+  scalar, and in particular the closed circle, acts equally on the left and right of every object.
 
 ## References
 
@@ -59,6 +67,16 @@ instance : MonoidalCategoryStruct TLDiagCat where
   rightUnitor X := eqToIso (TLDiagCat.ext (Nat.add_zero X.as))
 
 variable {X Y Z X' Y' : TLDiagCat}
+
+/-- Postcomposing with `eqToHom h` casts the top boundary of the underlying diagram. -/
+theorem diagram_comp_eqToHom (f : X ⟶ Y) (h : Y = Z) :
+    (f ≫ eqToHom h).diagram = TLDiagram.cast rfl (congrArg as h) f.diagram := by
+  subst h; simp
+
+/-- Precomposing with `eqToHom h` casts the bottom boundary of the underlying diagram. -/
+theorem diagram_eqToHom_comp (h : X = Y) (f : Y ⟶ Z) :
+    (eqToHom h ≫ f).diagram = TLDiagram.cast (congrArg as h).symm rfl f.diagram := by
+  subst h; simp
 
 /-! The next two lemmas are proved by `rfl`, not `(rfl)`, so that `dsimp` and `simp` can rewrite
 the numbers of points inside the indices of diagram types, where a propositional rewrite would not
@@ -126,6 +144,63 @@ instance instMonoidalCategory : MonoidalCategory TLDiagCat :=
     (rightUnitor_naturality := fun _ => hom_ext <| by simp [rightUnitor_hom])
     (pentagon := fun _ _ _ _ => hom_ext <| by simp [associator_hom])
     (triangle := fun _ _ => hom_ext <| by simp [associator_hom, leftUnitor_hom, rightUnitor_hom])
+
+/-! ### Centrality of scalars and closed circles -/
+
+/-- Acting on the right of `X` by a scalar `a : 𝟙_ TLDiagCat ⟶ 𝟙_ TLDiagCat` keeps the identity
+matching on `X.as` strands and adds the circles of `a`. -/
+theorem diagram_rightUnitor_inv_whiskerLeft_rightUnitor_hom
+    (a : 𝟙_ TLDiagCat ⟶ 𝟙_ TLDiagCat) (X : TLDiagCat) :
+    ((ρ_ X).inv ≫ X ◁ a ≫ (ρ_ X).hom).diagram =
+      ⟨(TLDiagram.id X.as).matching, a.diagram.circles⟩ := by
+  have hm : a.diagram.matching = (TLDiagram.id 0).matching :=
+    PlanarMatching.ext fun i => i.elim0
+  have ht := congrArg TLDiagram.matching (TLDiagram.tensor_id_zero (TLDiagram.id X.as))
+  rw [TLDiagram.matching_tensor, TLDiagram.matching_id] at ht
+  rw [rightUnitor_inv, rightUnitor_hom, diagram_eqToHom_comp, diagram_comp_eqToHom,
+    diagram_whiskerLeft, TLDiagram.cast_cast]
+  ext : 1
+  · simp only [TLDiagram.matching_cast, TLDiagram.matching_tensor, TLDiagram.matching_id, hm]
+    simpa [PlanarMatching.cast_cast] using ht
+  · simp
+
+/-- Acting on the left of `X` by a scalar `a : 𝟙_ TLDiagCat ⟶ 𝟙_ TLDiagCat` keeps the identity
+matching on `X.as` strands and adds the circles of `a`. -/
+theorem diagram_leftUnitor_inv_whiskerRight_leftUnitor_hom
+    (a : 𝟙_ TLDiagCat ⟶ 𝟙_ TLDiagCat) (X : TLDiagCat) :
+    ((λ_ X).inv ≫ a ▷ X ≫ (λ_ X).hom).diagram =
+      ⟨(TLDiagram.id X.as).matching, a.diagram.circles⟩ := by
+  have hm : a.diagram.matching = (TLDiagram.id 0).matching :=
+    PlanarMatching.ext fun i => i.elim0
+  have ht := congrArg (PlanarMatching.cast (by omega : 0 + X.as + (0 + X.as) = X.as + X.as))
+    (congrArg TLDiagram.matching (TLDiagram.id_zero_tensor (TLDiagram.id X.as)))
+  rw [TLDiagram.matching_tensor, TLDiagram.matching_cast, TLDiagram.matching_id,
+    PlanarMatching.cast_cast, PlanarMatching.cast_cast, PlanarMatching.cast_refl,
+    Equiv.refl_apply] at ht
+  rw [leftUnitor_inv, leftUnitor_hom, diagram_eqToHom_comp, diagram_comp_eqToHom,
+    diagram_whiskerRight, TLDiagram.cast_cast]
+  ext : 1
+  · simp only [TLDiagram.matching_cast, TLDiagram.matching_tensor, TLDiagram.matching_id, hm,
+      PlanarMatching.cast_cast] at ht ⊢
+    exact ht
+  · simp
+
+/-- **Every scalar is central in `TLDiagCat`**: tensoring any endomorphism of `𝟙_ TLDiagCat` on
+the left or on the right of an object `X` produces the same endomorphism of `X`. -/
+theorem circlesCommuteAt_scalar (a : 𝟙_ TLDiagCat ⟶ 𝟙_ TLDiagCat) (X : TLDiagCat) :
+    CirclesCommuteAt a X := by
+  rw [circlesCommuteAt_iff]
+  exact hom_ext <| (diagram_rightUnitor_inv_whiskerLeft_rightUnitor_hom a X).trans
+    (diagram_leftUnitor_inv_whiskerRight_leftUnitor_hom a X).symm
+
+/-- The closed circle acts identically on the left and right of every object of `TLDiagCat`. -/
+theorem circlesCommuteAt_circle (X : TLDiagCat) : CirclesCommuteAt circle X :=
+  circlesCommuteAt_scalar circle X
+
+/-- The composite `cup ≫ cap` acts identically on the left and right of every object of
+`TLDiagCat`. -/
+theorem circlesCommuteAt_cup_comp_cap (X : TLDiagCat) : CirclesCommuteAt (cup ≫ cap) X :=
+  circlesCommuteAt_scalar (cup ≫ cap) X
 
 end TLDiagCat
 
