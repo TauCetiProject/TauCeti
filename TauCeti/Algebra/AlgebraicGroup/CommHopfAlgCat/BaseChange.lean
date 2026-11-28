@@ -82,6 +82,21 @@ noncomputable def _root_.CommHopfAlgCat.baseChangeAlgEquiv
     (TauCeti.CommHopfAlgCat.baseChange (K := K) H : Type (max w v)) ≃ₐ[K] K ⊗[k] (H : Type v) :=
   AlgEquiv.refl
 
+/-- Applying `CommHopfAlgCat.baseChangeAlgEquiv` is the identity on the underlying carrier
+`K ⊗[k] H`. -/
+@[simp]
+lemma _root_.CommHopfAlgCat.baseChangeAlgEquiv_apply
+    (H : _root_.CommHopfAlgCat.{v} k)
+    (x : (TauCeti.CommHopfAlgCat.baseChange (K := K) H : Type (max w v))) :
+    H.baseChangeAlgEquiv (K := K) x = x := (rfl)
+
+/-- Applying `(CommHopfAlgCat.baseChangeAlgEquiv).symm` is the identity on the underlying carrier
+`K ⊗[k] H`. -/
+@[simp]
+lemma _root_.CommHopfAlgCat.baseChangeAlgEquiv_symm_apply
+    (H : _root_.CommHopfAlgCat.{v} k) (x : K ⊗[k] (H : Type v)) :
+    (H.baseChangeAlgEquiv (K := K)).symm x = x := (rfl)
+
 /-- Scalar extension of a morphism of commutative Hopf algebras. -/
 noncomputable abbrev baseChangeMap {H L : _root_.CommHopfAlgCat.{v} k}
     (φ : H ⟶ L) : baseChange (K := K) H ⟶ baseChange (K := K) L :=

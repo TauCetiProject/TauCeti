@@ -197,6 +197,12 @@ theorem gaPointsMulEquiv_symm_apply_ι (a : Multiplicative A) :
   rw [gaPointsMulEquiv]
   simp
 
+/-- Evaluating a point of `𝔾ₐ` on an arbitrary generator `ι R R r` multiplies `r` by the point's
+additive parameter. -/
+theorem ofConv_ι (F : WithConv (SymmetricAlgebra R R →ₐ[R] A)) (r : R) :
+    F.ofConv (ι R R r) = algebraMap R A r * Multiplicative.toAdd (gaPointsMulEquiv F) := by
+  rw [SymmetricAlgebra.ι_self_eq_smul_ι_one, map_smul, Algebra.smul_def, toAdd_gaPointsMulEquiv]
+
 /-- Reading a `𝔾ₐ`-point as an element of the value algebra is natural in the value algebra:
 post-composing the point with an `R`-algebra map applies that map to the corresponding
 element. -/

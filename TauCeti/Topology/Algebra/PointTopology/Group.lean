@@ -64,6 +64,9 @@ its adelic points.
   a closed embedding of groups of points over a T1 ring.
 * `ContinuousAlgEquiv.mapValueContinuousMulEquiv`: change of coefficients along an isomorphism of
   topological coefficient algebras, as an isomorphism of topological monoids of points.
+* `TauCeti.AlgHom.continuous_baseChangePointsMulEquiv` and
+  `TauCeti.AlgHom.continuous_baseChangePointsMulEquiv_symm`: continuity of
+  `AlgHom.baseChangePointsMulEquiv` in both directions.
 * `BialgEquiv.mapDomainContinuousMulEquiv`: pre-composition with an isomorphism of bialgebras, as
   an isomorphism of topological monoids of points.
 * `TauCeti.PointTopology.coe_baseChangeConvHomeomorph_symm`: for a bialgebra, the inverse of the
@@ -278,6 +281,29 @@ theorem BialgEquiv.mapDomainContinuousMulEquiv_symm (e : H₁ ≃ₐc[k] H₂) :
 
 end Functoriality
 
+section BaseChange
+
+open Topology TauCeti.PointTopology
+open scoped TensorProduct
+
+namespace TauCeti.AlgHom
+
+variable {k K A R : Type*} [CommSemiring k] [CommSemiring K] [Algebra k K]
+  [Semiring A] [_root_.Bialgebra k A] [CommSemiring R] [Algebra k R] [Algebra K R]
+  [IsScalarTower k K R] [TopologicalSpace R]
+
+/-- Restriction of base-changed bialgebra points is continuous for the point topology. -/
+@[continuity, fun_prop]
+theorem continuous_baseChangePointsMulEquiv_symm :
+    Continuous (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)).symm :=
+  continuous_withConv_iff.2 fun a ↦
+    (continuous_eval_ofConv (1 ⊗ₜ[k] a)).congr fun f ↦
+      (baseChangePointsMulEquiv_symm_apply f a).symm
+
+end TauCeti.AlgHom
+
+end BaseChange
+
 section Range
 
 variable {k H R R' : Type*} [CommSemiring k] [CommSemiring R] [Algebra k R] [CommSemiring R']
@@ -345,6 +371,13 @@ theorem coe_baseChangeConvHomeomorph_symm :
   rw [Homeomorph.symm_apply_eq]
   ext a
   simp
+
+/-- Base change of bialgebra points is continuous for the point topology. -/
+@[continuity, fun_prop]
+theorem _root_.TauCeti.AlgHom.continuous_baseChangePointsMulEquiv :
+    Continuous (AlgHom.baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)) := by
+  rw [← coe_baseChangeConvHomeomorph_symm]
+  exact (baseChangeConvHomeomorph k K A R).symm.continuous
 
 end BaseChangeMulEquiv
 

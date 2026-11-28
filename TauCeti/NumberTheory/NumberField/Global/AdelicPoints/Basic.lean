@@ -8,6 +8,8 @@ module
 public import Mathlib.NumberTheory.NumberField.AdeleRing
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 public import TauCeti.Topology.Algebra.PointTopology.Prod
+import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
+import TauCeti.Topology.Algebra.PointTopology.Separation
 
 /-!
 # Adelic points of an affine group scheme
@@ -15,14 +17,16 @@ public import TauCeti.Topology.Algebra.PointTopology.Prod
 Let `R` be a Dedekind domain with fraction field `K`, and let `H` be a bialgebra over `K`; when `H`
 is a commutative Hopf algebra it is the coordinate ring of the affine group scheme `G = Spec H`.
 This file defines the groups of points of `G` over Mathlib's `AdeleRing R K = K_∞ × 𝔸_{K,f}`,
-written `𝔸_K`, over its two factors and over the completions at the finite places of `R`,
+written `𝔸_K`, over its two factors and over the completions at the finite and infinite places:
 
 * `TauCeti.AdelicPoints R K H`, the points `G(𝔸_K) = WithConv (H →ₐ[K] 𝔸_K)`;
 * `TauCeti.AdelicPoints.FiniteAdelicPoints R K H`, the points `G(𝔸_{K,f})` over the finite
   adeles;
 * `TauCeti.AdelicPoints.InfinitePoints K H`, the points `G(K_∞)` over the infinite adeles;
 * `TauCeti.AdelicPoints.LocalPoints R K H v`, the points `G(K_v)` over the completion at a finite
-  place `v`,
+  place `v`;
+* `TauCeti.AdelicPoints.InfiniteLocalPoints K H w`, the points `G(K_w)` over the completion at an
+  infinite place `w`,
 
 each with the convolution product and Tau Ceti's point topology, the coarsest topology making
 every evaluation `x ↦ x h` continuous. For a Hopf algebra `H` these are topological groups
@@ -39,7 +43,9 @@ The rational diagonals and the projections are changes of coefficients `AlgHom.m
 algebra maps of the coefficient rings:
 
 * the rational diagonals `G(K) → G(𝔸_K)`, `G(K) → G(𝔸_{K,f})` and `G(K) → G(K_∞)` along the
-  diagonal embeddings of `K`;
+  diagonal algebra maps out of `K`; the induced point maps are injective whenever their target
+  coefficient rings are nontrivial (`diagonal_injective`, `finiteDiagonal_injective`,
+  `infiniteDiagonal_injective`);
 * the projections `G(𝔸_K) → G(𝔸_{K,f})` and `G(𝔸_K) → G(K_∞)` to the finite and infinite
   components;
 * the projections `p_v : G(𝔸_K) → G(K_v)` to the points over the completion at a finite place
@@ -47,20 +53,22 @@ algebra maps of the coefficient rings:
 
 The projections are continuous, and each of them carries the rational diagonal to the
 corresponding rational diagonal; in particular `p_v` sends a rational point to its image in
-`G(K_v)`. Finally, the splitting `𝔸_K = K_∞ × 𝔸_{K,f}` gives an isomorphism of topological groups
-`G(𝔸_K) ≃ G(K_∞) × G(𝔸_{K,f})`, and through it the embedding `finiteEmbed : G(𝔸_{K,f}) → G(𝔸_K)`,
-`x ↦ (1, x)`, of a finite adelic point as the adelic point with trivial infinite component.
-This is an embedding of groups of points: it is not induced by a ring map `𝔸_{K,f} → 𝔸_K`, and
-its infinite coordinate is the identity point, not zero.
+`G(K_v)`. The splitting `𝔸_K = K_∞ × 𝔸_{K,f}` gives an isomorphism of topological groups
+`G(𝔸_K) ≃ₜ* G(K_∞) × G(𝔸_{K,f})`, and through it the closed embeddings
+`infiniteEmbed : G(K_∞) → G(𝔸_K)` (`x ↦ (x, 1)`) and `finiteEmbed : G(𝔸_{K,f}) → G(𝔸_K)`
+(`x ↦ (1, x)`), factoring every adelic point as
+`infiniteEmbed (infiniteProjection x) * finiteEmbed (finiteProjection x) = x`. Likewise,
+`piInfiniteContinuousMulEquiv` identifies `G(K_∞)` with `∀ w, G(K_w)`.
 
 ## Main declarations
 
 * `TauCeti.AdelicPoints`, `TauCeti.AdelicPoints.FiniteAdelicPoints`,
-  `TauCeti.AdelicPoints.InfinitePoints`, `TauCeti.AdelicPoints.LocalPoints`.
+  `TauCeti.AdelicPoints.InfinitePoints`, `TauCeti.AdelicPoints.LocalPoints`,
+  `TauCeti.AdelicPoints.InfiniteLocalPoints`.
 * `TauCeti.AdelicPoints.diagonal`, `TauCeti.AdelicPoints.finiteDiagonal`,
-  `TauCeti.AdelicPoints.infiniteDiagonal`: the rational diagonals.
-* `TauCeti.AdelicPoints.diagonal_injective`: for a number field the rational diagonal into the
-  adelic points is injective.
+  `TauCeti.AdelicPoints.infiniteDiagonal`: the rational diagonals, with injectivity lemmas
+  `diagonal_injective`, `diagonal_injective_of_not_isField`, `finiteDiagonal_injective`,
+  `finiteDiagonal_injective_of_not_isField`, and `infiniteDiagonal_injective`.
 * `TauCeti.AdelicPoints.finiteProjection`, `TauCeti.AdelicPoints.infiniteProjection`: the finite
   and infinite components.
 * `TauCeti.AdelicPoints.localProjection`, `TauCeti.AdelicPoints.infinitePlaceProjection`: the
@@ -70,20 +78,27 @@ its infinite coordinate is the identity point, not zero.
   `TauCeti.AdelicPoints.infinitePlaceProjection_diagonal`: the local components of a rational point
   are its images in the local points.
 * `TauCeti.AdelicPoints.prodContinuousMulEquiv`: `G(𝔸_K) ≃ₜ* G(K_∞) × G(𝔸_{K,f})`, with
-  `TauCeti.AdelicPoints.prodContinuousMulEquiv_finiteEmbed`.
-* `TauCeti.AdelicPoints.finiteEmbed`, with `TauCeti.AdelicPoints.finiteProjection_finiteEmbed`
-  and `TauCeti.AdelicPoints.infiniteProjection_finiteEmbed`.
+  `TauCeti.AdelicPoints.prodContinuousMulEquiv_finiteEmbed` and
+  `TauCeti.AdelicPoints.prodContinuousMulEquiv_infiniteEmbed`.
+* `TauCeti.AdelicPoints.piInfiniteContinuousMulEquiv`: `G(K_∞) ≃ₜ* ∀ w, G(K_w)`.
+* `TauCeti.AdelicPoints.finiteEmbed`, `TauCeti.AdelicPoints.infiniteEmbed`: closed embeddings of
+  the finite and infinite factors, with `isClosedEmbedding_finiteEmbed`, `isEmbedding_finiteEmbed`,
+  `isClosedEmbedding_infiniteEmbed`, `isEmbedding_infiniteEmbed`, `finiteProjection_finiteEmbed`,
+  `infiniteProjection_finiteEmbed`, and `infiniteEmbed_mul_finiteEmbed`.
 * `TauCeti.AdelicPoints.ext_iff_projection`: an adelic point is determined by its infinite and
   finite components.
-* `TauCeti.AdelicPoints.exists_finiteEmbed_eq_iff`, `TauCeti.AdelicPoints.mrange_finiteEmbed`,
-  `TauCeti.AdelicPoints.isEmbedding_finiteEmbed`: `finiteEmbed` is a topological embedding onto
-  the adelic points with trivial infinite component.
+* `TauCeti.AdelicPoints.exists_finiteEmbed_eq_iff`, `TauCeti.AdelicPoints.mrange_finiteEmbed`:
+  `finiteEmbed` maps onto the adelic points with trivial infinite component.
+* `TauCeti.AdelicPoints.exists_infiniteEmbed_eq_iff`, `TauCeti.AdelicPoints.mrange_infiniteEmbed`:
+  `infiniteEmbed` maps onto the adelic points with trivial finite component.
 
 ## References
 
 * B. Conrad, *Weil and Grothendieck approaches to adelic points*, Enseign. Math. (2) 58 (2012),
   Prop. 2.1, p. 2, and §3.
 * J. Arthur, *An introduction to the trace formula*, Clay Math. Proc. 4 (2005), §2, p. 11.
+* A. Borel, *Some finiteness properties of adele groups over number fields*, Publ. Math. IHÉS 16
+  (1963), §1.1–1.2, pp. 6–7.
 -/
 
 public section
@@ -117,11 +132,17 @@ abbrev InfinitePoints := WithConv (H →ₐ[K] InfiniteAdeleRing K)
 over the completion `K_v` of `K` at `v`, with the convolution product and the point topology. -/
 abbrev LocalPoints (v : HeightOneSpectrum R) := WithConv (H →ₐ[K] v.adicCompletion K)
 
+/-- Wrapped `K`-algebra homomorphisms `H →ₐ[K] w.Completion` into the completion at an
+archimedean place `w` of `K`, with the point topology; when `H` is commutative (resp. a
+commutative Hopf algebra), these are the `w`-adic points (resp. group of points) of `Spec H`. -/
+abbrev InfiniteLocalPoints (K H : Type*) [Field K] [Semiring H] [Algebra K H]
+    (w : InfinitePlace K) := WithConv (H →ₐ[K] w.Completion)
+
 open TauCeti.PointTopology
 
 /-! ### Rational diagonals -/
 
-/-- The rational diagonal `G(K) → G(𝔸_K)`: a rational point composed with the diagonal embedding
+/-- The rational diagonal `G(K) → G(𝔸_K)`: a rational point composed with the diagonal algebra map
 `K → 𝔸_K`. -/
 noncomputable def diagonal : WithConv (H →ₐ[K] K) →* AdelicPoints R K H :=
   AlgHom.mapValue (Algebra.ofId K _)
@@ -134,7 +155,7 @@ noncomputable def finiteDiagonal : WithConv (H →ₐ[K] K) →* FiniteAdelicPoi
 noncomputable def infiniteDiagonal : WithConv (H →ₐ[K] K) →* InfinitePoints K H :=
   AlgHom.mapValue (Algebra.ofId K _)
 
-/-- The rational diagonal is change of coefficients along the diagonal embedding `K → 𝔸_K`. -/
+/-- The rational diagonal is change of coefficients along the diagonal algebra map `K → 𝔸_K`. -/
 theorem diagonal_def : diagonal R K H = AlgHom.mapValue (Algebra.ofId K (AdeleRing R K)) := (rfl)
 
 /-- The finite rational diagonal is change of coefficients along `K → 𝔸_{K,f}`. -/
@@ -166,11 +187,6 @@ theorem finiteDiagonal_apply_apply (g : WithConv (H →ₐ[K] K)) (h : H) :
 theorem infiniteDiagonal_apply_apply (g : WithConv (H →ₐ[K] K)) (h : H) :
     infiniteDiagonal K H g h = algebraMap K (InfiniteAdeleRing K) (g h) := by
   simp [infiniteDiagonal]
-
-/-- For a number field `K`, the rational diagonal `G(K) → G(𝔸_K)` is injective, since `K` embeds
-in `𝔸_K`. -/
-theorem diagonal_injective [NumberField K] : Function.Injective (diagonal R K H) :=
-  AlgHom.mapValue_injective (AdeleRing.algebraMap_injective R K)
 
 /-! ### Finite and infinite components -/
 
@@ -429,6 +445,16 @@ theorem infiniteProjection_finiteEmbed (x : FiniteAdelicPoints R K H) :
 theorem continuous_finiteEmbed : Continuous (finiteEmbed R K H) :=
   (prodContinuousMulEquiv R K H).symm.continuous.comp (continuous_const.prodMk continuous_id)
 
+/-- `finiteEmbed` is a closed embedding into `AdelicPoints R K H`. -/
+theorem isClosedEmbedding_finiteEmbed : Topology.IsClosedEmbedding (finiteEmbed R K H) :=
+  Function.LeftInverse.isClosedEmbedding finiteProjection_finiteEmbed
+    continuous_finiteProjection continuous_finiteEmbed
+
+/-- `finiteEmbed` is a topological embedding: it has the continuous left inverse
+`finiteProjection`. -/
+theorem isEmbedding_finiteEmbed : Topology.IsEmbedding (finiteEmbed R K H) :=
+  isClosedEmbedding_finiteEmbed.isEmbedding
+
 /-- An adelic point is determined by its infinite and finite components. -/
 theorem ext_iff_projection {x y : AdelicPoints R K H} :
     x = y ↔ infiniteProjection R K H x = infiniteProjection R K H y ∧
@@ -478,11 +504,157 @@ theorem exists_finiteEmbed_eq_iff {y : AdelicPoints R K H} :
     (∃ x, finiteEmbed R K H x = y) ↔ infiniteProjection R K H y = 1 := by
   rw [← MonoidHom.mem_mrange, mrange_finiteEmbed, MonoidHom.mem_mker]
 
-/-- `finiteEmbed` is a topological embedding: it has the continuous left inverse
-`finiteProjection`. -/
-theorem isEmbedding_finiteEmbed : Topology.IsEmbedding (finiteEmbed R K H) :=
-  Function.LeftInverse.isEmbedding finiteProjection_finiteEmbed continuous_finiteProjection
-    continuous_finiteEmbed
+/-- Inclusion of `InfinitePoints K H` into `AdelicPoints R K H` as `x ↦ (x, 1)`. -/
+noncomputable def infiniteEmbed (R K H : Type*) [CommRing R] [IsDedekindDomain R] [Field K]
+    [Algebra R K] [IsFractionRing R K] [Semiring H] [Bialgebra K H] :
+    InfinitePoints K H →* AdelicPoints R K H :=
+  (prodContinuousMulEquiv R K H).symm.toMonoidHom.comp (MonoidHom.inl _ _)
+
+/-- `infiniteEmbed` sends `x` to `(prodContinuousMulEquiv R K H).symm (x, 1)`. -/
+theorem infiniteEmbed_apply (x : InfinitePoints K H) :
+    infiniteEmbed R K H x = (prodContinuousMulEquiv R K H).symm (x, 1) :=
+  (rfl)
+
+/-- Evaluating `infiniteEmbed R K H x` at `h` pairs `x h` with the counit image. -/
+@[simp]
+theorem infiniteEmbed_apply_apply (x : InfinitePoints K H) (h : H) :
+    infiniteEmbed R K H x h = (x h, algebraMap K (FiniteAdeleRing R K) (Coalgebra.counit h)) := by
+  rw [infiniteEmbed_apply, prodContinuousMulEquiv_symm_apply_apply, AlgHom.convOne_apply]
+
+/-- `infiniteEmbed` maps `x` to `(x, 1)` under `prodContinuousMulEquiv`. -/
+theorem prodContinuousMulEquiv_infiniteEmbed (x : InfinitePoints K H) :
+    prodContinuousMulEquiv R K H (infiniteEmbed R K H x) = (x, 1) :=
+  (prodContinuousMulEquiv R K H).apply_symm_apply (x, 1)
+
+/-- `infiniteProjection` is a left inverse of `infiniteEmbed`. -/
+@[simp]
+theorem infiniteProjection_infiniteEmbed (x : InfinitePoints K H) :
+    infiniteProjection R K H (infiniteEmbed R K H x) = x :=
+  congr_arg Prod.fst ((prodContinuousMulEquiv_apply _).symm.trans
+    (prodContinuousMulEquiv_infiniteEmbed x))
+
+/-- `finiteProjection` sends `infiniteEmbed x` to `1`. -/
+@[simp]
+theorem finiteProjection_infiniteEmbed (x : InfinitePoints K H) :
+    finiteProjection R K H (infiniteEmbed R K H x) = 1 :=
+  congr_arg Prod.snd ((prodContinuousMulEquiv_apply _).symm.trans
+    (prodContinuousMulEquiv_infiniteEmbed x))
+
+/-- Factorization `infiniteEmbed (infiniteProjection x) * finiteEmbed (finiteProjection x) = x`. -/
+theorem infiniteEmbed_mul_finiteEmbed (x : AdelicPoints R K H) :
+    infiniteEmbed R K H (infiniteProjection R K H x) *
+        finiteEmbed R K H (finiteProjection R K H x) = x := by
+  apply (prodContinuousMulEquiv R K H).injective; simp [map_mul]
+
+/-- `infiniteEmbed` is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_infiniteEmbed : Continuous (infiniteEmbed R K H) :=
+  (prodContinuousMulEquiv R K H).symm.continuous.comp (continuous_id.prodMk continuous_const)
+
+/-- `infiniteEmbed` is a closed embedding into `AdelicPoints R K H`. -/
+theorem isClosedEmbedding_infiniteEmbed : Topology.IsClosedEmbedding (infiniteEmbed R K H) :=
+  Function.LeftInverse.isClosedEmbedding infiniteProjection_infiniteEmbed
+    continuous_infiniteProjection continuous_infiniteEmbed
+
+/-- `infiniteEmbed` is a topological embedding: it has the continuous left inverse
+`infiniteProjection`. -/
+theorem isEmbedding_infiniteEmbed : Topology.IsEmbedding (infiniteEmbed R K H) :=
+  isClosedEmbedding_infiniteEmbed.isEmbedding
+
+/-- `infiniteEmbed` is injective: `infiniteProjection` is a left inverse. -/
+theorem infiniteEmbed_injective : Function.Injective (infiniteEmbed R K H) :=
+  Function.LeftInverse.injective infiniteProjection_infiniteEmbed
+
+/-- The image of `infiniteEmbed` consists of the adelic points with trivial finite component. -/
+theorem mrange_infiniteEmbed :
+    MonoidHom.mrange (infiniteEmbed R K H) = MonoidHom.mker (finiteProjection R K H) := by
+  ext y
+  rw [MonoidHom.mem_mker]
+  constructor
+  · rintro ⟨x, rfl⟩
+    exact finiteProjection_infiniteEmbed x
+  · intro h
+    exact ⟨infiniteProjection R K H y, ext_projection (infiniteProjection_infiniteEmbed _)
+      (by rw [h, finiteProjection_infiniteEmbed])⟩
+
+/-- An adelic point is in the image of `infiniteEmbed` exactly when its finite component is the
+identity point. As a simp lemma, it rewrites the existence of an infinite preimage to the condition
+that the finite component is the identity point. -/
+@[simp]
+theorem exists_infiniteEmbed_eq_iff {y : AdelicPoints R K H} :
+    (∃ x, infiniteEmbed R K H x = y) ↔ finiteProjection R K H y = 1 := by
+  rw [← MonoidHom.mem_mrange, mrange_infiniteEmbed, MonoidHom.mem_mker]
+
+/-- Under `prodContinuousMulEquiv`, a diagonal adelic point splits into diagonal components. -/
+theorem prodContinuousMulEquiv_diagonal (g : WithConv (H →ₐ[K] K)) :
+    prodContinuousMulEquiv R K H (diagonal R K H g) =
+      (infiniteDiagonal K H g, finiteDiagonal R K H g) :=
+  Prod.ext (by simp) (by simp)
+
+/-! ### Archimedean product splitting -/
+
+/-- Multiplicative homeomorphism identifying `InfinitePoints K H` with the product
+`∀ w : InfinitePlace K, InfiniteLocalPoints K H w` (an isomorphism of topological monoids, or
+topological groups when `H` is a Hopf algebra). -/
+noncomputable def piInfiniteContinuousMulEquiv (K H : Type*) [Field K] [Semiring H]
+    [Bialgebra K H] :
+    InfinitePoints K H ≃ₜ* ∀ w : InfinitePlace K, InfiniteLocalPoints K H w :=
+  PointTopology.piContinuousMulEquiv K H (fun w : InfinitePlace K ↦ w.Completion)
+
+/-- At each infinite place `w`, `piInfiniteContinuousMulEquiv` agrees with
+`infiniteLocalProjection K H w`. -/
+@[simp]
+theorem piInfiniteContinuousMulEquiv_apply {K H : Type*} [Field K] [Semiring H] [Bialgebra K H]
+    (x : InfinitePoints K H) (w : InfinitePlace K) :
+    piInfiniteContinuousMulEquiv K H x w = infiniteLocalProjection K H w x := by
+  ext h
+  rw [piInfiniteContinuousMulEquiv, PointTopology.piContinuousMulEquiv_apply_apply,
+    infiniteLocalProjection_apply_apply]
+
+/-- Evaluating `(piInfiniteContinuousMulEquiv K H).symm f` on `h : H` at `w` gives
+`(f w).ofConv h`. -/
+@[simp]
+theorem piInfiniteContinuousMulEquiv_symm_apply_ofConv {K H : Type*} [Field K] [Semiring H]
+    [Bialgebra K H] (f : ∀ w : InfinitePlace K, InfiniteLocalPoints K H w)
+    (h : H) (w : InfinitePlace K) :
+    ((piInfiniteContinuousMulEquiv K H).symm f).ofConv h w = (f w).ofConv h :=
+  PointTopology.piContinuousMulEquiv_symm_apply_apply
+    (fun w : InfinitePlace K ↦ w.Completion) f h w
+
+/-! ### Diagonal injectivity and subsingleton criteria -/
+
+/-- Whenever `InfiniteAdeleRing K` is nontrivial, `infiniteDiagonal` is injective. -/
+theorem infiniteDiagonal_injective {K H : Type*} [Field K] [Semiring H] [Bialgebra K H]
+    [Nontrivial (InfiniteAdeleRing K)] :
+    Function.Injective (infiniteDiagonal K H) :=
+  AlgHom.mapValue_injective (algebraMap K _).injective
+
+/-- When `R` is a field, `HeightOneSpectrum R` is empty and `FiniteAdelicPoints R K H` is a
+subsingleton. -/
+theorem subsingleton_finiteAdelicPoints_of_isField (hR : IsField R) :
+    Subsingleton (FiniteAdelicPoints R K H) :=
+  have := FiniteAdeleRing.subsingleton_of_isField K hR
+  ⟨fun _ _ ↦ WithConv.ext <| AlgHom.ext fun _ ↦ Subsingleton.elim _ _⟩
+
+/-- When `FiniteAdeleRing R K` is nontrivial, `finiteDiagonal` is injective. -/
+theorem finiteDiagonal_injective [Nontrivial (FiniteAdeleRing R K)] :
+    Function.Injective (finiteDiagonal R K H) :=
+  AlgHom.mapValue_injective (algebraMap K _).injective
+
+/-- When `R` is not a field, `finiteDiagonal` is injective. -/
+theorem finiteDiagonal_injective_of_not_isField (hR : ¬ IsField R) :
+    Function.Injective (finiteDiagonal R K H) :=
+  have := HeightOneSpectrum.nonempty_of_not_isField hR; finiteDiagonal_injective
+
+/-- When `AdeleRing R K` is nontrivial, `diagonal` is injective. -/
+theorem diagonal_injective [Nontrivial (AdeleRing R K)] :
+    Function.Injective (diagonal R K H) :=
+  AlgHom.mapValue_injective (algebraMap K _).injective
+
+/-- Whenever `R` is not a field, `diagonal` is injective. -/
+theorem diagonal_injective_of_not_isField (hR : ¬ IsField R) :
+    Function.Injective (diagonal R K H) :=
+  have := HeightOneSpectrum.nonempty_of_not_isField hR; diagonal_injective
 
 end AdelicPoints
 

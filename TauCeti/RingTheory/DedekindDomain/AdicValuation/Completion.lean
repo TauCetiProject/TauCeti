@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 public import Mathlib.RingTheory.AdicCompletion.Topology
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
+public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import TauCeti.RingTheory.Henselian.Basic
 
 /-!
@@ -159,6 +160,41 @@ zero, since the field embeds into it. -/
 instance adicCompletion_charZero [CharZero K] (v : HeightOneSpectrum R) :
     CharZero (v.adicCompletion K) :=
   charZero_of_injective_algebraMap (algebraMap K (v.adicCompletion K)).injective
+
+/-- An element of `K` maps into `v.adicCompletionIntegers K` if and only if its `v`-adic valuation
+is at most `1`. -/
+@[simp]
+theorem algebraMap_mem_adicCompletionIntegers_iff (v : HeightOneSpectrum R) (k : K) :
+    algebraMap K (v.adicCompletion K) k ∈ v.adicCompletionIntegers K ↔ v.valuation K k ≤ 1 := by
+  rw [mem_adicCompletionIntegers, algebraMap_adicCompletion, Function.comp_apply,
+    valuedAdicCompletion_eq_valuation', Algebra.algebraMap_self_apply]
+
+/-- For `v ∉ S`, `v.adicCompletionIntegers K` as an `(S.integer K)`-subalgebra of
+`v.adicCompletion K`. -/
+noncomputable def adicCompletionIntegersSubalgebra (v : HeightOneSpectrum R) (K : Type*)
+    [Field K] [Algebra R K] [IsFractionRing R K] (S : Set (HeightOneSpectrum R)) (hv : v ∉ S) :
+    Subalgebra (S.integer K) (v.adicCompletion K) :=
+  { (v.adicCompletionIntegers K).toSubring with
+    algebraMap_mem' x := (v.algebraMap_mem_adicCompletionIntegers_iff (x : K)).mpr
+      (x.property v hv) }
+
+/-- Membership in `v.adicCompletionIntegersSubalgebra K S hv` agrees with membership in
+`v.adicCompletionIntegers K`. -/
+@[simp]
+theorem mem_adicCompletionIntegersSubalgebra {v : HeightOneSpectrum R} {K : Type*}
+    [Field K] [Algebra R K] [IsFractionRing R K] {S : Set (HeightOneSpectrum R)} (hv : v ∉ S)
+    {x : v.adicCompletion K} :
+    x ∈ v.adicCompletionIntegersSubalgebra K S hv ↔ x ∈ v.adicCompletionIntegers K :=
+  Iff.rfl
+
+/-- The underlying set of `v.adicCompletionIntegersSubalgebra K S hv` is
+`v.adicCompletionIntegers K`. -/
+@[simp]
+theorem coe_adicCompletionIntegersSubalgebra (v : HeightOneSpectrum R) (K : Type*)
+    [Field K] [Algebra R K] [IsFractionRing R K] (S : Set (HeightOneSpectrum R)) (hv : v ∉ S) :
+    (v.adicCompletionIntegersSubalgebra K S hv : Set (v.adicCompletion K)) =
+      v.adicCompletionIntegers K :=
+  (rfl)
 
 /-- The prime of `R` lying under the maximal ideal of the ring of integers of the completion of
 `K` at `v` is `v` itself. -/

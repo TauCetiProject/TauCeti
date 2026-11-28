@@ -36,6 +36,8 @@ it contains `m * t` exactly when it contains `t`.
   isomorphism and its inverse commute with the inclusions into `A`.
 * `Subalgebra.natCast_mul_mem_iff`: if `(m : K)` is a unit, a `K`-subalgebra contains `m * t`
   exactly when it contains `t`.
+* `Subalgebra.algebraMap_algebraMap_mem`: in a scalar tower `R → S → A`, an `R`-subalgebra of `A`
+  contains `algebraMap S A (algebraMap R S r)`.
 -/
 
 public section
@@ -117,5 +119,14 @@ theorem natCast_mul_mem_iff {K L : Type*} [CommSemiring K] [Semiring L] [Algebra
     (T : Subalgebra K L) {m : ℕ} (hm : IsUnit (m : K)) {t : L} : (m : L) * t ∈ T ↔ t ∈ T := by
   rw [← nsmul_eq_mul, ← Nat.cast_smul_eq_nsmul K]
   exact Submodule.smul_mem_iff_of_isUnit (Subalgebra.toSubmodule T) hm
+
+/-- In a scalar tower `R → S → A`, an `R`-subalgebra of `A` contains the image under
+`algebraMap S A` of any scalar from `R`. -/
+theorem algebraMap_algebraMap_mem {R S A : Type*} [CommSemiring R] [CommSemiring S] [Semiring A]
+    [Algebra R S] [Algebra R A] [Algebra S A] [IsScalarTower R S A]
+    (B : Subalgebra R A) (r : R) : algebraMap S A (algebraMap R S r) ∈ B := by
+  rw [Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, smul_assoc, one_smul,
+    ← Algebra.algebraMap_eq_smul_one]
+  exact B.algebraMap_mem r
 
 end Subalgebra
