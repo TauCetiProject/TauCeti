@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Set.Function
 public import Mathlib.Logic.Function.Iterate
+public import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
 # The forward orbit of a point under a self-map
@@ -25,6 +26,8 @@ set-theoretic API for these arguments.
 
 * `Function.mem_forwardOrbit`: `y` lies in the forward orbit of `x` iff `f^[n] x = y` for
   some `n`.
+* `Function.mem_forwardOrbit_iff_exists_lt_card`: on a finite type, every point of the forward
+  orbit of `x` is reached in fewer iterations than the number of points.
 * `Function.forwardOrbit_eq_insert`: the forward orbit of `x` is `x` together with the forward
   orbit of `f x`.
 * `Set.MapsTo.forwardOrbit_subset_iff`: the forward orbit of `x` is the smallest set containing
@@ -128,5 +131,31 @@ theorem Semiconj.image_forwardOrbit {fa : α → α} {fb : β → β} {g : α �
 /-- The forward orbit of `f x` is the image of the forward orbit of `x` under `f`. -/
 theorem forwardOrbit_apply (f : α → α) (x : α) : forwardOrbit f (f x) = f '' forwardOrbit f x :=
   (Semiconj.image_forwardOrbit (Commute.refl f) x).symm
+
+/-- On a finite type, a point `y` lies in the forward orbit of `x` exactly when it is reached
+from `x` in fewer iterations of `f` than the number of points. -/
+theorem mem_forwardOrbit_iff_exists_lt_card [Finite α] :
+    y ∈ forwardOrbit f x ↔ ∃ n < Nat.card α, f^[n] x = y := by
+  classical
+  refine ⟨fun h ↦ ?_, fun ⟨n, _, hn⟩ ↦ ⟨n, hn⟩⟩
+  have hex : ∃ n, f^[n] x = y := mem_forwardOrbit.1 h
+  refine ⟨Nat.find hex, ?_, Nat.find_spec hex⟩
+  set k := Nat.find hex
+  -- Two iterates up to the first visit `k` cannot agree: a repetition would shorten the path.
+  have key : ∀ i j : ℕ, i < j → j ≤ k → f^[i] x ≠ f^[j] x := by
+    intro i j hij hjk heq
+    have : f^[k - j + i] x = y := by
+      rw [iterate_add_apply, heq, ← iterate_add_apply, Nat.sub_add_cancel hjk]
+      exact Nat.find_spec hex
+    exact Nat.find_min hex (by omega) this
+  have hinj : Injective fun i : Fin (k + 1) ↦ f^[i] x := by
+    intro i j hij
+    rcases lt_trichotomy (i : ℕ) j with h | h | h
+    · exact absurd hij (key _ _ h (by omega))
+    · exact Fin.ext h
+    · exact absurd hij.symm (key _ _ h (by omega))
+  have := Nat.card_le_card_of_injective _ hinj
+  rw [Nat.card_eq_fintype_card, Fintype.card_fin] at this
+  omega
 
 end Function
