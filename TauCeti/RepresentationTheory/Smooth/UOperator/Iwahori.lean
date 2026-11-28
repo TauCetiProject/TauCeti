@@ -16,20 +16,20 @@ Let `K` be a valued field with valuation subring `A` and let `I₁ ⊆ GL_m(K)` 
 pro-`p` Iwahori subgroup `TauCeti.iwahoriOne m A`. A diagonal matrix `diagGL t` (`t : m → Kˣ`) is
 *dominant* if its diagonal entries have weakly increasing multiplicative valuations along the index
 order: `i ≤ j → A.valuation (t i) ≤ A.valuation (t j)`. These form the submonoid
-`A.dominantDiagSubmonoid m ⊆ GL_m(K)`.
+`A.valuation.dominantDiagSubmonoid m ⊆ GL_m(K)`.
 
 By `ValuationSubring.exists_map_iwahoriOne_split`, `I₁` splits uniformly along all pairs of
 dominant diagonal matrices. For a smooth `R`-linear representation `ρ` of `GL_m(K)` on an
 `R`-module `V` over any commutative ring `R` in which the pro-order of the compact subgroup `I₁` is
 invertible, specializing `Representation.uOperatorHom` yields a monoid homomorphism
-`A.dominantDiagSubmonoid m →* Module.End R (V^{I₁})` sending `t` to `U_t`, and in particular
-`U_{diag t} (U_{diag t'} v) = U_{diag (t * t')} v` on `V^{I₁}`.
+`A.valuation.dominantDiagSubmonoid m →* Module.End R (V^{I₁})` sending `t` to `U_t`, and in
+particular `U_{diag t} (U_{diag t'} v) = U_{diag (t * t')} v` on `V^{I₁}`.
 
 ## Main results
 
-* `Representation.iwahoriUOperatorHom`: the monoid homomorphism from `A.dominantDiagSubmonoid m`
-  to `Module.End R (V^{I₁})` sending each dominant diagonal matrix to its pro-`p` Iwahori
-  `U`-operator.
+* `Representation.iwahoriUOperatorHom`: the monoid homomorphism from
+  `A.valuation.dominantDiagSubmonoid m` to `Module.End R (V^{I₁})` sending each dominant diagonal
+  matrix to its pro-`p` Iwahori `U`-operator.
 * `Representation.iwahoriUOperatorHom_apply`: identifies `ρ.iwahoriUOperatorHom hI t` with
   `ρ.invariantsUOperator _ hI t`.
 * `Representation.coe_iwahoriUOperatorHom_apply`: identifies the coerced value of
@@ -67,16 +67,16 @@ noncomputable def iwahoriUOperatorHom (ρ : Representation R (GL m K) V) [IsSmoo
     (hI : TauCeti.HasUnitProOrder R
       ((TauCeti.iwahoriOne m (Valued.v (R := K)).valuationSubring).map
         (GeneralLinearGroup.map (algebraMap _ K)))) :
-    (Valued.v (R := K)).valuationSubring.dominantDiagSubmonoid m →*
+    (Valued.v (R := K)).valuationSubring.valuation.dominantDiagSubmonoid m →*
       Module.End R (invariants (ρ.comp
         ((TauCeti.iwahoriOne m (Valued.v (R := K)).valuationSubring).map
           (GeneralLinearGroup.map (algebraMap _ K))).subtype)) :=
-  ρ.uOperatorHom _ hI ((Valued.v (R := K)).valuationSubring.dominantDiagSubmonoid m) (by
+  ρ.uOperatorHom _ hI ((Valued.v (R := K)).valuationSubring.valuation.dominantDiagSubmonoid m) (by
     intro _ hg₁ _ hg₂ c hc
     obtain ⟨t, ht, rfl⟩ :=
-      ((Valued.v (R := K)).valuationSubring.mem_dominantDiagSubmonoid_iff).mp hg₁
+      ((Valued.v (R := K)).valuationSubring.valuation.mem_dominantDiagSubmonoid_iff).mp hg₁
     obtain ⟨t', ht', rfl⟩ :=
-      ((Valued.v (R := K)).valuationSubring.mem_dominantDiagSubmonoid_iff).mp hg₂
+      ((Valued.v (R := K)).valuationSubring.valuation.mem_dominantDiagSubmonoid_iff).mp hg₂
     obtain ⟨a, b, hcab, ha, hb⟩ :=
       (Valued.v (R := K)).valuationSubring.exists_map_iwahoriOne_split hc
     exact ⟨a, b, hcab, ha t ht, hb t' ht'⟩)
@@ -90,7 +90,7 @@ theorem iwahoriUOperatorHom_apply (ρ : Representation R (GL m K) V) [IsSmooth �
     (hI : TauCeti.HasUnitProOrder R
       ((TauCeti.iwahoriOne m (Valued.v (R := K)).valuationSubring).map
         (GeneralLinearGroup.map (algebraMap _ K))))
-    (t : (Valued.v (R := K)).valuationSubring.dominantDiagSubmonoid m) :
+    (t : (Valued.v (R := K)).valuationSubring.valuation.dominantDiagSubmonoid m) :
     ρ.iwahoriUOperatorHom hI t = ρ.invariantsUOperator _ hI t := by
   simp [iwahoriUOperatorHom]
 
@@ -103,7 +103,7 @@ theorem coe_iwahoriUOperatorHom_apply (ρ : Representation R (GL m K) V) [IsSmoo
     (hI : TauCeti.HasUnitProOrder R
       ((TauCeti.iwahoriOne m (Valued.v (R := K)).valuationSubring).map
         (GeneralLinearGroup.map (algebraMap _ K))))
-    (t : (Valued.v (R := K)).valuationSubring.dominantDiagSubmonoid m)
+    (t : (Valued.v (R := K)).valuationSubring.valuation.dominantDiagSubmonoid m)
     (v : invariants (ρ.comp
       ((TauCeti.iwahoriOne m (Valued.v (R := K)).valuationSubring).map
         (GeneralLinearGroup.map (algebraMap _ K))).subtype)) :
