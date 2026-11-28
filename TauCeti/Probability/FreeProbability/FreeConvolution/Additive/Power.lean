@@ -25,8 +25,10 @@ convolution power `MeasureTheory.Measure.freeConvPow`.
 
 * `Finset.isProbabilityMeasure_fold_freeConv_iff`,
   `Finset.fold_freeConv_map_affine`,
+  `Finset.fold_freeConv_map_affine_of_ne_zero`,
   `Finset.fold_freeConv_map_add`,
   `Finset.fold_freeConv_map_mul`,
+  `Finset.fold_freeConv_map_mul_of_ne_zero`,
   `Finset.fold_freeConv_neg`,
   `Finset.rSeries_fold_freeConv`,
   `Finset.freeCumulant_fold_freeConv`,
@@ -40,6 +42,9 @@ convolution power `MeasureTheory.Measure.freeConvPow`.
 * `MeasureTheory.Measure.freeConvPow_add`,
   `MeasureTheory.Measure.freeConvPow_mul`,
   `MeasureTheory.Measure.freeConvPow_map_affine`,
+  `MeasureTheory.Measure.freeConvPow_map_affine_of_ne_zero`,
+  `MeasureTheory.Measure.freeConvPow_map_mul`,
+  `MeasureTheory.Measure.freeConvPow_map_mul_of_ne_zero`,
   `MeasureTheory.Measure.rSeries_freeConvPow`,
   `MeasureTheory.Measure.freeCumulant_freeConvPow`,
   `MeasureTheory.Measure.eq_freeConvPow_iff_rSeries_eq`,
@@ -70,7 +75,7 @@ variable {ι : Type*} (s : Finset ι) {μ : ι → Measure ℝ}
 
 /-- Folding `Measure.freeConv` with base `Measure.dirac 0` always yields a measure with compact
 support. -/
-theorem isCompact_support_fold_freeConv (μ : ι → Measure ℝ) :
+@[simp] theorem isCompact_support_fold_freeConv (μ : ι → Measure ℝ) :
     IsCompact (s.fold Measure.freeConv (Measure.dirac 0) μ).support := by
   classical
   rcases s.eq_empty_or_nonempty with rfl | ⟨i, hi⟩
@@ -152,17 +157,25 @@ theorem fold_freeConv_map_affine (hprob : ∀ i ∈ s, IsProbabilityMeasure (μ 
         Measure.freeConv_map_affine (hcomp i (mem_insert_self i s))
           (s.isCompact_support_fold_freeConv μ) (a i) (∑ j ∈ s, a j) b]
 
-/-- Translating each `μ i` (`i ∈ s`) by `a i` translates the folded free convolution by
-`∑ i ∈ s, a i`, unconditionally for all measures on `ℝ` (including `s = ∅`). -/
-theorem fold_freeConv_map_add (μ : ι → Measure ℝ) (a : ι → ℝ) :
-    (s.fold Measure.freeConv (Measure.dirac 0) fun i => (μ i).map (a i + ·)) =
-      (s.fold Measure.freeConv (Measure.dirac 0) μ).map ((∑ i ∈ s, a i) + ·) := by
+/-- **Affine equivariance of finite free additive convolution** for arbitrary measures on `ℝ` when
+the slope `b` is nonzero (including `s = ∅`). -/
+theorem fold_freeConv_map_affine_of_ne_zero (μ : ι → Measure ℝ) (a : ι → ℝ) {b : ℝ}
+    (hb : b ≠ 0) :
+    (s.fold Measure.freeConv (Measure.dirac 0) fun i => (μ i).map fun x => a i + b * x) =
+      (s.fold Measure.freeConv (Measure.dirac 0) μ).map fun x => (∑ i ∈ s, a i) + b * x := by
   classical
   induction s using Finset.induction_on with
   | empty => simp
   | @insert i s hi ih =>
       rw [Finset.fold_insert hi, Finset.fold_insert hi, ih, Finset.sum_insert hi,
-        Measure.freeConv_map_add]
+        Measure.freeConv_map_affine_of_ne_zero _ _ _ _ hb]
+
+/-- Translating each `μ i` (`i ∈ s`) by `a i` translates the folded free convolution by
+`∑ i ∈ s, a i`, unconditionally for all measures on `ℝ` (including `s = ∅`). -/
+theorem fold_freeConv_map_add (μ : ι → Measure ℝ) (a : ι → ℝ) :
+    (s.fold Measure.freeConv (Measure.dirac 0) fun i => (μ i).map (a i + ·)) =
+      (s.fold Measure.freeConv (Measure.dirac 0) μ).map ((∑ i ∈ s, a i) + ·) := by
+  simpa using s.fold_freeConv_map_affine_of_ne_zero μ a one_ne_zero
 
 /-- Scaling each `μ i` (`i ∈ s`) by `b` scales the folded free convolution by `b` (including
 `s = ∅` and `b = 0`). -/
@@ -172,15 +185,19 @@ theorem fold_freeConv_map_mul (hprob : ∀ i ∈ s, IsProbabilityMeasure (μ i))
       (s.fold Measure.freeConv (Measure.dirac 0) μ).map (b * ·) := by
   simpa using s.fold_freeConv_map_affine hprob hcomp (fun _ => 0) b
 
+/-- Scaling each `μ i` (`i ∈ s`) by a nonzero scalar `b` commutes with finite folded free
+convolution unconditionally for all measures on `ℝ` (including `s = ∅`). -/
+theorem fold_freeConv_map_mul_of_ne_zero (μ : ι → Measure ℝ) {b : ℝ} (hb : b ≠ 0) :
+    (s.fold Measure.freeConv (Measure.dirac 0) fun i => (μ i).map (b * ·)) =
+      (s.fold Measure.freeConv (Measure.dirac 0) μ).map (b * ·) := by
+  simpa using s.fold_freeConv_map_affine_of_ne_zero μ (fun _ => 0) hb
+
 /-- Reflection `Measure.neg` commutes with finite folded free convolution unconditionally. -/
 theorem fold_freeConv_neg (μ : ι → Measure ℝ) :
     (s.fold Measure.freeConv (Measure.dirac 0) fun i => (μ i).neg) =
       (s.fold Measure.freeConv (Measure.dirac 0) μ).neg := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp [Measure.neg_def, Measure.map_dirac' measurable_neg]
-  | @insert i s hi ih =>
-      rw [Finset.fold_insert hi, Finset.fold_insert hi, ih, Measure.neg_freeConv_neg]
+  simpa [Measure.neg_def] using
+    s.fold_freeConv_map_affine_of_ne_zero μ (fun _ => 0) (by norm_num : (-1 : ℝ) ≠ 0)
 
 /-- The formal R-series of a finite `Finset.fold` of `Measure.freeConv` is the sum of the
 individual formal R-series, including `s = ∅`. -/
@@ -270,7 +287,7 @@ theorem IsFreelyIndependent.law_sum {φ : A →ₚ[ℂ] ℂ} {B : ι → Subalge
 
 namespace FreeLawRealization
 
-variable [DecidableEq ι] (μ : ι → Measure ℝ)
+variable (μ : ι → Measure ℝ)
   [∀ i, IsProbabilityMeasure (μ i)] [∀ i, CompactSpace (μ i).support]
 
 /-- In `algebra μ`, `∑ i ∈ s, generator μ i` has law `s.fold freeConv (dirac 0) μ`. -/
@@ -323,10 +340,11 @@ theorem freeConvPow_undef {μ : Measure ℝ} {n : ℕ} (hn : n ≠ 0)
   exact freeConv_of_not_right h
 
 /-- Every free convolution power of any measure on `ℝ` has compact topological support. -/
-theorem isCompact_support_freeConvPow (μ : Measure ℝ) :
-    ∀ n : ℕ, IsCompact (μ.freeConvPow n).support
-  | 0 => by simp [Measure.support_dirac]
-  | _ + 1 => isCompact_support_freeConv _ _
+@[simp] theorem isCompact_support_freeConvPow (μ : Measure ℝ) (n : ℕ) :
+    IsCompact (μ.freeConvPow n).support := by
+  cases n with
+  | zero => simp [Measure.support_dirac]
+  | succ n => simp [freeConvPow_succ]
 
 /-- Every free convolution power of a compactly supported probability measure is a probability
 measure. -/
@@ -423,12 +441,19 @@ theorem freeConvPow_map_affine {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (univ : Finset (Fin n)).fold_freeConv_map_affine (μ := fun _ => μ)
       (fun _ _ => inferInstance) (fun _ _ => hμ) (fun _ => a) b
 
+/-- **Affine equivariance of free convolution powers** for arbitrary measures on `ℝ` when the
+slope `b` is nonzero (including `n = 0`). -/
+theorem freeConvPow_map_affine_of_ne_zero (μ : Measure ℝ) (a : ℝ) {b : ℝ} (hb : b ≠ 0) (n : ℕ) :
+    (μ.map fun x => a + b * x).freeConvPow n =
+      (μ.freeConvPow n).map fun x => (n : ℝ) * a + b * x := by
+  simpa [Finset.fold_freeConv_const, nsmul_eq_mul] using
+    (univ : Finset (Fin n)).fold_freeConv_map_affine_of_ne_zero (fun _ => μ) (fun _ => a) hb
+
 /-- Translating `μ` by `a` translates `μ.freeConvPow n` by `n • a`, unconditionally for
 all measures on `ℝ`. -/
 theorem freeConvPow_map_add (μ : Measure ℝ) (a : ℝ) (n : ℕ) :
     (μ.map (a + ·)).freeConvPow n = (μ.freeConvPow n).map (n • a + ·) := by
-  simpa [Finset.fold_freeConv_const] using
-    (univ : Finset (Fin n)).fold_freeConv_map_add (fun _ => μ) (fun _ => a)
+  simpa [nsmul_eq_mul] using freeConvPow_map_affine_of_ne_zero μ a one_ne_zero n
 
 /-- Scaling `μ` by `b` scales `μ.freeConvPow n` by `b` (including `n = 0` and `b = 0`). -/
 theorem freeConvPow_map_mul {μ : Measure ℝ} [IsProbabilityMeasure μ]
@@ -436,11 +461,17 @@ theorem freeConvPow_map_mul {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (μ.map (b * ·)).freeConvPow n = (μ.freeConvPow n).map (b * ·) := by
   simpa using freeConvPow_map_affine hμ 0 b n
 
+/-- Scaling `μ` by a nonzero scalar `b` commutes with `freeConvPow` unconditionally for all
+measures on `ℝ` (including `n = 0`). -/
+theorem freeConvPow_map_mul_of_ne_zero (μ : Measure ℝ) {b : ℝ} (hb : b ≠ 0) (n : ℕ) :
+    (μ.map (b * ·)).freeConvPow n = (μ.freeConvPow n).map (b * ·) := by
+  simpa using freeConvPow_map_affine_of_ne_zero μ 0 hb n
+
 /-- Reflection `Measure.neg` commutes with free convolution powers unconditionally. -/
 theorem freeConvPow_neg (μ : Measure ℝ) (n : ℕ) :
     μ.neg.freeConvPow n = (μ.freeConvPow n).neg := by
-  simpa [Finset.fold_freeConv_const] using
-    (univ : Finset (Fin n)).fold_freeConv_neg (fun _ => μ)
+  simpa [Measure.neg_def] using
+    freeConvPow_map_affine_of_ne_zero μ 0 (by norm_num : (-1 : ℝ) ≠ 0) n
 
 /-- Interval support bounds scale by `n` under `freeConvPow`, unconditionally for all
 measures on `ℝ` and including `n = 0`. -/

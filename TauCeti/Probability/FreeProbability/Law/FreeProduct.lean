@@ -12,7 +12,6 @@ public import TauCeti.Probability.FreeProbability.FreeProduct.Reduced
 public import TauCeti.Probability.FreeProbability.Law.Basic
 public import TauCeti.Probability.FreeProbability.WeakClosure
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import Mathlib.Topology.ContinuousMap.StoneWeierstrass
 import Mathlib.Topology.ContinuousMap.Units
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Restrict
 import TauCeti.Analysis.VonNeumannAlgebra.Bicommutant
@@ -116,7 +115,7 @@ end Factor
 
 section Product
 
-variable {ι : Type*} [DecidableEq ι] (μ : ι → Measure ℝ)
+variable {ι : Type*} (μ : ι → Measure ℝ)
   [∀ i, IsProbabilityMeasure (μ i)] [∀ i, CompactSpace (μ i).support]
 
 -- Keep `HilbertSpace` an unexposed `def` with explicit Hilbert-space instances so internal factor
@@ -125,32 +124,38 @@ variable {ι : Type*} [DecidableEq ι] (μ : ι → Measure ℝ)
 -- `InnerProductSpace`) are exposed and cannot reference `private` declarations
 -- (`factorFunctional`, `factorFunctional_one`), so they inline the underlying definition;
 -- `CompleteSpace` is `Prop`-valued (hence private-bodied) and can use `factorFunctional μ`.
+open Classical in
 /-- The completed GNS Hilbert space of the reduced free product realizing `μ`. -/
 def HilbertSpace : Type _ :=
   ReducedFreeProduct.HilbertSpace (factorFunctional μ) (factorFunctional_one μ)
 
+open Classical in
 instance : NormedAddCommGroup (HilbertSpace μ) :=
   inferInstanceAs (NormedAddCommGroup (ReducedFreeProduct.HilbertSpace
     (fun i => StarPositiveFunctional.ofPositiveLinearMap
       (ContinuousMap.integralPositiveLinearMap ((μ i).comap ((↑) : (μ i).support → ℝ))))
     (fun i => by simp [StarPositiveFunctional.ofPositiveLinearMap_apply])))
 
+open Classical in
 instance : InnerProductSpace ℂ (HilbertSpace μ) :=
   inferInstanceAs (InnerProductSpace ℂ (ReducedFreeProduct.HilbertSpace
     (fun i => StarPositiveFunctional.ofPositiveLinearMap
       (ContinuousMap.integralPositiveLinearMap ((μ i).comap ((↑) : (μ i).support → ℝ))))
     (fun i => by simp [StarPositiveFunctional.ofPositiveLinearMap_apply])))
 
+open Classical in
 instance : CompleteSpace (HilbertSpace μ) :=
   inferInstanceAs (CompleteSpace
     (ReducedFreeProduct.HilbertSpace (factorFunctional μ) (factorFunctional_one μ)))
 
+open Classical in
 /-- The unit cyclic vacuum vector in `HilbertSpace μ`. -/
 def vacuum : HilbertSpace μ :=
   ReducedFreeProduct.vacuum (factorFunctional μ) (factorFunctional_one μ)
 
 /-- The vacuum vector has unit norm. -/
 @[simp] theorem norm_vacuum : ‖vacuum μ‖ = 1 := by
+  classical
   exact ReducedFreeProduct.norm_vacuum (factorFunctional μ) (factorFunctional_one μ)
 
 /-- The vacuum vector state on all bounded operators on `HilbertSpace μ`. -/
@@ -171,33 +176,40 @@ theorem continuous_wot_vectorState :
   simp_rw [vectorState_apply]
   exact ContinuousLinearMapWOT.continuous_dual_apply (vacuum μ) (innerSL ℂ (vacuum μ))
 
+open Classical in
 /-- The canonical reduced C⋆-free product algebra realizing `μ`. -/
 def algebra : StarSubalgebra ℂ (HilbertSpace μ →L[ℂ] HilbertSpace μ) :=
   ReducedFreeProduct.algebra (factorFunctional μ) (factorFunctional_one μ)
 
 instance isClosed_algebra :
     IsClosed (algebra μ : Set (HilbertSpace μ →L[ℂ] HilbertSpace μ)) := by
+  classical
   exact ReducedFreeProduct.isClosed_algebra (factorFunctional μ) (factorFunctional_one μ)
 
 /-- The vacuum vector `vacuum μ` is cyclic for `algebra μ`. -/
 theorem denseRange_algebra_vacuum :
     DenseRange (fun T : algebra μ =>
-      (T : HilbertSpace μ →L[ℂ] HilbertSpace μ) (vacuum μ)) :=
-  ReducedFreeProduct.denseRange_algebra_vacuum (factorFunctional μ) (factorFunctional_one μ)
+      (T : HilbertSpace μ →L[ℂ] HilbertSpace μ) (vacuum μ)) := by
+  classical
+  exact ReducedFreeProduct.denseRange_algebra_vacuum (factorFunctional μ) (factorFunctional_one μ)
 
+open Classical in
 /-- The vacuum state on the canonical C⋆-free product algebra realizing `μ`. -/
 def state : algebra μ →ₚ[ℂ] ℂ :=
   ReducedFreeProduct.state (factorFunctional μ) (factorFunctional_one μ)
 
 /-- Evaluation of `state μ` as the vacuum vector state restricted to `algebra μ`. -/
 theorem state_apply (T : algebra μ) :
-    state μ T = ⟪vacuum μ, (T : HilbertSpace μ →L[ℂ] HilbertSpace μ) (vacuum μ)⟫_ℂ :=
-  ReducedFreeProduct.state_apply (factorFunctional μ) (factorFunctional_one μ) T
+    state μ T = ⟪vacuum μ, (T : HilbertSpace μ →L[ℂ] HilbertSpace μ) (vacuum μ)⟫_ℂ := by
+  classical
+  exact ReducedFreeProduct.state_apply (factorFunctional μ) (factorFunctional_one μ) T
 
 /-- The vacuum state on `algebra μ` is normalized. -/
-@[simp] theorem state_one : state μ 1 = 1 :=
-  ReducedFreeProduct.state_one (factorFunctional μ) (factorFunctional_one μ)
+@[simp] theorem state_one : state μ 1 = 1 := by
+  classical
+  exact ReducedFreeProduct.state_one (factorFunctional μ) (factorFunctional_one μ)
 
+open Classical in
 /-- The `i`-th canonical factor `⋆`-homomorphism from `C((μ i).support, ℂ)` into `algebra μ`. -/
 def factor (i : ι) : C((μ i).support, ℂ) →⋆ₐ[ℂ] algebra μ :=
   ReducedFreeProduct.factor (factorFunctional μ) (factorFunctional_one μ) i
@@ -205,26 +217,15 @@ def factor (i : ι) : C((μ i).support, ℂ) →⋆ₐ[ℂ] algebra μ :=
 /-- The canonical factor subalgebras generate a norm-dense subalgebra of `algebra μ`. -/
 theorem topologicalClosure_iSup_range_factor :
     (⨆ i, (factor μ i).toAlgHom.range).topologicalClosure = ⊤ := by
-  let f : LinearAlgebra.FreeProduct ℂ (fun i => C((μ i).support, ℂ)) →⋆ₐ[ℂ] algebra μ :=
-    ReducedFreeProduct.ofAlgebraic (factorFunctional μ) (factorFunctional_one μ)
-  have hranges : (⨆ i, (factor μ i).toAlgHom.range) = f.toAlgHom.range := by
-    have hcomp : ∀ i, (factor μ i).toAlgHom.range =
-        (LinearAlgebra.FreeProduct.ι ℂ _ i).range.map f.toAlgHom := fun i => by
-      have hf : (factor μ i).toAlgHom = f.toAlgHom.comp (LinearAlgebra.FreeProduct.ι ℂ _ i) :=
-        AlgHom.ext fun x => ReducedFreeProduct.factor_apply (factorFunctional μ)
-          (factorFunctional_one μ) i x
-      rw [hf, AlgHom.range_comp]
-    simp_rw [hcomp, ← (Subalgebra.gc_map_comap f.toAlgHom).l_iSup,
-      LinearAlgebra.FreeProduct.iSup_range_ι, Algebra.map_top]
-  exact SetLike.coe_injective <| by
-    rw [Subalgebra.topologicalClosure_coe, hranges, AlgHom.coe_range, Algebra.coe_top]
-    exact (ReducedFreeProduct.denseRange_ofAlgebraic (factorFunctional μ)
-      (factorFunctional_one μ)).closure_eq
+  classical
+  exact ReducedFreeProduct.topologicalClosure_iSup_range_factor
+    (factorFunctional μ) (factorFunctional_one μ)
 
 /-- Evaluating `state μ` on the `i`-th factor integrates against `μ i` on `(μ i).support`. -/
 @[simp] theorem state_factor (i : ι) (x : C((μ i).support, ℂ)) :
-    state μ (factor μ i x) = ∫ t, x t ∂(μ i).comap ((↑) : (μ i).support → ℝ) :=
-  (ReducedFreeProduct.state_factor (factorFunctional μ) (factorFunctional_one μ) i x).trans
+    state μ (factor μ i x) = ∫ t, x t ∂(μ i).comap ((↑) : (μ i).support → ℝ) := by
+  classical
+  exact (ReducedFreeProduct.state_factor (factorFunctional μ) (factorFunctional_one μ) i x).trans
     ((StarPositiveFunctional.ofPositiveLinearMap_apply _ _).trans
       (ContinuousMap.integralPositiveLinearMap_apply _ x))
 
@@ -248,12 +249,14 @@ theorem factor_injective (i : ι) : Function.Injective (factor μ i) := by
 
 /-- The canonical factor subalgebras in `algebra μ` are freely independent for `state μ`. -/
 theorem isFreelyIndependent_factor :
-    IsFreelyIndependent (state μ).toLinearMap (fun i => (factor μ i).toAlgHom.range) :=
-  ReducedFreeProduct.isFreelyIndependent_factor (factorFunctional μ) (factorFunctional_one μ)
+    IsFreelyIndependent (state μ).toLinearMap (fun i => (factor μ i).toAlgHom.range) := by
+  classical
+  exact ReducedFreeProduct.isFreelyIndependent_factor (factorFunctional μ) (factorFunctional_one μ)
 
 /-- The vacuum state `state μ` is tracial on `algebra μ`. -/
-theorem state_mul_comm (x y : algebra μ) : state μ (x * y) = state μ (y * x) :=
-  ReducedFreeProduct.state_mul_comm (factorFunctional μ) (factorFunctional_one μ)
+theorem state_mul_comm (x y : algebra μ) : state μ (x * y) = state μ (y * x) := by
+  classical
+  exact ReducedFreeProduct.state_mul_comm (factorFunctional μ) (factorFunctional_one μ)
     (fun _ a b => by rw [mul_comm]) x y
 
 /-- The `i`-th canonical selfadjoint generator in `algebra μ` realizing `μ i`. -/
@@ -372,24 +375,13 @@ theorem topologicalClosure_starAlgebra_adjoin_range_generator :
     (StarAlgebra.adjoin ℂ (Set.range (generator μ))).topologicalClosure = ⊤ := by
   let S : StarSubalgebra ℂ (algebra μ) := StarAlgebra.adjoin ℂ (Set.range (generator μ))
   have hfactor : ∀ i, (factor μ i).toAlgHom.range ≤ S.topologicalClosure.toSubalgebra := by
-    intro i
-    let T : StarSubalgebra ℂ C((μ i).support, ℂ) := StarAlgebra.adjoin ℂ {factorCoordinate μ i}
-    have hsep : T.SeparatesPoints := fun x y hxy =>
-      ⟨factorCoordinate μ i,
-        ⟨factorCoordinate μ i, StarAlgebra.subset_adjoin ℂ _ (Set.mem_singleton _), rfl⟩,
-        fun heq => hxy (Subtype.ext (Complex.ofReal_injective heq))⟩
-    have hT : T.topologicalClosure = ⊤ :=
-      ContinuousMap.starSubalgebra_topologicalClosure_eq_top_of_separatesPoints T hsep
-    have hle : T.topologicalClosure ≤ S.topologicalClosure.comap (factor μ i) := by
-      refine T.topologicalClosure_minimal ?_ ?_
-      · exact StarAlgebra.adjoin_le fun x hx => by
-          obtain rfl := Set.mem_singleton_iff.mp hx
-          exact S.le_topologicalClosure (StarAlgebra.subset_adjoin ℂ _ ⟨i, rfl⟩)
-      · open scoped CStarAlgebra in
-        exact S.isClosed_topologicalClosure.preimage (map_continuous (factor μ i))
-    rintro _ ⟨a, rfl⟩
-    have ha : a ∈ S.topologicalClosure.comap (factor μ i) := hle (hT ▸ trivial)
-    exact ha
+    rintro i _ ⟨a, rfl⟩
+    have hmem : factor μ i a ∈ S.topologicalClosure := by
+      rw [factor_apply_eq_cfcHom]
+      exact StarSubalgebra.topologicalClosure_mono
+        (StarAlgebra.adjoin_mono (Set.singleton_subset_iff.mpr (Set.mem_range_self i)))
+        (cfcHom_mem_elemental (isSelfAdjoint_generator μ i).isStarNormal _)
+    simpa using hmem
   have htop : (⊤ : Subalgebra ℂ (algebra μ)) ≤ S.topologicalClosure.toSubalgebra := by
     rw [← topologicalClosure_iSup_range_factor μ]
     exact Subalgebra.topologicalClosure_minimal (iSup_le hfactor) S.isClosed_topologicalClosure

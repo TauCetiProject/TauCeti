@@ -61,8 +61,8 @@ namespace TauCeti.Probability
   have hshift (m : ℝ) (v : ℝ≥0) :
       semicircleReal m v = (semicircleReal 0 v).map fun x => m + 1 * x := by
     simpa using (map_affine_semicircleReal 0 m 1 v).symm
-  rw [hshift m₁ v₁, hshift m₂ v₂, Measure.freeConv_map_affine
-    (isCompact_support_semicircleReal 0 v₁) (isCompact_support_semicircleReal 0 v₂) m₁ m₂ 1,
+  rw [hshift m₁ v₁, hshift m₂ v₂,
+    Measure.freeConv_map_affine_of_ne_zero _ _ m₁ m₂ one_ne_zero,
     hcentred, ← hshift (m₁ + m₂) (v₁ + v₂)]
 
 /-- **Free convolution powers of Wigner semicircle laws.** -/

@@ -96,31 +96,13 @@ theorem exists_isFreelyIndependentElements_law_add_eq_freeConv {μ ν : Measure 
       IsSelfAdjoint (g true) ∧ IsSelfAdjoint (g false) ∧
       spectrum ℝ (g true) = μ.support ∧ spectrum ℝ (g false) = ν.support ∧
       φ.law (g true) = μ ∧ φ.law (g false) = ν ∧ φ.law (g true + g false) = μ.freeConv ν := by
-  let τ : Fin 2 → Measure ℝ := ![μ, ν]
-  have : ∀ i, IsProbabilityMeasure (τ i) := Fin.forall_fin_two.2 ⟨‹_›, ‹_›⟩
-  have : ∀ i, CompactSpace (τ i).support :=
-    Fin.forall_fin_two.2 ⟨isCompact_iff_compactSpace.mp hμ, isCompact_iff_compactSpace.mp hν⟩
+  obtain ⟨A, _, _, _, φ, a, hφ, ha, hfree, hl0, hl1, hs0, hs1⟩ :=
+    exists_isFreelyIndependentElements_law_eq_pair μ ν hμ hν
   have hinj : Function.Injective (fun b : Bool => (cond b 0 1 : Fin 2)) := by
     rintro (_ | _) (_ | _) h <;> simp_all
-  refine ⟨TauCeti.FreeLawRealization.algebra τ, inferInstance, inferInstance, inferInstance,
-    TauCeti.FreeLawRealization.state τ,
-    fun b => TauCeti.FreeLawRealization.generator τ (cond b 0 1),
-    TauCeti.FreeLawRealization.state_one τ,
-    (TauCeti.FreeLawRealization.isFreelyIndependentElements_generator τ).comp hinj,
-    TauCeti.FreeLawRealization.isSelfAdjoint_generator τ 0,
-    TauCeti.FreeLawRealization.isSelfAdjoint_generator τ 1,
-    TauCeti.FreeLawRealization.spectrum_generator τ 0,
-    TauCeti.FreeLawRealization.spectrum_generator τ 1,
-    TauCeti.FreeLawRealization.law_generator τ 0,
-    TauCeti.FreeLawRealization.law_generator τ 1, ?_⟩
-  simp only [Bool.cond_true, Bool.cond_false]
-  rw [(TauCeti.FreeLawRealization.isFreelyIndependentElements_generator τ).law_add
-    (TauCeti.FreeLawRealization.state_one τ) (by decide : (0 : Fin 2) ≠ 1)
-    (TauCeti.FreeLawRealization.isSelfAdjoint_generator τ 0)
-    (TauCeti.FreeLawRealization.isSelfAdjoint_generator τ 1),
-    TauCeti.FreeLawRealization.law_generator τ 0,
-    TauCeti.FreeLawRealization.law_generator τ 1]
-  simp [τ]
+  refine ⟨A, _, _, _, φ, fun b => a (cond b 0 1), hφ, hfree.comp hinj, ha 0, ha 1,
+    hs0, hs1, hl0, hl1, ?_⟩
+  simpa [hl0, hl1] using hfree.law_add hφ (by decide : (0 : Fin 2) ≠ 1) (ha 0) (ha 1)
 
 end MeasureTheory.Measure
 
@@ -142,7 +124,7 @@ theorem IsFreelyIndependent.law_add {φ : A →ₚ[ℂ] ℂ} {B : ι → Subalge
 
 namespace FreeLawRealization
 
-variable [DecidableEq ι] (μ : ι → Measure ℝ)
+variable (μ : ι → Measure ℝ)
   [∀ i, IsProbabilityMeasure (μ i)] [∀ i, CompactSpace (μ i).support]
 
 /-- In `algebra μ`, the sum of distinct generators `i ≠ j` has law `(μ i).freeConv (μ j)`. -/
@@ -174,27 +156,11 @@ instance : Std.Associative (α := Measure ℝ) freeConv := ⟨freeConv_assoc⟩
 /-- Translating `μ` by `a` and `ν` by `b` translates `μ.freeConv ν` by `a + b`, unconditionally. -/
 theorem freeConv_map_add (μ ν : Measure ℝ) (a b : ℝ) :
     (μ.map (a + ·)).freeConv (ν.map (b + ·)) = (μ.freeConv ν).map (a + b + ·) := by
-  have hcp (σ : Measure ℝ) (c : ℝ) :
-      (σ.map (c + ·)).IsCompactProbabilityMeasure → σ.IsCompactProbabilityMeasure :=
-    (σ.isCompactProbabilityMeasure_map_homeomorph_iff (Homeomorph.addLeft c)).mp
-  by_cases h : μ.IsCompactProbabilityMeasure ∧ ν.IsCompactProbabilityMeasure
-  · have := h.1.1; have := h.2.1; simpa using freeConv_map_affine h.1.2 h.2.2 a b 1
-  · rw [freeConv_of_not ((not_and_or.mp h).imp (mt (hcp μ a)) (mt (hcp ν b))),
-      freeConv_of_not (not_and_or.mp h), Measure.map_zero]
+  simpa using freeConv_map_affine_of_ne_zero μ ν a b one_ne_zero
 
 /-- Free additive convolution commutes with `Measure.neg` for all measures on `ℝ`. -/
 theorem neg_freeConv_neg (μ ν : Measure ℝ) : μ.neg.freeConv ν.neg = (μ.freeConv ν).neg := by
-  have hcp (σ : Measure ℝ) :
-      σ.neg.IsCompactProbabilityMeasure → σ.IsCompactProbabilityMeasure := by
-    rw [Measure.neg_def, ← Homeomorph.coe_neg,
-      σ.isCompactProbabilityMeasure_map_homeomorph_iff (Homeomorph.neg ℝ)]
-    exact id
-  by_cases h : μ.IsCompactProbabilityMeasure ∧ ν.IsCompactProbabilityMeasure
-  · have := h.1.1; have := h.2.1
-    simpa [Measure.neg_def] using freeConv_map_affine h.1.2 h.2.2 0 0 (-1)
-  · rw [freeConv_of_not ((not_and_or.mp h).imp (mt (hcp μ)) (mt (hcp ν))),
-      freeConv_of_not (not_and_or.mp h)]
-    simp [Measure.neg_def]
+  simpa [Measure.neg_def] using freeConv_map_affine_of_ne_zero μ ν 0 0 (by norm_num : (-1 : ℝ) ≠ 0)
 
 /-! ### Formal R-series, free cumulants, mean, and variance -/
 

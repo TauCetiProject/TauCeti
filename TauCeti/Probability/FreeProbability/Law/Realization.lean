@@ -97,7 +97,6 @@ theorem exists_isFreelyIndependentElements_law_eq {I : Type u} (μ : I → Measu
       (φ : A →ₚ[ℂ] ℂ) (a : I → A), φ 1 = 1 ∧ (∀ i, IsSelfAdjoint (a i)) ∧
         IsFreelyIndependentElements φ.toLinearMap a ∧ (∀ i, law φ (a i) = μ i) ∧
           ∀ i, spectrum ℝ (a i) ⊆ (μ i).support := by
-  classical
   have := fun i => isCompact_iff_compactSpace.1 (hμ i)
   exact ⟨FreeLawRealization.algebra μ, inferInstance, inferInstance, inferInstance,
     FreeLawRealization.state μ, FreeLawRealization.generator μ,
