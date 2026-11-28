@@ -7,10 +7,10 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import TauCeti.Algebra.Matrix.BaseChange
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InnerAut
 public import TauCeti.RingTheory.PolynomialLaw.Basic
 public import TauCeti.RingTheory.PolynomialLaw.Homogeneous
 public import TauCeti.RingTheory.PolynomialLaw.Multiplicative
+import TauCeti.LinearAlgebra.Matrix.Determinant.AlgebraEndomorphism
 
 /-!
 # The determinant polynomial law
@@ -19,8 +19,8 @@ For a commutative ring `A`, the determinant of `n × n` matrices is a polynomial
 `PolynomialLaw.det n A : Matrix n n A →ₚₗ[A] A`. After scalar extension to a commutative `A`-algebra
 `S`, it is the determinant over `S`, read through the identification
 `S ⊗[A] Matrix n n A ≃ Matrix n n S` (`TauCeti.Algebra.matrixBaseChangeAlgEquiv`). This law is
-homogeneous of degree `card n` and multiplicative, and it is invariant under conjugation by an
-invertible matrix. Composed with an algebra map `R → Matrix n n A`, it gives the determinant of a
+homogeneous of degree `card n` and multiplicative, and it is invariant under matrix-algebra
+endomorphisms. Composed with an algebra map `R → Matrix n n A`, it gives the determinant of a
 matrix representation in the sense of Chenevier (`TauCeti.Determinant.algHomDet`).
 
 ## Main declarations
@@ -32,7 +32,10 @@ matrix representation in the sense of Chenevier (`TauCeti.Determinant.algHomDet`
   it is the Leibniz formula with the signs acting through `A`.
 * `PolynomialLaw.isHomogeneousOfDegree_det`, `PolynomialLaw.isMultiplicative_det`: it is
   homogeneous of degree `card n` and multiplicative.
-* `PolynomialLaw.det_comp_innerAut`: it is invariant under conjugation by an invertible matrix.
+* `AlgHom.det_comp_toPolynomialLaw`: it is invariant under matrix-algebra endomorphisms,
+  by `TauCeti.det_apply_matrix` after scalar extension.
+* `AlgEquiv.det_comp_toPolynomialLaw`: the corresponding simplification for matrix-algebra
+  automorphisms.
 
 ## Implementation notes
 
@@ -90,11 +93,6 @@ private theorem leibniz_mul (M N : Matrix n n S) :
   let : CommRing S := (algebraMap A S).commSemiringToCommRing
   rw [leibniz_eq_det, leibniz_eq_det, leibniz_eq_det, Matrix.det_mul]
 
-private theorem leibniz_conj {G G' : Matrix n n S} (h : G * G' = 1) (M : Matrix n n S) :
-    leibniz A (G * M * G') = leibniz A M := by
-  let : CommRing S := (algebraMap A S).commSemiringToCommRing
-  rw [leibniz_eq_det, leibniz_eq_det, Matrix.det_mul_right_comm, h, one_mul]
-
 end Leibniz
 
 /-- The determinant of `n × n` matrices over `A`, as a polynomial law. After scalar extension to a
@@ -151,24 +149,32 @@ theorem isMultiplicative_det : (det n A).IsMultiplicative where
     rw [det_toFun'_def, det_toFun'_def, det_toFun'_def, map_mul, leibniz_mul,
       Algebra.TensorProduct.tmul_mul_tmul, one_mul]
 
-/-- The determinant law is invariant under conjugation by an invertible matrix, after every scalar
-extension. -/
+/-- The determinant polynomial law is invariant under any matrix-algebra endomorphism. This
+compares the determinant laws obtained from two splittings into the same matrix algebra (after
+reindexing if needed), even when they differ by an automorphism that is only locally inner. -/
 @[simp]
-theorem det_comp_innerAut (g : GL n A) :
-    (det n A).comp (Matrix.GeneralLinearGroup.innerAut g).toLinearMap.toPolynomialLaw =
-      det n A := by
+theorem _root_.AlgHom.det_comp_toPolynomialLaw (σ : AlgHom A (Matrix n n A) (Matrix n n A)) :
+    (det n A).comp σ.toLinearMap.toPolynomialLaw = det n A := by
   ext S _ _ x
-  set G : Matrix n n S := (g : Matrix n n A).map (algebraMap A S)
-  set G' : Matrix n n S := ((g⁻¹ : GL n A) : Matrix n n A).map (algebraMap A S)
-  have hconj : matrixBaseChangeAlgEquiv A S n
-      ((Matrix.GeneralLinearGroup.innerAut g).toLinearMap.baseChange S x) =
-        G * matrixBaseChangeAlgEquiv A S n x * G' := by
-    induction x using TensorProduct.inductionOn with
-    | tmul s M =>
-      simp [G, G', Matrix.map_mul]
-    | add x y hx hy => simp [hx, hy, Matrix.mul_add, Matrix.add_mul]
-  have hG : G * G' = 1 := by simp [G, G', ← Matrix.map_mul]
-  rw [comp_toFun', Function.comp_apply, LinearMap.toPolynomialLaw_toFun', det_toFun'_def,
-    det_toFun'_def, hconj, leibniz_conj A hG]
+  rw [comp_toFun', Function.comp_apply, LinearMap.toPolynomialLaw_toFun',
+    toFun'_eq_toFun]
+  let : CommRing S := (algebraMap A S).commSemiringToCommRing
+  let e := matrixBaseChangeAlgEquiv A S n
+  let f := Algebra.TensorProduct.map (AlgHom.id S S) σ
+  let τ := AlgEquiv.arrowCongr e e f
+  have hf : σ.toLinearMap.baseChange S = f.toLinearMap := by
+    simp only [f, Algebra.TensorProduct.toLinearMap_map, AlgHom.toLinearMap_id,
+      LinearMap.baseChange]
+  have hτ : τ (e x) = e (f x) := by
+    simp only [τ, AlgEquiv.arrowCongr_apply, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+      AlgEquiv.symm_apply_apply]
+  rw [det_toFun, det_toFun, hf, AlgHom.toLinearMap_apply]
+  exact congrArg (· ⊗ₜ 1) (hτ ▸ TauCeti.det_apply_matrix τ (e x))
+
+/-- The determinant polynomial law is invariant under matrix-algebra automorphisms. -/
+@[simp]
+theorem _root_.AlgEquiv.det_comp_toPolynomialLaw (e : Matrix n n A ≃ₐ[A] Matrix n n A) :
+    (det n A).comp e.toLinearMap.toPolynomialLaw = det n A := by
+  simpa only [AlgEquiv.toAlgHom_toLinearMap] using e.toAlgHom.det_comp_toPolynomialLaw
 
 end PolynomialLaw

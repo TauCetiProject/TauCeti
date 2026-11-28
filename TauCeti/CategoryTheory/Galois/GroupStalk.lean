@@ -26,6 +26,8 @@ stalks (`ContAction.grpStalkMap_smul`).
 * `ContAction.smul_grpGerm`: `G` acts on germs by translating the point.
 * `ContAction.isOpen_stabilizer_grpStalk`: the stabilizers of this action are open.
 * `ContAction.grpStalkMap_smul`: the induced homomorphism of stalks is `G`-equivariant.
+* `ContAction.grpGerm_ext`, `ContAction.exists_grpGerm_eq`: through germs, the sections of a sheaf
+  of groups are exactly the `G`-maps into its stalk.
 -/
 
 public section
@@ -76,5 +78,27 @@ theorem grpStalkMap_smul (f : P ⟶ Q) (g : G) (p : (point G).GrpStalk P) :
   obtain ⟨S, s, a, rfl⟩ := (point G).exists_grpGerm_eq P p
   rw [smul_grpGerm, GrothendieckTopology.Point.grpStalkMap_grpGerm,
     GrothendieckTopology.Point.grpStalkMap_grpGerm, smul_grpGerm]
+
+section Sheaf
+
+variable {𝒢 : Sheaf (jointlySurjectiveTopology G) GrpCat.{u}}
+
+/-- Sections of a sheaf of groups are determined by their germs. -/
+theorem grpGerm_ext {S : ContAction FintypeCat.{u} G} {a b : 𝒢.obj.obj (op S)}
+    (h : ∀ s, (point G).grpGerm 𝒢.obj S s a = (point G).grpGerm 𝒢.obj S s b) : a = b :=
+  germ_ext ((sheafCompose (jointlySurjectiveTopology G) (forget GrpCat.{u})).obj 𝒢) fun s ↦
+    ((point G).grpGerm_apply 𝒢.obj S s a).symm.trans
+      ((h s).trans ((point G).grpGerm_apply 𝒢.obj S s b))
+
+/-- Every `G`-map into the stalk of a sheaf of groups is given by the germs of a section. -/
+theorem exists_grpGerm_eq (S : ContAction FintypeCat.{u} G)
+    (φ : (fiberFunctor G).obj S →[G] (point G).GrpStalk 𝒢.obj) :
+    ∃ a : 𝒢.obj.obj (op S), ∀ s, (point G).grpGerm 𝒢.obj S s a = φ s := by
+  obtain ⟨a, ha⟩ := germHom_surjective
+    ((sheafCompose (jointlySurjectiveTopology G) (forget GrpCat.{u})).obj 𝒢) S φ
+  exact ⟨a, fun s ↦ ((point G).grpGerm_apply 𝒢.obj S s a).trans
+    ((germHom_apply _ S a s).symm.trans congr($ha s))⟩
+
+end Sheaf
 
 end ContAction

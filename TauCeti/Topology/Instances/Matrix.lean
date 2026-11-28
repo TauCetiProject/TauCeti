@@ -9,12 +9,14 @@ public import Mathlib.LinearAlgebra.Matrix.Action
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Univ
 public import Mathlib.LinearAlgebra.Matrix.Kronecker
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
+public import Mathlib.LinearAlgebra.Vandermonde
 public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 public import Mathlib.Topology.UniformSpace.Matrix
 public import Mathlib.Topology.Metrizable.Basic
+public import Mathlib.Topology.Order.Lattice
 public import TauCeti.LinearAlgebra.Matrix.TensorProduct
 public import TauCeti.LinearAlgebra.Matrix.Trace.Partial
 public import TauCeti.LinearAlgebra.Pi
@@ -38,6 +40,9 @@ Square matrices act jointly continuously on column vectors by `Matrix.mulVec`, t
 `Mathlib.LinearAlgebra.Matrix.Action`; through the unit group, so does `GL n R`
 (`Units.continuousSMul`).
 
+Powers of the absolute Vandermonde determinant are continuous in the nodes
+(`TauCeti.continuous_abs_det_vandermonde_pow`).
+
 The same product topology gives entrywise control of a real matrix-valued map near a point of
 continuity, again without a matrix norm
 (`ContinuousAt.exists_ball_subset_forall_abs_sub_le`), and the product uniformity gives the
@@ -45,7 +50,8 @@ uniform version for uniformly continuous maps (`UniformContinuous.exists_pos_for
 
 Over a topological field, the inverse of a matrix-valued function that is continuous at a point
 with invertible value is continuous there (`ContinuousAt.matrix_inv`), and so are its entries
-(`ContinuousAt.matrix_inv_apply`).
+(`ContinuousAt.matrix_inv_apply`). For an everywhere invertible family, inversion preserves
+continuity (`Continuous.matrix_inv`).
 
 Square matrices over a commutative topological ring `R` with open units again have open units
 (`Matrix.instIsOpenUnits`). The invertible matrices are the preimage of the open set of units of
@@ -99,6 +105,17 @@ its inverse.
 public section
 
 namespace TauCeti
+
+/-- The absolute Vandermonde determinant raised to a fixed natural power is continuous. -/
+theorem continuous_abs_det_vandermonde_pow {R : Type*} [CommRing R] [LinearOrder R]
+    [TopologicalSpace R] [IsTopologicalRing R] [ContinuousSup R] {n : ℕ} (k : ℕ) :
+    Continuous (fun d : Fin n → R ↦ |(Matrix.vandermonde d).det| ^ k) := by
+  have h : Continuous (Matrix.vandermonde : (Fin n → R) → Matrix (Fin n) (Fin n) R) :=
+    continuous_matrix fun i j ↦ by
+      simp only [Matrix.vandermonde_apply]
+      exact (continuous_apply i).pow (j : ℕ)
+  simp only [abs_eq_max_neg]
+  exact (h.matrix_det.sup h.matrix_det.neg).pow k
 
 /-- A space of matrices with finitely many rows and columns over a pseudo-metrizable space is
 pseudo-metrizable. -/
@@ -279,6 +296,13 @@ continuous and its value is invertible. -/
 theorem ContinuousAt.matrix_inv (hA : ContinuousAt A x) (hdet : (A x).det ≠ 0) :
     ContinuousAt (fun y ↦ (A y)⁻¹) x :=
   (continuousAt_matrix_inv _ (by rw [Ring.inverse_eq_inv']; exact continuousAt_inv₀ hdet)).comp hA
+
+/-- The inverse of a continuous matrix-valued function with everywhere nonzero determinant
+is continuous. -/
+@[fun_prop]
+theorem Continuous.matrix_inv (hA : Continuous A) (hdet : ∀ x, (A x).det ≠ 0) :
+    Continuous (fun x ↦ (A x)⁻¹) :=
+  continuous_iff_continuousAt.2 fun x ↦ hA.continuousAt.matrix_inv (hdet x)
 
 /-- The entries of the inverse of a matrix-valued function are continuous at every point where the
 function is continuous and its value is invertible. -/

@@ -11,6 +11,7 @@ public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Basic
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.FiniteDifference
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Lipschitz
 import TauCeti.NumberTheory.Chebyshev.Mertens
 import TauCeti.NumberTheory.Chebyshev.WeightMethod
@@ -37,10 +38,18 @@ give, for `a ≥ 0`, `w, w' > 0` and `y, z ≥ 1`,
 All constants above are at most `2 + γ + (log 4 + 4)`, so this one absolute constant serves in the
 bounds for `G_χ` and `G_1`.
 
+A bound on an increment `G(y) - G(z)` over `(z, y]` also controls the sharp truncation
+`D + ∑_{1 ≤ n ≤ z} c(n) / n`: the forward difference of `TauCeti.rieszSum c` differs from
+`(y - z) ∑_{1 ≤ n ≤ z} c(n) / n` only by the terms with `z < n ≤ y`.
+
 ## Main results
 
 * `Chebyshev.norm_mul_rieszSum_div_add_mul_sub_le`, `Chebyshev.norm_rieszSum_add_mul_sub_le`,
   `Chebyshev.norm_rieszSum_add_mul_le`: the three bounds for `G` with `‖c(n)‖ ≤ Λ(n)`.
+* `Chebyshev.norm_add_sum_div_le_of_norm_rieszSum_sub_add_le`,
+  `Chebyshev.norm_add_sum_div_le_at_rpow`: a bound on an increment `G(y) - G(z)` controls the
+  sharp truncation `D + ∑_{1 ≤ n ≤ z} c(n) / n`, in general and at `z = x^(1/δ₀)`,
+  `y = z (1 + x⁻²)`.
 * `Chebyshev.abs_mul_sum_Ioc_floor_div_sub_mul_log_add_sub_le`,
   `Chebyshev.abs_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_sub_le`,
   `Chebyshev.abs_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_le`: the three bounds for `G_1`.
@@ -130,6 +139,168 @@ theorem norm_rieszSum_add_mul_le {c : ℕ → ℂ} (hc : ∀ n, ‖c n‖ ≤ Λ
   have hy0 : 0 ≤ y := zero_le_one.trans hy
   simpa [abs_of_nonneg hy0, max_eq_left hy0] using
     norm_rieszSum_add_mul_sub_le hc D (z := 0) (le_max_of_le_left hy)
+
+/-! ### Sharp truncations from Riesz increments -/
+
+/-- **Sharp truncation from a Riesz increment.** Let `‖c(n)‖ ≤ Λ(n)` for all `n`, let `D ∈ ℂ`
+and `G(y) = TauCeti.rieszSum c y + y D`. A bound `B` on the increment `G(y) - G(z)` over `(z, y]`
+bounds the error in truncating `D + ∑_{1 ≤ n ≤ z} c(n) / n` at `z`, up to an additional error
+due to the integers in `(z, y]`. -/
+theorem norm_add_sum_div_le_of_norm_rieszSum_sub_add_le {c : ℕ → ℂ} (hc : ∀ n, ‖c n‖ ≤ Λ n)
+    (D : ℂ) {z y B : ℝ} (hz : 0 < z) (hzy : z < y) (hy : 1 ≤ y)
+    (hinc : ‖rieszSum c y - rieszSum c z + ((y - z : ℝ) : ℂ) * D‖ ≤ B) :
+    ‖D + ∑ n ∈ Icc 1 ⌊z⌋₊, c n / (n : ℂ)‖ ≤ B / (y - z) + (y - z + 1) * (Real.log y / z) := by
+  have hs : 0 < y - z := sub_pos.mpr hzy
+  have hs₀ : ((y - z : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hs.ne'
+  have hshort := norm_rieszSum_sub_div_sub_sum_div_le c hz hzy (M := Real.log y) (fun n hn ↦ by
+    have hnz := (mem_Ioc.mp hn).1
+    have hn₀ : 0 < n := by omega
+    have hny := (Nat.le_floor_iff' hn₀.ne').mp (mem_Ioc.mp hn).2
+    exact (hc n).trans (vonMangoldt_le_log.trans (Real.log_le_log (Nat.cast_pos.mpr hn₀) hny)))
+  have hcard : ((Ioc ⌊z⌋₊ ⌊y⌋₊).card : ℝ) ≤ y - z + 1 := by
+    rw [Nat.card_Ioc, Nat.cast_sub (Nat.floor_le_floor hzy.le)]
+    linarith [Nat.floor_le (hz.trans hzy).le, Nat.lt_floor_add_one z]
+  set R := rieszSum c y - rieszSum c z
+  set S := ∑ n ∈ Icc 1 ⌊z⌋₊, c n / (n : ℂ)
+  have hsplit : D + S = (R + ((y - z : ℝ) : ℂ) * D) / ((y - z : ℝ) : ℂ) -
+      (R / ((y - z : ℝ) : ℂ) - S) := by
+    rw [add_div, mul_div_cancel_left₀ _ hs₀]
+    ring
+  rw [hsplit]
+  refine (norm_sub_le _ _).trans (add_le_add ?_ ?_)
+  · rw [norm_div, Complex.norm_real, Real.norm_of_nonneg hs.le]
+    exact div_le_div_of_nonneg_right hinc hs.le
+  · exact hshort.trans
+      (mul_le_mul_of_nonneg_right hcard (div_nonneg (Real.log_nonneg hy) hz.le))
+
+section rpow
+
+open Real
+
+/-- The contour part of the error at `z = x ^ r` with relative width `η = x⁻²`. -/
+private theorem rpow_box_error_div_le {x Q r σ K z η : ℝ} (hx : 1 ≤ x) (hz_eq : z = x ^ r)
+    (hη_eq : η = x ^ (-2 : ℝ)) (hQ : z * x ^ (3 : ℝ) ≤ Q) (hlogQ : 1 ≤ log Q) (hK : 0 ≤ K)
+    (hσ : -1 ≤ r * (σ - 1)) :
+    K * log Q * (η * z ^ σ * log Q + z ^ 2 / Q) / (z * η) ≤
+      2 * K * x ^ (r * (σ - 1)) * log Q ^ 2 := by
+  have hx₀ := zero_lt_one.trans_le hx
+  have hz : 0 < z := by rw [hz_eq]; exact rpow_pos_of_pos hx₀ _
+  have hη : 0 < η := by rw [hη_eq]; exact rpow_pos_of_pos hx₀ _
+  have hQ₀ : 0 < Q := (mul_pos hz (rpow_pos_of_pos hx₀ _)).trans_le hQ
+  have hpow : z ^ σ / z = x ^ (r * (σ - 1)) := by
+    rw [hz_eq, ← rpow_mul hx₀.le, mul_sub, mul_one, rpow_sub hx₀, rpow_mul hx₀.le]
+  have htail : (z ^ 2 / Q) / (z * η) ≤ x ^ (-1 : ℝ) := calc
+    _ ≤ (z ^ 2 / (z * x ^ (3 : ℝ))) / (z * η) := by gcongr
+    _ = 1 / (x ^ (3 : ℝ) * η) := by
+      field_simp [hz.ne', hη.ne', (rpow_pos_of_pos hx₀ 3).ne']
+    _ = x ^ (-1 : ℝ) := by
+      apply (div_eq_iff (mul_ne_zero (rpow_pos_of_pos hx₀ 3).ne' hη.ne')).mpr
+      rw [hη_eq, mul_comm, ← rpow_add hx₀, ← rpow_add hx₀]
+      norm_num
+  have htail' : (z ^ 2 / Q) / (z * η) ≤ x ^ (r * (σ - 1)) * log Q :=
+    htail.trans ((rpow_le_rpow_of_exponent_le hx hσ).trans
+      (le_mul_of_one_le_right (by positivity) hlogQ))
+  calc
+    _ = K * log Q * (z ^ σ / z * log Q + (z ^ 2 / Q) / (z * η)) := by
+      field_simp [hz.ne', hη.ne', hQ₀.ne']
+    _ ≤ _ := by
+      rw [hpow]
+      calc
+        _ ≤ K * log Q * (x ^ (r * (σ - 1)) * log Q + x ^ (r * (σ - 1)) * log Q) := by
+          gcongr
+        _ = _ := by ring
+
+/-- The smoothing part of the error at `z = x ^ r` with relative width `η = x⁻²`. -/
+private theorem rpow_smoothing_error_le {x Q r e z η : ℝ} (hx : 2 ≤ x) (hr : 1 ≤ r)
+    (he : -1 ≤ e) (hz_eq : z = x ^ r) (hη_eq : η = x ^ (-2 : ℝ)) (hQ : z * x ^ (3 : ℝ) ≤ Q)
+    (hlogQ : 1 ≤ log Q) :
+    (z * η + 1) * (log (z * (1 + η)) / z) ≤ 2 * x ^ e * log Q ^ 2 := by
+  have hx₀ : 0 < x := by linarith
+  have hx₁ : 1 ≤ x := by linarith
+  have hz : 0 < z := by rw [hz_eq]; exact rpow_pos_of_pos hx₀ _
+  have hη : 0 < η := by rw [hη_eq]; exact rpow_pos_of_pos hx₀ _
+  have hη₁ : η ≤ 1 := by
+    rw [hη_eq]; exact rpow_le_one_of_one_le_of_nonpos hx₁ (by norm_num)
+  have hlog : log (z * (1 + η)) ≤ log Q := by
+    apply log_le_log (by positivity)
+    refine le_trans (mul_le_mul_of_nonneg_left ?_ hz.le) hQ
+    calc
+      1 + η ≤ 2 := by linarith
+      _ ≤ x ^ (3 : ℝ) := by
+        refine hx.trans ?_
+        simpa only [rpow_one] using rpow_le_rpow_of_exponent_le hx₁ (by norm_num : (1 : ℝ) ≤ 3)
+  have hηe : η ≤ x ^ e := by
+    rw [hη_eq]; exact rpow_le_rpow_of_exponent_le hx₁ (by linarith)
+  have hze : 1 / z ≤ x ^ e := by
+    rw [hz_eq, one_div, ← rpow_neg hx₀.le]
+    exact rpow_le_rpow_of_exponent_le hx₁ (by linarith)
+  calc
+    _ = (η + 1 / z) * log (z * (1 + η)) := by field_simp [hz.ne']
+    _ ≤ (2 * x ^ e) * log Q := by
+      refine (mul_le_mul_of_nonneg_left hlog (add_nonneg hη.le (one_div_nonneg.mpr hz.le))).trans ?_
+      exact mul_le_mul_of_nonneg_right (by linarith) (by linarith)
+    _ ≤ _ := by
+      apply mul_le_mul_of_nonneg_left _ (by positivity)
+      nlinarith
+
+/-- **Sharp truncation at a power cutoff.** Let `‖c(n)‖ ≤ Λ(n)` for all `n` and `D ∈ ℂ`. With
+`z = x^(1/δ₀)` and relative width `η = x⁻²`, a bound
+`K log Q (η z^(1 - δ₀ + δ) log Q + z² / Q)` for the increment of `TauCeti.rieszSum c y + y D`
+over `(z, z (1 + η)]` gives the truncation error
+`‖D + ∑_{1 ≤ n ≤ z} c(n) / n‖ ≤ (2K + 2) x^(-1 + δ/δ₀) (log Q)²`. -/
+theorem norm_add_sum_div_le_at_rpow {c : ℕ → ℂ} (hc : ∀ n, ‖c n‖ ≤ Λ n) (D : ℂ)
+    {x Q δ₀ δ K : ℝ} (hx : 2 ≤ x) (hδ₀ : 0 < δ₀) (hδ₀' : δ₀ ≤ 1) (hδ : 0 ≤ δ)
+    (hQ : x ^ (1 / δ₀ + 3) ≤ Q)
+    (hinc : ‖rieszSum c (x ^ (1 / δ₀) * (1 + x ^ (-2 : ℝ))) - rieszSum c (x ^ (1 / δ₀)) +
+        ((x ^ (1 / δ₀) * x ^ (-2 : ℝ) : ℝ) : ℂ) * D‖ ≤
+      K * log Q * (x ^ (-2 : ℝ) * (x ^ (1 / δ₀)) ^ (1 - δ₀ + δ) * log Q +
+        (x ^ (1 / δ₀)) ^ 2 / Q)) :
+    ‖D + ∑ n ∈ Icc 1 ⌊x ^ (1 / δ₀)⌋₊, c n / (n : ℂ)‖ ≤
+      (2 * K + 2) * x ^ (-1 + δ / δ₀) * log Q ^ 2 := by
+  have hx₀ : 0 < x := by linarith
+  have hx₁ : 1 ≤ x := by linarith
+  set z := x ^ (1 / δ₀) with hz_eq
+  set η := x ^ (-2 : ℝ) with hη_eq
+  have hr : 1 ≤ 1 / δ₀ := (le_div_iff₀ hδ₀).mpr (by simpa using hδ₀')
+  have hz : 1 ≤ z := by rw [hz_eq]; exact one_le_rpow hx₁ (by positivity)
+  have hη : 0 < η := by rw [hη_eq]; exact rpow_pos_of_pos hx₀ _
+  have hQ' : z * x ^ (3 : ℝ) ≤ Q := by rwa [hz_eq, ← rpow_add hx₀]
+  have hlogQ : 1 ≤ log Q := by
+    have hh : (2 : ℝ) ^ (3 : ℝ) ≤ z * x ^ (3 : ℝ) := by
+      calc
+        _ ≤ x ^ (3 : ℝ) := rpow_le_rpow (by norm_num) hx (by norm_num)
+        _ ≤ _ := le_mul_of_one_le_left (by positivity) hz
+    have := log_le_log (rpow_pos_of_pos (by norm_num : (0 : ℝ) < 2) _) (hh.trans hQ')
+    rw [log_rpow (by norm_num : (0 : ℝ) < 2)] at this
+    linarith [log_two_gt_d9]
+  have hy : z < z * (1 + η) := by nlinarith
+  have hstep : z * (1 + η) - z = z * η := by ring
+  have h := norm_add_sum_div_le_of_norm_rieszSum_sub_add_le hc D
+    (B := K * log Q * (η * z ^ (1 - δ₀ + δ) * log Q + z ^ 2 / Q))
+    (zero_lt_one.trans_le hz) hy (hz.trans hy.le) (by rw [hstep]; exact hinc)
+  rw [hstep] at h
+  refine h.trans ?_
+  have hK : 0 ≤ K := by
+    have hQ₀ : 0 < Q :=
+      (mul_pos (zero_lt_one.trans_le hz) (rpow_pos_of_pos hx₀ _)).trans_le hQ'
+    have hpos : 0 < log Q * (η * z ^ (1 - δ₀ + δ) * log Q + z ^ 2 / Q) := by positivity
+    have hn : 0 ≤ K * (log Q * (η * z ^ (1 - δ₀ + δ) * log Q + z ^ 2 / Q)) := by
+      rw [← mul_assoc]
+      exact (norm_nonneg _).trans hinc
+    exact nonneg_of_mul_nonneg_left hn hpos
+  have hexp : (1 / δ₀) * ((1 - δ₀ + δ) - 1) = -1 + δ / δ₀ := by
+    field_simp [hδ₀.ne']
+    ring
+  have he : -1 ≤ -1 + δ / δ₀ := by linarith [div_nonneg hδ hδ₀.le]
+  have hbox := rpow_box_error_div_le (σ := 1 - δ₀ + δ) hx₁ hz_eq hη_eq hQ' hlogQ hK
+    (by rw [hexp]; exact he)
+  rw [hexp] at hbox
+  calc
+    _ ≤ 2 * K * x ^ (-1 + δ / δ₀) * log Q ^ 2 + 2 * x ^ (-1 + δ / δ₀) * log Q ^ 2 :=
+      add_le_add hbox (rpow_smoothing_error_le hx hr he hz_eq hη_eq hQ' hlogQ)
+    _ = _ := by ring
+
+end rpow
 
 /-! ### The Riesz remainder of the trivial character -/
 

@@ -8,12 +8,13 @@ module
 public import TauCeti.NumberTheory.ArithmeticFunction.TwistedDivisorSum
 public import Mathlib.Analysis.PSeries
 public import Mathlib.Analysis.SpecialFunctions.Log.Base
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 public import TauCeti.NumberTheory.ArithmeticFunction.Zeta
 public import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Basic
 import TauCeti.NumberTheory.ArithmeticFunction.Misc
 import TauCeti.NumberTheory.Divisors
+import TauCeti.NumberTheory.PrimeCounting
 
 /-!
 # Bounds for divisor sums
@@ -42,6 +43,21 @@ factors counted with multiplicity is at most `n ^ log₂ x`
 (`ArithmeticFunction.pow_cardFactors_le_rpow_logb`), from `2 ^ Ω n ≤ n` for `n ≠ 0`
 (`ArithmeticFunction.two_pow_cardFactors_le`).
 
+Wigert's theorem gives the maximal order of the divisor count on the logarithmic scale:
+`limsup (log d(n) * log (log n) / log n) = log 2` (Hardy and Wright, Theorem 317). The upper half
+is formalized as `eventually_card_divisors_le_exp`: for every `ε > 0`, all sufficiently large `n`
+satisfy `d(n) ≤ exp ((log 2 + ε) * log n / log (log n))`. Since
+`log d(n) = ∑_{p ∈ n.primeFactors} log (v_p(n) + 1)` (`Nat.log_card_divisors`), one splits the
+finite set `n.primeFactors` (empty for `n = 0`) at a real cutoff `y > 1`. Each of the at most `y`
+elements `p ≤ y` contributes at most `log (1 + log n / log 2)`, because `2 ^ v_p(n) ≤ n`. For the
+elements `p > y`, the bound `v + 1 ≤ 2 ^ v` and
+`∑_{p ∈ n.primeFactors} v_p(n) * log p = log n` (for `n ≠ 0`) give a total of at most
+`log 2 * log n / log y`. This is `Nat.log_card_divisors_le`, valid for every `n` and `y > 1`.
+With `y = (log n) ^ (1 - δ)` and `δ = ε / (2 * log 2 + ε)`, the bound for the first part is
+negligible and the upper bound for the second part simplifies to
+`(log 2 + ε / 2) * log n / log (log n)`. This splitting of the prime divisors at a power of
+`log n` is the argument of Koukoulopoulos, Exercise 2.9.
+
 The ordered divisor functions also satisfy coefficient-one harmonic and summatory mean
 bounds, with natural cutoffs including zero and real cutoffs at least one. The pointwise
 coefficient comparisons give explicit mean bounds for three to the number of distinct prime
@@ -60,6 +76,9 @@ exponent; the bounds here sum over all positive integers and improve the summato
 ## References
 
 * F. Diamond and J. Shurman, *A First Course in Modular Forms*, §5.9, Proposition 5.9.1.
+* G. H. Hardy and E. M. Wright, *An Introduction to the Theory of Numbers*, Theorem 317.
+* D. Koukoulopoulos, *The Distribution of Prime Numbers*, Graduate Studies in Mathematics 203,
+  AMS (2019), Exercise 2.9(b), (e), (f), pp. 33–34.
 -/
 
 public noncomputable section
@@ -409,5 +428,141 @@ theorem ncard_setOf_ne_zero_and_abs_lt_and_dvd_le {Y : ℝ} (hY : 1 ≤ Y) :
     _ ≤ 4 * (Y * (1 + Real.log Y)) := by
         gcongr
         exact ArithmeticFunction.sum_Ioc_sigma_zero_le_mul_one_add_log hY
+
+end TauCeti
+
+/-! ### The maximal order of the divisor count: upper bound -/
+
+namespace Nat
+
+open Finset
+
+variable {y : ℝ}
+
+/-- The elements `p ≤ y` of `n.primeFactors` contribute at most
+`y * log (1 + log n / log 2)` to `log d(n) = ∑_{p ∈ n.primeFactors} log (v_p(n) + 1)`, for every
+real `y ≥ 0`. For `n = 0` the set `n.primeFactors` is empty and the sum is zero. Together with
+the bound for the elements `p > y` this gives `Nat.log_card_divisors_le`. -/
+theorem sum_primeFactors_filter_le_log_factorization_add_one_le (n : ℕ) (hy : 0 ≤ y) :
+    ∑ p ∈ n.primeFactors with ((p : ℕ) : ℝ) ≤ y, Real.log (n.factorization p + 1) ≤
+      y * Real.log (1 + Real.log n / Real.log 2) := by
+  have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
+  have hB : 0 ≤ Real.log (1 + Real.log n / Real.log 2) :=
+    Real.log_nonneg (le_add_of_nonneg_right (div_nonneg (Real.log_natCast_nonneg n) hlog2.le))
+  have hterm : ∀ p ∈ n.primeFactors.filter (fun p : ℕ ↦ (p : ℝ) ≤ y),
+      Real.log (n.factorization p + 1) ≤ Real.log (1 + Real.log n / Real.log 2) := by
+    intro p hp
+    have hpn := Nat.mem_primeFactors.mp (Finset.mem_filter.mp hp).1
+    have hpow : (2 : ℝ) ^ n.factorization p ≤ n := by
+      exact_mod_cast (Nat.pow_le_pow_left hpn.1.two_le _).trans (Nat.ordProj_le p hpn.2.2)
+    have hv : (n.factorization p : ℝ) ≤ Real.log n / Real.log 2 :=
+      (le_div_iff₀ hlog2).mpr (Real.le_log_of_pow_le two_pos hpow)
+    exact Real.log_le_log (by positivity) (by linarith)
+  have hcard : (#{p ∈ n.primeFactors | ((p : ℕ) : ℝ) ≤ y} : ℝ) ≤ y := by
+    have hsub : {p ∈ n.primeFactors | ((p : ℕ) : ℝ) ≤ y} ⊆ Nat.primesLE ⌊y⌋₊ := fun p hp ↦ by
+      rw [Finset.mem_filter] at hp
+      exact Nat.mem_primesLE.2 ⟨Nat.le_floor hp.2, Nat.prime_of_mem_primeFactors hp.1⟩
+    calc (#{p ∈ n.primeFactors | ((p : ℕ) : ℝ) ≤ y} : ℝ) ≤ Nat.primeCounting ⌊y⌋₊ := by
+          exact_mod_cast (Finset.card_le_card hsub).trans_eq
+            (Nat.primesLE_card_eq_primeCounting _)
+      _ ≤ ⌊y⌋₊ := by exact_mod_cast Nat.primeCounting_le_self _
+      _ ≤ y := Nat.floor_le hy
+  calc ∑ p ∈ n.primeFactors with ((p : ℕ) : ℝ) ≤ y, Real.log (n.factorization p + 1)
+      ≤ #{p ∈ n.primeFactors | ((p : ℕ) : ℝ) ≤ y} • Real.log (1 + Real.log n / Real.log 2) :=
+        Finset.sum_le_card_nsmul _ _ _ hterm
+    _ = #{p ∈ n.primeFactors | ((p : ℕ) : ℝ) ≤ y} * Real.log (1 + Real.log n / Real.log 2) :=
+        nsmul_eq_mul _ _
+    _ ≤ y * Real.log (1 + Real.log n / Real.log 2) := mul_le_mul_of_nonneg_right hcard hB
+
+/-- The elements `p > y` of `n.primeFactors` contribute at most `log 2 * log n / log y` to
+`log d(n) = ∑_{p ∈ n.primeFactors} log (v_p(n) + 1)`, for every real `y > 1`. For `n = 0` the set
+`n.primeFactors` is empty and the sum is zero. Together with the bound for the elements `p ≤ y`
+this gives `Nat.log_card_divisors_le`. -/
+theorem sum_primeFactors_filter_gt_log_factorization_add_one_le (n : ℕ) (hy : 1 < y) :
+    ∑ p ∈ n.primeFactors with y < ((p : ℕ) : ℝ), Real.log (n.factorization p + 1) ≤
+      Real.log 2 * Real.log n / Real.log y := by
+  have hlogy : 0 < Real.log y := Real.log_pos hy
+  have hterm : ∀ p ∈ n.primeFactors.filter (fun p : ℕ ↦ y < (p : ℝ)),
+      Real.log (n.factorization p + 1) ≤
+        Real.log 2 / Real.log y * (n.factorization p * Real.log p) := by
+    intro p hp
+    have hyp : y < p := (Finset.mem_filter.mp hp).2
+    have hpow : (n.factorization p + 1 : ℝ) ≤ 2 ^ n.factorization p := by
+      exact_mod_cast Nat.add_one_le_iff.2 Nat.lt_two_pow_self
+    have h1 : Real.log (n.factorization p + 1) ≤ n.factorization p * Real.log 2 :=
+      (Real.le_pow_iff_log_le (by positivity) two_pos).mp hpow
+    have h2 : Real.log y ≤ Real.log p := Real.log_le_log (by linarith) hyp.le
+    have h3 : (n.factorization p : ℝ) * Real.log 2 * Real.log y ≤
+        Real.log 2 * (n.factorization p * Real.log p) := by
+      nlinarith [mul_nonneg (n.factorization p).cast_nonneg (Real.log_pos one_lt_two).le]
+    rw [div_mul_eq_mul_div, le_div_iff₀ hlogy]
+    exact (mul_le_mul_of_nonneg_right h1 hlogy.le).trans h3
+  have hsum : ∑ p ∈ n.primeFactors with y < ((p : ℕ) : ℝ),
+      (n.factorization p * Real.log p : ℝ) ≤ Real.log n := by
+    rw [Real.log_nat_eq_sum_factorization n, Finsupp.sum, Nat.support_factorization]
+    exact Finset.sum_le_sum_of_subset_of_nonneg (Finset.filter_subset _ _)
+      fun p _ _ ↦ mul_nonneg (Nat.cast_nonneg _) (Real.log_natCast_nonneg p)
+  calc ∑ p ∈ n.primeFactors with y < ((p : ℕ) : ℝ), Real.log (n.factorization p + 1)
+      ≤ ∑ p ∈ n.primeFactors with y < ((p : ℕ) : ℝ),
+          Real.log 2 / Real.log y * (n.factorization p * Real.log p) := Finset.sum_le_sum hterm
+    _ = Real.log 2 / Real.log y *
+          ∑ p ∈ n.primeFactors with y < ((p : ℕ) : ℝ), (n.factorization p * Real.log p : ℝ) :=
+        (Finset.mul_sum _ _ _).symm
+    _ ≤ Real.log 2 / Real.log y * Real.log n :=
+        mul_le_mul_of_nonneg_left hsum (div_nonneg (Real.log_pos one_lt_two).le hlogy.le)
+    _ = Real.log 2 * Real.log n / Real.log y := by ring
+
+/-- For every natural number `n` and every real cutoff `y > 1`, the logarithm of the number of
+divisors of `n` is at most `y * log (1 + log n / log 2) + log 2 * log n / log y`. -/
+theorem log_card_divisors_le (n : ℕ) (hy : 1 < y) :
+    Real.log (#n.divisors) ≤
+      y * Real.log (1 + Real.log n / Real.log 2) + Real.log 2 * Real.log n / Real.log y := by
+  rw [log_card_divisors,
+    ← Finset.sum_filter_add_sum_filter_not n.primeFactors (fun p : ℕ ↦ (p : ℝ) ≤ y)]
+  simp only [not_le]
+  exact _root_.add_le_add
+    (sum_primeFactors_filter_le_log_factorization_add_one_le n (by linarith))
+    (sum_primeFactors_filter_gt_log_factorization_add_one_le n hy)
+
+end Nat
+
+namespace TauCeti
+
+open Filter Real
+
+/-- **Upper bound for the maximal order of the divisor function** (Wigert). For every `ε > 0`,
+every sufficiently large natural number `n` has at most
+`exp ((log 2 + ε) * log n / log (log n))` divisors. -/
+theorem eventually_card_divisors_le_exp {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ n : ℕ in atTop,
+      (n.divisors.card : ℝ) ≤ exp ((log 2 + ε) * log n / log (log n)) := by
+  have hD : 0 < 2 * log 2 + ε := by positivity
+  have hδ : 0 < ε / (2 * log 2 + ε) := div_pos hε hD
+  have hδ1 : 1 - ε / (2 * log 2 + ε) = 2 * log 2 / (2 * log 2 + ε) := by
+    field_simp
+    ring
+  have hδ1pos : 0 < 1 - ε / (2 * log 2 + ε) := by
+    rw [hδ1]
+    positivity
+  have htend : Tendsto (fun n : ℕ ↦ log (n : ℝ)) atTop atTop :=
+    tendsto_log_atTop.comp tendsto_natCast_atTop_atTop
+  filter_upwards [htend.eventually
+      ((isLittleO_rpow_one_sub_mul_log_one_add_div_div_log_atTop hδ (log 2)).bound (half_pos hε)),
+    htend.eventually (eventually_gt_atTop 1)] with n hsmall hL
+  have hlogL : 0 < log (log n) := log_pos hL
+  rw [norm_of_nonneg (div_nonneg (by linarith) hlogL.le), hδ1] at hsmall
+  have hsmall' := (le_norm_self _).trans hsmall
+  have hy : 1 < log n ^ (1 - ε / (2 * log 2 + ε)) := one_lt_rpow hL hδ1pos
+  have hbound := Nat.log_card_divisors_le n hy
+  rw [log_rpow (by linarith), hδ1] at hbound
+  have hlarge : log 2 * log n / (2 * log 2 / (2 * log 2 + ε) * log (log n)) =
+      (log 2 + ε / 2) * log n / log (log n) := by
+    field_simp
+  rw [hlarge] at hbound
+  refine le_exp_of_log_le ?_
+  calc log (n.divisors.card : ℝ)
+      ≤ ε / 2 * (log n / log (log n)) + (log 2 + ε / 2) * log n / log (log n) :=
+        hbound.trans (add_le_add hsmall' le_rfl)
+    _ = (log 2 + ε) * log n / log (log n) := by ring
 
 end TauCeti

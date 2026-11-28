@@ -42,9 +42,10 @@ theorem tendsto_rieszSum_vonMangoldtTransform_div {χ : RayClassCharacter 𝔪} 
         (x : ℂ)) atTop (𝓝 (-logDeriv (continuedLFunctionOfWeight χ.toUnitaryIdealWeight) 1)) := by
   let w := χ.toUnitaryIdealWeight
   let L := continuedLFunctionOfWeight w
-  refine tendsto_rieszSum_div_of_analyticAt (F := fun s ↦ -logDeriv L s)
-    (C := (Module.finrank ℚ K : ℝ) * (Real.log 4 + 4)) (fun x hx ↦ ?_) (fun s hs ↦ ?_)
-    (fun s hs ↦ ?_)
+  refine (tendsto_rieszSum_div_sub_log_of_analyticAt
+    (a := normCoeff K w.toIdealArithmeticFunction.vonMangoldtTransform)
+    (A := 0) (F := fun s ↦ -logDeriv L s) (M := (Module.finrank ℚ K : ℝ) * (Real.log 4 + 4))
+    (fun x hx ↦ ?_) (fun s hs ↦ ?_) (fun s hs ↦ ?_)).congr (fun _ ↦ by simp [w])
   · rw [mul_assoc]
     exact (w.toIdealArithmeticFunction.norm_sum_normCoeff_vonMangoldtTransform_le
       (fun I _ ↦ by simpa using w.norm_le_one I) x).trans
@@ -71,7 +72,7 @@ theorem tendsto_rieszSum_vonMangoldtTransform_div {χ : RayClassCharacter 𝔪} 
       rwa [← w.toIdealArithmeticFunction_eq_val])
     rw [← w.toIdealArithmeticFunction_eq_val, ← LSeries_normCoeff K hsum] at hlog
     rw [(logDeriv_congr_nhds heq).eq_of_nhds, hlog, neg_neg]
-    exact (LSeriesSummable_normCoeff K hsum).LSeriesHasSum
+    simpa using (LSeriesSummable_normCoeff K hsum).LSeriesHasSum
 
 /-- For a nontrivial ray class character whose L-function is nonzero at `1`, the twisted
 first Riesz sum remains bounded by `C x` on `[1, ∞)` after any linear correction `c x`. -/

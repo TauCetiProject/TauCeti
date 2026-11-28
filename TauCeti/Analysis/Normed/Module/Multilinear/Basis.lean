@@ -27,6 +27,8 @@ directions. For orthonormal bases the coordinate isomorphisms have norm at most 
 ## Main results
 
 * `ContinuousMultilinearMap.opNorm_le_prod_mul_sum_norm_apply_basis`: the bound above.
+* `ContinuousMultilinearMap.sum_smulRight_apply_basis`: the expansion of a continuous multilinear
+  map in the products of the coordinate functionals of the bases.
 -/
 
 public section
@@ -56,5 +58,25 @@ theorem opNorm_le_prod_mul_sum_norm_apply_basis (T : ContinuousMultilinearMap �
   rw [← Module.Basis.equivFunL_apply]
   exact (norm_le_pi_norm ((b j).equivFunL (m j)) (r j)).trans
     (((b j).equivFunL : E j →L[𝕜] ι j → 𝕜).le_opNorm (m j))
+
+/-- A continuous multilinear map on finite-dimensional spaces `E j` with bases `b j` is the sum,
+over all tuples `r` of basis indices, of the product of the coordinate functionals
+`(b j).coord (r j)` times its value on the tuple of basis vectors `b j (r j)`. -/
+theorem sum_smulRight_apply_basis [∀ j, FiniteDimensional 𝕜 (E j)]
+    (T : ContinuousMultilinearMap 𝕜 E G) (b : ∀ j, Module.Basis (ι j) 𝕜 (E j)) :
+    ∑ r : ∀ j, ι j, ((ContinuousMultilinearMap.mkPiAlgebra 𝕜 κ 𝕜).compContinuousLinearMap fun j ↦
+        LinearMap.toContinuousLinearMap ((b j).coord (r j))).smulRight (T fun j ↦ b j (r j)) =
+      T := by
+  classical
+  refine toMultilinearMap_injective <| Module.Basis.ext_multilinear b fun r ↦ ?_
+  simp only [coe_coe, sum_apply, smulRight_apply, compContinuousLinearMap_apply,
+    mkPiAlgebra_apply, LinearMap.coe_toContinuousLinearMap', Module.Basis.coord_apply,
+    Module.Basis.repr_self, Finsupp.single_apply]
+  rw [Finset.sum_eq_single r]
+  · simp
+  · intro r' _ hr'
+    obtain ⟨j, hj⟩ := Function.ne_iff.1 hr'
+    rw [Finset.prod_eq_zero (Finset.mem_univ j) (by simp [Ne.symm hj]), zero_smul]
+  · simp
 
 end ContinuousMultilinearMap

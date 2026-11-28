@@ -34,10 +34,15 @@ and `C¹` maps it obeys the following laws.
   `γ₁` and a cap `v` of `γ₁`,
   `A_H(γ₀, w # v) - A_H(γ₁, v) = ∫ w^* σ - ∫₀¹ H(t, γ₀(t)) dt + ∫₀¹ H(t, γ₁(t)) dt`
   (`TauCeti.cylinderAction_rectangleTrans_sub`), which identifies the energy of a Floer cylinder
-  with the drop of the capped action.
+  with the drop of the capped action. Gluing the stationary cylinder `(s, t) ↦ γ(t)` in front of
+  a map does not change the action (`TauCeti.cylinderAction_rectangleTrans_comp_snd`).
 * **Recapping.** Two caps `u`, `v` of the same loop differ by a sphere, obtained by running
   backwards through `u` and then through `v`, and `A_H(γ, v) - A_H(γ, u)` is the area of this
   sphere (`TauCeti.cylinderAction_sub_cylinderAction`).
+* **Reversing time.** Reversing the second coordinate of `u`, `t ↦ 1 - t`, reverses the loop and
+  negates the action for the reversed Hamiltonian `H∨(t, x) = -H(1 - t, x)`,
+  `A_{H∨}(γ∨, u∨) = -A_H(γ, u)` (`TauCeti.cylinderAction_comp_prodMap_id_one_sub`): both the area
+  and the Hamiltonian term change sign.
 
 For a closed `C¹` form the action is moreover unchanged along a `C²` homotopy of caps fixing the
 loop (`TauCeti.cylinderAction_eq_of_homotopy`). More generally, for a map `f` preserving the
@@ -75,7 +80,13 @@ The area conditions hold for exact forms (`TauCeti.vanishesOnSpheres_mextDeriv`,
 at `x` has action `-∫₀¹ H(t, x) dt` (`TauCeti.SmoothTwoForm.contractibleAction_const`), and a smooth
 reference loop has action `-∫₀¹ H(t, γ₀(t)) dt` relative to itself
 (`TauCeti.SmoothTwoForm.referenceAction_self`, and
-`TauCeti.SmoothTwoForm.seamedReferenceAction_self` for seamed paths).
+`TauCeti.SmoothTwoForm.seamedReferenceAction_self` for seamed paths). Reversing time negates each
+of the three action functionals for the reversed Hamiltonian `H∨`
+(`TauCeti.SmoothTwoForm.contractibleAction_comp_one_sub`,
+`TauCeti.SmoothTwoForm.referenceAction_comp_one_sub`); for seamed paths it also replaces `f` by an
+inverse `g`, so that the action of `f`-seamed paths for `H` and the action of `g`-seamed paths for
+`H∨` differ by a sign (`TauCeti.SmoothTwoForm.seamedReferenceAction_comp_one_sub`). This is the
+reflection comparing the Floer theory of a symplectomorphism with that of its inverse.
 
 ## Main definitions
 
@@ -98,6 +109,12 @@ reference loop has action `-∫₀¹ H(t, γ₀(t)) dt` relative to itself
   `C²` homotopy of caps fixing the loop.
 * `TauCeti.cylinderAction_eq_of_seamedHomotopy`: for a closed `C¹` form preserved by `f`, the
   action is unchanged along a `C²` homotopy of `f`-seamed cylinders relative to their ends.
+* `TauCeti.cylinderAction_comp_prodMap_id_one_sub`: reversing time negates the action for the
+  reversed Hamiltonian.
+* `TauCeti.SmoothTwoForm.seamedReferenceAction_comp_one_sub`: reversing time negates the action of
+  seamed paths, replacing the seam by its inverse;
+  `TauCeti.SmoothTwoForm.referenceAction_comp_one_sub` and
+  `TauCeti.SmoothTwoForm.contractibleAction_comp_one_sub` are the loop cases.
 
 ## References
 
@@ -159,6 +176,20 @@ theorem cylinderAction_add_const (σ : RoughForm I M ℝ 2) {H : ℝ → M → �
   rw [cylinderAction_def, cylinderAction_def, intervalIntegral.integral_add hH hc]
   ring
 
+/-- **Reversing time negates the action.** Reversing the second coordinate of a differentiable map
+`u` reverses its initial path `t ↦ u (0, t)`, and for the reversed Hamiltonian
+`(t, x) ↦ -H (1 - t) x` the action measured against the reversed map is minus the action measured
+against `u`: the area term and the Hamiltonian term both change sign. -/
+theorem cylinderAction_comp_prodMap_id_one_sub (σ : RoughForm I M ℝ 2) (H : ℝ → M → ℝ)
+    {u : ℝ × ℝ → M} (hu : MDifferentiable 𝓘(ℝ, ℝ × ℝ) I u) :
+    cylinderAction σ (fun t x ↦ -H (1 - t) x) (u ∘ Prod.map id fun t ↦ 1 - t) =
+      -cylinderAction σ H u := by
+  have h := intervalIntegral.integral_comp_sub_left (fun t ↦ H t (u (0, t))) (a := 0) (b := 1) 1
+  simp only [sub_self, sub_zero] at h
+  simp only [cylinderAction_def, rectangleIntegral_comp_prodMap_id_one_sub σ hu,
+    Function.comp_apply, Prod.map_apply, id_eq, intervalIntegral.integral_neg, h]
+  ring
+
 section Continuous
 
 variable [IsManifold I 1 M] {σ : RoughForm I M ℝ 2}
@@ -190,6 +221,24 @@ theorem cylinderAction_rectangleTrans_sub (hσ : IsSmoothForm I 0 σ) (H : ℝ �
       rectangleIntegral σ w (0, 0) (1, 1) - (∫ t in 0..1, H t (w (0, t))) +
         ∫ t in 0..1, H t (w (1, t)) := by
   simp only [cylinderAction_rectangleTrans hσ H hw hv h, cylinderAction_def, h]
+  ring
+
+/-- **Gluing a stationary cylinder.** For a continuous form and a `C¹` map `v` with initial
+loop `x = v (0, ·)`, gluing the stationary cylinder `(s, t) ↦ x t` in front of `v` does not change
+the action: the stationary cylinder has zero area, and it starts and ends at the same loop. -/
+theorem cylinderAction_rectangleTrans_comp_snd (hσ : IsSmoothForm I 0 σ) (H : ℝ → M → ℝ)
+    {x : ℝ → M} {v : ℝ × ℝ → M} (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v) (h : ∀ t, v (0, t) = x t) :
+    cylinderAction σ H (rectangleTrans (fun w ↦ x w.2) v) = cylinderAction σ H v := by
+  -- `x = v (0, ·)` is `C¹` because `v` is.
+  have hx : ContMDiff 𝓘(ℝ) I 1 x := by
+    rw [show x = fun t ↦ v (0, t) from funext fun t ↦ (h t).symm]
+    exact hv.comp (contDiff_const.prodMk contDiff_id).contMDiff
+  -- The stationary cylinder is `x ∘ Prod.snd`, whose area vanishes.
+  have h₀ : rectangleIntegral σ (fun w : ℝ × ℝ ↦ x w.2) (0, 0) (1, 1) = 0 :=
+    rectangleIntegral_comp_snd σ x _ _
+  rw [cylinderAction_rectangleTrans (u := fun w ↦ x w.2) hσ H (hx.comp contDiff_snd.contMDiff) hv
+    fun t ↦ (h t).symm, cylinderAction_def, cylinderAction_def, h₀]
+  simp only [h]
   ring
 
 /-- **Recapping.** For a continuous form and two `C¹` maps `u` and `v` starting at the same loop,
@@ -326,6 +375,22 @@ theorem contractibleAction_const (hσ : VanishesOnSpheres σ.val) (x : M) :
   rw [contractibleAction_eq hσ hc, cylinderAction_eq_of_isSmoothCylinder hc,
     rectangleIntegral_comp_fst, zero_sub]
 
+/-- **Reversing time negates the action of contractible loops.** If `σ` vanishes on spheres, the
+reversed loop `t ↦ γ (1 - t)` has, for the reversed Hamiltonian `(t, x) ↦ -H (1 - t) x`, minus the
+action of `γ`: a cap of `γ` run backwards in `t` is a cap of the reversed loop. -/
+theorem contractibleAction_comp_one_sub (hσ : VanishesOnSpheres σ.val) :
+    σ.contractibleAction (fun t x ↦ -H (1 - t) x) (fun t ↦ γ (1 - t)) =
+      -σ.contractibleAction H γ := by
+  by_cases h : ∃ u : ℝ × ℝ → M, ∃ x : M, IsSmoothCylinder I γ (fun _ ↦ x) u
+  · obtain ⟨u, x, hu⟩ := h
+    rw [contractibleAction_eq hσ hu, contractibleAction_eq hσ hu.comp_prodMap_id_one_sub,
+      cylinderAction_comp_prodMap_id_one_sub _ _ (hu.contMDiff.mdifferentiable (by simp))]
+  · -- reversing a cap of the reversed loop would give a cap of `γ`
+    have h' : ¬∃ u : ℝ × ℝ → M, ∃ x : M, IsSmoothCylinder I (fun t ↦ γ (1 - t)) (fun _ ↦ x) u :=
+      fun ⟨v, x, hv⟩ ↦ h ⟨_, x, by simpa only [sub_sub_cancel] using hv.comp_prodMap_id_one_sub⟩
+    rw [contractibleAction_eq_zero_of_not_exists h, contractibleAction_eq_zero_of_not_exists h',
+      neg_zero]
+
 open Classical in
 /-- The Hamiltonian action of an `f`-seamed path `γ` relative to the reference `f`-seamed path
 `γ₀`, measured against a smooth `f`-seamed cylinder from `γ` to `γ₀`; it is `0` when there is no
@@ -366,6 +431,26 @@ theorem seamedReferenceAction_self (hT : VanishesOnSeamedTori f σ.val)
   rw [seamedReferenceAction_eq hT hc, cylinderAction_eq_of_isSmoothSeamedCylinder hc,
     rectangleIntegral_comp_snd, zero_sub]
 
+/-- **Reversing time negates the seamed action.** Let `σ` vanish on `f`-seamed tori and let `g` be
+inverse to `f`. Reversing time turns an `f`-seamed path `γ` into the `g`-seamed path
+`t ↦ γ (1 - t)`, and for the reversed Hamiltonian `(t, x) ↦ -H (1 - t) x` its action relative to
+the reversed reference path `t ↦ γ₀ (1 - t)` is minus the action of `γ` relative to `γ₀`. -/
+theorem seamedReferenceAction_comp_one_sub {g : M → M} (hT : VanishesOnSeamedTori f σ.val)
+    (hgf : Function.LeftInverse g f) (hfg : Function.RightInverse g f) :
+    σ.seamedReferenceAction g (fun t x ↦ -H (1 - t) x) (fun t ↦ γ₀ (1 - t))
+        (fun t ↦ γ (1 - t)) = -σ.seamedReferenceAction f H γ₀ γ := by
+  by_cases h : ∃ u, IsSmoothSeamedCylinder I f γ γ₀ u
+  · obtain ⟨u, hu⟩ := h
+    rw [seamedReferenceAction_eq hT hu,
+      seamedReferenceAction_eq (hT.of_rightInverse hfg) (hu.comp_prodMap_id_one_sub hgf),
+      cylinderAction_comp_prodMap_id_one_sub _ _ (hu.contMDiff.mdifferentiable (by simp))]
+  · -- reversing a `g`-seamed cylinder between the reversed paths would give an `f`-seamed
+    -- cylinder from `γ` to `γ₀`
+    have h' : ¬∃ v, IsSmoothSeamedCylinder I g (fun t ↦ γ (1 - t)) (fun t ↦ γ₀ (1 - t)) v :=
+      fun ⟨v, hv⟩ ↦ h ⟨_, by simpa only [sub_sub_cancel] using hv.comp_prodMap_id_one_sub hfg⟩
+    rw [seamedReferenceAction_eq_zero_of_not_exists h,
+      seamedReferenceAction_eq_zero_of_not_exists h', neg_zero]
+
 /-- The Hamiltonian action of a loop `γ` relative to the reference loop `γ₀`, measured against a
 smooth cylinder from `γ` to `γ₀`; it is `0` when there is no such cylinder. This is the seamed
 action `TauCeti.SmoothTwoForm.seamedReferenceAction` for `f = id`. When `σ` vanishes on tori it
@@ -401,6 +486,15 @@ theorem referenceAction_self (hσ : VanishesOnTori σ.val) (hγ₀ : ContMDiff �
     (hper : γ₀ 1 = γ₀ 0) : σ.referenceAction H γ₀ γ₀ = -∫ t in 0..1, H t (γ₀ t) := by
   rw [← seamedReferenceAction_id]
   exact seamedReferenceAction_self ((vanishesOnSeamedTori_id_iff _).mpr hσ) hγ₀ hper
+
+/-- **Reversing time negates the action relative to a reference loop.** If `σ` vanishes on tori,
+the reversed loop `t ↦ γ (1 - t)` has, for the reversed Hamiltonian `(t, x) ↦ -H (1 - t) x` and
+relative to the reversed reference loop, minus the action of `γ` relative to `γ₀`. -/
+theorem referenceAction_comp_one_sub (hσ : VanishesOnTori σ.val) :
+    σ.referenceAction (fun t x ↦ -H (1 - t) x) (fun t ↦ γ₀ (1 - t)) (fun t ↦ γ (1 - t)) =
+      -σ.referenceAction H γ₀ γ :=
+  seamedReferenceAction_comp_one_sub ((vanishesOnSeamedTori_id_iff _).mpr hσ) (fun _ ↦ rfl)
+    fun _ ↦ rfl
 
 end SmoothTwoForm
 

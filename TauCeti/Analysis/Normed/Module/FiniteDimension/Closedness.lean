@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.Topology.MetricSpace.HausdorffDistance
 
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.Algebra.OpenSubgroup
-import Mathlib.Topology.MetricSpace.HausdorffDistance
 
 /-!
 # Closedness of finite-dimensional subspaces of normed spaces
@@ -37,6 +37,8 @@ closedness over any complete normed field.
 * `Submodule.isClosed_of_finiteDimensional'`: over any complete normed field (trivially normed
   or not), every finite-dimensional subspace of a `T0Space` seminormed space (in particular, of a
   normed space) is closed.
+* `Submodule.infDist_pos_of_notMem`: over any complete normed field, a point outside a
+  finite-dimensional subspace of a normed space has positive distance to it.
 -/
 
 public section
@@ -114,5 +116,12 @@ theorem isClosed_of_finiteDimensional' {𝕜 E : Type*} [NormedField 𝕜] [Comp
     (s : Submodule 𝕜 E) [FiniteDimensional 𝕜 s] :
     IsClosed (s : Set E) := by
   simpa using (⊥ : Submodule 𝕜 E).isClosed_sup_finiteDimensional' s isClosed_singleton
+
+/-- **A point outside a finite-dimensional subspace has positive distance to it**, over any
+complete normed field, since the subspace is closed. -/
+theorem infDist_pos_of_notMem {𝕜 E : Type*} [NormedField 𝕜] [CompleteSpace 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {P : Submodule 𝕜 E} [FiniteDimensional 𝕜 P] {x : E}
+    (hx : x ∉ P) : 0 < infDist x (P : Set E) :=
+  (P.isClosed_of_finiteDimensional'.notMem_iff_infDist_pos ⟨0, P.zero_mem⟩).mp hx
 
 end Submodule

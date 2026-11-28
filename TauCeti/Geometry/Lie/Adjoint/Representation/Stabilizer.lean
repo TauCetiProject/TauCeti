@@ -41,6 +41,8 @@ one-parameter subgroup `T_μ`, the closure of `{exp (t μ) | t ∈ ℝ}`
 
 * `TauCeti.Lie.mem_stabilizer_continuousAdjointRepresentation_iff`: `g ∈ Z_G(Y)` exactly when
   `Ad_g Y = Y`.
+* `TauCeti.Lie.stabilizer_continuousAdjointRepresentation_Ad`: the stabilizer of `Ad_g Y` is
+  `g Z_G(Y) g⁻¹`.
 * `TauCeti.Lie.stabilizer_continuousAdjointRepresentation_eq_centralizer`: `Z_G(Y)` is the
   centralizer of the one-parameter subgroup of `Y`.
 * `TauCeti.Lie.isClosed_stabilizer_continuousAdjointRepresentation`: `Z_G(Y)` is closed.
@@ -89,6 +91,16 @@ theorem mem_stabilizer_continuousAdjointRepresentation_iff {Y : LeftInvariantDer
       Ad (I := I) g Y = Y := by
   rw [Representation.mem_stabilizer, ContRepresentation.toRepresentation_apply,
     continuousAdjointRepresentation_apply]
+
+/-- **The adjoint stabilizer of a translate is the conjugate stabilizer.** The stabilizer of
+`Ad_g Y` is `g Z_G(Y) g⁻¹`. -/
+theorem stabilizer_continuousAdjointRepresentation_Ad (g : G) (Y : LeftInvariantDerivation I G) :
+    (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer
+        (Ad (I := I) g Y) =
+      ((continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer Y).map
+        (MulAut.conj g).toMonoidHom := by
+  rw [← continuousAdjointRepresentation_apply, ← ContRepresentation.toRepresentation_apply,
+    Representation.stabilizer_conj, MulEquiv.toMonoidHom_eq_coe]
 
 /-- **The adjoint stabilizer of `Y` is the centralizer of its one-parameter subgroup.** -/
 theorem stabilizer_continuousAdjointRepresentation_eq_centralizer

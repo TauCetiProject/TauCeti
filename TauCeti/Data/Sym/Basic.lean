@@ -127,6 +127,10 @@ theorem fin_two_three_cases (s : Sym (Fin 2) 3) :
 theorem ofFn_cons (a : α) (f : Fin n → α) : ofFn (Fin.cons a f) = a ::ₛ ofFn f :=
   Subtype.ext <| by simp [Sym.coe_cons, List.ofFn_succ]
 
+/-- An ordered one-point tuple is the singleton `Sym.oneEquiv` of its entry. -/
+theorem ofFn_eq_oneEquiv (f : Fin 1 → α) : ofFn f = Sym.oneEquiv (f 0) :=
+  Sym.coe_injective <| by simp [List.ofFn_succ]
+
 /-- Applying a function to every entry of an ordered tuple applies it to every point of the
 unordered one. -/
 @[simp]

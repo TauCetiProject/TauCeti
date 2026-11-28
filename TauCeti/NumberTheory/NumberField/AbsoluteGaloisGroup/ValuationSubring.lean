@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Decomposition
+public import TauCeti.NumberTheory.NumberField.IntegralClosure
 public import TauCeti.RingTheory.Valuation.LocalizationAtCenter
 import Mathlib.RingTheory.Ideal.GoingUp
 import Mathlib.RingTheory.Valuation.LocalSubring
 import TauCeti.NumberTheory.NumberField.AbsoluteGaloisGroup.Transitivity
-import TauCeti.RingTheory.DedekindDomain.Prufer
 
 /-!
 # Valuation subrings of `F^alg` and primes of the algebraic integers
@@ -27,7 +27,8 @@ the zero prime of `O` and by `F^alg` itself; the finite places of `F^alg` are th
 
 Every valuation subring of `F^alg` contains `O`, since it contains `ℤ` and is integrally closed;
 its centre on `O` is a prime of `O`. Conversely, `O` is a Prüfer domain
-(`IsIntegralClosure.preValuationRing_atPrime`), so the localization `O_Q` at a prime `Q` is a
+(`NumberField.preValuationRing_atPrime_integralClosure`, from Tau Ceti's
+`IsIntegralClosure.preValuationRing_atPrime`), so the localization `O_Q` at a prime `Q` is a
 valuation subring `A_Q = Q.valuationSubringAtPrime (AlgebraicClosure F)` of `F^alg`, and it is the
 only valuation subring centred at `Q`. So valuation subrings of `F^alg` correspond to primes of
 `O` (`TauCeti.GaloisRep.valuationSubringEquivPrimeSpectrum`), equivariantly for `G_F`. Under this
@@ -94,19 +95,6 @@ open NumberField Pointwise
 namespace TauCeti.GaloisRep
 
 variable (F : Type*) [Field F] [NumberField F]
-
-/-- The integral closure `O` of `𝓞 F` in `F^alg` has fraction field `F^alg`. -/
-instance instIsFractionRingIntegralClosure :
-    IsFractionRing (integralClosure (𝓞 F) (AlgebraicClosure F)) (AlgebraicClosure F) :=
-  have : Algebra.IsAlgebraic (𝓞 F) (AlgebraicClosure F) :=
-    (IsFractionRing.comap_isAlgebraic_iff (K := F)).mpr inferInstance
-  integralClosure.isFractionRing_of_algebraic fun _ hx ↦
-    FaithfulSMul.algebraMap_injective (𝓞 F) (AlgebraicClosure F) (hx.trans (map_zero _).symm)
-
-/-- **`O` is a Prüfer domain**: its localizations at primes are valuation rings. -/
-instance instPreValuationRingAtPrime (Q : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F)))
-    [Q.IsPrime] : PreValuationRing (Localization.AtPrime Q) :=
-  IsIntegralClosure.preValuationRing_atPrime (𝓞 F) F (AlgebraicClosure F) Q
 
 omit [NumberField F] in
 /-- **Every valuation subring of `F^alg` contains the algebraic integers `O`**: it contains `ℤ`
