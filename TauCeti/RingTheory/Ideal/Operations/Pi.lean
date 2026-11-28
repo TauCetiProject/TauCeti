@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Ideal.Quotient.Basic
 import Mathlib.LinearAlgebra.Quotient.Basic
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Ideal multiples on products of modules
@@ -57,33 +58,16 @@ theorem FG.smul_top_pi_eq_pi {R : Type*} [CommSemiring R] {ι : Type*}
     J • (⊤ : Submodule R (∀ i, M i)) =
       Submodule.pi Set.univ fun i ↦ J • (⊤ : Submodule R (M i)) := by
   refine le_antisymm (Submodule.smul_le.mpr fun r hr _ _ i _ ↦
-    Submodule.smul_mem_smul hr Submodule.mem_top) ?_
+    Submodule.smul_mem_smul hr Submodule.mem_top) fun x hx ↦ ?_
   obtain ⟨s, rfl⟩ := hJ
-  classical
-  induction s using Finset.induction_on with
-  | empty =>
-    intro x hx
-    have hx0 : x = 0 := funext fun i ↦ by simpa using Submodule.mem_pi.mp hx i (Set.mem_univ i)
-    rw [hx0]
-    exact zero_mem _
-  | @insert a s _ ih =>
-    intro x hx
-    have hspan : Ideal.span (↑(insert a s) : Set R) = Ideal.span {a} ⊔ Ideal.span (s : Set R) := by
-      rw [Finset.coe_insert, Set.insert_eq, Ideal.span_union]
-    rw [hspan, Submodule.sup_smul]
-    have hx' : ∀ i, ∃ u : M i, ∃ v ∈ Ideal.span (s : Set R) • (⊤ : Submodule R (M i)),
-        a • u + v = x i := fun i ↦ by
-      have hi := Submodule.mem_pi.mp hx i (Set.mem_univ i)
-      rw [hspan, Submodule.sup_smul] at hi
-      obtain ⟨y, hy, v, hv, hyv⟩ := Submodule.mem_sup.mp hi
-      rw [Submodule.ideal_span_singleton_smul, Submodule.mem_smul_pointwise_iff_exists] at hy
-      obtain ⟨u, _, rfl⟩ := hy
-      exact ⟨u, v, hv, hyv⟩
-    choose u v hv huv using hx'
-    have hxeq : x = a • u + v := funext fun i ↦ (huv i).symm
-    rw [hxeq]
-    exact Submodule.add_mem_sup (Submodule.smul_mem_smul (Ideal.mem_span_singleton_self a)
-      Submodule.mem_top) (ih fun i _ ↦ hv i)
+  have hspan : Ideal.span (s : Set R) = Ideal.span (Set.range ((↑) : s → R)) := by
+    rw [Subtype.range_coe_subtype, Finset.setOfPred_mem]
+  have hx' : ∀ i, ∃ m : s → M i, ∑ j : s, (j : R) • m j = x i := fun i ↦ by
+    have hi := Submodule.mem_pi.mp hx i (Set.mem_univ i)
+    rwa [hspan, Submodule.mem_span_range_smul_top_iff_exists_fun] at hi
+  choose m hm using hx'
+  rw [hspan, Submodule.mem_span_range_smul_top_iff_exists_fun]
+  exact ⟨fun j i ↦ m i j, funext fun i ↦ by simpa [Finset.sum_apply] using hm i⟩
 
 /-- For a finitely generated ideal `J` of a commutative semiring `R`,
 `J • (⊤ : Submodule R (ι → R))` consists of the tuples whose every coordinate lies in `J`. -/

@@ -95,18 +95,15 @@ the topology of `R` is `J`-adic, then `e.submodulePiPow J s n` form a basis of n
 theorem hasBasis_nhds_zero_submodulePiPow (e : M ≃L[R] (I → R)) {J : Ideal R} (hJ : IsAdic J) :
     (𝓝 (0 : M)).HasBasis (fun _ : Finset I × ℕ ↦ True)
       (fun p ↦ (e.submodulePiPow J p.1 p.2 : Set M)) := by
-  refine hasBasis_iff.mpr fun W ↦ ⟨fun hW ↦ ?_, fun ⟨⟨s, n⟩, _, hsub⟩ ↦
-    mem_of_superset ((e.isOpen_submodulePiPow hJ s n).mem_nhds (zero_mem _)) hsub⟩
-  have hW' : e.symm ⁻¹' W ∈ 𝓝 (0 : I → R) :=
-    e.symm.continuous.continuousAt.preimage_mem_nhds (by simpa using hW)
-  rw [nhds_pi, Filter.mem_pi'] at hW'
-  obtain ⟨s, t, ht, hst⟩ := hW'
-  choose k hk using fun i ↦ hJ.hasBasis_nhds_zero.mem_iff.mp (ht i)
-  refine ⟨(s, s.sup fun i ↦ k i), trivial, fun m hm ↦ ?_⟩
-  rw [SetLike.mem_coe, mem_submodulePiPow_iff] at hm
-  have hem : e m ∈ (s : Set I).pi t := fun i hi ↦ (hk i).2 (Ideal.pow_le_pow_right
-    (Finset.le_sup (Finset.mem_coe.mp hi)) (hm i (Finset.mem_coe.mp hi)))
-  simpa using hst hem
+  have h0 : (𝓝 (0 : I → R)).HasBasis (fun Ik : Set I × ℕ ↦ Ik.1.Finite ∧ True)
+      (fun Ik ↦ Ik.1.pi fun _ ↦ ((J ^ Ik.2 : Ideal R) : Set R)) := by
+    rw [nhds_pi]
+    exact hJ.hasBasis_nhds_zero.pi_self
+  refine (e.toHomeomorph.isInducing.basis_nhds (map_zero e ▸ h0)).to_hasBasis ?_ ?_
+  · rintro ⟨s, n⟩ ⟨hs, _⟩
+    exact ⟨(hs.toFinset, n), trivial, fun m hm ↦ by simpa [hs.mem_toFinset] using hm⟩
+  · rintro ⟨s, n⟩ _
+    exact ⟨(s, n), ⟨s.finite_toSet, trivial⟩, fun m hm ↦ by simpa using hm⟩
 
 end Adic
 

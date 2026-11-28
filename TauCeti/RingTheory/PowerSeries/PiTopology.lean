@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.PiTopology
-public import Mathlib.Topology.Algebra.Module.Equiv.Basic
+public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import TauCeti.RingTheory.PowerSeries.CoeffProd
 
@@ -37,27 +37,21 @@ variable (R S : Type*) [Semiring R] [Semiring S] [Module R S] [TopologicalSpace 
 
 /-- With the product topology on coefficients (`open scoped PowerSeries.WithPiTopology`), `S⟦X⟧` is
 continuously `R`-linearly isomorphic to `ℕ → S` via `PowerSeries.coeff` and `PowerSeries.mk`. -/
-noncomputable def continuousLinearEquivPi : S⟦X⟧ ≃L[R] (ℕ → S) where
-  toFun f n := PowerSeries.coeff n f
-  map_add' f g := by ext n; simp
-  map_smul' r f := by ext n; simp
-  invFun := PowerSeries.mk
-  left_inv f := by ext n; simp
-  right_inv c := by ext n; simp
-  continuous_toFun := continuous_pi (continuous_coeff S)
-  continuous_invFun := continuous_iff_continuousAt.mpr fun _ ↦
-    (tendsto_iff_coeff_tendsto S _ _ _).mpr fun n ↦ by
-      simpa [PowerSeries.coeff_mk] using (continuous_apply n).continuousAt.tendsto
+noncomputable def continuousLinearEquivPi : S⟦X⟧ ≃L[R] (ℕ → S) :=
+  ContinuousLinearEquiv.piCongrLeft R (fun _ : ℕ ↦ S) (Finsupp.uniqueEquiv ())
 
 @[simp, grind =]
 theorem continuousLinearEquivPi_apply (f : S⟦X⟧) (n : ℕ) :
-    continuousLinearEquivPi R S f n = PowerSeries.coeff n f :=
-  (rfl)
+    continuousLinearEquivPi R S f n = PowerSeries.coeff n f := by
+  rw [← PowerSeries.coeff_coeToMvPowerSeries, MvPowerSeries.coeff_apply]
+  have h := Equiv.piCongrLeft_apply (fun _ : ℕ ↦ S) (Finsupp.uniqueEquiv ()) f n
+  simp only [eq_rec_constant] at h
+  exact h
 
 @[simp, grind =]
 theorem continuousLinearEquivPi_symm_apply (c : ℕ → S) :
     (continuousLinearEquivPi R S).symm c = PowerSeries.mk c :=
-  (rfl)
+  funext fun s ↦ Equiv.piCongrLeft_symm_apply (fun _ : ℕ ↦ S) (Finsupp.uniqueEquiv ()) c s
 
 end Semiring
 

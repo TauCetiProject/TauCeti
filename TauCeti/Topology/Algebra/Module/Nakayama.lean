@@ -236,11 +236,9 @@ theorem LinearMap.bijective_of_bijective_mapQ_of_compactSpace {N : Type*}
   rw [← LinearMap.range_eq_top, ← top_le_iff]
   refine Submodule.le_of_le_sup_span_singleton_smul ha
     (LinearMap.coe_range f ▸ (isCompact_range hf).isClosed) (by simpa using isCompact_univ) ?_
-  rw [← hI, top_le_iff, sup_comm, ← Submodule.map_mkQ_eq_top, ← LinearMap.range_comp]
-  refine LinearMap.range_eq_top_of_surjective _ fun q ↦ ?_
-  obtain ⟨y, hy⟩ := hbij.2 q
-  obtain ⟨m, rfl⟩ := Submodule.mkQ_surjective _ y
-  exact ⟨m, by simpa using hy⟩
+  rw [← hI, top_le_iff, sup_comm, ← Submodule.map_mkQ_eq_top,
+    ← Submodule.range_mapQ (I • ⊤) (I • ⊤) f (Submodule.smul_top_le_comap_smul_top I f)]
+  exact LinearMap.range_eq_top.mpr hbij.2
 
 end CommRing
 

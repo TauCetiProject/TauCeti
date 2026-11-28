@@ -46,9 +46,10 @@ some `n`.** -/
 theorem exists_pow_smul_top_le (hM : IsCompactModule R M) {I : Ideal R} (hI : IsAdic I)
     (N : Submodule R M) (hN : IsOpen (N : Set M)) :
     ∃ n : ℕ, (I ^ n) • (⊤ : Submodule R M) ≤ N := by
-  have := hM.isTopologicalAddGroup; have := hM.continuousSMul
+  have := hM.isTopologicalAddGroup; have := hM.continuousSMul; have := hM.compactSpace
   have := Submodule.Quotient.discreteTopology_of_isOpen N hN
-  have := hM.finite_quotient_of_isOpen N hN; have := Fintype.ofFinite (M ⧸ N)
+  have : Finite (M ⧸ N) := N.toAddSubgroup.quotient_finite_of_isOpen hN
+  have := Fintype.ofFinite (M ⧸ N)
   choose k hk using fun q : M ⧸ N ↦
     (hI.hasBasis_nhds_zero.mem_iff.mp (((isOpen_discrete ({0} : Set (M ⧸ N))).preimage
       (continuous_id.smul continuous_const)).mem_nhds (zero_smul R q))).imp fun _ h ↦ h.2

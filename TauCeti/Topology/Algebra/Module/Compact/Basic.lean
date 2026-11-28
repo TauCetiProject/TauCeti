@@ -42,9 +42,8 @@ to the closed cosets it describes. Together these are the inverse-limit descript
 The predicate `IsCompactModule R M` packages the four topological hypotheses so that they can be
 carried as a single hypothesis on a module whose topology is given by hand; its API restates the
 two facts above for it, shows that it passes to closed submodules, quotients by closed submodules,
-products, and continuous linear equivalences, records that open submodules have finite index, and
-provides the witness that a compact totally disconnected topological ring is a compact module over
-itself.
+products, and continuous linear equivalences, and provides the witness that a compact totally
+disconnected topological ring is a compact module over itself.
 
 ## Main definitions
 
@@ -74,13 +73,12 @@ itself.
 * `TauCeti.IsCompactModule.isLinearTopology`,
   `TauCeti.IsCompactModule.eq_zero_of_forall_mem_of_isOpen`,
   `TauCeti.IsCompactModule.existsUnique_forall_mkQ_eq`, `TauCeti.IsCompactModule.submodule`,
-  `TauCeti.IsCompactModule.quotient`, `TauCeti.IsCompactModule.finite_quotient_of_isOpen`,
-  `TauCeti.IsCompactModule.isClosed_smul_top`,
+  `TauCeti.IsCompactModule.quotient`, `TauCeti.IsCompactModule.isClosed_smul_top`,
   `TauCeti.IsCompactModule.pi`, `TauCeti.IsCompactModule.prod`,
   `TauCeti.IsCompactModule.of_subsingleton`, `TauCeti.IsCompactModule.of_continuousLinearEquiv`,
   `TauCeti.IsCompactModule.self`: the same statements for the predicate, its stability under
-  closed submodules, quotients, products, and continuous linear equivalences, finite index of open
-  submodules, closedness of `I • ⊤`, and the self-module witness.
+  closed submodules, quotients, products, and continuous linear equivalences, closedness of
+  `I • ⊤`, and the self-module witness.
 * `TauCeti.IsCompactModule.of_finite`: a finitely generated Hausdorff topological module over a
   compact totally disconnected ring is a compact module.
 
@@ -425,12 +423,6 @@ theorem quotient (N : Submodule R M) (hN : IsClosed (N : Set M)) : IsCompactModu
   refine ⟨inferInstance, inferInstance, ⟨?_⟩, inferInstance⟩
   rw [← Set.image_univ_of_surjective N.mkQ_surjective]
   exact isCompact_univ.image N.continuous_mkQ
-
-/-- **Open submodules have finite index.** The quotient of a compact module by an open submodule
-is finite. -/
-theorem finite_quotient_of_isOpen (N : Submodule R M) (hN : IsOpen (N : Set M)) :
-    Finite (M ⧸ N) := by
-  have ⟨_, _, _, _⟩ := hM; exact N.toAddSubgroup.quotient_finite_of_isOpen hN
 
 /-- The binary product of compact modules is a compact module. -/
 theorem prod {N : Type*} [AddCommGroup N] [Module R N] [TopologicalSpace N]
