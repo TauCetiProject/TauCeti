@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.Analysis.Complex.AbelLimit
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecialFunctions.Complex.Exp.UnitCircle
 import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
@@ -148,20 +149,6 @@ end Complex
 
 namespace Real
 
-private theorem norm_exp_mul_I_sub_one {θ : ℝ} (hθ : θ ∈ Set.Icc 0 (2 * π)) :
-    ‖Complex.exp (θ * Complex.I) - 1‖ = 2 * sin (θ / 2) := by
-  have hs : 0 ≤ sin (θ / 2) :=
-    sin_nonneg_of_nonneg_of_le_pi (by linarith [hθ.1]) (by linarith [hθ.2])
-  rw [mul_comm _ Complex.I, Complex.norm_exp_I_mul_ofReal_sub_one,
-    Real.norm_of_nonneg (by positivity)]
-
-private theorem exp_mul_I_ne_one {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π)) :
-    Complex.exp (θ * Complex.I) ≠ 1 := by
-  have hs : 0 < sin (θ / 2) := sin_pos_of_pos_of_lt_pi (by linarith [hθ.1]) (by linarith [hθ.2])
-  refine sub_ne_zero.mp (norm_pos_iff.mp ?_)
-  rw [norm_exp_mul_I_sub_one (Set.Ioo_subset_Icc_self hθ)]
-  positivity
-
 private theorem sum_range_exp_mul_I_pow_div (θ : ℝ) (N : ℕ) :
     ∑ n ∈ range (N + 1), Complex.exp (θ * Complex.I) ^ n / (n : ℂ) =
       ∑ n ∈ Icc 1 N, Complex.exp (((n : ℝ) * θ) * Complex.I) / (n : ℂ) := by
@@ -177,7 +164,7 @@ theorem tendsto_sum_Icc_sin_mul_div {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π))
     Tendsto (fun N : ℕ ↦ ∑ n ∈ Icc 1 N, sin (n * θ) / n) atTop (𝓝 ((π - θ) / 2)) := by
   have h := ((Complex.continuous_im.tendsto _).comp
     (Complex.tendsto_sum_range_taylorSeries_neg_log
-      (by rw [Complex.norm_exp_ofReal_mul_I]) (exp_mul_I_ne_one hθ))).comp
+      (by rw [Complex.norm_exp_ofReal_mul_I]) (Complex.exp_ofReal_mul_I_ne_one_of_mem_Ioo hθ))).comp
     (tendsto_add_atTop_nat 1)
   rw [Complex.neg_im, Complex.log_im, Complex.arg_one_sub_exp_mul_I hθ, neg_div', neg_sub] at h
   refine h.congr fun N ↦ ?_
@@ -193,10 +180,10 @@ theorem tendsto_sum_Icc_cos_mul_div {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π))
       (𝓝 (-log (2 * sin (θ / 2)))) := by
   have h := ((Complex.continuous_re.tendsto _).comp
     (Complex.tendsto_sum_range_taylorSeries_neg_log
-      (by rw [Complex.norm_exp_ofReal_mul_I]) (exp_mul_I_ne_one hθ))).comp
+      (by rw [Complex.norm_exp_ofReal_mul_I]) (Complex.exp_ofReal_mul_I_ne_one_of_mem_Ioo hθ))).comp
     (tendsto_add_atTop_nat 1)
   rw [Complex.neg_re, Complex.log_re, norm_sub_rev (1 : ℂ),
-    norm_exp_mul_I_sub_one (Set.Ioo_subset_Icc_self hθ)] at h
+    Complex.norm_exp_ofReal_mul_I_sub_one_of_mem_Icc (Set.Ioo_subset_Icc_self hθ)] at h
   refine h.congr fun N ↦ ?_
   simp only [Function.comp_apply]
   rw [sum_range_exp_mul_I_pow_div]
@@ -209,8 +196,9 @@ private theorem norm_neg_log_one_sub_exp_sub_sum_Icc_le {θ : ℝ} (hθ : θ ∈
       ∑ n ∈ Icc 1 N, Complex.exp (((n : ℝ) * θ) * Complex.I) / (n : ℂ)‖ ≤
       1 / ((N + 1) * sin (θ / 2)) := by
   have h := Complex.norm_neg_log_one_sub_sub_sum_range_le
-    (by rw [Complex.norm_exp_ofReal_mul_I]) (exp_mul_I_ne_one hθ) N
-  rw [sum_range_exp_mul_I_pow_div, norm_exp_mul_I_sub_one (Set.Ioo_subset_Icc_self hθ),
+    (by rw [Complex.norm_exp_ofReal_mul_I]) (Complex.exp_ofReal_mul_I_ne_one_of_mem_Ioo hθ) N
+  rw [sum_range_exp_mul_I_pow_div,
+    Complex.norm_exp_ofReal_mul_I_sub_one_of_mem_Icc (Set.Ioo_subset_Icc_self hθ),
     Complex.norm_exp_ofReal_mul_I, one_pow, mul_one] at h
   convert h using 1
   field_simp
@@ -233,7 +221,7 @@ theorem abs_sub_sum_Icc_cos_mul_div_le {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * �
       1 / ((N + 1) * sin (θ / 2)) := by
   simpa only [Complex.sub_re, Complex.neg_re, Complex.log_re, Complex.re_sum, norm_sub_rev (1 : ℂ),
     Complex.div_natCast_re, ← Complex.ofReal_mul, Complex.exp_ofReal_mul_I_re,
-    norm_exp_mul_I_sub_one (Set.Ioo_subset_Icc_self hθ)] using
+    Complex.norm_exp_ofReal_mul_I_sub_one_of_mem_Icc (Set.Ioo_subset_Icc_self hθ)] using
     (Complex.abs_re_le_norm _).trans (norm_neg_log_one_sub_exp_sub_sum_Icc_le hθ N)
 
 end Real
