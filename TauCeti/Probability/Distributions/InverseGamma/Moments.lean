@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.InverseGamma.Basic
 public import Mathlib.Probability.Moments.Variance
 
+import TauCeti.Probability.GeneratingFunction
 import TauCeti.Probability.HasLaw
 import TauCeti.Probability.Moments.IntegrableExpMul
 
@@ -166,15 +167,24 @@ theorem not_integrable_exp_mul_inverseGammaMeasure (ha : 0 < a) (hr : 0 < r) (ht
   exact not_lt_of_ge (Nat.le_ceil a)
     ((integrable_pow_inverseGammaMeasure_iff ha hr ⌈a⌉₊).1 hpow)
 
+/-- For positive shape and rate, an exponential moment of an inverse-gamma law exists exactly at
+nonpositive rates. -/
+@[simp]
+theorem integrable_exp_mul_inverseGammaMeasure_iff (ha : 0 < a) (hr : 0 < r) (t : ℝ) :
+    Integrable (fun x : ℝ ↦ Real.exp (t * x)) (inverseGammaMeasure a r) ↔ t ≤ 0 := by
+  constructor
+  · intro h
+    exact not_lt.mp fun ht ↦ not_integrable_exp_mul_inverseGammaMeasure ha hr ht h
+  · exact integrable_exp_mul_inverseGammaMeasure
+
 /-- **The exact exponential-integrability domain of a valid inverse-gamma law** is the
 nonpositive half-line. -/
 @[simp]
 theorem integrableExpSet_id_inverseGammaMeasure (ha : 0 < a) (hr : 0 < r) :
     integrableExpSet id (inverseGammaMeasure a r) = Iic 0 := by
   ext u
-  simp only [integrableExpSet, Set.mem_ofPred_eq, id_eq, mem_Iic]
-  exact ⟨fun h ↦ not_lt.mp fun hu ↦ not_integrable_exp_mul_inverseGammaMeasure ha hr hu h,
-    integrable_exp_mul_inverseGammaMeasure⟩
+  simpa only [integrableExpSet, Set.mem_ofPred_eq, id_eq, mem_Iic] using
+    integrable_exp_mul_inverseGammaMeasure_iff ha hr u
 
 
 end Probability
@@ -188,8 +198,8 @@ open MeasureTheory TauCeti.Probability
 variable {a r : ℝ} {n : ℕ} {q : ℝ} {Ω : Type*} [MeasurableSpace Ω]
   {P : Measure Ω} {X : Ω → ℝ}
 
-/-- A real power of an inverse-gamma random variable is integrable exactly when its exponent is
-below the shape parameter. -/
+/-- For positive shape and rate, a real power of an inverse-gamma random variable is integrable
+exactly when its exponent is below the shape parameter. -/
 theorem integrable_rpow_inverseGammaMeasure_iff
     (hX : HasLaw X (inverseGammaMeasure a r) P) (ha : 0 < a) (hr : 0 < r) (q : ℝ) :
     Integrable (fun ω ↦ X ω ^ q) P ↔ q < a := by
@@ -204,8 +214,8 @@ theorem integral_rpow_inverseGammaMeasure
   rw [← Function.comp_def (f := fun x : ℝ ↦ x ^ q), hX.integral_comp (by fun_prop),
     TauCeti.Probability.integral_rpow_inverseGammaMeasure ha hr hq]
 
-/-- A natural power of an inverse-gamma random variable is integrable exactly when its exponent is
-below the shape parameter. -/
+/-- For positive shape and rate, a natural power of an inverse-gamma random variable is integrable
+exactly when its exponent is below the shape parameter. -/
 theorem integrable_pow_inverseGammaMeasure_iff
     (hX : HasLaw X (inverseGammaMeasure a r) P) (ha : 0 < a) (hr : 0 < r) (n : ℕ) :
     Integrable (fun ω ↦ X ω ^ n) P ↔ (n : ℝ) < a := by
@@ -216,10 +226,12 @@ theorem integrable_pow_inverseGammaMeasure_iff
 theorem integral_pow_inverseGammaMeasure
     (hX : HasLaw X (inverseGammaMeasure a r) P) (hr : 0 < r) (hn : (n : ℝ) < a) :
     ∫ ω, X ω ^ n ∂P = r ^ n * Real.Gamma (a - n) / Real.Gamma a := by
-  rw [← Function.comp_def (f := fun x : ℝ ↦ x ^ n), hX.integral_comp (by fun_prop),
-    TauCeti.Probability.integral_pow_inverseGammaMeasure hr n hn]
+  have ha : 0 < a := lt_of_le_of_lt (Nat.cast_nonneg n) hn
+  simpa only [Real.rpow_natCast] using
+    hX.integral_rpow_inverseGammaMeasure ha hr hn
 
-/-- An inverse-gamma random variable is integrable exactly when the shape exceeds one. -/
+/-- For positive shape and rate, an inverse-gamma random variable is integrable exactly when the
+shape exceeds one. -/
 theorem integrable_inverseGammaMeasure_iff
     (hX : HasLaw X (inverseGammaMeasure a r) P) (ha : 0 < a) (hr : 0 < r) :
     Integrable X P ↔ 1 < a := by
@@ -237,28 +249,20 @@ theorem variance_inverseGammaMeasure
     variance X P = r ^ 2 / ((a - 1) ^ 2 * (a - 2)) := by
   rw [hX.variance_eq, TauCeti.Probability.variance_id_inverseGammaMeasure hr ha]
 
-/-- An inverse-gamma random variable has a finite exponential moment exactly at nonpositive
-rates. -/
-theorem integrable_exp_mul_inverseGammaMeasure_iff
-    (hX : HasLaw X (inverseGammaMeasure a r) P) (ha : 0 < a) (hr : 0 < r) (t : ℝ) :
-    Integrable (fun ω ↦ Real.exp (t * X ω)) P ↔ t ≤ 0 := by
-  have hmeasure :
-      Integrable (fun x : ℝ ↦ Real.exp (t * x)) (inverseGammaMeasure a r) ↔ t ≤ 0 := by
-    constructor
-    · intro h
-      exact not_lt.mp fun ht ↦
-        TauCeti.Probability.not_integrable_exp_mul_inverseGammaMeasure ha hr ht h
-    · exact TauCeti.Probability.integrable_exp_mul_inverseGammaMeasure
-  simpa only [Function.comp_def] using
-    (hX.integrable_comp_iff (f := fun x : ℝ ↦ Real.exp (t * x)) (by fun_prop)).trans hmeasure
-
-/-- The exponential-integrability domain of an inverse-gamma random variable is the nonpositive
-half-line. -/
+/-- For positive shape and rate, the exponential-integrability domain of an inverse-gamma random
+variable is the nonpositive half-line. -/
 theorem integrableExpSet_inverseGammaMeasure
     (hX : HasLaw X (inverseGammaMeasure a r) P) (ha : 0 < a) (hr : 0 < r) :
     integrableExpSet X P = Set.Iic 0 := by
-  ext t
-  simpa only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_Iic] using
-    hX.integrable_exp_mul_inverseGammaMeasure_iff ha hr t
+  rw [TauCeti.Probability.HasLaw.integrableExpSet_eq hX,
+    TauCeti.Probability.integrableExpSet_id_inverseGammaMeasure ha hr]
+
+/-- For positive shape and rate, an inverse-gamma random variable has a finite exponential moment
+exactly at nonpositive rates. -/
+theorem integrable_exp_mul_inverseGammaMeasure_iff
+    (hX : HasLaw X (inverseGammaMeasure a r) P) (ha : 0 < a) (hr : 0 < r) (t : ℝ) :
+    Integrable (fun ω ↦ Real.exp (t * X ω)) P ↔ t ≤ 0 := by
+  have hmem := Set.ext_iff.mp (hX.integrableExpSet_inverseGammaMeasure ha hr) t
+  simpa only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_Iic] using hmem
 
 end ProbabilityTheory.HasLaw

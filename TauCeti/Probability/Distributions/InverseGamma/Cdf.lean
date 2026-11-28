@@ -73,8 +73,8 @@ theorem cdf_inverseGammaMeasure_eq (ha : 0 < a) (hr : 0 < r) (x : ℝ) :
     rw [measure_congr hsets, ← measureReal_def, measureReal_Ioi_gammaMeasure ha hr x⁻¹,
       div_eq_mul_inv]
 
-/-- A random variable with an inverse-gamma law has the upper regularized Gamma expression as its
-cumulative distribution function. -/
+/-- For positive shape and rate, an inverse-gamma random variable satisfies `P(X ≤ x) = 0` when
+`x ≤ 0`, and `P(X ≤ x) = 1 - regularizedGamma a (r / x)` when `x > 0`. -/
 theorem measureReal_le_of_hasLaw_inverseGammaMeasure {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} {X : Ω → ℝ} (ha : 0 < a) (hr : 0 < r)
     (hX : HasLaw X (inverseGammaMeasure a r) P) (x : ℝ) :
