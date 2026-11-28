@@ -77,12 +77,8 @@ theorem finrank_end_eq_finrank_moduleEnd {k G : Type*} [CommRing k] [Monoid G]
     (V : FDRep k G) :
     Module.finrank k (V ⟶ V) =
       Module.finrank k (Module.End k[G] (Representation.asModule V.ρ)) := by
-  rw [← (Representation.IntertwiningMap.equivAlgEnd V.ρ).toLinearEquiv.finrank_eq]
-  have h := ((forget₂HomLinearEquiv V V).symm.trans
-    (Rep.homLinearEquiv _ _)).finrank_eq
-  -- The carrier instances of the forgotten object reduce to those of `V`; the named
-  -- action comparison then identifies the two intertwining spaces.
-  simpa only [forget₂_ρ] using! h
+  rw [← (Representation.IntertwiningMap.equivAlgEnd V.ρ).toLinearEquiv.finrank_eq,
+    (homLinearEquiv V V).finrank_eq]
 
 end FDRep
 

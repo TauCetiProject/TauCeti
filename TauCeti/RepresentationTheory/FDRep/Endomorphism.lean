@@ -40,14 +40,13 @@ noncomputable def endIntertwiningAlgEquiv (A : FDRep k G) :
 @[simp]
 theorem endIntertwiningAlgEquiv_apply (A : FDRep k G) (f : End A) (x : A) :
     A.endIntertwiningAlgEquiv f x = f.asHom.hom.hom.hom x := by
-  simp [endIntertwiningAlgEquiv]; rfl
+  simp [endIntertwiningAlgEquiv]
 
 /-- The inverse comparison bundles the same intertwining operator. -/
 @[simp]
 theorem endIntertwiningAlgEquiv_symm_apply (A : FDRep k G)
     (f : Representation.IntertwiningMap A.ρ A.ρ) (x : A) :
     (A.endIntertwiningAlgEquiv.symm f).asHom.hom.hom.hom x = f x := by
-  change ((homLinearEquiv A A).symm f) x = f x
-  simp
+  simp [endIntertwiningAlgEquiv]
 
 end FDRep

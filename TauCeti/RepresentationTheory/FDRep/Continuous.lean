@@ -345,10 +345,11 @@ theorem homOfContRepresentationLinearEquiv_apply_apply (hπ : Continuous π) (h�
     homOfContRepresentationLinearEquiv hπ hρ f v =
       ofContRepresentationEquiv hρ (f.hom.hom.hom.hom ((ofContRepresentationEquiv hπ).symm v)) := by
   rw [homOfContRepresentationLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-    intertwiningMapEquiv_symm_apply_apply]
-  change (Representation.Equiv.intertwiningMapCongr (ofContRepresentationEquiv hπ)
-      (ofContRepresentationEquiv hρ) (FDRep.homLinearEquiv _ _ f.hom)) v = _
-  rw [Representation.Equiv.intertwiningMapCongr_apply, FDRep.homLinearEquiv_apply]
+    intertwiningMapEquiv_symm_apply_apply, Representation.Equiv.intertwiningMapCongr_apply]
+  -- `InducedCategory.homLinearEquiv` uses `Preadditive.inducedCategory` while `ContFDRep` uses
+  -- `Preadditive.fullSubcategory`, so unfolding `InducedCategory.homLinearEquiv` needs `default`
+  -- transparency.
+  erw [LinearEquiv.trans_apply, FDRep.homLinearEquiv_apply]
   rfl
 
 /-- The morphism of a continuous intertwiner acts by the intertwiner on the underlying
@@ -360,8 +361,11 @@ theorem homOfContRepresentationLinearEquiv_symm_apply_hom (hπ : Continuous π)
       (ofContRepresentationEquiv hρ).symm (f (ofContRepresentationEquiv hπ v)) := by
   rw [homOfContRepresentationLinearEquiv, LinearEquiv.symm_trans_apply,
     LinearEquiv.symm_trans_apply, LinearEquiv.symm_symm, intertwiningMapEquiv_apply]
-  change ((FDRep.homLinearEquiv _ _).symm _) v = _
-  rw [FDRep.homLinearEquiv_symm_apply, Representation.Equiv.intertwiningMapCongr_symm_apply]
+  -- `InducedCategory.homLinearEquiv` uses `Preadditive.inducedCategory` while `ContFDRep` uses
+  -- `Preadditive.fullSubcategory`, so unfolding `(InducedCategory.homLinearEquiv).symm` needs
+  -- `default` transparency.
+  erw [LinearEquiv.symm_trans_apply, FDRep.homLinearEquiv_symm_apply,
+    Representation.Equiv.intertwiningMapCongr_symm_apply]
   rfl
 
 /-- The morphisms between the objects of `ContFDRep 𝕜 G` given by two continuous representations

@@ -65,14 +65,12 @@ theorem homLinearEquivOfEquivDirectSum_apply_hom_hom_hom (X Y : FDRep R G) (Z : 
     (e : Representation.Equiv Y.ρ (Representation.directSum fun i ↦ (Z i).ρ))
     (φ : X ⟶ Y) (i : ι) (x : X) :
     (homLinearEquivOfEquivDirectSum X Y Z e φ i).hom.hom.hom x = e (φ.hom.hom.hom x) i := by
-  change (homLinearEquiv X (Z i)).symm
-    (Representation.IntertwiningMap.directSumLinearEquiv X.ρ (fun i ↦ (Z i).ρ)
-      (Representation.Equiv.intertwiningMapCongr (.refl X.ρ) e (homLinearEquiv X Y φ)) i) x = _
-  rw [homLinearEquiv_symm_apply, Representation.IntertwiningMap.directSumLinearEquiv_apply,
-    Representation.Equiv.intertwiningMapCongr_apply]
-  change e (homLinearEquiv X Y φ x) i = e (φ.hom.hom.hom x) i
-  rw [homLinearEquiv_apply]
-  rfl
+  simp only [homLinearEquivOfEquivDirectSum, LinearEquiv.trans_apply,
+    LinearEquiv.piCongrRight_apply, homLinearEquiv_symm_apply,
+    Representation.IntertwiningMap.directSumLinearEquiv_apply,
+    Representation.Equiv.intertwiningMapCongr_apply, homLinearEquiv_apply]
+  rw [← Representation.Equiv.refl_apply (ρ := X.ρ) ((Representation.Equiv.refl X.ρ).symm x),
+    Representation.Equiv.apply_symm_apply]
 
 /-- Applying `e` to the inverse of `homLinearEquivOfEquivDirectSum` recovers each supplied
 component morphism. -/

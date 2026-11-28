@@ -236,14 +236,14 @@ noncomputable def homLinearEquiv {R : Type u} {G : Type v} [CommRing R] [Monoid 
 @[simp]
 theorem homLinearEquiv_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G]
     (X Y : FDRep R G) (f : X ⟶ Y) (x : X) :
-    homLinearEquiv X Y f x = f x :=
+    homLinearEquiv X Y f x = f.hom.hom.hom x :=
   (rfl)
 
 /-- Evaluating the inverse of `FDRep.homLinearEquiv` recovers the underlying intertwining map. -/
 @[simp]
 theorem homLinearEquiv_symm_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G]
     (X Y : FDRep R G) (f : Representation.IntertwiningMap X.ρ Y.ρ) (x : X) :
-    (homLinearEquiv X Y).symm f x = f x :=
+    ((homLinearEquiv X Y).symm f).hom.hom.hom x = f x :=
   (rfl)
 
 /-- Forgetting finite generation keeps the finite-generation instance on the carrier. -/

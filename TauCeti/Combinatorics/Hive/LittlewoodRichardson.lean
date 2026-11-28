@@ -612,6 +612,19 @@ private theorem rowCount_fixedIntegerHiveEquivLRTableauOfShift_of_ne {lam μ γ 
   (fixedIntegerHiveEquivLRTableauOfShift hla hmb hgc h).val.rowCount_eq_zero_of_colLen_le
     ((DominantWeight.colLen_zero_shape_le _).trans hnr) k
 
+private theorem rowCount_fixedIntegerHiveEquivLRTableauOfShift_eq_of_ne
+    {lam μ γ : DominantWeight n} {a₁ b₁ a₂ b₂ : ℤ}
+    (hla₁ : (lam.shift a₁).IsPolynomial) (hmb₁ : (μ.shift b₁).IsPolynomial)
+    (hgc₁ : (γ.shift (a₁ + b₁)).IsPolynomial)
+    (hla₂ : (lam.shift a₂).IsPolynomial) (hmb₂ : (μ.shift b₂).IsPolynomial)
+    (hgc₂ : (γ.shift (a₂ + b₂)).IsPolynomial)
+    (h : FixedIntegerHive (productBoundary lam μ γ)) {r k : ℕ} (hrk : r ≠ k) :
+    (fixedIntegerHiveEquivLRTableauOfShift hla₂ hmb₂ hgc₂ h).val.rowCount r k =
+      (fixedIntegerHiveEquivLRTableauOfShift hla₁ hmb₁ hgc₁ h).val.rowCount r k :=
+  Int.ofNat.inj <|
+    (rowCount_fixedIntegerHiveEquivLRTableauOfShift_of_ne hla₂ hmb₂ hgc₂ h hrk).trans
+      (rowCount_fixedIntegerHiveEquivLRTableauOfShift_of_ne hla₁ hmb₁ hgc₁ h hrk).symm
+
 /-- Transporting a shifted Littlewood–Richardson tableau from `(a₁, b₁)` to `(a₂, b₂)` via
 `fixedIntegerHiveEquivLRTableauOfShift` preserves all off-diagonal row counts (`r ≠ k`). -/
 @[simp] theorem rowCount_fixedIntegerHiveEquivLRTableauOfShift_apply_symm_apply_of_ne
@@ -625,13 +638,29 @@ private theorem rowCount_fixedIntegerHiveEquivLRTableauOfShift_of_ne {lam μ γ 
     (fixedIntegerHiveEquivLRTableauOfShift hla₂ hmb₂ hgc₂
         ((fixedIntegerHiveEquivLRTableauOfShift hla₁ hmb₁ hgc₁).symm T)).val.rowCount r k =
       T.val.rowCount r k := by
-  let h := (fixedIntegerHiveEquivLRTableauOfShift hla₁ hmb₁ hgc₁).symm T
-  have hT : T = fixedIntegerHiveEquivLRTableauOfShift hla₁ hmb₁ hgc₁ h :=
-    ((fixedIntegerHiveEquivLRTableauOfShift hla₁ hmb₁ hgc₁).apply_symm_apply T).symm
-  conv_rhs => rw [hT]
-  exact_mod_cast
-    (rowCount_fixedIntegerHiveEquivLRTableauOfShift_of_ne hla₂ hmb₂ hgc₂ h hrk).trans
-      (rowCount_fixedIntegerHiveEquivLRTableauOfShift_of_ne hla₁ hmb₁ hgc₁ h hrk).symm
+  simpa only [Equiv.apply_symm_apply] using
+    rowCount_fixedIntegerHiveEquivLRTableauOfShift_eq_of_ne hla₁ hmb₁ hgc₁ hla₂ hmb₂ hgc₂
+      ((fixedIntegerHiveEquivLRTableauOfShift hla₁ hmb₁ hgc₁).symm T) hrk
+
+private theorem rowCount_fixedIntegerHiveEquivLRTableauOfShift_eq_diag
+    {lam μ γ : DominantWeight n} {a₁ b₁ a₂ b₂ : ℤ}
+    (hla₁ : (lam.shift a₁).IsPolynomial) (hmb₁ : (μ.shift b₁).IsPolynomial)
+    (hgc₁ : (γ.shift (a₁ + b₁)).IsPolynomial)
+    (hla₂ : (lam.shift a₂).IsPolynomial) (hmb₂ : (μ.shift b₂).IsPolynomial)
+    (hgc₂ : (γ.shift (a₂ + b₂)).IsPolynomial)
+    (h : FixedIntegerHive (productBoundary lam μ γ)) {r : ℕ} (hr : r < n) :
+    ((fixedIntegerHiveEquivLRTableauOfShift hla₂ hmb₂ hgc₂ h).val.rowCount r r : ℤ) =
+      ((fixedIntegerHiveEquivLRTableauOfShift hla₁ hmb₁ hgc₁ h).val.rowCount r r : ℤ) +
+        (b₂ - b₁) := by
+  have hdiag (a b : ℤ) (ha : (lam.shift a).IsPolynomial) (hb : (μ.shift b).IsPolynomial)
+      (hc : (γ.shift (a + b)).IsPolynomial) :
+      ((fixedIntegerHiveEquivLRTableauOfShift ha hb hc h).val.rowCount r r : ℤ) =
+        h.val.toGTPattern r (r + 1) + b := by
+    rw [natCast_rowCount_fixedIntegerHiveEquivLRTableauOfShift ha hb hc h hr r,
+      GTPattern.shift_apply_of_lt_of_le _ _ (Nat.lt_succ_self r) hr,
+      GTPattern.shift_apply_of_not_lt_le _ _ (by omega), sub_zero]
+  rw [hdiag a₂ b₂ hla₂ hmb₂ hgc₂, hdiag a₁ b₁ hla₁ hmb₁ hgc₁]
+  omega
 
 /-- On the diagonal (`r < n`), transporting a shifted Littlewood–Richardson tableau from `(a₁, b₁)`
 to `(a₂, b₂)` via `fixedIntegerHiveEquivLRTableauOfShift` shifts the multiplicity of letter `r` in
@@ -647,19 +676,9 @@ theorem rowCount_fixedIntegerHiveEquivLRTableauOfShift_apply_symm_apply_diag
     ((fixedIntegerHiveEquivLRTableauOfShift hla₂ hmb₂ hgc₂
         ((fixedIntegerHiveEquivLRTableauOfShift hla₁ hmb₁ hgc₁).symm T)).val.rowCount r r : ℤ) =
       (T.val.rowCount r r : ℤ) + (b₂ - b₁) := by
-  let h := (fixedIntegerHiveEquivLRTableauOfShift hla₁ hmb₁ hgc₁).symm T
-  have hT : T = fixedIntegerHiveEquivLRTableauOfShift hla₁ hmb₁ hgc₁ h :=
-    ((fixedIntegerHiveEquivLRTableauOfShift hla₁ hmb₁ hgc₁).apply_symm_apply T).symm
-  have hdiag (a b : ℤ) (ha : (lam.shift a).IsPolynomial) (hb : (μ.shift b).IsPolynomial)
-      (hc : (γ.shift (a + b)).IsPolynomial) :
-      ((fixedIntegerHiveEquivLRTableauOfShift ha hb hc h).val.rowCount r r : ℤ) =
-        h.val.toGTPattern r (r + 1) + b := by
-    rw [natCast_rowCount_fixedIntegerHiveEquivLRTableauOfShift ha hb hc h hr r,
-      GTPattern.shift_apply_of_lt_of_le _ _ (Nat.lt_succ_self r) hr,
-      GTPattern.shift_apply_of_not_lt_le _ _ (by omega), sub_zero]
-  conv_rhs => rw [hT]
-  rw [hdiag a₂ b₂ hla₂ hmb₂ hgc₂, hdiag a₁ b₁ hla₁ hmb₁ hgc₁]
-  omega
+  simpa only [Equiv.apply_symm_apply] using
+    rowCount_fixedIntegerHiveEquivLRTableauOfShift_eq_diag hla₁ hmb₁ hgc₁ hla₂ hmb₂ hgc₂
+      ((fixedIntegerHiveEquivLRTableauOfShift hla₁ hmb₁ hgc₁).symm T) hr
 
 /-- Characterization of shift transport across admissible pairs `(a₁, b₁)` and `(a₂, b₂)`: a
 shifted tableau `T₂` equals the transport of `T₁` iff its off-diagonal row counts match `T₁` and

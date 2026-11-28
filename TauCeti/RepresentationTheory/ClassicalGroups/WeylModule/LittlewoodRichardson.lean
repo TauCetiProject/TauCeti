@@ -13,8 +13,6 @@ public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Laurent
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rationality
 public import TauCeti.RepresentationTheory.Rep.DirectSum.Character
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.LittlewoodRichardson
-import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Weight.HighestWeight
-import TauCeti.RepresentationTheory.FDRep.DirectSum
 
 /-!
 # Tensor products of Weyl modules: the Littlewood–Richardson rule for `GL n ℂ` and `𝔤𝔩ₙ`
@@ -90,9 +88,6 @@ vanishes unless `λ ⊆ ν` and `|ν| = |λ| + |μ|`
   Littlewood–Richardson tableaux.
 * `TauCeti.nonempty_equiv_tprod_rationalWeylRep`: the Littlewood–Richardson rule for the rational
   Weyl modules `V_λ ⊗ V_μ` of two dominant weights.
-* `TauCeti.finrank_hom_tprod_rationalWeylFDRep`: the multiplicity of the irreducible rational Weyl
-  module `V_γ` in `V_λ ⊗ V_μ`, as a Littlewood–Richardson coefficient for the determinant-shifted
-  shapes.
 * `TauCeti.nonempty_lieModuleEquiv_tensorProduct_glIrreducible`: **the Littlewood–Richardson rule
   for `𝔤𝔩ₙ`**, the decomposition of `L(λ) ⊗ L(μ)` as an equivalence of `𝔤𝔩ₙ`-modules.
 * `TauCeti.isotypicMultiplicity_tensorProduct_glIrreducible`: **the multiplicity of `L(ν)` in
@@ -230,77 +225,6 @@ theorem nonempty_equiv_tensor_rationalWeylFDRep (lam μ : DominantWeight n) :
           ((weightOfShape n (ofPartition p.fst.val)).shift (lam.detShift + μ.detShift))).ρ)) :=
   let ⟨e⟩ := nonempty_equiv_tprod_rationalWeylRep n lam μ
   ⟨(FDRep.tprodEquiv _ _).trans e⟩
-
-open CategoryTheory MonoidalCategory in
-variable {n} in
-private theorem finrank_hom_tprod_rationalWeylFDRep_eq_sum (l m γ : DominantWeight n) :
-    Module.finrank ℂ
-        (rationalWeylFDRep ℂ n γ ⟶ rationalWeylFDRep ℂ n l ⊗ rationalWeylFDRep ℂ n m) =
-      ∑ ν : {ν : (l.detShiftShape.card + m.detShiftShape.card).Partition //
-          (ofPartition ν).colLen 0 ≤ n},
-        if γ = (weightOfShape n (ofPartition ν.val)).shift (l.detShift + m.detShift) then
-          Nat.card (LRTableau l.detShiftShape (ofPartition ν.val) m.detShiftShape)
-        else 0 := by
-  classical
-  obtain ⟨he⟩ := nonempty_equiv_tensor_rationalWeylFDRep l m
-  rw [FDRep.finrank_hom_of_equiv_directSum _ _ _ he, Fintype.sum_sigma]
-  refine Finset.sum_congr rfl fun ν _ => ?_
-  simp only [finrank_hom_rationalWeylFDRep, Finset.sum_const, Finset.card_univ, smul_eq_mul,
-    mul_boole, card_boundedYamanouchi_eq_natCard_lrTableau ν.property]
-
-open CategoryTheory MonoidalCategory in
-variable {n} in
-/-- **Tensor-product multiplicities of rational Weyl modules of `GL n ℂ`**: the multiplicity
-`Module.finrank ℂ (V_γ ⟶ V_λ ⊗ V_μ)` of the irreducible rational Weyl module `V_γ` in
-`V_λ ⊗ V_μ` equals the Littlewood–Richardson coefficient for the determinant-shifted shapes when
-`λₙ + μₙ ≤ γₙ`, and `0` otherwise. -/
-theorem finrank_hom_tprod_rationalWeylFDRep (l m γ : DominantWeight n) :
-    Module.finrank ℂ
-        (rationalWeylFDRep ℂ n γ ⟶ rationalWeylFDRep ℂ n l ⊗ rationalWeylFDRep ℂ n m) =
-      if l.detShift + m.detShift ≤ γ.detShift then
-        Nat.card (LRTableau l.detShiftShape
-          (γ.shift (-(l.detShift + m.detShift))).shape m.detShiftShape)
-      else 0 := by
-  classical
-  rw [finrank_hom_tprod_rationalWeylFDRep_eq_sum]
-  split_ifs with hshift
-  · set γ₀ : DominantWeight n := γ.shift (-(l.detShift + m.detShift))
-    have hγ₀ : γ₀.IsPolynomial := DominantWeight.isPolynomial_shift_neg_of_le_detShift hshift
-    have hw_iff (ν : {ν : (l.detShiftShape.card + m.detShiftShape.card).Partition //
-        (ofPartition ν).colLen 0 ≤ n}) :
-        γ = (weightOfShape n (ofPartition ν.val)).shift (l.detShift + m.detShift) ↔
-          γ₀.shape = ofPartition ν.val := by
-      refine ⟨fun h => by subst h; simp [γ₀, shape_weightOfShape ν.property], fun h => ?_⟩
-      have h' : γ₀ = weightOfShape n (ofPartition ν.val) := by
-        rw [← h, weightOfShape_shape hγ₀]
-      simpa [γ₀] using congrArg (fun x : DominantWeight n =>
-        x.shift (l.detShift + m.detShift)) h'
-    by_cases hcard : γ₀.shape.card = l.detShiftShape.card + m.detShiftShape.card
-    · let ν₀ : {ν : (l.detShiftShape.card + m.detShiftShape.card).Partition //
-          (ofPartition ν).colLen 0 ≤ n} :=
-        ⟨γ₀.shape.toPartition hcard, by simp⟩
-      rw [Finset.sum_eq_single ν₀]
-      · simp [(hw_iff ν₀).mpr (by simp [ν₀]), ν₀]
-      · intro ν _ hne
-        split_ifs with heq
-        · exact absurd (Subtype.ext <| ofPartition_injective <| by
-            have hshape := (hw_iff ν).mp heq; simp [ν₀, ← hshape]) hne
-        · rfl
-      · exact fun h => absurd (Finset.mem_univ _) h
-    · rw [@Nat.card_of_isEmpty _ (isEmpty_lrTableau_of_card_ne hcard)]
-      refine Finset.sum_eq_zero fun ν _ => ?_
-      split_ifs with heq
-      · exfalso; exact hcard (by rw [(hw_iff ν).mp heq, card_ofPartition])
-      · rfl
-  · cases n with
-    | zero => simp at hshift
-    | succ k =>
-      refine Finset.sum_eq_zero fun ν _ => ?_
-      split_ifs with heq
-      · exfalso
-        exact hshift <| DominantWeight.isPolynomial_shift_neg_iff_le_detShift.mp <| by
-          simp [heq]
-      · rfl
 
 /-- **The Littlewood–Richardson rule for `GL n ℂ`, with Littlewood–Richardson tableaux.** The
 tensor product of the Weyl modules of two Young diagrams `λ` and `μ` is equivalent to the direct
