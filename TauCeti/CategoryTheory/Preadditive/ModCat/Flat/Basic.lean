@@ -19,6 +19,7 @@ no smallness hypothesis and allows the value and morphism universes to differ.
 
 Representable modules are flat. A finite system of relations in a flat module
 can be trivialized using a common family of elements and coefficients.
+Flatness is an object property containing zero and stable under retracts.
 -/
 
 public section
@@ -26,6 +27,7 @@ public section
 universe w v u
 
 open CategoryTheory Limits Opposite BigOperators
+open scoped ZeroObject
 
 namespace TauCeti.ModCat
 
@@ -100,8 +102,11 @@ theorem Flat.of_retract {F G : ModCat.{w} C} [G.Flat] (e : Retract F G) : F.Flat
     have hG : ∑ j, G.obj.map (β j).op (e.i.hom.app (op (Y j)) (y j)) = 0 := by
       rw [← map_relation_sum, h, map_zero]
     have hFG (j : Fin n) :
-        e.r.hom.app (op (Y j)) (e.i.hom.app (op (Y j)) (y j)) = y j :=
-      congrArg (fun f : F ⟶ F ↦ f.hom.app (op (Y j)) (y j)) e.retract
+        e.r.hom.app (op (Y j)) (e.i.hom.app (op (Y j)) (y j)) = y j := by
+      simpa only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+        ConcreteCategory.comp_apply, ObjectProperty.FullSubcategory.id_hom, NatTrans.id_app,
+        ConcreteCategory.id_apply] using
+        congrArg (fun f : F ⟶ F ↦ f.hom.app (op (Y j)) (y j)) e.retract
     simpa only [hFG] using (Flat.isTrivialRelation β _ hG).map e.r
 
 /-- An isomorphism transports flatness from its source to its target. -/
@@ -119,7 +124,22 @@ theorem Flat.of_isZero (hF : IsZero F) : F.Flat where
       ⟨0, Fin.elim0, (fun i ↦ i.elim0), (fun i ↦ i.elim0), ?_, fun i ↦ i.elim0⟩
     intro j
     rw [Finset.univ_eq_empty, Finset.sum_empty]
-    exact congrArg (fun f : F ⟶ F ↦ f.hom.app (op (Y j)) (y j)) ((IsZero.iff_id_eq_zero F).mp hF)
+    simpa only [ObjectProperty.FullSubcategory.id_hom, NatTrans.id_app, ConcreteCategory.id_apply,
+      ObjectProperty.zero_hom, NatTrans.app_zero, AddCommGrpCat.hom_zero,
+      AddMonoidHom.zero_apply] using
+      congrArg (fun f : F ⟶ F ↦ f.hom.app (op (Y j)) (y j)) ((IsZero.iff_id_eq_zero F).mp hF)
+
+/-- Flatness as an object property on the category of modules. -/
+abbrev flat (C : Type u) [Category.{v} C] [Preadditive C] : ObjectProperty (ModCat.{w} C) :=
+  Flat
+
+instance : (flat.{w} C).IsStableUnderRetracts where
+  of_retract e h := by
+    have : Flat _ := h
+    exact Flat.of_retract e
+
+instance : (flat.{w} C).ContainsZero where
+  exists_zero := ⟨0, isZero_zero _, Flat.of_isZero (isZero_zero _)⟩
 
 private theorem sum_map_sum_map {X : C} {n m : ℕ} {Y : Fin n → C} {Z : Fin m → C}
     (β : ∀ j, X ⟶ Y j) (α : ∀ i j, Y j ⟶ Z i) (z : ∀ i, F.obj.obj (op (Z i))) :

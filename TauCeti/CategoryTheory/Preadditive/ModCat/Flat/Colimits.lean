@@ -5,16 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.ObjectProperty.FiniteProducts
-public import Mathlib.CategoryTheory.ObjectProperty.Retract
 public import TauCeti.CategoryTheory.Preadditive.ModCat.Flat.Basic
-import Mathlib.Algebra.Category.Grp.FilteredColimits
 import Mathlib.CategoryTheory.Limits.Constructions.Filtered
-import Mathlib.CategoryTheory.Limits.EssentiallySmall
-import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
+import TauCeti.CategoryTheory.Preadditive.ModCat.Evaluation
 
 /-!
-# Filtered colimits, coproducts, and retracts of flat modules
+# Filtered colimits and coproducts of flat modules
 
 A finite relation in a filtered colimit can be lifted to a common stage of the diagram.
 If the stage is flat, its trivialization maps to the colimit. The argument uses the
@@ -34,7 +30,6 @@ public section
 universe w v u
 
 open CategoryTheory Limits Opposite
-open scoped ZeroObject
 
 attribute [local instance] Abelian.hasFiniteBiproducts
 
@@ -57,7 +52,13 @@ instance flat_biprod (F G : ModCat.{w} C) [F.Flat] [G.Flat] : (F ⊞ G).Flat whe
         i.hom.app (op (Y l)) (p.hom.app (op (Y l)) (y l)) +
           j.hom.app (op (Y l)) (q.hom.app (op (Y l)) (y l)) = y l := by
       have ht : p ≫ i + q ≫ j = 𝟙 (F ⊞ G) := biprod.total
-      exact congrArg (fun f : F ⊞ G ⟶ F ⊞ G ↦ f.hom.app (op (Y l)) (y l)) ht
+      have hadd : (p ≫ i + q ≫ j).hom = (p ≫ i).hom + (q ≫ j).hom := by
+        simpa only [ObjectProperty.ι_map] using
+          (additiveFunctor Cᵒᵖ AddCommGrpCat.{w}).ι.map_add (f := p ≫ i) (g := q ≫ j)
+      simpa only [hadd, ObjectProperty.FullSubcategory.comp_hom,
+        ObjectProperty.FullSubcategory.id_hom, NatTrans.app_add, NatTrans.comp_app, NatTrans.id_app,
+        AddCommGrpCat.hom_add_apply, ConcreteCategory.comp_apply, ConcreteCategory.id_apply] using
+        congrArg (fun f : F ⊞ G ⟶ F ⊞ G ↦ f.hom.app (op (Y l)) (y l)) ht
     simpa only [hsum] using
       ((Flat.isTrivialRelation β _ hp).map i).add ((Flat.isTrivialRelation β _ hq).map j)
 
@@ -70,45 +71,37 @@ theorem Flat.of_isColimit {J : Type*} [Category* J] [IsFiltered J] [EssentiallyS
     classical
     let e := (equivSmallModel.{w} J).symm
     have := IsFiltered.of_equivalence e.symm
-    have := hasColimitsOfShape_of_essentiallySmall J AddCommGrpCat.{w}
-    have := preservesColimitsOfShape_of_equiv e (forget AddCommGrpCat.{w})
-    let ev (T : C) :=
-      (additiveFunctor Cᵒᵖ AddCommGrpCat.{w}).ι ⋙ (evaluation _ _).obj (op T)
-    have hc' (T : C) := isColimitOfPreserves (ev T) hc
+    have (T : C) : PreservesColimitsOfShape J (forgetEval.{w} T) :=
+      preservesColimitsOfShape_of_equiv e _
+    let c' (T : C) := (forgetEval T).mapCocone c
+    have hc' (T : C) : IsColimit (c' T) := isColimitOfPreserves (forgetEval T) hc
     let ι (j : J) : D.obj j ⟶ c.pt := c.ι.app j
-    choose j a ha using fun l ↦ Concrete.isColimit_exists_rep (D ⋙ ev (Y l)) (hc' (Y l)) (y l)
+    have hι (T : C) (j : J) (x : (D.obj j).obj.obj (op T)) :
+        (c' T).ι.app j x = (ι j).hom.app (op T) x := by
+      simpa only [c', Functor.mapCocone_ι_app] using forgetEval_map_apply T (ι j) x
+    have hmap (T : C) {i j : J} (g : i ⟶ j) (x : (D.obj i).obj.obj (op T)) :
+        (D ⋙ forgetEval T).map g x = (D.map g).hom.app (op T) x := by
+      simpa only [Functor.comp_map] using forgetEval_map_apply T (D.map g) x
+    have hleg (T : C) {i j : J} (g : i ⟶ j) (x : (D.obj i).obj.obj (op T)) :
+        (ι j).hom.app (op T) ((D.map g).hom.app (op T) x) = (ι i).hom.app (op T) x := by
+      rw [← hmap T g x, ← hι T j, ← hι T i, ← (c' T).w g, types_comp_apply]
+    choose j a ha using fun l ↦ Types.jointly_surjective_of_isColimit (hc' (Y l)) (y l)
     let O := Finset.univ.image j
     obtain ⟨k, hk⟩ := IsFiltered.sup_objs_exists O
     let f (l : Fin n) : j l ⟶ k := (hk (Finset.mem_image_of_mem j (Finset.mem_univ l))).some
     let b (l : Fin n) := (D.map (f l)).hom.app (op (Y l)) (a l)
-    have hb (l : Fin n) : (ι k).hom.app (op (Y l)) (b l) = y l := by
-      exact (congrArg (fun g : D.obj (j l) ⟶ c.pt ↦ g.hom.app (op (Y l)) (a l))
-        (c.w (f l))).trans (ha l)
-    have hk₀ : (ι k).hom.app (op X) (∑ l, (D.obj k).obj.map (β l).op (b l)) =
-        (ι k).hom.app (op X) 0 := by
-      simp only [map_relation_sum, hb, h, map_zero]
-    obtain ⟨m, g, g', hg⟩ := Concrete.isColimit_exists_of_rep_eq (D ⋙ ev X) (hc' X) _ _ hk₀
+    have hb (l : Fin n) : (ι k).hom.app (op (Y l)) (b l) = y l :=
+      (hleg (Y l) (f l) (a l)).trans ((hι (Y l) (j l) (a l)).symm.trans (ha l))
+    let s : (D.obj k).obj.obj (op X) := ∑ l, (D.obj k).obj.map (β l).op (b l)
+    have hk₀ : (c' X).ι.app k s = (c' X).ι.app k (0 : (D.obj k).obj.obj (op X)) := by
+      simp only [hι, s, map_relation_sum, hb, h, map_zero]
+    obtain ⟨m, g, hg⟩ := (Types.FilteredColimit.isColimit_eq_iff' (hc' X) _ _).mp hk₀
     let b' (l : Fin n) := (D.map g).hom.app (op (Y l)) (b l)
     have hm : ∑ l, (D.obj m).obj.map (β l).op (b' l) = 0 := by
-      -- The maps of the evaluated diagram are the components of the module morphisms.
-      change (D.map g).hom.app (op X) (∑ l, (D.obj k).obj.map (β l).op (b l)) =
-        (D.map g').hom.app (op X) 0 at hg
-      simpa only [map_relation_sum, map_zero, b'] using hg
-    have hb' (l : Fin n) : (ι m).hom.app (op (Y l)) (b' l) = y l := by
-      exact (congrArg (fun f : D.obj k ⟶ c.pt ↦ f.hom.app (op (Y l)) (b l)) (c.w g)).trans (hb l)
+      simpa only [hmap, s, map_relation_sum, map_zero, b'] using hg
+    have hb' (l : Fin n) : (ι m).hom.app (op (Y l)) (b' l) = y l :=
+      (hleg (Y l) g (b l)).trans (hb l)
     simpa only [hb'] using (Flat.isTrivialRelation β b' hm).map (ι m)
-
-/-- Flatness as an object property on the category of modules. -/
-abbrev flat (C : Type u) [Category.{v} C] [Preadditive C] : ObjectProperty (ModCat.{w} C) :=
-  Flat
-
-instance : (flat.{w} C).IsStableUnderRetracts where
-  of_retract e h := by
-    have : Flat _ := h
-    exact Flat.of_retract e
-
-instance : (flat.{w} C).ContainsZero where
-  exists_zero := ⟨0, isZero_zero _, Flat.of_isZero (isZero_zero _)⟩
 
 instance : (flat.{w} C).IsClosedUnderBinaryCoproducts where
   colimitsOfShape_le := by
