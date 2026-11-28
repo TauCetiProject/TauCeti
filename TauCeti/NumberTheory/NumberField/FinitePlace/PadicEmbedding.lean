@@ -44,6 +44,10 @@ algebraic Hecke characters.
 For `F = ℚ_[p]` the prime of `σ` is the kernel of the reduction of `σ` modulo `p`, which
 `RingHom.exists_inertiaDeg_eq_one_of_padic` shows to have residue degree one.
 
+That `x ↦ ‖σ x‖` restricts to the `p`-adic absolute value on `ℚ` holds for an embedding of any
+field over `ℚ`, such as an algebraic closure of `ℚ`; the prime of `σ` and the extensions of `σ`
+need `E` to be a number field.
+
 The extension to `E_v` exists although `F` need not be complete: `ℚ_[p](σ E)` is finite
 dimensional over the complete field `ℚ_[p]`, hence complete, and `σ` is continuous for the
 `v`-adic topology because its norm is a power of the `v`-adic absolute value.
@@ -59,7 +63,8 @@ dimensional over the complete field `ℚ_[p]`, hence complete, and `σ` is conti
 * `RingHom.finiteDimensional_adjoin_range`, `RingHom.completeSpace_adjoin_range`: the image of a
   number field generates a finite dimensional subalgebra over any field, which is complete over a
   complete field.
-* `RingHom.place_liesOver_padic`: on `ℚ`, the absolute value `x ↦ ‖σ x‖` is the `p`-adic one.
+* `RingHom.place_liesOver_padic`: on `ℚ`, the absolute value `x ↦ ‖σ x‖` is the `p`-adic one,
+  for an embedding `σ` of any field over `ℚ`.
 * `RingHom.mem_padicPrime_iff`, `RingHom.natCast_mem_padicPrime`: the prime of `σ` consists of
   the integers at which `σ` has norm less than `1`, and it contains `p`.
 * `RingHom.place_eq_relativeAbsValue_padicPrime`, `RingHom.norm_pow_localDegree`,
@@ -99,6 +104,23 @@ public section
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum NumberField
 
 namespace RingHom
+
+/-! ### The absolute value of an embedding on `ℚ` -/
+
+section LiesOver
+
+variable {E : Type*} [Field E] [Algebra ℚ E] {F : Type*} [NormedDivisionRing F] (σ : E →+* F)
+  (p : ℕ) [Fact p.Prime] [NormedAlgebra ℚ_[p] F]
+
+/-- On `ℚ`, the absolute value `x ↦ ‖σ x‖` is the `p`-adic absolute value. The field `E` is any
+field over `ℚ`, not necessarily a number field: for instance an algebraic closure of `ℚ`. -/
+instance place_liesOver_padic : (place σ).LiesOver (Rat.AbsoluteValue.padic p) :=
+  ⟨AbsoluteValue.ext fun q ↦ by
+    rw [AbsoluteValue.under_apply, place_apply, Rat.AbsoluteValue.padic_eq_padicNorm,
+      ← Padic.eq_padicNorm, eq_ratCast, map_ratCast, ← map_ratCast (algebraMap ℚ_[p] F),
+      norm_algebraMap']⟩
+
+end LiesOver
 
 variable {E : Type*} [Field E] [NumberField E]
 
@@ -142,13 +164,6 @@ variable {F : Type*} [NormedDivisionRing F] (σ : E →+* F) (p : ℕ) [Fact p.P
   [NormedAlgebra ℚ_[p] F]
 
 /-! ### The prime of an embedding -/
-
-/-- On `ℚ`, the absolute value `x ↦ ‖σ x‖` is the `p`-adic absolute value. -/
-instance place_liesOver_padic : (place σ).LiesOver (Rat.AbsoluteValue.padic p) :=
-  ⟨AbsoluteValue.ext fun q ↦ by
-    rw [AbsoluteValue.under_apply, place_apply, Rat.AbsoluteValue.padic_eq_padicNorm,
-      ← Padic.eq_padicNorm, eq_ratCast, map_ratCast, ← map_ratCast (algebraMap ℚ_[p] F),
-      norm_algebraMap']⟩
 
 /-- The prime of `ℤ` below `p`, read in `𝓞 ℚ`. -/
 private noncomputable abbrev ratPrime : HeightOneSpectrum (𝓞 ℚ) :=
