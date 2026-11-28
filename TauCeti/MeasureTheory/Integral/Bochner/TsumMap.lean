@@ -15,9 +15,10 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 Given a countable family `g : J → X → E` of a.e. strongly measurable functions into a Banach space
 `E` with `∑' j, ∫⁻ x, ‖g j x‖ₑ ∂μ ≠ ∞` and a continuous linear map `L : E →L[ℝ] F` into a Banach
-space `F`, this file proves that `L (∑' j, ∫ x, g j x ∂μ) = ∫ x, ∑' j, L (g j x) ∂μ`.
-Specializing `L` to a coordinate projection on `PiLp p E` yields the coordinatewise exchange
-identity `(∑' j, ∫ x, g j x ∂μ) i = ∫ x, ∑' j, g j x i ∂μ`.
+space `F`, this file proves that `L (∑' j, ∫ x, g j x ∂μ) = ∫ x, ∑' j, L (g j x) ∂μ`
+(`ContinuousLinearMap.map_tsum_integral`). Specializing `L` to a coordinate projection on `PiLp p E`
+yields the coordinatewise exchange identity `(∑' j, ∫ x, g j x ∂μ) i = ∫ x, ∑' j, g j x i ∂μ`
+(`PiLp.tsum_integral_apply`).
 
 ## Provenance
 
@@ -29,15 +30,13 @@ Apache 2.0, Copyright 2026 Anthropic, PBC), file `src/New/Spanning/Unfolding/Amp
 
 public section
 
-namespace TauCeti
-
 open MeasureTheory
 open scoped ENNReal
 
 /-- A continuous linear map `L : E →L[ℝ] F` commutes with the countable sum of Bochner integrals
 of a family `g : J → X → E` satisfying `∑' j, ∫⁻ x, ‖g j x‖ₑ ∂μ ≠ ∞`. -/
-theorem map_tsum_integral {X J E F : Type*} [MeasurableSpace X] {μ : Measure X} [Countable J]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+theorem ContinuousLinearMap.map_tsum_integral {X J E F : Type*} [MeasurableSpace X] {μ : Measure X}
+    [Countable J] [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
     [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
     (L : E →L[ℝ] F) {g : J → X → E}
     (hg_meas : ∀ j, AEStronglyMeasurable (g j) μ)
@@ -62,12 +61,11 @@ theorem map_tsum_integral {X J E F : Type*} [MeasurableSpace X] {μ : Measure X}
       (integral_tsum (fun j ↦ L.continuous.comp_aestronglyMeasurable (hg_meas j)) h_map_fin).symm
 
 /-- Coordinatewise exchange of a countable sum and a Bochner integral in `PiLp p E`. -/
-theorem tsum_integral_piLp_apply {X J I : Type*} [MeasurableSpace X] {μ : Measure X} [Countable J]
+theorem PiLp.tsum_integral_apply {X J I : Type*} [MeasurableSpace X] {μ : Measure X} [Countable J]
     [Fintype I] {p : ℝ≥0∞} [Fact (1 ≤ p)] {E : I → Type*}
     [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℝ (E i)] [∀ i, CompleteSpace (E i)]
     {g : J → X → PiLp p E} (hg_meas : ∀ j, AEStronglyMeasurable (g j) μ)
     (hg_fin : ∑' j, ∫⁻ x, ‖g j x‖ₑ ∂μ ≠ ∞) (i : I) :
-    (∑' j, ∫ x, g j x ∂μ) i = ∫ x, ∑' j, g j x i ∂μ :=
-  map_tsum_integral (PiLp.proj (𝕜 := ℝ) p E i) hg_meas hg_fin
-
-end TauCeti
+    (∑' j, ∫ x, g j x ∂μ) i = ∫ x, ∑' j, g j x i ∂μ := by
+  simpa only [PiLp.proj_apply] using
+    (PiLp.proj (𝕜 := ℝ) p E i).map_tsum_integral hg_meas hg_fin
