@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-public import TauCeti.Geometry.Symplectic.Liouville.Collar
+public import TauCeti.Geometry.Symplectic.Liouville.Collar.Basic
 public import TauCeti.Geometry.Symplectic.Liouville.Completion
 public import TauCeti.Geometry.Symplectic.Liouville.Flow.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Flat

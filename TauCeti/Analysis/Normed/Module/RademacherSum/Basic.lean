@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Analysis.Normed.Group.SeparationQuotient
 public import TauCeti.Analysis.Normed.Module.RademacherSum.Moment
 public import TauCeti.Analysis.Normed.Module.RademacherSum.Signs
 
@@ -35,6 +36,8 @@ space have `R₂ = √n ‖y‖`.
 * `TauCeti.rademacherMoment_two`: `rademacherMoment 2 y = rademacherSecondMoment y`.
 * `TauCeti.rademacherSecondMoment_comp_equiv`: invariance under reindexing.
 * `TauCeti.rademacherSecondMoment_sumElim_zero`: invariance under padding with zeros.
+* `TauCeti.rademacherSecondMoment_comp_separationQuotient`: invariance under passing to the
+  separation quotient.
 * `TauCeti.rademacherSecondMoment_smul_const`: `R₂(aᵢ • y) = R₂(a) ‖y‖`.
 * `TauCeti.norm_le_rademacherSecondMoment` and `TauCeti.rademacherSecondMoment_le_sum_norm`:
   `‖yᵢ‖ ≤ R₂(y) ≤ ∑ i, ‖yᵢ‖`, the lower bound in real normed spaces.
@@ -112,6 +115,21 @@ theorem rademacherSecondMoment_le_mul_map {F 𝓕 : Type*} [SeminormedAddCommGro
     (y : ι → E) :
     rademacherSecondMoment y ≤ K * rademacherSecondMoment (fun i ↦ f (y i)) := by
   simpa only [rademacherMoment_two] using rademacherMoment_le_mul_map two_pos f hK y
+
+/-- Passing to the separation quotient preserves the Rademacher second moment. -/
+@[simp]
+theorem rademacherSecondMoment_comp_separationQuotient (y : ι → E) :
+    rademacherSecondMoment (fun i ↦ SeparationQuotient.mk (y i)) =
+      rademacherSecondMoment y :=
+  le_antisymm
+    (by
+      simpa using rademacherSecondMoment_map_le
+        (SeparationQuotient.mkAddMonoidHom (M := E)) (M := 1)
+        (fun x ↦ by simp [SeparationQuotient.norm_mk]) y)
+    (by
+      simpa using rademacherSecondMoment_le_mul_map
+        (SeparationQuotient.mkAddMonoidHom (M := E)) (K := 1)
+        (fun x ↦ by simp [SeparationQuotient.norm_mk]) y)
 
 /-- The zero family has Rademacher second moment zero. -/
 @[simp]

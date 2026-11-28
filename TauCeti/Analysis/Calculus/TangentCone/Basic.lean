@@ -39,6 +39,8 @@ cones, which lets chart transitions of a manifold with corners compare the corne
   unique derivatives within the kernel of the coordinates defining the face.
 * `TauCeti.uniqueDiffOn_setOfPred_le_im`: a closed half-plane `{z : ℂ | a ≤ z.im}` is a set of
   unique differentiability.
+* `IsOpen.uniqueDiffOn_inter_setOf_im_nonneg`: so is its relatively open subset
+  `Ω ∩ {z | 0 ≤ z.im}`, for an open `Ω`.
 * `TauCeti.uniqueDiffOn_closedBall`: a closed ball of positive radius is a set of unique
   differentiability.
 * `TauCeti.mem_tangentConeAt_setOf_im_eq`: a real direction is tangent to a horizontal line in `ℂ`.
@@ -180,6 +182,12 @@ theorem TauCeti.uniqueDiffOn_ker_setOf_nonneg {E ι : Type*} [NormedAddCommGroup
 theorem TauCeti.uniqueDiffOn_setOfPred_le_im (a : ℝ) : UniqueDiffOn ℝ {z : ℂ | a ≤ z.im} :=
   uniqueDiffOn_convex (convex_halfSpace_im_ge a)
     ⟨Complex.I * (a + 1), by rw [Complex.interior_setOfPred_le_im]; simp⟩
+
+/-- The relatively open subset `Ω ∩ {z | 0 ≤ z.im}` of the closed upper half-plane, for an open
+`Ω ⊆ ℂ`, is a set of unique differentiability. -/
+theorem IsOpen.uniqueDiffOn_inter_setOf_im_nonneg {Ω : Set ℂ} (hΩ : IsOpen Ω) :
+    UniqueDiffOn ℝ (Ω ∩ {z | 0 ≤ z.im}) := by
+  simpa only [Set.inter_comm] using (TauCeti.uniqueDiffOn_setOfPred_le_im 0).inter hΩ
 
 /-- A closed ball of positive radius in a real normed space has unique derivatives, including on
 its boundary sphere. -/

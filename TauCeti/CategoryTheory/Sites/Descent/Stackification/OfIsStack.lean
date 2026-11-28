@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Sites.Descent.IsStack
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat
+public import TauCeti.CategoryTheory.Sites.Descent.Stackification.StrongTrans
 public import TauCeti.CategoryTheory.Sites.Descent.Stackification.Unit
 
 /-!
@@ -23,7 +25,8 @@ When `F` is a stack, every descent datum along a covering family is effective, s
 `Obj J F U` is in the essential image of `Obj.toObjFunctor`. As this functor is fully faithful
 (`Obj.fullyFaithfulToObjFunctor`), it is an equivalence `F.obj U ≌ Obj J F U`
 (`Obj.toObjEquivalence`): stackification fixes a stack, fibre by fibre (part of Stacks,
-Lemma 02ZN).
+Lemma 02ZN). Hence the unit `toStackification J F : F ⟶ stackification J F` is an equivalence of
+pseudofunctors (`stackificationOfIsStack`).
 
 ## Main declarations
 
@@ -33,6 +36,8 @@ Lemma 02ZN).
   essentially surjective.
 * `TauCeti.Stack.Stackification.Obj.toObjEquivalence`: for a stack, `toObjFunctor` is an
   equivalence.
+* `TauCeti.Stack.stackificationOfIsStack`: for a stack, the unit of the stackification is an
+  equivalence of pseudofunctors.
 
 ## References
 
@@ -202,3 +207,48 @@ lemma toObjEquivalence_functor (U : C) :
 end IsStack
 
 end TauCeti.Stack.Stackification.Obj
+
+namespace TauCeti.Stack
+
+open Stackification Obj
+open scoped Pseudofunctor.StrongTrans
+
+variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C) [HasPullbacks C]
+
+section
+
+variable (F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{max w v', max (w + 1) u v v' u'}) [F.IsStack J]
+
+/-- For a stack, the components of the unit of the stackification are equivalences
+(`Stackification.Obj.toObjEquivalence`). -/
+instance isEquivalence_toStackification_app (a : LocallyDiscrete Cᵒᵖ) :
+    ((toStackification.{w, v', u'} J F).app a).toFunctor.IsEquivalence :=
+  isEquivalence_toObjFunctor.{w} J F a.as.unop
+
+/-- **Stackification fixes a stack**: for a stack `F`, the unit `toStackification J F` is an
+equivalence of pseudofunctors between `F` and `stackification J F` (part of Stacks,
+Lemma 02ZN). Its components are the equivalences `Stackification.Obj.toObjEquivalence`. -/
+-- Expose the projections so the restriction isomorphism of `stackificationLift` can use the
+-- unit with its dependent source and state its component formula in `Universal.lean`.
+@[expose]
+def stackificationOfIsStack :
+    Bicategory.Equivalence F (stackification.{w} J F) :=
+  (toStackification.{w, v', u'} J F).equivalenceOfIsEquivalence
+
+/-- The equivalence `stackificationOfIsStack` is the unit of the stackification. -/
+@[simp]
+lemma stackificationOfIsStack_hom :
+    (stackificationOfIsStack.{w, v', u'} J F).hom = toStackification.{w, v', u'} J F :=
+  (rfl)
+
+/-- The inverse components of `stackificationOfIsStack` are the chosen quasi-inverses of
+`Stackification.Obj.toObjFunctor`. -/
+@[simp]
+lemma stackificationOfIsStack_inv_app_toFunctor (a : LocallyDiscrete Cᵒᵖ) :
+    ((stackificationOfIsStack.{w, v', u'} J F).inv.app a).toFunctor =
+      (toObjFunctor.{w} J F a.as.unop).inv :=
+  (rfl)
+
+end
+
+end TauCeti.Stack
