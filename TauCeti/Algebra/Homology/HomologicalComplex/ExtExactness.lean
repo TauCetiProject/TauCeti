@@ -59,8 +59,8 @@ theorem subsingleton_ext_opcycles (K : CochainComplex C ℕ) (X : C) (i m : ℕ)
           (hK i (Nat.lt_succ_self i)).isZero_homology
       have hw : K.fromOpcycles i (i + 1) ≫ K.pOpcycles (i + 1) = 0 := by
         rw [← cancel_epi (K.pOpcycles i), p_fromOpcycles_assoc, d_pOpcycles, comp_zero]
-      have hc := CokernelCofork.IsColimit.ofπ' (K.pOpcycles (i + 1)) hw (fun k hk ↦
-        ⟨K.descOpcycles k i (by simp) (by rw [← p_fromOpcycles_assoc, hk, comp_zero]), by simp⟩)
+      have hc := isCokernelOfComp (K.pOpcycles i) (K.d i (i + 1))
+        (K.opcyclesIsCokernel i (i + 1) (by simp)) hw (K.p_fromOpcycles i (i + 1))
       let S := ShortComplex.mk (K.fromOpcycles i (i + 1)) (K.pOpcycles (i + 1)) hw
       have hS : S.ShortExact :=
         ShortComplex.ShortExact.mk' (ShortComplex.exact_of_g_is_cokernel S hc) hmono inferInstance
