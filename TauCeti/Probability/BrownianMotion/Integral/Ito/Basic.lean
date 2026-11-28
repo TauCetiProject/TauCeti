@@ -13,65 +13,58 @@ public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 public import TauCeti.Probability.Process.TimeMeasure
 public import TauCeti.Probability.StochasticIntegral.Elementary
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
-import TauCeti.MeasureTheory.Function.Lp.Iterated
-import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
 import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Bound
-import TauCeti.Probability.Finance.SimpleStrategy.Energy
 import TauCeti.Probability.Finance.SimpleStrategy.Refinement
-import TauCeti.Probability.Process.Predictable.Basic
 import TauCeti.Probability.Process.ContinuousAE
 
 /-!
-# Itô integrals against Brownian motion and their uniqueness
+# Itô integrals against Brownian motion: specification, algebra, and uniqueness
 
 `TauCeti.Probability.IsItoIntegral ℱ P W H I` says that `I` is an Itô integral of the integrand
 `H` against `W`. The integrand is predictable and the paths of `I` are almost surely continuous.
-Moreover, for every time `t` some simple holdings, with heights known at the left endpoints of
-their intervals, approximate `H` on `(0,t]` in square energy in probability, while their
-elementary integrals at `t` converge in probability to `I t`. Square energy is a lower Lebesgue
-integral, so an infinite energy is never read as the default value zero of a divergent Bochner
-integral. The heights need not be bounded; bounded approximants are a special case. Every
-Itô integral integrand belongs to the pathwise domain `TauCeti.LocallyBrownianIntegrable`
-(`TauCeti.Probability.IsItoIntegral.locallyBrownianIntegrable`), giving one direction of the domain
-characterization without extra hypotheses on `P` or `W`.
+Moreover, for every time `t` some simple holdings on nondecreasing deterministic grids (allowing
+repeated dates), with heights known at the left endpoints of their intervals, approximate `H` on
+`(0,t]` in square energy in probability, while their elementary integrals at `t` converge in
+probability to `I t`. Square energy is a lower Lebesgue integral, so an infinite energy is never
+read as the default value zero of a divergent Bochner integral. The heights need not be bounded;
+bounded approximants are a special case.
 
 Against a pre-Brownian motion relative to the filtration, the elementary integrals of any simple
-holdings approximating the integrand on `(0,t]` in square energy in probability converge in
-probability to the Itô integral at `t`
-(`TauCeti.Probability.IsItoIntegral.tendstoInMeasure_simpleGains`), and also at every earlier
-time (`TauCeti.Probability.IsItoIntegral.tendstoInMeasure_simpleGains_of_le`); so any limit in
-probability of them agrees almost surely with the Itô integral at `t`
+holdings on nondecreasing deterministic grids (allowing repeated dates) with left-measurable heights
+approximating the integrand on `(0,t]` in square energy in probability converge in probability to
+the Itô integral at `t` (`TauCeti.Probability.IsItoIntegral.tendstoInMeasure_simpleGains`), and
+also at every earlier time (`TauCeti.Probability.IsItoIntegral.tendstoInMeasure_simpleGains_of_le`);
+so any limit in probability of them agrees almost surely with the Itô integral at `t`
 (`TauCeti.Probability.IsItoIntegral.ae_eq_of_tendstoInMeasure`). Such approximants and the ones
 witnessing the Itô integral are compared on one common grid. Their difference has square energy
 converging to zero in probability, so its elementary integral at `t` converges to zero in
 probability by the energy estimate
 `TauCeti.Probability.IsFilteredPreBrownianReal.tendstoInMeasure_simpleGains_of_energy`. Hence
 the predicate determines the integral up to indistinguishability
-(`TauCeti.Probability.isItoIntegral_unique`), and predictable integrands that agree
-`(timeMeasure T).prod P`-almost everywhere on every finite horizon have indistinguishable Itô
-integrals (`TauCeti.Probability.IsFilteredPreBrownianReal.itoIntegral_local_congr`): two integrals
-agree almost surely at each time, and continuity of their paths makes them indistinguishable.
-Neither path continuity of `W` nor usual conditions on the filtration are needed. Conversely, the
-predicate is invariant under indistinguishability (`TauCeti.Probability.IsItoIntegral.congr`), so it
-determines its integrals exactly up to indistinguishability
-(`TauCeti.Probability.isItoIntegral_iff_indist`).
+(`TauCeti.Probability.isItoIntegral_unique`): two integrals agree almost surely at each time,
+and continuity of their paths makes them indistinguishable. Neither path continuity of `W` nor
+usual conditions on the filtration are needed. Conversely, the predicate is invariant under
+indistinguishability (`TauCeti.Probability.IsItoIntegral.congr`), so it determines its
+integrals exactly up to indistinguishability (`TauCeti.Probability.isItoIntegral_iff_indist`).
 
 Against an adapted integrator the Itô integral is almost everywhere strongly measurable at each
 time (`TauCeti.Probability.IsItoIntegral.aestronglyMeasurable`).
 
-The elementary integral of a simple holding or `ElementaryIntegrand` is its Itô integral against
-every process with almost surely continuous paths
-(`TauCeti.Probability.isItoIntegral_simpleGains`, `isItoIntegral_elementaryIntegrand`), and
-`IsItoIntegral` is closed under scaling, negation, addition, subtraction, filtration enlargement
-(`IsItoIntegral.mono_filtration`), and a.e. congruence of the integrand or integrator. Existence
-of the integral for general L² and locally square-integrable integrands is proved in
-`Ito/Isometry.lean`, `Ito/L2.lean`, and `Ito/Local.lean`.
+The elementary integral of a simple holding on a nondecreasing grid with left-measurable heights
+is its Itô integral against every process with almost surely continuous paths
+(`TauCeti.Probability.isItoIntegral_simpleGains`). This file also establishes linearity,
+bounded initial and post-`u` multipliers, `(dt × P)`-a.e. integrand congruence for an `SFinite`
+measure `P` (`TauCeti.Probability.IsItoIntegral.congr_integrand`), and gains convergence in measure
+for arbitrary approximating sequences against a filtered pre-Brownian motion. Against a filtered
+pre-Brownian integrator with almost surely continuous paths, existence of the integral is proved in
+`TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry` for square-integrable integrands and in
+`TauCeti.Probability.BrownianMotion.Integral.Ito.Local` for localized integrands.
 
 The predicate transfers to an absolutely continuous finite measure with the same driver
-and approximants (`IsItoIntegral.mono_ac`); this does not assert that the driver is still Brownian.
+and approximants; this does not assert that the driver is still Brownian.
 
 ## References
 
@@ -84,28 +77,30 @@ public section
 noncomputable section
 
 open MeasureTheory Filter Set ProbabilityTheory
+open Finset hiding Iic mem_Iic
 open scoped ENNReal NNReal Topology
 
 namespace TauCeti.Probability
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ} {P : Measure Ω}
-  {W B H H₁ H₂ K I I₁ I₂ J : ℝ≥0 → Ω → ℝ}
+  {W B H K I J : ℝ≥0 → Ω → ℝ}
 
 /-- `I` is an **Itô integral** of the integrand `H` against `W`. The integrand is predictable,
-almost every path of `I` is continuous, and at every time `t` there are simple holdings with
-heights known at the left endpoints of their intervals such that
-`∫_(0,t] |Kₖ - H|² ds → 0` in probability while their elementary integrals at `t` converge to
-`I t` in probability. The square energy is a lower Lebesgue integral, so it is infinite rather
-than zero when the square error is not integrable. -/
+almost every path of `I` is continuous, and at every time `t` there are simple holdings on
+nondecreasing deterministic grids (repeated dates are allowed) with heights known at the left
+endpoints of their intervals such that `∫_(0,t] |Kₖ - H|² ds → 0` in probability while their
+elementary integrals at `t` converge to `I t` in probability. The square energy is a lower Lebesgue
+integral, so it is infinite rather than zero when the square error is not integrable. -/
 structure IsItoIntegral (ℱ : Filtration ℝ≥0 mΩ) (P : Measure Ω) (W H I : ℝ≥0 → Ω → ℝ) :
     Prop where
   /-- The integrand is predictable, so its square errors are measurable in time. -/
   isStronglyPredictable : IsStronglyPredictable ℱ H
   /-- Almost every path of the integral is continuous. -/
   ae_continuous : ∀ᵐ ω ∂P, Continuous fun t ↦ I t ω
-  /-- At each time `t`, simple holdings approximate the integrand on `(0,t]` in square energy
-  in probability, and their elementary integrals at `t` converge to `I t` in probability. -/
-  exists_approx (t : ℝ≥0) : ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ),
+  /-- At each time `t`, simple holdings on nondecreasing deterministic grids (repeated dates are
+  allowed) with left-measurable heights approximate the integrand on `(0,t]` in square energy in
+  probability, and their elementary integrals at `t` converge to `I t` in probability. -/
+  exists_approx : ∀ t : ℝ≥0, ∃ (n : ℕ → ℕ) (τ : ℕ → ℕ → ℝ≥0) (a : ℕ → ℕ → Ω → ℝ),
     (∀ k, MonotoneOn (τ k) (Iic (n k))) ∧
     (∀ k j, j < n k → StronglyMeasurable[ℱ (τ k j)] (a k j)) ∧
     (∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
@@ -123,44 +118,36 @@ theorem IsItoIntegral.mono_ac {Q : Measure Ω} [IsFiniteMeasure Q]
     obtain ⟨n, τ, a, hτ, ha, hE, hG⟩ := hI.exists_approx t
     exact ⟨n, τ, a, hτ, ha, fun ε hε ↦ hQP.tendsto_measure_zero (hE ε hε), hG.mono_ac hQP⟩
 
-/-- Every Itô integral integrand has finite pathwise square energy on every finite horizon almost
-surely (`TauCeti.LocallyBrownianIntegrable`). Neither s-finiteness of `P` nor Brownian assumptions
-on `W` are required. -/
-theorem IsItoIntegral.locallyBrownianIntegrable (hI : IsItoIntegral ℱ P W H I) :
-    LocallyBrownianIntegrable ℱ P H := by
-  refine locallyBrownianIntegrable_iff_nat.2 ⟨hI.isStronglyPredictable, fun n ↦ ?_⟩
-  rw [← NNReal.coe_natCast n, NNReal.comap_volume_restrict_Ioc, ← timeMeasure_def]
-  obtain ⟨m, τ, a, hτ, ha, hE, _⟩ := hI.exists_approx n
-  -- Step 1: if `H · ω ∉ L²(timeMeasure n)`, every simple approximant lies at square energy ≥ 1.
-  have hsub (ω : Ω) : ¬ MemLp (fun t ↦ H t ω) 2 (timeMeasure n) →
-      ∀ k, 1 ≤ ∫⁻ s, ‖Finance.simpleHolding (τ k) (m k) (a k) s ω - H s ω‖ₑ ^ 2
-        ∂timeMeasure n := by
-    intro hnot k
-    by_contra! hlt
-    apply hnot
-    have hK_fin : ∫⁻ s, ‖Finance.simpleHolding (τ k) (m k) (a k) s ω‖ₑ ^ 2
-        ∂timeMeasure n < ∞ :=
-      (timeMeasure n).lintegral_enorm_sq_simpleHolding_lt_top (hτ k)
-        (fun _ _ ↦ measurableSet_Ioc) ω
-    have hpred : IsStronglyPredictable ℱ
-        (fun s ω ↦ H s ω - Finance.simpleHolding (τ k) (m k) (a k) s ω) :=
-      hI.isStronglyPredictable.sub (Finance.isStronglyPredictable_simpleHolding (ha k))
-    have hmeas : AEMeasurable
-        (fun s ↦ ‖H s ω - Finance.simpleHolding (τ k) (m k) (a k) s ω‖ₑ ^ 2) (timeMeasure n) :=
-      (hpred.measurable_eNorm_pow ω 2).aemeasurable
-    have hH_fin : ∫⁻ s, ‖H s ω‖ₑ ^ 2 ∂timeMeasure n < ∞ := by
-      have htri := lintegral_enorm_sub_sq_le_two_mul (g := (0 : ℝ≥0 → ℝ)) hmeas
-      simp only [Pi.zero_apply, sub_zero, zero_sub, eNorm_neg] at htri
-      refine htri.trans_lt (ENNReal.mul_lt_top (by norm_num) (ENNReal.add_lt_top.mpr ⟨?_, hK_fin⟩))
-      simpa only [eNorm_sub_rev] using hlt.trans ENNReal.one_lt_top
-    have hm := (hI.isStronglyPredictable.mono ℱ.predictable_le_prod).of_uncurry_right (y := ω)
-    exact hm.aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.mpr hH_fin
-  -- Step 2: convergence of the approximation errors in probability forces the bad set to be null.
-  rw [ae_iff]
-  exact le_antisymm
-    (le_of_tendsto_of_tendsto tendsto_const_nhds (hE 1 one_pos)
-      (Eventually.of_forall fun k ↦ measure_mono fun ω hω ↦ hsub ω hω k))
-    zero_le
+/-- Two sequences of predictable processes approximating the same predictable process in
+square energy in probability on `(0,t]` approximate each other there. -/
+private theorem tendsto_measure_le_lintegral_sub (hH : IsStronglyPredictable ℱ H)
+    {K L : ℕ → ℝ≥0 → Ω → ℝ} (hK : ∀ k, IsStronglyPredictable ℱ (K k)) (t : ℝ≥0)
+    (hKH : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
+      ∫⁻ s, ‖K k s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t}) atTop (𝓝 0))
+    (hLH : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
+      ∫⁻ s, ‖L k s ω - H s ω‖ₑ ^ 2 ∂timeMeasure t}) atTop (𝓝 0))
+    (ε : ℝ≥0∞) (hε : 0 < ε) :
+    Tendsto (fun k ↦ P {ω | ε ≤ ∫⁻ s, ‖K k s ω - L k s ω‖ₑ ^ 2 ∂timeMeasure t})
+      atTop (𝓝 0) := by
+  set η := ε / 4
+  have hη : 0 < η := ENNReal.div_pos hε.ne' (by norm_num)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (by simpa only [add_zero] using (hKH η hη).add (hLH η hη)) (fun _ ↦ bot_le) fun k ↦ ?_
+  refine (measure_mono fun ω hω ↦ ?_).trans (measure_union_le _ _)
+  simp only [mem_ofPred_eq, mem_union] at hω ⊢
+  by_contra hcon
+  simp only [not_or, not_le] at hcon
+  have hmeas : Measurable fun s ↦ ‖K k s ω - H s ω‖ₑ ^ 2 :=
+    ((((hK k).sub hH).mono ℱ.predictable_le_prod).measurable.eNorm.pow_const 2).comp
+      (measurable_id.prodMk measurable_const)
+  have hlt := ENNReal.add_lt_add hcon.1 hcon.2
+  refine (hω.trans (lintegral_enorm_sub_sq_le_two_mul hmeas.aemeasurable)).not_gt ?_
+  calc
+    _ < 2 * (η + η) := by
+      rw [two_mul, two_mul]
+      exact ENNReal.add_lt_add hlt hlt
+    _ = 4 * (ε / 4) := by ring
+    _ ≤ ε := ENNReal.mul_div_le
 
 /-- **Convergence to the Itô integral.** Against a pre-Brownian motion relative to the
 filtration, if simple holdings with heights known at the left endpoints of their intervals
@@ -183,14 +170,9 @@ theorem IsItoIntegral.tendstoInMeasure_simpleGains (hW : IsFilteredPreBrownianRe
     have henergy : ∀ ε : ℝ≥0∞, 0 < ε → Tendsto (fun k ↦ P {ω | ε ≤
         ∫⁻ s, ‖Finance.simpleHolding (ρ k) (N k) (c k) s ω‖ₑ ^ 2 ∂timeMeasure t})
           atTop (𝓝 0) := by
-      intro ε hε
       simp_rw [hhold]
-      have hpred (k : ℕ) : IsStronglyPredictable ℱ
-          (fun s ω ↦ Finance.simpleHolding (τ k) (n k) (a k) s ω - H s ω) :=
-        (Finance.isStronglyPredictable_simpleHolding (ha k)).sub hI.isStronglyPredictable
-      exact TauCeti.tendsto_measure_le_lintegral_enorm_sub_sq
-        (Eventually.of_forall fun k ω ↦ ((hpred k).measurable_eNorm_pow ω 2).aemeasurable)
-        hKH hLH hε
+      exact tendsto_measure_le_lintegral_sub hI.isStronglyPredictable
+        (fun k ↦ Finance.isStronglyPredictable_simpleHolding (ha k)) t hKH hLH
     exact (hW.tendstoInMeasure_simpleGains_of_energy (fun k ↦ (hρ k).monotoneOn) hc t
       henergy).congr_left fun k ↦ ae_of_all _ fun ω ↦ hgain k W t ω
   simpa using hKI.sub hdiff
@@ -257,14 +239,9 @@ theorem IsItoIntegral.congr (hI : IsItoIntegral ℱ P W H I) (hIJ : I ≡ᵐ[P] 
     obtain ⟨n, τ, a, hτ, ha, hE, hG⟩ := hI.exists_approx t
     exact ⟨n, τ, a, hτ, ha, hE, hG.congr_right (hIJ.ae_eq_eval t)⟩
 
-/-- Against a pre-Brownian motion relative to the filtration, the Itô integrals of an integrand
-are exactly the processes indistinguishable from one of them. -/
-theorem isItoIntegral_iff_indist (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hI : IsItoIntegral ℱ P W H I) : IsItoIntegral ℱ P W H J ↔ I ≡ᵐ[P] J :=
-  ⟨isItoIntegral_unique hW hI, hI.congr⟩
-
-/-- The elementary integral of a simple holding with heights known at the left endpoints of its
-intervals is its Itô integral against every process with almost surely continuous paths. -/
+/-- The elementary integral of a simple holding on a nondecreasing grid with heights known at the
+left endpoints of its intervals is its Itô integral against every process with almost surely
+continuous paths. -/
 theorem isItoIntegral_simpleGains {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → Ω → ℝ}
     (hW : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω) (hτ : MonotoneOn τ (Iic n))
     (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j)) :
@@ -273,8 +250,8 @@ theorem isItoIntegral_simpleGains {τ : ℕ → ℝ≥0} {n : ℕ} {a : ℕ → 
   ae_continuous := by
     filter_upwards [hW] with ω hω
     exact Finance.continuous_simpleGains hω
-  exists_approx _ := ⟨fun _ ↦ n, fun _ ↦ τ, fun _ ↦ a, fun _ ↦ hτ, fun _ ↦ ha,
-    fun _ hε ↦ by simp [hε.ne'], fun _ hε ↦ by simp [hε.ne']⟩
+  exists_approx t := ⟨fun _ ↦ n, fun _ ↦ τ, fun _ ↦ a, fun _ ↦ hτ, fun _ ↦ ha,
+    fun ε hε ↦ by simp [hε.ne'], fun ε hε ↦ by simp [hε.ne']⟩
 
 /-- The elementary integral of a bundled `ElementaryIntegrand` is an Itô integral of its
 represented process against every process with almost surely continuous paths. -/
@@ -286,178 +263,253 @@ theorem isItoIntegral_elementaryIntegrand (K : ElementaryIntegrand ℱ)
 
 namespace IsItoIntegral
 
-/-- Enlarging the filtration on the same measurable space preserves `IsItoIntegral`. -/
-theorem mono_filtration (hI : IsItoIntegral ℱ P W H I) {𝒢 : Filtration ℝ≥0 mΩ} (hℱ𝒢 : ℱ ≤ 𝒢) :
-    IsItoIntegral 𝒢 P W H I where
-  isStronglyPredictable := hI.isStronglyPredictable.mono (Filtration.predictable_mono hℱ𝒢)
+/-! ### Congruence, filtration enlargement, initial value, and pathwise domain -/
+
+/-- Replacing the integrator by a modification preserves `IsItoIntegral`. -/
+theorem congr_integrator (hI : IsItoIntegral ℱ P W H I) (hWB : ∀ s, W s =ᵐ[P] B s) :
+    IsItoIntegral ℱ P B H I where
+  isStronglyPredictable := hI.isStronglyPredictable
   ae_continuous := hI.ae_continuous
-  exists_approx t :=
-    let ⟨n, τ, a, hτ, ha, hE, hM⟩ := hI.exists_approx t
-    ⟨n, τ, a, hτ, fun k j hj ↦ (ha k j hj).mono (hℱ𝒢 _), hE, hM⟩
-
-/-- The zero process is an Itô integral of the zero integrand. -/
-theorem zero (ℱ : Filtration ℝ≥0 mΩ) (P : Measure Ω) (W : ℝ≥0 → Ω → ℝ) :
-    IsItoIntegral ℱ P W 0 0 where
-  isStronglyPredictable := stronglyMeasurable_zero
-  ae_continuous := .of_forall fun _ ↦ continuous_const
-  exists_approx _ := ⟨fun _ ↦ 0, fun _ _ ↦ 0, fun _ _ _ ↦ 0,
-    fun _ _ _ _ _ _ ↦ le_rfl, fun _ _ hj ↦ absurd hj (Nat.not_lt_zero _),
-    fun _ hε ↦ by simp [Finance.simpleHolding_def, hε.not_ge],
-    fun _ hε ↦ by simp [Finance.simpleGains_def, hε.not_ge]⟩
-
-/-- For an almost surely continuous process starting at zero almost surely, `W` itself is an Itô
-integral of the constant integrand `1`. -/
-theorem const_one (hcont : ∀ᵐ ω ∂P, Continuous (W · ω)) (h0 : ∀ᵐ ω ∂P, W 0 ω = 0) :
-    IsItoIntegral ℱ P W (fun _ _ ↦ 1) W where
-  isStronglyPredictable := stronglyMeasurable_const
-  ae_continuous := hcont
   exists_approx t := by
-    let K : ElementaryIntegrand ℱ :=
-      ElementaryIntegrand.single 0 t zero_le (fun _ ↦ 1) stronglyMeasurable_const
-        ⟨1, fun _ ↦ by simp⟩
-    refine ⟨fun _ ↦ K.n, fun _ ↦ K.dates, fun _ ↦ K.positions,
-      fun _ ↦ K.monotone_dates.monotoneOn _, fun _ ↦ K.measurable_positions,
-      fun ε hε ↦ ?_,
-      TendstoInMeasure.congr_left (f := fun _ ↦ W t)
-        (fun _ ↦ h0.mono fun ω hω ↦ by
-          dsimp only
-          rw [← congrFun (congrFun (K.integral_eq_simpleGains W) t) ω]
-          simp [K, hω])
-        (fun _ hε ↦ by simp [hε.not_ge])⟩
-    have hzero (ω : Ω) :
-        ∫⁻ s, ‖Finance.simpleHolding K.dates K.n K.positions s ω - 1‖ₑ ^ 2
-          ∂timeMeasure t = 0 := by
-      have hsub : IsStronglyPredictable ℱ (fun s ω ↦ K.toProcess s ω - (1 : ℝ)) :=
-        K.isStronglyPredictable.sub stronglyMeasurable_const
-      have hmeas : Measurable fun s ↦ ‖K.toProcess s ω - 1‖ₑ ^ 2 :=
-        hsub.measurable_eNorm_pow ω 2
-      simp_rw [← ElementaryIntegrand.toProcess_eq_simpleHolding]
-      refine (lintegral_eq_zero_iff' hmeas.aemeasurable).2
-        ((ae_mem_Ioc_timeMeasure t).mono fun s hs ↦ ?_)
-      simp [K, hs]
-    simp [hzero, hε.not_ge]
+    obtain ⟨n, τ, a, hτ, ha, henergy, hgains⟩ := hI.exists_approx t
+    refine ⟨n, τ, a, hτ, ha, henergy, hgains.congr_left fun k ↦ ?_⟩
+    exact ((ae_ball_iff (finite_Iic (n k)).countable).2 fun j _ ↦ hWB (min (τ k j) t)).mono
+      Finance.simpleGains_congr_price
 
-/-- Replacing the integrand by a predictable process agreeing `(timeMeasure T).prod P`-almost
-everywhere on every finite horizon preserves `IsItoIntegral`. -/
-theorem congr_integrand_ae [SFinite P] (hI : IsItoIntegral ℱ P W H I)
+/-- For an `SFinite` measure `P`, replacing the integrand by a predictable process agreeing
+`(dt × P)`-a.e. on each finite horizon preserves `IsItoIntegral`. -/
+theorem congr_integrand [SFinite P] (hI : IsItoIntegral ℱ P W H I)
     (hK : IsStronglyPredictable ℱ K)
-    (hHK : ∀ T : ℝ≥0, Function.uncurry H =ᵐ[(timeMeasure T).prod P] Function.uncurry K) :
+    (hHK : ∀ t : ℝ≥0, Function.uncurry H =ᵐ[(timeMeasure t).prod P]
+      Function.uncurry K) :
     IsItoIntegral ℱ P W K I where
   isStronglyPredictable := hK
   ae_continuous := hI.ae_continuous
   exists_approx t := by
-    obtain ⟨n, τ, a, hτ, ha, hE, hM⟩ := hI.exists_approx t
-    have hsec : ∀ᵐ ω ∂P, (fun s ↦ H s ω) =ᵐ[timeMeasure t] (fun s ↦ K s ω) :=
-      Measure.ae_ae_of_ae_prod (Measure.measurePreserving_swap.quasiMeasurePreserving.ae (hHK t))
-    refine ⟨n, τ, a, hτ, ha, fun ε hε ↦ (hE ε hε).congr fun m ↦ measure_congr ?_, hM⟩
-    exact hsec.mono fun ω hω ↦ Iff.of_eq (congrArg (ε ≤ ·) (lintegral_congr_ae
-      (hω.mono fun s hs ↦
-        congrArg (fun x ↦ ‖Finance.simpleHolding (τ m) (n m) (a m) s ω - x‖ₑ ^ 2) hs)))
+    obtain ⟨n, τ, a, hτ, ha, henergy, hgains⟩ := hI.exists_approx t
+    have hsec : ∀ᵐ ω ∂P, (fun s ↦ H s ω) =ᵐ[timeMeasure t] fun s ↦ K s ω :=
+      Measure.ae_ae_of_ae_prod <| (Measure.measurePreserving_swap (μ := P)
+        (ν := timeMeasure t)).quasiMeasurePreserving.ae_eq_comp (hHK t)
+    refine ⟨n, τ, a, hτ, ha, fun ε hε ↦ (henergy ε hε).congr fun k ↦ measure_congr ?_, hgains⟩
+    filter_upwards [hsec] with ω hω
+    rw [lintegral_congr_ae (hω.mono fun s hs ↦
+      congrArg (‖Finance.simpleHolding (τ k) (n k) (a k) s ω - ·‖ₑ ^ 2) hs)]
 
-/-- Replacing the integrator by a process equal almost surely at each fixed time preserves
-`IsItoIntegral`. -/
-theorem congr_integrator_ae (hI : IsItoIntegral ℱ P W H I) (hWB : ∀ t : ℝ≥0, W t =ᵐ[P] B t) :
-    IsItoIntegral ℱ P B H I where
-  isStronglyPredictable := hI.isStronglyPredictable
+/-- Enlarging the filtration preserves `IsItoIntegral`. -/
+theorem mono_filtration {𝒢 : Filtration ℝ≥0 mΩ} (hI : IsItoIntegral ℱ P W H I) (hle : ℱ ≤ 𝒢) :
+    IsItoIntegral 𝒢 P W H I where
+  isStronglyPredictable := hI.isStronglyPredictable.mono (Filtration.predictable_mono hle)
   ae_continuous := hI.ae_continuous
-  exists_approx t :=
-    let ⟨n, τ, a, hτ, ha, hE, hM⟩ := hI.exists_approx t
-    ⟨n, τ, a, hτ, ha, hE, hM.congr_left fun m ↦
-      (ae_all_iff.mpr fun i : ℕ ↦ hWB (min (τ m i) t)).mono fun ω hω ↦
-        Finance.simpleGains_congr_price ω fun i _ ↦ hω i⟩
-
-/-- Every Itô integral vanishes almost surely at time zero. -/
-theorem eval_zero_ae_eq_zero (hI : IsItoIntegral ℱ P W H I) : I 0 =ᵐ[P] 0 :=
-  let ⟨_, _, _, _, _, _, hM⟩ := hI.exists_approx 0
-  tendstoInMeasure_ae_unique hM fun _ hε ↦ by simp [Finance.simpleGains_def, hε.not_ge]
-
-/-- Scaling both the integrand and the integral by a real constant preserves `IsItoIntegral`. -/
-theorem const_mul (hI : IsItoIntegral ℱ P W H I) (c : ℝ) :
-    IsItoIntegral ℱ P W (fun t ω ↦ c * H t ω) (fun t ω ↦ c * I t ω) where
-  isStronglyPredictable := hI.isStronglyPredictable.const_mul c
-  ae_continuous := hI.ae_continuous.mono fun _ hω ↦ continuous_const.mul hω
   exists_approx t := by
-    rcases eq_or_ne c 0 with rfl | hc
-    · obtain ⟨n, τ, a, hτ, ha, hE, hM⟩ := (zero ℱ P W).exists_approx t
-      exact ⟨n, τ, a, hτ, ha,
-        fun ε hε ↦ by simpa only [zero_mul, Pi.zero_apply] using hE ε hε,
-        by simpa only [zero_mul, Pi.zero_def] using hM⟩
-    · obtain ⟨n, τ, a, hτ, ha, hE, hM⟩ := hI.exists_approx t
-      refine ⟨n, τ, fun m j ω ↦ c * a m j ω, hτ,
-        fun m j hj ↦ (ha m j hj).const_mul c, fun ε hε ↦ ?_,
-        (hM.const_smul c).congr_left fun m ↦ .of_forall fun ω ↦ by
-          simp [Finance.simpleGains_def, Finset.mul_sum, mul_assoc]⟩
-      have hc₂_pos : 0 < ‖c‖ₑ ^ 2 := pos_iff_ne_zero.mpr (pow_ne_zero 2 (eNorm_pos.mpr hc).ne')
-      have hc₂_ne_top : ‖c‖ₑ ^ 2 ≠ ∞ := by finiteness
-      refine (hE (ε / ‖c‖ₑ ^ 2) (ENNReal.div_pos hε.ne' hc₂_ne_top)).congr fun m ↦ congrArg P ?_
-      ext ω
-      have hlint : (∫⁻ s, ‖Finance.simpleHolding (τ m) (n m) (fun j ω ↦ c * a m j ω) s ω -
-          c * H s ω‖ₑ ^ 2 ∂timeMeasure t) =
-          ‖c‖ₑ ^ 2 * ∫⁻ s, ‖Finance.simpleHolding (τ m) (n m) (a m) s ω - H s ω‖ₑ ^ 2
-            ∂timeMeasure t := by
-        rw [← lintegral_const_mul' _ _ hc₂_ne_top]
-        refine lintegral_congr fun s ↦ ?_
-        have hsh : Finance.simpleHolding (τ m) (n m) (fun j ω ↦ c * a m j ω) s ω =
-            c * Finance.simpleHolding (τ m) (n m) (a m) s ω := by
-          simp [Finance.simpleHolding_def, Finset.mul_sum, Set.indicator_apply]
-        rw [hsh, ← mul_sub, eNorm_mul, mul_pow]
-      simp only [mem_ofPred_eq, hlint, ENNReal.div_le_iff_le_mul (.inl hc₂_pos.ne')
-        (.inl hc₂_ne_top), mul_comm]
+    obtain ⟨n, τ, a, hτ, ha, henergy, hgains⟩ := hI.exists_approx t
+    exact ⟨n, τ, a, hτ, fun k i hi ↦ (ha k i hi).mono (hle (τ k i)), henergy, hgains⟩
 
-/-- Negating both the integrand and the integral preserves `IsItoIntegral`. -/
+/-- Every Itô integral vanishes almost surely at time `0`. -/
+theorem eval_zero_ae_eq_zero (hI : IsItoIntegral ℱ P W H I) : I 0 =ᵐ[P] 0 := by
+  obtain ⟨n, τ, a, hτ, -, -, hgains⟩ := hI.exists_approx 0
+  exact tendstoInMeasure_ae_unique
+    (hgains.congr_left fun k ↦ .of_forall fun ω ↦ Finance.simpleGains_of_le (hτ k) bot_le W ω)
+    (tendstoInMeasure_const 0)
+
+/-- Every integrand admitting an `IsItoIntegral` belongs to `LocallyBrownianIntegrable ℱ P`,
+with no finiteness assumption on `P` or Brownian assumption on `W`. -/
+theorem locallyBrownianIntegrable (hI : IsItoIntegral ℱ P W H I) :
+    LocallyBrownianIntegrable ℱ P H := by
+  refine locallyBrownianIntegrable_iff_nat.2 ⟨hI.isStronglyPredictable, fun N ↦ ?_⟩
+  obtain ⟨n, τ, a, -, ha, henergy, -⟩ := hI.exists_approx N
+  let E (k : ℕ) (ω : Ω) : ℝ≥0∞ :=
+    ∫⁻ s, ‖Finance.simpleHolding (τ k) (n k) (a k) s ω - H s ω‖ₑ ^ 2 ∂timeMeasure N
+  have hnull : P {ω | ∀ k, 1 ≤ E k ω} = 0 :=
+    nonpos_iff_eq_zero.mp <| ge_of_tendsto' (henergy 1 zero_lt_one) fun k ↦
+      measure_mono (s := {ω | ∀ k, 1 ≤ E k ω}) fun _ hω ↦ hω k
+  have hae : ∀ᵐ ω ∂P, ∃ k, E k ω < 1 := by
+    rw [ae_iff]
+    simpa [not_exists, not_lt] using hnull
+  filter_upwards [hae] with ω ⟨k, hk⟩
+  rw [← NNReal.coe_natCast N, NNReal.comap_volume_restrict_Ioc, ← timeMeasure_def]
+  have hpred := Finance.isStronglyPredictable_simpleHolding (ha k)
+  have hL : MemLp (fun s ↦ Finance.simpleHolding (τ k) (n k) (a k) s ω) 2 (timeMeasure N) :=
+    MemLp.of_bound hpred.stronglyMeasurable_path.aestronglyMeasurable
+      (∑ i ∈ range (n k), ‖a k i ω‖) (.of_forall fun s ↦ by
+        rw [Finance.simpleHolding_def]
+        exact (norm_sum_le _ _).trans (sum_le_sum fun _ _ ↦ norm_indicator_le_norm_self _ _))
+  have hdiff : MemLp (fun s ↦ Finance.simpleHolding (τ k) (n k) (a k) s ω - H s ω) 2
+      (timeMeasure N) :=
+    ((hpred.stronglyMeasurable_path.sub
+        hI.isStronglyPredictable.stronglyMeasurable_path).aestronglyMeasurable
+      |>.memLp_two_iff_lintegral_enorm_sq_lt_top).mpr (lt_trans hk ENNReal.one_lt_top)
+  exact (hL.sub hdiff).ae_eq (.of_forall fun _ ↦ sub_sub_cancel _ _)
+
+/-! ### Elementary and constant integrands -/
+
+/-- The zero process is an Itô integral of the zero integrand. -/
+@[simp]
+theorem zero : IsItoIntegral ℱ P W 0 0 where
+  isStronglyPredictable := stronglyMeasurable_const
+  ae_continuous := .of_forall fun _ ↦ continuous_const
+  exists_approx _ :=
+    ⟨fun _ ↦ 0, fun _ _ ↦ 0, fun _ _ ↦ 0, fun _ _ _ _ _ _ ↦ le_rfl,
+      fun _ _ hi ↦ (Nat.not_lt_zero _ hi).elim,
+      fun _ hε ↦ by simp [Finance.simpleHolding_def, hε.not_ge],
+      (tendstoInMeasure_const 0).congr_left fun _ ↦ .of_forall fun _ ↦ by
+        simp [Finance.simpleGains_def]⟩
+
+/-- An `ℱ u`-measurable `ξ` held on `(u, v]` (`u ≤ v`) has clipped increment gains
+`ξ * (W (v ⊓ t) - W (u ⊓ t))` as its Itô integral when `W` is `P`-a.s. continuous. -/
+theorem indicator_Ioc {u v : ℝ≥0} {ξ : Ω → ℝ} (huv : u ≤ v)
+    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω)) (hξ : StronglyMeasurable[ℱ u] ξ) :
+    IsItoIntegral ℱ P W (fun t ω ↦ (Ioc u v).indicator (fun _ ↦ ξ ω) t)
+      (fun t ω ↦ ξ ω * (W (min v t) ω - W (min u t) ω)) := by
+  let τ : ℕ → ℝ≥0 := fun i ↦ if i = 0 then u else v
+  have hτ : MonotoneOn τ (Iic 1) := fun i _ j _ hij ↦ by
+    dsimp [τ]; split_ifs <;> first | exact le_rfl | exact huv | omega
+  convert isItoIntegral_simpleGains (ℱ := ℱ) (P := P) (n := 1) (τ := τ) (a := fun _ ↦ ξ)
+    hcont hτ (fun i hi ↦ by obtain rfl : i = 0 := (by omega); exact hξ) using 1 <;>
+    (ext t ω; simp [Finance.simpleHolding_def, Finance.simpleGains_def, τ])
+
+/-- A time-constant `ℱ 0`-measurable `ξ` has `t ↦ ξ * (W t - W 0)` as an Itô integral when `W`
+is `P`-a.s. continuous, with no finiteness assumption on `P`, moment assumption on `ξ`, or
+`W 0 = 0`. -/
+theorem const_sub_initial {ξ : Ω → ℝ}
+    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω)) (hξ : StronglyMeasurable[ℱ 0] ξ) :
+    IsItoIntegral ℱ P W (fun _ ω ↦ ξ ω) (fun t ω ↦ ξ ω * (W t ω - W 0 ω)) where
+  isStronglyPredictable :=
+    ((locallyBrownianIntegrable_const_iff (P := P)).2 hξ).isStronglyPredictable
+  ae_continuous := hcont.mono fun _ hω ↦ by fun_prop
+  exists_approx t := by
+    obtain ⟨n, τ, a, hτ, ha, henergy, hgains⟩ :=
+      (indicator_Ioc (P := P) (zero_le : (0 : ℝ≥0) ≤ t) hcont hξ).exists_approx t
+    refine ⟨n, τ, a, hτ, ha, fun ε hε ↦ (henergy ε hε).congr fun k ↦ by
+      congr 1; ext ω; simp only [Set.mem_ofPred_eq]
+      rw [lintegral_congr_ae ((ae_mem_Ioc_timeMeasure t).mono fun _ hs ↦ by
+        rw [indicator_of_mem hs])],
+      by simpa only [min_self, min_eq_left (zero_le : (0 : ℝ≥0) ≤ t)] using hgains⟩
+
+/-- When `W` is `P`-a.s. continuous with `W 0 =ᵐ[P] 0`, a time-constant `ℱ 0`-measurable `ξ` has
+`t ↦ ξ * W t` as a continuous Itô integral. -/
+theorem const {ξ : Ω → ℝ} (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
+    (hW₀ : W 0 =ᵐ[P] 0) (hξ : StronglyMeasurable[ℱ 0] ξ) :
+    IsItoIntegral ℱ P W (fun _ ω ↦ ξ ω) (fun t ω ↦ ξ ω * W t ω) :=
+  (const_sub_initial hcont hξ).congr (hW₀.mono fun _ hω _ ↦ by simp [hω])
+
+/-- For an almost surely continuous process starting at zero almost surely, `W` itself is an Itô
+integral of the constant integrand `1`. -/
+theorem const_one (hcont : ∀ᵐ ω ∂P, Continuous (W · ω)) (h0 : ∀ᵐ ω ∂P, W 0 ω = 0) :
+    IsItoIntegral ℱ P W (fun _ _ ↦ 1) W := by
+  simpa only [one_mul] using const (ℱ := ℱ) (ξ := fun _ ↦ 1) hcont h0 stronglyMeasurable_const
+
+/-! ### Linearity and bounded initial multipliers -/
+
+/-- Multiplying an integrand by a bounded `ℱ 0`-measurable random variable `ξ` multiplies its Itô
+integral by `ξ`, on any measure `P` and for any integrator `W`. -/
+theorem bdd_mul (hI : IsItoIntegral ℱ P W H I) {ξ : Ω → ℝ}
+    (hξ : StronglyMeasurable[ℱ 0] ξ) (hb : ∃ C : ℝ, ∀ ω, ‖ξ ω‖ ≤ C) :
+    IsItoIntegral ℱ P W (fun t ω ↦ ξ ω * H t ω) (fun t ω ↦ ξ ω * I t ω) := by
+  obtain ⟨Cξ, hCξ⟩ := hb
+  refine ⟨(((locallyBrownianIntegrable_const_iff (P := P)).2 hξ).isStronglyPredictable).mul
+    hI.isStronglyPredictable, hI.ae_continuous.mono fun _ hω ↦ continuous_const.mul hω,
+    fun t ↦ ?_⟩
+  obtain ⟨n, τ, a, hτ, ha, henergy, hgains⟩ := hI.exists_approx t
+  refine ⟨n, τ, fun k i ω ↦ ξ ω * a k i ω, hτ,
+    fun k i hi ↦ (hξ.mono (ℱ.mono bot_le)).mul (ha k i hi),
+    fun _ hε ↦ MeasureTheory.tendsto_measure_lintegral_enorm_sq_bdd_mul
+      (μ := timeMeasure t) (ν := P) hCξ henergy (fun k s ω ↦ ?_) hε,
+    (hgains.bdd_smul hCξ).congr (fun k ↦ .of_forall fun ω ↦ by
+      rw [Finance.simpleGains_mul_left, smul_eq_mul]) .rfl⟩
+  rw [Finance.simpleHolding_mul_left, ← mul_sub, eNorm_mul]
+
+/-- Scaling an integrand by a constant scales its Itô integral. -/
+theorem smul (hI : IsItoIntegral ℱ P W H I) (c : ℝ) :
+    IsItoIntegral ℱ P W (c • H) (c • I) :=
+  hI.bdd_mul stronglyMeasurable_const ⟨‖c‖, fun _ ↦ le_rfl⟩
+
+/-- Negating an integrand negates its Itô integral. -/
 theorem neg (hI : IsItoIntegral ℱ P W H I) :
-    IsItoIntegral ℱ P W (fun t ω ↦ -H t ω) (fun t ω ↦ -I t ω) := by
-  simpa only [neg_one_mul] using hI.const_mul (-1)
+    IsItoIntegral ℱ P W (-H) (-I) := by
+  simpa [neg_one_smul] using hI.smul (-1 : ℝ)
 
-/-- Adding two integrands and their Itô integrals preserves `IsItoIntegral`. -/
-theorem add (h₁ : IsItoIntegral ℱ P W H₁ I₁) (h₂ : IsItoIntegral ℱ P W H₂ I₂) :
-    IsItoIntegral ℱ P W (fun t ω ↦ H₁ t ω + H₂ t ω) (fun t ω ↦ I₁ t ω + I₂ t ω) where
-  isStronglyPredictable := h₁.isStronglyPredictable.add h₂.isStronglyPredictable
-  ae_continuous := h₁.ae_continuous.mp (h₂.ae_continuous.mono fun _ hω₂ hω₁ ↦ hω₁.add hω₂)
+/-- Adding two integrands adds their Itô integrals. -/
+theorem add (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) :
+    IsItoIntegral ℱ P W (H + K) (I + J) where
+  isStronglyPredictable := hI.isStronglyPredictable.add hJ.isStronglyPredictable
+  ae_continuous := hI.ae_continuous.mp <| hJ.ae_continuous.mono fun _ hJω hIω ↦ hIω.add hJω
   exists_approx t := by
-    obtain ⟨n₁, τ₁, a₁, hτ₁, ha₁, hE₁, hM₁⟩ := h₁.exists_approx t
-    obtain ⟨n₂, τ₂, a₂, hτ₂, ha₂, hE₂, hM₂⟩ := h₂.exists_approx t
-    choose N ρ c _ hρ hc hhold hgain using fun k ↦
-      Finance.exists_simpleHolding_simpleGains_eq_sub ℱ (hτ₁ k) (hτ₂ k) (ha₁ k)
-        fun j hj ↦ (ha₂ k j hj).neg
-    have hhold' (k s ω) : Finance.simpleHolding (ρ k) (N k) (c k) s ω =
-        Finance.simpleHolding (τ₁ k) (n₁ k) (a₁ k) s ω +
-          Finance.simpleHolding (τ₂ k) (n₂ k) (a₂ k) s ω := by
-      rw [hhold k s ω]
-      simp only [Finance.simpleHolding_def, Set.indicator_apply]
-      rw [sub_eq_add_neg, ← Finset.sum_neg_distrib]
-      congr 1
-      exact Finset.sum_congr rfl fun _ _ ↦ by split_ifs <;> simp
-    have hgain' (k ω) : Finance.simpleGains (ρ k) (N k) (c k) W t ω =
-        Finance.simpleGains (τ₁ k) (n₁ k) (a₁ k) W t ω +
-          Finance.simpleGains (τ₂ k) (n₂ k) (a₂ k) W t ω := by
-      rw [hgain k W t ω]
-      simp [Finance.simpleGains_def, Finset.sum_neg_distrib, sub_neg_eq_add]
-    refine ⟨N, ρ, c, fun k ↦ (hρ k).monotoneOn, hc, fun ε hε ↦ ?_,
-      (hM₁.add hM₂).congr_left fun k ↦ .of_forall fun ω ↦ by simp [hgain' k ω]⟩
-    have hEq (k s ω) : ‖Finance.simpleHolding (ρ k) (N k) (c k) s ω -
-        (H₁ s ω + H₂ s ω)‖ₑ =
-        ‖(Finance.simpleHolding (τ₁ k) (n₁ k) (a₁ k) s ω - H₁ s ω) -
-          (H₂ s ω - Finance.simpleHolding (τ₂ k) (n₂ k) (a₂ k) s ω)‖ₑ := by
-      rw [hhold' k]
-      congr 1; ring
-    simp_rw [hEq]
-    have hK (k : ℕ) : IsStronglyPredictable ℱ
-        (fun s ω ↦ Finance.simpleHolding (τ₁ k) (n₁ k) (a₁ k) s ω - H₁ s ω) :=
-      (Finance.isStronglyPredictable_simpleHolding (ha₁ k)).sub h₁.isStronglyPredictable
-    exact TauCeti.tendsto_measure_le_lintegral_enorm_sub_sq
-      (H := (0 : ℝ≥0 → Ω → ℝ))
-      (K := fun k s ω ↦ Finance.simpleHolding (τ₁ k) (n₁ k) (a₁ k) s ω - H₁ s ω)
-      (L := fun k s ω ↦ H₂ s ω - Finance.simpleHolding (τ₂ k) (n₂ k) (a₂ k) s ω)
-      (Eventually.of_forall fun k ω ↦ by
-        simpa only [Pi.zero_apply, sub_zero] using ((hK k).measurable_eNorm_pow ω 2).aemeasurable)
-      (fun δ hδ ↦ by simpa only [Pi.zero_apply, sub_zero] using hE₁ δ hδ)
-      (fun δ hδ ↦ by simpa only [Pi.zero_apply, sub_zero, eNorm_sub_rev] using hE₂ δ hδ) hε
+    obtain ⟨n₁, τ₁, a₁, hτ₁, ha₁, he₁, hg₁⟩ := hI.exists_approx t
+    obtain ⟨n₂, τ₂, a₂, hτ₂, ha₂, he₂, hg₂⟩ := hJ.exists_approx t
+    choose n τ b _ hτ hbm hhold hgains using fun k ↦
+      Finance.exists_simpleHolding_simpleGains_eq_add ℱ (hτ₁ k) (hτ₂ k) (ha₁ k) (ha₂ k)
+    refine ⟨n, τ, b, fun k ↦ (hτ k).monotoneOn, hbm, fun ε hε ↦ ?_,
+      (hg₁.add hg₂).congr (fun k ↦ .of_forall fun ω ↦ (hgains k W t ω).symm) .rfl⟩
+    simp_rw [hhold, Pi.add_apply, add_sub_add_comm]
+    exact MeasureTheory.tendsto_measure_lintegral_enorm_add_sq
+      (.of_forall fun k ω ↦
+        (IsStronglyPredictable.measurable_enorm_sq_path
+          (H := fun s ω ↦ Finance.simpleHolding (τ₁ k) (n₁ k) (a₁ k) s ω - H s ω)
+          ((Finance.isStronglyPredictable_simpleHolding (ha₁ k)).sub
+            hI.isStronglyPredictable)).aemeasurable)
+      he₁ he₂ hε
 
-/-- Subtracting two integrands and their Itô integrals preserves `IsItoIntegral`. -/
-theorem sub (h₁ : IsItoIntegral ℱ P W H₁ I₁) (h₂ : IsItoIntegral ℱ P W H₂ I₂) :
-    IsItoIntegral ℱ P W (fun t ω ↦ H₁ t ω - H₂ t ω) (fun t ω ↦ I₁ t ω - I₂ t ω) := by
-  simpa only [sub_eq_add_neg] using h₁.add h₂.neg
+/-- Subtracting two integrands subtracts their Itô integrals. -/
+theorem sub (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) :
+    IsItoIntegral ℱ P W (H - K) (I - J) := by
+  simpa only [sub_eq_add_neg] using hI.add hJ.neg
+
+/-! ### Uniqueness, congruence, and post-`u` multipliers -/
+
+end IsItoIntegral
+
+/-- Against a pre-Brownian motion relative to the filtration, the Itô integrals of an integrand
+are exactly the processes indistinguishable from one of them. -/
+theorem isItoIntegral_iff_indist (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) : IsItoIntegral ℱ P W H J ↔ I ≡ᵐ[P] J :=
+  ⟨isItoIntegral_unique hW hI, hI.congr⟩
+
+namespace IsItoIntegral
+
+/-- **Integrand congruence**: predictable integrands agreeing `(dt × P)`-a.e. on every finite
+horizon have `P`-indistinguishable continuous Itô integrals against `W`. -/
+theorem indist_of_ae_eq (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hHK : ∀ t : ℝ≥0, Function.uncurry H =ᵐ[(timeMeasure t).prod P]
+      Function.uncurry K)
+    (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J) :
+    I ≡ᵐ[P] J := by
+  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
+  exact isItoIntegral_unique hW (hI.congr_integrand hJ.isStronglyPredictable hHK) hJ
+
+/-- Multiplying an integrand after time `u` by a bounded `ℱ u`-measurable `ξ` yields the post-`u`
+Itô integral `t ↦ ξ * (I t - I (min u t))`, without assuming path continuity of `W`. -/
+theorem indicator_Ioi_bdd_mul (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) {u : ℝ≥0} {ξ : Ω → ℝ}
+    (hξ : StronglyMeasurable[ℱ u] ξ) (hb : ∃ C : ℝ, ∀ ω, ‖ξ ω‖ ≤ C) :
+    IsItoIntegral ℱ P W (fun t ω ↦ (Ioi u).indicator (fun s ↦ ξ ω * H s ω) t)
+      (fun t ω ↦ ξ ω * (I t ω - I (min u t) ω)) := by
+  obtain ⟨Cξ, hCξ⟩ := hb
+  refine ⟨hI.isStronglyPredictable.indicator_Ioi_mul hξ,
+    hI.ae_continuous.mono fun _ hω ↦ by fun_prop, fun t ↦ ?_⟩
+  obtain ⟨n, τ, a, hτ, ha, henergy, hgains⟩ := hI.exists_approx t
+  have hgains_min := hI.tendstoInMeasure_simpleGains (t := min u t) hW hτ ha fun ε hε ↦
+    MeasureTheory.tendsto_measure_lintegral_mono (timeMeasure_mono (min_le_right u t)) henergy hε
+  refine ⟨n, fun k i ↦ max (τ k i) u, fun k i ω ↦ ξ ω * a k i ω,
+    fun k _ hi _ hj hij ↦ max_le_max_right u (hτ k hi hj hij),
+    fun k i hi ↦ (hξ.mono (ℱ.mono (le_max_right _ _))).mul
+      ((ha k i hi).mono (ℱ.mono (le_max_left _ _))),
+    fun _ hε ↦ MeasureTheory.tendsto_measure_lintegral_enorm_sq_bdd_mul
+      (μ := timeMeasure t) (ν := P) hCξ henergy (fun k s ω ↦ by
+        rw [Finance.simpleHolding_mul_left, Finance.simpleHolding_max_eq]
+        by_cases hs : u < s
+        · simp [Set.mem_Ioi.mpr hs, ← mul_sub, eNorm_mul]
+        · simp [Set.mem_Ioi, hs]) hε,
+    ((hgains.sub hgains_min).bdd_smul hCξ).congr (fun k ↦ .of_forall fun ω ↦ by
+      rw [Finance.simpleGains_mul_left, Finance.simpleGains_max_eq, smul_eq_mul]) .rfl⟩
+
+/-- Restricting an integrand to `(u, ∞)` yields the post-`u` Itô integral
+`t ↦ I t - I (min u t)`, without assuming path continuity of `W`. -/
+theorem indicator_Ioi (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hI : IsItoIntegral ℱ P W H I) (u : ℝ≥0) :
+    IsItoIntegral ℱ P W (fun t ω ↦ (Ioi u).indicator (H · ω) t)
+      (fun t ω ↦ I t ω - I (min u t) ω) := by
+  simpa only [one_mul] using hI.indicator_Ioi_bdd_mul hW (u := u) (ξ := fun _ ↦ 1)
+    stronglyMeasurable_const ⟨1, fun _ ↦ by norm_num⟩
 
 end IsItoIntegral
 
@@ -490,16 +542,5 @@ theorem _root_.TauCeti.ElementaryIntegrand.tendsto_measure_le_lintegral_of_tends
       (fun k ↦ (((K k).isStronglyPredictable.sub (hH k)).mono
         ℱ.predictable_le_prod).aestronglyMeasurable)
       hK hε
-
-/-- Representative independence of the Brownian Itô integral: Itô integrals of predictable
-integrands that agree `(timeMeasure T).prod P`-almost everywhere on every finite horizon are
-indistinguishable. Neither local square integrability nor Brownian path continuity is required. -/
-theorem IsFilteredPreBrownianReal.itoIntegral_local_congr
-    (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral ℱ P W K J)
-    (hHK : ∀ T : ℝ≥0, Function.uncurry H =ᵐ[(timeMeasure T).prod P] Function.uncurry K) :
-    I ≡ᵐ[P] J := by
-  have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  exact isItoIntegral_unique hW (hI.congr_integrand_ae hJ.isStronglyPredictable hHK) hJ
 
 end TauCeti.Probability

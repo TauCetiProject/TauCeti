@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Birational.TopologicalDegree.Basic
 public import TauCeti.AlgebraicGeometry.Birational.FunctionField.Determination
 public import TauCeti.AlgebraicGeometry.Birational.PartialIso
 public import TauCeti.AlgebraicGeometry.Birational.InversePartialIso
+public import TauCeti.AlgebraicGeometry.Morphisms.Modification.FunctionField
 
 /-!
 # Topological degree one
@@ -57,6 +58,8 @@ the inverse of the pullback
   when `f^*` is an isomorphism of fields.
 * `AlgebraicGeometry.Scheme.RationalMap.topologicalDegree_eq_one_of_comp_eq_id`: if `g ∘ f = id`
   for dominant `f` and `g`, then `e(f) = e(g) = 1`.
+* `TauCeti.AlgebraicGeometry.IsModification.topologicalDegree_toRationalMap`: a modification of
+  integral schemes has topological degree `1`.
 * `AlgebraicGeometry.Scheme.PartialIso.topologicalDegree_toRationalMap`: the rational map of a
   partial isomorphism has topological degree `1`.
 * `AlgebraicGeometry.Scheme.RationalMap.topologicalDegree_eq_one_iff_exists_comp_eq_id`: a
@@ -105,6 +108,14 @@ theorem RationalMap.topologicalDegree_eq_one_iff_isIso (f : X ⤏ Y) [f.IsDomina
     f.topologicalDegree = 1 ↔ IsIso f.functionFieldMap :=
   (topologicalDegree_eq_one_iff_bijective f).trans
     (ConcreteCategory.isIso_iff_bijective f.functionFieldMap).symm
+
+/-- **A modification has topological degree one**: a modification `f : X ⟶ Y` of integral schemes
+induces an isomorphism of function fields. -/
+theorem _root_.TauCeti.AlgebraicGeometry.IsModification.topologicalDegree_toRationalMap
+    (f : X ⟶ Y) [TauCeti.AlgebraicGeometry.IsModification f] :
+    f.toRationalMap.topologicalDegree = 1 := by
+  rw [RationalMap.topologicalDegree_eq_one_iff_isIso, Hom.functionFieldMap_toRationalMap]
+  infer_instance
 
 /-- If `g ∘ f = id` for dominant rational maps `f : X ⤏ Y` and `g : Y ⤏ X` of integral schemes,
 then `e(f) = e(g) = 1`: their product is `e(id) = 1`. -/

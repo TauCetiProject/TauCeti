@@ -70,6 +70,8 @@ an affine parametrization with a segment whose terminal endpoint is removed.
 * `TauCeti.eq_of_mem_segment_zero_left_of_norm_eq` — the norm separates the points of `[0, w]`.
 * `TauCeti.norm_mem_Icc_of_mem_segment` — a chord of length at most `r` between two vectors of
   norm `r` stays in the annulus `r / 2 ≤ ‖z‖ ≤ r`.
+* `TauCeti.norm_lineMap_le_of_norm_le` — the segment between two points of the closed ball of
+  radius `r` about the origin stays in that ball.
 * `TauCeti.mem_segment_zero_left_iff_real_inner_eq_norm_mul_and_norm_le` and
   `TauCeti.zero_mem_segment_iff_real_inner_eq_neg_norm_mul` — the two criteria in a real inner
   product space.
@@ -258,6 +260,13 @@ theorem norm_mem_Icc_of_mem_segment {r : ℝ} {p q z : E} (hp : ‖p‖ = r) (hq
   refine ⟨by linarith [norm_sub_norm_le p z, norm_sub_norm_le q z, norm_sub_rev z q], ?_⟩
   exact mem_closedBall_zero_iff.1 ((convex_closedBall (0 : E) r).segment_subset
     (mem_closedBall_zero_iff.2 hp.le) (mem_closedBall_zero_iff.2 hq.le) hz)
+
+/-- **Segments stay in a centred closed ball.** If `‖x‖ ≤ r` and `‖y‖ ≤ r`, then every point
+`AffineMap.lineMap x y t` with `t ∈ [0, 1]` has norm at most `r`, since closed balls are convex. -/
+theorem norm_lineMap_le_of_norm_le {x y : E} {r t : ℝ} (hx : ‖x‖ ≤ r) (hy : ‖y‖ ≤ r)
+    (ht : t ∈ Icc (0 : ℝ) 1) : ‖AffineMap.lineMap x y t‖ ≤ r :=
+  mem_closedBall_zero_iff.1 ((convex_closedBall (0 : E) r).lineMap_mem
+    (mem_closedBall_zero_iff.2 hx) (mem_closedBall_zero_iff.2 hy) ht)
 
 /-- The segment from a point `T` of the open ball of radius `μ ‖c‖` about `μ • c`, for some
 `μ > 0`, to `c` avoids the origin: such points lie in the open cone of positive multiples of the

@@ -119,6 +119,18 @@ lemma IsLocallyZero.comp_continuous [Zero M] {φ : (ι → X) → M} (hφ : IsLo
   obtain ⟨U, hU, hφU⟩ := hφ (f x)
   exact ⟨f ⁻¹' U, hf.continuousAt hU, fun y hy ↦ hφU _ hy⟩
 
+/-- Being locally zero is a local property: a function on tuples of points of `X` is locally zero
+once every point of `X` has a neighbourhood `U` such that its restriction to tuples of points of
+`U` is locally zero on `U`. The converse is `IsLocallyZero.comp_continuous` along the inclusions. -/
+lemma isLocallyZero_of_forall_nhds [Zero M] {φ : (ι → X) → M}
+    (h : ∀ x : X, ∃ U ∈ 𝓝 x, IsLocallyZero fun y : ι → U ↦ φ (Subtype.val ∘ y)) :
+    IsLocallyZero φ := by
+  intro x
+  obtain ⟨U, hU, hφU⟩ := h x
+  obtain ⟨V, hV, hφV⟩ := hφU ⟨x, mem_of_mem_nhds hU⟩
+  obtain ⟨W, hW, hWV⟩ := (mem_nhds_subtype U _ V).1 hV
+  exact ⟨W ∩ U, inter_mem hW hU, fun y hy ↦ hφV (fun i ↦ ⟨y i, (hy i).2⟩) fun i ↦ hWV (hy i).1⟩
+
 /-- A locally zero function vanishes on every constant tuple. -/
 lemma IsLocallyZero.apply_const [Zero M] {φ : (ι → X) → M} (hφ : IsLocallyZero φ)
     (x : X) : φ (fun _ ↦ x) = 0 := by
@@ -355,6 +367,27 @@ lemma cohomologyMap_id (n : ℕ) : cohomologyMap R M (ContinuousMap.id X) n = �
 lemma cohomologyMap_comp (f : C(Y, X)) (g : C(Z, Y)) (n : ℕ) :
     cohomologyMap R M (f.comp g) n = cohomologyMap R M f n ≫ cohomologyMap R M g n := by
   rw [cohomologyMap, cochainComplexMap_comp, HomologicalComplex.homologyMap_comp]
+
+/-- A class of `H^n(X; M)` that restricts to zero on a subspace `U` restricts to zero on every
+subspace `N ⊆ U`. -/
+theorem cohomologyMap_subtypeVal_apply_eq_zero_of_subset {N U : Set X} (hNU : N ⊆ U) {n : ℕ}
+    {c : cohomology R X M n}
+    (hc : (cohomologyMap R M (ContinuousMap.subtypeVal U) n).hom c = 0) :
+    (cohomologyMap R M (ContinuousMap.subtypeVal N) n).hom c = 0 := by
+  rw [← ContinuousMap.subtypeVal_comp_inclusion hNU, cohomologyMap_comp,
+    ConcreteCategory.comp_apply, hc, map_zero]
+
+variable {R M} in
+/-- If the cocycle `z` is represented by `φ`, then its pullback along `f` is represented by
+`y ↦ φ (f ∘ y)`. -/
+lemma iCycles_cyclesMap_apply_of_eq_cochainClass (f : C(Y, X)) {n : ℕ}
+    {z : (cochainComplex R X M).cycles n} {φ : (Fin (n + 1) → X) → M}
+    (hz : ((cochainComplex R X M).iCycles n).hom z = cochainClass R X M n φ) :
+    ((cochainComplex R Y M).iCycles n).hom
+        ((HomologicalComplex.cyclesMap (cochainComplexMap R M f) n).hom z) =
+      cochainClass R Y M n fun y ↦ φ (f ∘ y) := by
+  rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply,
+    hz, cochainComplexMap_f_cochainClass]
 
 /-- The **Alexander–Spanier cochain complex** as a contravariant functor on topological
 spaces. -/
