@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient.Operations
 public import TauCeti.Geometry.Manifold.Quotient.Section
 public import TauCeti.Geometry.Manifold.VectorBundle.TensorProduct
-public import TauCeti.Topology.VectorBundle.TensorProduct.OrbitRelQuotient
 
 /-!
 # Compatibility of quotient bundle descent with tensor products
@@ -69,7 +69,7 @@ theorem _root_.ContMDiff.section_tmul_orbitRelQuotientRec
   (contMDiff_section_orbitRelQuotientRec_iff hm).2 (ht₁_smooth.tmul_section ht₂_smooth)
 
 /-- **Quotient `C^m` universal property of `V₁ ⊗ V₂`.** Into any normed-fibre target bundle `V₃`
-over `M ⧸ G`, the descended linear bundle map `orbitRelQuotientRec (bundleTensorLift Φ) ...`
+over `M ⧸ G`, the descended linear bundle map `orbitRelQuotientRec (fun x ↦ (Φ x).tensorLift) ...`
 induces a `C^m` map of total spaces (`m ≤ n`) iff the invariant bilinear family `Φ` is `C^m`. -/
 theorem contMDiff_totalSpaceMap_bundleTensorLift_orbitRelQuotientRec_iff
     {F₃ : Type*} [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃]
@@ -85,11 +85,16 @@ theorem contMDiff_totalSpaceMap_bundleTensorLift_orbitRelQuotientRec_iff
     ContMDiff (I.prod 𝓘(𝕜, ProjectiveTensor 𝕜 F₁ F₂)) (I.prod 𝓘(𝕜, F₃)) m (fun p :
         TotalSpace (ProjectiveTensor 𝕜 F₁ F₂) (fun q ↦ V₁ q ⊗[𝕜] V₂ q) ↦ TotalSpace.mk' F₃ p.proj
           (MulAction.orbitRelQuotientRec (V := fun q ↦ V₁ q ⊗[𝕜] V₂ q →L[𝕜] V₃ q)
-            (bundleTensorLift Φ) (bundleTensorLift_smul_heq hΦ) p.proj p.snd)) ↔
+            (fun x ↦ (Φ x).tensorLift)
+            (MulAction.apply_smul_heq (fun _ (B : _ →L[𝕜] _ →L[𝕜] _) ↦ B.tensorLift) hΦ)
+            p.proj p.snd)) ↔
       ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₂ →L[𝕜] F₃)) m (fun x ↦ TotalSpace.mk'
         (F₁ →L[𝕜] F₂ →L[𝕜] F₃) (E := fun q ↦ V₁ q →L[𝕜] V₂ q →L[𝕜] V₃ q)
         (Quotient.mk (MulAction.orbitRel G M) x) (Φ x)) := by
-  conv_lhs => enter [4, p]; rw [← bundleTensorLift_orbitRelQuotientRec hΦ]
+  conv_lhs =>
+    enter [4, p]
+    rw [← MulAction.apply_orbitRelQuotientRec (fun _ (B : _ →L[𝕜] _ →L[𝕜] _) ↦ B.tensorLift) hΦ,
+      ← bundleTensorLift_eq]
   rw [← contMDiff_hom_bundle_iff (IB := I) (bundleTensorLift
       (MulAction.orbitRelQuotientRec (V := fun q ↦ V₁ q →L[𝕜] V₂ q →L[𝕜] V₃ q) Φ hΦ)),
     contMDiff_bundleTensorLift_iff, contMDiff_section_orbitRelQuotientRec_iff hm]
@@ -113,7 +118,7 @@ variable {F₁' F₂' : Type*} [NormedAddCommGroup F₁'] [NormedSpace 𝕜 F₁
     V₂' (Quotient.mk (MulAction.orbitRel G M) x)}
 
 /-- If two invariant linear families `φ₁` and `φ₂` are `C^m` upstairs (`m ≤ n`), the descent of
-`bundleTensorMap φ₁ φ₂` induces a `C^m` map of tensor-product total spaces over `M ⧸ G`. -/
+`x ↦ (φ₁ x).tensorMap (φ₂ x)` induces a `C^m` map of tensor-product total spaces over `M ⧸ G`. -/
 theorem _root_.ContMDiff.totalSpaceMap_bundleTensorMap_orbitRelQuotientRec
     (hφ₁_smooth : ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₁')) m (fun x ↦ TotalSpace.mk'
       (F₁ →L[𝕜] F₁') (E := fun q ↦ V₁ q →L[𝕜] V₁' q)
@@ -127,7 +132,10 @@ theorem _root_.ContMDiff.totalSpaceMap_bundleTensorMap_orbitRelQuotientRec
       (fun p : TotalSpace (ProjectiveTensor 𝕜 F₁ F₂) (fun q ↦ V₁ q ⊗[𝕜] V₂ q) ↦ TotalSpace.mk'
         (ProjectiveTensor 𝕜 F₁' F₂') (E := fun q ↦ V₁' q ⊗[𝕜] V₂' q) p.proj
         (MulAction.orbitRelQuotientRec (V := fun q ↦ V₁ q ⊗[𝕜] V₂ q →L[𝕜] V₁' q ⊗[𝕜] V₂' q)
-          (bundleTensorMap φ₁ φ₂) (bundleTensorMap_smul_heq hφ₁ hφ₂) p.proj p.snd)) := by
+          (fun x ↦ (φ₁ x).tensorMap (φ₂ x))
+          (MulAction.apply₂_smul_heq (fun _ (A₁ : _ →L[𝕜] _) (A₂ : _ →L[𝕜] _) ↦ A₁.tensorMap A₂)
+            hφ₁ hφ₂)
+          p.proj p.snd)) := by
   let _ : ∀ q, IsTopologicalAddGroup (V₁' q ⊗[𝕜] V₂' q) := fun _ ↦ inferInstance
   let _ : ∀ q, ContinuousSMul 𝕜 (V₁' q ⊗[𝕜] V₂' q) := fun _ ↦ inferInstance
   exact ((contMDiff_hom_bundle_iff (IB := I) (bundleTensorMap
@@ -135,10 +143,12 @@ theorem _root_.ContMDiff.totalSpaceMap_bundleTensorMap_orbitRelQuotientRec
     (MulAction.orbitRelQuotientRec (V := fun q ↦ V₂ q →L[𝕜] V₂' q) φ₂ hφ₂))).1
     (contMDiff_bundleTensorMap ((contMDiff_section_orbitRelQuotientRec_iff hm).2 hφ₁_smooth)
       ((contMDiff_section_orbitRelQuotientRec_iff hm).2 hφ₂_smooth))).congr fun p ↦ by
-    rw [bundleTensorMap_orbitRelQuotientRec]
+    rw [bundleTensorMap_eq, MulAction.apply₂_orbitRelQuotientRec
+      (fun _ (A₁ : _ →L[𝕜] _) (A₂ : _ →L[𝕜] _) ↦ A₁.tensorMap A₂) hφ₁ hφ₂]
 
 /-- If two invariant `C^m` linear families `φ₁` and `φ₂` (`m ≤ n`) are fibrewise bijective
-upstairs, the descent of `bundleTensorMap φ₁ φ₂` underlies a `C^m` diffeomorphism over `M ⧸ G`. -/
+upstairs, the descent of `x ↦ (φ₁ x).tensorMap (φ₂ x)` underlies a `C^m` diffeomorphism over
+`M ⧸ G`. -/
 theorem exists_bundleDiffeomorph_bundleTensorMap_orbitRelQuotientRec
     (hφ₁ : ∀ (g : G) (x : M), φ₁ (g • x) ≍ φ₁ x) (hφ₂ : ∀ (g : G) (x : M), φ₂ (g • x) ≍ φ₂ x)
     (hm : m ≤ n)
@@ -155,12 +165,16 @@ theorem exists_bundleDiffeomorph_bundleTensorMap_orbitRelQuotientRec
       ⇑Φ = fun p ↦ TotalSpace.mk' (ProjectiveTensor 𝕜 F₁' F₂') (E := fun q ↦ V₁' q ⊗[𝕜] V₂' q)
         p.proj (MulAction.orbitRelQuotientRec
           (V := fun q ↦ V₁ q ⊗[𝕜] V₂ q →L[𝕜] V₁' q ⊗[𝕜] V₂' q)
-          (bundleTensorMap φ₁ φ₂) (bundleTensorMap_smul_heq hφ₁ hφ₂) p.proj p.snd) := by
+          (fun x ↦ (φ₁ x).tensorMap (φ₂ x))
+          (MulAction.apply₂_smul_heq (fun _ (A₁ : _ →L[𝕜] _) (A₂ : _ →L[𝕜] _) ↦ A₁.tensorMap A₂)
+            hφ₁ hφ₂)
+          p.proj p.snd) := by
   rw [exists_bundleDiffeomorph_iff]
   refine ⟨hφ₁_smooth.totalSpaceMap_bundleTensorMap_orbitRelQuotientRec hφ₂_smooth hφ₁ hφ₂ hm,
     Quotient.ind fun x ↦ ?_⟩
-  rw [MulAction.orbitRelQuotientRec_mk, bundleTensorMap_eq]
-  exact (φ₁ x).tensorMap_bijective (hbij₁ x) (hbij₂ x)
+  rw [MulAction.orbitRelQuotientRec_mk,
+    ← ContinuousLinearMap.coe_coe, ContinuousLinearMap.toLinearMap_tensorMap]
+  exact _root_.TensorProduct.map_bijective (hbij₁ x) (hbij₂ x)
 
 end MapManifold
 

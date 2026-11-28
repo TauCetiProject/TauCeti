@@ -938,10 +938,9 @@ theorem ContMDiffWithinAt.clm_bundle_precomp (V₃ : B → Type*) {n : ℕ∞ω}
       fun y ↦ L (ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ (b x) (b y) (b x) (b y) (A y)) := by
     filter_upwards
       [hA.1.insert.continuousWithinAt.eventually_mem_baseSet_trivializationAt F₁ V₁,
-        hA.1.insert.continuousWithinAt.eventually_mem_baseSet_trivializationAt F₂ V₂,
         hA.1.insert.continuousWithinAt.eventually_mem_baseSet_trivializationAt F₃ V₃]
-      with y hy₁ hy₂ hy₃
-    exact ContinuousLinearMap.inCoordinates_precomp V₃ (A y) hy₁ hy₂ hy₃
+      with y hy₁ hy₃
+    exact ContinuousLinearMap.inCoordinates_precomp V₃ (A y) hy₁ hy₃
   exact (L.contDiff.contMDiff.contMDiffAt.comp_contMDiffWithinAt x
     hA.2).congr_of_eventuallyEq_insert heq
 

@@ -131,10 +131,9 @@ theorem contMDiffWithinAt_clm_bundle_dual_precomp_iff {b : M → B}
         (fun z ↦ StrongDual 𝕜 (V₂ z)) (StrongDual 𝕜 F₁) (fun z ↦ StrongDual 𝕜 (V₁ z))
         (b x) (b y) (b x) (b y) (.precomp 𝕜 (A y))) := by
     filter_upwards
-      [hdual.1.insert.continuousWithinAt.eventually_mem_baseSet_trivializationAt F₁ V₁,
-        hdual.1.insert.continuousWithinAt.eventually_mem_baseSet_trivializationAt F₂ V₂]
-      with y hy₁ hy₂
-    rw [ContinuousLinearMap.inCoordinates_precomp (F₃ := 𝕜) (Trivial B 𝕜) (A y) hy₁ hy₂
+      [hdual.1.insert.continuousWithinAt.eventually_mem_baseSet_trivializationAt F₁ V₁]
+      with y hy₁
+    rw [ContinuousLinearMap.inCoordinates_precomp (F₃ := 𝕜) (Trivial B 𝕜) (A y) hy₁
       (by simp [Trivial.eq_trivialization]), hret]
   exact hcomp.congr_of_eventuallyEq_insert heq
 
@@ -209,25 +208,13 @@ theorem exists_bundleDiffeomorph_dual_precomp_iff (ψ : ∀ x, V₁ x →L[𝕜]
       StrongDual 𝕜 (V₂ x) →L[𝕜] StrongDual 𝕜 (V₁ x))),
     exists_bundleDiffeomorph_iff ψ, contMDiff_totalSpaceMap_dual_precomp_iff]
   refine and_congr_right fun _ ↦ forall_congr' fun x ↦ ?_
-  let e₁ := (trivializationAt F₁ V₁ x).continuousLinearEquivAt 𝕜 x
-    (mem_baseSet_trivializationAt F₁ V₁ x)
-  let e₂ := (trivializationAt F₂ V₂ x).continuousLinearEquivAt 𝕜 x
-    (mem_baseSet_trivializationAt F₂ V₂ x)
-  let T : F₁ →L[𝕜] F₂ := e₂.toContinuousLinearMap.comp ((ψ x).comp e₁.symm.toContinuousLinearMap)
-  have hdual : (e₁.arrowCongr (.refl 𝕜 𝕜) : StrongDual 𝕜 (V₁ x) → StrongDual 𝕜 F₁) ∘
-      (ContinuousLinearMap.precomp 𝕜 (ψ x) : StrongDual 𝕜 (V₂ x) →L[𝕜] StrongDual 𝕜 (V₁ x)) ∘
-        (e₂.arrowCongr (.refl 𝕜 𝕜)).symm = ContinuousLinearMap.precomp 𝕜 T := by
-    ext α v; simp [T, ContinuousLinearEquiv.arrowCongr_apply]
-  have h1 : Function.Bijective
-      (ContinuousLinearMap.precomp 𝕜 T : StrongDual 𝕜 F₂ →L[𝕜] StrongDual 𝕜 F₁) ↔
-      Function.Bijective (ContinuousLinearMap.precomp 𝕜 (ψ x) :
-        StrongDual 𝕜 (V₂ x) →L[𝕜] StrongDual 𝕜 (V₁ x)) := by
-    rw [← hdual, EquivLike.comp_bijective, EquivLike.bijective_comp]
-  have h2 : Function.Bijective T ↔ Function.Bijective (ψ x) := by
-    have hT : (T : F₁ → F₂) = e₂ ∘ (ψ x) ∘ e₁.symm := by
-      simp only [T, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe]
-    rw [hT, EquivLike.comp_bijective, EquivLike.bijective_comp]
-  exact h1.symm.trans (T.precomp_bijective_iff_of_finiteDimensional.trans h2)
+  have := VectorBundle.isTopologicalAddGroup 𝕜 F₁ V₁ x
+  have := VectorBundle.continuousSMul 𝕜 F₁ V₁ x
+  let := FiberBundle.t2Space F₁ V₁ x
+  let := FiberBundle.t2Space F₂ V₂ x
+  let := VectorBundle.finiteDimensional 𝕜 F₁ V₁ x
+  let := VectorBundle.finiteDimensional 𝕜 F₂ V₂ x
+  exact (ψ x).precomp_bijective_iff_of_finiteDimensional
 
 end FiniteRankDual
 

@@ -661,7 +661,6 @@ theorem ContinuousLinearMap.inCoordinates_precomp (V₃ : B → Type*)
     [TopologicalSpace (TotalSpace F₃ V₃)] [FiberBundle F₃ V₃] [VectorBundle 𝕜 F₃ V₃]
     {x₀ y : B} (A : V₁ y →L[𝕜] V₂ y)
     (hy₁ : y ∈ (trivializationAt F₁ V₁ x₀).baseSet)
-    (hy₂ : y ∈ (trivializationAt F₂ V₂ x₀).baseSet)
     (hy₃ : y ∈ (trivializationAt F₃ V₃ x₀).baseSet) :
     ContinuousLinearMap.inCoordinates (F₂ →L[𝕜] F₃) (fun z ↦ V₂ z →L[𝕜] V₃ z)
       (F₁ →L[𝕜] F₃) (fun z ↦ V₁ z →L[𝕜] V₃ z) x₀ y x₀ y
@@ -670,23 +669,15 @@ theorem ContinuousLinearMap.inCoordinates_precomp (V₃ : B → Type*)
         (ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ x₀ y x₀ y A) := by
   have hy₁₃ : y ∈ (trivializationAt (F₁ →L[𝕜] F₃) (fun z ↦ V₁ z →L[𝕜] V₃ z) x₀).baseSet := by
     rw [hom_trivializationAt_baseSet]; exact ⟨hy₁, hy₃⟩
-  have hy₂₃ : y ∈ (trivializationAt (F₂ →L[𝕜] F₃) (fun z ↦ V₂ z →L[𝕜] V₃ z) x₀).baseSet := by
-    rw [hom_trivializationAt_baseSet]; exact ⟨hy₂, hy₃⟩
   ext g v
-  let f := (trivializationAt F₃ V₃ x₀).symmL 𝕜 y ∘L g ∘L
-    (trivializationAt F₂ V₂ x₀).continuousLinearMapAt 𝕜 y
   have hsymm :
-      (trivializationAt (F₂ →L[𝕜] F₃) (fun z ↦ V₂ z →L[𝕜] V₃ z) x₀).symmL 𝕜 y g = f := by
-    have hg : (trivializationAt (F₂ →L[𝕜] F₃)
-        (fun z ↦ V₂ z →L[𝕜] V₃ z) x₀).continuousLinearMapAt 𝕜 y f = g := by
-      rw [Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _ hy₂₃, hom_trivializationAt_apply]
-      ext u
-      simp [f, ContinuousLinearMap.inCoordinates, Trivialization.continuousLinearMapAt_symmL _ hy₃,
-        Trivialization.continuousLinearMapAt_symmL _ hy₂]
-    conv_lhs => rw [← hg, Trivialization.symmL_continuousLinearMapAt _ hy₂₃]
+      (trivializationAt (F₂ →L[𝕜] F₃) (fun z ↦ V₂ z →L[𝕜] V₃ z) x₀).symmL 𝕜 y g =
+        ((trivializationAt F₃ V₃ x₀).symmL 𝕜 y).comp
+          (g.comp ((trivializationAt F₂ V₂ x₀).continuousLinearMapAt 𝕜 y)) :=
+    Bundle.Trivialization.continuousLinearMap_symmL _ _ y g
   simp [ContinuousLinearMap.inCoordinates,
     Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 _ hy₁₃, hom_trivializationAt_apply, hsymm,
-    f, Trivialization.continuousLinearMapAt_symmL _ hy₃]
+    Trivialization.continuousLinearMapAt_symmL _ hy₃]
 
 end Precomp
 

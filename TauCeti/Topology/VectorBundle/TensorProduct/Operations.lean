@@ -139,13 +139,6 @@ def _root_.ContinuousLinearMap.tensorMap (f : V₁ →L[𝕜] V₁') (g : V₂ �
     (g : V₂ →L[𝕜] V₂') :
     (f.tensorMap g).toLinearMap = _root_.TensorProduct.map f.toLinearMap g.toLinearMap := (rfl)
 
-/-- The tensor product of two bijective continuous linear maps is bijective. -/
-theorem _root_.ContinuousLinearMap.tensorMap_bijective {f : V₁ →L[𝕜] V₁'} {g : V₂ →L[𝕜] V₂'}
-    (hf : Function.Bijective f) (hg : Function.Bijective g) :
-    Function.Bijective (f.tensorMap g) :=
-  (_root_.TensorProduct.congr (LinearEquiv.ofBijective f.toLinearMap hf)
-    (LinearEquiv.ofBijective g.toLinearMap hg)).bijective
-
 end SingleFiberMap
 
 section CommRingFiber
