@@ -52,8 +52,9 @@ factorial and inverse-factorial norm bounds in any normed algebra or normed divi
   `log_p max(|κ|, 1) + 1`.
 * `Padic.norm_factorial_mul`: `‖(p k)!‖ = p ^ (-k) ‖k!‖` in `ℚ_[p]`, by Legendre's formula.
 * `Padic.rpow_neg_div_le_norm_factorial`: `p ^ (-n / (p - 1)) ≤ ‖n!‖` in `ℚ_[p]`.
-* `TauCeti.rpow_neg_div_le_norm_factorial`: Legendre's lower bound for `‖(n! : K)‖` in any
-  seminormed `ℚ_[p]`-algebra with `‖1‖ = 1`.
+* `TauCeti.rpow_neg_div_le_norm_factorial`, `TauCeti.norm_factorial_pow_prime`: Legendre's
+  lower bound and exact prime-power factorial norm for `‖(n! : K)‖` in any seminormed
+  `ℚ_[p]`-algebra with `‖1‖ = 1`.
 * `TauCeti.norm_inv_factorial_le`, `TauCeti.norm_inv_factorial_le_rpow_sub_one_div`,
   `TauCeti.norm_inv_factorial_pow_prime`, `TauCeti.norm_inv_factorial_pow_prime_mul_rpow`,
   `TauCeti.le_norm_inv_factorial_pow_prime_mul_pow`,
@@ -287,6 +288,15 @@ namespace TauCeti
 
 open scoped Nat
 
+/-- If `0 < r` and `r ^ (n - 1) ≤ ‖c‖`, then `‖xⁿ / c‖ ≤ ‖x‖ (‖x‖ / r) ^ (n - 1)` for `n ≠ 0`. -/
+theorem norm_pow_div_le_of_le_norm {D : Type*} [NormedDivisionRing D] (x : D) {c : D} {r : ℝ}
+    (hr : 0 < r) {n : ℕ} (hn : n ≠ 0) (hc : r ^ (n - 1) ≤ ‖c‖) :
+    ‖x ^ n / c‖ ≤ ‖x‖ * (‖x‖ / r) ^ (n - 1) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+  rw [Nat.add_sub_cancel] at hc ⊢
+  rw [norm_div, norm_pow, div_pow, _root_.pow_succ', ← mul_div_assoc]
+  exact div_le_div_of_nonneg_left (by positivity) (pow_pos hr _) hc
+
 section NormedAlgebra
 
 variable {p : ℕ} [hp : Fact p.Prime] {K : Type*} [SeminormedRing K] [NormOneClass K]
@@ -298,6 +308,16 @@ theorem rpow_neg_div_le_norm_factorial (n : ℕ) :
     (p : ℝ) ^ (-((n : ℝ) / ((p : ℝ) - 1))) ≤ ‖(n ! : K)‖ := by
   rw [TauCeti.norm_natCast_eq_norm_padic (p := p)]
   exact Padic.rpow_neg_div_le_norm_factorial n
+
+/-- Exact norm of `(p ^ k)!` in any seminormed `ℚ_[p]`-algebra with `‖(1 : K)‖ = 1`: since
+`p ^ k` has base-`p` digit sum `1`, `‖((p ^ k)! : K)‖ = p ^ (-((p ^ k - 1) / (p - 1)))`. -/
+theorem norm_factorial_pow_prime (k : ℕ) :
+    ‖(((p ^ k)! : ℕ) : K)‖ = (p : ℝ) ^ (-((((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1))) := by
+  have hdiv : (padicValNat p (p ^ k)! : ℝ) = (((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1) := by
+    simpa only [Nat.padicValNat_def, Nat.cast_pow] using cast_multiplicity_factorial_pow p k
+  rw [TauCeti.norm_natCast_eq_norm_padic (p := p),
+    Padic.norm_natCast_eq_zpow (Nat.factorial_ne_zero _), ← Real.rpow_intCast]
+  simp [hdiv]
 
 end NormedAlgebra
 
@@ -331,11 +351,8 @@ theorem norm_inv_factorial_le_rpow_sub_one_div {n : ℕ} (hn : n ≠ 0) :
 base-`p` digit sum `1`, `‖((p ^ k)!)⁻¹‖ = p ^ ((p ^ k - 1) / (p - 1))`. -/
 theorem norm_inv_factorial_pow_prime (k : ℕ) :
     ‖(((p ^ k)! : ℕ) : D)⁻¹‖ = (p : ℝ) ^ ((((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1)) := by
-  have hdiv : (padicValNat p (p ^ k)! : ℝ) = (((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1) := by
-    simpa only [Nat.padicValNat_def, Nat.cast_pow] using cast_multiplicity_factorial_pow p k
-  rw [norm_inv, TauCeti.norm_natCast_eq_norm_padic (p := p),
-    Padic.norm_natCast_eq_zpow (Nat.factorial_ne_zero _)]
-  simp [← Real.rpow_natCast, hdiv]
+  rw [norm_inv, norm_factorial_pow_prime (p := p) (K := D) k,
+    Real.rpow_neg (Nat.cast_nonneg p), inv_inv]
 
 /-- At the critical radius `p ^ (-1 / (p - 1))`, the weighted inverse factorials along `n = p ^ k`
 equal `p ^ (-1 / (p - 1))`. -/
@@ -374,23 +391,13 @@ theorem norm_inv_factorial_mul_pow_le {r : ℝ} (hr0 : 0 ≤ r)
           have hexp : (n : ℝ) / ((p : ℝ) - 1) + -((p : ℝ) - 1)⁻¹ * (n : ℝ) = 0 := by ring
           rw [hexp, Real.rpow_zero]
 
-omit [NormedAlgebra ℚ_[p] D] in
-/-- If `r₀ ^ (n - 1) ≤ ‖c‖`, then `‖xⁿ / c‖ ≤ ‖x‖ (‖x‖ / r₀) ^ (n - 1)` for `n ≠ 0`. -/
-theorem norm_pow_div_le_of_le_norm (x : D) {c : D} {n : ℕ} (hn : n ≠ 0)
-    (hc : amiceRadius p 0 ^ (n - 1) ≤ ‖c‖) :
-    ‖x ^ n / c‖ ≤ ‖x‖ * (‖x‖ / amiceRadius p 0) ^ (n - 1) := by
-  have hr := amiceRadius_pos (p := p) 0
-  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  rw [Nat.add_sub_cancel] at hc ⊢
-  rw [norm_div, norm_pow, div_pow, _root_.pow_succ', ← mul_div_assoc]
-  exact div_le_div_of_nonneg_left (by positivity) (pow_pos hr _) hc
-
 /-- **The terms of the exponential series on its disc.** For `n ≠ 0`,
 `‖xⁿ / n!‖ ≤ ‖x‖ (‖x‖ / r₀) ^ (n - 1)`. When `‖x‖ < r₀` the terms decay geometrically, and every
 term of degree at least two is strictly smaller than a nonzero `x`. -/
 theorem norm_pow_div_factorial_le (x : D) {n : ℕ} (hn : n ≠ 0) :
     ‖x ^ n / (n ! : D)‖ ≤ ‖x‖ * (‖x‖ / amiceRadius p 0) ^ (n - 1) :=
-  norm_pow_div_le_of_le_norm x hn (amiceRadius_zero_pow_sub_one_le_norm_factorial hn)
+  norm_pow_div_le_of_le_norm x (amiceRadius_pos 0) hn
+    (amiceRadius_zero_pow_sub_one_le_norm_factorial hn)
 
 end NormedDivisionRing
 

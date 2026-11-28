@@ -157,8 +157,7 @@ tend to zero, and no bound `ρⁿ ≤ ‖⌊n / pʰ⌋!‖` holds for all `n` wi
 theorem norm_factorial_pow_eq_mul_amiceRadius_pow (h k : ℕ) :
     ‖((p ^ k)! : ℚ_[p])‖ = (p : ℝ) ^ (1 / ((p : ℝ) - 1)) * amiceRadius p h ^ p ^ (h + k) := by
   have hp0 := natCast_pos (p := p)
-  rw [norm_natCast_eq_rpow (factorial_ne_zero _), Nat.padicValNat_def,
-    cast_multiplicity_factorial_pow, amiceRadius_pow, ← Real.rpow_add hp0]
+  rw [norm_factorial_pow_prime (p := p) (K := ℚ_[p]) k, amiceRadius_pow, ← Real.rpow_add hp0]
   congr 1
   push_cast
   rw [pow_add]

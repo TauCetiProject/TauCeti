@@ -37,8 +37,9 @@ On the open disc `{x | ‖x‖ < amiceRadius p 0}`:
 * In any complete normed `ℚ_[p]`-algebra `A`, `exp x ≠ 0` when `A` is nontrivial
   (`TauCeti.PadicExp.exp_ne_zero`).
 * In any complete normed division algebra `D` over `ℚ_[p]`, `∑ ‖x ^ n / n!‖` converges
-  (`TauCeti.PadicExp.summable_norm_pow_div_factorial`) and `exp (-x) = (exp x)⁻¹`
-  (`TauCeti.PadicExp.exp_neg`); over a complete normed field `L` over `ℚ_[p]`,
+  (`TauCeti.PadicExp.summable_norm_pow_div_factorial`), `exp (-x) = (exp x)⁻¹`
+  (`TauCeti.PadicExp.exp_neg`), and `exp (x - y) = exp x / exp y` for commuting `x` and `y`
+  (`TauCeti.PadicExp.exp_sub_of_commute`); over a complete normed field `L` over `ℚ_[p]`,
   `exp (x - y) = exp x / exp y` (`TauCeti.PadicExp.exp_sub`).
 * In any complete ultrametric normed `ℚ_[p]`-algebra `A`, `NormedSpace.exp` satisfies the
   second-order remainder estimate `‖exp x - 1 - x‖ ≤ ‖x‖ ^ 2 * p ^ (1 / (p - 1))`
@@ -64,8 +65,9 @@ the subsequence `n = p ^ k` keeps norm at least `amiceRadius p 0`, so `∑ x ^ n
   convergence and power-series expansion of `NormedSpace.expSeries K A` (exact radius
   `ENNReal.ofReal (amiceRadius p 0)` whenever `NormOneClass A`).
 * `TauCeti.PadicExp.exp_ne_zero`, `TauCeti.PadicExp.summable_norm_pow_div_factorial`,
-  `TauCeti.PadicExp.exp_neg`, `TauCeti.PadicExp.exp_sub`: nonvanishing, absolute summability, and
-  quotient identity on `{x | ‖x‖ < amiceRadius p 0}`.
+  `TauCeti.PadicExp.exp_neg`, `TauCeti.PadicExp.exp_sub_of_commute`,
+  `TauCeti.PadicExp.exp_sub`: nonvanishing, absolute summability, and quotient identity on
+  `{x | ‖x‖ < amiceRadius p 0}`.
 * `TauCeti.PadicExp.norm_exp_sub_one_sub_le`, `TauCeti.PadicExp.norm_exp_sub_exp`,
   `TauCeti.PadicExp.exp_eq_one_iff`, `TauCeti.PadicExp.norm_exp_natCast_prime_sub_one`:
   quadratic remainder and full isometry properties on the disc of convergence.
@@ -224,6 +226,18 @@ theorem exp_neg [CompleteSpace D] {x : D} (hx : ‖x‖ < amiceRadius p 0) :
     NormedSpace.exp (-x) = (NormedSpace.exp x)⁻¹ :=
   NormedSpace.exp_neg_of_mem_ball ℚ_[p] (mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) hx)
 
+/-- On the open disc of convergence in a complete normed division algebra over `ℚ_[p]`,
+`exp (x - y) = exp x / exp y` for commuting elements `x` and `y`. -/
+theorem exp_sub_of_commute [CompleteSpace D] {x y : D} (hxy : Commute x y)
+    (hx : ‖x‖ < amiceRadius p 0) (hy : ‖y‖ < amiceRadius p 0) :
+    NormedSpace.exp (x - y) = NormedSpace.exp x / NormedSpace.exp y := by
+  have hny : ‖-y‖ < amiceRadius p 0 := by simpa using hy
+  rw [sub_eq_add_neg,
+    NormedSpace.exp_add_of_commute_of_mem_ball hxy.neg_right
+      (mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) hx)
+      (mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) hny),
+    exp_neg hy, div_eq_mul_inv]
+
 end DivisionAlgebra
 
 section UltrametricBanachAlgebra
@@ -328,13 +342,8 @@ end UltrametricBanachAlgebra
 `exp (x - y) = exp x / exp y`. -/
 theorem exp_sub {L : Type*} [NormedField L] [NormedAlgebra ℚ_[p] L] [CompleteSpace L] {x y : L}
     (hx : ‖x‖ < amiceRadius p 0) (hy : ‖y‖ < amiceRadius p 0) :
-    NormedSpace.exp (x - y) = NormedSpace.exp x / NormedSpace.exp y := by
-  have hny : ‖-y‖ < amiceRadius p 0 := by simpa using hy
-  rw [sub_eq_add_neg,
-    NormedSpace.exp_add_of_commute_of_mem_ball (Commute.all x (-y))
-      (mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) hx)
-      (mem_eball_expSeries_of_norm_lt (K := ℚ_[p]) hny),
-    exp_neg hy, div_eq_mul_inv]
+    NormedSpace.exp (x - y) = NormedSpace.exp x / NormedSpace.exp y :=
+  exp_sub_of_commute (Commute.all x y) hx hy
 
 end Disc
 

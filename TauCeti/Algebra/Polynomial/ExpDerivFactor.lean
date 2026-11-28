@@ -228,18 +228,16 @@ of a polynomial whenever `c ≠ 0`. -/
 @[simp]
 theorem natDegree_expDerivFactor (hc : c ≠ 0) (m : ℕ) (P : R[X]) :
     (expDerivFactor c m P).natDegree = P.natDegree := by
-  induction m with
-  | zero => simp
-  | succ m ih => rw [expDerivFactor_succ, natDegree_derivative_add_C_mul hc, ih]
+  simpa only [expDerivFactor_eq_iterate] using
+    natDegree_iterate_derivative_add_C_mul hc m (q := P)
 
 /-- Over a commutative semiring without zero divisors, `expDerivFactor c m` has trivial kernel
 whenever `c ≠ 0`. -/
 @[simp]
 theorem expDerivFactor_eq_zero_iff (hc : c ≠ 0) (m : ℕ) (P : R[X]) :
     expDerivFactor c m P = 0 ↔ P = 0 := by
-  induction m with
-  | zero => simp
-  | succ m ih => rw [expDerivFactor_succ, derivative_add_C_mul_eq_zero_iff hc, ih]
+  simpa only [expDerivFactor_eq_iterate] using
+    iterate_derivative_add_C_mul_eq_zero_iff hc m (q := P)
 
 /-- Over a commutative semiring without zero divisors, `expDerivFactor c m` scales the leading
 coefficient by `c ^ m` whenever `c ≠ 0`. -/
