@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Ring.Hom.Defs
+-- `SubmonoidClass`, for `MonoidHom.twistedNorm_mem`.
+public import Mathlib.Algebra.Group.Submonoid.Defs
 import Mathlib.Algebra.Group.Hom.Defs
 import Mathlib.Data.Finset.Range
 
@@ -21,6 +23,7 @@ norm** `MonoidHom.twistedNorm τ p δ` is the ordered product
 
 * `MonoidHom.twistedNorm`: the `p`-th twisted norm of `δ` under `τ : M →* M`.
 * `MonoidHom.twistedNorm_zero` and `MonoidHom.twistedNorm_succ`: defining recurrence.
+* `MonoidHom.twistedNorm_mem`: twisted norms of elements of a `τ`-stable submonoid lie in it.
 * `MonoidHom.map_twistedNorm`: a monoid homomorphism intertwining `τ` and `τ'` carries
   `twistedNorm τ` to `twistedNorm τ'`.
 * `MonoidHom.twistedNorm_eq_prod_iterate`: in a commutative monoid, `twistedNorm τ p δ` equals
@@ -53,6 +56,14 @@ theorem twistedNorm_zero (τ : M →* M) (δ : M) : twistedNorm τ 0 δ = 1 :=
 theorem twistedNorm_succ (τ : M →* M) (p : ℕ) (δ : M) :
     twistedNorm τ (p + 1) δ = δ * τ (twistedNorm τ p δ) :=
   (rfl)
+
+/-- If a submonoid `H` is stable under the endomorphism `τ`, then every twisted norm
+`twistedNorm τ p δ` of an element `δ ∈ H` lies in `H`. -/
+theorem twistedNorm_mem (τ : M →* M) {S : Type*} [SetLike S M] [SubmonoidClass S M] {H : S}
+    (hτ : ∀ x ∈ H, τ x ∈ H) {δ : M} (hδ : δ ∈ H) (p : ℕ) : twistedNorm τ p δ ∈ H := by
+  induction p with
+  | zero => rw [twistedNorm_zero]; exact one_mem H
+  | succ p ih => rw [twistedNorm_succ]; exact mul_mem hδ (hτ _ ih)
 
 /-- A monoid homomorphism `f : M →* N` intertwining `τ : M →* M` and `τ' : N →* N` carries
 `twistedNorm τ` to `twistedNorm τ'`. -/

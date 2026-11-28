@@ -54,6 +54,10 @@ clears the entries of `g` above the diagonal by an upper-unitriangular matrix ac
   the diagonal and the diagonal congruences.
 * `TauCeti.comap_generalLinearGroupMap_upperTriangularGroup`: the preimage of the
   upper-triangular group under any ring homomorphism `f` is `B(ker f)`.
+* `TauCeti.map_mem_upperUnitriangularCongruenceSubgroup`: a ring homomorphism `f` with
+  `I ≤ J.comap f` maps `U(I)` into `U(J)`.
+* `TauCeti.exists_mem_upperUnitriangularCongruenceSubgroup_coe_eq`: for `I` in the Jacobson
+  radical, a matrix that is upper unitriangular modulo `I` is invertible and lies in `U(I)`.
 * `TauCeti.UpperTriangularCongruenceSubgroup.diag`: the diagonal modulo `I`, with kernel `U(I)`
   (`TauCeti.UpperTriangularCongruenceSubgroup.ker_diag`).
 * `TauCeti.UpperTriangularCongruenceSubgroup.quotientEquiv`: `B(I) ⧸ U(I) ≃* (m → (R ⧸ I)ˣ)`
@@ -177,6 +181,21 @@ theorem comap_generalLinearGroupMap_upperUnitriangularGroup {S : Type*} [CommRin
   simp only [Subgroup.mem_comap, UpperUnitriangularGroup.mem_iff, Matrix.isUpperUnitriangular_def,
     Matrix.IsUpperTriangular, Matrix.BlockTriangular, id, GeneralLinearGroup.map_apply,
     mem_upperUnitriangularCongruenceSubgroup_iff, RingHom.mem_ker, map_sub, map_one, sub_eq_zero]
+
+/-- A ring homomorphism `f : R →+* S` with `I ≤ J.comap f` maps the upper-unitriangular
+congruence subgroup modulo `I` into the one modulo `J`. -/
+theorem map_mem_upperUnitriangularCongruenceSubgroup {S : Type*} [CommRing S] {f : R →+* S}
+    {J : Ideal S} (hf : I ≤ J.comap f) {g : GL m R}
+    (hg : g ∈ upperUnitriangularCongruenceSubgroup m I) :
+    GeneralLinearGroup.map f g ∈ upperUnitriangularCongruenceSubgroup m J := by
+  -- `U(I) ≤ U(ker (f mod J))`, and `U(ker (f mod J))` is the preimage of `U` over `S ⧸ J`.
+  have hker : I ≤ RingHom.ker ((Ideal.Quotient.mk J).comp f) := fun x hx ↦ by
+    rw [RingHom.mem_ker, RingHom.comp_apply, Ideal.Quotient.eq_zero_iff_mem]
+    exact Ideal.mem_comap.mp (hf hx)
+  have hg' := upperUnitriangularCongruenceSubgroup_mono hker hg
+  rw [← comap_generalLinearGroupMap_upperUnitriangularGroup, Subgroup.mem_comap,
+    GeneralLinearGroup.map_comp, MonoidHom.comp_apply] at hg'
+  exact map_mem_upperUnitriangularGroup_iff.mp hg'
 
 /-- Modulo the zero ideal, the upper-triangular congruence subgroup is the upper-triangular
 subgroup. -/
@@ -322,6 +341,26 @@ theorem index_upperUnitriangularCongruenceSubgroup (hI : I ≤ Ring.jacobson R) 
   have := isLocalHom_of_le_jacobson hI
   Subgroup.index_comap_of_surjective _
     (GeneralLinearGroup.map_surjective _ Ideal.Quotient.mk_surjective)
+
+/-- If `I` lies in the Jacobson radical, a matrix whose entries below the diagonal lie in `I` and
+whose diagonal entries are `≡ 1` modulo `I` is invertible, and lies in the upper-unitriangular
+congruence subgroup modulo `I`. -/
+theorem exists_mem_upperUnitriangularCongruenceSubgroup_coe_eq (hI : I ≤ Ring.jacobson R)
+    {M : Matrix m m R} (hlow : ∀ ⦃i j : m⦄, j < i → M i j ∈ I) (hdiag : ∀ i, M i i - 1 ∈ I) :
+    ∃ t ∈ upperUnitriangularCongruenceSubgroup m I, (t : Matrix m m R) = M := by
+  have := isLocalHom_of_le_jacobson hI
+  have hdiag' (i : m) : Ideal.Quotient.mk I (M i i) = 1 := by
+    rw [← map_one (Ideal.Quotient.mk I), Ideal.Quotient.eq]
+    exact hdiag i
+  have hunit : IsUnit M.det :=
+    isUnit_det_of_isUpperTriangular_map (f := Ideal.Quotient.mk I)
+      (fun i j hji ↦ by rw [map_apply, Ideal.Quotient.eq_zero_iff_mem]; exact hlow hji)
+      fun i ↦ by rw [hdiag']; exact isUnit_one
+  have hval : (GeneralLinearGroup.mk'' M hunit : Matrix m m R) = M :=
+    GeneralLinearGroup.val_mk'' M hunit
+  refine ⟨GeneralLinearGroup.mk'' M hunit, ?_, hval⟩
+  rw [mem_upperUnitriangularCongruenceSubgroup_iff, hval]
+  exact ⟨hlow, hdiag⟩
 
 open OrderDual in
 /-- **The Iwahori factorization.** If `I` lies in the Jacobson radical, every element `g` of the
