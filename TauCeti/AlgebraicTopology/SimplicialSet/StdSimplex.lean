@@ -12,6 +12,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
 public import Mathlib.AlgebraicTopology.SimplicialSet.StdSimplexOne
 public import Mathlib.Data.Finset.Sort
 public import TauCeti.AlgebraicTopology.SimplexCategory.JoinVertex
+import Mathlib.CategoryTheory.Functor.KanExtension.DenseAtYoneda
 
 /-!
 # Complements on standard simplices
@@ -31,6 +32,8 @@ faces of the increasing enumeration of a set `J` enumerate the sets `J` with one
   simplices.
 * `SSet.stdSimplex.const_app_apply`: the constant map at a vertex of `Δ[n]` sends every simplex
   to the constant simplex at that vertex.
+* `SSet.stdSimplex.asOrderHom_monotone_functor_eq_const`: a simplex of `Δ[n]` all of whose
+  vertices are `b` is, as a functor of finite linear orders, the constant functor at `b`.
 * `SSet.stdSimplex.δ_objMk_orderEmbOfFin`: the faces of the increasing enumeration of a set of
   vertices.
 * `SSet.stdSimplex.objMk_orderEmbOfFin_image`: an injective simplex is the increasing enumeration
@@ -118,6 +121,13 @@ the vertex function of the morphism `objEquiv x : ⦋d⦌ ⟶ ⦋n⦌` of the si
 @[simp]
 lemma coe_asOrderHom {n d : ℕ} (x : (Δ[n] : SSet.{u}) _⦋d⦌) : ⇑(asOrderHom x) = ⇑x :=
   rfl
+
+/-- A simplex `s` of `Δ[n]` all of whose vertices are `b`, seen through its vertex map as a functor
+`Fin (m + 1) ⥤ Fin (n + 1)`, is the constant functor at `b`. -/
+lemma asOrderHom_monotone_functor_eq_const {n : ℕ} {m : SimplexCategoryᵒᵖ}
+    (s : (Δ[n] : SSet.{u}).obj m) (b : Fin (n + 1)) (hs : ∀ k, asOrderHom s k = b) :
+    (asOrderHom s).monotone.functor = (Functor.const _).obj b :=
+  CategoryTheory.Functor.ext hs fun _ _ _ ↦ Subsingleton.elim _ _
 
 /-- The `i`-th face of the simplex of `Δ[n]` enumerating a set `J` of vertices in increasing order
 enumerates `J` with its `i`-th smallest element removed. -/
@@ -367,6 +377,9 @@ lemma objEquiv_objMk₁_last (m : ℕ) :
     objEquiv (objMk₁.{u} (Fin.last (m + 1))) = SimplexCategory.const ⦋m⦌ ⦋1⦌ 0 := by
   ext i : 3
   exact (objMk₁_apply_eq_zero_iff.{u} (Fin.last (m + 1)) i).2 (Fin.castSucc_lt_last i)
+
+/-- The standard simplex functor `SimplexCategory ⥤ SSet` is dense. -/
+instance isDense : stdSimplex.{u}.IsDense := inferInstanceAs uliftYoneda.{u}.IsDense
 
 end SSet.stdSimplex
 

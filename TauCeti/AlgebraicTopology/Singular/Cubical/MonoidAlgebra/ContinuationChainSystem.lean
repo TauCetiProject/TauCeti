@@ -65,6 +65,7 @@ relating the Barraud–Cornea cocycles of two choices of data.
 
 ## Main results
 
+* `TauCeti.continuationChainSum_mem`: the continuation sum of graded families is homogeneous.
 * `TauCeti.continuationChainSum_eq_zero_of_le` and `TauCeti.parametrizedChainSum_eq_zero_of_lt`:
   the continuation and parametrized sums of graded families vanish for degree reasons.
 * `TauCeti.continuationChainSum_eq_sum_subtype` and `TauCeti.parametrizedChainSum_eq_sum_subtype`:
@@ -153,6 +154,22 @@ theorem continuationChainSum_eq_zero_of_le
     eq_zero_of_mem_cubicalChainGrading_of_pos _ _ (by omega)
       (cubicalChainSumPairing_mem _ (hν x z) (hs' z y))
   simp [continuationChainSum_def, h₁, h₂]
+
+variable (s s' ν) in
+/-- The continuation sum of families of chains of cohomological degrees `ind y - ind x + 1`,
+`indQ y - indQ x + 1` and `indQ y - ind x` has cohomological degree `indQ y - ind x + 1`. -/
+theorem continuationChainSum_mem
+    (hs : ∀ x y, s x y ∈ cubicalChainGrading (M x y) R (ind y - ind x + 1))
+    (hs' : ∀ x y, s' x y ∈ cubicalChainGrading (M' x y) R (indQ y - indQ x + 1))
+    (hν : ∀ x y, ν x y ∈ cubicalChainGrading (N x y) R (indQ y - ind x)) (x : P) (y : Q) :
+    continuationChainSum ind indQ κ κ' R s s' ν x y ∈
+      cubicalChainGrading (N x y) R (indQ y - ind x + 1) := by
+  refine add_mem (Submodule.sum_mem _ fun z _ ↦ ?_) (Submodule.sum_mem _ fun z _ ↦ ?_)
+  · have hdeg : ind z - ind x + 1 + (indQ y - ind z) = indQ y - ind x + 1 := by ring
+    exact hdeg ▸ cubicalChainSumPairing_mem _ (hs x z) (hν z y)
+  · have hdeg : indQ z - ind x + (indQ y - indQ z + 1) = indQ y - ind x + 1 := by ring
+    rw [Units.smul_def]
+    exact zsmul_mem (hdeg ▸ cubicalChainSumPairing_mem _ (hν x z) (hs' z y)) _
 
 /-- Only the `z ∈ P` with `indQ y ≤ ind z < ind x` and the `z ∈ Q` with `indQ y < indQ z ≤ ind x`
 contribute to the continuation sum of families of chains of cohomological degrees

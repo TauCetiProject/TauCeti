@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Basic.Complex.Basic
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
-public import Mathlib.NumberTheory.LegendreSymbol.Basic
+public import Mathlib.Data.Nat.Factorization.Basic
+public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 import Mathlib.Data.Nat.ChineseRemainder
+import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol.OddPart
 
 /-!
 # Legendre twists of Dirichlet characters
@@ -26,6 +28,10 @@ principal, whatever `χ` is.
 
 * `DirichletCharacter.legendreTwist_apply`, `DirichletCharacter.legendreTwist_apply_natCast`: its
   values.
+* `DirichletCharacter.legendreTwist_apply_natCast_eq_mul_jacobiSym`: the coefficients for
+  primes congruent to `7` modulo `8`, expressed with the prime in the Jacobi numerator.
+* `DirichletCharacter.even_legendreTwist_iff`, `DirichletCharacter.odd_legendreTwist_iff`:
+  twisting by a prime congruent to `3` modulo `4` reverses parity.
 * `DirichletCharacter.legendreTwist_ne_one`: for an odd prime `d` not dividing `N`, the Legendre
   twist is not principal.
 
@@ -38,6 +44,8 @@ PBC): `New.quadTwist` in `src/Lib/General/NumberTheory/ImaginaryQuadraticField.l
 
 public section
 
+open scoped Nat
+
 namespace DirichletCharacter
 
 variable {N : ℕ} (χ : DirichletCharacter ℂ N) (d : ℕ) [Fact d.Prime]
@@ -47,6 +55,19 @@ variable {N : ℕ} (χ : DirichletCharacter ℂ N) (d : ℕ) [Fact d.Prime]
 noncomputable def legendreTwist : DirichletCharacter ℂ (N * d) :=
   χ.changeLevel (dvd_mul_right N d) *
     changeLevel (dvd_mul_left d N) ((quadraticChar (ZMod d)).ringHomComp (Int.castRingHom ℂ))
+
+/-- The Legendre twist is the product of the two characters lifted to the product level. -/
+theorem legendreTwist_def : χ.legendreTwist d =
+    χ.changeLevel (dvd_mul_right N d) * changeLevel (dvd_mul_left d N)
+      ((quadraticChar (ZMod d)).ringHomComp (Int.castRingHom ℂ)) := (rfl)
+
+/-- Raising the base level before applying a Legendre twist gives the same character
+as raising the level after twisting. -/
+theorem legendreTwist_changeLevel {M : ℕ} (h : M ∣ N) (ψ : DirichletCharacter ℂ M)
+    (p : ℕ) [Fact p.Prime] :
+    (changeLevel h ψ).legendreTwist p =
+      changeLevel (Nat.mul_dvd_mul_right h p) (ψ.legendreTwist p) := by
+  simp only [legendreTwist_def, map_mul, ← changeLevel_trans]
 
 /-- The Legendre twist takes the value `χ(n) (n / d)` at an integer `n`. -/
 @[simp]
@@ -66,6 +87,32 @@ theorem legendreTwist_apply (n : ℤ) : χ.legendreTwist d n = χ n * legendreSy
 @[simp]
 theorem legendreTwist_apply_natCast (n : ℕ) : χ.legendreTwist d n = χ n * legendreSym d n := by
   simpa using χ.legendreTwist_apply d n
+
+/-- On positive indices, a Legendre twist by a prime `d ≡ 7 mod 8` has coefficients
+`χ(n) J(-d | n°)`, where `n°` is the odd part of `n`. -/
+theorem legendreTwist_apply_natCast_eq_mul_jacobiSym {n : ℕ} (hd : d % 8 = 7) (hn : n ≠ 0) :
+    χ.legendreTwist d n = χ n * jacobiSym (-(d : ℤ)) (ordCompl[2] n) := by
+  rw [legendreTwist_apply_natCast, jacobiSym.legendreSym.to_jacobiSym,
+    TauCeti.jacobiSym_eq_jacobiSym_neg_ordCompl_two hd hn]
+
+/-- A Legendre twist by a prime congruent to `3` modulo `4` negates the value at `-1`. -/
+theorem legendreTwist_apply_neg_one (hd : d % 4 = 3) : χ.legendreTwist d (-1) = -χ (-1) := by
+  have hsym := (legendreSym.at_neg_one (p := d) (by omega)).trans
+    (ZMod.χ₄_nat_three_mod_four hd)
+  simpa only [Int.cast_neg, Int.cast_one, hsym, mul_neg, mul_one] using
+    χ.legendreTwist_apply d (-1)
+
+/-- Twisting by a prime congruent to `3` modulo `4` gives an even character exactly when the
+original character is odd. -/
+@[simp]
+theorem even_legendreTwist_iff (hd : d % 4 = 3) : (χ.legendreTwist d).Even ↔ χ.Odd := by
+  simp [Even, Odd, legendreTwist_apply_neg_one χ d hd, neg_eq_iff_eq_neg]
+
+/-- Twisting by a prime congruent to `3` modulo `4` gives an odd character exactly when the
+original character is even. -/
+@[simp]
+theorem odd_legendreTwist_iff (hd : d % 4 = 3) : (χ.legendreTwist d).Odd ↔ χ.Even := by
+  simp [Even, Odd, legendreTwist_apply_neg_one χ d hd]
 
 /-- For an odd prime `d` not dividing `N`, the Legendre twist of any character modulo `N` by `d`
 is not principal. -/

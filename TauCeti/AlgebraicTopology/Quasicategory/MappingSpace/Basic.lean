@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Quasicategory.LeftMappingSpace
-public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
+public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplex.JoinVertex
 import TauCeti.AlgebraicTopology.Quasicategory.OuterHorn.Parametrized
 import TauCeti.AlgebraicTopology.SimplicialSet.BoundaryColimits

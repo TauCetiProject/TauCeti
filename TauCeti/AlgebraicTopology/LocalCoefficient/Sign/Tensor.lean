@@ -15,6 +15,10 @@ On each fibre the pairing sends `f ⊗ g` to `f(e) * g(e)`. Changing the point `
 other sheet negates both factors, so this pairing needs no choice of a sheet. It is a
 linear equivalence and commutes with path transport. In particular, an orientation
 local system has a canonical perfect pairing with itself, even on a nonorientable bundle.
+The pairing is natural in maps of double covers: the induced isomorphism of sign local
+systems (`IsCoveringMap.signLocalSystemIsoOfMap`), tensored with itself, carries the
+pairing of one cover to that of the other
+(`IsCoveringMap.signLocalSystemIsoOfMap_hom_tensorHom_signLocalSystemTensorIso_hom`).
 
 The coefficient ring is commutative, with no restriction on its characteristic. The
 cover must be surjective, with exactly two points in each fibre exchanged by its deck map.
@@ -161,5 +165,53 @@ theorem signLocalSystemTensorIso_inv_app_mul (x : FundamentalGroupoid X)
       ((tensorSquareEquiv hp hfix hfib hsurj x).symm (ULift.up (a * b))) = _
   rw [LinearEquiv.apply_symm_apply, tensorSquareEquiv_tmul hp hfix hfib hsurj x e]
   simp
+
+section Map
+
+variable {F : Type u} [TopologicalSpace F] {q : F → X} (hq : IsCoveringMap q) {τ : C(F, F)}
+  {hτ : q ∘ τ = q} {f : C(E, F)} (hf : q ∘ f = p) (hfστ : f ∘ σ = τ ∘ f)
+  (hfixτ : ∀ e, τ e ≠ e) (hfibτ : ∀ e e', q e' = q e → e' = e ∨ e' = τ e)
+  (hsurjτ : Function.Surjective q)
+
+/-- **The tensor pairing is natural in maps of double covers.** The isomorphism of sign local
+systems induced by a map of double covers (`IsCoveringMap.signLocalSystemIsoOfMap`), tensored with
+itself, carries the canonical pairing of the source cover to that of the target cover: both
+multiply the values of two sign functions at a point and at its image. -/
+@[reassoc]
+theorem signLocalSystemIsoOfMap_hom_tensorHom_signLocalSystemTensorIso_hom :
+    ((hp.signLocalSystemIsoOfMap (R := R) hq hf hfστ hfixτ hfib hfibτ hsurj).hom ⊗ₘ
+        (hp.signLocalSystemIsoOfMap hq hf hfστ hfixτ hfib hfibτ hsurj).hom) ≫
+      (hp.signLocalSystemTensorIso (hσ := hσ) hfix hfib hsurj).hom =
+      (hq.signLocalSystemTensorIso (hσ := hτ) hfixτ hfibτ hsurjτ).hom := by
+  ext x : 2
+  apply ModuleCat.hom_ext
+  apply TensorProduct.ext
+  ext g g'
+  obtain ⟨e, he⟩ := hsurj x.as
+  -- The functor-category tensor and `ModuleCat` composition hide the pure tensor from
+  -- rewriting. Read this component equation as an equality in the underlying modules.
+  change ((hp.signLocalSystemTensorIso (hσ := hσ) hfix hfib hsurj).hom.app x).hom
+      (((hp.signLocalSystemIsoOfMap hq hf hfστ hfixτ hfib hfibτ hsurj).hom.app x).hom g ⊗ₜ[R]
+        ((hp.signLocalSystemIsoOfMap hq hf hfστ hfixτ hfib hfibτ hsurj).hom.app x).hom g') =
+    ((hq.signLocalSystemTensorIso hfixτ hfibτ hsurjτ).hom.app x).hom (g ⊗ₜ[R] g')
+  rw [signLocalSystemTensorIso_hom_app_tmul hp hfix hfib hsurj x ⟨e, he⟩,
+    signLocalSystemTensorIso_hom_app_tmul hq hfixτ hfibτ hsurjτ x
+      (Function.fiberMap f hf x.as ⟨e, he⟩),
+    signLocalSystemObjEquiv_signLocalSystemIsoOfMap_hom_app_apply,
+    signLocalSystemObjEquiv_signLocalSystemIsoOfMap_hom_app_apply]
+
+/-- The inverse of the canonical pairing of the target cover, followed by the tensor square of the
+isomorphism of sign local systems induced by a map of double covers, is the inverse of the
+canonical pairing of the source cover. -/
+@[reassoc]
+theorem signLocalSystemTensorIso_inv_signLocalSystemIsoOfMap_hom_tensorHom :
+    (hq.signLocalSystemTensorIso (R := R) (hσ := hτ) hfixτ hfibτ hsurjτ).inv ≫
+      ((hp.signLocalSystemIsoOfMap hq hf hfστ hfixτ hfib hfibτ hsurj).hom ⊗ₘ
+        (hp.signLocalSystemIsoOfMap hq hf hfστ hfixτ hfib hfibτ hsurj).hom) =
+      (hp.signLocalSystemTensorIso (hσ := hσ) hfix hfib hsurj).inv := by
+  rw [Iso.inv_comp_eq, Iso.eq_comp_inv,
+    signLocalSystemIsoOfMap_hom_tensorHom_signLocalSystemTensorIso_hom]
+
+end Map
 
 end IsCoveringMap

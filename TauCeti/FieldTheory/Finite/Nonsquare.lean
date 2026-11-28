@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.FieldTheory.Finite.Basic
 
 /-!
@@ -24,6 +25,8 @@ relation `{x, 1 - x} = 0` kills the two-torsion symbol `{g, g}`.
 
 * `TauCeti.FiniteField.exists_not_isSquare_and_not_isSquare_one_sub`: in a finite field of
   characteristic other than `2`, some `x` has `x` and `1 - x` both nonsquares.
+* `TauCeti.FiniteField.exists_odd_zpow_add_eq_one`: in a finite field of characteristic other than
+  `2`, any generator `g` of `Fˣ` has odd powers summing to `1`.
 
 ## References
 
@@ -69,5 +72,22 @@ theorem exists_not_isSquare_and_not_isSquare_one_sub (hF : ringChar F ≠ 2) :
   have := Finset.card_erase_of_mem h1
   have := Finset.card_pos.2 ⟨1, h1⟩
   omega
+
+/-- In a finite field of characteristic other than `2`, any generator `g` of `Fˣ` has odd powers
+`g ^ m` and `g ^ n` with `g ^ m + g ^ n = 1`. -/
+theorem exists_odd_zpow_add_eq_one (hchar : ringChar F ≠ 2)
+    {g : Fˣ} (hg : ∀ x : Fˣ, x ∈ Subgroup.zpowers g) :
+    ∃ m n : ℤ, Odd m ∧ Odd n ∧ ((g ^ m : Fˣ) : F) + (g ^ n : Fˣ) = 1 := by
+  obtain ⟨x, hx, hx1⟩ := exists_not_isSquare_and_not_isSquare_one_sub hchar
+  have hx0 : x ≠ 0 := by rintro rfl; exact hx IsSquare.zero
+  have hx10 : 1 - x ≠ 0 := by rintro h; rw [h] at hx1; exact hx1 IsSquare.zero
+  obtain ⟨m, hm⟩ := hg (Units.mk0 x hx0)
+  obtain ⟨n, hn⟩ := hg (Units.mk0 (1 - x) hx10)
+  have hm' : ((g ^ m : Fˣ) : F) = x := congrArg Units.val hm
+  have hn' : ((g ^ n : Fˣ) : F) = 1 - x := congrArg Units.val hn
+  exact ⟨m, n,
+    Int.not_even_iff_odd.mp fun he ↦ hx (hm' ▸ (he.isSquare_zpow g).map (Units.coeHom F)),
+    Int.not_even_iff_odd.mp fun he ↦ hx1 (hn' ▸ (he.isSquare_zpow g).map (Units.coeHom F)),
+    by rw [hm', hn', add_sub_cancel]⟩
 
 end TauCeti.FiniteField
