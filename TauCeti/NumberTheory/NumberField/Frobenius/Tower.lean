@@ -59,8 +59,9 @@ group of `Q` embeds into the automorphism group of the residue extension, so an 
   of the relative Frobenius is `σ` itself, with no power.
 * `NumberField.isArithFrobAt_restrictScalars_of_inertiaDeg_eq_one`: the same at residue degree
   one, concluding that the restriction is an arithmetic Frobenius rather than assuming one.
-* `NumberField.isArithFrobAt_int_of_absNorm_eq`: a relative Frobenius above an ideal of absolute
-  norm `p` is also a Frobenius over the ideal `(p)` of `ℤ`.
+* `NumberField.isArithFrobAt_int_of_absNorm_eq`,
+  `NumberField.isArithFrobAt_of_isArithFrobAt_int_of_absNorm_eq`: above an ideal of absolute
+  norm `p`, a relative Frobenius is the same as a Frobenius over the ideal `(p)` of `ℤ`.
 * `NumberField.isArithFrobAt_one_of_pow_eq_one` and
   `NumberField.isArithFrobAt_eq_one_of_pow_eq_one`: when an absolute Frobenius at `Q` has order
   dividing `n` and the residue field of `Q ∩ 𝓞 M` has `p ^ n` elements, the relative Frobenius
@@ -106,6 +107,26 @@ theorem isArithFrobAt_int_of_absNorm_eq {p : ℕ}
   change σ • x - x ^ Nat.card (ℤ ⧸ Q.under ℤ) ∈ Q
   rw [Ideal.natCard_quotient_under_of_liesOver (n := p) Q]
   exact hx
+
+/-- **A Frobenius over `(p)` is a relative Frobenius above an ideal of norm `p`.** This is the
+converse of `NumberField.isArithFrobAt_int_of_absNorm_eq`: if `P` lies above `(p)` with absolute
+norm `p` and `Q` lies above `P`, then an automorphism of `L / K` that is an arithmetic Frobenius at
+`Q` relative to `ℤ`, after restricting scalars to `ℚ`, is one relative to `K`. -/
+theorem isArithFrobAt_of_isArithFrobAt_int_of_absNorm_eq {p : ℕ}
+    (P : Ideal (𝓞 K)) [P.LiesOver (Ideal.span {(p : ℤ)})]
+    (hnorm : Ideal.absNorm P = p) (Q : Ideal (𝓞 L)) [Q.LiesOver P]
+    {σ : L ≃ₐ[K] L} (hσ : IsArithFrobAt ℤ (σ.restrictScalars ℚ) Q) :
+    IsArithFrobAt (𝓞 K) σ Q := by
+  intro x
+  have hx := hσ x
+  let _ : Q.LiesOver (Ideal.span {(p : ℤ)}) :=
+    Ideal.LiesOver.trans Q P (Ideal.span {(p : ℤ)})
+  have hunderK : Q.under (𝓞 K) = P := Ideal.LiesOver.over
+  rw [hunderK, ← Submodule.cardQuot_apply, ← Ideal.absNorm_apply, hnorm]
+  -- As in the forward direction, restricting scalars does not change the action on `𝓞 L`, so the
+  -- hypothesis is the goal once its residue cardinality over `ℤ` is computed.
+  change σ • x - x ^ Nat.card (ℤ ⧸ Q.under ℤ) ∈ Q at hx
+  rwa [Ideal.natCard_quotient_under_of_liesOver (n := p) Q] at hx
 
 end
 
@@ -162,11 +183,6 @@ theorem restrictScalars_eq_pow_inertiaDeg [Algebra.IsUnramifiedAt (𝓞 K) Q]
     -- No public lemma states this for the induced actions on `𝓞 L`; it is definitional because
     -- `AlgEquiv.restrictScalars` preserves the underlying ring equivalence.
     rfl
-  have hrestrictQ : (AlgEquiv.restrictScalars K τ) • Q = τ • Q := by
-    rw [Ideal.pointwise_smul_def, Ideal.pointwise_smul_def]
-    apply congrArg fun f ↦ Q.map f
-    ext x
-    exact congrArg (algebraMap (𝓞 L) L) (hrestrict x)
   have hcong (x : 𝓞 L) :
       (AlgEquiv.restrictScalars K τ) • x -
         (σ ^ (Q.under (𝓞 M)).inertiaDeg (𝓞 K)) • x ∈ Q := by
@@ -175,7 +191,7 @@ theorem restrictScalars_eq_pow_inertiaDeg [Algebra.IsUnramifiedAt (𝓞 K) Q]
     rw [← Ideal.Quotient.eq, hrestrict, hσ.mk_pow_smul, hres, hcard]
   have key : Ideal.Quotient.stabilizerHom Q (Q.under (𝓞 K)) (L ≃ₐ[K] L)
       ⟨AlgEquiv.restrictScalars K τ, by
-        rw [MulAction.mem_stabilizer_iff, hrestrictQ]
+        rw [MulAction.mem_stabilizer_iff, AlgEquiv.restrictScalars_smul_ideal]
         exact MulAction.mem_stabilizer_iff.mp hτ.mem_stabilizer⟩ =
       Ideal.Quotient.stabilizerHom Q (Q.under (𝓞 K)) (L ≃ₐ[K] L)
         ⟨σ ^ (Q.under (𝓞 M)).inertiaDeg (𝓞 K), pow_mem hσ.mem_stabilizer _⟩ := by

@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Topology.MetricSpace.Equicontinuity
+public import Mathlib.Topology.EMetricSpace.Lipschitz
+public import Mathlib.Topology.MetricSpace.Holder
+import Mathlib.Topology.MetricSpace.UniformConvergence
 
 /-!
 # Equicontinuity from slice distance bounds, and uniform attainment from rate bounds
@@ -22,13 +25,22 @@ Separately, uniform equicontinuity of a family `(g_k)` turns a bound `F k p ≤ 
 valid whenever `g_k` moves by at most `η` over distances at most `√(s p)`, into the uniform
 smallness `F k p < ε` for all `k` once `s p` is small enough.
 
+Finally, the iterates of a `1`-Lipschitz map are `1`-Lipschitz, so they form a uniformly
+equicontinuous family, and maps that are Hölder on a set with one constant and one positive exponent
+form a family uniformly equicontinuous on that set.
+
 ## Main statements
 
+* `Metric.uniformEquicontinuousOn_iff`: uniform equicontinuity on a set in terms of distances.
 * `Metric.equicontinuous_of_forall_dist_le`: a family `F : ι → X → W` controlled linearly by every
   uniform `Y`-slice distance bound of a jointly continuous map `g : X × Y → Z` with `Y` compact is
   equicontinuous.
 * `UniformEquicontinuous.exists_forall_lt_of_le_mul_add_mul`: a bound of the form
   `C (η + s L)` over a uniformly equicontinuous family gives uniform attainment as `s → 0`.
+* `LipschitzWith.uniformEquicontinuous_iterate`: the iterates of a `1`-Lipschitz map are uniformly
+  equicontinuous.
+* `HolderOnWith.uniformEquicontinuousOn`: maps sharing a Hölder constant and a positive exponent on
+  a set are uniformly equicontinuous on it.
 -/
 
 public section
@@ -66,6 +78,17 @@ theorem equicontinuous_of_forall_dist_le {X Y Z W ι : Type*} [TopologicalSpace 
     _ ≤ M * δ := mul_le_mul_of_nonneg_right (le_max_left L 1) hδ.le
     _ = r / 2 := by simp only [δ]; field_simp [hM.ne']
     _ < r := half_lt_self hr
+
+/-- Characterization of uniform equicontinuity on a set for families of functions between
+(pseudo) metric spaces. -/
+theorem uniformEquicontinuousOn_iff {ι X W : Type*} [PseudoMetricSpace X] [PseudoMetricSpace W]
+    {F : ι → X → W} {S : Set X} :
+    UniformEquicontinuousOn F S ↔ ∀ ε > 0, ∃ δ > 0,
+      ∀ x ∈ S, ∀ y ∈ S, dist x y < δ → ∀ i, dist (F i x) (F i y) < ε := by
+  rw [(uniformity_basis_dist.inf_principal (S ×ˢ S)).uniformEquicontinuousOn_iff
+    uniformity_basis_dist]
+  refine forall₂_congr fun ε _ ↦ exists_congr fun δ ↦ and_congr_right fun _ ↦ ?_
+  exact ⟨fun h x hx y hy hxy ↦ h x y ⟨hxy, hx, hy⟩, fun h x y hxy ↦ h x hxy.2.1 y hxy.2.2 hxy.1⟩
 
 end Metric
 
@@ -116,3 +139,21 @@ theorem exists_forall_lt_of_le_mul_add_mul {κ X P : Type*} [PseudoMetricSpace X
     _ < ε := by linarith
 
 end UniformEquicontinuous
+
+/-- The iterates of a `1`-Lipschitz map are uniformly equicontinuous. -/
+theorem LipschitzWith.uniformEquicontinuous_iterate {X : Type*} [PseudoEMetricSpace X]
+    {f : X → X} (hf : LipschitzWith 1 f) : UniformEquicontinuous fun n : ℕ ↦ f^[n] :=
+  LipschitzWith.uniformEquicontinuous _ 1 fun n ↦ by simpa using hf.iterate n
+
+/-- Maps that are `r`-Hölder on `s` with one constant `C`, for a fixed exponent `r > 0`, form a
+family uniformly equicontinuous on `s`. Compare `LipschitzWith.uniformEquicontinuous`. -/
+theorem HolderOnWith.uniformEquicontinuousOn {ι X Y : Type*} [PseudoEMetricSpace X]
+    [PseudoEMetricSpace Y] (f : ι → X → Y) {s : Set X} {C r : NNReal} (hr : 0 < r)
+    (h : ∀ i, HolderOnWith C r (f i) s) : UniformEquicontinuousOn f s := by
+  rw [(uniformity_basis_edist.inf_principal (s ×ˢ s)).uniformEquicontinuousOn_iff
+    uniformity_basis_edist]
+  intro ε hε
+  have hC : Tendsto (fun d : ENNReal ↦ (C : ENNReal) * d ^ (r : ℝ)) (𝓝 0) (𝓝 0) :=
+    ENNReal.tendsto_const_mul_rpow_nhds_zero_of_pos ENNReal.coe_ne_top hr
+  obtain ⟨δ, hδ, H⟩ := ENNReal.nhds_zero_basis.mem_iff.1 (hC (gt_mem_nhds hε))
+  exact ⟨δ, hδ, fun x y hxy i ↦ ((h i).edist_le hxy.2.1 hxy.2.2).trans_lt (H hxy.1)⟩

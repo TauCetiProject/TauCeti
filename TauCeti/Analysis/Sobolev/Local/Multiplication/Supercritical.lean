@@ -37,6 +37,9 @@ The algebra property is the diagonal case of a statement with three orders. If
 The Leibniz step needs `p > 1`: at `p = 1` a factor of order one has an integrable derivative
 only, which pairs with no finite exponent of the other factor.
 
+The local bounds that accompany these statements are in
+`TauCeti.Analysis.Sobolev.Local.Multiplication.Bound.Supercritical`.
+
 ## Main declarations
 
 * `TauCeti.MemWkpLoc.memLpLoc_bilin_of_two_lt_add_mul`: `B(f, g) ∈ L^p_loc` for
@@ -49,6 +52,8 @@ only, which pairs with no finite exponent of the other factor.
   `(a + b - c) p > 2`.
 * `TauCeti.MemWkpLoc.bilin_of_two_lt_mul`, `TauCeti.MemWkpLoc.clm_apply_of_two_lt_mul` and
   `TauCeti.MemWkpLoc.compL_of_two_lt_mul`: the algebra property of `W^{k,p}_loc` for `kp > 2`.
+* `TauCeti.exists_holderTriple_of_two_lt_add_mul`: the Hölder exponents for products in which
+  neither factor is locally bounded.
 
 ## References
 
@@ -110,6 +115,48 @@ private theorem div_two_le_inv_of_not_two_lt_mul {p : ℝ≥0} (hp0 : (0 : ℝ) 
   rw [div_le_iff₀ two_pos, inv_mul_eq_div, le_div_iff₀ hp0]
   linarith
 
+/-- **Hölder exponents for products without a bounded factor.** Let `1 ≤ p`, and let `a` and `b`
+be orders with `a p ≤ 2`, `b p ≤ 2` and `(a + b) p > 2`. There are finite exponents `s, t ≥ p`
+with `1/s + 1/t = 1/p`, `1/p - 1/s ≤ a/2` and `1/p - 1/t ≤ b/2`. By the Sobolev embedding, a
+factor in `W^{a,p}_loc` is then in `Lˢ_loc` and one in `W^{b,p}_loc` in `Lᵗ_loc`, and Hölder's
+inequality puts their product in `Lᵖ_loc`. -/
+theorem exists_holderTriple_of_two_lt_add_mul {p : ℝ≥0} (hp : 1 ≤ p) {a b : ℕ}
+    (ha : ¬ 2 < (a : ℝ≥0∞) * p) (hb : ¬ 2 < (b : ℝ≥0∞) * p)
+    (hab : 2 < ((a + b : ℕ) : ℝ≥0) * p) :
+    ∃ s t : ℝ≥0, p ≤ s ∧ p ≤ t ∧ (p : ℝ)⁻¹ - (s : ℝ)⁻¹ ≤ a / 2 ∧
+      (p : ℝ)⁻¹ - (t : ℝ)⁻¹ ≤ b / 2 ∧ ENNReal.HolderTriple s t p := by
+  have hp0 : (0 : ℝ) < p := zero_lt_one.trans_le (by exact_mod_cast hp)
+  have hxa := div_two_le_inv_of_not_two_lt_mul hp0 ha
+  have hxb := div_two_le_inv_of_not_two_lt_mul hp0 hb
+  -- Raise `1/p - a/2` and `1/p - b/2` by half the defect `ε = ((a + b)/2 - 1/p)/2 > 0`.
+  set x : ℝ := (p : ℝ)⁻¹ with hx
+  have hxab : 2 * x < a + b := by
+    have : (2 : ℝ) < (a + b) * p := by exact_mod_cast hab
+    rw [hx, ← div_eq_mul_inv, div_lt_iff₀ hp0]
+    exact this
+  set ε : ℝ := ((a + b) / 2 - x) / 2 with hε_def
+  have hε : 0 < ε := by linarith
+  have htf : 0 < x - a / 2 + ε := by linarith
+  have htg : 0 < x - b / 2 + ε := by linarith
+  let s : ℝ≥0 := ⟨(x - a / 2 + ε)⁻¹, by positivity⟩
+  let t : ℝ≥0 := ⟨(x - b / 2 + ε)⁻¹, by positivity⟩
+  have hs : (s : ℝ)⁻¹ = x - a / 2 + ε := inv_inv _
+  have ht : (t : ℝ)⁻¹ = x - b / 2 + ε := inv_inv _
+  have hs0 : (0 : ℝ) < s := inv_pos.2 htf
+  have ht0 : (0 : ℝ) < t := inv_pos.2 htg
+  refine ⟨s, t, ?_, ?_, by rw [hs]; linarith, by rw [ht]; linarith, ⟨?_⟩⟩
+  · rw [← NNReal.coe_le_coe, ← inv_le_inv₀ hs0 hp0, hs]
+    linarith
+  · rw [← NNReal.coe_le_coe, ← inv_le_inv₀ ht0 hp0, ht]
+    linarith
+  · -- `1/s + 1/t = 1/p`, checked in `ℝ`.
+    rw [← ENNReal.coe_inv (by exact_mod_cast hs0.ne'),
+      ← ENNReal.coe_inv (by exact_mod_cast ht0.ne'), ← ENNReal.coe_inv (by exact_mod_cast hp0.ne'),
+      ← ENNReal.coe_add, ENNReal.coe_inj, ← NNReal.coe_inj]
+    push_cast
+    rw [hs, ht]
+    ring
+
 /-- The reciprocal exponents for the Leibniz step. For `0 < x < 1` there is `T : ℕ → ℝ` with
 `0 < T m ≤ x ≤ T m + m/2` for every `m`, and `T m + T n ≤ 1` whenever `2x < m + n`. With
 `x = 1/p`, a factor of order `m` then lies in `L^{1/T m}_loc`, and Hölder's inequality applies
@@ -151,32 +198,10 @@ theorem MemWkpLoc.memLpLoc_bilin_of_two_lt_add_mul (B : F →L[ℝ] G →L[ℝ] 
   · exact holder (hf.memLpLoc_top_of_two_lt_mul hp1 ha) hg.memLpLoc
   by_cases hb : 2 < (b : ℝ≥0∞) * p
   · exact holder hf.memLpLoc (hg.memLpLoc_top_of_two_lt_mul hp1 hb)
-  -- Otherwise `1/p - a/2` and `1/p - b/2` are nonnegative with sum below `1/p`, and raising both
-  -- by half the defect gives reciprocal exponents summing to `1/p`.
-  have hp0 : (0 : ℝ) < p := zero_lt_one.trans_le (by exact_mod_cast hp)
-  have hxa := div_two_le_inv_of_not_two_lt_mul hp0 ha
-  have hxb := div_two_le_inv_of_not_two_lt_mul hp0 hb
-  set x : ℝ := (p : ℝ)⁻¹ with hx
-  have hxab : 2 * x < a + b := by
-    have : (2 : ℝ) < (a + b) * p := by exact_mod_cast hab
-    rw [hx, ← div_eq_mul_inv, div_lt_iff₀ hp0]
-    exact this
-  set ε : ℝ := ((a + b) / 2 - x) / 2 with hε_def
-  have hε : 0 < ε := by linarith
-  set tf : ℝ := x - a / 2 + ε with htf_def
-  set tg : ℝ := x - b / 2 + ε with htg_def
-  have htf : 0 < tf := by linarith
-  have htg : 0 < tg := by linarith
-  have hfs := hf.memLpLoc_inv_ofReal hp htf (by linarith) (by linarith)
-  have hgs := hg.memLpLoc_inv_ofReal hp htg (by linarith) (by linarith)
-  have : ENNReal.HolderTriple (ENNReal.ofReal tf)⁻¹ (ENNReal.ofReal tg)⁻¹ p := by
-    refine ⟨?_⟩
-    rw [inv_inv, inv_inv, ← ENNReal.ofReal_add htf.le htg.le,
-      ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_inv_of_pos hp0]
-    congr 1
-    rw [htf_def, htg_def, hε_def]
-    ring
-  exact holder hfs hgs
+  -- Otherwise the Sobolev embedding gives finite Hölder exponents for both factors.
+  obtain ⟨s, t, hps, hpt, hs, ht, hst⟩ := exists_holderTriple_of_two_lt_add_mul hp ha hb hab
+  exact holder (hf.memLpLoc_of_inv_sub_inv_le_div_two hp hps hs)
+    (hg.memLpLoc_of_inv_sub_inv_le_div_two hp hpt ht)
 
 /-- **The weak Leibniz rule for `kp > 2`, with two orders.** Let `1 < p`, let
 `f ∈ W^{a+1,p}_loc(Ω, F)` and `g ∈ W^{b+1,p}_loc(Ω, G)` have weak derivatives `Df` and `Dg` on

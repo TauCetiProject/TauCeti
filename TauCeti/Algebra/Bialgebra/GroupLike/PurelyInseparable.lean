@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Bialgebra.GroupLike.ScalarTower
 public import TauCeti.Algebra.Coalgebra.GroupLike.BaseChange
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 import TauCeti.FieldTheory.PurelyInseparable.BaseChange
-import TauCeti.RingTheory.Flat.EffectiveDescent
+import TauCeti.RingTheory.Flat.Amitsur
 import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 
 /-!
@@ -112,9 +112,8 @@ theorem groupLikeBaseChange_bijective_of_isPurelyInseparable
     induction x using TensorProduct.inductionOn with
     | add x y hx hy => simp only [map_add, hx, hy]
     | tmul l a => simp [e]
-  have hg : ((TensorProduct.mk k L A 1).lTensor L - TensorProduct.mk k L (L ⊗[k] A) 1)
-      g.val = 0 := by
-    rw [LinearMap.sub_apply, sub_eq_zero, ← h₁, ← h₂,
+  have hg : Amitsur.d₀ L A g.val = 0 := by
+    rw [Amitsur.d₀_def, LinearMap.sub_apply, sub_eq_zero, ← h₁, ← h₂,
       map_includeLeft_val_eq_map_includeRight_val hspan g]
   -- Amitsur exactness descends the coefficients of `g`.
   obtain ⟨a, ha⟩ := (Module.FaithfullyFlat.exact_mk_one_lTensor_sub_mk_one L A g.val).mp hg
@@ -130,17 +129,8 @@ of a commutative bialgebra. -/
 theorem span_groupLike_eq_top_of_isPurelyInseparable
     (hspan : Submodule.span L
       (Set.range (_root_.GroupLike.val (R := L) (A := L ⊗[k] A))) = ⊤) :
-    Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := A))) = ⊤ := by
-  let p := Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := A)))
-  have hp : p.baseChange L = ⊤ := by
-    apply top_unique
-    rw [← hspan]
-    apply Submodule.span_le.mpr
-    rintro _ ⟨g, rfl⟩
-    obtain ⟨h, rfl⟩ := (groupLikeBaseChange_bijective_of_isPurelyInseparable hspan).surjective g
-    rw [val_groupLikeBaseChange]
-    exact p.tmul_mem_baseChange_of_mem 1 (Submodule.subset_span ⟨h, rfl⟩)
-  apply Submodule.baseChange_injective (A := L)
-  simpa only [Submodule.baseChange_top] using hp
+    Submodule.span k (Set.range (_root_.GroupLike.val (R := k) (A := A))) = ⊤ :=
+  span_groupLike_eq_top_of_surjective
+    (groupLikeBaseChange_bijective_of_isPurelyInseparable hspan).surjective hspan
 
 end TauCeti

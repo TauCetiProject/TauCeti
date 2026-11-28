@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Matrix.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.KyFan
+import TauCeti.Analysis.Matrix.Eigenvalues.Basic
 
 /-!
 # Concavity of spectral functions
@@ -125,24 +126,11 @@ theorem concaveOn_spectralFunction {Γ : Set (Fin (Fintype.card ι) → ℝ)}
     ConcaveOn ℝ
       {A : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜) | A.property.isHermitian.eigenvalues₀ ∈ Γ}
       fun A ↦ f A.property.isHermitian.eigenvalues₀ := by
-  -- The sorted eigenvalues of a combination of Hermitian matrices are those of the same
-  -- combination of their Euclidean operators.
-  have key (A B : selfAdjoint.submodule ℝ (Matrix ι ι 𝕜)) (a b : ℝ) :
-      (a • A + b • B).property.isHermitian.eigenvalues₀ =
-        (((isSymmetric_toEuclideanLin_iff.mpr A.property.isHermitian).smul
-          (RCLike.conj_ofReal a)).add
-          ((isSymmetric_toEuclideanLin_iff.mpr B.property.isHermitian).smul
-            (RCLike.conj_ofReal b))).eigenvalues finrank_euclideanSpace := by
-    rw [IsHermitian.eigenvalues₀]
-    refine LinearMap.IsSymmetric.eigenvalues_congr ?_ _ _ _
-    rw [Submodule.coe_add, Submodule.coe_smul, Submodule.coe_smul,
-      RCLike.real_smul_eq_coe_smul (K := 𝕜) a, RCLike.real_smul_eq_coe_smul (K := 𝕜) b, map_add,
-      map_smul, map_smul]
   refine ⟨fun A hA B hB a b ha hb hab ↦ ?_, fun A hA B hB a b ha hb hab ↦ ?_⟩
-  · simp only [Set.mem_ofPred_eq, key]
+  · simp only [Set.mem_ofPred_eq, eigenvalues₀_smul_add_smul]
     exact LinearMap.IsSymmetric.eigenvalues_smul_add_smul_mem _ _ _ ha hb hf.1 hΓσ
       (hf.1 hA hB ha hb hab)
-  · simp only [smul_eq_mul, key]
+  · simp only [smul_eq_mul, eigenvalues₀_smul_add_smul]
     exact LinearMap.IsSymmetric.le_apply_eigenvalues_smul_add_smul _ _ _ hΓσ hfσ hf hA hB ha hb
       hab
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Symplectic.Floer.Linearization.Basic
 public import TauCeti.Geometry.Symplectic.Floer.TimeIndependent.Basic
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
@@ -73,11 +74,19 @@ mixed boundary conditions
 `∫₀¹ ‖∂s ξ‖² = ∫₀¹ ‖∂t ξ - dX_H(u) ξ‖²` below by `(C - a)² f`, and `‖∂s S‖ ≤ c M`. Hence
 `f'' ≥ (4 (C - a)² - 2 c M) f` with a positive constant. A nonnegative bounded function with
 `f'' ≥ κ f`, `κ > 0`, is convex and bounded, hence zero
-(`TauCeti.eq_zero_of_hasDerivAt_of_mul_le_of_bddAbove`). So `ξ = 0`
-(`TauCeti.SymplecticForm.eq_zero_of_fderiv_apply_real_eq` for cylinders). This step only uses
-that `ξ` is a bounded solution of the linearized equation along `u` whose slices satisfy the
-Wirtinger-type bound `C² ∫₀¹ ‖ξ‖² ≤ ∫₀¹ ‖∂t ξ‖²` and whose boundary term `⟪J ξ, ∂s ξ⟫` takes equal
-values at `t = 0` and `t = 1`.
+(`TauCeti.eq_zero_of_hasDerivAt_of_mul_le_of_bddAbove`). So `ξ = 0`. This step only uses that `ξ`
+is a bounded solution of the linearized equation along `u` whose slices satisfy the Wirtinger-type
+bound `C² ∫₀¹ ‖ξ‖² ≤ ∫₀¹ ‖∂t ξ‖²` and whose boundary term `⟪J ξ, ∂s ξ⟫` takes equal values at
+`t = 0` and `t = 1`.
+
+**The linearized operator.** That step is a statement about the linearized Floer operator
+`D_u ξ = ∂s ξ + J (∂t ξ - dX_H(u) ξ)` of `K = H dt` (`TauCeti.SymplecticForm.floerLinearization`).
+If `H` is `C³` with `‖dX_H‖ ≤ a < 2π` and `‖d²X_H‖ ≤ c`, and `u` is a `C¹` map with `‖du‖ ≤ M`,
+where `c M < 2 (2π - a)²`, then a bounded `C²` section `ξ` of period one in `t` whose slices have
+mean zero and with `D_u ξ = 0` everywhere vanishes
+(`TauCeti.SymplecticForm.eq_zero_of_floerLinearization_eq_zero`). Its consequences for the kernel of
+`D_u` along a time-independent cylinder are in
+`TauCeti.Geometry.Symplectic.Floer.TimeIndependent.Linearization`.
 
 The constant structure `J` covers flat targets. On a torus `V / Λ` with a flat compatible
 structure, a Floer cylinder whose loops are contractible lifts to a solution on `V` of period one
@@ -435,7 +444,7 @@ private theorem mul_integral_norm_sq_slice_le_of_periodic (hξ : ContDiff ℝ 1 
 bounded `C²` solution of `∂s ξ = -J ∂t ξ + J dX_H(u) ξ`, of period one in `t`, whose slices
 `t ↦ ξ(s, t)` have mean zero. If `‖dX_H‖ ≤ a < 2π`, `‖d²X_H‖ ≤ c`, `‖du‖ ≤ M` and
 `c M < 2 (2π - a)²`, then `ξ = 0`. -/
-theorem eq_zero_of_fderiv_apply_real_eq (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) {a c M B : ℝ}
+private theorem eq_zero_of_fderiv_apply_real_eq (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) {a c M B : ℝ}
     (hH : ContDiff ℝ 3 H) (ha : ∀ x, ‖fderiv ℝ (ω.hamiltonianVectorField H) x‖ ≤ a)
     (hc : ∀ x, ‖fderiv ℝ (fderiv ℝ (ω.hamiltonianVectorField H)) x‖ ≤ c)
     (ha2π : a < 2 * π) (hcM : c * M < 2 * (2 * π - a) ^ 2)
@@ -526,6 +535,32 @@ theorem hasDerivAt_gradient_of_isComplexLinearMap_perturbedFDeriv
   exact hd ▸ (hγ s).hasDerivAt
 
 end Main
+
+section Linearization
+
+/-! ### The linearized operator -/
+
+variable {a c M B : ℝ} {ξ : ℝ × ℝ → V}
+
+/-- **Bounded kernel elements with mean-zero slices vanish.** Let the inner product of `V` be the
+metric `ω(·, J ·)` of a constant compatible almost complex structure `J`, let `H` be a `C³`
+autonomous Hamiltonian with `‖dX_H‖ ≤ a < 2π` and `‖d²X_H‖ ≤ c`, and let `u` be a `C¹` map with
+`‖du‖ ≤ M`, where `c M < 2 (2π - a)²`. If a bounded `C²` section `ξ` of period one in `t`, whose
+slices `t ↦ ξ(s, t)` have mean zero, is in the kernel of the linearized Floer operator
+`D_u ξ = ∂s ξ + J (∂t ξ - dX_H(u) ξ)` of `K = H dt`, then `ξ = 0`. -/
+theorem eq_zero_of_floerLinearization_eq_zero (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+    (hH : ContDiff ℝ 3 H) (ha : ∀ x, ‖fderiv ℝ (ω.hamiltonianVectorField H) x‖ ≤ a)
+    (hc : ∀ x, ‖fderiv ℝ (fderiv ℝ (ω.hamiltonianVectorField H)) x‖ ≤ c)
+    (ha2π : a < 2 * π) (hcM : c * M < 2 * (2 * π - a) ^ 2)
+    (hu : ContDiff ℝ 1 u) (hM : ∀ z, ‖fderiv ℝ u z‖ ≤ M) (hξ : ContDiff ℝ 2 ξ)
+    (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (hmean : ∀ s, ∫ t in (0 : ℝ)..1, ξ (s, t) = 0)
+    (hD : ∀ z, ω.floerLinearization (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
+      (fun _ _ ↦ 0) (fun _ ↦ H) u ξ z = 0)
+    (hB : ∀ z, ‖ξ z‖ ≤ B) : ξ = 0 :=
+  funext <| eq_zero_of_fderiv_apply_real_eq hg hH ha hc ha2π hcM hu hM hξ hper hmean
+    (fun z ↦ (floerLinearization_const_eq_zero_iff ω J (fun _ ↦ H)).1 (hD z)) hB
+
+end Linearization
 
 section Strip
 

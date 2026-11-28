@@ -114,6 +114,9 @@ families of operators.
   the fibres, quantizes to `L ∘ Op(a) ∘ K`.
 * `TauCeti.Symbol.postcomp_comp_quantizeSobolev`: the component `ℓ ∘ Op(a)` of a matrix-valued
   quantization is `∑ⱼ Op(ℓ ∘ a ∘ e_j) ∘ c_j`.
+* `TauCeti.Symbol.postcomp_comp_quantizeSobolev_map_smulRight_id`: for a scalar symbol `c`, the
+  symbol `c Id_V` acts componentwise, `ℓ ∘ Op(c Id_V) = Op(c) ∘ ℓ`, and
+  `TauCeti.Symbol.postcomp_quantizeSobolev_map_smulRight_id` is its applied form.
 * `TauCeti.Symbol.exists_quantizeSobolev`: the mapping property for finite-dimensional normed
   `V` and `W`.
 * `TauCeti.Symbol.exists_one_add_norm_pow_mul_norm_fourier_le_sum_seminorm`,
@@ -1122,6 +1125,44 @@ theorem postcomp_comp_quantizeSobolev [FiniteDimensional ℂ V] (ha : a.HasCompa
   simp only [_root_.sum_apply, ContinuousLinearMap.comp_apply,
     quantizeSobolev_map ha ℓ _ (entryMap_apply ℓ _), ← map_sum,
     BesselPotentialSpace.sum_postcomp_toSpanSingleton_coord]
+
+/-- **Scalar symbols act componentwise.** For a scalar symbol `c` with compact spatial support, the
+symbol `c(x, ξ) Id_V` with values in the endomorphisms of `V` quantizes to an operator commuting
+with every functional `ℓ` on `V`: `ℓ (Op(c Id_V) v) = Op(c) (ℓ v)`. -/
+theorem postcomp_comp_quantizeSobolev_map_smulRight_id {c : Symbol n ℂ ℂ m}
+    (hc : c.HasCompactSpatialSupport) (ℓ : V →L[ℂ] ℂ) (s : ℝ) :
+    BesselPotentialSpace.postcomp _ _ 2 ℓ ∘L
+        (c.map (((ContinuousLinearMap.apply ℂ ℂ (1 : ℂ)).smulRight
+          (ContinuousLinearMap.id ℂ V)).restrictScalars ℝ)).quantizeSobolev (hc.map _) s =
+      c.quantizeSobolev hc s ∘L BesselPotentialSpace.postcomp _ s 2 ℓ := by
+  set Ψ := ((ContinuousLinearMap.apply ℂ ℂ (1 : ℂ)).smulRight
+    (ContinuousLinearMap.id ℂ V)).restrictScalars ℝ
+  set Φ₁ := ((ContinuousLinearMap.compL ℂ V V ℂ) ℓ).restrictScalars ℝ
+  set Φ₂ := ((ContinuousLinearMap.compL ℂ V ℂ ℂ).flip ℓ).restrictScalars ℝ
+  -- Both sides are quantizations of the scalar-valued symbol `ℓ ∘ c(x, ξ) Id_V = c(x, ξ) ∘ ℓ`.
+  have h₁ := quantizeSobolev_map (hc.map Ψ) (Φ := Φ₁) ℓ (.id ℂ V) (fun _ ↦ rfl) s
+  have h₂ := quantizeSobolev_map hc (Φ := Φ₂) (.id ℂ ℂ) ℓ (fun _ ↦ rfl) s
+  have heq : (c.map Ψ).map Φ₁ = c.map Φ₂ :=
+    Symbol.ext <| funext fun p ↦ ContinuousLinearMap.ext fun v ↦ by
+      have h := (c.coefficient p).map_smul (ℓ v) 1
+      simp only [smul_eq_mul, mul_one] at h
+      simp [Ψ, Φ₁, Φ₂, h, mul_comm]
+  have h₃ : ((c.map Ψ).map Φ₁).quantizeSobolev ((hc.map Ψ).map Φ₁) s =
+      (c.map Φ₂).quantizeSobolev (hc.map Φ₂) s := by
+    congr 1
+  rw [h₁, h₂, BesselPotentialSpace.postcomp_id, BesselPotentialSpace.postcomp_id] at h₃
+  simpa using h₃
+
+/-- **Scalar symbols act componentwise**, applied form of
+`TauCeti.Symbol.postcomp_comp_quantizeSobolev_map_smulRight_id`: `ℓ (Op(c Id_V) v) = Op(c) (ℓ v)`
+for a scalar symbol `c` with compact spatial support and every functional `ℓ` on `V`. -/
+theorem postcomp_quantizeSobolev_map_smulRight_id {c : Symbol n ℂ ℂ m}
+    (hc : c.HasCompactSpatialSupport) (ℓ : V →L[ℂ] ℂ) (s : ℝ) (v : H^{s}(CoordinateSpace n, V)) :
+    BesselPotentialSpace.postcomp _ _ 2 ℓ
+        ((c.map (((ContinuousLinearMap.apply ℂ ℂ (1 : ℂ)).smulRight
+          (ContinuousLinearMap.id ℂ V)).restrictScalars ℝ)).quantizeSobolev (hc.map _) s v) =
+      c.quantizeSobolev hc s (BesselPotentialSpace.postcomp _ s 2 ℓ v) :=
+  DFunLike.congr_fun (postcomp_comp_quantizeSobolev_map_smulRight_id hc ℓ s) v
 
 end Sobolev
 

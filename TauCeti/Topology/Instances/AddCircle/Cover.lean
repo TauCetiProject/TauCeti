@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
+public import Mathlib.Topology.CompactOpen
 public import Mathlib.Topology.Instances.AddCircle.Real
+public import TauCeti.Algebra.Group.ZMultiples
 
 /-!
 # Reduction maps between additive circles
@@ -20,7 +22,13 @@ isomorphic to `ZMod k` (`AddCircle.zmodEquivZMultiples`), giving the deck group 
 finite cover of the circle of length `q` by the circle of length `p`. Half the period lies in this
 kernel exactly when `k` is even (`AddCircle.period_div_two_mem_zmultiples_iff`). A nonzero natural
 number is a positive period (`TauCeti.fact_natCast_pos`), so `AddCircle (d : ℝ)` is a circle for
-every `d : ℕ` with `NeZero d`.
+every `d : ℕ` with `NeZero d`, and so is `AddCircle (n * p)` for a positive period `p`
+(`TauCeti.fact_natCast_mul_pos`).
+
+Precomposing with the `n`-sheeted covering `AddCircle (n * p) → AddCircle p` reads a map on
+`AddCircle p` with period `n p` (`AddCircle.coverPullback`): a loop of period `p` traversed `n`
+times. It has the same values at every real number (`AddCircle.coverPullback_coe`) and depends
+continuously on the loop (`AddCircle.continuous_coverPullback`).
 
 This quotient-group API describes repeated traversal of periodic curves without requiring a smooth
 structure. Analyticity and the local diffeomorphism property for positive periods are developed in
@@ -34,6 +42,12 @@ namespace TauCeti
 /-- A nonzero natural number `d` is a positive real period, so `AddCircle (d : ℝ)` is a circle. -/
 instance fact_natCast_pos {d : ℕ} [NeZero d] : Fact (0 < (d : ℝ)) :=
   ⟨Nat.cast_pos.2 (Nat.pos_of_neZero d)⟩
+
+/-- A positive period times a nonzero natural number `n` is a positive period, so
+`AddCircle (n * p)`, the circle of the `n`-sheeted cover of `AddCircle p`, is a circle. -/
+instance fact_natCast_mul_pos {n : ℕ} [NeZero n] {p : ℝ} [Fact (0 < p)] :
+    Fact (0 < (n : ℝ) * p) :=
+  ⟨mul_pos (Nat.cast_pos.2 (Nat.pos_of_neZero n)) Fact.out⟩
 
 end TauCeti
 
@@ -111,6 +125,44 @@ theorem ncard_preimage_coverMap_singleton [Fact (0 < p)] {k : ℕ} (hp : p = k *
     natCard_ker_coverMap h hp]
 
 end CoverMap
+
+section CoverPullback
+
+variable {X : Type*} [TopologicalSpace X]
+
+/-- The pullback of a map `g` on `AddCircle p` along the `n`-sheeted covering
+`AddCircle (n * p) → AddCircle p`. For a loop `g` of period `p` it is the same loop read with period
+`n p`, that is, traversed `n` times. -/
+def coverPullback (n : ℕ) (g : C(AddCircle p, X)) : C(AddCircle ((n : ℝ) * p), X) :=
+  g.comp ⟨coverMap (AddSubgroup.natCast_mul_mem_zmultiples p n), continuous_coverMap _⟩
+
+/-- At the class of a real number `t`, the pulled-back loop takes the value of `g` at the class of
+`t`. -/
+@[simp]
+theorem coverPullback_coe (n : ℕ) (g : C(AddCircle p, X)) (t : ℝ) :
+    coverPullback n g t = g t :=
+  congrArg g (coverMap_coe (AddSubgroup.natCast_mul_mem_zmultiples p n) t)
+
+/-- The pulled-back loop is the loop composed with the covering map. -/
+theorem coverPullback_apply (n : ℕ) (g : C(AddCircle p, X)) (x : AddCircle ((n : ℝ) * p)) :
+    coverPullback n g x = g (coverMap (AddSubgroup.natCast_mul_mem_zmultiples p n) x) :=
+  (rfl)
+
+/-- The pulled-back loop is invariant under the rotation by `p`, a deck transformation of the
+covering: `g` is read through the reduction modulo `p`. -/
+@[simp]
+theorem coverPullback_add_coe_period (n : ℕ) (g : C(AddCircle p, X))
+    (x : AddCircle ((n : ℝ) * p)) :
+    coverPullback n g (x + (p : AddCircle ((n : ℝ) * p))) = coverPullback n g x := by
+  rw [coverPullback_apply, coverPullback_apply, map_add, coverMap_coe, coe_period, add_zero]
+
+/-- The pullback along the covering map is continuous for the compact-open topologies. -/
+@[continuity, fun_prop]
+theorem continuous_coverPullback (n : ℕ) :
+    Continuous (coverPullback (p := p) (X := X) n) :=
+  ContinuousMap.continuous_precomp _
+
+end CoverPullback
 
 /-- For positive `p = k q` with `k : ℕ`, the canonical additive isomorphism
 `ZMod k ≃+ AddSubgroup.zmultiples ((q : ℝ) : AddCircle p)` sending `1` to the class of `q`. -/

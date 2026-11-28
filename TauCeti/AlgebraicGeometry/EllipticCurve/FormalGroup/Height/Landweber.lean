@@ -9,8 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Ideal
 public import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Representable
 public import TauCeti.RingTheory.FormalGroup.Height.Regular
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Bound
-import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.VariableChange
-import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Smooth
+import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Flat
 
 /-!
 # Landweber exactness of the formal group of a Weierstrass curve
@@ -42,10 +41,11 @@ and hence onto `(p, A)`. Consequently:
   (`WeierstrassCurve.isLandweberRegular_formalGroup_iff_of_heightIdeal_three_eq_top`,
   `WeierstrassCurve.isLandweberRegular_formalGroup_iff_of_span_c₄_Δ_eq_top`,
   `WeierstrassCurve.isLandweberRegular_formalGroup_iff`). This criterion needs no flatness.
-* For a singular family with `Δ = 0` and `(p, c₄) = R` at every prime `p` (in particular for a
-  nodal family with `Δ = 0` and `IsUnit c₄`), `I₂(Ê) = R`, so `Ê` is Landweber regular on `M` if
-  and only if every prime `p` is regular on `M`
-  (`WeierstrassCurve.isLandweberRegular_formalGroup_iff_of_Δ_eq_zero_of_span_natCast_c₄_eq_top`).
+* For a family whose discriminant is nilpotent modulo every prime `p`
+  (`W.Δ ∈ (Ideal.span {(p : R)}).radical`, in particular when `Δ = 0` or `IsNilpotent Δ`) and
+  `(p, c₄) = R` at every prime `p` (in particular for a nodal family with `IsUnit c₄`),
+  `I₂(Ê) = R`, so `Ê` is Landweber regular on `M` iff every prime `p` is regular on `M`; see
+  `WeierstrassCurve.isLandweberRegular_formalGroup_iff_of_Δ_mem_radical_of_span_natCast_c₄_eq_top`.
 
 For the universal Weierstrass curve over `ℤ[a₁, a₂, a₃, a₄, a₆]` the sequence `(p, A)` is regular
 (`WeierstrassCurve.Universal.isRegular_natCast_coeff_invariantDifferential`). Weak regularity
@@ -71,13 +71,13 @@ from flatness of `W.specialize : ℤ[a₁, ⋯, a₆] →+* R`, since this class
 of the flat right unit with `ChangeRing.map W.specialize`, which is the base change of
 `W.specialize` along the left unit
 (`WeierstrassCurve.flat_specialize_universalChange_smul_baseChange`).
-When `I₃(Ê) = R` at every prime `p`, the formal group of `C • W` is isomorphic to the base change
-of `Ê`, so its height ideals `I₃` over `R[u, u⁻¹, r, s, t]` are also `R[u, u⁻¹, r, s, t]`
-(`FormalGroup.heightIdeal_smul`, `FormalGroup.map_heightIdeal`). Under this flatness hypothesis
-the formal group of `C • W` is Landweber regular on `R[u, u⁻¹, r, s, t]`, and Landweber regularity
-descends along the faithfully flat extension `R → R[u, u⁻¹, r, s, t]`
-(`FormalGroup.isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat`).
-Hence `Ê` is Landweber regular on `R` (see
+Under this flatness hypothesis `(p, A)` is weakly regular on `R` for every prime `p`, without any
+assumption on `I₃(Ê)`: flat base change makes `(p, A)` for `C • W` weakly regular on
+`R[u, u⁻¹, r, s, t]`, the second height ideal does not depend on the Weierstrass equation, and weak
+regularity descends along the faithfully flat extension `R → R[u, u⁻¹, r, s, t]`
+(`WeierstrassCurve.isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat_universalChange`).
+When `I₃(Ê) = R` at every prime `p`, the regular-sequence criterion then shows that `Ê` is
+Landweber regular on `R` (see
 `isLandweberRegular_formalGroup_of_heightIdeal_three_eq_top_of_flat_universalChange` in
 `WeierstrassCurve`).
 
@@ -91,9 +91,10 @@ Hence `Ê` is Landweber regular on `R` (see
 * `WeierstrassCurve.isLandweberRegular_formalGroup_iff_of_span_c₄_Δ_eq_top` and
   `WeierstrassCurve.isLandweberRegular_formalGroup_iff`: Landweber regularity for smooth-or-nodal
   Weierstrass families and elliptic curves reduces to weak regularity of `(p, A)`.
-* `WeierstrassCurve.isLandweberRegular_formalGroup_iff_of_Δ_eq_zero_of_span_natCast_c₄_eq_top`:
-  when `Δ = 0` and `(p, c₄) = R` at every prime `p` (in particular for nodal families with
-  `IsUnit c₄`), Landweber regularity reduces to `p`-torsion-freeness.
+* `WeierstrassCurve.isLandweberRegular_formalGroup_iff_of_Δ_mem_radical_of_span_natCast_c₄_eq_top`:
+  when `W.Δ ∈ (Ideal.span {(p : R)}).radical` and `(p, c₄) = R` at every prime `p` (in particular
+  when `Δ = 0` or `IsNilpotent Δ`, and for nodal families with `IsUnit c₄`), Landweber regularity
+  reduces to `p`-torsion-freeness.
 * `WeierstrassCurve.isLandweberRegular_formalGroup_of_heightIdeal_three_eq_top_of_flat` and
   `WeierstrassCurve.isLandweberRegular_formalGroup_of_flat`: Landweber regularity when `I₃(Ê) = ⊤`
   at every prime `p` and for elliptic curves, respectively, when the classifying map
@@ -168,19 +169,22 @@ theorem isLandweberRegular_formalGroup_iff_of_span_c₄_Δ_eq_top
         IsWeaklyRegular M
           [(p : R), PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential] :=
   W.isLandweberRegular_formalGroup_iff_of_heightIdeal_three_eq_top M
-    fun _ hp ↦ W.heightIdeal_formalGroup_eq_top_of_span_c₄_Δ_eq_top h hp le_rfl
+    fun _ hp ↦ W.heightIdeal_formalGroup_eq_top_of_span_c₄_Δ_eq_top h hp.one_lt le_rfl
 
-/-- **Landweber regularity criterion when `Δ = 0` and `(p, c₄) = R` at every prime.** When `Δ = 0`
-and `Ideal.span {(p : R), W.c₄} = ⊤` for every prime `p` (in particular for nodal Weierstrass
-families where `IsUnit W.c₄`, via `Ideal.eq_top_of_isUnit_mem`), `I₂(Ê) = R` for every prime `p`,
-so `formalGroup W` is Landweber regular on `M` if and only if multiplication by every prime `p` is
-injective on `M`. -/
-theorem isLandweberRegular_formalGroup_iff_of_Δ_eq_zero_of_span_natCast_c₄_eq_top (hΔ : W.Δ = 0)
+/-- **Landweber regularity criterion when `Δ` is nilpotent modulo `p` and `(p, c₄) = R` at every
+prime.** When `W.Δ ∈ (Ideal.span {(p : R)}).radical` (in particular when `Δ = 0` or
+`IsNilpotent Δ`) and `Ideal.span {(p : R), W.c₄} = ⊤` for every prime `p` (in particular for nodal
+Weierstrass families where `IsUnit W.c₄`, via `Ideal.eq_top_of_isUnit_mem`), `I₂(Ê) = R` for every
+prime `p`, so `formalGroup W` is Landweber regular on `M` if and only if multiplication by every
+prime `p` is injective on `M`. -/
+theorem isLandweberRegular_formalGroup_iff_of_Δ_mem_radical_of_span_natCast_c₄_eq_top
+    (hΔ : ∀ ⦃p : ℕ⦄, p.Prime → W.Δ ∈ (Ideal.span {(p : R)}).radical)
     (hc₄ : ∀ ⦃p : ℕ⦄, p.Prime → Ideal.span {(p : R), W.c₄} = ⊤)
     (M : Type*) [AddCommGroup M] [Module R M] :
     (formalGroup W).IsLandweberRegular M ↔ ∀ ⦃p : ℕ⦄, p.Prime → IsSMulRegular M (p : R) :=
   (formalGroup W).isLandweberRegular_iff_of_heightIdeal_two_eq_top M fun _ hp ↦
-    (W.heightIdeal_formalGroup_eq_top_iff_of_Δ_eq_zero hΔ hp le_rfl).mpr (hc₄ hp)
+    (W.heightIdeal_formalGroup_eq_top_iff_of_Δ_mem_radical
+      (hΔ hp) hp.one_lt le_rfl).mpr (hc₄ hp)
 
 /-- **Landweber regularity when `I₃(Ê) = ⊤` at every prime with flat classifying morphism.** If
 `(formalGroup W).heightIdeal p 3 = ⊤` for every prime `p` (for instance when `(c₄, Δ) = R`, or in
@@ -203,16 +207,9 @@ on `R`. -/
 theorem isLandweberRegular_formalGroup_of_heightIdeal_three_eq_top_of_flat_universalChange
     (hI : ∀ ⦃p : ℕ⦄, p.Prime → (formalGroup W).heightIdeal p 3 = ⊤)
     (h : (ChangeRing.universalChange R • W.baseChange (ChangeRing R)).specialize.Flat) :
-    (formalGroup W).IsLandweberRegular R := by
-  have hI' : ∀ ⦃p : ℕ⦄, p.Prime →
-      (formalGroup (ChangeRing.universalChange R • W.baseChange (ChangeRing R))).heightIdeal p 3 =
-        ⊤ := fun p hp ↦ by
-    rw [VariableChange.formalGroup_smul, FormalGroup.heightIdeal_smul, baseChange,
-      map_formalGroup, ← FormalGroup.map_heightIdeal, hI hp, Ideal.map_top]
-  have hreg := isLandweberRegular_formalGroup_of_heightIdeal_three_eq_top_of_flat _ hI' h
-  rw [VariableChange.formalGroup_smul, FormalGroup.isLandweberRegular_smul_iff, baseChange,
-    map_formalGroup] at hreg
-  exact (FormalGroup.isLandweberRegular_map_algebraMap_iff_of_faithfullyFlat _ _).mp hreg
+    (formalGroup W).IsLandweberRegular R :=
+  (W.isLandweberRegular_formalGroup_iff_of_heightIdeal_three_eq_top R hI).mpr fun _ hp ↦
+    W.isWeaklyRegular_natCast_coeff_invariantDifferential_of_flat_universalChange hp h
 
 end General
 
@@ -229,7 +226,7 @@ theorem isLandweberRegular_formalGroup_iff (M : Type*) [AddCommGroup M] [Module 
       IsWeaklyRegular M
         [(p : R), PowerSeries.coeff (p - 1) (formalGroup W).invariantDifferential] :=
   W.isLandweberRegular_formalGroup_iff_of_heightIdeal_three_eq_top M
-    fun _ hp ↦ W.heightIdeal_formalGroup_eq_top hp le_rfl
+    fun _ hp ↦ W.heightIdeal_formalGroup_eq_top hp.one_lt le_rfl
 
 /-- **Landweber exactness for a flat classifying map.** If the classifying map
 `ℤ[a₁, a₂, a₃, a₄, a₆] →+* R` of an elliptic Weierstrass curve `W` is flat, then the formal group of
@@ -237,7 +234,7 @@ theorem isLandweberRegular_formalGroup_iff (M : Type*) [AddCommGroup M] [Module 
 theorem isLandweberRegular_formalGroup_of_flat (h : W.specialize.Flat) :
     (formalGroup W).IsLandweberRegular R :=
   W.isLandweberRegular_formalGroup_of_heightIdeal_three_eq_top_of_flat
-    (fun _ hp ↦ W.heightIdeal_formalGroup_eq_top hp le_rfl) h
+    (fun _ hp ↦ W.heightIdeal_formalGroup_eq_top hp.one_lt le_rfl) h
 
 namespace Universal
 

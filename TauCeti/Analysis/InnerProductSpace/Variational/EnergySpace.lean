@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
+import TauCeti.Analysis.Normed.Operator.Bilinear
 
 /-!
 # The energy space of a coercive Hermitian form
@@ -43,11 +44,14 @@ underlying sesquilinear form.
   (`TauCeti.CoerciveHermitianForm.inner_toEnergySpace`) and the two-sided norm bounds
   `TauCeti.CoerciveHermitianForm.sqrt_mul_norm_le_norm_toEnergySpace` and
   `TauCeti.CoerciveHermitianForm.norm_toEnergySpace_le`.
+* `TauCeti.CoerciveHermitianForm.sqrt_mul_norm_toEnergySpace_le`: the energy norms of two
+  coercive Hermitian forms on the same space bound each other.
 * `TauCeti.CoerciveHermitianForm.toEnergySpace_eq_toDual_symm_iff`: on a Banach space, `u` solves
   `a.form u v = ℓ v` for every `v` exactly when `a.toEnergySpace u` is the Riesz representative,
   in the energy space, of `ℓ` pulled back along `a.toEnergySpace.symm`.
-* `TauCeti.CoerciveHermitianForm.toEnergySpace_solutionOfFunctional`: when `V` is a Hilbert
-  space, the Lax–Milgram solution of `a.form u v = ℓ v` is mapped to that Riesz representative.
+* `TauCeti.CoerciveHermitianForm.isUnit_continuousLinearMapOfBilin`: when `V` is a Hilbert
+  space, the Fréchet–Riesz operator of `a.form` is invertible, so the Lax–Milgram solution maps
+  of `a.form` are defined.
 
 ## References
 
@@ -143,10 +147,7 @@ private theorem norm_toEnergySpaceₗ (u : V) : ‖a.toEnergySpaceₗ u‖ = √
 
 private theorem norm_toEnergySpaceₗ_le (u : V) : ‖a.toEnergySpaceₗ u‖ ≤ √‖a.form‖ * ‖u‖ := by
   rw [norm_toEnergySpaceₗ, ← Real.sqrt_sq (norm_nonneg u), ← Real.sqrt_mul' _ (sq_nonneg _)]
-  refine Real.sqrt_le_sqrt ?_
-  calc re (a.form u u) ≤ ‖a.form u u‖ := re_le_norm _
-    _ ≤ ‖a.form‖ * ‖u‖ * ‖u‖ := a.form.le_opNorm₂ u u
-    _ = ‖a.form‖ * ‖u‖ ^ 2 := by ring
+  exact Real.sqrt_le_sqrt ((le_abs_self _).trans (a.form.abs_re_apply_self_le u))
 
 private theorem sqrt_mul_norm_le_norm_toEnergySpaceₗ {c : ℝ} (u : V)
     (h : c * ‖u‖ ^ 2 ≤ re (a.form u u)) : √c * ‖u‖ ≤ ‖a.toEnergySpaceₗ u‖ := by
@@ -208,6 +209,20 @@ theorem sqrt_mul_norm_le_norm_toEnergySpace {c : ℝ} (u : V)
   rw [coe_toEnergySpace]
   exact a.sqrt_mul_norm_le_norm_toEnergySpaceₗ u h
 
+/-- **Comparison of two energy norms.** If `c * ‖u‖ ^ 2 ≤ re (a.form u u)`, then the energy norm
+of `u` for another coercive Hermitian form `b` is controlled by its energy norm for `a`:
+`√c * ‖u‖_b ≤ √‖b.form‖ * ‖u‖_a`. -/
+theorem sqrt_mul_norm_toEnergySpace_le (b : CoerciveHermitianForm 𝕜 V) {c : ℝ} (u : V)
+    (h : c * ‖u‖ ^ 2 ≤ re (a.form u u)) :
+    √c * ‖b.toEnergySpace u‖ ≤ √‖b.form‖ * ‖a.toEnergySpace u‖ :=
+  calc √c * ‖b.toEnergySpace u‖ ≤ √c * (√‖b.form‖ * ‖u‖) := by
+        gcongr
+        exact b.norm_toEnergySpace_le u
+    _ = √‖b.form‖ * (√c * ‖u‖) := by ring
+    _ ≤ √‖b.form‖ * ‖a.toEnergySpace u‖ := by
+        gcongr
+        exact a.sqrt_mul_norm_le_norm_toEnergySpace u h
+
 /-- The operator norm of `a.toEnergySpace` is at most `√‖a.form‖`. -/
 theorem opNorm_toEnergySpace_le : ‖(a.toEnergySpace : V →L[𝕜] a.EnergySpace)‖ ≤ √‖a.form‖ :=
   ContinuousLinearMap.opNorm_le_bound _ (Real.sqrt_nonneg _) a.norm_toEnergySpace_le
@@ -238,7 +253,7 @@ theorem toEnergySpace_eq_toDual_symm_iff [CompleteSpace V] (ℓ : StrongDual �
   · obtain ⟨v, rfl⟩ := a.toEnergySpace.surjective x
     simp [h, InnerProductSpace.toDual_symm_apply]
 
-/-! ### Comparison with the Lax–Milgram solution map -/
+/-! ### Invertibility of the Fréchet–Riesz operator on a Hilbert space -/
 
 section LaxMilgram
 
@@ -250,17 +265,6 @@ theorem isUnit_continuousLinearMapOfBilin :
     IsUnit (InnerProductSpace.continuousLinearMapOfBilin a.form) :=
   have ⟨_, hc, hcoer⟩ := a.exists_coercive
   InnerProductSpace.isUnit_continuousLinearMapOfBilin_of_coercive a.form hc hcoer
-
-/-- **The Lax–Milgram solution is a Riesz representative.** On a Hilbert space `V`, the solution
-`u` of `a.form u v = ℓ v` for every `v` is mapped by `a.toEnergySpace` to the Riesz
-representative, in the energy space, of `ℓ` pulled back along `a.toEnergySpace.symm`. -/
-theorem toEnergySpace_solutionOfFunctional (ℓ : StrongDual 𝕜 V) :
-    a.toEnergySpace
-        (InnerProductSpace.solutionOfFunctional a.form a.isUnit_continuousLinearMapOfBilin ℓ) =
-      (InnerProductSpace.toDual 𝕜 a.EnergySpace).symm
-        (ℓ.comp (a.toEnergySpace.symm : a.EnergySpace →L[𝕜] V)) :=
-  (a.toEnergySpace_eq_toDual_symm_iff ℓ _).mpr
-    (InnerProductSpace.apply_solutionOfFunctional_eq a.form _ ℓ)
 
 end LaxMilgram
 

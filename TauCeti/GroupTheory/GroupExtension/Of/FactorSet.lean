@@ -60,6 +60,8 @@ group cohomology: `groupCohomology.cocyclesOfIsMulCocycle₂ α.isMulCocycle₂`
   induces.
 * `TauCeti.FactorSet.ofBimultiplicative`: the factor set of a map `G →* G →* M`, for a trivial
   action.
+* `TauCeti.FactorSet.extendHom`: for a trivial action, the homomorphism `x ↦ χ x.left` attached to
+  a homomorphism `χ` out of `M` that kills every value of the factor set.
 * `TauCeti.FactorSet.ofIsCocycle₂`: the factor set named by a normalized additive `2`-cocycle
   `G × G → Additive M`.
 
@@ -80,6 +82,9 @@ group cohomology: `groupCohomology.cocyclesOfIsMulCocycle₂ α.isMulCocycle₂`
   `G`-component.
 * `TauCeti.FactorSet.commutatorElement_eq_inl`: for commutative `G` acting trivially, the
   commutator of `x` and `y` is the ratio of the values of `α` on their images in the two orders.
+* `TauCeti.FactorSet.forall_map_mul_left_iff` and `TauCeti.FactorSet.eq_extendHom`: for a trivial
+  action, `x ↦ χ x.left` is multiplicative exactly when `χ` kills the factor set, and it is then the
+  only homomorphism restricting to `χ` on `M` and trivial on the canonical section.
 * `TauCeti.FactorSet.forall_canonicalSection_mul_iff`: the canonical section is a homomorphism
   exactly for the trivial factor set.
 * `TauCeti.FactorSet.nonempty_groupExtensionEquiv`: cohomologous factor sets build equivalent
@@ -489,6 +494,58 @@ theorem commutatorElement_eq_inl (h : ∀ (g : A) (a : M), g • a = a) (x y : �
   group
 
 end Commutator
+
+section ExtendHom
+
+variable {A : Type*} [Monoid A] (α : FactorSet G M) (h : ∀ (g : G) (a : M), g • a = a)
+  (χ : M →* A)
+
+include h in
+/-- **Reading off the `M`-component is multiplicative exactly when `χ` kills the factor set.** For
+a trivial action, `x ↦ χ x.left` preserves multiplication on the twisted product if and only if
+`χ (α (g, k)) = 1` for all `g` and `k`. -/
+theorem forall_map_mul_left_iff :
+    (∀ x y : α.Extension, χ (x * y).left = χ x.left * χ y.left) ↔ ∀ p, χ (α p) = 1 := by
+  refine ⟨fun H p => ?_, fun H x y => by simp [h, H]⟩
+  simpa using H ⟨1, p.1⟩ ⟨1, p.2⟩
+
+/-- **The section-trivial extension of a homomorphism on the kernel.** For a trivial action and a
+homomorphism `χ : M →* A` killing every value of `α`, the map `x ↦ χ x.left` is a homomorphism on
+the twisted product. It restricts to `χ` on the copy of `M`
+(`TauCeti.FactorSet.extendHom_comp_inl`), is trivial on the canonical section
+(`TauCeti.FactorSet.extendHom_canonicalSection`), and is the only homomorphism with these two
+properties (`TauCeti.FactorSet.eq_extendHom`). -/
+def extendHom (hχ : ∀ p, χ (α p) = 1) : α.Extension →* A where
+  toFun x := χ x.left
+  map_one' := by simp
+  map_mul' := (forall_map_mul_left_iff α h χ).2 hχ
+
+variable (hχ : ∀ p, χ (α p) = 1)
+
+@[simp]
+theorem extendHom_apply (x : α.Extension) : α.extendHom h χ hχ x = χ x.left := (rfl)
+
+/-- The section-trivial extension of `χ` restricts to `χ` on the copy of `M`. -/
+@[simp]
+theorem extendHom_comp_inl : (α.extendHom h χ hχ).comp (inl α) = χ := by
+  ext
+  simp
+
+/-- The section-trivial extension of `χ` is trivial on the canonical section. -/
+theorem extendHom_canonicalSection (g : G) : α.extendHom h χ hχ (α.canonicalSection g) = 1 := by
+  simp
+
+/-- **Uniqueness of the section-trivial extension.** A homomorphism out of the twisted product
+that restricts to `χ` on the copy of `M` and is trivial on the canonical section is
+`TauCeti.FactorSet.extendHom`. -/
+theorem eq_extendHom (f : α.Extension →* A) (hf : ∀ a, f (inl α a) = χ a)
+    (hs : ∀ g, f (α.canonicalSection g) = 1) : f = α.extendHom h χ hχ := by
+  ext x
+  rw [← inl_mul_canonicalSection α x]
+  simp only [map_mul, hf, hs]
+  simp
+
+end ExtendHom
 
 section Rescale
 

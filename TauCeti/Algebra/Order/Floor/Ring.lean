@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Floor.Ring
 public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Data.Int.Interval
+public import Mathlib.Data.Set.Card
 
 import Mathlib.Basic.Finite.Prod
 import Mathlib.Data.Set.Finite.Range
@@ -19,13 +20,17 @@ A point of `[0, n)` in an ordered ring with a floor operation is the sum of an i
 `Fin n` and a remainder in `[0, 1)`. This describes, for example, time along one of the
 finitely many edges in a polygonal boundary parametrization. In the same way, a `1`-periodic
 function is determined by its values on `[0, 1)`: it takes the same value at `t` and at the
-fractional part of `t`. The integers in `[a, y)` number `max (y - a) 0` up to one.
+fractional part of `t`. The integers in `[a, y)` number `max (y - a) 0` up to one, a closed
+interval `[a, b]` with `a ≤ b + 1` contains at most `b - a + 1` integers, and for `N ≠ 0` only
+finitely many points `q` of a closed interval have `N q` an integer.
 
 For a step `δ > 0` in a linearly ordered field with an integer floor, the multiples of `δ` cut
 the line into the closed intervals `[δ m, δ (m + 1)]` with `m ∈ ℤ`. Every point `x` lies in the
 interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its index between
-`⌈-R / δ⌉ - 1` and `⌊R / δ⌋`. Rounding up to the multiples of `δ` moves a point by less than
-`δ`, and on a finite index type only finitely many rounded families have entries in `[-R, R]`.
+`⌈-R / δ⌉ - 1` and `⌊R / δ⌋`. Two points with no multiple of `δ` between them lie in the same
+interval, and an open interval of length `L` contains at most `⌈L / δ⌉₊` multiples of `δ`.
+Rounding up to the multiples of `δ` moves a point by less than `δ`, and on a finite index type
+only finitely many rounded families have entries in `[-R, R]`.
 
 ## Main results
 
@@ -33,16 +38,33 @@ interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its in
   a remainder in `[0, 1)`.
 * `Function.Periodic.apply_fract`: a `1`-periodic function takes the same value at `t` and at
   its fractional part `Int.fract t`.
+* `Int.fract_sub_eq_sub_iff`, `Int.fract_sub_eq_sub_add_one_iff`: the fractional part of
+  `a - b` is `fract a - fract b` exactly when `fract b ≤ fract a`, and `fract a - fract b + 1`
+  exactly when `fract a < fract b`.
+* `Int.fract_natCast_sub_mul_of_le`, `Int.fract_natCast_sub_mul_of_lt`,
+  `Int.fract_natCast_add_mul_of_lt`, `Int.fract_natCast_add_mul_of_le`: the fractional part of
+  the natural multiple `(j - i) * a` or `(i + j) * a`, in terms of those of `i * a` and `j * a`.
+* `TauCeti.fst_add_neg_floor_mem`: translating `p` by `-⌊p.1⌋` in the first coordinate moves
+  that coordinate into `[0, 1]`.
 * `Nat.cast_lt_iff_le_ceil_sub_one`: `(n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1` for natural `n`.
 * `TauCeti.abs_card_Ico_ceil_sub_le`: `|#[a, ⌈y⌉) - max (y - a) 0| ≤ 1` for an integer `a`.
+* `TauCeti.card_Icc_ceil_floor_le`: `#[⌈a⌉, ⌊b⌋] ≤ b - a + 1` for `a ≤ b + 1`.
+* `TauCeti.finite_setOf_mem_Icc_natCast_mul_eq_intCast`: for `N ≠ 0`, the points `q` of
+  `[a, b]` with `N q` an integer form a finite set.
 * `TauCeti.fract_inv_two`: `{1/2} = 1/2`.
 * `TauCeti.mem_Icc_mul_floor_div`: `x ∈ [δ ⌊x / δ⌋, δ (⌊x / δ⌋ + 1)]`.
 * `TauCeti.mem_Icc_ceil_floor_of_mem_Icc`: if `x ∈ [δ m, δ (m + 1)]` and `|x| ≤ R`, then
   `m ∈ [⌈-R / δ⌉ - 1, ⌊R / δ⌋]`.
 * `TauCeti.exists_finset_forall_exists_le_lt_add`: finitely many families round up, by less
   than `δ` in each entry, every family with entries in `[-R, R]`.
+* `TauCeti.floor_div_eq_of_forall_intCast_mul_notMem_uIcc`: if no multiple of `δ > 0` lies
+  between `a` and `b`, then `⌊a / δ⌋ = ⌊b / δ⌋`.
+* `TauCeti.encard_setOf_intCast_mul_mem_Ioo_le`: an open interval of length `L` contains at most
+  `⌈L / δ⌉₊` multiples of `δ > 0`.
 * `TauCeti.abs_sub_lt_one_div_of_natFloor_mul_eq`: for `t > 0`, nonnegative elements `a`, `b`
   with `⌊a * t⌋₊ = ⌊b * t⌋₊` differ by less than `1 / t`.
+* `TauCeti.finite_inter_Icc_of_forall_le_sub`: a set whose distinct points are at least `ε > 0`
+  apart meets every closed interval in a finite set.
 -/
 
 public section
@@ -61,6 +83,72 @@ theorem exists_eq_natCast_add_of_mem_Ico {R : Type*} [Ring R] [LinearOrder R]
 theorem _root_.Function.Periodic.apply_fract {R β : Type*} [Ring R] [LinearOrder R]
     [FloorRing R] {f : R → β} (hf : Function.Periodic f 1) (t : R) : f (Int.fract t) = f t := by
   simpa [Int.self_sub_floor] using hf.sub_int_mul_eq (x := t) ⌊t⌋
+
+/-- The fractional part of a difference is the difference of the fractional parts exactly when
+the fractional part of the term taken away is at most the other one. -/
+theorem _root_.Int.fract_sub_eq_sub_iff {R : Type*} [Ring R] [LinearOrder R]
+    [IsOrderedAddMonoid R] [FloorRing R] {a b : R} :
+    Int.fract (a - b) = Int.fract a - Int.fract b ↔ Int.fract b ≤ Int.fract a := by
+  refine ⟨fun h => sub_nonneg.1 (by rw [← h]; exact Int.fract_nonneg _), fun h =>
+    Int.fract_eq_iff.2 ⟨sub_nonneg.2 h,
+      (sub_le_self _ (Int.fract_nonneg b)).trans_lt (Int.fract_lt_one a), ⌊a⌋ - ⌊b⌋, ?_⟩⟩
+  unfold Int.fract
+  push_cast
+  abel
+
+/-- The fractional part of a difference is the difference of the fractional parts plus one
+exactly when the fractional part of the term taken away is the larger one. -/
+theorem _root_.Int.fract_sub_eq_sub_add_one_iff {R : Type*} [Ring R] [LinearOrder R]
+    [IsOrderedAddMonoid R] [FloorRing R] {a b : R} :
+    Int.fract (a - b) = Int.fract a - Int.fract b + 1 ↔ Int.fract a < Int.fract b := by
+  refine ⟨fun h => sub_neg.1 ((add_lt_iff_neg_right 1).1 (by rw [← h]; exact Int.fract_lt_one _)),
+    fun h => Int.fract_eq_iff.2 ⟨?_, (add_lt_iff_neg_right 1).2 (sub_neg.2 h), ⌊a⌋ - ⌊b⌋ - 1, ?_⟩⟩
+  · rw [sub_add_eq_add_sub, sub_nonneg]
+    exact (Int.fract_lt_one b).le.trans (le_add_of_nonneg_left (Int.fract_nonneg a))
+  · unfold Int.fract
+    push_cast
+    abel
+
+/-- For natural numbers `i ≤ j`, if the fractional part of `i * a` is at most that of `j * a`,
+then their difference is the fractional part of `(j - i) * a`. -/
+theorem _root_.Int.fract_natCast_sub_mul_of_le {R : Type*} [Ring R] [LinearOrder R]
+    [IsOrderedAddMonoid R] [FloorRing R] {a : R} {i j : ℕ} (hij : i ≤ j)
+    (h : Int.fract (i * a) ≤ Int.fract (j * a)) :
+    Int.fract (↑(j - i) * a) = Int.fract (j * a) - Int.fract (i * a) := by
+  rw [Nat.cast_sub hij, sub_mul, Int.fract_sub_eq_sub_iff.2 h]
+
+/-- For natural numbers `i ≤ j`, if the fractional part of `j * a` is less than that of `i * a`,
+then their difference plus one is the fractional part of `(j - i) * a`. -/
+theorem _root_.Int.fract_natCast_sub_mul_of_lt {R : Type*} [Ring R] [LinearOrder R]
+    [IsOrderedAddMonoid R] [FloorRing R] {a : R} {i j : ℕ} (hij : i ≤ j)
+    (h : Int.fract (j * a) < Int.fract (i * a)) :
+    Int.fract (↑(j - i) * a) = Int.fract (j * a) - Int.fract (i * a) + 1 := by
+  rw [Nat.cast_sub hij, sub_mul, Int.fract_sub_eq_sub_add_one_iff.2 h]
+
+/-- For natural numbers `i` and `j`, if the fractional parts of `i * a` and `j * a` sum to less
+than `1`, then their sum is the fractional part of `(i + j) * a`. -/
+theorem _root_.Int.fract_natCast_add_mul_of_lt {R : Type*} [Ring R] [LinearOrder R]
+    [IsOrderedAddMonoid R] [FloorRing R] {a : R} {i j : ℕ}
+    (h : Int.fract (i * a) + Int.fract (j * a) < 1) :
+    Int.fract (↑(i + j) * a) = Int.fract (i * a) + Int.fract (j * a) := by
+  rw [Nat.cast_add, add_mul, Int.fract_add_eq_add_iff.2 h]
+
+/-- For natural numbers `i` and `j`, if the fractional parts of `i * a` and `j * a` sum to at
+least `1`, then their sum minus one is the fractional part of `(i + j) * a`. -/
+theorem _root_.Int.fract_natCast_add_mul_of_le {R : Type*} [Ring R] [LinearOrder R]
+    [IsOrderedAddMonoid R] [FloorRing R] {a : R} {i j : ℕ}
+    (h : 1 ≤ Int.fract (i * a) + Int.fract (j * a)) :
+    Int.fract (↑(i + j) * a) = Int.fract (i * a) + Int.fract (j * a) - 1 := by
+  rw [Nat.cast_add, add_mul, Int.fract_add_eq_add_sub_one_iff.2 h]
+
+/-- Translating a pair `p` by `-⌊p.1⌋` in the first coordinate moves that coordinate into
+`[0, 1]`, since it becomes the fractional part of `p.1`. This brings a point of `R × M` into the
+fundamental domain `[0, 1] × M` of the translations `(x, y) ↦ (x + k, y)`, `k ∈ ℤ`. -/
+theorem fst_add_neg_floor_mem {R M : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+    [FloorRing R] [AddZeroClass M] (p : R × M) :
+    (p + (((-⌊p.1⌋ : ℤ) : R), 0)).1 ∈ Set.Icc (0 : R) 1 := by
+  simp only [Prod.fst_add, Int.cast_neg, ← sub_eq_add_neg, Int.self_sub_floor]
+  exact ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩
 
 /-- In an ordered ring with a natural ceiling, a natural number lies strictly below `a` exactly
 when it is at most `⌈a⌉₊ - 1`. This turns a strict cutoff into an inclusive one. -/
@@ -82,6 +170,32 @@ theorem abs_card_Ico_ceil_sub_le {R : Type*} [Ring R] [LinearOrder R] [IsStrictO
       abs_le]
     exact ⟨(neg_nonpos.2 zero_le_one).trans (sub_nonneg.2 (Int.le_ceil y)),
       (sub_lt_iff_lt_add'.2 (Int.ceil_lt_add_one y)).le⟩
+
+/-- The closed interval `[a, b]` contains at most `b - a + 1` integers, for `a ≤ b + 1`. -/
+theorem card_Icc_ceil_floor_le {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+    [FloorRing R] {a b : R} (hab : a ≤ b + 1) :
+    ((Finset.Icc ⌈a⌉ ⌊b⌋).card : R) ≤ b - a + 1 := by
+  rw [Int.card_Icc, ← Int.cast_natCast]
+  push_cast [Int.toNat_eq_max, sub_add_eq_add_sub]
+  exact max_le (sub_le_sub ((add_le_add_iff_right 1).2 (Int.floor_le b)) (Int.le_ceil a))
+    (sub_nonneg.2 hab)
+
+/-- In an ordered ring with an integer floor, the points `q` of `[a, b]` with `N q` an integer
+for a fixed `N ≠ 0` form a finite set. In a field these are the points of `[a, b]` in
+`(1 / N) ℤ`. -/
+theorem finite_setOf_mem_Icc_natCast_mul_eq_intCast {R : Type*} [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [FloorRing R] {N : ℕ} (hN : N ≠ 0) (a b : R) :
+    {q : R | q ∈ Set.Icc a b ∧ ∃ m : ℤ, (N : R) * q = m}.Finite := by
+  have hN' : (0 : R) < N := by exact_mod_cast Nat.pos_of_ne_zero hN
+  -- multiplication by `N` is injective and sends the set into the integers of `[N a, N b]`
+  refine (((Set.finite_Icc ⌊(N : R) * a⌋ ⌈(N : R) * b⌉).image ((↑) : ℤ → R)).preimage
+    (strictMono_mul_left_of_pos hN').injective.injOn).subset ?_
+  rintro q ⟨⟨ha, hb⟩, m, hm⟩
+  refine ⟨m, ⟨?_, ?_⟩, hm.symm⟩
+  · rw [← Int.floor_intCast (R := R) m, ← hm]
+    exact Int.floor_mono (mul_le_mul_of_nonneg_left ha hN'.le)
+  · rw [← Int.ceil_intCast (R := R) m, ← hm]
+    exact Int.ceil_mono (mul_le_mul_of_nonneg_left hb hN'.le)
 
 variable {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [FloorRing K] {δ : K}
 
@@ -116,6 +230,40 @@ theorem mem_Icc_ceil_floor_of_mem_Icc (hδ : 0 < δ) {R x : K} {m : ℤ}
     rw [le_div_iff₀ hδ]
     linarith [hx.1]
 
+/-- For a step `δ > 0`, two points with no multiple of `δ` between them have the same index
+`⌊x / δ⌋`. -/
+theorem floor_div_eq_of_forall_intCast_mul_notMem_uIcc (hδ : 0 < δ) {a b : K}
+    (h : ∀ m : ℤ, (m : K) * δ ∉ Set.uIcc a b) : ⌊a / δ⌋ = ⌊b / δ⌋ := by
+  wlog hab : a ≤ b generalizing a b
+  · exact (this (fun m hm ↦ h m (Set.uIcc_comm a b ▸ hm)) (le_of_not_ge hab)).symm
+  refine le_antisymm (Int.floor_mono (div_le_div_of_nonneg_right hab hδ.le)) (not_lt.1 fun hlt ↦ ?_)
+  -- the multiple `δ (⌊a / δ⌋ + 1)` would lie in `(a, b]`
+  refine h (⌊a / δ⌋ + 1) (Set.mem_uIcc_of_le ?_ ?_)
+  · rw [← div_le_iff₀ hδ]
+    push_cast
+    exact (Int.lt_floor_add_one _).le
+  · rw [← le_div_iff₀ hδ]
+    exact (Int.cast_le.2 (Int.add_one_le_iff.2 hlt)).trans (Int.floor_le _)
+
+/-- An open interval of length `L` contains at most `⌈L / δ⌉₊` multiples of a step `δ > 0`. -/
+theorem encard_setOf_intCast_mul_mem_Ioo_le (hδ : 0 < δ) (c L : K) :
+    {k : ℤ | (k : K) * δ ∈ Set.Ioo c (c + L)}.encard ≤ ⌈L / δ⌉₊ := by
+  have hsub : {k : ℤ | (k : K) * δ ∈ Set.Ioo c (c + L)} ⊆
+      (Finset.Ioo ⌊c / δ⌋ ⌈(c + L) / δ⌉ : Set ℤ) := by
+    rintro k ⟨h1, h2⟩
+    simp only [Finset.coe_Ioo, Set.mem_Ioo]
+    exact ⟨Int.floor_lt.2 ((div_lt_iff₀ hδ).2 h1), Int.lt_ceil.2 ((lt_div_iff₀ hδ).2 h2)⟩
+  refine (Set.encard_le_encard hsub).trans ?_
+  rw [Set.encard_coe_eq_coe_finsetCard, Int.card_Ioo]
+  have hceil : ⌈(c + L) / δ⌉ ≤ ⌈c / δ⌉ + ⌈L / δ⌉ := by
+    rw [add_div]
+    exact Int.ceil_add_le _ _
+  have hfl : ⌈c / δ⌉ ≤ ⌊c / δ⌋ + 1 := Int.ceil_le_floor_add_one _
+  have : (⌈(c + L) / δ⌉ - ⌊c / δ⌋ - 1).toNat ≤ ⌈L / δ⌉₊ := by
+    rw [← Int.ceil_toNat]
+    exact Int.toNat_le_toNat (by omega)
+  exact_mod_cast this
+
 /-- **Rounding up to a grid.** For a step `δ > 0` and a bound `R`, finitely many families on a
 finite index type round up every family `a` with entries in `[-R, R]`: some `c` among them has
 `a k ≤ c k < a k + δ` for every `k`. The families are those with entries `δ m`,
@@ -148,5 +296,27 @@ theorem abs_sub_lt_one_div_of_natFloor_mul_eq {a b t : K} (ht : 0 < t) (ha : 0 �
   rw [← sub_mul, abs_mul, abs_of_pos ht] at hcell
   rw [lt_div_iff₀ ht]
   exact hcell
+
+
+/-- **Separated sets are locally finite.** A set whose distinct points are at least `ε > 0` apart
+meets every closed interval `[r, s]` in a finite set: the index `⌊(t - r) / ε⌋` of its cell of
+width `ε` is injective on it and lies in `[0, ⌊(s - r) / ε⌋]`. -/
+theorem finite_inter_Icc_of_forall_le_sub {S : Set K} {ε : K} (hε : 0 < ε)
+    (hS : ∀ a ∈ S, ∀ b ∈ S, a < b → ε ≤ b - a) (r s : K) : (S ∩ Set.Icc r s).Finite := by
+  refine Set.Finite.of_finite_image ((Set.finite_Icc 0 ⌊(s - r) / ε⌋).subset ?_)
+    (f := fun t ↦ ⌊(t - r) / ε⌋) ?_
+  · rintro _ ⟨t, ⟨_, hrt, hts⟩, rfl⟩
+    exact ⟨Int.floor_nonneg.mpr (div_nonneg (sub_nonneg.mpr hrt) hε.le),
+      Int.floor_le_floor (div_le_div_of_nonneg_right (by linarith) hε.le)⟩
+  · -- two points in the same cell are less than `ε` apart, so they are equal
+    intro a ha b hb he
+    have hlt : |a - b| < ε := by
+      simpa [← sub_div, abs_div, abs_of_pos hε, div_lt_one hε] using
+        Int.abs_sub_lt_one_of_floor_eq_floor he
+    rw [abs_sub_lt_iff] at hlt
+    by_contra hab
+    rcases lt_or_gt_of_ne hab with hab | hab
+    · linarith [hS a ha.1 b hb.1 hab]
+    · linarith [hS b hb.1 a ha.1 hab]
 
 end TauCeti

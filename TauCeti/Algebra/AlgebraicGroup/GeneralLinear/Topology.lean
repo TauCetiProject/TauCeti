@@ -6,9 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.CongruenceSubgroup
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
 public import TauCeti.Topology.Algebra.PointTopology.Group
 public import TauCeti.Topology.Instances.Matrix
+
+import TauCeti.Algebra.AlgebraicGroup.CongruenceSubgroup.Topology
+import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Basic
 
 /-!
 # The point topology on `GL_n` is the topology of the unit group
@@ -32,6 +36,11 @@ subspace of `M_n(R)` (`TauCeti.GeneralLinear.isOpenEmbedding_coe_pointsMulEquiv`
   topological groups between the points of `GL_n` and `GL (Fin n) R`.
 * `TauCeti.GeneralLinear.isOpenEmbedding_coe_pointsMulEquiv`: over a ring with open units, the
   points of `GL_n` form an open subspace of the matrices.
+* `TauCeti.GeneralLinear.isOpen_ker_map_quotientMk`: the kernel of reduction modulo an open
+  ideal is open in `GL_n`.
+* `TauCeti.GeneralLinear.hasBasis_nhds_one_ker_map_quotientMk`: when ideals form a basis of
+  neighbourhoods of `0`, the kernels of reduction modulo them form a basis of neighbourhoods of
+  the identity of `GL_m`, for every finite index type `m`.
 
 ## References
 
@@ -131,6 +140,53 @@ theorem isOpenEmbedding_coe_pointsMulEquiv [IsOpenUnits R] :
     IsOpenEmbedding fun x : WithConv (coordinateHopfAlgebra k n →ₐ[k] R) ↦
       (pointsMulEquiv n x : Matrix (Fin n) (Fin n) R) :=
   IsOpenUnits.isOpenEmbedding_unitsVal.comp (pointsContinuousMulEquiv n).isOpenEmbedding
+
+/-- The kernel of reduction `GL_n(R) → GL_n(R ⧸ I)` modulo an open ideal `I` is open: it is the
+image of the congruence subgroup of level `I` under the homeomorphism `pointsContinuousMulEquiv`.
+-/
+theorem isOpen_ker_map_quotientMk {I : Ideal R} (hI : IsOpen (I : Set R)) :
+    IsOpen ((Matrix.GeneralLinearGroup.map (n := Fin n) (Ideal.Quotient.mk I)).ker :
+      Set (Matrix.GeneralLinearGroup (Fin n) R)) := by
+  rw [← map_congruenceSubgroup (R := ℤ), ← coe_pointsContinuousMulEquiv, Subgroup.coe_map]
+  exact (pointsContinuousMulEquiv (k := ℤ) n).isOpenMap _ (HopfAlgebra.isOpen_congruenceSubgroup hI)
+
+/-- **Principal congruence subgroups form a neighbourhood basis of the identity.** If ideals `J i`
+of `R` form a basis of neighbourhoods of `0`, then for every finite index type `m` the kernels of
+reduction `GL_m(R) → GL_m(R ⧸ J i)` form a basis of neighbourhoods of `1` in `GL_m(R)`. For
+`m = Fin n` they are the images of the congruence subgroups of the points of `GL_n` under the
+homeomorphism `pointsContinuousMulEquiv`; a general `m` is reindexed to `Fin n`, which is a
+homeomorphism of the unit groups compatible with reduction. -/
+theorem hasBasis_nhds_one_ker_map_quotientMk (m : Type*) [Fintype m] [DecidableEq m]
+    {ι : Sort*} {p : ι → Prop} {J : ι → Ideal R}
+    (hJ : (𝓝 (0 : R)).HasBasis p fun i ↦ (J i : Set R)) :
+    (𝓝 (1 : Matrix.GeneralLinearGroup m R)).HasBasis p fun i ↦
+      ((Matrix.GeneralLinearGroup.map (n := m) (Ideal.Quotient.mk (J i))).ker :
+        Set (Matrix.GeneralLinearGroup m R)) := by
+  -- The case of `Fin n`, through the points of `GL_n` and their congruence subgroups.
+  have hFin : (𝓝 (1 : Matrix.GeneralLinearGroup (Fin (Fintype.card m)) R)).HasBasis p fun i ↦
+      ((Matrix.GeneralLinearGroup.map (n := Fin (Fintype.card m)) (Ideal.Quotient.mk (J i))).ker :
+        Set (Matrix.GeneralLinearGroup (Fin (Fintype.card m)) R)) := by
+    have h := (HopfAlgebra.hasBasis_nhds_one_congruenceSubgroup (k := ℤ)
+      (H := coordinateHopfAlgebra ℤ (Fintype.card m)) hJ).map
+        (Homeomorph.ofClass (pointsContinuousMulEquiv (k := ℤ) (R := R) (Fintype.card m)))
+    rw [Homeomorph.map_nhds_eq, Homeomorph.coe_ofClass, map_one] at h
+    convert h using 2 with i
+    rw [← map_congruenceSubgroup (R := ℤ), Subgroup.coe_map, MulEquiv.coe_toMonoidHom]
+    simp only [pointsContinuousMulEquiv_apply]
+  -- Reindexing along `m ≃ Fin n` is a homeomorphism of the unit groups commuting with reduction.
+  let Φ := Matrix.GeneralLinearGroup.reindexContinuousMulEquiv R (Fintype.equivFin m)
+  have hΦ : Filter.comap Φ (𝓝 1) = 𝓝 (1 : Matrix.GeneralLinearGroup m R) := by
+    rw [← map_one Φ, ← Homeomorph.coe_ofClass Φ,
+      ← (Homeomorph.ofClass Φ).isInducing.nhds_eq_comap]
+  have h := hFin.comap Φ
+  rw [hΦ] at h
+  convert h using 2 with i
+  ext g
+  simp only [SetLike.mem_coe, MonoidHom.mem_ker, Set.mem_preimage, Φ,
+    Matrix.GeneralLinearGroup.reindexContinuousMulEquiv_apply]
+  rw [← Matrix.GeneralLinearGroup.reindex_map,
+    ← map_one (Matrix.GeneralLinearGroup.reindex _ (Fintype.equivFin m)),
+    (Matrix.GeneralLinearGroup.reindex _ (Fintype.equivFin m)).injective.eq_iff]
 
 end PointTopology
 

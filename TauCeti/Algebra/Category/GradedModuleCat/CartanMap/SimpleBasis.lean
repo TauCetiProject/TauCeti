@@ -124,8 +124,7 @@ private theorem laurentK0_of_mem_span (hS : IsExhaustiveGradedSimpleFamily S)
   by_cases hn₀ : n = 0
   · have : Subsingleton M.obj := Module.finrank_zero_iff.mp (hn.trans hn₀)
     have hM : IsZero M := IsZero.of_full_of_faithful_of_isZero (gradedFiniteModules 𝒜).ι M
-      ((IsZero.iff_id_eq_zero _).2
-        (GradedModuleCat.hom_ext (LinearMap.ext fun _ => Subsingleton.elim (α := M.obj) _ _)))
+      (GradedModuleCat.isZero_of_subsingleton M.obj)
     rw [← LaurentK0.ofExactK0_exactK0_of.{uA}, ExactK0.of_eq_zero_of_isZero.{uA} hM, map_zero]
     exact G.zero_mem
   have : Nontrivial M.obj := Module.nontrivial_of_finrank_pos (by rw [hn]; omega)
@@ -212,6 +211,26 @@ theorem gradedIdempotentCoordinate_eq_mul_gradedSimpleClassBasisOfNeZero_repr
   · subst hji
     exact (mul_one _).symm
   · exact (hne (Ne.symm hji)).trans (mul_zero _).symm
+
+include he he₀ hne hself hS in
+/-- Over a finite-dimensional graded algebra, an exhaustive simple family cut out by degree-zero
+idempotents with nonzero diagonal graded dimensions has a finite index type. -/
+theorem finite_of_smulGradedDimension_ne_zero [DirectSum.Decomposition 𝒜] [SetLike.GradedMul 𝒜] :
+    Finite I := by
+  let bS := gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS
+  let reg : (gradedFiniteModules 𝒜).FullSubcategory :=
+    ⟨GradedModuleCat.regular (𝒜 := 𝒜), gradedFiniteModules_iff.mpr inferInstance⟩
+  have hmem (i : I) : i ∈ (bS.repr (LaurentK0.of.{uA} _ reg)).support := by
+    rw [Finsupp.mem_support_iff]
+    intro hi
+    have hei : e i ≠ 0 :=
+      fun h0 => hself i (by rw [h0, GradedModuleCat.smulGradedDimension_zero])
+    have hcoord := gradedIdempotentCoordinate_eq_mul_gradedSimpleClassBasisOfNeZero_repr
+      S he he₀ hne hself hS (LaurentK0.of.{uA} _ reg) i
+    rw [gradedIdempotentCoordinate_of, hi, mul_zero] at hcoord
+    exact GradedModuleCat.smulGradedDimension_regular_ne_zero hei hcoord
+  exact Finite.of_injective (fun i => (⟨i, hmem i⟩ : (bS.repr (LaurentK0.of.{uA} _ reg)).support))
+    (fun _ _ h => congrArg Subtype.val h)
 
 end NeZero
 

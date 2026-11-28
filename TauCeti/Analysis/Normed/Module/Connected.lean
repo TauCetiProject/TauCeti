@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 public import Mathlib.Analysis.Normed.Module.Connected
 public import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Analysis.Normed.Module.Convex
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.LinearAlgebra.Pi
 import TauCeti.Topology.Connected.Basic
 
@@ -47,6 +49,8 @@ of the product of two preconnected sets.
   `Fin n → ℝ`.
 * `IsPreconnected.thickening`: the `δ`-thickening of a preconnected set in a real seminormed space
   is preconnected.
+* `TauCeti.instConnectedSpaceNonZero`: the nonzero vectors of a nontrivial complex normed space are
+  connected, since as a real vector space it has dimension at least two.
 -/
 
 public section
@@ -241,5 +245,17 @@ theorem not_homeomorph_of_punctured_nhds_splits
     obtain ⟨k, hki⟩ := exists_ne i
     obtain ⟨_, hxS, hxQ⟩ := hS₀_Q k
     exact Set.disjoint_left.mp (hQ_disj hki) hxQ (hi hxS)
+
+/-- The nonzero vectors of a nontrivial complex normed space are connected: as a real vector space
+it has dimension at least two. -/
+instance instConnectedSpaceNonZero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [Nontrivial E] : ConnectedSpace {v : E // v ≠ 0} := by
+  have h1 : 1 ≤ Module.rank ℂ E := Cardinal.one_le_iff_pos.mpr rank_pos
+  have h : 1 < Module.rank ℝ E := by
+    rw [rank_real_of_complex]
+    calc (1 : Cardinal) < 2 := Cardinal.one_lt_two
+      _ = 2 * 1 := (mul_one 2).symm
+      _ ≤ 2 * Module.rank ℂ E := by gcongr
+  exact isConnected_iff_connectedSpace.mp (isConnected_compl_singleton_of_one_lt_rank h 0)
 
 end TauCeti

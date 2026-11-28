@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.UnitaryStarAlgAut
+public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.Permutation
 public import Mathlib.LinearAlgebra.UnitaryGroup
@@ -22,6 +23,8 @@ permutation matrices over a possibly noncommutative star semiring are unitary. A
 `Matrix.mem_unitary_iff_conjTranspose` characterizes `unitary (Matrix n n R)` via the conjugate
 transpose over any star semiring, and `Matrix.conjTranspose_mul_mul_mem_unitary` transfers
 unitarity along a possibly rectangular matrix whose conjugate transpose is a two-sided inverse.
+`Matrix.map_mem_unitary` says that a star-preserving ring homomorphism applied entrywise preserves
+unitary matrices.
 
 `Matrix.diagonal_update_one_mem_unitary_iff` says that a diagonal matrix with all diagonal entries
 `1` except one is unitary exactly when that entry is. Multiplying one column `j` of a unitary
@@ -29,6 +32,9 @@ matrix `A` by `star (det A)` therefore keeps it unitary and makes its determinan
 `det A * star (det A) = 1`: this is `Matrix.UnitaryGroup.toSpecialUnitaryAt j A`, a special unitary
 matrix with the same columns as `A` away from `j`
 (`Matrix.UnitaryGroup.toSpecialUnitaryAt_mulVec_single`).
+
+`Matrix.star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup` says that a unitary matrix preserves
+the Hermitian dot product `star x ⬝ᵥ y`.
 
 For a diagonal with distinct entries, two unitary frames give the same conjugate exactly
 when their relative frame is diagonal. This is the sign ambiguity for orthogonal frames
@@ -80,12 +86,35 @@ theorem conjTranspose_mul_mul_mem_unitary
     simp only [conjTranspose_mul, conjTranspose_conjTranspose,
       ← Matrix.mul_assoc Pᴴ Xᴴ P, hcancel, hX.1, hX.2, Matrix.mul_one, hP]
 
+/-- Applying a star-preserving ring homomorphism entrywise preserves unitary matrices. -/
+theorem map_mem_unitary {R S n : Type*} [Semiring R] [StarRing R] [Semiring S] [StarRing S]
+    [Fintype n] [DecidableEq n] (f : R →+* S) (hf : ∀ x, f (star x) = star (f x))
+    {M : Matrix n n R} (hM : M ∈ unitary (Matrix n n R)) : M.map f ∈ unitary (Matrix n n S) := by
+  rw [mem_unitary_iff_conjTranspose] at hM ⊢
+  rw [← conjTranspose_map f hf, ← Matrix.map_mul, ← Matrix.map_mul, hM.1, hM.2,
+    Matrix.map_one _ f.map_zero f.map_one]
+  exact ⟨rfl, rfl⟩
+
 /-- A diagonal matrix whose diagonal entries are all `1` except the `i`-th one is unitary exactly
 when its `i`-th diagonal entry is unitary. -/
 theorem diagonal_update_one_mem_unitary_iff {n α : Type*} [Fintype n] [DecidableEq n]
     [Semiring α] [StarRing α] {a : α} {i : n} :
     diagonal (Function.update (1 : n → α) i a) ∈ unitary (Matrix n n α) ↔ a ∈ unitary α := by
   simp [Pi.mem_unitary_iff, Function.forall_update_iff]
+
+/-- A unitary matrix preserves the Hermitian dot product. -/
+theorem star_mulVec_dotProduct_mulVec_of_mem_unitaryGroup {n α : Type*} [Fintype n]
+    [DecidableEq n] [CommRing α] [StarRing α] {A : Matrix n n α} (hA : A ∈ unitaryGroup n α)
+    (x y : n → α) : star (A *ᵥ x) ⬝ᵥ (A *ᵥ y) = star x ⬝ᵥ y := by
+  rw [star_mulVec, dotProduct_mulVec, vecMul_vecMul, ← star_eq_conjTranspose,
+    (mem_unitaryGroup_iff' (A := A)).mp hA, vecMul_one]
+
+/-- Unitary conjugation preserves the characteristic polynomial. -/
+theorem charpoly_unitary_conj {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] [StarRing R] (A : Matrix n n R) (U : unitaryGroup n R) :
+    (star U.val * A * U.val).charpoly = A.charpoly := by
+  rw [charpoly_mul_comm (star U.val * A) U.val, ← Matrix.mul_assoc,
+    Unitary.mul_star_self_of_mem U.property, Matrix.one_mul]
 
 namespace UnitaryGroup
 

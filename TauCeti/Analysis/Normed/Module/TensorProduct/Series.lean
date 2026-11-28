@@ -42,7 +42,8 @@ This representation underlies the series description `T x = ∑ n, f n x • y n
   representation `u = ∑ n, x n ⊗ₜ y n` with `∑ n, ‖x n‖` finite and `y n → 0`, obtained by
   rescaling the factors of a series of finite cost.
 * `TauCeti.CompletedProjectiveTensor.hasSum_trace`: the tensor trace of `u = ∑ i, f i ⊗ₜ x i` is
-  `∑ i, f i (x i)`.
+  `∑ i, f i (x i)`, and `TauCeti.CompletedProjectiveTensor.hasSum_trace_mapL` composes `u` with an
+  operator `T` first, giving `∑ i, f i (T (x i))`.
 
 ## References
 
@@ -217,6 +218,16 @@ theorem hasSum_trace {f : ι → StrongDual 𝕜 E} {x : ι → E}
       CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) E)) u) :
     HasSum (fun i ↦ f i (x i)) (trace 𝕜 E u) := by
   simpa [Function.comp_def] using hu.map (trace 𝕜 E) (trace 𝕜 E).continuous
+
+/-- If `u = ∑ i, f i ⊗ₜ x i` in `E* ⊗̂π E`, then the trace of `u` composed with an operator `T`
+is `trace 𝕜 E ((1 ⊗ T) u) = ∑ i, f i (T (x i))`. -/
+theorem hasSum_trace_mapL {f : ι → StrongDual 𝕜 E} {x : ι → E}
+    {u : CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) E}
+    (hu : HasSum (fun i ↦ ((⟨f i ⊗ₜ x i⟩ : ProjectiveTensor 𝕜 (StrongDual 𝕜 E) E) :
+      CompletedProjectiveTensor 𝕜 (StrongDual 𝕜 E) E)) u) (T : E →L[𝕜] E) :
+    HasSum (fun i ↦ f i (T (x i))) (trace 𝕜 E (mapL (.id 𝕜 _) T u)) :=
+  hasSum_trace <| by
+    simpa [Function.comp_def] using hu.map (mapL (.id 𝕜 _) T) (ContinuousLinearMap.continuous _)
 
 end Trace
 

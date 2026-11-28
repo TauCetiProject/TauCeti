@@ -49,6 +49,8 @@ also contains formal differences.
 * `TauCeti.mem_hyperbolicIdeal_iff`: the hyperbolic ideal is the cyclic subgroup on `[ℍ]`.
 * `TauCeti.wittClass_eq_iff_anisotropicPart_eq`: two forms have the same Witt class exactly when
   their anisotropic parts agree.
+* `QuadraticMap.Anisotropic.wittClass_formClass_eq_zero_iff`: an anisotropic regular form has
+  trivial Witt class only on the zero space.
 * `TauCeti.wittClass_surjective`: every element of the Witt ring is the class of a form.
 
 ## References
@@ -62,7 +64,7 @@ open QuadraticMap QuadraticForm
 
 namespace TauCeti
 
-universe u
+universe u v
 
 variable {K : Type u} [Field K] [Invertible (2 : K)]
 
@@ -365,6 +367,15 @@ theorem wittClass_eq_zero_iff {x : RegularFormClass K} :
     wittClass x = 0 ↔ RegularFormClass.anisotropicPart x = 0 := by
   rw [← map_zero (wittClass (K := K)), wittClass_eq_iff_anisotropicPart_eq,
     RegularFormClass.anisotropicPart_eq_self RegularFormClass.anisotropic_zero]
+
+/-- An anisotropic regular form has trivial Witt class exactly when its space is zero: an
+anisotropic class is its own anisotropic part. -/
+theorem _root_.QuadraticMap.Anisotropic.wittClass_formClass_eq_zero_iff {V : Type v}
+    [AddCommGroup V] [Module K V] [FiniteDimensional K V] {Q : QuadraticForm K V}
+    (hA : Q.Anisotropic) (hQ : Q.Nondegenerate) :
+    wittClass (formClass Q hQ) = 0 ↔ Module.finrank K V = 0 := by
+  rw [wittClass_eq_zero_iff, RegularFormClass.anisotropicPart_eq_self
+    ((anisotropic_formClass Q hQ).mpr hA), ← RegularFormClass.rank_eq_zero_iff, rank_formClass]
 
 /-- **Every element of the Witt ring is the Witt class of a form.** The inverse of the class of
 `q` is the class of `-q`, by `TauCeti.RegularFormClass.add_neg_one_mul`. -/

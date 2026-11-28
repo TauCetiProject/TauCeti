@@ -38,7 +38,9 @@ indecomposability of the left ideal it generates.
   statement that `0` and `e` are the only idempotents `f` with `ef = fe = f`.
 * `TauCeti.IsPrimitiveIdempotent.mul_eq_zero_or_eq_of_commute`: for `e` primitive and `f` an
   idempotent commuting with it, `e * f` is `0` or `e`; hence commuting primitive idempotents with
-  nonzero product are equal (`TauCeti.IsPrimitiveIdempotent.eq_of_commute_of_mul_ne_zero`).
+  nonzero product are equal (`TauCeti.IsPrimitiveIdempotent.eq_of_commute_of_mul_ne_zero`), and
+  distinct commuting primitive idempotents are orthogonal
+  (`TauCeti.IsPrimitiveIdempotent.mul_eq_zero_of_ne`).
 * `TauCeti.isPrimitiveIdempotent_map_iff_of_bijOn`: along a ring homomorphism out of a commutative
   ring that is bijective on idempotents, an idempotent is primitive exactly when its image is.
 * `TauCeti.isPrimitiveIdempotent_iff_isIndecomposableModule`: **an idempotent is primitive exactly
@@ -100,6 +102,14 @@ structure IsPrimitiveIdempotent (e : A) : Prop where
 /-- A semiring carrying a primitive idempotent is nontrivial: that idempotent is nonzero. -/
 theorem IsPrimitiveIdempotent.nontrivial (he : IsPrimitiveIdempotent e) : Nontrivial A :=
   ⟨e, 0, he.ne_zero⟩
+
+/-- The sum of two orthogonal primitive idempotents is not primitive: it splits into two nonzero
+orthogonal idempotents. -/
+theorem not_isPrimitiveIdempotent_add {f : A} (he : IsPrimitiveIdempotent e)
+    (hf : IsPrimitiveIdempotent f) (hef : e * f = 0) (hfe : f * e = 0) :
+    ¬ IsPrimitiveIdempotent (e + f) := fun h ↦
+  (h.eq_zero_or_eq_zero_of_add he.isIdempotentElem hf.isIdempotentElem hef hfe rfl).elim
+    he.ne_zero hf.ne_zero
 
 /-- An idempotent whose corner ring contains no idempotent besides `0` and `e` is primitive: both
 summands of a decomposition of `e` lie in that corner ring. -/
@@ -244,6 +254,11 @@ theorem IsPrimitiveIdempotent.eq_of_commute_of_mul_ne_zero (he : IsPrimitiveIdem
     (hf.mul_eq_zero_or_eq_of_commute he.isIdempotentElem hef.symm).resolve_left
       (by rwa [← hef.eq])
   rw [← h₁, hef.eq, h₂]
+
+/-- **Distinct commuting primitive idempotents are orthogonal.** -/
+theorem IsPrimitiveIdempotent.mul_eq_zero_of_ne (he : IsPrimitiveIdempotent e) {f : A}
+    (hf : IsPrimitiveIdempotent f) (hef : Commute e f) (h : e ≠ f) : e * f = 0 :=
+  not_not.1 fun h0 ↦ h (he.eq_of_commute_of_mul_ne_zero hf hef h0)
 
 /-- **Primitivity along a bijection on idempotents.** Let `f : S →+* T` be a ring homomorphism out
 of a commutative ring which restricts to a bijection from the idempotents of `S` onto those of `T`,

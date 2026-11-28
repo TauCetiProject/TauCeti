@@ -160,17 +160,17 @@ theorem integral_integral_pow_spectralMeasure_wignerMatrix (n k : ℕ) :
       (((n + 1 : ℕ) : ℂ)⁻¹ * ∫ ω, (wignerMatrix ξ η (n + 1) ω ^ k).trace ∂P).re := by
   rw [integral_integral_pow_spectralMeasure, Fintype.card_fin, RCLike.re_to_complex]
 
-/-- **Quantitative expected even spectral moment bound.** For independent centered entries in the
-`(n + 1) × (n + 1)` corner with `2m`th absolute moments bounded by `B` and strictly upper second
-absolute moment `s`, the expected `2m`th empirical spectral moment of `H_{n+1}` lies within
-`O((n + 1)⁻¹)` of the `2m`th moment of `semicircleReal 0 s` (for every `m n : ℕ`). -/
+/-- **Quantitative expected even spectral moment bound.** For independent entries in the
+`(n + 1) × (n + 1)` corner with `2m`th absolute moments bounded by `B` and centered strictly upper
+entries of second absolute moment `s`, the expected `2m`th empirical spectral moment of `H_{n+1}`
+lies within `O((n + 1)⁻¹)` of the `2m`th moment of `semicircleReal 0 s` (for every `m n : ℕ`).
+Diagonal entries need not be centered. -/
 theorem abs_integral_integral_pow_two_mul_spectralMeasure_wignerMatrix_sub_le
     {m n : ℕ} {B : ℝ} {s : ℝ≥0}
     (hindep : iIndepFun
       (fun r : {ij : StrictUpper // ij.val.2 < n + 1} ⊕ {i : ℕ // i < n + 1} ↦
         Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P)
     (hξzero : ∀ ij : StrictUpper, ij.val.2 < n + 1 → ∫ ω, ξ ij ω ∂P = 0)
-    (hηzero : ∀ i < n + 1, ∫ ω, η i ω ∂P = 0)
     (hξp : ∀ ij : StrictUpper, ij.val.2 < n + 1 → MemLp (ξ ij) (2 * m : ℕ) P)
     (hηp : ∀ i < n + 1, MemLp (η i) (2 * m : ℕ) P)
     (hξ : ∀ ij : StrictUpper, ij.val.2 < n + 1 → ∫ ω, ‖ξ ij ω‖ ^ (2 * m) ∂P ≤ B)
@@ -194,19 +194,18 @@ theorem abs_integral_integral_pow_two_mul_spectralMeasure_wignerMatrix_sub_le
           ((s : ℝ) : ℂ) ^ m * catalan m‖ := Complex.abs_re_le_norm _
     _ ≤ ((m : ℝ) ^ (2 * m) * B + (s : ℝ) ^ m * catalan m * (m + 1).choose 2) / (n + 1 : ℕ) :=
         norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_le
-          (Nat.add_one_ne_zero n) s.coe_nonneg hindep hξzero hηzero hξp hηp hξ hη hξsq
+          (Nat.add_one_ne_zero n) s.coe_nonneg hindep hξzero hξp hηp hξ hη hξsq
 
-/-- **Quantitative expected odd spectral moment bound.** For independent centered entries in the
-`(n + 1) × (n + 1)` corner with `(2m + 1)`st absolute moments bounded by `B`, the expected
-`(2m + 1)`st empirical spectral moment of `H_{n+1}` has magnitude at most
-`(m + 1) ^ (2 * m + 1) * B / √(n + 1)`. -/
+/-- **Quantitative expected odd spectral moment bound.** For independent entries in the
+`(n + 1) × (n + 1)` corner with centered strictly upper coordinates and `(2m + 1)`st absolute
+moments bounded by `B`, the expected `(2m + 1)`st empirical spectral moment of `H_{n+1}` has
+magnitude at most `(m + 1) ^ (2 * m + 1) * B / √(n + 1)`. Diagonal entries need not be centered. -/
 theorem abs_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix_le
     {m n : ℕ} {B : ℝ}
     (hindep : iIndepFun
       (fun r : {ij : StrictUpper // ij.val.2 < n + 1} ⊕ {i : ℕ // i < n + 1} ↦
         Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P)
     (hξzero : ∀ ij : StrictUpper, ij.val.2 < n + 1 → ∫ ω, ξ ij ω ∂P = 0)
-    (hηzero : ∀ i < n + 1, ∫ ω, η i ω ∂P = 0)
     (hξp : ∀ ij : StrictUpper, ij.val.2 < n + 1 → MemLp (ξ ij) (2 * m + 1 : ℕ) P)
     (hηp : ∀ i < n + 1, MemLp (η i) (2 * m + 1 : ℕ) P)
     (hξ : ∀ ij : StrictUpper, ij.val.2 < n + 1 → ∫ ω, ‖ξ ij ω‖ ^ (2 * m + 1) ∂P ≤ B)
@@ -218,7 +217,7 @@ theorem abs_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix_l
   rw [integral_integral_pow_spectralMeasure_wignerMatrix]
   exact (Complex.abs_re_le_norm _).trans
     (norm_inv_mul_integral_trace_pow_two_mul_add_one_wignerMatrix_le
-      hindep hξzero hηzero hξp hηp hξ hη)
+      hindep hξzero hξp hηp hξ hη)
 
 /-- The empirical spectral measure of the `(n + 1) × (n + 1)` Wigner matrix, viewed as a random
 measure on `ℝ`, is almost everywhere measurable whenever the corner entry coordinates are. -/
@@ -301,9 +300,9 @@ end FixedSpace
 
 section Convergence
 
-/-- **Expected spectral moment convergence for triangular Wigner arrays.** For independent centered
-entries in the `(n + 1) × (n + 1)` corner on possibly varying probability spaces `(Ω n, P n)`
-whose `k`th absolute moments are uniformly bounded by `B` and whose strictly upper entries have
+/-- **Expected spectral moment convergence for triangular Wigner arrays.** For independent entries
+in the `(n + 1) × (n + 1)` corner on possibly varying probability spaces `(Ω n, P n)` whose `k`th
+absolute moments are uniformly bounded by `B` and whose strictly upper entries are centered with
 common second absolute moment `s`, the expected `k`th empirical spectral moment of `H_{n+1}`
 converges to the `k`th moment of `semicircleReal 0 s` (for every `k : ℕ`). -/
 theorem tendsto_integral_integral_pow_spectralMeasure_wignerMatrix'
@@ -314,7 +313,6 @@ theorem tendsto_integral_integral_pow_spectralMeasure_wignerMatrix'
       (fun r : {ij : StrictUpper // ij.val.2 < n + 1} ⊕ {i : ℕ // i < n + 1} ↦
         Sum.elim (fun ij ↦ ξ n ij.val) (fun i ω ↦ (η n i.val ω : ℂ)) r) (P n))
     (hξzero : ∀ n (ij : StrictUpper), ij.val.2 < n + 1 → ∫ ω, ξ n ij ω ∂P n = 0)
-    (hηzero : ∀ n, ∀ i < n + 1, ∫ ω, η n i ω ∂P n = 0)
     (hξp : ∀ n (ij : StrictUpper), ij.val.2 < n + 1 → MemLp (ξ n ij) (k : ℕ) (P n))
     (hηp : ∀ n, ∀ i < n + 1, MemLp (η n i) (k : ℕ) (P n))
     (hξ : ∀ n (ij : StrictUpper), ij.val.2 < n + 1 → ∫ ω, ‖ξ n ij ω‖ ^ k ∂P n ≤ B)
@@ -335,7 +333,7 @@ theorem tendsto_integral_integral_pow_spectralMeasure_wignerMatrix'
     refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun n ↦ ?_) hlim
     rw [Real.norm_eq_abs]
     exact abs_integral_integral_pow_two_mul_spectralMeasure_wignerMatrix_sub_le
-      (hindep n) (hξzero n) (hηzero n) (hξp n) (hηp n) (hξ n) (hη n) (hξsq n)
+      (hindep n) (hξzero n) (hξp n) (hηp n) (hξ n) (hη n) (hξsq n)
   · rw [integral_pow_two_mul_add_one_semicircleReal_zero]
     have hlim : Tendsto (fun n : ℕ ↦
         (m + 1 : ℝ) ^ (2 * m + 1) * B / Real.sqrt (n + 1 : ℕ)) atTop (𝓝 0) := by
@@ -343,17 +341,17 @@ theorem tendsto_integral_integral_pow_spectralMeasure_wignerMatrix'
     refine squeeze_zero_norm (fun n ↦ ?_) hlim
     rw [Real.norm_eq_abs]
     exact abs_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix_le
-      (hindep n) (hξzero n) (hηzero n) (hξp n) (hηp n) (hξ n) (hη n)
+      (hindep n) (hξzero n) (hξp n) (hηp n) (hξ n) (hη n)
 
 /-- **Expected spectral moment convergence for Wigner matrices.** On a single infinite entry array
-with independent centered coordinates, uniformly bounded `k`th absolute moments, and common
-off-diagonal second absolute moment `s`, the expected `k`th empirical spectral moment of `H_{n+1}`
-converges to `∫ x ^ k ∂semicircleReal 0 s` (for every `k : ℕ`). -/
+with independent coordinates, centered off-diagonal entries of common second absolute moment `s`,
+and uniformly bounded `k`th absolute moments, the expected `k`th empirical spectral moment of
+`H_{n+1}` converges to `∫ x ^ k ∂semicircleReal 0 s` (for every `k : ℕ`). -/
 theorem tendsto_integral_integral_pow_spectralMeasure_wignerMatrix
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ} {k : ℕ} {B : ℝ} {s : ℝ≥0}
     (hindep : iIndepFun (fun r : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) r) P)
-    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) (hηzero : ∀ i, ∫ ω, η i ω ∂P = 0)
+    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
     (hξp : ∀ ij, MemLp (ξ ij) (k : ℕ) P) (hηp : ∀ i, MemLp (η i) (k : ℕ) P)
     (hξ : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ k ∂P ≤ B) (hη : ∀ i, ∫ ω, ‖η i ω‖ ^ k ∂P ≤ B)
     (hξsq : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ 2 ∂P = s) :
@@ -363,14 +361,14 @@ theorem tendsto_integral_integral_pow_spectralMeasure_wignerMatrix
       atTop (𝓝 (∫ x, x ^ k ∂semicircleReal 0 s)) :=
   tendsto_integral_integral_pow_spectralMeasure_wignerMatrix'
     (fun _ ↦ iIndepFun_sumElim_ofReal_subtype_lt hindep)
-    (fun _ ij _ ↦ hξzero ij) (fun _ i _ ↦ hηzero i)
+    (fun _ ij _ ↦ hξzero ij)
     (fun _ ij _ ↦ hξp ij) (fun _ i _ ↦ hηp i)
     (fun _ ij _ ↦ hξ ij) (fun _ i _ ↦ hη i) (fun _ ij _ ↦ hξsq ij)
 
 /-- **Weak convergence of expected empirical spectral measures for triangular Wigner arrays.**
-For independent centered corner entries on varying spaces `(Ω n, P n)` with common off-diagonal
-second absolute moment `s` and uniformly bounded moments of every order, the expected empirical
-spectral measures `(P n).bind L_{H_{n+1}}` converge weakly to `semicircleReal 0 s`. -/
+For independent corner entries on varying spaces `(Ω n, P n)` with centered strictly upper entries
+of common second absolute moment `s` and uniformly bounded moments of every order, the expected
+empirical spectral measures `(P n).bind L_{H_{n+1}}` converge weakly to `semicircleReal 0 s`. -/
 theorem tendsto_bind_spectralMeasure_wignerMatrix'
     {Ω : ℕ → Type*} [∀ n, MeasurableSpace (Ω n)] {P : (n : ℕ) → Measure (Ω n)}
     {ξ : (n : ℕ) → StrictUpper → Ω n → ℂ} {η : (n : ℕ) → ℕ → Ω n → ℝ} {s : ℝ≥0}
@@ -378,7 +376,6 @@ theorem tendsto_bind_spectralMeasure_wignerMatrix'
       (fun r : {ij : StrictUpper // ij.val.2 < n + 1} ⊕ {i : ℕ // i < n + 1} ↦
         Sum.elim (fun ij ↦ ξ n ij.val) (fun i ω ↦ (η n i.val ω : ℂ)) r) (P n))
     (hξzero : ∀ n (ij : StrictUpper), ij.val.2 < n + 1 → ∫ ω, ξ n ij ω ∂P n = 0)
-    (hηzero : ∀ n, ∀ i < n + 1, ∫ ω, η n i ω ∂P n = 0)
     (hξp : ∀ k n (ij : StrictUpper), ij.val.2 < n + 1 → MemLp (ξ n ij) (k : ℕ) (P n))
     (hηp : ∀ k n, ∀ i < n + 1, MemLp (η n i) (k : ℕ) (P n))
     (hξ : ∀ k, ∃ B, ∀ n (ij : StrictUpper), ij.val.2 < n + 1 → ∫ ω, ‖ξ n ij ω‖ ^ k ∂P n ≤ B)
@@ -402,21 +399,21 @@ theorem tendsto_bind_spectralMeasure_wignerMatrix'
   obtain ⟨B₁, hB₁⟩ := hξ k
   obtain ⟨B₂, hB₂⟩ := hη k
   have hconv := tendsto_integral_integral_pow_spectralMeasure_wignerMatrix'
-    (B := max B₁ B₂) hindep hξzero hηzero (hξp k) (hηp k)
+    (B := max B₁ B₂) hindep hξzero (hξp k) (hηp k)
     (fun n ij hij ↦ (hB₁ n ij hij).trans (le_max_left _ _))
     (fun n i hi ↦ (hB₂ n i hi).trans (le_max_right _ _)) hξsq
   exact hconv.congr fun n ↦
     (integral_pow_bind_spectralMeasure_wignerMatrix (hξp k n) (hηp k n)).symm
 
 /-- **Weak convergence of the expected empirical spectral measure for Wigner matrices.**
-On a single infinite entry array with independent centered coordinates, common off-diagonal second
-absolute moment `s`, and uniformly bounded moments of every order, `P.bind L_{H_{n+1}}` converges
-weakly to `semicircleReal 0 s`. -/
+On a single infinite entry array with independent coordinates, centered off-diagonal entries of
+common second absolute moment `s`, and uniformly bounded moments of every order,
+`P.bind L_{H_{n+1}}` converges weakly to `semicircleReal 0 s`. -/
 theorem tendsto_bind_spectralMeasure_wignerMatrix
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ} {s : ℝ≥0}
     (hindep : iIndepFun (fun r : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) r) P)
-    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) (hηzero : ∀ i, ∫ ω, η i ω ∂P = 0)
+    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
     (hξp : ∀ k ij, MemLp (ξ ij) (k : ℕ) P) (hηp : ∀ k i, MemLp (η i) (k : ℕ) P)
     (hξ : ∀ k, ∃ B, ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ k ∂P ≤ B)
     (hη : ∀ k, ∃ B, ∀ i, ∫ ω, ‖η i ω‖ ^ k ∂P ≤ B)
@@ -431,7 +428,7 @@ theorem tendsto_bind_spectralMeasure_wignerMatrix
       atTop (𝓝 ⟨semicircleReal 0 s, inferInstance⟩) :=
   tendsto_bind_spectralMeasure_wignerMatrix'
     (fun _ ↦ iIndepFun_sumElim_ofReal_subtype_lt hindep)
-    (fun _ ij _ ↦ hξzero ij) (fun _ i _ ↦ hηzero i)
+    (fun _ ij _ ↦ hξzero ij)
     (fun k _ ij _ ↦ hξp k ij) (fun k _ i _ ↦ hηp k i)
     (fun k ↦ let ⟨B, hB⟩ := hξ k; ⟨B, fun _ ij _ ↦ hB ij⟩)
     (fun k ↦ let ⟨B, hB⟩ := hη k; ⟨B, fun _ i _ ↦ hB i⟩)
@@ -446,7 +443,6 @@ theorem tendsto_integral_integral_boundedContinuousFunction_spectralMeasure_wign
       (fun r : {ij : StrictUpper // ij.val.2 < n + 1} ⊕ {i : ℕ // i < n + 1} ↦
         Sum.elim (fun ij ↦ ξ n ij.val) (fun i ω ↦ (η n i.val ω : ℂ)) r) (P n))
     (hξzero : ∀ n (ij : StrictUpper), ij.val.2 < n + 1 → ∫ ω, ξ n ij ω ∂P n = 0)
-    (hηzero : ∀ n, ∀ i < n + 1, ∫ ω, η n i ω ∂P n = 0)
     (hξp : ∀ k n (ij : StrictUpper), ij.val.2 < n + 1 → MemLp (ξ n ij) (k : ℕ) (P n))
     (hηp : ∀ k n, ∀ i < n + 1, MemLp (η n i) (k : ℕ) (P n))
     (hξ : ∀ k, ∃ B, ∀ n (ij : StrictUpper), ij.val.2 < n + 1 → ∫ ω, ‖ξ n ij ω‖ ^ k ∂P n ≤ B)
@@ -458,7 +454,7 @@ theorem tendsto_integral_integral_boundedContinuousFunction_spectralMeasure_wign
           (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)) ∂P n)
       atTop (𝓝 (∫ x, f x ∂semicircleReal 0 s)) := by
   have hweak := tendsto_bind_spectralMeasure_wignerMatrix'
-    hindep hξzero hηzero hξp hηp hξ hη hξsq
+    hindep hξzero hξp hηp hξ hη hξsq
   have hf := (ProbabilityMeasure.tendsto_iff_forall_integral_tendsto.mp hweak) f
   refine hf.congr fun n ↦ ?_
   have : IsProbabilityMeasure (P n) := (hindep n).isProbabilityMeasure
@@ -479,7 +475,7 @@ theorem tendsto_integral_integral_boundedContinuousFunction_spectralMeasure_wign
     {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {ξ : StrictUpper → Ω → ℂ} {η : ℕ → Ω → ℝ} {s : ℝ≥0}
     (hindep : iIndepFun (fun r : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) r) P)
-    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) (hηzero : ∀ i, ∫ ω, η i ω ∂P = 0)
+    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
     (hξp : ∀ k ij, MemLp (ξ ij) (k : ℕ) P) (hηp : ∀ k i, MemLp (η i) (k : ℕ) P)
     (hξ : ∀ k, ∃ B, ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ k ∂P ≤ B)
     (hη : ∀ k, ∃ B, ∀ i, ∫ ω, ‖η i ω‖ ^ k ∂P ≤ B)
@@ -490,7 +486,7 @@ theorem tendsto_integral_integral_boundedContinuousFunction_spectralMeasure_wign
       atTop (𝓝 (∫ x, f x ∂semicircleReal 0 s)) :=
   tendsto_integral_integral_boundedContinuousFunction_spectralMeasure_wignerMatrix'
     (fun _ ↦ iIndepFun_sumElim_ofReal_subtype_lt hindep)
-    (fun _ ij _ ↦ hξzero ij) (fun _ i _ ↦ hηzero i)
+    (fun _ ij _ ↦ hξzero ij)
     (fun k _ ij _ ↦ hξp k ij) (fun k _ i _ ↦ hηp k i)
     (fun k ↦ let ⟨B, hB⟩ := hξ k; ⟨B, fun _ ij _ ↦ hB ij⟩)
     (fun k ↦ let ⟨B, hB⟩ := hη k; ⟨B, fun _ i _ ↦ hB i⟩)

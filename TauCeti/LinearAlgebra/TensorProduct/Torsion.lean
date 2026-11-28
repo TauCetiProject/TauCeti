@@ -18,7 +18,8 @@ import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 
 An annihilator of either factor annihilates its tensor product with an arbitrary module.
 Similarly, the tensor product of commutative additive monoids is torsion if either factor is
-torsion.
+torsion, and the tensor product of an `S`-torsion module on the left with any module over a
+commuting base semiring is `S`-torsion (`Module.IsTorsion'.tensorProduct_left`).
 No flatness or finite generation is required. These facts supply the tensor closure properties
 used in Hurewicz theorems modulo a class of abelian groups.
 
@@ -37,6 +38,10 @@ ring of characteristic zero, kills its elements of finite additive order
 instance `ℝ ⊗[ℤ] H²(X; ℤ)` forgets torsion classes. In particular, when `A` is moreover a ring, a
 set generating `G` modulo torsion spans `A ⊗[ℤ] G` over `A`
 (`TauCeti.span_one_tmul_eq_top_of_isOfFinAddOrder`).
+
+Over a commutative ring without zero divisors, the tensor product of a nontrivial flat module with
+a nontrivial torsion-free module is nontrivial
+(`TauCeti.nontrivial_tensorProduct_of_flat_left_of_isTorsionFree`).
 
 ## References
 
@@ -74,13 +79,34 @@ theorem isTorsionBy_tensorProduct_right {S : Type*} [Semiring S] [Module S M]
   | tmul x y => rw [← TensorProduct.tmul_smul, h (x := y), TensorProduct.tmul_zero]
   | add x y hx hy => simp [smul_add, hx, hy]
 
+end TauCeti
+
+namespace Module.IsTorsion'
+
+/-- Tensoring an `S`-torsion module on the left with any module over a commuting base semiring
+yields an `S`-torsion module. -/
+theorem tensorProduct_left {R R₀ M N : Type*} [CommSemiring R] [CommSemiring R₀]
+    [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N] [Module R₀ M]
+    [SMulCommClass R R₀ M] {S : Submonoid R₀} (hM : Module.IsTorsion' M S) :
+    Module.IsTorsion' (M ⊗[R] N) S := by
+  rw [Submodule.isTorsion'_iff_torsion'_eq_top (R := R₀), eq_top_iff]
+  refine fun t _ ↦ t.inductionOn (fun x y ↦ ?_) fun _ _ ↦ add_mem
+  obtain ⟨s, hs⟩ := @hM x
+  exact ⟨s, by rw [Submonoid.smul_def, TensorProduct.smul_tmul', ← Submonoid.smul_def, hs,
+    TensorProduct.zero_tmul]⟩
+
+end Module.IsTorsion'
+
+namespace TauCeti
+
+variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [AddCommMonoid N]
+  [Module R M] [Module R N]
+
 /-- Tensoring a torsion commutative additive monoid on the left with any commutative additive
 monoid gives a torsion monoid. -/
-theorem isAddTorsion_tensorProduct_left (h : IsAddTorsion M) : IsAddTorsion (M ⊗[R] N) := by
-  intro t
-  induction t using TensorProduct.inductionOn with
-  | tmul x y => exact ((TensorProduct.mk R M N).flip y).toAddMonoidHom.isOfFinAddOrder (h x)
-  | add x y hx hy => exact hx.add hy
+theorem isAddTorsion_tensorProduct_left (h : IsAddTorsion M) : IsAddTorsion (M ⊗[R] N) :=
+  isAddTorsion_iff_isTorsion_nat.2
+    (Module.IsTorsion'.tensorProduct_left (R₀ := ℕ) (isAddTorsion_iff_isTorsion_nat.1 h))
 
 /-- Tensoring a torsion commutative additive monoid on the right with any commutative additive
 monoid gives a torsion monoid. -/
@@ -212,5 +238,15 @@ theorem span_one_tmul_eq_top_of_isOfFinAddOrder {A G : Type*} [Ring A] [Module �
     rw [← sub_add_cancel x y, TensorProduct.tmul_add, tmul_eq_zero_of_isOfFinAddOrder r hxy,
       zero_add]
     exact Submodule.tmul_mem_baseChange_of_mem r hy
+
+/-- The tensor product of a nontrivial flat module with a nontrivial torsion-free module over a
+commutative ring without zero divisors is nontrivial. -/
+theorem nontrivial_tensorProduct_of_flat_left_of_isTorsionFree
+    {R P M : Type*} [CommRing R] [IsCancelMulZero R] [AddCommMonoid P] [Module R P]
+    [Module.Flat R P] [Nontrivial P] [AddCommGroup M] [Module R M] [Module.IsTorsionFree R M]
+    [Nontrivial M] : Nontrivial (P ⊗[R] M) :=
+  let ⟨_, hm₀⟩ := exists_ne (0 : M)
+  TensorProduct.nontrivial_of_linearMap_injective_of_flat_left R P M
+    (LinearMap.toSpanSingleton R M _) (smul_left_injective R hm₀)
 
 end TauCeti

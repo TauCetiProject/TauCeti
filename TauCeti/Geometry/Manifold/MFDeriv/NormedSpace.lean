@@ -25,10 +25,14 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   equation.
 * `TauCeti.mvfderiv_eq_fderiv_apply`: on normed spaces, `mvfderiv` applied to a tangent vector is
   `fderiv` applied to it.
+* `HasFDerivAt.mfderiv_apply`: on normed spaces, the manifold derivative of a map with Fréchet
+  derivative `f'` applies `f'` through the tangent-space identifications.
 * `TauCeti.mvfderiv_apply_eval`: the derivative of evaluation `a ↦ a u` of continuous linear maps
   is evaluation at `u`.
 * `TauCeti.mvfderiv_comp_apply_of_differentiableAt`: the chain rule when the outer map is
   between normed spaces.
+* `TauCeti.mvfderiv_comp_chartAt_apply`: the chain rule through a chart, with the tangent vector
+  read in the tangent trivialization.
 * `TauCeti.mvfderiv_scalar_comp`: the chain rule `d(φ ∘ g) = φ'(g x) • dg` for scalar `φ`.
 * `ContinuousLinearMap.mvfderiv_comp_apply`: the chain rule when the outer map is continuous
   linear. For a continuous linear equivalence, `ContinuousLinearEquiv.mvfderiv_comp_apply`
@@ -44,6 +48,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   sends a tangent vector `v` to `(v, d u v)`.
 * `TauCeti.fderiv_comp_graph_apply_of_mdifferentiableAt`: the chain rule along the graph of a
   manifold-valued map on a normed space.
+* `TauCeti.fderiv_comp_apply_eq_mfderiv`: the chain rule for a map between normed spaces which
+  factors through a manifold.
 * `HasMFDerivAt.hasDerivAt_comp_graph`: the chain rule `d/du f(u, γ u) = ∂_t f + d(f u)(γ')` along
   a curve in a manifold.
 * `TauCeti.continuous_fderiv_of_contMDiff`: the derivative in the domain variable of a `C¹`
@@ -64,6 +70,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   differentiability hypothesis.
 * `TauCeti.mvfderiv_smul_algebra`: the Leibniz rule for multiplication by a function with values in
   a normed algebra acting on the target.
+* `TauCeti.mvfderiv_apply_eq_neg_mul_mul_of_mul_eq_one`: the derivative of a pointwise inverse in a
+  normed algebra is `dg = -g (df) g`.
 * `TauCeti.mvfderiv_smul_left`: for a group acting on a normed space by continuous linear maps,
   the derivative of `k • ·` is `k • ·`.
 * `TauCeti.mvfderiv_add_const`: adding a constant does not change `mvfderiv`, without a
@@ -121,6 +129,15 @@ theorem mvfderiv_eq_fderiv_apply (f : F → F') (x : F) (v : TangentSpace 𝓘(�
   rw [mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply]
   exact congrArg _ (NormedSpace.fromTangentSpace_apply (𝕜 := 𝕜) x v)
 
+/-- For a map between normed spaces with Fréchet derivative `f'` at `x`, the manifold derivative
+at `x` applies `f'` to a tangent vector, read through the model-space tangent identifications. -/
+theorem _root_.HasFDerivAt.mfderiv_apply {f : F → F'} {f' : F →L[𝕜] F'} {x : F}
+    (h : HasFDerivAt f f' x) (v : TangentSpace 𝓘(𝕜, F) x) :
+    mfderiv 𝓘(𝕜, F) 𝓘(𝕜, F') f x v =
+      (NormedSpace.fromTangentSpace (f x)).symm (f' (NormedSpace.fromTangentSpace x v)) := by
+  rw [mfderiv_eq_fderiv, h.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe]
+
 /-- The derivative of the evaluation map `a ↦ a u` on continuous linear maps is evaluation
 at `u`. -/
 theorem mvfderiv_apply_eval (u : F) (a γ : F →L[𝕜] F') :
@@ -156,6 +173,16 @@ theorem _root_.Filter.EventuallyEq.mvfderiv_eq {f₁ f : M → F} {x : M} (hf : 
   -- `tangentSpaceCast` identifies two tangent spaces of `F`, both of which are `F` itself.
   rfl
 
+/-- The support of the derivative of a vector-valued function along a vector field lies in the
+support of the function: the manifold version of `tsupport_fderiv_apply_subset`. -/
+theorem tsupport_mvfderiv_apply_subset (f : M → F) (V : ∀ x, TangentSpace I x) :
+    tsupport (fun x ↦ mvfderiv I f x (V x)) ⊆ tsupport f := by
+  refine closure_minimal (fun x hx ↦ ?_) (isClosed_tsupport _)
+  by_contra h
+  have hf : f =ᶠ[𝓝 x] fun _ ↦ 0 := notMem_tsupport_iff_eventuallyEq.1 h
+  rw [Function.mem_support, hf.mvfderiv_eq, mvfderiv_const, zero_apply] at hx
+  exact hx rfl
+
 /-- A map into the model space with the germ of the extended chart at `x` has the identity as
 derivative at `x`, a tangent vector at `x` being read as a vector of the model space. -/
 theorem mvfderiv_apply_of_eventuallyEq_extChartAt {f : M → E} {x : M}
@@ -184,6 +211,30 @@ theorem mvfderiv_comp_apply_of_differentiableAt {g : M → F} {φ : F → F'} {x
   rw [mvfderiv_comp_apply x hφ.mdifferentiableAt hg, mvfderiv_eq_fderiv,
     ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     NormedSpace.fromTangentSpace_apply, mvfderiv_apply_eq_mfderiv_apply]
+
+/-- **The chain rule through a chart.** On a manifold modelled on a normed space `E` without
+boundary, the derivative at `x` of a function read in the chart at `c` is the derivative of its
+reading at the chart point, applied to the tangent vector read in the tangent trivialization at
+`c`. -/
+theorem mvfderiv_comp_chartAt_apply {M' : Type*} [TopologicalSpace M'] [ChartedSpace E M']
+    [IsManifold 𝓘(𝕜, E) 1 M'] {g : E → F} {c x : M'} (hx : x ∈ (chartAt E c).source)
+    (hg : DifferentiableAt 𝕜 g (chartAt E c x)) (w : TangentSpace 𝓘(𝕜, E) x) :
+    mvfderiv 𝓘(𝕜, E) (fun x' ↦ g (chartAt E c x')) x w =
+      fderiv 𝕜 g (chartAt E c x)
+        ((trivializationAt E (TangentSpace 𝓘(𝕜, E) : M' → Type _) c).continuousLinearMapAt 𝕜 x
+          w) := by
+  have hfun : (fun x' ↦ g (chartAt E c x')) = g ∘ extChartAt 𝓘(𝕜, E) c := by
+    funext x'
+    simp
+  have hch : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, E) (extChartAt 𝓘(𝕜, E) c) x :=
+    mdifferentiableAt_extChartAt hx
+  have hg' : MDifferentiableAt 𝓘(𝕜, E) 𝓘(𝕜, F) g (extChartAt 𝓘(𝕜, E) c x) := by
+    simpa using hg.mdifferentiableAt
+  rw [hfun, mvfderiv_comp_apply x hg' hch, mvfderiv_eq_fderiv,
+    TangentBundle.continuousLinearMapAt_trivializationAt hx, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, NormedSpace.fromTangentSpace_apply]
+  -- For the trivial model, `extChartAt 𝓘(𝕜, E) c` is `chartAt E c` as a function.
+  rfl
 
 /-- The chain rule for a scalar function on a manifold followed by a scalar function
 differentiable at the relevant point: the derivative is scaled by `φ'(g x)`. -/
@@ -341,6 +392,17 @@ theorem fderiv_comp_graph_apply_of_mdifferentiableAt {u : F → M} {f : F → M 
   simpa only [NormedSpace.fromTangentSpace_symm_apply,
     Function.uncurry_apply_pair, id_eq] using hc
 
+/-- The chain rule for a map between normed spaces which factors through a manifold: the derivative
+of `Φ ∘ f` is the composite of the manifold derivatives of `f` and `Φ`. -/
+theorem fderiv_comp_apply_eq_mfderiv {Φ : M → F'} {f : F → M} {x : F}
+    (hΦ : MDifferentiableAt I 𝓘(𝕜, F') Φ (f x)) (hf : MDifferentiableAt 𝓘(𝕜, F) I f x) (a : F) :
+    fderiv 𝕜 (Φ ∘ f) x a = mfderiv I 𝓘(𝕜, F') Φ (f x) (mfderiv 𝓘(𝕜, F) I f x a) := by
+  have h := mfderiv_comp_apply x hΦ hf a
+  -- `mfderiv_eq_fderiv` reads the tangent spaces of `F` and `F'` as the spaces themselves through
+  -- `NormedSpace.fromTangentSpace`, which is the identity.
+  rw [mfderiv_eq_fderiv] at h
+  exact h
+
 /-- **The chain rule along a curve for a time-dependent family.** If the curve `u` has velocity
 `w` at `t` and `f` is jointly differentiable at `(t, u t)`, then `s ↦ f s (u s)` has derivative
 `∂_t f(t, u t) + d(f t)(w)` at `t`: the derivative of `f` in the time variable plus the
@@ -423,6 +485,25 @@ theorem mvfderiv_smul_algebra {𝕜' : Type*} [NormedRing 𝕜'] [NormedAlgebra 
   simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
     Function.id_comp] at h ⊢
   rwa [Function.comp_apply, Function.comp_apply, extChartAt_to_inv] at h
+
+/-- The derivative of a pointwise inverse in a normed algebra: if `f * g = 1` near `x` and
+`g x * f x = 1`, then `dg = -g (df) g` at `x`. -/
+theorem mvfderiv_apply_eq_neg_mul_mul_of_mul_eq_one {A : Type*} [NormedRing A]
+    [NormedAlgebra 𝕜 A] {f g : M → A} {x : M} (hf : MDifferentiableAt I 𝓘(𝕜, A) f x)
+    (hg : MDifferentiableAt I 𝓘(𝕜, A) g x) (hfg : f * g =ᶠ[𝓝 x] 1) (hgf : g x * f x = 1)
+    (v : TangentSpace I x) :
+    mvfderiv I g x v = -(g x * mvfderiv I f x v * g x) := by
+  have hfg' : f • g =ᶠ[𝓝 x] fun _ ↦ 1 :=
+    hfg.mono fun y hy ↦ by
+      simpa only [Pi.smul_apply, smul_eq_mul, Pi.mul_apply, Pi.one_apply] using hy
+  have h := mvfderiv_smul_algebra (F := A) hf hg
+  rw [hfg'.mvfderiv_eq, mvfderiv_const] at h
+  have h' : f x * mvfderiv I g x v + mvfderiv I f x v * g x = 0 := by
+    simpa only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, smul_eq_mul,
+      zero_apply] using (congrArg (fun L ↦ L v) h).symm
+  calc mvfderiv I g x v = g x * (f x * mvfderiv I g x v) := by
+        rw [← mul_assoc, hgf, one_mul]
+    _ = _ := by rw [eq_neg_of_add_eq_zero_left h']; noncomm_ring
 
 /-- For a group acting on a normed space by continuous linear maps, the derivative of `k • ·`, read
 in the space, is `k • ·` at every point. -/

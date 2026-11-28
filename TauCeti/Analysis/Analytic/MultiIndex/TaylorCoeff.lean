@@ -58,6 +58,8 @@ not.
   `AnalyticAt.norm_prod_factorial_smul_mvTaylorCoeff_le`, and
   `AnalyticAt.factorial_smul_mvTaylorCoeff_of_unique`: agreement and norm bound with
   `iteratedFDeriv` and, in one variable, `iteratedDeriv`.
+* `AnalyticOnNhd.mvTaylorCoeff`: in characteristic zero, each Taylor coefficient is analytic in
+  the centre on the analytic locus of `f`.
 * `ContinuousLinearMap.mvTaylorCoeff_comp_left`,
   `ContinuousLinearEquiv.mvTaylorCoeff_comp_left`, and
   `ContinuousLinearMap.mvTaylorCoeff_comp_eq_zero`: postcomposition with continuous linear maps and
@@ -283,6 +285,25 @@ theorem factorial_smul_mvTaylorCoeff_of_unique [Unique ι] [CompleteSpace F]
     Fintype.sum_unique]
 
 end AnalyticAt
+
+/-- **Taylor coefficients are analytic in the centre.** If `f` is analytic on a neighborhood of
+every point of `s`, then so is `x ↦ mvTaylorCoeff f x α`, for every multi-index `α`: near each
+point it is a fixed evaluation of an iterated derivative of `f`, divided by `∏ i, (α i)!`. -/
+theorem AnalyticOnNhd.mvTaylorCoeff [CharZero 𝕜] [CompleteSpace F] {f : (ι → 𝕜) → F}
+    {s : Set (ι → 𝕜)} (hf : AnalyticOnNhd 𝕜 f s) (α : ι → ℕ) :
+    AnalyticOnNhd 𝕜 (fun x ↦ TauCeti.mvTaylorCoeff f x α) s := by
+  classical
+  obtain ⟨v, hv⟩ :=
+    TauCeti.exists_forall_card_filter_eq (α := Fin (∑ i, α i)) (Fintype.card_fin _).symm
+  have hD : AnalyticOnNhd 𝕜 (fun x ↦ ((∏ i, (α i).factorial : ℕ) : 𝕜)⁻¹ •
+      iteratedFDeriv 𝕜 (∑ i, α i) f x (fun j ↦ Pi.single (v j) 1)) s := fun x hx ↦
+    ((ContinuousMultilinearMap.apply 𝕜 (fun _ : Fin (∑ i, α i) ↦ ι → 𝕜) F
+      (fun j ↦ Pi.single (v j) 1)).analyticAt _).comp (hf.iteratedFDeriv _ x hx) |>.const_smul
+  refine fun x hx ↦ (hD x hx).congr ?_
+  filter_upwards [(hf x hx).eventually_analyticAt] with y hy
+  rw [← hy.prod_factorial_smul_mvTaylorCoeff α v hv, ← Nat.cast_smul_eq_nsmul 𝕜, smul_smul,
+    inv_mul_cancel₀ (Nat.cast_ne_zero.2 (Finset.prod_ne_zero_iff.2 fun i _ ↦
+      Nat.factorial_ne_zero _)), one_smul]
 
 namespace TauCeti
 

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Algebra.NonUnitalHom
 public import Mathlib.Data.Matrix.Basis
+public import Mathlib.Data.Matrix.Block
+public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 
 /-!
 # Products of matrix units
@@ -21,10 +23,25 @@ expands a linear map on matrices along the matrix units, and
 `Matrix.submodule_eq_top_of_single_one_mem` shows that the matrix units span all matrices.
 
 `Matrix.singleNonUnitalAlgHom` bundles the diagonal corner `x ↦ Matrix.single r r x` as a nonunital
-algebra homomorphism, accompanied by column, row, and entry matrix-unit identities valid without
-associativity.
+algebra homomorphism, and `Matrix.singleNonUnitalStarRingHom` bundles the same corner as a
+nonunital star ring homomorphism. They are accompanied by column, row, and entry matrix-unit
+identities valid without associativity. `Matrix.mul_single_one_mul_apply` reads off the entries
+of `X * Eⱼᵣ * Y`.
+
+`Matrix.single_mul_apply` and `Matrix.mul_single_apply` give the entries of a product with a
+matrix unit on either side as one formula, combining Mathlib's matching-index and unequal-index
+cases.
+
+`Matrix.fromBlocks_zero_conjTranspose_zero_eq_sum_single_add_conjTranspose`
+expands the off-diagonal blocks of a matrix in pairs of conjugate-transposed matrix units.
 
 Two off-diagonal matrix units witness that transposition does not preserve all products.
+
+`Matrix.single_eq_smul_single_one` writes a matrix with one nonzero entry `c` as `c` times the
+corresponding matrix unit. For a homomorphism `f` out of `Mₙ(R)`,
+`Matrix.map_single_mul_map_single` says that the images of the matrix units multiply like matrix
+units, and `Matrix.star_map_single` that a `⋆`-homomorphism maps the adjoint `Eⱼᵢ` of `Eᵢⱼ` to the
+adjoint of its image.
 -/
 
 /-- The product of two matrix units vanishes unless their inner indices agree. -/
@@ -93,6 +110,23 @@ public theorem Matrix.not_forall_transpose_mul (n R : Type*) [Fintype n] [Nontri
 public section
 namespace Matrix
 
+/-- A matrix with off-diagonal blocks `A` and `Aᴴ` and zero diagonal blocks is a sum of
+pairs of conjugate-transposed matrix units. The block `A` may be rectangular. -/
+theorem fromBlocks_zero_conjTranspose_zero_eq_sum_single_add_conjTranspose {m n R : Type*}
+    [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]
+    [AddCommMonoid R] [StarAddMonoid R] (A : Matrix m n R) :
+    fromBlocks 0 A Aᴴ 0 = ∑ i : m × n,
+      (single (Sum.inl i.1) (Sum.inr i.2) (A i.1 i.2) +
+        (single (Sum.inl i.1) (Sum.inr i.2) (A i.1 i.2))ᴴ) := by
+  have h := matrix_eq_sum_single (fromBlocks (0 : Matrix m m R) A 0 (0 : Matrix n n R))
+  simp only [Fintype.sum_sum_type, fromBlocks_apply₁₁, fromBlocks_apply₁₂,
+    fromBlocks_apply₂₁, fromBlocks_apply₂₂, Matrix.zero_apply, single_zero,
+    Finset.sum_const_zero, zero_add, add_zero] at h
+  rw [← Fintype.sum_prod_type'] at h
+  simpa only [fromBlocks_conjTranspose, conjTranspose_zero, fromBlocks_add, add_zero, zero_add,
+    conjTranspose_sum, ← Finset.sum_add_distrib] using
+    congrArg (fun M : Matrix (m ⊕ n) (m ⊕ n) R ↦ M + Mᴴ) h
+
 section SingleCorner
 variable (R : Type*) {n A : Type*} [NonUnitalNonAssocSemiring A] [Fintype n] [DecidableEq n]
 
@@ -108,6 +142,21 @@ def singleNonUnitalAlgHom [Monoid R] [DistribMulAction R A] (r : n) : A →ₙ�
 @[simp] theorem singleNonUnitalAlgHom_toLinearMap [Semiring R] [Module R A] (r : n) :
     (singleNonUnitalAlgHom R (A := A) r : A →ₗ[R] Matrix n n A) = singleLinearMap R r r := (rfl)
 end SingleCorner
+
+section SingleStarCorner
+variable (A : Type*) {n : Type*} [NonUnitalNonAssocSemiring A] [StarRing A] [Fintype n]
+  [DecidableEq n]
+
+/-- The diagonal corner embedding `x ↦ Matrix.single r r x` as a nonunital star ring
+homomorphism. -/
+def singleNonUnitalStarRingHom (r : n) : A →⋆ₙ+* Matrix n n A where
+  __ := (singleAddMonoidHom r r : A →+ Matrix n n A)
+  map_mul' x y := (single_mul_single_same x r r r y).symm
+  map_star' x := (conjTranspose_single r r x).symm
+/-- Evaluating `Matrix.singleNonUnitalStarRingHom` places its input in the `(r, r)` entry. -/
+@[simp] theorem singleNonUnitalStarRingHom_apply (r : n) (x : A) :
+    singleNonUnitalStarRingHom A r x = single r r x := (rfl)
+end SingleStarCorner
 
 section NonAssoc
 variable {l m n o p A : Type*} [NonAssocSemiring A]
@@ -157,6 +206,13 @@ theorem single_one_mul_mul_single_one [Fintype m] [Fintype n] [DecidableEq l] [D
     [DecidableEq n] [DecidableEq o] (X : Matrix m n A) (j : m) (p₀ : n) (r : l) (s : o) :
     single r j (1 : A) * (X * single p₀ s (1 : A)) = single r s (X j p₀) := by
   rw [mul_mul_single_one, single_mul_mul_single, one_mul, mul_one]
+/-- Entry `(u, v)` of `X * E_{j, r} * Y` is `X u j * Y r v`. -/
+@[simp] theorem mul_single_one_mul_apply [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n]
+    (X : Matrix l m A) (Y : Matrix n o A) (j : m) (r : n) (u : l) (v : o) :
+    (X * single j r (1 : A) * Y) u v = X u j * Y r v := by
+  rw [Matrix.mul_apply, Finset.sum_eq_single r
+    (fun x _ hx ↦ by rw [mul_single_apply_of_ne _ _ _ _ _ hx, zero_mul]) (by simp)]
+  simp
 end NonAssoc
 
 /-- Summing `E_{r, s}(X i u) * E_{s, t}(Y u j)` over `u` places `(X * Y) i j` in `(r, t)`. -/
@@ -165,5 +221,49 @@ theorem sum_single_mul_single {l m n o p q A : Type*} [NonUnitalNonAssocSemiring
     (Y : Matrix m n A) (i : l) (j : n) (r : o) (s : p) (t : q) :
     ∑ u : m, single r s (X i u) * single s t (Y u j) = single r t ((X * Y) i j) := by
   simp_rw [single_mul_single_same]; ext u v; simp [Matrix.sum_apply, Matrix.mul_apply, single]
+
+section SingleMulApply
+variable {l m n α : Type*} [Fintype m] [NonUnitalNonAssocSemiring α] (c : α)
+
+/-- Left multiplication by `single i j c` moves row `j` to row `i`, scaled by `c`. -/
+theorem single_mul_apply [DecidableEq l] [DecidableEq m] (i : l) (j : m) (M : Matrix m n α)
+    (a : l) (b : n) : (single i j c * M) a b = if a = i then c * M j b else 0 := by
+  split_ifs with h
+  · rw [h, single_mul_apply_same]
+  · exact single_mul_apply_of_ne c i j a b h M
+
+/-- Right multiplication by `single i j c` moves column `i` to column `j`, scaled by `c`. -/
+theorem mul_single_apply [DecidableEq m] [DecidableEq n] (i : m) (j : n) (M : Matrix l m α)
+    (a : l) (b : n) : (M * single i j c) a b = if b = j then M a i * c else 0 := by
+  split_ifs with h
+  · rw [h, mul_single_apply_same]
+  · exact mul_single_apply_of_ne c i j a b h M
+end SingleMulApply
+
+/-- A matrix with one nonzero entry `c` is `c` times the corresponding matrix unit. -/
+theorem single_eq_smul_single_one {m n R : Type*} [DecidableEq m] [DecidableEq n]
+    [MulZeroOneClass R] (i : m) (j : n) (c : R) : single i j c = c • single i j (1 : R) := by
+  rw [smul_single, smul_eq_mul, mul_one]
+
+section MapSingle
+variable {n R B F : Type*} [Fintype n] [DecidableEq n] [NonAssocSemiring R]
+  [FunLike F (Matrix n n R) B]
+
+/-- The images of the matrix units multiply like matrix units. -/
+theorem map_single_mul_map_single [NonUnitalNonAssocSemiring B]
+    [NonUnitalRingHomClass F (Matrix n n R) B] (f : F) (i j k l : n) :
+    f (single i j 1) * f (single k l 1) = if j = k then f (single i l 1) else 0 := by
+  rw [← map_mul]
+  split_ifs with h
+  · rw [h, single_mul_single_same, mul_one]
+  · simp [h]
+
+omit [Fintype n] in
+/-- A `⋆`-homomorphism maps the adjoint `Eⱼᵢ` of a matrix unit `Eᵢⱼ` to the adjoint of its
+image. -/
+theorem star_map_single [StarRing R] [Star B] [StarHomClass F (Matrix n n R) B] (f : F)
+    (i j : n) : star (f (single i j 1)) = f (single j i 1) := by
+  rw [← map_star, star_eq_conjTranspose, conjTranspose_single, star_one]
+end MapSingle
 end Matrix
 end

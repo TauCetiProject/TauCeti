@@ -9,6 +9,7 @@ public import Mathlib.Topology.Connected.PathConnected
 public import Mathlib.Order.PartialSups
 import Mathlib.Order.Atoms.Finite
 import Mathlib.Topology.LocallyConstant.Basic
+import TauCeti.Topology.UnitInterval.PathConnected
 
 /-!
 # Path-connected unions and intersections
@@ -33,7 +34,8 @@ If a set is covered by two path-connected subsets but is not itself path connect
 the two subsets is a path component of it.
 
 A function which, near each point of a path, agrees with its value at that point takes the same
-value at the two ends of the path.
+value at the two ends of the path. In particular, so does a function which takes equal values at
+points joined inside some neighbourhood of each point.
 
 ## Main declarations
 
@@ -42,9 +44,13 @@ value at the two ends of the path.
 * `TauCeti.isPathConnected_partialSups`: path connectedness of successive finite unions.
 * `IsPathConnected.pathComponentIn_eq_of_not_isPathConnected`: if a set that is not path connected
   is covered by two path-connected subsets, each of them is one of its path components.
+* `PathConnectedSpace.pathComponent_eq_univ`: in a path-connected space, every path component
+  is `Set.univ`.
 * `TauCeti.exists_pathComponent_representative`: a choice of base point in each path component.
 * `Path.eq_of_eventually_eq`: a function locally constant along a path takes the same value at its
   two ends.
+* `Path.eq_of_joinedIn_nhds`: a function constant on pairs of points joined inside a neighbourhood
+  of each point takes the same value at the two ends of a path.
 -/
 
 public section
@@ -101,6 +107,12 @@ theorem _root_.IsPathConnected.pathComponentIn_eq_of_not_isPathConnected {A B : 
     (hABC hz).elim (fun hzB ↦ hB.joinedIn _ hx _ hzB |>.mono hBA)
       (fun hzC ↦ (hq : JoinedIn A _ q).trans ((hC.joinedIn _ hqC _ hzC).mono hCA))⟩
 
+/-- In a path-connected space, the path component of any point is the whole space. -/
+@[simp]
+theorem _root_.PathConnectedSpace.pathComponent_eq_univ [PathConnectedSpace X] (x : X) :
+    pathComponent x = Set.univ :=
+  Set.eq_univ_of_forall (PathConnectedSpace.joined x)
+
 /-- **Base points of path components.** There is a map sending each point to a point joined to
 it, constant on path components. -/
 theorem exists_pathComponent_representative :
@@ -115,3 +127,16 @@ same value at the two ends of the path. -/
 theorem Path.eq_of_eventually_eq {X α : Type*} [TopologicalSpace X] {f : X → α} {x y : X}
     (γ : Path x y) (h : ∀ t, ∀ᶠ s in 𝓝 t, f (γ s) = f (γ t)) : f x = f y := by
   simpa using ((IsLocallyConstant.iff_eventually_eq _).2 h).apply_eq_of_preconnectedSpace 0 1
+
+/-- A function which takes equal values at any two points joined inside some neighbourhood of each
+point takes the same value at the two ends of a path. -/
+theorem Path.eq_of_joinedIn_nhds {X α : Type*} [TopologicalSpace X] {f : X → α} {x y : X}
+    (γ : Path x y) (h : ∀ z, ∃ N ∈ 𝓝 z, ∀ ⦃a b⦄, JoinedIn N a b → f a = f b) : f x = f y := by
+  refine γ.eq_of_eventually_eq fun t ↦ ?_
+  obtain ⟨N, hN, hf⟩ := h (γ t)
+  -- Near `t` the path stays in the path component of `γ ⁻¹' N` containing `t`.
+  filter_upwards [pathComponentIn_mem_nhds (γ.continuous.continuousAt.preimage_mem_nhds hN)]
+    with s hs
+  refine (hf ((hs.map γ.continuous.continuousOn).mono ?_)).symm
+  rintro _ ⟨u, hu, rfl⟩
+  exact hu
