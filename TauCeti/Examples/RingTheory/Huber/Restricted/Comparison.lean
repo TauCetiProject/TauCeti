@@ -58,7 +58,7 @@ noncomputable example (k m : ℕ) :
       (maximalIdeal ℤ_[p]).map (algebraMap ℤ_[p]
         (MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin k ↦ 1))) ^ m) ≃+*
       MvPolynomial (Fin k) (ZMod (p ^ m)) :=
-  (quotientPowIsRestrictedEquivMvPolynomialQuotient PadicInt.isAdic_maximalIdeal
+  (quotientPowIsRestrictedEquivMvPolynomialQuotient _root_.PadicInt.isAdic_maximalIdeal
     (IsNoetherian.noetherian _) m).toRingEquiv.trans <| MvPolynomial.mapEquiv (Fin k) <|
     (Ideal.quotEquivOfEq (by rw [_root_.PadicInt.maximalIdeal_eq_span_p, Ideal.span_singleton_pow]))
       |>.trans (_root_.PadicInt.quotientSpanPowEquivZMod m)
@@ -67,7 +67,7 @@ noncomputable example (k m : ℕ) :
     (restrictedMvPowerSeriesCompletion k ℤ_[p] ⧸
       (maximalIdeal ℤ_[p]).map (algebraMap ℤ_[p] (restrictedMvPowerSeriesCompletion k ℤ_[p])) ^ m)
       ≃+* MvPolynomial (Fin k) (ZMod (p ^ m)) :=
-  (quotientPowRestrictedCompletionEquivMvPolynomialQuotient PadicInt.isAdic_maximalIdeal
+  (quotientPowRestrictedCompletionEquivMvPolynomialQuotient _root_.PadicInt.isAdic_maximalIdeal
     (IsNoetherian.noetherian _) m).toRingEquiv.trans <| MvPolynomial.mapEquiv (Fin k) <|
     (Ideal.quotEquivOfEq (by rw [_root_.PadicInt.maximalIdeal_eq_span_p, Ideal.span_singleton_pow]))
       |>.trans (_root_.PadicInt.quotientSpanPowEquivZMod m)
@@ -76,8 +76,8 @@ example (k : ℕ) :
     IsNoetherianRing (MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin k ↦ 1)) ∧
     IsAdic ((maximalIdeal ℤ_[p]).map (algebraMap ℤ_[p]
       (MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin k ↦ 1)))) :=
-  ⟨isNoetherianRing_isRestricted_subring_of_isAdic PadicInt.isAdic_maximalIdeal,
-   isAdic_map_algebraMap_isRestricted_subring PadicInt.isAdic_maximalIdeal
+  ⟨isNoetherianRing_isRestricted_subring_of_isAdic _root_.PadicInt.isAdic_maximalIdeal,
+   isAdic_map_algebraMap_isRestricted_subring _root_.PadicInt.isAdic_maximalIdeal
      (IsNoetherian.noetherian _)⟩
 -- Over `ℤ_[p]`, `∑ Xⁿ` inverts `1 - X` in `ℤ_[p]⟦X⟧` yet is not restricted.
 example : (PowerSeries.mk (1 : ℕ → ℤ_[p])) * (1 - PowerSeries.X) = 1 ∧
@@ -101,8 +101,8 @@ example : letI : WithIdeal (PowerSeries ℤ_[p]) := ⟨maximalIdeal (PowerSeries
       rw [mem_maximalIdeal, mem_nonunits_iff] at ha
       exact fun hu ↦ ha (by simpa using hu.map PowerSeries.constantCoeff)
   exact existsUnique_continuous_ringHom_isRestricted_subring_of_isLinearTopology
-    (PadicInt.isAdic_maximalIdeal.continuous_of_map_le_radical hAdic (IsNoetherian.noetherian _)
-      (hmap.trans Ideal.le_radical)) fun _ ↦ 1 + PowerSeries.X
+    (_root_.PadicInt.isAdic_maximalIdeal.continuous_of_map_le_radical hAdic
+      (IsNoetherian.noetherian _) (hmap.trans Ideal.le_radical)) fun _ ↦ 1 + PowerSeries.X
 -- Over `ℚ_[p]`, no continuous ring map `ℚ_[p]⟨T⟩ →+* ℚ_[p]` extending `id` sends `T ↦ p⁻¹`.
 example : ¬ ∃ ψ : MvPowerSeries.IsRestricted.subring (R := ℚ_[p]) (fun _ : Fin 1 ↦ 1) →+* ℚ_[p],
     Continuous ψ ∧ (∀ r : ℚ_[p], ψ (algebraMap ℚ_[p] _ r) = r) ∧

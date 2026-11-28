@@ -50,7 +50,7 @@ example (J : Ideal ℤ_[p]) : IsNoetherianType (ℤ_[p] ⧸ J) := by
     rw [PadicInt.maximalIdeal_eq_span_p]
     exact Submodule.fg_span_singleton _
   have : IsNoetherianType ℤ_[p] :=
-    .of_pairOfDefinition (.adic _ PadicInt.isAdic_maximalIdeal hfg) <| by
+    .of_pairOfDefinition (.adic _ _root_.PadicInt.isAdic_maximalIdeal hfg) <| by
       rw [PairOfDefinition.adic_ringOfDefinition]
       exact isNoetherianRing_of_ringEquiv _ Subring.topEquiv.symm
   infer_instance

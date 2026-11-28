@@ -71,7 +71,7 @@ theorem padicInt_exists_pos_pow_map_le_and_not_map_le :
       ¬ (IsLocalRing.maximalIdeal ℤ_[p]).map (Spf.homEquiv (𝟙 (Spf ℤ_[p])) : ℤ_[p] →+* ℤ_[p]) ≤
           IsLocalRing.maximalIdeal ℤ_[p] ^ 2 := by
   let I := IsLocalRing.maximalIdeal ℤ_[p]
-  have hI : IsAdic I := Huber.PadicInt.isAdic_maximalIdeal
+  have hI : IsAdic I := _root_.PadicInt.isAdic_maximalIdeal
   refine ⟨(hI.continuous_iff_exists_pos_pow_map_le
     (is_ideal_adic_pow hI two_pos)).mp (Spf.homEquiv (𝟙 (Spf ℤ_[p]))).property, fun hle ↦ ?_⟩
   rw [Spf.homEquiv_apply_coe, Spf.sectionsHom_id, Ideal.map_id] at hle
@@ -92,7 +92,7 @@ theorem subsingleton_and_not_discrete_sectionsTopology_padicInt :
       ¬ @DiscreteTopology _ ((ofSpf ℤ_[p]).sectionsTopology ⊤ (isAffineOpen_top_ofSpf ℤ_[p])) := by
   have hmax (z : ofSpf ℤ_[p]) : z.val.asIdeal = IsLocalRing.maximalIdeal ℤ_[p] := le_antisymm
     (IsLocalRing.le_maximalIdeal z.val.isPrime.ne_top)
-    ((Spf.mem_carrier_iff_le (Huber.PadicInt.isAdic_maximalIdeal (p := p))).mp z.property)
+    ((Spf.mem_carrier_iff_le (_root_.PadicInt.isAdic_maximalIdeal (p := p))).mp z.property)
   refine ⟨⟨fun _ _ ↦ Subtype.ext (PrimeSpectrum.ext ((hmax _).trans (hmax _).symm))⟩, fun h ↦ ?_⟩
   let _ := (ofSpf ℤ_[p]).sectionsTopology ⊤ (isAffineOpen_top_ofSpf ℤ_[p])
   have : DiscreteTopology ℤ_[p] :=
@@ -111,7 +111,7 @@ theorem not_continuousOnAffines_spec_padic
   let toRes : ℚ_[p] →+* X.toLocallyRingedSpace.residueField x :=
     ((Scheme.ΓSpecIso (CommRingCat.of ℚ_[p])).inv ≫ X.toLocallyRingedSpace.Γevaluation x).hom
   have hzero := (continuousOnAffines_iff_residue
-    (Huber.PadicInt.isAdic_maximalIdeal (p := p)) φ).mp hφ (p : ℤ_[p])
+    (_root_.PadicInt.isAdic_maximalIdeal (p := p)) φ).mp hφ (p : ℤ_[p])
     (PadicInt.maximalIdeal_eq_span_p (p := p) ▸ Ideal.subset_span rfl) x
   exact ((isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero)).map
     toRes).ne_zero ((map_natCast toRes p).trans (by rwa [map_natCast, map_natCast] at hzero))

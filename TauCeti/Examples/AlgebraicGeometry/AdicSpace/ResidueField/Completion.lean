@@ -115,7 +115,7 @@ example :
 analytic point of the non-Tate source. -/
 example :
     let S := Pair.powerBounded ℤ_[p]
-    let hAdic := Huber.PadicInt.isAdic_maximalIdeal (p := p)
+    let hAdic := _root_.PadicInt.isAdic_maximalIdeal (p := p)
     let x : spa S.plus :=
       ⟨ofValuation (_root_.IsDiscreteValuationRing.maximalIdeal ℤ_[p]).intValuation,
         TauCeti.IsDiscreteValuationRing.ofValuation_intValuation_mem_spa hAdic S.plus⟩

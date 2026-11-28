@@ -137,7 +137,7 @@ theorem iSup_heightIdeal_ne_top {p : ℕ} (hp : 1 < p) :
   let φ : LazardRing →+* ZMod p := (Int.castRingHom (ZMod p)).comp augmentation
   have hle : ⨆ n, formalGroup.heightIdeal p n ≤ RingHom.ker φ := by
     rw [FormalGroup.iSup_heightIdeal_le_ker_iff hp, ← FormalGroup.map_comp, map_augmentation]
-    simp [FormalGroup.nsmulSeries_𝔾ₐ, ← map_natCast PowerSeries.C]
+    simp [FormalGroup.nsmulSeries_𝔾ₐ]
   exact ne_top_of_le_ne_top (RingHom.ker_ne_top φ) hle
 
 /-- For `1 < p`, every height ideal `I_n` on the Lazard ring is proper. -/

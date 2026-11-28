@@ -13,9 +13,11 @@ public import Mathlib.RingTheory.PowerSeries.Basic
 public import Mathlib.RingTheory.PowerSeries.NoZeroDivisors
 public import TauCeti.RingTheory.PowerSeries.Basic
 -- Proof-only: coefficients of products of series with coefficients in ideals.
-import Mathlib.RingTheory.PowerSeries.CoeffMulMem
+import Mathlib.RingTheory.Finiteness.Ideal
 import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+import Mathlib.RingTheory.PowerSeries.CoeffMulMem
 import Mathlib.RingTheory.PowerSeries.Inverse
+import TauCeti.RingTheory.PowerSeries.Dvd
 import TauCeti.RingTheory.QuotSMulTop
 
 /-!
@@ -36,8 +38,8 @@ local domain with a prime `ϖ`, a series with nonzero reduction modulo the maxim
 divisible by `C ϖ`, so it acts injectively on `R⟦X⟧ ⧸ (ϖ ^ m)`.
 
 A series whose coefficients lie in an ideal `J` has square zero modulo any ideal containing
-`J * J`. For a finitely generated ideal `I`, the same kernel computation describes `I.map C` by
-its coefficients and shows that it is prime when `I` is.
+`J * J`. For a finitely generated ideal `I`, the same kernel computation describes `I.map C` and
+its powers `(I.map C) ^ k` by their coefficients and shows that `I.map C` is prime when `I` is.
 
 ## Main results
 
@@ -46,9 +48,10 @@ its coefficients and shows that it is prime when `I` is.
   `R⟦X⟧ →ₐ[R] R`, has kernel `(X)`, giving the `R`-algebra isomorphism `R⟦X⟧ ⧸ (X) ≃ₐ[R] R`.
 * `PowerSeries.isLocalHom_constantCoeff`: the constant coefficient is a local homomorphism.
 * `PowerSeries.ker_map_of_fg`: `ker (map f) = (ker f).map C` when `ker f` is finitely generated.
-* `PowerSeries.mem_map_C_iff_of_fg`, `PowerSeries.isPrime_map_C_of_fg`: for a finitely generated
-  ideal `I`, the series in `I.map C` are those with all coefficients in `I`, and `I.map C` is prime
-  when `I` is.
+* `PowerSeries.mem_map_C_iff_of_fg`, `PowerSeries.mem_map_C_pow_iff_of_fg`,
+  `PowerSeries.mem_span_C_pow_iff`, `PowerSeries.map_mem_span_C_pow`,
+  `PowerSeries.isPrime_map_C_of_fg`: coefficientwise characterization of `I.map C`, its powers,
+  and principal constant powers `(C r) ^ k`, plus functoriality and primality.
 * `PowerSeries.prime_C_iff`: `C r` is prime in `R⟦X⟧` if and only if `r` is prime in `R`.
 * `PowerSeries.torsionBy_quotient_span_C_pow_eq_bot`: a series with nonzero reduction modulo the
   maximal ideal has no nonzero torsion on `R⟦X⟧ ⧸ (ϖ ^ m)` for a prime `ϖ` of a local domain.
@@ -119,6 +122,27 @@ theorem mem_map_C_iff_of_fg {I : Ideal R} (hI : I.FG) {f : R⟦X⟧} :
   rw [← Ideal.mk_ker (I := I), ← ker_map_of_fg _ (by rwa [Ideal.mk_ker]), RingHom.mem_ker,
     PowerSeries.ext_iff]
   simp [Ideal.Quotient.eq_zero_iff_mem]
+
+/-- For a finitely generated ideal `I`, a power series lies in `(I.map C) ^ k` iff all of its
+coefficients lie in `I ^ k`. -/
+theorem mem_map_C_pow_iff_of_fg {I : Ideal R} (hI : I.FG) (k : ℕ) {f : R⟦X⟧} :
+    f ∈ I.map C ^ k ↔ ∀ n, coeff n f ∈ I ^ k := by
+  rw [← Ideal.map_pow, mem_map_C_iff_of_fg (hI.pow (n := k))]
+
+/-- A power series lies in `Ideal.span {C r} ^ k` iff every coefficient lies in
+`Ideal.span {r} ^ k`. -/
+theorem mem_span_C_pow_iff (r : R) (k : ℕ) {f : R⟦X⟧} :
+    f ∈ Ideal.span {C r} ^ k ↔ ∀ n, coeff n f ∈ Ideal.span {r} ^ k := by
+  simp only [Ideal.span_singleton_pow, ← map_pow, Ideal.mem_span_singleton, C_dvd_iff_dvd_coeff]
+
+/-- Coefficientwise change of base ring maps `Ideal.span {C r} ^ k` into
+`Ideal.span {C (φ r)} ^ k`. -/
+theorem map_mem_span_C_pow (φ : R →+* S) {r : R} {k : ℕ} {f : R⟦X⟧}
+    (hf : f ∈ Ideal.span {C r} ^ k) :
+    map φ f ∈ Ideal.span {C (φ r)} ^ k := by
+  rw [Ideal.span_singleton_pow, Ideal.mem_span_singleton] at hf ⊢
+  obtain ⟨q, rfl⟩ := hf
+  exact ⟨map φ q, by rw [map_mul, map_pow, map_C]⟩
 
 /-- The extension `I.map C` of a finitely generated prime ideal `I` of `R` is a prime ideal of
 `R⟦X⟧`: it is the kernel of `R⟦X⟧ → (R ⧸ I)⟦X⟧`, whose target is a domain. -/

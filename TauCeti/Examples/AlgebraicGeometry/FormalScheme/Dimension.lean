@@ -64,7 +64,7 @@ example : (ofSpf ℤ_[p]).IsCohenMacaulay := inferInstance
 theorem asIdeal_eq_maximalIdeal (x : Spf.carrier ℤ_[p]) :
     (x : PrimeSpectrum ℤ_[p]).asIdeal = maximalIdeal ℤ_[p] :=
   ((maximalIdeal.isMaximal _).eq_of_le (x : PrimeSpectrum ℤ_[p]).isPrime.ne_top
-    ((Spf.mem_carrier_iff_le Huber.PadicInt.isAdic_maximalIdeal).mp x.property)).symm
+    ((Spf.mem_carrier_iff_le _root_.PadicInt.isAdic_maximalIdeal).mp x.property)).symm
 
 -- The maximal ideal `(p)` is a point of `Spf ℤ_[p]`, since `ℤ_[p]` is `p`-adically complete.
 example : (Spf.pointOfIsMaximal (maximalIdeal ℤ_[p]) : PrimeSpectrum ℤ_[p]).asIdeal =
@@ -81,7 +81,7 @@ example : topologicalKrullDim (Spf.carrier ℤ_[p]) = 0 :=
 
 -- The point of `Spf ℤ_[p]` is closed.
 example (x : Spf.carrier ℤ_[p]) : IsClosed ({x} : Set (Spf.carrier ℤ_[p])) :=
-  (Spf.isClosed_singleton_iff_isMaximal Huber.PadicInt.isAdic_maximalIdeal).mpr
+  (Spf.isClosed_singleton_iff_isMaximal _root_.PadicInt.isAdic_maximalIdeal).mpr
     (asIdeal_eq_maximalIdeal p x ▸ maximalIdeal.isMaximal _)
 
 end TauCeti.Examples.FormalScheme

@@ -5,17 +5,21 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.RingTheory.PowerSeries.Basic
 import Mathlib.RingTheory.PowerSeries.Trunc
 import Mathlib.Tactic.LinearCombination
+
+import Mathlib.Algebra.CharP.Algebra
 
 /-!
 # Complements on power series
 
 Mathlib's `PowerSeries.constantCoeff` is the constant coefficient `S⟦X⟧ → S` as a ring
 homomorphism. This file records it as a homomorphism of `A`-algebras for any commutative semiring
-`A` over which `S` is an algebra: evaluation at `X = 0`. It also records how a change of
-coefficients `map f` acts on the constant coefficient.
+`A` over which `S` is an algebra: evaluation at `X = 0`. Since `C : R →+* R⟦X⟧` is injective,
+`R⟦X⟧` also inherits characteristic `p` and characteristic zero from `R`. It also records how a
+change of coefficients `map f` acts on the constant coefficient.
 
 ## Main definitions
 
@@ -29,6 +33,7 @@ coefficients `map f` acts on the constant coefficient.
   most one solution `D`.
 * `PowerSeries.constantCoeffAlgHom_comp_toAlgHom`: evaluation at `X = 0` is a retraction of the
   inclusion of constants.
+* `PowerSeries.instCharP`, `PowerSeries.instCharZero`: `R⟦X⟧` inherits characteristic from `R`.
 * `PowerSeries.constantCoeff_map`: a change of coefficients `map f` acts on the constant
   coefficient by `f`, as `MvPowerSeries.constantCoeff_map` does for multivariate power series.
 * `PowerSeries.mk_mul_one_sub_X_eq`: if `b d + a (d + 1) = a d + c (d + 1)` for all integers `d`
@@ -137,6 +142,20 @@ theorem constantCoeffAlgHom_comp_toAlgHom {S : Type*} [CommSemiring S] [Algebra 
   AlgHom.ext fun s ↦ by simp
 
 end ConstantCoeff
+
+section Characteristic
+
+variable {R : Type*} [Semiring R]
+
+/-- Power series over a semiring of characteristic `p` have characteristic `p`. -/
+instance instCharP (p : ℕ) [CharP R p] : CharP R⟦X⟧ p :=
+  charP_of_injective_ringHom C_injective p
+
+/-- Power series over a characteristic-zero semiring have characteristic zero. -/
+instance instCharZero [CharZero R] : CharZero R⟦X⟧ :=
+  charZero_of_injective_ringHom C_injective
+
+end Characteristic
 
 section Map
 

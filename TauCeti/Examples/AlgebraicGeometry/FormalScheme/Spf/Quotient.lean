@@ -109,7 +109,7 @@ variable (p : ℕ) [Fact p.Prime]
 -- The maps of all infinitesimal neighbourhoods of `Spf ℤ_p` are surjective on stalks.
 example (n : ℕ) (q : PrimeSpectrum (ℤ_[p] ⧸ IsLocalRing.maximalIdeal ℤ_[p] ^ (n + 1))) :
     Function.Surjective ((fromSpecQuotient
-      (is_ideal_adic_pow Huber.PadicInt.isAdic_maximalIdeal n.succ_pos)).stalkMap q) :=
+      (is_ideal_adic_pow _root_.PadicInt.isAdic_maximalIdeal n.succ_pos)).stalkMap q) :=
   fromSpecQuotient_stalk_surjective _ q
 
 end Padic

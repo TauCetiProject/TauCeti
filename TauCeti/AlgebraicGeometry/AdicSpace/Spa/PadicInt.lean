@@ -48,7 +48,7 @@ theorem cont_padicInt :
     cont ℤ_[p] = {ofValuation (_root_.IsDiscreteValuationRing.maximalIdeal ℤ_[p]).intValuation,
       trivialSection (⊤ : PrimeSpectrum ℤ_[p])} := by
   rw [← spa_eq_cont_of_denseRange_intCast PadicInt.denseRange_intCast ⊤,
-    IsDiscreteValuationRing.spa_top_eq Huber.PadicInt.isAdic_maximalIdeal]
+    IsDiscreteValuationRing.spa_top_eq PadicInt.isAdic_maximalIdeal]
 
 /-- **The adic spectrum of `ℤ_p`**: for every plus ring `A⁺`, `Spa (ℤ_p, A⁺)` consists of the
 `p`-adic valuation and the trivial valuation of the maximal ideal. -/
@@ -62,7 +62,7 @@ every plus ring `A⁺`; the trivial valuation of the maximal ideal is a non-anal
 theorem spaAnalytic_padicInt (Aplus : Subring ℤ_[p]) :
     spaAnalytic Aplus =
       {ofValuation (_root_.IsDiscreteValuationRing.maximalIdeal ℤ_[p]).intValuation} := by
-  have hR := Huber.PadicInt.isAdic_maximalIdeal (p := p)
+  have hR := PadicInt.isAdic_maximalIdeal (p := p)
   rw [spaAnalytic_def, spa_padicInt, ← IsDiscreteValuationRing.spa_top_eq hR, ← spaAnalytic_def,
     IsDiscreteValuationRing.spaAnalytic_top_eq hR]
 

@@ -7,8 +7,11 @@ module
 
 public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.PowerSeries.Inverse
+public import TauCeti.LinearAlgebra.Submodule.CompleteFiltration
 
 import Mathlib.RingTheory.PowerSeries.Trunc
+import TauCeti.RingTheory.AdicCompletion.Pi
+import TauCeti.RingTheory.PowerSeries.Ideal
 import TauCeti.RingTheory.RegularLocalRing.PowerSeries
 
 /-!
@@ -28,6 +31,16 @@ of `R⟦X⟧`, so `R⟦X⟧` is complete for its maximal ideal when `R` is. For 
 algebra `O⟦T⟧` over a complete discrete valuation ring is complete for its maximal ideal
 `(ϖ, T)`, which is not visible from the `X`-adic completeness of `R⟦X⟧` alone.
 
+When `I` is finitely generated, the extended ideal `I.map C` likewise has powers described
+uniformly coefficientwise (`PowerSeries.mem_map_C_pow_iff_of_fg`), so `R⟦X⟧` also inherits
+`I`-adic Hausdorffness, precompleteness, and completeness for `I.map C`. Similarly, on any product
+`ι → R⟦X⟧`, the coefficientwise `I`-adic filtration `PowerSeries.coeffIdealFiltration I ι` is
+complete and separated whenever `R` is `I`-adically complete.
+
+## Main definitions
+
+* `PowerSeries.coeffIdealFiltration`: the coefficientwise `I`-adic filtration on `ι → R⟦X⟧`.
+
 ## Main results
 
 * `PowerSeries.mem_comap_constantCoeff_pow_iff`: `f ∈ I⟦X⟧ ^ N` exactly when
@@ -35,6 +48,14 @@ algebra `O⟦T⟧` over a complete discrete valuation ring is complete for its m
 * `PowerSeries.isHausdorff_comap_constantCoeff`, `PowerSeries.isPrecomplete_comap_constantCoeff`,
   `PowerSeries.isAdicComplete_comap_constantCoeff`: `R⟦X⟧` inherits `I`-adic Hausdorffness,
   precompleteness and completeness from `R`.
+* `PowerSeries.isHausdorff_map_C`, `PowerSeries.isPrecomplete_map_C`,
+  `PowerSeries.isAdicComplete_map_C`, `PowerSeries.isAdicComplete_span_C`,
+  `PowerSeries.isAdicComplete_span_natCast`: for finitely generated `I`, `R⟦X⟧` inherits `I`-adic
+  Hausdorffness, precompleteness and completeness for the extended ideal `I.map C`, and in
+  particular for principal constant ideals `Ideal.span {C r}` and natural casts `(n)`.
+* `PowerSeries.mem_coeffIdealFiltration`, `PowerSeries.coeffIdealFiltration_zero`,
+  `PowerSeries.isCompleteFiltration_coeffIdealFiltration`: membership, top step, and completeness
+  and separatedness of the coefficientwise `I`-adic filtration on `ι → R⟦X⟧`.
 * `PowerSeries.isAdicComplete_maximalIdeal`: over a local ring complete for its maximal ideal, the
   power series ring is complete for its maximal ideal.
 -/
@@ -119,6 +140,91 @@ constant coefficient in `I`. -/
 theorem isAdicComplete_comap_constantCoeff [IsAdicComplete I R] :
     IsAdicComplete (I.comap constantCoeff) R⟦X⟧ :=
   { isHausdorff_comap_constantCoeff I, isPrecomplete_comap_constantCoeff I with }
+
+/-- If `I` is finitely generated and `R` is `I`-adically Hausdorff, then `R⟦X⟧` is
+`(I.map C)`-adically Hausdorff. -/
+theorem isHausdorff_map_C {I : Ideal R} (hI : I.FG) [IsHausdorff I R] :
+    IsHausdorff (I.map C) R⟦X⟧ := by
+  refine ⟨fun f hf ↦ ext fun k ↦ IsHausdorff.haus ‹_› _ fun n ↦ ?_⟩
+  simp only [SModEq.zero, smul_eq_mul, Ideal.mul_top, mem_map_C_pow_iff_of_fg hI] at hf ⊢
+  exact hf n k
+
+/-- If `I` is finitely generated and `R` is `I`-adically precomplete, then `R⟦X⟧` is
+`(I.map C)`-adically precomplete. -/
+theorem isPrecomplete_map_C {I : Ideal R} (hI : I.FG) [IsPrecomplete I R] :
+    IsPrecomplete (I.map C) R⟦X⟧ := by
+  refine ⟨fun f hf ↦ ?_⟩
+  simp only [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top] at hf ⊢
+  have hex (k : ℕ) : ∃ L : R, ∀ n, coeff k (f n) - L ∈ I ^ n := by
+    obtain ⟨L, hL⟩ := IsPrecomplete.prec ‹_› (f := fun n ↦ coeff k (f n)) fun {m n} hmn ↦ by
+      rw [SModEq.sub_mem, smul_eq_mul, Ideal.mul_top, ← map_sub]
+      exact (mem_map_C_pow_iff_of_fg hI m).mp (hf hmn) k
+    exact ⟨L, fun n ↦ by simpa [SModEq.sub_mem] using hL n⟩
+  choose L hL using hex
+  refine ⟨mk L, fun n ↦ (mem_map_C_pow_iff_of_fg hI n).mpr fun k ↦ ?_⟩
+  simpa only [map_sub, coeff_mk] using hL k n
+
+/-- If `I` is finitely generated and `R` is `I`-adically complete, then `R⟦X⟧` is
+`(I.map C)`-adically complete. -/
+theorem isAdicComplete_map_C {I : Ideal R} (hI : I.FG) [IsAdicComplete I R] :
+    IsAdicComplete (I.map C) R⟦X⟧ :=
+  { isHausdorff_map_C hI, isPrecomplete_map_C hI with }
+
+/-- If `R` is `(r)`-adically complete, then `R⟦X⟧` is `(C r)`-adically complete. -/
+theorem isAdicComplete_span_C (r : R) [IsAdicComplete (Ideal.span {r}) R] :
+    IsAdicComplete (Ideal.span {C r}) R⟦X⟧ := by
+  have hspan : Ideal.span {C r} = (Ideal.span {r}).map C := by
+    rw [Ideal.map_span, Set.image_singleton]
+  exact hspan ▸ isAdicComplete_map_C (Submodule.fg_span_singleton r)
+
+/-- If `R` is `(n)`-adically complete for a natural number `n`, then `R⟦X⟧` is `(n)`-adically
+complete. -/
+instance isAdicComplete_span_natCast (n : ℕ) [IsAdicComplete (Ideal.span {(n : R)}) R] :
+    IsAdicComplete (Ideal.span {(n : R⟦X⟧)}) R⟦X⟧ :=
+  (map_natCast (C : R →+* R⟦X⟧) n) ▸ isAdicComplete_span_C (n : R)
+
+/-- The coefficientwise `I`-adic filtration on `ι → R⟦X⟧`: the `m`-th step consists of families
+whose power series coefficients all lie in `I ^ m`. -/
+def coeffIdealFiltration (ι : Type*) (m : ℕ) : Submodule R (ι → R⟦X⟧) where
+  carrier := {a | ∀ (i : ι) (n : ℕ), coeff n (a i) ∈ I ^ m}
+  zero_mem' _ _ := by simp
+  add_mem' ha hb i n := by
+    rw [Pi.add_apply, map_add]
+    exact add_mem (ha i n) (hb i n)
+  smul_mem' c a ha i n := by
+    rw [Pi.smul_apply, map_smul, smul_eq_mul]
+    exact Ideal.mul_mem_left _ c (ha i n)
+
+/-- Membership in `coeffIdealFiltration I ι m` is coefficientwise membership in `I ^ m`. -/
+@[simp]
+theorem mem_coeffIdealFiltration {ι : Type*} {m : ℕ} {a : ι → R⟦X⟧} :
+    a ∈ coeffIdealFiltration I ι m ↔ ∀ (i : ι) (n : ℕ), coeff n (a i) ∈ I ^ m :=
+  Iff.rfl
+
+/-- The zeroth step of `coeffIdealFiltration I ι` is the whole module `⊤`. -/
+@[simp]
+theorem coeffIdealFiltration_zero (ι : Type*) : coeffIdealFiltration I ι 0 = ⊤ :=
+  Submodule.eq_top_iff'.mpr fun _ ↦ (mem_coeffIdealFiltration I).mpr fun _ _ ↦ by simp [pow_zero]
+
+/-- If `R` is `I`-adically complete, then `coeffIdealFiltration I ι` is a complete separated
+filtration on `ι → R⟦X⟧`. -/
+theorem isCompleteFiltration_coeffIdealFiltration (ι : Type*) [IsAdicComplete I R] :
+    TauCeti.IsCompleteFiltration (coeffIdealFiltration I ι) where
+  antitone _ _ hmn _ hx :=
+    (mem_coeffIdealFiltration I).mpr fun i n ↦
+      Ideal.pow_le_pow_right hmn ((mem_coeffIdealFiltration I).mp hx i n)
+  eq_zero_of_forall_mem a hx := by
+    refine funext fun i ↦ PowerSeries.ext fun n ↦
+      IsHausdorff.haus (inferInstance : IsHausdorff I R) _ fun m ↦ ?_
+    rw [SModEq.zero, smul_eq_mul, Ideal.mul_top]
+    exact (mem_coeffIdealFiltration I).mp (hx m) i n
+  exists_limit seq hseq := by
+    obtain ⟨c, hc⟩ := TauCeti.exists_forall_sub_mem_pow I
+      (fun m (x : ι × ℕ) ↦ coeff x.2 (seq m x.1)) fun m ⟨i, n⟩ ↦ by
+        simpa only [← map_sub, ← Pi.sub_apply] using
+          (mem_coeffIdealFiltration I).mp (hseq m) i n
+    refine ⟨fun i ↦ mk fun n ↦ c (i, n), fun m ↦ (mem_coeffIdealFiltration I).mpr fun i n ↦ ?_⟩
+    simpa only [Pi.sub_apply, map_sub, coeff_mk] using hc m (i, n)
 
 /-- **Power series over a complete local ring are complete.** If a local ring `R` is complete for
 its maximal ideal, then so is `R⟦X⟧`. -/

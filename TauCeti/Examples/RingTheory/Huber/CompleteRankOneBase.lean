@@ -45,7 +45,7 @@ theorem isCompleteRankOneBase_padicInt (p : ℕ) [Fact p.Prime] :
   ne_zero := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
   not_isUnit := (mem_maximalIdeal _).mp
     (_root_.PadicInt.maximalIdeal_eq_span_p (p := p) ▸ Ideal.mem_span_singleton_self _)
-  isAdic := _root_.PadicInt.maximalIdeal_eq_span_p (p := p) ▸ PadicInt.isAdic_maximalIdeal
+  isAdic := _root_.PadicInt.maximalIdeal_eq_span_p (p := p) ▸ _root_.PadicInt.isAdic_maximalIdeal
   isAdicComplete := _root_.PadicInt.maximalIdeal_eq_span_p (p := p) ▸ inferInstance
 
 /-- The non-noetherian valuation ring `𝓞_ℂ_[p]` of `ℂ_p` forms a complete rank-one valuation base
