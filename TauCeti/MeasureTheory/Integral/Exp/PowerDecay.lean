@@ -23,7 +23,7 @@ import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 For real `p > 1`, complex `s` with `-1 < s.re` and `b` with `0 < b.re`, and every complex `z`,
 the kernel `t ↦ (t : ℂ) ^ s * Complex.exp (z * t - b * (t : ℂ) ^ (p : ℂ))` is Bochner integrable
-on `(0, ∞)` (see `TauCeti.norm_cpow_mul_cexp_mul_sub_mul_cpow` and
+on `(0, ∞)` (see `Real.norm_cpow_mul_cexp_mul_sub_mul_cpow` and
 `TauCeti.integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi` in
 `TauCeti.MeasureTheory.Integral.Exp.Decay`). Expanding `exp (z * t)` as its power series and
 integrating term by term by dominated convergence evaluates the integral as the everywhere
@@ -90,7 +90,7 @@ theorem hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi {p : ℝ} (hp : 1
         (Complex.re_le_norm (w - z)).trans_lt (mem_ball_iff_norm.mp hw)
       rw [Complex.sub_re] at hre
       linarith
-    rw [norm_cpow_mul_cexp_mul_sub_mul_cpow p b (s + 1) w ht, Complex.add_re, Complex.one_re]
+    rw [Real.norm_cpow_mul_cexp_mul_sub_mul_cpow p b (s + 1) w ht, Complex.add_re, Complex.one_re]
     gcongr
   · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t) w _
     have ht0 : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr ht.ne'
@@ -137,7 +137,7 @@ theorem tendsto_cpow_mul_cexp_mul_sub_mul_cpow_atTop {p : ℝ} (hp : 1 < p) {b :
   rw [zero_mul] at hlim
   refine hlim.congr' ?_
   filter_upwards [eventually_gt_atTop 0] with t ht
-  rw [Function.comp_apply, norm_cpow_mul_cexp_mul_sub_mul_cpow p b s z ht, mul_assoc,
+  rw [Function.comp_apply, Real.norm_cpow_mul_cexp_mul_sub_mul_cpow p b s z ht, mul_assoc,
     ← Real.exp_add]
   ring_nf
 
@@ -219,7 +219,7 @@ theorem hasSum_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi {p : ℝ} (hp : 1 < p
       (fun n => Measurable.aestronglyMeasurable (by fun_prop))
       (fun n => ?_) ?_ ?_ ?_
     · filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
-      have hnorm := norm_cpow_mul_cexp_mul_sub_mul_cpow p b (s + n) 0 ht
+      have hnorm := Real.norm_cpow_mul_cexp_mul_sub_mul_cpow p b (s + n) 0 ht
       simp only [zero_mul, zero_sub, zero_re, add_re, natCast_re, ← neg_mul] at hnorm
       dsimp only [F, bound]
       rw [norm_mul, norm_div, norm_pow, Complex.norm_natCast, hnorm]

@@ -42,7 +42,7 @@ inclusion.
   `TauCeti.integrableOn_rpow_mul_exp_mul_sub_mul_pow`: integrability of
   `t ^ q * exp (a * t - b * t ^ p)` (and `t ^ q * exp (a * t - b * t ^ n)`) on `(0, ∞)` when
   `1 < p` (resp. `1 < n`), `-1 < q`, and `0 < b`.
-* `TauCeti.norm_cpow_mul_cexp_mul_sub_mul_cpow`, `TauCeti.norm_cpow_mul_cexp_mul_sub_mul_pow`:
+* `Real.norm_cpow_mul_cexp_mul_sub_mul_cpow`, `Nat.norm_cpow_mul_cexp_mul_sub_mul_pow`:
   pointwise norm formula on `(0, ∞)` for `(t : ℂ) ^ s * Complex.exp (z * t - b * t ^ p)` (and
   natural-power `t ^ n`).
 * `TauCeti.integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi`,
@@ -172,7 +172,7 @@ theorem integrableOn_rpow_mul_exp_mul_sub_mul_rpow {p q b : ℝ} (hp : 1 < p) (h
 /-- For `0 < t`, any `p : ℝ`, and any `b s z : ℂ`, the norm of
 `(t : ℂ) ^ s * Complex.exp (z * t - b * (t : ℂ) ^ (p : ℂ))` is
 `t ^ s.re * Real.exp (z.re * t - b.re * t ^ p)`. -/
-theorem norm_cpow_mul_cexp_mul_sub_mul_cpow (p : ℝ) (b s z : ℂ) {t : ℝ} (ht : 0 < t) :
+theorem _root_.Real.norm_cpow_mul_cexp_mul_sub_mul_cpow (p : ℝ) (b s z : ℂ) {t : ℝ} (ht : 0 < t) :
     ‖(t : ℂ) ^ s * Complex.exp (z * t - b * (t : ℂ) ^ (p : ℂ))‖ =
       t ^ s.re * Real.exp (z.re * t - b.re * t ^ p) := by
   rw [norm_mul, Complex.norm_cpow_eq_rpow_re_of_pos ht, Complex.norm_exp,
@@ -189,7 +189,7 @@ theorem integrableOn_cpow_mul_cexp_mul_sub_mul_cpow_Ioi {p : ℝ} (hp : 1 < p) {
   have hmaj := integrableOn_rpow_mul_exp_mul_sub_mul_rpow hp hs hb z.re
   refine hmaj.mono' (Measurable.aestronglyMeasurable (by fun_prop)) ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
-  rw [norm_cpow_mul_cexp_mul_sub_mul_cpow p b s z ht]
+  rw [Real.norm_cpow_mul_cexp_mul_sub_mul_cpow p b s z ht]
 
 /-- For `1 < n`, `-1 < q`, and `0 < b`, a linear drift `a * t` in the exponent is dominated by
 `-b * t ^ n`, so `t ^ q * exp (a * t - b * t ^ n)` is integrable on `(0, ∞)`. -/
@@ -202,11 +202,11 @@ theorem integrableOn_rpow_mul_exp_mul_sub_mul_pow {n : ℕ} (hn : 1 < n) {q b : 
 /-- For `0 < t`, any `n : ℕ`, and any `b s z : ℂ`, the norm of
 `(t : ℂ) ^ s * Complex.exp (z * t - b * (t : ℂ) ^ n)` is
 `t ^ s.re * Real.exp (z.re * t - b.re * t ^ n)`. -/
-theorem norm_cpow_mul_cexp_mul_sub_mul_pow (n : ℕ) (b s z : ℂ) {t : ℝ} (ht : 0 < t) :
+theorem _root_.Nat.norm_cpow_mul_cexp_mul_sub_mul_pow (n : ℕ) (b s z : ℂ) {t : ℝ} (ht : 0 < t) :
     ‖(t : ℂ) ^ s * Complex.exp (z * t - b * (t : ℂ) ^ n)‖ =
       t ^ s.re * Real.exp (z.re * t - b.re * t ^ n) := by
   simpa only [Complex.ofReal_natCast, Complex.cpow_natCast, Real.rpow_natCast] using
-    norm_cpow_mul_cexp_mul_sub_mul_cpow n b s z ht
+    Real.norm_cpow_mul_cexp_mul_sub_mul_cpow n b s z ht
 
 /-- For `1 < n`, `0 < b.re`, and `-1 < s.re`, the complex integrand
 `t ↦ (t : ℂ) ^ s * Complex.exp (z * t - b * (t : ℂ) ^ n)` is integrable on `(0, ∞)` for every

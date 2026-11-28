@@ -14,7 +14,6 @@ import TauCeti.Analysis.SpecialFunctions.Gamma.Multiplication
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 import TauCeti.Analysis.Complex.Sqrt
-import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 import TauCeti.MeasureTheory.Integral.Exp.PowerDecay
 

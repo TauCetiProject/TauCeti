@@ -122,7 +122,7 @@ theorem integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi_of_nonneg {a b s c : �
 private theorem norm_cpow_mul_cexp_neg_mul_sq_sub_mul (b s z : ℂ) {u : ℝ} (hu : 0 < u) :
     ‖(u : ℂ) ^ s * cexp (-b * (u : ℂ) ^ 2 - z * u)‖ =
       u ^ s.re * rexp (-b.re * u ^ 2 - z.re * u) := by
-  have hnorm := norm_cpow_mul_cexp_mul_sub_mul_pow 2 b s (-z) hu
+  have hnorm := Nat.norm_cpow_mul_cexp_mul_sub_mul_pow 2 b s (-z) hu
   have h1 : -b * (u : ℂ) ^ 2 - z * u = -z * u - b * (u : ℂ) ^ 2 := by ring
   have h2 : (-z).re * u - b.re * u ^ 2 = -b.re * u ^ 2 - z.re * u := by
     rw [Complex.neg_re]; ring

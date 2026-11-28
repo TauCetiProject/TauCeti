@@ -278,7 +278,7 @@ private theorem norm_integrand_le_majorantTerm (s x r : ℂ) (y : ℝ) (m : ℕ)
       majorantTerm s.re x.re ‖r‖ y m u := by
   have h1 : ‖(u : ℂ) ^ (s - 1) * cexp (-(u : ℂ) ^ 2 / 2 - x * u)‖ =
       u ^ (s.re - 1) * rexp (-u ^ 2 / 2 - x.re * u) := by
-    have hnorm := norm_cpow_mul_cexp_mul_sub_mul_pow 2 (1 / 2) (s - 1) (-x) hu
+    have hnorm := Nat.norm_cpow_mul_cexp_mul_sub_mul_pow 2 (1 / 2) (s - 1) (-x) hu
     have hhalf : (1 / 2 : ℂ).re = 1 / 2 := by norm_num
     simp only [Complex.neg_re, Complex.sub_re, Complex.one_re, hhalf] at hnorm
     have hc : -(u : ℂ) ^ 2 / 2 - x * u = -x * u - (1 / 2 : ℂ) * (u : ℂ) ^ 2 := by ring
