@@ -18,7 +18,9 @@ In an integral extension, enlarge the set of inverted primes in the base and inv
 primes above it in the extension. If the base enlargement is a localization, the upper
 enlargement is a localization at the images of the same denominators. This gives a pushout
 square of algebras. For finite extensions, extension of ideal classes along its horizontal maps
-commutes with the relative class-group norm.
+commutes with the relative class-group norm. When `ClassGroup R` is torsion,
+`IsDedekindDomain.relNorm_integer_primesAbove_map_inclusion` gives this square for the canonical
+inclusions for every enlargement `S ⊆ T`.
 
 The two inputs are localization of the integral closure
 (`TauCeti.isLocalization_algebraMapSubmonoid_of_isIntegralClosure`) and localization of the
@@ -76,25 +78,22 @@ theorem integer_primesAbove_isPushout (M : Submonoid (S.integer K))
 variable [Module.Finite R B]
   [Module.IsTorsionFree (S.integer K) (T.integer K)]
   [Module.IsTorsionFree ((primesAbove R B S).integer L) ((primesAbove R B T).integer L)]
-  [Module.IsTorsionFree (S.integer K) ((primesAbove R B S).integer L)]
-  [Module.IsTorsionFree (T.integer K) ((primesAbove R B T).integer L)]
 
 /-- The norm of an ideal class followed by enlargement of the inverted primes equals
 enlargement followed by the norm, for any localization presentation of the base enlargement.
 The inverted primes upstairs are the full inverse images of those downstairs. -/
-theorem relNorm_integer_primesAbove_extendedHom (M : Submonoid (S.integer K))
+theorem relNorm_integer_primesAbove_extendedHom_eq_extendedHom_relNorm
+    (M : Submonoid (S.integer K))
     [IsLocalization M (T.integer K)] (c : ClassGroup ((primesAbove R B S).integer L)) :
     ClassGroup.relNorm (T.integer K)
         (ClassGroup.extendedHom ((primesAbove R B S).integer L) ((primesAbove R B T).integer L) c) =
       ClassGroup.extendedHom (S.integer K) (T.integer K) (ClassGroup.relNorm (S.integer K) c) :=
   have := integer_primesAbove_isLocalization (B := B) (L := L) (T := T) M
-  ClassGroup.relNorm_extendedHom_of_isLocalization M c
+  ClassGroup.relNorm_extendedHom_eq_extendedHom_relNorm M c
 
 end Localization
 
 variable [Module.Finite R B]
-  [Module.IsTorsionFree (S.integer K) ((primesAbove R B S).integer L)]
-  [Module.IsTorsionFree (T.integer K) ((primesAbove R B T).integer L)]
 
 /-- For a base ring with torsion class group, the relative norm commutes with the canonical
 inclusions of rings of `S`-integers for every enlargement `S ⊆ T`. -/
@@ -130,6 +129,6 @@ theorem relNorm_integer_primesAbove_map_inclusion [Fact (IsMulTorsion (ClassGrou
   have : IsLocalization M (T.integer K) :=
     integer_isLocalization_algebraMapSubmonoid K (Localization.submonoid T)
   simpa only [ClassGroup.extendedHom_eq_map, RingHom.algebraMap_toAlgebra] using
-    relNorm_integer_primesAbove_extendedHom (T := T) M c
+    relNorm_integer_primesAbove_extendedHom_eq_extendedHom_relNorm (T := T) M c
 
 end IsDedekindDomain

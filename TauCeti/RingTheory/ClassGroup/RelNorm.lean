@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.ClassGroup.Basic
 public import Mathlib.RingTheory.ClassGroup.ExtendedHom
 public import Mathlib.RingTheory.Ideal.Norm.RelNorm
 import Mathlib.GroupTheory.Congruence.Basic
+import TauCeti.RingTheory.Localization.Defs
 
 /-!
 # The relative norm on ideal class groups
@@ -37,6 +38,9 @@ descent instead goes through the monoid congruence `Con.ker` and
   `ClassGroup.relNorm_comp_extendedHom` the same statement as an identity of monoid homomorphisms.
   The extension direction is Mathlib's `ClassGroup.extendedHom`; the composite itself is the
   source's `ClassGroup.relNorm_comp_map`, respelt against it.
+* `ClassGroup.relNorm_extendedHom_eq_extendedHom_relNorm`: the relative norm commutes with
+  extension to localizations when the upper ring is localized at the images of the base
+  denominators.
 
 ## Provenance
 
@@ -174,11 +178,10 @@ variable {Rₘ Sₘ : Type*} [CommRing Rₘ] [CommRing Sₘ]
 
 /-- The class-group norm commutes with extension of ideals to a localization when the upper
 ring is localized at the image of the same denominators as the base ring. -/
-theorem relNorm_extendedHom_of_isLocalization (M : Submonoid R) [IsLocalization M Rₘ]
+theorem relNorm_extendedHom_eq_extendedHom_relNorm (M : Submonoid R) [IsLocalization M Rₘ]
     [IsLocalization (Algebra.algebraMapSubmonoid S M) Sₘ] (c : ClassGroup S) :
     relNorm Rₘ (extendedHom S Sₘ c) = extendedHom R Rₘ (relNorm R c) := by
-  have hM : M ≤ R⁰ := fun m hm ↦ mem_nonZeroDivisors_iff_ne_zero.mpr fun hm0 ↦
-    (IsLocalization.map_units Rₘ ⟨m, hm⟩).ne_zero (by simp [hm0])
+  have hM := TauCeti.IsLocalization.le_nonZeroDivisors_of_nontrivial M Rₘ
   obtain ⟨I, rfl⟩ := mk0_surjective c
   rw [extendedHom_mk0, relNorm_mk0, relNorm_mk0, extendedHom_mk0]
   apply congrArg mk0
