@@ -92,7 +92,8 @@ theorem hasSum_tricomiIncompleteGamma (a z : ℂ) :
   rw [tricomiIncompleteGamma_def]
   refine ((hasSum_regularizedHGFun (a := {1}) (b := {a + 1}) (by simp) z).mul_left
     (cexp (-z))).congr_fun fun k => ?_
-  rw [regularizedHGFunCoeff_one_singleton, add_right_comm, div_eq_mul_inv]
+  rw [regularizedHGFunCoeff_one, Multiset.map_singleton, Multiset.prod_singleton, add_right_comm,
+    div_eq_mul_inv]
   ring
 
 /-- Tricomi's function is real for real `a` and `x`: the terms `e^{−x} xᵏ / Γ(a + k + 1)` of its

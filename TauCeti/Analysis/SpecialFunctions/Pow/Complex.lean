@@ -81,6 +81,7 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   extends to a `k`-th root function analytic at that point.
 * `TauCeti.cpow_mul_inv`, `TauCeti.cpow_add_one'` -- multiplying a principal power by `w⁻¹` or `w`
   lowers or raises the exponent by one, including at the base `0`.
+* `TauCeti.cpow_neg_mul_cpow_mul` -- away from the base `0`, `x ^ (-s)` cancels `x ^ s`.
 * `TauCeti.hasDerivAt_sub_div_sub_cpow` -- the derivative of `w ↦ ((w - α) / (w - γ)) ^ a` where
   the quotient lies in the slit plane.
 * `TauCeti.hasDerivAt_factorial_mul_choose_mul_cpow` -- the derivatives of `x ↦ x ^ α` on
@@ -404,6 +405,11 @@ theorem cpow_add_one' {s : ℂ} (hs : s + 1 ≠ 0) (w : ℂ) : w ^ (s + 1) = w ^
   rcases eq_or_ne w 0 with rfl | hw
   · rw [zero_cpow hs, mul_zero]
   · rw [cpow_add _ _ hw, cpow_one]
+
+/-- Away from the base `0`, the principal power `x ^ (-s)` cancels `x ^ s` in front of any factor:
+`x ^ (-s) * (x ^ s * w) = w`. -/
+theorem cpow_neg_mul_cpow_mul {x : ℂ} (hx : x ≠ 0) (s w : ℂ) : x ^ (-s) * (x ^ s * w) = w := by
+  rw [← mul_assoc, ← cpow_add _ _ hx, neg_add_cancel, cpow_zero, one_mul]
 
 /-- The derivative of the power `w ↦ ((w - α) / (w - γ)) ^ a` at a point `z` where the quotient
 lies in the slit plane is the power times its logarithmic derivative

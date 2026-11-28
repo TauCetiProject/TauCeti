@@ -93,7 +93,8 @@ theorem besselI_def (ν x : ℝ) :
 theorem besselI_eq_rpow_mul (ν x : ℝ) :
     besselI ν x =
       (x / 2) ^ ν * (Complex.regularizedHGFun 0 {((ν + 1 : ℝ) : ℂ)} ((x / 2) ^ 2 : ℝ)).re := by
-  have hF := Complex.regularizedHGFun_zero_singleton_ofReal_im (ν + 1) ((x / 2) ^ 2)
+  have hF := Complex.regularizedHGFun_ofReal_im (a := 0) (b := {((ν + 1 : ℝ) : ℂ)}) (by simp)
+    (by simp) ((x / 2) ^ 2)
   rw [besselI_def, rpow_def]
   push_cast at hF ⊢
   rw [Complex.mul_re, hF, mul_zero, sub_zero]

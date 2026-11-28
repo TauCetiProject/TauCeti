@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import TauCeti.Analysis.Complex.SlitPlane
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 
 /-!
@@ -43,9 +44,11 @@ where the power is `z/2`.
 * `Complex.differentiable_struveH_intCast`, `Complex.differentiable_struveL_intCast` — for an
   integer order `n ≥ -1`, `𝐇_n` and `𝐋_n` are entire.
 * `Complex.cpow_neg_mul_struveH`, `Complex.cpow_neg_mul_struveL` — for `z ≠ 0`,
-  `(z/2)^{−ν−1} 𝐇_ν(z)` and `(z/2)^{−ν−1} 𝐋_ν(z)` are the entire cores. Their value
-  `(Γ(3/2) Γ(ν + 3/2))⁻¹` at `z = 0` is `Complex.regularizedHGFun_zero` with
-  `Complex.regularizedHGFunCoeff_one_pair`.
+  `(z/2)^{−ν−1} 𝐇_ν(z)` and `(z/2)^{−ν−1} 𝐋_ν(z)` are the cores `𝐅₁₂(3/2, ν + 3/2; ∓z²/4)`.
+  Their value `(Γ(3/2) Γ(ν + 3/2))⁻¹` at `z = 0` is `Complex.regularizedHGFun_zero` with
+  `Complex.regularizedHGFunCoeff_one`.
+* `Complex.differentiable_struveH_core`, `Complex.even_struveH_core` and their `struveL`
+  versions — the cores are entire and even in `z`.
 * `Complex.struveL_eq_struveH_I_mul` — `𝐋_ν(z) = −i e^{−iνπ/2} 𝐇_ν(iz)` when
   `ph(iz) = ph z + π/2`.
 * `Complex.struveH_ofReal_im`, `Complex.struveL_ofReal_im` — `𝐇_ν(x)` and `𝐋_ν(x)` are real for
@@ -104,11 +107,18 @@ private theorem hasSum_cpow_mul_regularizedHGFun (ν c : ℂ) {z : ℂ} (hz : z 
   refine ((hasSum_regularizedHGFun (by simp) _).mul_left ((z / 2) ^ (ν + 1))).congr_fun
     fun k => ?_
   -- `cpow_add` splits the power only once the exponent is written as a natural number plus
-  -- `ν + 1`; the natural part then becomes an ordinary power.
+  -- `ν + 1`; the natural part is then an ordinary power of `(z/2)²`.
   have he : 2 * (k : ℂ) + ν + 1 = ((2 * k : ℕ) : ℂ) + (ν + 1) := by push_cast; ring
-  rw [Multiset.insert_eq_cons, regularizedHGFunCoeff_one_pair, he, cpow_add _ _ h2, cpow_natCast,
-    pow_mul]
-  ring_nf
+  have hpow : (z / 2) ^ (2 * (k : ℂ) + ν + 1) = ((z / 2) ^ 2) ^ k * (z / 2) ^ (ν + 1) := by
+    rw [he, cpow_add _ _ h2, cpow_natCast, pow_mul]
+  have hx : c * z ^ 2 / 4 = c * (z / 2) ^ 2 := by ring
+  have hΓ : Gamma (3 / 2 + k) * Gamma (ν + 3 / 2 + k) =
+      Gamma (k + 3 / 2) * Gamma (k + ν + 3 / 2) := by
+    rw [add_comm (3 / 2 : ℂ), add_comm (ν + 3 / 2), ← add_assoc]
+  simp only [Multiset.insert_eq_cons, regularizedHGFunCoeff_one, Multiset.map_cons,
+    Multiset.map_singleton, Multiset.prod_cons, Multiset.prod_singleton]
+  rw [hΓ, hpow, hx, mul_pow]
+  ring
 
 /-- **The Struve series** (DLMF 11.2.1): for `z ≠ 0`,
 `𝐇_ν(z) = ∑ₖ (−1)ᵏ (z/2)^{2k+ν+1} / (Γ(k + 3/2) Γ(k + ν + 3/2))`, for every order `ν`. -/
@@ -138,12 +148,20 @@ private theorem hasSum_mul_regularizedHGFun_three_halves (c z : ℂ) :
     rw [hk, Gamma_ofReal, Real.Gamma_nat_add_one_add_half]
     push_cast
     ring
+  have hΓsq : Gamma (3 / 2 + k) * Gamma (3 / 2 + k) =
+      ((2 * k + 1)‼ : ℂ) ^ 2 * π / (2 ^ (k + 1)) ^ 2 := by
+    rw [hΓ, ← hπ]
+    ring
+  -- The scaled power `(z/2) (c z²/4)^k = 2 c^k z^{2k+1} / (2^{k+1})²`, through `(z/2)²` so that
+  -- only powers of `2` appear in the denominators.
   have hx : c * z ^ 2 / 4 = c * (z / 2) ^ 2 := by ring
-  rw [Multiset.insert_eq_cons, regularizedHGFunCoeff_one_pair, hΓ, hx]
-  rw [mul_pow, div_pow, div_pow, ← pow_mul, ← pow_mul]
+  have hp : z / 2 * (c * z ^ 2 / 4) ^ k = 2 * (c ^ k * z ^ (2 * k + 1)) / (2 ^ (k + 1)) ^ 2 := by
+    rw [hx, mul_pow, ← pow_mul, div_pow]
+    ring
+  simp only [Multiset.insert_eq_cons, regularizedHGFunCoeff_one, Multiset.map_cons,
+    Multiset.map_singleton, Multiset.prod_cons, Multiset.prod_singleton]
+  rw [hΓsq, mul_left_comm, hp]
   field_simp
-  rw [hπ]
-  ring
 
 /-- DLMF 11.2.3: `𝐇₀(z) = (2/π) ∑ₖ (−1)ᵏ z^{2k+1} / ((2k + 1)!!)²`, for every `z`. -/
 theorem hasSum_struveH_zero (z : ℂ) :
@@ -225,15 +243,38 @@ an entire even function of `z`. -/
 theorem cpow_neg_mul_struveH (ν : ℂ) {z : ℂ} (hz : z ≠ 0) :
     (z / 2) ^ (-(ν + 1)) * struveH ν z =
       regularizedHGFun {1} {3 / 2, ν + 3 / 2} (-(z ^ 2) / 4) := by
-  rw [struveH_def, ← mul_assoc, ← cpow_add _ _ (div_ne_zero hz two_ne_zero), neg_add_cancel,
-    cpow_zero, one_mul]
+  rw [struveH_def, TauCeti.cpow_neg_mul_cpow_mul (div_ne_zero hz two_ne_zero)]
 
 /-- For `z ≠ 0`, `(z/2)^{−ν−1} 𝐋_ν(z) = 𝐅₁₂(3/2, ν + 3/2; z²/4)`, the core of `𝐋_ν`, which is
 an entire even function of `z`. -/
 theorem cpow_neg_mul_struveL (ν : ℂ) {z : ℂ} (hz : z ≠ 0) :
     (z / 2) ^ (-(ν + 1)) * struveL ν z = regularizedHGFun {1} {3 / 2, ν + 3 / 2} (z ^ 2 / 4) := by
-  rw [struveL_def, ← mul_assoc, ← cpow_add _ _ (div_ne_zero hz two_ne_zero), neg_add_cancel,
-    cpow_zero, one_mul]
+  rw [struveL_def, TauCeti.cpow_neg_mul_cpow_mul (div_ne_zero hz two_ne_zero)]
+
+/-- The core `𝐅₁₂(3/2, ν + 3/2; c z²/4)` of `𝐇_ν` (`c = -1`) and `𝐋_ν` (`c = 1`) is entire. -/
+private theorem differentiable_regularizedHGFun_mul_sq (ν c : ℂ) :
+    Differentiable ℂ fun z : ℂ => regularizedHGFun {1} {3 / 2, ν + 3 / 2} (c * z ^ 2 / 4) :=
+  (differentiable_regularizedHGFun_of_card_le (by simp)).comp (by fun_prop)
+
+/-- The core `𝐅₁₂(3/2, ν + 3/2; −z²/4)` of `𝐇_ν` is entire. -/
+theorem differentiable_struveH_core (ν : ℂ) :
+    Differentiable ℂ fun z : ℂ => regularizedHGFun {1} {3 / 2, ν + 3 / 2} (-(z ^ 2) / 4) := by
+  simpa [neg_div] using differentiable_regularizedHGFun_mul_sq ν (-1)
+
+/-- The core `𝐅₁₂(3/2, ν + 3/2; z²/4)` of `𝐋_ν` is entire. -/
+theorem differentiable_struveL_core (ν : ℂ) :
+    Differentiable ℂ fun z : ℂ => regularizedHGFun {1} {3 / 2, ν + 3 / 2} (z ^ 2 / 4) := by
+  simpa using differentiable_regularizedHGFun_mul_sq ν 1
+
+/-- The core `𝐅₁₂(3/2, ν + 3/2; −z²/4)` of `𝐇_ν` is even in `z`. -/
+theorem even_struveH_core (ν : ℂ) :
+    Function.Even fun z : ℂ => regularizedHGFun {1} {3 / 2, ν + 3 / 2} (-(z ^ 2) / 4) :=
+  fun z => by simp only [neg_sq]
+
+/-- The core `𝐅₁₂(3/2, ν + 3/2; z²/4)` of `𝐋_ν` is even in `z`. -/
+theorem even_struveL_core (ν : ℂ) :
+    Function.Even fun z : ℂ => regularizedHGFun {1} {3 / 2, ν + 3 / 2} (z ^ 2 / 4) :=
+  fun z => by simp only [neg_sq]
 
 /-! ### The relation between `𝐋_ν` and `𝐇_ν`, and reality -/
 
@@ -265,10 +306,9 @@ private theorem struve_ofReal_im (ν x c : ℝ) (hx : 0 ≤ x) :
   have h1 : ((x : ℂ) / 2) ^ ((ν : ℂ) + 1) = (((x / 2) ^ (ν + 1) : ℝ) : ℂ) := by
     rw [ofReal_cpow (by positivity)]
     norm_num
-  have h2 := regularizedHGFun_map_ofReal_im {1} {3 / 2, ν + 3 / 2} (c * x ^ 2 / 4)
-  simp only [Multiset.map_singleton, Multiset.insert_eq_cons, Multiset.map_cons] at h2
+  have h2 := regularizedHGFun_ofReal_im (a := {1}) (b := {3 / 2, (ν : ℂ) + 3 / 2}) (by simp)
+    (by simp) (c * x ^ 2 / 4)
   push_cast at h2
-  rw [← Multiset.insert_eq_cons] at h2
   rw [h1, im_ofReal_mul, h2, mul_zero]
 
 /-- `𝐇_ν(x)` is real for real `ν` and `x ≥ 0`. -/
