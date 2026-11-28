@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicGeometry.AlgClosed.Basic
 public import TauCeti.AlgebraicGeometry.GroupAction.Orbit.Basic
-import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.Basic
 import TauCeti.AlgebraicGeometry.RationalPoint.Basic
 import TauCeti.AlgebraicGeometry.RationalPoint.Image
 import TauCeti.Topology.JacobsonSpace
@@ -30,9 +29,6 @@ rational-point transitivity, without importing orbit local closedness or dimensi
 * `TauCeti.SchemeAction.forall_exists_smul_of_orbit_eq_univ`: if `orbit G x = Set.univ` over an
   algebraically closed field with `G` locally of finite type, then every rational point of `X` is a
   rational translate of `x`.
-* `TauCeti.SchemeAction.orbit_eq_univ_iff_closedPoints_subset`: over any field, when `X` is
-  locally of finite type and `orbitMap G x` is quasi-compact, `orbit G x = Set.univ` iff it
-  contains every closed point of `X`.
 * `TauCeti.SchemeAction.orbit_eq_univ_iff_forall_exists_smul`: over an algebraically closed field,
   when `X` is locally of finite type and `orbitMap G x` is quasi-compact, `orbit G x` covers `X`
   iff `G(k)` acts transitively on `X(k)`.
@@ -115,24 +111,6 @@ theorem forall_exists_smul_of_orbit_eq_univ (x : 𝟙_ (Over (Spec (.of k))) ⟶
 
 end AlgClosed
 
-section Field
-
-/-- Over a field, the geometric orbit of a rational point covers a locally finite-type scheme `X`
-if and only if it contains every closed point of `X`. -/
-theorem orbit_eq_univ_iff_closedPoints_subset {k : Type u} [Field k] (G : Over (Spec (.of k)))
-    {X : Over (Spec (.of k))} [MonObj G] [ModObj G X] [LocallyOfFiniteType G.hom]
-    [LocallyOfFiniteType X.hom] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
-    [QuasiCompact (orbitMap G x).left] :
-    orbit G x = Set.univ ↔ closedPoints X.left ⊆ orbit G x := by
-  have : IsLocallyNoetherian X.left := LocallyOfFiniteType.isLocallyNoetherian X.hom
-  have : JacobsonSpace X.left := LocallyOfFiniteType.jacobsonSpace X.hom
-  have : LocallyOfFinitePresentation (orbitMap G x).left :=
-    locallyOfFinitePresentation_orbitMap G x
-  rw [← surjective_orbitMap_iff_orbit_eq_univ G x, orbit_def]
-  exact (orbitMap G x).left.surjective_iff_closedPoints_subset_range
-
-end Field
-
 section AlgClosedFiniteType
 
 variable {k : Type u} [Field k] [IsAlgClosed k] (G : Over (Spec (.of k)))
@@ -148,17 +126,14 @@ theorem orbit_eq_univ_iff_forall_exists_smul (x : 𝟙_ (Over (Spec (.of k))) �
       ∀ y : 𝟙_ (Over (Spec (.of k))) ⟶ X,
         ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, g • x = y := by
   refine ⟨forall_exists_smul_of_orbit_eq_univ G x, fun h ↦ ?_⟩
-  refine (orbit_eq_univ_iff_closedPoints_subset G x).mpr fun p hp ↦ ?_
-  have hpc : IsClosed {p} := mem_closedPoints_iff.mp hp
-  let y : 𝟙_ (Over (Spec (.of k))) ⟶ X :=
-    Over.homMk (U := 𝟙_ _) (V := X) (pointOfClosedPoint X.hom p hpc)
-      (pointOfClosedPoint_comp X.hom p hpc)
-  obtain ⟨g, hg⟩ := h y
-  have hp' : (g • x).left (IsLocalRing.closedPoint k) = p :=
-    (congrArg (fun f : 𝟙_ (Over (Spec (.of k))) ⟶ X ↦
-      f.left (IsLocalRing.closedPoint k)) hg).trans
-      (pointOfClosedPoint_apply X.hom p hpc (IsLocalRing.closedPoint k))
-  exact hp' ▸ smul_left_apply_mem_orbit G x g (IsLocalRing.closedPoint k)
+  have : LocallyOfFiniteType ((orbitMap G x).left ≫ X.hom) := by
+    rw [Over.w]
+    infer_instance
+  rw [← surjective_orbitMap_iff_orbit_eq_univ, AlgebraicGeometry.surjective_iff,
+    (orbitMap G x).left.surjective_iff_forall_rationalPoint X.hom]
+  intro p hp
+  obtain ⟨g, hg⟩ := h (Over.homMk p hp)
+  exact ⟨g.left, by simpa [← left_comp_orbitMap_left] using congrArg Over.Hom.left hg⟩
 
 end AlgClosedFiniteType
 
