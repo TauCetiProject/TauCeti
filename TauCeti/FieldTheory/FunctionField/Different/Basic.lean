@@ -11,6 +11,7 @@ public import TauCeti.FieldTheory.FunctionField.AffineModel.Extension
 -- Proof-only: the scalar tower `k → 𝒪_P → 𝒪_{P'}` of valuation rings and ideal multiplicities.
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
 import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
+import TauCeti.RingTheory.DiscreteValuationRing.Length
 
 /-!
 # The different exponent of a place
@@ -369,15 +370,13 @@ theorem differentIdeal_map_integers_eq_maximalIdeal_pow :
     (faithfulSMul_iff_algebraMap_injective B P'.integers).mpr hInj
   have hmap0 : (differentIdeal O B).map (algebraMap B P'.integers) ≠ ⊥ :=
     Ideal.map_ne_bot_of_ne_bot hB0
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible P'.integers
-  obtain ⟨n, hn⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hmap0 hϖ
   have hM0 : IsLocalRing.maximalIdeal P'.integers ≠ ⊥ :=
     IsDiscreteValuationRing.not_a_field P'.integers
-  have hmul := Ideal.multiplicity_map_of_map_eq hM0
-    (IsLocalization.AtPrime.map_eq_maximalIdeal q.asIdeal P'.integers) hB0
-  rw [hn, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq,
-    multiplicity_pow_self_of_prime (Ideal.prime_of_isPrime hM0 inferInstance)] at hmul
-  rw [hn, ← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq, hmul, differentExponent_def]
+  rw [Ideal.eq_maximalIdeal_pow_length_quotient _ hmap0,
+    Ideal.length_quotient_eq_multiplicity _ hmap0,
+    Ideal.multiplicity_map_of_map_eq hM0
+      (IsLocalization.AtPrime.map_eq_maximalIdeal q.asIdeal P'.integers) hB0,
+    ENat.toNat_natCast, differentExponent_def]
 
 /-- **The different exponent vanishes away from the discriminant**: if some `F`-basis of `F'` has
 integral vectors and unit discriminant at the place `P = P'.restrict k F` below `P'`, then

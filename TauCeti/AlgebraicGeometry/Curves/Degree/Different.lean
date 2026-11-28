@@ -254,11 +254,10 @@ theorem finrank_ramificationIdealSheaf_eq_degree_different
   have hdeg : (((ramificationIdealSheaf k f).subschemeι ≫
       X ↘ Spec (.of k)).finrank default : ℤ) =
       LineBundleClass.eulerDegree k (ramificationCartierDivisor k f).toLineBundleClass := by
-    rw [toLineBundleClass_ramificationCartierDivisor,
-      ← inv_mk_toInvertibleSheaf_ramificationIdealSheaf k f,
-      LineBundleClass.eulerDegree_inv k (Scheme.IsCurveOver.coheight_le_one (k := k)),
-      LineBundleClass.eulerDegree_mk,
-      hI.eulerDegree_toInvertibleSheaf k _ default, neg_neg]
+    rw [← (isEffective_ramificationCartierDivisor k f).toCartierDivisor_idealSheaf,
+      Scheme.IdealSheafData.IsEffectiveCartier.toLineBundleClass_toCartierDivisor,
+      LineBundleClass.mk_toInvertibleSheaf_congr _ hI (idealSheaf_ramificationCartierDivisor k f)]
+    exact (hI.eulerDegree_inv_mk_toInvertibleSheaf k _ default).symm
   rw [hdeg, Scheme.CartierDivisor.toLineBundleClass_eq_toWeilDivisor
       (Scheme.IsCurveOver.coheight_le_one (k := k)),
     LineBundleClass.eulerDegree_toLineBundleClass k

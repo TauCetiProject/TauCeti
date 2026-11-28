@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Kaehler.Basic
-import TauCeti.Algebra.Ring.Hom
+public import TauCeti.Algebra.Ring.Hom
 
 /-!
 # Semilinear functoriality of Kähler differentials along algebra homomorphisms
@@ -55,9 +55,8 @@ outside the `letI` scope.
   an algebra isomorphism the maps for `e` and `e.symm` are mutually inverse.
 * `KaehlerDifferential.mapSemilinearOfRingEquiv_id`, `mapSemilinearOfRingEquiv_comp`,
   `mapSemilinearOfRingEquiv_apply_symm_apply`, `mapSemilinearEquivOfRingEquiv_refl`,
-  `mapSemilinearEquivOfRingEquiv_trans`,
-  `mapSemilinearEquivOfRingEquiv_refl_eq_mapSemilinearEquiv_apply`: identity, composition, inverse,
-  and compatibility laws for the ring-equivalence Kähler maps and equivalences.
+  `mapSemilinearEquivOfRingEquiv_trans`: identity, composition, inverse, and compatibility laws
+  for the ring-equivalence Kähler maps and equivalences.
 * `KaehlerDifferential.span_singleton_mapSemilinear_eq_top_iff`: a generating differential
   transfers along an algebra isomorphism.
 * `KaehlerDifferential.nonempty_linearEquiv_pi_of_algEquiv`: freeness of the Kähler
@@ -327,36 +326,32 @@ theorem mapSemilinearOfRingEquiv_comp_apply (eR₁ : R ≃+* R') (eA₁ : A ≃+
 
 end Comp
 
-private theorem mapSemilinearOfRingEquiv_comp_symm_eq_id (eR : R ≃+* R') (eA : A ≃+* A')
-    (h : ∀ r : R, algebraMap R' A' (eR r) = eA (algebraMap R A r))
-    (hsymm : ∀ r' : R', algebraMap R A (eR.symm r') = eA.symm (algebraMap R' A' r')) :
-    letI : RingHomCompTriple (eA.symm : A' →+* A) (eA : A →+* A') (RingHom.id A') :=
-      ⟨RingHom.ext fun x ↦ eA.apply_symm_apply x⟩
-    (mapSemilinearOfRingEquiv eR eA h).comp
-        (mapSemilinearOfRingEquiv eR.symm eA.symm hsymm) = LinearMap.id :=
-  letI : RingHomCompTriple (eA.symm : A' →+* A) (eA : A →+* A') (RingHom.id A') :=
-    ⟨RingHom.ext fun x ↦ eA.apply_symm_apply x⟩
-  LinearMap.ext_on_range (span_range_derivation R' A') fun x ↦ by
-    simp only [LinearMap.comp_apply, mapSemilinearOfRingEquiv_D, eA.apply_symm_apply,
-      LinearMap.id_apply]
-
 /-- Mapping along `eR.symm, eA.symm` and then `eR, eA` is the identity on `Ω[A'⁄R']`. -/
 theorem mapSemilinearOfRingEquiv_apply_symm_apply (eR : R ≃+* R') (eA : A ≃+* A')
-    (h : ∀ r : R, algebraMap R' A' (eR r) = eA (algebraMap R A r))
-    (hsymm : ∀ r' : R', algebraMap R A (eR.symm r') = eA.symm (algebraMap R' A' r'))
-    (ω : Ω[A'⁄R']) :
+    (h : ∀ r : R, algebraMap R' A' (eR r) = eA (algebraMap R A r)) (ω : Ω[A'⁄R']) :
     mapSemilinearOfRingEquiv eR eA h
-        (mapSemilinearOfRingEquiv eR.symm eA.symm hsymm ω) = ω :=
-  DFunLike.congr_fun (mapSemilinearOfRingEquiv_comp_symm_eq_id eR eA h hsymm) ω
+        (mapSemilinearOfRingEquiv eR.symm eA.symm
+          (RingEquiv.apply_symm_of_comm eR eA (algebraMap R A) (algebraMap R' A') h) ω) = ω := by
+  have hcongr (eR₁ eR₂ : R' ≃+* R') (eA₁ eA₂ : A' ≃+* A') (hR : eR₁ = eR₂) (hA : eA₁ = eA₂)
+      (h₁ : ∀ r' : R', algebraMap R' A' (eR₁ r') = eA₁ (algebraMap R' A' r'))
+      (h₂ : ∀ r' : R', algebraMap R' A' (eR₂ r') = eA₂ (algebraMap R' A' r')) :
+      mapSemilinearOfRingEquiv eR₁ eA₁ h₁ ω = mapSemilinearOfRingEquiv eR₂ eA₂ h₂ ω := by
+    subst hR
+    subst hA
+    rfl
+  refine (mapSemilinearOfRingEquiv_comp_apply eR.symm eA.symm _ eR eA h ω).trans ?_
+  refine (hcongr _ _ _ _ (RingEquiv.symm_trans_self eR) (RingEquiv.symm_trans_self eA) _
+    (fun _ ↦ rfl)).trans ?_
+  exact mapSemilinearOfRingEquiv_id_apply _ ω
 
 /-- Mapping along `eR, eA` and then `eR.symm, eA.symm` is the identity on `Ω[A⁄R]`. -/
 theorem mapSemilinearOfRingEquiv_symm_apply_apply (eR : R ≃+* R') (eA : A ≃+* A')
-    (h : ∀ r : R, algebraMap R' A' (eR r) = eA (algebraMap R A r))
-    (hsymm : ∀ r' : R', algebraMap R A (eR.symm r') = eA.symm (algebraMap R' A' r'))
-    (ω : Ω[A⁄R]) :
-    mapSemilinearOfRingEquiv eR.symm eA.symm hsymm
+    (h : ∀ r : R, algebraMap R' A' (eR r) = eA (algebraMap R A r)) (ω : Ω[A⁄R]) :
+    mapSemilinearOfRingEquiv eR.symm eA.symm
+        (RingEquiv.apply_symm_of_comm eR eA (algebraMap R A) (algebraMap R' A') h)
         (mapSemilinearOfRingEquiv eR eA h ω) = ω :=
-  mapSemilinearOfRingEquiv_apply_symm_apply eR.symm eA.symm hsymm h ω
+  mapSemilinearOfRingEquiv_apply_symm_apply eR.symm eA.symm
+    (RingEquiv.apply_symm_of_comm eR eA (algebraMap R A) (algebraMap R' A') h) ω
 
 /-- When the base ring is fixed, `mapSemilinearOfRingEquiv` along `RingEquiv.refl R` and an
 `R`-algebra equivalence `e : A ≃ₐ[R] B` agrees with `mapSemilinear e.toAlgHom`. -/
@@ -368,18 +363,12 @@ theorem mapSemilinearOfRingEquiv_refl_eq_mapSemilinear_apply (e : A ≃ₐ[R] B)
     { toFun := mapSemilinear e.toAlgHom
       map_add' := map_add _
       map_smul' := fun a ξ ↦ (mapSemilinear e.toAlgHom).map_smulₛₗ a ξ }
+  have hf' (ξ : Ω[A⁄R]) : f' ξ = mapSemilinear e.toAlgHom ξ := rfl
   have hlin : mapSemilinearOfRingEquiv (RingEquiv.refl R) e.toRingEquiv h = f' :=
     LinearMap.ext_on_range (span_range_derivation R A) fun x ↦ by
-      rw [mapSemilinearOfRingEquiv_D]
-      change D R B (e x) = mapSemilinear e.toAlgHom (D R A x)
-      rw [mapSemilinear_D, AlgEquiv.toAlgHom_apply]
+      rw [mapSemilinearOfRingEquiv_D, hf', mapSemilinear_D, AlgEquiv.toAlgHom_apply,
+        AlgEquiv.coe_toRingEquiv]
   exact DFunLike.congr_fun hlin ω
-
-/-- Specializing `RingEquiv.apply_symm_of_comm` to the structure maps of two algebras. -/
-theorem algebraMap_symm_of_ringEquiv (eR : R ≃+* R') (eA : A ≃+* A')
-    (h : ∀ r : R, algebraMap R' A' (eR r) = eA (algebraMap R A r)) (r' : R') :
-    algebraMap R A (eR.symm r') = eA.symm (algebraMap R' A' r') :=
-  RingEquiv.apply_symm_of_comm eR eA (algebraMap R A) (algebraMap R' A') h r'
 
 attribute [local instance] RingHomInvPair.of_ringEquiv in
 /-- **The semilinear isomorphism of Kähler differentials along commuting ring isomorphisms**
@@ -387,11 +376,11 @@ attribute [local instance] RingHomInvPair.of_ringEquiv in
 noncomputable def mapSemilinearEquivOfRingEquiv (eR : R ≃+* R') (eA : A ≃+* A')
     (h : ∀ r : R, algebraMap R' A' (eR r) = eA (algebraMap R A r)) :
     Ω[A⁄R] ≃ₛₗ[(eA : A →+* A')] Ω[A'⁄R'] :=
-  have hsymm := algebraMap_symm_of_ringEquiv eR eA h
   { __ := mapSemilinearOfRingEquiv eR eA h
-    invFun := mapSemilinearOfRingEquiv eR.symm eA.symm hsymm
-    left_inv := mapSemilinearOfRingEquiv_symm_apply_apply eR eA h hsymm
-    right_inv := mapSemilinearOfRingEquiv_apply_symm_apply eR eA h hsymm }
+    invFun := mapSemilinearOfRingEquiv eR.symm eA.symm
+      (RingEquiv.apply_symm_of_comm eR eA (algebraMap R A) (algebraMap R' A') h)
+    left_inv := mapSemilinearOfRingEquiv_symm_apply_apply eR eA h
+    right_inv := mapSemilinearOfRingEquiv_apply_symm_apply eR eA h }
 
 attribute [local instance] RingHomInvPair.of_ringEquiv in
 /-- `mapSemilinearEquivOfRingEquiv` acts as `mapSemilinearOfRingEquiv`. -/
@@ -408,22 +397,9 @@ inverse equivalences. -/
 theorem mapSemilinearEquivOfRingEquiv_symm_apply (eR : R ≃+* R') (eA : A ≃+* A')
     (h : ∀ r : R, algebraMap R' A' (eR r) = eA (algebraMap R A r)) (ω' : Ω[A'⁄R']) :
     (mapSemilinearEquivOfRingEquiv eR eA h).symm ω' =
-      mapSemilinearOfRingEquiv eR.symm eA.symm (algebraMap_symm_of_ringEquiv eR eA h) ω' :=
+      mapSemilinearOfRingEquiv eR.symm eA.symm
+        (RingEquiv.apply_symm_of_comm eR eA (algebraMap R A) (algebraMap R' A') h) ω' :=
   (rfl)
-
-attribute [local instance] RingHomInvPair.of_ringEquiv in
-/-- `mapSemilinearEquivOfRingEquiv` sends `D R A x` to `D R' A' (eA x)`. -/
-theorem mapSemilinearEquivOfRingEquiv_D (eR : R ≃+* R') (eA : A ≃+* A')
-    (h : ∀ r : R, algebraMap R' A' (eR r) = eA (algebraMap R A r)) (x : A) :
-    mapSemilinearEquivOfRingEquiv eR eA h (D R A x) = D R' A' (eA x) :=
-  mapSemilinearOfRingEquiv_D eR eA h x
-
-attribute [local instance] RingHomInvPair.of_ringEquiv in
-/-- The inverse of `mapSemilinearEquivOfRingEquiv` sends `D R' A' x'` to `D R A (eA.symm x')`. -/
-theorem mapSemilinearEquivOfRingEquiv_symm_D (eR : R ≃+* R') (eA : A ≃+* A')
-    (h : ∀ r : R, algebraMap R' A' (eR r) = eA (algebraMap R A r)) (x' : A') :
-    (mapSemilinearEquivOfRingEquiv eR eA h).symm (D R' A' x') = D R A (eA.symm x') :=
-  mapSemilinearOfRingEquiv_D eR.symm eA.symm (algebraMap_symm_of_ringEquiv eR eA h) x'
 
 attribute [local instance] RingHomInvPair.of_ringEquiv in
 /-- `mapSemilinearEquivOfRingEquiv` along the identity equivalences is `LinearEquiv.refl`. -/
@@ -432,14 +408,6 @@ theorem mapSemilinearEquivOfRingEquiv_refl
     (mapSemilinearEquivOfRingEquiv (RingEquiv.refl R) (RingEquiv.refl A) h :
       Ω[A⁄R] ≃ₗ[A] Ω[A⁄R]) = LinearEquiv.refl A Ω[A⁄R] :=
   LinearEquiv.toLinearMap_injective (mapSemilinearOfRingEquiv_id h)
-
-attribute [local instance] RingHomInvPair.of_ringEquiv in
-/-- `mapSemilinearEquivOfRingEquiv` along the identity equivalences fixes every differential. -/
-theorem mapSemilinearEquivOfRingEquiv_refl_apply
-    (h : ∀ r : R, algebraMap R A (RingEquiv.refl R r) = RingEquiv.refl A (algebraMap R A r))
-    (ω : Ω[A⁄R]) :
-    mapSemilinearEquivOfRingEquiv (RingEquiv.refl R) (RingEquiv.refl A) h ω = ω :=
-  mapSemilinearOfRingEquiv_id_apply h ω
 
 section EquivComp
 
@@ -466,30 +434,7 @@ theorem mapSemilinearEquivOfRingEquiv_trans (eR₁ : R ≃+* R') (eA₁ : A ≃+
     ⟨RingHom.ext fun _ ↦ rfl⟩
   LinearEquiv.toLinearMap_injective (mapSemilinearOfRingEquiv_comp eR₁ eA₁ h₁ eR₂ eA₂ h₂)
 
-attribute [local instance] RingHomInvPair.of_ringEquiv in
-/-- Applied composition of `mapSemilinearEquivOfRingEquiv`, normalizing toward a single
-equivalence. -/
-theorem mapSemilinearEquivOfRingEquiv_trans_apply (eR₁ : R ≃+* R') (eA₁ : A ≃+* A')
-    (h₁ : ∀ r : R, algebraMap R' A' (eR₁ r) = eA₁ (algebraMap R A r))
-    (eR₂ : R' ≃+* R'') (eA₂ : A' ≃+* A'')
-    (h₂ : ∀ r' : R', algebraMap R'' A'' (eR₂ r') = eA₂ (algebraMap R' A' r'))
-    (ω : Ω[A⁄R]) :
-    mapSemilinearEquivOfRingEquiv eR₂ eA₂ h₂ (mapSemilinearEquivOfRingEquiv eR₁ eA₁ h₁ ω) =
-      mapSemilinearEquivOfRingEquiv (eR₁.trans eR₂) (eA₁.trans eA₂)
-        (fun r ↦ by rw [RingEquiv.trans_apply, RingEquiv.trans_apply, h₂, h₁]) ω :=
-  mapSemilinearOfRingEquiv_comp_apply eR₁ eA₁ h₁ eR₂ eA₂ h₂ ω
-
 end EquivComp
-
-attribute [local instance] RingHomInvPair.of_ringEquiv in
-/-- When the base ring is fixed, `mapSemilinearEquivOfRingEquiv` along `RingEquiv.refl R` and an
-`R`-algebra equivalence `e : A ≃ₐ[R] B` agrees with `mapSemilinearEquiv e`. -/
-theorem mapSemilinearEquivOfRingEquiv_refl_eq_mapSemilinearEquiv_apply (e : A ≃ₐ[R] B)
-    (h : ∀ r : R, algebraMap R B (RingEquiv.refl R r) = e.toRingEquiv (algebraMap R A r))
-    (ω : Ω[A⁄R]) :
-    mapSemilinearEquivOfRingEquiv (RingEquiv.refl R) e.toRingEquiv h ω =
-      mapSemilinearEquiv e ω :=
-  mapSemilinearOfRingEquiv_refl_eq_mapSemilinear_apply e h ω
 
 end RingEquiv
 

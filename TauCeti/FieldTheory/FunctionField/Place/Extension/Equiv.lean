@@ -92,6 +92,7 @@ noncomputable def integersEquivRestrictOfRingEquiv [Algebra k K] [Algebra k' K']
 include hK in
 /-- Coercion formula for `integersEquivRestrictOfRingEquiv`: it acts on underlying field elements as
 `σK`. -/
+@[simp]
 theorem coe_integersEquivRestrictOfRingEquiv [Algebra k K] [Algebra k' K']
     [IsScalarTower k K L] [IsScalarTower k' K' L'] [Algebra.IsIntegral K L]
     [Algebra.IsIntegral K' L'] (Q : Place k L) (x : (Q.restrict k K).integers) :
@@ -112,16 +113,35 @@ theorem residueField_comm_equivOfRingEquiv [Algebra k K] [Algebra k' K']
         (integersEquivRestrictOfRingEquiv σ τ h σK hK Q)).toRingHom =
       (IsLocalRing.ResidueField.mapEquiv (integersEquivOfRingEquiv σ τ h Q)).toRingHom.comp
         (algebraMap (Q.restrict k K).ResidueField Q.ResidueField) := by
-  ext x
-  obtain ⟨x, rfl⟩ := IsLocalRing.residue_surjective x
-  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
-    IsLocalRing.ResidueField.mapEquiv_apply, IsLocalRing.ResidueField.map_residue,
-    IsLocalRing.ResidueField.algebraMap_residue]
-  congr 1
-  ext
-  refine (congrArg (algebraMap K' L')
-    (coe_integersEquivRestrictOfRingEquiv σ τ h σK hK Q x)).trans ?_
-  simpa using (hK x).symm
+  have hring :
+      (algebraMap ((equivOfRingEquiv σ τ h Q).restrict k' K').integers
+          (equivOfRingEquiv σ τ h Q).integers).comp
+        (integersEquivRestrictOfRingEquiv σ τ h σK hK Q : _ →+* _) =
+      (integersEquivOfRingEquiv σ τ h Q : _ →+* _).comp
+        (algebraMap (Q.restrict k K).integers Q.integers) := by
+    ext x
+    simp [hK]
+  have halg {P : Place k L} [Algebra k K] [IsScalarTower k K L] [Algebra.IsIntegral K L] :
+      algebraMap (P.restrict k K).ResidueField P.ResidueField =
+        IsLocalRing.ResidueField.map (algebraMap (P.restrict k K).integers P.integers) :=
+    Ideal.Quotient.ringHom_ext (RingHom.ext fun _ ↦ rfl)
+  have halg' {P' : Place k' L'} [Algebra k' K'] [IsScalarTower k' K' L']
+      [Algebra.IsIntegral K' L'] :
+      algebraMap (P'.restrict k' K').ResidueField P'.ResidueField =
+        IsLocalRing.ResidueField.map (algebraMap (P'.restrict k' K').integers P'.integers) :=
+    Ideal.Quotient.ringHom_ext (RingHom.ext fun _ ↦ rfl)
+  have h1 :
+      (IsLocalRing.ResidueField.mapEquiv
+        (integersEquivRestrictOfRingEquiv σ τ h σK hK Q)).toRingHom =
+      IsLocalRing.ResidueField.map (integersEquivRestrictOfRingEquiv σ τ h σK hK Q : _ →+* _) :=
+    rfl
+  have h2 :
+      (IsLocalRing.ResidueField.mapEquiv (integersEquivOfRingEquiv σ τ h Q)).toRingHom =
+      IsLocalRing.ResidueField.map (integersEquivOfRingEquiv σ τ h Q : _ →+* _) :=
+    rfl
+  rw [halg', halg, h1, h2, ← IsLocalRing.ResidueField.map_comp,
+    ← IsLocalRing.ResidueField.map_comp]
+  simp only [hring]
 
 include hK in
 /-- **The relative degree is invariant under a commutative square of semilinear isomorphisms**:
