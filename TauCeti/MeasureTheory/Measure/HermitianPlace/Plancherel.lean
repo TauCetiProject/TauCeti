@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.HermitianPlace.Basic
+import TauCeti.Algebra.Group.AddChar.Basic
 import TauCeti.MeasureTheory.Integral.Pi
 import TauCeti.MeasureTheory.Integral.SchurTest
 
@@ -106,30 +107,33 @@ theorem FourierSqNormLe.mono {J : Matrix ι ι A} {ξ : A} {ρ ρ' : Measure (ι
   fun φ hφm hφ hφT ↦ (lintegral_mono_set hT').trans <|
     (h φ hφm hφ fun y hy ↦ hφT y fun hyT ↦ hy (hT hyT)).trans (by gcongr)
 
+/-- Integrating an integrable function against a jointly continuous kernel with values in the unit
+circle gives a continuous function, by dominated convergence. -/
+private theorem continuous_integral_mul_circle {X Y : Type*} [TopologicalSpace X]
+    [FirstCountableTopology X] [TopologicalSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y]
+    {μ : Measure Y} {k : X → Y → Circle} (hk : Continuous fun p : X × Y ↦ (k p.1 p.2 : ℂ))
+    {f : Y → ℂ} (hf : Integrable f μ) : Continuous fun x ↦ ∫ y, f y * k x y ∂μ := by
+  refine continuous_of_dominated (bound := fun y ↦ ‖f y‖) (fun x ↦ ?_) (fun x ↦ ?_) hf.norm ?_
+  · exact hf.aestronglyMeasurable.mul
+      (hk.comp (continuous_const.prodMk continuous_id)).aestronglyMeasurable
+  · exact Eventually.of_forall fun y ↦ by simp
+  · exact Eventually.of_forall fun y ↦
+      continuous_const.mul (hk.comp (continuous_id.prodMk continuous_const))
+
 variable [IsTopologicalRing A] [ContinuousStar A] [SecondCountableTopology A] [BorelSpace A]
 
 /-- The transform `v ↦ ∫ ψ(η · v*w) f(w) dw` of an integrable function `f` on `A^ι` is
 continuous. -/
 theorem continuous_integral_ψ_mul (η : A) {f : (ι → A) → ℂ} (hf : Integrable f) :
     Continuous fun v : ι → A ↦ ∫ w, (P.ψ (η * (star v ⬝ᵥ w)) : ℂ) * f w := by
-  have he := P.continuous_ψ_mul_dotProduct (ι := ι) η
-  refine continuous_of_dominated (bound := fun w ↦ ‖f w‖) (fun v ↦ ?_) (fun v ↦ ?_) hf.norm ?_
-  · exact (he.comp (continuous_const.prodMk continuous_id)).aestronglyMeasurable.mul
-      hf.aestronglyMeasurable
-  · exact Eventually.of_forall fun w ↦ by simp
-  · exact Eventually.of_forall fun w ↦
-      (he.comp (continuous_id.prodMk continuous_const)).mul continuous_const
+  simpa only [mul_comm (f _)] using continuous_integral_mul_circle
+    (k := fun v w ↦ P.ψ (η * (star v ⬝ᵥ w))) (P.continuous_ψ_mul_dotProduct η) hf
 
 /-- The kernel `z ↦ ∫ W(v) ψ(η · v*z) dv` of an integrable weight is continuous. -/
 private theorem continuous_integral_mul_ψ (η : A) {W : (ι → A) → ℝ} (hW : Integrable W) :
-    Continuous fun z : ι → A ↦ ∫ v, (W v : ℂ) * P.ψ (η * (star v ⬝ᵥ z)) := by
-  have he := P.continuous_ψ_mul_dotProduct (ι := ι) η
-  refine continuous_of_dominated (bound := fun v ↦ ‖W v‖) (fun z ↦ ?_) (fun z ↦ ?_) hW.norm ?_
-  · exact (Complex.continuous_ofReal.comp_aestronglyMeasurable hW.aestronglyMeasurable).mul
-      (he.comp (continuous_id.prodMk continuous_const)).aestronglyMeasurable
-  · exact Eventually.of_forall fun v ↦ by simp
-  · exact Eventually.of_forall fun v ↦
-      continuous_const.mul (he.comp (continuous_const.prodMk continuous_id))
+    Continuous fun z : ι → A ↦ ∫ v, (W v : ℂ) * P.ψ (η * (star v ⬝ᵥ z)) :=
+  continuous_integral_mul_circle (k := fun z v ↦ P.ψ (η * (star v ⬝ᵥ z)))
+    ((P.continuous_ψ_mul_dotProduct η).comp continuous_swap) hW.ofReal
 
 variable [LocallyCompactSpace A] [(volume : Measure A).IsAddHaarMeasure]
 
@@ -223,35 +227,27 @@ theorem lintegral_ofReal_mul_enorm_integral_sq_le (η : A) {W : (ι → A) → �
         have hk : AEMeasurable (fun p : (ι → A) × (ι → A) ↦ ‖K (p.1 - p.2)‖ₑ)
             (volume.prod volume) := (hK.comp continuous_sub).eNorm.measurable.aemeasurable
         exact hfm.comp_fst.mul (hk.mul hfm.comp_snd)
-    _ ≤ (∫⁻ z, ‖K z‖ₑ) * ∫⁻ w, ‖f w‖ₑ ^ 2 :=
-        lintegral_lintegral_mul_sub_mul_le hK.eNorm.measurable
-          (fun z ↦ by rw [show K (-z) = conj (K z) from P.integral_mul_ψ_neg η W z,
-            RCLike.eNorm_conj]) hfm
+    _ ≤ (∫⁻ z, ‖K z‖ₑ) * ∫⁻ w, ‖f w‖ₑ ^ 2 := by
+        refine lintegral_lintegral_mul_sub_mul_le hK.eNorm.measurable (fun z ↦ ?_) hfm
+        -- `K (-z) = conj (K z)`, so the two have the same norm
+        simpa only [K, RCLike.eNorm_conj] using congrArg (‖·‖ₑ) (P.integral_mul_ψ_neg η W z)
 
 /-- The transform `z ↦ ∫ ∏ᵢ G(vᵢ) ψ(v*z) dv` of a product of damping kernels has `L¹` norm at most
 `c ^ |ι|` when the transform of `G` has `L¹` norm at most `c`. -/
-private theorem lintegral_enorm_integral_prod_mul_ψ_le {G : A → ℝ} (hGc : Continuous G)
-    (hGi : Integrable G) {c : ℝ≥0∞} (hG : ∫⁻ w, ‖∫ v, (G v : ℂ) * P.ψ (star v * w)‖ₑ ≤ c) :
+private theorem lintegral_enorm_integral_prod_mul_ψ_le {G : A → ℝ} (hGi : Integrable G)
+    {c : ℝ≥0∞} (hG : ∫⁻ w, ‖∫ v, (G v : ℂ) * P.ψ (star v * w)‖ₑ ≤ c) :
     ∫⁻ z : ι → A, ‖∫ v, ((∏ i, G (v i) : ℝ) : ℂ) * P.ψ (star v ⬝ᵥ z)‖ₑ ≤ c ^ Fintype.card ι := by
   set Ghat : A → ℂ := fun w ↦ ∫ v, (G v : ℂ) * P.ψ (star v * w)
-  have hψ (v : A) : Continuous fun w : A ↦ (P.ψ (star v * w) : ℂ) :=
-    continuous_subtypeVal.comp (P.continuous_ψ.comp (continuous_const.mul continuous_id))
-  have hGhat : Continuous Ghat := by
-    refine continuous_of_dominated (bound := fun v ↦ ‖G v‖) (fun w ↦ ?_) (fun w ↦ ?_) hGi.norm
-      (Eventually.of_forall fun v ↦ continuous_const.mul (hψ v))
-    · exact (Complex.continuous_ofReal.comp hGc).mul (continuous_subtypeVal.comp
-        (P.continuous_ψ.comp (continuous_star.mul continuous_const))) |>.aestronglyMeasurable
-    · exact Eventually.of_forall fun v ↦ by simp
+  have hGhat : Continuous Ghat := continuous_integral_mul_circle (k := fun w v ↦ P.ψ (star v * w))
+    (continuous_subtypeVal.comp (P.continuous_ψ.comp
+      ((continuous_star.comp continuous_snd).mul continuous_fst))) hGi.ofReal
   have hprod (z : ι → A) :
       ∫ v, ((∏ i, G (v i) : ℝ) : ℂ) * P.ψ (star v ⬝ᵥ z) = ∏ i, Ghat (z i) := by
-    have hsum (g : ι → A) : P.ψ (∑ i, g i) = ∏ i, P.ψ (g i) := by
-      simpa only [AddChar.toMonoidHom_apply, ← ofAdd_sum, toAdd_ofAdd] using
-        map_prod P.ψ.toMonoidHom (fun i ↦ Multiplicative.ofAdd (g i)) Finset.univ
     rw [← integral_fintype_prod_volume_eq_prod]
     refine integral_congr_ae (Eventually.of_forall fun v ↦ ?_)
     have hcoe (g : ι → Circle) : ((∏ i, g i : Circle) : ℂ) = ∏ i, (g i : ℂ) :=
       map_prod Circle.coeHom g _
-    simp [dotProduct, hsum, hcoe, Finset.prod_mul_distrib]
+    simp [dotProduct, AddChar.map_sum_eq_prod, hcoe, Finset.prod_mul_distrib]
   calc ∫⁻ z : ι → A, ‖∫ v, ((∏ i, G (v i) : ℝ) : ℂ) * P.ψ (star v ⬝ᵥ z)‖ₑ
       = ∫⁻ z : ι → A, ∏ i, ‖Ghat (z i)‖ₑ := by
         refine lintegral_congr fun z ↦ ?_
@@ -282,7 +278,7 @@ private theorem lintegral_enorm_integral_comp_smul_mul_ψ (η u : Aˣ) (D : (ι 
   have hc : (P.modulus u)⁻¹ ^ Fintype.card ι * (P.modulus a)⁻¹ ^ Fintype.card ι =
       (P.modulus η)⁻¹ ^ Fintype.card ι := by
     rw [← mul_pow]
-    simp [a, P.modulus_star, P.modulus_ne_zero u]
+    simp [a, P.modulus_ne_zero u]
   simp_rw [hpt, NNReal.smul_def, eNorm_smul, NNReal.eNorm_eq]
   rw [lintegral_const_mul' _ _ ENNReal.coe_ne_top,
     P.lintegral_comp_smul a (fun z ↦ ‖∫ v, D v * P.ψ (star v ⬝ᵥ z)‖ₑ), ← mul_assoc,
@@ -311,7 +307,7 @@ theorem lintegral_enorm_integral_sq_le (η : Aˣ) {f : (ι → A) → ℂ} (hf :
     simp only [D] at this ⊢
     rw [this, div_eq_mul_inv, mul_pow, mul_comm, ENNReal.coe_pow,
       ENNReal.coe_inv (P.modulus_ne_zero η)]
-    exact mul_le_mul_left (P.lintegral_enorm_integral_prod_mul_ψ_le hGc hGi hG) _
+    exact mul_le_mul_left (P.lintegral_enorm_integral_prod_mul_ψ_le hGi hG) _
   -- As `u n → 0`, the weights tend to `D 0 = 1`, and Fatou's lemma removes them.
   have hlim (v : ι → A) : Tendsto (fun n ↦ ENNReal.ofReal (D ((u n : A) • v)) * ‖F v‖ₑ ^ 2)
       atTop (𝓝 (‖F v‖ₑ ^ 2)) := by

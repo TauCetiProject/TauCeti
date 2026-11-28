@@ -32,5 +32,4 @@ variable {M α : Type*} [Monoid M] [MulAction M α] [MeasurableSpace α] [Measur
 embedding. -/
 theorem IsUnit.measurableEmbedding_const_smul {c : M} (hc : IsUnit c) :
     MeasurableEmbedding (c • · : α → α) := by
-  obtain ⟨u, rfl⟩ := hc
-  exact _root_.measurableEmbedding_const_smul u
+  simpa only [Units.smul_isUnit] using _root_.measurableEmbedding_const_smul (α := α) hc.unit

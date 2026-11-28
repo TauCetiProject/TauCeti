@@ -123,6 +123,8 @@ structure HermitianPlace (A : Type*) [CommRing A] [StarRing A] [TopologicalSpace
   exists_locallyIntegrable :
     ∃ g : A → ℝ, LocallyIntegrable g ∧ ∀ u : Aˣ, (modulus u)⁻¹ ≤ ‖g u‖₊ ^ 2
 
+attribute [simp] HermitianPlace.star_δ HermitianPlace.modulus_star
+
 namespace HermitianPlace
 
 variable {A : Type*} [CommRing A] [StarRing A] [TopologicalSpace A] [MeasureSpace A]
@@ -135,6 +137,7 @@ theorem star_τ : star P.τ = 1 - P.τ := by
   rw [← P.τ_add_star, add_sub_cancel_left]
 
 /-- `δ⁻¹` is skew, like `δ`. -/
+@[simp]
 theorem star_δ_inv : star (↑P.δ⁻¹ : A) = -↑P.δ⁻¹ := by
   have h : (P.δ : A) * star (↑P.δ⁻¹ : A) = -1 := by
     have := congrArg star (Units.inv_mul P.δ)

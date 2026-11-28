@@ -100,7 +100,7 @@ theorem star_quadricChart_dotProduct_splitGram_mulVec {T : Matrix ι ι A} (hT :
   have hr : star t * Ring.inverse (star t) = 1 := Ring.mul_inverse_cancel _ hp.star
   have hr' : star (Ring.inverse (star t)) * t = 1 := by simpa [mul_comm] using congrArg star hr
   have hc : star (↑P.δ⁻¹ * (β : A)) = ↑P.δ⁻¹ * β := by
-    rw [star_mul, P.star_δ_inv, skewAdjoint.star_val_eq, neg_mul_neg, mul_comm]
+    simp [skewAdjoint.star_val_eq, mul_comm]
   have ha : star (a : A) = -a := skewAdjoint.star_val_eq
   rw [star_dotProduct_splitGram_mulVec]
   simp only [quadricChart_inl, quadricChart_inr_inl, quadricChart_inr_inr, star_add, star_mul,
@@ -112,6 +112,11 @@ theorem star_quadricChart_dotProduct_splitGram_mulVec {T : Matrix ι ι A} (hT :
 `dt · dw · dν(a)` under `TauCeti.HermitianPlace.quadricChart`. -/
 noncomputable def quadricMeasure : Measure (SplitIndex 1 ι → A) :=
   ((volume : Measure A).prod ((volume : Measure (ι → A)).prod P.ν)).map (P.quadricChart T β)
+
+/-- The quadric measure is the image of `dt · dw · dν(a)` under the chart. -/
+theorem quadricMeasure_def : P.quadricMeasure T β =
+    ((volume : Measure A).prod ((volume : Measure (ι → A)).prod P.ν)).map (P.quadricChart T β) :=
+  (rfl)
 
 section Measurability
 
@@ -135,9 +140,15 @@ theorem ae_quadricMeasure {T : Matrix ι ι A} (hT : T.IsHermitian) :
     ∀ᵐ v ∂P.quadricMeasure T β, star v ⬝ᵥ splitGram 1 T *ᵥ v = ↑P.δ⁻¹ * β := by
   have hs : MeasurableSet {v : SplitIndex 1 ι → A | star v ⬝ᵥ splitGram 1 T *ᵥ v = ↑P.δ⁻¹ * β} :=
     (isClosed_eq (by fun_prop) continuous_const).measurableSet
-  rw [quadricMeasure, ae_map_iff (P.measurable_quadricChart T β).aemeasurable hs]
+  rw [quadricMeasure_def, ae_map_iff (P.measurable_quadricChart T β).aemeasurable hs]
   exact (Measure.quasiMeasurePreserving_fst.ae P.ae_isUnit).mono fun p hp ↦
     P.star_quadricChart_dotProduct_splitGram_mulVec β hT hp
+
+/-- The quadric measure of a measurable set is the measure of its preimage under the chart. -/
+theorem quadricMeasure_apply {s : Set (SplitIndex 1 ι → A)} (hs : MeasurableSet s) :
+    P.quadricMeasure T β s = ((volume : Measure A).prod ((volume : Measure (ι → A)).prod P.ν))
+      (P.quadricChart T β ⁻¹' s) := by
+  rw [quadricMeasure_def, Measure.map_apply (P.measurable_quadricChart T β) hs]
 
 variable [LocallyCompactSpace A] [(volume : Measure A).IsAddHaarMeasure]
 
@@ -147,7 +158,7 @@ theorem lintegral_quadricMeasure {f : (SplitIndex 1 ι → A) → ℝ≥0∞} (h
       ∫⁻ t, ∫⁻ w, ∫⁻ a, f (P.quadricChart T β (t, w, a)) ∂P.ν ∂volume ∂volume := by
   have hfc : Measurable fun p ↦ f (P.quadricChart T β p) :=
     hf.comp (P.measurable_quadricChart T β)
-  rw [quadricMeasure, lintegral_map hf (P.measurable_quadricChart T β),
+  rw [quadricMeasure_def, lintegral_map hf (P.measurable_quadricChart T β),
     lintegral_prod _ hfc.aemeasurable]
   exact lintegral_congr fun t ↦ lintegral_prod _ (hfc.comp measurable_prodMk_left).aemeasurable
 

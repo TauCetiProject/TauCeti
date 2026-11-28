@@ -39,7 +39,7 @@ to them directly.
 On a locally compact `R1Space` with measurable open sets, a compact set `K` inside an open set
 `U` has a compactly supported Urysohn cutoff whose integral against every measure is at most the
 mass of `U`, and at least the mass of `K` for measures finite on compact sets. Conversely, on a
-locally compact Hausdorff space, a measure against which every nonnegative compactly supported
+locally compact `R1Space`, a measure against which every nonnegative compactly supported
 continuous function has finite lower integral is finite on compact sets.
 
 ## Main declarations
@@ -185,11 +185,11 @@ namespace TauCeti
 
 open scoped NNReal
 
-/-- A measure on a locally compact Hausdorff space whose lower integrals of nonnegative compactly
+/-- A measure on a locally compact `R1Space` whose lower integrals of nonnegative compactly
 supported continuous functions are all finite is finite on compact sets: by Urysohn's lemma, the
 indicator of a compact set lies below such a function. -/
 theorem isFiniteMeasureOnCompacts_of_lintegral_lt_top {X : Type*} [TopologicalSpace X]
-    [T2Space X] [LocallyCompactSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X}
+    [R1Space X] [LocallyCompactSpace X] [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X}
     (h : ∀ f : C_c(X, ℝ≥0), ∫⁻ x, f x ∂μ < ∞) : IsFiniteMeasureOnCompacts μ := by
   refine ⟨fun K hK ↦ ?_⟩
   obtain ⟨f, hfK, hfc, -, -⟩ :=
@@ -200,8 +200,9 @@ theorem isFiniteMeasureOnCompacts_of_lintegral_lt_top {X : Type*} [TopologicalSp
     ⟨⟨fun x ↦ (f x).toNNReal, continuous_real_toNNReal.comp f.continuous⟩,
       hf.comp_left Real.toNNReal_zero⟩
   calc μ K = ∫⁻ _ in K, 1 ∂μ := (setLIntegral_one K).symm
-    _ ≤ ∫⁻ x in K, g x ∂μ := setLIntegral_mono' hK.isClosed.measurableSet fun x hx ↦ by
-        simp [g, hfK hx]
+    _ ≤ ∫⁻ x in K, g x ∂μ :=
+        setLIntegral_mono g.continuous.measurable.coe_nnreal_ennreal
+          fun x hx ↦ by simp [g, hfK hx]
     _ ≤ ∫⁻ x, g x ∂μ := setLIntegral_le_lintegral K _
     _ < ∞ := h g
 
