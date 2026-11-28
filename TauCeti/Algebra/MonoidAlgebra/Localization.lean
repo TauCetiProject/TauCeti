@@ -10,7 +10,7 @@ public import Mathlib.GroupTheory.Finiteness
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.Localization.BaseChange
 public import Mathlib.RingTheory.TensorProduct.MonoidAlgebra
-import TauCeti.Algebra.Group.Submonoid.Finiteness
+import TauCeti.Algebra.Group.Submonoid.Closure
 
 /-!
 # Localizations of monoid algebras
@@ -22,9 +22,12 @@ after multiplying by a sufficiently large power of `f x`, the induced map of mon
 
 Additively, for an injective homomorphism `f : M →+ H` of commutative additive monoids,
 `AddMonoidAlgebra.isLocalization_mapDomain_of_single` gives a general criterion for `R[H]` to be a
-localization of `R[M]` at a submonoid `T`, and when `H` is an abelian group and `M` is finitely
-generated, `AddMonoidAlgebra.exists_isLocalization_away_of_exists_add_eq` specializes to principal
-localizations.
+localization of `R[M]` at a submonoid `T`. When `H` is an abelian group such that every `g : H`
+satisfies `g + f b = f a` for some `a b : M`,
+`AddMonoidAlgebra.isLocalization_mrange_of_of_exists_add_eq` identifies `R[H]` as the localization
+at all coefficient-one monomials, and when `M` is finitely generated,
+`AddMonoidAlgebra.exists_isLocalization_away_of_exists_add_eq` specializes to a principal
+localization.
 
 This is the algebraic form of an open immersion of affine monoid schemes: in toric geometry, the
 coordinate ring of the affine chart of a face `σ ∩ m^⊥` of a cone `σ` is obtained from the
@@ -42,7 +45,8 @@ constant monomials, for arbitrary commutative monoids and commutative coefficien
 * `TauCeti.AddMonoidAlgebra.isLocalization_away_mapDomainRingHom`: the same statement for
   additive monoid algebras, where `x` maps to an additive unit and powers become multiples.
 
-* `AddMonoidAlgebra.isLocalization_mapDomain_of_single` and
+* `AddMonoidAlgebra.isLocalization_mapDomain_of_single`,
+  `AddMonoidAlgebra.isLocalization_mrange_of_of_exists_add_eq`, and
   `AddMonoidAlgebra.exists_isLocalization_away_of_exists_add_eq`: localization criteria for
   additive monoid algebras.
 
@@ -149,9 +153,9 @@ theorem MonoidAlgebra.isLocalization_coefficients {S : Type*} [CommSemiring S]
 namespace AddMonoidAlgebra
 
 /-- Let `f : M →+ H` be an injective homomorphism of additive commutative monoids, and `T` a
-submonoid of `R[M]` sent to units of `R[H]`. If every monomial `single g 1` in `R[H]` clears into
-the image of `f` by multiplying with `mapDomain f s.1` for some `s : T`, then `R[H]` is the
-localization of `R[M]` at `T`. -/
+submonoid of `R[M]` sent to units of `R[H]`. If every monomial `single g 1` in `R[H]` clears to
+`single (f a) 1` in the image of the induced map after multiplying with `mapDomain f s.1` for some
+`s : T`, then `R[H]` is the localization of `R[M]` at `T`. -/
 theorem isLocalization_mapDomain_of_single {M H R : Type*} [AddCommMonoid M]
     [AddCommMonoid H] [CommSemiring R] {f : M →+ H} (hf : Function.Injective f)
     {T : Submonoid (AddMonoidAlgebra R M)}
@@ -178,9 +182,26 @@ theorem isLocalization_mapDomain_of_single {M H R : Type*} [AddCommMonoid M]
         rw [smul_mul_assoc, ha]; exact ((mapDomainAlgHom R R f).toLinearMap.map_smul r a).symm⟩
   · rw [halg, halg] at hab; exact ⟨1, by simp [mapDomain_injective hf hab]⟩
 
+/-- If `f : M →+ H` is an injective additive homomorphism from a commutative additive monoid `M`
+into an abelian group `H` such that every `g : H` satisfies `g + f b = f a` for some `a b : M`,
+then `R[H]` is the localization of `R[M]` at all coefficient-one monomials. -/
+theorem isLocalization_mrange_of_of_exists_add_eq {M H : Type*} [AddCommMonoid M]
+    [AddCommGroup H] {f : M →+ H} (hf : Function.Injective f)
+    (hshift : ∀ g : H, ∃ a b : M, g + f b = f a) (R : Type*) [CommSemiring R] :
+    letI := (mapDomainRingHom R f).toAlgebra
+    IsLocalization (MonoidHom.mrange (of R M)) (AddMonoidAlgebra R H) :=
+  isLocalization_mapDomain_of_single hf
+    (fun s ↦ by
+      obtain ⟨m, hm⟩ := s.property
+      rw [← hm, of_apply, mapDomain_single]
+      exact (Group.isUnit (Multiplicative.ofAdd (f m.toAdd))).map (of R H))
+    (fun g ↦ by
+      obtain ⟨a, b, hab⟩ := hshift g
+      exact ⟨a, ⟨of R M (Multiplicative.ofAdd b), _, rfl⟩, by simp [of_apply, hab]⟩)
+
 /-- If `f : M →+ H` is an injective additive homomorphism from a finitely generated additive monoid
-`M` into an abelian group `H` such that every element of `H` can be shifted into `f '' M`, then
-`R[H]` is a localization of `R[M]` away from a single coefficient-one monomial. -/
+`M` into an abelian group `H` such that every `g : H` satisfies `g + f b = f a` for some
+`a b : M`, then `R[H]` is a localization of `R[M]` away from a single coefficient-one monomial. -/
 theorem exists_isLocalization_away_of_exists_add_eq {M H : Type*}
     [AddCommMonoid M] [AddMonoid.FG M] [AddCommGroup H] {f : M →+ H} (hf : Function.Injective f)
     (hshift : ∀ g : H, ∃ a b : M, g + f b = f a) (R : Type*) [CommSemiring R] :

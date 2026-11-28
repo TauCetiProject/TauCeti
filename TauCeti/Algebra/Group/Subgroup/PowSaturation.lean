@@ -6,20 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
+public import Mathlib.GroupTheory.Torsion
 public import TauCeti.Algebra.Group.Submonoid.NSMulSaturation
+public import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # Positive-power saturation of subgroups
 
 Given a subgroup `H` of a commutative group `G`, its *positive-power saturation* `H.powSaturation`
 is the subgroup of elements `g : G` with `g ^ n ∈ H` for some `n > 0` (additively
-`H.nsmulSaturation`). Every element of `H.powSaturation ⧸ H.subgroupOf H.powSaturation` has finite
-order (`Subgroup.isMulTorsion_quotient_powSaturation`), and for finitely generated
-`H.powSaturation`, this quotient is finite (`Subgroup.finite_quotient_powSaturation`).
+`H.nsmulSaturation`). It is the least `PowSaturated` subgroup containing `H`, equals the pullback of
+`CommGroup.torsion (G ⧸ H)` along `QuotientGroup.mk' H`, and induces a canonical isomorphism
+`H.powSaturation ⧸ H.subgroupOf H.powSaturation ≃* CommGroup.torsion (G ⧸ H)`. Every element of
+this quotient has finite order (`Subgroup.isMulTorsion_quotient_powSaturation`), and for finitely
+generated `H.powSaturation`, this quotient is finite (`Subgroup.finite_quotient_powSaturation`).
 
 ## Main declarations
 
 * `Subgroup.powSaturation`, `AddSubgroup.nsmulSaturation`,
+  `Subgroup.powSaturation_le_iff_le`, `Subgroup.powSaturation_eq_comap_torsion`,
+  `Subgroup.quotientPowSaturationEquivTorsion`,
   `Subgroup.isMulTorsion_quotient_powSaturation`, `Subgroup.finite_quotient_powSaturation`.
 
 ## References
@@ -73,6 +79,68 @@ theorem powSaturated_powSaturation : H.powSaturation.PowSaturated :=
 /-- Positive-multiple saturation of additive subgroups is monotone. -/]
 theorem powSaturation_mono {H₁ H₂ : Subgroup G} (h : H₁ ≤ H₂) :
     H₁.powSaturation ≤ H₂.powSaturation := Submonoid.powSaturation_mono h
+
+/-- `H.powSaturation` is the least `PowSaturated` subgroup containing `H`. -/
+@[to_additive
+/-- `H.nsmulSaturation` is the least `NSMulSaturated` additive subgroup containing `H`. -/]
+theorem powSaturation_le_iff_le {H₁ H₂ : Subgroup G} (h : H₂.PowSaturated) :
+    H₁.powSaturation ≤ H₂ ↔ H₁ ≤ H₂ :=
+  Submonoid.powSaturation_le_iff_le h
+
+/-- A `PowSaturated` subgroup equals its positive-power saturation. -/
+@[to_additive (attr := simp)
+/-- An `NSMulSaturated` additive subgroup equals its positive-multiple saturation. -/]
+theorem powSaturation_eq_self (h : H.PowSaturated) : H.powSaturation = H :=
+  le_antisymm ((powSaturation_le_iff_le h).2 le_rfl) H.le_powSaturation
+
+/-- Positive-power saturation of subgroups is idempotent. -/
+@[to_additive
+/-- Positive-multiple saturation of additive subgroups is idempotent. -/]
+theorem powSaturation_powSaturation : H.powSaturation.powSaturation = H.powSaturation :=
+  H.powSaturation.powSaturation_eq_self H.powSaturated_powSaturation
+
+/-- `H.powSaturation` is the pullback of the torsion subgroup of `G ⧸ H`. -/
+@[to_additive
+/-- `H.nsmulSaturation` is the pullback of the torsion subgroup of `G ⧸ H`. -/]
+theorem powSaturation_eq_comap_torsion :
+    H.powSaturation = (CommGroup.torsion (G ⧸ H)).comap (QuotientGroup.mk' H) := by
+  ext g
+  simp [mem_powSaturation, CommGroup.mem_torsion, isOfFinOrder_iff_pow_eq_one,
+    ← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff]
+
+/-- The saturation quotient `H.powSaturation ⧸ H.subgroupOf H.powSaturation` is canonically
+isomorphic to `CommGroup.torsion (G ⧸ H)`. -/
+@[to_additive
+/-- The saturation quotient `H.nsmulSaturation ⧸ H.addSubgroupOf H.nsmulSaturation` is canonically
+isomorphic to `AddCommGroup.torsion (G ⧸ H)`. -/]
+noncomputable def quotientPowSaturationEquivTorsion :
+    H.powSaturation ⧸ H.subgroupOf H.powSaturation ≃* CommGroup.torsion (G ⧸ H) :=
+  (Subgroup.quotientSubgroupOfMulEquivMap H H.powSaturation).trans <|
+    MulEquiv.subgroupCongr <| by
+      rw [H.powSaturation_eq_comap_torsion]
+      exact Subgroup.map_comap_eq_self
+        (by rw [MonoidHom.range_eq_top.2 (QuotientGroup.mk'_surjective H)]; exact le_top)
+
+/-- `quotientPowSaturationEquivTorsion` sends the class of `g : H.powSaturation` to the class of
+`g` in `G ⧸ H`. -/
+@[to_additive (attr := simp)
+/-- `quotientNsmulSaturationEquivTorsion` sends the class of `g : H.nsmulSaturation` to the class
+of `g` in `G ⧸ H`. -/]
+theorem coe_quotientPowSaturationEquivTorsion_mk (g : H.powSaturation) :
+    (H.quotientPowSaturationEquivTorsion (g : H.powSaturation ⧸ H.subgroupOf H.powSaturation) :
+      G ⧸ H) = (g : G) := by
+  simp [quotientPowSaturationEquivTorsion]
+
+/-- The inverse of `quotientPowSaturationEquivTorsion` sends the torsion class of
+`g : H.powSaturation` back to its class modulo `H.subgroupOf H.powSaturation`. -/
+@[to_additive (attr := simp)
+/-- The inverse of `quotientNsmulSaturationEquivTorsion` sends the torsion class of
+`g : H.nsmulSaturation` back to its class modulo `H.addSubgroupOf H.nsmulSaturation`. -/]
+theorem quotientPowSaturationEquivTorsion_symm_mk (g : H.powSaturation)
+    (hg : (g : G ⧸ H) ∈ CommGroup.torsion (G ⧸ H)) :
+    H.quotientPowSaturationEquivTorsion.symm ⟨(g : G ⧸ H), hg⟩ =
+      (g : H.powSaturation ⧸ H.subgroupOf H.powSaturation) :=
+  (MulEquiv.symm_apply_eq _).2 (Subtype.ext (H.coe_quotientPowSaturationEquivTorsion_mk g).symm)
 
 /-- Every element of `H.powSaturation ⧸ H.subgroupOf H.powSaturation` has finite order. -/
 @[to_additive

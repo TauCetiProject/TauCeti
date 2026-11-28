@@ -50,7 +50,9 @@ Mathlib.
 The first isomorphism theorem for the composite `H → G → G ⧸ N` of the inclusion of a subgroup
 and a quotient map identifies `H ⧸ N.subgroupOf H` with the image of `H` in `G ⧸ N`; this is
 `Subgroup.quotientSubgroupOfMulEquivMap`, with evaluation rule
-`Subgroup.coe_quotientSubgroupOfMulEquivMap_mk`.
+`Subgroup.coe_quotientSubgroupOfMulEquivMap_mk` (and additive counterparts
+`AddSubgroup.quotientAddSubgroupOfAddEquivMap` and
+`AddSubgroup.coe_quotientAddSubgroupOfAddEquivMap_mk`).
 -/
 
 public section
@@ -111,13 +113,20 @@ namespace Subgroup
 /-- For a normal subgroup `N` and any subgroup `H` of `G`, the quotient `H ⧸ N.subgroupOf H` is
 isomorphic to the image `H.map (mk' N)` of `H` in `G ⧸ N`: this is the first isomorphism theorem
 for the composite `H → G → G ⧸ N`, whose kernel is `N.subgroupOf H`. -/
+@[to_additive
+/-- For a normal additive subgroup `N` and any additive subgroup `H` of `G`, the quotient
+`H ⧸ N.addSubgroupOf H` is isomorphic to the image `H.map (mk' N)` of `H` in `G ⧸ N`: this is
+the first isomorphism theorem for the composite `H → G → G ⧸ N`, whose kernel is
+`N.addSubgroupOf H`. -/]
 noncomputable def quotientSubgroupOfMulEquivMap {G : Type*} [Group G] (N H : Subgroup G)
     [N.Normal] : H ⧸ N.subgroupOf H ≃* H.map (QuotientGroup.mk' N) :=
   QuotientGroup.liftEquiv (N.subgroupOf H) ((QuotientGroup.mk' N).subgroupMap_surjective H)
     (by rw [Subgroup.ker_subgroupMap, QuotientGroup.ker_mk'])
 
 /-- `quotientSubgroupOfMulEquivMap` sends the class of `h : H` to the class of `h` in `G ⧸ N`. -/
-@[simp]
+@[to_additive (attr := simp)
+/-- `quotientAddSubgroupOfAddEquivMap` sends the class of `h : H` to the class of `h` in
+`G ⧸ N`. -/]
 theorem coe_quotientSubgroupOfMulEquivMap_mk {G : Type*} [Group G] (N H : Subgroup G) [N.Normal]
     (h : H) :
     (quotientSubgroupOfMulEquivMap N H (h : H ⧸ N.subgroupOf H) : G ⧸ N) = (h : G) :=
@@ -133,9 +142,9 @@ private def toAddKer {G : Type*} [AddCommGroup G] {N : AddSubgroup G} {U : Type*
   ⟨ψ.val.toAdditiveRight, AddMonoidHom.mem_ker.2 <| AddMonoidHom.ext fun x ↦
     congrArg Additive.ofMul (DFunLike.congr_fun ψ.property (.ofAdd x))⟩
 
-/-- Characters of an abelian group `G` into `U` that vanish on an additive subgroup `N`
-correspond multiplicatively to characters of the quotient `G ⧸ N`, via
-`AddMonoidHom.domRestrictHomKerEquiv`. -/
+/-- Characters of an abelian group `G` into `U` that are trivial on an additive subgroup `N`
+(taking the value `1` there) correspond multiplicatively to characters of the quotient `G ⧸ N`,
+via `AddMonoidHom.domRestrictHomKerEquiv`. -/
 def kerCompHomSubtypeMulEquiv {G : Type*} [AddCommGroup G] (N : AddSubgroup G)
     (U : Type*) [CommGroup U] :
     (MonoidHom.compHom' (P := U) N.subtype.toMultiplicative).ker ≃*

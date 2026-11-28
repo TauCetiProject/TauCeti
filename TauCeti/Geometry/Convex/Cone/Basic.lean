@@ -46,6 +46,8 @@ lattice, so they belong to the generic convex-cone API rather than to any consum
   cone into itself.
 * `PointedCone.map_linearEquiv_mul`: mapping a pointed cone by a product of linear automorphisms
   maps it by each factor in turn.
+* `AddSubmonoid.toHull`, `AddSubmonoid.coe_toHull`, `AddSubmonoid.toHull_injective`: canonical map
+  from an additive submonoid into the pointed cone hull of its image.
 -/
 
 public section
@@ -257,3 +259,30 @@ theorem mapsTo_nsmul_linearMap_id (q : ℕ) (σ : PointedCone R V) :
   simpa using σ.nsmul_mem hx q
 
 end PointedCone
+
+namespace AddSubmonoid
+
+variable {M : Type*} [AddCommMonoid M]
+
+/-- Canonical additive monoid homomorphism from `S : AddSubmonoid M` into the pointed cone hull
+`PointedCone.hull R (i '' (S : Set M))` along `i : M →+ V`. -/
+def toHull (S : AddSubmonoid M) (R : Type*) [Semiring R] [PartialOrder R] [IsOrderedRing R]
+    {V : Type*} [AddCommGroup V] [Module R V] (i : M →+ V) :
+    S →+ PointedCone.hull R (i '' (S : Set M)) where
+  toFun s := ⟨i s.val, PointedCone.subset_hull ⟨s.val, s.property, rfl⟩⟩
+  map_zero' := Subtype.ext (map_zero i)
+  map_add' a b := Subtype.ext (map_add i a.val b.val)
+
+/-- `AddSubmonoid.toHull` sends `s : S` to `i s` in the ambient module `V`. -/
+@[simp]
+theorem coe_toHull (S : AddSubmonoid M) (R : Type*) [Semiring R] [PartialOrder R] [IsOrderedRing R]
+    {V : Type*} [AddCommGroup V] [Module R V] (i : M →+ V) (s : S) :
+    (S.toHull R i s : V) = i s.val := (rfl)
+
+/-- `AddSubmonoid.toHull` is injective whenever `i` is injective on `S`. -/
+theorem toHull_injective (S : AddSubmonoid M) (R : Type*) [Semiring R] [PartialOrder R]
+    [IsOrderedRing R] {V : Type*} [AddCommGroup V] [Module R V] {i : M →+ V}
+    (hi : Set.InjOn i (S : Set M)) : Function.Injective (S.toHull R i) :=
+  fun a b h ↦ Subtype.ext (hi a.property b.property (congrArg Subtype.val h))
+
+end AddSubmonoid

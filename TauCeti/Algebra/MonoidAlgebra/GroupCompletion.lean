@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Group.Submonoid.GroupCompletion
 public import TauCeti.Algebra.MonoidAlgebra.Basic
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
-public import Mathlib.RingTheory.Localization.Basic
 public import Mathlib.RingTheory.Localization.FractionRing
 import Mathlib.RingTheory.Localization.LocalizationLocalization
 import TauCeti.Algebra.MonoidAlgebra.Localization
@@ -68,15 +67,8 @@ theorem isLocalization_addMonoidAlgebra_groupClosure :
     letI := (mapDomainRingHom R S.toGroupClosure).toAlgebra
     IsLocalization (MonoidHom.mrange (of R S))
       (AddMonoidAlgebra R (AddSubgroup.closure (S : Set G))) :=
-  isLocalization_mapDomain_of_single S.toGroupClosure_injective
-    (fun s ↦ by
-      obtain ⟨m, hm⟩ := s.property
-      rw [← hm, of_apply, mapDomain_single]
-      exact (Group.isUnit (Multiplicative.ofAdd (S.toGroupClosure m.toAdd))).map
-        (of R (AddSubgroup.closure (S : Set G))))
-    (fun g ↦ by
-      obtain ⟨a, b, hab⟩ := S.exists_add_toGroupClosure_eq g
-      exact ⟨a, ⟨of R S (Multiplicative.ofAdd b), _, rfl⟩, by simp [of_apply, hab]⟩)
+  isLocalization_mrange_of_of_exists_add_eq S.toGroupClosure_injective
+    S.exists_add_toGroupClosure_eq R
 
 /-- When `S` is finitely generated, `R[AddSubgroup.closure S]` is the localization of `R[S]` away
 from a single interior monomial `single u 1`. -/

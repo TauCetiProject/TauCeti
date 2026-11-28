@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Submonoid.Saturation
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import TauCeti.Algebra.Group.Subgroup.PowSaturation
+import Mathlib.LinearAlgebra.Dimension.Finite
+import Mathlib.LinearAlgebra.Dimension.RankNullity
+import Mathlib.LinearAlgebra.LinearIndependent.Basic
 
 /-!
 # Faces of monoids, positive-power invariance, and generated subgroups of faces
@@ -19,8 +23,10 @@ is finite. Pullback along an injective `f : M →+ N` whose image generates `N` 
 multiples gives `SaturatedAddSubmonoid.comapOrderIsoOfNSMulSaturation`, so saturating `S ≤ G` in
 `AddSubgroup.closure (S : Set G)` preserves the face lattice
 (`AddSubmonoid.nsmulSaturationInfClosureFaceOrderIso`). For `F : SaturatedAddSubmonoid S`,
-`F.faceSubgroup ≤ AddSubgroup.closure S` meets `S` in `F`, reflects order, and under saturation
-becomes `F.faceSubgroup.nsmulSaturation` with torsion (and, for `S.FG`, finite) quotient.
+`F.faceSubgroup` is a subgroup of the type `AddSubgroup.closure (S : Set G)`; pulling it back along
+`S.toGroupClosure` recovers `F`, reflects order, strictly increases rank under `S.FG`
+(`SaturatedAddSubmonoid.finrank_faceSubgroup_strictMono`), and under saturation becomes
+`F.faceSubgroup.nsmulSaturation` with torsion (and, for `S.FG`, finite) quotient.
 
 ## Main declarations
 
@@ -29,7 +35,8 @@ becomes `F.faceSubgroup.nsmulSaturation` with torsion (and, for `S.FG`, finite) 
 * `SaturatedSubmonoid.comapOrderIsoOfPowSaturation`,
   `AddSubmonoid.nsmulSaturationInfClosureFaceOrderIso`: saturation invariance of faces.
 * `SaturatedAddSubmonoid.faceSubgroup`, `SaturatedAddSubmonoid.toFaceSubgroup`,
-  `SaturatedAddSubmonoid.faceSubgroupNSMulSaturationEquiv`: face subgroups under saturation.
+  `SaturatedAddSubmonoid.faceSubgroupNSMulSaturationEquiv`,
+  `SaturatedAddSubmonoid.finrank_faceSubgroup_strictMono`: face subgroups, saturation, and rank.
 
 ## References
 
@@ -176,10 +183,16 @@ def mapPowSaturation {f : M →* N} (hf : Function.Injective f)
     obtain ⟨k, hk, hkprod⟩ := Submonoid.mem_powSaturation.1 hprod
     obtain ⟨z, hzF, hfz⟩ := Submonoid.mem_map.1 hkprod
     obtain ⟨n₁, hn₁, x₁, hx₁⟩ := hsurj y₁; obtain ⟨n₂, hn₂, x₂, hx₂⟩ := hsurj y₂
+    let m := k * (n₁ * n₂)
+    have hm₁ : n₁ * (k * n₂) = m := by ring
+    have hm₂ : n₂ * (k * n₁) = m := by ring
     have heq : f (x₁ ^ (k * n₂) * x₂ ^ (k * n₁)) = f (z ^ (n₁ * n₂)) := by
-      simp only [map_mul, map_pow, hx₁, hx₂, ← pow_mul]
-      rw [show n₁ * (k * n₂) = k * (n₁ * n₂) by ring,
-        show n₂ * (k * n₁) = k * (n₁ * n₂) by ring, ← mul_pow, pow_mul, ← hfz]
+      calc f (x₁ ^ (k * n₂) * x₂ ^ (k * n₁))
+        _ = f x₁ ^ (k * n₂) * f x₂ ^ (k * n₁) := by simp only [map_mul, map_pow]
+        _ = (y₁ ^ n₁) ^ (k * n₂) * (y₂ ^ n₂) ^ (k * n₁) := by rw [hx₁, hx₂]
+        _ = (y₁ * y₂) ^ m := by rw [← pow_mul, ← pow_mul, hm₁, hm₂, ← mul_pow]
+        _ = f z ^ (n₁ * n₂) := by rw [pow_mul, ← hfz]
+        _ = f (z ^ (n₁ * n₂)) := (map_pow f z (n₁ * n₂)).symm
     have hx₁F : x₁ ∈ F := (F.powSaturated ((F.mulSaturated
       (hf heq ▸ pow_mem hzF (n₁ * n₂))).1)).resolve_left (Nat.mul_pos hk hn₂).ne'
     exact Submonoid.mem_powSaturation.2 ⟨n₁, hn₁, Submonoid.mem_map.2 ⟨x₁, hx₁F, hx₁⟩⟩
@@ -327,9 +340,8 @@ difference of two elements of `F`. -/
 theorem mem_faceSubgroup_iff (F : SaturatedAddSubmonoid S)
     {g : AddSubgroup.closure (S : Set G)} :
     g ∈ F.faceSubgroup ↔ ∃ a b : F, g = S.toGroupClosure a - S.toGroupClosure b := by
-  rw [show F.faceSubgroup =
-      AddSubgroup.closure ((F.toAddSubmonoid.map S.toGroupClosure : AddSubmonoid _) : Set _) from
-    rfl, AddSubmonoid.mem_groupClosure_iff]
+  have hF : (F.toAddSubmonoid : Set S) = F := Set.ext fun _ ↦ mem_toAddSubmonoid
+  rw [faceSubgroup_def, ← hF, ← AddSubmonoid.coe_map, AddSubmonoid.mem_groupClosure_iff]
   exact ⟨fun ⟨⟨_, a, ha, rfl⟩, ⟨_, b, hb, rfl⟩, h⟩ ↦ ⟨⟨a, ha⟩, ⟨b, hb⟩, h⟩,
     fun ⟨a, b, h⟩ ↦ ⟨⟨_, a, a.property, rfl⟩, ⟨_, b, b.property, rfl⟩, h⟩⟩
 
@@ -465,5 +477,46 @@ theorem finite_quotient_nsmulSaturation_faceSubgroup (hS : S.FG) (F : SaturatedA
     rw [← F.faceSubgroup.nsmulSaturation.toIntSubmodule_toAddSubgroup]
     exact Submodule.fg_toAddSubgroup (IsNoetherian.noetherian _)
   exact F.faceSubgroup.finite_quotient_nsmulSaturation hfg
+
+/-- If a face `F` of `S` is finitely generated, then `F.faceSubgroup` is a finite `ℤ`-module. -/
+theorem moduleFinite_faceSubgroup (F : SaturatedAddSubmonoid S) (hF : F.toAddSubmonoid.FG) :
+    Module.Finite ℤ F.faceSubgroup :=
+  Module.Finite.iff_addGroup_fg.2
+    ((AddGroup.fg_iff_addSubgroup_fg F.faceSubgroup).2 (F.fg_faceSubgroup hF))
+
+/-- Strict inclusion of faces of a finitely generated submonoid `S` of an abelian group strictly
+increases the rank of `F.faceSubgroup`. -/
+theorem finrank_faceSubgroup_strictMono (hS : S.FG) :
+    StrictMono (fun F : SaturatedAddSubmonoid S ↦ Module.finrank ℤ F.faceSubgroup) := by
+  intro F₁ F₂ hlt
+  obtain ⟨s, hs₂, hs₁⟩ := IsConcreteLE.exists_of_lt hlt
+  have : AddMonoid.FG S := (AddMonoid.fg_iff_addSubmonoid_fg S).2 hS
+  have := F₂.moduleFinite_faceSubgroup F₂.fg_toAddSubmonoid
+  let H : Submodule ℤ F₂.faceSubgroup :=
+    F₁.faceSubgroup.toIntSubmodule.comap F₂.faceSubgroup.toIntSubmodule.subtype
+  have hle : F₁.faceSubgroup.toIntSubmodule ≤ F₂.faceSubgroup.toIntSubmodule :=
+    faceSubgroup_mono hlt.le
+  have hrankH : Module.finrank ℤ H = Module.finrank ℤ F₁.faceSubgroup :=
+    (Submodule.comapSubtypeEquivOfLe hle).finrank_eq
+  let q : F₂.faceSubgroup ⧸ H := Submodule.Quotient.mk (F₂.toFaceSubgroup ⟨s, hs₂⟩)
+  have hq_ind : LinearIndependent ℤ (fun _ : Unit ↦ q) := by
+    rw [Fintype.linearIndependent_iff]; intro c hc _; by_contra hc0
+    have hc_mem : (c () • F₂.toFaceSubgroup ⟨s, hs₂⟩) ∈ H :=
+      (Submodule.Quotient.mk_eq_zero H).1 (by simpa [q] using hc)
+    have hzsmul : c () • S.toGroupClosure s ∈ F₁.faceSubgroup := by
+      rw [← F₂.coe_toFaceSubgroup ⟨s, hs₂⟩, ← AddSubgroup.coe_zsmul]
+      exact Submodule.mem_comap.1 hc_mem
+    have hnsmul : (c ()).natAbs • S.toGroupClosure s ∈ F₁.faceSubgroup := by
+      rcases le_total 0 (c ()) with hcpos | hcneg
+      · rwa [← natCast_zsmul, Int.natAbs_of_nonneg hcpos]
+      · have hneg := F₁.faceSubgroup.neg_mem hzsmul
+        have hnat : ((c ()).natAbs : ℤ) = -c () := Int.ofNat_natAbs_of_nonpos hcneg
+        rwa [← neg_zsmul, ← hnat, natCast_zsmul] at hneg
+    rw [← map_nsmul, F₁.toGroupClosure_mem_faceSubgroup_iff] at hnsmul
+    exact hs₁ ((F₁.nsmulSaturated hnsmul).resolve_left (Int.natAbs_pos.2 hc0).ne')
+  have hq_pos : 1 ≤ Module.finrank ℤ (F₂.faceSubgroup ⧸ H) := by
+    simpa using hq_ind.fintype_card_le_finrank
+  have hsplit := Submodule.finrank_quotient_add_finrank H
+  dsimp only; omega
 
 end SaturatedAddSubmonoid

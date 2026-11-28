@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Submonoid.BigOperators
 public import Mathlib.Algebra.Group.Submonoid.Operations
 public import Mathlib.Algebra.Order.Monoid.Defs
+public import Mathlib.GroupTheory.Finiteness
 import Mathlib.Algebra.Group.Submonoid.Finsupp
 import TauCeti.Data.Finsupp.Weight
 
@@ -21,8 +22,10 @@ all coefficients have the same sign. These are the integer-coefficient companion
 `AddSubmonoid.mem_closure_range_iff_of_fintype`, which describes the closure through natural
 coefficients. For finitely many generators of positive degree in `ℕ`, only finitely
 many elements of the closure have a given degree. Strict positivity of an additive map on
-the nonzero elements of a generated submonoid is tested on the nonzero generators. Finally,
-additive closures inside a submonoid are compared with additive closures in the ambient monoid.
+the nonzero elements of a generated submonoid is tested on the nonzero generators. Additive
+closures inside a submonoid are compared with additive closures in the ambient monoid, and every
+finitely generated commutative (or additive) submonoid contains an interior element whose powers (or
+multiples) absorb every element of the submonoid.
 
 ## Main results
 
@@ -39,6 +42,9 @@ additive closures inside a submonoid are compared with additive closures in the 
 * `AddSubmonoid.mem_closure_image_iff_coe`, `AddSubmonoid.mem_closure_image_preimage_val_iff`:
   membership in the additive closure of a family valued in a submonoid, indexed by all indices or
   by a subset, read in the ambient monoid.
+* `Submonoid.FG.exists_forall_exists_mul_eq_pow` and
+  `AddSubmonoid.FG.exists_forall_exists_add_eq_nsmul`: interior element whose powers/multiples
+  absorb every element of a finitely generated submonoid.
 
 `AddSubmonoid.forall_pos_iff_of_closure_eq` is adapted from
 `Mei/Algebra/Group/AddSubmonoid/Degree.lean` in
@@ -149,3 +155,32 @@ theorem mem_closure_image_preimage_val_iff {ι B S : Type*} [AddMonoid B] [SetLi
     Subtype.image_preimage_coe, Set.inter_comm]
 
 end AddSubmonoid
+
+namespace Submonoid
+
+/-- Every finitely generated commutative submonoid `S` possesses an element `u : S` whose powers
+absorb every element of `S` by multiplication. -/
+@[to_additive
+/-- Every finitely generated additive submonoid `S` possesses an element `u : S` whose multiples
+absorb every element of `S` by addition. -/]
+theorem FG.exists_forall_exists_mul_eq_pow {M : Type*} [CommMonoid M] {S : Submonoid M}
+    (hS : S.FG) :
+    ∃ u : S, ∀ b : S, ∃ (n : ℕ) (c : S), b * c = u ^ n := by
+  classical
+  obtain ⟨t, ht⟩ := isMulFG_iff.1 hS
+  let gen : t → S := fun a ↦ ⟨a.val, ht ▸ subset_closure a.property⟩
+  refine ⟨∏ a : t, gen a, fun ⟨y, hyS⟩ ↦ ?_⟩
+  have hy : y ∈ closure (t : Set M) := ht.symm ▸ hyS
+  induction hy using closure_induction with
+  | mem z hz =>
+    exact ⟨1, ∏ a ∈ Finset.univ.erase ⟨z, hz⟩, gen a, by
+      rw [pow_one]; exact Finset.mul_prod_erase Finset.univ gen (Finset.mem_univ ⟨z, hz⟩)⟩
+  | one => exact ⟨0, 1, by simp⟩
+  | mul x w hx hw ihx ihw =>
+    obtain ⟨n₁, c₁, hc₁⟩ := ihx (ht ▸ hx)
+    obtain ⟨n₂, c₂, hc₂⟩ := ihw (ht ▸ hw)
+    have hcomm : (⟨x * w, hyS⟩ : S) * (c₁ * c₂) = (⟨x, ht ▸ hx⟩ * c₁) * (⟨w, ht ▸ hw⟩ * c₂) :=
+      Subtype.ext (by simp only [coe_mul]; ac_rfl)
+    exact ⟨n₁ + n₂, c₁ * c₂, by rw [hcomm, hc₁, hc₂, pow_add]⟩
+
+end Submonoid

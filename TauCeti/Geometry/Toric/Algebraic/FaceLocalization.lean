@@ -92,6 +92,7 @@ noncomputable def faceAffineCoordinateRingMap (hi : IsIntegralLattice i)
 theorem faceAffineCoordinateRingMap_def (hi : IsIntegralLattice i) (hτσ : τ.IsFaceOf σ) :
     faceAffineCoordinateRingMap hi hτσ =
       affineCoordinateRingMap hi hi (AddMonoidHom.id N) LinearMap.id (fun _ ↦ rfl)
+        -- Pin the cone coercions to the ambient vector space at this polymorphic argument.
         (show Set.MapsTo (LinearMap.id : V →ₗ[ℝ] V) (τ : Set V) (σ : Set V) from
           fun _ hx ↦ hτσ.le hx) := (rfl)
 

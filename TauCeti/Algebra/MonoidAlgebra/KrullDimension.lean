@@ -20,8 +20,8 @@ import TauCeti.RingTheory.KrullDimension.FiniteType
 
 Over a field `k`, `k[L]` of a finitely generated free abelian group `L` has Krull dimension
 `Module.finrank ℤ L` (`AddMonoidAlgebra.ringKrullDim_of_free`). More generally, if `f : M →+ H`
-embeds a finitely generated `UniqueSums` monoid `M` into a finitely generated free abelian group
-`H` such that `H` shifts into `f '' M`, then `ringKrullDim k[M] = Module.finrank ℤ H`
+embeds a finitely generated monoid `M` into a torsion-free abelian group `H` such that `H` shifts
+into `f '' M`, then `ringKrullDim k[M] = Module.finrank ℤ H`
 (`AddMonoidAlgebra.ringKrullDim_of_exists_add_eq`), yielding
 `ringKrullDim k[S] = Module.finrank ℤ (AddSubgroup.closure S)` for FG `S` in torsion-free `G`
 (`AddSubmonoid.FG.ringKrullDim_addMonoidAlgebra`).
@@ -75,13 +75,25 @@ theorem ringKrullDim_of_free (k L : Type*) [Field k] [AddCommGroup L] [Module.Fi
     Module.finrank_eq_nat_card_basis b]
 
 /-- Over a field `k`, if `f : M →+ H` is an injective additive homomorphism from a finitely
-generated commutative monoid `M` with `UniqueSums M` into a finitely generated free abelian group
-`H` such that every element of `H` shifts into `f '' M`, then `k[M]` has Krull dimension
-`Module.finrank ℤ H`. -/
+generated commutative monoid `M` into a torsion-free abelian group `H` such that every element of
+`H` shifts into `f '' M`, then `k[M]` has Krull dimension `Module.finrank ℤ H`. -/
 theorem ringKrullDim_of_exists_add_eq {M H : Type*} [AddCommMonoid M] [AddMonoid.FG M]
-    [UniqueSums M] [AddCommGroup H] [Module.Finite ℤ H] [Module.Free ℤ H]
+    [AddCommGroup H] [HasUniqueDiv H]
     {f : M →+ H} (hf : Function.Injective f) (hshift : ∀ g : H, ∃ a b : M, g + f b = f a)
     (k : Type*) [Field k] : ringKrullDim (AddMonoidAlgebra k M) = Module.finrank ℤ H := by
+  have : Module.IsTorsionFree ℤ H := Module.isTorsionFree_int_iff_hasUniqueDiv.2 inferInstance
+  have : UniqueSums M := .of_injective_addHom f.toAddHom hf inferInstance
+  have hmfg : (AddSubmonoid.map f ⊤).FG :=
+    ((AddMonoid.fg_iff_addSubmonoid_fg ⊤).1 inferInstance).map f
+  have htop : AddSubgroup.closure ((AddSubmonoid.map f ⊤ : AddSubmonoid H) : Set H) = ⊤ :=
+    eq_top_iff.2 fun g _ ↦ by
+      obtain ⟨a, b, hab⟩ := hshift g
+      rw [eq_sub_of_add_eq hab]
+      exact sub_mem (AddSubgroup.subset_closure ⟨a, trivial, rfl⟩)
+        (AddSubgroup.subset_closure ⟨b, trivial, rfl⟩)
+  have : Module.Finite ℤ (⊤ : AddSubgroup H) := Module.Finite.iff_addGroup_fg.2
+    ((AddGroup.fg_iff_addSubgroup_fg ⊤).2 (htop ▸ hmfg.addSubgroupClosure))
+  have : Module.Finite ℤ H := Module.Finite.equiv AddSubgroup.topEquiv.toIntLinearEquiv
   have : Algebra.FiniteType k (AddMonoidAlgebra k M) := AddMonoidAlgebra.finiteType_of_fg k M
   obtain ⟨u, _⟩ := exists_isLocalization_away_of_exists_add_eq hf hshift k
   let := (mapDomainRingHom k f).toAlgebra
@@ -98,12 +110,9 @@ open AddMonoidAlgebra
 torsion-free abelian group `G` has Krull dimension `Module.finrank ℤ (AddSubgroup.closure S)`. -/
 theorem FG.ringKrullDim_addMonoidAlgebra {G : Type*} [AddCommGroup G] [HasUniqueDiv G]
     {S : AddSubmonoid G} (hS : S.FG) (k : Type*) [Field k] :
-    ringKrullDim (AddMonoidAlgebra k S) = Module.finrank ℤ (AddSubgroup.closure (S : Set G)) := by
+    ringKrullDim (AddMonoidAlgebra k S) = Module.finrank ℤ (AddSubgroup.closure (S : Set G)) :=
   have : AddMonoid.FG S := (AddMonoid.fg_iff_addSubmonoid_fg S).2 hS
-  have : UniqueSums S := .of_injective_addHom S.subtype.toAddHom S.subtype_injective inferInstance
-  have : Module.Finite ℤ (AddSubgroup.closure (S : Set G)) :=
-    Module.Finite.iff_addGroup_fg.2 ((AddGroup.fg_iff_addSubgroup_fg _).2 hS.addSubgroupClosure)
-  exact AddMonoidAlgebra.ringKrullDim_of_exists_add_eq S.toGroupClosure_injective
+  AddMonoidAlgebra.ringKrullDim_of_exists_add_eq S.toGroupClosure_injective
     S.exists_add_toGroupClosure_eq k
 
 end AddSubmonoid

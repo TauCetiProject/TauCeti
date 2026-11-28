@@ -10,7 +10,6 @@ public import Mathlib.Data.PNat.Basic
 public import Mathlib.GroupTheory.Divisible
 
 import Mathlib.Algebra.Category.Grp.Injective
-import Mathlib.Algebra.Module.Injective
 import Mathlib.Data.Rat.Cast.CharZero
 
 /-!
