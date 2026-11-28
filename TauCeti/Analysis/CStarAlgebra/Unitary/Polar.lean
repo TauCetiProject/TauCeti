@@ -10,15 +10,16 @@ public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
 public import Mathlib.Analysis.CStarAlgebra.Unitization
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.Connected.PathConnected
-public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar
+public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar.Basic
 import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt.Basic
 
 /-!
 # Polar unitaries in C⋆-algebras: path-connectedness, norm perturbation, and unitization
 
 For an invertible element `x` of a unital C⋆-algebra `A`, `Units.polarUnitary x` is the unitary
-factor `u` of the polar decomposition `x = u |x|`, `|x| = √(x⋆x)`
-(`TauCeti/Analysis/SpecialFunctions/ContinuousFunctionalCalculus/Polar.lean`). This file shows:
+factor `u` of the polar decomposition `x = u |x|`, `|x| = √(x⋆x)` (see
+`TauCeti/Analysis/SpecialFunctions/ContinuousFunctionalCalculus/Polar/Basic.lean`).
+This file shows:
 
 * `x` is joined to `u` by a path of invertible elements (`Units.joined_polarUnitary`):
   `t ↦ u ((1 - t)|x| + t)` stays invertible, since `(1 - t)|x| + t` is strictly positive for

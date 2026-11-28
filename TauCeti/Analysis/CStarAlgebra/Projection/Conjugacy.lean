@@ -10,7 +10,7 @@ public import TauCeti.Analysis.CStarAlgebra.Unitary.Polar
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Unital
 import TauCeti.Analysis.Normed.Ring.Units
-import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Cartan
+import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Polar.Continuity
 
 /-!
 # Unitary conjugacy of nearby projections in a C⋆-algebra

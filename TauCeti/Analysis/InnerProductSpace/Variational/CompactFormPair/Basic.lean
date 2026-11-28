@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Variational.BoundedSublevels
@@ -291,30 +292,47 @@ theorem isCompact_toWeakSpace_unitConstraint_inter_closedBall [CompleteSpace V]
   rw [unitConstraint_eq_preimage, inter_comm]
   exact hball.of_isClosed_subset hclosed (image_mono inter_subset_left)
 
-/-- When `V` is complete and `W` is closed, every sublevel of the energy on the constrained sphere
+/-- When `V` is reflexive and `W` is closed, every sublevel of the energy on the constrained sphere
 `S_W` is weakly compact. -/
-theorem isCompact_toWeakSpace_sublevel_unitConstraint [CompleteSpace V]
+theorem isCompact_toWeakSpace_sublevel_unitConstraint_of_surjective
+    (hV : Function.Surjective (NormedSpace.inclusionInDoubleDual 𝕜 V))
     (hW : IsClosed (W : Set H)) (b : ℝ) :
     IsCompact (toWeakSpace 𝕜 V '' {u ∈ P.unitConstraint W | P.energy u ≤ b}) :=
-  isCompact_toWeakSpace_sublevel_of_isSeqClosed
-    surjective_inclusionInDoubleDual_of_innerProductSpace
+  isCompact_toWeakSpace_sublevel_of_isSeqClosed hV
     (P.isSeqClosed_toWeakSpace_unitConstraint W hW)
     (P.lowerSemicontinuousOn_energy_comp_toWeakSpace_symm_unitConstraint
       W).seqLowerSemicontinuousOn b
     ((P.hasBoundedSublevelsOn_energy_unitConstraint W).isBounded_sublevel b)
 
+/-- When `V` is complete and `W` is closed, every sublevel of the energy on the constrained sphere
+`S_W` is weakly compact. -/
+theorem isCompact_toWeakSpace_sublevel_unitConstraint [CompleteSpace V]
+    (hW : IsClosed (W : Set H)) (b : ℝ) :
+    IsCompact (toWeakSpace 𝕜 V '' {u ∈ P.unitConstraint W | P.energy u ≤ b}) :=
+  P.isCompact_toWeakSpace_sublevel_unitConstraint_of_surjective W
+    surjective_inclusionInDoubleDual_of_innerProductSpace hW b
+
 /-! ### Existence of constrained minima -/
+
+/-- **Constrained Rayleigh minima** (reflexive form). If `V` is reflexive and the constrained
+sphere `S_W` of a closed submodule `W` is nonempty, the energy attains its minimum on `S_W`. -/
+theorem exists_isMinOn_energy_unitConstraint_of_surjective
+    (hV : Function.Surjective (NormedSpace.inclusionInDoubleDual 𝕜 V))
+    (hW : IsClosed (W : Set H)) (hne : (P.unitConstraint W).Nonempty) :
+    ∃ u ∈ P.unitConstraint W, IsMinOn P.energy (P.unitConstraint W) u :=
+  exists_isMinOn_of_isSeqClosed hV hne
+    (P.isSeqClosed_toWeakSpace_unitConstraint W hW)
+    (P.lowerSemicontinuousOn_energy_comp_toWeakSpace_symm_unitConstraint
+      W).seqLowerSemicontinuousOn
+    (P.hasBoundedSublevelsOn_energy_unitConstraint W)
 
 /-- **Constrained Rayleigh minima.** If `V` is complete and the constrained sphere `S_W` of a
 closed submodule `W` is nonempty, the energy attains its minimum on `S_W`. -/
 theorem exists_isMinOn_energy_unitConstraint [CompleteSpace V] (hW : IsClosed (W : Set H))
     (hne : (P.unitConstraint W).Nonempty) :
     ∃ u ∈ P.unitConstraint W, IsMinOn P.energy (P.unitConstraint W) u :=
-  exists_isMinOn_of_isSeqClosed surjective_inclusionInDoubleDual_of_innerProductSpace hne
-    (P.isSeqClosed_toWeakSpace_unitConstraint W hW)
-    (P.lowerSemicontinuousOn_energy_comp_toWeakSpace_symm_unitConstraint
-      W).seqLowerSemicontinuousOn
-    (P.hasBoundedSublevelsOn_energy_unitConstraint W)
+  P.exists_isMinOn_energy_unitConstraint_of_surjective W
+    surjective_inclusionInDoubleDual_of_innerProductSpace hW hne
 
 /-- If `V` is complete and `W` is closed, the set of minimizers of the energy on the constrained
 sphere `S_W` is weakly compact. -/

@@ -10,7 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
 import TauCeti.AlgebraicGeometry.Modules.Sheaf
-import TauCeti.RingTheory.Flat.EffectiveDescent
+import TauCeti.RingTheory.Flat.Amitsur
 
 /-!
 # Faithfully flat descent of sections of the big presheaf of a quasi-coherent module
@@ -127,9 +127,7 @@ private theorem lTensor_mk_one_sub_mk_one_eq_zero_of_bigSectionsRestrict_eq {T T
           (.of Γ(T.left, ⊤) Γ((pullback T.hom).obj F, ⊤)),
         bigSectionsRestrict F g₁ (bigSectionsBaseChange F f y) =
           bigSectionsRestrict F g₂ (bigSectionsBaseChange F f y) →
-        ((TensorProduct.mk Γ(T.left, ⊤) Γ(T'.left, ⊤) Γ((pullback T.hom).obj F, ⊤) 1).lTensor
-            Γ(T'.left, ⊤) - TensorProduct.mk Γ(T.left, ⊤) Γ(T'.left, ⊤)
-            (Γ(T'.left, ⊤) ⊗[Γ(T.left, ⊤)] Γ((pullback T.hom).obj F, ⊤)) 1)
+        (TauCeti.Amitsur.d₀ Γ(T'.left, ⊤) Γ((pullback T.hom).obj F, ⊤))
           (y : Γ(T'.left, ⊤) ⊗[Γ(T.left, ⊤)] Γ((pullback T.hom).obj F, ⊤)) = 0 := by
   algebraize [f.left.appTop.hom]
   intro κ hκ₁ hκ₂ y₀ hy₀
@@ -184,6 +182,7 @@ private theorem lTensor_mk_one_sub_mk_one_eq_zero_of_bigSectionsRestrict_eq {T T
     (congrArg (fun c ↦ TensorProduct.assoc A A' A' M (c ⊗ₜ m)) (hκ₂ a)).trans
       (TensorProduct.assoc_tmul 1 a m)
   let y' : A' ⊗[A] M := y₀
+  rw [TauCeti.Amitsur.d₀_def]
   exact (LinearMap.sub_apply _ _ y').trans (sub_eq_zero.mpr ((key₁ y₀).symm.trans
       ((congrArg (fun x ↦ J (eZ.symm x)) hy₀).trans (key₂ y₀))))
 

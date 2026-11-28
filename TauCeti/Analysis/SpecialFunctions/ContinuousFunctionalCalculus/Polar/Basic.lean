@@ -30,7 +30,9 @@ The factorization is unique in the strongest sense: if `a = p * v` with `p ≥ 0
 then `p = √(a a⋆)` and `v = Units.polarUnitary a`, and likewise for `a = v * p`. Consequently
 the polar decomposition is equivariant for unitary multiplication on either side: for unitaries
 `v`, `w`, the positive factor of `v a w` is the conjugate `v √(a a⋆) v⋆`, and its unitary factor
-is `v u w`. The unitary factor of `a⋆` is `u⋆`.
+is `v u w`. The unitary factor of `a⋆` is `u⋆`. For continuity under an isometric real
+continuous functional calculus, see
+`TauCeti/Analysis/SpecialFunctions/ContinuousFunctionalCalculus/Polar/Continuity.lean`.
 
 For matrices, this is the decomposition of an invertible real matrix into a positive-definite
 symmetric matrix times an orthogonal one, and of an invertible complex matrix into a

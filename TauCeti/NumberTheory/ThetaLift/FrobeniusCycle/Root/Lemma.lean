@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ThetaLift.FrobeniusCycle.Root.Basic
 public import TauCeti.RingTheory.MvPolynomial.GaussFiltration
 import Mathlib.Algebra.CharP.Lemmas
+import Mathlib.Algebra.MvPolynomial.CommRing
 import Mathlib.Algebra.MvPolynomial.Equiv
 import Mathlib.Data.Finsupp.Weight
 import Mathlib.RingTheory.Ideal.Quotient.Operations
@@ -481,7 +482,7 @@ theorem defect_nonpos_of_extreme_term (T : FrobeniusCycle W R N) {a a' : Fin k}
   -- For `a = a'` the weights would not rise from `ū_s = u_s` to `u_s`.
   have ha : a ≠ a' := by
     rintro rfl
-    have h_idx : T.negIndex a a i = T.posIndex a a i := by simp [negIndex_eq_ite, posIndex_eq_ite]
+    have h_idx : T.negIndex a a i = T.posIndex a a i := T.negIndex_eq_posIndex_iff.mpr rfl
     have := (hc i).1
     rw [h_idx, sub_self] at this
     norm_num at this
