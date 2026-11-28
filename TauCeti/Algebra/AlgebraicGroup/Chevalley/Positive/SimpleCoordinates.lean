@@ -30,6 +30,9 @@ and `positiveRootProduct_inj` for integral uniqueness. The two commutator bounds
 
 ## References
 
+* The quotient construction and restricted collectors are adapted from
+  [Tau Ceti PR #47461](https://github.com/TauCetiProject/TauCeti/pull/47461), retained at
+  [commit 81fef49](https://github.com/TauCetiProject/TauCeti/commit/81fef49abc52d4fecb370a25605370bc2c8a7bd5).
 * R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemmas 17–18.
 * R. W. Carter, *Simple Groups of Lie Type*, §5.3.
 -/
