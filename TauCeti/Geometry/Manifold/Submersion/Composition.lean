@@ -100,36 +100,53 @@ theorem IsSubmersionAtOfComplement.exists_domChart_of_codChart
   have hprojx : (Φ₁ x).1 = Ψ₁ (f x) := by
     simpa [Φ₁, Ψ₁, d₁, c₁, extend_coe] using (hf.codChart_extend_apply hf.mem_domChart_source).symm
   have hxφ : x ∈ φ.source := by
-    simp only [φ, Θ, τF, τ, transHomeomorph_source, trans_source, prod_source, refl_source,
-      symm_source, ModelWithCorners.interiorChart_target, I.range_eq_univ, interior_univ,
-      mem_inter_iff, mem_preimage, mem_prod, mem_univ, and_true]
-    have hxΦ₁ : x ∈ Φ₁.source := by simpa [Φ₁] using hf.mem_domChart_source
-    have hfxΨ₁ : f x ∈ Ψ₁.source := by simpa [Ψ₁] using hf.mem_codChart_source
-    rw [hprojx]
-    refine ⟨hxΦ₁, Ψ₁.map_source hfxΨ₁, ?_⟩
-    rw [Ψ₁.left_inv hfxΨ₁]
-    simpa [Φ₂] using hfx
-  -- Membership in `(φ.extend I).target` unfolds directly to `Θ.target` (landing in `τ.target`
-  -- and `(d₁.extend I).target`), while `(φ.extend I).symm` factors through `d₁.extend I` via `τ⁻¹`.
+    have hxΦ₁ : x ∈ Φ₁.source := by rw [d₁.extendTrans_source]; exact hf.mem_domChart_source
+    have hfxΨ₁ : f x ∈ Ψ₁.source := by rw [c₁.extendTrans_source]; exact hf.mem_codChart_source
+    have hfxΦ₂ : f x ∈ Φ₂.source := by rw [ψ.extendTrans_source]; exact hfx
+    have hτ_mem : (Φ₁ x).1 ∈ τ.source := by
+      rw [trans_source, symm_source, mem_inter_iff, mem_preimage, hprojx]
+      exact ⟨Ψ₁.map_source hfxΨ₁, by rw [Ψ₁.left_inv hfxΨ₁]; exact hfxΦ₂⟩
+    have hτF_mem : Φ₁ x ∈ τF.source := by
+      rw [prod_source, refl_source, mem_prod]
+      exact ⟨hτ_mem, mem_univ _⟩
+    have hxΘ : x ∈ Θ.source := by
+      rw [transHomeomorph_source, trans_source, mem_inter_iff, mem_preimage]
+      exact ⟨hxΦ₁, hτF_mem⟩
+    rw [trans_source, symm_source, ModelWithCorners.interiorChart_target, I.range_eq_univ,
+      interior_univ, preimage_univ, inter_univ]
+    exact hxΘ
+  -- Membership in `(φ.extend I).target` steps through `Θ`, `Φ₁.trans τF`, `τF`, `τ`, and `Φ₁`,
+  -- while `(φ.extend I).symm` unwinds the same transitions in reverse.
+  have hτF_symm (u : E' × F₁) : τF.symm u = (τ.symm u.1, u.2) := by
+    rw [prod_symm, refl_symm]; rfl
   have hΘ_target : ∀ {w}, w ∈ (φ.extend I).target →
       ((hf.equiv w).1 ∈ Φ₂.target ∧ Φ₂.symm (hf.equiv w).1 ∈ Ψ₁.source) ∧
       hf.equiv.symm (τ.symm (hf.equiv w).1, (hf.equiv w).2) ∈ (d₁.extend I).target := by
     intro w hw
     have hwΘ : w ∈ Θ.target := by
       rwa [OpenPartialHomeomorph.extend_trans_interiorChart_symm_target] at hw
-    simp only [Θ, τF, Φ₁, ContinuousLinearEquiv.toHomeomorph_symm, Homeomorph.symm_symm,
-      transHomeomorph_target, trans_target, prod_target, refl_target, prod_symm, refl_symm,
-      OpenPartialHomeomorph.prod_apply, refl_apply, extendTrans_target,
-      ContinuousLinearEquiv.coe_toHomeomorph, mem_inter_iff, mem_preimage, mem_prod, mem_univ,
-      and_true] at hwΘ
-    refine ⟨by simpa [τ] using hwΘ.1, ?_⟩
+    have hw_comp : hf.equiv w ∈ (Φ₁.trans τF).target := by
+      rwa [transHomeomorph_target, mem_preimage] at hwΘ
+    rw [trans_target, mem_inter_iff, mem_preimage] at hw_comp
+    have hw_τ : (hf.equiv w).1 ∈ τ.target := by
+      have hw_τF := hw_comp.1
+      rw [prod_target, refl_target, mem_prod] at hw_τF
+      exact hw_τF.1
+    rw [trans_target, OpenPartialHomeomorph.symm_target, mem_inter_iff, mem_preimage] at hw_τ
+    have hw_Φ₁ : (τ.symm (hf.equiv w).1, (hf.equiv w).2) ∈ Φ₁.target := by
+      simpa only [hτF_symm] using hw_comp.2
+    rw [extendTrans_target, mem_preimage] at hw_Φ₁
+    refine ⟨hw_τ, ?_⟩
     rw [extend_target, I.range_eq_univ, inter_univ]
-    exact hwΘ.2
+    exact hw_Φ₁
   have hφ_symm (w : E) : (φ.extend I).symm w =
       (d₁.extend I).symm (hf.equiv.symm (τ.symm (hf.equiv w).1, (hf.equiv w).2)) := by
-    dsimp only [φ]
-    rw [OpenPartialHomeomorph.extend_trans_interiorChart_symm_symm]
-    simp [Θ, τF, Φ₁]
+    have h1 : (φ.extend I).symm w = Θ.symm w :=
+      congrFun (OpenPartialHomeomorph.extend_trans_interiorChart_symm_symm (I := I) Θ) w
+    have h2 : Θ.symm w = (Φ₁.trans τF).symm (hf.equiv w) := rfl
+    have h3 : (Φ₁.trans τF).symm (hf.equiv w) = Φ₁.symm (τF.symm (hf.equiv w)) := rfl
+    rw [h1, h2, h3, hτF_symm]
+    exact d₁.extendTrans_symm_apply I hf.equiv.toHomeomorph _
   have hmain : ∀ w ∈ (φ.extend I).target,
       (hf.equiv w).1 ∈ (ψ.extend J).target ∧
       f ((φ.extend I).symm w) = (ψ.extend J).symm (hf.equiv w).1 ∧

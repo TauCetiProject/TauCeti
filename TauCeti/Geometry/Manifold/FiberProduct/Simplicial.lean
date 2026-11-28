@@ -278,9 +278,16 @@ theorem baseProj_mapSimplex {a b : ℕ} (θ : ⦋a⦌ ⟶ ⦋b⦌) (y : Iterated
 
 /-- `mapSimplex` sends the identity morphism in `SimplexCategory` to the identity. -/
 @[simp]
-theorem mapSimplex_id {a : ℕ} (y : IteratedFiberProduct π (a + 1)) :
-    mapSimplex (𝟙 ⦋a⦌) y = y :=
-  reindex_id_apply y
+theorem mapSimplex_id {a : ℕ} :
+    (mapSimplex (𝟙 ⦋a⦌) : IteratedFiberProduct π (a + 1) → IteratedFiberProduct π (a + 1)) =
+      id := by
+  rw [mapSimplex_eq_reindex, SimplexCategory.id_toOrderHom, OrderHom.id_coe, reindex_id]
+
+/-- Pointwise form of `mapSimplex_id`. -/
+@[simp]
+theorem mapSimplex_id_apply {a : ℕ} (y : IteratedFiberProduct π (a + 1)) :
+    mapSimplex (𝟙 ⦋a⦌) y = y := by
+  rw [mapSimplex_eq_reindex, SimplexCategory.id_toOrderHom, OrderHom.id_coe, reindex_id_apply]
 
 /-- `mapSimplex` is contravariantly functorial on `SimplexCategory`. -/
 theorem mapSimplex_comp {a b c : ℕ} (θ₁ : ⦋a⦌ ⟶ ⦋b⦌) (θ₂ : ⦋b⦌ ⟶ ⦋c⦌) :

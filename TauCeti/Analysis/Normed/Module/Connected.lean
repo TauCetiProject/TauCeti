@@ -31,9 +31,10 @@ to the open subtype shows that removing a set relatively closed and discrete in 
 preconnected open set `U` keeps it preconnected
 (`IsPreconnected.sdiff_of_isOpen_of_isDiscrete_of_one_lt_rank`), without manifold machinery.
 
-It also gives a punctured-neighbourhood obstruction to being locally Euclidean: if removing a point
-`x₀` splits every sufficiently small neighbourhood into more than two pairwise disjoint open pieces,
-then no open neighbourhood of `x₀` is homeomorphic to an open subset of `Fin n → ℝ`
+It also gives a punctured-neighbourhood obstruction to being locally Euclidean: if one fixed
+family of more than two pairwise disjoint open sets covers the punctured space `{x₀}ᶜ` and every
+open neighbourhood of `x₀` meets every member away from `x₀`, then no open neighbourhood of `x₀`
+is homeomorphic to an open subset of `Fin n → ℝ`
 (`TauCeti.not_homeomorph_of_punctured_nhds_splits`).
 
 In any real seminormed space, the `δ`-thickening of a preconnected set is again preconnected
@@ -54,8 +55,9 @@ of the product of two preconnected sets.
   greater than one keeps it preconnected.
 * `IsPreconnected.thickening`: the `δ`-thickening of a preconnected set in a real seminormed space
   is preconnected.
-* `TauCeti.not_homeomorph_of_punctured_nhds_splits`: a point whose punctured neighbourhoods split
-  into more than two open pieces has no open neighbourhood homeomorphic to an open set of
+* `TauCeti.not_homeomorph_of_punctured_nhds_splits`: if one fixed family of more than two
+  pairwise disjoint open sets covers `{x₀}ᶜ` and every open neighbourhood of `x₀` meets every
+  member away from `x₀`, then `x₀` has no open neighbourhood homeomorphic to an open subset of
   `Fin n → ℝ`.
 * `TauCeti.instConnectedSpaceNonZero`: the nonzero vectors of a nontrivial complex normed space are
   connected, since as a real vector space it has dimension at least two.
@@ -139,6 +141,17 @@ end TauCeti
 
 namespace TauCeti
 
+/-- Auxiliary preconnectedness transport for `not_homeomorph_of_punctured_nhds_splits`: pulls a
+preconnected subset `S ⊆ V` back through the target subtype `V`, the inverse homeomorphism
+`e.symm`, and the source subtype `U`. -/
+private theorem isPreconnected_image_symm_preimage {X E' : Type*}
+    [TopologicalSpace X] [TopologicalSpace E'] {U : Set X} {V : Set E'} (hV : IsOpen V)
+    (e : U ≃ₜ V) {S : Set E'} (hSV : S ⊆ V) (hS : IsPreconnected S) :
+    IsPreconnected (Subtype.val '' (e.symm '' (Subtype.val ⁻¹' S : Set V))) :=
+  ((hS.preimage_of_isOpenMap Subtype.val_injective hV.isOpenMap_subtypeVal
+    (Subtype.range_coe_subtype ▸ hSV)).image _ e.symm.continuous.continuousOn).image _
+    continuous_subtypeVal.continuousOn
+
 /-- Auxiliary dimension-`1` step for `not_homeomorph_of_punctured_nhds_splits`: removing the centre
 splits an open interval in `Fin 1 → ℝ` into two connected pieces, which cannot meet `m ≥ 3`
 pairwise disjoint open sets covering the punctured neighbourhood. -/
@@ -163,11 +176,8 @@ private theorem not_homeomorph_finOne_of_punctured_nhds_splits
       ∃ i : Fin m, C I ⊆ Q i := by
     intro I hI hz₀ hIconn
     have hIV : φ.symm '' I ⊆ V := (image_mono hI).trans (hball.symm ▸ hballV)
-    have hA : IsPreconnected (Subtype.val ⁻¹' (φ.symm '' I) : Set V) :=
-      (hIconn.image _ φ.symm.continuous.continuousOn).preimage_of_isOpenMap
-        Subtype.val_injective hV.isOpenMap_subtypeVal (Subtype.range_coe_subtype ▸ hIV)
     have hC_pre : IsPreconnected (C I) :=
-      (hA.image _ e.symm.continuous.continuousOn).image _ continuous_subtypeVal.continuousOn
+      isPreconnected_image_symm_preimage hV e hIV (hIconn.image _ φ.symm.continuous.continuousOn)
     have hC_sub : C I ⊆ S₀ := by
       rw [hS₀_eq]
       refine image_mono (image_mono (preimage_mono ?_))
@@ -249,13 +259,10 @@ theorem not_homeomorph_of_punctured_nhds_splits
   · have hrank : 1 < Module.rank ℝ (Fin n → ℝ) := by
       rw [← Module.finrank_eq_rank, Module.finrank_fintype_fun_eq_card, Fintype.card_fin]
       exact_mod_cast hn2
-    have hA : IsPreconnected (Subtype.val ⁻¹' (Metric.ball y₀ r \ {y₀}) : Set V) :=
-      (isConnected_ball_sdiff_singleton hrank y₀ hr).isPreconnected.preimage_of_isOpenMap
-        Subtype.val_injective hV.isOpenMap_subtypeVal
-        (Subtype.range_coe_subtype ▸ sdiff_subset.trans hballV)
     have hS₀_pre : IsPreconnected S₀ := by
       rw [hS₀_eq]
-      exact (hA.image _ e.symm.continuous.continuousOn).image _ continuous_subtypeVal.continuousOn
+      exact isPreconnected_image_symm_preimage hV e (sdiff_subset.trans hballV)
+        (isConnected_ball_sdiff_singleton hrank y₀ hr).isPreconnected
     obtain ⟨i, hi⟩ := hpre_sub hS₀_pre Subset.rfl
     have : Nontrivial (Fin m) := Fin.nontrivial_iff_two_le.mpr (by omega)
     obtain ⟨k, hki⟩ := exists_ne i
