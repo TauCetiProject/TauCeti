@@ -7,27 +7,33 @@ module
 
 public import Mathlib.NumberTheory.MulChar.Basic
 public import TauCeti.RepresentationTheory.CharacterTable.GLn.HallAlgebra.Basic
-import Mathlib.LinearAlgebra.Charpoly.ToMatrix
-import Mathlib.LinearAlgebra.Dimension.Constructions
+
+import Mathlib.LinearAlgebra.Charpoly.BaseChange
 import TauCeti.LinearAlgebra.Charpoly.Quotient
 
 /-!
 # Determinant character and twisting endomorphisms on the Hall algebra
 
 For a multiplicative character `χ : MulChar k ℂ` of a field `k`, the determinant character
-`TauCeti.HallAlgebra.detChar χ` sends a similarity class `c` to
-`χ ((-1) ^ c.dim * c.charpoly.coeff 0)` (which equals `χ g.det` at `ofEnd g`). Because the
-determinant is multiplicative along invariant subspaces and quotients, pointwise multiplication by
-`detChar χ` defines a `ℂ`-algebra endomorphism `TauCeti.HallAlgebra.detTwist χ` of
-`TauCeti.HallAlgebra k` when `k` is finite.
+`χ.detChar` sends a similarity class `c` to `χ ((-1) ^ c.dim * c.charpoly.coeff 0)` (which equals
+`χ g.det` at `ofEnd g`). Because the determinant is multiplicative along invariant subspaces and
+quotients (`Module.End.det_eq_det_invtRestrict_mul_det_invtQuot`), pointwise multiplication by
+`χ.detChar` defines a `ℂ`-algebra endomorphism `χ.detTwist` of `TauCeti.HallAlgebra k` when `k` is
+finite. Restricting `χ.detTwist F` to `GL_n(k)` via `TauCeti.HallAlgebra.toClassFunction` gives
+the restriction of `F` multiplied pointwise by `χ ∘ det`.
 
-* `TauCeti.HallAlgebra.detChar`: the class function `c ↦ χ ((-1) ^ c.dim * c.charpoly.coeff 0)`.
-* `TauCeti.HallAlgebra.detChar_ofEnd`: `detChar χ (ofEnd g) = χ g.det`.
-* `TauCeti.HallAlgebra.detChar_eq_one_of_dim_eq_zero`: `detChar χ o = 1` when `o.dim = 0`.
-* `TauCeti.HallAlgebra.detChar_ofEnd_eq_mul`: multiplicativity of `detChar χ` along an invariant
-  subspace and its quotient.
-* `TauCeti.HallAlgebra.detTwist`: the `ℂ`-algebra endomorphism `F ↦ fun c ↦ detChar χ c * F c`
-  of `HallAlgebra k` for finite `k`.
+* `Module.End.det_eq_det_invtRestrict_mul_det_invtQuot`: `g.det = (g.invtRestrict hU).det *
+  (g.invtQuot hU).det` for an invariant subspace `U ∈ g.invtSubmodule`.
+* `MulChar.detChar`: the class function `c ↦ χ ((-1) ^ c.dim * c.charpoly.coeff 0)`.
+* `MulChar.detChar_apply`: explicit coefficient formula for `χ.detChar c`.
+* `MulChar.detChar_ofEnd`: `χ.detChar (ofEnd g) = χ g.det`.
+* `MulChar.detChar_eq_one_of_dim_eq_zero`: `χ.detChar o = 1` when `o.dim = 0`.
+* `MulChar.detChar_ofEnd_eq_mul`: multiplicativity of `χ.detChar` along an invariant subspace and
+  its quotient.
+* `MulChar.detTwist`: the `ℂ`-algebra endomorphism `F ↦ fun c ↦ χ.detChar c * F c` of
+  `HallAlgebra k` for finite `k`.
+* `MulChar.detTwist_apply`: evaluation rule `(χ.detTwist F) c = χ.detChar c * F c`.
+* `MulChar.detTwist_rankPart`: `χ.detTwist` commutes with `TauCeti.HallAlgebra.rankPart`.
 
 ## References
 
@@ -43,9 +49,20 @@ determinant is multiplicative along invariant subspaces and quotients, pointwise
 
 public section
 
-namespace TauCeti.HallAlgebra
+open TauCeti TauCeti.HallAlgebra TauCeti.SimilarityClass
 
-open SimilarityClass
+/-- The determinant of an endomorphism of a finite-dimensional vector space factors as the product
+of the determinants of its restriction to an invariant subspace and the induced endomorphism on the
+quotient. -/
+theorem Module.End.det_eq_det_invtRestrict_mul_det_invtQuot {k V : Type*} [Field k]
+    [AddCommGroup V] [Module k V] [Module.Finite k V] {g : Module.End k V} {U : Submodule k V}
+    (hU : U ∈ g.invtSubmodule) :
+    LinearMap.det g =
+      LinearMap.det (g.invtRestrict hU) * LinearMap.det (g.invtQuot hU) := by
+  rw [Module.End.invtRestrict_def, Module.End.invtQuot_def]
+  exact LinearMap.det_eq_det_mul_det U g ((Module.End.mem_invtSubmodule g).1 hU)
+
+namespace MulChar
 
 section Field
 
@@ -56,35 +73,33 @@ similarity class `c` via the constant term of its characteristic polynomial. -/
 noncomputable def detChar (χ : MulChar k ℂ) : HallAlgebra k :=
   fun c ↦ χ ((-1) ^ c.dim * c.charpoly.coeff 0)
 
-/-- At the similarity class of an endomorphism `g`, `detChar χ` evaluates to `χ g.det`. -/
+/-- Coefficient formula for the determinant character `χ.detChar` on an arbitrary similarity
+class. -/
+theorem detChar_apply (χ : MulChar k ℂ) (c : SimilarityClass k) :
+    χ.detChar c = χ ((-1) ^ c.dim * c.charpoly.coeff 0) := by
+  rfl
+
+/-- At the similarity class of an endomorphism `g`, `χ.detChar` evaluates to `χ g.det`. -/
 @[simp]
 theorem detChar_ofEnd (χ : MulChar k ℂ) {V : Type*} [AddCommGroup V] [Module k V]
     [Module.Finite k V] (g : Module.End k V) :
-    detChar χ (ofEnd g) = χ (LinearMap.det g) := by
-  let b := Module.finBasis k V
-  rw [detChar, dim_ofEnd, charpoly_ofEnd, ← LinearMap.det_toMatrix b,
-    ← LinearMap.charpoly_toMatrix g b, Matrix.det_eq_sign_charpoly_coeff, Fintype.card_fin]
+    χ.detChar (ofEnd g) = χ (LinearMap.det g) := by
+  rw [detChar, dim_ofEnd, charpoly_ofEnd, LinearMap.det_eq_sign_charpoly_coeff]
 
-/-- On a dimension-zero similarity class, `detChar χ` takes the value `1`. -/
+/-- On a dimension-zero similarity class, `χ.detChar` takes the value `1`. -/
 @[simp]
 theorem detChar_eq_one_of_dim_eq_zero (χ : MulChar k ℂ) {o : SimilarityClass k} (h : o.dim = 0) :
-    detChar χ o = 1 := by
-  have hsub : Subsingleton (Fin o.dim → k) := by rw [h]; infer_instance
-  have hrep : o.rep = LinearMap.id := LinearMap.ext fun _ ↦ hsub.elim _ _
-  rw [← ofEnd_rep o, detChar_ofEnd, hrep, LinearMap.det_id, map_one]
+    χ.detChar o = 1 := by
+  have : Subsingleton (Fin o.dim → k) := by rw [h]; infer_instance
+  rw [← ofEnd_rep o, detChar_ofEnd, LinearMap.det_eq_one_of_subsingleton, map_one]
 
 /-- The determinant character is multiplicative along an invariant subspace and its quotient. -/
 theorem detChar_ofEnd_eq_mul (χ : MulChar k ℂ) {V : Type*} [AddCommGroup V] [Module k V]
     [Module.Finite k V] {g : Module.End k V} {U : Submodule k V} (hU : U ∈ g.invtSubmodule) :
-    detChar χ (ofEnd g) =
-      detChar χ (ofEnd (g.invtRestrict hU)) * detChar χ (ofEnd (g.invtQuot hU)) := by
-  have hchar := (Module.End.charpoly_invtRestrict_mul_charpoly_invtQuot hU).symm
-  have hdim : Module.finrank k V = Module.finrank k U + Module.finrank k (V ⧸ U) := by
-    rw [add_comm, Submodule.finrank_quotient_add_finrank U]
-  simp only [detChar, dim_ofEnd, charpoly_ofEnd, hchar, Polynomial.mul_coeff_zero, hdim, pow_add,
-    ← map_mul]
-  congr 1
-  ring
+    χ.detChar (ofEnd g) =
+      χ.detChar (ofEnd (g.invtRestrict hU)) * χ.detChar (ofEnd (g.invtQuot hU)) := by
+  rw [detChar_ofEnd, detChar_ofEnd, detChar_ofEnd, ← map_mul,
+    g.det_eq_det_invtRestrict_mul_det_invtQuot hU]
 
 end Field
 
@@ -92,36 +107,40 @@ section Finite
 
 variable {k : Type*} [Field k] [Finite k]
 
-/-- Pointwise multiplication by `detChar χ` defines a `ℂ`-algebra endomorphism of
+/-- Pointwise multiplication by `χ.detChar` defines a `ℂ`-algebra endomorphism of
 `HallAlgebra k`. -/
-noncomputable def detTwist (χ : MulChar k ℂ) : HallAlgebra k →ₐ[ℂ] HallAlgebra k where
-  toFun F c := detChar χ c * F c
-  map_one' := by
-    ext c
-    by_cases h : c.dim = 0
-    · simp [one_apply, h, detChar_eq_one_of_dim_eq_zero]
-    · simp [one_apply, h]
-  map_mul' F H := by
-    refine ext_ofEnd fun n g ↦ ?_
-    have := Fintype.ofFinite g.invtSubmodule
-    simp only [mul_ofEnd_eq_sum, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun U _ ↦ ?_
-    rw [detChar_ofEnd_eq_mul χ U.property]
-    ring
-  map_zero' := by ext c; simp [zero_apply]
-  map_add' F H := by ext c; simp [add_apply, mul_add]
-  commutes' a := by
-    ext c
-    by_cases h : c.dim = 0
-    · simp [Algebra.algebraMap_eq_smul_one, smul_apply, one_apply, h,
-        detChar_eq_one_of_dim_eq_zero]
-    · simp [Algebra.algebraMap_eq_smul_one, smul_apply, one_apply, h]
+noncomputable def detTwist (χ : MulChar k ℂ) : HallAlgebra k →ₐ[ℂ] HallAlgebra k :=
+  let f : HallAlgebra k →ₗ[ℂ] HallAlgebra k :=
+    LinearMap.piMap fun c : SimilarityClass k ↦ LinearMap.mulLeft ℂ (χ.detChar c)
+  have hf (F : HallAlgebra k) (c : SimilarityClass k) : f F c = χ.detChar c * F c := rfl
+  AlgHom.ofLinearMap f
+    (by
+      ext c
+      rw [hf]
+      by_cases h : c.dim = 0
+      · simp [h, detChar_eq_one_of_dim_eq_zero]
+      · simp [h])
+    (by
+      intro F H
+      refine ext_ofEnd fun n g ↦ ?_
+      simp only [hf, HallAlgebra.mul_ofEnd, mul_finsum]
+      refine finsum_congr fun U ↦ ?_
+      rw [detChar_ofEnd_eq_mul χ U.property]
+      ring)
 
+/-- Evaluating `χ.detTwist F` at a similarity class `c` multiplies `F c` by `χ.detChar c`. -/
 @[simp]
 theorem detTwist_apply (χ : MulChar k ℂ) (F : HallAlgebra k) (c : SimilarityClass k) :
-    detTwist χ F c = detChar χ c * F c := by
+    χ.detTwist F c = χ.detChar c * F c := by
   rfl
+
+/-- Twisting by `χ.detChar` commutes with restriction to similarity classes of a given rank. -/
+@[simp]
+theorem detTwist_rankPart (χ : MulChar k ℂ) (n : ℕ) (F : HallAlgebra k) :
+    χ.detTwist (rankPart n F) = rankPart n (χ.detTwist F) := by
+  ext c
+  by_cases h : c.dim = n <;> simp [rankPart_apply, h]
 
 end Finite
 
-end TauCeti.HallAlgebra
+end MulChar
