@@ -104,9 +104,8 @@ theorem tendsto_exp_sub_one_sub_div_sq :
     Tendsto (fun h : ℝ ↦ (exp h - 1 - h) / h ^ 2) (𝓝[≠] 0) (𝓝 (1 / 2 : ℝ)) := by
   have h0 := (exp_sub_sum_range_succ_isLittleO_pow 2).tendsto_div_nhds_zero.mono_left
     (nhdsWithin_le_nhds (s := {0}ᶜ))
-  simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, pow_zero, pow_one,
-    Nat.factorial_zero, Nat.factorial_one, Nat.factorial_two, Nat.cast_one, Nat.cast_ofNat,
-    div_one] at h0
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add] at h0
+  norm_num at h0
   have h1 : Tendsto (fun h : ℝ ↦ (exp h - (1 + h + h ^ 2 / 2)) / h ^ 2 + 1 / 2)
       (𝓝[≠] 0) (𝓝 (1 / 2 : ℝ)) := by
     simpa using h0.add tendsto_const_nhds

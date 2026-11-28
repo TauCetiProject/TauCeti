@@ -45,9 +45,8 @@ not belong to any particular application.
   uniform `(N + 1)`-subinterval left-endpoint Riemann sums in terms of subinterval oscillation.
 * `TauCeti.intervalIntegral.tendsto_integral_nhds_zero_of_ae_norm_le`: if `‖F i x‖ ≤ B i` almost
   everywhere on `Ι a b` eventually along `l` and `B i → 0`, then `∫ x in a..b, F i x ∂μ → 0`.
-* `TauCeti.intervalIntegral.tendsto_integral_left_nhdsGT`: if `f` is continuous on `[a, b]`
-  (`a < b`) and agrees almost everywhere on `(a, b]` with `g`, then
-  `∫ t in x..b, g t ∂μ → ∫ t in a..b, g t ∂μ` as `x → a⁺`.
+* `TauCeti.intervalIntegral.tendsto_integral_left_nhdsGT`: if `g` is integrable on `(a, b]`
+  (`a ≤ b`), then `∫ t in x..b, g t ∂μ → ∫ t in a..b, g t ∂μ` as `x → a⁺`.
 * `TauCeti.intervalIntegral.eq_zero_of_tendsto_average_const`: a constant whose time averages
   `T⁻¹ ∫₀ᵀ c dt` tend to `0` vanishes.
 * `TauCeti.intervalIntegral.integral_eq_zero_of_forall_lt`: for `b ≤ a` and a measure vanishing
@@ -424,31 +423,56 @@ theorem tendsto_integral_nhds_zero_of_ae_norm_le {ι E : Type*} [NormedAddCommGr
   exact norm_setIntegral_le_of_norm_le_const_ae' measure_Ioc_lt_top hi
 
 open Filter Topology Interval in
-/-- If `f` is continuous on `[a, b]` (`a < b`) and agrees almost everywhere on `(a, b]` with `g`,
-then `∫ t in x..b, g t ∂μ → ∫ t in a..b, g t ∂μ` as `x → a⁺`. -/
+/-- If `g` is integrable on `(a, b]` (`a ≤ b`), then `∫ t in x..b, g t ∂μ → ∫ t in a..b, g t ∂μ`
+as `x → a⁺`. -/
 theorem tendsto_integral_left_nhdsGT {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {μ : Measure ℝ} [IsLocallyFiniteMeasure μ] {f g : ℝ → E}
-    {a b : ℝ} (hab : a < b) (hf : ContinuousOn f (Icc a b))
-    (hfg : ∀ᵐ t ∂μ, t ∈ Ioc a b → f t = g t) :
+    {μ : Measure ℝ} {g : ℝ → E} {a b : ℝ} (hab : a ≤ b) (hg : IntegrableOn g (Ioc a b) μ) :
     Tendsto (fun x : ℝ ↦ ∫ t in x..b, g t ∂μ) (𝓝[>] a) (𝓝 (∫ t in a..b, g t ∂μ)) := by
-  have hg_ioc : IntegrableOn g (Ioc a b) μ :=
-    (integrableOn_congr_fun_ae ((ae_restrict_iff' measurableSet_Ioc).mpr hfg)).mp
-      (hf.integrableOn_Icc.mono_set Ioc_subset_Icc_self)
-  have hg_ind : IntegrableOn ((Iic b).indicator g) (Ioi a) μ :=
-    (integrableOn_indicator_iff (measurableSet_Iic (a := b)).nullMeasurableSet).mpr
-      (by simpa only [inter_comm (Iic b), Ioi_inter_Iic] using hg_ioc)
-  have heq : ∀ {x : ℝ}, x ≤ b →
-      ∫ t in Ioi x, (Iic b).indicator g t ∂μ = ∫ t in x..b, g t ∂μ := fun {x} hxb ↦ by
-    rw [setIntegral_indicator measurableSet_Iic, Ioi_inter_Iic,
-      _root_.intervalIntegral.integral_of_le hxb]
-  have hc : Tendsto (fun x : ℝ ↦ ∫ t in Ioi x, (Iic b).indicator g t ∂μ)
-      (𝓝[>] a) (𝓝 (∫ t in a..b, g t ∂μ)) := by
-    simpa only [heq hab.le] using
-      hg_ind.continuousWithinAt_Ici_primitive_Ioi.tendsto.mono_left
-        (nhdsWithin_mono a Ioi_subset_Ici_self)
-  refine hc.congr' ?_
-  filter_upwards [Ioo_mem_nhdsGT hab] with x hx
-  exact heq hx.2.le
+  have hlt_case : ∀ {c : ℝ}, a < c → IntegrableOn g (Ioc a c) μ →
+      Tendsto (fun x : ℝ ↦ ∫ t in x..c, g t ∂μ) (𝓝[>] a) (𝓝 (∫ t in a..c, g t ∂μ)) := by
+    intro c hac hgc
+    have hg_ind : IntegrableOn ((Iic c).indicator g) (Ioi a) μ :=
+      (integrableOn_indicator_iff (measurableSet_Iic (a := c)).nullMeasurableSet).mpr
+        (by simpa only [inter_comm (Iic c), Ioi_inter_Iic] using hgc)
+    have heq : ∀ {x : ℝ}, x ≤ c →
+        ∫ t in Ioi x, (Iic c).indicator g t ∂μ = ∫ t in x..c, g t ∂μ := fun {x} hxc ↦ by
+      rw [setIntegral_indicator measurableSet_Iic, Ioi_inter_Iic,
+        _root_.intervalIntegral.integral_of_le hxc]
+    have hc : Tendsto (fun x : ℝ ↦ ∫ t in Ioi x, (Iic c).indicator g t ∂μ)
+        (𝓝[>] a) (𝓝 (∫ t in a..c, g t ∂μ)) := by
+      simpa only [heq hac.le] using
+        hg_ind.continuousWithinAt_Ici_primitive_Ioi.tendsto.mono_left
+          (nhdsWithin_mono a Ioi_subset_Ici_self)
+    refine hc.congr' ?_
+    filter_upwards [Ioo_mem_nhdsGT hac] with x hx
+    exact heq hx.2.le
+  rcases hab.eq_or_lt with rfl | hlt
+  · rw [_root_.intervalIntegral.integral_same]
+    by_cases h : ∃ c > a, IntegrableOn g (Ioc a c) μ
+    · rcases h with ⟨c, hac, hgc⟩
+      have hsub : Tendsto (fun x : ℝ ↦ ∫ t in x..c, g t ∂μ - ∫ t in a..c, g t ∂μ)
+          (𝓝[>] a) (𝓝 0) := by
+        simpa only [sub_self] using (hlt_case hac hgc).sub_const (∫ t in a..c, g t ∂μ)
+      refine hsub.congr' ?_
+      filter_upwards [Ioo_mem_nhdsGT hac] with x hx
+      have h1 : IntervalIntegrable g μ a x :=
+        (_root_.intervalIntegrable_iff_integrableOn_Ioc_of_le hx.1.le).mpr
+          (hgc.mono_set (Ioc_subset_Ioc_right hx.2.le))
+      have h2 : IntervalIntegrable g μ x c :=
+        (_root_.intervalIntegrable_iff_integrableOn_Ioc_of_le hx.2.le).mpr
+          (hgc.mono_set (Ioc_subset_Ioc_left hx.1.le))
+      rw [← _root_.intervalIntegral.integral_add_adjacent_intervals h1 h2,
+        _root_.intervalIntegral.integral_symm a x]
+      abel
+    · push Not at h
+      refine tendsto_const_nhds.congr' ?_
+      filter_upwards [self_mem_nhdsWithin] with x (hx : a < x)
+      have hni : ¬ IntervalIntegrable g μ a x := by
+        rw [_root_.intervalIntegrable_iff_integrableOn_Ioc_of_le hx.le]
+        exact h x hx
+      rw [_root_.intervalIntegral.integral_symm, _root_.intervalIntegral.integral_undef hni,
+        neg_zero]
+  · exact hlt_case hlt hg
 
 open Filter Topology in
 /-- If the time averages `T⁻¹ ∫₀ᵀ c dt` of a constant `c` tend to `0` as `T → ∞`, then `c = 0`:

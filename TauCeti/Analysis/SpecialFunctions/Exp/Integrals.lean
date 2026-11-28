@@ -69,9 +69,7 @@ theorem integral_exp_neg_div_eq_add_integral {b : ℝ} (hb : 0 < b) :
     (fun t ht ↦ hasDerivAt_log ((lt_min zero_lt_one hb).trans ht.1).ne')
     (Continuous.intervalIntegrable (by fun_prop) 1 b)
     (intervalIntegrable_inv_iff.mpr (Or.inr (notMem_uIcc_of_lt zero_lt_one hb)))
-  simp_rw [← div_eq_mul_inv, neg_mul, intervalIntegral.integral_neg, log_one, mul_zero, sub_zero,
-    sub_neg_eq_add] at hibp
-  simpa only [mul_comm (log _)] using hibp
+  simpa [div_eq_mul_inv, mul_comm (log _)] using hibp
 
 /-- For `a, b > 0`, `∫ t in a..b, (1 - e^{-t}) / t = log b - log a - ∫ t in a..b, e^{-t} / t`. -/
 theorem integral_one_sub_exp_neg_div_eq_log_sub {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
