@@ -23,6 +23,8 @@ none of the further theory built on it.
 
 * `TauCeti.single_sub_one_ne_zero_iff`: over a nontrivial ring, the difference `single g 1 - 1`
   between the basis element at `g` and the unit is nonzero exactly when `g ≠ 1`.
+* `TauCeti.one_add_single_ne_zero`: over a nontrivial semiring, `1 + single g r` is nonzero for
+  `g ≠ 1`.
 * This file tags Mathlib's `MonoidAlgebra.coeff_natCast_mul` and
   `AddMonoidAlgebra.coeff_natCast_mul` as `simp` lemmas: a natural-number constant scales every
   coefficient, `(↑n * x).coeff m = ↑n * x.coeff m`.
@@ -69,8 +71,13 @@ none of the further theory built on it.
   one-dimensional, each element being the monomial at any point with its coefficient there.
 * `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by the monomial `single u 1` at a
   unit `u` of `M` conjugates the indices of the coefficients.
+* `TauCeti.MonoidAlgebra.singleOneSMulLinearMap` and `LinearMap.toMonoidAlgebraLinearMap`:
+  noncommutative (`Semiring`) generalizations of Mathlib's `MonoidAlgebra.GroupSMul.linearMap` and
+  `MonoidAlgebra.equivariantOfLinearOfComm`.
 * `MonoidAlgebra.lift_apply_eq_sum`: over a finite monoid, `lift F x` is the finite sum
   `∑ m, x_m • F m`.
+* `MonoidAlgebra.coeff_curryAlgEquiv_symm` and `AddMonoidAlgebra.coeff_curryAlgEquiv_symm`:
+  reading coefficients of an uncurried nested monoid algebra element.
 * `MonoidAlgebra.coeff_mul_eq_sum`: the coefficients of a product in the group algebra of a finite
   group, as a convolution.
 
@@ -121,6 +128,14 @@ theorem _root_.MonoidAlgebra.exists_eq_smul_iff_dvd_coeff (x : MonoidAlgebra R M
 -- does for polynomials (`Polynomial.coeff_natCast_mul`) and power series
 -- (`PowerSeries.coeff_natCast_mul`).
 attribute [simp] MonoidAlgebra.coeff_natCast_mul AddMonoidAlgebra.coeff_natCast_mul
+
+/-- Over a nontrivial semiring, `1 + single g r` is nonzero for `g ≠ 1`: its coefficient at the
+identity is `1`. -/
+theorem one_add_single_ne_zero [Nontrivial R] [One M] {g : M} (hg : g ≠ 1) (r : R) :
+    (1 + MonoidAlgebra.single g r : MonoidAlgebra R M) ≠ 0 := by
+  intro h
+  have := congrArg (fun f => f.coeff 1) h
+  simp [MonoidAlgebra.one_def, MonoidAlgebra.coeff_single, hg.symm] at this
 
 end Semiring
 
@@ -208,6 +223,76 @@ theorem isIntegral_of_isMulTorsion {R G : Type*} [CommRing R] [CommMonoid G] (hG
     exact isIntegral_one
   | add x y hx hy => exact hx.add hy
   | smul r x hx => exact hx.smul r
+
+section ModuleAction
+
+open _root_.MonoidAlgebra
+
+variable {Λ G P : Type*} [Semiring Λ] [Monoid G] [AddCommMonoid P] [Module Λ P]
+  [Module Λ[G] P] [IsScalarTower Λ Λ[G] P]
+
+/-- Action of a monoid-algebra basis element `single g 1` commutes with scalar multiplication by
+`Λ`, even when `Λ` is noncommutative. -/
+theorem single_one_smul_comm (g : G) (c : Λ) (p : P) :
+    single g (1 : Λ) • (c • p) = c • (single g (1 : Λ) • p) := by
+  rw [← smul_one_smul Λ[G] c p, ← mul_smul, ← smul_assoc]
+  congr 1; simp [one_def]
+
+/-- Action of `single g c` factors into the `Λ`-action of `c` and the action of `single g 1`. -/
+theorem single_smul_eq_smul_single_one_smul (g : G) (c : Λ) (p : P) :
+    single g c • p = c • (single g (1 : Λ) • p) := by
+  rw [← smul_of, of_apply, smul_assoc]
+
+variable (Λ P) in
+/-- Action of a monoid element `g : G` on a `Λ[G]`-module `P` as a `Λ`-linear endomorphism
+`p ↦ single g 1 • p`. Generalizes Mathlib's `MonoidAlgebra.GroupSMul.linearMap` to a possibly
+noncommutative semiring `Λ`. -/
+noncomputable def singleOneSMulLinearMap (g : G) : P →ₗ[Λ] P where
+  toFun p := single g (1 : Λ) • p
+  map_add' := smul_add _
+  map_smul' c p := by rw [RingHom.id_apply, single_one_smul_comm]
+
+@[simp]
+theorem singleOneSMulLinearMap_apply (g : G) (p : P) :
+    singleOneSMulLinearMap Λ P g p = single g (1 : Λ) • p := by rfl
+
+@[simp]
+theorem singleOneSMulLinearMap_one :
+    singleOneSMulLinearMap Λ P (1 : G) = LinearMap.id := by ext p; simp [← one_def]
+
+@[simp]
+theorem singleOneSMulLinearMap_mul (g h : G) :
+    singleOneSMulLinearMap Λ P (g * h) =
+      singleOneSMulLinearMap Λ P g ∘ₗ singleOneSMulLinearMap Λ P h := by ext p; simp [← mul_smul]
+
+section Equivariant
+
+variable {Q : Type*} [AddCommMonoid Q] [Module Λ Q] [Module Λ[G] Q] [IsScalarTower Λ Λ[G] Q]
+
+/-- Promote a `Λ`-linear map `f : P →ₗ[Λ] Q` between `Λ[G]`-modules to a `Λ[G]`-linear map when it
+commutes with the action of every basis element `single g 1`. Generalizes Mathlib's
+`MonoidAlgebra.equivariantOfLinearOfComm` to a possibly noncommutative semiring `Λ`. -/
+def _root_.LinearMap.toMonoidAlgebraLinearMap (f : P →ₗ[Λ] Q)
+    (hf : ∀ (g : G) (p : P), f (single g (1 : Λ) • p) = single g (1 : Λ) • f p) :
+    P →ₗ[Λ[G]] Q where
+  toFun := f
+  map_add' := map_add f
+  map_smul' r p := by
+    rw [RingHom.id_apply]
+    induction r using induction_linear with
+    | zero => simp
+    | add x y hx hy => rw [add_smul, map_add, add_smul, hx, hy]
+    | single g c =>
+      rw [single_smul_eq_smul_single_one_smul, map_smul, hf, ← single_smul_eq_smul_single_one_smul]
+
+@[simp]
+theorem _root_.LinearMap.toMonoidAlgebraLinearMap_apply (f : P →ₗ[Λ] Q)
+    (hf : ∀ (g : G) (p : P), f (single g (1 : Λ) • p) = single g (1 : Λ) • f p) (p : P) :
+    f.toMonoidAlgebraLinearMap hf p = f p := by rfl
+
+end Equivariant
+
+end ModuleAction
 
 end MonoidAlgebra
 
@@ -453,6 +538,19 @@ theorem addSubgroupClosure_range_of {M : Type*} [MulOneClass M] :
     have h : single m c = c • of ℤ M m := by rw [of_apply, smul_single, smul_eq_mul, mul_one]
     rw [h]
     exact zsmul_mem (AddSubgroup.subset_closure (Set.mem_range_self m)) c
+
+/-- The `(m, n)`-coefficient of `(MonoidAlgebra.curryAlgEquiv R).symm x` is
+`(x.coeff m).coeff n`. -/
+@[to_additive (attr := simp) (dont_translate := R A)
+/-- The `(m, n)`-coefficient of `(AddMonoidAlgebra.curryAlgEquiv R).symm x` is
+`(x.coeff m).coeff n`. -/]
+theorem coeff_curryAlgEquiv_symm {R A M N : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [Monoid M] [Monoid N] (x : A[N][M]) (m : M) (n : N) :
+    ((curryAlgEquiv R).symm x).coeff (m, n) = (x.coeff m).coeff n := by
+  -- `(curryAlgEquiv R).symm` acts on the underlying carrier as `curryAddEquiv.symm`.
+  change (curryAddEquiv.symm x).coeff (m, n) = (x.coeff m).coeff n
+  rw [curryAddEquiv]
+  simp [Finsupp.curryAddEquiv_symm_apply, Finsupp.uncurry_apply_pair]
 
 end MonoidAlgebra
 

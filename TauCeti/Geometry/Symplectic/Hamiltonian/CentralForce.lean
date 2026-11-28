@@ -65,6 +65,7 @@ there.
   Hamiltonian and commutes with its Hamiltonian vector field.
 * `TauCeti.stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian`: Hamilton's
   equations for a central force.
+* `TauCeti.fderiv_angularMomentum_apply`: the Leibniz rule `dL(δq, δp) = L(δq, p) + L(q, δp)`.
 * `TauCeti.stdSymplecticForm_hamiltonianVectorField_angularMomentum`: angular momentum generates
   rotations.
 * `TauCeti.stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum`,
@@ -75,6 +76,8 @@ there.
 * `TauCeti.sq_sub_inner_sq_eq_of_hasDerivAt`: `ℓ²` is constant along integral curves of `H`.
 * `TauCeti.centralForceHamiltonian_eq_of_hasDerivAt`: `H` is constant along integral curves of `H`
   avoiding the collision set.
+* `TauCeti.hasDerivAt_reverse_hamiltonianVectorField_centralForceHamiltonian`: time reversal,
+  `s ↦ (q(-s), -p(-s))` is again a motion.
 * `TauCeti.stdSymplecticForm_poissonBracket_inner_rungeLenz`: conservation of the Runge–Lenz
   vector, `{⟪A, e⟫, H} = 0`.
 * `TauCeti.norm_rungeLenz_eq_of_hasDerivAt_kepler`: `‖A‖` is constant along Kepler motions
@@ -141,6 +144,30 @@ theorem hasDerivAt_kepler_potential (κ : ℝ) {r : ℝ} (hr : r ≠ 0) :
     HasDerivAt (fun r ↦ -κ / r) (κ / r ^ 2) r := by
   simpa [div_eq_mul_inv] using (hasDerivAt_inv hr).const_mul (-κ)
 
+/-- The Kepler potential `-κ / r` is differentiable at every nonzero radius. -/
+theorem differentiableAt_kepler_potential (κ : ℝ) {r : ℝ} (hr : r ≠ 0) :
+    DifferentiableAt ℝ (fun r ↦ -κ / r) r :=
+  (hasDerivAt_kepler_potential κ hr).differentiableAt
+
+open Topology in
+/-- Near a nonzero radius `r`, the Kepler potential `-κ / r` is differentiable. -/
+theorem eventually_differentiableAt_kepler_potential (κ : ℝ) {r : ℝ} (hr : r ≠ 0) :
+    ∀ᶠ s in 𝓝 r, DifferentiableAt ℝ (fun r ↦ -κ / r) s :=
+  (eventually_ne_nhds hr).mono fun _ hs ↦ differentiableAt_kepler_potential κ hs
+
+open Topology in
+/-- The second derivative of the Kepler potential `-κ / r` at a nonzero radius is `-2κ / r³`. -/
+theorem hasDerivAt_deriv_kepler_potential (κ : ℝ) {r : ℝ} (hr : r ≠ 0) :
+    HasDerivAt (deriv fun r ↦ -κ / r) (-2 * κ / r ^ 3) r := by
+  -- Near `r`, the derivative is the closed formula `κ / r²` of `hasDerivAt_kepler_potential`.
+  have hfun : (fun s ↦ κ * (s ^ 2)⁻¹) =ᶠ[𝓝 r] deriv fun r ↦ -κ / r := by
+    filter_upwards [eventually_ne_nhds hr] with s hs
+    rw [(hasDerivAt_kepler_potential κ hs).deriv, div_eq_mul_inv]
+  refine ((((hasDerivAt_pow 2 r).inv (pow_ne_zero 2 hr)).const_mul κ).congr_of_eventuallyEq
+    hfun.symm).congr_deriv ?_
+  field_simp
+  ring
+
 variable [InnerProductSpace ℝ V]
 
 /-- Applying a linear isometry to positions and momenta alike preserves every central-force
@@ -188,6 +215,15 @@ theorem hasFDerivAt_angularMomentum (u w : V) (x : V × V) :
       (.of_forall fun y ↦ by simp [real_inner_comm])
   refine (((hq u).mul (hp w)).sub ((hq w).mul (hp u))).congr_fderiv
     (ContinuousLinearMap.ext fun v ↦ ?_)
+  simp [real_inner_comm]
+  ring
+
+/-- **Leibniz rule for the angular momentum.** Since `L` is bilinear in the position and the
+momentum, its differential at `(q, p)` sends `(δq, δp)` to `L(δq, p) + L(q, δp)`. -/
+theorem fderiv_angularMomentum_apply (u w : V) (x v : V × V) :
+    fderiv ℝ (angularMomentum u w) x v =
+      angularMomentum u w (v.1, x.2) + angularMomentum u w (x.1, v.2) := by
+  rw [(hasFDerivAt_angularMomentum u w x).fderiv]
   simp [real_inner_comm]
   ring
 
@@ -591,6 +627,24 @@ theorem centralForceHamiltonian_eq_of_hasDerivAt {m : ℝ} {U : ℝ → ℝ} {γ
     (fun u hu ↦
       (hasFDerivAt_centralForceHamiltonian (hU u hu).hasDerivAt (hq u hu)).differentiableAt)
     ht₀ ht
+
+/-- **Time reversal of central-force motion.** If `γ = (q, p)` solves Hamilton's equations for
+`H(q, p) = ‖p‖² / (2m) + U(‖q‖)` at time `-t`, off the collision set and with `U` differentiable
+at `‖q‖`, then the reversed motion `s ↦ (q(-s), -p(-s))` solves them at time `t`. -/
+theorem hasDerivAt_reverse_hamiltonianVectorField_centralForceHamiltonian {m : ℝ} {U : ℝ → ℝ}
+    {γ : ℝ → V × V} {t : ℝ}
+    (hγ : HasDerivAt γ ((stdSymplecticForm (V := V)).hamiltonianVectorField
+      (centralForceHamiltonian m U) (γ (-t))) (-t))
+    (hq : (γ (-t)).1 ≠ 0) (hU : DifferentiableAt ℝ U ‖(γ (-t)).1‖) :
+    HasDerivAt (fun s ↦ ((γ (-s)).1, -(γ (-s)).2))
+      ((stdSymplecticForm (V := V)).hamiltonianVectorField (centralForceHamiltonian m U)
+        ((γ (-t)).1, -(γ (-t)).2)) t := by
+  rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian hU.hasDerivAt hq] at hγ
+  rw [stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian
+    (x := ((γ (-t)).1, -(γ (-t)).2)) hU.hasDerivAt hq]
+  have h := ((ContinuousLinearMap.id ℝ V).prodMap (-ContinuousLinearMap.id ℝ V)).hasFDerivAt
+    |>.comp_hasDerivAt t (hγ.scomp t (hasDerivAt_neg t))
+  exact h.congr_deriv (by ext <;> simp)
 
 /-- Angular momentum rotates the Runge–Lenz vector. In any dimension, for the plane
 specified by `u, w`, the bracket is the component of the infinitesimal rotation of `A`.

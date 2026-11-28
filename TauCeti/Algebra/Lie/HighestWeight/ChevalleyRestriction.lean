@@ -12,6 +12,7 @@ import TauCeti.Algebra.Lie.AdjointAction.SymmetricInvariants
 public import TauCeti.Algebra.Lie.Sl2.Weyl.Cartan
 import TauCeti.LinearAlgebra.RootSystem.Weyl.DominantIntegral
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
+import TauCeti.LinearAlgebra.SymmetricAlgebra.DegreeFiltration
 import TauCeti.RingTheory.Invariant.OrbitSeparation
 
 /-!
@@ -62,6 +63,8 @@ acts on `H` by inner automorphisms
 * `LieSubalgebra.map_lieInvariants_lieCartanRestriction`: the image of `S(L)^L` is `S(H)^W`.
 * `LieSubalgebra.lieChevalleyRestrictionIso_mem_homogeneousSubmodule_iff`: the isomorphism
   preserves degrees in both directions.
+* `LieSubalgebra.lieChevalleyRestrictionIso_mem_wordFiltration_iff`: the isomorphism preserves the
+  degree filtration in both directions.
 * `TauCeti.forall_mem_lieInvariants_lift_eval_eq_iff_exists_weylGroup`: two elements of `H` agree
   on `S(L*)^L` if and only if they are conjugate under the Weyl group.
 * `TauCeti.exists_coweightEquiv_eq_of_smul_eq`: if `g ∈ Int(L)` carries `x ∈ H` to `y ∈ H`, some
@@ -206,6 +209,24 @@ theorem lieChevalleyRestrictionIso_mem_homogeneousSubmodule_iff {p : lieInvarian
   obtain ⟨p', ⟨hp', hp'm⟩, hpq⟩ := linearInvariants_inf_homogeneousSubmodule_le_map_lieInvariants
     H m ⟨lieCartanRestriction_mem_linearInvariants p.property, hq⟩
   rwa [← lieCartanRestriction_injOn_lieInvariants H hp' p.property hpq]
+
+/-- **The Chevalley isomorphism preserves the degree filtration**: an invariant has degree at most
+`n` exactly when its restriction to `H` has. -/
+theorem lieChevalleyRestrictionIso_mem_wordFiltration_iff {p : lieInvariants K L L} {n : ℕ} :
+    (lieChevalleyRestrictionIso H p : _root_.SymmetricAlgebra K H) ∈
+        TauCeti.Algebra.wordFiltration (_root_.SymmetricAlgebra.ι K H) n ↔
+      (p : _root_.SymmetricAlgebra K L) ∈
+        TauCeti.Algebra.wordFiltration (_root_.SymmetricAlgebra.ι K L) n := by
+  rw [coe_lieChevalleyRestrictionIso_apply]
+  refine ⟨fun hq ↦ ?_, fun hp ↦ TauCeti.Algebra.map_mem_wordFiltration _ _ _ (fun x ↦ ?_) hp⟩
+  · -- the components of `p` above `n` are invariant and restrict to zero, so vanish
+    refine mem_wordFiltration_iff_coe_decompose_eq_zero.mpr fun m hm ↦
+      lieCartanRestriction_injOn_lieInvariants H (decompose_mem_lieInvariants p.property m)
+        (zero_mem _) ?_
+    rw [lieCartanRestriction_decompose, map_zero]
+    exact coe_decompose_eq_zero_of_mem_wordFiltration hm hq
+  · rw [lieCartanRestriction_ι]
+    exact TauCeti.Algebra.apply_mem_wordFiltration_one _ _
 
 end Surjective
 

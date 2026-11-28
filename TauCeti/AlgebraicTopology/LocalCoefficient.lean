@@ -118,6 +118,31 @@ theorem pullback_map_app {X : TopCat.{v₁}} {Y : TopCat.{v₂}} (f : C(X, Y))
       η.app ((FundamentalGroupoid.map f).obj x) :=
   rfl
 
+/-- **Transport in a pulled-back local system only sees the image of a path.** Two paths with the
+same end points whose images under `f` are homotopic have the same transport in the pullback along
+`f` of a local coefficient system. -/
+theorem pullback_obj_map_mk_eq_of_homotopic {X : TopCat.{v₁}} {Y : TopCat.{v₂}}
+    (f : C(X, Y)) (L : LocalCoefficientSystem.{u, v₂, w} R Y) {x y : X} {P Q : Path x y}
+    (h : (P.map f.continuous).Homotopic (Q.map f.continuous)) :
+    ((pullback (R := R) f).obj L).map
+        (Path.Homotopic.Quotient.mk P : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y) =
+      ((pullback (R := R) f).obj L).map (Path.Homotopic.Quotient.mk Q) := by
+  rw [pullback_obj_map, pullback_obj_map, FundamentalGroupoid.map_map,
+    FundamentalGroupoid.map_map, ← Path.Homotopic.Quotient.mk_map,
+    ← Path.Homotopic.Quotient.mk_map]
+  exact congrArg L.map (Quotient.sound h)
+
+/-- Two paths with the same end points whose images under `f` agree at every time have the same
+transport in the pullback along `f` of a local coefficient system. -/
+theorem pullback_obj_map_mk_eq_of_forall_apply_eq {X : TopCat.{v₁}} {Y : TopCat.{v₂}}
+    (f : C(X, Y)) (L : LocalCoefficientSystem.{u, v₂, w} R Y) {x y : X} {P Q : Path x y}
+    (h : ∀ t, f (P t) = f (Q t)) :
+    ((pullback (R := R) f).obj L).map
+        (Path.Homotopic.Quotient.mk P : FundamentalGroupoid.mk x ⟶ FundamentalGroupoid.mk y) =
+      ((pullback (R := R) f).obj L).map (Path.Homotopic.Quotient.mk Q) :=
+  pullback_obj_map_mk_eq_of_homotopic f L <|
+    (Path.ext (funext h) : P.map f.continuous = Q.map f.continuous) ▸ .refl _
+
 /-- Transport along corresponding morphisms, with propositionally equal targets, gives
 corresponding coefficients. -/
 theorem map_apply_heq (L : LocalCoefficientSystem.{u, v, w} R X)
@@ -495,6 +520,18 @@ theorem transport_symm {x y : X} (L : LocalCoefficientSystem.{u, v, w} R X)
   rw [h]
   exact L.map_id_apply _ a
 
+/-- Transport along a path class whose ends are moved by equalities is the transport along the
+class, conjugated by the transports along the constant classes that move the ends. -/
+theorem transport_cast {a b a' b' : X} (L : LocalCoefficientSystem.{u, v, w} R X)
+    (p : Path.Homotopic.Quotient a b) (ha : a' = a) (hb : b' = b) :
+    transport L (p.cast ha hb) =
+      ((transport L ((Path.Homotopic.Quotient.refl a').cast rfl ha.symm)).trans
+        (transport L p)).trans
+          (transport L ((Path.Homotopic.Quotient.refl b').cast rfl hb.symm)).symm := by
+  subst ha hb
+  ext v
+  simp
+
 /-- Transport commutes with a morphism of local coefficient systems. -/
 theorem transport_naturality {x y : X} {L K : LocalCoefficientSystem.{u, v, w} R X}
     (η : L ⟶ K) (p : Path.Homotopic.Quotient x y)
@@ -502,6 +539,19 @@ theorem transport_naturality {x y : X} {L K : LocalCoefficientSystem.{u, v, w} R
     η.app (FundamentalGroupoid.mk y) (transport L p a) =
       transport K p (η.app (FundamentalGroupoid.mk x) a) := by
   exact η.naturality_apply p a
+
+open MonoidalCategory in
+open scoped TensorProduct in
+/-- **Transport in a tensor product** of local coefficient systems is the tensor product of the
+transports: on the fibre `L(x) ⊗ K(x)` of the pointwise tensor product, a path class acts on
+`a ⊗ b` by acting on `a` and on `b`. -/
+theorem transport_tensor_tmul {S : Type w} [CommRing S] {x y : X}
+    (L K : LocalCoefficientSystem.{w, v, w} S X) (p : Path.Homotopic.Quotient x y)
+    (a : L.obj (FundamentalGroupoid.mk x)) (b : K.obj (FundamentalGroupoid.mk x)) :
+    transport (L ⊗ K) p (a ⊗ₜ[S] b) = transport L p a ⊗ₜ[S] transport K p b := by
+  -- The pointwise tensor product acts on a path class by the tensor product of the actions.
+  exact (transport_apply (L ⊗ K) p (a ⊗ₜ[S] b)).trans
+    (ModuleCat.MonoidalCategory.tensorHom_tmul (L.map p) (K.map p) a b)
 
 /-- Pullback transport is transport along the image path. -/
 @[simp]
@@ -613,6 +663,19 @@ theorem monodromyFunctor_map_hom (x : X) {L K : LocalCoefficientSystem.{u, v, w}
     (η : L ⟶ K) :
     ((monodromyFunctor R X x).map η).hom = monodromyMap η x :=
   rfl
+
+/-- The underlying linear map of the monodromy of a morphism of local systems is its component
+at the basepoint. -/
+theorem forget₂_map_monodromyFunctor_map (x : X) {L K : LocalCoefficientSystem.{u, v, w} R X}
+    (η : L ⟶ K) :
+    (forget₂ (Rep R (FundamentalGroup X x)) (ModuleCat R)).map ((monodromyFunctor R X x).map η) =
+      η.app (FundamentalGroupoid.mk x) := by
+  ext a
+  rw [Rep.forget₂_moduleCat_map, ModuleCat.hom_ofHom,
+    Representation.IntertwiningMap.toLinearMap_apply, monodromyFunctor_map_hom]
+  -- `rw` cannot use `monodromyMap_apply` here: the coercion is typed by the fibres of
+  -- `monodromyFunctor`, which are those of `L` only up to `monodromyFunctor_obj_V`.
+  exact monodromyMap_apply η x a
 
 /-- Transport along a path intertwines monodromy after changing the basepoint along that path. -/
 @[expose] def basepointChangeEquiv (L : LocalCoefficientSystem.{u, v, w} R X) {x y : X}

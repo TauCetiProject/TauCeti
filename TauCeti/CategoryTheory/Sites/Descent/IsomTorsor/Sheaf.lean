@@ -9,10 +9,12 @@ public import Mathlib.Algebra.Category.Grp.ForgetCorepresentable
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.FunctorCategory
 public import Mathlib.CategoryTheory.Monoidal.Types.Basic
 public import Mathlib.CategoryTheory.Sites.CartesianMonoidal
+public import TauCeti.CategoryTheory.Sites.Descent.IsPrestack
 public import TauCeti.CategoryTheory.Sites.Descent.IsomTorsor.Basic
+public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Abelian.Basic
 
 /-!
-# The principal comparison for the sheaf of isomorphisms of a banded gerbe
+# The sheaf of isomorphisms of a banded gerbe is a torsor
 
 Let `b` be an `A`-banding of a pseudofunctor `F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat` whose fibres are
 groupoids, for instance a gerbe, and let `x y` be objects over `U`. Mathlib's presheaf of
@@ -21,21 +23,28 @@ morphisms `F.presheafHom x y` on `Over U` is then the presheaf of isomorphisms `
 presheaves and of sheaves: the map `(p, a) ↦ (p, p · a)` is an isomorphism from
 `Hom(x, y) × A|_U` onto `Hom(x, y) × Hom(x, y)` (`AbelianBanding.principalPresheafIso`), with
 inverse `(p, q) ↦ (p, q - p)`, and for a prestack both sides are sheaves for `J.over U`
-(`AbelianBanding.principalSheafIso`). Together with the local sections of `Hom(x, y)` in a gerbe
-(`IsGerbe.exists_covering_hom`), these are the ingredients of Olsson's condition that `Isom(x, y)`
-is an `A|_U`-torsor (Olsson, Definition 31.1, Lemma 31.3 and Remark 31.5); the torsor statement
-itself is not formalised here.
+(`AbelianBanding.principalSheafIso`); its components are `AbelianBanding.homPrincipalEquiv`. This
+needs no isomorphism between `x` and `y`, local or global.
+
+If moreover `x` and `y` are locally isomorphic, as any two objects of a gerbe are, `Isom(x, y)` is
+a torsor under the restriction of `A` to `Over U` (Olsson, Lemma 31.3 and Remark 31.5): the local
+isomorphisms make it locally nonempty (`Pseudofunctor.coversTop_presheafHom`), and the action is
+simply transitive on sections over every `T` because the action of the band on isomorphisms is.
+The torsor is trivial exactly when `x` and `y` are isomorphic over `U`.
 
 ## Main declarations
 
 In the namespace `CategoryTheory.Pseudofunctor.AbelianBanding`:
 
-* `homPrincipalEquiv`: `(x ⟶ y) × A(U) ≃ (x ⟶ y) × (x ⟶ y)`, `(p, a) ↦ (p, homAct p a)`.
 * `coefficientPresheaf`, `actionPresheaf`, `pairPresheaf`: the presheaves `A|_U`,
   `Hom(x, y) × A|_U` and `Hom(x, y) × Hom(x, y)` on `Over U`.
 * `principalPresheafIso`: the principal comparison of presheaves.
 * `coefficientSheaf`: the sheaf `A|_U` on `J.over U`.
 * `principalSheafIso`: the same comparison for the tensor products of sheaves on `J.over U`.
+* `sheafHomTorsor`: `Isom(x, y)` as a torsor under the restriction of `A` to `Over U`.
+* `sheafHomTorsorEquiv`: local morphisms as torsor sections, compatible with restriction and action.
+* `mk_sheafHomTorsor_eq_one_iff`: this torsor is trivial if and only if `x` and `y` are
+  isomorphic.
 
 ## References
 
@@ -56,34 +65,6 @@ open LocallyDiscreteOpToCat
 variable {C : Type u} [Category.{v} C] {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}}
   {J : GrothendieckTopology C} {A : Sheaf J AddCommGrpCat.{v'}} (b : F.AbelianBanding J A)
   {U : C} {x y : F.obj (.mk (op U))}
-
-/-! ### The principal equivalence on one fibre -/
-
-variable (x y) in
-/-- **The principal equivalence on morphisms.** In a groupoid fibre, `(p, a) ↦ (p, homAct p a)` is
-an equivalence `(x ⟶ y) × A(U) ≃ (x ⟶ y) × (x ⟶ y)`, with inverse
-`(p, q) ↦ (p, difference p q)`. No morphism `x ⟶ y` is assumed to exist. -/
-noncomputable def homPrincipalEquiv [IsGroupoid (F.obj (.mk (op U)))] :
-    (x ⟶ y) × Multiplicative (A.obj.obj (op U)) ≃ (x ⟶ y) × (x ⟶ y) :=
-  letI := Groupoid.ofIsGroupoid (C := F.obj (.mk (op U)))
-  ((Groupoid.isoEquivHom x y).symm.prodCongr (Equiv.refl _)).trans
-    ((b.principalEquiv x y).trans
-      ((Groupoid.isoEquivHom x y).prodCongr (Groupoid.isoEquivHom x y)))
-
-@[simp]
-theorem homPrincipalEquiv_apply [IsGroupoid (F.obj (.mk (op U)))]
-    (pa : (x ⟶ y) × Multiplicative (A.obj.obj (op U))) :
-    b.homPrincipalEquiv x y pa = (pa.1, b.homAct pa.1 pa.2) := by
-  simp [homPrincipalEquiv, homAct_def]
-
-@[simp]
-theorem homPrincipalEquiv_symm_apply [IsGroupoid (F.obj (.mk (op U)))]
-    (pq : (x ⟶ y) × (x ⟶ y)) :
-    (b.homPrincipalEquiv x y).symm pq = (pq.1, b.difference (asIso pq.1) (asIso pq.2)) := by
-  -- the isomorphism with underlying morphism `p` is `asIso p`, as their `hom` fields agree
-  have h (p : x ⟶ y) : letI := Groupoid.ofIsGroupoid (C := F.obj (.mk (op U)))
-      (Groupoid.isoEquivHom x y).symm p = asIso p := Iso.ext rfl
-  simp [homPrincipalEquiv, h]
 
 /-! ### Presheaves on `Over U` -/
 
@@ -162,5 +143,167 @@ theorem principalSheafIso_hom_hom [∀ V : C, IsGroupoid (F.obj (.mk (op V)))] :
 theorem principalSheafIso_inv_hom [∀ V : C, IsGroupoid (F.obj (.mk (op V)))] :
     (b.principalSheafIso x y).inv.hom = (b.principalPresheafIso x y).inv :=
   (rfl)
+
+/-! ### The torsor of isomorphisms -/
+
+variable (x y) in
+/-- The action of the sections over `T` of the restriction of `A` to `Over U`, viewed as a sheaf of
+groups, on the sections over `T` of `Isom(x, y)`: the action `AbelianBanding.homAct` of the
+corresponding coefficient of `A(T.left)`. -/
+@[implicit_reducible]
+noncomputable def sheafHomMulAction (T : (Over U)ᵒᵖ) :
+    MulAction (((abelianSheafToGrpSheaf (J.over U)).obj
+      ((J.overPullback AddCommGrpCat.{v'} U).obj A)).obj.obj T) ((F.sheafHom J x y).obj.obj T) where
+  smul a p := b.homAct p ((abelianSheafToGrpSheafObjEquiv _ T).symm a)
+  one_smul p := (congrArg (b.homAct p) (map_one _)).trans (b.homAct_one p)
+  mul_smul a c p := (congrArg (b.homAct p) (map_mul _ a c)).trans (b.homAct_mul p _ _)
+
+/-- A coefficient acts on a section of `Isom(x, y)` by `AbelianBanding.homAct`. -/
+@[simp]
+lemma sheafHomMulAction_smul {T : (Over U)ᵒᵖ}
+    (a : ((abelianSheafToGrpSheaf (J.over U)).obj
+      ((J.overPullback AddCommGrpCat.{v'} U).obj A)).obj.obj T) (p : (F.sheafHom J x y).obj.obj T) :
+    letI := b.sheafHomMulAction x y T
+    a • p = b.homAct p ((abelianSheafToGrpSheafObjEquiv _ T).symm a) :=
+  (rfl)
+
+variable [∀ V : C, IsGroupoid (F.obj (.mk (op V)))]
+
+variable (x y) in
+/-- If `x` and `y` become isomorphic after pullback along every arrow of a covering sieve of `U`,
+as any two objects of a gerbe do, the sheaf `Isom(x, y)` on the slice site `J.over U` is a torsor
+under the restriction of `A` to `Over U`, acting by `AbelianBanding.homAct` (Olsson, Lemma 31.3
+and Remark 31.5). For a gerbe, `IsGerbe.exists_covering_iso x y` supplies the hypothesis.
+
+The body is exposed because the sections of this torsor are, by definition, the sections of
+`F.sheafHom J x y`, that is morphisms of fibres; statements about its action apply
+`AbelianBanding.homAct` to them. Use `sheafHomTorsorEquiv` to identify sections explicitly,
+and `sheafHomTorsor_sheaf` and `sheafHomTorsor_smul` for the sheaf and its action, rather than
+unfolding it. -/
+@[expose] noncomputable def sheafHomTorsor
+    (h : ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y)) :
+    Sheaf.Torsor
+      ((abelianSheafToGrpSheaf (J.over U)).obj ((J.overPullback AddCommGrpCat.{v'} U).obj A)) where
+  sheaf := F.sheafHom J x y
+  mulAction := b.sheafHomMulAction x y
+  map_smul T T' f a p := by
+    obtain ⟨a, rfl⟩ := (abelianSheafToGrpSheafObjEquiv _ T).surjective a
+    rw [sheafHomMulAction_smul, sheafHomMulAction_smul,
+      abelianSheafToGrpSheaf_map_abelianSheafToGrpSheafObjEquiv, MulEquiv.symm_apply_apply,
+      MulEquiv.symm_apply_apply]
+    exact b.pullHom_homAct p a f.unop.left _ _ (Over.w f.unop) (Over.w f.unop)
+  coversTop := coversTop_presheafHom
+    (h.imp fun _ ⟨hR, hxy⟩ ↦ ⟨hR, fun _ f hf ↦ (hxy f hf).map Iso.hom⟩)
+  bijective T := by
+    let E : ((abelianSheafToGrpSheaf (J.over U)).obj
+        ((J.overPullback AddCommGrpCat.{v'} U).obj A)).obj.obj T × (F.sheafHom J x y).obj.obj T ≃
+        (F.sheafHom J x y).obj.obj T × (F.sheafHom J x y).obj.obj T :=
+      (((abelianSheafToGrpSheafObjEquiv _ T).symm.toEquiv.prodCongr (Equiv.refl _)).trans
+        ((Equiv.prodComm _ _).trans ((b.homPrincipalEquiv _ _).trans (Equiv.prodComm _ _))))
+    -- `E` sends `(a, p)` to `(a • p, p)` by the definitions of `sheafHomMulAction` and
+    -- `homPrincipalEquiv`, whose body is exposed.
+    exact E.bijective
+
+/-- The underlying sheaf of the torsor `Isom(x, y)` is Mathlib's sheaf of morphisms. -/
+@[simp]
+lemma sheafHomTorsor_sheaf
+    (h : ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y)) :
+    (b.sheafHomTorsor x y h).sheaf = F.sheafHom J x y :=
+  (rfl)
+
+/-- A coefficient acts on a section of the torsor `Isom(x, y)` by `AbelianBanding.homAct`. -/
+@[simp]
+lemma sheafHomTorsor_smul
+    (h : ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y))
+    {T : (Over U)ᵒᵖ} (a : ((abelianSheafToGrpSheaf (J.over U)).obj
+      ((J.overPullback AddCommGrpCat.{v'} U).obj A)).obj.obj T)
+    (p : (b.sheafHomTorsor x y h).sheaf.obj.obj T) :
+    a • p = b.homAct p ((abelianSheafToGrpSheafObjEquiv _ T).symm a) :=
+  (rfl)
+
+/-- Local morphisms as sections of the isomorphism torsor. Restriction and the band action
+are respected by `sheafHomTorsorEquiv_map` and `sheafHomTorsorEquiv_smul`. -/
+def sheafHomTorsorEquiv
+    (h : ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y))
+    (T : (Over U)ᵒᵖ) :
+    ((F.map T.unop.hom.op.toLoc).toFunctor.obj x ⟶
+      (F.map T.unop.hom.op.toLoc).toFunctor.obj y) ≃
+        (b.sheafHomTorsor x y h).sheaf.obj.obj T :=
+  -- The sections of `sheafHomTorsor` are definitionally those of `presheafHom`,
+  -- as recorded by `sheafHomTorsor_sheaf`, `sheafHom_obj` and `presheafHom_obj`.
+  Equiv.refl _
+
+/-- The identification sends a local morphism to the same section of the torsor. -/
+@[simp]
+lemma sheafHomTorsorEquiv_apply
+    (h : ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y))
+    (T : (Over U)ᵒᵖ) (p : (F.map T.unop.hom.op.toLoc).toFunctor.obj x ⟶
+      (F.map T.unop.hom.op.toLoc).toFunctor.obj y) :
+    b.sheafHomTorsorEquiv h T p = p := (rfl)
+
+/-- The identification of local morphisms with torsor sections commutes with restriction. -/
+lemma sheafHomTorsorEquiv_map
+    (h : ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y))
+    {T T' : (Over U)ᵒᵖ} (f : T ⟶ T') (p : (F.presheafHom x y).obj T) :
+    (b.sheafHomTorsor x y h).sheaf.obj.map f (b.sheafHomTorsorEquiv h T p) =
+      b.sheafHomTorsorEquiv h T' ((F.presheafHom x y).map f p) := (rfl)
+
+/-- The identification of local morphisms with torsor sections intertwines the band action. -/
+lemma sheafHomTorsorEquiv_smul
+    (h : ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y))
+    {T : (Over U)ᵒᵖ} (a : ((abelianSheafToGrpSheaf (J.over U)).obj
+      ((J.overPullback AddCommGrpCat U).obj A)).obj.obj T) (p : (F.presheafHom x y).obj T) :
+    a • b.sheafHomTorsorEquiv h T p =
+      b.sheafHomTorsorEquiv h T
+        (b.homAct p ((abelianSheafToGrpSheafObjEquiv _ T).symm a)) := (rfl)
+
+/-- Translating both local isomorphisms multiplies their coefficients under composition. -/
+lemma sheafHomTorsor_smul_comp_smul {z : F.obj (.mk (op U))}
+    (hxy : ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y))
+    (hyz : ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj y ≅ (F.map f.op.toLoc).toFunctor.obj z))
+    {T : (Over U)ᵒᵖ} (p : (b.sheafHomTorsor x y hxy).sheaf.obj.obj T)
+    (q : (b.sheafHomTorsor y z hyz).sheaf.obj.obj T)
+    (g h : ((abelianSheafToGrpSheaf (J.over U)).obj
+      ((J.overPullback AddCommGrpCat U).obj A)).obj.obj T) :
+    (b.sheafHomTorsorEquiv hxy T).symm (g • p) ≫
+        (b.sheafHomTorsorEquiv hyz T).symm (h • q) =
+      b.homAct ((b.sheafHomTorsorEquiv hxy T).symm p ≫
+        (b.sheafHomTorsorEquiv hyz T).symm q)
+        ((abelianSheafToGrpSheafObjEquiv _ T).symm (g * h)) := by
+  obtain ⟨p, rfl⟩ := (b.sheafHomTorsorEquiv hxy T).surjective p
+  obtain ⟨q, rfl⟩ := (b.sheafHomTorsorEquiv hyz T).surjective q
+  simp only [sheafHomTorsorEquiv_smul, Equiv.symm_apply_apply]
+  calc
+    _ = b.homAct (b.homAct p _ ≫ q) _ := b.comp_homAct _ q _
+    _ = b.homAct (b.homAct (p ≫ q) _) _ :=
+      congrArg (b.homAct · _) (b.homAct_comp_hom p (asIso q) _)
+    _ = b.homAct (p ≫ q) _ := (b.homAct_mul _ _ _).symm
+    _ = _ := congrArg (b.homAct (p ≫ q))
+      ((map_mul (abelianSheafToGrpSheafObjEquiv _ T).symm h g).symm.trans
+        (congrArg (abelianSheafToGrpSheafObjEquiv _ T).symm (mul_comm h g)))
+
+/-- The torsor `Isom(x, y)` is trivial, that is has a global section, if and only if `x` and `y`
+are isomorphic over `U`. -/
+theorem mk_sheafHomTorsor_eq_one_iff
+    (h : ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y)) :
+    Sheaf.NonabelianH1.mk (b.sheafHomTorsor x y h) = 1 ↔ Nonempty (x ≅ y) := by
+  rw [Sheaf.NonabelianH1.mk_eq_one_iff, sheafHomTorsor_sheaf]
+  refine ⟨fun ⟨s, _⟩ ↦ ⟨asIso (F.presheafHomObjHomEquiv.symm (s (op (Over.mk (𝟙 U)))))⟩,
+    fun ⟨e⟩ ↦ ?_⟩
+  refine ⟨fun T ↦ (F.sheafHom J x y).obj.map (Over.mkIdTerminal.from T.unop).op
+    (F.presheafHomObjHomEquiv e.hom), fun {T T'} g ↦ ?_⟩
+  exact (Functor.map_comp_apply (F.sheafHom J x y).obj _ _ _).symm.trans
+    (congrArg (fun φ ↦ (F.sheafHom J x y).obj.map φ (F.presheafHomObjHomEquiv e.hom))
+      (Quiver.Hom.unop_inj (Over.mkIdTerminal.hom_ext _ _)))
 
 end CategoryTheory.Pseudofunctor.AbelianBanding

@@ -149,10 +149,10 @@ private theorem mfderiv_snd_flowOf_integralField_zero_apply (s : S)
     mfderiv (𝓘(ℝ).prod J) I (fun q : ℝ × S ↦ (flowOf (integralField Z g) q.1 (0, ι q.2)).2)
         (0, s) v = v.1 • Z (ι s) + mfderiv J I ι s v.2 := by
   have hZg := (contMDiff_integralField hZ hg).of_le (show (1 : WithTop ℕ∞) ≤ ∞ by simp)
-  have hf : ContMDiffAt J (𝓘(ℝ).prod I) 1 (fun y : S ↦ ((0 : ℝ), ι y)) s :=
-    contMDiffAt_const.prodMk (hι.contMDiffAt.of_le (by simp))
+  have hf : MDifferentiableAt J (𝓘(ℝ).prod I) (fun y : S ↦ ((0 : ℝ), ι y)) s :=
+    mdifferentiableAt_const.prodMk (hι.mdifferentiableAt (by simp))
   have h0 : ((0 : ℝ), ((0 : ℝ), ι s)) ∈ flowDomain (integralField Z g) :=
-    mem_flowDomain_zero hZg _
+    mem_flowDomain_zero (hZg _)
   have hF : MDifferentiableAt (𝓘(ℝ).prod J) (𝓘(ℝ).prod I)
       (fun q : ℝ × S ↦ flowOf (integralField Z g) q.1 ((0 : ℝ), ι q.2)) ((0 : ℝ), s) :=
     ((contMDiffOn_flowOf_integralField hZ hg hι).contMDiffAt
@@ -192,7 +192,7 @@ private theorem isLocalDiffeomorphAt_snd_flowOf_integralField [IsManifold J ∞ 
     ((contMDiff_snd.contMDiffOn (s := univ)).comp (contMDiffOn_flowOf_integralField hZ hg hι)
       fun _ _ ↦ mem_univ _)
     (isOpen_setOf_mem_flowDomain_integralField hZ hg hι)
-    (mem_flowDomain_zero ((contMDiff_integralField hZ hg).of_le (by simp)) _)
+    (mem_flowDomain_zero ((contMDiff_integralField hZ hg).contMDiffAt.of_le (by simp)))
     BoundarylessManifold.isInteriorPoint (by simp) hinj
     (by rw [Module.finrank_prod, finrank_self, ← hdim, add_comm])
 
@@ -251,7 +251,7 @@ theorem exists_contMDiffOn_mvfderiv_eq_of_isTransverseAlong
     (s := fun y : S ↦ ((0 : ℝ), y))
     (by
       rintro _ ⟨y, rfl⟩
-      exact ⟨mem_flowDomain_zero ((contMDiff_integralField hZ hg).of_le (by simp)) _,
+      exact ⟨mem_flowDomain_zero ((contMDiff_integralField hZ hg).contMDiffAt.of_le (by simp)),
         isLocalDiffeomorphAt_snd_flowOf_integralField hZ hg hι (himm y)
           (isTransverseAlong_iff.1 htr y) hdim⟩)
     (continuous_const.prodMk continuous_id) Prod.snd continuous_snd (fun _ ↦ rfl)

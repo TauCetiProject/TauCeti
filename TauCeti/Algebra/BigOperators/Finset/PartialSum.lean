@@ -34,8 +34,13 @@ This file contains basic facts about finite partial sums.
   prefix sums, which are monotone in the length for nonnegative tuples.
 * `TauCeti.prefixSum_eq_sum_castLE`, `TauCeti.prefixSum_comp_rev`: up to `n`, prefix sums are sums
   over the first indices, and prefix sums of a reversed tuple are suffix sums.
-* `TauCeti.prefixSum_eq_sum_range`: prefix sums of a sequence restricted to `Fin n` are its
-  partial sums over `range`, capped at `n`.
+* `TauCeti.prefixSum_sub_neg_comp_rev`: the complementary prefix sum of the reversed,
+  negated tuple is the original prefix sum minus the total sum.
+* `TauCeti.prefixSum_eq_sum_range`, `TauCeti.prefixSum_eq_sum_range_dite`: prefix sums of a
+  sequence restricted to `Fin n` are its partial sums over `range`, capped at `n`, and prefix sums
+  of a tuple equal the `range` sum padded with `0` beyond `n`.
+* `TauCeti.prefixSum_comp_castLE`: prefix sums of the restriction of a tuple to its first `m`
+  coordinates are its prefix sums, capped at `m`.
 * `TauCeti.prefixSum_sum`, `TauCeti.prefixSum_sub`, `TauCeti.prefixSum_single`: prefix sums of
   finite sums and differences of tuples, and of a tuple supported at one coordinate.
 * `TauCeti.prefixSum_sum_single_castSucc_sub_single_succ`: prefix sums of a combination
@@ -150,6 +155,17 @@ theorem prefixSum_min (k : ℕ) (x : Fin n → M) : prefixSum (min k n) x = pref
   · rw [min_eq_left hk]
   · rw [min_eq_right hk, prefixSum_of_le le_rfl, prefixSum_of_le hk]
 
+/-- The prefix sum of length `n - k` of a reversed, negated tuple is the prefix sum of length
+`k` of the original tuple minus its total sum. -/
+theorem prefixSum_sub_neg_comp_rev {G : Type*} [AddCommGroup G] (k : ℕ) (x : Fin n → G) :
+    prefixSum (n - k) (fun i ↦ -x i.rev) = prefixSum k x - ∑ i, x i := by
+  rw [prefixSum_comp_rev (Nat.sub_le n k) (fun i ↦ -x i), Nat.sub_sub_eq_min, min_comm n k,
+    sum_neg_distrib]
+  have hsplit : prefixSum (min k n) x + (∑ i : Fin n with min k n ≤ i.val, x i) = ∑ i, x i := by
+    simpa only [prefixSum_def, not_lt] using
+      sum_filter_add_sum_filter_not univ (fun i : Fin n ↦ i.val < min k n) x
+  rw [← prefixSum_min k x, ← hsplit, sub_add_cancel_left]
+
 /-- The prefix sums of the first `n` terms of a sequence `f : ℕ → M` are its partial sums, capped
 at `n`. -/
 theorem prefixSum_eq_sum_range (k : ℕ) (f : ℕ → M) :
@@ -159,6 +175,31 @@ theorem prefixSum_eq_sum_range (k : ℕ) (f : ℕ → M) :
   congr 1
   ext i
   simp [lt_min_iff, and_comm]
+
+/-- The prefix sum of length `k` of a tuple `x : Fin n → M` equals the `range k` sum padded with
+`0` beyond `n`. -/
+theorem prefixSum_eq_sum_range_dite (k : ℕ) (x : Fin n → M) :
+    prefixSum k x = ∑ i ∈ range k, if h : i < n then x ⟨i, h⟩ else 0 := by
+  let f : ℕ → M := fun i ↦ if h : i < n then x ⟨i, h⟩ else 0
+  have hx : x = fun i : Fin n ↦ f i := funext fun i ↦ by
+    dsimp only [f]; rw [dite_eq_left i.isLt]
+  calc
+    prefixSum k x = prefixSum k (fun i : Fin n ↦ f i) := congrArg (prefixSum k) hx
+    _ = ∑ i ∈ range (min k n), f i := prefixSum_eq_sum_range k f
+    _ = ∑ i ∈ range k, f i :=
+      sum_subset (range_mono (min_le_left k n)) fun i hi hni ↦ by
+        rw [mem_range] at hi hni
+        exact dite_eq_right (by omega)
+
+/-- The prefix sums of the restriction of `x` to its first `m` coordinates are the prefix sums of
+`x`, capped at `m`. -/
+theorem prefixSum_comp_castLE {m : ℕ} (h : m ≤ n) (k : ℕ) (x : Fin n → M) :
+    prefixSum k (x ∘ Fin.castLE h) = prefixSum (min k m) x := by
+  rw [← prefixSum_min k (x ∘ Fin.castLE h), prefixSum_eq_sum_range_dite,
+    prefixSum_eq_sum_range_dite]
+  refine sum_congr rfl fun i hi ↦ ?_
+  have him : i < m := (mem_range.1 hi).trans_le (min_le_right k m)
+  simp [him, him.trans_le h, Fin.castLE]
 
 /-- Prefix sums are additive in the tuple. -/
 @[simp]

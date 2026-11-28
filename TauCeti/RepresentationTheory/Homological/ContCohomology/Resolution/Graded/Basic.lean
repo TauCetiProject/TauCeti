@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.CochainComplex.DirectSum
+public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDiscrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Contraction
 public import TauCeti.RepresentationTheory.Continuous.TopRep.Discrete
@@ -37,6 +38,8 @@ to contract a tensor power of total resolutions onto the tensor power of the coe
 
 ## Main results
 
+* `gradedResolutionInternalGrading` bundles the homogeneous pieces and their internality
+  as an `InternalGrading`.
 * `gradedResolutionTopRepDifferential` bundles the square-zero differential as a morphism of
   discrete topological representations.
 * `gradedResolutionTopRepAugmentation` includes discrete coefficients into the degree-zero term
@@ -166,6 +169,18 @@ noncomputable def gradedResolutionPiece : ℤ → Submodule R X.gradedResolution
 /-- The homogeneous resolution terms decompose the total resolution as an internal direct sum. -/
 theorem isInternal_gradedResolutionPiece : DirectSum.IsInternal X.gradedResolutionPiece :=
   (resolutionModuleComplex X).isInternal_directSumPiece
+
+/-- The internal grading of the total coinduced resolution by its integer homogeneous pieces. -/
+noncomputable def gradedResolutionInternalGrading :
+    TauCeti.InternalGrading R X.gradedResolutionModule ℤ where
+  piece := X.gradedResolutionPiece
+  isInternal := X.isInternal_gradedResolutionPiece
+
+/-- The bundled grading has the same degree-`p` piece as the total resolution. -/
+@[simp]
+theorem gradedResolutionInternalGrading_piece (p : ℤ) :
+    X.gradedResolutionInternalGrading.piece p = X.gradedResolutionPiece p :=
+  (rfl)
 
 /-- In a nonnegative degree, the homogeneous piece is the corresponding resolution term's copy. -/
 @[simp]

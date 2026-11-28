@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
+public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Geometry.Manifold.PartitionOfUnity.Basic
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.Algebra.Monoid
+import TauCeti.Geometry.Manifold.BumpFunction
 
 /-!
 # Smooth cutoff functions around compact sets
@@ -15,7 +18,8 @@ import Mathlib.Geometry.Manifold.Algebra.Monoid
 On a Hausdorff manifold modelled on a finite-dimensional real space, a compact set `K` inside an
 open set `W` has a smooth cutoff function: a smooth `σ : M → [0, 1]`, equal to `1` on a
 neighbourhood of `K`, whose support is a compact subset of `W`
-(`IsCompact.exists_contMDiff_one_nhds_tsupport_subset`).
+(`IsCompact.exists_contMDiff_one_nhds_tsupport_subset`), also as a bundled smooth map
+(`IsCompact.exists_contMDiffMap_one_nhds_hasCompactSupport`).
 
 Mathlib's smooth Urysohn lemma `exists_contMDiffMap_one_nhds_of_subset_interior` gives such a
 function for a closed set, but assumes the manifold σ-compact and does not make the support
@@ -24,7 +28,11 @@ form extend a vector field given near a compact set to a compactly supported one
 complete one. For the same reason a compact set has a smooth bump covering indexed by a finite type
 and subordinate to any given neighbourhoods of its points
 (`IsCompact.exists_smoothBumpCovering_isSubordinate`), the input of Mathlib's Whitney embedding
-`SmoothBumpCovering.embeddingPiTangent`.
+`SmoothBumpCovering.embeddingPiTangent`. Hence finitely many smooth functions subordinate to any
+open cover of a compact set sum to one on it
+(`IsCompact.exists_finite_smooth_sum_eq_one_subordinate`), and any compactly supported `C^k`
+vector field decomposes into a finite sum of `C^k` vector fields subordinate to a cover of its
+support (`HasCompactSupport.exists_subordinate_vectorField_sum`).
 
 The construction, smoothing a finite sum of bump functions by `Real.smoothTransition`, follows the
 bump cover in the proof of `TauCeti.exists_vectorField_mvfderiv_eq_neg_one`.
@@ -39,7 +47,11 @@ universe u
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type u} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  {M : Type u} [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
+
+section
+
+variable [IsManifold I ∞ M]
 
 variable (I) in
 /-- **A smooth cutoff around a compact set.** If `K` is a compact subset of an open set `W` of a
@@ -78,7 +90,18 @@ theorem IsCompact.exists_contMDiff_one_nhds_tsupport_subset {K W : Set M} (hK : 
   have := Finset.single_le_sum (fun j _ ↦ (ρ j).nonneg) hi (f := fun j ↦ ρ j y)
   rwa [(interior_subset hyi : ρ i y = 1)] at this
 
-omit [IsManifold I ∞ M] in
+variable (I) in
+/-- **A bundled smooth cutoff around a compact set.** A compact subset `K` of a Hausdorff manifold
+modelled on a finite-dimensional space has a smooth compactly supported function `χ : C^∞(M, ℝ)`
+equal to `1` on a neighbourhood of `K`. -/
+theorem IsCompact.exists_contMDiffMap_one_nhds_hasCompactSupport {K : Set M} (hK : IsCompact K) :
+    ∃ χ : C^∞⟮I, M; ℝ⟯, HasCompactSupport χ ∧ ∀ᶠ x in 𝓝ˢ K, χ x = 1 := by
+  obtain ⟨χ, hχ, h1, hc, -, -⟩ :=
+    hK.exists_contMDiff_one_nhds_tsupport_subset I isOpen_univ (subset_univ _)
+  exact ⟨⟨χ, hχ⟩, hc, h1⟩
+
+end
+
 variable (I) in
 /-- **A finite smooth bump covering of a compact set.** If `K` is a compact subset of a Hausdorff
 manifold modelled on a finite-dimensional space and `U x` is a neighbourhood of `x` for every
@@ -99,3 +122,69 @@ theorem IsCompact.exists_smoothBumpCovering_isSubordinate {K : Set M} (hK : IsCo
     locallyFinite_of_finite _, fun x hx ↦ ?_⟩, fun i ↦ (hρ i.val).2⟩
   obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.1 (ht hx)
   exact ⟨⟨i, hi⟩, mem_interior_iff_mem_nhds.1 hxi⟩
+
+variable (I) in
+/-- **Finitely many smooth functions subordinate to an open cover of a compact set.** If a compact
+subset `K` of a Hausdorff manifold modelled on a finite-dimensional space is covered by open sets
+`U i`, there are finitely many smooth functions `χ k`, each supported in some `U (j k)`, whose sum
+is one on `K`. -/
+theorem IsCompact.exists_finite_smooth_sum_eq_one_subordinate [IsManifold I ∞ M] {ι : Type*}
+    {K : Set M} (hK : IsCompact K) {U : ι → Set M} (hU : ∀ i, IsOpen (U i))
+    (hKU : K ⊆ ⋃ i, U i) :
+    ∃ (n : ℕ) (χ : Fin n → C^∞⟮I, M; ℝ⟯) (j : Fin n → ι),
+      (∀ k, tsupport (χ k) ⊆ U (j k)) ∧ ∀ x ∈ K, ∑ k, χ k x = 1 := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · -- With no open sets, `K` is empty and the empty family works.
+    refine ⟨0, Fin.elim0, Fin.elim0, fun k ↦ k.elim0, fun x hx ↦ ?_⟩
+    exact isEmptyElim (mem_iUnion.1 (hKU hx)).choose
+  choose! idx hidx using fun x (hx : x ∈ K) ↦ mem_iUnion.1 (hKU hx)
+  obtain ⟨κ, _, f, hf⟩ := hK.exists_smoothBumpCovering_isSubordinate I
+    (U := fun x ↦ U (idx x)) fun x hx ↦ (hU _).mem_nhds (hidx x hx)
+  let e := Fintype.equivFin κ
+  refine ⟨Fintype.card κ, fun k ↦ f.toSmoothPartitionOfUnity (e.symm k),
+    fun k ↦ idx (f.c (e.symm k)), fun k ↦ hf.toSmoothPartitionOfUnity _, fun x hx ↦ ?_⟩
+  rw [← f.toSmoothPartitionOfUnity.sum_eq_one hx, finsum_eq_sum_of_fintype]
+  exact e.symm.sum_comp fun i ↦ f.toSmoothPartitionOfUnity i x
+
+variable (I) in
+/-- Decompose a compactly supported `C^k` vector field `X` into a finite sum of compactly
+supported `C^k` vector fields `Y i`, each supported in `U (c i)`, for any family of neighbourhoods
+`U x ∈ 𝓝 x` covering `tsupport X`. -/
+theorem HasCompactSupport.exists_subordinate_vectorField_sum
+    {k : ℕ∞ω} [ENat.LEInfty k] [IsManifold I 1 M] [IsManifold I (k + 1) M]
+    {X : (x : M) → TangentSpace I x} (hc : HasCompactSupport (β := E) X)
+    (hX : ContMDiff I I.tangent k (T% X)) {U : M → Set M}
+    (hU : ∀ x ∈ tsupport (α := E) X, U x ∈ 𝓝 x) :
+    ∃ (ι : Type u) (_ : Fintype ι) (c : ι → M) (Y : ι → (x : M) → TangentSpace I x),
+      (∀ i, ContMDiff I I.tangent k (T% (Y i))) ∧
+      (∀ i, HasCompactSupport (β := E) (Y i)) ∧
+      (∀ i, tsupport (α := E) (Y i) ⊆ U (c i)) ∧
+      (∀ x, X x = ∑ i, Y i x) := by
+  classical
+  have : IsManifold I k M := IsManifold.of_le (n := k + 1) le_self_add
+  obtain ⟨ι, _, bc, hbc⟩ := hc.exists_smoothBumpCovering_isSubordinate I hU
+  let bc' : BumpCovering ι M (tsupport (α := E) X) :=
+    { toFun i := ⟨bc i, (SmoothBumpFunction.contMDiff_of_isManifold (n := k) (bc i)).continuous⟩
+      locallyFinite' := bc.locallyFinite
+      nonneg' i _ := (bc i).nonneg
+      le_one' i _ := (bc i).le_one
+      eventuallyEq_one' := bc.eventuallyEq_one' }
+  let ρ := bc'.toPartitionOfUnity
+  have hρ_diff (i : ι) : ContMDiff I 𝓘(ℝ) k (ρ i) :=
+    bc'.contMDiff_toPartitionOfUnity_of_contMDiff
+      (fun j ↦ SmoothBumpFunction.contMDiff_of_isManifold (n := k) (bc j)) i
+  let Y : ι → (x : M) → TangentSpace I x := fun i x ↦ ρ i x • X x
+  have hY (i : ι) : ContMDiff I I.tangent k (T% (Y i)) := (hρ_diff i).smul_section hX
+  have hsum (x : M) : X x = ∑ i, Y i x := by
+    by_cases hx : x ∈ tsupport (α := E) X
+    · have h1 : ∑ i, ρ i x = 1 := by
+        rw [← finsum_eq_sum_of_fintype]
+        exact ρ.sum_eq_one hx
+      rw [← Finset.sum_smul, h1, one_smul]
+    · have hx0 : X x = 0 := image_eq_zero_of_notMem_tsupport (α := E) hx
+      simp [Y, hx0]
+  exact ⟨ι, inferInstance, bc.c, Y, hY,
+    fun i ↦ hc.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_subset_right _ _),
+    fun i ↦ (tsupport_smul_subset_left _ _).trans <|
+      (closure_mono (bc'.support_toPartitionOfUnity_subset i)).trans (hbc i),
+    hsum⟩
