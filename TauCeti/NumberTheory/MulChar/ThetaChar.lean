@@ -24,6 +24,7 @@ irreducible polynomials `P`.
   for `2 ≤ Q` and `x ^ (Q - 1) = 1`.
 * `MulChar.thetaExponent_eq_iff`: uniqueness characterization `T.thetaExponent Q x = j ↔
   T x = exp (2πi / (Q - 1)) ^ j` for `x ^ (Q - 1) = 1` and `j < Q - 1`.
+* `MulChar.thetaExponent_one`, `MulChar.thetaChar_one`: values at the identity root `x = 1`.
 * `MulChar.thetaChar`: the multiplicative character `T ^ T.thetaExponent Q x`.
 * `MulChar.thetaChar_def`: defining equation `T.thetaChar Q x = T ^ T.thetaExponent Q x`.
 * `MulChar.thetaChar_apply_pow`: symmetry `T.thetaChar Q x (z ^ m) = (T ^ a) x`.
@@ -54,7 +55,7 @@ namespace MulChar
 variable {K : Type*} [CommMonoidWithZero K] (T : MulChar K ℂ) {Q m : ℕ} {x y z : K}
 
 /-- The canonical natural number `j < Q - 1` with `T x = exp (2πi / (Q - 1)) ^ j`
-(defaulting to `0` if none exists). -/
+(arbitrary if none exists). -/
 noncomputable def thetaExponent (Q : ℕ) (x : K) : ℕ :=
   Classical.epsilon fun j : ℕ ↦ j < Q - 1 ∧ T x = exp (2 * Real.pi * I / (Q - 1 : ℕ)) ^ j
 
@@ -88,6 +89,11 @@ theorem thetaExponent_eq_iff (hx : x ^ (Q - 1) = 1) {j : ℕ} (hj : j < Q - 1) :
     (mem_coe.mpr (mem_range.mpr hj))
     ((T.apply_eq_exp_pow_thetaExponent hQ hx).symm.trans h)
 
+/-- At the identity `1`, the canonical exponent is `0`. -/
+@[simp]
+theorem thetaExponent_one (hQ : 2 ≤ Q) : T.thetaExponent Q 1 = 0 :=
+  (T.thetaExponent_eq_iff (one_pow _) (Nat.sub_pos_of_lt hQ)).mpr (by simp)
+
 /-- The multiplicative character `θ_x = T ^ (T.thetaExponent Q x)`. -/
 noncomputable def thetaChar (Q : ℕ) (x : K) : MulChar K ℂ :=
   T ^ T.thetaExponent Q x
@@ -95,6 +101,11 @@ noncomputable def thetaChar (Q : ℕ) (x : K) : MulChar K ℂ :=
 /-- Defining equation for `MulChar.thetaChar`. -/
 theorem thetaChar_def (Q : ℕ) (x : K) :
     T.thetaChar Q x = T ^ T.thetaExponent Q x := (rfl)
+
+/-- At the identity root `1`, `T.thetaChar Q 1` is the trivial multiplicative character `1`. -/
+@[simp]
+theorem thetaChar_one (hQ : 2 ≤ Q) : T.thetaChar Q 1 = 1 := by
+  rw [thetaChar_def, T.thetaExponent_one hQ, pow_zero]
 
 /-- Core symmetry for `MulChar.thetaChar`: if `x ^ (Q - 1) = 1`, `N = (Q - 1) * m ≠ 0`, and
 `T z = exp (2πi / N) ^ a`, then `T.thetaChar Q x (z ^ m) = (T ^ a) x`. -/
