@@ -60,6 +60,14 @@ multiplicative counterpart of the additivity of the trace `LinearMap.trace_eq_ad
   pointwise (as an element of the unipotent radical of the stabiliser of a flag does). The
   inclusion `W ≤ W'` is not needed: the proof works with `W ⊓ W'` inside `W'`.
 
+* `IsIdempotentElem.eq_zero_or_eq_one_of_irreducible_charpoly`: over a field, an idempotent matrix
+  whose column space is preserved by a matrix with irreducible characteristic polynomial is `0` or
+  `1`.
+
+* `IsIdempotentElem.exists_trace_mul_notMem_of_irreducible_charpoly`: modulo a maximal ideal `𝔭`,
+  for `b` with irreducible characteristic polynomial and an idempotent `e` whose reduction is
+  neither `0` nor `1`, some trace `tr ((1 - e) * b * e * Y)` lies outside `𝔭`.
+
 * `Submodule.charpoly_lsmul_eq_mul_quotient`: for an algebra `A` over a field `k` and an
   `A`-submodule `P` of a finite-dimensional `A`-module `M`, the characteristic polynomial of
   `a : A` on `M` is the product of those on `P` and on `M ⧸ P`.
@@ -238,6 +246,51 @@ theorem charpoly_comp_eq_charpoly {g u : V →ₗ[K] V} {W W' : Submodule K V}
     simpa [Submodule.Quotient.eq, ← map_sub] using hgW' (hu x)
 
 end LinearMap
+
+namespace IsIdempotentElem
+
+open Matrix
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- **Invariant idempotents of a matrix with irreducible characteristic polynomial.** Over a field,
+an idempotent `e` with `(1 - e) * b * e = 0`, whose column space `b` preserves, is `0` or `1` when
+the characteristic polynomial of `b` is irreducible. -/
+theorem eq_zero_or_eq_one_of_irreducible_charpoly {k : Type*} [Field k] {b e : Matrix n n k}
+    (hb : Irreducible b.charpoly) (he : IsIdempotentElem e) (h : (1 - e) * b * e = 0) :
+    e = 0 ∨ e = 1 := by
+  rw [sub_mul, sub_mul, one_mul, sub_eq_zero] at h
+  have hW : LinearMap.range e.toLin' ≤ (LinearMap.range e.toLin').comap b.toLin' := by
+    rintro _ ⟨v, rfl⟩
+    exact ⟨(b * e) *ᵥ v, by simp only [toLin'_apply, mulVec_mulVec, ← mul_assoc, ← h]⟩
+  by_contra! hne
+  refine b.toLin'.not_irreducible_charpoly_of_le_comap hW (fun h0 ↦ hne.1 ?_) (fun h1 ↦ hne.2 ?_)
+    (by rwa [charpoly_toLin'])
+  · exact toLin'.injective (by rw [LinearMap.range_eq_bot.mp h0, map_zero])
+  · refine toLin'.injective (LinearMap.ext fun v ↦ ?_)
+    obtain ⟨w, rfl⟩ := LinearMap.range_eq_top.mp h1 v
+    rw [toLin'_one, LinearMap.id_apply, ← LinearMap.comp_apply, ← toLin'_mul, he.eq]
+
+/-- **Idempotents modulo a maximal ideal.** If `b` has irreducible characteristic polynomial
+modulo a maximal ideal `𝔭` and the reduction of an idempotent `e` is neither `0` nor `1`, then
+`(1 - e) * b * e` does not vanish modulo `𝔭`, so some trace `tr ((1 - e) * b * e * Y)` lies
+outside `𝔭`. -/
+theorem exists_trace_mul_notMem_of_irreducible_charpoly {R : Type*} [CommRing R] {𝔭 : Ideal R}
+    [𝔭.IsMaximal] {b e : Matrix n n R} (hb : Irreducible (b.map (Ideal.Quotient.mk 𝔭)).charpoly)
+    (he : IsIdempotentElem e) (h₀ : e.map (Ideal.Quotient.mk 𝔭) ≠ 0)
+    (h₁ : e.map (Ideal.Quotient.mk 𝔭) ≠ 1) :
+    ∃ Y : Matrix n n R, ((1 - e) * b * e * Y).trace ∉ 𝔭 := by
+  let := Ideal.Quotient.field 𝔭
+  by_contra! h
+  have hz : (Ideal.Quotient.mk 𝔭).mapMatrix ((1 - e) * b * e) = 0 := by
+    ext i j
+    simpa [trace_mul_single, Ideal.Quotient.eq_zero_iff_mem] using h (single j i 1)
+  have he' : IsIdempotentElem (e.map (Ideal.Quotient.mk 𝔭)) := by
+    simpa only [RingHom.mapMatrix_apply] using he.map (Ideal.Quotient.mk 𝔭).mapMatrix
+  simp only [map_mul, map_sub, map_one, RingHom.mapMatrix_apply] at hz
+  exact (he'.eq_zero_or_eq_one_of_irreducible_charpoly hb hz).elim h₀ h₁
+
+end IsIdempotentElem
 
 namespace Submodule
 

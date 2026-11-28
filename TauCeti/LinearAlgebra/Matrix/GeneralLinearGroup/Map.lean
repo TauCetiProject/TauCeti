@@ -32,6 +32,8 @@ all of which a construction transporting a group of matrices along a change of s
 * `Matrix.GeneralLinearGroup.map_neg`: change of scalars commutes with negation.
 * `Matrix.GeneralLinearGroup.mem_ker_map_quotientMk_iff`: the kernel of reduction modulo an ideal
   `I` consists of the matrices congruent to the identity matrix entrywise modulo `I`.
+* `Matrix.GeneralLinearGroup.sub_one_apply_mem_of_mem_ker_map_quotientMk`: so the entries of
+  `g - 1` lie in `I` for `g` in that kernel.
 * `Matrix.GeneralLinearGroup.ker_map_quotientMk_mono`: that kernel decreases with the ideal.
 * `Matrix.GeneralLinearGroup.map_det_ker_map_quotientMk`: the determinants of that kernel are the
   units congruent to `1` modulo `I`.
@@ -115,6 +117,13 @@ theorem ker_map_quotientMk_mono {I J : Ideal R} (h : I ≤ J) :
     (Matrix.GeneralLinearGroup.map (n := n) (Ideal.Quotient.mk I)).ker ≤
       (Matrix.GeneralLinearGroup.map (Ideal.Quotient.mk J)).ker := fun _ hg ↦
   (mem_ker_map_quotientMk_iff J).2 fun i j ↦ h ((mem_ker_map_quotientMk_iff I).1 hg i j)
+
+/-- The entries of `g - 1` lie in `I` for `g` in the kernel of reduction modulo `I`. -/
+theorem sub_one_apply_mem_of_mem_ker_map_quotientMk {I : Ideal R} {g : GL n R}
+    (hg : g ∈ (Matrix.GeneralLinearGroup.map (n := n) (Ideal.Quotient.mk I)).ker) (i j : n) :
+    ((g : Matrix n n R) - 1) i j ∈ I := by
+  rw [Matrix.sub_apply]
+  exact (mem_ker_map_quotientMk_iff I).mp hg i j
 
 /-- **The determinants of the principal level are the units congruent to `1`**: for a nonempty
 finite index type `n`, the image under `det` of `ker(GL_n(R) → GL_n(R ⧸ I))` is
