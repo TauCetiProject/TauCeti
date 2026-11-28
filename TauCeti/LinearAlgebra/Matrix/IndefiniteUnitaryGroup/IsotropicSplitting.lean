@@ -615,10 +615,12 @@ theorem mem_parabolic_iff {g : unitaryGroupOf A} :
   Iff.rfl
 
 /-- The Levi elements lie in the parabolic subgroup. -/
+@[simp]
 theorem levi_mem_parabolic (x : GL p R × unitaryGroupOf A₀) : D.levi x ∈ D.parabolic :=
   ⟨x.1, D.levi_mul_k x⟩
 
 /-- The shears lie in the parabolic subgroup. -/
+@[simp]
 theorem shear_mem_parabolic (X : Matrix p p R) (hX : Xᴴ = -X) : D.shear X hX ∈ D.parabolic :=
   ⟨1, by simp⟩
 
@@ -968,6 +970,7 @@ theorem exists_eq_unipotent_mul_levi (g : unitaryGroupOf A) {a : Matrix p p R}
 /-! ### The parabolic subgroup and the unipotent elements -/
 
 /-- The unipotent elements lie in the parabolic subgroup. -/
+@[simp]
 theorem unipotent_mem_parabolic (c : Matrix n₀ p R) (b : Matrix p p R) :
     D.unipotent hj c b ∈ D.parabolic :=
   ⟨1, by simp⟩
@@ -988,14 +991,11 @@ theorem mem_parabolic_iff_exists_unipotent_mul_levi {g : unitaryGroupOf A} :
 `n(0, -j X)`. -/
 theorem shear_eq_unipotent {X : Matrix p p R} (hX : Xᴴ = -X) :
     D.shear X hX = D.unipotent hj 0 (-((j : R) • X)) := by
-  have hjj : (↑j⁻¹ : R) * j = 1 := Units.inv_mul j
-  -- The corner of `n(0, -j X)` is `⅟2 (j⁻¹ (-j X - j X)) = -X`.
+  -- Specialize the existing corner identity to the zero core-column parameter.
   have hcorner : ⅟(2 : R) • ((↑j⁻¹ : R) • (-((j : R) • X) + (-((j : R) • X))ᴴ) +
       (0 : Matrix n₀ p R)ᴴ * A₀ * (0 : Matrix n₀ p R)) = -X := by
-    simp only [conjTranspose_neg, conjTranspose_smul, conjTranspose_zero, hj, hX,
-      Matrix.zero_mul, Matrix.mul_zero, add_zero, neg_smul, smul_neg, neg_neg, smul_add,
-      smul_smul, hjj, one_smul]
-    rw [← neg_add, ← add_smul, invOf_two_add_invOf_two, one_smul]
+    simpa [unipotentCorner] using
+      (unipotentCorner_neg_neg_smul (A₀ := A₀) hj (X := X) (Y := 0) (by simp [hX]))
   refine unitaryGroupOf.ext (D.ext_mul ?_ ?_ ?_)
   · simp
   · simp

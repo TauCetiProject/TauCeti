@@ -100,6 +100,44 @@ public section
 
 namespace Matrix
 
+/-- **The kernel shrinks**: let `β, δ` satisfy the isotropy relation `βᴴ δ + δᴴ β = 0`, and let
+`w` be in the kernel of `δ` with `(β w)ᵢ ≠ 0`. Replacing the `i`-th row of `δ` by `c` times the
+`i`-th row of `β`, for `c ≠ 0`, gives a matrix whose kernel is strictly contained in that of `δ`. -/
+theorem ker_mulVecLin_row_replacement_lt {K p : Type*} [CommRing K] [IsDomain K] [StarRing K]
+    [Fintype p] [DecidableEq p] {β δ : Matrix p p K} (hiso : βᴴ * δ + δᴴ * β = 0) {w : p → K}
+    (hw : δ *ᵥ w = 0) {i : p} (hi : (β *ᵥ w) i ≠ 0) {c : K} (hc : c ≠ 0) :
+    LinearMap.ker ((1 - single i i (1 : K)) * δ + c • single i i (1 : K) * β).mulVecLin <
+      LinearMap.ker δ.mulVecLin := by
+  -- The isotropy relation, tested on `w` and a vector `v`.
+  have hiso_v (v : p → K) : star (β *ᵥ w) ⬝ᵥ (δ *ᵥ v) + star (δ *ᵥ w) ⬝ᵥ (β *ᵥ v) = 0 := by
+    have h := congrArg (fun M ↦ star w ⬝ᵥ (M *ᵥ v)) hiso
+    simp only [Matrix.add_mulVec, ← Matrix.mulVec_mulVec, dotProduct_add, dotProduct_mulVec,
+      ← star_mulVec, Matrix.zero_mulVec, dotProduct_zero] at h
+    rwa [← dotProduct_mulVec, ← dotProduct_mulVec] at h
+  have hmulVec (v : p → K) : ((1 - single i i (1 : K)) * δ + c • single i i (1 : K) * β) *ᵥ v =
+      δ *ᵥ v - Function.update (0 : p → K) i ((δ *ᵥ v) i) +
+        Function.update (0 : p → K) i (c * (β *ᵥ v) i) := by
+    simp [Matrix.add_mulVec, Matrix.sub_mulVec, ← Matrix.mulVec_mulVec, single_mulVec]
+  refine IsConcreteLE.lt_iff_le_and_exists.mpr ⟨fun v hv ↦ ?_, w, by simpa using hw, fun hw' ↦ ?_⟩
+  · simp only [LinearMap.mem_ker, mulVecLin_apply, hmulVec] at hv ⊢
+    -- Off `i` the new matrix agrees with `δ`, and at `i` it reads `c (β v)ᵢ`.
+    have hoff (m : p) (hm : m ≠ i) : (δ *ᵥ v) m = 0 := by
+      simpa [Function.update_apply, hm] using congrFun hv m
+    have hβv : (β *ᵥ v) i = 0 := by
+      simpa [hc] using congrFun hv i
+    -- So `δ v` is supported at `i`, and the isotropy relation with `w` kills its value there.
+    have hδv : δ *ᵥ v = Pi.single i ((δ *ᵥ v) i) := by
+      ext m
+      by_cases hm : m = i
+      · subst hm; simp
+      · simp [hoff m hm, hm]
+    have h := hiso_v v
+    rw [hw, star_zero, zero_dotProduct, add_zero, hδv, dotProduct_single, Pi.star_apply,
+      mul_eq_zero, star_eq_zero] at h
+    rw [hδv, h.resolve_left hi, Pi.single_zero]
+  · simp only [LinearMap.mem_ker, mulVecLin_apply, hmulVec, hw] at hw'
+    simpa [hc, hi] using congrFun hw' i
+
 /-- A matrix supported at a single entry has rank at most one. -/
 theorem rank_single_le_one.{u} {R : Type u} {m n : Type*} [CommSemiring R]
     [DecidableEq m] [DecidableEq n]
