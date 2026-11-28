@@ -323,24 +323,17 @@ theorem surjective_homotopyGroupMap_killHomotopyGroupsIncl [T2Space X] {N : Type
 /-- `TauCeti.killHomotopyGroups n X x` is path-connected when `X` is Hausdorff and path-connected:
 attaching cells of positive dimension creates no new path components. -/
 instance instPathConnectedSpaceKillHomotopyGroups [T2Space X] [PathConnectedSpace X] :
-    PathConnectedSpace (killHomotopyGroups n X x) := by
-  have hsurj := (bijective_homotopyGroupMap_killHomotopyGroupsIncl n X x (N := Fin 0)
-    (by simpa using NeZero.pos n)).2
-  have : Subsingleton (π_ 0 X x) := HomotopyGroup.pi0EquivZerothHomotopy.subsingleton
-  have : Subsingleton (π_ 0 (killHomotopyGroups n X x) (killHomotopyGroupsIncl n X x x)) :=
-    hsurj.subsingleton
-  have e := HomotopyGroup.pi0EquivZerothHomotopy (x := killHomotopyGroupsIncl n X x x)
-  exact pathConnectedSpace_iff_zerothHomotopy.2
-    ⟨⟨⟦killHomotopyGroupsIncl n X x x⟧⟩, e.symm.subsingleton⟩
+    PathConnectedSpace (killHomotopyGroups n X x) :=
+  (killHomotopyGroupsRelativeCWComplex n X x).pathConnectedSpace
+    (isEmpty_killHomotopyGroupsRelativeCWComplex_attachCells_ι n X x (Nat.zero_le n))
 
 /-- For `n ≥ 2`, the inclusion of `X` into `TauCeti.killHomotopyGroups n X x` induces an
 isomorphism of fundamental groups at `x`. -/
 def killHomotopyGroupsFundamentalGroupMulEquiv [T2Space X] (hn : 1 < n) :
     FundamentalGroup X x ≃*
       FundamentalGroup (killHomotopyGroups n X x) (killHomotopyGroupsIncl n X x x) :=
-  MulEquiv.ofBijective (FundamentalGroup.mapOfEq (killHomotopyGroupsIncl n X x).hom rfl)
-    ((HomotopyGroup.bijective_map_iff_bijective_mapOfEq _ rfl).1
-      (bijective_homotopyGroupMap_killHomotopyGroupsIncl n X x (N := Fin 1) (by simpa using hn)))
+  (killHomotopyGroupsRelativeCWComplex n X x).fundamentalGroupMulEquiv
+    (fun _ hm ↦ isEmpty_killHomotopyGroupsRelativeCWComplex_attachCells_ι n X x (by omega)) x
 
 /-- The isomorphism of fundamental groups is the map induced by the inclusion of `X`. -/
 @[simp]
@@ -348,7 +341,7 @@ lemma killHomotopyGroupsFundamentalGroupMulEquiv_apply [T2Space X] (hn : 1 < n)
     (g : FundamentalGroup X x) :
     killHomotopyGroupsFundamentalGroupMulEquiv n X x hn g =
       FundamentalGroup.mapOfEq (killHomotopyGroupsIncl n X x).hom rfl g :=
-  (rfl)
+  (killHomotopyGroupsRelativeCWComplex n X x).fundamentalGroupMulEquiv_apply _ x g
 
 
 /-- For `0 < k < n`, the inclusion of `X` into `TauCeti.killHomotopyGroups n X x` induces an

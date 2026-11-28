@@ -107,7 +107,8 @@ private lemma isZero_singularHomology_orbitRelQuotient (hE : finrank ℝ E = n +
     (ModuleCat.of k k) (finrank_euclideanSpace_fin) (by omega)
 
 /-- The homotopy groups `πⱼ` of the orbit space of a free action of a finite group on `Sⁿ⁺²`
-vanish for `2 ≤ j < n + 2`: the orbit map is a covering, and `Sⁿ⁺²` is `(n + 1)`-connected. -/
+vanish for `2 ≤ j < n + 2`: the orbit map is a covering, which induces isomorphisms on `πⱼ` for
+`j ≥ 2`, and `πⱼ(Sⁿ⁺²)` vanishes for `j < n + 2`. -/
 private lemma subsingleton_homotopyGroup_orbitRelQuotient (hE : finrank ℝ E = n + 3)
     (x : sphere (0 : E) 1) {j : ℕ} (h2 : 2 ≤ j) (hj : j < n + 2) :
     Subsingleton (π_ j (orbitRel.Quotient G (sphere (0 : E) 1)) (Quotient.mk _ x)) := by
@@ -182,13 +183,8 @@ private lemma pathConnectedSpace_cellAttachment_orbit (hE : finrank ℝ E = n + 
   have : PathConnectedSpace (sphere (0 : E) 1) := isPathConnected_iff_pathConnectedSpace.1 <|
     isPathConnected_sphere (by rw [← finrank_eq_rank, hE]; norm_cast; omega) 0 zero_le_one
   have : PathConnectedSpace (orbitRel.Quotient G (sphere (0 : E) 1)) :=
-    (Quotient.mk_surjective.pathConnectedSpace continuous_quotient_mk')
-  have := (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero
-    (Quotient.mk _ x : orbitRel.Quotient G (sphere (0 : E) 1))).1 inferInstance
-  exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero _).2
-    (bijective_homotopyGroupMap_cellAttachmentIncl (n := n + 2)
-      (fun _ : PUnit ↦ GenLoop.diskBoundaryMap p) (N := Fin 0) (by simp)
-      (Quotient.mk _ x)).2.subsingleton
+    Quotient.mk_surjective.pathConnectedSpace continuous_quotient_mk'
+  exact pathConnectedSpace_cellAttachment _
 
 /-- After attaching an `(n + 3)`-cell along a generator of `πₙ₊₂` of the orbit space of a free
 action of a finite group `G` on `Sⁿ⁺²`, killing the homotopy groups from degree `n + 3` on gives
@@ -245,8 +241,8 @@ theorem rank_classifyingSpace_singularHomology_le_one {E : Type} [NormedAddCommG
   have hepi := (isNConnected_killHomotopyGroupsIncl (n + 3) (cellAttachment φ) y)
     |>.epi_singularHomologyMap k le_rfl
   refine (LinearMap.rank_le_of_surjective _ ((ModuleCat.epi_iff_surjective _).1 hepi)).trans ?_
-  exact (rank_singularHomology_cellAttachment_le φ k
-    (isZero_singularHomology_orbitRelQuotient (G := G) hE k)).trans_eq Cardinal.mk_punit
+  exact (rank_singularHomology_cellAttachment_le φ k (ModuleCat.of k k)
+    (isZero_singularHomology_orbitRelQuotient (G := G) hE k)).trans_eq (by simp)
 
 /-! ### Free actions of `ℤ/p × ℤ/p` -/
 

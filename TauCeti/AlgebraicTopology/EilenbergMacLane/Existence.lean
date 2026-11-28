@@ -145,10 +145,10 @@ theorem subsingleton_homotopyGroup_presentation (k : ℕ) (hk : k < n + 2) :
   (bijective_homotopyGroupMap_cellAttachmentIncl (N := Fin k) (relationAttach A n ψ)
     (by simpa using hk) (sphereWedgeBase A (n + 2))).2.subsingleton
 
-/-- The presentation complex is path connected, since its `π₀` is trivial. -/
+/-- The presentation complex is path connected, as it is obtained from a path-connected wedge
+of spheres by attaching cells. -/
 instance pathConnectedSpace_presentation : PathConnectedSpace (presentation A n ψ) :=
-  (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (presentationBase A n ψ)).2
-    (subsingleton_homotopyGroup_presentation A n ψ 0 (by omega))
+  pathConnectedSpace_cellAttachment (relationAttach A n ψ)
 
 /-- **Attaching the relation cells kills exactly the kernel of `ψ` in `Hₙ₊₂`.** The kernel of the
 map `Hₙ₊₂(W; ℤ) → Hₙ₊₂(Y; ℤ)` induced by the inclusion of the wedge into the presentation complex
