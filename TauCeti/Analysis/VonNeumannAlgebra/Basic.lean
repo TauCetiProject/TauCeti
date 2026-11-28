@@ -85,6 +85,16 @@ theorem equivOfEq_symm {M N : VonNeumannAlgebra H} (h : M = N) :
     (equivOfEq h).symm = equivOfEq h.symm := by
   rfl
 
+@[simp]
+theorem equivOfEq_rfl {M : VonNeumannAlgebra H} :
+    equivOfEq (rfl : M = M) = StarAlgEquiv.refl ℂ M := by
+  ext; rfl
+
+@[simp]
+theorem equivOfEq_trans {M N P : VonNeumannAlgebra H} (hMN : M = N) (hNP : N = P) :
+    (equivOfEq hMN).trans (equivOfEq hNP) = equivOfEq (hMN.trans hNP) := by
+  ext; rfl
+
 /-- The order on a von Neumann algebra inherited from the Loewner order on operators makes it a
 star-ordered ring, so that positive functionals on it are those of the C⋆-algebra `M`. This
 specializes `Subtype.starOrderedRing`, whose instance search over the operators on a concrete

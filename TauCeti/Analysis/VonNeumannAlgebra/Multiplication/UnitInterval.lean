@@ -13,7 +13,9 @@ public import TauCeti.MeasureTheory.Measure.AtomlessStandardBorel
 
 Every atomless standard Borel probability space `(Ω, μ)` has multiplication von Neumann algebra
 unitarily conjugate to `VonNeumannAlgebra.multiplicationAlgebra (volume : Measure unitInterval)`
-(`exists_linearIsometryEquiv_mapLinearIsometryEquiv_multiplicationAlgebra_unitInterval`).
+(`exists_linearIsometryEquiv_mapLinearIsometryEquiv_multiplicationAlgebra_unitInterval`), using
+the mod-null measure-preserving equivalence provided by
+`MeasureTheory.Measure.exists_mpModNull_equiv_unitInterval`.
 
 ## References
 

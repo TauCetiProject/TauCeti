@@ -48,8 +48,10 @@ zero for `∅` and composes by intersection (`indicatorMultiplication_comp_indic
 cut-offs to a set and its complement add up to the identity (`indicatorMultiplication_add_compl`),
 it restricts constant indicator classes (`indicatorMultiplication_indicatorConstLp`), it is a
 contraction (`norm_indicatorMultiplication_le`), the `Lʳ` seminorm of `1_s f` is that of `f` on `s`
-(`eLpNorm_indicatorMultiplication`), and it is self-adjoint on `L²`
-(`inner_indicatorMultiplication_left`, `adjoint_indicatorMultiplication`).
+(`eLpNorm_indicatorMultiplication`), almost-everywhere equal sets induce equal operators
+(`indicatorMultiplication_congr`) and conversely on finite-measure sets
+(`ae_eq_of_indicatorMultiplication_eq`, `indicatorMultiplication_inj`), and it is self-adjoint on
+`L²` (`inner_indicatorMultiplication_left`, `adjoint_indicatorMultiplication`).
 
 Compare `MeasureTheory.Lp.multiplicationOperator` and `BoundedContinuousFunction.mulLp`.
 -/
@@ -251,6 +253,56 @@ theorem indicatorMultiplication_eq_iff {hs : MeasurableSet s} {f g : Lp E p μ} 
     indicatorMultiplication 𝕜 p hs f = g ↔ s.indicator f =ᵐ[μ] g :=
   ⟨fun h ↦ h ▸ (indicatorMultiplication_ae hs f).symm,
     fun h ↦ Lp.ext ((indicatorMultiplication_ae hs f).trans h)⟩
+
+/-- Almost-everywhere equal measurable sets induce the same indicator multiplication operator. -/
+theorem indicatorMultiplication_congr {t : Set α} (hs : MeasurableSet s)
+    (ht : MeasurableSet t) (h : s =ᵐ[μ] t) :
+    indicatorMultiplication (E := E) (μ := μ) 𝕜 p hs =
+      indicatorMultiplication (E := E) (μ := μ) 𝕜 p ht := by
+  rw [indicatorMultiplication, indicatorMultiplication, (TauCeti.linftyIndicator_inj hs ht).mpr h]
+
+/-- If two finite-measure measurable sets induce the same indicator multiplication operator on
+`Lp E p μ` (for a nontrivial space `E`), then the two sets agree almost everywhere (with no
+`SigmaFinite` hypothesis on `μ`). -/
+theorem ae_eq_of_indicatorMultiplication_eq [Nontrivial E] {t : Set α}
+    (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (ht : MeasurableSet t) (hμt : μ t ≠ ∞)
+    (h : indicatorMultiplication (E := E) (μ := μ) 𝕜 p hs =
+      indicatorMultiplication (E := E) (μ := μ) 𝕜 p ht) :
+    s =ᵐ[μ] t := by
+  obtain ⟨v, hv⟩ := exists_ne (0 : E)
+  have hmem_of {u w : Set α} (hu : MeasurableSet u) (hμu : μ u ≠ ∞) (hw : MeasurableSet w)
+      (heq : indicatorMultiplication (E := E) (μ := μ) 𝕜 p hu =
+        indicatorMultiplication (E := E) (μ := μ) 𝕜 p hw) :
+      ∀ᵐ x ∂μ, x ∈ u → x ∈ w := by
+    have happly : indicatorConstLp p hu hμu v =
+        indicatorConstLp p (hw.inter hu)
+          (measure_ne_top_of_subset Set.inter_subset_right hμu) v := by
+      have happly' :=
+        congrArg (fun T : Lp E p μ →L[𝕜] Lp E p μ ↦ T (indicatorConstLp p hu hμu v)) heq
+      rw [indicatorMultiplication_apply, TauCeti.linftyIndicator_smul_indicatorConstLp] at happly'
+      simp only [Set.inter_self] at happly'
+      rw [indicatorMultiplication_apply, TauCeti.linftyIndicator_smul_indicatorConstLp] at happly'
+      exact happly'
+    filter_upwards [Lp.ext_iff.mp happly,
+      indicatorConstLp_coeFn (p := p) (hs := hu) (hμs := hμu) (c := v),
+      indicatorConstLp_coeFn (p := p) (hs := hw.inter hu)
+        (hμs := measure_ne_top_of_subset Set.inter_subset_right hμu) (c := v)]
+      with x hxe hxu hxwu hmem
+    rw [hxu, Set.indicator_of_mem hmem] at hxe
+    rw [hxwu] at hxe
+    by_contra hnot
+    rw [Set.indicator_of_notMem fun (h' : x ∈ w ∩ u) ↦ hnot h'.1] at hxe
+    exact hv hxe
+  filter_upwards [hmem_of hs hμs ht h, hmem_of ht hμt hs h.symm] with x hst hts
+  exact ⟨hst, hts⟩
+
+/-- Two finite-measure measurable sets induce the same indicator multiplication operator on
+`Lp E p μ` (for a nontrivial space `E`) if and only if they agree almost everywhere. -/
+theorem indicatorMultiplication_inj [Nontrivial E] {t : Set α}
+    (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (ht : MeasurableSet t) (hμt : μ t ≠ ∞) :
+    indicatorMultiplication (E := E) (μ := μ) 𝕜 p hs =
+      indicatorMultiplication (E := E) (μ := μ) 𝕜 p ht ↔ s =ᵐ[μ] t :=
+  ⟨ae_eq_of_indicatorMultiplication_eq hs hμs ht hμt, indicatorMultiplication_congr hs ht⟩
 
 /-- If `f` vanishes almost everywhere outside `s`, then `indicatorMultiplication 𝕜 p hs f = f`. -/
 theorem indicatorMultiplication_eq_self_of_ae_notMem (hs : MeasurableSet s) {f : Lp E p μ}

@@ -221,6 +221,7 @@ theorem multiplicationOperator_const [IsFiniteMeasure μ] (c : 𝕜) :
   multiplicationOperator_of_ae_eq_const (Lp.coeFn_const (μ := μ) ∞ c)
 
 /-- Precomposition along a measure-preserving map intertwines `multiplicationOperator`. -/
+@[simp]
 theorem compMeasurePreserving_multiplicationOperator_apply {β : Type*} [MeasurableSpace β]
     {ν : Measure β} {g : α → β} (hg : MeasurePreserving g μ ν) (a : Lp 𝕜 ∞ ν) (f : Lp E p ν) :
     compMeasurePreserving g hg (multiplicationOperator a f) =
@@ -433,6 +434,7 @@ theorem coe_range_multiplicationStarAlgHom (μ : Measure α) (E : Type*)
 /-- Conjugating `multiplicationOperator a` by the `L²` unitary equivalence induced by an
 almost-everywhere inverse pair of measure-preserving maps yields multiplication by the `L∞`
 pullback `compMeasurePreserving f hf a`. -/
+@[simp]
 theorem conjStarAlgEquiv_compMeasurePreservingₗᵢEquiv_multiplicationOperator
     {β : Type*} [MeasurableSpace β] {ν : Measure β} {f : α → β} {g : β → α}
     (hf : MeasurePreserving f μ ν) (hg : MeasurePreserving g ν μ) (hfg : f ∘ g =ᵐ[ν] id)

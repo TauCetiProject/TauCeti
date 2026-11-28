@@ -22,7 +22,12 @@ enlarge supports: whenever `f` vanishes almost everywhere off a measurable set `
 multiplication operator (`MeasureTheory.Lp.forall_commute_multiplicationOperator_iff`):
 the commutant of `L∞(μ)` acting on `Lᵖ(μ)` is `L∞(μ)` itself. On a topological space whose measure
 is inner regular for compact sets, compact sets suffice
-(`MeasureTheory.Lp.exists_eq_multiplicationOperator_of_isCompact`).
+(`MeasureTheory.Lp.exists_eq_multiplicationOperator_of_isCompact`). Both the local and global
+multiplier representations in this file are built from the scalar specialization of the
+operator-valued locality theorem
+`ContinuousLinearMap.exists_forall_ae_eq_apply_of_forall_ae_eq_zero` (applied via
+`MeasureTheory.Lp.exists_eq_multiplicationOperator_of_forall_ae_eq_zero`, where the symbol `m x`
+on `𝕜` is multiplication by `m x 1`).
 
 On complex scalar `L²`, every bounded operator commuting with measurable-set indicator
 multiplications on sets of finite measure is locally multiplication by an `L∞` symbol on each
@@ -33,9 +38,7 @@ and globally multiplication by an `L∞` symbol when the measure is `σ`-finite
 
 Without any `σ`-finiteness assumption on `μ`, any two bounded operators on `Lp ℂ 2 μ` commuting
 with all finite-measure indicator multiplications commute with each other
-(`MeasureTheory.Lp.commute_of_forall_commute_indicatorMultiplication`), and indicator
-multiplications are faithful on finite-measure measurable sets up to almost-everywhere equality
-(`MeasureTheory.Lp.ae_eq_of_indicatorMultiplication_eq`).
+(`MeasureTheory.Lp.commute_of_forall_commute_indicatorMultiplication`).
 
 ## References
 
@@ -405,31 +408,6 @@ theorem eq_zero_of_mul_linftyIndicator_eq_self_of_multiplicationOperator_eq_zero
   · simp only [hind, Set.indicator_of_mem hxs, Pi.zero_apply, smul_eq_zero] at h0
     exact h0.resolve_right hv
   · rw [hmul, Pi.mul_apply, hsx, Set.indicator_of_notMem hxs, mul_zero, Pi.zero_apply]
-
-/-- If two finite-measure measurable sets induce the same indicator multiplication operator on
-`Lp E 2 μ` (for a nontrivial space `E`), then the two sets agree almost everywhere (with no
-`SigmaFinite` hypothesis on `μ`). -/
-theorem ae_eq_of_indicatorMultiplication_eq
-    [NormedAddCommGroup E] [NormedSpace ℂ E] [Nontrivial E]
-    {s t : Set α} (hs : MeasurableSet s) (hμs : μ s ≠ ∞) (ht : MeasurableSet t) (hμt : μ t ≠ ∞)
-    (h : indicatorMultiplication (E := E) (μ := μ) ℂ 2 hs =
-      indicatorMultiplication (E := E) (μ := μ) ℂ 2 ht) :
-    s =ᵐ[μ] t := by
-  set es := TauCeti.linftyIndicator μ ℂ s hs
-  set et := TauCeti.linftyIndicator μ ℂ t ht
-  have hst : es - et = 0 :=
-    eq_zero_of_mul_linftyIndicator_eq_self_of_multiplicationOperator_eq_zero (E := E)
-      (hs.union ht) (measure_union_lt_top hμs.lt_top hμt.lt_top).ne
-      (by
-        rw [sub_mul,
-          TauCeti.linftyIndicator_mul_linftyIndicator_of_subset_left hs (hs.union ht)
-            Set.subset_union_left,
-          TauCeti.linftyIndicator_mul_linftyIndicator_of_subset_left ht (hs.union ht)
-            Set.subset_union_right])
-      (by
-        rw [multiplicationOperator_sub, multiplicationOperator_linftyIndicator,
-          multiplicationOperator_linftyIndicator, h, sub_self])
-  exact (TauCeti.linftyIndicator_inj hs ht).mp (sub_eq_zero.mp hst)
 
 end MeasureTheory.Lp
 
