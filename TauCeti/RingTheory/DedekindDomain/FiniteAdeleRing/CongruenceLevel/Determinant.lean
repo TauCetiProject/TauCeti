@@ -70,7 +70,7 @@ theorem map_det_level0 (N : Ideal R) :
 /-- **`det K(N) = {x ∈ Ô^× : x ≡ 1 mod NÔ}`**: the determinants of the principal level `K(N)` are
 the images in `𝔸_f^×` of the units of the integral adeles congruent to `1` modulo `NÔ`. -/
 theorem map_det_principalLevel (N : Ideal R) :
-    (principalLevel K N).map GeneralLinearGroup.det =
+    (principalLevel K (Fin 2) N).map GeneralLinearGroup.det =
       (Units.map (Ideal.Quotient.mk (completedIdeal K N) :
           integralAdeles R K →* integralAdeles R K ⧸ completedIdeal K N)).ker.map
         (Units.map ((integralAdeles R K).val.toRingHom : integralAdeles R K →* 𝔸ᶠ[R, K])) := by

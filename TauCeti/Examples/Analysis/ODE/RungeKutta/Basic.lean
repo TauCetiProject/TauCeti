@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Notation
 public import TauCeti.Analysis.ODE.RungeKutta.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Analysis.ODE.RungeKutta.ExplicitEuler
 
 /-!
 # Checks for Butcher tableaux and their stage equations
@@ -17,7 +18,7 @@ These examples test the conventions of `TauCeti.ButcherTableau`: the orientation
 when the stage equations have no solution or several.
 
 * A tableau with no stages is explicit, its stage vector is empty and its increment is `0`.
-* The one-stage tableau `A = (0)`, `b = (1)`, `c = (0)` has increment `f t y`.
+* The one-stage tableau `TauCeti.explicitEuler` has increment `f t y`.
 * The two-stage tableau `A = (0, 0; 1, 0)`, `b = (1/2, 1/2)`, `c = (0, 1)` has stages `f t y` and
   `f (t + h) (y + h • f t y)`; the transpose of its matrix is not strictly lower triangular.
 * The one-stage tableau `A = (1)`, `b = (1)`, `c = (1)` on `f t u = λ u` over `ℝ` has the stage
@@ -48,25 +49,9 @@ theorem increment_of_zero (T : ButcherTableau 0) (f : ℝ → E → E) (t : ℝ)
 
 /-! ### One explicit stage -/
 
-/-- The tableau `A = (0)`, `b = (1)`, `c = (0)`. -/
-noncomputable def euler : ButcherTableau 1 := ⟨!![0], ![1], ![0]⟩
-
-theorem euler_isExplicit : euler.IsExplicit :=
-  isExplicit_iff.mpr fun i j _ ↦ by fin_cases i; fin_cases j; simp [euler]
-
-/-- The stage of `euler` is `f t y`: the stage time is `t + 0 * h = t`. -/
-theorem euler_stages (f : ℝ → E → E) (t : ℝ) (y : E) (h : ℝ) :
-    euler.stages f t y h = ![f t y] := by
-  ext i
-  fin_cases i
-  rw [stages_apply_of_isExplicit euler_isExplicit]
-  simp [euler]
-
-/-- The increment of `euler` is `f t y`. -/
-theorem euler_increment (f : ℝ → E → E) (t : ℝ) (y : E) (h : ℝ) :
-    euler.increment f t y h = f t y := by
-  rw [increment_def, euler_stages]
-  simp [euler]
+example (f : ℝ → E → E) (t : ℝ) (y : E) (h : ℝ) :
+    explicitEuler.increment f t y h = f t y :=
+  explicitEuler_increment f t y h
 
 /-! ### Two explicit stages -/
 

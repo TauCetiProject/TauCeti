@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.DG.DegreeZero
 public import TauCeti.Geometry.Manifold.Morse.Examples.Circle
 public import Mathlib.Topology.Covering.FundamentalGroupCircle
 import TauCeti.Algebra.AddCircle
+import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
 
 /-!
 # The Barraud–Cornea cocycle of the height function of the circle
@@ -61,9 +62,13 @@ differential `1 + 1 = 0` forgets.
   (`IsAdaptedPseudoGradient.loopChainToGroupAlgebra_barraudCorneaCocycle_m_circleCos_eq_mul`).
   When `S` gives them opposite coefficients `r` and `-r`, the entry is `(1 - t) g r`
   (`..._eq_one_sub_mul`).
-  For instance (an illustration, not formalized here), when `θ` is constant on the upper
-  half-circle, as the collapse of an embedded tree through the critical points along it is,
-  `g = 1` and the entry is `1 + t`.
+  When `θ` is constant on the upper half-circle, as the collapse of an embedded tree through the
+  critical points along it is, the upper half-loop is constant, so `g = 1`
+  (`TauCeti.fundamentalGroupHom_circleCosHalfLoop_one_eq_one`) and the entry is `1 + t`.
+* **The loop around the circle generates.** For `Y` the circle itself, the class of the loop once
+  around the circle generates `π₁(S¹, 0)` and has infinite order
+  (`TauCeti.zpowers_fundamentalGroupHom_circleCosLoop`,
+  `TauCeti.not_isOfFinOrder_fundamentalGroupHom_circleCosLoop`).
 
 The lemmas in the namespace `TauCeti.IsAdaptedPseudoGradient` are abbreviated above.
 
@@ -83,8 +88,13 @@ The lemmas in the namespace `TauCeti.IsAdaptedPseudoGradient` are abbreviated ab
   maximum to the minimum consists of the two trajectories through the half-circles.
 * `TauCeti.windingNumber_fundamentalGroupHom_circleCosLoop`: the loop around the circle has winding
   number one.
+* `TauCeti.zpowers_fundamentalGroupHom_circleCosLoop`,
+  `TauCeti.not_isOfFinOrder_fundamentalGroupHom_circleCosLoop`: the loop around the circle
+  generates `π₁(S¹, 0)` and has infinite order.
 * `TauCeti.fundamentalGroupHom_circleCosHalfLoop_neg_one`: the two half-loops differ by the loop
   around the circle.
+* `TauCeti.fundamentalGroupHom_circleCosHalfLoop_one_eq_one`: the upper half-loop of a map constant
+  on the upper half-circle is trivial.
 * `TauCeti.IsAdaptedPseudoGradient.loopChainToGroupAlgebra_barraudCorneaCocycle_m_circleCos`,
   `..._eq_mul` and `..._eq_one_sub_mul`: the degree-zero entry of the Barraud–Cornea cocycle from
   the maximum to the minimum, in general, for the coefficients `1` and for opposite coefficients
@@ -298,6 +308,38 @@ theorem fundamentalGroupHom_circleCosHalfLoop_neg_one {Y : Type*} [TopologicalSp
         MoorePath.map_trans, MoorePath.map_symm]
   rw [← MooreLoopSpace.fundamentalGroupHom_map, ← h, map_mul,
     MooreLoopSpace.fundamentalGroupHom_symm, inv_mul_cancel_right]
+
+/-- **The loop around the circle generates `π₁(S¹, 0)`**, having winding number `1`
+(`TauCeti.windingNumber_fundamentalGroupHom_circleCosLoop`). -/
+theorem zpowers_fundamentalGroupHom_circleCosLoop :
+    Subgroup.zpowers (MooreLoopSpace.fundamentalGroupHom 0 circleCosLoop) = ⊤ :=
+  (AddCircle.zpowers_eq_top_iff_isUnit_windingNumber _).2
+    (windingNumber_fundamentalGroupHom_circleCosLoop ▸ isUnit_one)
+
+/-- **The loop around the circle has infinite order in `π₁(S¹, 0)`**, having nonzero winding
+number. -/
+theorem not_isOfFinOrder_fundamentalGroupHom_circleCosLoop :
+    ¬IsOfFinOrder (MooreLoopSpace.fundamentalGroupHom 0 circleCosLoop) := by
+  rw [AddCircle.isOfFinOrder_iff_windingNumber_eq_zero,
+    windingNumber_fundamentalGroupHom_circleCosLoop]
+  exact one_ne_zero
+
+/-- **The upper half-loop of a map constant on the upper half-circle is trivial.** If `θ` sends the
+whole upper half-circle `[0, π]` to `y₀`, as the collapse of the arc joining the two critical
+points along it does, the loop traced by `θ` along the upper half-circle is constant, so its class
+in `π₁(Y, y₀)` is `1`. -/
+theorem fundamentalGroupHom_circleCosHalfLoop_one_eq_one {Y : Type*} [TopologicalSpace Y] {y₀ : Y}
+    (θ : C(AddCircle (2 * π), Y)) (h₀ : θ 0 = y₀) (hπ : θ ((π : ℝ) : AddCircle (2 * π)) = y₀)
+    (harc : ∀ φ ∈ Icc 0 π, θ (φ : AddCircle (2 * π)) = y₀) :
+    MooreLoopSpace.fundamentalGroupHom y₀ (circleCosHalfLoop θ h₀ hπ 1) = 1 := by
+  have h : (circleCosHalfLoop θ h₀ hπ 1).toPath = (1 : MooreLoopSpace Y y₀).toPath := by
+    rw [MooreLoopSpace.toPath_one]
+    ext s
+    rw [MooreLoopSpace.toPath_apply, toMoorePath_circleCosHalfLoop, MoorePath.map_apply,
+      circleCosHalfPath_one_apply]
+    exact harc _ ⟨Real.arccos_nonneg _, Real.arccos_le_pi _⟩
+  rw [MooreLoopSpace.fundamentalGroupHom_apply, h, ← MooreLoopSpace.fundamentalGroupHom_apply,
+    map_one]
 
 /-- The maximum and the minimum of the cosine are distinct points of the circle. -/
 private theorem zero_ne_coe_pi : (0 : AddCircle (2 * π)) ≠ (π : ℝ) :=

@@ -7,6 +7,8 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Extension
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Transport
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.MulIndicator
+import TauCeti.NumberTheory.NumberField.FinitePlace.Transport
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 
 /-!
@@ -24,7 +26,9 @@ place `e w` of `L`, the unique finite place with `|e x|_{e w} = |x|_w` for `x �
 (`RingEquiv.eq_equivOfRingEquiv_iff`). The component at
 `e w` of the transport of a finite adele `a` is the image of `a_w` under the isomorphism
 `K_w ≃ L_{e w}` extending `e`
-(`TauCeti.GlobalNumberFields.finiteAdeleEquiv_apply_eq_adicCompletionCongr`).
+(`TauCeti.GlobalNumberFields.finiteAdeleEquiv_apply_eq_adicCompletionCongr`). In particular,
+transport carries the indicator of a set `S` of finite places to the indicator of the set of the
+places `e w` for `w ∈ S` (`TauCeti.GlobalNumberFields.finiteAdeleEquiv_indicatorOne`).
 
 The construction uses `finiteAdeleExtension` and `infiniteAdeleExtension` with the algebra
 structure induced by the field isomorphism. In particular, it preserves the restricted-product
@@ -289,6 +293,23 @@ theorem finiteAdeleEquiv_apply_eq_adicCompletionCongr (e : K ≃+* L)
   · simpa only [FiniteAdeleRing.proj_apply] using h
   simp only [Function.comp_apply, finiteAdeleEquiv_algebraMap, AlgHomClass.commutes,
     HeightOneSpectrum.adicCompletionCongr_algebraMap]
+
+variable {K L} in
+/-- **Transport of the indicator of a set of places.** Transporting the indicator of a set `S` of
+finite places of `K` along `e : K ≃+* L` gives the indicator of the set of the places `e w` of `L`
+for `w ∈ S`. -/
+theorem finiteAdeleEquiv_indicatorOne (e : K ≃+* L) (S : Set (HeightOneSpectrum (𝓞 K))) :
+    finiteAdeleEquiv K L e (FiniteAdeleRing.indicatorOne S) =
+      FiniteAdeleRing.indicatorOne
+        (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) '' S) := by
+  classical
+  refine FiniteAdeleRing.ext L fun w' ↦ ?_
+  obtain ⟨w, rfl⟩ :=
+    (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e)).surjective w'
+  rw [finiteAdeleEquiv_apply_eq_adicCompletionCongr e (e.valuation_equivOfRingEquiv w),
+    FiniteAdeleRing.indicatorOne_apply, FiniteAdeleRing.indicatorOne_apply,
+    (Equiv.injective _).mem_set_image]
+  split_ifs <;> simp
 
 /-- The ring equivalence of full adele rings induced by a field isomorphism. -/
 noncomputable def adeleEquiv (e : K ≃+* L) : AdeleRing (𝓞 K) K ≃+* AdeleRing (𝓞 L) L :=

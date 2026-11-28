@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Algebra.Structures
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import Mathlib.Topology.Sets.Compacts
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Prod
-import TauCeti.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
 # Charts with subordinate cutoffs
@@ -25,9 +26,10 @@ On a Hausdorff `σ`-compact manifold with finite-dimensional model, every family
 indexed by the points of `P`, each containing its point, carries cutoffs
 (`TauCeti.ChartCutoffs.exists_chart_eq`); for a boundaryless model, chart cutoffs exist
 (`TauCeti.ChartCutoffs.nonempty`), even with the chart at each point inside a prescribed open
-neighbourhood of it (`TauCeti.ChartCutoffs.exists_source_subset`), since each point has such a
-chart (`TauCeti.exists_chart_source_subset`). Chart cutoffs on `M` and on `N`
-multiply to chart cutoffs on `M × N` with the product charts (`TauCeti.ChartCutoffs.prod`).
+neighbourhood of it (`TauCeti.ChartCutoffs.exists_source_subset`), since on any boundaryless
+manifold each point has such a chart (`TauCeti.exists_chart_source_subset`). Chart cutoffs on `M`
+and on `N` multiply to chart cutoffs on `M × N` with the product charts
+(`TauCeti.ChartCutoffs.prod`).
 
 ## Main declarations
 
@@ -54,21 +56,20 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 
 /-- On a manifold without boundary, every open neighbourhood `U` of a point `x` contains the source
 of a `C^n` chart into the model space with `C^n` inverse whose source contains `x`. -/
-theorem exists_chart_source_subset [I.Boundaryless] {n : ℕ∞ω} [IsManifold I n P] {U : Set P}
-    (hU : IsOpen U) {x : P} (hx : x ∈ U) :
+theorem exists_chart_source_subset [BoundarylessManifold I P] {n : ℕ∞ω} [IsManifold I n P]
+    {U : Set P} (hU : IsOpen U) {x : P} (hx : x ∈ U) :
     ∃ c : OpenPartialHomeomorph P E, ContMDiffOn I 𝓘(ℝ, E) n c c.source ∧
       ContMDiffOn 𝓘(ℝ, E) I n c.symm c.target ∧ c.source ⊆ U ∧ x ∈ c.source := by
-  let e := (chartAt H x).extendTrans I (Homeomorph.refl E)
-  refine ⟨e.restrOpen U hU, (OpenPartialHomeomorph.contMDiffOn_extendTrans _
-      (IsManifold.chart_mem_maximalAtlas x) contDiff_id).mono ?_,
-    -- The target of `e.restrOpen U` is `e.target ∩ e.symm ⁻¹' U`.
-    (OpenPartialHomeomorph.contMDiffOn_extendTrans_symm _ (IsManifold.chart_mem_maximalAtlas x)
-      contDiff_id).mono fun y hy ↦ hy.1, ?_, ?_⟩ <;>
-    rw [OpenPartialHomeomorph.restrOpen_source]
-  · exact inter_subset_left
-  · exact inter_subset_right
-  · rw [OpenPartialHomeomorph.extendTrans_source]
-    exact ⟨mem_chart_source H x, hx⟩
+  let e := TauCeti.extChartPartialDiffeomorph I n x
+  refine ⟨e.toOpenPartialHomeomorph.restrOpen U hU,
+    e.contMDiffOn_toOpenPartialHomeomorph_restrOpen hU,
+    PartialDiffeomorph.contMDiffOn_toOpenPartialHomeomorph_restrOpen_symm e hU, ?_, ?_⟩
+  · rw [OpenPartialHomeomorph.restrOpen_source]
+    exact inter_subset_right
+  · rw [OpenPartialHomeomorph.restrOpen_source,
+      PartialDiffeomorph.toOpenPartialHomeomorph_source]
+    exact ⟨(TauCeti.mem_extChartPartialDiffeomorph_source I n x).2
+      (BoundarylessManifold.isInteriorPoint (I := I)), hx⟩
 
 variable (ι : Type*) (I P n) in
 /-- **Charts with subordinate cutoffs** on `P`, indexed by `ι`: `C^n` charts into the model space

@@ -44,11 +44,11 @@ the circle, the two trajectories from the maximum to the minimum have loops of c
 the coefficient `1` (`TauCeti.fundamentalGroupHom_circleCosHalfLoop_neg_one` and
 `TauCeti.IsAdaptedPseudoGradient.loopChainToGroupAlgebra_barraudCorneaCocycle_m_circleCos_eq_mul`,
 in `TauCeti.Geometry.Manifold.Morse.DG.Circle.Basic`). With `θ` collapsing the upper arc (through
-`π / 2`) between the critical points (an illustration, not formalized here), `g = 1` and the entry
-is `1 + t` in `(ZMod 2)[π₁(S¹)]`; collapsing the lower arc instead gives `t g = 1` and the entry
-`1 + t⁻¹`. For integral fundamental chains of the trajectory spaces the coefficients
-`r_u` are instead the orientation signs of the trajectories; this integral form is a remark, not
-formalized here.
+`π / 2`) between the critical points, `g = 1` and the entry is `1 + t` in `(ZMod 2)[π₁(S¹)]`
+(in `TauCeti.Geometry.Manifold.Morse.DG.Circle.PathLoop`); collapsing the lower arc instead gives
+`t g = 1` and the entry `1 + t⁻¹` (an illustration, not formalized here). For integral
+fundamental chains of the trajectory spaces the coefficients `r_u` are instead the orientation
+signs of the trajectories; this integral form is a remark, not formalized here.
 
 ## Main results
 

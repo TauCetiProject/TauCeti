@@ -23,6 +23,8 @@ This file records general properties of quadratic-map isometries.
 * `QuadraticMap.Isometry.associated_apply`: an isometry preserves the associated bilinear map.
 * `QuadraticForm.isIsometry_polarBilin_of_forall_map_app`: a form-preserving linear map preserves
   the polar bilinear form.
+* `QuadraticMap.IsometryEquiv.ext_on_range`: an isometric equivalence is determined by its values
+  on a spanning family.
 * `QuadraticMap.apply_eq_zero_of_apply_eq_smul`: an eigenvector of a form-preserving endomorphism
   whose eigenvalue does not square to `1` (in the sense of regularity of `μ² - 1`) is isotropic.
 * `QuadraticMap.IsometryEquiv.polar_apply`: an isometric equivalence preserves polarization.
@@ -30,6 +32,9 @@ This file records general properties of quadratic-map isometries.
   bilinear form of the target back to that of the source.
 * `QuadraticMap.IsometryEquiv.map_orthogonal_polarBilin`: an isometric equivalence maps polar
   orthogonal complements to polar orthogonal complements.
+* `QuadraticMap.Isometry.equivalent_restrict_map`,
+  `QuadraticMap.IsometryEquiv.equivalent_restrict_map`: an injective isometry identifies the
+  restriction to a submodule with the restriction to its image.
 * `QuadraticMap.IsometryEquiv.polarKernelEquiv`: an isometric equivalence restricts to an
   equivalence of the kernels of polarization against corresponding vectors.
 * `QuadraticMap.IsometryEquiv.refl_apply`, `QuadraticMap.IsometryEquiv.symm_symm`, and
@@ -54,6 +59,17 @@ namespace TauCeti
 open QuadraticMap
 
 universe u v w
+
+/-- Isometric equivalences that agree on a family spanning the source module are equal. -/
+theorem _root_.QuadraticMap.IsometryEquiv.ext_on_range
+    {R M N P : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    [AddCommMonoid N] [Module R N] [AddCommMonoid P] [Module R P]
+    {Q : QuadraticMap R M P} {Q' : QuadraticMap R N P} {ι : Sort*} {v : ι → M}
+    {e f : Q.IsometryEquiv Q'} (hv : Submodule.span R (Set.range v) = ⊤)
+    (h : ∀ i, e (v i) = f (v i)) : e = f := by
+  have hlin : e.toLinearEquiv.toLinearMap = f.toLinearEquiv.toLinearMap :=
+    LinearMap.ext_on_range hv h
+  exact DFunLike.ext _ _ fun x ↦ DFunLike.congr_fun hlin x
 
 /-- An isometry of quadratic maps, regarded as an isometry of their negatives. The underlying
 linear map is unchanged. -/
@@ -163,6 +179,26 @@ theorem _root_.QuadraticMap.IsometryEquiv.map_orthogonal_polarBilin
     exact h _ hx
   · rw [← e.polar_apply, e.apply_symm_apply]
     exact h (e x) (by simpa using hx)
+
+/-- An injective isometry `f` identifies the restriction of `Q₁` to a submodule `W` with the
+restriction of `Q₂` to the image of `W`. -/
+theorem _root_.QuadraticMap.Isometry.equivalent_restrict_map {R : Type u} {M₁ : Type v}
+    {M₂ : Type*} {N : Type w} [CommSemiring R] [AddCommMonoid M₁] [Module R M₁]
+    [AddCommMonoid M₂] [Module R M₂] [AddCommMonoid N] [Module R N] {Q₁ : QuadraticMap R M₁ N}
+    {Q₂ : QuadraticMap R M₂ N} (f : Q₁ →qᵢ Q₂) (hf : Function.Injective f)
+    (W : Submodule R M₁) :
+    (Q₁.restrict W).Equivalent (Q₂.restrict (W.map f.toLinearMap)) :=
+  ⟨{ toLinearEquiv := Submodule.equivMapOfInjective f.toLinearMap hf W
+     map_app' w := f.map_app w }⟩
+
+/-- An isometric equivalence `e` identifies the restriction of `Q₁` to a submodule `W` with the
+restriction of `Q₂` to the image of `W`. -/
+theorem _root_.QuadraticMap.IsometryEquiv.equivalent_restrict_map {R : Type u} {M₁ : Type v}
+    {M₂ : Type*} {N : Type w} [CommSemiring R] [AddCommMonoid M₁] [Module R M₁]
+    [AddCommMonoid M₂] [Module R M₂] [AddCommMonoid N] [Module R N] {Q₁ : QuadraticMap R M₁ N}
+    {Q₂ : QuadraticMap R M₂ N} (e : Q₁.IsometryEquiv Q₂) (W : Submodule R M₁) :
+    (Q₁.restrict W).Equivalent (Q₂.restrict (W.map e.toLinearMap)) :=
+  e.toIsometry.equivalent_restrict_map e.injective W
 
 /-- The restriction of an isometric equivalence to the kernels of polarization against
 corresponding vectors. -/

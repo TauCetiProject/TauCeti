@@ -40,6 +40,11 @@ for the order `ℤ + f 𝓞 K` of conductor `f`.
   `#(𝓞 K ⧸ p 𝓞 K)ˣ = (p - 1) (p - χ_D(p))`.
 * `TauCeti.NumberField.card_units_quotient_span_natCast_mul_prod`:
   `#(𝓞 K ⧸ f 𝓞 K)ˣ · ∏_{p ∣ f} p² = f² ∏_{p ∣ f} (p - 1) (p - χ_D(p))`.
+* `TauCeti.NumberField.card_units_quotient_span_two`,
+  `TauCeti.NumberField.card_units_quotient_span_three`,
+  `TauCeti.NumberField.card_units_quotient_span_six`,
+  `TauCeti.NumberField.card_units_quotient_span_eight`:
+  explicit counts at levels `2`, `3`, `6`, and `8` in terms of `χ_D(2)` and `χ_D(3)`.
 
 ## References
 
@@ -136,5 +141,46 @@ theorem card_units_quotient_span_natCast_mul_prod (hK : finrank ℚ K = 2) {f : 
   refine Finset.prod_congr rfl fun p hp ↦ ?_
   have := Fact.mk (Nat.prime_of_mem_primeFactors hp)
   exact card_units_quotient_span_natCast_of_prime hK p
+
+/-- Explicit residue-unit count `#(𝓞 K ⧸ (2))ˣ = 2 - χ_D(2)` in a quadratic field. -/
+theorem card_units_quotient_span_two (hK : finrank ℚ K = 2) :
+    (Nat.card (𝓞 K ⧸ span {(2 : 𝓞 K)})ˣ : ℤ) =
+      2 - fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) 2 := by
+  simpa using card_units_quotient_span_natCast_of_prime hK 2
+
+/-- Explicit residue-unit count `#(𝓞 K ⧸ (3))ˣ = 2 * (3 - χ_D(3))` in a quadratic field. -/
+theorem card_units_quotient_span_three (hK : finrank ℚ K = 2) :
+    (Nat.card (𝓞 K ⧸ span {(3 : 𝓞 K)})ˣ : ℤ) =
+      2 * (3 - fundamentalDiscriminantChar (NumberField.discr K)
+        (isFundamentalDiscr_discr hK) 3) := by
+  simpa using card_units_quotient_span_natCast_of_prime hK 3
+
+/-- Explicit residue-unit count `#(𝓞 K ⧸ (6))ˣ = 2 * (2 - χ_D(2)) * (3 - χ_D(3))` in a quadratic
+field. -/
+theorem card_units_quotient_span_six (hK : finrank ℚ K = 2) :
+    (Nat.card (𝓞 K ⧸ span {(6 : 𝓞 K)})ˣ : ℤ) =
+      2 * (2 - fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) 2) *
+        (3 - fundamentalDiscriminantChar (NumberField.discr K)
+          (isFundamentalDiscr_discr hK) 3) := by
+  have h := card_units_quotient_span_natCast_mul_prod hK (f := 6) (by decide)
+  have hpf : (6 : ℕ).primeFactors = {2, 3} := by
+    rw [show (6 : ℕ) = 2 * 3 from rfl, Nat.primeFactors_mul (by decide) (by decide),
+      Nat.Prime.primeFactors Nat.prime_two, Nat.Prime.primeFactors Nat.prime_three]
+    rfl
+  rw [hpf, Finset.prod_pair (by decide), Finset.prod_pair (by decide)] at h
+  push_cast at h
+  linarith
+
+/-- Explicit residue-unit count `#(𝓞 K ⧸ (8))ˣ = 16 * (2 - χ_D(2))` in a quadratic field. -/
+theorem card_units_quotient_span_eight (hK : finrank ℚ K = 2) :
+    (Nat.card (𝓞 K ⧸ span {(8 : 𝓞 K)})ˣ : ℤ) =
+      16 * (2 - fundamentalDiscriminantChar (NumberField.discr K)
+        (isFundamentalDiscr_discr hK) 2) := by
+  have h := card_units_quotient_span_natCast_mul_prod hK (f := 8) (by decide)
+  have hpf : (8 : ℕ).primeFactors = {2} :=
+    Nat.primeFactors_prime_pow (k := 3) (by decide) Nat.prime_two
+  rw [hpf, Finset.prod_singleton, Finset.prod_singleton] at h
+  push_cast at h
+  linarith
 
 end TauCeti.NumberField
