@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # Circle integrals: linear maps, the angle interval and the radius
@@ -24,10 +25,14 @@ any parameter interval `[a, a + 2π]`.
 
 * `ContinuousLinearMap.circleIntegral_comp_comm`: continuous linear maps commute with circle
   integrals.
+* `circleIntegral.integral_of_not_completeSpace`: in an incomplete codomain every circle integral
+  is `0`.
 * `TauCeti.circleIntegral_eq_intervalIntegral_add_two_pi`: a circle integral may be computed over
   any parameter interval of length `2π`.
 * `TauCeti.integral_neg_pi_pi_eq_circleIntegral`: a circle integral as an integral over
   `[-π, π]`.
+* `TauCeti.intervalIntegral_circleMap_sub_mul`: the integral over `t ∈ [0, 1]` around a circle run
+  through clockwise at the speed `2π` is the integral over the angles `[-π, π]` divided by `2π`.
 * `ContinuousOn.continuousOn_circleIntegral`: for `f` continuous on the closed disc
   `|z - c| ≤ R`, the map `r ↦ ∮ z in C(c, r), f z` is continuous on `[0, R]`.
 -/
@@ -43,6 +48,11 @@ theorem ContinuousLinearMap.circleIntegral_comp_comm [CompleteSpace E] [Complete
     ∮ z in C(c, R), L (f z) = L (∮ z in C(c, R), f z) := by
   rw [circleIntegral, circleIntegral, ← L.intervalIntegral_comp_comm hf.out]
   simp only [map_smul]
+
+/-- In an incomplete codomain every circle integral is `0`. -/
+theorem circleIntegral.integral_of_not_completeSpace (hE : ¬CompleteSpace E) (f : ℂ → E) (c : ℂ)
+    (R : ℝ) : ∮ z in C(c, R), f z = 0 := by
+  rw [circleIntegral, intervalIntegral.integral_of_not_completeSpace hE]
 
 open Complex Metric Set
 open scoped Real
@@ -62,6 +72,20 @@ theorem TauCeti.integral_neg_pi_pi_eq_circleIntegral (f : ℂ → E) (c : ℂ) (
   rw [TauCeti.circleIntegral_eq_intervalIntegral_add_two_pi f c R (-π),
     show -π + 2 * π = π by ring]
   simp only [deriv_circleMap]
+
+/-- Running clockwise around a circle at the speed `2π` from the angle `α`, the integral over the
+parameters `t ∈ [0, 1]` is the integral over the angles `[-π, π]` divided by `2π`. -/
+theorem TauCeti.intervalIntegral_circleMap_sub_mul {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (g : ℂ → G) (c : ℂ) (r α : ℝ) :
+    ∫ t in (0 : ℝ)..1, g (circleMap c r (α - 2 * π * t)) =
+      (2 * π)⁻¹ • ∫ θ in -π..π, g (circleMap c r θ) := by
+  have hper : Function.Periodic (fun θ ↦ g (circleMap c r θ)) (2 * π) := fun θ ↦ by
+    simp only [periodic_circleMap c r θ]
+  rw [intervalIntegral.integral_comp_sub_mul (fun θ ↦ g (circleMap c r θ))
+    (by positivity : (2 * π : ℝ) ≠ 0) α, mul_one, mul_zero, sub_zero]
+  congr 1
+  have h := hper.intervalIntegral_add_eq (α - 2 * π) (-π)
+  rwa [sub_add_cancel, show -π + 2 * π = π by ring] at h
 
 /-- For `f` continuous on the closed disc `|z - c| ≤ R`, the circle integrals
 `r ↦ ∮ z in C(c, r), f z` over the concentric circles are continuous in the radius on `[0, R]`,

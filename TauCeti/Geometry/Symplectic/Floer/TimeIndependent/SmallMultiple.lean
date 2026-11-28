@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.TimeIndependent.SmallHamiltonian
+import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.ODE.Yorke
 import TauCeti.Geometry.Symplectic.Floer.Compactness.Basic
+import TauCeti.Geometry.Symplectic.Floer.Manifold.Translation
 import TauCeti.Geometry.Symplectic.Floer.Trajectory
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 
@@ -16,8 +18,8 @@ import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 # Floer cylinders of small multiples of an autonomous Hamiltonian
 
 Let `(V, ω)` be a symplectic vector space whose inner product is the metric `ω(·, J ·)` of a
-constant compatible almost complex structure `J`, let `H : V → ℝ` be a `C³` Hamiltonian whose
-Hamiltonian vector field has bounded first and second derivatives, and let `K ⊆ V` be compact.
+constant compatible almost complex structure `J`, let `H : V → ℝ` be a `C³` Hamiltonian and let
+`K ⊆ V` be compact.
 This file shows that there is `ε₀ > 0` such that for `|ε| < ε₀` every finite-energy Floer cylinder
 of `εH` with image in `K`, that is every solution `u` of period one in `t` of
 
@@ -36,7 +38,11 @@ cylinder.
 The analytic core is `TauCeti.SymplecticForm.eq_comp_fst_of_isComplexLinearMap_perturbedFDeriv`:
 a cylinder of `εH` whose derivative is bounded by `M` is independent of `t` as soon as
 `|ε| ‖d²X_H‖ M` is small compared with `(2π - |ε| ‖dX_H‖)²`. This file supplies the bound `M`,
-uniformly in `ε` and in the cylinder.
+uniformly in `ε` and in the cylinder. Since the cylinders lie in `K`, `H` may first be replaced by
+a compactly supported `C³` Hamiltonian equal to `H` near `K`, whose Hamiltonian vector field has
+bounded first and second derivatives
+(`TauCeti.SymplecticForm.exists_forall_norm_fderiv_hamiltonianVectorField_le`); this changes neither
+the equation, nor the energy, nor the gradient along such a cylinder.
 
 * **The ends are critical points.** By Yorke's theorem
   (`Function.Periodic.eq_const_of_hasDerivAt_of_lipschitzOnWith`) the one-periodic orbits of the
@@ -251,9 +257,10 @@ private theorem setLIntegral_ball_floerEnergyDensity_le (hH : ContDiff ℝ 3 H) 
   have hpre : (· + z₀) ⁻¹' ball z₀ (1 / 2) = ball (0 : ℝ × ℝ) (1 / 2) := by
     ext z
     simp [mem_ball, dist_eq_norm]
-  have htr := ω.lintegral_floerEnergyDensity_comp_add_right (fun _ _ ↦ 0) (fun _ y ↦ ε * H y) u z₀
-    (ball z₀ (1 / 2))
+  have htr := ω.constSmooth.lintegral_floerEnergyDensity_comp_add_right (fun _ _ ↦ 0)
+    (fun _ y ↦ ε * H y) u z₀ (ball z₀ (1 / 2))
   rw [hpre] at htr
+  simp only [floerEnergyDensity_constSmooth] at htr
   rw [htr]
   -- The square lies in the horizontal strip `ℝ × [t₀ - 1/2, t₀ + 1/2]` of width one.
   have hsub : ball z₀ (1 / 2) ⊆ (univ : Set ℝ) ×ˢ Icc (z₀.2 - 1 / 2) (z₀.2 - 1 / 2 + 1) := by
@@ -325,15 +332,54 @@ private theorem exists_pos_forall_norm_fderiv_le (hg : ∀ v w, ω v (J w) = ⟪
   rw [fderiv_comp_add_right, zero_add] at h
   exact h.trans (le_abs_self M)
 
+/-- **Floer cylinders of small multiples of an autonomous Hamiltonian.** There is `ε₀ > 0` such
+that for `|ε| < ε₀` every finite-energy Floer cylinder `u` of `εH` with image in `K` is independent
+of `t`, and `γ(s) = u(s, 0)` is an upward gradient line of `εH`. The derivative bounds needed by
+`TauCeti.SymplecticForm.eq_comp_fst_of_isComplexLinearMap_perturbedFDeriv` hold for a compactly
+supported Hamiltonian `H'` equal to `H` near `K`, and `u` is also a cylinder of `εH'`. -/
+private theorem exists_pos_forall_eq_comp_fst_and_hasDerivAt_gradient
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 3 H) (hK : IsCompact K) :
+    ∃ ε₀ > 0, ∀ ⦃ε : ℝ⦄ ⦃u : ℝ × ℝ → V⦄, |ε| < ε₀ → ContDiff ℝ 3 u →
+      (∀ s t, u (s, t + 1) = u (s, t)) → (∀ z, u z ∈ K) →
+      (∀ z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun _ y ↦ ε * H y) u z : ℝ × ℝ →ₗ[ℝ] V)) →
+      ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
+        ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ y ↦ ε * H y) u z) ≠ ⊤ →
+      (u = fun z ↦ u (z.1, 0)) ∧
+        ∀ s, HasDerivAt (fun s ↦ u (s, 0)) (∇ (fun y ↦ ε * H y) (u (s, 0))) s := by
+  obtain ⟨H', hH', hH'c, -, -, hHK⟩ :=
+    hH.contDiffOn.exists_contDiff_eventuallyEq_on_isCompact hK isOpen_univ (subset_univ K)
+  obtain ⟨a, c, hac⟩ := ω.exists_forall_norm_fderiv_hamiltonianVectorField_le hH' hH'c
+  obtain ⟨ε₀, hε₀, M, h⟩ :=
+    exists_pos_forall_norm_fderiv_le hg hH' (fun x ↦ (hac x).1) (fun x ↦ (hac x).2) hK
+  refine ⟨ε₀, hε₀, fun ε u hε hu hper huK hfl hE ↦ ?_⟩
+  -- Along `u`, the Hamiltonians `εH'` and `εH` agree near every point.
+  have hloc (z : ℝ × ℝ) : (fun y ↦ ε * H' y) =ᶠ[𝓝 (u z)] fun y ↦ ε * H y :=
+    (hHK _ (huK z)).mono fun y hy ↦ congrArg (ε * ·) hy
+  have hD (z : ℝ × ℝ) : ω.perturbedFDeriv (fun _ _ ↦ 0) (fun _ y ↦ ε * H' y) u z =
+      ω.perturbedFDeriv (fun _ _ ↦ 0) (fun _ y ↦ ε * H y) u z :=
+    ContinuousLinearMap.ext fun v ↦ by
+      simp only [perturbedFDeriv_apply, ω.hamiltonianVectorField_congr_of_eventuallyEq (hloc z)]
+  have hdens (z : ℝ × ℝ) : ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ y ↦ ε * H' y) u z =
+      ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ y ↦ ε * H y) u z := by
+    simp only [floerEnergyDensity_def, hD]
+  have hfl' (z : ℝ × ℝ) := hD z ▸ hfl z
+  obtain ⟨ha', hcM, hM⟩ := h hε hu hper huK hfl' (by simpa only [← hdens] using hE)
+  have ha := norm_fderiv_hamiltonianVectorField_const_mul_le hH' (fun x ↦ (hac x).1) ε
+  have hc := norm_fderiv_fderiv_hamiltonianVectorField_const_mul_le hH' (fun x ↦ (hac x).2) ε
+  refine ⟨eq_comp_fst_of_isComplexLinearMap_perturbedFDeriv hg (contDiff_const.mul hH') ha hc ha'
+    hcM hu hper hfl' hM, fun s ↦ ?_⟩
+  rw [← (hloc (s, 0)).gradient_eq]
+  exact hasDerivAt_gradient_of_isComplexLinearMap_perturbedFDeriv hg (contDiff_const.mul hH') ha hc
+    ha' hcM hu hper hfl' hM s
+
 /-- **Floer cylinders of small multiples of an autonomous Hamiltonian are time-independent.** Let
 the inner product of `V` be the metric `ω(·, J ·)` of a constant compatible structure `J`, let `H`
-be a `C³` Hamiltonian with `‖dX_H‖ ≤ a` and `‖d²X_H‖ ≤ c` everywhere, and let `K ⊆ V` be compact.
-There is `ε₀ > 0` such that for `|ε| < ε₀` every `C³` solution `u` of
-`∂s u + J (∂t u - ε X_H(u)) = 0` of period one in `t`, with image in `K` and finite energy, is
-independent of `t`: `u(s, t) = u(s, 0)`. -/
+be a `C³` Hamiltonian, and let `K ⊆ V` be compact. There is `ε₀ > 0` such that for `|ε| < ε₀`
+every `C³` solution `u` of `∂s u + J (∂t u - ε X_H(u)) = 0` of period one in `t`, with image in `K`
+and finite energy, is independent of `t`: `u(s, t) = u(s, 0)`. -/
 theorem exists_pos_forall_eq_comp_fst_of_isComplexLinearMap (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
-    (hH : ContDiff ℝ 3 H) (ha : ∀ x, ‖fderiv ℝ (ω.hamiltonianVectorField H) x‖ ≤ a)
-    (hc : ∀ x, ‖fderiv ℝ (fderiv ℝ (ω.hamiltonianVectorField H)) x‖ ≤ c) (hK : IsCompact K) :
+    (hH : ContDiff ℝ 3 H) (hK : IsCompact K) :
     ∃ ε₀ > 0, ∀ ⦃ε : ℝ⦄ ⦃u : ℝ × ℝ → V⦄, |ε| < ε₀ → ContDiff ℝ 3 u →
       (∀ s t, u (s, t + 1) = u (s, t)) → (∀ z, u z ∈ K) →
       (∀ z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
@@ -341,21 +387,15 @@ theorem exists_pos_forall_eq_comp_fst_of_isComplexLinearMap (hg : ∀ v w, ω v 
       ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
         ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ y ↦ ε * H y) u z) ≠ ⊤ →
       u = fun z ↦ u (z.1, 0) := by
-  obtain ⟨ε₀, hε₀, M, h⟩ := exists_pos_forall_norm_fderiv_le hg hH ha hc hK
-  refine ⟨ε₀, hε₀, fun ε u hε hu hper huK hfl hE ↦ ?_⟩
-  obtain ⟨ha', hcM, hM⟩ := h hε hu hper huK hfl hE
-  exact eq_comp_fst_of_isComplexLinearMap_perturbedFDeriv hg (contDiff_const.mul hH)
-    (norm_fderiv_hamiltonianVectorField_const_mul_le hH ha ε)
-    (norm_fderiv_fderiv_hamiltonianVectorField_const_mul_le hH hc ε) ha' hcM hu hper hfl hM
+  obtain ⟨ε₀, hε₀, h⟩ := exists_pos_forall_eq_comp_fst_and_hasDerivAt_gradient hg hH hK
+  exact ⟨ε₀, hε₀, fun ε u hε hu hper huK hfl hE ↦ (h hε hu hper huK hfl hE).1⟩
 
 /-- **Floer cylinders of small multiples of an autonomous Hamiltonian are gradient lines.** Under
 the hypotheses of `TauCeti.SymplecticForm.exists_pos_forall_eq_comp_fst_of_isComplexLinearMap`,
 there is `ε₀ > 0` such that for `|ε| < ε₀` the curve `γ(s) = u(s, 0)` of every such cylinder `u`
 of `εH` is an upward gradient line of `εH`, `γ' = ∇(εH)(γ)`, for the metric `ω(·, J ·)`. -/
 theorem exists_pos_forall_hasDerivAt_gradient_of_isComplexLinearMap
-    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 3 H)
-    (ha : ∀ x, ‖fderiv ℝ (ω.hamiltonianVectorField H) x‖ ≤ a)
-    (hc : ∀ x, ‖fderiv ℝ (fderiv ℝ (ω.hamiltonianVectorField H)) x‖ ≤ c) (hK : IsCompact K) :
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (hH : ContDiff ℝ 3 H) (hK : IsCompact K) :
     ∃ ε₀ > 0, ∀ ⦃ε : ℝ⦄ ⦃u : ℝ × ℝ → V⦄, |ε| < ε₀ → ContDiff ℝ 3 u →
       (∀ s t, u (s, t + 1) = u (s, t)) → (∀ z, u z ∈ K) →
       (∀ z, IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
@@ -363,12 +403,8 @@ theorem exists_pos_forall_hasDerivAt_gradient_of_isComplexLinearMap
       ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
         ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ y ↦ ε * H y) u z) ≠ ⊤ →
       ∀ s, HasDerivAt (fun s ↦ u (s, 0)) (∇ (fun y ↦ ε * H y) (u (s, 0))) s := by
-  obtain ⟨ε₀, hε₀, M, h⟩ := exists_pos_forall_norm_fderiv_le hg hH ha hc hK
-  refine ⟨ε₀, hε₀, fun ε u hε hu hper huK hfl hE ↦ ?_⟩
-  obtain ⟨ha', hcM, hM⟩ := h hε hu hper huK hfl hE
-  exact hasDerivAt_gradient_of_isComplexLinearMap_perturbedFDeriv hg (contDiff_const.mul hH)
-    (norm_fderiv_hamiltonianVectorField_const_mul_le hH ha ε)
-    (norm_fderiv_fderiv_hamiltonianVectorField_const_mul_le hH hc ε) ha' hcM hu hper hfl hM
+  obtain ⟨ε₀, hε₀, h⟩ := exists_pos_forall_eq_comp_fst_and_hasDerivAt_gradient hg hH hK
+  exact ⟨ε₀, hε₀, fun ε u hε hu hper huK hfl hE ↦ (h hε hu hper huK hfl hE).2⟩
 
 end Main
 

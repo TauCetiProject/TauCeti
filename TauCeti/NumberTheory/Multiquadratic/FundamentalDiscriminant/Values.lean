@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Character
+public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.OfSquarefree
 import Mathlib.Tactic.NormNum.LegendreSymbol
 import TauCeti.Algebra.Group.Even
 import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol
@@ -20,6 +21,8 @@ character. Since `fundamentalDiscriminant d` differs from `d` by `1` or `4`, its
 quadratic-residue status modulo odd arguments, as well as its Legendre symbol at odd primes,
 coincide with those of `d`; so for squarefree `d` the character of `fundamentalDiscriminant d`
 takes the value `legendreSym p d` at every odd prime `p`.
+At odd arguments `D` may likewise be replaced by its squarefree part `d`, since `D` is `d` or
+`4 * d`; so the character is the Jacobi symbol `(d / n)` of the radicand of its quadratic field.
 
 This file also identifies the characters of prime discriminants, including `-4`, `-3`, `8`,
 and `-8`, and proves multiplicativity in coprime fundamental discriminants.
@@ -81,6 +84,13 @@ theorem fundamentalDiscriminantChar_fundamentalDiscriminant_natCast {d : ℤ} (h
     fundamentalDiscriminantChar_natCast_eq_legendreSym
       (isFundamentalDiscr_fundamentalDiscriminant hd) hp
 
+/-- At an odd natural number, the Jacobi symbol of a fundamental discriminant is that of its
+squarefree part, the two differing by the square `1` or `4` of an integer prime to `n`. -/
+theorem _root_.Int.IsFundamentalDiscr.jacobiSym_squarefreePart {D : ℤ}
+    (hD : Int.IsFundamentalDiscr D) {n : ℕ} (hn : Odd n) :
+    jacobiSym (D : ℚ).squarefreePart n = jacobiSym D n := by
+  rw [← jacobiSym_fundamentalDiscriminant _ hn, hD.fundamentalDiscriminant_squarefreePart]
+
 -- Simplify these integer evaluations before reducing their casts.
 /-- A prime discriminant gives its previously defined prime-discriminant character. -/
 @[simp↓]
@@ -140,6 +150,33 @@ theorem fundamentalDiscriminantChar_neg_three (hD : Int.IsFundamentalDiscr (-3))
     fundamentalDiscriminantChar (-3) hD n = legendreSym 3 n :=
   have : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
   fundamentalDiscriminantChar_oddPrimeDiscriminant (p := 3) (by decide) n
+
+/-- The character of `-4` vanishes at `2`. -/
+theorem fundamentalDiscriminantChar_neg_four_two (hD : Int.IsFundamentalDiscr (-4)) :
+    fundamentalDiscriminantChar (-4) hD 2 = 0 := by
+  rw [fundamentalDiscriminantChar_two]
+  decide
+
+/-- The character of `-4` takes the value `-1` at `3`. -/
+theorem fundamentalDiscriminantChar_neg_four_three (hD : Int.IsFundamentalDiscr (-4)) :
+    fundamentalDiscriminantChar (-4) hD 3 = -1 := by
+  have h := fundamentalDiscriminantChar_neg_four 3
+  rw [Int.cast_ofNat] at h
+  exact h.trans (by decide)
+
+/-- The character of `-3` takes the value `-1` at `2`. -/
+theorem fundamentalDiscriminantChar_neg_three_two (hD : Int.IsFundamentalDiscr (-3)) :
+    fundamentalDiscriminantChar (-3) hD 2 = -1 := by
+  rw [fundamentalDiscriminantChar_two]
+  decide
+
+/-- The character of `-3` vanishes at `3`. -/
+theorem fundamentalDiscriminantChar_neg_three_three (hD : Int.IsFundamentalDiscr (-3)) :
+    fundamentalDiscriminantChar (-3) hD 3 = 0 := by
+  have h := fundamentalDiscriminantChar_neg_three hD 3
+  rw [Int.cast_ofNat] at h
+  rw [h]
+  norm_num
 
 /-- The character of `8` is `χ₈` at every integer. -/
 @[simp↓ high]

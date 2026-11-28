@@ -26,7 +26,8 @@ For a path-connected manifold, where the Hurewicz map identifies `H₁(M; ℤ)` 
 abelianization of `π₁(M, x)`, this determines `homologyPeriodHom φ`
 (`TauCeti.homologyPeriodHom_hurewiczHomologyAddEquiv`). The periods are natural: the periods of
 the pullback `f^* θ` along a `C²` map `f` are those of `θ` composed with the induced map
-`f_* : H₁(M; ℤ) → H₁(M'; ℤ)` (`TauCeti.homologyPeriodHom_singularHomologyMap`).
+`f_* : H₁(M; ℤ) → H₁(M'; ℤ)` (`TauCeti.homologyPeriodHom_singularHomologyMap`), and they commute
+with continuous linear maps of the coefficients (`TauCeti.homologyPeriodHom_mapCoeff`).
 
 For smooth real forms the homomorphism only depends on the de Rham class, and it determines the
 class, with no connectedness assumption: `TauCeti.deRhamCohomology.homologyPeriod` is an injective
@@ -44,7 +45,11 @@ in `Type`.
 * `TauCeti.homologyPeriodHom_homologyπ`: its value on the class of a cycle `Σ nᵢ σᵢ` is
   `Σ nᵢ ∫_{σᵢ} φ`.
 * `TauCeti.homologyPeriodHom_hurewicz₁`: the period of a loop is the value on its Hurewicz class.
+* `TauCeti.pathIntegral_eq_zero_of_loopClass_eq_zero`: the line integral along a `C¹` loop whose
+  class in `H₁(M; ℤ)` vanishes is zero.
 * `TauCeti.homologyPeriodHom_mextDeriv`: exact forms have vanishing periods, for any coefficients.
+* `TauCeti.homologyPeriodHom_mapCoeff`: the periods commute with continuous linear maps of the
+  coefficients.
 * `TauCeti.IsPrimitiveOn.eventually_exists_path_pathClassIntegral_eq_sub`: near a point where a
   closed `1`-form has a primitive `g`, paths from the point integrate the form to the change of `g`.
 * `TauCeti.exists_mextDeriv_eq_of_homologyPeriodHom_eq_zero`: a closed `1`-form whose periods on
@@ -83,13 +88,13 @@ singular `1`-cycles of `M`, as a homomorphism from `H₁(M; ℤ)` to the coeffic
 `1`-simplex is integrated as the continuous path it traces (`TauCeti.pathClassIntegral`). It is
 meaningful for closed `C¹` forms, and `0` otherwise. -/
 def homologyPeriodHom : ((singularChains ℤ).obj (.of M)).homology 1 →+ F :=
-  (H₁.liftPathClass (X := .of M) (f := fun q ↦ pathClassIntegral φ q)
-    fun p q ↦ pathClassIntegral_trans p q).comp (H₁AddEquivHomology (.of M)).symm.toAddMonoidHom
+  (H₁.liftPathClass ℤ (X := .of M) (f := fun q ↦ pathClassIntegral φ q)
+    fun p q ↦ pathClassIntegral_trans p q).comp (H₁AddEquivHomology ℤ (.of M)).symm.toAddMonoidHom
 
 /-- The period on the class of a cycle, given in the explicit description `H₁` of the first
 homology group. -/
-theorem homologyPeriodHom_H₁AddEquivHomology_mk (c : cycles₁ (.of M)) :
-    homologyPeriodHom φ (H₁AddEquivHomology (.of M) (H₁.mk c)) =
+theorem homologyPeriodHom_H₁AddEquivHomology_mk (c : cycles₁ ℤ (.of M)) :
+    homologyPeriodHom φ (H₁AddEquivHomology ℤ (.of M) (H₁.mk c)) =
       chainsDesc (fun s ↦ pathClassIntegral φ (.mk (path₁ s)))
         (c : ((singularChains ℤ).obj (.of M)).X 1) := by
   rw [homologyPeriodHom, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
@@ -101,27 +106,42 @@ theorem homologyPeriodHom_homologyπ (z : ((singularChains ℤ).obj (.of M)).cyc
     homologyPeriodHom φ ((((singularChains ℤ).obj (.of M)).homologyπ 1).hom z) =
       chainsDesc (fun s ↦ pathClassIntegral φ (.mk (path₁ s)))
         ((((singularChains ℤ).obj (.of M)).iCycles 1).hom z) := by
-  have hz : (((singularChains ℤ).obj (.of M)).iCycles 1).hom z ∈ cycles₁ (.of M) :=
+  have hz : (((singularChains ℤ).obj (.of M)).iCycles 1).hom z ∈ cycles₁ ℤ (.of M) :=
     mem_cycles₁ congr($(((singularChains ℤ).obj (.of M)).iCycles_d 1 0).hom z)
   rw [← H₁AddEquivHomology_mk ⟨_, hz⟩ z rfl, homologyPeriodHom_H₁AddEquivHomology_mk]
 
 /-- The period on the homology class of a loop is the integral along the loop. -/
 theorem homologyPeriodHom_loopClass {x : M} (γ : Path x x) :
-    homologyPeriodHom φ (H₁AddEquivHomology (.of M) (loopClass (X := .of M) γ)) =
+    homologyPeriodHom φ (H₁AddEquivHomology ℤ (.of M) (loopClass ℤ (X := .of M) γ)) =
       pathClassIntegral φ (.mk γ) := by
   rw [homologyPeriodHom, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
     AddEquiv.symm_apply_apply, H₁.liftPathClass_loopClass (fun p q ↦ pathClassIntegral_trans p q)]
+
+/-- **Null-homologous loops have zero periods.** Let `c` be a `C¹` curve whose restriction to
+`[a, b]`, reparametrized affinely by `[0, 1]`, is a loop `γ` whose class in `H₁(M; ℤ)` vanishes.
+Then the line integral of a closed `C¹` `1`-form along `c` from `a` to `b` is zero. -/
+theorem pathIntegral_eq_zero_of_loopClass_eq_zero (hφ : IsSmoothForm I 1 φ)
+    (hclosed : mextDeriv φ = 0) {c : ℝ → M} (hc : ContMDiff 𝓘(ℝ, ℝ) I 1 c) {a b : ℝ} {x : M}
+    {γ : Path x x} (hγ : ∀ t : unitInterval, γ t = c ((b - a) * t + a))
+    (h0 : H₁AddEquivHomology ℤ (.of M) (loopClass ℤ (X := .of M) γ) = 0) :
+    pathIntegral φ c a b = 0 := by
+  have hc' : ContMDiff 𝓘(ℝ, ℝ) I 1 fun t : ℝ ↦ c ((b - a) * t + a) :=
+    hc.comp (contMDiff_iff_contDiff.mpr ((contDiff_const.mul contDiff_id).add contDiff_const))
+  have h := pathIntegral_comp_mul_add (hφ.of_le (by norm_num)) hc (b - a) a 0 1
+  rw [mul_zero, zero_add, mul_one, sub_add_cancel, ← pathClassIntegral_mk_eq_pathIntegral hφ
+    hclosed hc' hγ, ← homologyPeriodHom_loopClass, h0, map_zero] at h
+  exact h.symm
 
 /-- **The periods factor through `H₁(M; ℤ)`**: the period of a loop class `g` at any base point is
 the value of `homologyPeriodHom φ` on the Hurewicz class of `g`. -/
 theorem homologyPeriodHom_hurewicz₁ {x : M} (g : FundamentalGroup M x) :
     homologyPeriodHom φ
-        (H₁AddEquivHomology (.of M) (Multiplicative.toAdd (hurewicz₁ (.of M) x g))) =
+        (H₁AddEquivHomology ℤ (.of M) (Multiplicative.toAdd (hurewicz₁ ℤ (.of M) x g))) =
       periodHom φ x (Additive.ofMul g) := by
   obtain ⟨p⟩ := g
   induction p using Path.Homotopic.Quotient.ind with | mk γ =>
   rw [periodHom_apply, toMul_ofMul]
-  refine (congrArg (fun h ↦ homologyPeriodHom φ (H₁AddEquivHomology _ (Multiplicative.toAdd h)))
+  refine (congrArg (fun h ↦ homologyPeriodHom φ (H₁AddEquivHomology ℤ _ (Multiplicative.toAdd h)))
     (hurewicz₁_mk (X := .of M) γ)).trans ?_
   rw [toAdd_ofAdd, homologyPeriodHom_loopClass]
 
@@ -129,7 +149,7 @@ theorem homologyPeriodHom_hurewicz₁ {x : M} (g : FundamentalGroup M x) :
 transported along the Hurewicz isomorphism from the abelianization of `π₁(M, x)`. -/
 theorem homologyPeriodHom_hurewiczHomologyAddEquiv [PathConnectedSpace M] {x : M}
     (g : FundamentalGroup M x) :
-    homologyPeriodHom φ (hurewiczHomologyAddEquiv (X := .of M) x
+    homologyPeriodHom φ (hurewiczHomologyAddEquiv (X := .of M) x (.refl ℤ)
         (Additive.ofMul (Group.Abelianization.of g))) =
       periodHom φ x (Additive.ofMul g) := by
   rw [hurewiczHomologyAddEquiv_apply, hurewiczAb_ofMul_of, homologyPeriodHom_hurewicz₁]
@@ -140,7 +160,7 @@ cycles by a linear map on singular `1`-chains which integrates `φ` along each s
 private theorem homologyPeriodHom_eq_of_simplexChain
     {g : ((singularChains ℤ).obj (.of M)).homology 1 →+ F}
     (L : ((singularChains ℤ).obj (.of M)).X 1 →ₗ[ℤ] F)
-    (hg : ∀ c : cycles₁ (.of M), g (H₁AddEquivHomology (.of M) (H₁.mk c)) = L c)
+    (hg : ∀ c : cycles₁ ℤ (.of M), g (H₁AddEquivHomology ℤ (.of M) (H₁.mk c)) = L c)
     (hL : ∀ s, L (simplexChain s 1) = pathClassIntegral φ (.mk (path₁ s))) :
     homologyPeriodHom φ = g :=
   homology_one_addMonoidHom_ext fun c ↦ by
@@ -169,6 +189,21 @@ theorem homologyPeriodHom_smul (a : ℝ) :
     (fun c ↦ by
       rw [AddMonoidHom.smul_apply, homologyPeriodHom_H₁AddEquivHomology_mk, LinearMap.smul_apply])
     fun s ↦ by rw [LinearMap.smul_apply, chainsDesc_simplexChain_one, pathClassIntegral_smul]
+
+/-- **The periods on singular homology are natural in the coefficients.** A continuous linear
+map `L` of coefficient spaces carries the periods of a closed `C¹` form `φ` to the periods of the
+form `L ∘ φ`. -/
+theorem homologyPeriodHom_mapCoeff {G : Type} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [CompleteSpace G] (L : F →L[ℝ] G) (hφ : IsSmoothForm I 1 φ) (hclosed : mextDeriv φ = 0) :
+    homologyPeriodHom (RoughForm.mapCoeff L φ) = (L : F →+ G).comp (homologyPeriodHom φ) :=
+  homologyPeriodHom_eq_of_simplexChain
+    ((L : F →+ G).toIntLinearMap ∘ₗ chainsDesc fun s ↦ pathClassIntegral φ (.mk (path₁ s)))
+    (fun c ↦ by
+      rw [AddMonoidHom.comp_apply, homologyPeriodHom_H₁AddEquivHomology_mk, LinearMap.comp_apply,
+        AddMonoidHom.coe_toIntLinearMap])
+    fun s ↦ by
+      rw [LinearMap.comp_apply, chainsDesc_simplexChain_one, AddMonoidHom.coe_toIntLinearMap,
+        pathClassIntegral_mapCoeff L hφ hclosed, AddMonoidHom.coe_ofClass]
 
 /-- The periods of a `1`-form which is not a closed `C¹` form are `0` by convention. -/
 theorem homologyPeriodHom_undef (h : ¬(IsSmoothForm I 1 φ ∧ mextDeriv φ = 0)) :
@@ -347,7 +382,7 @@ theorem homologyPeriod_mk (φ : closedForms I M 1) :
 on `g`. -/
 theorem homologyPeriod_hurewicz₁ (c : deRhamCohomology I M 1) {x : M} (g : FundamentalGroup M x) :
     homologyPeriod c
-        (H₁AddEquivHomology (.of M) (Multiplicative.toAdd (hurewicz₁ (.of M) x g))) =
+        (H₁AddEquivHomology ℤ (.of M) (Multiplicative.toAdd (hurewicz₁ ℤ (.of M) x g))) =
       period x c (Additive.ofMul g) := by
   obtain ⟨φ, rfl⟩ := mk_surjective I 1 c
   rw [homologyPeriod_mk, period_mk, homologyPeriodHom_hurewicz₁]

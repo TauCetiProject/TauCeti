@@ -39,6 +39,9 @@ invariance, the long exact sequence of a pair, excision) are transported to cubi
 
 ## Main results
 
+* `TauCeti.cubicalToSingular_app_f_map` and `TauCeti.singularChains_d_cubicalToSingular`:
+  naturality on normalized chains and compatibility with the boundary.
+
 * `TauCeti.singularToCubical_app_f_simplexChain` and `TauCeti.cubicalToSingular_app_f_ofCube`: the
   comparison maps send a simplex, respectively a cube, to the image of the model generator under
   it, regarded as a map from the model.
@@ -54,6 +57,8 @@ invariance, the long exact sequence of a pair, excision) are transported to cubi
   model generators are the point simplex and the point cube.
 * `TauCeti.singularCubicalHomologyIso_hom_singularHomology₀Section`: on homology in degree zero the
   comparison sends the class of a point to the class of the point cube.
+* `TauCeti.singularCubicalHomologyIso_inv_homologyπ_cubicalCycleOfPoint`: conversely, the inverse
+  comparison sends the class of the point cube to the class of the point.
 * `TauCeti.TopCat.isIso_singularHomologyMap_of_quasiIso`: a map inducing a quasi-isomorphism of
   normalized cubical chains induces isomorphisms on singular homology.
 
@@ -203,6 +208,21 @@ theorem cubicalToSingular_app_f_zero_ofZeroCube {X : TopCat.{u}} (c : SingularCu
   rw [← SingularCube.eq_point c] at h
   exact h
 
+/-- Naturality of the cubical-to-singular comparison on arbitrary normalized chains. -/
+theorem cubicalToSingular_app_f_map {X Y : TopCat.{u}} (f : X ⟶ Y) (n : ℕ)
+    (c : NormalizedCubicalChain X k n) :
+    ((cubicalToSingular k).app Y).f n (NormalizedCubicalChain.map k f.hom n c) =
+      ((singularChains k).map f).f n (((cubicalToSingular k).app X).f n c) :=
+  congrArg (fun φ ↦ φ.f n c) ((cubicalToSingular k).naturality f)
+
+/-- The cubical-to-singular comparison commutes with the normalized cubical boundary. -/
+theorem singularChains_d_cubicalToSingular {X : TopCat.{u}} (n : ℕ)
+    (c : NormalizedCubicalChain X k (n + 1)) :
+    ((singularChains k).obj X).d (n + 1) n (((cubicalToSingular k).app X).f (n + 1) c) =
+      ((cubicalToSingular k).app X).f n (NormalizedCubicalChain.boundary X k n c) :=
+  (HomologicalComplex.Hom.comm_apply _ (n + 1) n c).trans
+    (congrArg (((cubicalToSingular k).app X).f n) (normalizedCubicalChainComplex_obj_d_apply X n c))
+
 /-- The comparison with simplicial chains is natural: pushing forward the image of a cube is the
 image of the pushed-forward cube. -/
 theorem singularChains_map_cubicalToSingular {X Y : TopCat.{u}} (f : X ⟶ Y) {n : ℕ}
@@ -211,15 +231,9 @@ theorem singularChains_map_cubicalToSingular {X Y : TopCat.{u}} (f : X ⟶ Y) {n
         (((cubicalToSingular k).app X).f n
           (NormalizedCubicalChain.ofCube X k c)) =
       ((cubicalToSingular k).app Y).f n
-        (NormalizedCubicalChain.ofCube Y k (f.hom.comp c)) := by
-  have h := congrArg (fun φ ↦ φ.f n (NormalizedCubicalChain.ofCube X k c))
-    ((cubicalToSingular k).naturality f)
-  simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp] at h
-  -- The term `((normalizedCubicalChainComplex k).obj X).X n` is the module of normalized chains by
-  -- definition, which `exact` sees but `rw` does not.
-  exact h.symm.trans (congrArg (((cubicalToSingular k).app Y).f n).hom
-    ((normalizedCubicalChainComplex_map_f_apply f n _).trans
-      (NormalizedCubicalChain.map_ofCube _ f.hom c)))
+        (NormalizedCubicalChain.ofCube Y k (f.hom.comp c)) :=
+  (cubicalToSingular_app_f_map f n (NormalizedCubicalChain.ofCube X k c)).symm.trans
+    (congrArg (((cubicalToSingular k).app Y).f n) (NormalizedCubicalChain.map_ofCube k f.hom c))
 
 section ModelChains
 
@@ -291,9 +305,7 @@ theorem singularChains_d_cubicalToSingularGen (n : ℕ) :
         (cubicalToSingularSubcube k (n + 1) (SingularCube.face i 0 (ContinuousMap.id _)) -
           cubicalToSingularSubcube k (n + 1) (SingularCube.face i 1 (ContinuousMap.id _))) := by
   unfold cubicalToSingularGen cubicalToSingularSubcube
-  refine (HomologicalComplex.Hom.comm_apply ((cubicalToSingular k).app _) _ _ _).trans
-    ((congrArg (((cubicalToSingular k).app _).f n).hom
-      (normalizedCubicalChainComplex_obj_d_apply _ n _)).trans ?_)
+  refine (singularChains_d_cubicalToSingular n _).trans ?_
   rw [NormalizedCubicalChain.boundary_ofCube]
   simp only [SingularCube.comp_face_id]
   -- The sums are over the same indices and the comparison is linear.
@@ -463,6 +475,16 @@ theorem singularCubicalHomologyIso_hom_singularHomology₀Section {X : TopCat.{u
   rw [iCycles_cubicalCycleOfPoint, HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, hi]
   rw [singularToCubical_app_f_zero_simplexChain, Equiv.apply_symm_apply,
     normalizedCubicalChainComplexXEquiv_symm_apply]
+
+/-- The comparison of normalized cubical with singular homology sends the class of the point cube
+at `x` in degree zero to the class of the point `x`. -/
+theorem singularCubicalHomologyIso_inv_homologyπ_cubicalCycleOfPoint {X : TopCat.{u}} (x : X) :
+    (singularCubicalHomologyIso k X 0).inv
+        (((normalizedCubicalChainComplex k).obj X).homologyπ 0 (cubicalCycleOfPoint k x)) =
+      (singularHomology₀Section (ModuleCat.of k k) x).hom 1 := by
+  rw [← singularCubicalHomologyIso_hom_singularHomology₀Section]
+  -- The singular homology of `X` is the homology of `(singularChains k).obj X` by definition.
+  exact Iso.hom_inv_id_apply _ _
 
 /-- The comparison isomorphism on homology is natural. -/
 @[reassoc]

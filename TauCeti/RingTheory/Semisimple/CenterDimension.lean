@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Centralizer
 public import Mathlib.LinearAlgebra.DFinsupp
 public import Mathlib.LinearAlgebra.Dimension.Finite
 public import TauCeti.RingTheory.Semisimple.RegularIsotypicComponent
+import TauCeti.RingTheory.SimpleModule.Isotypic
 
 /-!
 # The center bounds the number of simple modules of a semisimple algebra
@@ -44,6 +45,10 @@ construction works over any commutative semiring of scalars.
 
 * `TauCeti.isTwoSided_of_mem_isotypicComponents`: an isotypic component of the regular module is a
   two-sided ideal.
+* `TauCeti.mul_eq_zero_of_mem_isotypicComponents`: distinct isotypic components of the regular
+  module multiply to zero.
+* `TauCeti.exists_sum_eq_of_isotypicComponents`: every element is a sum of elements of the
+  isotypic components of the regular module.
 * `TauCeti.exists_ne_zero_mem_center_of_mem_isotypicComponents`: it contains a nonzero central
   element.
 * `TauCeti.card_isotypicComponents_le_finrank_center`: the number of isotypic components of the
@@ -70,6 +75,28 @@ of the regular module, and those endomorphisms are the right multiplications. -/
 theorem isTwoSided_of_mem_isotypicComponents {c : Ideal R} (hc : c ∈ isotypicComponents R R) :
     c.IsTwoSided :=
   isFullyInvariant_iff_isTwoSided.mp (Submodule.IsFullyInvariant.of_mem_isotypicComponents hc)
+
+/-- Left multiplication by an element `b` of an isotypic component `c` of the regular module kills
+every other isotypic component `c'`: `b c' ⊆ c ∩ c' = 0`, since `c` is a two-sided ideal. -/
+theorem mul_eq_zero_of_mem_isotypicComponents {c c' : Ideal R}
+    (hc : c ∈ isotypicComponents R R) (hc' : c' ∈ isotypicComponents R R) (hne : c' ≠ c)
+    {b x : R} (hb : b ∈ c) (hx : x ∈ c') : b * x = 0 := by
+  have := isTwoSided_of_mem_isotypicComponents hc
+  have hdisj : Disjoint c' c :=
+    (sSupIndep_isotypicComponents R R).pairwiseDisjoint hc' hc hne
+  exact (Submodule.disjoint_def.mp hdisj) _ (c'.smul_mem b hx) (Ideal.mul_mem_right x c hb)
+
+/-- **Every element of a semisimple ring is a sum over the isotypic components.** For the finite
+set `s` of isotypic components of the regular module, every `x` is `∑_{c ∈ s} μ c` with
+`μ c ∈ c`. -/
+theorem exists_sum_eq_of_isotypicComponents [IsSemisimpleRing R] (x : R) :
+    ∃ μ : Ideal R → R, (∀ c, μ c ∈ c) ∧
+      ∑ c ∈ (isotypicComponents R R).toFinite.toFinset, μ c = x := by
+  have hx : x ∈ ⨆ c ∈ (isotypicComponents R R).toFinite.toFinset, c := by
+    simp_rw [Set.Finite.mem_toFinset, ← sSup_eq_iSup, sSup_isotypicComponents]
+    exact Submodule.mem_top
+  obtain ⟨μ, hμ⟩ := (Submodule.mem_iSup_finset_iff_exists_sum _ x).mp hx
+  exact ⟨fun c ↦ μ c, fun c ↦ (μ c).property, hμ⟩
 
 section CommSemiring
 
@@ -145,14 +172,9 @@ theorem card_isotypicComponents_le_finrank_center [Module.Finite k (Subalgebra.c
   classical
   let _ : Fintype (isotypicComponents R R) := Fintype.ofFinite _
   obtain ⟨e, hmem, hne, hcen⟩ := exists_center_family k R
-  have hind : iSupIndep fun c : isotypicComponents R R ↦ c.val :=
-    (sSupIndep_iff _).mp (sSupIndep_isotypicComponents R R)
   -- The chosen elements are linearly independent over `k`, one from each independent summand.
-  have hind' : iSupIndep fun c : isotypicComponents R R ↦ c.val.restrictScalars k := by
-    intro c
-    simpa only [← Submodule.restrictScalars_iSup, disjoint_iff,
-      ← Submodule.restrictScalars_inf, Submodule.restrictScalars_eq_bot_iff] using hind c
-  have hli : LinearIndependent k e := hind'.linearIndependent _ hmem hne
+  have hli : LinearIndependent k e :=
+    (iSupIndep_isotypicComponents_restrictScalars k (R := R) (M := R)).linearIndependent _ hmem hne
   -- Read the independence inside the center and count.
   have hli' : LinearIndependent k fun c ↦ (⟨e c, hcen c⟩ : Subalgebra.center k R) :=
     LinearIndependent.of_comp (Subalgebra.center k R).val.toLinearMap hli

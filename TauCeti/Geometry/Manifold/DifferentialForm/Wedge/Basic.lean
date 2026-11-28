@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Basic
+import TauCeti.Analysis.Normed.Operator.Bilinear
 
 /-!
 # Wedge products of bundle-valued rough differential forms
@@ -96,8 +97,8 @@ theorem bundleWedgeWith_flip
     bundleWedgeWith μ hμ φ ψ x v =
       (-1 : ℝ) ^ (k * l) •
         bundleWedgeWith
-          (fun y ↦ ContinuousLinearMap.pairingFlip (μ y) (hμ y))
-          (fun y ↦ ContinuousLinearMap.pairingFlip_continuous (μ y) (hμ y))
+          (fun y ↦ (μ y).toLinearMap.pairingFlip (hμ y))
+          (fun y ↦ (μ y).toLinearMap.continuous_uncurry_pairingFlip (hμ y))
           ψ φ x (v ∘ Fin.cast (Nat.add_comm l k)) := by
   simpa only [bundleWedgeWith] using
     ContinuousAlternatingMap.pairedWedge_flip (μ x) (hμ x) (φ x) (ψ x) v
@@ -256,6 +257,16 @@ theorem wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
             (ψ x (fun j ↦ v (σ (Fin.natAdd k j)))) :=
   bundleWedgeWith_apply _ _ φ ψ x v
 
+/-- Pairing a degree-zero rough form with a rough form pairs the function value with the form's
+value. -/
+@[simp]
+theorem wedgeWith_apply_zero_left (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : RoughForm I M F₁ 0) (ψ : RoughForm I M F₂ l)
+    (x : M) (v : Fin (0 + l) → TangentSpace I x) :
+    φ.wedgeWith μ ψ x v = μ (φ x 0) (ψ x (v ∘ Fin.cast (Nat.zero_add l).symm)) := by
+  rw [wedgeWith_apply']
+  exact ContinuousAlternatingMap.pairedWedge_apply_zero_left μ μ.continuous₂ _ _ v
+
 /-- Pairing a rough form with a degree-zero form pairs its value with the function value. -/
 @[simp]
 theorem wedgeWith_apply_zero_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
@@ -374,10 +385,8 @@ theorem wedgeWith_flip (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
       (-1 : ℝ) ^ (k * l) •
         ψ.wedgeWith μ.flip φ x (v ∘ Fin.cast (Nat.add_comm l k)) := by
   have hμ : Continuous (Function.uncurry fun a b ↦ μ a b) := μ.continuous₂
-  have hpair : ContinuousLinearMap.pairingFlip μ hμ = μ.flip := by
-    ext a b
-    rw [ContinuousLinearMap.pairingFlip_apply, ContinuousLinearMap.flip_apply]
-  simpa only [wedgeWith, bundleWedgeWith, hpair, Function.uncurry_apply_pair] using
+  simpa only [wedgeWith, bundleWedgeWith, ContinuousLinearMap.pairingFlip_eq_flip,
+    Function.uncurry_apply_pair] using
     bundleWedgeWith_flip (μ := fun _ ↦ μ) (hμ := fun _ ↦ hμ) φ ψ x v
 
 /-- A symmetric fibrewise pairing gives the graded-commutativity identity for rough forms. -/

@@ -87,19 +87,7 @@ theorem dualFeasible_iff {c : X × Y → EReal} : DualFeasible c φ ψ ↔
 `ENNReal.ofReal` loses no information because the cost is nonnegative. -/
 theorem dualFeasible_iff_ofReal_add_le : DualFeasible (fun z ↦ (c z : EReal)) φ ψ ↔
     ∀ x y, ENNReal.ofReal (φ x + ψ y) ≤ c (x, y) := by
-  constructor
-  · intro h x y
-    have hxy : ((φ x + ψ y : ℝ) : EReal) ≤ (c (x, y) : EReal) := by
-      simpa only [EReal.coe_add] using h x y
-    simpa only [EReal.real_coe_toENNReal, EReal.toENNReal_coe] using
-      EReal.toENNReal_le_toENNReal hxy
-  · intro h x y
-    have hcast : (ENNReal.ofReal (φ x + ψ y) : EReal) ≤ (c (x, y) : EReal) :=
-      EReal.coe_ennreal_le_coe_ennreal_iff.2 (h x y)
-    have hsum : ((φ x + ψ y : ℝ) : EReal) ≤ (ENNReal.ofReal (φ x + ψ y) : EReal) := by
-      rw [EReal.coe_ennreal_ofReal]
-      exact le_max_left ((φ x + ψ y : ℝ) : EReal) 0
-    simpa only [EReal.coe_add] using hsum.trans hcast
+  simp only [DualFeasible, ← EReal.real_coe_toENNReal, EReal.toENNReal_le_iff, EReal.coe_add]
 
 /-- A dual-feasible pair satisfies the extended-nonnegative pointwise constraint. -/
 theorem DualFeasible.ofReal_add_le (h : DualFeasible (fun z ↦ (c z : EReal)) φ ψ) (x : X) (y : Y) :
@@ -246,7 +234,8 @@ theorem DualFeasible.kantorovichDualValue_le_lintegral
     (h : DualFeasible (fun z ↦ (c z : EReal)) φ ψ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν) (hπ : IsCoupling π μ ν) :
     (kantorovichDualValue μ ν φ ψ : EReal) ≤ ((∫⁻ z, c z ∂π) : ℝ≥0∞) := by
-  exact EReal.coe_le_coe_ennreal_of_ofReal_le <|
+  apply EReal.toENNReal_le_iff.1
+  simpa only [EReal.real_coe_toENNReal] using
     h.ofReal_kantorovichDualValue_le_lintegral hφ hψ hπ
 
 /-- **Kantorovich weak duality, in extended-nonnegative form.** The positive part of every
@@ -272,7 +261,8 @@ theorem DualFeasible.kantorovichDualValue_le_transportCost
     (h : DualFeasible (fun z ↦ (c z : EReal)) φ ψ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν) :
     (kantorovichDualValue μ ν φ ψ : EReal) ≤ (transportCost c μ ν : ℝ≥0∞) := by
-  exact EReal.coe_le_coe_ennreal_of_ofReal_le <|
+  apply EReal.toENNReal_le_iff.1
+  simpa only [EReal.real_coe_toENNReal] using
     h.ofReal_kantorovichDualValue_le_transportCost hφ hψ
 
 end WeakDuality

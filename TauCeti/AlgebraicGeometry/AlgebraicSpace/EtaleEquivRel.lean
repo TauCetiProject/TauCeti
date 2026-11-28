@@ -226,4 +226,10 @@ theorem restrict (h : EtaleEquivRel s t) {U' : Scheme.{u}} (g : U' ⟶ U) [Etale
 
 end EtaleEquivRel
 
+/-- The restriction of a pair `s, t : R ⟶ U` of morphisms of schemes with empty source `R`, along
+any `g : U' ⟶ U`, has an empty total space. -/
+instance isEmpty_restrictRel {R U U' : Scheme.{u}} [IsEmpty R] (g : U' ⟶ U) (s t : R ⟶ U) :
+    IsEmpty ↥(restrictRel g t s) :=
+  ⟨fun x ↦ isEmptyElim (restrictRel.proj g t s x)⟩
+
 end TauCeti.AlgebraicGeometry.Spaces

@@ -133,6 +133,17 @@ theorem cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff {S : Set Y} 
     cubicalChainModuleEquiv_lof]
   simp [cubicalChainLof, DirectSum.lof_eq_of]
 
+/-- A chain `c` of dimension `n` minus the differential of a chain `v` of dimension `n + 1` is
+supported in `S` exactly when `c` minus the boundary of `v` is supported in `S` as a chain of
+dimension `n`. -/
+theorem cubicalChainModuleLof_sub_differential_mem_cubicalChainModuleSupportedIn_iff {S : Set Y}
+    {n : ℕ} {c : NormalizedCubicalChain Y R n} {v : NormalizedCubicalChain Y R (n + 1)} :
+    cubicalChainModuleLof Y H R n c -
+        cubicalChainModuleDifferential Y H R (cubicalChainModuleLof Y H R (n + 1) v) ∈
+      cubicalChainModuleSupportedIn H R S ↔ c - boundary Y R n v ∈ supportedIn R S n := by
+  rw [cubicalChainModuleDifferential_lof_succ, ← map_sub,
+    cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff]
+
 /-- The chain of a cube whose image lies in `S` is supported in `S`. -/
 theorem cubicalChainModuleLof_ofCube_mem_cubicalChainModuleSupportedIn {S : Set Y} {n : ℕ}
     {c : SingularCube Y n} (hc : Set.range c ⊆ S) :

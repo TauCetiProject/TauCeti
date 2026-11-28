@@ -23,7 +23,13 @@ variation of the map and the variation of the target almost complex structure.
 These are local-coordinate formulas, without a Sobolev completion or a transversality
 assertion. The Leibniz rule identifies the first-order symbol, and the reparametrization
 formula proves that, for a `C²` curve J-holomorphic near the point, differentiable infinitesimal
-source reparametrizations have tangent-valued linearization.
+source reparametrizations have tangent-valued linearization. This holds also for a source
+structure `j` varying with the point, frozen at its value at the point in the linearization
+(`cauchyRiemannLinearization_fderiv_apply_of_varying`), as for a curve read in a chart of a
+Riemann surface. Consequently, at a curve with injective derivative, a direction tangent to the
+curve near the point has tangent-valued linearization there
+(`cauchyRiemannLinearization_apply_mem_range_of_eventually_mem_range`), so the normal class of
+the linearization only depends on the normal class of the direction.
 For square-minus-one structures, the defect equals twice the usual anti-complex-linear part
 composed with the source structure.
 
@@ -97,15 +103,9 @@ theorem cauchyRiemannOperator_eq_zero_on_iff [FiniteDimensional ℝ U] [FiniteDi
     (∀ x ∈ s, cauchyRiemannOperator j.toLinearMap.toContinuousLinearMap
       (fun y ↦ (J y).toLinearMap.toContinuousLinearMap) u x = 0) ↔
       IsJHolomorphicOn (fun _ ↦ j) J u s := by
-  rw [isJHolomorphicOn_iff]
-  constructor
-  · intro h x hx
-    exact ((cauchyRiemannOperator_eq_zero_iff j J u x
-      ((hu x hx).differentiableAt (hs.mem_nhds hx))).mp (h x hx)).isJHolomorphicWithinAt
-  · intro h x hx
-    exact (cauchyRiemannOperator_eq_zero_iff j J u x
-      ((hu x hx).differentiableAt (hs.mem_nhds hx))).mpr
-        ((h x hx).isJHolomorphicAt_of_mem_nhds (hs.mem_nhds hx))
+  rw [hs.isJHolomorphicOn_iff]
+  exact forall₂_congr fun x hx ↦
+    cauchyRiemannOperator_eq_zero_iff j J u x ((hu x hx).differentiableAt (hs.mem_nhds hx))
 
 /-- The derivative of the Cauchy–Riemann defect in a map direction `ξ`, with the
 target endomorphism field fixed. -/
@@ -161,6 +161,13 @@ theorem cauchyRiemannLinearization_smul (j : U →L[ℝ] U) (J : V → V →L[�
   ext v
   simp only [cauchyRiemannLinearization_apply, fderiv_const_smul_field c,
     _root_.smul_apply, Pi.smul_apply, map_smul, smul_sub]
+
+/-- The local-coordinate linearization at `x` only depends on the germ of the direction at `x`. -/
+theorem _root_.Filter.EventuallyEq.cauchyRiemannLinearization_eq {j : U →L[ℝ] U}
+    {J : V → V →L[ℝ] V} {u ξ η : U → V} {x : U} (h : ξ =ᶠ[𝓝 x] η) :
+    cauchyRiemannLinearization j J u ξ x = cauchyRiemannLinearization j J u η x := by
+  ext v
+  simp only [cauchyRiemannLinearization_apply, h.fderiv_eq, h.self_of_nhds]
 
 /-- The nonlinear defect is differentiable along jointly `C²` map families and differentiable
 endomorphism families. This is a derivative in the parameter normed space. -/
@@ -220,29 +227,55 @@ theorem fderiv_cauchyRiemannOperator_apply
   simp only [_root_.add_apply]
   abel
 
-/-- Differentiating the holomorphicity identity in a source direction. -/
+/-- Differentiating the holomorphicity identity in a source direction, for a source structure `j`
+that varies with the point. -/
 private theorem fderiv_cauchyRiemannOperator_eq_zero
-    (j : U →L[ℝ] U) (J : V → V →L[ℝ] V) (u : U → V) (x a v : U)
-    (hu : ContDiffAt ℝ 2 u x) (hJ : DifferentiableAt ℝ J (u x))
-    (hhol : ∀ᶠ y in 𝓝 x, cauchyRiemannOperator j J u y = 0) :
-    fderiv ℝ (fderiv ℝ u) x a (j v) -
+    (j : U → U →L[ℝ] U) (J : V → V →L[ℝ] V) (u : U → V) (x a v : U)
+    (hu : ContDiffAt ℝ 2 u x) (hj : DifferentiableAt ℝ j x) (hJ : DifferentiableAt ℝ J (u x))
+    (hhol : ∀ᶠ y in 𝓝 x, cauchyRiemannOperator (j y) J u y = 0) :
+    fderiv ℝ (fderiv ℝ u) x a (j x v) + fderiv ℝ u x (fderiv ℝ j x a v) -
       J (u x) (fderiv ℝ (fderiv ℝ u) x a v) -
       fderiv ℝ J (u x) (fderiv ℝ u x a) (fderiv ℝ u x v) = 0 := by
   have hdu := (hu.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
   have hJu := hJ.comp x (hu.differentiableAt (by norm_num))
-  have hh : (fun y ↦ fderiv ℝ u y (j v)) =ᶠ[𝓝 x]
+  have hh : (fun y ↦ fderiv ℝ u y (j y v)) =ᶠ[𝓝 x]
       (fun y ↦ J (u y) (fderiv ℝ u y v)) := by
     filter_upwards [hhol] with y hy
     exact fderiv_apply_eq_of_cauchyRiemannOperator_eq_zero hy v
-  have hleft := (hdu.hasFDerivAt.clm_apply (hasFDerivAt_const (x := x) (j v))).fderiv
+  have hleft := (hdu.hasFDerivAt.clm_apply
+    (hj.hasFDerivAt.clm_apply (hasFDerivAt_const (x := x) v))).fderiv
   have hright := (hJu.hasFDerivAt.clm_apply
     (hdu.hasFDerivAt.clm_apply (hasFDerivAt_const (x := x) v))).fderiv
   have he := congrArg (fun L : U →L[ℝ] V ↦ L a)
     (hleft.symm.trans (hh.fderiv_eq.trans hright))
-  simp only [add_apply, comp_apply, flip_apply, zero_apply, map_zero, zero_add] at he
+  simp only [add_apply, comp_apply, flip_apply, zero_add, comp_zero] at he
   rw [fderiv_comp x hJ (hu.differentiableAt (by norm_num))] at he
   simp only [comp_apply, Function.comp_apply] at he
-  rw [he]
+  rw [sub_sub, sub_eq_zero, ← he]
+  abel
+
+/-- The ambient linearization on an infinitesimal reparametrization, for a source structure `j`
+that varies with the point and is frozen at its value `j x` in the linearization: it is tangent,
+`D_u(du · a) = du · (da ∘ j x - j x ∘ da - (dj a))`. The target structure may vary arbitrarily off
+the curve. -/
+theorem cauchyRiemannLinearization_fderiv_apply_of_varying
+    (j : U → U →L[ℝ] U) (J : V → V →L[ℝ] V) (u : U → V) (a : U → U) (x v : U)
+    (hu : ContDiffAt ℝ 2 u x) (ha : DifferentiableAt ℝ a x) (hj : DifferentiableAt ℝ j x)
+    (hJ : DifferentiableAt ℝ J (u x))
+    (hhol : ∀ᶠ y in 𝓝 x, cauchyRiemannOperator (j y) J u y = 0) :
+    cauchyRiemannLinearization (j x) J u (fun y ↦ fderiv ℝ u y (a y)) x v =
+      fderiv ℝ u x (fderiv ℝ a x (j x v) - j x (fderiv ℝ a x v) - fderiv ℝ j x (a x) v) := by
+  have hdu := (hu.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  have hs := hu.isSymmSndFDerivAt (by norm_num)
+  have he := fderiv_cauchyRiemannOperator_eq_zero j J u x (a x) v hu hj hJ hhol
+  have ht : J (u x) (fderiv ℝ u x (fderiv ℝ a x v)) =
+      fderiv ℝ u x (j x (fderiv ℝ a x v)) :=
+    (fderiv_apply_eq_of_cauchyRiemannOperator_eq_zero hhol.self_of_nhds _).symm
+  simp only [cauchyRiemannLinearization_apply, fderiv_clm_apply hdu ha,
+    add_apply, comp_apply, flip_apply, map_add, map_sub]
+  rw [hs (j x v) (a x), hs v (a x), ht]
+  rw [sub_sub, sub_eq_zero] at he
+  rw [eq_sub_of_add_eq he]
   abel
 
 /-- The ambient linearization on an infinitesimal reparametrization is tangent:
@@ -254,18 +287,55 @@ theorem cauchyRiemannLinearization_fderiv_apply
     (hhol : ∀ᶠ y in 𝓝 x, cauchyRiemannOperator j J u y = 0) :
     cauchyRiemannLinearization j J u (fun y ↦ fderiv ℝ u y (a y)) x v =
       fderiv ℝ u x (fderiv ℝ a x (j v) - j (fderiv ℝ a x v)) := by
+  simpa only [fderiv_const_apply, zero_apply, sub_zero] using
+    cauchyRiemannLinearization_fderiv_apply_of_varying (fun _ ↦ j) J u a x v hu ha
+      (differentiableAt_const j) hJ hhol
+
+/-- **Tangent directions have tangent linearization.** Let `u` be `C²` at `x` with injective
+derivative there, pseudoholomorphic near `x` for a source structure `j` that varies
+differentiably, and let `ξ` be a direction differentiable at `x` that is tangent to `u` near `x`,
+`ξ y ∈ range (du y)`. Then the linearization at `x`, with `j` frozen at `j x`, takes values in the
+tangent space `range (du x)`. So the normal class of the linearization only depends on the normal
+class of the direction near `x`. -/
+theorem cauchyRiemannLinearization_apply_mem_range_of_eventually_mem_range
+    [FiniteDimensional ℝ U] [FiniteDimensional ℝ V]
+    (j : U → U →L[ℝ] U) (J : V → V →L[ℝ] V) {u ξ : U → V} {x : U} (v : U)
+    (hu : ContDiffAt ℝ 2 u x) (hinj : Function.Injective (fderiv ℝ u x))
+    (hξ : DifferentiableAt ℝ ξ x) (hj : DifferentiableAt ℝ j x)
+    (hJ : DifferentiableAt ℝ J (u x))
+    (hhol : ∀ᶠ y in 𝓝 x, cauchyRiemannOperator (j y) J u y = 0)
+    (hmem : ∀ᶠ y in 𝓝 x, ξ y ∈ (fderiv ℝ u y).toLinearMap.range) :
+    cauchyRiemannLinearization (j x) J u ξ x v ∈ (fderiv ℝ u x).toLinearMap.range := by
   have hdu := (hu.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have hs := hu.isSymmSndFDerivAt (by norm_num)
-  have he := fderiv_cauchyRiemannOperator_eq_zero j J u x (a x) v hu hJ hhol
-  have ht : J (u x) (fderiv ℝ u x (fderiv ℝ a x v)) =
-      fderiv ℝ u x (j (fderiv ℝ a x v)) :=
-    (fderiv_apply_eq_of_cauchyRiemannOperator_eq_zero hhol.self_of_nhds _).symm
-  simp only [cauchyRiemannLinearization_apply, fderiv_clm_apply hdu ha,
-    add_apply, comp_apply, flip_apply, map_add, map_sub]
-  rw [hs (j v) (a x), hs v (a x), ht]
-  rw [sub_sub, sub_eq_zero] at he
-  rw [he]
-  abel
+  -- A left inverse `Λ` of `du x` makes `Λ ∘ du y` invertible near `x`, and solving
+  -- `du y (a y) = ξ y` through it gives a differentiable source field `a`.
+  obtain ⟨Λ, hΛ⟩ := (fderiv ℝ u x).toLinearMap.exists_leftInverse_of_injective
+    (LinearMap.ker_eq_bot.2 hinj)
+  let Λ' : V →L[ℝ] U := LinearMap.toContinuousLinearMap Λ
+  have hA : DifferentiableAt ℝ (fun y ↦ Λ'.comp (fderiv ℝ u y)) x :=
+    (differentiableAt_const Λ').clm_comp hdu
+  have hAx : Λ'.comp (fderiv ℝ u x) = 1 := by
+    ext w
+    exact LinearMap.congr_fun hΛ w
+  have hunit : ∀ᶠ y in 𝓝 x, IsUnit (Λ'.comp (fderiv ℝ u y)) :=
+    hA.continuousAt.eventually
+      (Units.isOpen.mem_nhds (by simpa only [Set.mem_ofPred_eq, hAx] using isUnit_one))
+  let a : U → U := fun y ↦ Ring.inverse (Λ'.comp (fderiv ℝ u y)) (Λ' (ξ y))
+  have ha : DifferentiableAt ℝ a x :=
+    (hA.inverse (by rw [hAx]; exact isUnit_one)).clm_apply
+      ((differentiableAt_const Λ').clm_apply hξ)
+  have hξa : ξ =ᶠ[𝓝 x] fun y ↦ fderiv ℝ u y (a y) := by
+    filter_upwards [hmem, hunit] with y ⟨b, hb⟩ hy
+    rw [ContinuousLinearMap.coe_coe] at hb
+    have hab : a y = b := by
+      -- Unfold `a` at `y`.
+      change Ring.inverse (Λ'.comp (fderiv ℝ u y)) (Λ' (ξ y)) = b
+      rw [← hb, ← ContinuousLinearMap.comp_apply Λ', ← mul_apply_eq_comp,
+        Ring.inverse_mul_cancel _ hy, one_apply_eq_self]
+    rw [hab, hb]
+  rw [hξa.cauchyRiemannLinearization_eq,
+    cauchyRiemannLinearization_fderiv_apply_of_varying j J u a x v hu ha hj hJ hhol]
+  exact LinearMap.mem_range_self _ _
 
 /-- Leibniz rule for the ambient linearization. Its symbol is
 `ξ ↦ df(jv) ξ - df(v) J ξ`, with no integrability assumption on `J`. -/

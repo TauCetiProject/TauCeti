@@ -282,35 +282,21 @@ instance : NonUnitalCStarAlgebra (FullCrossedProduct α μ) :=
 variable (α μ) in
 /-- The canonical ⋆-homomorphism from the twisted convolution algebra into the full crossed
 product. -/
-def of : ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] FullCrossedProduct α μ where
-  toFun f := (toFullStarAlgEquiv α μ f : Completion (FullConvolutionAlgebra α μ))
-  map_smul' c f := by
-    rw [map_smul]
-    exact Completion.coe_smul c _
-  map_zero' := by
-    rw [map_zero]
-    exact Completion.coe_zero
-  map_add' f g := by
-    rw [map_add]
-    exact Completion.coe_add _ _
-  map_mul' f g := by
-    rw [map_mul]
-    exact Completion.coe_mul' _ _
-  map_star' f := by
-    rw [map_star]
-    exact Completion.coe_star _
+def of : ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] FullCrossedProduct α μ :=
+  (Completion.coeNonUnitalStarAlgHom ℂ).comp (toFullStarAlgEquiv α μ).toNonUnitalStarAlgHom
 
 /-- The image of `f` under the completion map of `FullConvolutionAlgebra α μ` is `of α μ f`. -/
 @[simp]
 theorem coe_toFull_eq_of (f : ConvolutionAlgebra α μ) :
     ((toFull f : Completion (FullConvolutionAlgebra α μ)) : FullCrossedProduct α μ) = of α μ f :=
-  (rfl)
+  (congrFun (Completion.coe_coeNonUnitalStarAlgHom ℂ) (toFull f)).symm
 
 /-- The norm of the image of `f` in the full crossed product is its full seminorm `‖f‖ᵤ`. -/
 @[simp]
 theorem norm_of (f : ConvolutionAlgebra α μ) :
-    ‖of α μ f‖ = ConvolutionAlgebra.fullSeminorm α μ f :=
-  Completion.norm_coe (toFull f)
+    ‖of α μ f‖ = ConvolutionAlgebra.fullSeminorm α μ f := by
+  rw [← coe_toFull_eq_of]
+  exact Completion.norm_coe (toFull f)
 
 /-- The image of `f` in the full crossed product has norm at most its L¹ norm. -/
 theorem norm_of_le (f : ConvolutionAlgebra α μ) : ‖of α μ f‖ ≤ ‖f‖ :=
@@ -322,8 +308,11 @@ theorem continuous_of : Continuous (of α μ) :=
     simpa only [one_mul] using norm_of_le f
 
 /-- The twisted convolution algebra is dense in the full crossed product. -/
-theorem denseRange_of : DenseRange (of α μ) :=
-  Completion.denseRange_coe.comp toFull.surjective.denseRange (Completion.continuous_coe _)
+theorem denseRange_of : DenseRange (of α μ) := by
+  rw [show ⇑(of α μ) =
+      fun f ↦ ((toFull f : Completion (FullConvolutionAlgebra α μ)) : FullCrossedProduct α μ) from
+    funext fun f ↦ (coe_toFull_eq_of f).symm]
+  exact Completion.denseRange_coe.comp toFull.surjective.denseRange (Completion.continuous_coe _)
 
 /-- Compactly supported continuous functions `C_c(G, A)` map densely into
 `FullCrossedProduct α μ`. -/
@@ -370,42 +359,19 @@ variable {D : Type*} [NonUnitalCStarAlgebra D]
   (ρ : ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] D)
   (hρ : ∀ f, ‖ρ f‖ ≤ ConvolutionAlgebra.fullSeminorm α μ f)
 
-/-- A ⋆-homomorphism bounded by the full seminorm is continuous for that seminorm. -/
-private def liftCLM : FullConvolutionAlgebra α μ →L[ℂ] D :=
-  ((ρ : ConvolutionAlgebra α μ →ₗ[ℂ] D).comp
-    ((toFullStarAlgEquiv α μ).symm :
-      FullConvolutionAlgebra α μ →ₗ[ℂ] ConvolutionAlgebra α μ)).mkContinuous 1 fun f => by
-      simpa [norm_def] using hρ (ofFull f)
-
-private theorem fromCompletion_liftCLM_of (f : ConvolutionAlgebra α μ) :
-    (liftCLM ρ hρ).fromCompletion (of α μ f) = ρ f := by
-  simpa [liftCLM] using
-    ContinuousLinearMap.fromCompletion_apply_coe (liftCLM ρ hρ) (toFull f)
-
 /-- Extend a ⋆-homomorphism bounded by the full seminorm to the full crossed product.
 Its values on compactly supported coefficients are given by `lift_of`, and these determine
 it uniquely by `starAlgHom_ext`. -/
-def lift : FullCrossedProduct α μ →⋆ₙₐ[ℂ] D where
-  toFun := (liftCLM ρ hρ).fromCompletion
-  map_smul' := map_smul _
-  map_zero' := map_zero _
-  map_add' := map_add _
-  map_mul' x y := by
-    induction x using induction_on with
-    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-    | ih f =>
-      induction y using induction_on with
-      | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-      | ih g => simp only [← map_mul, fromCompletion_liftCLM_of]
-  map_star' x := by
-    induction x using induction_on with
-    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-    | ih f => simp only [← map_star, fromCompletion_liftCLM_of]
+def lift : FullCrossedProduct α μ →⋆ₙₐ[ℂ] D :=
+  (ρ.comp (toFullStarAlgEquiv α μ).symm.toNonUnitalStarAlgHom).fromCompletion <|
+    AddMonoidHomClass.continuous_of_bound _ 1 fun f => by simpa [norm_def] using hρ (ofFull f)
 
 /-- The extension agrees with the original ⋆-homomorphism on compactly supported coefficients. -/
 @[simp]
-theorem lift_of (f : ConvolutionAlgebra α μ) : lift ρ hρ (of α μ f) = ρ f :=
-  fromCompletion_liftCLM_of ρ hρ f
+theorem lift_of (f : ConvolutionAlgebra α μ) : lift ρ hρ (of α μ f) = ρ f := by
+  rw [← coe_toFull_eq_of]
+  -- `lift ρ hρ` is by definition the extension from the completion of `FullConvolutionAlgebra α μ`.
+  exact (NonUnitalStarAlgHom.fromCompletion_apply_coe _ _ (toFull f)).trans (by simp)
 
 /-- Composing the extension with the canonical map recovers the original ⋆-homomorphism. -/
 @[simp]

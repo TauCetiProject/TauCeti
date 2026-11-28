@@ -19,6 +19,9 @@ import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 A continuous map at uniformly bounded distance from a proper map into a proper metric space
 is proper. For example, a uniformly small smooth perturbation of a proper real-valued
 exhaustion function remains proper. The source needs no metric or separation assumptions.
+Conversely, a proper map into a proper metric space with bounded range has a compact source
+(`IsProperMap.compactSpace_of_isBounded_range`), so on a noncompact space a bounded function is
+never an exhaustion.
 
 The proof uses Mathlib's compactness of closed thickenings in proper metric spaces: the
 inverse image of a compact set under the perturbed map is a closed subset of the original
@@ -55,6 +58,15 @@ theorem _root_.IsProperMap.of_dist_le {X Y : Type*} [TopologicalSpace X] [Metric
     (hK.isClosed.preimage hg) ?_
   intro x hx
   exact Metric.mem_cthickening_of_dist_le (f x) (g x) C K hx (hfg x)
+
+/-- A proper map into a proper pseudometric space with bounded range has a compact source: the
+whole source is the inverse image of the compact closure of the range. For example, a bounded
+continuous real function on a noncompact space, such as `Real.arctan`, is not proper. -/
+theorem _root_.IsProperMap.compactSpace_of_isBounded_range {X Y : Type*} [TopologicalSpace X]
+    [PseudoMetricSpace Y] [ProperSpace Y] {f : X → Y} (hf : IsProperMap f)
+    (hb : Bornology.IsBounded (range f)) : CompactSpace X :=
+  ⟨(hf.isCompact_preimage hb.isCompact_closure).of_isClosed_subset isClosed_univ
+    fun x _ ↦ subset_closure (mem_range_self x)⟩
 
 /-- **Cluster points along proper maps.** If `f` is a proper map into a proper metric space and
 `f (u i)` frequently lies in a bounded set `s` along `l`, then `u` has a cluster point along `l`,

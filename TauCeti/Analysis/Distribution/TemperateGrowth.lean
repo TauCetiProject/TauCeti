@@ -13,8 +13,10 @@ import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.LinearAlgebra.Determinant
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.Instances.Sign
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
@@ -30,7 +32,8 @@ are smooth functions which outside a ball agree with a homogeneous function of d
 and diffeomorphisms whose derivatives of positive order are bounded.
 So does a smooth function satisfying symbol estimates
 `‖D^k f(x)‖ ≤ C_k (1 + ‖x‖ ^ 2) ^ ((m - k) / 2)` of some real order `m`, and the rescaled
-Bessel potential `x ↦ (1 + ‖c • x‖ ^ 2) ^ r`. On a real inner product space, so does the
+Bessel potential `x ↦ (1 + ‖c • x‖ ^ 2) ^ r`, together with its multiples
+`x ↦ (a ‖x‖ ^ 2 + c) ^ r` for `0 ≤ a` and `0 < c`. On a real inner product space, so does the
 logarithm `x ↦ log (1 + ‖x‖ ^ 2)` of the squared Japanese bracket, which enters the complex powers
 of the Japanese bracket. So does the exponential `y ↦ exp(i ⟪y, ξ⟫)` of an angular frequency
 `ξ`, which therefore defines a tempered distribution.
@@ -38,7 +41,9 @@ of the Japanese bracket. So does the exponential `y ↦ exp(i ⟪y, ξ⟫)` of a
 The derivative `Df` of a function `f` of temperate growth has temperate growth, since the iterated
 derivatives of `Df` are those of `f` shifted by one order. So does each directional derivative
 `x ↦ Df(x) v`. These are the coefficients that appear when the Leibniz rule is applied to the
-product of a Schwartz function or a tempered distribution with `f`.
+product of a Schwartz function or a tempered distribution with `f`. Applying a fixed continuous
+linear map `L` to the values, for instance taking coordinates of a matrix-valued `f`, also
+preserves temperate growth.
 
 On a finite-dimensional space the determinant is a polynomial in the matrix entries, so it has
 temperate growth, and so does the Jacobian determinant `x ↦ det Df(x)`. The absolute value of a
@@ -53,9 +58,16 @@ in `TauCeti.Analysis.Sobolev.BesselPotential.ChangeOfVariables`.
 If `g ∘ f = id` and `g` has temperate growth, then `‖x‖` is
 bounded by a polynomial in `‖f x‖`, the growth condition of Mathlib's `SchwartzMap.compCLM`.
 
-A measure of temperate growth is finite on compact sets.
+A smooth map between arbitrary real normed spaces that is affine outside a compact set has
+uniformly bounded derivatives of every positive order and temperate growth. Its order-zero values
+need not be bounded. A measure of temperate growth is finite on compact sets, and on a
+finite-dimensional space it integrates a positive weight `w ≤ 1` such that `w` and `1 / w` both
+have temperate growth.
 
 ## Main results
+
+* `ContDiff.exists_bound_iteratedFDeriv_pos_and_hasTemperateGrowth_of_eqOn_affine`:
+  smooth maps affine outside a compact set have bounded positive derivatives and temperate growth.
 
 * `Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le`: bounded derivatives give temperate
   growth.
@@ -63,15 +75,24 @@ A measure of temperate growth is finite on compact sets.
   give temperate growth.
 * `Function.HasTemperateGrowth.of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow`: symbol estimates
   give temperate growth.
-* `Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow`: the rescaled Bessel potential has
-  temperate growth.
+* `Function.hasTemperateGrowth_one_add_norm_smul_sq_rpow`,
+  `Function.hasTemperateGrowth_one_add_norm_sub_sq_rpow`: rescaled and translated Bessel potentials
+  have temperate growth.
+* `TauCeti.hasTemperateGrowth_mul_norm_sq_add_rpow`: so does `x ↦ (a ‖x‖ ^ 2 + c) ^ r` for
+  `0 ≤ a` and `0 < c`.
 * `Function.hasTemperateGrowth_log_one_add_norm_sq`: `x ↦ log (1 + ‖x‖ ^ 2)` has temperate growth.
 * `Function.hasTemperateGrowth_norm_sub_pow`: `y ↦ ‖x - y‖ ^ (2N)` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv`: `Df` has temperate growth.
 * `Function.HasTemperateGrowth.fderiv_apply`: `x ↦ Df(x) v` has temperate growth.
+* `Function.HasTemperateGrowth.continuousLinearMap_comp`: `L ∘ f` has temperate growth for a
+  continuous linear map `L`.
+* `Function.HasTemperateGrowth.basis_repr`: the coordinates of `f` in a finite basis have temperate
+  growth.
 * `Function.HasTemperateGrowth.basis_repr_fderiv_apply`: so do the coordinates of `Df(x) v` in a
   basis.
 * `Function.HasTemperateGrowth.prod`: finite products of functions of temperate growth.
+* `ContinuousLinearEquiv.hasTemperateGrowth_comp_iff`: precomposing with a continuous linear
+  equivalence preserves and reflects temperate growth.
 * `ContinuousLinearMap.hasTemperateGrowth_det`, `Function.HasTemperateGrowth.det_fderiv`: the
   determinant and the Jacobian determinant have temperate growth.
 * `Function.HasTemperateGrowth.abs`: `|f|` has temperate growth if `f` has no zeros.
@@ -84,11 +105,67 @@ A measure of temperate growth is finite on compact sets.
   `‖f x‖` from a left inverse of temperate growth.
 * `MeasureTheory.Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts`: a measure of temperate
   growth is finite on compact sets.
+* `MeasureTheory.Measure.HasTemperateGrowth.exists_integrable_hasTemperateGrowth`: a measure of
+  temperate growth integrates a positive weight `w ≤ 1` with `w` and `1 / w` of temperate growth.
 -/
 
 public section
 
 open scoped ContDiff
+
+namespace ContDiff
+
+open Set Filter Topology
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- A smooth map affine outside a compact set has uniformly bounded derivatives of every positive
+order and temperate growth. The source and target may be arbitrary real normed spaces; no bound
+on the values of the map itself is asserted. -/
+theorem exists_bound_iteratedFDeriv_pos_and_hasTemperateGrowth_of_eqOn_affine
+    {f : E → F} (hf : ContDiff ℝ ∞ f)
+    {K : Set E} (hK : IsCompact K) (a : F) (L : E →L[ℝ] F)
+    (heq : EqOn f (fun x ↦ a + L x) Kᶜ) :
+    (∀ n : ℕ, 0 < n → ∃ C : ℝ, ∀ x, ‖iteratedFDeriv ℝ n f x‖ ≤ C) ∧
+      Function.HasTemperateGrowth f := by
+  have hA : ContDiff ℝ ∞ (fun x ↦ a + L x) := contDiff_const.add L.contDiff
+  have hs : HasCompactSupport (fun x ↦ f x - (a + L x)) := by
+    apply HasCompactSupport.of_support_subset_isCompact hK
+    intro x hx
+    by_contra hxK
+    exact hx (sub_eq_zero.mpr (heq hxK))
+  have htemp : Function.HasTemperateGrowth f := by
+    have h := (hs.hasTemperateGrowth (hf.sub hA)).add
+      ((Function.HasTemperateGrowth.const a).add L.hasTemperateGrowth)
+    convert h using 1
+    funext x
+    simp
+  have hd : HasCompactSupport (fun x ↦ fderiv ℝ f x - L) := by
+    convert hs.fderiv ℝ using 1
+    funext x
+    rw [fderiv_fun_sub (hf.differentiable (by simp) x) (hA.differentiable (by simp) x),
+      (L.hasFDerivAt.const_add a).fderiv]
+  have hdcd : ContDiff ℝ ∞ (fun x ↦ fderiv ℝ f x - L) :=
+    (hf.fderiv_right (by simp)).sub contDiff_const
+  refine ⟨?_, htemp⟩
+  intro n hn
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
+  obtain ⟨C, _, hC⟩ := hd.exists_bound_iteratedFDeriv hdcd m
+  refine ⟨C + ‖L‖, fun x ↦ ?_⟩
+  rw [← norm_iteratedFDeriv_fderiv]
+  have heqD : fderiv ℝ f = (fun x ↦ fderiv ℝ f x - L) + (fun _ ↦ L) := by
+    funext x
+    simp
+  rw [heqD, iteratedFDeriv_add (hdcd.of_le (by simp)) contDiff_const, Pi.add_apply]
+  apply (norm_add_le _ _).trans
+  exact add_le_add (hC m le_rfl x) (by
+    by_cases hm : m = 0
+    · subst m
+      simp
+    · simp [iteratedFDeriv_const_of_ne hm])
+
+end ContDiff
 
 namespace Function.HasTemperateGrowth
 
@@ -154,19 +231,31 @@ theorem fderiv_apply (hf : f.HasTemperateGrowth) (v : E) :
     (fun x ↦ _root_.fderiv ℝ f x v).HasTemperateGrowth :=
   (ContinuousLinearMap.apply ℝ F v).hasTemperateGrowth.comp hf.fderiv
 
+/-- Applying a fixed continuous linear map `L` to the values of a function of temperate growth gives
+a function of temperate growth. The map `L` may be linear over a normed `ℝ`-algebra `𝕜`, such
+as `ℂ`. -/
+theorem continuousLinearMap_comp {𝕜 G : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+    [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F] [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [NormedSpace 𝕜 G] [IsScalarTower ℝ 𝕜 G] (L : F →L[𝕜] G) (hf : f.HasTemperateGrowth) :
+    (L ∘ f).HasTemperateGrowth :=
+  (L.restrictScalars ℝ).hasTemperateGrowth.comp hf
+
+/-- The coordinates `x ↦ b.repr (f x) i` of a function of temperate growth in a finite basis `b`
+have temperate growth. -/
+theorem basis_repr {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [CompleteSpace 𝕜]
+    [Finite ι] [NormedSpace 𝕜 F] [IsScalarTower ℝ 𝕜 F]
+    (hf : f.HasTemperateGrowth) (b : Module.Basis ι 𝕜 F) (i : ι) :
+    (fun x ↦ b.repr (f x) i).HasTemperateGrowth := by
+  have := b.finiteDimensional_of_finite
+  exact hf.continuousLinearMap_comp (LinearMap.toContinuousLinearMap (b.coord i))
+
 /-- The coordinates in a basis `b` of the directional derivative `x ↦ Df(x) v` of a function `f` of
 temperate growth have temperate growth. These are the coefficients of the chain rule for
 composition with `f`. -/
 theorem basis_repr_fderiv_apply {𝕜 ι : Type*} [RCLike 𝕜] [Finite ι]
     (hf : f.HasTemperateGrowth) (b : Module.Basis ι ℝ F) (v : E) (i : ι) :
-    (fun x ↦ ((b.repr (_root_.fderiv ℝ f x v) i : ℝ) : 𝕜)).HasTemperateGrowth := by
-  have h : (fun x ↦ ((b.repr (_root_.fderiv ℝ f x v) i : ℝ) : 𝕜)) =
-      ((RCLike.ofRealCLM (K := 𝕜)).comp ((ContinuousLinearMap.proj i).comp
-        b.equivFunL.toContinuousLinearMap)) ∘ fun x ↦ _root_.fderiv ℝ f x v := by
-    ext x
-    simp
-  rw [h]
-  exact (ContinuousLinearMap.hasTemperateGrowth _).comp (hf.fderiv_apply v)
+    (fun x ↦ ((b.repr (_root_.fderiv ℝ f x v) i : ℝ) : 𝕜)).HasTemperateGrowth :=
+  (RCLike.ofRealCLM (K := 𝕜)).hasTemperateGrowth.comp ((hf.fderiv_apply v).basis_repr b i)
 
 /-- A finite product of functions of temperate growth has temperate growth. -/
 theorem prod {ι R : Type*} [NormedCommRing R] [NormedAlgebra ℝ R] {f : ι → E → R}
@@ -199,6 +288,14 @@ theorem abs {f : E → ℝ} (hf : f.HasTemperateGrowth) (h0 : ∀ x, f x ≠ 0) 
   simpa only [abs_eq_sign_mul hf.1.continuous h0] using (HasTemperateGrowth.const _).fun_mul hf
 
 end Function.HasTemperateGrowth
+
+/-- Precomposing with a continuous linear equivalence preserves and reflects temperate growth. -/
+theorem ContinuousLinearEquiv.hasTemperateGrowth_comp_iff {D V W : Type*} [NormedAddCommGroup D]
+    [NormedSpace ℝ D] [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedAddCommGroup W]
+    [NormedSpace ℝ W] (e : D ≃L[ℝ] V) {g : V → W} :
+    (g ∘ e).HasTemperateGrowth ↔ g.HasTemperateGrowth :=
+  ⟨fun h ↦ by simpa [Function.comp_def] using h.comp e.symm.hasTemperateGrowth,
+    fun h ↦ h.comp e.hasTemperateGrowth⟩
 
 /-- On a finite-dimensional space the determinant has temperate growth, being a polynomial in the
 matrix entries. -/
@@ -276,6 +373,27 @@ theorem hasTemperateGrowth_one_add_norm_smul_sq_rpow (c r : ℝ) :
     (fun x : H ↦ (1 + ‖c • x‖ ^ 2) ^ r).HasTemperateGrowth :=
   (hasTemperateGrowth_one_add_norm_sq_rpow H r).comp (by fun_prop)
 
+/-- The translated Bessel potential `y ↦ (1 + ‖x - y‖ ^ 2) ^ r` has temperate growth. -/
+theorem hasTemperateGrowth_one_add_norm_sub_sq_rpow (x : H) (r : ℝ) :
+    (fun y : H ↦ (1 + ‖x - y‖ ^ 2) ^ r).HasTemperateGrowth :=
+  (hasTemperateGrowth_one_add_norm_sq_rpow H r).comp (by fun_prop)
+
+/-- For `0 ≤ a` and `0 < c`, the function `x ↦ (a ‖x‖ ^ 2 + c) ^ r` has temperate growth: it is
+`c ^ r (1 + ‖√(a / c) • x‖ ^ 2) ^ r`, a multiple of a rescaled Bessel potential. -/
+theorem _root_.TauCeti.hasTemperateGrowth_mul_norm_sq_add_rpow {a c : ℝ} (ha : 0 ≤ a) (hc : 0 < c)
+    (r : ℝ) :
+    (fun x : H ↦ (a * ‖x‖ ^ 2 + c) ^ r).HasTemperateGrowth := by
+  have h : (fun x : H ↦ (a * ‖x‖ ^ 2 + c) ^ r) =
+      fun x ↦ c ^ r * (1 + ‖√(a / c) • x‖ ^ 2) ^ r := by
+    ext x
+    rw [norm_smul, Real.norm_of_nonneg (Real.sqrt_nonneg _), mul_pow,
+      Real.sq_sqrt (div_nonneg ha hc.le), ← Real.mul_rpow hc.le (by positivity)]
+    congr 1
+    field_simp
+    ring
+  rw [h]
+  fun_prop
+
 /-- On a real inner product space `H`, the logarithm `x ↦ log (1 + ‖x‖ ^ 2)` of the squared
 Japanese bracket has temperate growth. -/
 @[fun_prop]
@@ -334,3 +452,44 @@ theorem MeasureTheory.Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts
   have hx' : ‖x‖ ≤ max R 0 := by simpa using (hR hx).trans (le_max_left R 0)
   rw [Set.mem_ofPred_eq, Real.norm_of_nonneg (by positivity)]
   exact Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) (by simp)
+
+/-- **A weight of temperate growth.** A measure `μ` of temperate growth on a finite-dimensional
+space integrates a function `w` with `0 < w ≤ 1` such that both `w` and `1 / w` have temperate
+growth. Multiplication by `w` and by `1 / w` therefore maps Schwartz functions to Schwartz
+functions, and the measure `w μ` is finite, with `‖w g‖_{L¹(μ)} = ‖g‖_{L¹(w μ)}`. One such
+weight is `w x = (1 + ‖e x‖ ^ 2) ^ (-n)` for a linear isomorphism `e` onto a Euclidean space and
+`n` large. -/
+theorem MeasureTheory.Measure.HasTemperateGrowth.exists_integrable_hasTemperateGrowth
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.HasTemperateGrowth] :
+    ∃ w : E → ℝ, w.HasTemperateGrowth ∧ (fun x ↦ (w x)⁻¹).HasTemperateGrowth ∧
+      (∀ x, 0 < w x ∧ w x ≤ 1) ∧ Integrable w μ := by
+  set e := toEuclidean (E := E)
+  set n : ℝ := (μ.integrablePower : ℝ)
+  have hb (x : E) : 0 < 1 + ‖e x‖ ^ 2 := by positivity
+  have hw : (fun x ↦ (1 + ‖e x‖ ^ 2) ^ (-n)).HasTemperateGrowth :=
+    (Function.hasTemperateGrowth_one_add_norm_sq_rpow _ _).comp e.hasTemperateGrowth
+  refine ⟨fun x ↦ (1 + ‖e x‖ ^ 2) ^ (-n), hw, ?_, fun x ↦ ⟨Real.rpow_pos_of_pos (hb x) _,
+    Real.rpow_le_one_of_one_le_of_nonpos (le_add_of_nonneg_right (by positivity))
+      (neg_nonpos.2 (Nat.cast_nonneg _))⟩, ?_⟩
+  · simp_rw [← Real.rpow_neg (hb _).le, neg_neg]
+    exact (Function.hasTemperateGrowth_one_add_norm_sq_rpow _ _).comp e.hasTemperateGrowth
+  -- Since `‖x‖ ≤ c ‖e x‖`, `1 + ‖x‖ ≤ a (1 + ‖e x‖ ^ 2)` with `a = 2 (1 + c)`, so the weight is
+  -- at most `a ^ n (1 + ‖x‖) ^ (-n)`, which `μ` integrates.
+  set c := ‖(e.symm : EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) →L[ℝ] E)‖
+  have ha : 0 < 2 * (1 + c) := by positivity
+  refine ((integrable_pow_neg_integrablePower μ).const_mul ((2 * (1 + c)) ^ n)).mono'
+    hw.1.continuous.aestronglyMeasurable (Filter.Eventually.of_forall fun x ↦ ?_)
+  have hx : ‖x‖ ≤ c * ‖e x‖ := by
+    simpa using (e.symm : EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) →L[ℝ] E).le_opNorm (e x)
+  have h1 : 1 + ‖x‖ ≤ 2 * (1 + c) * (1 + ‖e x‖ ^ 2) := by
+    nlinarith [norm_nonneg (e x), sq_nonneg (‖e x‖ - 1), norm_nonneg x, norm_nonneg
+      (e.symm : EuclideanSpace ℝ (Fin (Module.finrank ℝ E)) →L[ℝ] E)]
+  have h2 : (2 * (1 + c) * (1 + ‖e x‖ ^ 2)) ^ (-n) ≤ (1 + ‖x‖) ^ (-n) :=
+    Real.rpow_le_rpow_of_nonpos (by positivity) h1 (neg_nonpos.2 (Nat.cast_nonneg _))
+  rw [Real.mul_rpow ha.le (hb x).le] at h2
+  rw [Real.norm_of_nonneg (Real.rpow_nonneg (hb x).le _)]
+  calc (1 + ‖e x‖ ^ 2) ^ (-n)
+      = (2 * (1 + c)) ^ n * ((2 * (1 + c)) ^ (-n) * (1 + ‖e x‖ ^ 2) ^ (-n)) := by
+        rw [← mul_assoc, ← Real.rpow_add ha, add_neg_cancel, Real.rpow_zero, one_mul]
+    _ ≤ (2 * (1 + c)) ^ n * (1 + ‖x‖) ^ (-n) := by gcongr

@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Weight
 public import TauCeti.AlgebraicGeometry.SpecialFiber.Picard
 import Mathlib.Algebra.Order.Field.Rat
+import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # Line-bundle specialization on regular models
@@ -71,6 +72,14 @@ abbrev SpecialFiberCohomologyFiniteDimensional {R : Type u} [CommRing R] [IsLoca
       subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hc)
     FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
       (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj n)
+
+/-- Special-fibre `H⁰` finiteness for the components of a universally closed, locally of finite
+type scheme over a local ring. -/
+theorem specialFiberCohomologyFiniteDimensional_zero {R : Type u} [CommRing R] [IsLocalRing R]
+    {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
+    [UniversallyClosed toBase] [LocallyOfFiniteType toBase] :
+    toBase.SpecialFiberCohomologyFiniteDimensional 0 :=
+  fun _ ↦ toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton
 
 /-! ### Multidegrees across `X`, `X_s`, and `(X_s)_red`, and the weighted intersection matrix -/
 
@@ -566,10 +575,9 @@ private lemma exists_rat_mul_specialFiberMultiplicity_of_vecMul_eq_zero
       ← toBase.specialFiberWeightedIntersectionMatrix_mul_specialFiberWeight hX hη h₀ h₁ i j,
       mul_comm _ (v i), ← mul_assoc]
   have hmul : (toBase.specialFiberIntersectionMatrix hX hη).map (Int.cast : ℤ → ℚ) *ᵥ
-      (fun j ↦ (v j : ℚ)) = 0 := funext fun j ↦ by
-    simpa [hAv, Function.comp_def] using
-      (RingHom.map_mulVec (Int.castRingHom ℚ)
-        (toBase.specialFiberIntersectionMatrix hX hη) v j).symm
+      (fun j ↦ (v j : ℚ)) = 0 := by
+    rw [Matrix.map_intCast_mulVec, hAv]
+    exact funext fun _ ↦ Int.cast_zero
   exact (toBase.dotProduct_mulVec_specialFiberIntersectionMatrix_eq_zero_iff
     hX hη h₀ h₁ hπ hreg hconn (fun j ↦ (v j : ℚ))).mp (by rw [hmul, dotProduct_zero])
 

@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import Mathlib.RingTheory.Algebraic.Basic
 public import Mathlib.RingTheory.Valuation.ValuationSubring
+import Mathlib.Algebra.Polynomial.Lifts
+import TauCeti.RingTheory.Valuation.LinearIndependent
 import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!
@@ -17,6 +20,9 @@ subrings `A` of `L` lying over `O`, in the sense that `A ∩ K = O`, are pairwis
 any finitely many of them can be told apart by elements of `L` that lie in all of them: for each
 `A` there is an element that is a unit of `A` and a nonunit of every other one.
 
+Every element algebraic over `K` is a root of a polynomial over `O` with a coefficient equal to
+`1`: divide a relation over `K` by a coefficient of largest value.
+
 The engine is a single polynomial manipulation. Let `x ∈ A ∖ B` and put `t = x⁻¹`, a nonunit of
 `B`. Scale a nonzero polynomial relation `∑ aᵢ tⁱ = 0` over `K` so that every `aᵢ` lies in `O`
 and some `aᵢ` is a unit of `O`, and let `j` be the least such index. Then
@@ -26,18 +32,26 @@ contains `x` or `t`, so it contains `u` by one of the two expressions; that is, 
 over `O`.
 
 Separating elements turn into a bound on the number of such extensions through the linear
-independence criterion `Valuation.linearIndependent_of_map_lt`. Together these bound the number of
-points of a valuation spectrum lying over a given point along a finite ring map by the dimension
-of the fibre.
+independence criterion `Valuation.linearIndependent_of_map_lt`, so for `L / K` finite there are at
+most `[L : K]` extensions of `O` to `L`. Together these bound the number of points of a valuation
+spectrum lying over a given point along a finite ring map by the dimension of the fibre. Along a
+purely inseparable extension there is at most one extension, since some `p`-power of each element
+of `L` lies in `K`.
 
 ## Main results
 
+* `ValuationSubring.exists_coeff_eq_one_and_aeval_eq_zero`: an algebraic element is a root of a
+  polynomial over `O` with a coefficient equal to `1`.
+* `ValuationSubring.comap_injective_of_isPurelyInseparable`: along a purely inseparable extension
+  a valuation subring is determined by its restriction.
 * `ValuationSubring.eq_of_le_of_comap_eq`: two comparable valuation subrings of an algebraic
   extension with the same restriction to the base are equal.
 * `ValuationSubring.exists_mem_nonunits_valuation_eq_one`: two distinct valuation subrings with
   the same restriction `O` are separated by an element lying in every valuation subring over `O`.
 * `ValuationSubring.exists_valuation_eq_one_and_lt_one`: finitely many distinct valuation subrings
   over `O` admit a family of elements, each a unit for its own subring and a nonunit for the others.
+* `ValuationSubring.finite_setOf_comap_eq`, `ValuationSubring.ncard_setOf_comap_eq_le_finrank`:
+  for `L / K` finite, `O` has finitely many, indeed at most `[L : K]`, extensions to `L`.
 
 ## References
 
@@ -54,31 +68,42 @@ namespace ValuationSubring
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
+/-- **A normalized algebraic relation.** An element `x` algebraic over `K` is a root of a
+polynomial with coefficients in a valuation subring `O` of `K` one of whose coefficients is
+`1`. -/
+theorem exists_coeff_eq_one_and_aeval_eq_zero (O : ValuationSubring K) {E : Type*} [Ring E]
+    [Algebra K E] {x : E} (hx : IsAlgebraic K x) :
+    ∃ p : O[X], (∃ i, p.coeff i = 1) ∧ aeval x p = 0 := by
+  obtain ⟨q, hq0, hqx⟩ := hx
+  -- divide by a coefficient `q.coeff k` of largest value
+  obtain ⟨k, -, hk, hkO⟩ := O.exists_ne_zero_and_div_mem (s := Finset.range (q.natDegree + 1))
+    (g := q.coeff) ⟨q.natDegree, Finset.self_mem_range_succ _, leadingCoeff_ne_zero.mpr hq0⟩
+  have hcoeff (i : ℕ) : (C (q.coeff k)⁻¹ * q).coeff i = q.coeff i / q.coeff k := by
+    rw [coeff_C_mul, div_eq_inv_mul]
+  obtain ⟨p, hp⟩ : C (q.coeff k)⁻¹ * q ∈ lifts (algebraMap O K) := by
+    refine (lifts_iff_coeff_lifts _).mpr fun i ↦ ⟨⟨(C (q.coeff k)⁻¹ * q).coeff i, ?_⟩, rfl⟩
+    rw [hcoeff]
+    by_cases hi : i ∈ Finset.range (q.natDegree + 1)
+    · exact hkO i hi
+    · rw [coeff_eq_zero_of_natDegree_lt (by simpa [Nat.lt_succ_iff] using hi), zero_div]
+      exact O.zero_mem
+  rw [coe_mapRingHom] at hp
+  refine ⟨p, ⟨k, Subtype.val_injective ?_⟩, ?_⟩
+  · simpa [hcoeff, hk] using congr_arg (·.coeff k) hp
+  · rw [← aeval_map_algebraMap K, hp, map_mul, aeval_C, hqx, mul_zero]
+
 /-- **Normalizing a polynomial relation.** An element `t` algebraic over `K` satisfies a relation
-`∑_{i ≤ n} aᵢ tⁱ = 0` whose coefficients all lie in `O`, with some `aᵢ`, `i ≤ n`, a unit of `O`. -/
+`∑_{i ≤ n} aᵢ tⁱ = 0` whose coefficients all lie in `O`, with some `aᵢ`, `i ≤ n`, a unit of `O`:
+the relation `exists_coeff_eq_one_and_aeval_eq_zero`, written as a sum. -/
 private theorem exists_sum_eq_zero_of_isAlgebraic (O : ValuationSubring K) {t : L}
     (ht : IsAlgebraic K t) :
     ∃ (n : ℕ) (a : ℕ → K), (∀ i, a i ∈ O) ∧ (∃ i ≤ n, O.valuation (a i) = 1) ∧
       ∑ i ∈ Finset.range (n + 1), algebraMap K L (a i) * t ^ i = 0 := by
-  classical
-  obtain ⟨p, hp0, hpt⟩ := ht
-  set n := p.natDegree
-  obtain ⟨k, hk, hck, hkO⟩ := O.exists_ne_zero_and_div_mem
-    ⟨n, Finset.self_mem_range_succ n, mt leadingCoeff_eq_zero.mp hp0⟩
-  refine ⟨n, fun i ↦ p.coeff i / p.coeff k, fun i ↦ ?_,
-    ⟨k, Finset.mem_range_succ_iff.mp hk, by simp [hck]⟩, ?_⟩
-  · by_cases hi : i ∈ Finset.range (n + 1)
-    · exact hkO i hi
-    · rw [Finset.mem_range, not_lt] at hi
-      simp [coeff_eq_zero_of_natDegree_lt (Nat.lt_of_succ_le hi)]
-  · rw [aeval_eq_sum_range] at hpt
-    have hsum : ∑ i ∈ Finset.range (n + 1), algebraMap K L (p.coeff i / p.coeff k) * t ^ i =
-        (algebraMap K L (p.coeff k))⁻¹ * ∑ i ∈ Finset.range (n + 1), p.coeff i • t ^ i := by
-      rw [Finset.mul_sum]
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      simp only [Algebra.smul_def, div_eq_mul_inv, map_mul, map_inv₀]
-      ring
-    rw [hsum, hpt, mul_zero]
+  obtain ⟨p, ⟨k, hk⟩, hp⟩ := O.exists_coeff_eq_one_and_aeval_eq_zero ht
+  refine ⟨p.natDegree, fun i ↦ p.coeff i, fun i ↦ (p.coeff i).property,
+    ⟨k, le_natDegree_of_ne_zero (by simp [hk]), by simp [hk]⟩, ?_⟩
+  rw [aeval_eq_sum_range] at hp
+  simpa [Algebra.smul_def, IsScalarTower.algebraMap_apply O K L] using hp
 
 /-- **Two expressions for the tail of a relation.** If `t * x = 1` and `∑_{i ≤ n} cᵢ tⁱ = 0`, then
 for `j ≤ n` the tail `∑_{j ≤ i ≤ n} cᵢ t^{i - j}` equals `-∑_{i < j} cᵢ x^{j - i}`. -/
@@ -155,6 +180,23 @@ private theorem exists_of_mem_of_notMem {O : ValuationSubring K} {A B : Valuatio
       exact W.neg_mem _ (W.sum_mem fun i _ ↦ W.mul_mem _ _ (hW (haO' i)) (W.pow_mem hxW _))
     · exact W.sum_mem fun i _ ↦ W.mul_mem _ _ (hW (haO' i)) (W.pow_mem htW _)
 
+/-- **A valuation subring extends at most once along a purely inseparable extension**: valuation
+subrings of `L` are determined by their restrictions to `K`, since some `p`-power of each element
+of `L` lies in `K`. -/
+theorem comap_injective_of_isPurelyInseparable [IsPurelyInseparable K L] :
+    Function.Injective fun A : ValuationSubring L ↦ A.comap (algebraMap K L) := by
+  intro A B h
+  dsimp only at h
+  ext x
+  obtain ⟨n, a, ha⟩ := IsPurelyInseparable.pow_mem K (ringExpChar K) x
+  have hq : ringExpChar K ^ n ≠ 0 := pow_ne_zero _ (expChar_ne_zero K _)
+  have key (C : ValuationSubring L) : x ∈ C ↔ a ∈ C.comap (algebraMap K L) := by
+    rw [mem_comap, ha, ← valuation_le_one_iff, ← valuation_le_one_iff, map_pow,
+      pow_le_one_iff_of_nonneg zero_le hq]
+  rw [key, key, h]
+
+section Algebraic
+
 variable [Algebra.IsAlgebraic K L]
 
 /-- **Extensions of a valuation subring to an algebraic extension are incomparable.** If `A ≤ B`
@@ -210,5 +252,46 @@ theorem exists_valuation_eq_one_and_lt_one (O : ValuationSubring K)
     refine Finset.prod_le_one fun C hC ↦ (B.valuation_le_one_iff _).mpr ?_
     have hC' := Finset.mem_of_mem_erase (Finset.mem_of_mem_erase hC)
     exact (hu A C hA hC' (Finset.ne_of_mem_erase (Finset.mem_of_mem_erase hC))).2.2 B (hS B hB).ge
+
+end Algebraic
+
+/-! ### Finitely many extensions to a finite extension -/
+
+section Finite
+
+variable {O : ValuationSubring K} [FiniteDimensional K L]
+
+/-- Distinct extensions of `O` to `L` number at most `[L : K]`. -/
+private theorem card_le_finrank_of_forall_comap_eq {S : Finset (ValuationSubring L)}
+    (hS : ∀ W ∈ S, W.comap (algebraMap K L) = O) : S.card ≤ Module.finrank K L := by
+  obtain ⟨e, he⟩ := exists_valuation_eq_one_and_lt_one O S hS
+  have hli : LinearIndependent K fun W : S ↦ e W := by
+    refine Valuation.linearIndependent_of_map_lt (O := O) (fun W : S ↦ W.val.valuation)
+      (fun W a ha ↦ ?_) (fun W ↦ ?_) fun W W' hne ↦ ?_
+    · rw [valuation_le_one_iff, ← mem_comap, hS W W.property]
+      exact ha
+    · rw [(he W W.property).1]
+      exact one_ne_zero
+    · rw [(he W W.property).1]
+      exact (he W' W'.property).2 W W.property fun h ↦ hne (Subtype.ext h).symm
+  simpa using hli.fintype_card_le_finrank
+
+variable (O)
+
+/-- **A valuation subring has finitely many extensions to a finite extension.** -/
+theorem finite_setOf_comap_eq :
+    {W : ValuationSubring L | W.comap (algebraMap K L) = O}.Finite := by
+  by_contra hinf
+  obtain ⟨S, hS, hcard⟩ := Set.Infinite.exists_subset_card_eq hinf (Module.finrank K L + 1)
+  have := card_le_finrank_of_forall_comap_eq fun W hW ↦ hS hW
+  omega
+
+/-- **A valuation subring has at most `[L : K]` extensions to a finite extension `L`.** -/
+theorem ncard_setOf_comap_eq_le_finrank :
+    {W : ValuationSubring L | W.comap (algebraMap K L) = O}.ncard ≤ Module.finrank K L := by
+  rw [Set.ncard_eq_toFinset_card _ (finite_setOf_comap_eq O)]
+  exact card_le_finrank_of_forall_comap_eq fun W hW ↦ by simpa using hW
+
+end Finite
 
 end ValuationSubring

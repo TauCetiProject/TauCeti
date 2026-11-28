@@ -9,6 +9,7 @@ public import Mathlib.Topology.VectorBundle.Constructions
 public import Mathlib.Topology.VectorBundle.Hom
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Topology.VectorBundle.Coordinates
+public import TauCeti.Topology.VectorBundle.RestrictScalars
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import TauCeti.Topology.VectorBundle.Trivialization
@@ -38,6 +39,11 @@ preferred-frame coordinate expression is locally constant around each frame cent
 fixed point, a continuous Hom-bundle section is a continuous family of operators on their common
 base set (`TauCeti.continuousOn_inCoordinates`).
 
+Real-linear Hom bundles, and more generally Hom bundles over a normed field extension, carry
+the larger scalar field on their values whenever the target bundle does.
+`Bundle.ContinuousLinearMap.vectorBundleOfNormedAlgebra` registers this structure on the existing
+Hom atlas; the source bundle needs only the smaller field.
+
 For two vector bundle cores, a section of Mathlib's Hom bundle between them is continuous
 exactly when it is continuous in every pair of a source chart and a target chart, on their
 common domain, with chart expressions `VectorBundleCore.inChartCoordinates`
@@ -52,8 +58,12 @@ the coordinates of two fibre vectors is the coordinate of its value on them
 values in a fixed space this is its value on the two fibre vectors
 (`ContinuousLinearMap.inCoordinates_apply_continuousLinearMapAt₂_eq_apply`).
 
+Read in the trivializations of a fibrewise product bundle `E₂ ×ᵇ E₃`, a linear map into the
+product is the `prod` of the readings of its two components, at every point of both base sets
+(`ContinuousLinearMap.inCoordinates_prod_eq`, `ContinuousLinearMap.inCoordinates_prod`).
+
 The coordinate argument uses `ContinuousLinearMap.inCoordinates_inverse` and parallels
-the smooth inverse argument in `TauCeti.Geometry.Manifold.VectorBundle.Hom`.
+the smooth inverse argument in `TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic`.
 For the classical finite-rank bundle-isomorphism criterion see Hatcher,
 *Vector Bundles and K-Theory*, §1.1.
 -/
@@ -707,3 +717,89 @@ theorem Bundle.Trivialization.continuousLinearEquivAt_continuousLinearMap (e : T
   simp [Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 d hx.2]
 
 end HomFrame
+
+section ScalarExtensionHom
+
+variable {𝕜 𝕜' B F G : Type*} [NontriviallyNormedField 𝕜]
+  [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] [TopologicalSpace B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G] [NormedSpace 𝕜' G] [IsScalarTower 𝕜 𝕜' G]
+  {V W : B → Type*}
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)] [∀ x, Module 𝕜' (W x)]
+  [∀ x, IsScalarTower 𝕜 𝕜' (W x)] [∀ x, TopologicalSpace (W x)]
+  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul 𝕜 (W x)]
+  [∀ x, ContinuousConstSMul 𝕜' (W x)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  [TopologicalSpace (TotalSpace G W)] [FiberBundle G W]
+  [VectorBundle 𝕜 G W] [VectorBundle 𝕜' G W]
+
+/-- Homomorphisms into a bundle admitting a scalar extension form a vector bundle over the
+larger field, acting on their values. The source bundle is only over the smaller field. -/
+noncomputable instance (priority := 50) Bundle.ContinuousLinearMap.vectorBundleOfNormedAlgebra :
+    VectorBundle 𝕜' (F →L[𝕜] G) (fun x ↦ V x →L[𝕜] W x) := by
+  apply VectorBundle.ofLinear 𝕜 𝕜' (F →L[𝕜] G) (fun x ↦ V x →L[𝕜] W x)
+  intro e he
+  obtain ⟨e', ⟨e₁, e₂, he₁, he₂, rfl⟩, rfl⟩ := he.out
+  let := he₁
+  let := he₂
+  -- The native prebundle atlas consists of exactly these induced Hom trivializations.
+  change (e₁.continuousLinearMap (RingHom.id 𝕜) e₂).IsLinear 𝕜'
+  refine ⟨fun b hb ↦ ⟨((e₁.continuousLinearMap (RingHom.id 𝕜) e₂).linear 𝕜 hb).map_add, ?_⟩⟩
+  intro c v
+  ext u
+  simp only [Bundle.Trivialization.continuousLinearMap_apply, ContinuousLinearMap.comp_apply,
+    smul_apply]
+  simpa only [Bundle.Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 e₂ hb.2] using
+    (e₂.linear 𝕜' hb.2).map_smul c (v (e₁.symmL 𝕜 b u))
+
+end ScalarExtensionHom
+
+section InCoordinates
+
+variable {𝕜 B B' F₁ F₂ F₃ : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
+  [TopologicalSpace B']
+  [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁] [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+  [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃]
+  {E₁ : B → Type*} [∀ x, AddCommGroup (E₁ x)] [∀ x, Module 𝕜 (E₁ x)]
+  [∀ x, TopologicalSpace (E₁ x)] [TopologicalSpace (TotalSpace F₁ E₁)]
+  [FiberBundle F₁ E₁] [VectorBundle 𝕜 F₁ E₁]
+  {E₂ : B' → Type*} [∀ x, AddCommGroup (E₂ x)] [∀ x, Module 𝕜 (E₂ x)]
+  [∀ x, TopologicalSpace (E₂ x)] [TopologicalSpace (TotalSpace F₂ E₂)]
+  [FiberBundle F₂ E₂] [VectorBundle 𝕜 F₂ E₂]
+  {E₃ : B' → Type*} [∀ x, AddCommGroup (E₃ x)] [∀ x, Module 𝕜 (E₃ x)]
+  [∀ x, TopologicalSpace (E₃ x)] [TopologicalSpace (TotalSpace F₃ E₃)]
+  [FiberBundle F₃ E₃] [VectorBundle 𝕜 F₃ E₃]
+
+/-- Read in the trivializations of a fibrewise product bundle, a linear map into the product is the
+pair of the readings of its two components, at every point of both base sets. -/
+theorem ContinuousLinearMap.inCoordinates_prod_eq {x₀ x : B} {y₀ y : B'}
+    (hy₂ : y ∈ (trivializationAt F₂ E₂ y₀).baseSet)
+    (hy₃ : y ∈ (trivializationAt F₃ E₃ y₀).baseSet) (ϕ : E₁ x →L[𝕜] (E₂ ×ᵇ E₃) y) :
+    inCoordinates F₁ E₁ (F₂ × F₃) (E₂ ×ᵇ E₃) x₀ x y₀ y ϕ =
+      (inCoordinates F₁ E₁ F₂ E₂ x₀ x y₀ y ((ContinuousLinearMap.fst 𝕜 _ _).comp ϕ)).prod
+        (inCoordinates F₁ E₁ F₃ E₃ x₀ x y₀ y ((ContinuousLinearMap.snd 𝕜 _ _).comp ϕ)) := by
+  have hy : y ∈ ((trivializationAt F₂ E₂ y₀).prod (trivializationAt F₃ E₃ y₀)).baseSet := ⟨hy₂, hy₃⟩
+  -- The preferred trivializations of `E₂ ×ᵇ E₃` are the products of those of `E₂` and `E₃`, by
+  -- the definition of the instance `FiberBundle.prod`.
+  have he : trivializationAt (F₂ × F₃) (E₂ ×ᵇ E₃) y₀ =
+      (trivializationAt F₂ E₂ y₀).prod (trivializationAt F₃ E₃ y₀) := rfl
+  rw [inCoordinates, inCoordinates, inCoordinates,
+    ← Trivialization.coe_continuousLinearEquivAt_eq' (trivializationAt (F₂ × F₃) (E₂ ×ᵇ E₃) y₀) hy,
+    ← Trivialization.coe_continuousLinearEquivAt_eq' _ hy₂,
+    ← Trivialization.coe_continuousLinearEquivAt_eq' _ hy₃]
+  simp only [he, Trivialization.continuousLinearEquivAt_prod]
+  ext v <;> simp
+
+/-- Read in the trivializations of a fibrewise product bundle, the `prod` of two linear maps is the
+pair of their readings, at every point of both base sets. -/
+theorem ContinuousLinearMap.inCoordinates_prod {x₀ x : B} {y₀ y : B'}
+    (hy₂ : y ∈ (trivializationAt F₂ E₂ y₀).baseSet)
+    (hy₃ : y ∈ (trivializationAt F₃ E₃ y₀).baseSet) (ϕ : E₁ x →L[𝕜] E₂ y)
+    (ψ : E₁ x →L[𝕜] E₃ y) :
+    inCoordinates F₁ E₁ (F₂ × F₃) (E₂ ×ᵇ E₃) x₀ x y₀ y
+        (ϕ.prod ψ : E₁ x →L[𝕜] (E₂ ×ᵇ E₃) y) =
+      (inCoordinates F₁ E₁ F₂ E₂ x₀ x y₀ y ϕ).prod (inCoordinates F₁ E₁ F₃ E₃ x₀ x y₀ y ψ) :=
+  by rw [inCoordinates_prod_eq hy₂ hy₃, fst_comp_prod, snd_comp_prod]
+
+end InCoordinates

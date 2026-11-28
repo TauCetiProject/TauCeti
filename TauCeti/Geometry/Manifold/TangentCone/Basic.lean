@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Analysis.Calculus.TangentCone.TransverseDisc
 public import TauCeti.Analysis.Calculus.TransverseIntersection
 public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import Mathlib.Analysis.Calculus.TangentCone.ProperSpace
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
@@ -24,9 +25,12 @@ with charts in its model space it is read in the preferred chart itself
 (`TauCeti.mtangentConeAt_eq_tangentConeAt_chartAt`); read in any other chart around `y`, it is
 carried onto the tangent cone in that chart by the derivative of the transition map
 (`TauCeti.image_mtangentConeAt_eq_tangentConeAt`). The velocity of an integral curve that stays
-in `s` lies in it (`IsMIntegralCurveAt.mem_mtangentConeAt`), and the derivative of a map within
-`s` carries it into the tangent cone of the image of `s`
-(`HasMFDerivWithinAt.mapsTo_mtangentConeAt`).
+in `s` lies in it (`IsMIntegralCurveAt.mem_mtangentConeAt`). At an accumulation point of `s` it
+contains a nonzero vector when the model space is proper
+(`TauCeti.mtangentConeAt_nonempty_of_properSpace`). The derivative of a map within `s` carries it
+into the tangent cone of the image of `s` (`HasMFDerivWithinAt.mapsTo_mtangentConeAt`), so a map
+with surjective derivative carries transverse sets to transverse sets
+(`HasMFDerivAt.span_mtangentConeAt_image_sup_eq_top`).
 
 For a manifold modelled on a vector space `E` with charts in `E`, a chart of the maximal atlas that
 flattens `s` onto a closed linear subspace `L` near `y` makes the span of the tangent cone the
@@ -55,10 +59,14 @@ at `y`.
 
 * `TauCeti.mtangentConeAt`: the tangent cone of a subset of a manifold, read in the preferred
   chart.
+* `TauCeti.mtangentConeAt_nonempty_of_properSpace`: at an accumulation point of the set, the
+  tangent cone contains a nonzero vector.
 * `IsMIntegralCurveAt.mem_mtangentConeAt`: the velocity of an integral curve lies in the tangent
   cone of every set the curve stays in.
 * `HasMFDerivWithinAt.mapsTo_mtangentConeAt`: the derivative of a map within a set maps the
   tangent cone of the set into the tangent cone of its image.
+* `HasMFDerivAt.span_mtangentConeAt_image_sup_eq_top`: a map with surjective derivative carries
+  transverse sets to transverse sets.
 * `TauCeti.image_mtangentConeAt_eq_tangentConeAt`: read in another chart, the tangent cone is
   carried onto the tangent cone in that chart by the derivative of the transition map.
 * `TauCeti.tangentConeAt_preimage_symm_eq`: read in a chart that flattens a set onto a closed
@@ -128,6 +136,21 @@ theorem mtangentConeAt_eq_tangentConeAt (s : Set E) (y : E) :
     mtangentConeAt 𝓘(𝕜, E) s y = tangentConeAt 𝕜 s y := by
   simp [mtangentConeAt_def]
 
+/-- **At a non-isolated point the tangent cone is nontrivial.** If the model space is proper and
+`y` is an accumulation point of `s`, then the tangent cone of `s` at `y` contains a nonzero vector.
+This is the manifold form of `tangentConeAt_nonempty_of_properSpace`. -/
+theorem mtangentConeAt_nonempty_of_properSpace [ProperSpace E] {s : Set M} {y : M}
+    (hy : AccPt y (𝓟 s)) : (mtangentConeAt I s y ∩ {0}ᶜ).Nonempty := by
+  rw [mtangentConeAt_def]
+  refine tangentConeAt_nonempty_of_properSpace (accPt_iff_frequently.2 ?_)
+  -- The points of `s` near `y`, other than `y`, are read in the chart at `y` as distinct points.
+  refine (continuousAt_extChartAt (I := I) y).tendsto.frequently_map _ (fun w hw ↦ ?_)
+    ((accPt_iff_frequently.1 hy).and_eventually (extChartAt_source_mem_nhds (I := I) y))
+  obtain ⟨⟨hwy, hws⟩, hwsrc⟩ := hw
+  exact ⟨fun h ↦ hwy ((extChartAt I y).injOn hwsrc (mem_extChartAt_source y) h),
+    by rw [mem_preimage, (extChartAt I y).left_inv hwsrc]; exact hws,
+    extChartAt_target_subset_range y ((extChartAt I y).map_source hwsrc)⟩
+
 end Defs
 
 end TauCeti
@@ -187,6 +210,35 @@ theorem HasMFDerivWithinAt.mapsTo_mtangentConeAt {𝕜 E H M E' H' M' : Type*}
       ((tangentSpaceCastModel I x).symm : E →L[𝕜] TangentSpace I x)) v = f' v := rfl
   rw [hcast] at hmaps
   exact tangentConeAt_mono himage hmaps
+
+/-- **Surjective differentials carry transverse sets to transverse sets.** If `f` has a surjective
+derivative `f'` at `x`, and the tangent cones of `s` and `t` at `x` span the tangent space, then
+the tangent cones of `f '' s` and `f '' t` at `f x` span the tangent space. For instance, a
+diffeomorphism carries a transverse intersection to a transverse intersection. -/
+theorem HasMFDerivAt.span_mtangentConeAt_image_sup_eq_top {𝕜 E H M E' H' M' : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+    {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M] [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] {f : M → M'} {x : M}
+    {f' : TangentSpace I x →L[𝕜] TangentSpace I' (f x)} (hf : HasMFDerivAt I I' f x f')
+    (hf' : Function.Surjective f') {s t : Set M}
+    (h : Submodule.span 𝕜 (TauCeti.mtangentConeAt I s x) ⊔
+      Submodule.span 𝕜 (TauCeti.mtangentConeAt I t x) = ⊤) :
+    Submodule.span 𝕜 (TauCeti.mtangentConeAt I' (f '' s) (f x)) ⊔
+      Submodule.span 𝕜 (TauCeti.mtangentConeAt I' (f '' t) (f x)) = ⊤ := by
+  -- The tangent spaces are the model spaces, so `f'` is a linear map `E → E'`.
+  let F : E →ₗ[𝕜] E' := f'.toLinearMap
+  -- The derivative maps the span of the tangent cone of a set into that of its image.
+  have hmap (u : Set M) : (Submodule.span 𝕜 (TauCeti.mtangentConeAt I u x)).map F ≤
+      Submodule.span 𝕜 (TauCeti.mtangentConeAt I' (f '' u) (f x)) := by
+    rw [Submodule.map_span]
+    exact Submodule.span_mono hf.hasMFDerivWithinAt.mapsTo_mtangentConeAt.image_subset
+  have hF : (⊤ : Submodule 𝕜 E).map F = ⊤ := by
+    rw [Submodule.map_top]
+    exact LinearMap.range_eq_top.2 hf'
+  refine eq_top_iff.2 (hF.symm.le.trans ?_)
+  rw [← h, Submodule.map_sup]
+  exact sup_le_sup (hmap s) (hmap t)
 
 namespace TauCeti
 
@@ -341,8 +393,8 @@ theorem IsSliceChart.span_mtangentConeAt_eq_comap (hn : n ≠ 0)
   have himg := image_mtangentConeAt_eq_tangentConeAt (s := s) hy hA
   rw [tangentConeAt_preimage_symm_eq hs hL hy hys] at himg
   rw [OpenPartialHomeomorph.coe_trans] at hA
-  rw [mfderiv_eq_of_hasFDerivAt_chartAt_symm hA, ← A.injective.preimage_image
-    (mtangentConeAt 𝓘(𝕜, E) s y), himg]
+  rw [(hasMFDerivAt_iff_hasFDerivAt_comp_chartAt_symm.2 hA).mfderiv,
+    ← A.injective.preimage_image (mtangentConeAt 𝓘(𝕜, E) s y), himg]
   exact Submodule.span_eq (L.comap ((A : E →L[𝕜] E) : E →ₗ[𝕜] E))
 
 /-- **Sets flattened by one chart onto spanning subspaces are transverse.** If a single chart `q`

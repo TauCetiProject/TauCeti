@@ -9,13 +9,16 @@ public import Mathlib.Data.Bundle
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Homeomorph.Quotient
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+public import TauCeti.GroupTheory.QuotientGroup.Basic
 import TauCeti.Topology.Compactness.LocallyCompact
+import TauCeti.Topology.Homeomorph.Quotient
 
 /-!
 # Continuous maps from group quotients and compact orbit spaces
 
 This file records continuity results for maps out of group quotients that do not require
-transitivity of an action, and a compactness criterion for orbit spaces.
+transitivity of an action, continuity of the residual action of a quotient group on an orbit space,
+and a compactness criterion for orbit spaces.
 
 The orbit space of an action is compact as soon as some compact set meets every orbit, since the
 orbit space is then the image of that set under the continuous orbit projection. When the action
@@ -26,6 +29,8 @@ quotient manifold is read off from a compact fundamental domain upstairs.
 
 ## Main results
 
+* `Topology.IsQuotientMap.orbitRelQuotientHomeomorph`: a quotient map whose fibres are the
+  orbits identifies the orbit space with its target.
 * `TauCeti.continuous_ofQuotientStabilizer` proves continuity of the orbit map descended to a
   stabilizer quotient when the corresponding orbit map is continuous.
 * `TauCeti.continuous_orbitRelQuotientLift_iff`: the descent of a `G`-invariant map to the orbit
@@ -45,11 +50,19 @@ quotient manifold is read off from a compact fundamental domain upstairs.
 * `TauCeti.MulAction.compactSpace_orbitRelQuotient_iff_exists_isCompact`: for an action by
   homeomorphisms of a weakly locally compact space, the orbit space is compact exactly when some
   compact set meets every orbit.
+* `QuotientGroup.compactSpace_iff_exists_isCompact_mul_eq_univ`: its specialization to the right
+  action of a subgroup `Γ`: in a weakly locally compact group with separately continuous
+  multiplication, `G ⧸ Γ` is compact exactly when `K * Γ = G` for a compact set `K`.
+* `MulAction.orbitRel.Quotient.continuousSMul_quotientGroup`: if `G` acts continuously on `X` and
+  `N` is a normal subgroup, the residual action of `G ⧸ N` on `X ⧸ N`, `[g] • [x] = [g • x]`, is
+  continuous: both projections are open quotient maps, so their product is a quotient map, and on
+  representatives the residual action is the action of `G` followed by the projection.
 * `TauCeti.AddAction.orbitRelQuotientHomeomorphMultiplicative` and
   `TauCeti.MulAction.orbitRelQuotientHomeomorphAdditive`: canonical homeomorphisms identifying the
   orbit space of an action of `G` with that of `Multiplicative G` or `Additive G`.
 
-Both compactness statements have additive versions for `AddAction.orbitRel.Quotient`.
+The compactness statements have additive versions, for `AddAction.orbitRel.Quotient` and for
+`G ⧸ Γ` with `K + Γ = G`.
 -/
 
 public section
@@ -167,6 +180,43 @@ theorem MulAction.compactSpace_orbitRelQuotient_iff_exists_isCompact [Continuous
 
 end Compact
 
+end TauCeti
+
+namespace QuotientGroup
+
+open Set
+
+open scoped Pointwise
+
+variable {G : Type*} [Group G] {Γ : Subgroup G}
+
+/-- In a weakly locally compact group with separately continuous multiplication, `G ⧸ Γ` is
+compact exactly when `K * Γ = G` for some compact set `K`. This is
+`TauCeti.MulAction.compactSpace_orbitRelQuotient_iff_exists_isCompact` for the right action of `Γ`
+on `G`, whose orbit space is `G ⧸ Γ`. -/
+@[to_additive /-- In a weakly locally compact additive group with separately continuous addition,
+`G ⧸ Γ` is compact exactly when `K + Γ = G` for some compact set `K`. This is
+`TauCeti.AddAction.compactSpace_orbitRelQuotient_iff_exists_isCompact` for the action of `Γ` on `G`
+by right addition, whose orbit space is `G ⧸ Γ`. -/]
+theorem compactSpace_iff_exists_isCompact_mul_eq_univ [TopologicalSpace G]
+    [SeparatelyContinuousMul G] [WeaklyLocallyCompactSpace G] :
+    CompactSpace (G ⧸ Γ) ↔ ∃ K : Set G, IsCompact K ∧ K * (Γ : Set G) = univ := by
+  -- `G ⧸ Γ` is by definition `MulAction.orbitRel.Quotient Γ.op G`, since `QuotientGroup.leftRel Γ`
+  -- is by definition `MulAction.orbitRel Γ.op G`.
+  refine (TauCeti.MulAction.compactSpace_orbitRelQuotient_iff_exists_isCompact (G := Γ.op)
+    (X := G)).trans (exists_congr fun K ↦ and_congr_right fun _ ↦ ?_)
+  -- A compact set meets every orbit of `Γ.op` exactly when it meets every left coset of `Γ`.
+  rw [← image_mk_eq_univ_iff, eq_univ_iff_forall, mk_surjective.forall]
+  refine forall_congr' fun x ↦ ⟨fun ⟨γ, hγ⟩ ↦ ⟨_, hγ, ?_⟩, fun ⟨y, hy, hyx⟩ ↦ ?_⟩
+  · rw [Subgroup.smul_def, MulOpposite.smul_eq_mul_unop]
+    exact mk_mul_of_mem x (Subgroup.mem_op.1 γ.property)
+  · refine ⟨⟨MulOpposite.op (x⁻¹ * y), Subgroup.mem_op.2 (QuotientGroup.eq.1 hyx.symm)⟩, ?_⟩
+    rwa [Subgroup.mk_smul, op_smul_eq_mul, mul_inv_cancel_left]
+
+end QuotientGroup
+
+namespace TauCeti
+
 section TypeTags
 
 /-- Canonical homeomorphism identifying the orbit space of an additive action of `G` on `X` with
@@ -259,3 +309,67 @@ theorem continuous_ofQuotientStabilizer (b : X) (hb : Continuous fun g : G => g 
   exact hb.quotient_liftOn' _
 
 end TauCeti
+
+namespace Topology.IsQuotientMap
+
+variable {E X G : Type*} [TopologicalSpace E] [TopologicalSpace X]
+  [Group G] [MulAction G E] {q : E → X}
+
+/-- A quotient map whose fibres are the orbits identifies the orbit space with its target. -/
+@[to_additive addOrbitRelQuotientHomeomorph
+  /-- A quotient map whose fibres are the additive orbits identifies the additive orbit space
+  with its target. -/]
+noncomputable def orbitRelQuotientHomeomorph (hq : IsQuotientMap q)
+    (h : ∀ e e', q e = q e' ↔ e ∈ MulAction.orbit G e') :
+    MulAction.orbitRel.Quotient G E ≃ₜ X :=
+  (Homeomorph.Quotient.congrRight
+    (r' := Setoid.ker q)
+    (fun e e' ↦ MulAction.orbitRel_apply.trans (h e e').symm)).trans
+    (hq.homeomorph (f := ⟨q, hq.continuous⟩))
+
+/-- The orbit quotient homeomorphism sends a representative to its image in the target. -/
+@[to_additive (attr := simp) addOrbitRelQuotientHomeomorph_mk
+  /-- The additive orbit quotient homeomorphism sends a representative to its image in the
+  target. -/]
+theorem orbitRelQuotientHomeomorph_mk (hq : IsQuotientMap q)
+    (h : ∀ e e', q e = q e' ↔ e ∈ MulAction.orbit G e') (e : E) :
+    hq.orbitRelQuotientHomeomorph h (Quotient.mk _ e) = q e := by
+  simp only [orbitRelQuotientHomeomorph, Homeomorph.trans_apply,
+    Homeomorph.Quotient.congrRight_mk, homeomorph_apply (f := ⟨q, hq.continuous⟩),
+    ContinuousMap.coe_mk, Setoid.kerLift_mk]
+
+/-- The inverse homeomorphism sends the image of a representative to its orbit. -/
+@[to_additive (attr := simp) addOrbitRelQuotientHomeomorph_symm_apply
+  /-- The inverse homeomorphism sends the image of a representative to its additive orbit. -/]
+theorem orbitRelQuotientHomeomorph_symm_apply (hq : IsQuotientMap q)
+    (h : ∀ e e', q e = q e' ↔ e ∈ MulAction.orbit G e') (e : E) :
+    (hq.orbitRelQuotientHomeomorph h).symm (q e) = Quotient.mk _ e :=
+  (hq.orbitRelQuotientHomeomorph h).symm_apply_eq.2
+    (hq.orbitRelQuotientHomeomorph_mk h e).symm
+
+end Topology.IsQuotientMap
+
+namespace MulAction.orbitRel.Quotient
+
+variable {G X : Type*} [Group G] [TopologicalSpace G] [TopologicalSpace X] [MulAction G X]
+  (N : Subgroup G) [N.Normal]
+
+/-- **The residual action is continuous.** If a group `G` with separately continuous
+multiplication acts continuously on `X`, then for a normal subgroup `N` the quotient group `G ⧸ N`
+acts continuously on the orbit space `X ⧸ N` by `[g] • [x] = [g • x]`. -/
+@[to_additive /-- **The residual action is continuous.** If an additive group `G` with separately
+continuous addition acts continuously on `X`, then for a normal subgroup `N` the quotient group
+`G ⧸ N` acts continuously on the orbit space `X ⧸ N` by `[g] +ᵥ [x] = [g +ᵥ x]`. -/]
+instance continuousSMul_quotientGroup [SeparatelyContinuousMul G] [ContinuousSMul G X] :
+    ContinuousSMul (G ⧸ N) (orbitRel.Quotient N X) where
+  continuous_smul := by
+    rw [← (QuotientGroup.isOpenQuotientMap_mk.prodMap
+      MulAction.isOpenQuotientMap_quotientMk).continuous_comp_iff]
+    -- On representatives the residual action is the action of `G` followed by the projection.
+    have hcomp : (fun p : (G ⧸ N) × orbitRel.Quotient N X ↦ p.1 • p.2) ∘
+        Prod.map QuotientGroup.mk (Quotient.mk _) = Quotient.mk _ ∘ fun p : G × X ↦ p.1 • p.2 :=
+      funext fun p ↦ mk_smul_mk N p.1 p.2
+    rw [hcomp]
+    exact continuous_quot_mk.comp continuous_smul
+
+end MulAction.orbitRel.Quotient

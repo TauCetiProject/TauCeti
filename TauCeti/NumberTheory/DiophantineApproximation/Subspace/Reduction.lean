@@ -185,10 +185,10 @@ theorem exists_finset_submodule_forall_mem_or_smul_mem_approxDomain [Nontrivial 
     by_cases hv' : v ∈ Sfin
     · exact hfin v hv' ▸ hLFin v hv'
     · exact (funext (hfin' v hv hv')).symm ▸ Module.Dual.linearIndependent_proj K ι
-  obtain ⟨UInf, hUInf, hcovInf⟩ := LinearMap.exists_finset_ne_top_forall_exists_mem_of_apply_eq_zero
+  obtain ⟨UInf, hUInf, hcovInf⟩ := exists_finset_ne_top_forall_exists_mem_of_apply_eq_zero
     (univ : Finset (InfinitePlace K × ι)) (fun p ↦ L' p.1.val p.2)
     fun p _ ↦ (hindInf p.1).ne_zero p.2
-  obtain ⟨UFin, hUFin, hcovFin⟩ := LinearMap.exists_finset_ne_top_forall_exists_mem_of_apply_eq_zero
+  obtain ⟨UFin, hUFin, hcovFin⟩ := exists_finset_ne_top_forall_exists_mem_of_apply_eq_zero
     (S₀ ×ˢ univ) (fun p : FinitePlace K × ι ↦ L' p.1.val p.2)
     fun p hp ↦ (hindFin p.1 (mem_product.mp hp).1).ne_zero p.2
   refine ⟨S₀, L', T, hindInf, hindFin, hT, fun Q₀ ↦ ?_⟩
@@ -196,15 +196,14 @@ theorem exists_finset_submodule_forall_mem_or_smul_mem_approxDomain [Nontrivial 
   -- the infinite places and the places of `S₀`
   obtain ⟨T₁, hT₁, hlines⟩ :=
     exists_finset_finrank_eq_one_forall_exists_mem_of_mulHeight_le (K := K) (ι := ι) (max Q₀ Q₁)
-  refine ⟨T₁ ∪ UInf ∪ UFin, fun W hW ↦ ?_, fun x hx happrox ↦ ?_⟩
-  · rcases mem_union.mp hW with hW | hW
-    · rcases mem_union.mp hW with hW | hW
-      · -- a line is proper because `ι` has at least two elements
-        refine (Submodule.lt_top_of_finrank_lt_finrank ?_).ne
-        rw [hT₁ W hW, Module.finrank_fintype_fun_eq_card]
-        exact Fintype.one_lt_card
-      · exact hUInf W hW
-    · exact hUFin W hW
+  have hLinesProper : ∀ W ∈ T₁, W ≠ ⊤ := by
+    intro W hW
+    refine (Submodule.lt_top_of_finrank_lt_finrank ?_).ne
+    rw [hT₁ W hW, Module.finrank_fintype_fun_eq_card]
+    exact Fintype.one_lt_card
+  refine ⟨T₁ ∪ UInf ∪ UFin, ?_, fun x hx happrox ↦ ?_⟩
+  · simp only [Finset.forall_mem_union]
+    exact ⟨⟨hLinesProper, hUInf⟩, hUFin⟩
   by_cases hQ : mulHeight x ≤ max Q₀ Q₁
   · obtain ⟨W, hW, hxW⟩ := hlines x hx hQ
     exact Or.inl ⟨W, mem_union_left _ (mem_union_left _ hW), hxW⟩

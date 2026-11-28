@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Gaussian.Moments
 public import TauCeti.Probability.Distributions.Gaussian.Multivariate
 import Mathlib.Probability.Distributions.Gaussian.Fernique
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 
 /-!
 # Fourth mixed moments of Gaussian laws
@@ -18,8 +19,10 @@ For a multivariate Gaussian this gives the coordinate identity
 `E[Zᵢ Zⱼ Zₖ Zₗ] = Sᵢⱼ Sₖₗ + Sᵢₖ Sⱼₗ + Sᵢₗ Sⱼₖ` for centered coordinates.
 
 The linear-observable result is proved for Gaussian measures on real Banach spaces, then
-specialized to the multivariate law. Finite products of affine linear observables are integrable.
-Polarizing the existing scalar fourth-moment formula avoids any invertibility requirement.
+specialized to the multivariate law and to standard Gaussian inner-product observables (`‖x‖²`
+second moment, `3 ‖x‖⁴` fourth moment, and finite `Lᵖ` membership). Finite products of affine
+linear observables are integrable. Polarizing the existing scalar fourth-moment formula avoids any
+invertibility requirement.
 
 ## References
 
@@ -32,7 +35,7 @@ public section
 noncomputable section
 
 open MeasureTheory ProbabilityTheory
-open scoped ENNReal Nat
+open scoped ENNReal InnerProductSpace Nat
 
 namespace ProbabilityTheory.IsGaussian
 
@@ -43,19 +46,10 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 including real or complex observables and the empty product. -/
 theorem integrable_prod_clm (μ : Measure E) [IsGaussian μ]
     {ι 𝕜 : Type*} [RCLike 𝕜] (s : Finset ι) (L : ι → E →L[ℝ] 𝕜) (c : ι → 𝕜) :
-    Integrable (fun x ↦ ∏ i ∈ s, (L i x + c i)) μ := by
-  classical
-  by_cases hs : s = ∅
-  · simp [hs]
-  have hcard : (s.card : ℝ≥0∞) ≠ 0 := by
-    exact_mod_cast Finset.card_ne_zero.mpr (Finset.ne_empty_iff_nonempty.mp hs)
-  have hLp := MemLp.fun_prod (s := s) (p := fun _ ↦ (s.card : ℝ≥0∞))
-    (fun i _ ↦ ((memLp_map_measure_iff (by fun_prop) (by fun_prop)).1
-      (IsGaussian.memLp_id (μ.map (L i)) _ (by simp))).add (memLp_const (c i)))
-  have hexp : (∑ _i ∈ s, (s.card : ℝ≥0∞)⁻¹)⁻¹ = 1 := by
-    simp [nsmul_eq_mul, hcard, ENNReal.mul_inv_cancel]
-  rw [hexp] at hLp
-  exact memLp_one_iff_integrable.mp hLp
+    Integrable (fun x ↦ ∏ i ∈ s, (L i x + c i)) μ :=
+  TauCeti.integrable_fun_prod_of_memLp_card fun i _ ↦
+    ((memLp_map_measure_iff (by fun_prop) (by fun_prop)).1
+      (IsGaussian.memLp_id (μ.map (L i)) _ (by simp))).add (memLp_const (c i))
 
 /-- An affine linear observable times a finite product of affine linear observables is
 integrable under a Gaussian measure, for real or complex observables. -/
@@ -173,6 +167,37 @@ theorem integral_mul_mul_mul_multivariateGaussian
     (∫ x, x i * x j * x k * x l ∂multivariateGaussian 0 S) =
       S i j * S k l + S i k * S j l + S i l * S j k := by
   simpa using integral_mul_mul_mul_sub_multivariateGaussian 0 hS i j k l
+
+section StdGaussianInner
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+
+/-- A standard Gaussian linear observable belongs to every finite `Lᵖ` space. -/
+theorem memLp_inner_stdGaussian (x : E) (p : ℝ≥0∞) (hp : p ≠ ∞) :
+    MemLp (fun y ↦ ⟪x, y⟫_ℝ) p (stdGaussian E) :=
+  IsGaussian.memLp_dual (stdGaussian E) (innerSL ℝ x) p hp
+
+/-- The even moments of a standard Gaussian linear observable. -/
+theorem integral_pow_two_mul_inner_stdGaussian (x : E) (n : ℕ) :
+    (∫ y, ⟪x, y⟫_ℝ ^ (2 * n) ∂stdGaussian E) =
+      ‖x‖ ^ (2 * n) * (2 * n - 1 : ℕ)‼ := by
+  have h := IsGaussian.integral_pow_two_mul_sub_dual (stdGaussian E) (innerSL ℝ x) n
+  rw [covarianceBilinDual_self_eq_variance IsGaussian.memLp_two_id,
+    variance_dual_stdGaussian, innerSL_apply_norm] at h
+  simpa only [id_eq, integral_id_stdGaussian, sub_zero, innerSL_apply_apply, pow_mul] using h
+
+/-- The second moment of a standard Gaussian linear observable. -/
+theorem integral_sq_inner_stdGaussian (x : E) :
+    (∫ y, ⟪x, y⟫_ℝ ^ 2 ∂stdGaussian E) = ‖x‖ ^ 2 := by
+  simpa using integral_pow_two_mul_inner_stdGaussian x 1
+
+/-- The fourth moment of a standard Gaussian linear observable. -/
+theorem integral_pow_four_inner_stdGaussian (x : E) :
+    (∫ y, ⟪x, y⟫_ℝ ^ 4 ∂stdGaussian E) = 3 * ‖x‖ ^ 4 := by
+  simpa [Nat.doubleFactorial, mul_comm] using integral_pow_two_mul_inner_stdGaussian x 2
+
+end StdGaussianInner
 
 end TauCeti.Probability
 

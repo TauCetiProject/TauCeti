@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
+import TauCeti.Analysis.Calculus.Deriv.Mobius
 import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Moebius
 public import TauCeti.Topology.Compactification.OnePoint.Stabilizer
@@ -136,15 +137,9 @@ charts at `z` and at its image, has derivative `(a d - b c) / (c z + d) ^ 2`. -/
 theorem hasDerivAt_writtenInExtChartAt_smul_coe (g : GL (Fin 2) 𝕜) {z : 𝕜}
     (hz : g 1 0 * z + g 1 1 ≠ 0) :
     HasDerivAt (writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (z : OnePoint 𝕜) fun x ↦ g • x)
-      ((g : Matrix (Fin 2) (Fin 2) 𝕜).det / (g 1 0 * z + g 1 1) ^ 2) z := by
-  have hp : HasDerivAt (fun w : 𝕜 ↦ g 0 0 * w + g 0 1) (g 0 0) z := by
-    simpa using ((hasDerivAt_id z).const_mul (g 0 0)).add_const (c := g 0 1)
-  have hq' : HasDerivAt (fun w : 𝕜 ↦ g 1 0 * w + g 1 1) (g 1 0) z := by
-    simpa using ((hasDerivAt_id z).const_mul (g 1 0)).add_const (c := g 1 1)
-  refine ((hp.div hq' hz).congr_of_eventuallyEq
-    (writtenInExtChartAt_smul_coe_eventuallyEq g hz)).congr_deriv ?_
-  rw [det_fin_two]
-  ring
+      ((g : Matrix (Fin 2) (Fin 2) 𝕜).det / (g 1 0 * z + g 1 1) ^ 2) z :=
+  ((TauCeti.hasDerivAt_mul_add_div_mul_add hz).congr_of_eventuallyEq
+    (writtenInExtChartAt_smul_coe_eventuallyEq g hz)).congr_deriv (by rw [det_fin_two])
 
 /-- **The derivative of a Möbius transformation.** At a finite point `z` that is not a pole,
 `z ↦ (a z + b) / (c z + d)` has derivative `(a d - b c) / (c z + d) ^ 2`, read in the affine
@@ -152,12 +147,9 @@ charts at `z` and at its image. -/
 theorem mfderiv_smul_coe (g : GL (Fin 2) 𝕜) {z : 𝕜} (hz : g 1 0 * z + g 1 1 ≠ 0) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ g • x) z v =
       ((g : Matrix (Fin 2) (Fin 2) 𝕜).det / (g 1 0 * z + g 1 1) ^ 2 * v : 𝕜) := by
-  refine mfderiv_apply_eq_of_hasDerivAt
-    ((contMDiff_const_smul (I := 𝓘(𝕜)) (n := ⊤) g).mdifferentiable (by simp) _)
-    (Eventually.of_forall fun w ↦ ?_) ?_ v
-    (φ := writtenInExtChartAt 𝓘(𝕜) 𝓘(𝕜) (z : OnePoint 𝕜) fun x ↦ g • x)
-  · simp [writtenInExtChartAt]
-  · simpa using hasDerivAt_writtenInExtChartAt_smul_coe g hz
+  refine ((contMDiff_const_smul (I := 𝓘(𝕜)) (n := ⊤) g).continuous.continuousAt
+    |>.mfderiv_apply_eq_of_hasDerivWithinAt EventuallyEq.rfl ?_ v).trans (mul_comm v _)
+  simpa using hasDerivAt_writtenInExtChartAt_smul_coe g hz
 
 end Matrix.GeneralLinearGroup
 
@@ -169,25 +161,26 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜] [Prope
 theorem mfderiv_pglFixingZeroInftyEquiv_symm_zero (a : 𝕜ˣ) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ (pglFixingZeroInftyEquiv.symm a : PGL(2, 𝕜)) • x)
       ((0 : 𝕜) : OnePoint 𝕜) v = (a * v : 𝕜) := by
-  refine mfderiv_apply_eq_of_hasDerivAt (mdifferentiableAt_pgl_smul _ _) ?_
-    (((hasDerivAt_id _).const_mul (a : 𝕜)).congr_deriv (mul_one _)) v
-    (φ := fun w : 𝕜 ↦ (a : 𝕜) * w)
-  · refine Eventually.of_forall fun w ↦ ?_
-    simp
+  refine ((mdifferentiableAt_pgl_smul _ _).continuousAt.mfderiv_apply_eq_of_hasDerivWithinAt
+    (Eventually.of_forall fun w ↦ ?_) (φ := fun w : 𝕜 ↦ (a : 𝕜) * w)
+    (((hasDerivAt_id _).const_mul (a : 𝕜)).congr_deriv (mul_one _)).hasDerivWithinAt v).trans
+    (mul_comm v _)
+  simp [writtenInExtChartAt]
 
 /-- **The dilation `z ↦ a z` has derivative `a⁻¹` at `∞`**, read in the inverted chart, in which
 it is `w ↦ a⁻¹ w`. -/
 theorem mfderiv_pglFixingZeroInftyEquiv_symm_infty (a : 𝕜ˣ) (v : 𝕜) :
     mfderiv 𝓘(𝕜) 𝓘(𝕜) (fun x : OnePoint 𝕜 ↦ (pglFixingZeroInftyEquiv.symm a : PGL(2, 𝕜)) • x)
       (∞ : OnePoint 𝕜) v = (((a⁻¹ : 𝕜ˣ) : 𝕜) * v : 𝕜) := by
-  refine mfderiv_apply_eq_of_hasDerivAt (mdifferentiableAt_pgl_smul _ _) ?_
-    (((hasDerivAt_id _).const_mul ((a⁻¹ : 𝕜ˣ) : 𝕜)).congr_deriv (mul_one _)) v
-    (φ := fun w : 𝕜 ↦ ((a⁻¹ : 𝕜ˣ) : 𝕜) * w)
-  · refine Eventually.of_forall fun w ↦ ?_
-    rw [pglFixingZeroInftyEquiv_symm_smul_infty, chartAt_infty]
-    by_cases hw : w = 0
-    · simp [hw]
-    · simp [hw, mul_comm]
+  refine ((mdifferentiableAt_pgl_smul _ _).continuousAt.mfderiv_apply_eq_of_hasDerivWithinAt
+    (Eventually.of_forall fun w ↦ ?_) (φ := fun w : 𝕜 ↦ ((a⁻¹ : 𝕜ˣ) : 𝕜) * w)
+    (((hasDerivAt_id _).const_mul ((a⁻¹ : 𝕜ˣ) : 𝕜)).congr_deriv (mul_one _)).hasDerivWithinAt
+    v).trans (mul_comm v _)
+  simp only [writtenInExtChartAt, extChartAt_coe, modelWithCornersSelf_coe, Function.comp_apply]
+  rw [pglFixingZeroInftyEquiv_symm_smul_infty, chartAt_infty]
+  by_cases hw : w = 0
+  · simp [hw]
+  · simp [hw, mul_comm]
 
 /-- **The coordinate of an element fixing `0` and `∞` is its first jet at `0`**: the unit `a`
 attached to it by `OnePoint.pglFixingZeroInftyEquiv` is its derivative at `0`. -/

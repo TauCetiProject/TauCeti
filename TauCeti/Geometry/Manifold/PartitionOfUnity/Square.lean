@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.Algebra.Structures
+import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 
 /-!
 # Square partitions of unity
@@ -44,6 +45,9 @@ second summand of `D` only keeps `D` positive off `s`, where the sum of squares 
 * `SmoothPartitionOfUnity.exists_isSubordinate_sq`: on a Hausdorff σ-compact finite-dimensional
   manifold, every open cover of a closed set `s` has a subordinate smooth partition of unity of
   `s` whose functions are squares of nonnegative smooth functions.
+* `IsCompact.exists_sum_sq_eq_one`: on a Hausdorff finite-dimensional manifold, not necessarily
+  σ-compact, a compact set `K` has finitely many smooth functions with compact supports subordinate
+  to given neighbourhoods of the points of `K`, whose squares add up to one on `K`.
 -/
 
 public section
@@ -51,7 +55,9 @@ public section
 noncomputable section
 
 open Set Function
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff Topology
+
+universe u
 
 namespace SmoothPartitionOfUnity
 
@@ -211,3 +217,27 @@ theorem exists_isSubordinate_sq [FiniteDimensional ℝ E] [IsManifold I ∞ M] [
     fun i x ↦ ⟨ρ.sqrtNormalized_nonneg i x, ρ.sqNormalized_apply i x⟩⟩
 
 end SmoothPartitionOfUnity
+
+/-- **A finite square partition of unity of a compact set.** Let `K` be a compact subset of a
+Hausdorff manifold modelled on a finite-dimensional space, and `U x` a neighbourhood of `x` for
+every `x ∈ K`. There are finitely many points `cᵢ` and smooth functions `gᵢ` with compact supports
+in `U cᵢ` such that `∑ᵢ gᵢ² = 1` on `K`. -/
+theorem IsCompact.exists_sum_sq_eq_one {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [TopologicalSpace H] (I : ModelWithCorners ℝ E H) {M : Type u}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] {K : Set M}
+    (hK : IsCompact K) {U : M → Set M} (hU : ∀ x ∈ K, U x ∈ 𝓝 x) :
+    ∃ (ι : Type u) (_ : Fintype ι) (c : ι → M) (g : ι → C^∞⟮I, M; 𝓘(ℝ), ℝ⟯),
+      (∀ i, IsCompact (tsupport (g i)) ∧ tsupport (g i) ⊆ U (c i)) ∧
+        ∀ x ∈ K, ∑ i, g i x ^ 2 = 1 := by
+  obtain ⟨ι, _, f, hf⟩ := hK.exists_smoothBumpCovering_isSubordinate I hU
+  set ρ := f.toSmoothPartitionOfUnity
+  -- The normalized square roots of the partition of unity of the bump covering are supported in
+  -- the compact supports of the bump functions.
+  have hρ (i : ι) : tsupport (ρ.sqrtNormalized i) ⊆ tsupport (f i) := by
+    rw [SmoothPartitionOfUnity.tsupport_sqrtNormalized]
+    exact closure_mono (f.support_toSmoothPartitionOfUnity_subset i)
+  refine ⟨ι, inferInstance, f.c, ρ.sqrtNormalized, fun i ↦
+    ⟨(f i).hasCompactSupport.isCompact.of_isClosed_subset (isClosed_tsupport _) (hρ i),
+      (hρ i).trans (hf i)⟩, fun x hx ↦ ?_⟩
+  rw [← finsum_eq_sum_of_fintype]
+  exact ρ.sum_sq_sqrtNormalized_eq_one hx

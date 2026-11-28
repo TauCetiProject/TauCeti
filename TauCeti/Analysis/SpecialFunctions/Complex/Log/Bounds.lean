@@ -27,7 +27,9 @@ neither side is summable and both are `0`.  The double-family summability is not
 is `TauCeti.summable_mul_norm_pow_succ`, stated for a seminormed additive group and an arbitrary
 real weight, and this file uses it at weight `1`.
 
-The file also gives an explicit truncation error for a single `z`: the `n`-th partial sum
+For a single `z` of modulus less than one, comparing the Taylor series termwise bounds
+`‖log (1 - z)‖` by `-Real.log (1 - ‖z‖)`, the value of the same function at the real point
+`‖z‖`. The file also gives an explicit truncation error for a single `z`: the `n`-th partial sum
 `∑ j ∈ Icc 1 n, z ^ j / j` differs from `log (1 - z)⁻¹` by at most
 `‖z‖ ^ (n + 1) / ((1 - ‖z‖) (n + 1))`, which restates Mathlib's
 `Complex.norm_log_one_sub_inv_add_logTaylor_neg_le` with the Taylor polynomial written out.  At
@@ -39,6 +41,8 @@ The estimate `Complex.norm_log_le_of_re_mem_Icc` bounds the principal logarithm 
 in the real part on a positive vertical strip, with logarithmic growth in the imaginary part.
 Its proof adapts Robby Sneiderman’s strip argument from
 [PrimeNumberTheoremAnd](https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/83f85e91fccdeecc8248fe6d51c30edfb3a07d15/PrimeNumberTheoremAnd/Mathlib/Analysis/SpecialFunctions/Gamma/DigammaBounds.lean).
+Off the real axis, `|Real.log ‖z‖ - Real.log |im z||` is bounded above by
+`(re z / im z) ^ 2 / 2`; the lower half-plane follows from the upper one by conjugation.
 Away from the branch cut, on any vertical line `Re z = x` with `x ≥ 2`, the real part
 `Real.log ‖x + t I‖` of `Complex.log (x + t I)` differs from `Real.log (1 + |t|)` by at most
 `Real.log x`, comparing holomorphic logarithmic strip weights with the real height scale
@@ -56,6 +60,8 @@ term takes.
   summable, then `r` is summable (the converse of Mathlib's `Summable.clog_one_sub`).
 * `Complex.tsum_taylorSeries_neg_log`: for every `r` with `‖r i‖ < 1`, the sum over `ι × ℕ` is
   `∑' i, -log (1 - r i)` (both sides are `0` when `r` is not summable).
+* `Complex.norm_log_one_sub_le_neg_log_one_sub_norm`: for `‖z‖ < 1`,
+  `‖log (1 - z)‖ ≤ -Real.log (1 - ‖z‖)`.
 * `Complex.norm_log_one_sub_inv_sub_sum_Icc_le`: the truncation error of the same Taylor series
   for a single `z`, with its `n`-th partial sum `∑ j ∈ Icc 1 n, z ^ j / j`.
 * `Complex.norm_log_one_sub_div_inv_sub_sum_Icc_le`: the same truncation error at `z = w / p`,
@@ -70,6 +76,8 @@ term takes.
   positive vertical strip, including empty and singleton strips.
 * `Complex.abs_log_norm_ofReal_add_mul_I_sub_le`: for `2 ≤ x` and `t : ℝ`,
   `|Real.log ‖(x : ℂ) + t * I‖ - Real.log (1 + |t|)| ≤ Real.log x`.
+* `Complex.abs_log_norm_sub_log_abs_im_le`: off the real axis,
+  `|Real.log ‖z‖ - Real.log |im z|| ≤ (re z / im z) ^ 2 / 2`.
 -/
 
 public section
@@ -149,6 +157,16 @@ theorem norm_neg_one_pow_div_add_one (n : ℕ) :
     ‖((-1) ^ n / (n + 1) : ℂ)‖ = ((n : ℝ) + 1)⁻¹ := by
   rw [norm_div, norm_pow, norm_neg, norm_one, one_pow, one_div, ← Nat.cast_add_one,
     Complex.norm_natCast, Nat.cast_add_one]
+
+/-- **The principal logarithm `log (1 - z)` is dominated by its value at `‖z‖`.** For `‖z‖ < 1`,
+`‖log (1 - z)‖ ≤ -Real.log (1 - ‖z‖)`: the Taylor series of `-log (1 - z)` is bounded termwise by
+the Taylor series of `-Real.log (1 - ‖z‖)`, which has nonnegative terms. -/
+theorem norm_log_one_sub_le_neg_log_one_sub_norm {z : ℂ} (hz : ‖z‖ < 1) :
+    ‖log (1 - z)‖ ≤ -Real.log (1 - ‖z‖) := by
+  rw [← norm_neg]
+  refine (hasSum_taylorSeries_neg_log' hz).norm_le_of_bounded
+    (Real.hasSum_pow_div_log_of_abs_lt_one (by rwa [abs_norm])) fun j ↦ ?_
+  rw [norm_div, norm_pow, ← Nat.cast_add_one, norm_natCast, Nat.cast_add_one]
 
 /-- **The truncation error of the Taylor series of `log (1 - z)⁻¹`.** For `‖z‖ < 1`, the partial
 sum `∑ j ∈ Icc 1 n, z ^ j / j` approximates `log (1 - z)⁻¹ = -log (1 - z)` to within
@@ -255,5 +273,27 @@ theorem abs_log_norm_ofReal_add_mul_I_sub_le {x : ℝ} (hx : 2 ≤ x) (t : ℝ) 
   · have h := Real.log_le_log hz0 hhi
     rw [Real.log_mul hx0.ne' ht1.ne'] at h
     linarith
+
+/-- Off the real axis, `Real.log ‖z‖` differs from `Real.log |im z|` by at most
+`(re z / im z) ^ 2 / 2`, since `(‖z‖ / |im z|) ^ 2 = 1 + (re z / im z) ^ 2`. -/
+theorem abs_log_norm_sub_log_abs_im_le {z : ℂ} (hz : z.im ≠ 0) :
+    abs (Real.log ‖z‖ - Real.log |z.im|) ≤ (z.re / z.im) ^ 2 / 2 := by
+  have upper {w : ℂ} (hw : 0 < w.im) :
+      Real.log ‖w‖ - Real.log w.im ≤ (w.re / w.im) ^ 2 / 2 := by
+    have hw0 : 0 < ‖w‖ := hw.trans_le (im_le_norm w)
+    have hq : (‖w‖ / w.im) ^ 2 = 1 + (w.re / w.im) ^ 2 := by
+      rw [div_pow, div_pow, ← normSq_eq_norm_sq, normSq_apply]
+      field_simp
+      ring
+    have h := Real.log_le_sub_one_of_pos (pow_pos (div_pos hw0 hw) 2)
+    rw [Real.log_pow, Real.log_div hw0.ne' hw.ne', hq] at h
+    push_cast at h
+    linarith
+  rw [abs_of_nonneg (sub_nonneg.mpr
+    (Real.log_le_log (abs_pos.mpr hz) (abs_im_le_norm z)))]
+  rcases hz.lt_or_gt with hz | hz
+  · simpa [abs_of_neg hz, div_neg] using
+      (upper (w := (starRingEnd ℂ) z) (by simpa using hz))
+  · simpa [abs_of_pos hz] using upper hz
 
 end Complex

@@ -10,7 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.RingTheory.Etale.Finite
 public import Mathlib.CategoryTheory.Limits.FintypeCat
-public import TauCeti.CategoryTheory.ObjectProperty
+public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 
 /-!
@@ -136,6 +136,52 @@ spectrum of its coordinate algebra. -/
 theorem spec_obj_obj (A : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ) :
     ((spec R).obj A).obj = (algSpec R).obj (op A.unop.obj) :=
   (rfl)
+
+/-- The scheme over `Spec R` underlying the finite étale spectrum of `A` is `Spec A`, with the
+spectrum of the algebra map as structure morphism: `TauCeti.AlgebraicGeometry.algSpecObjIsoOverMk`
+transported along `spec_obj_obj`. Since `spec` is not exposed, that transport is not definitional
+outside this file, so later files use this isomorphism instead. -/
+noncomputable def specObjObjIso (A : CommAlgCat.FiniteEtale.{u} R) :
+    ((spec R).obj (op A)).obj ≅ Over.mk (Spec.algebraMap R A.obj) :=
+  eqToIso (spec_obj_obj R (op A)) ≪≫ TauCeti.AlgebraicGeometry.algSpecObjIsoOverMk A.obj
+
+/-- The underlying scheme morphism of `specObjObjIso R A` is the identity of `Spec A`, stated as
+the `eqToHom` of `spec_obj_obj` since `spec` is not exposed to statements. -/
+@[simp]
+theorem specObjObjIso_hom_left (A : CommAlgCat.FiniteEtale.{u} R) :
+    (specObjObjIso R A).hom.left = eqToHom (congrArg Comma.left (spec_obj_obj R (op A))) := by
+  simp only [specObjObjIso, Iso.trans_hom, eqToIso.hom, Over.comp_left, Over.eqToHom_left,
+    AlgebraicGeometry.algSpecObjIsoOverMk_hom_left]
+  -- The identity is stated on `(Over.mk _).left`, which `simp` cannot match syntactically with
+  -- the target of the `eqToHom`.
+  exact Category.comp_id _
+
+/-- The underlying scheme morphism of the inverse of `specObjObjIso R A` is the identity of
+`Spec A`, stated as the `eqToHom` of `spec_obj_obj` since `spec` is not exposed to statements. -/
+@[simp]
+theorem specObjObjIso_inv_left (A : CommAlgCat.FiniteEtale.{u} R) :
+    (specObjObjIso R A).inv.left = eqToHom (congrArg Comma.left (spec_obj_obj R (op A))).symm := by
+  simp only [specObjObjIso, Iso.trans_inv, eqToIso.inv, Over.comp_left, Over.eqToHom_left,
+    AlgebraicGeometry.algSpecObjIsoOverMk_inv_left]
+  -- The identity is stated on `(Over.mk _).left`, which `simp` cannot match syntactically with
+  -- the source of the `eqToHom`.
+  exact Category.id_comp _
+
+/-- Under `specObjObjIso`, the finite étale spectrum of a morphism `f : A ⟶ B` of finite étale
+`R`-algebras is `Spec f`. -/
+@[reassoc]
+theorem spec_map_hom_comp_specObjObjIso_hom {A B : CommAlgCat.FiniteEtale.{u} R} (f : A ⟶ B) :
+    ((spec R).map f.op).hom ≫ (specObjObjIso R A).hom =
+      (specObjObjIso R B).hom ≫
+        Over.homMk (V := Over.mk (Spec.algebraMap R A.obj))
+          (Spec.map (CommRingCat.ofHom (f.hom.hom : A.obj →+* B.obj))) (by
+          simp only [Over.mk_hom, Spec.algebraMap, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
+            AlgHom.comp_algebraMap]) :=
+  -- On underlying schemes both sides are `Spec f`, since `specObjObjIso` is the identity there.
+  Over.OverMorphism.ext (by
+    simp only [Over.comp_left, specObjObjIso_hom_left, Over.homMk_left]
+    -- `spec_obj_obj` holds by `rfl` here, so both `eqToHom`s are identities.
+    exact (Category.comp_id _).trans (Category.id_comp _).symm)
 
 private theorem exists_spec_iso (X : FiniteEtaleScheme (Spec R)) :
     ∃ A : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ, Nonempty ((spec R).obj A ≅ X) := by

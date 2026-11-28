@@ -230,8 +230,7 @@ private theorem span_range_originGenerator (π a : R) :
 theorem opensRange_blowupBaseChartι_sup_iSup_opensRange_blowupCoordChartι
     (hπ : π ∈ nonZeroDivisors R) :
     (blowupBaseChartι a hπ).opensRange ⊔ ⨆ i, (blowupCoordChartι a i hπ).opensRange = ⊤ := by
-  have h := Proj.iSup_basicOpen_eq_top _ _
-    (irrelevant_eq_span_monomialDegreeOne (span_range_originGenerator π (π ^ 2 * a))).le
+  have h := iSup_basicOpen_monomialDegreeOne (span_range_originGenerator π (π ^ 2 * a))
   rw [iSup_option] at h
   rw [opensRange_blowupBaseChartι]
   simp_rw [opensRange_blowupCoordChartι]
@@ -375,7 +374,7 @@ theorem locallyOfFinitePresentation_blowup (hπ : π ∈ nonZeroDivisors R) :
     (Q := RingHom.FinitePresentation)
   refine IsZariskiLocalAtSource.of_openCover (blowupOpenCover a hπ) fun j ↦ ?_
   rw [blowupOpenCover_f_blowupToSpec a hπ j]
-  exact locallyOfFinitePresentation_spec _
+  exact locallyOfFinitePresentation_SpecMap_algebraMap _ _
 
 /-- **The blowup of a node has pure relative dimension one.** For a nonzerodivisor `π` of `R`,
 every fibre of the blowup of `R[x, y] ⧸ (xy - π²a)` along `(π, x, y)` over `Spec R` is a curve

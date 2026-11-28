@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Geometry.Symplectic.AlmostComplex
+import Mathlib.Analysis.Normed.Operator.Bilinear
 
 /-!
 # The metric of a compatible pair
@@ -44,6 +46,8 @@ against exactly this metric.
   `InnerProductSpace.Core ℝ V`.
 * `TauCeti.SymplecticForm.abs_apply_le_norm_mul_norm`: when the inner product of `V` is the
   metric `ω(·, J ·)`, the symplectic form is bounded by it, `|ω(v, w)| ≤ ‖v‖ ‖w‖`.
+* `TauCeti.SymplecticForm.norm_toContinuousBilinearMap_le_one`: for that inner product, the
+  continuous bilinear map of `ω` has operator norm at most one.
 * `TauCeti.SymplecticForm.inner_apply_left_eq_of_apply_apply_eq_inner` and
   `TauCeti.SymplecticForm.inner_apply_left_eq_neg_of_apply_apply_eq_inner`: for that inner
   product, `⟪J v, w⟫ = ω(v, w)` and `J` is skew-adjoint.
@@ -272,6 +276,13 @@ theorem abs_apply_le_norm_mul_norm (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (v w 
   have hJ := ω.norm_apply_eq_norm_of_apply_apply_self_eq_inner (fun v => hg v v) w
   rw [hω, abs_neg, ← hJ]
   exact abs_real_inner_le_norm v (J w)
+
+/-- If the inner product of `V` is the metric `ω(·, J ·)`, then the continuous bilinear map of
+`ω` has operator norm at most one. -/
+theorem norm_toContinuousBilinearMap_le_one [T2Space V] [FiniteDimensional ℝ V]
+    (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) : ‖ω.toBilinForm.toContinuousBilinearMap‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound₂ _ zero_le_one fun v w ↦ by
+    simpa [Real.norm_eq_abs] using abs_apply_le_norm_mul_norm hg v w
 
 /-- If the inner product of `V` is the metric `ω(·, J ·)`, then pairing with `J v` is `ω(v, ·)`:
 `⟪J v, w⟫ = ω(v, w)`. -/

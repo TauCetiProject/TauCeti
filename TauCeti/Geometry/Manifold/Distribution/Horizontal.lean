@@ -26,6 +26,8 @@ differentiable, so the predicate is meaningful for differentiable maps.
 
 * `TauCeti.IsHorizontalMap`: maps whose tangent images lie in a distribution.
 * `TauCeti.IsHorizontalMap.comp`: precomposing a horizontal map keeps it horizontal.
+* `TauCeti.IsHorizontalMap.comp_left`: postcomposing with a map whose differential preserves the
+  distributions keeps it horizontal.
 * `TauCeti.IsHorizontalMap.eventually_sub_mem`: coordinates whose differential takes the
   distribution into a closed subspace are locally constant modulo that subspace along
   horizontal differentiable maps.
@@ -105,6 +107,17 @@ theorem IsHorizontalMap.comp {g : P → N} (hf : IsHorizontalMap J D f)
   rw [mfderiv_comp x (hfg x) (hg x)]
   exact (LinearMap.range_comp_le_range _ _).trans (hf (g x))
 
+/-- Postcomposing a horizontal map with a map `g` whose differential carries `D` into `D'` keeps it
+horizontal, wherever `f` and `g` are differentiable. -/
+theorem IsHorizontalMap.comp_left {D' : Π z : P, Submodule 𝕜 (TangentSpace K z)} {g : M → P}
+    (hf : IsHorizontalMap J D f) (hg : ∀ y, MDifferentiableAt I K g (f y))
+    (hf' : ∀ y, MDifferentiableAt J I f y)
+    (hgD : ∀ y, ∀ v ∈ D (f y), mfderiv I K g (f y) v ∈ D' (g (f y))) :
+    IsHorizontalMap J D' (g ∘ f) := fun y ↦ by
+  rw [mfderiv_comp y (hg y) (hf' y)]
+  rintro _ ⟨v, rfl⟩
+  exact hgD y _ (hf.mfderiv_mem y v)
+
 /-- **Independence of the parametrization.** Precomposing with a diffeomorphism of the source
 does not change whether a map is horizontal. -/
 theorem isHorizontalMap_comp_diffeomorph_iff (φ : P ≃ₘ^n⟮K, J⟯ N) (hn : n ≠ 0) :
@@ -122,14 +135,11 @@ theorem isHorizontalMap_diffeomorph_comp_iff {D' : Π z : P, Submodule 𝕜 (Tan
     (hψ : ∀ x (v : TangentSpace I x), v ∈ D x ↔ mfderiv I K ψ x v ∈ D' (ψ x)) :
     IsHorizontalMap J D' (ψ ∘ f) ↔ IsHorizontalMap J D f := by
   refine forall_congr' fun y ↦ ?_
-  have hcoe (v : TangentSpace I (f y)) :
-      (ψ.mfderivToContinuousLinearEquiv hn (f y)).toLinearEquiv.toLinearMap v =
-        mfderiv I K ψ (f y) v :=
-    congr($(ψ.mfderivToContinuousLinearEquiv_coe (x := f y) hn) v)
-  rw [ψ.range_mfderiv_diffeomorph_comp hn, Function.comp_apply, Submodule.map_le_iff_le_comap]
+  rw [ψ.range_mfderiv_diffeomorph_comp hn, Function.comp_apply, Submodule.map_le_iff_le_comap,
+    ψ.mfderivToContinuousLinearEquiv_toLinearMap hn]
   refine ⟨fun h v hv ↦ (hψ (f y) v).2 ?_, fun h v hv ↦ ?_⟩
-  · simpa only [Submodule.mem_comap, hcoe] using h hv
-  · simpa only [Submodule.mem_comap, hcoe] using (hψ (f y) v).1 (h hv)
+  · simpa only [Submodule.mem_comap, ContinuousLinearMap.coe_coe] using h hv
+  · simpa only [Submodule.mem_comap, ContinuousLinearMap.coe_coe] using (hψ (f y) v).1 (h hv)
 
 end Transport
 

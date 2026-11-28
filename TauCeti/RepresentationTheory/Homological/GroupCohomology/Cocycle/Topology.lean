@@ -11,17 +11,19 @@ public import Mathlib.Topology.Algebra.Group.Subgroup
 public import Mathlib.Topology.Separation.Basic
 
 /-!
-# The zero locus of a continuous `1`-cocycle
+# Continuity of `1`-cocycles and their zero loci
 
 For a `1`-cocycle `f : G → M` in the sense of Mathlib's unbundled `groupCohomology.IsCocycle₁`,
 `groupCohomology.zeroLocus` is the subgroup `{g | f g = 0}` of `G`. This file records its
-topological properties:
+topological properties, and that continuity of a `1`-cocycle is decided at the identity:
 
 * `groupCohomology.isClosed_zeroLocus`: the zero locus of a continuous `1`-cocycle with values
   in a `T1` space is closed.
 * `groupCohomology.eq_zero_of_eqOn_zero_of_topologicalClosure_closure_eq_top`: a continuous
   `1`-cocycle with values in a `T1` space that vanishes on a set whose generated subgroup is
   dense vanishes everywhere.
+* `groupCohomology.IsCocycle₁.continuous_of_continuousAt_one`: a `1`-cocycle that is continuous at
+  `1` is continuous.
 * `TauCeti.continuous_groupNormHom`: the norm of a finite normal subgroup is continuous when the
   ambient group acts by continuous maps.
 -/
@@ -51,6 +53,26 @@ theorem eq_zero_of_eqOn_zero_of_topologicalClosure_closure_eq_top [IsTopological
       (isClosed_zeroLocus hf hc)
   funext g
   exact (mem_zeroLocus hf).1 (hle (hs ▸ Subgroup.mem_top g))
+
+section Continuity
+
+variable {G M : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+  [AddCommGroup M] [SMul G M] [TopologicalSpace M] [ContinuousAdd M] [ContinuousConstSMul G M]
+
+/-- **A `1`-cocycle continuous at `1` is continuous.** This is the cocycle analogue of
+`continuous_of_continuousAt_one` for monoid homomorphisms; the action of `G` need only be by
+continuous maps, with no joint continuity. -/
+theorem IsCocycle₁.continuous_of_continuousAt_one {f : G → M} (hf : IsCocycle₁ f)
+    (h₁ : ContinuousAt f 1) : Continuous f := by
+  refine continuous_iff_continuousAt.2 fun g ↦ ?_
+  -- near `g` the cocycle identity reads `f (g * x) = g • f x + f g`
+  have hg : ContinuousAt (fun x ↦ f (g * x)) 1 :=
+    ((h₁.const_smul g).add continuousAt_const).congr
+      (Filter.Eventually.of_forall fun x ↦ (hf g x).symm)
+  simpa [Function.comp_def] using
+    hg.comp_of_eq (continuous_const_mul g⁻¹).continuousAt (inv_mul_cancel g)
+
+end Continuity
 
 end groupCohomology
 

@@ -8,8 +8,10 @@ module
 public import TauCeti.Analysis.Distribution.TestFunction.Translation
 public import TauCeti.Topology.Algebra.Module.Trace
 public import Mathlib.Analysis.Calculus.Gradient.Basic
+public import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Analysis.InnerProductSpace.Trace
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+public import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
@@ -19,6 +21,7 @@ For an open set `Ω` of a finite-dimensional real normed space `E`, a test vecto
 `φ ∈ 𝓓(Ω, E)` has divergence `div φ = tr (Dφ)`, which is again a test function on `Ω`. This file
 packages the divergence as a continuous linear map `𝓓(Ω, E) →L[ℝ] 𝓓(Ω, ℝ)`, in the style of
 Mathlib's `TestFunction.fderivCLM`, and expands it in the coordinates of any finite basis.
+The kernel of this map is the submodule of solenoidal test vector fields.
 
 The divergence of test vector fields is the operator dual to the distributional gradient: the
 total variation of a function and the perimeter of a set are suprema of the pairings
@@ -28,12 +31,16 @@ total variation of a function and the perimeter of a set are suprema of the pair
 
 * `TestFunction.divergenceCLM`: the divergence `𝓓(Ω, E) →L[ℝ] 𝓓(Ω, ℝ)`.
 * `TestFunction.divergenceCLM_apply`: pointwise, it is the trace of the Fréchet derivative.
+* `TestFunction.solenoidalSubmodule`: the kernel of `divergenceCLM` on test vector fields.
+* `TestFunction.mem_solenoidalSubmodule_iff`: membership means that the bundled divergence vanishes.
 * `TestFunction.divergenceCLM_monoCLM`: the divergence commutes with extending a test vector
   field from `Ω'` to a larger open set `Ω`.
 * `TestFunction.divergenceCLM_postcompCLM_toSpanSingleton`: the divergence of the vector field
   `φ v` is the directional derivative `∂_v φ`.
 * `TestFunction.divergenceCLM_apply_eq_deriv`: on the real line, the divergence of a test
   function is its derivative.
+* `TestFunction.divergenceCLM_lineTestFunction`: the divergence of the restriction of a scalar
+  test function to a line is its directional derivative along the line.
 * `TestFunction.divergenceCLM_apply_eq_sum`: in a basis `b`, it is the sum of the derivatives of
   the coordinate functions `b.repr (φ ·) i` in the directions `b i`.
 * `TauCeti.divergenceCLM_translateTestFunction`: the divergence of a translated test vector field
@@ -45,6 +52,8 @@ total variation of a function and the perimeter of a set are suprema of the pair
 * `TauCeti.trace_fderiv_smul` and `TauCeti.trace_fderiv_smul_const`: the Leibniz rule
   `div (χ φ) = χ div φ + Dχ φ` for the divergence `tr (D ·)` of a vector field multiplied by a
   scalar function.
+* `TauCeti.trace_fderiv_eq_sum_fderiv_apply_single`: on `EuclideanSpace ℝ ι`, the divergence
+  `tr (D f)` is the sum `∑ⱼ ∂ⱼ fⱼ` of the coordinate derivatives.
 * `TauCeti.trace_fderiv_exp_neg_smul`: the weighted divergence
   `div (e^{−W} φ) = (div φ − DW φ) e^{−W}`.
 * `TauCeti.exists_testFunction_sum_smul_comp_add`: weighting translates of a test vector field
@@ -68,6 +77,16 @@ linear map into the scalar test functions `𝓓(Ω, ℝ)`. It is the composite o
 derivative `TestFunction.fderivCLM` with the trace `TauCeti.traceCLM`. -/
 noncomputable def divergenceCLM : 𝓓(Ω, E) →L[ℝ] 𝓓(Ω, ℝ) :=
   postcompCLM (TauCeti.traceCLM ℝ E) ∘L fderivCLM ℝ ⊤ ⊤
+
+/-- Smooth compactly supported vector fields with zero divergence on the open set. -/
+noncomputable def solenoidalSubmodule (Ω : Opens E) : Submodule ℝ 𝓓(Ω, E) :=
+  (divergenceCLM (Ω := Ω)).ker
+
+/-- A test field is solenoidal exactly when its bundled divergence vanishes. -/
+@[simp]
+theorem mem_solenoidalSubmodule_iff {φ : 𝓓(Ω, E)} :
+    φ ∈ solenoidalSubmodule Ω ↔ divergenceCLM φ = 0 :=
+  (Iff.rfl)
 
 /-- The divergence of a test vector field is pointwise the trace of its Fréchet derivative. -/
 @[simp]
@@ -105,6 +124,14 @@ theorem divergenceCLM_apply_eq_deriv {Ω : Opens ℝ} (φ : 𝓓(Ω, ℝ)) (x : 
     ext; simp
   conv_lhs => rw [← hφ]
   rw [divergenceCLM_postcompCLM_toSpanSingleton, lineDerivOp_one_apply_eq_deriv]
+
+/-- The divergence of the restriction of a scalar test function `ψ` to a line is the derivative
+`∂_e ψ` along it. -/
+@[simp high]
+theorem divergenceCLM_lineTestFunction {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {Ω : Opens E} (ψ : 𝓓(Ω, ℝ)) (y e : E) (he : e ≠ 0) (t : ℝ) :
+    divergenceCLM (ψ.lineTestFunction y e he) t = ∂_{e} ψ (y + t • e) := by
+  rw [divergenceCLM_apply_eq_deriv, lineDerivOp_apply, deriv_lineTestFunction]
 
 /-- **The divergence in a basis**: `div φ = ∑ i, ∂_{b i} (b.repr (φ ·) i)`. -/
 theorem divergenceCLM_apply_eq_sum {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ E)
@@ -165,6 +192,21 @@ theorem trace_fderiv_smul {χ : E → ℝ} {φ : E → E} {x : E} (hχ : Differe
 theorem trace_fderiv_smul_const {χ : E → ℝ} {x : E} (hχ : DifferentiableAt ℝ χ x) (v : E) :
     LinearMap.trace ℝ E (fderiv ℝ (fun y => χ y • v) x : E →ₗ[ℝ] E) = fderiv ℝ χ x v := by
   simpa using trace_fderiv_smul hχ (differentiableAt_const v)
+
+/-- **The divergence in Euclidean coordinates**: the trace of the derivative of a map
+`f : ℝⁿ → ℝⁿ` is `∑ⱼ ∂ⱼ fⱼ`, the sum of the derivatives of its coordinates in the coordinate
+directions. -/
+theorem trace_fderiv_eq_sum_fderiv_apply_single {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {f : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {x : EuclideanSpace ℝ ι}
+    (hf : DifferentiableAt ℝ f x) :
+    LinearMap.trace ℝ _ (fderiv ℝ f x : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι) =
+      ∑ j, fderiv ℝ (fun y ↦ f y j) x (EuclideanSpace.single j 1) := by
+  rw [LinearMap.trace_eq_sum_inner _ (EuclideanSpace.basisFun ι ℝ)]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  have hd : HasFDerivAt (fun y ↦ f y j) ((EuclideanSpace.proj j).comp (fderiv ℝ f x)) x :=
+    (EuclideanSpace.proj (𝕜 := ℝ) j).hasFDerivAt.comp x hf.hasFDerivAt
+  rw [hd.fderiv]
+  simp [EuclideanSpace.inner_single_left]
 
 open scoped Gradient InnerProductSpace in
 /-- On `Ω`, the divergence of `φ b` is `φ div b + ⟪∇φ, b⟫`. -/

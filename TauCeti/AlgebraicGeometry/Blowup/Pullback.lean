@@ -45,6 +45,8 @@ closure of the inverse image of `Z ∖ V(I)` is in
   `Bl_{I.comap g} X' ⟶ Bl_I X` over `g`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.blowupBaseChangeHom I g`: the comparison morphism
   `Bl_{I.comap g} X' ⟶ X' ×_X Bl_I X`.
+* `AlgebraicGeometry.Scheme.IdealSheafData.blowupIso e h`: for an isomorphism `e : X ≅ Y` and
+  `I = J.comap e.hom`, the isomorphism `Bl_I X ≅ Bl_J Y` over `e`.
 
 ## Main results
 
@@ -194,6 +196,60 @@ theorem isPullback_blowupMap_of_flat :
     (I.blowupBaseChangeHom_snd g)
 
 end Flat
+
+section Iso
+
+variable {X Y Z : Scheme.{u}} (e : X ≅ Y) {I : X.IdealSheafData} {J : Y.IdealSheafData}
+  (h : I = J.comap e.hom)
+
+/-- **An isomorphism of schemes lifts to their blowups** along ideal sheaves that it matches: for
+`e : X ≅ Y` and `I = J.comap e.hom`, the morphism of blowups over `e` is an isomorphism
+`Bl_I X ≅ Bl_J Y`, as blowing up commutes with the flat base change `e`. It lies over `e`
+(`blowupIso_hom_blowupToBase`), and is the unique morphism doing so (`eq_blowupIso_hom`). -/
+def blowupIso : I.blowup ≅ J.blowup :=
+  have : IsIso (J.blowupMap e.hom) := (J.isPullback_blowupMap_of_flat e.hom).isIso_snd_of_isIso
+  eqToIso (congrArg blowup h) ≪≫ asIso (J.blowupMap e.hom)
+
+/-- The isomorphism of blowups lies over the isomorphism of schemes. -/
+@[reassoc (attr := simp)]
+theorem blowupIso_hom_blowupToBase :
+    (blowupIso e h).hom ≫ J.blowupToBase = I.blowupToBase ≫ e.hom := by
+  subst h
+  simp [blowupIso]
+
+/-- The inverse of the isomorphism of blowups lies over the inverse of the isomorphism of
+schemes. -/
+@[reassoc (attr := simp)]
+theorem blowupIso_inv_blowupToBase :
+    (blowupIso e h).inv ≫ I.blowupToBase = J.blowupToBase ≫ e.inv := by
+  rw [Iso.inv_comp_eq, blowupIso_hom_blowupToBase_assoc, Iso.hom_inv_id, Category.comp_id]
+
+/-- **Uniqueness of the isomorphism of blowups**: every morphism `Bl_I X ⟶ Bl_J Y` lying over `e`
+is `blowupIso e h`. Transported along `I = J.comap e.hom`, this is `eq_blowupMap`. -/
+theorem eq_blowupIso_hom {f : I.blowup ⟶ J.blowup}
+    (hf : f ≫ J.blowupToBase = I.blowupToBase ≫ e.hom) : f = (blowupIso e h).hom := by
+  subst h
+  simpa [blowupIso] using J.eq_blowupMap e.hom hf
+
+/-- The isomorphism of blowups induced by the identity is the identity. -/
+@[simp]
+theorem blowupIso_refl (h : I = I.comap (Iso.refl X).hom) :
+    blowupIso (Iso.refl X) h = Iso.refl _ :=
+  Iso.ext (eq_blowupIso_hom _ _ (by simp)).symm
+
+/-- The isomorphism of blowups induced by the inverse isomorphism is the inverse. -/
+theorem blowupIso_symm :
+    blowupIso e.symm (by rw [h, ← comap_comp, Iso.symm_hom, Iso.inv_hom_id, comap_id]) =
+      (blowupIso e h).symm :=
+  Iso.ext (eq_blowupIso_hom _ _ (by simp)).symm
+
+/-- The isomorphism of blowups induced by a composite of isomorphisms is the composite. -/
+theorem blowupIso_trans (e' : Y ≅ Z) {L : Z.IdealSheafData} (h' : J = L.comap e'.hom) :
+    blowupIso (e ≪≫ e') (by rw [h, h', ← comap_comp, Iso.trans_hom]) =
+      blowupIso e h ≪≫ blowupIso e' h' :=
+  Iso.ext (eq_blowupIso_hom _ _ (by simp)).symm
+
+end Iso
 
 /-- **Blowing up commutes with restriction to open subschemes**: for an open immersion `g`, the
 morphism of blowups `Bl_{I.comap g} X' ⟶ Bl_I X` is an open immersion, with image the preimage of

@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.NumberField.AdeleRing
 import Mathlib.Topology.Algebra.Group.Units
 import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Units
+import TauCeti.Topology.Algebra.ContinuousMulEquiv
 
 /-!
 # Basic API for ideles
@@ -33,15 +34,20 @@ at almost every finite place; `TauCeti.GlobalNumberFields.ideleFiniteCoord_idele
 `TauCeti.GlobalNumberFields.ideleInfiniteCoord_ideleOfUnits` recover those units.
 
 The embeddings of the units of the completions, at the infinite and at the finite places, into
-the idele group and the idele class group are continuous.
+the idele group and the idele class group are continuous, and so are `toFiniteIdele` and
+`ofFiniteIdele`.
 
 Finally, `NumberField.IdeleGroup.localUnitsEquiv` identifies the idele group, with its units
 topology, with the product of the unit groups `K_wˣ` at the infinite places and the restricted
 product of the unit groups `K_vˣ` at the finite places with respect to the local integral units
-`𝒪_vˣ`, as topological groups. Its coordinates are the coordinate maps above, and its inverse is
-`TauCeti.GlobalNumberFields.ideleOfUnits`. This is the classical description of the idele group as
-a restricted product over all places, and it shows that the units topology of the adele ring is
-the restricted-product topology of the local unit groups.
+`𝒪_vˣ`, as topological groups. Its coordinates are the coordinate maps above, which are therefore
+continuous, and its inverse is `TauCeti.GlobalNumberFields.ideleOfUnits`. This is the classical
+description of the idele group as a restricted product over all places, and it shows that the
+units topology of the adele ring is the restricted-product topology of the local unit groups.
+
+This topology need not be the subspace topology of the adele ring: when `R` has infinitely many
+height-one primes, `NumberField.IdeleGroup.not_isEmbedding_val` shows that the inclusion of the
+ideles into the adeles is not an embedding.
 
 ## References
 
@@ -150,6 +156,17 @@ continuous. -/
 theorem continuous_ofAdicCompletion (v : HeightOneSpectrum R) :
     Continuous (ofAdicCompletion R K v) :=
   (AdeleRing.continuous_ofAdicCompletion R K v).units_map _
+
+/-- The finite component of an idele depends continuously on the idele. -/
+@[continuity, fun_prop]
+theorem continuous_toFiniteIdele : Continuous (toFiniteIdele R K) :=
+  continuous_snd.units_map _
+
+/-- The idele with a given finite component and trivial infinite components depends continuously
+on the finite component. -/
+@[continuity, fun_prop]
+theorem continuous_ofFiniteIdele : Continuous (ofFiniteIdele R K) :=
+  (continuous_const.prodMk continuous_id).units_map _
 
 end NumberField.IdeleGroup
 
@@ -271,14 +288,9 @@ at the finite places with respect to the local integral units `𝒪_vˣ`. -/
 noncomputable def localUnitsEquiv :
     IdeleGroup R K ≃ₜ* (∀ w : InfinitePlace K, w.Completionˣ) ×
       Πʳ v : HeightOneSpectrum R,
-        [(v.adicCompletion K)ˣ, (Submonoid.ofClass (v.adicCompletionIntegers K)).units] where
-  toMulEquiv := MulEquiv.prodUnits.trans
-    (MulEquiv.prodCongr MulEquiv.piUnits (FiniteAdeleRing.unitsContinuousMulEquiv R K))
-  continuous_toFun := (ContinuousMulEquiv.piUnits.continuous.prodMap
-    (FiniteAdeleRing.unitsContinuousMulEquiv R K).continuous).comp Homeomorph.prodUnits.continuous
-  continuous_invFun := Homeomorph.prodUnits.symm.continuous.comp
-    (ContinuousMulEquiv.piUnits.symm.continuous.prodMap
-      (FiniteAdeleRing.unitsContinuousMulEquiv R K).symm.continuous)
+        [(v.adicCompletion K)ˣ, (Submonoid.ofClass (v.adicCompletionIntegers K)).units] :=
+  (ContinuousMulEquiv.prodUnits _ _).trans
+    (ContinuousMulEquiv.piUnits.prodCongr (FiniteAdeleRing.unitsContinuousMulEquiv R K))
 
 variable {R K}
 
@@ -286,15 +298,17 @@ variable {R K}
 an idele at the infinite places. -/
 @[simp]
 theorem localUnitsEquiv_apply_fst (x : IdeleGroup R K) (w : InfinitePlace K) :
-    (localUnitsEquiv R K x).1 w = w.ideleInfiniteCoord x :=
-  Units.ext (rfl)
+    (localUnitsEquiv R K x).1 w = w.ideleInfiniteCoord x := by
+  rw [localUnitsEquiv, ContinuousMulEquiv.trans_apply, ContinuousMulEquiv.prodCongr_apply]
+  exact Units.ext (rfl)
 
 /-- The finite part of `NumberField.IdeleGroup.localUnitsEquiv` consists of the coordinates of an
 idele at the finite places. -/
 @[simp]
 theorem localUnitsEquiv_apply_snd (x : IdeleGroup R K) (v : HeightOneSpectrum R) :
-    (localUnitsEquiv R K x).2 v = v.ideleFiniteCoord x :=
-  Units.ext (FiniteAdeleRing.coe_unitsContinuousMulEquiv_apply _ v)
+    (localUnitsEquiv R K x).2 v = v.ideleFiniteCoord x := by
+  rw [localUnitsEquiv, ContinuousMulEquiv.trans_apply, ContinuousMulEquiv.prodCongr_apply]
+  exact Units.ext (FiniteAdeleRing.coe_unitsContinuousMulEquiv_apply _ v)
 
 /-- The inverse of `NumberField.IdeleGroup.localUnitsEquiv` assembles an idele from its local
 units, as `TauCeti.GlobalNumberFields.ideleOfUnits` does. -/
@@ -310,5 +324,58 @@ theorem localUnitsEquiv_symm_apply (zi : ∀ w : InfinitePlace K, w.Completionˣ
       rw [← localUnitsEquiv_apply_snd, ContinuousMulEquiv.apply_symm_apply,
         TauCeti.GlobalNumberFields.ideleFiniteCoord_ideleOfUnits]
       exact RestrictedProduct.mk_apply _ _ z hz v)
+
+end NumberField.IdeleGroup
+
+section CoordinateContinuity
+
+open NumberField.IdeleGroup
+
+variable {K : Type*} [Field K]
+variable {R : Type*} [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFractionRing R K]
+
+/-- The coordinate of an idele at an infinite place is continuous. -/
+@[continuity, fun_prop]
+theorem NumberField.InfinitePlace.continuous_ideleInfiniteCoord (w : InfinitePlace K) :
+    Continuous (w.ideleInfiniteCoord : IdeleGroup R K → w.Completionˣ) := by
+  have : (w.ideleInfiniteCoord : IdeleGroup R K → w.Completionˣ) =
+      fun x ↦ (localUnitsEquiv R K x).1 w := funext fun x ↦ (localUnitsEquiv_apply_fst x w).symm
+  rw [this]
+  exact (continuous_apply w).comp (continuous_fst.comp (localUnitsEquiv R K).continuous)
+
+/-- The coordinate of an idele at a finite place is continuous. -/
+@[continuity, fun_prop]
+theorem IsDedekindDomain.HeightOneSpectrum.continuous_ideleFiniteCoord (v : HeightOneSpectrum R) :
+    Continuous (v.ideleFiniteCoord : IdeleGroup R K → (v.adicCompletion K)ˣ) := by
+  have : (v.ideleFiniteCoord : IdeleGroup R K → (v.adicCompletion K)ˣ) =
+      fun x ↦ (localUnitsEquiv R K x).2 v := funext fun x ↦ (localUnitsEquiv_apply_snd x v).symm
+  rw [this]
+  exact (RestrictedProduct.continuous_eval v).comp
+    (continuous_snd.comp (localUnitsEquiv R K).continuous)
+
+end CoordinateContinuity
+
+namespace NumberField.IdeleGroup
+
+open Filter Topology
+
+variable (R : Type*) [CommRing R] [IsDedekindDomain R]
+variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
+
+/-- **The ideles do not carry the subspace topology of the adeles** when `R` has infinitely many
+height-one primes, for instance for the ring of integers of a number field: the inclusion of the
+idele group, with the units topology, into the adele ring is not an embedding. -/
+theorem not_isEmbedding_val [Infinite (HeightOneSpectrum R)] :
+    ¬IsEmbedding (Units.val : IdeleGroup R K → AdeleRing R K) := by
+  intro h
+  -- `ofFiniteIdele` is an embedding, since `toFiniteIdele` is a continuous left inverse
+  have hof : IsEmbedding (ofFiniteIdele R K) :=
+    Function.LeftInverse.isEmbedding (toFiniteIdele_ofFiniteIdele R K)
+      (continuous_toFiniteIdele R K) (continuous_ofFiniteIdele R K)
+  have hval : Units.val ∘ ofFiniteIdele R K =
+      (fun a ↦ ((1 : InfiniteAdeleRing K), a)) ∘ Units.val :=
+    funext fun a ↦ coe_ofFiniteIdele R K a
+  exact FiniteAdeleRing.not_isEmbedding_val R K <|
+    .of_comp Units.continuous_val (continuous_const.prodMk continuous_id) (hval ▸ h.comp hof)
 
 end NumberField.IdeleGroup

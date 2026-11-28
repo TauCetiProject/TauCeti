@@ -12,7 +12,9 @@ public import Mathlib.CategoryTheory.Limits.Shapes.SingleObj
 public import Mathlib.Data.Finset.Sort
 public import Mathlib.Data.Finsupp.Order
 public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
+public import Mathlib.Topology.Category.TopCat.ULift
 public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
+public import TauCeti.Geometry.Convex.ConvexSpace.Defs
 public import TauCeti.Geometry.Convex.ConvexSpace.LocallyPathConnectedSpaceStdSimplex
 public import TauCeti.Geometry.Convex.ConvexSpace.Topology
 public import TauCeti.Topology.Category.TopCat.Action
@@ -23,13 +25,14 @@ import TauCeti.Topology.Homotopy.Contractible
 # The topological simplices and the singular simplices of a space
 
 The topological `n`-simplex is a standard simplex on a finite nonempty type, up to a universe
-lift, hence compact, Hausdorff, second-countable, metrizable, contractible and locally path
-connected. Every monomorphism in `SimplexCategory` induces a closed embedding of topological
-simplices (`SimplexCategory.isClosedEmbedding_toTop_map_of_mono`), and every point of `Δⁿ` lies in
-the open interior (`SimplexCategory.toTopInterior`) of a unique face. The geometric realization
-`|Δ[n]|` of the standard simplicial simplex, being homeomorphic to the topological simplex, is
-contractible as well. This file also names its initial vertex, and the continuous map on the
-topological `n`-simplex that underlies a singular `n`-simplex of a space.
+lift, hence compact, Hausdorff, second-countable, metrizable, contractible (in particular simply
+connected), and locally path connected. Every monomorphism in `SimplexCategory` induces a closed
+embedding of topological simplices (`SimplexCategory.isClosedEmbedding_toTop_map_of_mono`), and
+every point of `Δⁿ` lies in the open interior (`SimplexCategory.toTopInterior`) of a unique face.
+The geometric realization `|Δ[n]|` of the standard simplicial simplex, being homeomorphic to it,
+is contractible as well. This file also names its initial vertex, records how `SimplexCategory`
+monomorphisms and epimorphisms interact with interior points of `Convexity.StdSimplex`, and names
+the continuous map on the topological `n`-simplex that underlies a singular `n`-simplex of a space.
 
 ## Main declarations
 
@@ -39,6 +42,10 @@ topological `n`-simplex that underlies a singular `n`-simplex of a space.
   `SimplexCategory.toTopBoundary`: closed face embeddings and unique open-face decomposition.
 * `SimplexCategory.toTopInitialVertex`: the initial vertex of the topological `n`-simplex, and
   `SimplexCategory.toTop_map_toTopInitialVertex_down`: its image under a morphism of simplices.
+* `SimplexCategory.exists_mono_stdSimplex_map_eq`, `SimplexCategory.eq_of_mono_stdSimplex_map_eq`,
+  `SimplexCategory.eq_of_stdSimplex_map_eq_of_weights_ne_zero`: unique face decomposition and
+  pushforward injectivity of interior points of `Convexity.StdSimplex` along `SimplexCategory`
+  morphisms.
 * `TauCeti.TopCat.simplexMap`: the continuous map underlying a singular simplex, with its
   behaviour under reindexing, pushforward and the lax monoidal structure of `TopCat.toSSet`, and
   the endpoints of the parametrization `SSet.stdSimplex.toSSetObjI` of the unit interval.
@@ -56,6 +63,10 @@ open scoped Simplicial
 universe u
 
 namespace SimplexCategory
+
+/-- Every topological simplex is small in any universe `v`. -/
+instance small.{v} (n : SimplexCategory) : Small.{v} (toTop.{u}.obj n) :=
+  inferInstanceAs (Small.{v} (ULift.{u} (StdSimplex ℝ (Fin (n.len + 1)))))
 
 /-- Every topological simplex is compact. -/
 instance compactSpace (n : SimplexCategory) : CompactSpace (toTop.{u}.obj n) :=
@@ -83,6 +94,38 @@ instance locallyPathConnectedSpace (n : SimplexCategory) :
     LocallyPathConnectedSpace (toTop.{u}.obj n) :=
   (Homeomorph.ulift (X := StdSimplex ℝ (Fin (n.len + 1)))).symm.locallyPathConnectedSpace
 
+section StdSimplex
+
+variable {R : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R]
+
+/-- Every point of `StdSimplex R (Fin (n + 1))` comes from a face `[Mono ι]` at an interior point.
+-/
+lemma exists_mono_stdSimplex_map_eq {n : ℕ} (w : StdSimplex R (Fin (n + 1))) :
+    ∃ (k : ℕ) (ι : ⦋k⦌ ⟶ ⦋n⦌) (_ : Mono ι) (w₀ : StdSimplex R (Fin (k + 1))),
+      (∀ j, w₀.weights j ≠ 0) ∧ w = w₀.map ι :=
+  let ⟨k, f, w₀, hf, hw₀, hw⟩ := StdSimplex.exists_strictMono_map_eq w
+  ⟨k, Hom.mk ⟨f, hf.monotone⟩, mono_iff_injective.2 hf.injective, w₀, hw₀, hw⟩
+
+/-- A monomorphism `⦋k⦌ ⟶ ⦋n⦌` pushing an interior point to a given point is uniquely determined
+together with the interior point. -/
+lemma eq_of_mono_stdSimplex_map_eq {n k : ℕ} {ι₁ ι₂ : ⦋k⦌ ⟶ ⦋n⦌} [Mono ι₁] [Mono ι₂]
+    {w₁ w₂ : StdSimplex R (Fin (k + 1))} (hw₁ : ∀ j, w₁.weights j ≠ 0)
+    (hw₂ : ∀ j, w₂.weights j ≠ 0) (h : w₁.map ι₁ = w₂.map ι₂) : ι₁ = ι₂ ∧ w₁ = w₂ := by
+  obtain ⟨hfn, rfl⟩ := StdSimplex.eq_of_strictMono_map_eq
+    (ι₁.toOrderHom.monotone.strictMono_of_injective (mono_iff_injective.1 ‹_›))
+    (ι₂.toOrderHom.monotone.strictMono_of_injective (mono_iff_injective.1 ‹_›)) hw₁ hw₂ h
+  exact ⟨by ext i : 3; exact congrFun hfn i, rfl⟩
+
+/-- Morphisms `⦋n⦌ ⟶ ⦋r⦌` are determined by the pushforward of any interior point. -/
+lemma eq_of_stdSimplex_map_eq_of_weights_ne_zero {n r : ℕ} {π₁ π₂ : ⦋n⦌ ⟶ ⦋r⦌}
+    {w : StdSimplex R (Fin (n + 1))} (hw : ∀ j, w.weights j ≠ 0) (h : w.map π₁ = w.map π₂) :
+    π₁ = π₂ := by
+  ext i : 3
+  exact congrFun (StdSimplex.eq_of_monotone_map_eq_of_weights_ne_zero
+    π₁.toOrderHom.monotone π₂.toOrderHom.monotone hw h) i
+
+end StdSimplex
+
 /-- Unlifting the action of a morphism on `SimplexCategory.toTop` gives `StdSimplex.map`. -/
 theorem toTop_map_down {m n : SimplexCategory} (f : m ⟶ n) (t : toTop.{u}.obj m) :
     (toTop.{u}.map f t).down = StdSimplex.map f.toOrderHom t.down := (rfl)
@@ -90,8 +133,7 @@ theorem toTop_map_down {m n : SimplexCategory} (f : m ⟶ n) (t : toTop.{u}.obj 
 /-- Pushing forward along `f` takes the image of the coordinate support under `f`. -/
 theorem support_toTop_map {m n : SimplexCategory} (f : m ⟶ n) (t : toTop.{u}.obj m) :
     (toTop.{u}.map f t).down.weights.support = t.down.weights.support.image f.toOrderHom := by
-  rw [toTop_map_down, StdSimplex.weights_map]
-  exact Finsupp.support_mapDomain_of_nonneg (fun i ↦ t.down.nonneg i) f.toOrderHom
+  rw [toTop_map_down, StdSimplex.support_weights_map]
 
 /-- Every monomorphism in `SimplexCategory` induces an injective map of topological simplices. -/
 theorem toTop_map_injective_of_mono {m n : SimplexCategory} (f : m ⟶ n) [Mono f] :
@@ -132,9 +174,9 @@ theorem mem_toTopInterior_iff_support_eq_univ {n : SimplexCategory} {t : toTop.{
 
 /-- Every epimorphism in `SimplexCategory` carries interior points to interior points. -/
 theorem toTop_map_mem_toTopInterior_of_epi {m n : SimplexCategory} (f : m ⟶ n) [Epi f]
-    {t : toTop.{u}.obj m} (ht : t ∈ toTopInterior m) : toTop.{u}.map f t ∈ toTopInterior n := by
-  rw [mem_toTopInterior_iff_support_eq_univ] at ht ⊢
-  rw [support_toTop_map, ht]; exact Finset.image_univ_of_surjective (epi_iff_surjective.mp ‹_›)
+    {t : toTop.{u}.obj m} (ht : t ∈ toTopInterior m) : toTop.{u}.map f t ∈ toTopInterior n :=
+  fun i ↦ ((toTop.{u}.map f t).down.nonneg i).lt_iff_ne'.2 <|
+    StdSimplex.weights_map_ne_zero_of_surjective (epi_iff_surjective.1 ‹_›) (fun j ↦ (ht j).ne') i
 
 /-- The relative boundary of the topological simplex `n`, the complement of `toTopInterior n`. -/
 def toTopBoundary (n : SimplexCategory) : Set (toTop.{u}.obj n) := (toTopInterior n)ᶜ
@@ -189,33 +231,17 @@ theorem toTop_map_mem_toTopBoundary_of_len_lt {m n : SimplexCategory} (f : m ⟶
 theorem exists_mono_toTop_map_mem_toTopInterior {n : ℕ} (t : toTop.{u}.obj ⦋n⦌) :
     ∃ (k : ℕ) (μ : ⦋k⦌ ⟶ ⦋n⦌) (_ : Mono μ) (u : toTop.{u}.obj ⦋k⦌),
       u ∈ toTopInterior ⦋k⦌ ∧ toTop.{u}.map μ u = t := by
-  let S := t.down.weights.support
-  obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero t.down.support_weights_nonempty.card_pos.ne'
-  let e := S.orderEmbOfFin hk
-  let μ : ⦋k⦌ ⟶ ⦋n⦌ := mkHom e.toOrderHom
-  have hrange : Set.range μ.toOrderHom = (S : Set _) := by
-    simp only [μ, e, mkHom, Hom.toOrderHom_mk, OrderEmbedding.toOrderHom_coe,
-      Finset.range_orderEmbOfFin]
-  obtain ⟨u, hu⟩ : t ∈ Set.range (toTop.{u}.map μ) := by
-    rw [mem_range_toTop_map_iff, hrange]
-    exact fun _ ↦ Finsupp.notMem_support_iff.mp
-  refine ⟨k, μ, mono_iff_injective.mpr e.injective, u, mem_toTopInterior_iff_support_eq_univ.mpr <|
-    Finset.eq_univ_of_card _ ?_, hu⟩
-  have himg := congrArg Finset.card (hu ▸ support_toTop_map μ u)
-  exact (Finset.card_image_of_injective _ (f := μ.toOrderHom) e.injective).symm.trans
-    (himg.symm.trans (hk.trans (Fintype.card_fin (k + 1)).symm))
+  obtain ⟨k, μ, _, w₀, hw₀, hw⟩ := exists_mono_stdSimplex_map_eq t.down
+  exact ⟨k, μ, ‹_›, ULift.up w₀, fun i ↦ (w₀.nonneg i).lt_iff_ne'.2 (hw₀ i), ULift.ext hw.symm⟩
 
 /-- The dimension of the face whose open interior contains a point of `Δⁿ` is unique. -/
 theorem unique_mono_toTop_map_dim {n k₁ k₂ : ℕ} {μ₁ : ⦋k₁⦌ ⟶ ⦋n⦌} [Mono μ₁]
     {u₁ : toTop.{u}.obj ⦋k₁⦌} (hu₁ : u₁ ∈ toTopInterior ⦋k₁⦌)
     {μ₂ : ⦋k₂⦌ ⟶ ⦋n⦌} [Mono μ₂] {u₂ : toTop.{u}.obj ⦋k₂⦌} (hu₂ : u₂ ∈ toTopInterior ⦋k₂⦌)
-    (h : toTop.{u}.map μ₁ u₁ = toTop.{u}.map μ₂ u₂) : k₁ = k₂ := by
-  have hs := congrArg (fun p : toTop.{u}.obj ⦋n⦌ ↦ p.down.weights.support.card) h
-  rw [support_toTop_map, support_toTop_map, mem_toTopInterior_iff_support_eq_univ.mp hu₁,
-    mem_toTopInterior_iff_support_eq_univ.mp hu₂,
-    Finset.card_image_of_injective _ (mono_iff_injective.mp ‹Mono μ₁›),
-    Finset.card_image_of_injective _ (mono_iff_injective.mp ‹Mono μ₂›)] at hs
-  simpa using hs
+    (h : toTop.{u}.map μ₁ u₁ = toTop.{u}.map μ₂ u₂) : k₁ = k₂ :=
+  StdSimplex.eq_of_injective_map_eq_fin (mono_iff_injective.1 ‹_›) (fun i ↦ (hu₁ i).ne')
+    (mono_iff_injective.1 ‹_›) (fun i ↦ (hu₂ i).ne')
+    ((toTop_map_down μ₁ u₁).symm.trans ((congrArg ULift.down h).trans (toTop_map_down μ₂ u₂)))
 
 /-- The face morphism `⦋k⦌ ⟶ ⦋n⦌` whose open interior contains a point of `Δⁿ` is unique. -/
 theorem unique_mono_toTop_map_hom {n k : ℕ} {μ₁ μ₂ : ⦋k⦌ ⟶ ⦋n⦌} [Mono μ₁]
@@ -223,22 +249,21 @@ theorem unique_mono_toTop_map_hom {n k : ℕ} {μ₁ μ₂ : ⦋k⦌ ⟶ ⦋n⦌
     (h : toTop.{u}.map μ₁ u₁ = toTop.{u}.map μ₂ u₂) : μ₁ = μ₂ := by
   have hs := congrArg (fun p : toTop.{u}.obj ⦋n⦌ ↦ p.down.weights.support) h
   rw [support_toTop_map, support_toTop_map, mem_toTopInterior_iff_support_eq_univ.mp hu₁] at hs
-  have hinj₁ : Function.Injective μ₁.toOrderHom := mono_iff_injective.mp ‹Mono μ₁›
-  have hcard₁ : (Finset.univ.image μ₁.toOrderHom).card = k + 1 := by
-    simpa using Finset.card_image_of_injective Finset.univ hinj₁
-  have hsub : Finset.univ.image μ₁.toOrderHom ⊆ Finset.univ.image μ₂.toOrderHom :=
-    hs ▸ Finset.image_subset_image (Finset.subset_univ _)
-  have hcard₂ : (Finset.univ.image μ₂.toOrderHom).card = k + 1 :=
-    le_antisymm (Finset.card_image_le.trans (by simp))
-      (hcard₁.symm.le.trans (Finset.card_le_card hsub))
-  have heq_img := Finset.eq_of_subset_of_card_le hsub (hcard₂.trans hcard₁.symm).le
+  have hcard : (u₂.down.weights.support.image μ₂.toOrderHom).card = k + 1 := by
+    rw [← hs, Finset.card_image_of_injective _ (mono_iff_injective.mp ‹Mono μ₁›), Finset.card_fin]
+  have hsupp₂ : u₂.down.weights.support = Finset.univ :=
+    Finset.eq_univ_of_card u₂.down.weights.support <| by
+      rw [Fintype.card_fin]
+      exact le_antisymm
+        ((Finset.card_le_univ u₂.down.weights.support).trans_eq (Fintype.card_fin _))
+        (hcard.symm.trans_le Finset.card_image_le)
   have hinj₂ : Function.Injective μ₂.toOrderHom := fun i j hij ↦
-    Finset.card_image_iff.mp (hcard₂.trans (by simp)) (Finset.mem_univ i) (Finset.mem_univ j) hij
-  have hrange : Set.range μ₁.toOrderHom = Set.range μ₂.toOrderHom := by
-    simpa [Finset.coe_image] using congrArg SetLike.coe heq_img
-  ext i : 3
-  exact congrFun (((μ₁.toOrderHom.monotone.strictMono_of_injective hinj₁).range_inj_of_wellFoundedLT
-    (μ₂.toOrderHom.monotone.strictMono_of_injective hinj₂)).mp hrange) i
+    Finset.card_image_iff.mp (by simpa [hsupp₂] using hcard)
+      (Finset.mem_univ i) (Finset.mem_univ j) hij
+  have : Mono μ₂ := mono_iff_injective.mpr hinj₂
+  exact (eq_of_mono_stdSimplex_map_eq (fun i ↦ (hu₁ i).ne')
+    (fun i ↦ Finsupp.mem_support_iff.1 (hsupp₂ ▸ Finset.mem_univ i))
+    ((toTop_map_down μ₁ u₁).symm.trans ((congrArg ULift.down h).trans (toTop_map_down μ₂ u₂)))).1
 
 /-- A point of `Δⁿ` uniquely determines the dimension, face monomorphism, and interior preimage of
 the open face containing it. -/
@@ -301,6 +326,53 @@ lemma toTop_map_mkOfLe_toTop_map_δ_zero (k : ℕ) :
   rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, toTop_map_toTopInitialVertex_down,
     toTop_map_toTopInitialVertex_down]
   rfl
+
+section ULift
+
+universe v
+
+/-- Universe-lifting natural isomorphism
+`SimplexCategory.toTop.{max u v} ≅ SimplexCategory.toTop.{u} ⋙ TopCat.uliftFunctor.{v, u}`. -/
+noncomputable def toTopUliftIso :
+    toTop.{max u v} ≅ toTop.{u} ⋙ TopCat.uliftFunctor.{v, u} :=
+  NatIso.ofComponents
+    (fun m ↦ TopCat.isoOfHomeo
+      ((toTop₀.obj m).uliftFunctorObjHomeo.{max u v}.symm.trans
+        ((toTop₀.obj m).uliftFunctorObjHomeo.{u}.trans
+          (toTop.{u}.obj m).uliftFunctorObjHomeo.{v})))
+    fun _ ↦ by ext ⟨w⟩; rfl
+
+/-- The forward component of `SimplexCategory.toTopUliftIso` swaps the `ULift` layers via
+`(toTop.{u}.obj m).uliftFunctorObjHomeo`. -/
+@[simp] lemma toTopUliftIso_hom_app_apply (m : SimplexCategory) (t : toTop.{max u v}.obj m) :
+    dsimp% toTopUliftIso.{u, v}.hom.app m t =
+      (toTop.{u}.obj m).uliftFunctorObjHomeo.{v} (ULift.up t.down) :=
+  (rfl)
+
+/-- Evaluating `SimplexCategory.toTopUliftIso.hom.app m` on the realized standard simplex point of
+`w` recovers the universe lift of the corresponding point in `SimplexCategory.toTop.{u}.obj m`. -/
+lemma toTopUliftIso_hom_app_toTopSimplex (m : SimplexCategory)
+    (w : StdSimplex ℝ (Fin (m.len + 1))) :
+    toTopUliftIso.{u, v}.hom.app m
+        (SSet.toTopSimplex.{max u v}.hom.app m (m.toTopHomeo.{max u v}.symm w)) =
+      (toTop.{u}.obj m).uliftFunctorObjHomeo.{v}
+        (SSet.toTopSimplex.{u}.hom.app m (m.toTopHomeo.{u}.symm w)) := by
+  rw [toTopUliftIso_hom_app_apply]
+  refine congrArg ((toTop.{u}.obj m).uliftFunctorObjHomeo.{v}) ?_
+  apply ((toTop₀.obj m).uliftFunctorObjHomeo.{u}).symm.injective
+  -- Both sides evaluate to `m.toTopHomeo (m.toTopHomeo.symm w)` (`toTop₀.obj m` is `StdSimplex`).
+  exact (m.toTopHomeo.{max u v}.apply_symm_apply w).trans
+    (m.toTopHomeo.{u}.apply_symm_apply w).symm
+
+/-- The inverse component of `SimplexCategory.toTopUliftIso` removes the outer `ULift` layer via
+`(toTop.{u}.obj m).uliftFunctorObjHomeo.symm`. -/
+@[simp] lemma toTopUliftIso_inv_app_apply (m : SimplexCategory)
+    (t : TopCat.uliftFunctor.{v, u}.obj (toTop.{u}.obj m)) :
+    dsimp% toTopUliftIso.{u, v}.inv.app m t =
+      ULift.up ((toTop.{u}.obj m).uliftFunctorObjHomeo.{v}.symm t).down :=
+  (rfl)
+
+end ULift
 
 end SimplexCategory
 
@@ -424,6 +496,15 @@ lemma toSSetObj_smul_def {n : SimplexCategoryᵒᵖ} (g : G) (σ : (_root_.TopCa
     g • σ = (_root_.TopCat.toSSet.map
       (_root_.TopCat.ofHom ⟨(g • · : E → E), continuous_const_smul g⟩)).app n σ :=
   (rfl)
+
+/-- Pushing singular simplices forward along an equivariant map intertwines the actions on
+simplices, including when the acting monoids differ. -/
+lemma toSSet_map_app_smul {F : _root_.TopCat.{u}} {H : Type*} [Monoid H] [MulAction H F]
+    [ContinuousConstSMul H F] {φ : G →* H} (f : E ⟶ F) (hf : ∀ g x, f (g • x) = φ g • f x)
+    {n : SimplexCategoryᵒᵖ} (g : G) (σ : (_root_.TopCat.toSSet.obj E).obj n) :
+    (_root_.TopCat.toSSet.map f).app n (g • σ) = φ g • (_root_.TopCat.toSSet.map f).app n σ :=
+  simplexMap_injective <| ContinuousMap.ext fun p ↦ by
+    simp [toSSetObj_smul_def, simplexMap_app, hf]
 
 end Action
 

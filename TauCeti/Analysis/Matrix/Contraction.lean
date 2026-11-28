@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Topology.Algebra.Module.Trace
 import Mathlib.Analysis.InnerProductSpace.Trace
@@ -18,10 +19,15 @@ non-divergence-form operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` with constant coe
 
 ## Main declarations
 
+* `ContinuousLinearMap.abs_apply_single_single_le`, `ContinuousLinearMap.abs_apply_single_le`:
+  the entries of a bilinear form or a covector on `EuclideanSpace ℝ ι` at standard basis vectors
+  are bounded by its norm.
 * `Matrix.contraction`: the contraction with `A`, as a continuous linear functional.
 * `Matrix.contraction_add`, `Matrix.contraction_sub`, `Matrix.contraction_smul`: the
   contraction is linear in the matrix.
 * `Matrix.contraction_one`: contraction with the identity matrix is the trace.
+* `Matrix.contraction_apply_eq_traceCLM`: the contraction of `H` with `A` is the trace of
+  `A ∘ H`, for `A` acting on `ℝⁿ` (`Matrix.toEuclideanCLM`).
 * `Matrix.abs_contraction_le`: if every entry of `M` is at most `ε` in absolute value,
   then the contraction of `H` with `M` is at most `n² ε ‖H‖` in absolute value.
 * `Matrix.abs_sum_sum_mul_apply_single_single_le`: the same bound for the contraction
@@ -33,6 +39,24 @@ non-divergence-form operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` with constant coe
 public section
 
 noncomputable section
+
+namespace ContinuousLinearMap
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- An entry `B eᵢ eⱼ` of a bilinear form on `EuclideanSpace ℝ ι` at two vectors of the standard
+basis is bounded by its norm. -/
+theorem abs_apply_single_single_le (B : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ)
+    (i j : ι) : |B (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ ‖B‖ := by
+  simpa using B.le_opNorm₂ (EuclideanSpace.single i (1 : ℝ)) (EuclideanSpace.single j 1)
+
+/-- An entry `l eᵢ` of a covector on `EuclideanSpace ℝ ι` at a vector of the standard basis is
+bounded by its norm. -/
+theorem abs_apply_single_le (l : EuclideanSpace ℝ ι →L[ℝ] ℝ) (i : ι) :
+    |l (EuclideanSpace.single i 1)| ≤ ‖l‖ := by
+  simpa using l.le_opNorm (EuclideanSpace.single i (1 : ℝ))
+
+end ContinuousLinearMap
 
 namespace Matrix
 
@@ -78,13 +102,24 @@ theorem contraction_smul (c : ℝ) (A : Matrix (Fin n) (Fin n) ℝ) :
   ext H
   simp [mul_assoc, Finset.mul_sum]
 
+/-- The contraction of `H` with `A` is the trace of the composite `A ∘ H`, where `A` acts on `ℝⁿ`
+as `Matrix.toEuclideanCLM A`: `∑ᵢⱼ Aᵢⱼ ⟪H eᵢ, eⱼ⟫ = tr (A ∘ H)`. -/
+theorem contraction_apply_eq_traceCLM (A : Matrix (Fin n) (Fin n) ℝ)
+    (H : EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)) :
+    contraction A H =
+      traceCLM ℝ (EuclideanSpace ℝ (Fin n)) (toEuclideanCLM (𝕜 := ℝ) A ∘L H) := by
+  rw [contraction_apply, TauCeti.traceCLM_apply,
+    LinearMap.trace_eq_sum_inner _ (EuclideanSpace.basisFun (Fin n) ℝ)]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  simp [mulVec, dotProduct, real_inner_comm,
+    EuclideanSpace.inner_single_left]
+
 /-- Contraction with the identity matrix is the trace. -/
 theorem contraction_one :
     contraction (1 : Matrix (Fin n) (Fin n) ℝ) = traceCLM ℝ (EuclideanSpace ℝ (Fin n)) := by
   ext H
-  rw [contraction_apply, TauCeti.traceCLM_apply,
-    LinearMap.trace_eq_sum_inner _ (EuclideanSpace.basisFun (Fin n) ℝ)]
-  simp [Matrix.one_apply, real_inner_comm]
+  rw [contraction_apply_eq_traceCLM]
+  simp [Module.End.one_eq_id]
 
 /-- If every entry of `M` is at most `ε` in absolute value, then
 `|∑ᵢⱼ Mᵢⱼ ⟪H eᵢ, eⱼ⟫| ≤ n² ε ‖H‖`. -/
@@ -120,8 +155,8 @@ theorem abs_sum_sum_mul_apply_single_single_le {ι : Type*} [Fintype ι] [Decida
         refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i _ => ?_)
         refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun j _ => ?_)
         rw [abs_mul]
-        refine mul_le_mul (hM i j) ?_ (abs_nonneg _) ((abs_nonneg _).trans (hM i j))
-        simpa using B.le_opNorm₂ (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
+        exact mul_le_mul (hM i j) (B.abs_apply_single_single_le i j) (abs_nonneg _)
+          ((abs_nonneg _).trans (hM i j))
     _ = Fintype.card ι ^ 2 * ε * ‖B‖ := by
         simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
         ring

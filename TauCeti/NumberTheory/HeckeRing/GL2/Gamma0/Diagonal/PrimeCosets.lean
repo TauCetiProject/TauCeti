@@ -71,13 +71,13 @@ lemma exists_mem_Gamma0_natDiagGL_mul_eq_mul_scaleRep_of_dvd (hp : 0 < p) {γ : 
     ∃ δ : SL(2, ℤ), δ ∈ Gamma0 N ∧ natDiagGL 2 ![1, p] * mapGL ℚ γ = mapGL ℚ δ * scaleRep p := by
   obtain ⟨a', ha'⟩ := hpa
   have hdet := Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
-  let δ : SL(2, ℤ) := ⟨!![a', γ 0 1; γ 1 0, (p : ℤ) * γ 1 1], by
+  let δ : SL(2, ℤ) := .mk !![a', γ 0 1; γ 1 0, (p : ℤ) * γ 1 1] (by
     rw [Matrix.det_fin_two_of]
-    linear_combination hdet - γ 1 1 * ha'⟩
-  have h00 : (δ 0 0 : ℤ) = a' := rfl
-  have h01 : (δ 0 1 : ℤ) = γ 0 1 := rfl
-  have h10 : (δ 1 0 : ℤ) = γ 1 0 := rfl
-  have h11 : (δ 1 1 : ℤ) = (p : ℤ) * γ 1 1 := rfl
+    linear_combination hdet - γ 1 1 * ha')
+  have h00 : (δ 0 0 : ℤ) = a' := by simp [δ]
+  have h01 : (δ 0 1 : ℤ) = γ 0 1 := by simp [δ]
+  have h10 : (δ 1 0 : ℤ) = γ 1 0 := by simp [δ]
+  have h11 : (δ 1 1 : ℤ) = (p : ℤ) * γ 1 1 := by simp [δ]
   refine ⟨δ, Gamma0_mem.mpr (by rw [h10]; exact Gamma0_mem.mp hγ), ?_⟩
   refine Units.ext ?_
   rw [Units.val_mul, Units.val_mul, coe_natDiagGL_one hp, coe_mapGL_int_rat_fin_two γ,
