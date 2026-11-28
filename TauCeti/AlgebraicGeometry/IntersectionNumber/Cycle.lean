@@ -167,11 +167,8 @@ theorem intersectionNumber_pullback_eq_zero_of_height_eq_zero (f : Y ⟶ X) (x :
       (pullback f a) = 0 := by
   set I := vanishingIdeal (⟨closure {x}, isClosed_closure⟩ : Closeds Y)
   set J := vanishingIdeal (⟨closure {f x}, isClosed_closure⟩ : Closeds X)
-  have hrange : Set.range (I.subschemeι ≫ f) ⊆ closure {f x} := by
-    rw [Scheme.Hom.comp_base, TopCat.coe_comp, Set.range_comp, range_subschemeι,
-      coe_support_vanishingIdeal, Closeds.coe_mk, ← Set.image_singleton]
-    exact image_closure_subset_closure_image f.continuous
-  have hle : J ≤ (I.subschemeι ≫ f).ker := vanishingIdeal_le_ker_of_range_subset _ hrange
+  have hle : J ≤ (I.subschemeι ≫ f).ker :=
+    vanishingIdeal_le_ker_subschemeι_comp f ((Set.mapsTo_singleton.mpr rfl).closure f.continuous)
   rw [intersectionNumber_pullback]
   refine intersectionNumber_eq_zero_of_eq_comp k (I.subschemeι ≫ f)
     (IsClosedImmersion.lift J.subschemeι _ (by simpa using hle)) J.subschemeι
@@ -206,12 +203,8 @@ theorem intersectionNumber_pullback_eq_residueDegree_mul (f : Y ⟶ X) [f.IsOver
   have hJ :=
     topologicalKrullDim_subscheme_vanishingIdeal_closure_of_mem_pointsOfDimension y.property
   -- `f` restricts to a morphism `g` from the reduced closure of `x` to that of `y`.
-  have hrange : Set.range (I.subschemeι ≫ f) ⊆ closure {(y : X)} := by
-    rw [Scheme.Hom.comp_base, TopCat.coe_comp, Set.range_comp, range_subschemeι,
-      coe_support_vanishingIdeal, Closeds.coe_mk]
-    refine (image_closure_subset_closure_image f.continuous).trans ?_
-    rw [Set.image_singleton, hxy]
-  have hle : J ≤ (I.subschemeι ≫ f).ker := vanishingIdeal_le_ker_of_range_subset _ hrange
+  have hle : J ≤ (I.subschemeι ≫ f).ker :=
+    vanishingIdeal_le_ker_subschemeι_comp f ((Set.mapsTo_singleton.mpr hxy).closure f.continuous)
   let g := IsClosedImmersion.lift J.subschemeι (I.subschemeι ≫ f) (by simpa using hle)
   have hg : g ≫ J.subschemeι = I.subschemeι ≫ f := IsClosedImmersion.lift_fac _ _ _
   have : g.IsOver (Spec (.of k)) := ⟨by

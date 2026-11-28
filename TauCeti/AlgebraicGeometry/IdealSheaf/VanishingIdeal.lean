@@ -43,6 +43,8 @@ discrete valuation ring.
 * `Scheme.IdealSheafData.vanishingIdeal_le_ker_of_range_subset`: a morphism from a reduced scheme
   with image in `Z` kills the vanishing ideal of `Z`, so it factors through the reduced induced
   closed subscheme.
+* `Scheme.IdealSheafData.vanishingIdeal_le_ker_subschemeι_comp`: a morphism mapping `Z` into a
+  closed subset `W` restricts to a morphism of the reduced induced closed subschemes.
 * `Scheme.Hom.isIso_lift_subschemeι_vanishingIdeal`: a reduced closed subscheme
   with image `Z` is isomorphic to the reduced induced closed subscheme on `Z`.
 * `Scheme.IdealSheafData.comap_vanishingIdeal_of_isOpenImmersion`,
@@ -136,6 +138,17 @@ theorem vanishingIdeal_le_ker_of_range_subset {Y : Scheme.{u}} [IsReduced Y] (f 
       rw [← SetLike.mem_coe, coe_support_vanishingIdeal]
       exact h ⟨y, rfl⟩
   exact (X.mem_zeroLocus_iff _ _).mp hZ s hs hy
+
+/-- If a morphism `f : Y ⟶ X` maps a closed subset `Z` of `Y` into a closed subset `W` of `X`,
+then the restriction of `f` to the reduced induced closed subscheme on `Z` kills the vanishing
+ideal of `W`, so it factors through the reduced induced closed subscheme on `W`. -/
+theorem vanishingIdeal_le_ker_subschemeι_comp {Y : Scheme.{u}} (f : Y ⟶ X) {Z : Closeds Y}
+    {W : Closeds X} (h : Set.MapsTo f Z W) :
+    vanishingIdeal W ≤ ((vanishingIdeal Z).subschemeι ≫ f).ker := by
+  refine vanishingIdeal_le_ker_of_range_subset _ ?_
+  rw [Scheme.Hom.comp_base, TopCat.coe_comp, Set.range_comp, range_subschemeι,
+    coe_support_vanishingIdeal]
+  exact h.image_subset
 
 /-- A closed immersion from a reduced scheme with image `Z` identifies its source with the
 reduced induced closed subscheme on `Z`. The canonical lift commutes with the inclusions by
