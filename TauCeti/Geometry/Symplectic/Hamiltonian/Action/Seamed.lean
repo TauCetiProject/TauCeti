@@ -61,6 +61,15 @@ the critical loops of the action relative to a reference loop in
   (`TauCeti.SmoothTwoForm.IsNondegenerate.isSeamedReferenceActionCritical_of_mem_seamedSolutions`);
   when the suspension of `X_H` is complete, their time-zero points are the points where the
   time-one map agrees with `f` (`TauCeti.seamedSolutionsEquiv`).
+* **Reversing time.** For an inverse `g` of `f`, the reversal `t ↦ γ (1 - t)` of an `f`-seamed
+  path is `g`-seamed. It is a seamed solution of `H` with seam `g` exactly when `γ` is a seamed
+  solution of the reversed Hamiltonian `H∨(t, x) = -H(1 - t, x)` with seam `f`
+  (`TauCeti.SmoothTwoForm.comp_one_sub_mem_seamedSolutions_hamiltonianVectorField_iff`), and,
+  since reversing time negates the action
+  (`TauCeti.SmoothTwoForm.seamedReferenceAction_comp_one_sub`), the critical points of the action
+  of `g`-seamed paths for `H∨` are the reversed critical points of the action of `f`-seamed paths
+  for `H` (`TauCeti.SmoothTwoForm.isSeamedReferenceActionCritical_comp_one_sub_iff`). This
+  identifies the generators of the Floer theory of `f` with those of `f⁻¹`.
 
 ## Main definitions
 
@@ -73,6 +82,10 @@ the critical loops of the action relative to a reference loop in
   formula.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isSeamedReferenceActionCritical_iff`: the critical points
   of the action are the seamed paths solving the Hamiltonian equation on `(0, 1)`.
+* `TauCeti.SmoothTwoForm.comp_one_sub_mem_seamedSolutions_hamiltonianVectorField_iff`,
+  `TauCeti.SmoothTwoForm.isSeamedReferenceActionCritical_comp_one_sub_iff`: reversing time
+  exchanges the seamed solutions and the critical points for `f` and `H` with those for an inverse
+  of `f` and the reversed Hamiltonian.
 
 ## References
 
@@ -269,6 +282,68 @@ theorem IsNondegenerate.isSeamedReferenceActionCritical_iff [I.Boundaryless]
         ((1 : ℝ →L[ℝ] ℝ).smulRight (σ.hamiltonianVectorField (H t) (γ t))) :=
   ⟨fun hc _ ht ↦ hc.hasMFDerivAt h hT hH (Ioo_subset_Icc_self ht),
     h.isSeamedReferenceActionCritical hT hH hγ hcyl⟩
+
+/-! ### Reversing time -/
+
+omit [FiniteDimensional ℝ E] in
+/-- **Reversing time in seamed Hamiltonian solutions.** For mutually inverse `f` and `g`, the curve
+`t ↦ γ (1 - t)` is a seamed solution of the Hamiltonian `H` with seam `g` exactly when `γ` is a
+seamed solution of the reversed Hamiltonian `(t, x) ↦ -H (1 - t) x` with seam `f`: both the time
+and the Hamiltonian vector field change sign. -/
+theorem comp_one_sub_mem_seamedSolutions_hamiltonianVectorField_iff {g : M → M}
+    (hgf : LeftInverse g f) (hfg : RightInverse g f) :
+    (fun t ↦ γ (1 - t)) ∈ seamedSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) g ↔
+      γ ∈ seamedSolutions (fun t ↦ σ.hamiltonianVectorField fun x ↦ -H (1 - t) x) f := by
+  rw [comp_one_sub_mem_seamedSolutions_iff hgf hfg]
+  have h : (fun t x ↦ -σ.hamiltonianVectorField (H (1 - t)) x) =
+      fun t ↦ σ.hamiltonianVectorField fun x ↦ -H (1 - t) x :=
+    funext fun t ↦ funext fun x ↦ (hamiltonianVectorField_neg (f := H (1 - t)) x).symm
+  rw [h]
+
+omit [FiniteDimensional ℝ E] in
+/-- **Reversing time preserves the critical points of the seamed action.** Let `σ` vanish on
+`f`-seamed tori and let `g` be inverse to `f`. If `γ` is a critical point of the action of
+`f`-seamed paths relative to `γ₀`, then `t ↦ γ (1 - t)` is a critical point of the action of
+`g`-seamed paths relative to `t ↦ γ₀ (1 - t)`, for the reversed Hamiltonian
+`(t, x) ↦ -H (1 - t) x`. -/
+theorem IsSeamedReferenceActionCritical.comp_one_sub {g : M → M}
+    (hc : σ.IsSeamedReferenceActionCritical f H γ₀ γ) (hT : VanishesOnSeamedTori f σ.val)
+    (hgf : LeftInverse g f) (hfg : RightInverse g f) :
+    σ.IsSeamedReferenceActionCritical g (fun t x ↦ -H (1 - t) x) (fun t ↦ γ₀ (1 - t))
+      (fun t ↦ γ (1 - t)) where
+  contMDiff := hc.contMDiff.comp (contDiff_const.sub contDiff_id).contMDiff
+  exists_isSmoothSeamedCylinder :=
+    let ⟨_, hu⟩ := hc.exists_isSmoothSeamedCylinder
+    ⟨_, hu.comp_prodMap_id_one_sub hgf⟩
+  hasDerivAt w hw hseam h0 := by
+    -- the variation `w` run backwards in `t` is a variation through `f`-seamed paths from `γ`
+    have hd := hc.hasDerivAt (w := w ∘ Prod.map id fun t ↦ 1 - t)
+      (hw.comp (contDiff_id.prodMap (contDiff_const.sub contDiff_id)).contMDiff)
+      (fun s ↦ by simp [hseam s, hfg (w (s, 0))]) fun t ↦ by simp [h0]
+    -- and reversing time negates the action of each path of the variation
+    have heq : (fun s ↦ σ.seamedReferenceAction g (fun t x ↦ -H (1 - t) x)
+        (fun t ↦ γ₀ (1 - t)) fun t ↦ w (s, t)) =
+        fun s ↦ -σ.seamedReferenceAction f H γ₀ fun t ↦ w (s, 1 - t) := funext fun s ↦ by
+      simpa only [sub_sub_cancel] using
+        seamedReferenceAction_comp_one_sub (γ := fun t ↦ w (s, 1 - t)) hT hgf hfg
+    have hd' : HasDerivAt (fun s ↦ σ.seamedReferenceAction f H γ₀ fun t ↦ w (s, 1 - t)) 0 0 := by
+      simpa only [Function.comp_apply, Prod.map_apply, id_eq] using hd
+    rw [heq]
+    exact hd'.neg.congr_deriv neg_zero
+
+omit [FiniteDimensional ℝ E] in
+/-- **Reversing time preserves the critical points of the seamed action**, as a characterization:
+for `σ` vanishing on `f`-seamed tori and `g` inverse to `f`, the curve `t ↦ γ (1 - t)` is a
+critical point of the action of `g`-seamed paths relative to `t ↦ γ₀ (1 - t)` for the reversed
+Hamiltonian `(t, x) ↦ -H (1 - t) x` exactly when `γ` is a critical point of the action of
+`f`-seamed paths relative to `γ₀` for `H`. -/
+theorem isSeamedReferenceActionCritical_comp_one_sub_iff {g : M → M}
+    (hT : VanishesOnSeamedTori f σ.val) (hgf : LeftInverse g f) (hfg : RightInverse g f) :
+    σ.IsSeamedReferenceActionCritical g (fun t x ↦ -H (1 - t) x) (fun t ↦ γ₀ (1 - t))
+        (fun t ↦ γ (1 - t)) ↔ σ.IsSeamedReferenceActionCritical f H γ₀ γ := by
+  refine ⟨fun hc ↦ ?_, fun hc ↦ hc.comp_one_sub hT hgf hfg⟩
+  -- reversing time twice is the identity
+  simpa only [sub_sub_cancel, neg_neg] using hc.comp_one_sub (hT.of_rightInverse hfg) hfg hgf
 
 end SmoothTwoForm
 

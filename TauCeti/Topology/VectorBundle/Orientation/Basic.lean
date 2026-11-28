@@ -165,6 +165,34 @@ theorem mapOrientation_eq_map_coordChangeL (e e' : Trivialization F (π F E)) [e
       _ = _ := by rw [LinearEquiv.self_trans_symm, LinearEquiv.refl_trans]
   simp only [mapOrientation_apply, ← Orientation.map_trans, hcomp]
 
+section Determinant
+
+variable [Fintype ι] (e e' : Trivialization F (π F E)) [e.IsLinear ℝ] [e'.IsLinear ℝ]
+  {b : B} (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet) {o : Orientation ℝ (E b) ι}
+
+/-- If two linear trivializations read a top-degree fibre orientation identically, their coordinate
+change has positive determinant. -/
+theorem sign_det_coordChangeL_eq_one_of_mapOrientation_eq (hι : Fintype.card ι = finrank ℝ F)
+    (h : e'.mapOrientation ι hb' o = e.mapOrientation ι hb o) :
+    SignType.sign (e.coordChangeL ℝ e' b : F →L[ℝ] F).det = 1 := by
+  rw [mapOrientation_eq_map_coordChangeL e e' hb hb',
+    Orientation.map_eq_iff_det_pos_of_card_eq_finrank _ _ hι] at h
+  -- The continuous linear map has the determinant of its underlying linear map.
+  exact sign_pos h
+
+/-- If two linear trivializations read a top-degree fibre orientation oppositely, their coordinate
+change has negative determinant. -/
+theorem sign_det_coordChangeL_eq_neg_one_of_mapOrientation_eq_neg
+    (hι : Fintype.card ι = finrank ℝ F)
+    (h : e'.mapOrientation ι hb' o = -e.mapOrientation ι hb o) :
+    SignType.sign (e.coordChangeL ℝ e' b : F →L[ℝ] F).det = -1 := by
+  rw [mapOrientation_eq_map_coordChangeL e e' hb hb', Orientation.map_eq_neg_iff_det_neg _ _ hι]
+    at h
+  -- The continuous linear map has the determinant of its underlying linear map.
+  exact sign_neg h
+
+end Determinant
+
 section AddCommGroup
 
 variable {E' : B → Type*} [TopologicalSpace (TotalSpace F E')] [∀ b, AddCommGroup (E' b)]

@@ -12,6 +12,7 @@ import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
@@ -38,20 +39,10 @@ field vanishing outside a compact subset of `M` at all times has a complete susp
 every time map is a `C^n` diffeomorphism of `M`, with inverse the time map in the opposite
 direction.
 
-A solution can fail to exist up to a finite time `b` only by leaving every compact subset of `M`
-before `b`. This is the **escape criterion**, proved by applying the autonomous escape criteria
-`mem_maximalIntegralCurveInterval_of_isCompact_of_mapsTo_Ico` and `_Ioc` to the suspension and to
-the compact set `[s, b] × K`: the maximal integral curve of the suspension runs at unit speed in
-the clock coordinate. On a noncompact manifold a solution of an equation as simple as `y' = y²`
-on `ℝ` reaches infinity in finite time, and compact containment of the solution is the hypothesis
-under which its existence through a given time interval, for instance `[0, 1]` in Moser's
-argument, can be asserted. A field vanishing outside a fixed compact set keeps every solution in a
-compact set, so its suspension is complete.
-
-Compactly supported time-dependent fields are the input to the isotopy extension theorem: the
-velocity of a moving compact submanifold, extended to a compactly supported field on the ambient
-manifold, has a complete suspension, and its time maps are the ambient diffeomorphisms that carry
-the initial position of the submanifold to the later ones.
+The **escape criterion** says a solution can fail to reach a finite time only by leaving every
+compact subset. It follows from the autonomous escape criteria applied to the suspension on
+`[s, b] × K`. A field vanishing outside a fixed compact set has complete suspension, providing
+the ambient diffeomorphisms used in isotopy extension.
 
 ## Main definitions
 
@@ -108,6 +99,8 @@ the initial position of the submanifold to the later ones.
 * `TauCeti.timeDependentFlowOf_symm_of_mem`: flowing back from time `t` to time `s` undoes the flow
   from `s` to `t`, and `TauCeti.isLocalDiffeomorphAt_timeDependentFlowOf`: the time map is a local
   diffeomorphism wherever it is defined.
+* `TauCeti.isLocalDiffeomorphAt_flowOf`: the time-`t` map of the maximal flow of a `C^n` field,
+  complete or not, is a local diffeomorphism wherever it is defined.
 * `TauCeti.contMDiffAt_timeDependentFlowOf`: the time map is `C^n` at every point where it is
   defined, and `TauCeti.contMDiffAt_timeDependentFlowOf_comp` its composite with `C^n` initial
   times, final times and initial points.
@@ -184,6 +177,23 @@ theorem timeDependentSuspensionField_snd (X : ℝ → (x : M) → TangentSpace I
     (timeDependentSuspensionField X p).2 = X p.1 p.2 :=
   (rfl)
 
+/-- For a family `X` of time-dependent vector fields on `M`, indexed by the points `a` of a
+manifold `N` and jointly `C^n` in the parameter, the time and the point, and a real number `c`,
+the fields `(c, X a)` form a jointly `C^n` family of vector fields on `ℝ × M` indexed by `N`. -/
+theorem contMDiff_const_prod_field_param [IsManifold I 1 M] {n : ℕ∞ω} {F G N : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+    [TopologicalSpace N] [ChartedSpace G N] {X : N → ℝ → (x : M) → TangentSpace I x} (c : ℝ)
+    (hX : ContMDiff (J.prod (𝓘(ℝ, ℝ).prod I)) I.tangent n
+      (fun z : N × ℝ × M ↦ (⟨z.2.2, X z.1 z.2.1 z.2.2⟩ : TangentBundle I M))) :
+    ContMDiff (J.prod (𝓘(ℝ, ℝ).prod I)) (𝓘(ℝ, ℝ).prod I).tangent n
+      (fun z : N × ℝ × M ↦
+        (⟨z.2, (c, X z.1 z.2.1 z.2.2)⟩ : TangentBundle (𝓘(ℝ, ℝ).prod I) (ℝ × M))) := by
+  have hclock : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ).tangent n
+      (fun s : ℝ ↦ (⟨s, c⟩ : TangentBundle 𝓘(ℝ, ℝ) ℝ)) :=
+    contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
+  exact (contMDiff_equivTangentBundleProd_symm (I := 𝓘(ℝ, ℝ)) (M := ℝ) (I' := I) (M' := M)).comp
+    ((hclock.comp (contMDiff_fst.comp contMDiff_snd)).prodMk hX)
+
 /-- For a jointly `C^n` time-dependent vector field `X` and a real number `c`, the field `(c, X)`
 on `ℝ × M` is a `C^n` vector field. For `c = 1` it is the suspension of `X`, for `c = 0` it is the
 vertical field of `X`, and for `X = 0` and `c = 1` it is the unit field `∂_t` of the time
@@ -193,12 +203,10 @@ theorem contMDiff_const_prod_field [IsManifold I 1 M] {n : ℕ∞ω}
     (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent n
       (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M))) :
     ContMDiff (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod I).tangent n
-      (fun p : ℝ × M ↦ (⟨p, (c, X p.1 p.2)⟩ : TangentBundle (𝓘(ℝ, ℝ).prod I) (ℝ × M))) := by
-  have hclock : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ).tangent n
-      (fun s : ℝ ↦ (⟨s, c⟩ : TangentBundle 𝓘(ℝ, ℝ) ℝ)) :=
-    contMDiff_vectorSpace_iff_contDiff.2 contDiff_const
-  exact (contMDiff_equivTangentBundleProd_symm (I := 𝓘(ℝ, ℝ)) (M := ℝ) (I' := I) (M' := M)).comp
-    ((hclock.comp contMDiff_fst).prodMk hX)
+      (fun p : ℝ × M ↦ (⟨p, (c, X p.1 p.2)⟩ : TangentBundle (𝓘(ℝ, ℝ).prod I) (ℝ × M))) :=
+  -- The constant family at `X`, indexed by `ℝ`, read at the parameter `0`.
+  (contMDiff_const_prod_field_param (J := 𝓘(ℝ, ℝ)) (X := fun _ ↦ X) c
+    (hX.comp contMDiff_snd)).comp ((contMDiff_const (c := (0 : ℝ))).prodMk contMDiff_id)
 
 /-- The suspension of a jointly `C^n` time-dependent vector field is a `C^n` vector field on
 `ℝ × M`. -/
@@ -242,8 +250,8 @@ theorem timeDependentFlowOf_def :
 /-- Outside the domain of the time-dependent flow, the flow takes the junk value `x`. -/
 theorem timeDependentFlowOf_of_notMem (h : ((s, t), x) ∉ timeDependentFlowDomain X) :
     timeDependentFlowOf X s t x = x := by
-  rw [mem_timeDependentFlowDomain, mem_flowDomain] at h
-  rw [timeDependentFlowOf_def, flowOf_apply, maximalIntegralCurve_eq_of_not_mem h]
+  rw [mem_timeDependentFlowDomain] at h
+  rw [timeDependentFlowOf_def, flowOf_of_notMem h]
 
 /-! ### Solutions of the time-dependent equation -/
 
@@ -742,7 +750,7 @@ include hX
 theorem mem_timeDependentFlowDomain_self (s : ℝ) (x : M) :
     ((s, s), x) ∈ timeDependentFlowDomain X := by
   rw [mem_timeDependentFlowDomain, sub_self]
-  exact mem_flowDomain_zero (contMDiff_timeDependentSuspensionField hX) (s, x)
+  exact mem_flowDomain_zero (contMDiff_timeDependentSuspensionField hX (s, x))
 
 variable [T2Space M]
 
@@ -1075,6 +1083,19 @@ theorem isLocalDiffeomorphAt_timeDependentFlowOf {s t : ℝ} {x : M}
   rwa [show ⇑(timeDependentFlowPartialDiffeomorph hn hX s t).toPartialEquiv =
       timeDependentFlowOf X s t from
         funext (timeDependentFlowPartialDiffeomorph_apply hn hX s t)] at hΦ
+
+include hn in
+/-- **The time maps of a flow are local diffeomorphisms.** For a `C^n` vector field `v`, `1 ≤ n`,
+the time-`t` map of its maximal flow is a `C^n` local diffeomorphism at every point whose
+trajectory is defined at time `t`. No completeness of `v` is needed. -/
+theorem isLocalDiffeomorphAt_flowOf {v : (x : M) → TangentSpace I x}
+    (hv : ContMDiff I I.tangent n (fun x ↦ (⟨x, v x⟩ : TangentBundle I M))) {t : ℝ} {x : M}
+    (hx : (t, x) ∈ flowDomain v) : IsLocalDiffeomorphAt I I n (flowOf v t) x := by
+  have hv1 := hv.of_le (m := 1) (by exact_mod_cast hn)
+  exact (isLocalDiffeomorphAt_timeDependentFlowOf hn (X := fun _ ↦ v) (hv.comp contMDiff_snd)
+    (timeDependentFlowOf_const_eq_flowOf_of_mem hv1 (s := 0) (by simpa using hx)).1
+    ).congr_of_eventuallyEq
+    (eventually_flowOf_eventuallyEq_timeDependentFlowOf_of_mem hv1 hx).self_of_nhds
 
 end PartialDiffeomorph
 

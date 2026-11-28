@@ -42,7 +42,11 @@ treated in `TauCeti.Geometry.Symplectic.Floer.Continuation.SobolevRealization`.
   continuous for data that are `C¹` (with `C²` Hamiltonians `K_s`, `K_t`) along the graph of `u`
   (`TauCeti.SymplecticForm.continuous_floerJetCoeff`), and for the datum
   `H_t dt` it is bounded where `u` and the slice defect `∂t u - X_{H_t}(u)` are
-  (`TauCeti.SymplecticForm.exists_forall_norm_floerJetCoeff_le`).
+  (`TauCeti.SymplecticForm.exists_forall_norm_floerJetCoeff_le`). Where `J(z, ·)` and the
+  zeroth-order term `G = -X_{K_s} - J X_{K_t}` have derivatives `J'`, `G'` along `u` and the
+  Hamiltonian vector fields are differentiable, it is `(J(z, u z), J'(·) ∂t u + G')`
+  (`TauCeti.SymplecticForm.floerJetCoeff_eq_firstOrderJetCoeff`), hence essentially bounded when
+  `J`, `J'`, `G'` and `∂t u` are (`TauCeti.SymplecticForm.memLp_top_floerJetCoeff`).
 * `TauCeti.SymplecticForm.floerSobolevOperator p` is the resulting operator on the Sobolev space
   `TauCeti.CylinderSobolev.W1p V p` (`TauCeti.SymplecticForm.floerSobolevOperator_def`); for
   `p = 2` this is `TauCeti.CylinderSobolev.H1`, the setting of the Fredholm theory below, and for
@@ -300,6 +304,65 @@ theorem continuous_floerJetCoeff (ω : SymplecticForm V) {J : ℝ × ℝ → V �
       (continuousAt_id.prodMk hu.continuous.continuousAt)
   exact continuousAt_firstOrderJetCoeff hJu
     (ω.continuousAt_floerLinearizationCoeff (hJ z) (hKs z) (hKt z) hu.contDiffAt)
+
+/-- **The Floer coefficient field in terms of derivatives.** Where `J(z, ·)` and the zeroth-order
+term `G(z, ·) = -X_{K_s(z)} - J(z, ·) X_{K_t(z)}` have derivatives `J'` and `G'` at `u z`, and the
+Hamiltonian vector fields are differentiable there, the coefficient field of the Sobolev
+realization of the linearized Floer operator along `u` is `(J(z, u z), J'(·) ∂t u + G')` at `z`. -/
+theorem floerJetCoeff_eq_firstOrderJetCoeff (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V}
+    {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {z : ℝ × ℝ}
+    {J'₀ : V →L[ℝ] V →L[ℝ] V} {G'₀ : V →L[ℝ] V} (hJ : HasFDerivAt (J z) J'₀ (u z))
+    (hG : HasFDerivAt (ω.floerZerothOrder J Ks Kt z) G'₀ (u z))
+    (hKs : DifferentiableAt ℝ (ω.hamiltonianVectorField (Ks z)) (u z))
+    (hKt : DifferentiableAt ℝ (ω.hamiltonianVectorField (Kt z)) (u z)) :
+    ω.floerJetCoeff J Ks Kt u z =
+      firstOrderJetCoeff (J z (u z)) (J'₀.flip (fderiv ℝ u z (0, 1)) + G'₀) := by
+  rw [floerJetCoeff_def, floerLinearizationCoeff_eq_flip_add_fderiv_floerZerothOrder ω
+    hJ.differentiableAt hKs hKt, hJ.fderiv, hG.fderiv]
+
+/-- **The Floer coefficient field is essentially bounded.** Let `J` be bounded and continuous, and
+let `J'`, `G'` be bounded, continuous derivatives in `y` of `J` and of the zeroth-order term
+`G = -X_{K_s} - J X_{K_t}` along an almost everywhere strongly measurable map `u`, the Hamiltonian
+vector fields being differentiable along `u`. If `∂t u` is essentially bounded, the coefficient
+field of the Sobolev realization of the linearized Floer operator along `u` is in `L^∞`. -/
+theorem memLp_top_floerJetCoeff (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V}
+    {Ks Kt : ℝ × ℝ → V → ℝ} {J' : ℝ × ℝ → V → V →L[ℝ] V →L[ℝ] V} {G' : ℝ × ℝ → V → V →L[ℝ] V}
+    {μ : Measure (ℝ × ℝ)} (hJc : Continuous (uncurry J)) (hJ'c : Continuous (uncurry J'))
+    (hG'c : Continuous (uncurry G')) {u : ℝ × ℝ → V} (hu : AEStronglyMeasurable u μ)
+    {B C : ℝ} {K L : ℝ≥0}
+    (hJC : ∀ z y, ‖J z y‖ ≤ C) (hJ'K : ∀ z y, ‖J' z y‖ ≤ K) (hG'K : ∀ z y, ‖G' z y‖ ≤ L)
+    (hJ : ∀ z, HasFDerivAt (J z) (J' z (u z)) (u z))
+    (hG : ∀ z, HasFDerivAt (ω.floerZerothOrder J Ks Kt z) (G' z (u z)) (u z))
+    (hKs : ∀ z, DifferentiableAt ℝ (ω.hamiltonianVectorField (Ks z)) (u z))
+    (hKt : ∀ z, DifferentiableAt ℝ (ω.hamiltonianVectorField (Kt z)) (u z))
+    (huB : ∀ᵐ z ∂μ, ‖fderiv ℝ u z (0, 1)‖ ≤ B) :
+    MemLp (ω.floerJetCoeff J Ks Kt u) ∞ μ := by
+  have hcoeff (z : ℝ × ℝ) :=
+    ω.floerJetCoeff_eq_firstOrderJetCoeff (hJ z) (hG z) (hKs z) (hKt z)
+  refine memLp_top_of_bound ?_ (1 + C + (K * B + L)) ?_
+  · rw [funext hcoeff]
+    have hΦ : Continuous fun q : (V →L[ℝ] V) × ((V →L[ℝ] V →L[ℝ] V) × V) × (V →L[ℝ] V) ↦
+        firstOrderJetCoeff q.1 (q.2.1.1.flip q.2.1.2 + q.2.2) :=
+      continuous_iff_continuousAt.2 fun q ↦ continuousAt_firstOrderJetCoeff
+        continuous_fst.continuousAt
+        ((((ContinuousLinearMap.flipₗᵢ ℝ V V V).continuous.comp continuous_snd.fst.fst).clm_apply
+          continuous_snd.fst.snd).add continuous_snd.snd).continuousAt
+    have hy (Φ : ℝ × ℝ → V → V →L[ℝ] V) (hΦc : Continuous (uncurry Φ)) :
+        AEStronglyMeasurable (fun z ↦ Φ z (u z)) μ :=
+      hΦc.comp_aestronglyMeasurable (aestronglyMeasurable_id.prodMk hu)
+    have hut : AEStronglyMeasurable (fun z ↦ fderiv ℝ u z (0, 1)) μ := by
+      borelize V
+      exact (measurable_fderiv_apply_const ℝ u (0, 1)).aestronglyMeasurable
+    exact hΦ.comp_aestronglyMeasurable ((hy J hJc).prodMk
+      ((hJ'c.comp_aestronglyMeasurable (aestronglyMeasurable_id.prodMk hu)).prodMk
+        hut |>.prodMk (hy G' hG'c)))
+  · filter_upwards [huB] with z hz
+    rw [hcoeff]
+    refine (norm_firstOrderJetCoeff_le _ _).trans (add_le_add (add_le_add_right (hJC _ _) _) ?_)
+    refine (norm_add_le _ _).trans (add_le_add ?_ (hG'K _ _))
+    refine ((J' z (u z)).flip.le_opNorm _).trans ?_
+    rw [ContinuousLinearMap.opNorm_flip]
+    exact mul_le_mul (hJ'K _ _) hz (norm_nonneg _) K.coe_nonneg
 
 /-- For the datum `K = H_t dt`, the zeroth-order part of the linearized Floer operator is bounded
 by `‖dJ(u)‖ ‖∂t u - X_{H_t}(u)‖ + ‖J(u)‖ ‖dX_{H_t}(u)‖`. -/

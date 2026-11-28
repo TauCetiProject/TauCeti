@@ -6,7 +6,9 @@ Authors: Codex
 module
 
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
+public import Mathlib.RingTheory.MvPowerSeries.Rename
 import TauCeti.RingTheory.MvPowerSeries.Order
+import TauCeti.RingTheory.MvPowerSeries.Rename
 
 /-!
 # Formal implicit functions with identity linear part
@@ -15,6 +17,8 @@ import TauCeti.RingTheory.MvPowerSeries.Order
   zero-constant tuples that raises the order of differences by one.
 * `MvPowerSeries.existsUnique_subst_eq_of_two_le_order_sub_X` solves a substitution equation
   when the coordinate series agree with the variables through degree one.
+* `MvPowerSeries.existsUnique_subst_sumElim_X_eq_zero_of_killCompl_eq_X` constructs
+  the inverse tuple of a two-block law from its left unit equation.
 
 The fixed point uses `MvPowerSeries.exists_forall_le_order_sub`; the substitution estimate
 uses `MvPowerSeries.le_order_subst_sub_subst` and Mathlib's `MvPowerSeries.subst_sub`.
@@ -122,6 +126,84 @@ theorem existsUnique_subst_eq_of_two_le_order_sub_X [Finite σ] (f : σ → MvPo
     rw [he, add_eq_left, sub_eq_zero, substAlgHom_apply, eq_comm]
   obtain ⟨a, ha, huniq⟩ := existsUnique_fixedPoint_of_order_sub F (fun h i ↦ hcontract h i)
   exact ⟨a, (hsolve a).mp ha, fun b hb ↦ huniq b ((hsolve b).mpr hb)⟩
+
+/-- Subtracting the restriction to the parameter block and the corresponding variable from
+the unknown block leaves a series of order at least two when the restriction to the unknown
+block is that variable. -/
+theorem two_le_order_sub_rename_killCompl_add_X_of_killCompl_eq_X
+    (f : MvPowerSeries (σ ⊕ τ) R) {i : τ}
+    (h : killCompl Function.Embedding.inr f = X i) :
+    2 ≤ (f - (rename Function.Embedding.inl (killCompl Function.Embedding.inl f) +
+      X (Sum.inr i))).order := by
+  let e : σ ↪ σ ⊕ τ := Function.Embedding.inl
+  let e' : τ ↪ σ ⊕ τ := Function.Embedding.inr
+  have hc : constantCoeff (killCompl e f) = 0 := by
+    rw [constantCoeff_killCompl, ← constantCoeff_killCompl e' f, h, constantCoeff_X]
+  have hcross : killCompl e' (rename e (killCompl e f)) = 0 := by
+    rw [killCompl_rename_of_disjoint (fun _ _ ↦ Sum.inl_ne_inr), hc, map_zero]
+  apply two_le_order_of_killCompl_sum_eq_zero
+  · have h₀ := killCompl_X_eq_zero (R := R) (e := e) (t := (Sum.inr i : σ ⊕ τ)) (by simp [e])
+    rw [map_sub, map_add, killCompl_rename_app, h₀, add_zero, sub_self]
+  · have hX := killCompl_X (R := R) (e := Function.Embedding.inr) (σ := τ) (τ := σ ⊕ τ) i
+    simp only [Function.Embedding.inr_apply] at hX
+    rw [map_sub, map_add, h, hX, hcross]
+    simp only [zero_add, sub_self]
+
+/-- A tuple of series with `F(0, Y) = Y` admits a unique zero-constant tuple `a` solving
+`F(X, a(X)) = 0` for finite parameter and unknown blocks. Taking the same index type for both
+blocks gives the inverse series of a formal group law (Stix §10.2.2). -/
+theorem existsUnique_subst_sumElim_X_eq_zero_of_killCompl_eq_X [Finite σ] [Finite τ]
+    (f : τ → MvPowerSeries (σ ⊕ τ) R)
+    (h : ∀ i, killCompl Function.Embedding.inr (f i) = X i) :
+    ∃! a : {a : τ → MvPowerSeries σ R // ∀ i, constantCoeff (a i) = 0},
+      ∀ i, substAlgHom (HasSubst.X.sumElim (hasSubst_of_constantCoeff_zero a.prop)) (f i) = 0 := by
+  let l (i : τ) : MvPowerSeries σ R := killCompl Function.Embedding.inl (f i)
+  let g : σ ⊕ τ → MvPowerSeries (σ ⊕ τ) R :=
+    Sum.elim (X ∘ Sum.inl) (fun i ↦ f i - rename Function.Embedding.inl (l i))
+  have hg : ∀ i, 2 ≤ (g i - X i).order := by
+    rintro (i | i)
+    · simp only [g, Sum.elim_inl, Function.comp_apply, sub_self, order_zero, le_top]
+    · simpa only [g, l, Sum.elim_inr, sub_sub] using
+        two_le_order_sub_rename_killCompl_add_X_of_killCompl_eq_X (f i) (h i)
+  let q : σ ⊕ τ → MvPowerSeries σ R := Sum.elim X (-l)
+  have hq : ∀ i, constantCoeff (q i) = 0 := by
+    rintro (i | i)
+    · exact constantCoeff_X i
+    · simpa only [q, l, Sum.elim_inr, Pi.neg_apply, map_neg, neg_eq_zero, constantCoeff_killCompl,
+        constantCoeff_X] using congrArg constantCoeff (h i)
+  have hrename {z : σ ⊕ τ → MvPowerSeries σ R} (hz : HasSubst z)
+      (hleft : ∀ i, z (Sum.inl i) = X i) (p : MvPowerSeries σ R) :
+      (rename (Function.Embedding.inl : σ ↪ σ ⊕ τ) p).subst z = p := by
+    have he : z ∘ (Function.Embedding.inl : σ ↪ σ ⊕ τ) = X := funext hleft
+    rw [subst_rename _ _ hz, he, subst_self, id_eq]
+  obtain ⟨b, hb, huniq⟩ := existsUnique_subst_eq_of_two_le_order_sub_X g hg q hq
+  have hleft (i : σ) : b.val (Sum.inl i) = X i := by
+    simpa only [g, q, Sum.elim_inl, Function.comp_apply, substAlgHom_X] using hb (Sum.inl i)
+  let a : {a : τ → MvPowerSeries σ R // ∀ i, constantCoeff (a i) = 0} :=
+    ⟨b.val ∘ Sum.inr, fun i ↦ b.prop (Sum.inr i)⟩
+  have hab : Sum.elim X a.val = b.val :=
+    funext fun | .inl i => (hleft i).symm | .inr _ => rfl
+  refine ⟨a, ?_, ?_⟩
+  · intro i
+    have hi := hb (Sum.inr i)
+    simp only [g, q, Sum.elim_inr, Pi.neg_apply, map_sub, substAlgHom_apply,
+      hrename (hasSubst_of_constantCoeff_zero b.prop) hleft] at hi
+    rw [substAlgHom_apply, hab]
+    exact sub_eq_neg_self.mp hi
+  · intro c hc
+    let c' : {d : σ ⊕ τ → MvPowerSeries σ R // ∀ i, constantCoeff (d i) = 0} :=
+      ⟨Sum.elim X c.val, fun | .inl i => constantCoeff_X i | .inr i => c.prop i⟩
+    have hc' : c' = b := huniq c' <| by
+      intro i
+      have hs := hasSubst_of_constantCoeff_zero c'.prop
+      cases i with
+      | inl i => exact substAlgHom_X hs (Sum.inl i)
+      | inr i =>
+        simp only [g, q, Sum.elim_inr, Pi.neg_apply, map_sub, substAlgHom_apply,
+          hrename hs (fun _ ↦ rfl)]
+        have hi : (f i).subst (Sum.elim X c.val) = 0 := by simpa only [substAlgHom_apply] using hc i
+        exact (congrArg (fun z ↦ z - l i) hi).trans (zero_sub _)
+    exact Subtype.ext (funext fun i ↦ congrArg (fun d ↦ d.val (Sum.inr i)) hc')
 
 end CommRing
 

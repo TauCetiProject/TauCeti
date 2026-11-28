@@ -20,6 +20,9 @@ product as an `Lp` vector with its almost-everywhere representative and additive
 The norm is at most the product of the factor norms. Over a nontrivially normed field,
 `MeasureTheory.Lp.prodMulL` bundles this construction as a bounded bilinear map of norm at most one.
 
+For s-finite measures, `MeasureTheory.Lp.integrable_mul_comp_swap` shows that
+`(x, y) ↦ K₁ (x, y) * K₂ (y, x)` is integrable for `K₁ ∈ L²(μ ⊗ ν)` and `K₂ ∈ L²(ν ⊗ μ)`.
+
 The norm need only be submultiplicative. A normed ring supplies its own left scalar action, and
 homogeneity in the second argument with respect to that action requires commutativity.
 -/
@@ -154,6 +157,19 @@ theorem prodMul_smul_left (c : 𝕜) (F : Lp 𝕜 2 μ) (G : Lp 𝕜 2 ν) :
   simp [h, hsmul, h1, hf, mul_assoc]
 
 end NormedRing
+
+section Swap
+
+variable [NormedRing 𝕜] [SFinite μ] [SFinite ν]
+
+/-- For `K₁ ∈ L²(μ ⊗ ν)` and `K₂ ∈ L²(ν ⊗ μ)`, the function `(x, y) ↦ K₁ (x, y) * K₂ (y, x)` is
+integrable on `μ ⊗ ν`. -/
+theorem integrable_mul_comp_swap (K₁ : Lp 𝕜 2 (μ.prod ν)) (K₂ : Lp 𝕜 2 (ν.prod μ)) :
+    Integrable (fun p ↦ K₁ p * K₂ p.swap) (μ.prod ν) :=
+  (Lp.memLp K₁).integrable_mul
+    ((Lp.memLp K₂).comp_measurePreserving Measure.measurePreserving_swap)
+
+end Swap
 
 section NormedCommRing
 

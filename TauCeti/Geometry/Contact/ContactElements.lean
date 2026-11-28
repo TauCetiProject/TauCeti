@@ -49,9 +49,10 @@ The deck transformation `τ ↦ τ + π` sends `α` to `-α`, so `α` itself doe
 under the deck transformation forces `f (x, y, τ + π) = -f (x, y, τ)`, so `f` would change sign.
 Hence the contact structure `ξ` has no global contact form
 (`TauCeti.not_exists_isContactForm_kerDistribution_eq_contactElementDistribution`) and no
-coorientation (`TauCeti.not_exists_isCoorientation_contactElementDistribution`): its contact line is
-not trivial. A definition of contact structures as kernels of global contact forms would miss this
-example.
+coorientation (`TauCeti.not_exists_isCoorientation_contactElementDistribution`), and its
+contact line `TM ⧸ ξ` is not trivial
+(`TauCeti.not_exists_trivialization_quotient_contactElementDistribution`). A definition of contact
+structures as kernels of global contact forms would miss this example.
 
 ## Main definitions
 
@@ -69,6 +70,8 @@ example.
   `TauCeti.not_exists_isContactForm_kerDistribution_eq_contactElementDistribution`,
   `TauCeti.not_exists_isCoorientation_contactElementDistribution`: its contact structure is not
   coorientable.
+* `TauCeti.not_exists_trivialization_quotient_contactElementDistribution`: its contact line is not
+  trivial.
 
 ## References
 
@@ -388,5 +391,27 @@ theorem not_exists_isCoorientation_contactElementDistribution :
   not_exists_isContactForm_kerDistribution_eq_contactElementDistribution <|
     (IsContactDistribution.exists_isContactForm_kerDistribution_eq_iff_exists_isCoorientation
       isContactDistribution_contactElementDistribution).2 h
+
+/-- **The contact line of the space of contact elements of the plane is not trivial.** The line
+bundle `TM ⧸ ξ` of the contact structure `ξ` of `ℝ² × AddCircle π`
+(`TauCeti.IsContMDiffDistribution.quotientPrebundle`) has no smooth linear trivialization over the
+whole space. -/
+theorem not_exists_trivialization_quotient_contactElementDistribution :
+    letI hξ := (isContactDistribution_contactElementDistribution (n := ∞)).isContMDiffDistribution
+    letI hk := (isContactDistribution_contactElementDistribution (n := ∞)).finrank_sub_one_add_one
+    letI := (hξ.quotientPrebundle hk).totalSpaceTopology
+    letI := (hξ.quotientPrebundle hk).toFiberBundle
+    letI := (hξ.quotientPrebundle hk).toVectorBundle
+    ¬ ∃ (e : Bundle.Trivialization (Fin 1 → ℝ) (@Bundle.TotalSpace.proj _ (Fin 1 → ℝ)
+          fun z ↦ TangentSpace (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) z ⧸ contactElementDistribution z))
+        (_ : e.IsLinear ℝ),
+        e.toOpenPartialHomeomorph ∈ (contMDiffFiberwiseLinear ((ℝ × ℝ) × AddCircle π)
+          (Fin 1 → ℝ) (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) ∞).maximalAtlas
+          (Bundle.TotalSpace (Fin 1 → ℝ) fun z ↦ TangentSpace (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) z ⧸
+            contactElementDistribution z) ∧
+        e.baseSet = Set.univ := fun h ↦ by
+  have hξ := isContactDistribution_contactElementDistribution (n := ∞)
+  exact not_exists_isContactForm_kerDistribution_eq_contactElementDistribution
+    (hξ.exists_isContactForm_kerDistribution_eq_iff_exists_trivialization_quotient.2 h)
 
 end TauCeti

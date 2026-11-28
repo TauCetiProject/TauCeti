@@ -71,12 +71,8 @@ private lemma IsValuationPair.directed_span_pivot (hR : R.IsValuationPair) (y : 
   let patch (a b : GL n R) : GL n R := a * he.cutGL (a⁻¹ * b)
   have patch_val (a b : GL n R) : (GeneralLinearGroup.map R.subtype (patch a b)).val =
       e.val • (GeneralLinearGroup.map R.subtype b).val +
-        (1 - e.val) • (GeneralLinearGroup.map R.subtype a).val := by
-    ext i j
-    rw [GeneralLinearGroup.map_apply]
-    dsimp only [patch]
-    rw [he.val_mul_cutGL_inv_mul]
-    simp
+        (1 - e.val) • (GeneralLinearGroup.map R.subtype a).val :=
+    he.val_map_mul_cutGL_inv_mul R.subtype a b
   have patch_entry : B (patch c d) (patch c' d') = B c c' - e * (B c c' - B d d') := by
     have he_val : e.val * e.val = e.val := congrArg Subtype.val he.eq
     simp only [B, patch_val, mul_add, add_mul, smul_mul_assoc, mul_smul_comm, Matrix.add_apply,

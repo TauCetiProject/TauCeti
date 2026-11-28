@@ -185,7 +185,7 @@ boundary values in `Λ` exactly when the extension of its coordinates takes real
 private theorem mem_totallyRealBoundarySubspace_iff_compLeftL_mem
     {u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) E} :
     u ∈ totallyRealBoundarySubspace Λ α ↔
-      compLeftL (coordRL hΛ) u ∈ rotatingLinePiSubspace (Fin (finrank ℝ Λ)) 0 α := by
+      compLeftL (coordRL hΛ) u ∈ rotatingLinePiSubspace (fun _ : Fin (finrank ℝ Λ) ↦ 0) α := by
   rw [mem_totallyRealBoundarySubspace_iff, mem_rotatingLinePiSubspace_iff]
   refine forall₂_congr fun w hw ↦ ?_
   rw [closureExtend_compLeftL (convex_unitBallOpens ℂ) _ u
@@ -195,7 +195,7 @@ private theorem mem_totallyRealBoundarySubspace_iff_compLeftL_mem
 /-- The coordinates of an element of `X_Λ`, an element of `C^{1,α}(D, ℂ^ι)` with boundary values
 in `ℝ^ι`. -/
 private def toPi : totallyRealBoundarySubspace Λ α →L[ℝ]
-    rotatingLinePiSubspace (Fin (finrank ℝ Λ)) 0 α :=
+    rotatingLinePiSubspace (fun _ : Fin (finrank ℝ Λ) ↦ 0) α :=
   (compLeftL (coordRL hΛ) ∘L (totallyRealBoundarySubspace Λ α).subtypeL).codRestrict _ fun u ↦
     (mem_totallyRealBoundarySubspace_iff_compLeftL_mem hΛ).1 u.property
 
