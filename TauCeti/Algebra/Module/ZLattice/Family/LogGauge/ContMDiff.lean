@@ -95,25 +95,57 @@ theorem contMDiffAt_torusFamilyLogGauge (l : Λ)
       (fun z ↦ powPullbackPeriod_injective P z (hinj _))
     ContMDiffAt (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n
       (torusFamilyLogGauge P l) x := by
-  let _ := periodAddAction P
-  let _ := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
-  let _ := periodAddAction (powPullbackPeriod m r P)
-  let _ := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
-    (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
+  have haux : ∀ (Q : rootsOfUnityBall m r → Λ →ₗ[ℤ] E)
+      (_ : Q = P ∘ rootsOfUnityBall.powMap m r)
+      [∀ z, DiscreteTopology (LinearMap.range (Q z))]
+      [∀ z, IsZLattice ℝ (LinearMap.range (Q z))]
+      (hQinj : ∀ z, Function.Injective (Q z))
+      (hQP : ∀ l', ContMDiff 𝓘(ℂ) 𝓘(ℂ, E) n fun z ↦ Q z l')
+      (G : letI := periodAddAction Q; letI := periodAddAction P;
+        AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E) →
+          AddAction.orbitRel.Quotient Λ (Metric.ball (0 : ℂ) (r ^ m) × E))
+      (_ : ∀ z e, (letI := periodAddAction Q; letI := periodAddAction P;
+        G (Quotient.mk _ (z, e))) =
+        (letI := periodAddAction P;
+          Quotient.mk _ (rootsOfUnityBall.powMap m r z,
+            e - (log (z : ℂ) / (2 * π * I)) • Q z l)))
+      {y : letI := periodAddAction Q; AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)},
+      ((torusFamilyProjection Q y : rootsOfUnityBall m r) : ℂ) ≠ 0 →
+        letI := periodAddAction P
+        letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
+        letI := periodAddAction Q
+        letI := torusFamilyChartedSpace (H := ℂ) Q (fun l ↦ (hQP l).continuous) hQinj
+        ContMDiffAt (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n G y := by
+    intro Q hQ _ _ hQinj hQP G hG y hy
+    subst hQ
+    let _ := periodAddAction P
+    let _ := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
+    let _ := periodAddAction (P ∘ rootsOfUnityBall.powMap m r)
+    let _ := torusFamilyChartedSpace (H := ℂ) (P ∘ rootsOfUnityBall.powMap m r)
+      (fun l ↦ ((hP l).comp rootsOfUnityBall.contMDiff_powMap).continuous)
+      (fun z ↦ hinj (rootsOfUnityBall.powMap m r z))
+    have heq : G = torusFamilyBaseChangeMap P (rootsOfUnityBall.powMap m r) ∘
+        ⇑(torusFamilyLogTwistMap Subtype.val (P ∘ rootsOfUnityBall.powMap m r) (-l)) := by
+      funext w
+      induction w using Quotient.inductionOn with
+      | h p =>
+        obtain ⟨z, e⟩ := p
+        dsimp only [Function.comp_apply]
+        rw [hG, torusFamilyLogTwistMap_mk, torusFamilyBaseChangeMap_mk]
+        simp [sub_eq_add_neg]
+    rw [heq]
+    have hbc := contMDiff_torusFamilyBaseChangeMap P hinj hP (rootsOfUnityBall.powMap m r)
+      rootsOfUnityBall.contMDiff_powMap
+    have htw := contMDiffAt_torusFamilyLogTwistMap Subtype.val (P ∘ rootsOfUnityBall.powMap m r)
+      (fun z ↦ hinj (rootsOfUnityBall.powMap m r z)) rootsOfUnityBall.contMDiff_val
+      (fun l' ↦ (hP l').comp rootsOfUnityBall.contMDiff_powMap) (-l) hy
+    exact (hbc _).comp y htw
+  exact haux (powPullbackPeriod m r P) (powPullbackPeriod_eq_comp P)
     (fun z ↦ powPullbackPeriod_injective P z (hinj _))
-  have hbc := contMDiff_torusFamilyBaseChangeMap P hinj hP (rootsOfUnityBall.powMap m r)
-    rootsOfUnityBall.contMDiff_powMap
-  have htw : ContMDiffAt (𝓘(ℂ).prod 𝓘(ℂ, E)) (𝓘(ℂ).prod 𝓘(ℂ, E)) n
-      (torusFamilyLogTwistMap Subtype.val (powPullbackPeriod m r P) (-l)) x :=
-    contMDiffAt_torusFamilyLogTwistMap Subtype.val (powPullbackPeriod m r P)
-      (fun z ↦ powPullbackPeriod_injective P z (hinj _)) rootsOfUnityBall.contMDiff_val
-      (fun l' ↦ contMDiff_powPullbackPeriod P (hP l')) (-l) hx
-  have hbcAt := hbc (torusFamilyLogTwistMap Subtype.val (powPullbackPeriod m r P) (-l) x)
-  rw [torusFamilyLogGauge_eq_baseChange_comp_logTwist]
-  let _ := periodAddAction (P ∘ rootsOfUnityBall.powMap m r)
-  let _ := torusFamilyChartedSpace (H := ℂ) (P ∘ rootsOfUnityBall.powMap m r)
-    (fun l ↦ ((hP l).comp rootsOfUnityBall.contMDiff_powMap).continuous)
-    (fun z ↦ hinj (rootsOfUnityBall.powMap m r z))
-  exact hbcAt.comp x htw
+    (fun l' ↦ contMDiff_powPullbackPeriod P (hP l'))
+    (torusFamilyLogGauge P l)
+    (fun z e ↦ by
+      rw [torusFamilyLogGauge_mk, powPullbackPeriod_apply])
+    hx
 
 end TauCeti
