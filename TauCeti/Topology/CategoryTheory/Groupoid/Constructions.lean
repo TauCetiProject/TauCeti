@@ -10,17 +10,19 @@ public import TauCeti.Topology.CategoryTheory.FullSubcategory
 public import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 public import TauCeti.Topology.CategoryTheory.Prod
 public import TauCeti.Topology.CategoryTheory.ActionGroupoid.Basic
+public import TauCeti.Topology.CategoryTheory.Comma
 
 /-!
-# Restrictions, products and action examples of topological groupoids
+# Restrictions, products, comma categories and action examples of topological groupoids
 
-Full restriction to any predicate on objects and products preserve the topological-groupoid
-axioms, using the existing subspace and product topologies on total arrows. No openness of
-the restricted object set is necessary. The native action groupoid of a continuous action
+Full restriction to any predicate on objects, binary products, and comma categories (weak fiber
+products over a groupoid) preserve the topological-groupoid axioms, using the existing subspace,
+product, and comma topologies on objects and total arrows. No openness of the restricted object set
+or transversality of the functors is necessary. The native action groupoid of a continuous action
 of a topological group is a topological groupoid, retaining every group label, including
 ineffective isotropy.
 
-The continuity proofs and topologies are those of `FullSubcategory`, `Prod`, and
+The continuity proofs and topologies are those of `FullSubcategory`, `Prod`, `Comma`, and
 `ActionGroupoid.Basic`; this module packages them through `IsTopologicalGroupoid`.
 -/
 
@@ -73,6 +75,28 @@ instance IsTopologicalGroupoid.prod {C D : Type*} [Category C] [IsGroupoid C]
         (IsTopologicalGroupoid.continuous_comp (C := C)))
       (by simpa only [Quiver.Total.comp_def] using
         (IsTopologicalGroupoid.continuous_comp (C := D)))
+
+/-- The comma category `Comma L R` of two functors out of topological groupoids `A` and `B` into a
+category `T` with topologized total arrows is a topological groupoid. Over a groupoid `T`, this
+packages the weak fiber product of `L` and `R` as a topological groupoid without any continuity or
+transversality assumption on `L`, `R`, or `T`. -/
+instance IsTopologicalGroupoid.comma {A B T : Type*} [Category A] [IsGroupoid A]
+    [Category B] [IsGroupoid B] [Category T] {L : A ⥤ T} {R : B ⥤ T}
+    [TopologicalSpace A] [TopologicalSpace (Quiver.Total A)] [IsTopologicalGroupoid A]
+    [TopologicalSpace B] [TopologicalSpace (Quiver.Total B)] [IsTopologicalGroupoid B]
+    [TopologicalSpace (Quiver.Total T)] : IsTopologicalGroupoid (Comma L R) where
+  continuous_source := Comma.continuous_source
+  continuous_target := Comma.continuous_target
+  continuous_unit := Comma.continuous_unit IsTopologicalGroupoid.continuous_unit
+    IsTopologicalGroupoid.continuous_unit
+  continuous_inverse := Comma.continuous_inverse IsTopologicalGroupoid.continuous_inverse
+    IsTopologicalGroupoid.continuous_inverse
+  continuous_comp := by
+    simpa only [Quiver.Total.comp_def] using Comma.continuous_comp (L := L) (R := R)
+      (by simpa only [Quiver.Total.comp_def] using
+        (IsTopologicalGroupoid.continuous_comp (C := A)))
+      (by simpa only [Quiver.Total.comp_def] using
+        (IsTopologicalGroupoid.continuous_comp (C := B)))
 
 /-- A continuous group action gives a topological groupoid with arrow space homeomorphic
 to `G × X`, not a discretization of that space. -/

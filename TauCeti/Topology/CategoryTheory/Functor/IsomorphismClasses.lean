@@ -29,7 +29,10 @@ closed under isomorphisms, induces a closed embedding
 For groupoids these quotients are the coarse spaces. The construction keeps all arrows and
 requires no faithfulness of an isotropy action. It does not require a continuous choice of
 inverse functor or of representatives. The homeomorphisms respect composition and naturally
-isomorphic functors, as required when comparing different refinements of a presentation.
+isomorphic functors, as required when comparing different refinements of a presentation. An
+equivalence of categories in arbitrary universes whose both directions are continuous on objects
+likewise upgrades `CategoryTheory.Equivalence.isomorphismClassesEquiv` to a homeomorphism
+(`CategoryTheory.Equivalence.isomorphismClassesHomeomorph`).
 
 ## References
 
@@ -186,3 +189,52 @@ theorem isomorphismClassesHomeomorph_eq_of_iso (F : C ⥤ D) (G : C ⥤ D)
   exact ConcreteCategory.congr_hom (F.isomorphismClasses_map_eq_of_iso e) q
 
 end CategoryTheory.Functor
+
+namespace CategoryTheory.Equivalence
+
+universe v₁ v₂ u₁ u₂
+
+variable {C : Type u₁} {D : Type u₂} [Category.{v₁} C] [Category.{v₂} D]
+  [TopologicalSpace C] [TopologicalSpace D]
+
+/-- An equivalence of categories whose both directions are continuous on objects induces a
+homeomorphism between the spaces of isomorphism classes, across arbitrary universes. -/
+def isomorphismClassesHomeomorph (e : C ≌ D)
+    (hf : Continuous e.functor.obj) (hg : Continuous e.inverse.obj) :
+    Quotient (isIsomorphicSetoid C) ≃ₜ Quotient (isIsomorphicSetoid D) where
+  toEquiv := e.isomorphismClassesEquiv
+  continuous_toFun :=
+    (isQuotientMap_quotient_mk' (X := C) (s := isIsomorphicSetoid C)).continuous_iff.2 <| by
+      simpa only [Function.comp_def, Quotient.mk', Equiv.toFun_as_coe,
+        isomorphismClassesEquiv_mk] using continuous_quotient_mk'.comp hf
+  continuous_invFun :=
+    (isQuotientMap_quotient_mk' (X := D) (s := isIsomorphicSetoid D)).continuous_iff.2 <| by
+      simpa only [Function.comp_def, Quotient.mk', Equiv.invFun_as_coe,
+        isomorphismClassesEquiv_symm_mk] using continuous_quotient_mk'.comp hg
+
+/-- The underlying equivalence of `isomorphismClassesHomeomorph` is `isomorphismClassesEquiv`. -/
+@[simp]
+theorem toEquiv_isomorphismClassesHomeomorph (e : C ≌ D)
+    (hf : Continuous e.functor.obj) (hg : Continuous e.inverse.obj) :
+    (e.isomorphismClassesHomeomorph hf hg).toEquiv = e.isomorphismClassesEquiv :=
+  (rfl)
+
+/-- `isomorphismClassesHomeomorph` sends the class of `x` to the class of `e.functor.obj x`. -/
+@[simp]
+theorem isomorphismClassesHomeomorph_apply_mk (e : C ≌ D)
+    (hf : Continuous e.functor.obj) (hg : Continuous e.inverse.obj) (x : C) :
+    e.isomorphismClassesHomeomorph hf hg (Quotient.mk _ x) = Quotient.mk _ (e.functor.obj x) :=
+  e.isomorphismClassesEquiv_mk x
+
+/-- The inverse of `e.isomorphismClassesHomeomorph` is the homeomorphism of `e.symm`. -/
+@[simp]
+theorem isomorphismClassesHomeomorph_symm (e : C ≌ D)
+    (hf : Continuous e.functor.obj) (hg : Continuous e.inverse.obj) :
+    (e.isomorphismClassesHomeomorph hf hg).symm = e.symm.isomorphismClassesHomeomorph hg hf := by
+  ext q
+  induction q using Quotient.inductionOn with
+  | h y =>
+    exact (e.isomorphismClassesEquiv_symm_mk y).trans
+      (e.symm.isomorphismClassesHomeomorph_apply_mk hg hf y).symm
+
+end CategoryTheory.Equivalence
