@@ -40,7 +40,7 @@ outside the open set (`TauCeti.IsSmoothForm.indicator`).
 
 The exterior derivative is local, so, without any regularity assumption, it commutes with
 restriction to an open subset (`TauCeti.mpullback_inclusion_mextDeriv`,
-`TauCeti.mpullback_subtype_val_mextDeriv`, `TauCeti.mextDeriv_mpullback_subtypeVal`) and with
+`TauCeti.mpullback_subtype_val_mextDeriv`, `TauCeti.mextDeriv_mpullback_subtype_val_apply`) and with
 extension by zero whenever the extension vanishes near every point of `W` outside `U`
 (`TauCeti.RoughForm.mextDeriv_extendByZero`).
 
@@ -387,7 +387,7 @@ theorem mpullback_subtype_val_mextDeriv {U : Opens M} (γ : RoughForm I M F k) :
 
 /-- Exterior derivative of the pullback of a form along `Subtype.val` on an open subset
 evaluates through `Manifold.tangentSpaceOpenEquiv`. -/
-theorem mextDeriv_mpullback_subtypeVal {U : Opens M} (γ : RoughForm I M F k) (x : U)
+theorem mextDeriv_mpullback_subtype_val_apply {U : Opens M} (γ : RoughForm I M F k) (x : U)
     (v : Fin (k + 1) → TangentSpace I x) :
     mextDeriv (mpullback I I (Subtype.val : U → M) γ) x v =
       mextDeriv γ x.val (fun i ↦ Manifold.tangentSpaceOpenEquiv (I := I) x (v i)) := by

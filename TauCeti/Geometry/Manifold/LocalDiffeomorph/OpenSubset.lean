@@ -67,8 +67,8 @@ subset of the target manifold.
   of the inclusion of an open subset gives the same subspace.
 * `PartialDiffeomorph.exists_ambient_of_opens`: a partial diffeomorphism out of an open subset
   agrees near a point of its source with a partial diffeomorphism out of the ambient manifold
-  (and `PartialDiffeomorph.exists_ambient_of_opens_forall` records agreement in value and
-  differential across the whole ambient source).
+  (and `PartialDiffeomorph.exists_ambient_of_opens_apply_eq_mfderiv_eq` records agreement in
+  value and differential across the whole ambient source).
 * `PartialDiffeomorph.subtypeVal`: the inclusion of a nonempty open subset as a partial
   diffeomorphism.
 * `PartialDiffeomorph.liftOpens`: a partial diffeomorphism between nonempty open subsets, as a
@@ -526,7 +526,7 @@ values and differentials on the whole source.** If `Φ` is a `C^n` partial diffe
 open subset `U` of `M` and `p₀ ∈ Φ.source`, then there is a `C^n` partial diffeomorphism `e` out
 of `M` whose source contains `p₀` and lies in `U`, and which agrees with `Φ` in value and
 differential at every point of `e.source`. -/
-theorem exists_ambient_of_opens_forall {U : TopologicalSpace.Opens M}
+theorem exists_ambient_of_opens_apply_eq_mfderiv_eq {U : TopologicalSpace.Opens M}
     (Φ : PartialDiffeomorph I J U N n) {p₀ : U} (hp₀ : p₀ ∈ Φ.source) :
     ∃ e : PartialDiffeomorph I J M N n,
       (p₀ : M) ∈ e.source ∧ e.source ⊆ U ∧ e p₀ = Φ p₀ ∧

@@ -86,7 +86,8 @@ Legendrian immersions into `W × ℝ` are exactly the lifts of the exact Lagrang
 * `TauCeti.SmoothForm.wedge_contactization_wedgePow_mextDerivₗ`: the contact volume formula
   `α ∧ (dα)ⁿ = dz ∧ ωⁿ` for `α = dz - θ` and `ω = -dθ`.
 * `TauCeti.mpullback_contactizationShift_contactization`: change of primitive.
-* `TauCeti.mpullback_contactization_comp`, `TauCeti.exists_contactizationChart`: pullback and chart
+* `TauCeti.mpullback_comp_contactizationShift_eq_contactization`,
+  `PartialDiffeomorph.exists_prod_contactizationShift`: pullback and chart
   composition for `contactizationShift`.
 * `TauCeti.SmoothForm.isHorizontalMap_contactization_iff`: `(ι, h)` is horizontal exactly when
   `ι^* θ = dh`.
@@ -375,7 +376,7 @@ end Shift
 /-- Pulling back a one-form along the four-step composition
 `assoc ∘ Prod.map inc id ∘ contactizationShift g ∘ Prod.map e id` reduces to the contactization of
 `e^* β` whenever `assoc^* α = θ.contactization` and `β = inc^* θ + dg`. -/
-theorem mpullback_contactization_comp
+theorem mpullback_comp_contactizationShift_eq_contactization
     {E₁ H₁ M₁ E₂ H₂ M₂ E₃ H₃ M₃ E₄ H₄ M₄ : Type*}
     [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [TopologicalSpace H₁]
     {I₁ : ModelWithCorners ℝ E₁ H₁} [TopologicalSpace M₁] [ChartedSpace H₁ M₁] [IsManifold I₁ ∞ M₁]
@@ -413,12 +414,12 @@ theorem mpullback_contactization_comp
 /-- Compose a partial diffeomorphism `ψ : M → M'` with `contactizationShift` for a smooth
 function `g : B → ℝ` on a nonempty open subset `B : Opens M'` to obtain a partial
 diffeomorphism `Ω : M × ℝ → M' × ℝ` together with the restricted map `e_B : W_ψ → B`. -/
-theorem exists_contactizationChart {E H M E' H' M' : Type*}
+theorem _root_.PartialDiffeomorph.exists_prod_contactizationShift {E H M E' H' M' : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
     {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
     [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
     {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M']
-    {ψ : PartialDiffeomorph I I' M M' ∞} {B : TopologicalSpace.Opens M'} (hB : Nonempty B)
+    (ψ : PartialDiffeomorph I I' M M' ∞) {B : TopologicalSpace.Opens M'} (hB : Nonempty B)
     {g : B → ℝ} (hg : ContMDiff I' 𝓘(ℝ) ∞ g) :
     ∃ (W_ψ : TopologicalSpace.Opens M) (e_B : W_ψ → B)
       (Ω : PartialDiffeomorph (I.prod 𝓘(ℝ)) (I'.prod 𝓘(ℝ)) (M × ℝ) (M' × ℝ) ∞),

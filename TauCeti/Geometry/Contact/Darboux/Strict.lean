@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Contact.Standard
+import TauCeti.Geometry.Contact.Contactization
 import TauCeti.Geometry.Contact.Family
 import TauCeti.Geometry.Contact.Pullback
 import TauCeti.Geometry.Contact.Slice
+import TauCeti.Geometry.Contact.Standard.Contactization
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Manifold.Diffeomorph.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.LocalPrimitive
@@ -24,6 +26,7 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
+import TauCeti.Geometry.Symplectic.Liouville.Standard
 import TauCeti.Geometry.Symplectic.Manifold.Darboux
 
 /-!
@@ -70,8 +73,8 @@ of `TauCeti/Geometry/Contact/Darboux/Basic.lean`:
 
 ## Main results
 
-* `TauCeti.IsContactFormAt.exists_partialDiffeomorph_innerProductContactForm_eq`,
-  `TauCeti.IsContactFormAt.exists_partialDiffeomorph_innerProductContactForm_eq_of_finrank_eq`:
+* `TauCeti.IsContactFormAt.exists_partialDiffeomorph_mpullback_innerProductContactForm_eq`,
+  `IsContactFormAt.exists_partialDiffeomorph_mpullback_innerProductContactForm_eq_of_finrank_eq`:
   strict Darboux partial diffeomorphisms on finite-dimensional real normed spaces.
 * `TauCeti.IsContactFormAt.exists_strictDarbouxChart_of_isInteriorPoint`,
   `TauCeti.IsContactFormAt.exists_strictDarbouxChart_of_finrank_eq_of_isInteriorPoint`: strict
@@ -323,7 +326,7 @@ private theorem mextDeriv_pullback_add_eq_zero {K F : Type*} [NormedAddCommGroup
       -ω₀ (NormedSpace.fromTangentSpace x.val (Manifold.tangentSpaceOpenEquiv (I := 𝓘(ℝ, F)) x u))
         (NormedSpace.fromTangentSpace x.val
           (Manifold.tangentSpaceOpenEquiv (I := 𝓘(ℝ, F)) x w)) := by
-    rw [SmoothForm.coe_mpullback, mextDeriv_mpullback_subtypeVal θ.val x ![u, w]]
+    rw [SmoothForm.coe_mpullback, mextDeriv_mpullback_subtype_val_apply θ.val x ![u, w]]
     have hv : (fun i ↦ Manifold.tangentSpaceOpenEquiv (I := 𝓘(ℝ, F)) x (![u, w] i)) =
         ![Manifold.tangentSpaceOpenEquiv (I := 𝓘(ℝ, F)) x u,
           Manifold.tangentSpaceOpenEquiv (I := 𝓘(ℝ, F)) x w] := by
@@ -466,7 +469,7 @@ private theorem exists_contactizationToInnerProductChart {K : Type*} [NormedAddC
     exists_primitive_on_symplecticSlice (ω₀ := fun v w ↦ stdSymplecticForm v w) hs₀ψ hψs₀ hψ_symp
       (innerProductLiouvilleForm V) mextDeriv_innerProductLiouvilleForm_apply
   obtain ⟨W_ψ, e_B, Ω₀, he_B, hx_src, hxB, hsrc_W, hsrc_mem, hΩ₀_val, hΩ₀_comp⟩ :=
-    TauCeti.exists_contactizationChart (ψ := ψ) ⟨⟨0, h0B⟩⟩ hg
+    ψ.exists_prod_contactizationShift ⟨⟨0, h0B⟩⟩ hg
   let assoc := (Diffeomorph.prodAssocSymmSelf ℝ V V ℝ ∞).symm
   let Ω := Ω₀.trans assoc.toPartialDiffeomorph
   have hs₀Ω : (s₀, (0 : ℝ)) ∈ Ω.source := by
@@ -482,8 +485,9 @@ private theorem exists_contactizationToInnerProductChart {K : Type*} [NormedAddC
       ⇑assoc ∘ Prod.map Subtype.val id ∘ contactizationShift 𝓘(ℝ, V × V) hg ∘ Prod.map e_B id := by
     rw [PartialDiffeomorph.coe_trans, Diffeomorph.coe_toPartialDiffeomorph, Function.comp_assoc,
       hΩ₀_comp]
-  have hF_pull := TauCeti.mpullback_contactization_comp he_B hg contMDiff_subtypeVal
-    assoc.contMDiff (mpullback_prodAssocSymmSelf_symm_innerProductContactForm V) hshift_eq
+  have hF_pull := TauCeti.mpullback_comp_contactizationShift_eq_contactization he_B hg
+    contMDiff_subtypeVal assoc.contMDiff
+    (mpullback_prodAssocSymmSelf_symm_innerProductContactForm V) hshift_eq
   rw [mpullback_symplecticSlice_neg hBU he_B hx_src hxB,
     ← SmoothForm.mpullback_prodMap_id_contactization (-β) contMDiff_subtypeVal] at hF_pull
   refine ⟨Ω, hs₀Ω, hΩ₀, fun q hq u ↦ ?_⟩
@@ -511,7 +515,7 @@ open subset `W` of a finite-dimensional real normed space `E`, which is a contac
 Then there are `n` with `dim E = 2 n + 1` and a smooth partial diffeomorphism `Φ` from `E` to
 `ℝⁿ × ℝⁿ × ℝ` with `y₀ ∈ Φ.source ⊆ W` and `Φ y₀ = 0` which pulls the standard contact form
 `dz - Σᵢ pᵢ dqᵢ` back to `η` on `Φ.source`. -/
-theorem IsContactFormAt.exists_partialDiffeomorph_innerProductContactForm_eq
+theorem IsContactFormAt.exists_partialDiffeomorph_mpullback_innerProductContactForm_eq
     {η : E → E [⋀^Fin 1]→L[ℝ] ℝ} {W : Set E} {y₀ : E}
     (hc : IsContactFormAt (I := 𝓘(ℝ, E)) η y₀) (hW : IsOpen W) (hy₀W : y₀ ∈ W)
     (hη : ContDiffOn ℝ ∞ η W) :
@@ -530,7 +534,8 @@ theorem IsContactFormAt.exists_partialDiffeomorph_innerProductContactForm_eq
     exists_contactizationToInnerProductChart hs₀ψ hψs₀ hψ_symp
   have hp₀Ξ : p₀ ∈ (Ψ.trans Ω).source := by
     rw [PartialDiffeomorph.trans_source]; exact ⟨hp₀Ψ, by simpa [hΨp₀] using hs₀Ω⟩
-  obtain ⟨Φ, hp₀Φ, hΦW₀, hΦp₀, hΦ⟩ := (Ψ.trans Ω).exists_ambient_of_opens_forall hp₀Ξ
+  obtain ⟨Φ, hp₀Φ, hΦW₀, hΦp₀, hΦ⟩ :=
+    (Ψ.trans Ω).exists_ambient_of_opens_apply_eq_mfderiv_eq hp₀Ξ
   have hΦy₀ : Φ y₀ = 0 := by
     rw [← hp₀_eq, hΦp₀, PartialDiffeomorph.coe_trans, Function.comp_apply, hΨp₀, hΩ₀]
   refine ⟨n, Φ, by omega, hp₀_eq ▸ hp₀Φ, hΦW₀.trans hW₀W, hΦy₀, fun y hy v ↦ ?_⟩
@@ -557,7 +562,7 @@ theorem IsContactFormAt.exists_partialDiffeomorph_innerProductContactForm_eq
 
 omit [FiniteDimensional ℝ E] in
 /-- **The strict contact Darboux theorem on normed spaces, in dimension `2 n + 1`.** -/
-theorem IsContactFormAt.exists_partialDiffeomorph_innerProductContactForm_eq_of_finrank_eq
+theorem IsContactFormAt.exists_partialDiffeomorph_mpullback_innerProductContactForm_eq_of_finrank_eq
     {η : E → E [⋀^Fin 1]→L[ℝ] ℝ} {W : Set E} {y₀ : E}
     (hc : IsContactFormAt (I := 𝓘(ℝ, E)) η y₀) {n : ℕ} (hn : finrank ℝ E = 2 * n + 1)
     (hW : IsOpen W) (hy₀W : y₀ ∈ W) (hη : ContDiffOn ℝ ∞ η W) :
@@ -570,7 +575,7 @@ theorem IsContactFormAt.exists_partialDiffeomorph_innerProductContactForm_eq_of_
           η y ![v] := by
   have : FiniteDimensional ℝ E := finite_of_finrank_pos (by omega)
   obtain ⟨m, Φ, hm, hy₀, hsub, h0, hΦ⟩ :=
-    hc.exists_partialDiffeomorph_innerProductContactForm_eq hW hy₀W hη
+    hc.exists_partialDiffeomorph_mpullback_innerProductContactForm_eq hW hy₀W hη
   obtain rfl : m = n := by omega
   exact ⟨Φ, hy₀, hsub, h0, hΦ⟩
 
@@ -655,7 +660,7 @@ theorem IsContactFormAt.exists_strictDarbouxChart_of_isInteriorPoint {α : Rough
   obtain ⟨W, hW, hy₀W, hη, hc_in, hlift⟩ :=
     exists_isOpen_contDiffOn_inChartAt_and_lift hc hU hx₀U hα hx₀
   obtain ⟨n, Φ, hdim, hy₀Φ, hΦW, hΦ₀, hΦ⟩ :=
-    hc_in.exists_partialDiffeomorph_innerProductContactForm_eq hW hy₀W hη
+    hc_in.exists_partialDiffeomorph_mpullback_innerProductContactForm_eq hW hy₀W hη
   obtain ⟨chart, hx₀_src, hsubU, hchart_x₀, hchart⟩ := hlift Φ hy₀Φ hΦW hΦ₀
   refine ⟨n, chart, hdim, hx₀_src, hsubU, hchart_x₀, fun x hx v ↦ ?_⟩
   obtain ⟨hxΦ, hcx, hmvf⟩ := hchart x hx
