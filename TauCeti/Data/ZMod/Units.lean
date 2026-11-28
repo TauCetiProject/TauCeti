@@ -82,6 +82,9 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   `Q` of the modulus reduces to `ZMod.unitOfCoprime n` inverted, respectively to `1`, modulo `Q`.
   Their consumer is the diamond label of the Atkin-Lehner matrices in
   `TauCeti/NumberTheory/ModularForms/AtkinLehner/Hecke.lean`.
+* `ZMod.unit_mul_eq_self_of_mem_ker_unitsMap` — a unit that reduces to `1` modulo
+  `N / gcd(t, N)` fixes `t`. Its consumer is the vanishing of the Dirichlet convolution at a
+  nonunit in `TauCeti/NumberTheory/DirichletCharacter/JacobiSum.lean`.
 * `ZMod.zmultiples_coe_unit_eq_top` — a unit of `ZMod d` generates `ZMod d` additively, so that
   translation by it is a single cycle; its consumer is the genus-one Heegaard diagram of a lens
   space in `TauCeti/LowDimTopology/Heegaard/LensSpace/Diagram.lean`.
@@ -327,6 +330,25 @@ theorem ZMod.unitsMap_eq_one_of_intCast_eq {N d : ℕ} (hdN : d ∣ N) {u : (ZMo
   rw [ZMod.unitsMap_val, hu, ZMod.cast_intCast hdN, Units.val_one, hc]
   simp only [Int.cast_add, Int.cast_mul, Int.cast_natCast, ZMod.natCast_self, zero_mul, add_zero,
     Int.cast_one]
+
+/-- **A unit `u ≡ 1` modulo `N / gcd(t, N)` fixes `t`.** If the unit `u` of `ZMod N` reduces to
+`1` modulo `N / gcd(t, N)`, then `u t = t`. -/
+theorem ZMod.unit_mul_eq_self_of_mem_ker_unitsMap {N : ℕ} {t : ZMod N} {u : (ZMod N)ˣ}
+    (hu : u ∈ (ZMod.unitsMap (Nat.div_dvd_of_dvd (Nat.gcd_dvd_right t.val N))).ker) :
+    (u : ZMod N) * t = t := by
+  have hg : t.val.gcd N ∣ N := Nat.gcd_dvd_right _ _
+  have hd : N / t.val.gcd N ∣ N := Nat.div_dvd_of_dvd hg
+  rw [MonoidHom.mem_ker, Units.ext_iff, ZMod.unitsMap_val, Units.val_one] at hu
+  -- Lift `u - 1` and `t` to integers, multiples of `N / gcd(t, N)` and of `gcd(t, N)`.
+  have h1 : ((N / t.val.gcd N : ℕ) : ℤ) ∣ ZMod.cast ((u : ZMod N) - 1) := by
+    rw [← ZMod.intCast_zmod_eq_zero_iff_dvd, ZMod.intCast_cast]
+    simp [ZMod.cast_sub hd, ZMod.cast_one hd, hu]
+  have h2 : (t.val.gcd N : ℤ) ∣ ZMod.cast t :=
+    Int.natCast_dvd.2 (by rw [ZMod.natAbs_cast]; exact Nat.gcd_dvd_left _ _)
+  have h3 := mul_dvd_mul h1 h2
+  rw [← Nat.cast_mul, Nat.div_mul_cancel hg, ← ZMod.intCast_zmod_eq_zero_iff_dvd] at h3
+  push_cast [ZMod.intCast_zmod_cast] at h3
+  rwa [sub_one_mul, sub_eq_zero] at h3
 
 /-- A unit of `ZMod d` generates `ZMod d` as an additive group. -/
 theorem ZMod.zmultiples_coe_unit_eq_top (u : (ZMod d)ˣ) :

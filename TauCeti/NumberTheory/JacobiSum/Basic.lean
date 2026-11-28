@@ -37,6 +37,7 @@ field `F` with `q` elements, `#Fˣ = q - 1` (Mathlib's `Fintype.card_units`).
   `∑ u, χ u ψ (u + a) = ψ(a) χ(-a) J(χ, ψ)`.
 * `MulChar.sum_mul_apply_neg_eq_ite`: with values in a domain, `∑ x, χ x ψ (-x)` is `χ(-1) #Fˣ`
   if `χ ψ = 1` and zero otherwise.
+* `MulChar.jacobiSum_one_right`: `J(χ, 1)` is the sum of `χ` over the `x` with `1 - x` a unit.
 -/
 
 public section
@@ -113,5 +114,15 @@ theorem sum_mul_apply_neg_eq_ite [IsDomain R] (χ ψ : MulChar F R) [Decidable (
     congr 1
     linear_combination (-ψ (-1)) * h1 + χ (-1) * ψ.apply_neg_one_mul_self
   · rw [sum_eq_zero_of_ne_one hχψ, mul_zero]
+
+/-- The Jacobi sum of `χ` and the trivial character is the sum of `χ` over the `x` with `1 - x` a
+unit. -/
+theorem jacobiSum_one_right [DecidablePred (IsUnit : F → Prop)] (χ : MulChar F R) :
+    jacobiSum χ 1 = ∑ x with IsUnit (1 - x), χ x := by
+  rw [jacobiSum, sum_filter]
+  refine sum_congr rfl fun x _ ↦ ?_
+  by_cases hx : IsUnit (1 - x)
+  · simp [one_apply hx, hx]
+  · simp [hx]
 
 end MulChar
