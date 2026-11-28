@@ -28,8 +28,13 @@ namespace TauCeti
 variable {m : ℕ}
 
 /-- Number of size-`k` subsets of the weight list `w` whose weights sum to `t`. -/
-@[expose] def wedgeMultiplicity (w : Fin m → ℤ) (k : ℕ) (t : ℤ) : ℕ :=
+def wedgeMultiplicity (w : Fin m → ℤ) (k : ℕ) (t : ℤ) : ℕ :=
   ((Finset.univ.powersetCard k).filter (fun s => ∑ i ∈ s, w i = t)).card
+
+/-- The defining filtered subset count for the multiplicity of weight `t`. -/
+theorem wedgeMultiplicity_def (w : Fin m → ℤ) (k : ℕ) (t : ℤ) :
+    wedgeMultiplicity w k t =
+      ((Finset.univ.powersetCard k).filter (fun s => ∑ i ∈ s, w i = t)).card := (rfl)
 
 /-- A positive multiplicity is witnessed by a set of `k` indices of total weight `t`. -/
 theorem wedgeMultiplicity_pos_iff (w : Fin m → ℤ) (k : ℕ) (t : ℤ) :
@@ -37,8 +42,12 @@ theorem wedgeMultiplicity_pos_iff (w : Fin m → ℤ) (k : ℕ) (t : ℤ) :
   simp [wedgeMultiplicity, Finset.card_pos, Finset.Nonempty, Finset.mem_powersetCard]
 
 /-- The finite set of weights in degree `k`. -/
-@[expose] def wedgeWeightSupport (w : Fin m → ℤ) (k : ℕ) : Finset ℤ :=
+def wedgeWeightSupport (w : Fin m → ℤ) (k : ℕ) : Finset ℤ :=
   (Finset.univ.powersetCard k).image (fun s => ∑ i ∈ s, w i)
+
+/-- The support is the image of all size-`k` subsets under the weight-sum map. -/
+theorem wedgeWeightSupport_def (w : Fin m → ℤ) (k : ℕ) :
+    wedgeWeightSupport w k = (Finset.univ.powersetCard k).image (fun s => ∑ i ∈ s, w i) := (rfl)
 
 /-- The weight support consists exactly of weights with positive multiplicity. -/
 @[simp] theorem mem_wedgeWeightSupport (w : Fin m → ℤ) (k : ℕ) (t : ℤ) :
@@ -100,7 +109,7 @@ theorem wedgeMultiplicity_compl (w : Fin m → ℤ) {k : ℕ} (hk : k ≤ m) (t 
   by_cases ht : t = ∑ i, w i <;> simp [wedgeMultiplicity, h, Finset.filter_singleton, ht, eq_comm]
 
 /-- Above top degree no subset contributes. -/
-theorem wedgeMultiplicity_eq_zero_of_lt (w : Fin m → ℤ) {k : ℕ} (hk : m < k) (t : ℤ) :
+@[simp] theorem wedgeMultiplicity_eq_zero_of_lt (w : Fin m → ℤ) {k : ℕ} (hk : m < k) (t : ℤ) :
     wedgeMultiplicity w k t = 0 := by
   have h : (Finset.univ : Finset (Fin m)).powersetCard k = ∅ :=
     Finset.powersetCard_eq_empty.mpr (by simpa using hk)

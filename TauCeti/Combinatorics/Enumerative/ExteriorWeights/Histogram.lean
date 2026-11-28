@@ -172,7 +172,7 @@ theorem wedgeMultiplicity_eq_sum_histograms (w : Fin m → ℤ) (k : ℕ) (t : �
     (∑ j, (h j : ℕ)) = k ∧ (∑ j, (h j : ℤ) * j.val) = t
   calc
     _ = (Finset.univ.filter fun s => weightHistogram w s ∈ H).card := by
-      unfold wedgeMultiplicity
+      rw [wedgeMultiplicity_def]
       congr 1
       ext s
       simp only [H, Finset.mem_powersetCard, Finset.mem_filter, Finset.mem_univ, true_and,
