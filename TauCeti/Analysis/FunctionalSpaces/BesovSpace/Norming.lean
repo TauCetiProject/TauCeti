@@ -14,7 +14,7 @@ import TauCeti.Analysis.Normed.Lp.Dual
 /-!
 # Besov norms of negative order by duality
 
-Let `s : ℝ`, let `1 < p < ∞` and `1 ≤ q ≤ ∞`, and let `p'` and `q'` be the Hölder conjugate
+Let `s : ℝ`, let `1 ≤ p < ∞` and `1 ≤ q ≤ ∞`, and let `p'` and `q'` be the Hölder conjugate
 exponents. If a tempered distribution `u` is bounded on the Schwartz functions in the norm of
 `B^s_{p,q}`,
 
@@ -26,10 +26,11 @@ bump function and on `s`, not on the exponents
 Proposition 2.76). In particular every continuous linear functional `Λ` on `B^s_{p,q}` is, on the
 Schwartz functions, the pairing with an element of `B^{-s}_{p',q'}` of norm at most `C ‖Λ‖`
 (`TauCeti.BesovSpace.exists_toDistr_apply_eq_and_norm_le`). Mathematically, this is the converse
-half of the duality `(B^s_{p,q})^* = B^{-s}_{p',q'}` for `1 < p < ∞` and `q < ∞`. With the
+half of the duality `(B^s_{p,q})^* = B^{-s}_{p',q'}` for `1 ≤ p < ∞` and `q < ∞`. With the
 bound of the pairing between `B^{-s}_{p',q'}` and `B^s_{p,q}` and the density of the Schwartz
 functions in `B^s_{p,q}`, it gives the identification itself, `TauCeti.BesovSpace.strongDualEquiv`
-in `TauCeti.Analysis.FunctionalSpaces.BesovSpace.StrongDual`. The case `p = 1` is not covered.
+in `TauCeti.Analysis.FunctionalSpaces.BesovSpace.StrongDual`. At `p = 1` the blocks of `u` are
+`L^∞` functions and `B^{-s}_{∞,q'}` is the dual of `B^s_{1,q}`.
 
 ## The argument
 
@@ -41,7 +42,7 @@ blocks of Schwartz functions has Besov norm at most `K ‖w‖_{ℓ^q}` whenever
 
 * *Each block is an `L^{p'}` function.* With a single block, `‖(Δⱼ u) g‖ ≤ A K 2^{js} ‖g‖_p`, so
   `Δⱼ u` is an `L^{p'}` function `hⱼ` with `‖hⱼ‖_{p'} ≤ A K 2^{js}`
-  (`TemperedDistribution.exists_eq_toTemperedDistribution_and_norm_le`, which uses `1 < p < ∞`).
+  (`TemperedDistribution.exists_eq_toTemperedDistribution_and_norm_le`, for `1 ≤ p < ∞`).
 * *The weighted norms are in `ℓ^{q'}`.* Choose Schwartz functions `gⱼ` with `‖gⱼ‖_p ≤ 1` and
   `‖hⱼ‖_{p'} ≤ 2 ‖(Δⱼ u) gⱼ‖`, by norming `L^{p'}` with Schwartz functions. For a finite set `t`
   the functional `c ↦ ∑_{j ∈ t} cⱼ 2^{-js} (Δⱼ u) gⱼ` on `ℓ^q` is
@@ -192,61 +193,36 @@ private theorem norm_sum_mul_littlewoodPaleyBlock_apply_le {p q : ℝ≥0∞} [F
           fun j ↦ (norm_norm (c j)).le
 
 /-- **Assembling the blocks.** Let `u` be a tempered distribution whose blocks `Δⱼ u` are
-`L^{p'}` functions `hⱼ` with `‖hⱼ‖ ≤ B 2^{js}`. If there are `zⱼ` with `2^{-js} ‖hⱼ‖ ≤ 2 ‖zⱼ‖`
-whose finite pairings with `ℓ^q` satisfy `‖∑_{j ∈ t} cⱼ zⱼ‖ ≤ B ‖c‖_q`, then `u` is an element of
-`B^{-s}_{p',q'}` of norm at most `2 B`. -/
+`L^{p'}` functions `hⱼ`. If there are `zⱼ` with `2^{-js} ‖hⱼ‖ ≤ 2 ‖zⱼ‖` whose finite pairings with
+`ℓ^q` satisfy `‖∑_{j ∈ t} cⱼ zⱼ‖ ≤ B ‖c‖_q`, then `u` is an element of `B^{-s}_{p',q'}` of norm at
+most `2 B`. -/
 private theorem exists_toDistr_eq_and_norm_le_of_forall_norm_sum_mul_le {p' q q' : ℝ≥0∞}
     [Fact (1 ≤ p')] [Fact (1 ≤ q)] [Fact (1 ≤ q')] [q'.HolderConjugate q] {s B : ℝ} (hB : 0 ≤ B)
     (u : 𝓢'(E, ℂ)) (h : ℕ → Lp ℂ p' (volume : Measure E))
-    (hh : ∀ j, littlewoodPaleyBlock ℂ φ j u = h j) (hhB : ∀ j : ℕ, ‖h j‖ ≤ B * 2 ^ (s * j))
+    (hh : ∀ j, littlewoodPaleyBlock ℂ φ j u = h j)
     (z : ℕ → ℂ) (hz : ∀ j : ℕ, (2 : ℝ) ^ (-s * j) * ‖h j‖ ≤ 2 * ‖z j‖)
     (hzc : ∀ (t : Finset ℕ) (c : lp (fun _ : ℕ ↦ ℂ) q), ‖∑ j ∈ t, c j * z j‖ ≤ B * ‖c‖) :
     ∃ v : BesovSpace ℂ φ (-s) p' q', v.toDistr = u ∧ ‖v‖ ≤ 2 * B := by
-  have hle (j : ℕ) : ‖(2 : ℝ) ^ (-s * j) * ‖h j‖‖ ≤ 2 * B := by
-    rw [Real.norm_of_nonneg (by positivity)]
-    calc (2 : ℝ) ^ (-s * j) * ‖h j‖ ≤ 2 ^ (-s * j) * (B * 2 ^ (s * j)) := by gcongr; exact hhB j
-      _ = B := by
-          rw [mul_left_comm, ← Real.rpow_add two_pos, neg_mul, neg_add_cancel, Real.rpow_zero,
-            mul_one]
-      _ ≤ 2 * B := by linarith
-  rcases eq_or_ne q' ∞ with rfl | hq'
-  · -- For `q' = ∞` the single-block bounds suffice.
-    obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq h
-      (⟨_, memℓp_infty ⟨2 * B, by rintro _ ⟨j, rfl⟩; exact hle j⟩⟩ : lp (fun _ : ℕ ↦ ℝ) ∞) hh
-      fun j ↦ le_rfl
-    exact ⟨v, hv, hvn.trans (lp.norm_le_of_forall_le (by positivity) hle)⟩
-  · -- For `q' < ∞` the partial sums are bounded through the coordinates of the pairing.
-    have hq'0 : 0 < q'.toReal := ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hq'
-    have hsum (t : Finset ℕ) :
-        ∑ j ∈ t, ‖(2 : ℝ) ^ (-s * j) * ‖h j‖‖ ^ q'.toReal ≤ (2 * B) ^ q'.toReal := by
-      calc ∑ j ∈ t, ‖(2 : ℝ) ^ (-s * j) * ‖h j‖‖ ^ q'.toReal
-          ≤ ∑ j ∈ t, (2 * ‖z j‖) ^ q'.toReal := Finset.sum_le_sum fun j _ ↦
-            Real.rpow_le_rpow (norm_nonneg _)
-              ((Real.norm_of_nonneg (by positivity)).trans_le (hz j)) hq'0.le
-        _ = 2 ^ q'.toReal * ∑ j ∈ t, ‖z j‖ ^ q'.toReal := by
-            rw [Finset.mul_sum]
-            exact Finset.sum_congr rfl fun j _ ↦ Real.mul_rpow zero_le_two (norm_nonneg _)
-        _ ≤ 2 ^ q'.toReal * B ^ q'.toReal := by
-            gcongr
-            exact lp.sum_norm_rpow_le_of_forall_norm_sum_mul_le hq' t z hB (hzc t)
-        _ = (2 * B) ^ q'.toReal := (Real.mul_rpow zero_le_two hB).symm
-    obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq h
-      (⟨_, memℓp_gen' hsum⟩ : lp (fun _ : ℕ ↦ ℝ) q') hh fun j ↦ le_rfl
-    exact ⟨v, hv, hvn.trans (lp.norm_le_of_forall_sum_le hq'0 (by positivity) hsum)⟩
+  obtain ⟨hx, hxn⟩ := lp.exists_memℓp_and_norm_le_of_forall_norm_sum_mul_le (p := q')
+    (x := fun j : ℕ ↦ (2 : ℝ) ^ (-s * j) * ‖h j‖) z zero_le_two hB
+    (fun j ↦ (Real.norm_of_nonneg (by positivity)).trans_le (hz j)) hzc
+  obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq h ⟨_, hx⟩ hh
+    fun j ↦ le_rfl
+  exact ⟨v, hv, hvn.trans hxn⟩
 
 /-- **Besov norms of negative order by duality** (Bahouri–Chemin–Danchin, Proposition 2.76). Let
 `s : ℝ`. There is `C`, depending only on `φ` and `s`, with the following property. Let
-`1 < p < ∞` and `1 ≤ q ≤ ∞`, with Hölder conjugate exponents `p'` and `q'`. If a tempered
+`1 ≤ p < ∞` and `1 ≤ q ≤ ∞`, with Hölder conjugate exponents `p'` and `q'`. If a tempered
 distribution `u` satisfies `‖u f‖ ≤ A ‖f‖_{B^s_{p,q}}` for every Schwartz function `f`, then `u`
 is an element of `B^{-s}_{p',q'}` of norm at most `C A`. -/
 theorem exists_toDistr_eq_and_norm_le_of_norm_apply_le (s : ℝ) :
     ∃ C : ℝ, ∀ {p p' : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ p')] [p'.HolderConjugate p]
-      {q q' : ℝ≥0∞} [Fact (1 ≤ q)] [Fact (1 ≤ q')] [q'.HolderConjugate q], 1 < p → p ≠ ∞ →
+      {q q' : ℝ≥0∞} [Fact (1 ≤ q)] [Fact (1 ≤ q')] [q'.HolderConjugate q], p ≠ ∞ →
       ∀ (u : 𝓢'(E, ℂ)) {A : ℝ}, 0 ≤ A →
       (∀ f : 𝓢(E, ℂ), ‖u f‖ ≤ A * ‖SchwartzMap.toBesovSpaceCLM ℂ φ s p q f‖) →
       ∃ v : BesovSpace ℂ φ (-s) p' q', v.toDistr = u ∧ ‖v‖ ≤ C * A := by
   obtain ⟨K, hK, hKt⟩ := exists_norm_toBesovSpaceCLM_sum_le φ s
-  refine ⟨2 * K, fun {p p'} _ _ _ {q q'} _ _ _ hp hp_top u A hA hu ↦ ?_⟩
+  refine ⟨2 * K, fun {p p'} _ _ _ {q q'} _ _ _ hp_top u A hA hu ↦ ?_⟩
   -- Pairing `u` with a finite sum of blocks costs `A K` times an `ℓ^q` majorant.
   have hpair (t : Finset ℕ) (G : ℕ → 𝓢(E, ℂ)) (w : lp (fun _ : ℕ ↦ ℝ) q) (hw0 : ∀ j, 0 ≤ w j)
       (hw : ∀ j ∈ t, 2 ^ (s * j) * ‖(G j).toLp p‖ ≤ w j) :
@@ -257,7 +233,7 @@ theorem exists_toDistr_eq_and_norm_le_of_norm_apply_le (s : ℝ) :
   -- Each block of `u` is an `L^{p'}` function `hⱼ` with `‖hⱼ‖ ≤ A K 2^{js}`.
   have hblock (j : ℕ) : ∃ h : Lp ℂ p' (volume : Measure E),
       (h : 𝓢'(E, ℂ)) = littlewoodPaleyBlock ℂ φ j u ∧ ‖h‖ ≤ A * K * 2 ^ (s * j) := by
-    refine exists_eq_toTemperedDistribution_and_norm_le hp hp_top _ (by positivity) fun g ↦ ?_
+    refine exists_eq_toTemperedDistribution_and_norm_le hp_top _ (by positivity) fun g ↦ ?_
     have := hpair {j} (fun _ ↦ g) (lp.single q j (2 ^ (s * j) * ‖g.toLp p‖))
       (fun i ↦ by
         rw [lp.single_apply, Pi.single_apply]
@@ -266,7 +242,7 @@ theorem exists_toDistr_eq_and_norm_le_of_norm_apply_le (s : ℝ) :
     rw [Finset.sum_singleton, lp.norm_single (zero_lt_one.trans_le Fact.out),
       Real.norm_of_nonneg (by positivity)] at this
     exact this.trans_eq (by ring)
-  choose h hh hhn using hblock
+  choose h hh _ using hblock
   -- Schwartz functions `gⱼ` with `‖gⱼ‖_p ≤ 1` nearly norming `hⱼ`.
   have hnear (j : ℕ) : ∃ g : 𝓢(E, ℂ), ‖g.toLp p‖ ≤ 1 ∧ ‖h j‖ ≤ 2 * ‖(h j : 𝓢'(E, ℂ)) g‖ := by
     rcases (norm_nonneg (h j)).eq_or_lt with h0 | h0
@@ -285,30 +261,30 @@ theorem exists_toDistr_eq_and_norm_le_of_norm_apply_le (s : ℝ) :
           exact hg j
       _ = 2 * (2 ^ (-(s * j)) * ‖(h j : 𝓢'(E, ℂ)) (g j)‖) := by ring
   obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_forall_norm_sum_mul_le φ (q' := q')
-    (by positivity) u h (fun j ↦ (hh j).symm) hhn _ hz
+    (by positivity) u h (fun j ↦ (hh j).symm) _ hz
     (norm_sum_mul_littlewoodPaleyBlock_apply_le φ (by positivity) u g hg1 hpair)
   exact ⟨v, hv, hvn.trans_eq (by ring)⟩
 
 /-- **Functionals on `B^s_{p,q}` are pairings with `B^{-s}_{p',q'}`.** Let `s : ℝ`. There is `C`,
-depending only on `φ` and `s`, with the following property. Let `1 < p < ∞` and `1 ≤ q ≤ ∞`, with
+depending only on `φ` and `s`, with the following property. Let `1 ≤ p < ∞` and `1 ≤ q ≤ ∞`, with
 Hölder conjugate exponents `p'` and `q'`. For every continuous linear functional `Λ` on
 `B^s_{p,q}` there is `v ∈ B^{-s}_{p',q'}` with `‖v‖ ≤ C ‖Λ‖` whose pairing with every Schwartz
 function `f` is `Λ f`. -/
 theorem exists_toDistr_apply_eq_and_norm_le (s : ℝ) :
     ∃ C : ℝ, ∀ {p p' : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ p')] [p'.HolderConjugate p]
-      {q q' : ℝ≥0∞} [Fact (1 ≤ q)] [Fact (1 ≤ q')] [q'.HolderConjugate q], 1 < p → p ≠ ∞ →
+      {q q' : ℝ≥0∞} [Fact (1 ≤ q)] [Fact (1 ≤ q')] [q'.HolderConjugate q], p ≠ ∞ →
       ∀ Λ : StrongDual ℂ (BesovSpace ℂ φ s p q), ∃ v : BesovSpace ℂ φ (-s) p' q',
         (∀ f : 𝓢(E, ℂ), v.toDistr f = Λ (SchwartzMap.toBesovSpaceCLM ℂ φ s p q f)) ∧
           ‖v‖ ≤ C * ‖Λ‖ := by
   obtain ⟨C, hC⟩ := exists_toDistr_eq_and_norm_le_of_norm_apply_le φ s
-  refine ⟨C, fun {p p'} _ _ _ {q q'} _ _ _ hp hp_top Λ ↦ ?_⟩
+  refine ⟨C, fun {p p'} _ _ _ {q q'} _ _ _ hp_top Λ ↦ ?_⟩
   -- The restriction of `Λ` to the Schwartz functions, as a tempered distribution.
   have hu (f : 𝓢(E, ℂ)) : ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) 𝓢(E, ℂ) ℂ
       (Λ ∘L SchwartzMap.toBesovSpaceCLM ℂ φ s p q) f =
         Λ (SchwartzMap.toBesovSpaceCLM ℂ φ s p q f) := by
     rw [ContinuousLinearMap.toPointwiseConvergenceCLM_apply]
     exact ContinuousLinearMap.comp_apply Λ _ f
-  obtain ⟨v, hv, hvn⟩ := hC (p' := p') (q' := q') hp hp_top
+  obtain ⟨v, hv, hvn⟩ := hC (p' := p') (q' := q') hp_top
     (ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) 𝓢(E, ℂ) ℂ
       (Λ ∘L SchwartzMap.toBesovSpaceCLM ℂ φ s p q)) (norm_nonneg Λ) fun f ↦ by
       rw [hu]

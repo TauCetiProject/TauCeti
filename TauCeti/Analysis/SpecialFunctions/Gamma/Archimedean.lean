@@ -27,6 +27,8 @@ and `(2π) ^ (-s.re)`. Taking norms and real logarithms separates those exponent
 
 * `Complex.analyticAt_Gammaℝ_of_ne_zero`, `Complex.analyticAt_Gammaℂ_of_ne_zero`: both factors
   are analytic wherever they are nonzero.
+* `TauCeti.analyticAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow`: every product of natural powers of the
+  reciprocal archimedean factors is analytic everywhere.
 * `Complex.Gammaℂ_eq_zero_iff`: total zeros of `Gammaℂ` occur at `-(n : ℂ)` (`n : ℕ`),
   complementing `Complex.Gammaℝ_eq_zero_iff`; this identifies the exceptional values in finite
   products of shifted gamma factors.
@@ -41,8 +43,8 @@ and `(2π) ^ (-s.re)`. Taking norms and real logarithms separates those exponent
   `1 - 2k`.
 * `Complex.differentiableAt_Gammaℝ`, `Complex.differentiableAt_Gammaℂ`,
   `Complex.continuousAt_Gammaℝ`, `Complex.continuousAt_Gammaℂ`: regularity away from the poles.
-* `Complex.norm_Gammaℝ`, `Complex.norm_Gammaℂ`, `Complex.log_norm_Gammaℝ`,
-  `Complex.log_norm_Gammaℂ`: norm and log-norm identities.
+* `Complex.norm_Gammaℝ`, `Complex.norm_Gammaℝ_ofReal`, `Complex.norm_Gammaℂ`,
+  `Complex.log_norm_Gammaℝ`, `Complex.log_norm_Gammaℂ`: norm and log-norm identities.
 * `Complex.Gammaℝ_two_mul_natCast_add_one`, `Complex.Gammaℝ_neg_two_mul_natCast_sub_one`: the
   values `Γ_ℝ(2k + 1)` and, where `Gammaℝ` is regular, `Γ_ℝ(-2k - 1)`; like the values above,
   each is a rational multiple of a power of `π`.
@@ -155,6 +157,12 @@ theorem norm_Gammaℝ (z : ℂ) : ‖Gammaℝ z‖ = Real.pi ^ (-z.re / 2) * ‖
   rw [Gammaℝ_def, norm_mul, norm_cpow_eq_rpow_re_of_pos Real.pi_pos]
   simp [neg_div]
 
+/-- The norm of the real gamma factor at a nonnegative real argument `x`. -/
+theorem norm_Gammaℝ_ofReal {x : ℝ} (hx : 0 ≤ x) :
+    ‖Gammaℝ (x : ℂ)‖ = Real.pi ^ (-x / 2) * Real.Gamma (x / 2) := by
+  rw [norm_Gammaℝ, ofReal_re, ← ofReal_ofNat, ← ofReal_div, Gamma_ofReal, norm_real,
+    Real.norm_eq_abs, abs_of_nonneg (Real.Gamma_nonneg_of_nonneg (by positivity))]
+
 /-- Norm of Deligne's complex archimedean factor: `‖Γ_ℂ(z)‖ = 2 (2π) ^ (-z.re) ‖Γ(z)‖`, including
 at the poles where both sides are zero. -/
 theorem norm_Gammaℂ (z : ℂ) : ‖Gammaℂ z‖ = 2 * (2 * Real.pi) ^ (-z.re) * ‖Gamma z‖ := by
@@ -232,4 +240,14 @@ theorem Gammaℝ_neg_two_mul_natCast_sub_one (k : ℕ) :
 end IntegerValues
 
 end Complex
+
+namespace TauCeti
+
+/-- Products of natural powers of the reciprocal archimedean gamma factors are entire. -/
+theorem analyticAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow (r₁ r₂ : ℕ) (s : ℂ) :
+    AnalyticAt ℂ (fun z : ℂ ↦ (Complex.Gammaℝ z)⁻¹ ^ r₁ * (Complex.Gammaℂ z)⁻¹ ^ r₂) s :=
+  ((Complex.differentiable_Gammaℝ_inv.analyticAt s).pow r₁).mul
+    ((Complex.differentiable_Gammaℂ_inv.analyticAt s).pow r₂)
+
+end TauCeti
 

@@ -23,6 +23,8 @@ A minimal nonzero ideal is spanned by any of its nonzero elements (`IsAtom.span_
 
 * `Ideal.span_singleton_intCast_eq_natAbs`: `Ideal.span {(a : R)} = Ideal.span {(a.natAbs : R)}` in
   any ring `R`.
+* `Ideal.neZero_span_singleton_natCast`: `Ideal.span {(n : R)}` is nonzero for `n ≠ 0` in a
+  characteristic-zero semiring, as an instance.
 * `Ideal.eq_of_forall_mul_eq_of_span_eq_top`: if `T` generates the unit ideal and `s x = t x` for
   every `x ∈ T`, then `s = t`.
 -/
@@ -43,6 +45,13 @@ theorem span_singleton_intCast_eq_natAbs {R : Type*} [Ring R] (a : ℤ) :
 theorem span_singleton_natCast_ne_bot {R : Type*} [Semiring R] [CharZero R] {n : ℕ}
     (hn : n ≠ 0) : Ideal.span {(n : R)} ≠ ⊥ := by
   simpa using hn
+
+/-- In a characteristic-zero semiring, the ideal spanned by a nonzero natural number is nonzero,
+as an instance. With Mathlib's `Ring.HasFiniteQuotients` instances it makes `R ⧸ n R` finite by
+instance search, e.g. for the ring of integers of a number field. -/
+instance neZero_span_singleton_natCast {R : Type*} [Semiring R] [CharZero R] (n : ℕ)
+    [NeZero n] : NeZero (Ideal.span {(n : R)}) :=
+  ⟨span_singleton_natCast_ne_bot (NeZero.ne n)⟩
 
 /-- In a commutative semiring, an element is determined by its products with the elements of a set
 generating the unit ideal: if `s * x = t * x` for every `x ∈ T` and `Ideal.span T = ⊤`, then

@@ -9,7 +9,9 @@ public import TauCeti.Analysis.PDE.Wave.Endpoint
 public import TauCeti.Analysis.PDE.Wave.Energy
 import TauCeti.Analysis.Fourier.Bernstein
 import TauCeti.Analysis.PDE.Strichartz.LittlewoodPaley
+import TauCeti.Analysis.PDE.Wave.HomogeneousStrichartz
 import TauCeti.Analysis.PDE.Wave.MixedNorm
+import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Function.Lp.Star
 
@@ -49,9 +51,13 @@ weight `2^{j(γ - 1)}`, and for the free solution `u(t) = cos(tD) f + D⁻¹ sin
 
 (in the `ContDiffBump` namespace,
 `exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum_of_le_endpoint`), with the
-square sums in place of the `ℓ¹` sums when `r < ∞`. Every strong solution of the free equation on an
-interval of times containing `0` agrees there with the free solution for `f = u(0)` and
-`g = ∂ₜu(0)`, so it satisfies these estimates on that interval
+square sums in place of the `ℓ¹` sums when `r < ∞`. Joined with the pairs with `q > 2` of
+`TauCeti.Analysis.PDE.Wave.HomogeneousStrichartz`, the `ℓ¹` form for the free solution holds at
+every wave-admissible pair with `2 ≤ q < ∞`
+(`ContDiffBump.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum_of_two_le`).
+Every strong solution of the free equation on an interval of times containing `0` agrees there
+with the free solution for `f = u(0)` and `g = ∂ₜu(0)`, so it satisfies these estimates on that
+interval
 (`ContDiffBump.exists_eLpNorm_eLpNorm_le_tsum_of_isWaveSolutionOn_of_le_endpoint`). Together with
 the pairs with `q > 2` of `TauCeti.Analysis.PDE.Wave.HomogeneousStrichartz` and
 `TauCeti.Analysis.PDE.Wave.SobolevStrichartz`, which also treat `q = ∞`, this gives the
@@ -187,23 +193,13 @@ theorem exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le_of_lt_en
     (r' := (1 - r₀⁻¹)⁻¹) hn hr₀
   obtain ⟨σ, hσ⟩ := φ.exists_fourierMultiplierCLM_dyadicMultiplier_eq (F := ℂ)
   set B := eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate σ 0)) (1 + (1 - r₀⁻¹)⁻¹⁻¹ - r'⁻¹)⁻¹ volume
-  have hr1 : r⁻¹ ≤ 1 := ENNReal.inv_le_one.2 (ENNReal.HolderConjugate.one_le r r')
-  have hr₀1 : r₀⁻¹ ≤ 1 := ENNReal.inv_le_one.2 (one_le_two.trans hr₀2)
-  have hr'r₀' : r' ≤ (1 - r₀⁻¹)⁻¹ := by
-    rw [← ENNReal.inv_le_inv, inv_inv, ← ENNReal.HolderConjugate.one_sub_inv r r']
-    exact tsub_le_tsub_left (ENNReal.inv_le_inv.2 hr₀r) 1
-  have hexp : r'.toReal⁻¹ - ((1 - r₀⁻¹)⁻¹).toReal⁻¹ = (r₀⁻¹).toReal - (r⁻¹).toReal := by
-    rw [← ENNReal.toReal_inv, ← ENNReal.toReal_inv, inv_inv,
-      ← ENNReal.HolderConjugate.one_sub_inv r r', ENNReal.toReal_sub_of_le hr1 ENNReal.one_ne_top,
-      ENNReal.toReal_sub_of_le hr₀1 ENNReal.one_ne_top]
-    ring
   refine ⟨C * B.toNNReal, fun j m hm F hF ↦ ?_⟩
   -- `Pⱼ F(s) = Pⱼ Qⱼ F(s)`, and the endpoint estimate applies to `Qⱼ F`.
   have h := hC j m hm _ ((φ.dyadicMultiplier ℂ σ j).continuous.comp_aestronglyMeasurable hF)
   simp only [hσ j m hm] at h
   have hB := eLpNorm_eLpNorm_apply_le (φ.dyadicMultiplier ℂ σ j).continuous
     (fun g ↦ φ.eLpNorm_dyadicMultiplier_le_of_le σ j g (ENNReal.HolderConjugate.one_le r' r)
-      hr'r₀') hF (q := 2)
+      (ENNReal.HolderConjugate.le_inv_one_sub_inv (q' := r') hr₀r)) hF (q := 2)
   refine h.trans ?_
   calc _ ≤ C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
           Module.finrank ℝ E * (r₀⁻¹).toReal - 2⁻¹)) *
@@ -212,7 +208,8 @@ theorem exists_enorm_integral_halfWavePropagator_neg_littlewoodPaley_le_of_lt_en
           eLpNorm (fun s ↦ eLpNorm (F s) r' volume) 2 volume) := by
         gcongr
     _ = _ := by
-        rw [hexp, ENNReal.coe_mul, ENNReal.coe_toNNReal
+        rw [ENNReal.HolderConjugate.inv_toReal_sub_inv_toReal_inv_one_sub_inv (q := r) (q' := r')
+            (one_le_two.trans hr₀2), ENNReal.coe_mul, ENNReal.coe_toNNReal
           (φ.memLp_fourierInv_dyadicDilate σ 0 _).eLpNorm_ne_top,
           ← ofReal_rpow_mul_ofReal_rpow j _ (r₀⁻¹).toReal (r⁻¹).toReal]
         ring
@@ -532,6 +529,39 @@ theorem exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum_o
   exact ⟨C₁ + C₂, fun m hm f g ↦
     eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_of_one_le one_le_two
       (one_le_two.trans (two_le_of_le_endpoint hn hr0 hr)) (h₁ m hm f) (h₂ m hm g)⟩
+
+/-- **The Strichartz estimate for the free wave equation at every pair with `2 ≤ q < ∞`, with data
+in `\dot B^γ_{2,1} × \dot B^{γ - 1}_{2,1}`.** Let `E` be nontrivial of dimension `n`, let
+`(q, r)` be wave-admissible, `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `2 ≤ q < ∞`, where `q = 2`
+only in dimension `n ≥ 4`, and let `γ = n / 2 - n / r - 1 / q`. The pairs `(2, r)` are
+`ContDiffBump.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum_of_le_endpoint`
+and the pairs with `q > 2` are
+`ContDiffBump.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum`.
+There is `C` such that for all `f, g ∈ L²(E)`, the solution
+`u(t) = cos(tD) f + D⁻¹ sin(tD) g` of `∂ₜ²u = Δu` with `u(0) = f` and `∂ₜu(0) = g` satisfies
+
+`‖u‖_{L^q_t L^r_x} ≤ C (∑ⱼ 2^{jγ} ‖Pⱼ f‖₂ + ∑ⱼ 2^{j(γ - 1)} ‖Pⱼ g‖₂)`. -/
+theorem exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum_of_two_le
+    [Nontrivial E] {q : ℝ≥0} (hq : 2 ≤ q)
+    (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
+      ((Module.finrank ℝ E : ℝ) - 1) / 2)
+    (hq2 : q = 2 → 3 < Module.finrank ℝ E) :
+    ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
+      (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ f g : Lp ℂ 2 (volume : Measure E),
+        eLpNorm (fun t ↦ eLpNorm (waveCosPropagator ℂ t f + waveSinPropagator ℂ t g) r volume) q
+            volume ≤
+          C * (∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
+              Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹)) *
+                ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ +
+            ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
+              Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹ - 1)) *
+                ‖Lp.fourierMultiplierCLM ℂ (m j) g‖ₑ) := by
+  rcases hq.lt_or_eq with hq | rfl
+  · exact φ.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum hq hqr
+  · simp only [NNReal.coe_ofNat, ENNReal.coe_ofNat, div_self (two_ne_zero (α := ℝ))] at hqr ⊢
+    exact φ.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum_of_le_endpoint
+      (hq2 rfl) hqr
 
 /-- **The Strichartz estimate at the pairs `(2, r)` for strong solutions of the free wave
 equation.** Under the hypotheses of

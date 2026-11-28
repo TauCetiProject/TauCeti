@@ -6,18 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Dynamics.Flow
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.ODE.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 -- Private: monotonicity, constant-curve recognition, time reparametrization, the fundamental
--- theorem of calculus and the gradient of `-f` are used only in proofs; no declaration below
+-- theorem of calculus, the gradient of `-f`, the calculus of `Cⁿ` maps, the inverse function
+-- theorem and the regularity of ODE solutions are used only in proofs; no declaration below
 -- exposes their APIs.
+import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
+import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.ODE.Transform
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.ODE.Regularity
 
 /-!
 # Negative gradient trajectories
@@ -50,11 +55,17 @@ route to Morse homology.
   critical points of `f`.
 * `IsIntegralCurveOn.hasDerivWithinAt_comp_neg_gradient`: derivative of `f` along a
   negative gradient trajectory.
+* `IsIntegralCurve.contDiff_neg_gradient`: a global trajectory of a `Cⁿ` function, `1 ≤ n`, is
+  `Cⁿ`.
 * `IsIntegralCurveOn.antitoneOn_comp_neg_gradient` and
   `IsIntegralCurveOn.strictAntiOn_comp_neg_gradient`: Lyapunov monotonicity and strict
   descent away from critical points.
 * `IsIntegralCurve.exists_pos_forall_dist_lt_mem_Ioo`: near a point which is not critical, a
-  global trajectory passes only at nearby times.
+  global trajectory passes only at nearby times; `IsIntegralCurve.comap_nhds_le_nhds` is the same
+  statement for filters.
+* `IsIntegralCurve.exists_contDiffAt_levelHittingTime`: near a point which is not critical, the
+  time at which a global trajectory of a `Cⁿ` function reaches a given level of `f` is `Cⁿ`: it
+  is a local inverse of `t ↦ f (γ t)`.
 * `IsIntegralCurveOn.intervalIntegrable_norm_gradient_sq`: finite energy on compact time
   intervals.
 * `IsIntegralCurveOn.integral_norm_gradient_sq_eq_sub` and
@@ -238,6 +249,17 @@ theorem hasDerivAt_comp_neg_gradient
   ((hγ.isIntegralCurveOn univ).hasDerivWithinAt_comp_neg_gradient (mem_univ t) hf).hasDerivAt
     univ_mem
 
+/-- **Trajectories are as regular as the function.** A global negative gradient trajectory of a
+`Cⁿ` function `f`, `1 ≤ n`, is `Cⁿ`: its velocity `-∇f(γ)` is the composite of the `Cⁿ⁻¹`
+gradient with the curve itself. -/
+theorem contDiff_neg_gradient (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) {n : ℕ∞}
+    (hf : ContDiff ℝ n f) (hn : 1 ≤ n) : ContDiff ℝ n γ := by
+  have hsub : ((n - 1 : ℕ∞) : WithTop ℕ∞) + 1 = n := by
+    exact_mod_cast tsub_add_cancel_of_le hn
+  have h := TauCeti.contDiff_succ_of_hasDerivAt (n := n - 1) (X := fun _ y ↦ -∇ f y)
+    ((hf.gradient_right (m := ((n - 1 : ℕ∞) : WithTop ℕ∞)) hsub.le).neg.comp contDiff_snd) hγ
+  rwa [hsub] at h
+
 /-- The value of `f` is antitone along a global negative gradient trajectory. -/
 theorem antitone_comp_neg_gradient
     (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) (hf : ∀ t, DifferentiableAt ℝ f (γ t)) :
@@ -255,6 +277,23 @@ theorem strictAnti_comp_neg_gradient
       (by_contra fun h ↦ hcrit t (gradient_eq_zero_of_not_differentiableAt h)))
     fun t ↦ neg_lt_zero.mpr (sq_pos_of_ne_zero (norm_ne_zero_iff.mpr (hcrit t)))
 
+/-- **Strict decrease at a regular point.** If `γ s₀` is not a critical point of `f`, then along
+the global negative gradient trajectory `γ` the value of `f` is larger than `f (γ s₀)` at all times
+just before `s₀`, and smaller at all times just after. -/
+theorem eventually_nhdsLT_lt_and_eventually_nhdsGT_lt_comp_neg_gradient
+    (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) {s₀ : ℝ} (hf : DifferentiableAt ℝ f (γ s₀))
+    (hcrit : ∇ f (γ s₀) ≠ 0) :
+    (∀ᶠ t in 𝓝[<] s₀, f (γ s₀) < f (γ t)) ∧ ∀ᶠ t in 𝓝[>] s₀, f (γ t) < f (γ s₀) := by
+  -- `-(f ∘ γ)` has positive derivative at `s₀`.
+  have hd := (hasDerivAt_comp_neg_gradient hγ hf).neg
+  have hpos : 0 < -(-‖∇ f (γ s₀)‖ ^ 2) := by
+    rw [neg_neg]; exact pow_pos (norm_pos_iff.2 hcrit) 2
+  refine ⟨?_, ?_⟩
+  · filter_upwards [hd.hasDerivWithinAt.eventually_nhdsLT_lt_of_pos hpos] with t ht
+    simpa only [Pi.neg_apply, Function.comp_apply, neg_lt_neg_iff] using ht
+  · filter_upwards [hd.hasDerivWithinAt.eventually_nhdsGT_lt_of_pos hpos] with t ht
+    simpa only [Pi.neg_apply, Function.comp_apply, neg_lt_neg_iff] using ht
+
 /-- **Near a regular point, a trajectory passes only at nearby times.** If `γ s₀` is not a
 critical point of `f`, then for every `δ > 0` there is a ball around `γ s₀` that the global
 negative gradient trajectory `γ` meets only at times within `δ` of `s₀`. The value of `f`
@@ -265,15 +304,10 @@ theorem exists_pos_forall_dist_lt_mem_Ioo
     {s₀ : ℝ} (hcrit : ∇ f (γ s₀) ≠ 0) {δ : ℝ} (hδ : 0 < δ) :
     ∃ r > 0, ∀ s, dist (γ s) (γ s₀) < r → s ∈ Ioo (s₀ - δ) (s₀ + δ) := by
   have hanti := antitone_comp_neg_gradient hγ hf
-  -- `-(f ∘ γ)` has positive derivative at `s₀`, so `f ∘ γ` drops strictly on both sides of `s₀`.
-  have hd := (hasDerivAt_comp_neg_gradient hγ (hf s₀)).neg
-  have hpos : 0 < -(-‖∇ f (γ s₀)‖ ^ 2) := by
-    rw [neg_neg]; exact pow_pos (norm_pos_iff.2 hcrit) 2
-  obtain ⟨t₁, ht₁, ht₁I⟩ := ((hd.hasDerivWithinAt.eventually_nhdsLT_lt_of_pos hpos).and
-    (Ioo_mem_nhdsLT (by linarith : s₀ - δ < s₀))).exists
-  obtain ⟨t₂, ht₂, ht₂I⟩ := ((hd.hasDerivWithinAt.eventually_nhdsGT_lt_of_pos hpos).and
-    (Ioo_mem_nhdsGT (by linarith : s₀ < s₀ + δ))).exists
-  simp only [Pi.neg_apply, Function.comp_apply, neg_lt_neg_iff] at ht₁ ht₂
+  obtain ⟨hlt, hgt⟩ :=
+    eventually_nhdsLT_lt_and_eventually_nhdsGT_lt_comp_neg_gradient hγ (hf s₀) hcrit
+  obtain ⟨t₁, ht₁, ht₁I⟩ := (hlt.and (Ioo_mem_nhdsLT (by linarith : s₀ - δ < s₀))).exists
+  obtain ⟨t₂, ht₂, ht₂I⟩ := (hgt.and (Ioo_mem_nhdsGT (by linarith : s₀ < s₀ + δ))).exists
   -- Points close to `γ s₀` have values of `f` strictly between those at `t₁` and `t₂`.
   set ε := min (f (γ t₁) - f (γ s₀)) (f (γ s₀) - f (γ t₂))
   have hε0 : 0 < ε := lt_min (by linarith) (by linarith)
@@ -290,6 +324,70 @@ theorem exists_pos_forall_dist_lt_mem_Ioo
     have := hanti (show t₂ ≤ s by linarith [ht₂I.2])
     simp only [Function.comp_apply] at this
     linarith [min_le_right (f (γ t₁) - f (γ s₀)) (f (γ s₀) - f (γ t₂))]
+
+/-- **Near a regular point, a trajectory passes only at nearby times**, in the language of
+filters: if `γ s₀` is not a critical point of `f`, the times at which the global negative gradient
+trajectory `γ` is close to `γ s₀` are close to `s₀`. This is the form in which bump functions at
+`γ s₀` are localized in time along `γ`
+(`TauCeti.exists_contDiff_tsupport_subset_integral_comp_mul_pos`). -/
+theorem comap_nhds_le_nhds (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x))
+    (hf : ∀ t, DifferentiableAt ℝ f (γ t)) {s₀ : ℝ} (hcrit : ∇ f (γ s₀) ≠ 0) :
+    comap γ (𝓝 (γ s₀)) ≤ 𝓝 s₀ := by
+  intro S hS
+  obtain ⟨δ, hδ, hδS⟩ := Metric.mem_nhds_iff.1 hS
+  obtain ⟨r, hr, hrs⟩ := hγ.exists_pos_forall_dist_lt_mem_Ioo hf hcrit hδ
+  exact mem_comap.2 ⟨Metric.ball (γ s₀) r, Metric.ball_mem_nhds _ hr,
+    fun s hs ↦ hδS (by rw [Real.ball_eq_Ioo]; exact hrs s hs)⟩
+
+/-- **The level-hitting time near a regular point.** Let `f` be `Cⁿ`, `n ≠ 0`, and `γ` a negative
+gradient trajectory with `∇f(γ s₀) ≠ 0`, so that `γ` is `Cⁿ` as well. Then `f ∘ γ` has a local
+inverse `σ` near `s₀`, of class `Cⁿ` on an open set `T` containing `f (γ s₀)`:
+`f (γ (σ a)) = a` for `a ∈ T`, and `σ (f (γ s)) = s` for `s` near `s₀`. So for `f x ∈ T`,
+`σ (f x)` is the time at which the trajectory reaches the level of `f` at `x`. -/
+theorem exists_contDiffAt_levelHittingTime (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x)) {n : ℕ∞}
+    (hf : ContDiff ℝ n f) (hn0 : (n : WithTop ℕ∞) ≠ 0) {s₀ : ℝ} (hcrit : ∇ f (γ s₀) ≠ 0) :
+    ∃ σ : ℝ → ℝ, ∃ T : Set ℝ, IsOpen T ∧ f (γ s₀) ∈ T ∧ (∀ a ∈ T, ContDiffAt ℝ n σ a) ∧
+      (∀ a ∈ T, f (γ (σ a)) = a) ∧ ∀ᶠ s in 𝓝 s₀, σ (f (γ s)) = s := by
+  have hγn := hγ.contDiff_neg_gradient hf (Order.one_le_iff_ne_zero.2 (by exact_mod_cast hn0))
+  have hφ (t : ℝ) := hγ.hasDerivAt_comp_neg_gradient (t := t) (hf.differentiable hn0 _)
+  have hφ0 : -‖∇ f (γ s₀)‖ ^ 2 ≠ 0 := by simpa using hcrit
+  have hφn : ContDiff ℝ n (f ∘ γ) := hf.comp hγn
+  -- The inverse function theorem for `f ∘ γ`, whose derivative `-‖∇f(γ t)‖²` is nonzero at `s₀`.
+  set Φ := hφn.contDiffAt.toOpenPartialHomeomorph (f ∘ γ) ((hφ s₀).hasFDerivAt_equiv hφ0) hn0
+  have hs₀ : s₀ ∈ Φ.source :=
+    hφn.contDiffAt.mem_toOpenPartialHomeomorph_source ((hφ s₀).hasFDerivAt_equiv hφ0) hn0
+  have hinv : Φ.symm (f (γ s₀)) = s₀ := Φ.left_inv hs₀
+  have hgc : Continuous fun t ↦ ∇ f (γ t) :=
+    (hf.continuous_gradient hn0).comp hγ.continuous
+  refine ⟨Φ.symm, Φ.target ∩ Φ.symm ⁻¹' {t | ∇ f (γ t) ≠ 0},
+    Φ.isOpen_inter_preimage_symm (isOpen_ne_fun hgc continuous_const),
+    ⟨Φ.map_source hs₀, by simpa [hinv] using hcrit⟩,
+    fun a ha ↦ Φ.contDiffAt_symm_deriv (by simpa using ha.2) ha.1 (hφ _) hφn.contDiffAt,
+    fun a ha ↦ Φ.right_inv ha.1, ?_⟩
+  filter_upwards [Φ.open_source.mem_nhds hs₀] with s hs using Φ.left_inv hs
+
+/-- Along a negative gradient trajectory from `p` at `-∞` to `q` at `+∞`, the value of `f` lies
+between `f q` and `f p`, since it decreases. -/
+theorem mem_Icc_comp_neg_gradient (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x))
+    (hf : ∀ t, DifferentiableAt ℝ f (γ t)) {p q : E} (hfp : ContinuousAt f p)
+    (hfq : ContinuousAt f q) (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q))
+    (s : ℝ) : f (γ s) ∈ Icc (f q) (f p) :=
+  ⟨(hγ.antitone_comp_neg_gradient hf).le_of_tendsto (hfq.tendsto.comp htop) s,
+    (hγ.antitone_comp_neg_gradient hf).ge_of_tendsto (hfp.tendsto.comp hbot) s⟩
+
+/-- Along a negative gradient trajectory from `p` at `-∞` to `q` at `+∞`, the value of `f` at a
+point which is not a critical point lies strictly between `f q` and `f p`: it decreases, strictly
+near that point. -/
+theorem mem_Ioo_comp_neg_gradient (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x))
+    (hf : ∀ t, DifferentiableAt ℝ f (γ t)) {p q : E} (hfp : ContinuousAt f p)
+    (hfq : ContinuousAt f q) (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 q))
+    {s₀ : ℝ} (hcrit : ∇ f (γ s₀) ≠ 0) : f (γ s₀) ∈ Ioo (f q) (f p) := by
+  obtain ⟨hlt, hgt⟩ :=
+    eventually_nhdsLT_lt_and_eventually_nhdsGT_lt_comp_neg_gradient hγ (hf s₀) hcrit
+  obtain ⟨t₁, ht₁⟩ := hlt.exists
+  obtain ⟨t₂, ht₂⟩ := hgt.exists
+  exact ⟨(hγ.mem_Icc_comp_neg_gradient hf hfp hfq hbot htop t₂).1.trans_lt ht₂,
+    ht₁.trans_le (hγ.mem_Icc_comp_neg_gradient hf hfp hfq hbot htop t₁).2⟩
 
 /-- **Energy identity for a global negative gradient trajectory.**  The drop in `f` between two
 times equals the integral of the squared norm of its gradient along the trajectory. -/
@@ -354,10 +452,9 @@ value `f p` all along it, so its gradient vanishes there and the trajectory stay
 theorem eq_const_of_tendsto (hγ : IsIntegralCurve γ (fun _ x ↦ -∇ f x))
     (hf : ∀ t, DifferentiableAt ℝ f (γ t)) {p : E} (hfp : ContinuousAt f p)
     (hbot : Tendsto γ atBot (𝓝 p)) (htop : Tendsto γ atTop (𝓝 p)) : γ = fun _ ↦ p := by
-  have hanti := antitone_comp_neg_gradient hγ hf
   have hval : ∀ t, f (γ t) = f p := fun t ↦
-    le_antisymm (hanti.ge_of_tendsto (hfp.tendsto.comp hbot) t)
-      (hanti.le_of_tendsto (hfp.tendsto.comp htop) t)
+    have h := hγ.mem_Icc_comp_neg_gradient hf hfp hfp hbot htop t
+    le_antisymm h.2 h.1
   have hconst : ∀ t, γ t = γ 0 := fun t ↦
     is_const_of_deriv_eq_zero (fun t ↦ (hγ t).differentiableAt) (fun u ↦ by
       simp only [(hγ u).deriv, gradient_eq_zero_of_eventually_const_value hγ
