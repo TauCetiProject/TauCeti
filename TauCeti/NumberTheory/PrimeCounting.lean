@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Order.Floor.Semiring
 public import Mathlib.NumberTheory.PrimeCounting
 public import Mathlib.Topology.Algebra.GroupWithZero
 import Mathlib.Tactic.Linarith
+import TauCeti.Data.Nat.Interval
 import TauCeti.Order.Filter.AtTopBot
 
 /-!
@@ -23,6 +24,9 @@ first `k` primes do.
 
 There are at most `n` primes `p ≤ n`, and iterating the same unit-step bound shows that an
 interval `(x, x + y]` of length `y ≥ 0` contains at most `y + 1` primes.
+
+The number of primes in a closed interval `[l, u]` of natural numbers is `π(u) - π'(l)`, where
+`π'(l)` counts the primes less than `l` (`Nat.card_filter_Icc_prime`).
 
 The same comparison applies to any sequence of cutoffs `B k` tending to infinity such that,
 eventually, each interval `(B k, B (k + 1)]` contains at most one prime: the products over the
@@ -49,6 +53,7 @@ convergence of the cutoffs therefore transports in both directions with this exp
   first primes in increasing order.
 * `Nat.prod_primesLE_eq_prod_range_nth`: a product over the primes `p ≤ n` is the product over
   the first `π n` primes.
+* `Nat.card_filter_Icc_prime`: the number of primes in `[l, u]` is `π(u) - π'(l)`.
 * `Nat.primeCounting_le_self`, `Nat.primeCounting_floor_add_sub_le_add_one`: there are at most
   `n` primes `p ≤ n`, and at most `y + 1` primes in an interval `(x, x + y]`.
 * `Nat.primeCounting_floor_add_sub_le_max`: an interval `(x, x + y]` with `x < 0` contains no
@@ -147,6 +152,13 @@ theorem primeCounting_add_le_add (m k : ℕ) : primeCounting (m + k) ≤ primeCo
 theorem primeCounting_le_self (n : ℕ) : primeCounting n ≤ n := by
   rw [← primesLE_card_eq_primeCounting, primesLE_eq_filter_Ioc_zero]
   exact (card_filter_le _ _).trans (by simp)
+
+/-- The number of primes in `[l, u]` is `π(u) - π'(l)`, with natural-number subtraction, where
+`π'(l)` is the number of primes less than `l`. For `l > u` the interval is empty and both sides
+are zero. -/
+theorem card_filter_Icc_prime (l u : ℕ) :
+    #{p ∈ Icc l u | p.Prime} = primeCounting u - primeCounting' l := by
+  rw [primeCounting_eq_primeCounting'_succ, primeCounting', card_filter_Icc_eq_count_sub]
 
 /-- In an ordered commutative ring with a floor, an interval `(x, x + y]` of length `y ≥ 0`
 contains at most `y + 1` primes. -/

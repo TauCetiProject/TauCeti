@@ -6,7 +6,9 @@ Authors: Arend Mellendijk, OpenAI Codex
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Data.Nat.Count
 public import Mathlib.Order.Interval.Finset.Nat
+import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Data.Nat.Factorization.Basic
 
 /-!
@@ -17,6 +19,10 @@ This supplies the exact local counts for interval sieves. A sum over the multipl
 `[1, K]` is the sum over `p * k` for `k ∈ [1, K / p]`.
 The counting argument is adapted from [Arend Mellendijk, PNT+, BrunTitchmarsh.lean]
 (https://github.com/TauCetiProject/PrimeNumberTheoremAnd/blob/7c7892801a0937aa6925e531a5e2c105bd20690b/PrimeNumberTheoremAnd/BrunTitchmarsh.lean).
+
+For a decidable predicate `p`, the number of `n` in a closed interval `[l, u]` satisfying `p` is
+the difference `Nat.count p (u + 1) - Nat.count p l` of two initial counts
+(`Nat.card_filter_Icc_eq_count_sub`).
 
 A window `[lo, a + b)` whose lower end `lo` is at least the truncated difference `a - b` has at
 most `2 * b` elements. This covers both `[a - b, a + b)`, the `k` with `a ≤ k + b` and
@@ -63,11 +69,32 @@ theorem sum_Icc_filter_dvd_eq {M : Type*} [AddCommMonoid M] (g : ℕ → M) (p K
     rw [Nat.le_div_iff_mul_le hp', mul_comm] at hkK
     exact ⟨⟨Nat.one_le_iff_ne_zero.mpr (mul_ne_zero hp (by omega)), hkK⟩, dvd_mul_right p k⟩
 
-/-- A window `[lo, a + b)` whose lower end `lo` is at least the truncated difference `a - b` has
+/-- For a decidable predicate `p`, the number of `n` in a closed interval `[l, u]` satisfying `p` is
+the difference `Nat.count p (u + 1) - Nat.count p l` of two initial counts
+(`Nat.card_filter_Icc_eq_count_sub`).
+
+A window `[lo, a + b)` whose lower end `lo` is at least the truncated difference `a - b` has
 at most `2 * b` elements. The bound is attained by `[a - b, a + b)` when `b ≤ a`. -/
 theorem card_Ico_add_le_two_mul_of_sub_le (a b : ℕ) {lo : ℕ} (h : a - b ≤ lo) :
     (Finset.Ico lo (a + b)).card ≤ 2 * b := by
   rw [card_Ico]
   omega
+
+/-- The number of `n` in `[l, u]` satisfying `p` is `Nat.count p (u + 1) - Nat.count p l`, with
+natural-number subtraction. For `l > u` the interval is empty and both sides are zero.
+
+This is the splitting of a filtered initial range at `l` with which Mathlib's
+`Nat.primeCounting'_add_le` begins, stated for an arbitrary decidable predicate and as an
+equality. -/
+theorem card_filter_Icc_eq_count_sub (p : ℕ → Prop) [DecidablePred p] (l u : ℕ) :
+    ((Finset.Icc l u).filter p).card = count p (u + 1) - count p l := by
+  rcases le_or_gt l (u + 1) with h | h
+  · have hsplit := Finset.sum_range_add_sum_Ico (fun n ↦ if p n then 1 else 0) h
+    rw [← Finset.Ico_add_one_right_eq_Icc, Finset.card_filter, count_eq_card_filter_range,
+      count_eq_card_filter_range, Finset.card_filter, Finset.card_filter, ← hsplit,
+      Nat.add_sub_cancel_left]
+  · rw [Finset.Icc_eq_empty (by omega), Finset.filter_empty, Finset.card_empty, eq_comm,
+      Nat.sub_eq_zero_iff_le]
+    exact count_monotone p (by omega)
 
 end Nat
