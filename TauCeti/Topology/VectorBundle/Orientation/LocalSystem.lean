@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Tensor
 public import TauCeti.Topology.Homotopy.Monodromy.Basic
 public import TauCeti.Topology.IsLocalHomeomorph.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Fiberwise
-import TauCeti.Topology.VectorBundle.Orientation.Cover.Transport
+public import TauCeti.Topology.VectorBundle.Orientation.Cover.Transport
 
 import Mathlib.Algebra.Category.ModuleCat.Projective
 import TauCeti.Topology.Homotopy.Covering
@@ -37,6 +37,11 @@ in which Thom and Euler classes of bundles without a chosen orientation live; a 
 identifies cohomology twisted by it with ordinary cohomology. Independently of orientability,
 `TauCeti.VectorBundleOrientationCover.signLocalSystemTensorIso` identifies its tensor square
 with the constant coefficient system: evaluate both factors at either orientation and multiply.
+For a local system `N` with coefficients in the same universe, evaluation at an orientation of
+`E_b` identifies the fibre of the twisted system `N ⊗ o(E)` over `b` with the fibre of `N`
+(`TauCeti.VectorBundleOrientationCover.tensorSignLocalSystemFiberEquiv`); along a path, these
+identifications turn transport in `N ⊗ o(E)` into transport in `N` when orientation
+transport carries the first orientation to the second.
 If `2 = 0` in `R`, as for `R = 𝔽₂`, the system itself is constant without any orientation
 (`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfTwoEqZero`): evaluation at either
 orientation of a fibre gives the same value, since `-1 = 1` in `R`.
@@ -60,7 +65,9 @@ Isomorphic bundles have isomorphic orientation local systems. A fibrewise isomor
 a map of double covers, so pulling functions on orientations back along it is an isomorphism
 `o(E) ≅ o(E')` (`TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise`, by
 `IsCoveringMap.signLocalSystemIsoOfMap`). Hence homology and cohomology twisted by the
-orientation local system depend only on the isomorphism class of the bundle.
+orientation local system depend only on the isomorphism class of the bundle. Tensored with itself,
+this isomorphism carries the canonical pairing `o(E) ⊗ o(E) ≅ R` to that of `o(E')`
+(`signLocalSystemIsoOfFiberwise_hom_tensorHom_signLocalSystemTensorIso_hom`).
 
 Every loop acts on a fibre of `o(E)` by `1` or by `-1`
 (`VectorBundleOrientationCover.monodromyRepresentation_signLocalSystem_eq_one_or_eq_neg_one`).
@@ -76,6 +83,8 @@ two orientations of a fibre, and it projects to a loop whose monodromy exchanges
   functions on orientations.
 * `TauCeti.VectorBundleOrientationCover.signLocalSystemFiberEquiv`: evaluation at an orientation
   of the fibre.
+* `TauCeti.VectorBundleOrientationCover.tensorSignLocalSystemFiberEquiv`: evaluation at an
+  orientation of the fibre of a local system twisted by the orientation system.
 * `TauCeti.VectorBundleOrientation.signLocalSystemIso`: the trivialization given by an
   orientation.
 * `TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise`: the isomorphism of
@@ -306,6 +315,22 @@ theorem signLocalSystemFiberEquiv_map {b b' : B}
     (IsIso.hom_inv_id p)
   exact congrArg _ (h'.trans (congrFun (isCoveringMap_proj (F := F) (E := E) hι).monodromy_refl _))
 
+/-- Transport in the orientation local system along a path which carries the orientation `o` at its
+start to the orientation `o'` at its end, in the sense of
+`TauCeti.VectorBundleOrientationCover.orientationTransport`, carries the value at `o` to the value
+at `o'`. -/
+theorem signLocalSystemFiberEquiv_transport_mk {b b' : B} (γ : Path b b')
+    {o : Orientation ℝ (E b) ι} {o' : Orientation ℝ (E b') ι}
+    (h : orientationTransport E hι γ o = o')
+    (f : (signLocalSystem F E R hι).obj (FundamentalGroupoid.mk b)) :
+    signLocalSystemFiberEquiv hι o'
+        (LocalCoefficientSystem.transport (signLocalSystem F E R hι) (.mk γ) f) =
+      signLocalSystemFiberEquiv hι o f := by
+  rw [LocalCoefficientSystem.transport_apply]
+  refine signLocalSystemFiberEquiv_map hι _ ?_ f
+  rw [orientationTransport_apply] at h
+  rw [← h, ← fiberEquiv_symm_apply (b := b'), Equiv.symm_apply_apply]
+
 /-- **Transport over a trivializing set**: along a path in the base set of a linear trivialization
 `e`, transport in the orientation local system carries the element with value `r` at the orientation
 read as `ω` at the start to the element with value `r` at the orientation read as `ω` at the end. -/
@@ -493,6 +518,83 @@ theorem signLocalSystemTensorIso_inv_app_mul {x : B} (o : Orientation ℝ (E x) 
     (FundamentalGroupoid.mk x)
     (⟨⟨x, o⟩, rfl⟩ : (proj ⁻¹' {x} : Set (VectorBundleOrientationCover F E ι))) a b
 
+variable (N : LocalCoefficientSystem.{max uB uE uι, uB, max uB uE uι} S (TopCat.of B))
+
+omit [FiniteDimensional ℝ F] in
+/-- **A local system twisted by the orientation system, read at an orientation.** For a local
+system `N`, evaluation at an orientation `o` of `E_b` identifies the fibre of `N ⊗ o(E)` over `b`
+with the fibre of `N`, sending `n ⊗ φ` to `φ(o) • n` (`tensorSignLocalSystemFiberEquiv_tmul`). The
+opposite orientation gives the opposite identification
+(`tensorSignLocalSystemFiberEquiv_neg`). -/
+def tensorSignLocalSystemFiberEquiv {b : B} (o : Orientation ℝ (E b) ι) :
+    (N ⊗ signLocalSystem F E S hι).obj (FundamentalGroupoid.mk b) ≃ₗ[S]
+      N.obj (FundamentalGroupoid.mk b) :=
+  (TensorProduct.congr (LinearEquiv.refl S _) (signLocalSystemFiberEquiv hι o)).trans
+    (TensorProduct.rid S _)
+
+omit [FiniteDimensional ℝ F] in
+/-- Evaluation at `o` sends `n ⊗ φ` to `φ(o) • n`. -/
+theorem tensorSignLocalSystemFiberEquiv_tmul {b : B} (o : Orientation ℝ (E b) ι)
+    (n : N.obj (FundamentalGroupoid.mk b))
+    (φ : (signLocalSystem F E S hι).obj (FundamentalGroupoid.mk b)) :
+    tensorSignLocalSystemFiberEquiv hι N o (n ⊗ₜ[S] φ) = signLocalSystemFiberEquiv hι o φ • n :=
+  TensorProduct.rid_tmul _ _
+
+omit [FiniteDimensional ℝ F] in
+/-- The inverse of evaluation at `o` sends `n` to `n ⊗ φ`, for the element `φ` of the fibre of
+`o(E)` with value `1` at `o`. -/
+theorem tensorSignLocalSystemFiberEquiv_symm_apply {b : B} (o : Orientation ℝ (E b) ι)
+    (n : N.obj (FundamentalGroupoid.mk b)) :
+    (tensorSignLocalSystemFiberEquiv hι N o).symm n =
+      n ⊗ₜ[S] (signLocalSystemFiberEquiv hι o).symm 1 :=
+  (tensorSignLocalSystemFiberEquiv hι N o).symm_apply_eq.2 (by
+    rw [tensorSignLocalSystemFiberEquiv_tmul, LinearEquiv.apply_symm_apply, one_smul])
+
+omit [FiniteDimensional ℝ F] in
+/-- Evaluation at the opposite orientation is the negative of evaluation at `o`. -/
+theorem tensorSignLocalSystemFiberEquiv_neg {b : B} (o : Orientation ℝ (E b) ι)
+    (c : (N ⊗ signLocalSystem F E S hι).obj (FundamentalGroupoid.mk b)) :
+    tensorSignLocalSystemFiberEquiv hι N (-o) c = -tensorSignLocalSystemFiberEquiv hι N o c := by
+  -- Both sides are linear in `c`, and they agree on pure tensors.
+  have h : (tensorSignLocalSystemFiberEquiv hι N (-o)).toLinearMap =
+      -(tensorSignLocalSystemFiberEquiv hι N o).toLinearMap :=
+    TensorProduct.ext' fun n φ ↦
+      ((tensorSignLocalSystemFiberEquiv_tmul hι N (-o) n φ).trans (by
+        rw [signLocalSystemFiberEquiv_neg, neg_smul])).trans
+        (congrArg Neg.neg (tensorSignLocalSystemFiberEquiv_tmul hι N o n φ)).symm
+  exact LinearMap.congr_fun h c
+
+omit [FiniteDimensional ℝ F] in
+/-- Transport in `N ⊗ o(E)` along a path which carries the orientation `o` at its start to the
+orientation `o'` at its end, in the sense of
+`TauCeti.VectorBundleOrientationCover.orientationTransport`, is transport in `N`, once the fibres
+are read at `o` and at `o'`. -/
+theorem tensorSignLocalSystemFiberEquiv_transport_mk {b b' : B} (γ : Path b b')
+    {o : Orientation ℝ (E b) ι} {o' : Orientation ℝ (E b') ι}
+    (h : orientationTransport E hι γ o = o')
+    (c : (N ⊗ signLocalSystem F E S hι).obj (FundamentalGroupoid.mk b)) :
+    tensorSignLocalSystemFiberEquiv hι N o'
+        (LocalCoefficientSystem.transport (N ⊗ signLocalSystem F E S hι) (.mk γ) c) =
+      LocalCoefficientSystem.transport N (.mk γ) (tensorSignLocalSystemFiberEquiv hι N o c) := by
+  -- Both sides are linear in `c`, and they agree on pure tensors.
+  have hlin : (tensorSignLocalSystemFiberEquiv hι N o').toLinearMap ∘ₗ
+      (LocalCoefficientSystem.transport (N ⊗ signLocalSystem F E S hι) (.mk γ)).toLinearMap =
+      (LocalCoefficientSystem.transport N (.mk γ)).toLinearMap ∘ₗ
+        (tensorSignLocalSystemFiberEquiv hι N o).toLinearMap :=
+    TensorProduct.ext' fun n φ ↦ calc
+      tensorSignLocalSystemFiberEquiv hι N o'
+          (LocalCoefficientSystem.transport (N ⊗ signLocalSystem F E S hι) (.mk γ) (n ⊗ₜ[S] φ))
+      _ = signLocalSystemFiberEquiv hι o'
+            (LocalCoefficientSystem.transport (signLocalSystem F E S hι) (.mk γ) φ) •
+          LocalCoefficientSystem.transport N (.mk γ) n := by
+        rw [LocalCoefficientSystem.transport_tensor_tmul, tensorSignLocalSystemFiberEquiv_tmul]
+      _ = LocalCoefficientSystem.transport N (.mk γ) (signLocalSystemFiberEquiv hι o φ • n) := by
+        rw [signLocalSystemFiberEquiv_transport_mk hι γ h, map_smul]
+      _ = LocalCoefficientSystem.transport N (.mk γ)
+          (tensorSignLocalSystemFiberEquiv hι N o (n ⊗ₜ[S] φ)) := by
+        rw [tensorSignLocalSystemFiberEquiv_tmul]
+  exact LinearMap.congr_fun hlin c
+
 end Tensor
 
 section Fiberwise
@@ -571,6 +673,40 @@ theorem signLocalSystemObjEquiv_signLocalSystemIsoOfFiberwise_inv_app_apply
         (proj ⁻¹' {x.as} : Set (VectorBundleOrientationCover F' E' ι)) → R) ⟨⟨x.as, o⟩, rfl⟩ := by
   rw [← signLocalSystemObjEquiv_signLocalSystemIsoOfFiberwise_hom_app_apply (hφ := hφ) (o := o),
     ← ModuleCat.comp_apply, Iso.inv_hom_id_app, ModuleCat.id_apply]
+
+section Tensor
+
+open MonoidalCategory
+
+variable {S : Type (max uB uE uι)} [CommRing S]
+
+/-- **The tensor pairing of orientation local systems is natural in bundle isomorphisms.** The
+isomorphism `o(E) ≅ o(E')` induced by a fibrewise isomorphism `φ b : E'_b ≃ E_b`, tensored with
+itself, carries the canonical pairing `o(E) ⊗ o(E) ≅ S` to the canonical pairing of `o(E')`
+(`TauCeti.VectorBundleOrientationCover.signLocalSystemTensorIso`). -/
+@[reassoc]
+theorem signLocalSystemIsoOfFiberwise_hom_tensorHom_signLocalSystemTensorIso_hom :
+    ((signLocalSystemIsoOfFiberwise S hι hι' hφ).hom ⊗ₘ
+        (signLocalSystemIsoOfFiberwise S hι hι' hφ).hom) ≫ (signLocalSystemTensorIso hι').hom =
+      (signLocalSystemTensorIso hι).hom :=
+  (isCoveringMap_proj hι').signLocalSystemIsoOfMap_hom_tensorHom_signLocalSystemTensorIso_hom
+    deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι' h) (surjective_proj hι') (isCoveringMap_proj hι)
+    (proj_comp_map hι' hφ) (map_comp_deck hι' hφ) deck_ne_self (fun _ _ h ↦ eq_or_eq_deck hι h)
+    (surjective_proj hι)
+
+/-- The inverse of the canonical pairing `o(E) ⊗ o(E) ≅ S`, followed by the tensor square of the
+isomorphism `o(E) ≅ o(E')` induced by a fibrewise isomorphism, is the inverse of the canonical
+pairing of `o(E')`. -/
+@[reassoc]
+theorem signLocalSystemTensorIso_inv_signLocalSystemIsoOfFiberwise_hom_tensorHom :
+    (signLocalSystemTensorIso hι).inv ≫
+      ((signLocalSystemIsoOfFiberwise S hι hι' hφ).hom ⊗ₘ
+        (signLocalSystemIsoOfFiberwise S hι hι' hφ).hom) =
+      (signLocalSystemTensorIso hι').inv := by
+  rw [Iso.inv_comp_eq, Iso.eq_comp_inv,
+    signLocalSystemIsoOfFiberwise_hom_tensorHom_signLocalSystemTensorIso_hom]
+
+end Tensor
 
 end Fiberwise
 

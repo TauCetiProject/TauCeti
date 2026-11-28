@@ -21,6 +21,8 @@ approximants converge to `t` as `n → ∞`.
 
 * `TauCeti.dyadicNNRat`: the `k`-th level-`n` dyadic nonnegative rational `k / 2 ^ n : ℚ≥0`,
   with `TauCeti.dyadicNNRat_strictMono` and `TauCeti.dyadicNNRat_add`.
+* `TauCeti.strictMono_coe_dyadicNNRat`: the coerced level-`n` dyadic grid
+  `k ↦ (dyadicNNRat n k : ℝ≥0)` is strictly increasing.
 * `TauCeti.dyadicNNRat_double` and `TauCeti.dyadicNNRat_scale`: nesting identities across dyadic
   levels.
 * `TauCeti.dist_dyadicNNRat_succ` and `TauCeti.edist_dyadicNNRat_succ`: adjacent dyadic grid points
@@ -69,6 +71,13 @@ theorem dyadicNNRat_add (n k i : ℕ) :
 @[simp]
 theorem coe_dyadicNNRat (n k : ℕ) : (dyadicNNRat n k : ℝ≥0) = (k : ℝ≥0) / 2 ^ n := by
   simp [dyadicNNRat_def]
+
+/-- The coerced level-`n` dyadic grid `k ↦ (dyadicNNRat n k : ℝ≥0)` is strictly increasing. -/
+theorem strictMono_coe_dyadicNNRat (n : ℕ) :
+    StrictMono (fun k ↦ (dyadicNNRat n k : ℝ≥0)) :=
+  fun _ _ hij ↦ by
+    simpa only [coe_dyadicNNRat] using
+      div_lt_div_of_pos_right (Nat.cast_lt.mpr hij) (by positivity)
 
 /-- A level-`n` dyadic rational lies in `[0, N]` if and only if its numerator is at most
 `N * 2 ^ n`. -/

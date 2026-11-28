@@ -195,6 +195,18 @@ noncomputable def detLineCoprodMapEquiv (hι : ∀ l, D₂' (ι l) = D₂ l)
     (surjective_mkQ_comp_parameterProj hι h) hι' (LinearMap.exact_map_mkQ_range ι)
     (Submodule.mkQ_surjective _)
 
+/-- `ContinuousLinearMap.detLineCoprodMapEquiv` is the cancellation
+(`TauCeti.detLineShortExactCancelEquiv`) of the common quotient `Λ' ⧸ range ι` of the short exact
+sequences `0 → ker (D₁.coprod D₂) → ker (D₁.coprod D₂') → Λ' ⧸ range ι → 0` and
+`0 → Λ → Λ' → Λ' ⧸ range ι → 0`. -/
+theorem detLineCoprodMapEquiv_def (hι : ∀ l, D₂' (ι l) = D₂ l) (hι' : Function.Injective ι)
+    (h : Function.Surjective (D₁.coprod D₂)) [FiniteDimensional 𝕜 (D₁.coprod D₂).ker] :
+    detLineCoprodMapEquiv D₁ hι hι' h =
+      TauCeti.detLineShortExactCancelEquiv (kerCoprodMap_injective hι hι') (exact_kerCoprodMap hι)
+        (surjective_mkQ_comp_parameterProj hι h) hι' (LinearMap.exact_map_mkQ_range ι)
+        (Submodule.mkQ_surjective _) :=
+  (rfl)
+
 /-- **The value of `ContinuousLinearMap.detLineCoprodMapEquiv`.** It sends the image of `a ⊗ w`
 under the short exact sequence `0 → ker (D₁.coprod D₂) → ker (D₁.coprod D₂') → Λ' ⧸ range ι → 0`,
 tensored with `φ`, to `a ⊗ ψ`, where `ψ` takes the value of `φ` on the image of `a' ⊗ w` under

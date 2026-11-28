@@ -54,8 +54,8 @@ along field and completion isomorphisms.
 * `Set.MapsTo.ringHom_pow`: if a ring endomorphism `f` maps `A` into itself, so does `f ^ n`.
 * `RingEquiv.exists_eq_sq_sub_mul_sq_map_iff`: a ring equivalence preserves solvability of
   `b = x² - a y²`.
-* `RingHom.toMonoidHom_comp`: converting a composition of ring homomorphisms to a monoid
-  homomorphism commutes with composition.
+* `RingHom.toMonoidHom_comp`: converting a composite ring homomorphism to a monoid homomorphism
+  gives the composite of the converted monoid homomorphisms.
 -/
 
 public section
@@ -159,12 +159,11 @@ end RingEquiv
 
 namespace RingHom
 
-/-- Converting a composition of ring homomorphisms to a monoid homomorphism commutes with
-composition. -/
-@[simp]
-theorem toMonoidHom_comp {α β γ : Type*} [NonAssocSemiring α] [NonAssocSemiring β]
-    [NonAssocSemiring γ] (g : β →+* γ) (f : α →+* β) :
-    ((g.comp f : α →+* γ) : α →* γ) = (g : β →* γ).comp (f : α →* β) :=
-  rfl
+/-- Viewing a composite ring homomorphism as a monoid homomorphism gives the composite of the
+converted monoid homomorphisms. -/
+theorem toMonoidHom_comp {R S T : Type*} [NonAssocSemiring R] [NonAssocSemiring S]
+    [NonAssocSemiring T] (g : S →+* T) (f : R →+* S) :
+    (g.comp f).toMonoidHom = g.toMonoidHom.comp f.toMonoidHom :=
+  MonoidHom.ext fun _ ↦ by simp [RingHom.toMonoidHom_eq_coe]
 
 end RingHom

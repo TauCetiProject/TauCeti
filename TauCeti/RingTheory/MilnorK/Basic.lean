@@ -28,14 +28,14 @@ commutative ring the same presentation gives the naive Milnor K-theory.
 The degree-`n` Milnor K-group `TauCeti.MilnorK.degree R n` is the subgroup spanned by the symbols
 of length `n`, which is the image of the degree-`n` tensors. This file develops the presentation:
 symbols and their multilinearity and Steinberg relations, the universal property for maps into
-rings, functoriality in the ring and on each degree (`TauCeti.MilnorK.mapDegree`), the grading
-submodules, and the identifications of degree zero with `ℤ` and of degree one with `Rˣ`. Over a
-field, the degree-one classes anticommute, so swapping two adjacent entries negates a symbol, and
-`{a, a} = {a, -1}`. These classes need not vanish, so the Milnor ring is not an exterior algebra.
-The grade involution `σ`, which is `(-1) ^ n` in degree `n`, records the resulting graded
-commutativity `x y = (-1) ^ (m n) y x`. Permutation-sign rules and general repeated-entry
-torsion live in `TauCeti.RingTheory.MilnorK.Permutation`, while characteristic-`2` / finite-field
-corollaries and finite-field vanishing live in `TauCeti.FieldTheory.MilnorK.Basic`.
+rings, functoriality in the ring, the grading submodules, and the identifications of degree zero
+with `ℤ` and of degree one with `Rˣ`. Over a field, the degree-one classes anticommute, so
+swapping two adjacent entries negates a symbol, and `{a, a} = {a, -1}`. These classes need not
+vanish, so the Milnor ring is not an exterior algebra. The grade involution `σ`, which is
+`(-1) ^ n` in degree `n`, records the resulting graded commutativity `x y = (-1) ^ (m n) y x`.
+Permutation-sign rules and general repeated-entry torsion live in
+`TauCeti.RingTheory.MilnorK.Permutation`, while finite-field vanishing lives in
+`TauCeti.FieldTheory.MilnorK.FiniteField`.
 
 ## Main definitions
 
@@ -50,8 +50,7 @@ corollaries and finite-field vanishing live in `TauCeti.FieldTheory.MilnorK.Basi
 * `TauCeti.MilnorK.degree R n`: the degree-`n` Milnor K-group, as a `ℤ`-submodule.
 * `TauCeti.MilnorK.lift`: the ring homomorphism out of `MilnorK R` attached to an additive map
   `Rˣ → A` killing the Steinberg products.
-* `TauCeti.MilnorK.map`: the ring homomorphism induced by a ring homomorphism `R →+* S`, and
-  `TauCeti.MilnorK.mapDegree`: the induced `ℤ`-linear map `degree R n →ₗ[ℤ] degree S n`.
+* `TauCeti.MilnorK.map`: the ring homomorphism induced by a ring homomorphism `R →+* S`.
 * `TauCeti.MilnorK.degreeZeroEquiv`, `TauCeti.MilnorK.degreeOneEquiv`: `ℤ ≃ K_0ᴹ(R)` and
   `Additive Rˣ ≃ K_1ᴹ(R)`.
 * `TauCeti.MilnorK.involute`: the grade involution `σ`, sending `{a}` to `-{a}`.
@@ -59,16 +58,19 @@ corollaries and finite-field vanishing live in `TauCeti.FieldTheory.MilnorK.Basi
 ## Main results
 
 * `TauCeti.MilnorK.ofUnit_mul_ofUnit_of_add_eq_one`: the Steinberg relation `{a} {b} = 0` for
-  `a + b = 1`, and `TauCeti.MilnorK.symbol_append_cons_cons_of_add_eq_one` for two neighbouring
-  entries of any symbol.
-* `TauCeti.MilnorK.symbol_append_cons_mul`, `TauCeti.MilnorK.symbol_append_cons_pow`: symbols
+  `a + b = 1`, `TauCeti.MilnorK.isSteinbergPairing_mul_ofUnit` for the resulting Steinberg pairing,
+  and `TauCeti.MilnorK.symbol_append_cons_cons_of_add_eq_one` for two neighbouring entries of any
+  symbol.
+* `TauCeti.MilnorK.symbol_append_cons_mul`, `TauCeti.MilnorK.symbol_append_cons_pow`,
+  `TauCeti.MilnorK.symbol_append_cons_inv`, `TauCeti.MilnorK.symbol_append_cons_zpow`: symbols
   are additive in every entry.
 * `TauCeti.MilnorK.ringHom_ext`: ring homomorphisms out of `MilnorK R` agreeing on degree-one
   classes are equal.
 * `TauCeti.MilnorK.lift_mem_of_mem_degree`: `lift` sends `degree R n` into the `n`-th piece of a
   graded target when the additive map lands in its degree-one piece.
-* `TauCeti.MilnorK.degree_eq_span`, `TauCeti.MilnorK.mem_degree_iff`: the degree-`n` group is
-  spanned by the symbols of length `n`, and is the image of the degree-`n` tensors.
+* `TauCeti.MilnorK.degree_eq_span`, `TauCeti.MilnorK.mem_degree_iff`,
+  `TauCeti.MilnorK.degree_eq_map_range_pow`: the degree-`n` group is spanned by the symbols of
+  length `n`, and is the image of the degree-`n` tensors.
 * `TauCeti.MilnorK.degree_induction_on`: induction principle for elements of `degree R n`.
 * `TauCeti.MilnorK.iSup_degree_eq_top`, `TauCeti.MilnorK.span_range_symbol`: the degree
   submodules exhaust `MilnorK R`, and the symbols span it.
@@ -78,9 +80,11 @@ corollaries and finite-field vanishing live in `TauCeti.FieldTheory.MilnorK.Basi
 * `TauCeti.MilnorK.instGradedMonoidDegree`: the degree submodules make `MilnorK R` a graded monoid.
 * `TauCeti.MilnorK.instCharZero`, `TauCeti.MilnorK.ofUnit_injective`: `ℤ` and `Rˣ` embed.
 * `TauCeti.MilnorK.ofUnit_mul_ofUnit_neg_self`, `TauCeti.MilnorK.ofUnit_mul_ofUnit_comm`,
-  `TauCeti.MilnorK.ofUnit_mul_ofUnit_self`, `TauCeti.MilnorK.symbol_append_cons_cons_swap`: over a
-  field, `{a, -a} = 0`, `{a, b} = -{b, a}`, `{a, a} = {a, -1}`, and swapping adjacent entries
-  negates a symbol.
+  `TauCeti.MilnorK.ofUnit_mul_ofUnit_self`, `TauCeti.MilnorK.two_nsmul_ofUnit_mul_ofUnit_self`,
+  `TauCeti.MilnorK.ofUnit_mul_ofUnit_self_eq_zero_of_charTwo`,
+  `TauCeti.MilnorK.symbol_append_cons_cons_swap`: over a field, `{a, -a} = 0`, `{a, b} = -{b, a}`,
+  `{a, a} = {a, -1}`, `2 • {a, a} = 0` (`{a, a} = 0` in characteristic `2`), and swapping
+  adjacent entries negates a symbol.
 * `TauCeti.MilnorK.symbol_append_cons_cons_self`: over a field, `{…, a, a, …} = {…, a, -1, …}`.
 * `TauCeti.MilnorK.involute_of_mem_degree`: `σ` is multiplication by `(-1) ^ n` on `K_nᴹ(R)`.
 * `TauCeti.MilnorK.ofUnit_mul_involute`, `TauCeti.MilnorK.mul_comm_of_mem_degree`: over a field,
@@ -238,12 +242,15 @@ theorem ofUnit_mul_ofUnit_of_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) :
     ofUnit a * ofUnit b = 0 := by
   rw [ofUnit, ofUnit, ← map_mul, mk_ι_mul_ι_of_add_eq_one h]
 
-/-- The product of two degree-one unit classes defines a Steinberg pairing on `R`. -/
-theorem isSteinbergPairing_ofUnit_mul :
+/-- The degree-two product `(a, b) ↦ ofUnit a * ofUnit b` in `MilnorK R` is a Steinberg
+pairing. -/
+theorem isSteinbergPairing_mul_ofUnit :
     IsSteinbergPairing (fun a b : Rˣ ↦ ofUnit a * ofUnit b) where
   map_mul_left a₁ a₂ b := by rw [ofUnit_mul, add_mul]
   map_mul_right a b₁ b₂ := by rw [ofUnit_mul, mul_add]
-  steinberg := ofUnit_mul_ofUnit_of_add_eq_one
+  map_one_left b := by simp
+  map_one_right a := by simp
+  map_add_eq_one _ _ hab := ofUnit_mul_ofUnit_of_add_eq_one hab
 
 /-- The **Milnor symbol** `{a₁, …, aₙ}` of a list of units: the ordered product of their
 degree-one classes. The empty symbol is `1`. -/
@@ -606,30 +613,6 @@ theorem map_mem_degree {S : Type*} [CommRing S] (f : R →+* S) {n : ℕ} {x : M
     (hx : x ∈ degree R n) : map f x ∈ degree S n :=
   lift_mem_of_mem_degree _ _ (fun _ ↦ ofUnit_mem_degree_one _) hx
 
-/-- The degree-`n` `ℤ`-linear map `MilnorK.degree R n →ₗ[ℤ] MilnorK.degree S n` induced by `f`. -/
-def mapDegree {S : Type*} [CommRing S] (f : R →+* S) (n : ℕ) : degree R n →ₗ[ℤ] degree S n :=
-  (map f).toIntAlgHom.toLinearMap.restrict fun _ hx ↦ map_mem_degree f hx
-
-/-- Underlying value of `mapDegree f n x`. -/
-@[simp]
-theorem mapDegree_apply {S : Type*} [CommRing S] (f : R →+* S) (n : ℕ) (x : degree R n) :
-    (mapDegree f n x : MilnorK S) = map f x.val :=
-  congrArg Subtype.val (LinearMap.restrict_apply
-    (f := (map f).toIntAlgHom.toLinearMap) (fun _ hx ↦ map_mem_degree f hx) x)
-
-/-- `MilnorK.mapDegree` preserves the identity ring homomorphism. -/
-@[simp]
-theorem mapDegree_id (n : ℕ) : mapDegree (RingHom.id R) n = LinearMap.id := by
-  ext x
-  rw [mapDegree_apply, map_id, RingHom.id_apply, LinearMap.id_apply]
-
-/-- `MilnorK.mapDegree` preserves composition of ring homomorphisms. -/
-theorem mapDegree_comp {S T : Type*} [CommRing S] [CommRing T] (g : S →+* T) (f : R →+* S)
-    (n : ℕ) : mapDegree (g.comp f) n = (mapDegree g n).comp (mapDegree f n) := by
-  ext x
-  rw [LinearMap.comp_apply, mapDegree_apply, mapDegree_apply, mapDegree_apply, map_comp,
-    RingHom.comp_apply]
-
 /-! ### The grade involution -/
 
 section Involute
@@ -795,40 +778,27 @@ variable {F : Type*} [Field F]
 
 /-- Over a field, `{a, -a} = 0` for every unit `a`. -/
 @[simp]
-theorem ofUnit_mul_ofUnit_neg_self (a : Fˣ) : ofUnit a * ofUnit (-a) = 0 := by
-  by_cases ha : a = 1
-  · simp [ha]
-  have ha' : (a : F) ≠ 1 := fun h ↦ ha (Units.ext h)
-  have h₁ : (1 : F) - a ≠ 0 := sub_ne_zero.2 ha'.symm
-  have h₂ : (1 : F) - (a : F)⁻¹ ≠ 0 :=
-    sub_ne_zero.2 fun h ↦ ha' (by simpa using congrArg Inv.inv h.symm)
-  have hneg : -a = Units.mk0 _ h₁ / Units.mk0 _ h₂ := by
-    ext
-    simp only [Units.val_neg, Units.val_div_eq_div_val, Units.val_mk0]
-    rw [eq_div_iff h₂]
-    field_simp
-    ring
-  have hv : ofUnit a⁻¹ * ofUnit (Units.mk0 _ h₂) = 0 :=
-    ofUnit_mul_ofUnit_of_add_eq_one (by simp)
-  rw [hneg, ofUnit_div, mul_sub, ofUnit_mul_ofUnit_of_add_eq_one (by simp), zero_sub, neg_eq_zero]
-  rwa [ofUnit_inv, neg_mul, neg_eq_zero] at hv
+theorem ofUnit_mul_ofUnit_neg_self (a : Fˣ) : ofUnit a * ofUnit (-a) = 0 :=
+  isSteinbergPairing_mul_ofUnit.map_neg_self a
 
 /-- Over a field, the degree-one classes anticommute: `{a, b} = -{b, a}`. -/
-theorem ofUnit_mul_ofUnit_comm (a b : Fˣ) : ofUnit a * ofUnit b = -(ofUnit b * ofUnit a) := by
-  have h₁ : ofUnit a * ofUnit (-(a * b)) = ofUnit a * ofUnit b := by
-    rw [← neg_mul, ofUnit_mul, mul_add, ofUnit_mul_ofUnit_neg_self, zero_add]
-  have h₂ : ofUnit b * ofUnit (-(a * b)) = ofUnit b * ofUnit a := by
-    rw [← mul_neg, ofUnit_mul, mul_add, ofUnit_mul_ofUnit_neg_self, add_zero]
-  have h := ofUnit_mul_ofUnit_neg_self (a * b)
-  rw [ofUnit_mul, add_mul, h₁, h₂] at h
-  exact eq_neg_of_add_eq_zero_left h
+theorem ofUnit_mul_ofUnit_comm (a b : Fˣ) : ofUnit a * ofUnit b = -(ofUnit b * ofUnit a) :=
+  isSteinbergPairing_mul_ofUnit.map_swap a b
 
 /-- Over a field, `{a, a} = {a, -1}`. Unlike in an exterior algebra, this class need not vanish:
 `{-1, -1} ≠ 0` over `ℝ` (Weibel, Example III.7.2(c)). -/
-theorem ofUnit_mul_ofUnit_self (a : Fˣ) : ofUnit a * ofUnit a = ofUnit a * ofUnit (-1) := by
-  have h := ofUnit_mul_ofUnit_neg_self a
-  rw [← neg_one_mul a, ofUnit_mul, mul_add] at h
-  rw [eq_neg_of_add_eq_zero_right h, neg_ofUnit_mul_ofUnit_neg_one]
+theorem ofUnit_mul_ofUnit_self (a : Fˣ) : ofUnit a * ofUnit a = ofUnit a * ofUnit (-1) :=
+  isSteinbergPairing_mul_ofUnit.map_self a
+
+/-- Over a field, `2 • (ofUnit a * ofUnit a) = 0`. -/
+theorem two_nsmul_ofUnit_mul_ofUnit_self (a : Fˣ) : 2 • (ofUnit a * ofUnit a) = 0 :=
+  isSteinbergPairing_mul_ofUnit.two_nsmul_map_self a
+
+/-- In characteristic `2`, `ofUnit a * ofUnit a = 0`. -/
+@[simp]
+theorem ofUnit_mul_ofUnit_self_eq_zero_of_charTwo [CharP F 2] (a : Fˣ) :
+    ofUnit a * ofUnit a = 0 :=
+  isSteinbergPairing_mul_ofUnit.map_self_of_charTwo a
 
 /-- Over a field, for units `a, b` with difference `h = a - b`,
 `{a, b} = {h, b} - {h, a} + {a, -1}`. Applied to two distinct monic polynomials of the same degree
