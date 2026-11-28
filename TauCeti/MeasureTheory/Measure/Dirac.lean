@@ -38,7 +38,8 @@ combinations of Dirac measures at its points, with nonnegative real weights summ
   measures exactly when they are topologically inseparable.
 * `MeasureTheory.Measure.dirac_le_iff_one_le_apply_singleton` — a measure dominates a unit point
   mass exactly when it gives the point mass at least one.
-* `MeasureTheory.Measure.support_dirac` — the topological support of a Dirac measure.
+* `MeasureTheory.Measure.support_dirac`, `MeasureTheory.Measure.isCompact_support_dirac` — the
+  topological support of a Dirac measure and its compactness in `R0Space`.
 * `TauCeti.MeasureTheory.measurePreserving_const_dirac` — a constant map out of a probability
   space onto a point `b` is measure preserving onto `Measure.dirac b`.
 * `MeasureTheory.Measure.eq_smul_dirac_of_forall_notMem` — a measure vanishing on measurable sets
@@ -124,6 +125,18 @@ theorem support_dirac [TopologicalSpace X] [OpensMeasurableSpace X] (a : X) :
   refine forall_congr' fun U ↦ imp.swap.trans <| forall_congr' fun hU ↦
     imp_congr_right fun _ ↦ ?_
   rw [pos_iff_ne_zero, Ne, dirac_eq_zero_iff_notMem hU.measurableSet, not_not]
+
+/-- In an `R0Space` (for instance any `T1Space` or `R1Space`), every Dirac measure has compact
+topological support. -/
+-- Simplify before `support_dirac` rewrites the support to `closure {a}`.
+@[simp↓]
+theorem isCompact_support_dirac [TopologicalSpace X] [OpensMeasurableSpace X] [R0Space X]
+    (a : X) : IsCompact (dirac a).support := by
+  rw [support_dirac]
+  refine isCompact_iff_finite_subcover.2 fun U hUo hU => ?_
+  obtain ⟨i, hi⟩ := Set.mem_iUnion.1 (hU (subset_closure (Set.mem_singleton a)))
+  refine ⟨{i}, fun x hx => Set.mem_biUnion (Finset.mem_singleton_self i) ?_⟩
+  exact ((specializes_iff_mem_closure.2 hx).inseparable.mem_open_iff (hUo i)).mp hi
 
 /-- A measure vanishing on every measurable set avoiding `x` is its total mass times the
 Dirac measure at `x`. No measurability assumption on `{x}` is needed. -/

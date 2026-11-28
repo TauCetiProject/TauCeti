@@ -166,12 +166,6 @@ theorem factor_apply (i : I) (a : A i) :
     factor φ hφ i a = ofAlgebraic φ hφ (ι ℂ A i a) := by
   simp [factor]
 
-private theorem iSup_range_comp_ι {B : Type*} [Semiring B] [Algebra ℂ B]
-    (f : LinearAlgebra.FreeProduct ℂ A →ₐ[ℂ] B) :
-    (⨆ i, (f.comp (ι ℂ A i)).range) = f.range := by
-  simp_rw [AlgHom.range_comp, ← (Subalgebra.gc_map_comap f).l_iSup,
-    iSup_range_ι, Algebra.map_top]
-
 /-- The canonical factor subalgebras generate a norm-dense subalgebra of `algebra φ hφ`. -/
 theorem topologicalClosure_iSup_range_factor :
     (⨆ i, (factor φ hφ i).toAlgHom.range).topologicalClosure = ⊤ := by

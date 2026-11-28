@@ -44,16 +44,18 @@ R-series equals its variance.
   `MeasureTheory.Measure.freeCumulant_eq_coeff_freeCumulantSeries`,
   `MeasureTheory.Measure.freeCumulant_succ_eq_coeff_rSeries`,
   `MeasureTheory.Measure.freeCumulant_zero`,
+  `MeasureTheory.Measure.zero_freeCumulant_succ`,
   `MeasureTheory.Measure.freeCumulant_one`,
   `MeasureTheory.Measure.freeCumulant_two_eq_variance`,
   `MeasureTheory.Measure.freeCumulant_integral_const_eq`,
+  `MeasureTheory.Measure.rSeries_zero`,
   `MeasureTheory.Measure.rSeries_dirac`,
   `MeasureTheory.Measure.freeCumulant_dirac`,
   `MeasureTheory.Measure.rSeries_map_affine`,
   `MeasureTheory.Measure.freeCumulant_one_map_affine`,
   `MeasureTheory.Measure.freeCumulant_map_affine`: characterization, coefficient, special-value,
-  Dirac, constant-word, and affine transport formulas for `MeasureTheory.Measure.freeCumulant` and
-  `MeasureTheory.Measure.rSeries`.
+  zero-measure, Dirac, constant-word, and affine transport formulas for
+  `MeasureTheory.Measure.freeCumulant` and `MeasureTheory.Measure.rSeries`.
 * `MeasureTheory.Measure.ext_of_rSeries_eq`,
   `MeasureTheory.Measure.eq_iff_rSeries_eq`,
   `MeasureTheory.Measure.eq_iff_forall_freeCumulant_eq`,
@@ -116,6 +118,18 @@ theorem freeCumulant_succ_eq_coeff_rSeries (μ : Measure ℝ) (n : ℕ) :
   rw [freeCumulant_eq_coeff_freeCumulantSeries, PowerSeries.coeff_zero_eq_constantCoeff_apply,
     TauCeti.constantCoeff_freeCumulantSeries]
 
+/-- Every positive-order free cumulant of the zero measure is `0`. -/
+@[simp] theorem zero_freeCumulant_succ (n : ℕ) : (0 : Measure ℝ).freeCumulant (n + 1) = 0 := by
+  rw [freeCumulant, TauCeti.freeCumulant_eq_sum_mu_mul_partitionMoment]
+  refine Finset.sum_eq_zero fun π _ => ?_
+  obtain ⟨B, hB, -⟩ := π.val.exists_mem (mem_univ (0 : Fin (n + 1)))
+  simp [TauCeti.partitionMoment_def, prod_eq_zero hB]
+
+/-- The formal R-series of the zero measure is `0`. -/
+@[simp] theorem rSeries_zero : (0 : Measure ℝ).rSeries = 0 := by
+  ext n
+  simp
+
 /-- The first free cumulant of any real Borel measure is its mean `∫ x, x ∂μ`. -/
 @[simp] theorem freeCumulant_one (μ : Measure ℝ) : μ.freeCumulant 1 = ∫ x, x ∂μ := by
   rw [freeCumulant_eq_coeff_freeCumulantSeries, TauCeti.coeff_one_freeCumulantSeries]; rfl
@@ -126,11 +140,19 @@ theorem freeCumulant_succ_eq_coeff_rSeries (μ : Measure ℝ) (n : ℕ) :
   rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply, coeff_rSeries, Nat.zero_add,
     freeCumulant_one]
 
+/-- The linear coefficient of the formal R-series of a square-integrable real random variable `X`
+equals its variance. -/
+theorem coeff_one_rSeries_integral_eq_variance {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [IsProbabilityMeasure μ] {X : Ω → ℝ} (hX : MemLp X 2 μ) :
+    PowerSeries.coeff 1 (TauCeti.rSeries (fun f : Ω → ℝ => ∫ ω, f ω ∂μ) X) = variance X μ := by
+  rw [← TauCeti.coeff_succ_freeCumulantSeries, TauCeti.coeff_two_freeCumulantSeries]
+  exact (variance_eq_sub hX).symm
+
 /-- The second free cumulant of a probability measure with finite second moment is its variance. -/
 theorem freeCumulant_two_eq_variance {μ : Measure ℝ} [IsProbabilityMeasure μ]
     (hμ : MemLp (id : ℝ → ℝ) 2 μ) : μ.freeCumulant 2 = variance id μ := by
-  rw [freeCumulant_eq_coeff_freeCumulantSeries, TauCeti.coeff_two_freeCumulantSeries]
-  exact (variance_eq_sub hμ).symm
+  rw [freeCumulant_succ_eq_coeff_rSeries, rSeries_def]
+  exact coeff_one_rSeries_integral_eq_variance hμ
 
 /-- Any constant-`id` integral free cumulant along a finite linear order reduces to
 `μ.freeCumulant #s`. -/
@@ -247,14 +269,6 @@ theorem coeff_zero_rSeries_integral {Ω : Type*} [MeasurableSpace Ω] (μ : Meas
 theorem coeff_zero_rSeries (μ : Measure ℝ) :
     PowerSeries.coeff 0 μ.rSeries = ∫ x, x ∂μ := by
   rw [PowerSeries.coeff_zero_eq_constantCoeff_apply, constantCoeff_rSeries]
-
-/-- The linear coefficient of the formal R-series of a square-integrable real random variable `X`
-equals its variance. -/
-theorem coeff_one_rSeries_integral_eq_variance {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
-    [IsProbabilityMeasure μ] {X : Ω → ℝ} (hX : MemLp X 2 μ) :
-    PowerSeries.coeff 1 (TauCeti.rSeries (fun f : Ω → ℝ => ∫ ω, f ω ∂μ) X) = variance X μ := by
-  rw [← TauCeti.coeff_succ_freeCumulantSeries, TauCeti.coeff_two_freeCumulantSeries]
-  exact (variance_eq_sub hX).symm
 
 /-- The linear coefficient of the formal R-series of a compactly supported probability measure
 equals its variance. -/

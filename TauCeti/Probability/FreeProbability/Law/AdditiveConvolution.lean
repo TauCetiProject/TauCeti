@@ -254,19 +254,8 @@ theorem support_freeConv_subset_Icc {μ ν : Measure ℝ} {α β γ δ : ℝ}
       (isCompact_Icc.of_isClosed_subset isClosed_support hμ)
       (isCompact_Icc.of_isClosed_subset isClosed_support hν)
   rw [freeConv_law_law hφ ha hfree]
-  refine (support_law_subset_spectrum φ _).trans fun x hx => ?_
-  have h0 := h0.subset.trans hμ
-  have h1 := h1.subset.trans hν
-  have hl : algebraMap ℝ A (α + γ) ≤ a 0 + a 1 := by
-    rw [map_add]
-    exact add_le_add ((algebraMap_le_iff_le_spectrum (ha 0)).2 fun y hy => (h0 hy).1)
-      ((algebraMap_le_iff_le_spectrum (ha 1)).2 fun y hy => (h1 hy).1)
-  have hu : a 0 + a 1 ≤ algebraMap ℝ A (β + δ) := by
-    rw [map_add]
-    exact add_le_add ((le_algebraMap_iff_spectrum_le (ha 0)).2 fun y hy => (h0 hy).2)
-      ((le_algebraMap_iff_spectrum_le (ha 1)).2 fun y hy => (h1 hy).2)
-  exact ⟨(algebraMap_le_iff_le_spectrum ((ha 0).add (ha 1))).1 hl x hx,
-    (le_algebraMap_iff_spectrum_le ((ha 0).add (ha 1))).1 hu x hx⟩
+  exact PositiveLinearMap.support_law_add_subset_Icc φ (ha 0) (ha 1)
+    (h0.subset.trans hμ) (h1.subset.trans hν)
 
 /-- Free convolution is commutative. -/
 theorem freeConv_comm (μ ν : Measure ℝ) : μ.freeConv ν = ν.freeConv μ := by

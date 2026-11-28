@@ -14,6 +14,7 @@ public import TauCeti.Probability.FreeProbability.WeakClosure
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Topology.ContinuousMap.Units
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Restrict
+import TauCeti.Analysis.RCLike.ContinuousMap
 import TauCeti.Analysis.VonNeumannAlgebra.Bicommutant
 import TauCeti.MeasureTheory.Measure.Support
 import TauCeti.Topology.Homeomorph.SetCongr
@@ -283,11 +284,8 @@ theorem generator_eq_factor (i : ι) :
 @[simp] theorem spectrum_generator (i : ι) : spectrum ℝ (generator μ i) = (μ i).support := by
   refine Set.Subset.antisymm ?_
     (law_generator μ i ▸ PositiveLinearMap.support_law_subset_spectrum (state μ) (generator μ i))
-  refine (AlgHom.spectrum_apply_subset ((factor μ i).toAlgHom.restrictScalars ℝ)
-    (factorCoordinate μ i)).trans ?_
-  rw [factorCoordinate, ContinuousMap.spectrum_realToRCLike, ContinuousMap.spectrum_eq_range]
-  rintro _ ⟨x, rfl⟩
-  exact x.property
+  exact (AlgHom.spectrum_apply_subset ((factor μ i).toAlgHom.restrictScalars ℝ)
+    (factorCoordinate μ i)).trans_eq (ContinuousMap.spectrum_realToRCLike_restrict_id ℂ _)
 
 /-- The canonical homeomorphism identifying `spectrum ℂ (generator μ i)` with `(μ i).support`. -/
 def spectrumHomeomorphSupport (i : ι) : spectrum ℂ (generator μ i) ≃ₜ (μ i).support :=
@@ -474,12 +472,10 @@ theorem vonNeumannState_mul_comm (x y : vonNeumannAlgebra μ) :
     vonNeumannState μ (x * y) = vonNeumannState μ (y * x) := by
   let s : Set (HilbertSpace μ →WOT[ℂ] HilbertSpace μ) :=
     ContinuousLinearMapWOT.ofCLM '' (algebra μ : Set (HilbertSpace μ →L[ℂ] HilbertSpace μ))
-  have hmul (A B : HilbertSpace μ →L[ℂ] HilbertSpace μ) :
-      (ContinuousLinearMapWOT.ofCLM A * ContinuousLinearMapWOT.ofCLM B).toCLM = A * B := by
-    rw [← ContinuousLinearMapWOT.ofCLM_mul, ContinuousLinearMapWOT.toCLM_ofCLM]
   have hs : ∀ a ∈ s, ∀ b ∈ s, vectorState μ (a * b).toCLM = vectorState μ (b * a).toCLM := by
     rintro _ ⟨A, hA, rfl⟩ _ ⟨B, hB, rfl⟩
-    simpa only [hmul, vectorState_apply, state_apply, MulMemClass.coe_mul] using
+    simpa only [ContinuousLinearMapWOT.toCLM_mul, ContinuousLinearMapWOT.toCLM_ofCLM,
+      vectorState_apply, state_apply, MulMemClass.coe_mul] using
       state_mul_comm μ ⟨A, hA⟩ ⟨B, hB⟩
   have hmem (z : vonNeumannAlgebra μ) :
       ContinuousLinearMapWOT.ofCLM (z : HilbertSpace μ →L[ℂ] HilbertSpace μ) ∈ closure s := by
@@ -487,7 +483,8 @@ theorem vonNeumannState_mul_comm (x y : vonNeumannAlgebra μ) :
     rw [← StarAlgebra.adjoin_eq (algebra μ), ← VonNeumannAlgebra.image_ofCLM_adjoin_eq_closure]
     exact ⟨z, z.property, rfl⟩
   have hc := continuous_wot_vectorState μ
-  simpa only [vonNeumannState_apply, MulMemClass.coe_mul, hmul] using
+  simpa only [vonNeumannState_apply, MulMemClass.coe_mul, ContinuousLinearMapWOT.toCLM_mul,
+    ContinuousLinearMapWOT.toCLM_ofCLM] using
     eqOn_closure₂' hs
       (fun a => hc.comp (continuous_const_mul a)) (fun b => hc.comp (continuous_mul_const b))
       (fun a => hc.comp (continuous_mul_const a)) (fun b => hc.comp (continuous_const_mul b))

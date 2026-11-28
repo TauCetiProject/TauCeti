@@ -29,11 +29,10 @@ cumulants, mean, and variance.
 * `MeasureTheory.Measure.isZeroOrProbabilityMeasure_freeConv`,
   `MeasureTheory.Measure.isProbabilityMeasure_freeConv_iff`,
   `MeasureTheory.Measure.freeConv_eq_zero_iff`: totalization and zero/probability iff lemmas.
-* `MeasureTheory.Measure.exists_isFreelyIndependentElements_law_add_eq_freeConv`,
-  `TauCeti.IsFreelyIndependent.law_add`,
+* `TauCeti.IsFreelyIndependent.law_add`,
   `TauCeti.FreeLawRealization.law_add_generator`,
-  `TauCeti.FreeLawRealization.law_add_vonNeumannGenerator`: binary realization and transport across
-  C⋆- and concrete von Neumann probability spaces.
+  `TauCeti.FreeLawRealization.law_add_vonNeumannGenerator`: subalgebra and canonical C⋆- and
+  concrete von Neumann transport for free additive convolution.
 * `MeasureTheory.Measure.freeConv_map_add`,
   `MeasureTheory.Measure.neg_freeConv_neg`: simultaneous translation and reflection laws.
 * `MeasureTheory.Measure.rSeries_freeConv`,
@@ -85,24 +84,6 @@ probability measure. -/
 @[simp] theorem freeConv_eq_zero_iff {μ ν : Measure ℝ} :
     μ.freeConv ν = 0 ↔ ¬μ.IsCompactProbabilityMeasure ∨ ¬ν.IsCompactProbabilityMeasure := by
   rw [eq_zero_iff_not_isProbabilityMeasure, isProbabilityMeasure_freeConv_iff, not_and_or]
-
-/-- **Binary C⋆-probability realization of `μ`, `ν`, and `μ.freeConv ν`.** -/
-theorem exists_isFreelyIndependentElements_law_add_eq_freeConv {μ ν : Measure ℝ}
-    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
-    (hμ : IsCompact μ.support) (hν : IsCompact ν.support) :
-    ∃ (A : Type) (_ : CStarAlgebra A) (_ : PartialOrder A) (_ : StarOrderedRing A)
-      (φ : A →ₚ[ℂ] ℂ) (g : Bool → A),
-      φ 1 = 1 ∧ TauCeti.IsFreelyIndependentElements φ.toLinearMap g ∧
-      IsSelfAdjoint (g true) ∧ IsSelfAdjoint (g false) ∧
-      spectrum ℝ (g true) = μ.support ∧ spectrum ℝ (g false) = ν.support ∧
-      φ.law (g true) = μ ∧ φ.law (g false) = ν ∧ φ.law (g true + g false) = μ.freeConv ν := by
-  obtain ⟨A, _, _, _, φ, a, hφ, ha, hfree, hl0, hl1, hs0, hs1⟩ :=
-    exists_isFreelyIndependentElements_law_eq_pair μ ν hμ hν
-  have hinj : Function.Injective (fun b : Bool => (cond b 0 1 : Fin 2)) := by
-    rintro (_ | _) (_ | _) h <;> simp_all
-  refine ⟨A, _, _, _, φ, fun b => a (cond b 0 1), hφ, hfree.comp hinj, ha 0, ha 1,
-    hs0, hs1, hl0, hl1, ?_⟩
-  simpa [hl0, hl1] using hfree.law_add hφ (by decide : (0 : Fin 2) ≠ 1) (ha 0) (ha 1)
 
 end MeasureTheory.Measure
 
@@ -168,15 +149,17 @@ theorem neg_freeConv_neg (μ ν : Measure ℝ) : μ.neg.freeConv ν.neg = (μ.fr
 theorem rSeries_freeConv {μ ν : Measure ℝ} [IsProbabilityMeasure μ]
     [IsProbabilityMeasure ν] (hμ : IsCompact μ.support) (hν : IsCompact ν.support) :
     (μ.freeConv ν).rSeries = μ.rSeries + ν.rSeries := by
-  obtain ⟨A, _, _, _, φ, g, hφ1, hfree, hgt, hgf, -, -, hlt, hlf, hladd⟩ :=
-    exists_isFreelyIndependentElements_law_add_eq_freeConv hμ hν
-  have h1 := φ.map_ofReal_rSeries_law hgt
-  have h2 := φ.map_ofReal_rSeries_law hgf
-  rw [hlt] at h1
-  rw [hlf] at h2
+  obtain ⟨A, _, _, _, φ, a, hφ1, ha, hfree, hl0, hl1, -, -⟩ :=
+    exists_isFreelyIndependentElements_law_eq_pair μ ν hμ hν
+  have hladd : φ.law (a 0 + a 1) = μ.freeConv ν := by
+    simpa [hl0, hl1] using hfree.law_add hφ1 (by decide : (0 : Fin 2) ≠ 1) (ha 0) (ha 1)
+  have h1 := φ.map_ofReal_rSeries_law (ha 0)
+  have h2 := φ.map_ofReal_rSeries_law (ha 1)
+  rw [hl0] at h1
+  rw [hl1] at h2
   apply PowerSeries.map_injective (Complex.ofRealHom : ℝ →+* ℂ) Complex.ofReal_injective
-  rw [map_add, ← hladd, φ.map_ofReal_rSeries_law (hgt.add hgf)]
-  exact (hfree.rSeries_add hφ1 Bool.false_ne_true.symm).trans
+  rw [map_add, ← hladd, φ.map_ofReal_rSeries_law ((ha 0).add (ha 1))]
+  exact (hfree.rSeries_add hφ1 (by decide : (0 : Fin 2) ≠ 1)).trans
     (by simpa using congrArg₂ (· + ·) h1.symm h2.symm)
 
 /-- **Additivity of free cumulants under free additive convolution.** -/

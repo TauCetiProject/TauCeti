@@ -95,6 +95,8 @@ theorem support_semicircleReal (a : ℝ) (v : ℝ≥0) :
   simp [sub_eq_add_neg]
 
 /-- Every centre/variance semicircle law has compact topological support. -/
+-- Simplify before `support_semicircleReal` rewrites the support to `Icc`.
+@[simp↓]
 theorem isCompact_support_semicircleReal (a : ℝ) (v : ℝ≥0) :
     IsCompact (semicircleReal a v).support := by
   rw [support_semicircleReal]
