@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPolynomial.Ideal
-import TauCeti.RingTheory.MvPolynomial.Ideal
+import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 
 /-!
 # Evaluation of monomials into ideal powers

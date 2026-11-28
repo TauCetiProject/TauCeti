@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPolynomial.Ideal
+public import TauCeti.RingTheory.MvPolynomial.Ideal.Basic
 import Mathlib.Algebra.CharP.Algebra
 import TauCeti.Algebra.MvPolynomial.Monomial
 
