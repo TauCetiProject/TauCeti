@@ -412,9 +412,20 @@ def supportedModuleHPresheafIsoSupportedSubmodule
     (h : ∀ q < n, IsZero (F.supportedModuleHSheaf S q)) (hZS : Z ≤ S) :
     F.supportedModuleHPresheaf Z n ≅
       ((F.supportedModuleHSheaf S n).supportedSubmoduleSheaf Z).obj :=
-  NatIso.ofComponents (fun W ↦ (F.supportedModuleHEdgeEquiv h hZS W.unop).toModuleIso) fun f ↦ by
-    ext x
-    exact Subtype.ext (F.coe_supportedModuleHEdgeEquiv_map h hZS (leOfHom f.unop) x)
+  NatIso.ofComponents (fun W ↦ (F.supportedModuleHEdgeEquiv h hZS W.unop).toModuleIso)
+    fun {W₁ W₂} f ↦ by
+      ext x
+      rw [ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply]
+      have hcomp : ∀ (W : (Opens X)ᵒᵖ) (y : F.supportedModuleH Z W.unop n),
+          (F.supportedModuleHEdgeEquiv h hZS W.unop).toModuleIso.hom y =
+            F.supportedModuleHEdgeEquiv h hZS W.unop y := fun _ _ ↦ by
+        simp [LinearEquiv.toModuleIso_hom]
+      refine Subtype.ext ?_
+      refine (congrArg Subtype.val (hcomp W₂ _)).trans ?_
+      refine (F.coe_supportedModuleHEdgeEquiv_map h hZS (leOfHom f.unop) x).trans ?_
+      refine (congrArg ((F.supportedModuleHSheaf S n).obj.map f)
+        (congrArg Subtype.val (hcomp W₁ x))).symm.trans ?_
+      exact ((F.supportedModuleHSheaf S n).coe_supportedSubmodulePresheaf_map_apply Z f _).symm
 
 /-- On sections over `W`, `CategoryTheory.Sheaf.supportedModuleHPresheafIsoSupportedSubmodule` acts
 by `CategoryTheory.Sheaf.supportedModuleHEdgeEquiv`. -/
@@ -676,8 +687,15 @@ lemma supportedModuleHHigherEdgeEquiv_map {j k : ℕ}
     F.supportedModuleHHigherEdgeEquiv h hZS W' hk
         ((F.supportedModuleHPresheaf Z k).map (homOfLE hW).op x) =
       ((F.supportedModuleHSheaf S n).supportedModuleHPresheaf Z j).map (homOfLE hW).op
-        (F.supportedModuleHHigherEdgeEquiv h hZS W hk x) :=
-  congr($((F.supportedModuleHPresheafEdgeIso h hZS hk).hom.naturality (homOfLE hW).op) x)
+        (F.supportedModuleHHigherEdgeEquiv h hZS W hk x) := by
+  refine (F.supportedModuleHHigherEdgeEquiv_apply h hZS W' hk _).trans ?_
+  rw [supportedModuleHHigherEdgeEquiv_apply]
+  have h1 := ModuleCat.comp_apply ((F.supportedModuleHPresheaf Z k).map (homOfLE hW).op)
+    ((F.supportedModuleHPresheafEdgeIso h hZS hk).hom.app (op W')) x
+  have h2 := congr($((F.supportedModuleHPresheafEdgeIso h hZS hk).hom.naturality (homOfLE hW).op) x)
+  have h3 := ModuleCat.comp_apply ((F.supportedModuleHPresheafEdgeIso h hZS hk).hom.app (op W))
+    (((F.supportedModuleHSheaf S n).supportedModuleHPresheaf Z j).map (homOfLE hW).op) x
+  exact h1.symm.trans (h2.trans h3)
 
 /-- **Degenerate edge comparison for local cohomology sheaves.** If the local cohomology sheaves
 `𝓗_S^q(F)` vanish for all `q ≤ k` with `q ≠ n` (where `n + j = k`), then for every closed `Z ≤ S`,

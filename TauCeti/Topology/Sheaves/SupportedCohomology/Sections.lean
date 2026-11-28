@@ -386,7 +386,11 @@ lemma supportedModuleHPresheafZeroIso_inv_app_apply
 lemma supportedModuleHPresheafZeroIso_hom_naturality (f : F ⟶ G) :
     (supportedModuleHPresheafFunctor S 0).map f ≫ (G.supportedModuleHPresheafZeroIso S).hom =
       (F.supportedModuleHPresheafZeroIso S).hom ≫ ((supportedSubmoduleFunctor S).map f).hom := by
-  refine supportedModuleHPresheaf_hom_ext fun W x ↦ Subtype.ext ?_
+  refine supportedModuleHPresheaf_hom_ext fun W x ↦ ?_
+  refine (supportedModuleHPresheaf_comp_app_apply ((supportedModuleHPresheafFunctor S 0).map f)
+    (G.supportedModuleHPresheafZeroIso S).hom W x).trans ?_
+  rw [supportedModuleHPresheaf_comp_app_apply]
+  refine Subtype.ext ?_
   refine (coe_supportedModuleHPresheafZeroIso_hom_app_apply S G W
     (((supportedModuleHPresheafFunctor S 0).map f).app W x)).trans ?_
   rw [supportedModuleHPresheafFunctor_map_app_apply]
