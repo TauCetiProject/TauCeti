@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Coordinates
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Parabolic
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Collection.Basic
-import Mathlib.GroupTheory.QuotientGroup.Basic
 import Mathlib.Data.List.Nodup
 
 /-!
@@ -72,135 +71,19 @@ private theorem punctured_lattice_mem (A : CommAlgCat ℤ) (i : Fin t.rank)
     exact Finset.mem_erase.mpr ⟨fun h => hγ.2 (congrArg Subtype.val h), Finset.mem_univ _⟩
   exact hle hg
 
-open scoped Classical in
-private theorem collect_punctured_of_commutator_bound {κ : Type*} [LinearOrder κ]
-    (A : CommAlgCat ℤ) (i : Fin t.rank) (key : PositiveRoot → κ)
-    (hcomm : ∀ α ∈ Finset.univ.erase (pin i), ∀ β ∈ Finset.univ.erase (pin i), α ≠ β →
-      ⁅(chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
-          D.isNilpotent_representation_rootGenerator α.val A).range,
-        (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
-          D.isNilpotent_representation_rootGenerator β.val A).range⁆ ≤
-        ⨆ γ ∈ {γ ∈ Finset.univ.erase (pin i) | max (key α) (key β) < key γ},
-          (chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
-            D.isNilpotent_representation_rootGenerator γ.val A).range)
-    (l : List PositiveRoot) (hl : l.Nodup) (hall : ∀ γ, γ ∈ l ↔ γ ≠ pin i)
-    (g : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] D.lattice))
-    (hg : g ∈ D.subsystemSubgroup
-      (posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i}) A) :
-    ∃ u : PositiveRoot → A,
-      (l.map fun γ => chevalleyRootSubgroup D.representation D.lattice
-        D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
-        γ.val A (ofAdd (u γ))).prod = g := by
-  exact (mem_biSup_range_iff_exists_list_prod_map hcomm hl
-    (fun γ => by simpa only [Finset.mem_erase, Finset.mem_univ, and_true] using hall γ)).mp
-      (punctured_lattice_mem D A i hg)
-
-private theorem collect_punctured_notG2
-    [(t.rationalRootSystem ht).IsNotG2] (A : CommAlgCat ℤ) (i : Fin t.rank)
-    (l : List PositiveRoot) (hl : l.Nodup) (hall : ∀ γ, γ ∈ l ↔ γ ≠ pin i)
-    (g : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] D.lattice))
-    (hg : g ∈ D.subsystemSubgroup
-      (posRoots (t.rationalRootSystem ht) (t.rationalBase ht) \ {t.simpleIndex ht i}) A) :
-    ∃ u : PositiveRoot → A,
-      (l.map fun γ => chevalleyRootSubgroup D.representation D.lattice
-        D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
-        γ.val A (ofAdd (u γ))).prod = g := by
-  classical
-  let X (γ : PositiveRoot) := chevalleyRootSubgroup D.representation D.lattice
-    D.representation_mem_lattice D.isNilpotent_representation_rootGenerator γ.val A
-  let S : Finset PositiveRoot := Finset.univ.erase (pin i)
-  have hcomm (α) (_ : α ∈ S) (β) (_ : β ∈ S) (_ : α ≠ β) :
-      ⁅(X α).range, (X β).range⁆ ≤
-        ⨆ γ ∈ {γ ∈ S | max ((t.rationalBase ht).height α.val)
-          ((t.rationalBase ht).height β.val) < (t.rationalBase ht).height γ.val},
-          (X γ).range := by
-    refine (commutator_range_chevalleyRootSubgroup_le D.representation D.lattice
-      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
-      α.property β.property A).trans (iSup₂_le fun γ hγ => ?_)
-    obtain ⟨hpos, hheight⟩ := Finset.mem_filter.mp hγ
-    have hpos' := (mem_posRootsFinset _ _ _).mp hpos
-    have hne : (⟨γ, hpos'⟩ : PositiveRoot) ≠ pin i := by
-      intro heq
-      have hroot : γ = t.simpleIndex ht i := congrArg Subtype.val heq
-      have hp := (t.rationalBase ht).isPos_iff.mp ((mem_posRoots _ _ _).mp α.property)
-      rw [hroot, (t.rationalBase ht).height_one_of_mem_support
-        (simpleIndex_mem_support i)] at hheight
-      omega
-    exact le_iSup_of_le ⟨γ, hpos'⟩ (le_iSup_of_le
-      (Finset.mem_filter.mpr ⟨Finset.mem_erase.mpr ⟨hne, Finset.mem_univ _⟩, hheight⟩) le_rfl)
-  exact collect_punctured_of_commutator_bound D A i _ hcomm l hl hall g hg
-
-private theorem collect_punctured_G2 {ht : G2.Valid} (D : ChevalleyDatum G2 ht)
-    (A : CommAlgCat ℤ) (i : Fin G2.rank)
-    (l : List {γ // γ ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht)})
-    (hl : l.Nodup) (hall : ∀ γ, γ ∈ l ↔ γ ≠ pin i)
-    (g : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] D.lattice))
-    (hg : g ∈ D.subsystemSubgroup
-      (posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) \ {G2.simpleIndex ht i}) A) :
-    ∃ u : {γ // γ ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht)} → A,
-      (l.map fun γ => chevalleyRootSubgroup D.representation D.lattice
-        D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
-        γ.val A (ofAdd (u γ))).prod = g := by
-  classical
-  let X (γ : {γ // γ ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht)}) :=
-    chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
-      D.isNilpotent_representation_rootGenerator γ.val A
-  let S := Finset.univ.erase (pin (ht := ht) i)
-  let e := g2PositiveRootEquiv ht
-  have hcomm (α) (_ : α ∈ S) (β) (_ : β ∈ S) (hne : α ≠ β) :
-      ⁅(X α).range, (X β).range⁆ ≤
-        ⨆ γ ∈ {γ ∈ S | max (e α) (e β) < e γ}, (X γ).range := by
-    let a := e α
-    let b := e β
-    have hab : a ≠ b := e.injective.ne hne
-    have hbound := commutator_range_chevalleyRootSubgroup_g2_le D.representation D.lattice
-      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator A a b hab
-    rw [castAdd_g2PositiveRootEquiv, castAdd_g2PositiveRootEquiv] at hbound
-    refine hbound.trans (iSup₂_le fun k hk => ?_)
-    let γ := e.symm k
-    have hγval : γ.val = Fin.castAdd 6 k := by
-      rw [← castAdd_g2PositiveRootEquiv ht γ, ← e.apply_symm_apply k]
-    have hk' : max α.val.val β.val.val < k.val := by
-      simpa only [Fin.lt_def, Fin.val_max, a, b, e, g2PositiveRootEquiv_apply_val] using hk
-    have hγ : γ ≠ pin i := by
-      intro heq
-      have heq' := congrArg (fun x => x.val.val) heq
-      have hi : i.val < 2 := i.isLt
-      have hne' : α.val.val ≠ β.val.val := by
-        simpa only [a, b, e, g2PositiveRootEquiv_apply_val] using Fin.val_injective.ne hab
-      simp only [hγval, pin, val_simpleIndex, Fin.val_castAdd] at heq'
-      omega
-    refine le_iSup_of_le γ (le_iSup_of_le
-      (Finset.mem_filter.mpr ⟨Finset.mem_erase.mpr ⟨hγ, Finset.mem_univ _⟩, by
-        simpa only [γ, e.apply_symm_apply] using hk⟩) ?_)
-    simp only [X, hγval, le_refl]
-  exact collect_punctured_of_commutator_bound D A i _ hcomm l hl hall g hg
-
 private theorem collect_punctured (A : Type v) [CommRing A] (i : Fin t.rank)
     (l : List PositiveRoot) (hl : l.Nodup) (hall : ∀ γ, γ ∈ l ↔ γ ≠ pin i)
     (g : D.points A) (hg : g ∈ D.puncturedPositivePoints A i) :
     ∃ u : PositiveRoot → A, (D.positiveRootProduct l A u : D.points A) = g := by
   obtain ⟨q, hq, hmatrix⟩ := D.mem_puncturedPositivePoints_iff.mp hg
-  have hprod : ∃ u : PositiveRoot → A,
-      (l.map fun γ => chevalleyRootSubgroup D.representation D.lattice
-        D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
-        γ.val (CommAlgCat.of ℤ A) (ofAdd (u γ))).prod = q := by
-    by_cases htG2 : t = G2
-    · subst t
-      exact collect_punctured_G2 D _ i l hl hall q hq
-    · have := isNotG2_rationalRootSystem_of_ne_G2 (ht := ht) htG2
-      exact collect_punctured_notG2 D _ i l hl hall q hq
+  have hprod := exists_prod_of_mem_iSup_punctured_posRoots_chevalleyRootSubgroup
+    D.representation D.lattice D.representation_mem_lattice
+    D.isNilpotent_representation_rootGenerator (CommAlgCat.of ℤ A) i l hl hall q
+    (punctured_lattice_mem D _ i hq)
   obtain ⟨u, hu⟩ := hprod
   refine ⟨u, Subtype.ext ?_⟩
   rw [D.coe_positiveRootProduct_eq_latticeProduct, hu]
   exact hmatrix
-
-/-- The punctured positive subgroup is normal in the positive point subgroup. -/
-instance normal_puncturedPositivePoints_subgroupOf (A : Type v) [CommRing A]
-    (i : Fin t.rank) :
-    ((D.puncturedPositivePoints A i).subgroupOf (D.positivePoints A)).Normal :=
-  Subgroup.normal_subgroupOf_of_le_normalizer
-    (D.positivePoints_le_normalizer_puncturedPositivePoints A i)
 
 private theorem simple_mem_punctured (A : Type v) [CommRing A] (i : Fin t.rank)
     (a : A) (ha : D.rootSubgroupPoints (t.simpleIndex ht i) A (ofAdd a) ∈
@@ -214,15 +97,15 @@ private theorem simple_mem_punctured (A : Type v) [CommRing A] (i : Fin t.rank)
   obtain ⟨u, hu⟩ := collect_punctured D A i l hl hall _ ha
   have hupdate : D.positiveRootProduct l A (Function.update u p 0) =
       D.positiveRootProduct l A u := by
-    apply (D.positiveRootProduct_inj l hl A).mpr
+    apply D.positiveRootProduct_congr
     intro γ hγ
     exact Function.update_of_ne ((hall γ).mp hγ) _ _
   have hsingle : D.positiveRootProduct l A (Pi.single p a) = 1 := by
-    apply Subtype.ext
-    rw [coe_positiveRootProduct, Subgroup.coe_one]
-    exact List.prod_eq_one fun x hx => by
-      obtain ⟨γ, hγ, rfl⟩ := List.mem_map.mp hx
-      simp [Pi.single_eq_of_ne ((hall γ).mp hγ)]
+    calc
+      D.positiveRootProduct l A (Pi.single p a) = D.positiveRootProduct l A 0 :=
+        D.positiveRootProduct_congr l A fun γ hγ =>
+          Pi.single_eq_of_ne ((hall γ).mp hγ) _
+      _ = 1 := D.positiveRootProduct_zero l A
   have heq : D.positiveRootProduct (p :: l) A (Function.update u p 0) =
       D.positiveRootProduct (p :: l) A (Pi.single p a) := by
     apply Subtype.ext
@@ -246,17 +129,14 @@ theorem rootSubgroupPoints_simpleIndex_mem_puncturedPositivePoints_iff
   · rintro rfl
     simp
 
-private noncomputable def positiveRootHom (A : Type v) [CommRing A] (γ : PositiveRoot) :
-    Multiplicative A →* D.positivePoints A :=
-  (D.rootSubgroupPoints γ.val A).codRestrict _
-    (D.rootSubgroupPoints_mem_positivePoints A γ.property)
-
 @[simp]
 private theorem positiveRootHom_pin_apply (A : Type v) [CommRing A] (i : Fin t.rank)
     (u : Multiplicative A) :
     positiveRootHom D A (pin i) u =
       ⟨D.rootSubgroupPoints (t.simpleIndex ht i) A u,
-        D.rootSubgroupPoints_mem_positivePoints A (simpleIndex_mem_posRoots i) u⟩ := rfl
+        D.rootSubgroupPoints_mem_positivePoints A (simpleIndex_mem_posRoots i) u⟩ := by
+  apply Subtype.ext
+  exact D.coe_positiveRootHom A (pin i) u
 
 private theorem lift_punctured_simple_factorization (A : Type v) [CommRing A]
     (i : Fin t.rank) (g : D.positivePoints A) (v : D.points A)

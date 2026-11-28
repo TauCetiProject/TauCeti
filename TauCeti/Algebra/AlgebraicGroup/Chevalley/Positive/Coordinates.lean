@@ -69,6 +69,15 @@ theorem coe_positiveRootProduct (l : List PositiveRoot) (A : Type v) [CommRing A
       (l.map fun γ => D.rootSubgroupPoints γ.val A (ofAdd (u γ))).prod :=
   (rfl)
 
+/-- Positive-root products agree whenever their parameters agree on the listed roots.
+The list may contain repetitions. -/
+theorem positiveRootProduct_congr (l : List PositiveRoot) (A : Type v) [CommRing A]
+    {u v : PositiveRoot → A} (huv : ∀ γ ∈ l, u γ = v γ) :
+    D.positiveRootProduct l A u = D.positiveRootProduct l A v := by
+  ext1
+  simp only [coe_positiveRootProduct]
+  exact congrArg List.prod (List.map_congr_left fun γ hγ => by rw [huv γ hγ])
+
 /-- The empty positive-root product is the identity element of `D.positivePoints A`. -/
 @[simp]
 theorem positiveRootProduct_nil (A : Type v) [CommRing A] (u : PositiveRoot → A) :
@@ -195,10 +204,7 @@ theorem positiveRootProduct_inj (l : List PositiveRoot) (hl : l.Nodup)
     intro γ hγ
     simpa only [extend, dite_eq_left γ.property] using
       hparams γ.val (List.mem_map.mpr ⟨γ, hγ, rfl⟩)
-  · intro huv
-    ext1
-    simp only [coe_positiveRootProduct]
-    exact congrArg List.prod (List.map_congr_left fun γ hγ => by rw [huv γ hγ])
+  · exact D.positiveRootProduct_congr l A
 
 /-- For any Chevalley datum, an ordered enumeration of all positive roots without repetitions
 gives an injective parameter map. The value ring is arbitrary. -/
