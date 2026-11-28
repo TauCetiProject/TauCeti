@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Differentials.Presheaf
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Pullback
+public import TauCeti.AlgebraicGeometry.Restrict
 import TauCeti.AlgebraicGeometry.Modules.AffineRestriction
 import TauCeti.AlgebraicGeometry.Modules.Differentials.Quasicoherent
 import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
@@ -211,10 +212,11 @@ theorem relativeDifferential_appLE (f : X ⟶ S) (V : S.Opens) (U : X.Opens)
   have e := congr(($h).app U t)
   refine (congrArg ((absoluteToRelative f).app U)
     (cotangentMap_app_pullbackSectionsLE_d R f V U hUV b).symm).trans ?_
-  exact e
+  simpa only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply,
+    Scheme.Modules.Hom.zero_app, AddCommGrpCat.hom_zero, AddMonoidHom.zero_apply] using e
 
 /-- The universal relative derivation of the structure sheaf for a morphism of schemes. -/
-def relativeDerivation (f : X ⟶ S) :
+def universalDerivation (f : X ⟶ S) :
     PresheafOfModulesOfCommRing.Derivation f.relativeDifferentials.val f.c where
   d := ((X.universalDerivation (ULift.{u} ℤ)).postcomp (absoluteToRelative f).val).d
   d_mul := ((X.universalDerivation (ULift.{u} ℤ)).postcomp (absoluteToRelative f).val).d_mul
@@ -226,9 +228,50 @@ def relativeDerivation (f : X ⟶ S) :
 
 /-- The universal relative derivation sends a local function to its relative differential. -/
 @[simp]
-theorem relativeDerivation_d (f : X ⟶ S) (U : X.Opens) (a : Γ(X, U)) :
+theorem universalDerivation_d (f : X ⟶ S) (U : X.Opens) (a : Γ(X, U)) :
     dsimp% only [CategoryTheory.ObjectProperty.ι_obj]
-    (f.relativeDerivation.d (X := op U) a = f.relativeDifferential U a) := (rfl)
+    (f.universalDerivation.d (X := op U) a = f.relativeDifferential U a) := (rfl)
+
+/-- Relative differentiation commutes with restriction to a smaller open. -/
+@[simp]
+theorem relativeDifferential_restrict (f : X ⟶ S) {U V : X.Opens} (i : V ⟶ U)
+    (a : Γ(X, U)) :
+    f.relativeDifferential V (X.presheaf.map i.op a) =
+      f.relativeDifferentials.presheaf.map i.op (f.relativeDifferential U a) := by
+  refine (f.universalDerivation_d V _).symm.trans ?_
+  exact (f.universalDerivation.d_map i.op a).trans
+    (congrArg (f.relativeDifferentials.presheaf.map i.op) (f.universalDerivation_d U a))
+
+/-- The relative differential is additive. -/
+@[simp]
+theorem relativeDifferential_add (f : X ⟶ S) (U : X.Opens) (a b : Γ(X, U)) :
+    f.relativeDifferential U (a + b) = f.relativeDifferential U a +
+      f.relativeDifferential U b := by
+  exact (f.universalDerivation_d U (a + b)).symm.trans
+    ((map_add (f.universalDerivation.d (X := op U)) a b).trans
+      (congrArg₂ (· + ·) (f.universalDerivation_d U a) (f.universalDerivation_d U b)))
+
+/-- The relative differential satisfies the Leibniz rule. -/
+@[simp]
+theorem relativeDifferential_mul (f : X ⟶ S) (U : X.Opens) (a b : Γ(X, U)) :
+    f.relativeDifferential U (a * b) = a • f.relativeDifferential U b +
+      b • f.relativeDifferential U a := by
+  exact (f.universalDerivation_d U (a * b)).symm.trans
+    ((f.universalDerivation.d_mul (X := op U) a b).trans
+      (congrArg₂ (· + ·) (congrArg (a • ·) (f.universalDerivation_d U b))
+        (congrArg (b • ·) (f.universalDerivation_d U a))))
+
+/-- The relative differential of zero vanishes. -/
+@[simp]
+theorem relativeDifferential_zero (f : X ⟶ S) (U : X.Opens) :
+    f.relativeDifferential U 0 = 0 :=
+  (f.universalDerivation_d U 0).symm.trans (map_zero (f.universalDerivation.d (X := op U)))
+
+/-- The relative differential of one vanishes. -/
+@[simp]
+theorem relativeDifferential_one (f : X ⟶ S) (U : X.Opens) :
+    f.relativeDifferential U 1 = 0 :=
+  (f.universalDerivation_d U 1).symm.trans (f.universalDerivation.d_one (op U))
 
 /-- A morphism out of the sheaf of relative differentials is determined by its values on the
 differentials of local functions. -/
@@ -242,7 +285,12 @@ theorem relativeDifferentials_hom_ext (f : X ⟶ S) {M : X.Modules}
   apply (cancel_epi (absoluteToRelative f)).mp
   apply X.relativeDifferentials_hom_ext (ULift.{u} ℤ)
   intro U a
-  exact h U.unop a
+  -- The affine-base extensionality lemma uses bundled module maps. Its goal must first
+  -- be expressed through the sheaf section API to rewrite evaluation of composites.
+  change (absoluteToRelative f ≫ φ).app U.unop _ = (absoluteToRelative f ≫ ψ).app U.unop _
+  rw [Scheme.Modules.Hom.comp_app, Scheme.Modules.Hom.comp_app]
+  exact (ConcreteCategory.comp_apply _ _ _).trans
+    ((h U.unop a).trans (ConcreteCategory.comp_apply _ _ _).symm)
 
 private def absoluteDerivation {f : X ⟶ S} {M : X.Modules}
     (D : PresheafOfModulesOfCommRing.Derivation M.val f.c) : M.Derivation (ULift.{u} ℤ) where
@@ -265,6 +313,8 @@ private theorem cotangentMap_comp_of_derivation {f : X ⟶ S} {M : X.Modules}
   let φ := (X.relativeDifferentialsHomEquiv (ULift.{u} ℤ) M).symm (absoluteDerivation D)
   have h := X.relativeDifferentialsHomEquiv_symm_fac (ULift.{u} ℤ) (absoluteDerivation D)
   have he := congr(($h).d (X := op (f ⁻¹ᵁ V)) (f.app V b))
+  simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply,
+    Scheme.Modules.Hom.zero_app, AddCommGrpCat.hom_zero, AddMonoidHom.zero_apply]
   exact (congrArg (φ.app (f ⁻¹ᵁ V))
     (cotangentMap_app_pullbackSections_d (ULift.{u} ℤ) f V b)).trans
     (he.trans (D.d_app (X := op V) b))
@@ -282,17 +332,18 @@ private theorem relativeDifferentialsDesc_app_d {f : X ⟶ S} {M : X.Modules}
     ((X.relativeDifferentialsHomEquiv (ULift.{u} ℤ) M).symm (absoluteDerivation D))
     (cotangentMap_comp_of_derivation D)
   have h := X.relativeDifferentialsHomEquiv_symm_fac (ULift.{u} ℤ) (absoluteDerivation D)
-  exact (congr(($hπ).app U ((X.universalDerivation (ULift.{u} ℤ)).d (X := op U) a))).trans
-    congr(($h).d (X := op U) a)
+  have he := congr(($hπ).app U ((X.universalDerivation (ULift.{u} ℤ)).d (X := op U) a))
+  simp only [Scheme.Modules.Hom.comp_app] at he
+  exact he.trans congr(($h).d (X := op U) a)
 
 /-- Morphisms from the relative differential sheaf to a module correspond to derivations over
 the base with values in that module, by composition with the universal derivation. -/
 def relativeDifferentialsHomEquiv (f : X ⟶ S) (M : X.Modules) :
     (f.relativeDifferentials ⟶ M) ≃ PresheafOfModulesOfCommRing.Derivation M.val f.c where
-  toFun φ := f.relativeDerivation.postcomp φ.val
+  toFun φ := f.universalDerivation.postcomp φ.val
   invFun := relativeDifferentialsDesc
   left_inv φ := f.relativeDifferentials_hom_ext fun U a ↦
-    relativeDifferentialsDesc_app_d (f.relativeDerivation.postcomp φ.val) U a
+    relativeDifferentialsDesc_app_d (f.universalDerivation.postcomp φ.val) U a
   right_inv D := by
     ext U a
     exact relativeDifferentialsDesc_app_d D U.unop a
@@ -301,7 +352,7 @@ def relativeDifferentialsHomEquiv (f : X ⟶ S) (M : X.Modules) :
 @[simp]
 theorem relativeDifferentialsHomEquiv_apply (f : X ⟶ S) {M : X.Modules}
     (φ : f.relativeDifferentials ⟶ M) :
-    f.relativeDifferentialsHomEquiv M φ = f.relativeDerivation.postcomp φ.val := (rfl)
+    f.relativeDifferentialsHomEquiv M φ = f.universalDerivation.postcomp φ.val := (rfl)
 
 /-- The morphism associated to a derivation sends the differential of a function to its value
 under that derivation. -/
@@ -312,15 +363,31 @@ theorem relativeDifferentialsHomEquiv_symm_app_relativeDifferential (f : X ⟶ S
       D.d (X := op U) a :=
   relativeDifferentialsDesc_app_d D U a
 
+/-- Maps out of pulled-back relative differentials are determined by the pullbacks of
+local differentials. -/
+theorem pullback_relativeDifferentials_hom_ext (f : X ⟶ S) (g' : X' ⟶ X) {M : X'.Modules}
+    {φ ψ : (Scheme.Modules.pullback g').obj f.relativeDifferentials ⟶ M}
+    (h : ∀ (U : X.Opens) (a : Γ(X, U)),
+      φ.app (g' ⁻¹ᵁ U) (g'.pullbackSections f.relativeDifferentials U
+        (f.relativeDifferential U a)) =
+      ψ.app (g' ⁻¹ᵁ U) (g'.pullbackSections f.relativeDifferentials U
+        (f.relativeDifferential U a))) : φ = ψ := by
+  apply ((Scheme.Modules.pullbackPushforwardAdjunction g').homEquiv _ _).injective
+  apply f.relativeDifferentials_hom_ext
+  intro U a
+  exact (Scheme.Modules.pullbackPushforwardAdjunction_homEquiv_app_apply g' φ U _).trans
+    ((h U a).trans
+      (Scheme.Modules.pullbackPushforwardAdjunction_homEquiv_app_apply g' ψ U _).symm)
+
 section AffineBase
 
 variable (R : Type u) [CommRing R] (X : Scheme.{u}) [X.Over (Spec (.of R))]
 
-private def relativeDerivationOverSpec :
+private def universalDerivationOverSpec :
     ((X ↘ Spec (.of R)).relativeDifferentials).Derivation R where
-  d := (X ↘ Spec (.of R)).relativeDerivation.d
-  d_mul := (X ↘ Spec (.of R)).relativeDerivation.d_mul
-  d_map := (X ↘ Spec (.of R)).relativeDerivation.d_map
+  d := (X ↘ Spec (.of R)).universalDerivation.d
+  d_mul := (X ↘ Spec (.of R)).universalDerivation.d_mul
+  d_map := (X ↘ Spec (.of R)).universalDerivation.d_map
   d_app {U} b := by
     have h := X.baseRingToStructurePresheaf_app_eq_appLE R U.unop
     exact (congrArg ((X ↘ Spec (.of R)).relativeDifferential U.unop)
@@ -330,12 +397,12 @@ private def relativeDerivationOverSpec :
 
 private def relativeDifferentialsHomOverSpec :
     X.relativeDifferentials R ⟶ (X ↘ Spec (.of R)).relativeDifferentials :=
-  (X.relativeDifferentialsHomEquiv R _).symm (relativeDerivationOverSpec R X)
+  (X.relativeDifferentialsHomEquiv R _).symm (universalDerivationOverSpec R X)
 
 private theorem relativeDifferentialsHomOverSpec_app_d (U : X.Opens) (a : Γ(X, U)) :
     (relativeDifferentialsHomOverSpec R X).app U ((X.universalDerivation R).d (X := op U) a) =
       (X ↘ Spec (.of R)).relativeDifferential U a := by
-  have h := X.relativeDifferentialsHomEquiv_symm_fac R (relativeDerivationOverSpec R X)
+  have h := X.relativeDifferentialsHomEquiv_symm_fac R (universalDerivationOverSpec R X)
   exact congr(($h).d (X := op U) a)
 
 private theorem bijective_relativeDifferentialsHomOverSpec_app (U : X.affineOpens) :
@@ -361,9 +428,7 @@ private theorem bijective_relativeDifferentialsHomOverSpec_app (U : X.affineOpen
   let e := TauCeti.AlgebraicGeometry.relativeDifferentialsSectionsEquiv R X U
   let e' := f.relativeDifferentialsSectionsEquiv V U le_top
   let φ : Γ(X.relativeDifferentials R, U.val) →ₗ[A] Γ(f.relativeDifferentials, U.val) :=
-    { toFun := (relativeDifferentialsHomOverSpec R X).app U.val
-      map_add' := map_add _
-      map_smul' := (relativeDifferentialsHomOverSpec R X).app_smul }
+    ((Scheme.Modules.sectionsFunctor U.val).map (relativeDifferentialsHomOverSpec R X)).hom
   have he : φ.comp e.toLinearMap =
       e'.toLinearMap.comp (KaehlerDifferential.map R B A A) := by
     apply LinearMap.ext_on_range (KaehlerDifferential.span_range_derivation R A)
@@ -394,6 +459,22 @@ theorem _root_.AlgebraicGeometry.Scheme.relativeDifferentialsIsoOverSpec_hom_app
         ((X.universalDerivation R).d (X := op U) a) =
       (X ↘ Spec (.of R)).relativeDifferential U a :=
   relativeDifferentialsHomOverSpec_app_d R X U a
+
+/-- The inverse affine-base comparison sends a relative differential to the differential
+over the base ring. -/
+@[simp]
+theorem
+    _root_.AlgebraicGeometry.Scheme.relativeDifferentialsIsoOverSpec_inv_app_relativeDifferential
+    (U : X.Opens) (a : Γ(X, U)) :
+    (Scheme.relativeDifferentialsIsoOverSpec R X).inv.app U
+        ((X ↘ Spec (.of R)).relativeDifferential U a) =
+      (X.universalDerivation R).d (X := op U) a := by
+  let e := Scheme.relativeDifferentialsIsoOverSpec R X
+  refine (congrArg (e.inv.app U)
+    (Scheme.relativeDifferentialsIsoOverSpec_hom_app_d R X U a).symm).trans ?_
+  have h := congr($(e.hom_inv_id).app U ((X.universalDerivation R).d (X := op U) a))
+  simp only [Scheme.Modules.Hom.comp_app, Scheme.Modules.Hom.id_app] at h
+  exact (ConcreteCategory.comp_apply _ _ _).symm.trans (h.trans (ConcreteCategory.id_apply _))
 
 end AffineBase
 
@@ -444,11 +525,68 @@ theorem relativeDifferentialsPullbackHom_app_pullbackSectionsLE_relativeDifferen
   refine (congrArg ((relativeDifferentialsPullbackHom g' H).app U') h.symm).trans ?_
   have hπ := congr($(pullback_π_comp_relativeDifferentialsPullbackHom g' H).app U'
     (g'.pullbackSectionsLE (X.relativeDifferentials R) U U' hU d))
+  simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply] at hπ
   refine hπ.trans ?_
   exact congrArg ((absoluteToRelative f').app U')
     (cotangentMap_app_pullbackSectionsLE_d R g' U U' hU a)
 
+/-- On a full inverse image, the canonical map sends a pulled-back differential to the
+differential of the pulled-back function. -/
+@[simp]
+theorem relativeDifferentialsPullbackHom_app_pullbackSections_relativeDifferential
+    (U : X.Opens) (a : Γ(X, U)) :
+    (relativeDifferentialsPullbackHom g' H).app (g' ⁻¹ᵁ U)
+        (g'.pullbackSections f.relativeDifferentials U (f.relativeDifferential U a)) =
+      f'.relativeDifferential (g' ⁻¹ᵁ U) (g'.app U a) := by
+  simpa only [Scheme.Hom.appLE_eq_app, Scheme.Hom.pullbackSectionsLE_self] using
+    relativeDifferentialsPullbackHom_app_pullbackSectionsLE_relativeDifferential
+      g' H U (g' ⁻¹ᵁ U) le_rfl a
+
 end CommSq
+
+/-- Pullback along an identity square is the canonical identity comparison. -/
+@[simp]
+theorem relativeDifferentialsPullbackHom_id (f : X ⟶ S)
+    (H : CommSq (𝟙 X) f f (𝟙 S)) :
+    relativeDifferentialsPullbackHom (𝟙 X) H =
+      (Scheme.Modules.pullbackId X).hom.app f.relativeDifferentials := by
+  apply f.pullback_relativeDifferentials_hom_ext
+  intro U a
+  refine (relativeDifferentialsPullbackHom_app_pullbackSections_relativeDifferential
+    (𝟙 X) H U a).trans ?_
+  exact (congrArg (f.relativeDifferential U)
+    (congr($(Scheme.Hom.id_app U) a))).trans
+    (Scheme.Hom.pullbackSections_id f.relativeDifferentials U
+      (f.relativeDifferential U a)).symm
+
+/-- The map on relative differentials respects pasting of commutative squares, through the
+canonical comparison between a composite pullback and the iterated pullback. -/
+@[reassoc]
+theorem relativeDifferentialsPullbackHom_comp {X'' S'' : Scheme.{u}}
+    {f : X ⟶ S} {f' : X' ⟶ S'} {f'' : X'' ⟶ S''}
+    {g' : X' ⟶ X} {g : S' ⟶ S} {h' : X'' ⟶ X'} {h : S'' ⟶ S'}
+    (H : CommSq g' f' f g) (K : CommSq h' f'' f' h) :
+    relativeDifferentialsPullbackHom (h' ≫ g') (K.horiz_comp H) =
+      (Scheme.Modules.pullbackComp h' g').inv.app f.relativeDifferentials ≫
+        (Scheme.Modules.pullback h').map (relativeDifferentialsPullbackHom g' H) ≫
+          relativeDifferentialsPullbackHom h' K := by
+  apply f.pullback_relativeDifferentials_hom_ext
+  intro U a
+  refine (relativeDifferentialsPullbackHom_app_pullbackSections_relativeDifferential
+    (h' ≫ g') (K.horiz_comp H) U a).trans ?_
+  refine Eq.trans ?_
+    (Scheme.Modules.pullbackComp_inv_comp_app_pullbackSections h' g'
+      (relativeDifferentialsPullbackHom g' H) (relativeDifferentialsPullbackHom h' K) U _).symm
+  refine Eq.trans ?_
+    (congrArg (fun x ↦ (relativeDifferentialsPullbackHom h' K).app (h' ⁻¹ᵁ g' ⁻¹ᵁ U)
+      (h'.pullbackSections _ (g' ⁻¹ᵁ U) x))
+      (relativeDifferentialsPullbackHom_app_pullbackSections_relativeDifferential g' H U a)).symm
+  have ha : (h' ≫ g').app U a = h'.app (g' ⁻¹ᵁ U) (g'.app U a) :=
+    (congrArg (fun φ ↦ φ a) (Scheme.Hom.comp_app h' g' U)).trans
+      (CommRingCat.comp_apply _ _ a)
+  exact (congrArg (f''.relativeDifferential (h' ⁻¹ᵁ g' ⁻¹ᵁ U)) ha).trans
+    (relativeDifferentialsPullbackHom_app_pullbackSections_relativeDifferential
+      h' K (g' ⁻¹ᵁ U) (g'.app U a)).symm
 
 section BaseChange
 
@@ -491,9 +629,8 @@ private theorem bijective_relativeDifferentialsPullbackHom_app (H : IsPullback g
   let e' := (KaehlerDifferential.tensorKaehlerEquiv R R' A B).trans
     (f'.relativeDifferentialsSectionsEquiv V' ⟨W, hW⟩ inf_le_right)
   let φ : Γ(N, W) →ₗ[B] Γ(f'.relativeDifferentials, W) :=
-    { toFun := (relativeDifferentialsPullbackHom g' H.toCommSq).app W
-      map_add' := map_add _
-      map_smul' := (relativeDifferentialsPullbackHom g' H.toCommSq).app_smul }
+    ((Scheme.Modules.sectionsFunctor W).map
+      (relativeDifferentialsPullbackHom g' H.toCommSq)).hom
   have he : φ.comp e.toLinearMap = e'.toLinearMap := by
     apply TauCeti.kaehlerBaseChange_linearMap_ext
     intro a
@@ -551,31 +688,40 @@ theorem relativeDifferentialsBaseChangeIso_hom (H : IsPullback g' f' f g) :
       relativeDifferentialsPullbackHom g' H.toCommSq :=
   (rfl)
 
+/-- The inverse base-change comparison carries the differential of a pulled-back function
+to the pullback of its differential, on any smaller open. -/
+@[simp]
+theorem relativeDifferentialsBaseChangeIso_inv_app_relativeDifferential_appLE
+    (H : IsPullback g' f' f g) (U : X.Opens) (U' : X'.Opens)
+    (hU : U' ≤ g' ⁻¹ᵁ U) (a : Γ(X, U)) :
+    (relativeDifferentialsBaseChangeIso g' H).inv.app U'
+        (f'.relativeDifferential U' (g'.appLE U U' hU a)) =
+      g'.pullbackSectionsLE f.relativeDifferentials U U' hU (f.relativeDifferential U a) := by
+  let e := relativeDifferentialsBaseChangeIso g' H
+  have he := relativeDifferentialsPullbackHom_app_pullbackSectionsLE_relativeDifferential
+    g' H.toCommSq U U' hU a
+  rw [← relativeDifferentialsBaseChangeIso_hom g' H] at he
+  refine (congrArg (e.inv.app U') he.symm).trans ?_
+  simpa only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply,
+    Scheme.Modules.Hom.id_app, ConcreteCategory.id_apply] using
+    congr($(e.hom_inv_id).app U'
+      (g'.pullbackSectionsLE f.relativeDifferentials U U' hU (f.relativeDifferential U a)))
+
+/-- On a full inverse image, the inverse base-change comparison preserves differentials. -/
+@[simp]
+theorem relativeDifferentialsBaseChangeIso_inv_app_relativeDifferential
+    (H : IsPullback g' f' f g) (U : X.Opens) (a : Γ(X, U)) :
+    (relativeDifferentialsBaseChangeIso g' H).inv.app (g' ⁻¹ᵁ U)
+        (f'.relativeDifferential (g' ⁻¹ᵁ U) (g'.app U a)) =
+      g'.pullbackSections f.relativeDifferentials U (f.relativeDifferential U a) := by
+  simpa only [Scheme.Hom.appLE_eq_app, Scheme.Hom.pullbackSectionsLE_self] using
+    relativeDifferentialsBaseChangeIso_inv_app_relativeDifferential_appLE H U (g' ⁻¹ᵁ U) le_rfl a
+
 end BaseChange
-
-/-- The scheme over `Spec Γ(S,V)` obtained by restricting `f` to an affine open `V` of `S`. -/
-@[instance_reducible]
-def restrictPreimageOverSpec (f : X ⟶ S) (V : S.affineOpens) :
-    (f ⁻¹ᵁ V.val).toScheme.Over (Spec (.of Γ(S, V))) :=
-  ⟨(f ∣_ V.val) ≫ V.property.isoSpec.hom⟩
-
-/-- The induced structure morphism is the restriction of `f` followed by the affine-open
-isomorphism. -/
-theorem restrictPreimageOverSpec_over (f : X ⟶ S) (V : S.affineOpens) :
-    CategoryTheory.over _ _ (f.restrictPreimageOverSpec V) =
-      (f ∣_ V.val) ≫ V.property.isoSpec.hom :=
-  (rfl)
 
 section RestrictPreimage
 
 variable (f : X ⟶ S) (V : S.affineOpens)
-
-private theorem isPullback_restrictPreimageOverSpec :
-    IsPullback (f ⁻¹ᵁ V.val).ι (CategoryTheory.over _ _ (f.restrictPreimageOverSpec V)) f
-      (V.property.isoSpec.inv ≫ V.val.ι) :=
-  (isPullback_morphismRestrict f V.val).flip.of_iso
-    (.refl _) (.refl _) V.property.isoSpec (.refl _) (by simp)
-    (by simp [restrictPreimageOverSpec_over]) (by simp) (by simp)
 
 /-- On the inverse image of an affine open `V` of the base, the relative differentials are the
 differentials over `Γ(S, V)` with the induced structure morphism. -/
@@ -607,9 +753,8 @@ theorem relativeDifferentialsRestrictPreimageIso_hom_app_relativeDifferential
       relativeDifferentialsBaseChangeIso_hom,
       relativeDifferentialsPullbackHom_app_pullbackSectionsLE_relativeDifferential,
       e, b, j, Scheme.Hom.appIso_hom']
-  · have h := @Scheme.relativeDifferentialsIsoOverSpec_hom_app_d Γ(S, V) _ _
+  · exact @Scheme.relativeDifferentialsIsoOverSpec_inv_app_relativeDifferential Γ(S, V) _ _
       (f.restrictPreimageOverSpec V) W b
-    exact (congrArg (e.inv.app W) h.symm).trans (congr($(e.hom_inv_id).app W _))
 
 /-- The inverse comparison sends a differential to the restriction of the differential of the
 corresponding function on the image open. -/
@@ -624,7 +769,10 @@ theorem relativeDifferentialsRestrictPreimageIso_inv_app_d
     (((f ⁻¹ᵁ V.val).ι.appIso W).inv a)
   simp only [Iso.inv_hom_id_apply] at h
   let e := f.relativeDifferentialsRestrictPreimageIso V
-  exact (congrArg (e.inv.app W) h.symm).trans (congr($(e.hom_inv_id).app W _))
+  exact (congrArg (e.inv.app W) h.symm).trans (by
+    simpa only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply,
+      Scheme.Modules.Hom.id_app, ConcreteCategory.id_apply] using
+      congr($(e.hom_inv_id).app W _))
 
 end RestrictPreimage
 
