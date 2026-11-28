@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Group.AddChar
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup.Graded.BesselGroup
-import Mathlib.Tactic.NoncommRing
 
 /-!
 # The unipotent character of a graded hermitian form
@@ -77,51 +76,6 @@ open Matrix
 
 namespace TauCeti
 
-/-! ### Traces against the shift -/
-
-section Trace
-
-variable {R : Type*} [Ring R] {X : Type*} [Fintype X] {s : ℕ} (N c : R)
-
-/-- The shift has trace zero. -/
-@[simp]
-theorem trace_gradedShift : (gradedShift X s N c).trace = 0 :=
-  Finset.sum_eq_zero fun k _ ↦ gradedShift_apply_eq_zero_of_ne N c (k := k) (l := k) (by omega)
-
-/-- The trace of the shift times a matrix raising the grade by more than two vanishes. -/
-theorem trace_gradedShift_mul_eq_zero {d : ℤ} (hd : 2 < d)
-    {A : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R} (hA : RaisesDegree (gradedGrade X s) d A) :
-    (gradedShift X s N c * A).trace = 0 :=
-  ((raisesDegree_gradedShift N c).mul hA).trace_eq_zero (by omega)
-
-/-- **Additivity of `A ↦ tr (𝔢 A)` on unipotent matrices.** If `A - 1` and `B - 1` raise the
-grade by at least `d` and `d'` with `2 < d + d'`, then `tr (𝔢 (A B)) = tr (𝔢 A) + tr (𝔢 B)`. -/
-theorem trace_gradedShift_mul_mul [DecidableEq X] {d d' : ℤ} (hdd' : 2 < d + d')
-    {A B : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R} (hA : RaisesDegree (gradedGrade X s) d (A - 1))
-    (hB : RaisesDegree (gradedGrade X s) d' (B - 1)) :
-    (gradedShift X s N c * (A * B)).trace =
-      (gradedShift X s N c * A).trace + (gradedShift X s N c * B).trace := by
-  have hAB : A * B = (A - 1) * (B - 1) + A + B - 1 := by noncomm_ring
-  have hexpand : (gradedShift X s N c * (A * B)).trace =
-      (gradedShift X s N c * ((A - 1) * (B - 1))).trace + (gradedShift X s N c * A).trace +
-        (gradedShift X s N c * B).trace - (gradedShift X s N c).trace := by
-    simp only [hAB, Matrix.mul_sub, Matrix.mul_add, Matrix.mul_one, trace_sub, trace_add]
-  rw [hexpand, trace_gradedShift_mul_eq_zero N c hdd' (hA.mul hB), trace_gradedShift, zero_add,
-    sub_zero]
-
-/-- The shift commutes with every matrix that is block diagonal with identity string block, such
-as the image of `U(X)`. -/
-theorem commute_gradedShift_fromBlocks (a : Matrix X X R) :
-    Commute (gradedShift X s N c) (fromBlocks a 0 0 1) := by
-  -- The shift is supported on the string block.
-  have h : gradedShift X s N c = fromBlocks 0 0 0 (gradedShift X s N c).toBlocks₂₂ := by
-    rw [← fromBlocks_toBlocks (gradedShift X s N c)]
-    congr 1 <;> ext <;> simp [toBlocks₁₁, toBlocks₁₂, toBlocks₂₁]
-  rw [commute_iff_eq, h]
-  simp [fromBlocks_multiply]
-
-end Trace
-
 /-! ### The unipotent character -/
 
 section Char
@@ -184,22 +138,10 @@ theorem gradedUnipotentChar_mul_mul_inv {r : unitaryGroupOf (gradedGram X s N)}
       ((r : GL (X ⊕ Fin s) R) : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R))
     (g : unitaryGroupOf (gradedGram X s N)) :
     gradedUnipotentChar X s N c ψ (r * g * r⁻¹) = gradedUnipotentChar X s N c ψ g := by
-  set R' : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R :=
-    ((r : GL (X ⊕ Fin s) R) : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R)
-  set G' : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R :=
-    ((g : GL (X ⊕ Fin s) R) : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R)
-  set R'' : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R :=
-    (((r⁻¹ : unitaryGroupOf (gradedGram X s N)) : GL (X ⊕ Fin s) R) :
-      Matrix (X ⊕ Fin s) (X ⊕ Fin s) R)
-  have hRR : R'' * R' = 1 := by simp [R', R'']
-  -- Move `r` past the shift, then cycle it around the trace to meet `r⁻¹`.
-  have htrace : (gradedShift X s N c * (R' * G' * R'')).trace =
-      (gradedShift X s N c * G').trace := by
-    have hmove : gradedShift X s N c * (R' * G' * R'') = R' * (gradedShift X s N c * G' * R'') := by
-      rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hr.eq, Matrix.mul_assoc R', Matrix.mul_assoc R']
-    rw [hmove, trace_mul_comm, Matrix.mul_assoc, hRR, Matrix.mul_one]
-  simp only [gradedUnipotentChar_apply, Subgroup.coe_mul, Units.val_mul]
-  exact congrArg ψ htrace
+  simp only [gradedUnipotentChar_apply, Subgroup.coe_mul, Units.val_mul, Subgroup.coe_inv]
+  congr 1
+  rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hr.eq,
+    Matrix.mul_assoc _ (gradedShift X s N c), trace_units_conj (r : GL (X ⊕ Fin s) R)]
 
 /-- The unipotent character is invariant under conjugation by the image of `U(X)`. -/
 theorem gradedUnipotentChar_gradedInclusion_mul_mul_inv (a : unitaryGroup X R)

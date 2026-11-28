@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.FormAdjoint
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup.Bessel
 public import TauCeti.LinearAlgebra.Matrix.RaisesDegree
 import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.NoncommRing
 
 /-!
 # Graded hermitian forms, the shift and the string map
@@ -75,6 +76,10 @@ pass to vectors with coefficients in any `E`-algebra, such as the finite adeles.
   graded Gram matrix is the split form `splitGram ϱ (middleGram N)`, reordered.
 * `TauCeti.raisesDegree_gradedShift`, `TauCeti.stringMap_apply_eq_zero_of_ne`: the shift lowers
   the grade by two and the string map by one.
+* `TauCeti.trace_gradedShift_mul_mul`: additivity of the trace against the shift on matrices
+  whose differences from the identity raise the grade by degrees summing to more than two.
+* `TauCeti.commute_gradedShift_fromBlocks`: the shift commutes with block diagonal matrices
+  having identity string block.
 * `TauCeti.conjTranspose_stringMap_mul_gradedGram_mul_stringMap`: `⟨T x, T y⟩ = ⟨x, 𝔢 y⟩`, for
   self-adjoint `N` and `c`.
 * `TauCeti.stringMap_mul_gradedGram_mul_conjTranspose_stringMap`: the inverse-free form
@@ -104,6 +109,9 @@ pass to vectors with coefficients in any `E`-algebra, such as the finite adeles.
   them, and the definitions here follow their conventions; the comparison with the split form
   (`TauCeti.gradedSplitEquiv`, `TauCeti.gradedGram_eq_submatrix_splitGram`,
   `TauCeti.reindex_gradedGram`) and the compatibility with ring homomorphisms are new here.
+* The trace and commutation statements follow `New.Grading.trace_shift_mul` and
+  `New.Grading.commute_shift_ratCoordMatrix_inclX` in `grh-lean`, file
+  `src/Lib/Weil/Periods/Equivariant.lean`, under the same license and copyright above.
 -/
 
 public section
@@ -508,6 +516,51 @@ theorem stringMap_apply_eq_zero_of_ne {k : X' ⊕ Fin s} {l : X ⊕ Fin (s + 1)}
     omega
 
 end Grades
+
+/-! ### Traces against the shift -/
+
+section Trace
+
+variable [Ring R] [Fintype X] (N c : R)
+
+/-- The shift has trace zero. -/
+@[simp]
+theorem trace_gradedShift : (gradedShift X s N c).trace = 0 :=
+  Finset.sum_eq_zero fun k _ ↦ gradedShift_apply_eq_zero_of_ne N c (k := k) (l := k) (by omega)
+
+/-- The trace of the shift times a matrix raising the grade by more than two vanishes. -/
+theorem trace_gradedShift_mul_eq_zero {d : ℤ} (hd : 2 < d)
+    {A : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R} (hA : RaisesDegree (gradedGrade X s) d A) :
+    (gradedShift X s N c * A).trace = 0 :=
+  ((raisesDegree_gradedShift N c).mul hA).trace_eq_zero (by omega)
+
+/-- **Additivity of `A ↦ tr (𝔢 A)` on unipotent matrices.** If `A - 1` and `B - 1` raise the
+grade by at least `d` and `d'` with `2 < d + d'`, then `tr (𝔢 (A B)) = tr (𝔢 A) + tr (𝔢 B)`. -/
+theorem trace_gradedShift_mul_mul [DecidableEq X] {d d' : ℤ} (hdd' : 2 < d + d')
+    {A B : Matrix (X ⊕ Fin s) (X ⊕ Fin s) R} (hA : RaisesDegree (gradedGrade X s) d (A - 1))
+    (hB : RaisesDegree (gradedGrade X s) d' (B - 1)) :
+    (gradedShift X s N c * (A * B)).trace =
+      (gradedShift X s N c * A).trace + (gradedShift X s N c * B).trace := by
+  have hAB : A * B = (A - 1) * (B - 1) + A + B - 1 := by noncomm_ring
+  have hexpand : (gradedShift X s N c * (A * B)).trace =
+      (gradedShift X s N c * ((A - 1) * (B - 1))).trace + (gradedShift X s N c * A).trace +
+        (gradedShift X s N c * B).trace - (gradedShift X s N c).trace := by
+    simp only [hAB, Matrix.mul_sub, Matrix.mul_add, Matrix.mul_one, trace_sub, trace_add]
+  rw [hexpand, trace_gradedShift_mul_eq_zero N c hdd' (hA.mul hB), trace_gradedShift, zero_add,
+    sub_zero]
+
+/-- The shift commutes with every matrix that is block diagonal with identity string block, such
+as the image of `U(X)`. -/
+theorem commute_gradedShift_fromBlocks (a : Matrix X X R) :
+    Commute (gradedShift X s N c) (fromBlocks a 0 0 1) := by
+  -- The shift is supported on the string block.
+  have h : gradedShift X s N c = fromBlocks 0 0 0 (gradedShift X s N c).toBlocks₂₂ := by
+    rw [← fromBlocks_toBlocks (gradedShift X s N c)]
+    congr 1
+  rw [commute_iff_eq, h]
+  simp [fromBlocks_multiply]
+
+end Trace
 
 /-! ### The shift and the form adjoint of the string map -/
 
