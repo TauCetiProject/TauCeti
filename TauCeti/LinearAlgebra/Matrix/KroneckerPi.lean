@@ -59,7 +59,8 @@ theorem kroneckerPi_mul [CommSemiring R] [DecidableEq S] [∀ s : S, Fintype (b 
 
 /-- The Kronecker product of identity matrices is the identity matrix. -/
 @[simp]
-theorem kroneckerPi_one [CommSemiring R] [∀ s : S, DecidableEq (a s)] [DecidableEq (∀ s : S, a s)] :
+theorem kroneckerPi_one [CommMonoidWithZero R] [∀ s : S, DecidableEq (a s)]
+    [DecidableEq (∀ s : S, a s)] :
     kroneckerPi (fun s : S ↦ (1 : _root_.Matrix (a s) (a s) R)) = 1 := by
   simp [kroneckerPi, ← _root_.Matrix.ext_iff, prod_boole, funext_iff, _root_.Matrix.one_apply]
 
