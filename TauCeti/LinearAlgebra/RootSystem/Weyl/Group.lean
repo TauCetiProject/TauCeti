@@ -499,7 +499,6 @@ section
 
 /-- Evaluating the coroot representation `P.weylGroupCorootRep` on `Subgroup.equivOp _ w` applies
 the coweight equivalence of `w`. -/
-@[simp]
 theorem weylGroupCorootRep_equivOp_apply (w : P.weylGroup) (x : N) :
     P.weylGroupCorootRep (Subgroup.equivOp P.weylGroup w) x =
       (w : P.Aut).coweightEquiv x := by
