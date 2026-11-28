@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Regular.LinearMap
 import Mathlib.Algebra.GroupWithZero.Action.Regular
+import Mathlib.RingTheory.Ideal.Colon
 import Mathlib.RingTheory.Nilpotent.Defs
 
 /-!
@@ -21,7 +22,8 @@ This is the input that splits an idempotent off the total ring of fractions of a
 Noetherian ring with two minimal primes, as in `IsLocalRing.isDomain_of_isIntegrallyClosed`.
 
 A nilpotent ideal of a nontrivial ring, at the other extreme, kills a nonzero element: its last
-nonzero power does.
+nonzero power does. For a submodule and its quotient, the product of their
+annihilators annihilates the ambient module.
 
 ## Main results
 
@@ -29,6 +31,7 @@ nonzero power does.
   together with its annihilator contains a nonzerodivisor.
 * `Ideal.exists_ne_zero_forall_mul_eq_zero_of_isNilpotent`: a nilpotent ideal of a nontrivial
   ring kills a nonzero element.
+* `Submodule.annihilator_mul_annihilator_quotient_le`: the product of annihilators in an extension.
 -/
 
 public section
@@ -64,3 +67,13 @@ theorem Ideal.exists_ne_zero_forall_mul_eq_zero_of_isNilpotent {R : Type*} [Comm
   have hmem := Ideal.mul_mem_mul hx hsmem
   rwa [← pow_succ', Nat.sub_add_cancel (pos_nilpotencyClass_iff.mpr hI), pow_nilpotencyClass hI,
     Ideal.zero_eq_bot, Ideal.mem_bot] at hmem
+
+/-- The product of the annihilators of a submodule and its quotient annihilates the
+ambient module. -/
+theorem Submodule.annihilator_mul_annihilator_quotient_le {R M : Type*} [Ring R]
+    [AddCommGroup M] [Module R M] (S : Submodule R M) :
+    S.annihilator * Module.annihilator R (M ⧸ S) ≤ Module.annihilator R M := by
+  rw [Submodule.annihilator_quotient]
+  refine Ideal.mul_le.mpr fun a ha b hb ↦ Module.mem_annihilator.mpr fun x ↦ ?_
+  rw [mul_smul]
+  exact Submodule.mem_annihilator.mp ha _ (Submodule.mem_colon.mp hb _ (Set.mem_univ x))
