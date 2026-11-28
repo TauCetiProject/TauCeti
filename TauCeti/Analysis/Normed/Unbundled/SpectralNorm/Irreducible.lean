@@ -64,14 +64,14 @@ theorem Monic.norm_coeff_le_spectralValue_pow {R : Type*} [SeminormedRing R] [No
   · simp [hp.coeff_natDegree]
   · simpa [coeff_eq_zero_of_natDegree_lt hi] using pow_nonneg (spectralValue_nonneg p) _
 
-/-- A monic irreducible polynomial over a domain with vanishing constant term is `X`. -/
-theorem Monic.eq_X_of_irreducible_of_coeff_zero_eq_zero {R : Type*} [CommRing R] [IsDomain R]
+/-- A monic irreducible polynomial over a nontrivial semiring with vanishing constant term is
+`X`. -/
+theorem Monic.eq_X_of_irreducible_of_coeff_zero_eq_zero {R : Type*} [Semiring R] [Nontrivial R]
     {p : R[X]} (hm : p.Monic) (hp : Irreducible p) (ha0 : p.coeff 0 = 0) : p = X := by
   obtain ⟨q, hq⟩ := X_dvd_iff.mpr ha0
-  have hqu : IsUnit q := (hp.isUnit_or_isUnit hq).resolve_left irreducible_X.not_isUnit
+  have hqu : IsUnit q := (hp.isUnit_or_isUnit hq).resolve_left not_isUnit_X
   have hqm : q.Monic := monic_X.of_mul_monic_left (hq ▸ hm)
-  have hq1 : q = 1 := hqm.natDegree_eq_zero.mp (natDegree_eq_zero_of_isUnit hqu)
-  rw [hq, hq1, mul_one]
+  rw [hq, hqm.eq_one_of_isUnit hqu, mul_one]
 
 private theorem spectralValue_eq_norm_coeff_zero_rpow_of_irreducible_of_norm_le_one {K : Type*}
     [NormedField K] (hK : ∀ c : K, c ≠ 0 → ‖c‖ = 1) {p : K[X]} (hm : p.Monic)

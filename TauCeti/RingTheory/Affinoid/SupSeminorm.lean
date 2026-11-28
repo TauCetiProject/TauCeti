@@ -19,54 +19,61 @@ import TauCeti.RingTheory.Spectrum.Maximal.Integral
 /-!
 # Point norms and the supremum seminorm of an affinoid algebra
 
-Let `A` be a commutative `K`-algebra over a complete nonarchimedean field `K`. For a maximal
-ideal `x` of `A` and `f : A`, `TauCeti.pointNorm K x f` is the **residue-field spectral value**
+Let `A` be a commutative `K`-algebra over a normed field `K`. For a maximal ideal `x` of `A` and
+`f : A`, `TauCeti.pointNorm K x f` is the **residue-field spectral value**
 `spectralNorm K (A ⧸ x) (mk x f)` in `A ⧸ x` (which vanishes if the residue of `f` is
-transcendental over `K`). When `A` is affinoid (or more generally when `A ⧸ x` is algebraic over
-`K`), this residue field is finite over `K`, and `pointNorm K x` is a genuine multiplicative,
-ultrametric absolute value `|f(x)|` extending the norm of `K`; no embedding into a chosen algebraic
-closure enters. The supremum seminorm `|f|sup` (`TauCeti.supSeminorm K f`) is the conditional real
-`iSup` of `pointNorm K x f` over all maximal ideals `x`, returning `0` on the zero algebra (empty
-maximal spectrum) and `0` when the family is unbounded above; whenever point values are bounded
-above (for instance on an affinoid algebra or on the image of an `AlgHom` from a normed algebra
-with summable geometric series), it is the true bounded pointwise supremum.
+transcendental over `K`). When `A` is affinoid over a complete ultrametric field `K`, the residue
+field `A ⧸ x` is finite over `K`; more generally, when `K` is complete and ultrametric and `A ⧸ x`
+is algebraic over `K` (not necessarily finite), `pointNorm K x` induces a genuine multiplicative,
+ultrametric absolute value on `A ⧸ x` extending the norm of `K`, with no embedding into a chosen
+algebraic closure entering. The function `TauCeti.supSeminorm K f` is the conditional real `iSup`
+of `pointNorm K x f` over all maximal ideals `x`, returning `0` on the zero algebra (empty maximal
+spectrum) and `0` when the family is unbounded above; whenever point values are bounded above (for
+instance on an affinoid algebra or on the image of an `AlgHom` from a normed algebra with summable
+geometric series), it is the genuine bounded pointwise supremum.
 
-For an affinoid algebra the point norms are multiplicative, ultrametric and compatible with
-scalars, and they are bounded by every complete algebra norm on `A`. In particular
-`|f|sup` is a finite, power-multiplicative ring seminorm, its kernel is the nilradical, algebra
-homomorphisms of affinoid algebras do not increase it, and integral ones with kernel contained in
-the Jacobson radical preserve it.
+For an affinoid algebra over a complete nonarchimedean field `K`, the point norms are
+multiplicative, ultrametric and compatible with scalars, and they are bounded by every complete
+algebra norm on `A`. In particular `|f|sup` (`TauCeti.supSeminorm K f`) is a finite,
+power-multiplicative ring seminorm, its kernel is the nilradical, algebra homomorphisms of affinoid
+algebras do not increase it, and integral ones with kernel contained in the Jacobson radical
+preserve it.
 It is unchanged by passing to the reduction `A ⧸ nilradical A`, it is the maximum of its values on
 the quotients by the finitely many minimal primes of `A`, and a monic equation
 `f ^ d + ∑_{i < d} aᵢ f ^ i = 0` bounds it by `max_{i < d} |aᵢ|sup ^ (1 / (d - i))`.
 
 More generally, over any complete ultrametric normed field `K`, any `K`-algebra homomorphism
 `φ : B →ₐ[K] A` from an arbitrary normed `K`-algebra `B` with summable geometric series into
-any commutative `K`-algebra `A` satisfies `|φ(b)(x)| ≤ gelfandRadius b`, hence
-`|φ(b)|sup ≤ gelfandRadius b ≤ ‖b‖`, by `AlgHom.spectralNorm_apply_le_gelfandRadius`. Specializing
-to the identity homomorphism yields the bound by any algebra norm with summable geometric series
-on `A`. The kernel computation uses that affinoid algebras are Jacobson rings.
+any commutative `K`-algebra `A` satisfies `pointNorm K x (φ b) ≤ gelfandRadius b`, hence
+`supSeminorm K (φ b) ≤ gelfandRadius b ≤ ‖b‖`, by `AlgHom.spectralNorm_apply_le_gelfandRadius`.
+Specializing to the identity homomorphism yields the bound by any algebra norm with summable
+geometric series on `A`. The kernel computation uses that affinoid algebras are Jacobson rings.
 
 ## Main definitions
 
 * `TauCeti.pointNorm`: the residue-field spectral value `spectralNorm K (A ⧸ x) (mk x f)` of
-  `f : A` at a maximal ideal `x` (zero on transcendental residues; a genuine absolute value
-  `|f(x)|` when `A ⧸ x` is algebraic over `K`, in particular on affinoid algebras).
+  `f : A` at a maximal ideal `x` (zero on transcendental residues; when `K` is complete ultrametric
+  and `A ⧸ x` is algebraic over `K`, in particular on affinoid algebras where `A ⧸ x` is finite over
+  `K`, it induces a genuine multiplicative, ultrametric absolute value on `A ⧸ x` extending the norm
+  of `K`).
 * `TauCeti.supSeminorm`: the conditional real supremum `⨆ x : MaximalSpectrum A, pointNorm K x f`
-  (giving the true bounded pointwise supremum `|f|sup` when point values are bounded above, e.g. on
-  affinoid algebras, and `0` on the zero algebra or for unbounded families).
-* `TauCeti.IsAffinoidAlgebra.supRingSeminorm`: `|·|sup` bundled as a ring seminorm.
+  (giving the genuine bounded pointwise supremum when point values are bounded above, `0` on the
+  zero algebra or for unbounded families, and the supremum ring seminorm `|f|sup` in the affinoid
+  setting or whenever point values are bounded above and satisfy the ring-seminorm axioms).
+* `TauCeti.IsAffinoidAlgebra.supRingSeminorm`: `|·|sup` on an affinoid algebra bundled as a ring
+  seminorm.
 
 ## Main results
 
-* `MaximalSpectrum.pointNorm_le_norm` and `TauCeti.supSeminorm_le_norm`: `|f(x)| ≤ ‖f‖` and
-  `|f|sup ≤ ‖f‖` for every algebra norm with summable geometric series.
+* `MaximalSpectrum.pointNorm_le_norm` and `TauCeti.supSeminorm_le_norm`:
+  `pointNorm K x f ≤ ‖f‖` and `supSeminorm K f ≤ ‖f‖` over a complete ultrametric field `K` for
+  every algebra norm with summable geometric series.
 * `TauCeti.IsAffinoidAlgebra.isUnit_iff_forall_pointNorm_ne_zero`: `f` is a unit if and only if
   `|f(x)| ≠ 0` at every classical point `x`.
 * `TauCeti.IsAffinoidAlgebra.bddAbove_range_pointNorm`: the point norms of `f` are bounded.
-* `TauCeti.isUnit_one_sub_of_supSeminorm_lt_one`: if the point norms of `a` are bounded and
-  `|a|sup < 1`, then `1 - a` is a unit.
-* `TauCeti.isPowMul_supSeminorm`: `|f ^ n|sup = |f|sup ^ n` for `n ≥ 1`.
+* `TauCeti.isUnit_one_sub_of_supSeminorm_lt_one`: if the residue-field spectral values of `a` are
+  bounded above and `supSeminorm K a < 1`, then `1 - a` is a unit.
+* `TauCeti.isPowMul_supSeminorm`: `supSeminorm K (f ^ n) = supSeminorm K f ^ n` for `n ≥ 1`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_aeval_le`: a polynomial over the unit ball of `K`
   without constant term, evaluated at elements with `|xᵢ|sup ≤ ε ≤ 1`, has `|·|sup ≤ ε`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_zero_iff`: `|f|sup = 0` if and only if `f` is
@@ -75,22 +82,22 @@ on `A`. The kernel computation uses that affinoid algebras are Jacobson rings.
   exactly when `A` is reduced.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_map_le` and
   `AlgHom.supSeminorm_map_le_of_comap_isMaximal_of_bddAbove`: algebra homomorphisms contracting
-  maximal ideals to maximal ideals do not increase `|·|sup` on elements with bounded source point
-  norms.
+  maximal ideals to maximal ideals do not increase `supSeminorm K` on elements with bounded source
+  residue-field spectral values.
 * `TauCeti.IsAffinoidAlgebra.pointNorm_le_supSeminorm_map_of_isIntegral_of_ker_le` and
   `AlgHom.pointNorm_le_supSeminorm_map_of_isIntegral_of_ker_le_of_bddAbove`: for integral algebra
-  homomorphisms into an algebra with bounded target point norms, classical points containing the
-  kernel satisfy `|a(x)| ≤ |φ a|sup`.
+  homomorphisms into an algebra with bounded target residue-field spectral values, maximal ideals
+  containing the kernel satisfy `pointNorm K x a ≤ supSeminorm K (φ a)`.
 * `AlgHom.supSeminorm_map_of_isIntegral_of_ker_le_jacobson`: integral algebra homomorphisms whose
-  kernel lies in the Jacobson radical preserve `|·|sup`.
-* `TauCeti.supSeminorm_mk_nilradical`: `|·|sup` is unchanged by reduction.
+  kernel lies in the Jacobson radical preserve `supSeminorm K`.
+* `TauCeti.supSeminorm_mk_nilradical`: `supSeminorm K` is unchanged by reduction.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_iSup_minimalPrimes`: `|f|sup` is the supremum of the
   supremum seminorms of the residues of `f` modulo the minimal primes of `A`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_le_iSup_coeff_rpow_of_eval_eq_zero`: the bound of
   `|f|sup` by the coefficients of a monic polynomial vanishing at `f`.
 * `AlgHom.pointNorm_apply_le_gelfandRadius`, `AlgHom.bddAbove_range_pointNorm`,
   `AlgHom.supSeminorm_apply_le_gelfandRadius`, and `AlgHom.supSeminorm_apply_le_norm`: spectral
-  contraction and point-norm boundedness from arbitrary normed `K`-algebras with summable geometric
+  contraction and point-value boundedness from arbitrary normed `K`-algebras with summable geometric
   series into commutative `K`-algebras.
 
 ## References
@@ -110,9 +117,10 @@ variable {K : Type*} [NormedField K]
 
 variable (K) in
 /-- The residue-field spectral value of `f : A` at a maximal ideal `x`: the spectral norm over `K`
-of the residue of `f` in `A ⧸ x` (zero when that residue is transcendental over `K`). When `A ⧸ x`
-is algebraic over `K` (in particular for an affinoid algebra, where `A ⧸ x` is finite over `K`),
-this defines a genuine multiplicative absolute value `|f(x)|` extending the norm of `K`. -/
+of the residue of `f` in `A ⧸ x` (zero when that residue is transcendental over `K`). When `K` is
+complete and ultrametric and `A ⧸ x` is algebraic over `K` (in particular for an affinoid algebra,
+where `A ⧸ x` is finite over `K`), this induces a genuine multiplicative, ultrametric absolute value
+on the residue field extending the norm of `K`. -/
 noncomputable def pointNorm (x : MaximalSpectrum A) (f : A) : ℝ :=
   letI := Ideal.Quotient.field x.asIdeal
   spectralNorm K (A ⧸ x.asIdeal) (Ideal.Quotient.mk x.asIdeal f)
@@ -120,8 +128,9 @@ noncomputable def pointNorm (x : MaximalSpectrum A) (f : A) : ℝ :=
 variable (K) in
 /-- The conditional real supremum `⨆ x : MaximalSpectrum A, pointNorm K x f` over all maximal
 ideals `x` of `A` (returning `0` on the zero algebra or when `pointNorm K · f` is unbounded above).
-Whenever the point values are bounded above (in particular for an affinoid algebra), this is the
-bounded pointwise supremum seminorm `|f|sup`. -/
+Whenever the point values are bounded above, this is the bounded pointwise supremum; on an
+affinoid algebra (or more generally when point values are bounded above and satisfy the
+ring-seminorm axioms), it is the supremum ring seminorm `|f|sup`. -/
 noncomputable def supSeminorm (f : A) : ℝ :=
   ⨆ x : MaximalSpectrum A, pointNorm K x f
 
@@ -145,9 +154,9 @@ theorem pointNorm_zero {x : MaximalSpectrum A} : pointNorm K x 0 = 0 := by
 theorem pointNorm_one {x : MaximalSpectrum A} : pointNorm K x 1 = 1 := by
   simpa using pointNorm_algebraMap (x := x) (1 : K)
 
-/-- The absolute value at a classical point can be computed in any field `L` over `K` that
-receives the residue field: if a `K`-algebra map `ψ : A → L` vanishes on `x`, then `|f(x)|` is
-the spectral norm of `ψ f`. -/
+/-- The residue-field spectral value at a maximal ideal can be computed in any field `L` over `K`
+that receives the residue field: if a `K`-algebra map `ψ : A →ₐ[K] L` vanishes on `x`, then
+`pointNorm K x f` is the spectral norm of `ψ f`. -/
 theorem pointNorm_eq_spectralNorm {L : Type*} [Field L] [Algebra K L] {x : MaximalSpectrum A}
     {ψ : A →ₐ[K] L} (hψ : x.asIdeal ≤ RingHom.ker ψ) (f : A) :
     pointNorm K x f = spectralNorm K L (ψ f) := by
@@ -157,14 +166,14 @@ theorem pointNorm_eq_spectralNorm {L : Type*} [Field L] [Algebra K L] {x : Maxim
   have h : ψ' (Ideal.Quotient.mk x.asIdeal f) = ψ f := Ideal.Quotient.lift_mk _ _ _
   rw [pointNorm, ← h, ψ'.spectralNorm_map]
 
-/-- Elements congruent modulo a classical point have the same absolute value there. -/
+/-- Elements congruent modulo a maximal ideal have the same residue-field spectral value there. -/
 theorem pointNorm_eq_of_sub_mem {x : MaximalSpectrum A} {f g : A} (h : f - g ∈ x.asIdeal) :
     pointNorm K x f = pointNorm K x g := by
   rw [pointNorm, pointNorm, Ideal.Quotient.eq.mpr h]
 
-/-- The absolute value at a classical point is unchanged by pulling the point back along an
-algebra map, whenever the pullback is again a maximal ideal. -/
-theorem pointNorm_comap {B : Type*} [CommRing B] [Algebra K B] (φ : A →ₐ[K] B)
+/-- The residue-field spectral value at a maximal ideal is unchanged by pulling the ideal back
+along an algebra map, whenever the pullback is again a maximal ideal. -/
+theorem _root_.AlgHom.pointNorm_comap {B : Type*} [CommRing B] [Algebra K B] (φ : A →ₐ[K] B)
     (x : MaximalSpectrum B) (hx : (x.asIdeal.comap φ).IsMaximal) (a : A) :
     pointNorm K ⟨_, hx⟩ a = pointNorm K x (φ a) := by
   let := Ideal.Quotient.field x.asIdeal
@@ -173,25 +182,25 @@ theorem pointNorm_comap {B : Type*} [CommRing B] [Algebra K B] (φ : A →ₐ[K]
   rw [pointNorm_eq_spectralNorm (ψ := q.comp φ) ((Ideal.comap_mono hq).trans_eq (q.comap_ker φ)),
     pointNorm_eq_spectralNorm (x := x) (ψ := q) hq, AlgHom.comp_apply]
 
-/-- The absolute value at a classical point is unchanged by pulling the point back along an
-integral algebra homomorphism. -/
+/-- The residue-field spectral value at a maximal ideal is unchanged by pulling the ideal back
+along an integral algebra homomorphism. -/
 @[simp]
-theorem pointNorm_comapOfIsIntegral {B : Type*} [CommRing B] [Algebra K B] (φ : A →ₐ[K] B)
-    (hφ : (φ : A →+* B).IsIntegral) (y : MaximalSpectrum B) (a : A) :
+theorem _root_.AlgHom.pointNorm_comapOfIsIntegral {B : Type*} [CommRing B] [Algebra K B]
+    (φ : A →ₐ[K] B) (hφ : (φ : A →+* B).IsIntegral) (y : MaximalSpectrum B) (a : A) :
     pointNorm K (MaximalSpectrum.comapOfIsIntegral (φ : A →+* B) hφ y) a = pointNorm K y (φ a) := by
-  rw [← pointNorm_comap φ y
+  rw [← φ.pointNorm_comap y
     (Ideal.isMaximal_comap_of_isIntegral_of_isMaximal (φ : A →+* B) hφ y.asIdeal)]
   congr 1
   exact MaximalSpectrum.ext (MaximalSpectrum.comapOfIsIntegral_asIdeal (φ : A →+* B) hφ y)
 
-/-- The absolute value at a classical point is unchanged by pulling the point back along an
-algebra map into an affinoid algebra. -/
+/-- The residue-field spectral value at a classical point of an affinoid algebra `B` is unchanged
+by pulling the point back along an algebra map into `B`. -/
 @[simp]
 theorem IsAffinoidAlgebra.pointNorm_maximalSpectrumComap [IsUltrametricDist K] [CompleteSpace K]
     {B : Type*} [CommRing B] [Algebra K B] (hB : IsAffinoidAlgebra K B) (φ : A →ₐ[K] B)
     (x : MaximalSpectrum B) (a : A) :
     pointNorm K (hB.maximalSpectrumComap φ x) a = pointNorm K x (φ a) := by
-  rw [← pointNorm_comap φ x (hB.comap_isMaximal φ x.asIdeal)]
+  rw [← φ.pointNorm_comap x (hB.comap_isMaximal φ x.asIdeal)]
   congr 1
   exact MaximalSpectrum.ext (hB.maximalSpectrumComap_asIdeal φ x)
 
@@ -205,8 +214,8 @@ theorem _root_.MaximalSpectrum.pointNorm_neg [IsUltrametricDist K] (x : MaximalS
   · rw [spectralNorm_eq_zero_of_not_isAlgebraic hf,
       spectralNorm_eq_zero_of_not_isAlgebraic fun h ↦ hf (by simpa using h.neg)]
 
-/-- The absolute value at a classical point is homogeneous for scalars of `K`:
-`|(c • f)(x)| = ‖c‖ * |f(x)|`. -/
+/-- The residue-field spectral value at a maximal ideal is homogeneous for scalars of `K`:
+`pointNorm K x (c • f) = ‖c‖ * pointNorm K x f`. -/
 theorem _root_.MaximalSpectrum.pointNorm_smul [IsUltrametricDist K] (x : MaximalSpectrum A) (c : K)
     (f : A) :
     pointNorm K x (c • f) = ‖c‖ * pointNorm K x f := by
@@ -224,7 +233,7 @@ theorem _root_.MaximalSpectrum.pointNorm_smul [IsUltrametricDist K] (x : Maximal
         mul_zero]
 
 open Polynomial IntermediateField in
-/-- `|(f ^ n)(x)| = |f(x)| ^ n` at every classical point `x`. -/
+/-- `pointNorm K x (f ^ n) = pointNorm K x f ^ n` at every maximal ideal `x`. -/
 theorem _root_.MaximalSpectrum.pointNorm_pow [IsUltrametricDist K] (x : MaximalSpectrum A) (f : A)
     (n : ℕ) :
     pointNorm K x (f ^ n) = pointNorm K x f ^ n := by
@@ -245,7 +254,7 @@ theorem _root_.MaximalSpectrum.pointNorm_pow [IsUltrametricDist K] (x : MaximalS
 
 /-- Over a complete ultrametric normed field `K`, any `K`-algebra homomorphism from a normed
 `K`-algebra `B` with summable geometric series into a commutative `K`-algebra `A` is bounded at
-every classical point `x : MaximalSpectrum A` by the Gelfand radius on `B`. -/
+every maximal ideal `x : MaximalSpectrum A` by the Gelfand radius on `B`. -/
 theorem _root_.AlgHom.pointNorm_apply_le_gelfandRadius [IsUltrametricDist K] [CompleteSpace K]
     [NormedRing B] [NormedAlgebra K B] [HasSummableGeomSeries B] (φ : B →ₐ[K] A)
     (x : MaximalSpectrum A) (b : B) :
@@ -255,9 +264,9 @@ theorem _root_.AlgHom.pointNorm_apply_le_gelfandRadius [IsUltrametricDist K] [Co
     (ψ := Ideal.Quotient.mkₐ K x.asIdeal) (Ideal.Quotient.mkₐ_ker K x.asIdeal).ge]
   exact ((Ideal.Quotient.mkₐ K x.asIdeal).comp φ).spectralNorm_apply_le_gelfandRadius b
 
-/-- **Point norms are bounded by algebra norms with summable geometric series.** On a commutative
+/-- **Point values are bounded by algebra norms with summable geometric series.** On a commutative
 algebra with an algebra norm having summable geometric series over a complete ultrametric field
-`K`, `|f(x)| ≤ ‖f‖` at every classical point `x`. -/
+`K`, `pointNorm K x f ≤ ‖f‖` at every maximal ideal `x`. -/
 theorem _root_.MaximalSpectrum.pointNorm_le_norm [IsUltrametricDist K] [CompleteSpace K]
     {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [HasSummableGeomSeries A]
     (x : MaximalSpectrum A) (f : A) : pointNorm K x f ≤ ‖f‖ :=
@@ -329,14 +338,14 @@ theorem supSeminorm_eq_iSup (f : A) : supSeminorm K f = ⨆ x : MaximalSpectrum 
 theorem supSeminorm_nonneg (f : A) : 0 ≤ supSeminorm K f :=
   Real.iSup_nonneg fun _ ↦ pointNorm_nonneg f
 
-/-- A nonnegative bound for all point norms bounds the supremum seminorm. -/
+/-- A nonnegative bound for all residue-field spectral values bounds `supSeminorm K`. -/
 theorem supSeminorm_le {f : A} {r : ℝ} (hr : 0 ≤ r) (h : ∀ x, pointNorm K x f ≤ r) :
     supSeminorm K f ≤ r :=
   Real.iSup_le h hr
 
 /-- Over a complete ultrametric normed field `K`, any `K`-algebra homomorphism from a normed
 `K`-algebra `B` with summable geometric series into a commutative `K`-algebra `A` maps every
-`b : B` to an element of supremum seminorm at most `gelfandRadius b`. -/
+`b : B` to an element with `supSeminorm K (φ b) ≤ gelfandRadius b`. -/
 theorem _root_.AlgHom.supSeminorm_apply_le_gelfandRadius [IsUltrametricDist K] [CompleteSpace K]
     [NormedRing B] [NormedAlgebra K B] [HasSummableGeomSeries B] (φ : B →ₐ[K] A) (b : B) :
     supSeminorm K (φ b) ≤ gelfandRadius b :=
@@ -350,29 +359,29 @@ theorem _root_.AlgHom.supSeminorm_apply_le_norm [IsUltrametricDist K] [CompleteS
     supSeminorm K (φ b) ≤ ‖b‖ :=
   (φ.supSeminorm_apply_le_gelfandRadius b).trans (gelfandRadius_le_norm b)
 
-/-- Over a complete ultrametric normed field `K`, the point norms of the image of any element under
-a `K`-algebra homomorphism from a normed `K`-algebra with summable geometric series are bounded
-above by its Gelfand radius. -/
+/-- Over a complete ultrametric normed field `K`, the residue-field spectral values of the image
+of any element under a `K`-algebra homomorphism from a normed `K`-algebra with summable geometric
+series are bounded above by its Gelfand radius. -/
 theorem _root_.AlgHom.bddAbove_range_pointNorm [IsUltrametricDist K] [CompleteSpace K]
     [NormedRing B] [NormedAlgebra K B] [HasSummableGeomSeries B] (φ : B →ₐ[K] A) (b : B) :
     BddAbove (Set.range fun x : MaximalSpectrum A ↦ pointNorm K x (φ b)) :=
   ⟨gelfandRadius b, Set.forall_mem_range.mpr fun x ↦ φ.pointNorm_apply_le_gelfandRadius x b⟩
 
-/-- The supremum seminorm is bounded by every algebra norm with summable geometric series. -/
+/-- `TauCeti.supSeminorm K` is bounded by every algebra norm with summable geometric series. -/
 theorem supSeminorm_le_norm [IsUltrametricDist K] [CompleteSpace K]
     {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [HasSummableGeomSeries A] (f : A) :
     supSeminorm K f ≤ ‖f‖ :=
   (AlgHom.id K A).supSeminorm_apply_le_norm f
 
-/-- If the absolute values of `f` at the classical points are bounded, then each of them is at
-most the supremum seminorm: `|f(x)| ≤ |f|sup`. -/
+/-- If the residue-field spectral values of `f` over maximal ideals are bounded above, then each
+of them is at most `supSeminorm K f`. -/
 theorem pointNorm_le_supSeminorm_of_bddAbove {f : A}
     (hb : BddAbove (Set.range fun x : MaximalSpectrum A ↦ pointNorm K x f))
     (x : MaximalSpectrum A) : pointNorm K x f ≤ supSeminorm K f := by
   rw [supSeminorm_eq_iSup]
   exact le_ciSup hb x
 
-/-- The supremum seminorm vanishes on the zero algebra, which has no maximal ideals. -/
+/-- `TauCeti.supSeminorm K` vanishes on the zero algebra, which has no maximal ideals. -/
 theorem supSeminorm_eq_zero_of_subsingleton [Subsingleton A] (f : A) : supSeminorm K f = 0 := by
   have : IsEmpty (MaximalSpectrum A) := ⟨fun x ↦ x.isMaximal.ne_top (Subsingleton.elim _ _)⟩
   exact Real.iSup_of_isEmpty _
@@ -390,8 +399,8 @@ theorem supSeminorm_algebraMap [Nontrivial A] (c : K) :
 theorem supSeminorm_one [Nontrivial A] : supSeminorm K (1 : A) = 1 := by
   simp [supSeminorm]
 
-/-- **Perturbations of `1` by elements of supremum seminorm `< 1` are units.** If the absolute
-values of `a` at the classical points are bounded and `|a|sup < 1`, then `1 - a` is a unit. -/
+/-- **Perturbations of `1` with `supSeminorm K a < 1` are units.** If the residue-field spectral
+values of `a` are bounded above and `supSeminorm K a < 1`, then `1 - a` is a unit. -/
 theorem isUnit_one_sub_of_supSeminorm_lt_one {a : A}
     (hb : BddAbove (Set.range fun x : MaximalSpectrum A ↦ pointNorm K x a))
     (ha : supSeminorm K a < 1) : IsUnit (1 - a) := by
@@ -409,25 +418,27 @@ theorem isUnit_one_sub_of_supSeminorm_lt_one {a : A}
 theorem supSeminorm_neg [IsUltrametricDist K] (f : A) : supSeminorm K (-f) = supSeminorm K f := by
   simp only [supSeminorm, MaximalSpectrum.pointNorm_neg]
 
-/-- The supremum seminorm is homogeneous for scalars of `K`: `|c • f|sup = ‖c‖ * |f|sup`. -/
+/-- `supSeminorm K` is homogeneous for scalars of `K`:
+`supSeminorm K (c • f) = ‖c‖ * supSeminorm K f`. -/
 theorem supSeminorm_smul [IsUltrametricDist K] (c : K) (f : A) :
     supSeminorm K (c • f) = ‖c‖ * supSeminorm K f := by
   simp only [supSeminorm, MaximalSpectrum.pointNorm_smul, Real.mul_iSup_of_nonneg (norm_nonneg c)]
 
-/-- `|f ^ n|sup = |f|sup ^ n` for `n ≠ 0`, including on the zero algebra. For `n = 0` the
-statement fails on the zero algebra. -/
+/-- `supSeminorm K (f ^ n) = supSeminorm K f ^ n` for `n ≠ 0`, including on the zero algebra.
+For `n = 0` the statement fails on the zero algebra. -/
 theorem supSeminorm_pow [IsUltrametricDist K] (f : A) {n : ℕ} (hn : n ≠ 0) :
     supSeminorm K (f ^ n) = supSeminorm K f ^ n := by
   simp only [supSeminorm, MaximalSpectrum.pointNorm_pow,
     Real.iSup_pow_of_ne_zero (fun _ ↦ pointNorm_nonneg f) hn]
 
-/-- The supremum seminorm is power-multiplicative: `|f ^ n|sup = |f|sup ^ n` for `n ≥ 1`. -/
+/-- `supSeminorm K` is power-multiplicative: `supSeminorm K (f ^ n) = supSeminorm K f ^ n` for
+`n ≥ 1`. -/
 theorem isPowMul_supSeminorm [IsUltrametricDist K] : IsPowMul (supSeminorm K : A → ℝ) :=
   fun f _ hn ↦ supSeminorm_pow f (Nat.one_le_iff_ne_zero.mp hn)
 
 /-- An integral `K`-algebra homomorphism between commutative `K`-algebras whose kernel is contained
-in the Jacobson radical `Ideal.jacobson (⊥ : Ideal A)` preserves supremum seminorms, since every
-classical point of the source lifts to the target. -/
+in the Jacobson radical `Ideal.jacobson (⊥ : Ideal A)` preserves `supSeminorm K`, since every
+maximal ideal of the source lifts to the target. -/
 theorem _root_.AlgHom.supSeminorm_map_of_isIntegral_of_ker_le_jacobson {B : Type*} [CommRing B]
     [Algebra K B] (φ : A →ₐ[K] B) (hφ : φ.toRingHom.IsIntegral)
     (hker : RingHom.ker φ ≤ Ideal.jacobson (⊥ : Ideal A)) (a : A) :
@@ -436,10 +447,10 @@ theorem _root_.AlgHom.supSeminorm_map_of_isIntegral_of_ker_le_jacobson {B : Type
   have hg := MaximalSpectrum.comapOfIsIntegral_surjective_of_ker_le_jacobson (φ : A →+* B) hφ' hker
   simp only [supSeminorm]
   rw [← hg.iSup_comp]
-  simp only [pointNorm_comapOfIsIntegral]
+  simp only [φ.pointNorm_comapOfIsIntegral hφ']
 
-/-- A surjective algebra map whose kernel consists of nilpotent elements preserves supremum
-seminorms, since it is integral and its kernel lies in the Jacobson radical. -/
+/-- A surjective algebra map whose kernel consists of nilpotent elements preserves
+`supSeminorm K`, since it is integral and its kernel lies in the Jacobson radical. -/
 theorem supSeminorm_map_of_ker_le_nilradical {B : Type*} [CommRing B] [Algebra K B]
     {φ : A →ₐ[K] B} (hφ : Function.Surjective φ) (hker : RingHom.ker φ ≤ nilradical A) (a : A) :
     supSeminorm K (φ a) = supSeminorm K a :=
@@ -447,7 +458,7 @@ theorem supSeminorm_map_of_ker_le_nilradical {B : Type*} [CommRing B] [Algebra K
     (φ.toRingHom.isIntegral_of_surjective hφ)
     (hker.trans Ideal.radical_le_jacobson) a
 
-/-- A `K`-algebra isomorphism preserves the supremum seminorm. -/
+/-- A `K`-algebra isomorphism preserves `supSeminorm K`. -/
 @[simp]
 theorem _root_.AlgEquiv.supSeminorm_eq {B : Type*} [CommRing B] [Algebra K B] (e : A ≃ₐ[K] B)
     (a : A) :
@@ -455,40 +466,37 @@ theorem _root_.AlgEquiv.supSeminorm_eq {B : Type*} [CommRing B] [Algebra K B] (e
   supSeminorm_map_of_ker_le_nilradical (φ := e.toAlgHom) e.surjective
     ((RingHom.injective_iff_ker_eq_bot _).mp e.injective ▸ bot_le) a
 
-/-- **The supremum seminorm is unchanged by reduction**: `|f|sup` is the same in `A` and in its
-reduction `A ⧸ nilradical A`. -/
+/-- **`supSeminorm K` is unchanged by reduction**: `supSeminorm K` takes the same value in `A` and
+in its reduction `A ⧸ nilradical A`. -/
 theorem supSeminorm_mk_nilradical (f : A) :
     supSeminorm K (Ideal.Quotient.mk (nilradical A) f) = supSeminorm K f :=
   supSeminorm_map_of_ker_le_nilradical (φ := Ideal.Quotient.mkₐ K (nilradical A))
     (Ideal.Quotient.mkₐ_surjective K _) (Ideal.Quotient.mkₐ_ker K _).le f
 
-/-- An algebra homomorphism contracting maximal ideals to maximal ideals does not increase the
-supremum seminorm at any element whose source point norms are bounded. -/
+/-- An algebra homomorphism contracting maximal ideals to maximal ideals does not increase
+`supSeminorm K` at any element whose source residue-field spectral values are bounded above. -/
 theorem _root_.AlgHom.supSeminorm_map_le_of_comap_isMaximal_of_bddAbove {B : Type*} [CommRing B]
     [Algebra K B] (φ : A →ₐ[K] B) (hmax : ∀ x : MaximalSpectrum B, (x.asIdeal.comap φ).IsMaximal)
     {a : A} (hb : BddAbove (Set.range fun y : MaximalSpectrum A ↦ pointNorm K y a)) :
     supSeminorm K (φ a) ≤ supSeminorm K a :=
   supSeminorm_le (supSeminorm_nonneg a) fun x ↦ by
-    rw [← pointNorm_comap φ x (hmax x) a]
+    rw [← φ.pointNorm_comap x (hmax x) a]
     exact pointNorm_le_supSeminorm_of_bddAbove hb _
 
-/-- At a classical point `x` of `A` containing the kernel of an integral algebra map `φ : A → B`
-into an algebra whose point norms at `φ a` are bounded, `|a(x)| ≤ |φ a|sup`. -/
+/-- At a maximal ideal `x` of `A` containing the kernel of an integral algebra map `φ : A →ₐ[K] B`
+into an algebra whose residue-field spectral values at `φ a` are bounded above,
+`pointNorm K x a ≤ supSeminorm K (φ a)`. -/
 theorem _root_.AlgHom.pointNorm_le_supSeminorm_map_of_isIntegral_of_ker_le_of_bddAbove
     {B : Type*} [CommRing B] [Algebra K B] (φ : A →ₐ[K] B) (hφ : φ.toRingHom.IsIntegral)
     {x : MaximalSpectrum A} (hx : RingHom.ker φ ≤ x.asIdeal) {a : A}
     (hb : BddAbove (Set.range fun y : MaximalSpectrum B ↦ pointNorm K y (φ a))) :
     pointNorm K x a ≤ supSeminorm K (φ a) := by
-  algebraize [φ.toRingHom]
-  have : Algebra.IsIntegral A B := ⟨hφ⟩
-  obtain ⟨m, hm, hmcomap⟩ := Ideal.exists_ideal_over_maximal_of_isIntegral x.asIdeal hx
   have hφ' : (φ : A →+* B).IsIntegral := hφ
-  have hcomap : MaximalSpectrum.comapOfIsIntegral (φ : A →+* B) hφ' ⟨m, hm⟩ = x :=
-    MaximalSpectrum.ext ((MaximalSpectrum.comapOfIsIntegral_asIdeal _ _ _).trans hmcomap)
+  obtain ⟨y, hy⟩ := (MaximalSpectrum.mem_range_comapOfIsIntegral_iff (φ : A →+* B) hφ').mpr hx
   calc
-    pointNorm K x a = pointNorm K ⟨m, hm⟩ (φ a) := by
-      rw [← hcomap, pointNorm_comapOfIsIntegral]
-    _ ≤ supSeminorm K (φ a) := pointNorm_le_supSeminorm_of_bddAbove hb ⟨m, hm⟩
+    pointNorm K x a = pointNorm K y (φ a) := by
+      rw [← hy, φ.pointNorm_comapOfIsIntegral hφ']
+    _ ≤ supSeminorm K (φ a) := pointNorm_le_supSeminorm_of_bddAbove hb y
 
 namespace IsAffinoidAlgebra
 

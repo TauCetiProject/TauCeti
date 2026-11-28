@@ -39,6 +39,7 @@ map of `g` and `h` on these degree bounds, in the explicit form consumed by Hens
 * `Polynomial.Monic.modByMonic_mul_add`, `Polynomial.Monic.divByMonic_mul_add`: division with
   remainder reads off `g * v + u`.
 * `Polynomial.map_mem_degreeLT`: a change of coefficients preserves membership in `R[X]_n`.
+* `Polynomial.degreeLTEquiv_apply`: `Polynomial.degreeLTEquiv` reads off coefficients.
 * `Polynomial.finrank_degreeLT`: `R[X]_n` has rank `n`.
 * `Polynomial.finite_setOf_monic_natDegree_eq`, `Polynomial.ncard_setOf_monic_natDegree_eq`:
   over a finite coefficient ring there are finitely many monic polynomials of degree `d`, and over
@@ -95,6 +96,12 @@ theorem map_mem_degreeLT {S : Type*} [Semiring S] (φ : R →+* S) {n : ℕ} {f 
 @[simp]
 theorem finrank_degreeLT [StrongRankCondition R] (n : ℕ) : Module.finrank R (degreeLT R n) = n := by
   rw [Module.finrank_eq_card_basis (degreeLT.basis R n), Fintype.card_fin]
+
+/-- `Polynomial.degreeLTEquiv` reads off the coefficients of a polynomial of degree `< n`. -/
+@[simp]
+theorem degreeLTEquiv_apply (n : ℕ) (p : degreeLT R n) (i : Fin n) :
+    degreeLTEquiv R n p i = (p : R[X]).coeff i :=
+  (rfl)
 
 variable (R)
 

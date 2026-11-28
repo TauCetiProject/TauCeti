@@ -146,7 +146,7 @@ theorem supSeminorm_apply_X_le_one [IsDaggerAlgebra K C] {σ : Type*} [Finite σ
       ext
       simp [RingHom.mem_ker, Ideal.Quotient.eq_zero_iff_mem]
     rwa [hker] at h
-  rw [← pointNorm_comap φ y hy]
+  rw [← φ.pointNorm_comap y hy]
   exact (pointNorm_le_norm _ _).trans (norm_X i).le
 
 /-- The image of an element of supremum seminorm at most `1` in the completion `T_n ⧸ I T_n` of a
@@ -167,7 +167,7 @@ private theorem exists_monic_eval_mem_map_toTate {n : ℕ} {π : W (Fin n) →�
   have hι : ι (π g) = Ideal.Quotient.mk J (toTate (Fin n) K g) := by simp [ι]
   have hsup : supSeminorm K (Ideal.Quotient.mk J (toTate (Fin n) K g)) ≤ 1 := by
     refine supSeminorm_le zero_le_one fun y ↦ ?_
-    rw [← hι, ← pointNorm_comap ι y (hB.comap_isMaximal ι y.asIdeal)]
+    rw [← hι, ← ι.pointNorm_comap y (hB.comap_isMaximal ι y.asIdeal)]
     exact (IsDaggerAlgebra.pointNorm_le_supSeminorm _ _).trans hg
   obtain ⟨p, hp, hpf, hpc⟩ :=
     (isAffinoidAlgebra_tate (K := K) (σ := Fin n)).exists_monic_aeval_eq_zero_supSeminorm_coeff_le

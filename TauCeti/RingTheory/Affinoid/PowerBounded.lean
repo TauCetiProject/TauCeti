@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.Huber.PowerBounded
 public import TauCeti.Analysis.Normed.Ring.Ultra
 
 import Mathlib.RingTheory.Polynomial.RationalRoot
+import TauCeti.RingTheory.Affinoid.FunctionAlgebra
 import TauCeti.RingTheory.Affinoid.MaximumModulus
 import TauCeti.RingTheory.Affinoid.MinimalPolynomial
 import TauCeti.RingTheory.Affinoid.NoetherNormalization
@@ -17,7 +18,6 @@ import TauCeti.RingTheory.Affinoid.QuotientNorm
 import TauCeti.RingTheory.Huber.Normed
 import TauCeti.RingTheory.IntegralClosure.Quotient
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniqueFactorization
-import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 
 /-!
 # Power-bounded and topologically nilpotent elements of affinoid algebras
@@ -27,13 +27,13 @@ surjection `π : K⟨X₁, …, Xₙ⟩ → A`, and let `A₀ = π(K⟨X₁, …
 unit ball. This file identifies the elements of supremum seminorm at most one with the elements
 integral over `A₀`. Nilpotents are retained throughout: no reducedness is assumed.
 
-For a complete ultrametric algebra norm on `A`, the presentation is continuous and `A₀` is a
-bounded subring. Consequently the power-bounded elements of `A` are exactly the elements with
-`|f|sup ≤ 1`, and the topologically nilpotent ones are exactly those with `|f|sup < 1`, or
-equivalently `|f(x)| < 1` at every classical point `x`. In particular both sets depend only on
-the algebra structure of `A`, not on the chosen norm. An open bounded subring `B` is the whole
-unit ball `{f | |f|sup ≤ 1}` as soon as `B ⧸ ϖB` is reduced for some topologically nilpotent
-element `ϖ ∈ B` regular in `A`, by the general criterion
+For any complete algebra norm on `A` (not assumed ultrametric), the topologically nilpotent
+elements are exactly those with `|f|sup < 1`, or equivalently `|f(x)| < 1` at every classical point
+`x`. For a complete ultrametric algebra norm on `A`, the presentation is continuous and `A₀` is a
+bounded subring, so the power-bounded elements of `A` are exactly the elements with `|f|sup ≤ 1`.
+In particular both sets depend only on the algebra structure of `A`, not on the chosen norm. An open
+bounded subring `B` is the whole unit ball `{f | |f|sup ≤ 1}` as soon as `B ⧸ ϖB` is reduced for
+some topologically nilpotent element `ϖ ∈ B` regular in `A`, by the general criterion
 `TauCeti.Huber.isPowerBounded_iff_mem_of_isReduced_quotient`.
 
 Integrality is detected modulo every minimal prime `𝔭`
@@ -50,7 +50,7 @@ value of the minimal polynomial; it therefore lifts to a monic polynomial over `
 * `TauCeti.IsAffinoidAlgebra.isPowerBounded_iff_supSeminorm_le_one`: `A° = {f | |f|sup ≤ 1}`,
   with the pointwise form `TauCeti.IsAffinoidAlgebra.isPowerBounded_iff_forall_pointNorm_le_one`.
 * `TauCeti.IsAffinoidAlgebra.isTopologicallyNilpotent_iff_supSeminorm_lt_one`:
-  `A°° = {f | |f|sup < 1}`, with the pointwise form
+  `A°° = {f | |f|sup < 1}` for any complete `K`-algebra norm, with the pointwise form
   `TauCeti.IsAffinoidAlgebra.isTopologicallyNilpotent_iff_forall_pointNorm_lt_one`.
 * `TauCeti.IsAffinoidAlgebra.mem_iff_supSeminorm_le_one_of_isReduced_quotient`: an open bounded
   subring `B` containing a topologically nilpotent regular element `ϖ` of `A` with `B ⧸ ϖB`
@@ -164,7 +164,46 @@ namespace TauCeti.IsAffinoidAlgebra
 open Filter Topology
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
-  {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A] [CompleteSpace A]
+
+/-- **Topologically nilpotent elements of an affinoid algebra.** For any complete `K`-algebra
+norm on an affinoid algebra (not assumed ultrametric), an element is topologically nilpotent if and
+only if its supremum seminorm is less than one. -/
+theorem isTopologicallyNilpotent_iff_supSeminorm_lt_one {A : Type*} [NormedCommRing A]
+    [NormedAlgebra K A] [CompleteSpace A] (hA : IsAffinoidAlgebra K A) {f : A} :
+    IsTopologicallyNilpotent f ↔ supSeminorm K f < 1 := by
+  rw [hA.supSeminorm_eq_gelfandRadius f]
+  refine ⟨fun hf ↦ ?_, fun hf ↦ ?_⟩
+  · -- Some positive power of `f` has norm less than one.
+    obtain ⟨N, hN⟩ := eventually_atTop.mp (hf.eventually (Metric.ball_mem_nhds 0 one_pos))
+    have hlt : ‖f ^ (N + 1)‖ < 1 := mem_ball_zero_iff.mp (hN _ N.le_succ)
+    exact (gelfandRadius_le_norm_pow f N.succ_ne_zero).trans_lt <| by
+      simpa only [one_div] using Real.rpow_lt_one (norm_nonneg _) hlt (by positivity)
+  · -- Choose `r` with `gelfandRadius f < r < 1` so `‖f ^ n‖ ≤ C * r ^ n → 0`.
+    obtain ⟨r, hfr, hr1⟩ := exists_between hf
+    obtain ⟨C, _, hC⟩ := norm_pow_le_mul_pow_of_gelfandRadius_lt f hfr
+    have hr0 : 0 ≤ r := (gelfandRadius_nonneg f).trans hfr.le
+    have hC_lim : Tendsto (fun n : ℕ ↦ C * r ^ n) atTop (𝓝 0) := by
+      simpa only [mul_zero] using (tendsto_pow_atTop_nhds_zero_of_lt_one hr0 hr1).const_mul C
+    exact tendsto_zero_iff_norm_tendsto_zero.mpr <|
+      squeeze_zero (fun _ ↦ norm_nonneg _) hC hC_lim
+
+/-- **Topologically nilpotent elements, pointwise.** For any complete `K`-algebra norm on an
+affinoid algebra (not assumed ultrametric), an element is topologically nilpotent if and only if it
+has absolute value less than one at every classical point. -/
+theorem isTopologicallyNilpotent_iff_forall_pointNorm_lt_one {A : Type*} [NormedCommRing A]
+    [NormedAlgebra K A] [CompleteSpace A] (hA : IsAffinoidAlgebra K A) {f : A} :
+    IsTopologicallyNilpotent f ↔ ∀ x, pointNorm K x f < 1 := by
+  rw [hA.isTopologicallyNilpotent_iff_supSeminorm_lt_one, hA.supSeminorm_lt_iff one_pos]
+
+/-- A power-bounded element lies in `A°°` (when `A` has a nonarchimedean additive topology)
+exactly when its supremum seminorm is less than one. -/
+theorem mem_topologicallyNilpotentIdeal_iff_supSeminorm_lt_one {A : Type*} [NormedCommRing A]
+    [NormedAlgebra K A] [CompleteSpace A] [NonarchimedeanAddGroup A]
+    (hA : IsAffinoidAlgebra K A) {a : Huber.powerBoundedSubring A} :
+    a ∈ Huber.topologicallyNilpotentIdeal A ↔ supSeminorm K (a : A) < 1 := by
+  rw [Huber.mem_topologicallyNilpotentIdeal, hA.isTopologicallyNilpotent_iff_supSeminorm_lt_one]
+
+variable {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A] [CompleteSpace A]
 
 /-- **Power-bounded elements of an affinoid algebra.** For every complete ultrametric algebra
 norm on an affinoid algebra, an element is power-bounded if and only if its supremum seminorm is
@@ -194,56 +233,12 @@ theorem isPowerBounded_iff_supSeminorm_le_one (hA : IsAffinoidAlgebra K A) {f : 
     exact Huber.isPowerBounded_of_isIntegral
       ⟨q.map (Subring.inclusion hle), hq.map _, by rwa [eval₂_map]⟩
 
-/-- **Topologically nilpotent elements of an affinoid algebra.** For every complete ultrametric
-algebra norm on an affinoid algebra, an element is topologically nilpotent if and only if its
-supremum seminorm is less than one. -/
-theorem isTopologicallyNilpotent_iff_supSeminorm_lt_one (hA : IsAffinoidAlgebra K A) {f : A} :
-    IsTopologicallyNilpotent f ↔ supSeminorm K f < 1 := by
-  refine ⟨fun hf ↦ ?_, fun hf ↦ ?_⟩
-  · -- Some positive power of `f` has norm less than one.
-    obtain ⟨N, hN⟩ := eventually_atTop.mp (hf.eventually (Metric.ball_mem_nhds 0 one_pos))
-    rw [← pow_lt_one_iff_of_nonneg (supSeminorm_nonneg f) N.succ_ne_zero,
-      ← supSeminorm_pow f N.succ_ne_zero]
-    exact (supSeminorm_le_norm _).trans_lt (mem_ball_zero_iff.mp (hN _ N.le_succ))
-  · -- Write `f ^ n = c * u` with `|c| < 1` and `u` power-bounded.
-    obtain ⟨c, hc0, hc1⟩ := NormedField.exists_norm_lt_one K
-    obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one hc0 hf
-    have hn0 : n ≠ 0 := by
-      rintro rfl
-      exact (hc1.trans (by simpa using hn)).false
-    have hc : c ≠ 0 := norm_pos_iff.mp hc0
-    have hu : Huber.IsPowerBounded (c⁻¹ • f ^ n) := by
-      rw [hA.isPowerBounded_iff_supSeminorm_le_one, supSeminorm_smul,
-        supSeminorm_pow f hn0, norm_inv, inv_mul_le_one₀ hc0]
-      exact hn.le
-    have hcn : IsTopologicallyNilpotent (algebraMap K A c) :=
-      IsTopologicallyNilpotent.map (continuous_algebraMap K A)
-        (tendsto_pow_atTop_nhds_zero_of_norm_lt_one hc1)
-    refine IsTopologicallyNilpotent.of_pow hn0 ?_
-    have hfu : f ^ n = c⁻¹ • f ^ n * algebraMap K A c := by
-      rw [smul_mul_assoc, mul_comm, ← Algebra.smul_def, smul_smul, inv_mul_cancel₀ hc, one_smul]
-    rw [hfu]
-    exact hu.isTopologicallyNilpotent_mul hcn
-
 /-- **Power-bounded elements, pointwise.** For every complete ultrametric algebra norm on an
 affinoid algebra, an element is power-bounded if and only if it has absolute value at most one at
 every classical point. -/
 theorem isPowerBounded_iff_forall_pointNorm_le_one (hA : IsAffinoidAlgebra K A) {f : A} :
     Huber.IsPowerBounded f ↔ ∀ x, pointNorm K x f ≤ 1 := by
   rw [hA.isPowerBounded_iff_supSeminorm_le_one, hA.supSeminorm_le_iff zero_le_one]
-
-/-- **Topologically nilpotent elements, pointwise.** For every complete ultrametric algebra norm on
-an affinoid algebra, an element is topologically nilpotent if and only if it has absolute value
-less than one at every classical point. -/
-theorem isTopologicallyNilpotent_iff_forall_pointNorm_lt_one (hA : IsAffinoidAlgebra K A)
-    {f : A} : IsTopologicallyNilpotent f ↔ ∀ x, pointNorm K x f < 1 := by
-  rw [hA.isTopologicallyNilpotent_iff_supSeminorm_lt_one, hA.supSeminorm_lt_iff one_pos]
-
-/-- A power-bounded element lies in `A°°` exactly when its supremum seminorm is less than one. -/
-theorem mem_topologicallyNilpotentIdeal_iff_supSeminorm_lt_one (hA : IsAffinoidAlgebra K A)
-    {a : Huber.powerBoundedSubring A} :
-    a ∈ Huber.topologicallyNilpotentIdeal A ↔ supSeminorm K (a : A) < 1 := by
-  rw [Huber.mem_topologicallyNilpotentIdeal, hA.isTopologicallyNilpotent_iff_supSeminorm_lt_one]
 
 /-- **A ring of definition with reduced quotient is the unit ball of the supremum seminorm.** Let
 `B` be an open bounded subring of an affinoid algebra with a complete ultrametric algebra norm,

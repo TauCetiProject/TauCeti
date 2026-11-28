@@ -34,6 +34,10 @@ the powers satisfy the quantitative bound `‖f ^ n‖ ≤ C |f|sup ^ n`.
   `‖f ^ n‖ ^ (1 / n)` tends to `|f|sup` (for any complete `K`-algebra norm).
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_smoothingFun`: `|f|sup = inf_{n ≥ 1} ‖f ^ n‖ ^ (1 / n)`
   (for any complete `K`-algebra norm).
+* `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_norm_of_norm_pow_eq` and
+  `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_norm_of_normMulClass`: `|f|sup = ‖f‖` when
+  `‖f ^ n‖ = ‖f‖ ^ n` for all `n ≠ 0` (in particular for any multiplicative algebra norm, without
+  requiring `‖1‖ = 1`).
 * `TauCeti.IsAffinoidAlgebra.exists_norm_pow_le_mul_supSeminorm_pow`: for a complete ultrametric
   algebra norm, if `|f|sup > 0`, then `‖f ^ n‖ ≤ C |f|sup ^ n` for some constant `C` and every `n`.
 * `TauCeti.IsAffinoidAlgebra.supRingSeminorm_eq_smoothingSeminorm`: the smoothing identity for the
@@ -80,15 +84,29 @@ theorem supSeminorm_eq_smoothingFun {A : Type*} [NormedCommRing A] [NormedAlgebr
     supSeminorm K f = smoothingFun (normRingSeminorm A) f := by
   rw [hA.supSeminorm_eq_gelfandRadius f, smoothingFun_normRingSeminorm_eq_gelfandRadius]
 
+/-- A complete algebra norm on an affinoid algebra agrees with `supSeminorm K` at any element
+whose positive powers satisfy `‖f ^ n‖ = ‖f‖ ^ n` (for instance, for a power-multiplicative
+norm). -/
+theorem supSeminorm_eq_norm_of_norm_pow_eq {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
+    [CompleteSpace A] (hA : IsAffinoidAlgebra K A) {f : A}
+    (hf : ∀ n : ℕ, n ≠ 0 → ‖f ^ n‖ = ‖f‖ ^ n) :
+    supSeminorm K f = ‖f‖ := by
+  refine tendsto_nhds_unique (hA.pow_norm_pow_one_div_tendsto_nhds_supSeminorm f) ?_
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [eventually_ne_atTop 0] with n hn
+  have hnR : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
+  rw [hf n hn, ← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg f), mul_one_div_cancel hnR,
+    Real.rpow_one]
+
 /-- A complete multiplicative algebra norm on an affinoid algebra is its supremum norm.
-No normalisation of a Tate presentation is needed. -/
+No normalisation of `‖1‖` or of a Tate presentation is needed. -/
 @[simp]
 theorem supSeminorm_eq_norm_of_normMulClass {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
-    [CompleteSpace A] [NormOneClass A] [NormMulClass A]
-    (hA : IsAffinoidAlgebra K A) (f : A) : supSeminorm K f = ‖f‖ := by
-  rw [hA.supSeminorm_eq_smoothingFun]
-  exact smoothingFun_apply_of_map_mul_eq_mul (normRingSeminorm A)
-    (le_of_eq norm_one) (fun g ↦ norm_mul f g)
+    [CompleteSpace A] [NormMulClass A]
+    (hA : IsAffinoidAlgebra K A) (f : A) : supSeminorm K f = ‖f‖ :=
+  hA.supSeminorm_eq_norm_of_norm_pow_eq fun n hn ↦
+    Nat.le_induction (by simp) (fun k _ ih ↦ by rw [pow_succ, norm_mul, ih, pow_succ]) n
+      (Nat.one_le_iff_ne_zero.mpr hn)
 
 variable {A : Type*} [NormedCommRing A] [NormedAlgebra K A] [IsUltrametricDist A] [CompleteSpace A]
 

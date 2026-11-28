@@ -41,7 +41,7 @@ restricting `E` to be a field.
 
 ## Main results
 
-* `TauCeti.spectralNorm_quotient_le_spectralValue_minpoly`: at every maximal ideal `m`, the
+* `IsIntegral.spectralNorm_quotient_le_spectralValue_minpoly`: at every maximal ideal `m`, the
   residue-field spectral norm of `x mod m` for an integral element `x` is at most
   `spectralValue (minpoly K x)` (no global integrality or reducedness needed).
 * `TauCeti.spectralValue_minpoly_eq_iSup_spectralNorm`: `spectralValue (minpoly K x)` is the
@@ -86,7 +86,7 @@ private theorem spectralNorm_quotient_le_iSup [Module.Finite K E] (x : E)
 /-- At every maximal ideal `m` of a commutative `K`-algebra `E` (not assumed integral or reduced),
 the residue-field spectral norm of `x mod m` for an integral element `x : E` is at most
 `spectralValue (minpoly K x)`. -/
-theorem spectralNorm_quotient_le_spectralValue_minpoly [IsUltrametricDist K]
+theorem _root_.IsIntegral.spectralNorm_quotient_le_spectralValue_minpoly [IsUltrametricDist K]
     {x : E} (hx : IsIntegral K x) (m : MaximalSpectrum E) :
     letI := Ideal.Quotient.field m.asIdeal
     spectralNorm K (E ⧸ m.asIdeal) (Ideal.Quotient.mk m.asIdeal x) ≤
@@ -112,7 +112,7 @@ theorem spectralValue_minpoly_eq_iSup_spectralNorm (x : E) :
   have hxm (m : MaximalSpectrum E) : IsIntegral K (Ideal.Quotient.mk m.asIdeal x) :=
     hx.map (Ideal.Quotient.mkₐ K m.asIdeal)
   refine le_antisymm ?_
-    (Real.iSup_le (fun m ↦ spectralNorm_quotient_le_spectralValue_minpoly hx m)
+    (Real.iSup_le (fun m ↦ hx.spectralNorm_quotient_le_spectralValue_minpoly m)
       (spectralValue_nonneg _))
   let Q : K[X] := ∏ m : MaximalSpectrum E, minpoly K (Ideal.Quotient.mk m.asIdeal x)
   have hQ_monic : Q.Monic := monic_prod_of_monic _ _ fun m _ ↦ minpoly.monic (hxm m)

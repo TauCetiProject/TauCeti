@@ -578,7 +578,7 @@ theorem supSeminorm_eq_gelfandRadius {A : Type*} [NormedCommRing A] [NormedAlgeb
   rw [← supSeminorm_mk_nilradical (K := K) f,
     supSeminorm_eq_gelfandRadius_of_isReduced (A := A ⧸ nilradical A)
       (hA.quotient (nilradical A)),
-    gelfandRadius_quotient_mk_eq_of_le_nilradical le_rfl f]
+    Ideal.gelfandRadius_quotient_mk_eq_of_le_nilradical (nilradical A) le_rfl f]
 
 /-- For any reduced affinoid `K`-algebra `A` over a complete nontrivially normed ultrametric field
 `K` carrying a complete `K`-algebra norm, the identity map to `hA.SupNormModel` is a topological

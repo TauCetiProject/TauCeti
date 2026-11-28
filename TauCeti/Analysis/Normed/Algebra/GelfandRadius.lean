@@ -54,7 +54,7 @@ In any seminormed commutative ring `A`, `gelfandRadius` agrees with Mathlib's sm
 * `Commute.gelfandRadius_add_le_of_isNilpotent` and
   `Commute.gelfandRadius_add_eq_of_isNilpotent`: perturbing by a commuting nilpotent preserves the
   Gelfand radius.
-* `TauCeti.gelfandRadius_quotient_mk_eq_of_le_nilradical`: quotienting a seminormed commutative
+* `Ideal.gelfandRadius_quotient_mk_eq_of_le_nilradical`: quotienting a seminormed commutative
   ring by an ideal of nilpotent elements preserves the Gelfand radius.
 * `IsIdempotentElem.one_le_gelfandRadius_mul_norm_inverse`: a lower bound on the Gelfand radius
   of elements of the corner `p R p`.
@@ -395,33 +395,37 @@ theorem gelfandRadius_le_spectralValue_of_aeval_eq_zero {B A : Type*} [Seminorme
   exact Real.rpow_le_rpow (gelfandRadius_nonneg _) (hBA _)
     (one_div_nonneg.mpr (sub_nonneg.mpr (Nat.cast_le.mpr hjd.le)))
 
+end TauCeti
+
+namespace Ideal
+
 /-- The quotient map onto `A ⧸ I` does not increase the Gelfand radius. -/
 theorem gelfandRadius_quotient_mk_le {A : Type*} [SeminormedCommRing A] (I : Ideal A) (f : A) :
-    gelfandRadius (Ideal.Quotient.mk I f) ≤ gelfandRadius f :=
+    gelfandRadius (Quotient.mk I f) ≤ gelfandRadius f :=
   gelfandRadius_le_of_norm_pow_le 1 fun n ↦ by
-    simpa only [← map_pow, one_mul] using Ideal.Quotient.norm_mk_le I (f ^ n)
+    simpa only [← map_pow, one_mul] using Quotient.norm_mk_le I (f ^ n)
 
 /-- If `I ≤ nilradical A` in a seminormed commutative ring `A`, then the Gelfand radius of `f : A`
 is bounded above by the Gelfand radius of its residue in `A ⧸ I`. -/
 theorem gelfandRadius_le_quotient_mk_of_le_nilradical {A : Type*} [SeminormedCommRing A]
-    {I : Ideal A} (hI : I ≤ nilradical A) (f : A) :
-    gelfandRadius f ≤ gelfandRadius (Ideal.Quotient.mk I f) := by
+    (I : Ideal A) (hI : I ≤ nilradical A) (f : A) :
+    gelfandRadius f ≤ gelfandRadius (Quotient.mk I f) := by
   refine le_of_forall_gt_imp_ge_of_dense fun r hr ↦ ?_
   have hr0 : 0 < r := (gelfandRadius_nonneg _).trans_lt hr
-  have hev : ∀ᶠ n : ℕ in Filter.atTop, ‖Ideal.Quotient.mk I f ^ n‖ ^ (n : ℝ)⁻¹ < r :=
-    (tendsto_order.1 (tendsto_gelfandRadius (Ideal.Quotient.mk I f))).2 r hr
+  have hev : ∀ᶠ n : ℕ in Filter.atTop, ‖Quotient.mk I f ^ n‖ ^ (n : ℝ)⁻¹ < r :=
+    (tendsto_order.1 (tendsto_gelfandRadius (Quotient.mk I f))).2 r hr
   obtain ⟨k, hk_lt, hk1⟩ := (hev.and (Filter.eventually_ge_atTop 1)).exists
   have hk0 : 0 < (k : ℝ) := Nat.cast_pos.mpr hk1
-  have hk_pow : ‖Ideal.Quotient.mk I (f ^ k)‖ < r ^ k := by
+  have hk_pow : ‖Quotient.mk I (f ^ k)‖ < r ^ k := by
     rw [map_pow]
     have hlt := pow_lt_pow_left₀ hk_lt (by positivity) (by omega : k ≠ 0)
     rwa [← Real.rpow_natCast _ k, ← Real.rpow_mul (norm_nonneg _),
       inv_mul_cancel₀ hk0.ne', Real.rpow_one] at hlt
   obtain ⟨y, hy, hy_norm⟩ :=
-    Ideal.Quotient.norm_mk_lt (Ideal.Quotient.mk I (f ^ k)) (sub_pos.mpr hk_pow)
+    Quotient.norm_mk_lt (Quotient.mk I (f ^ k)) (sub_pos.mpr hk_pow)
   have hy_lt : ‖y‖ < r ^ k := by linarith
   have hz_nil : IsNilpotent (f ^ k - y) :=
-    mem_nilradical.mp (hI (Ideal.Quotient.eq.mp hy.symm))
+    mem_nilradical.mp (hI (Quotient.eq.mp hy.symm))
   have hpow : gelfandRadius f ^ k < r ^ k := by
     calc gelfandRadius f ^ k = gelfandRadius (f ^ k) :=
           (gelfandRadius_pow_of_ne_zero f (by omega)).symm
@@ -434,9 +438,9 @@ theorem gelfandRadius_le_quotient_mk_of_le_nilradical {A : Type*} [SeminormedCom
 /-- Quotienting a seminormed commutative ring by an ideal of nilpotent elements preserves the
 Gelfand radius. -/
 theorem gelfandRadius_quotient_mk_eq_of_le_nilradical {A : Type*} [SeminormedCommRing A]
-    {I : Ideal A} (hI : I ≤ nilradical A) (f : A) :
-    gelfandRadius (Ideal.Quotient.mk I f) = gelfandRadius f :=
-  le_antisymm (gelfandRadius_quotient_mk_le I f)
-    (gelfandRadius_le_quotient_mk_of_le_nilradical hI f)
+    (I : Ideal A) (hI : I ≤ nilradical A) (f : A) :
+    gelfandRadius (Quotient.mk I f) = gelfandRadius f :=
+  le_antisymm (I.gelfandRadius_quotient_mk_le f)
+    (I.gelfandRadius_le_quotient_mk_of_le_nilradical hI f)
 
-end TauCeti
+end Ideal

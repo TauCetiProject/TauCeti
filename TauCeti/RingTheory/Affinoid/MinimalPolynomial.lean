@@ -111,7 +111,8 @@ private theorem exists_pointNorm_eq_spectralNorm (hB : IsAffinoidAlgebra K B)
   -- It lies under a classical point of `B`, which is integral over `S`.
   have : Algebra.IsIntegral S B := Algebra.IsIntegral.tower_top A
   obtain ⟨y, hy⟩ := hB.maximalSpectrumComap_surjective (S.val.restrictScalars K)
-    (fun b ↦ Algebra.IsIntegral.isIntegral (R := S) b) Subtype.val_injective ⟨_, hmax⟩
+    (fun b ↦ Algebra.IsIntegral.isIntegral (R := S) b)
+    (((RingHom.injective_iff_ker_eq_bot _).mp Subtype.val_injective).trans_le bot_le) ⟨_, hmax⟩
   refine ⟨y, ?_⟩
   have hfS : f ∈ S := (AlgHom.mem_range _).mpr ⟨X, aeval_X f⟩
   have hfα : χ ⟨f, hfS⟩ = α := by
@@ -138,8 +139,9 @@ theorem exists_pointNorm_coeff_le_pointNorm_pow (hB : IsAffinoidAlgebra K B)
   -- Compute the point norms at `x` in an algebraic closure `Ω` of the residue field.
   let := Ideal.Quotient.field x.asIdeal
   have := hB.finite_quotient_of_isIntegral (IsScalarTower.toAlgHom K A B)
-    (fun b ↦ Algebra.IsIntegral.isIntegral (R := A) b) (FaithfulSMul.algebraMap_injective A B)
-    x.asIdeal
+    (fun b ↦ Algebra.IsIntegral.isIntegral (R := A) b) x.asIdeal
+    (((RingHom.injective_iff_ker_eq_bot _).mp (FaithfulSMul.algebraMap_injective A B)).trans_le
+      bot_le)
   let Ω := AlgebraicClosure (A ⧸ x.asIdeal)
   have : Algebra.IsAlgebraic K Ω := Algebra.IsAlgebraic.trans K (A ⧸ x.asIdeal) Ω
   have hker : RingHom.ker (algebraMap A Ω) = x.asIdeal := by

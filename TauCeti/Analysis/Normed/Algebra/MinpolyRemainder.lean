@@ -16,6 +16,7 @@ import Mathlib.RingTheory.Polynomial.Basic
 import TauCeti.Analysis.Normed.Module.Finite.Basic
 import TauCeti.FieldTheory.Minpoly.TorsionFree
 import TauCeti.RingTheory.Huber.Normed
+import TauCeti.RingTheory.Polynomial.DegreeLT
 
 /-!
 # Coefficient bounds for remainders modulo minimal polynomials
@@ -40,10 +41,6 @@ public section
 open Polynomial
 
 namespace TauCeti
-
-private theorem degreeLTEquiv_apply {R : Type*} [Semiring R] (n : ℕ) (p : degreeLT R n)
-    (i : Fin n) : degreeLTEquiv R n p i = (p : R[X]).coeff i :=
-  (rfl)
 
 /-- For an element `a` of a Banach `K`-algebra `A` that is finite and torsion-free over a Noetherian
 integrally closed ultrametric Banach domain `B` (with continuous structure map `B → A`, where `K` is

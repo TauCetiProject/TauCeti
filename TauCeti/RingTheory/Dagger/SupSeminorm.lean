@@ -110,7 +110,7 @@ theorem pointNorm_map_le_norm {φ : W σ →ₐ[K] A} (hφ : Function.Surjective
     (x : MaximalSpectrum A) (f : W σ) : pointNorm K x (φ f) ≤ ‖f‖ := by
   -- The pullback of `x` is a classical point of `W` at which `f` has the same absolute value.
   have hx : (x.asIdeal.comap φ).IsMaximal := Ideal.comap_isMaximal_of_surjective φ hφ
-  rw [← pointNorm_comap φ x hx]
+  rw [← φ.pointNorm_comap x hx]
   exact pointNorm_le_norm _ f
 
 /-- **The supremum seminorm is bounded by residue norms.** For a surjection `φ : W ↠ A`,
