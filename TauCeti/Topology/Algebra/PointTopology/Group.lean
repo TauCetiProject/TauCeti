@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Algebra.Equiv
 public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.Topology.Algebra.PointTopology.Functoriality
+import TauCeti.Topology.Algebra.ContinuousMulEquiv
 
 /-!
 # The topological group of points of an affine group scheme
@@ -38,12 +39,13 @@ bialgebra map `H₁ → H₂` induces the continuous homomorphism `BialgHom.mapD
 homomorphism `AlgHom.mapValue`. Since the group of points carries the point topology of the
 underlying homomorphisms, `AlgHom.mapValue ψ` is an embedding or a closed embedding whenever `ψ`
 is, and an open embedding when `ψ` is and the coordinate algebra is of finite type. An
-isomorphism of topological coefficient algebras induces an isomorphism of topological monoids of
-points. No topology on the source of `ψ` is needed to locate its points among those with values in
-the target: when `ψ` is injective with closed image, its image on points is closed, and when the
-image of `ψ` is discrete and the coordinate algebra is commutative of finite type, its image on
-points is discrete. This is how the rational points of an affine group over a number field sit in
-its adelic points.
+isomorphism of bialgebras (`BialgEquiv.mapDomainContinuousMulEquiv`) or of topological coefficient
+algebras (`ContinuousAlgEquiv.mapValueContinuousMulEquiv`) induces an isomorphism of topological
+monoids of points. No topology on the source of `ψ` is needed to locate its points among those with
+values in the target: when `ψ` is injective with closed image, its image on points is closed, and
+when the image of `ψ` is discrete and the coordinate algebra is commutative of finite type, its
+image on points is discrete. This is how the rational points of an affine group over a number field
+sit in its adelic points.
 
 ## Main declarations
 
@@ -53,8 +55,9 @@ its adelic points.
   Hopf algebra is continuous.
 * `TauCeti.PointTopology.isTopologicalGroup`: the points of a Hopf algebra form a topological
   group.
-* `BialgHom.continuous_mapDomain` and `AlgHom.continuous_mapValue`: functoriality of the points is
-  continuous in the coordinate algebra and in continuous maps of coefficients.
+* `BialgHom.continuous_mapDomain`, `BialgEquiv.mapDomainContinuousMulEquiv`, and
+  `AlgHom.continuous_mapValue`: functoriality of the points is continuous in the coordinate algebra
+  and in continuous maps of coefficients.
 * `AlgHom.isEmbedding_mapValue`, `AlgHom.isClosedEmbedding_mapValue` and
   `AlgHom.isOpenEmbedding_mapValue`: change of coefficients along an embedding, closed embedding
   or open embedding of coefficient rings.
@@ -141,6 +144,39 @@ theorem BialgHom.continuous_mapDomain (φ : H₁ →ₐc[k] H₂) :
   continuous_withConv_iff.2 fun h ↦ by
     simp only [BialgHom.mapDomain_apply, ofConv_toConv, AlgHom.comp_apply]
     exact continuous_eval_ofConv _
+
+/-- A bialgebra equivalence induces a topological monoid isomorphism on convolution points, for
+every topology on the coefficient algebra `R`. -/
+noncomputable def BialgEquiv.mapDomainContinuousMulEquiv (R : Type*) [CommSemiring R]
+    [Algebra k R] [TopologicalSpace R] (e : H₁ ≃ₐc[k] H₂) :
+    WithConv (H₂ →ₐ[k] R) ≃ₜ* WithConv (H₁ →ₐ[k] R) where
+  toMulEquiv := e.mapDomainMulEquiv (A := R)
+  continuous_toFun := (BialgHom.continuous_mapDomain (e : H₁ →ₐc[k] H₂)).congr fun f ↦
+    (e.mapDomainMulEquiv_apply f).symm
+  continuous_invFun := (BialgHom.continuous_mapDomain (e.symm : H₂ →ₐc[k] H₁)).congr fun f ↦
+    (e.mapDomainMulEquiv_symm_apply f).symm
+
+@[simp]
+theorem BialgEquiv.coe_mapDomainContinuousMulEquiv (R : Type*) [CommSemiring R]
+    [Algebra k R] [TopologicalSpace R] (e : H₁ ≃ₐc[k] H₂) :
+    (e.mapDomainContinuousMulEquiv R : WithConv (H₂ →ₐ[k] R) ≃* WithConv (H₁ →ₐ[k] R)) =
+      e.mapDomainMulEquiv :=
+  (rfl)
+
+@[simp]
+theorem BialgEquiv.mapDomainContinuousMulEquiv_apply (R : Type*) [CommSemiring R]
+    [Algebra k R] [TopologicalSpace R] (e : H₁ ≃ₐc[k] H₂)
+    (f : WithConv (H₂ →ₐ[k] R)) :
+    e.mapDomainContinuousMulEquiv R f = BialgHom.mapDomain (e : H₁ →ₐc[k] H₂) f :=
+  (DFunLike.congr_fun (e.coe_mapDomainContinuousMulEquiv R) f).trans (e.mapDomainMulEquiv_apply f)
+
+@[simp]
+theorem BialgEquiv.mapDomainContinuousMulEquiv_symm_apply (R : Type*) [CommSemiring R]
+    [Algebra k R] [TopologicalSpace R] (e : H₁ ≃ₐc[k] H₂)
+    (f : WithConv (H₁ →ₐ[k] R)) :
+    (e.mapDomainContinuousMulEquiv R).symm f = BialgHom.mapDomain (e.symm : H₂ →ₐc[k] H₁) f :=
+  (ContinuousMulEquiv.symm_apply_of_coe_eq (e.coe_mapDomainContinuousMulEquiv R) f).trans
+    (e.mapDomainMulEquiv_symm_apply f)
 
 /-- Postcomposition with a continuous algebra map `ψ : R → R'` of coefficients is a continuous
 homomorphism from the points with values in `R` to those with values in `R'`. -/

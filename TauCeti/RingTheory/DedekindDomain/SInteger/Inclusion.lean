@@ -20,10 +20,17 @@ height-one primes of `R`. The `S`-integers are contained in the `S'`-integers
 compose in towers `S ⊆ S' ⊆ S''`, by Mathlib's `Subalgebra.inclusion_self` and
 `Subalgebra.inclusion_inclusion`.
 
-* **Uniqueness.** Every `R`-algebra map `𝒪_S → 𝒪_{S'}` is the inclusion inside `K`
-  (`IsDedekindDomain.coe_algebraMap_integer`), hence injective
-  (`IsDedekindDomain.algebraMap_integer_injective`), so the algebra structure in the localization
-  statement below is no extra datum.
+* **Uniqueness.** The inclusion `Subalgebra.inclusion (Set.integer_mono K h)` equips `𝒪_{S'}` with
+  its canonical `𝒪_S`-algebra structure (`Set.integerAlgebraOfSubset`), forming a scalar tower with
+  `K` (`Set.isScalarTower_integerAlgebraOfSubset`) with injective canonical embedding
+  `𝒪_{S'} →ₐ[𝒪_S] K` (`Set.integerValOfSubset`, `Set.integerValOfSubset_injective`; more generally
+  `Set.toAlgHom_integer_injective` in any scalar tower). Every `R`-algebra map `𝒪_S → 𝒪_{S'}` is the
+  inclusion inside
+  `K` (`IsDedekindDomain.coe_algebraMap_integer`), hence injective
+  (`IsDedekindDomain.algebraMap_integer_injective`), and any `𝒪_S`-algebra structure on `𝒪_{S'}`
+  forming a scalar tower with `K` coincides with `Set.integerAlgebraOfSubset`
+  (`Set.integerAlgebraOfSubset_eq`), so the algebra structure in the localization statement below is
+  no extra datum.
 * **Localization.** Whenever `𝒪_{S'}` is the localization of `R` at a submonoid `M`, it is the
   localization of `𝒪_S` at the image of `M`
   (`IsDedekindDomain.integer_isLocalization_algebraMapSubmonoid`, an instance of the general
@@ -71,6 +78,70 @@ namespace IsDedekindDomain
 variable {S S' : Set (HeightOneSpectrum R)}
 
 section Localization
+
+/-- For `S ⊆ S'`, the canonical `S.integer K`-algebra structure on `S'.integer K` induced by the
+subalgebra inclusion `S.integer K ≤ S'.integer K`. -/
+@[instance_reducible]
+noncomputable def _root_.Set.integerAlgebraOfSubset (h : S ⊆ S') :
+    Algebra (S.integer K) (S'.integer K) :=
+  (Subalgebra.inclusion (Set.integer_mono K h)).toAlgebra
+
+/-- For `S ⊆ S'`, the `S.integer K`-algebra structure `Set.integerAlgebraOfSubset K h` on
+`S'.integer K` forms a scalar tower with `K`. -/
+theorem _root_.Set.isScalarTower_integerAlgebraOfSubset (h : S ⊆ S') :
+    letI : Algebra (S.integer K) (S'.integer K) := Set.integerAlgebraOfSubset K h
+    IsScalarTower (S.integer K) (S'.integer K) K := by
+  let : Algebra (S.integer K) (S'.integer K) := Set.integerAlgebraOfSubset K h
+  exact Subalgebra.inclusion.isScalarTower_right (Set.integer_mono K h) K
+
+/-- Any `S.integer K`-algebra structure on `S'.integer K` forming a scalar tower with `K` coincides
+with `Set.integerAlgebraOfSubset K h`. -/
+theorem _root_.Set.integerAlgebraOfSubset_eq [Algebra (S.integer K) (S'.integer K)]
+    [IsScalarTower (S.integer K) (S'.integer K) K] (h : S ⊆ S') :
+    Set.integerAlgebraOfSubset K h = ‹_› :=
+  Algebra.algebra_ext _ _ fun r ↦ FaithfulSMul.algebraMap_injective (S'.integer K) K <| by
+    simpa [Set.integerAlgebraOfSubset, RingHom.algebraMap_toAlgebra] using
+      IsScalarTower.algebraMap_apply (S.integer K) (S'.integer K) K r
+
+/-- In any scalar tower `S.integer K → S'.integer K → K`, the canonical `S.integer K`-algebra map
+`S'.integer K →ₐ[S.integer K] K` is injective. -/
+theorem _root_.Set.toAlgHom_integer_injective [Algebra (S.integer K) (S'.integer K)]
+    [IsScalarTower (S.integer K) (S'.integer K) K] :
+    Function.Injective (IsScalarTower.toAlgHom (S.integer K) (S'.integer K) K) := by
+  rw [IsScalarTower.coe_toAlgHom']
+  exact FaithfulSMul.algebraMap_injective (S'.integer K) K
+
+/-- For `S ⊆ S'`, the canonical `S.integer K`-algebra embedding `S'.integer K →ₐ[S.integer K] K`
+of `S'.integer K` into `K`. -/
+noncomputable def _root_.Set.integerValOfSubset (h : S ⊆ S') :
+    letI : Algebra (S.integer K) (S'.integer K) := Set.integerAlgebraOfSubset K h
+    S'.integer K →ₐ[S.integer K] K :=
+  letI : Algebra (S.integer K) (S'.integer K) := Set.integerAlgebraOfSubset K h
+  letI : IsScalarTower (S.integer K) (S'.integer K) K :=
+    Set.isScalarTower_integerAlgebraOfSubset K h
+  IsScalarTower.toAlgHom (S.integer K) (S'.integer K) K
+
+/-- The underlying function of `Set.integerValOfSubset K h` is `Subtype.val`. -/
+@[simp]
+theorem _root_.Set.coe_integerValOfSubset (h : S ⊆ S') :
+    (Set.integerValOfSubset K h : S'.integer K → K) = Subtype.val := by
+  let : Algebra (S.integer K) (S'.integer K) := Set.integerAlgebraOfSubset K h
+  let : IsScalarTower (S.integer K) (S'.integer K) K :=
+    Set.isScalarTower_integerAlgebraOfSubset K h
+  ext x
+  rw [Set.integerValOfSubset, IsScalarTower.toAlgHom_apply, Subalgebra.algebraMap_apply]
+
+/-- Evaluating `Set.integerValOfSubset K h` at `x` coerces `x` to `K`. -/
+theorem _root_.Set.integerValOfSubset_apply (h : S ⊆ S') (x : S'.integer K) :
+    Set.integerValOfSubset K h x = (x : K) :=
+  congrFun (Set.coe_integerValOfSubset K h) x
+
+/-- For `S ⊆ S'`, the canonical `S.integer K`-algebra embedding `Set.integerValOfSubset K h` is
+injective. -/
+theorem _root_.Set.integerValOfSubset_injective (h : S ⊆ S') :
+    Function.Injective (Set.integerValOfSubset K h) := by
+  rw [Set.coe_integerValOfSubset]
+  exact Subtype.val_injective
 
 /-- **Every `R`-algebra map between rings of `S`-integers is the inclusion inside `K`.** Hence an
 `Algebra` structure on `𝒪_{S'}` over `𝒪_S` compatible with `R` is unique: it is
