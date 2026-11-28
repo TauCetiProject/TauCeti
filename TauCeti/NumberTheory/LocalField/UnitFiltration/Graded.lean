@@ -105,9 +105,8 @@ theorem coe_principalUnitGroupEquivUnitFiltration_symm_sub_one (n : ℕ)
         ((principalUnitGroupEquivUnitFiltration K (n + 1)).symm x).property⟩ :
         (𝓂[K] ^ (n + 1) : Ideal 𝒪[K])) = unitFiltrationDifference n x := by
   apply Subtype.ext
-  apply Subtype.ext
-  rw [AddSubgroupClass.coe_sub, OneMemClass.coe_one,
-    coe_coe_principalUnitGroupEquivUnitFiltration_symm, coe_coe_unitFiltrationDifference]
+  rw [coe_unitFiltrationDifference]
+  rfl
 
 /-- Subtracting one identifies the positive unit-filtration quotient
 `U(K,n+1) / U(K,n+2)` with `𝓂[K]^(n+1) / 𝓂[K]^(n+2)`, transported from

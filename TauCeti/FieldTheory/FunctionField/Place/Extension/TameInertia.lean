@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.WildInertia
+public import TauCeti.RingTheory.DiscreteValuationRing.RamificationGroup
 public import TauCeti.RingTheory.LocalRing.RamificationGroup.Graded
 
 /-!

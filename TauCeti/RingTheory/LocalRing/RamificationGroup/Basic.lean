@@ -251,20 +251,13 @@ instance instNormalRamificationGroup (G : Type*) [Group G] (S : Type*) [CommRing
   simp_rw [ramificationGroup_def, Subgroup.normal_iff_map_conj_eq, ← Ideal.inertia_smul]
   exact fun σ ↦ congrArg (Ideal.inertia G) (smul_maximalIdeal_pow σ _)
 
-/-- Canonical isomorphism between graded ramification pieces at equal indices. -/
-def ramificationGroupGradedCongr (G S : Type*) [Group G] [CommRing S] [IsLocalRing S]
-    [MulSemiringAction G S] {i j : ℤ} (h : i = j) :
-    RamificationGroupGraded G S i ≃* RamificationGroupGraded G S j := by
-  subst h
-  exact MulEquiv.refl _
-
-/-- Evaluating `ramificationGroupGradedCongr` on a quotient class preserves its representative. -/
-@[simp]
-theorem ramificationGroupGradedCongr_mk (G S : Type*) [Group G] [CommRing S]
+/-- Casting a graded ramification quotient class between equal indices preserves its
+representative. -/
+theorem cast_ramificationGroupGraded_mk (G S : Type*) [Group G] [CommRing S]
     [IsLocalRing S] [MulSemiringAction G S] {i j : ℤ} (h : i = j)
     (σ : ramificationGroup G S i) :
-    ramificationGroupGradedCongr G S h (QuotientGroup.mk σ) =
-      QuotientGroup.mk ⟨(σ : G), h ▸ σ.property⟩ := by
+    MulEquiv.cast (M := RamificationGroupGraded G S) h (QuotientGroup.mk σ) =
+      QuotientGroup.mk (MulEquiv.cast (M := fun k : ℤ ↦ ↥(ramificationGroup G S k)) h σ) := by
   subst h
   rfl
 
