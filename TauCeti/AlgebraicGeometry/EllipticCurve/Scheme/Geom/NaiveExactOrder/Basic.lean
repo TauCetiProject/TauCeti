@@ -261,20 +261,22 @@ private theorem toUnit_comp_pow_eq_one_iff (Z : Over S)
     (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (n : ℕ) :
     (toUnit Z ≫ P) ^ n = 1 ↔ Z.hom ≫ (P ^ n).left = Z.hom ≫ E.zero := by
   rw [← comp_pow]
-  refine ⟨fun h ↦ by simpa [hom_one_left] using congrArg CommaMorphism.left h, fun h ↦ ?_⟩
-  ext1
-  simpa [hom_one_left] using h
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have h' := congrArg CommaMorphism.left h
+    simpa only [Over.comp_left, Over.toUnit_left, Over.tensorUnit_left, Over.tensorUnit_hom,
+      Category.id_comp, hom_one_left] using h'
+  · ext1
+    simpa only [Over.comp_left, Over.toUnit_left, Over.tensorUnit_left, Over.tensorUnit_hom,
+      Category.id_comp, hom_one_left] using h
 
 private theorem isEmpty_equalizer_toUnit_comp_one_iff (Z : Over S)
     (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) (k : ℕ) :
     IsEmpty (equalizer ((toUnit Z ≫ P) ^ k) 1).left ↔
       ∀ z, (P ^ k).left (Z.hom z) ≠ E.zero (Z.hom z) := by
-  rw [← comp_pow, ← Set.range_eq_empty_iff,
-    range_equalizer_ι_left_of_left_eq_hom_comp _ _ 1 (by simp [hom_one_left]),
-    Set.eq_empty_iff_forall_notMem]
-  simp only [Over.comp_left, Over.toUnit_left, Set.mem_ofPred_eq, hom_one_left,
-    Over.tensorUnit_left, Over.tensorUnit_hom, Category.id_comp]
-  simp only [Scheme.Hom.comp_apply]
+  rw [← comp_pow, isEmpty_equalizer_iff_forall_ne_of_left_eq_hom_comp _ _ 1 (by
+    simp [hom_one_left])]
+  simp only [Over.comp_left, Over.toUnit_left, Over.tensorUnit_left, Over.tensorUnit_hom,
+    Category.id_comp, Scheme.Hom.comp_apply, hom_one_left]
 
 /-- A point `toUnit Z ≫ P` obtained by pulling back an `S`-point `P` along `Z.hom` has naive
 exact order `N` if and only if `N • P` agrees with the zero section along `Z.hom` and no proper
@@ -420,9 +422,9 @@ theorem isOfNaiveExactOrder_comp_torsionι_iff (y : Z ⟶ (E.torsion N).X) :
     simpa using E.comp_torsionι_zpow N y
   have hk (k : ℕ) : IsEmpty (equalizer ((y ≫ E.torsionι N) ^ k) 1).left ↔
       ∀ t, (y ≫ E.torsionι N ^ k).left t ≠ E.zero (Z.hom t) := by
-    rw [← Set.range_eq_empty_iff, range_equalizer_ι_left_one, Set.eq_empty_iff_forall_notMem,
+    rw [isEmpty_equalizer_iff_forall_ne_of_left_eq_hom_comp _ _ 1 (by simp [hom_one_left]),
       comp_pow]
-    exact Iff.rfl
+    simp [hom_one_left]
   simp only [isOfNaiveExactOrder_iff_forall_lt, h₁, true_and, hk,
     range_left_subset_naiveLocus_iff]
   -- every `a ≠ 0` in `ℤ/Nℤ` is `k • 1` for a unique `0 < k < N`
@@ -605,9 +607,8 @@ theorem naiveExactOrderPreimageMap_naiveExactOrderPreimageι :
 /-- The base-change morphism on `naiveExactOrderPreimage` along the identity square is the
 identity. -/
 @[simp]
-theorem naiveExactOrderPreimageMap_id (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap)
-    (h0' : E.zero ≫ 𝟙 E.carrier = 𝟙 S ≫ E.zero) (hP' : P.left ≫ 𝟙 E.carrier = 𝟙 S ≫ P.left) :
-    naiveExactOrderPreimageMap N (.id_horiz E.structureMap) h0' hP' =
+theorem naiveExactOrderPreimageMap_id (P : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) :
+    naiveExactOrderPreimageMap N (.id_horiz E.structureMap) (by simp) (by simp) =
       𝟙 (naiveExactOrderPreimage N P) := by
   refine (cancel_mono (naiveExactOrderPreimageι N P)).mp ?_
   simp
@@ -618,10 +619,10 @@ theorem naiveExactOrderPreimageMap_comp {S'' : Scheme.{u}} {E'' : EllipticCurveG
     {g' : E''.carrier ⟶ E'.carrier} {f' : S'' ⟶ S'}
     (hg' : IsPullback g' E''.structureMap E'.structureMap f')
     (h0' : E''.zero ≫ g' = f' ≫ E'.zero)
-    {P'' : 𝟙_ (Over S'') ⟶ Over.mk E''.structureMap} (hP' : P''.left ≫ g' = f' ≫ P'.left)
-    (h0'' : E''.zero ≫ (g' ≫ g) = (f' ≫ f) ≫ E.zero)
-    (hP'' : P''.left ≫ (g' ≫ g) = (f' ≫ f) ≫ P.left) :
-    naiveExactOrderPreimageMap N (hg'.paste_horiz hg) h0'' hP'' =
+    {P'' : 𝟙_ (Over S'') ⟶ Over.mk E''.structureMap} (hP' : P''.left ≫ g' = f' ≫ P'.left) :
+    naiveExactOrderPreimageMap N (hg'.paste_horiz hg)
+        (by rw [← Category.assoc, h0', Category.assoc, h0, Category.assoc])
+        (by rw [← Category.assoc, hP', Category.assoc, hP, Category.assoc]) =
       naiveExactOrderPreimageMap N hg' h0' hP' ≫ naiveExactOrderPreimageMap N hg h0 hP := by
   refine (cancel_mono (naiveExactOrderPreimageι N P)).mp ?_
   simp [Category.assoc]
