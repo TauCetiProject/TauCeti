@@ -320,4 +320,50 @@ theorem latticeTheta_unitScale (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (u : (�
   exact tsum_congr fun x ↦ by
     rw [Units.unitSMulIdealLatticeEquiv_apply, archGaussian_unit_smul]
 
+/-- A Gaussian at parameters at least `t`, `t ≥ 1`, is bounded by a fixed summable Gaussian
+times an exponentially decreasing factor, provided the vector has squared length at least `δ`. -/
+private theorem norm_archGaussian_le_exp_mul {x : mixedSpace K} {δ t : ℝ}
+    (hδ : δ ≤ mixedInner K x x) (ht : 1 ≤ t) {y : realSpace K} (hy : ∀ w, t ≤ y w) :
+    ‖archGaussian y x‖ ≤ Real.exp (-(Real.pi * δ / 2) * t) *
+      ‖archGaussian (fun _ ↦ (1 / 2 : ℝ)) x‖ := by
+  classical
+  have hQ := mixedInner_self_nonneg K x
+  have hsum : t * mixedInner K x x ≤ ∑ w, y w * normAtPlace w x ^ 2 := by
+    rw [mixedInner_self_eq_sum, Finset.mul_sum]
+    exact Finset.sum_le_sum fun w _ ↦ mul_le_mul_of_nonneg_right (hy w) (sq_nonneg _)
+  have hsplit : δ / 2 * t + 1 / 2 * mixedInner K x x ≤ t * mixedInner K x x := by
+    nlinarith [mul_nonneg (sub_nonneg.mpr ht) hQ,
+      mul_nonneg (by linarith : 0 ≤ t) (sub_nonneg.mpr hδ)]
+  simp only [archGaussian_apply, Complex.norm_real, Real.norm_eq_abs,
+    abs_of_pos (Real.exp_pos _), ← Real.exp_add]
+  apply Real.exp_le_exp.mpr
+  rw [← Finset.mul_sum, ← mixedInner_self_eq_sum]
+  nlinarith [Real.pi_pos]
+
+/-- Exponential decay of a weighted Gaussian sum whose embedding vectors have squared mixed
+length bounded below by `δ > 0` and whose terms are summable in norm at parameter `1 / 2`. -/
+theorem exists_norm_tsum_mul_archGaussian_le {α : Type*} (c : α → ℂ) (emb : α → mixedSpace K)
+    {δ : ℝ} (hδ : 0 < δ) (hL : ∀ x : α, δ ≤ mixedInner K (emb x) (emb x))
+    (hc : Summable fun x : α ↦ ‖c x * archGaussian (fun _ ↦ (1 / 2 : ℝ)) (emb x)‖) :
+    ∃ c₀ > 0, ∃ C ≥ 0, ∀ t : ℝ, 1 ≤ t → ∀ y : realSpace K, (∀ w, t ≤ y w) →
+      ‖∑' x : α, c x * archGaussian y (emb x)‖ ≤ C * Real.exp (-c₀ * t) := by
+  let a : α → ℝ := fun x ↦ ‖c x * archGaussian (fun _ ↦ (1 / 2 : ℝ)) (emb x)‖
+  refine ⟨Real.pi * δ / 2, by positivity, ∑' x, a x,
+    tsum_nonneg (fun _ ↦ norm_nonneg _), fun t ht y hy ↦ ?_⟩
+  calc
+    ‖∑' x : α, c x * archGaussian y (emb x)‖
+        ≤ ∑' x, Real.exp (-(Real.pi * δ / 2) * t) * a x :=
+          tsum_of_norm_bounded (hc.mul_left _).hasSum fun x ↦ by
+            rw [norm_mul]
+            calc
+              ‖c x‖ * ‖archGaussian y (emb x)‖
+                  ≤ ‖c x‖ * (Real.exp (-(Real.pi * δ / 2) * t) *
+                      ‖archGaussian (fun _ ↦ (1 / 2 : ℝ)) (emb x)‖) :=
+                    mul_le_mul_of_nonneg_left (norm_archGaussian_le_exp_mul (hL x) ht hy)
+                      (norm_nonneg _)
+              _ = Real.exp (-(Real.pi * δ / 2) * t) * a x := by
+                  simp only [a, norm_mul]; ring
+    _ = (∑' x, a x) * Real.exp (-(Real.pi * δ / 2) * t) := by
+        rw [tsum_mul_left, mul_comm]
+
 end TauCeti.LFunctions

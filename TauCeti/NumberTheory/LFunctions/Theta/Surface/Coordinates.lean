@@ -266,4 +266,28 @@ theorem exists_norm_surfaceScale_le_of_isBounded {E : Type*} [Norm E] {g : realS
     (Real.rpow_le_rpow ht₀.le ht (by positivity)) (by positivity)
     ((mem_normOneSurface.mp x.property).1 w).le
 
+/-- Any function on `realSpace K` that decays as `C * exp (-c * t)` whenever all coordinates
+are at least `t ≥ 1` decays uniformly as `C * exp (-c' * u ^ (1 / [K : ℚ]))` along
+`surfaceScale x u` for `x` in any bounded subset of `normOneSurface K`. -/
+theorem exists_norm_surfaceScale_le_of_forall_le {E : Type*} [Norm E] {f : realSpace K → E}
+    {c C : ℝ} (hc : 0 < c) (hC : 0 ≤ C)
+    (hf : ∀ t : ℝ, 1 ≤ t → ∀ y : realSpace K, (∀ w, t ≤ y w) → ‖f y‖ ≤ C * Real.exp (-c * t))
+    {D : Set (realSpace K)} (hD : Bornology.IsBounded D) (hS : D ⊆ normOneSurface K) :
+    ∃ c' > 0, ∃ C' ≥ 0, ∀ᶠ u : ℝ in Filter.atTop, ∀ x ∈ D,
+      ‖f (surfaceScale x u)‖ ≤ C' * Real.exp (-c' * u ^ (Module.finrank ℚ K : ℝ)⁻¹) := by
+  obtain ⟨b, hb, hbx⟩ := exists_pos_le_of_isBounded_normOneSurface hD hS
+  have hn : 0 < (Module.finrank ℚ K : ℝ)⁻¹ :=
+    inv_pos.mpr (Nat.cast_pos.mpr (Module.finrank_pos (R := ℚ) (M := K)))
+  have hu : Filter.Tendsto (fun u : ℝ ↦ b * u ^ (Module.finrank ℚ K : ℝ)⁻¹)
+      Filter.atTop Filter.atTop :=
+    (tendsto_rpow_atTop hn).const_mul_atTop hb
+  refine ⟨c * b, mul_pos hc hb, C, hC, ?_⟩
+  filter_upwards [hu.eventually_ge_atTop 1, Filter.eventually_ge_atTop (0 : ℝ)] with u hu hu0 x hx
+  have h := hf (b * u ^ (Module.finrank ℚ K : ℝ)⁻¹) hu (surfaceScale x u) fun w ↦ by
+    rw [surfaceScale_apply]
+    simpa only [one_div] using
+      mul_le_mul_of_nonneg_right (hbx x hx w)
+        (Real.rpow_nonneg hu0 (Module.finrank ℚ K : ℝ)⁻¹)
+  simpa only [neg_mul, mul_assoc] using h
+
 end TauCeti.LFunctions

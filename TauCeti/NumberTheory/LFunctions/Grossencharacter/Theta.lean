@@ -8,7 +8,8 @@ module
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Conductor
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.FiniteCharacter
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Harmonic
-import TauCeti.NumberTheory.LFunctions.Theta.Decay
+import TauCeti.NumberTheory.LFunctions.Theta.Gaussian
+import TauCeti.NumberTheory.LFunctions.Theta.Surface.Coordinates
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
 
 /-!

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.NumberTheory.LFunctions.Theta.Decay
 public import TauCeti.NumberTheory.LFunctions.Theta.Inversion
+public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Integral
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Invariance
 
 /-!
@@ -129,77 +130,6 @@ theorem mellinKernel_inv (D : Set (realSpace K)) (L : Submodule ℤ (mixedSpace 
   ring
 
 open scoped Classical in
-/-- A bounded continuous surface weight `w` multiplied by a positive-orthant continuous,
-orthant-bounded function `g (surfaceScale x t)` is integrable over any bounded measurable
-surface set `D` for `t > 0`. -/
-theorem integrableOn_mul_surfaceScale {w : normOneSurface K → ℂ} {g : realSpace K → ℂ}
-    (hwc : Continuous w)
-    (hg : ∀ {y₀ : realSpace K}, (∀ w, 0 < y₀ w) → ContinuousAt g y₀)
-    (hg_bound : ∀ {δ : ℝ}, 0 < δ → ∃ B : ℝ, ∀ y : realSpace K, (∀ w, δ ≤ y w) → ‖g y‖ ≤ B)
-    {D : Set (realSpace K)} (hDm : MeasurableSet D) (hD : Bornology.IsBounded D)
-    (hw_bound : ∃ W ≥ 0, ∀ x : normOneSurface K, (x : realSpace K) ∈ D → ‖w x‖ ≤ W)
-    {t : ℝ} (ht : 0 < t) :
-    IntegrableOn (fun x : normOneSurface K ↦ w x * g (surfaceScale (x : realSpace K) t))
-      (Subtype.val ⁻¹' D) (surfaceHaar K) := by
-  obtain ⟨W, hW, hWx⟩ := hw_bound
-  obtain ⟨B, hB⟩ := exists_norm_surfaceScale_le_of_isBounded hg_bound hD ht
-  have hmeas : AEStronglyMeasurable
-      (fun x : normOneSurface K ↦ w x * g (surfaceScale (x : realSpace K) t))
-      ((surfaceHaar K).restrict (Subtype.val ⁻¹' D)) :=
-    (hwc.mul (continuous_comp_surfaceScale hg ht)).aestronglyMeasurable
-  have := isFiniteMeasure_restrict.mpr (surfaceHaar_preimage_lt_top hD).ne
-  refine (integrable_const (W * B)).mono' hmeas ?_
-  filter_upwards [ae_restrict_mem (measurable_subtypeVal hDm)] with x hx
-  rw [norm_mul]
-  exact mul_le_mul (hWx x hx) (hB t le_rfl x hx) (norm_nonneg _) hW
-
-open scoped Classical in
-/-- Continuity on `(0, ∞)` of `u ↦ A * ∫ x in D, w x * g (surfaceScale x (u / lam)) d*x` for a
-bounded measurable surface set `D`, bounded continuous surface weight `w`, and positive-orthant
-continuous, orthant-bounded function `g`. -/
-theorem continuousOn_const_mul_integral_surfaceScale (A : ℂ) {w : normOneSurface K → ℂ}
-    {g : realSpace K → ℂ} (hwc : Continuous w)
-    (hg : ∀ {y₀ : realSpace K}, (∀ w, 0 < y₀ w) → ContinuousAt g y₀)
-    (hg_bound : ∀ {δ : ℝ}, 0 < δ → ∃ B : ℝ, ∀ y : realSpace K, (∀ w, δ ≤ y w) → ‖g y‖ ≤ B)
-    {D : Set (realSpace K)} (hDm : MeasurableSet D) (hD : Bornology.IsBounded D)
-    (hw_bound : ∃ W ≥ 0, ∀ x : normOneSurface K, (x : realSpace K) ∈ D → ‖w x‖ ≤ W)
-    {lam : ℝ} (hlam : 0 < lam) :
-    ContinuousOn (fun u ↦ A * ∫ x in Subtype.val ⁻¹' D,
-      w x * g (surfaceScale (x : realSpace K) (u / lam)) ∂surfaceHaar K) (Set.Ioi 0) := by
-  intro u₀ hu₀
-  replace hu₀ : 0 < u₀ := hu₀
-  refine ContinuousAt.continuousWithinAt ?_
-  set F : ℝ → normOneSurface K → ℂ := fun u x ↦
-    w x * g (surfaceScale (x : realSpace K) (u / lam))
-  have ht₀ : 0 < u₀ / 2 / lam := by positivity
-  obtain ⟨W, hW, hWx⟩ := hw_bound
-  obtain ⟨B, hB⟩ := exists_norm_surfaceScale_le_of_isBounded hg_bound hD ht₀
-  have hmeas : ∀ᶠ u in nhds u₀, AEStronglyMeasurable (F u)
-      ((surfaceHaar K).restrict (Subtype.val ⁻¹' D)) := by
-    filter_upwards [Ioi_mem_nhds hu₀] with u (hu : 0 < u)
-    exact (integrableOn_mul_surfaceScale hwc hg hg_bound hDm hD ⟨W, hW, hWx⟩
-      (by positivity : 0 < u / lam)).aestronglyMeasurable
-  have hbound : ∀ᶠ u in nhds u₀, ∀ᵐ x ∂(surfaceHaar K).restrict (Subtype.val ⁻¹' D),
-      ‖F u x‖ ≤ W * B := by
-    filter_upwards [Ioi_mem_nhds (half_lt_self hu₀)] with u (hu : u₀ / 2 < u)
-    filter_upwards [ae_restrict_mem (measurable_subtypeVal hDm)] with x hx
-    dsimp only [F]
-    rw [norm_mul]
-    exact mul_le_mul (hWx x hx) (hB (u / lam) (div_le_div_of_nonneg_right hu.le hlam.le) x hx)
-      (norm_nonneg _) hW
-  have hint : Integrable (fun _ ↦ W * B) ((surfaceHaar K).restrict (Subtype.val ⁻¹' D)) := by
-    have := isFiniteMeasure_restrict.mpr (surfaceHaar_preimage_lt_top hD).ne
-    exact integrable_const _
-  have hcont : ∀ᵐ x ∂(surfaceHaar K).restrict (Subtype.val ⁻¹' D),
-      ContinuousAt (fun u ↦ F u x) u₀ := by
-    refine Filter.Eventually.of_forall fun x ↦ ?_
-    have hu : Continuous fun u : ℝ ↦ surfaceScale (x : realSpace K) (u / lam) :=
-      continuous_surfaceScale.comp (continuous_const.prodMk (continuous_id.div_const _))
-    exact continuousAt_const.mul (ContinuousAt.comp (g := g)
-      (hg (surfaceScale_pos (mem_normOneSurface.mp x.property).1 (by positivity))) hu.continuousAt)
-  exact continuousAt_const.mul (continuousAt_of_dominated hmeas hbound hint hcont)
-
-open scoped Classical in
 /-- On a bounded surface set, the theta series is uniformly bounded for radial parameters
 above any fixed positive lower radius. -/
 theorem exists_norm_latticeTheta_surfaceScale_le {D : Set (realSpace K)}
@@ -213,17 +143,14 @@ theorem exists_norm_latticeTheta_surfaceScale_le {D : Set (realSpace K)}
 
 open scoped Classical in
 /-- For a bounded measurable surface set, the theta series at a positive radial parameter is
-integrable over that set. Boundedness on the norm-one surface bounds every coordinate away from
-zero, so a single Gaussian theta value dominates it. -/
-theorem integrableOn_latticeTheta_surfaceScale {D : Set (realSpace K)} (hDm : MeasurableSet D)
+integrable over that set. -/
+theorem integrableOn_latticeTheta_surfaceScale {D : Set (realSpace K)} (_hDm : MeasurableSet D)
     (hD : Bornology.IsBounded D) (L : Submodule ℤ (mixedSpace K))
     {t : ℝ} (ht : 0 < t) :
     IntegrableOn (fun x : normOneSurface K ↦ latticeTheta L (surfaceScale (x : realSpace K) t))
       (Subtype.val ⁻¹' D) (surfaceHaar K) := by
   simpa using integrableOn_mul_surfaceScale (w := fun _ ↦ (1 : ℂ)) continuous_const
-    (continuousAt_latticeTheta L)
-    (fun hδ ↦ ⟨‖latticeTheta L fun _ ↦ _‖, fun _ hy ↦ norm_latticeTheta_le L (fun _ ↦ hδ) hy⟩)
-    hDm hD ⟨1, zero_le_one, fun _ _ ↦ by simp⟩ ht
+    (continuousAt_latticeTheta L) hD ht
 
 open scoped Classical in
 /-- Subtracting the constant term of the kernel subtracts `1` from the theta series before
@@ -248,7 +175,7 @@ theorem mellinKernel_sub_eq_integral_sub_one {D : Set (realSpace K)}
 open scoped Classical in
 /-- **The Mellin kernel is continuous on `(0, ∞)`** for a bounded measurable set `D` of
 parameters, such as a unit fundamental domain. -/
-theorem continuousOn_mellinKernel {D : Set (realSpace K)} (hDm : MeasurableSet D)
+theorem continuousOn_mellinKernel {D : Set (realSpace K)} (_hDm : MeasurableSet D)
     (hD : Bornology.IsBounded D) (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
     [IsZLattice ℝ L] : ContinuousOn (mellinKernel D L) (Set.Ioi 0) := by
   have hV : 0 < ZLattice.covolume L := ZLattice.covolume_pos L
@@ -262,9 +189,7 @@ theorem continuousOn_mellinKernel {D : Set (realSpace K)} (hDm : MeasurableSet D
   rw [hm]
   exact continuousOn_const_mul_integral_surfaceScale
     ((2 : ℂ) ^ nrComplexPlaces K / (Units.torsionOrder K : ℂ)) (w := fun _ ↦ (1 : ℂ))
-    continuous_const (continuousAt_latticeTheta L)
-    (fun hδ ↦ ⟨‖latticeTheta L fun _ ↦ _‖, fun _ hy ↦ norm_latticeTheta_le L (fun _ ↦ hδ) hy⟩)
-    hDm hD ⟨1, zero_le_one, fun _ _ ↦ by simp⟩ (sq_pos_of_pos hV)
+    continuous_const (continuousAt_latticeTheta L) hD (sq_pos_of_pos hV)
 
 /-! ### The kernel at `∞` -/
 
@@ -278,49 +203,6 @@ theorem continuous_latticeTheta_surfaceScale (L : Submodule ℤ (mixedSpace K))
     {t : ℝ} (ht : 0 < t) :
     Continuous fun x : normOneSurface K ↦ latticeTheta L (surfaceScale (x : realSpace K) t) :=
   continuous_comp_surfaceScale (continuousAt_latticeTheta L) ht
-
-open scoped Classical in
-/-- Transfer a uniform stretched-exponential decay bound on `g (surfaceScale x u) - ε` over a
-bounded surface set `D` through the surface integral against a bounded weight `w` and radial
-level `lam > 0`. -/
-theorem exists_norm_mul_integral_surfaceScale_sub_le
-    {w : normOneSurface K → ℂ} {g : realSpace K → ℂ} {ε : ℂ}
-    {D : Set (realSpace K)} (hD : Bornology.IsBounded D)
-    (hw : ∃ W ≥ 0, ∀ x : normOneSurface K, (x : realSpace K) ∈ D → ‖w x‖ ≤ W)
-    (hg : ∃ c > 0, ∃ C ≥ 0, ∀ᶠ u : ℝ in atTop, ∀ x ∈ D ∩ normOneSurface K,
-      ‖g (surfaceScale x u) - ε‖ ≤ C * Real.exp (-c * u ^ (Module.finrank ℚ K : ℝ)⁻¹))
-    (A : ℂ) {lam : ℝ} (hlam : 0 < lam) :
-    ∃ c > 0, ∃ C ≥ 0, ∀ᶠ u : ℝ in atTop,
-      ‖A * ∫ x in Subtype.val ⁻¹' D,
-        w x * (g (surfaceScale (x : realSpace K) (u / lam)) - ε) ∂surfaceHaar K‖ ≤
-        C * Real.exp (-c * u ^ (Module.finrank ℚ K : ℝ)⁻¹) := by
-  set n : ℝ := (Module.finrank ℚ K : ℝ)⁻¹
-  set S : Set (normOneSurface K) := Subtype.val ⁻¹' D
-  have hfin : surfaceHaar K S < ⊤ := surfaceHaar_preimage_lt_top hD
-  obtain ⟨W, hW, hWx⟩ := hw
-  obtain ⟨c, hc, C, hC, h⟩ := hg
-  refine ⟨c / lam ^ n, by positivity, ‖A‖ * (W * C * (surfaceHaar K).real S),
-    by positivity, ?_⟩
-  have hu : Tendsto (fun u : ℝ ↦ u / lam) atTop atTop :=
-    tendsto_id.atTop_div_const hlam
-  filter_upwards [hu.eventually h, eventually_gt_atTop 0] with u hu hu0
-  set e := Real.exp (-c * (u / lam) ^ n)
-  have hnorm (x : normOneSurface K) (hx : x ∈ S) :
-      ‖w x * (g (surfaceScale (x : realSpace K) (u / lam)) - ε)‖ ≤ W * C * e := by
-    rw [norm_mul]
-    calc ‖w x‖ * ‖g (surfaceScale (x : realSpace K) (u / lam)) - ε‖
-        ≤ W * (C * e) := mul_le_mul (hWx x hx) (hu x ⟨hx, x.property⟩) (norm_nonneg _) hW
-      _ = W * C * e := by ring
-  have he : e = Real.exp (-(c / lam ^ n) * u ^ n) := by
-    simp only [e]
-    rw [Real.div_rpow hu0.le hlam.le]
-    ring_nf
-  rw [norm_mul, ← he]
-  calc ‖A‖ * ‖∫ x in S, w x * (g (surfaceScale (x : realSpace K) (u / lam)) - ε)
-        ∂surfaceHaar K‖
-      ≤ ‖A‖ * (W * C * e * (surfaceHaar K).real S) :=
-        mul_le_mul_of_nonneg_left (norm_setIntegral_le_of_norm_le_const hfin hnorm) (norm_nonneg _)
-    _ = ‖A‖ * (W * C * (surfaceHaar K).real S) * e := by ring
 
 open scoped Classical in
 /-- **The Mellin kernel at `∞`**: over a bounded measurable set `D` of parameters the kernel of a
