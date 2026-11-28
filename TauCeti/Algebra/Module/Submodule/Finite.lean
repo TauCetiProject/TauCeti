@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Operations
 public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.LinearAlgebra.Projection
 public import Mathlib.LinearAlgebra.Quotient.Basic
@@ -28,6 +29,10 @@ quotient being finite over `A` implies that the ambient module is finite over `A
 quotient is formed over `R`; the scalar semiring `A` need not be a ring. This is the
 scalar-restriction version of Mathlib's `Module.Finite.of_submodule_quotient`.
 
+Finitely generated submodules can be lifted and split: one inside the range of a linear map is
+the image of a finitely generated submodule, one inside `B ⊔ C` lies in `B ⊔ C'` for a finitely
+generated `C' ≤ C`, and one inside `I • N` lies in `I • W` for a finitely generated `W ≤ N`.
+
 ## Main declarations
 
 * `Submodule.finite_iff_fg_restrictScalars`: an `R`-submodule is finite over a compatible scalar
@@ -38,6 +43,9 @@ scalar-restriction version of Mathlib's `Module.Finite.of_submodule_quotient`.
   finitely generated.
 * `iSupIndep.finite_ne_bot_of_fg`: an independent family of submodules with finitely generated
   supremum has finite support.
+* `Submodule.FG.exists_fg_map_eq_of_le_range`, `Submodule.FG.exists_fg_le_sup`,
+  `Submodule.FG.exists_fg_le_smul`: a finitely generated submodule of a range, a supremum or an
+  ideal multiple is controlled by a finitely generated submodule of the relevant piece.
 * `TauCeti.instModuleFiniteToAddSubgroup`: a finitely generated `ℤ`-submodule stays finitely
   generated when read as an additive subgroup.
 -/
@@ -108,3 +116,72 @@ image of the finitely generated module under the projection onto it. -/
 theorem Module.Finite.of_isCompl {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
     [Module.Finite R M] {T T' : Submodule R M} (hcompl : IsCompl T T') : Module.Finite R T :=
   Module.Finite.of_surjective (T.projectionOnto T' hcompl) (T.projectionOnto_surjective hcompl)
+
+namespace Submodule
+
+variable {R M M' : Type*} [AddCommMonoid M] [AddCommMonoid M']
+
+section Semiring
+
+variable [Semiring R] [Module R M] [Module R M']
+
+/-- A finitely generated submodule contained in the range of a linear map is the image of a
+finitely generated submodule of the source. -/
+theorem FG.exists_fg_map_eq_of_le_range {f : M →ₗ[R] M'} {N' : Submodule R M'} (hN' : N'.FG)
+    (h : N' ≤ LinearMap.range f) : ∃ N : Submodule R M, N.FG ∧ N.map f = N' := by
+  induction N', hN' using Submodule.fg_induction with
+  | singleton y =>
+    obtain ⟨x, rfl⟩ := h (mem_span_singleton_self y)
+    exact ⟨R ∙ x, fg_span_singleton x, by simp [map_span]⟩
+  | sup N₁ N₂ _ _ ih₁ ih₂ =>
+    obtain ⟨P₁, hP₁, rfl⟩ := ih₁ (le_sup_left.trans h)
+    obtain ⟨P₂, hP₂, rfl⟩ := ih₂ (le_sup_right.trans h)
+    exact ⟨P₁ ⊔ P₂, hP₁.sup hP₂, Submodule.map_sup _ _ _⟩
+
+/-- A finitely generated submodule of `B ⊔ C` lies in `B ⊔ C'` for some finitely generated
+`C' ≤ C`. -/
+theorem FG.exists_fg_le_sup {A B C : Submodule R M} (hA : A.FG) (h : A ≤ B ⊔ C) :
+    ∃ C' : Submodule R M, C'.FG ∧ C' ≤ C ∧ A ≤ B ⊔ C' := by
+  induction A, hA using Submodule.fg_induction with
+  | singleton x =>
+    obtain ⟨b, hb, c, hc, rfl⟩ := mem_sup.1 (h (mem_span_singleton_self x))
+    refine ⟨R ∙ c, fg_span_singleton c, (span_singleton_le_iff_mem _ _).2 hc, ?_⟩
+    rw [span_singleton_le_iff_mem]
+    exact add_mem (mem_sup_left hb) (mem_sup_right (mem_span_singleton_self c))
+  | sup A₁ A₂ _ _ ih₁ ih₂ =>
+    obtain ⟨C₁, hC₁, hC₁C, hA₁⟩ := ih₁ (le_sup_left.trans h)
+    obtain ⟨C₂, hC₂, hC₂C, hA₂⟩ := ih₂ (le_sup_right.trans h)
+    exact ⟨C₁ ⊔ C₂, hC₁.sup hC₂, sup_le hC₁C hC₂C,
+      sup_le (hA₁.trans (sup_le_sup_left le_sup_left _))
+        (hA₂.trans (sup_le_sup_left le_sup_right _))⟩
+
+end Semiring
+
+variable [CommSemiring R] [Module R M]
+
+/-- A finitely generated submodule of `I • N` lies in `I • W` for some finitely generated
+`W ≤ N`. -/
+theorem FG.exists_fg_le_smul {I : Ideal R} {N C : Submodule R M} (hC : C.FG) (h : C ≤ I • N) :
+    ∃ W : Submodule R M, W.FG ∧ W ≤ N ∧ C ≤ I • W := by
+  induction C, hC using Submodule.fg_induction with
+  | singleton x =>
+    have hx : x ∈ I • N := h (mem_span_singleton_self x)
+    simp only [span_singleton_le_iff_mem]
+    clear h
+    induction hx using Submodule.smul_induction_on' with
+    | smul r hr n hn =>
+      exact ⟨R ∙ n, fg_span_singleton n, (span_singleton_le_iff_mem _ _).2 hn,
+        smul_mem_smul hr (mem_span_singleton_self n)⟩
+    | add x _ y _ hx hy =>
+      obtain ⟨W₁, hW₁, hW₁N, hxW⟩ := hx
+      obtain ⟨W₂, hW₂, hW₂N, hyW⟩ := hy
+      exact ⟨W₁ ⊔ W₂, hW₁.sup hW₂, sup_le hW₁N hW₂N,
+        add_mem ((smul_mono_right I le_sup_left : I • W₁ ≤ I • (W₁ ⊔ W₂)) hxW)
+          ((smul_mono_right I le_sup_right : I • W₂ ≤ I • (W₁ ⊔ W₂)) hyW)⟩
+  | sup C₁ C₂ _ _ ih₁ ih₂ =>
+    obtain ⟨W₁, hW₁, hW₁N, hC₁⟩ := ih₁ (le_sup_left.trans h)
+    obtain ⟨W₂, hW₂, hW₂N, hC₂⟩ := ih₂ (le_sup_right.trans h)
+    exact ⟨W₁ ⊔ W₂, hW₁.sup hW₂, sup_le hW₁N hW₂N, sup_le
+      (hC₁.trans (smul_mono_right _ le_sup_left)) (hC₂.trans (smul_mono_right _ le_sup_right))⟩
+
+end Submodule

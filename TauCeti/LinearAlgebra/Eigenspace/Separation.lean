@@ -35,8 +35,14 @@ and `(f - μ • 1) ^ k` kills `w`, then applying `(f - μ • 1) ^ k` stays ins
   scaled by `(ν - μ) ^ k` under `(f - μ • 1) ^ k`.
 * `Module.End.biSup_inf_genEigenspace_eq_of_mem`: a summand whose scalar is attained only by
   itself is cut out of the sum by the corresponding generalized eigenspace.
-* `Module.End.genEigenspace_eq_of_iSup_eq_top`: if the summands span the whole space and the
-  scalars are pairwise distinct, every summand is a generalized eigenspace.
+* `Module.End.genEigenspace_eq_of_iSup_eq_top` and
+  `Module.End.maxGenEigenspace_eq_bot_of_iSup_eq_top`: if the summands span the whole space,
+  every distinct-scalar summand is a generalized eigenspace and every scalar outside their range
+  has trivial maximal generalized eigenspace.
+* `Module.End.eq_zero_of_apply_eq_smul_of_span_eq_top`: an eigenvector whose eigenvalue does not
+  occur in a spanning family of eigenvectors is zero.
+* `Module.End.mem_of_hasEigenvalue_of_iSup_maxGenEigenspace_eq_top`: if the maximal generalized
+  eigenspaces for the scalars in a set span, every eigenvalue lies in that set.
 * `TauCeti.isCompl_eigenspace_one_neg_one`: the `1`- and `-1`-eigenspaces of an involution are
   complementary over a commutative ring in which `2` is a unit.
 -/
@@ -132,5 +138,49 @@ theorem genEigenspace_eq_of_iSup_eq_top {ι : Type w} (A : Module.End K V)
     A.genEigenspace (g k) n = W k :=
   (congrFun (((A.independent_genEigenspace n).comp hg).le_iff_eq_of_iSup_eq_top htop |>.mp hW)
     k).symm
+
+/-- **Scalars outside a spanning family of generalized eigenspaces have trivial maximal
+generalized eigenspace.** If the `W j` span `V` and every `W j` lies in the maximal generalized
+eigenspace `A.maxGenEigenspace (g j)`, then `A.maxGenEigenspace μ = ⊥` for every scalar `μ` not
+attained on any nonzero summand `W j`. -/
+theorem maxGenEigenspace_eq_bot_of_iSup_eq_top {ι : Type w} (A : Module.End K V)
+    {W : ι → Submodule K V} {g : ι → K} (hW : ∀ j, W j ≤ A.maxGenEigenspace (g j))
+    (htop : ⨆ j, W j = ⊤) {μ : K} (hμ : ∀ j, W j ≠ ⊥ → g j ≠ μ) :
+    A.maxGenEigenspace μ = ⊥ := by
+  have hle : ⊤ ≤ ⨆ (c : K) (_ : c ≠ μ), A.maxGenEigenspace c := by
+    refine htop ▸ iSup_le fun j ↦ ?_
+    by_cases hbot : W j = ⊥
+    · simp [hbot]
+    · exact (hW j).trans (le_iSup₂_of_le (g j) (hμ j hbot) le_rfl)
+  exact disjoint_top.mp ((A.independent_maxGenEigenspace μ).mono_right hle)
+
+/-- **An eigenvector whose eigenvalue misses a spanning family of eigenvectors is zero.** If
+`V` is spanned by vectors `b j` satisfying `A (b j) = g j • b j`, then any vector `v` with
+`A v = μ • v` and `∀ j, b j ≠ 0 → g j ≠ μ` vanishes. -/
+theorem eq_zero_of_apply_eq_smul_of_span_eq_top {ι : Type w} (A : Module.End K V)
+    {b : ι → V} (hspan : Submodule.span K (Set.range b) = ⊤) {g : ι → K}
+    (hb : ∀ j, A (b j) = g j • b j) {μ : K} {v : V}
+    (hv : A v = μ • v) (hμ : ∀ j, b j ≠ 0 → g j ≠ μ) : v = 0 := by
+  have hbot : A.maxGenEigenspace μ = ⊥ :=
+    A.maxGenEigenspace_eq_bot_of_iSup_eq_top (W := fun j ↦ Submodule.span K {b j})
+      (fun j ↦ (Submodule.span_singleton_le_iff_mem _ _).mpr
+        (eigenspace_le_maxGenEigenspace (mem_eigenspace_iff.mpr (hb j))))
+      (by rwa [← Submodule.span_range_eq_iSup])
+      (fun j hj ↦ hμ j fun h0 ↦ hj (by simp [h0]))
+  simpa [hbot] using eigenspace_le_maxGenEigenspace (mem_eigenspace_iff.mpr hv)
+
+/-- **Eigenvalues of a spanning sum of generalized eigenspaces.** If the maximal generalized
+eigenspaces of `f` for the scalars in a set `S` span `V`, then every eigenvalue of `f` lies in `S`:
+an eigenvector for a scalar outside `S` would be independent of all of them. -/
+theorem mem_of_hasEigenvalue_of_iSup_maxGenEigenspace_eq_top (f : Module.End K V) {S : Set K}
+    (hS : ⨆ μ ∈ S, f.maxGenEigenspace μ = ⊤) {ν : K} (hν : f.HasEigenvalue ν) : ν ∈ S := by
+  obtain ⟨z, hz⟩ := hν.exists_hasEigenvector
+  by_contra hνS
+  have hle : ⨆ μ ∈ S, f.maxGenEigenspace μ ≤ ⨆ (μ) (_ : μ ≠ ν), f.maxGenEigenspace μ :=
+    iSup₂_le fun μ hμ ↦ le_iSup₂_of_le μ (by rintro rfl; exact hνS hμ) le_rfl
+  rw [hS, top_le_iff] at hle
+  refine hz.2 (Submodule.disjoint_def.mp (f.independent_maxGenEigenspace ν) z
+    (f.eigenspace_le_maxGenEigenspace hz.1) ?_)
+  exact hle ▸ Submodule.mem_top
 
 end Module.End

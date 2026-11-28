@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Vandermonde
@@ -15,14 +16,17 @@ import TauCeti.LinearAlgebra.Vandermonde
 # Root bounds from bounds on weighted moments
 
 Let `K` be a normed field, `β` a finite family of elements of `K` (the *roots*) and `c` a family of
-weights. The weighted moments are the sums `∑ i, c i * β i ^ n`. This file shows that an eventual
-bound `‖∑ i, c i * β i ^ n‖ ≤ C * R ^ n` on the moments bounds every root that the moments can see:
+weights. The weighted moments are the sums `∑ i, c i * β i ^ n`. This file shows that a growth
+bound on the moments, such as an eventual bound `‖∑ i, c i * β i ^ n‖ ≤ C * R ^ n`, bounds every
+root that the moments can see:
 
 * for pairwise distinct roots, every root with a nonzero weight has norm at most `R`;
 * for arbitrary roots, every root whose *total* weight, the sum of the weights of all indices
   carrying that root, is nonzero has norm at most `R`;
 * in characteristic zero, the unweighted power sums `∑ i, α i ^ n` are eventually bounded by a
-  multiple of `R ^ n` if and only if every root has norm at most `R`.
+  multiple of `R ^ n` if and only if every root has norm at most `R`;
+* if the moments are `o(R ^ n)` for some `R > 0`, every visible root, distinct with nonzero weight
+  or of nonzero total weight, has norm strictly less than `R`.
 
 This is the finite-spectrum argument behind deducing the Riemann hypothesis over finite fields from
 point-count estimates: the point counts `#X(𝔽_{qⁿ})` are alternating sums of powers of the
@@ -47,6 +51,9 @@ positive multiplicity carries a nonzero total weight in the unweighted case.
   unweighted power-sum criterion in characteristic zero.
 * `TauCeti.exists_one_lt_norm_sum_mul_inv_pow`: weighted moments of the inverses of distinct roots
   inside the open unit ball leave the closed unit ball infinitely often.
+* `TauCeti.sum_mul_pow_eq_sum_image_mul_pow`: grouping a weighted moment by roots.
+* `TauCeti.norm_lt_of_moment_isLittleO` and `TauCeti.norm_lt_of_grouped_moment_isLittleO`: the
+  strict root bound from little-o moments, for distinct and for grouped roots.
 
 ## References
 
@@ -54,13 +61,16 @@ positive multiplicity carries a nonzero total weight in the unweighted case.
   Appendix C, the finite-spectrum lemma on p. 81.
 * Mircea Mustata, *Zeta functions in algebraic geometry*, §3.3, the root bound from estimates for
   all powers.
+* Theo van den Bogaart, Bas Edixhoven, *Algebraic stacks whose number of points over finite
+  fields is a polynomial*, in: Number fields and function fields, Progr. Math. 239 (2005),
+  Lemma 4.1 and its proof, pp. 6–7, the strict bound from little-o moments.
 -/
 
 public section
 
 namespace TauCeti
 
-open Filter Finset Matrix
+open Asymptotics Filter Finset Matrix
 
 variable {K : Type*} [NormedField K]
 
@@ -108,6 +118,18 @@ theorem norm_le_of_moment_bound {ι : Type*} [Fintype ι] {β : ι → K} (hβ :
   rw [div_pow, ← mul_div_assoc, le_div_iff₀ (pow_pos hpos n)]
   exact hwindow n hn
 
+/-- **Grouping a weighted moment by roots.** The weighted moment of a finite family of roots `α`
+with weights `w` is the weighted moment of the distinct roots in the image of `α`, each weighted by
+the total weight of the indices carrying it. -/
+theorem sum_mul_pow_eq_sum_image_mul_pow {R ι : Type*} [Semiring R] [DecidableEq R] [Fintype ι]
+    (α w : ι → R) (n : ℕ) :
+    ∑ i, w i * α i ^ n = ∑ b : univ.image α, (∑ i with α i = b, w i) * (b : R) ^ n := by
+  rw [← sum_fiberwise_of_maps_to (g := α) fun i _ ↦ mem_image_of_mem α (mem_univ i),
+    ← sum_coe_sort (univ.image α)]
+  refine sum_congr rfl fun b _ ↦ ?_
+  rw [sum_mul]
+  exact sum_congr rfl fun i hi ↦ by rw [(mem_filter.1 hi).2]
+
 /-- **Roots of nonzero total weight are bounded by the growth rate of the moments.** Let `α` be a
 finite family of roots, possibly with repetitions, and `w` a family of weights. If the weighted
 moments `∑ i, w i * α i ^ n` are eventually bounded by `C * R ^ n`, then every root whose total
@@ -117,18 +139,10 @@ A nonzero individual weight does not suffice: the weights of a repeated root may
 theorem norm_le_of_grouped_moment_bound {ι : Type*} [Fintype ι] [DecidableEq K] {α w : ι → K}
     {C R : ℝ} (hR : 0 ≤ R) {N : ℕ}
     (hbound : ∀ n, N ≤ n → ‖∑ i, w i * α i ^ n‖ ≤ C * R ^ n) {j : ι}
-    (hw : ∑ i with α i = α j, w i ≠ 0) : ‖α j‖ ≤ R := by
-  -- Group the indices by their root: the grouped weights of the distinct roots in the image of
-  -- `α` have the same moments.
-  have hgroup : ∀ n, ∑ i, w i * α i ^ n =
-      ∑ b : univ.image α, (∑ i with α i = b, w i) * (b : K) ^ n := fun n ↦ by
-    rw [← sum_fiberwise_of_maps_to (g := α) fun i _ ↦ mem_image_of_mem α (mem_univ i),
-      ← sum_coe_sort (univ.image α)]
-    refine sum_congr rfl fun b _ ↦ ?_
-    rw [sum_mul]
-    exact sum_congr rfl fun i hi ↦ by rw [(mem_filter.1 hi).2]
-  exact norm_le_of_moment_bound (β := fun b : univ.image α ↦ (b : K)) Subtype.val_injective hR
-    (fun n hn ↦ hgroup n ▸ hbound n hn) (k := ⟨α j, mem_image_of_mem α (mem_univ j)⟩) hw
+    (hw : ∑ i with α i = α j, w i ≠ 0) : ‖α j‖ ≤ R :=
+  norm_le_of_moment_bound (β := fun b : univ.image α ↦ (b : K)) Subtype.val_injective hR
+    (fun n hn ↦ sum_mul_pow_eq_sum_image_mul_pow α w n ▸ hbound n hn)
+    (k := ⟨α j, mem_image_of_mem α (mem_univ j)⟩) hw
 
 /-- **The power-sum criterion in characteristic zero.** If the power sums `∑ i, α i ^ n` of a
 finite family of elements of a normed field of characteristic zero are eventually bounded by
@@ -166,5 +180,49 @@ theorem exists_one_lt_norm_sum_mul_inv_pow {ι : Type*} [Fintype ι] {γ : ι �
     (C := 1) zero_le_one (N := N + 1) (fun n hn ↦ by simpa using h n (by omega) (by omega)) hk
   rw [norm_inv] at hle
   exact (one_lt_inv₀ (norm_pos_iff.2 hγk)).2 hγk' |>.not_ge hle
+
+/-! ### Strict bounds from little-o moments -/
+
+/-- **Distinct roots of nonzero weight lie strictly inside the radius of little-o moments.** If
+the weighted moments of pairwise distinct roots `β` with weights `c` are `o(R ^ n)` for some
+`R > 0`, then every root of nonzero weight has norm strictly less than `R`. A root of zero weight
+is invisible to the moments and is not bounded. -/
+theorem norm_lt_of_moment_isLittleO {ι : Type*} [Fintype ι] {β : ι → K}
+    (hβ : Function.Injective β) {c : ι → K} {R : ℝ} (hR : 0 < R)
+    (ho : (fun n ↦ ∑ i, c i * β i ^ n) =o[atTop] fun n ↦ R ^ n) {k : ι} (hk : c k ≠ 0) :
+    ‖β k‖ < R := by
+  -- Transport the roots to `Fin d`, where the Vandermonde matrix lives, and bound the moments
+  -- eventually by `ε * R ^ n` with `ε` small against the window constant `W`.
+  let e := Fintype.equivFin ι
+  set W := ∑ j, ‖(vandermonde (β ∘ e.symm))⁻¹ j (e k)‖ * R ^ (j : ℕ)
+  have hW : 0 ≤ W := sum_nonneg fun j _ ↦ by positivity
+  have hck : 0 < ‖c k‖ := norm_pos_iff.2 hk
+  have hε : 0 < ‖c k‖ / (W + 1) := by positivity
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (ho.def hε)
+  have h := norm_mul_norm_pow_le_of_moment_bound (hβ.comp e.symm.injective) (c := c ∘ e.symm)
+    (fun m hm ↦ by simpa [e.symm.sum_comp fun i ↦ c i * β i ^ m, abs_of_pos hR] using hN m hm)
+    (e k) le_rfl
+  simp only [Function.comp_apply, Equiv.symm_apply_apply] at h
+  -- If `R ≤ ‖β k‖`, then `‖c k‖ * R ^ N ≤ ‖c k‖ / (W + 1) * R ^ N * W < ‖c k‖ * R ^ N`.
+  by_contra! hle
+  have hRN : 0 < R ^ N := pow_pos hR N
+  have hεW : ‖c k‖ / (W + 1) * W < ‖c k‖ := by
+    rw [div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
+    nlinarith
+  have := mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hR.le hle N) hck.le
+  nlinarith
+
+/-- **Roots of nonzero total weight lie strictly inside the radius of little-o moments.** Let `α`
+be a finite family of roots, possibly with repetitions, and `w` a family of weights. If the
+weighted moments `∑ i, w i * α i ^ n` are `o(R ^ n)` for some `R > 0`, then every root whose total
+weight, summed over all the indices carrying that root, is nonzero has norm strictly less
+than `R`. -/
+theorem norm_lt_of_grouped_moment_isLittleO {ι : Type*} [Fintype ι] [DecidableEq K]
+    {α w : ι → K} {R : ℝ} (hR : 0 < R)
+    (ho : (fun n ↦ ∑ i, w i * α i ^ n) =o[atTop] fun n ↦ R ^ n) {j : ι}
+    (hw : ∑ i with α i = α j, w i ≠ 0) : ‖α j‖ < R :=
+  norm_lt_of_moment_isLittleO (β := fun b : univ.image α ↦ (b : K)) Subtype.val_injective hR
+    (by simpa only [sum_mul_pow_eq_sum_image_mul_pow α w] using ho)
+    (k := ⟨α j, mem_image_of_mem α (mem_univ j)⟩) hw
 
 end TauCeti

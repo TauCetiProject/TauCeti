@@ -194,7 +194,8 @@ theorem targetLocally_of_iSup_eq_top {f : X ⟶ Y} {ι : Type*} (V : ι → Open
   refine ⟨V', ⟨⟨y, hi⟩, hy, rfl⟩, A, inferInstance, inferInstance, inferInstance, inferInstance,
     inferInstance, inferInstance, inferInstance, S, P, hP, B, inferInstance, inferInstance,
     inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, T, P', hP', φ, hφ,
-    hsheaf, (restrictRestrictIso Y.obj (V i).isOpenEmbedding W).symm ≪≫ eW, e.symm ≪≫ eU, ?_⟩
+    hsheaf, (PreAdicSpace.restrictRestrictIso Y.obj (V i).isOpenEmbedding W).symm ≪≫ eW,
+    e.symm ≪≫ eU, ?_⟩
   -- transport the local square through the two identifications of open subspaces, composing the
   -- identities as terms: rewriting inside the restricted objects would require identifying the
   -- topology of a restriction with its underlying subtype topology
@@ -205,7 +206,7 @@ theorem targetLocally_of_iSup_eq_top {f : X ⟶ Y} {ι : Type*} (V : ι → Open
     (fun g ↦ eU.hom ≫ presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
       φ.map_mem_plus S.isRingOfIntegralElements.isPowerBounded_of_mem
       T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf ≫ eW.inv ≫ g)
-    (restrictRestrictIso_hom_ofRestrict Y.obj (V i).isOpenEmbedding W)
+    (PreAdicSpace.restrictRestrictIso_hom_ofRestrict Y.obj (V i).isOpenEmbedding W)
   simp only [Category.assoc] at hsource htarget
   simp only [Category.assoc, ObjectProperty.homMk_hom, Hom.restrictPreimage_ofRestrict] at hsquare
   simpa only [Iso.trans_hom, Iso.symm_hom, Iso.trans_inv, Iso.symm_inv, Category.assoc] using
@@ -235,12 +236,12 @@ theorem targetLocally_presentationLimitPreAdicSpaceComap {A : Type u} [CommRing 
   refine fun _ ↦ ⟨⊤, trivial, A, inferInstance, inferInstance, inferInstance, inferInstance,
     inferInstance, inferInstance, inferInstance, S, P, hP, B, inferInstance, inferInstance,
     inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, T, P', hP', φ, hφ,
-    hsheaf, restrictTopIso _,
-    restrictIsoOfRangeEq _ _ (Opens.isOpenEmbedding ⊤) ?_ ≪≫ restrictTopIso _, ?_⟩
+    hsheaf, PreAdicSpace.restrictTopIso _,
+    restrictIsoOfRangeEq _ _ (Opens.isOpenEmbedding ⊤) ?_ ≪≫ PreAdicSpace.restrictTopIso _, ?_⟩
   · rw [Opens.map_top]
   · simp only [Iso.trans_hom, Category.assoc, restrictIsoOfRangeEq_hom_ofRestrict_assoc,
-      restrictTopIso_hom, ObjectProperty.homMk_hom]
-    simp [← restrictTopIso_hom]
+      PreAdicSpace.restrictTopIso_hom, ObjectProperty.homMk_hom]
+    simp [← PreAdicSpace.restrictTopIso_hom]
 
 /-- Precomposing a target-locally `Q` morphism with an isomorphism gives a target-locally `Q`
 morphism: over the same neighbourhoods, `e` identifies the restrictions of the two sources. -/

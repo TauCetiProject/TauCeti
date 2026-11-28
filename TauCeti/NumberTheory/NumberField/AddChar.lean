@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+public import Mathlib.NumberTheory.LegendreSymbol.AddCharacter
 public import Mathlib.RingTheory.DedekindDomain.Different
 public import Mathlib.NumberTheory.NumberField.Basic
+
+import Mathlib.NumberTheory.NumberField.Norm
 
 /-!
 # Trace characters on residue rings of number fields
@@ -16,13 +19,19 @@ Let `I` be a nonzero ideal of `𝓞 K`. The phase `exp (2πi Tr(xy))`, for `x �
 and `y ∈ K`, depends only on `x mod I` precisely when `y` belongs to the trace dual
 `I⁻¹ 𝔡⁻¹`. This file constructs that additive character as `Ideal.traceAddChar`,
 using Mathlib's `Real.fourierChar` and `FractionalIdeal.dual`. The construction also
-works for the zero ideal, whose trace dual in Mathlib is zero.
+works for the zero ideal, whose trace dual in Mathlib is zero. The underlying trace character
+`TauCeti.numberFieldTraceChar K` of `K` is trivial on `𝓞 K`, whose traces are integers
+(`TauCeti.numberFieldTraceChar_algebraMap`).
 
 The evaluation lemma `Ideal.traceAddChar_mk` permits any representative of a residue
 class. The character is trivial exactly when its parameter lies in the inverse different,
 and two parameters give the same character exactly when their difference lies there
 (`Ideal.traceAddChar_eq_iff`). Thus no choices of representatives enter the Gauss-sum phase,
 including at `I = ⊤`, where the residue ring has one element.
+
+The trace character of `y` is primitive exactly when `z y ∈ 𝔡⁻¹` forces `z ∈ I`
+(`Ideal.isPrimitive_traceAddChar_iff`), in particular when the integral ideal `y I 𝔡` is prime
+to `I` (`Ideal.isPrimitive_traceAddChar`).
 
 ## References
 
@@ -65,6 +74,13 @@ theorem numberFieldTraceChar_apply_eq_one_iff (x : K) :
     exact_mod_cast h.symm
   · rintro ⟨n, hn⟩
     exact ⟨n, by rw [← hn, eq_intCast, Rat.cast_intCast, mul_comm]⟩
+
+/-- The trace character is trivial on the algebraic integers, whose traces are integers. -/
+@[simp]
+theorem numberFieldTraceChar_algebraMap (r : 𝓞 K) :
+    numberFieldTraceChar K (algebraMap (𝓞 K) K r) = 1 :=
+  (numberFieldTraceChar_apply_eq_one_iff K _).mpr
+    ⟨Algebra.trace ℤ (𝓞 K) r, by simpa using Algebra.coe_trace_int r⟩
 
 end TauCeti
 
@@ -210,5 +226,64 @@ theorem traceAddChar_smul
   simp only [Submodule.coe_smul, Algebra.smul_def, map_mul]
   congr 2
   ring
+
+/-! ### Primitivity of the trace character -/
+
+/-- **Primitivity of the trace character.** The trace character of `y` is primitive exactly when
+every `z ∈ 𝓞 K` with `z y` in the inverse different `𝔡⁻¹ = (𝓞 K)^∨` lies in `I`. -/
+theorem isPrimitive_traceAddChar_iff
+    (y : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K)) :
+    (I.traceAddChar y).IsPrimitive ↔
+      ∀ z : 𝓞 K, (z : K) * y ∈ FractionalIdeal.dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) →
+        z ∈ I := by
+  -- The shift by the class of `z` is the trace character of `z • y = z y`.
+  have hshift (z : 𝓞 K) : (I.traceAddChar y).mulShift (Ideal.Quotient.mk I z) = 1 ↔
+      (z : K) * y ∈ FractionalIdeal.dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) := by
+    rw [← traceAddChar_smul, traceAddChar_eq_one_iff, Submodule.coe_smul, Algebra.smul_def]
+  refine ⟨fun h z hz ↦ ?_, fun h x hx ↦ ?_⟩
+  · by_contra hzI
+    exact h (by rwa [Ne, Ideal.Quotient.eq_zero_iff_mem]) ((hshift z).mpr hz)
+  · obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective x
+    rw [Ne, hshift]
+    exact fun hz ↦ hx (Ideal.Quotient.eq_zero_iff_mem.mpr (h z hz))
+
+variable {I} in
+/-- **The trace character is primitive when `y I 𝔡` is prime to `I`**, `𝔡` the different of `K`:
+if the integral ideal `y I 𝔡` and `I` generate the unit ideal, the trace character of `y` is a
+primitive additive character of `𝓞 K ⧸ I`. -/
+theorem isPrimitive_traceAddChar
+    {y : (FractionalIdeal.dual ℤ ℚ (I : FractionalIdeal (𝓞 K)⁰ K) : Submodule (𝓞 K) K)}
+    (hy : FractionalIdeal.spanSingleton (𝓞 K)⁰ (y : K) * I *
+      (differentIdeal ℤ (𝓞 K) : FractionalIdeal (𝓞 K)⁰ K) + I = 1) :
+    (traceAddChar I y).IsPrimitive := by
+  rw [isPrimitive_traceAddChar_iff]
+  intro z hz
+  have hd : FractionalIdeal.dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) *
+      (differentIdeal ℤ (𝓞 K) : FractionalIdeal (𝓞 K)⁰ K) = 1 := by
+    rw [coeIdeal_differentIdeal ℤ ℚ,
+      mul_inv_cancel₀ (FractionalIdeal.dual_ne_zero ℤ ℚ one_ne_zero)]
+  have hz1 : FractionalIdeal.spanSingleton (𝓞 K)⁰ (z : K) ≤ 1 :=
+    FractionalIdeal.spanSingleton_le_iff_mem.mpr ((FractionalIdeal.mem_one_iff _).mpr ⟨z, rfl⟩)
+  have hzy : FractionalIdeal.spanSingleton (𝓞 K)⁰ ((z : K) * y) ≤
+      FractionalIdeal.dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) :=
+    FractionalIdeal.spanSingleton_le_iff_mem.mpr hz
+  -- `(z) = (z) (y I 𝔡 + I) = (z y) 𝔡 I + (z) I ≤ 𝔡⁻¹ 𝔡 I + I = I`.
+  have hle : FractionalIdeal.spanSingleton (𝓞 K)⁰ (z : K) ≤ I := by
+    calc FractionalIdeal.spanSingleton (𝓞 K)⁰ (z : K)
+        = FractionalIdeal.spanSingleton (𝓞 K)⁰ (z : K) *
+          (FractionalIdeal.spanSingleton (𝓞 K)⁰ (y : K) * I *
+            (differentIdeal ℤ (𝓞 K) : FractionalIdeal (𝓞 K)⁰ K) + I) := by rw [hy, mul_one]
+      _ = FractionalIdeal.spanSingleton (𝓞 K)⁰ ((z : K) * y) *
+            (differentIdeal ℤ (𝓞 K) : FractionalIdeal (𝓞 K)⁰ K) * I +
+          FractionalIdeal.spanSingleton (𝓞 K)⁰ (z : K) * I := by
+          rw [mul_add, map_mul]
+          ring
+      _ ≤ FractionalIdeal.dual ℤ ℚ (1 : FractionalIdeal (𝓞 K)⁰ K) *
+            (differentIdeal ℤ (𝓞 K) : FractionalIdeal (𝓞 K)⁰ K) * I + 1 * I := by
+          gcongr
+      _ = I := by rw [hd, one_mul, ← FractionalIdeal.coeIdeal_sup, sup_idem]
+  obtain ⟨z', hz', hzz'⟩ :=
+    (FractionalIdeal.mem_coeIdeal _).mp (hle (FractionalIdeal.mem_spanSingleton_self _ _))
+  rwa [← RingOfIntegers.coe_injective hzz']
 
 end Ideal

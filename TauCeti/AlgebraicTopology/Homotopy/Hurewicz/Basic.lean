@@ -73,6 +73,8 @@ as well.
   (`GenLoop.toCubeBoundaryPairHom_eq_cubeBoundaryPairHom`).
 * `GenLoop.hurewicz`: the Hurewicz class of a generalized loop, characterized by
   `GenLoop.hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom`.
+* `GenLoop.zmultiples_hurewicz_of_isIso`: a generalized loop whose integral Hurewicz class is an
+  isomorphism generates the integral homology.
 * `HomotopyGroup.hurewicz`: the Hurewicz map on homotopy classes.
 * `TauCeti.singularHomologyMap_cubeBoundaryPair_eq_add`: the pinch identity for maps of pairs out
   of the cube.
@@ -82,7 +84,8 @@ as well.
   homomorphism `πₙ₊₁(X, x) → Hₙ₊₁(X; ℤ)`, in `Type 0` and in an arbitrary universe `w`, natural in
   the space (`HomotopyGroup.hurewiczIntHom_map`, `HomotopyGroup.hurewiczUliftIntHom_map`).
 * `HomotopyGroup.hurewiczModuleCatHom`: the integral Hurewicz homomorphism in degree `n + 2` as a
-  morphism of `ModuleCat ℤ`, natural in the space (`HomotopyGroup.hurewiczModuleCatHom_naturality`).
+  morphism of `ModuleCat ℤ`, natural in the space (`HomotopyGroup.hurewiczModuleCatHom_naturality`,
+  `HomotopyGroup.singularHomologyMap_comp_hurewiczModuleCatHom`).
 
 ## References
 
@@ -208,6 +211,18 @@ theorem hurewicz_map (f : C(X, Y)) (hf : f x = y) (p : Ω^ (Fin (n + 1)) X x) :
     singularHomologyIsoOfSubsetSingleton_hom_naturality R n f hf,
     hurewicz_comp_singularHomologyIsoOfSubsetSingleton_hom_assoc, toCubeBoundaryPairHom_map,
     TopPair.singularHomologyMap_comp]
+
+/-- **An invertible integral Hurewicz class generates**: if the integral Hurewicz class of a
+generalized loop `p` is an isomorphism `ℤ ≅ Hₘ₊₁(X; ℤ)`, then every class in `Hₘ₊₁(X; ℤ)` is an
+integer multiple of the Hurewicz class of `p`. -/
+theorem zmultiples_hurewicz_of_isIso {X : Type} [TopologicalSpace X] {x : X}
+    {m : ℕ} (p : Ω^ (Fin (m + 1)) X x) [IsIso (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p)] :
+    AddSubgroup.zmultiples ((GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p).hom 1) = ⊤ := by
+  refine (AddSubgroup.eq_top_iff' _).2 fun b ↦ AddSubgroup.mem_zmultiples_iff.2
+    ⟨(inv (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) p)).hom b, ?_⟩
+  -- The Hurewicz morphism `ℤ ⟶ Hₘ₊₁(X; ℤ)` is `ℤ`-linear, so it sends `k` to `k` times the image
+  -- of `1`.
+  rw [← map_zsmul, smul_eq_mul, mul_one, IsIso.inv_hom_id_apply]
 
 end GenLoop
 
@@ -764,6 +779,18 @@ theorem hurewiczModuleCatHom_naturality {X Y : Type} [TopologicalSpace X] [Topol
   -- both definitional; `rw [ofMul_toMul]` cannot see the first through the carrier of
   -- `ModuleCat.of`.
   exact hurewiczIntHom_map f hf a.toMul
+
+/-- Naturality of the underlying `ℤ`-linear map `(HomotopyGroup.hurewiczModuleCatHom _ _ _).hom`
+with respect to based continuous maps. -/
+theorem singularHomologyMap_comp_hurewiczModuleCatHom {X Y : Type} [TopologicalSpace X]
+    [TopologicalSpace Y] {x : X} {y : Y} (f : C(X, Y)) (hf : f x = y) (n : ℕ) :
+    (HomologicalComplex.homologyMap ((singularChains ℤ).map (TopCat.ofHom f)) (n + 2)).hom.comp
+        (hurewiczModuleCatHom X x n).hom =
+      (hurewiczModuleCatHom Y y n).hom.comp
+        (mapHom (N := Fin (n + 2)) f hf).toAdditive.toIntLinearMap := by
+  have h := congrArg ModuleCat.Hom.hom (hurewiczModuleCatHom_naturality f hf n).symm
+  rwa [ModuleCat.hom_comp, ModuleCat.hom_comp, ModuleCat.hom_ofHom,
+    singularHomologyFunctor_obj_map] at h
 
 /-- **The integral Hurewicz homomorphism in an arbitrary universe** `w`,
 `πₙ₊₁(X, x) → Hₙ₊₁(X; ULift.{w} ℤ)`, `[p] ↦ p_*[Iⁿ⁺¹]`: the Hurewicz homomorphism

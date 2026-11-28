@@ -27,7 +27,7 @@ the underlying abelian sheaf of the module pullback
 (`AlgebraicGeometry.Scheme.Hom.toSheafPullbackComparison`).
 
 The pullback map is natural in `M`, commutes with the connecting maps of a short exact sequence
-whose pullback is still short exact (for instance for flat `g` and quasi-coherent terms), is
+whose pullback is still short exact (for instance for flat `g`), is
 semilinear for the action of global functions along `g^♯ : Γ(X, 𝒪_X) ⟶ Γ(Y, 𝒪_Y)`, and is the
 pullback of global sections in degree zero. For the base change `Y = X ×_R R'` along a ring map
 `R → R'`, its `R'`-linear extension is the flat base change map
@@ -45,7 +45,8 @@ pullback of global sections in degree zero. For the base change `Y = X ×_R R'` 
 For an open subset `U` the analogous map is `Scheme.Hom.cohomologyOnPullback`, from
 `Hⁿ(U, M)` to `Hⁿ(g⁻¹ U, g^* M)`. It is semilinear over global functions, commutes with
 restriction and with the connecting maps for the covers `U ∪ V` and `g⁻¹ U ∪ g⁻¹ V`, and
-in degree zero is pullback of sections. These comparisons provide the commutative
+in degree zero is pullback of sections; as `U` varies these maps form a morphism of cohomology
+presheaves (`Scheme.Hom.cohomologyPresheafPullback`). These comparisons provide the commutative
 Mayer–Vietoris ladders used to transport cohomological statements across a morphism of
 schemes, without any affine-diagonal hypothesis.
 
@@ -100,8 +101,7 @@ theorem cohomologyPullback_cohomologyMap {M N : X.Modules} (α : M ⟶ N) (n : �
 
 /-- The pullback map on cohomology commutes with the connecting maps of a short exact sequence
 `S` of sheaves of modules on `X` whose pullback to `Y` is short exact, for instance when `g` is flat
-and the first two terms of `S` are quasi-coherent
-(`AlgebraicGeometry.Scheme.Hom.shortExact_map_pullback_of_flat`). -/
+(`AlgebraicGeometry.Scheme.Modules.preservesHomology_pullback_of_flat`). -/
 theorem cohomologyPullback_cohomologyδ {S : ShortComplex X.Modules} (hS : S.ShortExact)
     (hS' : (S.map (Scheme.Modules.pullback g)).ShortExact) {n₀ n₁ : ℕ} (h : n₀ + 1 = n₁)
     (x : Cohomology S.X₃ n₀) :
@@ -160,6 +160,18 @@ def cohomologyOnPullback (M : X.Modules) (n : ℕ) (U : X.Opens) :
       ((Opens.map g.base).freeYonedaSheafToSheafPullback _ _) ((toSheaf X).obj M) n (𝟙 _) ≫
     ((CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n).map
       ((toSheafPullbackComparison g).app M)).app (op (g ⁻¹ᵁ U))
+
+/-- Pullback over an open is the pullback of cohomology over the open `U` along the morphism of
+sites, followed by the comparison from abelian inverse image to module pullback. -/
+lemma cohomologyOnPullback_def (M : X.Modules) (n : ℕ) (U : X.Opens) :
+    g.cohomologyOnPullback M n U =
+      CategoryTheory.Sheaf.H'.pullback
+          ((Opens.map g.base).sheafPullback AddCommGrpCat.{u}
+            (Opens.grothendieckTopology X) (Opens.grothendieckTopology Y))
+          ((Opens.map g.base).freeYonedaSheafToSheafPullback _ _) ((toSheaf X).obj M) n (𝟙 _) ≫
+        ((CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n).map
+          ((toSheafPullbackComparison g).app M)).app (op (g ⁻¹ᵁ U)) :=
+  (rfl)
 
 /-- Pullback over an open is abelian inverse image followed by the map from inverse image
 to the underlying sheaf of the module pullback. -/
@@ -249,6 +261,23 @@ lemma cohomologyOnRes_comp_cohomologyOnPullback (M : X.Modules) (n : ℕ) {U V :
     Category.assoc, ← hn, ← Category.assoc,
     CategoryTheory.Sheaf.H'.pullback_comp_map]
   simp
+
+/-- Pullback on the cohomology of the opens of `X`, as a morphism from the cohomology presheaf
+`U ↦ Hⁿ(U, M)` to the presheaf `U ↦ Hⁿ(g⁻¹ U, g^* M)`. -/
+def cohomologyPresheafPullback (M : X.Modules) (n : ℕ) :
+    ((SheafOfModules.toSheaf X.ringCatSheaf).obj M).cohomologyPresheaf n ⟶
+      (Opens.map g.base).op ⋙
+        ((SheafOfModules.toSheaf Y.ringCatSheaf).obj
+          ((Scheme.Modules.pullback g).obj M)).cohomologyPresheaf n where
+  app U := g.cohomologyOnPullback M n U.unop
+  naturality U V i := by
+    exact g.cohomologyOnRes_comp_cohomologyOnPullback M n (leOfHom i.unop)
+
+/-- The components of `cohomologyPresheafPullback` are pullback on the cohomology of opens. -/
+@[simp]
+lemma cohomologyPresheafPullback_app (M : X.Modules) (n : ℕ) (U : X.Opensᵒᵖ) :
+    (g.cohomologyPresheafPullback M n).app U = g.cohomologyOnPullback M n U.unop :=
+  (rfl)
 
 /-- Pullback on the cohomology of an open is semilinear over global functions. -/
 lemma cohomologyOnPullback_smul (M : X.Modules) (n : ℕ) (U : X.Opens)

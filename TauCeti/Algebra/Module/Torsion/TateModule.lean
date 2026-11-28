@@ -39,6 +39,8 @@ introducing an elliptic-curve-specific copy of the inverse-limit machinery.
 * `TauCeti.TateModule.lift`: the map into the Tate module induced by compatible finite-level
   maps.
 * `TauCeti.TateModule.mapLinearMap`: the `ℤ_p`-linear map induced by an additive homomorphism.
+* `TauCeti.TateModule.quotientEquivLevel`: `T_p A / p^n ≅ A[p^n]` when the transition maps are
+  surjective.
 
 ## Main results
 
@@ -59,10 +61,16 @@ introducing an elliptic-curve-specific copy of the inverse-limit machinery.
 * `TauCeti.TateModule.proj_eq_zero_iff`: the kernel of the projection to `A[p^n]` is
   `p^n T_p A`. So `T_p A` has no `p`-torsion (`TauCeti.TateModule.eq_zero_of_pow_nsmul_eq_zero`)
   and only `0` is divisible by every power of `p`
-  (`TauCeti.TateModule.eq_zero_of_forall_exists_eq_pow_nsmul`).
+  (`TauCeti.TateModule.eq_zero_of_forall_exists_eq_pow_nsmul`). As a subgroup statement this is
+  `TauCeti.TateModule.ker_proj`; when the transition maps are surjective, the projection induces
+  `T_p A / p^n ≅ A[p^n]` (`TauCeti.TateModule.quotientEquivLevel`).
 * `TauCeti.TateModule.eq_one_of_isOfFinOrder_of_forall_proj_eq`: **Serre's lemma**. An
   endomorphism of finite order of `T_p A` inducing the identity on `A[p^k]`, with `p^k ≥ 3`, is the
   identity.
+* `TauCeti.TateModule.instIsTorsionFreePadicInt`: `T_p A` is torsion-free over `ℤ_p`.
+* `TauCeti.TateModule.subsingleton_of_pow_nsmul_eq_zero`: if `p ^ N` kills the `p`-power torsion
+  of `A`, then `T_p A = 0`. In particular the Tate module of a torsion-free group, such as `ℤ`,
+  is zero.
 
 ## References
 
@@ -721,6 +729,33 @@ theorem proj_eq_zero_iff {x : TateModule p A} {n : ℕ} :
     rw [map_nsmul]
     exact AddSubgroup.torsionBy.nsmul _
 
+/-- **The kernel of the projection to `A[p ^ n]` is the subgroup `p ^ n T_p A`.** -/
+theorem ker_proj (n : ℕ) :
+    (proj (p := p) (A := A) n).ker =
+      (nsmulAddMonoidHom (p ^ n) : TateModule p A →+ TateModule p A).range := by
+  ext x
+  rw [AddMonoidHom.mem_ker, proj_eq_zero_iff, AddMonoidHom.mem_range]
+  simp [eq_comm]
+
+/-- **`T_p A / p ^ n ≅ A[p ^ n]`**: if every transition map is surjective, the projection to
+`A[p ^ n]` induces an isomorphism from the quotient by `p ^ n T_p A`, which is its kernel
+(`ker_proj`). -/
+def quotientEquivLevel (h : ∀ n, Function.Surjective (tateModuleTransition p A n)) (n : ℕ) :
+    TateModule p A ⧸ (nsmulAddMonoidHom (p ^ n) : TateModule p A →+ TateModule p A).range ≃+
+      TateModuleLevel p A n :=
+  (QuotientAddGroup.quotientAddEquivOfEq (ker_proj n).symm).trans
+    (QuotientAddGroup.quotientKerEquivOfSurjective _ (proj_surjective h n))
+
+/-- The isomorphism `T_p A / p ^ n ≅ A[p ^ n]` sends a class to the projection of a
+representative. -/
+@[simp]
+theorem quotientEquivLevel_mk (h : ∀ n, Function.Surjective (tateModuleTransition p A n))
+    (n : ℕ) (x : TateModule p A) :
+    quotientEquivLevel h n (x : TateModule p A ⧸
+        (nsmulAddMonoidHom (p ^ n) : TateModule p A →+ TateModule p A).range) =
+      proj n x :=
+  (rfl)
+
 /-- **The Tate module has no `p`-torsion.** -/
 theorem eq_zero_of_pow_nsmul_eq_zero {x : TateModule p A} {k : ℕ} (h : p ^ k • x = 0) :
     x = 0 :=
@@ -732,6 +767,33 @@ theorem eq_zero_of_pow_nsmul_eq_zero {x : TateModule p A} {k : ℕ} (h : p ^ k �
 theorem eq_zero_of_forall_exists_eq_pow_nsmul {x : TateModule p A}
     (h : ∀ n, ∃ y : TateModule p A, x = p ^ n • y) : x = 0 :=
   ext fun n ↦ by rw [proj_eq_zero_iff.mpr (h n), map_zero]
+
+/-- **The Tate module is torsion-free over `ℤ_p`**: a nonzero `p`-adic integer kills no nonzero
+point of `T_p A`. -/
+instance instIsTorsionFreePadicInt [Fact p.Prime] :
+    Module.IsTorsionFree ℤ_[p] (TateModule p A) :=
+  .of_smul_eq_zero fun a x h ↦ or_iff_not_imp_left.2 fun ha ↦ by
+    -- Write `a = u * p ^ k` with `u` a unit, so that `p ^ k • (u • x) = 0`.
+    rw [PadicInt.unitCoeff_spec ha, mul_comm, mul_smul, ← Nat.cast_pow,
+      Nat.cast_smul_eq_nsmul] at h
+    simpa using eq_zero_of_pow_nsmul_eq_zero h
+
+/-- **The Tate module vanishes under bounded exponent.** If `p ^ N` kills the whole `p`-power
+torsion subgroup of `A`, then `T_p A = 0`. This applies in particular when `A` itself is killed by
+`p ^ N`, and needs no finiteness hypothesis on `A`. -/
+theorem subsingleton_of_pow_nsmul_eq_zero {N : ℕ}
+    (h : ∀ (n : ℕ) (a : A), p ^ n • a = 0 → p ^ N • a = 0) : Subsingleton (TateModule p A) :=
+  subsingleton_of_forall_eq 0 fun x ↦ ext fun n ↦ Subtype.ext <| by
+    -- The level-`n` component is `p ^ N` times the level-`(n + N)` component, which is
+    -- `p`-power torsion.
+    rw [coe_proj_eq_pow_nsmul x n N, map_zero, ZeroMemClass.coe_zero]
+    exact h _ _ (AddSubgroup.torsionBy.nsmul_iff.mp (proj (n + N) x).property)
+
+/-- The Tate module of a torsion-free abelian group is zero; for example `T_p ℤ = 0`. -/
+instance [IsAddTorsionFree A] : Subsingleton (TateModule p A) :=
+  subsingleton_of_pow_nsmul_eq_zero (N := 1) fun n a ha ↦ by
+    simp only [nsmul_eq_zero_iff, Nat.pow_eq_zero, ne_eq, pow_one] at ha ⊢
+    tauto
 
 /-- **Serre's lemma on the Tate module.** An endomorphism of finite order of `T_p A` that induces
 the identity on `A[p ^ k]`, with `p ^ k ≥ 3`, is the identity. -/

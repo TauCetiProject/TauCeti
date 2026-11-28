@@ -37,9 +37,11 @@ the split-semisimplicity criterion and includes `Q = 1` in characteristic zero.
 The vectors `v_U` diagonalize the Jucys–Murphy elements: the additive element `L_i` acts by
 `L_i v_U = [content i]_Q * v_U`, and the normalized element `J_i = 1 + (Q - 1) L_i` by
 `J_i v_U = Q ^ content i * v_U`, where `content i` is the column minus the row of the label `i`
-in `U`. The additive eigenvalues remain informative at `Q = 1`, where `J_i = 1`. Irreducibility
-of these modules and their comparison with other constructions of the Specht modules are not
-treated here.
+in `U`. The additive eigenvalues remain informative at `Q = 1`, where `J_i = 1`. Under the
+split-semisimplicity criterion `[d]_Q ≠ 0` for `0 < d ≤ n` these modules are absolutely
+irreducible (`TauCeti.Algebra.TypeAHeckeAlgebra.Seminormal.Irreducible`); under the weaker
+hypothesis above they need not be. Their comparison with other constructions of the Specht
+modules is not treated.
 
 ## Main definitions
 
@@ -57,6 +59,8 @@ treated here.
   eigenvectors of the additive Jucys–Murphy elements, with eigenvalues `[content]_Q`.
 * `TauCeti.TypeAHeckeAlgebra.seminormalRep_jucysMurphy_single`: the basis vectors are
   eigenvectors of the normalized Jucys–Murphy elements, with eigenvalues `Q ^ content`.
+* `TauCeti.TypeAHeckeAlgebra.additiveContent_ne_zero_of_card_le`: the hypothesis on `μ` carries
+  over to every diagram with at most as many cells.
 
 ## Implementation notes
 
@@ -496,16 +500,11 @@ theorem additiveContent_labelContent_sub_ne_zero (hQ : Q ≠ 0)
     additiveContent Q (labelContent T.toTableau b - labelContent T.toTableau a) ≠ 0 := by
   have hne : labelContent T.toTableau b - labelContent T.toTableau a ≠ 0 :=
     sub_ne_zero.mpr (T.labelContent_ne_of_lt_of_le_add_two hab hba).symm
-  have hlt := abs_labelContent_sub_lt_card T.toTableau b a
-  rw [abs_lt] at hlt
-  rcases lt_or_gt_of_ne hne with h | h
-  · obtain ⟨m, hm⟩ := Int.eq_ofNat_of_zero_le (neg_nonneg.mpr h.le)
-    rw [← neg_neg (labelContent T.toTableau b - labelContent T.toTableau a), hm, ne_eq,
-      additiveContent_neg_eq_zero_iff hQ]
-    exact hμ m (by omega) (by omega)
-  · obtain ⟨m, hm⟩ := Int.eq_ofNat_of_zero_le h.le
-    rw [hm]
-    exact hμ m (by omega) (by omega)
+  have hlt : |labelContent T.toTableau b - labelContent T.toTableau a - 0| < μ.card := by
+    rw [sub_zero]
+    exact abs_labelContent_sub_lt_card T.toTableau b a
+  rw [ne_eq, ← additiveContent_zero Q, additiveContent_inj hQ hμ hlt]
+  exact hne
 
 /-- Under the hypothesis of `TauCeti.TypeAHeckeAlgebra.seminormalRep` on `Q`, the additive
 content of an axial distance of a standard tableau is nonzero. -/
@@ -515,6 +514,14 @@ theorem additiveContent_axialDistance_ne_zero (hQ : Q ≠ 0)
   rw [axialDistance_def]
   exact additiveContent_labelContent_sub_ne_zero hQ hμ T (Fin.mk_lt_mk.mpr (Nat.lt_add_one k))
     (by simp only; omega)
+
+/-- The hypothesis of `TauCeti.TypeAHeckeAlgebra.seminormalRep` on `μ` carries over to every
+diagram `ν` with at most as many cells, such as the diagram obtained by removing a corner of
+`μ`. -/
+theorem additiveContent_ne_zero_of_card_le {ν : YoungDiagram} (hνμ : ν.card ≤ μ.card)
+    (hμ : ∀ d : ℕ, 0 < d → d < μ.card → additiveContent Q d ≠ 0) :
+    ∀ d : ℕ, 0 < d → d < ν.card → additiveContent Q d ≠ 0 :=
+  fun d hd hdν => hμ d hd (hdν.trans_le hνμ)
 
 private theorem seminormalGen_sq (hQ : Q ≠ 0)
     (hμ : ∀ d : ℕ, 0 < d → d < μ.card → additiveContent Q d ≠ 0) (k : ℕ) (hk : k + 1 < μ.card)

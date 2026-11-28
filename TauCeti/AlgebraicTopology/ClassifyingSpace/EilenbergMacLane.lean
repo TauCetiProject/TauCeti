@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Basic
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Covering
-public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
+public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.Covering
 
 /-!
@@ -131,9 +131,7 @@ def universalGSpaceHomeomorphUniversalCover :
   IsCoveringMap.totalSpaceHomeomorphOfRangeEq
     (isQuotientCoveringMap_classifyingSpaceProj G).isCoveringMap
     (UniversalCover.isCoveringMap _) (classifyingSpaceProj_universalGSpaceBasepoint G)
-    (UniversalCover.proj_basepointLift _) <| by
-      rw [FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton,
-        FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton]
+    (UniversalCover.proj_basepointLift _) (FundamentalGroup.mapOfEq_range_eq_of_subsingleton ..)
 
 /-- The comparison homeomorphism carries the base point of the countable join to the class of
 the constant path. -/

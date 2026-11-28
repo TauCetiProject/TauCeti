@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.Graph.Connectivity.Bidirected
 public import TauCeti.Combinatorics.Network.Isomorphism.Connectivity
 public import TauCeti.Combinatorics.Network.Isomorphism.Walk
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Flow
+public import TauCeti.Combinatorics.SimpleGraph.Walk.MinimumWeight
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Connected
 import Mathlib.Algebra.Group.PUnit
 
@@ -57,6 +58,8 @@ undirected max-flow/min-cut theorem with additive-subgroup integrality directly 
 * `TauCeti.DoubledQuiver.mapPath_bidirectedNetworkIso_toBidirected`: transporting the multigraph
   bidirected walk of `p : G.Walk u v` along `bidirectedNetworkIso` recovers
   `DoubledQuiver.walkToPath G p`.
+* `TauCeti.DoubledQuiver.bottleneck_walkToPath`: the directed bottleneck of `walkToPath G p` is the
+  minimum edge weight of `p`.
 * `TauCeti.DoubledQuiver.isCycle_iff_isCycle_walkToPath_and_nodup_map_edge_arrows`: an undirected
   cycle of `G` is a directed cycle of `DoubledQuiver G` whose arrows have distinct underlying
   undirected edges.
@@ -197,8 +200,8 @@ theorem doubledVertexEquiv_apply (x : V(Graph.ofSimpleGraph G)) :
 @[simp]
 theorem doubledVertexEquiv_symm_apply (i : DoubledQuiver G) :
     G.doubledVertexEquiv.symm i =
-      G.toOfSimpleGraphVertex ((DoubledQuiver.vertexEquiv G).symm i) :=
-  Subtype.ext (G.toOfSimpleGraphVertex_val _).symm
+      G.ofSimpleGraphVertexEquiv ((DoubledQuiver.vertexEquiv G).symm i) :=
+  Subtype.ext (G.ofSimpleGraphVertexEquiv_apply_val _).symm
 
 /-- Transporting a finite set of vertices from `Graph.ofSimpleGraph G` along `doubledVertexEquiv`
 produces `DoubledQuiver.vertexFinset`. -/
@@ -291,15 +294,17 @@ theorem bidirectedTotalHomEquivDart_edge (a : Σ x y, (Graph.ofSimpleGraph G).Bi
 
 @[simp]
 theorem bidirectedTotalHomEquivDart_symm_apply_fst (d : G.Dart) :
-    (G.bidirectedTotalHomEquivDart.symm d).1 = G.toOfSimpleGraphVertex d.fst :=
+    (G.bidirectedTotalHomEquivDart.symm d).1 = G.ofSimpleGraphVertexEquiv d.fst :=
   Subtype.ext (by
-    rw [← G.bidirectedTotalHomEquivDart_fst, Equiv.apply_symm_apply, toOfSimpleGraphVertex_val])
+    rw [← G.bidirectedTotalHomEquivDart_fst, Equiv.apply_symm_apply,
+      ofSimpleGraphVertexEquiv_apply_val])
 
 @[simp]
 theorem bidirectedTotalHomEquivDart_symm_apply_snd_fst (d : G.Dart) :
-    (G.bidirectedTotalHomEquivDart.symm d).2.1 = G.toOfSimpleGraphVertex d.snd :=
+    (G.bidirectedTotalHomEquivDart.symm d).2.1 = G.ofSimpleGraphVertexEquiv d.snd :=
   Subtype.ext (by
-    rw [← G.bidirectedTotalHomEquivDart_snd, Equiv.apply_symm_apply, toOfSimpleGraphVertex_val])
+    rw [← G.bidirectedTotalHomEquivDart_snd, Equiv.apply_symm_apply,
+      ofSimpleGraphVertexEquiv_apply_val])
 
 @[simp]
 theorem bidirectedTotalHomEquivDart_symm_apply_snd_snd_val (d : G.Dart) :
@@ -441,6 +446,29 @@ theorem map_edge_arrows_walkToPath {u v : V} (p : G.Walk u v) :
   rcases a with ⟨i, j, e⟩
   rw [edge_def, Function.comp_apply, totalArrowEquivDart_apply, SimpleGraph.Dart.edge_mk]
 
+/-- The directed walk corresponding to a nonempty simple-graph walk has a nonempty arrow list. -/
+theorem arrows_walkToPath_ne_nil {u v : V} (p : G.Walk u v) (hp : ¬p.Nil) :
+    ArrowWalk.arrows (Q := Hom G) (walkToPath G p) ≠ [] := by
+  intro h
+  apply hp
+  apply p.edges_eq_nil.mp
+  rw [← map_edge_arrows_walkToPath G p, h]
+  simp
+
+/-- The bottleneck of the directed walk corresponding to a nonempty simple-graph walk is its
+minimum edge weight. -/
+@[simp]
+theorem bottleneck_walkToPath {K : Type w} [LinearOrder K] {u v : V} (p : G.Walk u v)
+    (wt : Sym2 V → K) (hp : ¬p.Nil) :
+    ArrowWalk.bottleneck (Q := Hom G) (capacity G wt) (walkToPath G p)
+      (arrows_walkToPath_ne_nil G p hp) = p.minEdgeWeight wt hp := by
+  apply eq_of_forall_le_iff
+  intro k
+  rw [ArrowWalk.le_bottleneck_iff, p.le_minEdgeWeight_iff]
+  simp only [capacity_apply]
+  rw [← map_edge_arrows_walkToPath]
+  simp only [List.forall_mem_map]
+
 /-- `DoubledQuiver.walkToPath` preserves and reflects simple paths. -/
 @[simp]
 theorem isPath_walkToPath_iff {u v : V} {p : G.Walk u v} :
@@ -521,14 +549,14 @@ theorem reachableWithout_edge_mem_iff (F : Set (Sym2 V)) {u v : V} :
   simpa [hpre, Graph.reachableWithout_bidirectedHom_iff, Graph.ofSimpleGraph_deleteEdges] using
     ((unitBidirectedNetworkIso G).reachableWithout_preimage_iff
       (F := {a : TotalArrow G | edge G a.2.2 ∈ F})
-      (s := G.toOfSimpleGraphVertex u) (t := G.toOfSimpleGraphVertex v)).symm
+      (s := G.ofSimpleGraphVertexEquiv u) (t := G.ofSimpleGraphVertexEquiv v)).symm
 
 /-- Local `k`-arc-reachability in `DoubledQuiver G` agrees with `k`-edge-reachability in `G`. -/
 @[simp]
 theorem isArcReachable_hom_iff {k : ℕ} {u v : V} :
     IsArcReachable (Hom G) k (vertex G u) (vertex G v) ↔ G.IsEdgeReachable k u v := by
   simpa using ((unitBidirectedNetworkIso G).isArcReachable_iff (k := k)
-    (s := G.toOfSimpleGraphVertex u) (t := G.toOfSimpleGraphVertex v)).symm
+    (s := G.ofSimpleGraphVertexEquiv u) (t := G.ofSimpleGraphVertexEquiv v)).symm
 
 /-- Global `k`-arc-strength of `DoubledQuiver G` agrees with `k`-edge-connectivity of `G`. -/
 @[simp]
@@ -730,13 +758,13 @@ theorem excessAt_assignmentEquiv [Fintype V] [∀ i j : DoubledQuiver G, Fintype
     (unitBidirectedNetworkIso G).excessAt_assignmentEquiv]
 
 /-- Excess at `vertex G u` under `DoubledQuiver.assignmentEquiv` agrees with excess at
-`G.toOfSimpleGraphVertex u`. -/
+`G.ofSimpleGraphVertexEquiv u`. -/
 @[simp]
 theorem excessAt_assignmentEquiv_vertex [Fintype V] [∀ i j : DoubledQuiver G, Fintype (i ⟶ j)]
     [AddCommGroup K] (f : Assignment (Graph.ofSimpleGraph G).BidirectedHom K) (u : V) :
     excessAt (assignmentEquiv G K f) (vertex G u) =
-      excessAt f (G.toOfSimpleGraphVertex u) := by
-  simpa using excessAt_assignmentEquiv G f (G.toOfSimpleGraphVertex u)
+      excessAt f (G.ofSimpleGraphVertexEquiv u) := by
+  simpa using excessAt_assignmentEquiv G f (G.ofSimpleGraphVertexEquiv u)
 
 /-- Circulations on `(Graph.ofSimpleGraph G).BidirectedHom` correspond to circulations on
 `DoubledQuiver G`. -/
@@ -762,11 +790,11 @@ variable [AddCommGroup K] [Preorder K]
 -- computable without duplicating any conservation or interval proofs.
 private noncomputable def boundedFlowEquivAux
     (lo hi : Assignment (Graph.ofSimpleGraph G).BidirectedHom K) (s t : V) :
-    BoundedFlow lo hi (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t) ≃
+    BoundedFlow lo hi (G.ofSimpleGraphVertexEquiv s) (G.ofSimpleGraphVertexEquiv t) ≃
       BoundedFlow (assignmentEquiv G K lo) (assignmentEquiv G K hi)
         (vertex G s) (vertex G t) :=
   ((unitBidirectedNetworkIso G).boundedFlowEquiv lo hi
-    (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t)).trans
+    (G.ofSimpleGraphVertexEquiv s) (G.ofSimpleGraphVertexEquiv t)).trans
     (BoundedFlow.congr
       (DFunLike.congr_fun
         (bidirectedNetworkIso_assignmentEquiv G (fun _ ↦ ()) (fun _ _ ↦ le_rfl)) lo)
@@ -777,7 +805,7 @@ private noncomputable def boundedFlowEquivAux
 /-- Bounded `s`–`t` assignments on `(Graph.ofSimpleGraph G).BidirectedHom` correspond to bounded
 assignments between the transported bounds on `DoubledQuiver G`. -/
 def boundedFlowEquiv (lo hi : Assignment (Graph.ofSimpleGraph G).BidirectedHom K) (s t : V) :
-    BoundedFlow lo hi (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t) ≃
+    BoundedFlow lo hi (G.ofSimpleGraphVertexEquiv s) (G.ofSimpleGraphVertexEquiv t) ≃
       BoundedFlow (assignmentEquiv G K lo) (assignmentEquiv G K hi)
         (vertex G s) (vertex G t) where
   toFun f :=
@@ -797,7 +825,8 @@ def boundedFlowEquiv (lo hi : Assignment (Graph.ofSimpleGraph G).BidirectedHom K
 
 @[simp]
 theorem boundedFlowEquiv_apply_toFun {lo hi : Assignment (Graph.ofSimpleGraph G).BidirectedHom K}
-    {s t : V} (f : BoundedFlow lo hi (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t)) :
+    {s t : V} (f : BoundedFlow lo hi (G.ofSimpleGraphVertexEquiv s)
+      (G.ofSimpleGraphVertexEquiv t)) :
     (boundedFlowEquiv G lo hi s t f).toFun = assignmentEquiv G K f.toFun :=
   (rfl)
 
@@ -817,7 +846,8 @@ private theorem boundedFlowEquiv_eq_aux
 
 @[simp]
 theorem val_boundedFlowEquiv {lo hi : Assignment (Graph.ofSimpleGraph G).BidirectedHom K}
-    {s t : V} (f : BoundedFlow lo hi (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t)) :
+    {s t : V} (f : BoundedFlow lo hi (G.ofSimpleGraphVertexEquiv s)
+      (G.ofSimpleGraphVertexEquiv t)) :
     (boundedFlowEquiv G lo hi s t f).val = f.val := by
   rw [boundedFlowEquiv_eq_aux, boundedFlowEquivAux, Equiv.trans_apply, BoundedFlow.val_congr,
     Network.Iso.boundedFlowEquiv_apply, (unitBidirectedNetworkIso G).val_mapBoundedFlow]
@@ -833,7 +863,8 @@ theorem val_boundedFlowEquiv_symm {lo hi : Assignment (Graph.ofSimpleGraph G).Bi
 /-- `DoubledQuiver.boundedFlowEquiv` preserves and reflects maximality of bounded flows. -/
 @[simp]
 theorem isMaximum_boundedFlowEquiv_iff {lo hi : Assignment (Graph.ofSimpleGraph G).BidirectedHom K}
-    {s t : V} (f : BoundedFlow lo hi (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t)) :
+    {s t : V} (f : BoundedFlow lo hi (G.ofSimpleGraphVertexEquiv s)
+      (G.ofSimpleGraphVertexEquiv t)) :
     (boundedFlowEquiv G lo hi s t f).IsMaximum ↔ f.IsMaximum := by
   rw [boundedFlowEquiv_eq_aux, boundedFlowEquivAux, Equiv.trans_apply,
     BoundedFlow.isMaximum_congr_iff, Network.Iso.boundedFlowEquiv_apply,
@@ -851,11 +882,11 @@ theorem isMaximum_boundedFlowEquiv_symm_iff
 
 private noncomputable def flowEquivAux (c : Sym2 V → K) (s t : V) :
     Flow ((Graph.ofSimpleGraph G).bidirectedCapacity (G.ofSimpleGraphCapacity c))
-        (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t) ≃
+        (G.ofSimpleGraphVertexEquiv s) (G.ofSimpleGraphVertexEquiv t) ≃
       Flow (capacity G c) (vertex G s) (vertex G t) :=
   ((unitBidirectedNetworkIso G).flowEquiv
     ((Graph.ofSimpleGraph G).bidirectedCapacity (G.ofSimpleGraphCapacity c))
-    (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t)).trans
+    (G.ofSimpleGraphVertexEquiv s) (G.ofSimpleGraphVertexEquiv t)).trans
     (Flow.congr
       ((DFunLike.congr_fun
         (bidirectedNetworkIso_assignmentEquiv G (fun _ ↦ ()) (fun _ _ ↦ le_rfl)) _).trans
@@ -867,7 +898,7 @@ private noncomputable def flowEquivAux (c : Sym2 V → K) (s t : V) :
 `DoubledQuiver G` for `DoubledQuiver.capacity G c`. -/
 def flowEquiv (c : Sym2 V → K) (s t : V) :
     Flow ((Graph.ofSimpleGraph G).bidirectedCapacity (G.ofSimpleGraphCapacity c))
-        (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t) ≃
+        (G.ofSimpleGraphVertexEquiv s) (G.ofSimpleGraphVertexEquiv t) ≃
       Flow (capacity G c) (vertex G s) (vertex G t) where
   toFun f :=
     { toFun := assignmentEquiv G K f.toFun
@@ -891,7 +922,7 @@ def flowEquiv (c : Sym2 V → K) (s t : V) :
 @[simp]
 theorem flowEquiv_apply_toFun {c : Sym2 V → K} {s t : V}
     (f : Flow ((Graph.ofSimpleGraph G).bidirectedCapacity (G.ofSimpleGraphCapacity c))
-      (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t)) :
+      (G.ofSimpleGraphVertexEquiv s) (G.ofSimpleGraphVertexEquiv t)) :
     (flowEquiv G c s t f).toFun = assignmentEquiv G K f.toFun :=
   (rfl)
 
@@ -910,7 +941,7 @@ private theorem flowEquiv_eq_aux (c : Sym2 V → K) (s t : V) :
 @[simp]
 theorem val_flowEquiv {c : Sym2 V → K} {s t : V}
     (f : Flow ((Graph.ofSimpleGraph G).bidirectedCapacity (G.ofSimpleGraphCapacity c))
-      (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t)) :
+      (G.ofSimpleGraphVertexEquiv s) (G.ofSimpleGraphVertexEquiv t)) :
     (flowEquiv G c s t f).val = f.val := by
   rw [flowEquiv_eq_aux, flowEquivAux, Equiv.trans_apply, Flow.toBoundedFlow_congr,
     BoundedFlow.val_congr, Network.Iso.flowEquiv_apply, (unitBidirectedNetworkIso G).val_mapFlow]
@@ -925,7 +956,7 @@ theorem val_flowEquiv_symm {c : Sym2 V → K} {s t : V}
 @[simp]
 theorem isMaximum_flowEquiv_iff {c : Sym2 V → K} {s t : V}
     (f : Flow ((Graph.ofSimpleGraph G).bidirectedCapacity (G.ofSimpleGraphCapacity c))
-      (G.toOfSimpleGraphVertex s) (G.toOfSimpleGraphVertex t)) :
+      (G.ofSimpleGraphVertexEquiv s) (G.ofSimpleGraphVertexEquiv t)) :
     (flowEquiv G c s t f).IsMaximum ↔ f.IsMaximum := by
   rw [flowEquiv_eq_aux, flowEquivAux, Equiv.trans_apply, Flow.isMaximum_congr_iff,
     Network.Iso.flowEquiv_apply, (unitBidirectedNetworkIso G).isMaximum_mapFlow_iff]

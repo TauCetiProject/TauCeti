@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Submodule.Map
-public import Mathlib.Algebra.Module.Submodule.Range
-public import Mathlib.Order.SupIndep
-public import Mathlib.LinearAlgebra.Span.Basic
+public import Mathlib.Algebra.Algebra.Operations
 
 /-!
 # Submodules under a linear map
@@ -20,7 +17,10 @@ forward along a (semi)linear map turns a spanning family into one spanning the r
 and along an injective map it leaves an independent family independent.
 
 The finite-set form is what a decomposition of a module into a `Finset` of submodules needs, as in
-`TauCeti/RingTheory/KrullSchmidt/Existence.lean`, when it is transported along a linear map.
+`TauCeti/RingTheory/KrullSchmidt/Existence.lean`, when it is transported along a linear map. An
+injective semilinear endomorphism mapping a finite submodule `N` into itself is surjective on `N`,
+so `N.map f = N`; this applies both to regular scalar actions on finite submodules and to
+regular-determinant matrix maps on finite product submodules `I^ι`.
 
 The file also describes two maps between submodule lattices: the inverse of the interval
 isomorphism `Submodule.mapIic` is the inverse image along the inclusion, and an injective map
@@ -28,7 +28,9 @@ restricted to `B` carries the trace `A.comap B.subtype` of `A` in `B` onto the t
 in `B.map f`. The subquotient identifications in `TauCeti/Algebra/Module/Submodule/Quotient.lean`
 use both. For a surjective semilinear map, inverse image identifies the target's submodules
 with the source's submodules containing the kernel, including when the scalar homomorphism
-is a surjection rather than an isomorphism.
+is a surjection rather than an isomorphism. For a scalar tower `k`-`A`-`M` and any `k`-submodule `I`
+of `A`, every `A`-linear map sends the scalar product `I • ⊤` into `I • ⊤`
+(`Submodule.map_mem_smul_top`).
 
 ## Main results
 
@@ -40,10 +42,20 @@ is a surjection rather than an isomorphism.
 * `Submodule.map_eq_span_of_span_eq_top`: the image of a submodule spanned by a family of its
   vectors (for instance a basis, via `Module.Basis.span_eq`) is spanned by the images of those
   vectors.
+* `Submodule.map_eq_self_of_finite`: an injective semilinear endomorphism stabilizing a finite
+  submodule `N` maps `N` onto itself.
 * `Submodule.mapIic_symm_apply`: the inverse of `Submodule.mapIic` takes inverse images along the
   inclusion.
 * `Submodule.map_equiv_eq_iff`: a semilinear equivalence carries `p` onto `q` exactly when it
   maps a vector into `q` precisely when the vector lies in `p`.
+* `LinearEquiv.map_comap_subtype_ofSubmodules`: a semilinear equivalence restricted to `p` and
+  `e(p)` carries the trace of `W` in `p` onto the trace of `e(W)` in `e(p)`.
+* `LinearEquiv.ofSubmodules_ofBijective_apply`: the restriction to `p` and `q` of the equivalence
+  defined by a bijective map `f` agrees with `f.restrict`.
+* `Submodule.map_mem_smul_top`: every `A`-linear map sends `I • ⊤` into `I • ⊤` for any
+  `k`-submodule `I` of `A`.
+* `Submodule.inf_restrictScalars_eq_map_comap`: `P ⊓ W` is the image of the pullback of `P` to a
+  submodule `W` over a larger ring of scalars.
 * `LinearMap.map_equivMapOfInjective_comap_subtype`: the restriction of an injective map to `B`
   carries the trace of `A` in `B` onto the trace of `A.map f` in `B.map f`.
 -/
@@ -68,6 +80,16 @@ theorem map_eq_span_of_span_eq_top (p : Submodule R M) {v : ι → p}
 theorem map_span_singleton (f : M →ₛₗ[σ₁₂] M₂) (x : M) : (R ∙ x).map f = R₂ ∙ f x := by
   rw [map_span, Set.image_singleton]
 
+/-- An injective semilinear endomorphism mapping a finite submodule `N` into itself maps `N` onto
+itself. -/
+theorem map_eq_self_of_finite {σ : R →+* R} [RingHomSurjective σ] (N : Submodule R M) [Finite N]
+    {f : M →ₛₗ[σ] M} (hf : Function.Injective f) (hN : N.map f ≤ N) : N.map f = N := by
+  refine hN.antisymm fun y hy ↦ ?_
+  have hinj : Function.Injective (fun x : N ↦ (⟨f x.val, hN (mem_map_of_mem x.property)⟩ : N)) :=
+    fun x₁ x₂ h ↦ Subtype.ext (hf (congrArg Subtype.val h))
+  obtain ⟨x, hx⟩ := Finite.surjective_of_injective hinj ⟨y, hy⟩
+  exact ⟨x.val, x.property, congrArg Subtype.val hx⟩
+
 /-- The inverse of `Submodule.mapIic` takes the inverse image along the inclusion.  This is the
 `symm`-side counterpart of Mathlib's `Submodule.coe_mapIic_apply`.
 
@@ -89,7 +111,45 @@ theorem map_equiv_eq_iff {e : M ≃ₛₗ[τ₁₂] M₂} {p : Submodule R M} {q
   simp only [mem_map_equiv, LinearEquiv.symm_apply_apply]
   exact forall_congr' fun _ ↦ Iff.comm
 
+/-- A semilinear equivalence `e` restricted to submodules `p` and `q = e(p)` carries the trace
+`W.comap p.subtype` of `W` in `p` onto the trace of `W' = e(W)` in `q`. -/
+theorem _root_.LinearEquiv.map_comap_subtype_ofSubmodules (e : M ≃ₛₗ[τ₁₂] M₂)
+    {p W : Submodule R M} {q W' : Submodule R₂ M₂} (hpq : p.map (e : M →ₛₗ[τ₁₂] M₂) = q)
+    (hW : W.map (e : M →ₛₗ[τ₁₂] M₂) = W') :
+    (W.comap p.subtype).map (e.ofSubmodules p q hpq : p →ₛₗ[τ₁₂] q) = W'.comap q.subtype := by
+  ext v
+  simp [← hW, map_equiv_eq_comap_symm]
+
+/-- The restriction to `p` and `q` of the equivalence defined by a bijective semilinear map `f`
+agrees with the restriction `f.restrict` of `f` to a map `p → q`. -/
+theorem _root_.LinearEquiv.ofSubmodules_ofBijective_apply (f : M →ₛₗ[τ₁₂] M₂)
+    (hf : Function.Bijective f) {p : Submodule R M} {q : Submodule R₂ M₂}
+    (hpq : p.map (LinearEquiv.ofBijective f hf : M →ₛₗ[τ₁₂] M₂) = q) (hf' : ∀ x ∈ p, f x ∈ q)
+    (x : p) : (LinearEquiv.ofBijective f hf).ofSubmodules p q hpq x = f.restrict hf' x :=
+  Subtype.ext (by simp)
+
 end Equiv
+
+/-- Every `A`-linear map sends `I • ⊤` into `I • ⊤` for any `k`-submodule `I` of `A`. -/
+theorem map_mem_smul_top {k : Type*} {A : Type*} [Semiring k] [Semiring A] [Module k A]
+    {M : Type*} [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
+    {N : Type*} [AddCommMonoid N] [Module k N] [Module A N] [IsScalarTower k A N]
+    (I : Submodule k A) (g : M →ₗ[A] N) {x : M} (hx : x ∈ I • (⊤ : Submodule k M)) :
+    g x ∈ I • (⊤ : Submodule k N) := by
+  refine Submodule.smul_induction_on hx (fun a ha y _ ↦ ?_) (fun _ _ hx hy ↦ ?_)
+  · rw [g.map_smul]
+    exact Submodule.smul_mem_smul ha Submodule.mem_top
+  · rw [map_add]
+    exact add_mem hx hy
+
+/-- For an `S`-submodule `W` and an `R`-submodule `P`, viewing `W` as an `R`-submodule,
+`P ⊓ W` is the image of the pullback of `P` along the inclusion of `W`. -/
+theorem inf_restrictScalars_eq_map_comap {R S M : Type*} [Semiring R] [Semiring S]
+    [AddCommMonoid M] [Module R M] [Module S M] [SMul R S] [IsScalarTower R S M]
+    (P : Submodule R M) (W : Submodule S M) :
+    P ⊓ W.restrictScalars R =
+      (P.comap (W.subtype.restrictScalars R)).map (W.subtype.restrictScalars R) := by
+  rw [map_comap_eq, LinearMap.range_restrictScalars, range_subtype, inf_comm]
 
 end Submodule
 

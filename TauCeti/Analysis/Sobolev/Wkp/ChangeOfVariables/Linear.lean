@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
-public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 public import TauCeti.MeasureTheory.Function.Lp.Precomposition
 public import TauCeti.Topology.Algebra.Module.Trace
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.MeasureTheory.Function.Lp.Dilation
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Linear changes of variables in `W^{2,p}`
@@ -29,12 +30,13 @@ General `Cᵏ` changes of variables in `W^{k,p}` are treated in
 
 ## The argument
 
-The first-order part of `u ∘ e` comes from `TauCeti.W1p.compL`, each gradient component
-`⟪∇u, e c⟫` lies in `W^{1,p}(W)` (`TauCeti.Wkp.exists_w1p_value_eq_inner_gradient`), and
-precomposing those components with `e` places `u ∘ e` in `W^{2,p}(U)` via
-`TauCeti.W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn`. Uniqueness of weak derivatives
-identifies the entries `⟪D²(u ∘ e) f, c⟫ = ⟪D²u(e ·) (e f), e c⟫`. Zero boundary values are
-preserved because `e` is a homeomorphism (`TauCeti.W1p.compL_mem_w1p0Submodule`).
+The first-order part of `u ∘ e` comes from `TauCeti.W1p.compContinuousLinearEquivL`, each
+gradient component `⟪∇u, e c⟫` lies in `W^{1,p}(W)`
+(`TauCeti.Wkp.exists_w1p_value_eq_inner_gradient`), and precomposing those components with `e`
+places `u ∘ e` in `W^{2,p}(U)` via `TauCeti.W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn`.
+Uniqueness of weak derivatives identifies the entries `⟪D²(u ∘ e) f, c⟫ = ⟪D²u(e ·) (e f), e c⟫`.
+Zero boundary values are preserved because `e` is a homeomorphism
+(`TauCeti.W1p.compContinuousLinearEquivL_mem_w1p0Submodule`).
 
 ## Main declarations
 
@@ -42,6 +44,8 @@ preserved because `e` is a homeomorphism (`TauCeti.W1p.compL_mem_w1p0Submodule`)
   `W^{1,p}` function whose weak gradient is given by the weak Hessian of `u`.
 * `TauCeti.Wkp.exists_value_ae_eq_comp_continuousLinearEquiv`: precomposition with a linear
   automorphism in `W^{2,p}`, and the chain rule for the weak Hessian.
+* `TauCeti.Wkp.exists_value_ae_eq_of_value_ae_eq_comp_continuousLinearEquiv`: if `u ∘ e` lies in
+  `W^{2,p}(e⁻¹(W))`, then `u` lies in `W^{2,p}(W)`.
 * `TauCeti.Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp`: transferring a Hessian
   estimate for the Laplacian to a constant-coefficient operator along a linear change of variables.
 
@@ -63,16 +67,11 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {U W : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
-/-! ### Precomposition with a linear automorphism in `W^{1,p}` -/
+/-! ### Linear automorphisms as changes of variables -/
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 private theorem mapsTo_of_coe_eq_preimage (e : E ≃L[ℝ] E) (hUW : (U : Set E) = e ⁻¹' W) :
     MapsTo e U W := hUW ▸ mapsTo_preimage e W
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem norm_fderiv_le (e : E ≃L[ℝ] E) (x : E) :
-    ‖fderiv ℝ e x‖ ≤ ‖(e : E →L[ℝ] E)‖ := by
-  rw [e.fderiv]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 private theorem abs_det_pos (e : E ≃L[ℝ] E) : 0 < |(e : E →L[ℝ] E).det| :=
@@ -83,46 +82,7 @@ private theorem abs_det_le (e : E ≃L[ℝ] E) (x : E) :
     |(e : E →L[ℝ] E).det| ≤ |(fderiv ℝ e x).det| := by
   rw [e.fderiv]
 
-/-- Precomposition with a continuous linear automorphism `e` of `E`, as an operator
-`W^{1,p}(W) → W^{1,p}(U)` for `U = e⁻¹(W)`. -/
-private def compCLE (hp : p ≠ ⊤) (e : E ≃L[ℝ] E) (hUW : (U : Set E) = e ⁻¹' W) :
-    W1p mu W p →L[ℝ] W1p mu U p :=
-  W1p.compL e hp e.differentiable.differentiableOn e.injective.injOn
-    (mapsTo_of_coe_eq_preimage e hUW) (fun x _ => norm_fderiv_le e x) (abs_det_pos e)
-    (fun x _ => abs_det_le e x)
-
-private theorem value_compCLE_ae (hp : p ≠ ⊤) (e : E ≃L[ℝ] E) (hUW : (U : Set E) = e ⁻¹' W)
-    (u : W1p mu W p) :
-    W1p.value (compCLE hp e hUW u) =ᵐ[mu.restrict U] fun x => W1p.value u (e x) :=
-  W1p.value_compL_ae e hp e.differentiable.differentiableOn e.injective.injOn
-    (mapsTo_of_coe_eq_preimage e hUW) (fun x _ => norm_fderiv_le e x) (abs_det_pos e)
-    (fun x _ => abs_det_le e x) u
-
-private theorem gradient_compCLE_ae (hp : p ≠ ⊤) (e : E ≃L[ℝ] E) (hUW : (U : Set E) = e ⁻¹' W)
-    (u : W1p mu W p) :
-    W1p.gradient (compCLE hp e hUW u) =ᵐ[mu.restrict U]
-      fun x => (e : E →L[ℝ] E).adjoint (W1p.gradient u (e x)) := by
-  filter_upwards [W1p.gradient_compL_ae e hp e.differentiable.differentiableOn e.injective.injOn
-    (mapsTo_of_coe_eq_preimage e hUW) (fun x _ => norm_fderiv_le e x) (abs_det_pos e)
-    (fun x _ => abs_det_le e x) u] with x hx
-  rw [compCLE, hx, e.fderiv]
-
-private theorem compCLE_mem_w1p0Submodule (hp : p ≠ ⊤) (e : E ≃L[ℝ] E)
-    (hUW : (U : Set E) = e ⁻¹' W) {u : W1p mu W p} (hu : u ∈ w1p0Submodule mu W p) :
-    compCLE hp e hUW u ∈ w1p0Submodule mu U p :=
-  W1p.compL_mem_w1p0Submodule e hp e.differentiable.differentiableOn e.injective.injOn
-    (mapsTo_of_coe_eq_preimage e hUW) (fun x _ => norm_fderiv_le e x) (abs_det_pos e)
-    (fun x _ => abs_det_le e x) e.toHomeomorph.isProperMap hUW hu
-
 /-! ### Precomposition with a linear automorphism in `W^{2,p}` -/
-
-/-- Almost-everywhere statements on `W` pull back along a linear automorphism `e` to
-`U = e⁻¹(W)`. -/
-private theorem quasiMeasurePreserving_restrict_of_coe_eq_preimage (e : E ≃L[ℝ] E)
-    (hUW : (U : Set E) = e ⁻¹' W) :
-    QuasiMeasurePreserving e (mu.restrict U) (mu.restrict W) :=
-  (Measure.ContinuousLinearMap.quasiMeasurePreserving mu (e : E →L[ℝ] E)
-    (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero).restrict (mapsTo_of_coe_eq_preimage e hUW)
 
 /-- Each component `⟪∇u, c⟫` of the weak gradient of `u ∈ W^{2,p}(W)` is the value of a function
 `d ∈ W^{1,p}(W)` whose weak gradient has the components `⟪D²u f, c⟫`. -/
@@ -154,15 +114,17 @@ theorem Wkp.exists_w1p_value_eq_inner_gradient (u : Wkp mu W p 2) (c : E) :
 
 /-- If the weak gradient of `d ∈ W^{1,p}(W)` has components `⟪D²u f, e c⟫`, then the weak gradient
 of `d ∘ e` has components `⟪(e† ∘ D²u(e ·) ∘ e) f, c⟫`. -/
-private theorem inner_gradient_compCLE_ae (hp : p ≠ ⊤) (e : E ≃L[ℝ] E)
+private theorem inner_gradient_compContinuousLinearEquivL_ae (hp : p ≠ ⊤) (e : E ≃L[ℝ] E)
     (hUW : (U : Set E) = e ⁻¹' W) (u : Wkp mu W p 2) (c : E) (d : W1p mu W p)
     (hd : ∀ f : E, (fun y => ⟪W1p.gradient d y, f⟫_ℝ) =ᵐ[mu.restrict W]
       fun y => ⟪Wkp.iteratedGradient 1 u y f, e c⟫_ℝ) (f : E) :
-    (fun x => ⟪W1p.gradient (compCLE hp e hUW d) x, f⟫_ℝ) =ᵐ[mu.restrict U]
+    (fun x => ⟪W1p.gradient (W1p.compContinuousLinearEquivL hp e hUW d) x, f⟫_ℝ)
+      =ᵐ[mu.restrict U]
       fun x => ⟪((e : E →L[ℝ] E).adjoint ∘L Wkp.iteratedGradient 1 u (e x) ∘L
         (e : E →L[ℝ] E)) f, c⟫_ℝ := by
-  filter_upwards [gradient_compCLE_ae hp e hUW d,
-    quasiMeasurePreserving_restrict_of_coe_eq_preimage e hUW |>.ae (hd (e f))] with x h1 h2
+  filter_upwards [W1p.gradient_compContinuousLinearEquivL_ae hp e hUW d,
+    (e.quasiMeasurePreserving_restrict mu (mapsTo_of_coe_eq_preimage e hUW)).ae (hd (e f))]
+    with x h1 h2
   rw [h1, ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.adjoint_inner_left, ContinuousLinearMap.comp_apply,
     ContinuousLinearEquiv.coe_coe, h2]
@@ -180,8 +142,8 @@ theorem Wkp.exists_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤) (e : 
         (e : E →L[ℝ] E).adjoint ∘L Wkp.iteratedGradient 1 u (e x) ∘L (e : E →L[ℝ] E)) ∧
       (Wkp.firstOrder 1 u ∈ w1p0Submodule mu W p →
         Wkp.firstOrder 1 w ∈ w1p0Submodule mu U p) := by
-  set T := compCLE (mu := mu) hp e hUW
-  have hqmp := quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := mu) e hUW
+  set T := W1p.compContinuousLinearEquivL (mu := mu) hp e hUW
+  have hqmp := e.quasiMeasurePreserving_restrict mu (mapsTo_of_coe_eq_preimage e hUW)
   set u₁ := Wkp.firstOrder 1 u
   have hgrad : W1p.gradient u₁ = Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) :=
     Wkp.gradient_firstOrder_one u
@@ -193,14 +155,16 @@ theorem Wkp.exists_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤) (e : 
   -- The component `⟪∇(u ∘ e), c⟫ = ⟪∇u, e c⟫ ∘ e` is the value of `d (e c) ∘ e`.
   have hw₁ (c : E) : (fun x => ⟪W1p.gradient w₁ x, c⟫_ℝ) =ᵐ[mu.restrict U]
       W1p.value (T (d (e c))) := by
-    filter_upwards [gradient_compCLE_ae hp e hUW u₁, value_compCLE_ae hp e hUW (d (e c)),
+    filter_upwards [W1p.gradient_compContinuousLinearEquivL_ae hp e hUW u₁,
+      W1p.value_compContinuousLinearEquivL_ae hp e hUW (d (e c)),
       hqmp.ae (hdv (e c))] with x h1 h2 h3
     rw [h1, ContinuousLinearMap.adjoint_inner_left, h2, h3, hgrad, ContinuousLinearEquiv.coe_coe]
   have hD (c f : E) : HasWeakLineDerivOn mu U (fun x => ⟪W1p.gradient w₁ x, c⟫_ℝ)
       (fun x => ⟪W1p.gradient (T (d (e c))) x, f⟫_ℝ) f := by
     simpa only [innerSL_apply_apply] using
       ((W1p.hasWeakFDerivOn (T (d (e c)))).hasWeakLineDerivOn f).congr_ae (hw₁ c).symm
-  have hDe (c f : E) := inner_gradient_compCLE_ae hp e hUW u c (d (e c)) (hdg (e c)) f
+  have hDe (c f : E) :=
+    inner_gradient_compContinuousLinearEquivL_ae hp e hUW u c (d (e c)) (hdg (e c)) f
   set b := stdOrthonormalBasis ℝ E
   obtain ⟨w, hw⟩ := W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn w₁ b fun i j =>
     ⟨(innerSL ℝ (b i)).compLp (W1p.gradient (T (d (e (b j))))),
@@ -212,7 +176,7 @@ theorem Wkp.exists_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤) (e : 
   · rw [Wkp.value_succ, hw]
     have h1 := Wkp.value_one (mu := mu) (Omega := U) (p := p) w₁
     rw [h1]
-    filter_upwards [value_compCLE_ae hp e hUW u₁] with x hx
+    filter_upwards [W1p.value_compContinuousLinearEquivL_ae hp e hUW u₁] with x hx
     rw [hx, hval]
   · -- The entries `⟪D²w f, c⟫` are the weak derivatives in direction `f` of `⟪∇w, c⟫`.
     have hentry (c f : E) : (fun x => ⟪Wkp.iteratedGradient 1 w x f, c⟫_ℝ) =ᵐ[mu.restrict U]
@@ -227,7 +191,24 @@ theorem Wkp.exists_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤) (e : 
     exact ContinuousLinearMap.coe_injective (b.toBasis.ext fun i =>
       InnerProductSpace.ext_inner_right_basis b.toBasis fun j => by simpa using hx i j)
   · rw [Wkp.firstOrder_one, hw]
-    exact compCLE_mem_w1p0Submodule hp e hUW hu
+    exact W1p.compContinuousLinearEquivL_mem_w1p0Submodule hp e hUW hu
+
+/-- **Transporting back along a linear automorphism.** Let `U = e⁻¹(W)`. If `v' ∈ W^{2,p}(U)` has
+the value of `g ∘ e`, then some `v ∈ W^{2,p}(W)` has the value of `g`. -/
+theorem Wkp.exists_value_ae_eq_of_value_ae_eq_comp_continuousLinearEquiv (hp : p ≠ ⊤)
+    (e : E ≃L[ℝ] E) (hUW : (U : Set E) = e ⁻¹' W) {g : E → ℝ} {v' : Wkp mu U p 2}
+    (hv' : Wkp.value 2 v' =ᵐ[mu.restrict U] fun y => g (e y)) :
+    ∃ v : Wkp mu W p 2, Wkp.value 2 v =ᵐ[mu.restrict W] g := by
+  have hWU : (W : Set E) = e.symm ⁻¹' U := by
+    rw [hUW, ← preimage_comp]
+    ext x
+    simp
+  obtain ⟨v, hv, -, -⟩ := Wkp.exists_value_ae_eq_comp_continuousLinearEquiv hp e.symm hWU v'
+  refine ⟨v, ?_⟩
+  filter_upwards [hv,
+    (e.symm.quasiMeasurePreserving_restrict mu (mapsTo_of_coe_eq_preimage e.symm hWU)).ae hv']
+    with y h₁ h₂
+  rw [h₁, h₂, ContinuousLinearEquiv.apply_symm_apply]
 
 /-! ### Transferring Hessian estimates along a linear change of variables -/
 
@@ -268,7 +249,7 @@ theorem Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp {A : E →L[ℝ]
       fun x _ => abs_det_le e x
   have hC' : (ENNReal.ofReal |(e : E →L[ℝ] E).det|)⁻¹ ≠ ⊤ :=
     ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 habs).ne'
-  have hqmp := quasiMeasurePreserving_restrict_of_coe_eq_preimage (mu := mu) e hUW
+  have hqmp := e.quasiMeasurePreserving_restrict mu (mapsTo_of_coe_eq_preimage e hUW)
   -- `v` solves Poisson's equation with forcing term `f ∘ e`
   set f' := Lp.compOfMapLeSmul ℝ e.continuous.aemeasurable hC' hmap f
   have hf'e := Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) e.continuous.aemeasurable hC' hmap f

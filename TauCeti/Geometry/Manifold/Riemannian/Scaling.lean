@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCiv
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Conformal
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Geometry.Manifold.Riemannian.Conformal
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
 
 /-!
@@ -32,8 +33,10 @@ constant sectional curvature `k` exactly when `g` has constant sectional curvatu
 example the round sphere of radius `r` has sectional curvature `1 / r²`.
 
 The gradient of a function is the dual of its differential through the metric, so
-`grad_{c g} f = c⁻¹ grad_g f`; since the Levi-Civita connections agree, the Laplace–Beltrami
-operator `Δ = div ∘ grad` scales in the same way, `Δ_{c g} = c⁻¹ Δ_g`.
+`grad_{c g} f = c⁻¹ grad_g f`, the constant case of
+`Bundle.ContMDiffRiemannianMetric.mgradient_rescale` in `Riemannian/Conformal.lean`; since the
+Levi-Civita connections agree, the Laplace–Beltrami operator `Δ = div ∘ grad` scales in the same
+way, `Δ_{c g} = c⁻¹ Δ_g`.
 
 Both metrics are installed in turn as the `RiemannianBundle` instance of the tangent bundle of
 `M`. Connections and curvature tensors do not depend on the metric, so they are compared directly
@@ -248,17 +251,8 @@ theorem mgradient_rescale_const [IsManifold I 1 M]
         ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩;
       TauCeti.Manifold.mgradient I f x) =
     c⁻¹ • (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
-      TauCeti.Manifold.mgradient I f x) := by
-  have hg (v : TangentSpace I x) :
-      g.inner x (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨g.toRiemannianMetric⟩; TauCeti.Manifold.mgradient I f x) v = mvfderiv I f x v := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-    exact TauCeti.Manifold.inner_mgradient v
-  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-    ⟨(g.rescale (fun _ ↦ c) contMDiff_const fun _ ↦ hc).toRiemannianMetric⟩
-  refine (TauCeti.Manifold.eq_mgradient_iff.2 fun v ↦ ?_).symm
-  rw [inner_riemannianBundle, rescale_inner, map_smul, smul_apply, hg, smul_eq_mul,
-    ← mul_assoc, mul_inv_cancel₀ hc.ne', one_mul]
+      TauCeti.Manifold.mgradient I f x) :=
+  g.mgradient_rescale contMDiff_const (fun _ ↦ hc) f x
 
 /-- **Scaling of the Laplacian.** Multiplying a `C¹` metric by a positive constant `c` multiplies
 the Laplace–Beltrami operator of every `C²` function by `c⁻¹`. -/

@@ -48,6 +48,8 @@ boundary point it flows out of.
   `(0, ∞) × S` bijectively onto the complement of `W`.
 * `TauCeti.IsLiouvilleCompletion.cylindricalEndPartialDiffeomorph`: the Liouville flow-out of the
   boundary, as a diffeomorphism from `(0, ∞) × S` onto the complement of `W`.
+* `TauCeti.IsLiouvilleCompletion.coe_cylindricalEndPartialDiffeomorph_symm`: its inverse is the
+  inverse of the flow-out on `(0, ∞) × S`.
 * `TauCeti.IsLiouvilleCompletion.cylindricalEndPartialDiffeomorph_symm_apply_fst`: its inverse
   reads off the logarithm of the radial coordinate.
 
@@ -102,6 +104,16 @@ theorem IsLiouvilleCompletion.bijOn_flowOf_comp (h : IsLiouvilleCompletion ω α
     have := (bijOn_id (Ioi (0 : ℝ))).prodMap (hιinj.bijOn_image (s := univ))
     rwa [image_univ, hιW] at this
   exact (h.bijOn_flowOf_Ioi_prod_frontier hZ).comp hmap
+
+/-- **Every point of the cylindrical end flows out of the boundary.** Let `M` be a completion of
+the Liouville domain `W`, with Liouville flow `ψ`, and let `ι : S → M` be a map whose range
+contains the boundary of `W`. Then every point `x ∉ W` is `ψₜ (ι s)` for some `t > 0` and `s`. -/
+theorem IsLiouvilleCompletion.exists_flowOf_eq_of_notMem (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.val = α.val) (hιW : frontier W ⊆ range ι)
+    {x : M} (hx : x ∉ W) : ∃ t > 0, ∃ s, flowOf Z t (ι s) = x := by
+  obtain ⟨⟨y, t⟩, ⟨hy, ht, hyx⟩, -⟩ := h.existsUnique_flowOf_eq hZ hx
+  obtain ⟨s, rfl⟩ := hιW hy
+  exact ⟨t, ht, s, hyx⟩
 
 /-! ### Smoothness of the flow-out -/
 
@@ -191,6 +203,13 @@ theorem coe_cylindricalEndPartialDiffeomorph :
     ⇑(h.cylindricalEndPartialDiffeomorph hZ hι himm hιinj hιW hdim) =
       fun p : ℝ × S ↦ flowOf Z p.1 (ι p.2) :=
   IsLocalDiffeomorphOn.coe_partialDiffeomorphOfInjOn ..
+
+/-- The inverse of `cylindricalEndPartialDiffeomorph` is the inverse of the Liouville flow-out of
+the boundary on `(0, ∞) × S`: it sends `ψₜ (ι s)`, `t > 0`, to `(t, s)`. -/
+theorem coe_cylindricalEndPartialDiffeomorph_symm :
+    ⇑(h.cylindricalEndPartialDiffeomorph hZ hι himm hιinj hιW hdim).symm =
+      invFunOn (fun p : ℝ × S ↦ flowOf Z p.1 (ι p.2)) (Ioi 0 ×ˢ univ) :=
+  funext fun _ ↦ IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn_symm_apply ..
 
 /-- The source of `cylindricalEndPartialDiffeomorph` is `(0, ∞) × S`. -/
 @[simp]

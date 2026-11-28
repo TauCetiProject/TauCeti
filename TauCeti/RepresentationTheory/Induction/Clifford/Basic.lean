@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Group.End
 public import Mathlib.RepresentationTheory.Semisimple
 public import TauCeti.RepresentationTheory.Irreducible
 public import TauCeti.RepresentationTheory.Induction.Conjugate
@@ -38,7 +39,7 @@ Throughout, an irreducible constituent is presented as an **atom** of the lattic
 `N`-subrepresentations rather than as an abstract irreducible representation of `N` mapping in.
 That is what keeps the argument free of finiteness hypotheses: no dimension count and no counting of
 conjugates enters.  Finite-dimensionality is used only to *produce* an atom, in
-`Representation.isSemisimpleRepresentation_comp_subtype`.
+`Representation.isSemisimpleRepresentation_comp_subtype_of_isIrreducible`.
 
 The file stops at semisimplicity: nothing below mentions a decomposition, an isotypic component, a
 multiplicity or a `G`-orbit of constituents.  The translation machinery the semisimplicity statement
@@ -49,7 +50,8 @@ is proved from is also what **Clifford's theorem** runs on; its single-orbit for
 
 * `Representation.conjSubrep`: the translate `ρ g '' U` of an `N`-subrepresentation `U`.
 * `Representation.conjSubrepOrderIso`: translation as an order isomorphism of the lattice of
-  `N`-subrepresentations.
+  `N`-subrepresentations, and `Representation.conjSubrepHom`: the resulting action of `G` by order
+  automorphisms.
 * `Representation.conjSubrepEquiv`: translation by `ρ g` as an equivalence from `U`, with its action
   of `N` twisted by conjugation, onto the translate.
 
@@ -63,8 +65,8 @@ is proved from is also what **Clifford's theorem** runs on; its single-orbit for
   `N`-subrepresentation through conjugation-invariant scalars, it acts on everything through them.
 * `Representation.isSemisimpleRepresentation_comp_subtype_of_isAtom`: if some `N`-subrepresentation
   of an irreducible representation `IsAtom`, then the restriction to `N` is semisimple.
-* `Representation.isSemisimpleRepresentation_comp_subtype`: the same conclusion for a
-  **finite-dimensional** irreducible representation, where such an atom is automatic
+* `Representation.isSemisimpleRepresentation_comp_subtype_of_isIrreducible`: the same conclusion
+  for a **finite-dimensional** irreducible representation, where such an atom is automatic
   (`Representation.exists_isAtom`).
 
 ## Implementation notes
@@ -150,6 +152,18 @@ theorem conjSubrep_conjSubrep (g h : G) (σ : Subrepresentation (ρ.comp N.subty
     rw [toSubmodule_conjSubrep, toSubmodule_conjSubrep, toSubmodule_conjSubrep,
       ← Submodule.map_comp, ← Module.End.mul_eq_comp, ← map_mul]
 
+/-- Translating back by `g⁻¹` undoes translating by `g`. Not a `simp` lemma: `simp` already
+proves it from `conjSubrep_conjSubrep` and `conjSubrep_eq_self_of_mem`. -/
+theorem conjSubrep_inv_conjSubrep (g : G) (σ : Subrepresentation (ρ.comp N.subtype)) :
+    conjSubrep ρ g⁻¹ (conjSubrep ρ g σ) = σ := by
+  rw [conjSubrep_conjSubrep, inv_mul_cancel, conjSubrep_one]
+
+/-- Translating by `g` undoes translating back by `g⁻¹`. Not a `simp` lemma, for the same reason
+as `conjSubrep_inv_conjSubrep`. -/
+theorem conjSubrep_conjSubrep_inv (g : G) (σ : Subrepresentation (ρ.comp N.subtype)) :
+    conjSubrep ρ g (conjSubrep ρ g⁻¹ σ) = σ := by
+  rw [conjSubrep_conjSubrep, mul_inv_cancel, conjSubrep_one]
+
 @[simp]
 theorem conjSubrep_bot (g : G) : conjSubrep ρ g (⊥ : Subrepresentation (ρ.comp N.subtype)) = ⊥ :=
   Subrepresentation.toSubmodule_injective <| by
@@ -170,8 +184,8 @@ def conjSubrepOrderIso (g : G) :
     Subrepresentation (ρ.comp N.subtype) ≃o Subrepresentation (ρ.comp N.subtype) where
   toFun := conjSubrep ρ g
   invFun := conjSubrep ρ g⁻¹
-  left_inv σ := by rw [conjSubrep_conjSubrep, inv_mul_cancel, conjSubrep_one]
-  right_inv σ := by rw [conjSubrep_conjSubrep, mul_inv_cancel, conjSubrep_one]
+  left_inv := conjSubrep_inv_conjSubrep g
+  right_inv := conjSubrep_conjSubrep_inv g
   map_rel_iff' {σ τ} := by
     simp only [Equiv.coe_fn_mk, ← Subrepresentation.toSubmodule_le_toSubmodule,
       toSubmodule_conjSubrep]
@@ -192,6 +206,21 @@ theorem isAtom_conjSubrep_iff {g : G} {σ : Subrepresentation (ρ.comp N.subtype
     IsAtom (conjSubrep ρ g σ) ↔ IsAtom σ := by
   rw [← conjSubrepOrderIso_apply g σ]
   exact (conjSubrepOrderIso ρ g).isAtom_iff σ
+
+variable (ρ) in
+/-- **`G` acts on the `N`-subrepresentations by translation**, through order automorphisms: the
+value at `g` is `conjSubrepOrderIso ρ g`, and the action laws are `conjSubrep_one` and
+`conjSubrep_conjSubrep`. -/
+def conjSubrepHom :
+    G →* (Subrepresentation (ρ.comp N.subtype) ≃o Subrepresentation (ρ.comp N.subtype)) where
+  toFun := conjSubrepOrderIso ρ
+  map_one' := RelIso.ext conjSubrep_one
+  map_mul' g h := RelIso.ext fun σ ↦ (conjSubrep_conjSubrep g h σ).symm
+
+@[simp]
+theorem conjSubrepHom_apply (g : G) (σ : Subrepresentation (ρ.comp N.subtype)) :
+    conjSubrepHom ρ g σ = conjSubrep ρ g σ :=
+  (rfl)
 
 variable (ρ) in
 /-- Translation by `ρ g` identifies `σ`, with its action of `N` twisted by conjugation by `g`,
@@ -314,7 +343,8 @@ theorem isSemisimpleRepresentation_comp_subtype_of_isAtom [ρ.IsIrreducible]
 
 /-- **Restriction to a normal subgroup preserves semisimplicity.** The restriction to a normal
 subgroup of a finite-dimensional irreducible representation is semisimple. -/
-theorem isSemisimpleRepresentation_comp_subtype [ρ.IsIrreducible] [FiniteDimensional k V] :
+theorem isSemisimpleRepresentation_comp_subtype_of_isIrreducible [ρ.IsIrreducible]
+    [FiniteDimensional k V] :
     Representation.IsSemisimpleRepresentation (ρ.comp N.subtype) := by
   have : Nontrivial V := Representation.IsIrreducible.nontrivial ‹ρ.IsIrreducible›
   obtain ⟨σ, hσ⟩ := Representation.exists_isAtom (ρ.comp N.subtype)

@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.PositiveDegrees.Basic
-public import TauCeti.Algebra.Module.Primitive
+public import TauCeti.Algebra.Module.Primitive.Basic
 public import Mathlib.GroupTheory.Subgroup.Saturated
 
 /-!
@@ -85,6 +85,18 @@ theorem add_mem_rayDegrees {w : SupportedRay d} {n m : N}
   obtain ⟨hn, a, ha, rfl⟩ := hn
   obtain ⟨hm, b, hb, rfl⟩ := hm
   exact ⟨d.monoid.add_mem hn hm, a + b, add_pos ha hb, (add_zsmul _ _ _).symm⟩
+
+/-- A positive natural multiple of an actual ray degree remains an actual ray degree.
+
+Adapted from Claude's `Mei/Algebra/PositiveDegrees/Ray/Commensurable.lean` in
+[yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
+`bf3986029ff4d3eb4025d4067489511b0724374e` (Apache 2.0). -/
+theorem nsmul_mem_rayDegrees {w : SupportedRay d} {n : N} (hn : n ∈ w.rayDegrees) {p : ℕ}
+    (hp : 0 < p) : p • n ∈ w.rayDegrees := by
+  obtain ⟨hmem, a, ha, rfl⟩ := mem_rayDegrees.mp hn
+  refine mem_rayDegrees.mpr ⟨d.monoid.nsmul_mem hmem p, (p : ℤ) * a, mul_pos ?_ ha, ?_⟩
+  · exact_mod_cast hp
+  · rw [mul_smul, natCast_zsmul]
 
 /-- The additive semigroup of actual allowed positive degrees on a supported ray. -/
 def degreeSemigroup (w : SupportedRay d) : AddSubsemigroup N where

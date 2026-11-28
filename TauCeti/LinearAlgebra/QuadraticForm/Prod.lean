@@ -76,6 +76,9 @@ the two summands gives an orthogonal family of the orthogonal sum.
   `orthogonalGroupProd` and `specialOrthogonalGroupProd` under `IsometryEquiv.prod`,
   `IsometryEquiv.uniqueProd`, `IsometryEquiv.prodUnique`, `IsometryEquiv.prodAssoc`, and
   `IsometryEquiv.prodComm`.
+* `QuadraticMap.equivalent_pi_succ_prod`, `QuadraticMap.equivalent_pi_zero_prod`: splitting off
+  the first summand of an orthogonal sum indexed by `Fin (n + 1)`, and deleting an empty one, next
+  to a further orthogonal summand.
 * `QuadraticMap.isOrthoᵢ_associated_prod`: orthogonal families of the summands concatenate to an
   orthogonal family of `Q₁.prod Q₂`.
 * `QuadraticMap.polar_pi_single_left`, `QuadraticMap.polar_pi_single_right`,
@@ -151,6 +154,16 @@ theorem zero_prod_zero : (0 : QuadraticMap R M₁ P).prod (0 : QuadraticMap R M�
 theorem prod_eq_zero_iff {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} :
     Q₁.prod Q₂ = 0 ↔ Q₁ = 0 ∧ Q₂ = 0 := by
   rw [← zero_prod_zero, prod_inj]
+
+/-- The orthogonal product of a nonzero quadratic map with any quadratic map is nonzero. -/
+theorem prod_ne_zero_left {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} (h : Q₁ ≠ 0) :
+    Q₁.prod Q₂ ≠ 0 :=
+  fun h' ↦ h (prod_eq_zero_iff.mp h').1
+
+/-- The orthogonal product of any quadratic map with a nonzero quadratic map is nonzero. -/
+theorem prod_ne_zero_right {Q₁ : QuadraticMap R M₁ P} {Q₂ : QuadraticMap R M₂ P} (h : Q₂ ≠ 0) :
+    Q₁.prod Q₂ ≠ 0 :=
+  fun h' ↦ h (prod_eq_zero_iff.mp h').2
 
 /-- The orthogonal products of members of two submodules of quadratic maps are the span of the
 orthogonal products `Q ⊕ 0` and `0 ⊕ Q'` with `Q` and `Q'` in the respective submodules: this is
@@ -353,6 +366,50 @@ theorem IsometryEquiv.toIsometry_prod {N₁ N₂ : Type*} [AddCommMonoid N₁] [
     (e₁.prod e₂).toIsometry = e₁.toIsometry.prodMap e₂.toIsometry :=
   Isometry.ext fun _ ↦ by simp
 
+section prodProdProdComm
+
+variable {N₁ N₂ : Type*} [AddCommMonoid N₁] [AddCommMonoid N₂] [Module R N₁] [Module R N₂]
+  (Q₁ : QuadraticMap R M₁ P) (Q₂ : QuadraticMap R M₂ P) (Q₃ : QuadraticMap R N₁ P)
+  (Q₄ : QuadraticMap R N₂ P)
+
+/-- `QuadraticMap.IsometryEquiv.prodProdProdComm` carries the first summand of
+`(Q₁ ⊕ Q₂) ⊕ (Q₃ ⊕ Q₄)` to the first summand of `(Q₁ ⊕ Q₃) ⊕ (Q₂ ⊕ Q₄)`. -/
+@[simp]
+theorem IsometryEquiv.prodProdProdComm_comp_inl_comp_inl :
+    (prodProdProdComm Q₁ Q₂ Q₃ Q₄).toIsometry.comp
+      ((Isometry.inl (Q₁.prod Q₂) (Q₃.prod Q₄)).comp (Isometry.inl Q₁ Q₂)) =
+      (Isometry.inl (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inl Q₁ Q₃) :=
+  Isometry.ext fun _ ↦ by simp
+
+/-- `QuadraticMap.IsometryEquiv.prodProdProdComm` carries the second summand of
+`(Q₁ ⊕ Q₂) ⊕ (Q₃ ⊕ Q₄)` to the third summand of `(Q₁ ⊕ Q₃) ⊕ (Q₂ ⊕ Q₄)`. -/
+@[simp]
+theorem IsometryEquiv.prodProdProdComm_comp_inl_comp_inr :
+    (prodProdProdComm Q₁ Q₂ Q₃ Q₄).toIsometry.comp
+      ((Isometry.inl (Q₁.prod Q₂) (Q₃.prod Q₄)).comp (Isometry.inr Q₁ Q₂)) =
+      (Isometry.inr (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inl Q₂ Q₄) :=
+  Isometry.ext fun _ ↦ by simp
+
+/-- `QuadraticMap.IsometryEquiv.prodProdProdComm` carries the third summand of
+`(Q₁ ⊕ Q₂) ⊕ (Q₃ ⊕ Q₄)` to the second summand of `(Q₁ ⊕ Q₃) ⊕ (Q₂ ⊕ Q₄)`. -/
+@[simp]
+theorem IsometryEquiv.prodProdProdComm_comp_inr_comp_inl :
+    (prodProdProdComm Q₁ Q₂ Q₃ Q₄).toIsometry.comp
+      ((Isometry.inr (Q₁.prod Q₂) (Q₃.prod Q₄)).comp (Isometry.inl Q₃ Q₄)) =
+      (Isometry.inl (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inr Q₁ Q₃) :=
+  Isometry.ext fun _ ↦ by simp
+
+/-- `QuadraticMap.IsometryEquiv.prodProdProdComm` carries the fourth summand of
+`(Q₁ ⊕ Q₂) ⊕ (Q₃ ⊕ Q₄)` to the fourth summand of `(Q₁ ⊕ Q₃) ⊕ (Q₂ ⊕ Q₄)`. -/
+@[simp]
+theorem IsometryEquiv.prodProdProdComm_comp_inr_comp_inr :
+    (prodProdProdComm Q₁ Q₂ Q₃ Q₄).toIsometry.comp
+      ((Isometry.inr (Q₁.prod Q₂) (Q₃.prod Q₄)).comp (Isometry.inr Q₃ Q₄)) =
+      (Isometry.inr (Q₁.prod Q₃) (Q₂.prod Q₄)).comp (Isometry.inr Q₂ Q₄) :=
+  Isometry.ext fun _ ↦ by simp
+
+end prodProdProdComm
+
 /-- `Fin.consLinearEquiv` is isometric: an orthogonal sum indexed by `Fin (n + 1)` is the orthogonal
 product of its first summand with the orthogonal sum of the remaining ones. -/
 def IsometryEquiv.consPi {n : ℕ} {M : Fin (n + 1) → Type*} [∀ i, AddCommMonoid (M i)]
@@ -367,6 +424,21 @@ theorem IsometryEquiv.consPi_apply {n : ℕ} {M : Fin (n + 1) → Type*} [∀ i,
     [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P) (x : M 0) (y : ∀ i : Fin n, M i.succ) :
     IsometryEquiv.consPi Q (x, y) = Fin.cons x y :=
   (rfl)
+
+/-- Splitting off the first summand of an orthogonal sum indexed by `Fin (n + 1)` that sits next to
+a further summand `A`. -/
+theorem equivalent_pi_succ_prod {n : ℕ} {M : Fin (n + 1) → Type*} [∀ i, AddCommMonoid (M i)]
+    [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P) (A : QuadraticMap R M₁ P) :
+    ((QuadraticMap.pi Q).prod A).Equivalent
+      ((Q 0).prod ((QuadraticMap.pi fun i : Fin n ↦ Q i.succ).prod A)) :=
+  ⟨((IsometryEquiv.consPi Q).symm.prod (IsometryEquiv.refl A)).trans
+    (IsometryEquiv.prodAssoc _ _ _)⟩
+
+/-- An empty orthogonal sum indexed by `Fin 0` may be deleted from an orthogonal product. -/
+theorem equivalent_pi_zero_prod {M : Fin 0 → Type*} [∀ i, AddCommMonoid (M i)]
+    [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P) (A : QuadraticMap R M₁ P) :
+    ((QuadraticMap.pi Q).prod A).Equivalent A :=
+  ⟨IsometryEquiv.uniqueProd _ A⟩
 
 /-- The orthogonal sum of isometric equivalences acts coordinatewise. -/
 @[simp]

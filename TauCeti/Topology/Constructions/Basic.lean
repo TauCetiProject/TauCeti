@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.ContinuousMap.Basic
+import Mathlib.Topology.Maps.Proper.Basic
 import Mathlib.Topology.SeparatedMap
+import TauCeti.Data.Set.Prod
 
 /-!
 # Quotients by setoids, fibre products, and subtypes of topological spaces
@@ -23,14 +25,25 @@ subtype-topology convergence API for continuous maps on subtypes.
 * `Setoid.isOpen_image_quotient_mk`: the image of an open set closed under `s` is open.
 * `Setoid.isOpenEmbedding_domRestrict_quotient_mk_of_isOpen`: the quotient map restricted to an
   open set whose points are related only to themselves is an open embedding.
+* `Setoid.isClosedMap_quotient_mk_of_isClosed`: on a compact space, the quotient map by a relation
+  that is closed in `X × X` is a closed map.
 * `Function.Pullback.continuous_fst`, `Function.Pullback.continuous_snd`: the projections of the
   fibre product are continuous.
 * `Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp`: open maps are stable under
   pullback; the projection of a fibre product to one factor is open onto its range when the map
   from the other factor is.
+* `Function.Pullback.isEmbedding_fst`, `Function.Pullback.isEmbedding_snd`: embeddings are stable
+  under pullback; the projection of a fibre product to one factor is an embedding when the map
+  from the other factor is.
 * `ContinuousMap.pullbackFst`, `ContinuousMap.pullbackSnd`, `ContinuousMap.mapPullback`,
   `ContinuousMap.mapPullbackSnd`, `Homeomorph.pullbackComm`: bundled projections, functoriality,
   and symmetry of the fibre product.
+* `ContinuousMap.mapPullbackFst`: the map `X₁ ×_Y Z → X₂ ×_Y Z`, `(x, z) ↦ (g x, z)`, induced
+  by a map `g` of first factors over `Y`, the first-factor counterpart of
+  `ContinuousMap.mapPullbackSnd`.
+* `ContinuousMap.range_mapPullbackFst`, `ContinuousMap.isOpenEmbedding_mapPullbackFst`: its image
+  is the part over the image of `g`, and it is an open embedding when `g` is one, as for the
+  pullback over an open part of the parameters into the pullback over all of them.
 * `ContinuousAt.tendsto_comap_val`, `Continuous.tendsto_comap_val`: a continuous function on a
   subtype tends to `f x` along `Filter.comap Subtype.val (𝓝 x.val)`.
 * `Topology.IsQuotientMap.of_comp_eq_comp`: quotient maps are stable under pullback along a
@@ -80,6 +93,23 @@ theorem isOpenEmbedding_domRestrict_quotient_mk_of_isOpen {U : Set X} (hU : IsOp
     rintro _ y ⟨x, hx, rfl⟩ hxy
     exact hfix x.property hxy ▸ mem_image_of_mem _ hx
 
+/-- On a compact space, the quotient map by an equivalence relation that is closed in `X × X` is a
+closed map. -/
+theorem isClosedMap_quotient_mk_of_isClosed [CompactSpace X]
+    (hs : IsClosed {p : X × X | s p.1 p.2}) : IsClosedMap (Quotient.mk s) := by
+  intro C hC
+  -- The saturation of `C` is the projection to the second factor of the closed set of pairs
+  -- `(x, y)` with `x ∈ C` and `s x y`; the projection is closed because `X` is compact.
+  have hsat : Quotient.mk s ⁻¹' (Quotient.mk s '' C) =
+      Prod.snd '' (Prod.fst ⁻¹' C ∩ {p : X × X | s p.1 p.2}) := by
+    ext y
+    simp only [mem_preimage, mem_image, mem_inter_iff, mem_ofPred_eq, Prod.exists,
+      exists_eq_right]
+    exact exists_congr fun x => and_congr_right fun _ => Quotient.eq
+  have hq : IsQuotientMap (Quotient.mk s) := isQuotientMap_quotient_mk'
+  rw [← hq.isClosed_preimage, hsat]
+  exact isClosedMap_snd_of_compactSpace _ ((hC.preimage continuous_fst).inter hs)
+
 end Setoid
 
 section Pullback
@@ -125,6 +155,22 @@ theorem Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp [TopologicalSp
     obtain ⟨x, hxU, hx⟩ : g (ι q).2 ∈ f '' U := hfU ▸ ⟨hqO, (ι q).1, hfg q⟩
     obtain ⟨q', hq'⟩ : (x, (ι q).2) ∈ range ι := hrange ▸ hx
     exact ⟨q', show ι q' ∈ T from hq' ▸ hUV ⟨hxU, hqV⟩, Subtype.ext (by simp [hq'])⟩
+
+/-- **Embeddings are stable under pullback.** If `g : Z → Y` is an embedding and `f : X → Y` is
+continuous, then the projection `X ×_Y Z → X` is an embedding: the second coordinate of a point of
+the fibre product is recovered continuously from the first through the embedding `g`. -/
+theorem Function.Pullback.isEmbedding_fst [TopologicalSpace Y] (hf : Continuous f)
+    (hg : IsEmbedding g) : IsEmbedding (Pullback.fst : f.Pullback g → X) := by
+  refine ⟨⟨le_antisymm (continuous_iff_le_induced.1 continuous_fst) ?_⟩, fun p q hpq ↦ ?_⟩
+  · -- For the topology induced by the first projection, the second projection is continuous,
+    -- since `g` composed with it is `f` composed with the first projection.
+    let t : TopologicalSpace (f.Pullback g) := .induced Pullback.fst ‹_›
+    have hsnd : Continuous (Pullback.snd : f.Pullback g → Z) := by
+      rw [hg.isInducing.continuous_iff]
+      exact (hf.comp continuous_induced_dom).congr fun p ↦ p.property
+    exact continuous_iff_le_induced.1 (continuous_induced_dom.prodMk hsnd)
+  · exact Subtype.ext (Prod.ext hpq
+      (hg.injective (p.property.symm.trans ((congrArg f hpq).trans q.property))))
 
 variable (f g)
 
@@ -178,6 +224,13 @@ def Homeomorph.pullbackComm : f.Pullback g ≃ₜ g.Pullback f where
     (Homeomorph.pullbackComm g f : C(g.Pullback f, f.Pullback g)).comp
       (Homeomorph.pullbackComm f g : C(f.Pullback g, g.Pullback f)) = .id (f.Pullback g) := by
   ext : 1; rfl
+
+variable {f g} in
+/-- **Embeddings are stable under pullback.** If `f : X → Y` is an embedding and `g : Z → Y` is
+continuous, then the projection `X ×_Y Z → Z` is an embedding. -/
+theorem Function.Pullback.isEmbedding_snd [TopologicalSpace Y] (hf : IsEmbedding f)
+    (hg : Continuous g) : IsEmbedding (Pullback.snd : f.Pullback g → Z) :=
+  (isEmbedding_fst hg hf).comp (Homeomorph.pullbackComm f g).isEmbedding
 
 section MapPullback
 
@@ -234,6 +287,61 @@ def ContinuousMap.mapPullbackSnd : C(f.Pullback p, f.Pullback q) :=
   ext : 1; rfl
 
 end MapPullbackSnd
+
+section MapPullbackFst
+
+variable {X₁ X₂ Y Z : Type*} [TopologicalSpace X₁] [TopologicalSpace X₂] [TopologicalSpace Z]
+  {p : X₁ → Y} {q : X₂ → Y} (g : C(X₁, X₂)) (hg : q ∘ ⇑g = p) (f : Z → Y)
+
+/-- Bundled continuous map `p.Pullback f → q.Pullback f` over `Z` induced by a map
+`g : C(X₁, X₂)` over `Y` (`q ∘ g = p`): `(x, z) ↦ (g x, z)`. -/
+def ContinuousMap.mapPullbackFst : C(p.Pullback f, q.Pullback f) :=
+  ContinuousMap.mapPullback (g₁ := f) (g₂ := f) g id (.id Z) hg rfl
+
+@[simp] theorem ContinuousMap.coe_mapPullbackFst_apply (x : p.Pullback f) :
+    (ContinuousMap.mapPullbackFst g hg f x).val = (g x.val.1, x.val.2) :=
+  ContinuousMap.coe_mapPullback_apply _ _ _ _ _ x
+
+@[simp] theorem ContinuousMap.fst_mapPullbackFst (x : p.Pullback f) :
+    (ContinuousMap.mapPullbackFst g hg f x).fst = g x.fst :=
+  congrArg Prod.fst (ContinuousMap.coe_mapPullbackFst_apply g hg f x)
+
+@[simp] theorem ContinuousMap.snd_mapPullbackFst (x : p.Pullback f) :
+    (ContinuousMap.mapPullbackFst g hg f x).snd = x.snd :=
+  congrArg Prod.snd (ContinuousMap.coe_mapPullbackFst_apply g hg f x)
+
+@[simp] theorem ContinuousMap.pullbackFst_comp_mapPullbackFst :
+    (ContinuousMap.pullbackFst q f).comp (ContinuousMap.mapPullbackFst g hg f) =
+      g.comp (ContinuousMap.pullbackFst p f) := by
+  ext : 1; simp
+
+@[simp] theorem ContinuousMap.pullbackSnd_comp_mapPullbackFst :
+    (ContinuousMap.pullbackSnd q f).comp (ContinuousMap.mapPullbackFst g hg f) =
+      ContinuousMap.pullbackSnd p f := by
+  ext : 1; simp
+
+/-- The points of `q.Pullback f` over the image of `g` are exactly the image of the map induced
+by `g`. -/
+theorem ContinuousMap.range_mapPullbackFst :
+    range (ContinuousMap.mapPullbackFst g hg f) = Function.Pullback.fst ⁻¹' range g := by
+  refine Subset.antisymm ?_ fun y ⟨x, hx⟩ ↦
+    ⟨⟨(x, y.snd), (congrFun hg x).symm.trans ((congrArg q hx).trans y.property)⟩,
+      Function.Pullback.ext ((fst_mapPullbackFst g hg f _).trans hx) (snd_mapPullbackFst g hg f _)⟩
+  rintro _ ⟨x, rfl⟩
+  exact ⟨x.fst, (fst_mapPullbackFst g hg f x).symm⟩
+
+/-- The map induced by an open embedding of first factors is an open embedding. -/
+theorem ContinuousMap.isOpenEmbedding_mapPullbackFst (hg' : IsOpenEmbedding g) :
+    IsOpenEmbedding (ContinuousMap.mapPullbackFst g hg f) := by
+  have h : Subtype.val ∘ ⇑(ContinuousMap.mapPullbackFst g hg f) = Prod.map g id ∘ Subtype.val :=
+    funext (ContinuousMap.coe_mapPullbackFst_apply g hg f)
+  refine ⟨(IsEmbedding.subtypeVal (p := fun z : X₂ × Z ↦ q z.1 = f z.2)).of_comp_iff.1 ?_, ?_⟩
+  · rw [h]
+    exact (hg'.isEmbedding.prodMap IsEmbedding.id).comp IsEmbedding.subtypeVal
+  · rw [range_mapPullbackFst]
+    exact hg'.isOpen_range.preimage Function.Pullback.continuous_fst
+
+end MapPullbackFst
 
 end Pullback
 

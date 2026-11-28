@@ -13,7 +13,7 @@ import TauCeti.Analysis.PDE.SeibergWitten.LogModulusRatio
 import TauCeti.Data.Fin.VecNotation
 
 /-!
-# Confined flat limits are plane vortices
+# Confined flat limits are plane vortices, zero-free ones the vacuum
 
 Rescaling a large-parameter Seiberg–Witten solution near a pseudoholomorphic curve at the scale
 `h = (2 r)^(-1/2)` produces, in the limit, a solution of the flat equations on
@@ -56,8 +56,18 @@ The proof assembles three steps.
   `b = b' - Im (h⁻¹ dh)` for the pulled-back connection `b'` of the vortex
   (`TauCeti.SeibergWitten.norm_eq_one_and_eq_normalConnection_sub_phaseForm`).
 
-The extraction of such a limit from actual large-parameter solutions, with its curvature and
-vacuum bounds, is not treated here.
+**Zero-free limits.** A solution whose section vanishes nowhere, with `|α| ≤ 1` and with defect
+`1 - |α|²` of integral at most `C R²` over every ball of radius `R ≥ 1`, is the gauge transform of
+the vacuum `(0, u₀)` by the unimodular function `α`
+(`TauCeti.SeibergWitten.norm_eq_one_and_eq_neg_phaseForm_of_sum_covariantDeriv_smul_eq_zero`).
+Here no vacuum condition at infinity is assumed: the quadratic bound on the defect, which a
+rescaled limit inherits from the monotonicity of the defect energy, replaces it
+(`TauCeti.SeibergWitten.norm_eq_one_and_eq_neg_phaseForm_of_setIntegral_ball_le`).
+
+Limits of blown-up large-parameter solutions, in radial gauge, are extracted in
+`TauCeti.Analysis.PDE.SeibergWitten.Rescaling.Compactness` from uniform bounds on the blown-up
+fields; those bounds for actual solutions, and the vacuum bounds used here, are not treated
+here.
 
 ## Main results
 
@@ -70,6 +80,8 @@ vacuum bounds, is not treated here.
   curvature and the transverse vacuum condition.
 * `TauCeti.SeibergWitten.exists_vortex_norm_eq_one_and_eq_normalConnection_sub_phaseForm`: the
   classification of confined flat limits as gauge transforms of pulled-back plane vortices.
+* `TauCeti.SeibergWitten.norm_eq_one_and_eq_neg_phaseForm_of_sum_covariantDeriv_smul_eq_zero`:
+  zero-free flat limits with quadratic defect growth are gauge transforms of the vacuum.
 
 ## References
 
@@ -305,7 +317,9 @@ theorem exists_vortex_norm_eq_one_and_eq_normalConnection_sub_phaseForm (hb : Co
     rw [quadraticTwoForm_sqrt_smul o ρ hkl (by norm_num), Submodule.coe_smul, hF y]
     norm_num
   have hdbar (y : V) : covariantDBar J b α y = 0 :=
-    (sum_covariantDeriv_smul_ι_apply_eq_zero_iff hQ hkl he h₀ h₂₃ hρ hu₀ hu₀' b α y).1 (hD y)
+    (sum_covariantDeriv_smul_ι_apply_eq_zero_iff hQ
+      (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃) hu₀ hu₀' b α y).1
+      (hD y)
   -- The curvature is `J`-invariant, since its self-dual part is a multiple of `ω`.
   have hJF (y u w : V) : extDeriv b y ![J u, J w] = extDeriv b y ![u, w] := by
     have hP : cliffordProjection o ρ J.kahlerForm (α y • u₀) = α y • u₀ := by
@@ -334,6 +348,53 @@ theorem exists_vortex_norm_eq_one_and_eq_normalConnection_sub_phaseForm (hb : Co
     (fun z ↦ by norm_num [hsol z]) hdense hnorm
     (hh.of_le (by simp)) hh₀ hαh hbdd hlim
   exact ⟨s, x, hx, hsol, hframe, hzero, h, hh, h1, hαh, hbh⟩
+
+include hkl he h₀ h₂₃ hQ h₂ hρ hu₀ hu₀₁ in
+/-- **Zero-free flat limits are the vacuum up to gauge.** Let `e` be a positively oriented unitary
+frame of `V = ℂ_base × ℂ_normal`, `J e₀ = e₁` and `J e₂ = e₃`, and `u₀` a unit spinor of the
+canonical line. Let `(b, α u₀)` be a solution of the flat limiting equations
+
+`∑ₖ c(eₖ) ∇_{eₖ} (α u₀) = 0`,  `F + ⋆F = ω / 8 - q(α u₀) / 2`,  `F = -db`,
+
+with a differentiable connection form and a `C²` section `α` that vanishes nowhere and has
+`|α| ≤ 1`. If the defect `1 - |α|²` has integral at most `C R²` over every ball of radius `R ≥ 1`,
+then `|α| = 1` and `b = -Im (α⁻¹ dα)`: the solution is the gauge transform of the vacuum
+`(0, u₀)` by the unimodular function `α`. -/
+theorem norm_eq_one_and_eq_neg_phaseForm_of_sum_covariantDeriv_smul_eq_zero
+    [MeasurableSpace V] [BorelSpace V] {μ : MeasureTheory.Measure V} [μ.IsAddHaarMeasure]
+    (hb : Differentiable ℝ b) (hα : ContDiff ℝ 2 α) (hα₀ : ∀ y, α y ≠ 0) (hα₁ : ∀ y, ‖α y‖ ≤ 1)
+    (hD : ∀ y, ∑ k, covariantDeriv b α y (e k) • ρ (ι Q (e k)) u₀ = 0)
+    (hF : ∀ y, (alternatingFormEquiv V 2).symm (-extDeriv b y) +
+        o.hodgeStar hkl ((alternatingFormEquiv V 2).symm (-extDeriv b y)) =
+      (1 / 8 : ℝ) • J.kahlerForm -
+        (1 / 2 : ℝ) • (quadraticTwoForm o ρ hkl (α y • u₀) : ⋀[ℝ]^2 V))
+    {C : ℝ} (hC : ∀ y R, 1 ≤ R → ∫ x in Metric.ball y R, (1 - ‖α x‖ ^ 2) ∂μ ≤ C * R ^ 2) :
+    (∀ y, ‖α y‖ = 1) ∧ b = -phaseForm α := by
+  have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := ℝ) (by rw [← hkl]; norm_num)
+  have hu₀' : (u₀ : W) ≠ 0 := by
+    have hu : u₀ ≠ 0 := by
+      rintro rfl
+      simp at hu₀₁
+    simpa using hu
+  have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
+  -- The Dirac equation is `∂bar_a α = 0`, and the curvature equation, in the form of `FlatLimit` at
+  -- `r = 1 / 2`, gives the flat vortex curvature equation with coupling `1 / 4`.
+  have hdbar (y : V) : covariantDBar J b α y = 0 :=
+    (sum_covariantDeriv_smul_ι_apply_eq_zero_iff hQ hJ hu₀ hu₀' b α y).1 (hD y)
+  have hF' (y : V) : ∑ i, extDeriv b y ![e i, J (e i)] = 1 / 4 * (‖α y‖ ^ 2 - 1) := by
+    have h := sum_extDeriv_apply_eq_of_add_hodgeStar_eq_sub_quadraticTwoForm hkl he h₀ h₂₃ hQ h₂
+      hρ hu₀ hu₀₁ e (r := 1 / 2) (by norm_num) (α := α) (y := y) (by
+        rw [quadraticTwoForm_sqrt_smul o ρ hkl (by norm_num), Submodule.coe_smul, hF y]
+        norm_num)
+    rw [h]
+    norm_num
+  have hz : (finrank ℝ V : ℤ) - 2 = 2 := by
+    rw [← hkl]
+    norm_num
+  exact norm_eq_one_and_eq_neg_phaseForm_of_setIntegral_ball_le hJ e (by norm_num) hb hα hα₀ hα₁
+    hdbar hF' fun y R hR ↦ by
+      rw [hz, zpow_ofNat]
+      exact hC y R hR
 
 end Classification
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Pullbacks
+public import TauCeti.AlgebraicGeometry.Morphisms.OpenImmersion
 public import TauCeti.RingTheory.Grassmannian.Chart.Triple
 
 /-!
@@ -53,6 +54,8 @@ morphisms `Spec (ChartAlgebra R x) ⟶ Spec R` of the charts glue to the structu
 * `Module.Grassmannian.chartι_toSpec`: the structure morphism restricts on each chart to the
   structure morphism of the chart.
 * `Module.Grassmannian.isPullback_chartι`: the charts at `x` and `y` intersect in their overlap.
+* `Module.Grassmannian.chartι_preimage_opensRange_chartι`: inside the chart at `x`, the chart at
+  `y` is the basic open set of the transition determinant.
 
 ## References
 
@@ -228,6 +231,13 @@ theorem isPullback_chartι (x y : Fin k → M) :
         Spec.map (CommRingCat.ofHom (algebraMap (ChartAlgebra R y) (OverlapAlgebra R y x))))
       (chartι R x) (chartι R y) :=
   IsPullback.of_isLimit ((glueData R M k).vPullbackConeIsLimit x y)
+
+/-- Inside the chart of the Grassmannian at `x`, the chart at `y` is the basic open set of the
+determinant `transitionDet R x y` of the universal transition matrix. -/
+theorem chartι_preimage_opensRange_chartι (x y : Fin k → M) :
+    chartι R x ⁻¹ᵁ (chartι R y).opensRange = PrimeSpectrum.basicOpen (transitionDet R x y) := by
+  rw [Scheme.preimage_opensRange_of_isPullback (isPullback_chartι x y).flip]
+  exact Scheme.Hom.opensRange_localizationAway (R := .of (ChartAlgebra R x)) _
 
 /-- **The charts agree on their overlap.** On the overlap of the charts at `x` and `y`, the chart at
 `x` is the chart at `y` composed with the transition isomorphism. -/
