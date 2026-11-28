@@ -38,10 +38,12 @@ prefix sum of length `i` of the decreasing rearrangement `x ∘ Tuple.sortDesc x
 * `TauCeti.maxSubsetSum_smul`: `maxSubsetSum i` is positively homogeneous.
 * `TauCeti.le_of_sum_eq_maxSubsetSum`: in an ordered cancellative additive monoid, a set
   attaining `maxSubsetSum i a` contains the largest coordinates of `a`.
-* `TauCeti.nsmul_sum_le_card_nsmul_maxSubsetSum`: in an ordered cancellative additive monoid,
-  `i • ∑ j, a j ≤ card ι • maxSubsetSum i a`.
+* `TauCeti.exists_card_eq_forall_notMem_le`: some set of `i` indices carries the `i` largest
+  coordinates.
 * `TauCeti.maxSubsetSum_mono`, `TauCeti.maxSubsetSum_add_le`: in an ordered additive monoid,
   `maxSubsetSum i` is monotone and subadditive.
+* `TauCeti.nsmul_sum_le_card_nsmul_maxSubsetSum`: in an ordered additive monoid,
+  `i • ∑ j, a j ≤ card ι • maxSubsetSum i a`.
 * `Antitone.maxSubsetSum_eq_prefixSum`, `TauCeti.maxSubsetSum_eq_prefixSum_sortDesc`: in an
   ordered additive monoid, on `Fin n`, the largest sum of `i` coordinates is a prefix sum of the
   decreasing rearrangement.
@@ -62,6 +64,25 @@ open Finset
 namespace TauCeti
 
 variable {ι κ M : Type*} [Fintype ι] [Fintype κ]
+
+/-- Some set of `i` indices carries the `i` largest coordinates of `a`: every coordinate outside
+it is at most every coordinate inside it. -/
+theorem exists_card_eq_forall_notMem_le [LinearOrder M] (i : Fin (Fintype.card ι)) (a : ι → M) :
+    ∃ T : Finset ι, #T = i ∧ ∀ j ∉ T, ∀ k ∈ T, a j ≤ a k := by
+  classical
+  -- Take the first `i` indices of the decreasing rearrangement of `a` on `Fin (card ι)`.
+  let e := Fintype.equivFin ι
+  let σ := Tuple.sortDesc (a ∘ e.symm)
+  refine ⟨({p | (p : ℕ) < i} : Finset (Fin (Fintype.card ι))).map (σ.trans e.symm).toEmbedding,
+    ?_, ?_⟩
+  · rw [card_map, Fin.card_filter_val_lt, min_eq_right i.isLt.le]
+  · intro j hj k hk
+    obtain ⟨p, hp, rfl⟩ := mem_map.mp hk
+    have hq : ¬ ((σ.symm (e j) : Fin _) : ℕ) < i := fun hq ↦
+      hj (mem_map.mpr ⟨σ.symm (e j), by simpa using hq, by simp⟩)
+    have h := Tuple.antitone_sortDesc (a ∘ e.symm)
+      (show p ≤ σ.symm (e j) by simp only [mem_filter, mem_univ, true_and] at hp; omega)
+    simpa [σ] using h
 
 section MaxSubsetSum
 
@@ -159,33 +180,6 @@ theorem le_of_sum_eq_maxSubsetSum [IsOrderedCancelAddMonoid M] {T : Finset ι} (
     rw [card_insert_of_notMem (by simp [hj]), card_erase_add_one hk, hT])
   rwa [sum_insert (by simp [hj]), ← hTsum, ← add_sum_erase T a hk, add_le_add_iff_right] at h
 
-/-- The largest sum of `i` coordinates is at least `i / card ι` times the total:
-`i • ∑ j, a j ≤ card ι • maxSubsetSum i a`. -/
-theorem nsmul_sum_le_card_nsmul_maxSubsetSum [IsOrderedCancelAddMonoid M]
-    (i : Fin (Fintype.card ι)) (a : ι → M) :
-    (i : ℕ) • ∑ j, a j ≤ Fintype.card ι • maxSubsetSum i a := by
-  classical
-  obtain ⟨T, hT, hTsum⟩ := exists_sum_eq_maxSubsetSum i a
-  rcases T.eq_empty_or_nonempty with rfl | hTne
-  · simp [← hT]
-  -- Every coordinate in `T` is at least `m`, and every coordinate outside `T` at most `m`.
-  set m := T.inf' hTne a
-  have hin : (i : ℕ) • m ≤ ∑ k ∈ T, a k := hT ▸ card_nsmul_le_sum T a m fun k hk ↦ inf'_le a hk
-  have hout : ∑ j ∈ Tᶜ, a j ≤ (Fintype.card ι - i) • m := by
-    rw [← hT, ← card_compl]
-    exact sum_le_card_nsmul Tᶜ a m fun j hj ↦
-      le_inf' hTne a fun k hk ↦ le_of_sum_eq_maxSubsetSum hT hTsum (mem_compl.mp hj) hk
-  have hn : Fintype.card ι = (Fintype.card ι - i) + i := (Nat.sub_add_cancel i.isLt.le).symm
-  calc (i : ℕ) • ∑ j, a j = (i : ℕ) • ∑ k ∈ T, a k + (i : ℕ) • ∑ j ∈ Tᶜ, a j := by
-        rw [← sum_add_sum_compl T, nsmul_add]
-    _ ≤ (i : ℕ) • ∑ k ∈ T, a k + (Fintype.card ι - i) • ((i : ℕ) • m) := by
-        rw [smul_comm]
-        exact add_le_add_right (nsmul_le_nsmul_right hout _) _
-    _ ≤ (i : ℕ) • ∑ k ∈ T, a k + (Fintype.card ι - i) • ∑ k ∈ T, a k :=
-        add_le_add_right (nsmul_le_nsmul_right hin _) _
-    _ = Fintype.card ι • maxSubsetSum i a := by
-        rw [← hTsum, add_comm, ← add_nsmul, ← hn]
-
 variable [IsOrderedAddMonoid M]
 
 /-- `maxSubsetSum i` is monotone in the vector. -/
@@ -199,6 +193,32 @@ theorem maxSubsetSum_add_le (i : Fin (Fintype.card ι)) (a b : ι → M) :
   maxSubsetSum_le_iff.mpr fun _ hs ↦ by
     simpa only [Pi.add_apply, sum_add_distrib] using
       add_le_add (sum_le_maxSubsetSum hs) (sum_le_maxSubsetSum hs)
+
+/-- The largest sum of `i` coordinates is at least `i / card ι` times the total:
+`i • ∑ j, a j ≤ card ι • maxSubsetSum i a`. -/
+theorem nsmul_sum_le_card_nsmul_maxSubsetSum (i : Fin (Fintype.card ι)) (a : ι → M) :
+    (i : ℕ) • ∑ j, a j ≤ Fintype.card ι • maxSubsetSum i a := by
+  classical
+  obtain ⟨T, hT, hsep⟩ := exists_card_eq_forall_notMem_le i a
+  refine le_trans ?_ (nsmul_le_nsmul_right (sum_le_maxSubsetSum hT) _)
+  rcases T.eq_empty_or_nonempty with rfl | hTne
+  · simp [← hT]
+  -- Every coordinate in `T` is at least `m`, and every coordinate outside `T` at most `m`.
+  set m := T.inf' hTne a
+  have hin : (i : ℕ) • m ≤ ∑ k ∈ T, a k := hT ▸ card_nsmul_le_sum T a m fun k hk ↦ inf'_le a hk
+  have hout : ∑ j ∈ Tᶜ, a j ≤ (Fintype.card ι - i) • m := by
+    rw [← hT, ← card_compl]
+    exact sum_le_card_nsmul Tᶜ a m fun j hj ↦ le_inf' hTne a (hsep j (mem_compl.mp hj))
+  have hn : Fintype.card ι = (Fintype.card ι - i) + i := (Nat.sub_add_cancel i.isLt.le).symm
+  calc (i : ℕ) • ∑ j, a j = (i : ℕ) • ∑ k ∈ T, a k + (i : ℕ) • ∑ j ∈ Tᶜ, a j := by
+        rw [← sum_add_sum_compl T, nsmul_add]
+    _ ≤ (i : ℕ) • ∑ k ∈ T, a k + (Fintype.card ι - i) • ((i : ℕ) • m) := by
+        rw [smul_comm]
+        exact add_le_add_right (nsmul_le_nsmul_right hout _) _
+    _ ≤ (i : ℕ) • ∑ k ∈ T, a k + (Fintype.card ι - i) • ∑ k ∈ T, a k :=
+        add_le_add_right (nsmul_le_nsmul_right hin _) _
+    _ = Fintype.card ι • ∑ k ∈ T, a k := by
+        rw [add_comm, ← add_nsmul, ← hn]
 
 end MaxSubsetSum
 
