@@ -169,12 +169,16 @@ theorem coe_injective : Function.Injective ((↑) : HyperbolicPlane → P) :=
 theorem ext {z w : HyperbolicPlane} (h : (z : P) = w) : z = w :=
   coe_injective h
 
-/-- The extended charts of the hyperbolic plane are the inclusion into `ℝ × ℝ`. -/
+/-- The charts of the hyperbolic plane are the inclusion into `ℝ × ℝ`. -/
 @[simp]
-theorem extChartAt_apply (z w : HyperbolicPlane) : extChartAt J z w = w := by
-  change extChartAt J (show upperHalfSpaceOpens ℝ from z) (show upperHalfSpaceOpens ℝ from w) = _
-  simp [extChartAt]
+theorem chartAt_apply (z w : HyperbolicPlane) : chartAt P z w = w := by
+  change chartAt P (show upperHalfSpaceOpens ℝ from z) (show upperHalfSpaceOpens ℝ from w) = _
+  simp
   rfl
+
+/-- The extended charts of the hyperbolic plane are the inclusion into `ℝ × ℝ`. -/
+theorem extChartAt_apply (z w : HyperbolicPlane) : extChartAt J z w = w := by
+  simp
 
 /-- The charts of the hyperbolic plane are defined everywhere. -/
 @[simp]
