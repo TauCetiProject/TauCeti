@@ -25,6 +25,8 @@ corresponding support inclusion and cardinality bound for finite linear combinat
   `(∑ j ∈ s, C (w j) * X (g j)).support ⊆ s.image fun j ↦ Finsupp.single (g j) 1`.
 * `MvPolynomial.card_support_sum_C_mul_X_le`:
   `#(∑ j ∈ s, C (w j) * X (g j)).support ≤ #s`.
+* `MvPolynomial.card_support_linearForm_le`:
+  `#(∑ j, C (r j) * X j).support ≤ Fintype.card σ`.
 -/
 
 public section
@@ -63,5 +65,11 @@ theorem card_support_sum_C_mul_X_le (s : Finset ι) (w : ι → R) (g : ι → �
     #(∑ j ∈ s, C (w j) * X (g j) : MvPolynomial σ R).support ≤ #s := by
   simp_rw [C_mul_X_eq_monomial]
   exact card_support_sum_monomial_le s (fun j ↦ Finsupp.single (g j) 1) w
+
+/-- A linear form `∑ j, C (r j) * X j` in `card σ` variables has at most `card σ` monomials in
+its support. -/
+theorem card_support_linearForm_le [Fintype σ] (r : σ → R) :
+    #(∑ j, C (r j) * X j : MvPolynomial σ R).support ≤ Fintype.card σ :=
+  (card_support_sum_C_mul_X_le univ r id).trans_eq card_univ
 
 end MvPolynomial

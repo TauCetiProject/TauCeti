@@ -48,9 +48,9 @@ Roth's lemma.
 
 * `MvPolynomial.card_support_le_two_pow`: `#p.support ≤ 2 ^ ∑ j, p.degreeOf j`.
 * `MvPolynomial.abv_coeff_le_iSup_support`: `v (p.coeff b) ≤ ⨆ c : p.support, v (p.coeff c)`.
-* `MvPolynomial.abv_coeff_sum_monomial_le`, `MvPolynomial.abv_coeff_sum_C_mul_X_le`: coefficient
-  bounds for finite sums of monomials with distinct exponents and for finite linear combinations of
-  distinct variables.
+* `MvPolynomial.abv_coeff_sum_monomial_le`, `MvPolynomial.abv_coeff_sum_C_mul_X_le`,
+  `MvPolynomial.abv_coeff_linearForm_le`: coefficient bounds for finite sums of monomials with
+  distinct exponents and for finite linear combinations of distinct variables.
 * `MvPolynomial.abv_coeff_prod_le`, `MvPolynomial.abv_coeff_prod_le_of_isNonarchimedean`:
   coefficient bounds for finite products.
 * `MvPolynomial.abv_coeff_prod_le_two_pow`: without zero divisors,
@@ -142,6 +142,15 @@ theorem abv_coeff_sum_C_mul_X_le [Semiring S] [PartialOrder S] {v : AbsoluteValu
   simp_rw [C_mul_X_eq_monomial]
   exact abv_coeff_sum_monomial_le
     (fun _ hi _ hj h ↦ hg hi hj (Finsupp.single_left_injective one_ne_zero h)) hB0 hw m
+
+/-- If every coefficient of the linear form `∑ j, C (r j) * X j` has absolute value at most `B`
+with `0 ≤ B`, then every polynomial coefficient of the linear form has absolute value at most
+`B`. -/
+theorem abv_coeff_linearForm_le [Fintype σ] [Semiring S] [PartialOrder S]
+    {v : AbsoluteValue R S} {r : σ → R} {B : S}
+    (hB0 : 0 ≤ B) (hr : ∀ j, v (r j) ≤ B) (m : σ →₀ ℕ) :
+    v ((∑ j, C (r j) * X j : MvPolynomial σ R).coeff m) ≤ B :=
+  abv_coeff_sum_C_mul_X_le Function.injective_id.injOn hB0 (fun j _ ↦ hr j) m
 
 /-- If the coefficients of `p` and `q` are bounded by `r` and `s` under an absolute value `v`,
 then each coefficient of `p * q` is bounded by `#p.support * (r * s)`. -/

@@ -54,16 +54,6 @@ section AbsoluteValue
 
 variable {σ κ ι R S : Type*} [CommSemiring R]
 
-private theorem card_support_linearForm_le [Fintype σ] (r : σ → R) :
-    #(∑ j, C (r j) * X j : MvPolynomial σ R).support ≤ Fintype.card σ :=
-  (card_support_sum_C_mul_X_le univ r id).trans_eq card_univ
-
-private theorem abv_coeff_linearForm_le [Fintype σ] [Semiring S] [PartialOrder S]
-    {v : AbsoluteValue R S} {r : σ → R} {B : S}
-    (hB0 : 0 ≤ B) (hr : ∀ j, v (r j) ≤ B) (m : σ →₀ ℕ) :
-    v ((∑ j, C (r j) * X j : MvPolynomial σ R).coeff m) ≤ B :=
-  abv_coeff_sum_C_mul_X_le Function.injective_id.injOn hB0 (fun j _ ↦ hr j) m
-
 private theorem card_support_blockLinearForm_le [Fintype ι] (A : ι → ι → R) (p : κ × ι) :
     #(blockLinearForm (fun _ ↦ A) p).support ≤ Fintype.card ι := by
   simpa only [blockLinearForm_apply] using
