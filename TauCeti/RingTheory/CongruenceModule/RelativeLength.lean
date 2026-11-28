@@ -63,6 +63,7 @@ private theorem mul_eq_smul_of_supported_single {x : X} {b : A}
     b * g = evalAt A x g • b := by
   apply Subtype.ext
   funext y
+  -- `A` is a subalgebra of functions, so multiplication evaluates pointwise.
   change evalAt A y b * evalAt A y g = evalAt A x g * evalAt A y b
   by_cases hy : y = x
   · subst y
@@ -80,9 +81,12 @@ private theorem smul_mem_torsionBySet_vanishingOn {Z : Finset X} {g : A}
   have hz : (k : A) * g = 0 := by
     apply Subtype.ext
     funext y
+    -- Evaluation of the product in `A` is pointwise multiplication.
     change evalAt A y k * evalAt A y g = 0
     by_cases hy : y ∈ Z
-    · rw [show evalAt A y k = 0 from k.property y hy, zero_mul]
+    · have hky : evalAt A y k = 0 := by
+        simpa [evalAt] using k.property y hy
+      rw [hky, zero_mul]
     · rw [mem_supportIdeal.mp hg y hy, mul_zero]
   rw [hz, zero_smul]
 
@@ -105,26 +109,9 @@ private theorem mem_torsionBySet_supportIdeal_insert [DecidableEq X] [IsDomain O
       rw [mul_comm (evalAt A x b), sub_self]
     · rw [hb y hyx, mem_supportIdeal.mp hg y (by simp [hyx, hy]), mul_zero, mul_zero, sub_self]
   have h := hm ⟨d, hd⟩
-  change (evalAt A x b • g - evalAt A x g • b) • m = 0 at h
+  simp only [d] at h
   rw [sub_smul, smul_assoc, smul_assoc, hbm, smul_zero, sub_zero] at h
   exact (smul_eq_zero_iff_right hbx).mp h
-
-private theorem length_quotient_le_of_scalar_mem {N E : Type*} [IsDomain O]
-    [IsNoetherianRing O] [Ring.KrullDimLE 1 O] [AddCommGroup N] [Module O N] [Module.Finite O N]
-    [AddCommGroup E] [Module O E] [Module.Finite O E] [Module.IsTorsionFree O E]
-    (f : N →ₗ[O] E) (K : Submodule O N) (hker : LinearMap.ker f ≤ K) {a : O} (ha : a ≠ 0)
-    (hK : ∀ n : N, a • n ∈ K) :
-    Module.length O (N ⧸ K) ≤ (Module.finrank O E : ℕ∞) * Ring.ord O a := by
-  let e := f.quotKerEquivRange
-  let : Module.IsTorsionFree O (N ⧸ LinearMap.ker f) :=
-    e.injective.moduleIsTorsionFree _ (map_smul e)
-  rw [← ((LinearMap.ker f).quotientQuotientEquivQuotient K hker).length_eq]
-  refine (length_quotient_le_finrank_mul_ord ha ?_).trans ?_
-  · rintro ⟨n⟩
-    exact ⟨a • n, hK n, map_smul _ _ _⟩
-  · gcongr
-    exact (f.range.subtype.comp e.toLinearMap).finrank_le_finrank_of_injective
-      (f.range.injective_subtype.comp e.injective)
 
 variable [IsDomain O] [IsDiscreteValuationRing O] [Module.Finite O M]
   [Module.IsTorsionFree O M]
@@ -161,6 +148,7 @@ private theorem length_coordinate_step [DecidableEq X] {Z S : Finset X} {x : X} 
     intro n
     apply (mem_torsionBySet_iff _ _).mpr
     intro k
+    -- The torsion predicate acts on the underlying `M` element of `n : N`.
     change (k : A) • (b • (n : M)) = 0
     rw [← mul_smul, mul_comm, mul_eq_smul_of_supported_single hb]
     have hk : evalAt A x k = 0 := k.property
@@ -170,6 +158,7 @@ private theorem length_coordinate_step [DecidableEq X] {Z S : Finset X} {x : X} 
     apply mem_torsionBySet_supportIdeal_insert hb hbx n.property
     exact congrArg Subtype.val (LinearMap.mem_ker.mp hn)
   let K := (N' ⊔ N ⊓ P).comap N.subtype
+  -- These lets abbreviate the source quotient and the scalar ideal for the generic length bound.
   change Module.length O (N ⧸ K) ≤ (Module.finrank O E : ℕ∞) * Module.length O (O ⧸ I)
   rw [← IsPrincipal.span_singleton_generator I]
   refine length_quotient_le_of_scalar_mem f K (hk.trans (comap_mono le_sup_left)) ha fun n ↦ ?_
@@ -180,6 +169,7 @@ private theorem length_coordinate_step [DecidableEq X] {Z S : Finset X} {x : X} 
   have hdiff : IsPrincipal.generator I • n - gn ∈ LinearMap.ker f := by
     rw [LinearMap.mem_ker]
     apply Subtype.ext
+    -- `f` is scalar multiplication by `b` with codomain restricted to `E`; `gn` lifts `g • n`.
     change b • (IsPrincipal.generator I • (n : M) - g • (n : M)) = 0
     rw [smul_sub, smul_comm b, ← mul_smul, mul_eq_smul_of_supported_single hb, smul_assoc,
       hga, sub_self]
@@ -224,12 +214,14 @@ theorem length_quot_annihilators_le_sum_rank_mul_relCongruence
   have htop : T ∅ = ⊤ := by
     have he : (supportIdeal A ∅ : Set A) = {0} := by
       ext f
+      -- Membership in the coerced set unfolds to submodule membership here.
       change f ∈ supportIdeal A ∅ ↔ f = 0
       rw [mem_supportIdeal]
       exact ⟨fun hf ↦ Subtype.ext (funext fun x ↦ hf x (Finset.notMem_empty x)),
         fun hf _ _ ↦ hf ▸ map_zero _⟩
     apply eq_top_iff.mpr
     intro m _
+    -- `T` is the torsion submodule with scalars restricted from `A` to `O`.
     change m ∈ torsionBySet A M (supportIdeal A ∅)
     simp [he, mem_torsionBy_iff]
   have hz : (T Z).map P.mkQ = ⊥ := by
