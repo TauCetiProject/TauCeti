@@ -114,9 +114,10 @@ theorem sum_dart_eq_sum_edgeFinset {M : Type*} [AddCommMonoid M] (f : V → V �
     fun d _ ↦ mem_edgeFinset.2 d.edge_mem]
   refine Finset.sum_congr rfl fun e he ↦ ?_
   induction e using Sym2.ind with | _ x y =>
-  let d : G.Dart := ⟨(x, y), mem_edgeFinset.1 he⟩
-  rw [show s(x, y) = d.edge from rfl, d.edge_fiber, Finset.sum_pair d.ne_symm]
-  rfl
+  have hxy : G.Adj x y := mem_edgeFinset.1 he
+  rw [Sym2.lift_mk, ← Dart.edge_mk (p := (x, y)) hxy, Dart.edge_fiber,
+    Finset.sum_pair (Dart.ne_symm _)]
+  simp
 
 variable (G) in
 /-- The double sum of `f i j` over the ordered pairs of adjacent vertices is the sum of

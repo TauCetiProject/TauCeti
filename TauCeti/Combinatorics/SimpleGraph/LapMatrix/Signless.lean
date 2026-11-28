@@ -19,7 +19,7 @@ quadratic form is `uᵀ Q u = ∑_{xy ∈ E} (u_x + u_y)²`. Hence `Q` is positi
 
 With the unsigned incidence matrix `U` (the columns of Mathlib's `incMatrix` at the edges),
 `Q = U Uᵀ`. For a proper `2`-colouring with sign matrix `S = diag(±1)`, `S L S = Q`, where `L` is
-the Laplacian; so the Laplacian and the signless Laplacian of a bipartite graph are similar.
+the Laplacian.
 
 ## Main definitions
 
@@ -44,10 +44,12 @@ the Laplacian; so the Laplacian and the signless Laplacian of a bipartite graph 
 
 ## References
 
-* A. E. Brouwer and W. H. Haemers, *Spectra of Graphs*, Springer Universitext (2012), §1.1 and
-  the proof of Proposition 1.3.10.
+* A. E. Brouwer and W. H. Haemers, *Spectra of Graphs*, Springer Universitext (2012), §1.1, p. 1,
+  and the proof of Proposition 1.3.10, p. 8.
+* R. B. Bapat, *Graphs and Matrices*, 2nd ed., Springer Universitext (2014), introduction to
+  Chapter 7, p. 87, and Lemma 7.7, p. 93.
 * D. Cvetković, P. Rowlinson and S. Simić, *An Introduction to the Theory of Graph Spectra*,
-  Cambridge University Press (2010), §7.8.
+  LMS Student Texts 75, Cambridge University Press (2010), Theorem 7.8.1, p. 217.
 -/
 
 public section
@@ -154,20 +156,28 @@ theorem unsignedIncMatrix_apply {R : Type*} [Zero R] [One R] (x : V) (e : G.edge
   (rfl)
 
 /-- The unsigned incidence matrix `U` satisfies `U Uᵀ = Q`. -/
-theorem unsignedIncMatrix_mul_transpose (R : Type*) [Semiring R] :
+theorem unsignedIncMatrix_mul_transpose (R : Type*) [NonAssocSemiring R] :
     G.unsignedIncMatrix R * (G.unsignedIncMatrix R)ᵀ = G.signlessLapMatrix R := by
   ext i j
-  have key := congrFun₂ (G.incMatrix_mul_transpose (R := R)) i j
-  rw [Matrix.mul_apply] at key ⊢
-  simp only [transpose_apply, unsignedIncMatrix_apply] at key ⊢
-  rw [← sum_subtype G.edgeFinset (fun _ ↦ mem_edgeFinset)
-    (fun e ↦ G.incMatrix R i e * G.incMatrix R j e), sum_subset (subset_univ _) fun e _ he ↦ ?_,
-    key]
-  · rcases eq_or_ne i j with rfl | hij
-    · simp
-    · simp [signlessLapMatrix_apply_of_ne _ hij, hij, adjMatrix_apply]
-  · rw [incMatrix_of_notMem_incidenceSet, zero_mul]
+  have hsum : (G.unsignedIncMatrix R * (G.unsignedIncMatrix R)ᵀ) i j =
+      (G.incMatrix R * (G.incMatrix R)ᵀ) i j := by
+    simp only [Matrix.mul_apply, transpose_apply, unsignedIncMatrix_apply]
+    rw [← sum_subtype G.edgeFinset (fun _ ↦ mem_edgeFinset)
+      (fun e ↦ G.incMatrix R i e * G.incMatrix R j e)]
+    refine sum_subset (subset_univ _) fun e _ he ↦ ?_
+    rw [incMatrix_of_notMem_incidenceSet, zero_mul]
     exact fun h ↦ he (mem_edgeFinset.2 h.1)
+  rw [hsum]
+  rcases eq_or_ne i j with rfl | hij
+  · rw [incMatrix_mul_transpose_diag, signlessLapMatrix_apply_self]
+  rw [signlessLapMatrix_apply_of_ne _ hij, adjMatrix_apply, Matrix.mul_apply]
+  simp only [transpose_apply, incMatrix_apply_mul_incMatrix_apply]
+  split_ifs with ha
+  · rw [G.incidenceSet_inter_incidenceSet_of_adj ha, sum_eq_single s(i, j)
+      (fun e _ he ↦ Set.indicator_of_notMem he _) (fun h ↦ (h (mem_univ _)).elim)]
+    simp
+  · rw [G.incidenceSet_inter_incidenceSet_of_not_adj ha hij]
+    simp
 
 /-- **Sign conjugation.** For a proper `2`-colouring `c` with sign matrix
 `S = diag(if c x then -1 else 1)`, the conjugate `S L S` of the Laplacian is the signless
