@@ -42,6 +42,8 @@ kernel, so it is the projection `diag(1, 0)` in a basis adapted to the two.
 
 ## Main statements
 
+* `LinearMap.trace_mul_eq_trace_restrict_range`: for an idempotent `c`, invariance of its range
+  under `f` suffices for `trace (c * f) = trace (f|range c)`.
 * `TauCeti.LinearMap.trace_mul_eq_mul_trace_restrict_range`: if `c * c = a • c` and `f` commutes
   with `c`, then `trace (c * f) = a * trace (f|range c)`. Taking `c` to be the action of a
   quasi-idempotent of a group algebra computes the character of its image.
@@ -68,6 +70,24 @@ vanishes in `K`, the essentially idempotent `f` is nilpotent and both sides are 
 -/
 
 public section
+
+namespace LinearMap
+
+/-- If `f` preserves the image of the idempotent `e`, its trace there is the ambient trace of
+`e * f`. Commutation with `e` is not required. -/
+theorem trace_mul_eq_trace_restrict_range {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+    [FiniteDimensional K V] {e f : Module.End K V} (he : IsIdempotentElem e)
+    (hf : ∀ x ∈ range e, f x ∈ range e) :
+    trace K V (e * f) = trace K (range e) (f.restrict hf) := by
+  have hmem (x : V) : (e * f) x ∈ range e := ⟨f x, by simp⟩
+  have hres : (e * f).restrict (fun x _ ↦ hmem x) = f.restrict hf := by
+    refine LinearMap.ext fun x ↦ Subtype.ext ?_
+    rw [coe_restrict_apply, coe_restrict_apply, mul_apply_eq_comp]
+    exact (IsIdempotentElem.mem_range_iff he).mp (hf x x.property)
+  rw [← hres]
+  exact (trace_restrict_eq_of_forall_mem (range e) _ hmem).symm
+
+end LinearMap
 
 namespace TauCeti
 
