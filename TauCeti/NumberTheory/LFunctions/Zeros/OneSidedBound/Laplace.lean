@@ -37,6 +37,16 @@ namespace TauCeti.OneSidedBound
 
 variable {d q : ℕ} [Fact d.Prime] [NeZero q]
 
+/-- The logarithmic-derivative mean is meromorphic on `ℂ`. -/
+theorem meromorphic_logDerivMean : Meromorphic (logDerivMean d q) := by
+  let : NeZero (q * d) := ⟨Nat.mul_ne_zero (NeZero.ne q) (Fact.out : d.Prime).ne_zero⟩
+  simp_rw [funext (logDerivMean_def d q)]
+  intro s
+  refine ((MeromorphicAt.fun_sum (s := Finset.univ) fun ψ _ ↦ ?_).fun_sub
+    (MeromorphicAt.const _ _)).fun_div (MeromorphicAt.const _ _)
+  exact ((quadraticTwist d ψ).analyticAt_entireLFunction s).meromorphicAt.logDeriv.fun_sub
+    (ψ.analyticAt_entireLFunction s).meromorphicAt.logDeriv
+
 /-- The compensated mean is analytic wherever all the pole-removed L-functions in it are
 nonzero. In particular, this applies on `Re s ≥ 1`. -/
 theorem analyticAt_logDerivMean {s : ℂ}

@@ -10,15 +10,17 @@ public import TauCeti.Analysis.Contour.Residue.Basic
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Entire
 public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Remainder
 import Mathlib.Analysis.Calculus.DSlope
-import TauCeti.Analysis.Calculus.LogDeriv
 import TauCeti.Analysis.Contour.Residue.Germ
-import TauCeti.Analysis.Contour.Residue.SimplePole
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.FiniteSum
+import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Laplace
 
 /-!
 # Poles of the one-sided prime remainder transform
 
-For the signed mean of logarithmic derivatives `G_q`, the continued transform of the
-normalized first Riesz remainder has germ `(G_q(z) / z - G_q(1)) / (z - 1)`. The point `1`
+This file studies the meromorphic normal form of `(G_q(z) / z - G_q(1)) / (z - 1)`, where
+`G_q` is the signed mean of logarithmic derivatives. For an odd prime `d` coprime to `q`,
+`TauCeti.OneSidedBound.hasLaplace_primeRemainder` identifies the quotient on `Re z > 1`
+with the Laplace transform of the normalized first Riesz remainder at `z - 1`. The point `1`
 is removable. Away from `0` and `1`, the only possible poles are simple, and the residue
 is the difference of the total untwisted and twisted zero multiplicities divided by
 `φ(q) z (1 - z)`. Where the twists do not vanish, the untwisted zeros cannot cancel, and
@@ -42,29 +44,20 @@ variable (d q : ℕ) [Fact d.Prime] [NeZero q]
 local instance : NeZero (q * d) :=
   ⟨Nat.mul_ne_zero (NeZero.ne q) (Fact.out : d.Prime).ne_zero⟩
 
-/-- The meromorphic normal form of `(G_q(z) / z - G_q(1)) / (z - 1)`, the expression for
-    the continued Laplace transform of `v ↦ R_q(exp v)` at `z - 1`. -/
+/-- The meromorphic normal form of `(G_q(z) / z - G_q(1)) / (z - 1)`. -/
 noncomputable def primeRemainderTransform : ℂ → ℂ :=
   toMeromorphicNFOn (fun z ↦ (logDerivMean d q z / z - logDerivMean d q 1) / (z - 1)) univ
 
-/-- The continued transform is meromorphic in normal form. -/
+/-- The transform expression is meromorphic in normal form. -/
 theorem meromorphicNFOn_primeRemainderTransform :
     MeromorphicNFOn (primeRemainderTransform d q) univ :=
   meromorphicNFOn_toMeromorphicNFOn _ _
 
-private theorem meromorphic_logDerivMean : Meromorphic (logDerivMean d q) := by
-  simp_rw [funext (logDerivMean_def d q)]
-  intro s
-  refine ((MeromorphicAt.fun_sum (s := Finset.univ) fun ψ _ ↦ ?_).fun_sub
-    (MeromorphicAt.const _ _)).fun_div (MeromorphicAt.const _ _)
-  exact ((quadraticTwist d ψ).analyticAt_entireLFunction s).meromorphicAt.logDeriv.fun_sub
-    (ψ.analyticAt_entireLFunction s).meromorphicAt.logDeriv
-
-/-- The defining quotient represents the punctured germ of the continued transform. -/
+/-- The defining quotient represents the punctured germ of the transform expression. -/
 theorem primeRemainderTransform_eventuallyEq (s : ℂ) :
     primeRemainderTransform d q =ᶠ[𝓝[≠] s]
       fun z ↦ (logDerivMean d q z / z - logDerivMean d q 1) / (z - 1) := by
-  have h := meromorphic_logDerivMean d q
+  have h := meromorphic_logDerivMean (d := d) (q := q)
   have hq : Meromorphic (fun z ↦ (logDerivMean d q z / z - logDerivMean d q 1) / (z - 1)) := by
     fun_prop
   exact (meromorphicOn_univ.mpr hq).toMeromorphicNFOn_eq_self_on_nhdsNE (mem_univ s)
@@ -72,14 +65,9 @@ theorem primeRemainderTransform_eventuallyEq (s : ℂ) :
 private theorem primeRemainderTransform_analyticGerm {s : ℂ} (hs : 1 ≤ s.re) :
     AnalyticAt ℂ (primeRemainderTransform d q) s ∧
       primeRemainderTransform d q =ᶠ[𝓝 s] dslope (fun z ↦ logDerivMean d q z / z) 1 := by
-  have ha : AnalyticAt ℂ (fun z ↦ logDerivMean d q z / z) s := by
-    simp_rw [logDerivMean_def d q]
-    refine ((Finset.analyticAt_fun_sum Finset.univ fun ψ _ ↦ ?_).fun_sub analyticAt_const |>.fun_div
-      analyticAt_const (Nat.cast_ne_zero.mpr (Nat.totient_pos.mpr (NeZero.pos q)).ne')).fun_div
+  have ha : AnalyticAt ℂ (fun z ↦ logDerivMean d q z / z) s :=
+    (analyticAt_logDerivMean_of_one_le_re (d := d) (q := q) hs).fun_div
       analyticAt_id (ne_zero_of_re_pos (zero_lt_one.trans_le hs))
-    exact (((quadraticTwist d ψ).analyticAt_entireLFunction s).logDeriv
-      ((quadraticTwist d ψ).entireLFunction_ne_zero_of_one_le_re hs)).fun_sub
-      ((ψ.analyticAt_entireLFunction s).logDeriv (ψ.entireLFunction_ne_zero_of_one_le_re hs))
   have hd := ha.dslope 1
   have hnf := meromorphicNFOn_primeRemainderTransform d q (mem_univ s)
   have he := (hnf.eventuallyEq_nhdsNE_iff_eventuallyEq_nhds hd.meromorphicNFAt).mp <|
@@ -92,7 +80,7 @@ private theorem primeRemainderTransform_analyticGerm {s : ℂ} (hs : 1 ≤ s.re)
       rw [dslope_of_ne _ hz, slope_def_field, div_one]
   exact ⟨hd.congr he.symm, he⟩
 
-/-- The continued transform is analytic on `Re s ≥ 1`; in particular `1` is removable. -/
+/-- The transform expression is analytic on `Re s ≥ 1`; in particular `1` is removable. -/
 theorem analyticAt_primeRemainderTransform_of_one_le_re {s : ℂ} (hs : 1 ≤ s.re) :
     AnalyticAt ℂ (primeRemainderTransform d q) s :=
   (primeRemainderTransform_analyticGerm d q hs).1
@@ -103,42 +91,57 @@ theorem primeRemainderTransform_eq_dslope {s : ℂ} (hs : 1 ≤ s.re) :
     primeRemainderTransform d q s = dslope (fun z ↦ logDerivMean d q z / z) 1 s :=
   (primeRemainderTransform_analyticGerm d q hs).2.eq_of_nhds
 
-/-- Multiplying out the polar factor leaves the signed sum of vanishing orders, divided
-    by the first Riesz denominator and the number of characters. -/
-private theorem tendsto_sub_mul_primeRemainderTransform {s : ℂ} (h₀ : s ≠ 0) :
-    Tendsto (fun z ↦ (z - s) * primeRemainderTransform d q z) (𝓝[≠] s)
-      (𝓝 ((∑ ψ : DirichletCharacter ℂ q, ((analyticOrderNatAt ψ.entireLFunction s : ℂ) -
-        (analyticOrderNatAt (quadraticTwist d ψ).entireLFunction s : ℂ))) /
-        ((Nat.totient q : ℂ) * s * (1 - s)))) := by
-  have hz : Tendsto (fun z : ℂ ↦ z) (𝓝[≠] s) (𝓝 s) := nhdsWithin_le_nhds
-  have hs : Tendsto (fun z ↦ z - s) (𝓝[≠] s) (𝓝 0) := by simpa using hz.sub_const s
-  rcases eq_or_ne s 1 with rfl | h₁
-  · have h := analyticAt_primeRemainderTransform_of_one_le_re d q (s := 1) (by simp)
-    have ht : Tendsto (primeRemainderTransform d q) (𝓝[≠] 1)
-        (𝓝 (primeRemainderTransform d q 1)) :=
-      h.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
-    simpa using hs.mul ht
-  have hsum := tendsto_finsetSum (Finset.univ : Finset (DirichletCharacter ℂ q)) fun ψ _ ↦
-    ((quadraticTwist d ψ).tendsto_sub_mul_logDeriv_entireLFunction s).sub
-      (ψ.tendsto_sub_mul_logDeriv_entireLFunction s)
-  have hmean := (hsum.sub hs).div_const (Nat.totient q : ℂ)
-  have hlim := ((hmean.div hz h₀).sub (hs.mul_const (logDerivMean d q 1))).div
-    (hz.sub_const 1) (sub_ne_zero.mpr h₁)
-  simp only [sub_zero, zero_mul, ← div_mul_eq_div_div] at hlim
-  have hneg (a b : ℂ) : a / b = -a / -b := by rw [neg_div_neg_eq]
-  rw [hneg _ (_ * (s - 1)), ← Finset.sum_neg_distrib, ← mul_neg, neg_sub] at hlim
-  simp only [neg_sub] at hlim
-  refine hlim.congr' ?_
-  filter_upwards [primeRemainderTransform_eventuallyEq d q s] with z hz'
-  rw [hz', logDerivMean_def d q z]
-  simp only [← mul_div_assoc, mul_sub, Finset.mul_sum, mul_one]
-  rfl
+/-- The constant `-1` in the numerator of `G_q` contributes the reciprocal term. -/
+private theorem primeRemainderTransform_eventuallyEq_rieszRemainderMellin (s : ℂ) :
+    primeRemainderTransform d q =ᶠ[𝓝[≠] s]
+      (q.totient : ℂ)⁻¹ • (((∑ ψ : DirichletCharacter ℂ q,
+        rieszRemainderMellin ψ.entireLFunction) - (∑ ψ : DirichletCharacter ℂ q,
+        rieszRemainderMellin (quadraticTwist d ψ).entireLFunction)) + fun z : ℂ ↦ z⁻¹) := by
+  have hterm {L : ℂ → ℂ} (hL : Meromorphic L) (ha : AnalyticAt ℂ L 1) (h₁ : L 1 ≠ 0) :
+      rieszRemainderMellin L =ᶠ[𝓝[≠] s]
+        fun z ↦ (z * logDeriv L 1 - logDeriv L z) / (z * (z - 1)) := by
+    have hord := ha.meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mpr h₁
+    simpa [hord, ha.logDerivFinitePart_eq_logDeriv h₁] using hL.rieszRemainderMellin_eventuallyEq s
+  have hu := (Finset.univ : Finset (DirichletCharacter ℂ q)).eventually_all.mpr
+    fun ψ _ ↦ hterm (fun z ↦ (ψ.analyticAt_entireLFunction z).meromorphicAt)
+      (ψ.analyticAt_entireLFunction 1) (ψ.entireLFunction_ne_zero_of_one_le_re (by simp))
+  have ht := (Finset.univ : Finset (DirichletCharacter ℂ q)).eventually_all.mpr
+    fun ψ _ ↦ hterm (fun z ↦ ((quadraticTwist d ψ).analyticAt_entireLFunction z).meromorphicAt)
+      ((quadraticTwist d ψ).analyticAt_entireLFunction 1)
+      ((quadraticTwist d ψ).entireLFunction_ne_zero_of_one_le_re (by simp))
+  have hne (a : ℂ) : ∀ᶠ z in 𝓝[≠] s, z ≠ a := by
+    rcases eq_or_ne s a with rfl | h
+    · exact self_mem_nhdsWithin
+    · exact eventually_ne_nhdsWithin h
+  filter_upwards [primeRemainderTransform_eventuallyEq d q s, hu, ht, hne 0, hne 1]
+    with z hz hu ht hz₀ hz₁
+  rw [hz, logDerivMean_def, logDerivMean_def]
+  simp only [Pi.smul_apply, smul_eq_mul, Pi.add_apply, Pi.sub_apply, Finset.sum_apply]
+  rw [Finset.sum_congr rfl hu, Finset.sum_congr rfl ht]
+  simp only [← Finset.sum_div, Finset.sum_sub_distrib, ← Finset.mul_sum]
+  field_simp [sub_ne_zero.mpr hz₁]
+  ring
 
-/-- Away from `0` the continued transform has at most a simple pole. -/
+/-- Away from `0` the transform has at most a simple pole. -/
 theorem neg_one_le_meromorphicOrderAt_primeRemainderTransform {s : ℂ} (h₀ : s ≠ 0) :
-    -1 ≤ meromorphicOrderAt (primeRemainderTransform d q) s :=
-  Contour.neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul
-    (tendsto_sub_mul_primeRemainderTransform d q h₀)
+    -1 ≤ meromorphicOrderAt (primeRemainderTransform d q) s := by
+  have hφ : (q.totient : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne _)
+  have hu (ψ : DirichletCharacter ℂ q) : Meromorphic ψ.entireLFunction :=
+    fun z ↦ (ψ.analyticAt_entireLFunction z).meromorphicAt
+  have ht (ψ : DirichletCharacter ℂ q) : Meromorphic (quadraticTwist d ψ).entireLFunction :=
+    fun z ↦ ((quadraticTwist d ψ).analyticAt_entireLFunction z).meromorphicAt
+  rw [meromorphicOrderAt_congr (primeRemainderTransform_eventuallyEq_rieszRemainderMellin d q s),
+    meromorphicOrderAt_const_smul_eq_meromorphicOrderAt (inv_ne_zero hφ)]
+  have hinv : AnalyticAt ℂ (fun z : ℂ ↦ z⁻¹) s := analyticAt_id.inv h₀
+  have hsum := neg_one_le_meromorphicOrderAt_sum_sub_rieszRemainderMellin
+    (t := Finset.univ) (u := Finset.univ) (fun ψ _ ↦ hu ψ) (fun ψ _ ↦ ht ψ) h₀
+  have hinv' : -1 ≤ meromorphicOrderAt (fun z : ℂ ↦ z⁻¹) s :=
+    (by decide : (-1 : WithTop ℤ) ≤ 0).trans hinv.meromorphicOrderAt_nonneg
+  exact (le_min hsum hinv').trans
+    (meromorphicOrderAt_add
+      ((MeromorphicAt.sum fun ψ _ ↦ meromorphicAt_rieszRemainderMellin ψ.entireLFunction s).sub
+        (MeromorphicAt.sum fun ψ _ ↦ meromorphicAt_rieszRemainderMellin
+          (quadraticTwist d ψ).entireLFunction s)) hinv.meromorphicAt)
 
 /-- The residue is the total untwisted vanishing order minus the total twisted vanishing
     order, scaled by `1 / (φ(q) s (1 - s))`. -/
@@ -146,10 +149,34 @@ theorem residue_primeRemainderTransform {s : ℂ} (h₀ : s ≠ 0) :
     Contour.residue (primeRemainderTransform d q) s =
       (∑ ψ : DirichletCharacter ℂ q, ((analyticOrderNatAt ψ.entireLFunction s : ℂ) -
         (analyticOrderNatAt (quadraticTwist d ψ).entireLFunction s : ℂ))) /
-        ((Nat.totient q : ℂ) * s * (1 - s)) :=
-  Contour.residue_eq_of_tendsto_sub_mul
-    (meromorphicNFOn_primeRemainderTransform d q (mem_univ s)).meromorphicAt
-    (tendsto_sub_mul_primeRemainderTransform d q h₀)
+        ((Nat.totient q : ℂ) * s * (1 - s)) := by
+  let U := fun ψ : DirichletCharacter ℂ q ↦ ψ.entireLFunction
+  let T := fun ψ : DirichletCharacter ℂ q ↦ (quadraticTwist d ψ).entireLFunction
+  have hu (ψ : DirichletCharacter ℂ q) (z : ℂ) : AnalyticAt ℂ (U ψ) z :=
+    ψ.analyticAt_entireLFunction z
+  have ht (ψ : DirichletCharacter ℂ q) (z : ℂ) : AnalyticAt ℂ (T ψ) z :=
+    (quadraticTwist d ψ).analyticAt_entireLFunction z
+  have hm (L : DirichletCharacter ℂ q → ℂ → ℂ) :
+      MeromorphicAt (∑ ψ, rieszRemainderMellin (L ψ)) s :=
+    MeromorphicAt.sum fun ψ _ ↦ meromorphicAt_rieszRemainderMellin (L ψ) s
+  have hsum (L : DirichletCharacter ℂ q → ℂ → ℂ) (hL : ∀ ψ z, AnalyticAt ℂ (L ψ) z) :
+      Contour.residue (∑ ψ, rieszRemainderMellin (L ψ)) s =
+        (∑ ψ, (analyticOrderNatAt (L ψ) s : ℂ)) / (s * (1 - s)) := by
+    have hr := residue_sum_rieszRemainderMellin (t := Finset.univ) (L := L)
+      (fun _ ↦ 1) (fun ψ _ z ↦ (hL ψ z).meromorphicAt) h₀
+    have hord (ψ : DirichletCharacter ℂ q) :
+        ((meromorphicOrderAt (L ψ) s).untop₀ : ℂ) = analyticOrderNatAt (L ψ) s := by
+      rw [(hL ψ s).meromorphicOrderAt_eq, analyticOrderNatAt]
+      cases analyticOrderAt (L ψ) s <;> simp
+    simpa [hord] using hr
+  have hinv : AnalyticAt ℂ (fun z : ℂ ↦ z⁻¹) s := analyticAt_id.inv h₀
+  rw [Contour.residue_congr_nhdsNE
+      (primeRemainderTransform_eventuallyEq_rieszRemainderMellin d q s),
+    Contour.residue_const_smul, Contour.residue_add ((hm U).sub (hm T)) hinv.meromorphicAt,
+    Contour.residue_sub (hm U) (hm T), Contour.residue_eq_zero_of_analyticAt hinv,
+    add_zero, hsum U hu, hsum T ht, ← sub_div, ← Finset.sum_sub_distrib, smul_eq_mul]
+  simp only [U, T, div_eq_mul_inv, mul_inv]
+  ring
 
 private theorem residue_eq_sum_order_of_twists_ne_zero {s : ℂ} (h₀ : s ≠ 0)
     (ht : ∀ ψ : DirichletCharacter ℂ q, (quadraticTwist d ψ).entireLFunction s ≠ 0) :
@@ -162,7 +189,7 @@ private theorem residue_eq_sum_order_of_twists_ne_zero {s : ℂ} (h₀ : s ≠ 0
   simp only [hψ, Nat.cast_zero, sub_zero]
 
 /-- At a nonzero point where none of the twisted entire functions vanish, a pole of the
-    continued transform detects a zero of an untwisted entire function, and conversely. -/
+    transform detects a zero of an untwisted entire function, and conversely. -/
 theorem meromorphicOrderAt_primeRemainderTransform_neg_iff {s : ℂ} (h₀ : s ≠ 0)
     (ht : ∀ ψ : DirichletCharacter ℂ q, (quadraticTwist d ψ).entireLFunction s ≠ 0) :
     meromorphicOrderAt (primeRemainderTransform d q) s < 0 ↔
@@ -171,8 +198,7 @@ theorem meromorphicOrderAt_primeRemainderTransform_neg_iff {s : ℂ} (h₀ : s �
   · have h := analyticAt_primeRemainderTransform_of_one_le_re d q (s := 1) (by simp)
     exact iff_of_false (not_lt.mpr h.meromorphicOrderAt_nonneg) fun ⟨ψ, hψ⟩ ↦
       ψ.entireLFunction_ne_zero_of_one_le_re (by simp) hψ
-  have hφ : (Nat.totient q : ℂ) ≠ 0 := by
-    exact_mod_cast (Nat.totient_pos.mpr (NeZero.pos q)).ne'
+  have hφ : (q.totient : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne _)
   rw [Contour.meromorphicOrderAt_lt_zero_iff_residue_ne_zero
     (meromorphicNFOn_primeRemainderTransform d q (mem_univ s)).meromorphicAt
     (neg_one_le_meromorphicOrderAt_primeRemainderTransform d q h₀),
@@ -203,16 +229,14 @@ theorem re_residue_primeRemainderTransform_pos {σ : ℝ} (hσ : 0 < σ)
   rw [residue_eq_sum_order_of_twists_ne_zero d q h₀ ht] at hr ⊢
   have hsum : 0 < ∑ ψ : DirichletCharacter ℂ q, analyticOrderNatAt ψ.entireLFunction σ :=
     Nat.pos_of_ne_zero (Nat.cast_ne_zero.mp (div_ne_zero_iff.mp hr).1)
-  have hNum : (0 : ℝ) < ((∑ ψ : DirichletCharacter ℂ q,
-    analyticOrderNatAt ψ.entireLFunction σ : ℕ) : ℝ) := Nat.cast_pos.mpr hsum
-  have hDen : (0 : ℝ) < (q.totient : ℝ) * σ * (1 - σ) :=
-    mul_pos (mul_pos (Nat.cast_pos.mpr (Nat.totient_pos.mpr (NeZero.pos q))) hσ) (sub_pos.mpr h₁)
-  have heq := congrArg Complex.re (Complex.ofReal_div
-    ((∑ ψ : DirichletCharacter ℂ q, analyticOrderNatAt ψ.entireLFunction σ : ℕ) : ℝ)
-    ((q.totient : ℝ) * σ * (1 - σ)))
-  simp only [Complex.ofReal_mul, Complex.ofReal_sub, Complex.ofReal_one, Complex.ofReal_natCast,
-    Complex.ofReal_re] at heq
-  rw [← heq]
-  exact div_pos hNum hDen
+  calc
+    0 < ((∑ ψ : DirichletCharacter ℂ q, analyticOrderNatAt ψ.entireLFunction σ : ℕ) : ℝ) /
+        ((q.totient : ℝ) * σ * (1 - σ)) :=
+      div_pos (Nat.cast_pos.mpr hsum)
+        (mul_pos (mul_pos (Nat.cast_pos.mpr (NeZero.pos q.totient)) hσ) (sub_pos.mpr h₁))
+    _ = _ := by
+      refine (Complex.ofReal_re _).symm.trans ?_
+      push_cast
+      rfl
 
 end TauCeti.OneSidedBound
