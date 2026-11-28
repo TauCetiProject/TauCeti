@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.OpenImmersion
 
 /-!
-# Open immersions: ranges under base change and stalks
+# Open immersions: ranges, stalks, and sections
 
 In a cartesian square of schemes, the preimage of an open immersion's range is the
 range of the base-changed immersion.
@@ -23,6 +23,9 @@ exactly when it restricts to zero on the image `j ''ᵁ (j ⁻¹ᵁ W)`
 
 An open immersion out of an empty scheme has empty range
 (`AlgebraicGeometry.Scheme.Hom.opensRange_eq_bot_of_isEmpty`).
+
+If a section is an open immersion, its open image maps isomorphically to the base
+(`AlgebraicGeometry.Scheme.Hom.isIso_opensRange_ι_comp_of_comp_eq_id`).
 -/
 
 public section
@@ -63,5 +66,11 @@ lemma Hom.opensRange_eq_bot_of_isEmpty {U X : Scheme.{u}} [IsEmpty U] (j : U ⟶
     [IsOpenImmersion j] : j.opensRange = ⊥ := by
   ext
   simp [Scheme.Hom.coe_opensRange]
+
+/-- The open image of an open-immersion section maps isomorphically to the base. -/
+theorem Hom.isIso_opensRange_ι_comp_of_comp_eq_id {X S : Scheme.{u}} (s : S ⟶ X)
+    [IsOpenImmersion s] {f : X ⟶ S} (hs : s ≫ f = 𝟙 S) : IsIso (s.opensRange.ι ≫ f) := by
+  rw [← s.isoOpensRange_inv_comp, Category.assoc, hs, Category.comp_id]
+  infer_instance
 
 end AlgebraicGeometry.Scheme

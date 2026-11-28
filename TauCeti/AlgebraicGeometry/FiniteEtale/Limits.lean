@@ -169,6 +169,12 @@ noncomputable def clopenSubscheme (U : Y.obj.left.Opens) (hU : IsClosed (U : Set
   ⟨Over.mk (U.ι ≫ Y.obj.hom), (finiteEtaleSchemeProperty_iff _).mpr
     ⟨inferInstanceAs (IsFinite (U.ι ≫ Y.obj.hom)), inferInstanceAs (Etale (U.ι ≫ Y.obj.hom))⟩⟩
 
+/-- The underlying scheme over the base of a clopen subscheme is the open restriction. -/
+@[simp]
+theorem clopenSubscheme_obj (U : Y.obj.left.Opens) (hU : IsClosed (U : Set Y.obj.left)) :
+    (clopenSubscheme U hU).obj = Over.mk (U.ι ≫ Y.obj.hom) :=
+  (rfl)
+
 /-- The inclusion of an open and closed subscheme of a finite étale `S`-scheme `Y` into `Y`. -/
 noncomputable def clopenSubschemeι (U : Y.obj.left.Opens) (hU : IsClosed (U : Set Y.obj.left)) :
     clopenSubscheme U hU ⟶ Y :=
