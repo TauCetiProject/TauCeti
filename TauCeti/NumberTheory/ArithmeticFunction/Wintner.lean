@@ -15,7 +15,7 @@ import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.NumberTheory.Divisors
 
 /-!
-# The mean value of a divisor sum
+# Wintner's mean value estimate for divisor sums
 
 Let `g` be a function on the natural numbers with values in a real Banach space, and put
 `a(t) = ∑_{d ∣ t} g(d)`. If `∑_d ‖g(d)‖ / √d` converges, then `a` has the mean value
