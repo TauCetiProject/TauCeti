@@ -217,6 +217,21 @@ variable {t' : X.functionField} (ht' : Transcendental k t')
       (weilDifferentialOfSeparating hF ht').property
       (coe_weilDifferentialOfSeparating_ne_zero hF ht') (X.toPlace (k := k) (y : X)))
 
+include hK in
+omit [IsLocallyNoetherian X] [SheafOfModules.isInvertible X (X.relativeDifferentials k)] in
+/-- Subtracting `div(dt/dt')` from the divisor of `dt` gives the Weil orders of `dt'`. -/
+lemma coeff_sub_principalDivisor_derivativeOfSeparating [AlgebraicGeometry.IsNoetherian X]
+    (y : CodimensionOnePoint X) :
+    WeilDivisor.coeff (K - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor
+      (Additive.ofMul (Units.mk0 (derivativeOfSeparating ht' t)
+        (derivativeOfSeparating_ne_zero ht')))) y =
+      weilDifferentialOrder hF hk (weilDifferentialOfSeparating hF ht').property
+        (coe_weilDifferentialOfSeparating_ne_zero hF ht') (X.toPlace (k := k) (y : X)) := by
+  rw [SchemeWeilDivisor.coeff_sub_principalDivisor, hK, toMul_ofMul, Units.val_mk0,
+    ← CodimensionOnePoint.toPlace_ord (k := k),
+    Place.ord_derivativeOfSeparating_eq_sub _ hF hk ht' ht]
+  ring
+
 include hK hK' in
 omit [IsLocallyNoetherian X] [SheafOfModules.isInvertible X (X.relativeDifferentials k)] in
 /-- The divisors of `dt` and of `dt'` differ by the principal divisor of `dt/dt'`:
@@ -226,10 +241,20 @@ lemma eq_sub_principalDivisor_derivativeOfSeparating [IsNoetherian X] :
       (Additive.ofMul (Units.mk0 (derivativeOfSeparating ht' t)
         (derivativeOfSeparating_ne_zero ht'))) := by
   ext y
-  rw [hK', SchemeWeilDivisor.coeff_sub_principalDivisor, hK, toMul_ofMul, Units.val_mk0,
-    ← CodimensionOnePoint.toPlace_ord (k := k),
-    Place.ord_derivativeOfSeparating_eq_sub _ hF hk ht' ht]
-  ring
+  rw [hK', coeff_sub_principalDivisor_derivativeOfSeparating ht hF hk K hK ht']
+
+omit [IsLocallyNoetherian X]
+  [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
+  [SheafOfModules.isInvertible X (X.relativeDifferentials k)] in
+/-- Reading a rational differential in the basis `dt'` multiplies its coefficient in the
+basis `dt` by the separating derivative `dt/dt'`. -/
+private lemma differentialCoordinate_changeOfSeparating (η : Ω[X.functionField⁄k]) :
+    (kaehlerBasisOfSeparating ht').coord () η =
+      (kaehlerBasisOfSeparating ht).coord () η * derivativeOfSeparating ht' t := by
+  have hη := (differentialCoordinateEquiv ht).symm_apply_apply η
+  rw [differentialCoordinateEquiv_symm_apply, differentialCoordinateEquiv_apply] at hη
+  conv_lhs => rw [← hη]
+  simp only [map_smul, Module.Basis.coord_apply, kaehlerBasisOfSeparating_repr_D, smul_eq_mul]
 
 /-- **Change of separating function.** Reading a differential in the basis `dt'` instead of
 `dt` multiplies its rational coefficient by `dt/dt'`: going from `𝒪_X(K)` back to `Ω_{X/k}`
@@ -248,8 +273,9 @@ lemma relativeDifferentialsIsoDivisorSheaf_inv_hom_sheafι :
   · apply (Scheme.rationalFunctionsEquiv U).injective
     simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply,
       relativeDifferentialsIsoDivisorSheaf_hom_app, relativeDifferentialsIsoDivisorSheaf_inv_app,
-      Scheme.rationalFunctionsEquiv_rationalFunctionsMul_app, map_smul,
-      Module.Basis.coord_apply, kaehlerBasisOfSeparating_repr_D, smul_eq_mul]
+      Scheme.rationalFunctionsEquiv_rationalFunctionsMul_app,
+      differentialCoordinate_changeOfSeparating ht ht', map_smul, Module.Basis.coord_apply,
+      kaehlerBasisOfSeparating_repr_D, derivativeOfSeparating_self, smul_eq_mul, mul_one]
     exact mul_comm _ _
   · exact (Scheme.subsingleton_rationalFunctions U
       (TopologicalSpace.Opens.eq_bot_of_not_nonempty hU)).elim _ _
@@ -257,6 +283,37 @@ lemma relativeDifferentialsIsoDivisorSheaf_inv_hom_sheafι :
 end ChangeOfSeparatingFunction
 
 end Comparison
+
+section ShiftedDivisor
+
+variable [IsNoetherian X]
+  [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
+  [SheafOfModules.isInvertible X (X.relativeDifferentials k)]
+  (hF : IsFunctionField k X.functionField) (hk : IsIntegrallyClosedIn k X.functionField)
+  (hdim : ∀ y : X, coheight y ≤ 1) (K : SchemeWeilDivisor X)
+  (hK : ∀ y : CodimensionOnePoint X, WeilDivisor.coeff K y =
+    weilDifferentialOrder hF hk (weilDifferentialOfSeparating hF ht).property
+      (coe_weilDifferentialOfSeparating_ne_zero hF ht) (X.toPlace (k := k) (y : X)))
+  {t' : X.functionField} (ht' : Transcendental k t')
+  [Algebra.IsSeparable k⟮t'⟯ X.functionField]
+
+/-- Changing from `dt` to `dt'` on the sheaf of `K` is multiplication by `dt/dt'`
+into the sheaf of `K - div(dt/dt')`. The target divisor's coefficients follow from those
+of `K`. -/
+lemma relativeDifferentialsIsoDivisorSheaf_inv_hom_eq_sheafMul :
+    let g := Additive.ofMul
+      (Units.mk0 (derivativeOfSeparating ht' t) (derivativeOfSeparating_ne_zero ht'))
+    (relativeDifferentialsIsoDivisorSheaf ht hF hk hdim K hK).inv ≫
+      (relativeDifferentialsIsoDivisorSheaf ht' hF hk hdim
+        (K - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g)
+        (coeff_sub_principalDivisor_derivativeOfSeparating ht hF hk K hK ht')).hom =
+      SchemeWeilDivisor.sheafMul g K := by
+  dsimp only
+  rw [← cancel_mono (SchemeWeilDivisor.sheafι _), Category.assoc,
+    relativeDifferentialsIsoDivisorSheaf_inv_hom_sheafι, SchemeWeilDivisor.sheafMul_ι,
+    toMul_ofMul, Units.val_mk0]
+
+end ShiftedDivisor
 
 section ProperCurve
 
@@ -266,6 +323,24 @@ variable [IsNoetherian X] [X.IsSeparated]
   (hF : IsFunctionField k X.functionField) (hk : IsIntegrallyClosedIn k X.functionField)
   (hdim : ∀ y : X, coheight y ≤ 1)
   (hex : ValuativeCriterion.Existence (X ↘ Spec (.of k)))
+
+omit [AlgebraicGeometry.IsNoetherian X]
+  [SheafOfModules.isInvertible X (X.relativeDifferentials k)] in
+/-- The scheme Weil divisor of the differential of a separating rational function. -/
+def canonicalDivisorOfSeparating : SchemeWeilDivisor X :=
+  (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim).symm
+    (weilDifferentialDivisor hF hk (weilDifferentialOfSeparating hF ht).property
+      (coe_weilDifferentialOfSeparating_ne_zero hF ht))
+
+omit [AlgebraicGeometry.IsNoetherian X]
+  [SheafOfModules.isInvertible X (X.relativeDifferentials k)] in
+/-- The coefficient of the divisor of `dt` at a codimension-one point is its Weil order. -/
+lemma coeff_canonicalDivisorOfSeparating (y : CodimensionOnePoint X) :
+    WeilDivisor.coeff (canonicalDivisorOfSeparating ht hF hk hdim hex) y =
+      weilDifferentialOrder hF hk (weilDifferentialOfSeparating hF ht).property
+        (coe_weilDifferentialOfSeparating_ne_zero hF ht) (X.toPlace (k := k) (y : X)) := by
+  rw [canonicalDivisorOfSeparating, SchemeWeilDivisor.coeff_equivFunctionFieldDivisor_symm,
+    coeff_weilDifferentialDivisor]
 
 include hF hk hdim hex in
 /-- On a curve over an exact constant field with all the places of its function field, the
@@ -279,15 +354,12 @@ theorem nonempty_iso_relativeDifferentials_canonicalBundle :
   let ω := weilDifferentialOfSeparating hF ht
   have hω : (ω : Module.Dual k (repartitionSpace k X.functionField)) ≠ 0 :=
     coe_weilDifferentialOfSeparating_ne_zero hF ht
-  let K := (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim).symm
-    (weilDifferentialDivisor hF hk ω.property hω)
-  have hK (y : CodimensionOnePoint X) : WeilDivisor.coeff K y =
-      weilDifferentialOrder hF hk ω.property hω (X.toPlace (k := k) (y : X)) := by
-    simp only [K, SchemeWeilDivisor.coeff_equivFunctionFieldDivisor_symm,
-      coeff_weilDifferentialDivisor]
+  let K := canonicalDivisorOfSeparating ht hF hk hdim hex
+  have hK := coeff_canonicalDivisorOfSeparating ht hF hk hdim hex
   obtain ⟨e⟩ := InvertibleSheaf.nonempty_iso_canonicalBundle_sheaf hex hdim hF hk (K := K) (by
     dsimp only [K]
-    rw [(SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim).apply_symm_apply]
+    rw [canonicalDivisorOfSeparating,
+      (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim).apply_symm_apply]
     exact divisorClass_weilDifferentialDivisor hF hk ω.property hω)
   exact ⟨relativeDifferentialsIsoDivisorSheaf ht hF hk hdim K hK ≪≫ e.symm⟩
 

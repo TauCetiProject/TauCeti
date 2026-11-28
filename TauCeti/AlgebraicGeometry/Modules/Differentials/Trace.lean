@@ -17,20 +17,19 @@ and all the places of its function field. A separating rational function `t` ide
 annihilates the kernel of the repartition map, and hence defines a linear form on
 `H¹(X, Ω_{X/k})`.
 
-`relativeDifferentialsTrace` is this linear form, with the separating function and its divisor
-explicit. Its value on the class represented by `(a_P dt)_P` is the sum of the local
+`relativeDifferentialsResidueTrace` is this linear form. Its value on the class represented
+by `(a_P dt)_P` is the sum of the local
 components of the Kähler–Weil differentials `a_P dt`, evaluated at `1`. These local components
 of Weil differentials need no separability assumption on residue fields. Tate's residue
 theory is the reference for their interpretation as residues; this file proves the
 local-component formula.
 The trace is nonzero and is uniquely determined by its values on repartition classes.
 
-The trace does not depend on the separating function (`relativeDifferentialsTrace_eq`). For a
-second separating function `t'`, the chain rule `dt = (dt/dt') dt'` shows that the class of
-`(a_P dt)_P` is that of `((dt/dt') a_P dt')_P`, and that the Weil differential of `dt` is `dt/dt'`
-times that of `dt'`. Hence `relativeDifferentialsResidueTrace`, the trace built from a chosen
-separating function, is the residue trace `tr_{X/k}`, characterized by the residue formula for
-every separating function.
+For a second separating function `t'`, the chain rule `dt = (dt/dt') dt'` sends
+`(a_P dt)_P` to `((dt/dt') a_P dt')_P` in cohomology. The equality
+`weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul` identifies the two Weil
+differential pairings on these rescaled coefficients. Thus the residue trace `tr_{X/k}`
+has the same evaluation formula for every separating function.
 
 The normalized duality theorem is separate from this construction; for line bundles it is
 `InvertibleSheaf.bijective_residueTraceDualityHom` in
@@ -40,8 +39,6 @@ The normalized duality theorem is separate from this construction; for line bund
 
 * `isGreatest_weilDifferentialFiltration_equivFunctionFieldDivisor`: the divisor `K` of `dt`
   is the largest divisor bounding the Weil differential `dt`;
-* `relativeDifferentialsTrace`: the trace built from a separating function `t`;
-* `relativeDifferentialsTrace_eq`: it does not depend on `t`;
 * `relativeDifferentialsResidueTrace`: the residue trace `tr_{X/k}`, with
   `relativeDifferentialsResidueTrace_eq_finsum_residue`, the residue formula.
 
@@ -99,7 +96,7 @@ theorem isGreatest_weilDifferentialFiltration_equivFunctionFieldDivisor :
 
 /-- The trace on `H¹(X, Ω_{X/k})` obtained from the Weil differential `dt` and its divisor.
 The comparison with `𝒪_X(K)` transports the actual repartition linear form to cohomology. -/
-def relativeDifferentialsTrace :
+private def relativeDifferentialsTrace :
     Module.Dual k (Scheme.Modules.Cohomology (X.relativeDifferentials k) 1) :=
   ((SchemeWeilDivisor.cohomologyOneDualEquivWeilDifferentialFiltration hex hdim hF K).symm
     ⟨_, (isGreatest_weilDifferentialFiltration_equivFunctionFieldDivisor
@@ -140,8 +137,7 @@ theorem repartitionToRelativeDifferentialsCohomologyOne_surjective :
 
 /-- On a repartition representative, the trace is the Weil differential `dt` evaluated on
 its rational coefficients. -/
-@[simp]
-lemma relativeDifferentialsTrace_repartitionToRelativeDifferentialsCohomologyOne
+private lemma relativeDifferentialsTrace_repartitionToRelativeDifferentialsCohomologyOne
     (a : repartitionSpace k X.functionField) :
     relativeDifferentialsTrace ht hF hk hex hdim K hK
         (repartitionToRelativeDifferentialsCohomologyOne ht hF hk hex hdim K hK a) =
@@ -160,7 +156,7 @@ lemma relativeDifferentialsTrace_repartitionToRelativeDifferentialsCohomologyOne
 
 /-- The trace is the sum of the local components of `dt` evaluated on the repartition
 coefficients; these have finite support even when some residue fields are inseparable. -/
-theorem relativeDifferentialsTrace_eq_finsum
+private theorem relativeDifferentialsTrace_eq_finsum
     (a : repartitionSpace k X.functionField) :
     relativeDifferentialsTrace ht hF hk hex hdim K hK
         (repartitionToRelativeDifferentialsCohomologyOne ht hF hk hex hdim K hK a) =
@@ -172,7 +168,7 @@ theorem relativeDifferentialsTrace_eq_finsum
 
 /-- The residue formula on differential repartitions: each summand is the local component
 of the Weil differential attached to `a_P dt`, evaluated at `1`. -/
-theorem relativeDifferentialsTrace_eq_finsum_residue
+private theorem relativeDifferentialsTrace_eq_finsum_residue
     (a : repartitionSpace k X.functionField) :
     relativeDifferentialsTrace ht hF hk hex hdim K hK
         (repartitionToRelativeDifferentialsCohomologyOne ht hF hk hex hdim K hK a) =
@@ -189,7 +185,7 @@ theorem relativeDifferentialsTrace_eq_finsum_residue
     coe_weilDifferentialSpaceModule_smul, repartitionDualComponent_repartitionDualMul, mul_one]
 
 /-- The residue trace on first cohomology of relative differentials is nonzero. -/
-theorem relativeDifferentialsTrace_ne_zero :
+private theorem relativeDifferentialsTrace_ne_zero :
     relativeDifferentialsTrace ht hF hk hex hdim K hK ≠ 0 := by
   intro h
   apply coe_weilDifferentialOfSeparating_ne_zero hF ht
@@ -200,7 +196,7 @@ theorem relativeDifferentialsTrace_ne_zero :
   simpa only [h, LinearMap.zero_apply] using ha.symm
 
 /-- Values on differential repartitions uniquely determine the trace. -/
-theorem relativeDifferentialsTrace_unique
+private theorem relativeDifferentialsTrace_unique
     (φ : Module.Dual k (Scheme.Modules.Cohomology (X.relativeDifferentials k) 1))
     (hφ : ∀ a : repartitionSpace k X.functionField,
       φ (repartitionToRelativeDifferentialsCohomologyOne ht hF hk hex hdim K hK a) =
@@ -225,20 +221,26 @@ variable {t' : X.functionField} (ht' : Transcendental k t')
 theorem repartitionToRelativeDifferentialsCohomologyOne_eq_repartitionMul
     (a : repartitionSpace k X.functionField) :
     repartitionToRelativeDifferentialsCohomologyOne ht hF hk hex hdim K hK a =
-      repartitionToRelativeDifferentialsCohomologyOne ht' hF hk hex hdim K' hK'
+      repartitionToRelativeDifferentialsCohomologyOne ht' hF hk hex hdim
+        (K - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor
+          (Additive.ofMul (Units.mk0 (derivativeOfSeparating ht' t)
+            (derivativeOfSeparating_ne_zero ht'))))
+        (coeff_sub_principalDivisor_derivativeOfSeparating ht hF hk K hK ht')
         (repartitionMul hF (derivativeOfSeparating ht' t) a) := by
-  obtain rfl := eq_sub_principalDivisor_derivativeOfSeparating ht hF hk K hK ht' K' hK'
   set g : Additive X.functionFieldˣ := Additive.ofMul (Units.mk0 (derivativeOfSeparating ht' t)
     (derivativeOfSeparating_ne_zero ht'))
   have hg : ((Additive.toMul g : X.functionFieldˣ) : X.functionField) =
       derivativeOfSeparating ht' t := by
     rw [toMul_ofMul, Units.val_mk0]
-  -- Through `dt` and then `dt'`, the divisor sheaves are compared by multiplication by `dt/dt'`.
+  have hK' : ∀ y : CodimensionOnePoint X,
+      WeilDivisor.coeff (K - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) y =
+        weilDifferentialOrder hF hk (weilDifferentialOfSeparating hF ht').property
+          (coe_weilDifferentialOfSeparating_ne_zero hF ht') (X.toPlace (k := k) (y : X)) :=
+    coeff_sub_principalDivisor_derivativeOfSeparating ht hF hk K hK ht'
   have hφ : (relativeDifferentialsIsoDivisorSheaf ht hF hk hdim K hK).inv ≫
       (relativeDifferentialsIsoDivisorSheaf ht' hF hk hdim _ hK').hom =
-        SchemeWeilDivisor.sheafMul g K := by
-    rw [← cancel_mono (SchemeWeilDivisor.sheafι _), Category.assoc,
-      relativeDifferentialsIsoDivisorSheaf_inv_hom_sheafι, SchemeWeilDivisor.sheafMul_ι, hg]
+        SchemeWeilDivisor.sheafMul g K :=
+    relativeDifferentialsIsoDivisorSheaf_inv_hom_eq_sheafMul ht hF hk hdim K hK ht'
   have hR := cohomologyMap_repartitionToRelativeDifferentialsCohomologyOne ht' hF hk hex hdim _ hK'
     (repartitionMul hF (derivativeOfSeparating ht' t) a)
   rw [← Scheme.Modules.coe_cohomologyMapBaseLinear k X] at hR
@@ -255,13 +257,14 @@ theorem repartitionToRelativeDifferentialsCohomologyOne_eq_repartitionMul
 
 /-- **The residue trace does not depend on the separating function**: the traces built from two
 separating functions `t` and `t'` and the divisors of `dt` and `dt'` are equal. -/
-theorem relativeDifferentialsTrace_eq :
+private theorem relativeDifferentialsTrace_eq :
     relativeDifferentialsTrace ht hF hk hex hdim K hK =
       relativeDifferentialsTrace ht' hF hk hex hdim K' hK' := by
+  obtain rfl := eq_sub_principalDivisor_derivativeOfSeparating ht hF hk K hK ht' K' hK'
   refine (relativeDifferentialsTrace_unique ht hF hk hex hdim K hK _ fun a ↦ ?_).symm
   let := weilDifferentialSpaceModule hF
   rw [repartitionToRelativeDifferentialsCohomologyOne_eq_repartitionMul ht hF hk hex hdim K hK
-      ht' K' hK',
+      ht',
     relativeDifferentialsTrace_repartitionToRelativeDifferentialsCohomologyOne,
     weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul hF hk ht' ht,
     coe_weilDifferentialSpaceModule_smul, repartitionDualMul_apply_apply]
@@ -282,42 +285,28 @@ private instance isSeparable_residueTraceSeparating :
     Algebra.IsSeparable k⟮residueTraceSeparating hF⟯ X.functionField :=
   (exists_transcendental_and_isSeparable_adjoin_of_isInvertible hF).choose_spec.2
 
-/-- The divisor of `dt` for the separating function `t = residueTraceSeparating hF`. -/
-private def residueTraceDivisor : SchemeWeilDivisor X :=
-  (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim).symm
-    (weilDifferentialDivisor hF hk
-      (weilDifferentialOfSeparating hF (transcendental_residueTraceSeparating hF)).property
-      (coe_weilDifferentialOfSeparating_ne_zero hF (transcendental_residueTraceSeparating hF)))
-
-omit [AlgebraicGeometry.IsNoetherian X] in
-private lemma coeff_residueTraceDivisor (y : CodimensionOnePoint X) :
-    WeilDivisor.coeff (residueTraceDivisor hF hk hex hdim) y =
-      weilDifferentialOrder hF hk
-        (weilDifferentialOfSeparating hF (transcendental_residueTraceSeparating hF)).property
-        (coe_weilDifferentialOfSeparating_ne_zero hF (transcendental_residueTraceSeparating hF))
-        (X.toPlace (k := k) (y : X)) := by
-  simp only [residueTraceDivisor, SchemeWeilDivisor.coeff_equivFunctionFieldDivisor_symm,
-    coeff_weilDifferentialDivisor]
-
 /-- **The residue trace** `tr_{X/k} : H¹(X, Ω_{X/k}) → k` of an integral curve over an exact
 constant field, with invertible differentials and all the places of its function field: on the
 class represented by a repartition of differentials `(η_P)_P` it is the sum over the places `P`
-of the local components at `1` of the Weil differentials attached to the `η_P` (by Tate's theory,
-these are the `k`-valued residues of the `η_P`). It is
-`relativeDifferentialsTrace` for any separating function `t` and the divisor of `dt`
-(`relativeDifferentialsResidueTrace_eq`); a separating function exists because the
-differentials are invertible. -/
+of the local components at `1` of the Weil differentials attached to the `η_P`.
+Invertibility supplies a separating function, and the formula works with every separating
+function and the corresponding divisor of its differential. -/
 def relativeDifferentialsResidueTrace :
     Module.Dual k (Scheme.Modules.Cohomology (X.relativeDifferentials k) 1) :=
-  relativeDifferentialsTrace (transcendental_residueTraceSeparating hF) hF hk hex hdim
-    (residueTraceDivisor hF hk hex hdim) (coeff_residueTraceDivisor hF hk hex hdim)
+  let hv := transcendental_residueTraceSeparating hF
+  relativeDifferentialsTrace hv hF hk hex hdim
+    (canonicalDivisorOfSeparating hv hF hk hdim hex)
+    (coeff_canonicalDivisorOfSeparating hv hF hk hdim hex)
 
 /-- The residue trace is the trace built from any separating function `t` and the divisor
 of `dt`. -/
-theorem relativeDifferentialsResidueTrace_eq :
+private theorem relativeDifferentialsResidueTrace_eq_relativeDifferentialsTrace :
     relativeDifferentialsResidueTrace hF hk hex hdim =
       relativeDifferentialsTrace ht hF hk hex hdim K hK :=
-  relativeDifferentialsTrace_eq _ hF hk hex hdim _ _ ht K hK
+  let hv := transcendental_residueTraceSeparating hF
+  relativeDifferentialsTrace_eq hv hF hk hex hdim
+    (canonicalDivisorOfSeparating hv hF hk hdim hex)
+    (coeff_canonicalDivisorOfSeparating hv hF hk hdim hex) ht K hK
 
 /-- On the class of the repartition `(a_P dt)_P`, the residue trace is the Weil differential `dt`
 evaluated on the coefficients `(a_P)_P`. -/
@@ -328,12 +317,23 @@ theorem relativeDifferentialsResidueTrace_repartitionToRelativeDifferentialsCoho
         (repartitionToRelativeDifferentialsCohomologyOne ht hF hk hex hdim K hK a) =
       (weilDifferentialOfSeparating hF ht :
         Module.Dual k (repartitionSpace k X.functionField)) a := by
-  rw [relativeDifferentialsResidueTrace_eq ht hF hk hex hdim K hK,
+  rw [relativeDifferentialsResidueTrace_eq_relativeDifferentialsTrace ht hF hk hex hdim K hK,
     relativeDifferentialsTrace_repartitionToRelativeDifferentialsCohomologyOne]
 
-/-- **The residue formula.** On the class of the repartition of differentials `(a_P dt)_P`, the
-residue trace is the sum over the places `P` of the local components at `1` of the Weil
-differentials attached to `a_P dt` (by Tate's theory, the `k`-valued residues of `a_P dt`). -/
+/-- The residue trace of a repartition class sums the local components of the Weil
+differential of `dt` on the corresponding local coefficients. -/
+theorem relativeDifferentialsResidueTrace_eq_finsum
+    (a : repartitionSpace k X.functionField) :
+    relativeDifferentialsResidueTrace hF hk hex hdim
+        (repartitionToRelativeDifferentialsCohomologyOne ht hF hk hex hdim K hK a) =
+      ∑ᶠ P : Place k X.functionField,
+        repartitionDualComponent (weilDifferentialOfSeparating hF ht) P
+          ((a : Place k X.functionField → X.functionField) P) := by
+  rw [relativeDifferentialsResidueTrace_eq_relativeDifferentialsTrace ht hF hk hex hdim K hK,
+    relativeDifferentialsTrace_eq_finsum]
+
+/-- On the class of `(a_P dt)_P`, the residue trace sums the local components at `1` of
+the Weil differentials associated to `a_P dt`. -/
 theorem relativeDifferentialsResidueTrace_eq_finsum_residue
     (a : repartitionSpace k X.functionField) :
     relativeDifferentialsResidueTrace hF hk hex hdim
@@ -343,13 +343,29 @@ theorem relativeDifferentialsResidueTrace_eq_finsum_residue
           (kaehlerDifferentialEquivWeilDifferentialOfSeparating hF hk ht
             ((a : Place k X.functionField → X.functionField) P •
               KaehlerDifferential.D k X.functionField t)) P 1 := by
-  rw [relativeDifferentialsResidueTrace_eq ht hF hk hex hdim K hK,
+  rw [relativeDifferentialsResidueTrace_eq_relativeDifferentialsTrace ht hF hk hex hdim K hK,
     relativeDifferentialsTrace_eq_finsum_residue]
 
 /-- The residue trace is nonzero. -/
+@[simp]
 theorem relativeDifferentialsResidueTrace_ne_zero :
     relativeDifferentialsResidueTrace hF hk hex hdim ≠ 0 :=
-  relativeDifferentialsTrace_ne_zero _ hF hk hex hdim _ _
+  let hv := transcendental_residueTraceSeparating hF
+  relativeDifferentialsTrace_ne_zero hv hF hk hex hdim
+    (canonicalDivisorOfSeparating hv hF hk hdim hex)
+    (coeff_canonicalDivisorOfSeparating hv hF hk hdim hex)
+
+/-- Evaluation by the Weil differential associated to `dt` on all repartition classes
+characterizes the residue trace. -/
+theorem relativeDifferentialsResidueTrace_unique
+    (φ : Module.Dual k (Scheme.Modules.Cohomology (X.relativeDifferentials k) 1))
+    (hφ : ∀ a : repartitionSpace k X.functionField,
+      φ (repartitionToRelativeDifferentialsCohomologyOne ht hF hk hex hdim K hK a) =
+        (weilDifferentialOfSeparating hF ht :
+          Module.Dual k (repartitionSpace k X.functionField)) a) :
+    φ = relativeDifferentialsResidueTrace hF hk hex hdim := by
+  rw [relativeDifferentialsResidueTrace_eq_relativeDifferentialsTrace ht hF hk hex hdim K hK]
+  exact relativeDifferentialsTrace_unique ht hF hk hex hdim K hK φ hφ
 
 end
 

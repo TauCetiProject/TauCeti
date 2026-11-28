@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Germ
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Principal
 public import TauCeti.AlgebraicGeometry.Cohomology.Flasque
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.Data.DFinsupp.Basic
 public import Mathlib.Topology.Sheaves.LocallySurjective
 public import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
+import Mathlib.LinearAlgebra.Quotient.Basic
 
 /-!
 # The sheaf of principal parts of a Weil divisor
@@ -168,6 +170,91 @@ lemma principalPartMapOfLE_comp_apply {D E F : SchemeWeilDivisor X} (h : D ≤ E
     principalPartMapOfLE h' x (principalPartMapOfLE h x q) =
       principalPartMapOfLE (h.trans h') x q :=
   Submodule.factor_comp_apply (stalkSubmodule_mono h x) (stalkSubmodule_mono h' x) q
+
+end LocallyNoetherian
+
+section Mul
+
+variable [IsNoetherian X]
+variable (g : Additive X.functionFieldˣ)
+
+/-- Multiplying by a nonzero rational function `g` carries the stalk of `𝒪_X(D)` at `x` into
+the stalk of `𝒪_X(D - div g)`, since it adds `ord_x g` to every order of vanishing. -/
+lemma mul_mem_stalkSubmodule_sub_principalDivisor {x : CodimensionOnePoint X}
+    {f : X.functionField} (hf : f ∈ stalkSubmodule D x) :
+    ((Additive.toMul g : X.functionFieldˣ) : X.functionField) * f ∈
+      stalkSubmodule (D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) x := by
+  rw [mem_stalkSubmodule] at hf ⊢
+  rcases eq_or_ne f 0 with rfl | h0
+  · exact Or.inl (mul_zero _)
+  refine Or.inr ?_
+  have hf' := hf.resolve_left h0
+  rw [coeff_sub_principalDivisor, Scheme.ord_mul (Units.ne_zero _) h0]
+  omega
+
+private lemma map_stalkSubmodule_mulLeft (D : SchemeWeilDivisor X)
+    (x : CodimensionOnePoint X) :
+    (stalkSubmodule D x).map
+        (Units.mulLeftLinearEquiv (X.presheaf.stalk (x : X)) X.functionField
+          (Additive.toMul g)).toLinearMap =
+      stalkSubmodule (D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) x := by
+  have hD : D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g -
+      (WeilDivisor.OrderSystem.ofScheme X).principalDivisor (-g) = D := by
+    rw [WeilDivisor.OrderSystem.principalDivisor_neg]
+    abel
+  refine le_antisymm (Submodule.map_le_iff_le_comap.mpr fun f hf ↦ ?_) ?_
+  · simpa only [Submodule.mem_comap, LinearEquiv.coe_coe, Units.mulLeftLinearEquiv_apply] using
+      mul_mem_stalkSubmodule_sub_principalDivisor g hf
+  · rw [Submodule.map_equiv_eq_comap_symm]
+    intro f hf
+    simpa only [Submodule.mem_comap, LinearEquiv.coe_coe, Units.symm_mulLeftLinearEquiv_apply,
+      hD, toMul_neg] using mul_mem_stalkSubmodule_sub_principalDivisor (-g) hf
+
+/-- Multiplication by `g` identifies local principal parts for `D` and `D - div g`. -/
+def principalPartMulEquiv (D : SchemeWeilDivisor X) (x : CodimensionOnePoint X) :
+    PrincipalPart D x ≃ₗ[X.presheaf.stalk (x : X)]
+      PrincipalPart (D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) x :=
+  Submodule.Quotient.equiv _ _
+    ((Additive.toMul g).mulLeftLinearEquiv (X.presheaf.stalk (x : X)) X.functionField)
+    (map_stalkSubmodule_mulLeft g D x)
+
+/-- Multiplication by `g` on local principal parts. -/
+def principalPartMapOfMul (D : SchemeWeilDivisor X) (x : CodimensionOnePoint X) :
+    PrincipalPart D x →ₗ[X.presheaf.stalk (x : X)]
+      PrincipalPart (D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) x :=
+  (principalPartMulEquiv g D x).toLinearMap
+
+/-- The forward map of the principal-parts equivalence is multiplication by `g`. -/
+@[simp]
+lemma principalPartMulEquiv_toLinearMap (D : SchemeWeilDivisor X) (x : CodimensionOnePoint X) :
+    (principalPartMulEquiv g D x).toLinearMap = principalPartMapOfMul g D x :=
+  (by rw [principalPartMapOfMul])
+
+/-- Multiplication by `g` sends the class of `f` to the class of `g * f`. -/
+@[simp]
+lemma principalPartMapOfMul_mk (D : SchemeWeilDivisor X) (x : CodimensionOnePoint X)
+    (f : X.functionField) :
+    principalPartMapOfMul g D x (Submodule.Quotient.mk f) =
+      Submodule.Quotient.mk (((Additive.toMul g : X.functionFieldˣ) : X.functionField) * f) := by
+  rw [principalPartMapOfMul, LinearEquiv.coe_coe, principalPartMulEquiv,
+    Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe,
+    Units.mulLeftLinearEquiv_apply]
+
+/-- The inverse sends the class of `f` to the class of `g⁻¹ * f`. -/
+@[simp]
+lemma principalPartMulEquiv_symm_mk (D : SchemeWeilDivisor X) (x : CodimensionOnePoint X)
+    (f : X.functionField) :
+    (principalPartMulEquiv g D x).symm (Submodule.Quotient.mk f) =
+      Submodule.Quotient.mk (((Additive.toMul g : X.functionFieldˣ)⁻¹ : X.functionField) * f) := by
+  rw [principalPartMulEquiv, Submodule.Quotient.equiv_symm, Submodule.Quotient.equiv_apply,
+    Submodule.mapQ_apply, LinearEquiv.coe_coe, Units.symm_mulLeftLinearEquiv_apply,
+    Units.val_inv_eq_inv_val]
+
+end Mul
+
+section LocallyNoetherian
+
+variable [IsLocallyNoetherian X]
 
 /-- The finitely supported families of principal parts of `D` at the codimension-one points of
 `U`. -/
