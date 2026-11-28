@@ -39,6 +39,7 @@ is bounded on `x ≥ 0`.
   eventually bounded by `C exp (-μ t)`, so an exponential rate `k` cannot be improved.
 * `TauCeti.exp_neg_le_div_exp_sub_one`: `exp (-x) ≤ x / (exp x - 1)` for `0 < x`.
 * `TauCeti.div_exp_sub_one_le_one`: `x / (exp x - 1) ≤ 1` for `0 ≤ x`.
+* `TauCeti.min_one_div_two_le_one_sub_exp_neg`: `min 1 t / 2 ≤ 1 - exp (-t)` for `0 ≤ t`.
 * `TauCeti.exp_neg_le_rpow_iff`: `exp (-t) ≤ y ^ ε ↔ exp (-(t / ε)) ≤ y` for `0 ≤ y`, `0 < ε`.
 * `TauCeti.abs_log_sub_le_iff`: `|log x - y| ≤ C ↔ exp (-C) * exp y ≤ x ∧ x ≤ exp C * exp y` for
   `0 < x`.
@@ -52,6 +53,8 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exp_sub_one_sq_le_two_mul_sq_mul_cosh`: `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real
   `t`.
 * `TauCeti.fourteen_le_two_mul_exp_two_pi`: the numerical bound `14 ≤ 2 exp (2π)`.
+* `TauCeti.two_mul_exp_two_pi_mul_add_one_le`: `2 exp (2π s) + 1 ≤ 2 exp (2π (s + 1))` for
+  `s ≥ -1`.
 * `Real.abs_exp_sub_exp_le`: `|exp a - exp b| ≤ exp M * |a - b|` for `a, b ≤ M`.
 * `TauCeti.pow_mul_exp_neg_mul_le`: `t ^ m exp (-a t) ≤ m! / a ^ m` for `0 < a`, `0 ≤ t`.
 * `TauCeti.pow_mul_exp_neg_mul_div_factorial_le_profile`: a sharper bound for the factorial-
@@ -66,6 +69,7 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exp_neg_sub_mul_le_of_le`: `exp (-(x - σ) t) ≤ exp (-(x - σ) δ)` for `σ ≤ x` and
   `δ ≤ t`.
 * `Real.pow_le_exp_mul`: `x ^ k ≤ exp (k x)` for `0 ≤ x` and every natural `k`.
+* `Real.exp_le_pow_of_exp_one_le`: `exp y ≤ x ^ n` for `exp 1 ≤ x` and `y ≤ n`.
 * `TauCeti.exp_div_pow_le_exp_div_pow`: `exp t / d ^ k ≤ exp c / s ^ k` for `0 < s`, `0 ≤ d` and
   `k (s / d - 1) + t ≤ c`.
 * `TauCeti.one_add_mul_le_one_add_mul_exp_mul_sub_one`:
@@ -188,6 +192,25 @@ theorem div_exp_sub_one_le_one {x : ℝ} (hx : 0 ≤ x) : x / (exp x - 1) ≤ 1 
   rw [div_le_one (sub_pos.2 (one_lt_exp_iff.2 hx))]
   linarith [add_one_le_exp x]
 
+/-- For nonnegative `t`, the gap `1 - exp (-t)` is at least half of `min 1 t`: it is linear in
+`t` up to `t = 1` and bounded below by a constant thereafter. -/
+theorem min_one_div_two_le_one_sub_exp_neg {t : ℝ} (ht : 0 ≤ t) :
+    min 1 t / 2 ≤ 1 - exp (-t) := by
+  have hden : 0 < 1 + t := by linarith
+  have hinv : exp (-t) ≤ (1 + t)⁻¹ := by
+    rw [exp_neg]
+    exact inv_anti₀ hden (by simpa [add_comm] using add_one_le_exp t)
+  have hfrac : min 1 t / 2 ≤ t / (1 + t) := by
+    rcases le_total t 1 with h | h
+    · rw [min_eq_right h, div_le_div_iff₀ (by norm_num) hden]
+      nlinarith [mul_nonneg ht (sub_nonneg.mpr h)]
+    · rw [min_eq_left h, div_le_div_iff₀ (by norm_num) hden]
+      linarith
+  calc
+    _ ≤ t / (1 + t) := hfrac
+    _ = 1 - (1 + t)⁻¹ := by field_simp; ring
+    _ ≤ _ := sub_le_sub_left hinv _
+
 /-- For `0 ≤ y` and `0 < ε`, the power `y ^ ε` reaches the level `exp (-t)` exactly when `y`
 reaches the level `exp (-(t / ε))`. -/
 theorem exp_neg_le_rpow_iff {y ε t : ℝ} (hy : 0 ≤ y) (hε : 0 < ε) :
@@ -276,6 +299,16 @@ theorem exp_sub_one_sq_le_two_mul_sq_mul_cosh (t : ℝ) :
 /-- `2 exp (2π)` is at least `14`. -/
 theorem fourteen_le_two_mul_exp_two_pi : 14 ≤ 2 * exp (2 * π) := by
   nlinarith [quadratic_le_exp_of_nonneg (by positivity : 0 ≤ 2 * π), two_le_pi]
+
+/-- `2 exp (2π s) + 1 ≤ 2 exp (2π (s + 1))` for `s ≥ -1`. -/
+theorem two_mul_exp_two_pi_mul_add_one_le (s : ℝ) (hs : -1 ≤ s) :
+    2 * exp (2 * π * s) + 1 ≤ 2 * exp (2 * π * (s + 1)) := by
+  have h₁ := fourteen_le_two_mul_exp_two_pi
+  have h₂ : exp (-(2 * π)) ≤ exp (2 * π * s) := exp_le_exp.2 (by nlinarith [pi_pos])
+  have h₃ : 1 ≤ exp (2 * π) * exp (-(2 * π)) := by rw [← exp_add, add_neg_cancel, exp_zero]
+  rw [mul_add, mul_one, exp_add]
+  nlinarith [exp_pos (2 * π * s), exp_pos (2 * π), exp_pos (-(2 * π)),
+    mul_le_mul_of_nonneg_left h₂ (exp_pos (2 * π)).le]
 
 /-- On `(-∞, M]`, the real exponential is `exp M`-Lipschitz: for `a ≤ M` and `b ≤ M`,
 `|exp a - exp b| ≤ exp M * |a - b|`. -/
@@ -421,6 +454,15 @@ times the base: `x ^ k ≤ exp (k x)` for `0 ≤ x`, since `x ≤ x + 1 ≤ exp 
 theorem _root_.Real.pow_le_exp_mul {x : ℝ} (hx : 0 ≤ x) (k : ℕ) : x ^ k ≤ exp (k * x) := by
   rw [exp_natCast_mul]
   exact pow_le_pow_left₀ hx (by linarith [add_one_le_exp x]) k
+
+/-- A natural power with base at least `exp 1` bounds `exp y` whenever `y` is at most the
+exponent of the power. -/
+theorem _root_.Real.exp_le_pow_of_exp_one_le {x y : ℝ} {n : ℕ} (hx : exp 1 ≤ x) (hy : y ≤ n) :
+    exp y ≤ x ^ n := by
+  calc
+    exp y ≤ exp n := exp_le_exp.mpr hy
+    _ = exp 1 ^ n := by rw [← exp_natCast_mul, mul_one]
+    _ ≤ x ^ n := pow_le_pow_left₀ (exp_nonneg _) hx _
 
 /-- Comparison of two geometric rates against exponential factors: for `0 < s` and `0 ≤ d`, if
 `k (s / d - 1) + t ≤ c` then `exp t / d ^ k ≤ exp c / s ^ k`. For `0 < d` it follows from

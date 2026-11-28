@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Process.Predictable.Basic
+public import TauCeti.Probability.Process.Predictable.Measure
 public import TauCeti.MeasureTheory.Function.Lp.Iterated
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
+public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 public import TauCeti.Probability.Process.TimeMeasure
 import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
+import TauCeti.Probability.Finance.SimpleStrategy.Energy
 
 /-!
 # Expected and pathwise square-energy domains
@@ -25,7 +27,10 @@ restriction to predictable sets. The expected-energy domain is also closed under
 by predictable processes that are essentially bounded on each finite horizon.
 Product-almost-everywhere replacement by predictable processes preserves the expected-energy
 domain, and, for s-finite `P`, the pathwise-energy domain. A finite initial-measurable random
-variable, held constant in time, belongs to the pathwise domain without any moment assumption.
+variable, held constant in time, belongs to the pathwise domain without any moment assumption,
+while on any finite deterministic grid, left-measurable `L²` heights belong to `BrownianIntegrable`
+for s-finite `P` (`TauCeti.BrownianIntegrable.simpleHolding`), and bounded left-measurable heights
+belong to `BrownianIntegrable` for finite `P` (`TauCeti.BrownianIntegrable.simpleHolding_of_bdd`).
 The pathwise domain transfers to an absolutely continuous measure and is unchanged under
 an equivalent measure on the same filtration. This does not assert preservation of expected
 square energy or that the original driver remains Brownian.
@@ -48,7 +53,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set Filter
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
@@ -125,6 +130,12 @@ theorem BrownianIntegrable.locallyBrownianIntegrable [SFinite P]
   exact ((h.memLp n).comp_measurePreserving
     (Measure.measurePreserving_swap (μ := P) (ν := _))).ae_memLp_prod_right
 
+/-- `BrownianIntegrable` expressed as `L²` membership for the trimmed predictable measure
+`ℱ.predictableMeasure P T`. -/
+theorem BrownianIntegrable.memLp_predictableMeasure (h : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
+    MemLp (Function.uncurry H) 2 (ℱ.predictableMeasure P T) :=
+  (ℱ.memLp_predictableMeasure_iff P h.isStronglyPredictable T 2).mpr (h.memLp_timeMeasure T)
+
 /-- The expected-energy domain is closed under addition. -/
 theorem BrownianIntegrable.add (hH : BrownianIntegrable ℱ P H)
     (hK : BrownianIntegrable ℱ P K) :
@@ -175,6 +186,16 @@ theorem BrownianIntegrable.indicator (hH : BrownianIntegrable ℱ P H)
     BrownianIntegrable ℱ P (fun t ω ↦ A.indicator (Function.uncurry H) (t, ω)) := by
   refine ⟨hH.isStronglyPredictable.indicator hA, fun T ↦ ?_⟩
   exact (hH.memLp T).indicator (ℱ.predictable_le_prod A hA).nullMeasurableSet
+
+/-- Restricting an integrand to `(s, ∞)` preserves finite expected square energy. -/
+theorem BrownianIntegrable.indicator_Ioi (hH : BrownianIntegrable ℱ P H) (s : ℝ≥0) :
+    BrownianIntegrable ℱ P (fun u ω ↦ (Ioi s).indicator (H · ω) u) := by
+  have heq : (fun u ω ↦ (Ioi s).indicator (H · ω) u) =
+      fun u ω ↦ ((Ioi s ×ˢ (univ : Set Ω)).indicator (Function.uncurry H)) (u, ω) := by
+    ext u ω
+    by_cases hu : s < u <;> simp [hu]
+  rw [heq]
+  exact hH.indicator (measurableSet_predictable_Ioi_prod (i := s) MeasurableSet.univ)
 
 /-- Restriction to a predictable set preserves finite pathwise square energy. -/
 theorem LocallyBrownianIntegrable.indicator (hH : LocallyBrownianIntegrable ℱ P H)
@@ -261,5 +282,29 @@ theorem brownianIntegrable_const_iff [SFinite P] {ξ : Ω → ℝ} :
   · rintro ⟨hξ, hξ₂⟩
     exact ⟨((locallyBrownianIntegrable_const_iff (P := P)).2 hξ).isStronglyPredictable,
       fun _ ↦ hξ₂.comp_snd _⟩
+
+/-- Left-measurable `L²` heights on any finite deterministic grid produce an integrand in the
+expected-square-energy domain `BrownianIntegrable ℱ P`, for any `SFinite` measure `P` and with no
+monotonicity assumption on the grid. -/
+theorem BrownianIntegrable.simpleHolding [SFinite P] {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (ha₂ : ∀ j < n, MemLp (a j) 2 P) :
+    BrownianIntegrable ℱ P (Finance.simpleHolding τ n a) where
+  isStronglyPredictable := Finance.isStronglyPredictable_simpleHolding ha
+  memLp T := by
+    rw [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def]
+    exact (ℱ.memLp_predictableMeasure_iff P (Finance.isStronglyPredictable_simpleHolding ha) T 2).mp
+      (Finance.memLp_simpleHolding_predictableMeasure ha ha₂ T)
+
+/-- Bounded left-measurable heights on any finite deterministic grid produce an integrand in
+`BrownianIntegrable ℱ P` on a finite measure space `P`. -/
+theorem BrownianIntegrable.simpleHolding_of_bdd [IsFiniteMeasure P]
+    {n : ℕ} {τ : ℕ → ℝ≥0} {a : ℕ → Ω → ℝ}
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hb : ∀ j < n, ∃ C, ∀ ω, ‖a j ω‖ ≤ C) :
+    BrownianIntegrable ℱ P (Finance.simpleHolding τ n a) :=
+  BrownianIntegrable.simpleHolding ha fun j hj ↦
+    let ⟨C, hC⟩ := hb j hj
+    MemLp.of_bound ((ha j hj).mono (ℱ.le _)).aestronglyMeasurable C (.of_forall hC)
 
 end TauCeti

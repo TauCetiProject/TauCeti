@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.CoeffAction
+public import TauCeti.NumberTheory.ModularForms.WeakForm
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Degree
+import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Invariant
 import TauCeti.NumberTheory.ModularForms.LevelOne.FunctionField
 
 /-!
@@ -44,6 +46,9 @@ construction of Galois conjugates of modular forms that controls their poles on 
 * `TauCeti.modularFunctionCoeffAction_mem_holomorphicSubalgebra_iff` and
   `TauCeti.forall_ne_infty_modularFunctionCoeffAction_iff`: the automorphisms of `ℂ`, acting
   through the Fourier coefficients, preserve `𝒪(Y(N))`.
+* `TauCeti.IsWeakForm.meromorphicFunction` and `TauCeti.isWeakForm_finitePart_ofQuotient_mk`:
+  weight-zero weak forms on `Γ(N)` are the pullbacks of the functions on `X(N)` without poles on
+  `Y(N)`.
 
 ## References
 
@@ -55,7 +60,7 @@ public noncomputable section
 
 open CongruenceSubgroup MulOpposite Subgroup.CompactifiedQuotient UpperHalfPlane
 open TauCeti.RiemannSurface TauCeti.RiemannSurface.MeromorphicFunction OnePoint
-open scoped MatrixGroups
+open scoped MatrixGroups ModularForm
 
 namespace TauCeti
 
@@ -177,5 +182,54 @@ theorem modularFunctionCoeffAction_mem_holomorphicSubalgebra_iff (σ : ℂ ≃+*
   rw [mem_holomorphicSubalgebra_range_ofQuotient_iff,
     mem_holomorphicSubalgebra_range_ofQuotient_iff]
   exact forall_ne_infty_modularFunctionCoeffAction_iff σ F
+
+/-! ### Weight-zero weak forms -/
+
+/-- A weight-zero weak form on `Γ(N)` as a meromorphic function on `X(N)`. It has no pole on
+`Y(N)` (`TauCeti.IsWeakForm.meromorphicFunction_ofQuotient_mk`). -/
+def IsWeakForm.meromorphicFunction {F : ℍ → ℂ} (hF : IsWeakForm (Gamma N) 0 F) :
+    MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient :=
+  meromorphicFunctionOfGammaInvariant F hF.mdifferentiable
+    (fun γ hγ τ ↦ by rw [← congrFun (ModularForm.SL_slash_zero F γ) τ, hF.slash_eq γ hγ])
+    (fun γ ↦ by
+      obtain ⟨c, hc⟩ := hF.exists_isBigO_exp γ
+      exact ⟨c, by rwa [ModularForm.SL_slash_zero] at hc⟩)
+
+/-- The meromorphic function on `X(N)` of a weight-zero weak form `F` takes the value `F τ` at
+the orbit of `τ`. -/
+@[simp]
+theorem IsWeakForm.meromorphicFunction_ofQuotient_mk {F : ℍ → ℂ}
+    (hF : IsWeakForm (Gamma N) 0 F) (τ : ℍ) :
+    hF.meromorphicFunction (ofQuotient (Quotient.mk _ τ)) = F τ :=
+  meromorphicFunctionOfGammaInvariant_ofQuotient_mk _ _ _ τ
+
+/-- The finite part of the meromorphic function on `X(N)` of a weight-zero weak form `F` at the
+orbit of `τ` is `F τ`. -/
+@[simp]
+theorem IsWeakForm.finitePart_meromorphicFunction_ofQuotient_mk {F : ℍ → ℂ}
+    (hF : IsWeakForm (Gamma N) 0 F) (τ : ℍ) :
+    hF.meromorphicFunction.finitePart (ofQuotient (Quotient.mk _ τ)) = F τ :=
+  finitePart_of_eq_coe (hF.meromorphicFunction_ofQuotient_mk τ)
+
+/-- The pullback to `ℍ` of a function on `X(N)` without poles on `Y(N)` is a weak form of weight
+`0` on `Γ(N)`. -/
+theorem isWeakForm_finitePart_ofQuotient_mk
+    {Ψ : MeromorphicFunction ((Gamma N).map sl2zToPSL2R).CompactifiedQuotient}
+    (hΨ : ∀ τ : ℍ, Ψ (ofQuotient (Quotient.mk _ τ)) ≠ ∞) :
+    IsWeakForm (Gamma N) 0 fun τ ↦ Ψ.finitePart (ofQuotient (Quotient.mk _ τ)) := by
+  have hinv : ∀ γ ∈ Gamma N,
+      (fun τ ↦ Ψ.finitePart (ofQuotient (Quotient.mk _ τ))) ∣[(0 : ℤ)] γ =
+        fun τ ↦ Ψ.finitePart (ofQuotient (Quotient.mk _ τ)) := fun γ hγ ↦ by
+    rw [finitePart_ofQuotient_slash_zero, modularFunctionAction_eq_one_of_mem hγ, unop_one,
+      AlgEquiv.one_apply]
+  refine isWeakForm_iff_meromorphicAt_cuspFunction.mpr ⟨fun τ ↦ ?_, hinv, fun γ ↦ ?_⟩
+  · exact (mdifferentiableAt_finitePart (hΨ τ)).comp τ
+      ((mdifferentiable_ofQuotient _).comp τ (Subgroup.mdifferentiable_quotientMk _ τ))
+  · refine ⟨N, NeZero.pos N, ?_, ?_⟩
+    · simpa [strictLevel_Gamma] using periodic_slash_comp_ofComplex hinv γ
+    · rw [finitePart_ofQuotient_slash_zero]
+      simpa [cuspDatumInftyGamma_width, cuspDatumInftyGamma_scaling] using
+        meromorphicAt_cuspFunction_finitePart (cuspDatumInftyGamma N)
+          (unop (modularFunctionAction N γ) Ψ)
 
 end TauCeti

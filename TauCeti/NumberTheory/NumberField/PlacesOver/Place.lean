@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.AbsoluteValue.Place
-public import TauCeti.NumberTheory.NumberField.PlacesOver.InfinitePlace
+public import TauCeti.NumberTheory.NumberField.PlacesOver.InfinitePlace.Basic
 public import TauCeti.NumberTheory.NumberField.PlacesOver.Relative
 
 import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
@@ -26,7 +26,8 @@ A place of a field `L` of characteristic zero is a `ℚ`-normalised absolute val
   on `ℚ` (`NumberField.InfinitePlace.under_rat`), and an absolute value of `L` lying over the real
   absolute value of `ℚ` is an infinite place of `L` (Tau Ceti's
   `NumberField.isInfinitePlace_iff_of_liesOver`). This gives the bijection
-  `AbsoluteValue.Place.infinitePlaceEquiv`.
+  `AbsoluteValue.Place.infinitePlaceEquiv`, and every infinite place of `L` is `x ↦ ‖φ x‖` for an
+  embedding `φ : L →+* ℂ` (`AbsoluteValue.Place.exists_forall_apply_eq_norm`).
 * **Finite places.** For a number field `K`, Mathlib's `NumberField.FinitePlace K` is normalised by
   the absolute norm of its prime, not on `ℚ`. Its local-degree root over `ℚ`
   (`NumberField.FinitePlace.relativeAbsValue`) is a place (`NumberField.FinitePlace.toPlace`), and
@@ -80,7 +81,11 @@ theorem not_isNonarchimedean_toPlace (v : InfinitePlace L) : ¬ IsNonarchimedean
 
 end InfinitePlace
 
-namespace _root_.AbsoluteValue.Place
+end NumberField
+
+namespace AbsoluteValue.Place
+
+open NumberField
 
 variable {L : Type*} [Field L] [CharZero L]
 
@@ -115,7 +120,50 @@ theorem val_infinitePlaceEquiv_apply (w : {w : Place L // ¬ IsNonarchimedean w.
 theorem infinitePlaceEquiv_symm_apply (v : InfinitePlace L) :
     ((infinitePlaceEquiv L).symm v).val = v.toPlace := (rfl)
 
-end _root_.AbsoluteValue.Place
+/-- An infinite place is the place underlying the Mathlib infinite place it corresponds to. -/
+@[simp]
+theorem toPlace_infinitePlaceEquiv (w : {w : Place L // ¬ IsNonarchimedean w.val}) :
+    (infinitePlaceEquiv L w).toPlace = w.val := (rfl)
+
+/-- The infinite place corresponding to an infinite place `w` has the values of `w`. -/
+@[simp]
+theorem infinitePlaceEquiv_apply (w : {w : Place L // ¬ IsNonarchimedean w.val}) (x : L) :
+    infinitePlaceEquiv L w x = w.val x := by
+  rw [InfinitePlace.coe_apply, val_infinitePlaceEquiv_apply, coe_apply]
+
+/-- An infinite place `w` with `w x = ‖φ x‖` for all `x` is the place underlying
+`NumberField.InfinitePlace.mk φ`. -/
+theorem eq_toPlace_mk {w : Place L} {φ : L →+* ℂ} (hφ : ∀ x, w x = ‖φ x‖) :
+    w = (InfinitePlace.mk φ).toPlace :=
+  Place.ext fun x ↦ by
+    rw [hφ, coe_apply, InfinitePlace.val_toPlace, ← InfinitePlace.coe_apply, InfinitePlace.apply]
+
+/-- An infinite place `w` with `w x = ‖φ x‖` for all `x` corresponds to
+`NumberField.InfinitePlace.mk φ`. -/
+theorem infinitePlaceEquiv_eq_mk {w : Place L} (hw : ¬ IsNonarchimedean w.val) {φ : L →+* ℂ}
+    (hφ : ∀ x, w x = ‖φ x‖) : infinitePlaceEquiv L ⟨w, hw⟩ = InfinitePlace.mk φ :=
+  InfinitePlace.ext _ _ fun x ↦ by rw [infinitePlaceEquiv_apply, InfinitePlace.apply, hφ]
+
+/-- **Infinite places are given by complex embeddings.** Every infinite place `w` of `L` is
+`x ↦ ‖φ x‖` for an embedding `φ : L →+* ℂ`, unique up to complex conjugation
+(`NumberField.InfinitePlace.mk_eq_iff`). -/
+theorem exists_forall_apply_eq_norm (w : Place L) (hw : ¬ IsNonarchimedean w.val) :
+    ∃ φ : L →+* ℂ, ∀ x, w x = ‖φ x‖ :=
+  ⟨(infinitePlaceEquiv L ⟨w, hw⟩).embedding, fun x ↦ by
+    rw [InfinitePlace.norm_embedding_eq, infinitePlaceEquiv_apply]⟩
+
+/-- The infinite place of `K` below the infinite place of `L` corresponding to `w` corresponds to
+the restriction of `w` to `K`. -/
+theorem comap_infinitePlaceEquiv {K : Type*} [Field K] [CharZero K] [Algebra K L] (w : Place L)
+    (hw : ¬ IsNonarchimedean w.val) :
+    (infinitePlaceEquiv L ⟨w, hw⟩).comap (algebraMap K L) =
+      infinitePlaceEquiv K ⟨w.under K, not_isNonarchimedean_under K hw⟩ :=
+  InfinitePlace.ext _ _ fun x ↦ by
+    rw [InfinitePlace.comap_apply, infinitePlaceEquiv_apply, infinitePlaceEquiv_apply, under_apply]
+
+end AbsoluteValue.Place
+
+namespace NumberField
 
 /-- Mathlib's action of the Galois group on the infinite places agrees with the action on
 places. -/
@@ -174,7 +222,11 @@ theorem exists_toPlace_eq {w : Place K} (hw : IsNonarchimedean w.val) :
 
 end FinitePlace
 
-namespace _root_.AbsoluteValue.Place
+end NumberField
+
+namespace AbsoluteValue.Place
+
+open NumberField
 
 variable (K : Type*) [Field K] [NumberField K]
 
@@ -196,6 +248,4 @@ theorem toPlace_finitePlaceEquiv (w : {w : Place K // IsNonarchimedean w.val}) :
 theorem finitePlaceEquiv_symm_apply (v : FinitePlace K) :
     ((finitePlaceEquiv K).symm v).val = v.toPlace := (rfl)
 
-end _root_.AbsoluteValue.Place
-
-end NumberField
+end AbsoluteValue.Place

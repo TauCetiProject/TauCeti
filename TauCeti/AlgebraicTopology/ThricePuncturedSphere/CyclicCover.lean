@@ -238,10 +238,6 @@ private theorem one_sub_γ0_mem_slitPlane (s : unitInterval) : 1 - (γ0 s : ℂ)
   rw [norm_coe_γ0] at h
   exact Or.inl (by rw [sub_re, one_re]; linarith)
 
-/-- Along `γ1`, the point `γ1 s` stays in the right half-plane, where `log` is continuous. -/
-private theorem γ1_mem_slitPlane (s : unitInterval) : (γ1 s : ℂ) ∈ slitPlane :=
-  Or.inl (mem_rightOpen.1 (γ1_mem_rightOpen s))
-
 /-- The lift of `γ0` to the cyclic cover starting at `fiberPoint k`: over `t = (1/2) exp (2πis)`,
 the branch `ζ ^ k · exp ((a (log (1/2) + 2πis) + b (log (1 − t) + πi)) / m)` of
 `(tᵃ (t − 1)ᵇ)^(1/m)`. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Irreducible
 public import Mathlib.RepresentationTheory.Semisimple
+public import TauCeti.RepresentationTheory.GFinite
 public import TauCeti.RepresentationTheory.Subrepresentation
 public import Mathlib.RingTheory.SimpleModule.Rank
 -- Private: the range of a representation's monoid-algebra action is used only inside proofs.
@@ -88,7 +89,9 @@ an algebra are those of the whole algebra.
   contains an atom, so the atom criterion always has something to apply to.
 * `Representation.exists_isAtom`: in particular a nonzero finite-dimensional
   representation has an atom.
-* `Representation.exists_isIrreducible_subrepresentation`: consequently every nonzero
+* `Representation.exists_isIrreducible_subrepresentation_of_isGFinite`: consequently a
+  representation with a nonzero `G`-finite vector contains an irreducible subrepresentation.
+* `Representation.exists_isIrreducible_subrepresentation`: in particular every nonzero
   finite-dimensional representation contains an irreducible subrepresentation.
 * `Representation.IsIrreducible.exists_forall_apply_eq_smul`: Schur's lemma over an
   algebraically closed field, for an unbundled equivariant endomorphism.
@@ -490,14 +493,27 @@ theorem IsIrreducible.exists_unit_smul_of_intertwines [IsAlgClosed k] [FiniteDim
   obtain ⟨c, hc⟩ := exists_forall_apply_eq_smul (ρ := ρ) f fun g v ↦ LinearMap.congr_fun (hf g) v
   exact ⟨c, LinearMap.ext fun v ↦ by simp [hc]⟩
 
+/-- **A representation with a nonzero `G`-finite vector contains an irreducible
+subrepresentation.**  The vector lies in a nonzero finite-dimensional subrepresentation, which
+contains a minimal nonzero one; the ambient representation may be infinite-dimensional. -/
+theorem exists_isIrreducible_subrepresentation_of_isGFinite {ρ : Representation k G V} {v : V}
+    (hv : ρ.IsGFinite v) (hv0 : v ≠ 0) :
+    ∃ σ : Subrepresentation ρ, σ ≠ ⊥ ∧ σ.toRepresentation.IsIrreducible := by
+  obtain ⟨W, hW, hvW⟩ := (ρ.isGFinite_iff_exists_subrepresentation v).1 hv
+  have hW0 : W ≠ ⊥ := by
+    rintro rfl
+    exact hv0 (by simpa using hvW)
+  obtain ⟨σ, -, hσ⟩ := exists_isAtom_le hW0
+  exact ⟨σ, hσ.1, isIrreducible_toRepresentation_of_isAtom hσ⟩
+
 /-- **Every nonzero finite-dimensional representation contains an irreducible subrepresentation.**
 Finite-dimensionality alone suffices; no semisimplicity is assumed.  This produces a single
 irreducible subrepresentation, not a decomposition: a representation that is not semisimple need
 not be the sum of its irreducible subrepresentations. -/
 theorem exists_isIrreducible_subrepresentation [FiniteDimensional k V] [Nontrivial V]
     (ρ : Representation k G V) :
-    ∃ σ : Subrepresentation ρ, σ ≠ ⊥ ∧ σ.toRepresentation.IsIrreducible := by
-  obtain ⟨σ, hσ⟩ := exists_isAtom ρ
-  exact ⟨σ, hσ.1, isIrreducible_toRepresentation_of_isAtom hσ⟩
+    ∃ σ : Subrepresentation ρ, σ ≠ ⊥ ∧ σ.toRepresentation.IsIrreducible :=
+  let ⟨v, hv⟩ := exists_ne (0 : V)
+  exists_isIrreducible_subrepresentation_of_isGFinite (IsGFinite.of_finiteDimensional v) hv
 
 end Representation

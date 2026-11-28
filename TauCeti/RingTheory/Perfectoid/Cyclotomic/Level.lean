@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Perfectoid.Cyclotomic.Period
 
-import TauCeti.RingTheory.WittVector.Frobenius
+import TauCeti.RingTheory.WittVector.Frobenius.Basic
 
 /-!
 # Finite Frobenius products of the cyclotomic period

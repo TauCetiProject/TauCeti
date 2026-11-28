@@ -84,6 +84,14 @@ theorem mem_serializedStage {A : ℕ → Finset ℕ} {s x : ℕ} :
         have hright := congrArg Prod.snd hu
         simp [← hleft, ← hright, hx]
 
+/-- Agreement of the source stages below `s` preserves serialized stage `s`. -/
+theorem serializedStage_eq_of_eqOn {A B : ℕ → Finset ℕ} {s : ℕ}
+    (h : Set.EqOn A B (Set.Iio s)) : serializedStage A s = serializedStage B s := by
+  ext x
+  simp only [mem_serializedStage]
+  refine exists_congr fun t => and_congr_right fun ht => ?_
+  rw [h ((Nat.right_le_pair x t).trans_lt ht)]
+
 /-- Serialized stages increase even when the original stages do not. -/
 theorem monotone_serializedStage (A : ℕ → Finset ℕ) : Monotone (serializedStage A) := by
   intro s t hst x hx
@@ -136,6 +144,27 @@ theorem subset_serializedStage (A : ℕ → Finset ℕ) (t : ℕ) :
     simpa [Nat.testBit_sum_two_pow] using hx
   have hlt := x.lt_two_pow_self.trans_le (Nat.two_pow_le_of_mem_bitIndices hbit)
   exact mem_serializedStage.mpr ⟨t, Nat.pair_lt_pair_left t hlt, hx⟩
+
+/-- Binary codes of serialized stages are primitive recursive uniformly in the parameters of
+the source stages whenever their binary codes are primitive recursive. -/
+theorem primrec_serializedStage {α : Type*} [Primcodable α] {A : α → ℕ → Finset ℕ}
+    (hA : Primrec fun p : α × ℕ => Finset.equivBitIndices.symm (A p.1 p.2)) :
+    Primrec fun p : α × ℕ => Finset.equivBitIndices.symm (serializedStage (A p.1) p.2) := by
+  open Primrec in
+  have hu : Primrec fun q : (α × ℕ) × ℕ => q.2.unpair := Primrec.unpair.comp snd
+  have hmem : Primrec fun q : (α × ℕ) × ℕ => decide (q.2.unpair.1 ∈ A q.1.1 q.2.unpair.2) :=
+    (Primrec.mem_equivBitIndices.decide.comp
+      (hA.comp ((fst.comp fst).pair (snd.comp hu))) (fst.comp hu)).of_eq
+      fun _ => by rw [Equiv.apply_symm_apply]
+  have hbit := equivBitIndices_symm_filter_range snd hmem.to₂
+  have h := equivBitIndices_symm_image (fst.comp hu).to₂ hbit
+  refine h.of_eq fun ⟨a, s⟩ => ?_
+  congr 1
+  ext x
+  simp only [Equiv.apply_symm_apply, Finset.mem_image, Finset.mem_filter, Finset.mem_range,
+    decide_eq_true_eq, mem_serializedStage]
+  exact ⟨fun ⟨p, ⟨hp, hm⟩, hx⟩ => ⟨p.unpair.2, by simpa [← hx], hx ▸ hm⟩,
+    fun ⟨t, ht, hm⟩ => ⟨Nat.pair x t, by simpa using And.intro ht hm, by simp⟩⟩
 
 /-- Binary codes of serialized stages are oracle-computable, uniformly in all parameters of the
 source stages, without monotonicity or infinitude assumptions. -/

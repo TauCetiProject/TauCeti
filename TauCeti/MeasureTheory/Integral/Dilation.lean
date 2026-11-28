@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 public import TauCeti.Analysis.Calculus.FDeriv.Comp
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Integral.Bochner.Affine
 
 /-!
@@ -27,6 +29,14 @@ factors. The Bochner integral is rescaled by the same factor, for all factors
 (`TauCeti.integral_comp_mul_pi`), by the linear change of variables
 `MeasureTheory.Measure.integral_comp_linearMap` for the diagonal matrix.
 
+For `ε > 0` the dilation `k_ε(y) = ε⁻ᵈ k(ε⁻¹ • y)` of a kernel `k`, where `d` is the dimension
+of `E`, has the same integral as `k`. Substituting `y = ε • z` turns the average of a function `g`
+against `k_ε` into the average of `z ↦ g (ε • z)` against `k`. When `g` is bounded and continuous
+at `0`, these averages converge to `(∫ k) • g 0` as `ε → 0⁺` by dominated convergence, with no sign,
+normalization or support condition on the real or complex kernel `k`. Applied to the translates of
+an `Lᵖ` function, this gives the approximate-identity property of dilated kernels in
+`TauCeti.MeasureTheory.Function.Lp.Convolution`.
+
 On the plane `ℝ × ℝ`, the Bochner case `MeasureTheory.Measure.setIntegral_comp_smul` of a set
 integral is restated with its Jacobian computed: substituting `z = c • z'` contributes the factor
 `c * c`.
@@ -44,6 +54,11 @@ integral is restated with its Jacobian computed: substituting `z = c • z'` con
 * `MeasureTheory.Measure.map_mul_pi_addHaar_eq_smul`: the image of an additive Haar measure on
   `ℝ^ι` under `x ↦ (cᵢ xᵢ)ᵢ` is the measure scaled by `|∏ᵢ cᵢ|⁻¹`.
 * `TauCeti.integral_comp_mul_pi`: `∫ x, F (fun i ↦ cᵢ xᵢ) = |∏ᵢ cᵢ|⁻¹ • ∫ y, F y` on `ℝ^ι`.
+* `TauCeti.integral_comp_inv_smul_smul`: the average of a function against the dilation
+  `k_ε(y) = ε⁻ᵈ k(ε⁻¹ • y)` of a kernel is the average of its rescaling `g (ε • ·)` against `k`.
+* `TauCeti.tendsto_integral_comp_inv_smul_smul`: for an integrable real or complex kernel `k` and
+  a bounded function `g` continuous at `0`, the averages of `g` against `k_ε` converge to
+  `(∫ k) • g 0` as `ε → 0⁺`.
 * `MeasureTheory.Measure.setIntegral_prod_eq_mul_smul_setIntegral_comp_smul`:
   `∫ z in s, f z = (c * c) • ∫ z in c⁻¹ • s, f (c • z)` on the plane `ℝ × ℝ`.
 -/
@@ -161,5 +176,57 @@ theorem integral_comp_mul_pi {ι G : Type*} [Fintype ι] [NormedAddCommGroup G] 
   -- The coordinatewise dilation is the linear map of the diagonal matrix of the `cᵢ`.
   have h := Measure.integral_comp_linearMap μ F (Matrix.toLin' (Matrix.diagonal c))
   rwa [← Measure.mul_pi_eq_toLin'_diagonal, Measure.det_toLin'_diagonal] at h
+
+
+section Dilation
+
+open Filter Module
+open scoped Topology
+
+variable [FiniteDimensional ℝ E] {μ : Measure E} [μ.IsAddHaarMeasure]
+  {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace ℝ V] [NormedSpace 𝕜 V]
+  [IsScalarTower ℝ 𝕜 V]
+
+/-- **Rescaling an average against a dilated kernel.** For `ε > 0`, the average of `g` against
+the dilation `ε⁻ᵈ k(ε⁻¹ • y)` of a kernel `k` is the average of `z ↦ g (ε • z)` against `k`. -/
+theorem integral_comp_inv_smul_smul {ε : ℝ} (hε : 0 < ε) (k : E → 𝕜) (g : E → V) :
+    ∫ y, ((ε ^ finrank ℝ E)⁻¹ • k (ε⁻¹ • y)) • g y ∂μ = ∫ z, k z • g (ε • z) ∂μ := by
+  set G : E → V := fun z ↦ k z • g (ε • z)
+  have h (y : E) :
+      ((ε ^ finrank ℝ E)⁻¹ • k (ε⁻¹ • y)) • g y = (ε ^ finrank ℝ E)⁻¹ • G (ε⁻¹ • y) := by
+    simp only [G, smul_assoc, smul_inv_smul₀ hε.ne']
+  simp_rw [h]
+  rw [integral_smul, Measure.integral_comp_inv_smul_of_nonneg μ G hε.le,
+    inv_smul_smul₀ (pow_ne_zero _ hε.ne')]
+
+/-- **Dilations of an integrable kernel concentrate at the origin.** Let `k` be an integrable
+real or complex kernel and let `g` be an almost everywhere strongly measurable, essentially
+bounded function with values in a Banach space, continuous at `0`. Then the averages of `g`
+against the dilations `k_ε(y) = ε⁻ᵈ k(ε⁻¹ • y)` converge to `(∫ k) • g 0` as `ε → 0⁺`. -/
+theorem tendsto_integral_comp_inv_smul_smul [CompleteSpace V] {k : E → 𝕜} (hk : Integrable k μ)
+    {g : E → V} (hg : AEStronglyMeasurable g μ) {C : ℝ} (hgC : ∀ᵐ y ∂μ, ‖g y‖ ≤ C)
+    (hg₀ : ContinuousAt g 0) :
+    Tendsto (fun ε : ℝ ↦ ∫ y, ((ε ^ finrank ℝ E)⁻¹ • k (ε⁻¹ • y)) • g y ∂μ)
+      (𝓝[>] 0) (𝓝 ((∫ y, k y ∂μ) • g 0)) := by
+  rw [← integral_smul_const]
+  refine Tendsto.congr' (eventually_nhdsWithin_of_forall fun ε (hε : 0 < ε) ↦
+    (integral_comp_inv_smul_smul hε k g).symm) ?_
+  -- Dominated convergence: `z ↦ g (ε • z)` is bounded by `C` and tends to `g 0` as `ε → 0`.
+  have hqmp {ε : ℝ} (hε : 0 < ε) := Measure.quasiMeasurePreserving_smul μ hε.ne'
+  refine tendsto_integral_filter_of_dominated_convergence (fun z ↦ ‖k z‖ * C)
+    (eventually_nhdsWithin_of_forall fun ε hε ↦
+      hk.aestronglyMeasurable.smul (hg.comp_quasiMeasurePreserving (hqmp hε)))
+    (eventually_nhdsWithin_of_forall fun ε hε ↦ by
+      filter_upwards [(hqmp hε).ae hgC] with z hz
+      rw [norm_smul]
+      exact mul_le_mul_of_nonneg_left hz (norm_nonneg _))
+    (hk.norm.mul_const _) (ae_of_all _ fun z ↦ ?_)
+  have hz : Tendsto (fun ε : ℝ ↦ ε • z) (𝓝[>] 0) (𝓝 0) := by
+    have h : Tendsto (fun ε : ℝ ↦ ε • z) (𝓝 0) (𝓝 ((0 : ℝ) • z)) := tendsto_id.smul_const z
+    rw [zero_smul] at h
+    exact h.mono_left nhdsWithin_le_nhds
+  exact (hg₀.tendsto.comp hz).const_smul (k z)
+
+end Dilation
 
 end TauCeti

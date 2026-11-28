@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.PDE.Spectrum.Mixed.MinMax
 public import TauCeti.Analysis.PDE.Spectrum.Operator.Mixed
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 import TauCeti.Analysis.InnerProductSpace.Variational.FormKernel
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
+import TauCeti.Analysis.Sobolev.W1p.ConnectedComponents
 import TauCeti.Analysis.Sobolev.W1p.InfiniteDimensional
 import TauCeti.Analysis.Sobolev.W1p.Zero
 
@@ -48,14 +50,25 @@ the least positive eigenvalue.
 * `TauCeti.PDE.exists_isLeast_neumannEigenvalue_pos_rayleigh_meanZero_of_isLipschitzDomainWith`:
   the same on a bounded connected Lipschitz domain, where Rellich–Kondrachov
   (`TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`) supplies the Rellich property.
-* `TauCeti.PDE.exists_isLeast_spectrum_mixedOperator_laplacian_empty_pos_rayleigh_meanZero`: the
-  same for the spectrum of the mixed Laplacian `-Δ_∅` (`TauCeti.PDE.mixedOperator` with `Γ = ∅`)
-  on `Ω ⊆ ℝⁿ`, when `H¹_∅(Ω) = H¹(Ω)`, so that `-Δ_∅` is the Neumann Laplacian: its least
-  positive spectral value exists and is the least Rayleigh quotient of mean zero.
 
-Connectedness cannot be dropped: on `(0, 1) ∪ (2, 3)` the function equal to `1` on the first
-interval and `-1` on the second has mean zero and zero gradient, so the Rayleigh quotient of mean
-zero has minimum `0`, which is not a positive eigenvalue.
+On `Ω ⊆ ℝⁿ`, `n ≥ 1`, with `H¹_∅(Ω) = H¹(Ω)`, as on a bounded Lipschitz domain
+(`TauCeti.w1pVanishingOnSubmodule_empty_of_isLipschitzDomain`), the mixed Laplacian `-Δ_∅`
+(`TauCeti.PDE.mixedOperator` with `Γ = ∅`) is the Neumann Laplacian, and its eigenvalues counted
+with multiplicity are the min–max values `λₖ(∅)` (`TauCeti.PDE.mixedEigenvalue`), indexed from
+`k = 0`. The second eigenvalue `λ₂` above is `λ₁(∅)`:
+
+* `TauCeti.PDE.isLeast_spectrum_mixedOperator_laplacian_empty_inter_Ioi_mixedEigenvalue_one`:
+  `λ₁(∅)` is the least positive point of the spectrum of `-Δ_∅`;
+* `TauCeti.PDE.isLeast_rayleigh_meanZero_mixedEigenvalue_one`: `λ₁(∅)` is the least Rayleigh
+  quotient of mean zero;
+* `TauCeti.PDE.forall_inner_gradient_eq_mixedEigenvalue_one_mul_iff`: the eigenfunctions of
+  `λ₁(∅)` are `0` and the minimizers of the Rayleigh quotient of mean zero.
+
+Connectedness cannot be dropped. On an open set of finite measure that is not preconnected, a
+function constant on each of two disjoint open pieces can have mean zero and zero gradient, so the
+Rayleigh quotient of mean zero has minimum `0`, which is not a positive eigenvalue
+(`TauCeti.PDE.isLeast_rayleigh_meanZero_zero_of_not_isPreconnected`). On `(0, 1) ∪ (2, 3)` such a
+function is the one equal to `1` on the first interval and `-1` on the second.
 
 ## References
 
@@ -230,6 +243,22 @@ theorem exists_isLeast_neumannEigenvalue_pos_rayleigh_meanZero [Nontrivial E]
   · rw [← setOf_rayleigh_neumannPair hconn]
     exact CompactFormPair.isLeast_rayleigh_of_isMinOn hu₀ hmin
 
+/-- **On a disconnected domain the least Rayleigh quotient of mean zero is `0`.** If the open set
+`Ω` has finite measure and is not preconnected, the minimum of `‖∇u‖² / ‖u‖²` over the nonzero
+`u ∈ H¹(Ω)` with `∫_Ω u = 0` is `0`, attained by a function constant on each of two disjoint open
+pieces of `Ω`. So it is not a positive Neumann eigenvalue, and the connectedness hypothesis of
+`TauCeti.PDE.exists_isLeast_neumannEigenvalue_pos_rayleigh_meanZero` cannot be dropped. -/
+theorem isLeast_rayleigh_meanZero_zero_of_not_isPreconnected
+    (hconn : ¬IsPreconnected (Omega : Set E)) :
+    IsLeast {r | ∃ u : W1p mu Omega 2, W1p.value u ≠ 0 ∧
+      ∫ x in Omega, W1p.value u x ∂mu = 0 ∧ r = ‖W1p.gradient u‖ ^ 2 / ‖W1p.value u‖ ^ 2} 0 := by
+  obtain ⟨u, hu, hgrad, hint⟩ :=
+    W1p.exists_ne_zero_and_gradient_eq_zero_and_setIntegral_eq_zero (mu := mu) (p := 2) hconn
+  refine ⟨⟨u, fun h => hu (W1p.ext_value (h.trans W1p.value_zero.symm)), hint, by simp [hgrad]⟩,
+    ?_⟩
+  rintro _ ⟨v, -, -, rfl⟩
+  positivity
+
 end FiniteMeasure
 
 /-- **The second Neumann eigenvalue of a bounded connected Lipschitz domain** is the least Rayleigh
@@ -278,27 +307,67 @@ private theorem spectrum_mixedOperator_laplacian_empty_inter_Ioi
     fun v ↦ h ⟨v, hmem v⟩⟩, fun ⟨u, hu, h⟩ ↦ ⟨⟨u, hmem u⟩, fun h0 ↦ hu (congrArg Subtype.val h0),
     fun v ↦ h v⟩⟩
 
-/-- **The second eigenvalue of the Neumann Laplacian `-Δ_∅` is the least Rayleigh quotient of
-mean zero.** Let `Ω ⊆ ℝⁿ`, `n ≥ 1`, be a nonempty preconnected open set of finite measure with
-compact value map `H¹(Ω) → L²(Ω)`, on which `H¹_∅(Ω) = H¹(Ω)`, as on a bounded Lipschitz domain
-(`TauCeti.w1pVanishingOnSubmodule_empty_of_isLipschitzDomainWith`), so that the mixed Laplacian
-`-Δ_∅` is the Neumann Laplacian. Then the spectrum of `-Δ_∅` has a least positive element `κ`, and
-`κ` is the minimum of the Rayleigh quotient `‖∇u‖² / ‖u‖²` over the `u ∈ H¹(Ω)` with `u ≠ 0` and
-`∫_Ω u = 0`. -/
-theorem exists_isLeast_spectrum_mixedOperator_laplacian_empty_pos_rayleigh_meanZero
-    [Nonempty ι] [IsFiniteMeasure (mu.restrict (Omega : Set (EuclideanSpace ℝ ι)))]
-    (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2)))
-    (htop : w1pVanishingOnSubmodule mu Omega 2 ∅ = ⊤)
-    (hconn : IsPreconnected (Omega : Set (EuclideanSpace ℝ ι)))
-    (hne : (Omega : Set (EuclideanSpace ℝ ι)).Nonempty) :
-    ∃ kappa : ℝ,
-      IsLeast ((mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
-        (1 : Matrix ι ι ℝ)) ∅).spectrum ∩ Ioi 0) kappa ∧
-      IsLeast {r | ∃ u : W1p mu Omega 2, W1p.value u ≠ 0 ∧
-        ∫ x in Omega, W1p.value u x ∂mu = 0 ∧ r = ‖W1p.gradient u‖ ^ 2 / ‖W1p.value u‖ ^ 2}
-        kappa := by
-  rw [spectrum_mixedOperator_laplacian_empty_inter_Ioi hK htop]
-  exact exists_isLeast_neumannEigenvalue_pos_rayleigh_meanZero hK hconn hne
+section MinMax
+
+variable [Nonempty ι] [IsFiniteMeasure (mu.restrict (Omega : Set (EuclideanSpace ℝ ι)))]
+  (hK : IsCompactOperator (W1p.valueL (mu := mu) (Omega := Omega) (p := 2)))
+  (htop : w1pVanishingOnSubmodule mu Omega 2 ∅ = ⊤)
+  (hconn : IsPreconnected (Omega : Set (EuclideanSpace ℝ ι)))
+  (hne : (Omega : Set (EuclideanSpace ℝ ι)).Nonempty)
+include hK htop hconn hne
+
+/-- **The second min–max eigenvalue of the Neumann Laplacian is its least positive spectral
+value.** Let `Ω ⊆ ℝⁿ`, `n ≥ 1`, be a nonempty preconnected open set of finite measure with compact
+value map `H¹(Ω) → L²(Ω)`, on which `H¹_∅(Ω) = H¹(Ω)`. Then `λ₁(∅)`, the min–max value
+`TauCeti.PDE.mixedEigenvalue` with index `1`, is the least positive point of the spectrum of
+`-Δ_∅`. -/
+theorem isLeast_spectrum_mixedOperator_laplacian_empty_inter_Ioi_mixedEigenvalue_one :
+    IsLeast ((mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
+      (1 : Matrix ι ι ℝ)) ∅).spectrum ∩ Ioi 0) (mixedEigenvalue mu Omega ∅ (fun _ ↦ 1) 0 0 1) := by
+  have hspec := spectrum_mixedOperator_laplacian_eq_range (empty_disjoint _) hK hne
+  have hmono := monotone_mixedEigenvalue_laplacian (empty_disjoint _) hK hne
+  refine ⟨⟨hspec ▸ mem_range_self 1, mixedEigenvalue_laplacian_one_pos (empty_disjoint _) hK hconn
+    hne⟩, ?_⟩
+  rintro _ ⟨hk, hkpos⟩
+  obtain ⟨k, rfl⟩ := hspec ▸ hk
+  -- The constants have zero energy, so `0` is a spectral value, some `λⱼ(∅)`.
+  obtain ⟨j, hj⟩ := hspec ▸ zero_mem_spectrum_mixedOperator_laplacian_of_gradient_eq_zero
+    (empty_disjoint _) (u := W1p.const 1) (by rw [htop]; exact ClosedSubmodule.mem_top)
+    (W1p.value_const_ne_zero hne one_ne_zero) (W1p.gradient_const 1)
+  -- So `λ₀(∅) ≤ 0`, and every positive spectral value is some `λₖ(∅)` with `k ≥ 1`.
+  rcases k with _ | k
+  · exact absurd ((hmono j.zero_le).trans_eq hj) (not_le.2 hkpos)
+  · exact hmono (Nat.succ_le_succ k.zero_le)
+
+/-- **The second Neumann eigenvalue is the least Rayleigh quotient of mean zero**, in its min–max
+form. Let `Ω ⊆ ℝⁿ`, `n ≥ 1`, be a nonempty preconnected open set of finite measure with compact
+value map `H¹(Ω) → L²(Ω)`, on which `H¹_∅(Ω) = H¹(Ω)`. Then `λ₁(∅)`, the min–max value
+`TauCeti.PDE.mixedEigenvalue` with index `1`, is the minimum of the Rayleigh quotient
+`‖∇u‖² / ‖u‖²` over the `u ∈ H¹(Ω)` with `u ≠ 0` and `∫_Ω u = 0`. -/
+theorem isLeast_rayleigh_meanZero_mixedEigenvalue_one :
+    IsLeast {r | ∃ u : W1p mu Omega 2, W1p.value u ≠ 0 ∧
+      ∫ x in Omega, W1p.value u x ∂mu = 0 ∧ r = ‖W1p.gradient u‖ ^ 2 / ‖W1p.value u‖ ^ 2}
+      (mixedEigenvalue mu Omega ∅ (fun _ ↦ 1) 0 0 1) := by
+  obtain ⟨kappa, hspec, hray⟩ := exists_isLeast_neumannEigenvalue_pos_rayleigh_meanZero hK hconn hne
+  rw [← spectrum_mixedOperator_laplacian_empty_inter_Ioi hK htop] at hspec
+  rwa [(isLeast_spectrum_mixedOperator_laplacian_empty_inter_Ioi_mixedEigenvalue_one hK htop
+    hconn hne).unique hspec]
+
+/-- **The eigenfunctions of the second Neumann eigenvalue are the Rayleigh minimizers of mean
+zero.** Under the hypotheses of `TauCeti.PDE.isLeast_rayleigh_meanZero_mixedEigenvalue_one`,
+`u ∈ H¹(Ω)` satisfies `∫_Ω ∇u · ∇v = λ₁(∅) ∫_Ω u v` for every `v ∈ H¹(Ω)` exactly when
+`∫_Ω u = 0` and `‖∇u‖² = λ₁(∅) ‖u‖²`. -/
+theorem forall_inner_gradient_eq_mixedEigenvalue_one_mul_iff (u : W1p mu Omega 2) :
+    (∀ v : W1p mu Omega 2, ⟪W1p.gradient u, W1p.gradient v⟫_ℝ =
+        mixedEigenvalue mu Omega ∅ (fun _ ↦ 1) 0 0 1 * ⟪W1p.value u, W1p.value v⟫_ℝ) ↔
+      ∫ x in Omega, W1p.value u x ∂mu = 0 ∧
+        ‖W1p.gradient u‖ ^ 2 = mixedEigenvalue mu Omega ∅ (fun _ ↦ 1) 0 0 1 * ‖W1p.value u‖ ^ 2 :=
+  forall_inner_gradient_eq_iff_of_isLeast_neumannEigenvalue_pos hK hconn
+    (spectrum_mixedOperator_laplacian_empty_inter_Ioi hK htop ▸
+      isLeast_spectrum_mixedOperator_laplacian_empty_inter_Ioi_mixedEigenvalue_one hK htop hconn
+        hne) u
+
+end MinMax
 
 end PDE
 

@@ -44,7 +44,9 @@ their weak derivatives are bounded in `Lᵖ(W)` on every open `W` with compact c
   allowed: the hypotheses for `p` give those for the finite exponent `min p 3`.
 * *Smooth data.* If the data are smooth and converge in `C^∞` on compact sets, a subsequence
   converges in `C^∞` on compact subsets of `Ω` to a smooth solution of the limiting equation
-  (`TauCeti.exists_subseq_forall_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn`).
+  (`TauCeti.exists_subseq_forall_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn`). Both cases
+  are combined for `1 ≤ ℓ ≤ ∞`, with orders read in `ℕ∞`, in
+  `TauCeti.exists_subseq_forall_le_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn`.
 * *Gradient bounds* (McDuff–Salamon, Theorem 4.1.1). In the compactness theorem for `ℓ ≥ 1` and
   data converging in `C^ℓ`, and in the one for smooth data converging in `C^∞` (in particular fixed
   smooth data), a bound on `‖du n‖` on each compact subset of `Ω`, uniform in `n`, may replace the
@@ -562,6 +564,45 @@ theorem exists_subseq_forall_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn 
     (((tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.1 (hconv 0)).comp_tendsto
       hψ'.tendsto_atTop).tendsto_at hz)
   exact ⟨σ, v, hσ, hv, hw.congr hvw, hconv⟩
+
+/-- **Compactness for the nonlinear Cauchy–Riemann equation, any order** (McDuff–Salamon, Theorem
+B.4.2 and Remark B.4.3, planar interior case). For `1 ≤ ℓ ≤ ∞` and data of class `C^ℓ` converging
+in `C^ℓ` on compact subsets of `ℂ × V`, a subsequence of the solutions converges in `C^ℓ` on compact
+subsets of `Ω` to a solution of the limiting equation of class `C^ℓ` on `Ω`. This combines
+`TauCeti.exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn` for finite `ℓ` and
+`TauCeti.exists_subseq_forall_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn` for `ℓ = ∞`,
+with the orders `k ≤ ℓ` read in `ℕ∞`. -/
+theorem exists_subseq_forall_le_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn {p : ℝ≥0∞}
+    (hp : 2 < p) {ℓ : ℕ∞} (hℓ : 1 ≤ ℓ) {J : ℕ → ℂ → V → V →L[ℝ] V} {η : ℕ → ℂ → V → V}
+    {J₀ : ℂ → V → V →L[ℝ] V} {η₀ : ℂ → V → V} {u : ℕ → ℂ → V}
+    (hJ : ∀ n, ContDiff ℝ ℓ (fun x : ℂ × V => J n x.1 x.2))
+    (hη : ∀ n, ContDiff ℝ ℓ (fun x : ℂ × V => η n x.1 x.2))
+    (hJt : ∀ i : ℕ, (i : ℕ∞) ≤ ℓ → TendstoLocallyUniformly
+      (fun n => iteratedFDeriv ℝ i (fun x : ℂ × V => J n x.1 x.2))
+      (iteratedFDeriv ℝ i (fun x : ℂ × V => J₀ x.1 x.2)) atTop)
+    (hηt : ∀ i : ℕ, (i : ℕ∞) ≤ ℓ → TendstoLocallyUniformly
+      (fun n => iteratedFDeriv ℝ i (fun x : ℂ × V => η n x.1 x.2))
+      (iteratedFDeriv ℝ i (fun x : ℂ × V => η₀ x.1 x.2)) atTop)
+    (hJ2 : ∀ n, ∀ᵐ z ∂volume.restrict Ω, J n z (u n z) * J n z (u n z) = -1)
+    (hu : ∀ n, IsWeakCauchyRiemannOn p Ω (J n) (η n) (u n))
+    (hK : ∀ K ⊆ (Ω : Set ℂ), IsCompact K → ∃ K' : Set V, IsCompact K' ∧ ∀ n, MapsTo (u n) K K')
+    (hd : ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
+      ∃ c : ℝ≥0, ∀ n, ∃ D, HasWeakFDerivOn volume W (u n) D ∧ eLpNorm D p (volume.restrict W) ≤ c) :
+    ∃ (φ : ℕ → ℕ) (v : ℂ → V), StrictMono φ ∧ ContDiffOn ℝ ℓ v Ω ∧
+      IsWeakCauchyRiemannOn p Ω J₀ η₀ v ∧ ∀ k : ℕ, (k : ℕ∞) ≤ ℓ → TendstoLocallyUniformlyOn
+        (fun n => iteratedFDeriv ℝ k (u (φ n))) (iteratedFDeriv ℝ k v) atTop Ω := by
+  induction ℓ using ENat.recTopCoe with
+  | top =>
+    obtain ⟨φ, v, hφ, hv, hw, hconv⟩ :=
+      exists_subseq_forall_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn hp hJ hη
+        (fun i ↦ hJt i le_top) (fun i ↦ hηt i le_top) hJ2 hu hK hd
+    exact ⟨φ, v, hφ, hv, hw, fun k _ ↦ hconv k⟩
+  | coe ℓ =>
+    obtain ⟨φ, v, hφ, hv, hw, hconv⟩ :=
+      exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn hp (by exact_mod_cast hℓ)
+        hJ hη (fun i hi ↦ hJt i (by exact_mod_cast hi)) (fun i hi ↦ hηt i (by exact_mod_cast hi))
+        hJ2 hu hK hd
+    exact ⟨φ, v, hφ, hv, hw, fun k hk ↦ hconv k (by exact_mod_cast hk)⟩
 
 /-! ### Gradient bounds -/
 
