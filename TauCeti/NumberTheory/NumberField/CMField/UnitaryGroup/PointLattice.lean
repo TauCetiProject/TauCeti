@@ -186,4 +186,19 @@ theorem mem_finiteLattice_one_iff (y : ι → E) :
     (algebraMap E 𝔸ᶠ[E] ∘ y) ∈ V.finiteLattice 1 ↔ y ∈ V.lattice := by
   simp only [mem_finiteLattice_iff, mem_lattice_iff, OneMemClass.coe_one, mul_one]
 
+/-- The Hermitian pairing of rational lattice vectors is integral. -/
+theorem isIntegral_dotProduct_gram_mulVec {y z : ι → E}
+    (hy : y ∈ V.lattice) (hz : z ∈ V.lattice) : IsIntegral ℤ (star y ⬝ᵥ (V.gram *ᵥ z)) := by
+  let f := algebraMap E 𝔸ᶠ[E]
+  have h := V.finiteForm_mem_integralAdeles 1
+    ((V.mem_finiteLattice_one_iff y).mpr hy) ((V.mem_finiteLattice_one_iff z).mpr hz)
+  have heq : f (star y ⬝ᵥ (V.gram *ᵥ z)) = V.finiteForm (f ∘ y) (f ∘ z) := by
+    have hstar : f ∘ star y = star (f ∘ y) := funext fun i ↦ algebraMap_star_comm (y i)
+    have hzmap : f ∘ (V.gram *ᵥ z) = V.gram.map f *ᵥ (f ∘ z) := funext (f.map_mulVec V.gram z)
+    rw [V.finiteForm_def, f.map_dotProduct, hstar, hzmap]
+  rw [← heq] at h
+  obtain ⟨a, ha⟩ := (FiniteAdeleRing.algebraMap_mem_integralAdeles_iff _).mp h
+  rw [← ha]
+  exact RingOfIntegers.isIntegral_coe a
+
 end TauCeti.FramedHermitianSpace
