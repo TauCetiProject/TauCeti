@@ -73,6 +73,14 @@ abbrev SpecialFiberCohomologyFiniteDimensional {R : Type u} [CommRing R] [IsLoca
     FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
       (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj n)
 
+/-- Special-fibre `H⁰` finiteness for the components of a universally closed, locally of finite
+type scheme over a local ring. -/
+theorem specialFiberCohomologyFiniteDimensional_zero {R : Type u} [CommRing R] [IsLocalRing R]
+    {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R))
+    [UniversallyClosed toBase] [LocallyOfFiniteType toBase] :
+    toBase.SpecialFiberCohomologyFiniteDimensional 0 :=
+  fun _ ↦ toBase.finiteDimensional_cohomology_zero_subscheme_closure_singleton
+
 /-! ### Multidegrees across `X`, `X_s`, and `(X_s)_red`, and the weighted intersection matrix -/
 
 section Multidegree

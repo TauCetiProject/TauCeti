@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Billiard.PhaseSpace
+public import TauCeti.Dynamics.Billiard.PolygonalTable.Trajectory
 public import TauCeti.Analysis.Complex.Rectangle
 import TauCeti.Analysis.Complex.PlaneSeparation.Convex
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
@@ -29,6 +30,12 @@ the square `[0, 1/2] × [0, 1/2]` the mass `1/4`
 on the phase space, since the identification of states at the sides keeps the position
 (`TauCeti.Examples.UnitSquare.position`), and `μ_P` is the area of the position set, divided by
 the area `1` of the table, the directions contributing a factor `2π / 2π`.
+
+The state at the center `(1 + i)/2` with direction `1` points inward, flies freely for time `1/2`
+(`TauCeti.Examples.UnitSquare.flightTime_center_one`) and hits the right side at `1 + i/2`, a point
+of the relative interior of the side from `1` to `1 + i`, whose direction is `i`. There the
+direction is reflected to `σ(1) = i² = −1`: the first collision state is `(1 + i/2, −1)`
+(`TauCeti.Examples.UnitSquare.collisionState_center_one`).
 -/
 
 open Complex Set MeasureTheory
@@ -177,5 +184,86 @@ theorem liouville_position_preimage_quarter :
     circleArcLength_univ, carrier_unitSquareTable, hvol]
   -- `(2π · 1)⁻¹ · (1/4 · 2π) = 1/4`
   rw [mul_one, mul_left_comm, ENNReal.inv_mul_cancel h2π ENNReal.ofReal_ne_top, mul_one]
+
+/-! ### A trajectory from the center -/
+
+section Trajectory
+
+open PolygonalTable
+
+/-- The center of the unit square. -/
+abbrev center : ℂ := (1 + I) / 2
+
+theorem interior_carrier_unitSquareTable :
+    interior unitSquareTable.carrier = Ioo 0 1 ×ℂ Ioo 0 1 := by
+  rw [carrier_unitSquareTable, interior_rectangle (by simp) (by simp)]
+  simp
+
+/-- The state at the center of the unit square with direction `1` points inward. -/
+theorem pointsInward_center_one : unitSquareTable.PointsInward center 1 :=
+  pointsInward_of_mem_interior (by
+    rw [interior_carrier_unitSquareTable]
+    exact ⟨by norm_num [center], by norm_num [center]⟩) 1
+
+/-- **From the center in direction `1`, the free flight time is `1/2`.** -/
+theorem flightTime_center_one : unitSquareTable.flightTime center 1 = 1 / 2 := by
+  rw [flightTime_def]
+  refine IsLeast.csInf_eq ⟨⟨by norm_num, ?_⟩, fun t (htf : 0 < t ∧ _) => ?_⟩
+  · rw [carrier_unitSquareTable, frontier_rectangle]
+    refine Or.inr ⟨?_, ?_⟩ <;> norm_num [center, uIcc_of_le]
+  · obtain ⟨ht, hf⟩ := htf
+    by_contra! h
+    refine Set.disjoint_left.1 disjoint_interior_frontier ?_ hf
+    rw [interior_carrier_unitSquareTable, mem_reProdIm]
+    refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> norm_num [center] <;> linarith
+
+/-- From the center in direction `1`, the trajectory hits the frontier at `1 + i/2`. -/
+theorem hitPoint_center_one : unitSquareTable.hitPoint center 1 = 1 + I / 2 := by
+  rw [hitPoint_def, flightTime_center_one]
+  push_cast
+  ring
+
+/-- The right side of the unit square, from `1` to `1 + i`. -/
+def rightSide : unitSquareTable.Side := ofSimplePolygonSideEquiv squareSimplePolygon (1 : Fin 4)
+
+theorem start_rightSide : rightSide.start = 1 :=
+  -- As in `carrier_unitSquareTable`, `squareSimplePolygon.toPolygon` is `squarePolygon` by
+  -- definition, and `(1 : Fin squareSimplePolygon.numVertices)` is `(1 : Fin 4)`.
+  (Side.start_ofSimplePolygonSideEquiv squareSimplePolygon _).trans squarePolygon_one
+
+theorem finish_rightSide : rightSide.finish = 1 + I := by
+  refine (Side.finish_ofSimplePolygonSideEquiv squareSimplePolygon (1 : Fin 4)).trans ?_
+  -- As in `carrier_unitSquareTable`, `squareSimplePolygon.toPolygon` is `squarePolygon` by
+  -- definition; its vertex count `squareSimplePolygon.numVertices` only unfolds to `4`, so we
+  -- `change`.
+  change squarePolygon (finRotate 4 1) = 1 + I
+  exact squarePolygon_two
+
+/-- The right side of the unit square has direction `i`. -/
+theorem coe_direction_rightSide : (rightSide.direction : ℂ) = I := by
+  simp [Side.coe_direction, finish_rightSide, start_rightSide]
+
+/-- The point `1 + i/2` lies in the relative interior of the right side. -/
+theorem one_add_I_div_two_mem_sideInterior :
+    1 + I / 2 ∈ unitSquareTable.sideInterior rightSide := by
+  rw [sideInterior_eq_openSegment, start_rightSide, finish_rightSide, openSegment_eq_image']
+  refine ⟨1 / 2, ⟨by norm_num, by norm_num⟩, ?_⟩
+  simp only [add_sub_cancel_left, real_smul]
+  push_cast
+  ring
+
+/-- **The first collision state from the center in direction `1` is `(1 + i/2, −1)`.** -/
+theorem collisionState_center_one :
+    unitSquareTable.collisionState (center, 1) 1 = (1 + I / 2, -1) := by
+  have h1 : (unitSquareTable.collisionState (center, 1) 1).1 = 1 + I / 2 := by
+    rw [collisionState_one_fst]
+    exact hitPoint_center_one
+  have h1' := h1 ▸ one_add_I_div_two_mem_sideInterior
+  refine Prod.ext h1 (Subtype.ext ?_)
+  rw [collisionState_succ_snd_of_mem_sideInterior (n := 0) h1', collisionState_zero,
+    Billiard.coe_directionReflection, Billiard.sideReflection_apply, coe_direction_rightSide]
+  simp
+
+end Trajectory
 
 end TauCeti.Examples.UnitSquare

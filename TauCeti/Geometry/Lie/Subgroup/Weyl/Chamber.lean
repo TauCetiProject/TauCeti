@@ -54,6 +54,11 @@ every `X₀`; uniqueness fails without regularity, since `X₀ = 0` gives `C = �
   `X + s X₀` to `Y + s v w X₀`, both in the open chamber, so `v w = 1` and `X = v w X = v Y = Y`.
   This is a direct argument for the closed chamber, with walls, not only for the open one.
 
+The same three steps, for any finite group acting linearly with reflections in a family of
+hyperplanes and freely on the regular points, give the generic strict fundamental domain theorem
+`Representation.existsUnique_mem_closedChamber_orbitRel` of
+`TauCeti.RepresentationTheory.ReflectingHyperplane.FundamentalDomain`.
+
 The chamber is cut out by the roots, not by the reflecting hyperplanes of the finite group `W`
 acting on `𝔱` as in `Representation.chamber`, and not through a root pairing as in
 `TauCeti.weylChamber`: identifying either of those with the root data of `T` requires knowing that
@@ -74,6 +79,7 @@ space `𝔤* / Ad* G`, placing `X ∈ C` at the coadjoint orbit of its covector 
 ## Main definitions
 
 * `TauCeti.sameSideChamber α X₀`: the closed chamber of a family of linear forms containing `X₀`.
+* `TauCeti.Lie.IsMaximalTorus.weylSameSideChamberHomeomorph`: `C ≃ₜ 𝔱 / W`.
 * `TauCeti.Lie.IsMaximalTorus.sameSideChamberOrbitHomeomorph`: `C ≃ₜ 𝔤 / Ad G`.
 * `TauCeti.Lie.IsMaximalTorus.sameSideChamberCoadjointOrbitHomeomorph`: `C ≃ₜ 𝔤* / Ad* G`.
 
@@ -91,6 +97,8 @@ space `𝔤* / Ad* G`, placing `X ∈ C` at the coadjoint orbit of its covector 
   group and a regular `X₀`, two Weyl-related points of the closed chamber are equal.
 * `TauCeti.Lie.IsMaximalTorus.existsUnique_mem_sameSideChamber_Ad`: for a compact connected group
   and a regular `X₀`, every adjoint orbit meets the closed chamber in exactly one point.
+* `TauCeti.Lie.IsMaximalTorus.existsUnique_mem_sameSideChamber_orbitRel_coadjointRepresentation`:
+  every coadjoint orbit contains exactly one covector `B'(X, ·)` with `X` in the closed chamber.
 
 ## References
 
@@ -253,11 +261,8 @@ theorem IsMaximalTorus.apply_weylAdjointRepresentation_ne_zero (hT : IsMaximalTo
   rw [← hD.stabilizer_continuousAdjointRepresentation_eq_iff hT.isTorus rfl hB hsep hα hV] at hX ⊢
   obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective w
   -- The stabilizer of `Ad_n X` is the conjugate by `n` of the stabilizer `T` of `X`.
-  have := Representation.stabilizer_conj
-    (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation n X
-  simp only [ContRepresentation.toRepresentation_apply, continuousAdjointRepresentation_apply,
-    hX] at this
-  rw [Subgroup.coe_weylAdjointRepresentation_mk_apply, this]
+  rw [Subgroup.coe_weylAdjointRepresentation_mk_apply,
+    stabilizer_continuousAdjointRepresentation_Ad, hX]
   exact Subgroup.mem_normalizer_iff_map_conj_eq.1 n.property
 
 /-- **The Weyl group acts freely on the regular elements.** For a compact connected group, an
@@ -504,10 +509,51 @@ theorem IsMaximalTorus.sameSideChamberOrbitHomeomorph_apply (X : sameSideChamber
         ((X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) : LeftInvariantDerivation I G) :=
   (rfl)
 
+/-- **A closed Weyl chamber is the Weyl orbit space of `𝔱`.** For a maximal torus `T` of a
+compact connected Lie group, a root-plane decomposition of `𝔤` over `𝔱` with nonzero planes for a
+symmetric positive definite invariant form, and a regular `X₀ ∈ 𝔱`, sending a point of the closed
+chamber of `X₀` to its Weyl orbit is a homeomorphism onto `𝔱 / W`. -/
+def IsMaximalTorus.weylSameSideChamberHomeomorph :
+    sameSideChamber α X₀ ≃ₜ Quotient (T.weylAdjointRepresentation (I := I)).orbitRel :=
+  (hT.sameSideChamberOrbitHomeomorph hBs hBp hB hD hV hX₀).trans hT.weylOrbitHomeomorph.symm
+
+/-- The homeomorphism `IsMaximalTorus.weylSameSideChamberHomeomorph` sends a point of the chamber
+to its Weyl orbit. -/
+@[simp]
+theorem IsMaximalTorus.weylSameSideChamberHomeomorph_apply (X : sameSideChamber α X₀) :
+    hT.weylSameSideChamberHomeomorph hBs hBp hB hD hV hX₀ X =
+      Quotient.mk (T.weylAdjointRepresentation (I := I)).orbitRel
+        (X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) := by
+  rw [weylSameSideChamberHomeomorph, Homeomorph.trans_apply, Homeomorph.symm_apply_eq,
+    weylOrbitHomeomorph_mk, sameSideChamberOrbitHomeomorph_apply]
+
 /-- Evaluation at the identity, the Lie algebra isomorphism from left-invariant derivations to the
 tangent Lie algebra `𝔤` on which the coadjoint representation is defined. -/
 local notation "evalOne" => leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
   (BoundarylessManifold.isInteriorPoint (x := (1 : G)))
+
+/-- **Every coadjoint orbit contains exactly one covector of a closed Weyl chamber.** For a maximal
+torus `T` of a compact connected Lie group, a root-plane decomposition of `𝔤` over `𝔱` with nonzero
+planes for a symmetric positive definite invariant form, a regular `X₀ ∈ 𝔱`, and an invariant form
+`B'` with trivial left radical on the tangent Lie algebra `𝔤`, every covector `ν ∈ 𝔤*` lies in the
+coadjoint orbit of `B'(X, ·)` for exactly one `X` in the closed chamber of `X₀`. -/
+theorem IsMaximalTorus.existsUnique_mem_sameSideChamber_orbitRel_coadjointRepresentation
+    {B' : LinearMap.BilinForm ℝ (GroupLieAlgebra I G)}
+    (hB' : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B')
+    (hB's : LinearMap.SeparatingLeft B') (ν : Dual ℝ (GroupLieAlgebra I G)) :
+    ∃! Y, Y ∈ sameSideChamber α X₀ ∧ (coadjointRepresentation ℝ I G).orbitRel
+      (B' (evalOne (Y : LeftInvariantDerivation I G))) ν := by
+  set r := (coadjointRepresentation ℝ I G).orbitRel
+  obtain ⟨g, X, hX, hgX⟩ := hT.exists_coadjointRepresentation_apply_eq hB' hB's ν
+  -- The covector `ν` is coadjoint to `B'(X, ·)` with `X ∈ 𝔱`.
+  have hνX : r (B' (evalOne X)) ν := (Representation.orbitRel_apply _).2 ⟨g, hgX⟩
+  obtain ⟨Y, ⟨hY, hYX⟩, huniq⟩ :=
+    hT.existsUnique_mem_sameSideChamber_orbitRel hBs hBp hB hD hV hX₀ ⟨X, hX⟩
+  refine ⟨Y, ⟨hY, r.iseqv.trans
+    ((hT.orbitRel_coadjointRepresentation_iff hB' hB's Y ⟨X, hX⟩).2 hYX) hνX⟩,
+    fun Y' ⟨hY', hY'ν⟩ ↦ huniq Y' ⟨hY', ?_⟩⟩
+  exact (hT.orbitRel_coadjointRepresentation_iff hB' hB's Y' ⟨X, hX⟩).1
+    (r.iseqv.trans hY'ν (r.iseqv.symm hνX))
 
 variable {B' : LinearMap.BilinForm ℝ (GroupLieAlgebra I G)}
   (hB' : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B')

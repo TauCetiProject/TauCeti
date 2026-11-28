@@ -55,8 +55,9 @@ chain map, and its cup product satisfies the Leibniz rule `δ(a ∪ b) = δa ∪
 when the broken Y-flow lines between any three critical points are evenly many in total
 (`IsMorseSmaleTriple.morseDiagonalMap_comp_morseBoundary_eq_iff`,
 `IsMorseSmaleTriple.morseCupProduct_comp_morseBoundary_eq_iff`). That they are, because they are
-the ends of the compactified one-dimensional Y-slices, needs the gluing of Y-flow lines and is not
-proved here.
+the ends of the compactified one-dimensional Y-slices, needs the gluing of Y-flow lines and is
+proved in `TauCeti.Geometry.Manifold.Morse.Boundary.Diagonal.ChainMap`
+(`IsMorseSmaleTriple.even_ncard_root_add_ncard_firstLeaf_add_ncard_secondLeaf`).
 
 The arguments follow those for a pair of pseudo-gradients in
 `TauCeti.Geometry.Manifold.Morse.Stable.Pair`: the Y-slice is the intersection of the transverse

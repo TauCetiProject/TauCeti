@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Center.Basic
 public import Mathlib.CategoryTheory.Discrete.Basic
 public import Mathlib.CategoryTheory.Products.Basic
 public import Mathlib.CategoryTheory.SingleObj
+public import TauCeti.CategoryTheory.Center.Basic
 
 /-!
 # The centre of a disjoint union of copies of a one-object groupoid
@@ -20,6 +21,9 @@ disjoint union, indexed by `I`, of copies of the one-object groupoid of `G`. A p
 `(i, ⋆)` (`BandFixtures.componentCenter`); it is a unit of the categorical centre, with inverse the
 pointwise inverse profile (`BandFixtures.componentCenterUnit`), and every centre unit arises from a
 unique profile: the units of the centre are the profiles (`BandFixtures.componentCenterEquiv`).
+For a single copy, a coefficient `g` is the central endomorphism of `SingleObj G` acting by `g`
+(`BandFixtures.singleCenter`), a unit of the centre with inverse `g⁻¹`
+(`BandFixtures.singleCenterUnit`).
 
 These are the fibres of the constant pseudofunctors used to test central sections of gerbes: for
 `I = Bool` the profile `(1, 2)` of `C₃` acts differently on the two components, so no single
@@ -29,6 +33,8 @@ coefficient represents it.
 
 In the namespace `CategoryTheory.Pseudofunctor.BandFixtures`:
 
+* `singleCenter g`, `singleCenterUnit g`: a coefficient as a central endomorphism and a central
+  unit of `SingleObj G`.
 * `componentCenter a`: the central endomorphism with component `(𝟙, a i)` at `(i, ⋆)`.
 * `componentCenterUnit a`: the corresponding unit of the centre.
 * `componentCenterEquiv I G : (I → G) ≃* (CatCenter (Discrete I × SingleObj G))ˣ`.
@@ -49,15 +55,31 @@ namespace CategoryTheory.Pseudofunctor.BandFixtures
 
 variable {I : Type u} {G : Type v}
 
-/-- A central endomorphism of `Discrete I × SingleObj G` is determined by its group components. -/
-theorem catCenter_ext_discrete_prod_singleObj [Monoid G]
-    {z w : CatCenter (Discrete I × SingleObj G)}
-    (h : ∀ x : Discrete I × SingleObj G, (z.app x).2 = (w.app x).2) : z = w :=
-  CatCenter.ext _ _ fun x ↦ Prod.hom_ext (Subsingleton.elim _ _) (h x)
-
 section CommMonoid
 
 variable [CommMonoid G]
+
+-- Exposed so that central sections of one-object diagrams can be compared with it by unfolding
+-- `MonCat.toCat`.
+/-- A coefficient `g` of a commutative monoid `G` as a natural endomorphism of the identity functor
+of `SingleObj G`. It is natural because `G` is commutative. -/
+@[expose] def singleCenter (g : G) : CatCenter (SingleObj G) :=
+  .of
+    { app _ := (g : SingleObj.star G ⟶ SingleObj.star G)
+      naturality _ _ f := mul_comm g f }
+
+@[simp]
+theorem singleCenter_app (g : G) (x : SingleObj G) :
+    (singleCenter g).app x = (g : SingleObj.star G ⟶ SingleObj.star G) :=
+  (rfl)
+
+@[simp]
+theorem singleCenter_mul (g h : G) : singleCenter (g * h) = singleCenter g * singleCenter h :=
+  CatCenter.ext _ _ fun _ ↦ rfl
+
+@[simp]
+theorem singleCenter_one : singleCenter (1 : G) = 1 :=
+  CatCenter.ext _ _ fun _ ↦ rfl
 
 /-- The **centre of a profile** `a : I → G`: the natural endomorphism of the identity of
 `Discrete I × SingleObj G` with component `(𝟙, a i)` at an object over the label `i`. It is natural
@@ -88,13 +110,13 @@ theorem componentCenter_app_snd (a : I → G) (x : Discrete I × SingleObj G) :
 @[simp]
 theorem componentCenter_mul (a b : I → G) :
     componentCenter (a * b) = componentCenter a * componentCenter b :=
-  catCenter_ext_discrete_prod_singleObj fun x ↦ by
+  CatCenter.ext_prod_singleObj fun x ↦ by
     simp [CatCenter.mul_app', SingleObj.comp_as_mul]
 
 /-- The centre of the trivial profile is the identity. -/
 @[simp]
 theorem componentCenter_one : componentCenter (1 : I → G) = 1 :=
-  catCenter_ext_discrete_prod_singleObj fun _ ↦ by
+  CatCenter.ext_prod_singleObj fun _ ↦ by
     simp [CatCenter.app_one, SingleObj.id_as_one]
 
 end CommMonoid
@@ -102,6 +124,35 @@ end CommMonoid
 section CommGroup
 
 variable [CommGroup G]
+
+-- Exposed for the same reason as `singleCenter`.
+/-- A coefficient `g` of a commutative group `G` as a unit of the categorical centre of
+`SingleObj G`, with inverse coefficient `g⁻¹`. -/
+@[expose] def singleCenterUnit (g : G) : (CatCenter (SingleObj G))ˣ :=
+  MonoidHom.toHomUnits
+    { toFun := singleCenter, map_one' := singleCenter_one, map_mul' := singleCenter_mul } g
+
+@[simp]
+theorem val_singleCenterUnit (g : G) : (singleCenterUnit g).val = singleCenter g :=
+  (rfl)
+
+/-- The inverse of the central unit of `g` is the central endomorphism of `g⁻¹`. -/
+theorem val_inv_singleCenterUnit (g : G) : (singleCenterUnit g)⁻¹.val = singleCenter g⁻¹ :=
+  (rfl)
+
+/-- The inverse of the central unit of `g` is the central unit of `g⁻¹`. -/
+@[simp]
+theorem singleCenterUnit_inv (g : G) : (singleCenterUnit g)⁻¹ = singleCenterUnit g⁻¹ :=
+  Units.ext (val_inv_singleCenterUnit g)
+
+@[simp]
+theorem singleCenterUnit_mul (g h : G) :
+    singleCenterUnit (g * h) = singleCenterUnit g * singleCenterUnit h :=
+  Units.ext (singleCenter_mul g h)
+
+@[simp]
+theorem singleCenterUnit_one : singleCenterUnit (1 : G) = 1 :=
+  Units.ext singleCenter_one
 
 /-- The **centre unit of a profile** `a`, with inverse the centre of the pointwise inverse
 profile. -/
@@ -141,7 +192,7 @@ def componentCenterEquiv : (I → G) ≃* (CatCenter (Discrete I × SingleObj G)
   toFun := componentCenterUnit
   invFun z i := (z.val.app (⟨i⟩, SingleObj.star G)).2
   left_inv _ := rfl
-  right_inv _ := Units.ext <| catCenter_ext_discrete_prod_singleObj fun ⟨⟨_⟩, ⟨⟩⟩ ↦ rfl
+  right_inv _ := Units.ext <| CatCenter.ext_prod_singleObj fun ⟨⟨_⟩, ⟨⟩⟩ ↦ rfl
   map_mul' := componentCenterUnit_mul
 
 @[simp]

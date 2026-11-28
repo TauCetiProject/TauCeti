@@ -255,7 +255,7 @@ lemma sheafifyPresheafHomEquiv_toSheafify (M N : F.obj (.mk (op U))) (T : Over U
         ((Over.map T.hom).obj (Over.mk (𝟙 T.left))).hom (by simp) (by simp) := by
       rw [Over.mapObjMkIdHom, Over.mapMkIso_hom]
       simp only [presheafHom_map, TypeCat.ofHom_apply, Quiver.Hom.unop_op, Over.homMk_left]
-    rw [overMapCompPresheafHomIso_hom_app_apply, presheafHomObjHomEquiv_eq_map, hx]
+    rw [overMapCompPresheafHomIso_hom_app, presheafHomObjHomEquiv_eq_map, hx]
     simp [pullHom]
   apply Fiber.hom_ext
   rw [Fiber.homEquiv_sheafifyPresheafHomEquiv,
@@ -309,10 +309,10 @@ lemma toFiber_map_comp_pullbackHom_sheafifyPresheafHomEquiv_comp (M N : F.obj (.
     simp only [Category.assoc] at h
     simp only [NatTrans.comp_app, ConcreteCategory.comp_apply, Functor.whiskerLeft_app,
       Functor.whiskerRight_app, presheafHomPostcomp_app_apply, presheafHomPrecomp_app_apply,
-      overMapCompPresheafHomIso_hom_app_apply, Category.assoc]
+      overMapCompPresheafHomIso_hom_app, Category.assoc]
     -- The remaining component of `overMapCompPresheafHomIso` is at an object of the form
     -- `(Over.map p.left).op.obj Z`, at which its argument `w` is typed only up to unfolding.
-    erw [overMapCompPresheafHomIso_hom_app_apply]
+    erw [overMapCompPresheafHomIso_hom_app]
     simp only [Category.assoc]
     exact h
   have key' := congrArg (J.sheafifySections T'.left).map key
@@ -350,7 +350,7 @@ lemma sheafifyPresheafHomEquiv_mkId (M N : F.obj (.mk (op U)))
     have h := mapComp'_conj_eq_mapId'_conj_pullHom Z.unop.hom _ rfl
       ((Over.mapId U).inv.app Z.unop).left (by simp) M N w
     simp only [NatTrans.comp_app, ConcreteCategory.comp_apply, Functor.whiskerRight_app,
-      presheafHomPrecomp_app_apply, overMapCompPresheafHomIso_hom_app_apply]
+      presheafHomPrecomp_app_apply, overMapCompPresheafHomIso_hom_app]
     -- As in `toFiber_map_comp_pullbackHom_sheafifyPresheafHomEquiv_comp`, the remaining component
     -- is at an object at which its argument is typed only up to unfolding.
     erw [presheafHomPostcomp_app_apply]
@@ -383,7 +383,7 @@ lemma Fiber.pullbackHom_toFiber_map (f : V ⟶ U) {M N : F.obj (.mk (op U))} (φ
       (Over.mkIdTerminal.from ((Over.map f).obj (Over.mk (𝟙 V)))).op
         (F.presheafHomObjHomEquiv φ)) = F.presheafHomObjHomEquiv
           ((F.map f.op.toLoc).toFunctor.map φ) := by
-    rw [presheafHom_map_presheafHomObjHomEquiv, overMapCompPresheafHomIso_hom_app_apply]
+    rw [presheafHom_map_presheafHomObjHomEquiv, overMapCompPresheafHomIso_hom_app]
     -- The object `Over.mk (𝟙 V)` appears both as it is and as `unop (op _)`.
     erw [mapComp'_naturality_1]
     exact (presheafHomObjHomEquiv_eq_map F _).symm

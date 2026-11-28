@@ -304,7 +304,8 @@ private def MooreLoopSpace.zerothHomotopyDoubleSphereEquiv (b : OrthonormalBasis
 private theorem MooreLoopSpace.zerothHomotopyDoubleSphereEquiv_mk_one
     (b : OrthonormalBasis (Fin 3) ℝ E) (x : sphere (0 : E) 1) :
     zerothHomotopyDoubleSphereEquiv b x (.mk 1) = 0 := by
-  simp [zerothHomotopyDoubleSphereEquiv]
+  rw [zerothHomotopyDoubleSphereEquiv, Equiv.trans_apply, zerothHomotopyDoubleEquiv_mk_one]
+  simp
 
 /-- **Reduced zeroth homology of the double loop space of `S²`.** For the unit sphere `S²` of a
 real inner product space with an orthonormal basis `b` indexed by `Fin 3`, the reduced zeroth
