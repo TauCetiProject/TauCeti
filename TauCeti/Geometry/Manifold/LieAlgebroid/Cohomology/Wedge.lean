@@ -39,7 +39,8 @@ private lemma linearEquiv_cast_rfl {R ι : Type*} {M : ι → Type*} [Semiring R
 
 section Wedge
 open ContMDiffSection (wedge wedge_zero_left wedge_zero_right wedge_comm wedge_apply_zero_right
-  interior interior_wedge interior_cast ext_of_interior alternating_cast_apply trivialEquiv
+  interior interior_wedge interior_cast ext_of_interior alternating_add_apply
+  alternating_const_smul_apply alternating_smul_apply alternating_cast_apply trivialEquiv
   alternatingIsEmptyEquiv)
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
@@ -99,8 +100,7 @@ theorem extDeriv_smul_apply {k : ℕ} (f : C^∞⟮I, M; ℝ⟯) (η : A.Cochain
     (v : Fin (k + 1) → V x) : (A.extDeriv k (f • η)) x v =
       wedge (A.extDeriv 0 (A.cochainZeroEquiv.symm f)) η x (v ∘ Fin.cast (Nat.add_comm 1 k)) +
         f x * (A.extDeriv k η) x v := by
-  rw [A.extDeriv_smul, ContMDiffSection.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
-    alternating_cast_apply, ContMDiffSection.smul_apply, ContinuousAlternatingMap.smul_apply,
+  rw [A.extDeriv_smul, alternating_add_apply, alternating_cast_apply, alternating_smul_apply,
     smul_eq_mul]
 private lemma extDeriv_wedge_zero_left {l : ℕ} (φ : A.Cochain 0) (ψ : A.Cochain l) :
     A.extDeriv (0 + l) (wedge φ ψ) = LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := A.Cochain)
@@ -152,8 +152,7 @@ theorem extDeriv_wedge_apply {k l : ℕ} (φ : A.Cochain k) (ψ : A.Cochain l) (
       wedge (A.extDeriv k φ) ψ x (v ∘ Fin.cast (Nat.add_right_comm k 1 l)) +
         (-1 : ℝ) ^ k • wedge φ (A.extDeriv l ψ) x
           (v ∘ Fin.cast (Nat.add_assoc k l 1).symm) := by
-  rw [A.extDeriv_wedge, ContMDiffSection.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
-    alternating_cast_apply, ContMDiffSection.coe_smul, Pi.smul_apply,
-    ContinuousAlternatingMap.smul_apply, alternating_cast_apply]
+  rw [A.extDeriv_wedge, alternating_add_apply, alternating_cast_apply, alternating_const_smul_apply,
+    alternating_cast_apply]
 end Wedge
 end TauCeti.LieAlgebroid

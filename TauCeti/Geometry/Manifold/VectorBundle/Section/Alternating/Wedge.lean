@@ -138,7 +138,8 @@ theorem interior_wedge_apply {k l : ℕ} (s : Cₛ^n⟮I; FW, W⟯)
     (φ : Cₛ^n⟮I; FW [⋀^Fin (k + 1)]→L[ℝ] ℝ, fun x ↦ W x [⋀^Fin (k + 1)]→L[ℝ] ℝ⟯)
     (ψ : Cₛ^n⟮I; FW [⋀^Fin (l + 1)]→L[ℝ] ℝ, fun x ↦ W x [⋀^Fin (l + 1)]→L[ℝ] ℝ⟯) (y : M)
     (v : Fin (k + 1 + l) → W y) : interior (k := k + 1 + l) s (wedge φ ψ) y v =
-      wedge (interior s φ) ψ y (v ∘ Fin.cast (show k + (l + 1) = k + 1 + l by omega)) +
+      wedge (interior s φ) ψ y
+        (v ∘ Fin.cast ((Nat.add_assoc k l 1).symm.trans (Nat.add_right_comm k l 1))) +
         (-1 : ℝ) ^ (k + 1) • wedge φ (interior s ψ) y v := by
   simp only [interior_eq_curryLeftTopological, wedge_apply']
   exact ContinuousAlternatingMap.curryLeftTopological_pairedWedge
@@ -166,8 +167,7 @@ theorem wedge_comm {k l : ℕ}
     wedge φ ψ = (-1 : ℝ) ^ (k * l) • LinearEquiv.cast (R := C^n⟮I, M; ℝ⟯)
       (M := fun q ↦ Cₛ^n⟮I; FW [⋀^Fin q]→L[ℝ] ℝ, fun x ↦ W x [⋀^Fin q]→L[ℝ] ℝ⟯)
       (Nat.add_comm l k) (wedge ψ φ) := by
-  ext x v; rw [wedge_comm_apply, coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply,
-    alternating_cast_apply]
+  ext x v; rw [wedge_comm_apply, alternating_const_smul_apply, alternating_cast_apply]
 /-- Associativity of the scalar wedge product as an identity of sections. -/
 theorem wedge_assoc {k l m : ℕ}
     (φ : Cₛ^n⟮I; FW [⋀^Fin k]→L[ℝ] ℝ, fun x ↦ W x [⋀^Fin k]→L[ℝ] ℝ⟯)
@@ -183,9 +183,9 @@ theorem interior_wedge {k l : ℕ} (s : Cₛ^n⟮I; FW, W⟯)
     (ψ : Cₛ^n⟮I; FW [⋀^Fin (l + 1)]→L[ℝ] ℝ, fun x ↦ W x [⋀^Fin (l + 1)]→L[ℝ] ℝ⟯) :
     interior (k := k + 1 + l) s (wedge φ ψ) = LinearEquiv.cast (R := C^n⟮I, M; ℝ⟯)
       (M := fun q ↦ Cₛ^n⟮I; FW [⋀^Fin q]→L[ℝ] ℝ, fun x ↦ W x [⋀^Fin q]→L[ℝ] ℝ⟯)
-      (show k + (l + 1) = k + 1 + l by omega) (wedge (interior s φ) ψ) +
+      ((Nat.add_assoc k l 1).symm.trans (Nat.add_right_comm k l 1)) (wedge (interior s φ) ψ) +
         (-1 : ℝ) ^ (k + 1) • wedge φ (interior s ψ) := by
-  ext x v; rw [interior_wedge_apply, coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
-    alternating_cast_apply, coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply]
+  ext x v; rw [interior_wedge_apply, alternating_add_apply, alternating_cast_apply,
+    alternating_const_smul_apply]
 end Wedge
 end ContMDiffSection

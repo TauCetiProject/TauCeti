@@ -156,18 +156,9 @@ theorem lieModule_d_smul_apply :
       smul_eq_mul, LieRinehartRing.leibniz_mul_right, smul_eq_mul, Fin.sum_univ_one]
     simp [Subsingleton.elim (Fin.removeNth 0 v) ![]]
   | n + 1, a, η, v => by
-    obtain ⟨x, w, rfl⟩ : ∃ x w, v = Matrix.vecCons x w := ⟨v 0, tail v, (cons_self_tail v).symm⟩
-    have hlie : ⁅x, a • η⁆ w = a * ⁅x, η⁆ w + ⁅x, a⁆ * η w := by
-      simp only [lie_smul_right, add_apply, smul_apply, smul_eq_mul]
-    have hsum : ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) •
-          (⁅Matrix.vecCons x w i, a⁆ * η (i.removeNth (Matrix.vecCons x w))) =
-        ⁅x, a⁆ * η w - ∑ j : Fin (n + 1), (-1 : ℤ) ^ (j : ℕ) •
-          (⁅w j, a⁆ * η.curryLeft x (j.removeNth w)) := by
-      rw [Fin.sum_univ_succ]; simp [Matrix.vecCons, removeNth_succ_cons, pow_succ, sub_eq_add_neg]
-    rw [← curryLeft_apply_apply, LieModule.Cohomology.curryLeft_d_succ, ← curryLeft_apply_apply,
-      LieModule.Cohomology.curryLeft_d_succ, sub_apply, sub_apply, hlie,
-      curryLeft_smul_of_tower a η, LinearMap.smul_apply,
-      lieModule_d_smul_apply a (η.curryLeft x) w, hsum, mul_sub]
+    rw [LieModule.Cohomology.d_succ_apply, LieModule.Cohomology.d_succ_apply, mul_add]
+    simp only [smul_apply, smul_eq_mul, LieRinehartRing.leibniz_mul_right, smul_add,
+      ← mul_smul_comm, Finset.sum_add_distrib, ← Finset.mul_sum]
     abel
 variable {R A L} in
 private theorem curryLeft_d_restrictScalars_smul :

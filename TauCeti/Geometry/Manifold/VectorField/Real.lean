@@ -26,7 +26,8 @@ namespace TauCeti
 noncomputable def realFieldCoord {n : ℕ∞ω}
     (u : Cₛ^n⟮𝓘(ℝ, ℝ); ℝ, (TangentSpace 𝓘(ℝ, ℝ) : ℝ → Type _)⟯) : C^n⟮𝓘(ℝ, ℝ), ℝ; ℝ⟯ :=
   ⟨fun x ↦ NormedSpace.fromTangentSpace x (u x),
-    (contMDiff_vectorSpace_iff_contDiff.mp u.contMDiff).contMDiff⟩
+    (contMDiff_vectorSpace_iff_contDiff.mp u.contMDiff).contMDiff.congr
+      (fun x ↦ NormedSpace.fromTangentSpace_apply x (u x))⟩
 
 /-- Under `NormedSpace.fromTangentSpace`, `realFieldCoord u` evaluates to `u x` at `x`. -/
 @[simp] theorem realFieldCoord_apply {n : ℕ∞ω}

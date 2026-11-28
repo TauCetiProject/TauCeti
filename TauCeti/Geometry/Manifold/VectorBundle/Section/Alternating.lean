@@ -67,6 +67,18 @@ theorem interior_swap {k : ℕ} (s t : Cₛ^n⟮I; FW, W⟯)
   have h := interior_self (s + t) φ
   simp only [map_add, LinearMap.add_apply, interior_self, zero_add, add_zero,
     add_eq_zero_iff_eq_neg] at h; exact neg_eq_iff_eq_neg.mp h.symm
+/-- Pointwise evaluation of a sum of alternating bundle sections. -/
+theorem alternating_add_apply {ι : Type*} [Fintype ι]
+    (φ ψ : Cₛ^n⟮I; FW [⋀^ι]→L[𝕜] FV, fun x ↦ W x [⋀^ι]→L[𝕜] V x⟯) (x : M)
+    (v : ι → W x) : (φ + ψ) x v = φ x v + ψ x v := by simp
+/-- Pointwise evaluation of a constant scalar multiple of an alternating bundle section. -/
+theorem alternating_const_smul_apply {ι : Type*} [Fintype ι] (c : 𝕜)
+    (φ : Cₛ^n⟮I; FW [⋀^ι]→L[𝕜] FV, fun x ↦ W x [⋀^ι]→L[𝕜] V x⟯) (x : M)
+    (v : ι → W x) : (c • φ) x v = c • φ x v := by simp
+/-- Pointwise evaluation of a smooth-function multiple of an alternating bundle section. -/
+theorem alternating_smul_apply {ι : Type*} [Fintype ι] (f : C^n⟮I, M; 𝕜⟯)
+    (φ : Cₛ^n⟮I; FW [⋀^ι]→L[𝕜] FV, fun x ↦ W x [⋀^ι]→L[𝕜] V x⟯) (x : M)
+    (v : ι → W x) : (f • φ) x v = f x • φ x v := by simp
 /-- Pointwise evaluation of a degree cast on alternating bundle sections. -/
 theorem alternating_cast_apply {m k : ℕ} (h : m = k)
     (φ : Cₛ^n⟮I; FW [⋀^Fin m]→L[𝕜] FV, fun x ↦ W x [⋀^Fin m]→L[𝕜] V x⟯) (x : M)
