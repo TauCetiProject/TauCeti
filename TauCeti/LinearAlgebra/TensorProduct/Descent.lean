@@ -140,10 +140,8 @@ theorem finiteDimensional_comap_mk_one {K L M : Type*} [Field K] [Field L] [Alge
   have hle : A.baseChange L ≤ D :=
     Submodule.baseChange_le_iff_le_comap.mpr le_rfl
   have : FiniteDimensional L (A.baseChange L) := Submodule.finiteDimensional_of_le hle
-  let e : L ⊗[K] A ≃ₗ[L] A.baseChange L :=
-    LinearEquiv.ofInjective (A.subtype.baseChange L)
-      (Module.Flat.lTensor_preserves_injective_linearMap _ A.injective_subtype)
-  have : FiniteDimensional L (L ⊗[K] A) := Module.Finite.equiv e.symm
+  have : FiniteDimensional L (L ⊗[K] A) :=
+    Module.Finite.equiv (Submodule.toBaseChange.toLinearEquiv L A).symm
   exact Module.Finite.of_finite_tensorProduct_of_faithfullyFlat L
 
 end Submodule
