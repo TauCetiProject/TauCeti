@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Moments.Covariance
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Positivity
 
 /-!
 # Grüss's inequality

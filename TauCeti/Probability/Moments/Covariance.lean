@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Moments.CovarianceBilin
-public import Mathlib.Probability.Moments.Variance
 import Mathlib.Algebra.QuadraticDiscriminant
-import Mathlib.Tactic.Linarith
 import Mathlib.Analysis.Matrix.Hermitian
 import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
@@ -30,7 +28,7 @@ totalized coordinate by coordinate.
 
 ## Main results
 
-* `ProbabilityTheory.covariance_sq_le_variance_mul_variance` bounds the squared covariance
+* `TauCeti.covariance_sq_le_variance_mul_variance` bounds the squared covariance
   by the product of the variances for square-integrable functions under a finite measure.
 
 * `TauCeti.covMatrix` is the matrix of coordinate covariances of a measure.
@@ -64,7 +62,9 @@ open MeasureTheory ProbabilityTheory
 
 open scoped RealInnerProductSpace
 
-namespace ProbabilityTheory
+namespace TauCeti
+
+section CovarianceBound
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {f g : α → ℝ}
 
@@ -83,9 +83,7 @@ theorem covariance_sq_le_variance_mul_variance [IsFiniteMeasure μ]
   unfold discrim at hdisc
   nlinarith only [hdisc]
 
-end ProbabilityTheory
-
-namespace TauCeti
+end CovarianceBound
 
 /-- Covariance is unchanged by almost-everywhere changes to either observable. -/
 theorem covariance_congr_ae {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
