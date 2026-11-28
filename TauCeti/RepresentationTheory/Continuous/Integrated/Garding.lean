@@ -42,7 +42,7 @@ namespace ContRepresentation
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [I.Boundaryless] {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [LieGroup I ∞ G] [T2Space G]
   {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
   (π : ContRepresentation ℂ G V) (hπ : ∀ v, Continuous fun g ↦ π g v)

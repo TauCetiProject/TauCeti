@@ -37,7 +37,8 @@ needs nothing beyond the definition of `gaussianReal`.
 * `TauCeti.Probability.gaussianPDFReal_neg` and `TauCeti.Probability.gaussianPDFReal_zero_neg` —
   reflection `gaussianPDFReal m v (-x) = gaussianPDFReal (-m) v x` and evenness at zero mean.
 * `TauCeti.Probability.antitoneOn_gaussianPDFReal` — the density decreases to the right of the
-  mean.
+  mean; `TauCeti.Probability.gaussianPDFReal_le_of_sq_le` — it decreases in the squared distance
+  to the mean.
 * `TauCeti.Probability.gaussianPDFReal_self`, `TauCeti.Probability.gaussianPDFReal_le_self`,
   `TauCeti.Probability.gaussianPDFReal_le`, and `TauCeti.Probability.gaussianPDF_le` — the density
   attains its global maximum `(√(2 * π * v))⁻¹` at the mean (with both sides vanishing when
@@ -112,6 +113,12 @@ theorem gaussianPDFReal_zero_neg (v : ℝ≥0) (x : ℝ) :
 theorem antitoneOn_gaussianPDFReal (m : ℝ) (v : ℝ≥0) :
     AntitoneOn (gaussianPDFReal m v) (Set.Ici m) := fun x hx y _ hxy => by
   have hx : 0 ≤ x - m := sub_nonneg.2 hx
+  simp only [gaussianPDFReal]
+  gcongr
+
+/-- The Gaussian density of `N(μ, v)` decreases in the squared distance to the mean. -/
+theorem gaussianPDFReal_le_of_sq_le {μ : ℝ} {v : ℝ≥0} {x y : ℝ}
+    (h : (x - μ) ^ 2 ≤ (y - μ) ^ 2) : gaussianPDFReal μ v y ≤ gaussianPDFReal μ v x := by
   simp only [gaussianPDFReal]
   gcongr
 

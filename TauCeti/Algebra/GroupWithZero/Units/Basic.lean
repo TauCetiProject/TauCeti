@@ -70,6 +70,8 @@ values `z ≠ 0` and `x` contains those with values `z ^ k * x`.
   with values `z ≠ 0` and `x` contains the unit with value `z ^ k * x`.
 * `TauCeti.inv_ne_zero_and_inv_eq_iff_mul_eq_one`: `a⁻¹` is a nonzero `b` exactly when
   `a * b = 1`.
+* `Units.range_val_eq_compl_zero`: the values of the units of a group with zero are exactly its
+  nonzero elements.
 -/
 
 public section
@@ -171,3 +173,12 @@ theorem inv_ne_zero_and_inv_eq_iff_mul_eq_one {G₀ : Type*} [GroupWithZero G₀
     ⟨inv_ne_zero (left_ne_zero_of_mul_eq_one h), inv_eq_of_mul_eq_one_right h⟩⟩
 
 end TauCeti
+
+namespace Units
+
+/-- The units of a group with zero are exactly its nonzero elements. -/
+theorem range_val_eq_compl_zero {G₀ : Type*} [GroupWithZero G₀] :
+    Set.range (Units.val : G₀ˣ → G₀) = {0}ᶜ :=
+  Set.ext fun x ↦ ⟨by rintro ⟨u, rfl⟩; exact u.ne_zero, fun hx ↦ ⟨Units.mk0 x hx, rfl⟩⟩
+
+end Units
