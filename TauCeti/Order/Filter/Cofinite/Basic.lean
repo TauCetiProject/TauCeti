@@ -44,6 +44,13 @@ theorem Filter.tendsto_tsub_const_cofinite {α : Type*} [Preorder α] [Add α] [
   Tendsto.cofinite_of_finite_preimage_singleton fun m ↦
     ((Set.finite_Iic (m + d)).subset fun _ hn ↦ tsub_le_iff_right.1 (le_of_eq hn)).to_subtype
 
+/-- Projecting away a finite factor preserves convergence along the cofinite filter. -/
+theorem Filter.tendsto_snd_cofinite {ι β : Type*} [Finite ι] :
+    Tendsto (Prod.snd : ι × β → β) cofinite cofinite := by
+  refine Tendsto.cofinite_of_finite_preimage_singleton fun b ↦ ?_
+  rw [Set.preimage_snd_singleton_eq_range]
+  exact Set.finite_range _
+
 namespace Filter.Tendsto
 
 variable {α β : Type*} {f : α → β}

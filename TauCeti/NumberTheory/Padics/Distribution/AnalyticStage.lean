@@ -274,6 +274,17 @@ theorem eval_natCast_val_add_mul (c : AnalyticStage p h E) (a : ZMod (p ^ h)) (w
     eval S c ((a.val : ℤ_[p]) + (p : ℤ_[p]) ^ h * w) = ∑' n, w ^ n • c (a, n) :=
   (hasSum_eval_natCast_val_add_mul S c a w).tsum_eq.symm
 
+/-- Stage evaluation at a disc centre reads off its constant coefficient. -/
+-- Simplify before `ZMod.natCast_val` rewrites the centre to `ZMod.cast`.
+@[simp↓]
+theorem eval_natCast_val (c : AnalyticStage p h E) (a : ZMod (p ^ h)) :
+    eval S c (a.val : ℤ_[p]) = c (a, 0) := by
+  have h := eval_natCast_val_add_mul S c a 0
+  rw [tsum_eq_single 0] at h
+  · simpa using h
+  · intro n hn
+    simp [zero_pow hn]
+
 /-- Evaluation does not increase norms. -/
 theorem norm_eval_le (c : AnalyticStage p h E) : ‖eval S c‖ ≤ ‖c‖ :=
   norm_discSeries_comp_le c
@@ -288,13 +299,7 @@ theorem opNorm_eval_le_one {𝕜 : Type*} [NontriviallyNormedField 𝕜] [Normed
 @[simp]
 theorem eval_apply_zero (c : AnalyticStage p h E) :
     eval S c 0 = c (0, 0) := by
-  have h0 : (0 : ℤ_[p]) = (((0 : ZMod (p ^ h)).val : ℕ) : ℤ_[p]) + (p : ℤ_[p]) ^ h * 0 := by
-    simp
-  conv_lhs => rw [h0]
-  rw [eval_natCast_val_add_mul, tsum_eq_single 0]
-  · simp
-  · intro n hn
-    simp [zero_pow hn]
+  simpa only [ZMod.val_zero, Nat.cast_zero] using eval_natCast_val S c 0
 
 /-- Stage evaluation of a coordinate vector `single (a, n) e` at `z`: it vanishes outside the disc
 of `a` and equals `w ^ n • e` on that disc, where `w` is the local disc coordinate of `z`. -/

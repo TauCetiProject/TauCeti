@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Colimit.Module
+public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.NumberTheory.Padics.Distribution.Polynomial
 
 /-!

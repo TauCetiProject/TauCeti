@@ -148,6 +148,22 @@ theorem tendsto_norm_inv_natCast_mul_pow {q : ℝ} (hq₀ : 0 ≤ q) (hq₁ : q 
           (Nat.le_ceil c)
     _ = (n : ℝ) ^ ⌈c⌉₊ := Real.rpow_natCast _ _
 
+/-- Shifting the geometric exponent down by one still absorbs the norms of inverse natural
+numbers, for every real ratio `0 ≤ q < 1`. -/
+theorem tendsto_norm_inv_natCast_mul_pow_pred {q : ℝ} (hq₀ : 0 ≤ q) (hq₁ : q < 1) :
+    Tendsto (fun n : ℕ ↦ ‖(n : K)⁻¹‖ * q ^ (n - 1)) atTop (𝓝 0) := by
+  rcases hq₀.eq_or_lt with rfl | hq₀
+  · apply tendsto_const_nhds.congr'
+    filter_upwards [eventually_ge_atTop 2] with n hn
+    simp [zero_pow (by omega : n - 1 ≠ 0)]
+  have ht := (tendsto_norm_inv_natCast_mul_pow K hq₀.le hq₁).mul_const q⁻¹
+  rw [zero_mul] at ht
+  refine ht.congr' ?_
+  filter_upwards [eventually_ge_atTop 1] with n hn
+  have hpow : q ^ n = q ^ (n - 1) * q := by
+    rw [← pow_succ, Nat.sub_add_cancel hn]
+  simp only [hpow, mul_assoc, mul_inv_cancel₀ hq₀.ne', mul_one]
+
 /-- In a normed field, `‖(n : K)⁻¹‖ * q ^ n → 0` as the integer `n` tends to `∞`, for every
 `0 ≤ q < 1`. -/
 theorem tendsto_norm_inv_intCast_mul_zpow_atTop {q : ℝ} (hq₀ : 0 ≤ q) (hq₁ : q < 1) :
