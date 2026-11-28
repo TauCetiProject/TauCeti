@@ -52,7 +52,8 @@ variable {V ι G K : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [Finite �
   {x y : WallComplement W}
 
 include hcomm in
-/-- Arbitrary integer powers of the labels of walls crossed at one time commute pairwise. -/
+/-- Powers of the labels of walls crossed at one time commute pairwise if labels commute
+whenever their walls have equal affine spans. -/
 theorem crossingWalls_zpow_pairwise (e : x ⟶ y) (t : ℝ) (k : ι → ℤ) :
     (crossingWalls x y t : Set ι).Pairwise
       (fun i j => Commute (label i ^ k i) (label j ^ k j)) := by

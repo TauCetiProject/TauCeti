@@ -168,12 +168,8 @@ theorem signedCrossingEvent_swap
         (Equiv.prodCongr (Equiv.refl ι) (Equiv.neg ℤ)).toEmbedding := by
   classical
   ext ⟨i, s⟩
-  have hv (hi : (i, 1 - t) ∈ crossings x y) : ν i (y.val - x.val) ≠ 0 := by
-    intro hz
-    obtain ⟨ht, hi⟩ := (mem_crossings x y i (1 - t)).mp hi
-    apply e.down.transverse i ⟨_, ht, hi⟩
-    rw [← hν i]
-    exact hz
+  have hv (hi : (i, 1 - t) ∈ crossings x y) : ν i (y.val - x.val) ≠ 0 :=
+    e.down.apply_sub_ne_zero_of_mem_crossings hi (hν i).le
   have he : ν i (x.val - y.val) = -ν i (y.val - x.val) := by simp [map_sub]
   simp only [Finset.mem_map, Prod.exists, Equiv.toEmbedding_apply, Equiv.prodCongr_apply,
     Prod.map_apply, Equiv.refl_apply, Equiv.neg_apply, Prod.mk.injEq, mem_signedCrossingEvent]

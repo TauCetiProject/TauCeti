@@ -11,10 +11,10 @@ import TauCeti.Algebra.Group.Pow
 /-!
 # Changes of coorientation for wall transport
 
-Positive rescaling of the representative normal preserves transport. A negative rescaling
-preserves it when the corresponding wall label is inverted and the normal's kernel is contained
-in the direction of the wall's affine span. This applies independently to each indexed wall,
-including several coincident walls at one crossing.
+Positive rescaling of the representative normal preserves transport. Independent nonzero signed
+rescalings preserve transport when every normal's kernel lies in its wall's affine-span direction
+and the labels are inverted at the negatively rescaled indices. This includes several coincident
+walls at one crossing.
 -/
 
 public section
@@ -48,6 +48,7 @@ variable {x y : WallComplement W}
 /-- Independent nonzero rescalings preserve a simultaneous crossing product when the labels of
 negatively rescaled walls are inverted and each normal's kernel lies in its wall's affine-span
 direction. -/
+@[simp]
 theorem crossingEventProduct_smul_coorientation
     (hν : ∀ i, LinearMap.ker (ν i) ≤ (affineSpan ℝ (W i)).direction)
     (r : ι → ℝ) (hr : ∀ i, r i ≠ 0) (e : x ⟶ y) (t : ℝ) :
@@ -59,15 +60,13 @@ theorem crossingEventProduct_smul_coorientation
     (commute_coorientationLabels label hcomm r) e t,
     crossingEventProduct_eq_crossingWalls ν label hcomm e t]
   refine Finset.noncommProd_congr rfl (fun i hi => ?_) _
-  obtain ⟨ht, hm⟩ := (mem_crossings x y i t).mp ((mem_crossingWalls x y t i).mp hi)
-  have hv : ν i (y.val - x.val) ≠ 0 := by
-    intro hz
-    apply e.down.transverse i ⟨t, ht, hm⟩
-    exact hν i (LinearMap.mem_ker.mpr hz)
+  have hv := e.down.apply_sub_ne_zero_of_mem_crossings
+    ((mem_crossingWalls x y t i).mp hi) (hν i)
   simpa only [LinearMap.smul_apply, smul_eq_mul] using ite_inv_zpow_ite_mul_pos hv (hr i) (label i)
 
 /-- Independent nonzero rescalings preserve segment transport when each negatively rescaled wall
 carries the inverse label and each normal's kernel lies in its wall's affine-span direction. -/
+@[simp]
 theorem segmentPathProduct_smul_coorientation
     (hν : ∀ i, LinearMap.ker (ν i) ≤ (affineSpan ℝ (W i)).direction)
     (r : ι → ℝ) (hr : ∀ i, r i ≠ 0) (e : x ⟶ y) :
@@ -94,6 +93,7 @@ variable {V ι G : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [Finite ι]
 
 /-- Positive rescaling of the individual normal representatives leaves polygonal wall
 transport unchanged. -/
+@[simp]
 theorem wallPathProduct_smul_pos (r : ι → ℝ) (hr : ∀ i, 0 < r i) (p : AdmissiblePLPath x y) :
     p.wallPathProduct (fun i => r i • ν i) label hcomm = p.wallPathProduct ν label hcomm := by
   rw [wallPathProduct_eq_prod_signedCrossingEvents, wallPathProduct_eq_prod_signedCrossingEvents,
@@ -101,6 +101,7 @@ theorem wallPathProduct_smul_pos (r : ι → ℝ) (hr : ∀ i, 0 < r i) (p : Adm
 
 /-- Independent nonzero rescalings preserve polygonal transport when the labels of negatively
 rescaled walls are inverted and each normal's kernel lies in its wall's affine-span direction. -/
+@[simp]
 theorem wallPathProduct_smul_coorientation
     (hν : ∀ i, LinearMap.ker (ν i) ≤ (affineSpan ℝ (W i)).direction)
     (r : ι → ℝ) (hr : ∀ i, r i ≠ 0) (p : AdmissiblePLPath x y) :

@@ -31,8 +31,8 @@ import TauCeti.Data.Nat.Periodic.Basic
   times the first factor gives consecutive monomial exponents.
 * `TauCeti.eq_mul_zpow_sub_iff_mul_zpow_eq`: in a group, `a = b * h ^ (n - m)` if and only if
   `a * h ^ m = b * h ^ n`.
-* `TauCeti.ite_inv_zpow_ite_mul_pos`: rescaling a nonzero scalar preserves its sign-dependent
-  group power when negative scaling inverts the base.
+* `TauCeti.ite_inv_zpow_ite_mul_pos`: nonzero rescaling of a nonzero scalar preserves its
+  sign-dependent group power when negative scaling inverts the base.
 * `TauCeti.pow_mul_mul_pow_mul_eq`: the carry of `Nat.add_eq_mod_add_carry`, read in the
   powers of an `n`-th root of `a`.
 * `TauCeti.pow_two_pow_of_odd` and `TauCeti.nsmul_two_nsmul_of_odd`: for odd `n`, raising to the

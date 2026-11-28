@@ -133,6 +133,15 @@ namespace AdmissibleSegment
 
 variable {x y : WallComplement W}
 
+/-- A normal whose kernel lies in the wall direction is nonzero on an admissible
+segment's velocity at a crossing. -/
+theorem apply_sub_ne_zero_of_mem_crossings (h : AdmissibleSegment x y)
+    {i : ι} {t : ℝ} {ν : V →ₗ[ℝ] ℝ} (ht : (i, t) ∈ crossings x y)
+    (hν : LinearMap.ker ν ≤ (affineSpan ℝ (W i)).direction) :
+    ν (y.val - x.val) ≠ 0 := by
+  obtain ⟨ht, hi⟩ := (mem_crossings x y i t).mp ht
+  exact fun hz => h.transverse i ⟨t, ht, hi⟩ (hν (LinearMap.mem_ker.mpr hz))
+
 /-- A segment meeting no closed wall is admissible, with no transversality condition. -/
 theorem of_crossings_eq_empty (hclosed : ∀ i, IsClosed (W i))
     (he : crossings x y = ∅) : AdmissibleSegment x y where
