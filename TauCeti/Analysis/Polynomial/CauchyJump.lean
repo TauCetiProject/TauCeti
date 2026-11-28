@@ -97,7 +97,9 @@ variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] {p q : R[
 /-- The sign of the quotient of the cofactors at `a` is the right-hand sign of `p * q`. -/
 private theorem sign_cofactorDiv (p q : R[X]) (a : R) :
     sign (cofactorDiv p q a a) = (p * q).derivSignRight a := by
-  rw [cofactorDiv, TauCeti.sign_div, derivSignRight_mul, derivSignRight_eq_sign_eval_divByMonic,
+  have hmul : (p * q).derivSignRight a = p.derivSignRight a * q.derivSignRight a := by
+    simp [signRight_mul]
+  rw [cofactorDiv, TauCeti.sign_div, hmul, derivSignRight_eq_sign_eval_divByMonic,
     derivSignRight_eq_sign_eval_divByMonic, mul_comm]
 
 /-- At a pole, the left-hand sign of `p * q` is `(-1) ^ (m - n)` times its right-hand sign. -/
@@ -232,7 +234,7 @@ theorem cauchyJump_eq_one_iff_tendsto :
     · rfl
     · exact absurd hl ((tendsto_div_nhdsLT_atTop hpole hs).not_tendsto disjoint_atBot_atTop.symm)
   · rcases hs : (p * q).derivSignRight a with _ | _ | _
-    · exact absurd ((derivSignRight_eq_zero_iff _ _).1 hs) hpq
+    · exact absurd (by simpa using hs) hpq
     · exact absurd hr ((tendsto_div_nhdsGT_atBot hpole hs).not_tendsto disjoint_atBot_atTop)
     · rfl
 

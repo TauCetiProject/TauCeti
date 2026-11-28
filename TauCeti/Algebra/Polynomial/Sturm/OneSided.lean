@@ -182,8 +182,8 @@ theorem signVariationsRight_append_cons_of_ne_zero (cs ds : List R[X]) {p : R[X]
     (a : R) :
     signVariationsRight (cs ++ p :: ds) a =
       signVariationsRight (cs ++ [p]) a + signVariationsRight (p :: ds) a := by
-  simpa only [signVariationsRight_def, List.map_append, List.map_cons, List.map_nil] using
-    List.signVariations_append_cons_of_ne_zero _ _ ((derivSignRight_eq_zero_iff p a).not.2 hp)
+  simpa [signVariationsRight_def] using
+    List.signVariations_append_cons_of_ne_zero _ _ (signRight_eq_zero_iff.not.2 hp)
 
 /-- The left-hand variations at `a` split at any nonzero entry. -/
 theorem signVariationsLeft_append_cons_of_ne_zero (cs ds : List R[X]) {p : R[X]} (hp : p ≠ 0)
@@ -213,9 +213,9 @@ theorem signVariationsLeft_filter_ne_zero (cs : List R[X]) (a : R) :
 variations at any point, even one where that polynomial vanishes. -/
 theorem signVariationsRight_map_mul (cs : List R[X]) {d : R[X]} (hd : d ≠ 0) (a : R) :
     signVariationsRight (cs.map (d * ·)) a = signVariationsRight cs a := by
-  simpa only [signVariationsRight_def, List.map_map, Function.comp_def, derivSignRight_mul] using
-    List.signVariations_map_signType_mul_left (cs.map (·.derivSignRight a))
-      ((derivSignRight_eq_zero_iff d a).not.2 hd)
+  simpa [signVariationsRight_def, Function.comp_def, signRight_mul] using
+    List.signVariations_map_signType_mul_left (cs.map (signRight a))
+      (signRight_eq_zero_iff.not.2 hd)
 
 /-- Multiplying every entry by a common nonzero polynomial does not change the left-hand
 variations at any point, even one where that polynomial vanishes. -/

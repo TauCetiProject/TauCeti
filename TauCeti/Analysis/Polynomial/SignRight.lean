@@ -6,26 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Polynomial.SignRight
-public import TauCeti.Algebra.Polynomial.Eval.OneSided
 
-/-! # Algebraic and analytic right-hand signs of real polynomials
+/-! # Additional lemmas for `Polynomial.signRight`
 
-Mathlib's `Polynomial.signRight x p` is the eventual sign of a real polynomial along `𝓝[>] x`.
-The algebraic sign `Polynomial.derivSignRight p x`, the sign of the first nonzero derivative,
-is realized on an interval immediately to the right of `x`, so the two agree on every real
-polynomial, including the zero polynomial and at multiple roots.
+Over any strictly ordered commutative ring, `Polynomial.signRight` commutes with powers.
 -/
 
 public section
 
-open Set
-
 namespace Polynomial
 
-/-- Over `ℝ`, the algebraic right-hand sign is Mathlib's eventual right-hand sign. -/
-theorem derivSignRight_eq_signRight (p : ℝ[X]) (a : ℝ) :
-    p.derivSignRight a = signRight a p := by
-  obtain ⟨-, u, -, hau, -, hu⟩ := p.exists_derivSignLeft_derivSignRight a
-  exact (signRight_eq_of_eventually (Filter.mem_of_superset (Ioo_mem_nhdsGT hau) hu)).symm
+/-- Powers raise the right-hand sign to the same power, with the convention `0^0 = 1`. -/
+@[simp]
+theorem signRight_pow {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+    (a : R) (p : R[X]) (n : ℕ) :
+    signRight a (p ^ n) = signRight a p ^ n := by
+  induction n with
+  | zero => rw [pow_zero, pow_zero, ← C_1, signRight_C, sign_one]
+  | succ n ih => simp [pow_succ, signRight_mul, ih]
 
 end Polynomial

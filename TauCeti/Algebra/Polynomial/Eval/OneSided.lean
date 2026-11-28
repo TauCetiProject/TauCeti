@@ -9,11 +9,10 @@ public import TauCeti.Algebra.Polynomial.Eval.Sign
 public import TauCeti.Algebra.Polynomial.LinearFactor
 public import TauCeti.Algebra.Polynomial.Thom.Basic
 public import TauCeti.Data.Nat.Factorial.NatCast
+public import TauCeti.Analysis.Polynomial.SignRight
 public import Mathlib.Algebra.Polynomial.FieldDivision
-public import Mathlib.Basic.Sign.Basic
+public import Mathlib.Analysis.Polynomial.SignRight
 import Mathlib.Topology.Algebra.Order.Field
-import Mathlib.Topology.Algebra.Polynomial
-import Mathlib.Topology.Instances.Sign
 
 /-! # One-sided polynomial signs
 
@@ -40,10 +39,12 @@ immediately to the left.
 
 ## Implementation notes
 
-Mathlib defines the real right-hand sign `Polynomial.signRight x p` analytically, as the eventual
-sign of evaluation along `𝓝[>] x`. The signs here are algebraic and need only a commutative ring
-with a linear order, so they remain separate. Over `ℝ`, the two right-hand signs agree by
-`Polynomial.derivSignRight_eq_signRight` in `TauCeti.Analysis.Polynomial.SignRight`.
+Mathlib defines `Polynomial.signRight x p` over `[CommRing R] [LinearOrder R]` as the sign of
+`(taylor x p).trailingCoeff`. The signs here use iterated formal derivatives at
+`p.rootMultiplicity a`, which can vanish for nonzero polynomials when factorials vanish in `R`,
+so `derivSignRight` remains separate in general. Over any strictly ordered commutative ring
+(`IsStrictOrderedRing R`), the two right-hand signs agree by
+`Polynomial.derivSignRight_eq_signRight`.
 
 ## References
 
@@ -268,17 +269,19 @@ theorem derivSignRight_eq_sign_eval_divByMonic (p : R[X]) (a : R) :
   rw [derivSignRight_def, eval_iterate_derivative_rootMultiplicity, nsmul_eq_mul, sign_mul,
     sign_pos (Nat.cast_pos.mpr (Nat.factorial_pos _)), one_mul]
 
-/-- A one-sided sign vanishes exactly when the polynomial is zero. -/
+/-- Over a strictly ordered commutative ring, the derivative-based right-hand sign agrees with
+Mathlib's `Polynomial.signRight`. -/
 @[simp]
-theorem derivSignRight_eq_zero_iff (p : R[X]) (a : R) : p.derivSignRight a = 0 ↔ p = 0 := by
-  constructor
-  · intro h
-    by_contra hp
-    rw [derivSignRight_eq_sign_eval_divByMonic, sign_eq_zero_iff] at h
-    exact eval_divByMonic_pow_rootMultiplicity_ne_zero a hp h
-  · rintro rfl
-    simp
+theorem derivSignRight_eq_signRight (p : R[X]) (a : R) :
+    p.derivSignRight a = signRight a p := by
+  by_cases hp : p = 0
+  · simp [hp]
+  rw [derivSignRight_eq_sign_eval_divByMonic]
+  conv_rhs => rw [← p.pow_mul_divByMonic_rootMultiplicity_eq a]
+  rw [signRight_mul, signRight_X_sub_C_pow, one_mul,
+    signRight_of_eval_ne_zero (eval_divByMonic_pow_rootMultiplicity_ne_zero a hp)]
 
+/-- The left-hand sign vanishes exactly when the polynomial is zero. -/
 @[simp]
 theorem derivSignLeft_eq_zero_iff (p : R[X]) (a : R) : p.derivSignLeft a = 0 ↔ p = 0 := by
   rw [derivSignLeft_def, mul_eq_zero]
@@ -287,8 +290,8 @@ theorem derivSignLeft_eq_zero_iff (p : R[X]) (a : R) : p.derivSignLeft a = 0 ↔
 /-- A nonzero polynomial does not vanish where it has its right-hand sign. -/
 theorem eval_ne_zero_of_sign_eq_derivSignRight {p : R[X]} (hp : p ≠ 0) {a x : R}
     (h : sign (p.eval x) = p.derivSignRight a) : p.eval x ≠ 0 := fun h0 => by
-  rw [h0, sign_zero, eq_comm, derivSignRight_eq_zero_iff] at h
-  exact hp h
+  rw [h0, sign_zero, eq_comm] at h
+  exact hp (by simpa using h)
 
 /-- A nonzero polynomial does not vanish where it has its left-hand sign. -/
 theorem eval_ne_zero_of_sign_eq_derivSignLeft {p : R[X]} (hp : p ≠ 0) {a x : R}
@@ -308,36 +311,27 @@ theorem derivSignLeft_eq_neg_derivSignRight_of_odd (p : R[X]) (a : R)
     (h : Odd (p.rootMultiplicity a)) : p.derivSignLeft a = -p.derivSignRight a := by
   rw [derivSignLeft_def, h.neg_one_pow, neg_one_mul]
 
-/-- The one-sided signs agree exactly when the root multiplicity is even. This includes the zero
-polynomial, whose one-sided signs are both zero. -/
+/-- The left-hand sign agrees with the right-hand sign exactly when the root multiplicity is
+even. This includes the zero polynomial, whose one-sided signs are both zero. -/
 @[simp]
-theorem derivSignLeft_eq_derivSignRight_iff (p : R[X]) (a : R) :
-    p.derivSignLeft a = p.derivSignRight a ↔ Even (p.rootMultiplicity a) := by
+theorem derivSignLeft_eq_signRight_iff (p : R[X]) (a : R) :
+    p.derivSignLeft a = signRight a p ↔ Even (p.rootMultiplicity a) := by
   rcases Nat.even_or_odd (p.rootMultiplicity a) with h | h
   · simp [derivSignLeft_eq_derivSignRight_of_even p a h, h]
   by_cases hp : p = 0
   · simp [hp] at h
-  rw [derivSignLeft_eq_neg_derivSignRight_of_odd p a h, iff_false_intro (Nat.not_even_iff_odd.2 h),
-    iff_false, eq_comm, SignType.self_eq_neg_iff]
-  simpa using hp
+  rw [derivSignLeft_eq_neg_derivSignRight_of_odd p a h, eq_comm]
+  simpa [Nat.not_even_iff_odd.2 h, SignType.self_eq_neg_iff] using hp
 
-/-- For a nonzero polynomial, the one-sided signs are opposite exactly when the root multiplicity
-is odd. -/
+/-- For a nonzero polynomial, the left-hand sign is the negative of the right-hand sign exactly
+when the root multiplicity is odd. -/
 @[simp]
-theorem derivSignLeft_eq_neg_derivSignRight_iff {p : R[X]} (hp : p ≠ 0) (a : R) :
-    p.derivSignLeft a = -p.derivSignRight a ↔ Odd (p.rootMultiplicity a) := by
+theorem derivSignLeft_eq_neg_signRight_iff {p : R[X]} (hp : p ≠ 0) (a : R) :
+    p.derivSignLeft a = -signRight a p ↔ Odd (p.rootMultiplicity a) := by
   rcases Nat.even_or_odd (p.rootMultiplicity a) with h | h
-  · rw [derivSignLeft_eq_derivSignRight_of_even p a h,
-      iff_false_intro (Nat.not_odd_iff_even.2 h), iff_false, SignType.self_eq_neg_iff]
-    simpa using hp
+  · simpa [derivSignLeft_eq_derivSignRight_of_even p a h, Nat.not_odd_iff_even.2 h,
+      SignType.self_eq_neg_iff] using hp
   · simp [derivSignLeft_eq_neg_derivSignRight_of_odd p a h, h]
-
-/-- Multiplication multiplies right-hand signs, including when a factor is zero. -/
-@[simp]
-theorem derivSignRight_mul (p q : R[X]) (a : R) :
-    (p * q).derivSignRight a = p.derivSignRight a * q.derivSignRight a := by
-  simp only [derivSignRight_eq_sign_eval_divByMonic, eval_divByMonic_eq_trailingCoeff_comp,
-    mul_comp, trailingCoeff_mul, sign_mul]
 
 /-- Multiplication multiplies left-hand signs, including when a factor is zero. -/
 @[simp]
@@ -347,17 +341,8 @@ theorem derivSignLeft_mul (p q : R[X]) (a : R) :
   · simp [hp]
   by_cases hq : q = 0
   · simp [hq]
-  simp only [derivSignLeft_def, rootMultiplicity_mul (mul_ne_zero hp hq), pow_add,
-    derivSignRight_mul]
+  simp [derivSignLeft_def, rootMultiplicity_mul (mul_ne_zero hp hq), pow_add, signRight_mul]
   ac_rfl
-
-/-- Powers raise the right-hand sign to the same power, with the convention `0^0 = 1`. -/
-@[simp]
-theorem derivSignRight_pow (p : R[X]) (a : R) (n : ℕ) :
-    (p ^ n).derivSignRight a = p.derivSignRight a ^ n := by
-  induction n with
-  | zero => simp
-  | succ n ih => simp [pow_succ, ih]
 
 /-- Powers raise the left-hand sign to the same power, with the convention `0^0 = 1`. -/
 @[simp]
@@ -412,14 +397,16 @@ theorem odd_rootMultiplicity_iff_exists_sign_eval_eq_neg {p : R[X]} (hp : p ≠ 
     Odd (p.rootMultiplicity a) ↔ ∃ l u, l < a ∧ a < u ∧
       ∀ x ∈ Ioo l a, ∀ y ∈ Ioo a u, sign (p.eval x) = -sign (p.eval y) := by
   obtain ⟨l, u, hl, hu, hL, hR⟩ := p.exists_derivSignLeft_derivSignRight a
-  rw [← derivSignLeft_eq_neg_derivSignRight_iff hp]
+  have hR : ∀ x ∈ Ioo a u, sign (p.eval x) = signRight a p := by simpa using hR
+  rw [← derivSignLeft_eq_neg_signRight_iff hp]
   constructor
   · intro h
     exact ⟨l, u, hl, hu, fun x hx y hy => by rw [hL x hx, hR y hy, h]⟩
   · rintro ⟨l', u', hl', hu', h⟩
     obtain ⟨x, hx, hxa⟩ := exists_between (max_lt hl hl')
     obtain ⟨y, hay, hy⟩ := exists_between (lt_min hu hu')
-    rw [← hL x ⟨(le_max_left _ _).trans_lt hx, hxa⟩, ← hR y ⟨hay, hy.trans_le (min_le_left _ _)⟩]
+    rw [← hL x ⟨(le_max_left _ _).trans_lt hx, hxa⟩,
+      ← hR y ⟨hay, hy.trans_le (min_le_left _ _)⟩]
     exact h x ⟨(le_max_right _ _).trans_lt hx, hxa⟩ y ⟨hay, hy.trans_le (min_le_right _ _)⟩
 
 /-- Immediately to the right of a point `a`, the derivative has the sign of `p(x) - p(a)`, and

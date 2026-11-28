@@ -82,7 +82,7 @@ theorem sign_eval_eq_sign_eval_iff_even_rootMultiplicity (p : R[X]) {a r b : R} 
     (hrb : r < b) (hz : ∀ x ∈ Set.Icc a b, x ≠ r → p.eval x ≠ 0) :
     SignType.sign (p.eval a) = SignType.sign (p.eval b) ↔ Even (p.rootMultiplicity r) := by
   obtain ⟨ha, hb⟩ := p.signs_at_isolated_point har hrb hz
-  rw [ha, hb, derivSignLeft_eq_derivSignRight_iff]
+  simp [ha, hb]
 
 /-- A polynomial changes sign across an isolated root in `[a, b]` exactly when the root has odd
 multiplicity. -/
@@ -91,7 +91,7 @@ theorem sign_eval_eq_neg_sign_eval_iff_odd_rootMultiplicity (p : R[X]) {a r b : 
     SignType.sign (p.eval a) = -SignType.sign (p.eval b) ↔ Odd (p.rootMultiplicity r) := by
   have hp : p ≠ 0 := fun h => hz b ⟨(har.trans hrb).le, le_rfl⟩ hrb.ne' (by simp [h])
   obtain ⟨ha, hb⟩ := p.signs_at_isolated_point har hrb hz
-  rw [ha, hb, derivSignLeft_eq_neg_derivSignRight_iff hp]
+  simp [ha, hb, hp]
 
 /-- If a polynomial has no zeros except possibly at an interior point, and does
 not vanish there either, both endpoint signs agree with its sign at that point. -/
