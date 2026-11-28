@@ -565,14 +565,7 @@ theorem not_exists_forall_vertexCorner_eq_smul_of_not_isBipartite
   let q : Quiver.Path (Symmetrify.of.obj (OrientedQuiver.vertex G o v))
       (Symmetrify.of.obj (OrientedQuiver.vertex G o v)) :=
     q₀.cast hobj hobj
-  have length_cast : ∀ {a b c d : Symmetrify (OrientedQuiver G o)}
-      (ha : a = c) (hb : b = d) (r : Quiver.Path a b),
-      (r.cast ha hb).length = r.length := by
-    intro a b c d ha hb r
-    subst c
-    subst d
-    rfl
-  have hlength : q.length = q₀.length := length_cast hobj hobj q₀
+  have hlength : q.length = q₀.length := Quiver.Path.length_cast hobj hobj q₀
   have hqodd : Odd q.length := by
     rw [hlength]
     exact hq₀odd

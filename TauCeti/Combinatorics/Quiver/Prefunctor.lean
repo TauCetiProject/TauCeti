@@ -22,7 +22,8 @@ between categories with topologies on their arrows is continuous.
 
 ## Main results
 
-* `Quiver.Path.vertices_cast`: casting the endpoints of a path does not change its vertex list.
+* `Quiver.Path.vertices_cast`, `Quiver.Path.length_cast`: casting the endpoints of a path does not
+  change its vertex list or its length.
 * `Prefunctor.length_mapPath`: pushing a path along a prefunctor preserves its length.
 * `Prefunctor.vertices_mapPath`: the vertices of the pushed path are the images of the vertices of
   the original path.
@@ -57,6 +58,13 @@ universe u v
 @[simp]
 theorem vertices_cast {V : Type u} [Quiver.{v} V] {s t s' t' : V} (hs : s = s') (ht : t = t')
     (p : Quiver.Path s t) : (p.cast hs ht).vertices = p.vertices := by
+  subst hs ht
+  rfl
+
+/-- Casting the endpoints of a path does not change its length. -/
+@[simp]
+theorem length_cast {V : Type u} [Quiver.{v} V] {s t s' t' : V} (hs : s = s') (ht : t = t')
+    (p : Quiver.Path s t) : (p.cast hs ht).length = p.length := by
   subst hs ht
   rfl
 

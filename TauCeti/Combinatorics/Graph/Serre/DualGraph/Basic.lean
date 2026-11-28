@@ -31,20 +31,27 @@ and the darts of the dual graph are the classes of places and of crossings
 `x` and a crossing to its dart defines a morphism from the dual graph to `Δ`
 (`SerreGraph.dualGraphHom`).
 
-The definitions make sense for any Serre graph `Δ`. The dual graph is preconnected when `Γ` and
-`Δ` are, and connected when moreover `Γ` is nonempty. A *band* (`SerreGraph.IsBandVertex`) is a
-component of the complement which contains no vertex of `Γ` and no central region of a triangle;
-when `Δ` is acyclic, exactly two darts of the dual graph start at a band, and they lie over
-distinct darts of `Δ`: the band is the product of a track with an interval. For instance, a place
-strictly inside an edge of `Γ` lying in no triangle lies in a band. When `Δ` is a tree and the
-flag complex of `Γ` is connected and has trivial first cohomology with coefficients in `ℤ/2`,
-every track separates the complex and Dunwoody shows that the dual graph is a tree.
+The definitions make sense for any Serre graph `Δ`. The dual graph is preconnected when `Γ` is
+and the images of adjacent vertices of `Γ` are joined in `Δ` (for instance, when `Δ` is
+preconnected), and connected when moreover `Γ` is nonempty. A *band*
+(`SerreGraph.IsBandVertex`) is a component of the complement which contains no vertex of `Γ` and
+no central region of a triangle; when `Δ` is acyclic, exactly two darts of the dual graph start
+at a band, and they lie over distinct darts of `Δ`: the band is the product of a track with an
+interval. For instance, a place strictly inside an edge of `Γ` lying in no triangle lies in a
+band.
+
+That the dual graph is a tree when the flag complex of `Γ` has trivial first cohomology is proved
+in `TauCeti/Combinatorics/Graph/Serre/DualGraph/Tree.lean`.
 
 ## Main definitions
 
 * `TauCeti.SerreGraph.dualGraph`: the graph dual to the pattern of `f`.
 * `TauCeti.SerreGraph.DualPlace.toVertex`, `TauCeti.SerreGraph.DualDart.toDart`: the vertex of the
   dual graph containing a place and the dart through a crossing.
+* `TauCeti.SerreGraph.DualPlace.liftVertex`: a function on places which agrees on linked places,
+  as a function on the vertices of the dual graph.
+* `TauCeti.SerreGraph.DualPlace.swap`: a place with its two ends exchanged, in the same vertex of
+  the dual graph.
 * `TauCeti.SerreGraph.dualVertex`: the component of the complement containing a vertex of `Γ`.
 * `TauCeti.SerreGraph.dualGraphHom`: the morphism from the dual graph to `Δ`.
 * `TauCeti.SerreGraph.IsBandVertex`: a component of the complement containing no vertex of `Γ`
@@ -53,8 +60,10 @@ every track separates the complex and Dunwoody shows that the dual graph is a tr
 ## Main results
 
 * `TauCeti.SerreGraph.dualGraph_preconnected`, `TauCeti.SerreGraph.dualGraph_connected`: the
-  dual graph is preconnected when `Γ` and `Δ` are, connected when `Γ` is connected and `Δ`
-  preconnected.
+  dual graph is preconnected when `Γ` is and the images of adjacent vertices are joined in `Δ`,
+  connected when moreover `Γ` is connected.
+* `TauCeti.SerreGraph.DualDart.eq_of_fst_eq_of_snd_eq_of_toGeomEdge_eq`: a track meets each
+  oriented edge of `Γ` in at most one crossing.
 * `TauCeti.SerreGraph.IsBandVertex.exists_darts`: when `Δ` is acyclic, a band has exactly two
   darts, over distinct darts of `Δ`.
 * `TauCeti.SerreGraph.isBandVertex_toVertex`: a place strictly inside an edge lying in no
@@ -157,6 +166,30 @@ instance : Std.Symm (DualPlace.Linked (Γ := Γ) (Δ := Δ) (f := f)) :=
 /-- The link between crossings is a symmetric relation. -/
 instance : Std.Symm (DualDart.Linked (Γ := Γ) (Δ := Δ) (f := f)) :=
   ⟨fun _ _ => DualDart.Linked.symm⟩
+
+/-- The same place with its two ends exchanged. -/
+def DualPlace.swap (p : DualPlace Γ Δ f) : DualPlace Γ Δ f :=
+  ⟨p.snd, p.fst, p.pt, p.eq_or_adj.imp Eq.symm .symm, p.isBetween.symm⟩
+
+@[simp] theorem DualPlace.swap_fst (p : DualPlace Γ Δ f) : p.swap.fst = p.snd := (rfl)
+
+@[simp] theorem DualPlace.swap_snd (p : DualPlace Γ Δ f) : p.swap.snd = p.fst := (rfl)
+
+@[simp] theorem DualPlace.swap_pt (p : DualPlace Γ Δ f) : p.swap.pt = p.pt := (rfl)
+
+@[simp] theorem DualPlace.swap_swap (p : DualPlace Γ Δ f) : p.swap.swap = p := (rfl)
+
+/-- A place linked to another is linked to it with its ends exchanged. -/
+theorem DualPlace.Linked.swap_right {p q : DualPlace Γ Δ f} (h : p.Linked q) :
+    p.Linked q.swap := by
+  obtain ⟨h₁, h₂, h₃, h₄, h₅, h₆⟩ := h
+  refine ⟨h₁, h₃, h₂, h₅, h₄, ?_⟩
+  rcases h₆ with h | h | h | h <;> simp [DualPlace.swap, h]
+
+/-- A place is linked to itself with its ends exchanged. -/
+theorem DualPlace.linked_swap (p : DualPlace Γ Δ f) : p.Linked p.swap :=
+  DualPlace.Linked.swap_right
+    ⟨rfl, .inl rfl, p.eq_or_adj, p.eq_or_adj.imp Eq.symm .symm, .inl rfl, .inl rfl⟩
 
 /-- The place on the source side of a crossing. -/
 def DualDart.srcPlace (p : DualDart Γ Δ f) : DualPlace Γ Δ f :=
@@ -262,10 +295,24 @@ theorem DualPlace.Linked.toVertex_eq {p q : DualPlace Γ Δ f} (h : p.Linked q) 
     p.toVertex = q.toVertex :=
   Quot.sound h
 
+/-- A place and the same place with its ends exchanged lie in the same vertex of the dual graph. -/
+@[simp] theorem DualPlace.toVertex_swap (p : DualPlace Γ Δ f) : p.swap.toVertex = p.toVertex :=
+  (DualPlace.linked_swap p).symm.toVertex_eq
+
 /-- Linked crossings lie on the same dart of the dual graph. -/
 theorem DualDart.Linked.toDart_eq {p q : DualDart Γ Δ f} (h : p.Linked q) :
     p.toDart = q.toDart :=
   Quot.sound h
+
+/-- A function on places which agrees on linked places descends to the vertices of the dual
+graph. -/
+def DualPlace.liftVertex {α : Sort*} (g : DualPlace Γ Δ f → α)
+    (hg : ∀ p q : DualPlace Γ Δ f, p.Linked q → g p = g q) : (dualGraph Γ Δ f).V → α :=
+  Quot.lift g hg
+
+@[simp] theorem DualPlace.liftVertex_toVertex {α : Sort*} (g : DualPlace Γ Δ f → α)
+    (hg : ∀ p q : DualPlace Γ Δ f, p.Linked q → g p = g q) (p : DualPlace Γ Δ f) :
+    DualPlace.liftVertex g hg p.toVertex = g p := (rfl)
 
 /-- A property of places which passes along the links between the places of a vertex of the dual
 graph holds at every place of the vertex as soon as it holds at one of them. -/
@@ -329,6 +376,22 @@ variable {Γ Δ f} in
 
 @[simp] theorem dualGraphHom_mapV_dualVertex (a : V) :
     (dualGraphHom Γ Δ f).mapV (dualVertex Γ Δ f a) = f a := (rfl)
+
+variable {Γ Δ f} in
+/-- A track meets each oriented edge of `Γ` in at most one crossing: two crossings of the same
+oriented edge of `Γ` lying on the same edge of the dual graph are equal. -/
+theorem DualDart.eq_of_fst_eq_of_snd_eq_of_toGeomEdge_eq {q q' : DualDart Γ Δ f}
+    (hf : q.fst = q'.fst) (hs : q.snd = q'.snd)
+    (h : (dualGraph Γ Δ f).toGeomEdge q.toDart = (dualGraph Γ Δ f).toGeomEdge q'.toDart) :
+    q = q' := by
+  -- The darts of `Δ` of the two crossings lie on the same geometric edge.
+  have hd := (dualGraphHom Γ Δ f).toGeomEdge_mapE_congr h
+  simp only [dualGraphHom_mapE_toDart] at hd
+  have hc := q'.crosses
+  rw [← hf, ← hs] at hc
+  rcases Δ.toGeomEdge_eq_toGeomEdge_iff.mp hd with hd | hd
+  · exact DualDart.ext hf hs hd.symm
+  · exact (q.crosses.not_crosses_rev (hd ▸ hc)).elim
 
 /-- A vertex of the dual graph is a *band* when it contains no vertex of `Γ` and no central
 region of a triangle: none of its places has its vertex of `Δ` at the image of an end, or between
@@ -407,52 +470,38 @@ private theorem nonempty_path_dualVertex_of_adj {a b : V} (h : Γ.Adj a b)
   exact hv ▸ ⟨r⟩
 
 /-- The vertices of the dual graph containing vertices of `Γ` joined by a walk are joined by a
-path, when `Δ` is preconnected. -/
-private theorem nonempty_path_dualVertex_of_reachable (hΔ : Δ.Preconnected) {a b : V}
-    (h : Γ.Reachable a b) :
+path, when the images of adjacent vertices of `Γ` are joined in `Δ`. -/
+private theorem nonempty_path_dualVertex_of_reachable
+    (hf : ∀ ⦃a b⦄, Γ.Adj a b → Nonempty (Δ.Path (f a) (f b))) {a b : V} (h : Γ.Reachable a b) :
     Nonempty ((dualGraph Γ Δ f).Path (dualVertex Γ Δ f a) (dualVertex Γ Δ f b)) := by
   obtain ⟨w⟩ := h
   induction w with
   | nil => exact ⟨.nil⟩
   | cons h _ ih =>
-    obtain ⟨r⟩ := nonempty_path_dualVertex_of_adj h ((preconnected_iff Δ).mp hΔ _ _)
+    obtain ⟨r⟩ := nonempty_path_dualVertex_of_adj h (hf h)
     obtain ⟨s⟩ := ih
     exact ⟨r.comp s⟩
 
-/-- The graph dual to the pattern of a map from a preconnected graph to a preconnected graph is
-preconnected. -/
-theorem dualGraph_preconnected (hΔ : Δ.Preconnected) (hΓ : Γ.Preconnected) :
-    (dualGraph Γ Δ f).Preconnected := by
+/-- The graph dual to the pattern of a map from a preconnected graph is preconnected when the images
+of adjacent vertices are joined, for instance when the target is preconnected. -/
+theorem dualGraph_preconnected (hf : ∀ ⦃a b⦄, Γ.Adj a b → Nonempty (Δ.Path (f a) (f b)))
+    (hΓ : Γ.Preconnected) : (dualGraph Γ Δ f).Preconnected := by
   refine (preconnected_iff _).mpr fun x y => ?_
   obtain ⟨p, rfl⟩ := DualPlace.toVertex_surjective x
   obtain ⟨q, rfl⟩ := DualPlace.toVertex_surjective y
   obtain ⟨r⟩ := nonempty_path_dualVertex_fst p
-  obtain ⟨s⟩ := nonempty_path_dualVertex_of_reachable hΔ (hΓ p.fst q.fst)
+  obtain ⟨s⟩ := nonempty_path_dualVertex_of_reachable hf (hΓ p.fst q.fst)
   obtain ⟨t⟩ := nonempty_path_dualVertex_fst q
   exact ⟨r.reverse.comp (s.comp t)⟩
 
-/-- The graph dual to the pattern of a map from a connected graph to a preconnected graph is
-connected. -/
-theorem dualGraph_connected (hΔ : Δ.Preconnected) (hΓ : Γ.Connected) :
-    (dualGraph Γ Δ f).Connected :=
+/-- The graph dual to the pattern of a map from a connected graph is connected when the images of
+adjacent vertices are joined, for instance when the target is preconnected. -/
+theorem dualGraph_connected (hf : ∀ ⦃a b⦄, Γ.Adj a b → Nonempty (Δ.Path (f a) (f b)))
+    (hΓ : Γ.Connected) : (dualGraph Γ Δ f).Connected :=
   (connected_iff _).mpr ⟨hΓ.nonempty.map (dualVertex Γ Δ f),
-    dualGraph_preconnected hΔ hΓ.preconnected⟩
+    dualGraph_preconnected hf hΓ.preconnected⟩
 
 /-! ### Bands -/
-
-/-- The same place with its two ends exchanged. -/
-private def DualPlace.swap (p : DualPlace Γ Δ f) : DualPlace Γ Δ f :=
-  ⟨p.snd, p.fst, p.pt, p.eq_or_adj.imp Eq.symm .symm, p.isBetween.symm⟩
-
-private theorem DualPlace.Linked.swap_right {p q : DualPlace Γ Δ f} (h : p.Linked q) :
-    p.Linked q.swap := by
-  obtain ⟨h₁, h₂, h₃, h₄, h₅, h₆⟩ := h
-  refine ⟨h₁, h₃, h₂, h₅, h₄, ?_⟩
-  rcases h₆ with h | h | h | h <;> simp [DualPlace.swap, h]
-
-private theorem DualPlace.linked_swap (p : DualPlace Γ Δ f) : p.Linked p.swap :=
-  DualPlace.Linked.swap_right
-    ⟨rfl, .inl rfl, p.eq_or_adj, p.eq_or_adj.imp Eq.symm .symm, .inl rfl, .inl rfl⟩
 
 /-- A place strictly inside an edge of `Γ` which lies in no triangle is a band: all the places
 in its class are places of the same edge over the same vertex of `Δ`. -/
@@ -578,7 +627,7 @@ theorem IsBandVertex.exists_darts (hΔ : Δ.IsAcyclic) {x : (dualGraph Γ Δ f).
     exact DualPlace.of_toVertex_eq step he.symm hN q (.inl rfl)
   · rintro (rfl | rfl)
     · exact congrArg DualPlace.toVertex hq₁
-    · exact (congrArg DualPlace.toVertex hq₂).trans (DualPlace.linked_swap p).symm.toVertex_eq
+    · exact (congrArg DualPlace.toVertex hq₂).trans p.toVertex_swap
 
 end SerreGraph
 
