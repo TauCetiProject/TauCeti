@@ -28,6 +28,16 @@ presentation, local freeness, and finite local freeness. Via
 `Opens.sheafOfModulesRestrictIsoPullback`, open-subspace restriction `U.sheafOfModulesRestrict R`
 preserves all five properties as well.
 
+Because `SheafOfModules.isRightAdjoint_pushforward` is intentionally a theorem rather than a
+global instance, `LocalGeneratorsData.pullback`, `QuasicoherentData.pullback`, and all five global
+pullback preservation results (`isQuasicoherent_pullback`, `isFiniteType_pullback`,
+`isFinitePresentation_pullback`, `isLocallyFree_pullback`, and `isFiniteLocallyFree_pullback`)
+take `[(SheafOfModules.pushforward.{u} φ).IsRightAdjoint]` as a typeclass prerequisite; callers
+can install it locally via `letI := SheafOfModules.isRightAdjoint_pushforward φ`. (For the five
+`TopologicalSpace.Opens.*_sheafOfModulesRestrict` results, the corresponding instance for
+`U.sheafInclusionHom RingCat.{u} R` is already supplied automatically by
+`Opens.isRightAdjoint_pushforward_sheafInclusionHom`.)
+
 ## Main declarations
 
 * `SheafOfModules.LocalGeneratorsData.pullback`: transports local generators of `M` along `(f, φ)`

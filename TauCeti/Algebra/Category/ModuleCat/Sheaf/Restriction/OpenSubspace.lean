@@ -229,17 +229,32 @@ instance isIso_sheafOfModulesRestrictAdj_counit :
       (Opens.map U.inclusion').obj (U.isOpenEmbedding.functor.obj W.unop)
     have heq : W' = W.unop :=
       Opens.map_functor_eq' U.inclusion' U.isOpenEmbedding W.unop
-    have hhom : U.isOpenEmbedding.isOpenMap.adjunction.unit.app W.unop =
+    have hunit : U.isOpenEmbedding.isOpenMap.adjunction.unit.app W.unop =
         eqToHom heq.symm :=
       Subsingleton.elim _ _
-    have hmap : ⇑(((U.sheafOfModulesRestrictAdj.{v} R).counit.app M).val.app W) =
-        ⇑(M.val.presheaf.map (eqToHom heq.symm).op) :=
+    let e : M.val.presheaf.obj (op W') ≅
+        ((U.sheafOfModulesRestrict.{v} R).obj
+          ((SheafOfModules.pushforward.{v}
+            (U.sheafInclusionHom RingCat.{u} R)).obj M)).val.presheaf.obj W :=
+      eqToIso (sheafOfModulesRestrict_obj_val_presheaf_obj U R
+        ((SheafOfModules.pushforward.{v} (U.sheafInclusionHom RingCat.{u} R)).obj M) W).symm
+    have hcomp :
+        ⇑(((U.sheafOfModulesRestrictAdj.{v} R).counit.app M).val.app W) ∘ ⇑e.hom =
+          ⇑(M.val.presheaf.map (eqToHom heq.symm).op) :=
       funext fun x ↦
-        let x' : M.val.obj (op W') := x
-        congrArg (fun k : W.unop ⟶ W' ↦ M.val.presheaf.map k.op x') hhom
-    rw [ConcreteCategory.isIso_iff_bijective, hmap]
-    exact (ConcreteCategory.isIso_iff_bijective _).mp
-      (Functor.map_isIso M.val.presheaf (eqToHom heq.symm).op)
+        (sheafOfModulesRestrictAdj_counit_app_val_app U R M W x).trans
+          ((congrArg (fun k : W.unop ⟶ W' ↦ M.val.map k.op x) hunit).trans
+            ((PresheafOfModules.presheaf_map_apply_coe M.val (eqToHom heq.symm).op x).symm.trans
+              rfl))
+    have hbij_comp : Function.Bijective
+        (⇑(((U.sheafOfModulesRestrictAdj.{v} R).counit.app M).val.app W) ∘ ⇑e.hom) := by
+      rw [hcomp]
+      exact (ConcreteCategory.isIso_iff_bijective _).mp
+        (Functor.map_isIso M.val.presheaf (eqToHom heq.symm).op)
+    have hbij_e : Function.Bijective (⇑e.hom) :=
+      (ConcreteCategory.isIso_iff_bijective _).mp e.isIso_hom
+    exact (ConcreteCategory.isIso_iff_bijective _).mpr
+      ((Function.Bijective.of_comp_iff _ hbij_e).mp hbij_comp)
   have : IsIso ((SheafOfModules.forget _).map
       ((U.sheafOfModulesRestrictAdj.{v} R).counit.app M)) :=
     (PresheafOfModules.isoMk (fun W ↦ @asIso _ _ _ _ _ (happ W))
