@@ -167,7 +167,7 @@ private theorem lcmUpto_le_four_pow (n : ℕ) : Nat.lcmUpto n ≤ 4 ^ n := by
       _ ≤ 4 ^ m * 4 ^ k := Nat.mul_le_mul (ih m hm) hchoose
       _ = 4 ^ n := by rw [← pow_add, hmk]
 
-private theorem psi_le_mul_log_four {x : ℝ} (hx : 0 ≤ x) : ψ x ≤ x * Real.log 4 := by
+theorem psi_le_mul_log_four {x : ℝ} (hx : 0 ≤ x) : ψ x ≤ x * Real.log 4 := by
   rw [psi_eq_psi_coe_floor, psi_eq_log_lcmUpto]
   calc
     _ ≤ Real.log ((4 : ℝ) ^ ⌊x⌋₊) := Real.log_le_log
