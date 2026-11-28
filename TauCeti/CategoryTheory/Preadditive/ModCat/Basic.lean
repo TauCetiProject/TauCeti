@@ -126,6 +126,16 @@ instance (X : C) : Projective ((yoneda C).obj X) where
     obtain ⟨s, hs⟩ := exists_comp_eq_preadditiveYoneda_obj_of_epi π.hom g.hom
     exact ⟨ObjectProperty.homMk s, ObjectProperty.hom_ext _ hs⟩
 
+variable {C} in
+/-- The inclusion into all functors sends a coproduct of representable modules to the coproduct
+of the representable functors. -/
+noncomputable def ιSigmaYonedaIso {I : Type*} [Small.{v} I] (X : I → C) :
+    (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι.obj (∐ fun i ↦ (yoneda C).obj (X i)) ≅
+      ∐ fun i ↦ preadditiveYoneda.obj (X i) :=
+  PreservesCoproduct.iso (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι _ ≪≫
+    Sigma.mapIso fun i ↦ ((additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).liftCompιIso preadditiveYoneda
+      fun _ ↦ (additiveFunctor_iff _).2 inferInstance).app (X i)
+
 end ModCat
 
 section Linear

@@ -12,6 +12,7 @@ public import Mathlib.CategoryTheory.Presentable.StrongGenerator
 public import TauCeti.CategoryTheory.Functor.LocallySmall
 public import TauCeti.CategoryTheory.Limits.Preserves.Shapes.Kernels
 public import TauCeti.CategoryTheory.Preadditive.ModCat.Basic
+public import TauCeti.SetTheory.Cardinal.AlephOne
 
 /-!
 # Presentability of modules over a preadditive category
@@ -235,15 +236,40 @@ private lemma ι_inr_relations (P : ∀ k : K, Presentation (D.obj k))
         (ι P a.left - lift P a ≫ ι P a.right) :=
   Sigma.ι_comp_desc _ _
 
+/-- A map kills the relations exactly when it kills the relations of each module and
+identifies each generator with its chosen lift along each arrow. -/
+private lemma relations_comp_eq_zero_iff (P : ∀ k : K, Presentation (D.obj k)) {Z : ModCat.{v} C}
+    (t : (∐ fun i ↦ (yoneda C).obj (generator P i)) ⟶ Z) :
+    relations P ≫ t = 0 ↔ (∀ k : K, (P k).relation ≫ ι P k ≫ t = 0) ∧
+      ∀ a : Arrow K, ι P a.left ≫ t = lift P a ≫ ι P a.right ≫ t := by
+  constructor
+  · intro ht
+    refine ⟨fun k ↦ Sigma.hom_ext _ _ fun j ↦ ?_, fun a ↦ sub_eq_zero.mp ?_⟩
+    · have e := congrArg (Sigma.ι (fun j ↦ (yoneda C).obj (relationGenerator P j))
+        (Sum.inl ⟨k, j⟩) ≫ ·) ht
+      rw [ι_inl_relations_assoc, comp_zero] at e
+      -- `relationGenerator P (Sum.inl ⟨k, j⟩)` unfolds to `(P k).Y j`.
+      simpa only [Category.assoc, comp_zero] using! e
+    · apply Sigma.hom_ext
+      intro i
+      have e := congrArg (Sigma.ι (fun j ↦ (yoneda C).obj (relationGenerator P j))
+        (Sum.inr ⟨a, i⟩) ≫ ·) ht
+      rw [ι_inr_relations_assoc, comp_zero] at e
+      -- `relationGenerator P (Sum.inr ⟨a, i⟩)` unfolds to `(P a.left).X i`.
+      simpa only [Category.assoc, Preadditive.sub_comp, Preadditive.comp_sub, comp_zero] using! e
+  · rintro ⟨h₁, h₂⟩
+    apply Sigma.hom_ext
+    rintro (⟨k, j⟩ | ⟨a, i⟩)
+    · rw [ι_inl_relations_assoc, comp_zero]
+      simp only [h₁ k, comp_zero]
+    · rw [ι_inr_relations_assoc, comp_zero, Preadditive.sub_comp, Category.assoc, h₂ a, sub_self,
+        comp_zero]
+
 private lemma relations_projection (P : ∀ k : K, Presentation (D.obj k)) (c : Cocone D) :
-    relations P ≫ projection P c = 0 := by
-  apply Sigma.hom_ext
-  rintro (⟨k, j⟩ | ⟨a, i⟩)
-  · rw [ι_inl_relations_assoc]
-    simp only [ι_projection, reassoc_of% (P k).zero, zero_comp, comp_zero]
-  · rw [ι_inr_relations_assoc]
-    simp only [Preadditive.sub_comp, Category.assoc, ι_projection, lift_π_assoc,
-      c.w, sub_self, comp_zero]
+    relations P ≫ projection P c = 0 :=
+  (relations_comp_eq_zero_iff P _).2
+    ⟨fun k ↦ by simp only [ι_projection, reassoc_of% (P k).zero, zero_comp],
+      fun a ↦ by simp only [ι_projection, lift_π_assoc, c.w]⟩
 
 private lemma epi_projection (P : ∀ k : K, Presentation (D.obj k)) {c : Cocone D}
     (hc : IsColimit c) : Epi (projection P c) := by
@@ -259,26 +285,14 @@ private def isCokernelOfDiagram (P : ∀ k : K, Presentation (D.obj k)) {c : Coc
     IsColimit (CokernelCofork.ofπ (projection P c) (relations_projection P c)) := by
   have := epi_projection P hc
   refine CokernelCofork.IsColimit.ofπ' _ _ fun t ht ↦ ?_
-  have ht₁ (k : K) : (P k).relation ≫ ι P k ≫ t = 0 := by
-    apply Sigma.hom_ext
-    intro j
-    have e := congrArg (Sigma.ι (fun j ↦ (yoneda C).obj (relationGenerator P j))
-      (Sum.inl ⟨k, j⟩) ≫ ·) ht
-    rw [ι_inl_relations_assoc, comp_zero] at e
-    simpa only [Category.assoc, comp_zero] using! e
+  obtain ⟨ht₁, ht₂⟩ := (relations_comp_eq_zero_iff P t).1 ht
   let s (k : K) := (CokernelCofork.IsColimit.desc' (P k).isCokernel (ι P k ≫ t) (ht₁ k)).val
   have hs (k : K) : (P k).π ≫ s k = ι P k ≫ t :=
     (CokernelCofork.IsColimit.desc' (P k).isCokernel (ι P k ≫ t) (ht₁ k)).property
   have hs' (a : Arrow K) : s a.left = D.map a.hom ≫ s a.right := by
     apply (cancel_epi (P a.left).π).1
     rw [hs a.left, ← lift_π_assoc, hs a.right]
-    apply sub_eq_zero.mp
-    apply Sigma.hom_ext
-    intro i
-    have e := congrArg (Sigma.ι (fun j ↦ (yoneda C).obj (relationGenerator P j))
-      (Sum.inr ⟨a, i⟩) ≫ ·) ht
-    rw [ι_inr_relations_assoc, comp_zero] at e
-    simpa only [Category.assoc, Preadditive.sub_comp, Preadditive.comp_sub, comp_zero] using! e
+    exact ht₂ a
   let c' : Cocone D :=
     Cocone.mk _ {
       app := s
@@ -348,11 +362,6 @@ theorem isCardinalPresentable_iff_cokernel_of_representables [EssentiallySmall.{
   · rintro ⟨I, J, hI, hJ, X, Y, d, ⟨e⟩⟩
     exact ⟨⟨I, J, X, Y, d, _, _, cokernel.cokernelIso d (cokernel.π d ≫ e.hom) e rfl⟩, hI, hJ⟩
 
-/-- The cardinal `ℵ₁` is regular, as a `Fact`; the analogue of `Cardinal.fact_isRegular_aleph0`.
-Enable it with `attribute [local instance]` where `ℵ₁`-presentability is used. -/
-lemma _root_.Cardinal.fact_isRegular_aleph_one : Fact (ℵ₁ : Cardinal.{v}).IsRegular :=
-  ⟨isRegular_aleph_one⟩
-
 attribute [local instance] Cardinal.fact_isRegular_aleph_one
 
 /-- The `ℵ₁`-presentable modules are precisely the cokernels of maps between countable sums
@@ -364,15 +373,6 @@ theorem isCardinalPresentable_aleph_one_iff [EssentiallySmall.{v} C] (F : ModCat
         Nonempty (cokernel d ≅ F) := by
   simpa [HasCardinalLT, lt_aleph_one_iff, mk_le_aleph0_iff, and_assoc, and_left_comm,
     exists_prop] using isCardinalPresentable_iff_cokernel_of_representables ℵ₁ F
-
-/-- The inclusion into all functors sends a coproduct of representable modules to the coproduct
-of the representable functors. -/
-private noncomputable def ιSigmaYonedaIso {I : Type*} [Small.{v} I] (X : I → C) :
-    (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι.obj (∐ fun i ↦ (yoneda C).obj (X i)) ≅
-      ∐ fun i ↦ preadditiveYoneda.obj (X i) :=
-  PreservesCoproduct.iso (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι _ ≪≫
-    Sigma.mapIso fun i ↦ ((additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).liftCompιIso preadditiveYoneda
-      fun _ ↦ (additiveFunctor_iff _).2 inferInstance).app (X i)
 
 /-- A module is finitely presentable exactly when its underlying functor has a finite
 presentation by representables. -/

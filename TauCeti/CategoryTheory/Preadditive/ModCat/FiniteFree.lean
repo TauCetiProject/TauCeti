@@ -32,10 +32,6 @@ variable {C : Type u} [Category.{v} C] [Preadditive C]
 private abbrev ι (C : Type u) [Category.{v} C] [Preadditive C] :=
   (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι
 
-private noncomputable def yonedaCoproductIso {n : ℕ} (Y : Fin n → C) :
-    (∐ fun j ↦ preadditiveYoneda.obj (Y j)) ≅ (ι C).obj (∐ (yoneda C).obj ∘ Y) :=
-  asIso (sigmaComparison (ι C) ((yoneda C).obj ∘ Y))
-
 variable (C) in
 /-- A finite free module is isomorphic to a finite coproduct of representable modules. -/
 def isFiniteFree : ObjectProperty (ModCat.{v} C) := fun F ↦ IsFiniteSumOfRepresentables F.obj
@@ -47,9 +43,9 @@ theorem isFiniteFree_def {F : ModCat.{v} C} :
   rw [isFiniteFree, isFiniteSumOfRepresentables_def]
   constructor
   · rintro ⟨n, Y, ⟨e⟩⟩
-    exact ⟨n, Y, ⟨(ι C).preimageIso (e ≪≫ yonedaCoproductIso Y)⟩⟩
+    exact ⟨n, Y, ⟨(ι C).preimageIso (e ≪≫ (ιSigmaYonedaIso Y).symm)⟩⟩
   · rintro ⟨n, Y, ⟨e⟩⟩
-    exact ⟨n, Y, ⟨(ι C).mapIso e ≪≫ (yonedaCoproductIso Y).symm⟩⟩
+    exact ⟨n, Y, ⟨(ι C).mapIso e ≪≫ ((ιSigmaYonedaIso Y).symm).symm⟩⟩
 
 /-- Finite free modules are equivalently the finite biproducts of representable modules,
 up to isomorphism. -/
@@ -69,7 +65,7 @@ instance : (isFiniteFree C).IsClosedUnderIsomorphisms where
 /-- A finite coproduct of representable modules is finite free. -/
 theorem isFiniteFree_coproduct_yoneda {n : ℕ} (Y : Fin n → C) :
     isFiniteFree C (∐ fun j ↦ (yoneda C).obj (Y j)) :=
-  (isFiniteSumOfRepresentables_sigma Y).of_iso (yonedaCoproductIso Y)
+  (isFiniteSumOfRepresentables_sigma Y).of_iso ((ιSigmaYonedaIso Y).symm)
 
 /-- A finite biproduct of representable modules is finite free. -/
 theorem isFiniteFree_biproduct_yoneda {n : ℕ} (Y : Fin n → C) :
@@ -108,8 +104,8 @@ theorem isFinitelyPresentedFunctor_iff_exists_finiteFree_presentation {P : ModCa
       isFinitelyPresentedFunctor_iff_exists_isColimit.mp hP
     let U := ∐ (yoneda C).obj ∘ X
     let V := ∐ (yoneda C).obj ∘ Y
-    let eX := yonedaCoproductIso X
-    let eY := yonedaCoproductIso Y
+    let eX := (ιSigmaYonedaIso X).symm
+    let eY := (ιSigmaYonedaIso Y).symm
     let d' : U ⟶ V := (ι C).preimage (eX.inv ≫ d ≫ eY.hom)
     let p' : V ⟶ P := (ι C).preimage (eY.inv ≫ p)
     have h' : d' ≫ p' = 0 := by

@@ -145,6 +145,13 @@ lemma preadditiveYonedaHomOfElement_app_apply {Y : C} {F : Cᵒᵖ ⥤ AddCommGr
     (preadditiveYonedaHomOfElement x).app Z a = F.map a.op x :=
   (rfl)
 
+/-- A morphism out of `(-, Y)` is the morphism associated to its value on the identity. -/
+@[simp]
+lemma preadditiveYonedaHomOfElement_app_id {Y : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
+    [F.Additive] (α : preadditiveYoneda.obj Y ⟶ F) :
+    preadditiveYonedaHomOfElement (α.app (op Y) (𝟙 Y)) = α :=
+  preadditiveYoneda_obj_hom_ext (by simp)
+
 /-- The preadditive Yoneda embedding `Y ↦ (-, Y)` is an additive functor. -/
 instance preadditiveYoneda_additive :
     (preadditiveYoneda : C ⥤ Cᵒᵖ ⥤ AddCommGrpCat.{v}).Additive where
