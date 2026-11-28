@@ -32,7 +32,7 @@ from the Smith-normal-form integral-matrix scaling of
 * for `T : V ≃ₗ[E] V`, `Measure.map T μ = |det T|_E⁻¹ • μ`
   (`MeasureTheory.Measure.map_linearEquiv_addHaar_of_isNonarchimedeanLocalField`), and for any
   group `G` acting continuously and `E`-linearly on `V`, `distribHaarChar V g = |det (g • ·)|_E`
-  (`MeasureTheory.distribHaarChar_eq_normalizedAbsoluteValue_det`);
+  (`MeasureTheory.distribHaarChar_eq_normalizedAbsoluteValue_det_of_isModuleTopology`);
 * scalar multiplication by `c : E` scales `μ` by `|c|_E ^ finrank E V`
   (`MeasureTheory.Measure.addHaar_smul_module_of_isNonarchimedeanLocalField`,
   `MeasureTheory.Measure.addHaar_preimage_smul_module_of_isNonarchimedeanLocalField`,
@@ -75,7 +75,7 @@ change of basis in `GL_n(𝒪[E])`, and likewise for any `T ∈ GL(L)`).
   `MeasureTheory.Measure.lintegral_comp_linearEquiv_addHaar_of_isNonarchimedeanLocalField`,
   `MeasureTheory.Measure.integral_comp_linearEquiv_addHaar_of_isNonarchimedeanLocalField`: linear,
   matrix, and scalar-dilation change of variables on `V` and `ι → E`.
-* `MeasureTheory.distribHaarChar_eq_normalizedAbsoluteValue_det`:
+* `MeasureTheory.distribHaarChar_eq_normalizedAbsoluteValue_det_of_isModuleTopology`:
   `distribHaarChar V g = |det (g • ·)|_E`.
 * `Submodule.IsFullLattice.map_localAddHaar`, `Submodule.IsFullLattice.localAddHaar_congr`,
   `Submodule.IsFullLattice.map_linearEquiv_addHaar_of_mem_stabilizer`,
@@ -526,7 +526,7 @@ variable (E : Type*) {V G : Type*} [Field E] [ValuativeRel E] [TopologicalSpace 
 space `V` carrying its module topology, any group `G` acting continuously and `E`-linearly on `V`
 satisfies `distribHaarChar V g = |det (g • ·)|_E`. Specializes directly to `V ≃ₗ[E] V`,
 `LinearMap.GeneralLinearGroup E V`, and `(V →L[E] V)ˣ`. -/
-theorem distribHaarChar_eq_normalizedAbsoluteValue_det (g : G) :
+theorem distribHaarChar_eq_normalizedAbsoluteValue_det_of_isModuleTopology (g : G) :
     distribHaarChar V g =
       (normalizedAbsoluteValue E (LinearMap.det (DistribSMul.toLinearMap E V g)) : ℝ≥0) := by
   borelize V

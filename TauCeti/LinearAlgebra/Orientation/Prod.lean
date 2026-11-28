@@ -20,7 +20,9 @@ The canonical product orientation places the first factor before the second. Its
 uses relative basis signs and actual product-basis determinants, including empty factor bases.
 It is compatible with scaling either factor by a unit and with recasting the index types of the
 factors (`Orientation.prod_units_smul_left`, `Orientation.prod_reindex_finCongr`, and their
-one-sided versions).
+one-sided versions). A zero-dimensional factor contributes only its sign relative to the empty
+basis: the product is the other factor carried into `E × F`
+(`Orientation.reindex_prod_of_left_eq_zero`, `Orientation.reindex_prod_of_right_eq_zero`).
 
 Lower triangular shears preserve every orientation of a finite-dimensional product over an
 ordered field (`Orientation.map_skewProd_refl`).
@@ -32,6 +34,8 @@ factor past each of the `n` basis vectors of the second.
 Reassociating `(E × F) × G` as `E × (F × G)` carries the product orientation `(o × o') × o''` to
 `o × (o' × o'')` (`Orientation.map_prodAssoc_prod`, inverse form
 `Orientation.map_prodAssoc_symm_prod`): both list the bases of the three factors in the same order.
+Moving the first factor of `E × (F × G)` past the second, to `F × (E × G)`, multiplies the product
+orientation by `(-1) ^ (m * n)` (`Orientation.map_prodAssoc_symm_trans_prodComm_prod`).
 -/
 
 public section
@@ -156,6 +160,22 @@ theorem prod_neg_right (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n
   congr 1
   module
 
+/-- Reversing the first factor of a product orientation negates its transport along any linear
+equivalence. -/
+theorem map_prod_neg_left {N : Type*} [AddCommGroup N] [Module R N]
+    (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n))
+    (hm : Module.finrank R E = m) (hn : Module.finrank R F = n) (e : (E × F) ≃ₗ[R] N) :
+    (prod (-o) p hm hn).map (Fin (m + n)) e = -((prod o p hm hn).map (Fin (m + n)) e) := by
+  rw [prod_neg_left, Orientation.map_neg]
+
+/-- Reversing the second factor of a product orientation negates its transport along any linear
+equivalence. -/
+theorem map_prod_neg_right {N : Type*} [AddCommGroup N] [Module R N]
+    (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n))
+    (hm : Module.finrank R E = m) (hn : Module.finrank R F = n) (e : (E × F) ≃ₗ[R] N) :
+    (prod o (-p) hm hn).map (Fin (m + n)) e = -((prod o p hm hn).map (Fin (m + n)) e) := by
+  rw [prod_neg_right, Orientation.map_neg]
+
 /-- Simultaneous reversal of both factors preserves the product orientation. -/
 theorem prod_neg_neg (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n))
     (hm : Module.finrank R E = m) (hn : Module.finrank R F = n) :
@@ -203,6 +223,51 @@ theorem prod_reindex_finCongr_right {n' : ℕ} (e : n = n') (o : Orientation R E
       reindex R (E × F) (finCongr (congrArg (m + ·) e)) (prod o p hm (hn.trans e.symm)) := by
   subst e
   simp only [finCongr_refl, reindex_refl, Equiv.refl_apply]
+
+/-- **A zero-dimensional first factor.** If a linear equivalence `e : F ≃ E × F` acts as
+`w ↦ (0, w)`, so that the first factor `E` is zero, the product orientation of `o` and `p`,
+reindexed by the dimension `k` of `F`, is the orientation `p` of `F`, reindexed likewise and
+carried into `E × F` by `e`, scaled by the sign of `o` relative to the empty basis of `E`. -/
+theorem reindex_prod_of_left_eq_zero {k : ℕ} (o : Orientation R E (Fin m))
+    (p : Orientation R F (Fin n)) (hm : Module.finrank R E = m) (hn : Module.finrank R F = n)
+    (hk : m + n = k) (hnk : n = k) (e : F ≃ₗ[R] E × F) (he : ∀ w, e w = (0, w)) :
+    reindex R (E × F) (finCongr hk) (prod o p hm hn) =
+      Units.map (Int.castRingHom R).toMonoidHom (signBasis o (Module.finBasisOfFinrankEq R E hm)) •
+        Orientation.map (Fin k) e (reindex R F (finCongr hnk) p) := by
+  -- The first factor is zero, since `(x, 0) = e w = (0, w)` for `w = e⁻¹ (x, 0)`.
+  have : Subsingleton E := ⟨fun x y ↦ by
+    have hx := congrArg Prod.fst ((he _).symm.trans (e.apply_symm_apply (x, 0)))
+    have hy := congrArg Prod.fst ((he _).symm.trans (e.apply_symm_apply (y, 0)))
+    exact hx.symm.trans hy⟩
+  obtain rfl : m = 0 := hm.symm.trans Module.finrank_zero_of_subsingleton
+  subst hk
+  let b := Module.finBasisOfFinrankEq R E hm
+  let c := Module.finBasisOfFinrankEq R F hn
+  -- For the orientation of the empty basis `b`, the product basis of `b` and `c` is `c` carried
+  -- into `E × F` by `e`; the case of `-c.orientation` follows by negating both sides.
+  have key : ∀ p' : Orientation R F (Fin n),
+      reindex R (E × F) (finCongr rfl) (prod b.orientation p' hm hn) =
+        Orientation.map (Fin (0 + n)) e (reindex R F (finCongr hnk) p') := by
+    have hbase : reindex R (E × F) (finCongr rfl) (prod b.orientation c.orientation hm hn) =
+        Orientation.map (Fin (0 + n)) e (reindex R F (finCongr hnk) c.orientation) := by
+      rw [prod_basis_orientation, ← Basis.orientation_reindex, ← Basis.orientation_reindex,
+        ← Basis.orientation_map]
+      congr 1
+      refine Basis.eq_of_apply_eq fun k ↦ Fin.addCases (fun i ↦ i.elim0) (fun j ↦ ?_) k
+      have hj : (Fin.cast hnk.symm (Fin.natAdd 0 j) : Fin n) = j := Fin.ext (by simp)
+      simp only [Basis.reindex_apply, Basis.map_apply, finCongr_symm, finCongr_apply,
+        Fin.cast_eq_self, finSumFinEquiv_symm_apply_natAdd]
+      rw [hj, he]
+      exact Prod.ext (Basis.prod_apply_inr_fst _ _ _) (Basis.prod_apply_inr_snd _ _ _)
+    intro p'
+    rcases c.orientation_eq_or_eq_neg p' with rfl | rfl
+    · exact hbase
+    · rw [prod_neg_right, Orientation.reindex_neg, hbase, Orientation.reindex_neg,
+        Orientation.map_neg]
+  rcases b.orientation_eq_or_eq_neg o with rfl | rfl
+  · rw [key, signBasis_orientation, map_one, one_smul]
+  · rw [prod_neg_left, Orientation.reindex_neg, key, signBasis_neg, signBasis_orientation,
+      intCast_units_smul_eq_ite, ite_eq_right (by decide)]
 
 /-- The relative sign in a product basis is the product of the two relative factor signs. -/
 theorem signBasis_prod (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n))
@@ -254,6 +319,26 @@ theorem map_prodComm_prod_of_even (o : Orientation R E (Fin m)) (p : Orientation
     Orientation.map (Fin (m + n)) (LinearEquiv.prodComm R E F) (prod o p hm hn) =
       Orientation.reindex R (F × E) (finCongr (add_comm n m)) (prod p o hn hm) := by
   rw [map_prodComm_prod, h.neg_one_pow, one_smul]
+
+/-- **A zero-dimensional second factor.** If a linear equivalence `e : E ≃ E × F` acts as
+`v ↦ (v, 0)`, so that the second factor `F` is zero, the product orientation of `o` and `p`,
+reindexed by the dimension `k` of `E`, is the orientation `o` of `E`, reindexed likewise and
+carried into `E × F` by `e`, scaled by the sign of `p` relative to the empty basis of `F`. -/
+theorem reindex_prod_of_right_eq_zero {k : ℕ} (o : Orientation R E (Fin m))
+    (p : Orientation R F (Fin n)) (hm : Module.finrank R E = m) (hn : Module.finrank R F = n)
+    (hk : m + n = k) (hmk : m = k) (e : E ≃ₗ[R] E × F) (he : ∀ v, e v = (v, 0)) :
+    reindex R (E × F) (finCongr hk) (prod o p hm hn) =
+      Units.map (Int.castRingHom R).toMonoidHom (signBasis p (Module.finBasisOfFinrankEq R F hn)) •
+        Orientation.map (Fin k) e (reindex R E (finCongr hmk) o) := by
+  obtain rfl : n = 0 := by omega
+  -- Followed by the exchange of the factors, `e` acts as `v ↦ (0, v)`; exchange them back.
+  have h := congrArg (Orientation.map (Fin k) (LinearEquiv.prodComm R F E))
+    (reindex_prod_of_left_eq_zero p o hn hm ((add_comm 0 m).trans hk) hmk
+      (e.trans (LinearEquiv.prodComm R E F)) fun v ↦ by simp [he])
+  have hee : (e.trans (LinearEquiv.prodComm R E F)).trans (LinearEquiv.prodComm R F E) = e :=
+    LinearEquiv.ext fun v ↦ by simp
+  rwa [map_reindex, map_prodComm_prod_of_even p o hn hm (by simp),
+    reindex_finCongr_reindex_finCongr, map_units_smul, ← map_trans, hee] at h
 
 variable {E' F' : Type*} [AddCommGroup E'] [Module R E'] [AddCommGroup F'] [Module R F']
   [Module.Free R E'] [Module.Finite R E']
@@ -342,6 +427,24 @@ theorem map_prodAssoc_symm_prod (o : Orientation R E (Fin m)) (o' : Orientation 
   rw [← (Orientation.map _ (LinearEquiv.prodAssoc R E F G)).injective.eq_iff, ← map_symm,
     Equiv.apply_symm_apply, map_reindex, map_prodAssoc_prod, reindex_finCongr_reindex_finCongr,
     finCongr_refl, reindex_refl, Equiv.refl_apply]
+
+/-- Moving the first factor of `E × (F × G)` past the second, through `(E × F) × G`, multiplies the
+product orientation `o × (o' × o'')` by `(-1) ^ (m * n)`, where `m` and `n` are the dimensions of
+`E` and `F`. The index types are identified through `n + (m + p) = m + (n + p)`. -/
+theorem map_prodAssoc_symm_trans_prodComm_prod (o : Orientation R E (Fin m))
+    (o' : Orientation R F (Fin n)) (o'' : Orientation R G (Fin p)) (hm : Module.finrank R E = m)
+    (hn : Module.finrank R F = n) (hp : Module.finrank R G = p) :
+    Orientation.map (Fin (m + (n + p)))
+        (((LinearEquiv.prodAssoc R E F G).symm.trans
+          ((LinearEquiv.prodComm R E F).prodCongr (LinearEquiv.refl R G))).trans
+          (LinearEquiv.prodAssoc R F E G))
+        (prod o (prod o' o'' hn hp) hm (by rw [Module.finrank_prod, hn, hp])) =
+      (-1 : Rˣ) ^ (m * n) • Orientation.reindex R (F × E × G) (finCongr (by omega))
+        (prod o' (prod o o'' hm hp) hn (by rw [Module.finrank_prod, hm, hp])) := by
+  rw [map_trans, map_trans, map_prodAssoc_symm_prod, map_reindex, map_prod, map_prodComm_prod,
+    map_refl, Equiv.refl_apply, prod_units_smul_left, prod_reindex_finCongr_left, map_reindex,
+    map_units_smul, map_reindex, map_prodAssoc_prod]
+  simp only [reindex_units_smul, reindex_finCongr_reindex_finCongr]
 
 section Field
 

@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.SpecificDegree
-public import Mathlib.RingTheory.Polynomial.DegreeLT
 public import Mathlib.RingTheory.Polynomial.GaussLemma
 import TauCeti.Algebra.Polynomial.SpecificDegree
+import TauCeti.RingTheory.Polynomial.DegreeLT
 
 /-!
 # Monic irreducible polynomials of a fixed degree
@@ -32,6 +32,8 @@ monic quadratic factors, in the domain itself.
 * `Polynomial.mem_monicIrreduciblesOfDegree_iff`: the defining membership condition.
 * `Polynomial.finite_monicIrreduciblesOfDegree`: over a finite coefficient ring there are
   finitely many.
+* `TauCeti.finite_monicIrreducible_natDegree_le`: over a finite semiring there are finitely many
+  monic irreducibles of bounded degree.
 * `Polynomial.ncard_monicIrreduciblesOfDegree_one`: over a domain the monic irreducibles of degree
   one are the `X - C a`, as many as the elements of the coefficient ring.
 * `Polynomial.monicIrreduciblesOfDegree_sdiff_singleton_X`: the monic irreducibles other than `X`
@@ -77,12 +79,8 @@ theorem mem_monicIrreduciblesOfDegree_iff {d : ℕ} {g : R[X]} :
 /-- **Over a finite coefficient ring there are finitely many monic irreducibles of each
 degree.** -/
 theorem finite_monicIrreduciblesOfDegree [Finite R] (d : ℕ) :
-    (monicIrreduciblesOfDegree R d).Finite := by
-  nontriviality R
-  have : Finite (degreeLT R d) := .of_equiv _ (degreeLTEquiv R d).toEquiv.symm
-  have hmon : {g : R[X] | g.Monic ∧ g.natDegree = d}.Finite :=
-    Set.finite_coe_iff.mp (.of_equiv _ (monicEquivDegreeLT d).symm)
-  exact hmon.subset fun g hg => ⟨hg.1, hg.2.2⟩
+    (monicIrreduciblesOfDegree R d).Finite :=
+  (finite_setOf_monic_natDegree_eq R d).subset fun _ hg => ⟨hg.1, hg.2.2⟩
 
 variable {R} in
 /-- The monic irreducible polynomials of degree `n` other than `X` are those with nonzero constant
@@ -159,6 +157,19 @@ both sides are `0` by convention (`ncard` of an infinite set and `Nat.card R` ar
 end Domain
 
 end Polynomial
+
+namespace TauCeti
+
+/-- There are finitely many monic irreducibles of bounded degree over a finite semiring. -/
+theorem finite_monicIrreducible_natDegree_le (R : Type*) [Semiring R] [Finite R] (m : ℕ) :
+    {p : {p : Polynomial R // p.Monic ∧ Irreducible p} |
+      (p : Polynomial R).natDegree ≤ m}.Finite := by
+  apply (Set.finite_Iic m).preimage'
+  intro d _
+  exact ((Polynomial.finite_setOf_monic_natDegree_eq R d).preimage
+    Subtype.val_injective.injOn).subset fun p hp ↦ ⟨p.property.1, hp⟩
+
+end TauCeti
 
 namespace Polynomial.Monic
 

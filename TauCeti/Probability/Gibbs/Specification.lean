@@ -11,6 +11,7 @@ public import Mathlib.Probability.Kernel.Proper
 public import TauCeti.Probability.Kernel.Invariance
 public import Mathlib.Algebra.Group.Action.Pointwise.Finset
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
+import TauCeti.Dynamics.Ergodic.Action.Map
 
 /-!
 # Specifications and Gibbs measures on a subshift
@@ -41,6 +42,9 @@ suffices to check `∫ γ_Λ (C | ω) dμ(ω) = μ(C)` on the measurable cylinde
 The Gibbs probability measures form a convex set (`TauCeti.Specification.convex_gibbsMeasures`),
 as do the invariant ones (`TauCeti.Specification.gibbsInvariant`, a subset of Tau Ceti's convex
 set `TauCeti.MeasureTheory.invariantMeasuresOfMeasureUnivEq` of invariant probability measures).
+An invariant measure on all configurations that is carried by `X` pulls back to an invariant
+measure on `X` of the same mass
+(`TauCeti.Subshift.comap_val_mem_invariantMeasuresOfMeasureUnivEq`).
 For an equivariant specification the action of `Γ` preserves the Gibbs measures
 (`TauCeti.Specification.IsGibbs.map_smul`).
 A specification is quasilocal (`TauCeti.Specification.IsQuasilocal`) when the mass
@@ -67,6 +71,24 @@ open scoped ENNReal Pointwise
 namespace TauCeti
 
 variable {Γ I S : Type*} [Group Γ] [MulAction Γ I] [TopologicalSpace S] [MeasurableSpace S]
+
+/-- An invariant measure of mass `c` on the configurations, carried by a subshift `X`, pulls back
+to an invariant measure of mass `c` on `X`, for an action on configurations given by
+`(g • ω) i = ω (g⁻¹ • i)`. -/
+theorem Subshift.comap_val_mem_invariantMeasuresOfMeasureUnivEq [OpensMeasurableSpace (I → S)]
+    {X : Subshift Γ I S} [SMul Γ (I → S)]
+    (hσ : ∀ (g : Γ) (ω : I → S) i, (g • ω) i = ω (g⁻¹ • i)) {c : ℝ≥0∞} {μ : Measure (I → S)}
+    (hμ : μ ∈ invariantMeasuresOfMeasureUnivEq Γ (I → S) c) (hX : ∀ᵐ ω ∂μ, ω ∈ X) :
+    μ.comap ((↑) : X → I → S) ∈ invariantMeasuresOfMeasureUnivEq Γ X c := by
+  obtain ⟨hinv, huniv⟩ := mem_invariantMeasuresOfMeasureUnivEq_iff.1 hμ
+  have hemb : MeasurableEmbedding ((↑) : X → I → S) :=
+    MeasurableEmbedding.subtypeVal X.measurableSet_coe
+  refine mem_invariantMeasuresOfMeasureUnivEq_iff.2
+    ⟨(hemb.smulInvariantMeasure_map_iff fun g ω => funext fun i => (hσ g ω i).symm).1 ?_, ?_⟩
+  · rw [X.map_comap_val_of_ae_mem hX]
+    exact hinv
+  · rw [hemb.comap_apply, image_univ, Subtype.range_coe_subtype, ← huniv]
+    exact measure_congr (ae_eq_univ.2 (ae_iff.1 hX))
 
 /-- A specification on a subshift `X`: a family, indexed by the finite sets `Λ`, of Markov kernels
 `γ_Λ` measurable for the exterior σ-algebra `𝓕_{Λᶜ}` on the source, each proper, and consistent:
@@ -238,27 +260,34 @@ theorem IsGibbs.add (hμ : γ.IsGibbs μ) (hν : γ.IsGibbs ν) : γ.IsGibbs (μ
 theorem IsGibbs.smul (hμ : γ.IsGibbs μ) (c : ℝ≥0∞) : γ.IsGibbs (c • μ) :=
   isGibbs_iff_invariant.2 fun Λ => (isGibbs_iff_invariant.1 hμ Λ).smul c
 
-/-- **Reweighting by a tail density.** If `μ` is Gibbs and `f` is measurable for the exterior
-σ-algebra of every finite set, as a tail-measurable density is, then `f • μ` is Gibbs. -/
-theorem IsGibbs.withDensity (hμ : γ.IsGibbs μ) {f : X → ℝ≥0∞}
-    (hf : ∀ Λ : Finset I, Measurable[X.exterior Λ] f) : γ.IsGibbs (μ.withDensity f) := by
-  intro Λ
-  have hfm : Measurable f := (hf Λ).mono (X.exterior_le Λ) le_rfl
+/-- **Reweighting by an exterior density, one finite set at a time.** If `μ.bind γ_Λ = μ` and `f`
+is measurable for the exterior σ-algebra `𝓕_{Λᶜ}`, then `f • μ` also satisfies
+`(f • μ).bind γ_Λ = f • μ`. -/
+theorem bind_kernel_withDensity {Λ : Finset I} (hμ : μ.bind (γ.kernel Λ) = μ) {f : X → ℝ≥0∞}
+    (hf : Measurable[X.exterior Λ] f) :
+    (μ.withDensity f).bind (γ.kernel Λ) = μ.withDensity f := by
+  have hfm : Measurable f := hf.mono (X.exterior_le Λ) le_rfl
   ext C hC
   have hCf : Measurable fun ω => f ω * C.indicator 1 ω := hfm.mul (measurable_one.indicator hC)
   -- Properness pulls the exterior-measurable density inside each kernel.
   have hprop (ω : X) :
       f ω * γ.kernel Λ ω C = ∫⁻ ω', f ω' * C.indicator 1 ω' ∂(γ.kernel Λ ω) := by
-    rw [(γ.isProper Λ).lintegral_mul (X.exterior_le Λ) (measurable_one.indicator hC) (hf Λ),
+    rw [(γ.isProper Λ).lintegral_mul (X.exterior_le Λ) (measurable_one.indicator hC) hf,
       lintegral_indicator_one hC]
   rw [Measure.bind_apply hC (γ.measurable_kernel Λ).aemeasurable,
     lintegral_withDensity_eq_lintegral_mul _ hfm (γ.measurable_kernel_apply Λ hC),
     withDensity_apply _ hC]
   simp only [Pi.mul_apply, hprop]
-  rw [← Measure.lintegral_bind (γ.measurable_kernel Λ).aemeasurable hCf.aemeasurable, hμ Λ,
+  rw [← Measure.lintegral_bind (γ.measurable_kernel Λ).aemeasurable hCf.aemeasurable, hμ,
     ← lintegral_indicator hC]
   congr 1 with ω
   by_cases hω : ω ∈ C <;> simp [hω]
+
+/-- **Reweighting by a tail density.** If `μ` is Gibbs and `f` is measurable for the exterior
+σ-algebra of every finite set, as a tail-measurable density is, then `f • μ` is Gibbs. -/
+theorem IsGibbs.withDensity (hμ : γ.IsGibbs μ) {f : X → ℝ≥0∞}
+    (hf : ∀ Λ : Finset I, Measurable[X.exterior Λ] f) : γ.IsGibbs (μ.withDensity f) :=
+  fun Λ => bind_kernel_withDensity (hμ Λ) (hf Λ)
 
 /-- The zero measure is Gibbs. -/
 @[simp]

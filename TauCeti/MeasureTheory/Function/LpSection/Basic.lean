@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSpace.Complete
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import Mathlib.MeasureTheory.Measure.SeparableMeasure
 public import TauCeti.MeasureTheory.Function.LpSection.Measurable
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The spaces `Lᵖ` of sections of a vector bundle
@@ -322,6 +323,13 @@ theorem norm_eq_integral (hp0 : p ≠ 0) (hp : p ≠ ∞) :
     ‖f‖ = (∫ x, ‖f x‖ ^ p.toReal ∂μ) ^ p.toReal⁻¹ := by
   conv_lhs => rw [← mk_coeFn f]
   exact norm_mk_eq_integral hp0 hp _ _
+
+/-- For a finite measure, a class whose fibre norm is almost everywhere at most `C` has norm at
+most `μ(univ) ^ (1 / p) * C`. -/
+theorem norm_le_of_ae_bound [IsFiniteMeasure μ] {C : ℝ} (hC : 0 ≤ C)
+    (hfC : ∀ᵐ x ∂μ, ‖f x‖ ≤ C) : ‖f‖ ≤ measureUnivNNReal μ ^ p.toReal⁻¹ * C := by
+  rw [norm_eq_norm_toLp]
+  exact f.memLp_norm.norm_toLp_le_of_ae_bound hC (by simpa using hfC)
 
 variable [hp : Fact (1 ≤ p)]
 

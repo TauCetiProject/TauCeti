@@ -53,6 +53,8 @@ every compactly supported smooth function `φ`.
 * `LinearMap.isFormalAdjoint_of_forall_inner_eq`: a pointwise adjoint, such as the fibrewise
   adjoint of a bundle map, is a formal adjoint for every measure; in particular multiplication by
   a smooth function is its own formal adjoint (`LinearMap.isFormalAdjoint_lsmul`).
+* `LinearMap.IsFormalAdjoint.withDensity`: change of density, from `μ` to `ρ μ` for a smooth
+  `ρ ≥ 0`.
 * `LinearMap.IsFormalAdjoint.unique`: uniqueness of formal adjoints.
 * `LinearMap.IsFormalAdjoint.formalAdjoint_eq`,
   `LinearMap.IsFormalAdjoint.formalAdjoint_formalAdjoint`: the formal adjoint is characterized by
@@ -277,6 +279,31 @@ theorem isFormalAdjoint_lsmul (a : C^∞⟮I, M; ℝ⟯) :
     simp [inner_smul_left, inner_smul_right]
 
 end Multiplication
+
+/-! ### Change of density -/
+
+/-- **Change of density.** Let `Q` be a formal adjoint of `P` with respect to `μ`, and let
+`ρ ≥ 0` be smooth. An operator `Q'` with `ρ Q' t = Q (ρ t)` for every section `t` is a formal
+adjoint of `P` with respect to the weighted measure `ρ μ`. For `ρ > 0` this says
+`Q' t = ρ⁻¹ Q (ρ t)`. -/
+theorem IsFormalAdjoint.withDensity [OpensMeasurableSpace M] (h : P.IsFormalAdjoint Q μ)
+    {Q' : Cₛ^∞⟮I; F', W⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯} {ρ : C^∞⟮I, M; ℝ⟯} (hρ : ∀ x, 0 ≤ ρ x)
+    (hQ' : ∀ t, ρ • Q' t = Q (ρ • t)) :
+    P.IsFormalAdjoint Q' (μ.withDensity fun x ↦ ENNReal.ofReal (ρ x)) := by
+  intro s t hst
+  have hρm : Measurable fun x ↦ ENNReal.ofReal (ρ x) :=
+    ENNReal.measurable_ofReal.comp ρ.contMDiff.continuous.measurable
+  have hρt : ∀ᵐ x ∂μ, ENNReal.ofReal (ρ x) < ⊤ := .of_forall fun _ ↦ ENNReal.ofReal_lt_top
+  simp only [integral_withDensity_eq_integral_toReal_smul hρm hρt, ENNReal.toReal_ofReal (hρ _),
+    smul_eq_mul]
+  have hρst : IsCompact s.tsupport ∨ IsCompact (ρ • t).tsupport :=
+    hst.imp _root_.id fun ht ↦ ht.of_isClosed_subset (ρ • t).isClosed_tsupport
+      (ContMDiffSection.tsupport_smul_function_subset_right ρ t)
+  calc ∫ x, ρ x * ⟪P s x, t x⟫ ∂μ = ∫ x, ⟪P s x, (ρ • t) x⟫ ∂μ := by
+        simp [ContMDiffSection.smul_apply, inner_smul_right]
+    _ = ∫ x, ⟪s x, Q (ρ • t) x⟫ ∂μ := h s _ hρst
+    _ = ∫ x, ρ x * ⟪s x, Q' t x⟫ ∂μ := by
+        simp [← hQ', ContMDiffSection.smul_apply, inner_smul_right]
 
 /-! ### Uniqueness -/
 

@@ -11,6 +11,7 @@ import Mathlib.Analysis.Normed.Module.RCLike.Real
 import Mathlib.Analysis.Normed.Module.Seminorm.Norm
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Tactic.Module
+import TauCeti.Algebra.Module.Basic
 
 /-!
 # Basic lemmas on normed scalar actions and modules
@@ -63,6 +64,9 @@ normed spaces:
 * `Continuous.div_norm_smul`: for a continuous real scalar action and continuous `τ` and `y`, the
   radial rescaling `p ↦ (τ p / ‖y p‖) • y p` is continuous as long as `τ` vanishes on the frontier
   of the locus where `‖y‖` vanishes.
+* `TauCeti.norm_le_norm_inv_two_smul_add_add_norm_inv_two_smul_sub`: splitting `x` into the
+  midpoint `2⁻¹ • (x + y)` and the half difference `2⁻¹ • (x - y)` bounds `‖x‖` by the sum of
+  their norms, for instance `‖F‖ ≤ ‖F⁺‖ + ‖F⁻‖` for the self-dual and anti-self-dual parts.
 * `TauCeti.nonneg_of_forall_norm_eq_abs_le`: a bound on the absolute values of a real function on
   a sphere of nonnegative radius in a nontrivial real normed space is nonnegative.
 * `IsOpen.diam_pos`: a nonempty bounded open set in a nontrivial real normed space has positive
@@ -284,6 +288,14 @@ theorem norm_div_norm_smul_le {F : Type*} [SeminormedAddGroup F] [SMulZeroClass 
   (norm_smul_le _ _).trans <| by
     rw [norm_div, Real.norm_of_nonneg (norm_nonneg y), div_eq_mul_inv, mul_assoc]
     exact mul_le_of_le_one_right (norm_nonneg τ) inv_mul_le_one
+
+/-- The norm of `x` is at most the sum of the norms of the midpoint `2⁻¹ • (x + y)` and the half
+difference `2⁻¹ • (x - y)`, which add up to `x`
+(`TauCeti.inv_two_smul_add_add_inv_two_smul_sub`). -/
+theorem norm_le_norm_inv_two_smul_add_add_norm_inv_two_smul_sub {R E : Type*}
+    [DivisionSemiring R] [NeZero (2 : R)] [SeminormedAddCommGroup E] [Module R E] (x y : E) :
+    ‖x‖ ≤ ‖(2⁻¹ : R) • (x + y)‖ + ‖(2⁻¹ : R) • (x - y)‖ :=
+  (norm_add_le _ _).trans_eq' (by rw [inv_two_smul_add_add_inv_two_smul_sub])
 
 /-- A bound on the absolute values of a real function on the sphere of radius `R ≥ 0` about the
 origin of a nontrivial real normed space is nonnegative, since that sphere is nonempty. -/

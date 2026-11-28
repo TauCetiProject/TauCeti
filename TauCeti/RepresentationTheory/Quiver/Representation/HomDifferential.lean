@@ -52,6 +52,26 @@ noncomputable def homVertex (f : M ⟶ N) : HomVertex M N :=
 theorem homVertex_apply (f : M ⟶ N) (i : Q) (x : vertexSpace k Q M i) :
     homVertex M N f i x = (f.app ((Paths.of Q).obj i)).hom x := (rfl)
 
+variable {M N} in
+/-- Vertex components of a composite are the composites at each vertex. -/
+@[simp]
+theorem homVertex_comp {P : QuiverRep.{u, v, w, t} k Q} (f : M ⟶ N) (g : N ⟶ P) (i : Q) :
+    homVertex M P (f ≫ g) i = (homVertex N P g i).comp (homVertex M N f i) := (rfl)
+
+/-- The identity morphism has the identity linear map at each vertex. -/
+@[simp]
+theorem homVertex_id (i : Q) : homVertex M M (𝟙 M) i = LinearMap.id := (rfl)
+
+/-- The zero morphism has the zero linear map at each vertex. -/
+@[simp]
+theorem homVertex_zero (i : Q) : homVertex M N 0 i = 0 := (rfl)
+
+variable {M N} in
+/-- Taking vertex components commutes with scalar multiplication. -/
+@[simp]
+theorem homVertex_smul (r : k) (f : M ⟶ N) (i : Q) :
+    homVertex M N (r • f) i = r • homVertex M N f i := (rfl)
+
 /-- The vertex components of a morphism commute with each arrow action. -/
 theorem homVertex_naturality (f : M ⟶ N) (i j : Q) (a : i ⟶ j)
     (x : vertexSpace k Q M i) :
