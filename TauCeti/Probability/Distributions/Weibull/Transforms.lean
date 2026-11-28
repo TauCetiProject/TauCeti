@@ -11,6 +11,8 @@ public import TauCeti.Probability.Distributions.Weibull.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Probability.Distributions.Exponential.Basic
+import TauCeti.Probability.GeneratingFunction
+import TauCeti.Probability.HasLaw
 import TauCeti.Probability.Moments.IntegrableExpMul
 
 /-!
@@ -25,7 +27,8 @@ whose exponent has been halved; the sublinear case follows because every positiv
 eventually dominates the density's stretched-exponential decay. At shape one, identifying the
 Weibull law with an exponential law also gives the mgf `(1 - lam * t)⁻¹` and cgf
 `-log (1 - lam * t)`. In the superlinear case, integrating the exponential series term by term
-expresses the mgf as the exponential generating function of the Weibull moments.
+expresses the mgf as the exponential generating function of the Weibull moments. The final section
+transfers these transform results to random variables with a Weibull law.
 
 ## Main results
 
@@ -382,3 +385,80 @@ theorem cgf_id_weibullMeasure_one (hlam : 0 < lam) (ht : t < lam⁻¹) :
 end Probability
 
 end TauCeti
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
+  {k lam t : ℝ}
+
+/-- Every real exponential rate is integrable for a Weibull random variable of shape greater
+than one. -/
+theorem integrable_exp_mul_weibullMeasure_of_one_lt
+    (hX : HasLaw X (weibullMeasure k lam) P) (hk : 1 < k) (t : ℝ) :
+    Integrable (fun ω ↦ Real.exp (t * X ω)) P :=
+  hX.integrable_fun_comp
+    (TauCeti.Probability.integrable_exp_mul_id_weibullMeasure_of_one_lt hk t)
+
+/-- For a Weibull random variable of positive shape below one and positive scale, an exponential
+moment is finite exactly at nonpositive rates. -/
+theorem integrable_exp_mul_weibullMeasure_iff_of_lt_one
+    (hX : HasLaw X (weibullMeasure k lam) P) (hk : 0 < k) (hk' : k < 1)
+    (hlam : 0 < lam) (t : ℝ) :
+    Integrable (fun ω ↦ Real.exp (t * X ω)) P ↔ t ≤ 0 := by
+  simpa only [Function.comp_def] using
+    (integrable_comp_iff hX (f := fun x : ℝ ↦ Real.exp (t * x)) (by fun_prop)).trans
+      (TauCeti.Probability.integrable_exp_mul_id_weibullMeasure_iff_of_lt_one
+        hk hk' hlam t)
+
+/-- For positive shape and scale, the exact exponential-integrability domain of a Weibull random
+variable. -/
+theorem integrableExpSet_weibullMeasure (hX : HasLaw X (weibullMeasure k lam) P)
+    (hk : 0 < k) (hlam : 0 < lam) :
+    integrableExpSet X P =
+      if k < 1 then Set.Iic 0 else if k = 1 then Set.Iio lam⁻¹ else Set.univ := by
+  rw [TauCeti.Probability.HasLaw.integrableExpSet_eq hX,
+    TauCeti.Probability.integrableExpSet_id_weibullMeasure hk hlam]
+
+/-- For positive scale and shape greater than one, the Gamma-coefficient series converges to the
+moment-generating function of a Weibull random variable. -/
+theorem hasSum_mgf_weibullMeasure_of_one_lt (hX : HasLaw X (weibullMeasure k lam) P)
+    (hk : 1 < k) (hlam : 0 < lam) (t : ℝ) :
+    HasSum (fun n : ℕ =>
+      (t * lam) ^ n * Real.Gamma (1 + (n : ℝ) / k) / n.factorial) (mgf X P t) := by
+  rw [← mgf_id_map hX.aemeasurable, hX.map_eq]
+  exact TauCeti.Probability.hasSum_mgf_id_weibullMeasure_of_one_lt hk hlam t
+
+/-- For positive scale and shape greater than one, the moment-generating function equals its
+Gamma-coefficient series. See `hasSum_mgf_weibullMeasure_of_one_lt` for convergence. -/
+theorem mgf_weibullMeasure_of_one_lt (hX : HasLaw X (weibullMeasure k lam) P)
+    (hk : 1 < k) (hlam : 0 < lam) (t : ℝ) :
+    mgf X P t =
+      ∑' n : ℕ, (t * lam) ^ n * Real.Gamma (1 + (n : ℝ) / k) / n.factorial :=
+  (hX.hasSum_mgf_weibullMeasure_of_one_lt hk hlam t).tsum_eq.symm
+
+/-- The cumulant-generating function of a superlinear Weibull random variable is the logarithm
+of its Gamma-coefficient series. -/
+theorem cgf_weibullMeasure_of_one_lt (hX : HasLaw X (weibullMeasure k lam) P)
+    (hk : 1 < k) (hlam : 0 < lam) (t : ℝ) :
+    cgf X P t = Real.log
+      (∑' n : ℕ, (t * lam) ^ n * Real.Gamma (1 + (n : ℝ) / k) / n.factorial) := by
+  rw [cgf, hX.mgf_weibullMeasure_of_one_lt hk hlam]
+
+/-- The moment-generating function of a shape-one Weibull random variable below the reciprocal
+scale. -/
+theorem mgf_weibullMeasure_one (hX : HasLaw X (weibullMeasure 1 lam) P)
+    (hlam : 0 < lam) (ht : t < lam⁻¹) :
+    mgf X P t = (1 - lam * t)⁻¹ := by
+  rw [← mgf_id_map hX.aemeasurable, hX.map_eq,
+    TauCeti.Probability.mgf_id_weibullMeasure_one hlam ht]
+
+/-- The cumulant-generating function of a shape-one Weibull random variable below the reciprocal
+scale. -/
+theorem cgf_weibullMeasure_one (hX : HasLaw X (weibullMeasure 1 lam) P)
+    (hlam : 0 < lam) (ht : t < lam⁻¹) :
+    cgf X P t = -Real.log (1 - lam * t) := by
+  rw [cgf, hX.mgf_weibullMeasure_one hlam ht, Real.log_inv]
+
+end ProbabilityTheory.HasLaw
