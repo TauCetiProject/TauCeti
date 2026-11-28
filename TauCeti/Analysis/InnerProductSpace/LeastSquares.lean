@@ -178,12 +178,10 @@ least-squares solution of least norm: every least-squares solution `b'` with `�
 equal to `b`. -/
 theorem IsLeastSquares.eq_of_norm_le (hb : X.IsLeastSquares y b) (hbk : b ∈ (ker X)ᗮ)
     (hb' : X.IsLeastSquares y b') (hle : ‖b'‖ ≤ ‖b‖) : b' = b := by
-  have h := norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero b (b' - b)
-    (inner_left_of_mem_orthogonal (hb.isLeastSquares_iff_sub_mem_ker.mp hb') hbk)
-  rw [add_sub_cancel] at h
-  have h0 : ‖b' - b‖ * ‖b' - b‖ ≤ 0 := by nlinarith [norm_nonneg b']
-  exact sub_eq_zero.mp <| norm_eq_zero.mp <| mul_self_eq_zero.mp <|
-    le_antisymm h0 (mul_self_nonneg _)
+  refine eq_of_norm_le_re_inner_eq_norm_sq (𝕜 := 𝕜) hle ?_
+  rw [← sub_add_cancel b' b, inner_add_left,
+    inner_right_of_mem_orthogonal (hb.isLeastSquares_iff_sub_mem_ker.mp hb') hbk, zero_add,
+    inner_self_eq_norm_sq]
 
 variable (X y) in
 /-- Exactly one least-squares solution lies in the orthogonal complement of the kernel. By
