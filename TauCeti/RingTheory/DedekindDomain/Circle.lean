@@ -53,8 +53,9 @@ criterion for plane curves (`MvPolynomial.isDedekindDomain_quotient_span_singlet
 * `TauCeti.CircleRing.isCoprime_one_add_x_one_sub_x`: the two charts cover the circle.
 * `TauCeti.CircleRing.instIsDedekindDomain`: over a field in which `2 ≠ 0`, `CircleRing k` is a
   Dedekind domain.
-* `TauCeti.CircleRing.isLocalization_away_chartToOverlap`: the overlap `y ≠ 0` is the
-  localization of a chart `1 + εx ≠ 0` away from `y / (1 + εx)`.
+* `TauCeti.CircleRing.isLocalization_away_y_chartToOverlap`,
+  `TauCeti.CircleRing.isLocalization_away_chartToOverlap`: the overlap `y ≠ 0` is the
+  localization of a chart `1 + εx ≠ 0` away from `y` and from `y / (1 + εx)`.
 * `TauCeti.CircleRing.stereographic_overlap_coord_of_sq_eq_one`,
   `TauCeti.CircleRing.stereographic_overlap_of_sq_eq_one`: on the overlap `y ≠ 0`, the
   stereographic coordinates at `ε` and `-ε` (in particular `t₊` and `t₋` for `ε = 1`) satisfy
@@ -538,6 +539,25 @@ theorem chartToOverlap_invSelf (hε : ε ^ 2 = 1) :
       mul_invSelf, one_pow]
 
 /-- The overlap `k[x, y, y⁻¹]` is the localization of the stereographic chart `k[x, y, (1 + εx)⁻¹]`
+away from `y`, as an algebra through `chartToOverlap`. -/
+theorem isLocalization_away_y_chartToOverlap (hε : ε ^ 2 = 1) :
+    letI := (chartToOverlap hε).toRingHom.toAlgebra
+    IsLocalization.Away
+      (algebraMap (CircleRing k) (Localization.Away (1 + ε • x : CircleRing k)) y)
+      (Localization.Away (y : CircleRing k)) := by
+  let := (chartToOverlap hε).toRingHom.toAlgebra
+  have : IsScalarTower (CircleRing k) (Localization.Away (1 + ε • x : CircleRing k))
+      (Localization.Away (y : CircleRing k)) :=
+    IsScalarTower.of_algebraMap_eq' (RingHom.ext fun a => (chartToOverlap_algebraMap hε a).symm)
+  have : IsLocalization.Away
+      (algebraMap (CircleRing k) (Localization.Away (y : CircleRing k)) (1 + ε • x))
+      (Localization.Away (y : CircleRing k)) :=
+    IsLocalization.away_of_isUnit_of_bijective _ (isUnit_one_add_smul_x_away_y hε)
+      Function.bijective_id
+  exact IsLocalization.Away.commutes (Localization.Away (1 + ε • x : CircleRing k))
+    (Localization.Away (y : CircleRing k)) (Localization.Away (y : CircleRing k)) (1 + ε • x) y
+
+/-- The overlap `k[x, y, y⁻¹]` is the localization of the stereographic chart `k[x, y, (1 + εx)⁻¹]`
 away from the stereographic coordinate `y / (1 + εx)`, as an algebra through `chartToOverlap`. -/
 theorem isLocalization_away_chartToOverlap (hε : ε ^ 2 = 1) :
     letI := (chartToOverlap hε).toRingHom.toAlgebra
@@ -546,39 +566,8 @@ theorem isLocalization_away_chartToOverlap (hε : ε ^ 2 = 1) :
         invSelf (1 + ε • x : CircleRing k))
       (Localization.Away (y : CircleRing k)) := by
   let := (chartToOverlap hε).toRingHom.toAlgebra
-  have hy : IsLocalization.Away
-      (algebraMap (CircleRing k) (Localization.Away (1 + ε • x : CircleRing k)) y)
-      (Localization.Away (y : CircleRing k)) := by
-    refine IsLocalization.Away.mk _ ?_ (fun z ↦ ?_) (fun a b hab ↦ ?_)
-    · rw [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-        chartToOverlap_algebraMap]
-      exact IsLocalization.Away.algebraMap_isUnit _
-    · obtain ⟨n, a, ha⟩ := IsLocalization.Away.surj (y : CircleRing k) z
-      refine ⟨n, algebraMap (CircleRing k) _ a, ?_⟩
-      simpa only [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-        map_pow, chartToOverlap_algebraMap] using ha
-    · obtain ⟨m, a', ha'⟩ := IsLocalization.Away.surj (1 + ε • x : CircleRing k) a
-      obtain ⟨l, b', hb'⟩ := IsLocalization.Away.surj (1 + ε • x : CircleRing k) b
-      have hab' : algebraMap (CircleRing k) (Localization.Away (y : CircleRing k))
-          (a' * (1 + ε • x) ^ l) =
-          algebraMap (CircleRing k) _ (b' * (1 + ε • x) ^ m) := by
-        have h : chartToOverlap hε (a * algebraMap (CircleRing k) _ (1 + ε • x) ^ (m + l)) =
-            chartToOverlap hε (b * algebraMap (CircleRing k) _ (1 + ε • x) ^ (m + l)) := by
-          simpa only [map_mul, RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
-            RingHom.coe_coe] using congrArg
-              (· * chartToOverlap hε (algebraMap (CircleRing k) _ (1 + ε • x) ^ (m + l))) hab
-        rw [pow_add, ← mul_assoc, ha', mul_comm (algebraMap _ _ _ ^ m), ← mul_assoc, hb'] at h
-        simpa only [← map_pow, ← map_mul, chartToOverlap_algebraMap] using h
-      obtain ⟨n, hn⟩ := IsLocalization.Away.exists_of_eq (y : CircleRing k) hab'
-      refine ⟨n, ?_⟩
-      have hn' := congrArg (algebraMap (CircleRing k)
-        (Localization.Away (1 + ε • x : CircleRing k))) hn
-      simp only [map_mul, map_pow, ← ha', ← hb'] at hn'
-      have hu : IsUnit (algebraMap (CircleRing k)
-          (Localization.Away (1 + ε • x : CircleRing k)) (1 + ε • x)) :=
-        IsLocalization.Away.algebraMap_isUnit _
-      exact (hu.pow (m + l)).mul_right_cancel (by linear_combination hn')
-  refine @IsLocalization.Away.of_associated _ _ _ _ _ _ _ ?_ hy
+  refine @IsLocalization.Away.of_associated _ _ _ _ _ _ _ ?_
+    (isLocalization_away_y_chartToOverlap hε)
   refine ⟨(IsLocalization.Away.algebraMap_isUnit
     (S := Localization.Away (1 + ε • x : CircleRing k)) (1 + ε • x : CircleRing k)).unit⁻¹, ?_⟩
   congr 1
@@ -591,12 +580,20 @@ theorem stereographic_overlap_coord_of_sq_eq_one (hε : ε ^ 2 = 1) :
     chartToOverlap hε (algebraMap (CircleRing k) _ y * invSelf (1 + ε • x : CircleRing k)) *
       chartToOverlap ((neg_sq ε).trans hε)
         (algebraMap (CircleRing k) _ y * invSelf (1 + (-ε) • x : CircleRing k)) = 1 := by
-  simp only [map_mul, chartToOverlap_algebraMap]
-  rw [mul_mul_mul_comm, ← map_mul, ← sq, ← one_add_smul_x_mul_one_sub_smul_x hε,
-    show (1 - ε • x : CircleRing k) = 1 + (-ε) • x by rw [sub_eq_add_neg, neg_smul],
-    map_mul, mul_mul_mul_comm, ← chartToOverlap_algebraMap hε,
-    ← chartToOverlap_algebraMap ((neg_sq ε).trans hε),
-    map_mul_eq_one _ (mul_invSelf _), map_mul_eq_one _ (mul_invSelf _), one_mul]
+  simp only [map_mul, chartToOverlap_algebraMap, chartToOverlap_invSelf]
+  rw [neg_smul, sub_neg_eq_add]
+  have hxy : algebraMap (CircleRing k) (Localization.Away (y : CircleRing k)) (1 + ε • x) *
+      algebraMap (CircleRing k) (Localization.Away (y : CircleRing k)) (1 - ε • x) =
+        algebraMap (CircleRing k) (Localization.Away (y : CircleRing k)) y ^ 2 := by
+    rw [← map_mul, one_add_smul_x_mul_one_sub_smul_x hε, map_pow]
+  have hyi : algebraMap (CircleRing k) (Localization.Away (y : CircleRing k)) y *
+      invSelf (y : CircleRing k) = 1 := mul_invSelf _
+  trans (algebraMap (CircleRing k) (Localization.Away (y : CircleRing k)) y *
+    invSelf (y : CircleRing k)) ^ 4
+  · linear_combination
+      (algebraMap (CircleRing k) (Localization.Away (y : CircleRing k)) y *
+        invSelf (y : CircleRing k) ^ 2) ^ 2 * hxy
+  · rw [hyi, one_pow]
 
 /-- **Overlap compatibility of the stereographic charts.** On `k[x, y, y⁻¹]`, the stereographic
 coordinates `t_ε = y / (1 + εx)` and `t_{-ε} = y / (1 - εx)` for `ε² = 1` are mutually inverse:

@@ -140,6 +140,7 @@ theorem evalGL_stabilizeGL_circleRotation (N : ℕ) (hN : 2 ≤ N) :
         (stabilizeGL (CircleRing ℝ) hN (SpecialLinearGroup.toGL (circleRotation ℝ))) := by
     ext i j
     simp [φ, CircleRing.coe_evalGL_apply, GeneralLinearGroup.map_apply]
+  -- `GeneralLinearGroup.map φ` is definitionally `Units.map φ.mapMatrix.toMonoidHom`.
   rw [hev, GeneralLinearGroup.map, ← stabilizeGL_map hN φ, circleRotationLoop_apply]
   congr 1
   ext i j
@@ -180,10 +181,9 @@ theorem circle_rotation_not_stably_elementary {k : Type*} [CommRing k] (f : k �
   apply circle_rotation_not_stably_elementary_real
   have hmap := congrArg (AlgebraicK1.map (CircleRing.map f)) h
   rw [AlgebraicK1.map_mk, map_one] at hmap
-  change AlgebraicK1.mk (CircleRing ℝ) 2
-      (GeneralLinearGroup.map (CircleRing.map f) (SpecialLinearGroup.toGL (circleRotation k))) = 1
-    at hmap
-  rwa [← SpecialLinearGroup.toGL_map, map_circleRotation f] at hmap
+  -- `AlgebraicK1.map_mk` produces `Units.map (CircleRing.map f).mapMatrix.toMonoidHom`, which is
+  -- definitionally `GeneralLinearGroup.map (CircleRing.map f)`.
+  rwa [← GeneralLinearGroup.map, ← SpecialLinearGroup.toGL_map, map_circleRotation f] at hmap
 
 /-- **No identity stabilization of `circleRotation k` is elementary** when `k` admits a ring
 homomorphism `k →+* ℝ`. -/
