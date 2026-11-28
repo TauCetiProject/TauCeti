@@ -117,26 +117,22 @@ def reesMul (i j : ℕ) : I.reesComponent i ⊗ I.reesComponent j ⟶ I.reesComp
   sheafMul (I ^ i) (I ^ j) ≫ eqToHom (congrArg sheaf (pow_add I i j).symm)
 
 /-- The multiplication of the Rees algebra, followed by the inclusion `Iⁱ⁺ʲ ⟶ 𝒪_X`, is the
-inclusion `Iⁱ ⊗ Iʲ ⟶ 𝒪_X ⊗ 𝒪_X` followed by the multiplication of `𝒪_X`, with the inclusions read
-as morphisms to the monoidal unit. -/
-@[reassoc]
-lemma reesMul_sheafιUnit (i j : ℕ) :
-    I.reesMul i j ≫ (I ^ (i + j)).sheafιUnit =
-      ((I ^ i).sheafιUnit ⊗ₘ (I ^ j).sheafιUnit) ≫ (λ_ (𝟙_ X.Modules)).hom :=
-  (Category.assoc _ _ _).trans
-    ((congrArg (sheafMul (I ^ i) (I ^ j) ≫ ·) (eqToHom_sheafιUnit (pow_add I i j).symm)).trans
-      (by
-        rw [sheafιUnit_def, sheafιUnit_def, sheafιUnit_def]
-        exact sheafMul_sheafι (I ^ i) (I ^ j)))
-
-/-- The multiplication of the Rees algebra, followed by the inclusion `Iⁱ⁺ʲ ⟶ 𝒪_X`, is the
 inclusion `Iⁱ ⊗ Iʲ ⟶ 𝒪_X ⊗ 𝒪_X` followed by the multiplication of `𝒪_X`. -/
 @[reassoc]
 theorem reesMul_sheafι (i j : ℕ) :
     I.reesMul i j ≫ (I ^ (i + j)).sheafι =
-      ((I ^ i).sheafι ⊗ₘ (I ^ j).sheafι) ≫ (λ_ (𝟙_ X.Modules)).hom := by
-  have h := I.reesMul_sheafιUnit i j
-  rwa [sheafιUnit_def, sheafιUnit_def, sheafιUnit_def] at h
+      ((I ^ i).sheafι ⊗ₘ (I ^ j).sheafι) ≫ (λ_ (𝟙_ X.Modules)).hom :=
+  (Category.assoc _ _ _).trans
+    ((congrArg (sheafMul (I ^ i) (I ^ j) ≫ ·) (eqToHom_sheafι (pow_add I i j).symm)).trans
+      (sheafMul_sheafι (I ^ i) (I ^ j)))
+
+/-- `reesMul_sheafι`, stated with the inclusions read as morphisms to the monoidal unit. -/
+@[reassoc]
+lemma reesMul_sheafιUnit (i j : ℕ) :
+    I.reesMul i j ≫ (I ^ (i + j)).sheafιUnit =
+      ((I ^ i).sheafιUnit ⊗ₘ (I ^ j).sheafιUnit) ≫ (λ_ (𝟙_ X.Modules)).hom := by
+  rw [sheafιUnit_def, sheafιUnit_def, sheafιUnit_def]
+  exact I.reesMul_sheafι i j
 
 /-- The unit `𝒪_X ⟶ I⁰` of the Rees algebra of `I`: every regular function is a section of
 `I⁰ = 𝒪_X`. -/

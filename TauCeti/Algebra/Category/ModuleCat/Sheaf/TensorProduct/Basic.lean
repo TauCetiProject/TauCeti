@@ -179,6 +179,12 @@ lemma tensorProductCongrLeft_trans {M M' M'' N : SheafOfModules.{u} (ringCatShea
       tensorProductCongrLeft R e ≪≫ tensorProductCongrLeft R e' :=
   Functor.mapIso_trans _ _ _
 
+/-- Transport through the first argument commutes with taking inverses of isomorphisms. -/
+@[simp]
+lemma tensorProductCongrLeft_symm {M M' N : SheafOfModules.{u} (ringCatSheaf R)} (e : M ≅ M') :
+    tensorProductCongrLeft R (N := N) e.symm = (tensorProductCongrLeft R e).symm :=
+  (tensorProductRightFunctor R N).mapIso_symm e
+
 /-- Transport through the second argument sends the identity to the identity. -/
 @[simp]
 lemma tensorProductCongrRight_refl (M N : SheafOfModules.{u} (ringCatSheaf R)) :
@@ -192,6 +198,12 @@ lemma tensorProductCongrRight_trans {M N N' N'' : SheafOfModules.{u} (ringCatShe
     tensorProductCongrRight R (M := M) (e ≪≫ e') =
       tensorProductCongrRight R e ≪≫ tensorProductCongrRight R e' :=
   Functor.mapIso_trans _ _ _
+
+/-- Transport through the second argument commutes with taking inverses of isomorphisms. -/
+@[simp]
+lemma tensorProductCongrRight_symm {M N N' : SheafOfModules.{u} (ringCatSheaf R)} (e : N ≅ N') :
+    tensorProductCongrRight R (M := M) e.symm = (tensorProductCongrRight R e).symm :=
+  (tensorProductLeftFunctor R M).mapIso_symm e
 
 /-- Transports through the two arguments commute. -/
 lemma tensorProductCongrLeft_trans_tensorProductCongrRight

@@ -83,11 +83,10 @@ the inclusion `Iⁿ ⟶ 𝒪_Y`, followed by `f^* 𝒪_Y ≅ 𝒪_X`. -/
 theorem reesPullbackComponent_sheafι (n : ℕ) :
     I.reesPullbackComponent f n ≫ (I.comap f ^ n).sheafι =
       (Scheme.Modules.pullback f).map (I ^ n).sheafι ≫
-        (Scheme.Modules.pullbackObjUnitIso f).hom := by
-  have h := eqToHom_sheafιUnit (comap_pow I f n)
-  rw [sheafιUnit_def, sheafιUnit_def] at h
-  exact (Category.assoc _ _ _).trans
-    ((congrArg (_ ≫ ·) h).trans ((I ^ n).pullbackSheafHom_sheafι f))
+        (Scheme.Modules.pullbackObjUnitIso f).hom :=
+  (Category.assoc _ _ _).trans
+    ((congrArg (_ ≫ ·) (eqToHom_sheafι (comap_pow I f n))).trans
+      ((I ^ n).pullbackSheafHom_sheafι f))
 
 /-- `reesPullbackComponent_sheafι`, stated with the inclusions read as morphisms to the monoidal
 unit and with `f^* 𝒪_Y ≅ 𝒪_X` written as the unit comparison `η` of `f^*`. -/

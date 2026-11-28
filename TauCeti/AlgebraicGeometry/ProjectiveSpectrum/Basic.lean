@@ -59,7 +59,9 @@ of the structure sheaf of `Spec` over basic opens
 * `AlgebraicGeometry.Proj.le_basicOpen_pow`: `D₊(f) ≤ D₊(fⁿ)` for every `n : ℕ`.
 * `AlgebraicGeometry.Proj.basicOpen_awayToSection_mk`: on the chart `D₊(f)`, the function `g / fⁿ`
   is invertible exactly on `D₊(fg)`; its values in the localizations are given by
-  `AlgebraicGeometry.Proj.val_awayToSection_mk_apply`.
+  `AlgebraicGeometry.Proj.val_awayToSection_mk_apply`, and its pullback along
+  `(basicOpenIsoSpec 𝒜 f f_deg hm).inv` by
+  `AlgebraicGeometry.Proj.basicOpenIsoSpec_inv_appTop_awayToSection`.
 * `AlgebraicGeometry.Proj.toSpecZero_preimage_basicOpen`: the inverse image of the basic open
   `D(r)` of a degree-zero element under `Proj A ⟶ Spec A₀` is the standard open `D₊(r)`.
 * `AlgebraicGeometry.Proj.toSpecZero_appLE_basicOpen`: on `D₊(f)`, the functions pulled back
@@ -324,6 +326,24 @@ theorem val_awayToSection_mk_apply {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) (n : �
     ((awayToSection 𝒜 f (Away.mk 𝒜 hf n g hg)).val x).val =
       Localization.mk g ⟨f ^ n, fun h ↦ x.property (x.val.isPrime.mem_of_pow_mem n h)⟩ :=
   (rfl)
+
+variable (𝒜) in
+/-- Under `(basicOpenIsoSpec 𝒜 f f_deg hm).inv`, a fraction `a` in `Away 𝒜 f` corresponds to
+`(basicOpen 𝒜 f).topIso.inv (awayToSection 𝒜 f a)`. -/
+theorem basicOpenIsoSpec_inv_appTop_awayToSection {f : A} {m : ℕ} (f_deg : f ∈ 𝒜 m)
+    (hm : 0 < m) (a : Away 𝒜 f) :
+    (basicOpenIsoSpec 𝒜 f f_deg hm).inv.appTop
+        ((basicOpen 𝒜 f).topIso.inv (awayToSection 𝒜 f a)) =
+      (Scheme.ΓSpecIso (.of (Away 𝒜 f))).inv a := by
+  have hbo :
+      (basicOpenIsoSpec 𝒜 f f_deg hm).hom.appTop
+          ((Scheme.ΓSpecIso (.of (Away 𝒜 f))).inv a) =
+        (basicOpen 𝒜 f).topIso.inv (awayToSection 𝒜 f a) := by
+    rw [basicOpenIsoSpec_hom, Scheme.Hom.appTop, basicOpenToSpec_app_top]
+    simp only [CommRingCat.comp_apply, Iso.inv_hom_id_apply]
+    exact CommRingCat.comp_apply (awayToSection 𝒜 f) (basicOpen 𝒜 f).topIso.inv a
+  rw [← hbo, ← CommRingCat.comp_apply, ← Scheme.Hom.comp_appTop, Iso.inv_hom_id,
+    Scheme.Hom.id_appTop, CommRingCat.id_apply]
 
 /-- On the standard chart `D₊(f)`, the function `g / fⁿ` is invertible exactly on `D₊(fg)`. -/
 theorem basicOpen_awayToSection_mk {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) (n : ℕ) (g : A)

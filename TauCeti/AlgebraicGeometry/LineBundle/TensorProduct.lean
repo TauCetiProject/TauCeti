@@ -241,6 +241,15 @@ lemma tensorProductCongrLeft_trans {L L' L'' K : InvertibleSheaf X} (e : L ≅ L
     tensorProductCongrLeft_hom_hom]
   exact h
 
+/-- Transport through the first tensor factor commutes with taking inverses of isomorphisms. -/
+@[simp]
+lemma tensorProductCongrLeft_symm {L L' K : InvertibleSheaf X} (e : L ≅ L') :
+    tensorProductCongrLeft (K := K) e.symm = (tensorProductCongrLeft (K := K) e).symm := by
+  ext1
+  refine (Iso.inv_ext ?_).symm
+  rw [← Iso.trans_hom, ← tensorProductCongrLeft_trans, Iso.self_symm_id,
+    tensorProductCongrLeft_refl, Iso.refl_hom]
+
 /-- Transport through the second tensor factor sends the identity to the identity. -/
 @[simp]
 lemma tensorProductCongrRight_refl (L K : InvertibleSheaf X) :
@@ -269,6 +278,15 @@ lemma tensorProductCongrRight_trans {L K K' K'' : InvertibleSheaf X} (e : K ≅ 
   rw [tensorProductCongrRight_hom_hom, tensorProductCongrRight_hom_hom,
     tensorProductCongrRight_hom_hom]
   exact h
+
+/-- Transport through the second tensor factor commutes with taking inverses of isomorphisms. -/
+@[simp]
+lemma tensorProductCongrRight_symm {L K K' : InvertibleSheaf X} (e : K ≅ K') :
+    tensorProductCongrRight (L := L) e.symm = (tensorProductCongrRight (L := L) e).symm := by
+  ext1
+  refine (Iso.inv_ext ?_).symm
+  rw [← Iso.trans_hom, ← tensorProductCongrRight_trans, Iso.self_symm_id,
+    tensorProductCongrRight_refl, Iso.refl_hom]
 
 /-- Transports through the two tensor factors commute. -/
 lemma tensorProductCongrLeft_trans_tensorProductCongrRight {L L' K K' : InvertibleSheaf X}

@@ -37,7 +37,8 @@ separated over a base that agree over the base and on `D₊(Z)` are equal.
 
 * `WeierstrassCurve.opensRange_chartι`: the image of the chart `chartι W i` is the standard affine
   open `D₊(Xᵢ)`.
-* `WeierstrassCurve.exists_mem_range_chartι`: the three charts cover the projective model.
+* `WeierstrassCurve.iSup_basicOpen_coord_eq_top` and `WeierstrassCurve.exists_mem_range_chartι`:
+  the three standard opens `D₊(Xᵢ)` and charts cover the projective model.
 * `WeierstrassCurve.isSchemeTheoreticallyDominant_chartι_two`: the chart `D₊(Z)` is
   scheme-theoretically dense in the projective model.
 * `WeierstrassCurve.chartι_projModelOver`: on the chart `D₊(Xᵢ)`, the structure morphism of the
@@ -112,12 +113,16 @@ theorem opensRange_chartι (i : Fin 3) :
     (W.chartι i).opensRange = Proj.basicOpen W.toProjective.grading (W.toProjective.coord i) :=
   (Scheme.Hom.opensRange_comp_of_isIso _ _).trans (Proj.opensRange_awayι _ _ _ _)
 
+/-- The three standard degree-one opens `D₊(X)`, `D₊(Y)`, `D₊(Z)` cover `W.projModel`. -/
+theorem iSup_basicOpen_coord_eq_top :
+    ⨆ i : Fin 3, Proj.basicOpen W.toProjective.grading (W.toProjective.coord i) = ⊤ :=
+  Proj.iSup_basicOpen_eq_top _ _ W.toProjective.irrelevant_le_span_range_coord
+
 /-- The charts `D₊(X₀)`, `D₊(X₁)` and `D₊(X₂)` cover the projective model. -/
 theorem exists_mem_range_chartι (y : W.projModel) : ∃ i, y ∈ Set.range (W.chartι i) := by
   -- the opens `D₊(Xᵢ)` cover the projective model, and `D₊(Xᵢ)` is the image of the chart `i`
   have hy : y ∈ ⨆ i, (W.chartι i).opensRange := by
-    rw [iSup_congr W.opensRange_chartι,
-      Proj.iSup_basicOpen_eq_top _ _ W.toProjective.irrelevant_le_span_range_coord]
+    rw [iSup_congr W.opensRange_chartι, W.iSup_basicOpen_coord_eq_top]
     exact TopologicalSpace.Opens.mem_top y
   obtain ⟨i, hi⟩ := TopologicalSpace.Opens.mem_iSup.mp hy
   exact ⟨i, Set.mem_range.mpr (Scheme.Hom.mem_opensRange.mp hi)⟩

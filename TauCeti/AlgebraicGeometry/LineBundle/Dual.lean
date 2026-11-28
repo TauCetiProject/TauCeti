@@ -30,7 +30,9 @@ or is a monomorphism exactly when `φ` does, and whose cokernel is `(cokernel φ
 * `InvertibleSheaf.tensorRightDualEquivalence` is the autoequivalence `- ⊗ L.dual` of `X.Modules`;
 * `InvertibleSheaf.twistedToUnit` twists a morphism `φ : L₁.obj ⟶ L₂.obj` into a functional
   `(L₁ ⊗ L₂.dual).obj ⟶ 𝟙_ X.Modules`, with `twistedToUnit_eq_zero_iff`, `mono_twistedToUnit_iff`,
-  and `cokernelTwistedToUnitIso`.
+  and `cokernelTwistedToUnitIso`;
+* `InvertibleSheaf.dualIsoOfTensorIsoTrivial` identifies `L.dual` with `M` from a pairing
+  `L ⊗ M ≅ 𝒪_X`, characterized via `tensorDualIso` and `ihom.ev`.
 
 These constructions supply inverses for the Picard group of a scheme and relate morphisms of line
 bundles to ideal sheaves.
@@ -294,6 +296,162 @@ lemma π_comp_cokernelTwistedToUnitIso_inv (L₁ L₂ : InvertibleSheaf X) (φ :
     cokernel.π φ ▷ (dual L₂).obj ≫ (cokernelTwistedToUnitIso L₁ L₂ φ).inv =
       (evaluationDualIso L₂).hom ≫ cokernel.π (twistedToUnit L₁ L₂ φ) := by
   rw [Iso.comp_inv_eq, Category.assoc, π_comp_cokernelTwistedToUnitIso_hom, Iso.hom_inv_id_assoc]
+
+/-- The monoidal pairing `L.obj ⊗ M.obj ≅ 𝟙_ X.Modules` induced by `e : L ⊗ M ≅ 𝒪_X`. -/
+private def pairingIso {L M : InvertibleSheaf X} (e : tensorProduct L M ≅ trivial X) :
+    @Iso (_root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf)) _
+      ((L.obj : _root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf)) ⊗ M.obj)
+      (𝟙_ (_root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf))) :=
+  (tensorProductObjIso L M).symm ≪≫ (SheafOfModules.isInvertible X).ι.mapIso e ≪≫
+    trivialObjIsoUnit X
+
+/-- The transpose `M.obj ⟶ L.obj.dual` of `e : L ⊗ M ≅ 𝒪_X` under the internal-Hom adjunction. -/
+private def curryPairing {L M : InvertibleSheaf X} (e : tensorProduct L M ≅ trivial X) :
+    @Quiver.Hom (_root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf)) _
+      (M.obj : _root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf))
+      (SheafOfModules.dual (R := X.sheaf) L.obj) :=
+  MonoidalClosed.curry (C := _root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf))
+    (pairingIso e).hom
+
+/-- The transpose `M.obj ⟶ L.obj.dual` of a pairing `L ⊗ M ≅ 𝒪_X` is an isomorphism. -/
+private lemma isIso_curryPairing {L M : InvertibleSheaf X} (e : tensorProduct L M ≅ trivial X) :
+    @IsIso (_root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf)) _ _ _
+      (curryPairing e) := by
+  let L₀ : _root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf) := L.obj
+  let M₀ : _root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf) := M.obj
+  let evIso : L₀ ⊗ L₀.dual ≅ 𝟙_ _ := evaluationDualIsoSheaf L
+  let p : L₀ ⊗ M₀ ≅ 𝟙_ _ := pairingIso e
+  let f : M₀ ⟶ L₀.dual := curryPairing e
+  have hwf : (L₀ ◁ f) ≫ evIso.hom = p.hom := by
+    have h := MonoidalClosed.uncurry_curry p.hom
+    rw [MonoidalClosed.uncurry_eq] at h
+    exact h
+  have : IsIso ((L₀ ◁ f) ≫ evIso.hom) := by rw [hwf]; infer_instance
+  have : IsIso (L₀ ◁ f) := IsIso.of_isIso_comp_right (L₀ ◁ f) evIso.hom
+  -- In a symmetric monoidal category, `L₀ ◁ f` being an isomorphism makes `f` an isomorphism,
+  -- since `L₀.dual ⊗ L₀ ≅ 𝟙_ _` cancels `L₀` on the left.
+  let u : L₀.dual ⊗ L₀ ≅ 𝟙_ _ := β_ L₀.dual L₀ ≪≫ evIso
+  have hf : f = (λ_ M₀).inv ≫ (u.inv ▷ M₀) ≫ (α_ L₀.dual L₀ M₀).hom ≫ (L₀.dual ◁ (L₀ ◁ f)) ≫
+      (α_ L₀.dual L₀ L₀.dual).inv ≫ (u.hom ▷ L₀.dual) ≫ (λ_ L₀.dual).hom := by
+    rw [associator_inv_naturality_right_assoc, Iso.hom_inv_id_assoc, ← whisker_exchange_assoc,
+      ← comp_whiskerRight_assoc, Iso.inv_hom_id, id_whiskerRight, Category.id_comp,
+      leftUnitor_naturality, Iso.inv_hom_id_assoc]
+  -- `show IsIso f` switches the domain from `M.obj : X.Modules` to `M₀` so `rw [hf]` passes
+  -- Lean's implicit-transparency check (`X.Modules` is `SheafOfModules X.ringCatSheaf`).
+  exact show IsIso f by rw [hf]; infer_instance
+
+/-- On underlying `𝒪_X`-modules, `(tensorDualIso L).hom` factors through `tensorProductObjIso`,
+`evaluationDualIso`, and `trivialObjIsoUnit`. -/
+lemma tensorDualIso_hom_hom_eq_tensorProductObjIso_hom_comp (L : InvertibleSheaf X) :
+    (tensorDualIso L).hom.hom =
+      (tensorProductObjIso L (dual L)).hom ≫
+        (evaluationDualIso L).hom ≫ (trivialObjIsoUnit X).inv := by
+  let C := _root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf)
+  let L₀ : C := L.obj
+  let fObjD : (tensorProduct L (dual L)).obj ≅ L₀ ⊗ L₀.dual := tensorProductObjIso L (dual L)
+  let fEval : L₀ ⊗ L₀.dual ⟶ 𝟙_ C := (evaluationDualIsoSheaf L).hom
+  let fTriv : (trivial X).obj ≅ 𝟙_ C := trivialObjIsoUnit X
+  -- Inside this module `(dual L).obj = L₀.dual` is definitional, so `eqToIso (dual_obj L)` is
+  -- `Iso.refl L₀.dual`; term-mode `trans`/`congrArg` avoids `rw` across `X.Modules` vs `C`.
+  have hcongr : (SheafOfModules.tensorProductCongrRight (M := L₀) X.sheaf
+      (Iso.refl L₀.dual)).hom = 𝟙 _ :=
+    congrArg Iso.hom (SheafOfModules.tensorProductCongrRight_refl X.sheaf L₀ L₀.dual)
+  have hev : (evaluationDualIso L).hom = fEval :=
+    (evaluationDualIso_hom L).trans (Category.id_comp fEval)
+  have hL : (tensorDualIso L).hom.hom =
+      (eqToIso (tensorProduct_obj L (dual L))).hom ≫
+        (SheafOfModules.tensorProductIso X.sheaf L₀ L₀.dual).hom ≫
+        (L₀.tensorUnderlyingIso L₀.dual).inv ≫ fEval ≫ fTriv.inv :=
+    (tensorDualIso_hom_hom L).trans <| (tensorDualIsoSheaf_hom L).trans <|
+      congrArg ((eqToIso (tensorProduct_obj L (dual L))).hom ≫ ·)
+        ((congrArg (· ≫ _) hcongr).trans (Category.id_comp _))
+  have hR : (tensorProductObjIso L (dual L)).hom ≫
+        (evaluationDualIso L).hom ≫ (trivialObjIsoUnit X).inv =
+      (eqToIso (tensorProduct_obj L (dual L))).hom ≫
+        (SheafOfModules.tensorProductIso X.sheaf L₀ L₀.dual).hom ≫
+        (L₀.tensorUnderlyingIso L₀.dual).inv ≫ fEval ≫ fTriv.inv :=
+    (congrArg (fObjD.hom ≫ · ≫ fTriv.inv) hev).trans <|
+      (congrArg (· ≫ fEval ≫ fTriv.inv) (tensorProductObjIso_hom L (dual L))).trans <|
+        (Category.assoc _ _ _).trans
+          (congrArg ((eqToIso (tensorProduct_obj L (dual L))).hom ≫ ·) (Category.assoc _ _ _))
+  exact hL.trans hR.symm
+
+/-- Dualizing a pairing `L ⊗ M ≅ 𝒪_X` canonically identifies `L.dual` with `M`. Its inverse
+`M ⟶ L.dual` is the transpose of the monoidal pairing `L.obj ⊗ M.obj ≅ 𝟙_ X.Modules` under
+the internal-Hom adjunction. -/
+def dualIsoOfTensorIsoTrivial {L M : InvertibleSheaf X}
+    (e : tensorProduct L M ≅ trivial X) : dual L ≅ M :=
+  ObjectProperty.isoMk _
+    (eqToIso (dual_obj L) ≪≫
+      (@asIso (_root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf)) _ _ _
+        (curryPairing e) (isIso_curryPairing e)).symm)
+
+/-- Evaluating `L` against the inverse of `dualIsoOfTensorIsoTrivial e` recovers the pairing `e`
+transported to `L.obj ⊗ M.obj ⟶ 𝟙_ X.Modules`. -/
+@[reassoc]
+lemma whiskerLeft_dualIsoOfTensorIsoTrivial_inv_ev {L M : InvertibleSheaf X}
+    (e : tensorProduct L M ≅ trivial X) :
+    (L.obj ◁ ((dualIsoOfTensorIsoTrivial e).inv.hom ≫ (eqToIso (dual_obj L)).hom)) ≫
+        (evaluationDualIsoSheaf L).hom =
+      (tensorProductObjIso L M).inv ≫ e.hom.hom ≫ (trivialObjIsoUnit X).hom := by
+  let L₀ : _root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf) := L.obj
+  let M₀ : _root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf) := M.obj
+  let D₀ : _root_.SheafOfModules (SheafOfModules.ringCatSheaf X.sheaf) := (dual L).obj
+  let eDual : D₀ ≅ L₀.dual := eqToIso (dual_obj L)
+  let p : L₀ ⊗ M₀ ≅ 𝟙_ _ := pairingIso e
+  let f : M₀ ⟶ L₀.dual := curryPairing e
+  let g : M₀ ⟶ D₀ := (dualIsoOfTensorIsoTrivial e).inv.hom
+  -- By definition of `dualIsoOfTensorIsoTrivial`, `g` is `curryPairing e` followed by `eDual.inv`.
+  have hval : g = f ≫ eDual.inv := rfl
+  have hinv : g ≫ eDual.hom = f := by rw [hval, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  have huncurry : (L₀ ◁ f) ≫ (evaluationDualIsoSheaf L).hom = p.hom := by
+    have h := MonoidalClosed.uncurry_curry p.hom
+    rw [MonoidalClosed.uncurry_eq] at h
+    exact h
+  exact (congrArg (fun k ↦ (L₀ ◁ k) ≫ (evaluationDualIsoSheaf L).hom) hinv).trans huncurry
+
+/-- Evaluating `L` against `(dualIsoOfTensorIsoTrivial e).inv` via `evaluationDualIso` in
+`X.Modules` recovers the pairing `e`. -/
+@[reassoc]
+lemma whiskerLeft_dualIsoOfTensorIsoTrivial_inv_evaluationDualIso_hom
+    {L M : InvertibleSheaf X} (e : tensorProduct L M ≅ trivial X) :
+    (L.obj ◁ (dualIsoOfTensorIsoTrivial e).inv.hom) ≫ (evaluationDualIso L).hom =
+      (tensorProductObjIso L M).inv ≫ e.hom.hom ≫ (trivialObjIsoUnit X).hom := by
+  -- Inside this module `(dual L).obj = L.obj.dual` is definitional, so both `eqToIso`s are `𝟙`.
+  have hev : (evaluationDualIso L).hom = (evaluationDualIsoSheaf L).hom :=
+    (evaluationDualIso_hom L).trans (Category.id_comp (evaluationDualIsoSheaf L).hom)
+  have hid : ((dualIsoOfTensorIsoTrivial e).inv.hom ≫ (eqToIso (dual_obj L)).hom :
+      M.obj ⟶ L.obj.dual) = (dualIsoOfTensorIsoTrivial e).inv.hom := Category.comp_id _
+  exact (congrArg (_ ≫ ·) hev).trans <|
+    (congrArg (fun k ↦ (L.obj ◁ k) ≫ (evaluationDualIsoSheaf L).hom) hid.symm).trans
+      (whiskerLeft_dualIsoOfTensorIsoTrivial_inv_ev e)
+
+/-- Transporting `tensorDualIso L` along the inverse of `dualIsoOfTensorIsoTrivial e` recovers
+the pairing `e`. -/
+@[reassoc (attr := simp)]
+lemma tensorProductCongrRight_dualIsoOfTensorIsoTrivial_inv_tensorDualIso_hom
+    {L M : InvertibleSheaf X} (e : tensorProduct L M ≅ trivial X) :
+    (tensorProductCongrRight (L := L) (dualIsoOfTensorIsoTrivial e)).inv ≫
+        (tensorDualIso L).hom =
+      e.hom := by
+  -- Commute `tensorProductCongrRight` past `tensorProductObjIso` in `X.Modules` and apply
+  -- `whiskerLeft_dualIsoOfTensorIsoTrivial_inv_evaluationDualIso_hom`.
+  ext1
+  rw [ObjectProperty.FullSubcategory.comp_hom, ← Iso.symm_hom, ← tensorProductCongrRight_symm,
+    tensorDualIso_hom_hom_eq_tensorProductObjIso_hom_comp,
+    tensorProductCongrRight_hom_hom_comp_tensorProductObjIso_hom_assoc L
+      (dualIsoOfTensorIsoTrivial e).symm,
+    Iso.symm_hom, whiskerLeft_dualIsoOfTensorIsoTrivial_inv_evaluationDualIso_hom_assoc,
+    Iso.hom_inv_id_assoc, Iso.hom_inv_id, Category.comp_id]
+
+/-- Transporting `e` along `dualIsoOfTensorIsoTrivial e` recovers `tensorDualIso L`. -/
+@[reassoc (attr := simp)]
+lemma tensorProductCongrRight_dualIsoOfTensorIsoTrivial_hom_comp
+    {L M : InvertibleSheaf X} (e : tensorProduct L M ≅ trivial X) :
+    (tensorProductCongrRight (L := L) (dualIsoOfTensorIsoTrivial e)).hom ≫ e.hom =
+      (tensorDualIso L).hom := by
+  rw [← tensorProductCongrRight_dualIsoOfTensorIsoTrivial_inv_tensorDualIso_hom e,
+    Iso.hom_inv_id_assoc]
 
 end InvertibleSheaf
 
