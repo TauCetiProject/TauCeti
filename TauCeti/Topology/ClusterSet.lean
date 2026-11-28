@@ -90,10 +90,12 @@ criterion adds is the production of the pointwise limits that theorem asks for.
   of `w`; `TauCeti.isCompact_clusterSetOn_of_isBounded` and
   `TauCeti.isConnected_clusterSetOn_of_isBounded` are again the proper-metric forms.
 * `TauCeti.isPreconnectedApproachAt_of_forall_exists_isPreconnected_superset`,
+  `TauCeti.IsPreconnectedApproachAt.image_homeomorph`,
+  `TauCeti.isPreconnectedApproachAt_image_homeomorph_iff`,
   `TauCeti.isPreconnectedApproachAt_of_notMem_closure`,
   `TauCeti.IsPreconnectedApproachAt.congr`, and
-  `TauCeti.isPreconnectedApproachAt_inter_of_mem_nhds` — metric-space, exterior, and set-germ
-  properties of preconnected approach regions.
+  `TauCeti.isPreconnectedApproachAt_inter_of_mem_nhds` — metric-space, homeomorphism-invariance,
+  exterior, and set-germ properties of preconnected approach regions.
 
 ## References
 
@@ -599,6 +601,22 @@ theorem IsPreconnectedApproachAt.image {Y : Type*} [TopologicalSpace Y] {U : Set
       exact ⟨mem_image_of_mem φ hx, by rwa [mem_preimage, hκφ hx], hts hxt⟩
   rw [heq]
   exact htU.image _ (hφU.mono inter_subset_left)
+
+/-- Preconnected approach regions are preserved under a homeomorphism. -/
+theorem IsPreconnectedApproachAt.image_homeomorph {Y : Type*} [TopologicalSpace Y] {U : Set X}
+    {a : X} (h : IsPreconnectedApproachAt U a) (e : X ≃ₜ Y) :
+    IsPreconnectedApproachAt (e '' U) (e a) :=
+  h.image e.continuous.continuousAt e.continuous.continuousOn
+    e.symm.continuous.continuousAt (e.symm_apply_apply a) (fun x _ ↦ e.symm_apply_apply x)
+
+/-- Having preconnected approach regions is invariant under a homeomorphism of the ambient
+spaces. -/
+@[simp]
+theorem isPreconnectedApproachAt_image_homeomorph_iff {Y : Type*} [TopologicalSpace Y] {U : Set X}
+    (e : X ≃ₜ Y) {y : Y} :
+    IsPreconnectedApproachAt (e '' U) y ↔ IsPreconnectedApproachAt U (e.symm y) :=
+  ⟨fun h ↦ e.symm_image_image U ▸ h.image_homeomorph e.symm,
+    fun h ↦ e.apply_symm_apply y ▸ h.image_homeomorph e⟩
 
 /-- Off the closure of `U`, a neighbourhood disjoint from `U` witnesses preconnected approach
 regions trivially. -/
