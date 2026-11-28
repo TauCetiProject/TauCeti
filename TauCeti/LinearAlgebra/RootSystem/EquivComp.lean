@@ -178,6 +178,15 @@ theorem autCongr_smul (e : P.Equiv Q) (g : Aut P) (x : M) :
   have h' : g • x = g.weightEquiv x := (rfl)
   rw [h, h', RootPairing.Equiv.weightEquiv_autCongr_apply, LinearEquiv.symm_apply_apply]
 
+/-- An equivalence conjugating `σ` to `τ` semiconjugates `σ.weightMap` to `τ.weightMap` along
+`e.weightMap`. -/
+theorem semiconj_weightMap_of_autCongr (e : P.Equiv Q) {σ : Aut P} {τ : Aut Q}
+    (hστ : e.autCongr σ = τ) : Function.Semiconj e.weightMap σ.weightMap τ.weightMap :=
+  fun x ↦ by
+    have h : τ.weightMap (e.weightMap x) = e.autCongr σ • e.weightEquiv x := by
+      rw [hστ, ← weightEquiv_apply]; rfl
+    rw [h, e.autCongr_smul σ x, weightEquiv_apply]; rfl
+
 /-- Conjugation transports the action on root indices along `e.indexEquiv`. -/
 @[simp]
 theorem autCongr_smul_index (e : P.Equiv Q) (g : Aut P) (i : ι) :
@@ -204,6 +213,16 @@ theorem autCongr_comp (e : P.Equiv Q) (f : Q.Equiv S) :
   MulEquiv.ext fun g ↦ by
     simp only [RootPairing.Equiv.autCongr_apply, MulEquiv.trans_apply,
       RootPairing.Equiv.symm_comp, RootPairing.Equiv.comp_assoc]
+
+/-- Conjugating an automorphism by a commuting automorphism fixes it. -/
+theorem autCongr_eq_of_commute {g h : Aut P} (hgh : Commute g h) :
+    g.autCongr h = h := by
+  rw [autCongr_apply, ← mul_eq_comp, ← mul_eq_comp, ← mul_assoc]
+  exact hgh.mul_inv_cancel_assoc
+
+/-- Conjugating an automorphism by a power of itself fixes it. -/
+theorem autCongr_pow_self (σ : Aut P) (k : ℕ) : (σ ^ k).autCongr σ = σ :=
+  autCongr_eq_of_commute (Commute.pow_self σ k)
 
 end Conjugation
 
@@ -245,6 +264,19 @@ theorem indexEquiv_apply_of_weightEquiv_comp_weightMap (e : P.Equiv Q) {σ : Aut
     (j : ι) : e.indexEquiv (σ.indexEquiv j) = τ.indexEquiv (e.indexEquiv j) :=
   e.toHom.indexEquiv_apply_of_weightMap_comp
     ((LinearMap.ext e.weightEquiv_apply : e.weightEquiv.toLinearMap = e.toHom.weightMap) ▸ hw) j
+
+/-- An equivalence intertwining the weight-space endomorphisms of `σ` and `τ` along `e.weightEquiv`
+conjugates `σ` to `τ`. -/
+theorem autCongr_eq_of_weightEquiv_comp_weightMap (e : P.Equiv Q) {σ : Aut P} {τ : Aut Q}
+    (hw : e.weightEquiv.toLinearMap ∘ₗ σ.weightMap = τ.weightMap ∘ₗ e.weightEquiv.toLinearMap) :
+    e.autCongr σ = τ := by
+  have hhom : (e.autCongr σ).toHom = τ.toHom := RootPairing.Hom.weightHom_injective Q <| by
+    ext x
+    dsimp [Hom.weightHom]
+    rw [← weightEquiv_apply, weightEquiv_autCongr_apply, weightEquiv_apply]
+    simpa [← weightEquiv_apply] using LinearMap.congr_fun hw (e.weightEquiv.symm x)
+  exact Equiv.ext (congrArg Hom.weightMap hhom) (congrArg Hom.coweightMap hhom)
+    (congrArg Hom.indexEquiv hhom)
 
 end Intertwine
 

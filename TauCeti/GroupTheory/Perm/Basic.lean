@@ -79,6 +79,11 @@ namespace Function.Semiconj
 
 variable {α γ : Type*} {σ : Equiv.Perm α} {τ : Equiv.Perm γ} {g : α → γ}
 
+/-- A map intertwining two permutations also intertwines all of their natural powers. -/
+theorem perm_pow_right (hg : Function.Semiconj g σ τ) (n : ℕ) :
+    Function.Semiconj g ⇑(σ ^ n) ⇑(τ ^ n) := fun z ↦ by
+  simpa only [Equiv.Perm.coe_pow] using iterate_right hg n z
+
 /-- A map intertwining two permutations also intertwines all of their integer powers. This
 extends `Function.Semiconj.iterate_right` to negative exponents. -/
 theorem perm_zpow_right (hg : Function.Semiconj g σ τ) (k : ℤ) :
@@ -93,6 +98,13 @@ theorem perm_zpow_right (hg : Function.Semiconj g σ τ) (k : ℤ) :
   | negSucc m =>
       simpa only [zpow_negSucc, ← inv_pow, Equiv.Perm.coe_pow] using
         (iterate_right hinv (m + 1) z)
+
+/-- An injective map intertwining two permutations reflects and preserves the same-cycle
+relation. -/
+theorem sameCycle_iff (hg : Function.Semiconj g σ τ) (hinj : Function.Injective g) {x y : α} :
+    τ.SameCycle (g x) (g y) ↔ σ.SameCycle x y :=
+  ⟨fun ⟨k, hk⟩ ↦ ⟨k, hinj (by simpa only [← hg.perm_zpow_right k x] using hk)⟩,
+    fun ⟨k, hk⟩ ↦ ⟨k, (hg.perm_zpow_right k x).symm.trans (congrArg g hk)⟩⟩
 
 end Function.Semiconj
 

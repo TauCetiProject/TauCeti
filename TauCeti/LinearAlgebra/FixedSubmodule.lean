@@ -40,6 +40,8 @@ generates.
 * `LinearMap.fixedSubmodule_restrict`: the fixed submodule of the restriction of `f` to an
   invariant submodule `p` is the part of the fixed submodule of `f` that lies in `p`.
 
+* `LinearMap.sum_range_pow_apply_mem_fixedSubmodule`: cyclic sums over a period lie in the
+  fixed submodule.
 * `Module.End.eigenspace_one_eq_fixedSubmodule`: the `1`-eigenspace of an endomorphism is its
   fixed submodule.
 -/
@@ -69,6 +71,18 @@ theorem pow_apply_of_mem_fixedSubmodule {R M : Type*} [Semiring R] [AddCommMonoi
     (f ^ i) x = x := by
   rw [pow_apply_eq_iterate]
   exact Function.IsFixedPt.iterate (mem_fixedSubmodule_iff.mp hx) i
+
+/-- If `(f ^ n) x = x`, then the cyclic sum `∑ i ∈ Finset.range n, (f ^ i) x` is fixed by `f`. -/
+theorem sum_range_pow_apply_mem_fixedSubmodule {R M : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] {f : M →ₗ[R] M} {n : ℕ} {x : M} (hx : (f ^ n) x = x) :
+    ∑ i ∈ Finset.range n, (f ^ i) x ∈ f.fixedSubmodule := by
+  rw [mem_fixedSubmodule_iff, map_sum]
+  simp_rw [← LinearMap.comp_apply (f := f), ← Module.End.mul_eq_comp, ← pow_succ']
+  cases n with
+  | zero => simp
+  | succ m =>
+    rw [Finset.sum_range_succ, hx, Finset.sum_range_succ' (fun i ↦ (f ^ i) x) m, pow_zero,
+      Module.End.one_eq_id, LinearMap.id_apply, add_comm]
 
 section Restrict
 

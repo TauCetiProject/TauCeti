@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Base
+public import TauCeti.LinearAlgebra.RootSystem.Base.Basic
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -17,24 +17,18 @@ among the roots: a vanishing integral combination of roots has a vanishing combi
 so two integral combinations with the same value have the same combination of heights. When the
 roots span the weight space, it also extends height to the linear functional which sums the
 coordinates in the simple-root basis. Over a field, a form taking value one on the simple roots
-exists even when they do not span the weight space. Ahead of all this, it records how bases,
-heights and positivity are transported along equivalences of root pairings (in particular an
-automorphism permuting the simple roots preserves heights), and how reflection in a root changes
-height: reflection in a simple root subtracts the corresponding Cartan integer.
+exists even when they do not span the weight space. Ahead of all this, it records how heights and
+positivity are transported along equivalences of root pairings (in particular an automorphism
+permuting the simple roots preserves heights), and how reflection in a root changes height:
+reflection in a simple root subtracts the corresponding Cartan integer.
 
 ## Main definitions
 
-* `RootPairing.Base.supportPerm` is the permutation of `b.support` induced by an automorphism
-  stabilizing `b.support`.
 * `TauCeti.heightLinearMap` is the linear extension of root height to the weight
   space of a root system.
 
 ## Main results
 
-* `RootPairing.Base.map_one` and `RootPairing.Base.map_mul`: transporting bases is an action of the
-  automorphism group, `RootPairing.Base.map_eq_of_forall_mem_support` says an automorphism
-  permuting the simple roots fixes the base, and `RootPairing.Base.mem_support_indexEquiv_iff` says
-  it preserves simple-root membership in both directions.
 * `RootPairing.Base.height_map` and `RootPairing.Base.isPos_map_iff`: an equivalence of root
   pairings carries the height and the positivity of a root relative to a base to those of its
   image relative to the transported base; `RootPairing.Base.height_indexEquiv` and
@@ -71,59 +65,6 @@ section Map
 
 variable {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
   {P₂ : RootPairing ι₂ R M₂ N₂}
-
-/-- Transporting a base along the identity automorphism does nothing. -/
-@[simp]
-protected theorem map_one (b : P.Base) : b.map (1 : P.Aut) = b := by
-  classical
-  ext i
-  simp
-
-/-- Transporting a base along a product of automorphisms transports it along each factor in turn,
-the right-hand factor first. -/
-protected theorem map_mul (b : P.Base) (g h : P.Aut) : b.map (g * h) = (b.map h).map g := by
-  classical
-  ext i
-  simp [Finset.image_image]
-
-/-- An automorphism carrying every simple root of `b` to a simple root fixes `b`. -/
-theorem map_eq_of_forall_mem_support {b : P.Base} {u : P.Aut}
-    (hu : ∀ j ∈ b.support, u.indexEquiv j ∈ b.support) : b.map u = b := by
-  classical
-  exact ext <| Finset.eq_of_subset_of_card_le (by simpa [Finset.image_subset_iff] using hu)
-    (by rw [support_map_eq, Finset.card_image_of_injective _ u.indexEquiv.injective])
-
-/-- An automorphism carrying `b.support` into itself maps a root index into `b.support` if and only
-if the index already lies in `b.support`, because `b.support` is finite. -/
-theorem mem_support_indexEquiv_iff (b : P.Base) {u : P.Aut}
-    (hu : ∀ j ∈ b.support, u.indexEquiv j ∈ b.support) (i : ι) :
-    u.indexEquiv i ∈ b.support ↔ i ∈ b.support := by
-  classical
-  have hsupp : b.support.image u.indexEquiv = b.support := by
-    rw [← support_map_eq, map_eq_of_forall_mem_support hu]
-  refine ⟨fun hi ↦ ?_, hu i⟩
-  rw [← hsupp, Finset.mem_image] at hi
-  obtain ⟨j, hj, hij⟩ := hi
-  exact u.indexEquiv.injective hij ▸ hj
-
-/-- The permutation of `b.support` induced by an automorphism stabilizing `b.support`. -/
-noncomputable def supportPerm (b : P.Base) {σ : P.Aut}
-    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) : Equiv.Perm b.support :=
-  Equiv.Perm.subtypePerm σ.indexEquiv (b.mem_support_indexEquiv_iff hσ)
-
-@[simp] theorem coe_supportPerm_apply (b : P.Base) {σ : P.Aut}
-    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) (i : b.support) :
-    (b.supportPerm hσ i : ι) = σ.indexEquiv i := by simp [supportPerm]
-@[simp] theorem coe_supportPerm_symm_apply (b : P.Base) {σ : P.Aut}
-    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) (i : b.support) :
-    ((b.supportPerm hσ).symm i : ι) = σ.indexEquiv.symm i := by rfl
-
-@[simp] theorem sameCycle_supportPerm_iff (b : P.Base) {σ : P.Aut}
-    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) {i j : b.support} :
-    Equiv.Perm.SameCycle (b.supportPerm hσ) i j ↔
-      Equiv.Perm.SameCycle σ.indexEquiv (i : ι) (j : ι) :=
-  exists_congr fun k ↦ by
-    rw [← Subtype.coe_inj, supportPerm, Equiv.Perm.subtypePerm_zpow, Equiv.Perm.subtypePerm_apply]
 
 /-- **Heights are transported along equivalences of root pairings.** The image of a root under an
 equivalence `e` has, relative to the transported base `b.map e`, the height of the original root

@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.SimpleGraph.Acyclic
+public import TauCeti.LinearAlgebra.RootSystem.Base.Basic
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Basic
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Symmetrizable
 public import Mathlib.Combinatorics.SimpleGraph.Hasse
+import TauCeti.LinearAlgebra.RootSystem.Base.CartanMatrix
 
 /-!
 # The diagram of a finite-type Cartan matrix is a forest
@@ -338,3 +340,31 @@ theorem card_edgeFinset_add_one_eq_card_support [DecidableEq b.support] :
 end RootPairing
 
 end TauCeti
+
+namespace RootPairing
+
+section DiagramIso
+
+variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
+  {P : RootPairing ι R M N} {Q : RootPairing ι₂ R M₂ N₂}
+  (e : P.Equiv Q) {b : P.Base} {b' : Q.Base}
+  (hb : ∀ i, i ∈ b.support ↔ e.indexEquiv i ∈ b'.support)
+  [CharZero R] [P.IsCrystallographic] [Q.IsCrystallographic]
+
+/-- The Dynkin-diagram isomorphism induced by a base-preserving equivalence. -/
+def Equiv.diagramGraphIso :
+    TauCeti.diagramGraph b.cartanMatrix ≃g TauCeti.diagramGraph b'.cartanMatrix where
+  toEquiv := e.supportEquiv hb
+  map_rel_iff' {i j} := by
+    simp only [TauCeti.diagramGraph_adj, ne_eq, (e.supportEquiv hb).apply_eq_iff_eq,
+      e.cartanMatrix_supportEquiv hb]
+
+/-- `Equiv.diagramGraphIso` evaluates via `Equiv.supportEquiv`. -/
+@[simp] theorem Equiv.diagramGraphIso_apply (i : b.support) :
+    e.diagramGraphIso hb i = e.supportEquiv hb i := (rfl)
+
+end DiagramIso
+
+end RootPairing

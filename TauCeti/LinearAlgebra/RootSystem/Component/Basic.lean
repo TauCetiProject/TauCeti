@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.DirectSum.Decomposition
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import Mathlib.LinearAlgebra.RootSystem.Hom
 public import Mathlib.LinearAlgebra.RootSystem.Irreducible
 public import Mathlib.LinearAlgebra.RootSystem.RootPositive
+public import TauCeti.LinearAlgebra.RootSystem.EquivComp
+import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.Dynamics.PeriodicPts.Basic
 
 /-!
 # Irreducible components of a root pairing
@@ -34,6 +38,9 @@ root system is irreducible exactly when its graph is connected.
 * `RootPairing.componentProj`: the projection of a root system onto a component space along the
   others.
 * `RootPairing.Equiv.nonorthogonalGraphIso`: the graph isomorphism induced by an equivalence.
+* `RootPairing.Equiv.componentHom`: the group homomorphism from `P.Aut` to permutations of
+  `P.Component`.
+* `RootPairing.Equiv.suppEquiv`: the bijection between root blocks of corresponding components.
 
 ## Main results
 
@@ -49,8 +56,9 @@ root system is irreducible exactly when its graph is connected.
 * `RootPairing.componentSpace_mem_invtSubmodule`: component spaces are invariant under reflections.
 * `RootPairing.InvariantForm.apply_eq_zero_of_mem_componentSpace`: over a domain with `2 ≠ 0`,
   different component spaces are orthogonal under every invariant form.
-* `RootPairing.Equiv.map_componentSpace`, `RootPairing.Equiv.map_corootComponentSpace`: an
-  equivalence carries component spaces to component spaces, and likewise for coroots.
+* `RootPairing.Equiv.map_componentSpace`, `RootPairing.Equiv.map_corootComponentSpace`,
+  `RootPairing.Equiv.coe_componentProj_weightMap`: an equivalence carries component spaces to
+  component spaces, intertwines component projections, and likewise for coroots.
 * `RootPairing.Equiv.componentEquiv_one`, `RootPairing.Equiv.componentEquiv_mul`: automorphisms
   permute the components by a group action, and `RootPairing.Equiv.componentEquiv_pow`: the
   permutation induced by a power is the corresponding power.
@@ -311,11 +319,26 @@ theorem componentProj_apply_of_ne {C D : P.Component} (hCD : D ≠ C) {x : M}
   classical
   exact DirectSum.IsInternal.ofBijective_coeLinearMap_of_mem_ne P.isInternal_componentSpace hCD hx
 
+/-- The decomposition coordinate of a vector along `P.componentSpace` agrees with
+`P.componentProj`. -/
+theorem decompose_componentSpace_eq_componentProj [DecidableEq P.Component]
+    [DirectSum.Decomposition P.componentSpace] (C : P.Component) (x : M) :
+    DirectSum.decompose P.componentSpace x C = P.componentProj C x := by
+  rw [DirectSum.IsInternal.decompose_eq_ofBijective_symm P.isInternal_componentSpace x]
+  have hdec : (‹DecidableEq P.Component›) = Classical.decEq P.Component := Subsingleton.elim _ _
+  subst hdec
+  rfl
+
 /-- The projection of a root onto its own component space. -/
 @[simp]
 theorem componentProj_root_self (i : ι) :
     P.componentProj (P.componentOf i) (P.root i) = ⟨P.root i, root_mem_componentSpace i⟩ :=
   componentProj_apply_of_mem _
+
+/-- The projection of a root onto its own component space coerces to that root. -/
+theorem coe_componentProj_root_of_eq {C : P.Component} {j : ι}
+    (hj : P.componentOf j = C) : (P.componentProj C (P.root j) : M) = P.root j := by
+  subst hj; exact congrArg Subtype.val (P.componentProj_root_self j)
 
 /-- The projection of a root onto the component space of another component vanishes. -/
 theorem componentProj_root_of_ne {C : P.Component} {i : ι} (hi : P.componentOf i ≠ C) :
@@ -359,14 +382,29 @@ theorem componentProj_reflection_of_ne {C : P.Component} {i : ι} (h : P.compone
   rw [coe_componentProj_reflection, reflection_apply,
     coroot'_eq_zero_of_mem_componentSpace h (P.componentProj C x).property, zero_smul, sub_zero]
 
+/-- Component projections preserve `P.rootSpan S` for every compatible scalar ring `S`. -/
+theorem componentProj_mem_rootSpan (S : Type*) [CommRing S] [Module S M]
+    [LinearMap.CompatibleSMul M M S R] (C : P.Component) {x : M} (hx : x ∈ P.rootSpan S) :
+    (P.componentProj C x : M) ∈ P.rootSpan S := by
+  let projS : M →ₗ[S] M := ((P.componentSpace C).subtype ∘ₗ P.componentProj C).restrictScalars S
+  refine (Submodule.span_le.mpr (Set.range_subset_iff.mpr fun j ↦ ?_) :
+      P.rootSpan S ≤ (P.rootSpan S).comap projS) hx
+  rw [SetLike.mem_coe, Submodule.mem_comap]
+  by_cases hjC : P.componentOf j = C
+  · simpa [projS, coe_componentProj_root_of_eq hjC] using (P.rootSpanMem S j).property
+  · simp [projS, componentProj_root_of_ne hjC]
+
 end Projection
 
 /-! ### Transport along equivalences -/
 
 section Equiv
 
-variable {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
-  {Q : RootPairing ι₂ R M₂ N₂}
+open _root_.Equiv (Perm)
+
+variable {ι₂ ι₃ M₂ N₂ M₃ N₃ : Type*} [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂]
+  [Module R N₂] [AddCommGroup M₃] [Module R M₃] [AddCommGroup N₃] [Module R N₃]
+  {Q : RootPairing ι₂ R M₂ N₂} {S : RootPairing ι₃ R M₃ N₃}
 
 /-- An equivalence of root pairings is an isomorphism of non-orthogonality graphs, along its
 bijection of root indices. -/
@@ -380,6 +418,23 @@ def Equiv.nonorthogonalGraphIso (e : P.Equiv Q) : P.nonorthogonalGraph ≃g Q.no
 theorem Equiv.nonorthogonalGraphIso_apply (e : P.Equiv Q) (i : ι) :
     e.nonorthogonalGraphIso i = e.indexEquiv i :=
   (rfl)
+
+/-- The non-orthogonality graph isomorphism of the identity equivalence is the identity. -/
+@[simp] theorem Equiv.nonorthogonalGraphIso_id :
+    (Equiv.id P).nonorthogonalGraphIso = SimpleGraph.Iso.refl := by ext i; simp
+
+/-- Non-orthogonality graph isomorphisms respect composition of equivalences. -/
+@[simp] theorem Equiv.nonorthogonalGraphIso_comp (e : P.Equiv Q) (f : Q.Equiv S) :
+    (Equiv.comp f e).nonorthogonalGraphIso =
+      e.nonorthogonalGraphIso.trans f.nonorthogonalGraphIso := by ext i; simp
+
+/-- Non-orthogonality graph isomorphisms respect inversion of equivalences. -/
+@[simp] theorem Equiv.nonorthogonalGraphIso_symm (e : P.Equiv Q) :
+    (Equiv.symm P Q e).nonorthogonalGraphIso = e.nonorthogonalGraphIso.symm := by
+  ext i
+  exact e.indexEquiv.injective (by
+    rw [nonorthogonalGraphIso_apply, inv_indexEquiv, _root_.Equiv.apply_symm_apply,
+      ← nonorthogonalGraphIso_apply]; simp)
 
 /-- The bijection of irreducible components induced by an equivalence of root pairings. -/
 def Equiv.componentEquiv (e : P.Equiv Q) : P.Component ≃ Q.Component :=
@@ -395,10 +450,93 @@ theorem Equiv.componentEquiv_symm_componentOf (e : P.Equiv Q) (i : ι₂) :
     e.componentEquiv.symm (Q.componentOf i) = P.componentOf (e.indexEquiv.symm i) :=
   e.componentEquiv.symm_apply_eq.mpr (by simp)
 
+/-- `P.componentOf` semiconjugates `σ.indexEquiv` to `σ.componentEquiv`. -/
+theorem semiconj_componentOf (P : RootPairing ι R M N) (σ : P.Aut) :
+    Function.Semiconj P.componentOf σ.indexEquiv σ.componentEquiv :=
+  fun j ↦ (σ.componentEquiv_componentOf j).symm
+
+/-- The component bijection of the identity equivalence is the identity. -/
+@[simp] theorem Equiv.componentEquiv_id :
+    (Equiv.id P).componentEquiv = _root_.Equiv.refl P.Component :=
+  _root_.Equiv.ext fun C ↦ C.ind fun _ ↦ by simp
+
+/-- Component bijections respect composition of equivalences. -/
+@[simp] theorem Equiv.componentEquiv_comp (e : P.Equiv Q) (f : Q.Equiv S) :
+    (Equiv.comp f e).componentEquiv = e.componentEquiv.trans f.componentEquiv :=
+  _root_.Equiv.ext fun C ↦ C.ind fun _ ↦ by simp
+
+/-- Component bijections respect inversion of equivalences. -/
+@[simp] theorem Equiv.componentEquiv_symm (e : P.Equiv Q) :
+    (Equiv.symm P Q e).componentEquiv = e.componentEquiv.symm :=
+  _root_.Equiv.ext fun C ↦ C.ind fun _ ↦ by simp
+
+/-- The action of the automorphism group of a root pairing on its irreducible components. -/
+def Equiv.componentHom (P : RootPairing ι R M N) : P.Aut →* Perm P.Component where
+  toFun σ := σ.componentEquiv
+  map_one' := Equiv.componentEquiv_id
+  map_mul' σ τ := Equiv.componentEquiv_comp τ σ
+
+/-- The identity automorphism acts trivially on irreducible components. -/
+@[simp] theorem Equiv.componentEquiv_one : (1 : P.Aut).componentEquiv = (1 : Perm P.Component) :=
+  (Equiv.componentHom P).map_one
+
+/-- Component permutations respect multiplication of automorphisms. -/
+theorem Equiv.componentEquiv_mul (σ τ : P.Aut) :
+    (σ * τ).componentEquiv = σ.componentEquiv * τ.componentEquiv :=
+  (Equiv.componentHom P).map_mul σ τ
+
+section AutPowers
+
+variable (σ : P.Aut)
+
+/-- Evaluating `Equiv.componentHom` yields `componentEquiv`. -/
+@[simp] theorem Equiv.componentHom_apply : Equiv.componentHom P σ = σ.componentEquiv := (rfl)
+
+/-- Component permutations respect inverses of automorphisms. -/
+@[simp] theorem Equiv.componentEquiv_inv : (σ⁻¹).componentEquiv = (σ.componentEquiv)⁻¹ :=
+  (Equiv.componentHom P).map_inv σ
+
+/-- Component permutations respect natural powers of automorphisms. -/
+@[simp] theorem Equiv.componentEquiv_pow (n : ℕ) : (σ ^ n).componentEquiv = σ.componentEquiv ^ n :=
+  (Equiv.componentHom P).map_pow σ n
+
+/-- Component permutations respect integer powers of automorphisms. -/
+@[simp] theorem Equiv.componentEquiv_zpow (z : ℤ) : (σ ^ z).componentEquiv = σ.componentEquiv ^ z :=
+  (Equiv.componentHom P).map_zpow σ z
+
+end AutPowers
+
+/-- Every root reflection fixes every irreducible component. -/
+@[simp] theorem Equiv.componentEquiv_reflection (i : ι) :
+    (Equiv.reflection P i).componentEquiv = (1 : Perm P.Component) :=
+  _root_.Equiv.ext fun C ↦ C.ind fun j ↦
+    ((Equiv.reflection P i).componentEquiv_componentOf j).trans (P.componentOf_reflectionPerm i j)
+
 theorem Equiv.indexEquiv_mem_supp_iff (e : P.Equiv Q) {C : P.Component} {i : ι} :
     e.indexEquiv i ∈ (e.componentEquiv C).supp ↔ i ∈ C.supp := by
   simp only [SimpleGraph.ConnectedComponent.mem_supp_iff, ← e.componentEquiv_componentOf,
     e.componentEquiv.apply_eq_iff_eq]
+
+/-- The bijection `C.supp ≃ (e.componentEquiv C).supp` induced by an equivalence. -/
+def Equiv.suppEquiv (e : P.Equiv Q) (C : P.Component) : C.supp ≃ (e.componentEquiv C).supp :=
+  e.indexEquiv.subtypeEquiv fun _ ↦ e.indexEquiv_mem_supp_iff.symm
+
+/-- `Equiv.suppEquiv` acts on root indices by `e.indexEquiv`. -/
+@[simp] theorem Equiv.coe_suppEquiv_apply (e : P.Equiv Q) (C : P.Component) (i : C.supp) :
+    (e.suppEquiv C i : ι₂) = e.indexEquiv i := (rfl)
+
+/-- `(Equiv.suppEquiv C).symm` acts on root indices by `e.indexEquiv.symm`. -/
+@[simp] theorem Equiv.coe_suppEquiv_symm_apply (e : P.Equiv Q) (C : P.Component)
+    (j : (e.componentEquiv C).supp) :
+    ((e.suppEquiv C).symm j : ι) = e.indexEquiv.symm j := (rfl)
+
+/-- An equivalence maps the root block of `C` onto the root block of `e.componentEquiv C`. -/
+theorem Equiv.image_indexEquiv_supp (e : P.Equiv Q) (C : P.Component) :
+    e.indexEquiv '' (C.supp : Set ι) = (e.componentEquiv C).supp := by
+  ext j
+  exact ⟨fun ⟨_, hi, h⟩ ↦ h ▸ e.indexEquiv_mem_supp_iff.mpr hi, fun hj ↦
+    ⟨e.indexEquiv.symm j, e.indexEquiv_mem_supp_iff.mp (by simp [hj]),
+      e.indexEquiv.apply_symm_apply j⟩⟩
 
 /-- **An equivalence of root pairings carries component spaces to component spaces.** -/
 theorem Equiv.map_componentSpace (e : P.Equiv Q) (C : P.Component) :
@@ -415,6 +553,21 @@ theorem Equiv.map_componentSpace (e : P.Equiv Q) (C : P.Component) :
     refine ⟨e.indexEquiv.symm i, ?_, ?_⟩
     · exact e.indexEquiv_mem_supp_iff.mp (by simpa using hi)
     · simpa using Hom.root_weightMap_apply P Q (e.indexEquiv.symm i) e.toHom
+
+/-- An equivalence maps weights in a component space to weights in the corresponding component
+space. -/
+theorem Equiv.weightMap_mem_componentSpace (e : P.Equiv Q) {C : P.Component} {x : M}
+    (hx : x ∈ P.componentSpace C) :
+    e.weightMap x ∈ Q.componentSpace (e.componentEquiv C) :=
+  e.map_componentSpace C ▸ Submodule.mem_map_of_mem hx
+
+/-- Powers of an automorphism map weights in a component space to weights in the corresponding
+component space. -/
+theorem Equiv.pow_weightMap_mem_componentSpace (σ : P.Aut) {C : P.Component} {x : M}
+    (hx : x ∈ P.componentSpace C) (r : ℕ) :
+    (σ.weightMap ^ r) x ∈ P.componentSpace ((σ.componentEquiv ^ r) C) := by
+  rw [← σ.weightMap_pow, ← σ.componentEquiv_pow]
+  exact (σ ^ r).weightMap_mem_componentSpace hx
 
 /-- An equivalence of root pairings carries coroot component spaces to coroot component spaces. -/
 theorem Equiv.map_corootComponentSpace (e : P.Equiv Q) (C : P.Component) :
@@ -433,35 +586,55 @@ theorem Equiv.map_corootComponentSpace (e : P.Equiv Q) (C : P.Component) :
     exact ⟨e.indexEquiv i, e.indexEquiv_mem_supp_iff.mpr hi,
       by simpa using Hom.coroot_coweightMap_apply P Q (e.indexEquiv i) e.toHom⟩
 
-/-- An equivalence of root pairings carries the component space of `C` into that of the
-corresponding component. -/
-theorem Equiv.weightMap_mem_componentSpace (e : P.Equiv Q) {C : P.Component} {x : M}
-    (hx : x ∈ P.componentSpace C) :
-    e.toHom.weightMap x ∈ Q.componentSpace (e.componentEquiv C) := by
-  rw [← e.map_componentSpace C]
-  exact Submodule.mem_map_of_mem hx
+/-- An equivalence maps covectors in the target coroot component space to the source coroot
+component space. -/
+theorem Equiv.coweightMap_mem_corootComponentSpace (e : P.Equiv Q) {C : P.Component} {y : N₂}
+    (hy : y ∈ Q.corootComponentSpace (e.componentEquiv C)) :
+    e.coweightMap y ∈ P.corootComponentSpace C :=
+  e.map_corootComponentSpace C ▸ Submodule.mem_map_of_mem hy
 
-/-- The identity automorphism fixes every component. -/
-@[simp]
-theorem Equiv.componentEquiv_one : (1 : P.Aut).componentEquiv = 1 :=
-  _root_.Equiv.ext fun C ↦ C.ind fun i ↦ componentEquiv_componentOf 1 i
+/-- Conjugating an automorphism preserves the minimal period of its component action. -/
+theorem Equiv.minimalPeriod_componentEquiv_of_autCongr (e : P.Equiv Q) {σ : P.Aut}
+    {τ : Q.Aut} (hστ : e.autCongr σ = τ) (C : P.Component) :
+    Function.minimalPeriod τ.componentEquiv (e.componentEquiv C) =
+      Function.minimalPeriod σ.componentEquiv C := by
+  have hsemi : Function.Semiconj e.componentEquiv σ.componentEquiv τ.componentEquiv :=
+    fun D ↦ D.ind fun j ↦ by
+      rw [← hστ]
+      simp [Equiv.autCongr_apply]
+  exact (hsemi.minimalPeriod_eq e.componentEquiv.injective C).symm
 
-/-- The permutation of the components induced by a product of automorphisms is the product of the
-induced permutations. Not a `simp` lemma: `RootPairing.Equiv.mul_eq_comp` rewrites its left-hand
-side. -/
-theorem Equiv.componentEquiv_mul (σ τ : P.Aut) :
-    (σ * τ).componentEquiv = σ.componentEquiv * τ.componentEquiv :=
-  _root_.Equiv.ext fun C ↦ C.ind fun i ↦ by
-    simp [componentEquiv_componentOf]
+section EquivProjection
 
-/-- The permutation of the components induced by a power of an automorphism is the corresponding
-power of the induced permutation. -/
-@[simp]
-theorem Equiv.componentEquiv_pow (σ : P.Aut) (n : ℕ) :
-    (σ ^ n).componentEquiv = σ.componentEquiv ^ n := by
-  induction n with
-  | zero => simp
-  | succ n ih => rw [pow_succ, componentEquiv_mul, ih, pow_succ]
+variable [P.IsRootSystem] [Q.IsRootSystem]
+
+/-- **An equivalence of root systems intertwines the component projections.** -/
+theorem Equiv.coe_componentProj_weightMap (e : P.Equiv Q) (C : P.Component) (x : M) :
+    (Q.componentProj (e.componentEquiv C) (e.weightMap x) : M₂) =
+      e.weightMap (P.componentProj C x) := by
+  refine LinearMap.congr_fun (LinearMap.ext_on_range (IsRootSystem.span_root_eq_top (P := P))
+    (f := (Q.componentSpace (e.componentEquiv C)).subtype ∘ₗ
+      Q.componentProj (e.componentEquiv C) ∘ₗ e.weightMap)
+    (g := e.weightMap ∘ₗ (P.componentSpace C).subtype ∘ₗ P.componentProj C) fun j ↦ ?_) x
+  simp only [LinearMap.coe_comp, Function.comp_apply, Submodule.coe_subtype,
+    Hom.root_weightMap_apply P Q j e.toHom]
+  by_cases hj : P.componentOf j = C
+  · subst hj
+    have hmem : Q.root (e.indexEquiv j) ∈ Q.componentSpace (e.componentEquiv (P.componentOf j)) :=
+      e.componentEquiv_componentOf j ▸ Q.root_mem_componentSpace (e.indexEquiv j)
+    rw [Q.componentProj_apply_of_mem hmem, P.componentProj_root_self]
+    exact (Hom.root_weightMap_apply P Q j e.toHom).symm
+  · have hj' : Q.componentOf (e.indexEquiv j) ≠ e.componentEquiv C :=
+      e.componentEquiv_componentOf j ▸ e.componentEquiv.injective.ne hj
+    simp [Q.componentProj_root_of_ne hj', P.componentProj_root_of_ne hj]
+
+/-- Powers of an automorphism intertwine component projections along permutation powers. -/
+theorem Equiv.coe_componentProj_pow_weightMap (σ : P.Aut) (n : ℕ) (C : P.Component) (x : M) :
+    (P.componentProj ((σ.componentEquiv ^ n) C) ((σ.weightMap ^ n) x) : M) =
+      (σ.weightMap ^ n) (P.componentProj C x) := by
+  rw [← σ.componentEquiv_pow, ← σ.weightMap_pow]; exact (σ ^ n).coe_componentProj_weightMap C x
+
+end EquivProjection
 
 end Equiv
 

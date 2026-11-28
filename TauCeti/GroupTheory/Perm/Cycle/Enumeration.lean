@@ -11,6 +11,7 @@ public import Mathlib.Dynamics.PeriodicPts.Lemmas
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
+import TauCeti.Dynamics.PeriodicPts.Basic
 import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.Data.Fin.Basic
 
@@ -81,6 +82,11 @@ theorem sameCycle_out_iff {x : α} {O : Quotient (SameCycle.setoid σ)} :
     σ.SameCycle O.out x ↔ (⟦x⟧ : Quotient (SameCycle.setoid σ)) = O := by
   conv_rhs => rw [← Quotient.out_eq O]
   exact ⟨fun h ↦ Quotient.sound h.symm, fun h ↦ (Quotient.exact h).symm⟩
+
+/-- Distinct cycles have representatives in distinct `SameCycle` classes. -/
+theorem not_sameCycle_out_of_ne {O₁ O₂ : Quotient (SameCycle.setoid σ)} (h : O₁ ≠ O₂) :
+    ¬σ.SameCycle O₁.out O₂.out :=
+  fun hsc ↦ h ((σ.sameCycle_out_iff.mp hsc).symm.trans (Quotient.out_eq O₂))
 
 /-- The iterates of the representative of a cycle stay in that cycle. -/
 @[simp]
@@ -258,6 +264,27 @@ theorem prod_quotient_sameCycle_prod_range [Fintype α] [Fintype (Quotient (Same
     Fintype.prod_sigma]
   exact Finset.prod_congr rfl fun q _ ↦
     (σ.prod_sigmaCycleEquiv_eq_prod_range Quotient.out σ.existsUnique_sameCycle_out f q).symm
+
+/-- A product over the elements in a cycle `O` along an injective map intertwining `π` and `τ`
+equals the product over the `τ`-iterates of `f O.out` below `minimalPeriod τ (f O.out)`. -/
+@[to_additive
+  /-- A sum over the elements in a cycle `O` along an injective map intertwining `π` and `τ`
+  equals the sum over the `τ`-iterates of `f O.out` below `minimalPeriod τ (f O.out)`. -/]
+theorem prod_filter_quotient_eq_prod_range {J β M : Type*} [Fintype J] [CommMonoid M]
+    (π : Perm J) (f : J → β) (hf : Injective f) (τ : Perm β)
+    (hτ : Semiconj f π τ) (g : β → M)
+    (O : Quotient (SameCycle.setoid π))
+    [DecidablePred fun j : J ↦ (⟦j⟧ : Quotient (SameCycle.setoid π)) = O] :
+    ∏ j ∈ Finset.univ.filter (fun j ↦ (⟦j⟧ : Quotient (SameCycle.setoid π)) = O), g (f j) =
+      ∏ r ∈ Finset.range (minimalPeriod τ (f O.out)), g ((τ ^ r) (f O.out)) := by
+  classical
+  have hτ_pow (k : ℕ) (j : J) : f ((π ^ k) j) = (τ ^ k) (f j) := hτ.perm_pow_right k j
+  have hper : minimalPeriod π O.out = minimalPeriod τ (f O.out) := hτ.minimalPeriod_eq hf O.out
+  have hfilt : Finset.univ.filter (fun j ↦ (⟦j⟧ : Quotient (SameCycle.setoid π)) = O) =
+      Finset.univ.filter (SameCycle π O.out) := by
+    ext j; simp [sameCycle_out_iff]
+  rw [hfilt, ← prod_range_minimalPeriod π (fun j ↦ g (f j)) O.out, hper]
+  exact Finset.prod_congr rfl fun r _ ↦ by rw [hτ_pow]
 
 section OrbitElem
 

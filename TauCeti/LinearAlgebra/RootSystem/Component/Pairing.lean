@@ -216,6 +216,8 @@ noncomputable def componentPairingEquiv (e : P.Equiv Q) (C : P.Component) {D : Q
   bijective_weightMap := LinearEquiv.bijective _
   bijective_coweightMap := LinearEquiv.bijective _
 
+section Apply
+
 variable (e : P.Equiv Q) (C : P.Component) {D : Q.Component} (hD : e.componentEquiv C = D)
 
 @[simp]
@@ -233,6 +235,28 @@ theorem coe_componentPairingEquiv_indexEquiv_apply (i : C.supp) :
     ((e.componentPairingEquiv C hD).indexEquiv i : ι₂) = e.indexEquiv i :=
   (rfl)
 
+/-- The inverse weight equivalence of component pairings acts as `e.weightEquiv.symm`. -/
+@[simp]
+theorem coe_componentPairingEquiv_weightEquiv_symm_apply (x : Q.componentSpace D) :
+    ((e.componentPairingEquiv C hD).weightEquiv.symm x : M) = e.weightEquiv.symm x :=
+  e.weightEquiv.injective <| by
+    rw [e.weightEquiv_apply, ← coe_componentPairingEquiv_weightMap_apply e C hD,
+      ← weightEquiv_apply, LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+
+/-- The inverse coweight equivalence of component pairings acts as `e.coweightEquiv.symm`. -/
+@[simp]
+theorem coe_componentPairingEquiv_coweightEquiv_symm_apply (y : P.corootComponentSpace C) :
+    ((e.componentPairingEquiv C hD).coweightEquiv.symm y : N₂) = e.coweightEquiv.symm y :=
+  e.coweightEquiv.injective <| by
+    rw [e.coweightEquiv_apply, ← coe_componentPairingEquiv_coweightMap_apply e C hD,
+      ← coweightEquiv_apply, LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+
+/-- The inverse index bijection of component pairings acts as `e.indexEquiv.symm`. -/
+@[simp]
+theorem coe_componentPairingEquiv_indexEquiv_symm_apply (j : D.supp) :
+    ((e.componentPairingEquiv C hD).indexEquiv.symm j : ι) = e.indexEquiv.symm j :=
+  (rfl)
+
 /-- **The equivalence of component pairings intertwines the component projections**: projecting
 onto the component space of `C` and then applying the equivalence of component pairings is
 applying `e` and then projecting onto the component space of the corresponding component. -/
@@ -240,21 +264,68 @@ theorem componentPairingEquiv_weightMap_componentProj (x : M) :
     (e.componentPairingEquiv C hD).toHom.weightMap (P.componentProj C x) =
       Q.componentProj D (e.toHom.weightMap x) := by
   subst hD
-  suffices h : e.toHom.weightMap ∘ₗ (P.componentSpace C).subtype ∘ₗ P.componentProj C =
-      (Q.componentSpace (e.componentEquiv C)).subtype ∘ₗ
-        Q.componentProj (e.componentEquiv C) ∘ₗ e.toHom.weightMap from
-    Subtype.ext (LinearMap.congr_fun h x)
-  refine LinearMap.ext_on_range (IsRootSystem.span_root_eq_top (P := P)) fun i ↦ ?_
-  simp only [LinearMap.coe_comp, Function.comp_apply, Submodule.coe_subtype,
-    Hom.root_weightMap_apply]
-  by_cases h : P.componentOf i = C
-  · subst h
-    rw [componentProj_root_self, componentEquiv_componentOf, componentProj_root_self,
-      Hom.root_weightMap_apply]
-  · rw [componentProj_root_of_ne h, componentProj_root_of_ne (by
-      rw [← componentEquiv_componentOf]
-      exact e.componentEquiv.injective.ne h)]
-    simp
+  apply Subtype.ext
+  rw [coe_componentPairingEquiv_weightMap_apply, ← e.coe_componentProj_weightMap C x]
+
+end Apply
+
+theorem componentPairingEquiv_congr {e₁ e₂ : P.Equiv Q} (he : e₁ = e₂) {C : P.Component}
+    {D : Q.Component} (h₁ : e₁.componentEquiv C = D) (h₂ : e₂.componentEquiv C = D) :
+    e₁.componentPairingEquiv C h₁ = e₂.componentPairingEquiv C h₂ := by
+  subst he; rfl
+
+/-- The identity equivalence restricts to the identity on every component. -/
+@[simp]
+theorem componentPairingEquiv_id (C : P.Component) :
+    (Equiv.id P).componentPairingEquiv C (D := C) (by simp) = Equiv.id (P.componentPairing C) := by
+  ext x <;> simp
+
+/-- The identity automorphism restricts to the identity on every component. -/
+@[simp]
+theorem componentPairingEquiv_one (C : P.Component) :
+    (1 : P.Aut).componentPairingEquiv C (D := C) (by simp) = 1 :=
+  componentPairingEquiv_id C
+
+/-- Restriction of component-fixing automorphisms to a component is multiplicative. -/
+theorem componentPairingEquiv_mul {τ₁ τ₂ : P.Aut} {C : P.Component}
+    (h₁ : τ₁.componentEquiv C = C) (h₂ : τ₂.componentEquiv C = C) :
+    (τ₁ * τ₂).componentPairingEquiv C (by simp [h₁, h₂]) =
+      τ₁.componentPairingEquiv C h₁ * τ₂.componentPairingEquiv C h₂ := by
+  ext x <;> simp [Equiv.mul_eq_comp]
+
+/-- Restriction of component-fixing automorphisms to a component preserves inverses. -/
+@[simp]
+theorem componentPairingEquiv_inv {τ : P.Aut} {C : P.Component}
+    (hC : τ.componentEquiv C = C) :
+    (τ⁻¹).componentPairingEquiv C
+        (by rw [componentEquiv_inv, _root_.Equiv.Perm.inv_eq_iff_eq, hC]) =
+      (τ.componentPairingEquiv C hC)⁻¹ :=
+  eq_inv_of_mul_eq_one_left <| by
+    rw [← componentPairingEquiv_mul, componentPairingEquiv_congr (inv_mul_cancel τ) _ (by simp),
+      componentPairingEquiv_one]
+
+/-- Restriction of component-fixing automorphisms to a component preserves natural powers. -/
+@[simp]
+theorem componentPairingEquiv_pow {τ : P.Aut} {C : P.Component}
+    (hC : τ.componentEquiv C = C) (n : ℕ) :
+    (τ ^ n).componentPairingEquiv C
+        (by rw [componentEquiv_pow]; exact Function.IsFixedPt.perm_pow hC n) =
+      τ.componentPairingEquiv C hC ^ n := by
+  induction n with
+  | zero => exact componentPairingEquiv_one C
+  | succ n ih =>
+    have hpow : (τ ^ n).componentEquiv C = C := by
+      rw [componentEquiv_pow]; exact Function.IsFixedPt.perm_pow hC n
+    simp only [pow_succ', componentPairingEquiv_mul hC hpow, ih]
+
+/-- **Conjugating `τ.componentPairingEquiv C hC` along `e.componentPairingEquiv C hD` restricts
+`e.autCongr τ` to `D`.** -/
+theorem autCongr_componentPairingEquiv (e : P.Equiv Q) {τ : P.Aut} {C : P.Component}
+    (hC : τ.componentEquiv C = C) {D : Q.Component} (hD : e.componentEquiv C = D) :
+    (e.componentPairingEquiv C hD).autCongr (τ.componentPairingEquiv C hC) =
+      (e.autCongr τ).componentPairingEquiv D
+        (by subst hD; simp [autCongr_apply, hC]) := by
+  ext x <;> simp [autCongr_apply]
 
 end Equiv
 
