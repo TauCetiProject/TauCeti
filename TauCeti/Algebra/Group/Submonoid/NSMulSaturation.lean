@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.Algebra.Group.Submonoid.Saturation
 public import Mathlib.GroupTheory.Subgroup.Saturated
 public import TauCeti.Algebra.Group.Submonoid.GroupCompletion
+import TauCeti.Algebra.Group.Submonoid.Membership
 
 /-!
 # Saturation of a submonoid by positive powers
@@ -34,6 +35,8 @@ compatibility lemmas with `AddSubmonoid.toGroupClosure`).
 
 ## Main results
 
+* `Submonoid.powSaturated_map_prod_id`: the image under `n ↦ (f n, n)` is saturated exactly when
+  the source submonoid is saturated, provided positive powers are injective on the target.
 * `Submonoid.PowSaturated.comap` and `Submonoid.PowSaturated.inf`: `PowSaturated` is preserved by
   pullbacks and binary intersections.
 * `Submonoid.MulSaturated.powSaturated`: a submonoid saturated under products, such as a face of
@@ -63,6 +66,28 @@ namespace Submonoid
 section Monoid
 
 variable {M N : Type*} [Monoid M] [Monoid N]
+
+/-- The image of `s` under `n ↦ (f n, n)` is `PowSaturated` exactly when `s` is,
+provided nonzero powers are injective on the first coordinate `M`. -/
+@[to_additive AddSubmonoid.nsmulSaturated_map_prod_id
+/-- The image of `s` under `n ↦ (f n, n)` is `NSMulSaturated` exactly when `s` is,
+provided nonzero natural multiples are injective on the first coordinate `M`. -/]
+theorem powSaturated_map_prod_id {N M : Type*} [Monoid N] [Monoid M]
+    [HasUniqueRoots M] (s : Submonoid N) (f : N →* M) :
+    (s.map (f.prod (MonoidHom.id N))).PowSaturated ↔ s.PowSaturated := by
+  constructor
+  · intro h a n hn
+    have hmem : (f n, n) ^ a ∈ s.map (f.prod (MonoidHom.id N)) :=
+      ⟨n ^ a, hn, Prod.ext (map_pow f n a) rfl⟩
+    exact (h hmem).imp_right fun hgraph =>
+      ((s.mem_map_prod_id_iff f (f n, n)).mp hgraph).1
+  · rintro h a ⟨m, n⟩ hmem
+    by_cases ha : a = 0
+    · exact Or.inl ha
+    · have hgraph := (s.mem_map_prod_id_iff f (m ^ a, n ^ a)).mp hmem
+      exact Or.inr ((s.mem_map_prod_id_iff f (m, n)).mpr
+        ⟨(h hgraph.1).resolve_left ha,
+          pow_left_injective ha (hgraph.2.trans (map_pow f n a))⟩)
 
 /-- The pullback of a `PowSaturated` submonoid along a monoid homomorphism is `PowSaturated`. -/
 @[to_additive /-- The pullback of an `NSMulSaturated` additive submonoid along an additive monoid

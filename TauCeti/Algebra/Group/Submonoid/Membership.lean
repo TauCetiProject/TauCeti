@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Prod
 public import Mathlib.Algebra.Group.Submonoid.Membership
+import TauCeti.Data.Set.Prod
 
 /-!
 # Powers, preimages, and generated submonoids
@@ -20,6 +22,17 @@ additive submonoids.
 public section
 
 namespace Submonoid
+
+/-- A point of the graph image is determined by its second coordinate in the source monoid. -/
+@[to_additive AddSubmonoid.mem_map_prod_id_iff]
+theorem mem_map_prod_id_iff {N M : Type*} [Monoid N] [Monoid M]
+    (s : Submonoid N) (f : N →* M) (x : M × N) :
+    x ∈ s.map (f.prod (MonoidHom.id N)) ↔ x.2 ∈ s ∧ x.1 = f x.2 := by
+  have hf : ⇑(f.prod (MonoidHom.id N)) = fun n => (f n, n) := by
+    funext n
+    simp only [MonoidHom.prod_apply, MonoidHom.id_apply]
+  rw [← SetLike.mem_coe, Submonoid.coe_map, hf]
+  simpa only [SetLike.mem_coe] using Set.mem_image_prodMk_self_snd_iff f (s : Set N) x
 
 variable {M N F : Type*} [Monoid M] [Monoid N] [FunLike F M N] [MonoidHomClass F M N]
 
