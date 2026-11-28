@@ -74,6 +74,10 @@ vanishing on the range is a dot product with such a `z`.
 * `Matrix.exists_mul_eq_of_range_le`: construct the right factor from column preimages.
 * `Matrix.exists_mul_map_eq_of_span_le`: if the columns of `C` lie in the `S`-span of those of
   `B`, then `C = B U` with `U` over `S`.
+* `Matrix.linearCombination_col_eq_mulVec`: an `S`-linear combination of the columns of a matrix
+  over an `S`-algebra `A` is a matrix-vector product.
+* `Matrix.span_image_algebraMap_eq_range_mulVecLin`: the `A`-span of the image of a submodule `U`
+  of `m → R` is the column space over `A` of the matrix of a basis of `U`.
 * `Matrix.exists_mul_eq_one_of_linearIndependent_col`,
   `Matrix.exists_mul_map_mul_eq_one_of_linearIndependent_col`: over a field, a matrix with
   independent columns has a left inverse, and so does its product with an invertible matrix over
@@ -152,6 +156,31 @@ theorem exists_mul_map_eq_of_span_le {S A : Type*} [CommSemiring S] [CommSemirin
   simp only [Finset.sum_apply, Pi.smul_apply, col_apply] at this
   simp only [Algebra.smul_def] at this
   simp only [Matrix.mul_apply, map_apply, of_apply, ← this, mul_comm]
+
+/-- Let `A` be an `S`-algebra. The `S`-linear combination of the columns of `B` with coefficients
+`d` is `B` applied to the image of `d` in `A`. -/
+theorem linearCombination_col_eq_mulVec {S A : Type*} [CommSemiring S] [Semiring A]
+    [Algebra S A] (B : Matrix m ι A) (d : ι → S) :
+    Fintype.linearCombination S B.col d = B *ᵥ fun j ↦ algebraMap S A (d j) := by
+  funext k
+  simp [Fintype.linearCombination_apply, Finset.sum_apply, Algebra.smul_def, mulVec, dotProduct,
+    Algebra.commutes]
+
+/-- Let `A` be an `R`-algebra and `b` a basis of a submodule `U` of `m → R`. The `A`-span of the
+coordinatewise image of `U` in `m → A` is the column space over `A` of the matrix of `b`. -/
+theorem span_image_algebraMap_eq_range_mulVecLin {A : Type*} [CommSemiring A] [Algebra R A]
+    (U : Submodule R (m → R)) (b : Module.Basis ι R U) :
+    Submodule.span A ((fun (v : m → R) k ↦ algebraMap R A (v k)) '' U) =
+      LinearMap.range ((of fun k j ↦ (b j : m → R) k).map (algebraMap R A)).mulVecLin := by
+  let f : (m → R) →ₗ[R] m → A := ((Algebra.ofId R A).compLeft m).toLinearMap
+  have hU : (U : Set (m → R)) = Submodule.span R (U.subtype '' Set.range b) := by
+    rw [Submodule.span_image, b.span_eq, Submodule.map_subtype_top]
+  -- The coordinatewise image is the `R`-linear map `f`, and `A`-spans absorb `R`-spans.
+  have hf : ⇑f = fun (v : m → R) k ↦ algebraMap R A (v k) := rfl
+  rw [← hf, hU, ← Submodule.map_coe, Submodule.map_span, Submodule.span_span_of_tower,
+    range_mulVecLin, ← Set.range_comp, ← Set.range_comp]
+  -- The columns of the mapped matrix are the images of the `b j`, by definition.
+  congr 2
 
 section Field
 

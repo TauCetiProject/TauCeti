@@ -33,6 +33,8 @@ of `M` is `B u` with `[det u] = [L : M]`
 * `NumberField.IsCMField.latticeDiscriminant_span_col`: the discriminant computed from any basis.
 * `NumberField.FiniteAdeleRing.IsLatticeOfRank.latticeDiscriminant_pos`: the discriminant is
   positive.
+* `NumberField.FiniteAdeleRing.IsLatticeOfRank.one_le_latticeDiscriminant`: the discriminant is
+  at least `1` if `B^*B` is integral for every `B` with columns in the lattice.
 * `NumberField.FiniteAdeleRing.IsLatticeOfRank.latticeDiscriminant_eq_mul_relIndex`: the
   discriminant of a sublattice of finite index.
 
@@ -220,6 +222,32 @@ theorem latticeDiscriminant_pos
   rw [latticeDiscriminant_span_col hx, genIndex_gramDet_mul, h_gram, genIndex_algebraMap]
   refine Real.sqrt_pos.2 (Rat.cast_pos.2 (mul_pos (pow_pos (genIndex_units_pos a.det) 2) ?_))
   exact abs_pos.2 ((Algebra.norm_ne_zero_iff).2 (det_transpose_map_complexConj_mul_ne_zero hx))
+
+/-- A lattice `L` of rank `r` has discriminant `d_r(L) ≥ 1` if `B^*B` is integral for every
+`κ × r` matrix `B` with columns in `L`. -/
+theorem one_le_latticeDiscriminant
+    {L : Submodule (integralAdeles (𝓞 E) E) (κ → 𝔸ᶠ[E])} (hL : IsLatticeOfRank r L)
+    (h : ∀ B : Matrix κ (Fin r) 𝔸ᶠ[E], (∀ j, B.col j ∈ L) →
+      ∀ i j, ((B.map (finiteAdeleConj E))ᵀ * B) i j ∈ integralAdeles (𝓞 E) E) :
+    1 ≤ latticeDiscriminant r L := by
+  have hpos := hL.latticeDiscriminant_pos
+  obtain ⟨x, a, hx, rfl⟩ := isLatticeOfRank_iff.1 hL
+  set B := x.map (algebraMap E 𝔸ᶠ[E]) * (a : Matrix (Fin r) (Fin r) 𝔸ᶠ[E])
+  have hB := h B fun j ↦ Submodule.subset_span ⟨j, rfl⟩
+  -- The Gram matrix of `B` is the image of a matrix `M` over `Ô`.
+  let M : Matrix (Fin r) (Fin r) (integralAdeles (𝓞 E) E) := Matrix.of fun i j ↦ ⟨_, hB i j⟩
+  have hM : gramDet B = algebraMap (integralAdeles (𝓞 E) E) 𝔸ᶠ[E] M.det := by
+    -- The entries of `M`, mapped to `𝔸_f`, are those of `B^*B`.
+    rw [RingHom.map_det, gramDet_def]
+    congr 1
+  rw [latticeDiscriminant_span_col hx] at hpos ⊢
+  -- The index of `det(B^*B)` is not zero, so it is a unit and its index is that of an ideal of `Ô`.
+  have h0 : genIndex E (gramDet B) ≠ 0 := fun h0 ↦
+    (Real.sqrt_pos.1 hpos).ne' (by exact_mod_cast h0)
+  have hunit := not_not.1 (genIndex_eq_zero_iff.not.1 h0)
+  rw [hM, Subalgebra.algebraMap_apply] at hunit ⊢
+  rw [genIndex_eq_cardQuot hunit, Real.one_le_sqrt]
+  exact_mod_cast Nat.one_le_iff_ne_zero.2 (cardQuot_span_singleton_ne_zero hunit)
 
 /-- **Discriminants of sublattices.** For an `Ô`-submodule `M` of finite index of a lattice `L`
 of rank `r`, `d_r(M) = d_r(L)·[L : M]`. -/
