@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Algebra.Homology.SingleHomology
+public import Mathlib.Algebra.Homology.DerivedCategory.TStructure
 public import Mathlib.CategoryTheory.Endofunctor.Algebra
-public import TauCeti.Algebra.Homology.DerivedCategory.CohomologySequence
 public import TauCeti.Algebra.Homology.DerivedCategory.MappingCone
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCocone.Basic
+public import TauCeti.CategoryTheory.Triangulated.HomologyShortExactSequence
+import TauCeti.CategoryTheory.Triangulated.TStructure.Bounds
 
 /-!
 # Derived fixed points of an endomorphism
@@ -24,8 +26,10 @@ The construction is functorial in strictly commuting maps. Its distinguished tri
 gives the long exact cohomology sequence and bounds its amplitude. In particular a
 complex concentrated in degree zero can have fixed-point cohomology in degree one.
 The kernel/cokernel sequence and its vanishing isomorphisms are the general triangle API:
-`M.fixedPointsTriangle.cohomologySequence M.fixedPointsTriangle_distinguished n`,
-`Triangle.cohomologyIsoKernel` and `Triangle.cohomologyIsoCokernel`.
+`Triangle.homologyShortExactSequence`, applied to the fixed-point triangle and
+`DerivedCategory.homologyFunctor C 0`, and `Triangle.homologyIsoKernel` and
+`Triangle.homologyIsoCokernel`. The functor `TauCeti.fixedPointsTriangleFunctor` gives the map of
+fixed-point triangles and hence the map of short exact sequences.
 No enhancement or category of homotopy-coherent endomorphisms is constructed here.
 
 ## References
@@ -41,8 +45,9 @@ noncomputable section
 universe w v u
 
 open CategoryTheory Limits Pretriangulated
+open CategoryTheory.Endofunctor.Algebra (forget)
 
-namespace CategoryTheory.Endofunctor.Algebra
+namespace TauCeti
 
 variable {C : Type u} [Category.{v} C]
 
@@ -50,6 +55,8 @@ section Preadditive
 
 variable [Preadditive C]
 
+-- The endpoint types of the characteristic equations for fixed-point maps require
+-- the object parts of the difference and the fixed-point functors to reduce.
 /-- The natural endomorphism `φ - 1` of the forgetful functor on complexes with an
 endomorphism. This is formed in the category of the fixed scalars. -/
 @[expose]
@@ -67,7 +74,7 @@ def fixedPointsDifference :
     exact congrArg (· - f.f) f.h
 
 @[simp]
-lemma fixedPointsDifference_app (M : Algebra (𝟭 (CochainComplex C ℤ))) :
+lemma fixedPointsDifference_app (M : Endofunctor.Algebra (𝟭 (CochainComplex C ℤ))) :
     fixedPointsDifference.app M = id (α := M.a ⟶ M.a) M.str - 𝟙 M.a := (rfl)
 
 variable [HasBinaryBiproducts C]
@@ -76,31 +83,23 @@ variable [HasBinaryBiproducts C]
 by `-1`. Morphisms are induced by the same equivariant map on both cone terms. -/
 @[expose, implicit_reducible]
 def fixedPointsComplexFunctor :
-    Algebra (𝟭 (CochainComplex C ℤ)) ⥤ CochainComplex C ℤ :=
+    Endofunctor.Algebra (𝟭 (CochainComplex C ℤ)) ⥤ CochainComplex C ℤ :=
   NatTrans.mappingCoconeFunctor fixedPointsDifference
 
-/-- The cochain model of the derived fixed points of an endomorphism. -/
-abbrev fixedPointsComplex (M : Algebra (𝟭 (CochainComplex C ℤ))) : CochainComplex C ℤ :=
-  fixedPointsComplexFunctor.obj M
-
 /-- The canonical projection from the fixed-point complex to the original complex. -/
-@[implicit_reducible]
+@[expose, implicit_reducible]
 def fixedPointsComplexι :
     fixedPointsComplexFunctor (C := C) ⟶ forget (𝟭 (CochainComplex C ℤ)) :=
   NatTrans.mappingCoconeFunctorFst fixedPointsDifference
 
 @[simp]
-lemma fixedPointsComplex_eq (M : Algebra (𝟭 (CochainComplex C ℤ))) :
-    M.fixedPointsComplex =
-      CochainComplex.mappingCocone (id (α := M.a ⟶ M.a) M.str - 𝟙 M.a) := (rfl)
-
-@[simp]
-lemma fixedPointsComplexι_app (M : Algebra (𝟭 (CochainComplex C ℤ))) :
+lemma fixedPointsComplexι_app (M : Endofunctor.Algebra (𝟭 (CochainComplex C ℤ))) :
     fixedPointsComplexι.app M =
       CochainComplex.mappingCocone.fst (id (α := M.a ⟶ M.a) M.str - 𝟙 M.a) := (rfl)
 
 @[simp]
-lemma fixedPointsComplexFunctor_map {M N : Algebra (𝟭 (CochainComplex C ℤ))} (f : M ⟶ N) :
+lemma fixedPointsComplexFunctor_map {M N : Endofunctor.Algebra (𝟭 (CochainComplex C ℤ))}
+    (f : M ⟶ N) :
     fixedPointsComplexFunctor.map f =
       (CochainComplex.mappingCone.map (id (α := M.a ⟶ M.a) M.str - 𝟙 M.a)
         (id (α := N.a ⟶ N.a) N.str - 𝟙 N.a) f.f f.f
@@ -113,16 +112,98 @@ variable [Abelian C] [HasDerivedCategory.{w} C]
 /-- Derived fixed points as a functor to the derived category of the fixed scalars. -/
 @[expose, implicit_reducible]
 def fixedPointsFunctor :
-    Algebra (𝟭 (CochainComplex C ℤ)) ⥤ DerivedCategory C :=
+    Endofunctor.Algebra (𝟭 (CochainComplex C ℤ)) ⥤ DerivedCategory C :=
   fixedPointsComplexFunctor ⋙ DerivedCategory.Q
 
 @[simp]
-lemma fixedPointsFunctor_map {M N : Algebra (𝟭 (CochainComplex C ℤ))} (f : M ⟶ N) :
+lemma fixedPointsFunctor_map {M N : Endofunctor.Algebra (𝟭 (CochainComplex C ℤ))} (f : M ⟶ N) :
     fixedPointsFunctor.map f = DerivedCategory.Q.map (fixedPointsComplexFunctor.map f) := (rfl)
+
+open CochainComplex in
+/-- The distinguished fixed-point fibre triangles and their induced morphisms. -/
+@[expose]
+def fixedPointsTriangleFunctor :
+    Endofunctor.Algebra (𝟭 (CochainComplex C ℤ)) ⥤ Triangle (DerivedCategory C) where
+  obj M := DerivedCategory.Q.mapTriangle.obj (mappingCocone.triangle (fixedPointsDifference.app M))
+  map {M N} f := DerivedCategory.Q.mapTriangle.map
+    (show mappingCocone.triangle (fixedPointsDifference.app M) ⟶
+        mappingCocone.triangle (fixedPointsDifference.app N) from
+    { hom₁ := fixedPointsComplexFunctor.map f
+      hom₂ := f.f
+      hom₃ := f.f
+      comm₁ := (fixedPointsComplexι.naturality f).symm
+      comm₂ := (fixedPointsDifference.naturality f).symm
+      comm₃ := by
+        -- The third arrow is the cone inclusion followed by the inverse double-shift
+        -- comparison. Use naturality of that comparison and the cone triangle map.
+        let e := shiftFunctorCompIsoId (CochainComplex C ℤ) (-1 : ℤ) 1 (by omega)
+        let α := mappingCone.triangleMap _ _ f.f f.f (fixedPointsDifference.naturality f).symm
+        let S : ℤ → _ := CategoryTheory.shiftFunctor (CochainComplex C ℤ)
+        change ((mappingCone.triangle (fixedPointsDifference.app M)).mor₂ ≫ e.inv.app _) ≫
+          (S (-1) ⋙ S 1).map α.hom₃ =
+            f.f ≫ (mappingCone.triangle (fixedPointsDifference.app N)).mor₂ ≫ e.inv.app _
+        rw [Category.assoc]
+        calc
+          _ = _ ≫ (α.hom₃ ≫ e.inv.app _) :=
+            congrArg (_ ≫ ·) (e.inv.naturality α.hom₃).symm
+          _ = (_ ≫ α.hom₃) ≫ _ := (Category.assoc _ _ _).symm
+          _ = (α.hom₂ ≫ _) ≫ _ := congrArg (· ≫ _) α.comm₂
+          _ = _ := Category.assoc _ _ _ })
+  map_id M := by
+    ext
+    · exact fixedPointsFunctor.map_id M
+    · exact DerivedCategory.Q.map_id _
+    · exact DerivedCategory.Q.map_id _
+  map_comp f g := by
+    refine TriangleMorphism.ext ?_ ?_ ?_
+    · exact fixedPointsFunctor.map_comp f g
+    · exact DerivedCategory.Q.map_comp _ _
+    · exact DerivedCategory.Q.map_comp _ _
+
+@[simp]
+lemma fixedPointsTriangleFunctor_map_hom₁ {M N : Endofunctor.Algebra (𝟭 (CochainComplex C ℤ))}
+    (f : M ⟶ N) : (fixedPointsTriangleFunctor.map f).hom₁ = fixedPointsFunctor.map f := (rfl)
+
+@[simp]
+lemma fixedPointsTriangleFunctor_map_hom₂ {M N : Endofunctor.Algebra (𝟭 (CochainComplex C ℤ))}
+    (f : M ⟶ N) : (fixedPointsTriangleFunctor.map f).hom₂ = DerivedCategory.Q.map f.f := (rfl)
+
+@[simp]
+lemma fixedPointsTriangleFunctor_map_hom₃ {M N : Endofunctor.Algebra (𝟭 (CochainComplex C ℤ))}
+    (f : M ⟶ N) : (fixedPointsTriangleFunctor.map f).hom₃ = DerivedCategory.Q.map f.f := (rfl)
+
+end TauCeti
+
+namespace CategoryTheory.Endofunctor.Algebra
+
+open TauCeti
+
+variable {C : Type u} [Category.{v} C]
+
+section Preadditive
+
+variable [Preadditive C] [HasBinaryBiproducts C]
+
+/-- The cochain model of the derived fixed points of an endomorphism. -/
+abbrev fixedPointsComplex (M : Algebra (𝟭 (CochainComplex C ℤ))) : CochainComplex C ℤ :=
+  fixedPointsComplexFunctor.obj M
+
+@[simp]
+lemma fixedPointsComplex_eq (M : Algebra (𝟭 (CochainComplex C ℤ))) :
+    M.fixedPointsComplex =
+      CochainComplex.mappingCocone (id (α := M.a ⟶ M.a) M.str - 𝟙 M.a) := (rfl)
+
+end Preadditive
+
+variable [Abelian C] [HasDerivedCategory.{w} C]
 
 /-- The derived fixed points `fib(φ - 1)`. -/
 abbrev fixedPoints (M : Algebra (𝟭 (CochainComplex C ℤ))) : DerivedCategory C :=
   fixedPointsFunctor.obj M
+
+/-- Derived fixed points are the localization of their cochain model. -/
+lemma fixedPoints_eq (M : Algebra (𝟭 (CochainComplex C ℤ))) :
+    M.fixedPoints = DerivedCategory.Q.obj M.fixedPointsComplex := (rfl)
 
 /-- The projection from derived fixed points to the original complex. -/
 @[implicit_reducible]
@@ -130,12 +211,19 @@ def fixedPointsι (M : Algebra (𝟭 (CochainComplex C ℤ))) :
     M.fixedPoints ⟶ DerivedCategory.Q.obj M.a :=
   DerivedCategory.Q.map (fixedPointsComplexι.app M)
 
+/-- The derived projection is the localization of the cochain projection. -/
+lemma fixedPointsι_eq (M : Algebra (𝟭 (CochainComplex C ℤ))) :
+    M.fixedPointsι = DerivedCategory.Q.map (fixedPointsComplexι.app M) := (rfl)
+
 /-- The fixed-point fibre triangle, with second map `φ - 1`. -/
 @[expose, implicit_reducible]
 def fixedPointsTriangle (M : Algebra (𝟭 (CochainComplex C ℤ))) :
     Triangle (DerivedCategory C) :=
-  DerivedCategory.Q.mapTriangle.obj
-    (CochainComplex.mappingCocone.triangle (id (α := M.a ⟶ M.a) M.str - 𝟙 M.a))
+  fixedPointsTriangleFunctor.obj M
+
+@[simp]
+lemma fixedPointsTriangleFunctor_obj (M : Algebra (𝟭 (CochainComplex C ℤ))) :
+    fixedPointsTriangleFunctor.obj M = M.fixedPointsTriangle := (rfl)
 
 @[simp]
 lemma fixedPointsTriangle_obj₁ (M : Algebra (𝟭 (CochainComplex C ℤ))) :
@@ -156,7 +244,11 @@ lemma fixedPointsTriangle_mor₁ (M : Algebra (𝟭 (CochainComplex C ℤ))) :
 @[simp]
 lemma fixedPointsTriangle_mor₂ (M : Algebra (𝟭 (CochainComplex C ℤ))) :
     M.fixedPointsTriangle.mor₂ = DerivedCategory.Q.map (id (α := M.a ⟶ M.a) M.str) - 𝟙 _ := by
-  simp [fixedPointsTriangle]
+  change DerivedCategory.Q.map (id (α := M.a ⟶ M.a) M.str - 𝟙 M.a) = _
+  calc
+    _ = DerivedCategory.Q.map (id (α := M.a ⟶ M.a) M.str) -
+        DerivedCategory.Q.map (𝟙 M.a) := Functor.map_sub _
+    _ = _ := congrArg (_ - ·) (DerivedCategory.Q.map_id M.a)
 
 @[simp]
 lemma fixedPointsTriangle_mor₃ (M : Algebra (𝟭 (CochainComplex C ℤ))) :
@@ -171,15 +263,18 @@ theorem fixedPointsTriangle_distinguished (M : Algebra (𝟭 (CochainComplex C �
   DerivedCategory.mappingCocone_triangle_distinguished _
 
 @[reassoc]
-lemma fixedPointsι_comp (M : Algebra (𝟭 (CochainComplex C ℤ))) :
+lemma fixedPointsι_comp_sub_eq_zero (M : Algebra (𝟭 (CochainComplex C ℤ))) :
     M.fixedPointsι ≫ (DerivedCategory.Q.map (id (α := M.a ⟶ M.a) M.str) - 𝟙 _) = 0 := by
-  rw [← fixedPointsTriangle_mor₂]
-  exact comp_distTriang_mor_zero₁₂ _ M.fixedPointsTriangle_distinguished
+  calc
+    _ = M.fixedPointsTriangle.mor₁ ≫ M.fixedPointsTriangle.mor₂ :=
+      congrArg (M.fixedPointsι ≫ ·) M.fixedPointsTriangle_mor₂.symm
+    _ = 0 := comp_distTriang_mor_zero₁₂ _ M.fixedPointsTriangle_distinguished
 
 @[reassoc (attr := simp)]
 lemma fixedPointsι_comp_map_str (M : Algebra (𝟭 (CochainComplex C ℤ))) :
     M.fixedPointsι ≫ DerivedCategory.Q.map M.str = M.fixedPointsι := by
-  simpa only [Preadditive.comp_sub, Category.comp_id, sub_eq_zero, id_eq] using M.fixedPointsι_comp
+  simpa only [Preadditive.comp_sub, Category.comp_id, sub_eq_zero, id_eq]
+    using M.fixedPointsι_comp_sub_eq_zero
 
 @[reassoc]
 lemma fixedPointsι_naturality {M N : Algebra (𝟭 (CochainComplex C ℤ))} (f : M ⟶ N) :
@@ -205,25 +300,28 @@ instance isIso_fixedPointsFunctor_map {M N : Algebra (𝟭 (CochainComplex C ℤ
 theorem isZero_fixedPoints_iff (M : Algebra (𝟭 (CochainComplex C ℤ))) :
     IsZero M.fixedPoints ↔ QuasiIso (id (α := M.a ⟶ M.a) M.str - 𝟙 M.a) := by
   rw [← DerivedCategory.isIso_Q_map_iff_quasiIso]
-  exact M.fixedPointsTriangle.isZero₁_iff_isIso₂ M.fixedPointsTriangle_distinguished
+  rw [← M.fixedPointsTriangle_obj₁]
+  refine (M.fixedPointsTriangle.isZero₁_iff_isIso₂ M.fixedPointsTriangle_distinguished).trans ?_
+  have h : DerivedCategory.Q.map (id (α := M.a ⟶ M.a) M.str - 𝟙 M.a) =
+      DerivedCategory.Q.map (id (α := M.a ⟶ M.a) M.str) - 𝟙 (DerivedCategory.Q.obj M.a) :=
+    (Functor.map_sub DerivedCategory.Q).trans (congrArg (_ - ·) (DerivedCategory.Q.map_id M.a))
+  exact Iff.of_eq (congrArg IsIso (M.fixedPointsTriangle_mor₂.trans h.symm))
 
 /-- Derived fixed points preserve a lower cohomological bound. -/
 theorem isGE_fixedPoints (M : Algebra (𝟭 (CochainComplex C ℤ))) (a : ℤ)
     [(DerivedCategory.Q.obj M.a).IsGE a] : M.fixedPoints.IsGE a := by
-  have : M.fixedPointsTriangle.obj₂.IsGE a := by simpa using (inferInstance :
-    (DerivedCategory.Q.obj M.a).IsGE a)
-  have : M.fixedPointsTriangle.obj₃.IsGE a := by simpa using (inferInstance :
-    (DerivedCategory.Q.obj M.a).IsGE a)
-  exact M.fixedPointsTriangle.isGE_obj₁ M.fixedPointsTriangle_distinguished a
+  rw [← fixedPointsTriangle_obj₁]
+  refine DerivedCategory.TStructure.t.isGE₁ _ M.fixedPointsTriangle_distinguished a ?_ ?_
+  · simpa using (inferInstance : (DerivedCategory.Q.obj M.a).IsGE a)
+  · simpa using DerivedCategory.TStructure.t.isGE_of_ge (DerivedCategory.Q.obj M.a) (a - 1) a
 
 /-- Derived fixed points increase an upper cohomological bound by at most one. -/
 theorem isLE_fixedPoints (M : Algebra (𝟭 (CochainComplex C ℤ))) (b : ℤ)
     [(DerivedCategory.Q.obj M.a).IsLE b] : M.fixedPoints.IsLE (b + 1) := by
-  have : M.fixedPointsTriangle.obj₂.IsLE b := by simpa using (inferInstance :
-    (DerivedCategory.Q.obj M.a).IsLE b)
-  have : M.fixedPointsTriangle.obj₃.IsLE b := by simpa using (inferInstance :
-    (DerivedCategory.Q.obj M.a).IsLE b)
-  exact M.fixedPointsTriangle.isLE_obj₁ M.fixedPointsTriangle_distinguished b
+  rw [← fixedPointsTriangle_obj₁]
+  refine DerivedCategory.TStructure.t.isLE₁ _ M.fixedPointsTriangle_distinguished (b + 1) ?_ ?_
+  · simpa using DerivedCategory.TStructure.t.isLE_of_le (DerivedCategory.Q.obj M.a) b (b + 1)
+  · simpa using (inferInstance : (DerivedCategory.Q.obj M.a).IsLE b)
 
 /-! The identity on an object in degree zero has that object as its degree-one
 fixed-point cohomology. In particular this applies to a nonzero `𝔽_p`-module. -/
@@ -237,8 +335,17 @@ example (X : C) :
       (DerivedCategory.Q.obj M.a)) :=
     DerivedCategory.isZero_of_isLE _ 0 1 (by omega)
   have hφ : (DerivedCategory.homologyFunctor C 0).map M.fixedPointsTriangle.mor₂ = 0 := by
-    simp [M]
-  exact M.fixedPointsTriangle.cohomologyIsoCokernel M.fixedPointsTriangle_distinguished 1 hz ≪≫
+    rw [M.fixedPointsTriangle_mor₂]
+    change (DerivedCategory.homologyFunctor C 0).map
+      (DerivedCategory.Q.map (𝟙 M.a) - 𝟙 (DerivedCategory.Q.obj M.a)) = 0
+    rw [Functor.map_id, sub_self, Functor.map_zero]
+  have : Mono (((DerivedCategory.homologyFunctor C 0).shift (1 : ℤ)).map
+      M.fixedPointsTriangle.mor₂) :=
+    mono_of_source_iso_zero _ (by
+      rw [fixedPointsTriangle_obj₂]
+      exact hz.isoZero)
+  exact M.fixedPointsTriangle.homologyIsoCokernel (DerivedCategory.homologyFunctor C 0)
+    M.fixedPointsTriangle_distinguished 1 ≪≫
     cokernelIsoOfEq hφ ≪≫ cokernelZeroIsoTarget ≪≫
     (DerivedCategory.homologyFunctorFactors C 0).app M.a ≪≫
     (HomologicalComplex.homologyFunctorSingleIso C (.up ℤ) 0).app X
