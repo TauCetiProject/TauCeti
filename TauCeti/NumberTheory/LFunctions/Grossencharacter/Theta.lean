@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Conductor
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.FiniteCharacter
 public import TauCeti.NumberTheory.LFunctions.Grossencharacter.Harmonic
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
+import TauCeti.RingTheory.FractionalIdeal.LinearEquiv
 
 /-!
 # Hecke's twisted theta series of a Grossencharacter
@@ -222,17 +223,13 @@ theorem heckeTheta_mk0 (χ : Grossencharacter K 𝔪) (𝔞 : (Ideal (𝓞 K))�
         ∑' a : (𝔞 : Ideal (𝓞 K)), χ.primitive.finiteCharacter (a : 𝓞 K) *
           χ.harmonicFactor (mixedEmbedding K ((a : 𝓞 K) : K)) *
           archGaussian y (mixedEmbedding K ((a : 𝓞 K) : K)) := by
-  let e : (𝔞 : Ideal (𝓞 K)) ≃ (FractionalIdeal.mk0 K 𝔞 : Submodule (𝓞 K) K) :=
-    (Submodule.equivMapOfInjective (Algebra.linearMap (𝓞 K) K)
-      (IsFractionRing.injective (𝓞 K) K) (𝔞 : Ideal (𝓞 K))).toEquiv
-  have he_coe (a : (𝔞 : Ideal (𝓞 K))) :
-      ((e a : (FractionalIdeal.mk0 K 𝔞 : Submodule (𝓞 K) K)) : K) =
-        algebraMap (𝓞 K) K (a : 𝓞 K) :=
-    rfl
-  rw [heckeTheta_def, ← e.tsum_eq]
+  rw [heckeTheta_def, FractionalIdeal.coe_mk0,
+    ← (FractionalIdeal.coeIdealEquiv (S := (𝓞 K)⁰) (P := K)
+      (𝔞 : Ideal (𝓞 K))).symm.toEquiv.tsum_eq]
   congr 1
   refine tsum_congr fun a ↦ ?_
-  rw [he_coe a, χ.primitive.finiteCharacterField_algebraMap]
+  rw [LinearEquiv.coe_toEquiv, FractionalIdeal.coe_coeIdealEquiv_symm_apply,
+    χ.primitive.finiteCharacterField_algebraMap]
 
 /-- Monotone domination of `‖χ.heckeTheta I y‖` by the absolute series majorant at any smaller
 positive parameter `y' ≤ y`. -/
@@ -243,13 +240,10 @@ theorem norm_heckeTheta_le (χ : Grossencharacter K 𝔪) (I : (FractionalIdeal 
         ‖χ.primitive.finiteCharacterField (a : K) *
           χ.harmonicFactor (mixedEmbedding K (a : K)) *
           archGaussian y' (mixedEmbedding K (a : K))‖ := by
-  have hy : ∀ w, 0 < y w := fun w ↦ (hy' w).trans_le (h w)
-  have hsum := χ.summable_finiteCharacterField_mul_harmonicFactor_mul_archGaussian I hy
   have hsum' := χ.summable_finiteCharacterField_mul_harmonicFactor_mul_archGaussian I hy'
   rw [heckeTheta_def]
   refine (norm_add_le _ _).trans (add_le_add le_rfl ?_)
-  refine (norm_tsum_le_tsum_norm hsum.norm).trans ?_
-  refine hsum.norm.tsum_le_tsum (fun a ↦ ?_) hsum'.norm
+  refine tsum_of_norm_bounded hsum'.norm.hasSum fun a ↦ ?_
   rw [norm_mul, norm_mul, norm_mul, norm_mul]
   exact mul_le_mul_of_nonneg_left (norm_archGaussian_le h _)
     (mul_nonneg (norm_nonneg _) (norm_nonneg _))
