@@ -110,8 +110,8 @@ private lemma exists_injective_toTopObjMk_eq {n : ℕ} (x : (Δ[p] ⊗ Δ[q] : S
     refine congrArg (fun g ↦ w₀.map g) (funext fun j ↦ ?_)
     have h1 := objEquiv_map_apply x θ j
     have h2 := objEquiv_map_apply y π j
-    dsimp only [Function.comp_apply] at h1 h2 ⊢
-    change (objEquiv x) (θ.toOrderHom j) = (objEquiv y) (π.toOrderHom j)
+    -- `ConcreteCategory.hom` on `SimplexCategory` is `SimplexCategory.Hom.toOrderHom`.
+    dsimp only [Function.comp_apply, ConcreteCategory.hom]
     rw [← h1, hxy, h2]
 
 /-- Two points of the realizations of simplices of `Δ[p] ⊗ Δ[q]` with injective vertex maps and

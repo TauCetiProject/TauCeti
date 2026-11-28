@@ -389,8 +389,6 @@ noncomputable def preorderHomeomorphStdSimplex {n : ℕ} {α : Type u} [Preorder
   have hθ : (nerve.representableBy α e).homEquiv θ = s :=
     nerve.objEquiv.injective <| ComposableArrows.ext
       (fun i ↦ by
-        change (nerve.objEquiv ((nerve.representableBy α e).homEquiv θ)).obj i =
-          (nerve.objEquiv s).obj i
         rw [nerve.representableBy_homEquiv_obj]
         exact e.symm_apply_apply _)
       (fun _ _ ↦ Subsingleton.elim _ _)
