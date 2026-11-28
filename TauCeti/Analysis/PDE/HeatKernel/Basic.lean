@@ -101,6 +101,12 @@ theorem heatKernel_apply (t : ℝ) (x : E) :
     heatKernel t x = (4 * π * t) ^ (-(Module.finrank ℝ E : ℝ) / 2) * exp (-‖x‖ ^ 2 / (4 * t)) :=
   (rfl)
 
+/-- On a plane the heat kernel is `K_t(x) = exp(-‖x‖² / (4t)) / (4πt)`. -/
+theorem heatKernel_apply_of_finrank_eq_two (hE : Module.finrank ℝ E = 2) (t : ℝ) (x : E) :
+    heatKernel t x = exp (-‖x‖ ^ 2 / (4 * t)) / (4 * π * t) := by
+  rw [heatKernel_apply, hE, show -((2 : ℕ) : ℝ) / 2 = -1 by norm_num, rpow_neg_one,
+    inv_mul_eq_div]
+
 /-- The heat kernel is positive at every positive time. -/
 theorem heatKernel_pos {t : ℝ} (ht : 0 < t) (x : E) : 0 < heatKernel t x := by
   rw [heatKernel_apply]
