@@ -36,6 +36,8 @@ function with values in a subring `R ⊆ ℂ` containing them again has its valu
 * `ZMod.fourier_val_div_eq_stdAddChar`: the Fourier mode `n` at `j.val / N` on the circle is the
   standard additive character at `j * n`, and `ZMod.val_div_natCast_mem_Icc`: `j.val / N` lies in
   `[0, 1]`.
+* `ZMod.stdAddChar_mul_intCast`: the same identity read from the character,
+  `stdAddChar (j * n) = e(n * (j.val / N))` with `e = Real.fourierChar`.
 * `ZMod.dft_comp_natCast_val`: the transform of a function of the reduction modulo `v ∣ N`.
 * `ZMod.dft_apply_mem`: the transform of an `R`-valued function is `R`-valued when `R` contains
   the `N`-th roots of unity.
@@ -83,6 +85,17 @@ theorem fourier_val_div_eq_stdAddChar (j : ZMod N) (n : ℤ) :
   rw [h]
   push_cast
   congr 1
+  ring
+
+/-- **Integer phase of the standard additive character.** For `j : ZMod N` and an integer `n`,
+`stdAddChar (j * n) = e(n * (j.val / N))`, where `e(t) = exp (2 π i t)` is `Real.fourierChar`. This
+is `fourier_val_div_eq_stdAddChar` with the Fourier mode written as a value of
+`Real.fourierChar`. -/
+theorem stdAddChar_mul_intCast (j : ZMod N) (n : ℤ) :
+    stdAddChar (j * (n : ZMod N)) = (Real.fourierChar ((n : ℝ) * ((j.val : ℝ) / N)) : ℂ) := by
+  rw [← fourier_val_div_eq_stdAddChar, fourier_coe_apply, Real.fourierChar_apply]
+  congr 1
+  push_cast
   ring
 
 /-- The residue representative `j.val / N` lies in the unit interval. -/
