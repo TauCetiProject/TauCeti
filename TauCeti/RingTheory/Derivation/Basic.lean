@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.RingTheory.Derivation.Basic
 import Mathlib.Data.Nat.Choose.Sum
@@ -16,7 +17,8 @@ A derivation vanishes on the image `(n : A)` of a natural number (`Derivation.ma
 numeric literal `(OfNat.ofNat n : A)` with `2 ≤ n` is not syntactically such a cast, so `simp`
 does not apply that lemma to it. This file adds the literal form `Derivation.map_ofNat`, so that
 `simp` differentiates polynomial expressions with numeric coefficients, for instance partial
-derivatives `MvPolynomial.pderiv i (3 * X 0 ^ 2)`.
+derivatives `MvPolynomial.pderiv i (3 * X 0 ^ 2)`. In characteristic `p`, any derivation also
+annihilates `p`-th powers (`Derivation.map_pow_eq_zero_of_charP`).
 
 A derivation differentiates a finite product termwise: `D (∏ i ∈ s, f i)` is the sum over
 `j ∈ s` of `D (f j)` times the product of the other factors. In particular, a derivation `δ`
@@ -48,6 +50,8 @@ A derivation over any scalars `S` which vanishes on the image of `R` is `R`-line
 ## Main results
 
 * `Derivation.map_ofNat`: a derivation vanishes on numeric literals.
+* `Derivation.map_pow_eq_zero_of_charP`: in characteristic `p`, any derivation vanishes on `p`-th
+  powers.
 * `Derivation.leibniz_prod`: the Leibniz rule for finite products.
 * `Derivation.apply_prod_pow_of_apply_eq`: a derivation dual to the `i`-th coordinate
   differentiates a monomial in the coordinates by lowering its `i`-th exponent.
@@ -65,6 +69,7 @@ A derivation over any scalars `S` which vanishes on the image of `R` is `R`-line
 * `Derivation.exists_iterate_smul_eq_zero`: scalar multiples preserve local nilpotence.
 * `Derivation.smulIterCoeff`: the coefficients of the expansion of `(b • D)^[n]`, `b : A`.
 * `Derivation.iterate_smul_apply_eq_sum`: `(b • D)^[n]` as a combination of the `D^[k]`.
+* `Derivation.iterate_smul_apply_eq_add_sum`: the split expansion of `(b • D)^[n]` for `2 ≤ n`.
 * `Derivation.smulIterCoeff_succ_one`: the coefficient of `D` in `(b • D)^[n + 1]`.
 * `Derivation.map_smulIterCoeff`: the coefficients are natural in the ring.
 * `Derivation.leibniz_ringInverse`: the derivative of `Ring.inverse a`.
@@ -86,6 +91,10 @@ variable {R A M : Type*} [CommSemiring R] [CommSemiring A] [AddCommMonoid M] [Al
 @[simp]
 theorem map_ofNat (n : ℕ) [n.AtLeastTwo] : D (no_index (OfNat.ofNat n : A)) = 0 := by
   rw [← Nat.cast_ofNat, map_natCast]
+
+/-- In characteristic `p`, any derivation annihilates `p`-th powers. -/
+theorem map_pow_eq_zero_of_charP {p : ℕ} [CharP A p] (x : A) : D (x ^ p) = 0 := by
+  rw [Derivation.leibniz_pow, ← Nat.cast_smul_eq_nsmul A, CharP.cast_eq_zero, zero_smul]
 
 /-- **Leibniz rule for finite products**: `D (∏ i ∈ s, f i)` is the sum over `j ∈ s` of
 `D (f j)` times the product of the other factors. -/
@@ -292,6 +301,19 @@ theorem iterate_smul_apply_eq_sum (D : Derivation R A A) (b y : A) (n : ℕ) :
     rw [mul_add, Finset.mul_sum, Finset.mul_sum, hshift]
     simp only [mul_assoc]
     ring
+
+/-- The expansion `iterate_smul_apply_eq_sum` for `n ≥ 2`, with its extreme coefficients
+`smulIterCoeff D b n 0 = 0` and `smulIterCoeff D b n n = b ^ n` made explicit. -/
+theorem iterate_smul_apply_eq_add_sum (D : Derivation R A A) (b y : A) {n : ℕ}
+    (hn : 2 ≤ n) : (b • D)^[n] y = b ^ n * D^[n] y + smulIterCoeff D b n 1 * D y +
+      ∑ k ∈ Finset.Ico 2 n, smulIterCoeff D b n k * D^[k] y := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' (by omega : 1 ≤ n)
+  -- Split off the top term `k = n`, then the bottom terms `k = 0` and `k = 1`.
+  rw [iterate_smul_apply_eq_sum, Finset.sum_range_succ, Finset.range_eq_Ico,
+    Finset.sum_eq_sum_Ico_succ_bot (by omega), Finset.sum_eq_sum_Ico_succ_bot (by omega)]
+  simp only [smulIterCoeff_self, smulIterCoeff_succ_zero, zero_mul, zero_add,
+    Function.iterate_one]
+  ring
 
 /-- An element whose derivative is a unit is squarefree: if `a = x * x * y`, then `x` divides
 `D a = x * D (x * y) + x * y * D x`. -/

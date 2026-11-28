@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.Algebra.Polynomial.Monic
 public import Mathlib.Algebra.Polynomial.Reverse
 import Mathlib.Algebra.Polynomial.Degree.Lemmas
+import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import TauCeti.Algebra.Ring.Parity
 import TauCeti.RingTheory.TensorProduct.Maps
 
@@ -63,7 +64,8 @@ to be a ring.
 * `TauCeti.Determinant.algHomDet`: the determinant `det ∘ ρ` of a matrix representation
   `ρ : R →ₐ[A] Matrix n n A`, a `card n`-dimensional determinant with value `det (ρ x)`,
   characteristic polynomial `(ρ x).charpoly` and trace `(ρ x).trace`; conjugate representations
-  have the same determinant (`TauCeti.Determinant.algHomDet_innerAut_comp`).
+  have the same determinant (`AlgHom.algHomDet_comp`), as do
+  representations related by any matrix-algebra endomorphism.
 
 ## References
 
@@ -626,13 +628,16 @@ theorem trace_algHomDet (ρ : R →ₐ[A] Matrix n n A) (x : R) :
   · rw [trace_eq_neg_charpoly_coeff _ Fintype.card_pos, charpoly_algHomDet,
       Matrix.trace_eq_neg_charpoly_coeff]
 
-/-- Conjugate matrix representations have the same determinant: `algHomDet` does not change when
-`ρ` is followed by conjugation by an invertible matrix. -/
+/-- Postcomposing a matrix representation with a matrix-algebra endomorphism preserves its
+determinant. In particular, two matrix splittings of the same algebra over a common coefficient
+ring and of the same matrix degree give the same determinant, with the indices identified if
+needed. -/
 @[simp]
-theorem algHomDet_innerAut_comp (g : GL n A) (ρ : R →ₐ[A] Matrix n n A) :
-    algHomDet ((Matrix.GeneralLinearGroup.innerAut g).toAlgHom.comp ρ) = algHomDet ρ := by
+theorem _root_.AlgHom.algHomDet_comp (σ : AlgHom A (Matrix n n A) (Matrix n n A))
+    (ρ : R →ₐ[A] Matrix n n A) : algHomDet (σ.comp ρ) = algHomDet ρ := by
   ext1
-  simp [toLaw_algHomDet, LinearMap.toPolynomialLaw_comp, PolynomialLaw.comp_assoc]
+  simp only [toLaw_algHomDet, AlgHom.comp_toLinearMap, LinearMap.toPolynomialLaw_comp,
+    PolynomialLaw.comp_assoc, AlgHom.det_comp_toPolynomialLaw]
 
 end AlgHomDet
 

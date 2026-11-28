@@ -95,10 +95,11 @@ theorem measureReal_abs_cdf_sampleCovariance_sub_expected_ge_le_of_indep_row
         (Matrix.isHermitian_sampleCovariance _) : Measure ℝ) x -
       cdf (expectedCovarianceSpectralMeasure hX : Measure ℝ) x|} ≤
       2 * Real.exp (-(t ^ 2) * Fintype.card p / 2) := by
+  let e := Matrix.ofMeasurableEquiv p n 𝕜
   have hy (i : p) : AEMeasurable (fun ω ↦ (X ω).row i) P :=
-    aemeasurable_pi_iff.2 fun _ ↦ Matrix.measurable_apply.comp_aemeasurable hX
+    ((measurable_pi_apply i).comp e.symm.measurable).comp_aemeasurable hX
   have htail := measureReal_abs_cdf_sampleCovariance_sub_expected_ge_le hind hy
-    (F := Matrix.of) (Matrix.ofMeasurableEquiv p n 𝕜).measurable
+    (F := Matrix.of) e.measurable
     (fun i a b hab ↦ Matrix.rank_sub_le_one_of_row_eq (Matrix.of a) (Matrix.of b) i hab)
     x ht
   have hcard : (Fintype.card p : ℝ) ≠ 0 := by exact_mod_cast Fintype.card_ne_zero

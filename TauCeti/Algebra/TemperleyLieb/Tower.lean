@@ -155,7 +155,8 @@ private theorem sandwich_two (x : TemperleyLieb R δ 1) :
     ∃ y : TemperleyLieb R δ 1,
       e δ (Fin.last 0) * strandIncl x * e δ (Fin.last 0) = strandIncl y * e δ (Fin.last 0) := by
   refine ⟨δ • x, ?_⟩
-  rw [← (algEquivOfLeOne δ le_rfl).symm_apply_apply x, algEquivOfLeOne_symm_apply]
+  conv_lhs => rw [eq_algebraMap_aug_of_le_one le_rfl x]
+  conv_rhs => rw [eq_algebraMap_aug_of_le_one le_rfl x]
   simp only [Algebra.algebraMap_eq_smul_one, map_smul, map_one, mul_smul_comm, mul_one,
     smul_mul_assoc, one_mul, e_mul_self, smul_comm δ]
 

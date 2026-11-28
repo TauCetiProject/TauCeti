@@ -1,0 +1,168 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicGeometry.ModularCurve.YOne.Basic
+
+/-!
+# Explicit presentation and smoothness of naive `Y₁(4)`
+
+On an elliptic Tate normal form `Y² + AXY + BY = X³ + BX²` over an arbitrary commutative ring,
+`4 • (0, 0) = 0` holds if and only if `A = 1`
+(`WeierstrassCurve.tateNormalForm_projModelMulBy_four_eq_projModelZero_iff`), while `(0, 0)`,
+`2 • (0, 0)` and `3 • (0, 0)` miss the zero section everywhere. Consequently the naive `Y₁(4)`
+moduli scheme over `ℤ` (`UniversalTate.yOne 4`, representing the naive `[Γ₁(4)]` problem) is
+isomorphic to `Spec ℤ[B, (B(1 - 16B))⁻¹]` (`UniversalTate.yOneFourIso`) and smooth of relative
+dimension `1` over `Spec ℤ` (`UniversalTate.smoothOfRelativeDimension_one_terminal_from_yOne_four`).
+Where `4` (i.e. `2`) is invertible on `B`, naive `[Γ₁(4)]` agrees with the Drinfeld moduli problem
+`[Γ₁(4)]`.
+
+## Main definitions
+
+* `TauCeti.AlgebraicGeometry.UniversalTate.yOneFourIso`: the isomorphism
+  `UniversalTate.yOne 4 ≅ Spec ℤ[B, (B(1 - 16B))⁻¹]` identifying naive `Y₁(4)` over `ℤ`.
+
+## Main results
+
+* `TauCeti.AlgebraicGeometry.UniversalTate.exactOrderOpens_four`: the open exact-order locus for
+  `N = 4` is the whole base, so naive `Y₁(4)` is a closed subscheme of `Spec ℤ[A, B][Δ⁻¹]`
+  (`UniversalTate.isClosedImmersion_yOneι_four`) and affine (`UniversalTate.isAffine_yOne_four`).
+* `TauCeti.AlgebraicGeometry.UniversalTate.yOneFourIso_hom_SpecMap` and
+  `TauCeti.AlgebraicGeometry.UniversalTate.yOneFourIso_inv_yOneι`: `yOneFourIso` identifies
+  `yOneι 4` with the spectrum of the specialization map `A = 1`.
+* `TauCeti.AlgebraicGeometry.UniversalTate.smoothOfRelativeDimension_one_terminal_from_yOne_four`:
+  naive `Y₁(4)` over `ℤ` is smooth of relative dimension `1` over `Spec ℤ`.
+
+## References
+
+* D. S. Kubert, *Universal bounds on the torsion of elliptic curves*, Proc. London Math. Soc. (3)
+  33 (1976), 193–237, Table 3 (`X₁(4)`).
+* D. Loeffler, *Modular Curves*, lecture notes, §3.3.
+-/
+
+public section
+
+universe u
+
+open CategoryTheory Limits AlgebraicGeometry WeierstrassCurve MonObj
+
+namespace TauCeti.AlgebraicGeometry
+
+namespace UniversalTate
+
+/-- On the universal Tate normal form, `(0, 0)`, `2 • (0, 0)` and `3 • (0, 0)` miss the zero
+section at every point of the base, so `exactOrderOpens 4` is the whole base. -/
+@[simp]
+theorem exactOrderOpens_four : exactOrderOpens.{u} 4 = ⊤ := by
+  rw [eq_top_iff]
+  intro t _
+  rw [mem_exactOrderOpens_iff]
+  intro k hk0 hk4 heq
+  rw [pointHom_pow_left_apply_eq_zero_iff] at heq
+  interval_cases k <;> simp only [Nat.cast_one, Nat.cast_ofNat] at heq
+  · rw [projModelMulBy_one, Category.comp_id] at heq
+    exact WeierstrassCurve.UniversalTate.point_ne_projModelZero t heq
+  · exact WeierstrassCurve.UniversalTate.point_projModelMulBy_two_ne_projModelZero t heq
+  · exact WeierstrassCurve.UniversalTate.point_projModelMulBy_three_ne_projModelZero t heq
+
+/-- Over `ℤ`, the immersion from naive `Y₁(4)` into `Spec ℤ[A, B][Δ⁻¹]` is a closed
+immersion: since `(0, 0)`, `2 • (0, 0)`, and `3 • (0, 0)` miss the zero section everywhere,
+`yOne 4` is isomorphic over `Spec ℤ[A, B][Δ⁻¹]` to `torsionLocus 4`. -/
+instance isClosedImmersion_yOneι_four : IsClosedImmersion (yOneι.{u} 4) := by
+  obtain ⟨f, hf⟩ := (exists_comp_torsionLocusι_eq_iff _ 4).mpr
+    ((exists_comp_yOneι_eq_iff (yOneι.{u} 4) 4).mp ⟨𝟙 _, Category.id_comp _⟩).1
+  obtain ⟨g, hg⟩ := (exists_comp_yOneι_eq_iff (torsionLocusι.{u} 4) 4).mpr
+    ⟨(exists_comp_torsionLocusι_eq_iff _ 4).mp ⟨𝟙 _, Category.id_comp _⟩, fun _ ↦ by simp⟩
+  have hmk : Subobject.mk (yOneι.{u} 4) = Subobject.mk (torsionLocusι.{u} 4) :=
+    le_antisymm (Subobject.mk_le_mk_of_comm f hf) (Subobject.mk_le_mk_of_comm g hg)
+  rw [← Subobject.ofMkLEMk_comp hmk.le, ← Subobject.isoOfMkEqMk_hom (h := hmk)]
+  infer_instance
+
+/-- Naive `Y₁(4)` over `ℤ` is affine. -/
+instance isAffine_yOne_four : IsAffine (yOne.{u} 4) :=
+  isAffine_of_isAffineHom (yOneι.{u} 4)
+
+-- Any morphism from an affine scheme `X` to `Spec ℤ[A, B][Δ⁻¹]` killing `4 • (0, 0)` factors
+-- through `Spec ℤ[B, (B(1 - 16B))⁻¹]`.
+private theorem exists_toSpec_of_isAffine {X : Scheme.{u}} [IsAffine X]
+    (f : X ⟶ Spec (.of (ULift.{u} WeierstrassCurve.UniversalTate.Ring)))
+    (hf : f ≫ (pointHom.{u} ^ 4).left = f ≫ curveGeom.zero) :
+    ∃ hom : X ⟶ Spec (.of (ULift.{u} UniversalGammaOneFour.Ring)),
+      hom ≫ Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift) = f := by
+  obtain ⟨φ, hφ⟩ := Spec.map_surjective (X.isoSpec.inv ≫ f)
+  have hN : Spec.map φ ≫ (pointHom.{u} ^ 4).left = Spec.map φ ≫ curveGeom.zero := by
+    rw [hφ, Category.assoc, hf, Category.assoc]
+  obtain ⟨ψ, hcomp, -⟩ :=
+    (UniversalGammaOneFour.existsUnique_comp_toUniversalTate_ulift_iff φ.hom).mpr
+      ((specMap_comp_pointHom_pow_four_eq_zero_iff φ.hom).mp hN)
+  refine ⟨X.isoSpec.hom ≫ Spec.map (CommRingCat.ofHom ψ), ?_⟩
+  rw [Category.assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp, hcomp, CommRingCat.ofHom_hom,
+    hφ, Iso.hom_inv_id_assoc]
+
+private theorem exists_yOneFourToSpec :
+    ∃ hom : yOne.{u} 4 ⟶ Spec (.of (ULift.{u} UniversalGammaOneFour.Ring)),
+      hom ≫ Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift) =
+        yOneι.{u} 4 :=
+  exists_toSpec_of_isAffine (yOneι.{u} 4)
+    (((exists_comp_yOneι_eq_iff (yOneι.{u} 4) 4).mp ⟨𝟙 _, Category.id_comp _⟩).1)
+
+private theorem exists_specToYOneFour :
+    ∃ inv : Spec (.of (ULift.{u} UniversalGammaOneFour.Ring)) ⟶ yOne.{u} 4,
+      inv ≫ yOneι 4 = Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift) :=
+  (exists_comp_yOneι_eq_iff _ 4).mpr
+    ⟨(specMap_comp_pointHom_pow_four_eq_zero_iff _).mpr
+        UniversalGammaOneFour.toUniversalTate_ulift_a₁,
+      fun _ ↦ by simp⟩
+
+/-- The specialization map `A = 1` induces a closed immersion
+`Spec ℤ[B, (B(1 - 16B))⁻¹] ⟶ Spec ℤ[A, B][Δ⁻¹]`. -/
+instance isClosedImmersion_specMap_toUniversalTate_ulift :
+    IsClosedImmersion
+      (Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift.{u, u})) :=
+  IsClosedImmersion.spec_of_surjective _ UniversalGammaOneFour.surjective_toUniversalTate_ulift
+
+private theorem subobject_mk_yOneι_four :
+    Subobject.mk (yOneι.{u} 4) =
+      Subobject.mk
+        (Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift.{u, u})) :=
+  le_antisymm
+    (Subobject.mk_le_mk_of_comm exists_yOneFourToSpec.choose exists_yOneFourToSpec.choose_spec)
+    (Subobject.mk_le_mk_of_comm exists_specToYOneFour.choose exists_specToYOneFour.choose_spec)
+
+/-- **Naive `Y₁(4)` over `ℤ` is `Spec ℤ[B, (B(1 - 16B))⁻¹]`** (agreeing with Drinfeld `Y₁(4)`
+where `4` is invertible). -/
+noncomputable def yOneFourIso :
+    yOne.{u} 4 ≅ Spec (.of (ULift.{u} UniversalGammaOneFour.Ring)) :=
+  Subobject.isoOfMkEqMk _ _ subobject_mk_yOneι_four
+
+/-- Under `yOneFourIso.hom`, the specialization map `A = 1` recovers the closed immersion
+`yOneι 4 : yOne 4 ⟶ Spec ℤ[A, B][Δ⁻¹]` of naive `Y₁(4)`. -/
+@[reassoc (attr := simp)]
+theorem yOneFourIso_hom_SpecMap :
+    yOneFourIso.{u}.hom ≫
+        Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift) =
+      yOneι.{u} 4 :=
+  Subobject.ofMkLEMk_comp subobject_mk_yOneι_four.le
+
+/-- Under `yOneFourIso.inv`, the closed immersion `yOneι 4` is the spectrum of the specialization
+map `A = 1`. -/
+@[reassoc (attr := simp)]
+theorem yOneFourIso_inv_yOneι :
+    yOneFourIso.{u}.inv ≫ yOneι.{u} 4 =
+      Spec.map (CommRingCat.ofHom UniversalGammaOneFour.toUniversalTate.ulift) :=
+  Subobject.ofMkLEMk_comp subobject_mk_yOneι_four.ge
+
+/-- Naive `Y₁(4)` over `ℤ` is smooth of relative dimension `1` over `Spec ℤ`. -/
+instance smoothOfRelativeDimension_one_terminal_from_yOne_four :
+    SmoothOfRelativeDimension 1 (terminal.from (yOne.{u} 4)) := by
+  rw [terminal.hom_ext (terminal.from (yOne.{u} 4))
+    (yOneFourIso.{u}.hom ≫ terminal.from _)]
+  exact (MorphismProperty.cancel_left_of_respectsIso (@SmoothOfRelativeDimension 1)
+    yOneFourIso.{u}.hom _).mpr inferInstance
+
+end UniversalTate
+
+end TauCeti.AlgebraicGeometry

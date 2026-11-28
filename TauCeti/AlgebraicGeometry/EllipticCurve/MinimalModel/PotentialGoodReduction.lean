@@ -14,7 +14,7 @@ import TauCeti.AlgebraicGeometry.Curves.StableReduction.DVRExtension.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel
 import TauCeti.AlgebraicGeometry.EllipticCurve.Legendre
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
-import TauCeti.RingTheory.Valuation.ValuationRing
+import TauCeti.RingTheory.Valuation.ValuationRing.Basic
 
 /-!
 # Potential good reduction

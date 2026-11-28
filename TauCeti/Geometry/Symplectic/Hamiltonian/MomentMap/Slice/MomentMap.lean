@@ -63,6 +63,8 @@ No moment map on `M`, no closedness of `σ` and no compactness of `H` is used.
 
 ## Main definitions
 
+* `TauCeti.SmoothTwoForm.IsNondegenerate.isotropySkewAdjoint hσ hσG`: the linear map
+  `𝔥 → sp(T_p M, σ_p)`, `ξ ↦ A_ξ`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticSliceIsotropyAction hσ hσG`: the linear map
   `𝔥 → sp(V, ω_V)`, `ξ ↦ ([u] ↦ [A_ξ u])`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticSliceMomentMap hσ hσG`: the slice moment map
@@ -173,8 +175,8 @@ theorem isotropyLinearization_apply_mem_orthogonal
   exact h
 
 /-- The isotropy algebra of `p` acting on `T_p M` by the skew-adjoint endomorphisms `A_ξ` of
-`σ_p`. -/
-private def isotropySkewAdjoint :
+`σ_p`, where `A_ξ` is the generator of `t ↦ d(exp (t ξ))_p`. -/
+def isotropySkewAdjoint :
     (InfinitesimalAction.fundamental I G I' M).isotropy p →ₗ[ℝ]
       skewAdjointLieSubalgebra (hσ.symplecticFormAt p).toBilinForm :=
   LinearMap.codRestrict (hσ.symplecticFormAt p).toBilinForm.skewAdjointSubmodule
@@ -183,11 +185,20 @@ private def isotropySkewAdjoint :
       (LinearMap.mem_skewAdjointSubmodule _).2 fun u v ↦
         (hσ.symplecticFormAt_isotropyLinearization_apply hσG ξ u v).trans (map_neg _ _).symm
 
-private theorem coe_isotropySkewAdjoint_apply
+/-- The isotropy algebra acts on `T_p M` by `u ↦ A_ξ u`. -/
+@[simp]
+theorem coe_isotropySkewAdjoint_apply
     (ξ : (InfinitesimalAction.fundamental I G I' M).isotropy p) (u : TangentSpace I' p) :
     (isotropySkewAdjoint hσ hσG ξ : Module.End ℝ (TangentSpace I' p)) u =
       isotropyLinearization I' p ξ u :=
   LinearMap.congr_fun (LinearMap.codRestrict_apply _ _ ξ) u
+
+/-- The endomorphism of `T_p M` by which `ξ` acts is the linearized isotropy action `A_ξ`. -/
+theorem coe_isotropySkewAdjoint
+    (ξ : (InfinitesimalAction.fundamental I G I' M).isotropy p) :
+    (isotropySkewAdjoint hσ hσG ξ : Module.End ℝ (TangentSpace I' p)) =
+      ((isotropyLinearization I' p ξ : E' →ₗ[ℝ] E') : Module.End ℝ (TangentSpace I' p)) :=
+  LinearMap.ext (coe_isotropySkewAdjoint_apply hσ hσG ξ)
 
 /-! ### The isotropy algebra on the symplectic slice -/
 

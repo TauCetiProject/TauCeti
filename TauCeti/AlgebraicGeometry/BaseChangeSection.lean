@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
+public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 public import Mathlib.AlgebraicGeometry.Limits
 public import TauCeti.CategoryTheory.Comma.Over
 import Mathlib.AlgebraicGeometry.PullbackCarrier
@@ -60,6 +61,15 @@ lemma graphSection_fst {T : Over S} (x : T ⟶ Over.mk f) :
 lemma graphSection_snd {T : Over S} (x : T ⟶ Over.mk f) :
     graphSection x ≫ pullback.snd T.hom f = x.left :=
   pullback.lift_snd _ _ _
+
+/-- A graph followed by a change of parameter records the parameter map and the original point
+as the two components of the resulting morphism to the fibre product. -/
+@[reassoc]
+lemma graphSection_comp_pullback_map_eq_lift {T T' : Over S}
+    (x : T ⟶ Over.mk f) (φ : T ⟶ T') :
+    graphSection x ≫ ((Over.pullback f).map φ).left =
+      (CartesianMonoidalCategory.lift φ x).left := by
+  apply pullback.hom_ext <;> simp [graphSection, Over.lift_left]
 
 /-- Graphs commute with base change: the graph of `φ ≫ x` followed by the induced morphism
 `T' ×_S X ⟶ T ×_S X` is `φ` followed by the graph of `x`. -/
@@ -118,6 +128,14 @@ lemma baseChangeSection_fst (T : Over S) :
 lemma baseChangeSection_snd (T : Over S) :
     baseChangeSection f x₀ hx₀ T ≫ pullback.snd T.hom f = T.hom ≫ x₀ :=
   graphSection_snd _
+
+open MonoidalCategory CartesianMonoidalCategory in
+/-- The base change of a section `x` to `T` pairs the identity of `T` with the composite
+`T.left ⟶ S ⟶ Y.left`, using the cartesian product in `Over S`. -/
+lemma baseChangeSection_eq_lift_left {Y : Over S} (x : 𝟙_ (Over S) ⟶ Y) (T : Over S) :
+    baseChangeSection Y.hom x.left (x.w.trans Over.tensorUnit_hom) T =
+      (lift (𝟙 T) (toUnit T ≫ x)).left := by
+  apply pullback.hom_ext <;> simp
 
 /-- Over a scheme with at most one point, a point of a base change that projects into the image
 of a section is the value of the base-changed section. -/

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
 public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
-public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering
+public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Covering.Basic
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SimplyConnected
 public import TauCeti.Topology.Algebra.QuadraticForm.RealSpecialOrthogonal
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Covering

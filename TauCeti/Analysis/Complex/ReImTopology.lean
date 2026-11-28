@@ -24,7 +24,8 @@ open half-plane `{a < im}` (`TauCeti.setOfPred_le_im_mem_nhds`). A relatively op
 (`TauCeti.interior_inter_setOf_im_nonneg`), which as an open set is the upper half of `Ω`
 (`TopologicalSpace.Opens.interior_inter_setOf_im_nonneg_eq_upperHalf`), and every point of
 `Ω ∩ {0 ≤ im}` is a limit of interior points
-(`TauCeti.subset_closure_interior_inter_setOf_im_nonneg`). The set `Ω ∩ {0 ≤ im}` is also the
+(`TauCeti.subset_closure_interior_inter_setOf_im_nonneg`), also after removing any one point
+(`TauCeti.subset_closure_inter_setOf_im_nonneg_diff_singleton`). The set `Ω ∩ {0 ≤ im}` is also the
 closed upper part of a conjugation-invariant open set
 (`TauCeti.exists_isOpen_mapsTo_conj_inter_setOf_im_nonneg_eq`), and a compact subset of a
 conjugation-invariant open set lies in a conjugation-invariant open set with compact closure inside
@@ -35,6 +36,12 @@ the closure of `U ∩ {0 ≤ im}` lies in `Ω ∩ {0 ≤ im}`
 axis (`TauCeti.inter_setOf_im_nonneg_induction`). A function continuous on `Ω ∩ {0 ≤ im}` and
 zero on `Ω ∩ ℝ` is uniformly small near the axis on compact sets
 (`TauCeti.exists_forall_norm_lt_of_im_lt`).
+
+Vertical approaches `t ↦ x ± t * I` along `𝓝[>] 0` map into the open upper and lower half-plane
+neighbourhood filters at `x : ℝ` (`Real.tendsto_ofReal_add_mul_I_nhdsWithin_im_pos`,
+`Real.tendsto_ofReal_sub_mul_I_nhdsWithin_im_neg`), and complex conjugation maps the open upper
+half-plane neighbourhood filter at `z : ℂ` into the open lower half-plane neighbourhood filter at
+`conj z` (`Complex.tendsto_conj_nhdsWithin_im_pos`).
 -/
 
 public noncomputable section
@@ -98,6 +105,16 @@ theorem subset_closure_interior_inter_setOf_im_nonneg {Ω : Set ℂ} (hΩ : IsOp
   rw [interior_inter_setOf_im_nonneg hΩ]
   exact hΩ.inter_closure ⟨hx.1, by rw [Complex.closure_setOfPred_lt_im]; exact hx.2⟩
 
+/-- For `Ω` open, removing a point `x` from `Ω ∩ {0 ≤ im}` does not change its closure: every
+point of `Ω ∩ {0 ≤ im}`, `x` included, is a limit of points of `(Ω ∩ {0 ≤ im}) \ {x}`. -/
+theorem subset_closure_inter_setOf_im_nonneg_diff_singleton {Ω : Set ℂ} (hΩ : IsOpen Ω) (x : ℂ) :
+    Ω ∩ {z : ℂ | 0 ≤ z.im} ⊆ closure ((Ω ∩ {z : ℂ | 0 ≤ z.im}) \ {x}) := by
+  refine (subset_closure_interior_inter_setOf_im_nonneg hΩ).trans
+    (closure_minimal ?_ isClosed_closure)
+  -- The interior is open, and the complement of a point is dense in it.
+  exact ((dense_compl_singleton x).open_subset_closure_inter isOpen_interior).trans
+    (closure_mono fun z hz ↦ ⟨interior_subset hz.1, hz.2⟩)
+
 /-- **A conjugation-invariant open set with the same closed upper part.** For `Ω` open, the open
 set `Ω' = {z | re z + i |im z| ∈ Ω}` is invariant under conjugation and has the same closed upper
 part `Ω ∩ {0 ≤ im}` as `Ω`. -/
@@ -156,6 +173,43 @@ theorem inter_setOf_im_nonneg_induction {Ω : Opens ℂ} (P : Set ℂ → Prop)
         fun w hw => ⟨hw.1, hw.2.2⟩⟩, hbd z.re r hr hrΩ⟩
 
 end TauCeti
+
+namespace Real
+
+/-- Approaching a real point `x` vertically from above along `t ↦ x + t * I` (`t → 0+`) maps into
+the open upper half-plane neighbourhood filter at `x`. -/
+theorem tendsto_ofReal_add_mul_I_nhdsWithin_im_pos (x : ℝ) :
+    Filter.Tendsto (fun t : ℝ ↦ (x : ℂ) + t * Complex.I) (𝓝[>] 0) (𝓝[{z : ℂ | 0 < z.im}] x) := by
+  have hcont : Continuous fun t : ℝ ↦ (x : ℂ) + t * Complex.I :=
+    continuous_const.add (Complex.continuous_ofReal.mul continuous_const)
+  simpa using (hcont.continuousWithinAt (s := Set.Ioi 0) (x := 0)).tendsto_nhdsWithin
+    fun t ht ↦ by simpa using ht
+
+end Real
+
+namespace Complex
+
+open scoped ComplexConjugate in
+/-- Complex conjugation maps the open upper half-plane neighbourhood filter at `z` into the open
+lower half-plane neighbourhood filter at `conj z`. -/
+theorem tendsto_conj_nhdsWithin_im_pos (z : ℂ) :
+    Filter.Tendsto (conj : ℂ → ℂ) (𝓝[{w : ℂ | 0 < w.im}] z)
+      (𝓝[{w : ℂ | w.im < 0}] (conj z)) :=
+  Complex.continuous_conj.continuousWithinAt.tendsto_nhdsWithin fun w hw ↦ by simpa using hw
+
+end Complex
+
+namespace Real
+
+/-- Approaching a real point `x` vertically from below along `t ↦ x - t * I` (`t → 0+`) maps into
+the open lower half-plane neighbourhood filter at `x`. -/
+theorem tendsto_ofReal_sub_mul_I_nhdsWithin_im_neg (x : ℝ) :
+    Filter.Tendsto (fun t : ℝ ↦ (x : ℂ) - t * Complex.I) (𝓝[>] 0) (𝓝[{z : ℂ | z.im < 0}] x) := by
+  simpa [Function.comp_def, sub_eq_add_neg] using
+    (Complex.tendsto_conj_nhdsWithin_im_pos (x : ℂ)).comp
+      (tendsto_ofReal_add_mul_I_nhdsWithin_im_pos x)
+
+end Real
 
 /-- The interior of the half-disc `Ω ∩ {0 ≤ im}`, as an open set, is the upper half of `Ω`. -/
 theorem TopologicalSpace.Opens.interior_inter_setOf_im_nonneg_eq_upperHalf (Ω : Opens ℂ) :

@@ -15,6 +15,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
 public import TauCeti.Geometry.Symplectic.Liouville.Linear
 public import TauCeti.Geometry.Symplectic.Prod.Skew
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+import TauCeti.Geometry.Symplectic.JHolomorphic.ComplexDifferentiable
 import TauCeti.Geometry.Symplectic.JHolomorphic.Prod.Skew
 import TauCeti.Analysis.InnerProductSpace.TwoDim
 import TauCeti.Geometry.Symplectic.CompatibleMetric
@@ -52,11 +53,15 @@ It is `C^n` wherever `ν` and `μ` are (`TauCeti.contDiffAt_normalModelStructure
   (`TauCeti.isJHolomorphicAt_fst_normalModelStructure`,
   `TauCeti.isJHolomorphic_fst_normalModelStructure`,
   `TauCeti.IsJHolomorphicAt.fst_of_normalModelStructure`,
+  `TauCeti.IsJHolomorphicAt.differentiableAt_fst_of_normalModelStructure`,
   `TauCeti.isJHolomorphic_prodMk_right_normalModelStructure`); a map into a single fibre is
   `J_N`-holomorphic exactly when it is holomorphic into `ℂ`
   (`TauCeti.isJHolomorphicAt_prodMk_right_normalModelStructure_iff`,
   `TauCeti.isJHolomorphic_prodMk_right_normalModelStructure_iff`);
-* the graph of a section `s` is `J_N`-holomorphic exactly when `s` is differentiable and
+* a curve `t ↦ (f t, v t)` parametrized by a disc is `J_N`-holomorphic exactly when `f` is
+  holomorphic, `v` is differentiable and `∂bar v + conj f' (ν(f) v + μ(f) conj v) = 0`
+  (`TauCeti.isJHolomorphicAt_prodMk_normalModelStructure_iff`); in particular the graph of a
+  section `s` is `J_N`-holomorphic exactly when `s` is differentiable and
   `∂bar s + ν s + μ conj s = 0` (`TauCeti.isJHolomorphicAt_graph_normalModelStructure_iff`,
   `TauCeti.isJHolomorphic_graph_normalModelStructure_iff`), where
   `∂bar s = TauCeti.conjWirtingerDeriv s z 1`;
@@ -239,6 +244,67 @@ theorem isJHolomorphic_prodMap_id_smul_normalModelStructure (a : ℝ) :
       (Prod.map id (a • ·)) :=
   (isJHolomorphic_iff _ _ _).2 (isJHolomorphicAt_prodMap_id_smul_normalModelStructure a)
 
+/-- The projection to the base of a curve that is `J_N`-holomorphic at `y`, for the standard
+structure on the source, is complex differentiable at `y`. -/
+theorem IsJHolomorphicAt.differentiableAt_fst_of_normalModelStructure {u : ℂ → ℂ × ℂ} {y : ℂ}
+    (hu : IsJHolomorphicAt (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ)
+      (normalModelStructure ν μ) u y) :
+    DifferentiableAt ℂ (fun y ↦ (u y).1) y :=
+  isConstStructureJHolomorphicAt_ofComplexModule_iff.1
+    ((isJHolomorphicAt_constStructure_iff _ _ _ _).1 hu.fst_of_normalModelStructure)
+
+/-- **Holomorphic curves in the normal model.** A curve `t ↦ (f t, v t)`, parametrized by an
+open set of `ℂ` with its standard structure, is `J_N`-holomorphic at `t` exactly when its base
+component `f` is holomorphic at `t`, its normal component `v` is differentiable at `t`, and `v`
+solves the normal Cauchy–Riemann equation pulled back by `f` there:
+
+`∂bar v + conj f' (ν(f) v + μ(f) conj v) = 0`.
+
+At a critical point of `f` the equation reduces to `∂bar v = 0`. For `f` the identity this is the
+equation `∂bar s + ν s + μ conj s = 0` of a `J_N`-holomorphic section
+(`TauCeti.isJHolomorphicAt_graph_normalModelStructure_iff`). -/
+theorem isJHolomorphicAt_prodMk_normalModelStructure_iff {f v : ℂ → ℂ} {t : ℂ} :
+    IsJHolomorphicAt (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ) (normalModelStructure ν μ)
+        (fun t ↦ (f t, v t)) t ↔
+      DifferentiableAt ℂ f t ∧ DifferentiableAt ℝ v t ∧
+        conjWirtingerDeriv v t 1 + conj (deriv f t) * (ν (f t) * v t + μ (f t) * conj (v t)) =
+          0 := by
+  -- for holomorphic `f`, complex linearity of the derivative is one complex identity
+  have key (hf : DifferentiableAt ℂ f t) :
+      IsComplexLinearMap (AlmostComplexStructure.ofComplexModule ℂ)
+          (normalModelStructure ν μ (f t, v t))
+          ((fderiv ℝ f t).prod (fderiv ℝ v t) : ℂ →L[ℝ] ℂ × ℂ).toLinearMap ↔
+        conjWirtingerDeriv v t 1 + conj (deriv f t) * (ν (f t) * v t + μ (f t) * conj (v t)) =
+          0 := by
+    have hfξ (ξ : ℂ) : fderiv ℝ f t ξ = ξ * deriv f t := by
+      rw [hf.fderiv_restrictScalars ℝ, ContinuousLinearMap.coe_restrictScalars',
+        ← toSpanSingleton_deriv]
+      simp
+    rw [isComplexLinearMap_iff_apply]
+    simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.prod_apply,
+      AlmostComplexStructure.ofComplexModule_apply, normalModelStructure_apply, hfξ,
+      fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv (f := v), smul_eq_mul,
+      Prod.mk.injEq, map_mul, conj_I]
+    constructor
+    · intro h
+      have h₁ := (h 1).2
+      simp only [map_one, one_mul] at h₁
+      linear_combination (I / 2) * h₁ +
+        (conjWirtingerDeriv v t 1 + conj (deriv f t) * (ν (f t) * v t + μ (f t) * conj (v t))) *
+          I_sq
+    · intro h ξ
+      exact ⟨by ring, by linear_combination (-2 * I * conj ξ) * h⟩
+  constructor
+  · intro h
+    have hf : DifferentiableAt ℂ f t := h.differentiableAt_fst_of_normalModelStructure
+    have hv : DifferentiableAt ℝ v t := h.differentiableAt.snd
+    obtain ⟨L, hL, hlin⟩ := (isJHolomorphicAt_iff _ _ _ _).1 h
+    rw [hL.unique ((hf.restrictScalars ℝ).hasFDerivAt.prodMk hv.hasFDerivAt)] at hlin
+    exact ⟨hf, hv, (key hf).1 hlin⟩
+  · rintro ⟨hf, hv, heq⟩
+    exact isJHolomorphicAt_of_hasFDerivAt
+      ((hf.restrictScalars ℝ).hasFDerivAt.prodMk hv.hasFDerivAt) ((key hf).2 heq)
+
 /-- **Holomorphic sections are the kernel of the normal operator.** A section `s` has
 `J_N`-holomorphic graph at `z` exactly when it is differentiable at `z` and solves the real
 Cauchy–Riemann equation `∂bar s + ν s + μ conj s = 0` there. -/
@@ -246,30 +312,8 @@ theorem isJHolomorphicAt_graph_normalModelStructure_iff {s : ℂ → ℂ} {z : �
     IsJHolomorphicAt (fun _ ↦ AlmostComplexStructure.ofComplexModule ℂ) (normalModelStructure ν μ)
         (fun z ↦ (z, s z)) z ↔
       DifferentiableAt ℝ s z ∧ conjWirtingerDeriv s z 1 + ν z * s z + μ z * conj (s z) = 0 := by
-  -- complex linearity of the graph derivative reduces to one complex identity in `ξ`
-  have key : ∀ ξ : ℂ, (fderiv ℝ s z (I * ξ) =
-      I * fderiv ℝ s z ξ + 2 * I * (ν z * s z + μ z * conj (s z)) * conj ξ) ↔
-      2 * I * conj ξ * (conjWirtingerDeriv s z 1 + ν z * s z + μ z * conj (s z)) = 0 := by
-    intro ξ
-    rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv,
-      fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv]
-    simp only [smul_eq_mul, map_mul, conj_I]
-    constructor <;> intro h <;> linear_combination (-1 : ℂ) * h
-  have hlin : IsComplexLinearMap (AlmostComplexStructure.ofComplexModule ℂ)
-        (AlmostComplexStructure.ofComplexModule ℂ)
-        ((fderiv ℝ s z : ℂ →ₗ[ℝ] ℂ) - normalModelShear (ν z * s z + μ z * conj (s z))) ↔
-      ∀ ξ : ℂ, fderiv ℝ s z (I * ξ) =
-        I * fderiv ℝ s z ξ + 2 * I * (ν z * s z + μ z * conj (s z)) * conj ξ := by
-    rw [isComplexLinearMap_iff_apply]
-    refine forall_congr' fun ξ ↦ ?_
-    simp only [normalModelShear, AlmostComplexStructure.ofComplexModule_apply,
-      LinearMap.sub_apply, LinearMap.smul_apply, ContinuousLinearMap.coe_coe,
-      AlgEquiv.toLinearMap_apply, Complex.conjAe_coe, smul_eq_mul, map_mul, conj_I]
-    constructor <;> intro h <;> linear_combination h
-  refine (AlmostComplexStructure.isJHolomorphicAt_graph_skewProd_iff (J₁ := fun _ ↦ _)).trans
-    (and_congr_right fun _ ↦ hlin.trans ⟨fun h ↦ ?_, fun h ξ ↦ (key ξ).2 ?_⟩)
-  · simpa using (key 1).1 (h 1)
-  · rw [h, mul_zero]
+  rw [isJHolomorphicAt_prodMk_normalModelStructure_iff (f := fun z ↦ z)]
+  simp [add_assoc]
 
 /-- **`J_N`-holomorphic sections are the solutions of the normal operator.** The graph of `s` is
 `J_N`-holomorphic exactly when `s` is differentiable and solves `∂bar s + ν s + μ conj s = 0`

@@ -34,6 +34,8 @@ This file proves the following facts about submodules and localized modules:
   Mathlib's `multiple_mem_span_of_mem_localization_span`.
 * `Submodule.isLocalizedModule_subtype_of_span_eq_top`: when `F` is the localization of `R` at
   `S`, the inclusion of an `R`-submodule spanning an `F`-module is a localization at `S`.
+* `Submodule.isBaseChange_subtype_of_span_eq_top`: the same inclusion exhibits the ambient
+  module as the scalar extension of the submodule to `F`.
 -/
 
 public section
@@ -108,6 +110,15 @@ theorem isLocalizedModule_subtype_of_span_eq_top (hM : span F (M : Set E) = ⊤)
     (by simpa [localized'_eq_span] using hM)).restrictScalars R
   have h : e.toLinearMap ∘ₗ M.toLocalized' F S LinearMap.id = M.subtype := by ext; simp [e]
   exact h ▸ IsLocalizedModule.of_linearEquiv S _ e
+
+variable (M) in
+/-- Over a localization `F` of `R`, a spanning submodule exhibits the ambient module
+as its scalar extension to `F`. -/
+theorem isBaseChange_subtype_of_span_eq_top (S : Submonoid R) [IsLocalization S F]
+    (hM : span F (M : Set E) = ⊤) :
+    IsBaseChange F M.subtype :=
+  have := M.isLocalizedModule_subtype_of_span_eq_top S hM
+  IsLocalizedModule.isBaseChange S F M.subtype
 
 end ClearDenominators
 
