@@ -16,6 +16,7 @@ public import TauCeti.RepresentationTheory.AsModule
 public import TauCeti.RepresentationTheory.OfMulAction
 public import TauCeti.RepresentationTheory.WeightSpace
 public import TauCeti.GroupTheory.GroupAction.PiTransport
+public import TauCeti.Topology.Algebra.Group.LocallyConstant
 
 /-!
 # Coinduction: exactness and coextension of scalars
@@ -43,10 +44,8 @@ Mathlib's coinduced action is evaluated by `Representation.coind_apply_coe_apply
 `(h • f) h₁ = f (h₁ * h)`. Coinduction along an open map whose image has finite index preserves
 representations with open kernel (`Representation.isOpen_ker_coind`): the kernel of the
 coinduced action contains the open set of `x` with `t x t⁻¹ ∈ φ(ker ρ)` for `t` in a finite set of
-coset representatives. An element stabilizes a coinduced function exactly when the function is
-invariant under right translation by it (`Representation.mem_stabilizer_coind_iff`), so a
-coinduced function with open stabilizer is locally constant
-(`Representation.isLocallyConstant_val_of_isOpen_stabilizer_coind`).
+coset representatives. The stabilizer of a coinduced function is its right-translation
+stabilizer `TauCeti.rightTranslationStabilizer` (`Representation.stabilizer_coind_eq`).
 
 ## References
 
@@ -170,22 +169,13 @@ section Stabilizer
 variable {k G H V : Type*} [Semiring k] [Monoid G] [Group H] [AddCommMonoid V] [Module k V]
   {φ : G →* H} {ρ : Representation k G V}
 
-/-- An element `h` stabilizes a coinduced function `f` exactly when `f` is invariant under right
-translation by `h`. -/
-theorem mem_stabilizer_coind_iff {f : coindV φ ρ} {h : H} :
-    h ∈ (coind φ ρ).stabilizer f ↔ ∀ h₁, f.val (h₁ * h) = f.val h₁ := by
-  simp only [mem_stabilizer, Subtype.ext_iff, funext_iff, coind_apply_coe_apply]
-
-/-- A coinduced function whose stabilizer is open is locally constant: it is constant on the open
-neighbourhood `h₁ U` of each point `h₁`, where `U` is its stabilizer. -/
-theorem isLocallyConstant_val_of_isOpen_stabilizer_coind [TopologicalSpace H]
-    [SeparatelyContinuousMul H] {f : coindV φ ρ}
-    (hf : IsOpen ((coind φ ρ).stabilizer f : Set H)) : IsLocallyConstant f.val := by
-  refine (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦ ?_
-  have hU : IsOpen ((x⁻¹ * ·) ⁻¹' ((coind φ ρ).stabilizer f : Set H)) :=
-    hf.preimage (continuous_const_mul _)
-  filter_upwards [hU.mem_nhds (by simp [one_mem])] with y hy
-  simpa using mem_stabilizer_coind_iff.1 hy x
+/-- The stabilizer of a coinduced function `f` is its right-translation stabilizer: `h` stabilizes
+`f` exactly when `f (h₁ * h) = f h₁` for every `h₁`. -/
+theorem stabilizer_coind_eq (f : coindV φ ρ) :
+    (coind φ ρ).stabilizer f = TauCeti.rightTranslationStabilizer f.val := by
+  ext h
+  simp only [mem_stabilizer, TauCeti.mem_rightTranslationStabilizer, Subtype.ext_iff, funext_iff,
+    coind_apply_coe_apply]
 
 end Stabilizer
 

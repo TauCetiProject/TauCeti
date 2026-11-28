@@ -148,14 +148,16 @@ theorem mem_algebraicModularForms_iff
     φ ∈ V.algebraicModularForms ρ ↔
       ∃ U : OpenSubgroup (finiteAdelicUnitaryGroup E ι), ∀ u ∈ U, ∀ g, φ.val (g * u) = φ.val g := by
   rw [algebraicModularForms, mem_smoothVectors_iff_exists_openSubgroup]
-  exact exists_congr fun U ↦ ⟨fun h u hu ↦ mem_stabilizer_coind_iff.1 (h hu),
-    fun h u hu ↦ mem_stabilizer_coind_iff.2 (h u hu)⟩
+  simp only [stabilizer_coind_eq]
+  exact exists_congr fun U ↦ ⟨fun h u hu ↦ mem_rightTranslationStabilizer.1 (h hu),
+    fun h u hu ↦ mem_rightTranslationStabilizer.2 (h u hu)⟩
 
 /-- **Algebraic modular forms are locally constant** functions on `G_f`. -/
 theorem isLocallyConstant_val_of_mem_algebraicModularForms
     {φ : coindV V.finiteRationalEmbedding (V.coefficientRep ρ)}
     (hφ : φ ∈ V.algebraicModularForms ρ) : IsLocallyConstant φ.val :=
-  isLocallyConstant_val_of_isOpen_stabilizer_coind ((V.mem_algebraicModularForms_iff_isOpen ρ).1 hφ)
+  isLocallyConstant_of_isOpen_rightTranslationStabilizer <|
+    stabilizer_coind_eq φ ▸ (V.mem_algebraicModularForms_iff_isOpen ρ).1 hφ
 
 -- Not `@[simp]`: simp unfolds the action through `Subrepresentation.coe_toRepresentation_apply`
 -- and `Representation.coind_apply`, so the left-hand side is not in simp-normal form (`simpNF`).
