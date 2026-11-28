@@ -21,8 +21,8 @@ simplicial homotopies `SSet.Homotopy`, and defines homotopies of morphisms of pa
   `X ⊗ Δ[0] ⟶ X ⊗ Δ[1]` are the ends `ι₀` and `ι₁` of the cylinder, after the projection to `X`;
   `SSet.fstStdSimplexZeroIso_inv_whiskerLeft_stdSimplex_δ_one` and `_zero` state the same after
   the inverse isomorphism `X ≅ X ⊗ Δ[0]`.
-* `SSet.whiskerLeft_horn_one_zero_ι`, `SSet.whiskerLeft_horn_one_one_ι`: the inclusions
-  `X ⊗ Λ[1, 0] ⟶ X ⊗ Δ[1]` and `X ⊗ Λ[1, 1] ⟶ X ⊗ Δ[1]` are the ends `ι₀` and `ι₁`.
+* `SSet.whiskerLeft_horn_one_zero_ι`: the inclusion
+  `X ⊗ Λ[1, 0] ⟶ X ⊗ Δ[1]` is the end `ι₀`.
 * `SSet.lift_const_zero_eq_comp_ι₀`, `SSet.lift_const_one_eq_comp_ι₁`: a map into the cylinder
   which is constant on the interval factors through an end.
 * `SSet.range_ι₀_inf_range_ι₁`: the two ends of the cylinder are disjoint.
@@ -37,6 +37,8 @@ simplicial homotopies `SSet.Homotopy`, and defines homotopies of morphisms of pa
 * `SSet.Homotopy.curry`, `SSet.Homotopy.uncurry`: homotopies correspond under the tensor-hom
   adjunction.
 * `SSet.Homotopy.op`: opposite reverses a simplicial homotopy.
+* `SSet.stdSimplex.contractionLast`: the dual standard-simplex contraction, from the identity
+  to the constant map at the last vertex, fixing that vertex. For `Δ[1]` it is maximum.
 * `SSet.Homotopy.ulift`, `SSet.Homotopy.ofUlift`, `SSet.Homotopy.uliftEquiv`: homotopies
   transport bijectively along `SSet.uliftFunctor`.
 * `SSet.ihomEdgeEquiv`: the vertices of the simplicial set `Fun(X, Z) = (ihom X).obj Z` are the
@@ -128,17 +130,90 @@ projection `X ⊗ Λ[1, 0] ⟶ X`. -/
 lemma whiskerLeft_horn_one_zero_ι (X : SSet.{w}) : X ◁ Λ[1, 0].ι = fst X _ ≫ ι₀ := by
   simpa only [lift_const_zero_eq_comp_ι₀, Category.id_comp] using whiskerLeft_horn_one_ι X 0
 
-/-- The inclusion `X ⊗ Λ[1, 1] ⟶ X ⊗ Δ[1]` is the end `X ⊗ {1}` of the cylinder, after the
-projection `X ⊗ Λ[1, 1] ⟶ X`. -/
-lemma whiskerLeft_horn_one_one_ι (X : SSet.{w}) : X ◁ Λ[1, 1].ι = fst X _ ≫ ι₁ := by
-  simpa only [lift_const_one_eq_comp_ι₁, Category.id_comp] using whiskerLeft_horn_one_ι X 1
+/-- The path coordinate `(a, z, τ) ↦ (z, a)` of a product with a cylinder. -/
+@[no_expose]
+noncomputable def cylinderPathCoordinate (A Z : SSet.{w}) : A ⊗ (Z ⊗ Δ[1]) ⟶ Z ⊗ A :=
+  lift (snd _ _ ≫ fst _ _) (fst _ _)
+
+/-- The two time coordinates `(σ, z, τ) ↦ (σ, τ)` of an iterated cylinder. -/
+@[no_expose]
+noncomputable def cylinderTimeCoordinates (Z : SSet.{w}) : Δ[1] ⊗ (Z ⊗ Δ[1]) ⟶ Δ[1] ⊗ Δ[1] :=
+  lift (fst _ _) (snd _ _ ≫ snd _ _)
+
+/-- The first component of the path coordinate retains the `Z` coordinate. -/
+@[reassoc (attr := simp)]
+lemma cylinderPathCoordinate_fst (A Z : SSet.{w}) :
+    cylinderPathCoordinate A Z ≫ fst _ _ = snd _ _ ≫ fst _ _ :=
+  lift_fst _ _
+
+/-- The time component of the path coordinate is the outer parameter. -/
+@[reassoc (attr := simp)]
+lemma cylinderPathCoordinate_snd (A Z : SSet.{w}) :
+    cylinderPathCoordinate A Z ≫ snd _ _ = fst _ _ :=
+  lift_snd _ _
+
+/-- The first time coordinate is the outer interval parameter. -/
+@[reassoc (attr := simp)]
+lemma cylinderTimeCoordinates_fst (Z : SSet.{w}) :
+    cylinderTimeCoordinates Z ≫ fst _ _ = fst _ _ :=
+  lift_fst _ _
+
+/-- The second time coordinate is the cylinder parameter. -/
+@[reassoc (attr := simp)]
+lemma cylinderTimeCoordinates_snd (Z : SSet.{w}) :
+    cylinderTimeCoordinates Z ≫ snd _ _ = snd _ _ ≫ snd _ _ :=
+  lift_snd _ _
+
+/-- Fixing the path time at zero takes the path coordinate to its initial endpoint. -/
+@[reassoc]
+lemma whiskerRight_δ_one_cylinderPathCoordinate (Z : SSet.{w}) :
+    stdSimplex.δ 1 ▷ (Z ⊗ Δ[1]) ≫ cylinderPathCoordinate Δ[1] Z = snd _ _ ≫ fst _ _ ≫ ι₀ := by
+  apply CartesianMonoidalCategory.hom_ext <;> simp [cylinderPathCoordinate,
+    stdSimplex.δ_one_eq_const, comp_const]
+
+/-- Fixing the path time at one takes the path coordinate to its final endpoint. -/
+@[reassoc]
+lemma whiskerRight_δ_zero_cylinderPathCoordinate (Z : SSet.{w}) :
+    stdSimplex.δ 0 ▷ (Z ⊗ Δ[1]) ≫ cylinderPathCoordinate Δ[1] Z = snd _ _ ≫ fst _ _ ≫ ι₁ := by
+  apply CartesianMonoidalCategory.hom_ext <;> simp [cylinderPathCoordinate,
+    stdSimplex.δ_zero_eq_const, comp_const]
+
+/-- Fixing the path time at zero fixes the first of the two time coordinates. -/
+@[reassoc]
+lemma whiskerRight_δ_one_cylinderTimeCoordinates (Z : SSet.{w}) :
+    stdSimplex.δ 1 ▷ (Z ⊗ Δ[1]) ≫ cylinderTimeCoordinates Z =
+      lift (const (stdSimplex.obj₀Equiv.symm 0)) (snd _ _ ≫ snd _ _) := by
+  apply CartesianMonoidalCategory.hom_ext <;> simp [cylinderTimeCoordinates,
+    stdSimplex.δ_one_eq_const, comp_const]
+
+/-- Fixing the path time at one fixes the first of the two time coordinates. -/
+@[reassoc]
+lemma whiskerRight_δ_zero_cylinderTimeCoordinates (Z : SSet.{w}) :
+    stdSimplex.δ 0 ▷ (Z ⊗ Δ[1]) ≫ cylinderTimeCoordinates Z =
+      lift (const (stdSimplex.obj₀Equiv.symm 1)) (snd _ _ ≫ snd _ _) := by
+  apply CartesianMonoidalCategory.hom_ext <;> simp [cylinderTimeCoordinates,
+    stdSimplex.δ_zero_eq_const, comp_const]
+
+/-- Fixing the homotopy time at zero gives the initial endpoint of the time cylinder. -/
+@[reassoc (attr := simp)]
+lemma whiskerLeft_ι₀_cylinderTimeCoordinates (Z : SSet.{w}) :
+    Δ[1] ◁ (ι₀ : Z ⟶ _) ≫ cylinderTimeCoordinates Z = fst _ _ ≫ ι₀ := by
+  apply CartesianMonoidalCategory.hom_ext <;> simp [cylinderTimeCoordinates, comp_const]
+
+/-- Fixing the homotopy time at one gives the final endpoint of the time cylinder. -/
+@[reassoc (attr := simp)]
+lemma whiskerLeft_ι₁_cylinderTimeCoordinates (Z : SSet.{w}) :
+    Δ[1] ◁ (ι₁ : Z ⟶ _) ≫ cylinderTimeCoordinates Z = fst _ _ ≫ ι₁ := by
+  apply CartesianMonoidalCategory.hom_ext <;> simp [cylinderTimeCoordinates, comp_const]
 
 /-- For a section `g` of the projection `X ⊗ Δ[1] ⟶ X` of the cylinder, applying `g` to the second
 factor of `A ⊗ X` and then forgetting the interval coordinate is the braiding `A ⊗ X ⟶ X ⊗ A`. -/
-lemma whiskerLeft_comp_lift_snd_fst {A X : SSet.{w}} (g : X ⟶ X ⊗ Δ[1])
+@[reassoc]
+lemma whiskerLeft_comp_cylinderPathCoordinate {A X : SSet.{w}} (g : X ⟶ X ⊗ Δ[1])
     (hg : g ≫ fst _ _ = 𝟙 X) :
-    A ◁ g ≫ lift (snd _ _ ≫ fst _ _) (fst _ _) = (β_ A X).hom := by
-  rw [comp_lift, whiskerLeft_snd_assoc, hg, Category.comp_id, whiskerLeft_fst, lift_snd_fst]
+    A ◁ g ≫ cylinderPathCoordinate A X = (β_ _ _).hom := by
+  rw [cylinderPathCoordinate, comp_lift, whiskerLeft_snd_assoc, hg, Category.comp_id,
+    whiskerLeft_fst, lift_snd_fst]
 
 /-- The associator identifies the cylinder `A ⊗ (X ⊗ Δ[1])` with `(A ⊗ X) ⊗ Δ[1]`, carrying the
 inclusion of `A ⊗ (X ⊗ {0})` to that of `(A ⊗ X) ⊗ {0}`. -/
@@ -186,6 +261,23 @@ lemma δ_one_verticalEdge {X : SSet.{w}} (v : X _⦋0⦌) :
 lemma δ_zero_verticalEdge {X : SSet.{w}} (v : X _⦋0⦌) :
     (X ⊗ Δ[1]).δ 0 (verticalEdge v) = ι₁.app _ v :=
   Prod.ext (δ_comp_σ_self_apply 0 v) (stdSimplex.ext _ _ fun i ↦ by fin_cases i; rfl)
+
+/-- Reversing the interval in an opposite cylinder exchanges its two endpoints. -/
+@[reassoc]
+lemma lift_const_comp_opIso_inv (X : SSet.{w}) (i : Fin 2) :
+    lift (𝟙 X.op) (SSet.const (SSet.stdSimplex.obj₀Equiv.symm i)) ≫
+      X.op ◁ (SSet.stdSimplex.opIso ⦋1⦌).inv =
+      SSet.opFunctor.map (lift (𝟙 X) (SSet.const (SSet.stdSimplex.obj₀Equiv.symm i.rev))) := by
+  apply NatTrans.ext
+  funext ⟨m⟩
+  apply ConcreteCategory.hom_ext
+  intro x
+  induction m using SimplexCategory.rec with | _ m
+  apply Prod.ext
+  · rfl
+  · apply SSet.opObjEquiv.injective
+    ext j
+    fin_cases i <;> rfl
 
 end SSet
 
@@ -447,25 +539,12 @@ lemma map_mkOfLe_toSimplicialObjectHomotopy_h_zero (H : SSet.Homotopy f g) {n : 
 noncomputable def op (H : SSet.Homotopy f g) :
     SSet.Homotopy (SSet.opFunctor.map g) (SSet.opFunctor.map f) := by
   -- Tensor products are pointwise, so opposite commutes definitionally with the cylinder product.
-  have he (i : Fin 2) : lift (𝟙 X.op) (SSet.const (SSet.stdSimplex.obj₀Equiv.symm i)) ≫
-      X.op ◁ (SSet.stdSimplex.opIso ⦋1⦌).inv =
-      SSet.opFunctor.map (lift (𝟙 X) (SSet.const (SSet.stdSimplex.obj₀Equiv.symm i.rev))) := by
-    apply NatTrans.ext
-    funext ⟨m⟩
-    apply ConcreteCategory.hom_ext
-    intro x
-    induction m using SimplexCategory.rec with | _ m
-    apply Prod.ext
-    · rfl
-    · apply SSet.opObjEquiv.injective
-      ext j
-      fin_cases i <;> rfl
   refine mk' (X.op ◁ (SSet.stdSimplex.opIso ⦋1⦌).inv ≫ SSet.opFunctor.map H.h) ?_ ?_
   · exact (Category.assoc _ _ _).symm.trans
-      ((congrArg (· ≫ SSet.opFunctor.map H.h) (he 0)).trans
+      ((congrArg (· ≫ SSet.opFunctor.map H.h) (lift_const_comp_opIso_inv X 0)).trans
         ((SSet.opFunctor.map_comp _ _).symm.trans (congrArg _ H.h₁)))
   · exact (Category.assoc _ _ _).symm.trans
-      ((congrArg (· ≫ SSet.opFunctor.map H.h) (he 1)).trans
+      ((congrArg (· ≫ SSet.opFunctor.map H.h) (lift_const_comp_opIso_inv X 1)).trans
         ((SSet.opFunctor.map_comp _ _).symm.trans (congrArg _ H.h₀)))
 
 /-- The opposite homotopy is obtained by reversing the interval in the opposite cylinder. -/
@@ -545,3 +624,60 @@ structure Homotopy {P P' : SSetPair.{w}} (f g : P ⟶ P') where
   w : P.hom ▷ Δ[1] ≫ right.h = left.h ≫ P'.hom
 
 end SSetPair
+
+namespace SSet.stdSimplex
+
+/-- The contraction of the standard simplex `Δ[n]` onto its last vertex: the homotopy from the
+identity to the constant map at `Fin.last n` which is the identity over the vertex `0` of `Δ[1]`
+and the constant map at `Fin.last n` over the vertex `1`. -/
+@[no_expose]
+noncomputable def contractionLast (n : ℕ) :
+    Homotopy (𝟙 Δ[n]) (SSet.const (obj₀Equiv.symm (Fin.last n))) := by
+  let H := ((contraction n).op.precomp (opIso ⦋n⦌).inv).postcomp (opIso ⦋n⦌).hom
+  refine Homotopy.mk' H.h ?_ ?_
+  · refine H.h₀.trans ?_
+    have hi : opFunctor.map (𝟙 (Δ[n] : SSet)) = 𝟙 _ := opFunctor.map_id _
+    rw [hi, Category.comp_id, Iso.inv_hom_id]
+  · refine H.h₁.trans ?_
+    have hc : opFunctor.map (SSet.const (obj₀Equiv.symm (0 : Fin (n + 1))) : Δ[n] ⟶ Δ[n]) ≫
+        (opIso ⦋n⦌).hom = SSet.const (obj₀Equiv.symm (Fin.last n)) :=
+      opFunctor_map_const_comp_opIso_hom 0
+    rw [Category.assoc, hc, comp_const]
+
+/-- Vertexwise evaluation of the standard simplex contraction. -/
+@[simp]
+lemma contractionLast_h_app_apply {n m : ℕ} (σ : Δ[n] _⦋m⦌) (e : Δ[1] _⦋m⦌)
+    (i : Fin (m + 1)) :
+    dsimp% (contractionLast n).h.app (op ⦋m⦌) (σ, e) i = if e i = 0 then σ i else Fin.last n :=
+by
+  simp only [contractionLast, Homotopy.mk'_h, Homotopy.postcomp_h, Homotopy.precomp_h,
+    Homotopy.op_h]
+  -- The opposite cylinder and the standard-simplex isomorphisms reverse all vertex indices.
+  change ((contraction n).h.app (op ⦋m⦌)
+    (opObjEquiv ((opIso ⦋n⦌).inv.app _ σ),
+      opObjEquiv ((opIso ⦋1⦌).inv.app _ e)) i.rev).rev = _
+  refine (congrArg Fin.rev (contraction_h_app_apply
+    (opObjEquiv ((opIso ⦋n⦌).inv.app _ σ))
+    (opObjEquiv ((opIso ⦋1⦌).inv.app _ e)) i.rev)).trans ?_
+  rw [opIso_inv_app_hom_apply, opIso_inv_app_hom_apply,
+    opObjEquiv_opObjEquiv_symm_apply, opObjEquiv_opObjEquiv_symm_apply, Fin.rev_rev]
+  by_cases h : e i = 0
+  · simp [h]
+  · have h' : e i = 1 := Fin.eq_one_of_ne_zero (e i) h
+    simp [h']
+
+/-- The contraction of `Δ[n]` onto its last vertex fixes that vertex. -/
+@[reassoc]
+lemma lift_const_last_contractionLast_h {Z : SSet.{w}} (n : ℕ) (f : Z ⟶ Δ[1]) :
+    lift (SSet.const (obj₀Equiv.symm (Fin.last n))) f ≫ (contractionLast n).h =
+      SSet.const (obj₀Equiv.symm (Fin.last n)) := by
+  ext ⟨⟨m⟩⟩ z i
+  -- Evaluate the pairing, keeping the contraction behind its component API.
+  refine congrArg Fin.val ((contractionLast_h_app_apply
+    ((SSet.const (obj₀Equiv.symm (Fin.last n)) : Z ⟶ Δ[n]).app _ z) (f.app _ z) i).trans ?_)
+  have hc : (SSet.const (obj₀Equiv.symm (Fin.last n)) : Z ⟶ Δ[n]).app _ z i = Fin.last n :=
+    const_app_apply _ z i
+  simp only [hc, ite_self]
+  exact hc.symm
+
+end SSet.stdSimplex

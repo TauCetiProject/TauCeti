@@ -57,9 +57,6 @@ faces of the increasing enumeration of a set `J` enumerate the sets `J` with one
   `Δ[n]` to its identity, which fixes the initial vertex
   (`SSet.stdSimplex.lift_const_zero_contraction_h`); for `n = 1` it is the minimum of the two
   coordinates of `Δ[1] ⊗ Δ[1]`.
-* `SSet.stdSimplex.contractionLast`: the homotopy from the identity of `Δ[n]` to the constant map
-  at its last vertex, which fixes the last vertex
-  (`SSet.stdSimplex.lift_const_last_contractionLast_h`); for `n = 1` it is the maximum.
 * `SSet.stdSimplex.objEquiv_objMk₁_zero`, `SSet.stdSimplex.objEquiv_objMk₁_last`: the extreme
   simplices `objMk₁ 0` and `objMk₁ (Fin.last _)` of `Δ[1]` are constant.
 * `SSet.horn_one_ι_eq_const`: each horn `Λ[1, i]` of `Δ[1]` is the vertex `i`.
@@ -91,16 +88,28 @@ lemma minRetraction_comp_objMk₁ {n : ℕ} (j : Fin (n + 1)) :
   rw [objMk₁_apply_eq_zero_iff, Fin.castSucc_lt_succ_iff]
   exact min_le_right i j
 
+/-- Reversal exchanges the zero and one segments of an interval cut simplex. -/
+@[simp]
+lemma rev_map_objEquiv_objMk₁ {n : ℕ} (j : Fin (n + 2)) :
+    dsimp% SimplexCategory.rev.map (objEquiv (objMk₁.{u} j)) = objEquiv (objMk₁.{u} j.rev) := by
+  ext i : 3
+  -- Normalize the source and target ordinals before reversing their vertex functions.
+  change (objMk₁.{u} j i.rev).rev = objMk₁.{u} j.rev i
+  rw [objMk₁_apply, objMk₁_apply]
+  split_ifs <;> apply Fin.ext <;>
+    simp_all only [Fin.val_zero, Fin.val_one, Fin.val_rev, Fin.val_castSucc,
+      Fin.lt_def] <;> omega
+
 /-- Restricting the cut simplex at `j` to the final segment starting at `j` is constant one. -/
 @[simp]
 lemma maxRetraction_comp_objMk₁ {n : ℕ} (j : Fin (n + 1)) :
     SimplexCategory.maxRetraction j ≫ objEquiv (objMk₁.{u} j.castSucc) =
       SimplexCategory.const ⦋n⦌ ⦋1⦌ 1 := by
-  ext i : 3
-  simp only [SimplexCategory.comp_toOrderHom, OrderHom.comp_coe, Function.comp_apply,
-    SimplexCategory.maxRetraction_apply, objEquiv_toOrderHom_apply, SimplexCategory.const_apply]
-  rw [objMk₁_apply_eq_one_iff, Fin.castSucc_le_castSucc_iff]
-  exact le_max_right i j
+  have h := congrArg (fun f ↦ SimplexCategory.rev.map f)
+    (minRetraction_comp_objMk₁.{u} j.rev)
+  simpa only [Functor.map_comp, SimplexCategory.maxRetraction_def, rev_map_objEquiv_objMk₁,
+    Fin.rev_succ, Fin.rev_rev, SimplexCategory.rev_map_const,
+    show (0 : Fin 2).rev = 1 from rfl] using h
 
 /-- A map of standard simplices `q : Δ[m] ⟶ Δ[n]` sends a simplex `x` of `Δ[m]` to the simplex
 whose `j`-th vertex is the image of the `j`-th vertex of `x` under the vertex map of `q`. -/
@@ -331,54 +340,13 @@ lemma lift_const_zero_contraction_h {Z : SSet.{u}} (n : ℕ) (f : Z ⟶ Δ[1]) :
     lift (SSet.const (obj₀Equiv.symm 0)) f ≫ (contraction n).h =
       SSet.const (obj₀Equiv.symm 0) := by
   ext ⟨⟨m⟩⟩ z i
-  -- The value at a vertex is computed by the defining formula of the contraction.
-  change ((if f.app _ z i = 0 then 0 else 0 : Fin (n + 1)) : ℕ) = 0
-  split_ifs <;> rfl
-
-/-- The contraction of the standard simplex `Δ[n]` onto its last vertex: the homotopy from the
-identity to the constant map at `Fin.last n` which is the identity over the vertex `0` of `Δ[1]`
-and the constant map at `Fin.last n` over the vertex `1`. -/
-noncomputable def contractionLast (n : ℕ) :
-    Homotopy (𝟙 Δ[n]) (SSet.const (obj₀Equiv.symm (Fin.last n))) where
-  h :=
-    { app m := ↾fun p ↦ objMk
-        ⟨fun k ↦ if asOrderHom p.2 k = 0 then asOrderHom p.1 k else Fin.last n,
-          fun k l hkl ↦ by
-            dsimp only
-            split_ifs with hk hl hl
-            · exact (asOrderHom p.1).monotone hkl
-            · exact Fin.le_last _
-            · exact absurd (Fin.le_zero_iff.1 (hl ▸ (asOrderHom p.2).monotone hkl)) hk
-            · exact le_rfl⟩
-      -- The formula is computed vertexwise, so it commutes with reindexing by definition.
-      naturality m m' φ := by
-        ext p
-        rfl }
-  -- Over the vertex `0` of `Δ[1]` every vertex is unchanged, and over `1` it is sent to the last.
-  h₀ := by
-    ext ⟨⟨m⟩⟩ p
-    rfl
-  h₁ := by
-    ext ⟨⟨m⟩⟩ p
-    rfl
-  rel := by ext _ ⟨⟨_, ⟨⟩⟩, _⟩
-
-/-- Vertexwise evaluation of the standard simplex contraction. -/
-@[simp]
-lemma contractionLast_h_app_apply {n m : ℕ} (σ : Δ[n] _⦋m⦌) (e : Δ[1] _⦋m⦌)
-    (i : Fin (m + 1)) :
-    dsimp% (contractionLast n).h.app (op ⦋m⦌) (σ, e) i = if e i = 0 then σ i else Fin.last n :=
-  (rfl)
-
-/-- The contraction of `Δ[n]` onto its last vertex fixes that vertex. -/
-@[reassoc]
-lemma lift_const_last_contractionLast_h {Z : SSet.{u}} (n : ℕ) (f : Z ⟶ Δ[1]) :
-    lift (SSet.const (obj₀Equiv.symm (Fin.last n))) f ≫ (contractionLast n).h =
-      SSet.const (obj₀Equiv.symm (Fin.last n)) := by
-  ext ⟨⟨m⟩⟩ z i
-  -- The value at a vertex is computed by the defining formula of the contraction.
-  change ((if f.app _ z i = 0 then Fin.last n else Fin.last n : Fin (n + 1)) : ℕ) = n
-  split_ifs <;> rfl
+  -- Evaluate the pairing, keeping the contraction behind its component API.
+  refine congrArg Fin.val ((contraction_h_app_apply
+    ((SSet.const (obj₀Equiv.symm (0)) : Z ⟶ Δ[n]).app _ z) (f.app _ z) i).trans ?_)
+  have hc : (SSet.const (obj₀Equiv.symm (0)) : Z ⟶ Δ[n]).app _ z i = 0 :=
+    const_app_apply _ z i
+  simp only [hc, ite_self]
+  exact hc.symm
 
 /-- The `m`-simplex of `Δ[1]` taking `0` times the value `0` is constant at `1`. -/
 @[simp]
@@ -429,27 +397,15 @@ lemma vertexJoinCollapse_comp_vertexJoin_map_maxRetraction {n : ℕ} (j : Fin (n
     vertexJoinCollapse (stdSimplex.objEquiv (stdSimplex.objMk₁.{u} j.castSucc)) ≫
         vertexJoin.map (maxRetraction j) =
       vertexJoinCollapse (stdSimplex.objEquiv (stdSimplex.objMk₁.{u} j.castSucc)) := by
-  refine hom_ext_zero_succ (m := ⦋n⦌) ?_ (fun i ↦ ?_)
-  · -- Normalize the join object to the finite ordinal expected by the vertex extensionality
-    -- lemma; rewriting `comp_toOrderHom` alone cannot match these dependent source types.
-    change (vertexJoin.map (maxRetraction j)).toOrderHom ((vertexJoinCollapse _).toOrderHom 0) =
-      (vertexJoinCollapse _).toOrderHom 0
-    rw [vertexJoinCollapse_zero]
-    exact vertexJoin_map_zero _
-  · -- Normalize the join object to the finite ordinal expected by the vertex extensionality
-    -- lemma; rewriting `comp_toOrderHom` alone cannot match these dependent source types.
-    change (vertexJoin.map (maxRetraction j)).toOrderHom ((vertexJoinCollapse _).toOrderHom
-      i.succ) =
-      (vertexJoinCollapse _).toOrderHom i.succ
-    rw [vertexJoinCollapse_succ]
-    simp only [stdSimplex.objEquiv_toOrderHom_apply (stdSimplex.objMk₁.{u} j.castSucc) i]
-    by_cases h : stdSimplex.objMk₁.{u} j.castSucc i = 1
-    · simp only [h, ↓reduceIte]
-      refine (vertexJoin_map_succ _ i).trans
-        (congrArg Fin.succ ((maxRetraction_apply j i).trans (max_eq_left ?_)))
-      rwa [stdSimplex.objMk₁_apply_eq_one_iff, Fin.castSucc_le_castSucc_iff] at h
-    · simp only [h, ↓reduceIte]
-      exact vertexJoin_map_zero _
+  have h := congrArg (fun f ↦ rev.map f)
+    (joinVertexCollapse_comp_joinVertex_map_minRetraction.{u} j.rev)
+  -- Normalize the shifted ordinal so reversal can rewrite the composite.
+  change rev.map (joinVertexCollapse (objEquiv (objMk₁.{u} j.rev.succ)) ≫
+      joinVertex.map (minRetraction j.rev)) =
+    rev.map (joinVertexCollapse (objEquiv (objMk₁.{u} j.rev.succ))) at h
+  simpa only [Functor.map_comp, vertexJoinCollapse_def, vertexJoin, Functor.comp_map,
+    rev_map_objEquiv_objMk₁, Fin.rev_castSucc, Fin.rev_rev, maxRetraction_def,
+    rev_map_rev_map] using h
 
 /-- The standard simplex functor `SimplexCategory ⥤ SSet` is dense. -/
 instance isDense : stdSimplex.{u}.IsDense := inferInstanceAs uliftYoneda.{u}.IsDense

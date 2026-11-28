@@ -913,7 +913,7 @@ lemma coneContraction_ι :
   (rfl)
 
 /-- The initial endpoint of the pointed cone contraction. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma ι₀_coneContraction : ι₀ ≫ coneContraction y = 𝟙 _ := by
   rw [← cancel_mono (coneSpace X y).ι, Category.assoc, coneContraction_ι, ι₀_comp_assoc,
     ι₀_joinVertexContraction, Category.comp_id, Category.id_comp]
@@ -939,7 +939,7 @@ lemma const_coneVertex_app_val {Z : SSet.{u}} {n : ℕ} (z : Z _⦋n⦌) :
   exact map_map_const_zero X _ y
 
 /-- The final endpoint of the pointed cone contraction. -/
-@[reassoc]
+@[reassoc (attr := simp)]
 lemma ι₁_coneContraction : ι₁ ≫ coneContraction y = SSet.const (coneVertex y) := by
   apply NatTrans.ext
   funext ⟨⟨n⟩⟩
@@ -974,6 +974,59 @@ lemma lift_const_coneVertex_coneContraction {Z : SSet.{u}} (f : Z ⟶ Δ[1]) :
   refine (coneContraction_app_val y (n := n)
     ((SSet.const (coneVertex y)).app _ z, f.app _ z)).trans ?_
   rw [const_coneVertex_app_val, map_map_const_zero]
+
+/-- **The contraction forgets the part of a family which is collapsed.** For a family `G` of
+simplices of `coneSpace X y` parametrized by `Z ⊗ Δ[1]`, contracting `G (z, e)` along `e`, or the
+value `G (z, 0)` at the start of the path, gives the same result. -/
+@[reassoc]
+lemma lift_snd_coneContraction {Z : SSet.{u}} (G : Z ⊗ Δ[1] ⟶ (coneSpace X y : SSet.{u})) :
+    lift G (snd _ _) ≫ coneContraction y =
+      lift (fst _ _ ≫ ι₀ ≫ G) (snd _ _) ≫ coneContraction y := by
+  ext ⟨⟨n⟩⟩ ⟨z, e⟩ : 4
+  apply Subtype.ext
+  -- Evaluate the products and compositions; the contraction itself is rewritten by its API.
+  change ((coneContraction y).app _ (G.app _ (z, e), e)).val =
+    ((coneContraction y).app _ (G.app _ (ι₀.app _ z), e)).val
+  obtain ⟨k, rfl⟩ := stdSimplex.objMk₁_surjective e
+  induction k using Fin.cases with
+  | zero =>
+    have he (s : (coneSpace X y : SSet.{u}) _⦋n⦌) :
+        (s, stdSimplex.objMk₁.{u} (0 : Fin (n + 2))) = ι₁.app _ s := by
+      refine Prod.ext (α := (coneSpace X y : SSet.{u}) _⦋n⦌) (β := Δ[1] _⦋n⦌)
+        (ι₁_app_fst s).symm ?_
+      apply stdSimplex.objEquiv.injective
+      refine (stdSimplex.objEquiv_objMk₁_zero n).trans ?_
+      ext i : 3
+      exact (ι₁_app_snd_apply s i).symm
+    have hc (s : (coneSpace X y : SSet.{u}) _⦋n⦌) :
+        ((coneContraction y).app _ (s, stdSimplex.objMk₁.{u} (0 : Fin (n + 2)))).val =
+          X.map (SimplexCategory.const ⦋n + 1⦌ ⦋0⦌ 0).op y := by
+      have h := congrArg (fun f ↦ (f.app (op ⦋n⦌) s).val) (ι₁_coneContraction y)
+      exact (congrArg (fun t ↦ ((coneContraction y).app _ t).val) (he s)).trans
+        (h.trans (const_coneVertex_app_val y s))
+    exact (hc _).trans (hc _).symm
+  | succ j =>
+    refine (coneContraction_app_val y (n := n)
+      (G.app _ (z, stdSimplex.objMk₁ _), stdSimplex.objMk₁ _)).trans
+        (Eq.trans ?_ (coneContraction_app_val y (n := n)
+          (G.app _ (ι₀.app _ z), stdSimplex.objMk₁ _)).symm)
+    rw [← stdSimplex.joinVertexCollapse_comp_joinVertex_map_minRetraction j, op_comp,
+      Functor.map_comp_apply,
+      Functor.map_comp_apply]
+    congr 1
+    have h₁ := congrArg Subtype.val (NatTrans.naturality_apply G (minRetraction j).op
+      (show (Z ⊗ Δ[1] : SSet.{u}) _⦋n⦌ from (z, stdSimplex.objMk₁ j.succ)))
+    have h₂ := congrArg Subtype.val (NatTrans.naturality_apply G (minRetraction j).op (ι₀.app _ z))
+    refine h₁.symm.trans (Eq.trans ?_ h₂)
+    congr 2
+    refine Prod.ext rfl (stdSimplex.objEquiv.injective
+      ((stdSimplex.minRetraction_comp_objMk₁.{u} j).trans ?_))
+    ext i : 3
+    simp only [stdSimplex.objEquiv_toOrderHom_apply, SimplexCategory.const_apply]
+    -- Restriction of a constant interval simplex is still constant.
+    exact ((congrArg (fun e : Δ[1] _⦋n⦌ ↦ e i)
+      (SSet.prod_map_snd Z Δ[1] (minRetraction j).op (ι₀.app _ z))).trans
+        (SSet.ι₀_app_snd_apply z _)).symm
 
 variable {y}
 
@@ -1054,19 +1107,7 @@ lemma coneFiberIso_inv_ι :
 over `x` exactly when its face opposite to the last vertex is constant at `x`. -/
 noncomputable def sliceFiberIso :
     (fiber (slice.π (yonedaEquiv.symm y)) x : SSet.{u}) ≅ (X.rightMappingSpace x y : SSet.{u}) :=
-  let e := sliceIso y
-  let hp := sliceIso_hom_coneπ y
-  let hi : e.inv ≫ slice.π (yonedaEquiv.symm y) = coneπ X y := by
-    rw [← hp, e.inv_hom_id_assoc]
-  { hom := fiber.map e.hom hp x ≫ (coneFiberIso x y).hom
-    inv := (coneFiberIso x y).inv ≫ fiber.map e.inv hi x
-    hom_inv_id := by
-      simp only [Category.assoc, Iso.hom_inv_id_assoc]
-      simp only [← fiber.map_comp, e.hom_inv_id, fiber.map_id]
-    inv_hom_id := by
-      rw [Category.assoc, ← Category.assoc (fiber.map e.inv hi x)]
-      simp only [← fiber.map_comp, e.inv_hom_id, fiber.map_id, Category.id_comp,
-        Iso.inv_hom_id] }
+  fiber.mapIso (sliceIso y) (sliceIso_hom_coneπ _) x ≪≫ coneFiberIso x y
 
 /-- The simplex of `Hom^R_X(x, y)` attached to a simplex `Δ[n] ⋆ Δ[0] ⟶ X` of the fibre of
 `X_{/y} ⟶ X` is its composite with `Δ[n + 1] ≅ Δ[n] ⋆ Δ[0]`. -/
@@ -1078,7 +1119,8 @@ theorem sliceFiberIso_hom_app_coe {m : SimplexCategory}
 by
   have h : (sliceFiberIso x y).hom ≫ toConeSpace x y =
       (fiber (slice.π (yonedaEquiv.symm y)) x).ι ≫ (sliceIso y).hom := by
-    simp only [sliceFiberIso, Category.assoc, coneFiberIso_hom_toConeSpace, fiber.map_ι]
+    simp only [sliceFiberIso, Iso.trans_hom, Category.assoc,
+      coneFiberIso_hom_toConeSpace, fiber.mapIso_hom, fiber.map_ι]
   exact (congrArg (fun f ↦ (f.app _ s).val) h).trans (sliceIso_hom_app_val y s.val)
 
 /-- The simplex `Δ[n] ⋆ Δ[0] ⟶ X` of the fibre of `X_{/y} ⟶ X` attached to a simplex of
@@ -1090,7 +1132,8 @@ theorem sliceFiberIso_inv_app_coe {m : SimplexCategory}
 by
   have h : (sliceFiberIso x y).inv ≫ (fiber (slice.π (yonedaEquiv.symm y)) x).ι =
       toConeSpace x y ≫ (sliceIso y).inv := by
-    simp only [sliceFiberIso, Category.assoc, fiber.map_ι, coneFiberIso_inv_ι_assoc]
+    simp only [sliceFiberIso, Iso.trans_inv, Category.assoc,
+      fiber.mapIso_inv, fiber.map_ι, coneFiberIso_inv_ι_assoc]
   exact (congrArg (fun f ↦ (slice.objEquiv (f.app _ t)).val) h).trans
     (sliceIso_inv_app_val y ((toConeSpace x y).app _ t))
 

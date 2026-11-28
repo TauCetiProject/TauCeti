@@ -71,7 +71,7 @@ open prodStdSimplex in
 /-- **The comparison map through the contraction**: the comparison
 `Hom^L_X(x, y) ⟶ Hom_X(x, y)` sends a simplex `s` to the path from the identity of `x` to `s`
 traced by the contraction, projected to `X`. -/
-private lemma toMappingSpace_comp_ι :
+lemma toMappingSpace_comp_ι :
     toMappingSpace x y ≫ (X.mappingSpace x y).ι = curry ((β_ Δ[1] _).hom ≫
       toConeSpace x y ▷ Δ[1] ≫ coneContraction x ≫ coneπ X x) := by
   ext ⟨⟨n⟩⟩ s
@@ -115,54 +115,6 @@ private lemma toMappingSpace_comp_ι :
   · have h' : e i = 1 := Fin.eq_one_of_ne_zero (e i) h
     simp only [h', ↓reduceIte]
     exact (vertexJoin_map_succ _ i).symm
-
-/-- **The contraction forgets the part of a family which is collapsed.** For a family `G` of
-simplices of `coneSpace X x` parametrized by `Z ⊗ Δ[1]`, contracting `G (z, e)` along `e`, or the
-value `G (z, 1)` at the end of the path, gives the same result. -/
-@[reassoc]
-private lemma lift_snd_coneContraction {Z : SSet.{u}} (G : Z ⊗ Δ[1] ⟶ (coneSpace X x : SSet.{u})) :
-    lift G (snd _ _) ≫ coneContraction x =
-      lift (fst _ _ ≫ ι₁ ≫ G) (snd _ _) ≫ coneContraction x := by
-  ext ⟨⟨n⟩⟩ ⟨z, e⟩ : 4
-  apply Subtype.ext
-  -- Evaluate the products and compositions; the contraction itself is rewritten by its API.
-  change ((coneContraction x).app _ (G.app _ (z, e), e)).val =
-    ((coneContraction x).app _ (G.app _ (ι₁.app _ z), e)).val
-  refine (coneContraction_app_val x (n := n) (G.app _ (z, e), e)).trans
-    (Eq.trans ?_ (coneContraction_app_val x (n := n) (G.app _ (ι₁.app _ z), e)).symm)
-  obtain ⟨k, rfl⟩ := stdSimplex.objMk₁_surjective e
-  induction k using Fin.lastCases with
-  | last =>
-    rw [stdSimplex.objEquiv_objMk₁_last, vertexJoinCollapse_const_zero, op_comp,
-      Functor.map_comp_apply,
-      Functor.map_comp_apply]
-    -- Simplices of `vertexJoin.op ⋙ X` are simplices of `X`, on which the maps act by restriction.
-    change X.map _ (X.map (SimplexCategory.const ⦋0⦌ (vertexJoin.obj ⦋n⦌) 0).op
-        (G.app _ (z, _)).val) =
-      X.map _ (X.map (SimplexCategory.const ⦋0⦌ (vertexJoin.obj ⦋n⦌) 0).op
-        (G.app _ (ι₁.app _ z)).val)
-    rw [show X.map (SimplexCategory.const ⦋0⦌ (vertexJoin.obj ⦋n⦌) 0).op
-        (G.app _ (z, _)).val = x from (mem_coneSpace_obj_iff x _).1 (G.app _ _).property,
-      show X.map (SimplexCategory.const ⦋0⦌ (vertexJoin.obj ⦋n⦌) 0).op
-        (G.app _ (ι₁.app _ z)).val = x from (mem_coneSpace_obj_iff x _).1 (G.app _ _).property]
-  | cast j =>
-    rw [← stdSimplex.vertexJoinCollapse_comp_vertexJoin_map_maxRetraction j, op_comp,
-      Functor.map_comp_apply,
-      Functor.map_comp_apply]
-    congr 1
-    have h₁ := congrArg Subtype.val (NatTrans.naturality_apply G (maxRetraction j).op
-      (show (Z ⊗ Δ[1] : SSet.{u}) _⦋n⦌ from (z, stdSimplex.objMk₁ j.castSucc)))
-    have h₂ := congrArg Subtype.val (NatTrans.naturality_apply G (maxRetraction j).op (ι₁.app _ z))
-    refine h₁.symm.trans (Eq.trans ?_ h₂)
-    congr 2
-    refine Prod.ext rfl (stdSimplex.objEquiv.injective
-      ((stdSimplex.maxRetraction_comp_objMk₁.{u} j).trans ?_))
-    ext i : 3
-    simp only [stdSimplex.objEquiv_toOrderHom_apply, SimplexCategory.const_apply]
-    -- Restriction of a constant interval simplex is still constant.
-    exact ((congrArg (fun e : Δ[1] _⦋n⦌ ↦ e i)
-      (SSet.prod_map_snd Z Δ[1] (maxRetraction j).op (ι₁.app _ z))).trans
-        (SSet.ι₁_app_snd_apply z _)).symm
 
 section comparison
 
@@ -221,8 +173,8 @@ private lemma toMappingSpace_inverse : toMappingSpace x y ≫ inverse x y = 𝟙
 /-- The uncurried homotopy from `inverse ≫ toMappingSpace` to the identity of `Hom_X(x, y)`:
 `(σ, γ, τ)` goes to the contraction at time `max σ τ` of the lifted path at time `σ`. -/
 private noncomputable def homotopyAux : Δ[1] ⊗ ((X.mappingSpace x y : SSet.{u}) ⊗ Δ[1]) ⟶ X :=
-  lift (lift (snd _ _ ≫ fst _ _) (fst _ _) ≫ pathLift x y)
-    (lift (fst _ _) (snd _ _ ≫ snd _ _) ≫ (stdSimplex.contractionLast 1).h) ≫
+  lift (cylinderPathCoordinate Δ[1] _ ≫ pathLift x y)
+    (cylinderTimeCoordinates _ ≫ (stdSimplex.contractionLast 1).h) ≫
       coneContraction x ≫ coneπ X x
 
 private lemma range_curry_homotopyAux_le :
@@ -230,32 +182,24 @@ private lemma range_curry_homotopyAux_le :
   rw [range_le_mappingSpace_iff, uncurry_curry]
   constructor
   · -- At `σ = 0`, the lifted path is at the identity of `x`, which the contraction fixes.
-    have e : stdSimplex.δ 1 ▷ _ ≫ lift (lift (snd _ _ ≫ fst _ _) (fst _ _) ≫ pathLift x y)
-        (lift (fst _ _) (snd _ _ ≫ snd _ _) ≫ (stdSimplex.contractionLast 1).h) =
+    have e : stdSimplex.δ 1 ▷ _ ≫ lift (cylinderPathCoordinate Δ[1] _ ≫ pathLift x y)
+        (cylinderTimeCoordinates _ ≫ (stdSimplex.contractionLast 1).h) =
         lift (SSet.const (coneVertex x)) (stdSimplex.δ 1 ▷ _ ≫
-          lift (fst _ _) (snd _ _ ≫ snd _ _) ≫ (stdSimplex.contractionLast 1).h) := by
-      rw [comp_lift, ← Category.assoc, comp_lift, whiskerRight_fst, whiskerRight_snd_assoc,
-        stdSimplex.δ_one_eq_const, comp_const, lift_const_zero_eq_comp_ι₀,
-        Category.assoc, Category.assoc, ι₀_pathLift]
-      simp only [comp_const]
+          cylinderTimeCoordinates _ ≫ (stdSimplex.contractionLast 1).h) := by
+      simp only [comp_lift, whiskerRight_δ_one_cylinderPathCoordinate_assoc,
+        ι₀_pathLift, comp_const]
     rw [homotopyAux, reassoc_of% e, lift_const_coneVertex_coneContraction_assoc,
       const_coneVertex_coneπ]
   · -- At `σ = 1`, the lifted path is at its end, which lies over `y`, and is not contracted.
-    have e : stdSimplex.δ 0 ▷ _ ≫ lift (lift (snd _ _ ≫ fst _ _) (fst _ _) ≫ pathLift x y)
-        (lift (fst _ _) (snd _ _ ≫ snd _ _) ≫ (stdSimplex.contractionLast 1).h) =
+    have e : stdSimplex.δ 0 ▷ _ ≫ lift (cylinderPathCoordinate Δ[1] _ ≫ pathLift x y)
+        (cylinderTimeCoordinates _ ≫ (stdSimplex.contractionLast 1).h) =
         (snd _ _ ≫ fst _ _ ≫ ι₁ ≫ pathLift x y) ≫ ι₁ := by
-      rw [← lift_const_one_eq_comp_ι₁]
-      refine CartesianMonoidalCategory.hom_ext _ _ ?_ ?_
-      · simp only [Category.assoc, lift_fst]
-        have h : stdSimplex.δ 0 ▷ ((X.mappingSpace x y : SSet.{u}) ⊗ Δ[1]) ≫
-            lift (snd _ _ ≫ fst _ _) (fst _ _) = snd _ _ ≫ fst _ _ ≫ ι₁ :=
-          CartesianMonoidalCategory.hom_ext _ _ (by simp)
-            (by simp [stdSimplex.δ_zero_eq_const, comp_const, ι₁])
-        rw [reassoc_of% h]
-      · simp only [Category.assoc, lift_snd]
-        rw [← Category.assoc, comp_lift, whiskerRight_fst, whiskerRight_snd_assoc,
-          stdSimplex.δ_zero_eq_const, comp_const]
-        -- The vertex `1` of `Δ[1]` is its last vertex `Fin.last 1`.
+      rw [← lift_const_one_eq_comp_ι₁, comp_lift]
+      apply CartesianMonoidalCategory.hom_ext
+      · simp only [lift_fst,
+          whiskerRight_δ_zero_cylinderPathCoordinate_assoc]
+      · simp only [lift_snd,
+          whiskerRight_δ_zero_cylinderTimeCoordinates_assoc]
         exact stdSimplex.lift_const_last_contractionLast_h 1 _
     rw [homotopyAux, reassoc_of% e, ι₁_coneContraction_assoc]
     simp only [pathLift_coneπ, mappingSpace.ι₁_braiding_uncurry_ι, comp_const]
@@ -268,13 +212,16 @@ private noncomputable def homotopy :
       rw [← cancel_mono (X.mappingSpace x y).ι, Category.assoc, Subcomplex.lift_ι,
         Category.assoc, toMappingSpace_comp_ι, ← curry_natural_left, ← curry_natural_left]
       congr 1
-      have e : (Δ[1] : SSet.{u}) ◁ ι₀ ≫ lift (lift (snd _ _ ≫ fst _ _) (fst _ _) ≫ pathLift x y)
-          (lift (fst _ _) (snd _ _ ≫ snd _ _) ≫ (stdSimplex.contractionLast 1).h) =
+      have e : (Δ[1] : SSet.{u}) ◁ ι₀ ≫ lift (cylinderPathCoordinate Δ[1] _ ≫ pathLift x y)
+          (cylinderTimeCoordinates _ ≫ (stdSimplex.contractionLast 1).h) =
           (β_ _ _).hom ≫ lift (pathLift x y) (snd _ _) := by
-        rw [comp_lift, comp_lift, ← Category.assoc,
-          whiskerLeft_comp_lift_snd_fst _ (ι₀_fst _), ← Category.assoc, comp_lift,
-          whiskerLeft_fst, whiskerLeft_snd_assoc, ι₀_snd, comp_const, lift_const_zero_eq_comp_ι₀,
-          Category.assoc, (stdSimplex.contractionLast 1).h₀, Category.comp_id, braiding_hom_snd]
+        rw [comp_lift]
+        apply CartesianMonoidalCategory.hom_ext
+        · simp only [lift_fst, Category.assoc]
+          exact whiskerLeft_comp_cylinderPathCoordinate_assoc _ (ι₀_fst _) _
+        · simp only [lift_snd, Category.assoc,
+            whiskerLeft_ι₀_cylinderTimeCoordinates_assoc, (stdSimplex.contractionLast 1).h₀,
+            Category.comp_id, braiding_hom_snd]
       have e' : lift (fst _ _ ≫ ι₁ ≫ pathLift x y) (snd _ _) =
           inverse x y ▷ Δ[1] ≫ toConeSpace x y ▷ Δ[1] := by
         rw [← comp_whiskerRight, inverse_toConeSpace]
@@ -285,15 +232,18 @@ private noncomputable def homotopy :
     (by
       rw [← cancel_mono (X.mappingSpace x y).ι, Category.assoc, Subcomplex.lift_ι,
         Category.id_comp, ← curry_natural_left, curry_eq_iff]
-      have e : (Δ[1] : SSet.{u}) ◁ ι₁ ≫ lift (lift (snd _ _ ≫ fst _ _) (fst _ _) ≫ pathLift x y)
-          (lift (fst _ _) (snd _ _ ≫ snd _ _) ≫ (stdSimplex.contractionLast 1).h) =
+      have e : (Δ[1] : SSet.{u}) ◁ ι₁ ≫ lift (cylinderPathCoordinate Δ[1] _ ≫ pathLift x y)
+          (cylinderTimeCoordinates _ ≫ (stdSimplex.contractionLast 1).h) =
           ((β_ _ _).hom ≫ pathLift x y) ≫ ι₁ := by
-        rw [← lift_const_one_eq_comp_ι₁, comp_lift, ← Category.assoc,
-          whiskerLeft_comp_lift_snd_fst _ (ι₁_fst _), ← Category.assoc, comp_lift,
-          whiskerLeft_fst, whiskerLeft_snd_assoc, ι₁_snd, comp_const, lift_const_one_eq_comp_ι₁,
-          Category.assoc, (stdSimplex.contractionLast 1).h₁, comp_const]
-        -- The vertex `1` of `Δ[1]` is its last vertex `Fin.last 1`.
-        rfl
+        rw [← lift_const_one_eq_comp_ι₁, comp_lift]
+        apply CartesianMonoidalCategory.hom_ext
+        · simp only [lift_fst]
+          exact whiskerLeft_comp_cylinderPathCoordinate_assoc _ (ι₁_fst _) _
+        · simp only [lift_snd,
+            whiskerLeft_ι₁_cylinderTimeCoordinates_assoc, (stdSimplex.contractionLast 1).h₁,
+            comp_const]
+          -- The last vertex of the interval is the numeral one.
+          rfl
       rw [homotopyAux, reassoc_of% e, ι₁_coneContraction_assoc, pathLift_coneπ,
         SymmetricCategory.symmetry_assoc])
 
@@ -310,6 +260,15 @@ end comparison
 
 end leftMappingSpace
 
+namespace modelCategoryQuillen
+
+/-- The left comparison is a weak equivalence in the Kan–Quillen model structure. -/
+scoped instance leftMappingSpace_weakEquivalence_toMappingSpace (x y : X _⦋0⦌) [X.Quasicategory] :
+    HomotopicalAlgebra.WeakEquivalence (leftMappingSpace.toMappingSpace x y) :=
+  weakEquivalence_of_isWeakHomotopyEquivalence _
+
+end modelCategoryQuillen
+
 section IsFullyFaithful
 
 open HomotopicalAlgebra
@@ -325,10 +284,6 @@ theorem isFullyFaithful_iff_weakEquivalence_leftMappingSpace_map (f : X ⟶ Y) :
     IsFullyFaithful f ↔ ∀ x y : X _⦋0⦌, WeakEquivalence (leftMappingSpace.map x y f) := by
   rw [isFullyFaithful_iff_weakEquivalence_mappingSpace_map]
   refine forall₂_congr fun x y ↦ ?_
-  have := modelCategoryQuillen.weakEquivalence_of_isWeakHomotopyEquivalence
-    (leftMappingSpace.toMappingSpace x y)
-  have := modelCategoryQuillen.weakEquivalence_of_isWeakHomotopyEquivalence
-    (leftMappingSpace.toMappingSpace (f.app _ x) (f.app _ y))
   rw [← weakEquivalence_precomp_iff (leftMappingSpace.toMappingSpace x y),
     leftMappingSpace.toMappingSpace_comp_map, weakEquivalence_postcomp_iff]
 
