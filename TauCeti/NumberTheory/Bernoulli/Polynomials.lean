@@ -102,21 +102,6 @@ theorem bernoulli_eval_add_eq_sum (n : ℕ) (x y : ℚ) :
   rw [add_comm x, ← taylor_eval, eval_eq_sum_range' (Nat.lt_succ_of_le hd)]
   simp only [coeff_taylor_bernoulli]
 
-/-- Separate the constant and linear terms in the translation formula for `Bₖ₊₁(x + y)`. -/
-theorem bernoulli_eval_add_eq_add_linear_add_sq_mul_sum (k : ℕ) (x y : ℚ) :
-    (bernoulli (k + 1)).eval (x + y) = (bernoulli (k + 1)).eval x +
-      ((k + 1 : ℕ) : ℚ) * (bernoulli k).eval x * y +
-      y ^ 2 * ∑ i ∈ range k, ((k + 1).choose (i + 2) : ℚ) *
-        (bernoulli (k - (i + 1))).eval x * y ^ i := by
-  rw [bernoulli_eval_add_eq_sum, sum_range_succ', sum_range_succ', mul_sum]
-  simp only [Nat.choose_zero_right, Nat.cast_one, Nat.sub_zero, pow_zero, one_mul, mul_one,
-    Nat.zero_add, Nat.choose_one_right, Nat.add_sub_cancel, Nat.add_sub_add_right, pow_one]
-  rw [add_comm _ ((bernoulli (k + 1)).eval x), ← add_assoc, add_right_comm]
-  congr 1
-  refine sum_congr rfl fun i _ ↦ ?_
-  rw [pow_add y i 2]
-  ring
-
 end Polynomial
 
 open PowerSeries
