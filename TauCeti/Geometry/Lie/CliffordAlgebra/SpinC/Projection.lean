@@ -316,28 +316,6 @@ theorem realToSpecialOrthogonalProdDetRange_apply (g : G) :
       (realToSpecialOrthogonalRange n hQ g, det (realCliffordForm n 0) hQ g) :=
   Prod.ext rfl (detContinuousMonoidHom_apply _ hQ g)
 
-/-- Composing `realToSpecialOrthogonalProdDetRange` with the first factor projection recovers
-`realToSpecialOrthogonalRange`. -/
-@[simp]
-theorem fst_comp_realToSpecialOrthogonalProdDetRange :
-    (ContinuousMonoidHom.fst
-        { x : GL (Fin n) ℝ //
-          x ∈ (QuadraticMap.specialOrthogonalToGeneralLinear (realCliffordForm n 0)).range }
-        Circle).comp (realToSpecialOrthogonalProdDetRange n hQ) =
-      realToSpecialOrthogonalRange n hQ :=
-  ContinuousMonoidHom.toMonoidHom_injective (MonoidHom.fst_comp_prod _ _)
-
-/-- Composing `realToSpecialOrthogonalProdDetRange` with the second factor projection recovers
-`detContinuousMonoidHom`. -/
-@[simp]
-theorem snd_comp_realToSpecialOrthogonalProdDetRange :
-    (ContinuousMonoidHom.snd
-        { x : GL (Fin n) ℝ //
-          x ∈ (QuadraticMap.specialOrthogonalToGeneralLinear (realCliffordForm n 0)).range }
-        Circle).comp (realToSpecialOrthogonalProdDetRange n hQ) =
-      detContinuousMonoidHom _ hQ :=
-  ContinuousMonoidHom.toMonoidHom_injective (MonoidHom.snd_comp_prod _ _)
-
 /-- **The `Lie(SO(n)) × ℝ` splitting of `Lie(Spinᶜ(n))`**. It lifts an infinitesimal orthogonal
 transformation via `(realSpinToSpecialOrthogonalLieEquiv n).symm` and a determinant weight via
 `realDetLieLift`. -/
