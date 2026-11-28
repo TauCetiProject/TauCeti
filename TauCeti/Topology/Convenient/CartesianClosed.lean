@@ -538,7 +538,6 @@ theorem equiv_ihom_coev_app_apply (Y Z : GeneratedByTopCat.{v} G) (z : Z) (y : Y
 
 /-- Canonical morphism from the `G`-generated refinement of the compact-open mapping space
 `C(Y, Z)` into the internal hom `(ihom Y).obj Z`. -/
-@[expose]
 def compactOpenToIhom (Y Z : GeneratedByTopCat.{v} G) :
     of (X := G) (WithGeneratedByTopology G C(Y, Z)) ⟶ (ihom Y).obj Z :=
   (TopCat.toGeneratedByTopCat (X := G)).map <| TopCat.ofHom

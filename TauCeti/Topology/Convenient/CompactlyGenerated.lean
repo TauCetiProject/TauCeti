@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Logic.Small.Basic
+public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
 public import Mathlib.Topology.Instances.Shrink
-public import TauCeti.Topology.Compactness.CompactlyGeneratedSpace
 public import TauCeti.Topology.Convenient.GeneratedBy
 public import TauCeti.Topology.Convenient.HomSpace
 
@@ -27,8 +27,8 @@ and establish the point-set inputs for `CompactlyGenerated.{u, w}`:
 * Locally compact product preservation
   (`TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_right`,
   `TauCeti.uCompactlyGeneratedSpace_prod_of_locallyCompactSpace_left`), specializing Whitehead's
-  quotient-product argument via `Topology.IsGeneratedBy.prod_right` and
-  `TauCeti.Topology.Convenient.HomSpace`.
+  quotient-product argument via `Topology.IsGeneratedBy.prod_right` in
+  `TauCeti.Topology.Convenient.GeneratedBy`.
 
 ## References
 

@@ -6,38 +6,29 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Convenient.HomSpace
-public import TauCeti.Topology.Convenient.GeneratedBy
 
 /-!
-# Products with locally compact spaces and compact-open comparisons
+# Comparison between `G`-probed mapping spaces and the compact-open topology
 
 Given a family of topological spaces `G : ι → Type u`, Mathlib equips the type
 `ContinuousMapGeneratedBy G Y Z` of `G`-continuous maps `Y → Z` with the initial topology induced
 by precomposition along continuous maps `G i → Y` into compact-open mapping spaces `C(G i, Z)`.
 
-This file supplies two complements:
+This file compares `ContinuousMapGeneratedBy G Y Z` with the compact-open mapping space `C(Y, Z)`:
 
-* **Products with locally compact factors**
-  (`Topology.IsGeneratedBy.prod_of_locallyCompactSpace_right`,
-  `Topology.IsGeneratedBy.prod_of_locallyCompactSpace_left`): proved via
-  `Topology.IsGeneratedBy.prod_right` (Whitehead's quotient-product argument in
-  `TauCeti.Topology.Convenient.GeneratedBy`), assuming each test space `G i` is locally compact
-  and each pairwise product `G i × G j` is `G`-generated, if `Y` and `Z` are `G`-generated and
-  one of them is locally compact, then the ordinary product topology on `Y × Z` is already
-  `G`-generated, with no universe restriction between `G`, `Y`, and `Z`.
-* **Comparison with the compact-open topology** (`ContinuousMap.toContinuousMapGeneratedBy`,
-  `Topology.ContinuousMapGeneratedBy.equivContinuousMap`,
-  `Topology.ContinuousMapGeneratedBy.homeomorphContinuousMap`):
-  every continuous map `Y → Z` is `G`-continuous and the inclusion
-  `C(Y, Z) → ContinuousMapGeneratedBy G Y Z` is continuous for the compact-open topology on
-  `C(Y, Z)`. When `Y` is `G`-generated, this map is a bijection; when, in addition, every compact
-  subset of `Y` is the continuous image of a compact subset of some generator `G i`, it is a
-  homeomorphism.
+* Every continuous map `Y → Z` is `G`-continuous (`ContinuousMap.toContinuousMapGeneratedBy`), and
+  the resulting inclusion `C(Y, Z) → ContinuousMapGeneratedBy G Y Z` is continuous
+  (`ContinuousMap.continuous_toContinuousMapGeneratedBy`).
+* When `Y` is `G`-generated, `ContinuousMapGeneratedBy G Y Z` has the same underlying maps as
+  `C(Y, Z)` (`Topology.ContinuousMapGeneratedBy.toContinuousMap`,
+  `Topology.ContinuousMapGeneratedBy.equivContinuousMap`).
+* When, in addition, every compact subset of `Y` is the continuous image of a compact subset of
+  some generator `G i`, the two topologies coincide
+  (`Topology.ContinuousMapGeneratedBy.continuous_toContinuousMap`,
+  `Topology.ContinuousMapGeneratedBy.homeomorphContinuousMap`).
 
 ## References
 
-* J. H. C. Whitehead, *Note on a theorem due to Borsuk*, Bull. Amer. Math. Soc. 54 (1948),
-  1125–1132 (quotient-product lemma for locally compact factors).
 * M. Escardó, J. Lawson, and A. Simpson, *Comparing Cartesian closed categories of (core)
   compactly generated spaces*, Topology Appl. 143 (2004), 105–145.
 * R. M. Vogt, *Convenient categories of topological spaces for homotopy theory*, Arch. Math.
@@ -51,36 +42,6 @@ public section
 open Topology
 
 universe v v' t u
-
-namespace Topology.IsGeneratedBy
-
-variable {ι : Type t} {G : ι → Type u} [∀ i, TopologicalSpace (G i)]
-  {Y : Type v} [TopologicalSpace Y] {Z : Type v'} [TopologicalSpace Z]
-
-section LocallyCompactGenerators
-
-variable [∀ i, LocallyCompactSpace (G i)] [∀ i j, IsGeneratedBy G (G i × G j)]
-  [IsGeneratedBy G Y] [IsGeneratedBy G Z]
-
-/-- Assuming all generators `G i` are locally compact with `G`-generated pairwise products
-`G i × G j`, if `Y` and `Z` are `G`-generated and `Z` is locally compact, then the ordinary product
-`Y × Z` is `G`-generated. -/
-instance prod_of_locallyCompactSpace_right [LocallyCompactSpace Z] : IsGeneratedBy G (Y × Z) :=
-  haveI := fun i ↦ (prod_left : IsGeneratedBy G (G i × Z))
-  prod_right
-
-/-- Assuming all generators `G i` are locally compact with `G`-generated pairwise products
-`G i × G j`, if `Y` and `Z` are `G`-generated and `Y` is locally compact, then the ordinary product
-`Y × Z` is `G`-generated. -/
-instance prod_of_locallyCompactSpace_left [LocallyCompactSpace Y] : IsGeneratedBy G (Y × Z) :=
-  haveI := fun i ↦ (prod_left : IsGeneratedBy G (G i × Y))
-  prod_left
-
-end LocallyCompactGenerators
-
-end Topology.IsGeneratedBy
-
-section HomSpace
 
 variable {ι : Type t} {G : ι → Type u} [∀ i, TopologicalSpace (G i)]
   {Y : Type v} [TopologicalSpace Y] {Z : Type v'} [TopologicalSpace Z]
@@ -184,5 +145,3 @@ theorem homeomorphContinuousMap_symm_apply [IsGeneratedBy G Y]
     (homeomorphContinuousMap (Z := Z) hG).symm f = f.toContinuousMapGeneratedBy G := (rfl)
 
 end Topology.ContinuousMapGeneratedBy
-
-end HomSpace

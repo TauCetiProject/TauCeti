@@ -32,7 +32,10 @@ When `Y` is locally compact, `G`-generated, and every product `G i × Y` with a 
 `G`-generated, currying through `C(Y, -)` shows that `X × Y` is `G`-generated whenever `X` is
 (`Topology.IsGeneratedBy.prod_right`), and more generally that refining `X × Y` agrees up to
 homeomorphism with refining `X` alone and taking the ordinary product with `Y`
-(`Topology.WithGeneratedByTopology.prodRightHomeomorph`).
+(`Topology.WithGeneratedByTopology.prodRightHomeomorph`). When all generators `G i` are locally
+compact with `G`-generated pairwise products `G i × G j`, this specializes to the instances
+`Topology.IsGeneratedBy.prod_of_locallyCompactSpace_right` and
+`Topology.IsGeneratedBy.prod_of_locallyCompactSpace_left`.
 
 ## References
 
@@ -227,6 +230,28 @@ theorem prod_left {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
     [∀ i, IsGeneratedBy G (G i × X)] : IsGeneratedBy G (X × Y) :=
   have : IsGeneratedBy G (Y × X) := prod_right
   (Homeomorph.prodComm Y X).isQuotientMap.isGeneratedBy
+
+section LocallyCompactGenerators
+
+variable {Y : Type*} {Z : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
+  [∀ i, LocallyCompactSpace (G i)] [∀ i j, IsGeneratedBy G (G i × G j)]
+  [IsGeneratedBy G Y] [IsGeneratedBy G Z]
+
+/-- Assuming all generators `G i` are locally compact with `G`-generated pairwise products
+`G i × G j`, if `Y` and `Z` are `G`-generated and `Z` is locally compact, then the ordinary product
+`Y × Z` is `G`-generated. -/
+instance prod_of_locallyCompactSpace_right [LocallyCompactSpace Z] : IsGeneratedBy G (Y × Z) :=
+  haveI := fun i ↦ (prod_left : IsGeneratedBy G (G i × Z))
+  prod_right
+
+/-- Assuming all generators `G i` are locally compact with `G`-generated pairwise products
+`G i × G j`, if `Y` and `Z` are `G`-generated and `Y` is locally compact, then the ordinary product
+`Y × Z` is `G`-generated. -/
+instance prod_of_locallyCompactSpace_left [LocallyCompactSpace Y] : IsGeneratedBy G (Y × Z) :=
+  haveI := fun i ↦ (prod_left : IsGeneratedBy G (G i × Y))
+  prod_left
+
+end LocallyCompactGenerators
 
 end Topology.IsGeneratedBy
 

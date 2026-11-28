@@ -49,7 +49,7 @@ object universe `w`.
 
 * J. H. C. Whitehead, *Note on a theorem due to Borsuk*, Bull. Amer. Math. Soc. 54 (1948),
   1125–1132 (quotient-product lemma for locally compact factors, specialized from
-  `Topology.IsGeneratedBy.prod_right` via `TauCeti.Topology.Convenient.HomSpace` and
+  `Topology.IsGeneratedBy.prod_right` via `TauCeti.Topology.Convenient.GeneratedBy` and
   `TauCeti.Topology.Convenient.CompactlyGenerated`).
 * N. E. Steenrod, *A convenient category of topological spaces*, Michigan Math. J. 14 (1967),
   133–152.
@@ -229,17 +229,16 @@ instance instIsIsoProdComparisonCompactlyGeneratedToTop [UCompactlyGeneratedSpac
 
 /-- When `X × Y` is `u`-compactly generated, the convenient product `X ⊗ Y` is homeomorphic to the
 ordinary product `X × Y` by the identity on points. -/
-@[expose]
 def tensorHomeomorphProd [UCompactlyGeneratedSpace.{u} (X × Y)] : ↑(X ⊗ Y) ≃ₜ X × Y :=
   counitHomeomorph.{u, w} (TopCat.of (X × Y))
 
 @[simp]
 theorem tensorHomeomorphProd_apply [UCompactlyGeneratedSpace.{u} (X × Y)] (p : ↑(X ⊗ Y)) :
-    tensorHomeomorphProd X Y p = p := rfl
+    tensorHomeomorphProd X Y p = p := (rfl)
 
 @[simp]
 theorem tensorHomeomorphProd_symm_apply [UCompactlyGeneratedSpace.{u} (X × Y)] (p : X × Y) :
-    (tensorHomeomorphProd X Y).symm p = p := rfl
+    (tensorHomeomorphProd X Y).symm p = p := (rfl)
 
 end ProdComparison
 
@@ -258,13 +257,13 @@ def toCompactlyGeneratedProdRightIso (X : TopCat.{w}) (L : Type w)
 theorem toCompactlyGeneratedProdRightIso_hom_apply (X : TopCat.{w}) (L : Type w)
     [TopologicalSpace L] [LocallyCompactSpace L] [T2Space L] [Small.{u} L]
     (p : TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of (X × L))) :
-    (toCompactlyGeneratedProdRightIso X L).hom p = p := rfl
+    (toCompactlyGeneratedProdRightIso X L).hom p = p := (rfl)
 
 @[simp]
 theorem toCompactlyGeneratedProdRightIso_inv_apply (X : TopCat.{w}) (L : Type w)
     [TopologicalSpace L] [LocallyCompactSpace L] [T2Space L] [Small.{u} L]
     (p : ↑(TopCat.toCompactlyGenerated.{u, w}.obj X ⊗ (of L : CompactlyGenerated.{u, w}))) :
-    (toCompactlyGeneratedProdRightIso X L).inv p = p := rfl
+    (toCompactlyGeneratedProdRightIso X L).inv p = p := (rfl)
 
 /-- Symmetric isomorphism `k(L × X) ≅ of L ⊗ kX` in `CompactlyGenerated.{u, w}`. -/
 @[expose]
@@ -280,13 +279,13 @@ def toCompactlyGeneratedProdLeftIso (L : Type w) (X : TopCat.{w})
 theorem toCompactlyGeneratedProdLeftIso_hom_apply (L : Type w) (X : TopCat.{w})
     [TopologicalSpace L] [LocallyCompactSpace L] [T2Space L] [Small.{u} L]
     (p : TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of (L × X))) :
-    (toCompactlyGeneratedProdLeftIso L X).hom p = p := rfl
+    (toCompactlyGeneratedProdLeftIso L X).hom p = p := (rfl)
 
 @[simp]
 theorem toCompactlyGeneratedProdLeftIso_inv_apply (L : Type w) (X : TopCat.{w})
     [TopologicalSpace L] [LocallyCompactSpace L] [T2Space L] [Small.{u} L]
     (p : ↑((of L : CompactlyGenerated.{u, w}) ⊗ TopCat.toCompactlyGenerated.{u, w}.obj X)) :
-    (toCompactlyGeneratedProdLeftIso L X).inv p = p := rfl
+    (toCompactlyGeneratedProdLeftIso L X).inv p = p := (rfl)
 
 /-- Any map into `↑(X ⊗ Y)` from a `u`-compactly generated space that is continuous into the
 ordinary product `X × Y` is continuous into the convenient product `X ⊗ Y`. -/
@@ -464,7 +463,6 @@ theorem evalAt_apply (Y Z : CompactlyGenerated.{u, w}) (y : Y) (f : ↑((ihom Y)
 
 /-- Canonical morphism `k(C(Y, Z)) ⟶ (ihom Y).obj Z` in `CompactlyGenerated.{u, w}` induced by
 viewing continuous maps as `CompHaus.{u}`-continuous maps. -/
-@[expose]
 def compactOpenToIhom (Y Z : CompactlyGenerated.{u, w}) :
     TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(Y, Z)) ⟶ (ihom Y).obj Z :=
   TopCat.toCompactlyGeneratedOfContinuousGeneratedBy.{u}
@@ -474,7 +472,7 @@ def compactOpenToIhom (Y Z : CompactlyGenerated.{u, w}) :
 @[simp]
 theorem compactOpenToIhom_apply (Y Z : CompactlyGenerated.{u, w})
     (f : TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(Y, Z))) (y : Y) :
-    (compactOpenToIhom Y Z f) y = f y := rfl
+    (compactOpenToIhom Y Z f) y = f y := (rfl)
 
 instance (Y Z : CompactlyGenerated.{u, w}) :
     FunLike ↑((compactlyGeneratedToTop.{u, w} ⋙ TopCat.mappingSpace Y.toTop ⋙
@@ -669,11 +667,11 @@ def uliftBoolEval (Z : CompactlyGenerated.{u, w}) :
 
 @[simp]
 theorem uliftBoolEval_apply_false (Z : CompactlyGenerated.{u, w}) (p : ↑(Z ⊗ Z)) :
-    uliftBoolEval Z (ULift.up false, p) = p.1 := rfl
+    uliftBoolEval Z (ULift.up false, p) = p.1 := (rfl)
 
 @[simp]
 theorem uliftBoolEval_apply_true (Z : CompactlyGenerated.{u, w}) (p : ↑(Z ⊗ Z)) :
-    uliftBoolEval Z (ULift.up true, p) = p.2 := rfl
+    uliftBoolEval Z (ULift.up true, p) = p.2 := (rfl)
 
 /-- The exponential `(ihom S⁰).obj Z` out of the discrete two-point space `ULift Bool` is
 canonically isomorphic to the convenient square `Z ⊗ Z`, sending `f` to `(f ⟨false⟩, f ⟨true⟩)`. -/
@@ -722,7 +720,7 @@ def ihomULiftBoolHomeomorph (L : Type w) [TopologicalSpace L] [LocallyCompactSpa
 theorem ihomULiftBoolHomeomorph_apply (L : Type w) [TopologicalSpace L] [LocallyCompactSpace L]
     [T2Space L] [Small.{u} L]
     (f : ↑((ihom (of.{u, w} (ULift.{w} Bool))).obj (of.{u, w} L))) :
-    ihomULiftBoolHomeomorph.{u, w} L f = (f (ULift.up false), f (ULift.up true)) := rfl
+    ihomULiftBoolHomeomorph.{u, w} L f = (f (ULift.up false), f (ULift.up true)) := (rfl)
 
 @[simp]
 theorem ihomULiftBoolHomeomorph_symm_apply_false (L : Type w) [TopologicalSpace L]
