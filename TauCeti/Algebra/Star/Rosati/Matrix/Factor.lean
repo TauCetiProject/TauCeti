@@ -125,13 +125,6 @@ private theorem exists_starAlgEquiv_matrix_of_hermitian_unit {D : Type*} [Divisi
   exact and_congr_right fun _ ↦ forall₂_congr fun _ _ ↦
     ⟨fun h ↦ pos_of_mul_pos_right h hc.le, fun h ↦ mul_pos hc h⟩
 
-private theorem map_trace_smul_one {D : Type*} [Ring D] [Algebra ℝ D] {n : Type*} [Fintype n]
-    [DecidableEq n] (τ : D →ₗ[ℝ] ℝ) (c : D) :
-    τ (Matrix.trace (c • (1 : Matrix n n D))) = (Fintype.card n : ℝ) * τ c := by
-  have htr : Matrix.trace (c • (1 : Matrix n n D)) = (Fintype.card n : ℝ) • c := by
-    simp [Matrix.trace_smul, Algebra.smul_def, Nat.cast_comm]
-  rw [htr, map_smul, smul_eq_mul]
-
 private theorem exists_cyclic_trace_pos {D : Type*} [Ring D] [Nontrivial D] [Algebra ℝ D]
     [Nonempty n] (φ : A ≃ₐ[ℝ] Matrix n n D) (t : A →ₗ[ℝ] ℝ)
     (hcyc : ∀ x y, t (x * y) = t (y * x)) (hpos : ∀ x, x ≠ 0 → 0 < t (x * star x)) :
@@ -142,7 +135,7 @@ private theorem exists_cyclic_trace_pos {D : Type*} [Ring D] [Nontrivial D] [Alg
   have htpos : 0 < (Fintype.card n : ℝ) * τ 1 := by
     have h := hτ 1
     simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, map_one] at h
-    rw [← one_smul D (1 : Matrix n n D), map_trace_smul_one] at h
+    rw [← one_smul D (1 : Matrix n n D), τ.map_trace_smul_one, smul_eq_mul] at h
     exact h ▸ by simpa using hpos 1 fun h0 ↦
       (one_ne_zero : (1 : Matrix n n D) ≠ 0) (by simpa using congrArg φ h0)
   exact ⟨τ, pos_of_mul_pos_right htpos (Nat.cast_pos.mpr Fintype.card_pos).le, hτ_cyc,
@@ -248,7 +241,7 @@ private theorem trace_eq_mul_comp_traceLinearMap_complex {A : Type*} [Ring A] [A
   have hτI : τ Complex.I = 0 := by
     have h2 : t' (φ.symm (Complex.I • 1)) = -t' (φ.symm (Complex.I • 1)) := by
       conv_lhs => rw [← hstar', ← AlgEquiv.symm_apply_apply φ (star _), hI, map_neg, map_neg]
-    rw [hτ, AlgEquiv.apply_symm_apply, map_trace_smul_one] at h2
+    rw [hτ, AlgEquiv.apply_symm_apply, τ.map_trace_smul_one, smul_eq_mul] at h2
     exact (mul_eq_zero.mp (by linarith : (Fintype.card n : ℝ) * τ Complex.I = 0)).resolve_left
       (Nat.cast_ne_zero.mpr Fintype.card_ne_zero)
   refine ⟨τ 1, hc, fun x ↦ ?_⟩

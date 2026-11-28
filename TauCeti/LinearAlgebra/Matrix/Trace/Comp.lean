@@ -13,9 +13,9 @@ import Mathlib.Data.Matrix.Basis
 /-!
 # Postcomposed matrix traces and cyclic functionals
 
-Cyclicity, positivity, column quadratic-form expansion, cyclic factorization, and rank-one identity
-for `rePart.comp (Matrix.traceLinearMap n R D)`. Over `ℍ[ℝ]` with `QuaternionAlgebra.reₗ`, this is
-the real-part trace (half the quaternionic reduced trace).
+Cyclicity, positivity, column quadratic-form expansion, cyclic factorization, scalar-identity trace
+evaluation, and rank-one identity for `rePart.comp (Matrix.traceLinearMap n R D)`. Over `ℍ[ℝ]`
+with `QuaternionAlgebra.reₗ`, this is the real-part trace (half the quaternionic reduced trace).
 -/
 
 public section
@@ -90,6 +90,16 @@ theorem exists_eq_comp_matrixTrace_of_cyclic {R D M : Type*} [CommSemiring R] [S
     rw [Finset.sum_eq_single i (fun j _ hji ↦ by rw [hsingle_off, hcyc]; simp [hji])
       (fun hi ↦ absurd (Finset.mem_univ i) hi),
       hsingle_diag, hcyc, Matrix.single_mul_single_same, one_mul, hτ]
+
+/-- Evaluating an `R`-linear map `τ : D →ₗ[R] M` on `Matrix.trace (c • (1 : Matrix n n D))`
+scales `τ c` by `(Fintype.card n : R)`. -/
+theorem map_trace_smul_one {R D M : Type*} [Semiring R] [NonAssocSemiring D] [Module R D]
+    [AddCommMonoid M] [Module R M] {n : Type*} [Fintype n] [DecidableEq n]
+    (τ : D →ₗ[R] M) (c : D) :
+    τ (Matrix.trace (c • (1 : Matrix n n D))) = (Fintype.card n : R) • τ c := by
+  have htr : Matrix.trace (c • (1 : Matrix n n D)) = Fintype.card n • c := by
+    simp [Matrix.trace_smul, Nat.cast_comm]
+  rw [htr, map_nsmul, Nat.cast_smul_eq_nsmul]
 
 /-- Rank-one trace identity: for `X = Matrix.vecMulVec v (star w)`,
 `(rePart.comp (Matrix.traceLinearMap n R D)) (X * U * Xᴴ * V)` equals `rePart` applied to the
