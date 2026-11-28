@@ -70,14 +70,24 @@ function `f` and `0 < p < ∞` satisfy `(μ s) ^ (1 / p) ‖f x‖ₑ ≤ ‖f�
 theorem exists_mem_measure_rpow_mul_enorm_le_eLpNorm (f : α → ε) {p : ℝ≥0∞} {s : Set α}
     (hp0 : p ≠ 0) (hp : p ≠ ∞) (hμ0 : μ s ≠ 0) (hμ : μ s ≠ ∞) :
     ∃ x ∈ s, (μ s) ^ p.toReal⁻¹ * ‖f x‖ₑ ≤ eLpNorm f p (μ.restrict s) := by
-  by_cases hf : AEStronglyMeasurable f (μ.restrict s)
-  · have hpr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-    obtain ⟨x, hxs, hx⟩ := exists_le_setLAverage hμ0 hμ (hf.eNorm.pow_const p.toReal)
-    rw [setLAverage_eq, lintegral_rpow_enorm_eq_eLpNorm_rpow hp0 hp hf] at hx
-    exact ⟨x, hxs, (ENNReal.rpow_inv_mul_le_iff_rpow_le_div hpr hμ0 hμ).2 hx⟩
-  · obtain ⟨x, hx⟩ := nonempty_of_measure_ne_zero hμ0
-    rw [eLpNorm_of_not_aestronglyMeasurable hf]
-    exact ⟨x, hx, le_top⟩
+  have hfreq := frequently_measure_univ_rpow_mul_enorm_le_eLpNorm (μ := μ.restrict s) f hp0 hp
+    (mt Measure.restrict_eq_zero.1 hμ0) (by rwa [Measure.restrict_apply_univ])
+  rw [Measure.restrict_apply_univ] at hfreq
+  have hnull : NullMeasurableSet
+      {x | (μ s) ^ p.toReal⁻¹ * ‖f x‖ₑ ≤ eLpNorm f p (μ.restrict s)} (μ.restrict s) := by
+    by_cases hf : AEStronglyMeasurable f (μ.restrict s)
+    · exact (hf.eNorm.const_mul _).aestronglyMeasurable.nullMeasurableSet_le
+        aestronglyMeasurable_const
+    · simp [eLpNorm_of_not_aestronglyMeasurable hf]
+  by_contra! hnot
+  have hzero :
+      (μ.restrict s) {x | (μ s) ^ p.toReal⁻¹ * ‖f x‖ₑ ≤ eLpNorm f p (μ.restrict s)} = 0 := by
+    rw [Measure.restrict_apply₀ hnull]
+    have : {x | (μ s) ^ p.toReal⁻¹ * ‖f x‖ₑ ≤ eLpNorm f p (μ.restrict s)} ∩ s = ∅ := by
+      ext x
+      exact ⟨fun ⟨hx1, hx2⟩ ↦ (hnot x hx2).not_ge hx1, False.elim⟩
+    rw [this, measure_empty]
+  exact (frequently_ae_iff.1 hfreq) hzero
 
 end PointSelection
 

@@ -25,9 +25,11 @@ Hessians close to `D²u` in `Lᵖ(K)`
 coefficients, the principal parts of `v` and `u` differ by at most `N ‖D²v - D²u‖` almost
 everywhere, where `N` depends only on the dimension and a bound for the entries of the
 coefficients. This two-sided comparison serves solutions of equations as well as inequalities.
-In particular `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼv ≤ f + N ‖D²v - D²u‖`, so `v` is a classical supersolution
-with a right-hand side whose positive part is at most `‖f⁺‖_{Lᵖ} + η` in `Lᵖ`. No regularity or
-measurability of the coefficients is needed.
+In particular, `∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼv ≤ (f)⁺ + N ‖D²v - D²u‖` holds almost everywhere on `S`; taking
+the pointwise maximum `g = max (∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼv) ((f)⁺ + N ‖D²v - D²u‖)` turns `v` into a
+classical supersolution at every point of `S` while agreeing with `(f)⁺ + N ‖D²v - D²u‖` almost
+everywhere, so `g⁺` has `Lᵖ` norm at most `‖f⁺‖_{Lᵖ} + η`. No regularity or measurability of the
+coefficients is needed.
 
 Shifting `v` up by `η / 2` gives a smooth `w` with `ū ≤ w ≤ ū + η` on `K` (preserving nonnegativity
 without rescaling, for the weak Harnack and Harnack inequalities); shifting `v` up by `ζ` and

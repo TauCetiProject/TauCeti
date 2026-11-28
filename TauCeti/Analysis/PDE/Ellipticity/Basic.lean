@@ -895,6 +895,13 @@ lemma abs_apply_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω
   simpa [dotProduct, Matrix.mulVec, Pi.single_apply] using
     h.upper_bound hx (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
 
+/-- Almost everywhere on any measurable subset of the domain, every entry of the coefficient
+matrix is bounded in absolute value by the upper ellipticity constant. -/
+lemma ae_abs_apply_le [MeasurableSpace X] {μ : MeasureTheory.Measure X} {S : Set X}
+    (h : UniformlyEllipticOn Ω a lam Lam) (hS : S ⊆ Ω) (hSm : MeasurableSet S) :
+    ∀ᵐ x ∂μ.restrict S, ∀ i j, |a x i j| ≤ Lam :=
+  (MeasureTheory.ae_restrict_mem hSm).mono fun _ hx ↦ h.abs_apply_le (hS hx)
+
 /-- A symmetric uniformly elliptic coefficient matrix is positive definite. -/
 lemma posDef (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) (hsymm : (a x).IsSymm) :
     (a x).PosDef :=

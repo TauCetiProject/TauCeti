@@ -64,8 +64,8 @@ exact form of the bounded-overlap count.
   selection on a ball, finding `w ∈ B(x₀, r)` with
   `‖f w‖ ≤ |B(0, 1)|^(-1/p) r^(-n/p) ‖f‖_{L^p(B(x₀, r))}`.
 * `MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm_of_dist_le`:
-  off-centre Chebyshev point selection on a ball `B(q', r)` from the `Lᵖ` norm on `B(q, r)` when
-  `dist q' q ≤ r / 2`.
+  off-centre Chebyshev point selection in `B(q', r) ∩ B(q, r)` from the `Lᵖ` norm on `B(q, r)`
+  when `dist q' q ≤ r / 2`.
 * `TauCeti.eLpNorm_restrict_ball_le_of_forall_mem_closedBall`: covering `closedBall x₀ r` by
   balls of radius `s` upgrades uniform local `Lᵖ` bounds in `ℝ≥0∞` to a bound on `B(x₀, r)`.
 * `TauCeti.toReal_eLpNorm_restrict_ball_le_of_forall_mem_closedBall`: real-valued covering bound
@@ -419,7 +419,7 @@ theorem _root_.MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal
   rw [hpow, mul_assoc]
 
 /-- **Off-centre Chebyshev point selection on a ball.** For `p > 0`, `r > 0`, `dist q' q ≤ r / 2`,
-and `f ∈ L^p(B(q, r))` in dimension `n`, there is a point `w ∈ B(q', r)` at which
+and `f ∈ L^p(B(q, r))` in dimension `n`, there is a point `w ∈ B(q', r) ∩ B(q, r)` at which
 `‖f w‖ ≤ 2^(n/p) |B(0, 1)|^(-1/p) r^(-n/p) ‖f‖_{L^p(B(q, r))}`. -/
 theorem _root_.MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm_of_dist_le
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -427,14 +427,14 @@ theorem _root_.MeasureTheory.Measure.exists_mem_ball_norm_le_rpow_neg_mul_toReal
     {F : Type*} [NormedAddCommGroup F] {f : E → F} {p r : ℝ} {q' q : E}
     (hp : 0 < p) (hr : 0 < r) (hdist : dist q' q ≤ r / 2)
     (hf : MemLp f (ENNReal.ofReal p) (mu.restrict (ball q r))) :
-    ∃ w ∈ ball q' r,
+    ∃ w ∈ ball q' r ∩ ball q r,
       ‖f w‖ ≤ 2 ^ ((finrank ℝ E : ℝ) / p) * mu.real (ball (0 : E) 1) ^ (-p⁻¹) *
         (r ^ (-((finrank ℝ E : ℝ) / p)) *
           (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball q r))).toReal) := by
   have hsub : ball q' (r / 2) ⊆ ball q r := ball_subset_ball' (by linarith)
   obtain ⟨w, hw, hfw⟩ := mu.exists_mem_ball_norm_le_rpow_neg_mul_toReal_eLpNorm hp (half_pos hr)
     (hf.mono_measure (Measure.restrict_mono hsub le_rfl))
-  refine ⟨w, ball_subset_ball (half_lt_self hr).le hw, ?_⟩
+  refine ⟨w, ⟨ball_subset_ball (half_lt_self hr).le hw, hsub hw⟩, ?_⟩
   have hmono : (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball q' (r / 2)))).toReal ≤
       (eLpNorm f (ENNReal.ofReal p) (mu.restrict (ball q r))).toReal :=
     ENNReal.toReal_mono hf.eLpNorm_ne_top

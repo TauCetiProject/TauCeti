@@ -58,7 +58,7 @@ the `Lᵖ` norm of `f` on `t` is at most that of `ψ • f`
 * `MeasureTheory.eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion`: finite-cover `eLpNorm` bound
   `‖f‖_{Lᵖ(s)} ≤ card(t) ^ (1 / p) * B` from uniform bounds `≤ B` on the pieces.
 * `MeasureTheory.toReal_eLpNorm_restrict_le_card_rpow_mul_of_subset_biUnion`: real-valued
-  finite-cover `Lᵖ` bound from uniform `toReal` bounds on the pieces.
+  finite-cover `Lᵖ` bound when each piece has finite `Lᵖ` seminorm and uniform `toReal` bound.
 * `MeasureTheory.toReal_eLpNorm_restrict_mono_ae`: real-valued restricted `Lᵖ` monotonicity under
   a.e. norm domination on nested sets.
 * `MeasureTheory.eLpNorm_restrict_biUnion_finset_le`: subadditivity over a finite union.

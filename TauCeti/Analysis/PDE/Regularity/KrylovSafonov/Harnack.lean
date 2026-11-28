@@ -140,9 +140,9 @@ private theorem exists_le_mul_add_of_dist_le_div_five [Nonempty ι] {κ : ℝ} :
   have hfpos : eLpNorm (fun x ↦ (f x)⁺) (Fintype.card ι) (volume.restrict (ball z r)) =
       eLpNorm f (Fintype.card ι) (volume.restrict (ball z r)) :=
     eLpNorm_congr_ae hf_ae.symm
-  have hweak := HW (ha.mono_set hb) hLam (hu.mono hb)
+  have hweak := (HW (ha.mono_set hb) hLam (hu.mono hb)
     (fun x hx ↦ hnonneg x (hb hx)) (fun x hx ↦ le_of_abs_le (habs x (hb hx)))
-    ((hf.mono_measure (Measure.restrict_mono hb le_rfl)).ae_eq hf_ae)
+    ((hf.mono_measure (Measure.restrict_mono hb le_rfl)).ae_eq hf_ae)).2
     w (by rw [mem_ball, dist_comm]; linarith)
   rw [hfpos] at hweak
   calc u z ≤ Cl * (Cw * (u w + r * F / lam) + r * F / lam) := by
