@@ -19,8 +19,8 @@ For even-dimensional oriented real inner product spaces `(U, o₁)` and `(V, o�
 `Q₁ u = -‖u‖²`, `Q₂ v = -‖v‖²`, `o₁₂` equal to `o₁.prod o₂` transported along
 `(WithLp.linearEquiv 2 ℝ (U × V)).symm`, and arbitrary `(W, Q₃)`, `TensorProduct.assoc ℂ E F G`
 intertwines the two iterated `CliffordAlgebra.complexProdTensor` actions along
-`QuadraticMap.IsometryEquiv.withLpProdAssoc`. When `(W, o₃)` is also even-dimensional with
-`Q₃ w = -‖w‖²`, it carries the left-associated product chirality to the right-associated one.
+`QuadraticMap.IsometryEquiv.withLpProdAssoc`. When `(W, o₃)` is also even-dimensional, it carries
+the left-associated product volume element to the right-associated one.
 
 ## Main results
 
@@ -28,9 +28,9 @@ intertwines the two iterated `CliffordAlgebra.complexProdTensor` actions along
   `CliffordAlgebra.assoc_complexProdTensor`: `TensorProduct.assoc ℂ E F G` intertwines the two
   iterated `complexProdTensor` actions along `QuadraticMap.IsometryEquiv.withLpProdAssoc` when
   `o₁₂` is `o₁.prod o₂` transported along `(WithLp.linearEquiv 2 ℝ (U × V)).symm`.
-* `CliffordAlgebra.assoc_complexProdTensor_complexVolume`: for even-dimensional `(W, o₃)` with
-  `Q₃ w = -‖w‖²`, `TensorProduct.assoc ℂ E F G` carries the left-associated chirality action to the
-  right-associated one when `o_R` is transported from `o_L` along `LinearEquiv.withLpProdAssoc`.
+* `CliffordAlgebra.assoc_complexProdTensor_complexVolume`: for even-dimensional `(W, o₃)` and any
+  quadratic form `Q₃`, `TensorProduct.assoc ℂ E F G` carries the left-associated volume action to
+  the right-associated one when `o_R` is transported from `o_L` along `LinearEquiv.withLpProdAssoc`.
 
 ## References
 
@@ -104,7 +104,7 @@ private theorem complexProdTensor_assoc_left
   have hγ₁₂_anti := AlgHom.map_mul_cliffordProdTensor_ι ρ₁ γ₁
     (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hk ρ₁) ρ₂ γ₂
     (map_complexVolume_mul_map_ι o₂ hn ρ₂)
-  have hvol := complexProdTensor_complexVolume_of_map_prod hQ₁₂ o₁ hQ₁ hk ρ₁ ρ₂ o₂ o₁₂ hn hQ₂ ho₁₂
+  have hvol := complexProdTensor_complexVolume_of_map_prod hQ₁₂ o₁ hQ₁ hk ρ₁ ρ₂ o₂ o₁₂ hn ho₁₂
   have hcomp := AlgHom.cliffordProdTensor_comp_prodMap ρ₁₂_std (TensorProduct.map γ₁ γ₂)
     hγ₁₂_sq hγ₁₂_anti ρ₃ e₁₂ (QuadraticMap.Isometry.id (Q₃.baseChange ℂ))
   simp only [CliffordAlgebra.map_id, AlgHom.comp_id] at hcomp
@@ -190,10 +190,10 @@ theorem assoc_complexProdTensor
     (conjAlgEquiv_assoc_complexProdTensor hQ₁₂ hQ₂₃ hQ_L hQ_R o₁ o₂ o₁₂ hQ₁ hk hQ₂ hn
       ρ₁ ρ₂ ρ₃ ho₁₂) a t
 
-/-- **Associativity on the product chirality.** When `(W, o₃)` is also even-dimensional with
-`Q₃ w = -‖w‖²` and `o_R` is obtained from the left-associated product orientation `o_L` along
-`LinearEquiv.withLpProdAssoc`, `TensorProduct.assoc ℂ E F G` carries the left-associated chirality
-action `(Γ_U ⊗ Γ_V) ⊗ Γ_W` to `Γ_U ⊗ (Γ_V ⊗ Γ_W)`. -/
+/-- **Associativity on the product volume element.** When `(W, o₃)` is also even-dimensional
+and `o_R` is obtained from the left-associated product orientation `o_L` along
+`LinearEquiv.withLpProdAssoc`, `TensorProduct.assoc ℂ E F G` carries the left-associated volume
+action `(Γ_U ⊗ Γ_V) ⊗ ω_W` to `Γ_U ⊗ (Γ_V ⊗ ω_W)`. -/
 theorem assoc_complexProdTensor_complexVolume
     [FiniteDimensional ℝ W] {m : ℕ} [Fact (finrank ℝ W = m)] (o₃ : Orientation ℝ W (Fin m))
     [Fact (finrank ℝ (WithLp 2 (V × W)) = n + m)]
@@ -202,7 +202,7 @@ theorem assoc_complexProdTensor_complexVolume
     (o_L : Orientation ℝ (WithLp 2 (WithLp 2 (U × V) × W)) (Fin (k + n + m)))
     [Fact (finrank ℝ (WithLp 2 (U × WithLp 2 (V × W))) = k + (n + m))]
     (o_R : Orientation ℝ (WithLp 2 (U × WithLp 2 (V × W))) (Fin (k + (n + m))))
-    (hQ₃ : ∀ w, Q₃ w = -‖w‖ ^ 2) (hm : Even m)
+    (hm : Even m)
     (ho₁₂ : (o₁.prod o₂ Fact.out Fact.out).map (Fin (k + n))
       (WithLp.linearEquiv 2 ℝ (U × V)).symm = o₁₂)
     (ho₂₃ : (o₂.prod o₃ Fact.out Fact.out).map (Fin (n + m))
@@ -225,11 +225,10 @@ theorem assoc_complexProdTensor_complexVolume
     simp only [ho₁₂, ho₂₃] at hassoc
     rw [← ho_R, ← ho_L, hassoc, eq_comm, Orientation.reindex_finCongr_eq_iff]
   rw [complexProdTensor_complexVolume_of_map_prod hQ_L o₁₂
-      (QuadraticForm.withLpProd_eq_neg_norm_sq hQ₁₂ hQ₁ hQ₂) (hk.add hn) _ ρ₃ o₃ o_L hm hQ₃ ho_L,
-    complexProdTensor_complexVolume_of_map_prod hQ₁₂ o₁ hQ₁ hk ρ₁ ρ₂ o₂ o₁₂ hn hQ₂ ho₁₂,
-    complexProdTensor_complexVolume_of_map_prod hQ_R o₁ hQ₁ hk ρ₁ _ o₂₃ o_R (hn.add hm)
-      (QuadraticForm.withLpProd_eq_neg_norm_sq hQ₂₃ hQ₂ hQ₃) ho_R',
-    complexProdTensor_complexVolume_of_map_prod hQ₂₃ o₂ hQ₂ hn ρ₂ ρ₃ o₃ o₂₃ hm hQ₃ ho₂₃]
+      (QuadraticForm.withLpProd_eq_neg_norm_sq hQ₁₂ hQ₁ hQ₂) (hk.add hn) _ ρ₃ o₃ o_L hm ho_L,
+    complexProdTensor_complexVolume_of_map_prod hQ₁₂ o₁ hQ₁ hk ρ₁ ρ₂ o₂ o₁₂ hn ho₁₂,
+    complexProdTensor_complexVolume_of_map_prod hQ_R o₁ hQ₁ hk ρ₁ _ o₂₃ o_R (hn.add hm) ho_R',
+    complexProdTensor_complexVolume_of_map_prod hQ₂₃ o₂ hQ₂ hn ρ₂ ρ₃ o₃ o₂₃ hm ho₂₃]
   exact (TensorProduct.map_map_assoc _ _ _ t).symm
 
 end CliffordAlgebra

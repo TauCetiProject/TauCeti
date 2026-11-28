@@ -38,10 +38,12 @@ Mathlib records the characteristic of an endomorphism algebra in
 `Mathlib/Algebra/CharP/LinearMaps.lean`, whose `Module.charP_end` transfers a prime characteristic
 along a non-torsion element; the exponential characteristic of a vector space needs no such element.
 The same holds for an `R`-algebra `A` acting on itself: left multiplication `Algebra.lmul` embeds
-`A` into `Module.End R A`, so the two have the same exponential characteristic.
+`A` into `Module.End R A`, so the two have the same characteristic and exponential characteristic.
 
 ## Main results
 
+* `Module.End.instCharP`: the endomorphisms `Module.End R A` of an `R`-algebra `A` have the
+  characteristic of `A`.
 * `Module.End.instExpChar`: the endomorphisms `Module.End R A` of an `R`-algebra `A` have the
   exponential characteristic of `A`.
 * `Module.End.isNilpotent_sub_one_of_pow_expChar_pow_eq_one`: an endomorphism of `p`-power order of
@@ -51,6 +53,12 @@ The same holds for an `R`-algebra `A` acting on itself: left multiplication `Alg
 public section
 
 namespace Module.End
+
+/-- The `R`-linear endomorphisms of an `R`-algebra `A` have the characteristic of `A`,
+since left multiplication `Algebra.lmul` embeds `A` into `Module.End R A`. -/
+instance instCharP {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A] (p : ℕ)
+    [CharP A p] : CharP (Module.End R A) p :=
+  charP_of_injective_ringHom (f := (Algebra.lmul R A).toRingHom) Algebra.lmul_injective p
 
 /-- The `R`-linear endomorphisms of an `R`-algebra `A` have the exponential characteristic of `A`,
 since left multiplication `Algebra.lmul` embeds `A` into `Module.End R A`. -/
