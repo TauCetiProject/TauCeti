@@ -41,9 +41,8 @@ variable {ι : Type u} [Fintype ι] [DecidableEq ι] {R : Type v} [CommSemiring 
   {N : FusionRules ι} {P : FSymbols R N}
 
 /-- The tensor product of two graded bases, with one copy of each pair of basis vectors for
-each fusion channel. The body is exposed so that callers can index its matrices by these
-pairs of basis vectors and fusion indices. -/
-@[expose]
+each fusion channel. Use `tensorBasisMk` and `tensorBasisMk_exists` to construct and
+decompose its basis vectors. -/
 def tensorObj (X Y : Model P) : Model P :=
   ⟨fun c ↦ Σ ab : ι × ι, (X.basis ab.1 × Y.basis ab.2) × Fin (N.N ab.1 ab.2 c)⟩
 
@@ -58,11 +57,13 @@ variable {X X' X'' Y Y' Y'' : Model P}
 
 /-- A tensor product basis vector with the given input grades, basis vectors and
 fusion channel. -/
-abbrev tensorBasisMk {c : ι} (ab : ι × ι) (x : X.basis ab.1) (y : Y.basis ab.2)
+def tensorBasisMk {c : ι} (ab : ι × ι) (x : X.basis ab.1) (y : Y.basis ab.2)
     (i : Fin (N.N ab.1 ab.2 c)) : (tensorObj X Y).basis c :=
   ⟨ab, (x, y), i⟩
 
-private theorem tensorBasisMk_exists {c : ι} (p : (tensorObj X Y).basis c) :
+/-- Every tensor product basis vector is given by input grades, basis vectors and a
+fusion channel. -/
+theorem tensorBasisMk_exists {c : ι} (p : (tensorObj X Y).basis c) :
     ∃ ab x y i, p = tensorBasisMk ab x y i := by
   obtain ⟨ab, ⟨x, y⟩, i⟩ := p
   exact ⟨ab, x, y, i, rfl⟩
@@ -240,7 +241,9 @@ def leftUnitorBasis (X : Model P) (c : ι) :
       obtain rfl := eq_of_simple_basis i
       have hb := eq_of_fusion_index j (N.N_unit_left_of_ne b c)
       subst b
-      exact ⟨x, by rw [Subsingleton.elim i default, Subsingleton.elim j (N.unitLeft c)]⟩)).symm
+      exact ⟨x, by
+        rw [Subsingleton.elim i default, Subsingleton.elim j (N.unitLeft c)]
+        rfl⟩)).symm
 
 /-- The right unitor on graded bases. Its inverse inserts the unique unit vector and fusion
 index. -/
@@ -254,7 +257,9 @@ def rightUnitorBasis (X : Model P) (c : ι) :
       obtain rfl := eq_of_simple_basis i
       have ha := eq_of_fusion_index j (N.N_unit_right_of_ne a c)
       subst a
-      exact ⟨x, by rw [Subsingleton.elim i default, Subsingleton.elim j (N.unitRight c)]⟩)).symm
+      exact ⟨x, by
+        rw [Subsingleton.elim i default, Subsingleton.elim j (N.unitRight c)]
+        rfl⟩)).symm
 
 /-- The inverse left unitor on a basis vector. -/
 @[simp]
