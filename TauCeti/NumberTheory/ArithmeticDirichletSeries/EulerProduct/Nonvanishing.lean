@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.LSeries.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.ThreeFourOne
-import TauCeti.NumberTheory.NumberField.DedekindZeta
+import TauCeti.NumberTheory.NumberField.DedekindZeta.Basic
 
 /-!
 # `3-4-1` nonvanishing for norm-twisted-square ideal weights

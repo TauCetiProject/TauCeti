@@ -48,6 +48,7 @@ theorem LSeries_term_dilateSq_eq_zero_of_notMem_range (f : ArithmeticFunction �
 
 /-- Reindexing the square-indexed Dirichlet terms of `f.dilateSq` at `s` gives the Dirichlet terms
 of `f` at `2 * s`. -/
+@[simp]
 theorem LSeries_term_dilateSq_sq (f : ArithmeticFunction ℂ) (s : ℂ) (m : ℕ) :
     LSeries.term (f.dilateSq : ℕ → ℂ) s (m ^ 2) = LSeries.term (f : ℕ → ℂ) (2 * s) m := by
   rw [TauCeti.LSeries.term_sq]
@@ -56,6 +57,7 @@ theorem LSeries_term_dilateSq_sq (f : ArithmeticFunction ℂ) (s : ℂ) (m : ℕ
 /-- **Dirichlet series of a square-dilated arithmetic function.** For every complex arithmetic
 function `f` and every `s : ℂ`, `LSeries f.dilateSq s = LSeries f (2 * s)` (both totalized to `0`
 when not summable). -/
+@[simp]
 theorem LSeries_dilateSq (f : ArithmeticFunction ℂ) (s : ℂ) :
     LSeries (f.dilateSq : ℕ → ℂ) s = LSeries (f : ℕ → ℂ) (2 * s) := by
   rw [LSeries, LSeries]
@@ -66,6 +68,7 @@ theorem LSeries_dilateSq (f : ArithmeticFunction ℂ) (s : ℂ) :
 
 /-- **Absolute convergence of a square-dilated Dirichlet series.** `LSeriesSummable f.dilateSq s`
 holds if and only if `LSeriesSummable f (2 * s)` holds. -/
+@[simp]
 theorem LSeriesSummable_dilateSq_iff (f : ArithmeticFunction ℂ) (s : ℂ) :
     LSeriesSummable (f.dilateSq : ℕ → ℂ) s ↔ LSeriesSummable (f : ℕ → ℂ) (2 * s) := by
   rw [LSeriesSummable, LSeriesSummable,

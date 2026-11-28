@@ -8,14 +8,15 @@ module
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.LFunctions.Hecke.Basic
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Dirichlet
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Continuation
 
 /-!
 # Presented Hecke L-functions over `ℚ`
 
 Over `ℚ`, `TauCeti.GlobalNumberFields.RayClassCharacter.toDirichletCharacter` identifies any ray
 class character `χ` of a modulus `𝔪` with a Dirichlet character `ψ = χ.toDirichletCharacter` modulo
-`Ideal.absNorm 𝔪.finitePart` (`TauCeti.GlobalNumberFields.LSeries_rayClassCharacter_rat_eq`). Since
+`Ideal.absNorm 𝔪.finitePart`
+(`TauCeti.GlobalNumberFields.LSeries_rayClassCharacter_eq_LSeries_toDirichletCharacter`). Since
 `DirichletCharacter.LFunction` is meromorphic on `ℂ` (entire when `ψ ≠ 1`, and agreeing away from
 `s = 1` with a finite Euler product times `riemannZeta` when `ψ = 1`), the canonical meromorphic
 continuation `TauCeti.LFunctions.heckeLFunctionC χ` equals
@@ -58,7 +59,7 @@ theorem heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat {𝔪 : Modulus ℚ}
     (χ : RayClassCharacter 𝔪) :
     heckeLFunctionC χ =
       toMeromorphicNFOn (DirichletCharacter.LFunction χ.toDirichletCharacter) Set.univ := by
-  rw [heckeLFunctionC_def, LSeries_rayClassCharacter_rat_eq χ]
+  rw [heckeLFunctionC_def, LSeries_rayClassCharacter_eq_LSeries_toDirichletCharacter χ]
   exact meromorphicContinuation_eq_toMeromorphicNFOn
     χ.toDirichletCharacter.meromorphic_LFunction
     (fun s (hs : 1 < s.re) ↦
@@ -87,7 +88,7 @@ theorem heckeLFunctionC_eq_LSeries_rat {𝔪 : Modulus ℚ} (χ : RayClassCharac
   rw [heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat χ,
     toMeromorphicNFOn_apply_of_analyticAt χ.toDirichletCharacter.meromorphic_LFunction
       (χ.toDirichletCharacter.analyticAt_LFunction (.inl fun h ↦ by simp [h] at hs)),
-    LSeries_rayClassCharacter_rat_eq χ,
+    LSeries_rayClassCharacter_eq_LSeries_toDirichletCharacter χ,
     DirichletCharacter.LFunction_eq_LSeries _ hs]
 
 end TauCeti.LFunctions

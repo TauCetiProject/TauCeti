@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Hecke.Basic
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Cancellation
-import TauCeti.NumberTheory.NumberField.DedekindZeta
+import TauCeti.NumberTheory.NumberField.HalfPlane
 
 /-!
 # Comparison of presented and cancellation-continued Hecke L-functions

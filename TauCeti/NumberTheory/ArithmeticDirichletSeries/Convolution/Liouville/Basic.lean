@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.ArithmeticFunction.DilateSq
 import Mathlib.Algebra.GroupWithZero.Torsion
 import TauCeti.Algebra.Group.Submonoid.Operations
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Multiplicative
+import TauCeti.NumberTheory.LSeries.Convergence
 import TauCeti.NumberTheory.LSeries.DilateSq
 
 /-!
@@ -167,11 +168,8 @@ convergence `1 / 2`. -/
 theorem abscissaOfAbsConv_normCoeff_convolution_one_liouville :
     LSeries.abscissaOfAbsConv (normCoeff K (IdealArithmeticFunction.convolution 1
       (MultiplicativeIdealWeight.liouville K).toIdealArithmeticFunction)) =
-        ((1 / 2 : ℝ) : EReal) := by
-  refine le_antisymm ?_
-    (half_le_abscissaOfAbsConv_normCoeff_convolution_one
-      (MultiplicativeIdealWeight.isTrivialOnGood_liouville_sq K))
-  exact LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun _ hy ↦
-    (LSeriesSummable_normCoeff_convolution_one_liouville_iff (K := K)).mpr (by simpa using hy)
+        ((1 / 2 : ℝ) : EReal) :=
+  TauCeti.LSeries.abscissaOfAbsConv_eq_of_LSeriesSummable_iff fun _ ↦
+    LSeriesSummable_normCoeff_convolution_one_liouville_iff
 
 end TauCeti

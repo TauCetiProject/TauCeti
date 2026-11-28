@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Bundle
-public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Continuation
 public import TauCeti.NumberTheory.LFunctions.Hecke.Basic
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Dirichlet
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.LFunctions.Hecke.Rat.Basic
 import TauCeti.NumberTheory.NumberField.Ideal.DegreeOne
 
@@ -43,18 +44,6 @@ private theorem rayClass_of_changeLevel {d n : ℕ} (hd : d ≠ 0) (hn : n ≠ 0
     apply (ratDirichletEquiv n hn).injective
     simp only [ratDirichletEquiv_induced, MulEquiv.apply_symm_apply]
   rw [← hind, PrimitiveRayClassCharacter.of_induced]
-
-/-- Transport an invariant `F` across `changeLevel hMN ψ = χ` when `N = M`. -/
-private theorem eq_of_level_eq_of_changeLevel_eq {α : Sort*}
-    (F : ∀ {N : ℕ}, [NeZero N] → DirichletCharacter ℂ N → α)
-    {M N : ℕ} [NeZero M] [NeZero N] (hMN : M ∣ N) (hNM : N = M)
-    {ψ : DirichletCharacter ℂ M} {χ : DirichletCharacter ℂ N}
-    (h : DirichletCharacter.changeLevel hMN ψ = χ) :
-    F χ = F ψ := by
-  subst hNM
-  rw [DirichletCharacter.changeLevel_self] at h
-  subst h
-  rfl
 
 /-- The rational ray class dictionary on primitive bundles. Its inverse presents a ray class
 character of conductor `𝔣` at `(n)·∞`, where `n` is the norm of the finite part of `𝔣`. -/
@@ -169,8 +158,8 @@ theorem toMultiplicativeIdealWeight_toPrimitiveRayClassCharacter_apply
       ψ.character (Ideal.absNorm J) := by
   rw [← (toPrimitiveRayClassCharacter ψ).character.toDirichletCharacter_apply_absNorm hJ]
   obtain ⟨hdiv, hchg⟩ := of_eq_iff.mp (toPrimitiveRayClassCharacter.symm_apply_apply ψ)
-  exact eq_of_level_eq_of_changeLevel_eq (fun {_ _} η ↦ η (Ideal.absNorm J)) hdiv
-    (absNorm_finitePart_conductor_toPrimitiveRayClassCharacter ψ) hchg
+  exact DirichletCharacter.eq_of_level_eq_of_changeLevel_eq (fun {_ _} η ↦ η (Ideal.absNorm J))
+    hdiv (absNorm_finitePart_conductor_toPrimitiveRayClassCharacter ψ) hchg
 
 /-- The coefficients of the corresponding ray class and Dirichlet series agree at every
 positive index. -/
@@ -180,9 +169,9 @@ theorem normCoeff_toPrimitiveRayClassCharacter (ψ : PrimitiveDirichletCharacter
     normCoeff ℚ
       (toPrimitiveRayClassCharacter ψ).character.toUnitaryIdealWeight.toIdealArithmeticFunction n =
         ψ.character n := by
-  rw [normCoeff_rayClassCharacter_rat_eq _ hn]
+  rw [normCoeff_rayClassCharacter_eq_toDirichletCharacter _ hn]
   obtain ⟨hdiv, hchg⟩ := of_eq_iff.mp (toPrimitiveRayClassCharacter.symm_apply_apply ψ)
-  exact eq_of_level_eq_of_changeLevel_eq (fun {_ _} η ↦ η n) hdiv
+  exact DirichletCharacter.eq_of_level_eq_of_changeLevel_eq (fun {_ _} η ↦ η n) hdiv
     (absNorm_finitePart_conductor_toPrimitiveRayClassCharacter ψ) hchg
 
 /-- The continued ray class L-function is the meromorphic normal form of the corresponding
@@ -192,7 +181,7 @@ theorem heckeLFunctionC_toPrimitiveRayClassCharacter (ψ : PrimitiveDirichletCha
       toMeromorphicNFOn ψ.character.LFunction Set.univ := by
   obtain ⟨hdiv, hchg⟩ := of_eq_iff.mp (toPrimitiveRayClassCharacter.symm_apply_apply ψ)
   rw [heckeLFunctionC_eq_toMeromorphicNFOn_LFunction_rat,
-    eq_of_level_eq_of_changeLevel_eq (fun {_ _} η ↦ η.LFunction) hdiv
+    DirichletCharacter.eq_of_level_eq_of_changeLevel_eq (fun {_ _} η ↦ η.LFunction) hdiv
       (absNorm_finitePart_conductor_toPrimitiveRayClassCharacter ψ) hchg]
 
 /-- The corresponding continued L-functions have the same punctured germ at every point. -/

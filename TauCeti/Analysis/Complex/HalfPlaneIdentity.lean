@@ -42,7 +42,7 @@ namespace TauCeti
 /-- **Punctured-neighbourhood identity theorem on a right half-plane boundary.** Two functions
 differentiable on a punctured neighbourhood of `a` that agree on the `Re z > a.re` side of a
 neighbourhood of `a` agree on a punctured neighbourhood of `a`. -/
-theorem eventuallyEq_of_differentiableAt_nhdsNE_of_eventuallyEq_re_gt
+theorem eventuallyEq_nhdsNE_of_differentiableAt_of_eventuallyEq_re_gt
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
     {F H : ℂ → E} {a : ℂ}
     (hF : ∀ᶠ z in 𝓝[≠] a, DifferentiableAt ℂ F z)

@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Analytic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convolution.Liouville.Basic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
-import TauCeti.NumberTheory.NumberField.DedekindZeta
+import TauCeti.NumberTheory.NumberField.DedekindZeta.Basic
 
 /-!
 # Local continuation counterexample for the ideal Liouville weight

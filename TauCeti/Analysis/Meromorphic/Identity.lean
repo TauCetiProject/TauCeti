@@ -59,6 +59,6 @@ theorem MeromorphicAt.eventuallyEq_nhdsNE_of_eventuallyEq_re_gt
     {f g : ℂ → E} {a : ℂ} (hf : MeromorphicAt f a) (hg : MeromorphicAt g a)
     (hfg : f =ᶠ[𝓝[{z : ℂ | a.re < z.re}] a] g) :
     f =ᶠ[𝓝[≠] a] g :=
-  TauCeti.eventuallyEq_of_differentiableAt_nhdsNE_of_eventuallyEq_re_gt
+  TauCeti.eventuallyEq_nhdsNE_of_differentiableAt_of_eventuallyEq_re_gt
     (hf.eventually_analyticAt.mono fun _ h ↦ h.differentiableAt)
     (hg.eventually_analyticAt.mono fun _ h ↦ h.differentiableAt) hfg

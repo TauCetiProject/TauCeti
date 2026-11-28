@@ -63,8 +63,9 @@ of a convergent series of nonnegative terms must become arbitrarily small.
   `TauCeti.summable_idealTerm_of_unitary_of_one_lt_re` is its unitary specialization.
 * `TauCeti.analyticOnNhd_LSeries_of_bounded`: the L-series of a uniformly bounded weight is
   holomorphic on `Re s > 1`, `TauCeti.analyticOnNhd_LSeries_of_unitary` is its unitary
-  specialization, and `TauCeti.UnitaryIdealWeight.analyticAt_of_eqOn_LSeries` transfers
-  analyticity to any function agreeing with the `L`-series on `Re s > 1`.
+  specialization, and `TauCeti.analyticAt_of_eqOn_LSeries_of_bounded` (with specialization
+  `TauCeti.UnitaryIdealWeight.analyticAt_of_eqOn_LSeries`) transfers analyticity to any function
+  agreeing with the `L`-series on `Re s > 1`.
 * `TauCeti.idealAbscissaOfAbsConv_lt_re_of_bounded`: the same hypothesis places the ideal-indexed
   abscissa of absolute convergence strictly below every `Re s > 1`.
 
@@ -536,15 +537,25 @@ theorem analyticOnNhd_LSeries_of_unitary {K : Type*} [Field K] [NumberField K]
     rw [UnitaryIdealWeight.toIdealArithmeticFunction_apply]
     exact χ.norm_le_one _
 
+/-- Any function agreeing on `Re z > 1` with the `L`-series of a uniformly bounded ideal arithmetic
+function is analytic at every `s` with `1 < Re s`. -/
+theorem analyticAt_of_eqOn_LSeries_of_bounded {K : Type*} [Field K] [NumberField K]
+    {f : IdealArithmeticFunction K} {C : ℝ} (hf : ∀ I : (Ideal (𝓞 K))⁰, ‖f I‖ ≤ C)
+    {L : ℂ → ℂ} (hLL : Set.EqOn L (LSeries (normCoeff K f)) {z | 1 < z.re})
+    {s : ℂ} (hs : 1 < s.re) : AnalyticAt ℂ L s :=
+  (analyticOnNhd_LSeries_of_bounded hf s hs).congr
+    ((eventuallyEq_of_mem ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds hs)
+      hLL).symm)
+
 /-- Any function agreeing on `Re z > 1` with the `L`-series of a unitary ideal weight is
 analytic at every `s` with `1 < Re s`. -/
 theorem UnitaryIdealWeight.analyticAt_of_eqOn_LSeries {K : Type*} [Field K] [NumberField K]
     (χ : UnitaryIdealWeight K) {L : ℂ → ℂ}
     (hLL : Set.EqOn L (LSeries (normCoeff K χ.toIdealArithmeticFunction)) {z | 1 < z.re})
     {s : ℂ} (hs : 1 < s.re) : AnalyticAt ℂ L s :=
-  (analyticOnNhd_LSeries_of_unitary χ s hs).congr
-    ((eventuallyEq_of_mem ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds hs)
-      hLL).symm)
+  analyticAt_of_eqOn_LSeries_of_bounded (C := 1) (fun I ↦ by
+    rw [UnitaryIdealWeight.toIdealArithmeticFunction_apply]
+    exact χ.norm_le_one _) hLL hs
 
 /-- **A uniformly bounded weight has ideal-indexed abscissa below every `Re s > 1`.** This is the
 form in which `summable_idealTerm_of_bounded_of_one_lt_re` feeds results stated strictly to the

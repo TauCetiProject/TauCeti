@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.ThreeF
 public import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Weight
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Nonvanishing
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Restrict
-import TauCeti.NumberTheory.NumberField.DedekindZeta
+import TauCeti.NumberTheory.NumberField.DedekindZeta.Basic
 
 /-!
 # Nonvanishing of Galois character series on the line `Re s = 1`

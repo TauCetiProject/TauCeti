@@ -13,7 +13,7 @@ import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Cyclotomic.Surjective
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Orthogonality
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Weight
 import TauCeti.NumberTheory.Cyclotomic.Aut
-import TauCeti.NumberTheory.NumberField.DedekindZeta
+import TauCeti.NumberTheory.NumberField.DedekindZeta.Basic
 
 /-!
 # The continued L-series of a cyclotomic Galois character

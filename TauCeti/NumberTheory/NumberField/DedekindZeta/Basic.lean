@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.DedekindZeta
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Weight
+public import TauCeti.NumberTheory.NumberField.HalfPlane
 import Mathlib.Analysis.Complex.RemovableSingularity
 import TauCeti.Analysis.Complex.HalfPlaneIdentity
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
@@ -52,15 +53,14 @@ Tauberian theorem needs to count prime ideals.
 
 ## Main results
 
-* `TauCeti.setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re`: the closed half-plane
-  `Re s ≥ 1` lies in the half-plane of continuation.
 * `TauCeti.isBigO_card_idealsLE_sub`: the number of nonzero integral ideals of norm at most `x` is
   `ρ x + O(x ^ (1 - 1 / [K : ℚ]))`.
 * `TauCeti.exists_differentiableOn_eq_dedekindZeta_sub`: `ζ_K(s) - ρ / (s - 1)` extends
   holomorphically from `Re s > 1` to `Re s > 1 - 1 / [K : ℚ]`.
 * `TauCeti.exists_differentiableOn_eq_dedekindZeta`: `ζ_K` extends holomorphically from
   `Re s > 1` to `{s | 1 - 1 / [K : ℚ] < s.re} \ {1}`.
-* `TauCeti.exists_differentiableOn_eq_LSeries_ofBadPrimes_sub`: the same for the Dedekind zeta
+* `TauCeti.exists_differentiableOn_eq_LSeries_ofBadPrimes_sub` and
+  `TauCeti.exists_differentiableOn_eq_LSeries_ofBadPrimes`: the same for the Dedekind zeta
   function with the Euler factors at a finite set of primes deleted, with the correspondingly
   corrected residue.
 * `TauCeti.ne_zero_of_eqOn_dedekindZeta`: a continuation of `ζ_K` differentiable at a point
@@ -91,13 +91,6 @@ open Asymptotics Filter IsDedekindDomain NumberField TauCeti.GlobalNumberFields
 open scoped nonZeroDivisors Topology
 
 namespace TauCeti
-
-/-- The closed half-plane `Re s ≥ 1` lies in the half-plane of the Dedekind zeta continuation. -/
-theorem setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re
-    (K : Type*) [Field K] [NumberField K] :
-    {s : ℂ | 1 ≤ s.re} ⊆ {s : ℂ | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} :=
-  fun _ hs ↦
-    (sub_lt_self (1 : ℝ) (one_div_pos.mpr (Nat.cast_pos.mpr Module.finrank_pos))).trans_le hs
 
 variable (K : Type*) [Field K] [NumberField K]
 
@@ -156,6 +149,18 @@ private theorem isBigO_sum_Icc_dedekindZetaCoeff_sub :
   exact Complex.isBigO_ofReal_left.mpr
     ((isBigO_card_idealsLE_sub K).comp_tendsto tendsto_natCast_atTop_atTop)
 
+-- Adding `ρ / (s - 1)` back to a regularized continuation gives punctured-domain differentiability
+-- and agreement with `F` on `Re s > 1`.
+private theorem exists_differentiableOn_add_div_sub_one {F G : ℂ → ℂ} {ρ : ℂ}
+    (hG : DifferentiableOn ℂ G {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re})
+    (hGF : ∀ s : ℂ, 1 < s.re → G s = F s - ρ / (s - 1)) :
+    ∃ T : ℂ → ℂ, DifferentiableOn ℂ T ({s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} \ {1}) ∧
+      Set.EqOn T F {s | 1 < s.re} := by
+  refine ⟨fun s ↦ G s + ρ / (s - 1), (hG.mono Set.sdiff_subset).add
+    ((differentiableOn_const ρ).div (differentiableOn_id.sub_const 1) fun _ hs ↦
+      sub_ne_zero.mpr hs.2), fun s hs ↦ ?_⟩
+  simp only [hGF s hs, sub_add_cancel]
+
 /-- **The Dedekind zeta function across `Re s = 1`.** There is a function holomorphic on the
 half-plane `Re s > 1 - 1 / [K : ℚ]` that agrees with `ζ_K(s) - ρ / (s - 1)` on `Re s > 1`, where
 `ρ = dedekindZeta_residue K`. So `ζ_K` continues meromorphically to `Re s > 1 - 1 / [K : ℚ]`, with a
@@ -174,10 +179,7 @@ theorem exists_differentiableOn_eq_dedekindZeta :
     ∃ T : ℂ → ℂ, DifferentiableOn ℂ T ({s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} \ {1}) ∧
       Set.EqOn T (dedekindZeta K) {s | 1 < s.re} := by
   obtain ⟨G, hG, hGζ⟩ := exists_differentiableOn_eq_dedekindZeta_sub K
-  refine ⟨fun s ↦ G s + (dedekindZeta_residue K : ℂ) / (s - 1), (hG.mono Set.sdiff_subset).add
-    ((differentiableOn_const _).div (differentiableOn_id.sub_const 1) fun _ hs ↦
-      sub_ne_zero.mpr hs.2), fun s hs ↦ ?_⟩
-  simp only [hGζ s hs, sub_add_cancel]
+  exact exists_differentiableOn_add_div_sub_one K hG hGζ
 
 /-- **The Dedekind zeta function with finitely many Euler factors deleted, across `Re s = 1`.**
 For a finite set `S` of primes of `𝓞 K`, there is a function holomorphic on the half-plane
@@ -215,11 +217,7 @@ theorem exists_differentiableOn_eq_LSeries_ofBadPrimes (S : Finset (HeightOneSpe
         (MultiplicativeIdealWeight.ofBadPrimes (S : Set (HeightOneSpectrum (𝓞 K)))
           S.finite_toSet).toIdealArithmeticFunction)) {s | 1 < s.re} := by
   obtain ⟨G, hG, hGL⟩ := exists_differentiableOn_eq_LSeries_ofBadPrimes_sub K S
-  set ρ : ℂ := dedekindZeta_residue K * ∏ P ∈ S, (1 - (Ideal.absNorm P.asIdeal : ℂ) ^ (-1 : ℂ))
-  refine ⟨fun s ↦ G s + ρ / (s - 1), (hG.mono Set.sdiff_subset).add
-    ((differentiableOn_const ρ).div (differentiableOn_id.sub_const 1) fun _ hs ↦
-      sub_ne_zero.mpr hs.2), fun s hs ↦ ?_⟩
-  simp only [hGL s hs, ρ, sub_add_cancel]
+  exact exists_differentiableOn_add_div_sub_one K hG hGL
 
 variable {K} in
 /-- **The Dedekind zeta function has no zeros on the line `Re s = 1` away from its pole.** If `f`
@@ -231,12 +229,12 @@ theorem ne_zero_of_eqOn_dedekindZeta {f : ℂ → ℂ} {s : ℂ} (hs : s.re = 1)
     f s ≠ 0 := by
   obtain ⟨T, hT, hTζ⟩ := exists_differentiableOn_eq_dedekindZeta K
   have hs₂1 : 2 * s - 1 ≠ 1 := fun h ↦ hs1 (by linear_combination h / 2)
+  have hs₂re : 1 ≤ (2 * s - 1).re := by norm_num [hs]
   have hTcont : ContinuousAt T (2 * s - 1) := by
     have hopen : IsOpen ({z : ℂ | 1 - 1 / (Module.finrank ℚ K : ℝ) < z.re} \ {1}) :=
       (isOpen_lt continuous_const Complex.continuous_re).sdiff isClosed_singleton
     exact (hT.differentiableAt (hopen.mem_nhds
-      ⟨setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K
-        (show 1 ≤ (2 * s - 1).re by norm_num [hs]), hs₂1⟩)).continuousAt
+      ⟨setOf_one_le_re_subset_setOf_one_sub_one_div_finrank_lt_re K hs₂re, hs₂1⟩)).continuousAt
   -- `ζ_K` is the `L`-series of the trivial unitary weight, whose pointwise square is itself; so
   -- the `3-4-1` criterion for unitary weights applies, with `T` continuing the square's series.
   have hζ : LSeries (normCoeff K (1 : UnitaryIdealWeight K).toIdealArithmeticFunction) =
@@ -333,7 +331,7 @@ private theorem eventuallyEq_sub_one_mul_of_eventuallyEq_dedekindZeta {K : Type*
   have hFH : (fun s : ℂ ↦ (s - 1) * f s) =ᶠ[𝓝[{s : ℂ | 1 < s.re}] 1] H := by
     filter_upwards [hfζ, self_mem_nhdsWithin] with s hfs hs
     rw [hfs, hHζ s hs]
-  exact TauCeti.eventuallyEq_of_differentiableAt_nhdsNE_of_eventuallyEq_re_gt hFdiff hHdiff
+  exact TauCeti.eventuallyEq_nhdsNE_of_differentiableAt_of_eventuallyEq_re_gt hFdiff hHdiff
     (by simpa using hFH)
 
 variable {K} in

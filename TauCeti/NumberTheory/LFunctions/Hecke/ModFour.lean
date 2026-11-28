@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LegendreSymbol.ZModChar
-public import TauCeti.NumberTheory.LFunctions.Hecke.Nonvanishing
+public import TauCeti.NumberTheory.LFunctions.Hecke.Nonvanishing.Basic
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Dirichlet
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.VonMangoldt
-public import TauCeti.NumberTheory.LFunctions.Hecke.Nonvanishing
+public import TauCeti.NumberTheory.LFunctions.Hecke.Nonvanishing.Basic
 import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.Calculus.LogDeriv
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.VonMangoldtCoeff

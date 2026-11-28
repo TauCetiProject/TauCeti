@@ -15,7 +15,7 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Nonvanishing
 import TauCeti.NumberTheory.LSeries.Landau
 import TauCeti.NumberTheory.LSeries.Twist
-import TauCeti.NumberTheory.NumberField.DedekindZeta
+import TauCeti.NumberTheory.NumberField.DedekindZeta.Basic
 import TauCeti.NumberTheory.NumberField.DedekindZeta.Limits
 
 /-!
@@ -54,9 +54,10 @@ and hence the entire closed half-plane `Re s ≥ 1` without assuming cancellatio
    criteria throughout `Re s ≥ 1` (requiring half-plane continuation and boundary data only at
    `s = 1 + (u / 2) * I`, and local differentiability — or meromorphy and continuity — on the rest
    of `Re s = 1`).
-4. Over fields with `[K : ℚ] = 1`, `TauCeti.exists_differentiableOn_eq_dedekindZeta` already
+4. Over fields where `[K : ℚ] = 1`, `TauCeti.exists_differentiableOn_eq_dedekindZeta` already
    continues `ζ_K` to `{s | 0 < s.re} \ {1}`, discharging the `Z` continuation hypothesis at
-   `s = 1 + (u / 2) * I`. `TauCeti.NumberTheory.ArithmeticDirichletSeries.Cancellation.Nonvanishing`
+   `s = 1 + (u / 2) * I`.
+   `TauCeti.NumberTheory.ArithmeticDirichletSeries.Cancellation.Nonvanishing.DegreeOne`
    instantiates `L` with `continuedLFunctionOfWeight` for weights with cancellation.
 
 For sharpness, see `TauCeti.MultiplicativeIdealWeight.`
@@ -288,6 +289,17 @@ theorem apply_one_ne_zero_of_eqOn_LSeries {χ : MultiplicativeIdealWeight K}
   have hne : (σ : ℂ) ≠ 1 := fun h ↦ hσ.2.ne (by exact_mod_cast h)
   simp [F, Function.update_of_ne hne]
 
+/-- If `Z` is continuous at `1 / 2` and `L` is continuous at `1 / 2 + v`, then
+`(Z σ * L (σ + v)).re` does not tend to `+∞` as real `σ → (1 / 2)⁺`. -/
+private theorem not_tendsto_re_mul_add_atTop_of_continuousAt {Z L : ℂ → ℂ} {v : ℂ}
+    (hZhalf : ContinuousAt Z (1 / 2 : ℂ)) (hLhalf : ContinuousAt L (1 / 2 + v)) :
+    ¬ Tendsto (fun σ : ℝ ↦ (Z σ * L ((σ : ℂ) + v)).re) (𝓝[>] (1 / 2 : ℝ)) atTop :=
+  not_tendsto_atTop_of_tendsto_nhds <|
+    (continuous_re.continuousAt.comp
+      ((hZhalf.comp_of_eq continuous_ofReal.continuousAt (by norm_num)).mul
+        (hLhalf.comp_of_eq (continuous_ofReal.continuousAt.add_const v) (by norm_num)))
+      ).tendsto.mono_left nhdsWithin_le_nhds
+
 /-- **Landau's nonvanishing theorem at `s = 1`, continuous-at-`1 / 2` form.** When
 `(χ ^ 2).IsTrivialOnGood`, if `Z` and `L` continue `ζ_K` and `L(χ, ·)` holomorphically to
 `{s | 1 / 2 < s.re}` (with `1` punctured from `Z`) and both are continuous at `1 / 2`, then
@@ -300,12 +312,8 @@ theorem apply_one_ne_zero_of_continuousAt_half {χ : MultiplicativeIdealWeight K
     (hLL : EqOn L (LSeries (normCoeff K χ.toIdealArithmeticFunction)) {s | 1 < s.re})
     (hZhalf : ContinuousAt Z (1 / 2 : ℂ)) (hLhalf : ContinuousAt L (1 / 2 : ℂ)) :
     L 1 ≠ 0 :=
-  apply_one_ne_zero_of_eqOn_LSeries hχ hZ hZζ hL hLL <|
-    not_tendsto_atTop_of_tendsto_nhds <|
-      (continuous_re.continuousAt.comp
-        ((hZhalf.comp_of_eq continuous_ofReal.continuousAt (by norm_num)).mul
-          (hLhalf.comp_of_eq continuous_ofReal.continuousAt (by norm_num)))
-        ).tendsto.mono_left nhdsWithin_le_nhds
+  apply_one_ne_zero_of_eqOn_LSeries hχ hZ hZζ hL hLL <| by
+    simpa using not_tendsto_re_mul_add_atTop_of_continuousAt (v := 0) hZhalf (by simpa using hLhalf)
 
 /-- **Landau's nonvanishing theorem at `s = 1`, open half-plane past `1 / 2`.** When
 `(χ ^ 2).IsTrivialOnGood`, if `σ₁ < 1 / 2` and `Z`, `L` continue `ζ_K` and `L(χ, ·)`
@@ -374,12 +382,8 @@ theorem apply_one_add_div_two_mul_I_ne_zero_of_isNormTwistOnGood_sq_of_continuou
     (hZhalf : ContinuousAt Z (1 / 2 : ℂ))
     (hLhalf : ContinuousAt L (1 / 2 + (u : ℂ) / 2 * I)) :
     L (1 + (u : ℂ) / 2 * I) ≠ 0 :=
-  apply_one_add_div_two_mul_I_ne_zero_of_isNormTwistOnGood_sq hχ hZ hZζ hL hLL <|
-    not_tendsto_atTop_of_tendsto_nhds <|
-      (continuous_re.continuousAt.comp
-        ((hZhalf.comp_of_eq continuous_ofReal.continuousAt (by norm_num)).mul
-          (hLhalf.comp_of_eq (continuous_ofReal.continuousAt.add_const _) (by norm_num)))
-        ).tendsto.mono_left nhdsWithin_le_nhds
+  apply_one_add_div_two_mul_I_ne_zero_of_isNormTwistOnGood_sq hχ hZ hZζ hL hLL
+    (not_tendsto_re_mul_add_atTop_of_continuousAt hZhalf hLhalf)
 
 /-! ### Full closed half-plane `Re s ≥ 1` nonvanishing -/
 
@@ -449,16 +453,12 @@ theorem ne_zero_of_one_le_re_of_isNormTwistOnGood_sq_of_continuousAt
     L s ≠ 0 :=
   ne_zero_of_one_le_re_of_isNormTwistOnGood_sq hχ hLL hs hLs fun hsu ↦ by
     obtain ⟨Z, hZ, hZζ, hZhalf, hL, hLhalf⟩ := hlandau hsu
-    exact ⟨Z, hZ, hZζ, hL, not_tendsto_atTop_of_tendsto_nhds <|
-      (continuous_re.continuousAt.comp
-        ((hZhalf.comp_of_eq continuous_ofReal.continuousAt (by norm_num)).mul
-          (hLhalf.comp_of_eq (continuous_ofReal.continuousAt.add_const _) (by norm_num)))
-        ).tendsto.mono_left nhdsWithin_le_nhds⟩
+    exact ⟨Z, hZ, hZζ, hL, not_tendsto_re_mul_add_atTop_of_continuousAt hZhalf hLhalf⟩
 
 /-- **Meromorphic order zero throughout `Re s ≥ 1`.** Under the branch-minimal hypotheses of
-`ne_zero_of_one_le_re_of_isNormTwistOnGood_sq` (weakening differentiability on
-`Re s = 1 \ {1 + (u / 2) * I}` to meromorphy and continuity at `s`), `meromorphicOrderAt L s = 0`
-for every `s` with `1 ≤ s.re`. -/
+`ne_zero_of_one_le_re_of_isNormTwistOnGood_sq`, requiring meromorphy and continuity at the
+nonexceptional boundary point `s` (`s.re = 1` with `s ≠ 1 + (u / 2) * I`),
+`meromorphicOrderAt L s = 0` for every `s` with `1 ≤ s.re`. -/
 theorem meromorphicOrderAt_eq_zero_of_one_le_re_of_isNormTwistOnGood_sq
     {χ : MultiplicativeIdealWeight K} {u : ℝ} (hχ : (χ ^ 2).IsNormTwistOnGood u) {L : ℂ → ℂ}
     (hLL : EqOn L (LSeries (normCoeff K χ.toIdealArithmeticFunction)) {z | 1 < z.re})
@@ -490,26 +490,27 @@ theorem meromorphicOrderAt_eq_zero_of_one_le_re_of_isNormTwistOnGood_sq
 
 /-! ### Degree-`1` specialization discharging the Dedekind zeta continuation -/
 
-/-- **Nonvanishing on `Re s ≥ 1` when `[K : ℚ] = 1`.** For a field of degree `1` over `ℚ`,
-`TauCeti.exists_differentiableOn_eq_dedekindZeta` already continues `ζ_K` holomorphically to
-`{s | 0 < s.re} \ {1}`, discharging the `Z` hypothesis of
-`ne_zero_of_one_le_re_of_isNormTwistOnGood_sq_of_continuousAt` at `s = 1 + (u / 2) * I`; the
-pointwise differentiability on `Re s = 1 \ {1 + (u / 2) * I}` and half-plane continuation/continuity
-hypotheses on `L` at `s = 1 + (u / 2) * I` remain explicit. -/
-theorem ne_zero_of_one_le_re_of_finrank_eq_one (hK : Module.finrank ℚ K = 1)
+/-- **Nonvanishing on `Re s ≥ 1` when `[K : ℚ] = 1` at the exceptional point.** When
+`s = 1 + (u / 2) * I` and `[K : ℚ] = 1`, `TauCeti.exists_differentiableOn_eq_dedekindZeta` already
+continues `ζ_K` holomorphically to `{s | 0 < s.re} \ {1}`, discharging the `Z` hypothesis of
+`ne_zero_of_one_le_re_of_isNormTwistOnGood_sq_of_continuousAt`; the pointwise differentiability on
+`Re s = 1 \ {1 + (u / 2) * I}` and half-plane continuation/continuity hypotheses on `L` at
+`s = 1 + (u / 2) * I` remain explicit. -/
+theorem ne_zero_of_one_le_re_of_finrank_eq_one
     {χ : MultiplicativeIdealWeight K} {u : ℝ} (hχ : (χ ^ 2).IsNormTwistOnGood u) {L : ℂ → ℂ}
     (hLL : EqOn L (LSeries (normCoeff K χ.toIdealArithmeticFunction)) {z | 1 < z.re})
     {s : ℂ} (hs : 1 ≤ s.re)
     (hLs : s.re = 1 → s ≠ 1 + (u : ℂ) / 2 * I → DifferentiableAt ℂ L s)
     (hlandau : s = 1 + (u : ℂ) / 2 * I →
       DifferentiableOn ℂ L {z | (1 / 2 : ℝ) < z.re} ∧
-      ContinuousAt L (1 / 2 + (u : ℂ) / 2 * I)) :
+      ContinuousAt L (1 / 2 + (u : ℂ) / 2 * I))
+    (hK : s = 1 + (u : ℂ) / 2 * I → Module.finrank ℚ K = 1) :
     L s ≠ 0 := by
   refine ne_zero_of_one_le_re_of_isNormTwistOnGood_sq_of_continuousAt hχ hLL hs hLs fun hsu ↦ ?_
   obtain ⟨hL, hLhalf⟩ := hlandau hsu
   obtain ⟨Z, hZ0, hZζ⟩ := exists_differentiableOn_eq_dedekindZeta K
   have hZ0' : DifferentiableOn ℂ Z ({z | (0 : ℝ) < z.re} \ {1}) := by
-    simpa [hK] using hZ0
+    simpa [hK hsu] using hZ0
   have hopen : IsOpen ({z : ℂ | (0 : ℝ) < z.re} \ {1}) :=
     (isOpen_lt continuous_const Complex.continuous_re).sdiff isClosed_singleton
   have hZhalf : ContinuousAt Z (1 / 2 : ℂ) :=

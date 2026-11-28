@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 public import TauCeti.NumberTheory.LFunctions.Hecke.Basic
-import TauCeti.NumberTheory.LFunctions.Hecke.Nonvanishing
+import TauCeti.NumberTheory.LFunctions.Hecke.Nonvanishing.Continuation
 
 /-!
 # Nonvanishing and Landau criteria for presented Hecke L-functions
@@ -19,8 +19,8 @@ continuation via `TauCeti.meromorphicContinuation_eqOn`), this file lifts
 `heckeLFunctionC χ` on `Re s ≥ 1`:
 
 * since `heckeLFunctionC χ` is already meromorphic in normal form on `ℂ`, boundary meromorphy is
-  automatic, and `3-4-1` / punctured-germ comparison yields `meromorphicOrderAt = 0` and
-  nonvanishing away from `χ ^ 2 = 1 ∧ s = 1`;
+  automatic, and comparison with the analytic nonvanishing model yields `meromorphicOrderAt = 0`
+  and nonvanishing away from `χ ^ 2 = 1 ∧ s = 1`;
 * only at `χ ^ 2 = 1 ∧ s = 1` does Landau's theorem require holomorphy of `heckeLFunctionC χ` on
   `{z | 1 / 2 < z.re}` together with the sharp boundary condition that
   `(dedekindZetaC K σ * heckeLFunctionC χ σ).re` does not tend to `+∞` as real `σ → (1 / 2)⁺`
@@ -32,9 +32,11 @@ series agreement for `heckeLFunctionC χ`, see `TauCeti.NumberTheory.LFunctions.
 (identifying `heckeLFunctionC χ` over `ℚ` with the meromorphic normal form of Mathlib's
 `DirichletCharacter.LFunction`), `TauCeti.NumberTheory.LFunctions.Hecke.Rat.Nonvanishing`
 (giving unconditional nonvanishing and meromorphic order zero on `Re s ≥ 1` over `ℚ` whenever
-`χ ≠ 1 ∨ s ≠ 1`), and `TauCeti.NumberTheory.LFunctions.Hecke.Nonvanishing` (which proves
-`Re s ≥ 1` nonvanishing of `continuedLFunctionOfWeight χ.toUnitaryIdealWeight` for nontrivial
-`χ ≠ 1`, requiring `[K : ℚ] = 1` only at `χ ^ 2 = 1 ∧ s = 1`).
+`χ ≠ 1 ∨ s ≠ 1`), `TauCeti.NumberTheory.LFunctions.Hecke.Nonvanishing.Basic` (unitary character
+families and away-from-exception nonvanishing of `continuedLFunctionOfWeight`), and
+`TauCeti.NumberTheory.LFunctions.Hecke.Nonvanishing.DegreeOne` (full `Re s ≥ 1` nonvanishing of
+`continuedLFunctionOfWeight χ.toUnitaryIdealWeight` for nontrivial `χ ≠ 1`, requiring
+`[K : ℚ] = 1` only at `χ ^ 2 = 1 ∧ s = 1`).
 
 ## Main results
 
