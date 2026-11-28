@@ -196,22 +196,42 @@ equivalence relation `r.comap Subtype.val` is homeomorphic to its image `Quotien
 even when `W` is not saturated for `r`. -/
 noncomputable def IsOpen.quotientComapHomeomorphImage {r : Setoid X} {W : Set X} (hW : IsOpen W)
     (hq : IsOpenMap (Quotient.mk r)) :
-    Quotient (r.comap (Subtype.val : W → X)) ≃ₜ Quotient.mk r '' W := by
+    Quotient (r.comap (Subtype.val : W → X)) ≃ₜ Quotient.mk r '' W :=
   let g : C(W, Quotient.mk r '' W) :=
     ⟨fun w ↦ ⟨Quotient.mk r w.val, w.val, w.property, rfl⟩,
       (continuous_quot_mk.comp continuous_subtypeVal).subtype_mk _⟩
   have hg : IsOpenQuotientMap g :=
     ⟨fun ⟨_, x, hxW, hx⟩ ↦ ⟨⟨x, hxW⟩, Subtype.ext hx⟩,
       g.continuous, (hq.comp hW.isOpenMap_subtypeVal).subtype_mk _⟩
-  exact (Homeomorph.Quotient.congrRight fun w₁ w₂ ↦ by
-    rw [Setoid.comap_rel, Setoid.ker_def, Subtype.ext_iff]
-    exact (@Quotient.eq _ r w₁.val w₂.val).symm).trans hg.isQuotientMap.homeomorph
+  let h₀ : Quotient (r.comap (Subtype.val : W → X)) ≃ₜ Quotient.mk r '' W :=
+    (Homeomorph.Quotient.congrRight fun w₁ w₂ ↦ by
+      rw [Setoid.comap_rel, Setoid.ker_def, Subtype.ext_iff]
+      exact (@Quotient.eq _ r w₁.val w₂.val).symm).trans hg.isQuotientMap.homeomorph
+  have heq : h₀.toEquiv = Setoid.comapValQuotientEquiv r W := by
+    ext x
+    induction x using Quotient.inductionOn with
+    | h w =>
+      change (h₀ (Quotient.mk _ w) : Quotient r) =
+        (Setoid.comapValQuotientEquiv r W ⟦w⟧ : Quotient r)
+      simp only [h₀, Homeomorph.trans_apply, IsQuotientMap.homeomorph_apply,
+        Setoid.comapValQuotientEquiv_mk]
+      exact congrArg Subtype.val (Setoid.kerLift_mk _ w)
+  { toEquiv := Setoid.comapValQuotientEquiv r W
+    continuous_toFun := heq ▸ h₀.continuous_toFun
+    continuous_invFun := heq ▸ h₀.continuous_invFun }
 
+/-- The underlying equivalence of `IsOpen.quotientComapHomeomorphImage` is
+`Setoid.comapValQuotientEquiv`. -/
+@[simp]
+theorem IsOpen.toEquiv_quotientComapHomeomorphImage {r : Setoid X} {W : Set X} (hW : IsOpen W)
+    (hq : IsOpenMap (Quotient.mk r)) :
+    (hW.quotientComapHomeomorphImage hq).toEquiv = Setoid.comapValQuotientEquiv r W :=
+  (rfl)
+
+/-- `IsOpen.quotientComapHomeomorphImage` maps the class of `w : W` to `Quotient.mk r w.val`. -/
 @[simp]
 theorem IsOpen.coe_quotientComapHomeomorphImage_mk {r : Setoid X} {W : Set X} (hW : IsOpen W)
     (hq : IsOpenMap (Quotient.mk r)) (w : W) :
     ((hW.quotientComapHomeomorphImage hq
       (Quotient.mk (r.comap (Subtype.val : W → X)) w)) : Quotient r) = Quotient.mk r w.val := by
-  simp only [IsOpen.quotientComapHomeomorphImage, Homeomorph.trans_apply,
-    IsQuotientMap.homeomorph_apply]
-  exact congrArg Subtype.val (Setoid.kerLift_mk _ w)
+  simp [IsOpen.quotientComapHomeomorphImage]

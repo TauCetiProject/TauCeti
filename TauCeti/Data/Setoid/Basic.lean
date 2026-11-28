@@ -18,13 +18,15 @@ This file records small generic additions to Mathlib's `Setoid` API.
 * `TauCeti.Setoid.map_of_le_mk`: the quotient map induced by a setoid inequality sends a
   representative to the same representative in the larger quotient.
 * `Setoid.quotientKerEquivRange_mk` and `Setoid.quotientKerEquivRange_symm_mk`: Mathlib's
-  `Setoid.quotientKerEquivRange` sends `⟦x⟧` to `⟨f x, ⟨x, rfl⟩⟩` and back.
+  `Setoid.quotientKerEquivRange` sends `⟦x⟧` to `⟨f x, Set.mem_range_self x⟩` and back.
 * `Setoid.comapQuotientEquiv_mk` and `Setoid.comapQuotientEquiv_symm_mk`: Mathlib's
-  `Setoid.comapQuotientEquiv` sends `⟦x⟧` to `⟨Quotient.mk s (f x), ⟨x, rfl⟩⟩` and back.
+  `Setoid.comapQuotientEquiv` sends `⟦x⟧` to
+  `⟨Quotient.mk s (f x), Set.mem_range_self (f := @Quotient.mk'' _ s ∘ f) x⟩` and back.
 * `Setoid.comapValQuotientEquiv`, `Setoid.comapValQuotientEquiv_mk`, and
   `Setoid.comapValQuotientEquiv_symm_mk`: the quotient of `K` by the restricted setoid
   `s.comap (↑)` is in bijection with the image `Quotient.mk s '' K` of `K` in `Quotient s`,
-  sending `⟦x⟧` to `⟨Quotient.mk s x.val, ⟨x.val, x.property, rfl⟩⟩` and back.
+  sending `⟦x⟧` to `⟨Quotient.mk s x.val, Set.mem_image_of_mem (Quotient.mk s) x.property⟩` and
+  back.
 * `Setoid.ofPred_rel_eq_iff`: two elements have the same class exactly when they are related.
 * `Setoid.map_of_le_surjective`: the quotient map induced by a setoid inequality is surjective.
 * `Setoid.preimage_image_quotientMk_eq_relPreimage` and `Setoid.preimage_image_quotientMk`: the
@@ -54,10 +56,10 @@ end TauCeti
 namespace Setoid
 
 /-- Mathlib's `Setoid.quotientKerEquivRange` sends the equivalence class `⟦x⟧` to
-`⟨f x, ⟨x, rfl⟩⟩` in `Set.range f`. -/
+`⟨f x, Set.mem_range_self x⟩` in `Set.range f`. -/
 @[simp]
 theorem quotientKerEquivRange_mk {α β : Type*} (f : α → β) (x : α) :
-    quotientKerEquivRange f ⟦x⟧ = ⟨f x, ⟨x, rfl⟩⟩ := by
+    quotientKerEquivRange f ⟦x⟧ = ⟨f x, Set.mem_range_self x⟩ := by
   apply Subtype.ext
   simp [quotientKerEquivRange, quotientKerEquivRangeKerLift]
 
@@ -73,7 +75,8 @@ theorem quotientKerEquivRange_symm_mk {α β : Type*} (f : α → β) (x : α)
 `f x` in `Set.range (@Quotient.mk'' _ s ∘ f)`. -/
 @[simp]
 theorem comapQuotientEquiv_mk {α β : Type*} (f : α → β) (s : Setoid β) (x : α) :
-    comapQuotientEquiv f s ⟦x⟧ = ⟨Quotient.mk s (f x), ⟨x, rfl⟩⟩ := by
+    comapQuotientEquiv f s ⟦x⟧ =
+      ⟨Quotient.mk s (f x), Set.mem_range_self (f := @Quotient.mk'' _ s ∘ f) x⟩ := by
   apply Subtype.ext
   have h : Quotient.congrRight (Setoid.ext_iff.1 (comap_eq (f := f) (r := s))) ⟦x⟧ =
       Quotient.mk (ker (Quotient.mk'' ∘ f)) x :=
@@ -93,22 +96,24 @@ identifying the type of equivalence classes of `K` under the restriction `s.coma
 image `Quotient.mk s '' K` of `K` in `Quotient s`. -/
 noncomputable def comapValQuotientEquiv {α : Type*} (s : Setoid α) (K : Set α) :
     Quotient (s.comap ((↑) : K → α)) ≃ Quotient.mk s '' K :=
-  (comapQuotientEquiv _ _).trans (Set.equivOfEq (by rw [Set.range_comp, Subtype.range_coe]))
+  (comapQuotientEquiv _ _).trans (Set.equivOfEq (Set.range_domRestrict (Quotient.mk s) K))
 
 /-- `Setoid.comapValQuotientEquiv` sends the equivalence class of `x : K` to `Quotient.mk s x.val`
 in `Quotient.mk s '' K`. -/
 @[simp]
 theorem comapValQuotientEquiv_mk {α : Type*} (s : Setoid α) (K : Set α) (x : K) :
-    comapValQuotientEquiv s K ⟦x⟧ = ⟨Quotient.mk s x.val, ⟨x.val, x.property, rfl⟩⟩ := by
+    comapValQuotientEquiv s K ⟦x⟧ =
+      ⟨Quotient.mk s x.val, Set.mem_image_of_mem (Quotient.mk s) x.property⟩ := by
   apply Subtype.ext
-  simp [comapValQuotientEquiv]
+  rw [comapValQuotientEquiv, Equiv.trans_apply, comapQuotientEquiv_mk]
+  rfl
 
-/-- The inverse of `Setoid.comapValQuotientEquiv` sends the image point represented by `a : α`
-with `ha : a ∈ K` back to `⟦⟨a, ha⟩⟧`. -/
+/-- The inverse of `Setoid.comapValQuotientEquiv` sends the image point represented by `x : K`
+back to `⟦x⟧`. -/
 @[simp]
-theorem comapValQuotientEquiv_symm_mk {α : Type*} (s : Setoid α) (K : Set α) (a : α)
-    (ha : a ∈ K) (hx : Quotient.mk s a ∈ Quotient.mk s '' K) :
-    (comapValQuotientEquiv s K).symm ⟨Quotient.mk s a, hx⟩ = ⟦⟨a, ha⟩⟧ := by
+theorem comapValQuotientEquiv_symm_mk {α : Type*} (s : Setoid α) (K : Set α) (x : K)
+    (hx : Quotient.mk s x.val ∈ Quotient.mk s '' K) :
+    (comapValQuotientEquiv s K).symm ⟨Quotient.mk s x.val, hx⟩ = ⟦x⟧ := by
   simp [Equiv.symm_apply_eq]
 
 /-- Two elements have the same class exactly when they are related. -/
