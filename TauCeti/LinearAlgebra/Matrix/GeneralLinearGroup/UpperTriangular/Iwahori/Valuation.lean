@@ -197,19 +197,16 @@ theorem _root_.ValuationSubring.transvectionUnit_mem_map_iwahoriOne_iff {i j : m
     rcases lt_or_gt_of_ne hij with hlt | hgt
     · exact Or.inl ⟨hlt, by simpa [coe_transvectionUnit_eq_one_add_single, hij] using h1 i j⟩
     · exact Or.inr ⟨hgt, by simpa [coe_transvectionUnit_eq_one_add_single, hij] using hlow hgt⟩
-  · rintro (⟨hlt, hc⟩ | ⟨-, hc⟩)
-    · let a : A := ⟨c, (A.valuation_le_one_iff c).mp hc⟩
-      refine ⟨transvectionUnit hij a, ?_, map_transvectionUnit (algebraMap A K) hij a⟩
-      rw [SetLike.mem_coe, ← comap_generalLinearGroupMap_residue_upperUnitriangularGroup,
-        Subgroup.mem_comap, map_transvectionUnit]
-      exact transvectionUnit_mem_upperUnitriangularGroup hlt _
-    · let a : A := ⟨c, (A.valuation_le_one_iff c).mp hc.le⟩
-      refine ⟨transvectionUnit hij a, ?_, map_transvectionUnit (algebraMap A K) hij a⟩
-      rw [SetLike.mem_coe, ← comap_generalLinearGroupMap_residue_upperUnitriangularGroup,
-        Subgroup.mem_comap, map_transvectionUnit]
-      have ha : IsLocalRing.residue A a = 0 :=
-        (IsLocalRing.residue_eq_zero_iff a).mpr ((A.valuation_lt_one_iff a).mpr hc)
-      rw [ha, transvectionUnit_zero]
+  · intro h
+    have hc_le : A.valuation c ≤ 1 := h.elim (fun ⟨_, hle⟩ ↦ hle) (fun ⟨_, hlt⟩ ↦ hlt.le)
+    let a : A := ⟨c, (A.valuation_le_one_iff c).mp hc_le⟩
+    refine ⟨transvectionUnit hij a, ?_, map_transvectionUnit (algebraMap A K) hij a⟩
+    rw [SetLike.mem_coe, ← comap_generalLinearGroupMap_residue_upperUnitriangularGroup,
+      Subgroup.mem_comap, map_transvectionUnit]
+    rcases h with ⟨hlt, -⟩ | ⟨-, hlt⟩
+    · exact transvectionUnit_mem_upperUnitriangularGroup hlt _
+    · rw [(IsLocalRing.residue_eq_zero_iff a).mpr ((A.valuation_lt_one_iff a).mpr hlt),
+        transvectionUnit_zero]
       exact one_mem _
 
 end TauCeti
