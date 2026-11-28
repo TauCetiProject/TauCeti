@@ -158,6 +158,43 @@ private theorem presentationLimitRationalEquiv_restrict (Y : CAff.{u})
   exact (presentationLimitRationalIso_hom_presentationLimitMap_apply Y.pair.plus hAplus q₁ q₂
     hq₁ hq₂ hsub z).symm
 
+private theorem globalSections_map_pullback_proj (Y : CAff.{u})
+    {T₀ T₁₂ : Finset Y.ring} {s₀ s₁₂ : Y.ring}
+    (h₀ : IsOpen (Ideal.span (T₀ : Set Y.ring) : Set Y.ring))
+    (h₁₂ : IsOpen (Ideal.span (T₁₂ : Set Y.ring) : Set Y.ring))
+    {W : Opens ↥(ValuationSpectrum.spa Y.pair.plus)}
+    (hUW : spaBasicOpen Y.pair.plus T₁₂ s₁₂ ≤ W)
+    (hW₀ : W ≤ spaBasicOpen Y.pair.plus T₀ s₀)
+    {hsub : rationalSubset Y.pair.plus T₁₂ s₁₂ ⊆ rationalSubset Y.pair.plus T₀ s₀}
+    {Q : CAff.{u}ᵒᵖ}
+    (iso : op (Y.rationalLocalization T₁₂ s₁₂ h₁₂) ⟶ Q)
+    (proj : Q ⟶ op (Y.rationalLocalization T₀ s₀ h₀))
+    (hproj : iso ≫ proj = (rationalLocalizationRestrict h₀ h₁₂ hsub).op)
+    (x : presentationLimit (P := Y.pairOfDefinition) Y.pair.plus
+      (spaBasicOpen Y.pair.plus T₀ s₀)) :
+    let P := Y.pairOfDefinition
+    let p₀ : Presentation P :=
+      ⟨T₀, s₀, hasDenominatorPower_of_isOpen_span P T₀ s₀ (Localization.Away s₀) h₀⟩
+    let p₁₂ : Presentation P :=
+      ⟨T₁₂, s₁₂, hasDenominatorPower_of_isOpen_span P T₁₂ s₁₂ (Localization.Away s₁₂) h₁₂⟩
+    globalSections.map iso.op
+        (globalSections.map proj.op (presentationLimitRationalEquiv Y p₀ h₀ x)) =
+      presentationLimitRationalEquiv Y p₁₂ h₁₂
+        ((presentationLimitMap (P := P) hUW).hom.val
+          ((presentationLimitMap (P := P) hW₀).hom.val x)) := by
+  intro P p₀ p₁₂
+  let y : globalSections.obj (op (op (Y.rationalLocalization T₀ s₀ h₀))) :=
+    presentationLimitRationalEquiv Y p₀ h₀ x
+  have hcomp :
+      globalSections.map iso.op (globalSections.map proj.op y) =
+        (rationalLocalizationRestrict h₀ h₁₂ hsub).toRingHom
+          (presentationLimitRationalEquiv Y p₀ h₀ x) := by
+    refine (Functor.map_comp_apply globalSections _ _ y).symm.trans ?_
+    rw [← op_comp, hproj, globalSections_map_apply]
+  refine hcomp.trans ?_
+  rw [presentationLimitRationalEquiv_restrict Y (q₁ := p₀) (q₂ := p₁₂) h₀ h₁₂ (hUW.trans hW₀) x,
+    presentationLimitMap_apply_presentationLimitMap_apply]
+
 private theorem rationalLocalization_compatible_iff (Y : CAff.{u})
     (T₁ T₂ T₁₂ : Finset Y.ring) (s₁ s₂ s₁₂ : Y.ring)
     (h₁ : IsOpen (Ideal.span (T₁ : Set Y.ring) : Set Y.ring))
@@ -196,88 +233,24 @@ private theorem rationalLocalization_compatible_iff (Y : CAff.{u})
       (inf_le_right : spaBasicOpen Y.pair.plus T₁ s₁ ⊓ spaBasicOpen Y.pair.plus T₂ s₂ ≤
         spaBasicOpen Y.pair.plus T₂ s₂)).hom.val x₂ := by
   let P := Y.pairOfDefinition
-  let p₁ : Presentation P :=
-    ⟨T₁, s₁, hasDenominatorPower_of_isOpen_span P T₁ s₁ (Localization.Away s₁) h₁⟩
-  let p₂ : Presentation P :=
-    ⟨T₂, s₂, hasDenominatorPower_of_isOpen_span P T₂ s₂ (Localization.Away s₂) h₂⟩
   let p₁₂ : Presentation P :=
     ⟨T₁₂, s₁₂, hasDenominatorPower_of_isOpen_span P T₁₂ s₁₂ (Localization.Away s₁₂) h₁₂⟩
   have hiso : Function.Bijective (globalSections.map hpull.isoPullback.hom.op) :=
     ConcreteCategory.bijective_of_isIso _
-  let y₁ : globalSections.obj (op (op (Y.rationalLocalization T₁ s₁ h₁))) :=
-    presentationLimitRationalEquiv Y p₁ h₁ x₁
-  let y₂ : globalSections.obj (op (op (Y.rationalLocalization T₂ s₂ h₂))) :=
-    presentationLimitRationalEquiv Y p₂ h₂ x₂
-  have hcomp₁ :
-      globalSections.map hpull.isoPullback.hom.op
-        (globalSections.map (Limits.pullback.fst (Y.rationalLocalizationHom T₁ s₁ h₁).op
-          (Y.rationalLocalizationHom T₂ s₂ h₂).op).op y₁) =
-      (rationalLocalizationRestrict h₁ h₁₂
-        (hinter.le.trans Set.inter_subset_left)).toRingHom
-          (presentationLimitRationalEquiv Y p₁ h₁ x₁) := by
-    refine (Functor.map_comp_apply globalSections _ _ y₁).symm.trans ?_
-    rw [← op_comp, hpull.isoPullback_hom_fst, globalSections_map_apply]
-  have hcomp₂ :
-      globalSections.map hpull.isoPullback.hom.op
-        (globalSections.map (Limits.pullback.snd (Y.rationalLocalizationHom T₁ s₁ h₁).op
-          (Y.rationalLocalizationHom T₂ s₂ h₂).op).op y₂) =
-      (rationalLocalizationRestrict h₂ h₁₂
-        (hinter.le.trans Set.inter_subset_right)).toRingHom
-          (presentationLimitRationalEquiv Y p₂ h₂ x₂) := by
-    refine (Functor.map_comp_apply globalSections _ _ y₂).symm.trans ?_
-    rw [← op_comp, hpull.isoPullback_hom_snd, globalSections_map_apply]
-  have hle₁ : spaBasicOpen Y.pair.plus T₁₂ s₁₂ ≤ spaBasicOpen Y.pair.plus T₁ s₁ :=
-    hU₁₂.le.trans inf_le_left
-  have hle₂ : spaBasicOpen Y.pair.plus T₁₂ s₁₂ ≤ spaBasicOpen Y.pair.plus T₂ s₂ :=
-    hU₁₂.le.trans inf_le_right
-  have hlhs :
-      (rationalLocalizationRestrict h₁ h₁₂
-          (hinter.le.trans Set.inter_subset_left)).toRingHom
-            (presentationLimitRationalEquiv Y p₁ h₁ x₁) =
-        presentationLimitRationalEquiv Y p₁₂ h₁₂
-          ((presentationLimitMap (P := P) hle₁).hom.val x₁) :=
-    presentationLimitRationalEquiv_restrict Y (q₁ := p₁) (q₂ := p₁₂) h₁ h₁₂ hle₁ x₁
-  have hrhs :
-      (rationalLocalizationRestrict h₂ h₁₂
-          (hinter.le.trans Set.inter_subset_right)).toRingHom
-            (presentationLimitRationalEquiv Y p₂ h₂ x₂) =
-        presentationLimitRationalEquiv Y p₁₂ h₁₂
-          ((presentationLimitMap (P := P) hle₂).hom.val x₂) :=
-    presentationLimitRationalEquiv_restrict Y (q₁ := p₂) (q₂ := p₁₂) h₂ h₁₂ hle₂ x₂
-  have hmap₁ :
-      (presentationLimitMap (P := P) hle₁).hom.val x₁ =
-        (presentationLimitMap (P := P) hU₁₂.le).hom.val
-          ((presentationLimitMap (P := P) inf_le_left).hom.val x₁) := by
-    rw [← presentationLimitMap_comp (P := P) inf_le_left hU₁₂.le]; rfl
-  have hmap₂ :
-      (presentationLimitMap (P := P) hle₂).hom.val x₂ =
-        (presentationLimitMap (P := P) hU₁₂.le).hom.val
-          ((presentationLimitMap (P := P) inf_le_right).hom.val x₂) := by
-    rw [← presentationLimitMap_comp (P := P) inf_le_right hU₁₂.le]; rfl
-  have h12 :
-      (globalSections.map hpull.isoPullback.hom.op
-          (globalSections.map (Limits.pullback.fst (Y.rationalLocalizationHom T₁ s₁ h₁).op
-            (Y.rationalLocalizationHom T₂ s₂ h₂).op).op y₁) =
-        globalSections.map hpull.isoPullback.hom.op
-          (globalSections.map (Limits.pullback.snd (Y.rationalLocalizationHom T₁ s₁ h₁).op
-            (Y.rationalLocalizationHom T₂ s₂ h₂).op).op y₂)) ↔
-      (presentationLimitMap (P := P)
-        (inf_le_left : spaBasicOpen Y.pair.plus T₁ s₁ ⊓ spaBasicOpen Y.pair.plus T₂ s₂ ≤
-          spaBasicOpen Y.pair.plus T₁ s₁)).hom.val x₁ =
-      (presentationLimitMap (P := P)
-        (inf_le_right : spaBasicOpen Y.pair.plus T₁ s₁ ⊓ spaBasicOpen Y.pair.plus T₂ s₂ ≤
-          spaBasicOpen Y.pair.plus T₂ s₂)).hom.val x₂ := by
-    rw [hcomp₁, hcomp₂, hlhs, hrhs]
-    refine ((presentationLimitRationalEquiv Y p₁₂ h₁₂).injective.eq_iff).trans ?_
-    rw [hmap₁, hmap₂]
-    have _ : IsIso (presentationLimitMap (P := P) hU₁₂.le) :=
-      ⟨presentationLimitMap (P := P) hU₁₂.symm.le,
-        by rw [presentationLimitMap_comp, presentationLimitMap_refl],
-        by rw [presentationLimitMap_comp, presentationLimitMap_refl]⟩
-    exact (ConcreteCategory.bijective_of_isIso
-      (TopCommRingCat.isCompleteSeparated.ι.map
-        (presentationLimitMap (P := P) hU₁₂.le))).injective.eq_iff
-  exact hiso.injective.eq_iff.symm.trans h12
+  have hcomp₁ := globalSections_map_pullback_proj Y h₁ h₁₂ hU₁₂.le inf_le_left
+    hpull.isoPullback.hom (Limits.pullback.fst _ _) hpull.isoPullback_hom_fst x₁
+  have hcomp₂ := globalSections_map_pullback_proj Y h₂ h₁₂ hU₁₂.le inf_le_right
+    hpull.isoPullback.hom (Limits.pullback.snd _ _) hpull.isoPullback_hom_snd x₂
+  have _ : IsIso (presentationLimitMap (P := P) hU₁₂.le) :=
+    isIso_presentationLimitMap_of_eq hU₁₂
+  have heq_map :
+      Function.Injective
+        (TopCommRingCat.isCompleteSeparated.ι.map (presentationLimitMap (P := P) hU₁₂.le)) :=
+    (ConcreteCategory.bijective_of_isIso _).injective
+  dsimp only at hcomp₁ hcomp₂ ⊢
+  refine hiso.injective.eq_iff.symm.trans ?_
+  rw [hcomp₁, hcomp₂]
+  exact ((presentationLimitRationalEquiv Y p₁₂ h₁₂).injective.eq_iff).trans heq_map.eq_iff
 
 private theorem isSheafFor_globalSections_rationalCoverPresieve_iff (Y : CAff.{u}) {ι : Type*}
     (T : ι → Finset Y.ring) (s : ι → Y.ring)
@@ -299,27 +272,23 @@ private theorem isSheafFor_globalSections_rationalCoverPresieve_iff (Y : CAff.{u
       presentationLimit (P := P) Y.pair.plus (U i) ≃
         (Y.rationalLocalization (T i) (s i) (hT i)).ring :=
     presentationLimitRationalEquiv Y (p i) (hT i)
+  -- Stage 1: represent each pairwise intersection `U i ⊓ U j` as a rational basic open so the
+  -- corresponding canonical localization forms a pullback in `CAffᵒᵖ`.
   have hU (i : ι) : U i ∈ spaRationalOpens Y.pair.plus :=
     spaBasicOpen_mem_spaRationalOpens (hT i)
   choose T' s' hT' hUij using fun i j ↦ mem_spaRationalOpens_iff_exists_spaBasicOpen.mp <|
     inf_mem_spaRationalOpens (hU i) (hU j)
   have hinter (i j : ι) :
       rationalSubset Y.pair.plus (T' i j) (s' i j) =
-        rationalSubset Y.pair.plus (T i) (s i) ∩ rationalSubset Y.pair.plus (T j) (s j) := by
-    refine le_antisymm (fun w hw ↦ ?_) (fun w ⟨hw₁, hw₂⟩ ↦ ?_)
-    · have hw' : (⟨w, rationalSubset_subset_spa _ _ _ hw⟩ :
-          ↥(ValuationSpectrum.spa Y.pair.plus)) ∈ U i ⊓ U j :=
-        (hUij i j) ▸ mem_spaBasicOpen.mpr hw
-      exact ⟨mem_spaBasicOpen.mp hw'.1, mem_spaBasicOpen.mp hw'.2⟩
-    · have hw' : (⟨w, rationalSubset_subset_spa _ _ _ hw₁⟩ :
-          ↥(ValuationSpectrum.spa Y.pair.plus)) ∈ U i ⊓ U j :=
-        ⟨mem_spaBasicOpen.mpr hw₁, mem_spaBasicOpen.mpr hw₂⟩
-      exact mem_spaBasicOpen.mp <| (hUij i j) ▸ hw'
+        rationalSubset Y.pair.plus (T i) (s i) ∩ rationalSubset Y.pair.plus (T j) (s j) :=
+    rationalSubset_eq_inter_of_spaBasicOpen_eq_inf (hUij i j).symm
   have hpull (i j : ι) :=
     isPullback_rationalLocalizationRestrict (hT i) (hT j) (hT' i j) (hinter i j)
   have : (Presieve.ofArrows (fun i ↦ op (Y.rationalLocalization (T i) (s i) (hT i)))
       fun i ↦ (Y.rationalLocalizationHom (T i) (s i) (hT i)).op).HasPairwisePullbacks :=
     ⟨by rintro _ _ _ ⟨i⟩ _ ⟨j⟩; exact (hpull i j).hasPullback⟩
+  -- Stage 2: transport pullback compatibility in `CAff.globalSections` to restriction
+  -- compatibility in `presentationLimitPresheaf`.
   have hcompat_iff (x : ∀ i, presentationLimit (P := P) Y.pair.plus (U i)) :
       Presieve.Arrows.PullbackCompatible globalSections
         (fun i ↦ (Y.rationalLocalizationHom (T i) (s i) (hT i)).op)
@@ -330,10 +299,14 @@ private theorem isSheafFor_globalSections_rationalCoverPresieve_iff (Y : CAff.{u
       @rationalLocalization_compatible_iff Y (T i) (T j) (T' i j) (s i) (s j) (s' i j)
         (hT i) (hT j) (hT' i j) (hUij i j).symm (hinter i j) (hpull i j).hasPullback
         (hpull i j) (x i) (x j)
+  -- Stage 3: reduce both `IsSheafFor` assertions to `ExistsUnique` gluing and transport
+  -- amalgamations along `eTop` and `ePiece`.
   rw [rationalCoverPresieve_eq_ofArrows, Presieve.isSheafFor_arrows_iff_pullbacks,
     isSheafFor_ofArrows_iff_existsUnique_presentationLimitMap P (fun i ↦ (le_top : U i ≤ ⊤))]
   refine ⟨fun hO x hx ↦ ?_, fun hLim y hy ↦ ?_⟩
-  · obtain ⟨b, hb, hbu⟩ := hO (fun i ↦ ePiece i (x i)) ((hcompat_iff x).mpr hx)
+  · -- Forward: glue the transported family `ePiece i (x i)` via `hO`, then push to `⊤` via
+    -- `eTop`.
+    obtain ⟨b, hb, hbu⟩ := hO (fun i ↦ ePiece i (x i)) ((hcompat_iff x).mpr hx)
     refine ⟨eTop b, fun i ↦ (ePiece i).injective
         ((presentationLimitRationalEquiv_top Y (T i) (s i) (hT i) b).trans (hb i)),
       fun a ha ↦ ?_⟩
@@ -341,7 +314,9 @@ private theorem isSheafFor_globalSections_rationalCoverPresieve_iff (Y : CAff.{u
     refine congrArg eTop (hbu (eTop.symm a) fun i ↦ ?_)
     rw [globalSections_map_apply, ← presentationLimitRationalEquiv_top Y (T i) (s i) (hT i),
       eTop.apply_symm_apply, ha i]
-  · let y' : ∀ i, (Y.rationalLocalization (T i) (s i) (hT i)).ring := y
+  · -- Backward: glue the inverse-transported family `(ePiece i).symm (y i)` via `hLim`, then
+    -- pull back along `eTop.symm`.
+    let y' : ∀ i, (Y.rationalLocalization (T i) (s i) (hT i)).ring := y
     have hy_eq : (fun i ↦ (ePiece i ((ePiece i).symm (y' i)) :
         globalSections.obj (op (op (Y.rationalLocalization (T i) (s i) (hT i)))))) = y :=
       funext fun i ↦ (ePiece i).apply_symm_apply (y' i)

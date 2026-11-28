@@ -554,6 +554,13 @@ theorem eqToHom_presentationLimit {V W : Opens ↥(spa Aplus)} (e : V = W)
   subst e
   simp
 
+/-- **Restricting along an equality of opens is an isomorphism** on `presentationLimit`. -/
+theorem isIso_presentationLimitMap_of_eq {V W : Opens ↥(spa Aplus)} (h : V = W) :
+    IsIso (presentationLimitMap (P := P) h.le) :=
+  ⟨presentationLimitMap (P := P) h.ge,
+    by rw [presentationLimitMap_comp, presentationLimitMap_refl],
+    by rw [presentationLimitMap_comp, presentationLimitMap_refl]⟩
+
 /-- **The presheaf `V ↦ presentationLimit V`** on `Spa(A,A⁺)`, valued in
 `CompleteSeparatedTopCommRingCat`. Both functor laws are reindexing identities for the limit:
 restricting along `le_refl` is the identity on the index, and restricting twice is restricting
