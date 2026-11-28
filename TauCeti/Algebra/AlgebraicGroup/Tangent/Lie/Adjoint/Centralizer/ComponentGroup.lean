@@ -38,8 +38,6 @@ component-group API over an algebraically closed field `k` (with isogeny special
     elements
     (`TauCeti.FiniteTypeCommHopfAlgCat.cast_centralizerComponentGroup_rationalComponentMap`).
   - `TauCeti.FiniteTypeCommHopfAlgCat.centralizerComponentGroupZeroEquiv`: `A(0) ≃* π₀(G)`.
-  - `TauCeti.FiniteTypeCommHopfAlgCat.componentGroupInclusion_centralizer_eq_one`: the
-    homomorphism `A(x) →* π₀(G)` induced by `C_G(x) ⊆ G` is trivial when `G` is preconnected.
 * **Conjugation**:
   - `TauCeti.centralizerComponentGroupConjugationEquiv`: a rational point `g ∈ G(k)` induces
     `A(x) ≃* A(Ad(g) x)`, satisfying identity (`centralizerComponentGroupConjugationEquiv_one`),
@@ -124,15 +122,6 @@ theorem centralizerComponentGroupZeroEquiv_rationalComponentMap
       rationalComponentMap H g.val :=
   HopfIdeal.componentGroupEquivOfEqBot_rationalComponentMap
     (centralizerHopfIdeal_zero (k := k) (H := H)) g
-
-/-- If `G` is preconnected, the homomorphism `A(x) →* π₀(G)` induced by the centralizer
-inclusion `C_G(x) ⊆ G` is trivial (even though `A(x)` itself may be nontrivial). -/
-theorem componentGroupInclusion_centralizer_eq_one (H : FiniteTypeCommHopfAlgCat.{u, u} k)
-    [PreconnectedSpace (PrimeSpectrum H)]
-    (x : Module.Dual k (Bialgebra.CotangentSpace k H))
-    (C : (centralizerHopfIdeal H x).ComponentGroup) :
-    (centralizerHopfIdeal H x).componentGroupInclusion C = 1 :=
-  HopfIdeal.componentGroupInclusion_eq_one (centralizerHopfIdeal H x) C
 
 end FiniteTypeCommHopfAlgCat
 
@@ -402,7 +391,7 @@ theorem mulExact_centralizerComponentGroupMap_of_faithfullyFlat (f : H ⟶ K)
   let iso : quotient K (CommHopfAlgCat.kernelHopfIdeal f.hom ⊔ centralizerHopfIdeal K x) ≅
       quotient (quotient K (centralizerHopfIdeal K x)) (CommHopfAlgCat.kernelHopfIdeal c.hom) :=
     ObjectProperty.isoMk _ (f.hom.kernelCentralizerMapIso x)
-  exact mulExact_comp_iso_hom _ _ iso
+  exact mulExact_mapComponentGroup_of_comp_iso_hom _ _ iso
     (ObjectProperty.hom_ext _ (f.hom.quotientMapOfLe_comp_kernelCentralizerMapIso_hom x))
     (centralizerComponentGroupMap f x) hex
 
@@ -442,7 +431,7 @@ theorem mulExact_centralizerComponentGroupMap_of_le (f : H ⟶ K)
     rw [← Category.assoc, mkQuotient_comp_quotientMapOfLe, mkQuotient_comp_quotientMapOfLe]
     exact ObjectProperty.hom_ext _
       (CommHopfAlgCat.mkQuotient_comp_eqToHom (sup_eq_left.mpr hle))
-  exact mulExact_comp_iso_hom _ _ iso hcomp _
+  exact mulExact_mapComponentGroup_of_comp_iso_hom _ _ iso hcomp _
     (mulExact_centralizerComponentGroupMap_of_faithfullyFlat f x hf)
 
 /-- **Central-kernel exact sequence on centralizer component groups.** For a faithfully flat

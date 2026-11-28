@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Functor
 import Mathlib.Algebra.Group.Action.Hom
+import TauCeti.Algebra.Group.Hom.Lift
 import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.GroupTheory.GroupAction.CompHom
-import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # Descent of homomorphisms and actions to the component group

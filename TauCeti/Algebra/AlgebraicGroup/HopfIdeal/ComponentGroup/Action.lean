@@ -60,8 +60,11 @@ private theorem quotientPointsSubgroup_identityComponent_of_mem_ambient (I : Hop
     ((CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).hom.hom q :
         HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) ∈
       CommHopfAlgCat.quotientPointsSubgroup H.obj I.identityComponent (CommAlgCat.of k k) := by
-  rw [← I.rationalComponentMap_eq_one_iff, I.rationalComponentMap_def, MonoidHom.comp_apply,
-    CommHopfAlgCat.quotientPointsSubgroupIso_inv_hom_apply, rationalComponentMap_eq_one_iff]
+  rw [← I.rationalComponentMap_eq_one_iff, I.rationalComponentMap_def, MonoidHom.comp_apply]
+  have hinv : (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).inv.hom
+      ((CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).hom.hom q) = q :=
+    GrpCat.inv_hom_apply _ q
+  rw [hinv, rationalComponentMap_eq_one_iff]
   exact hq
 
 private theorem quotientPointsSubgroupIso_inv_hom_mem_identityComponent_iff (I : HopfIdeal k H)
@@ -112,8 +115,9 @@ theorem descSubgroupComponentGroupHom_rationalComponentMap (I : HopfIdeal k H)
     (g : CommHopfAlgCat.quotientPointsSubgroup H.obj I (CommAlgCat.of k k)) :
     descSubgroupComponentGroupHom H I φ hφ (I.rationalComponentMap g) = φ g := by
   rw [descSubgroupComponentGroupHom, I.rationalComponentMap_def, MonoidHom.comp_apply,
-    descComponentGroupHom_rationalComponentMap, MonoidHom.comp_apply,
-    CommHopfAlgCat.quotientPointsSubgroupIso_hom_inv_apply]
+    descComponentGroupHom_rationalComponentMap, MonoidHom.comp_apply]
+  exact congrArg φ
+    (GrpCat.hom_inv_apply (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)) g)
 
 /-- Composing the descended subgroup homomorphism with `I.rationalComponentMap` recovers `φ`. -/
 @[simp]
@@ -160,9 +164,9 @@ theorem ker_descSubgroupComponentGroupHom (I : HopfIdeal k H) {M : Type*} [Monoi
   constructor
   · intro hq
     exact ⟨(CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).hom.hom q,
-      hq, CommHopfAlgCat.quotientPointsSubgroupIso_inv_hom_apply H.obj I _ q⟩
+      hq, GrpCat.inv_hom_apply _ q⟩
   · rintro ⟨g, hg, rfl⟩
-    rwa [CommHopfAlgCat.quotientPointsSubgroupIso_hom_inv_apply]
+    simpa [GrpCat.hom_inv_apply] using hg
 
 /-- The descended subgroup homomorphism is injective exactly when `ker φ` consists of rational
 points of `N°`. -/
@@ -182,8 +186,10 @@ theorem injective_descSubgroupComponentGroupHom_iff (I : HopfIdeal k H) {M : Typ
     ext g
     have hg := Subgroup.ext_iff.mp h
       ((CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).inv.hom g)
-    rw [MonoidHom.mem_ker, MonoidHom.comp_apply,
-      CommHopfAlgCat.quotientPointsSubgroupIso_hom_inv_apply,
+    have hinv : (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).hom.hom
+        ((CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).inv.hom g) = g :=
+      GrpCat.hom_inv_apply (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)) g
+    rw [MonoidHom.mem_ker, MonoidHom.comp_apply, hinv,
       quotientPointsSubgroupIso_inv_hom_mem_identityComponent_iff] at hg
     exact hg
   · intro h
@@ -191,8 +197,10 @@ theorem injective_descSubgroupComponentGroupHom_iff (I : HopfIdeal k H) {M : Typ
     obtain ⟨g, rfl⟩ := (ConcreteCategory.bijective_of_isIso
       (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).inv).2 q
     have hg := Subgroup.ext_iff.mp h g
-    rw [MonoidHom.mem_ker, MonoidHom.comp_apply,
-      CommHopfAlgCat.quotientPointsSubgroupIso_hom_inv_apply,
+    have hinv : (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).hom.hom
+        ((CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).inv.hom g) = g :=
+      GrpCat.hom_inv_apply (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)) g
+    rw [MonoidHom.mem_ker, MonoidHom.comp_apply, hinv,
       quotientPointsSubgroupIso_inv_hom_mem_identityComponent_iff]
     exact hg
 
@@ -264,7 +272,9 @@ private theorem quotientMulAction_iso_inv_smul (I : HopfIdeal k H) (X : Type*)
     (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).inv.hom g • y =
       g • y := by
   unfold quotientMulAction
-  rw [MulAction.compHom_smul_def, CommHopfAlgCat.quotientPointsSubgroupIso_hom_inv_apply]
+  rw [MulAction.compHom_smul_def]
+  exact congrArg (· • y)
+    (GrpCat.hom_inv_apply (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)) g)
 
 /-- Descend an action of the closed subgroup `N(k) ≤ G(k)` on `X` whose restriction to `N°(k)` is
 trivial to a permutation action of `π₀(N)`. -/
@@ -433,7 +443,7 @@ theorem ker_subgroupComponentGroupActionHom (I : HopfIdeal k H) (X : Type*)
   constructor
   · intro hq
     exact ⟨(CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).hom.hom q,
-      hq, CommHopfAlgCat.quotientPointsSubgroupIso_inv_hom_apply H.obj I _ q⟩
+      hq, GrpCat.inv_hom_apply _ q⟩
   · rintro ⟨g, hg, rfl⟩ x
     rw [quotientMulAction_iso_inv_smul]
     exact hg x

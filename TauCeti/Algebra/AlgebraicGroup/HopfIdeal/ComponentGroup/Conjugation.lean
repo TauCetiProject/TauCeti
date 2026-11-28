@@ -209,8 +209,7 @@ theorem componentGroupConjugationEquiv_self_eq_refl_of_mem_identityComponent (I 
       (le_identityComponent I) _ hg⟩
   have h1 : I.rationalComponentMap gI = 1 :=
     (I.rationalComponentMap_eq_one_iff gI).mpr hg
-  rw [componentGroupConjugationEquiv_self_eq_conj I gI, h1, map_one]
-  rfl
+  rw [componentGroupConjugationEquiv_self_eq_conj I gI, h1, map_one, MulAut.one_def]
 
 /-- Conjugation is natural with respect to nested closed-subgroup inclusions `V(I₂) ⊆ V(I₁)`. -/
 theorem mapComponentGroup_quotientMapOfLe_componentGroupConjugationEquiv
