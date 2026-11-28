@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Holder.OpenSet.Basic
 public import Mathlib.Topology.ExtendFrom
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Tactic.IntervalCases
+import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -22,10 +24,16 @@ continuous linear functional of norm at most one. These boundary values are how 
 conditions are imposed on elements of `C^{k+1,α}(Ω)`, for instance totally real boundary
 conditions for the Cauchy–Riemann operator on the disc.
 
+Conversely, a function that is differentiable on an open `Ω` with compact closure, whose value and
+derivative extend continuously to the closure and whose derivative is `α`-Hölder on `Ω`, defines
+an element of `C^{1,α}(Ω)`, for every exponent `α`
+(`TauCeti.exists_ckHolderSpaceOn_one_of_isCompact_closure`).
+
 ## Main declarations
 
 * `TauCeti.CkHolderSpaceOn.closureExtend`: the extension `extendFrom Ω f` of an element to `E`; it
-  agrees with the element on `Ω` (`TauCeti.CkHolderSpaceOn.closureExtend_apply`).
+  agrees with the element on `Ω` (`TauCeti.CkHolderSpaceOn.closureExtend_apply`), and the zero
+  element extends by zero (`TauCeti.CkHolderSpaceOn.closureExtend_zero`).
 * `TauCeti.CkHolderSpaceOn.closureExtend_eq_of_continuousWithinAt`: it is the value at the point
   of any function agreeing with the element on `Ω` and continuous within `Ω` there.
 * `TauCeti.CkHolderSpaceOn.differentiableOn_closureExtend`: from order one on, the extension to the
@@ -37,6 +45,11 @@ conditions for the Cauchy–Riemann operator on the disc.
   the closure to its extension, which is Lipschitz on the closure with the same constant.
 * `TauCeti.CkHolderSpaceOn.closureEvalL`: the value of the extension at a point of the closure,
   as a continuous linear functional on `C^{k+1,α}(Ω)` of norm at most one.
+* `TauCeti.exists_ckHolderSpaceOn_one_of_isCompact_closure`: an element of `C^{1,α}(Ω)` from a
+  function differentiable on `Ω` whose value and derivative are continuous on the compact closure,
+  with derivative `α`-Hölder on `Ω`. Unlike
+  `TauCeti.CkHolderSpaceOn.exists_apply_eq_of_differentiableOn_of_holderOnWith`, it also covers
+  the exponent `α = 0`.
 -/
 
 public section
@@ -81,17 +94,15 @@ theorem closureExtend_eventuallyEq_extend (f : CkHolderSpaceOn k α Ω F) {x : E
 theorem lipschitzOnWith_extend (hΩ : Convex ℝ (Ω : Set E)) (f : CkHolderSpaceOn (k + 1) α Ω F) :
     LipschitzOnWith ‖f‖₊ f.extend Ω := by
   refine hΩ.lipschitzOnWith_of_nnNorm_fderiv_le (𝕜 := ℝ) (fun x hx ↦ ?_) fun x hx ↦ ?_
-  · exact (f.contDiffOn_extend.differentiableOn (by simp)).differentiableAt
-      (Ω.isOpen.mem_nhds hx)
+  · exact f.differentiableAt_extend hx
   · rw [← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm, ← norm_iteratedFDeriv_one (𝕜 := ℝ)]
     exact f.norm_iteratedFDeriv_extend_le (i := 1) (by omega) ⟨x, hx⟩
 
 /-- From order one on, the extension to the closure is differentiable on `Ω`. -/
 theorem differentiableOn_closureExtend (f : CkHolderSpaceOn (k + 1) α Ω F) :
-    DifferentiableOn ℝ f.closureExtend Ω := fun x hx ↦
-  (((f.contDiffOn_extend.differentiableOn (by simp)).differentiableAt
-    (Ω.isOpen.mem_nhds hx)).congr_of_eventuallyEq
-      (f.closureExtend_eventuallyEq_extend hx)).differentiableWithinAt
+    DifferentiableOn ℝ f.closureExtend Ω := fun _ hx ↦
+  ((f.differentiableAt_extend hx).congr_of_eventuallyEq
+    (f.closureExtend_eventuallyEq_extend hx)).differentiableWithinAt
 
 /-- **Uniqueness of the extension to the closure.** At a point of the closure of `Ω`, the
 extension to the closure takes the value of any function that agrees with the element on `Ω` and
@@ -102,6 +113,14 @@ theorem closureExtend_eq_of_continuousWithinAt (f : CkHolderSpaceOn k α Ω F) {
   refine extendFrom_eq hx (hg.tendsto.congr' ?_)
   filter_upwards [self_mem_nhdsWithin] with y hy
   rw [f.extend_apply_of_mem hy, hfg]
+
+/-- The extension of the zero element of `C^{k,α}(Ω)` vanishes on the closure of `Ω`. -/
+@[simp]
+theorem closureExtend_zero {x : E} (hx : x ∈ closure (Ω : Set E)) :
+    (0 : CkHolderSpaceOn k α Ω F).closureExtend x = 0 := by
+  refine extendFrom_eq hx (tendsto_const_nhds.congr' ?_)
+  filter_upwards [self_mem_nhdsWithin] with y hy
+  rw [extend_apply _ ⟨y, hy⟩, coe_zero, Pi.zero_apply]
 
 variable [CompleteSpace F]
 
@@ -180,3 +199,41 @@ theorem norm_closureEvalL_le (hΩ : Convex ℝ (Ω : Set E)) {x : E}
   LinearMap.mkContinuous_norm_le _ zero_le_one _
 
 end TauCeti.CkHolderSpaceOn
+
+namespace TauCeti
+
+open TopologicalSpace
+open scoped NNReal
+
+variable {α : ℝ≥0} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E}
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- A function `u` that is differentiable on an open set `Ω` with compact closure, with `u` and a
+field `u'` continuous on the closure, where `u'` is the derivative of `u` on `Ω` and is `α`-Hölder
+on `Ω`, agrees on `Ω` with an element of `C^{1,α}(Ω)`. -/
+theorem exists_ckHolderSpaceOn_one_of_isCompact_closure (hΩ : IsCompact (closure (Ω : Set E)))
+    {u : E → F} (hu : ContinuousOn u (closure (Ω : Set E))) (hud : DifferentiableOn ℝ u Ω)
+    {u' : E → E →L[ℝ] F} {K : ℝ≥0} (hu'c : ContinuousOn u' (closure (Ω : Set E)))
+    (hu'H : HolderOnWith K α u' Ω) (hu' : ∀ z ∈ (Ω : Set E), fderiv ℝ u z = u' z) :
+    ∃ U : CkHolderSpaceOn 1 α Ω F, ∀ x, U x = u x := by
+  have hcd : ContDiffOn ℝ ((1 : ℕ) : WithTop ℕ∞) u Ω := by
+    rw [show ((1 : ℕ) : WithTop ℕ∞) = 0 + 1 by norm_num,
+      contDiffOn_succ_iff_fderiv_of_isOpen Ω.isOpen]
+    exact ⟨hud, by simp, contDiffOn_zero.2 ((hu'c.mono subset_closure).congr hu')⟩
+  obtain ⟨C, hC⟩ := hΩ.exists_bound_of_continuousOn hu
+  obtain ⟨C', hC'⟩ := hΩ.exists_bound_of_continuousOn hu'c
+  refine ⟨CkHolderSpaceOn.ofContDiffOn u hcd (fun i hi ↦ ?_) ⟨K, ?_⟩,
+    CkHolderSpaceOn.ofContDiffOn_apply _ _ _ _⟩
+  · interval_cases i
+    · exact ⟨C, fun x ↦ by
+        rw [norm_iteratedFDeriv_zero]
+        exact hC x (subset_closure x.property)⟩
+    · exact ⟨C', fun x ↦ by
+        rw [norm_iteratedFDeriv_one, hu' x x.property]
+        exact hC' x (subset_closure x.property)⟩
+  · have h : HolderOnWith K α (iteratedFDeriv ℝ 1 u) Ω := by
+      rw [holderOnWith_iteratedFDeriv_one_iff]
+      exact hu'H.congr fun z hz ↦ (hu' z hz).symm
+    exact h.holderWith
+
+end TauCeti

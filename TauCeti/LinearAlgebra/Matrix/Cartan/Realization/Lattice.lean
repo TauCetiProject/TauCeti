@@ -204,7 +204,7 @@ variable {κ : Type*} [Finite κ] (b : Basis κ ℚ H)
 simple coroot and every simple root is integral on the basis. -/
 noncomputable def ofBasis : R.CoweightLattice where
   lattice := Submodule.span ℤ (Set.range b)
-  isFullLattice := Submodule.isFullLattice_span (Set.finite_range b) b.span_eq
+  isFullLattice := b.isFullLattice_span_range
   coroot_mem := hcoroot
   root_mem_dualLattice i := (Submodule.mem_dualLattice_span_iff _ _).mpr <| by
     rintro _ ⟨k, rfl⟩

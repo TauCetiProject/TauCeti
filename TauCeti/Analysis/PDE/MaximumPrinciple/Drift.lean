@@ -684,18 +684,13 @@ private theorem ae_energyIntegrand_add_value_mul_inner_eq {l : ℝ} (hl : 0 ≤ 
               ⟪e x, W1p.gradient (W1p.posPartAbove (by norm_num) hl u) x⟫_ℝ)) +
           l * (c x * W1p.value (W1p.posPartAbove (by norm_num) hl u) x +
             ⟪e x, W1p.gradient (W1p.posPartAbove (by norm_num) hl u) x⟫_ℝ)) := by
-  classical
-  filter_upwards [W1p.value_posPartAbove_ae (by norm_num) hl u,
-    W1p.gradient_posPartAbove_ae (by norm_num) hl u] with x hvx hgx
+  filter_upwards [W1p.ae_posPartAbove_cases (by norm_num) hl u] with x hx
   simp only [energyIntegrand_apply, jetField_apply, massForm_apply, driftForm_apply,
     Pi.sub_apply, Pi.zero_apply, inner_sub_left]
-  rw [hvx, hgx]
-  by_cases hx : l < W1p.value u x
-  · rw [indicator_of_mem (s := {y | l < W1p.value u y}) hx, max_eq_left (sub_nonneg.2 hx.le)]
+  rcases hx with ⟨hv, hg⟩ | ⟨hv, hg⟩
+  · rw [hv, hg]
     ring
-  · rw [indicator_of_notMem (s := {y | l < W1p.value u y}) hx,
-      max_eq_right (sub_nonpos.2 (not_lt.1 hx))]
-    simp
+  · simp [hv, hg]
 
 omit [DecidableEq ι] in
 /-- Where `(u - l)⁺` or its gradient is not zero, `u > l ≥ 0`. So `l (u - l)⁺ ≤ |u| (u - l)⁺` and

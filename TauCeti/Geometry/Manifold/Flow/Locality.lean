@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Flow.Basic
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Flows depend only on the field near a trajectory
@@ -96,7 +96,7 @@ theorem eventually_flowOf_eq_of_eqOn (ht : (t, x) ∈ flowDomain v)
   have hO : IsOpen O := isOpen_setOf_mem_flowDomain_and_flowOf_mem hv hU
   have hseg : uIcc 0 t ⊆ maximalIntegralCurveInterval v x :=
     ordConnected_maximalIntegralCurveInterval.uIcc_subset
-      (mem_flowDomain.mp (mem_flowDomain_zero hv x)) (mem_flowDomain.mp ht)
+      (mem_flowDomain.mp (mem_flowDomain_zero (hv x))) (mem_flowDomain.mp ht)
   have hsub : uIcc 0 t ×ˢ {x} ⊆ O := by
     rintro ⟨s, y⟩ ⟨hs, rfl⟩
     exact ⟨mem_flowDomain.mpr (hseg hs), htU hs⟩

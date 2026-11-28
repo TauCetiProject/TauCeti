@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import TauCeti.RepresentationTheory.Stabilizer
 public import TauCeti.RepresentationTheory.Subrepresentation
+public import TauCeti.RepresentationTheory.TorsionBy
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
 import Mathlib.RepresentationTheory.Rep.Basic
 import TauCeti.RepresentationTheory.Intertwining
@@ -75,6 +76,8 @@ case.
 * `Representation.not_isSmooth_pi_ofMulAction_quotient`: over a nontrivial semiring, an infinite
   product of coset permutation modules `∏ i, A[G ⧸ H i]` fails to be smooth when `⨅ i, H i` is
   not open.
+* `Representation.continuous_iff_isSmooth`: when right translations on `G` are continuous and `V`
+  carries the discrete topology, joint continuity on `G × V` is equivalent to smoothness.
 
 ## References
 
@@ -141,6 +144,25 @@ instance [IsSmooth ρ] (ρ' : Subrepresentation ρ) : IsSmooth ρ'.toRepresentat
 instance [IsSmooth ρ] (W : Submodule A V) (le_comap : ∀ g, W ≤ W.comap (ρ g)) :
     IsSmooth (ρ.subrepresentation W le_comap) :=
   IsSmooth.of_injective (σ := ρ) ⟨W.subtype, fun _ ↦ rfl⟩ W.injective_subtype
+
+section IdealTorsion
+
+variable {A V : Type*} [CommRing A] [AddCommGroup V] [Module A V]
+  (ρ : Representation A G V) (I : Ideal A)
+
+omit [TopologicalSpace G] in
+/-- Passing to ideal torsion preserves each vector's stabilizer. -/
+@[simp]
+theorem stabilizer_torsionByIdeal (v : Submodule.torsionBySet A V I) :
+    (ρ.torsionByIdeal I).stabilizer v = ρ.stabilizer (v : V) := by
+  ext
+  simp [Subtype.ext_iff]
+
+/-- Ideal torsion of a smooth representation is smooth over the quotient ring. -/
+instance [IsSmooth ρ] : IsSmooth (ρ.torsionByIdeal I) :=
+  ⟨fun v ↦ ρ.stabilizer_torsionByIdeal I v ▸ IsSmooth.isOpen_stabilizer (v : V)⟩
+
+end IdealTorsion
 
 /-- The restriction of a smooth representation along a continuous homomorphism is smooth. -/
 theorem IsSmooth.comp [IsSmooth ρ] {H : Type*} [Group H] [TopologicalSpace H] {φ : H →* G}
@@ -211,6 +233,26 @@ instance [ρ.IsTrivial] : IsSmooth ρ :=
 /-- A representation on a space with at most one vector is smooth. -/
 instance [Subsingleton V] : IsSmooth ρ :=
   ⟨fun v ↦ by rw [stabilizer_eq_top_of_subsingleton ρ v]; exact isOpen_univ⟩
+
+/-- When `V` carries the discrete topology and right translations on `G` are continuous, a
+representation `ρ` is jointly continuous on `G × V` if and only if it is smooth.
+
+Adapted from `continuousSMul_iff_stabilizer_isOpen` in `Mathlib.Topology.Algebra.MulAction`. -/
+theorem continuous_iff_isSmooth [ContinuousConstSMul Gᵐᵒᵖ G]
+    [TopologicalSpace V] [DiscreteTopology V] (ρ : Representation A G V) :
+    Continuous (fun p : G × V => ρ p.1 p.2) ↔ ρ.IsSmooth := by
+  rw [isSmooth_iff]
+  refine ⟨fun h v =>
+      (isOpen_discrete {v}).preimage (h.comp (continuous_id.prodMk continuous_const)),
+    fun h => continuous_prod_of_discrete_right.mpr fun v => continuous_discrete_rng.mpr fun w => ?_⟩
+  obtain hU | ⟨m, hm : ρ m v = w⟩ := {g : G | ρ g v = w}.eq_empty_or_nonempty
+  · simp [Set.preimage, hU]
+  · have hset : (fun g : G => ρ g v) ⁻¹' {w} =
+        (fun g : G => MulOpposite.op m⁻¹ • g) ⁻¹' (ρ.stabilizer w : Set G) := by
+      ext g
+      simp [Representation.mem_stabilizer, ← hm, ← mul_apply_eq_comp, ← map_mul]
+    rw [hset]
+    exact (h w).preimage (continuous_const_smul (MulOpposite.op m⁻¹))
 
 end IsSmooth
 

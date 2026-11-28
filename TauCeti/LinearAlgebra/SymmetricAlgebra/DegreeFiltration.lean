@@ -14,7 +14,8 @@ The degree filtration of `SymmetricAlgebra R M` is the word filtration
 `TauCeti.Algebra.wordFiltration` of the generator map: its `k`-th step is spanned by the products of
 at most `k` generators. Since every such product is homogeneous of degree at most `k`, an element of
 the `k`-th step has no homogeneous component of degree above `k`
-(`TauCeti.SymmetricAlgebra.coe_decompose_eq_zero_of_mem_wordFiltration`). In particular a nonzero
+(`TauCeti.SymmetricAlgebra.coe_decompose_eq_zero_of_mem_wordFiltration`), and conversely
+(`TauCeti.SymmetricAlgebra.mem_wordFiltration_iff_coe_decompose_eq_zero`). In particular a nonzero
 homogeneous element of degree `n` does not have degree below `n`
 (`TauCeti.SymmetricAlgebra.disjoint_homogeneousSubmodule_wordFiltrationPrevious`), which is how
 leading terms are read off in degree inductions on the symmetric algebra.
@@ -23,6 +24,8 @@ leading terms are read off in degree inductions on the symmetric algebra.
 
 * `TauCeti.SymmetricAlgebra.coe_decompose_eq_zero_of_mem_wordFiltration`: an element of degree at
   most `k` has zero homogeneous component in every degree above `k`.
+* `TauCeti.SymmetricAlgebra.mem_wordFiltration_iff_coe_decompose_eq_zero`: an element has degree at
+  most `k` exactly when its homogeneous components above `k` vanish.
 * `TauCeti.SymmetricAlgebra.disjoint_homogeneousSubmodule_wordFiltrationPrevious`: the homogeneous
   elements of degree `n` meet the elements of degree below `n` only in zero.
 -/
@@ -49,6 +52,22 @@ theorem coe_decompose_eq_zero_of_mem_wordFiltration {k n : ℕ} (hkn : k < n)
       exact DirectSum.decompose_of_mem_ne _ hy (i.property.trans_lt hkn).ne
   | zero => simp
   | add y z _ _ hy hz => simp [DirectSum.decompose_add, hy, hz]
+
+/-- **An element has degree at most `k` exactly when it has no homogeneous component above `k`**:
+`x` lies in the `k`-th step of the degree filtration of the symmetric algebra if and only if its
+degree-`n` homogeneous component is zero for every `n > k`. -/
+theorem mem_wordFiltration_iff_coe_decompose_eq_zero {k : ℕ} {x : _root_.SymmetricAlgebra R M} :
+    x ∈ wordFiltration (_root_.SymmetricAlgebra.ι R M) k ↔
+      ∀ n, k < n →
+        (DirectSum.decompose (homogeneousSubmodule R M) x n : _root_.SymmetricAlgebra R M) = 0 := by
+  classical
+  refine ⟨fun hx _ hkn ↦ coe_decompose_eq_zero_of_mem_wordFiltration hkn hx, fun hx ↦ ?_⟩
+  rw [← DirectSum.sum_support_decompose (homogeneousSubmodule R M) x]
+  refine Submodule.sum_mem _ fun n _ ↦ ?_
+  rcases le_or_gt n k with hnk | hkn
+  · exact wordFiltration_mono _ hnk (range_pow_le_wordFiltration _ n (SetLike.coe_mem _))
+  · rw [hx n hkn]
+    exact zero_mem _
 
 /-- **A homogeneous element of degree `n` has degree below `n` only if it is zero**: the degree-`n`
 homogeneous submodule of the symmetric algebra is disjoint from the step of the degree filtration

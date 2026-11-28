@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Filtered.Connected
+public import Mathlib.CategoryTheory.Filtered.Final
 public import Mathlib.CategoryTheory.Limits.FormalCoproducts.Basic
 public import Mathlib.Data.Fintype.EquivFin
 public import Mathlib.Topology.Category.TopCat.Opens
@@ -33,6 +33,11 @@ filteredness of the category of actual refinement functions. They provide small 
 categories for colimits of cover-dependent invariants whose transition maps are independent of
 refinement functions.
 Finite covers retain repeated members and include the empty cover of the empty space.
+
+The subtype `finiteRangePointCover X` consists of point-neighborhood covers with finitely many
+distinct opens. It is nonempty and directed on every space. On compact spaces,
+`PointOpenCover.exists_finiteRange_refinement` gives a finite-range refinement of every point
+cover, and the inclusion `finiteRangePointCover.inclusion` is final.
 
 Homeomorphisms transport point-neighborhood covers and actual refinements
 (`PointOpenCover.mapHomeomorph`, `PointOpenCover.mapHomeomorphHom`) and identify the refinement
@@ -377,5 +382,48 @@ theorem le_empty [IsEmpty X] (U : FiniteOpenCover X) : U ≤ empty :=
   ⟨⟨fun i ↦ Fin.elim0 i.down, fun i ↦ Fin.elim0 i.down⟩⟩
 
 end FiniteOpenCover
+
+/-- Point-neighborhood covers with finitely many distinct opens, ordered towards refinement. -/
+abbrev finiteRangePointCover (X : Type u) [TopologicalSpace X] :=
+  {W : PointOpenCover X // (Set.range W.opens).Finite}
+
+/-- On a compact space every point-neighborhood cover has a refinement with finitely many
+distinct opens. -/
+theorem PointOpenCover.exists_finiteRange_refinement {X : Type u} [TopologicalSpace X]
+    [CompactSpace X] (U : PointOpenCover X) :
+    ∃ W : finiteRangePointCover X, U ≤ W.val := by
+  classical
+  obtain ⟨V, ⟨φ⟩⟩ := FiniteOpenCover.exists_refinement U.opens U.isOpenCover
+  choose a ha using V.isOpenCover.exists_mem
+  let W : PointOpenCover X := ⟨fun x ↦ V.opens (a x), ha⟩
+  have hW : (Set.range W.opens).Finite :=
+    (Set.finite_range V.opens).subset (by rintro _ ⟨x, rfl⟩; exact ⟨a x, rfl⟩)
+  exact ⟨⟨W, hW⟩, ⟨(⟨a, fun _ ↦ 𝟙 _⟩ : W.toFormalCoproduct ⟶ V.toFormalCoproduct) ≫ φ⟩⟩
+
+namespace finiteRangePointCover
+
+variable {X : Type u} [TopologicalSpace X]
+
+instance : IsDirectedOrder (finiteRangePointCover X) where
+  directed U V := by
+    refine ⟨⟨U.val.inter V.val, ?_⟩, U.val.le_inter_left V.val, U.val.le_inter_right V.val⟩
+    refine ((U.property.prod V.property).image
+      (fun p : Opens X × Opens X ↦ p.1 ⊓ p.2)).subset ?_
+    rintro _ ⟨x, rfl⟩
+    exact ⟨(U.val.opens x, V.val.opens x), ⟨⟨x, rfl⟩, ⟨x, rfl⟩⟩, rfl⟩
+
+instance : Nonempty (finiteRangePointCover X) :=
+  ⟨⟨default, Set.finite_range_const⟩⟩
+
+/-- Forget that a point-neighborhood cover has finite range. -/
+abbrev inclusion : finiteRangePointCover X ⥤ PointOpenCover X :=
+  (show Monotone (fun W : finiteRangePointCover X ↦ W.val) from fun _ _ h ↦ h).functor
+
+/-- On compact spaces, finite-range point-neighborhood covers are cofinal among all point
+covers. -/
+instance [CompactSpace X] : (inclusion (X := X)).Final :=
+  (Monotone.final_functor_iff _).2 PointOpenCover.exists_finiteRange_refinement
+
+end finiteRangePointCover
 
 end TauCeti.Topology

@@ -10,7 +10,7 @@ public import TauCeti.Analysis.CStarAlgebra.Unitary.Polar
 public import TauCeti.Analysis.Matrix.GeneralLinearGroup.Connected
 public import TauCeti.Analysis.Matrix.GeneralLinearGroup.IdentityComponent
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Cartan
-public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.StableComponent
+public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.StableComponent.Basic
 
 /-!
 # Unitary representatives of the stable component group

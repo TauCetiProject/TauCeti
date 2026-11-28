@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Probability.PopulationSampling.Map
 public import TauCeti.Probability.PopulationSampling.OnePair
+import TauCeti.Data.ENNReal.Inv
+import TauCeti.Probability.PopulationSampling.Discrepancy
 
 /-!
 # Sampling discrepancy for populations with a repeated value
@@ -39,11 +41,24 @@ attain the collision probability. For `m ≤ 1` the two sampling laws coincide f
 * `etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_le_of_not_injective`,
   `tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_le_of_not_injective`: its total
   variation form;
-* `iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_lt_of_not_injective`: for
-  `2 ≤ m`, the excess of a non-injective population is strictly below `1 - p`;
+* `iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_lt_of_not_injective`,
+  `iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_lt_of_not_injective`,
+  `etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_lt_of_not_injective`,
+  `tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_lt_of_not_injective`: for
+  `2 ≤ m`, the forward excess (and for `2 ≤ m ≤ n`, the reverse excess) and total variation
+  distances of a non-injective population are strictly below the collision values;
 * `iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq_iff_injective`,
-  `etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_iff_injective`: for
-  `2 ≤ m ≤ n`, the collision probability is attained exactly by injective populations.
+  `iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_eq_iff_injective`,
+  `etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_iff_injective`,
+  `tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_iff_injective`: for
+  `2 ≤ m ≤ n` and a measurable all-distinct event, the collision values are attained in either
+  direction exactly by injective populations;
+* `iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq_iff_injective_of_singletons`,
+  `iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_eq_iff_injective_of_singletons`,
+  `etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_iff_injective_of_singletons`,
+  `tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_iff_injective_of_singletons`:
+  the same characterizations under `[MeasurableSingletonClass α]` without an explicit measurability
+  hypothesis.
 
 ## References
 
@@ -206,6 +221,60 @@ theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_lt_of_not_
   · simp [sampleWithoutReplacement_eq_zero_of_card_lt hnm,
       Nat.descFactorial_eq_zero_iff_lt.2 hnm]
 
+/-- **Strictness of the repeated-value bound, reversed excess form.** For `2 ≤ |ι| ≤ |κ|`, the
+largest event excess of sampling a population with a repeated value with replacement over sampling
+it without replacement is strictly below the collision probability
+`1 - |κ|.descFactorial |ι| / |κ| ^ |ι|`. The hypothesis `|ι| ≤ |κ|` is necessary: when
+`|ι| > |κ|`, sampling without replacement vanishes and the reverse excess equals `1`. -/
+theorem iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_lt_of_not_injective
+    (hx : ¬ Injective x) (hm : 2 ≤ Fintype.card ι) (hmn : Fintype.card ι ≤ Fintype.card κ) :
+    (⨆ (A : Set (ι → α)) (_ : MeasurableSet A),
+      sampleWithReplacement (Measure.dirac x) A -
+        sampleWithoutReplacement (Measure.dirac x) A) <
+      1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
+        (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι := by
+  obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
+  rw [iSup_sampleWithReplacement_sub_sampleWithoutReplacement_comm _ e]
+  exact iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_lt_of_not_injective hx hm
+
+/-- **Strictness of the repeated-value bound, extended total-variation form.** For a sample of
+size `|ι| ≥ 2`, Mathlib's extended total variation distance between sampling a population with a
+repeated value without and with replacement is strictly below twice the collision probability
+`1 - |κ|.descFactorial |ι| / |κ| ^ |ι|`. -/
+theorem etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_lt_of_not_injective
+    (hx : ¬ Injective x) (hm : 2 ≤ Fintype.card ι) :
+    etvDist (sampleWithoutReplacement (ι := ι) (Measure.dirac x))
+        (sampleWithReplacement (ι := ι) (Measure.dirac x)) <
+      2 * (1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
+        (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι) := by
+  obtain ⟨a, -⟩ := not_injective_iff.1 hx
+  have : Nonempty (ι → κ) := ⟨fun _ => a⟩
+  have := isProbabilityMeasure_sampleWithReplacement (ι := ι) (Measure.dirac x)
+  rcases le_or_gt (Fintype.card ι) (Fintype.card κ) with hmn | hnm
+  · obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
+    have := isProbabilityMeasure_sampleWithoutReplacement (Measure.dirac x) e
+    rw [etvDist_eq_two_mul_iSup_sub (by rw [measure_univ, measure_univ])]
+    exact ENNReal.mul_lt_mul_right two_ne_zero ENNReal.ofNat_ne_top
+      (iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_lt_of_not_injective hx hm)
+  · rw [etvDist_eq_iSup_sub_add_iSup_sub, sampleWithoutReplacement_eq_zero_of_card_lt hnm,
+      Nat.descFactorial_eq_zero_iff_lt.2 hnm]
+    simpa using (iSup₂_le fun _ _ => prob_le_one).trans_lt (by norm_num : (1 : ℝ≥0∞) < 2)
+
+/-- **Strictness of the repeated-value bound, real total-variation form.** For a sample of size
+`|ι| ≥ 2`, the real total variation distance between sampling a population with a repeated value
+without and with replacement is strictly below twice the collision probability
+`1 - |κ|.descFactorial |ι| / |κ| ^ |ι|`. -/
+theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_lt_of_not_injective
+    (hx : ¬ Injective x) (hm : 2 ≤ Fintype.card ι) :
+    tvDist (sampleWithoutReplacement (ι := ι) (Measure.dirac x))
+        (sampleWithReplacement (ι := ι) (Measure.dirac x)) <
+      2 * (1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
+        (Fintype.card κ : ℝ) ^ Fintype.card ι) := by
+  have h := ENNReal.toReal_strict_mono (by finiteness)
+    (etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_lt_of_not_injective
+      (ι := ι) hx hm)
+  simpa [tvDist] using h
+
 /-- **Distinct values are the only populations attaining the collision probability.** For
 `2 ≤ |ι| ≤ |κ|` and a measurable all-distinct event, the largest event excess of sampling
 `x : κ → α` without replacement over sampling it with replacement equals the collision
@@ -225,6 +294,22 @@ theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq_iff_inj
   exact (iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_lt_of_not_injective
     hx hm).ne h
 
+/-- **Distinct values are the only populations attaining the collision probability, reversed excess
+form.** For `2 ≤ |ι| ≤ |κ|` and a measurable all-distinct event, the largest event excess of
+sampling `x : κ → α` with replacement over sampling it without replacement equals the collision
+probability `1 - |κ|.descFactorial |ι| / |κ| ^ |ι|` if and only if `x` is injective. -/
+theorem iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_eq_iff_injective
+    (hm : 2 ≤ Fintype.card ι) (hmn : Fintype.card ι ≤ Fintype.card κ)
+    (hI : MeasurableSet {f : ι → α | Injective f}) :
+    (⨆ (A : Set (ι → α)) (_ : MeasurableSet A),
+      sampleWithReplacement (Measure.dirac x) A -
+        sampleWithoutReplacement (Measure.dirac x) A) =
+      1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
+        (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι ↔ Injective x := by
+  obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
+  rw [iSup_sampleWithReplacement_sub_sampleWithoutReplacement_comm _ e]
+  exact iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq_iff_injective hm hmn hI
+
 /-- **Total-variation form of the characterization.** For `2 ≤ |ι| ≤ |κ|` and a measurable
 all-distinct event, Mathlib's extended total variation distance between sampling `x : κ → α`
 without and with replacement equals twice the collision probability
@@ -243,6 +328,100 @@ theorem etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_iff_inje
   rw [etvDist_eq_two_mul_iSup_sub (by rw [measure_univ, measure_univ]),
     ENNReal.mul_right_inj two_ne_zero ENNReal.ofNat_ne_top]
   exact iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq_iff_injective hm hmn hI
+
+/-- **Real total-variation form of the characterization.** For `2 ≤ |ι| ≤ |κ|` and a measurable
+all-distinct event, the real total variation distance between sampling `x : κ → α` without and with
+replacement equals twice the collision probability `1 - |κ|.descFactorial |ι| / |κ| ^ |ι|` if and
+only if `x` is injective. -/
+theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_iff_injective
+    (hm : 2 ≤ Fintype.card ι) (hmn : Fintype.card ι ≤ Fintype.card κ)
+    (hI : MeasurableSet {f : ι → α | Injective f}) :
+    tvDist (sampleWithoutReplacement (ι := ι) (Measure.dirac x))
+        (sampleWithReplacement (ι := ι) (Measure.dirac x)) =
+      2 * (1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
+        (Fintype.card κ : ℝ) ^ Fintype.card ι) ↔ Injective x := by
+  obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
+  refine ⟨fun h => ?_, fun hx => tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq
+    hx e hI⟩
+  by_contra hx
+  exact (tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_lt_of_not_injective
+    hx hm).ne h
+
+/-- **Attainment characterization under measurable singletons (excess form).** When `α` has
+measurable singletons and `2 ≤ |ι| ≤ |κ|`, a deterministic population attains the collision excess
+`1 - |κ|.descFactorial |ι| / |κ| ^ |ι|` if and only if its values are distinct, without requiring
+measurability of the all-distinct event in `ι → α`. -/
+theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq_iff_injective_of_singletons
+    [MeasurableSingletonClass α] (hm : 2 ≤ Fintype.card ι)
+    (hmn : Fintype.card ι ≤ Fintype.card κ) :
+    (⨆ (A : Set (ι → α)) (_ : MeasurableSet A),
+      sampleWithoutReplacement (Measure.dirac x) A -
+        sampleWithReplacement (Measure.dirac x) A) =
+      1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
+        (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι ↔ Injective x := by
+  obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
+  refine ⟨fun h => ?_, fun hx =>
+    iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq_of_injective hx e⟩
+  by_contra hx
+  exact (iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_lt_of_not_injective
+    hx hm).ne h
+
+/-- **Attainment characterization under measurable singletons (reversed excess form).** When `α`
+has measurable singletons and `2 ≤ |ι| ≤ |κ|`, the largest event excess of sampling `x : κ → α`
+with replacement over sampling it without replacement equals the collision probability
+`1 - |κ|.descFactorial |ι| / |κ| ^ |ι|` if and only if `x` is injective, without requiring
+measurability of the all-distinct event in `ι → α`. -/
+theorem iSup_sampleWithReplacement_sub_sampleWithoutReplacement_dirac_eq_iff_injective_of_singletons
+    [MeasurableSingletonClass α] (hm : 2 ≤ Fintype.card ι)
+    (hmn : Fintype.card ι ≤ Fintype.card κ) :
+    (⨆ (A : Set (ι → α)) (_ : MeasurableSet A),
+      sampleWithReplacement (Measure.dirac x) A -
+        sampleWithoutReplacement (Measure.dirac x) A) =
+      1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
+        (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι ↔ Injective x := by
+  obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
+  rw [iSup_sampleWithReplacement_sub_sampleWithoutReplacement_comm _ e]
+  exact
+    iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_eq_iff_injective_of_singletons
+      hm hmn
+
+/-- **Attainment characterization under measurable singletons (`etvDist` form).** When `α` has
+measurable singletons and `2 ≤ |ι| ≤ |κ|`, Mathlib's extended total variation distance between
+sampling `x : κ → α` without and with replacement equals twice the collision probability
+`1 - |κ|.descFactorial |ι| / |κ| ^ |ι|` if and only if `x` is injective, without requiring
+measurability of the all-distinct event in `ι → α`. -/
+theorem etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_iff_injective_of_singletons
+    [MeasurableSingletonClass α] (hm : 2 ≤ Fintype.card ι)
+    (hmn : Fintype.card ι ≤ Fintype.card κ) :
+    etvDist (sampleWithoutReplacement (ι := ι) (Measure.dirac x))
+        (sampleWithReplacement (ι := ι) (Measure.dirac x)) =
+      2 * (1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
+        (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι) ↔ Injective x := by
+  obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
+  refine ⟨fun h => ?_, fun hx =>
+    etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_of_injective hx e⟩
+  by_contra hx
+  exact (etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_lt_of_not_injective
+    hx hm).ne h
+
+/-- **Attainment characterization under measurable singletons (`tvDist` form).** When `α` has
+measurable singletons and `2 ≤ |ι| ≤ |κ|`, the real total variation distance between sampling
+`x : κ → α` without and with replacement equals twice the collision probability
+`1 - |κ|.descFactorial |ι| / |κ| ^ |ι|` if and only if `x` is injective, without requiring
+measurability of the all-distinct event in `ι → α`. -/
+theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_iff_injective_of_singletons
+    [MeasurableSingletonClass α] (hm : 2 ≤ Fintype.card ι)
+    (hmn : Fintype.card ι ≤ Fintype.card κ) :
+    tvDist (sampleWithoutReplacement (ι := ι) (Measure.dirac x))
+        (sampleWithReplacement (ι := ι) (Measure.dirac x)) =
+      2 * (1 - (Fintype.card κ).descFactorial (Fintype.card ι) /
+        (Fintype.card κ : ℝ) ^ Fintype.card ι) ↔ Injective x := by
+  obtain ⟨e⟩ := Function.Embedding.nonempty_of_card_le hmn
+  refine ⟨fun h => ?_, fun hx =>
+    tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_eq_of_injective hx e⟩
+  by_contra hx
+  exact (tvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_lt_of_not_injective
+    hx hm).ne h
 
 end Characterization
 

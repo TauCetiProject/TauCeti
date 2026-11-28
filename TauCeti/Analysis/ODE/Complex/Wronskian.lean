@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.Complex.LinearEquation
+import TauCeti.Analysis.ODE.Complex.ScalarLinear
+import TauCeti.Analysis.ODE.Wronskian
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
@@ -19,9 +21,16 @@ are linearly independent exactly when their Wronskian is nonzero at one, equival
 point of the domain. The latter combines the initial-jet map, whose value at a point is the
 pair `(y, y')`, with uniqueness of solutions with given initial jet.
 
-Unlike `TauCeti.wronskian_eq_of_hasDerivAt`, which treats globally defined solutions of
-`f'' = q f`, the statements here are local to the domain of the equation and allow a
-first-derivative term.
+For the second-order equation `P w'' + Q w' + R w = 0` on a preconnected open set `U ⊆ ℂ`, whose
+leading coefficient `P` is nonzero on a dense subset of `U`, the Wronskians of any two solutions
+satisfy Abel's identity there. Hence the Wronskian of any two solutions is a constant multiple of
+any reference Wronskian that is nonzero at some point of `U`, and two solutions whose Wronskian is
+nonzero at one point of `U` span all solutions on `U`
+(`IsOpen.exists_eq_mul_add_mul_of_secondOrderLinearEquation`). The zeros of `P`, such as the
+singular points `0` and `1` of the hypergeometric equation, may lie in `U`.
+
+Unlike `TauCeti.wronskian_eq_of_hasDerivAt`, which treats solutions of `f'' = q f`, the
+statements here allow a first-derivative term.
 
 ## Main results
 
@@ -34,6 +43,10 @@ first-derivative term.
   for solutions given as functions.
 * `TauCeti.LinearEquation.linearIndependent_iff_wronskian_ne_zero`: on a preconnected domain the
   converse holds as well.
+* `IsOpen.differentiableOn_and_hasDerivAt_wronskian_of_secondOrderLinearEquation`: Abel's
+  identity on an open set, with the holomorphy of the Wronskian.
+* `IsOpen.exists_eq_mul_add_mul_of_secondOrderLinearEquation`: the span criterion for
+  `P w'' + Q w' + R w = 0` on a preconnected open set.
 
 ## References
 
@@ -79,10 +92,10 @@ theorem IsSolution.hasDerivAt_wronskian (hy₁ : E.IsSolution y₁) (hy₂ : E.I
         (y₁ z * deriv y₂ z - deriv y₁ z * y₂ z)) z := by
   have h₁ := hy₁.analyticOnNhd z hz
   have h₂ := hy₂.analyticOnNhd z hz
-  convert (h₁.differentiableAt.hasDerivAt.mul h₂.deriv.differentiableAt.hasDerivAt).sub
-    (h₁.deriv.differentiableAt.hasDerivAt.mul h₂.differentiableAt.hasDerivAt) using 1
-  rw [hy₁.deriv_deriv_eq hz, hy₂.deriv_deriv_eq hz]
-  ring
+  exact h₁.differentiableAt.hasDerivAt.wronskian_of_secondOrderLinearEquation
+    h₁.deriv.differentiableAt.hasDerivAt h₂.differentiableAt.hasDerivAt
+    h₂.deriv.differentiableAt.hasDerivAt ((isSolution_iff_deriv_deriv.mp hy₁).2 z hz)
+    ((isSolution_iff_deriv_deriv.mp hy₂).2 z hz)
 
 /-- For an equation `y'' + a₀ y = 0` without first-derivative term, the Wronskian
 `y₁ y₂' - y₁' y₂` of two solutions is constant on every open preconnected subset of the domain. -/
@@ -146,5 +159,62 @@ theorem linearIndependent_iff_wronskian_ne_zero (hU : IsPreconnected (U : Set �
   simp [initialJet_apply]
 
 end LinearEquation
+
+/-- **Abel's identity on an open set**: if `f` and `g` are holomorphic on an open set `U ⊆ ℂ` and
+solve `P w'' + Q w' + R w = 0` at the points of `U ∩ S`, where `P` has no zero, then their
+Wronskian `𝒲{f, g} = f g' - f' g` is holomorphic on `U` and has derivative
+`-(Q z / P z) 𝒲{f, g}(z)` at every `z ∈ U ∩ S`. -/
+theorem _root_.IsOpen.differentiableOn_and_hasDerivAt_wronskian_of_secondOrderLinearEquation
+    {U S : Set ℂ} (hU : IsOpen U) {P Q R f g : ℂ → ℂ} (hP : ∀ z ∈ U ∩ S, P z ≠ 0)
+    (hf : DifferentiableOn ℂ f U) (hg : DifferentiableOn ℂ g U)
+    (hf' : ∀ z ∈ U ∩ S, P z * deriv (deriv f) z + Q z * deriv f z + R z * f z = 0)
+    (hg' : ∀ z ∈ U ∩ S, P z * deriv (deriv g) z + Q z * deriv g z + R z * g z = 0) :
+    DifferentiableOn ℂ (fun z ↦ f z * deriv g z - deriv f z * g z) U ∧
+      ∀ z ∈ U ∩ S, HasDerivAt (fun ζ ↦ f ζ * deriv g ζ - deriv f ζ * g ζ)
+        (-(Q z / P z) * (f z * deriv g z - deriv f z * g z)) z :=
+  ⟨(hf.fun_mul (hg.deriv hU)).fun_sub ((hf.deriv hU).fun_mul hg), fun z hz ↦
+    (hf.differentiableAt (hU.mem_nhds hz.1)).hasDerivAt_wronskian_of_secondOrderLinearEquation
+      (hP z hz) ((hf.deriv hU).differentiableAt (hU.mem_nhds hz.1))
+      (hg.differentiableAt (hU.mem_nhds hz.1))
+      ((hg.deriv hU).differentiableAt (hU.mem_nhds hz.1)) (hf' z hz) (hg' z hz)⟩
+
+/-- **The span criterion** for a second-order linear equation `P w'' + Q w' + R w = 0` on a
+preconnected open set `U ⊆ ℂ` whose leading coefficient `P` is nonzero on `U ∩ S` for a dense
+set `S`: if `f₁` and `f₂` are holomorphic on `U`, solve the equation on `U ∩ S`, and have a
+Wronskian `𝒲{f₁, f₂}` nonzero at a point `z₀ ∈ U`, then every function `w` holomorphic on `U`
+that solves the equation on `U ∩ S` is `A f₁ + B f₂` on `U` with constants `A`, `B`. The
+coefficients need not be continuous, and `U` may contain zeros of `P`. -/
+theorem _root_.IsOpen.exists_eq_mul_add_mul_of_secondOrderLinearEquation {U S : Set ℂ}
+    (hU : IsOpen U) (hUc : IsPreconnected U) (hS : Dense S) {P Q R f₁ f₂ w : ℂ → ℂ}
+    (hP : ∀ z ∈ U ∩ S, P z ≠ 0)
+    (hf₁ : DifferentiableOn ℂ f₁ U) (hf₂ : DifferentiableOn ℂ f₂ U)
+    (hw : DifferentiableOn ℂ w U)
+    (hf₁' : ∀ z ∈ U ∩ S, P z * deriv (deriv f₁) z + Q z * deriv f₁ z + R z * f₁ z = 0)
+    (hf₂' : ∀ z ∈ U ∩ S, P z * deriv (deriv f₂) z + Q z * deriv f₂ z + R z * f₂ z = 0)
+    (hw' : ∀ z ∈ U ∩ S, P z * deriv (deriv w) z + Q z * deriv w z + R z * w z = 0)
+    {z₀ : ℂ} (hz₀ : z₀ ∈ U) (hW : f₁ z₀ * deriv f₂ z₀ - deriv f₁ z₀ * f₂ z₀ ≠ 0) :
+    ∃ A B : ℂ, ∀ z ∈ U, w z = A * f₁ z + B * f₂ z := by
+  -- On `U ∩ S` every Wronskian of two solutions satisfies Abel's identity, so it is a constant
+  -- multiple of `𝒲{f₁, f₂}`, which is nonzero at `z₀`.
+  have habel := hU.differentiableOn_and_hasDerivAt_wronskian_of_secondOrderLinearEquation hP
+    hf₁ hf₂ hf₁' hf₂'
+  have hratio {g₁ g₂ : ℂ → ℂ} (hg₁ : DifferentiableOn ℂ g₁ U) (hg₂ : DifferentiableOn ℂ g₂ U)
+      (hg₁' : ∀ z ∈ U ∩ S, P z * deriv (deriv g₁) z + Q z * deriv g₁ z + R z * g₁ z = 0)
+      (hg₂' : ∀ z ∈ U ∩ S, P z * deriv (deriv g₂) z + Q z * deriv g₂ z + R z * g₂ z = 0) :
+      ∃ K : ℂ, ∀ z ∈ U, g₁ z * deriv g₂ z - deriv g₁ z * g₂ z =
+        K * (f₁ z * deriv f₂ z - deriv f₁ z * f₂ z) :=
+    have h := hU.differentiableOn_and_hasDerivAt_wronskian_of_secondOrderLinearEquation hP
+      hg₁ hg₂ hg₁' hg₂'
+    hU.exists_eq_const_mul_of_hasDerivAt_mul hUc hS h.1 habel.1 hz₀ hW h.2 habel.2
+  obtain ⟨A, hA⟩ := hratio hw hf₂ hw' hf₂'
+  obtain ⟨B, hB⟩ := hratio hf₁ hw hf₁' hw'
+  -- `𝒲{f₁, f₂} w = 𝒲{f₁, f₂} (A f₁ + B f₂)` on `U`, so `w = A f₁ + B f₂` near `z₀`, where
+  -- `𝒲{f₁, f₂}` has no zero; the identity theorem extends this to `U`.
+  refine ⟨A, B, fun z hz ↦ (hw.analyticOnNhd hU).eqOn_of_preconnected_of_eventuallyEq
+    (((hf₁.const_mul A).fun_add (hf₂.const_mul B)).analyticOnNhd hU) hUc hz₀ ?_ hz⟩
+  filter_upwards [((habel.1.differentiableAt (hU.mem_nhds hz₀)).continuousAt).eventually_ne hW,
+    hU.mem_nhds hz₀] with z hWz hz
+  apply mul_right_cancel₀ hWz
+  linear_combination f₁ z * hA z hz + f₂ z * hB z hz
 
 end TauCeti
