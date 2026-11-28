@@ -133,6 +133,27 @@ assumption on the index type. -/
 instance projective_directSumObj [∀ j, Projective (M j)] : Projective (directSumObj M) :=
   Projective.of_isColimit_cofan (coproductCofanIsColimit M)
 
+/-- The degreewise direct sum of a family of internally graded modules is canonically isomorphic
+to their categorical biproduct whenever the biproduct exists. -/
+def directSumObjIsoBiproduct [HasBiproduct M] : directSumObj M ≅ ⨁ M :=
+  (coproductCofanIsColimit M).coconePointUniqueUpToIso (biproduct.isColimit M)
+
+/-- The canonical isomorphism `directSumObjIsoBiproduct` identifies the coproduct injections with
+the biproduct inclusions. -/
+@[reassoc (attr := simp)]
+theorem coproductCofan_inj_directSumObjIsoBiproduct_hom [HasBiproduct M] (j : J) :
+    (coproductCofan M).inj j ≫ (directSumObjIsoBiproduct M).hom = biproduct.ι M j :=
+  (coproductCofanIsColimit M).comp_coconePointUniqueUpToIso_hom (biproduct.isColimit M)
+    (Discrete.mk j)
+
+/-- The inverse of `directSumObjIsoBiproduct` identifies the biproduct inclusions with the
+coproduct injections. -/
+@[reassoc (attr := simp)]
+theorem biproduct_ι_directSumObjIsoBiproduct_inv [HasBiproduct M] (j : J) :
+    biproduct.ι M j ≫ (directSumObjIsoBiproduct M).inv = (coproductCofan M).inj j :=
+  (coproductCofanIsColimit M).comp_coconePointUniqueUpToIso_inv (biproduct.isColimit M)
+    (Discrete.mk j)
+
 /-- The dimension of graded maps from a finite degreewise direct sum is the sum of the
 Hom dimensions of its summands. The Hom modules must be finite and free over `k`. -/
 theorem finrank_hom_directSumObj [Fintype J] [StrongRankCondition k]
@@ -140,8 +161,7 @@ theorem finrank_hom_directSumObj [Fintype J] [StrongRankCondition k]
     [∀ j, Module.Free k (M j ⟶ N)] [∀ j, Module.Finite k (M j ⟶ N)] :
     Module.finrank k (directSumObj M ⟶ N) = ∑ j, Module.finrank k (M j ⟶ N) := by
   let _ := HasBiproduct.of_hasCoproduct M
-  let e := (coproductCofanIsColimit M).coconePointUniqueUpToIso (biproduct.isColimit M)
-  rw [(Linear.homCongr k e (Iso.refl N)).finrank_eq]
+  rw [(Linear.homCongr k (directSumObjIsoBiproduct M) (Iso.refl N)).finrank_eq]
   exact finrank_hom_biproduct k M N
 
 end TauCeti.GradedModuleCat
