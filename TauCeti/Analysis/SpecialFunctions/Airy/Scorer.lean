@@ -49,10 +49,11 @@ cube root of unity `ν`, the rotation `f ↦ (z ↦ ν f(ν z))` preserves every
 * `Nat.iterate_deriv_scorerHi_zero` — `Hi⁽ⁿ⁾(0) = 3^{(n−2)/3} Γ((n+1)/3) / π`, and
   `TauCeti.scorerHi_zero` — `Hi(0) = 3^{−2/3} Γ(1/3) / π`.
 
-The norm, integrability and differentiation lemmas for the moment integrals, the decay of the
-kernel at infinity and the Gamma values at the origin are shared with the integral of `Ai² + Bi²`
-in `TauCeti.Analysis.SpecialFunctions.Airy.Product.Integral` through
-`TauCeti.MeasureTheory.Integral.Exp.PowerDecay`, whose proofs were extracted from that file. The
+The norm and integrability lemmas for the moment integrals are shared with the integral of
+`Ai² + Bi²` in `TauCeti.Analysis.SpecialFunctions.Airy.Product.Integral` through
+`TauCeti.MeasureTheory.Integral.Exp.Decay`, while differentiation, decay of the kernel at
+infinity, and Gamma values at the origin come from
+`TauCeti.MeasureTheory.Integral.Exp.PowerDecay`. The
 argument for the equation `Hi'' = z Hi + 1/π` is proved here; it is adapted from the proof of the
 product differential equation `TauCeti.airyAi_sq_add_airyBi_sq_differential_equation` in
 `TauCeti.Analysis.SpecialFunctions.Airy.Product.Integral`. The rotation argument is adapted from
@@ -152,11 +153,15 @@ private theorem hasDerivAt_integral_pow_mul_cexp_neg_cube_div_three_add_mul (n :
     HasDerivAt
       (fun w : ℂ => ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ n * cexp (-(t : ℂ) ^ 3 / 3 + w * t))
       (∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (n + 1) * cexp (-(t : ℂ) ^ 3 / 3 + z * t)) z := by
-  have h := hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := 3) (b := 1 / 3) (s := n)
+  have h := hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_pow_Ioi (n := 3) (b := 1 / 3) (s := n)
     (by norm_num) (by norm_num) (by simp; linarith [n.cast_nonneg (α := ℝ)]) z
-  -- The exponent `n + 1` of the derivative kernel is the natural number `n + 1`.
-  have hcast : (n : ℂ) + 1 = ((n + 1 : ℕ) : ℂ) := by push_cast; ring
-  simpa only [hcast, pow_mul_cexp_neg_cube_div_three_add_mul_eq] using h
+  have hexp (w : ℂ) (t : ℝ) : w * t - (1 / 3 : ℂ) * (t : ℂ) ^ 3 = -(t : ℂ) ^ 3 / 3 + w * t := by
+    ring
+  refine (h.congr_of_eventuallyEq (.of_forall fun w => ?_)).congr_deriv ?_
+  · refine setIntegral_congr_fun measurableSet_Ioi fun t _ => ?_
+    rw [cpow_natCast, hexp]
+  · refine setIntegral_congr_fun measurableSet_Ioi fun t _ => ?_
+    rw [← Nat.cast_add_one, cpow_natCast, hexp]
 
 /-! ### Derivatives of `Hi` -/
 

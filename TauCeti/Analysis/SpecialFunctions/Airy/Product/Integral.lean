@@ -493,20 +493,22 @@ private theorem hasDerivAt_integral_pow_mul_cexp_sub_cube_div_twelve_mul_cpow (n
       (∫ t in Ioi (0 : ℝ),
         (t : ℂ) ^ (n + 1) * cexp (z * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ))
       z := by
-  have h := hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := 3) (b := 1 / 12)
+  have h := hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_pow_Ioi (n := 3) (b := 1 / 12)
     (s := (n : ℂ) - 1 / 2) (by norm_num) (by norm_num)
     (by simp; linarith [n.cast_nonneg (α := ℝ)]) z
-  -- The exponent `s + 1` of the derivative kernel is `(n + 1) - 1/2`.
-  have hcast : ((n : ℂ) - 1 / 2) + 1 = ((n + 1 : ℕ) : ℂ) - 1 / 2 := by
-    push_cast
-    ring
   have hF (k : ℕ) (w : ℂ) :
       ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ k * cexp (w * t - (t : ℂ) ^ 3 / 12) * (t : ℂ) ^ (-1 / 2 : ℂ) =
         ∫ t in Ioi (0 : ℝ),
-          (t : ℂ) ^ ((k : ℂ) - 1 / 2) *
-            cexp (w * t - (1 / 12 : ℂ) * (t : ℂ) ^ ((3 : ℝ) : ℂ)) :=
-    setIntegral_congr_fun measurableSet_Ioi fun _ ht =>
-      pow_mul_cexp_sub_cube_div_twelve_mul_cpow_eq ht k w
+          (t : ℂ) ^ ((k : ℂ) - 1 / 2) * cexp (w * t - (1 / 12 : ℂ) * (t : ℂ) ^ 3) := by
+    refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) => ?_
+    have hpow : (t : ℂ) ^ k * (t : ℂ) ^ (-1 / 2 : ℂ) = (t : ℂ) ^ ((k : ℂ) - 1 / 2) := by
+      rw [← cpow_natCast, ← cpow_add _ _ (ofReal_ne_zero.mpr ht.ne')]
+      ring_nf
+    rw [mul_right_comm, hpow]
+    ring_nf
+  have hcast : ((n : ℂ) - 1 / 2) + 1 = ((n + 1 : ℕ) : ℂ) - 1 / 2 := by
+    push_cast
+    ring
   rw [hcast] at h
   simpa only [hF] using h
 

@@ -713,12 +713,11 @@ theorem tendsto_tsum_mul_pow_div_factorial_mul_hermite_mul_integral_nhdsLT_one {
     ∫ v in Ioi (0 : ℝ), (v : ℂ) ^ (s - 1) * cexp (-(v : ℂ) ^ 2 / 2 - z * v)
   have hI_cont : Continuous I := by
     have hdiff : Differentiable ℂ I := fun z => by
-      have hz := (hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := 2) (b := 1 / 2)
+      have hz := (hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_pow_Ioi (n := 2) (b := 1 / 2)
         (s := s - 1) (by norm_num) (by norm_num) (by simpa using hs) (-z)).comp z
         (hasDerivAt_neg z)
       refine (hz.congr_of_eventuallyEq (.of_forall fun w => ?_)).differentiableAt
       refine setIntegral_congr_fun measurableSet_Ioi fun v _ => ?_
-      rw [Complex.ofReal_ofNat, Complex.cpow_ofNat]
       ring_nf
     exact hdiff.continuous
   let g : ℝ → ℂ := fun t =>

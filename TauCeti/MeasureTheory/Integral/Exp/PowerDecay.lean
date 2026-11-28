@@ -43,7 +43,8 @@ functions, which is `π ^ (-3 / 2)` times the integral with `b = 1/12` and `s = 
 
 ## Main results
 
-* `TauCeti.hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi`: the derivative in `z` of the
+* `TauCeti.hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi`,
+  `TauCeti.hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_pow_Ioi`: the derivative in `z` of the
   integral is the integral of the kernel with `s` replaced by `s + 1`.
 * `TauCeti.tendsto_cpow_mul_cexp_mul_sub_mul_cpow_atTop`: the kernel tends to zero at infinity.
 * `TauCeti.integral_cpow_mul_cexp_neg_mul_cpow_Ioi`: complex-exponent and complex-rate
@@ -98,6 +99,18 @@ theorem hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi {p : ℝ} (hp : 1
     convert hexp.cexp.const_mul ((t : ℂ) ^ s) using 1
     rw [Complex.cpow_add _ _ ht0, Complex.cpow_one]
     ring
+
+/-- Natural-power companion to `TauCeti.hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi`:
+for `1 < n`, `0 < b.re`, and `-1 < s.re`, the derivative of
+`w ↦ ∫₀^∞ (t : ℂ) ^ s * exp (w * t - b * (t : ℂ) ^ n) dt` at `z` is
+`∫₀^∞ (t : ℂ) ^ (s + 1) * exp (z * t - b * (t : ℂ) ^ n) dt`. -/
+theorem hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_pow_Ioi {n : ℕ} (hn : 1 < n) {b s : ℂ}
+    (hb : 0 < b.re) (hs : -1 < s.re) (z : ℂ) :
+    HasDerivAt
+      (fun w : ℂ => ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ s * cexp (w * t - b * (t : ℂ) ^ n))
+      (∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (s + 1) * cexp (z * t - b * (t : ℂ) ^ n)) z := by
+  simpa only [Complex.ofReal_natCast, Complex.cpow_natCast] using
+    hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_cpow_Ioi (p := n) (by exact_mod_cast hn) hb hs z
 
 /-- For `1 < p` and `0 < b.re`, every `s z : ℂ`, the kernel
 `t ↦ (t : ℂ) ^ s * exp (z * t - b * (t : ℂ) ^ (p : ℂ))` tends to zero at infinity. -/
