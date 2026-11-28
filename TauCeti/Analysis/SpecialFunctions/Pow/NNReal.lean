@@ -97,6 +97,7 @@ On a seminormed group, `x ↦ c * ‖x‖₊ ^ a` tends to `0` at `0` for every 
 ## Main declarations
 
 * `ENNReal.pow_rpow_comm`: natural and real powers commute in `ℝ≥0∞`.
+* `ENNReal.pow_rpow_one_sub_inv_natCast`: `(x ^ n) ^ (1 - 1 / n) = x ^ (n - 1)` for `n ≠ 0`.
 * `ENNReal.le_of_rpow_le_mul_rpow_sub_one`: `X ^ r ≤ C * X ^ (r - 1)` gives `X ≤ C` for a finite
   `X`.
 * `ENNReal.rpow_le_rpow_sub_one_mul`: `a ^ r ≤ b ^ (r - 1) * a` for `a ≤ b` and `1 ≤ r`.
@@ -157,6 +158,12 @@ namespace ENNReal
 /-- Natural and real powers commute in `ℝ≥0∞`. -/
 theorem pow_rpow_comm (x : ℝ≥0∞) (n : ℕ) (y : ℝ) : (x ^ n) ^ y = (x ^ y) ^ n := by
   rw [← rpow_natCast_mul, mul_comm, rpow_mul_natCast]
+
+/-- For `n ≠ 0`, the `(1 - 1 / n)`-th power of `x ^ n` in `ℝ≥0∞` is `x ^ (n - 1)`. -/
+theorem pow_rpow_one_sub_inv_natCast (x : ℝ≥0∞) {n : ℕ} (hn : n ≠ 0) :
+    (x ^ n) ^ (1 - (n : ℝ)⁻¹) = x ^ (n - 1) := by
+  rw [← rpow_natCast_mul, mul_sub, mul_one, mul_inv_cancel₀ (Nat.cast_ne_zero.2 hn),
+    ← Nat.cast_pred (Nat.pos_of_ne_zero hn), rpow_natCast]
 
 /-- If `X ^ r ≤ C * X ^ (r - 1)` for a finite `X`, then `X ≤ C`. -/
 theorem le_of_rpow_le_mul_rpow_sub_one {X C : ℝ≥0∞} {r : ℝ} (hX : X ≠ ∞)

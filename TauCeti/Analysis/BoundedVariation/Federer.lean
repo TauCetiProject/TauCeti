@@ -10,7 +10,6 @@ public import TauCeti.Analysis.BoundedVariation.ReducedBoundary.Basic
 public import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
 import TauCeti.Analysis.BoundedVariation.BlowUp
 import TauCeti.Analysis.BoundedVariation.EssentialBoundary
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Federer's `0`–`1/2`–`1` density theorem
@@ -91,8 +90,9 @@ theorem ae_hasDensityAt_zero_or_one_half_or_one_of_perimeter_ne_top
     (hs : NullMeasurableSet s (μ.restrict Ω)) (hP : perimeter μ Ω s ≠ ∞) :
     ∀ᵐ x ∂μHE[finrank ℝ E - 1], x ∈ Ω →
       HasDensityAt μ s x 0 ∨ HasDensityAt μ s x (1 / 2) ∨ HasDensityAt μ s x 1 :=
-  ae_hasDensityAt_zero_or_one_half_or_one (locallyIntegrableOn_indicator_const hs 1)
-    fun _ _ hKΩ => ⟨Ω, hKΩ, by rwa [← perimeter_def]⟩
+  let ⟨hu, hfin⟩ :=
+    locallyIntegrableOn_indicator_and_exists_totalVariationOn_ne_top_of_perimeter_ne_top hs hP
+  ae_hasDensityAt_zero_or_one_half_or_one hu hfin
 
 end TauCeti
 

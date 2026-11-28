@@ -98,7 +98,8 @@ theorem inner_left_injective_of_finrank_eq_one {𝕜 F : Type*} [RCLike 𝕜] [N
   obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' ν hν).1 hn (x - y)
   have h0 : ⟪c • ν, ν⟫_𝕜 = 0 := by rw [hc, inner_sub_left, h, sub_self]
   rw [inner_smul_left, mul_eq_zero, map_eq_zero, inner_self_eq_zero] at h0
-  exact sub_eq_zero.1 (hc ▸ (h0.resolve_right hν).symm ▸ zero_smul 𝕜 ν)
+  rw [h0.resolve_right hν, zero_smul] at hc
+  exact sub_eq_zero.1 hc.symm
 
 end TauCeti
 

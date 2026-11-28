@@ -109,19 +109,23 @@ private theorem measure_inter_preimage_eq_zero_or_sdiff_eq_zero (e : E ≃ₗᵢ
     have heq : e ⁻¹' I \ s = e ⁻¹' (I \ e.symm ⁻¹' s) := by rw [preimage_sdiff, hsymm]
     rw [heq, hvol, h0]
 
-/-- Along a linear isometry `e : E ≃ₗᵢ[ℝ] ℝ`, if `s` is null-measurable on `ball x r` (`r > 0`)
-and has volume-perimeter strictly below `1` on `ball x r \ {x}`, then on the open half-ball
+/-- Along a linear isometry `e : E ≃ₗᵢ[ℝ] ℝ`, if `s` is null-measurable on `ball x r` and has
+volume-perimeter strictly below `1` on `ball x r \ {x}`, then on the open half-ball
 `ball x r ∩ {y | e y < e x}` either `s` or its complement is `μ`-null. -/
 private theorem measure_inter_ball_inter_lt_eq_zero_or_sdiff_eq_zero (e : E ≃ₗᵢ[ℝ] ℝ) {r : ℝ}
-    (hr : 0 < r) (hs : NullMeasurableSet s (μ.restrict (ball x r)))
+    (hs : NullMeasurableSet s (μ.restrict (ball x r)))
     (hP : perimeter volume ⟨ball x r \ {x}, isOpen_ball.sdiff isClosed_singleton⟩ s < 1) :
     μ (s ∩ (ball x r ∩ {y | e y < e x})) = 0 ∨ μ ((ball x r ∩ {y | e y < e x}) \ s) = 0 := by
   set I : Opens ℝ := ⟨Ioo (e x - r) (e x), isOpen_Ioo⟩
   have hpre : e ⁻¹' I = ball x r ∩ {y | e y < e x} := by
-    have hI : ball (e x) r ∩ Iio (e x) = (I : Set ℝ) := by
-      rw [Real.ball_eq_Ioo, Set.Ioo_inter_Iio, min_eq_right (le_add_of_nonneg_right hr.le),
-        Opens.coe_mk]
-    rw [← hI, preimage_inter, e.preimage_ball, e.symm_apply_apply, ← Iio_def, preimage_ofPred_eq]
+    ext y
+    simp only [I, mem_preimage, Opens.coe_mk, mem_Ioo, mem_inter_iff, mem_ball,
+      ← e.isometry.dist_eq y x, Real.dist_eq, abs_sub_lt_iff, mem_ofPred_eq]
+    constructor
+    · rintro ⟨h1, h2⟩
+      exact ⟨⟨by linarith, by linarith⟩, h2⟩
+    · rintro ⟨⟨_, h2⟩, h3⟩
+      exact ⟨by linarith, h3⟩
   have hmaps : MapsTo e.symm I
       (⟨ball x r \ {x}, isOpen_ball.sdiff isClosed_singleton⟩ : Opens E) := fun t ht => by
     have hmem : e.symm t ∈ ball x r ∩ {y | e y < e x} := by
@@ -132,6 +136,29 @@ private theorem measure_inter_ball_inter_lt_eq_zero_or_sdiff_eq_zero (e : E ≃�
     hs.mono (Measure.restrict_mono sdiff_subset le_rfl)
   simpa only [hpre] using
     measure_inter_preimage_eq_zero_or_sdiff_eq_zero e ordConnected_Ioo hmaps hs' hP
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+private lemma setOf_trans_neg_lt (e : E ≃ₗᵢ[ℝ] ℝ) (x : E) :
+    {y | (e.trans (LinearIsometryEquiv.neg ℝ)) y <
+        (e.trans (LinearIsometryEquiv.neg ℝ)) x} = {y | e x < e y} := by
+  ext y; simp
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+private lemma setOf_lt_trans_neg (e : E ≃ₗᵢ[ℝ] ℝ) (x : E) :
+    {y | (e.trans (LinearIsometryEquiv.neg ℝ)) x <
+        (e.trans (LinearIsometryEquiv.neg ℝ)) y} = {y | e y < e x} := by
+  ext y; simp
+
+/-- Along a linear isometry `e : E ≃ₗᵢ[ℝ] ℝ`, if `s` is null-measurable on `ball x r` and has
+volume-perimeter strictly below `1` on `ball x r \ {x}`, then on the open half-ball
+`ball x r ∩ {y | e x < e y}` either `s` or its complement is `μ`-null. -/
+private theorem measure_inter_ball_inter_gt_eq_zero_or_sdiff_eq_zero (e : E ≃ₗᵢ[ℝ] ℝ) {r : ℝ}
+    (hs : NullMeasurableSet s (μ.restrict (ball x r)))
+    (hP : perimeter volume ⟨ball x r \ {x}, isOpen_ball.sdiff isClosed_singleton⟩ s < 1) :
+    μ (s ∩ (ball x r ∩ {y | e x < e y})) = 0 ∨ μ ((ball x r ∩ {y | e x < e y}) \ s) = 0 := by
+  have h := measure_inter_ball_inter_lt_eq_zero_or_sdiff_eq_zero
+    (e.trans (LinearIsometryEquiv.neg ℝ)) hs hP
+  rwa [setOf_trans_neg_lt] at h
 
 /-- Combining constancy on the two open half-balls around `x` along `e : E ≃ₗᵢ[ℝ] ℝ` yields `∅`,
 `univ`, or a half-line `{y | ⟪y, ν⟫ < ⟪x, ν⟫}` almost everywhere on `ball x r`. -/
@@ -171,10 +198,8 @@ private theorem ae_eq_empty_or_univ_or_setOf_inner_lt_of_halves (e : E ≃ₗᵢ
   rcases hL with hL0 | hL1 <;> rcases hR with hR0 | hR1
   · exact .inl (ae_eq_empty.2 (hnull e hL0 hR0))
   · refine .inr (.inr (hstep (e.trans (LinearIsometryEquiv.neg ℝ)) ?_ ?_))
-    · simpa only [LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.coe_neg,
-        neg_lt_neg_iff] using hR1
-    · simpa only [LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.coe_neg,
-        neg_lt_neg_iff] using hL0
+    · rwa [setOf_trans_neg_lt]
+    · rwa [setOf_lt_trans_neg]
   · exact .inr (.inr (hstep e hL1 hR0))
   · exact .inr (.inl (ae_eq_univ.2 (hnull e
       (by simpa [sdiff_eq_compl_inter, inter_comm] using hL1)
@@ -228,13 +253,8 @@ theorem exists_ae_eq_empty_or_univ_or_setOf_inner_lt_of_finrank_eq_one
   have hs : NullMeasurableSet s (μ.restrict (ball x r)) :=
     ((aemeasurable_indicator_const_iff (1 : ℝ)).1
       hu.aestronglyMeasurable.aemeasurable).mono (Measure.restrict_mono hrΩ le_rfl)
-  have hL := measure_inter_ball_inter_lt_eq_zero_or_sdiff_eq_zero e hr hs hP
-  have hR := measure_inter_ball_inter_lt_eq_zero_or_sdiff_eq_zero
-    (e.trans (LinearIsometryEquiv.neg ℝ)) hr hs hP
-  have hR' : μ (s ∩ (ball x r ∩ {y | e x < e y})) = 0 ∨
-      μ ((ball x r ∩ {y | e x < e y}) \ s) = 0 := by
-    simpa only [LinearIsometryEquiv.trans_apply, LinearIsometryEquiv.coe_neg, neg_lt_neg_iff]
-      using hR
-  exact ⟨r, hr, hrΩ, ae_eq_empty_or_univ_or_setOf_inner_lt_of_halves e hL hR'⟩
+  have hL := measure_inter_ball_inter_lt_eq_zero_or_sdiff_eq_zero e hs hP
+  have hR := measure_inter_ball_inter_gt_eq_zero_or_sdiff_eq_zero e hs hP
+  exact ⟨r, hr, hrΩ, ae_eq_empty_or_univ_or_setOf_inner_lt_of_halves e hL hR⟩
 
 end TauCeti

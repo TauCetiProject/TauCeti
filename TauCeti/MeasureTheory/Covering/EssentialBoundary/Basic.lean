@@ -570,11 +570,9 @@ theorem notMem_essentialBoundary_of_ae_eq_empty_or_univ {U : Set α} (hU : IsOpe
     (h : s =ᵐ[μ.restrict U] (∅ : Set α) ∨ s =ᵐ[μ.restrict U] univ) :
     x ∉ essentialBoundary μ s := by
   intro hx
-  rcases h with he | hu
-  · have hcongr := (inter_essentialBoundary_congr_ae hU he).subset ⟨hxU, hx⟩
-    simp at hcongr
-  · have hcongr := (inter_essentialBoundary_congr_ae hU hu).subset ⟨hxU, hx⟩
-    simp at hcongr
+  rcases h with h | h <;>
+    simpa only [essentialBoundary_empty, essentialBoundary_univ, inter_empty, mem_empty_iff_false]
+      using (inter_essentialBoundary_congr_ae hU h).subset ⟨hxU, hx⟩
 
 end Compl
 

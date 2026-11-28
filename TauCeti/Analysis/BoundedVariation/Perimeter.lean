@@ -82,6 +82,16 @@ def perimeter (μ : Measure E) (Ω : Opens E) (s : Set E) : ℝ≥0∞ :=
 theorem perimeter_def : perimeter μ Ω s = totalVariationOn μ Ω (s.indicator 1) :=
   (rfl)
 
+/-- A null-measurable set of finite perimeter in `Ω` has locally integrable indicator on `Ω` and
+finite total variation on an open neighborhood of every compact subset of `Ω`. -/
+theorem locallyIntegrableOn_indicator_and_exists_totalVariationOn_ne_top_of_perimeter_ne_top
+    [IsLocallyFiniteMeasure μ] (hs : NullMeasurableSet s (μ.restrict Ω))
+    (hP : perimeter μ Ω s ≠ ∞) :
+    LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω μ ∧
+      ∀ K, IsCompact K → K ⊆ Ω →
+        ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞ :=
+  ⟨locallyIntegrableOn_indicator_const hs 1, fun _ _ hKΩ => ⟨Ω, hKΩ, by rwa [← perimeter_def]⟩⟩
+
 /-- **The perimeter by duality.** For a null-measurable set `s`,
 `P(s; Ω) = ⨆ { ∫_s div φ ∂μ | φ ∈ 𝓓(Ω, E), ‖φ‖ ≤ 1 }`. -/
 theorem perimeter_eq_iSup (hs : NullMeasurableSet s μ) : perimeter μ Ω s =

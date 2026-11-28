@@ -15,7 +15,6 @@ import TauCeti.Analysis.BoundedVariation.RelativeIsoperimetric
 import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.LinearAlgebra.Dimension.FinrankOne
 import TauCeti.MeasureTheory.Covering.HausdorffDensity
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # The essential boundary and the reduced boundary
@@ -137,15 +136,11 @@ private theorem exists_pos_frequently_le_perimeter_ball_div
       exact notMem_essentialBoundary_of_ae_eq_empty_or_univ isOpen_ball (mem_ball_self hr0)
         (ae_eq_empty_or_univ_of_perimeter_ball_lt h1 hsr hlt) hx
   · obtain ⟨a, ha, hfreq⟩ := exists_pos_frequently_ofReal_mul_measure_closedBall_le hx
-    obtain ⟨C, hCtop, hC⟩ := exists_min_div_closedBall_rpow_le_mul_perimeter_div hn μ
-    set C' : ℝ≥0∞ := max C 1
-    have hC'top : C' ≠ ∞ := max_ne_top hCtop ENNReal.one_ne_top
-    have hC'pos : 0 < C'.toReal := ENNReal.toReal_pos
-      (lt_of_lt_of_le one_pos (le_max_right _ _)).ne' hC'top
+    obtain ⟨C, hCpos, hC⟩ := exists_min_div_closedBall_rpow_le_mul_perimeter_div hn μ
     set q : ℝ := 1 - (finrank ℝ E : ℝ)⁻¹
     have hq : 0 ≤ q :=
       sub_nonneg.2 (inv_le_one_of_one_le₀ (by exact_mod_cast (by omega : 1 ≤ finrank ℝ E)))
-    refine ⟨a ^ q / C'.toReal, by positivity,
+    refine ⟨a ^ q / C, by positivity,
       (hfreq.and_eventually (Ioo_mem_nhdsGT hε)).mono fun r ⟨⟨h₁, h₂⟩, hr0, hrε⟩ => ?_⟩
     have hiso := hC hr0 (hs.mono (Measure.restrict_mono ((ball_subset_ball hrε.le).trans hεU)
       le_rfl))
@@ -155,20 +150,10 @@ private theorem exists_pos_frequently_le_perimeter_ball_div
         min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r) := by
       rw [ENNReal.le_div_iff_mul_le (.inl hcb0) (.inl hcbtop)]
       exact le_min h₁ h₂
-    rw [ENNReal.ofReal_div_of_pos hC'pos]
+    rw [ENNReal.ofReal_div_of_pos (NNReal.coe_pos.2 hCpos), ENNReal.ofReal_coe_nnreal,
+      ← ENNReal.ofReal_rpow_of_nonneg ha.le hq]
     refine ENNReal.div_le_of_le_mul ?_
-    calc ENNReal.ofReal (a ^ q) = ENNReal.ofReal a ^ q :=
-          (ENNReal.ofReal_rpow_of_nonneg ha.le hq).symm
-      _ ≤ (min (μ (s ∩ closedBall x r)) (μ (closedBall x r \ s)) / μ (closedBall x r)) ^ q :=
-          ENNReal.rpow_le_rpow hmin hq
-      _ ≤ C * (perimeter μ ⟨ball x r, isOpen_ball⟩ s / ENNReal.ofReal r ^ (finrank ℝ E - 1)) :=
-          hiso
-      _ ≤ ENNReal.ofReal C'.toReal *
-          (perimeter μ ⟨ball x r, isOpen_ball⟩ s / ENNReal.ofReal r ^ (finrank ℝ E - 1)) := by
-          rw [ENNReal.ofReal_toReal hC'top]
-          exact mul_le_mul_left (le_max_left _ _) _
-      _ = (perimeter μ ⟨ball x r, isOpen_ball⟩ s / ENNReal.ofReal r ^ (finrank ℝ E - 1)) *
-          ENNReal.ofReal C'.toReal := mul_comm _ _
+    exact (ENNReal.rpow_le_rpow hmin hq).trans (hiso.trans_eq (mul_comm _ _))
 
 /-- **Perimeter lower bound at the essential boundary.** Let `s` be null-measurable on a
 neighborhood `U` of a point `x` of its essential boundary. Then for some `c > 0` and arbitrarily
@@ -279,8 +264,9 @@ truncated natural subtraction (so `0 - 1 = 0` when `n = 0`). -/
 theorem essentialBoundary_inter_ae_eq_reducedBoundary_of_perimeter_ne_top
     (hs : NullMeasurableSet s (μ.restrict Ω)) (hP : perimeter μ Ω s ≠ ∞) :
     (essentialBoundary μ s ∩ Ω : Set E) =ᵐ[μHE[finrank ℝ E - 1]] reducedBoundary μ Ω s :=
-  essentialBoundary_inter_ae_eq_reducedBoundary (locallyIntegrableOn_indicator_const hs 1)
-    fun _ _ hKΩ => ⟨Ω, hKΩ, by rwa [← perimeter_def]⟩
+  let ⟨hu, hfin⟩ :=
+    locallyIntegrableOn_indicator_and_exists_totalVariationOn_ne_top_of_perimeter_ne_top hs hP
+  essentialBoundary_inter_ae_eq_reducedBoundary hu hfin
 
 /-- **Densities of sets of locally finite perimeter.** In every dimension, for countably many sets
 `s i` of locally finite perimeter in an open set `Ω`, off an `Hⁿ⁻¹`-null set every `s i` has
