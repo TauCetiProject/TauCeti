@@ -69,6 +69,9 @@ has no antiderivative.
 
 As linear endomorphisms of `R[X]`, the derivative and multiplication by `X` satisfy the Weyl
 relation `d x = x d + 1` (`Polynomial.derivative_mul_mulLeft_X`).
+
+Over any semiring, the `j`-th coefficient of `X * p'` is `p.coeff j * j`
+(`Polynomial.coeff_X_mul_derivative`).
 -/
 
 public section
@@ -394,5 +397,12 @@ theorem derivative_mul_mulLeft_X {R : Type*} [CommSemiring R] :
       LinearMap.mulLeft R X * derivative + 1 := by
   refine LinearMap.ext fun p ↦ ?_
   simp [derivative_mul, add_comm]
+
+/-- The `j`-th coefficient of `X * p'` is `j` times the `j`-th coefficient of `p`. -/
+theorem coeff_X_mul_derivative {R : Type*} [Semiring R] (p : R[X]) (j : ℕ) :
+    (X * p.derivative).coeff j = p.coeff j * j := by
+  cases j with
+  | zero => simp
+  | succ i => rw [coeff_X_mul, coeff_derivative, Nat.cast_add_one]
 
 end Polynomial
