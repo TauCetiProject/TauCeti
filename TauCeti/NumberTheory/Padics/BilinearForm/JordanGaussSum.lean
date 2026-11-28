@@ -48,9 +48,7 @@ Conway–Sloane `2`-adic symbol: the quantity
 
 is an isometry invariant
 (`LinearMap.BilinForm.IsJordanSplitting.prod_χ₈_pow_mul_stdAddChar_sum_eq_of_equivalent`).
-So the oddities of the constituents up to `j` are invariant in total modulo `8`, up to `4` times
-the number of signs `ε i = -1` with `j - i` even, while the individual signs and oddities are not:
-sign walking `⟨1⟩ ⊥ 2 !![0, 1; 1, 0] ≅ ⟨5⟩ ⊥ 2 !![2, 1; 1, 2]`
+Sign walking `⟨1⟩ ⊥ 2 !![0, 1; 1, 0] ≅ ⟨5⟩ ⊥ 2 !![2, 1; 1, 2]`
 (`TauCeti.equivalent_toBilin'_unary_two_hyperbolic`) changes the sign and the oddity of the
 constituent of index `0` together, from `(1, 1)` to `(-1, 5)`, and leaves `ε 0 · e(t 0 / 8)`
 unchanged.

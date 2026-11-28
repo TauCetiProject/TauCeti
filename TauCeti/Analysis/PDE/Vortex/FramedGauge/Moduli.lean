@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.PDE.Vortex.Coupling
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Divisor
 public import TauCeti.Analysis.PDE.Vortex.WindingPhase
 import Mathlib.Data.Fintype.Order
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
-import TauCeti.Analysis.PDE.Vortex.Coupling
 import TauCeti.Analysis.PDE.Vortex.FramedGauge.DerivativeDecay
 
 /-!
@@ -34,17 +34,22 @@ at every exponential rate `c < 1 / 2`
 disc, `x - x_ref` is the rotation of the section part of that difference by the winding phase,
 which equals the reference section `x_ref` uses there and has bounded derivatives, so the
 derivatives of `x - x_ref` there are bounded by those of the end trivialization
-(`exists_norm_iteratedFDeriv_sub_referenceField_le_mul`). Hence every derivative of
-`x - x_ref` decays exponentially (`isBigO_iteratedFDeriv_sub_referenceField`). A
-smooth field with this decay lies in every `A_m^k`
-(`TauCeti.Vortex.mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField`).
+(`exists_norm_iteratedFDeriv_sub_referenceField_le_mul`). Hence every derivative of `x - x_ref`
+decays exponentially (`isBigO_iteratedFDeriv_sub_referenceField`). A smooth field with this decay
+lies in every `A_m^s`
+(`TauCeti.Vortex.mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField`). One normalizing
+smooth framed gauge works simultaneously for all cutoffs `f` and all orders `s : ℝ`
+(`exists_framedGaugeGroup_smul_mem_framedFieldSpace`).
 
 With Taubes's existence theorem (`TauCeti.Vortex.framedVortexDivisor_surjective`) this shows that
-every effective divisor of degree `m` is the divisor of a `C²` vortex of `A_m^k`
-(`sobolevVortexDivisor_surjective`). For `k ≥ 4`, where `G_(k+1)` preserves the `C²` vortices of
-`A_m^k`, the divisor therefore identifies the Sobolev moduli of framed vortices with `Sym ℂ m`
-(`sobolevVortexModuliEquiv`), the Sobolev counterpart of `TauCeti.Vortex.framedVortexModuliEquiv`.
-Conversely, a smooth framed gauge relating two fields of `A_m^k` lies in `G_(k+1)`
+every effective divisor of degree `m` is the zero divisor of a smooth vortex `x` lying in
+`⋂_s A_m^s` whose defect `x - referenceField f m` has all iterated derivatives decaying
+exponentially (`exists_contDiff_mem_framedFieldSpace_equation_eq_zero_isZeroMultiplicity`), so
+`sobolevVortexDivisor` is surjective (`sobolevVortexDivisor_surjective`). For `k ≥ 4`,
+where `G_(k+1)` preserves the `C²` vortices of `A_m^k`, the divisor therefore identifies the
+Sobolev moduli of framed vortices with `Sym ℂ m` (`sobolevVortexModuliEquiv`), the Sobolev
+counterpart of `TauCeti.Vortex.framedVortexModuliEquiv`. Conversely, a smooth framed gauge relating
+two fields of `A_m^k` lies in `G_(k+1)`
 (`TauCeti.Vortex.mem_sobolevGaugeGroup_of_mem_framedFieldSpace`).
 
 ## Main results
@@ -61,9 +66,11 @@ All in the namespace `TauCeti.Vortex`:
   whose section is `|α|` times the winding phase near infinity lies in `A_m^s` for every `s`, with
   this decay.
 * `exists_framedGaugeGroup_smul_mem_framedFieldSpace`: every smooth framed vortex has a smooth
-  framed gauge representative lying in `A_m^s` for every `s`, with this decay.
-* `exists_contDiff_sobolevVortexDivisor_eq`: every point of `Sym ℂ m` is the divisor of a smooth
-  vortex of `A_m^k` lying in every `A_m^s`, with this decay.
+  framed gauge representative lying in `A_m^s` for every cutoff `f` and order `s`, with this decay.
+* `exists_contDiff_mem_framedFieldSpace_equation_eq_zero_isZeroMultiplicity`,
+  `exists_contDiff_sobolevVortexDivisor_eq`: every `D ∈ Sym ℂ m` is the zero divisor of a smooth
+  vortex `x` in `⋂_s A_m^s` whose defect `x - referenceField f m` has all iterated derivatives
+  decaying exponentially.
 * `sobolevVortexDivisor_surjective`: every point of `Sym ℂ m` is the divisor of a `C²` vortex of
   `A_m^k`.
 * `sobolevVortexModuliEquiv`: for `k ≥ 4`, the Sobolev moduli of framed vortices are `Sym ℂ m`.
@@ -216,19 +223,47 @@ theorem gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq
   exact ⟨mem_framedFieldSpace_of_isBigO_iteratedFDeriv_sub_referenceField hy (c := 1 / 4)
     (by norm_num) (hdec (1 / 4) (by norm_num)), hdec⟩
 
-/-- **Every smooth framed vortex orbit meets every `A_m^s`.** A smooth framed degree-`m` vortex
-`x` is carried by a smooth framed gauge `u` to a field `u · x` lying in the affine Sobolev space
-`A_m^s` for every real `s`, such that every derivative of `u · x - x_ref` is `O(exp (-c |z|))`
-at infinity for every rate `c < 1 / 2`. -/
-theorem exists_framedGaugeGroup_smul_mem_framedFieldSpace (f : ContDiffBump (0 : ℝ))
+/-- **Smooth framed gauge representative in `A_m^s` with all-order exponential decay.** Every
+smooth plane vortex with the degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1` has a smooth framed
+gauge transform `u • x` whose section is `|α|` times `windingPhase m` outside a compact set, which
+belongs to `framedFieldSpace f m s` for every cutoff `f` and real order `s`, and whose difference
+from `referenceField f m` has all iterated derivatives `O(exp (-c |z|))` at infinity for every
+`f` and every rate `c < 1 / 2`. -/
+theorem exists_framedGaugeGroup_smul_mem_framedFieldSpace
     (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0)
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
-    ∃ u : framedGaugeGroup, (∀ s : ℝ, u • x ∈ framedFieldSpace f m s) ∧
-      ∀ c < 1 / 2, ∀ n : ℕ, iteratedFDeriv ℝ n (u • x - referenceField f m) =O[cocompact ℂ]
-        fun z ↦ Real.exp (-(c * ‖z‖)) := by
+    ∃ u : framedGaugeGroup,
+      (∀ᶠ z in cocompact ℂ,
+        sectionValue (u • x) z = ‖sectionValue (u • x) z‖ * windingPhase m z) ∧
+      (∀ (f : ContDiffBump (0 : ℝ)) (s : ℝ), u • x ∈ framedFieldSpace f m s) ∧
+      ∀ (f : ContDiffBump (0 : ℝ)), ∀ c < 1 / 2, ∀ n : ℕ,
+        iteratedFDeriv ℝ n (u • x - referenceField f m) =O[cocompact ℂ]
+          fun z ↦ Real.exp (-(c * ‖z‖)) := by
   obtain ⟨u, hu⟩ := exists_framedGaugeGroup_sectionValue_smul_eq hx hframe
-  exact ⟨u, gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq f u.property hx hsol
-    hframe hu⟩
+  have h f :=
+    gaugeTransform_mem_framedFieldSpace_of_eventually_sectionValue_eq f u.property hx hsol hframe hu
+  exact ⟨u, hu, fun f ↦ (h f).1, fun f ↦ (h f).2⟩
+
+/-- **Existence of smooth Sobolev framed vortices with prescribed zeros.** Every effective divisor
+`D ∈ Sym ℂ m` is the zero divisor of a smooth plane vortex `x` whose section equals `|α|` times
+`windingPhase m` outside a compact set, whose difference from `referenceField f m` has exponential
+decay of all iterated derivatives at every rate `c < 1 / 2`, and which belongs to
+`framedFieldSpace f m s` for every cutoff `f` and real order `s`. -/
+theorem exists_contDiff_mem_framedFieldSpace_equation_eq_zero_isZeroMultiplicity (D : Sym ℂ m) :
+    ∃ x : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ x ∧ (∀ z, equation x z = 0) ∧
+      (∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z) ∧
+      (∀ (f : ContDiffBump (0 : ℝ)) (s : ℝ), x ∈ framedFieldSpace f m s) ∧
+      (∀ (f : ContDiffBump (0 : ℝ)), ∀ c < 1 / 2, ∀ n : ℕ,
+        iteratedFDeriv ℝ n (x - referenceField f m) =O[cocompact ℂ]
+          fun z ↦ Real.exp (-(c * ‖z‖))) ∧
+      IsZeroMultiplicity (sectionValue x) fun z ↦ (D : Multiset ℂ).count z := by
+  obtain ⟨y, hy, hsol, hfr, hD⟩ := exists_contDiff_equation_eq_zero_isZeroMultiplicity D
+  obtain ⟨u, hphase, hmem, hdecay⟩ :=
+    exists_framedGaugeGroup_smul_mem_framedFieldSpace hy hsol hfr
+  exact ⟨u • y, contDiff_framedGaugeGroup_smul u hy, fun z ↦
+    (equation_framedGaugeGroup_smul_eq_zero_iff u fun i ↦
+      ((contDiff_euclidean.1 hy i).differentiable (by simp)).differentiableAt).2 (hsol z),
+    hphase, hmem, hdecay, isZeroMultiplicity_sectionValue_framedGaugeGroup_smul hD u⟩
 
 /-! ### The Sobolev moduli of framed vortices -/
 
@@ -245,16 +280,10 @@ theorem exists_contDiff_sobolevVortexDivisor_eq (D : Sym ℂ m) :
       ∀ c < 1 / 2, ∀ n : ℕ,
         iteratedFDeriv ℝ n ((x : ℂ → EuclideanSpace ℝ (Fin 4)) - referenceField f m)
           =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨x, hx⟩ := framedVortexDivisor_surjective one_pos m D
-  obtain ⟨hxc, hxsol, hxfr⟩ := mem_framedVortexSubMulAction.1 x.property
-  simp only [coupledEquation_one] at hxsol
-  obtain ⟨u, hu, hdec⟩ := exists_framedGaugeGroup_smul_mem_framedFieldSpace f hxc hxsol hxfr
-  obtain ⟨hyc, hysol, -⟩ := mem_framedVortexSubMulAction.1 (u • x).property
-  rw [SubMulAction.val_smul] at hyc hysol
-  refine ⟨⟨⟨u • (x : ℂ → EuclideanSpace ℝ (Fin 4)), hu k⟩,
-    mem_sobolevVortices.2 ⟨hyc.of_le (by simp), by simpa using hysol⟩⟩, ?_, hyc, hu, hdec⟩
-  rw [sobolevVortexDivisor_eq_framedVortexDivisor _ (u • x) (SubMulAction.val_smul u x).symm,
-    framedVortexDivisor_smul, hx]
+  obtain ⟨x, hx, hsol, -, hmem, hdec, hD⟩ :=
+    exists_contDiff_mem_framedFieldSpace_equation_eq_zero_isZeroMultiplicity D
+  exact ⟨⟨⟨x, hmem f k⟩, mem_sobolevVortices.2 ⟨hx.of_le (by simp), hsol⟩⟩,
+    sobolevVortexDivisor_eq_iff.2 hD, hx, hmem f, hdec f⟩
 
 /-- **Existence on the Sobolev scale.** For `k ≥ 2`, every effective divisor of degree `m`,
 repeated points included, is the divisor of a `C²` vortex of `A_m^k`. -/

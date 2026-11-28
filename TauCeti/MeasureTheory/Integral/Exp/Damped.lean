@@ -31,6 +31,8 @@ integral.
 
 * `TauCeti.tendsto_setIntegral_exp_smul`: the damped integral converges to the undamped one as
   `sigma` decreases to `1`.
+* `MeasureTheory.IntegrableOn.tendsto_setIntegral_Ioi_exp_neg_mul_smul`: on an open
+  half-line the same limit holds for the damping rate decreasing to zero.
 * `TauCeti.integrable_exp_neg_mul_smul_of_le`: if `e^{-σt} G(t)` is integrable for a measure
   carried by `[0, ∞)`, so is the more strongly damped `e^{-xt} G(t)` for every `x ≥ σ`.
 * `TauCeti.norm_setIntegral_Ioi_exp_neg_mul_smul_le`: on `(δ, ∞)` the extra damping
@@ -64,6 +66,27 @@ theorem tendsto_setIntegral_exp_smul (hf : IntegrableOn f (Ici a) μ) :
   · have hexp : Tendsto (fun sigma : ℝ ↦ Real.exp (-u * (sigma - 1))) (𝓝 1) (𝓝 1) :=
       (by fun_prop : Continuous fun sigma : ℝ ↦ Real.exp (-u * (sigma - 1))).tendsto' 1 1 (by simp)
     simpa using (hexp.mono_left nhdsWithin_le_nhds).smul_const (f u)
+
+/-- For a function integrable on `(a, ∞)`, the damped integral with factor `exp (-ε * t)`
+converges to the undamped integral as `ε` tends to zero from above. -/
+theorem _root_.MeasureTheory.IntegrableOn.tendsto_setIntegral_Ioi_exp_neg_mul_smul
+    (hf : IntegrableOn f (Ioi a) μ) :
+    Tendsto (fun ε : ℝ ↦ ∫ t in Ioi a, Real.exp (-ε * t) • f t ∂μ)
+      (𝓝[>] 0) (𝓝 (∫ t in Ioi a, f t ∂μ)) := by
+  -- Apply the limit at rate `sigma - 1` to the measure restricted to the open half-line.
+  have hε : ∀ᶠ ε : ℝ in 𝓝[>] 0, 0 < ε := self_mem_nhdsWithin
+  have hmap : Tendsto (fun ε : ℝ ↦ ε + 1) (𝓝[>] 0) (𝓝[≥] (1 : ℝ)) :=
+    tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+      (by simpa using (tendsto_id (x := 𝓝 (0 : ℝ)) |>.add_const 1).mono_left nhdsWithin_le_nhds)
+      (hε.mono fun ε h ↦ by simpa using h.le)
+  have hrestrict : (μ.restrict (Ioi a)).restrict (Ici a) = μ.restrict (Ioi a) := by
+    rw [Measure.restrict_restrict measurableSet_Ici, inter_eq_right.mpr Ioi_subset_Ici_self]
+  have hf' : IntegrableOn f (Ici a) (μ.restrict (Ioi a)) := by
+    rw [IntegrableOn, hrestrict]
+    exact hf.integrable
+  have hexp (ε t : ℝ) : -t * ((ε + 1) - 1) = -ε * t := by ring
+  simpa only [Function.comp_def, hrestrict, hexp] using
+    (tendsto_setIntegral_exp_smul hf').comp hmap
 
 /-- If `t ↦ e^{-σt} G(t)` is integrable for a measure `μ` carried by `[0, ∞)`, then so is
 `t ↦ e^{-xt} G(t)` for every `x ≥ σ`. -/

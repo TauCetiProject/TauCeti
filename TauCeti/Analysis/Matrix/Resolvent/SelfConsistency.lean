@@ -129,7 +129,8 @@ theorem norm_inv_card_mul_trace_minorResolvent_sub_resolventTransform_le [Nonemp
       resolventTransform (A.spectralMeasure hA : Measure ℝ) z‖ ≤
       3 / ((Fintype.card n : ℝ) * |z.im|) := by
   rw [resolventTransform_spectralMeasure A hA (hA.notMem_spectrum_of_im_ne_zero hz),
-    ← mul_sub, norm_mul, norm_inv, Complex.norm_natCast, norm_sub_rev]
+    normalizedResolventTrace_def, ← mul_sub, norm_mul, norm_inv, Complex.norm_natCast,
+    norm_sub_rev]
   exact (mul_le_mul_of_nonneg_left (hA.norm_trace_inv_sub_smul_one_sub_trace_minorResolvent_le i hz)
     (by positivity)).trans_eq (by ring)
 
@@ -144,14 +145,14 @@ theorem norm_resolventTransform_spectralMeasure_quadratic_le [Nonempty n]
   classical
   intro m
   let R := (A - z • 1)⁻¹
-  have hm : m = (Fintype.card n : ℂ)⁻¹ * R.trace :=
+  have hm : m = A.normalizedResolventTrace z :=
     resolventTransform_spectralMeasure A hA (hA.notMem_spectrum_of_im_ne_zero hz.ne')
   have hc : (Fintype.card n : ℂ) ≠ 0 := by exact_mod_cast Fintype.card_ne_zero
   have havg :
       v * (m * m) + z * m + 1 = (Fintype.card n : ℂ)⁻¹ * ∑ i, (1 + R i i * (z + v * m)) := by
     rw [Finset.sum_add_distrib, ← Finset.sum_mul]
     simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_one]
-    simp only [Matrix.trace, Matrix.diag] at hm
+    simp only [normalizedResolventTrace_def, Matrix.trace, Matrix.diag] at hm
     linear_combination (z + v * m) * hm + (inv_mul_cancel₀ hc).symm
   rw [havg, norm_mul, norm_inv, Complex.norm_natCast]
   calc

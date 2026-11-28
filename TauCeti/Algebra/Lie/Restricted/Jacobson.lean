@@ -20,8 +20,8 @@ import TauCeti.Algebra.Polynomial.Derivative
 /-!
 # Jacobson's formula
 
-In an associative algebra of prime characteristic `p` the Frobenius `a ↦ a ^ p` is not additive,
-but its failure to be additive is a Lie polynomial: Jacobson's formula reads
+In an associative algebra of prime characteristic `p`, the Frobenius `a ↦ a ^ p` can fail to be
+additive, but its failure to be additive is a Lie polynomial: Jacobson's formula reads
 
 `(a + b) ^ p = a ^ p + b ^ p + Λ_p(a, b)`,
 
@@ -48,16 +48,20 @@ case, the Lie polynomial in the free Lie algebra on two generators over any comm
 ## Main statements
 
 * `TauCeti.LieAlgebra.add_pow_eq_jacobson`: **Jacobson's formula**,
-  `(a + b) ^ p = a ^ p + b ^ p + jacobson p a b` in a ring of prime characteristic `p`.
+  `(a + b) ^ p = a ^ p + b ^ p + jacobson p a b` in a ring of exponential characteristic `p`.
 * `LieHom.map_jacobson`, `TauCeti.LieAlgebra.lift_jacobsonLie`: `Λ_p` is natural for Lie algebra
   morphisms, and is the value of the Lie polynomial `jacobsonLie R p`.
 * `TauCeti.LieAlgebra.jacobson_eq_zero_of_lie_eq_zero`: `Λ_p(x, y) = 0` when `⁅x, y⁆ = 0`.
+* `TauCeti.LieAlgebra.jacobson_smul_smul`: `p`-homogeneity `Λ_p(c • x, c • y) = c ^ p • Λ_p(x, y)`.
+* `TauCeti.LieAlgebra.jacobson_eq_ad_pow_of_lie_ad_pow_eq_zero`: rank-one collapse
+  `Λ_p(x, y) = (ad R L y ^ (p - 1)) x` when `⁅x, (ad R L y ^ k) x⁆ = 0` for all `k < p - 1`
+  (`1 < p`).
 * `TauCeti.LieAlgebra.sum_nsmul_jacobsonCoeff_eq_jacobson`: when `p • z = 0` for every `z`, any
   choice of representatives of the inverses `(j + 1)⁻¹` modulo `p` gives the same value.
 * `TauCeti.LieAlgebra.jacobson_two`, `TauCeti.LieAlgebra.jacobson_three`:
   `Λ_2(x, y) = ⁅y, x⁆` and `Λ_3(x, y) = ⁅y, ⁅y, x⁆⁆ + 2 • ⁅x, ⁅y, x⁆⁆`.
-* `TauCeti.LieAlgebra.jacobson_single_single`: for `2 × 2` matrices over `ZMod p`, `p` odd,
-  `Λ_p(E₀₁, E₁₀) = E₀₁ + E₁₀`, so the Lie term of Jacobson's formula does not vanish.
+* `TauCeti.LieAlgebra.jacobson_single_single`: for `2 × 2` matrices over `ZMod p` with `p` an odd
+  prime, `Λ_p(E₀₁, E₁₀) = E₀₁ + E₁₀`, giving a counterexample where the Lie term does not vanish.
 
 ## Implementation notes
 
@@ -146,6 +150,31 @@ theorem jacobson_eq_zero_of_lie_eq_zero (p : ℕ) {x y : L} (h : ⁅x, y⁆ = 0)
   obtain ⟨k, hk⟩ : ∃ k, p - 1 = k + 1 := ⟨p - 2, by grind⟩
   rw [hk, jacobsonCoeff_succ_eq_zero_of_lie_eq_zero h, smul_zero]
 
+/-- `Λ_0(x, y) = 0`. -/
+@[simp]
+theorem jacobson_zero (x y : L) : jacobson 0 x y = 0 := by
+  simp [jacobson_def]
+
+/-- `Λ_1(x, y) = 0`. -/
+@[simp]
+theorem jacobson_one (x y : L) : jacobson 1 x y = 0 := by
+  simp [jacobson_def]
+
+/-- `Λ_p(0, y) = 0` for every `p : ℕ`. -/
+@[simp]
+theorem jacobson_zero_left (p : ℕ) (y : L) : jacobson p 0 y = 0 :=
+  jacobson_eq_zero_of_lie_eq_zero p (zero_lie y)
+
+/-- `Λ_p(x, 0) = 0` for every `p : ℕ`. -/
+@[simp]
+theorem jacobson_zero_right (p : ℕ) (x : L) : jacobson p x 0 = 0 :=
+  jacobson_eq_zero_of_lie_eq_zero p (lie_zero x)
+
+/-- `Λ_p(x, x) = 0` for every `p : ℕ`. -/
+@[simp]
+theorem jacobson_self (p : ℕ) (x : L) : jacobson p x x = 0 :=
+  jacobson_eq_zero_of_lie_eq_zero p (lie_self x)
+
 /-- `Λ_2(x, y) = ⁅y, x⁆`. -/
 @[simp]
 theorem jacobson_two (x y : L) : jacobson 2 x y = ⁅y, x⁆ := by
@@ -179,6 +208,69 @@ theorem sum_nsmul_jacobsonCoeff_eq_jacobson {p : ℕ} (hL : ∀ z : L, p • z =
   rw [hmod (c j), hcj, ← hmod]
 
 end LieRing
+
+section LieAlgebra
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+/-- Homogeneity of the Jacobson coefficients:
+`jacobsonCoeff (c • x) (c • y) k j = c ^ (k + 1) • jacobsonCoeff x y k j`. -/
+theorem jacobsonCoeff_smul_smul (c : R) (x y : L) (k j : ℕ) :
+    jacobsonCoeff (c • x) (c • y) k j = c ^ (k + 1) • jacobsonCoeff x y k j := by
+  induction k generalizing j with
+  | zero => cases j <;> simp
+  | succ k ih =>
+    cases j <;>
+      simp [jacobsonCoeff_succ_zero, jacobsonCoeff_succ_succ, ih, smul_smul, pow_succ', smul_add,
+        mul_comm]
+
+/-- Homogeneity of Jacobson's Lie polynomial:
+`Λ_p(c • x, c • y) = c ^ p • Λ_p(x, y)`. -/
+theorem jacobson_smul_smul (p : ℕ) (c : R) (x y : L) :
+    jacobson p (c • x) (c • y) = c ^ p • jacobson p x y := by
+  rcases p with _ | p
+  · simp
+  · rw [jacobson_def, jacobson_def, Finset.smul_sum]
+    refine sum_congr rfl fun j _ ↦ ?_
+    rw [jacobsonCoeff_smul_smul, Nat.add_sub_cancel, smul_comm]
+
+/-- The `j = 0` Jacobson coefficient `jacobsonCoeff x y k 0` is `(ad R L y ^ k) x`. -/
+theorem jacobsonCoeff_zero_eq_ad_pow (x y : L) (k : ℕ) :
+    jacobsonCoeff x y k 0 = (LieAlgebra.ad R L y ^ k) x := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [jacobsonCoeff_succ_zero, ih, pow_succ', mul_apply_eq_comp, LieAlgebra.ad_apply]
+
+private theorem jacobsonCoeff_succ_eq_zero_of_lie_ad_pow_eq_zero {x y : L} {n : ℕ}
+    (h : ∀ k < n, ⁅x, (LieAlgebra.ad R L y ^ k) x⁆ = 0) {k : ℕ} (hk : k ≤ n) (j : ℕ) :
+    jacobsonCoeff x y k (j + 1) = 0 := by
+  induction k generalizing j with
+  | zero => simp
+  | succ k ih =>
+    cases j with
+    | zero =>
+      rw [jacobsonCoeff_succ_succ, jacobsonCoeff_zero_eq_ad_pow (R := R), h k (by omega),
+        ih (by omega) 0, lie_zero, add_zero]
+    | succ j =>
+      rw [jacobsonCoeff_succ_succ, ih (by omega) j, ih (by omega) (j + 1), lie_zero, lie_zero,
+        add_zero]
+
+/-- **Rank-one collapse of Jacobson's Lie polynomial.** If `1 < p` and `x` commutes with
+`(ad R L y ^ k) x` for every `k < p - 1`, then only `jacobsonCoeff x y (p - 1) 0` survives in
+`Λ_p(x, y)`, yielding `jacobson p x y = (LieAlgebra.ad R L y ^ (p - 1)) x`. -/
+theorem jacobson_eq_ad_pow_of_lie_ad_pow_eq_zero {p : ℕ} (hp : 1 < p) {x y : L}
+    (h : ∀ k < p - 1, ⁅x, (LieAlgebra.ad R L y ^ k) x⁆ = 0) :
+    jacobson p x y = (LieAlgebra.ad R L y ^ (p - 1)) x := by
+  rw [jacobson_def, Finset.sum_eq_single 0]
+  · simp [ZMod.val_one'' (by omega : p ≠ 1), jacobsonCoeff_zero_eq_ad_pow (R := R)]
+  · intro j _ hj0
+    obtain ⟨j', rfl⟩ := Nat.exists_eq_succ_of_ne_zero hj0
+    rw [jacobsonCoeff_succ_eq_zero_of_lie_ad_pow_eq_zero (R := R) h le_rfl, smul_zero]
+  · intro hmem
+    exact absurd (Finset.mem_range.mpr (by omega)) hmem
+
+end LieAlgebra
 
 end TauCeti.LieAlgebra
 
@@ -245,6 +337,7 @@ private theorem coeff_pow_succ_eq (p : ℕ) [hp : Fact p.Prime] [CharP A p] (a b
     (hj : j < p - 1) :
     ((C a * X + C b) ^ p).coeff (j + 1) =
       ((j + 1 : ZMod p)⁻¹).val • jacobsonCoeff a b (p - 1) j := by
+  have : ExpChar A p := ExpChar.prime hp.out
   have hder : ((C a * X + C b) ^ p).coeff (j + 1) * ((j + 1 : ℕ) : A) =
       jacobsonCoeff a b (p - 1) j := by
     rw [← coeff_ad_pow_apply, ad_pow_sub_one_apply p, Nat.cast_succ, ← coeff_derivative,
@@ -255,36 +348,40 @@ private theorem coeff_pow_succ_eq (p : ℕ) [hp : Fact p.Prime] [CharP A p] (a b
       (Nat.coprime_comm.1 (Nat.coprime_of_lt_prime (n := j + 1) (by omega) (by omega) hp.out))
   rw [nsmul_eq_mul, ← hder, Nat.cast_comm, mul_assoc, hinv, mul_one]
 
-/-- **Jacobson's formula.**  In a ring of prime characteristic `p`,
+/-- **Jacobson's formula.**  In a ring of exponential characteristic `p`,
 `(a + b) ^ p = a ^ p + b ^ p + Λ_p(a, b)` for the ring commutator. -/
-theorem add_pow_eq_jacobson (p : ℕ) [hp : Fact p.Prime] [CharP A p] (a b : A) :
+theorem add_pow_eq_jacobson (p : ℕ) [hp : ExpChar A p] (a b : A) :
     (a + b) ^ p = a ^ p + b ^ p + jacobson p a b := by
-  have hlin : (C a * X + C b).natDegree ≤ 1 := natDegree_linear_le
-  have hdeg : ((C a * X + C b) ^ p).natDegree < p + 1 :=
-    (natDegree_pow_le.trans (Nat.mul_le_mul_left p hlin)).trans_lt (by omega)
-  -- Evaluating at `t = 1`, which is central, gives the sum of the coefficients.
-  have hsum : (a + b) ^ p = ∑ i ∈ range (p + 1), ((C a * X + C b) ^ p).coeff i := by
-    let φ := eval₂RingHom' (RingHom.id A) 1 fun _ ↦ Commute.one_right _
-    have hφ : φ (C a * X + C b) = a + b := by simp [φ]
-    rw [← hφ, ← map_pow]
-    simp [φ, eval₂_eq_sum_range' _ hdeg]
-  have h0 : ((C a * X + C b) ^ p).coeff 0 = b ^ p := by
-    rw [← constantCoeff_apply, map_pow]
-    simp
-  have htop : ((C a * X + C b) ^ p).coeff p = a ^ p := by
-    simpa using coeff_pow_of_natDegree_le (m := p) hlin
-  obtain ⟨q, rfl⟩ : ∃ q, p = q + 1 := ⟨p - 1, (Nat.sub_add_cancel hp.out.one_le).symm⟩
-  rw [hsum, sum_range_succ, sum_range_succ', h0, htop, jacobson_def, Nat.add_sub_cancel,
-    sum_congr rfl fun j hj ↦ coeff_pow_succ_eq (q + 1) a b (by simpa using hj)]
-  ac_rfl
+  obtain _ | ⟨hprime⟩ := hp
+  · simp
+  · have : Fact p.Prime := ⟨hprime⟩
+    have hlin : (C a * X + C b).natDegree ≤ 1 := natDegree_linear_le
+    have hdeg : ((C a * X + C b) ^ p).natDegree < p + 1 :=
+      (natDegree_pow_le.trans (Nat.mul_le_mul_left p hlin)).trans_lt (by omega)
+    -- Evaluating at `t = 1`, which is central, gives the sum of the coefficients.
+    have hsum : (a + b) ^ p = ∑ i ∈ range (p + 1), ((C a * X + C b) ^ p).coeff i := by
+      let φ := eval₂RingHom' (RingHom.id A) 1 fun _ ↦ Commute.one_right _
+      have hφ : φ (C a * X + C b) = a + b := by simp [φ]
+      rw [← hφ, ← map_pow]
+      simp [φ, eval₂_eq_sum_range' _ hdeg]
+    have h0 : ((C a * X + C b) ^ p).coeff 0 = b ^ p := by
+      rw [← constantCoeff_apply, map_pow]
+      simp
+    have htop : ((C a * X + C b) ^ p).coeff p = a ^ p := by
+      simpa using coeff_pow_of_natDegree_le (m := p) hlin
+    obtain ⟨q, rfl⟩ : ∃ q, p = q + 1 := ⟨p - 1, (Nat.sub_add_cancel hprime.one_le).symm⟩
+    rw [hsum, sum_range_succ, sum_range_succ', h0, htop, jacobson_def, Nat.add_sub_cancel,
+      sum_congr rfl fun j hj ↦ coeff_pow_succ_eq (q + 1) a b (by simpa using hj)]
+    ac_rfl
 
-/-- For odd `p`, `Λ_p(E₀₁, E₁₀) = E₀₁ + E₁₀ ≠ 0` for the matrix units of `2 × 2` matrices over
-`ZMod p`: their `p`-th powers vanish while `(E₀₁ + E₁₀) ^ p = E₀₁ + E₁₀`, so the Frobenius of a
-noncommutative ring of characteristic `p` is not additive and the Lie term of Jacobson's formula
+/-- For an odd prime `p`, `Λ_p(E₀₁, E₁₀) = E₀₁ + E₁₀ ≠ 0` for the matrix units of `2 × 2` matrices
+over `ZMod p`: their `p`-th powers vanish while `(E₀₁ + E₁₀) ^ p = E₀₁ + E₁₀`, so the Frobenius of
+a noncommutative ring of characteristic `p` is not additive and the Lie term of Jacobson's formula
 is needed. -/
 theorem jacobson_single_single (p : ℕ) [Fact p.Prime] (hp : p ≠ 2) :
     jacobson p (Matrix.single (0 : Fin 2) (1 : Fin 2) (1 : ZMod p)) (Matrix.single 1 0 1) =
       Matrix.single 0 1 1 + Matrix.single 1 0 1 := by
+  have : ExpChar (Matrix (Fin 2) (Fin 2) (ZMod p)) p := ExpChar.prime Fact.out
   set a : Matrix (Fin 2) (Fin 2) (ZMod p) := Matrix.single 0 1 1
   set b : Matrix (Fin 2) (Fin 2) (ZMod p) := Matrix.single 1 0 1
   have ha : a ^ 2 = 0 := by simp [a, sq]

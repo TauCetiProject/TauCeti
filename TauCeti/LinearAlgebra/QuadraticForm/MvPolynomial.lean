@@ -9,6 +9,7 @@ public import Mathlib.Algebra.MvPolynomial.CommRing
 public import Mathlib.Algebra.MvPolynomial.Degrees
 public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
+public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 
 /-!
 # Multivariate polynomial representation of coordinate quadratic forms
@@ -25,6 +26,7 @@ Gram matrix.
 * `QuadraticMap.toMvPolynomial`: the multivariate polynomial in `MvPolynomial ι R` representing a
   coordinate quadratic form `Q : QuadraticForm R (ι → R)`.
 * `QuadraticMap.eval_toMvPolynomial`: evaluating `Q.toMvPolynomial` at `x : ι → R` recovers `Q x`.
+* `QuadraticMap.toMvPolynomial_isHomogeneous`: `Q.toMvPolynomial` is homogeneous of degree two.
 * `QuadraticMap.totalDegree_toMvPolynomial_le`: `Q.toMvPolynomial` has total degree at most `2`.
 * `QuadraticMap.toMvPolynomial_injective`: `toMvPolynomial` is injective.
 * `QuadraticMap.toMvPolynomialLinearMap`: `toMvPolynomial` bundled as an `R`-linear map.
@@ -86,22 +88,21 @@ theorem eval_toMvPolynomial (Q : QuadraticForm R (ι → R)) (x : ι → R) :
         polarSym2_sym2Mk, polar_smul_left, polar_smul_right, smul_eq_mul]
       ring
 
+/-- The coordinate polynomial of a quadratic form is homogeneous of degree two. -/
+theorem toMvPolynomial_isHomogeneous (Q : QuadraticForm R (ι → R)) :
+    Q.toMvPolynomial.IsHomogeneous 2 := by
+  rw [toMvPolynomial_def]
+  apply IsHomogeneous.add
+  · exact IsHomogeneous.sum _ _ _ fun i _ ↦ isHomogeneous_C_mul_X_pow _ i 2
+  · apply IsHomogeneous.sum
+    intro ij _
+    induction ij using Sym2.ind with
+    | _ i j => exact (isHomogeneous_C_mul_X _ i).mul (isHomogeneous_X _ j)
+
 /-- Every coordinate quadratic form is represented by a polynomial of total degree at most two. -/
 theorem totalDegree_toMvPolynomial_le (Q : QuadraticForm R (ι → R)) :
-    Q.toMvPolynomial.totalDegree ≤ 2 := by
-  rcases subsingleton_or_nontrivial R with hR | hR
-  · simp [Subsingleton.elim Q.toMvPolynomial 0]
-  refine (totalDegree_add _ _).trans (max_le ?_ ?_)
-  · refine totalDegree_finsetSum_le fun i _ ↦ ?_
-    exact (totalDegree_mul _ _).trans (by simp)
-  · refine totalDegree_finsetSum_le fun ij _ ↦ ?_
-    induction ij using Sym2.ind with
-    | _ i j =>
-      dsimp only [offDiagMonomial, Sym2.lift_mk]
-      refine (totalDegree_mul _ _).trans ?_
-      have h1 : (C (polar Q (Pi.single i 1) (Pi.single j 1)) * X i).totalDegree ≤ 1 :=
-        (totalDegree_mul _ _).trans (by simp)
-      simpa using Nat.add_le_add_right h1 1
+    Q.toMvPolynomial.totalDegree ≤ 2 :=
+  Q.toMvPolynomial_isHomogeneous.totalDegree_le
 
 /-- The polynomial of a coordinate quadratic form has zero constant coefficient. -/
 @[simp]

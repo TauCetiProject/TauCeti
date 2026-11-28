@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Concave
 public import TauCeti.Analysis.PDE.FullyNonlinear.HessianCone
+import TauCeti.RingTheory.MvPolynomial.Symmetric.PDeriv
 
 /-!
 # Concavity of `σ_k^{1/k}` on the Hessian cone `Γ_k`
@@ -17,6 +18,16 @@ The function `σ_k^{1/k}` is concave on the Hessian cone `Γ_k ⊆ ℝⁿ`
 (`MvPolynomial.IsHyperbolic.concaveOn_rpow`) for the elementary symmetric polynomial `σ_k`,
 hyperbolic of degree `k` in the direction `e = (1, …, 1)` with Gårding cone `Γ_k` for `k ≤ n`;
 for `k > n` the cone is empty (`TauCeti.hessianCone_eq_empty`).
+
+Gårding's inequality (`MvPolynomial.IsHyperbolic.mul_rpow_mul_rpow_le_eval_sum_smul_pderiv`) for
+`σ_{k+1}` is the tangent inequality
+(`TauCeti.mul_esymm_rpow_mul_esymm_rpow_le_sum_mul_eval_update_zero_esymm`): for `μ` and `ν` in
+the closure of `Γ_{k+1}`,
+
+`(k + 1) σ_{k+1}(ν)^{1/(k+1)} σ_{k+1}(μ)^{k/(k+1)} ≤ ∑ᵢ νᵢ σ_{k;i}(μ)`,
+
+where `σ_{k;i}(μ) = ∂σ_{k+1}/∂μᵢ (μ)` is `σ_k` of `μ` with its `i`-th entry set to zero
+(`TauCeti.eval_pderiv_esymm_succ`).
 
 ## References
 
@@ -51,5 +62,21 @@ theorem concaveOn_esymm_rpow (n k : ℕ) :
     exact (isHyperbolic_esymm (σ := Fin n) (by simpa using hkn)).concaveOn_rpow
   · rw [hessianCone_eq_empty hkn]
     exact ⟨convex_empty, fun _ hx ↦ hx.elim⟩
+
+/-- **The tangent inequality for `σ_{k+1}^{1/(k+1)}`.** For `μ` and `ν` in the closure of the
+Hessian cone `Γ_{k+1}`, `(k + 1) σ_{k+1}(ν)^{1/(k+1)} σ_{k+1}(μ)^{1 - 1/(k+1)} ≤ ∑ᵢ νᵢ σ_{k;i}(μ)`,
+where `σ_{k;i}(μ)` is `σ_k` of `μ` with its `i`-th entry set to zero. -/
+theorem mul_esymm_rpow_mul_esymm_rpow_le_sum_mul_eval_update_zero_esymm (k : ℕ)
+    {μ ν : Fin n → ℝ} (hμ : μ ∈ closure (hessianCone n (k + 1)))
+    (hν : ν ∈ closure (hessianCone n (k + 1))) :
+    ((k + 1 : ℕ) : ℝ) * eval ν (esymm (Fin n) ℝ (k + 1)) ^ ((k + 1 : ℕ) : ℝ)⁻¹ *
+        eval μ (esymm (Fin n) ℝ (k + 1)) ^ (1 - ((k + 1 : ℕ) : ℝ)⁻¹) ≤
+      ∑ i, ν i * eval (Function.update μ i 0) (esymm (Fin n) ℝ k) := by
+  rcases le_or_gt (k + 1) n with hkn | hkn
+  · rw [← gardingCone_esymm_eq_hessianCone] at hμ hν
+    have h := (isHyperbolic_esymm (σ := Fin n) (by simpa using hkn))
+      |>.mul_rpow_mul_rpow_le_eval_sum_smul_pderiv hμ hν
+    simpa only [map_sum, smul_eval, eval_pderiv_esymm_succ] using h
+  · simp [hessianCone_eq_empty hkn] at hμ
 
 end TauCeti

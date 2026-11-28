@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import Mathlib.RingTheory.LocalProperties.ProjectiveDimension
 public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
+public import TauCeti.CategoryTheory.Abelian.GlobalDimension
 import Mathlib.Algebra.Category.ModuleCat.ProjectiveDimension
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import TauCeti.Algebra.Module.PseudoCoherent.FaithfullyFlat
@@ -25,16 +26,11 @@ dimension is finite, and then it equals the Krull dimension.
 ## Main definitions
 
 * `TauCeti.globalDimension R`: the supremum of `CategoryTheory.projectiveDimension M` over all
-  `M : ModuleCat.{v} R`, valued in `WithBot ℕ∞`. It is `⊥` exactly for the zero ring.
+  `M : ModuleCat.{v} R`, via `CategoryTheory.Abelian.globalDimension`. It is `⊥` exactly for
+  the zero ring.
 
 ## Main results
 
-* `TauCeti.globalDimension_le_iff`: `globalDimension R ≤ d` iff every module has projective
-  dimension at most `d`, for any `d : WithBot ℕ∞`.
-* `TauCeti.globalDimension_le_iff_hasProjectiveDimensionLE`: `globalDimension R ≤ n` iff every
-  module has projective dimension at most `n`, in Mathlib's pointwise vocabulary.
-* `TauCeti.globalDimension_le_iff_hasInjectiveDimensionLE`: `globalDimension R ≤ n` iff every
-  module has injective dimension at most `n`.
 * `TauCeti.globalDimension_le_tfae`: it suffices to bound the projective dimensions of the finite
   modules, or only of the cyclic modules `R ⧸ I` (Stacks, Lemma 10.109.12 (065T)).
 * `TauCeti.globalDimension_eq_iSup_cyclic`, `TauCeti.globalDimension_eq_iSup_finite`:
@@ -80,43 +76,14 @@ variable (R : Type u) [Ring R]
 /-- The **global dimension** of a ring `R`: the supremum of the projective dimensions of all
 `R`-modules in `ModuleCat.{v} R`. Stacks, Definition 10.109.10 (00O6). -/
 @[stacks 00O6]
-noncomputable def globalDimension : WithBot ℕ∞ :=
-  ⨆ M : ModuleCat.{v} R, projectiveDimension M
-
-/-- Unfolds `globalDimension` as the supremum of the projective dimensions of all modules. -/
-theorem globalDimension_def :
-    globalDimension.{v} R = ⨆ M : ModuleCat.{v} R, projectiveDimension M := by
-  rw [globalDimension]
-
-variable {R} in
-/-- The projective dimension of every module is at most the global dimension of the ring. -/
-theorem _root_.ModuleCat.projectiveDimension_le_globalDimension (M : ModuleCat.{v} R) :
-    projectiveDimension M ≤ globalDimension.{v} R :=
-  le_iSup (fun M : ModuleCat.{v} R ↦ projectiveDimension M) M
-
-/-- The global dimension is at most `d` iff every module has projective dimension at most `d`. -/
-theorem globalDimension_le_iff (d : WithBot ℕ∞) :
-    globalDimension.{v} R ≤ d ↔ ∀ M : ModuleCat.{v} R, projectiveDimension M ≤ d :=
-  iSup_le_iff
-
-/-- The global dimension is at most `n` iff every module has projective dimension at most `n`. -/
-theorem globalDimension_le_iff_hasProjectiveDimensionLE (n : ℕ) :
-    globalDimension.{v} R ≤ n ↔ ∀ M : ModuleCat.{v} R, HasProjectiveDimensionLE M n := by
-  simp [globalDimension, projectiveDimension_le_iff]
-
-/-- The global dimension is at most `n` iff every module has injective dimension at most `n`:
-both conditions say that all `Ext` groups vanish above degree `n`. -/
-theorem globalDimension_le_iff_hasInjectiveDimensionLE [Small.{v} R] (n : ℕ) :
-    globalDimension.{v} R ≤ n ↔ ∀ M : ModuleCat.{v} R, HasInjectiveDimensionLE M n := by
-  rw [globalDimension_le_iff_hasProjectiveDimensionLE]
-  simp only [hasProjectiveDimensionLT_iff.{v}, hasInjectiveDimensionLT_iff.{v}]
-  exact ⟨fun h N i hi M e ↦ h M i hi e, fun h N i hi M e ↦ h M i hi e⟩
+noncomputable abbrev globalDimension : WithBot ℕ∞ :=
+  Abelian.globalDimension (ModuleCat.{v} R)
 
 /-- Only the zero ring has global dimension `⊥`. -/
 @[simp]
 theorem globalDimension_eq_bot_iff [Small.{v} R] :
     globalDimension.{v} R = ⊥ ↔ Subsingleton R := by
-  simp only [globalDimension, iSup_eq_bot, projectiveDimension_eq_bot_iff,
+  simp only [Abelian.globalDimension_eq_bot_iff,
     ModuleCat.isZero_iff_subsingleton]
   exact ⟨fun h ↦ (equivShrink.{v} R).subsingleton_congr.mpr (h (ModuleCat.of R (Shrink.{v} R))),
     fun _ M ↦ Module.subsingleton R M⟩
@@ -130,11 +97,13 @@ theorem globalDimension_le_tfae [Small.{v} R] (n : ℕ) :
     [globalDimension.{v} R ≤ n,
       ∀ M : ModuleCat.{v} R, Module.Finite R M → HasProjectiveDimensionLE M n,
       ∀ I : Ideal R, HasProjectiveDimensionLE (ModuleCat.of R (Shrink.{v} (R ⧸ I))) n].TFAE := by
-  tfae_have 1 → 2 := fun h M _ ↦ (globalDimension_le_iff_hasProjectiveDimensionLE R n).mp h M
+  tfae_have 1 → 2 := fun h M _ ↦
+    (Abelian.globalDimension_le_iff_hasProjectiveDimensionLE (ModuleCat R) n).mp h M
   tfae_have 2 → 3 := fun h I ↦
     h _ (Module.Finite.equiv (Shrink.linearEquiv R (R ⧸ I)).symm)
-  tfae_have 3 → 1 := fun h ↦ (globalDimension_le_iff_hasProjectiveDimensionLE R n).mpr
-    (ModuleCat.hasProjectiveDimensionLE_of_quotients n h)
+  tfae_have 3 → 1 := fun h ↦
+    (Abelian.globalDimension_le_iff_hasProjectiveDimensionLE (ModuleCat R) n).mpr
+      (ModuleCat.hasProjectiveDimensionLE_of_quotients n h)
   tfae_finish
 
 /-- **Auslander's theorem: the global dimension is the supremum over cyclic modules.** The global
@@ -143,7 +112,7 @@ dimension of `R` is the supremum of the projective dimensions of the cyclic modu
 theorem globalDimension_eq_iSup_cyclic [Small.{v} R] :
     globalDimension.{v} R =
       ⨆ I : Ideal R, projectiveDimension (ModuleCat.of R (Shrink.{v} (R ⧸ I))) := by
-  refine le_antisymm ?_ (iSup_le fun I ↦ ModuleCat.projectiveDimension_le_globalDimension _)
+  refine le_antisymm ?_ (iSup_le fun I ↦ Abelian.projectiveDimension_le_globalDimension _)
   induction h : ⨆ I : Ideal R, projectiveDimension (ModuleCat.of R (Shrink.{v} (R ⧸ I)))
     using WithBot.recBotCoe with
   | bot =>
@@ -168,7 +137,7 @@ modules. -/
 theorem globalDimension_eq_iSup_finite [Small.{v} R] :
     globalDimension.{v} R =
       ⨆ (M : ModuleCat.{v} R) (_ : Module.Finite R M), projectiveDimension M := by
-  refine le_antisymm ?_ (iSup₂_le fun M _ ↦ M.projectiveDimension_le_globalDimension)
+  refine le_antisymm ?_ (iSup₂_le fun M _ ↦ Abelian.projectiveDimension_le_globalDimension M)
   rw [globalDimension_eq_iSup_cyclic]
   exact iSup_le fun I ↦ le_iSup₂_of_le (ModuleCat.of R (Shrink.{v} (R ⧸ I)))
     (Module.Finite.equiv (Shrink.linearEquiv R (R ⧸ I)).symm) le_rfl
@@ -177,14 +146,14 @@ theorem globalDimension_eq_iSup_finite [Small.{v} R] :
 zero: every module over it is projective. -/
 theorem globalDimension_eq_zero_of_isSemisimpleRing [IsSemisimpleRing R] [Nontrivial R]
     [Small.{v} R] : globalDimension.{v} R = 0 := by
-  refine le_antisymm (iSup_le fun M ↦ ?_) ?_
+  refine le_antisymm ((Abelian.globalDimension_le_iff _ _).2 fun M ↦ ?_) ?_
   · have := Module.projective_of_isSemisimpleRing R M
     exact Projective.projectiveDimension_le_zero M
   · have hR : ¬ Limits.IsZero (ModuleCat.of R (Shrink.{v} R)) := by
       rw [ModuleCat.isZero_iff_subsingleton, ← (equivShrink.{v} R).subsingleton_congr]
       exact not_subsingleton R
     exact ((projectiveDimension_ge_zero_iff _).mpr hR).trans
-      (ModuleCat.projectiveDimension_le_globalDimension _)
+      (Abelian.projectiveDimension_le_globalDimension _)
 
 /-- One inequality of `TauCeti.globalDimension_eq_globalDimension`: both sides are detected on
 the cyclic modules `R ⧸ I`, whose projective dimension does not depend on the universe. -/
@@ -199,7 +168,8 @@ private theorem globalDimension_le_globalDimension [Small.{v} R] [Small.{v'} R] 
     | coe n =>
       refine ((globalDimension_le_tfae.{v} R n).out 3 1).mp fun I ↦ ?_
       let M := ModuleCat.of R (Shrink.{v'} (R ⧸ I))
-      have := (globalDimension_le_iff_hasProjectiveDimensionLE.{v'} R n).mp h.le M
+      have :=
+        (Abelian.globalDimension_le_iff_hasProjectiveDimensionLE (ModuleCat.{v'} R) n).mp h.le M
       exact ModuleCat.hasProjectiveDimensionLE_of_linearEquiv.{v', v} (M := M)
         ((Shrink.linearEquiv.{v'} R (R ⧸ I)).trans (Shrink.linearEquiv.{v} R (R ⧸ I)).symm) n
 
@@ -221,7 +191,7 @@ global dimension of `S⁻¹R` is at most that of `R`. Stacks, Lemma 10.109.13 (0
 @[stacks 00O8]
 theorem _root_.Submonoid.globalDimension_localization_le [Small.{v} R] (S : Submonoid R) :
     globalDimension.{v} (Localization S) ≤ globalDimension.{v} R := by
-  refine iSup_le fun N ↦ ?_
+  refine (Abelian.globalDimension_le_iff _ _).2 fun N ↦ ?_
   let : Module R N := Module.compHom N (algebraMap R (Localization S))
   have : IsScalarTower R (Localization S) N := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
   have := isLocalizedModule_id S N (Localization S)
@@ -231,7 +201,7 @@ theorem _root_.Submonoid.globalDimension_localization_le [Small.{v} R] (S : Subm
       (LinearMap.id : N →ₗ[R] N)).extendScalarsOfIsLocalization S (Localization S))
   rw [← projectiveDimension_eq_of_iso e]
   exact (ModuleCat.projectiveDimension_le_projectiveDimension_of_isLocalizedModule S M).trans
-    (ModuleCat.projectiveDimension_le_globalDimension M)
+    (Abelian.projectiveDimension_le_globalDimension M)
 
 /-- **Global dimension descends along faithfully flat algebras.** A noetherian ring `R` has global
 dimension at most that of any faithfully flat `R`-algebra `S`: the projective dimension of a
@@ -254,7 +224,7 @@ theorem globalDimension_le_of_faithfullyFlat {S : Type u} [CommRing S] [Algebra 
       refine ((globalDimension_le_tfae.{u} R n).out 2 1).mp ?_
       intro M _
       exact (ModuleCat.hasProjectiveDimensionLE_baseChange_iff .of_isNoetherianRing).mp
-        ((globalDimension_le_iff_hasProjectiveDimensionLE S n).mp h.le _)
+        ((Abelian.globalDimension_le_iff_hasProjectiveDimensionLE (ModuleCat S) n).mp h.le _)
 
 /-- **A principal ideal domain that is not a field has global dimension one.** Every module has
 projective dimension at most one, and a cyclic module `R ⧸ (a)` with `a` a nonzero nonunit has
@@ -262,14 +232,15 @@ projective dimension exactly one
 (`ModuleCat.projectiveDimension_quotient_span_singleton_eq_one`). -/
 theorem globalDimension_eq_one_of_isPrincipalIdealRing [IsDomain R] [IsPrincipalIdealRing R]
     [Small.{v} R] (hR : ¬ IsField R) : globalDimension.{v} R = 1 := by
-  refine le_antisymm ((globalDimension_le_iff_hasProjectiveDimensionLE R 1).mpr inferInstance) ?_
+  refine le_antisymm
+    ((Abelian.globalDimension_le_iff_hasProjectiveDimensionLE (ModuleCat R) 1).mpr inferInstance) ?_
   obtain ⟨I, hbot, htop⟩ := Ring.not_isField_iff_exists_ideal_bot_lt_and_lt_top.mp hR
   obtain ⟨a, rfl⟩ := IsPrincipalIdealRing.principal I
   have ha : a ≠ 0 := by rintro rfl; simp at hbot
   have ha' : ¬ IsUnit a := fun h ↦ htop.ne (Ideal.span_singleton_eq_top.mpr h)
   exact (ModuleCat.projectiveDimension_quotient_span_singleton_eq_one
     (mem_nonZeroDivisors_of_ne_zero ha) ha').symm.le.trans
-    (ModuleCat.projectiveDimension_le_globalDimension _)
+    (Abelian.projectiveDimension_le_globalDimension _)
 
 end CommRing
 

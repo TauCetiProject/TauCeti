@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.GraphFlattening.Basic
+public import TauCeti.Analysis.Calculus.GraphFlattening.Direction
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
@@ -45,6 +46,9 @@ compactness, which bounds those of the shear.
 * `TauCeti.Wkp.isChangeOfVariables_graphFlattening` and
   `TauCeti.Wkp.isChangeOfVariables_graphFlattening_symm`: graph flattening by a `Cᵏ` height and
   its inverse are changes of variables of order `k`, with Jacobian determinant one.
+* `TauCeti.Wkp.isChangeOfVariables_shearAlong`: the shear `y ↦ y + γ y ν` by a `C²` function `γ`
+  invariant along a vector `ν` with `‖ν‖ ≤ 1`, whose first two derivatives are bounded by `G`, is
+  a change of variables of order two with constant `1 + G` and Jacobian lower bound one.
 * `TauCeti.exists_isChangeOfVariables_of_contDiff`: a `Cᵏ` boundary graph gives a flattening
   change of variables of order `k` between a convex neighbourhood on the flat side and a
   neighbourhood of the boundary point, mapping the half-space part onto the domain.
@@ -125,6 +129,31 @@ theorem isChangeOfVariables_graphFlattening_symm {k : ℕ} (hk : 1 ≤ k) {γ : 
   rw [graphFlattening_symm] at hUV ⊢
   exact isChangeOfVariables_graphFlattening (γ := -γ) hk hγ.neg hUV fun i hi hik x hx ↦ by
     simpa [iteratedFDeriv_neg] using hM i hi hik x hx
+
+/-- **A shear is a change of variables of order two.** Let `γ` be `C²` and invariant along `ν`,
+with `‖ν‖ ≤ 1`, and let `Dγ` and `D²γ` be bounded by `G` on an open set `U`. Then the shear
+`shearAlong γ ν`, `y ↦ y + γ y ν`, is a change of variables of order two from `U` into every open
+set `V` into which it maps `U`, with constant `1 + G` and Jacobian lower bound one
+(`1 ≤ |det DΦ|`). -/
+theorem isChangeOfVariables_shearAlong {γ : E → ℝ} {ν : E} {G : ℝ≥0} {U V : Opens E}
+    (hν : ‖ν‖ ≤ 1) (hγ : ContDiff ℝ 2 γ) (hγν : ∀ x (t : ℝ), γ (x + t • ν) = γ x)
+    (hG1 : ∀ x ∈ (U : Set E), ‖fderiv ℝ γ x‖ ≤ G)
+    (hG2 : ∀ x ∈ (U : Set E), ‖fderiv ℝ (fderiv ℝ γ) x‖ ≤ G)
+    (hUV : MapsTo (shearAlong γ ν) U V) :
+    IsChangeOfVariables 2 U V (shearAlong γ ν) (1 + G) 1 where
+  contDiffOn := (contDiff_shearAlong hγ).contDiffOn
+  differentiableOn := (differentiable_shearAlong (hγ.differentiable (by norm_num))).differentiableOn
+  injOn := (injective_shearAlong hγν).injOn
+  mapsTo := hUV
+  norm_iteratedFDeriv_le i hi hi2 x hx := by
+    obtain rfl | rfl : i = 1 ∨ i = 2 := by omega
+    · rw [norm_iteratedFDeriv_one]
+      exact norm_fderiv_shearAlong_le hν (hγ.differentiable (by norm_num) x) (hG1 x hx)
+    · rw [← norm_iteratedFDeriv_fderiv, norm_iteratedFDeriv_one]
+      exact (norm_fderiv_fderiv_shearAlong_le hν hγ.contDiffAt).trans
+        ((hG2 x hx).trans (le_add_of_nonneg_left zero_le_one))
+  pos := one_pos
+  le_abs_det x _ := (abs_det_fderiv_shearAlong (hγ.differentiable (by norm_num)) hγν x).ge
 
 end Wkp
 
