@@ -219,22 +219,33 @@ Over a ring satisfying the strong rank condition and rank--nullity, if page `r` 
 nonzero objects and every page `s` in `[r, r')` has finitely generated terms and the same
 alternating signs as page `s + 1`, then `(E.page r').eulerChar = (E.page r).eulerChar`. -/
 theorem eulerChar_page_eq_of_le_of_finite [StrongRankCondition R] [HasRankNullity.{v} R]
-    [∀ s, (c s).EulerCharSigns] {r : ℤ} (hr : r₀ ≤ r)
+    {r : ℤ} (hr : r₀ ≤ r)
     (hfin : {pq : κ | ¬ IsZero ((E.page r).X pq)}.Finite)
     (r' : ℤ) (hrr' : r ≤ r')
+    [hsigns : ∀ s : Set.Icc r r', (c s.val).EulerCharSigns]
     (hmem : ∀ s (hs : r ≤ s), s < r' → ∀ pq,
       Module.Finite R ((E.page s (hr.trans hs)).X pq))
-    (hχ : ∀ s, r ≤ s → s < r' → ∀ pq, (c s).χ pq = (c (s + 1)).χ pq := by simp) :
-    (E.page r' (hr.trans hrr')).eulerChar = (E.page r).eulerChar := by
+    (hχ : ∀ s (hs : r ≤ s) (hs' : s < r'), ∀ pq,
+      (letI := hsigns ⟨s, hs, Int.le_of_lt hs'⟩; (c s).χ pq) =
+        (letI := hsigns ⟨s + 1, Int.le_add_one hs, hs'⟩; (c (s + 1)).χ pq) := by simp) :
+    (letI := hsigns ⟨r', hrr', le_rfl⟩; (E.page r' (hr.trans hrr')).eulerChar) =
+      (letI := hsigns ⟨r, le_rfl, hrr'⟩; (E.page r).eulerChar) := by
+  revert hsigns hmem hχ
   induction r', hrr' using Int.leInduction with
-  | base => rfl
+  | base => intros; rfl
   | succ s hrs ih =>
+    intro hsigns hmem hχ
     have : ∀ pq, Module.Finite R ((E.page s (hr.trans hrs)).X pq) :=
       hmem s hrs (Int.lt_succ s)
-    rw [E.eulerChar_page_add_one (hr.trans hrs)
-        (E.finite_not_isZero_page_X_of_le hr hfin s hrs) (hχ s hrs (Int.lt_succ s)),
-      ih (fun t ht hts ↦ hmem t ht (lt_trans hts (Int.lt_succ s)))
-        (fun t ht hts ↦ hχ t ht (lt_trans hts (Int.lt_succ s)))]
+    let _ : (c s).EulerCharSigns := hsigns ⟨s, hrs, Int.le_add_one le_rfl⟩
+    let _ : (c (s + 1)).EulerCharSigns := hsigns ⟨s + 1, Int.le_add_one hrs, le_rfl⟩
+    have hstep := E.eulerChar_page_add_one (hr.trans hrs)
+      (E.finite_not_isZero_page_X_of_le hr hfin s hrs) (hχ s hrs (Int.lt_succ s))
+    have hih := @ih
+      (fun t ↦ hsigns ⟨t.val, t.property.1, le_trans t.property.2 (Int.le_add_one le_rfl)⟩)
+      (fun t ht hts ↦ hmem t ht (lt_trans hts (Int.lt_succ s)))
+      (fun t ht hts ↦ hχ t ht (lt_trans hts (Int.lt_succ s)))
+    exact hstep.trans hih
 
 /-- **Invariance of the Euler characteristic across pages of a spectral sequence.** Over a ring
 satisfying the strong rank condition and rank--nullity, if page `r` has Noetherian terms (for
@@ -242,12 +253,16 @@ instance if `R` is a Noetherian ring and page `r` has finitely generated terms) 
 nonzero objects, and adjacent pages `s` and `s + 1` in `[r, r')` carry the same alternating signs,
 then `(E.page r').eulerChar = (E.page r).eulerChar`. -/
 theorem eulerChar_page_eq_of_le [StrongRankCondition R] [HasRankNullity.{v} R]
-    [∀ s, (c s).EulerCharSigns] {r : ℤ} (hr : r₀ ≤ r)
+    {r : ℤ} (hr : r₀ ≤ r)
     [∀ pq, IsNoetherian R ((E.page r).X pq)]
     (hfin : {pq : κ | ¬ IsZero ((E.page r).X pq)}.Finite)
     (r' : ℤ) (hrr' : r ≤ r')
-    (hχ : ∀ s, r ≤ s → s < r' → ∀ pq, (c s).χ pq = (c (s + 1)).χ pq := by simp) :
-    (E.page r' (hr.trans hrr')).eulerChar = (E.page r).eulerChar :=
+    [hsigns : ∀ s : Set.Icc r r', (c s.val).EulerCharSigns]
+    (hχ : ∀ s (hs : r ≤ s) (hs' : s < r'), ∀ pq,
+      (letI := hsigns ⟨s, hs, Int.le_of_lt hs'⟩; (c s).χ pq) =
+        (letI := hsigns ⟨s + 1, Int.le_add_one hs, hs'⟩; (c (s + 1)).χ pq) := by simp) :
+    (letI := hsigns ⟨r', hrr', le_rfl⟩; (E.page r' (hr.trans hrr')).eulerChar) =
+      (letI := hsigns ⟨r, le_rfl, hrr'⟩; (E.page r).eulerChar) :=
   E.eulerChar_page_eq_of_le_of_finite hr hfin r' hrr'
     (fun s hs _ _ ↦ E.finite_page_X_of_le hr s hs) hχ
 
