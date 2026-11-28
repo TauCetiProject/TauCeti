@@ -7,11 +7,7 @@ module
 
 public import Mathlib.RingTheory.PowerSeries.Basic
 public import TauCeti.Algebra.CharP.Frobenius.Fixed
-public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Perfectoid.Cyclotomic.Basic
-
-import TauCeti.RingTheory.Huber.ValuedField
-
 
 /-!
 # Charts in `A_inf`
@@ -29,10 +25,10 @@ A *chart* (`TauCeti.Perfectoid.Chart`) requires `f ≠ 0` and consists of a `Λ`
 `Λ⟦X⟧ → A_inf`, an element
 `ϖ♭ ∈ A♭` with `X ↦ z = [ϖ♭]`, an integer `e ≥ 0` and a unit `A(X)` of `Λ⟦X⟧`, such that the image
 `E = z ^ e A(z) + p` of `X ^ e A(X) + p` generates the kernel of `θ`. Its ring `S ⊆ A_inf` is the
-image of `Λ⟦X⟧`. For `A = O_C` the condition on `E` says that `E` is a unit multiple of the period
-`ξ` (`TauCeti.Perfectoid.Chart.associated_E_cyclotomicXi`). A chart stands in for the embedding
-`W(k)⟦u⟧ → A_inf`, `u ↦ [π♭]`, attached to a uniformiser `π` of a `p`-adic field and compatible
-`p`-power roots of it.
+image of `Λ⟦X⟧`. When `A` is integral perfectoid, the condition on `E` says that `E` is a unit
+multiple of the period `ξ` (`TauCeti.Perfectoid.Chart.associated_E_cyclotomicXi`). A chart stands
+in for the embedding `W(k)⟦u⟧ → A_inf`, `u ↦ [π♭]`, attached to a uniformiser `π` of a `p`-adic
+field and compatible `p`-power roots of it.
 
 Applying `θ` to `E` gives `θ(z) ^ e θ(A(z)) = -p` with `θ(A(z))` a unit of `A`. Since `p` is not a
 unit, this forces `e ≠ 0` and shows that `θ(z)`, and hence `z` and `ϖ♭`, are not units; so a
@@ -48,8 +44,8 @@ chart need not require `z` to be a nonunit, as this follows from the other condi
 
 * `TauCeti.Perfectoid.Chart.ext`: a chart is determined by its map, `e` and `A(X)`.
 * `TauCeti.Perfectoid.Chart.ker_fontaineTheta_eq_span_E`: `E` generates the kernel of `θ`, and
-  `TauCeti.Perfectoid.Chart.associated_E_cyclotomicXi`: for `A = O_C`, `E` is a unit multiple of
-  `ξ`.
+  `TauCeti.Perfectoid.Chart.associated_E_cyclotomicXi`: for an integral perfectoid ring, `E` is a
+  unit multiple of `ξ`.
 * `TauCeti.Perfectoid.Chart.untilt_pow_mul_fontaineTheta_unitSeries`: `θ(z) ^ e θ(A(z)) = -p`.
 * `TauCeti.Perfectoid.Chart.e_ne_zero`, `TauCeti.Perfectoid.Chart.not_isUnit_z`: `e ≠ 0` and `z`
   is not a unit.
@@ -239,25 +235,23 @@ end Chart
 
 end Chart
 
-section PerfectoidField
+section IsIntegralPerfectoid
 
 open TauCeti.WittVector
-open scoped _root_.NormedField Valued
 
-variable {p : ℕ} [Fact p.Prime] {C : Type*} [NontriviallyNormedField C] [IsUltrametricDist C]
-  [CompleteSpace C] [IsPerfectoidTateRing p C] [Fact ¬IsUnit (p : 𝒪[C])]
-  [IsAdicComplete (Ideal.span {(p : 𝒪[C])}) 𝒪[C]] {f : ℕ}
+variable {p : ℕ} [Fact p.Prime] {A : Type*} [CommRing A] [IsIntegralPerfectoid p A]
+  [Fact ¬IsUnit (p : A)] {f : ℕ}
 
-/-- **`E` is a unit multiple of `ξ`.** For the valuation ring `O_C` of a complete perfectoid
-nonarchimedean field and `ε ∈ O_C♭` such that the untilt of `ε ^ (1 / p)` is a primitive `p`-th
-root of unity, the element `E` of a chart is a unit multiple of the period `ξ` attached to `ε`. -/
-theorem Chart.associated_E_cyclotomicXi (c : Chart p 𝒪[C] f) (ε : PreTilt 𝒪[C] p)
-    (hε : IsPrimitiveRoot
-      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt 𝒪[C] p) p).symm ε)) p) :
+/-- **`E` is a unit multiple of `ξ`.** For an integral perfectoid ring `A` and `ε ∈ A♭` such
+that `ζ = (ε ^ (1 / p))♯` satisfies `∑_{j < p} ζ ^ j = 0`, the element `E` of a chart is a unit
+multiple of the period `ξ` attached to `ε`. -/
+theorem Chart.associated_E_cyclotomicXi (c : Chart p A f) (ε : PreTilt A p)
+    (hε : ∑ j ∈ Finset.range p,
+      ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε).untilt ^ j = 0) :
     Associated c.E (cyclotomicXi p ε) :=
-  ((Huber.isRingOfIntegralElements_integer C).ker_fontaineTheta_eq_span_iff_associated_cyclotomicXi
-    (hε.geom_sum_eq_zero (Fact.out : p.Prime).one_lt)).mp c.ker_fontaineTheta_eq_span_E
+  (IsIntegralPerfectoid.ker_fontaineTheta_eq_span_iff_associated_cyclotomicXi hε).mp
+    c.ker_fontaineTheta_eq_span_E
 
-end PerfectoidField
+end IsIntegralPerfectoid
 
 end TauCeti.Perfectoid

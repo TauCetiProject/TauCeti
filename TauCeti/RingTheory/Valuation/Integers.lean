@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Ring.Hom.InjSurj
 public import Mathlib.FieldTheory.Perfect
 public import Mathlib.LinearAlgebra.Span.Defs
 public import Mathlib.RingTheory.Valuation.Integers
+public import Mathlib.Topology.Algebra.Valued.NormedValued
 
 /-!
 # Rings of integers: domains and perfection
@@ -41,6 +42,8 @@ inequality.
 * `Valuation.Integers.perfectRing`: the ring of integers of a perfect ring is perfect.
 * `Valuation.Integers.isNontrivial_of_ne_zero_of_not_isUnit`: if the ring of integers of a
   valuation on a field contains a nonzero nonunit, the valuation is nontrivial.
+* `Valuation.Integers.norm_le_one`: elements of a ring of integers for a rank-`≤ 1` valuation have
+  `v.norm ≤ 1`.
 * `Valuation.integers_self_iff`: a ring is the ring of integers of a valuation on it iff the
   valuation is at most `1` everywhere.
 * `Valuation.units_smul_integer`: a unit of valuation one maps the ring of integers onto itself.
@@ -110,6 +113,14 @@ theorem isNontrivial_of_ne_zero_of_not_isUnit {F Γ₀ O : Type*} [Field F]
     have hϖF : algebraMap O F ϖ ≠ 0 := (map_ne_zero_iff _ hv.hom_inj).mpr hϖ0
     exact ⟨algebraMap O F ϖ, (Valuation.ne_zero_iff _).mpr hϖF,
       fun h1 ↦ hϖu (hv.isUnit_of_one (isUnit_iff_ne_zero.mpr hϖF) h1)⟩
+
+/-- **Elements of a ring of integers have real valuation at most one.** For a rank-`≤ 1` valuation
+`v` on `R` with ring of integers `O`, every `a : O` satisfies `v.norm (algebraMap O R a) ≤ 1`. -/
+theorem norm_le_one [Valuation.RankLeOne v] (hv : v.Integers O) (a : O) :
+    v.norm (algebraMap O R a) ≤ 1 := by
+  have h1 : v.restrict (algebraMap O R a) ≤ 1 := v.restrict_le_one_iff.mpr (hv.map_le_one a)
+  simpa [Valuation.norm_def, ← NNReal.coe_one, NNReal.coe_le_coe] using
+    (Valuation.RankLeOne.strictMono' (v := v)).le_iff_le.mpr h1
 
 end Valuation.Integers
 

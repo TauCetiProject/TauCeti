@@ -8,7 +8,7 @@ module
 public import TauCeti.RingTheory.Perfectoid.Padic
 public import TauCeti.RingTheory.Perfectoid.Untilt
 public import TauCeti.RingTheory.Perfectoid.UniformTilt.IsAlgClosed
-public import TauCeti.RingTheory.Perfectoid.Cyclotomic.Basic
+public import TauCeti.RingTheory.WittVector.Cyclotomic.Basic
 public import TauCeti.RingTheory.WittVector.ArtinSchreier.Basic
 
 /-!

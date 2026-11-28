@@ -23,9 +23,6 @@ each of them are `p`-torsion-free. When in addition `ε♯ = 1`, `ε - 1` lies i
 of `V♭`, hence is a nonunit, so `[p, x]` and `[x, p]` are regular sequences on `A_inf(V)` for
 `x ∈ {μ, ξ, ξ'}` and for `x ∈ {ξ_r, ξ'_r}` with `1 ≤ r`.
 
-For a ring of integral elements `R⁺` that is a domain (such as `O_C`) and `ε ∈ R⁺♭` with
-`∑_{j < p} ((ε ^ (1 / p))♯) ^ j = 0`, `ξ` is a prime element of `W(R⁺♭)`.
-
 ## Main results
 
 * `TauCeti.WittVector.cyclotomicMu_mem_nonZeroDivisors_of_ne_one`,
@@ -37,15 +34,6 @@ For a ring of integral elements `R⁺` that is a domain (such as `O_C`) and `ε 
 * `isSMulRegular_quotient_natCast_*_of_ne_one`: `p`-torsion-freeness of `W(V♭) ⧸ (x)`.
 * `isRegular_pair_*_of_untilt_eq_one`: regular pairs `[p, x]` and `[x, p]` when `ε♯ = 1` and
   `ε ≠ 1`.
-* `TauCeti.Huber.IsRingOfIntegralElements.prime_cyclotomicXi`: `ξ` is a prime element of
-  `W(R⁺♭)` when `R⁺` is a domain.
-
-## Provenance
-
-The statement of `TauCeti.Huber.IsRingOfIntegralElements.prime_cyclotomicXi` follows
-`New.Period.Ainf.prime_xi` in `src/Lib/PadicHodge/PeriodRings/Ainf.lean` of grh-lean
-(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), where it is
-proved for `C = ℂ_p`.
 
 ## References
 
@@ -219,25 +207,3 @@ theorem isRegular_pair_cyclotomicXiTildeLevel_natCast_of_untilt_eq_one {ε : Pre
 end DomainRegularity
 
 end TauCeti.WittVector
-
-namespace TauCeti.Huber.IsRingOfIntegralElements
-
-open TauCeti.Perfectoid TauCeti.WittVector
-
-variable {p : ℕ} [Fact p.Prime] {R : Type*} [CommRing R] [UniformSpace R]
-  [IsUniformAddGroup R] [IsTopologicalRing R] [IsTateRing R] [CompleteSpace R] [T2Space R]
-  [IsPerfectoidTateRing p R] {Rplus : Subring R} [IsDomain Rplus] [Fact ¬IsUnit (p : Rplus)]
-  [IsAdicComplete (span {(p : Rplus)}) Rplus]
-
-/-- **`ξ` is a prime element of `W(R⁺♭)`** whenever `R⁺` is a domain and `∑_{j < p} ζ ^ j = 0`:
-`ξ ≠ 0` and `(ξ) = ker θ` is a prime ideal. -/
-theorem prime_cyclotomicXi (hplus : IsRingOfIntegralElements Rplus) {ε : PreTilt Rplus p}
-    (hne : ε ≠ 1)
-    (hε : ∑ j ∈ Finset.range p,
-      ((_root_.frobeniusEquiv (PreTilt Rplus p) p).symm ε).untilt ^ j = 0) :
-    Prime (cyclotomicXi p ε) := by
-  rw [← Ideal.span_singleton_prime (cyclotomicXi_ne_zero p hne),
-    ← hplus.ker_fontaineTheta_eq_span_cyclotomicXi hε]
-  exact RingHom.ker_isPrime _
-
-end TauCeti.Huber.IsRingOfIntegralElements

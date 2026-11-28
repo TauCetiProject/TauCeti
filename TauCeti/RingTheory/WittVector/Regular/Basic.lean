@@ -5,55 +5,52 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Regular.RegularSequence
+public import Mathlib.RingTheory.QuotSMulTop
+public import Mathlib.RingTheory.Regular.IsSMulRegular
 public import Mathlib.RingTheory.WittVector.Complete
 
 import TauCeti.RingTheory.QuotSMulTop
-import TauCeti.RingTheory.Regular.RegularSequence
 import TauCeti.RingTheory.WittVector.Teichmuller.Coeff
 import TauCeti.RingTheory.WittVector.Units
 
 /-!
-# Regular elements and regular pairs in Witt vectors of a perfect ring
+# Regular elements in Witt vectors
 
-Let `R` be a perfect ring of characteristic `p` and `𝕎 R = WittVector p R` its ring of `p`-typical
-Witt vectors. Since `𝕎 R` is `p`-torsion-free and `p`-adically separated with
-`𝕎 R ⧸ (p) ≃+* R` through the zeroth Witt coordinate, regularity of multiplication by `x` on
-`𝕎 R ⧸ (p)` is equivalent to `x.coeff 0 ∈ R⁰`, and this gives a sufficient criterion for
-regularity of `x` on `𝕎 R`, of `p` on `𝕎 R ⧸ (x)`, and of the pairs `[p, x]` and `[x, p]`:
+Let `R` be a ring of characteristic `p` and `𝕎 R = WittVector p R` its ring of `p`-typical Witt
+vectors. If `x.coeff 0 ∈ R⁰`, then multiplication by `x` on `𝕎 R` is regular (`x ∈ (𝕎 R)⁰`),
+without requiring `R` to be perfect. When `R` is perfect of characteristic `p`, `p` is
+`𝕎 R`-regular, regularity of multiplication by `x` on `𝕎 R ⧸ (p)` holds iff `x.coeff 0 ∈ R⁰`,
+and `x.coeff 0 ∈ R⁰` also makes `p` regular on `𝕎 R ⧸ (x)`. Finally,
+`(p, x) ≠ ⊤ ↔ ¬ IsUnit (x.coeff 0)`.
 
-* `p` is a nonzerodivisor of `𝕎 R`.
-* Multiplication by `x` on `𝕎 R ⧸ (p)` is regular iff `x.coeff 0 ∈ R⁰`.
-* If `x.coeff 0 ∈ R⁰`, then `x ∈ (𝕎 R)⁰`, `p` is regular on `𝕎 R ⧸ (x)`, and both `[p, x]` and
-  `[x, p]` are weakly regular sequences on `𝕎 R` (and regular when `¬ IsUnit (x.coeff 0)`).
-
-This is the regular-sequence input for the regularity of the cyclotomic periods of `A_inf`
-(Bhatt–Morrow–Scholze, *Integral p-adic Hodge theory*, Lemma 3.23 and Proposition 3.17).
+For weakly regular and regular pairs `[p, x]` and `[x, p]`, see
+`TauCeti.RingTheory.WittVector.Regular.Sequence`.
 
 ## Main results
 
-* `WittVector.isSMulRegular_natCast`: `p` is `𝕎 R`-regular.
-* `WittVector.isSMulRegular_quotientP_iff`: multiplication by `x` on `𝕎 R ⧸ (p)` is regular iff
-  `x.coeff 0 ∈ R⁰`.
-* `WittVector.mem_nonZeroDivisors_of_coeff_zero`: if `x.coeff 0 ∈ R⁰`, then `x ∈ (𝕎 R)⁰`.
-* `WittVector.mk_natCast_mem_nonZeroDivisors`: if `x.coeff 0 ∈ R⁰`, then `p` is a nonzerodivisor
-  on `𝕎 R ⧸ (x)`.
-* `WittVector.isSMulRegular_quotient_natCast_of_coeff_zero`: if `x.coeff 0 ∈ R⁰`, then `p` is
-  regular on `𝕎 R ⧸ (x)`.
-* `WittVector.isWeaklyRegular_pair_natCast_of_coeff_zero` and
-  `WittVector.isWeaklyRegular_pair_of_coeff_zero`: `[p, x]` and `[x, p]` are weakly regular.
+* `WittVector.isSMulRegular_natCast`: over a perfect ring of characteristic `p`, `p` is
+  `𝕎 R`-regular.
+* `WittVector.isSMulRegular_quotientP_iff`: over a perfect ring of characteristic `p`,
+  multiplication by `x` on `𝕎 R ⧸ (p)` is regular iff `x.coeff 0 ∈ R⁰`.
+* `WittVector.isSMulRegular_quotSMulTop_natCast_iff`: the same for `QuotSMulTop (p : 𝕎 R) (𝕎 R)`.
+* `WittVector.mem_nonZeroDivisors_of_coeff_zero`: over any ring of characteristic `p`, if
+  `x.coeff 0 ∈ R⁰`, then `x ∈ (𝕎 R)⁰`.
+* `WittVector.isSMulRegular_of_coeff_zero`: over any ring of characteristic `p`, if
+  `x.coeff 0 ∈ R⁰`, then `x` is `𝕎 R`-regular.
+* `WittVector.mk_natCast_mem_nonZeroDivisors`: over a perfect ring of characteristic `p`, if
+  `x.coeff 0 ∈ R⁰`, then `p` is a nonzerodivisor on `𝕎 R ⧸ (x)`.
+* `WittVector.isSMulRegular_quotient_natCast_of_coeff_zero` and
+  `WittVector.isSMulRegular_quotSMulTop_natCast_of_coeff_zero`: over a perfect ring of
+  characteristic `p`, if `x.coeff 0 ∈ R⁰`, then `p` is regular on `𝕎 R ⧸ (x)` and
+  `QuotSMulTop x (𝕎 R)`.
 * `WittVector.span_pair_natCast_ne_top_iff`: `(p, x) ≠ ⊤ ↔ ¬ IsUnit (x.coeff 0)`.
-* `WittVector.isRegular_natCast_cons_singleton`,
-  `WittVector.isRegular_natCast_cons_singleton_of_map_eq_zero`, and
-  `WittVector.isRegular_pair_of_coeff_zero`: `[p, x]` and `[x, p]` are regular when
-  `x.coeff 0 ∈ R⁰` and `¬ IsUnit (x.coeff 0)`.
 -/
 
 public section
 
 namespace WittVector
 
-open Ideal RingTheory.Sequence
+open Ideal
 open scoped nonZeroDivisors
 
 variable {p : ℕ} [hp : Fact p.Prime] {R : Type*} [CommRing R] [CharP R p] [PerfectRing R p]
@@ -86,28 +83,18 @@ theorem isSMulRegular_quotSMulTop_natCast_iff (x : 𝕎 R) :
   ((QuotSMulTop.equivQuotSpanSingleton (p : 𝕎 R)).isSMulRegular_congr x).trans
     (isSMulRegular_quotientP_iff x)
 
+omit [PerfectRing R p] in
 /-- If the zeroth Witt coordinate of `x` is a nonzerodivisor of `R`, then `x` is a nonzerodivisor
 of `𝕎 R`. -/
 theorem mem_nonZeroDivisors_of_coeff_zero {x : 𝕎 R} (hx : x.coeff 0 ∈ R⁰) : x ∈ (𝕎 R)⁰ := by
-  refine mem_nonZeroDivisors_iff_right.mpr fun y hy ↦ ext fun n ↦ ?_
-  -- Show `(p : 𝕎 R) ^ m ∣ y` for all `m` by induction, then take `m = n + 1`.
-  have hdvd : ∀ m : ℕ, (p : 𝕎 R) ^ m ∣ y := by
-    intro m
-    induction m generalizing y with
-    | zero => simp
-    | succ m ih =>
-      have hy0 : y.coeff 0 * x.coeff 0 = 0 := by
-        simpa [mul_coeff_zero] using congrArg (coeff · 0) hy
-      obtain ⟨y', rfl⟩ := mem_span_singleton.mp
-        ((mem_span_p_iff_coeff_zero_eq_zero y).mpr (hx.2 _ hy0))
-      have hy' : y' * x = 0 :=
-        (mul_cancel_left_mem_nonZeroDivisors p_mem_nonZeroDivisors).mp (by linear_combination hy)
-      rw [pow_succ']
-      exact mul_dvd_mul_left _ (ih y' hy')
-  rw [zero_coeff]
-  exact (mem_span_p_pow_iff_le_coeff_eq_zero y (n + 1)).mp (mem_span_singleton.mpr (hdvd (n + 1)))
-    n (Nat.lt_succ_self n)
+  refine mem_nonZeroDivisors_iff_right.mpr fun y hy ↦ by_contra fun hy0 ↦ ?_
+  obtain ⟨n, w, hw0, rfl⟩ := verschiebung_nonzero hy0
+  have h0 : ((verschiebung^[n] w * verschiebung^[0] x).coeff (n + 0)) = 0 := by
+    simpa only [Function.iterate_zero_apply, add_zero, hy] using zero_coeff (p := p) (R := R) n
+  rw [iterate_verschiebung_mul_coeff, pow_zero, pow_one] at h0
+  exact hw0 ((pow_mem hx (p ^ n)).2 _ h0)
 
+omit [PerfectRing R p] in
 /-- If `x.coeff 0 ∈ R⁰`, then `x` is `𝕎 R`-regular. -/
 theorem isSMulRegular_of_coeff_zero {x : 𝕎 R} (hx : x.coeff 0 ∈ R⁰) : IsSMulRegular (𝕎 R) x :=
   ((Commute.isRegular_iff (Commute.all x)).mp
@@ -144,19 +131,6 @@ theorem isSMulRegular_quotSMulTop_natCast_of_coeff_zero {x : 𝕎 R} (hx : x.coe
   ((QuotSMulTop.equivQuotSpanSingleton x).isSMulRegular_congr (p : 𝕎 R)).mpr
     (isSMulRegular_quotient_natCast_of_coeff_zero hx)
 
-/-- If `x.coeff 0 ∈ R⁰`, then `[p, x]` is a weakly regular sequence on `𝕎 R`. -/
-theorem isWeaklyRegular_pair_natCast_of_coeff_zero {x : 𝕎 R} (hx : x.coeff 0 ∈ R⁰) :
-    IsWeaklyRegular (𝕎 R) [(p : 𝕎 R), x] :=
-  IsWeaklyRegular.cons isSMulRegular_natCast
-    ((isWeaklyRegular_singleton_iff _ x).mpr ((isSMulRegular_quotSMulTop_natCast_iff x).mpr hx))
-
-/-- If `x.coeff 0 ∈ R⁰`, then `[x, p]` is a weakly regular sequence on `𝕎 R`. -/
-theorem isWeaklyRegular_pair_of_coeff_zero {x : 𝕎 R} (hx : x.coeff 0 ∈ R⁰) :
-    IsWeaklyRegular (𝕎 R) [x, (p : 𝕎 R)] :=
-  IsWeaklyRegular.cons (isSMulRegular_of_coeff_zero hx)
-    ((isWeaklyRegular_singleton_iff _ (p : 𝕎 R)).mpr
-      (isSMulRegular_quotSMulTop_natCast_of_coeff_zero hx))
-
 omit [PerfectRing R p] in
 /-- The ideal `(p, x)` of `𝕎 R` is proper iff `x.coeff 0` is not a unit of `R`. -/
 theorem span_pair_natCast_ne_top_iff (x : 𝕎 R) :
@@ -168,32 +142,5 @@ theorem span_pair_natCast_ne_top_iff (x : 𝕎 R) :
       (isUnit_iff_isUnit_coeff_zero.mpr hu)
   · have : span {x.coeff 0} = ⊤ := by rw [← hmap, htop, Ideal.map_top]
     exact Ideal.span_singleton_eq_top.mp this
-
-/-- **Regular pairs `(p, x)`.** Over a perfect ring `R` of characteristic `p`, if the zeroth Witt
-coordinate of `x : 𝕎 R` is a nonzerodivisor and not a unit, then `p, x` is a regular sequence in
-`𝕎 R`. -/
-theorem isRegular_natCast_cons_singleton (x : 𝕎 R) (hx : x.coeff 0 ∈ R⁰)
-    (hu : ¬IsUnit (x.coeff 0)) : IsRegular (𝕎 R) [(p : 𝕎 R), x] :=
-  (isRegular_pair_iff_isWeaklyRegular_of_span_ne_top
-    ((span_pair_natCast_ne_top_iff x).mpr hu)).mpr
-      (isWeaklyRegular_pair_natCast_of_coeff_zero hx)
-
-/-- If the zeroth Witt coordinate of `x : 𝕎 R` is a nonzerodivisor and `x` is killed by a ring
-homomorphism to a nontrivial ring, then `p, x` is a regular sequence in `𝕎 R`. -/
-theorem isRegular_natCast_cons_singleton_of_map_eq_zero (x : 𝕎 R) (hx : x.coeff 0 ∈ R⁰)
-    {B : Type*} [CommRing B] [Nontrivial B] (f : 𝕎 R →+* B) (hf : f x = 0) :
-    IsRegular (𝕎 R) [(p : 𝕎 R), x] := by
-  refine isRegular_natCast_cons_singleton x hx fun hu ↦ ?_
-  have := (isUnit_iff_isUnit_coeff_zero.mpr hu).map f
-  rw [hf] at this
-  exact not_isUnit_zero this
-
-/-- If `x.coeff 0 ∈ R⁰` and `¬ IsUnit (x.coeff 0)`, then `[x, p]` is a regular sequence on `𝕎 R`.
--/
-theorem isRegular_pair_of_coeff_zero {x : 𝕎 R} (hx : x.coeff 0 ∈ R⁰)
-    (hnu : ¬ IsUnit (x.coeff 0)) : IsRegular (𝕎 R) [x, (p : 𝕎 R)] :=
-  (isRegular_pair_iff_isWeaklyRegular_of_span_ne_top
-    (by rw [Set.pair_comm]; exact (span_pair_natCast_ne_top_iff x).mpr hnu)).mpr
-      (isWeaklyRegular_pair_of_coeff_zero hx)
 
 end WittVector
