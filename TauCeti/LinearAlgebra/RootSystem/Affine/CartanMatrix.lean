@@ -94,8 +94,9 @@ restriction to the simple nodes and extension by fixing the affine node.
 * `RootPairing.Base.coroot_highestRoot_eq_sum_affineComarks`,
   `RootPairing.Base.affineComarks_zsmul_form_highestRoot`, `RootPairing.Base.affineComarks_pos`,
   and `RootPairing.Base.sum_affineComarks`: the comarks expand `θ^∨` in the simple coroots,
-  satisfy `aᵢ^∨ • B(θ, θ) = aᵢ • B(αᵢ, αᵢ)` for every invariant form `B`, are positive, and sum
-  to the dual Coxeter number `ht(θ^∨) + 1`.
+  satisfy `aᵢ^∨ • B(θ, θ) = aᵢ • B(αᵢ, αᵢ)` for every invariant form `B`, are positive when `P`
+  is crystallographic, reduced, and irreducible over an integral domain, and sum to the dual
+  Coxeter number `ht(θ^∨) + 1`.
 * `RootPairing.Base.affineMarks_vecMul_affineCartanMatrix` and
   `RootPairing.Base.affineCartanMatrix_mulVec_affineComarks`: the marks and comarks are left and
   right null vectors of `A`.

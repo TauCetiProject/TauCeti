@@ -11,17 +11,19 @@ public import TauCeti.LinearAlgebra.Matrix.Cartan.Symmetrizable
 public import TauCeti.LinearAlgebra.RootSystem.Affine.CartanMatrix
 
 /-!
-# The minimal realization and symmetrizability of an untwisted affine Cartan matrix
+# The minimal realization and symmetrizability of `b.affineCartanMatrix`
 
 For a base `b` of a finite crystallographic root pairing `P` over a characteristic-zero ring with
-highest root `θ = b.highestRoot`, the untwisted affine Cartan matrix `b.affineCartanMatrix` has
-entries `⟨αₖ, αₗ^∨⟩` with `α₀ = -θ` at `none`. Since `TauCeti.SymmetrizableDatum` and
+maximal-height root `θ = b.highestRoot` (which is the highest root, making `b.affineCartanMatrix`
+the untwisted affine Cartan matrix, when `P` is reduced and irreducible; see
+`TauCeti/LinearAlgebra/RootSystem/Affine/CartanMatrix.lean`), `b.affineCartanMatrix` has entries
+`⟨αₖ, αₗ^∨⟩` with `α₀ = -θ` at `none`. Since `TauCeti.SymmetrizableDatum` and
 `TauCeti.CartanRealization` use the row convention `Aₖₗ = αₗ(hₖ)`, this file equips
 `b.affineCartanMatrixᵀ` with:
 
 * `RootPairing.Base.affineCartanSymmetrizableDatum`: symmetrizability by root lengths
   `(P.posRootForm ℤ).rootLength (b.affineSimpleRootIndex k)`.
-* `RootPairing.Base.affineCartanRealization`: the standard minimal realization on `N × K × K`
+* `RootPairing.Base.affineCartanRealization`: the standard realization on `N × K × K`
   (`𝔥 ⊕ K c ⊕ K d`) with coroots `affineCoroot` and roots `affineRoot`, central element
   `affineCentralElement` (`= (0, 1, 0)`), and null root `affineNullRoot` (`(h, a, t) ↦ t`).
 
@@ -45,10 +47,11 @@ variable {ι R M N : Type*} [CommRing R] [IsDomain R] [CharZero R] [AddCommGroup
   [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} [Finite ι] [Nonempty ι]
   [P.IsCrystallographic] (b : P.Base)
 
-/-- **The untwisted affine Cartan matrix is symmetrizable.** Packaged in the row convention
-`cartan k l = αₗ(hₖ)` of `TauCeti.SymmetrizableDatum`, the matrix is `b.affineCartanMatrixᵀ` and
-the symmetrizer is given by the positive integer root lengths of Mathlib's canonical positive
-invariant form `P.posRootForm ℤ`. -/
+/-- **Symmetrizability of `b.affineCartanMatrixᵀ`** (the untwisted affine Cartan matrix when `P` is
+reduced and irreducible). Packaged in the row convention `cartan k l = αₗ(hₖ)` of
+`TauCeti.SymmetrizableDatum`, the matrix is `b.affineCartanMatrixᵀ` and the symmetrizer is given by
+the positive integer root lengths of Mathlib's canonical positive invariant form
+`P.posRootForm ℤ`. -/
 noncomputable def affineCartanSymmetrizableDatum :
     TauCeti.SymmetrizableDatum (Option b.support) :=
   letI : Fintype ι := Fintype.ofFinite ι
@@ -88,18 +91,34 @@ section CorootsAndRoots
 variable {ι R M N : Type*} [CommRing R] [CharZero R] [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} [Finite ι] [Nonempty ι] (b : P.Base)
 
-/-- The simple coroots in the standard affine realization `N × R × R`: `hᵢ = (αᵢ^∨, 0, 0)` for a
+/-- The simple coroots in the standard realization `N × R × R`: `hᵢ = (αᵢ^∨, 0, 0)` for a
 finite simple root `i` and `h₀ = (-θ^∨, 1, 0)` at the affine node. -/
 noncomputable def affineCoroot : Option b.support → N × R × R
   | none => (-P.coroot b.highestRoot, 1, 0)
   | some i => (P.coroot i, 0, 0)
 
-/-- The simple roots in the standard affine realization `N × R × R`: `αᵢ(h, a, t) = ⟨αᵢ, h⟩` for a
+@[simp]
+theorem affineCoroot_none :
+    b.affineCoroot none = (-P.coroot b.highestRoot, 1, 0) := (rfl)
+
+@[simp]
+theorem affineCoroot_some (i : b.support) :
+    b.affineCoroot (some i) = (P.coroot i, 0, 0) := (rfl)
+
+/-- The simple roots in the standard realization `N × R × R`: `αᵢ(h, a, t) = ⟨αᵢ, h⟩` for a
 finite simple root `i` and `α₀(h, a, t) = t - ⟨θ, h⟩` at the affine node. -/
 noncomputable def affineRoot : Option b.support → Module.Dual R (N × R × R)
   | none => LinearMap.snd R R R ∘ₗ LinearMap.snd R N (R × R) -
       P.toLinearMap (P.root b.highestRoot) ∘ₗ LinearMap.fst R N (R × R)
   | some i => P.toLinearMap (P.root i) ∘ₗ LinearMap.fst R N (R × R)
+
+@[simp]
+theorem affineRoot_none (h : N) (a t : R) :
+    b.affineRoot none (h, a, t) = t - P.toLinearMap (P.root b.highestRoot) h := (rfl)
+
+@[simp]
+theorem affineRoot_some (i : b.support) (h : N) (a t : R) :
+    b.affineRoot (some i) (h, a, t) = P.toLinearMap (P.root i) h := (rfl)
 
 end CorootsAndRoots
 
@@ -108,8 +127,8 @@ section Realization
 variable {ι K M N : Type*} [Field K] [CharZero K] [AddCommGroup M] [Module K M] [AddCommGroup N]
   [Module K N] {P : RootPairing ι K M N} [Finite ι] [Nonempty ι] (b : P.Base) [P.IsCrystallographic]
 
-/-- **The standard realization of the untwisted affine Cartan matrix** `b.affineCartanMatrixᵀ` on
-`N × K × K`, representing `𝔥 ⊕ K c ⊕ K d`. -/
+/-- **The standard realization of `b.affineCartanMatrixᵀ`** (the untwisted affine Cartan matrix
+when `P` is reduced and irreducible) on `N × K × K`, representing `𝔥 ⊕ K c ⊕ K d`. -/
 noncomputable def affineCartanRealization :
     TauCeti.CartanRealization (b.affineCartanMatrixᵀ.map (Int.cast : ℤ → K)) (N × K × K) where
   coroot := b.affineCoroot
