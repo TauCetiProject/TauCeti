@@ -108,7 +108,7 @@ theorem mem_binaryTetrahedralCoords_iff {v : Fin 4 → ℤ} :
   fin_cases i <;> simp
 
 /-- The four doubled coordinates of each point share a parity. -/
-private theorem even_iff_even_of_mem_binaryTetrahedralCoords {v : Fin 4 → ℤ}
+theorem even_iff_even_of_mem_binaryTetrahedralCoords {v : Fin 4 → ℤ}
     (hv : v ∈ binaryTetrahedralCoords) (i : Fin 4) : Even (v i) ↔ Even (v 0) :=
   (by decide : ∀ v ∈ binaryTetrahedralCoords, ∀ i : Fin 4, Even (v i) ↔ Even (v 0)) v hv i
 

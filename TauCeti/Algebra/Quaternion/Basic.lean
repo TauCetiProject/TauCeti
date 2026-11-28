@@ -106,8 +106,7 @@ theorem exists_mk_div_two_mul_eq {K : Type*} [Field K] [NeZero (2 : K)] (r : K) 
   refine ⟨![a, b, c, d], ?_⟩
   ext <;>
     simp only [ha, hb, hc, hd, Matrix.cons_val, ← two_mul, Int.cast_mul, Int.cast_ofNat] <;>
-    by_cases hr : r = 0 <;>
-    simp [hr, mul_div_mul_left _ _ (NeZero.ne (2 : K))]
+    exact mul_div_mul_left _ _ (NeZero.ne (2 : K))
 
 /-- If the integer quaternion product of `v` and `w` has even coordinates, then the product of the
 corresponding quaternions scaled by `r` and `s` has `ℤ`-coordinates scaled by `e` whenever

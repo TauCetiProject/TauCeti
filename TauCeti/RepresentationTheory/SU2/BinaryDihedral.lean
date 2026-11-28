@@ -247,10 +247,15 @@ theorem weylElement_inv_sq_eq_binaryDihedralRotation_pow :
     weylElement⁻¹ ^ 2 = binaryDihedralRotation n ^ n := by
   rw [weylElement_inv_sq_eq_torusHom n, binaryDihedralRotation_pow, binaryDihedralHom_a]
 
+/-- The rotation generator satisfies `r ^ n = -1` in `SU(2)`. -/
+theorem binaryDihedralRotation_pow_self_eq_torusHom_neg_one :
+    binaryDihedralRotation n ^ n = torusHom (-1) := by
+  rw [← weylElement_inv_sq_eq_binaryDihedralRotation_pow, weylElement_inv_sq_eq_torusHom_neg_one]
+
 /-- The rotation generator satisfies `r ^ n = -1`. -/
 theorem coe_binaryDihedralRotation_pow_self :
     ((binaryDihedralRotation n ^ n : SU2) : Matrix (Fin 2) (Fin 2) ℂ) = -1 := by
-  rw [← weylElement_inv_sq_eq_binaryDihedralRotation_pow, coe_weylElement_inv_sq]
+  rw [binaryDihedralRotation_pow_self_eq_torusHom_neg_one, coe_torusHom_neg_one]
 
 /-- Conjugation by `s` inverts the rotation generator: `s r s⁻¹ = r⁻¹`. -/
 theorem weylElement_inv_conj_binaryDihedralRotation :

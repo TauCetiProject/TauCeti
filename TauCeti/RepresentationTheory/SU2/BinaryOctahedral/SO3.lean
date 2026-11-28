@@ -59,6 +59,12 @@ theorem comap_map_toSO3_binaryOctahedralSubgroup :
     (binaryOctahedralSubgroup.map toSO3).comap toSO3 = binaryOctahedralSubgroup :=
   Subgroup.comap_map_eq_self ker_toSO3_le_binaryOctahedralSubgroup
 
+/-- An element of `SU(2)` maps into `binaryOctahedralSubgroup.map toSO3` under `toSO3` exactly when
+it lies in `TauCeti.SU2.binaryOctahedralSubgroup`. -/
+theorem toSO3_mem_map_toSO3_binaryOctahedralSubgroup_iff {g : SU2} :
+    toSO3 g ∈ binaryOctahedralSubgroup.map toSO3 ↔ g ∈ binaryOctahedralSubgroup := by
+  rw [← Subgroup.mem_comap, comap_map_toSO3_binaryOctahedralSubgroup]
+
 /-- **The `SO(3)` image of the binary octahedral subgroup has `24` elements.** -/
 theorem natCard_map_toSO3_binaryOctahedralSubgroup :
     Nat.card (binaryOctahedralSubgroup.map toSO3) = 24 := by
@@ -81,11 +87,15 @@ theorem toSO3_binaryDihedralRotation_four :
   refine Subtype.ext ?_
   rw [coe_cubeRotationToSpecialOrthogonalGroup, hA, binaryDihedralRotation_def, coe_toSO3_torusHom]
   have hz : ((ZMod.toCircle (1 : ZMod (2 * 4)) : ℂ) ^ 2) = Complex.I := by
-    rw [← Circle.coe_pow, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, mul_one,
-      ZMod.toCircle_natCast]
-    push_cast
-    rw [show (2 : ℂ) * Real.pi * Complex.I * 2 / 8 = Real.pi / 2 * Complex.I by ring,
-      Complex.exp_pi_div_two_mul_I]
+    calc
+      ((ZMod.toCircle (1 : ZMod (2 * 4)) : ℂ) ^ 2)
+        = Complex.exp (Real.pi / 2 * Complex.I) := by
+          rw [← Circle.coe_pow, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, mul_one,
+            ZMod.toCircle_natCast]
+          congr 1
+          push_cast
+          ring
+      _ = Complex.I := Complex.exp_pi_div_two_mul_I
   ext i j
   fin_cases i <;> fin_cases j <;> simp [hz]
 
@@ -132,6 +142,13 @@ theorem map_toSO3_binaryOctahedralSubgroup :
 theorem comap_toSO3_range_cubeRotationToSpecialOrthogonalGroup :
     (cubeRotationToSpecialOrthogonalGroup ℝ).range.comap toSO3 = binaryOctahedralSubgroup := by
   rw [← map_toSO3_binaryOctahedralSubgroup, comap_map_toSO3_binaryOctahedralSubgroup]
+
+/-- An element of `SU(2)` maps into the real cube rotation group under `toSO3` exactly when it
+lies in `TauCeti.SU2.binaryOctahedralSubgroup`. -/
+theorem toSO3_mem_range_cubeRotationToSpecialOrthogonalGroup_iff {g : SU2} :
+    toSO3 g ∈ (cubeRotationToSpecialOrthogonalGroup ℝ).range ↔
+      g ∈ binaryOctahedralSubgroup := by
+  rw [← Subgroup.mem_comap, comap_toSO3_range_cubeRotationToSpecialOrthogonalGroup]
 
 /-- **The `SO(3)` image of the binary octahedral subgroup is isomorphic to `S₄`**, via the
 identification with the cube rotation group (`TauCeti.cubeRotationEquiv`). -/

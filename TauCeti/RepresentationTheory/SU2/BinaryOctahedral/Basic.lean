@@ -187,18 +187,33 @@ private theorem toComplexMatrix_mem_of_mem_binaryOctahedralCosetCoords {w : Fin 
 /-- The integer quaternion with coordinates `v`. -/
 private def intQuaternion (v : Fin 4 → ℤ) : ℍ[ℤ] := ⟨v 0, v 1, v 2, v 3⟩
 
+/-- If `v` has all coordinates of the same parity and `w` has even coordinate sum, then all
+coordinates of the integer quaternions `v w` and `w v` are even. -/
+private theorem even_coords_of_parity {v w : Fin 4 → ℤ}
+    (hpv : ∀ i : Fin 4, Even (v i) ↔ Even (v 0)) (hpw : Even (w 0 + w 1 + w 2 + w 3)) :
+    ∀ x ∈ [intQuaternion v * intQuaternion w, intQuaternion w * intQuaternion v],
+      Even x.re ∧ Even x.imI ∧ Even x.imJ ∧ Even x.imK := by
+  simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
+    intQuaternion, re_mul, imI_mul, imJ_mul, imK_mul, Int.even_add, Int.even_sub, Int.even_mul,
+    hpv 1, hpv 2, hpv 3]
+  simp only [Int.even_add] at hpw
+  tauto
+
 /-- For a doubled binary tetrahedral coordinate vector `v` and a scaled coordinate vector `w` of the
 second family, all coordinates of the integer quaternions `v w` and `w v` are even. Either all
 coordinates of `v` are even, or they are all odd and each coordinate of `v w` and `w v` has the
-parity of `w₀ + w₁ + w₂ + w₃`, which is even; this is checked over the 24 × 24 pairs. -/
+parity of `w₀ + w₁ + w₂ + w₃`, which is even because `w₀² + w₁² + w₂² + w₃² = 2`. -/
 private theorem even_coords_of_mem {v w : Fin 4 → ℤ} (hv : v ∈ binaryTetrahedralCoords)
     (hw : w ∈ binaryOctahedralCosetCoords) :
     ∀ x ∈ [intQuaternion v * intQuaternion w, intQuaternion w * intQuaternion v],
-      Even x.re ∧ Even x.imI ∧ Even x.imJ ∧ Even x.imK :=
-  (by rw [binaryTetrahedralCoords_def]; decide : ∀ v ∈ binaryTetrahedralCoords,
-    ∀ w ∈ binaryOctahedralCosetCoords,
-    ∀ x ∈ [intQuaternion v * intQuaternion w, intQuaternion w * intQuaternion v],
-      Even x.re ∧ Even x.imI ∧ Even x.imJ ∧ Even x.imK) v hv w hw
+      Even x.re ∧ Even x.imI ∧ Even x.imJ ∧ Even x.imK := by
+  have hsq : Even (∑ i : Fin 4, w i ^ 2) := by
+    rw [mem_binaryOctahedralCosetCoords_iff.mp hw]
+    exact ⟨1, rfl⟩
+  have hpw : Even (w 0 + w 1 + w 2 + w 3) := by
+    simpa only [Fin.sum_univ_four, Int.even_add, Int.even_pow, OfNat.ofNat_ne_zero, ne_eq,
+      not_false_eq_true, and_true] using hsq
+  exact even_coords_of_parity (even_iff_even_of_mem_binaryTetrahedralCoords hv) hpw
 
 /-- The product of a binary tetrahedral point `v / 2` and a quaternion `w / √2` of the second
 family, in either order, has coordinates in `ℤ/√2`. -/
@@ -536,7 +551,7 @@ theorem binaryDihedralRotation_four_notMem_binaryTetrahedralSubgroup :
 @[simp]
 theorem torusHom_neg_one_mem_binaryOctahedralSubgroup :
     torusHom (-1) ∈ binaryOctahedralSubgroup := by
-  rw [← weylElement_inv_sq_eq_torusHom_neg_one, weylElement_inv_sq_eq_binaryDihedralRotation_pow 4]
+  rw [← binaryDihedralRotation_pow_self_eq_torusHom_neg_one 4]
   exact pow_mem binaryDihedralRotation_four_mem_binaryOctahedralSubgroup 4
 
 /-- **Coset characterization of the binary octahedral subgroup**: an element of `SU(2)` lies in
