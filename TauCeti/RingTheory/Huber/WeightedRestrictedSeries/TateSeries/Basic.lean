@@ -28,7 +28,7 @@ variables `TauCeti.Huber.tateSeries.X` and coefficientwise subring
 
 For a Huber pair `S = (A, A⁺)`, `TauCeti.Huber.tateSeriesPair N A S` is the uncompleted unit-weight
 Huber pair `S.weighted isWeightFamily_one_weight`, whose plus ring equals
-`tateSeriesPlus N A S.plus` (`TauCeti.Huber.tateSeriesPair_plus`).
+`tateSeriesPlus N A S.plus` (`TauCeti.Huber.Pair.weighted_plus_one_weight`).
 
 ## Main definitions
 
@@ -482,12 +482,6 @@ pair `S = (A, A⁺)`. -/
 noncomputable abbrev tateSeriesPair (N : ℕ) (A : Type*) [CommRing A] [TopologicalSpace A]
     [IsTopologicalRing A] [IsHuberRing A] (S : Pair A) : Pair (tateSeries N A) :=
   S.weighted (k := N) isWeightFamily_one_weight
-
-/-- The plus ring of `tateSeriesPair N A S` is `tateSeriesPlus N A S.plus` on the nose, with no
-integral closure needed. -/
-theorem tateSeriesPair_plus (N : ℕ) (S : Pair A) :
-    (tateSeriesPair N A S).plus = tateSeriesPlus N A S.plus :=
-  Pair.weighted_plus_one_weight S
 
 /-- A continuous ring homomorphism `tateSeries N A →+* B` mapping `Aplus.plus` (via constants) and
 every coordinate `tateSeries.X N A i` into `Bplus.plus` carries all of

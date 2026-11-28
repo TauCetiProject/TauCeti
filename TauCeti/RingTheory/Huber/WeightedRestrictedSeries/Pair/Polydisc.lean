@@ -76,8 +76,7 @@ of `(Pair.powerBounded K).polydisc n` over a nontrivially normed ultrametric fie
   is open (`TauCeti.Huber.isOpen_topologicalClosure_closure_polydiscVar`).
 * `TauCeti.Huber.Pair.polydiscPlus_eq_topologicalClosure`: `S.polydiscPlus n` is the topological
   closure of `A⁺[T₁, …, Tₙ]` in `A⟨T₁, …, Tₙ⟩`.
-* `TauCeti.Huber.Pair.map_polydiscPlus_equiv` and
-  `TauCeti.Huber.map_symm_tateSeriesPlus_eq_polydiscPlus`: `restrictedMvPowerSeriesCompletionEquiv`
+* `TauCeti.Huber.Pair.map_polydiscPlus_equiv`: `restrictedMvPowerSeriesCompletionEquiv`
   identifies `S.polydiscPlus n` with `tateSeriesPlus n A S.plus`.
 * `TauCeti.Huber.Pair.polydisc.existsUnique_hom`: universal property of `S.polydisc n` for
   morphisms into complete Hausdorff Huber pairs.
@@ -334,19 +333,6 @@ theorem Pair.map_polydiscPlus_equiv (S : Pair A) (n : ℕ)
       restrictedMvPowerSeriesCompletionEquiv_coe f⟩
     rw [Pair.polydiscPlus, Pair.polydisc, Pair.completion_plus]
     exact map_mem_completionPlus (S.weighted_plus_one_weight.symm ▸ hf)
-
-/-- **Comparison with `Pair.polydiscPlus`:** when `tateSeries N A` is complete and Hausdorff, the
-inverse completion equivalence `(restrictedMvPowerSeriesCompletionEquiv N A).symm` maps
-`tateSeriesPlus N A S.plus` onto `S.polydiscPlus N`. -/
-theorem map_symm_tateSeriesPlus_eq_polydiscPlus (N : ℕ) (S : Pair A)
-    [CompleteSpace (tateSeries N A)] [T0Space (tateSeries N A)] :
-    (tateSeriesPlus N A S.plus).map
-        ((restrictedMvPowerSeriesCompletionEquiv N A).symm :
-          tateSeries N A →+* restrictedMvPowerSeriesCompletion N A) =
-      S.polydiscPlus N := by
-  dsimp only [tateSeriesPlus]
-  rw [← S.map_polydiscPlus_equiv N, Subring.map_map]
-  ext x; simp
 
 /-! ### Universal property of the relative closed polydisc -/
 

@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.Huber.StandardEtale.Basic
 
 import Mathlib.Data.Fin.SuccPred
+import TauCeti.LinearAlgebra.Matrix.CornerMinor
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.GaussValuation
 
 /-!
 # Explicit Jacobian inverses for standard étale presentations
@@ -140,41 +142,19 @@ embedded Jacobian determinant of `F'`.** -/
 theorem jacobian_explicitInverseSystem (ϖ : A) {N' : ℕ} (F' : Fin N' → tateSeries N' A) (k' : ℕ) :
     tateSeries.jacobian (explicitInverseSystem A ϖ F' k') =
       tateSeries.castSuccAlgHom (tateSeries.jacobian F') ^ 2 := by
-  let J := tateSeries.jacobianMatrix (explicitInverseSystem A ϖ F' k')
-  let A₀ := tateSeries.castSuccAlgHom.toRingHom.mapMatrix (tateSeries.jacobianMatrix F')
-  let C₀ : Matrix (Fin 1) (Fin N') (tateSeries (N' + 1) A) :=
-    Matrix.of fun _ j ↦ tateSeries.pderiv j.castSucc
-      (explicitInverseSystem A ϖ F' k' (Fin.last N'))
-  let D₀ : Matrix (Fin 1) (Fin 1) (tateSeries (N' + 1) A) :=
-    Matrix.of fun _ _ ↦ tateSeries.castSuccAlgHom (tateSeries.jacobian F')
-  have hleft (i : Fin N') : finSumFinEquiv (m := N') (n := 1) (Sum.inl i) = i.castSucc := rfl
-  have hright : finSumFinEquiv (m := N') (n := 1) (Sum.inr 0) = Fin.last N' :=
-    Fin.ext (Nat.add_zero N')
-  have hre : Matrix.reindex (finSumFinEquiv (m := N') (n := 1)).symm
-      (finSumFinEquiv (m := N') (n := 1)).symm J = Matrix.fromBlocks A₀ 0 C₀ D₀ := by
-    refine Matrix.ext fun r c ↦ ?_
-    rcases r with i | r <;> rcases c with j | c
-    · simp only [Matrix.reindex_apply, Matrix.submatrix_apply, Equiv.symm_symm, hleft,
-        Matrix.fromBlocks_apply₁₁, A₀, RingHom.mapMatrix_apply, Matrix.map_apply,
-        AlgHom.toRingHom_eq_coe, RingHom.coe_coe, J, tateSeries.jacobianMatrix_apply,
-        pderiv_explicitInverseSystem_castSucc_castSucc]
-    · obtain rfl : c = 0 := Subsingleton.elim c 0
-      simp only [Matrix.reindex_apply, Matrix.submatrix_apply, Equiv.symm_symm, hleft, hright,
-        Matrix.fromBlocks_apply₁₂, Matrix.zero_apply, J, tateSeries.jacobianMatrix_apply,
-        pderiv_explicitInverseSystem_castSucc_last]
-    · obtain rfl : r = 0 := Subsingleton.elim r 0
-      simp only [Matrix.reindex_apply, Matrix.submatrix_apply, Equiv.symm_symm, hleft, hright,
-        Matrix.fromBlocks_apply₂₁, C₀, Matrix.of_apply, J, tateSeries.jacobianMatrix_apply]
-    · obtain rfl : r = 0 := Subsingleton.elim r 0
-      obtain rfl : c = 0 := Subsingleton.elim c 0
-      simp only [Matrix.reindex_apply, Matrix.submatrix_apply, Equiv.symm_symm, hright,
-        Matrix.fromBlocks_apply₂₂, D₀, Matrix.of_apply, J, tateSeries.jacobianMatrix_apply,
-        pderiv_explicitInverseSystem_last_last]
-  rw [tateSeries.jacobian_def,
-    ← Matrix.det_reindex_self (finSumFinEquiv (m := N') (n := 1)).symm J, hre,
-    Matrix.det_fromBlocks_zero₁₂, Matrix.det_fin_one]
-  simp only [A₀, D₀, Matrix.of_apply, ← RingHom.map_det, AlgHom.toRingHom_eq_coe,
-    RingHom.coe_coe, ← tateSeries.jacobian_def, sq]
+  rw [tateSeries.jacobian_def, Matrix.det_eq_mul_det_submatrix_castSucc_of_col _ fun i hi ↦ ?_]
+  · have hcorner :
+        (tateSeries.jacobianMatrix (explicitInverseSystem A ϖ F' k')).submatrix
+            Fin.castSucc Fin.castSucc =
+          tateSeries.castSuccAlgHom.toRingHom.mapMatrix (tateSeries.jacobianMatrix F') := by
+      ext i j
+      simp only [Matrix.submatrix_apply, tateSeries.jacobianMatrix_apply,
+        pderiv_explicitInverseSystem_castSucc_castSucc, RingHom.mapMatrix_apply,
+        Matrix.map_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
+    rw [tateSeries.jacobianMatrix_apply, pderiv_explicitInverseSystem_last_last, hcorner,
+      ← RingHom.map_det, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, ← tateSeries.jacobian_def, sq]
+  · obtain ⟨i, rfl⟩ := Fin.eq_castSucc_of_ne_last hi
+    rw [tateSeries.jacobianMatrix_apply, pderiv_explicitInverseSystem_castSucc_last]
 
 private theorem map_last_mul_castSucc_jacobian {C : Type*} [CommRing C] [Algebra A C]
     {ϖ : A} {N' : ℕ} {F' : Fin N' → tateSeries N' A} {k' : ℕ}
@@ -250,7 +230,7 @@ private theorem exists_unit_π_jacobian_explicitInverseSystem (Aplus : Pair A) {
   dsimp only [s]
   rw [← Pair.Hom.toRingHom_quotientHom (tateSeriesPair (N' + 1) A Aplus) I]
   exact (Pair.quotientHom (tateSeriesPair (N' + 1) A Aplus) I).map_mem_plus _
-    (by simpa only [tateSeriesPair_plus] using
+    (by simpa only [Pair.weighted_plus_one_weight Aplus] using
       tateSeries.X_mem_tateSeriesPlus Aplus.plus (Fin.last N'))
 
 /-- **Canonical standard étale presentation of the quotient by `explicitInverseSystem A ϖ F' k'`.**
@@ -578,7 +558,7 @@ private theorem mem_plus_iff_isIntegral_withInverseHom
     have hmap_le : (tateSeriesPlus (P.N + 1) A Aplus.plus).map P.withInverseHom.toRingHom
         ≤ Cplus.plus := by
       rintro _ ⟨f, hf, rfl⟩
-      exact P.withInversePairHom.map_mem_plus f (by rwa [tateSeriesPair_plus])
+      exact P.withInversePairHom.map_mem_plus f (by rwa [Pair.weighted_plus_one_weight Aplus])
     exact fun hc ↦ Subring.integralClosure_subring_le_iff.mpr hmap_le
       ((mem_integralClosure_iff _ _).mpr hc)
 

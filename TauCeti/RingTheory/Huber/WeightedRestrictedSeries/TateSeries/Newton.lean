@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.TateSeries.Eval
 public import TauCeti.RingTheory.Huber.WeightedEval.Newton
 import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
+import TauCeti.RingTheory.Subsemiring.SpanSingleton
 
 /-!
 # Multivariable Newton–Hensel lifting for `tateSeries`
@@ -155,9 +156,10 @@ theorem existsUnique_weightedEval_tateSeries_eq_zero
   have hFt_base (i) : weightedEval (RingHom.id C) (fun l ↦ (t l : C))
       (F i : MvPowerSeries (Fin N) C) ∈
         (ϖ : C) ^ (2 * k + 1) • (P.ringOfDefinition : Set C) := by
-    obtain ⟨r, hr⟩ := hFt i
-    refine ⟨(ϖ ^ (e - (2 * k + 1)) * r : P.ringOfDefinition), SetLike.coe_mem _, ?_⟩
-    push_cast; rw [hr, smul_eq_mul, ← mul_assoc, ← pow_add, Nat.add_sub_of_le he]
+    rw [← SubsemiringClass.image_coe_span_singleton_pow P.ringOfDefinition ϖ.property]
+    exact Set.image_mono (Ideal.pow_le_pow_right he)
+      ((SubsemiringClass.image_coe_span_singleton_pow P.ringOfDefinition ϖ.property e).symm ▸
+        hFt_smul i)
   obtain ⟨u, ⟨hu_mod, hu_zero⟩, hu_uniq⟩ :=
     existsUnique_weightedEval_eq_zero P hϖ hFres hF₀ t hJ hFt_base
   exact ⟨u, ⟨hu_mod, hu_zero,
@@ -214,10 +216,11 @@ theorem existsUnique_weightedEval_tateSeries_eq_zero_of_coeff_sub
       (ϖ : C) ^ (k + 1) • (P.ringOfDefinition : Set C) := by
     intro i ν
     obtain ⟨r, hr⟩ := hFG i ν
-    rw [Set.mem_smul_set]
-    refine ⟨((ϖ ^ (e - (k + 1)) * r : P.ringOfDefinition) : C), SetLike.coe_mem _, ?_⟩
-    rw [smul_eq_mul, Subring.coe_mul, Subring.coe_pow, ← mul_assoc, ← pow_add,
-      Nat.add_sub_of_le hke, ← hr, AddSubgroupClass.coe_sub, map_sub]
+    rw [← AddSubgroupClass.coe_sub (G i) (F i),
+      ← SubsemiringClass.image_coe_span_singleton_pow P.ringOfDefinition ϖ.property]
+    exact Set.image_mono (Ideal.pow_le_pow_right hke)
+      ((SubsemiringClass.image_coe_span_singleton_pow P.ringOfDefinition ϖ.property e).symm ▸
+        ⟨r, r.property, hr.symm⟩)
   obtain ⟨M', -, hJM', -⟩ := exists_mul_jacobianMatrix_eq_pow_smul_one_of_coeff_mem P hϖ
     (fun i ↦ mem_weightedRestrictedSubring.mp (F i).property)
     (fun i ↦ mem_tateSeriesPlus_iff.mp (hF i))
@@ -289,11 +292,11 @@ theorem map_weightedEval_tateSeries_eq_zero
         (tateSeries.mapRingHom hφ (F i) : MvPowerSeries (Fin N) C') = 0) →
       v' = u' := by
   intro ϖ' t' u'
+  let φ₀ : P.ringOfDefinition →+* P'.ringOfDefinition :=
+    φ.restrict P.ringOfDefinition P'.ringOfDefinition hPφ
   have hu'_mod (i) : ϖ' ^ (k + 1) ∣ u' i - t' i := by
-    obtain ⟨q, hq⟩ := hu_mod i
-    exact ⟨⟨φ q, hPφ _ q.property⟩, Subtype.ext <| by
-      simpa only [u', t', ϖ', AddSubgroupClass.coe_sub, Subring.coe_mul, Subring.coe_pow,
-        map_sub, map_mul, map_pow] using congrArg (fun z : P.ringOfDefinition ↦ φ (z : C)) hq⟩
+    have h := map_dvd φ₀ (hu_mod i)
+    rwa [map_pow, map_sub] at h
   have hu'_zero (i) : weightedEval (RingHom.id C') (fun l ↦ (u' l : C'))
       (tateSeries.mapRingHom hφ (F i) : MvPowerSeries (Fin N) C') = 0 := by
     dsimp only [u']
@@ -301,8 +304,7 @@ theorem map_weightedEval_tateSeries_eq_zero
       (fun l ↦ P.isBounded_ringOfDefinition.isPowerBounded_of_mem (u l).property) (F i),
       hu_zero i, map_zero]
   refine ⟨hu'_mod, hu'_zero, fun v' hv'_mod hv'_zero ↦ ?_⟩
-  let M' : Matrix (Fin N) (Fin N) P'.ringOfDefinition :=
-    M.map (φ.restrict P.ringOfDefinition P'.ringOfDefinition hPφ)
+  let M' : Matrix (Fin N) (Fin N) P'.ringOfDefinition := M.map φ₀
   have hF' (i) := tateSeries.mapRingHom_mem_tateSeriesPlus hφ hPφ (hF i)
   have hJ' : M'.map Subtype.val *
       Matrix.of (fun i j ↦ weightedEval (RingHom.id C') (fun l ↦ (t' l : C'))

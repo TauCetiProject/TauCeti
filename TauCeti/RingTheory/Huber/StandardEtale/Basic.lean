@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Huber.QuotientMapping
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Polydisc
 import Mathlib.Topology.Algebra.Group.Neighborhood
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
+import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.GaussValuation
 import TauCeti.Topology.Algebra.IsUniformGroup.Quotient
 
 /-!
@@ -181,7 +182,7 @@ noncomputable def toPairHom (P : StandardEtalePresentation Aplus ϖ Cplus) :
     rw [P.mem_plus_iff]
     let R := (tateSeriesPlus P.N A Aplus.plus).map (P.π : tateSeries P.N A →+* C)
     exact isIntegral_algebraMap (R := R) (x := ⟨P.π f, Subring.mem_map.mpr
-      ⟨f, by simpa only [tateSeriesPair_plus] using hf, rfl⟩⟩)
+      ⟨f, by simpa only [Pair.weighted_plus_one_weight Aplus] using hf, rfl⟩⟩)
 
 @[simp]
 theorem toPairHom_toRingHom (P : StandardEtalePresentation Aplus ϖ Cplus) :
@@ -193,7 +194,7 @@ theorem algebraMap_mem_plus (P : StandardEtalePresentation Aplus ϖ Cplus) {a : 
     (ha : a ∈ Aplus.plus) : algebraMap A C a ∈ Cplus.plus := by
   rw [← P.π.commutes a, ← AlgHom.coe_toRingHom, ← P.toPairHom_toRingHom]
   exact P.toPairHom.map_mem_plus _
-    (by rw [tateSeriesPair_plus]; exact algebraMap_mem_tateSeriesPlus_iff.mpr ha)
+    (by rw [Pair.weighted_plus_one_weight Aplus]; exact algebraMap_mem_tateSeriesPlus_iff.mpr ha)
 
 /-- The structure morphism `(A, A⁺) → (C, C⁺)` of Huber pairs induced by a standard étale
 presentation. -/
@@ -214,7 +215,7 @@ theorem isQuotientMapping (P : StandardEtalePresentation Aplus ϖ Cplus) :
     ⟨P.isOpenQuotientMap_π, fun c hc ↦ ?_⟩
   have hS : (tateSeriesPair P.N A Aplus).plus.map P.toPairHom.toRingHom =
       (tateSeriesPlus P.N A Aplus.plus).map (P.π : tateSeries P.N A →+* C) := by
-    rw [toPairHom_toRingHom, tateSeriesPair_plus]
+    rw [toPairHom_toRingHom, Pair.weighted_plus_one_weight Aplus]
   rw [hS]
   exact (P.mem_plus_iff c).mp hc
 
@@ -332,7 +333,8 @@ theorem toRingHom_π_X_mem_plus (P : StandardEtalePresentation Aplus ϖ Cplus)
     h.toRingHom (P.π (tateSeries.X P.N A i)) ∈ Uplus.plus := by
   rw [← AlgHom.coe_toRingHom, ← P.toPairHom_toRingHom]
   exact h.map_mem_plus _ (P.toPairHom.map_mem_plus _
-    (by rw [tateSeriesPair_plus]; exact tateSeries.X_mem_tateSeriesPlus Aplus.plus i))
+    (by rw [Pair.weighted_plus_one_weight Aplus]
+        exact tateSeries.X_mem_tateSeriesPlus Aplus.plus i))
 
 section UniversalProperty
 
@@ -492,8 +494,8 @@ noncomputable def ofQuotient (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUniformize
         (tateSeries N A ⧸ I) =
         ((tateSeriesPlus N A Aplus.plus).map (Ideal.Quotient.mk I)).subtype :=
       RingHom.ext fun x ↦ Algebra.algebraMap_ofSubsemiring_apply _ x
-    rw [Pair.quotient_plus, tateSeriesPair_plus, Subalgebra.mem_toSubring, mem_integralClosure_iff,
-      IsIntegral, hmk, halg]
+    rw [Pair.quotient_plus, Pair.weighted_plus_one_weight Aplus, Subalgebra.mem_toSubring,
+      mem_integralClosure_iff, IsIntegral, hmk, halg]
   exists_unit_π_jacobian := hu
 
 @[simp]
