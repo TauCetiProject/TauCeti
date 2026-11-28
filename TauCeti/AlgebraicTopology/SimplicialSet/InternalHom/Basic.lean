@@ -391,6 +391,45 @@ lemma homEquiv_comp_pre_coe {Z L : SSet.{u}} (φ : Z ⟶ ihomOver p f) (i : L �
   rw [homEquiv_apply_coe, homEquiv_apply_coe, Category.assoc, pre_ι, ← Category.assoc,
     uncurry_pre_app]
 
+/-- Restricting relative functors along a monomorphism is an inner fibration when the
+map to the base is an inner fibration. -/
+instance innerFibration_pre {L : SSet.{u}} (i : L ⟶ K) [Mono i] [InnerFibration p] :
+    InnerFibration (pre (p := p) (f := f) i) := by
+  let sq := Functor.PullbackObjObj.ofHasPullback MonoidalClosed.internalHom i p
+  have hconst : (ihomOver p (i ≫ f)).ι ≫ (ihom L).map p =
+      const ((ihomObj₀Equiv K B).symm f) ≫ (MonoidalClosed.pre i).app B := by
+    rw [const_comp, pre_app_app_ihomObj₀Equiv_symm]
+    exact fiber.ι_comp _ _
+  let b := sq.isPullback.lift (ihomOver p (i ≫ f)).ι
+    (const ((ihomObj₀Equiv K B).symm f)) hconst
+  have hb₁ : b ≫ sq.fst = (ihomOver p (i ≫ f)).ι := sq.isPullback.lift_fst _ _ _
+  have hb₂ : b ≫ sq.snd = const ((ihomObj₀Equiv K B).symm f) :=
+    sq.isPullback.lift_snd _ _ _
+  -- Present the bifunctor projection using `ihom`, as in the relative inclusions.
+  let π : (ihom K).obj E ⟶ sq.pt := sq.π
+  have hπ₁ : π ≫ sq.fst = (MonoidalClosed.pre i).app E := sq.π_fst
+  have hπ₂ : π ≫ sq.snd = (ihom K).map p := sq.π_snd
+  have hpb : IsPullback (ihomOver p f).ι (pre i) π b := by
+    refine IsPullback.mk' ?_ (fun _ _ _ h _ ↦ (cancel_mono _).1 h) ?_
+    · apply sq.hom_ext
+      · rw [Category.assoc, hπ₁, Category.assoc, hb₁]
+        exact (pre_ι i).symm
+      · rw [Category.assoc, hπ₂, Category.assoc, hb₂]
+        exact (fiber.ι_comp _ _).trans (comp_const _ _).symm
+    · intro T g a h
+      have hg : g ≫ (ihom K).map p = const ((ihomObj₀Equiv K B).symm f) := by
+        have hh := congrArg (fun k ↦ k ≫ sq.snd) h
+        rw [Category.assoc, hπ₂, Category.assoc, hb₂] at hh
+        exact hh.trans (comp_const _ _)
+      refine ⟨Subcomplex.lift g (by rw [ihomOver, range_le_fiber_iff]; exact hg),
+        Subcomplex.lift_ι _ _, ?_⟩
+      rw [← cancel_mono (ihomOver p (i ≫ f)).ι]
+      rw [Category.assoc, pre_ι, Subcomplex.lift_ι_assoc]
+      have hh := congrArg (fun k ↦ k ≫ sq.fst) h
+      rwa [Category.assoc, hπ₁, Category.assoc, hb₁] at hh
+  have : InnerFibration π := innerFibration_pullbackObjObjπ sq
+  exact ⟨innerFibrations.of_isPullback hpb (mem_innerFibrations π)⟩
+
 /-- **The relative simplex description of `Fun_B(K, E)`**: its `n`-simplices are the maps
 `K ⊗ Δ[n] ⟶ E` over `f`, that is, whose composite with `p` is the projection to `K` followed
 by `f`. -/
@@ -411,6 +450,22 @@ def obj₀Equiv : (ihomOver p f : SSet) _⦋0⦌ ≃ {g : K ⟶ E // g ≫ p = f
 lemma obj₀Equiv_apply_coe (σ : (ihomOver p f : SSet) _⦋0⦌) :
     dsimp% (obj₀Equiv σ).val = ihomObj₀Equiv K E σ.val :=
   (rfl)
+
+/-- Forgetting the equation over the base in the vertex represented by a relative map
+recovers its vertex in the ordinary internal hom. -/
+@[simp]
+lemma obj₀Equiv_symm_apply_coe (g : {g : K ⟶ E // g ≫ p = f}) :
+    dsimp% (obj₀Equiv.symm g).val = (ihomObj₀Equiv K E).symm g.val :=
+  (rfl)
+
+/-- A constant family of relative functors is the projection followed by its fixed functor. -/
+@[simp]
+lemma homEquiv_const_coe {Z : SSet.{u}} (g : {g : K ⟶ E // g ≫ p = f}) :
+    dsimp% (homEquiv (const (obj₀Equiv.symm g) : Z ⟶ ihomOver p f)).val = fst K Z ≫ g.val := by
+  rw [homEquiv_apply_coe, const_comp]
+  have h : (ihomOver p f).ι.app _ (obj₀Equiv.symm g) = (ihomObj₀Equiv K E).symm g.val :=
+    obj₀Equiv_symm_apply_coe g
+  rw [h, const_ihomObj₀Equiv_symm, uncurry_curry]
 
 /-- The functor over `f` corresponding to the image of a vertex `z` under
 `φ : Z ⟶ Fun_B(K, E)` is the restriction of the uncurried form of `φ` to `K ⊗ {z}`. -/
