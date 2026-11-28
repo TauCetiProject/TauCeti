@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Geometry.Manifold.FiberBundle.Basic
 public import TauCeti.Topology.FiberBundle.Principal.Basic
+import TauCeti.Geometry.Manifold.Algebra.SMul
 
 /-!
 # Smooth principal bundles
@@ -197,11 +198,8 @@ theorem contMDiff_op_smul :
 so right translation by any `g : G` is `C^n` (packaged as a diffeomorphism by
 `Diffeomorph.constSmul` in `TauCeti.Geometry.Manifold.Algebra.SMul`). -/
 instance instContMDiffConstSMul :
-    ContMDiffConstSMul (IB.prod IG) n Gᵐᵒᵖ (ManifoldTotalSpace G P) where
-  contMDiff_const_smul γ := by
-    have h := (contMDiff_op_smul (n := n) (G := G) (P := P) (IB := IB) (IG := IG)).comp
-      (contMDiff_id.prodMk (contMDiff_const (c := unop γ)))
-    exact h.congr fun x ↦ by simp
+    ContMDiffConstSMul (IB.prod IG) n Gᵐᵒᵖ (ManifoldTotalSpace G P) :=
+  contMDiff_op_smul.contMDiffConstSMul_op
 
 /-- Every right orbit map `g ↦ op g • x` on `ManifoldTotalSpace G P` is `C^n`. -/
 theorem contMDiff_orbit (x : ManifoldTotalSpace G P) :
