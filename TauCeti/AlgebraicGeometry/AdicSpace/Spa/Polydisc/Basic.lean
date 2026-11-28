@@ -55,7 +55,7 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
   to a point of `Spa (A, A°)` and a tuple `a ∈ (A°)ᵏ`.
 * `TauCeti.ValuationSpectrum.normClassicalPoint`: over a complete ultrametric normed field `K`,
   the canonical classical point attached to `normSpaPoint K` and `a ∈ (K°)ᵏ`.
-* `TauCeti.ValuationSpectrum.classicalPoints`: the locus of classical points of
+* `TauCeti.ValuationSpectrum.rationalPoints`: the locus of `K`-rational points of
   `closedPolydisc k K`.
 * `TauCeti.ValuationSpectrum.taylorHom`: the translation `Tᵢ ↦ Tᵢ + aᵢ` of `A⟨T⟩` by
   `a ∈ (A°)ᵏ`.
@@ -76,11 +76,11 @@ and `Polynomial.taylorEquiv` for the same substitution on polynomials, the trans
 * `TauCeti.ValuationSpectrum.classicalPoint_eq_normClassicalPoint`,
   `TauCeti.ValuationSpectrum.normClassicalPoint_mem_basicOpen_iff`,
   `TauCeti.ValuationSpectrum.normClassicalPoint_mem_rationalSubset_iff`,
-  `TauCeti.ValuationSpectrum.normClassicalPoint_mem_classicalPoints`,
-  `TauCeti.ValuationSpectrum.range_normClassicalPoint_eq_classicalPoints`, and
-  `TauCeti.ValuationSpectrum.range_classicalPoint_eq_classicalPoints`: every `x : Spa (K, K°)`
+  `TauCeti.ValuationSpectrum.normClassicalPoint_mem_rationalPoints`,
+  `TauCeti.ValuationSpectrum.range_normClassicalPoint_eq_rationalPoints`, and
+  `TauCeti.ValuationSpectrum.range_classicalPoint_eq_rationalPoints`: every `x : Spa (K, K°)`
   yields `normClassicalPoint`, its basic-open and rational-subset membership reduces to norm
-  inequalities on evaluations, and it sweeps out `classicalPoints k K`.
+  inequalities on evaluations, and it sweeps out `rationalPoints k K`.
 * `TauCeti.ValuationSpectrum.subsingleton_closedPolydisc_zero`: the zero-dimensional closed
   polydisc over an ultrametric normed field is a subsingleton.
 * `TauCeti.ValuationSpectrum.classicalPoint_injective`: when `x` has trivial support, the
@@ -735,46 +735,46 @@ theorem normClassicalPoint_injective :
 
 end Complete
 
-/-- **The classical locus of the closed polydisc `closedPolydisc k K`**: the set of `K`-rational
-classical points parametrised by power-bounded tuples `a ∈ (K°)ᵏ`. -/
-noncomputable def classicalPoints (k : ℕ) (K : Type*) [NormedField K] [IsUltrametricDist K]
+/-- **The `K`-rational locus of the closed polydisc `closedPolydisc k K`**: the set of
+`K`-rational classical points parametrised by power-bounded tuples `a ∈ (K°)ᵏ`. -/
+noncomputable def rationalPoints (k : ℕ) (K : Type*) [NormedField K] [IsUltrametricDist K]
     [CompleteSpace K] : Set (closedPolydisc k K) :=
   Set.range fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
     normClassicalPoint a.val a.property
 
-/-- The range of `normClassicalPoint` is `classicalPoints k K`. -/
+/-- The range of `normClassicalPoint` is `rationalPoints k K`. -/
 @[simp]
-theorem range_normClassicalPoint_eq_classicalPoints {k : ℕ} [CompleteSpace K] :
+theorem range_normClassicalPoint_eq_rationalPoints {k : ℕ} [CompleteSpace K] :
     Set.range (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-        normClassicalPoint a.val a.property) = classicalPoints k K :=
+        normClassicalPoint a.val a.property) = rationalPoints k K :=
   (rfl)
 
-/-- Membership in `classicalPoints k K`: a point lies in the classical locus iff it equals
+/-- Membership in `rationalPoints k K`: a point lies in the `K`-rational locus iff it equals
 `normClassicalPoint a ha` for some power-bounded tuple `a ∈ (K°)ᵏ`. -/
-theorem mem_classicalPoints_iff {k : ℕ} {K : Type*} [NormedField K] [IsUltrametricDist K]
+theorem mem_rationalPoints_iff {k : ℕ} {K : Type*} [NormedField K] [IsUltrametricDist K]
     [CompleteSpace K] {v : closedPolydisc k K} :
-    v ∈ classicalPoints k K ↔
+    v ∈ rationalPoints k K ↔
       ∃ (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)), normClassicalPoint a ha = v := by
-  simp only [← range_normClassicalPoint_eq_classicalPoints, Set.mem_range, Subtype.exists]
+  simp only [← range_normClassicalPoint_eq_rationalPoints, Set.mem_range, Subtype.exists]
 
-/-- Every `normClassicalPoint a ha` lies in `classicalPoints k K`. -/
+/-- Every `normClassicalPoint a ha` lies in `rationalPoints k K`. -/
 @[simp]
-theorem normClassicalPoint_mem_classicalPoints {k : ℕ} [CompleteSpace K]
+theorem normClassicalPoint_mem_rationalPoints {k : ℕ} [CompleteSpace K]
     (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)) :
-    normClassicalPoint a ha ∈ classicalPoints k K :=
-  mem_classicalPoints_iff.mpr ⟨a, ha, rfl⟩
+    normClassicalPoint a ha ∈ rationalPoints k K :=
+  mem_rationalPoints_iff.mpr ⟨a, ha, rfl⟩
 
-/-- Every `classicalPoint x a ha` lies in `classicalPoints k K`. -/
-theorem classicalPoint_mem_classicalPoints {k : ℕ} [CompleteSpace K]
+/-- Every `classicalPoint x a ha` lies in `rationalPoints k K`. -/
+theorem classicalPoint_mem_rationalPoints {k : ℕ} [CompleteSpace K]
     (x : spa (powerBoundedSubring K)) (a : Fin k → K) (ha : ∀ i, IsPowerBounded (a i)) :
-    classicalPoint x a ha ∈ classicalPoints k K := by
+    classicalPoint x a ha ∈ rationalPoints k K := by
   simp [classicalPoint_eq_normClassicalPoint]
 
-/-- Every `x : Spa (K, K°)` sweeps out the same locus `classicalPoints k K`. -/
-theorem range_classicalPoint_eq_classicalPoints {k : ℕ} [CompleteSpace K]
+/-- Every `x : Spa (K, K°)` sweeps out the same locus `rationalPoints k K`. -/
+theorem range_classicalPoint_eq_rationalPoints {k : ℕ} [CompleteSpace K]
     (x : spa (powerBoundedSubring K)) :
     Set.range (fun a : {a : Fin k → K // ∀ i, IsPowerBounded (a i)} ↦
-        classicalPoint x a.val a.property) = classicalPoints k K := by
+        classicalPoint x a.val a.property) = rationalPoints k K := by
   simp [classicalPoint_eq_normClassicalPoint]
 
 end NormedField

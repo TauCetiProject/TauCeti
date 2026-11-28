@@ -39,10 +39,10 @@ comparison with `gaussPoint zero_lt_one le_rfl` is in
 * `TauCeti.ValuationSpectrum.isUnitGaussPoint_iff_eq_unitGaussPoint`: `unitGaussPoint n K` is the
   unique point satisfying `IsUnitGaussPoint`.
 * `TauCeti.ValuationSpectrum.unitGaussPoint_ne_classicalPoint` and
-  `TauCeti.ValuationSpectrum.unitGaussPoint_notMem_classicalPoints`: in positive dimension over a
-  complete field, `unitGaussPoint n K` is not classical.
+  `TauCeti.ValuationSpectrum.unitGaussPoint_notMem_rationalPoints`: in positive dimension over a
+  complete field, `unitGaussPoint n K` is not `K`-rational.
 * `TauCeti.ValuationSpectrum.unitGaussPoint_zero_eq_classicalPoint` and
-  `TauCeti.ValuationSpectrum.unitGaussPoint_zero_mem_classicalPoints`: in dimension `0`,
+  `TauCeti.ValuationSpectrum.unitGaussPoint_zero_mem_rationalPoints`: in dimension `0`,
   `unitGaussPoint 0 K` equals the unique classical point.
 
 ## References
@@ -101,18 +101,17 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K]
 `f ↦ max_ν ‖coeff ν f‖`. -/
 noncomputable def unitGaussPoint (n : ℕ) (K : Type*) [NormedField K] [IsUltrametricDist K] :
     closedPolydisc n K :=
-  ⟨ofValuation (weightedGaussValuation n (Valued.isContinuous_v (R := K))),
+  ⟨ofValuation (unitGaussValuation n K),
     (mem_closedPolydisc_iff n K _).mpr
-      ⟨(isContinuous_ofValuation_iff _).mpr (isContinuous_weightedGaussValuation _),
+      ⟨(isContinuous_ofValuation_iff _).mpr (isContinuous_unitGaussValuation n K),
         fun _ hf ↦ (vle_ofValuation _ _ _).mpr <| by
           rw [map_one]
-          exact weightedGaussValuation_le_one_of_mem_powerBoundedSubring n hf⟩⟩
+          exact unitGaussValuation_le_one_of_mem_powerBoundedSubring hf⟩⟩
 
 /-- The underlying point of `unitGaussPoint n K` in `Spv K⟨T⟩` is the valuation spectrum point of
-the unit-radius Gauss valuation. -/
+the unit Gauss valuation `unitGaussValuation n K`. -/
 theorem unitGaussPoint_val (n : ℕ) (K : Type*) [NormedField K] [IsUltrametricDist K] :
-    (unitGaussPoint n K).val =
-      ofValuation (weightedGaussValuation n (Valued.isContinuous_v (R := K))) :=
+    (unitGaussPoint n K).val = ofValuation (unitGaussValuation n K) :=
   (rfl)
 
 /-- The unit Gauss point compares restricted power series by their unit Gauss norms. -/
@@ -123,7 +122,7 @@ theorem unitGaussPoint_vle_iff (n : ℕ)
       MvPowerSeries.gaussNorm norm (fun _ : Fin n ↦ (1 : ℝ)) (f : MvPowerSeries (Fin n) K) ≤
         MvPowerSeries.gaussNorm norm (fun _ : Fin n ↦ (1 : ℝ)) (g : MvPowerSeries (Fin n) K) := by
   rw [unitGaussPoint_val, vle_ofValuation, ← NNReal.coe_le_coe,
-    coe_weightedGaussValuation_normedField, coe_weightedGaussValuation_normedField]
+    coe_unitGaussValuation, coe_unitGaussValuation]
 
 /-- The unit Gauss point compares restricted power series by the Gauss norms of their images under
 `restrictedMvPowerSeriesGaussEquiv`. -/
@@ -181,11 +180,11 @@ theorem unitGaussPoint_ne_classicalPoint [CompleteSpace K] {n : ℕ} [NeZero n]
   ne_classicalPoint_of_supp_eq_bot _ (supp_unitGaussPoint n K) x a ha
 
 /-- **In positive dimension over a complete field, the unit Gauss point is not in
-`classicalPoints n K`.** -/
+`rationalPoints n K`.** -/
 @[simp]
-theorem unitGaussPoint_notMem_classicalPoints [CompleteSpace K] {n : ℕ} [NeZero n] :
-    unitGaussPoint n K ∉ classicalPoints n K := by
-  rw [mem_classicalPoints_iff]
+theorem unitGaussPoint_notMem_rationalPoints [CompleteSpace K] {n : ℕ} [NeZero n] :
+    unitGaussPoint n K ∉ rationalPoints n K := by
+  rw [mem_rationalPoints_iff]
   rintro ⟨a, ha, h⟩
   rw [normClassicalPoint_def] at h
   exact unitGaussPoint_ne_classicalPoint (normSpaPoint K) a ha h.symm
@@ -196,13 +195,13 @@ theorem unitGaussPoint_zero_eq_classicalPoint [CompleteSpace K]
     unitGaussPoint 0 K = classicalPoint x Fin.elim0 (fun i ↦ i.elim0) :=
   eq_classicalPoint_zero x (unitGaussPoint 0 K)
 
-/-- **In dimension `0`, the unit Gauss point lies in `classicalPoints 0 K`**, over every complete
+/-- **In dimension `0`, the unit Gauss point lies in `rationalPoints 0 K`**, over every complete
 ultrametric normed field. -/
 @[simp]
-theorem unitGaussPoint_zero_mem_classicalPoints [CompleteSpace K] :
-    unitGaussPoint 0 K ∈ classicalPoints 0 K := by
+theorem unitGaussPoint_zero_mem_rationalPoints [CompleteSpace K] :
+    unitGaussPoint 0 K ∈ rationalPoints 0 K := by
   rw [unitGaussPoint_zero_eq_classicalPoint (normSpaPoint K)]
-  exact classicalPoint_mem_classicalPoints _ _ _
+  exact classicalPoint_mem_rationalPoints _ _ _
 
 end UnitGaussPoint
 

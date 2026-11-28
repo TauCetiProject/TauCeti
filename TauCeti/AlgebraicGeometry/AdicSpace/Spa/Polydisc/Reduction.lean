@@ -47,10 +47,7 @@ theorem evalAtHom_eq_coe_weightedSubringEvalHom (a : Fin n → K) (ha : ∀ i, I
     evalAtHom a ha f.val =
       (weightedSubringEvalHom (fun i ↦ ⟨a i, mem_powerBoundedSubring.mpr (ha i)⟩) f : K) := by
   rw [evalAtHom_eq_weightedEvalHom]
-  exact (coe_weightedSubringEvalHom (fun i ↦ ⟨a i, mem_powerBoundedSubring.mpr (ha i)⟩)
-    ((isWeightBounded_one_weight_iff_forall_isPowerBounded (RingHom.id K)
-      (fun i ↦ ((⟨a i, mem_powerBoundedSubring.mpr (ha i)⟩ : powerBoundedSubring K) : K))).mpr
-      ha) f).symm
+  exact (coe_weightedSubringEvalHom (fun i ↦ ⟨a i, mem_powerBoundedSubring.mpr (ha i)⟩) f).symm
 
 /-- Evaluating a unit-bounded series at a power-bounded tuple yields a power-bounded element. -/
 theorem evalAtHom_mem_powerBoundedSubring_of_mem_weightedSubring

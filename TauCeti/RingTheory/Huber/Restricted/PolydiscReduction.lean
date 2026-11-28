@@ -305,12 +305,17 @@ noncomputable def weightedSubringEvalHom (a : Fin n → powerBoundedSubring K) :
 /-- Evaluating an integral series `f ∈ K°⟨T₁, …, Tₙ⟩` at an integral tuple `a : Fin n → K°`
 via `weightedSubringEvalHom` agrees after coercion to `K` with `weightedEvalHom` on `f.val`. -/
 theorem coe_weightedSubringEvalHom (a : Fin n → powerBoundedSubring K)
-    (hb : IsWeightBounded (RingHom.id K) (fun _ : Fin n ↦ ({1} : Set K))
-      (fun i ↦ (a i : K)))
     (f : weightedSubring (fun _ : Fin n ↦ ({1} : Set K)) isWeightFamily_one_weight
       (powerBoundedSubring K)) :
     ((weightedSubringEvalHom a f : powerBoundedSubring K) : K) =
-      weightedEvalHom isWeightFamily_one_weight continuousAt_id hb f.val := by
+      weightedEvalHom isWeightFamily_one_weight continuousAt_id
+        ((isWeightBounded_one_weight_iff_forall_isPowerBounded (RingHom.id K) _).mpr fun i ↦
+          mem_powerBoundedSubring.mp (a i).property)
+        f.val := by
+  have hb : IsWeightBounded (RingHom.id K) (fun _ : Fin n ↦ ({1} : Set K))
+      (fun i ↦ (a i : K)) :=
+    (isWeightBounded_one_weight_iff_forall_isPowerBounded (RingHom.id K) _).mpr fun i ↦
+      mem_powerBoundedSubring.mp (a i).property
   have hcont : Continuous (powerBoundedSubring K).subtype := continuous_subtypeVal
   let toSub := weightedMap (k := n) (φ := (powerBoundedSubring K).subtype) hcont
     isWeightFamily_one_weight isWeightFamily_one_weight (fun _ ↦ by simp)
