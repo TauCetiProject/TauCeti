@@ -8,6 +8,9 @@ module
 public import Mathlib.Algebra.Homology.DerivedCategory.RightDerivedFunctorPlus
 public import TauCeti.Algebra.Homology.HomologicalComplex.Acyclic
 
+import TauCeti.Algebra.Homology.DerivedCategory.Plus.Basic
+import TauCeti.Algebra.Homology.DerivedCategory.Plus.RightDerived
+
 /-!
 # Bounded below right derived functors from adapted complexes
 
@@ -72,24 +75,21 @@ theorem isIso_rightDerivedFunctorPlusUnit_app (hinj : ∀ (Y : C), Injective Y �
   obtain ⟨b, _⟩ := K.property
   obtain ⟨L, i, _, hi, hL, hLb⟩ :=
     CochainComplex.Plus.modelCategoryQuillen.exists_mono_quasiIso_injective K.obj (b - 1) b
-  -- `L`, viewed as a bounded below complex of injective objects: mapping its lift back along
-  -- `InjectiveObject.ι C` gives `L` by definition, so `hLb` is the required bound
-  let L' : CochainComplex.Plus (InjectiveObject C) :=
-    ⟨HomologicalComplex.liftObjectProperty _ L hL, b - 1,
-      (CochainComplex.isStrictlyGE_mapHomologicalComplex_obj_iff _ (InjectiveObject.ι C) _).1 hLb⟩
-  let i' : K ⟶ (InjectiveObject.ι C).mapCochainComplexPlus.obj L' := ObjectProperty.homMk i
-  -- `i` and `F(i)` are quasi-isomorphisms; by definition `i'.hom` is `i` and
-  -- `(F.mapCochainComplexPlus.map i').hom` is `(F.mapHomologicalComplex _).map i`
+  -- view `L` in `CochainComplex.Plus C` and lift `i` to `K ⟶ L'`
+  let L' : CochainComplex.Plus C := ⟨L, b - 1, hLb⟩
+  let i' : K ⟶ L' := ObjectProperty.homMk i
+  have : QuasiIso i'.hom := hi
+  have : QuasiIso (F.mapCochainComplexPlus.map i').hom := by
+    rw [Functor.mapCochainComplexPlus_map_hom]
+    exact F.quasiIso_map_of_mono_of_isStrictlyGE P hP hF i (b - 1) hK fun n ↦ hinj _ (hL n)
+  -- `i'` and `F(i')` are quasi-isomorphisms, and `F.rightDerivedFunctorPlusUnit.app L'` is an
+  -- isomorphism because `L'` has injective terms
   have : IsIso (DerivedCategory.Plus.Q.map i') :=
-    Localization.inverts _ (CochainComplex.Plus.quasiIso C) i'
-      ((CochainComplex.Plus.quasiIso_iff C i').2 hi)
+    TauCeti.DerivedCategory.Plus.isIso_Q_map_of_quasiIso i'
   have : IsIso (DerivedCategory.Plus.Q.map (F.mapCochainComplexPlus.map i')) :=
-    Localization.inverts _ (CochainComplex.Plus.quasiIso D) _
-      ((CochainComplex.Plus.quasiIso_iff D _).2
-        (F.quasiIso_map_of_mono_of_isStrictlyGE P hP hF i (b - 1) hK fun n ↦ hinj _ (hL n)))
-  -- the map `F(L) ⟶ RF(L)` is an isomorphism, as `L` has injective terms
-  have h := F.rightDerivedFunctorPlusUnit.naturality i'
-  dsimp only [Functor.comp_map] at h
+    TauCeti.DerivedCategory.Plus.isIso_Q_map_of_quasiIso (F.mapCochainComplexPlus.map i')
+  have : ∀ n, Injective (L'.obj.X n) := hL
+  have h := F.rightDerivedFunctorPlusUnit_naturality i'
   have : IsIso (F.rightDerivedFunctorPlusUnit.app K ≫
       F.rightDerivedFunctorPlus.map (DerivedCategory.Plus.Q.map i')) := by
     rw [← h]

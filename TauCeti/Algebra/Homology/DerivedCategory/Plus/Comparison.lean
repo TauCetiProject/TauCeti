@@ -269,7 +269,7 @@ private def degreeZeroComponent (n : ℕ) (X : C) (I : InjectiveResolution X) :
       (F.rightDerivedFunctorPlus.mapIso
         ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).app X)) ≪≫
     F.rightDerivedFunctorPlusHomologyObjIsoOfResolution I.ιPlus (n : ℤ) ≪≫
-    I.cocomplexPlusHomologyIso F n ≪≫
+    I.cochainComplexPlusHomologyIso F n ≪≫
     (I.isoRightDerivedObj F n).symm
 
 private lemma degreeZeroComponent_hom (n : ℕ) (X : C) (I : InjectiveResolution X) :
@@ -278,7 +278,7 @@ private lemma degreeZeroComponent_hom (n : ℕ) (X : C) (I : InjectiveResolution
           (F.rightDerivedFunctorPlus.map
             ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).hom.app X)) ≫
         (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution I.ιPlus (n : ℤ)).hom ≫
-        (I.cocomplexPlusHomologyIso F n).hom ≫
+        (I.cochainComplexPlusHomologyIso F n).hom ≫
         (I.isoRightDerivedObj F n).inv :=
   rfl
 
@@ -300,9 +300,9 @@ private lemma degreeZeroComponent_hom_naturality (n : ℕ) {X Y : C} (f : X ⟶ 
   have h2 := F.rightDerivedFunctorPlusHomologyObjIsoOfResolution_hom_naturality
     IX.ιPlus IY.ιPlus
     ((TauCeti.CochainComplex.Plus.singleFunctor C 0).map f)
-    (InjectiveResolution.cocomplexPlusMap φ)
+    (InjectiveResolution.cochainComplexPlusMap φ)
     (congrArg DerivedCategory.Plus.Q.map (InjectiveResolution.ιPlus_naturality φ)) (n : ℤ)
-  have h3 := InjectiveResolution.cocomplexPlusHomologyIso_hom_naturality φ F n
+  have h3 := InjectiveResolution.cochainComplexPlusHomologyIso_hom_naturality φ F n
   have h4 := (InjectiveResolution.isoRightDerivedObj_inv_naturality f IX IY φ.hom
     (InjectiveResolution.desc_commutes_zero f IY IX) F n).symm
   simp only [Functor.comp_map, HomologicalComplex.homologyFunctor_map] at h4
@@ -314,27 +314,27 @@ private lemma degreeZeroComponent_hom_naturality (n : ℕ) {X Y : C} (f : X ⟶ 
         (DerivedCategory.Plus.homologyFunctor D (n : ℤ)).map (F.rightDerivedFunctorPlus.map
           ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).hom.app Y))) ≫
         (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution IY.ιPlus (n : ℤ)).hom ≫
-        (IY.cocomplexPlusHomologyIso F n).hom ≫ (IY.isoRightDerivedObj F n).inv := by
+        (IY.cochainComplexPlusHomologyIso F n).hom ≫ (IY.isoRightDerivedObj F n).inv := by
       simp only [degreeZeroComponent_hom, Category.assoc]
     _ = (DerivedCategory.Plus.homologyFunctor D (n : ℤ)).map (F.rightDerivedFunctorPlus.map
           ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).hom.app X)) ≫
         ((DerivedCategory.Plus.homologyFunctor D (n : ℤ)).map (F.rightDerivedFunctorPlus.map
           (DerivedCategory.Plus.Q.map ((TauCeti.CochainComplex.Plus.singleFunctor C 0).map f))) ≫
         (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution IY.ιPlus (n : ℤ)).hom) ≫
-        (IY.cocomplexPlusHomologyIso F n).hom ≫ (IY.isoRightDerivedObj F n).inv := by
+        (IY.cochainComplexPlusHomologyIso F n).hom ≫ (IY.isoRightDerivedObj F n).inv := by
       rw [h1, Category.assoc, Category.assoc]
     _ = (DerivedCategory.Plus.homologyFunctor D (n : ℤ)).map (F.rightDerivedFunctorPlus.map
           ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).hom.app X)) ≫
         (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution IX.ιPlus (n : ℤ)).hom ≫
         (HomologicalComplex.homologyMap
-          ((F.mapHomologicalComplex (.up ℤ)).map (InjectiveResolution.cocomplexPlusMap φ).hom)
+          ((F.mapHomologicalComplex (.up ℤ)).map (InjectiveResolution.cochainComplexPlusMap φ).hom)
             (n : ℤ) ≫
-        (IY.cocomplexPlusHomologyIso F n).hom) ≫ (IY.isoRightDerivedObj F n).inv := by
+        (IY.cochainComplexPlusHomologyIso F n).hom) ≫ (IY.isoRightDerivedObj F n).inv := by
       rw [h2, Category.assoc, Category.assoc]
     _ = (DerivedCategory.Plus.homologyFunctor D (n : ℤ)).map (F.rightDerivedFunctorPlus.map
           ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).hom.app X)) ≫
         (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution IX.ιPlus (n : ℤ)).hom ≫
-        (IX.cocomplexPlusHomologyIso F n).hom ≫
+        (IX.cochainComplexPlusHomologyIso F n).hom ≫
         (HomologicalComplex.homologyMap ((F.mapHomologicalComplex (.up ℕ)).map φ.hom) n ≫
         (IY.isoRightDerivedObj F n).inv) := by
       rw [h3, Category.assoc]
@@ -358,7 +358,7 @@ def singleFunctorZeroCompRightDerivedFunctorPlusCompHomologyIso (n : ℕ) :
 /-- On any object `X : C`, `singleFunctorZeroCompRightDerivedFunctorPlusCompHomologyIso` is
 computed by any injective resolution `I : InjectiveResolution X`, compatibly with
 `I.isoRightDerivedObj F n`, `F.rightDerivedFunctorPlusHomologyObjIsoOfResolution`, and
-`I.cocomplexPlusHomologyIso`. -/
+`I.cochainComplexPlusHomologyIso`. -/
 @[reassoc]
 lemma singleFunctorZeroCompRightDerivedFunctorPlusCompHomologyIso_hom_app_comp_isoRightDerivedObj
     (n : ℕ) (X : C) (I : InjectiveResolution X) :
@@ -368,7 +368,7 @@ lemma singleFunctorZeroCompRightDerivedFunctorPlusCompHomologyIso_hom_app_comp_i
           (F.rightDerivedFunctorPlus.map
             ((TauCeti.DerivedCategory.Plus.singleFunctorIsoCompQ C 0).hom.app X)) ≫
         (F.rightDerivedFunctorPlusHomologyObjIsoOfResolution I.ιPlus (n : ℤ)).hom ≫
-        (I.cocomplexPlusHomologyIso F n).hom := by
+        (I.cochainComplexPlusHomologyIso F n).hom := by
   have h := degreeZeroComponent_hom_naturality F n (𝟙 X) (injectiveResolution X) I
   simp only [Functor.map_id, Category.id_comp, Category.comp_id] at h
   dsimp only [singleFunctorZeroCompRightDerivedFunctorPlusCompHomologyIso,

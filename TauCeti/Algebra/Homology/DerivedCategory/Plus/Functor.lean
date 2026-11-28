@@ -65,16 +65,8 @@ variable {C₁ : Type u₁} [Category.{v₁} C₁] [Abelian C₁] [HasDerivedCat
 lemma plus_mapDerivedCategory (X : DerivedCategory C₁)
     (hX : (DerivedCategory.TStructure.t (C := C₁)).plus X) :
     (DerivedCategory.TStructure.t (C := C₂)).plus (F.mapDerivedCategory.obj X) := by
-  obtain ⟨a, ha⟩ := hX
-  obtain ⟨K, _, ⟨e⟩⟩ := X.exists_iso_Q_obj_of_isGE a
-  let L : CochainComplex C₂ ℤ := (F.mapHomologicalComplex (ComplexShape.up ℤ)).obj K
-  have : L.IsGE a := by
-    rw [CochainComplex.isGE_iff]
-    exact fun i hi ↦ (K.exactAt_of_isGE a i hi).map F
-  exact (DerivedCategory.TStructure.t (C := C₂)).plus.prop_of_iso
-    (F.mapDerivedCategory.mapIso e ≪≫ F.mapDerivedCategoryFactors.app K).symm
-    ⟨a, by
-      simpa only [Functor.comp_obj] using (DerivedCategory.isGE_Q_obj_iff L a).2 ‹L.IsGE a›⟩
+  obtain ⟨a, _⟩ := hX
+  exact ⟨a, F.isGE_mapDerivedCategory_obj X a⟩
 
 /-- The triangulated functor `DerivedCategory.Plus C₁ ⥤ DerivedCategory.Plus C₂` induced by an
 exact functor `F : C₁ ⥤ C₂` between abelian categories. -/
