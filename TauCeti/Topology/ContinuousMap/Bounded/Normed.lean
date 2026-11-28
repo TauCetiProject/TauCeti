@@ -114,7 +114,7 @@ namespace BoundedContinuousFunction
 
 /-- Pointwise characterization of the order on bounded continuous functions. -/
 theorem le_def {α β : Type*} [TopologicalSpace α] [NormedAddCommGroup β] [Lattice β]
-    [HasSolidNorm β] [IsOrderedAddMonoid β] {f g : α →ᵇ β} :
+    {f g : α →ᵇ β} :
     f ≤ g ↔ ∀ x, f x ≤ g x :=
   Iff.rfl
 

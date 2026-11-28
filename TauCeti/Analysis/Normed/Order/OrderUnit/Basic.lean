@@ -549,6 +549,15 @@ theorem norm_le_of_neg_le_of_le [IsOrderedAddMonoid E] (he : IsOrderUnitNorm e) 
   have hneg : -(‖b‖ • e) ≤ -b := neg_le.1 (by simpa using he.le_norm_smul b)
   exact hneg.trans h₁
 
+/-- For nonnegative elements `v` and `u` in an order-unit space, `‖v - u‖ ≤ ‖v + u‖`. -/
+theorem norm_sub_le_norm_add_of_nonneg [IsOrderedAddMonoid E] (he : IsOrderUnitNorm e)
+    {v u : E} (hv : 0 ≤ v) (hu : 0 ≤ u) : ‖v - u‖ ≤ ‖v + u‖ := by
+  refine he.norm_le_of_neg_le_of_le ?_ ?_
+  · rw [neg_add, sub_eq_add_neg]
+    exact add_le_add ((neg_nonpos.mpr hv).trans hv) le_rfl
+  · rw [sub_eq_add_neg]
+    exact add_le_add le_rfl ((neg_nonpos.mpr hu).trans hu)
+
 /-- Transport of `IsOrderUnitNorm` along a linear isometric order equivalence. -/
 theorem map_linearIsometryEquiv {F : Type*} [SeminormedAddCommGroup F] [Module ℝ F]
     [PartialOrder F] (he : IsOrderUnitNorm e) (Φ : E ≃ₗᵢ[ℝ] F)

@@ -20,11 +20,7 @@ decomposition `a = ℜ a + I • ℑ a`.
 
 ## Main definitions
 
-* `TauCeti.OrderUnit.cstarStateRestrict`: restricts a C⋆-state on `A` to a real order-unit state
-  on `selfAdjoint A`.
-* `TauCeti.OrderUnit.cstarStateExtend`: extends a real order-unit state on `selfAdjoint A` to a
-  C⋆-state on `A`.
-* `TauCeti.OrderUnit.cstarStateSpaceHomeomorph`: the resulting weak-* homeomorphism
+* `TauCeti.OrderUnit.cstarStateSpaceHomeomorph`: the weak-* homeomorphism
   `TauCeti.stateSpace A ≃ₜ TauCeti.OrderUnit.stateSpace (1 : selfAdjoint A)`.
 
 ## References
@@ -56,9 +52,8 @@ private theorem ofReal_re_apply_of_mem_stateSpace {ψ : WeakDual ℂ A}
     simpa using RCLike.conj_eq_iff_im.1 (isSelfAdjoint_apply_of_mem_stateSpace hψ ha).star_eq
   exact Complex.ext rfl him.symm
 
-/-- Restrict a C⋆-algebra state on `A` (with compatible star order `PartialOrder A` and
-`StarOrderedRing A`) to a real order-unit state on `selfAdjoint A`. -/
-def cstarStateRestrict (ψ : TauCeti.stateSpace A) : OrderUnit.stateSpace (1 : selfAdjoint A) :=
+private def cstarStateRestrict (ψ : TauCeti.stateSpace A) :
+    OrderUnit.stateSpace (1 : selfAdjoint A) :=
   let f : selfAdjoint A →L[ℝ] ℝ :=
     { toFun := fun a => (ψ.val a).re
       map_add' := fun a b => by simp
@@ -78,14 +73,11 @@ def cstarStateRestrict (ψ : TauCeti.stateSpace A) : OrderUnit.stateSpace (1 : s
       simpa [hf] using hle,
     by simp [hf, TauCeti.map_one_of_mem_stateSpace ψ.property]⟩⟩
 
-@[simp]
-theorem cstarStateRestrict_apply (ψ : TauCeti.stateSpace A) (a : selfAdjoint A) :
+private theorem cstarStateRestrict_apply (ψ : TauCeti.stateSpace A) (a : selfAdjoint A) :
     (cstarStateRestrict A ψ).val a = (ψ.val a).re := (rfl)
 
-/-- Extend a real order-unit state on `selfAdjoint A` to a C⋆-algebra state on `A` (with
-compatible star order `PartialOrder A` and `StarOrderedRing A`) via the Cartesian decomposition
-`a = ℜ a + I • ℑ a`. -/
-def cstarStateExtend (φ : OrderUnit.stateSpace (1 : selfAdjoint A)) : TauCeti.stateSpace A :=
+private def cstarStateExtend (φ : OrderUnit.stateSpace (1 : selfAdjoint A)) :
+    TauCeti.stateSpace A :=
   let g : A →L[ℂ] ℂ :=
     { toFun := fun a => (φ.val (ℜ a) : ℂ) + Complex.I * (φ.val (ℑ a) : ℂ)
       map_add' := fun a b => by simp [map_add]; ring
@@ -119,8 +111,7 @@ def cstarStateExtend (φ : OrderUnit.stateSpace (1 : selfAdjoint A)) : TauCeti.s
       have him : ℑ (1 : A) = 0 := selfAdjoint.imaginaryPart_coe (x := (1 : selfAdjoint A))
       simp [hg, hre, him, OrderUnit.apply_eq_one_of_mem_stateSpace φ.property]⟩⟩
 
-@[simp]
-theorem cstarStateExtend_apply (φ : OrderUnit.stateSpace (1 : selfAdjoint A)) (a : A) :
+private theorem cstarStateExtend_apply (φ : OrderUnit.stateSpace (1 : selfAdjoint A)) (a : A) :
     (cstarStateExtend A φ).val a = (φ.val (ℜ a) : ℂ) + Complex.I * (φ.val (ℑ a) : ℂ) := (rfl)
 
 /-- Restriction to `selfAdjoint A` and unique complex-linear extension via `a = ℜ a + I • ℑ a`

@@ -172,14 +172,6 @@ private theorem coe_mem_closedNonnegCone {a : E} (ha : 0 ≤ a) :
     coe he a ∈ closedNonnegCone he :=
   AddSubmonoid.le_topologicalClosure _ (AddSubmonoid.mem_map.mpr ⟨a, ha, rfl⟩)
 
-private theorem norm_sub_le_norm_add_of_nonneg (he : IsOrderUnitNorm e)
-    {v u : E} (hv : 0 ≤ v) (hu : 0 ≤ u) : ‖v - u‖ ≤ ‖v + u‖ := by
-  refine he.norm_le_of_neg_le_of_le ?_ ?_
-  · rw [neg_add, sub_eq_add_neg]
-    exact add_le_add ((neg_nonpos.mpr hv).trans hv) le_rfl
-  · rw [sub_eq_add_neg]
-    exact add_le_add le_rfl ((neg_nonpos.mpr hu).trans hu)
-
 private theorem norm_sub_le_norm_add_of_mem_closedNonnegCone (he : IsOrderUnitNorm e)
     {v u : OrderUnitCompletion he}
     (hv : v ∈ closedNonnegCone he) (hu : u ∈ closedNonnegCone he) :
@@ -192,7 +184,7 @@ private theorem norm_sub_le_norm_add_of_mem_closedNonnegCone (he : IsOrderUnitNo
   have hsub : C ×ˢ C ⊆ {p | ‖p.fst - p.snd‖ ≤ ‖p.fst + p.snd‖} := by
     rintro ⟨_, _⟩ ⟨⟨a, ha, rfl⟩, ⟨b, hb, rfl⟩⟩
     simp only [Set.mem_ofPred_eq, ← map_sub, ← map_add, (coe he).norm_map]
-    exact norm_sub_le_norm_add_of_nonneg he ha hb
+    exact he.norm_sub_le_norm_add_of_nonneg ha hb
   have hmem : (v, u) ∈ closure (C ×ˢ C) := by
     rw [closure_prod_eq]
     exact ⟨mem_closedNonnegCone_iff.mp hv, mem_closedNonnegCone_iff.mp hu⟩
@@ -441,6 +433,21 @@ theorem stateHomeomorph_symm_apply_coe (he : IsOrderUnitNorm e)
     (φ : OrderUnit.stateSpace e) (a : E) :
     ((stateHomeomorph he).symm φ).val (coe he a) = φ.val a :=
   stateExtend_apply_coe he φ a
+
+/-- The inverse of `stateHomeomorph he` sends a state `φ` of `E` to the continuous linear
+extension `extend he (WeakDual.toStrongDual φ.val)`. -/
+theorem toStrongDual_stateHomeomorph_symm (he : IsOrderUnitNorm e)
+    (φ : OrderUnit.stateSpace e) :
+    WeakDual.toStrongDual ((stateHomeomorph he).symm φ).val =
+      extend he (WeakDual.toStrongDual φ.val) :=
+  extend_unique _ fun a => stateHomeomorph_symm_apply_coe he φ a
+
+/-- On an arbitrary completion element `x`, `(stateHomeomorph he).symm φ` evaluates as
+`extend he (WeakDual.toStrongDual φ.val) x`. -/
+theorem stateHomeomorph_symm_apply (he : IsOrderUnitNorm e)
+    (φ : OrderUnit.stateSpace e) (x : OrderUnitCompletion he) :
+    ((stateHomeomorph he).symm φ).val x = extend he (WeakDual.toStrongDual φ.val) x := by
+  rw [← WeakDual.toStrongDual_apply, toStrongDual_stateHomeomorph_symm]
 
 end OrderUnitCompletion
 

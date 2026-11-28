@@ -166,6 +166,21 @@ theorem continuous_statePullback {F : Type*} [AddCommGroup F] [Module ℝ F] [To
   simpa only [Function.comp_apply, statePullback_apply] using
     continuous_eval_stateSpace (e := f) (T a)
 
+/-- Evaluation at `a : E` preserves real linear combinations (and in particular convex
+combinations) that remain in `stateSpace e`. -/
+theorem eval_stateSpace_smul_add_smul {φ ψ : stateSpace e} {s t : ℝ}
+    (h : s • φ.val + t • ψ.val ∈ stateSpace e) (a : E) :
+    (⟨s • φ.val + t • ψ.val, h⟩ : stateSpace e).val a = s * φ.val a + t * ψ.val a := by
+  simp
+
+/-- Evaluation at `a : E` preserves finite barycentric (and in particular convex) combinations
+that remain in `stateSpace e`. -/
+theorem eval_stateSpace_centerMass {ι : Type*} (t : Finset ι) (w : ι → ℝ)
+    (φ : ι → stateSpace e) (h : t.centerMass w (fun i => (φ i).val) ∈ stateSpace e) (a : E) :
+    (⟨t.centerMass w (fun i => (φ i).val), h⟩ : stateSpace e).val a =
+      t.centerMass w (fun i => (φ i).val a) := by
+  simp [Finset.centerMass, sum_apply, smul_apply]
+
 /-- Pulling back along the identity map fixes every state. -/
 @[simp]
 theorem statePullback_id (φ : stateSpace e) :
@@ -181,6 +196,26 @@ theorem statePullback_comp {F G : Type*} [AddCommGroup F] [Module ℝ F] [Topolo
     statePullback (S.comp T) (hS.comp hT) (by simp [hTe, hSf]) φ =
       statePullback T hT hTe (statePullback S hS hSf φ) :=
   Subtype.ext <| DFunLike.ext _ _ fun _ => rfl
+
+/-- Pulling back states preserves real linear combinations (and in particular convex combinations)
+that remain in `stateSpace f`. -/
+theorem statePullback_smul_add_smul {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+    [Preorder F] {f : F} (T : E →L[ℝ] F) (hT : Monotone T) (hTe : T e = f)
+    {φ ψ : stateSpace f} {s t : ℝ} (h : s • φ.val + t • ψ.val ∈ stateSpace f) :
+    (statePullback T hT hTe ⟨s • φ.val + t • ψ.val, h⟩).val =
+      s • (statePullback T hT hTe φ).val + t • (statePullback T hT hTe ψ).val :=
+  DFunLike.ext _ _ fun _ => by simp [statePullback_apply]
+
+/-- Pulling back states preserves finite barycentric (and in particular convex) combinations
+that remain in `stateSpace f`. -/
+theorem statePullback_centerMass {ι F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+    [Preorder F] {f : F} (T : E →L[ℝ] F) (hT : Monotone T) (hTe : T e = f) (t : Finset ι)
+    (w : ι → ℝ) (φ : ι → stateSpace f)
+    (h : t.centerMass w (fun i => (φ i).val) ∈ stateSpace f) :
+    (statePullback T hT hTe ⟨t.centerMass w (fun i => (φ i).val), h⟩).val =
+      t.centerMass w (fun i => (statePullback T hT hTe (φ i)).val) :=
+  DFunLike.ext _ _ fun _ => by
+    simp [Finset.centerMass, statePullback_apply, sum_apply, smul_apply]
 
 end Preorder
 
