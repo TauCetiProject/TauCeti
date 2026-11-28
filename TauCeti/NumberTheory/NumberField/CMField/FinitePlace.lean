@@ -27,6 +27,8 @@ places `w` with `conj w ≠ w` lie above the places of the maximal real subfield
   the valuation of a place fixed by conjugation.
 * `IsDedekindDomain.HeightOneSpectrum.map_asIdeal_of_conjPlace_eq`: the ideal of a place fixed by
   conjugation is stable under conjugation of the integers.
+* `IsDedekindDomain.HeightOneSpectrum.under_conjPlace`: `w` and `conj w` lie over the same place
+  of `E⁺`.
 * `IsDedekindDomain.HeightOneSpectrum.eq_conjPlace_iff`: the conjugate place is the only finite
   place with this property.
 * `IsDedekindDomain.HeightOneSpectrum.conjPlace_conjPlace`: conjugation of finite places is an
@@ -93,5 +95,23 @@ theorem map_asIdeal_of_conjPlace_eq {w : HeightOneSpectrum (𝓞 E)} (h : w.conj
   -- `ringOfIntegersComplexConj E` and `RingOfIntegers.mapRingEquiv (complexConj E).toRingEquiv`
   -- have the same underlying map, so the two images of `w.asIdeal` agree
   exact this.symm
+
+local notation3 "E⁺" => maximalRealSubfield E
+
+/-- A finite place `w` of a CM field `E` and its conjugate `conj w` lie over the same finite place
+of the maximal real subfield `E⁺`. -/
+@[simp]
+theorem under_conjPlace (w : HeightOneSpectrum (𝓞 E)) :
+    under (𝓞 E⁺) w.conjPlace = under (𝓞 E⁺) w := by
+  ext r
+  simp only [under_asIdeal, Ideal.mem_comap]
+  -- membership of an integer in a place is read off its valuation, and `conj` fixes `E⁺`
+  have hfix : complexConj E (algebraMap (𝓞 E) E (algebraMap (𝓞 E⁺) (𝓞 E) r)) =
+      algebraMap (𝓞 E) E (algebraMap (𝓞 E⁺) (𝓞 E) r) := by
+    rw [← IsScalarTower.algebraMap_apply, IsScalarTower.algebraMap_apply (𝓞 E⁺) E⁺ E,
+      AlgEquiv.commutes]
+  rw [← intValuation_lt_one_iff_mem, ← intValuation_lt_one_iff_mem,
+    ← valuation_of_algebraMap (K := E), ← valuation_of_algebraMap (K := E),
+    ← valuation_conjPlace w, hfix]
 
 end IsDedekindDomain.HeightOneSpectrum
