@@ -104,7 +104,7 @@ theorem exists_mem_nhds_zero_eq_zero_of_algebraMap_mem :
   obtain ⟨N, hN, hN0⟩ := h0
   refine ⟨N, hN, fun x hx ↦ AdeleRing.algebraMap_injective (𝓞 K) K ?_⟩
   have : (⟨algebraMap K 𝔸[K] x, x, rfl⟩ : AdeleRing.principalSubgroup (𝓞 K) K) = 0 := hN0 hx
-  rw [map_zero, ← ZeroMemClass.coe_zero (AdeleRing.principalSubgroup (𝓞 K) K), ← this]
+  simpa using congrArg Subtype.val this
 
 /-- **`K` is closed in its adele ring**: the diagonal copy of a number field is a closed additive
 subgroup of `𝔸[K]`. -/

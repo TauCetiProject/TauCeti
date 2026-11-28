@@ -72,9 +72,7 @@ theorem adelicUnitaryGroup.fst_toAdeleMatrix_apply {s : ι → ℤˣ} (g : adeli
     (i j : ι) :
     (adelicUnitaryGroup.toAdeleMatrix E s g i j).1 =
       ((g : GL ι (InfiniteAdeleRing E) × GL ι 𝔸ᶠ[E]).1 : Matrix ι ι (InfiniteAdeleRing E)) i j := by
-  rw [adelicUnitaryGroup.toAdeleMatrix, MonoidHom.comp_apply, MonoidHom.comp_apply,
-    Subgroup.coe_subtype, MulEquiv.coe_toMonoidHom, Units.coeHom_apply,
-    coe_prodEquivGL_symm_apply, Matrix.of_apply]
+  simp [adelicUnitaryGroup.toAdeleMatrix, coe_prodEquivGL_symm_apply]
 
 /-- The finite component of the entry `(i, j)` of the adelic matrix of `g` is `g_f i j`. -/
 @[simp]
@@ -82,9 +80,7 @@ theorem adelicUnitaryGroup.snd_toAdeleMatrix_apply {s : ι → ℤˣ} (g : adeli
     (i j : ι) :
     (adelicUnitaryGroup.toAdeleMatrix E s g i j).2 =
       ((g : GL ι (InfiniteAdeleRing E) × GL ι 𝔸ᶠ[E]).2 : Matrix ι ι 𝔸ᶠ[E]) i j := by
-  rw [adelicUnitaryGroup.toAdeleMatrix, MonoidHom.comp_apply, MonoidHom.comp_apply,
-    Subgroup.coe_subtype, MulEquiv.coe_toMonoidHom, Units.coeHom_apply,
-    coe_prodEquivGL_symm_apply, Matrix.of_apply]
+  simp [adelicUnitaryGroup.toAdeleMatrix, coe_prodEquivGL_symm_apply]
 
 /-- **`G(s)` is a closed subset of the adelic matrices**: the adelic matrix
 `G(s) → M_n(𝔸)` is a closed embedding. The unitary groups `G_∞(s)` and `G_f` are closed subsets

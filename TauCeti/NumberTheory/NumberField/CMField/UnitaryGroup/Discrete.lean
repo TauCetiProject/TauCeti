@@ -104,7 +104,9 @@ private theorem exists_mem_nhds_one_eq_one_of_rationalEmbedding_mem
         algebraMap E 𝔸[E] (((γ : GL ι E) : Matrix ι ι E) i j - (1 : Matrix ι ι E) i j) := by
     simp only [c, M, hconj, coe_prodEquivGL_symm_apply, Matrix.of_apply,
       GeneralLinearGroup.map_apply, map_sub]
-    congr 1
+    -- The adele of `a ∈ E` is the pair of its infinite and finite adeles.
+    exact sub_left_inj.2 <| Prod.ext (AdeleRing.algebraMap_fst_def (𝓞 E) E _).symm
+      (AdeleRing.algebraMap_snd_def (𝓞 E) E _).symm
   have hW : (⋂ i, ⋂ j, c i j ⁻¹' N) ∈ 𝓝 (1 : adelicUnitaryGroup E s) := by
     refine Filter.iInter_mem.2 fun i ↦ Filter.iInter_mem.2 fun j ↦
       (hc i j).continuousAt.preimage_mem_nhds ?_
