@@ -12,8 +12,10 @@ import TauCeti.Analysis.Fourier.ZMod
 /-!
 # Cesàro averages via discrete Fourier transforms
 
-* `TauCeti.tendsto_cesaro_ite_mod_of_fourier`: vanishing of rational Fourier twists modulo `q`
-  implies vanishing of the masked Cesàro average on a residue class `r < q`.
+* `TauCeti.tendsto_cesaro_ite_mod_of_fourier`: if the Cesàro averages of the twisted sequence
+  `i ↦ b i * fourier (a.val : ℤ) (((i : ℝ) / q : ℝ) : UnitAddCircle)` tend to `0` for every
+  residue frequency `a : ZMod q` (including `a = 0`), then the masked Cesàro average on a residue
+  class `r < q` tends to `0`.
 -/
 
 public section
@@ -22,8 +24,10 @@ open Filter Finset
 
 namespace TauCeti
 
-/-- Vanishing of rational Fourier twists modulo `q` implies vanishing on the residue class `r < q`
-for any complex sequence `b : ℕ → ℂ`. -/
+/-- If the Cesàro averages of the twisted sequence
+`i ↦ b i * fourier (a.val : ℤ) (((i : ℝ) / q : ℝ) : UnitAddCircle)` tend to `0` for every residue
+frequency `a : ZMod q` (including `a = 0`), then the masked Cesàro average of `b : ℕ → ℂ` on the
+residue class `r < q` tends to `0`. -/
 theorem tendsto_cesaro_ite_mod_of_fourier {b : ℕ → ℂ} {q r : ℕ} [NeZero q] (hr : r < q)
     (h : ∀ a : ZMod q, Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℂ)⁻¹ *
       ∑ i ∈ range (n + 1), b i * fourier (a.val : ℤ) (((i : ℝ) / q : ℝ) : UnitAddCircle))

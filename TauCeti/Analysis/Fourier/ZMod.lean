@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Fourier.ZMod
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.Data.ZMod.Count
-import TauCeti.Data.ZMod.FinEquiv
 
 /-!
 # The discrete Fourier transform on `ZMod N`: bounds, reductions and integrality
@@ -39,7 +38,6 @@ function with values in a subring `R ⊆ ℂ` containing them again has its valu
   `ZMod.val_div_natCast_mem_Icc`: `j.val / N` lies in `[0, 1]`.
 * `ZMod.ite_mod_eq_sum_fourier`: indicator of a residue class modulo `q > 0` as a finite Fourier sum
   of rational twists.
-* `ZMod.sum_fourier_div_eq`: evaluation of `∑ j < M, fourier k (j / M)` for any `M ≠ 0`.
 * `ZMod.dft_comp_natCast_val`: the transform of a function of the reduction modulo `v ∣ N`.
 * `ZMod.dft_apply_mem`: the transform of an `R`-valued function is `R`-valued when `R` contains
   the `N`-th roots of unity.
@@ -117,17 +115,6 @@ theorem ite_mod_eq_sum_fourier {q r : ℕ} [NeZero q] (hr : r < q) (i : ℕ) :
   rw [← hinv]; congr 1; refine Finset.sum_congr rfl fun a _ ↦ ?_
   rw [mul_comm, fourier_natCast_div_eq_stdAddChar, Int.cast_natCast, natCast_zmod_val,
     mul_comm (a : ZMod q)]
-
-/-- Sum of an `M`-th root of unity over `0, …, M - 1` equals `M` when `M ∣ k` and `0` otherwise. -/
-theorem sum_fourier_div_eq (k : ℤ) (M : ℕ) [NeZero M] :
-    ∑ j ∈ Finset.range M, fourier k (((j : ℝ) / (M : ℝ) : ℝ) : UnitAddCircle) =
-      if (k : ZMod M) = 0 then (M : ℂ) else 0 := by
-  simp_rw [fourier_natCast_div_eq_stdAddChar, ← Fin.sum_univ_eq_sum_range, ← finEquiv_apply]
-  rw [Fintype.sum_equiv (finEquiv M).toEquiv
-      (fun x : Fin M ↦ stdAddChar (finEquiv M x * (k : ZMod M)))
-      (fun x : ZMod M ↦ stdAddChar (x * (k : ZMod M))) (fun _ ↦ rfl),
-    AddChar.sum_mulShift (k : ZMod M) (isPrimitive_stdAddChar M), ZMod.card M]
-  split_ifs <;> simp
 
 /-- **The Fourier transform of a function of the reduction modulo a divisor.** For `v ∣ N` and
 `L = N / v`, the discrete Fourier transform modulo `N` of `j ↦ f (j mod v)` is `L • 𝓕 f m` at

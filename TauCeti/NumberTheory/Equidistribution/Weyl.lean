@@ -23,7 +23,7 @@ Fourier-analytic equidistribution criteria on `AddCircle T` and `UnitAddTorus d`
 `TauCeti.asympEquidistributed_addCircle_iff`, `TauCeti.weyl_criterion_addCircle`,
 `TauCeti.asympEquidistributed_unitAddTorus_iff`, `TauCeti.weyl_criterion`,
 `TauCeti.not_asympEquidistributed_of_mFourier_const`,
-`TauCeti.asympEquidistributed_unitAddTorus_iff_forall_linear_comb`,
+`TauCeti.asympEquidistributed_unitAddTorus_iff_forall_pairing`,
 `TauCeti.totallyAsympEquidistributed_unitAddTorus_iff_rational_twist`, and
 `TauCeti.uniformDistribution_mod_one_tfae`.
 
@@ -50,8 +50,8 @@ theorem asympEquidistributed_addCircle_iff {T : ℝ} [Fact (0 < T)] {x : ℕ →
   simp_rw [TauCeti.Probability.integral_empiricalMeasure_rclike
     (fourier _).continuous.stronglyMeasurable]
 
-/-- **Weyl's criterion on `AddCircle T` for Haar**: equidistribution iff all nonzero Fourier sums
-tend to `0`. -/
+/-- **Weyl's criterion on `AddCircle T` for Haar**: equidistribution iff the normalized Fourier
+averages tend to `0` for every nonzero circle frequency `k ≠ 0`. -/
 theorem weyl_criterion_addCircle {T : ℝ} [Fact (0 < T)] {x : ℕ → AddCircle T} :
     AsympEquidistributed x AddCircle.haarAddCircle.toProbabilityMeasure ↔ ∀ k : ℤ, k ≠ 0 →
       Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℂ)⁻¹ * ∑ i ∈ range (n + 1), fourier k (x i))
@@ -75,8 +75,8 @@ theorem asympEquidistributed_unitAddTorus_iff {x : ℕ → UnitAddTorus d}
   simp_rw [TauCeti.Probability.integral_empiricalMeasure_rclike
     (UnitAddTorus.mFourier _).continuous.stronglyMeasurable]
 
-/-- **Weyl's criterion on `UnitAddTorus d` for Haar**: equidistribution iff all nontrivial
-`mFourier` sums tend to `0`. -/
+/-- **Weyl's criterion on `UnitAddTorus d` for Haar**: equidistribution iff the normalized
+`mFourier` averages tend to `0` for every nonzero torus frequency `k ≠ 0`. -/
 theorem weyl_criterion {x : ℕ → UnitAddTorus d} :
     AsympEquidistributed x (volume : Measure (UnitAddTorus d)).toProbabilityMeasure ↔
       ∀ k : d → ℤ, k ≠ 0 → Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℂ)⁻¹ *
@@ -100,8 +100,9 @@ theorem not_asympEquidistributed_of_mFourier_const {x : ℕ → UnitAddTorus d} 
   exact hc (tendsto_nhds_unique tendsto_const_nhds hlim)
 
 /-- **Equidistribution via 1D projections**: `x` is Haar-equidistributed on `UnitAddTorus d` iff
-every nonzero integer combination of its coordinates is equidistributed on `UnitAddCircle`. -/
-theorem asympEquidistributed_unitAddTorus_iff_forall_linear_comb {x : ℕ → UnitAddTorus d} :
+for every nonzero integer frequency `k ≠ 0`, the pairing `n ↦ ∑ i, k i • x n i` is
+equidistributed on `UnitAddCircle`. -/
+theorem asympEquidistributed_unitAddTorus_iff_forall_pairing {x : ℕ → UnitAddTorus d} :
     AsympEquidistributed x (volume : Measure (UnitAddTorus d)).toProbabilityMeasure ↔
       ∀ k : d → ℤ, k ≠ 0 → AsympEquidistributed (fun n ↦ ∑ i, k i • x n i)
         AddCircle.haarAddCircle.toProbabilityMeasure := by
@@ -111,8 +112,9 @@ theorem asympEquidistributed_unitAddTorus_iff_forall_linear_comb {x : ℕ → Un
   · simpa only [← UnitAddTorus.mFourier_eq_fourier_sum] using
       (weyl_criterion_addCircle.mp (h k hk)) 1 one_ne_zero
 
-/-- **Total equidistribution by rational twists**: `x` is totally Haar-equidistributed iff all its
-rationally twisted Weyl sums vanish in the limit. -/
+/-- **Total equidistribution by rational twists**: `x` is totally Haar-equidistributed iff for
+every nonzero torus frequency `k ≠ 0` and every rational twist `a / b` (`b > 0`), the normalized
+twisted `mFourier` averages tend to `0`. -/
 theorem totallyAsympEquidistributed_unitAddTorus_iff_rational_twist {x : ℕ → UnitAddTorus d} :
     TotallyAsympEquidistributed x (volume : Measure (UnitAddTorus d)).toProbabilityMeasure ↔
       ∀ k : d → ℤ, k ≠ 0 → ∀ b : ℕ, 0 < b → ∀ a : ℤ,
@@ -229,7 +231,8 @@ private theorem asympEquidistributed_of_forall_fract_Ico {u : ℕ → ℝ}
       (f := ((↑) : ℝ → UnitAddCircle)) continuous_quotient_mk' AddCircle.measurable_mk'
 
 /-- **Uniform distribution modulo `1`**: equivalence of Haar equidistribution on `UnitAddCircle`,
-fractional-part frequencies in `[a, b) ⊆ [0, 1]`, and vanishing of nonzero Weyl sums. -/
+fractional-part frequencies in `[a, b) ⊆ [0, 1]`, and normalized Fourier averages tending to `0`
+for every nonzero circle frequency `k ≠ 0`. -/
 theorem uniformDistribution_mod_one_tfae (u : ℕ → ℝ) :
     List.TFAE [
       AsympEquidistributed (fun n ↦ (u n : UnitAddCircle))

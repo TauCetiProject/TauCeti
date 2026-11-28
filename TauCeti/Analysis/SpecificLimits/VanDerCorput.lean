@@ -11,7 +11,6 @@ import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.Positivity
 import TauCeti.Algebra.BigOperators.Intervals
-import TauCeti.Analysis.SpecificLimits.Cesaro.Basic
 
 /-!
 # Van der Corput's inequality and correlation lemma

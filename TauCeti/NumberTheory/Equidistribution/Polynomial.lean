@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.Equidistribution.Linear
 public import TauCeti.NumberTheory.Equidistribution.VanDerCorput
-import TauCeti.Algebra.BigOperators.Finset.Average
 import TauCeti.Algebra.Group.PolynomialSequence
 import TauCeti.Analysis.Fourier.Monomial
 
@@ -17,7 +16,7 @@ import TauCeti.Analysis.Fourier.Monomial
 Equidistribution and total equidistribution (on `ℕ` and `ℤ`) of polynomial sequences
 `n ↦ ∑ j ∈ range (s + 1), n ^ j • α j` in `UnitAddTorus d`: `TauCeti.weyl_polynomial`,
 `TauCeti.weyl_polynomial_unitAddCircle`,
-`TauCeti.asympEquidistributed_poly_comp_affine_addCircle`,
+`TauCeti.asympEquidistributed_poly_comp_affine_unitAddCircle`,
 `TauCeti.polynomial_equidistribution_tfae`, `TauCeti.polynomial_equidistribution_iff`,
 `TauCeti.polynomial_total_equidistribution_iff`, and
 `TauCeti.polynomial_total_equidistributionInt_iff`.
@@ -49,8 +48,11 @@ theorem weyl_polynomial {d : Type*} [Fintype d] (s : ℕ) (hs : 1 ≤ s) (α : �
   | succ m ih =>
     refine vanDerCorput_difference fun h hh ↦ ?_
     let β := fun r ↦ ∑ j ∈ Ico (r + 1) (m + 3), (h ^ (j - r) * j.choose r) • α j
-    rw [(funext (poly_sub_shift (m + 2) h α) : (fun n : ℕ ↦
-      (∑ j ∈ range (m + 3), (n + h) ^ j • α j) - ∑ j ∈ range (m + 3), n ^ j • α j) = _)]
+    have hdiff : (fun n : ℕ ↦
+        (∑ j ∈ range (m + 3), (n + h) ^ j • α j) - ∑ j ∈ range (m + 3), n ^ j • α j) =
+        fun n : ℕ ↦ ∑ r ∈ range (m + 2), n ^ r • β r :=
+      funext fun n ↦ by simpa [fwdDiff] using fwdDiff_sum_range_pow_nsmul (m + 2) h α n
+    rw [hdiff]
     exact ih β ((by simp [β, Nat.choose_succ_self_right] : β (m + 1) = (h * (m + 2)) • α (m + 2))
       ▸ hα.nsmul (Nat.mul_ne_zero hh.ne' (Nat.succ_ne_zero _)))
 
@@ -61,12 +63,12 @@ theorem weyl_polynomial_unitAddCircle (s : ℕ) (hs : 1 ≤ s) (c : ℕ → Unit
     AsympEquidistributed (fun n : ℕ ↦ ∑ j ∈ range (s + 1), n ^ j • c j)
       AddCircle.haarAddCircle.toProbabilityMeasure := by
   simpa [Fintype.sum_unique] using
-    (asympEquidistributed_unitAddTorus_iff_forall_linear_comb.mp (weyl_polynomial (d := Unit) s hs
+    (asympEquidistributed_unitAddTorus_iff_forall_pairing.mp (weyl_polynomial (d := Unit) s hs
       (fun j _ ↦ c j) (torusIrrational_unique_iff.mpr hc))) (fun _ ↦ 1) (by simp [funext_iff])
 
 /-- 1D polynomial sequences with an infinite-order non-constant coefficient are equidistributed
 on `UnitAddCircle` along every affine progression `Q * n + R` (`Q ≠ 0`). -/
-theorem asympEquidistributed_poly_comp_affine_addCircle {s : ℕ} (c : ℕ → UnitAddCircle)
+theorem asympEquidistributed_poly_comp_affine_unitAddCircle {s : ℕ} (c : ℕ → UnitAddCircle)
     (hex : ∃ j ∈ Icc 1 s, addOrderOf (c j) = 0) {Q : ℤ} (hQ : Q ≠ 0) (R : ℤ) :
     AsympEquidistributed (fun n : ℕ ↦ ∑ j ∈ range (s + 1), (Q * (n : ℤ) + R) ^ j • c j)
       AddCircle.haarAddCircle.toProbabilityMeasure := by
@@ -80,10 +82,11 @@ theorem asympEquidistributed_poly_comp_affine_addCircle {s : ℕ} (c : ℕ → U
         ⟨mem_Icc.mpr ⟨by have := (mem_Ioc.mp j.property).1; omega, (mem_Ioc.mp j.property).2⟩, h0⟩
   obtain ⟨D, hDpos, hD⟩ := isOfFinAddOrder_iff_nsmul_eq_zero.mp hfin
   refine asympEquidistributed_of_forall_mod hDpos fun r _ ↦ ?_
-  obtain ⟨γ, hγ_lead, hγ_eq⟩ := poly_comp_affine_kill_high hj₀_ge (mem_Icc.mp hj₀_mem.1).2 c
-    (q := Q * (D : ℤ)) (fun j hj ↦ by
-      have hDj : D • c j = 0 := congrFun hD ⟨j, hj⟩
-      rw [mul_zsmul, natCast_zsmul, hDj, smul_zero]) (Q * (r : ℤ) + R)
+  obtain ⟨γ, hγ_lead, hγ_eq⟩ :=
+    exists_sum_range_mul_add_pow_zsmul_eq_of_forall_zsmul_eq_zero hj₀_ge (mem_Icc.mp hj₀_mem.1).2 c
+      (q := Q * (D : ℤ)) (fun j hj ↦ by
+        have hDj : D • c j = 0 := congrFun hD ⟨j, hj⟩
+        rw [mul_zsmul, natCast_zsmul, hDj, smul_zero]) (Q * (r : ℤ) + R)
   rw [(funext fun n ↦ by
     have heq : Q * ((D * n + r : ℕ) : ℤ) + R = (Q * (D : ℤ)) * (n : ℤ) + (Q * (r : ℤ) + R) := by
       push_cast; ring
@@ -102,13 +105,13 @@ private theorem totallyAsympEquidistributedInt_poly_of_forall_addOrderOf {d : Ty
     TotallyAsympEquidistributedInt (fun n : ℤ ↦ ∑ j ∈ range (s + 1), n ^ j • α j)
       (volume : Measure (UnitAddTorus d)).toProbabilityMeasure :=
   totallyAsympEquidistributedInt_iff_forall_affine.mpr fun Q hQ R ↦
-    asympEquidistributed_unitAddTorus_iff_forall_linear_comb.mpr fun k hk ↦ by
+    asympEquidistributed_unitAddTorus_iff_forall_pairing.mpr fun k hk ↦ by
       simp_rw [(fun n : ℕ ↦ (by
         rw [← UnitAddTorus.pairing_apply, map_sum]
         simp_rw [map_zsmul, UnitAddTorus.pairing_apply] :
         ∑ i, k i • (∑ j ∈ range (s + 1), (Q * (n : ℤ) + R) ^ j • α j) i =
           ∑ j ∈ range (s + 1), (Q * (n : ℤ) + R) ^ j • ∑ i, k i • α j i))]
-      exact asympEquidistributed_poly_comp_affine_addCircle _ (h6 k hk) hQ R
+      exact asympEquidistributed_poly_comp_affine_unitAddCircle _ (h6 k hk) hQ R
 
 /-- Necessary non-annihilation condition for equidistribution of a polynomial sequence. -/
 private theorem forall_pairing_ne_zero_of_asympEquidistributed_poly {d : Type*} [Fintype d]

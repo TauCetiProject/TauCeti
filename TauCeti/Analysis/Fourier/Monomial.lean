@@ -15,6 +15,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
+import TauCeti.Topology.Circle.AddCircle
 
 /-!
 # Pointwise identities and estimates for the Fourier monomials
@@ -38,7 +39,6 @@ integrates term by term against an `L¹` function.
   and `(fourier n)⋆ = fourier (-n)` in `C(AddCircle T, ℂ)`.
 * `TauCeti.fourier_apply_add`, `TauCeti.fourier_apply_sub`: `fourier n` turns sums and differences
   of points into `fourier n x * fourier n y` and `fourier n x * fourier (-n) y`.
-* `AddCircle.coe_toCircle_eq_one_iff`: for `T ≠ 0`, `(AddCircle.toCircle y : ℂ) = 1 ↔ y = 0`.
 * `TauCeti.norm_two_pi_I_mul_intCast_div`: `‖2πin/T‖ = 2π/T |n|` for `T > 0`.
 * `TauCeti.norm_fourier_coe_sub_le`: `‖e_n φ - e_n ψ‖ ≤ ‖2πin/T‖ |φ - ψ|` for real `φ, ψ`.
 * `TauCeti.norm_fourier_coe_sub_sub_le`: the second-order bound
@@ -132,13 +132,6 @@ theorem fourier_apply_add (n : ℤ) (x y : AddCircle T) :
 theorem fourier_apply_sub (n : ℤ) (x y : AddCircle T) :
     fourier n (x - y) = fourier n x * fourier (-n) y := by
   simp [sub_eq_add_neg, AddCircle.toCircle_add]
-
-/-- For `T ≠ 0`, `AddCircle.toCircle y` coerces to `1 : ℂ` only at `y = 0`. -/
-@[simp]
-theorem _root_.AddCircle.coe_toCircle_eq_one_iff (hT : T ≠ 0) (y : AddCircle T) :
-    (AddCircle.toCircle y : ℂ) = 1 ↔ y = 0 :=
-  ⟨fun h ↦ AddCircle.injective_toCircle hT (Subtype.ext (by simpa using h)),
-    by rintro rfl; simp⟩
 
 /-- The frequency factor `2πin/T` by which differentiation multiplies the Fourier monomial
 `fourier n` (`hasDerivAt_fourier`) has norm `2π/T |n|`. -/
@@ -351,24 +344,25 @@ theorem mFourier_eq_fourier_sum (k : d → ℤ) (x : UnitAddTorus d) :
 /-- Negating the argument conjugates a multivariate Fourier monomial. -/
 theorem mFourier_apply_neg (k : d → ℤ) (x : UnitAddTorus d) :
     mFourier k (-x) = starRingEnd ℂ (mFourier k x) := by
-  rw [← mFourier_neg, mFourier_eq_fourier_sum, mFourier_eq_fourier_sum]; simp
+  rw [mFourier_eq_fourier_sum, ← TauCeti.UnitAddTorus.pairing_apply, map_neg,
+    ← AddMonoidHom.neg_apply, ← map_neg TauCeti.UnitAddTorus.pairing,
+    TauCeti.UnitAddTorus.pairing_apply, ← mFourier_eq_fourier_sum, mFourier_neg]
 
 /-- Evaluating a multivariate Fourier monomial at a natural-number multiple raises its value to that
 power. -/
 theorem mFourier_apply_nsmul (k : d → ℤ) (n : ℕ) (x : UnitAddTorus d) :
     mFourier k (n • x) = mFourier k x ^ n := by
-  rw [mFourier_eq_fourier_sum, mFourier_eq_fourier_sum, fourier_one, fourier_one,
-    (by simp [Finset.smul_sum, ← natCast_zsmul, zsmul_comm] :
-      ∑ i, k i • (n • x) i = n • ∑ i, k i • x i)]
-  simpa [AddCircle.toCircle_addChar] using congrArg ((↑) : Circle → ℂ)
-    (AddChar.map_nsmul_eq_pow AddCircle.toCircle_addChar n (∑ i, k i • x i))
+  rw [mFourier_eq_fourier_sum, mFourier_eq_fourier_sum, ← TauCeti.UnitAddTorus.pairing_apply,
+    map_nsmul, TauCeti.UnitAddTorus.pairing_apply]
+  simp [fourier_apply, AddCircle.toCircle_nsmul]
 
 /-- Scaling the frequency vector by an integer `m` corresponds to evaluating `fourier m` on the
 integer pairing `∑ i, k i • x i`. -/
 theorem mFourier_zsmul (m : ℤ) (k : d → ℤ) (x : UnitAddTorus d) :
     mFourier (m • k) x = fourier m (∑ i, k i • x i) := by
-  rw [mFourier_eq_fourier_sum, fourier_one, fourier_apply, Finset.smul_sum (r := m)]
-  congr 2; exact Finset.sum_congr rfl fun i _ ↦ by rw [Pi.smul_apply, smul_eq_mul, mul_zsmul]
+  rw [mFourier_eq_fourier_sum, ← TauCeti.UnitAddTorus.pairing_apply, map_zsmul,
+    AddMonoidHom.zsmul_apply, TauCeti.UnitAddTorus.pairing_apply, fourier_apply, fourier_apply,
+    one_zsmul]
 
 end UnitAddTorus
 

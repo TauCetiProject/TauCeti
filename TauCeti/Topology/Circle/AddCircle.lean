@@ -52,6 +52,7 @@ A real number vanishes in `UnitAddCircle = ℝ/ℤ` exactly when it is an intege
 * `AddCircle.coe_add_half_period_ne` — adding the half period moves every point.
 * `AddCircle.im_toCircle_eq_zero_iff` — `0` and the half period are the only points at which
   `AddCircle.toCircle` is real.
+* `AddCircle.coe_toCircle_eq_one_iff` — for `T ≠ 0`, `(AddCircle.toCircle y : ℂ) = 1 ↔ y = 0`.
 * `AddCircle.exists_forall_eq_add_pos` — a continuous family `ψ (θ, ·)` of maps of the circle, the
   identity at time `0`, with `ψ (-θ, ·)` a right inverse of `ψ (θ, ·)` and without fixed points at
   small positive times, moves every point forward by a small continuous amount at some arbitrarily
@@ -144,6 +145,13 @@ theorem im_toCircle_eq_zero_iff {T : ℝ} (hT : T ≠ 0) {x : AddCircle T} :
   -- preimages, by injectivity of `toCircle`.
   rw [Circle.im_coe_eq_zero_iff, ← toCircle_half_period hT, ← toCircle_zero (T := T),
     (injective_toCircle hT).eq_iff, (injective_toCircle hT).eq_iff]
+
+/-- For `T ≠ 0`, `AddCircle.toCircle y` coerces to `1 : ℂ` only at `y = 0`. -/
+@[simp]
+theorem coe_toCircle_eq_one_iff {T : ℝ} (hT : T ≠ 0) (y : AddCircle T) :
+    (AddCircle.toCircle y : ℂ) = 1 ↔ y = 0 :=
+  ⟨fun h ↦ AddCircle.injective_toCircle hT (Subtype.ext (by simpa using h)),
+    by rintro rfl; simp⟩
 
 section Displacement
 

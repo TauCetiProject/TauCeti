@@ -8,7 +8,6 @@ module
 public import Mathlib.Data.List.TFAE
 public import TauCeti.NumberTheory.Equidistribution.Weyl
 public import TauCeti.Topology.Instances.AddCircle.UnitAddTorus
-import TauCeti.Algebra.BigOperators.Finset.Average
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.SpecificLimits.Normed
 

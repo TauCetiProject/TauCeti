@@ -74,28 +74,25 @@ theorem tendsto_cesaro_comp_add_iff {f : ℕ → E} {L : E} (m : ℕ) :
       ∑ i ∈ range (n + m + 1), f i := by
     conv_rhs => rw [(by omega : n + m + 1 = m + (n + 1)), sum_range_add, add_comm]
     exact congrArg (· + ∑ i ∈ range m, f i) (sum_congr rfl fun i _ ↦ by rw [Nat.add_comm])
-  have hprefix := tendsto_inv_succ_smul_const (𝕜 := ℝ) (∑ i ∈ range m, f i)
-  constructor
-  · intro hB
-    have hratio : Tendsto (fun n : ℕ ↦ ((n - m + 1 : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ)) atTop (𝓝 1) :=
-      (tendsto_add_div_succ (1 - (m : ℝ))).congr' <| by
-        filter_upwards [eventually_ge_atTop m] with n hn
-        simp only [Nat.cast_add, Nat.cast_sub hn, Nat.cast_one]; ring
-    refine Tendsto.congr' ?_
-      (by simpa using (hratio.smul (hB.comp (tendsto_sub_atTop_nat m))).add hprefix)
-    filter_upwards [eventually_ge_atTop m] with n hn
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le' hn
-    rw [Nat.add_sub_cancel, smul_smul, div_eq_mul_inv, mul_right_comm,
-      mul_inv_cancel₀ (by positivity), one_mul, ← smul_add, hsum k]
-    simp only [Nat.cast_add, Nat.cast_one]
-  · intro hA
-    have hratio : Tendsto (fun n : ℕ ↦ ((n + m + 1 : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ)) atTop (𝓝 1) :=
-      (tendsto_add_div_succ ((m : ℝ) + 1)).congr fun n ↦ by push_cast; ring
-    refine Tendsto.congr (fun n ↦ ?_)
-      (by simpa using (hratio.smul (hA.comp (tendsto_add_atTop_nat m))).sub hprefix)
-    rw [smul_smul, div_eq_mul_inv, mul_right_comm, mul_inv_cancel₀ (by positivity), one_mul,
-      ← hsum n, smul_add, add_sub_cancel_right]
-    simp only [Nat.cast_add, Nat.cast_one]
+  have hprefix : Tendsto (fun n : ℕ ↦ ((n + m + 1 : ℕ) : ℝ)⁻¹ • ∑ i ∈ range m, f i)
+      atTop (𝓝 0) :=
+    ((tendsto_inv_succ_smul_const (𝕜 := ℝ) (∑ i ∈ range m, f i)).comp
+      (tendsto_add_atTop_nat m)).congr fun n ↦ by simp
+  have hratio : Tendsto (fun n : ℕ ↦ ((n + m + 1 : ℕ) : ℝ) / ((n + 1 : ℕ) : ℝ)) atTop (𝓝 1) :=
+    (tendsto_add_div_succ ((m : ℝ) + 1)).congr fun n ↦ by push_cast; ring
+  have hratio_inv :
+      Tendsto (fun n : ℕ ↦ ((n + 1 : ℕ) : ℝ) / ((n + m + 1 : ℕ) : ℝ)) atTop (𝓝 1) := by
+    simpa only [inv_one] using (hratio.inv₀ one_ne_zero).congr fun n ↦ inv_div _ _
+  conv_rhs => rw [← Filter.tendsto_add_atTop_iff_nat m]
+  refine ⟨fun hB ↦ ?_, fun hA ↦ ?_⟩
+  · refine Tendsto.congr (fun n ↦ ?_)
+      (by simpa only [one_smul, add_zero] using (hratio_inv.smul hB).add hprefix)
+    rw [smul_smul, div_mul_eq_mul_div, mul_inv_cancel₀ (by positivity), one_div, ← smul_add,
+      hsum n]
+  · refine Tendsto.congr (fun n ↦ ?_)
+      (by simpa only [one_smul, sub_zero] using hratio.smul (hA.sub hprefix))
+    rw [← smul_sub, ← hsum n, add_sub_cancel_right, smul_smul, div_eq_mul_inv, mul_right_comm,
+      mul_inv_cancel₀ (by positivity), one_mul]
 
 /-- If a sequence has Cesàro limits along every residue class modulo `q > 0`, its Cesàro averages
 converge to the average of those limits. -/
@@ -117,7 +114,7 @@ theorem tendsto_cesaro_of_forall_mod {f : ℕ → E} {q : ℕ} (hq : 0 < q) {L :
           omega⟩))
   rw [← smul_sum] at hsum; refine hsum.congr' ?_
   filter_upwards [eventually_ge_atTop q] with n hn
-  rw [← Finset.sum_range_add_one_eq_sum_mod f hq n, smul_sum]
+  rw [Finset.sum_range_succ_eq_sum_mod f hq n, smul_sum]
   refine sum_congr rfl fun r hr ↦ ?_; have hrq : r < q := mem_range.mp hr
   have hk : 1 ≤ (n + q - r) / q := by rw [Nat.le_div_iff_mul_le hq]; omega
   rw [Nat.sub_add_cancel hk, smul_smul]; congr 1

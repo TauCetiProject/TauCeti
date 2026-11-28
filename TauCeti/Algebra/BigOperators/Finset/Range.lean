@@ -104,7 +104,8 @@ as those of noncrossing partitions, into sums over `Finset.range`.
 * `Finset.sum_range_sum_range_split_gap`: split a double sum over `range n × range n` by the gap
   `N` between the indices into the pairs with `k < l - N`, those with `l < k - N` and those with
   `|k - l| ≤ N`, as in Bony's decomposition of a product of two Littlewood–Paley partial sums.
-* `Finset.sum_range_add_one_eq_sum_mod`: exact residue-class decomposition of `∑ i < n + 1, f i`.
+* `Finset.sum_range_succ_eq_sum_mod`: exact residue-class decomposition of
+  `∑ i ∈ range (n + 1), f i`.
 -/
 
 public section
@@ -809,17 +810,13 @@ theorem sum_range_succ_sum_range_succ_comm {M : Type*} [AddCommMonoid M] (n : �
         rw [Nat.sub_add_comm (mem_range_succ_iff.mp hk)]
 
 /-- Splitting `∑ i ∈ range (n + 1), f i` into residue classes modulo `q > 0`. -/
-theorem sum_range_add_one_eq_sum_mod {M : Type*} [AddCommMonoid M]
+theorem sum_range_succ_eq_sum_mod {M : Type*} [AddCommMonoid M]
     (f : ℕ → M) {q : ℕ} (hq : 0 < q) (n : ℕ) :
-    (∑ r ∈ range q, ∑ m ∈ range ((n + q - r) / q), f (q * m + r)) =
-      ∑ i ∈ range (n + 1), f i := by
+    ∑ i ∈ range (n + 1), f i =
+      ∑ r ∈ range q, ∑ m ∈ range ((n + q - r) / q), f (q * m + r) := by
   rw [sum_sigma' (f := fun r m ↦ f (q * m + r))]
-  refine sum_nbij' (fun p ↦ q * p.2 + p.1) (fun i ↦ ⟨i % q, i / q⟩) ?_ ?_ ?_ ?_ (fun _ _ ↦ rfl)
-  · rintro ⟨r, m⟩ h
-    simp only [mem_sigma, mem_range] at h ⊢
-    have hmul := (Nat.le_div_iff_mul_le hq).mp (Nat.succ_le_of_lt h.2)
-    rw [Nat.succ_mul, Nat.mul_comm m q] at hmul
-    omega
+  refine sum_nbij' (fun i ↦ ⟨i % q, i / q⟩) (fun p ↦ q * p.2 + p.1) ?_ ?_ ?_ ?_
+    (fun i _ ↦ by dsimp only; exact congrArg f (Nat.div_add_mod i q).symm)
   · intro i hi
     simp only [mem_sigma, mem_range] at hi ⊢
     refine ⟨Nat.mod_lt i hq, (Nat.le_div_iff_mul_le hq).mpr ?_⟩
@@ -828,11 +825,16 @@ theorem sum_range_add_one_eq_sum_mod {M : Type*} [AddCommMonoid M]
     rw [Nat.succ_mul, Nat.mul_comm (i / q) q]
     omega
   · rintro ⟨r, m⟩ h
+    simp only [mem_sigma, mem_range] at h ⊢
+    have hmul := (Nat.le_div_iff_mul_le hq).mp (Nat.succ_le_of_lt h.2)
+    rw [Nat.succ_mul, Nat.mul_comm m q] at hmul
+    omega
+  · intro i _
+    exact Nat.div_add_mod i q
+  · rintro ⟨r, m⟩ h
     simp only [mem_sigma, mem_range] at h
     ext <;> dsimp only
     · rw [Nat.mul_add_mod, Nat.mod_eq_of_lt h.1]
     · rw [Nat.mul_add_div hq, Nat.div_eq_of_lt h.1, add_zero]
-  · intro i _
-    exact Nat.div_add_mod i q
 
 end Finset
