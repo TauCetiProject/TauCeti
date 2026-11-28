@@ -290,6 +290,36 @@ theorem veroneseIso_inv_preimage_basicOpen (f : veronese 𝒜 d) :
   rw [← veroneseIso_hom_preimage_basicOpen, ← Scheme.Hom.comp_preimage, Iso.inv_hom_id,
     Scheme.Hom.id_preimage]
 
+/-- On a positive-degree chart, pullback along the inverse Veronese isomorphism on
+`Proj` is the canonical inclusion on homogeneous fractions (Stacks, Lemma 27.11.8). -/
+@[reassoc]
+theorem basicOpenIsoAway_hom_comp_veroneseIso_inv_appLE {f : veronese 𝒜 d} {k : ℕ}
+    (hf : f ∈ veroneseGrading 𝒜 d k) (hk : 0 < k) :
+    (basicOpenIsoAway (veroneseGrading 𝒜 d) f hf hk).hom ≫ (veroneseIso 𝒜 d).inv.appLE
+        (basicOpen (veroneseGrading 𝒜 d) f) (basicOpen 𝒜 (f : A))
+        (veroneseIso_inv_preimage_basicOpen 𝒜 d f).ge =
+      CommRingCat.ofHom (awayVeroneseEquiv f).toRingHom ≫
+        (basicOpenIsoAway 𝒜 (f : A) (mem_veroneseGrading.1 hf)
+          (Nat.mul_pos (NeZero.pos d) hk)).hom := by
+  simp only [basicOpenIsoAway_hom]
+  let U := basicOpen (veroneseGrading 𝒜 d) f
+  let V := basicOpen 𝒜 (f : A)
+  let h := (veroneseIso_inv_preimage_basicOpen 𝒜 d f).ge
+  let e := basicOpenIsoSpec 𝒜 (f : A) (mem_veroneseGrading.1 hf)
+    (Nat.mul_pos (NeZero.pos d) hk)
+  let e' := basicOpenIsoSpec (veroneseGrading 𝒜 d) f hf hk
+  have hres : (veroneseIso 𝒜 d).inv.resLE U V h =
+      (e.hom ≫ Spec.map (CommRingCat.ofHom (awayVeroneseEquiv f).toRingHom)) ≫ e'.inv := by
+    apply (cancel_mono U.ι).mp
+    simp only [Scheme.Hom.resLE_comp_ι, Category.assoc]
+    apply e.inv_comp_eq.mp
+    simpa only [e, e', U, V, basicOpenIsoSpec_inv_ι, basicOpenIsoSpec_inv_ι_assoc] using
+      awayι_veroneseIso_inv 𝒜 d hf hk
+  have hsections := congrArg Scheme.Hom.appTop (e'.eq_comp_inv.mp hres)
+  simp only [e, e', basicOpenIsoSpec_hom, Scheme.Hom.comp_appTop, basicOpenToSpec_app_top,
+    Scheme.Hom.resLE_app_top, Category.assoc, Scheme.ΓSpecIso_naturality_assoc] at hsections
+  exact (cancel_mono V.topIso.inv).mp ((cancel_epi (Scheme.ΓSpecIso _).hom).mp hsections)
+
 /-- An element `f` of `A^{(d)}` lies in the homogeneous prime ideal of the point of
 `Proj A^{(d)}` corresponding to a point `x` of `Proj A` if and only if it lies in that of `x`. -/
 @[simp]
@@ -305,6 +335,66 @@ theorem toIdeal_asHomogeneousIdeal_veroneseIso_inv (x : Proj 𝒜) :
     ((veroneseIso 𝒜 d).inv x).asHomogeneousIdeal.toIdeal =
       x.asHomogeneousIdeal.toIdeal.comap (veronese 𝒜 d).val :=
   Ideal.ext <| mem_asHomogeneousIdeal_veroneseIso_inv 𝒜 d x
+
+/-- The inverse Veronese isomorphism pulls a function back by the inclusion on localizations
+at each point (Stacks, Lemma 27.11.8). -/
+theorem val_veroneseIso_inv_appLE_apply
+    {U : (Proj (veroneseGrading 𝒜 d)).Opens} {V : (Proj 𝒜).Opens}
+    (hUV : V ≤ (veroneseIso 𝒜 d).inv ⁻¹ᵁ U)
+    (a : Γ(Proj (veroneseGrading 𝒜 d), U)) (x : V) :
+    letI := ProjectiveSpectrum.isPrime ((veroneseIso 𝒜 d).inv x.val)
+    letI := ProjectiveSpectrum.isPrime x.val
+    (((veroneseIso 𝒜 d).inv.appLE U V hUV a).val x).val =
+      Localization.localRingHom _ _ (veronese 𝒜 d).val.toRingHom
+        (toIdeal_asHomogeneousIdeal_veroneseIso_inv 𝒜 d x.val)
+        (a.val ⟨_, hUV x.property⟩).val := by
+  obtain ⟨_, ⟨⟨k, g⟩, rfl⟩, hfx, hfU⟩ :=
+    TopologicalSpace.Opens.isBasis_iff_nbhd.mp (isBasis_basicOpen_pos (veroneseGrading 𝒜 d))
+      (hUV x.property)
+  let f : veronese 𝒜 d := g
+  let W := basicOpen 𝒜 (f : A)
+  let T := basicOpen (veroneseGrading 𝒜 d) f
+  let hT : W ≤ (veroneseIso 𝒜 d).inv ⁻¹ᵁ T := (veroneseIso_inv_preimage_basicOpen 𝒜 d f).ge
+  let xW : W := ⟨x.val, (veroneseIso_inv_preimage_basicOpen 𝒜 d f).le hfx⟩
+  let aT := (Proj (veroneseGrading 𝒜 d)).presheaf.map (homOfLE hfU).op a
+  -- Both pullbacks agree on the intersection of their domains.
+  have hres :
+      (veroneseIso 𝒜 d).inv.appLE U V hUV ≫
+          (Proj 𝒜).presheaf.map (homOfLE inf_le_left : V ⊓ W ⟶ V).op =
+        (Proj (veroneseGrading 𝒜 d)).presheaf.map (homOfLE hfU).op ≫
+          (veroneseIso 𝒜 d).inv.appLE T W hT ≫
+            (Proj 𝒜).presheaf.map (homOfLE inf_le_right : V ⊓ W ⟶ W).op := by
+    rw [Scheme.Hom.appLE_map, Scheme.Hom.appLE_map, Scheme.Hom.map_appLE]
+  let xVW : (V ⊓ W : (Proj 𝒜).Opens) := ⟨x.val, x.property, xW.property⟩
+  have heval :
+      (((veroneseIso 𝒜 d).inv.appLE U V hUV a).val x).val =
+        (((veroneseIso 𝒜 d).inv.appLE T W hT aT).val xW).val :=
+    congrArg (fun b : Γ(Proj 𝒜, V ⊓ W) ↦ (b.val xVW).val) (ConcreteCategory.congr_hom hres a)
+  refine heval.trans ?_
+  -- Write the restricted function as a homogeneous fraction.
+  obtain ⟨z, hz⟩ := (ConcreteCategory.bijective_of_isIso
+    (basicOpenIsoAway (veroneseGrading 𝒜 d) f g.property k.pos).hom).surjective aT
+  rw [basicOpenIsoAway_hom] at hz
+  have h : (veroneseIso 𝒜 d).inv.appLE T W hT (awayToSection (veroneseGrading 𝒜 d) f z) =
+      awayToSection 𝒜 (f : A) (awayVeroneseEquiv f z) :=
+    ConcreteCategory.congr_hom (by simpa only [basicOpenIsoAway_hom] using
+      basicOpenIsoAway_hom_comp_veroneseIso_inv_appLE 𝒜 d g.property k.pos) z
+  rw [← hz, h]
+  have hx' : ((awayToSection 𝒜 (f : A) (awayVeroneseEquiv f z)).val xW).val = _ :=
+    ProjectiveSpectrum.Proj.awayToSection_apply 𝒜 (f : A) (awayVeroneseEquiv f z) xW
+  have hy' : (a.val ⟨_, hUV x.property⟩).val = _ :=
+    (congrArg (fun b : Γ(Proj (veroneseGrading 𝒜 d), T) ↦ (b.val ⟨_, hfx⟩).val) hz).symm.trans
+      (ProjectiveSpectrum.Proj.awayToSection_apply (veroneseGrading 𝒜 d) f z ⟨_, hfx⟩)
+  rw [hx', hy', val_awayVeroneseEquiv]
+  -- View the map of prime localizations as the localization map induced by inclusion.
+  change _ = IsLocalization.map _ (veronese 𝒜 d).val.toRingHom _ (IsLocalization.map _ _ _ z.val)
+  rw [IsLocalization.map_map]
+  have := ProjectiveSpectrum.isPrime x.val
+  have hxmem : (f : A) ∈ x.val.asHomogeneousIdeal.toIdeal.primeCompl.comap (RingHom.id A) :=
+    xW.property
+  exact IsLocalization.map_map (T := Submonoid.powers (f : A)) (l := RingHom.id A)
+    (Submonoid.powers_le_comap_powers (veronese 𝒜 d).val.toRingHom f)
+    (Submonoid.powers_le.mpr hxmem) z.val
 
 /-- An element `f` of `A^{(d)}` lies in the homogeneous prime ideal of the point of `Proj A`
 corresponding to a point `y` of `Proj A^{(d)}` if and only if it lies in that of `y`. -/

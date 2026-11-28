@@ -95,6 +95,30 @@ universe u
 variable {A B σ τ : Type u} [CommRing A] [CommRing B] [SetLike σ A] [AddSubgroupClass σ A]
   [SetLike τ B] [AddSubgroupClass τ B] {𝒜 : ℕ → σ} {ℬ : ℕ → τ} [GradedRing 𝒜] [GradedRing ℬ]
 
+/-- The standard opens of positive-degree homogeneous elements form a basis for `Proj 𝒜`
+([Stacks, Section 10.57](https://stacks.math.columbia.edu/tag/00JM)). -/
+theorem isBasis_basicOpen_pos (𝒜 : ℕ → σ) [GradedRing 𝒜] :
+    TopologicalSpace.Opens.IsBasis
+      (Set.range fun i : Σ k : ℕ+, 𝒜 k ↦ basicOpen 𝒜 i.2) := by
+  rw [TopologicalSpace.Opens.isBasis_iff_nbhd]
+  intro U x hx
+  obtain ⟨_, ⟨f, rfl⟩, hxf, hfU⟩ :=
+    TopologicalSpace.Opens.isBasis_iff_nbhd.mp (isBasis_basicOpen 𝒜) hx
+  have ⟨i, hi⟩ : ∃ i, x ∈ basicOpen 𝒜 (GradedRing.proj 𝒜 i f) := by
+    rwa [basicOpen_eq_iSup_proj, TopologicalSpace.Opens.mem_iSup] at hxf
+  have ⟨j, hj, g, hg, hxg⟩ : ∃ j > 0, ∃ g ∈ 𝒜 j, g ∉ x.asHomogeneousIdeal := by
+    by_contra! h
+    exact x.not_irrelevant_le ((HomogeneousIdeal.irrelevant_le 𝒜).mpr h)
+  have hfi : GradedRing.proj 𝒜 i f ∈ 𝒜 i := by
+    simpa only [GradedRing.proj_apply] using SetLike.coe_mem (DirectSum.decompose 𝒜 f i)
+  refine ⟨basicOpen 𝒜 (GradedRing.proj 𝒜 i f * g),
+    ⟨⟨⟨i + j, by lia⟩, ⟨_, SetLike.mul_mem_graded hfi hg⟩⟩, rfl⟩, ?_, ?_⟩
+  · rw [basicOpen_mul]
+    exact TopologicalSpace.Opens.mem_inf.mpr ⟨hi, (mem_basicOpen 𝒜 g x).mpr hxg⟩
+  · rw [basicOpen_mul]
+    exact inf_le_left.trans ((le_iSup (fun i ↦ basicOpen 𝒜 (GradedRing.proj 𝒜 i f)) i).trans
+      ((basicOpen_eq_iSup_proj 𝒜 f).ge.trans hfU))
+
 /-- The `R`-point of `Proj A` with homogeneous coordinates `φ : A →+* R`, read on the standard
 chart `D₊(f)`, does not depend on the homogeneous element `f` of positive degree with `φ f` a
 unit: both charts give the point read on `D₊(fg)`. -/
