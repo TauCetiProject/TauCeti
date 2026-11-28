@@ -611,6 +611,16 @@ theorem etaQuotientMultiplier_def (N : ℕ) (r : ℕ → ℤ) (γ : Gamma0 N) :
       ∏ δ ∈ N.divisors.attach,
         etaMultiplier (conjScaleGamma0 (Nat.dvd_of_mem_divisors δ.property) γ) ^ r δ := (rfl)
 
+/-- If `F δ` equals the conjugate eta multiplier
+`etaMultiplier (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) γ)` for every `δ ∈ N.divisors`,
+then `etaQuotientMultiplier N r γ = ∏ δ ∈ N.divisors, F δ ^ r δ`. -/
+theorem etaQuotientMultiplier_eq_prod {N : ℕ} (r : ℕ → ℤ) (γ : Gamma0 N) {F : ℕ → ℂ}
+    (hF : ∀ δ (hδ : δ ∈ N.divisors),
+      etaMultiplier (conjScaleGamma0 (Nat.dvd_of_mem_divisors hδ) γ) = F δ) :
+    etaQuotientMultiplier N r γ = ∏ δ ∈ N.divisors, F δ ^ r δ := by
+  rw [etaQuotientMultiplier_def, ← Finset.prod_attach N.divisors (fun δ ↦ F δ ^ r δ)]
+  exact Finset.prod_congr rfl fun δ _ ↦ by rw [hF δ δ.property]
+
 /-- **The transformation of an eta quotient under `Γ₀(N)`**: for `γ = (a b; c d) ∈ Γ₀(N)`,
 `f(γ τ) = (∏_{δ ∣ N} ε(γ_δ) ^ {r δ}) · √(c τ + d) ^ {∑_{δ ∣ N} r δ} · f(τ)` on the upper
 half-plane, with the principal square root. -/
