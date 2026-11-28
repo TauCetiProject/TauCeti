@@ -73,6 +73,18 @@ theorem autMulEquivOfIso_trans (e : x ≅ y) (d : y ≅ z) :
   simp only [autMulEquivOfIso_eq_conjAut]
   exact MulEquiv.ext fun a ↦ Iso.trans_conjAut e d a
 
+/-- Conjugation takes one automorphism to another exactly when their underlying morphisms
+commute with the conjugating isomorphism. -/
+theorem autMulEquivOfIso_eq_iff (e : x ≅ y) (a : Aut x) (b : Aut y) :
+    autMulEquivOfIso e a = b ↔ a.asIso.hom ≫ e.hom = e.hom ≫ b.asIso.hom := by
+  rw [Aut.ext_iff, Iso.ext_iff]
+  simp only [autMulEquivOfIso_apply_asIso, Iso.trans_hom, Iso.symm_hom]
+  constructor
+  · intro h
+    simpa using congrArg (e.hom ≫ ·) h
+  · intro h
+    simpa using congrArg (e.inv ≫ ·) h
+
 /-- **Conjugation does not depend on the isomorphism** when `Aut x` is commutative: two
 isomorphisms `e e' : x ≅ y` conjugate `Aut x` onto `Aut y` in the same way (the first part of
 the Stacks Project, Lemma 8.11.8). -/

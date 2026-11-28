@@ -73,6 +73,15 @@ section LocalImageSieve
 
 variable {J : GrothendieckTopology C} (η : StrongTrans F G)
 
+/-- A strong transformation whose components are essentially surjective is locally essentially
+surjective, for every topology. -/
+theorem isLocallyEssSurj_of_essSurj (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.EssSurj) :
+    η.IsLocallyEssSurj J where
+  exists_covering_lift {U} y := ⟨⊤, J.top_mem U, fun V f _ ↦
+    have := hη V
+    ⟨(η.app (.mk (op V))).toFunctor.objPreimage ((G.map f.op.toLoc).toFunctor.obj y),
+      ⟨(η.app (.mk (op V))).toFunctor.objObjPreimageIso _⟩⟩⟩
+
 /-- An isomorphism `e : G(g)(η_V x) ≅ G(g)(G(f) z)` between the restrictions along `g : W ⟶ V`
 of `η_V x` and `G(f) z` gives an isomorphism `η_W (F(g) x) ≅ G(g ≫ f) z`, through `c_g(x)` and
 the composition isomorphism of `G`. -/

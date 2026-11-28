@@ -70,7 +70,7 @@ open scoped StrongTrans
 
 /-- Compatibility with a morphism of bands out of stackification is detected after composition
 with its band-preserving unit. -/
-theorem bandCompatible_stackification_iff {B : Sheaf J AddCommGrpCat.{w}}
+theorem bandCompatible_iff_comp_toStackification {B : Sheaf J AddCommGrpCat.{w}}
     {H : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{max t v', max (t + 1) u v v' u'}}
     (φ : A ⟶ B) (bH : H.AbelianBanding J B)
     (θ : TauCeti.Stack.stackification.{t} J F ⟶ H) :
@@ -89,14 +89,14 @@ theorem bandCompatible_stackification_iff {B : Sheaf J AddCommGrpCat.{w}}
 
 /-- A transformation out of stackification into a banded pseudofunctor preserves the band exactly
 when its composite with the unit does. -/
-theorem bandPreserving_stackification_iff
+theorem bandPreserving_iff_comp_toStackification
     {H : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{max t v', max (t + 1) u v v' u'}}
     (bH : H.AbelianBanding J A)
     (θ : TauCeti.Stack.stackification.{t} J F ⟶ H) :
     BandPreserving (stackification.{w, v, u, v', u', t} b) bH θ ↔
       BandPreserving b bH (toStackification.{t, v', u'} J F ≫ θ) := by
   simpa only [bandCompatible_id_iff] using
-    bandCompatible_stackification_iff.{w, v, u, v', u', t} b (𝟙 A) bH θ
+    bandCompatible_iff_comp_toStackification.{w, v, u, v', u', t} b (𝟙 A) bH θ
 
 variable {B : Sheaf J AddCommGrpCat.{w}}
   {G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{max t v', max (t + 1) u v v' u'}}
@@ -109,7 +109,7 @@ theorem bandCompatible_stackificationMap_iff [G.IsPrestack J] (ψ : F ⟶ G) :
     BandCompatible φ (stackification.{w, v, u, v', u', t} b)
       (stackification.{w, v, u, v', u', t} bG) (stackificationMap.{t} J ψ) ↔
       BandCompatible φ b bG ψ := by
-  rw [bandCompatible_stackification_iff,
+  rw [bandCompatible_iff_comp_toStackification,
     bandCompatible_iff_of_iso (toStackificationCompStackificationMapIso.{t, v', u'} J ψ)]
   constructor
   · intro h
@@ -117,6 +117,7 @@ theorem bandCompatible_stackificationMap_iff [G.IsPrestack J] (ψ : F ⟶ G) :
     refine ⟨fun U x a ↦ ?_⟩
     apply (Stackification.Obj.fullyFaithfulToObjFunctor.{t} J G U).autMulEquivOfFullyFaithful
       ((ψ.app (.mk (op U))).toFunctor.obj x) |>.injective
+    simp only [Functor.FullyFaithful.autMulEquivOfFullyFaithful_apply]
     exact (Functor.comp_mapAut _ _ _ _).symm.trans
       ((BandCompatible.mapAut_mulEquiv (bF := b)
         (bG := stackification.{w, v, u, v', u', t} bG) (φ := φ)
@@ -135,7 +136,26 @@ the original transformation is compatible with it. -/
 theorem bandCompatible_stackificationLift_iff [G.IsStack J] (ψ : F ⟶ G) :
     BandCompatible φ (stackification.{w, v, u, v', u', t} b) bG
       (stackificationLift.{t, v', u'} J ψ) ↔ BandCompatible φ b bG ψ := by
-  rw [bandCompatible_stackification_iff]
+  rw [bandCompatible_iff_comp_toStackification]
   exact bandCompatible_iff_of_iso (toStackificationCompStackificationLiftIso.{t, v', u'} J ψ)
+
+/-- A stackified transformation preserves the induced bands exactly when the original does. -/
+@[simp]
+theorem bandPreserving_stackificationMap_iff [G.IsPrestack J] (bG : G.AbelianBanding J A)
+    (ψ : F ⟶ G) :
+    BandPreserving (stackification.{w, v, u, v', u', t} b)
+      (stackification.{w, v, u, v', u', t} bG) (stackificationMap.{t} J ψ) ↔
+      BandPreserving b bG ψ := by
+  simpa only [bandCompatible_id_iff] using
+    bandCompatible_stackificationMap_iff.{w, v, u, v', u', t} b (𝟙 A) bG ψ
+
+/-- The universal extension into a stack preserves the band exactly when the original does. -/
+@[simp]
+theorem bandPreserving_stackificationLift_iff [G.IsStack J] (bG : G.AbelianBanding J A)
+    (ψ : F ⟶ G) :
+    BandPreserving (stackification.{w, v, u, v', u', t} b) bG
+      (stackificationLift.{t, v', u'} J ψ) ↔ BandPreserving b bG ψ := by
+  simpa only [bandCompatible_id_iff] using
+    bandCompatible_stackificationLift_iff.{w, v, u, v', u', t} b (𝟙 A) bG ψ
 
 end CategoryTheory.Pseudofunctor.AbelianBanding

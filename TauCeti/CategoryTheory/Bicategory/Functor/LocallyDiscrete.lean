@@ -9,7 +9,8 @@ public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import Mathlib.CategoryTheory.Bicategory.Strict.Pseudofunctor
 public import Mathlib.CategoryTheory.Category.Cat
 public import Mathlib.CategoryTheory.Comma.Over.Basic
-public import Mathlib.CategoryTheory.Endomorphism
+public import TauCeti.CategoryTheory.Aut.Conjugation
+public import TauCeti.CategoryTheory.Endomorphism
 
 import Mathlib.CategoryTheory.Bicategory.Functor.Cat
 
@@ -543,11 +544,10 @@ lemma mapAut_mapAut {A B D : B₀} (f : A ⟶ B) (g : B ⟶ D) (fg : A ⟶ D)
     (P.map g.toLoc).toFunctor.mapAut _ ((P.map f.toLoc).toFunctor.mapAut M a) =
       Aut.autMulEquivOfIso (P.compIso f g fg h M)
         ((P.map fg.toLoc).toFunctor.mapAut M a) := by
-  apply Aut.ext
-  apply Iso.ext
-  simpa only [Functor.mapAut_apply_asIso, Functor.mapIso_hom,
-    Aut.autMulEquivOfIso_apply_asIso, Iso.trans_hom, Iso.symm_hom] using
-    (P.compIso_naturality_1 f g fg h a.asIso.hom).symm
+  simpa only [compIso, Cat.Hom.comp_toFunctor, Functor.comp_mapAut] using
+    Functor.mapAut_eq_autMulEquivOfIso_app
+      (Cat.Hom.toNatIso (P.mapComp' f.toLoc g.toLoc fg.toLoc
+        (by simp [← Quiver.Hom.comp_toLoc, h]))) M a
 
 /-- Conjugation of the iterated functor map along `f` and `g` by `Pseudofunctor.compIso` recovers
 the functor map along `fg` (in particular, pullback when `B₀` is an opposite category). -/

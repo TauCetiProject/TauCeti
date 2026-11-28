@@ -60,12 +60,13 @@ private def chart {U : C} {z : G.obj (.mk (op U))} (x : F.obj (.mk (op U)))
   ((b.mulEquiv U x).trans ((hη U).autMulEquivOfFullyFaithful x)).trans
     (Aut.autMulEquivOfIso e)
 
-private lemma chart_hom {U : C} {z : G.obj (.mk (op U))} (x : F.obj (.mk (op U)))
-    (e : (η.app (.mk (op U))).toFunctor.obj x ≅ z)
+private lemma chart_apply {U : C} {z : G.obj (.mk (op U))}
+    (x : F.obj (.mk (op U))) (e : (η.app (.mk (op U))).toFunctor.obj x ≅ z)
     (a : Multiplicative (A.obj.obj (op U))) :
-    (chart b η hη x e a).asIso.hom =
-      e.inv ≫ (η.app (.mk (op U))).toFunctor.map (b.mulEquiv U x a).asIso.hom ≫ e.hom := by
-  rfl
+    chart b η hη x e a = Aut.autMulEquivOfIso e
+      ((η.app (.mk (op U))).toFunctor.mapAut x (b.mulEquiv U x a)) := by
+  simp only [chart, MulEquiv.trans_apply,
+    Functor.FullyFaithful.autMulEquivOfFullyFaithful_apply]
 
 private lemma chart_eq {U : C} {z : G.obj (.mk (op U))}
     (x x' : F.obj (.mk (op U)))
@@ -73,19 +74,14 @@ private lemma chart_eq {U : C} {z : G.obj (.mk (op U))}
     (e' : (η.app (.mk (op U))).toFunctor.obj x' ≅ z) :
     chart b η hη x e = chart b η hη x' e' := by
   let d := (hη U).preimageIso (e ≪≫ e'.symm)
-  -- Comparing the two conjugates cancels the chart maps.
+  have hd : (η.app (.mk (op U))).toFunctor.mapIso d = e ≪≫ e'.symm :=
+    (hη U).isoEquiv.apply_symm_apply _
   apply MulEquiv.ext
   intro a
-  apply Aut.ext
-  apply Iso.ext
-  rw [chart_hom, chart_hom]
-  have ha := congrArg ((η.app (.mk (op U))).toFunctor.map)
-    (b.mulEquiv_hom_comp d a)
-  simp only [Functor.map_comp] at ha
-  rw [Functor.FullyFaithful.preimageIso_hom, (hη U).map_preimage] at ha
-  simp only [Iso.trans_hom, Iso.symm_hom] at ha
-  rw [← cancel_epi e.hom, ← cancel_mono e'.inv]
-  simpa only [Category.assoc, Iso.hom_inv_id_assoc, Iso.hom_inv_id, Category.comp_id] using ha
+  rw [chart_apply, chart_apply, ← b.autMulEquivOfIso_mulEquiv d a,
+    Functor.mapAut_autMulEquivOfIso, ← MulEquiv.trans_apply,
+    ← Aut.autMulEquivOfIso_trans, hd]
+  simp
 
 private def localBand {U : C} {z : G.obj (.mk (op U))}
     (hz : (η.app (.mk (op U))).toFunctor.essImage z) :
@@ -104,7 +100,7 @@ private lemma conjugate_localBand {U : C} {z z' : G.obj (.mk (op U))}
     (a : Multiplicative (A.obj.obj (op U))) :
     Aut.autMulEquivOfIso e (localBand b η hη hz a) = localBand b η hη hz' a := by
   rw [localBand_eq b η hη hz' hz.witness (hz.getIso ≪≫ e)]
-  simp only [localBand, chart, MulEquiv.trans_apply, Aut.autMulEquivOfIso_trans]
+  simp only [localBand, chart_apply, Aut.autMulEquivOfIso_trans, MulEquiv.trans_apply]
 
 private lemma map_localBand {U V : C} {z : G.obj (.mk (op U))}
     (hz : (η.app (.mk (op U))).toFunctor.essImage z) (g : V ⟶ U)
@@ -114,20 +110,17 @@ private lemma map_localBand {U V : C} {z : G.obj (.mk (op U))}
         (.ofAdd (A.obj.map g.op a.toAdd)) := by
   rw [localBand_eq b η hη _ ((F.map g.op.toLoc).toFunctor.obj hz.witness)
     (η.naturalityObjIso g.op.toLoc hz.witness ≪≫ (G.map g.op.toLoc).toFunctor.mapIso hz.getIso)]
-  change (G.map g.op.toLoc).toFunctor.mapAut z
-      (Aut.autMulEquivOfIso hz.getIso
-        ((η.app (.mk (op U))).toFunctor.mapAut hz.witness (b.mulEquiv U hz.witness a))) = _
+  rw [localBand, chart_apply, chart_apply]
   rw [Functor.mapAut_autMulEquivOfIso]
   have h := Functor.mapAut_eq_autMulEquivOfIso_app
     (Cat.Hom.toNatIso (η.naturality g.op.toLoc)) hz.witness (b.mulEquiv U hz.witness a)
   simp only [Cat.Hom.comp_toFunctor, Functor.comp_mapAut, b.mapAut_mulEquiv] at h
   rw [h]
-  simp only [chart, MulEquiv.trans_apply, Aut.autMulEquivOfIso_trans]
+  simp only [Aut.autMulEquivOfIso_trans, MulEquiv.trans_apply]
   have he : η.naturalityObjIso g.op.toLoc hz.witness =
       (Cat.Hom.toNatIso (η.naturality g.op.toLoc)).app hz.witness :=
     Iso.ext (η.naturalityObjIso_hom g.op.toLoc hz.witness)
   rw [he]
-  rfl
 
 private lemma localBand_hom_comp {U : C} {z z' : G.obj (.mk (op U))}
     (hz : (η.app (.mk (op U))).toFunctor.essImage z)
@@ -135,9 +128,7 @@ private lemma localBand_hom_comp {U : C} {z z' : G.obj (.mk (op U))}
     (a : Multiplicative (A.obj.obj (op U))) :
     (localBand b η hη hz a).asIso.hom ≫ e.hom =
       e.hom ≫ (localBand b η hη hz' a).asIso.hom := by
-  have h := congrArg (fun c ↦ c.asIso.hom) (conjugate_localBand b η hη hz hz' e a)
-  simpa only [Aut.autMulEquivOfIso_apply_asIso, Iso.trans_hom, Iso.symm_hom,
-    Category.assoc, Iso.hom_inv_id_assoc] using congrArg (e.hom ≫ ·) h
+  exact (Aut.autMulEquivOfIso_eq_iff _ _ _).1 (conjugate_localBand b η hη hz hz' e a)
 
 private def bandDescentIso {U : C} (z : G.obj (.mk (op U)))
     (a : Multiplicative (A.obj.obj (op U))) :
@@ -171,13 +162,6 @@ private def bandDescentIso {U : C} (z : G.obj (.mk (op U)))
       simp only [Functor.mapAut_apply_asIso, Functor.mapIso_hom] at h₁' h₂'
       exact (congrArg (· ≫ _) h₁').trans (h.trans (congrArg (_ ≫ ·) h₂'.symm)))
 
-private lemma bandDescentIso_hom_hom {U : C} (z : G.obj (.mk (op U)))
-    (a : Multiplicative (A.obj.obj (op U))) (i : (η.localImageSieve z).arrows.category) :
-    (bandDescentIso b η hη z a).hom.hom i =
-      (localBand b η hη ((η.mem_localImageSieve_iff z i.obj.hom).1 i.property)
-        (.ofAdd (A.obj.map i.obj.hom.op a.toAdd))).asIso.hom :=
-  (rfl)
-
 variable [G.IsPrestack J] [η.IsLocallyEssSurj J]
 
 private def bandAut {U : C} (z : G.obj (.mk (op U)))
@@ -185,6 +169,14 @@ private def bandAut {U : C} (z : G.obj (.mk (op U)))
   .of ((G.isPrestackFor' (η.localImageSieve z)
     (η.localImageSieve_mem J z)).fullyFaithful.preimageIso
     (bandDescentIso b η hη z a))
+
+private lemma bandAut_asIso_hom {U : C} (z : G.obj (.mk (op U)))
+    (a : Multiplicative (A.obj.obj (op U))) :
+    (bandAut b η hη z a).asIso.hom =
+      ((G.isPrestackFor' (η.localImageSieve z)
+        (η.localImageSieve_mem J z)).fullyFaithful.preimageIso
+        (bandDescentIso b η hη z a)).hom :=
+  (rfl)
 
 private lemma map_bandAut {U V : C} (z : G.obj (.mk (op U)))
     (a : Multiplicative (A.obj.obj (op U))) (g : V ⟶ U) (hg : η.localImageSieve z g) :
@@ -196,72 +188,41 @@ private lemma map_bandAut {U V : C} (z : G.obj (.mk (op U)))
   have h := congrArg (fun t ↦ DescentData.Hom.hom t ⟨Over.mk g, hg⟩)
     ((G.isPrestackFor' (η.localImageSieve z) (η.localImageSieve_mem J z)).fullyFaithful.map_preimage
       (bandDescentIso b η hη z a).hom)
-  rw [toDescentData_map_hom, bandDescentIso_hom_hom] at h
-  change (G.map g.op.toLoc).toFunctor.map
-    ((G.isPrestackFor' (η.localImageSieve z) (η.localImageSieve_mem J z)).fullyFaithful.preimageIso
-      (bandDescentIso b η hη z a)).hom = _
-  rw [Functor.FullyFaithful.preimageIso_hom]
+  simp only [toDescentData_map_hom, bandDescentIso] at h
+  rw [Functor.mapAut_apply_asIso, Functor.mapIso_hom, bandAut_asIso_hom,
+    Functor.FullyFaithful.preimageIso_hom]
   exact h
 
 private lemma bandAut_eq_localBand {U : C} {z : G.obj (.mk (op U))}
     (hz : (η.app (.mk (op U))).toFunctor.essImage z)
     (a : Multiplicative (A.obj.obj (op U))) :
     bandAut b η hη z a = localBand b η hη hz a := by
-  apply Aut.ext
-  apply Iso.ext
-  refine IsPrestack.hom_ext (η.localImageSieve_mem J z) fun V g hg ↦ ?_
-  exact congrArg (fun c ↦ c.asIso.hom)
-    ((map_bandAut b η hη z a g hg).trans (map_localBand b η hη hz g a).symm)
+  refine IsPrestack.aut_ext (η.localImageSieve_mem J z) fun V g hg ↦ ?_
+  exact (map_bandAut b η hη z a g hg).trans (map_localBand b η hη hz g a).symm
 
-private lemma bandAut_hom_comp {U : C} {z z' : G.obj (.mk (op U))} (e : z ≅ z')
+private lemma conjugate_bandAut {U : C} {z z' : G.obj (.mk (op U))} (e : z ≅ z')
     (a : Multiplicative (A.obj.obj (op U))) :
-    (bandAut b η hη z a).asIso.hom ≫ e.hom = e.hom ≫ (bandAut b η hη z' a).asIso.hom := by
-  refine IsPrestack.hom_ext
+    Aut.autMulEquivOfIso e (bandAut b η hη z a) = bandAut b η hη z' a := by
+  refine IsPrestack.aut_ext
     (J.intersection_covering (η.localImageSieve_mem J z) (η.localImageSieve_mem J z'))
     fun V g ⟨hg, hg'⟩ ↦ ?_
-  have h := localBand_hom_comp b η hη ((η.mem_localImageSieve_iff z g).1 hg)
-    ((η.mem_localImageSieve_iff z' g).1 hg') ((G.map g.op.toLoc).toFunctor.mapIso e)
-    (.ofAdd (A.obj.map g.op a.toAdd))
-  have h₁ := congrArg (fun c ↦ c.asIso.hom) (map_bandAut b η hη z a g hg)
-  have h₂ := congrArg (fun c ↦ c.asIso.hom) (map_bandAut b η hη z' a g hg')
-  simp only [Functor.mapAut_apply_asIso, Functor.mapIso_hom] at h₁ h₂
-  simp only [Functor.map_comp]
-  exact (congrArg (· ≫ _) h₁).trans (h.trans (congrArg (_ ≫ ·) h₂.symm))
+  rw [Functor.mapAut_autMulEquivOfIso, map_bandAut b η hη z a g hg,
+    map_bandAut b η hη z' a g hg']
+  exact conjugate_localBand b η hη _ _ _ _
 
 private def bandHom {U : C} (z : G.obj (.mk (op U))) :
     Multiplicative (A.obj.obj (op U)) →* Aut z where
   toFun := bandAut b η hη z
   map_one' := by
-    apply Aut.ext
-    apply Iso.ext
-    refine IsPrestack.hom_ext (η.localImageSieve_mem J z) fun V g hg ↦ ?_
-    have h := map_bandAut b η hη z 1 g hg
-    simpa using congrArg (fun c ↦ c.asIso.hom) h
+    refine IsPrestack.aut_ext (η.localImageSieve_mem J z) fun V g hg ↦ ?_
+    simp [map_bandAut b η hη z 1 g hg]
   map_mul' a a' := by
-    apply Aut.ext
-    apply Iso.ext
-    refine IsPrestack.hom_ext (η.localImageSieve_mem J z) fun V g hg ↦ ?_
-    have h := map_bandAut b η hη z (a * a') g hg
-    have hm : Multiplicative.ofAdd (A.obj.map g.op (a * a').toAdd) =
-        Multiplicative.ofAdd (A.obj.map g.op a.toAdd) *
-          Multiplicative.ofAdd (A.obj.map g.op a'.toAdd) := by
-      simp only [toAdd_mul, map_add, ofAdd_add]
-    rw [hm, map_mul] at h
-    have h' := ((G.map g.op.toLoc).toFunctor.mapAut z).map_mul
-      (bandAut b η hη z a) (bandAut b η hη z a')
-    rw [map_bandAut b η hη z a g hg, map_bandAut b η hη z a' g hg] at h'
-    exact congrArg (fun c ↦ c.asIso.hom) (h.trans h'.symm)
+    refine IsPrestack.aut_ext (η.localImageSieve_mem J z) fun V g hg ↦ ?_
+    simp only [map_mul, map_bandAut b η hη z _ g hg, toAdd_mul, map_add, ofAdd_add]
 
-private lemma bandAut_injective {U : C} (z : G.obj (.mk (op U))) :
-    Function.Injective (bandAut b η hη z) := by
-  intro a a' h
-  have hA := (A.isSheaf_obj_comp (forget AddCommGrpCat)).isSeparated
-    (η.localImageSieve z) (η.localImageSieve_mem J z)
-  apply Multiplicative.toAdd.injective
-  refine hA.ext fun V g hg ↦ ?_
-  have h' := congrArg ((G.map g.op.toLoc).toFunctor.mapAut z) h
-  rw [map_bandAut b η hη z a g hg, map_bandAut b η hη z a' g hg] at h'
-  exact congrArg Multiplicative.toAdd ((localBand b η hη _).injective h')
+private lemma bandHom_apply {U : C} (z : G.obj (.mk (op U)))
+    (a : Multiplicative (A.obj.obj (op U))) : bandHom b η hη z a = bandAut b η hη z a :=
+  (rfl)
 
 omit [G.IsPrestack J] [η.IsLocallyEssSurj J] in
 private lemma localBand_comp {U V W : C} (z : G.obj (.mk (op U)))
@@ -298,30 +259,38 @@ private lemma coefficient_compatible {U : C} (z : G.obj (.mk (op U))) (t : Aut z
   have h := G.mapAut_mapAut f.op g.op (g ≫ f).op op_comp.symm z t
   exact h.symm.trans hc.symm
 
-private lemma bandAut_surjective {U : C} (z : G.obj (.mk (op U))) :
-    Function.Surjective (bandAut b η hη z) := by
-  intro t
-  let s := coefficient b η hη z t
-  have hs := coefficient_compatible b η hη z t
-  have hA := A.isSheaf_obj_comp (forget AddCommGrpCat)
-    (η.localImageSieve z) (η.localImageSieve_mem J z)
-  refine ⟨.ofAdd (hA.amalgamate s hs), Aut.ext (Iso.ext ?_)⟩
-  refine IsPrestack.hom_ext (η.localImageSieve_mem J z) fun V g hg ↦ ?_
-  have h := map_bandAut b η hη z (.ofAdd (hA.amalgamate s hs)) g hg
-  have hgA : A.obj.map g.op (hA.amalgamate s hs) = s g hg := hA.valid_glue hs g hg
-  rw [toAdd_ofAdd, hgA] at h
-  simpa only [s, coefficient, ofAdd_toAdd, MulEquiv.apply_symm_apply,
-    Functor.mapAut_apply_asIso, Functor.mapIso_hom] using
-    congrArg (fun c ↦ c.asIso.hom) h
+private lemma bandHom_bijective {U : C} (z : G.obj (.mk (op U))) :
+    Function.Bijective (bandHom b η hη z) := by
+  constructor
+  · intro a a' h
+    rw [bandHom_apply, bandHom_apply] at h
+    have hA := (A.isSheaf_obj_comp (forget AddCommGrpCat)).isSeparated
+      (η.localImageSieve z) (η.localImageSieve_mem J z)
+    apply Multiplicative.toAdd.injective
+    refine hA.ext fun V g hg ↦ ?_
+    have h' := congrArg ((G.map g.op.toLoc).toFunctor.mapAut z) h
+    rw [map_bandAut b η hη z a g hg, map_bandAut b η hη z a' g hg] at h'
+    exact congrArg Multiplicative.toAdd ((localBand b η hη _).injective h')
+  · intro t
+    let s := coefficient b η hη z t
+    have hs := coefficient_compatible b η hη z t
+    have hA := A.isSheaf_obj_comp (forget AddCommGrpCat)
+      (η.localImageSieve z) (η.localImageSieve_mem J z)
+    refine ⟨.ofAdd (hA.amalgamate s hs), ?_⟩
+    rw [bandHom_apply]
+    refine IsPrestack.aut_ext (η.localImageSieve_mem J z) ?_
+    intro V g hg
+    have h := map_bandAut b η hη z (.ofAdd (hA.amalgamate s hs)) g hg
+    have hgA : A.obj.map g.op (hA.amalgamate s hs) = s g hg := hA.valid_glue hs g hg
+    rw [toAdd_ofAdd, hgA] at h
+    simpa only [s, coefficient, ofAdd_toAdd, MulEquiv.apply_symm_apply] using h
 
 private lemma mapAut_bandAut {U V : C} (f : V ⟶ U) (z : G.obj (.mk (op U)))
     (a : Multiplicative (A.obj.obj (op U))) :
     (G.map f.op.toLoc).toFunctor.mapAut z (bandAut b η hη z a) =
       bandAut b η hη ((G.map f.op.toLoc).toFunctor.obj z)
         (.ofAdd (A.obj.map f.op a.toAdd)) := by
-  apply Aut.ext
-  apply Iso.ext
-  refine IsPrestack.hom_ext (J.pullback_stable f (η.localImageSieve_mem J z)) fun W g hg ↦ ?_
+  refine IsPrestack.aut_ext (J.pullback_stable f (η.localImageSieve_mem J z)) fun W g hg ↦ ?_
   let c := G.compIso f.op g.op (g ≫ f).op op_comp.symm z
   have hgf : η.localImageSieve z (g ≫ f) := hg
   have he : (η.app (.mk (op W))).toFunctor.essImage
@@ -338,22 +307,19 @@ private lemma mapAut_bandAut {U V : C} (f : V ⟶ U) (z : G.obj (.mk (op U)))
   have hA : A.obj.map g.op (A.obj.map f.op a.toAdd) = A.obj.map (g ≫ f).op a.toAdd := by
     rw [← ConcreteCategory.comp_apply, ← Functor.map_comp, ← op_comp]
   simp only [toAdd_ofAdd, hA] at h₂
-  have h := hnat.trans (hc.trans h₂.symm)
-  simpa only [Cat.Hom.comp_toFunctor, Functor.comp_mapAut,
-    Functor.mapAut_apply_asIso, Functor.mapIso_hom, Functor.comp_map] using
-    congrArg (fun t ↦ t.asIso.hom) h
+  exact hnat.trans (hc.trans h₂.symm)
 
 /-- Transport an abelian banding along a fully faithful, locally essentially surjective strong
 transformation into a prestack. -/
 def descend : G.AbelianBanding J A where
   mulEquiv U z := MulEquiv.ofBijective (bandHom b η hη z)
-    ⟨bandAut_injective b η hη z, bandAut_surjective b η hη z⟩
-  mapAut_mulEquiv f z a := mapAut_bandAut b η hη f z a
-  autMulEquivOfIso_mulEquiv e a := Aut.ext <| Iso.ext <| by
-    have h := bandAut_hom_comp b η hη e a
-    simpa only [MulEquiv.ofBijective_apply, bandHom, MonoidHom.coe_mk, OneHom.coe_mk,
-      Aut.autMulEquivOfIso_apply_asIso, Iso.trans_hom, Iso.symm_hom,
-      Category.assoc, Iso.inv_hom_id_assoc] using congrArg (e.inv ≫ ·) h
+    (bandHom_bijective b η hη z)
+  mapAut_mulEquiv f z a := by
+    rw [MulEquiv.ofBijective_apply, MulEquiv.ofBijective_apply, bandHom_apply, bandHom_apply]
+    exact mapAut_bandAut b η hη f z a
+  autMulEquivOfIso_mulEquiv e a := by
+    rw [MulEquiv.ofBijective_apply, MulEquiv.ofBijective_apply, bandHom_apply, bandHom_apply]
+    exact conjugate_bandAut b η hη e a
 
 /-- On an object in the image, the descended band is the image of the original band. -/
 @[simp]
@@ -364,8 +330,9 @@ theorem descend_mulEquiv_obj (U : C) (x : F.obj (.mk (op U)))
   have h := (bandAut_eq_localBand b η hη (Functor.obj_mem_essImage _ x) a).trans
     (congrArg (fun t : Multiplicative (A.obj.obj (op U)) ≃* Aut _ ↦ t a)
       (localBand_eq b η hη _ x (Iso.refl _)))
-  simp only [chart, MulEquiv.trans_apply, Aut.autMulEquivOfIso_refl, MulEquiv.refl_apply] at h
-  exact h
+  dsimp only [descend]
+  rw [MulEquiv.ofBijective_apply, bandHom_apply]
+  simpa only [chart_apply, Aut.autMulEquivOfIso_refl, MulEquiv.refl_apply] using h
 
 /-- The transformation used to descend a banding preserves that banding. -/
 instance bandPreserving_descend : BandPreserving b (b.descend η hη) η where

@@ -79,4 +79,10 @@ theorem comp_mapAut (G : C ⥤ D) (H : D ⥤ E) (y : C) (b : Aut y) :
     (G ⋙ H).mapAut y b = H.mapAut (G.obj y) (G.mapAut y b) :=
   Aut.ext (Iso.ext (by simp))
 
+/-- The fully faithful automorphism equivalence acts by the functor on automorphisms. -/
+@[simp]
+theorem FullyFaithful.autMulEquivOfFullyFaithful_apply {G : C ⥤ D} (hG : G.FullyFaithful)
+    (x : C) (a : Aut x) : hG.autMulEquivOfFullyFaithful x a = G.mapAut x a :=
+  (rfl)
+
 end CategoryTheory.Functor

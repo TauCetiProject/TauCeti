@@ -11,8 +11,7 @@ public import TauCeti.CategoryTheory.Sites.Descent.Banding.Stackification
 # Checks for descent of abelian bandings
 
 These checks use the independent site and fibre universes needed by a big scheme site.
-They verify descent along the identity and the formula on an object in the image of the
-stackification unit.
+They verify the unit formula and simplification of band preservation for maps and lifts.
 -/
 
 public section
@@ -27,22 +26,7 @@ namespace TauCeti.Examples.BandingStackification
 
 variable {C : Type (u + 1)} [Category.{u} C] {J : GrothendieckTopology C}
   {A : Sheaf J AddCommGrpCat.{u}}
-  {F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{u, u + 1}}
-
-local instance : (StrongTrans.id F).IsLocallyEssSurj J where
-  exists_covering_lift y :=
-    ⟨⊤, J.top_mem _, fun _ f _ ↦ ⟨(F.map f.op.toLoc).toFunctor.obj y, ⟨Iso.refl _⟩⟩⟩
-
-example [F.IsPrestack J] (b : F.AbelianBanding J A) :
-    b.descend (StrongTrans.id F) (fun _ ↦ .id _) = b := by
-  let := b.bandPreserving_descend (StrongTrans.id F) (fun _ ↦ .id _)
-  exact b.eq_of_bandPreserving (StrongTrans.id F)
-    (b.descend (StrongTrans.id F) (fun _ ↦ .id _)) b
-
-example [G.IsPrestack J] (b : F.AbelianBanding J A) (η : StrongTrans F G)
-    (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.FullyFaithful)
-    [η.IsLocallyEssSurj J] : ∃! bG : G.AbelianBanding J A, BandPreserving b bG η :=
-  b.existsUnique_bandPreserving η hη
+  {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{u, u + 1}}
 
 variable [Limits.HasPullbacks C] [F.IsPrestack J]
 
@@ -53,5 +37,20 @@ example (b : F.AbelianBanding J A) (U : C) (x : F.obj (.mk (op U)))
       ((Stack.toStackification.{u, u, u + 1} J F).app (.mk (op U))).toFunctor.mapAut x
         (b.mulEquiv U x a) :=
   b.stackification_mulEquiv_obj U x a
+
+variable {G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{u, u + 1}}
+
+example [G.IsPrestack J] (b : F.AbelianBanding J A) (bG : G.AbelianBanding J A)
+    (ψ : StrongTrans F G) :
+    BandPreserving (b.stackification.{u, u, u + 1, u, u + 1, u})
+      (bG.stackification.{u, u, u + 1, u, u + 1, u}) (Stack.stackificationMap.{u} J ψ) ↔
+      BandPreserving b bG ψ := by
+  simp
+
+example [G.IsStack J] (b : F.AbelianBanding J A) (bG : G.AbelianBanding J A)
+    (ψ : StrongTrans F G) :
+    BandPreserving (b.stackification.{u, u, u + 1, u, u + 1, u}) bG
+      (Stack.stackificationLift.{u, u, u + 1} J ψ) ↔ BandPreserving b bG ψ := by
+  simp
 
 end TauCeti.Examples.BandingStackification
