@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Geometry.Convex.ConvexSpace.Defs
 public import TauCeti.Algebra.BigOperators.Finset.PartialSum
+import Mathlib.Data.Finset.Sort
+import TauCeti.Data.Set.Function
 
 /-!
 # Faces of the standard simplex
@@ -41,6 +43,14 @@ The prefix sums `TauCeti.prefixSum N x.weights` of the weights of a point `x` of
 additive homomorphism sending `1` to `1` and nonnegative elements to nonnegative elements applies
 the homomorphism to each weight, and over strict ordered semirings on both scalar types it commutes
 with `StdSimplex.map` (`StdSimplex.mapRange_map`).
+
+Pushing a point forward along `f` maps the support of its weights by `f`
+(`StdSimplex.support_weights_map`), so every point of `StdSimplex R X` on a linear order `X` strips
+uniquely along a strictly monotone map from `Fin (k + 1)` to an interior point with
+nowhere-vanishing coordinates (`StdSimplex.exists_strictMono_map_eq`,
+`StdSimplex.equivOfInjectiveMapEq`, `StdSimplex.eq_of_strictMono_map_eq`), and monotone maps out of
+a linear order are determined by the pushforward of any interior point
+(`StdSimplex.eq_of_monotone_map_eq_of_weights_ne_zero`).
 -/
 
 public section
@@ -476,5 +486,124 @@ theorem mapRange_map (f : R →+ S) (hf₁ : f 1 = 1) (hf : ∀ r, 0 ≤ r → 0
   exact (Finsupp.mapDomain_mapRange g w.weights f (map_zero f) (map_add f)).symm
 
 end MapRangeOrderedSemiring
+
+section Semiring
+
+variable {R : Type*} [PartialOrder R] [Semiring R] [IsStrictOrderedRing R] {X Y : Type*}
+
+/-- Pushing a point of a standard simplex forward along `f` maps the support of its weights. -/
+theorem support_weights_map [DecidableEq Y] (f : X → Y) (x : StdSimplex R X) :
+    (x.map f).weights.support = x.weights.support.image f := by
+  rw [weights_map, Finsupp.support_mapDomain_of_nonneg x.nonneg]
+
+/-- When every coordinate of `x` is nonzero, the nonzero coordinates of `x.map f` are `range f`. -/
+theorem weights_map_ne_zero_iff (f : X → Y) {x : StdSimplex R X}
+    (hx : ∀ i, x.weights i ≠ 0) (y : Y) :
+    (x.map f).weights y ≠ 0 ↔ y ∈ Set.range f := by
+  classical
+  rw [← Finsupp.mem_support_iff, support_weights_map, Finset.mem_image]; simp [hx]
+
+/-- Pushing an interior point of a standard simplex along a surjection preserves nonzero weights. -/
+theorem weights_map_ne_zero_of_surjective {f : X → Y} (hf : f.Surjective)
+    {x : StdSimplex R X} (hx : ∀ i, x.weights i ≠ 0) (y : Y) : (x.map f).weights y ≠ 0 :=
+  (weights_map_ne_zero_iff f hx y).2 (hf y)
+
+/-- Two maps pushing interior points of standard simplices to the same point have equal ranges. -/
+theorem range_eq_of_map_eq {Z : Type*} {f₁ : X → Z} {x₁ : StdSimplex R X}
+    (hx₁ : ∀ i, x₁.weights i ≠ 0) {f₂ : Y → Z} {x₂ : StdSimplex R Y}
+    (hx₂ : ∀ j, x₂.weights j ≠ 0) (h : x₁.map f₁ = x₂.map f₂) : Set.range f₁ = Set.range f₂ :=
+  Set.ext fun z ↦ by rw [← weights_map_ne_zero_iff f₁ hx₁, ← weights_map_ne_zero_iff f₂ hx₂, h]
+
+/-- Every point of `StdSimplex R X` on a linear order `X` is the pushforward along a strictly
+monotone map `Fin (k + 1) → X` of an interior point of `StdSimplex R (Fin (k + 1))`. -/
+theorem exists_strictMono_map_eq [LinearOrder X] (w : StdSimplex R X) :
+    ∃ (k : ℕ) (f : Fin (k + 1) → X) (w₀ : StdSimplex R (Fin (k + 1))),
+      StrictMono f ∧ (∀ j, w₀.weights j ≠ 0) ∧ w = w₀.map f := by
+  obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero w.support_weights_nonempty.card_ne_zero
+  let e := w.weights.support.orderEmbOfFin hk
+  have hsupp : Set.BijOn e (e ⁻¹' ↑w.weights.support) ↑w.weights.support :=
+    Set.bijOn_preimage_iff.2 ⟨e.injective.injOn, by rw [Finset.range_orderEmbOfFin]⟩
+  refine ⟨k, e, comap w hsupp, e.strictMono, ?_, (map_comap w hsupp).symm⟩
+  intro j
+  rw [weights_comap_apply]
+  exact Finsupp.mem_support_iff.1 (w.weights.support.orderEmbOfFin_mem hk j)
+
+/-- Two injective maps pushing interior points of standard simplices to the same point induce an
+equivalence between their domains intertwining the maps. -/
+noncomputable def equivOfInjectiveMapEq {Z : Type*} {f₁ : X → Z} (hf₁ : f₁.Injective)
+    {w₁ : StdSimplex R X} (hw₁ : ∀ i, w₁.weights i ≠ 0) {f₂ : Y → Z} (hf₂ : f₂.Injective)
+    {w₂ : StdSimplex R Y} (hw₂ : ∀ j, w₂.weights j ≠ 0) (h : w₁.map f₁ = w₂.map f₂) :
+    X ≃ Y :=
+  ((Equiv.ofInjective f₁ hf₁).trans (Set.equivOfEq (range_eq_of_map_eq hw₁ hw₂ h))).trans
+    (Equiv.ofInjective f₂ hf₂).symm
+
+/-- `equivOfInjectiveMapEq` intertwines `f₂` with `f₁`. -/
+-- Not `@[simp]`: LHS has free variable `f₂` as head symbol (`warning.simp.varHead`).
+theorem apply_equivOfInjectiveMapEq {Z : Type*} {f₁ : X → Z} (hf₁ : f₁.Injective)
+    {w₁ : StdSimplex R X} (hw₁ : ∀ i, w₁.weights i ≠ 0) {f₂ : Y → Z} (hf₂ : f₂.Injective)
+    {w₂ : StdSimplex R Y} (hw₂ : ∀ j, w₂.weights j ≠ 0) (h : w₁.map f₁ = w₂.map f₂) (x : X) :
+    f₂ (equivOfInjectiveMapEq hf₁ hw₁ hf₂ hw₂ h x) = f₁ x := by
+  simp [equivOfInjectiveMapEq, Equiv.apply_ofInjective_symm]
+
+/-- The inverse of `equivOfInjectiveMapEq` intertwines `f₁` with `f₂`. -/
+-- Not `@[simp]`: LHS has free variable `f₁` as head symbol (`warning.simp.varHead`).
+theorem apply_equivOfInjectiveMapEq_symm {Z : Type*} {f₁ : X → Z} (hf₁ : f₁.Injective)
+    {w₁ : StdSimplex R X} (hw₁ : ∀ i, w₁.weights i ≠ 0) {f₂ : Y → Z} (hf₂ : f₂.Injective)
+    {w₂ : StdSimplex R Y} (hw₂ : ∀ j, w₂.weights j ≠ 0) (h : w₁.map f₁ = w₂.map f₂) (y : Y) :
+    f₁ ((equivOfInjectiveMapEq hf₁ hw₁ hf₂ hw₂ h).symm y) = f₂ y := by
+  simp [equivOfInjectiveMapEq, Equiv.apply_ofInjective_symm]
+
+/-- Two injective maps out of `Fin (k₁ + 1)` and `Fin (k₂ + 1)` pushing interior points of
+standard simplices to the same point have equal domain dimensions `k₁ = k₂`. -/
+theorem eq_of_injective_map_eq_fin {Z : Type*} {k₁ k₂ : ℕ}
+    {f₁ : Fin (k₁ + 1) → Z} (hf₁ : f₁.Injective)
+    {w₁ : StdSimplex R (Fin (k₁ + 1))} (hw₁ : ∀ i, w₁.weights i ≠ 0)
+    {f₂ : Fin (k₂ + 1) → Z} (hf₂ : f₂.Injective)
+    {w₂ : StdSimplex R (Fin (k₂ + 1))} (hw₂ : ∀ j, w₂.weights j ≠ 0)
+    (h : w₁.map f₁ = w₂.map f₂) : k₁ = k₂ :=
+  Nat.succ.inj (by simpa using Fintype.card_congr (equivOfInjectiveMapEq hf₁ hw₁ hf₂ hw₂ h))
+
+/-- A strictly monotone map from a linear order pushing an interior point to a given point of a
+standard simplex is uniquely determined together with the interior point. -/
+theorem eq_of_strictMono_map_eq [LinearOrder X] [Preorder Y]
+    {f₁ f₂ : X → Y} (hf₁ : StrictMono f₁) (hf₂ : StrictMono f₂)
+    {w₁ w₂ : StdSimplex R X} (hw₁ : ∀ i, w₁.weights i ≠ 0) (hw₂ : ∀ i, w₂.weights i ≠ 0)
+    (h : w₁.map f₁ = w₂.map f₂) : f₁ = f₂ ∧ w₁ = w₂ := by
+  let : Fintype X := ⟨w₁.weights.support, fun i ↦ Finsupp.mem_support_iff.2 (hw₁ i)⟩
+  obtain rfl := (StrictMono.range_inj_of_wellFoundedLT hf₁ hf₂).1 (range_eq_of_map_eq hw₁ hw₂ h)
+  exact ⟨rfl, map_injective hf₁.injective h⟩
+
+/-- Monotone maps from a linear order into a partial order are determined by the pushforward
+of any interior point of `StdSimplex R X`. -/
+theorem eq_of_monotone_map_eq_of_weights_ne_zero [LinearOrder X] [PartialOrder Y]
+    {f₁ f₂ : X → Y} (hf₁ : Monotone f₁) (hf₂ : Monotone f₂)
+    {w : StdSimplex R X} (hw : ∀ a, w.weights a ≠ 0) (h : w.map f₁ = w.map f₂) : f₁ = f₂ := by
+  let : Fintype X := ⟨w.weights.support, fun a ↦ Finsupp.mem_support_iff.2 (hw a)⟩
+  classical
+  have hpos (a : X) : 0 < w.weights a := lt_of_le_of_ne (w.nonneg a) (hw a).symm
+  have hset (y : Y) :
+      Finset.univ.filter (f₁ · ≤ y) = Finset.univ.filter (f₂ · ≤ y) := by
+    let χ : Y → Fin 2 := fun z ↦ if z ≤ y then 0 else 1
+    have hmap (g : X → Y) : ((w.map g).map χ).weights 0 =
+        ∑ a ∈ Finset.univ.filter (g · ≤ y), w.weights a := by
+      rw [StdSimplex.map_map, weights_map_apply]
+      simp [χ]
+    have hsum : ∑ a ∈ Finset.univ.filter (f₁ · ≤ y), w.weights a =
+        ∑ a ∈ Finset.univ.filter (f₂ · ≤ y), w.weights a := by rw [← hmap f₁, ← hmap f₂, h]
+    have hsub {g₁ g₂ : X → Y} (hg₁ : Monotone g₁) (hg₂ : Monotone g₂)
+        (hle : ∑ a ∈ Finset.univ.filter (g₁ · ≤ y), w.weights a ≤
+          ∑ a ∈ Finset.univ.filter (g₂ · ≤ y), w.weights a) :
+        Finset.univ.filter (g₁ · ≤ y) ⊆ Finset.univ.filter (g₂ · ≤ y) := fun a ha ↦ by
+      by_contra ha'
+      have hsub' : Finset.univ.filter (g₂ · ≤ y) ⊆ Finset.univ.filter (g₁ · ≤ y) := fun b hb ↦ by
+        simp only [Finset.mem_filter, Finset.mem_univ, true_and] at ha ha' hb ⊢
+        exact (hg₁ (le_of_not_ge fun hab ↦ ha' ((hg₂ hab).trans hb))).trans ha
+      exact (Finset.sum_lt_sum_of_subset hsub' ha ha' (hpos a) fun b _ _ ↦ w.nonneg b).not_ge hle
+    exact Finset.Subset.antisymm (hsub hf₁ hf₂ hsum.le) (hsub hf₂ hf₁ hsum.ge)
+  funext x
+  have hle (y : Y) : f₁ x ≤ y ↔ f₂ x ≤ y := by simpa using Finset.ext_iff.1 (hset y) x
+  exact le_antisymm ((hle (f₂ x)).2 le_rfl) ((hle (f₁ x)).1 le_rfl)
+
+end Semiring
 
 end Convexity.StdSimplex

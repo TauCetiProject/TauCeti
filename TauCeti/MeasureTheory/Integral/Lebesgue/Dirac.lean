@@ -8,10 +8,12 @@ module
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 
 /-!
-# Integration against finite sums of Dirac measures
+# Integration against Dirac measures and finite sums of Dirac measures
 
-A nonnegative measurable function integrates against a finite sum of point masses by
-summing its values at the corresponding points, with multiplicities retained.
+For any nonnegative extended-real function `f` without measurability assumptions, the lower
+Lebesgue integral against `Measure.dirac a` is bounded above by `f a`. Moreover, a nonnegative
+measurable function integrates against a finite sum of point masses by summing its values at the
+corresponding points, with multiplicities retained.
 -/
 
 public section
@@ -19,6 +21,15 @@ public section
 open scoped ENNReal
 
 namespace MeasureTheory
+
+/-- For any function `f : X → ℝ≥0∞` without measurability assumptions, the lower Lebesgue
+integral against `Measure.dirac a` is at most `f a`. -/
+theorem lintegral_dirac_le {X : Type*} [MeasurableSpace X] (a : X) (f : X → ℝ≥0∞) :
+    ∫⁻ y, f y ∂Measure.dirac a ≤ f a := by
+  rw [lintegral_def]
+  refine iSup₂_le fun s hs => ?_
+  rw [← s.lintegral_eq_lintegral, lintegral_dirac' _ s.measurable]
+  exact hs a
 
 -- Not a simp lemma: `lintegral_finsetSum_measure` already simplifies its left-hand side.
 /-- Integrating against a finite sum of Dirac measures sums the values at their points.

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.Block.Basic
-public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.BrauerProjection
+public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.Brauer.Projection
 public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.DefectGroup.Principal
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Induction
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.PGroup

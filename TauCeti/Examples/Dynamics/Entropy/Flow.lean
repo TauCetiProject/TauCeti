@@ -44,18 +44,13 @@ example (ϕ : Flow ℝ X) {c : ℝ} (hc : 0 < c) :
 /-- Every time-`t` map of the unit-speed flow on the circle has entropy `0`. -/
 example {p : ℝ} [Fact (0 < p)] (t : ℝ) :
     coverEntropy (AddCircle.translationFlow p t) univ = 0 := by
-  have h : AddCircle.translationFlow p t = (· + (t : AddCircle p)) := by
-    funext x
-    simp
-  rw [h, coverEntropy_addCircle_add_right_eq_zero]
+  rw [AddCircle.translationFlow_eq_add_right, coverEntropy_addCircle_add_right_eq_zero]
 
 /-- The unit-speed flow on the circle has pressure `0` for the zero potential. -/
 example {p : ℝ} [Fact (0 < p)] :
     flowTopologicalPressure (AddCircle.translationFlow p) 0 = 0 := by
-  have h : AddCircle.translationFlow p 1 = (· + ((1 : ℝ) : AddCircle p)) := by
-    funext x
-    simp
-  rw [flowTopologicalPressure_zero, h, coverEntropy_addCircle_add_right_eq_zero]
+  rw [flowTopologicalPressure_zero, AddCircle.translationFlow_eq_add_right,
+    coverEntropy_addCircle_add_right_eq_zero]
 
 /-- The entropy of the time-`t` maps of the unit-speed circle flow agrees with
 `coverEntropy_flow_univ`: `0 = |t| * 0`. -/
