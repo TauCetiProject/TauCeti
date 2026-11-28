@@ -118,50 +118,83 @@ private theorem exists_forall_smul_mem_ball {r : ℝ} (hr : 0 < r) (hT₀ : 0 < 
     _ < r := by linarith
 
 omit [FiniteDimensional ℝ E] in
-/-- On a closed orbit of least period `T₀` running along the axis `ℝ • u` up to time `σ < T₀`, a
-segment `[s₀, s₁] • u` with `0 < s₀` and `s₁ < σ` is disjoint from the rest of the orbit, the
-points at the times of `[σ, T₀]`. -/
+/-- On an orbit without returns to `0` on `(0, T₀)` that runs along `ℝ • u` on `[s₀, s₁]` with
+`0 < s₀` and `s₁ < σ`, the segment `[s₀, s₁] • u` is disjoint from the trajectory tail on
+`[σ, T₀]`. -/
 private theorem disjoint_image_smul_image_flowOf
     (hv : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent 1 (fun z : E ↦ (⟨z, v z⟩ : TangentBundle 𝓘(ℝ, E) E)))
-    (hP : (T₀, (0 : E)) ∈ flowDomain (I := 𝓘(ℝ, E)) v)
-    (hp : flowOf (I := 𝓘(ℝ, E)) v T₀ 0 = 0)
     (hmin : ∀ t ∈ Ioo 0 T₀, flowOf (I := 𝓘(ℝ, E)) v t 0 ≠ 0) {σ s₀ s₁ : ℝ}
-    (haxis : ∀ t ∈ Icc 0 σ, flowOf (I := 𝓘(ℝ, E)) v t 0 = t • u) (hs₀ : 0 < s₀)
+    (haxis : ∀ t ∈ Icc s₀ s₁, flowOf (I := 𝓘(ℝ, E)) v t 0 = t • u) (hs₀ : 0 < s₀)
     (hs₁ : s₁ < σ) :
     Disjoint ((fun s : ℝ ↦ s • u) '' Icc s₀ s₁)
       ((fun t ↦ flowOf (I := 𝓘(ℝ, E)) v t 0) '' Icc σ T₀) := by
   rw [Set.disjoint_left]
   rintro _ ⟨s, hs, rfl⟩ ⟨t, ht, hst⟩
-  refine flowOf_ne_flowOf_of_lt hv hP hp hmin (hs₀.trans_le hs.1)
+  refine flowOf_ne_flowOf_of_lt hv hmin (hs₀.trans_le hs.1)
     ((hs.2.trans_lt hs₁).trans_le ht.1) ht.2 ?_
-  rw [haxis s ⟨hs₀.le.trans hs.1, hs.2.trans hs₁.le⟩]
+  rw [haxis s hs]
   exact hst.symm
 
-/-- On a closed orbit of least period `T₀` running along the axis `ℝ • u` up to time `σ < T₀`
-inside a ball `B` around `0`, a segment `[s₀, s₁] • u` with `0 < s₀` and `s₁ < σ` has a smooth
-compactly supported cutoff, equal to `1` near the segment, supported in `B` and away from the rest
-of the orbit, the points at the times of `[σ, T₀]`. -/
+/-- On an orbit without returns to `0` on `(0, T₀)` that runs along `ℝ • u` inside `ball 0 r` on
+`[s₀, s₁]` with `0 < s₀` and `s₁ < σ`, there is a smooth compactly supported cutoff equal to `1`
+near `[s₀, s₁] • u`, supported in `ball 0 r`, and vanishing on the trajectory tail over
+`[σ, T₀]`. -/
 private theorem exists_contDiff_cutoff_axis
     (hv : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent 1 (fun z : E ↦ (⟨z, v z⟩ : TangentBundle 𝓘(ℝ, E) E)))
-    (hP : (T₀, (0 : E)) ∈ flowDomain (I := 𝓘(ℝ, E)) v)
-    (hp : flowOf (I := 𝓘(ℝ, E)) v T₀ 0 = 0)
     (hmin : ∀ t ∈ Ioo 0 T₀, flowOf (I := 𝓘(ℝ, E)) v t 0 ≠ 0) {σ s₀ s₁ r : ℝ}
-    (hball : ∀ τ ∈ Icc 0 σ, τ • u ∈ ball (0 : E) r)
-    (haxis : ∀ t ∈ Icc 0 σ, flowOf (I := 𝓘(ℝ, E)) v t 0 = t • u) (hσ : 0 ≤ σ) (hs₀ : 0 < s₀)
+    (hball : ∀ τ ∈ Icc s₀ s₁, τ • u ∈ ball (0 : E) r)
+    (haxis : ∀ t ∈ Icc s₀ s₁, flowOf (I := 𝓘(ℝ, E)) v t 0 = t • u) (hs₀ : 0 < s₀)
     (hs₁ : s₁ < σ) :
     ∃ χ : E → ℝ, ContDiff ℝ ∞ χ ∧ HasCompactSupport χ ∧ tsupport χ ⊆ ball 0 r ∧
       (∀ t ∈ Icc σ T₀, flowOf (I := 𝓘(ℝ, E)) v t 0 ∉ tsupport χ) ∧
       ∀ s ∈ Icc s₀ s₁, s • u ∈ interior (χ ⁻¹' {1}) := by
-  have hR : IsCompact ((fun t ↦ flowOf (I := 𝓘(ℝ, E)) v t 0) '' Icc σ T₀) :=
+  rcases lt_or_ge s₁ s₀ with hlt | hle
+  · exact ⟨0, contDiff_const, HasCompactSupport.zero, by simp, by simp,
+      fun s hs ↦ absurd (hs.1.trans hs.2) hlt.not_ge⟩
+  have hσ : 0 < σ := hs₀.trans (hle.trans_lt hs₁)
+  have hcomp {d : ℝ} (hd : (d, (0 : E)) ∈ flowDomain (I := 𝓘(ℝ, E)) v) :
+      IsCompact ((fun t ↦ flowOf (I := 𝓘(ℝ, E)) v t 0) '' Icc σ d) :=
     isCompact_Icc.image_of_continuousOn ((isMIntegralCurveOn_flowOf hv 0).continuousOn.mono
-      fun t ht ↦ uIcc_subset_setOf_mem_flowDomain hP (Icc_subset_uIcc ⟨hσ.trans ht.1, ht.2⟩))
+      fun t ht ↦ uIcc_subset_setOf_mem_flowDomain hd (Icc_subset_uIcc ⟨hσ.le.trans ht.1, ht.2⟩))
+  -- The tail over `[σ, T₀]` meeting `ball 0 r` lies in a compact subset `R` of the tail image.
+  obtain ⟨R, hRc, hRsub, hRmem⟩ : ∃ R : Set E, IsCompact R ∧
+      R ⊆ (fun t ↦ flowOf (I := 𝓘(ℝ, E)) v t 0) '' Icc σ T₀ ∧
+      ∀ t ∈ Icc σ T₀, flowOf (I := 𝓘(ℝ, E)) v t 0 ∈ ball 0 r →
+        flowOf (I := 𝓘(ℝ, E)) v t 0 ∈ R := by
+    -- Case 1: `T₀` is in the flow domain, so the entire tail image over `[σ, T₀]` is compact.
+    by_cases hP : (T₀, (0 : E)) ∈ flowDomain (I := 𝓘(ℝ, E)) v
+    · exact ⟨_, hcomp hP, Subset.rfl, fun t ht _ ↦ ⟨t, ht, rfl⟩⟩
+    -- Case 2: `T₀ < σ`, so the tail interval `[σ, T₀]` is empty.
+    rcases lt_or_ge T₀ σ with hT | hT
+    · exact ⟨∅, isCompact_empty, empty_subset _, fun _ ht _ ↦ absurd (ht.1.trans ht.2) hT.not_ge⟩
+    -- Case 3: `T₀ = σ`, so the tail image is a singleton.
+    rcases eq_or_lt_of_le hT with rfl | hσT
+    · exact ⟨{flowOf (I := 𝓘(ℝ, E)) v σ 0}, isCompact_singleton, by simp,
+        fun t ht _ ↦ le_antisymm ht.2 ht.1 ▸ mem_singleton _⟩
+    -- Case 4: `σ < T₀` and `(T₀, 0) ∉ flowDomain v`. By `hmin`, `(0, T₀)` lies in the domain, so
+    -- `T₀` is its finite right endpoint and the trajectory leaves `closedBall 0 r` near `T₀⁻`.
+    have hdomIoo : ∀ t ∈ Ioo 0 T₀, (t, (0 : E)) ∈ flowDomain (I := 𝓘(ℝ, E)) v := fun t ht ↦
+      by_contra fun h ↦ hmin t ht (flowOf_of_notMem h)
+    have hlub := isLUB_setOf_mem_flowDomain_of_notMem (hσ.trans hσT) hdomIoo hP
+    obtain ⟨a, haT, ha⟩ := mem_nhdsLT_iff_exists_Ioo_subset.mp
+      (eventually_flowOf_notMem hv hlub (isCompact_closedBall (0 : E) r))
+    obtain ⟨c, hc₁, hc₂⟩ := exists_between (max_lt haT hσT)
+    refine ⟨((fun t ↦ flowOf (I := 𝓘(ℝ, E)) v t 0) '' Icc σ c) ∪ {flowOf (I := 𝓘(ℝ, E)) v T₀ 0},
+      (hcomp (hdomIoo c ⟨hσ.trans ((le_max_right a σ).trans_lt hc₁), hc₂⟩)).union
+        isCompact_singleton,
+      union_subset (image_mono (Icc_subset_Icc_right hc₂.le))
+        (singleton_subset_iff.mpr ⟨T₀, right_mem_Icc.mpr hσT.le, rfl⟩), fun t ht htb ↦ ?_⟩
+    rcases le_or_gt t c with htc | hct
+    · exact Or.inl ⟨t, ⟨ht.1, htc⟩, rfl⟩
+    exact (eq_or_lt_of_le ht.2).elim (fun h ↦ Or.inr (h ▸ rfl)) fun htT ↦
+      absurd (ball_subset_closedBall htb) (ha ⟨(le_max_left a σ).trans_lt (hc₁.trans hct), htT⟩)
   obtain ⟨χ, hχ, -, hχ1, hχc, hχU⟩ :=
     (isCompact_Icc.image (continuous_id.smul continuous_const)).exists_contDiff_cutoff
-      (isOpen_ball.inter hR.isClosed.isOpen_compl) <| by
+      (isOpen_ball.inter hRc.isClosed.isOpen_compl) <| by
         rintro _ ⟨s, hs, rfl⟩
-        exact ⟨hball s ⟨hs₀.le.trans hs.1, hs.2.trans hs₁.le⟩, Set.disjoint_left.1
-          (disjoint_image_smul_image_flowOf hv hP hp hmin haxis hs₀ hs₁) ⟨s, hs, rfl⟩⟩
-  exact ⟨χ, hχ, hχc, hχU.trans inter_subset_left, fun t ht h ↦ (hχU h).2 ⟨t, ht, rfl⟩,
+        exact ⟨hball s hs, fun hR' ↦ Set.disjoint_left.1
+          (disjoint_image_smul_image_flowOf hv hmin haxis hs₀ hs₁) ⟨s, hs, rfl⟩ (hRsub hR')⟩
+  exact ⟨χ, hχ, hχc, hχU.trans inter_subset_left, fun t ht h ↦ (hχU h).2 (hRmem t ht (hχU h).1),
     fun s hs ↦ hχ1 ⟨s, hs, rfl⟩⟩
 
 omit [FiniteDimensional ℝ E] in
@@ -290,8 +323,9 @@ theorem exists_contDiff_returnDerivative_add_smul_eq_exp_smul
     hvU (hseg hball hσσ)
   -- The cut-off `χ` is `1` near the segment `[s₀, s₁] • u` carrying the dilation, and supported
   -- away from the rest of the orbit, since the orbit has least period `T₀`.
-  obtain ⟨χ, hχ, hχc, hχB, hχR, hχ1⟩ := exists_contDiff_cutoff_axis hv hP hp hmin hball
-    (fun t ht ↦ (hv_axis t ht).2) hσ.le hs₀ hs₁
+  obtain ⟨χ, hχ, hχc, hχB, hχR, hχ1⟩ := exists_contDiff_cutoff_axis hv hmin
+    (fun t ht ↦ hball t ⟨hs₀.le.trans ht.1, ht.2.trans hs₁.le⟩)
+    (fun t ht ↦ (hv_axis t ⟨hs₀.le.trans ht.1, ht.2.trans hs₁.le⟩).2) hs₀ hs₁
   set W : E → E := fun z ↦ χ z • Z z
   have htsW : tsupport W ⊆ tsupport χ := tsupport_smul_subset_left χ Z
   have hWaxis (s : ℝ) : W (s • u) = 0 := by simp [W, hZaxis]
@@ -537,7 +571,7 @@ theorem exists_contMDiff_returnDerivative_add_smul_eq_exp_smul {v : (x : M) → 
         refine ⟨hball s hsσ, ?_⟩
         rintro ⟨t, ht, hts⟩
         rw [← (hv_axis s hsσ).2] at hts
-        exact flowOf_ne_flowOf_of_lt hv1 hP hp hmin (by linarith [hs.1])
+        exact flowOf_ne_flowOf_of_lt hv1 hmin (by linarith [hs.1])
           (by linarith [hs.2, ht.1]) ht.2 hts.symm) hZ hZaxis
   have hW_orbit (t : ℝ) (ht : t ∈ Icc 0 T₀) : W (flowOf v t p) = 0 := by
     rcases le_or_gt t σ with h | h

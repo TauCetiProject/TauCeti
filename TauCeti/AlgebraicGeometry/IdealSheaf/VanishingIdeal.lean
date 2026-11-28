@@ -45,6 +45,8 @@ discrete valuation ring.
   closed subscheme.
 * `Scheme.IdealSheafData.vanishingIdeal_le_map_vanishingIdeal`: a morphism mapping `Z` into a
   closed subset `W` restricts to a morphism of the reduced induced closed subschemes.
+* `Scheme.IdealSheafData.existsUnique_comp_subschemeι_vanishingIdeal_iff`: universal property of
+  the reduced induced closed subscheme on `Z` for morphisms from reduced schemes.
 * `Scheme.Hom.isIso_lift_subschemeι_vanishingIdeal`: a reduced closed subscheme
   with image `Z` is isomorphic to the reduced induced closed subscheme on `Z`.
 * `Scheme.IdealSheafData.comap_vanishingIdeal_of_isOpenImmersion`,
@@ -146,6 +148,24 @@ theorem vanishingIdeal_le_map_vanishingIdeal {Y : Scheme.{u}} (f : Y ⟶ X) {Z :
     {W : Closeds X} (h : Set.MapsTo f Z W) : vanishingIdeal W ≤ (vanishingIdeal Z).map f := by
   rw [map_vanishingIdeal]
   exact vanishingIdeal_antimono (Closeds.closure_le.mpr h.image_subset)
+
+/-- A morphism `f : Y ⟶ X` from a reduced scheme factors uniquely through the reduced induced
+closed subscheme `(vanishingIdeal Z).subschemeι` on a closed subset `Z` if and only if its
+set-theoretic image lies in `Z`. -/
+theorem existsUnique_comp_subschemeι_vanishingIdeal_iff {Y : Scheme.{u}} [IsReduced Y]
+    (f : Y ⟶ X) (Z : Closeds X) :
+    (∃! g : Y ⟶ (vanishingIdeal Z).subscheme, g ≫ (vanishingIdeal Z).subschemeι = f) ↔
+      Set.range f ⊆ Z := by
+  refine ⟨?_, fun hf ↦ ?_⟩
+  · rintro ⟨g, hg, -⟩ _ ⟨y, rfl⟩
+    have hmem : (vanishingIdeal Z).subschemeι (g y) ∈ Set.range (vanishingIdeal Z).subschemeι :=
+      ⟨g y, rfl⟩
+    rw [← hg, Scheme.Hom.comp_apply]
+    rwa [range_subschemeι, coe_support_vanishingIdeal] at hmem
+  · refine ⟨IsClosedImmersion.lift (vanishingIdeal Z).subschemeι f
+      (by simpa using vanishingIdeal_le_ker_of_range_subset f hf),
+      IsClosedImmersion.lift_fac _ _ _, fun g hg ↦ ?_⟩
+    rw [← cancel_mono (vanishingIdeal Z).subschemeι, hg, IsClosedImmersion.lift_fac]
 
 /-- A closed immersion from a reduced scheme with image `Z` identifies its source with the
 reduced induced closed subscheme on `Z`. The canonical lift commutes with the inclusions by

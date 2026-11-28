@@ -19,7 +19,8 @@ sign `(-1)^(#{b ∈ S | b < a})` on the saddle adding `a`.
 
 `khovanovComplexXIso` identifies its terms with the finite biproduct of these quantum pieces.
 The inclusions and projections characterize the terms, and `ι_khovanovComplex_d` gives the
-signed saddle differential. The complex is supported in `[-n₋, n₊]`.
+signed saddle differential. The complex is supported in `[-n₋, n₊]` in cochain degree and in
+quantum degrees congruent to `D.componentCount` modulo two.
 
 `khovanovComplexShiftIso` compares this explicit state convention to the native cochain shift
 of the bracket. Its degree-`i` component is `(-1)^(i * n₋)`, since native shifts change the
@@ -383,6 +384,25 @@ theorem isZero_khovanovComplex_X_of_quantum_notMem_Icc {j : ℤ}
   intro h
   rcases h with ⟨hl, hu⟩
   exact hj ⟨by omega, by omega⟩
+
+/-- Every chain group of the normalized Khovanov complex vanishes in quantum degrees whose parity
+differs from `D.componentCount`, over any commutative coefficient ring. -/
+theorem isZero_khovanovComplex_X_of_mod_two_ne {j : ℤ}
+    (hj : j % 2 ≠ (D.componentCount : ℤ) % 2) (i : ℤ) :
+    IsZero ((D.khovanovComplex hD R j).X i) := by
+  rw [khovanovComplex_X, Functor.isZero_cubeComplex_X_iff]
+  intro S
+  rw [D.resolutionCube_obj_normalized hD R j S.val, ModuleCat.isZero_of_iff_subsingleton,
+    Submodule.subsingleton_iff_eq_bot]
+  exact D.circleQuantumGrading_piece_eq_bot_of_mod_two_ne hD R (PDCode.cubeState S.val) hj
+
+/-- The entire quantum-component Khovanov complex vanishes when `j % 2 ≠ D.componentCount % 2`. -/
+theorem isZero_khovanovComplex_of_mod_two_ne {j : ℤ}
+    (hj : j % 2 ≠ (D.componentCount : ℤ) % 2) :
+    IsZero (D.khovanovComplex hD R j) := by
+  rw [IsZero.iff_id_eq_zero]
+  ext i : 1
+  exact (D.isZero_khovanovComplex_X_of_mod_two_ne hD R hj i).eq_of_src _ _
 
 /-- The normalized chain groups are supported in a finite rectangle in the two gradings
 jointly. -/

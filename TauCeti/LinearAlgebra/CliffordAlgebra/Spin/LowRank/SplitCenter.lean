@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Algebra.Ring.Fin
-public import TauCeti.Algebra.Star.Unitary
+public import TauCeti.Algebra.Star.Unitary.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Center
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Four
 public import TauCeti.RingTheory.Idempotents.Corner.Basic

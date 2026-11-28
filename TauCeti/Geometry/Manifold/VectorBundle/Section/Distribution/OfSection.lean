@@ -66,7 +66,9 @@ in charts are Mathlib's `TestFunction.integralAgainstBilinCLM`, the map underlyi
 * `TauCeti.LocallyIntegrableSection`: local integrability of a section, with
   `TauCeti.locallyIntegrableSection_def`, `TauCeti.LocallyIntegrableSection.locallyIntegrableOn`,
   `TauCeti.LocallyIntegrableSection.zero`, `TauCeti.LocallyIntegrableSection.add`,
-  `TauCeti.LocallyIntegrableSection.smul` and `Continuous.locallyIntegrableSection`.
+  `TauCeti.LocallyIntegrableSection.smul`, and
+  `TauCeti.LocallyIntegrableSection.locallyIntegrableOn_target` in restrictions of preferred charts.
+  Continuous sections are locally integrable (`Continuous.locallyIntegrableSection`).
 * `TauCeti.locallyIntegrableSection_iff_of_iUnion_eq_univ`,
   `TauCeti.localRep_ae_eq_of_iUnion_eq_univ`: local integrability and almost everywhere equality of
   readings from a chart cover.
@@ -450,7 +452,7 @@ omit [ContMDiffVectorBundle ∞ G W I] [T2Space M] in
 include hct hcα in
 /-- The reading at `α` of a locally integrable section is locally integrable on the target of a
 restriction of the preferred chart at `α`. -/
-private theorem LocallyIntegrableSection.locallyIntegrableOn_target
+theorem LocallyIntegrableSection.locallyIntegrableOn_target
     (hu : LocallyIntegrableSection I G u) :
     LocallyIntegrableOn (FirstJetBundle.localRep I G u α) c.target (Module.finBasis ℝ E).addHaar :=
   (hu.locallyIntegrableOn α).mono_set (target_subset_inter_preimage_baseSet c hct hcα)
