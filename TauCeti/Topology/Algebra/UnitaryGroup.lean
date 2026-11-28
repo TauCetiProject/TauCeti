@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Star.Unitary
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SpecialUnitary
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
+public import TauCeti.Topology.Algebra.Group.ClosedSubgroup
 public import TauCeti.Topology.Algebra.Matrix.UnitaryGroup
 public import TauCeti.Topology.Algebra.Star.Unitary
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
@@ -50,11 +51,10 @@ likewise passes to the unitary subgroup `unitarySubgroup (GL n 𝕜)`.
 The file also packages closed subgroups directly inside `Matrix.unitaryGroup n 𝕜` as
 `ClosedSubgroup`: the full unitary group `ClosedSubgroup.unitary`, the special unitary group
 `ClosedSubgroup.specialUnitary` (closed over any `T1Space` topological commutative star ring),
-index transport `ClosedSubgroup.reindex` along a bijection `e : n ≃ m` via the reindexing
-homeomorphism `Matrix.unitaryReindexContinuousMulEquiv` (with membership characterized by inverse
-reindexing via `ClosedSubgroup.mem_reindex_iff`), and, over `ℝ` or `ℂ`, the block-diagonal product
-`ClosedSubgroup.fromBlocksProd` `{diag(g₁, g₂)}` of two closed subgroups of `U(n)` and `U(m)`,
-closed by compactness.
+composition laws for transporting closed subgroups via `ContinuousMulEquiv.closedSubgroupOrderIso`
+applied to `Matrix.unitaryReindexContinuousMulEquiv`, and, over `ℝ` or `ℂ`, the block-diagonal
+product `ClosedSubgroup.fromBlocksProd` `{diag(g₁, g₂)}` of two closed subgroups of `U(n)` and
+`U(m)`, closed by compactness.
 
 This is the setup the compact-group representation theory of `SU(2)` runs on; see
 `TauCeti/RepresentationTheory/SU2/Basic.lean`.
@@ -67,7 +67,6 @@ This is the setup the compact-group representation theory of `SU(2)` runs on; se
   groups, as a continuous homomorphism.
 * `ClosedSubgroup.unitary`: the full unitary group `U(n)` as a `ClosedSubgroup`.
 * `ClosedSubgroup.specialUnitary`: the special unitary group `SU(n)` as a `ClosedSubgroup`.
-* `ClosedSubgroup.reindex`: transports a closed subgroup `G ≤ U(n)` along `e : n ≃ m`.
 * `ClosedSubgroup.fromBlocksProd`: the block-diagonal product `{diag(g₁, g₂)} ≤ U(n ⊕ m)` of
   closed subgroups `G₁ ≤ U(n)` and `G₂ ≤ U(m)`, closed by compactness.
 
@@ -85,8 +84,10 @@ This is the setup the compact-group representation theory of `SU(2)` runs on; se
 * `Matrix.UnitaryGroup.continuous_fromBlocksOne`,
   `Matrix.specialUnitaryGroup.continuous_fromBlocksOne`: the block embeddings `B ↦ diag(1_r, B)`
   of `U(m)` in `U(r + m)` and of `SU(m)` in `SU(r + m)` are continuous.
-* `ClosedSubgroup.mem_reindex_iff`: membership in `G.reindex e` reduces to membership of the
-  inverse reindexing in `G`.
+* `ClosedSubgroup.closedSubgroupOrderIso_unitaryReindexContinuousMulEquiv_refl`,
+  `ClosedSubgroup.closedSubgroupOrderIso_unitaryReindexContinuousMulEquiv_trans`: identity and
+  composition laws for transporting closed subgroups along
+  `Matrix.unitaryReindexContinuousMulEquiv`.
 -/
 
 public section
@@ -371,61 +372,27 @@ section Reindex
 variable {n m p 𝕜 : Type*} [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m]
   [Fintype p] [DecidableEq p] [CommRing 𝕜] [StarRing 𝕜] [TopologicalSpace 𝕜]
 
-/-- Reindex a closed subgroup `G ≤ U(n)` along a bijection `e : n ≃ m` to obtain a closed
-subgroup of `U(m)`. -/
-def reindex (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) (e : n ≃ m) :
-    ClosedSubgroup (Matrix.unitaryGroup m 𝕜) where
-  toSubgroup :=
-    (G : Subgroup _).map (Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).toMulEquiv.toMonoidHom
-  isClosed' := by
-    -- Identify the `ClosedSubgroup` carrier with the image under the reindexing homeomorphism.
-    change IsClosed (((G : Subgroup _).map
-      (Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).toMulEquiv.toMonoidHom :
-        Subgroup (Matrix.unitaryGroup m 𝕜)) : Set (Matrix.unitaryGroup m 𝕜))
-    rw [Subgroup.coe_map]
-    exact (Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).toHomeomorph.isClosed_image.mpr G.isClosed'
-
-/-- The underlying subgroup of `G.reindex e` is the `Subgroup.map` of `G` under
-`Matrix.unitaryReindexContinuousMulEquiv 𝕜 e`. -/
-theorem toSubgroup_reindex (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) (e : n ≃ m) :
-    (G.reindex e).toSubgroup =
-      (G : Subgroup _).map
-        (Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).toMulEquiv.toMonoidHom := by
-  unfold reindex
-  rfl
-
-/-- Membership in `G.reindex e` reduces to membership of the inverse reindexing in `G`. -/
-@[simp]
-theorem mem_reindex_iff {G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)} (e : n ≃ m)
-    {V : Matrix.unitaryGroup m 𝕜} :
-    V ∈ G.reindex e ↔ Matrix.unitaryReindexContinuousMulEquiv 𝕜 e.symm V ∈ G := by
-  have hmem : V ∈ G.reindex e ↔ V ∈ (G.reindex e).toSubgroup := Iff.rfl
-  rw [hmem, toSubgroup_reindex, Subgroup.mem_map_equiv,
-    ← Matrix.symm_unitaryReindexContinuousMulEquiv]
-  rfl
-
-/-- Reindexing an element of `G` along `e` lands in `G.reindex e`. -/
-theorem unitaryReindexContinuousMulEquiv_mem_reindex
-    {G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)} (e : n ≃ m)
-    {U : Matrix.unitaryGroup n 𝕜} (hU : U ∈ G) :
-    Matrix.unitaryReindexContinuousMulEquiv 𝕜 e U ∈ G.reindex e := by
-  rw [mem_reindex_iff]
-  simpa [← Matrix.symm_unitaryReindexContinuousMulEquiv] using hU
-
-/-- Reindexing along the identity equivalence leaves a closed subgroup unchanged. -/
-@[simp]
-theorem reindex_refl (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) :
-    G.reindex (Equiv.refl n) = G := by
+/-- Reindexing a closed subgroup `G ≤ U(n)` along the identity equivalence leaves `G` unchanged. -/
+theorem closedSubgroupOrderIso_unitaryReindexContinuousMulEquiv_refl
+    (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) :
+    (Matrix.unitaryReindexContinuousMulEquiv 𝕜 (Equiv.refl n)).closedSubgroupOrderIso G = G := by
   apply ClosedSubgroup.toSubgroup_injective
-  rw [toSubgroup_reindex, Matrix.unitaryReindexContinuousMulEquiv_refl]
+  rw [ContinuousMulEquiv.closedSubgroupOrderIso_apply_toSubgroup,
+    Matrix.unitaryReindexContinuousMulEquiv_refl]
   exact Subgroup.map_id _
 
-/-- Reindexing along a composite equivalence `e.trans f` equals reindexing along `e` then `f`. -/
+/-- Reindexing a closed subgroup `G ≤ U(n)` along a composite equivalence `e.trans f` equals
+reindexing along `e` then `f`. -/
 @[simp]
-theorem reindex_trans (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) (e : n ≃ m) (f : m ≃ p) :
-    G.reindex (e.trans f) = (G.reindex e).reindex f := by
+theorem closedSubgroupOrderIso_unitaryReindexContinuousMulEquiv_trans
+    (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) (e : n ≃ m) (f : m ≃ p) :
+    (Matrix.unitaryReindexContinuousMulEquiv 𝕜 (e.trans f)).closedSubgroupOrderIso G =
+      (Matrix.unitaryReindexContinuousMulEquiv 𝕜 f).closedSubgroupOrderIso
+        ((Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).closedSubgroupOrderIso G) := by
   apply ClosedSubgroup.toSubgroup_injective
-  rw [toSubgroup_reindex, toSubgroup_reindex, toSubgroup_reindex, Subgroup.map_map]
+  rw [ContinuousMulEquiv.closedSubgroupOrderIso_apply_toSubgroup,
+    ContinuousMulEquiv.closedSubgroupOrderIso_apply_toSubgroup,
+    ContinuousMulEquiv.closedSubgroupOrderIso_apply_toSubgroup, Subgroup.map_map]
   congr 1
   exact congrArg
     (fun φ : Matrix.unitaryGroup n 𝕜 ≃ₜ* Matrix.unitaryGroup p 𝕜 ↦ φ.toMulEquiv.toMonoidHom)

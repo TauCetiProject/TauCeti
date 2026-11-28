@@ -357,23 +357,19 @@ theorem EmbeddedLieSubgroupData.range_mvfderiv_unitsVal_subtypeVal_one
     -- `leftInvariantDerivationEquivGroupLieAlgebra`, differing only in the proof-irrelevant
     -- interior-point witness `IsInteriorPoint 1` on `Rˣ`.
     rfl
-  ext v
-  simp only [LinearMap.mem_range, ContinuousLinearMap.coe_coe, LieSubalgebra.mem_toSubmodule,
-    Subgroup.mem_linearLieSubalgebra]
-  constructor
-  · rintro ⟨w, rfl⟩
-    have hD := hval_D (eK.symm w)
-    rw [eK.apply_symm_apply w] at hD
-    rw [hD, LieEquiv.symm_apply_apply]
-    exact d.lieMapSubtypeVal_mem_lieSubalgebraOfSubgroup (eK.symm w)
-  · intro hv
-    have hmem : (unitsLieAlgebraLieEquiv (R := R)).symm v ∈ d.lieMapSubtypeVal.range := by
-      rw [d.range_lieMapSubtypeVal_eq]
-      exact hv
-    rcases hmem with ⟨D, hD⟩
-    have hD' : d.lieMapSubtypeVal D = (unitsLieAlgebraLieEquiv (R := R)).symm v := hD
-    refine ⟨eK D, ?_⟩
-    rw [hval_D D, hD', LieEquiv.apply_symm_apply]
+  have hcomp :
+      (mvfderiv 𝓘(ℝ, E') (fun k : K ↦ ((k : Rˣ) : R)) (1 : K)).toLinearMap.comp
+          eK.toLinearEquiv.toLinearMap =
+        (unitsLieAlgebraLieEquiv (R := R)).toLieHom.toLinearMap.comp
+          d.lieMapSubtypeVal.toLinearMap :=
+    LinearMap.ext hval_D
+  dsimp only
+  rw [← LinearMap.range_comp_of_range_eq_top
+      (mvfderiv 𝓘(ℝ, E') (fun k : K ↦ ((k : Rˣ) : R)) (1 : K)).toLinearMap
+      (LinearEquiv.range eK.toLinearEquiv),
+    hcomp, LinearMap.range_comp, ← LieHom.range_toSubmodule, d.range_lieMapSubtypeVal_eq,
+    Subgroup.linearLieSubalgebra_eq_map]
+  rfl
 
 /-- At any `g ∈ K`, the tangent space in `R` of an embedded Lie subgroup `K ≤ Rˣ` is the left
 translate `g · 𝔤` of its Lie subalgebra. -/

@@ -46,7 +46,8 @@ matrix coordinates coincides with `𝔤` through
 
 We also characterize the Lie algebras of `ClosedSubgroup.unitary` (`Xᴴ = -X`),
 `ClosedSubgroup.specialUnitary` (`Xᴴ = -X ∧ X.trace = 0`), countable closed subgroups (trivial Lie
-algebra `⊥`), reindexed subgroups `ClosedSubgroup.reindex` (with isomorphism
+algebra `⊥`), reindexed subgroups
+`(Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).closedSubgroupOrderIso G` (with isomorphism
 `ClosedSubgroup.matrixLieAlgebraReindexEquiv`), and block-diagonal products
 `ClosedSubgroup.fromBlocksProd` (with isomorphism
 `ClosedSubgroup.matrixLieAlgebraFromBlocksProdEquiv`). Differentiating the invariance of a
@@ -180,10 +181,6 @@ open scoped Matrix.Norms.Operator
 attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
 
 attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
-
-private theorem continuous_matrix_exp :
-    Continuous (NormedSpace.exp : Matrix n n 𝕜 → Matrix n n 𝕜) :=
-  NormedSpace.exp_continuous
 
 /-- The subgroup of units determined by `G` is closed, being the compact image of `G`. -/
 theorem isClosed_toGL (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) :
@@ -348,7 +345,12 @@ theorem exp_zero : G.exp 0 = 1 :=
 /-- The group-valued exponential `G.exp : G.matrixLieAlgebra → G` is continuous. -/
 theorem continuous_exp : Continuous (G.exp) := by
   rw [continuous_induced_rng, continuous_induced_rng]
-  exact continuous_matrix_exp.comp continuous_subtypeVal
+  have hcont : @Continuous (Matrix n n 𝕜) (Matrix n n 𝕜)
+      (Matrix.linftyOpTopologicalSpace n n 𝕜) (Matrix.linftyOpTopologicalSpace n n 𝕜)
+      NormedSpace.exp := by
+    let _ := Matrix.linftyOpTopologicalSpace n n 𝕜
+    open scoped Matrix.Norms.Operator in exact NormedSpace.exp_continuous
+  exact hcont.comp continuous_subtypeVal
 
 /-- The Lie algebra of a closed subgroup of `U(n)` consists of skew-Hermitian matrices. -/
 theorem conjTranspose_eq_neg_of_mem_matrixLieAlgebra {X : Matrix n n 𝕜}
@@ -771,22 +773,28 @@ section Reindex
 
 variable {m : Type*} [Fintype m] [DecidableEq m]
 
-/-- A matrix lies in the Lie algebra of `G.reindex e` iff its inverse reindexing lies in the
-Lie algebra of `G`. -/
+/-- A matrix lies in the Lie algebra of
+`(Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).closedSubgroupOrderIso G` iff its inverse
+reindexing lies in the Lie algebra of `G`. -/
 @[simp]
 theorem mem_matrixLieAlgebra_reindex_iff (e : n ≃ m) {Y : Matrix m m 𝕜} :
-    Y ∈ (G.reindex e).matrixLieAlgebra ↔ Matrix.reindex e.symm e.symm Y ∈ G.matrixLieAlgebra := by
+    Y ∈ ((Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).closedSubgroupOrderIso G).matrixLieAlgebra ↔
+      Matrix.reindex e.symm e.symm Y ∈ G.matrixLieAlgebra := by
   rw [mem_matrixLieAlgebra_iff, mem_matrixLieAlgebra_iff]
   refine forall_congr' fun t ↦ ?_
   have hsmul : Matrix.reindex e.symm e.symm (t • Y) = t • Matrix.reindex e.symm e.symm Y :=
     (Matrix.reindexLinearEquiv ℝ 𝕜 e.symm e.symm).map_smul t Y
   constructor
   · rintro ⟨V, hV, hEq⟩
-    refine ⟨Matrix.unitaryReindexContinuousMulEquiv 𝕜 e.symm V, (mem_reindex_iff e).mp hV, ?_⟩
-    rw [Matrix.coe_unitaryReindexContinuousMulEquiv_apply, hEq, ← Matrix.exp_reindex, hsmul]
+    refine ⟨Matrix.unitaryReindexContinuousMulEquiv 𝕜 e.symm V, ?_, ?_⟩
+    · simpa [Matrix.symm_unitaryReindexContinuousMulEquiv] using
+        (ContinuousMulEquiv.mem_closedSubgroupOrderIso
+          (Matrix.unitaryReindexContinuousMulEquiv 𝕜 e) G).mp hV
+    · rw [Matrix.coe_unitaryReindexContinuousMulEquiv_apply, hEq, ← Matrix.exp_reindex, hsmul]
   · rintro ⟨U, hU, hEq⟩
     refine ⟨Matrix.unitaryReindexContinuousMulEquiv 𝕜 e U,
-      unitaryReindexContinuousMulEquiv_mem_reindex e hU, ?_⟩
+      (ContinuousMulEquiv.apply_mem_closedSubgroupOrderIso
+        (Matrix.unitaryReindexContinuousMulEquiv 𝕜 e) G).mpr hU, ?_⟩
     rw [Matrix.coe_unitaryReindexContinuousMulEquiv_apply, hEq, ← Matrix.exp_reindex]
     congr 1
     exact ((Matrix.reindexLinearEquiv ℝ 𝕜 e e).map_smul t
@@ -794,11 +802,13 @@ theorem mem_matrixLieAlgebra_reindex_iff (e : n ≃ m) {Y : Matrix m m 𝕜} :
 
 variable (G) in
 /-- Reindexing along a bijection `e : n ≃ m` induces a Lie-algebra isomorphism
-`G.matrixLieAlgebra ≃ₗ⁅ℝ⁆ (G.reindex e).matrixLieAlgebra`. -/
+from `G.matrixLieAlgebra` to the Lie algebra of
+`(Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).closedSubgroupOrderIso G`. -/
 def matrixLieAlgebraReindexEquiv (e : n ≃ m) :
-    G.matrixLieAlgebra ≃ₗ⁅ℝ⁆ (G.reindex e).matrixLieAlgebra :=
+    G.matrixLieAlgebra ≃ₗ⁅ℝ⁆
+      ((Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).closedSubgroupOrderIso G).matrixLieAlgebra :=
   (Matrix.reindexAlgEquiv ℝ 𝕜 e).toLieEquiv.ofSubalgebras G.matrixLieAlgebra
-    (G.reindex e).matrixLieAlgebra (by
+    ((Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).closedSubgroupOrderIso G).matrixLieAlgebra (by
       ext Y
       simp only [LieSubalgebra.mem_map, mem_matrixLieAlgebra_reindex_iff]
       constructor
@@ -810,7 +820,9 @@ def matrixLieAlgebraReindexEquiv (e : n ≃ m) :
 /-- The forward map of `matrixLieAlgebraReindexEquiv` reindexes the underlying matrix by `e`. -/
 @[simp]
 theorem coe_matrixLieAlgebraReindexEquiv_apply (e : n ≃ m) (X : G.matrixLieAlgebra) :
-    ((G.matrixLieAlgebraReindexEquiv e X : (G.reindex e).matrixLieAlgebra) : Matrix m m 𝕜) =
+    ((G.matrixLieAlgebraReindexEquiv e X :
+      ((Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).closedSubgroupOrderIso G).matrixLieAlgebra) :
+        Matrix m m 𝕜) =
       Matrix.reindex e e (X : Matrix n n 𝕜) := by
   simp [matrixLieAlgebraReindexEquiv]
 
@@ -818,18 +830,24 @@ theorem coe_matrixLieAlgebraReindexEquiv_apply (e : n ≃ m) (X : G.matrixLieAlg
 `e.symm`. -/
 @[simp]
 theorem coe_matrixLieAlgebraReindexEquiv_symm_apply (e : n ≃ m)
-    (Y : (G.reindex e).matrixLieAlgebra) :
+    (Y : ((Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).closedSubgroupOrderIso
+      G).matrixLieAlgebra) :
     (((G.matrixLieAlgebraReindexEquiv e).symm Y : G.matrixLieAlgebra) : Matrix n n 𝕜) =
       Matrix.reindex e.symm e.symm (Y : Matrix m m 𝕜) := by
   simp [matrixLieAlgebraReindexEquiv]
 
-/-- Inverse reindexing intertwines the adjoint action of `G.reindex e` with that of `G`. -/
+/-- Inverse reindexing intertwines the adjoint action of the reindexed subgroup with that of
+`G`. -/
 theorem matrixLieAlgebraReindexEquiv_symm_matrixAdjointRepresentation (e : n ≃ m)
-    {g : Matrix.unitaryGroup n 𝕜} (hg : g ∈ G) (Y : (G.reindex e).matrixLieAlgebra) :
+    {g : Matrix.unitaryGroup n 𝕜} (hg : g ∈ G)
+    (Y : ((Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).closedSubgroupOrderIso
+      G).matrixLieAlgebra) :
     (G.matrixLieAlgebraReindexEquiv e).symm
-        ((G.reindex e).matrixAdjointRepresentation
+        (((Matrix.unitaryReindexContinuousMulEquiv 𝕜 e).closedSubgroupOrderIso
+            G).matrixAdjointRepresentation
           ⟨Matrix.unitaryReindexContinuousMulEquiv 𝕜 e g,
-            unitaryReindexContinuousMulEquiv_mem_reindex e hg⟩ Y) =
+            (ContinuousMulEquiv.apply_mem_closedSubgroupOrderIso
+              (Matrix.unitaryReindexContinuousMulEquiv 𝕜 e) G).mpr hg⟩ Y) =
       G.matrixAdjointRepresentation ⟨g, hg⟩ ((G.matrixLieAlgebraReindexEquiv e).symm Y) := by
   ext1
   simp only [coe_matrixLieAlgebraReindexEquiv_symm_apply, coe_matrixAdjointRepresentation_apply,
