@@ -145,7 +145,7 @@ end Ring
 
 section Balanced
 
-variable {S A : Type*} [Ring S] [Ring A] [Module S A] {t : S} {p q : A}
+variable {S A : Type*} [Ring A] [DistribSMul S A] {t : S} {p q : A}
 
 /-- Replacing idempotents `p` and `q` by `1 - p` and `1 - q` negates their balanced defect. -/
 theorem one_sub_mul_mul_sub_smul_sub (hp : IsIdempotentElem p) (hq : IsIdempotentElem q) :
