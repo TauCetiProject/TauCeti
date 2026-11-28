@@ -42,12 +42,12 @@ open Finset
 
 namespace DirichletCharacter
 
-variable {R : Type*} [CommRing R] [IsDomain R] {N : ℕ} [NeZero N]
-  {χ ψ : DirichletCharacter R N}
+variable {N : ℕ} [NeZero N]
 
 /-- If `χ ψ` is primitive, then the convolution `∑_x χ(x) ψ(t - x)` vanishes at every nonunit
-`t`. -/
-theorem sum_mul_apply_sub_eq_zero_of_isPrimitive (h : (χ * ψ).IsPrimitive) {t : ZMod N}
+`t`. The values lie in any commutative semiring in which nonzero factors cancel. -/
+theorem sum_mul_apply_sub_eq_zero_of_isPrimitive {R : Type*} [CommSemiring R]
+    [IsCancelMulZero R] {χ ψ : DirichletCharacter R N} (h : (χ * ψ).IsPrimitive) {t : ZMod N}
     (ht : ¬IsUnit t) : ∑ x, χ x * ψ (t - x) = 0 := by
   -- The units `u ≡ 1` modulo `N / g`, with `g = gcd(t, N)`, fix `t`.
   set g := t.val.gcd N
@@ -68,20 +68,18 @@ theorem sum_mul_apply_sub_eq_zero_of_isPrimitive (h : (χ * ψ).IsPrimitive) {t 
   have hχψu : (χ * ψ) (u : ZMod N) ≠ 1 := fun h ↦
     hχψu1 (Units.ext (by rw [MulChar.coe_toUnitHom, h, Units.val_one]))
   have hut : (u : ZMod N) * t = t := ZMod.unit_mul_eq_self_of_mem_ker_unitsMap hu
-  -- The substitution `x = u x'` multiplies the sum by `(χ ψ)(u)`.
-  have key : ∑ x, χ x * ψ (t - x) = (χ * ψ) (u : ZMod N) * ∑ x, χ x * ψ (t - x) := by
-    rw [mul_sum]
-    refine (Fintype.sum_bijective _ (Units.mulLeft_bijective u) _ _ fun x ↦ ?_).symm
-    rw [MulChar.mul_apply]
-    conv_rhs => rw [← hut, ← mul_sub, map_mul, map_mul]
-    ring
-  have hsub : (1 - (χ * ψ) (u : ZMod N)) * ∑ x, χ x * ψ (t - x) = 0 := by
-    rw [sub_mul, one_mul, ← key, sub_self]
-  exact (mul_eq_zero.mp hsub).resolve_left (sub_ne_zero.mpr hχψu.symm)
+  -- The substitution `x = u x'` multiplies the sum by `(χ ψ)(u) ≠ 1`.
+  refine eq_zero_of_mul_eq_self_left hχψu ?_
+  rw [mul_sum]
+  refine Fintype.sum_bijective _ (Units.mulLeft_bijective u) _ _ fun x ↦ ?_
+  rw [MulChar.mul_apply]
+  conv_rhs => rw [← hut, ← mul_sub, map_mul, map_mul]
+  ring
 
 /-- **The Gauss–Jacobi relation modulo `N`**: if `χ ψ` is primitive, then
 `g(χ ψ) J(χ, ψ) = g(χ) g(ψ)` for every additive character `e` of `ZMod N`. -/
-theorem gaussSum_mul_jacobiSum_of_isPrimitive (h : (χ * ψ).IsPrimitive) (e : AddChar (ZMod N) R) :
+theorem gaussSum_mul_jacobiSum_of_isPrimitive {R : Type*} [CommRing R] [NoZeroDivisors R]
+    {χ ψ : DirichletCharacter R N} (h : (χ * ψ).IsPrimitive) (e : AddChar (ZMod N) R) :
     gaussSum (χ * ψ) e * jacobiSum χ ψ = gaussSum χ e * gaussSum ψ e := by
   rw [gaussSum_mul, gaussSum, sum_mul]
   refine sum_congr rfl fun t _ ↦ ?_
