@@ -7,7 +7,7 @@ module
 
 public import Mathlib.GroupTheory.PGroup
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
-import TauCeti.GroupTheory.PGroup
+import TauCeti.GroupTheory.PGroup.Basic
 
 /-!
 # Finite `p`-group quotients of topological groups

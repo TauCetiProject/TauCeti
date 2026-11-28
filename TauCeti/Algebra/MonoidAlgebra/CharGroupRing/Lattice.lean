@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Index
 public import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.RingTheory.Ideal.Quotient.Index
 import Mathlib.Algebra.Regular.Pi
+import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
 
 /-!
 # Character group rings as lattices

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.GroupTheory.PGroup
+import TauCeti.GroupTheory.PGroup.Basic
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import TauCeti.GroupTheory.PLowerCentralSeries
 public import TauCeti.GroupTheory.QuotientGroup.Map

@@ -12,7 +12,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Frattini.Basic
 import Mathlib.GroupTheory.Nilpotent
 import Mathlib.Topology.Algebra.ClopenNhdofOne
 import TauCeti.GroupTheory.Index.Basic
-import TauCeti.GroupTheory.PGroup
+import TauCeti.GroupTheory.PGroup.Basic
 
 /-!
 # Maximal open subgroups of pro-`p` groups

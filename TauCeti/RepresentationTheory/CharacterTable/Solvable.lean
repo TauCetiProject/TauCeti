@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Group.Conj
 public import Mathlib.GroupTheory.Solvable
 import TauCeti.RepresentationTheory.CharacterTable.Table
 import TauCeti.RepresentationTheory.CharacterTable.Vanishing
-import TauCeti.GroupTheory.PGroup
+import TauCeti.GroupTheory.PGroup.Basic
 import Mathlib.GroupTheory.Nilpotent
 import Mathlib.GroupTheory.Sylow
 

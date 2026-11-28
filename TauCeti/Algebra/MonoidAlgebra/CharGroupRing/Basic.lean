@@ -8,18 +8,16 @@ module
 public import Mathlib.GroupTheory.FiniteAbelian.Duality
 public import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 public import Mathlib.RingTheory.IntegralDomain
-public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Basic
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
-public import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
+public import TauCeti.Algebra.MonoidAlgebra.CharEval.Basic
+import TauCeti.Algebra.Algebra.Pi
 
 /-!
-# Evaluation of a group ring at characters, and character group rings
+# Character group rings
 
-Let `O` be a commutative ring and `G` a commutative group. A *character* of `G` is a group
-homomorphism `ψ : G →* Oˣ`, and evaluation at `ψ` is the `O`-algebra homomorphism
-`ψ : O[G] → O`, `∑ a_g g ↦ ∑ a_g ψ(g)`. Collecting the evaluations at a set `Ψ` of characters
-gives the joint evaluation `O[G] → ∏_{ψ ∈ Ψ} O`, whose image is the *character group ring*
-`R_Ψ`: an `O`-subalgebra of the product, and a quotient of `O[G]` by the intersection of the
+Let `O` be a commutative ring and `G` a commutative group. Collecting character evaluations
+`MonoidHom.charEval` (`TauCeti.Algebra.MonoidAlgebra.CharEval.Basic`) at a set `Ψ` of characters
+`G →* Oˣ` gives the joint evaluation `O[G] → ∏_{ψ ∈ Ψ} O`, whose image is the *character group
+ring* `R_Ψ`: an `O`-subalgebra of the product, and a quotient of `O[G]` by the intersection of the
 kernels of the evaluations at the members of `Ψ`.
 
 Character group rings are the coefficient orders of the integral Brumer–Stark arguments of
@@ -27,8 +25,8 @@ Dasgupta and Kakde: they interpolate between `O` (`Ψ = {1}`) and, for `G` finit
 domain with enough roots of unity, `O[G]` itself (`Ψ` all characters). Under the same
 hypotheses, the quotient `O[G] / N_I O[G]` by the norm element `N_I` of a subgroup `I` is the
 character group ring of the set of characters that are nontrivial on `I` (Dasgupta–Kakde,
-Lemma 2.2); this identification is not proved in this file. Character group rings are in
-general proper suborders of the product `∏_{ψ ∈ Ψ} O`.
+Lemma 2.2; proved in `TauCeti.Algebra.MonoidAlgebra.CharGroupRing.Norm`). Character group rings are
+in general proper suborders of the product `∏_{ψ ∈ Ψ} O`.
 
 The main theorem is that the joint evaluation at all characters is injective when `G` is finite
 and `O` is a domain with enough roots of unity (`Set.jointEval_injective`), so that the
@@ -36,25 +34,21 @@ character group ring of the set of all characters is `O[G]` itself.
 
 ## Main definitions
 
-* `MonoidHom.charEval`: evaluation `O[G] →ₐ[O] O` at a character, the `O[G]`-point
-  `TauCeti.DiagonalizableGroup.point` of the diagonalizable group with values in `O`.
 * `Set.jointEval`: the joint evaluation `O[G] →ₐ[O] (Ψ → O)` at a set of characters.
 * `Set.charGroupRing`: the character group ring `R_Ψ`, the range of `Ψ.jointEval`.
-* `Set.charGroupRing.proj`: the canonical surjection `α_Ψ : O[G] →ₐ[O] R_Ψ`.
+* `Set.charGroupRing.proj`: the canonical surjection `α_Ψ : O[G] →ₐ[O] R_Ψ` onto the character
+  group ring.
+* `Set.charGroupRing.restrictAlgHom`: the canonical surjective transition homomorphism
+  `R_Ψ →ₐ[O] R_{Ψ'}` for `Ψ' ⊆ Ψ`.
+* `Set.charGroupRing.evalAlgHom`: coordinate evaluation `R_Ψ →ₐ[O] O` at `ψ ∈ Ψ`.
+* `Set.charGroupRing.singletonAlgEquiv`: the canonical isomorphism `R_{{ψ}} ≃ₐ[O] O`.
 
 ## Main results
 
-* `MonoidAlgebra.charEval_one_apply` and `MonoidHom.charEval_one`: the trivial character
-  evaluates by the augmentation.
-* `MonoidHom.charEval_subgroupCharSum_of_le_ker` and
-  `MonoidHom.charEval_subgroupCharSum_eq_zero`: the evaluation of a character sum over a finite
-  subgroup `H`, which is `#H` or `0` (row orthogonality); the norm element `∑_{h ∈ H} h` is the
-  case of the trivial character.
 * `TauCeti.eq_of_forall_charEval_eq` and `Set.jointEval_injective`: for `G` finite and `O` a
   domain with enough roots of unity, an element of `O[G]` is determined by its values at all
   characters.
-* `Set.charGroupRing.proj_eq_proj_iff` and `Set.charGroupRing.ker_proj`: the kernel of
-  `α_Ψ` is the intersection of the kernels of the evaluations at the members of `Ψ`.
+* `Set.charGroupRing.proj_eq_proj_iff` and `Set.charGroupRing.ker_proj`: the kernel of `α_Ψ`.
 
 ## Implementation notes
 
@@ -64,9 +58,8 @@ first require showing that the order of `G` is nonzero in `O`. Instead, the func
 by Artin's theorem `linearIndependent_monoidHom`, and the joint evaluation sends the standard
 basis of `O[G]` to them.
 
-Declarations whose first explicit argument is a character or a set of characters live in the
-`MonoidHom` and `Set` namespaces, so that `ψ.charEval`, `Ψ.jointEval` and `Ψ.charGroupRing`
-elaborate by dot notation.
+Declarations whose first explicit argument is a set of characters live in the `Set` namespace, so
+that `Ψ.jointEval` and `Ψ.charGroupRing` elaborate by dot notation.
 
 ## References
 
@@ -79,53 +72,6 @@ public section
 section CommSemiring
 
 variable {O G : Type*} [CommSemiring O] [CommGroup G]
-
-/-- Evaluation of the group ring `O[G]` at a character `ψ : G →* Oˣ`: the `O`-algebra
-homomorphism `∑ a_g g ↦ ∑ a_g ψ(g)`. It is the `O[G]`-point of the diagonalizable group
-`D(G)` with values in `O` attached to `ψ`, and following Dasgupta–Kakde it is written `ψ(x)`
-for `x ∈ O[G]`. Being reducible, it inherits the value lemmas of
-`TauCeti.DiagonalizableGroup.point`: `TauCeti.DiagonalizableGroup.point_single` sends
-`single g a` to `a • ψ g`, and `TauCeti.DiagonalizableGroup.point_single_one` sends `single g 1`
-to `ψ g`. -/
-noncomputable abbrev MonoidHom.charEval (ψ : G →* Oˣ) : MonoidAlgebra O G →ₐ[O] O :=
-  TauCeti.DiagonalizableGroup.point ψ
-
-/-- The trivial character evaluates by the coefficient-sum augmentation. -/
-@[simp]
-theorem MonoidAlgebra.charEval_one_apply (x : MonoidAlgebra O G) :
-    (1 : G →* Oˣ).charEval x = MonoidAlgebra.augmentation O G x := by
-  induction x using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add x y hx hy => rw [map_add, map_add, hx, hy]
-  | single g a => simp
-
-namespace MonoidHom
-
-/-- As a ring homomorphism, evaluation at the trivial character is the coefficient-sum
-augmentation. -/
-theorem charEval_one :
-    ((1 : G →* Oˣ).charEval : MonoidAlgebra O G →+* O) =
-      MonoidAlgebra.augmentation O G :=
-  RingHom.ext MonoidAlgebra.charEval_one_apply
-
-/-- The value of a character `ψ` on the character sum `∑_{h ∈ H} χ(h) h` over a finite subgroup
-`H` is `#H` when `χ ψ` is trivial on `H`. -/
-theorem charEval_subgroupCharSum_of_le_ker (χ ψ : G →* Oˣ) (H : Subgroup G) [Fintype H]
-    (hH : H ≤ (χ * ψ).ker) :
-    ψ.charEval (TauCeti.subgroupCharSum ((Units.coeHom O).comp χ) H) = Nat.card H := by
-  have h (h : H) : ((χ h : Oˣ) : O) * ψ h = 1 := by
-    rw [← Units.val_mul, ← MonoidHom.mul_apply, hH h.property, Units.val_one]
-  simp [TauCeti.subgroupCharSum_def, map_sum, h, Nat.card_eq_fintype_card]
-
-/-- The norm element `∑_{h ∈ H} h` of a finite subgroup `H` on which `ψ` is trivial evaluates
-to `#H` at `ψ`. -/
-theorem charEval_subgroupCharSum_one_of_le_ker (ψ : G →* Oˣ) (H : Subgroup G) [Fintype H]
-    (hH : H ≤ ψ.ker) :
-    ψ.charEval (TauCeti.subgroupCharSum (1 : G →* O) H) = Nat.card H := by
-  simpa using charEval_subgroupCharSum_of_le_ker 1 ψ H
-    fun g hg ↦ by simpa [MonoidHom.mem_ker] using hH hg
-
-end MonoidHom
 
 namespace Set
 
@@ -206,6 +152,145 @@ theorem ker_proj : RingHom.ker (proj Ψ) = ⨅ ψ ∈ Ψ, RingHom.ker ψ.charEva
   ext x
   simp [RingHom.mem_ker, proj_eq_zero_iff]
 
+private theorem map_restrictAmbient_charGroupRing {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ) :
+    Ψ.charGroupRing.map (TauCeti.AlgHom.funLeft O (fun _ ↦ O) (Set.inclusion h)) =
+      Ψ'.charGroupRing := by
+  have hcomp :
+      (TauCeti.AlgHom.funLeft O (fun _ ↦ O) (Set.inclusion h)).comp Ψ.jointEval =
+        Ψ'.jointEval := by
+    ext x ψ
+    simp
+  rw [charGroupRing_def, charGroupRing_def, ← AlgHom.range_comp, hcomp]
+
+/-- For `Ψ' ⊆ Ψ`, restricting functions from `Ψ` to `Ψ'` defines the canonical surjective
+`O`-algebra transition homomorphism `R_Ψ →ₐ[O] R_{Ψ'}` through which `α_{Ψ'}` factors. -/
+noncomputable def restrictAlgHom {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ) :
+    Ψ.charGroupRing →ₐ[O] Ψ'.charGroupRing :=
+  (Subalgebra.equivOfEq _ _ (map_restrictAmbient_charGroupRing h)).toAlgHom.comp
+    ((TauCeti.AlgHom.funLeft O (fun _ ↦ O) (Set.inclusion h)).subalgebraMap Ψ.charGroupRing)
+
+/-- Coordinatewise formula for `restrictAlgHom`. -/
+@[simp]
+theorem coe_restrictAlgHom_apply {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ)
+    (y : Ψ.charGroupRing) (ψ : Ψ') :
+    (restrictAlgHom h y : Ψ' → O) ψ = (y : Ψ → O) ⟨ψ.val, h ψ.property⟩ := by
+  simp [restrictAlgHom]
+
+/-- Restricting a character group ring to itself is the identity algebra homomorphism. -/
+@[simp]
+theorem restrictAlgHom_self (h : Ψ ⊆ Ψ) :
+    restrictAlgHom h = AlgHom.id O Ψ.charGroupRing := by
+  ext y ψ
+  simp
+
+/-- Iterated restriction along `Ψ'' ⊆ Ψ' ⊆ Ψ` agrees with restriction along `Ψ'' ⊆ Ψ`. -/
+@[simp]
+theorem restrictAlgHom_restrictAlgHom {Ψ'' Ψ' Ψ : Set (G →* Oˣ)}
+    (h₁ : Ψ'' ⊆ Ψ') (h₂ : Ψ' ⊆ Ψ) (y : Ψ.charGroupRing) :
+    restrictAlgHom h₁ (restrictAlgHom h₂ y) = restrictAlgHom (h₁.trans h₂) y := by
+  ext ψ
+  simp
+
+/-- Composition of transition homomorphisms `restrictAlgHom`. -/
+@[simp]
+theorem restrictAlgHom_comp {Ψ'' Ψ' Ψ : Set (G →* Oˣ)}
+    (h₁ : Ψ'' ⊆ Ψ') (h₂ : Ψ' ⊆ Ψ) :
+    (restrictAlgHom h₁).comp (restrictAlgHom h₂) = restrictAlgHom (h₁.trans h₂) :=
+  AlgHom.ext (restrictAlgHom_restrictAlgHom h₁ h₂)
+
+/-- `restrictAlgHom` commutes with the canonical projections `α_Ψ` and `α_{Ψ'}`. -/
+@[simp]
+theorem restrictAlgHom_proj {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ) (x : MonoidAlgebra O G) :
+    restrictAlgHom h (proj Ψ x) = proj Ψ' x := by
+  ext ψ
+  simp
+
+/-- Composing `restrictAlgHom` with `proj Ψ` recovers `proj Ψ'`. -/
+@[simp]
+theorem restrictAlgHom_comp_proj {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ) :
+    (restrictAlgHom h).comp (proj Ψ) = proj Ψ' :=
+  AlgHom.ext (restrictAlgHom_proj h)
+
+/-- `restrictAlgHom` is surjective whenever `Ψ' ⊆ Ψ`. -/
+theorem restrictAlgHom_surjective {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ) :
+    Function.Surjective (restrictAlgHom h) :=
+  (Subalgebra.equivOfEq _ _ (map_restrictAmbient_charGroupRing h)).surjective.comp
+    ((TauCeti.AlgHom.funLeft O (fun _ ↦ O) (Set.inclusion h)).subalgebraMap_surjective
+      Ψ.charGroupRing)
+
+/-- Evaluation of `R_Ψ` at a member `ψ ∈ Ψ`: the surjective `O`-algebra homomorphism `R_Ψ →ₐ[O] O`
+projecting onto the `ψ`-coordinate. -/
+noncomputable def evalAlgHom {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ) : Ψ.charGroupRing →ₐ[O] O :=
+  (Pi.evalAlgHom O (fun _ : Ψ ↦ O) ⟨ψ, hψ⟩).comp Ψ.charGroupRing.val
+
+/-- `evalAlgHom` reads off the `ψ`-coordinate in `Ψ → O`. -/
+@[simp]
+theorem evalAlgHom_apply {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ) (y : Ψ.charGroupRing) :
+    evalAlgHom hψ y = (y : Ψ → O) ⟨ψ, hψ⟩ := by
+  simp [evalAlgHom]
+
+/-- Composing `evalAlgHom` with `proj Ψ` gives `ψ.charEval`. -/
+@[simp]
+theorem evalAlgHom_comp_proj {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ) :
+    (evalAlgHom hψ).comp (proj Ψ) = ψ.charEval :=
+  AlgHom.ext fun x ↦ by simp
+
+/-- Composing `evalAlgHom` on `R_{Ψ'}` with `restrictAlgHom` recovers `evalAlgHom` on `R_Ψ`. -/
+@[simp]
+theorem evalAlgHom_comp_restrictAlgHom {Ψ' Ψ : Set (G →* Oˣ)} (h : Ψ' ⊆ Ψ)
+    {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ') :
+    (evalAlgHom hψ).comp (restrictAlgHom h) = evalAlgHom (h hψ) :=
+  AlgHom.ext fun y ↦ by simp
+
+/-- Coordinate evaluation `R_Ψ →ₐ[O] O` at any `ψ ∈ Ψ` is surjective, split by
+`algebraMap O R_Ψ`. -/
+theorem evalAlgHom_surjective {ψ : G →* Oˣ} (hψ : ψ ∈ Ψ) :
+    Function.Surjective (evalAlgHom hψ) :=
+  fun a ↦ ⟨algebraMap O Ψ.charGroupRing a, (evalAlgHom hψ).commutes a⟩
+
+/-- A nontrivial character group ring `R_Ψ` is necessarily indexed by a nonempty set `Ψ`, since
+`∅ → O` is a subsingleton. -/
+theorem nonempty_of_nontrivial [Nontrivial Ψ.charGroupRing] : Ψ.Nonempty := by
+  by_contra h
+  rw [Set.not_nonempty_iff_eq_empty] at h
+  subst h
+  exact zero_ne_one
+    (ext (y := (0 : (∅ : Set (G →* Oˣ)).charGroupRing)) fun ψ ↦ False.elim ψ.property)
+
+/-- When `Ψ` is nonempty, `algebraMap O R_Ψ` is a local homomorphism because it has a left inverse
+`evalAlgHom hψ`. -/
+instance [Nonempty Ψ] : IsLocalHom (algebraMap O Ψ.charGroupRing) := by
+  obtain ⟨ψ, hψ⟩ := ‹Nonempty Ψ›
+  exact isLocalHom_of_leftInverse (evalAlgHom hψ) (fun a ↦ (evalAlgHom hψ).commutes a)
+
+/-- When `R_Ψ` is nontrivial, `Ψ` is nonempty and hence `algebraMap O R_Ψ` is a local
+homomorphism. -/
+instance [Nontrivial Ψ.charGroupRing] : IsLocalHom (algebraMap O Ψ.charGroupRing) := by
+  have := (nonempty_of_nontrivial (Ψ := Ψ)).to_subtype
+  infer_instance
+
+/-- The character group ring of a singleton `{ψ}` is canonically isomorphic to `O`. -/
+noncomputable def singletonAlgEquiv (ψ : G →* Oˣ) : ({ψ} : Set (G →* Oˣ)).charGroupRing ≃ₐ[O] O :=
+  AlgEquiv.ofAlgHom
+    (evalAlgHom (Set.mem_singleton ψ))
+    (Algebra.ofId O _)
+    (AlgHom.ext fun a ↦ (evalAlgHom (Set.mem_singleton ψ)).commutes a)
+    (AlgHom.ext fun y ↦ ext fun ⟨χ, hχ⟩ ↦ by
+      cases Set.mem_singleton_iff.mp hχ
+      simp)
+
+/-- `singletonAlgEquiv` evaluates at `ψ`. -/
+@[simp]
+theorem singletonAlgEquiv_apply (ψ : G →* Oˣ) (y : ({ψ} : Set (G →* Oˣ)).charGroupRing) :
+    singletonAlgEquiv ψ y = (y : ({ψ} : Set (G →* Oˣ)) → O) ⟨ψ, Set.mem_singleton ψ⟩ := by
+  simp [singletonAlgEquiv]
+
+/-- The inverse of `singletonAlgEquiv` is `algebraMap O R_{{ψ}}`. -/
+@[simp]
+theorem singletonAlgEquiv_symm_apply (ψ : G →* Oˣ) (a : O) :
+    (singletonAlgEquiv ψ).symm a = algebraMap O ({ψ} : Set (G →* Oˣ)).charGroupRing a := by
+  simp [singletonAlgEquiv]
+
 end charGroupRing
 
 end Set
@@ -215,46 +300,6 @@ end CommSemiring
 section Domain
 
 variable {O G : Type*} [CommRing O] [IsDomain O] [CommGroup G]
-
-namespace MonoidHom
-
-/-- Row orthogonality: the value of a character `ψ` on the character sum `∑_{h ∈ H} χ(h) h` over
-a finite subgroup `H` vanishes when `χ ψ` is nontrivial on `H` and `O` is a domain. -/
-theorem charEval_subgroupCharSum_eq_zero (χ ψ : G →* Oˣ) (H : Subgroup G) [Fintype H]
-    (hH : ¬ H ≤ (χ * ψ).ker) :
-    ψ.charEval (TauCeti.subgroupCharSum ((Units.coeHom O).comp χ) H) = 0 := by
-  have hne : (Units.coeHom O).comp ((χ * ψ).comp H.subtype) ≠ 1 := by
-    intro h
-    refine hH fun g hg ↦ Units.val_eq_one.mp ?_
-    simpa using DFunLike.congr_fun h ⟨g, hg⟩
-  simpa [TauCeti.subgroupCharSum_def, map_sum] using sum_hom_units_eq_zero _ hne
-
-variable [Fintype (⊤ : Subgroup G)] in
-/-- The integral character sum associated to `χ` evaluates to the group order at `χ` and to
-zero at each other character. It is the scaled character idempotent, with no division in `O`. -/
-@[simp]
-theorem charEval_subgroupCharSum_inv_top [DecidableEq (G →* Oˣ)] (χ ψ : G →* Oˣ) :
-    ψ.charEval (TauCeti.subgroupCharSum ((Units.coeHom O).comp χ⁻¹) ⊤) =
-      if χ = ψ then (Nat.card G : O) else 0 := by
-  have hker : ⊤ ≤ (χ⁻¹ * ψ).ker ↔ χ = ψ := by
-    rw [top_le_iff, MonoidHom.ker_eq_top_iff]
-    exact inv_mul_eq_one (a := χ) (b := ψ)
-  by_cases h : χ = ψ
-  · rw [ite_eq_left h]
-    simpa using charEval_subgroupCharSum_of_le_ker χ⁻¹ ψ ⊤ (hker.mpr h)
-  · rw [ite_eq_right h]
-    exact charEval_subgroupCharSum_eq_zero χ⁻¹ ψ ⊤ fun hle ↦ h (hker.mp hle)
-
-/-- The norm element `∑_{h ∈ H} h` of a finite subgroup `H` on which `ψ` is nontrivial evaluates
-to `0` at `ψ` when `O` is a domain. For `H = G` this is the vanishing of a nontrivial character
-on the group sum. -/
-theorem charEval_subgroupCharSum_one_eq_zero (ψ : G →* Oˣ) (H : Subgroup G) [Fintype H]
-    (hH : ¬ H ≤ ψ.ker) :
-    ψ.charEval (TauCeti.subgroupCharSum (1 : G →* O) H) = 0 := by
-  simpa using charEval_subgroupCharSum_eq_zero 1 ψ H
-    fun h ↦ hH fun g hg ↦ by simpa [MonoidHom.mem_ker] using h hg
-
-end MonoidHom
 
 variable [Finite G] [HasEnoughRootsOfUnity O (Monoid.exponent G)]
 

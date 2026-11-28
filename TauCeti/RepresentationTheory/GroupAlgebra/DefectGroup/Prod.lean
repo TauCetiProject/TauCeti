@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Group.Center
 public import TauCeti.Algebra.Group.Subgroup.Prod
 public import TauCeti.Algebra.MonoidAlgebra.TensorProduct
-public import TauCeti.GroupTheory.PGroup
+public import TauCeti.GroupTheory.PGroup.Basic
 public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.Basic
 
 /-!

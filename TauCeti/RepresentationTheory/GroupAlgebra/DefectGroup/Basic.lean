@@ -11,7 +11,7 @@ public import Mathlib.Order.Minimal
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Basic
 public import TauCeti.RepresentationTheory.GroupAlgebra.Brauer.Kernel
 public import TauCeti.RingTheory.Idempotents.Corner.Local
-import TauCeti.GroupTheory.PGroup
+import TauCeti.GroupTheory.PGroup.Basic
 
 /-!
 # Defect groups

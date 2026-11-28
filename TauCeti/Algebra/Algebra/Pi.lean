@@ -88,6 +88,7 @@ algebra map `R → (ι → A)` of the product algebra.
   algebras give separating characters of `C ⊗[R] D`.
 * `TauCeti.AlgHom.pi_id_bijective_of_finrank_le_card`: a finite-dimensional algebra over a field
   with at least as many characters as its dimension is the algebra of functions on its characters.
+* `TauCeti.AlgHom.funLeft`: precomposition of a dependent product algebra with an index map.
 * `TauCeti.AlgHom.pi_bijective_of_isUnit_det`: over any commutative ring, evaluation at sections
   whose matrix on some basis has unit determinant is bijective.
 * `Pi.single_one_eq_algebraMap_comp`: a standard basis vector of `ι → A` is the image of a
@@ -393,5 +394,39 @@ theorem AlgHom.pi_id_bijective_of_finrank_le_card
         (f := (AlgHom.pi fun χ : A →ₐ[K] K ↦ χ).toLinearMap) hsurj)
   exact ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank
     (f := (AlgHom.pi fun χ : A →ₐ[K] K ↦ χ).toLinearMap) hdim).mpr hsurj, hsurj⟩
+
+section FunLeft
+
+variable (R : Type*) {ι : Type*} (A : ι → Type*) [CommSemiring R]
+  [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)] {ι' : Type*}
+
+/-- Precomposition with an index map `f : ι' → ι` as an `R`-algebra homomorphism
+`(Π i, A i) →ₐ[R] (Π j, A (f j))`. -/
+def AlgHom.funLeft (f : ι' → ι) : (Π i, A i) →ₐ[R] (Π j, A (f j)) :=
+  AlgHom.pi (fun j ↦ Pi.evalAlgHom R A (f j))
+
+variable {R A}
+
+/-- Precomposition with `f` evaluates at `j` as evaluation at `f j`. -/
+@[simp]
+theorem AlgHom.funLeft_apply (f : ι' → ι) (g : Π i, A i) (j : ι') :
+    AlgHom.funLeft R A f g j = g (f j) := by
+  rfl
+
+/-- Precomposition with the identity map is the identity algebra homomorphism. -/
+@[simp]
+theorem AlgHom.funLeft_id :
+    AlgHom.funLeft R A (_root_.id : ι → ι) = _root_.AlgHom.id R (Π i, A i) := by
+  ext
+  simp
+
+/-- Precomposition reverses composition of index maps. -/
+theorem AlgHom.funLeft_comp {ι'' : Type*} (f₁ : ι' → ι) (f₂ : ι'' → ι') :
+    AlgHom.funLeft R A (f₁ ∘ f₂) =
+      (AlgHom.funLeft R (fun j ↦ A (f₁ j)) f₂).comp (AlgHom.funLeft R A f₁) := by
+  ext
+  simp
+
+end FunLeft
 
 end TauCeti

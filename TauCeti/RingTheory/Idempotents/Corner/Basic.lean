@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Span
 public import Mathlib.RingTheory.Idempotents
 public import Mathlib.RingTheory.Noetherian.Basic
 
@@ -23,6 +24,9 @@ ring structure when `A` is a nonunital ring. The corner inherits the compatible 
 and module structure of `A`. Over a commutative semiring `R`, this makes it an `R`-algebra,
 with `algebraMap R eAe r = r • e`. When `A` is unital, this is the structure under which `eAe`
 can be compared with `A` as `R`-algebras, for instance through Mathlib's `MoritaEquivalence`.
+When `A` is an `R`-algebra and `e` is a central idempotent, compression `x ↦ e * x * e` is a
+surjective `R`-algebra homomorphism `IsIdempotentElem.compressAlgHom`, whose kernel over a ring
+is `(1 - e)`.
 
 ## Main definitions
 
@@ -55,6 +59,9 @@ can be compared with `A` as `R`-algebras, for instance through Mathlib's `Morita
   `Af` without idempotency assumptions.
 * `IsIdempotentElem.mul_corner_val` and `IsIdempotentElem.corner_val_mul`: an element of the
   corner ring `eAe` is fixed by `e` on both sides.
+* `IsIdempotentElem.compressAlgHom_surjective`, `IsIdempotentElem.ker_compressAlgHom`, and
+  `IsIdempotentElem.ker_eq_span_one_sub_of_iff_mul_eq_zero`: compression `A →ₐ[R] eAe` onto a
+  central idempotent corner is surjective, and over a ring its kernel is `(1 - e)`.
 * `IsIdempotentElem.val_list_prod_map_compress`: a product of compressions in `eAe` is
   `e (x₁ e) ⋯ (xₙ e)` in `A`.
 * `Pi.isIdempotentElem_iff`: an element of a product is idempotent exactly when each component
@@ -360,6 +367,36 @@ theorem compressAlgHom_surjective : Function.Surjective (he.compressAlgHom R hc)
 end AlgHom
 
 end Semiring
+
+section CentralRing
+
+/-- A ring homomorphism out of `A` whose kernel pointwise agrees with annihilation by a central
+idempotent `e` has kernel equal to the principal ideal `(1 - e)`. -/
+theorem ker_eq_span_one_sub_of_iff_mul_eq_zero {A : Type u} {B : Type*} [Ring A] [Ring B]
+    {e : A} (he : IsIdempotentElem e) (hcomm : ∀ x : A, Commute e x) (f : A →+* B)
+    (hf : ∀ x : A, f x = 0 ↔ e * x = 0) :
+    RingHom.ker f = Ideal.span {1 - e} := by
+  ext x
+  rw [RingHom.mem_ker, hf, Ideal.mem_span_singleton']
+  refine ⟨fun hx ↦ ⟨x, by rw [mul_sub, mul_one, ← (hcomm x).eq, hx, sub_zero]⟩, ?_⟩
+  rintro ⟨r, rfl⟩
+  rw [mul_sub, mul_one, mul_sub, ← mul_assoc, (hcomm r).eq, mul_assoc, he.eq, sub_self]
+
+variable (R : Type v) [CommSemiring R] {A : Type u} [Ring A] [Algebra R A]
+  {e : A} (he : IsIdempotentElem e) (hc : IsMulCentral e)
+
+/-- The kernel of compression `A →ₐ[R] eAe` onto a central idempotent corner is the principal
+ideal `(1 - e)`. -/
+theorem ker_compressAlgHom :
+    RingHom.ker (he.compressAlgHom R hc) = Ideal.span {1 - e} :=
+  he.ker_eq_span_one_sub_of_iff_mul_eq_zero hc.comm (he.compressAlgHom R hc : A →+* he.Corner)
+    fun x ↦ by
+      rw [AlgHom.coe_toRingHom]
+      have hval := he.val_compressAlgHom R hc x
+      exact ⟨fun hx ↦ hval.symm.trans (congrArg Subtype.val hx),
+        fun hx ↦ Subtype.ext (hval.trans hx)⟩
+
+end CentralRing
 
 section Functional
 

@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.PGroup
 public import Mathlib.Topology.Algebra.Group.TopologicalAbelianization
 public import Mathlib.Topology.Instances.ZMod
 public import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
-import TauCeti.GroupTheory.PGroup
+import TauCeti.GroupTheory.PGroup.Basic
 import TauCeti.Topology.Algebra.Group.Profinite.Basic
 
 /-!
