@@ -56,6 +56,23 @@ universe u v w
 variable {k : Type u} {H : Type v} {M : Type w}
   [Field k] [CommRing H] [HopfAlgebra k H] [AddCommGroup M] [Module k M] [Comodule k H M]
 
+private theorem range_comp_castLE_of_eq {α : Type*} {m d : ℕ} (v : Fin d → α)
+    (h : m ≤ d) (hm : m = d) :
+    Set.range (v ∘ Fin.castLE h) = Set.range v := by
+  subst hm
+  rw [Set.range_comp, Fin.range_castLE]
+  simp
+
+private theorem range_comp_castSucc_comp_castLE_of_eq {α : Type*} {m₁ m₂ r : ℕ}
+    (v : Fin (r + 1) → α) (h₁ : m₁ ≤ r) (h₂ : m₂ ≤ r + 1) (hm : m₁ = m₂) :
+    Set.range ((v ∘ Fin.castSucc) ∘ Fin.castLE h₁) = Set.range (v ∘ Fin.castLE h₂) := by
+  subst hm
+  rw [Set.range_comp, Set.range_comp, Set.image_comp, Fin.range_castLE, Fin.range_castLE]
+  refine congrArg (v '' ·) ?_
+  ext j
+  simp only [Set.mem_image, Set.mem_ofPred_eq]
+  exact ⟨fun ⟨_, hk, hkj⟩ ↦ hkj ▸ hk, fun hj ↦ ⟨⟨j.val, Nat.lt_of_lt_of_le hj h₁⟩, hj, rfl⟩⟩
+
 /-- For a linearly independent tuple `v : Fin d → M` in a finite-dimensional comodule, the line
 stabilizer of `exteriorFlagVector k d v` is the supremum of the stabilizers of its prefix spans. -/
 theorem stabilizerHopfIdeal_span_exteriorFlagVector_of_linearIndependent [Module.Finite k M]
@@ -102,12 +119,10 @@ theorem stabilizerHopfIdeal_span_exteriorFlagVector_of_linearIndependent [Module
     conv_rhs =>
       rw [Fin.univ_castSuccEmb, Finset.cons_eq_insert, Finset.sup_insert, Finset.sup_map]
     refine congrArg₂ (· ⊔ ·) ?_ (Finset.sup_congr rfl fun i _ ↦ ?_)
-    · rw [show v ∘ Fin.castLE (Nat.le_of_lt_succ (Fin.last (r + 1)).isLt) = v from
-        funext fun x ↦ by simp]
+    · rw [range_comp_castLE_of_eq v _ (Fin.val_last (r + 1))]
     · dsimp only [Function.comp_apply, Fin.castSuccEmb_apply]
-      rw [show (v ∘ Fin.castSucc) ∘ Fin.castLE (Nat.le_of_lt_succ i.isLt) =
-          v ∘ Fin.castLE (Nat.le_of_lt_succ i.castSucc.isLt) from
-        funext fun x ↦ by simp]
+      rw [range_comp_castSucc_comp_castLE_of_eq v _
+        (Nat.le_of_lt_succ i.castSucc.isLt) (Fin.val_castSucc i).symm]
 
 end FlagStabilizer
 

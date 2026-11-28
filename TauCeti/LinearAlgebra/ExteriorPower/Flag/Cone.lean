@@ -282,8 +282,8 @@ private theorem span_le_of_forall_exteriorFlagForms {r : ℕ} {c₀ : k} {u : Fi
         rintro _ ⟨c, v, rfl⟩
         simp only [s, map_mul, _root_.SymmetricAlgebra.lift_ι_apply, map_smul,
           LinearMap.smul_apply, Module.Dual.eval_apply]
-        rw [show L (exteriorFlagVector k (m + 2) v) = 0 from
-            incidenceDual_exteriorFlagVector_eq_zero η φ_m ξ v, smul_zero, mul_zero]⟩
+        dsimp only [L]
+        rw [incidenceDual_exteriorFlagVector_eq_zero, smul_zero, mul_zero]⟩
     have hLw : L ((flagSpaceSuccEquiv k M (m + 1)).symm
         ((c₀ • exteriorFlagVector k (m + 1) u) ⊗ₜ[k]
           _root_.exteriorPower.ιMulti k (m + 2) v₀)) = 0 :=
