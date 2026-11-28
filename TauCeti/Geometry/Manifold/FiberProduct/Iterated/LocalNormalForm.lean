@@ -286,10 +286,11 @@ private theorem localNormalFormPartialDiffeomorph_apply_snd {π : Y → M} (hn :
       (L i ((φ i).extend IY (z.val i))).2 := rfl
 
 /-- **Local projection normal form of `IteratedFiberProduct π (k + 1)`.** Around any point
-`y ∈ Y^[k+1]` and any chart `ψ` of `M` around `IteratedFiberProduct.baseProj y`, there exist
-simultaneous maximal charts `φ i` of `Y` around `y.val i`, linear splittings
-`L i : EY ≃L[ℝ] EM × (Fin (dim Y - dim M) → ℝ)`, and a `C^n` partial diffeomorphism `Φ` on
-`Y^[k+1]` around `y` with values in `EM × (Fin (k + 1) → Fin (dim Y - dim M) → ℝ)` such that:
+`y ∈ Y^[k+1]` and any chart `ψ` of the maximal `C^n` atlas of `M` around
+`IteratedFiberProduct.baseProj y`, there exist simultaneous maximal charts `φ i` of `Y` around
+`y.val i`, linear splittings `L i : EY ≃L[ℝ] EM × (Fin (dim Y - dim M) → ℝ)`, and a `C^n`
+partial diffeomorphism `Φ` on `Y^[k+1]` around `y` with values in
+`EM × (Fin (k + 1) → Fin (dim Y - dim M) → ℝ)` such that:
 * `IteratedFiberProduct.baseProj` reads as the projection onto `EM`,
 * each factor projection `IteratedFiberProduct.eval i` (in chart `φ i` and splitting `L i`) reads
   as `(u, v) ↦ (u, v i)`, and

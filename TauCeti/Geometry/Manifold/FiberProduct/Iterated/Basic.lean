@@ -17,7 +17,7 @@ For any map `π : Y → M`, the `k`-fold iterated fibre product `Y^[k]` is the s
 subspace topology in `Fin k → Y`.
 
 This file collects the manifold-free set-theoretic and topological API:
-* the factor projections `TauCeti.IteratedFiberProduct.eval`, the diagonal inclusion
+* the factor projections `TauCeti.IteratedFiberProduct.eval`, the diagonal map
   `TauCeti.IteratedFiberProduct.const`, and for positive `k = m + 1`, the common base projection
   `TauCeti.IteratedFiberProduct.baseProj`;
 * contravariant reindexing `TauCeti.IteratedFiberProduct.reindex` along `α : Fin k₁ → Fin k₂`,
@@ -95,7 +95,7 @@ theorem map_eval_eq {k : ℕ} (y : IteratedFiberProduct π k) (i j : Fin k) :
     π (eval i y) = π (eval j y) :=
   y.property i j
 
-/-- The diagonal inclusion `Y → Y^[k]` sending `z` to the constant tuple `(z, …, z)`. -/
+/-- The diagonal map `Y → Y^[k]` sending `z` to the constant tuple `(z, …, z)`. -/
 def const (k : ℕ) (z : Y) : IteratedFiberProduct π k :=
   ⟨fun _ ↦ z, fun _ _ ↦ rfl⟩
 

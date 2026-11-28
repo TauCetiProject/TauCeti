@@ -58,9 +58,10 @@ inverse is `C^n` on its target when `Ψ.symm` is `C^n`.
   transported by `OpenPartialHomeomorph.extendTrans` and of its inverse.
 * `OpenPartialHomeomorph.contMDiffAt_extend_symm`: the inverse of an extended chart `e.extend I`
   of the maximal atlas is `C^n` at the model coordinate `I (e x)` of a point of its source.
-* `TauCeti.liftCodTransition`, `TauCeti.contMDiffOn_liftCodTransition`, and
-  `TauCeti.liftCodTransition_mem_maximalAtlas`: lifting a partial homeomorphism of `E''` along
-  `L : E ≃L[𝕜] E'' × F` by the identity on `F`, and preserving maximal-atlas membership.
+* `ContinuousLinearEquiv.liftCodTransition`, `ContinuousLinearEquiv.contMDiffOn_liftCodTransition`,
+  and `ContinuousLinearEquiv.liftCodTransition_mem_maximalAtlas`: lifting a partial homeomorphism
+  of `E''` along `L : E ≃L[𝕜] E'' × F` by the identity on `F`, and preserving maximal-atlas
+  membership.
 -/
 
 public section
@@ -175,9 +176,13 @@ theorem _root_.ContMDiffAt.contDiffAt_comp_symm_of_mem_maximalAtlas {f : M' → 
 
 end CompSymm
 
-section LiftCodTransition
+end TauCeti
 
-variable {E'' F : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+namespace ContinuousLinearEquiv
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E E'' F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- Lift a partial homeomorphism `σ` of `E''` along `L : E ≃L[𝕜] E'' × F` by acting as the
@@ -187,47 +192,51 @@ def liftCodTransition (L : E ≃L[𝕜] E'' × F) (σ : OpenPartialHomeomorph E'
   (L.toHomeomorph.transOpenPartialHomeomorph
     (σ.prod (OpenPartialHomeomorph.refl F))).transHomeomorph L.symm.toHomeomorph
 
-/-- A point `u` lies in `(liftCodTransition L σ).source` if and only if `(L u).1` lies in
+/-- A point `u` lies in `(L.liftCodTransition σ).source` if and only if `(L u).1` lies in
 `σ.source`. -/
+@[simp]
 theorem mem_liftCodTransition_source_iff (L : E ≃L[𝕜] E'' × F)
     (σ : OpenPartialHomeomorph E'' E'') (u : E) :
-    u ∈ (liftCodTransition L σ).source ↔ (L u).1 ∈ σ.source := by
+    u ∈ (L.liftCodTransition σ).source ↔ (L u).1 ∈ σ.source := by
   simp [liftCodTransition]
 
-/-- A point `u` lies in `(liftCodTransition L σ).target` if and only if `(L u).1` lies in
+/-- A point `u` lies in `(L.liftCodTransition σ).target` if and only if `(L u).1` lies in
 `σ.target`. -/
+@[simp]
 theorem mem_liftCodTransition_target_iff (L : E ≃L[𝕜] E'' × F)
     (σ : OpenPartialHomeomorph E'' E'') (u : E) :
-    u ∈ (liftCodTransition L σ).target ↔ (L u).1 ∈ σ.target := by
+    u ∈ (L.liftCodTransition σ).target ↔ (L u).1 ∈ σ.target := by
   simp [liftCodTransition]
 
-/-- The inverse of `liftCodTransition L σ` is `liftCodTransition L σ.symm`. -/
+/-- The inverse of `L.liftCodTransition σ` is `L.liftCodTransition σ.symm`. -/
+@[simp]
 theorem liftCodTransition_symm (L : E ≃L[𝕜] E'' × F) (σ : OpenPartialHomeomorph E'' E'') :
-    (liftCodTransition L σ).symm = liftCodTransition L σ.symm := by
+    (L.liftCodTransition σ).symm = L.liftCodTransition σ.symm := by
   refine OpenPartialHomeomorph.ext _ _ (fun _ ↦ by simp [liftCodTransition])
     (fun _ ↦ by simp [liftCodTransition]) ?_
   ext u
   simp [mem_liftCodTransition_source_iff, mem_liftCodTransition_target_iff]
 
-/-- Application formula for `liftCodTransition` in terms of `L`, `σ`, and `L.symm`. -/
+/-- Application formula for `L.liftCodTransition` in terms of `L`, `σ`, and `L.symm`. -/
+@[simp]
 theorem liftCodTransition_apply (L : E ≃L[𝕜] E'' × F) (σ : OpenPartialHomeomorph E'' E'')
     (u : E) :
-    liftCodTransition L σ u = L.symm (σ (L u).1, (L u).2) := by
+    L.liftCodTransition σ u = L.symm (σ (L u).1, (L u).2) := by
   simp [liftCodTransition]
 
-/-- Applying `L` to `liftCodTransition L σ u` gives `σ (L u).1` in the first component. -/
+/-- Applying `L` to `L.liftCodTransition σ u` gives `σ (L u).1` in the first component. -/
 theorem liftCodTransition_apply_fst (L : E ≃L[𝕜] E'' × F) (σ : OpenPartialHomeomorph E'' E'')
     (u : E) :
-    (L (liftCodTransition L σ u)).1 = σ (L u).1 := by
-  simp [liftCodTransition_apply]
+    (L (L.liftCodTransition σ u)).1 = σ (L u).1 := by
+  simp
 
 /-- Lifting a partial homeomorphism `σ` that is `C^n` on its source along `L : E ≃L[𝕜] E'' × F`
 gives a partial homeomorphism that is `C^n` on its source. -/
-theorem contMDiffOn_liftCodTransition (L : E ≃L[𝕜] E'' × F)
+theorem contMDiffOn_liftCodTransition (L : E ≃L[𝕜] E'' × F) {n : ℕ∞ω}
     {σ : OpenPartialHomeomorph E'' E''}
     (hσ : ContMDiffOn 𝓘(𝕜, E'') 𝓘(𝕜, E'') n σ σ.source) :
-    ContMDiffOn 𝓘(𝕜, E) 𝓘(𝕜, E) n (liftCodTransition L σ)
-      (liftCodTransition L σ).source :=
+    ContMDiffOn 𝓘(𝕜, E) 𝓘(𝕜, E) n (L.liftCodTransition σ)
+      (L.liftCodTransition σ).source :=
   L.symm.contDiff.contMDiff.comp_contMDiffOn <|
     ((hσ.comp ((ContinuousLinearMap.fst 𝕜 E'' F).contMDiff.contMDiffOn
         (s := (σ.prod (OpenPartialHomeomorph.refl F)).source))
@@ -237,17 +246,15 @@ theorem contMDiffOn_liftCodTransition (L : E ≃L[𝕜] E'' × F)
 
 /-- Lifting a chart `σ` of the maximal `C^n` atlas of `E''` along `L : E ≃L[𝕜] E'' × F` gives a
 chart of the maximal `C^n` atlas of `E`. -/
-theorem liftCodTransition_mem_maximalAtlas (L : E ≃L[𝕜] E'' × F)
+theorem liftCodTransition_mem_maximalAtlas (L : E ≃L[𝕜] E'' × F) {n : ℕ∞ω}
     {σ : OpenPartialHomeomorph E'' E''} (hσ : σ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E'') n E'') :
-    liftCodTransition L σ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n E :=
-  (liftCodTransition L σ).mem_maximalAtlas_of_contMDiffOn
-    (contMDiffOn_liftCodTransition L (contMDiffOn_of_mem_maximalAtlas hσ))
-    ((liftCodTransition_symm L σ).symm ▸
-      contMDiffOn_liftCodTransition L (contMDiffOn_symm_of_mem_maximalAtlas hσ))
+    L.liftCodTransition σ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n E :=
+  (L.liftCodTransition σ).mem_maximalAtlas_of_contMDiffOn
+    (L.contMDiffOn_liftCodTransition (contMDiffOn_of_mem_maximalAtlas hσ))
+    ((L.liftCodTransition_symm σ).symm ▸
+      L.contMDiffOn_liftCodTransition (contMDiffOn_symm_of_mem_maximalAtlas hσ))
 
-end LiftCodTransition
-
-end TauCeti
+end ContinuousLinearEquiv
 
 namespace OpenPartialHomeomorph
 

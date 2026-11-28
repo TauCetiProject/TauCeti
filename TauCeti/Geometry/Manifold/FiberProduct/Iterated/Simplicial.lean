@@ -18,16 +18,18 @@ When `π : Y → M` is a `C^n` submersion (`1 ≤ n`) between finite-dimensional
 manifolds and each `IteratedFiberProduct π (m + 1)` carries
 `TauCeti.iteratedFiberProductChartedSpace` (building on the manifold-free simplicial operations
 `reindex`, `face`, `degeneracy`, and `cons` in
-`TauCeti.Geometry.Manifold.FiberProduct.Iterated.Basic`):
+`TauCeti.Geometry.Manifold.FiberProduct.Iterated.Basic`; all smooth results in this module are
+for nonempty finite index sets `Fin (m₁ + 1)` and `Fin (m₂ + 1)`):
 
-* every reindexing map `reindex α` is `C^{m'}` (`m' ≤ n`), and a bijection `α : Fin k₁ ≃ Fin k₂`
-  induces a `C^n` diffeomorphism (`TauCeti.iteratedFiberProductReindexDiffeomorph`);
+* every reindexing map `reindex α` along `α : Fin (m₁ + 1) → Fin (m₂ + 1)` is `C^{m'}` (`m' ≤ n`),
+  and a bijection `α : Fin (m₁ + 1) ≃ Fin (m₂ + 1)` induces a `C^n` diffeomorphism
+  (`TauCeti.iteratedFiberProductReindexDiffeomorph`);
 * reindexing along any injective map `α : Fin (m₁ + 1) → Fin (m₂ + 1)` is a surjective `C^n`
   submersion (`TauCeti.isSubmersion_reindex_of_injective`); in particular, every face map `face i`
   is a surjective `C^n` submersion (`TauCeti.isSubmersion_face`,
   `TauCeti.IteratedFiberProduct.surjective_face`);
-* reindexing along any surjective map is a `C^n` smooth embedding
-  (`TauCeti.isSmoothEmbedding_reindex_of_surjective`); in particular, every degeneracy map
+* reindexing along any surjective map `α : Fin (m₁ + 1) → Fin (m₂ + 1)` is a `C^n` smooth
+  embedding (`TauCeti.isSmoothEmbedding_reindex_of_surjective`); in particular, every degeneracy map
   `degeneracy i` is a `C^n` immersion and smooth embedding (`TauCeti.contMDiff_degeneracy`,
   `TauCeti.isImmersion_degeneracy`, `TauCeti.isSmoothEmbedding_degeneracy`);
 * for a section `s` of `π`, prepending `s (baseProj y)` to `y` is `C^{m'}` at every `y` where `s`
