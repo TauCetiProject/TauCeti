@@ -13,7 +13,8 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
 For a Dedekind domain `R` with fraction field `K`, write `Ô` for the integral finite adeles and
 `NÔ` for the completion `IsDedekindDomain.FiniteAdeleRing.completedIdeal K N` of an integral
-ideal `N`. The principal congruence level of `N` in `GL_n(𝔸_f)` is the image under the open
+ideal `N`. For a finite index type `ι` of size `n`, the principal congruence level of `N` in
+`GL_n(𝔸_f) = GL_ι(𝔸_f)` is the image under the open
 embedding `IsDedekindDomain.FiniteAdeleRing.integralGL` of the kernel of reduction
 `GL_n(Ô) → GL_n(Ô ⧸ NÔ)`, that is, `{g ∈ GL_n(Ô) : g ≡ 1 mod NÔ}`.
 
@@ -61,19 +62,20 @@ namespace IsDedekindDomain.FiniteAdeleRing
 open TauCeti
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
-variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K] (n : ℕ)
+variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K] (ι : Type*) [Fintype ι]
+  [DecidableEq ι]
 
 /-- **The principal congruence levels form a basis of neighbourhoods of `1` in `GL_n(𝔸_f)`.** As
 `N` runs over the nonzero ideals of `R`, the images in `GL_n(𝔸_f)` of the kernels of reduction
 `GL_n(Ô) → GL_n(Ô ⧸ NÔ)`, the groups `{g ∈ GL_n(Ô) : g ≡ 1 mod NÔ}`, form a basis of
 neighbourhoods of the identity. -/
 theorem hasBasis_nhds_one_map_ker_integralGL :
-    (𝓝 (1 : GL (Fin n) 𝔸ᶠ[R, K])).HasBasis (fun N : Ideal R ↦ N ≠ ⊥) fun N ↦
-      ((Matrix.GeneralLinearGroup.map (n := Fin n) (Ideal.Quotient.mk (completedIdeal K N))).ker.map
-        (integralGL K (Fin n)) : Set (GL (Fin n) 𝔸ᶠ[R, K])) := by
-  have h := (GeneralLinear.hasBasis_nhds_one_ker_map_quotientMk n
-    (hasBasis_nhds_zero_completedIdeal (R := R) K)).map (integralGL K (Fin n))
-  rw [(isOpenEmbedding_integralGL K (Fin n)).map_nhds_eq, map_one] at h
+    (𝓝 (1 : GL ι 𝔸ᶠ[R, K])).HasBasis (fun N : Ideal R ↦ N ≠ ⊥) fun N ↦
+      ((Matrix.GeneralLinearGroup.map (n := ι) (Ideal.Quotient.mk (completedIdeal K N))).ker.map
+        (integralGL K ι) : Set (GL ι 𝔸ᶠ[R, K])) := by
+  have h := (GeneralLinear.hasBasis_nhds_one_ker_map_quotientMk ι
+    (hasBasis_nhds_zero_completedIdeal (R := R) K)).map (integralGL K ι)
+  rw [(isOpenEmbedding_integralGL K ι).map_nhds_eq, map_one] at h
   simpa only [Subgroup.coe_map] using h
 
 /-- **The principal congruence levels of the positive integers form a basis of neighbourhoods of
@@ -82,22 +84,22 @@ finite, for instance the ring of integers of a number field, the groups
 `{g ∈ GL_n(Ô) : g ≡ 1 mod MÔ}` for integers `M ≥ 1` form a basis of neighbourhoods of the identity:
 every neighbourhood of `1` contains one of them. -/
 theorem hasBasis_nhds_one_map_ker_integralGL_natCast [CharZero R] [Ring.HasFiniteQuotients R] :
-    (𝓝 (1 : GL (Fin n) 𝔸ᶠ[R, K])).HasBasis (fun M : ℕ ↦ M ≠ 0) fun M ↦
-      ((Matrix.GeneralLinearGroup.map (n := Fin n)
+    (𝓝 (1 : GL ι 𝔸ᶠ[R, K])).HasBasis (fun M : ℕ ↦ M ≠ 0) fun M ↦
+      ((Matrix.GeneralLinearGroup.map (n := ι)
         (Ideal.Quotient.mk (completedIdeal K (Ideal.span {(M : R)})))).ker.map
-          (integralGL K (Fin n)) : Set (GL (Fin n) 𝔸ᶠ[R, K])) := by
-  refine (hasBasis_nhds_one_map_ker_integralGL K n).to_hasBasis (fun N hN ↦ ?_) fun M hM ↦ ?_
+          (integralGL K ι) : Set (GL ι 𝔸ᶠ[R, K])) := by
+  refine (hasBasis_nhds_one_map_ker_integralGL K ι).to_hasBasis (fun N hN ↦ ?_) fun M hM ↦ ?_
   · -- A nonzero ideal `N` contains its absolute norm `[R : N]`, a positive integer.
     refine ⟨Ideal.absNorm N, Ideal.absNorm_eq_zero_iff.not.mpr hN, Subgroup.map_mono ?_⟩
     exact Matrix.GeneralLinearGroup.ker_map_quotientMk_mono
       (completedIdeal_mono K ((Ideal.span_singleton_le_iff_mem N).mpr (Ideal.absNorm_mem N)))
   · exact ⟨Ideal.span {(M : R)}, by simpa using hM, le_rfl⟩
 
-/-- **The principal levels `K(N)` form a basis of neighbourhoods of `1` in `GL₂(𝔸_f)`**, as `N`
+/-- **The principal levels `K(N)` form a basis of neighbourhoods of `1` in `GL_n(𝔸_f)`**, as `N`
 runs over the nonzero ideals of `R`. -/
 theorem hasBasis_nhds_one_principalLevel :
-    (𝓝 (1 : GL (Fin 2) 𝔸ᶠ[R, K])).HasBasis (fun N : Ideal R ↦ N ≠ ⊥) fun N ↦
-      (principalLevel K N : Set (GL (Fin 2) 𝔸ᶠ[R, K])) := by
-  simpa only [principalLevel_eq_map_ker] using hasBasis_nhds_one_map_ker_integralGL (R := R) K 2
+    (𝓝 (1 : GL ι 𝔸ᶠ[R, K])).HasBasis (fun N : Ideal R ↦ N ≠ ⊥) fun N ↦
+      (principalLevel K ι N : Set (GL ι 𝔸ᶠ[R, K])) := by
+  simpa only [principalLevel_eq_map_ker] using hasBasis_nhds_one_map_ker_integralGL (R := R) K ι
 
 end IsDedekindDomain.FiniteAdeleRing

@@ -471,10 +471,7 @@ denominator. -/
 private lemma im_div_eq_zero_iff {w v : ℂ} (hv : v ≠ 0) :
     (w / v).im = 0 ↔ (w * conj v).im = 0 := by
   have hnv : normSq v ≠ 0 := fun h => hv (Complex.normSq_eq_zero.mp h)
-  have h : (w / v).im = (w * conj v).im / normSq v := by
-    rw [Complex.div_im, Complex.mul_im, Complex.conj_re, Complex.conj_im]
-    ring
-  rw [h, div_eq_zero_iff]
+  rw [Complex.div_im_eq_im_mul_conj_div_normSq, div_eq_zero_iff]
   simp [hnv]
 
 /-- **The equation of a geodesic through the origin.** A point `z` of the Poincaré disc lies on

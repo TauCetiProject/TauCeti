@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Algebra.Module.Submodule.Lattice
 public import Mathlib.Algebra.Module.Pi
 public import Mathlib.LinearAlgebra.Pi
+public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import TauCeti.Data.ZMod.IntUnitsPower
 public import TauCeti.Data.ZMod.Two
 import TauCeti.Algebra.CharP.Invertible
@@ -28,6 +29,10 @@ form a submodule `TauCeti.signTwisted R j χ` of `A → E`.
 Twisted maps pull back along homomorphisms `f : G' →+ G`
 (`TauCeti.signTwisted_le_signTwisted_comp`), with equality when `f` is surjective, as for a change
 of basis of the lattice (`TauCeti.signTwisted_comp_of_surjective`).
+
+For the inclusion of a subgroup `N` of a commutative group `B`, the maps twisted by `0` are the
+`N`-periodic maps, that is the lifts of the maps on `B ⧸ N`
+(`TauCeti.comp_quotientMk_mem_signTwisted_zero`, `TauCeti.signTwistedZeroEquivQuotientFun`).
 
 The double cover of the torus defined by a nonzero sign character `ι` is `ℂ / ker ι`. When `2` is
 invertible in the scalars, a map on it twisted by the restriction of `χ` is uniquely the sum of a
@@ -234,6 +239,46 @@ theorem even_finrank_signTwisted_domRestrict_ker_inf {K : Type*} [Field K] [Modu
     ZMod.ne_zero_iff_eq_one.1 fun h ↦
       ((AddMonoidHom.exists_domRestrict_ker_eq_iff_zmod_two hg₀).2 h).elim fun χ hχ ↦ hφ χ hχ
   exact Module.End.even_finrank_of_mul_self_eq_neg_one hK (signTwistedTranslate_mul_self hS h₁)
+
+section Quotient
+
+variable {B : Type*} [AddCommGroup B] {N : AddSubgroup B}
+
+/-- The lift `f ∘ (↑)` of a map `f` on `B ⧸ N` is `N`-periodic. -/
+theorem comp_quotientMk_mem_signTwisted_zero (f : B ⧸ N → E) :
+    (fun z : B ↦ f z) ∈ signTwisted R N.subtype 0 :=
+  mem_signTwisted_zero.2 fun g z ↦ by
+    rw [AddSubgroup.coe_subtype, QuotientAddGroup.mk_add_of_mem z g.property]
+
+variable (R N) in
+/-- **Periodic maps are maps on the quotient.** The maps on `B` twisted by the trivial sign
+character along the inclusion of `N`, that is the `N`-periodic maps, descend to `B ⧸ N`; their
+descents are all the maps on `B ⧸ N`, with inverse the lift `f ↦ f ∘ (↑)`. -/
+def signTwistedZeroEquivQuotientFun :
+    (signTwisted R N.subtype 0 : Submodule R (B → E)) ≃ₗ[R] (B ⧸ N → E) where
+  toFun v x := Quotient.liftOn' x (v : B → E) fun a b h ↦ by
+    have := mem_signTwisted_zero.1 v.property ⟨-a + b, QuotientAddGroup.leftRel_apply.1 h⟩ a
+    rwa [AddSubgroup.coe_subtype, add_neg_cancel_left, eq_comm] at this
+  invFun f := ⟨fun z ↦ f z, comp_quotientMk_mem_signTwisted_zero f⟩
+  map_add' _ _ := funext fun x ↦ Quotient.inductionOn' x fun _ ↦ rfl
+  map_smul' _ _ := funext fun x ↦ Quotient.inductionOn' x fun _ ↦ rfl
+  left_inv _ := rfl
+  right_inv _ := funext fun x ↦ Quotient.inductionOn' x fun _ ↦ rfl
+
+/-- The descent of a periodic map `v` takes the value `v z` at the class of `z`. -/
+@[simp]
+theorem signTwistedZeroEquivQuotientFun_apply_mk
+    (v : (signTwisted R N.subtype 0 : Submodule R (B → E))) (z : B) :
+    signTwistedZeroEquivQuotientFun R N v z = (v : B → E) z :=
+  (rfl)
+
+/-- The inverse of the descent is the lift `f ↦ f ∘ (↑)`. -/
+@[simp]
+theorem coe_signTwistedZeroEquivQuotientFun_symm_apply (f : B ⧸ N → E) :
+    ((signTwistedZeroEquivQuotientFun R N).symm f : B → E) = fun z : B ↦ f z :=
+  (rfl)
+
+end Quotient
 
 variable [Invertible (2 : R)]
 

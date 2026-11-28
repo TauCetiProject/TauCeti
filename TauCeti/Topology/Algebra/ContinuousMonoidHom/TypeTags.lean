@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.Algebra.Group.TypeTags.Hom
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import Mathlib.Topology.Algebra.Monoid
 public import Mathlib.Topology.Constructions
 public import TauCeti.Algebra.GroupAction.TypeTags
 
@@ -27,6 +28,8 @@ topology.
 
 * `ContinuousAddMonoidHom.toMultiplicative`: the equivalence
   `(M →ₜ+ N) ≃ (Multiplicative M →ₜ* Multiplicative N)` upgrading `AddMonoidHom.toMultiplicative`.
+* `ContinuousAddMonoidHom.toMultiplicativeAddEquiv`: the same equivalence as an additive
+  equivalence `(M →ₜ+ N) ≃+ Additive (Multiplicative M →ₜ* Multiplicative N)`.
 * `ContinuousMonoidHom.toAdditive`: the equivalence
   `(M →ₜ* N) ≃ (Additive M →ₜ+ Additive N)` upgrading `MonoidHom.toAdditive`.
 * `AddSubgroup.toSubgroupContinuousMulEquiv`: the topological isomorphism
@@ -115,6 +118,36 @@ theorem toMultiplicative_map_smul {G H : Type*} [Monoid G] [Monoid H] [DistribMu
     [DistribMulAction H N] (f : M →ₜ+ N) (ψ : H → G) (h : ∀ (g : H) (m : M), f (ψ g • m) = g • f m)
     (g : H) (x : Multiplicative M) : f.toMultiplicative (ψ g • x) = g • f.toMultiplicative x :=
   f.toAddMonoidHom.toMultiplicative_map_smul ψ h g x
+
+section AddEquiv
+
+variable {M N : Type*} [AddMonoid M] [AddCommMonoid N] [TopologicalSpace M] [TopologicalSpace N]
+  [ContinuousAdd N]
+
+/-- `ContinuousAddMonoidHom.toMultiplicative` as an additive equivalence between the group of
+continuous additive homomorphisms `M →ₜ+ N` and the additive type tag of the group of continuous
+multiplicative homomorphisms `Multiplicative M →ₜ* Multiplicative N`. -/
+def toMultiplicativeAddEquiv :
+    (M →ₜ+ N) ≃+ Additive (Multiplicative M →ₜ* Multiplicative N) where
+  toEquiv := toMultiplicative.trans Additive.ofMul
+  map_add' _ _ := (rfl)
+
+/-- `ContinuousAddMonoidHom.toMultiplicativeAddEquiv` is `toMultiplicative` followed by
+`Additive.ofMul`. -/
+@[simp]
+theorem toMultiplicativeAddEquiv_apply (f : M →ₜ+ N) :
+    toMultiplicativeAddEquiv f = Additive.ofMul f.toMultiplicative :=
+  (rfl)
+
+/-- The inverse of `ContinuousAddMonoidHom.toMultiplicativeAddEquiv` is `Additive.toMul` followed
+by `toMultiplicative.symm`. -/
+@[simp]
+theorem toMultiplicativeAddEquiv_symm_apply
+    (f : Additive (Multiplicative M →ₜ* Multiplicative N)) :
+    toMultiplicativeAddEquiv.symm f = toMultiplicative.symm f.toMul :=
+  (rfl)
+
+end AddEquiv
 
 end ContinuousAddMonoidHom
 

@@ -133,22 +133,22 @@ theorem directionAmount_le {ι : Type*} {s : Finset ι} {κ : ι → ℕ} {c b :
         mul_le_mul_of_nonneg_right (hκ i hi) hlog25, hP i hi]
     _ = _ := by rw [sum_const, nsmul_eq_mul]; ring
 
-/-- Suppose `b` is nonnegative, `c - log b` is at least both `0` and `log b`, and each prime sum
-`P i` on `s` is at most `κ i * log b`. A subset `t ⊆ s` of orders at least `b` then gives a
+/-- Suppose `b` is nonnegative, `c - l` is at least both `0` and `log b`, and each prime sum
+`P i` on `s` is at most `κ i * l`. A subset `t ⊆ s` of orders at least `b` then gives a
 lower bound of `b * T` for the total remaining size whenever `T ≤ t.card * log b`. -/
-theorem mul_le_directionAmount {ι : Type*} {s t : Finset ι} {κ : ι → ℕ} {c b T : ℝ}
-    {P : ι → ℝ} (ht : t ⊆ s) (hb : 0 ≤ b) (hc : max 0 (log b) ≤ c - log b)
+theorem mul_le_directionAmount {ι : Type*} {s t : Finset ι} {κ : ι → ℕ} {c b T l : ℝ}
+    {P : ι → ℝ} (ht : t ⊆ s) (hb : 0 ≤ b) (hc : max 0 (log b) ≤ c - l)
     (hκ : ∀ i ∈ t, b ≤ κ i) (hT : T ≤ t.card * log b)
-    (hP : ∀ i ∈ s, P i ≤ κ i * log b) :
+    (hP : ∀ i ∈ s, P i ≤ κ i * l) :
     b * T ≤ directionAmount s κ c P := by
-  have hl : 0 ≤ c - log b := (le_max_left _ _).trans hc
+  have hl : 0 ≤ c - l := (le_max_left _ _).trans hc
   have hsum := sum_mul_sub_le_directionAmount ht (sub_nonneg.mp hl) hP
   have hκsum : (t.card : ℝ) * b ≤ ∑ i ∈ t, (κ i : ℝ) := by
     simpa only [sum_const, nsmul_eq_mul] using sum_le_sum hκ
   calc
     b * T ≤ b * ((t.card : ℝ) * log b) := mul_le_mul_of_nonneg_left hT hb
     _ = (t.card : ℝ) * b * log b := by ring
-    _ ≤ (t.card : ℝ) * b * (c - log b) :=
+    _ ≤ (t.card : ℝ) * b * (c - l) :=
       mul_le_mul_of_nonneg_left ((le_max_right _ _).trans hc) (by positivity)
     _ ≤ _ := (mul_le_mul_of_nonneg_right hκsum hl).trans hsum
 
@@ -162,8 +162,8 @@ theorem le_rank_mul_directionAmount {ι : Type*} {s t : Finset ι} {κ : ι → 
     (hrank : F * (x : ℝ) ^ 5 ≤ rank) :
     (x : ℝ) ^ 4 * s.card * ((x : ℝ) * b) ≤ rank * directionAmount s κ c P := by
   have hBT : (b : ℝ) * T ≤ directionAmount s κ c P :=
-    mul_le_directionAmount ht (Nat.cast_nonneg _) (max_le (by linarith [log_natCast_nonneg b])
-      (by linarith)) (by exact_mod_cast hκ) hT hP
+    mul_le_directionAmount (l := log b) ht (Nat.cast_nonneg _)
+      (max_le (by linarith [log_natCast_nonneg b]) (by linarith)) (by exact_mod_cast hκ) hT hP
   calc
     (x : ℝ) ^ 4 * s.card * ((x : ℝ) * b) = (F * (x : ℝ) ^ 5) * ((b : ℝ) * T) := by
       rw [hcard, Nat.cast_mul]
