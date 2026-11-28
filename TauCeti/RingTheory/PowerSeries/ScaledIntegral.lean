@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
+public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import TauCeti.RingTheory.PowerSeries.Rescale
 public import TauCeti.RingTheory.PowerSeries.SubringCoeff
 
@@ -47,6 +48,8 @@ algebraization theorems of Calegari, Dimitrov and Tang.
 * `TauCeti.mem_scaledIntegralSeries_iff`: membership means integrality of every `Mⁿ aₙ`.
 * `TauCeti.mem_scaledIntegralSeries_iff_rescale_mem_range_map`: membership means that
   `f(M X)` is the coefficientwise image of a power series over `A`.
+* `TauCeti.scaledIntegralSeries_integralClosure`: when `A` is integrally closed in `R`, the
+  lattice over `integralClosure A R` coincides with the `A`-integral lattice.
 * `TauCeti.scaledIntegralSeries_one`: at scale one the lattice is the image of `A⟦X⟧`.
 * `TauCeti.scaledIntegralSeries_le_of_dvd`: the lattice grows along divisibility of scales.
 * `TauCeti.C_mem_scaledIntegralSeries_iff`: a constant lies in the lattice iff it is integral.
@@ -144,6 +147,14 @@ theorem mem_scaledIntegralSeries_int_iff {M : R} {f : R⟦X⟧} :
 theorem mem_scaledIntegralSeries_integralClosure_iff {M : R} {f : R⟦X⟧} :
     f ∈ scaledIntegralSeries (integralClosure ℤ R) M ↔ ∀ n, IsIntegral ℤ (M ^ n * coeff n f) := by
   simp [mem_scaledIntegralSeries_iff, mem_integralClosure_iff]
+
+/-- If `A` is integrally closed in `R`, then the integral lattice over the integral closure of `A`
+in `R` coincides with the `A`-integral lattice. -/
+@[simp]
+theorem scaledIntegralSeries_integralClosure [IsIntegrallyClosedIn A R] (M : R) :
+    scaledIntegralSeries (integralClosure A R) M = scaledIntegralSeries A M := by
+  ext f
+  simp [mem_scaledIntegralSeries_iff, mem_integralClosure_iff, IsIntegrallyClosedIn.isIntegral_iff]
 
 /-- At scale one the integral lattice is the image of the power series over `A`. -/
 theorem scaledIntegralSeries_one :

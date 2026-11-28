@@ -80,7 +80,7 @@ theorem Polynomial.aeval_single_one_eq_algebraMap {R : Type*} [CommSemiring R] (
     aeval (single 1 1 : R⸨X⸩) p = algebraMap R[X] R⸨X⸩ p := by
   induction p using Polynomial.induction_on with
   | C a =>
-    simp [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_eq, PowerSeries.algebraMap_apply']
+    simp [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_eq]
   | add p q hp hq => simp [hp, hq]
   | monomial n a h => simp_all [pow_succ, ← mul_assoc]
 

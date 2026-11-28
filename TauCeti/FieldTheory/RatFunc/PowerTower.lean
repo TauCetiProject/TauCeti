@@ -90,8 +90,7 @@ noncomputable def expand (K : Type*) [CommRing K] [IsDomain K] (N : ℕ+) :
 theorem expand_algebraMap {K : Type*} [CommRing K] [IsDomain K] (N : ℕ+) (p : K[X]) :
     expand K N (algebraMap K[X] (RatFunc K) p) =
       algebraMap K[X] (RatFunc K) (p.comp (Polynomial.X ^ (N : ℕ))) := by
-  change RatFunc.mapRingHom (Polynomial.expand K N) _ (algebraMap K[X] (RatFunc K) p) = _
-  rw [RatFunc.coe_mapRingHom_eq_coe_map, ← div_one (algebraMap K[X] (RatFunc K) p),
+  rw [expand, RatFunc.coe_mapAlgHom_eq_coe_map, ← div_one (algebraMap K[X] (RatFunc K) p),
     ← (algebraMap K[X] (RatFunc K)).map_one, RatFunc.map_apply_div, map_one, map_one, div_one,
     Polynomial.expand_eq_comp_X_pow]
 

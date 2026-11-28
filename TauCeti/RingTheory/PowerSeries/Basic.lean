@@ -226,6 +226,7 @@ theorem coeff_neg_X_pow_mul (k n : ℕ) (f : R⟦X⟧) :
 end CoeffRing
 
 /-- Rewriting `algebraMap R[X] R⟦X⟧` as the canonical polynomial-to-power-series coercion. -/
+@[simp]
 theorem algebraMap_polynomial_powerSeries {R : Type*} [CommSemiring R] (p : Polynomial R) :
     algebraMap (Polynomial R) R⟦X⟧ p = (p : R⟦X⟧) := by
   simp [PowerSeries.algebraMap_apply']

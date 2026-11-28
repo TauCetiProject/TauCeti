@@ -448,16 +448,6 @@ theorem exists_pos_nat_mem_scaledIntegralSeries_of_isIntegral {K : Type*} [Field
   rw [C_mem_scaledIntegralSeries_iff]
   exact ⟨⟨constantCoeff f, (mem_integralClosure_iff ℤ K).mpr hf₀⟩, rfl⟩
 
-/-- For rational power series, membership in `scaledIntegralSeries (integralClosure ℤ ℚ) M` implies
-membership in `scaledIntegralSeries ℤ M`, since `ℤ` is integrally closed in `ℚ`. -/
-private lemma mem_scaledIntegralSeries_int_of_integralClosure {f : ℚ⟦X⟧} {M : ℚ}
-    (hmem : f ∈ scaledIntegralSeries (integralClosure ℤ ℚ) M) :
-    f ∈ scaledIntegralSeries ℤ M :=
-  mem_scaledIntegralSeries_int_iff.mpr fun n ↦ by
-    obtain ⟨a, ha⟩ := (IsIntegrallyClosed.isIntegral_iff (R := ℤ) (K := ℚ)).mp
-      (mem_scaledIntegralSeries_integralClosure_iff.mp hmem n)
-    exact ⟨a, by simpa using ha⟩
-
 /-- Specialization of `TauCeti.exists_pos_nat_smul_mem_scaledIntegralSeries` to rational power
 series: if `f ∈ ℚ⟦X⟧` is algebraic over `ℚ(X)`, then `(c : ℚ) • f ∈ scaledIntegralSeries ℤ M`
 for some positive integers `c, M`. -/
@@ -465,7 +455,8 @@ theorem exists_pos_nat_smul_mem_scaledIntegralSeries_rat {f : ℚ⟦X⟧}
     (hf : IsAlgebraic ℚ⟮X⟯ (f : ℚ⸨X⸩)) :
     ∃ c M : ℕ, 0 < c ∧ 0 < M ∧ (c : ℚ) • f ∈ scaledIntegralSeries ℤ (M : ℚ) := by
   obtain ⟨c, M, hc, hM, hmem⟩ := exists_pos_nat_smul_mem_scaledIntegralSeries hf
-  exact ⟨c, M, hc, hM, mem_scaledIntegralSeries_int_of_integralClosure hmem⟩
+  rw [scaledIntegralSeries_integralClosure] at hmem
+  exact ⟨c, M, hc, hM, hmem⟩
 
 /-- Specialization of `TauCeti.exists_pos_nat_mem_scaledIntegralSeries_of_isIntegral` to rational
 power series: if `f ∈ ℚ⟦X⟧` is algebraic over `ℚ(X)` and its constant coefficient is an integer,
@@ -476,7 +467,8 @@ theorem exists_pos_nat_mem_scaledIntegralSeries_rat {f : ℚ⟦X⟧}
   obtain ⟨a, ha⟩ := hf₀
   obtain ⟨M, hM, hmem⟩ := exists_pos_nat_mem_scaledIntegralSeries_of_isIntegral hf
     (ha ▸ isIntegral_intCast a)
-  exact ⟨M, hM, mem_scaledIntegralSeries_int_of_integralClosure hmem⟩
+  rw [scaledIntegralSeries_integralClosure] at hmem
+  exact ⟨M, hM, hmem⟩
 
 /-! ### Examples -/
 
