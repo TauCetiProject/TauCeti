@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Real.Sqrt
+public import Mathlib.NumberTheory.Harmonic.Bounds
 public import TauCeti.Analysis.InnerProductSpace.Projection.MetricProj
 public import TauCeti.Analysis.Optimization.Online.Regret
 import TauCeti.Analysis.Real.SumInvSqrt
@@ -42,6 +43,18 @@ because the squared distances to `u` now telescope with the non-negative weights
 `1 / (2 * η t) - 1 / (2 * η (t - 1))`. The steps `η t = D / (G * √(t + 1))` give regret at most
 `3 / 2 * D * G * √T` for every `T`.
 
+Strongly convex losses need neither a bounded domain nor a start in `K`. If `g t` satisfies the
+subgradient inequality of `f t` at `x t` with the quadratic term `μ t / 2 * ‖u - x t‖ ^ 2`, the
+steps `η t = 1 / ∑_{i ≤ t} μ i` give
+
+`regret f x T u ≤ 1 / 2 * ∑_{t < T} ‖g t‖ ^ 2 / ∑_{i ≤ t} μ i`,
+
+because `1 / (2 * η t) - μ t / 2` is `1 / (2 * η (t - 1))` for `t ≥ 1` and `0` for `t = 0`,
+so the squared distances to `u` telescope to a non-positive quantity. For a constant modulus
+`α > 0` and `‖g t‖ ≤ G` the steps `η t = 1 / (α * (t + 1))` give regret at most
+`G ^ 2 / (2 * α) * (1 + log T)`, through the bound `harmonic_le_one_add_log` on the harmonic
+numbers.
+
 ## Main definitions
 
 * `TauCeti.OnlineConvexOptimization.ogd K η g x₀`: the iterates of online gradient descent.
@@ -63,13 +76,19 @@ because the squared distances to `u` now telescope with the non-negative weights
   `TauCeti.OnlineConvexOptimization.sum_inner_ogd_sub_le_of_antitone`.
 * `TauCeti.OnlineConvexOptimization.regret_ogd_le_three_halves`: the regret bound
   `3 / 2 * D * G * √T` with the steps `D / (G * √(t + 1))`.
+* `TauCeti.OnlineConvexOptimization.regret_ogd_le_of_strongConvex`: the regret bound for
+  strongly convex losses with the steps `1 / ∑_{i ≤ t} μ i`, and its linear form
+  `TauCeti.OnlineConvexOptimization.sum_inner_ogd_sub_sub_le`.
+* `TauCeti.OnlineConvexOptimization.regret_ogd_le_log`: the logarithmic regret bound
+  `G ^ 2 / (2 * α) * (1 + log T)` with the steps `1 / (α * (t + 1))`.
 
 ## References
 
 * F. Orabona, *A modern introduction to online learning*, arXiv:1912.13213, Theorem 2.13 (both
-  bounds) and equation (2.1), with Lemma 2.31 for subgradients.
+  bounds) and equation (2.1), with Lemma 2.31 for subgradients, and Theorem 4.7 and
+  Corollary 4.8 for strongly convex losses.
 * E. Hazan, *Introduction to online convex optimization*, 2nd ed., MIT Press, 2022, Chapter 3,
-  Theorem 3.1 for the bound `3 / 2 * G * D * √T`.
+  Theorem 3.1 for the bound `3 / 2 * G * D * √T` and Theorem 3.3 for strongly convex losses.
 * M. Zinkevich, *Online convex programming and generalized infinitesimal gradient ascent*,
   ICML 2003, Theorem 1 for the steps `1 / √(t + 1)`.
 -/
@@ -349,5 +368,103 @@ theorem regret_ogd_le_three_halves (hc : IsComplete K) (hK : Convex ℝ K) (x₀
     field_simp
   rw [hfirst]
   linarith
+
+/-- **The regret bound of online gradient descent for strongly convex losses** on the linear
+losses with their quadratic terms. Let `K` be complete and convex and `u ∈ K`. Let the steps be
+`η t = 1 / ∑_{i ≤ t} μ i`, where the partial sums `∑_{i ≤ t} μ i` are positive for `t < T`; this
+holds when every `μ t` is positive. Then the iterates `x = ogd K η g x₀` satisfy
+`∑_{t < T} (⟪g t, x t - u⟫ - μ t / 2 * ‖x t - u‖ ^ 2) ≤
+  1 / 2 * ∑_{t < T} ‖g t‖ ^ 2 / ∑_{i ≤ t} μ i`.
+No bound on `K` and no condition on the start `x₀` is needed. -/
+theorem sum_inner_ogd_sub_sub_le (hc : IsComplete K) (hK : Convex ℝ K) (x₀ : E) {μ : ℕ → ℝ}
+    (g : ℕ → E) (T : ℕ) (hμ : ∀ t < T, 0 < ∑ i ∈ range (t + 1), μ i) {u : E} (hu : u ∈ K) :
+    ∑ t ∈ range T, (⟪g t, ogd K (fun t ↦ 1 / ∑ i ∈ range (t + 1), μ i) g x₀ t - u⟫ -
+        μ t / 2 * ‖ogd K (fun t ↦ 1 / ∑ i ∈ range (t + 1), μ i) g x₀ t - u‖ ^ 2) ≤
+      1 / 2 * ∑ t ∈ range T, ‖g t‖ ^ 2 / ∑ i ∈ range (t + 1), μ i := by
+  set η : ℕ → ℝ := fun t ↦ 1 / ∑ i ∈ range (t + 1), μ i with hη
+  set x := ogd K η g x₀
+  -- Summing the one-step inequality, the squared distances to `u` telescope with the weights
+  -- `(∑_{i < t} μ i) / 2`: the weight `(∑_{i ≤ t} μ i) / 2` of the step minus the quadratic
+  -- term `μ t / 2` is the weight of the previous step.
+  have key : ∀ n ≤ T, ∑ t ∈ range n, (⟪g t, x t - u⟫ - μ t / 2 * ‖x t - u‖ ^ 2) +
+      ‖x n - u‖ ^ 2 * (∑ i ∈ range n, μ i) / 2 ≤
+        1 / 2 * ∑ t ∈ range n, ‖g t‖ ^ 2 / ∑ i ∈ range (t + 1), μ i := by
+    intro n hn
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      have hS := hμ n hn
+      have hstep := inner_ogd_sub_le hc hK η g x₀ n (one_div_pos.2 hS) hu
+      have e1 : (‖x n - u‖ ^ 2 - ‖x (n + 1) - u‖ ^ 2) / (2 * η n) =
+          (‖x n - u‖ ^ 2 - ‖x (n + 1) - u‖ ^ 2) * (∑ i ∈ range (n + 1), μ i) / 2 := by
+        rw [hη]
+        field_simp
+      have e2 : η n / 2 * ‖g n‖ ^ 2 = 1 / 2 * (‖g n‖ ^ 2 / ∑ i ∈ range (n + 1), μ i) := by
+        rw [hη]
+        ring
+      rw [e1, e2, sum_range_succ] at hstep
+      have ih := ih (by omega)
+      rw [sum_range_succ, sum_range_succ (fun t ↦ ‖g t‖ ^ 2 / ∑ i ∈ range (t + 1), μ i),
+        sum_range_succ]
+      linarith
+  have hT := key T le_rfl
+  have hP : 0 ≤ ‖x T - u‖ ^ 2 * (∑ i ∈ range T, μ i) / 2 := by
+    obtain _ | n := T
+    · simp
+    · have := (hμ n n.lt_succ_self).le
+      positivity
+  linarith
+
+/-- **The regret bound of online gradient descent for strongly convex losses.** Let `K` be
+complete and convex, `u ∈ K`, and let the steps be `η t = 1 / ∑_{i ≤ t} μ i`, where the partial
+sums `∑_{i ≤ t} μ i` are positive for `t < T`; this holds when every `μ t` is positive. If each
+`g t` with `t < T` satisfies the subgradient inequality
+`f t (x t) + ⟪g t, u - x t⟫ + μ t / 2 * ‖u - x t‖ ^ 2 ≤ f t u` with modulus `μ t` of the loss
+`f t` at the iterate `x t` of `x = ogd K η g x₀`, then
+`regret f x T u ≤ 1 / 2 * ∑_{t < T} ‖g t‖ ^ 2 / ∑_{i ≤ t} μ i`. -/
+theorem regret_ogd_le_of_strongConvex (hc : IsComplete K) (hK : Convex ℝ K) (x₀ : E)
+    {μ : ℕ → ℝ} (g : ℕ → E) (f : ℕ → E → ℝ) {T : ℕ}
+    (hμ : ∀ t < T, 0 < ∑ i ∈ range (t + 1), μ i) {u : E} (hu : u ∈ K)
+    (hf : ∀ t < T, f t (ogd K (fun t ↦ 1 / ∑ i ∈ range (t + 1), μ i) g x₀ t) +
+      ⟪g t, u - ogd K (fun t ↦ 1 / ∑ i ∈ range (t + 1), μ i) g x₀ t⟫ +
+        μ t / 2 * ‖u - ogd K (fun t ↦ 1 / ∑ i ∈ range (t + 1), μ i) g x₀ t‖ ^ 2 ≤ f t u) :
+    regret f (ogd K (fun t ↦ 1 / ∑ i ∈ range (t + 1), μ i) g x₀) T u ≤
+      1 / 2 * ∑ t ∈ range T, ‖g t‖ ^ 2 / ∑ i ∈ range (t + 1), μ i :=
+  (regret_le_sum_inner_sub_sub f _ g μ hf).trans (sum_inner_ogd_sub_sub_le hc hK x₀ g T hμ hu)
+
+/-- **The logarithmic regret bound of online gradient descent** for strongly convex losses with
+the constant modulus `α > 0` and the steps `η t = 1 / (α * (t + 1))`. Let `K` be complete and
+convex and `u ∈ K`. If `‖g t‖ ≤ G` and `g t` satisfies the subgradient inequality
+`f t (x t) + ⟪g t, u - x t⟫ + α / 2 * ‖u - x t‖ ^ 2 ≤ f t u` with modulus `α` of the loss `f t` at
+the iterate `x t` for every `t < T`, then `regret f x T u ≤ G ^ 2 / (2 * α) * (1 + log T)`. -/
+theorem regret_ogd_le_log (hc : IsComplete K) (hK : Convex ℝ K) (x₀ : E) (g : ℕ → E)
+    (f : ℕ → E → ℝ) {α G : ℝ} (hα : 0 < α) {T : ℕ} (hg : ∀ t < T, ‖g t‖ ≤ G) {u : E}
+    (hu : u ∈ K)
+    (hf : ∀ t < T, f t (ogd K (fun t ↦ 1 / (α * (t + 1))) g x₀ t) +
+      ⟪g t, u - ogd K (fun t ↦ 1 / (α * (t + 1))) g x₀ t⟫ +
+        α / 2 * ‖u - ogd K (fun t ↦ 1 / (α * (t + 1))) g x₀ t‖ ^ 2 ≤ f t u) :
+    regret f (ogd K (fun t ↦ 1 / (α * (t + 1))) g x₀) T u ≤
+      G ^ 2 / (2 * α) * (1 + Real.log T) := by
+  -- The constant modulus `α` has the partial sums `∑_{i ≤ t} α = α * (t + 1)`.
+  have hsum : ∀ t : ℕ, ∑ _i ∈ range (t + 1), α = α * (t + 1) := fun t ↦ by
+    simp [mul_comm]
+  have hη : (fun t : ℕ ↦ 1 / ∑ _i ∈ range (t + 1), α) = fun t : ℕ ↦ 1 / (α * (t + 1)) := by
+    simp only [hsum]
+  have h := regret_ogd_le_of_strongConvex hc hK x₀ (μ := fun _ ↦ α) g f
+    (fun t _ ↦ by rw [hsum]; positivity) hu (by rw [hη]; exact hf)
+  rw [hη] at h
+  refine h.trans ?_
+  have hharm : ∑ t ∈ range T, ((t : ℝ) + 1)⁻¹ ≤ 1 + Real.log T := by
+    simpa [harmonic, Rat.cast_sum] using harmonic_le_one_add_log T
+  calc 1 / 2 * ∑ t ∈ range T, ‖g t‖ ^ 2 / ∑ _i ∈ range (t + 1), α
+      ≤ 1 / 2 * ∑ t ∈ range T, G ^ 2 / α * ((t : ℝ) + 1)⁻¹ := by
+        gcongr with t ht
+        rw [hsum, div_mul_eq_div_div, ← div_eq_mul_inv]
+        gcongr
+        exact hg t (mem_range.1 ht)
+    _ = G ^ 2 / (2 * α) * ∑ t ∈ range T, ((t : ℝ) + 1)⁻¹ := by
+        rw [← mul_sum]
+        ring
+    _ ≤ G ^ 2 / (2 * α) * (1 + Real.log T) := by gcongr
 
 end TauCeti.OnlineConvexOptimization
