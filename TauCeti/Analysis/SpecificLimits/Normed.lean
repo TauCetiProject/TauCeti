@@ -88,6 +88,23 @@ theorem summable_mul_pow_of_norm_le {K : Type*} [SeminormedRing K] [CompleteSpac
     Summable (fun n : ℕ ↦ b n * q ^ n) :=
   (summable_norm_mul_pow_of_norm_le hb hq).of_norm
 
+/-- Geometric majorant bound: if `‖t‖ ≤ M ^ m * S ^ (m + 1)`, then
+`‖t * x ^ (m + 1)‖ ≤ (S * ‖x‖) * (M * S * ‖x‖) ^ m`. -/
+theorem norm_mul_pow_succ_le {R : Type*} [SeminormedRing R] {t x : R} {M S : ℝ} {m : ℕ}
+    (ht : ‖t‖ ≤ M ^ m * S ^ (m + 1)) :
+    ‖t * x ^ (m + 1)‖ ≤ (S * ‖x‖) * (M * S * ‖x‖) ^ m :=
+  (norm_mul_le _ _).trans <| (mul_le_mul ht (norm_pow_le' x m.succ_pos) (norm_nonneg _)
+    ((norm_nonneg t).trans ht)).trans_eq (by simp only [Nat.succ_eq_add_one]; ring)
+
+/-- Geometric summability criterion for shifted power series `∑ m, f m * x ^ (m + 1)` with bounds
+`‖f m‖ ≤ M ^ m * S ^ (m + 1)`. -/
+theorem summable_norm_mul_pow_succ_of_le {R : Type*} [SeminormedRing R] {f : ℕ → R} {M S : ℝ}
+    (hM : 0 ≤ M) (hS : 0 ≤ S) {x : R} (hx : M * S * ‖x‖ < 1)
+    (hf : ∀ m, ‖f m‖ ≤ M ^ m * S ^ (m + 1)) :
+    Summable fun m : ℕ ↦ ‖f m * x ^ (m + 1)‖ :=
+  ((summable_geometric_of_lt_one (by positivity) hx).mul_left (S * ‖x‖)).of_nonneg_of_le
+    (fun _ ↦ norm_nonneg _) fun m ↦ norm_mul_pow_succ_le (hf m)
+
 /-- A sequence whose consecutive norms shrink by a factor `C ρᵏ` with `ρ < 1` is summable. -/
 theorem summable_of_norm_succ_le_mul_pow {E : Type*} [SeminormedAddCommGroup E] [CompleteSpace E]
     {f : ℕ → E} {C ρ : ℝ} (hρ : ρ < 1) (h : ∀ k, ‖f (k + 1)‖ ≤ C * ρ ^ k * ‖f k‖) :

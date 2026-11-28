@@ -16,7 +16,7 @@ import TauCeti.LinearAlgebra.Finsupp.LSum
 Let `R` be a commutative star ring and `q : Rˣ` a self-adjoint parameter, so that the type-A
 Hecke algebras carry the real-parameter involution fixing every generator `T i`
 (`TauCeti.Algebra.TypeAHeckeAlgebra.Star`). Let `ι` be a linearly ordered alphabet of positive
-and negative letters, finite for the traces, with weights `p : ι → R`. The atomic trace
+and negative letters, with weights `p : ι → R`. The atomic trace
 `TauCeti.TypeAHeckeAlgebra.atomicTrace pos q p n` is `x ↦ tr (ρ(x) * D)`, where `ρ` is the signed
 checked representation on the word space and `D` is the diagonal product density of the weights.
 
@@ -24,14 +24,16 @@ The matrix of the signed checked R-matrix in the word basis is symmetric and its
 polynomials in `q`, so for self-adjoint `q` the generators act by self-adjoint matrices
 (`TauCeti.isSelfAdjoint_signedCheckedR_single_apply`). Hence `ρ` carries the involution to the
 conjugate transpose in the word basis (`TauCeti.TypeAHeckeAlgebra.signedChecked_star_single_apply`).
-Consequently the diagonal coefficient of `star x * x` at a word `w` is
-`∑ u, star (ρ(x) w u) * ρ(x) w u`, writing `ρ(x) w u` for the coefficient of the word `u` in the
-image of `w` (`TauCeti.TypeAHeckeAlgebra.signedChecked_star_mul_single_apply`), and
+Consequently, without assuming finiteness of `ι`, the diagonal coefficient of `star x * x` at a
+word `w` is `∑ u ∈ (ρ(x) w).support, star (ρ(x) w u) * ρ(x) w u`, writing `ρ(x) w u` for the
+coefficient of the word `u` in the image of `w`
+(`TauCeti.TypeAHeckeAlgebra.signedChecked_star_mul_self_single_apply`). Over a commutative
+star-ordered ring without zero divisors, vanishing of that diagonal forces the entire column
+`ρ(x) w` to vanish
+(`TauCeti.TypeAHeckeAlgebra.signedChecked_single_apply_eq_zero_of_star_mul_self`).
 
-`atomicTrace (star x * x) = ∑ w, (∏ i, p (w i)) * ∑ u, star (ρ(x) w u) * ρ(x) w u`.
-
-Over a commutative star-ordered ring, such as `ℝ`, or `ℂ` with the order `ComplexOrder`, this is
-nonnegative as soon as every weight is nonnegative
+For finite alphabets over a commutative star-ordered ring, such as `ℝ`, or `ℂ` with the order
+`ComplexOrder`, `atomicTrace (star x * x)` is nonnegative as soon as every weight is nonnegative
 (`TauCeti.TypeAHeckeAlgebra.atomicTrace_star_mul_self_nonneg`). No normalization of the weights
 and no Markov condition is needed.
 
@@ -46,24 +48,6 @@ geometric models on `r + 1` positive letters with weights proportional to `1, Q,
 `Q = q ^ 2`, this shows that the Ocneanu trace with projection parameter `a_(r + 1)(Q)`
 (`TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_mul_eigenprojection_geometric`) is positive
 (`TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_star_mul_self_nonneg_geometric`).
-
-## Main results
-
-* `TauCeti.TypeAHeckeAlgebra.signedChecked_star_single_apply`: the signed checked representation
-  carries the real-parameter involution to the conjugate transpose in the word basis.
-* `TauCeti.TypeAHeckeAlgebra.signedChecked_star_mul_single_apply`: the matrix coefficients of
-  `star x * y` in the word basis as Hermitian pairings.
-* `TauCeti.TypeAHeckeAlgebra.atomicTrace_star`: for self-adjoint weights the atomic trace
-  commutes with the involution.
-* `TauCeti.TypeAHeckeAlgebra.atomicTrace_star_mul_self_nonneg`: **positivity of atomic traces**
-  with nonnegative weights.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.map_star_mul_self_nonneg_of_eq_atomicTrace`: a linear
-  functional on the infinite algebra restricting to atomic traces with nonnegative weights is
-  positive.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_star_mul_self_nonneg_of_atomic`: an Ocneanu
-  trace realized by an atomic model with nonnegative weights is positive.
-* `TauCeti.InfiniteTypeAHeckeAlgebra.ocneanuTrace_star_mul_self_nonneg_geometric`: the Ocneanu
-  traces of the geometric atomic models are positive.
 
 ## References
 
@@ -136,13 +120,50 @@ theorem signedChecked_star_mul_single_apply [Fintype ι] (x y : TypeAHeckeAlgebr
     sum_fintype _ _ (by simp)]
   simp only [RingHom.id_apply, signedChecked_star_single_apply, mul_comm]
 
-/-- For self-adjoint weights, the atomic trace commutes with the real-parameter involution. -/
+/-- **Diagonal sum-of-squares formula** for `signedChecked pos q (star x * x)`, without assuming a
+finite alphabet. -/
+theorem signedChecked_star_mul_self_single_apply (x : TypeAHeckeAlgebra R q n) (w : Fin n → ι) :
+    signedChecked pos q (star x * x) (single w 1) w =
+      ∑ u ∈ (signedChecked pos q x (single w 1)).support,
+        star (signedChecked pos q x (single w 1) u) *
+          signedChecked pos q x (single w 1) u := by
+  rw [map_mul, mul_apply_eq_comp, LinearMap.apply_apply_eq_finsuppSum_mul, Finsupp.sum]
+  exact Finset.sum_congr rfl fun u _ ↦ by
+    rw [RingHom.id_apply, signedChecked_star_single_apply, mul_comm]
+
+/-- Every diagonal entry of `signedChecked pos q (star x * x)` is nonnegative. -/
+theorem signedChecked_star_mul_self_single_apply_nonneg [PartialOrder R] [StarOrderedRing R]
+    (x : TypeAHeckeAlgebra R q n) (w : Fin n → ι) :
+    0 ≤ signedChecked pos q (star x * x) (single w 1) w := by
+  rw [signedChecked_star_mul_self_single_apply]
+  exact Finset.sum_nonneg fun _ _ ↦ star_mul_self_nonneg _
+
+/-- If the diagonal coefficient of `star x * x` at a word `w` vanishes over a `StarOrderedRing`
+without zero divisors, then every entry `signedChecked pos q x (single w 1) u` in that column
+vanishes. -/
+theorem signedChecked_single_apply_eq_zero_of_star_mul_self [PartialOrder R] [StarOrderedRing R]
+    [NoZeroDivisors R] (x : TypeAHeckeAlgebra R q n) {w : Fin n → ι}
+    (hdiag : signedChecked pos q (star x * x) (single w 1) w = 0) (u : Fin n → ι) :
+    signedChecked pos q x (single w 1) u = 0 := by
+  rw [signedChecked_star_mul_self_single_apply] at hdiag
+  by_contra hne
+  exact hne ((mul_eq_zero.mp ((Finset.sum_eq_zero_iff_of_nonneg fun _ _ ↦
+    star_mul_self_nonneg _).mp hdiag u (Finsupp.mem_support_iff.mpr hne))).elim star_eq_zero.mp id)
+
+/-- For self-adjoint weights, the atomic trace commutes with the involution. -/
 @[simp]
 theorem atomicTrace_star [Finite ι] (hp : ∀ a, IsSelfAdjoint (p a)) (x : TypeAHeckeAlgebra R q n) :
     atomicTrace pos q p n (star x) = star (atomicTrace pos q p n x) := by
   have := Fintype.ofFinite ι
   simp only [atomicTrace_eq_sum, signedChecked_star_single_apply, star_sum, star_mul',
     star_prod, (hp _).star_eq]
+
+/-- Conjugating `atomicTrace` conjugates both the weights and the argument. -/
+theorem star_atomicTrace [Finite ι] (x : TypeAHeckeAlgebra R q n) :
+    star (atomicTrace pos q p n x) = atomicTrace pos q (star ∘ p) n (star x) := by
+  cases nonempty_fintype ι
+  rw [atomicTrace_eq_sum, atomicTrace_eq_sum, star_sum]
+  exact Finset.sum_congr rfl fun w _ ↦ by simp [mul_comm, signedChecked_star_single_apply]
 
 /-- **Positivity of atomic traces.** Over a commutative star-ordered ring, for a self-adjoint
 parameter and nonnegative weights, the atomic trace of `star x * x` is nonnegative. -/
@@ -197,12 +218,11 @@ theorem ocneanuTrace_star_mul_self_nonneg_geometric {r : ℕ} {c : R}
     (x : InfiniteTypeAHeckeAlgebra R q) :
     0 ≤ ocneanuTrace R q (c * (q : R) ^ (2 * r + 1)) (star x * x) := by
   have hQ : 0 ≤ (q : R) ^ 2 := hq.out.sq_nonneg
-  set S := ∑ a ∈ Finset.range (r + 1), ((q : R) ^ 2) ^ a
-  have hS : 0 ≤ S := Finset.sum_nonneg fun a _ ↦ pow_nonneg hQ a
-  -- `star c * S * c = star c * (c * S) = star c` is nonnegative since `S` is.
+  have hS : 0 ≤ ∑ a ∈ Finset.range (r + 1), ((q : R) ^ 2) ^ a :=
+    Finset.sum_nonneg fun _ _ ↦ pow_nonneg hQ _
   have hc₀ : 0 ≤ c := by
     have := star_left_conjugate_nonneg hS c
-    rwa [mul_assoc, mul_comm S c, hc, mul_one, star_nonneg_iff] at this
+    rwa [mul_assoc, mul_comm _ c, hc, mul_one, star_nonneg_iff] at this
   exact map_star_mul_self_nonneg_of_eq_atomicTrace (fun _ : Fin (r + 1) ↦ True)
     (fun a ↦ mul_nonneg hc₀ (pow_nonneg hQ _))
     (fun _ ↦ TypeAHeckeAlgebra.atomicTrace_geometric_eq q hc) x

@@ -9,7 +9,7 @@ public import TauCeti.Algebra.TypeAHeckeAlgebra.Cocenter.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Polynomial.Laurent.Basic
 import TauCeti.Algebra.Polynomial.Laurent.Regular
-import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Block
+import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Block.CycleWord
 import TauCeti.RingTheory.MvPolynomial.Ideal
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 import TauCeti.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem

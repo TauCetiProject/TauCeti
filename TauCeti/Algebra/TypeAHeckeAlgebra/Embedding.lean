@@ -41,6 +41,8 @@ injective.
 
 * `TauCeti.TypeAHeckeAlgebra.regularRep_toInfinite_Tw_apply_single_one`: the image of `T_w` in the
   infinite algebra takes the basis vector of `1` to that of the image of `w`.
+* `TauCeti.TypeAHeckeAlgebra.regularRep_toInfinite_apply_single_one`: evaluating the `A_∞` regular
+  representation at `Finsupp.single 1 1` computes the `basisTw` coordinates pushed forward to `W'`.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.T_ne_algebraMap` and
   `TauCeti.TypeAHeckeAlgebra.T_ne_algebraMap`: over a nontrivial ring a generator is never a
   scalar, whatever the unit `q`.
@@ -142,7 +144,7 @@ theorem regularRep_toInfinite_Tw_apply_single_one (w : W) :
 /-- Evaluation at the basis vector of `1` of the regular representation of the infinite algebra,
 pulled back to the Hecke algebra on `n` strands, is the coordinate map of the basis `T_w` followed
 by the inclusion of Coxeter groups. -/
-private theorem regularRep_toInfinite_apply_single_one (x : TypeAHeckeAlgebra R q n) :
+theorem regularRep_toInfinite_apply_single_one (x : TypeAHeckeAlgebra R q n) :
     InfiniteTypeAHeckeAlgebra.regularRep q cs' (toInfinite R q n x) (single 1 1) =
       mapDomain (cs.parabolicHom cs' coxeterMatrixA_eq_coxeterMatrixAInfty)
         ((basisTw q cs).repr x) := by

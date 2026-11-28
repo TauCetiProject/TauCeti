@@ -408,6 +408,15 @@ theorem range_toInfinite :
       simpa using InfiniteTypeAHeckeAlgebra.T_mem_stage (R := R) (q := q) (i := i) (by omega)
   · exact Algebra.subset_adjoin ⟨⟨i, by omega⟩, by simp⟩
 
+/-- Every element of `InfiniteTypeAHeckeAlgebra R q` is the image under `toInfinite` of an
+element in some finite stage. -/
+theorem _root_.TauCeti.InfiniteTypeAHeckeAlgebra.exists_toInfinite_eq
+    (x : InfiniteTypeAHeckeAlgebra R q) :
+    ∃ (n : ℕ) (y : TypeAHeckeAlgebra R q n), toInfinite R q n y = x := by
+  obtain ⟨n, hx⟩ := InfiniteTypeAHeckeAlgebra.exists_mem_stage x
+  rw [← range_toInfinite, AlgHom.mem_range] at hx
+  exact ⟨n, hx⟩
+
 /-- The maps to the infinite type-A Hecke algebra are compatible with the tower maps. -/
 @[simp]
 theorem toInfinite_strandIncl (x : TypeAHeckeAlgebra R q n) :

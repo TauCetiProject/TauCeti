@@ -42,9 +42,10 @@ image in the infinite algebra is `ζₘ` (`TauCeti.TypeAHeckeAlgebra.toInfinite_
 * `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_cosetRep` and
   `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_cycleWord`: the values of a Markov trace on
   descending products and on cycle words.
-* `TauCeti.TypeAHeckeAlgebra.cycleWord_add_two` and
-  `TauCeti.TypeAHeckeAlgebra.toInfinite_cycleWord`: the recursion of the finite cycle words and
-  their images in the infinite algebra.
+* `TauCeti.TypeAHeckeAlgebra.cycleWord_add_two`,
+  `TauCeti.TypeAHeckeAlgebra.tailIncl_cycleWord_mul_smul_T_zero`, and
+  `TauCeti.TypeAHeckeAlgebra.toInfinite_cycleWord`: the last-strand and first-strand recursions of
+  the finite cycle words and their images in the infinite algebra.
 
 ## References
 
@@ -182,6 +183,19 @@ theorem toInfinite_cycleWord (m : ℕ) :
     · simp
     · rw [cycleWord_add_two, InfiniteTypeAHeckeAlgebra.cycleWord_add_two, map_mul,
         toInfinite_strandIncl, ih, map_smul, toInfinite_T, Fin.val_last]
+
+/-- The cycle word on `m + 2` strands is the shifted-tail cycle word on `m + 1` strands followed by
+`g_0 = q • T 0`. -/
+theorem tailIncl_cycleWord_mul_smul_T_zero (m : ℕ) :
+    tailIncl q (m + 1) (cycleWord q (m + 1)) * ((q : R) • T q (0 : Fin (m + 1))) =
+      cycleWord q (m + 2) := by
+  refine toInfinite_injective R q (m + 2) ?_
+  rw [map_mul, toInfinite_tailIncl, toInfinite_cycleWord, toInfinite_cycleWord, map_smul,
+    toInfinite_T, Fin.val_zero, InfiniteTypeAHeckeAlgebra.cycleWord_def,
+    InfiniteTypeAHeckeAlgebra.cycleWord_def]
+  simp [InfiniteTypeAHeckeAlgebra.shift_cosetRep,
+    InfiniteTypeAHeckeAlgebra.cosetRep_succ_mul_T (Nat.zero_lt_succ m), pow_succ, mul_smul,
+    mul_comm]
 
 end TypeAHeckeAlgebra
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.InfiniteSum
+public import TauCeti.Topology.Algebra.InfiniteSum.Constructions
 
 /-!
 # Partial sums of a family with at most one nonzero term
@@ -19,6 +20,10 @@ pairwise disjoint supports.
 For families `f` and `y` in seminormed groups with `∑ i, ‖f i‖ * ‖y i‖` summable, the extended sum
 `∑' i, ‖f i‖ₑ * ‖y i‖ₑ` is the extended real `ENNReal.ofReal (∑' i, ‖f i‖ * ‖y i‖)`
 (`TauCeti.tsum_enorm_mul_enorm_eq_ofReal`).
+
+`TauCeti.tsum_norm_sum_elim_const_ofLex` evaluates the norm sum of a summable family extended by a
+constant finite branch over `ι ⊕ₗ κ`, and `TauCeti.sum_subtype_norm_le_tsum` bounds the sum of
+norms over a finite subset by the total norm sum.
 -/
 
 public section
@@ -44,5 +49,21 @@ theorem tsum_enorm_mul_enorm_eq_ofReal {ι G H : Type*} [SeminormedAddGroup G]
     (hfy : Summable fun i ↦ ‖f i‖ * ‖y i‖) :
     ∑' i, ‖f i‖ₑ * ‖y i‖ₑ = ENNReal.ofReal (∑' i, ‖f i‖ * ‖y i‖) := by
   simp [ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity) hfy, ENNReal.ofReal_mul]
+
+/-- Norm sum of an absolutely summable family extended by a constant finite branch over `ι ⊕ₗ κ`. -/
+theorem tsum_norm_sum_elim_const_ofLex {ι κ E : Type*} [Fintype κ] [SeminormedAddCommGroup E]
+    {f : ι → E} (hf : Summable fun a ↦ ‖f a‖) (c : E) :
+    (∑' a : ι ⊕ₗ κ, ‖Sum.elim f (fun _ ↦ c) (ofLex a)‖) =
+      (∑' a, ‖f a‖) + (Fintype.card κ : ℝ) * ‖c‖ := by
+  have hcongr : (fun a : ι ⊕ₗ κ ↦ ‖Sum.elim f (fun _ ↦ c) (ofLex a)‖) =
+      fun a ↦ Sum.elim (fun i ↦ ‖f i‖) (fun _ ↦ ‖c‖) (ofLex a) := by ext a; cases ofLex a <;> rfl
+  rw [hcongr, hf.tsum_sumLex_elim_const, nsmul_eq_mul]
+
+/-- For a family with summable norms, the sum of norms over any finite subtype is at most the total
+norm sum. -/
+theorem sum_subtype_norm_le_tsum {E ι : Type*} [SeminormedAddCommGroup E] {p : ι → E}
+    (hp : Summable fun a ↦ ‖p a‖) (s : Finset ι) : ∑ a : s, ‖p a‖ ≤ ∑' a, ‖p a‖ := by
+  rw [Finset.univ_eq_attach, s.sum_attach fun a ↦ ‖p a‖]
+  exact hp.sum_le_tsum s fun _ _ ↦ norm_nonneg _
 
 end TauCeti

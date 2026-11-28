@@ -8,7 +8,9 @@ module
 public import Mathlib.RingTheory.PowerSeries.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.CycleWord
+import Mathlib.RingTheory.PowerSeries.Inverse
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Atomic traces of cycle words
@@ -44,6 +46,11 @@ multiplies `1 + (Q - 1) * X * ∑ G b` by one factor `(1 + (Q - 1 - ε c) * p c 
 
 ## Main results
 
+* `TauCeti.TypeAHeckeAlgebra.signedChecked_cycleWord_succ_snoc_apply`: the diagonal recursion of
+  cycle words across an appended last letter.
+* `TauCeti.TypeAHeckeAlgebra.signedChecked_cycleWord_single_apply_of_sq_eq_one` and
+  `TauCeti.TypeAHeckeAlgebra.atomicTrace_cycleWord_of_sq_eq_one`: at `q ^ 2 = 1`, the cycle word
+  diagonal vanishes off constant words and the atomic trace is the signed `(m + 1)`-th power sum.
 * `TauCeti.TypeAHeckeAlgebra.atomicTrace_cycleWord_generating_function`: **the cycle-trace
   generating identity** for atomic traces.
 * `TauCeti.TypeAHeckeAlgebra.map_atomicTrace_cycleWord`: cycle traces commute with coefficient
@@ -84,25 +91,66 @@ private theorem signedChecked_T_last_mul_strandIncl_single_snoc_apply
     Fin.ext (by simp)
   have hk : BraidGroup.strandSucc (Fin.last n : Fin (n + 2 - 1)) = Fin.last (n + 1) :=
     Fin.ext (by simp)
-  have hswap : Fin.snoc w c ∘ Equiv.swap (Fin.last n).castSucc (Fin.last (n + 1)) =
-      Fin.snoc (update w (Fin.last n) c) (w (Fin.last n)) := by
-    rw [Equiv.comp_swap_eq_update]
-    simp [← Fin.snoc_update, Fin.update_snoc_last]
   -- The last letter of the exchanged word is `w (Fin.last n)`, which `x` does not change.
   rw [map_mul, mul_apply_eq_comp, signedChecked_T, hj, hk, LinearMap.smul_apply,
-    Finsupp.smul_apply, signedCheckedR_apply, hswap]
+    Finsupp.smul_apply, signedCheckedR_apply, Fin.snoc_comp_swap_last]
   simp only [Fin.snoc_castSucc, Fin.snoc_last, smul_eq_mul, crossingDiag,
     signedChecked_strandIncl_single_snoc_apply_snoc]
   rcases lt_trichotomy (w (Fin.last n)) c with h | h | h
-  · simp only [h.ne, h.ne', h, ↓reduceIte]
-    ring
-  · subst h
-    simp only [↓reduceIte]
-    ring
-  · simp only [h.ne', h.ne, h.not_gt, ↓reduceIte]
-    ring
+  · simp only [h.ne, h.ne', h, ↓reduceIte]; ring
+  · subst h; simp only [↓reduceIte]; ring
+  · simp only [h.ne', h.ne, h.not_gt, ↓reduceIte]; ring
+
+/-- **Cycle-word diagonal recursion across an appended last strand.** -/
+theorem signedChecked_cycleWord_succ_snoc_apply {m : ℕ} (w : Fin (m + 1) → ι) (c : ι) :
+    signedChecked pos q (cycleWord q (m + 2)) (single (Fin.snoc w c) 1) (Fin.snoc w c) =
+      signedChecked pos q (cycleWord q (m + 1)) (single w 1) w *
+        (if w (Fin.last m) = c then (if pos c then (q : R) ^ 2 else -1)
+          else if w (Fin.last m) < c then (q : R) ^ 2 - 1 else 0) := by
+  rw [cycleWord_add_two, smul_mul_assoc, map_smul, LinearMap.smul_apply, Finsupp.smul_apply,
+    smul_eq_mul, signedChecked_T_last_mul_strandIncl_single_snoc_apply]
+  simp only [crossingDiag]
+  linear_combination (signedChecked pos q (cycleWord q (m + 1)) (single w 1) w *
+    (if w (Fin.last m) = c then (if pos c then (q : R) ^ 2 else -1)
+      else if w (Fin.last m) < c then (q : R) ^ 2 - 1 else 0)) * Units.mul_inv q
+
+/-- At `(q : R) ^ 2 = 1`, the diagonal entry of `cycleWord (m + 1)` vanishes off constant words. -/
+theorem signedChecked_cycleWord_single_apply_of_sq_eq_one (hq : (q : R) ^ 2 = 1) :
+    ∀ {m : ℕ} (w : Fin (m + 1) → ι),
+      signedChecked pos q (cycleWord q (m + 1)) (single w 1) w =
+        if ∀ i, w i = w 0 then (if pos (w 0) then (1 : R) else -1) ^ m else 0
+  | 0, w => by simp [Fin.forall_fin_one]
+  | m + 1, w => by
+    conv_lhs => rw [← Fin.snoc_init_self w]
+    rw [signedChecked_cycleWord_succ_snoc_apply,
+      signedChecked_cycleWord_single_apply_of_sq_eq_one hq (Fin.init w), hq, sub_self, ite_self]
+    have h0 : Fin.init w 0 = w 0 := congrArg w Fin.castSucc_zero
+    by_cases hall : ∀ i : Fin (m + 2), w i = w 0
+    · have hi : ∀ i : Fin (m + 1), Fin.init w i = Fin.init w 0 :=
+        fun i ↦ (hall i.castSucc).trans h0.symm
+      have hl : Fin.init w (Fin.last m) = w (Fin.last (m + 1)) :=
+        (hall (Fin.last m).castSucc).trans (hall (Fin.last (m + 1))).symm
+      rw [ite_eq_left hi, ite_eq_left hl, ite_eq_left hall, h0, hall (Fin.last (m + 1)), pow_succ]
+    · rw [ite_eq_right hall]
+      by_cases hl : Fin.init w (Fin.last m) = w (Fin.last (m + 1))
+      · rw [ite_eq_right fun hi ↦ hall (Fin.forall_fin_succ'.mpr
+          ⟨fun i ↦ (hi i).trans h0, hl.symm.trans ((hi (Fin.last m)).trans h0)⟩), zero_mul]
+      · rw [ite_eq_right hl, mul_zero]
 
 variable [Fintype ι]
+
+/-- **Cycle-word atomic trace at `Q = 1`** equals the signed `(m + 1)`-th power sum. -/
+theorem atomicTrace_cycleWord_of_sq_eq_one (hq : (q : R) ^ 2 = 1) (p : ι → R) (m : ℕ) :
+    atomicTrace pos q p (m + 1) (cycleWord q (m + 1)) =
+      ∑ a, (if pos a then (1 : R) else -1) ^ m * p a ^ (m + 1) := by
+  classical
+  rw [atomicTrace_eq_sum]
+  simp_rw [signedChecked_cycleWord_single_apply_of_sq_eq_one pos q hq, ite_mul, zero_mul,
+    ← Finset.sum_filter]
+  exact Finset.sum_bij' (fun w _ ↦ w 0) (fun a _ _ ↦ a) (fun _ _ ↦ Finset.mem_univ _)
+    (fun _ _ ↦ Finset.mem_filter.mpr ⟨Finset.mem_univ _, fun _ ↦ rfl⟩)
+    (fun w hw ↦ funext fun i ↦ ((Finset.mem_filter.mp hw).2 i).symm) (fun _ _ ↦ rfl)
+    fun w hw ↦ by simp [fun i ↦ congrArg p ((Finset.mem_filter.mp hw).2 i)]
 
 /-- Summing the diagonal coefficient of a crossing against a function of its first letter. -/
 private theorem sum_crossingDiag_mul (c : ι) (f : ι → R) :
@@ -166,16 +214,14 @@ theorem map_atomicTrace_cycleWord [Finite ι] {S : Type*} [CommRing S]
         (cycleWord (Units.map f.toMonoidHom q) m) := by
   let := Fintype.ofFinite ι
   have hdiag (b c : ι) : f (crossingDiag pos q b c) =
-      crossingDiag pos (Units.map f.toMonoidHom q) b c := by
-    simp [crossingDiag, apply_ite f]
+      crossingDiag pos (Units.map f.toMonoidHom q) b c := by simp [crossingDiag, apply_ite f]
   have hlast (k : ℕ) (c : ι) : f (lastLetterSum pos q p k c) =
       lastLetterSum pos (Units.map f.toMonoidHom q) (fun a ↦ f (p a)) k c := by
     induction k generalizing c with
     | zero => simp [lastLetterSum_zero]
     | succ k ih => simp only [lastLetterSum_succ, map_mul, map_sum, hdiag, ih]
-  cases m with
-  | zero => simp
-  | succ m => simp only [atomicTrace_cycleWord_eq_sum_lastLetterSum, map_sum, hlast]
+  rcases m with _ | m <;> [simp; simp only [atomicTrace_cycleWord_eq_sum_lastLetterSum, map_sum,
+    hlast]]
 
 open PowerSeries
 
@@ -198,8 +244,8 @@ private theorem lastLetterSeries_mul (c : ι) :
   ext (_ | m)
   · simp [lastLetterSeries, lastLetterSum_zero]
   · simp only [map_sub, map_add, coeff_succ_mul_X, coeff_C_mul, coeff_C, lastLetterSeries,
-      coeff_mk, S, map_sum, lastLetterSum_succ, sum_crossingDiag_mul, ε]
-    simp only [reduceCtorEq, ↓reduceIte, zero_add]
+      coeff_mk, S, map_sum, lastLetterSum_succ, sum_crossingDiag_mul, ε, reduceCtorEq, ↓reduceIte,
+      zero_add]
     split_ifs <;> ring
 
 /-- Adding the letters of a lower set of the alphabet in increasing order: the series
@@ -216,15 +262,13 @@ private theorem lastLetterSeries_prod (s : Finset ι) (hs : ∀ a ∈ s, ∀ b <
     have has : a ∉ s := fun h ↦ (hlt a h).false
     -- The letters before `a` are exactly those of `s`.
     have hfilter : ({b | b < a} : Finset ι) = s := by
-      ext b
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+      ext b; simp only [Finset.mem_filter, Finset.mem_univ, true_and]
       exact ⟨fun hb ↦ (Finset.mem_insert.mp (hs a (Finset.mem_insert_self a s) b hb)).resolve_left
         hb.ne, hlt b⟩
     have hs' : ∀ a ∈ s, ∀ b < a, b ∈ s := fun x hx b hb ↦
       (Finset.mem_insert.mp (hs x (Finset.mem_insert_of_mem hx) b hb)).resolve_left
         (hb.trans (hlt x hx)).ne
-    have ha := lastLetterSeries_mul pos q p a
-    rw [hfilter] at ha
+    have ha := lastLetterSeries_mul pos q p a; rw [hfilter] at ha
     rw [Finset.sum_insert has, Finset.prod_insert has, Finset.prod_insert has]
     simp only [map_mul, map_sub, map_one] at ha ih ⊢
     linear_combination (1 - C (if pos a then (q : R) ^ 2 else -1) * C (p a) * X +
@@ -250,17 +294,55 @@ theorem atomicTrace_cycleWord_generating_function :
     · rw [mul_assoc, map_add, coeff_C_mul, coeff_succ_X_mul, map_sum]
       simp [lastLetterSeries, atomicTrace_cycleWord_eq_sum_lastLetterSum]
   have hD : ∏ a, (if pos a then 1 - C ((q : R) ^ 2 * p a) * X else 1 + C (p a) * X) =
-      ∏ a, (1 - C ((if pos a then (q : R) ^ 2 else -1) * p a) * X) :=
-    Finset.prod_congr rfl fun a _ ↦ by
-      split_ifs
-      · rfl
-      · simp only [map_mul, map_neg, map_one]
-        ring
+      ∏ a, (1 - C ((if pos a then (q : R) ^ 2 else -1) * p a) * X) := Finset.prod_congr rfl
+    fun a _ ↦ by split_ifs <;> [rfl; (simp only [map_mul, map_neg, map_one]; ring)]
   have hN : ∏ a, (if pos a then 1 - C (p a) * X else 1 + C ((q : R) ^ 2 * p a) * X) =
       ∏ a, (1 + C (((q : R) ^ 2 - 1 - if pos a then (q : R) ^ 2 else -1) * p a) * X) :=
     Finset.prod_congr rfl fun a _ ↦ by
       split_ifs <;> simp only [map_mul, map_sub, map_neg, map_one, map_pow] <;> ring
   rw [hseries, hD, hN]
-  exact lastLetterSeries_prod pos q p Finset.univ fun _ _ b _ ↦ Finset.mem_univ b
+  exact lastLetterSeries_prod pos q p Finset.univ fun _ _ _ _ ↦ Finset.mem_univ _
+
+omit [LinearOrder ι] [Fintype ι] in
+/-- The linear generating-function factor `1 - c₁ * p a * X` at a positive letter `a` and
+`1 + c₂ * p a * X` at a negative letter `a`. -/
+noncomputable def cycleGeneratingFactor (c₁ c₂ : R) (a : ι) : Polynomial R :=
+  if pos a then 1 - Polynomial.C (c₁ * p a) * Polynomial.X
+  else 1 + Polynomial.C (c₂ * p a) * Polynomial.X
+
+omit [LinearOrder ι] [Fintype ι] in
+/-- Coercing `cycleGeneratingFactor` from `Polynomial R` to `PowerSeries R`. -/
+theorem coe_cycleGeneratingFactor (c₁ c₂ : R) (a : ι) : (cycleGeneratingFactor pos p c₁ c₂ a :
+    R⟦X⟧) = if pos a then 1 - C (c₁ * p a) * X else 1 + C (c₂ * p a) * X := by
+  dsimp only [cycleGeneratingFactor]; split_ifs <;> simp
+
+omit [LinearOrder ι] [Fintype ι] in
+/-- Evaluating `cycleGeneratingFactor` at `x : R`. -/
+@[simp] theorem eval_cycleGeneratingFactor (c₁ c₂ : R) (a : ι) (x : R) :
+    (cycleGeneratingFactor pos p c₁ c₂ a).eval x =
+      if pos a then 1 - c₁ * p a * x else 1 + c₂ * p a * x := by
+  dsimp only [cycleGeneratingFactor]; split_ifs <;> simp [mul_assoc]
+
+omit [LinearOrder ι] [Fintype ι] in
+/-- The constant coefficient of `cycleGeneratingFactor` in `R⟦X⟧` is `1`. -/
+theorem constantCoeff_cycleGeneratingFactor (c₁ c₂ : R) (a : ι) :
+    constantCoeff (cycleGeneratingFactor pos p c₁ c₂ a : R⟦X⟧) = 1 := by
+  rw [coe_cycleGeneratingFactor]; simp [apply_ite]
+
+omit [LinearOrder ι] in
+/-- The finite product of `cycleGeneratingFactor` in `R⟦X⟧` is a unit. -/
+theorem isUnit_prod_cycleGeneratingFactor (c₁ c₂ : R) :
+    IsUnit (∏ a, (cycleGeneratingFactor pos p c₁ c₂ a : R⟦X⟧)) := isUnit_iff_constantCoeff.mpr <| by
+  rw [map_prod, Finset.prod_eq_one fun a _ ↦ constantCoeff_cycleGeneratingFactor pos p c₁ c₂ a]
+  exact isUnit_one
+
+/-- **The cycle-trace generating identity for atomic traces**, written in terms of
+`cycleGeneratingFactor`. -/
+theorem atomicTrace_cycleWord_generating_function_eq_prod : PowerSeries.mk (fun m ↦ if m = 0 then 1
+    else ((q : R) ^ 2 - 1) * atomicTrace pos q p m (cycleWord q m)) *
+      ∏ a, (cycleGeneratingFactor pos p ((q : R) ^ 2) 1 a : R⟦X⟧) =
+    ∏ a, (cycleGeneratingFactor pos p 1 ((q : R) ^ 2) a : R⟦X⟧) := by
+  simpa only [coe_cycleGeneratingFactor, one_mul] using
+    atomicTrace_cycleWord_generating_function pos q p
 
 end TauCeti.TypeAHeckeAlgebra

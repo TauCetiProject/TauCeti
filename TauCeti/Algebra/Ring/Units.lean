@@ -33,6 +33,9 @@ product into its two factors.
 * `TauCeti.isUnit_one_add_mul_comm`: `IsUnit (1 + a * b) ↔ IsUnit (1 + b * a)`.
 * `Units.val_sub_val_inv_ne_zero`: in a ring without zero divisors, a unit `u ≠ ±1` satisfies
   `u - u⁻¹ ≠ 0`.
+* `Units.one_add_sq_eq_mul_add_inv`: for a unit `q`, `1 + q ^ 2 = q * (q + q⁻¹)`.
+* `Units.mul_sub_val_inv_mul_one_sub`: for a unit `q`,
+  `q * (q * η - q⁻¹ * (1 - η)) = (1 + q ^ 2) * η - 1`.
 * `Units.val_inv_add_val_neg_mul_inv_eq_one`: if `r + s = 1` for units, then
   `r⁻¹ + (-(s r⁻¹)) = 1`.
 * `Units.mul_inv_eq_inv_mul_sub_inv`: if `[p, u] = u` for a unit `u`, then `[p, u⁻¹] = -u⁻¹`.
@@ -70,6 +73,18 @@ end TauCeti
 namespace Units
 
 variable {R : Type*} [Ring R]
+
+/-- For a unit `q` in a ring, `1 + q ^ 2 = q * (q + q⁻¹)`. -/
+theorem one_add_sq_eq_mul_add_inv (q : Rˣ) :
+    1 + (q : R) ^ 2 = q * ((q : R) + ↑q⁻¹) := by
+  rw [mul_add, ← sq, Units.mul_inv, add_comm]
+
+/-- Converting a projection parameter `η` to the scaled Markov parameter `q * z`:
+`q * (q * η - q⁻¹ * (1 - η)) = (1 + q ^ 2) * η - 1`. -/
+theorem mul_sub_val_inv_mul_one_sub (q : Rˣ) (η : R) :
+    (q : R) * ((q : R) * η - ↑q⁻¹ * (1 - η)) = (1 + (q : R) ^ 2) * η - 1 := by
+  rw [mul_sub, ← mul_assoc, ← sq, ← mul_assoc, Units.mul_inv, one_mul, add_mul, one_mul]
+  abel
 
 /-- If `r + s = 1` for units `r` and `s`, then `r⁻¹ + (-(s r⁻¹)) = 1`. This trades a pair adding
 up to one for another such pair whose first entry is `r⁻¹`, as in the Steinberg relation. -/

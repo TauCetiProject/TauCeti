@@ -39,8 +39,9 @@ set of the earlier ones.
   appending and then reindexing along the extension of `g` that fixes the last position.
 * `Fin.tail_contractNth_succ`, `Fin.init_contractNth_castSucc`: contracting two adjacent entries
   away from the first (last) one commutes with dropping the first (last) entry.
-* `Fin.snoc_comp_swap_castSucc`: exchanging two entries other than the last one commutes with
-  appending.
+* `Fin.snoc_comp_swap_castSucc` and `Fin.snoc_comp_swap_last`: exchanging two entries other
+  than the last one, or the last two entries, of a `Fin.snoc` tuple.
+* `Fin.cons_comp_swap_zero`: exchanging the first two entries of a `Fin.cons` tuple.
 * `Fin.cons_comp_swap_succ`: exchanging two entries other than the first one commutes with
   prepending.
 * `Fin.tail_tail_comp_swap_zero_one`: exchanging the first two entries leaves
@@ -158,6 +159,21 @@ theorem snoc_comp_swap_castSucc {n : ℕ} (c : Fin n → α) (z : α) (j k : Fin
   · simp [Equiv.swap_apply_of_ne_of_ne, (castSucc_lt_last j).ne.symm, (castSucc_lt_last k).ne.symm]
   · rw [Function.comp_apply, ← (castSucc_injective n).map_swap j k i]
     simp
+
+/-- Exchanging the last two entries of `Fin.snoc c z` replaces the last entry of `c` by `z` and
+puts the old last entry at the end. -/
+theorem snoc_comp_swap_last {n : ℕ} (c : Fin (n + 1) → α) (z : α) :
+    snoc c z ∘ Equiv.swap (last n).castSucc (last (n + 1)) =
+      snoc (Function.update c (last n) z) (c (last n)) := by
+  rw [Equiv.comp_swap_eq_update]
+  simp [← snoc_update, update_snoc_last]
+
+/-- Exchanging the first two entries of `Fin.cons z c` replaces the first entry of `c` by `z` and
+puts the old first entry at the front. -/
+theorem cons_comp_swap_zero {n : ℕ} (z : α) (c : Fin (n + 1) → α) :
+    cons z c ∘ Equiv.swap 0 (0 : Fin (n + 1)).succ = cons (c 0) (Function.update c 0 z) := by
+  rw [Equiv.comp_swap_eq_update, Function.update_comm (succ_ne_zero _)]
+  simp
 
 /-- Exchanging the entries `j.succ` and `k.succ` of `Fin.cons z c` is prepending `z` to `c` with
 the entries `j` and `k` exchanged. -/

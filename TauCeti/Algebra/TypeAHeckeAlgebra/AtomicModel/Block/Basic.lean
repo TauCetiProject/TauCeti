@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.CycleWord
-public import TauCeti.Algebra.TypeAHeckeAlgebra.Cocenter.Basic
+public import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Basic
 import Mathlib.Algebra.BigOperators.Fin
-import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
 # Atomic traces are multiplicative on disjoint blocks of strands
@@ -32,28 +30,12 @@ Summing over words gives **separated-block multiplicativity**
 
 No normalization of the weights and no Markov condition are needed.
 
-Since the cycle-block words span the cocenter of each Hecke algebra, a tracial family of
-functionals which is multiplicative on disjoint blocks is determined by its values on the cycle
-words `ζₘ` (`TauCeti.TypeAHeckeAlgebra.trace_eq_of_cycleWord_values`). So an atomic trace is
-identified on every finite Hecke algebra by its cycle values
-(`TauCeti.TypeAHeckeAlgebra.atomicTrace_eq_of_cycleWord`). These cycle values are in turn fixed
-by the cycle-trace generating identity
-(`TauCeti.TypeAHeckeAlgebra.atomicTrace_cycleWord_generating_function`) whenever `q ^ 2 - 1`
-is not a zero divisor. As that identity only involves the weights of the positive and of the
-negative letters, the atomic trace then does not depend on the linear order of the alphabet,
-although the signed checked representation does
-(`TauCeti.TypeAHeckeAlgebra.atomicTrace_eq_of_equiv`).
-
 ## Main results
 
 * `TauCeti.TypeAHeckeAlgebra.signedChecked_castAdd_mapDomain_append` and
   `TauCeti.TypeAHeckeAlgebra.signedChecked_natAdd_mapDomain_append`: the block maps act on the
   corresponding block of letters.
 * `TauCeti.TypeAHeckeAlgebra.atomicTrace_castAdd_mul_natAdd`: separated-block multiplicativity.
-* `TauCeti.TypeAHeckeAlgebra.atomicTrace_eq_of_cycleWord`: two atomic traces with the same cycle
-  values agree on every finite Hecke algebra.
-* `TauCeti.TypeAHeckeAlgebra.atomicTrace_eq_of_equiv`: if `q ^ 2 - 1` is not a zero divisor,
-  the atomic trace only depends on the signed weights of the letters, not on their order.
 
 ## References
 
@@ -164,50 +146,5 @@ theorem atomicTrace_castAdd_mul_natAdd (x : TypeAHeckeAlgebra R q a)
     Fin.prod_univ_add]
   simp only [Fin.append_left, Fin.append_right]
   ring
-
-/-- **Atomic traces are determined by their cycle values.** Two atomic traces, on possibly
-different signed alphabets with possibly different weights, which agree on every cycle word `ζₘ`
-agree on the Hecke algebra on any number of strands. -/
-theorem atomicTrace_eq_of_cycleWord {ι' : Type*} [LinearOrder ι'] [Finite ι'] (pos' : ι' → Prop)
-    [DecidablePred pos'] (p' : ι' → R)
-    (h : ∀ m, atomicTrace pos q p m (cycleWord q m) = atomicTrace pos' q p' m (cycleWord q m))
-    (n : ℕ) : atomicTrace pos q p n = atomicTrace pos' q p' n :=
-  trace_eq_of_cycleWord_values (fun _ ↦ atomicTrace_mul_comm pos q p)
-    (fun _ ↦ atomicTrace_mul_comm pos' q p') (fun _ _ ↦ atomicTrace_castAdd_mul_natAdd pos q p)
-    (fun _ _ ↦ atomicTrace_castAdd_mul_natAdd pos' q p') h n
-
-open PowerSeries in
-/-- **The atomic trace does not depend on the order of the alphabet.** If `q ^ 2 - 1` is not a
-zero divisor, two atomic traces whose alphabets correspond by a bijection `e`, not necessarily
-monotone, preserving the signs and the weights of the letters, agree on the Hecke algebra on any
-number of strands. -/
-theorem atomicTrace_eq_of_equiv {ι' : Type*} [LinearOrder ι'] [Finite ι'] (pos' : ι' → Prop)
-    [DecidablePred pos'] (p' : ι' → R) (hq : IsLeftRegular ((q : R) ^ 2 - 1)) (e : ι ≃ ι')
-    (hpos : ∀ a, pos' (e a) ↔ pos a) (hp : ∀ a, p' (e a) = p a) (n : ℕ) :
-    atomicTrace pos q p n = atomicTrace pos' q p' n := by
-  have := Fintype.ofFinite ι
-  have := Fintype.ofFinite ι'
-  refine atomicTrace_eq_of_cycleWord pos q p pos' p' (fun m ↦ ?_) n
-  -- Both generating series satisfy the same identity, with the same numerator and the same
-  -- denominator, which is a unit.
-  have hN := Fintype.prod_equiv e
-    (fun a ↦ if pos a then 1 - C (p a) * X else 1 + C ((q : R) ^ 2 * p a) * X)
-    (fun a ↦ if pos' a then 1 - C (p' a) * X else 1 + C ((q : R) ^ 2 * p' a) * X)
-    fun a ↦ by simp only [hpos, hp]
-  have hD := Fintype.prod_equiv e
-    (fun a ↦ if pos a then 1 - C ((q : R) ^ 2 * p a) * X else 1 + C (p a) * X)
-    (fun a ↦ if pos' a then 1 - C ((q : R) ^ 2 * p' a) * X else 1 + C (p' a) * X)
-    fun a ↦ by simp only [hpos, hp]
-  have hunit : IsUnit (∏ a, if pos a then 1 - C ((q : R) ^ 2 * p a) * X else 1 + C (p a) * X) :=
-    isUnit_iff_constantCoeff.2 (by simp [map_prod, apply_ite])
-  have hseries := hunit.mul_left_injective
-    ((atomicTrace_cycleWord_generating_function pos q p).trans
-      (hN.trans ((atomicTrace_cycleWord_generating_function pos' q p').symm.trans
-        (congrArg _ hD.symm))))
-  rcases m with _ | m
-  · simp
-  · have hcoeff := congrArg (coeff (m + 1)) hseries
-    simp only [coeff_mk, Nat.add_one_ne_zero, ↓reduceIte] at hcoeff
-    exact hq hcoeff
 
 end TauCeti.TypeAHeckeAlgebra

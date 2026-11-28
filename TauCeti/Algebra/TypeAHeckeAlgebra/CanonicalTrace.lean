@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TypeAHeckeAlgebra.Basis
+public import TauCeti.Algebra.TypeAHeckeAlgebra.Embedding
 import TauCeti.GroupTheory.Coxeter.Length
 
 /-!
@@ -16,6 +16,8 @@ satisfies `τ(T_v T_w) = δ_(v,w⁻¹)`, so the bases indexed by `w` and `w⁻¹
 pairing is nondegenerate over every commutative coefficient ring, including at roots of unity.
 For the rescaled basis `g_w = q ^ length w • T_w`, the pairing satisfies
 `τ(g_(w⁻¹) g_w) = (q²) ^ length w` and vanishes on pairs whose indices do not multiply to `1`.
+Evaluating the `A_∞` regular representation at `(Finsupp.single 1 1) 1` recovers the canonical
+trace (`TauCeti.TypeAHeckeAlgebra.canonicalTrace_eq_regularRep_toInfinite`).
 
 Here the Coxeter system can be any realization of type `A_(n-1)`. No semisimplicity,
 positivity, or arbitrary-parameter Markov trace existence is assumed or asserted.
@@ -194,5 +196,17 @@ theorem forall_canonicalTrace_mul_eq_zero_iff (x : TypeAHeckeAlgebra R q n) :
       canonicalTrace_mul_comm cs (Tw q cs w⁻¹)] using hx (Tw q cs w⁻¹)
   · rintro rfl
     simp
+
+/-- Evaluating the `A_∞` regular representation at `(Finsupp.single 1 1) 1` recovers
+`canonicalTrace`. -/
+theorem canonicalTrace_eq_regularRep_toInfinite {W' : Type*} [Group W']
+    (cs' : CoxeterSystem coxeterMatrixAInfty W') (x : TypeAHeckeAlgebra R q n) :
+    canonicalTrace cs x =
+      InfiniteTypeAHeckeAlgebra.regularRep q cs' (toInfinite R q n x) (Finsupp.single 1 1) 1 := by
+  rw [regularRep_toInfinite_apply_single_one cs cs',
+    ← map_one (cs.parabolicHom cs' coxeterMatrixA_eq_coxeterMatrixAInfty),
+    Finsupp.mapDomain_apply_of_injective
+      (cs.parabolicHom_injective (cs' := cs') coxeterMatrixA_eq_coxeterMatrixAInfty),
+    canonicalTrace_apply]
 
 end TauCeti.TypeAHeckeAlgebra

@@ -36,6 +36,8 @@ public import Mathlib.Analysis.RCLike.Basic
   `re (((σ : K) - ρ)⁻¹)` over real points `ρ ∈ S` with `0 < σ - re ρ ≤ D`.
 * `RCLike.one_sub_re_le_norm_sub_one`: `1 - re z ≤ ‖z - 1‖`.
 * `RCLike.norm_I_le_one`: `‖I‖ ≤ 1`, uniformly over `ℝ` (where `I = 0`) and `ℂ` (where `‖I‖ = 1`).
+* `RCLike.pos_of_ofReal_eq_sq_of_isSelfAdjoint`: the square of a nonzero self-adjoint scalar is
+  a positive real.
 * `RCLike.ext_of_re_eq_of_re_I_mul_eq`: two scalars in `K` with equal real parts before and after
   multiplying by `RCLike.I` are equal (uniformly over `ℝ` and `ℂ`).
 * `RCLike.apply_eq_of_re_eq_of_re_I_smul_eq`: the `I`-test equating `f v` and `g v` for `K`-action
@@ -161,6 +163,14 @@ theorem sum_mul_inv_le_sum_mul_re_sub_inv {S : Finset K} {w : K → ℝ} {σ D :
 /-- The real part of a scalar falls short of `1` by at most its distance to `1`. -/
 theorem one_sub_re_le_norm_sub_one (z : K) : 1 - re z ≤ ‖z - 1‖ := by
   simpa [norm_sub_rev] using re_le_norm (1 - z)
+
+/-- If `z ≠ 0` in an `RCLike` field is self-adjoint and `z ^ 2` equals the real scalar `(Q : K)`,
+then `0 < Q`. -/
+theorem pos_of_ofReal_eq_sq_of_isSelfAdjoint {z : K} (hz : z ≠ 0) (hs : IsSelfAdjoint z)
+    {Q : ℝ} (hQ : (Q : K) = z ^ 2) : 0 < Q := by
+  have hre : (re z : K) = z := conj_eq_iff_re.mp hs.star_eq
+  rw [ofReal_injective (hQ.trans ((congrArg (· ^ 2) hre.symm).trans (ofReal_pow _ 2).symm))]
+  exact sq_pos_of_ne_zero fun h0 ↦ hz (by rw [← hre, h0, ofReal_zero])
 
 /-- Two scalars in an `RCLike` field are equal if they have the same real part and their products
 with `RCLike.I` also have the same real part. Over `ℝ` the second hypothesis is `0 = 0`; over `ℂ`
