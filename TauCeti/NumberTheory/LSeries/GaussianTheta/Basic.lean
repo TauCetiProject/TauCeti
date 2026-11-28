@@ -371,12 +371,6 @@ theorem gaussianTheta_eq_gaussianDirichletTheta (j : Fin 2) (a : ℕ → ℂ) (t
     gaussianDirichletTheta j 0 t = 0 := by
   simp [gaussianDirichletTheta_def]
 
-/-- The degree-indexed Gaussian theta sum is measurable in the scale. -/
-@[fun_prop] theorem measurable_gaussianDirichletTheta (j : ℕ) (a : ℕ → ℂ) :
-    Measurable (gaussianDirichletTheta j a) := by
-  rw [funext (gaussianDirichletTheta_def j a)]
-  fun_prop
-
 /-- A geometric bound for each summand of a Gaussian theta sum with bounded coefficients. -/
 private theorem norm_gaussianDirichletTheta_term_le (j : ℕ) {a : ℕ → ℂ} {M t : ℝ}
     {n : ℕ} (ha : ‖a (n + 1)‖ ≤ M) :
@@ -421,23 +415,6 @@ theorem norm_gaussianDirichletTheta_le (j : ℕ) {a : ℕ → ℂ} {M t : ℝ}
     Real.exp_neg]
   have he := Real.exp_pos t
   field_simp [he.ne', ne_of_gt (Real.one_lt_exp_iff.mpr ht), ne_of_gt hq]
-
-/-- Above a positive cutoff, the Gaussian theta sum with bounded coefficients has an exponential
-majorant, uniform over the coefficient sequences and all scales above the cutoff. -/
-theorem norm_gaussianDirichletTheta_le_mul_exp_neg (j : ℕ) {a : ℕ → ℂ} {M r t : ℝ}
-    (ha : ∀ n ≠ 0, ‖a n‖ ≤ M) (hr : 0 < r) (ht : r ≤ t) :
-    ‖gaussianDirichletTheta j a t‖ ≤
-      (M * (j.factorial : ℝ) * Real.exp 1 / (1 - Real.exp (-r))) * Real.exp (-t) := by
-  have hM : 0 ≤ M := (norm_nonneg _).trans (ha 1 one_ne_zero)
-  have ht₀ := hr.trans_le ht
-  have hd : 0 < 1 - Real.exp (-r) := by simpa using hr
-  calc
-    _ ≤ M * (j.factorial : ℝ) * Real.exp 1 / (Real.exp t - 1) :=
-      norm_gaussianDirichletTheta_le j ha ht₀
-    _ = (M * (j.factorial : ℝ) * Real.exp 1 / (1 - Real.exp (-t))) * Real.exp (-t) := by
-      rw [Real.exp_neg]
-      field_simp [(Real.exp_pos t).ne', (Real.one_lt_exp_iff.mpr ht₀).ne']
-    _ ≤ _ := by gcongr
 
 /-- The Mellin transform of the Gaussian theta sum is `LSeries a s` multiplied by
 `Γℝ(s+j)/2` in the common domain of absolute convergence. -/
