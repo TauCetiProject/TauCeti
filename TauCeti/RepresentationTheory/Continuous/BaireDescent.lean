@@ -252,13 +252,13 @@ private noncomputable def descentIntertwiningMap {Γ K L V₁ V₂ ι₁ ι₂ :
           (Matrix.mulVecLin_comp_eq_of_map_mul_eq (RingHom.injective (algebraMap E L)) hmat) v
 
 /-- **Abstract simultaneous descent of a finite diagram of continuous representations.** Let `Γ`
-be a compact Baire group with continuous inversion and `L / K` an algebraic extension of
-topological fields whose finite intermediate fields are countably many and closed in `L`. Any
-finite family of finite-dimensional continuous representations of `Γ` over `L` carrying the
-`L`-module topology (`IsModuleTopology L (V a)`), together with finitely many intertwining maps
-between them, descends to a single finite intermediate field `E` containing any prescribed finite
-`K₀`. The descent isomorphisms hold for any `L`-module topology (`IsModuleTopology L`) on the
-base-changed spaces `L ⊗[E] (Fin _ → E)`. -/
+be a compact Baire group with continuous inversion and `L / K` an algebraic field extension with a
+ring topology on `L` such that the finite intermediate fields of `L / K` are countably many and
+closed in `L`. Any finite family of finite-dimensional continuous representations of `Γ` over `L`
+carrying the `L`-module topology (`IsModuleTopology L (V a)`), together with finitely many
+intertwining maps between them, descends to a single finite intermediate field `E` containing any
+prescribed finite `K₀`. The descent isomorphisms hold for any `L`-module topology
+(`IsModuleTopology L`) on the base-changed spaces `L ⊗[E] (Fin _ → E)`. -/
 theorem exists_descent_family_of_countable {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
     [SeparatelyContinuousMul Γ] [ContinuousInv Γ] [CompactSpace Γ] [BaireSpace Γ]
     {K L : Type*} [Field K] [Field L] [Algebra K L] [Algebra.IsAlgebraic K L]

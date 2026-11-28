@@ -21,10 +21,11 @@ import TauCeti.FieldTheory.IntermediateField.Adjoin.PrimitiveElement
 Let `L` be an algebraically closed normed field over a normed field `K` satisfying Krasner's lemma
 (`IsKrasner K L`), and let `k` be a field whose image in `K` is dense. Any separable element
 `x : L` over `K` generates the same extension `K⟮x⟯` as some element `β : L` separable over `k`:
-approximate `minpoly K x` by a monic polynomial `g ∈ k[X]` of the same degree whose root `β ∈ L`
-lies closer to `x` than to any other conjugate of `x`, apply `IsKrasner.krasner` to get
-`K⟮x⟯ ≤ K⟮β⟯`, and compare degrees over `K`. Then `g.map (algebraMap k K)` is `minpoly K β`, which
-is separable since `β ∈ K⟮x⟯`, so `g` and hence `β` are separable over `k`.
+approximate `minpoly K x` by a monic polynomial `g ∈ k[X]` of the same degree with a root `β ∈ L`
+whose distance from `x` is smaller than the distance from `x` to every other conjugate of `x`,
+apply `IsKrasner.krasner` to get `K⟮x⟯ ≤ K⟮β⟯`, and compare degrees over `K`. Then
+`g.map (algebraMap k K)` is `minpoly K β`, which is separable since `β ∈ K⟮x⟯`, so `g` and hence `β`
+are separable over `k`.
 
 By the primitive element theorem, every finite separable intermediate field `E` of `L / K` has the
 form `K⟮β⟯` with `β` separable (and in particular algebraic) over `k`. When `k` is countable, the
