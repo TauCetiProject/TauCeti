@@ -14,7 +14,7 @@ public import TauCeti.Combinatorics.Hypergraph.Polyad.UnorderedSupport
 public import TauCeti.Logic.Embedding.Basic
 
 import Mathlib.Algebra.Group.Action.Basic
-import Mathlib.Data.Finset.Sort
+import Mathlib.Data.Fin.Tuple.Sort
 import Mathlib.Data.Fintype.Perm
 import Mathlib.Tactic.FinCases
 import TauCeti.Data.Finset.Image
@@ -307,31 +307,21 @@ theorem HasDistinctCells.existsUnique_perm_strictMono {α : Type*} [LinearOrder 
     {P : Polyad3 S} (hP : P.HasDistinctCells) :
     ∃! σ : Equiv.Perm (Fin 3),
       StrictMono fun i : Fin 3 ↦ ord ⟨(P.perm σ).cell i, (P.perm σ).cell_mem_parts i⟩ := by
-  classical
   let a : Fin 3 → α := fun i ↦ ord ⟨P.cell i, P.cell_mem_parts i⟩
   have ha_inj : Function.Injective a :=
     hord.comp fun i j hij ↦
       (hasDistinctCells_iff_injective_cell P).1 hP (congrArg Subtype.val hij)
-  let eS : Fin 3 ≃o (univ.image a : Finset α) :=
-    (univ.image a).orderIsoOfFin (by rw [card_image_of_injective _ ha_inj, card_fin])
-  let eA : Fin 3 ≃ (univ.image a : Finset α) :=
-    Equiv.ofBijective (fun i ↦ ⟨a i, mem_image_of_mem a (mem_univ i)⟩)
-      ⟨fun i j h ↦ ha_inj (congrArg Subtype.val h),
-        fun ⟨_, hy⟩ ↦ let ⟨i, _, hi⟩ := mem_image.1 hy; ⟨i, Subtype.ext hi⟩⟩
-  let σ : Equiv.Perm (Fin 3) := eS.toEquiv.trans eA.symm
-  have hσ_val (i : Fin 3) : a (σ i) = (eS i).val :=
-    congrArg Subtype.val (eA.apply_symm_apply (eS i))
-  have hσ : StrictMono (a ∘ σ) := fun i j hij ↦ by
-    simpa only [Function.comp_apply, hσ_val] using Subtype.coe_lt_coe.2 (eS.strictMono hij)
   have hfun_eq (τ : Equiv.Perm (Fin 3)) :
       (fun i : Fin 3 ↦ ord ⟨(P.perm τ).cell i, (P.perm τ).cell_mem_parts i⟩) = a ∘ τ :=
     funext fun i ↦ congrArg ord (Subtype.ext (P.perm_cell τ i))
-  refine ⟨σ, by dsimp only; rwa [hfun_eq], fun τ hτ ↦ ?_⟩
-  dsimp only at hτ
-  rw [hfun_eq] at hτ
-  have hrange : Set.range (a ∘ τ) = Set.range (a ∘ σ) := by
-    rw [Set.range_comp, τ.range_eq_univ, Set.range_comp, σ.range_eq_univ]
-  exact Equiv.ext fun i ↦ ha_inj (congrFun (hτ.eq_of_range_eq hσ hrange) i)
+  refine ⟨Tuple.sort a, ?_, fun τ hτ ↦ ?_⟩
+  · dsimp only
+    rw [hfun_eq]
+    exact (Tuple.monotone_sort a).strictMono_of_injective (ha_inj.comp (Tuple.sort a).injective)
+  · dsimp only at hτ
+    rw [hfun_eq] at hτ
+    exact Equiv.ext fun i ↦ ha_inj
+      (congrFun (Tuple.comp_sort_eq_comp_iff_monotone.2 hτ.monotone) i)
 
 /-- Summing a nonnegative `S₃`-invariant function over a set of polyads in pairwise distinct
 `S₃`-orbits (with trivial stabilizers in the set) is at most one-sixth of the total sum over all
@@ -533,10 +523,8 @@ theorem unionSupport_perm {ι : Type*} [Fintype ι] (Q : ι → Subpolyad3 P)
     (σ : Equiv.Perm (Fin 3)) :
     unionSupport (fun i ↦ (Q i).perm σ) =
       (unionSupport Q).map (Equiv.subtypeInjectiveCongr σ.symm (Equiv.refl V)).toEmbedding := by
-  ext y
-  simp only [mem_unionSupport, support_perm_eq_map, mem_map]
-  exact ⟨fun ⟨i, x, hx, hxy⟩ ↦ ⟨x, ⟨i, hx⟩, hxy⟩,
-    fun ⟨x, ⟨i, hx⟩, hxy⟩ ↦ ⟨i, x, hx, hxy⟩⟩
+  rw [unionSupport_def, unionSupport_def]
+  simp only [support_perm_eq_map, Finset.map_eq_image, ← Finset.biUnion_image]
 
 end Subpolyad3
 

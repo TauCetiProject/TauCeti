@@ -11,22 +11,25 @@ public import TauCeti.Combinatorics.Hypergraph.Triadic.Basic
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
+import TauCeti.Combinatorics.Hypergraph.Polyad.Density
 
 /-!
 # Coarse top-regularity from good fine children
 
 Given a fine refinement `D` of a coarse triadic complex `C` with coarse parent projection
-`Q.coarsen hV f`, if a coloring `H'` tracks `H.relativeDensity c P` across subpolyads of every
-good fine child `Q` of a coarse polyad `P` in `Keep`, and the remaining fine children of `P` carry
-at most a `θ`-fraction of `#P.support`, then `H'` is rank-one top-regular over `P`. Averaging
-via Markov charging yields `TopRegularOverMostPolyads` on `C` from global mass bounds on `¬Keep`
-coarse polyads and `¬Good` fine children
+`Q.coarsen hV f`, suppose `2 * (τ + θ) ≤ δ ^ 2`, a coloring `H'` tracks `H.relativeDensity c P`
+within `τ * #Q.support` across subpolyads of every good fine child `Q` of a coarse polyad `P` in
+`Keep`, and the remaining fine children of `P` carry at most a `θ`-fraction of `#P.support`. Then
+`H'` is `(δ, 1)`-top-regular over `P`. Averaging via Markov charging yields
+`H'.TopRegularOverMostPolyads C δ ε' 1` from global mass bounds `repMass` on `¬Keep` coarse
+polyads and `badMass` on `¬Good` fine children under `Keep` when
+`repMass + badMass / θ ≤ ε' * (|V|)₃`
 (`TauCeti.Colored3Graph.topRegularOverMostPolyads_of_good_children`).
 
 ## Main results
 
-* `TauCeti.Colored3Graph.topRegularOverMostPolyads_of_good_children`: Markov charging of
-  irregular coarse polyads to exceptional coarse polyads and bad fine children.
+* `TauCeti.Colored3Graph.topRegularOverMostPolyads_of_good_children`: `(δ, 1)`-top-regularity
+  over most polyads of `C` from good fine children and coarse/bad-child mass budgets.
 -/
 
 public section
@@ -57,28 +60,21 @@ private theorem abs_relDensityOn_sub_coarse_mul_card_le_of_good_children
     (c : κ) (U : Subpolyad3 P) :
     |((H'.relDensityOn c U.support : ℝ) - H.relativeDensity c P) * #U.support| ≤
       (τ + θ) * #P.support := by
-  have hmiss (Q : Polyad3 D.skeleton) (hQ : Q.coarsen hV f ≠ P) :
-      U.support ∩ Q.support = ∅ :=
-    disjoint_iff_inter_eq_empty.1 ((Polyad3.pairwise_disjoint_support hQ.symm).mono
-      U.support_subset (Polyad3.support_subset_coarsen hV f hf Q))
   have hsumP : ∑ Q : Polyad3 D.skeleton with Q.coarsen hV f = P, (#Q.support : ℝ) =
       #P.support := by
     have h := Polyad3.sum_card_support_coarsen hV f hf P
     rw [← Finset.filter_congr_decidable] at h
     exact_mod_cast h
-  rw [H'.relDensityOn_sub_mul_card_eq_sum_inter_support D.skeleton c U.support]
-  calc |∑ Q : Polyad3 D.skeleton,
-          ((H'.relDensityOn c (U.support ∩ Q.support) : ℝ) - H.relativeDensity c P) *
-            #(U.support ∩ Q.support)|
-      ≤ ∑ Q : Polyad3 D.skeleton,
+  have hagg := H'.abs_relDensityOn_sub_mul_card_le_sum_polyadMap
+    (fun Q : Polyad3 D.skeleton ↦ Q.coarsen hV f) U.support_subset c
+    (a := H.relativeDensity c P) (mod_cast H.relativeDensity_nonneg c P)
+    (mod_cast H.relativeDensity_le_one c P)
+  simp only [Polyad3.coarsen_ofTriple hV f hf, ne_eq, not_true_eq_false, filter_false,
+    empty_inter, card_empty, Nat.cast_zero, add_zero] at hagg
+  calc |((H'.relDensityOn c U.support : ℝ) - H.relativeDensity c P) * #U.support|
+      ≤ ∑ Q : Polyad3 D.skeleton with Q.coarsen hV f = P,
           |((H'.relDensityOn c (U.support ∩ Q.support) : ℝ) - H.relativeDensity c P) *
-            #(U.support ∩ Q.support)| := abs_sum_le_sum_abs _ _
-    _ = ∑ Q : Polyad3 D.skeleton with Q.coarsen hV f = P,
-          |((H'.relDensityOn c (U.support ∩ Q.support) : ℝ) - H.relativeDensity c P) *
-            #(U.support ∩ Q.support)| := by
-        rw [sum_filter]
-        refine sum_congr rfl fun Q _ ↦ ?_
-        split_ifs with hQ <;> [rfl; simp [hmiss Q hQ]]
+            #(U.support ∩ Q.support)| := by convert hagg
     _ ≤ ∑ Q : Polyad3 D.skeleton with Q.coarsen hV f = P,
           (τ * #Q.support + if ¬Good Q then (#Q.support : ℝ) else 0) := by
         refine sum_le_sum fun Q hQ ↦ ?_
@@ -146,9 +142,10 @@ private theorem isTopRegularOverPolyad_of_good_children
       _ ≤ δ ^ 2 * #P.support := by gcongr
       _ ≤ δ * #U.support := by nlinarith
 
-/-- Markov charging of irregular coarse polyads over a configurable filter `Keep` of coarse
-polyads: irregular polyads outside `Keep` contribute to `repMass`, while irregular polyads in
-`Keep` are charged to `¬Good` fine children via `θ⁻¹`. -/
+/-- If `H'` tracks `H.relativeDensity c P` within `τ * #Q.support` on subpolyads of `Good`
+fine children `Q` of `Keep` coarse polyads `P`, non-kept coarse mass is at most `repMass`,
+`Keep`-parent `¬Good` child mass is at most `badMass`, `2 * (τ + θ) ≤ δ ^ 2`, and
+`repMass + badMass / θ ≤ ε' * (|V|)₃`, then `H'.TopRegularOverMostPolyads C δ ε' 1`. -/
 theorem topRegularOverMostPolyads_of_good_children
     {H H' : Colored3Graph κ V} {C D : TriadicComplex3 V}
     (hC : C.IsPolyadDecomposition)

@@ -16,8 +16,8 @@ import TauCeti.Order.Partition.Pi
 # Nontransversal polyad mass
 
 Over an equitable vertex partition into `t` nonempty cells, each cell has size at most
-`2 * |V| / t`. Every injective triple in the support of a polyad lacking distinct vertex cells
-(`¬P.HasDistinctCells`) lands in two common cells under `S.vertexPart`, so counting
+`2 * (|V| / t)`. Every injective triple in the support of a polyad lacking distinct vertex cells
+(`¬P.HasDistinctCells`) has two coordinates in a common cell of `S.vertexPart`, so counting
 nontransversal ordered triples via `Finpartition.card_filter_not_injective_part_le_of_card_le`
 bounds the total support cardinality of repeated-cell polyads by `6 * |V|³ / t`
 (`TauCeti.Polyad3.sum_card_support_not_hasDistinctCells_le`).

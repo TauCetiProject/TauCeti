@@ -14,6 +14,7 @@ import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.Order.BigOperators.Sum.Union
 import TauCeti.Combinatorics.Enumerative.RandomColoring
 import TauCeti.Combinatorics.Hypergraph.Polyad.Perm
 import TauCeti.Combinatorics.Hypergraph.Triadic.Recoloring.CoarsePassage
@@ -742,9 +743,9 @@ theorem TopRegularOverMostPolyads.exists_approximates3_of_polyadEnergy_sub_le [F
         _ = Fintype.card (Polyad3 D.skeleton) * N₀ := by rw [sum_const, card_univ, nsmul_eq_mul]
     have hirr_D : ∑ Q ∈ s₂, (#Q.support : ℝ) ≤ μ * (Fintype.card V).descFactorial 3 := by
       simpa only [s₂] using h.sum_card_support_univ_le hD
-    have hinter : 0 ≤ ∑ Q ∈ s₁ ∩ s₂, (#Q.support : ℝ) := sum_nonneg fun _ _ ↦ Nat.cast_nonneg _
     rw [hunion]
-    linarith [sum_union_inter (s₁ := s₁) (s₂ := s₂) (f := fun Q ↦ (#Q.support : ℝ))]
+    exact (Finset.sum_union_le fun Q _ ↦ (Nat.cast_nonneg #Q.support : (0 : ℝ) ≤ _)).trans
+      ((add_le_add hsmall_sum hirr_D).trans_eq (add_comm _ _))
   have hε' : 0 ≤ (μ + Fintype.card (Polyad3 D.skeleton) * N₀ /
       (Fintype.card V).descFactorial 3) / θ := by
     have := h.nonneg; positivity

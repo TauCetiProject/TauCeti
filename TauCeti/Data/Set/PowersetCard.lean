@@ -302,15 +302,8 @@ theorem image_ofFinEmb_map_subtypeInjectiveCongr [DecidableEq β]
     (s.map (Equiv.subtypeInjectiveCongr σ.symm (Equiv.refl β)).toEmbedding).image
         (fun x ↦ ofFinEmb r β ⟨x.val, x.property⟩) =
       s.image (fun x ↦ ofFinEmb r β ⟨x.val, x.property⟩) := by
-  ext u
-  simp only [Finset.mem_image, Finset.mem_map, Equiv.coe_toEmbedding,
-    Equiv.subtypeInjectiveCongr_apply, Equiv.coe_refl, Function.id_comp, Equiv.symm_symm]
-  constructor
-  · rintro ⟨_, ⟨x, hx, rfl⟩, rfl⟩
-    exact ⟨x, hx, (ofFinEmb_comp_perm σ x.val _).symm⟩
-  · rintro ⟨x, hx, rfl⟩
-    exact ⟨⟨x.val ∘ σ, x.property.comp σ.injective⟩, ⟨x, hx, rfl⟩,
-      ofFinEmb_comp_perm σ x.val _⟩
+  rw [Finset.map_eq_image, Finset.image_image]
+  exact Finset.image_congr fun x _ ↦ by simp [Equiv.subtypeInjectiveCongr_apply]
 
 /-- Two embeddings `Fin r ↪ β` have the same unordered image if and only if they differ by a
 permutation of `Fin r`. -/

@@ -48,11 +48,7 @@ theorem exists_piecewise_of_pairwiseDisjoint {α β κ : Type*} [DecidableEq α]
     simp only [mem_biUnion, not_exists, not_and] at ha
     exact dite_eq_right fun ⟨i, hi, hm⟩ ↦ ha i hi hm
   refine ⟨h, fun i hi a ha ↦ h_eq hi ha, fun a ha ↦ h_out ha, ?_⟩
-  have hfilt : {a ∈ G.biUnion supp | h a ≠ g a} = G.biUnion fun i ↦ {a ∈ supp i | h a ≠ g a} := by
-    ext a
-    simp only [mem_filter, mem_biUnion]
-    tauto
-  rw [hfilt, card_biUnion fun i hi j hj hij ↦
+  rw [Finset.filter_biUnion, card_biUnion fun i hi j hj hij ↦
     (hdisj hi hj hij).mono (filter_subset _ _) (filter_subset _ _)]
   exact sum_congr rfl fun i hi ↦ congrArg card (filter_congr fun a ha ↦ by rw [h_eq hi ha])
 
