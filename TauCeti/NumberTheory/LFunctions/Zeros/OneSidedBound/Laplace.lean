@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.LSeries.PrimesInAP
 public import TauCeti.Analysis.LaplaceTransform.Basic
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Basic
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Entire
 public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Remainder
 import Mathlib.NumberTheory.LSeries.Linearity
-import Mathlib.NumberTheory.LSeries.PrimesInAP
 import TauCeti.Analysis.Calculus.LogDeriv
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Laplace
 import TauCeti.NumberTheory.LSeries.Conjugate
@@ -59,6 +59,29 @@ theorem analyticAt_logDerivMean_of_one_le_re {s : ℂ} (hs : 1 ≤ s.re) :
     AnalyticAt ℂ (logDerivMean d q) s :=
   analyticAt_logDerivMean fun ψ ↦ ⟨ψ.entireLFunction_ne_zero_of_one_le_re hs,
     (ψ.legendreTwist d).entireLFunction_ne_zero_of_one_le_re hs⟩
+
+/-- If the Legendre twists are all nonprincipal, the compensated mean is the untwisted
+residue-class auxiliary function plus the average twisted logarithmic derivative, with the
+constant correction `-1 / φ(q)`. -/
+theorem logDerivMean_eq_residueClassAux_add
+    (hnonprincipal : ∀ ψ : DirichletCharacter ℂ q, ψ.legendreTwist d ≠ 1) (w : ℂ) :
+    logDerivMean d q w = vonMangoldt.LFunctionResidueClassAux (1 : ZMod q) w +
+      (∑ ψ : DirichletCharacter ℂ q, logDeriv (ψ.legendreTwist d).LFunction w) /
+        (q.totient : ℂ) - (q.totient : ℂ)⁻¹ := by
+  classical
+  let : NeZero (q * d) := ⟨Nat.mul_ne_zero (NeZero.ne q) (Fact.out : d.Prime).ne_zero⟩
+  simp only [logDerivMean_def, Finset.sum_sub_distrib, quadraticTwist_eq_legendreTwist,
+    entireLFunction_of_ne_one (hnonprincipal _)]
+  have hsum := Finset.sum_compl_add_sum ({1} : Finset (DirichletCharacter ℂ q))
+    (fun ψ ↦ logDeriv ψ.entireLFunction w)
+  rw [← hsum, Finset.sum_singleton, entireLFunction_one]
+  have hterm (ψ : DirichletCharacter ℂ q) (hψ : ψ ∈ ({1}ᶜ : Finset (DirichletCharacter ℂ q))) :
+      logDeriv ψ.entireLFunction w = logDeriv ψ.LFunction w := by
+    rw [entireLFunction_of_ne_one (by simpa using hψ)]
+  rw [Finset.sum_congr rfl hterm]
+  simp only [vonMangoldt.LFunctionResidueClassAux, ZMod.inv_one, MulChar.map_one, one_mul,
+    logDeriv_apply]
+  ring
 
 open Classical in
 /-- Count the principal members of the twisted family in the polar contribution. -/
