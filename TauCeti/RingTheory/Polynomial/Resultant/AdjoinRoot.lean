@@ -48,6 +48,11 @@ No signs appear anywhere: `B` is an endomorphism, so the two blocks are never re
   determinant, and then as a resultant.
 * `AdjoinRoot.norm_mk_eq_resultant_of_natDegree_le` — the same resultant read at any degree bound
   for `p`, which `g` being monic makes independent of the bound.
+* `AdjoinRoot.norm_mk_one_add_sub_one_mem`, `AdjoinRoot.norm_mk_C` — the norm of `1 + h` modulo an
+  ideal containing the coefficients of `h`, and the norm of a constant `C a`.
+* `Polynomial.exists_resultant_eq_pow_mul`,
+  `Polynomial.exists_resultant_eq_pow_mul_of_coeff_mem_span_mul` —
+  shifted-factor resultant factorization modulo an ideal or principal multiple.
 * `AdjoinRoot.norm_mk_eq_prod_eval` — when `g = ∏ i, (X - C rᵢ)` splits into linear factors,
   the norm of `mk g p` is the product `∏ i, p rᵢ` of the values of `p` at the roots.
 * `AdjoinRoot.norm_algebraMap_sub_root`, `AdjoinRoot.norm_mk_C_sub_X_add` — the two values that
@@ -316,6 +321,21 @@ theorem norm_mk_eq_resultant_of_natDegree_le (hg : g.Monic) {p : R[X]} {n : ℕ}
   rw [resultant_add_right_deg _ _ _ _ _ le_rfl, hg.coeff_natDegree, one_pow, one_mul,
     norm_mk_eq_resultant hg]
 
+/-- For monic `g : R[X]`, if every coefficient of `h` lies in an ideal `I`, then the norm of
+`AdjoinRoot.mk g (1 + h)` over `R` is congruent to `1` modulo `I`. -/
+theorem norm_mk_one_add_sub_one_mem {g h : R[X]} (hg : g.Monic) {I : Ideal R}
+    (hh : ∀ i, h.coeff i ∈ I) :
+    Algebra.norm R (mk g (1 + h)) - 1 ∈ I := by
+  have hmem := hg.resultant_sub_mem_of_coeff_sub_mem (g := 1) (ψ := 1 + h) fun i ↦ by
+    simpa [add_sub_cancel_left] using hh i
+  rw [natDegree_one, resultant_one_right, pow_zero] at hmem
+  rwa [norm_mk_eq_resultant hg]
+
+/-- For monic `g : R[X]`, the norm of `AdjoinRoot.mk g (C a)` over `R` is `a ^ g.natDegree`. -/
+theorem norm_mk_C {g : R[X]} (hg : g.Monic) (a : R) :
+    Algebra.norm R (mk g (C a)) = a ^ g.natDegree := by
+  rw [norm_mk_eq_resultant hg, natDegree_C, resultant_C_zero_right]
+
 /-- **The norm on `AdjoinRoot g` for a split `g`.** If `g = ∏ i, (X - C (r i))` is a product of
 linear factors, then the norm of `AdjoinRoot.mk g p` is the product of the values of `p` at the
 roots `r i`. No hypothesis on the base ring is needed: the roots may repeat, and the ring may have
@@ -397,3 +417,40 @@ theorem norm_mk_C_sub_X_add {q : R[X]} {x : R} (hq : q.Monic) (hgq : g = q * (X 
   ring
 
 end AdjoinRoot
+
+namespace Polynomial
+
+variable {R : Type*} [CommRing R]
+
+/-- **Resultant of a shifted monic factor.** For monic `g : R[X]` and an ideal `I : Ideal R`, if
+`ψ = g + C a + C a * h` and all coefficients of `h` lie in `I`, then
+`g.resultant ψ = a ^ g.natDegree * u` for some `u` congruent to `1` modulo `I`. -/
+theorem exists_resultant_eq_pow_mul {g ψ h : R[X]} (hg : g.Monic) (a : R) {I : Ideal R}
+    (hψ : ψ = g + C a + C a * h) (hh : ∀ i, h.coeff i ∈ I) :
+    ∃ u : R, u - 1 ∈ I ∧ g.resultant ψ = a ^ g.natDegree * u := by
+  refine ⟨Algebra.norm R (AdjoinRoot.mk g (1 + h)),
+    AdjoinRoot.norm_mk_one_add_sub_one_mem hg hh, ?_⟩
+  rw [← AdjoinRoot.norm_mk_C hg a, ← map_mul (Algebra.norm R), ← map_mul,
+    ← AdjoinRoot.norm_mk_eq_resultant hg]
+  congr 1
+  have hrewrite : ψ = g + C a * (1 + h) := by rw [hψ]; ring
+  rw [hrewrite, map_add, AdjoinRoot.mk_self, zero_add]
+
+/-- **Resultant of a shifted monic factor modulo `a * b`.** If `g` is monic and every coefficient
+of `ψ - (g + C a)` lies in `Ideal.span {a * b}`, then `g.resultant ψ = a ^ g.natDegree * u` for
+some `u` with `u - 1 ∈ Ideal.span {b}`. -/
+theorem exists_resultant_eq_pow_mul_of_coeff_mem_span_mul {g ψ : R[X]} (hg : g.Monic) (a b : R)
+    (hψ : ∀ i, (ψ - (g + C a)).coeff i ∈ Ideal.span {a * b}) :
+    ∃ u : R, u - 1 ∈ Ideal.span {b} ∧ g.resultant ψ = a ^ g.natDegree * u := by
+  have hdvd : C (a * b) ∣ ψ - (g + C a) :=
+    (C_dvd_iff_dvd_coeff _ _).mpr fun i ↦ Ideal.mem_span_singleton.mp (hψ i)
+  obtain ⟨k, hk⟩ := hdvd
+  have hrewrite : ψ = g + C a + C a * (C b * k) := by
+    rw [sub_eq_iff_eq_add] at hk
+    rw [hk, C_mul]
+    ring
+  refine exists_resultant_eq_pow_mul hg a hrewrite fun i ↦ ?_
+  rw [coeff_C_mul, Ideal.mem_span_singleton]
+  exact dvd_mul_right b _
+
+end Polynomial
