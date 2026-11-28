@@ -25,7 +25,9 @@ in the convention that the right-hand factor acts first. See Kisin, Madapusi Per
 for the use of the units of the rational endomorphism algebra.
 
 The `R`-linear category `WithCoefficients R K` uses these Hom spaces, so invertible
-coefficient homomorphisms are isomorphisms in the usual categorical sense.
+coefficient homomorphisms are isomorphisms in the usual categorical sense. Over `ℚ`, an
+integral homomorphism is invertible exactly when it has a two-sided integral inverse up to
+multiplication by a common nonzero integer.
 -/
 
 public section
@@ -325,6 +327,18 @@ theorem exists_zsmul_eq_ofHom (f : CoefficientHom ℚ A B) :
     (TensorProduct.mk ℤ ℚ (Additive (A ⟶ B)) 1) f
   exact ⟨n, g.toMul, nonZeroDivisors.ne_zero n.property, h⟩
 
+/-- Two integral homomorphisms have the same rational image exactly when some common nonzero
+integer power in the pointwise group law makes them equal. -/
+theorem ofHom_rat_eq_iff_exists_zpow_eq {f g : A ⟶ B} :
+    ofHom ℚ f = ofHom ℚ g ↔ ∃ n : ℤ, n ≠ 0 ∧ f ^ n = g ^ n := by
+  let loc := TensorProduct.mk ℤ ℚ (Additive (A ⟶ B)) 1
+  -- Express the two pure tensors as images under the localization map.
+  change loc (Additive.ofMul f) = loc (Additive.ofMul g) ↔ _
+  rw [IsLocalizedModule.eq_iff_exists ℤ⁰ loc]
+  simp only [Submonoid.smul_def, ← ofMul_zpow, Additive.ofMul.injective.eq_iff]
+  exact ⟨fun ⟨n, h⟩ ↦ ⟨n, nonZeroDivisors.ne_zero n.prop, h⟩,
+    fun ⟨n, hn, h⟩ ↦ ⟨⟨n, mem_nonZeroDivisors_of_ne_zero hn⟩, h⟩⟩
+
 end
 
 end CoefficientHom
@@ -477,5 +491,68 @@ identity morphism. -/
     (A : AbelianVariety K) (n : ℤ) :
     (coefficientFunctor R).map (mulBy A n) = n • 𝟙 ((coefficientFunctor R).obj A) :=
   CoefficientHom.ofHom_mulBy (R := R) A n
+
+variable {A B : AbelianVariety K}
+
+/-- A homomorphism with a two-sided inverse up to multiplication by an integer becomes
+invertible with coefficients in any ring where that integer is a unit. -/
+theorem isIso_coefficientFunctor_map_of_comp_eq_mulBy (R : Type v) [CommRing R]
+    {f : A ⟶ B} {g : B ⟶ A} {n : ℤ} (hn : IsUnit (n : R))
+    (hA : f ≫ g = mulBy A n) (hB : g ≫ f = mulBy B n) :
+    IsIso ((coefficientFunctor R).map f) := by
+  obtain ⟨r, hr⟩ := hn
+  let F : AbelianVariety K ⥤ WithCoefficients R K := coefficientFunctor R
+  refine ⟨⟨(↑r⁻¹ : R) • F.map g, ?_, ?_⟩⟩
+  · rw [Linear.comp_smul, ← F.map_comp, hA, coefficientFunctor_map_mulBy,
+      ← Int.cast_smul_eq_zsmul R, ← hr, smul_smul, Units.inv_mul, one_smul]
+  · rw [Linear.smul_comp, ← F.map_comp, hB, coefficientFunctor_map_mulBy,
+      ← Int.cast_smul_eq_zsmul R, ← hr, smul_smul, Units.inv_mul, one_smul]
+
+private noncomputable def rationalHomLinearEquiv (A B : AbelianVariety K) :
+    ((coefficientFunctor ℚ).obj A ⟶ (coefficientFunctor ℚ).obj B) ≃ₗ[ℚ] CoefficientHom ℚ A B :=
+  (Linear.homCongr ℚ (eqToIso (coefficientFunctor_obj ℚ A))
+    (eqToIso (coefficientFunctor_obj ℚ B))).trans (WithCoefficients.homLinearEquiv ⟨A⟩ ⟨B⟩)
+
+private theorem rationalHomLinearEquiv_map (f : A ⟶ B) :
+    rationalHomLinearEquiv A B ((coefficientFunctor ℚ).map f) = CoefficientHom.ofHom ℚ f := by
+  simp only [rationalHomLinearEquiv, LinearEquiv.trans_apply, Linear.homCongr_apply,
+    eqToIso.inv, eqToIso.hom, coefficientFunctor_map, Category.assoc, eqToHom_trans_assoc,
+    eqToHom_trans, eqToHom_refl, Category.id_comp, Category.comp_id, LinearEquiv.apply_symm_apply]
+
+/-- An integral homomorphism becomes invertible with rational coefficients exactly when another
+integral homomorphism composes with it on both sides to multiplication by the same nonzero
+integer. -/
+theorem isIso_rational_coefficientFunctor_map_iff (f : A ⟶ B) :
+    IsIso ((coefficientFunctor ℚ).map f) ↔
+      ∃ (n : ℤ) (g : B ⟶ A), n ≠ 0 ∧ f ≫ g = mulBy A n ∧ g ≫ f = mulBy B n := by
+  refine ⟨fun _ ↦ ?_, fun ⟨n, g, hn, hA, hB⟩ ↦
+    isIso_coefficientFunctor_map_of_comp_eq_mulBy ℚ
+      (isUnit_iff_ne_zero.mpr (by exact_mod_cast hn)) hA hB⟩
+  let F : AbelianVariety K ⥤ WithCoefficients ℚ K := coefficientFunctor ℚ
+  let e := rationalHomLinearEquiv B A
+  obtain ⟨n, g, hn, hg₀⟩ := CoefficientHom.exists_zsmul_eq_ofHom (A := B) (B := A)
+    (e (inv (F.map f)))
+  have hg : n • inv (F.map f) = F.map g := e.injective (by
+    rw [map_zsmul, hg₀, rationalHomLinearEquiv_map])
+  have hA : F.map (f ≫ g) = F.map (mulBy A n) := by
+    rw [F.map_comp, ← hg, Preadditive.comp_zsmul, IsIso.hom_inv_id, coefficientFunctor_map_mulBy]
+  have hB : F.map (g ≫ f) = F.map (mulBy B n) := by
+    rw [F.map_comp, ← hg, Preadditive.zsmul_comp, IsIso.inv_hom_id, coefficientFunctor_map_mulBy]
+  obtain ⟨dA, hdA₀, hdA⟩ :=
+    (CoefficientHom.ofHom_rat_eq_iff_exists_zpow_eq (f := f ≫ g) (g := mulBy A n)).mp
+    (by simpa only [F, rationalHomLinearEquiv_map] using congrArg (rationalHomLinearEquiv A A) hA)
+  obtain ⟨dB, hdB₀, hdB⟩ :=
+    (CoefficientHom.ofHom_rat_eq_iff_exists_zpow_eq (f := g ≫ f) (g := mulBy B n)).mp
+    (by simpa only [F, rationalHomLinearEquiv_map] using congrArg (rationalHomLinearEquiv B B) hB)
+  -- The product of the two exponents works for both compositions.
+  let d := dA * dB
+  have hd : d ≠ 0 := mul_ne_zero hdA₀ hdB₀
+  refine ⟨n * d, g ^ d, mul_ne_zero hn hd, ?_, ?_⟩
+  · dsimp only [d]
+    rw [Hom.comp_zpow, zpow_mul, hdA]
+    simp only [mulBy_eq_zpow, ← zpow_mul, mul_assoc]
+  · dsimp only [d]
+    rw [Hom.zpow_comp, zpow_mul', hdB]
+    simp only [mulBy_eq_zpow, ← zpow_mul, mul_assoc, mul_comm dA dB]
 
 end TauCeti.AlgebraicGeometry.AbelianVariety
