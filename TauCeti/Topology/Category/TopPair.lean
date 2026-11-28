@@ -473,6 +473,11 @@ topological pairs. -/
 abbrev sigmaι (i : ι) : P i ⟶ sigma P :=
   TopPair.ofHom (TopCat.sigmaι (fun i ↦ (P i).fst) i) (TopCat.sigmaι (fun i ↦ (P i).snd) i)
 
+/-- On the ambient spaces, the summand inclusion `TopPair.sigmaι P i` sends `x` to `⟨i, x⟩`. -/
+@[simp]
+lemma sigmaι_fst_apply (i : ι) (x : (P i).fst) :
+    Hom.fst (sigmaι P i) x = ⟨i, x⟩ := (rfl)
+
 /-- The cofan of a family of topological pairs given by their disjoint union. -/
 abbrev sigmaCofan : Cofan P :=
   Cofan.mk (sigma P) (sigmaι P)

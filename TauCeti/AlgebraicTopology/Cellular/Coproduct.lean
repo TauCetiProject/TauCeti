@@ -95,6 +95,26 @@ lemma sigmaDiskBoundaryPairIso_hom_fst_apply
   erw [TopPair.ofSubsetMap_fst_apply]
   exact Homeomorph.sigmaCongrRight_apply (fun _ : ι ↦ diskHomeomorphClosedBall n) p
 
+/-- On the ambient spaces, `(TauCeti.sigmaDiskBoundaryPairIso ι n).inv` applies
+`(TauCeti.diskHomeomorphClosedBall n).symm` on each summand. -/
+@[simp]
+lemma sigmaDiskBoundaryPairIso_inv_fst_apply
+    (p : (sigmaDiskPair ι n).fst) :
+    TopPair.Hom.fst (sigmaDiskBoundaryPairIso ι n).inv p =
+      ⟨p.1, (diskHomeomorphClosedBall n).symm p.2⟩ := by
+  simp only [sigmaDiskBoundaryPairIso, Iso.trans_inv, TopPair.Hom.fst_comp, TopCat.comp_app,
+    TopPair.ofSubsetIso_inv]
+  -- `erw` is required because `TopPair.isoOfSubsetRange_inv_fst_apply` expects `P.fst` rather
+  -- than `(TopPair.ofSubset _).fst`, and `TopPair.ofSubsetMap_fst_apply` matches after unfolding
+  -- semireducible `ConcreteCategory.hom (TopCat.ofHom _)`.
+  erw [TopPair.isoOfSubsetRange_inv_fst_apply, TopPair.ofSubsetMap_fst_apply]
+  -- `TopPair.ofSubsetMap_fst_apply` leaves `TopCat.ofHom (sigmaDiskHomeomorph ι n).symm`
+  -- applied to `p : (sigmaDiskPair ι n).fst` with semireducible `diskBoundaryPair`; align
+  -- with `Homeomorph.sigmaCongrRight` over `TopCat.disk n`.
+  change (Homeomorph.sigmaCongrRight fun _ : ι ↦ diskHomeomorphClosedBall n).symm p = _
+  rw [Homeomorph.sigmaCongrRight_symm]
+  exact Homeomorph.sigmaCongrRight_apply (fun _ : ι ↦ (diskHomeomorphClosedBall n).symm) p
+
 end DiskPair
 
 variable {X : Type w} [TopologicalSpace X] [T2Space X] {D : Set X} (C : Set X) [RelCWComplex C D]
@@ -149,9 +169,10 @@ lemma coe_characteristicPairMap_sigmaDiskBoundaryPairIso_diskCenter (n : ℕ) (j
             (diskCenter n)))).val = map n j 0 := by
   rw [sigmaDiskBoundaryPairIso_hom_fst_apply]
   refine (characteristicPairMap_fst_apply C n _).trans ?_
-  -- `TopPair.sigmaι ... j (diskCenter n)` reduces to `⟨j, diskCenter n⟩` after unfolding the
-  -- summand inclusion.
-  change map n j (diskHomeomorphClosedBall n (diskCenter n)) = map n j 0
+  -- `diskBoundaryPair` is semireducible, so `erw` unifies `diskCenter n : TopCat.disk n`
+  -- with `(diskBoundaryPair n).fst`.
+  erw [TopPair.sigmaι_fst_apply]
+  dsimp only
   congr 1
   rw [coe_diskHomeomorphClosedBall_apply, ContinuousLinearEquiv.unitBallHomeomorph_apply,
     coe_diskCenter_down, map_zero, gaugeRescale_zero]
