@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.OpenSubgroup
-public import Mathlib.Topology.LocallyConstant.Basic
 import Mathlib.Topology.Compactness.LocallyCompact
+import Mathlib.Topology.LocallyConstant.Basic
 import TauCeti.Algebra.Group.Subgroup.Map
 
 /-!
@@ -44,8 +44,6 @@ A compact set meets only finitely many left cosets of an open subgroup
 * `OpenSubgroup.directedOn_ge_isCompact_and_le`, `OpenSubgroup.isCoinitial_isCompact_and_le`:
   compact open subgroups below a given open subgroup `U₀` are downward-directed, and when `U₀` is
   compact they form a coinitial family in `OpenSubgroup G`.
-* `OpenSubgroup.isLocallyConstant_of_forall_mul_eq`: a function invariant under right translation
-  by an open subgroup is locally constant.
 * `IsCompact.finite_image_mk`: a compact set meets only finitely many left cosets of an open
   subgroup.
 * `Subgroup.isOpen_conjAct_smul_subgroupOf`: for `K` open, `H ∩ aKa⁻¹` is open in `H`.
@@ -189,18 +187,6 @@ theorem continuous_mk_comap_iff [SeparatelyContinuousMul H] (U : OpenSubgroup H)
       exact (TauCeti.QuotientGroup.injective_mapComap f U.toSubgroup).eq_iff.symm
     rw [hfiber]
     exact h.isOpen_preimage _ (isOpen_discrete _)
-
-/-- A function invariant under right translation by an open subgroup `U` is locally constant:
-near `a`, every point is `a * u` with `u ∈ U`. -/
-@[to_additive /-- A function invariant under right translation by an open additive subgroup `U` is
-locally constant: near `a`, every point is `a + u` with `u ∈ U`. -/]
-theorem isLocallyConstant_of_forall_mul_eq [SeparatelyContinuousMul G] {X : Type*}
-    (U : OpenSubgroup G) {f : G → X} (hf : ∀ a, ∀ u ∈ U, f (a * u) = f a) :
-    IsLocallyConstant f := by
-  refine (IsLocallyConstant.iff_eventually_eq f).2 fun a => ?_
-  have ha : IsOpen ((a⁻¹ * ·) ⁻¹' (U : Set G)) := U.isOpen.preimage (continuous_const_mul a⁻¹)
-  filter_upwards [ha.mem_nhds (by simp)] with b hb
-  simpa using hf a _ hb
 
 end OpenSubgroup
 

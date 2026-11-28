@@ -309,6 +309,9 @@ abbrev S₃ : Type := Equiv.Perm (Fin 3)
 /-- The `3`-cycle `ρ = (0 1 2)` of `S₃`. -/
 abbrev ρ : S₃ := finRotate 3
 
+/-- The transposition `s = (0 1)` of `S₃`. -/
+abbrev s : S₃ := Equiv.swap 0 1
+
 /-- The classes of `S₃`: the identity, the `3`-cycles and the transpositions. -/
 def classOfS₃ (g : S₃) : Fin 3 :=
   if g = 1 then 0 else if g * g * g = 1 then 1 else 2
@@ -317,6 +320,18 @@ def classOfS₃ (g : S₃) : Fin 3 :=
 theorem isConj_of_classOfS₃_eq (g h : S₃) (hgh : classOfS₃ g = classOfS₃ h) : IsConj g h := by
   revert g h
   simp only [isConj_iff, classOfS₃]
+  decide +kernel
+
+/-- `g` is conjugate to `ρ` exactly when it is a `3`-cycle. -/
+theorem isConj_ρ_iff (g : S₃) : IsConj g ρ ↔ g ≠ 1 ∧ g * g * g = 1 := by
+  revert g
+  simp only [isConj_iff]
+  decide +kernel
+
+/-- `g` is conjugate to `s` exactly when it is a transposition. -/
+theorem isConj_s_iff (g : S₃) : IsConj g s ↔ g ≠ 1 ∧ g * g = 1 := by
+  revert g
+  simp only [isConj_iff]
   decide +kernel
 
 /-- `1 + ρ + ρ²` is central in `𝔽₂[S₃]`. -/

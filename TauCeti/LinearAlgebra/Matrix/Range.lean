@@ -85,6 +85,8 @@ vanishing on the range is a dot product with such a `z`.
   supported on the top row.
 * `Matrix.mem_range_mulVecLin_iff_forall_vecMul_eq_zero`: over a field, `v` is in the column range
   of `A` if and only if `z ⬝ᵥ v = 0` whenever `z ᵥ* A = 0`.
+* `Matrix.forall_mulVec_mem_span_singleton_iff`: the column range of `A` lies in the line spanned
+  by `y` if and only if `A` is an outer product `vecMulVec y ξ`.
 -/
 
 public section
@@ -227,6 +229,27 @@ theorem range_mulVecLin_eq_of_succ {n : ℕ} {L : Submodule R (Fin (n + 1) → R
   simpa using add_mem hmem (LinearMap.mem_range_self H.mulVecLin c)
 
 end Succ
+
+section OuterProduct
+
+variable {R m n : Type*} [CommSemiring R] [Fintype n]
+
+/-- Every vector `A *ᵥ v` lies in the line spanned by `y` if and only if `A` is an outer product
+`vecMulVec y ξ`. -/
+theorem forall_mulVec_mem_span_singleton_iff {A : Matrix m n R} {y : m → R} :
+    (∀ v, A *ᵥ v ∈ Submodule.span R {y}) ↔ ∃ ξ, A = vecMulVec y ξ := by
+  classical
+  constructor
+  · intro h
+    choose ξ hξ using fun k ↦ Submodule.mem_span_singleton.mp (h (Pi.single k 1))
+    refine ⟨ξ, ?_⟩
+    ext j k
+    simpa [mulVec_single_one, vecMulVec_apply, mul_comm] using (congrFun (hξ k) j).symm
+  · rintro ⟨ξ, rfl⟩ v
+    rw [vecMulVec_mulVec, op_smul_eq_smul]
+    exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self y)
+
+end OuterProduct
 
 section RowRange
 

@@ -9,8 +9,10 @@ public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import TauCeti.Analysis.Bochner.CharFun.PosDef
 public import TauCeti.Analysis.PositiveDefinite.Function.Kernel
--- The remaining import is proof-only: the integrability of the complex Gaussian.
+-- The remaining imports are proof-only: the integrability of the complex Gaussian, and the
+-- passage from complex to real positive-semidefinite kernels.
 import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
+import TauCeti.LinearAlgebra.Matrix.OfReal
 
 /-!
 # The Gaussian is a positive-definite function
@@ -47,6 +49,8 @@ form then follows on that same generality through
 * `TauCeti.isPositiveDefinite_cexp_neg_sq_norm`: `a ↦ exp (-‖a‖²)` is positive definite.
 * `TauCeti.posSemidef_cexp_neg_sq_norm`: `(a, b) ↦ exp (-‖a - b‖²)` is a positive-definite
   kernel.
+* `TauCeti.posSemidef_exp_neg_mul_sq_norm`: the real kernel `(a, b) ↦ exp (-c‖a - b‖²)` is
+  positive semidefinite for `c ≥ 0`.
 
 ## References
 
@@ -184,6 +188,17 @@ theorem posSemidef_cexp_neg_sq_norm :
     Matrix.PosSemidef fun a b : V => Complex.exp (-(‖a - b‖ ^ 2 : ℝ)) := by
   simpa only [one_mul] using
     posSemidef_cexp_neg_mul_sq_norm (V := V) (c := 1) zero_le_one
+
+/-- The real Gaussian kernel `(a, b) ↦ exp (-c‖a - b‖²)` is positive semidefinite for every
+`c ≥ 0`, on any real inner-product space. This is the real form of
+`posSemidef_cexp_neg_mul_sq_norm`. -/
+theorem posSemidef_exp_neg_mul_sq_norm {c : ℝ} (hc : 0 ≤ c) :
+    Matrix.PosSemidef fun a b : V => Real.exp (-(c * ‖a - b‖ ^ 2)) := by
+  refine (congrArg Matrix.PosSemidef ?_).mp (posSemidef_cexp_neg_mul_sq_norm (V := V) hc).map_re
+  ext a b
+  -- The complex kernel takes the real values `exp (-c‖a - b‖²)`. It is a bare function rather
+  -- than a `Matrix.of` term, so `Matrix.map_apply` does not match: unfold `Matrix.map` instead.
+  simp only [Matrix.map, Matrix.of_apply, ← Complex.ofReal_neg, Complex.exp_ofReal_re]
 
 end General
 

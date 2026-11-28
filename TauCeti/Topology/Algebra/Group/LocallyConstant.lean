@@ -40,7 +40,9 @@ invariance under small left translations
 (`TauCeti.eventually_forall_mul_left_eq_of_hasCompactSupport`), are cases of the invariance of a
 compactly supported locally constant function under any jointly continuous family of maps
 `act · g` with `act z 1 = z` and `act (act z g) g⁻¹ = z`, for `g` near `1`
-(`TauCeti.eventually_forall_apply_act_eq_of_hasCompactSupport`).
+(`TauCeti.eventually_forall_apply_act_eq_of_hasCompactSupport`). Conversely, on any group with
+separately continuous multiplication, a function whose right-translation stabilizer is open is
+locally constant (`TauCeti.isLocallyConstant_of_isOpen_rightTranslationStabilizer`).
 
 Uniform local constancy is what makes the coinduced module of locally constant equivariant maps a
 *discrete* `G`-module, its right-translation stabilizers being open. Since an open subgroup of a
@@ -170,6 +172,17 @@ def rightTranslationStabilizer (f : G → A) : Subgroup G where
 @[to_additive (attr := simp) mem_addRightTranslationStabilizer]
 theorem mem_rightTranslationStabilizer {f : G → A} {g : G} :
     g ∈ rightTranslationStabilizer f ↔ ∀ x : G, f (x * g) = f x := Iff.rfl
+
+/-- A function whose right-translation stabilizer is open is locally constant: it is constant on
+the open neighbourhood `x U` of each point `x`, where `U` is the stabilizer. -/
+theorem isLocallyConstant_of_isOpen_rightTranslationStabilizer [TopologicalSpace G]
+    [SeparatelyContinuousMul G] {f : G → A} (hf : IsOpen (rightTranslationStabilizer f : Set G)) :
+    IsLocallyConstant f := by
+  refine (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦ ?_
+  have hU : IsOpen ((x⁻¹ * ·) ⁻¹' (rightTranslationStabilizer f : Set G)) :=
+    hf.preimage (continuous_const_mul _)
+  filter_upwards [hU.mem_nhds (by simp [one_mem])] with y hy
+  simpa using mem_rightTranslationStabilizer.1 hy x
 
 /-- A locally constant function on a compact topological group is *uniformly* locally constant:
 its right-translation stabilizer is an open subgroup, so a single open neighbourhood of `1` makes

@@ -13,6 +13,7 @@ public import TauCeti.MeasureTheory.Integral.PeakFunction
 public import TauCeti.MeasureTheory.Measure.Regular
 public import TauCeti.MeasureTheory.Measure.Typeclasses.SFinite
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Basic
+import TauCeti.Topology.Algebra.Group.LocallyConstant
 
 /-!
 # Restricted Haar measures, coset integrals, convolution and peak kernels on open subgroups
@@ -334,8 +335,11 @@ theorem sum_eq_zero_of_integral_eq_zero [SeparatelyContinuousMul G] [μ.IsHaarMe
     exact hfc.isCompact.measure_lt_top)).ne
   have hpos : μ.real H ≠ 0 :=
     (measureReal_ne_zero_iff hfin).2 (H.isOpen.measure_pos μ ⟨1, H.one_mem⟩).ne'
-  rw [integral_eq_measureReal_smul_sum μ H
-    ((H.isLocallyConstant_of_forall_mul_eq hfH).continuous.integrable_of_hasCompactSupport hfc)
+  -- `f` is locally constant, since its right-translation stabilizer contains `H`, hence open.
+  have hlc : IsLocallyConstant f :=
+    TauCeti.isLocallyConstant_of_isOpen_rightTranslationStabilizer <| Subgroup.isOpen_mono
+      (fun u hu => TauCeti.mem_rightTranslationStabilizer.2 fun a => hfH a u hu) H.isOpen
+  rw [integral_eq_measureReal_smul_sum μ H (hlc.continuous.integrable_of_hasCompactSupport hfc)
     hfH hT, smul_eq_zero] at h0
   exact h0.elim hpos hne
 
