@@ -18,6 +18,8 @@ antidiagonal has only finitely many nonzero terms. In particular this applies wh
 index is nonnegative and the vertical complexes have a common lower bound, of any integer value.
 The construction is the integer-indexed analogue of `HomologicalComplex₂.totalCoaugmentation`
 from `TauCeti.Algebra.Homology.TotalComplex.UpNat`, with the same native total differential.
+For a bicomplex with just column zero, `HomologicalComplex₂.isIso_totalCoaugmentationUpInt_single`
+identifies the total complex with that column.
 -/
 
 public section
@@ -85,6 +87,25 @@ lemma rowCoaugmentationUpInt_f_zero (q : ℤ) :
 
 end Row
 
+/-- The identity coaugmentation of a bicomplex with only column zero is an isomorphism from
+that column to the total complex. -/
+lemma isIso_totalCoaugmentationUpInt_single [HasZeroObject C] (E : CochainComplex C ℤ)
+    [HasTotal ((HomologicalComplex.single _ (ComplexShape.up ℤ) 0).obj E) (ComplexShape.up ℤ)] :
+    IsIso (totalCoaugmentationUpInt ((HomologicalComplex.single _ (ComplexShape.up ℤ) 0).obj E)
+      (HomologicalComplex.singleObjXSelf _ 0 E).inv (by
+        rw [HomologicalComplex.single_obj_d, comp_zero])) := by
+  let S : HomologicalComplex₂ C (ComplexShape.up ℤ) (ComplexShape.up ℤ) :=
+    (HomologicalComplex.single _ (ComplexShape.up ℤ) 0).obj E
+  have (n : ℤ) : IsIso (S.ιTotal (ComplexShape.up ℤ) 0 n n (by simp)) :=
+    isIso_ιTotal_of_isZero S 0 (fun p hp ↦
+      HomologicalComplex.isZero_single_obj_X _ _ _ _ hp) (by simp)
+  have (n : ℤ) : IsIso ((totalCoaugmentationUpInt S
+      (HomologicalComplex.singleObjXSelf _ 0 E).inv (by
+        rw [HomologicalComplex.single_obj_d, comp_zero])).f n) := by
+    rw [totalCoaugmentationUpInt_f]
+    infer_instance
+  exact HomologicalComplex.Hom.isIso_of_components _
+
 end HomologicalComplex₂
 
 namespace HomologicalComplex₂
@@ -131,15 +152,7 @@ theorem quasiIso_totalCoaugmentationUpInt
   let α : E ⟶ S.total (ComplexShape.up ℤ) :=
     S.totalCoaugmentationUpInt (HomologicalComplex.singleObjXSelf _ 0 E).inv (by
       rw [HomologicalComplex.single_obj_d, comp_zero])
-  have hα : IsIso α := by
-    have hi (n : ℤ) : IsIso (S.ιTotal (ComplexShape.up ℤ) 0 n n (by simp)) :=
-      isIso_ιTotal_of_isZero S 0 (fun p hp ↦
-        HomologicalComplex.isZero_single_obj_X _ _ _ _ hp) (by simp)
-    have hi' (n : ℤ) : IsIso (α.f n) := by
-      dsimp only [α]
-      rw [totalCoaugmentationUpInt_f]
-      infer_instance
-    exact HomologicalComplex.Hom.isIso_of_components α
+  have : IsIso α := isIso_totalCoaugmentationUpInt_single E
   have he : α ≫ total.map φ (ComplexShape.up ℤ) = K.totalCoaugmentationUpInt η hη := by
     rw [totalCoaugmentationUpInt_total_map]
     congr 1

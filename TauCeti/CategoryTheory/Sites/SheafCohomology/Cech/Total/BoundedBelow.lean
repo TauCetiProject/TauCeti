@@ -61,7 +61,9 @@ private lemma isZero_cechEvalX (b : ℤ)
   refine (IsZero.iff_id_eq_zero _).2 (Pi.hom_ext _ _ fun a ↦ ?_)
   exact (hP _ q hq).eq_of_tgt _ _
 
-private lemma isZero_extendedCechX (b : ℤ)
+/-- The zero-extended Čech bicomplex vanishes in negative Čech degrees and below any
+common lower bound on the coefficient complexes. -/
+lemma isZero_cechComplexFunctor_extend_X (b : ℤ)
     (hP : ∀ X q, q < b → IsZero ((P.obj X).X q)) (p q : ℤ)
     (h : p < 0 ∨ q < b) :
     IsZero (((((cechComplexFunctor U).obj P).extend
@@ -82,6 +84,19 @@ private lemma isZero_extendedCechX (b : ℤ)
           (((cechComplexFunctor U).obj P).extendXIso ComplexShape.embeddingUpNat
             (i := p.toNat) (by simpa using Int.toNat_of_nonneg hp)))
     · exact hz (by omega)
+
+/-- On total degree `n`, the nonzero terms of the zero-extended Čech bicomplex have Čech
+degree in `[0, n - b]`. In particular the support is empty when `n < b`. -/
+lemma cechComplexFunctor_extend_support_subset (b : ℤ)
+    (hP : ∀ X q, q < b → IsZero ((P.obj X).X q)) (n : ℤ) :
+    {p : ℤ | ¬ IsZero (((((cechComplexFunctor U).obj P).extend
+      ComplexShape.embeddingUpNat).X p).X (n - p))} ⊆ Set.Icc 0 (n - b) := by
+  intro p hp
+  constructor
+  · by_contra h
+    exact hp (isZero_cechComplexFunctor_extend_X U P b hP p (n - p) (Or.inl (by omega)))
+  · by_contra h
+    exact hp (isZero_cechComplexFunctor_extend_X U P b hP p (n - p) (Or.inr (by omega)))
 
 private def extendedCechRowIso (q : ℤ) :
     (HomologicalComplex₂.flip
@@ -126,21 +141,6 @@ private lemma cechTotalComplexAugmentationColumn_f (q : ℤ) :
   simp only [HomologicalComplex.id_f, HomologicalComplex.eval_map]
   exact Category.id_comp _
 
-private lemma cechAugmentation_eval_f_zero (q : ℤ) :
-    ((cechAugmentation U hT P).f 0).f q ≫
-        ((cechComplexFunctorMapIso U
-          (HomologicalComplex.eval A (ComplexShape.up ℤ) q)).hom.app P).f 0 =
-      (cechAugmentation U hT (P ⋙ HomologicalComplex.eval A (ComplexShape.up ℤ) q)).f 0 := by
-  refine Pi.hom_ext _ _ fun a ↦ ?_
-  have h₁ := cechComplexFunctorMapIso_hom_app_f_π U
-    (HomologicalComplex.eval A (ComplexShape.up ℤ) q) P 0 a
-  have h₂ := congrArg (fun f ↦ f.f q) (cechAugmentation_f_zero_comp_π U hT P a)
-  have h₃ := cechAugmentation_f_zero_comp_π U hT
-    (P ⋙ HomologicalComplex.eval A (ComplexShape.up ℤ) q) a
-  exact (Category.assoc _ _ _).trans <| (_ ≫= h₁).trans <|
-    ((HomologicalComplex.eval A (ComplexShape.up ℤ) q).map_comp _ _).symm.trans <|
-      h₂.trans h₃.symm
-
 private lemma extendedCechAugmentation_f_zero (q : ℤ) :
     (HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0
       ((P.obj (op T)).X q)).inv ≫
@@ -181,7 +181,9 @@ private lemma rowCoaugmentationUpInt_comp_extendedCechRowIso (q : ℤ) :
   simp only [HomologicalComplex.eval_map, Category.assoc]
   simp only [← HomologicalComplex.comp_f_assoc, Iso.inv_hom_id,
     HomologicalComplex.id_f, Category.id_comp]
-  rw [← Category.assoc, cechAugmentation_eval_f_zero]
+  simpa only [HomologicalComplex.eval_map] using
+    (map_cechAugmentation_f_zero_comp_cechComplexFunctorMapIso_assoc U
+      (HomologicalComplex.eval A (ComplexShape.up ℤ) q) hT P _)
 
 end
 
@@ -200,13 +202,8 @@ theorem quasiIso_cechTotalComplexAugmentation (b : ℤ)
   have hfin (n : ℤ) : {p : ℤ | ¬ IsZero
       (((((cechComplexFunctor U).obj P).extend
         ComplexShape.embeddingUpNat).X p).X (n - p))}.Finite := by
-    apply (Set.finite_Icc (0 : ℤ) (n - b)).subset
-    intro p hp
-    constructor
-    · by_contra h
-      exact hp (isZero_extendedCechX U P b hP p (n - p) (Or.inl (by omega)))
-    · by_contra h
-      exact hp (isZero_extendedCechX U P b hP p (n - p) (Or.inr (by omega)))
+    exact (Set.finite_Icc (0 : ℤ) (n - b)).subset
+      (cechComplexFunctor_extend_support_subset U P b hP n)
   have hr (q : ℤ) : QuasiIso
       (rowCoaugmentationUpInt _ (cechTotalComplexAugmentationColumn U hT P)
         (cechTotalComplexAugmentationColumn_comp_d U hT P) q) := by
@@ -223,8 +220,7 @@ theorem quasiIso_cechTotalComplexAugmentation (b : ℤ)
       totalCoaugmentationUpInt _ (cechTotalComplexAugmentationColumn U hT P)
         (cechTotalComplexAugmentationColumn_comp_d U hT P) := by
     ext n
-    simp only [cechTotalComplexAugmentation_f, totalCoaugmentationUpInt_f,
-      cechTotalComplexAugmentationColumn_def]
+    simp only [cechTotalComplexAugmentation_f, totalCoaugmentationUpInt_f]
   rw [he]
   exact quasiIso_totalCoaugmentationUpInt _ _ _ hfin hr
 

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Filtered.Final
 public import Mathlib.CategoryTheory.Limits.Constructions.EventuallyConstant
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Total.Augmentation
 public import TauCeti.Topology.Sheaves.Cech.Hypercohomology
@@ -84,35 +83,12 @@ lemma cechHypercohomologyAugmentation_naturality
     ← HomologicalComplex.homologyMap_comp, cechTotalComplexAugmentation_naturality,
     HomologicalComplex.homologyMap_comp, Category.assoc]
 
-private abbrev FiniteRangePointCover (X : Type u) [TopologicalSpace X] :=
-  {W : PointOpenCover X // (Set.range W.opens).Finite}
-
-private lemma exists_finiteRange_refinement [CompactSpace X] (U : PointOpenCover X) :
-    ∃ W : FiniteRangePointCover X, U ≤ W.val := by
-  classical
-  obtain ⟨V, ⟨φ⟩⟩ := FiniteOpenCover.exists_refinement U.opens U.isOpenCover
-  choose a ha using V.isOpenCover.exists_mem
-  let W : PointOpenCover X := ⟨fun x ↦ V.opens (a x), ha⟩
-  have hW : (Set.range W.opens).Finite :=
-    (Set.finite_range V.opens).subset (by rintro _ ⟨x, rfl⟩; exact ⟨a x, rfl⟩)
-  exact ⟨⟨W, hW⟩, ⟨(⟨a, fun _ ↦ 𝟙 _⟩ : W.toFormalCoproduct ⟶ V.toFormalCoproduct) ≫ φ⟩⟩
-
-private instance [CompactSpace X] : IsDirectedOrder (FiniteRangePointCover X) where
-  directed U V := by
-    obtain ⟨W, hW⟩ := exists_finiteRange_refinement (U.val.inter V.val)
-    exact ⟨W, (U.val.le_inter_left V.val).trans hW,
-      (U.val.le_inter_right V.val).trans hW⟩
-
-private instance [CompactSpace X] : Nonempty (FiniteRangePointCover X) := by
-  obtain ⟨W, _⟩ := exists_finiteRange_refinement (default : PointOpenCover X)
-  exact ⟨W⟩
-
 omit [HasColimitsOfShape (PointOpenCover X) A] in
 private lemma isIso_augmentation_finiteRange
     (hfinite : ∀ (ι : Type u) [Finite ι] (U : ι → Opens X), IsOpenCover U →
       IsIso (HomologicalComplex.homologyMap
         (cechTotalComplexAugmentation U isTerminalTop P) n))
-    (W : FiniteRangePointCover X) :
+    (W : finiteRangePointCover X) :
     IsIso (HomologicalComplex.homologyMap
       (cechTotalComplexAugmentation W.val.opens isTerminalTop P) n) := by
   classical
@@ -144,13 +120,11 @@ theorem isIso_cechHypercohomologyAugmentation_of_finite [CompactSpace X]
       IsIso (HomologicalComplex.homologyMap
         (cechTotalComplexAugmentation U isTerminalTop P) n)) :
     IsIso (cechHypercohomologyAugmentation P n) := by
-  let F : FiniteRangePointCover X ⥤ PointOpenCover X :=
-    (show Monotone (fun W : FiniteRangePointCover X ↦ W.val) from fun _ _ h ↦ h).functor
-  have : F.Final := (Monotone.final_functor_iff _).2 exists_finiteRange_refinement
+  let F := finiteRangePointCover.inclusion (X := X)
   let D := (cechHypercohomologyDiagram A
     PointOpenCover.toFormalCoproduct (fun _ _ h ↦ h) n).flip.obj P
-  let W : FiniteRangePointCover X := Classical.arbitrary _
-  have haug (V : FiniteRangePointCover X) := isIso_augmentation_finiteRange P n hfinite V
+  let W : finiteRangePointCover X := Classical.arbitrary _
+  have haug (V : finiteRangePointCover X) := isIso_augmentation_finiteRange P n hfinite V
   have heventual : (F ⋙ D).IsEventuallyConstantFrom W := by
     intro V f
     dsimp only [Functor.comp_map, D, Functor.flip_obj_map]
@@ -168,7 +142,7 @@ theorem isIso_cechHypercohomologyAugmentation_of_finite [CompactSpace X]
   have hι : IsIso (colimit.ι D W.val) := by
     have hi' := IsIso.comp_isIso' hi (inferInstance : IsIso (colimit.pre D F))
     rw [colimit.ι_pre] at hi'
-    simpa only [F, Monotone.functor_obj] using hi'
+    simpa only [F, finiteRangePointCover.inclusion, Monotone.functor_obj] using hi'
   rw [← homologyMap_cechTotalComplexAugmentation_comp_ι P n W.val]
   rw [cechHypercohomologyι_app]
   have := haug W

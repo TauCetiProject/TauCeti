@@ -76,13 +76,10 @@ in the native direct-sum total. -/
 @[simp]
 lemma cechTotalComplexAugmentation_f (n : ℤ) :
     (cechTotalComplexAugmentation U hT P).f n =
-      ((HomologicalComplex.singleObjXSelf _ 0 _).inv ≫
-        (cechAugmentation U hT P).f 0 ≫
-          (((cechComplexFunctor U).obj P).extendXIso ComplexShape.embeddingUpNat
-            (i := 0) rfl).inv).f n ≫
+      (cechTotalComplexAugmentationColumn U hT P).f n ≫
       ιTotal _ (ComplexShape.up ℤ) 0 n n (zero_add n) := by
   unfold cechTotalComplexAugmentation
-  rw [totalCoaugmentationUpInt_f, cechTotalComplexAugmentationColumn_def]
+  rw [totalCoaugmentationUpInt_f]
 
 omit [HasCoproducts.{0} A] in
 private lemma cechTotalComplexAugmentationColumn_naturality
@@ -106,8 +103,7 @@ lemma cechTotalComplexAugmentation_naturality {Q : Cᵒᵖ ⥤ CochainComplex A 
     cechTotalComplexAugmentation U hT P ≫ (cechTotalComplexFunctor U).map α =
       α.app (op T) ≫ cechTotalComplexAugmentation U hT Q := by
   ext n
-  simp only [HomologicalComplex.comp_f, cechTotalComplexAugmentation_f,
-    ← cechTotalComplexAugmentationColumn_def]
+  simp only [HomologicalComplex.comp_f, cechTotalComplexAugmentation_f]
   rw [cechTotalComplexFunctor_map, Category.assoc, ιTotal_map,
     ← Category.assoc, ← HomologicalComplex.comp_f, cechTotalComplexAugmentationColumn_naturality]
   simp
@@ -133,8 +129,7 @@ lemma cechTotalComplexAugmentation_refinement
     cechTotalComplexAugmentation V hT P ≫ cechTotalComplexMap P φ =
       cechTotalComplexAugmentation U hT P := by
   ext n
-  simp only [HomologicalComplex.comp_f, cechTotalComplexAugmentation_f,
-    ← cechTotalComplexAugmentationColumn_def]
+  simp only [HomologicalComplex.comp_f, cechTotalComplexAugmentation_f]
   rw [Category.assoc, ι_cechTotalComplexMap,
     ← Category.assoc, ← HomologicalComplex.comp_f, cechTotalComplexAugmentationColumn_refinement]
 
