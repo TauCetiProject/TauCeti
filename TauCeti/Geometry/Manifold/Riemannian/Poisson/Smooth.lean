@@ -43,7 +43,7 @@ Poisson solution operator.
   operator sends every smooth function on a closed manifold into
   `meanZeroSmoothFunctions I M (riemannianVolume I M) ∞`.
 * `TauCeti.Manifold.exists_neg_laplaceBeltrami_eq`: smooth solvability of `Δ⁺u = f` with
-  `∫ u dV = 0` on a closed connected smooth manifold.
+  `∫ u dV = 0` for smooth `f` with `∫ f dV = 0` on a closed connected smooth manifold.
 * `TauCeti.Manifold.coe_negLaplaceBeltramiEquiv_apply`: bundled projection of
   `negLaplaceBeltramiEquiv`.
 * `TauCeti.Manifold.neg_laplaceBeltrami_negLaplaceBeltramiEquiv_symm`: the inverse of
@@ -51,7 +51,8 @@ Poisson solution operator.
 * `TauCeti.Manifold.eq_negLaplaceBeltramiEquiv_symm_iff`: pointwise characterization of the
   inverse of `negLaplaceBeltramiEquiv`.
 * `TauCeti.Manifold.existsUnique_contMDiff_integral_eq_zero_and_neg_laplaceBeltrami_eq`: smooth
-  solvability and uniqueness of `∫ u dV = 0` and `Δ⁺u = f` on a closed connected smooth manifold.
+  solvability and uniqueness of `∫ u dV = 0` and `Δ⁺u = f` for smooth `f` with `∫ f dV = 0` on a
+  closed connected smooth manifold.
 
 ## References
 
