@@ -31,6 +31,10 @@ an arbitrary set `S` is replaced by `S ∪ conj S`.
 
 These decompositions reduce statements about `G_f` to finitely many places: they relate `G_f` to
 its integral subgroup `K₀` and to its elements supported at a single place and its conjugate.
+Conversely, by compactness of `K₀`, an open subgroup of `G_f`, such as a level, is seen at finitely
+many places only: it contains the elements of `K₀` trivial on a finite set `S` of places, and the
+elements of `K₀` supported on `{w, conj w}` for every `w` with `w, conj w ∉ S`. This is how a
+condition imposed by a level, such as being fixed by it, is checked away from finitely many places.
 
 ## Main definitions
 
@@ -58,6 +62,15 @@ its integral subgroup `K₀` and to its elements supported at a single place and
 * `TauCeti.finiteAdelicUnitaryGroup.eq_top_of_integralAdelicUnitaryGroup_le`: a subgroup of `G_f`
   containing `K₀` and the elements supported on `{w, conj w}` for every finite place `w` is all
   of `G_f`.
+* `TauCeti.finiteAdelicUnitaryGroup.exists_finset_inter_supportedOn_compl_subset`: on a compact
+  subset of `G_f`, every neighbourhood of `1` contains the elements trivial on some finite set of
+  places.
+* `TauCeti.finiteAdelicUnitaryGroup.exists_finset_inf_supportedOn_compl_le_and_forall_iff`: an
+  open subgroup `H` of `G_f` contains the elements of `K₀` trivial on a finite set `S` of places
+  chosen so that `H` contains the elements of `K₀` supported on `{w, conj w}` exactly when `w` and
+  `conj w` lie outside `S`.
+* `TauCeti.finiteAdelicUnitaryGroup.eventually_inf_supportedOn_le`: an open subgroup of `G_f`
+  contains the elements of `K₀` supported on `{w, conj w}` for almost all finite places `w`.
 
 ## References
 
@@ -70,15 +83,20 @@ The statements on supports, `TauCeti.finiteAdelicUnitaryGroup.exists_supportedOn
 `TauCeti.finiteAdelicUnitaryGroup.eq_top_of_integralAdelicUnitaryGroup_le`, are those of
 `New.Gf.exists_supportedOn_mul_trivialOn` and `New.Gf.mem_of_stdLevel_le_of_supportedOn_le` in
 the file `src/Lib/Adelic/Unitary/ComponentsAndBlockSums.lean` of grh-lean
-(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC); the
-formalization here is independent of that code.
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC). The statements
+on open subgroups,
+`TauCeti.finiteAdelicUnitaryGroup.exists_finset_inf_supportedOn_compl_le_and_forall_iff` and
+`TauCeti.finiteAdelicUnitaryGroup.eventually_inf_supportedOn_le`, follow
+`New.exists_inf_trivialOn_le` and `New.eventually_maxCompactAt_le` in the file
+`src/Lib/Adelic/AutomorphicForms/HeckeEigenforms.lean` of grh-lean, proved by compactness of `K₀`
+and a minimal choice of `S`. The formalization here is independent of that code.
 -/
 
 public section
 noncomputable section
 
 open IsDedekindDomain IsDedekindDomain.HeightOneSpectrum Matrix NumberField NumberField.IsCMField
-open scoped NumberField.AdeleRing
+open scoped NumberField.AdeleRing Topology
 
 namespace TauCeti.finiteAdelicUnitaryGroup
 
@@ -367,5 +385,85 @@ theorem eq_top_of_integralAdelicUnitaryGroup_le {H : Subgroup (finiteAdelicUnita
   refine (cut_mem_integralAdelicUnitaryGroup_iff_forall_mem_range _).2 fun w hw ↦ ?_
   by_contra h
   exact hw (Or.inl (hT.mem_toFinset.2 h))
+
+/-! ### Open subgroups are cut out at finitely many places -/
+
+/-- **Neighbourhoods of `1` are cut out at finitely many places on compact sets.** For a compact
+set `C` of `G_f` and a neighbourhood `U` of `1`, there is a finite set `S` of finite places such
+that every element of `C` trivial on `S` (supported on the complement of `S`) lies in `U`. -/
+theorem exists_finset_inter_supportedOn_compl_subset {C U : Set (finiteAdelicUnitaryGroup E ι)}
+    (hC : IsCompact C) (hU : U ∈ 𝓝 1) :
+    ∃ S : Finset (HeightOneSpectrum (𝓞 E)), C ∩ supportedOn E ι (↑S)ᶜ ⊆ U := by
+  -- An element with all components `1` is `1`, which lies in the interior of `U`, so the closed
+  -- sets `{g | g_w = 1}` have intersection disjoint from the compact set `C \ interior U`.
+  have hdisj : Disjoint (C \ interior U) (⋂ w, (proj E ι w : _ → _) ⁻¹' {1}) := by
+    refine Set.disjoint_left.2 fun g hgC hg ↦ hgC.2 ?_
+    have hg1 : g = 1 := ext_proj fun w ↦ by rw [map_one]; exact Set.mem_iInter.1 hg w
+    exact hg1 ▸ mem_interior_iff_mem_nhds.2 hU
+  obtain ⟨S, hS⟩ := (hC.diff isOpen_interior).elim_finite_subfamily_closed _
+    (fun w ↦ isClosed_singleton.preimage (continuous_proj w)) hdisj
+  refine ⟨S, fun g ⟨hgC, hgS⟩ ↦ interior_subset (by_contra fun hgU ↦ ?_)⟩
+  refine Set.disjoint_left.1 hS ⟨hgC, hgU⟩ (Set.mem_iInter₂.2 fun w hw ↦ ?_)
+  exact mem_supportedOn_iff.1 hgS w (Set.notMem_compl_iff.2 hw)
+
+/-- **The finitely many places of an open subgroup.** For an open subgroup `H` of `G_f` there is
+a finite set `S` of finite places such that `H` contains the elements of `K₀` trivial on `S`,
+and such that for every finite place `w`, `H` contains the elements of `K₀` supported on
+`{w, conj w}` exactly when neither `w` nor `conj w` lies in `S`. -/
+theorem exists_finset_inf_supportedOn_compl_le_and_forall_iff
+    {H : Subgroup (finiteAdelicUnitaryGroup E ι)}
+    (hH : IsOpen (H : Set (finiteAdelicUnitaryGroup E ι))) :
+    ∃ S : Finset (HeightOneSpectrum (𝓞 E)),
+      integralAdelicUnitaryGroup E ι ⊓ supportedOn E ι (↑S)ᶜ ≤ H ∧
+      ∀ w : HeightOneSpectrum (𝓞 E),
+        integralAdelicUnitaryGroup E ι ⊓ supportedOn E ι {w, w.conjPlace} ≤ H ↔
+          w ∉ S ∧ w.conjPlace ∉ S := by
+  classical
+  -- Take `S` minimal among the finite sets of places such that `H` contains the elements of
+  -- `K₀` trivial on them; one exists by compactness of `K₀`.
+  obtain ⟨S₀, hS₀⟩ := exists_finset_inter_supportedOn_compl_subset
+    (isCompact_integralAdelicUnitaryGroup E ι) (hH.mem_nhds H.one_mem)
+  obtain ⟨S, hS, hmin⟩ := wellFounded_lt.has_min
+    {S : Finset (HeightOneSpectrum (𝓞 E)) |
+      integralAdelicUnitaryGroup E ι ⊓ supportedOn E ι (↑S)ᶜ ≤ H} ⟨S₀, fun _ hg ↦ hS₀ hg⟩
+  refine ⟨S, hS, fun w ↦ ⟨fun hw ↦ ?_, fun hw ↦ ?_⟩⟩
+  · -- If `H` contains the elements of `K₀` supported on `P = {w, conj w}`, then removing `P`
+    -- from `S` keeps the defining property: cut an element of `K₀` trivial on `S \ P` along `P`.
+    have hP := Function.Involutive.preimage_pair conjPlace_conjPlace w
+    have hT : integralAdelicUnitaryGroup E ι ⊓ supportedOn E ι (↑(S \ {w, w.conjPlace}))ᶜ ≤ H := by
+      rintro g ⟨hg₀, hgT⟩
+      rw [← cut_mul_cut_compl hP g]
+      refine H.mul_mem (hw ⟨cut_mem_integralAdelicUnitaryGroup hP hg₀, cut_mem_supportedOn hP g⟩)
+        (hS ⟨cut_mem_integralAdelicUnitaryGroup _ hg₀, mem_supportedOn_iff.2 fun v hv ↦ ?_⟩)
+      by_cases hvP : v ∈ ({w, w.conjPlace} : Set _)
+      · exact proj_cut_of_notMem _ g (Set.notMem_compl_iff.2 hvP)
+      · rw [proj_cut_of_mem _ g hvP]
+        refine mem_supportedOn_iff.1 hgT v fun hv' ↦ hv' ?_
+        rw [Finset.coe_sdiff, Finset.coe_insert, Finset.coe_singleton]
+        exact ⟨Set.notMem_compl_iff.1 hv, hvP⟩
+    have hsub : S \ {w, w.conjPlace} ⊆ S := Finset.sdiff_subset
+    by_contra hwS
+    -- Since `w` or `conj w` lies in `S` but not in `S \ P`, the set `S \ P` is strictly smaller.
+    refine hmin _ hT (hsub.ssubset_of_ne fun h ↦ hwS ⟨fun hwS' ↦ ?_, fun hwS' ↦ ?_⟩) <;>
+      exact (Finset.mem_sdiff.1 (h ▸ hwS')).2 (by simp)
+  · -- If neither `w` nor `conj w` lies in `S`, the elements supported on `{w, conj w}` are
+    -- trivial on `S`.
+    refine le_trans (inf_le_inf_left _ (supportedOn_mono ?_)) hS
+    rintro v (rfl | rfl)
+    exacts [hw.1, hw.2]
+
+/-- **An open subgroup contains almost all local integral subgroups.** An open subgroup `H` of
+`G_f` contains the elements of `K₀` supported on `{w, conj w}` for all but finitely many finite
+places `w`. -/
+theorem eventually_inf_supportedOn_le {H : Subgroup (finiteAdelicUnitaryGroup E ι)}
+    (hH : IsOpen (H : Set (finiteAdelicUnitaryGroup E ι))) :
+    ∀ᶠ w in Filter.cofinite,
+      integralAdelicUnitaryGroup E ι ⊓ supportedOn E ι {w, w.conjPlace} ≤ H := by
+  obtain ⟨S, -, hS⟩ := exists_finset_inf_supportedOn_compl_le_and_forall_iff hH
+  have hconj : Set.InjOn conjPlace (conjPlace ⁻¹' (S : Set (HeightOneSpectrum (𝓞 E)))) :=
+    (Function.Involutive.injective conjPlace_conjPlace).injOn
+  filter_upwards [S.finite_toSet.compl_mem_cofinite,
+    (S.finite_toSet.preimage hconj).compl_mem_cofinite] with w hw hw'
+  exact (hS w).2 ⟨hw, hw'⟩
 
 end TauCeti.finiteAdelicUnitaryGroup

@@ -12,7 +12,7 @@ public import Mathlib.Data.Set.Image
 
 This file contains elementary lemmas about images of sets under composed functions, about
 preimages under an injective function of the range of a composition or of a single value, and
-about the smallest set stable under an involution containing a given set.
+about the smallest set stable under an involution containing a given set or a given point.
 -/
 
 public section
@@ -62,5 +62,10 @@ it is the smallest such set containing `s`. -/
 theorem preimage_union_preimage (hf : Involutive f) (s : Set α) :
     f ⁻¹' (s ∪ f ⁻¹' s) = s ∪ f ⁻¹' s := by
   rw [preimage_union, hf.preimage s, union_comm]
+
+/-- For an involution `f`, the pair `{a, f a}` is stable under `f`: it is the smallest such set
+containing `a`. -/
+theorem preimage_pair (hf : Involutive f) (a : α) : f ⁻¹' {a, f a} = {a, f a} := by
+  rw [← hf.image_eq_preimage_symm, image_pair, hf a, pair_comm]
 
 end Function.Involutive
