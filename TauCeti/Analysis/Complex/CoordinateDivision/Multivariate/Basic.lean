@@ -28,7 +28,7 @@ polynomial degree `< deg (P j)` in every coordinate `z_j` with `i < j`.
 
 The triangular representation `(f₀, g)` is uniquely determined among all decompositions with each
 `g_i` continuous (`TauCeti.eq_of_eq_add_sum_mul_eval`). For polydisc supremum bounds on `(f₀, g)`
-when each `P i` is monic, see `TauCeti.Analysis.Complex.CoordinateDivision.MultivariateEstimate`.
+when each `P i` is monic, see `TauCeti.Analysis.Complex.CoordinateDivision.Multivariate.Estimate`.
 
 ## Main results
 
