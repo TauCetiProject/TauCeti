@@ -8,10 +8,21 @@ module
 public import Mathlib.Analysis.Fourier.ZMod
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
+public import Mathlib.Topology.Algebra.InfiniteSum.DiscreteConvolution
 import TauCeti.Data.ZMod.Count
+import TauCeti.Topology.Algebra.InfiniteSum.DiscreteConvolution
 
 /-!
-# The discrete Fourier transform on `ZMod N`: bounds, reductions and integrality
+# The discrete Fourier transform on `ZMod N`: Parseval, convolution, bounds and reductions
+
+The unnormalized transform `𝓕 Φ k = ∑ⱼ e(-j k / N) Φ j` satisfies Parseval's identity
+`∑ₖ ⟪𝓕 Φ k, 𝓕 Ψ k⟫ = N ∑ⱼ ⟪Φ j, Ψ j⟫`, the factor `N` reflecting the normalization, and it turns
+the cyclic convolution `(Φ ⋆ Ψ) x = ∑ₐ Φ a Ψ (x - a)` into the pointwise product. These are the
+basic identities of discrete Fourier analysis on the cyclic group. They are stated for Mathlib's
+`ZMod.dft` and Mathlib's discrete convolution, with vector values. For scalar values, the finite
+Fourier transform on the dual of a module, `AddChar.fourierTransform`, has its own convolution
+identity `AddChar.fourierTransform_convolution`, and `AddChar.fourierTransform_stdAddChar_mul`
+compares it with `ZMod.dft` up to `k ↦ -k`.
 
 For `v ∣ N`, a function `f` on `ZMod v` pulls back to `ZMod N` along the reduction
 `j ↦ (j.val : ZMod v)`. Its discrete Fourier transform modulo `N` is supported on the multiples
@@ -29,6 +40,13 @@ function with values in a subring `R ⊆ ℂ` containing them again has its valu
 
 ## Main results
 
+* `ZMod.sum_inner_dft_dft`: **Parseval's identity** `∑ₖ ⟪𝓕 Φ k, 𝓕 Ψ k⟫ = N ∑ⱼ ⟪Φ j, Ψ j⟫` for
+  functions with values in a complex inner product space, and `ZMod.sum_norm_sq_dft`, its form
+  `∑ₖ ‖𝓕 Φ k‖ ^ 2 = N ∑ⱼ ‖Φ j‖ ^ 2`.
+* `ZMod.dft_addConvolution`: **the cyclic convolution theorem** for the discrete convolution
+  through a bilinear map `L`, `𝓕 (Φ ⋆₊[L] Ψ) k = L (𝓕 Φ k) (𝓕 Ψ k)`, and
+  `ZMod.dft_addRingConvolution`, its form `𝓕 (Φ ⋆ᵣ₊ Ψ) = 𝓕 Φ * 𝓕 Ψ` for functions with values in
+  a `ℂ`-algebra, such as `ℂ` itself.
 * `ZMod.norm_invDFT_le_of_forall_norm_le`: a pointwise bound on a function also bounds every
   coefficient of its inverse Fourier transform.
 * `ZMod.stdAddChar_intCast_natCast_mul`: the additive character modulo `m n` at `n x` is the
@@ -41,9 +59,17 @@ function with values in a subring `R ⊆ ℂ` containing them again has its valu
   the `N`-th roots of unity.
 * `ZMod.map_dft_of_comp_unitMul`: a cyclotomic coefficient map `σ` sends `𝓕 Φ k` to `𝓕 Ψ k`
   when `Ψ (d * j) = σ (Φ j)`.
+
+## References
+
+* M. Vetterli, J. Kovačević, V. K. Goyal, *Foundations of Signal Processing*, Cambridge
+  University Press, 2014: equation (3.171), p. 257, the circular convolution property, and
+  equation (3.179), p. 258, Parseval's equality.
 -/
 
 public section
+
+open scoped InnerProductSpace DiscreteConvolution
 
 namespace ZMod
 
@@ -171,5 +197,68 @@ theorem map_dft_of_comp_unitMul {σ : ℂ →+* ℂ} {d : (ZMod N)ˣ}
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     rw [mul_neg, mul_left_comm]
   simp only [hmap, ← hΦ, dft_comp_unitMul, Units.inv_mul_cancel_left]
+
+section Parseval
+
+variable {H : Type*} [SeminormedAddCommGroup H] [InnerProductSpace ℂ H]
+
+/-- **Parseval's identity** for the unnormalized discrete Fourier transform on `ZMod N`:
+`∑ₖ ⟪𝓕 Φ k, 𝓕 Ψ k⟫ = N ∑ⱼ ⟪Φ j, Ψ j⟫`. For `H = ℂ`, where `⟪a, b⟫ = conj a * b`, this is
+`∑ₖ conj (𝓕 Φ k) * 𝓕 Ψ k = N ∑ⱼ conj (Φ j) * Ψ j`. -/
+theorem sum_inner_dft_dft (Φ Ψ : ZMod N → H) :
+    ∑ k, ⟪𝓕 Φ k, 𝓕 Ψ k⟫_ℂ = N * ∑ j, ⟪Φ j, Ψ j⟫_ℂ := by
+  -- expanding the left transform and summing over `k` first gives the double transform of `Φ`
+  have h (j : ZMod N) :
+      ⟪𝓕 (𝓕 Φ) (-j), Ψ j⟫_ℂ = ∑ k, stdAddChar (-(j * k)) * ⟪𝓕 Φ k, Ψ j⟫_ℂ := by
+    simp [dft_apply (𝓕 Φ), sum_inner, inner_smul_left, ← AddChar.map_neg_eq_conj, mul_comm]
+  simp_rw [dft_dft, neg_neg, inner_smul_left, Complex.conj_natCast] at h
+  simp_rw [Finset.mul_sum, h, dft_apply Ψ, inner_sum, inner_smul_right]
+  exact Finset.sum_comm
+
+/-- **Parseval's identity** in norm form: `∑ₖ ‖𝓕 Φ k‖ ^ 2 = N ∑ⱼ ‖Φ j‖ ^ 2`. -/
+theorem sum_norm_sq_dft (Φ : ZMod N → H) : ∑ k, ‖𝓕 Φ k‖ ^ 2 = N * ∑ j, ‖Φ j‖ ^ 2 := by
+  have h := sum_inner_dft_dft Φ Φ
+  simp only [inner_self_eq_norm_sq_to_K, RCLike.ofReal_eq_complex_ofReal] at h
+  exact_mod_cast h
+
+end Parseval
+
+section Convolution
+
+open DiscreteConvolution
+
+variable {E' F : Type*} [AddCommGroup E'] [Module ℂ E'] [AddCommGroup F] [Module ℂ F]
+  [TopologicalSpace F]
+
+/-- **The cyclic convolution theorem.** The discrete Fourier transform of the convolution
+`(Φ ⋆₊[L] Ψ) x = ∑ₐ L (Φ a) (Ψ (x - a))` on `ZMod N` through a `ℂ`-bilinear map `L` is
+`k ↦ L (𝓕 Φ k) (𝓕 Ψ k)`. -/
+@[simp]
+theorem dft_addConvolution (L : E →ₗ[ℂ] E' →ₗ[ℂ] F) (Φ : ZMod N → E) (Ψ : ZMod N → E') :
+    𝓕 (Φ ⋆₊[L] Ψ) = fun k ↦ L (𝓕 Φ k) (𝓕 Ψ k) := by
+  ext k
+  simp only [dft_apply, addConvolution_eq_tsum_sub, tsum_fintype, map_sum, LinearMap.map_smul₂,
+    LinearMap.sum_apply, Finset.smul_sum]
+  rw [Finset.sum_comm]
+  -- for fixed `y`, substitute `x = d + y` and split `e(-(d + y) k / N) = e(-d k / N) e(-y k / N)`
+  refine Finset.sum_congr rfl fun y _ ↦
+    (Fintype.sum_equiv (Equiv.addRight y) _ _ fun d ↦ ?_).symm
+  rw [Equiv.coe_addRight, add_sub_cancel_right, add_mul, neg_add, AddChar.map_add_eq_mul, mul_smul,
+    LinearMap.map_smul]
+
+/-- **The cyclic convolution theorem** for functions with values in a `ℂ`-algebra, not necessarily
+unital or associative: the discrete Fourier transform of `(Φ ⋆ᵣ₊ Ψ) x = ∑ₐ Φ a * Ψ (x - a)` on
+`ZMod N` is the pointwise product `𝓕 Φ * 𝓕 Ψ`. -/
+@[simp]
+theorem dft_addRingConvolution {R : Type*} [NonUnitalNonAssocRing R] [Module ℂ R]
+    [SMulCommClass ℂ R R] [IsScalarTower ℂ R R] [TopologicalSpace R] (Φ Ψ : ZMod N → R) :
+    𝓕 (Φ ⋆ᵣ₊ Ψ) = 𝓕 Φ * 𝓕 Ψ := by
+  have h : Φ ⋆ᵣ₊ Ψ = Φ ⋆₊[LinearMap.mul ℂ R] Ψ := by
+    ext x
+    simp only [addRingConvolution_eq_tsum_sub, addConvolution_eq_tsum_sub, LinearMap.mul_apply']
+  ext k
+  simp only [h, dft_addConvolution, LinearMap.mul_apply', Pi.mul_apply]
+
+end Convolution
 
 end ZMod
