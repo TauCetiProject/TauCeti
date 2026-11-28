@@ -58,6 +58,8 @@ Fourier series are of this more general shape.
 endomorphism `b` of `V` with `E (b u, w) + E (u, b w) = E (u, w)` and `E (b l, m)` integral on `L`,
 the canonical multiplier `χ_b (l) = exp (πi E (l, b l))` is a semicharacter for `B`, which gives the
 datum `(B, χ_b)` (`TauCeti.AppellHumbertData.ofCanonicalSemichar`).
+Its values satisfy `χ_b (l)² = 1`
+(`TauCeti.AppellHumbertData.semichar_ofCanonicalSemichar_apply_sq_eq_one`).
 
 The data form an additive group (`B` adds, `χ` multiplies), which corresponds to the tensor product
 of line bundles; on theta functions, products and powers land in the theta functions of the sum
@@ -715,6 +717,19 @@ theorem semichar_ofCanonicalSemichar_eq_circleExp (l : L) :
     (ofCanonicalSemichar B hB b hadj hint).semichar l =
       Circle.exp (π * (ofCanonicalSemichar B hB b hadj hint).riemannForm l (b l)) := by
   rw [semichar_ofCanonicalSemichar_apply, riemannForm_ofCanonicalSemichar_apply]
+
+/-- **The canonical multiplier squares to one** on `L`: `χ_b (l)² = exp (2πi E (l, b l)) = 1`, as
+`E (l, b l) = -E (b l, l)` is an integer. -/
+theorem semichar_ofCanonicalSemichar_apply_sq_eq_one (l : L) :
+    (ofCanonicalSemichar B hB b hadj hint).semichar l ^ 2 = 1 := by
+  obtain ⟨k, hk⟩ := hint l l
+  -- The phase is `2π` times the integer `-k`.
+  have hphase : π * ((B (b l) l - B l (b l)).im / (2 * π)) +
+      π * ((B (b l) l - B l (b l)).im / (2 * π)) = 2 * π * (-k : ℤ) := by
+    rw [← neg_sub, Complex.neg_im, neg_div, hk]
+    push_cast
+    ring
+  rw [semichar_ofCanonicalSemichar_apply, sq, ← Circle.exp_add, hphase, Circle.exp_two_pi_mul_int]
 
 end CanonicalSemichar
 
