@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Join.Indexed
-public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Algebra.MulAction
 public import TauCeti.Topology.Order.Lattice
 
@@ -21,11 +20,13 @@ most one nonzero entry over each index.
 
 `TauCeti.MilnorJoin ι G` is a type copy of that realization carrying Milnor's *strong* topology:
 the coarsest topology for which every weight `x ↦ tᵢ(x)` is continuous and every label
-`x ↦ gᵢ(x)` is continuous on the open set `{tᵢ > 0}`. When `G` is a monoid, it acts on the right
-by multiplying every label, and this action is jointly continuous as soon as multiplication on `G`
-is; no metric on `G` is involved. With `ι = ℕ` and `G` a topological group this is the total space
-`EG` of Milnor's universal principal `G`-bundle. The weak topology of the realization
-(`TauCeti.universalGSpace`) ignores any topology on the labels, and is a different topology.
+`x ↦ gᵢ(x)` is continuous on the open set `{tᵢ > 0}`. A monoid acting on `G` acts on the join
+by acting on every label, and this action is jointly continuous as soon as the action on `G` is.
+In particular, when `G` is a monoid it acts on the right by multiplying every label, and this
+action is jointly continuous as soon as multiplication on `G` is; no metric on `G` is involved.
+With `ι = ℕ` and `G` a topological group this is the total space `EG` of Milnor's universal
+principal `G`-bundle. The weak topology of the realization (`TauCeti.universalGSpace`) ignores
+any topology on the labels, and is a different topology.
 
 The continuity criterion `TauCeti.MilnorJoin.continuous_iff` describes the maps into the join
 from an arbitrary space, for instance from a product with an interval or with `G`, through these
@@ -43,12 +44,16 @@ largest weight `m = maxᵢ tᵢ`, which is positive and invariant under the acti
   indices of positive weight.
 * `TauCeti.MilnorJoin.continuous_iff`: the continuity criterion in coordinates, and
   `TauCeti.MilnorJoin.continuous_mk` for maps built from continuous weights and labels.
-* `TauCeti.MilnorJoin.instMulActionMulOpposite`: the right action relabelling `gᵢ ↦ gᵢ g`, with
-  `TauCeti.MilnorJoin.weights_op_smul` and `TauCeti.MilnorJoin.label_op_smul`; the left action
-  `gᵢ ↦ g gᵢ`; and `TauCeti.MilnorJoin.map_inv_smul`: label inversion carries the left action
-  of `g⁻¹` to the right action of `g`.
-* `TauCeti.MilnorJoin.instContinuousSMulMulOpposite`: the right action is jointly continuous
-  when multiplication on `G` is continuous.
+* `TauCeti.MilnorJoin.instMulAction`: a monoid acting on `G` acts on the join by acting on every
+  label, with `TauCeti.MilnorJoin.weights_smul` and `TauCeti.MilnorJoin.label_smul`. For a monoid
+  `G` this gives the right action relabelling `gᵢ ↦ gᵢ g`, with
+  `TauCeti.MilnorJoin.label_op_smul`, and the left action `gᵢ ↦ g gᵢ`, which commute
+  (`TauCeti.MilnorJoin.instSMulCommClass`); and `TauCeti.MilnorJoin.map_inv_smul`: label
+  inversion carries the left action of `g⁻¹` to the right action of `g`.
+* `TauCeti.MilnorJoin.continuous_map₂`: relabelling along jointly continuous families of maps is
+  jointly continuous; hence `TauCeti.MilnorJoin.instContinuousSMul`: the action is jointly
+  continuous when the action on `G` is, so the right action is jointly continuous when
+  multiplication on `G` is continuous.
 * `TauCeti.MilnorJoin.eventually_forall_weights_apply_lt`: finite-support tail control, and
   `TauCeti.MilnorJoin.continuous_maxWeight`: the largest weight is continuous.
 
@@ -82,11 +87,6 @@ namespace MilnorJoin
 
 variable {ι : Type u} {G : Type v} {H : Type w}
 
-/-- The vertex `⟨i, l i⟩` over each index `i`; distinct indices give distinct vertices. -/
-private theorem sigmaMk_injective (l : ι → G) :
-    Function.Injective fun i : ι => (⟨i, l i⟩ : Σ _ : ι, G) :=
-  Function.LeftInverse.injective (g := Sigma.fst) fun _ => rfl
-
 /-! ### Weights and points from weights and labels -/
 
 /-- The weights `tᵢ` of a point of the join. The weight at `i` is the total barycentric
@@ -111,7 +111,8 @@ private theorem mapDomain_mem_realization {w : ι →₀ ℝ} (hw₀ : ∀ i, 0 
     (hw₁ : w.sum (fun _ r => r) = 1) (l : ι → G) :
     Finsupp.mapDomain (fun i => (⟨i, l i⟩ : Σ _ : ι, G)) w ∈
       (indexedJoin fun _ : ι => G).standardGeometricComplex.space := by
-  have hl := sigmaMk_injective l
+  have hl : Function.Injective fun i => (⟨i, l i⟩ : Σ _ : ι, G) :=
+    Function.LeftInverse.injective (g := Sigma.fst) fun _ => rfl
   refine mem_indexedJoin_realization_iff.2 ⟨fun v => ?_, ?_, fun v v' hv hv' hvv' => ?_⟩
   · by_cases hv : v ∈ Set.range fun i => (⟨i, l i⟩ : Σ _ : ι, G)
     · obtain ⟨i, rfl⟩ := hv
@@ -234,8 +235,8 @@ theorem toRealization_val (x : MilnorJoin ι G) :
   ext ⟨i, g⟩
   by_cases hg : g = label i x
   · subst hg
-    rw [Finsupp.mapDomain_apply_of_injective (sigmaMk_injective fun i => label i x),
-      weights_apply]
+    rw [Finsupp.mapDomain_apply_of_injective
+      (Function.LeftInverse.injective (g := Sigma.fst) fun _ => rfl), weights_apply]
   · rw [Finsupp.mapDomain_of_notMem_range]
     · by_contra h
       exact hg (label_eq_of_ne_zero h).symm
@@ -249,7 +250,8 @@ by `l`. -/
 theorem label_mk {w : ι →₀ ℝ} {hw₀ : ∀ i, 0 ≤ w i} {hw₁ : w.sum (fun _ r => r) = 1}
     {l : ι → G} {i : ι} (hi : 0 < w i) : label i (mk w hw₀ hw₁ l) = l i := by
   refine label_eq_of_ne_zero ?_
-  rw [toRealization_val_mk, Finsupp.mapDomain_apply_of_injective (sigmaMk_injective l)]
+  rw [toRealization_val_mk, Finsupp.mapDomain_apply_of_injective
+    (Function.LeftInverse.injective (g := Sigma.fst) fun _ => rfl)]
   exact hi.ne'
 
 /-- Two points of the join are equal when they have the same weights and the same labels at
@@ -294,92 +296,100 @@ theorem label_map [Nonempty H] (f : G → H) {x : MilnorJoin ι G} {i : ι} (hi 
     label i (map f x) = f (label i x) :=
   label_mk hi
 
+/-- Relabelling a point built from weights and labels relabels the labels. -/
+@[simp]
+theorem map_mk (f : G → H) {w : ι →₀ ℝ} {hw₀ : ∀ i, 0 ≤ w i} {hw₁ : w.sum (fun _ r => r) = 1}
+    {l : ι → G} : map f (mk w hw₀ hw₁ l) = mk w hw₀ hw₁ (f ∘ l) := by
+  have : Nonempty H := .map f ‹_›
+  refine ext (by simp) fun i hi => ?_
+  rw [weights_map, weights_mk] at hi
+  rw [label_map _ (by rwa [weights_mk]), label_mk hi, label_mk hi, Function.comp_apply]
+
+/-- Relabelling keeps the largest weight. -/
+@[simp]
+theorem maxWeight_map (f : G → H) (x : MilnorJoin ι G) : maxWeight (map f x) = maxWeight x := by
+  simp [maxWeight]
+
 /-- Relabelling by the identity is the identity. -/
 @[simp]
 theorem map_id (x : MilnorJoin ι G) : map id x = x :=
   mk_weights_label x
 
 /-- Relabelling is functorial. -/
-theorem map_map [Nonempty H] {K : Type*} [Nonempty K] (g : H → K) (f : G → H) (x : MilnorJoin ι G) :
-    map g (map f x) = map (g ∘ f) x :=
-  ext (by simp) fun i hi => by
-    rw [weights_map, weights_map] at hi
-    rw [label_map _ (by rwa [weights_map]), label_map _ hi, label_map _ hi, Function.comp_apply]
+theorem map_map [Nonempty H] {K : Type*} (g : H → K) (f : G → H) (x : MilnorJoin ι G) :
+    map g (map f x) = map (g ∘ f) x := by
+  have : Nonempty K := .map (g ∘ f) ‹_›
+  refine ext (by simp) fun i hi => ?_
+  rw [weights_map, weights_map] at hi
+  rw [label_map _ (by rwa [weights_map]), label_map _ hi, label_map _ hi, Function.comp_apply]
 
 end Map
 
 /-! ### The group actions -/
 
-section Monoid
+section MulAction
 
-variable [Monoid G]
+variable [Nonempty G] {M : Type*} [Monoid M] [MulAction M G]
 
-/-- The right action of a monoid on the join of copies of itself, `x • g`, written
-`MulOpposite.op g • x`, multiplying every label on the right by `g`. -/
-instance instMulActionMulOpposite : MulAction Gᵐᵒᵖ (MilnorJoin ι G) where
-  smul g x := map (· * g.unop) x
+/-- A monoid acting on `G` acts on the join of copies of `G` by acting on every label. For a
+monoid `G` this gives the right action `x • g`, written `MulOpposite.op g • x`, multiplying every
+label on the right by `g`, and the left action multiplying every label on the left. -/
+instance instMulAction : MulAction M (MilnorJoin ι G) where
+  smul m x := map (m • ·) x
   one_smul x := by
     -- the action being defined is relabelling; unfold it to state the law for `map`
     change map _ x = x
-    simp only [unop_one, mul_one]
+    simp only [one_smul]
     exact map_id x
-  mul_smul a b x := by
+  mul_smul m n x := by
     -- the action being defined is relabelling; unfold it to reduce to `map_map`
     change map _ x = map _ (map _ x)
-    rw [map_map]
+    simp only [mul_smul]
+    exact (map_map _ _ x).symm
+
+/-- The action is relabelling by the action on labels. -/
+theorem smul_eq_map (m : M) (x : MilnorJoin ι G) : m • x = map (m • ·) x :=
+  (rfl)
+
+/-- The action preserves the weight at every index. -/
+@[simp]
+theorem weights_smul (m : M) (x : MilnorJoin ι G) : weights (m • x) = weights x :=
+  weights_map _ x
+
+/-- The action preserves the largest weight. -/
+@[simp]
+theorem maxWeight_smul (m : M) (x : MilnorJoin ι G) : maxWeight (m • x) = maxWeight x :=
+  maxWeight_map _ x
+
+/-- At an index of positive weight, the action acts on the label. -/
+theorem label_smul (m : M) {x : MilnorJoin ι G} {i : ι} (hi : 0 < weights x i) :
+    label i (m • x) = m • label i x :=
+  label_map _ hi
+
+/-- Commuting actions on `G` give commuting actions on the join; for a monoid `G`, the left and
+right actions commute. -/
+instance instSMulCommClass {N : Type*} [Monoid N] [MulAction N G] [SMulCommClass M N G] :
+    SMulCommClass M N (MilnorJoin ι G) where
+  smul_comm m n x := by
+    simp only [smul_eq_map, map_map]
     congr 1
     funext g
-    simp [mul_assoc]
+    exact smul_comm m n g
+
+end MulAction
+
+section Monoid
+
+variable [Monoid G]
 
 /-- The right action is relabelling by right multiplication. -/
 theorem op_smul_eq_map (g : G) (x : MilnorJoin ι G) : op g • x = map (· * g) x :=
   (rfl)
 
-/-- The right action preserves the weight at every index. -/
-@[simp]
-theorem weights_op_smul (g : G) (x : MilnorJoin ι G) : weights (op g • x) = weights x :=
-  weights_map _ x
-
-/-- The right action preserves the largest weight. -/
-@[simp]
-theorem maxWeight_op_smul (g : G) (x : MilnorJoin ι G) : maxWeight (op g • x) = maxWeight x := by
-  simp [maxWeight]
-
 /-- At an index of positive weight, the right action multiplies the label on the right. -/
 theorem label_op_smul (g : G) {x : MilnorJoin ι G} {i : ι} (hi : 0 < weights x i) :
     label i (op g • x) = label i x * g :=
-  label_map _ hi
-
-/-- The left action of a monoid on the join of copies of itself, multiplying every label on the
-left. -/
-instance instMulAction : MulAction G (MilnorJoin ι G) where
-  smul g x := map (g * ·) x
-  one_smul x := by
-    -- the action being defined is relabelling; unfold it to state the law for `map`
-    change map _ x = x
-    simp only [one_mul]
-    exact map_id x
-  mul_smul a b x := by
-    -- the action being defined is relabelling; unfold it to reduce to `map_map`
-    change map _ x = map _ (map _ x)
-    rw [map_map]
-    congr 1
-    funext g
-    simp [mul_assoc]
-
-/-- The left action is relabelling by left multiplication. -/
-theorem smul_eq_map (g : G) (x : MilnorJoin ι G) : g • x = map (g * ·) x :=
-  (rfl)
-
-/-- The left action preserves the weight at every index. -/
-@[simp]
-theorem weights_smul (g : G) (x : MilnorJoin ι G) : weights (g • x) = weights x :=
-  weights_map _ x
-
-/-- At an index of positive weight, the left action multiplies the label on the left. -/
-theorem label_smul (g : G) {x : MilnorJoin ι G} {i : ι} (hi : 0 < weights x i) :
-    label i (g • x) = g * label i x :=
-  label_map _ hi
+  label_smul _ hi
 
 end Monoid
 
@@ -389,7 +399,7 @@ theorem map_inv_smul [DivisionMonoid G] (g : G) (x : MilnorJoin ι G) :
   ext (by simp) fun i hi => by
     simp only [weights_map, weights_smul] at hi
     rw [label_map _ (by rwa [weights_smul]), label_smul _ hi,
-      label_op_smul _ (by rwa [weights_map]), label_map _ hi, mul_inv_rev, inv_inv]
+      label_op_smul _ (by rwa [weights_map]), label_map _ hi, smul_eq_mul, mul_inv_rev, inv_inv]
 
 /-! ### The strong coordinate topology -/
 
@@ -502,53 +512,32 @@ instance [T2Space G] : T2Space (MilnorJoin ι G) := by
   · obtain ⟨i, hi⟩ := DFunLike.ne_iff.1 hw
     exact separated_by_continuous (continuous_weights_apply i) hi
 
+/-- Relabelling along a family of maps of label spaces depending jointly continuously on a
+parameter is jointly continuous in the parameter and the point. -/
+theorem continuous_map₂ [Nonempty H] [TopologicalSpace H] {X : Type*} [TopologicalSpace X]
+    {f : X → G → H} (hf : Continuous (Function.uncurry f)) :
+    Continuous fun p : X × MilnorJoin ι G => map (f p.1) p.2 :=
+  continuous_mk _ _ (fun i => (continuous_weights_apply i).comp continuous_snd) fun i =>
+    hf.comp_continuousOn (continuous_fst.continuousOn.prodMk
+      ((continuousOn_label i).comp continuous_snd.continuousOn fun _ hp => hp))
+
 /-- A continuous map of label spaces induces a continuous map of joins. -/
 @[fun_prop]
 theorem continuous_map [Nonempty H] [TopologicalSpace H] {f : G → H} (hf : Continuous f) :
-    Continuous (map (ι := ι) f) :=
-  continuous_mk _ _ (fun i => continuous_weights_apply i) fun i =>
-    hf.comp_continuousOn (continuousOn_label i)
+    Continuous (map (ι := ι) f) := by
+  -- the parameter space of the jointly continuous relabelling is a point
+  have h := (continuous_map₂ (ι := ι) (f := fun _ : Unit => f) (hf.comp continuous_snd)).comp
+    (by fun_prop : Continuous fun x : MilnorJoin ι G => ((), x))
+  exact h
+
+/-- A jointly continuous action on `G` gives a jointly continuous action on the join. For a
+monoid `G` with continuous multiplication, both the right and the left action are jointly
+continuous. -/
+instance instContinuousSMul {M : Type*} [Monoid M] [MulAction M G] [TopologicalSpace M]
+    [ContinuousSMul M G] : ContinuousSMul M (MilnorJoin ι G) :=
+  ⟨continuous_map₂ (f := fun m g => m • g) continuous_smul⟩
 
 end Topology
-
-section ContinuousMul
-
-variable [Monoid G] [TopologicalSpace G] [ContinuousMul G]
-
-/-- The right action of a monoid with continuous multiplication on the join is jointly
-continuous. -/
-instance instContinuousSMulMulOpposite : ContinuousSMul Gᵐᵒᵖ (MilnorJoin ι G) where
-  continuous_smul := by
-    refine continuous_iff.2 ⟨fun i => ?_, fun i => ?_⟩
-    · exact ((continuous_weights_apply i).comp continuous_snd).congr fun p => by
-        rw [Function.comp_apply, ← op_unop p.1, weights_op_smul]
-    · have hl : ContinuousOn (fun p : Gᵐᵒᵖ × MilnorJoin ι G => label i p.2 * p.1.unop)
-          {p | 0 < weights (p.1 • p.2) i} :=
-        ((continuousOn_label i).comp continuous_snd.continuousOn fun p hp => by
-          rwa [mem_ofPred_eq, ← op_unop p.1, weights_op_smul] at hp).mul
-            (continuous_unop.comp continuous_fst).continuousOn
-      refine hl.congr fun p hp => ?_
-      obtain ⟨g, x⟩ := p
-      rw [← op_unop g] at hp ⊢
-      simp only [mem_ofPred_eq, weights_op_smul] at hp
-      exact label_op_smul _ hp
-
-/-- The left action of a monoid with continuous multiplication on the join is jointly
-continuous. -/
-instance instContinuousSMul : ContinuousSMul G (MilnorJoin ι G) where
-  continuous_smul := by
-    refine continuous_iff.2 ⟨fun i => ?_, fun i => ?_⟩
-    · simp only [weights_smul]
-      fun_prop
-    · have hl : ContinuousOn (fun p : G × MilnorJoin ι G => p.1 * label i p.2)
-          {p | 0 < weights (p.1 • p.2) i} :=
-        continuous_fst.continuousOn.mul ((continuousOn_label i).comp continuous_snd.continuousOn
-          fun p hp => by simpa using hp)
-      refine hl.congr fun p hp => ?_
-      simp only [mem_ofPred_eq, weights_smul] at hp
-      exact label_smul _ hp
-
-end ContinuousMul
 
 end MilnorJoin
 
