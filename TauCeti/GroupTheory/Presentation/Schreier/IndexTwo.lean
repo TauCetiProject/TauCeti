@@ -221,6 +221,17 @@ theorem mk_mk_schreierWord_singleton (x : α) (s : Bool) :
 
 /-! ## Conjugation by the transversal element -/
 
+/-- **Inverting every generator on a rewritten word** flips the representative it is read from:
+the endomorphism of `PresentedGroup R` that inverts every generator sends the class of the rewrite
+of `L` from representative `b` to the class of the rewrite of `L` from `!b`, for any set `R` of
+relators. -/
+private theorem lift_inv_mk_schreierWord {R : Set (FreeGroup β)} (b : Bool)
+    (L : PresentationWord α) :
+    FreeGroup.lift (fun y => (PresentedGroup.of y : PresentedGroup R)⁻¹)
+        (FreeGroup.mk (schreierWord a e b L)) =
+      PresentedGroup.mk R (FreeGroup.mk (schreierWord a e (!b) L)) := by
+  rw [FreeGroup.lift_inv_mk, FreeGroup.lift_mk, ← PresentedGroup.mk_mk, ← schreierWord_not]
+
 /-- **Inverting every Schreier generator**, as an endomorphism of the rewritten presented group. It
 is the action of conjugation by `a` on the kernel, since `a (a x) a⁻¹ = x a = (a x)⁻¹` for
 involutions; it is an automorphism, `TauCeti.schreierInvAut`. -/
@@ -228,7 +239,7 @@ def schreierInvHom :
     PresentedGroup (schreierRelators a e W) →* PresentedGroup (schreierRelators a e W) :=
   PresentedGroup.toGroup (f := fun y => (PresentedGroup.of y)⁻¹) (by
     rintro r ⟨positive, w, hw, rfl⟩
-    rw [FreeGroup.lift_inv_mk, FreeGroup.lift_mk, ← PresentedGroup.mk_mk, ← schreierWord_not]
+    rw [lift_inv_mk_schreierWord]
     exact PresentedGroup.one_of_mem (mk_schreierWord_mem_schreierRelators a e (!positive) hw))
 
 @[simp]
@@ -524,13 +535,10 @@ private theorem lift_semidirectLetter_mk (L : PresentationWord α) :
       rw [schreierWord_cons_eq_append, ← FreeGroup.mul_mk, map_mul, mk_mk_schreierWord_singleton,
         Bool.not_false]
       congr 1
-      calc
-        _ = FreeGroup.lift
-            (fun y => (PresentedGroup.of y : PresentedGroup (schreierRelators a e W))⁻¹)
-            (FreeGroup.mk (schreierWord a e false L)) := rfl
-        _ = _ := by
-          rw [FreeGroup.lift_inv_mk, FreeGroup.lift_mk, ← PresentedGroup.mk_mk, ← schreierWord_not,
-            Bool.not_false]
+      -- By definition, `schreierInvHom` (a `PresentedGroup.toGroup`) sends the class of a
+      -- free-group word `w` to `FreeGroup.lift (fun y ↦ (of y)⁻¹) w`; Mathlib has no `toGroup`
+      -- lemma for this.
+      exact lift_inv_mk_schreierWord a e false L
     · simp only [semidirectLetter, SemidirectProduct.mul_right, List.length_cons, Nat.cast_succ,
         ofAdd_add]
       exact mul_comm _ _
