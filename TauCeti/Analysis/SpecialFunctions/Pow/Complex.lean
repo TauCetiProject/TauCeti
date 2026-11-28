@@ -26,9 +26,8 @@ import TauCeti.RingTheory.Binomial
 /-!
 # Principal complex powers: scaling, sector inversion, and holomorphic products
 
-Multiplication of a complex number by a nonnegative real scalar is compatible with principal
-complex powers.  Away from zero, this follows because positive scaling does not cross the branch
-cut of the principal logarithm; the zero cases follow from the totalized definition of `cpow`.
+Principal complex powers split across finite products of nonnegative reals (iterating
+`Complex.ofReal_mul_cpow`), and across products whose arguments add in the principal range.
 
 Taking the principal power `u ^ (r⁻¹ : ℝ)` of a nonzero `u` divides its argument by `r`, so
 raising the result back to the power `r` returns `u` — but only as long as the intermediate
@@ -58,7 +57,6 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 
 ## Main results
 
-* `TauCeti.ofReal_mul_cpow` -- a principal power splits across a nonnegative real factor.
 * `TauCeti.div_ofReal_cpow` -- a principal power splits across division by a nonnegative real.
 * `TauCeti.ofReal_prod_cpow` -- a principal power splits across a finite product of nonnegative
   reals.
@@ -168,30 +166,13 @@ open scoped Topology
 
 namespace TauCeti
 
-/-- A principal complex power splits across multiplication by a nonnegative real scalar:
-`((r : ℂ) * z) ^ w = (r : ℂ) ^ w * z ^ w` for all complex `z` and `w`, without a branch
-hypothesis on `z`.  This generalizes `Complex.mul_cpow_ofReal_nonneg` to a complex second factor;
-the proof follows Mathlib's. -/
-theorem ofReal_mul_cpow {r : ℝ} (hr : 0 ≤ r) (z w : ℂ) :
-    ((r : ℂ) * z) ^ w = (r : ℂ) ^ w * z ^ w := by
-  rcases eq_or_ne w 0 with (rfl | hw)
-  · simp only [Complex.cpow_zero, mul_one]
-  rcases eq_or_lt_of_le hr with (rfl | hr')
-  · rw [Complex.ofReal_zero, zero_mul, Complex.zero_cpow hw, zero_mul]
-  rcases eq_or_ne z 0 with (rfl | hz)
-  · simp [Complex.zero_cpow hw]
-  rw [Complex.cpow_def_of_ne_zero (mul_ne_zero (Complex.ofReal_ne_zero.mpr hr'.ne') hz),
-    Complex.cpow_def_of_ne_zero (Complex.ofReal_ne_zero.mpr hr'.ne'),
-    Complex.cpow_def_of_ne_zero hz, Complex.log_ofReal_mul hr' hz, add_mul, Complex.exp_add]
-  rw [Complex.ofReal_log hr]
-
 /-- A principal complex power splits across division by a nonnegative real scalar:
 `(z / r) ^ w = z ^ w / (r : ℂ) ^ w` for all complex `z` and `w`, without a branch hypothesis on
 `z`.  This generalizes `Complex.div_cpow_ofReal_nonneg` to a complex numerator. -/
 theorem div_ofReal_cpow {r : ℝ} (hr : 0 ≤ r) (z w : ℂ) :
     (z / r) ^ w = z ^ w / (r : ℂ) ^ w := by
-  rw [div_eq_inv_mul, ← Complex.ofReal_inv, ofReal_mul_cpow (inv_nonneg.mpr hr), Complex.ofReal_inv,
-    Complex.inv_cpow_ofReal_nonneg hr, inv_mul_eq_div]
+  rw [div_eq_inv_mul, ← Complex.ofReal_inv, Complex.ofReal_mul_cpow (inv_nonneg.mpr hr),
+    Complex.ofReal_inv, Complex.inv_cpow_ofReal_nonneg hr, inv_mul_eq_div]
 
 /-- A principal complex power splits across a finite product of nonnegative reals:
 `((∏ i ∈ s, f i : ℝ) : ℂ) ^ z = ∏ i ∈ s, (f i : ℂ) ^ z`. -/
@@ -201,8 +182,8 @@ theorem ofReal_prod_cpow {ι : Type*} (s : Finset ι) {f : ι → ℝ} (hf : ∀
   induction s using Finset.induction_on with
   | empty => simp
   | insert i s hi ih =>
-    rw [Finset.prod_insert hi, Finset.prod_insert hi, ofReal_mul, ofReal_mul_cpow (hf i (by simp)),
-      ← ih fun j hj ↦ hf j (Finset.mem_insert_of_mem hj)]
+    rw [Finset.prod_insert hi, Finset.prod_insert hi, ofReal_mul,
+      Complex.ofReal_mul_cpow (hf i (by simp)), ← ih fun j hj ↦ hf j (Finset.mem_insert_of_mem hj)]
 
 /-- A principal power splits across a product when the sum of the arguments lies in the
 principal range `(-π, π]`, including when either factor is zero. -/
@@ -621,7 +602,7 @@ theorem continuous_ofReal_add_cpow_of_re_pos {x : ℂ} {s : ℂ} (hs : 0 < s.re)
 `w⁻ʳ * pʳ = (p / w)ʳ`. -/
 theorem one_div_cpow_mul_ofReal_rpow {w : ℂ} (hw : w.arg ≠ Real.pi) {p : ℝ} (hp : 0 ≤ p) (r : ℝ) :
     (1 / w ^ (r : ℂ)) * ((p ^ r : ℝ) : ℂ) = ((p : ℂ) / w) ^ (r : ℂ) := by
-  rw [div_eq_mul_inv (p : ℂ) w, ofReal_mul_cpow hp, Complex.inv_cpow w (r : ℂ) hw,
+  rw [div_eq_mul_inv (p : ℂ) w, Complex.ofReal_mul_cpow hp, Complex.inv_cpow w (r : ℂ) hw,
     ← Complex.ofReal_cpow hp, one_div, mul_comm]
 
 /-- For `a > 0` and `w` off the negative real axis, the principal powers combine:
@@ -1073,7 +1054,7 @@ theorem one_sub_mul_cpow_eq_one_sub_cpow_mul {z s : ℂ} {t : ℝ} (ht1 : t < 1)
     push_cast
     field_simp [h1t_ne]
     ring
-  rw [hfact, TauCeti.ofReal_mul_cpow h1t.le, ofReal_sub, ofReal_one]
+  rw [hfact, Complex.ofReal_mul_cpow h1t.le, ofReal_sub, ofReal_one]
 
 /-- Power-splitting for `t / (1 - t)` on `(0, 1)`:
 `t ^ u * (1 - t) ^ v * ((t / (1 - t)) * w) ^ s = t ^ (u + s) * (1 - t) ^ (v - s) * w ^ s`. -/
@@ -1091,7 +1072,7 @@ theorem mul_cpow_one_sub_cpow_mul_div_cpow {u v s w : ℂ} {t : ℝ}
     (cpow_add u s ht_ne).symm
   have hpow_1t : (1 - (t : ℂ)) ^ v * (1 - (t : ℂ)) ^ (-s) = (1 - (t : ℂ)) ^ (v - s) := by
     rw [← cpow_add _ _ h1t_ne, ← sub_eq_add_neg]
-  rw [TauCeti.ofReal_mul_cpow (div_pos ht0 h1t).le, hq_pow, ← hpow_t, ← hpow_1t]
+  rw [Complex.ofReal_mul_cpow (div_pos ht0 h1t).le, hq_pow, ← hpow_t, ← hpow_1t]
   ring
 
 /-- For any complex base `w` and exponent `d`, `‖w ^ d‖ ≤ ‖w‖ ^ d.re * exp (π * |d.im|)`. -/

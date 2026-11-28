@@ -172,7 +172,7 @@ private theorem tsum_unit_setIntegral_archGaussian {D : Set (realSpace K)}
   simp_rw [hu_eq]
   rw [← torsionOrder_smul_integral_archHaar_eq_tsum_unitCone hD hint₀, nsmul_eq_mul,
     integral_archGaussian_mul_archNorm_cpow hx₀ hs0, norm_mixedEmbedding_coneGen, ofReal_mul,
-    ofReal_mul_cpow (Nat.cast_nonneg _), ofReal_natCast, ofReal_ratCast]
+    Complex.ofReal_mul_cpow (Nat.cast_nonneg _), ofReal_natCast, ofReal_ratCast]
   ring
 
 /-- Sum over `(𝓞 K)ˣ` of the norm-weighted real Gaussian cone integrals along one ideal orbit. -/
@@ -322,8 +322,8 @@ private theorem covolume_sq_idealLattice_cpow (I : (FractionalIdeal (𝓞 K)⁰ 
     rw [covolume_idealLattice]
     simp [N_I, D_K]
   rw [h1, hcov, ofReal_mul,
-    ofReal_mul_cpow (mul_nonneg hNI_pos.le (by positivity)),
-    ofReal_mul, ofReal_mul_cpow hNI_pos.le, ofReal_pow,
+    Complex.ofReal_mul_cpow (mul_nonneg hNI_pos.le (by positivity)),
+    ofReal_mul, Complex.ofReal_mul_cpow hNI_pos.le, ofReal_pow,
     TauCeti.ofReal_pow_cpow (by positivity) (nrComplexPlaces K) s, cpow_nat_mul,
     Real.sqrt_eq_rpow, ← cpow_mul_ofReal_nonneg hDK_pos.le, ofReal_intCast |discr K|]
   congr 2
@@ -349,7 +349,7 @@ private theorem covolume_gamma_mul_eq (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (s
   have h2gamma : (2 : ℂ) ^ r₂ * Gammaℝ (2 * s) ^ r₂ = ((2 : ℂ) ^ s) ^ r₂ * Gammaℂ s ^ r₂ := by
     rw [← mul_pow, two_mul_Gammaℝ_two_mul, mul_pow]
   have h2cancel : (((2⁻¹ : ℝ) : ℂ) ^ s) ^ r₂ * ((2 : ℂ) ^ s) ^ r₂ = 1 := by
-    rw [← ofReal_ofNat, ← mul_pow, ← ofReal_mul_cpow (by positivity)]
+    rw [← ofReal_ofNat, ← mul_pow, ← Complex.ofReal_mul_cpow (by positivity)]
     norm_num
   have hNI_cancel : (N_I : ℂ) ^ s * ((FractionalIdeal.absNorm I.val : ℚ) : ℂ) ^ (-s) = 1 := by
     rw [← ofReal_ratCast, ← cpow_add _ _ (ofReal_ne_zero.mpr hNI_pos.ne'), add_neg_cancel,

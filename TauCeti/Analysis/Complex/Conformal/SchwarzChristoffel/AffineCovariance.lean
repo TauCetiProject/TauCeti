@@ -59,7 +59,7 @@ theorem schwarzChristoffelIntegrand_affine_prevertices (a e : ι → ℝ) {c : �
       (c : ℂ) * (z - (a i : ℂ)) := by
     push_cast
     ring
-  simp_rw [h_affine, TauCeti.ofReal_mul_cpow hc.le, Finset.prod_mul_distrib]
+  simp_rw [h_affine, Complex.ofReal_mul_cpow hc.le, Finset.prod_mul_distrib]
   congr 1
   rw [Complex.ofReal_sum]
   exact (cpow_sum (Complex.ofReal_ne_zero.mpr hc.ne') (fun i ↦ (e i : ℂ)) Finset.univ).symm

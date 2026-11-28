@@ -422,7 +422,7 @@ private theorem mul_eulerIntegrand_eq_integral_mellinBarnes {a b c z : ℂ} {σ 
         (t : ℂ) ^ (b + (σ + y * I) - 1) * (1 - (t : ℂ)) ^ (c - b - 1) *
           (Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) * (-z) ^ (σ + y * I)) := by
     have hexp : b - 1 + ((σ : ℂ) + y * I) = b + ((σ : ℂ) + y * I) - 1 := by ring
-    rw [TauCeti.ofReal_mul_cpow ht0.le]
+    rw [Complex.ofReal_mul_cpow ht0.le]
     calc (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) *
           (Gamma (a + (σ + y * I)) * Gamma (-(σ + y * I)) *
             ((t : ℂ) ^ (σ + y * I) * (-z) ^ (σ + y * I)))

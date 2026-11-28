@@ -203,7 +203,7 @@ theorem carlsonRF_ofReal_mul {l : ℝ} (hl : 0 < l) (x y z : ℂ) :
     carlsonRF (l * x) (l * y) (l * z) = (l : ℂ) ^ (-(1 / 2) : ℂ) * carlsonRF x y z := by
   have hscale (s : ℝ) (w : ℂ) : (((l * s : ℝ) : ℂ) + l * w) ^ (-(1 / 2) : ℂ) =
       (l : ℂ) ^ (-(1 / 2) : ℂ) * ((s : ℂ) + w) ^ (-(1 / 2) : ℂ) := by
-    rw [Complex.ofReal_mul, ← mul_add, TauCeti.ofReal_mul_cpow hl.le]
+    rw [Complex.ofReal_mul, ← mul_add, Complex.ofReal_mul_cpow hl.le]
   have hl3 : (l : ℂ) * ((l : ℂ) ^ (-(1 / 2) : ℂ)) ^ 3 = (l : ℂ) ^ (-(1 / 2) : ℂ) := by
     have hl0 : (l : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hl.ne'
     calc (l : ℂ) * ((l : ℂ) ^ (-(1 / 2) : ℂ)) ^ 3

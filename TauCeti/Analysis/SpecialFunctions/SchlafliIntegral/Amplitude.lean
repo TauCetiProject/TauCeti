@@ -588,7 +588,7 @@ theorem schlafliAmplitude_inv_two_left {w : ℂ} (hw : w + 2 ≠ 0) :
   have h2 : ((2⁻¹ : ℝ) : ℂ) ^ (1 / 2 : ℂ) = (2 : ℂ) ^ (-(1 / 2 : ℂ)) := by
     rw [ofReal_inv, inv_cpow_ofReal_nonneg zero_le_two, ofReal_ofNat, ← cpow_neg]
   rw [schlafliAmplitude_def, coshMulArcosh_inv_two_left, h1,
-    ofReal_mul_cpow (by positivity) (w + 2) (1 / 2 : ℂ), h2,
+    Complex.ofReal_mul_cpow (by positivity) (w + 2) (1 / 2 : ℂ), h2,
     mul_div_cancel_right₀ _ (by simp [hw])]
 
 /-- For fixed `w`, `p ↦ schlafliAmplitude p w` is an entire function. -/

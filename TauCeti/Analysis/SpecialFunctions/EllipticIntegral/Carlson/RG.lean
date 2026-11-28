@@ -211,7 +211,7 @@ theorem carlsonRG_ofReal_mul {l : ℝ} (hl : 0 < l) (x y z : ℂ) :
   have hl0 : (l : ℂ) ≠ 0 := ofReal_ne_zero.mpr hl.ne'
   have hscale (s : ℝ) (w : ℂ) : (((l * s : ℝ) : ℂ) + l * w) ^ (-(1 / 2) : ℂ) =
       (l : ℂ) ^ (-(1 / 2) : ℂ) * ((s : ℂ) + w) ^ (-(1 / 2) : ℂ) := by
-    rw [ofReal_mul, ← mul_add, TauCeti.ofReal_mul_cpow hl.le]
+    rw [ofReal_mul, ← mul_add, Complex.ofReal_mul_cpow hl.le]
   have hscale_div (s : ℝ) (w : ℂ) :
       (l : ℂ) * w / (((l * s : ℝ) : ℂ) + l * w) = w / ((s : ℂ) + w) := by
     rw [ofReal_mul, ← mul_add, mul_div_mul_left _ _ hl0]

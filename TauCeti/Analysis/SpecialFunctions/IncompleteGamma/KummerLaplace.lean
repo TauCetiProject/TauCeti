@@ -412,7 +412,7 @@ theorem kummerLaplace_zero_ofReal_eq_cpow_neg_mul_exp_mul_integral (a : ℂ) {x 
   have hpow : (x : ℂ) ^ (-a) * (x : ℂ) * (x : ℂ) ^ (a - 1) = 1 := by
     nth_rw 2 [← cpow_one (x : ℂ)]
     rw [← cpow_add _ _ hx0, ← cpow_add _ _ hx0]; simp
-  rw [← mul_one_add, ofReal_mul, TauCeti.ofReal_mul_cpow hx.le,
+  rw [← mul_one_add, ofReal_mul, Complex.ofReal_mul_cpow hx.le,
     ofReal_add, ofReal_one, ← neg_mul, mul_one_add,
     Complex.exp_add, pow_zero, mul_one]
   linear_combination -(cexp (-(x : ℂ) * (r : ℂ)) * (1 + (r : ℂ)) ^ (a - 1)) *
