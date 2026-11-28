@@ -104,7 +104,7 @@ omit [LinearOrder σ] in
 /-- Pull back a family of diagram generators `H : D.diagramVertices → MvPolynomial σ A` along an
 equivalence of variable sets `e : τ ≃ σ` to the preimage diagram `Finsupp.equivMapDomain e ⁻¹' D`.
 -/
-noncomputable def pullBackGenerators {τ : Type*} [Finite τ] (e : τ ≃ σ) (D : Set (σ →₀ ℕ))
+noncomputable def pullbackGenerators {τ : Type*} [Finite τ] (e : τ ≃ σ) (D : Set (σ →₀ ℕ))
     (H : D.diagramVertices → MvPolynomial σ A) :
     (Finsupp.equivMapDomain e ⁻¹' D).diagramVertices → MvPolynomial τ A :=
   fun v₀ ↦ (renameEquiv A e).symm (H ⟨Finsupp.equivMapDomain e v₀.val,
@@ -113,10 +113,10 @@ noncomputable def pullBackGenerators {τ : Type*} [Finite τ] (e : τ ≃ σ) (D
 omit [LinearOrder σ] in
 /-- Applying `renameEquiv A e` to a pulled-back generator recovers the original generator at the
 pushed-forward vertex. -/
-theorem renameEquiv_pullBackGenerators {τ : Type*} [Finite τ] (e : τ ≃ σ) (D : Set (σ →₀ ℕ))
+theorem renameEquiv_pullbackGenerators {τ : Type*} [Finite τ] (e : τ ≃ σ) (D : Set (σ →₀ ℕ))
     (H : D.diagramVertices → MvPolynomial σ A)
     (v₀ : (Finsupp.equivMapDomain e ⁻¹' D).diagramVertices) :
-    renameEquiv A e (pullBackGenerators e D H v₀) =
+    renameEquiv A e (pullbackGenerators e D H v₀) =
       H ⟨Finsupp.equivMapDomain e v₀.val,
         (mem_diagramVertices_preimage_equivMapDomain_iff e).mp v₀.property⟩ :=
   (renameEquiv A e).apply_symm_apply _
@@ -126,14 +126,14 @@ theorem image_renameEquiv_diagramSpanSet {τ : Type*} [Finite τ] [LinearOrder �
     (D : Set (σ →₀ ℕ)) (H : D.diagramVertices → MvPolynomial σ A) (ℓ : ℕ) :
     (renameEquiv A e.toEquiv) ''
         ((Finsupp.equivMapDomain e.toEquiv ⁻¹' D).diagramSpanSet
-          (pullBackGenerators e.toEquiv D H) ℓ) =
+          (pullbackGenerators e.toEquiv D H) ℓ) =
       D.diagramSpanSet H ℓ := by
   have hren (s : τ →₀ ℕ) : renameEquiv A e.toEquiv (monomial s (1 : A)) =
       monomial (Finsupp.equivMapDomain e.toEquiv s) 1 := by
     rw [renameEquiv_apply, rename_monomial, Finsupp.equivMapDomain_eq_mapDomain]
   refine Subset.antisymm ?_ ?_
   · rintro _ ⟨q, (⟨v₀, β₀, hβ₀, hdeg₀, rfl⟩ | ⟨γ₀, hγ₀, hdeg₀, rfl⟩), rfl⟩
-    · rw [map_mul, renameEquiv_pullBackGenerators, hren]
+    · rw [map_mul, renameEquiv_pullbackGenerators, hren]
       exact monomial_mul_mem_diagramSpanSet ⟨_, _⟩
         ((mem_diagramBox_preimage_equivMapDomain_iff e).mp hβ₀)
         (by simpa [Finsupp.equivMapDomain_eq_mapDomain] using hdeg₀)
@@ -147,7 +147,7 @@ theorem image_renameEquiv_diagramSpanSet {τ : Type*} [Finite τ] [LinearOrder �
         (mem_diagramVertices_preimage_equivMapDomain_iff e.toEquiv).mpr hv⟩
         ((mem_diagramBox_preimage_equivMapDomain_iff e).mpr hβ)
         (by simpa [Finsupp.equivMapDomain_eq_mapDomain] using hdeg),
-        by rw [map_mul, renameEquiv_pullBackGenerators, hren]⟩
+        by rw [map_mul, renameEquiv_pullbackGenerators, hren]⟩
     · obtain ⟨γ₀, rfl⟩ := (Finsupp.domCongr e.toEquiv (M := ℕ)).surjective γ
       simp only [Finsupp.domCongr_apply] at hγ hdeg ⊢
       exact ⟨_, monomial_mem_diagramSpanSet hγ
@@ -347,13 +347,13 @@ private theorem homogeneousSubmodule_le_span_fin :
         X_zero_mul_mem_span_diagramSpanSet hD_up hD_mono (hk.trans hm) ihm hQ
       exact hsplit ▸ add_mem hren hX0
 
-private theorem isHomogeneous_pullBackGenerators {σ τ : Type*} [Finite σ] [Finite τ]
+private theorem isHomogeneous_pullbackGenerators {σ τ : Type*} [Finite σ] [Finite τ]
     (e : τ ≃ σ) {D : Set (σ →₀ ℕ)} {H : D.diagramVertices → MvPolynomial σ A}
     (hH : ∀ v, (H v).IsHomogeneous v.val.degree)
     (v₀ : (Finsupp.equivMapDomain e ⁻¹' D).diagramVertices) :
-    (pullBackGenerators e D H v₀).IsHomogeneous v₀.val.degree :=
+    (pullbackGenerators e D H v₀).IsHomogeneous v₀.val.degree :=
   (IsHomogeneous.rename_isHomogeneous_iff e.symm.injective).mpr <| by
-    simpa [pullBackGenerators, renameEquiv_symm, renameEquiv_apply,
+    simpa [pullbackGenerators, renameEquiv_symm, renameEquiv_apply,
       Finsupp.equivMapDomain_eq_mapDomain] using
       hH ⟨Finsupp.equivMapDomain e v₀.val,
         (mem_diagramVertices_preimage_equivMapDomain_iff e).mp v₀.property⟩
@@ -363,13 +363,13 @@ private theorem homogeneousSubmodule_le_span_preimage_equivMapDomain_iff
     (D : Set (σ →₀ ℕ)) (H : D.diagramVertices → MvPolynomial σ A) (m : ℕ) :
     homogeneousSubmodule τ A m ≤
         Submodule.span A ((Finsupp.equivMapDomain e.toEquiv ⁻¹' D).diagramSpanSet
-          (pullBackGenerators e.toEquiv D H) m) ↔
+          (pullbackGenerators e.toEquiv D H) m) ↔
       homogeneousSubmodule σ A m ≤ Submodule.span A (D.diagramSpanSet H m) := by
   let g := renameEquiv A e.toEquiv
   have hmap : Submodule.span A (D.diagramSpanSet H m) =
       Submodule.map g.toLinearMap (Submodule.span A
         ((Finsupp.equivMapDomain e.toEquiv ⁻¹' D).diagramSpanSet
-          (pullBackGenerators e.toEquiv D H) m)) :=
+          (pullbackGenerators e.toEquiv D H) m)) :=
     (congrArg (Submodule.span A) (image_renameEquiv_diagramSpanSet e D H m).symm).trans
       (Submodule.map_span g.toLinearMap _).symm
   have hhom {q} : q ∈ homogeneousSubmodule τ A m ↔ g q ∈ homogeneousSubmodule σ A m := by
@@ -397,9 +397,11 @@ theorem homogeneousSubmodule_le_span_diagramSpanSet_of_le {σ : Type*} [Finite �
     homogeneousSubmodule σ A ℓ ≤ Submodule.span A (D.diagramSpanSet H ℓ) := by
   cases nonempty_fintype σ; let e : Fin (Fintype.card σ) ≃o σ := Fintype.orderIsoFinOfCardEq σ rfl
   refine (homogeneousSubmodule_le_span_preimage_equivMapDomain_iff e D H ℓ).mp
-    (homogeneousSubmodule_le_span_fin (fun _ _ hle hα ↦ hD_up (by simpa using hle) hα)
+    (homogeneousSubmodule_le_span_fin (fun x y hle hα ↦ hD_up (by
+        simpa only [Finsupp.equivMapDomain_eq_mapDomain] using
+          (Finsupp.mapDomain_le_mapDomain_iff_le e.toEquiv.injective x y).mpr hle) hα)
       ((isMonotoneDiagram_preimage_equivMapDomain e).mpr hD_mono)
-      (isHomogeneous_pullBackGenerators e.toEquiv hH)
+      (isHomogeneous_pullbackGenerators e.toEquiv hH)
       (by rwa [diagramCutoff_preimage_equivMapDomain e D])
       ((homogeneousSubmodule_le_span_preimage_equivMapDomain_iff e D H k).mpr hspan) hℓ)
 
