@@ -442,7 +442,11 @@ end TauCeti
 namespace Fin
 
 /-- The order embedding `Fin b ↪o Fin N` enumerating the indices outside the range of
-`I : Fin a ↪o Fin N`, where `a + b = N`. -/
+`I : Fin a ↪o Fin N`, where `a + b = N`. 
+
+Adapted from `grh-lean` (https://github.com/lsernau/grh-lean at commit
+`72fead102f663d5c7a407964a13dc0cf9d977207`, Apache 2.0, Copyright 2026 Anthropic, PBC), file
+`src/Lib/GLn/Dual.lean` (`columnComplement` API). -/
 noncomputable def orderEmbCompl {N a b : ℕ} (hab : a + b = N) (I : Fin a ↪o Fin N) :
     Fin b ↪o Fin N :=
   Set.powersetCard.ofFinEmbEquiv.symm

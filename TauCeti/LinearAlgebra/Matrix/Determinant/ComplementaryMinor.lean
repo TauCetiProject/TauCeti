@@ -181,7 +181,11 @@ universe u v
 `I : Fin a ↪o Fin N`, there is a sign `u : ℤˣ` (independent of `R`, `A`, `B`) such that for every
 commutative ring `R` and matrices `A, B : Matrix m m R` with `A * B = 1`, `u` times the minor of
 `A` on the rows outside `I` and the first `b` columns equals `A.det` times the minor of `Bᵀ` on the
-rows `I` and the last `a` columns in reverse order. -/
+rows `I` and the last `a` columns in reverse order.
+
+Adapted from `grh-lean` (https://github.com/lsernau/grh-lean at commit
+`72fead102f663d5c7a407964a13dc0cf9d977207`, Apache 2.0, Copyright 2026 Anthropic, PBC), file
+`src/Lib/GLn/Dual.lean` (`GL.exists_sign_minor_columnComplement`). -/
 theorem exists_sign_det_submatrix_orderEmbCompl {m : Type u} [Fintype m] [DecidableEq m]
     {N a b : ℕ} (hab : a + b = N) (e pos : m ≃ Fin N) (I : Fin a ↪o Fin N) :
     ∃ u : ℤˣ, ∀ {R : Type v} [CommRing R] {A B : Matrix m m R}, A * B = 1 →
