@@ -19,8 +19,9 @@ For a finitely presented module `X`, the Auslander–Reiten formula identifies t
 corresponds to postcomposition with the class of `D Tr(t)`.
 
 The stable translate makes the presentation-level formula independent of a choice of lifts.
-The resulting pairing is natural in both variables. Over an Artin algebra, Matlis biduality
-turns the pairing into the first Auslander–Reiten formula for finitely generated modules.
+The resulting pairing is natural in both variables. Matlis biduality turns the pairing into
+the first Auslander–Reiten formula when `Ext¹(X, N)` has finite length over the base ring.
+This holds for finitely generated modules over an Artin algebra.
 
 ## References
 
@@ -69,31 +70,39 @@ theorem stableAuslanderReitenFormula_apply
   simp only [stableAuslanderReitenFormula, LinearEquiv.trans_apply, Linear.homCongr_apply,
     Functor.homLinearEquiv_apply, Iso.refl_inv, Category.id_comp]
 
-/-- In the stable pairing, pullback along a representative `t` of a stable morphism `g`
-corresponds to postcomposition with `τg`. -/
+/-- In the stable pairing, pullback along `t` corresponds to postcomposition with the translate
+of its stable class. -/
+@[simp]
 theorem stableAuslanderReitenFormula_pullback
-    {X X' : FinitelyPresentedStableModule.{u, max u v} A} (g : X ⟶ X')
-    (t : X.obj.as ⟶ X'.obj.as) (ht : (S).projectiveStableFunctor.map t = g.hom)
+    {X X' : FinitelyPresentedStableModule.{u, max u v} A} (t : X.obj.as ⟶ X'.obj.as)
     {N : ModuleCat.{max u v} A} (ξ : (S).Ext1 X'.obj.as N)
     (a : (S).injectiveStableFunctor.obj N ⟶ (stableTranslate R A E).obj X) :
     stableAuslanderReitenFormula (R := R) (E := E) X N a (ξ.pullback t) =
       stableAuslanderReitenFormula (R := R) (E := E) X' N
-        (a ≫ (stableTranslate R A E).map g) ξ := by
+        (a ≫ (stableTranslate R A E).map (ObjectProperty.homMk ((S).projectiveStableFunctor.map t)))
+        ξ := by
   obtain ⟨t₀, t₁, ht₀, ht₁⟩ := exists_lift_projective_presentation
     X.presentation.exact.linearMap_comp_eq_zero X'.presentation.exact X'.presentation.surjective
     t.hom
-  have hg : (ObjectProperty.homMk ((S).projectiveStableFunctor.map t) : X ⟶ X') = g :=
-    ObjectProperty.hom_ext _ ht
   have hτ := stableTranslateObjIsoMatlisDualTranspose_naturality (R := R) (E := E) t ht₀ ht₁
-  rw [hg] at hτ
-  rw [stableAuslanderReitenFormula_apply, stableAuslanderReitenFormula_apply, Category.assoc, hτ,
-    ← Category.assoc a, Functor.map_comp _ (a ≫ (stableTranslateObjIsoMatlisDualTranspose X).hom),
-    injectiveStableToTrivialFunctor_map,
-    ModuleCat.auslanderReitenFormula_comap R E _ _ _ ht₀ ht₁, LinearMap.comp_apply,
-    Ext1.pullbackLinearMap_apply]
+  have hcomp :
+      (a ≫ (stableTranslate R A E).map (ObjectProperty.homMk ((S).projectiveStableFunctor.map t))) ≫
+          (stableTranslateObjIsoMatlisDualTranspose (R := R) (E := E) X').hom =
+        (a ≫ (stableTranslateObjIsoMatlisDualTranspose (R := R) (E := E) X).hom) ≫
+          (S).injectiveStableFunctor.map
+            (ModuleCat.matlisDualTransposeMap R E X.presentation X'.presentation ht₁) := by
+    simp only [Category.assoc, hτ]
+  have h := ModuleCat.auslanderReitenFormula_comap R E X.presentation X'.presentation N ht₀ ht₁
+    ((S).injectiveStableToTrivialFunctor.map
+      (a ≫ (stableTranslateObjIsoMatlisDualTranspose (R := R) (E := E) X).hom))
+  simpa only [stableAuslanderReitenFormula_apply, hcomp,
+    Functor.map_comp _ (a ≫ (stableTranslateObjIsoMatlisDualTranspose X).hom),
+    injectiveStableToTrivialFunctor_map, LinearMap.comp_apply, Ext1.pullbackLinearMap_apply] using!
+    (DFunLike.congr_fun h ξ).symm
 
 /-- In the stable pairing, pushout along a map of coefficient modules corresponds to
 precomposition with its costable class. -/
+@[simp]
 theorem stableAuslanderReitenFormula_pushout
     (X : FinitelyPresentedStableModule.{u, max u v} A) {N N' : ModuleCat.{max u v} A}
     (f : N ⟶ N') (ξ : (S).Ext1 X.obj.as N)
@@ -101,74 +110,116 @@ theorem stableAuslanderReitenFormula_pushout
     stableAuslanderReitenFormula (R := R) (E := E) X N' a (ξ.pushout f) =
       stableAuslanderReitenFormula (R := R) (E := E) X N
         ((S).injectiveStableFunctor.map f ≫ a) ξ := by
-  rw [stableAuslanderReitenFormula_apply, stableAuslanderReitenFormula_apply, Category.assoc,
-    Functor.map_comp _ ((S).injectiveStableFunctor.map f), injectiveStableToTrivialFunctor_map,
-    ModuleCat.auslanderReitenFormula_naturality,
-    LinearMap.comp_apply, Ext1.pushoutLinearMap_apply]
+  have h := ModuleCat.auslanderReitenFormula_naturality R E X.presentation f
+    ((S).injectiveStableToTrivialFunctor.map
+      (a ≫ (stableTranslateObjIsoMatlisDualTranspose (R := R) (E := E) X).hom))
+  simpa only [stableAuslanderReitenFormula_apply, Category.assoc,
+    Functor.map_comp _ ((S).injectiveStableFunctor.map f),
+    injectiveStableToTrivialFunctor_map, LinearMap.comp_apply, Ext1.pushoutLinearMap_apply] using!
+    (DFunLike.congr_fun h ξ).symm
 
-variable [IsArtinianRing R] [Module.Finite R A]
-  (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
+variable (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
 
-/-- **The first Auslander–Reiten formula.** Over an Artin algebra, for finitely generated modules
-`X` and `N`, `Ext¹(X, N)` is the Matlis dual of maps from `N` to `τX` modulo injectives.
+/-- **The first Auslander–Reiten formula.** If `Ext¹(X, N)` has finite length over `R`, it is
+the Matlis dual of maps from `N` to `τX` modulo injectives.
 Here `τ` is the stable translate `D Tr`, and the dual is taken with respect to an injective
 `R`-module `E` whose socle contains one copy of each simple `R`-module. Yoneda extensions are
 computed in `ModuleCat A`. -/
 noncomputable def ext1EquivDualCostableHom
     (X : FinitelyPresentedStableModule.{u, max u v} A) (N : ModuleCat.{max u v} A)
-    [Module.Finite A N] :
+    (h : IsFiniteLength R ((S).Ext1 X.obj.as N)) :
     (S).Ext1 X.obj.as N ≃ₗ[R]
       (((S).injectiveStableFunctor.obj N ⟶ (stableTranslate R A E).obj X) →ₗ[R] E) :=
-  have : Module.FinitePresentation A X.obj.as := X.property
-  (LinearEquiv.ofBijective LinearMap.applyₗ
-    (bijective_applyₗ_of_forall_isMaximal hE (ModuleCat.isFiniteLength_ext1 R X.obj.as N))) ≪≫ₗ
+  (LinearEquiv.ofBijective LinearMap.applyₗ (bijective_applyₗ_of_forall_isMaximal hE h)) ≪≫ₗ
     ((stableAuslanderReitenFormula (R := R) (E := E) X N).arrowCongr
       (LinearEquiv.refl R E)).symm
 
-private theorem ext1EquivDualCostableHom_apply_eq_pairing
+/-- The first Auslander–Reiten formula evaluates the stable pairing on any costable morphism. -/
+theorem ext1EquivDualCostableHom_apply_eq_pairing
     (X : FinitelyPresentedStableModule.{u, max u v} A) {N : ModuleCat.{max u v} A}
-    [Module.Finite A N] (ξ : (S).Ext1 X.obj.as N)
+    (h : IsFiniteLength R ((S).Ext1 X.obj.as N)) (ξ : (S).Ext1 X.obj.as N)
     (a : (S).injectiveStableFunctor.obj N ⟶ (stableTranslate R A E).obj X) :
-    ext1EquivDualCostableHom hE X N ξ a =
-      stableAuslanderReitenFormula (R := R) (E := E) X N a ξ :=
-  rfl
+    ext1EquivDualCostableHom hE X N h ξ a =
+      stableAuslanderReitenFormula (R := R) (E := E) X N a ξ := by
+  simp only [ext1EquivDualCostableHom, LinearEquiv.trans_apply, LinearEquiv.arrowCongr_symm_apply,
+    LinearEquiv.refl_symm, LinearEquiv.refl_apply, LinearEquiv.ofBijective_apply,
+    LinearMap.applyₗ_apply_apply]
 
 /-- On the stable class of a map to the dual transpose of the chosen presentation,
 the first Auslander–Reiten formula evaluates the Auslander–Reiten form on the pushout. -/
 @[simp]
 theorem ext1EquivDualCostableHom_apply
     (X : FinitelyPresentedStableModule.{u, max u v} A) {N : ModuleCat.{max u v} A}
-    [Module.Finite A N] (ξ : (S).Ext1 X.obj.as N)
+    (h : IsFiniteLength R ((S).Ext1 X.obj.as N)) (ξ : (S).Ext1 X.obj.as N)
     (a : N ⟶ ModuleCat.matlisDualTranspose R E X.presentation) :
-    ext1EquivDualCostableHom hE X N ξ
+    ext1EquivDualCostableHom hE X N h ξ
       ((S).injectiveStableFunctor.map a ≫
         (stableTranslateObjIsoMatlisDualTranspose (R := R) (E := E) X).inv) =
       ModuleCat.auslanderReitenForm R E X.presentation (ξ.pushout a) := by
-  rw [ext1EquivDualCostableHom_apply_eq_pairing, stableAuslanderReitenFormula_apply,
+  simp only [ext1EquivDualCostableHom_apply_eq_pairing, stableAuslanderReitenFormula_apply,
     Category.assoc, Iso.inv_hom_id, Category.comp_id, injectiveStableToTrivialFunctor_map,
     ModuleCat.auslanderReitenFormula_map_apply]
 
-/-- Pullback along a representative `t` of a stable morphism `g` corresponds to the dual
-of postcomposition with `τg`. -/
+/-- Pullback along `t` corresponds to the dual of postcomposition with the translate of its
+stable class. -/
 theorem ext1EquivDualCostableHom_pullback
-    {X X' : FinitelyPresentedStableModule.{u, max u v} A} (g : X ⟶ X')
-    (t : X.obj.as ⟶ X'.obj.as) (ht : (S).projectiveStableFunctor.map t = g.hom)
-    {N : ModuleCat.{max u v} A} [Module.Finite A N] (ξ : (S).Ext1 X'.obj.as N)
+    {X X' : FinitelyPresentedStableModule.{u, max u v} A} (t : X.obj.as ⟶ X'.obj.as)
+    {N : ModuleCat.{max u v} A} (h : IsFiniteLength R ((S).Ext1 X.obj.as N))
+    (h' : IsFiniteLength R ((S).Ext1 X'.obj.as N)) (ξ : (S).Ext1 X'.obj.as N)
     (a : (S).injectiveStableFunctor.obj N ⟶ (stableTranslate R A E).obj X) :
-    ext1EquivDualCostableHom hE X N (ξ.pullback t) a =
-      ext1EquivDualCostableHom hE X' N ξ (a ≫ (stableTranslate R A E).map g) := by
+    ext1EquivDualCostableHom hE X N h (ξ.pullback t) a =
+      ext1EquivDualCostableHom hE X' N h' ξ
+        (a ≫ (stableTranslate R A E).map
+          (ObjectProperty.homMk ((S).projectiveStableFunctor.map t))) := by
   simpa only [ext1EquivDualCostableHom_apply_eq_pairing] using
-    stableAuslanderReitenFormula_pullback (R := R) (E := E) g t ht ξ a
+    stableAuslanderReitenFormula_pullback (R := R) (E := E) t ξ a
 
 /-- Pushout in the coefficient module corresponds to the dual of precomposition with its
 costable class. -/
 theorem ext1EquivDualCostableHom_pushout
     (X : FinitelyPresentedStableModule.{u, max u v} A) {N N' : ModuleCat.{max u v} A}
-    [Module.Finite A N] [Module.Finite A N'] (f : N ⟶ N') (ξ : (S).Ext1 X.obj.as N)
+    (h : IsFiniteLength R ((S).Ext1 X.obj.as N)) (h' : IsFiniteLength R ((S).Ext1 X.obj.as N'))
+    (f : N ⟶ N') (ξ : (S).Ext1 X.obj.as N)
     (a : (S).injectiveStableFunctor.obj N' ⟶ (stableTranslate R A E).obj X) :
-    ext1EquivDualCostableHom hE X N' (ξ.pushout f) a =
-      ext1EquivDualCostableHom hE X N ξ ((S).injectiveStableFunctor.map f ≫ a) := by
+    ext1EquivDualCostableHom hE X N' h' (ξ.pushout f) a =
+      ext1EquivDualCostableHom hE X N h ξ ((S).injectiveStableFunctor.map f ≫ a) := by
   simpa only [ext1EquivDualCostableHom_apply_eq_pairing] using
     stableAuslanderReitenFormula_pushout (R := R) (E := E) X f ξ a
+
+variable [IsArtinianRing R] [Module.Finite R A]
+
+/-- The first Auslander–Reiten formula for finitely generated modules over an Artin algebra,
+where `Ext¹(X, N)` has finite length over the base ring. -/
+noncomputable abbrev ext1EquivDualCostableHomOfArtinAlgebra
+    (X : FinitelyPresentedStableModule.{u, max u v} A) (N : ModuleCat.{max u v} A)
+    [Module.Finite A N] :
+    (S).Ext1 X.obj.as N ≃ₗ[R]
+      (((S).injectiveStableFunctor.obj N ⟶ (stableTranslate R A E).obj X) →ₗ[R] E) :=
+  have : Module.FinitePresentation A X.obj.as := X.property
+  ext1EquivDualCostableHom hE X N (ModuleCat.isFiniteLength_ext1 R X.obj.as N)
+
+/-- Pullback in the first Auslander–Reiten formula over an Artin algebra corresponds to the dual
+of postcomposition with the translate of the stable class. -/
+@[simp]
+theorem ext1EquivDualCostableHomOfArtinAlgebra_pullback
+    {X X' : FinitelyPresentedStableModule.{u, max u v} A} (t : X.obj.as ⟶ X'.obj.as)
+    {N : ModuleCat.{max u v} A} [Module.Finite A N] (ξ : (S).Ext1 X'.obj.as N)
+    (a : (S).injectiveStableFunctor.obj N ⟶ (stableTranslate R A E).obj X) :
+    ext1EquivDualCostableHomOfArtinAlgebra hE X N (ξ.pullback t) a =
+      ext1EquivDualCostableHomOfArtinAlgebra hE X' N ξ
+        (a ≫ (stableTranslate R A E).map
+          (ObjectProperty.homMk ((S).projectiveStableFunctor.map t))) :=
+  ext1EquivDualCostableHom_pullback hE t _ _ ξ a
+
+/-- Pushout in the first Auslander–Reiten formula over an Artin algebra corresponds to the dual
+of precomposition with the costable class. -/
+@[simp]
+theorem ext1EquivDualCostableHomOfArtinAlgebra_pushout
+    (X : FinitelyPresentedStableModule.{u, max u v} A) {N N' : ModuleCat.{max u v} A}
+    [Module.Finite A N] [Module.Finite A N'] (f : N ⟶ N') (ξ : (S).Ext1 X.obj.as N)
+    (a : (S).injectiveStableFunctor.obj N' ⟶ (stableTranslate R A E).obj X) :
+    ext1EquivDualCostableHomOfArtinAlgebra hE X N' (ξ.pushout f) a =
+      ext1EquivDualCostableHomOfArtinAlgebra hE X N ξ ((S).injectiveStableFunctor.map f ≫ a) :=
+  ext1EquivDualCostableHom_pushout hE X _ _ f ξ a
 
 end TauCeti

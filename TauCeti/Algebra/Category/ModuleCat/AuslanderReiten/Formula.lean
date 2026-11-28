@@ -276,22 +276,13 @@ theorem dualExt1EquivCostableHom_comap {N N' : ModuleCat.{max u v w} A}
       (contravariantDefectEquivExt1 R e he X').toLinearMap =
         (χ ∘ₗ (contravariantDefectEquivExt1 R e he X).toLinearMap) ∘ₗ
           contravariantDefectComap R e.g.hom t.hom := by
-    refine LinearMap.ext fun x ↦ ?_
-    obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, contravariantDefectComap_mk,
-      contravariantDefectEquivExt1_mk, Ext1.pullbackLinearMap_apply, Ext1.pullback_pullback,
-      ofHom_comp, ofHom_hom]
+    simp only [LinearMap.comp_assoc, contravariantDefectEquivExt1_comap R e he t]
   simp only [dualExt1EquivCostableHom_apply, hχ,
     Function.Exact.dualContravariantDefectEquivCovariantDefect_comap P.exact P.surjective
       P'.exact P'.surjective e.shortExact.moduleCat_injective_f e.shortExact.moduleCat_surjective_g
-      e.function_exact ht₀ ht₁]
-  generalize Function.Exact.dualContravariantDefectEquivCovariantDefect P.exact P.surjective
-    e.shortExact.moduleCat_injective_f e.shortExact.moduleCat_surjective_g e.function_exact
-    (χ ∘ₗ (contravariantDefectEquivExt1 R e he X).toLinearMap) = y
-  obtain ⟨a, rfl⟩ := Submodule.Quotient.mk_surjective _ y
-  rw [homCokernelMap_mk, covariantDefectEquivCostableHom_mk,
-    covariantDefectEquivCostableHom_mk, ← Functor.map_comp, matlisDualTransposeMap_eq]
-  simp only [← ofHom_comp, LinearMap.comp_assoc, LinearEquiv.symm_comp_assoc]
+      e.function_exact ht₀ ht₁, matlisDualTransposeMap_eq]
+  exact covariantDefectEquivCostableHom_homCokernelMap R (matlisDualTransposeEquiv R E P) e he
+    (matlisDualTransposeEquiv R E P') _ _
 
 /-- Pullback on `Ext¹(-, N)` along a morphism lifted to finite projective presentations is
 adjoint under the Auslander–Reiten pairing to postcomposition with the class of `D Tr(t)`. -/

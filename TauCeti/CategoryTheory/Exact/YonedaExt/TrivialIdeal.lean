@@ -38,8 +38,10 @@ for relative injectives.
   factor through every deflation onto their target.
 * `TauCeti.ExactStructure.injectivelyTrivialIdeal E`: the ideal `ℐ_E` of the morphisms that extend
   across every inflation out of their source.
-* `TauCeti.ExactStructure.injectiveStableToTrivialFunctor E`: the full comparison functor from
-  the injective stable category to `E/ℐ_E`, an equivalence with enough relative injectives.
+* `TauCeti.ExactStructure.projectiveStableToTrivialFunctor E` and
+  `TauCeti.ExactStructure.injectiveStableToTrivialFunctor E`: the full comparison functors from
+  the stable categories to `E/𝒫_E` and `E/ℐ_E`, respectively. They are equivalences with enough
+  relative projectives and injectives, respectively.
 
 ## Main results
 
@@ -152,6 +154,33 @@ theorem EnoughProjectives.projectivelyTrivialIdeal_eq (h : E.EnoughProjectives) 
   obtain ⟨t, ht⟩ := mem_projectivelyTrivialIdeal_iff.mp hf (E.isDeflation_g P.conflation)
   rw [mem_projectiveStableIdeal_iff, ObjectProperty.factorsThrough_iff]
   exact ⟨P.P, P.isProjective, t, P.p, ht.symm⟩
+
+variable (E) in
+/-- The canonical functor from the projective stable category to the quotient by projectively
+trivial morphisms, induced by the identity on the underlying category. -/
+noncomputable abbrev projectiveStableToTrivialFunctor :
+    E.ProjectiveStableCategory ⥤ E.projectivelyTrivialIdeal.Quotient :=
+  E.projectiveStableIdeal.lift E.projectivelyTrivialIdeal.quotientFunctor (by
+    rw [MorphismIdeal.kerIdeal_quotientFunctor]
+    exact projectiveStableIdeal_le_projectivelyTrivialIdeal)
+
+/-- The comparison sends a stable class to the class of the same morphism modulo projectively
+trivial morphisms. -/
+@[simp]
+theorem projectiveStableToTrivialFunctor_map (E : ExactStructure C) (f : X ⟶ Y) :
+    E.projectiveStableToTrivialFunctor.map (E.projectiveStableFunctor.map f) =
+      E.projectivelyTrivialIdeal.quotientFunctor.map f :=
+  Quotient.lift_map_functor_map _ _ _ _
+
+/-- The comparison to the quotient by projectively trivial morphisms is full. -/
+instance (E : ExactStructure C) : E.projectiveStableToTrivialFunctor.Full :=
+  MorphismIdeal.full_lift _ _ _
+
+/-- With enough relative projectives the comparison is an equivalence. -/
+theorem EnoughProjectives.projectiveStableToTrivialFunctor_isEquivalence (h : E.EnoughProjectives) :
+    E.projectiveStableToTrivialFunctor.IsEquivalence := by
+  apply MorphismIdeal.isEquivalence_lift
+  rw [MorphismIdeal.kerIdeal_quotientFunctor, h.projectivelyTrivialIdeal_eq]
 
 /-- **An object is relatively projective exactly when its identity is projectively trivial.** -/
 @[simp high]

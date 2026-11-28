@@ -51,6 +51,9 @@ with an `A`-linear equivalence `W ≃ₗ[A] B`, compared on morphisms by
 
 ## Main results
 
+* `ModuleCat.contravariantDefectEquivExt1_comap` and
+  `ModuleCat.covariantDefectEquivCostableHom_homCokernelMap`: naturality of the comparisons for
+  an injective middle term in the test module.
 * `ModuleCat.contravariantDefectEquivStableHom_map` and
   `ModuleCat.contravariantDefectEquivStableHom_comap`: naturality of the contravariant
   identification in the sequence and in the test module.
@@ -124,6 +127,18 @@ theorem contravariantDefectEquivExt1_mk {Y : ModuleCat.{t} A} (g : Y →ₗ[A] N
       (Ext1.mk e).pullback (ofHom g) := by
   simp only [contravariantDefectEquivExt1, LinearEquiv.trans_apply,
     contravariantDefectEquivHomQuotient_mk, Extension.homQuotientEquivExt1_mk]
+
+/-- **Naturality of the contravariant defect as `Ext¹` in the test module.** Precomposition
+with `s : Y ⟶ Y'` on defects is base change along `s`. -/
+theorem contravariantDefectEquivExt1_comap {Y Y' : ModuleCat.{t} A} (s : Y ⟶ Y') :
+    (contravariantDefectEquivExt1 R e he Y).toLinearMap ∘ₗ
+        contravariantDefectComap R e.g.hom s.hom =
+      Ext1.pullbackLinearMap R s ∘ₗ (contravariantDefectEquivExt1 R e he Y').toLinearMap := by
+  refine LinearMap.ext fun x ↦ ?_
+  obtain ⟨g, rfl⟩ := Submodule.Quotient.mk_surjective _ x
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, contravariantDefectComap_mk,
+    contravariantDefectEquivExt1_mk, Ext1.pullbackLinearMap_apply, Ext1.pullback_pullback,
+    ofHom_comp, ofHom_hom]
 
 end Injective
 
@@ -232,6 +247,21 @@ theorem covariantDefectEquivCostableHom_mk (u : N →ₗ[A] W) :
       (ExactStructure.abelian _).injectivelyTrivialIdeal.quotientFunctor.map
         (ofHom (eW.toLinearMap ∘ₗ u)) := by
   simp [covariantDefectEquivCostableHom]
+
+/-- **Naturality of the covariant defect as costable `Hom` in the test module.** For
+`g : W → W'` and `W' ≃ B'`, postcomposition on defects is postcomposition with the costable
+class of the induced `B ⟶ B'`. -/
+theorem covariantDefectEquivCostableHom_homCokernelMap {W' : Type t} [AddCommGroup W']
+    [Module A W'] [Module R W'] [IsScalarTower R A W'] {B' : ModuleCat.{t} A} (eW' : W' ≃ₗ[A] B')
+    (g : W →ₗ[A] W') (y : covariantDefect R e.f.hom W) :
+    covariantDefectEquivCostableHom R eW' e he (homCokernelMap R e.f.hom g y) =
+      covariantDefectEquivCostableHom R eW e he y ≫
+        (ExactStructure.abelian _).injectivelyTrivialIdeal.quotientFunctor.map
+          (ofHom (eW'.toLinearMap ∘ₗ g ∘ₗ eW.symm.toLinearMap)) := by
+  obtain ⟨a, rfl⟩ := Submodule.Quotient.mk_surjective _ y
+  rw [homCokernelMap_mk, covariantDefectEquivCostableHom_mk,
+    covariantDefectEquivCostableHom_mk, ← Functor.map_comp]
+  simp only [← ofHom_comp, LinearMap.comp_assoc, LinearEquiv.symm_comp_assoc]
 
 end Injective
 
