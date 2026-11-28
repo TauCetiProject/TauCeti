@@ -38,7 +38,8 @@ generated for a finite index set, and consists of the elements of `Q₊` that li
 * `TauCeti.CartanRealization.CoweightLattice.posRootCone`: the positive root cone of the weight
   lattice `P`, the natural span of the simple roots in `P`.
 * `TauCeti.CartanRealization.height`: the height on `Q₊`.
-* `TauCeti.CartanRealization.RootLE`: the order `μ ≤ λ` given by `λ - μ ∈ Q₊`.
+* `TauCeti.CartanRealization.RootLE`: the order `μ ≤ λ` given by `λ - μ ∈ Q₊`, with height
+  difference `TauCeti.CartanRealization.RootLE.height` over a field of characteristic zero.
 * `TauCeti.CartanRealization.IsDominant`: the dominance predicate `λ(hᵢ) ≥ 0` for all `i`.
 * `TauCeti.CartanRealization.restrictRootLatticeEquiv`: the canonical isomorphism
   `R.rootLattice ≃ₗ[ℤ] (R.restrict M hc hs).rootLattice` induced by restriction of functionals.
@@ -54,6 +55,12 @@ generated for a finite index set, and consists of the elements of `Q₊` that li
 * `TauCeti.CartanRealization.RootLE.antisymm`: the order on weights is antisymmetric.
 * `TauCeti.CartanRealization.finite_setOf_rootLE_height_le`: **finite-height intervals**, the set
   of `μ ≤ λ` with `ht(λ - μ) ≤ n` is finite.
+* `TauCeti.CartanRealization.exists_maximal_of_rootLE_finset`: over a field of characteristic zero,
+  any nonempty predicate on weights bounded above by finitely many cones `λ - Q₊` has a
+  `RootLE`-maximal element above any witness.
+* `TauCeti.CartanRealization.isDominant_of_forall_exists_nat_apply_coroot`: over a field with a
+  compatible partial order (`[PartialOrder K] [IsOrderedRing K]`), a weight taking natural values
+  on all simple coroots is dominant.
 * `TauCeti.CartanRealization.CoweightLattice.rootLattice_le_weightLattice`: `Q ⊆ P`.
 * `TauCeti.CartanRealization.CoweightLattice.coe_mem_posRootCone_iff`: the positive root cone of
   `P` is the part of `Q₊` in `P`.
@@ -286,6 +293,70 @@ theorem finite_setOf_rootLE_height_le [Finite I] [CharZero K] (lam : Dual K H) (
   (R.linearIndependent_nat_root.finite_sub_natSpanHeight_le lam n).subset
     fun μ ⟨h, hn⟩ ↦ ⟨⟨lam - μ, h⟩, (sub_sub_cancel lam μ).symm, hn⟩
 
+section RootLEHeight
+
+variable [CharZero K]
+
+/-- The **height difference** `ht(λ - μ)` attached to a witness `h : R.RootLE μ lam`. -/
+noncomputable def RootLE.height {μ lam : Dual K H} (h : R.RootLE μ lam) : ℕ :=
+  R.height ⟨lam - μ, rootLE_iff.mp h⟩
+
+theorem RootLE.height_def {μ lam : Dual K H} (h : R.RootLE μ lam) :
+    h.height = R.height ⟨lam - μ, rootLE_iff.mp h⟩ := (rfl)
+
+/-- A reflexive inequality has height difference zero. -/
+@[simp]
+theorem RootLE.height_refl (lam : Dual K H) : (rootLE_refl (R := R) lam).height = 0 := by
+  simp [RootLE.height_def]
+
+/-- Height differences add along transitive chains `μ ≤ ν ≤ λ`. -/
+theorem RootLE.height_trans {μ ν lam : Dual K H} (h₁ : R.RootLE μ ν) (h₂ : R.RootLE ν lam) :
+    (h₁.trans h₂).height = h₂.height + h₁.height := by
+  have hadd : (⟨lam - μ, rootLE_iff.mp (h₁.trans h₂)⟩ : R.posRootCone) =
+      ⟨lam - ν, rootLE_iff.mp h₂⟩ + ⟨ν - μ, rootLE_iff.mp h₁⟩ :=
+    Subtype.ext (sub_add_sub_cancel lam ν μ).symm
+  exact (congrArg R.height hadd).trans (map_add R.height _ _)
+
+/-- The height difference vanishes if and only if the two weights coincide. -/
+@[simp]
+theorem RootLE.height_eq_zero_iff {μ lam : Dual K H} (h : R.RootLE μ lam) :
+    h.height = 0 ↔ μ = lam := by
+  rw [RootLE.height_def, CartanRealization.height_eq_zero_iff, Subtype.ext_iff]
+  simp [sub_eq_zero, eq_comm]
+
+/-- A strict inequality `μ ≤ λ` with `μ ≠ λ` has positive height difference. -/
+theorem RootLE.height_pos_of_ne {μ lam : Dual K H} (h : R.RootLE μ lam) (hne : μ ≠ lam) :
+    0 < h.height :=
+  Nat.pos_of_ne_zero fun hz ↦ hne (h.height_eq_zero_iff.mp hz)
+
+/-- **Maximal elements in a union of finitely many downward cones.** Over a field of characteristic
+zero, any nonempty predicate `Q` on `Dual K H` whose elements lie below a finite set `S` in
+`R.RootLE` has a `RootLE`-maximal element above any given witness `μ₀`, with no finiteness
+hypothesis on the index set `I`. -/
+theorem exists_maximal_of_rootLE_finset {Q : Dual K H → Prop} {S : Finset (Dual K H)}
+    (hS : ∀ μ, Q μ → ∃ lam ∈ S, R.RootLE μ lam) {μ₀ : Dual K H} (hμ₀ : Q μ₀) :
+    ∃ μ, Q μ ∧ R.RootLE μ₀ μ ∧ ∀ ν, Q ν → R.RootLE μ ν → ν = μ := by
+  classical
+  let bound : Dual K H → ℕ := fun lam ↦ if h : R.RootLE μ₀ lam then h.height else 0
+  let B : ℕ := S.sup bound
+  have hle_B (ν : Dual K H) (hQ : Q ν) (h₀ : R.RootLE μ₀ ν) : h₀.height ≤ B := by
+    obtain ⟨lam, hlam, hνlam⟩ := hS ν hQ
+    have hsup : bound lam ≤ B := Finset.le_sup hlam
+    have hb : bound lam = (h₀.trans hνlam).height := dite_eq_left (h₀.trans hνlam)
+    have hht := h₀.height_trans hνlam
+    omega
+  let P : ℕ → Prop := fun k ↦ ∃ μ, Q μ ∧ ∃ h₀ : R.RootLE μ₀ μ, h₀.height = k
+  have hP0 : P 0 := ⟨μ₀, hμ₀, rootLE_refl μ₀, RootLE.height_refl μ₀⟩
+  obtain ⟨μ, hQμ, h₀μ, hk⟩ := Nat.findGreatest_spec (P := P) (Nat.zero_le B) hP0
+  refine ⟨μ, hQμ, h₀μ, fun ν hQν hν ↦ ?_⟩
+  by_contra hne
+  have hpos := hν.height_pos_of_ne (Ne.symm hne)
+  have htrans := h₀μ.height_trans hν
+  have hle := Nat.le_findGreatest (P := P) (hle_B ν hQν (h₀μ.trans hν)) ⟨ν, hQν, h₀μ.trans hν, rfl⟩
+  omega
+
+end RootLEHeight
+
 /-! ### Dominance -/
 
 section Dominance
@@ -315,6 +386,14 @@ theorem isDominant_zero [Preorder K] : R.IsDominant 0 := fun _ ↦ le_rfl
 theorem IsDominant.add [PartialOrder K] [IsOrderedAddMonoid K] {lam μ : Dual K H}
     (hlam : R.IsDominant lam) (hμ : R.IsDominant μ) : R.IsDominant (lam + μ) :=
   fun i ↦ add_nonneg (hlam i) (hμ i)
+
+/-- A weight whose pairing with every simple coroot is a natural number is dominant. -/
+theorem isDominant_of_forall_exists_nat_apply_coroot [PartialOrder K] [IsOrderedRing K]
+    {μ : Dual K H} (h : ∀ i : I, ∃ n : ℕ, μ (R.coroot i) = n) : R.IsDominant μ :=
+  isDominant_iff.mpr fun i ↦ by
+    obtain ⟨n, hn⟩ := h i
+    rw [hn]
+    exact Nat.cast_nonneg n
 
 end Dominance
 

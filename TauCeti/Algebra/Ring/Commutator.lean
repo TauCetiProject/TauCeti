@@ -52,6 +52,8 @@ Lie bracket `⁅A, B⁆ = A * B - B * A` of the ring.
 * `TauCeti.Associative.pow_mul_eq_mul_pow_add_nsmul_of_commutator_eq`: the mirrored orientation,
   moving an element across a power standing to its left.
 * `TauCeti.Associative.pow_mul_eq_add_nsmul_mul_pow`: the mirrored shifted-factor form.
+* `TauCeti.Associative.pow_mul_eq_sum_antidiagonal`: the general binomial expansion of
+  `x ^ n * y` in iterated commutators `(fun z ↦ ⁅x, z⁆)^[i] y` and powers `x ^ j`.
 * `TauCeti.Associative.isNilpotent_of_commutator_eq`: a commutator commuting with both of its
   arguments is nilpotent as soon as one of them is.
 * `TauCeti.Associative.isNilpotent_of_commutator_eq_nsmul`: the same conclusion when the
@@ -215,6 +217,35 @@ theorem mul_pow_eq_pow_mul_add_zsmul (hxy : x * y - y * x = c • y) (n : ℕ) :
     Int.cast_natCast, (Nat.cast_commute n (c : A)).eq]
 
 end IntegerShift
+
+section IteratedCommutator
+
+variable {A : Type*} [Ring A]
+
+/-- **Power–commutator expansion in an associative ring.** Moving `x ^ n` past `y` expands as a
+binomial sum over `i + j = n` of `n.choose i • ((fun z ↦ ⁅x, z⁆)^[i] y * x ^ j)`. -/
+theorem pow_mul_eq_sum_antidiagonal (x y : A) (n : ℕ) :
+    x ^ n * y =
+      ∑ ij ∈ Finset.antidiagonal n,
+        n.choose ij.fst • ((fun z ↦ ⁅x, z⁆)^[ij.fst] y * x ^ ij.snd) := by
+  let : LieRing A := LieRing.ofAssociativeRing
+  have htoEnd (k : ℕ) (z : A) :
+      ((@LieModule.toEnd ℤ A A _ _ _ _ _ LieRingModule.ofAssociativeModule
+        LieModule.ofAssociativeModule x) ^ k) z = x ^ k * z := by
+    rw [show @LieModule.toEnd ℤ A A _ _ _ _ _ LieRingModule.ofAssociativeModule
+      LieModule.ofAssociativeModule x = Algebra.lmul ℤ A x from rfl, ← map_pow]
+    rfl
+  have had (k : ℕ) (z : A) :
+      ((LieAlgebra.ad ℤ A x) ^ k) z = (fun w ↦ ⁅x, w⁆)^[k] z := by
+    rw [pow_apply_eq_iterate]
+    rfl
+  have hbr (u v : A) :
+      @Bracket.bracket A A LieRingModule.ofAssociativeModule.toBracket u v = u * v := rfl
+  simpa only [htoEnd, had, hbr, mul_one] using
+    @LieModule.toEnd_pow_lie ℤ A A _ _ _ _ _ LieRingModule.ofAssociativeModule
+      LieModule.ofAssociativeModule x y 1 n
+
+end IteratedCommutator
 
 section CentralCommutator
 

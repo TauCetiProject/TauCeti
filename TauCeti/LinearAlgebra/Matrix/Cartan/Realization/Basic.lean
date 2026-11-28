@@ -60,6 +60,13 @@ variable {I K H : Type*}
 
 attribute [simp] root_coroot
 
+/-- A simple coroot pairs to `2` with its simple root for a cast integer matrix with diagonal
+entry `2` at node `i`. -/
+theorem root_coroot_eq_two {I K H : Type*} [Field K] [AddCommGroup H] [Module K H]
+    {A : Matrix I I ℤ} (R : CartanRealization (A.map (Int.cast : ℤ → K)) H) {i : I}
+    (hA : A i i = 2) : R.root i (R.coroot i) = 2 := by
+  rw [root_coroot, Matrix.map_apply, hA, Int.cast_two]
+
 section
 
 variable [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I K}

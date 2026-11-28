@@ -63,6 +63,8 @@ If `x * x = c • 1` is a scalar, then `ad x` satisfies the cubic `(ad x)³ = 4 
 * `LieSubalgebra.commute_coe_iff`: two elements of a Lie subalgebra of `A` commute in `A` exactly
   when their bracket vanishes.
 * `Module.End.commutator_apply`: the bracket of two endomorphisms, applied to a vector.
+* `Module.End.apply_apply_eq_add_commutator`: swapping two endomorphisms in a pointwise
+  application releases their commutator.
 * `TauCeti.map_lie_eq_zero`: a ring homomorphism into a commutative ring kills commutators.
 
 ## References
@@ -221,6 +223,11 @@ variable {R : Type u} {M : Type v} [Semiring R] [AddCommGroup M] [Module R M]
 @[simp]
 theorem commutator_apply (X Y : Module.End R M) (m : M) : ⁅X, Y⁆ m = X (Y m) - Y (X m) := by
   rw [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp]
+
+/-- Swapping two endomorphisms in a pointwise application releases their commutator. -/
+theorem apply_apply_eq_add_commutator (X Y : Module.End R M) (m : M) :
+    X (Y m) = Y (X m) + ⁅X, Y⁆ m := by
+  rw [commutator_apply, add_sub_cancel]
 
 end Module.End
 

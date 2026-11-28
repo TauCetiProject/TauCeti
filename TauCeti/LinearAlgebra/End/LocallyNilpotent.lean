@@ -5,12 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.Algebra.Module.Submodule.Basic
 public import Mathlib.Algebra.Module.Submodule.Range
 public import Mathlib.LinearAlgebra.Span.Defs
 public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.LinearAlgebra.Finsupp.Defs
+public import Mathlib.LinearAlgebra.Prod
+public import TauCeti.LinearAlgebra.End.Basic
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 
 /-!
@@ -41,8 +44,9 @@ a grading by `ℕ`, such as divided differences on a polynomial ring, form local
   `f` may be truncated at any length beyond `k`.
 * `Module.End.span_range_pow_apply_eq_span_range_fin`: the orbit of a vector killed by
   `u ^ (n + 1)` spans the same submodule as its first `n + 1` vectors.
-* `Module.End.neg_pow_apply_eq_zero_iff`: a power of `-f` kills a vector exactly when the same
-  power of `f` does.
+* `Module.End.neg_pow_apply_eq_zero_iff` and `Module.End.exists_neg_pow_apply_eq_zero`: a power of
+  `-f` kills a vector exactly when the same power of `f` does, so `-f` is locally nilpotent
+  whenever `f` is.
 * `Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero`: `1 + f` is a unit when `f` is
   locally nilpotent.
 * `Module.End.bijective_of_sub_mem_filtration`: an endomorphism which is the identity up to a
@@ -57,6 +61,11 @@ a grading by `ℕ`, such as divided differences on a polynomial ring, form local
   vector, then neither do its composites of any length.
 * `Module.End.iSup_wordKer_eq_top_of_surjective`, `Module.End.iSup_wordKer_eq_top_of_injective`:
   local nilpotence of a family passes to quotients and to submodules.
+* `Module.End.exists_pow_apply_eq_zero_of_injective`,
+  `Module.End.exists_pow_apply_eq_zero_of_surjective`,
+  `Module.End.exists_pow_apply_eq_zero_prod`,
+  `Module.End.exists_pow_apply_eq_zero_directSum`: local nilpotence of a single endomorphism
+  passes along injective and surjective intertwiners and to binary products and direct sums.
 -/
 
 public section
@@ -108,6 +117,11 @@ theorem Module.End.neg_pow_apply_eq_zero_iff (f : Module.End R M) (n : ℕ) (x :
     ((-f) ^ n) x = 0 ↔ (f ^ n) x = 0 := by
   rcases neg_one_pow_eq_or (Module.End R M) n with h | h <;>
     simp [neg_pow, h]
+
+/-- If every vector is annihilated by some power of `f`, then the same holds for `-f`. -/
+theorem Module.End.exists_neg_pow_apply_eq_zero {f : Module.End R M}
+    (hf : ∀ x, ∃ n, (f ^ n) x = 0) (x : M) : ∃ n, ((-f) ^ n) x = 0 := by
+  simpa only [neg_pow_apply_eq_zero_iff] using hf x
 
 /-- If every vector is annihilated by some power of `f`, then `1 + f` is invertible. -/
 theorem Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero (f : Module.End R M)
@@ -357,6 +371,63 @@ theorem iSup_wordKer_eq_top_of_injective (hg : ∀ i, g ∘ₗ f i = f' i ∘ₗ
   intro x
   obtain ⟨d, hd⟩ := hf' (g x)
   exact ⟨d, comap_wordKer_of_injective hg hinj d ▸ hd⟩
+
+/-- Local nilpotence passes to submodules: an endomorphism intertwined by an injective linear map
+with a locally nilpotent endomorphism is locally nilpotent. -/
+theorem exists_pow_apply_eq_zero_of_injective {f : Module.End R M} {f' : Module.End R N}
+    {g : M →ₗ[R] N} (hg : g ∘ₗ f = f' ∘ₗ g) (hinj : Function.Injective g)
+    (hf' : ∀ y : N, ∃ d : ℕ, (f' ^ d) y = 0) (x : M) :
+    ∃ d : ℕ, (f ^ d) x = 0 := by
+  obtain ⟨d, hd⟩ := hf' (g x)
+  have hpow := Module.End.pow_apply_of_comp_eq hg d x
+  exact ⟨d, hinj (by rw [← hpow, hd, map_zero])⟩
+
+/-- Local nilpotence passes to quotients: an endomorphism intertwined by a surjective linear map
+from a locally nilpotent endomorphism is locally nilpotent. -/
+theorem exists_pow_apply_eq_zero_of_surjective {f : Module.End R M} {f' : Module.End R N}
+    {g : M →ₗ[R] N} (hg : g ∘ₗ f = f' ∘ₗ g) (hsurj : Function.Surjective g)
+    (hf : ∀ x : M, ∃ d : ℕ, (f ^ d) x = 0) (y : N) :
+    ∃ d : ℕ, (f' ^ d) y = 0 := by
+  obtain ⟨x, rfl⟩ := hsurj y
+  obtain ⟨d, hd⟩ := hf x
+  have hpow := Module.End.pow_apply_of_comp_eq hg d x
+  exact ⟨d, by rw [hpow, hd, map_zero]⟩
+
+/-- Local nilpotence passes to products: an endomorphism of `M × N` intertwined by the two
+projections with locally nilpotent endomorphisms on `M` and `N` is locally nilpotent. -/
+theorem exists_pow_apply_eq_zero_prod {eM : Module.End R M} {eN : Module.End R N}
+    {eMN : Module.End R (M × N)}
+    (hfst : LinearMap.fst R M N ∘ₗ eMN = eM ∘ₗ LinearMap.fst R M N)
+    (hsnd : LinearMap.snd R M N ∘ₗ eMN = eN ∘ₗ LinearMap.snd R M N)
+    (hM : ∀ m : M, ∃ k : ℕ, (eM ^ k) m = 0) (hN : ∀ y : N, ∃ k : ℕ, (eN ^ k) y = 0)
+    (x : M × N) :
+    ∃ k : ℕ, (eMN ^ k) x = 0 := by
+  obtain ⟨k₁, hk₁⟩ := hM x.1
+  obtain ⟨k₂, hk₂⟩ := hN x.2
+  have h1 := Module.End.pow_apply_of_comp_eq hfst (max k₁ k₂) x
+  have h2 := Module.End.pow_apply_of_comp_eq hsnd (max k₁ k₂) x
+  simp only [LinearMap.fst_apply, LinearMap.snd_apply] at h1 h2
+  exact ⟨max k₁ k₂, Prod.ext
+    (h1.symm.trans (Module.End.pow_map_zero_of_le (le_max_left k₁ k₂) hk₁))
+    (h2.symm.trans (Module.End.pow_map_zero_of_le (le_max_right k₁ k₂) hk₂))⟩
+
+open DirectSum in
+/-- Local nilpotence passes to direct sums: an endomorphism of `⨁ j, P j` intertwined with
+locally nilpotent endomorphisms `eP j` via `DirectSum.lof` is locally nilpotent. -/
+theorem exists_pow_apply_eq_zero_directSum {κ : Type*} [DecidableEq κ] {P : κ → Type*}
+    [∀ j, AddCommMonoid (P j)] [∀ j, Module R (P j)]
+    {eP : ∀ j, Module.End R (P j)} {eDS : Module.End R (⨁ j, P j)}
+    (hmap : ∀ j, eDS ∘ₗ DirectSum.lof R κ P j = DirectSum.lof R κ P j ∘ₗ eP j)
+    (hP : ∀ j m, ∃ k : ℕ, (eP j ^ k) m = 0) (v : ⨁ j, P j) :
+    ∃ k : ℕ, (eDS ^ k) v = 0 := by
+  refine DirectSum.induction_on v ⟨0, map_zero _⟩ (fun j m ↦ ?_)
+    fun x y ⟨kx, hkx⟩ ⟨ky, hky⟩ ↦ ?_
+  · obtain ⟨k, hk⟩ := hP j m
+    have hpow := Module.End.pow_apply_of_comp_eq (hmap j).symm k m
+    exact ⟨k, by rw [← DirectSum.lof_eq_of R, hpow, hk, map_zero]⟩
+  · refine ⟨max kx ky, ?_⟩
+    rw [map_add, Module.End.pow_map_zero_of_le (le_max_left kx ky) hkx,
+      Module.End.pow_map_zero_of_le (le_max_right kx ky) hky, add_zero]
 
 end Module.End
 
