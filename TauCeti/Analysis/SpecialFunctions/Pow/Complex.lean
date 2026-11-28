@@ -142,6 +142,7 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `Complex.norm_one_sub_mul_ofReal_cpow_le` -- for `‖z‖ ≤ 1`, `0 ≤ t < 1`, and any `s : ℂ`,
   `‖(1 - z * t) ^ s‖ ≤ exp (π |s.im|) (2 ^ s.re + (1 - t) ^ s.re)`.
 * `Complex.inv_cpow_half_cpow` -- `((z ^ (1/2))⁻¹) ^ w = z ^ (-w / 2)` for all `z, w : ℂ`.
+* `Complex.inv_cpow_neg_ofReal_nonneg` -- `((a : ℂ)⁻¹) ^ (-w) = (a : ℂ) ^ w` for `0 ≤ a`.
 * `Complex.one_sub_mul_cpow_eq_one_sub_cpow_mul`,
   `Complex.mul_cpow_one_sub_cpow_mul_div_cpow` -- rescaling `(1 - z * t) ^ s` and splitting
   powers of `t / (1 - t)` on `(0, 1)`.
@@ -1062,6 +1063,13 @@ theorem inv_cpow_half_cpow (z w : ℂ) : (z ^ (1 / 2 : ℂ))⁻¹ ^ w = z ^ (-w 
     (by rw [him]; linarith [neg_pi_lt_arg z, Real.pi_pos])]
   congr 1
   ring
+
+/-- Raising the inverse of a nonnegative real cast to `-w` gives the original cast raised to
+`w`. -/
+@[simp]
+theorem inv_cpow_neg_ofReal_nonneg {a : ℝ} (ha : 0 ≤ a) (w : ℂ) :
+    ((a : ℂ)⁻¹) ^ (-w) = (a : ℂ) ^ w := by
+  rw [inv_cpow_ofReal_nonneg ha, cpow_neg, inv_inv]
 
 /-- Rescaling `(1 - z * t) ^ s = (1 - t) ^ s * (1 + (t / (1 - t)) * (1 - z)) ^ s` for `t < 1`. -/
 theorem one_sub_mul_cpow_eq_one_sub_cpow_mul {z s : ℂ} {t : ℝ} (ht1 : t < 1) :

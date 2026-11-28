@@ -20,6 +20,8 @@ import TauCeti.Analysis.SpecialFunctions.Erf.Series
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Hermite.Bound
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.MeasureTheory.Integral.Exp.Decay
+import TauCeti.MeasureTheory.Integral.Exp.PowerDecay
 import TauCeti.RingTheory.Polynomial.Hermite.GeneratingFunction
 
 /-!
@@ -172,10 +174,10 @@ theorem integrableOn_rpow_mul_exp_mul_tsum_pow_div_Gamma_Ioc {σ : ℝ} {M : ℕ
     exact integrableOn_empty
   let C₀ : ℝ := 2 * rexp ((q * a / √2) ^ 2) / a ^ M
   have hmaj : IntegrableOn
-      (fun u : ℝ => C₀ * (u ^ (σ + (M : ℝ) - 1) * rexp (-(1 / 2) * u ^ 2 - x * u)))
+      (fun u : ℝ => C₀ * (u ^ (σ + (M : ℝ) - 1) * rexp (-x * u - 1 / 2 * u ^ 2)))
       (Ioc 0 a) :=
-    ((integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi (by norm_num : (0 : ℝ) < 1 / 2)
-      (s := σ + (M : ℝ) - 1) (by linarith) x).mono_set Ioc_subset_Ioi_self).const_mul C₀
+    ((integrableOn_rpow_mul_exp_mul_sub_mul_pow (n := 2) (by norm_num) (by linarith)
+      (by norm_num : (0 : ℝ) < 1 / 2) (-x)).mono_set Ioc_subset_Ioi_self).const_mul C₀
   refine hmaj.mono'
     (measurable_rpow_mul_exp_mul_tsum_pow_div_Gamma σ x q M).aestronglyMeasurable ?_
   filter_upwards [ae_restrict_mem measurableSet_Ioc] with u ⟨hu0, hua⟩
@@ -200,10 +202,9 @@ theorem integrableOn_rpow_mul_exp_mul_tsum_pow_div_Gamma_Ioc {σ : ℝ} {M : ℕ
       ≤ u ^ (σ - 1) * rexp (-u ^ 2 / 2 - x * u) * (C₀ * u ^ M) :=
         mul_le_mul_of_nonneg_left hS_le (by positivity)
     _ = C₀ * ((u ^ (σ - 1) * u ^ M) * rexp (-u ^ 2 / 2 - x * u)) := by ring
-    _ = C₀ * (u ^ (σ + (M : ℝ) - 1) * rexp (-(1 / 2) * u ^ 2 - x * u)) := by
+    _ = C₀ * (u ^ (σ + (M : ℝ) - 1) * rexp (-x * u - 1 / 2 * u ^ 2)) := by
         rw [hrpow]
-        congr 3
-        ring
+        ring_nf
 
 /-- For `0 < a`, any `σ : ℝ`, and any shift `M : ℕ`, the `M`-shifted half-Gamma Laplace majorant
 `u ↦ u^{σ - 1} exp(-u² / 2 - x u) ∑_{k ≥ 0} (q u / √2)^{k + M} / Γ((k + M) / 2 + 1)` is integrable
@@ -277,11 +278,12 @@ private theorem norm_integrand_le_majorantTerm (s x r : ℂ) (y : ℝ) (m : ℕ)
       majorantTerm s.re x.re ‖r‖ y m u := by
   have h1 : ‖(u : ℂ) ^ (s - 1) * cexp (-(u : ℂ) ^ 2 / 2 - x * u)‖ =
       u ^ (s.re - 1) * rexp (-u ^ 2 / 2 - x.re * u) := by
-    rw [neg_sq_div_two_sub_eq, norm_cpow_mul_cexp_neg_mul_sq_sub_mul (1 / 2) (s - 1) x hu]
-    simp only [Complex.sub_re, Complex.one_re]
-    congr 2
-    norm_num
-    ring
+    have hnorm := Nat.norm_cpow_mul_cexp_mul_sub_mul_pow 2 (1 / 2) (s - 1) (-x) hu
+    have hhalf : (1 / 2 : ℂ).re = 1 / 2 := by norm_num
+    simp only [Complex.neg_re, Complex.sub_re, Complex.one_re, hhalf] at hnorm
+    have hc : -(u : ℂ) ^ 2 / 2 - x * u = -x * u - (1 / 2 : ℂ) * (u : ℂ) ^ 2 := by ring
+    have hr : -x.re * u - 1 / 2 * u ^ 2 = -u ^ 2 / 2 - x.re * u := by ring
+    rw [hc, hnorm, hr]
   have h2 := norm_aeval_hermite_mul_pow_div_factorial_le m y (r * u)
   rw [norm_mul r, Complex.norm_real, Real.norm_of_nonneg hu.le] at h2
   rw [norm_mul, h1]
@@ -298,14 +300,14 @@ private theorem integrableOn_majorantTerm {σ : ℝ} {m : ℕ} (hσ : 0 < σ + (
     IntegrableOn (majorantTerm σ x q y m) (Ioi 0) := by
   let C₁ : ℝ := rexp (y ^ 2 / 2) * ((q / √2) ^ m / Real.Gamma ((m : ℝ) / 2 + 1))
   have hmaj : IntegrableOn
-      (fun u : ℝ => C₁ * (u ^ (σ + (m : ℝ) - 1) * rexp (-(1 / 2) * u ^ 2 - x * u))) (Ioi 0) :=
-    (integrableOn_rpow_mul_exp_neg_mul_sq_sub_mul_Ioi (by norm_num : (0 : ℝ) < 1 / 2)
-      (s := σ + (m : ℝ) - 1) (by linarith) x).const_mul C₁
+      (fun u : ℝ => C₁ * (u ^ (σ + (m : ℝ) - 1) * rexp (-x * u - 1 / 2 * u ^ 2))) (Ioi 0) :=
+    (integrableOn_rpow_mul_exp_mul_sub_mul_pow (n := 2) (by norm_num) (by linarith)
+      (by norm_num : (0 : ℝ) < 1 / 2) (-x)).const_mul C₁
   refine IntegrableOn.congr_fun hmaj ?_ measurableSet_Ioi
   intro u (hu : 0 < u)
   have hrpow : u ^ (σ + (m : ℝ) - 1) = u ^ (σ - 1) * u ^ m := by
     rw [add_sub_right_comm, Real.rpow_add hu, Real.rpow_natCast]
-  have hexp : -(1 / 2 : ℝ) * u ^ 2 - x * u = -u ^ 2 / 2 - x * u := by ring
+  have hexp : -x * u - 1 / 2 * u ^ 2 = -u ^ 2 / 2 - x * u := by ring
   unfold majorantTerm
   dsimp [C₁]
   rw [hrpow, hexp, mul_div_right_comm q u, mul_pow]
@@ -710,10 +712,13 @@ theorem tendsto_tsum_mul_pow_div_factorial_mul_hermite_mul_integral_nhdsLT_one {
   let I : ℂ → ℂ := fun z =>
     ∫ v in Ioi (0 : ℝ), (v : ℂ) ^ (s - 1) * cexp (-(v : ℂ) ^ 2 / 2 - z * v)
   have hI_cont : Continuous I := by
-    have hdiff : Differentiable ℂ I := by
-      simpa only [I, neg_sq_div_two_sub_eq] using
-        differentiable_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi
-          (b := (1 / 2 : ℂ)) (by norm_num) hs
+    have hdiff : Differentiable ℂ I := fun z => by
+      have hz := (hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_pow_Ioi (n := 2) (b := 1 / 2)
+        (s := s - 1) (by norm_num) (by norm_num) (by simpa using hs) (-z)).comp z
+        (hasDerivAt_neg z)
+      refine (hz.congr_of_eventuallyEq (.of_forall fun w => ?_)).differentiableAt
+      refine setIntegral_congr_fun measurableSet_Ioi fun v _ => ?_
+      ring_nf
     exact hdiff.continuous
   let g : ℝ → ℂ := fun t =>
     (Real.sqrt (1 + (r * t) ^ 2) : ℂ) ^ (-s) *

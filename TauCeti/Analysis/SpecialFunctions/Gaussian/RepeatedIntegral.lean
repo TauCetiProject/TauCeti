@@ -9,8 +9,9 @@ public import TauCeti.Analysis.SpecialFunctions.Erf.Basic
 
 import TauCeti.Analysis.Complex.IteratedDeriv
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
-import TauCeti.Analysis.SpecialFunctions.Gaussian.LaplaceIntegral
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Moments
+import TauCeti.MeasureTheory.Integral.Exp.Decay
+import TauCeti.MeasureTheory.Integral.Exp.PowerDecay
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Probability.Distributions.Gaussian.Cdf
 import TauCeti.Probability.Distributions.Gaussian.PDF
@@ -76,8 +77,8 @@ not proved here: this file develops `Hh_n` itself, from the defining integral al
 
 ## Implementation notes
 
-In the Laplace form, the derivative comes from the half-line Gaussian–Laplace integrals of
-`TauCeti.Analysis.SpecialFunctions.Gaussian.LaplaceIntegral`. Both recurrences come from
+In the Laplace form, the derivative comes from the half-line power-decay Laplace integrals of
+`TauCeti.MeasureTheory.Integral.Exp.PowerDecay`. Both recurrences come from
 integrating the derivative of `t ↦ w(t) e^{-(z+t)²/2}` over `(0, ∞)` for the weight
 `w(t) = tᵏ/k!`, which gives minus its value at `t = 0`. Differentiating the Gaussian factor
 contributes `-(z Hh_k(z) + (k + 1) Hh_{k+1}(z))` in either case; the weight contributes `0` for
@@ -132,11 +133,12 @@ private theorem pow_div_factorial_mul_cexp_ofReal (n : ℕ) (x t : ℝ) :
 /-- The defining integral of `Hh_n(z)` converges absolutely, for every `n` and `z`. -/
 theorem integrableOn_repeatedGaussianIntegral_integrand (n : ℕ) (z : ℂ) :
     IntegrableOn (fun t : ℝ => (t : ℂ) ^ n / n ! * cexp (-((z + t) ^ 2) / 2)) (Ioi 0) := by
-  have h := (integrableOn_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi (b := 1 / 2) (s := n + 1)
-    (by norm_num) (by rw [add_re, natCast_re, one_re]; positivity) z).const_mul
-    (cexp (-z ^ 2 / 2) / n !)
+  have h := (integrableOn_cpow_mul_cexp_mul_sub_mul_pow_Ioi (n := 2) (b := 1 / 2) (s := n)
+    (by norm_num) (by norm_num) (by rw [natCast_re]; linarith [n.cast_nonneg (α := ℝ)])
+    (-z)).const_mul (cexp (-z ^ 2 / 2) / n !)
   refine IntegrableOn.congr_fun h (fun t _ => ?_) measurableSet_Ioi
-  rw [pow_div_factorial_mul_cexp_eq, add_sub_cancel_right, cpow_natCast]
+  rw [pow_div_factorial_mul_cexp_eq, cpow_natCast]
+  ring_nf
 
 /-- On the real line, the real integrand `t ↦ tⁿ/n! e^{-(x+t)²/2}` of `Hh_n(x)` is integrable on
 `(0, ∞)`. -/
@@ -166,9 +168,20 @@ private theorem natCast_add_one_mul_div_factorial_succ (n : ℕ) (u : ℂ) :
 theorem hasDerivAt_repeatedGaussianIntegral (n : ℕ) (z : ℂ) :
     HasDerivAt (repeatedGaussianIntegral n)
       (-(z * repeatedGaussianIntegral n z + (n + 1) * repeatedGaussianIntegral (n + 1) z)) z := by
-  have hL := hasDerivAt_integral_cpow_mul_cexp_neg_mul_sq_sub_mul_Ioi (b := 1 / 2)
-    (s := n + 1) (by norm_num) (by rw [add_re, natCast_re, one_re]; positivity) z
-  simp only [add_sub_cancel_right, cpow_natCast] at hL
+  have hL0 := (hasDerivAt_integral_cpow_mul_cexp_mul_sub_mul_pow_Ioi (n := 2) (b := 1 / 2)
+    (s := n) (by norm_num) (by norm_num)
+    (by rw [natCast_re]; linarith [n.cast_nonneg (α := ℝ)]) (-z)).comp z (hasDerivAt_neg z)
+  have hL : HasDerivAt
+      (fun w : ℂ => ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ n * cexp (-(1 / 2) * (t : ℂ) ^ 2 - w * t))
+      (-∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (n + 1) * cexp (-(1 / 2) * (t : ℂ) ^ 2 - z * t)) z := by
+    refine (hL0.congr_of_eventuallyEq (.of_forall fun w => ?_)).congr_deriv ?_
+    · refine setIntegral_congr_fun measurableSet_Ioi fun t _ => ?_
+      rw [cpow_natCast]
+      ring_nf
+    · rw [mul_neg_one, neg_inj]
+      refine setIntegral_congr_fun measurableSet_Ioi fun t _ => ?_
+      rw [← Nat.cast_add_one, cpow_natCast]
+      ring_nf
   have hE : HasDerivAt (fun w : ℂ => cexp (-w ^ 2 / 2)) (cexp (-z ^ 2 / 2) * -z) z := by
     convert Complex.hasDerivAt_cexp_mul_sub_sq (-(1 / 2)) 0 z using 1
     · exact funext fun w => by ring_nf
@@ -179,12 +192,8 @@ theorem hasDerivAt_repeatedGaussianIntegral (n : ℕ) (z : ℂ) :
   rw [hfun]
   convert (hE.div_const (n ! : ℂ)).mul hL using 1
   beta_reduce
-  rw [repeatedGaussianIntegral_eq_cexp_div_factorial_mul_integral]
-  have hcpow : (∫ t in Ioi (0 : ℝ), (t : ℂ) ^ ((n : ℂ) + 1) *
-      cexp (-(1 / 2) * (t : ℂ) ^ 2 - z * t)) =
-      ∫ t in Ioi (0 : ℝ), (t : ℂ) ^ (n + 1) * cexp (-(1 / 2) * (t : ℂ) ^ 2 - z * t) := by
-    simp_rw [← Nat.cast_add_one, cpow_natCast]
-  rw [hcpow, div_mul_eq_mul_div (cexp (-z ^ 2 / 2)) ((n + 1) ! : ℂ),
+  rw [repeatedGaussianIntegral_eq_cexp_div_factorial_mul_integral,
+    div_mul_eq_mul_div (cexp (-z ^ 2 / 2)) ((n + 1) ! : ℂ),
     natCast_add_one_mul_div_factorial_succ]
   ring
 
