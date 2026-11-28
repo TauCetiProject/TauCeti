@@ -19,7 +19,8 @@ of substacks means equality of their object properties inside the given ambient 
 equivalence of their underlying stacks alone does not identify substacks.
 
 This file bundles these properties, constructs the underlying stack and its inclusion,
-and defines inverse images along morphisms of stacks. It imposes no algebraicity or
+orders substacks by inclusion, characterizes factorizations through them, and defines inverse
+images along morphisms of stacks. It imposes no algebraicity or
 representability condition on the inclusion. These can be imposed separately when defining
 open and closed substacks, as in the Stacks Project, Definition 100.9.9.
 
@@ -72,6 +73,15 @@ theorem ext {P Q : Substack X}
           funext T M
           exact propext (h T.as.unop M)
 
+/-- Substack inclusion is containment of the object properties in every fibre. -/
+instance : PartialOrder (Substack X) :=
+  PartialOrder.lift (fun P : Substack X ↦ P.prop) fun _ _ h ↦
+    ext fun T M ↦ Iff.of_eq (congrFun (congrFun h (.mk (op T))) M)
+
+lemma le_iff {P Q : Substack X} :
+    P ≤ Q ↔ ∀ T M, P.prop T M → Q.prop T M :=
+  Iff.rfl
+
 /-- The stack in groupoids underlying a substack. Its stack condition follows from the
 locality of the object property. -/
 -- Expose the carrier so that the domains of the inclusion functors compute as full subcategories.
@@ -115,6 +125,37 @@ instance faithful_ι_app (P : Substack X) (T : LocallyDiscrete Scheme.{u}ᵒᵖ)
   dsimp [ι]
   exact (P.prop T).fullyFaithfulι.faithful
 
+open scoped Pseudofunctor.StrongTrans
+
+/-- A morphism factors through the inclusion up to invertible modification precisely when its
+fibre functors take values in the substack. -/
+theorem exists_lift_iff (P : Substack Y) (f : X.toSchPseudofunctor ⟶ Y.toSchPseudofunctor) :
+    (∃ g : X.toSchPseudofunctor ⟶ P.toStackInGroupoids.toSchPseudofunctor,
+      Nonempty (g ≫ P.ι ≅ f)) ↔
+      ∀ T M, P.prop T ((f.app T).toFunctor.obj M) := by
+  constructor
+  · rintro ⟨g, ⟨e⟩⟩ T M
+    apply (P.prop T).prop_of_iso ((Cat.Hom.toNatIso (Pseudofunctor.StrongTrans.isoApp e T)).app M)
+    simpa only [Pseudofunctor.StrongTrans.comp_app, Cat.Hom.comp_toFunctor, Functor.comp_obj,
+      ι_app_obj] using ((g.app T).toFunctor.obj M).property
+  · intro h
+    exact ⟨P.toObjectProperty.lift f h, ⟨by
+      rw [ι_eq]
+      exact P.toObjectProperty.liftCompιIso f h⟩⟩
+
+/-- Two factorizations of a morphism through a substack admit a unique modification compatible
+with their chosen identifications after inclusion. -/
+theorem existsUnique_lift_hom (P : Substack Y) {f : X.toSchPseudofunctor ⟶ Y.toSchPseudofunctor}
+    {g k : X.toSchPseudofunctor ⟶ P.toStackInGroupoids.toSchPseudofunctor}
+    (e : g ≫ P.ι ≅ f) (d : k ≫ P.ι ≅ f) :
+    ∃! m : g ⟶ k, (m ▷ P.ι) ≫ d.hom = e.hom := by
+  let H := postcomp X.toSchPseudofunctor P.ι
+  have hH : H.FullyFaithful := by
+    dsimp only [H]
+    rw [ι_eq]
+    exact P.toObjectProperty.fullyFaithfulPostcompι _
+  exact (d.homToEquiv.bijective.comp (hH.map_bijective g k)).existsUnique e.hom
+
 /-- The inverse image of a substack along a morphism of stacks, computed on objects. -/
 def comap (P : Substack Y) (f : Hom X Y) : Substack X where
   toObjectProperty := P.toObjectProperty.inverseImage f
@@ -125,6 +166,10 @@ lemma comap_prop (P : Substack Y) (f : Hom X Y) (T : LocallyDiscrete Scheme.{u}�
     (M : X.toSchPseudofunctor.obj T) :
     (P.comap f).prop T M ↔ P.prop T ((f.app T).toFunctor.obj M) :=
   Pseudofunctor.ObjectProperty.inverseImage_prop P.toObjectProperty f T M
+
+/-- Inverse image preserves inclusion of substacks. -/
+theorem monotone_comap (f : Hom X Y) : Monotone (fun P : Substack Y ↦ P.comap f) :=
+  fun _ _ h T M hM ↦ (comap_prop _ f T M).mpr (h T _ ((comap_prop _ f T M).mp hM))
 
 @[simp]
 lemma comap_id (P : Substack X) : P.comap (Pseudofunctor.StrongTrans.id _) = P := by
