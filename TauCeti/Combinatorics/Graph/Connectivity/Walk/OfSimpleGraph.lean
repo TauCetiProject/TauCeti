@@ -430,18 +430,20 @@ theorem toSimpleGraph_reachable_iff {u v : V(G)} :
   rintro ⟨p⟩
   exact p.liftToGraph.reachable u.property
 
-/-- An actual vertex isolated in the simplification is reachable only from itself. The proof
-applies Mathlib's `SimpleGraph.Walk.nil_of_isIsolated_of_mem_support` to a walk in the
-simplification. Loops at the vertex do not affect this conclusion. -/
+/-- An actual vertex isolated in the underlying simple graph reaches exactly itself, even if it
+has loops. -/
+-- The forward implication reuses Mathlib's
+-- `SimpleGraph.not_reachable_of_neighborSet_left_eq_empty`.
 @[simp]
 theorem reachable_iff_eq_of_isIsolated {x y : α} (hx : x ∈ V(G))
     (hxi : G.toSimpleGraph.IsIsolated ⟨x, hx⟩) : G.Reachable x y ↔ x = y := by
   constructor
   · intro hxy
-    let vy : V(G) := ⟨y, hxy.right_mem⟩
-    obtain ⟨p⟩ := (toSimpleGraph_reachable_iff (G := G) (u := ⟨x, hx⟩) (v := vy)).mpr hxy
-    have hp : p.Nil := p.nil_of_isIsolated_of_mem_support hxi p.start_mem_support
-    exact congrArg Subtype.val hp.eq
+    by_contra hne
+    exact SimpleGraph.not_reachable_of_neighborSet_left_eq_empty
+      (fun h ↦ hne (congrArg Subtype.val h)) hxi.neighborSet_eq_empty
+      ((toSimpleGraph_reachable_iff (G := G) (u := ⟨x, hx⟩)
+        (v := ⟨y, hxy.right_mem⟩)).mpr hxy)
   · rintro rfl
     exact Reachable.refl hx
 

@@ -379,7 +379,11 @@ theorem connectedComponentOf_eq_induce_reachable {x : α} (hx : x ∈ V(G)) :
   have hC : V((G.connectedComponentOf x hx).val) = {y | G.Reachable x y} := by
     ext y
     exact mem_vertexSet_connectedComponentOf_iff hx
-  exact congrArg (fun S ↦ G.induce S) hC
+  calc
+    (G.connectedComponentOf x hx).val = G.induce V((G.connectedComponentOf x hx).val) := by
+      rw [connectedComponentOf, ConnectedComponent.coe_ofSimple,
+        vertexSet_connectedComponentSubgraph, connectedComponentSubgraph]
+    _ = G.induce {y | G.Reachable x y} := congrArg (fun S ↦ G.induce S) hC
 
 /-! ### Isolated vertices -/
 
@@ -404,13 +408,12 @@ theorem isConnectedComponentOf_induce_singleton_iff_isIsolated {x : α} (hx : x 
       G.toSimpleGraph.IsIsolated ⟨x, hx⟩ := by
   constructor
   · intro hC y hxy
-    rw [Graph.toSimpleGraph_adj] at hxy
-    obtain ⟨hne, e, he⟩ := hxy
     have hy : (y : α) ∈ V(G.induce {x}) :=
       hC.isClosedSubgraph.mem_vertexSet_of_reachable
-        (by simp only [vertexSet_induce, Set.mem_singleton_iff]) he.reachable
-    exact hne (Subtype.ext
-      (by simpa only [vertexSet_induce, Set.mem_singleton_iff] using hy)).symm
+        (by simp only [vertexSet_induce, Set.mem_singleton_iff])
+        (toSimpleGraph_reachable_iff.mp hxy.reachable)
+    exact hxy.ne' (Subtype.ext
+      (by simpa only [vertexSet_induce, Set.mem_singleton_iff] using hy))
   · intro hxi
     rw [← connectedComponentOf_eq_induce_singleton_of_isIsolated hx hxi]
     exact (G.connectedComponentOf x hx).property
