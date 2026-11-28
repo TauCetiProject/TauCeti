@@ -238,6 +238,26 @@ lemma singularChainComplexπ_tensorHom_f_relativeShuffleAlexanderWhitneySmallCha
       HomologicalComplex.comp_f, Category.assoc, hdesc]
   exact π_leftRelativeShuffleAlexanderWhitneySmallChainsHomotopy_hom X Y A B R S i j
 
+private lemma chainComplexMap_subtypeVal_comp_ambientHomotopy_hom_comp_eq_zero
+    {ι : Type*} (U : ι → Set ↥(X ⊗ Y)) (k : ι) {X' Y' : TopCat.{w}}
+    (f₁ : X' ⟶ X) (f₂ : Y' ⟶ Y) (g : of ↥(U k) ⟶ X' ⊗ Y')
+    (hg : g ≫ (f₁ ⊗ₘ f₂) = ofHom (ContinuousMap.subtypeVal (U k)))
+    (hmem : ∀ z, (f₁ ⊗ₘ f₂) z ∈ U k) (i j : ℕ) :
+    (SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal (U k)))) (R ⊗ S)).f i ≫
+      (alexanderWhitneyShuffleHomotopy X Y R S).hom i j ≫
+      (((X ⊗ Y).smallSingularSubcomplex U).pair.chainComplexπ (R ⊗ S)).f j = 0 := by
+  have hfac : SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal (U k)))) (R ⊗ S) =
+      SSet.chainComplexMap (toSSet.map g) (R ⊗ S) ≫
+        SSet.chainComplexMap (toSSet.map (f₁ ⊗ₘ f₂)) (R ⊗ S) := by
+    rw [← hg, Functor.map_comp]
+    exact ((SSet.chainComplexFunctor C).obj (R ⊗ S)).map_comp _ _
+  have hzero := TauCeti.chainComplexMap_comp_smallSingularSubcomplex_chainComplexπ_eq_zero
+    U (f₁ ⊗ₘ f₂) hmem (R ⊗ S)
+  rw [hfac, HomologicalComplex.comp_f, Category.assoc,
+    comp_homotopy_hom_comp_eq_zero
+      (alexanderWhitneyShuffleHomotopy_hom_naturality f₁ f₂ R S i j) hzero,
+    comp_zero]
+
 private lemma chainComplexMap_smallSingularSubcomplex_ι_comp_ambientHomotopy_hom_comp
     (i j : ℕ) :
     (SSet.chainComplexMap ((X ⊗ Y).smallSingularSubcomplex
@@ -249,48 +269,21 @@ private lemma chainComplexMap_smallSingularSubcomplex_ι_comp_ambientHomotopy_ho
     ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]).pair.chainComplexπ (R ⊗ S)
   refine chainComplexMap_f_smallSingularSubcomplex_ι_comp_eq_zero ![fst X Y ⁻¹' A, snd X Y ⁻¹' B]
     i ((alexanderWhitneyShuffleHomotopy X Y R S).hom i j ≫ π.f j) (Fin.forall_fin_two.2 ⟨?_, ?_⟩)
-  · let iA : of ↥A ⟶ X := ofHom (ContinuousMap.subtypeVal A)
-    let g₀ : of ↥(![fst X Y ⁻¹' A, snd X Y ⁻¹' B] 0) ⟶ of ↥A ⊗ Y :=
-      (prodPreimageFstIso X Y A).inv
-    have hfac : SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal
-        (![fst X Y ⁻¹' A, snd X Y ⁻¹' B] 0)))) (R ⊗ S) =
-        SSet.chainComplexMap (toSSet.map g₀) (R ⊗ S) ≫
-          SSet.chainComplexMap (toSSet.map (iA ⊗ₘ 𝟙 Y)) (R ⊗ S) := by
-      have hg₀ : g₀ ≫ (iA ⊗ₘ 𝟙 Y) =
-          ofHom (ContinuousMap.subtypeVal (![fst X Y ⁻¹' A, snd X Y ⁻¹' B] 0)) :=
-        prodPreimageFstIso_inv_comp_whiskerRight X Y A
-      rw [← hg₀, Functor.map_comp]
-      exact ((SSet.chainComplexFunctor C).obj (R ⊗ S)).map_comp _ _
-    have hzero := TauCeti.chainComplexMap_comp_smallSingularSubcomplex_chainComplexπ_eq_zero
-      ![fst X Y ⁻¹' A, snd X Y ⁻¹' B] (iA ⊗ₘ 𝟙 Y) (i := 0)
-      (fun z ↦ mapsTo_tensorHom_preimage_fst (A := Set.univ) iA (𝟙 Y)
-        (fun w _ ↦ w.property) (Set.mem_preimage.2 (Set.mem_univ _))) (R ⊗ S)
-    rw [hfac, HomologicalComplex.comp_f, Category.assoc,
-      comp_homotopy_hom_comp_eq_zero
-        (alexanderWhitneyShuffleHomotopy_hom_naturality iA (𝟙 Y) R S i j) hzero,
-      comp_zero]
-  · let iB : of ↥B ⟶ Y := ofHom (ContinuousMap.subtypeVal B)
-    let g₁ : of ↥(![fst X Y ⁻¹' A, snd X Y ⁻¹' B] 1) ⟶ X ⊗ of ↥B :=
-      ofHom ⟨fun x ↦ (fst X Y x.val, ⟨snd X Y x.val, x.property⟩),
+  · exact chainComplexMap_subtypeVal_comp_ambientHomotopy_hom_comp_eq_zero X Y R S
+      ![fst X Y ⁻¹' A, snd X Y ⁻¹' B] 0 (ofHom (ContinuousMap.subtypeVal A)) (𝟙 Y)
+      (prodPreimageFstIso X Y A).inv (prodPreimageFstIso_inv_comp_whiskerRight X Y A)
+      (fun z ↦ mapsTo_tensorHom_preimage_fst (A := Set.univ)
+        (ofHom (ContinuousMap.subtypeVal A)) (𝟙 Y) (fun w _ ↦ w.property)
+        (Set.mem_preimage.2 (Set.mem_univ _))) i j
+  · exact chainComplexMap_subtypeVal_comp_ambientHomotopy_hom_comp_eq_zero X Y R S
+      ![fst X Y ⁻¹' A, snd X Y ⁻¹' B] 1 (𝟙 X) (ofHom (ContinuousMap.subtypeVal B))
+      (ofHom ⟨fun x ↦ (fst X Y x.val, ⟨snd X Y x.val, x.property⟩),
         ((fst X Y).hom.continuous.comp continuous_subtypeVal).prodMk
-          (((snd X Y).hom.continuous.comp continuous_subtypeVal).subtype_mk fun x ↦ x.property)⟩
-    have hfac : SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal
-        (![fst X Y ⁻¹' A, snd X Y ⁻¹' B] 1)))) (R ⊗ S) =
-        SSet.chainComplexMap (toSSet.map g₁) (R ⊗ S) ≫
-          SSet.chainComplexMap (toSSet.map (𝟙 X ⊗ₘ iB)) (R ⊗ S) := by
-      have hg₁ : g₁ ≫ (𝟙 X ⊗ₘ iB) =
-          ofHom (ContinuousMap.subtypeVal (![fst X Y ⁻¹' A, snd X Y ⁻¹' B] 1)) :=
-        TopCat.ext fun _ ↦ rfl
-      rw [← hg₁, Functor.map_comp]
-      exact ((SSet.chainComplexFunctor C).obj (R ⊗ S)).map_comp _ _
-    have hzero := TauCeti.chainComplexMap_comp_smallSingularSubcomplex_chainComplexπ_eq_zero
-      ![fst X Y ⁻¹' A, snd X Y ⁻¹' B] (𝟙 X ⊗ₘ iB) (i := 1)
-      (fun z ↦ mapsTo_tensorHom_preimage_snd (B := Set.univ) (𝟙 X) iB
-        (fun w _ ↦ w.property) (Set.mem_preimage.2 (Set.mem_univ _))) (R ⊗ S)
-    rw [hfac, HomologicalComplex.comp_f, Category.assoc,
-      comp_homotopy_hom_comp_eq_zero
-        (alexanderWhitneyShuffleHomotopy_hom_naturality (𝟙 X) iB R S i j) hzero,
-      comp_zero]
+          (((snd X Y).hom.continuous.comp continuous_subtypeVal).subtype_mk fun x ↦ x.property)⟩)
+      (TopCat.ext fun _ ↦ rfl)
+      (fun z ↦ mapsTo_tensorHom_preimage_snd (B := Set.univ)
+        (𝟙 X) (ofHom (ContinuousMap.subtypeVal B)) (fun w _ ↦ w.property)
+        (Set.mem_preimage.2 (Set.mem_univ _))) i j
 
 /-- **The relative Eilenberg–Zilber chain homotopy** `shuffle ∘ AW ≃ id` on
 `C(X × Y; fst⁻¹(A) + snd⁻¹(B); R ⊗ S)`. -/
