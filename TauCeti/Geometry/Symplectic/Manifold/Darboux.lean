@@ -67,7 +67,8 @@ form is nondegenerate at `x₀`
   Darboux chart is nondegenerate on its source.
 * `TauCeti.SmoothTwoForm.exists_darbouxChart_iff_nondegenerate_of_isInteriorPoint`: a closed
   two-form has a Darboux chart at an interior point exactly when it is nondegenerate there.
-* `SmoothTwoForm.exists_standardDarbouxChart_of_nondegenerate_of_finrank_eq_of_isInteriorPoint`:
+* `TauCeti.SmoothTwoForm.exists_standardDarbouxChart_of_nondegenerate_of_isInteriorPoint` and
+  `SmoothTwoForm.exists_standardDarbouxChart_of_nondegenerate_of_finrank_eq_of_isInteriorPoint`:
   standard Euclidean Darboux charts for a closed two-form nondegenerate at `x₀`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.exists_darbouxChart_of_isInteriorPoint` and
   `TauCeti.SmoothTwoForm.IsSymplectic.exists_darbouxChart`: Darboux charts into the model space `E`.
@@ -291,12 +292,16 @@ theorem exists_darbouxChart_of_nondegenerate_of_isInteriorPoint
       (fun z hz ↦ hcl.extDeriv_inChartAt_eq_zero x₀ hz) hnd
   obtain ⟨chart, hchart_src, hchart_coe, hmvf⟩ :=
     exists_partialDiffeomorph_comp_extChartAt I ∞ x₀ hV₀_open hV₀_sub
-      (by exact_mod_cast le_top) Φ_flat
+      (by exact_mod_cast le_top) Φ_flat.toPartialDiffeomorph
+  have hΦsrc : Φ_flat.toPartialDiffeomorph.source = univ := by
+    simp [Diffeomorph.toPartialDiffeomorph_toPartialEquiv]
+  rw [hΦsrc, inter_univ] at hchart_src
   have hx₀_src : x₀ ∈ chart.source := by
     rw [hchart_src]
     exact ⟨mem_extChartAt_source x₀, hy₀V₀⟩
   have hchart_x₀ : chart x₀ = 0 := by
     rw [hchart_coe]
+    simp only [Diffeomorph.toPartialDiffeomorph_toPartialEquiv, Equiv.toPartialEquiv_apply]
     exact hΦy₀
   refine ⟨chart, form₀, hx₀_src, hchart_x₀, fun x hx v w ↦ ?_⟩
   have hxS : x ∈ (extChartAt I x₀).source ∩ extChartAt I x₀ ⁻¹' V₀ :=
@@ -311,7 +316,7 @@ theorem exists_darbouxChart_of_nondegenerate_of_isInteriorPoint
   simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply]
   congr 1
   ext i
-  fin_cases i <;> rfl
+  fin_cases i <;> simp [Diffeomorph.toPartialDiffeomorph_toPartialEquiv]
 
 /-- **Darboux charts exist exactly at nondegenerate points.** A closed two-form has a Darboux chart
 centred at an interior point `x₀`, pulling a constant symplectic form on the model space `E` back
@@ -356,6 +361,27 @@ theorem IsSymplectic.exists_darbouxChart_of_symplecticForm_of_isInteriorPoint
     trans_toDiffeomorph_darboux hx₀₁ h0₁ hchart₁ e.toContinuousLinearEquiv he
   exact ⟨_, hx₀', h0', hpull⟩
 
+/-- **Standard Euclidean Darboux coordinates at an interior point, for a closed two-form
+nondegenerate there.** Around an interior point `x₀` where a closed smooth two-form `form` is
+nondegenerate, there are `n : ℕ` and a smooth partial diffeomorphism onto an open neighborhood of
+`0` in `EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)` pulling `stdSymplecticForm` back to
+`form`. -/
+theorem exists_standardDarbouxChart_of_nondegenerate_of_isInteriorPoint
+    {form : SmoothTwoForm I M} (hcl : form.IsClosed) {x₀ : M}
+    (hnd₀ : (form.bilinFormAt x₀).Nondegenerate) (hx₀ : I.IsInteriorPoint x₀) :
+    ∃ (n : ℕ) (chart : PartialDiffeomorph I
+      𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)) M
+      (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)) ∞),
+      x₀ ∈ chart.source ∧ chart x₀ = 0 ∧
+      ∀ x ∈ chart.source, ∀ v w : TangentSpace I x,
+        form.eval₂ x v w =
+          stdSymplecticForm (mvfderiv I chart x v) (mvfderiv I chart x w) := by
+  obtain ⟨chart₁, ω₁, hx₀₁, h0₁, hchart₁⟩ :=
+    exists_darbouxChart_of_nondegenerate_of_isInteriorPoint hcl hnd₀ hx₀
+  obtain ⟨n, L, hL⟩ := ω₁.exists_continuousLinearEquiv_stdSymplecticForm
+  obtain ⟨hx₀', h0', -, hpull⟩ := trans_toDiffeomorph_darboux hx₀₁ h0₁ hchart₁ L hL
+  exact ⟨n, _, hx₀', h0', hpull⟩
+
 /-- **Standard Euclidean Darboux coordinates at an interior point.** Around any interior point `x₀`
 of `(M, form)`, there are `n : ℕ` and a smooth partial diffeomorphism onto an open neighborhood of
 `0` in `EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)` pulling `stdSymplecticForm` back to
@@ -369,11 +395,9 @@ theorem IsSymplectic.exists_standardDarbouxChart_of_isInteriorPoint
       x₀ ∈ chart.source ∧ chart x₀ = 0 ∧
       ∀ x ∈ chart.source, ∀ v w : TangentSpace I x,
         form.eval₂ x v w =
-          stdSymplecticForm (mvfderiv I chart x v) (mvfderiv I chart x w) := by
-  obtain ⟨chart₁, ω₁, hx₀₁, h0₁, hchart₁⟩ := hform.exists_darbouxChart_of_isInteriorPoint hx₀
-  obtain ⟨n, L, hL⟩ := ω₁.exists_continuousLinearEquiv_stdSymplecticForm
-  obtain ⟨hx₀', h0', -, hpull⟩ := trans_toDiffeomorph_darboux hx₀₁ h0₁ hchart₁ L hL
-  exact ⟨n, _, hx₀', h0', hpull⟩
+          stdSymplecticForm (mvfderiv I chart x v) (mvfderiv I chart x w) :=
+  exists_standardDarbouxChart_of_nondegenerate_of_isInteriorPoint hform.isClosed
+    (hform.isNondegenerate.nondegenerate_bilinFormAt x₀) hx₀
 
 /-- **Standard Euclidean Darboux coordinates at fixed dimension `2 * n`, for a closed two-form
 nondegenerate at an interior point.** -/

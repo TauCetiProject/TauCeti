@@ -39,8 +39,9 @@ supported (`TauCeti.RoughForm.isCompact_tsupport_extendByZero`). Likewise, the r
 outside the open set (`TauCeti.IsSmoothForm.indicator`).
 
 The exterior derivative is local, so, without any regularity assumption, it commutes with
-restriction to an open subset (`TauCeti.mpullback_inclusion_mextDeriv`) and with extension by zero
-whenever the extension vanishes near every point of `W` outside `U`
+restriction to an open subset (`TauCeti.mpullback_inclusion_mextDeriv`,
+`TauCeti.mpullback_subtype_val_mextDeriv`, `TauCeti.mextDeriv_mpullback_subtype_val_apply`) and with
+extension by zero whenever the extension vanishes near every point of `W` outside `U`
 (`TauCeti.RoughForm.mextDeriv_extendByZero`).
 
 These are the gluing and cut-off steps of the Mayer–Vietoris sequence of de Rham cohomology, and
@@ -53,13 +54,15 @@ some partial diffeomorphism of the ambient manifold fixing `K` pulls forms back 
 also when `U` is empty (`TauCeti.exists_partialDiffeomorph_mpullback_apply_eq_of_opens`). A partial
 diffeomorphism, viewed as a diffeomorphism between its source and target, pulls back the restriction
 of a form to its target as it pulls back the form itself
-(`TauCeti.mpullback_toDiffeomorphSourceTarget_apply`), and the restriction to open subsets of a
-diffeomorphism pulls back restricted forms as the diffeomorphism pulls back the forms themselves
-(`TauCeti.mpullback_subtype_mpullback_subtype_val`). So a construction carried out on an open
-submanifold, such as a flow defined only where some condition on the forms holds, transfers to the
-ambient manifold. In particular, a partial diffeomorphism of the source of a partial
-diffeomorphism `Ψ` fixing a set `K` corrects `Ψ` to a partial diffeomorphism agreeing with `Ψ` on
-`K` (`PartialDiffeomorph.exists_eqOn_mpullback_apply_eq_of_opens`).
+(`TauCeti.mpullback_toDiffeomorphSourceTarget_apply`), its inverse does the same for the
+restriction to its source (`PartialDiffeomorph.mpullback_toDiffeomorphSourceTarget_symm_apply`),
+and the restriction to open subsets of a diffeomorphism pulls back restricted forms as the
+diffeomorphism pulls back the forms themselves (`TauCeti.mpullback_subtype_mpullback_subtype_val`).
+So a construction carried out on an open submanifold, such as a flow defined only where some
+condition on the forms holds, transfers to the ambient manifold. In particular, a partial
+diffeomorphism of the source of a partial diffeomorphism `Ψ` fixing a set `K` corrects `Ψ` to a
+partial diffeomorphism agreeing with `Ψ` on `K`
+(`PartialDiffeomorph.exists_eqOn_mpullback_apply_eq_of_opens`).
 
 On a product `U × M` with an open subset `U` of a normed space, the differential of the first
 coordinate reads the first coordinate of a tangent vector
@@ -353,6 +356,44 @@ theorem mpullback_inclusion_mextDeriv {U W : Opens M} (h : U ≤ W) (γ : RoughF
   rw [mpullback_inclusion_apply, mextDeriv_def, mextDeriv_def, extChartAt_inclusion_self]
   exact (heq.extDerivWithin_eq (heq.self_of_nhdsWithin (mem_range_self _))).symm
 
+/-- Near the chart image of a point of an open subset `U`, the coordinate expression of the
+restriction of a form on `M` agrees with that of the form itself. -/
+theorem RoughForm.inChartAt_mpullback_subtype_val_eventuallyEq {U : Opens M}
+    (γ : RoughForm I M F k) (x : U) :
+    (mpullback I I (Subtype.val : U → M) γ).inChartAt x =ᶠ[𝓝[range I] (extChartAt I x x)]
+      γ.inChartAt (x : M) := by
+  filter_upwards [extChartAt_target_mem_nhdsWithin x] with z hz
+  have hev : Subtype.val ∘ (extChartAt I x).symm =ᶠ[𝓝[range I] z] (extChartAt I (x : M)).symm :=
+    Filter.eventuallyEq_of_mem (extChartAt_target_mem_nhdsWithin_of_mem hz) fun w hw ↦
+      U.coe_extChartAt_symm_apply x hw
+  have hmf : mfderivWithin 𝓘(ℝ, E) I (Subtype.val ∘ (extChartAt I x).symm) (range I) z =
+      mfderivWithin 𝓘(ℝ, E) I (extChartAt I (x : M)).symm (range I) z :=
+    hev.mfderivWithin_eq (U.coe_extChartAt_symm_apply x hz)
+  rw [inChartAt_mpullback γ _ x hz (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero), hmf,
+    U.coe_extChartAt_symm_apply x hz]
+  ext v
+  exact (inChartAt_apply γ (x : M) z v).symm
+
+/-- Restricting a form on `M` to an open subset commutes with the exterior derivative, with no
+regularity assumption: near every point of the subset both are computed from the same coordinate
+expression. -/
+theorem mpullback_subtype_val_mextDeriv {U : Opens M} (γ : RoughForm I M F k) :
+    mpullback I I (Subtype.val : U → M) (mextDeriv γ) =
+      mextDeriv (mpullback I I (Subtype.val : U → M) γ) := by
+  funext x
+  have heq := RoughForm.inChartAt_mpullback_subtype_val_eventuallyEq γ x
+  rw [mpullback_subtype_val_apply, mextDeriv_def, mextDeriv_def, U.extChartAt_apply x x]
+  exact (heq.extDerivWithin_eq (heq.self_of_nhdsWithin (mem_range_self _))).symm
+
+/-- Exterior derivative of the pullback of a form along `Subtype.val` on an open subset
+evaluates through `Manifold.tangentSpaceOpenEquiv`. -/
+theorem mextDeriv_mpullback_subtype_val_apply {U : Opens M} (γ : RoughForm I M F k) (x : U)
+    (v : Fin (k + 1) → TangentSpace I x) :
+    mextDeriv (mpullback I I (Subtype.val : U → M) γ) x v =
+      mextDeriv γ x.val (fun i ↦ Manifold.tangentSpaceOpenEquiv (I := I) x (v i)) := by
+  rw [← mpullback_subtype_val_mextDeriv, mpullback_apply, Manifold.mfderiv_subtype_val,
+    ContinuousLinearEquiv.coe_coe]
+
 /-- The exterior derivative commutes with extension by zero from an open subset `U ≤ W`, provided
 the extension vanishes near every point of `W` outside `U`. No regularity is needed. -/
 theorem RoughForm.mextDeriv_extendByZero {U W : Opens M} (h : U ≤ W) {ω : RoughForm I U F k}
@@ -553,6 +594,26 @@ theorem mpullback_toDiffeomorphSourceTarget_apply {E' H' M' : Type*} [NormedAddC
     (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero), hcomp,
     mpullback_comp_at (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero)
       (Ψ.mdifferentiableAt hn x.property), mpullback_subtype_val_apply]
+
+omit [IsManifold I 1 M] in
+/-- **Pullback along the inverse of a partial diffeomorphism, as a diffeomorphism of open
+subsets.** Pulling the restriction of a form on `M` to the source of `Ψ` back along
+`Ψ.toDiffeomorphSourceTarget.symm` is, at each point of the target, pulling the form back along
+`Ψ.symm`. -/
+theorem _root_.PartialDiffeomorph.mpullback_toDiffeomorphSourceTarget_symm_apply {E' H' M' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+    [TopologicalSpace M'] [ChartedSpace H' M'] {n : WithTop ℕ∞}
+    (Ψ : PartialDiffeomorph I I' M M' n) (hn : n ≠ 0)
+    (ω : RoughForm I M F k) (x : (⟨Ψ.target, Ψ.open_target⟩ : Opens M')) :
+    mpullback I' I Ψ.toDiffeomorphSourceTarget.symm (mpullback I I Subtype.val ω) x =
+      mpullback I' I Ψ.symm ω x := by
+  -- Through the inclusions, `Ψ.toDiffeomorphSourceTarget.symm` is `Ψ.symm`.
+  have hcomp : Subtype.val ∘ Ψ.toDiffeomorphSourceTarget.symm = Ψ.symm ∘ Subtype.val :=
+    funext Ψ.toDiffeomorphSourceTarget_symm_apply_coe
+  rw [← mpullback_comp_at (Ψ.toDiffeomorphSourceTarget.symm.mdifferentiable hn _)
+    (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero), hcomp,
+    mpullback_comp_at (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero)
+      (Ψ.symm.mdifferentiableAt hn x.property), mpullback_subtype_val_apply]
 
 omit [IsManifold I 1 M] in
 /-- **Correcting a partial diffeomorphism on its source.** Let `Ψ` be a partial diffeomorphism from

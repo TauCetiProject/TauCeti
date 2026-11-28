@@ -60,8 +60,8 @@ diffeomorphism of the model space read through it has explicit source and forwar
   diffeomorphism onto its target in the model space.
 * `TauCeti.extChartPartialDiffeomorph`: an extended chart restricted to the interior of its target,
   as a partial diffeomorphism onto an open subset of the model space.
-* `TauCeti.exists_partialDiffeomorph_comp_extChartAt`: a diffeomorphism from the model space onto
-  a normed space composed with an extended chart restricted to an open set, as a partial
+* `TauCeti.exists_partialDiffeomorph_comp_extChartAt`: a partial diffeomorphism from the model space
+  onto a normed space composed with an extended chart restricted to an open set, as a partial
   diffeomorphism with its derivative.
 * `TauCeti.exists_mem_maximalAtlas_mfderiv_eq`: a coordinate change of the model space at the chart
   image of an interior point, read through the extended chart and translated to fix that image, is
@@ -355,15 +355,16 @@ theorem extChartPartialDiffeomorph_trans_trans_symm_apply (x : M)
     Function.comp_apply, coe_extChartPartialDiffeomorph,
     ← extChartPartialDiffeomorph_symm_apply I n x, ← PartialDiffeomorph.symm_toPartialEquiv]
 
-/-- A diffeomorphism from the model space onto a normed space `F`, composed with the extended chart
-at `x₀` restricted to the preimage of an open set `V₀` inside the interior of the chart target, is a
-`C^n` partial diffeomorphism with source the restricted chart source, and its differential at a
-point of the source is the differential of the diffeomorphism after that of the extended chart. -/
+/-- A partial diffeomorphism from the model space onto a normed space `F`, composed with the
+extended chart at `x₀` restricted to the preimage of an open set `V₀` inside the interior of the
+chart target, is a `C^n` partial diffeomorphism with source the restricted chart source intersected
+with the preimage of `Φ.source`, and its differential at a point of the source is the differential
+of the partial diffeomorphism after that of the extended chart. -/
 theorem exists_partialDiffeomorph_comp_extChartAt (x₀ : M) {V₀ : Set E} (hV₀ : IsOpen V₀)
     (hV₀W : V₀ ⊆ interior (extChartAt I x₀).target) (hn : 1 ≤ n)
-    (Φ : E ≃ₘ^n⟮𝓘(𝕂, E), 𝓘(𝕂, F)⟯ F) :
+    (Φ : PartialDiffeomorph 𝓘(𝕂, E) 𝓘(𝕂, F) E F n) :
     ∃ chart : PartialDiffeomorph I 𝓘(𝕂, F) M F n,
-      chart.source = (extChartAt I x₀).source ∩ extChartAt I x₀ ⁻¹' V₀ ∧
+      chart.source = (extChartAt I x₀).source ∩ extChartAt I x₀ ⁻¹' (V₀ ∩ Φ.source) ∧
         (∀ y, chart y = Φ (extChartAt I x₀ y)) ∧
         ∀ x ∈ chart.source, ∀ u : TangentSpace I x, mvfderiv I chart x u =
           fderiv 𝕂 Φ (extChartAt I x₀ x) (mvfderiv I (extChartAt I x₀) x u) := by
@@ -373,20 +374,24 @@ theorem exists_partialDiffeomorph_comp_extChartAt (x₀ : M) {V₀ : Set E} (hV�
   have hS_sub : S ⊆ e₀.source := by
     rw [extChartPartialDiffeomorph_source]
     exact inter_subset_inter_right _ (preimage_mono hV₀W)
-  let chart : PartialDiffeomorph I 𝓘(𝕂, F) M F n :=
-    (e₀.restrOpen S hS_open).trans Φ.toPartialDiffeomorph
-  have hchart_src : chart.source = S := by
-    simp [chart, inter_eq_right.2 hS_sub]
+  let chart : PartialDiffeomorph I 𝓘(𝕂, F) M F n := (e₀.restrOpen S hS_open).trans Φ
+  have hchart_src : chart.source =
+      (extChartAt I x₀).source ∩ extChartAt I x₀ ⁻¹' (V₀ ∩ Φ.source) := by
+    rw [PartialDiffeomorph.trans_source, PartialDiffeomorph.restrOpen_source,
+      inter_eq_right.2 hS_sub, PartialDiffeomorph.coe_restrOpen, coe_extChartPartialDiffeomorph]
+    simp only [S, preimage_inter, Set.inter_assoc]
   have hchart_coe (y : M) : chart y = Φ (extChartAt I x₀ y) := by
-    simp [chart, e₀]
+    simp [chart, e₀, PartialDiffeomorph.coe_restrOpen]
   refine ⟨chart, hchart_src, hchart_coe, fun x hx u ↦ ?_⟩
+  rw [hchart_src] at hx
   have hx_chart : x ∈ (chartAt H x₀).source := by
-    simpa only [extChartAt_source] using (hchart_src ▸ hx : x ∈ S).1
+    simpa only [extChartAt_source] using hx.1
+  have hΦd : DifferentiableAt 𝕂 Φ (extChartAt I x₀ x) :=
+    mdifferentiableAt_iff_differentiableAt.1
+      (Φ.mdifferentiableAt (zero_lt_one.trans_le hn).ne' hx.2.2)
   have : IsManifold I 1 M := IsManifold.of_le hn
   have hcomp : ⇑chart = ⇑Φ ∘ ⇑(extChartAt I x₀) := funext hchart_coe
-  rw [hcomp,
-    mvfderiv_comp_apply_of_differentiableAt (Φ.differentiable (zero_lt_one.trans_le hn).ne' _)
-      (mdifferentiableAt_extChartAt hx_chart)]
+  rw [hcomp, mvfderiv_comp_apply_of_differentiableAt hΦd (mdifferentiableAt_extChartAt hx_chart)]
 
 end Charts
 

@@ -46,9 +46,9 @@ restricted to the hyperplane (`TauCeti.isContactFormAt_congr`), and it is unchan
 multiplied by a common nonzero factor (`TauCeti.isContactFormAt_congr_smul`). At an interior point
 the condition can be checked in the preferred chart
 (`TauCeti.isContactFormAt_inChartAt_iff`), which reduces local questions about contact forms on
-manifolds, such as the existence of Darboux charts, to open subsets of the model space.
-On a normed space it is the linear condition `Module.Dual.IsContact` for the covector `α(x)` and the
-bilinear form of `dα(x)` (`TauCeti.isContactFormAt_modelSpace_iff_isContact`).
+manifolds, such as the existence of Darboux charts, to open subsets of the model space. On a normed
+space this is the linear condition `Module.Dual.IsContact` for the covector `α(x)` and the bilinear
+form of `dα(x)` (`TauCeti.isContactFormAt_modelSpace_iff_isContact`).
 
 ## Main declarations
 
@@ -68,7 +68,7 @@ bilinear form of `dα(x)` (`TauCeti.isContactFormAt_modelSpace_iff_isContact`).
 * `TauCeti.IsContactFormAt`: the pointwise contact condition for a rough one-form, with
   `TauCeti.isContactFormAt_neg_iff`, `TauCeti.isContactFormAt_fun_smul_iff`,
   `TauCeti.isContactFormAt_congr`, `TauCeti.isContactFormAt_congr_smul`,
-  `TauCeti.SmoothForm.isContactFormAt_iff_isContact` and
+  `TauCeti.SmoothForm.isContactFormAt_iff_isContact`, and
   `TauCeti.SmoothForm.isContactForm_iff_forall_isContactFormAt`.
 * `TauCeti.isContactFormAt_inChartAt_iff`: at an interior point, the pointwise contact condition
   holds exactly when it holds for the coordinate expression in the preferred chart.
@@ -386,32 +386,32 @@ theorem isContactFormAt_fun_smul_iff (hf : MDifferentiableAt I 𝓘(ℝ, ℝ) f 
 
 end Rescaling
 
+private theorem roughForm_isContactFormAt_iff_isContact {α : RoughForm I M ℝ 1} {y : M}
+    (l : TangentSpace I y →ₗ[ℝ] ℝ) (B : TangentSpace I y →ₗ[ℝ] TangentSpace I y →ₗ[ℝ] ℝ)
+    (hl : ∀ v, l v = α y ![v]) (hB : ∀ v w, B v w = mextDeriv α y ![v, w]) :
+    IsContactFormAt α y ↔ Module.Dual.IsContact l B := by
+  have hB_alt : LinearMap.IsAlt B := fun v ↦ by
+    rw [hB]
+    exact (mextDeriv α y).map_eq_zero_of_eq ![v, v] (i := 0) (j := 1) rfl (by decide)
+  rw [Module.Dual.isContact_iff_of_isRefl hB_alt.isRefl]
+  refine ⟨fun h ↦ ⟨fun h0 ↦ h.ne_zero <| RoughForm.ker_eq_top_iff.1 <| eq_top_iff.2 fun v _ ↦
+    RoughForm.mem_ker.2 <| hl v ▸ LinearMap.congr_fun h0 v,
+    fun v hv hvw ↦ h.nondegenerate v (RoughForm.mem_ker.2 (hl v ▸ hv)) fun w hw ↦
+      hB v w ▸ hvw w (hl w ▸ RoughForm.mem_ker.1 hw)⟩,
+    fun ⟨h0, h⟩ ↦ ⟨fun hz ↦ h0 <| LinearMap.ext fun v ↦ by simp [hl, hz],
+    fun v hv hvw ↦ h v (hl v ▸ RoughForm.mem_ker.1 hv) fun w hw ↦
+      (hB v w).symm ▸ hvw w (RoughForm.mem_ker.2 (hl w ▸ hw))⟩⟩
+
 /-- For a smooth one-form, the pointwise contact condition at `x` is the linear contact condition
 `Module.Dual.IsContact` for the covector `α_x` and the bilinear form of `dα_x`. -/
 theorem SmoothForm.isContactFormAt_iff_isContact [IsManifold I 2 M] {α : SmoothForm I M ℝ 1}
     {x : M} :
     IsContactFormAt α.val x ↔ Module.Dual.IsContact
       (SmoothForm.degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ)
-      ((mextDerivₗ I 1 α).bilinFormAt x) := by
-  rw [Module.Dual.isContact_iff_of_isRefl (isAlt_bilinFormAt _ x).isRefl]
-  simp only [SmoothForm.degreeOneEquiv_coe_apply, ← mextDeriv_eq_bilinFormAt, ne_eq,
-    LinearMap.ext_iff, LinearMap.zero_apply, not_forall]
-  constructor
-  · intro h
-    refine ⟨?_, ?_⟩
-    · by_contra hn
-      push Not at hn
-      apply h.ne_zero
-      ext v
-      have hv : ![v 0] = v := by
-        ext i
-        fin_cases i
-        rfl
-      simpa only [hv, ContinuousAlternatingMap.coe_zero, Pi.zero_apply] using hn (v 0)
-    · simpa only [RoughForm.mem_ker] using h.nondegenerate
-  · rintro ⟨⟨v, hv⟩, h⟩
-    refine ⟨fun hz ↦ hv (by rw [hz]; rfl), ?_⟩
-    simpa only [RoughForm.mem_ker] using h
+      ((mextDerivₗ I 1 α).bilinFormAt x) :=
+  roughForm_isContactFormAt_iff_isContact _ _
+    (SmoothForm.degreeOneEquiv_coe_apply α x)
+    (fun v w ↦ (SmoothForm.mextDeriv_eq_bilinFormAt α x v w).symm)
 
 /-- A smooth one-form is contact exactly when it satisfies the pointwise contact condition
 at every point. -/
@@ -431,24 +431,22 @@ theorem isContactFormAt_modelSpace_iff_isContact {α : E → E [⋀^Fin 1]→L[�
     IsContactFormAt (I := 𝓘(ℝ, E)) α x ↔
       Module.Dual.IsContact (ContinuousAlternatingMap.toDual (α x) : E →ₗ[ℝ] ℝ)
         (ContinuousAlternatingMap.flatL ℝ E ℝ (extDeriv α x)).toLinearMap₁₂ := by
-  rw [Module.Dual.isContact_iff_of_isRefl
-    (ContinuousAlternatingMap.isAlt_toLinearMap₁₂_flatL (extDeriv α x)).isRefl]
-  have hB (v w : E) :
-      (ContinuousAlternatingMap.flatL ℝ E ℝ (extDeriv α x)).toLinearMap₁₂ v w =
-        extDeriv α x ![v, w] :=
-    ContinuousAlternatingMap.flatL_apply_apply _ v w
-  simp only [ContinuousLinearMap.coe_coe, ContinuousAlternatingMap.toDual_apply, hB]
-  have hd (v w : E) : mextDeriv α x ![v, w] = extDeriv α x ![v, w] :=
-    DFunLike.congr_fun (mextDeriv_eq_extDeriv α x) _
-  refine ⟨fun h ↦ ⟨fun h0 ↦ h.ne_zero <| RoughForm.ker_eq_top_iff.1 <| eq_top_iff.2 fun v _ ↦
-    RoughForm.mem_ker.2 <| (ContinuousAlternatingMap.toDual_apply (α x) v).symm.trans
-      (LinearMap.congr_fun h0 v),
-    fun v hv hvw ↦ h.nondegenerate v (RoughForm.mem_ker.2 hv) fun w hw ↦
-      (hd v w).trans (hvw w (RoughForm.mem_ker.1 hw))⟩,
-    fun ⟨h0, h⟩ ↦ ⟨fun hz ↦ h0 <| LinearMap.ext fun v ↦
-      (ContinuousAlternatingMap.toDual_apply (α x) v).trans (by rw [hz]; rfl),
-      fun v hv hvw ↦ h v (RoughForm.mem_ker.1 hv) fun w hw ↦
-        (hd v w).symm.trans (hvw w (RoughForm.mem_ker.2 hw))⟩⟩
+  rw [← Module.Dual.isContact_comp_linearEquiv_compl₁₂_iff
+    (NormedSpace.fromTangentSpace x).toLinearEquiv]
+  exact roughForm_isContactFormAt_iff_isContact _ _
+    (fun v ↦ by
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
+        ContinuousLinearMap.coe_coe]
+      rw [ContinuousAlternatingMap.toDual_apply, NormedSpace.fromTangentSpace_apply]
+      -- `TangentSpace 𝓘(ℝ, E) x` and `E` share the same carrier.
+      rfl)
+    (fun v w ↦ by
+      simp only [LinearMap.compl₁₂_apply, LinearEquiv.coe_coe,
+        ContinuousLinearEquiv.coe_toLinearEquiv]
+      refine (ContinuousAlternatingMap.flatL_apply_apply (extDeriv α x)
+        (NormedSpace.fromTangentSpace x v) (NormedSpace.fromTangentSpace x w)).trans ?_
+      -- `TangentSpace 𝓘(ℝ, E) x` and `E` share the same carrier, so `fromTangentSpace` is `id`.
+      exact (DFunLike.congr_fun (mextDeriv_eq_extDeriv α x) ![v, w]).symm)
 
 end ModelSpace
 

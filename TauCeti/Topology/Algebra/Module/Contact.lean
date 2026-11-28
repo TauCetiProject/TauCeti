@@ -14,14 +14,14 @@ import TauCeti.Topology.Algebra.Module.BilinearForm
 # Openness of the contact condition
 
 For a continuous family of covectors and bilinear forms on a finite-dimensional space,
-the contact condition is open. Continuity of each evaluation suffices. The test is the
-determinant of the symplectization form on one extra dimension, using
+the contact condition is open (`TauCeti.isOpen_setOf_isContact`). Continuity of each evaluation
+suffices. The test is the determinant of the symplectization form on one extra dimension, using
 `Module.Dual.isContact_iff_nondegenerate_symplectizationForm`.
 
 Consequently, if two such pairs agree and are contact along a subset, their affine
 interpolation is contact on a neighborhood of that subset, uniformly over any compact
-set of interpolation parameters. The subset need not be compact or closed. This is
-the neighborhood-shrinking step for contact deformations.
+set of interpolation parameters (`TauCeti.exists_isOpen_isContact_affine`). The subset need not be
+compact or closed. This is the neighborhood-shrinking step for contact deformations.
 
 ## References
 

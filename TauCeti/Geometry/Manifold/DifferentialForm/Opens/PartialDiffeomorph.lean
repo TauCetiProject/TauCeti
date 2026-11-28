@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
 # Pullback along a partial diffeomorphism between its source and target
@@ -20,6 +21,11 @@ form back to another on its source restricts to a diffeomorphism of open subsets
 restricted forms back to each other
 (`TauCeti.SmoothForm.mpullback_toDiffeomorphSourceTarget_eq_iff`), the form in which local
 normal-form theorems for differential forms state their conclusion.
+
+Because `Naturality` sits downstream of `Pullback.Smooth` and `Opens`, the corresponding exterior
+derivative laws (`PartialDiffeomorph.mextDeriv_mpullback_toDiffeomorphSourceTarget_apply` and
+`PartialDiffeomorph.mextDeriv_mpullback_toDiffeomorphSourceTarget_symm_apply`) live here rather
+than in `Opens`.
 -/
 
 public section
@@ -59,5 +65,55 @@ theorem SmoothForm.mpullback_toDiffeomorphSourceTarget_eq_iff
   · simp only [SmoothForm.coe_mpullback, mpullback_toDiffeomorphSourceTarget_apply Φ (by simp),
       mpullback_subtype_val_apply]
     exact h x x.property
+
+/-- **Exterior derivative of a pullback along `Φ.toDiffeomorphSourceTarget`.** Pulling the
+restriction of a smooth form on `M'` back along `Φ.toDiffeomorphSourceTarget` and differentiating
+gives the exterior derivative of the form evaluated along the differential of `Φ`. -/
+theorem _root_.PartialDiffeomorph.mextDeriv_mpullback_toDiffeomorphSourceTarget_apply
+    (Φ : PartialDiffeomorph I I' M M' ∞) (β : SmoothForm I' M' F k)
+    (x : (⟨Φ.source, Φ.open_source⟩ : Opens M)) (v : Fin (k + 1) → TangentSpace I x) :
+    mextDeriv (SmoothForm.mpullback Φ.toDiffeomorphSourceTarget
+        Φ.toDiffeomorphSourceTarget.contMDiff
+        (SmoothForm.mpullback (Subtype.val : (⟨Φ.target, Φ.open_target⟩ : Opens M') → M')
+          contMDiff_subtypeVal β)).val x v =
+      mextDeriv β.val (Φ x.val) (fun i ↦ mfderiv I I' Φ x.val
+        (Manifold.tangentSpaceOpenEquiv (I := I) x (v i))) := by
+  have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
+  have : IsManifold I' 2 M' := IsManifold.of_le (n := ∞) (by simp)
+  rw [← mextDerivₗ_apply, SmoothForm.mextDerivₗ_mpullback,
+    SmoothForm.mextDerivₗ_mpullback, SmoothForm.coe_mpullback, SmoothForm.coe_mpullback]
+  refine (DFunLike.congr_fun
+    (mpullback_toDiffeomorphSourceTarget_apply Φ (by simp) (mextDerivₗ I' k β).val x) v).trans ?_
+  have hv : (fun i ↦ Manifold.tangentSpaceOpenEquiv (I := I) x (v i)) = v :=
+    funext fun i ↦ Manifold.tangentSpaceOpenEquiv_apply x (v i)
+  refine (DFunLike.congr_arg (mpullback (F := F) (k := k + 1) I I' Φ (mextDerivₗ I' k β).val x.val)
+    hv.symm).trans ?_
+  rw [TauCeti.mpullback_apply, mextDerivₗ_apply]
+
+/-- **Exterior derivative of a pullback along `Φ.toDiffeomorphSourceTarget.symm`.** Pulling the
+restriction of a smooth form on `M` back along `Φ.toDiffeomorphSourceTarget.symm` and
+differentiating gives the exterior derivative of the form evaluated along the differential of
+`Φ.symm`. -/
+theorem _root_.PartialDiffeomorph.mextDeriv_mpullback_toDiffeomorphSourceTarget_symm_apply
+    (Φ : PartialDiffeomorph I I' M M' ∞) (β : SmoothForm I M F k)
+    (x : (⟨Φ.target, Φ.open_target⟩ : Opens M')) (v : Fin (k + 1) → TangentSpace I' x) :
+    mextDeriv (SmoothForm.mpullback Φ.toDiffeomorphSourceTarget.symm
+        Φ.toDiffeomorphSourceTarget.symm.contMDiff
+        (SmoothForm.mpullback (Subtype.val : (⟨Φ.source, Φ.open_source⟩ : Opens M) → M)
+          contMDiff_subtypeVal β)).val x v =
+      mextDeriv β.val (Φ.symm x.val) (fun i ↦ mfderiv I' I Φ.symm x.val
+        (Manifold.tangentSpaceOpenEquiv (I := I') x (v i))) := by
+  have : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
+  have : IsManifold I' 2 M' := IsManifold.of_le (n := ∞) (by simp)
+  rw [← mextDerivₗ_apply, SmoothForm.mextDerivₗ_mpullback,
+    SmoothForm.mextDerivₗ_mpullback, SmoothForm.coe_mpullback, SmoothForm.coe_mpullback]
+  refine (DFunLike.congr_fun
+    (Φ.mpullback_toDiffeomorphSourceTarget_symm_apply (by simp) (mextDerivₗ I k β).val x) v).trans
+    ?_
+  have hv : (fun i ↦ Manifold.tangentSpaceOpenEquiv (I := I') x (v i)) = v :=
+    funext fun i ↦ Manifold.tangentSpaceOpenEquiv_apply x (v i)
+  refine (DFunLike.congr_arg
+    (mpullback (F := F) (k := k + 1) I' I Φ.symm (mextDerivₗ I k β).val x.val) hv.symm).trans ?_
+  rw [TauCeti.mpullback_apply, mextDerivₗ_apply]
 
 end TauCeti

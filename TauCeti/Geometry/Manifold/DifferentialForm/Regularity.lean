@@ -36,6 +36,8 @@ differentiation commutes with this extension.
 * `TauCeti.RoughForm.contDiffWithinAt_inChartAt`: a `C^n` section has `C^n` chart expressions.
 * `TauCeti.RoughForm.contDiffWithinAt_of_contMDiffWithinAt_modelSpace`: over the model space, a
   `C^n` section within a set is a `C^n` function within that set.
+* `TauCeti.contMDiffAt_form_modelSpace_iff`: over the model space, a form is a `C^n` section at a
+  point exactly when it is a `C^n` function into the space of alternating maps at that point.
 * `TauCeti.RoughForm.contDiffWithinAt_inChartAt_of_contDiffWithinAt_inChartAt`: on a `C^(n+1)`
   manifold, `C^n` regularity of chart expressions transfers between overlapping charts;
   `TauCeti.RoughForm.contDiffOn_inChartAt_of_contMDiffOn` (for forms `C^n` on an open set),
@@ -577,6 +579,18 @@ theorem RoughForm.contDiffWithinAt_of_contMDiffWithinAt_modelSpace {n : WithTop 
   simpa only [RoughForm.inChartAt_modelSpace, extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
     PartialEquiv.refl_coe, preimage_id, modelWithCornersSelf_coe, range_id, inter_univ, id_eq]
     using φ.contDiffWithinAt_inChartAt hφ
+
+/-- Over the model space `𝓘(ℝ, E)`, a form is a `C^n` section at `x` exactly when it is a `C^n`
+function into the space of alternating maps at `x`. -/
+theorem contMDiffAt_form_modelSpace_iff {n : WithTop ℕ∞} {φ : RoughForm 𝓘(ℝ, E) E F k} {x : E} :
+    ContMDiffAt 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) n
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) y (φ y)) x ↔
+      ContDiffAt ℝ (E := E) (F := E [⋀^Fin k]→L[ℝ] F) n φ x :=
+  ⟨fun h ↦ contDiffWithinAt_univ.1
+      (RoughForm.contDiffWithinAt_of_contMDiffWithinAt_modelSpace h.contMDiffWithinAt),
+    fun h ↦ contMDiffAt_form_of_contDiffWithinAt_inChartAt_self <| by
+      simpa only [RoughForm.inChartAt_modelSpace, modelWithCornersSelf_coe, range_id,
+        extChartAt_model_space_eq_id, PartialEquiv.refl_coe, id_eq] using h.contDiffWithinAt⟩
 
 variable (I) in
 /-- The exterior derivative as a real linear map on smooth fixed-coefficient forms. -/
