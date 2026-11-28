@@ -21,6 +21,8 @@ touch the slit-plane boundary.
 
 * `TauCeti.continuousOn_arg_im_nonneg_ne_zero`.
 * `TauCeti.continuousOn_log_im_nonneg_ne_zero`.
+* `Filter.Tendsto.clog_of_im_nonneg`.
+* `TauCeti.continuousWithinAt_log_one_sub_ofReal_mul_im_nonpos`.
 * `TauCeti.continuousOn_cpow_const_im_nonneg`.
 
 ## References
@@ -32,7 +34,8 @@ touch the slit-plane boundary.
 
 public section
 
-open Complex
+open Complex Filter
+open scoped Topology
 
 namespace TauCeti
 
@@ -52,6 +55,31 @@ theorem continuousOn_log_im_nonneg_ne_zero :
     ContinuousOn log {z : ℂ | 0 ≤ z.im ∧ z ≠ 0} := by
   unfold log
   fun_prop (disch := exact fun _ hz ↦ norm_ne_zero_iff.2 hz.2)
+
+/-- Limit rule for `Complex.log` along a filter eventually mapped into the closed upper half-plane,
+when the limiting value is nonzero. -/
+theorem _root_.Filter.Tendsto.clog_of_im_nonneg {α : Type*} {l : Filter α} {f : α → ℂ} {z : ℂ}
+    (hf : Tendsto f l (𝓝 z)) (him : ∀ᶠ y in l, 0 ≤ (f y).im) (hne : z ≠ 0) :
+    Tendsto (fun y ↦ log (f y)) l (𝓝 (log z)) := by
+  rcases eq_or_neBot l with rfl | _
+  · exact tendsto_bot
+  have hz : 0 ≤ z.im := ge_of_tendsto (continuous_im.continuousAt.tendsto.comp hf) him
+  refine (continuousOn_log_im_nonneg_ne_zero z ⟨hz, hne⟩).tendsto.comp (tendsto_nhdsWithin_iff.mpr
+    ⟨hf, ?_⟩)
+  filter_upwards [him, hf.eventually_ne hne] with y hy hy0 using ⟨hy, hy0⟩
+
+/-- Continuity of `w ↦ Complex.log (1 - t * w)` within the closed lower half-plane when `t ≥ 0`
+and `1 - t * z ≠ 0`. -/
+theorem continuousWithinAt_log_one_sub_ofReal_mul_im_nonpos {t : ℝ} (ht : 0 ≤ t) {z : ℂ}
+    (htz : 1 - (t : ℂ) * z ≠ 0) :
+    ContinuousWithinAt (fun w : ℂ ↦ log (1 - (t : ℂ) * w)) {w : ℂ | w.im ≤ 0} z := by
+  have hlin : ContinuousWithinAt (fun w : ℂ ↦ 1 - (t : ℂ) * w) {w : ℂ | w.im ≤ 0} z :=
+    (by fun_prop : Continuous fun w : ℂ ↦ 1 - (t : ℂ) * w).continuousWithinAt
+  have him : ∀ᶠ w in 𝓝[{w : ℂ | w.im ≤ 0}] z, 0 ≤ (1 - (t : ℂ) * w).im := by
+    refine eventually_nhdsWithin_of_forall fun w (hw : w.im ≤ 0) ↦ ?_
+    simp only [sub_im, one_im, mul_im, ofReal_re, ofReal_im, zero_mul, add_zero, zero_sub]
+    nlinarith [ht, hw]
+  exact Filter.Tendsto.clog_of_im_nonneg hlin him htz
 
 /-- A complex power whose exponent has positive real part is continuous on the closed upper
 half-plane. Unlike continuity on the open slit plane, this includes one-sided continuity at the

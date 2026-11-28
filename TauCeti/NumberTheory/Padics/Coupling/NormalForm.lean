@@ -15,6 +15,7 @@ import Mathlib.Analysis.Normed.Algebra.Ultra
 import TauCeti.Data.Nat.Pow
 import TauCeti.RingTheory.MvPowerSeries.NormCoeff
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Subst
+import TauCeti.RingTheory.PowerSeries.Exp.Subst
 
 /-!
 # Couplings and normal form of `p`-adic multivariate power series
@@ -37,12 +38,20 @@ has **normal form** `HasNormalForm p S pr ϖ l F` if
   `0 ≤ r ≤ 1`, `‖ϖ ^ (p + 1) / p‖ * r ≤ p ^ (-(p - 1)⁻¹)`, and `Z` is an integral substitution
   without constant term whose couplings `Γ_e(Z)` have norm at most `r` up to degree `B` for `e ∈ S`
   with `e ≤ p.log B`, then `F(ϖ Z)` is integral in degrees at most `B`.
+* `MvPowerSeries.HasNormalForm.of_norm_coeff_sub_le`: the exponent modulo `π`. If
+  `F(ϖ z) = W * exp ((ϖ ^ (p + 1) / p) • Ξ')` with `W` integral, `Ξ'` without constant term and the
+  coefficients of `Ξ' - Ξ` of norm at most `r`, where `‖ϖ ^ (p + 1) / p‖ * r ≤ p ^ (-(p - 1)⁻¹)`,
+  then `F` has the normal form with exponent `Ξ`.
 
 ## References
 
 * L. Alpöge, `New.coupling`, `New.couplingSum`, and `New.HasNormalForm` in
   `src/New/Derivatives/Divisibility/NormalForm.lean`,
   <https://github.com/leanprover-community/riemann-hypothesis/tree/dba5aded4bf7>.
+* L. Alpöge, `New.HasNormalForm.of_dvd_sub` in the same file, adapted as
+  `MvPowerSeries.HasNormalForm.of_norm_coeff_sub_le`; there divisibility by `π` in the valuation
+  ring of `ℂ_[p]`, here a bound `r` on the norms of the coefficients,
+  <https://github.com/leanprover-community/riemann-hypothesis/tree/3ad0b4b58709>.
 -/
 
 public section
@@ -74,6 +83,13 @@ theorem couplingSum_def [TopologicalSpace R] (p : ℕ) (S : Set ℕ) (pr : ℕ �
     (l : ℕ → ℕ → R) :
     (couplingSum p S pr l : MvPowerSeries (Φ × c) R) =
       ∑' x : S × ℕ, l x.1 x.2 • coupling p pr x.1 ^ p ^ x.2 := by rfl
+
+/-- A coefficient map preserves the coupling for each partner rule and exponent. -/
+@[simp]
+theorem map_coupling {S : Type*} [CommRing S] (f : R →+* S)
+    (p : ℕ) (pr : ℕ → Φ → Φ) (e : ℕ) :
+    map (σ := Φ × c) f (coupling p pr e) = coupling p pr e := by
+  simp [coupling_def]
 
 /-- Substituting `Z` into `coupling p pr e`. -/
 theorem subst_coupling {p : ℕ} {pr : ℕ → Φ → Φ} {τ : Type*} {Z : Φ × c → MvPowerSeries τ R}
@@ -406,6 +422,31 @@ theorem HasNormalForm.norm_coeff_subst_le_one (hF : HasNormalForm p S pr ϖ l F)
         (fun u hu ↦ norm_coeff_subst_couplingSum_le hp hr0 hr1 hl hZ hΓ hu)
         ((Finsupp.degree_mono hd).trans hm))
   simpa [Finsupp.prod] using h1
+
+/-- **The exponent modulo `π`.** If `F(ϖ z) = W * exp ((ϖ ^ (p + 1) / p) • Ξ')` with `W` integral,
+`Ξ'` without constant term, and the coefficients of `Ξ' - Ξ` of norm at most `r`, where
+`‖ϖ ^ (p + 1) / p‖ * r ≤ p ^ (-(p - 1)⁻¹)`, then `F` has the normal form `(S, pr, ϖ, l)`: the
+factor `exp ((ϖ ^ (p + 1) / p) • (Ξ' - Ξ))` is integral and moves into `W`. -/
+theorem HasNormalForm.of_norm_coeff_sub_le {r : ℝ}
+    (hr : ‖ϖ ^ (p + 1) / p‖ * r ≤ (p : ℝ) ^ (-(p - 1 : ℝ)⁻¹)) {W Ξ' : MvPowerSeries (Φ × c) K}
+    (hW : ∀ d, ‖coeff d W‖ ≤ 1) (hΞ' : constantCoeff Ξ' = 0)
+    (h_sub : ∀ d, ‖coeff d (Ξ' - couplingSum p S pr l)‖ ≤ r)
+    (hF : F.rescale (fun _ : Φ × c ↦ ϖ) =
+      W * (PowerSeries.exp K).subst ((ϖ ^ (p + 1) / p) • Ξ')) :
+    HasNormalForm p S pr ϖ l F := by
+  have : IsUltrametricDist K := .of_normedAlgebra ℚ_[p]
+  have hp : 1 < p := (Fact.out : p.Prime).one_lt
+  have hG : constantCoeff (Ξ' - couplingSum p S pr l : MvPowerSeries (Φ × c) K) = 0 := by
+    simp [hΞ', constantCoeff_couplingSum hp]
+  have h_exp : (PowerSeries.exp K).subst ((ϖ ^ (p + 1) / p) • Ξ') =
+      (PowerSeries.exp K).subst ((ϖ ^ (p + 1) / p) • (Ξ' - couplingSum p S pr l)) *
+        (PowerSeries.exp K).subst ((ϖ ^ (p + 1) / p) • couplingSum p S pr l) := by
+    rw [← PowerSeries.subst_exp_add (.of_constantCoeff_zero (by simp [hG]))
+      (.of_constantCoeff_zero (by simp [constantCoeff_couplingSum hp])),
+      ← smul_add, sub_add_cancel]
+  refine ⟨_, fun d ↦ ?_, by rw [hF, h_exp, mul_assoc]⟩
+  simpa using norm_coeff_mul_le_mul hW (fun t ↦ PowerSeries.norm_coeff_subst_exp_smul_le_one hr hG
+    (B := t.degree) (fun d _ ↦ h_sub d) le_rfl) d
 
 end NormalForm
 

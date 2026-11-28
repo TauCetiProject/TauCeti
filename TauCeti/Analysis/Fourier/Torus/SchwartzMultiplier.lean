@@ -13,7 +13,7 @@ import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.Fourier.Torus.Convolution
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
-import TauCeti.Analysis.Fourier.PoissonSummation
+import TauCeti.Analysis.Fourier.Poisson.Lattice
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
 /-!

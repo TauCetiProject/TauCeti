@@ -28,16 +28,7 @@ public section
 
 namespace MvPowerSeries
 
-variable {Φ c : Type*} [Fintype Φ] [Fintype c]
-
-/-- A coefficient map preserves the coupling for each partner rule and exponent. -/
-@[simp]
-theorem map_coupling {R S : Type*} [CommRing R] [CommRing S] (f : R →+* S)
-    (p : ℕ) (pr : ℕ → Φ → Φ) (e : ℕ) :
-    map (σ := Φ × c) f (coupling p pr e) = coupling p pr e := by
-  simp [coupling_def]
-
-variable {ι : Type*} [Fintype ι] [DecidableEq (Φ × c)]
+variable {Φ c ι : Type*} [Fintype Φ] [Fintype c] [Fintype ι] [DecidableEq (Φ × c)]
 
 /-- In exponential characteristic `p`, a weighted resolution of the identity whose dual
 coefficients are Frobenius partners turns the weighted sum of powers of the linear forms into a

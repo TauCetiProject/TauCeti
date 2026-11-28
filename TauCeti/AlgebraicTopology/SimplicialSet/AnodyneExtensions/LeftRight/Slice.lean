@@ -44,27 +44,24 @@ universe u
 
 namespace SSet
 
-variable {A B K L X S : SSet.{u}} {m : ℕ} {k : Fin (m + 1)}
+variable {A B K L X S : SSet.{u}}
 
 /-! ### Relative slices and coslices of inner fibrations -/
 
 namespace coslice
 
-/-- For an inner fibration `p : X ⟶ S`, a simplex `τ : Δ[m] ⟶ X` and `0 < k`, **the relative
-coslice map `X_{τ/} ⟶ X_{(Λ[m, k] ⟶ Δ[m] ⟶ X)/} ×_{S_{(Λ[m, k] ⟶ Δ[m] ⟶ S)/}} S_{τ ≫ p/}` is a
-trivial fibration**: it has the right lifting property with respect to every monomorphism
-`j : A ⟶ B`. Through the universal property of the coslice, this says that a map
-`(Λ[m, k] ⋆ B) ∪ (Δ[m] ⋆ A) ⟶ X` extending `τ` extends to `Δ[m] ⋆ B` over every map
-`Δ[m] ⋆ B ⟶ S` whose restriction to `(Λ[m, k] ⋆ B) ∪ (Δ[m] ⋆ A)` is its composite with `p`. -/
-private theorem hasLiftingProperty_restrictionMap_horn_ι (p : X ⟶ S) [InnerFibration p] (hk : 0 < k)
-    (τ : Δ[m] ⟶ X) (j : A ⟶ B) [Mono j] :
-    HasLiftingProperty j (restrictionMap Λ[m, k].ι p τ) := by
-  suffices (monomorphisms SSet.{u}).rlp (restrictionMap Λ[m, k].ι p τ) from
+/-- If `p` lifts against the union-join of a subcomplex with every boundary, its relative
+coslice map along that subcomplex lifts against every monomorphism. -/
+theorem hasLiftingProperty_restrictionMap_of_unionJoin (Λ : K.Subcomplex) (p : X ⟶ S)
+    (h : ∀ n, HasLiftingProperty (Subcomplex.unionJoin Λ ∂Δ[n]).ι p)
+    (τ : K ⟶ X) (j : A ⟶ B) [Mono j] :
+    HasLiftingProperty j (restrictionMap Λ.ι p τ) := by
+  suffices (monomorphisms SSet.{u}).rlp (restrictionMap Λ.ι p τ) from
     this j (monomorphisms.infer_property j)
   rw [rlp_monomorphisms]
   rintro _ _ _ ⟨n⟩
-  have := join.innerAnodyneExtensions_unionJoin_horn_boundary n hk p (mem_innerFibrations p)
-  exact (forall_hasLiftingProperty_restrictionMap_iff_of_isPushout Λ[m, k].ι ∂Δ[n].ι p
+  have := h n
+  exact (forall_hasLiftingProperty_restrictionMap_iff_of_isPushout Λ.ι ∂Δ[n].ι p
     (Subcomplex.unionJoin.isPushout _ _) (Subcomplex.unionJoin.ι₁_ι _ _)
     (Subcomplex.unionJoin.ι₂_ι _ _)).2 inferInstance τ
 
@@ -72,21 +69,18 @@ end coslice
 
 namespace slice
 
-/-- For an inner fibration `p : X ⟶ S`, a simplex `σ : Δ[m] ⟶ X` and `k < m`, **the relative
-slice map `X_{/σ} ⟶ X_{/(Λ[m, k] ⟶ Δ[m] ⟶ X)} ×_{S_{/(Λ[m, k] ⟶ Δ[m] ⟶ S)}} S_{/σ ≫ p}` is a
-trivial fibration**: it has the right lifting property with respect to every monomorphism
-`j : A ⟶ B`. Through the universal property of the slice, this says that a map
-`(A ⋆ Δ[m]) ∪ (B ⋆ Λ[m, k]) ⟶ X` extending `σ` extends to `B ⋆ Δ[m]` over every map
-`B ⋆ Δ[m] ⟶ S` whose restriction to `(A ⋆ Δ[m]) ∪ (B ⋆ Λ[m, k])` is its composite with `p`. -/
-private theorem hasLiftingProperty_restrictionMap_horn_ι (p : X ⟶ S) [InnerFibration p]
-    (hk : k < Fin.last m) (σ : Δ[m] ⟶ X) (j : A ⟶ B) [Mono j] :
-    HasLiftingProperty j (restrictionMap Λ[m, k].ι p σ) := by
-  suffices (monomorphisms SSet.{u}).rlp (restrictionMap Λ[m, k].ι p σ) from
+/-- If `p` lifts against the union-join of every boundary with a subcomplex, its relative
+slice map along that subcomplex lifts against every monomorphism. -/
+theorem hasLiftingProperty_restrictionMap_of_unionJoin (Λ : K.Subcomplex) (p : X ⟶ S)
+    (h : ∀ n, HasLiftingProperty (Subcomplex.unionJoin ∂Δ[n] Λ).ι p)
+    (σ : K ⟶ X) (j : A ⟶ B) [Mono j] :
+    HasLiftingProperty j (restrictionMap Λ.ι p σ) := by
+  suffices (monomorphisms SSet.{u}).rlp (restrictionMap Λ.ι p σ) from
     this j (monomorphisms.infer_property j)
   rw [rlp_monomorphisms]
   rintro _ _ _ ⟨n⟩
-  have := join.innerAnodyneExtensions_unionJoin_boundary_horn n hk p (mem_innerFibrations p)
-  exact (forall_hasLiftingProperty_restrictionMap_iff_of_isPushout ∂Δ[n].ι Λ[m, k].ι p
+  have := h n
+  exact (forall_hasLiftingProperty_restrictionMap_iff_of_isPushout ∂Δ[n].ι Λ.ι p
     (Subcomplex.unionJoin.isPushout _ _) (Subcomplex.unionJoin.ι₁_ι _ _)
     (Subcomplex.unionJoin.ι₂_ι _ _)).2 inferInstance σ
 
@@ -98,7 +92,9 @@ instance rightFibration_restrictionMap (p : X ⟶ S) [InnerFibration p] (i : L �
     (σ : K ⟶ X) : RightFibration (restrictionMap i p σ) :=
   (rightFibration_iff_hasLiftingProperty _).2 fun _ _ hk ↦
     (forall_hasLiftingProperty_restrictionMap_iff _ i p).2
-      (fun τ ↦ coslice.hasLiftingProperty_restrictionMap_horn_ι p hk τ i) σ
+      (fun τ ↦ coslice.hasLiftingProperty_restrictionMap_of_unionJoin _ p
+        (fun n ↦ join.innerAnodyneExtensions_unionJoin_horn_boundary n hk p
+          (mem_innerFibrations p)) τ i) σ
 
 end slice
 
@@ -112,7 +108,9 @@ instance leftFibration_restrictionMap (p : X ⟶ S) [InnerFibration p] (i : L �
     (τ : K ⟶ X) : LeftFibration (restrictionMap i p τ) :=
   (leftFibration_iff_hasLiftingProperty _).2 fun _ _ hk ↦
     (slice.forall_hasLiftingProperty_restrictionMap_iff i _ p).1
-      (fun σ ↦ slice.hasLiftingProperty_restrictionMap_horn_ι p hk σ i) τ
+      (fun σ ↦ slice.hasLiftingProperty_restrictionMap_of_unionJoin _ p
+        (fun n ↦ join.innerAnodyneExtensions_unionJoin_boundary_horn n hk p
+          (mem_innerFibrations p)) σ i) τ
 
 end coslice
 

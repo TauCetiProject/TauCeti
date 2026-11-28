@@ -8,19 +8,26 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.MeanValue
 public import Mathlib.Analysis.Calculus.Deriv.Pow
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
+import TauCeti.Analysis.SpecialFunctions.Hyperbolic
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 
 /-!
-# A strict upper bound for the hyperbolic cotangent
+# Bounds and nonvanishing estimates for hyperbolic functions
 
-At a positive argument, the hyperbolic cotangent is strictly smaller than the reciprocal
-plus one third of the argument. Two derivative comparisons, each starting at zero, give
-the strict inequality. The radius sign is essential.
+At a positive argument, the real hyperbolic cotangent is strictly smaller than the reciprocal
+plus one third of the argument (`Real.cosh_div_sinh_lt_inv_add_div_three`). Two derivative
+comparisons, each starting at zero, give the strict inequality. The radius sign is essential.
 
 This converts hyperbolic cotangent comparison terms into reciprocal-plus-linear bounds
 for distance-support estimates, comparing the matched hyperbolic and linear profiles.
+
+For the complex hyperbolic functions on the imaginary axis,
+`Complex.cosh_pi_mul_I_div_ne_zero` and `Complex.sinh_ofReal_mul_pi_mul_I_div_ne_zero` give
+nonvanishing at rational multiples of `π * I` from the corresponding trigonometric positivity
+bounds.
 
 Adapted from Otis Chodosh's formalization in
 `ForTauCeti/Analysis/SpecialFunctions/Hyperbolic/Bounds.lean` in
@@ -82,3 +89,23 @@ theorem cosh_div_sinh_lt_inv_add_div_three {x : ℝ} (hx : 0 < x) :
   exact sub_pos.mp (linear_sinh_sub_mul_cosh_pos hx)
 
 end Real
+
+namespace Complex
+
+open scoped Real
+
+/-- For a real denominator `2 < x`, `cosh (π * I / x)` is nonzero. -/
+theorem cosh_pi_mul_I_div_ne_zero {x : ℝ} (hx : 2 < x) : cosh (π * I / x) ≠ 0 := by
+  rw [mul_div_right_comm, ← ofReal_div, cosh_ofReal_mul_I_ne_zero]
+  exact (TauCeti.cos_pi_div_pos hx).ne'
+
+/-- For real `0 < x < l`, `sinh (x * (π * I / l))` is nonzero. -/
+theorem sinh_ofReal_mul_pi_mul_I_div_ne_zero {x l : ℝ} (h0 : 0 < x) (hx : x < l) :
+    sinh ((x : ℂ) * (π * I / l)) ≠ 0 := by
+  have h : (x : ℂ) * (π * I / l) = ↑(x * π / l) * I := by
+    rw [ofReal_div, ofReal_mul]
+    ring
+  rw [h, sinh_ofReal_mul_I_ne_zero]
+  exact (TauCeti.sin_mul_pi_div_pos h0 hx).ne'
+
+end Complex

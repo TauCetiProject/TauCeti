@@ -5,6 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.Embedding.DownNatAdd
+public import TauCeti.Algebra.Homology.Embedding.Extend
+public import TauCeti.Algebra.Homology.Embedding.ExtendHomology.Sequence
+public import TauCeti.Algebra.Homology.TotalComplex.Basic
 public import TauCeti.Algebra.Homology.TotalComplex.Functor
 public import TauCeti.Topology.Sheaves.KSheaf.ShortExact
 
@@ -33,10 +37,24 @@ the last term, concentrated in the column `a`, is that column shifted by `-a`
 (`CategoryTheory.Functor.shiftIsoTotalComplexOfIsZero`), and shifts of homotopy K-sheaves are
 homotopy K-sheaves (`TopCat.KPresheaf.IsHomotopyKSheaf.comp_shiftFunctor`).
 
+**First-quadrant bicomplexes.** The flag totals of interval diagrams are total complexes of
+bicomplexes indexed by `ℕ × ℕ` with homological differentials, read in cochain degrees `N - •`
+through the embedding `n ↦ N - n` (`ComplexShape.embeddingUpIntLE N`). For a K-presheaf `G` of
+such bicomplexes with finitely many nonzero rows, the total complex read in cochain degrees
+`N - •` is a homotopy K-sheaf as soon as each row `q`, read in cochain degrees `N - q - •`, is one
+(`TopCat.KPresheaf.isHomotopyKSheaf_comp_homologicalComplex₂TotalFunctor_comp_extendFunctor`).
+The proof is the same induction, splitting off the row `0` by the degreewise split short exact
+sequence `row 0 ⟶ Tot ⟶ Tot (rows ≥ 1)[1]` (`HomologicalComplex₂.rowZeroShortComplex`); the rows
+`≥ 1` placed one degree higher and read in cochain degrees `N - •` are read in cochain degrees
+`N - 1 - •` (`ComplexShape.Embedding.extendFunctorCompExtendFunctorIso`).
+
 ## Main results
 
 * `TopCat.KPresheaf.isHomotopyKSheaf_totalComplex`: the total complex of a K-presheaf of double
   complexes with finitely many nonzero columns, all homotopy K-sheaves, is a homotopy K-sheaf.
+* `TopCat.KPresheaf.isHomotopyKSheaf_comp_homologicalComplex₂TotalFunctor_comp_extendFunctor`:
+  the same for first-quadrant bicomplexes with finitely many nonzero rows, read in cochain
+  degrees.
 
 ## References
 
@@ -133,5 +151,88 @@ theorem isHomotopyKSheaf_totalComplex
   isHomotopyKSheaf_totalComplex_aux (b - a).toNat a F (fun K p hp ↦ hF K p (by omega)) fun p ↦
     if hp : a ≤ p ∧ p ≤ b then hcol p hp.1 hp.2
     else isHomotopyKSheaf_of_acyclic fun K ↦ acyclic_of_isZero _ (hF (op K) p (by omega))
+
+/-! ### First-quadrant bicomplexes read in cochain degrees -/
+
+section FirstQuadrant
+
+open ComplexShape HomologicalComplex₂
+
+variable (G : KPresheaf (HomologicalComplex₂ C (down ℕ) (down ℕ)) X)
+
+omit [T2Space X] [HasFilteredColimitsOfSize.{w, w} C] [AB5OfSize.{w, w} C]
+  [WeaklyLocallyCompactSpace X] in
+/-- The short complex `row 0 ⟶ Tot ⟶ Tot (rows ≥ 1)[1]` of the values of `G`, as a short complex
+of K-presheaves of chain complexes. -/
+private noncomputable def rowZeroKShortComplex : ShortComplex (KPresheaf (ChainComplex C ℕ) X) where
+  X₁ := G ⋙ (HomologicalComplex.eval C (down ℕ) 0).mapHomologicalComplex (down ℕ)
+  X₂ := G ⋙ totalFunctor C (down ℕ) (down ℕ) (down ℕ)
+  X₃ := G ⋙ rowsSuccFunctor C ⋙ totalFunctor C (down ℕ) (down ℕ) (down ℕ) ⋙
+    (embeddingDownNatAdd 1).extendFunctor C
+  f := { app K := rowZeroι (G.obj K), naturality _ _ h := rowZeroι_naturality (G.map h) }
+  g := { app K := dropRowZero (G.obj K), naturality _ _ h := dropRowZero_naturality (G.map h) }
+  zero := by
+    ext K : 2
+    exact rowZeroι_dropRowZero (G.obj K)
+
+omit [T2Space X] [HasFilteredColimitsOfSize.{w, w} C] [AB5OfSize.{w, w} C]
+  [WeaklyLocallyCompactSpace X] in
+/-- The short complex `row 0 ⟶ Tot ⟶ Tot (rows ≥ 1)[1]`, read in cochain degrees `N - •`, is short
+exact: it is split in each degree. -/
+private lemma shortExact_rowZeroKShortComplex_map (N : ℤ) :
+    ((rowZeroKShortComplex G).map
+      ((Functor.whiskeringRight _ _ _).obj ((embeddingUpIntLE N).extendFunctor C))).ShortExact :=
+  ShortComplex.shortExact_of_forall_evaluation _ fun K ↦
+    -- at `K` it is the short complex `rowZeroShortComplex (G.obj K)` read in degrees `N - •`
+    ShortComplex.shortExact_of_iso (ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
+      ((Category.id_comp _).trans (Category.comp_id _).symm)
+      ((Category.id_comp _).trans (Category.comp_id _).symm))
+      ((rowZeroShortComplex_shortExact (G.obj K)).extend (embeddingUpIntLE N))
+
+/-- **Pardon's Lemma A.2.11 for first-quadrant bicomplexes.** Let `G` be a K-presheaf of
+bicomplexes indexed by `ℕ × ℕ`, with homological differentials, whose rows `q ≥ n` vanish, and
+let `N` be an integer. If every row `q < n`, the complex `p ↦ ((G K).X p).X q` read in cochain
+degrees `N - q - •`, is a homotopy K-sheaf, then the total complex `K ↦ Tot (G K)` read in cochain
+degrees `N - •` is a homotopy K-sheaf. -/
+theorem isHomotopyKSheaf_comp_homologicalComplex₂TotalFunctor_comp_extendFunctor
+    (n : ℕ) (N : ℤ) (hG : ∀ K p q, n ≤ q → IsZero (((G.obj K).X p).X q))
+    (hrow : ∀ q < n, IsHomotopyKSheaf (G ⋙
+      (HomologicalComplex.eval C (down ℕ) q).mapHomologicalComplex (down ℕ) ⋙
+        (embeddingUpIntLE (N - q)).extendFunctor C)) :
+    IsHomotopyKSheaf (G ⋙ totalFunctor C (down ℕ) (down ℕ) (down ℕ) ⋙
+      (embeddingUpIntLE N).extendFunctor C) := by
+  induction n generalizing G N with
+  | zero =>
+    -- all terms vanish, so the total complex vanishes in every degree
+    refine isHomotopyKSheaf_of_acyclic fun K k ↦ HomologicalComplex.ExactAt.of_isZero ?_
+    by_cases hk : ∃ m, (embeddingUpIntLE N).f m = k
+    · obtain ⟨m, rfl⟩ := hk
+      exact IsZero.of_iso ((IsZero.iff_id_eq_zero _).2 (total.hom_ext _ fun p q _ ↦
+        (hG (op K) p q q.zero_le).eq_of_src _ _)) (((G.obj (op K)).total _).extendXIso _ rfl)
+    · exact ((G.obj (op K)).total _).isZero_extend_X _ k (not_exists.1 hk)
+  | succ n ih =>
+    -- The rows `≥ 1`, placed one degree higher and read in degrees `N - •`, are read in degrees
+    -- `N - 1 - •`, where the induction hypothesis applies to them.
+    have he : ∀ m : ℕ, (embeddingUpIntLE N).f ((embeddingDownNatAdd 1).f m) =
+        (embeddingUpIntLE (N - 1)).f m := fun m ↦ by
+      simp only [embeddingDownNatAdd_f, embeddingUpIntLE_f]
+      push_cast
+      ring
+    have h₃ := ih (G ⋙ rowsSuccFunctor C) (N - 1)
+      (fun K p q hq ↦ hG K p (q + 1) (by omega)) fun q hq ↦ by
+        have hN : N - 1 - (q : ℤ) = N - ((q + 1 : ℕ) : ℤ) := by
+          push_cast
+          ring
+        rw [hN]
+        -- the row `q` of `rowsSucc K` is, up to reducible unfolding of the abbreviation
+        -- `rowsSucc`, the row `q + 1` of `K`
+        exact hrow (q + 1) (by omega)
+    have h₁ := hrow 0 n.succ_pos
+    rw [Nat.cast_zero, sub_zero] at h₁
+    refine (shortExact_rowZeroKShortComplex_map G N).isHomotopyKSheaf_X₂ h₁ (h₃.of_iso ?_)
+    exact Functor.isoWhiskerLeft (G ⋙ rowsSuccFunctor C ⋙ totalFunctor C (down ℕ) (down ℕ) (down ℕ))
+      (Embedding.extendFunctorCompExtendFunctorIso C he).symm
+
+end FirstQuadrant
 
 end TopCat.KPresheaf
