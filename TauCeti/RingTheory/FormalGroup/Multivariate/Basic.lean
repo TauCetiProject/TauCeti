@@ -160,15 +160,9 @@ theorem substLaw_assoc {x y z : Fin n → MvPowerSeries σ R}
   have a₀ : a 0 = x := rfl
   have a₁ : a 1 = y := rfl
   have a₂ : a 2 = z := rfl
-  have ha : HasSubst (Function.uncurry a) := .uncurry (by
-    intro j
-    fin_cases j
-    · change HasSubst (a 0)
-      simpa only [a₀] using hx
-    · change HasSubst (a 1)
-      simpa only [a₁] using hy
-    · change HasSubst (a 2)
-      simpa only [a₂] using hz)
+  -- To prove admissibility of the three blocks, separate the first block from the remaining two.
+  have ha : HasSubst (Function.uncurry a) :=
+    .uncurry (Fin.forall_fin_succ.mpr ⟨hx, Fin.forall_fin_two.mpr ⟨hy, hz⟩⟩)
   have hxy := F.hasSubst_substLaw (hasSubst_block (0 : Fin 3)) (hasSubst_block 1)
   have hyz := F.hasSubst_substLaw (hasSubst_block (1 : Fin 3)) (hasSubst_block 2)
   funext i
