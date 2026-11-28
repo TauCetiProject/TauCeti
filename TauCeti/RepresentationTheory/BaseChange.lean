@@ -219,12 +219,10 @@ theorem cancelBaseChange_baseChange {E' L : Type*} [CommSemiring E'] [Semiring L
     AlgebraTensorModule.cancelBaseChange E E' L L V
         ((ρ.baseChange E').baseChange L g x) =
       ρ.baseChange L g (AlgebraTensorModule.cancelBaseChange E E' L L V x) := by
-  have h : (AlgebraTensorModule.cancelBaseChange E E' L L V).toLinearMap ∘ₗ
-        ((ρ.baseChange E').baseChange L g) =
-      (ρ.baseChange L g) ∘ₗ (AlgebraTensorModule.cancelBaseChange E E' L L V).toLinearMap := by
-    ext v
-    simp
-  exact LinearMap.congr_fun h x
+  simpa only [Representation.baseChange_apply, LinearMap.baseChange_eq_lTensor,
+    LinearMap.comp_apply, LinearEquiv.coe_coe, AlgebraTensorModule.coe_lTensor,
+    show AlgebraTensorModule.lTensor E' E' (ρ g) = (ρ g).baseChange E' from rfl] using
+    (LinearMap.congr_fun (AlgebraTensorModule.lTensor_comp_cancelBaseChange E E' L (ρ g)) x).symm
 
 /-- **Scalar-tower cancellation equivalence for representations.** For a scalar tower `E → E' → L`,
 `AlgebraTensorModule.cancelBaseChange E E' L L V` is an equivalence of `L`-representations

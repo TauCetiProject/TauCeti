@@ -43,6 +43,9 @@ suitable basis of `V`, a continuous homomorphism `Γ → GL_n(𝒪[E])`
 * `TauCeti.GaloisLattice.IntegralModel.map_toGL_apply`: its image in `GL ι E` is the matrix of
   `ρ g` in the extended basis of `V`.
 * `TauCeti.GaloisLattice.IntegralModel.continuous_toGL`: the matrix form is continuous.
+* `TauCeti.ContinuousRep.exists_basis_monoidHom_GL`: over a nonarchimedean local field, a
+  representation of a compact group has matrices in `GL ι 𝒪[E]` in some basis, without requiring
+  continuous inversion on `Γ`.
 * `TauCeti.ContinuousRep.exists_basis_continuousMonoidHom_GL`: over a nonarchimedean local field,
   a representation of a compact group is a continuous homomorphism to `GL_n(𝒪[E])` in some basis.
 
@@ -126,6 +129,30 @@ namespace TauCeti.ContinuousRep
 
 open ValuativeRel
 
+section MonoidHom
+
+variable {Γ : Type*} [Group Γ] [TopologicalSpace Γ] [CompactSpace Γ]
+  {E V : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E] [IsNonarchimedeanLocalField E]
+  [AddCommGroup V] [Module E V] [Module 𝒪[E] V] [IsScalarTower 𝒪[E] E V]
+  [TopologicalSpace V] [IsModuleTopology E V] [FiniteDimensional E V]
+
+/-- **Algebraic matrix form of the stable-lattice theorem.** A jointly continuous representation
+`ρ` of a compact group `Γ` on a finite-dimensional vector space `V` over a nonarchimedean local
+field `E` has, in a suitable basis of `V` indexed by any finite type `ι` of cardinality `dim V`,
+matrices coming from `GL ι 𝒪[E]`, without assuming continuous inversion on `Γ`. -/
+theorem exists_basis_monoidHom_GL {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (hcard : Fintype.card ι = finrank E V) (ρ : ContinuousRep Γ E V) :
+    ∃ (c : Basis ι E V) (φ : Γ →* GL ι 𝒪[E]),
+      ∀ g, (φ g : Matrix ι ι 𝒪[E]).map (algebraMap 𝒪[E] E) = LinearMap.toMatrix c c (ρ g) := by
+  obtain ⟨Λ⟩ : Nonempty (GaloisLattice.IntegralModel 𝒪[E] ρ) := inferInstance
+  have := IsLattice.free E Λ.lattice
+  let b₀ := Module.finBasisOfFinrankEq 𝒪[E] Λ.lattice
+    (IsFullLattice.finrank_eq (K := E) (M := Λ.lattice))
+  let b := b₀.reindex (Fintype.equivFinOfCardEq hcard).symm
+  exact ⟨b.extendOfIsFullLattice E, Λ.toGL b, Λ.map_toGL_apply b⟩
+
+end MonoidHom
+
 variable {Γ : Type*} [Group Γ] [TopologicalSpace Γ] [ContinuousInv Γ] [CompactSpace Γ]
   {E V : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E] [IsNonarchimedeanLocalField E]
   [AddCommGroup V] [Module E V] [Module 𝒪[E] V] [IsScalarTower 𝒪[E] E V]
@@ -139,10 +166,15 @@ lattice. -/
 theorem exists_basis_continuousMonoidHom_GL (ρ : ContinuousRep Γ E V) :
     ∃ (c : Basis (Fin (finrank E V)) E V) (φ : Γ →ₜ* GL (Fin (finrank E V)) 𝒪[E]),
       ∀ g, (φ g : Matrix _ _ 𝒪[E]).map (algebraMap 𝒪[E] E) = LinearMap.toMatrix c c (ρ g) := by
-  obtain ⟨Λ⟩ : Nonempty (GaloisLattice.IntegralModel 𝒪[E] ρ) := inferInstance
-  have := IsLattice.free E Λ.lattice
-  let b := Module.finBasisOfFinrankEq 𝒪[E] Λ.lattice
-    (IsFullLattice.finrank_eq (K := E) (M := Λ.lattice))
-  exact ⟨b.extendOfIsFullLattice E, ⟨Λ.toGL b, Λ.continuous_toGL b⟩, Λ.map_toGL_apply b⟩
+  obtain ⟨c, φ, hφ⟩ := exists_basis_monoidHom_GL (Fintype.card_fin (finrank E V)) ρ
+  have hcont : Continuous φ := (MonoidHom.continuous_iff_continuous_val φ).2 <|
+    continuous_matrix fun i j ↦ Topology.IsInducing.subtypeVal.continuous_iff.2 <| by
+      have hentry :
+          (fun g : Γ ↦
+            (((φ g : Matrix (Fin (finrank E V)) (Fin (finrank E V)) 𝒪[E]) i j : 𝒪[E]) : E)) =
+            fun g : Γ ↦ LinearMap.toMatrix c c (ρ g) i j :=
+        funext fun g ↦ congr_fun₂ (hφ g) i j
+      simpa only [Function.comp_def, hentry] using (ρ.continuous_toMatrix c).matrix_elem i j
+  exact ⟨c, ⟨φ, hcont⟩, hφ⟩
 
 end TauCeti.ContinuousRep

@@ -246,12 +246,16 @@ theorem cancelBaseChange_comp_sum_smul_baseChange
         (∑ i ∈ s, c i • (g i).baseChange E').baseChange L =
       (∑ i ∈ s, algebraMap E' L (c i) • (g i).baseChange L) ∘ₗ
         (AlgebraTensorModule.cancelBaseChange E E' L L V).toLinearMap := by
-  induction s using Finset.cons_induction with
-  | empty => simp
-  | cons a s ha ih =>
-    simp only [Finset.sum_cons]
-    rw [LinearMap.baseChange_add, LinearMap.comp_add, LinearMap.add_comp, ih,
-      cancelBaseChange_comp_smul_baseChange]
+  rw [← LinearMap.baseChangeHom_apply, map_sum,
+    ← LinearMap.llcomp_apply' (R₃ := L)
+      (AlgebraTensorModule.cancelBaseChange E E' L L W).toLinearMap,
+    map_sum,
+    ← LinearMap.lcomp_apply' (S := L) (N := L ⊗[E] W)
+      (AlgebraTensorModule.cancelBaseChange E E' L L V).toLinearMap,
+    map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  simpa only [LinearMap.baseChangeHom_apply, LinearMap.llcomp_apply', LinearMap.lcomp_apply'] using
+    cancelBaseChange_comp_smul_baseChange (c i) (g i)
 
 end LinearMap
 

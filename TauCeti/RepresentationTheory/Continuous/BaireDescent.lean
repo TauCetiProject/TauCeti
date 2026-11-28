@@ -16,6 +16,7 @@ import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Topology.Algebra.OpenSubgroup
 import Mathlib.Topology.Baire.Lemmas
 import TauCeti.LinearAlgebra.Matrix.BaseChange
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Basis
 import TauCeti.LinearAlgebra.Matrix.ToLin
 import TauCeti.NumberTheory.Padics.AlgebraicClosure.IntermediateField
 import TauCeti.RepresentationTheory.Continuous.IntegralModel.Matrix
@@ -24,10 +25,12 @@ import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Subfield
 /-!
 # Coefficient-field and integral descent for continuous representations
 
-Let `Γ` be a compact Baire topological group (for instance any compact Hausdorff group) and `ℓ` a
-prime. Every continuous matrix representation `ρ : Γ →ₜ* GL ι (PadicAlgCl ℓ)` has its image
-contained in `GL ι E` for a single finite extension `E / ℚ_[ℓ]` inside `PadicAlgCl ℓ`, which may
-be chosen to contain any prescribed finite intermediate field `K`.
+Let `Γ` be a compact Baire group with separately continuous multiplication
+(`SeparatelyContinuousMul Γ`; continuous inversion is not required for matrix or integral descent,
+and is needed only for object and diagram descent below) and `ℓ` a prime. Every continuous matrix
+representation `ρ : Γ →ₜ* GL ι (PadicAlgCl ℓ)` has its image contained in `GL ι E` for a single
+finite extension `E / ℚ_[ℓ]` inside `PadicAlgCl ℓ`, which may be chosen to contain any prescribed
+finite intermediate field `K`.
 
 The proof is a Baire-category argument: the finite subextensions `E` of `PadicAlgCl ℓ / ℚ_[ℓ]`
 are countably many (`PadicAlgCl.countable_finiteDimensional`) and closed
@@ -43,22 +46,25 @@ Using the framed-representation API in
 `TauCeti.RepresentationTheory.Continuous.ContinuousRep.Framed.BaseChange`, and integral models in
 `TauCeti.RepresentationTheory.Continuous.IntegralModel.Matrix`, we deduce:
 * **Abstract Baire descent** (`TauCeti.ContinuousRep.baire_descent_of_countable`) for any compact
-  Baire group and algebraic extension with countably many closed finite subextensions, specialized
-  to `PadicAlgCl ℓ` in `TauCeti.ContinuousRep.baire_descent`.
+  Baire group with separately continuous multiplication (no continuous inversion needed) and any
+  algebraic extension with countably many closed finite subextensions, specialized to `PadicAlgCl ℓ`
+  in `TauCeti.ContinuousRep.baire_descent`.
 * **Simultaneous descent of finite diagrams**
   (`TauCeti.ContinuousRep.exists_descent_family_of_countable`,
   `TauCeti.ContinuousRep.exists_descent_family`) and of a single representation
   (`TauCeti.ContinuousRep.exists_descent_of_countable`, `TauCeti.ContinuousRep.exists_descent`)
-  for finite-dimensional continuous representations carrying the module topology
-  (`IsModuleTopology`), with the descent isomorphism holding for any module topology on the
-  base-changed spaces. Together with `TauCeti.RepresentationTheory.Descent`, this descends finite
-  diagrams of finite-dimensional continuous representations over `PadicAlgCl ℓ` carrying the module
-  topology to a common finite extension of `ℚ_[ℓ]`, and descends intertwining maps between base
-  changes of representations.
-* **Integral descent** (`TauCeti.ContinuousRep.exists_integral_conj_GL`): combining
-  `baire_descent` with `TauCeti.GaloisLattice.IntegralModel.toGL` over the resulting finite
-  extension `E / ℚ_[ℓ]` shows every continuous `ρ : Γ →ₜ* GL ι (PadicAlgCl ℓ)` is conjugate into
-  `GL ι 𝒪[E]`, i.e., to matrices with entries in `E` of norm at most `1`.
+  for finite-dimensional continuous representations of a compact Baire group with separately
+  continuous multiplication and continuous inversion (`ContinuousInv Γ`) carrying the module
+  topology (`IsModuleTopology`), with the descent isomorphism holding for any module topology on
+  the base-changed spaces. Together with `TauCeti.RepresentationTheory.Descent`, this descends
+  finite diagrams of finite-dimensional continuous representations over `PadicAlgCl ℓ` carrying the
+  module topology to a common finite extension of `ℚ_[ℓ]`, and descends intertwining maps between
+  base changes of representations.
+* **Integral descent** (`TauCeti.ContinuousRep.exists_integral_conj_GL`): assuming only separately
+  continuous multiplication (without continuous inversion), combining `baire_descent` with
+  `TauCeti.ContinuousRep.exists_basis_monoidHom_GL` over the resulting finite extension `E / ℚ_[ℓ]`
+  shows every continuous `ρ : Γ →ₜ* GL ι (PadicAlgCl ℓ)` is conjugate into `GL ι 𝒪[E]`, i.e., to
+  matrices with entries in `E` of norm at most `1`.
 
 ## Main results
 
@@ -93,21 +99,11 @@ private def entriesSubgroup {Γ L S ι : Type*} [Group Γ] [Field L] [SetLike S 
     [SubfieldClass S L] [Fintype ι] [DecidableEq ι] (ρ : Γ →* GL ι L) (E : S) : Subgroup Γ :=
   (Matrix.GeneralLinearGroup.map (n := ι) (SubringClass.subtype E)).range.comap ρ
 
-private theorem mem_entriesSubgroup_iff {Γ L S ι : Type*} [Group Γ] [Field L] [SetLike S L]
-    [SubfieldClass S L] [Fintype ι] [DecidableEq ι] (ρ : Γ →* GL ι L) (E : S) (g : Γ) :
-    g ∈ entriesSubgroup ρ E ↔ ∀ i j, (ρ g : Matrix ι ι L) i j ∈ E :=
-  Matrix.GeneralLinearGroup.mem_range_map_subtype_iff E (ρ g)
-
-private theorem isClosed_entriesSubgroup {Γ L S ι : Type*} [Group Γ] [TopologicalSpace Γ]
-    [Field L] [SetLike S L] [SubfieldClass S L] [TopologicalSpace L] [Fintype ι] [DecidableEq ι]
-    (ρ : Γ →ₜ* GL ι L) {E : S} (hE : IsClosed (E : Set L)) :
-    IsClosed (entriesSubgroup (ρ : Γ →* GL ι L) E : Set Γ) :=
-  (Matrix.GeneralLinearGroup.isClosed_range_map_subtype hE).preimage (map_continuous ρ)
-
 /-- **Abstract Baire-category descent for continuous matrix representations.** If `Γ` is a
-compact Baire group and `L / K` is an algebraic field extension whose finite intermediate fields
-are countably many and closed in `L`, then every continuous `ρ : Γ →ₜ* GL ι L` has entries in a
-single finite intermediate field containing any prescribed finite `K₀`. -/
+compact Baire group with separately continuous multiplication (no continuous inversion is required)
+and `L / K` is an algebraic field extension whose finite intermediate fields are countably many and
+closed in `L`, then every continuous `ρ : Γ →ₜ* GL ι L` has entries in a single finite
+intermediate field containing any prescribed finite `K₀`. -/
 theorem baire_descent_of_countable
     {Γ : Type*} [Group Γ] [TopologicalSpace Γ] [SeparatelyContinuousMul Γ]
     [CompactSpace Γ] [BaireSpace Γ]
@@ -124,7 +120,8 @@ theorem baire_descent_of_countable
   have : Countable S := hcount.to_subtype
   let H (E : S) : Subgroup Γ := entriesSubgroup (ρ : Γ →* GL ι L) E.val
   have hHclosed (E : S) : IsClosed (H E : Set Γ) :=
-    isClosed_entriesSubgroup ρ (hclosed E.val E.property)
+    (Matrix.GeneralLinearGroup.isClosed_range_map_subtype (hclosed E.val E.property)).preimage
+      (map_continuous ρ)
   have hcover : (⋃ E : S, (H E : Set Γ)) = Set.univ := by
     refine Set.eq_univ_iff_forall.mpr fun g ↦ ?_
     let s : Set L := Set.range fun p : ι × ι ↦ (ρ g : Matrix ι ι L) p.1 p.2
@@ -132,7 +129,7 @@ theorem baire_descent_of_countable
     refine Set.mem_iUnion.mpr ⟨⟨IntermediateField.adjoin K s,
       IntermediateField.finiteDimensional_adjoin fun x _ ↦
         (Algebra.IsAlgebraic.isAlgebraic x).isIntegral⟩, ?_⟩
-    exact (mem_entriesSubgroup_iff (ρ : Γ →* GL ι L) _ g).mpr fun i j ↦
+    exact (Matrix.GeneralLinearGroup.mem_range_map_subtype_iff _ (ρ g)).mpr fun i j ↦
       IntermediateField.subset_adjoin K s ⟨(i, j), rfl⟩
   -- By Baire category, some `H E₀` has nonempty interior, hence is open of finite index.
   obtain ⟨E₀, ⟨x, hx⟩⟩ := nonempty_interior_of_iUnion_of_closed hHclosed hcover
@@ -153,7 +150,7 @@ theorem baire_descent_of_countable
   have hrg : r⁻¹ * g ∈ H E₀ := by
     rw [← QuotientGroup.eq]
     exact Quotient.out_eq q
-  have hrg' := (mem_entriesSubgroup_iff (ρ : Γ →* GL ι L) E₀.val (r⁻¹ * g)).mp hrg
+  have hrg' := (Matrix.GeneralLinearGroup.mem_range_map_subtype_iff E₀.val (ρ (r⁻¹ * g))).mp hrg
   rw [← mul_inv_cancel_left r g, map_mul, Units.val_mul, Matrix.mul_apply]
   refine E.sum_mem fun k _ ↦ E.mul_mem ?_ ?_
   · exact (le_sup_right : IntermediateField.adjoin K T ≤ E)
@@ -161,8 +158,9 @@ theorem baire_descent_of_countable
   · exact (le_sup_of_le_left le_sup_right : E₀.val ≤ E) (hrg' k j)
 
 /-- **Coefficient-field descent from `PadicAlgCl ℓ`.** Every continuous matrix representation
-`ρ : Γ →ₜ* GL ι (PadicAlgCl ℓ)` of a compact Baire group has entries in a single finite extension
-`E / ℚ_[ℓ]` containing any prescribed finite intermediate field `K`. -/
+`ρ : Γ →ₜ* GL ι (PadicAlgCl ℓ)` of a compact Baire group with separately continuous multiplication
+(no continuous inversion is required) has entries in a single finite extension `E / ℚ_[ℓ]`
+containing any prescribed finite intermediate field `K`. -/
 theorem baire_descent {Γ : Type*} [Group Γ] [TopologicalSpace Γ] [SeparatelyContinuousMul Γ]
     [CompactSpace Γ] [BaireSpace Γ] (ℓ : ℕ) [Fact ℓ.Prime] {ι : Type*} [Fintype ι] [DecidableEq ι]
     (ρ : Γ →ₜ* GL ι (PadicAlgCl ℓ))
@@ -244,7 +242,9 @@ private noncomputable def descentIntertwiningMap {Γ K L V₁ V₂ ι₁ ι₂ :
       rw [hME]
       have hsub : (algebraMap E L : E →+* L) = SubringClass.subtype E :=
         Subfield.algebraMap_ofSubfield (s := E.toSubfield)
-      simpa only [hsub, map_subtype_liftGLOfMem_frame, coe_toRepresentation] using hcomm
+      simpa only [hsub, SubringClass.coe_subtype,
+        ContinuousMonoidHom.map_subtype_liftGLOfMem_matrix, coe_frame_apply,
+        coe_toRepresentation] using hcomm
     exact LinearMap.ext fun v ↦ by
       simpa only [LinearMap.comp_apply, coe_toRepresentation, ofFramed_apply,
         Matrix.mulVecLin_apply] using
@@ -252,13 +252,15 @@ private noncomputable def descentIntertwiningMap {Γ K L V₁ V₂ ι₁ ι₂ :
           (Matrix.mulVecLin_comp_eq_of_map_mul_eq (RingHom.injective (algebraMap E L)) hmat) v
 
 /-- **Abstract simultaneous descent of a finite diagram of continuous representations.** Let `Γ`
-be a compact Baire group with continuous inversion and `L / K` an algebraic field extension with a
-ring topology on `L` such that the finite intermediate fields of `L / K` are countably many and
-closed in `L`. Any finite family of finite-dimensional continuous representations of `Γ` over `L`
-carrying the `L`-module topology (`IsModuleTopology L (V a)`), together with finitely many
-intertwining maps between them, descends to a single finite intermediate field `E` containing any
-prescribed finite `K₀`. The descent isomorphisms hold for any `L`-module topology
-(`IsModuleTopology L`) on the base-changed spaces `L ⊗[E] (Fin _ → E)`. -/
+be a compact Baire group with separately continuous multiplication and continuous inversion (unlike
+matrix descent above, continuous inversion is required here and in the object/diagram descent
+theorems below) and `L / K` an algebraic field extension with a ring topology on `L` such that the
+finite intermediate fields of `L / K` are countably many and closed in `L`. Any finite family of
+finite-dimensional continuous representations of `Γ` over `L` carrying the `L`-module topology
+(`IsModuleTopology L (V a)`), together with finitely many intertwining maps between them, descends
+to a single finite intermediate field `E` containing any prescribed finite `K₀`. The descent
+isomorphisms hold for any `L`-module topology (`IsModuleTopology L`) on the base-changed spaces
+`L ⊗[E] (Fin _ → E)`. -/
 theorem exists_descent_family_of_countable {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
     [SeparatelyContinuousMul Γ] [ContinuousInv Γ] [CompactSpace Γ] [BaireSpace Γ]
     {K L : Type*} [Field K] [Field L] [Algebra K L] [Algebra.IsAlgebraic K L]
@@ -322,10 +324,11 @@ theorem exists_descent_family_of_countable {Γ : Type*} [Group Γ] [TopologicalS
       (f j).toLinearMap (ME j) (hME j) x
 
 /-- **Abstract object descent for a continuous representation.** Under the hypotheses of
-`exists_descent_family_of_countable`, every finite-dimensional continuous representation `ρ` of a
-compact Baire group over `L` carrying the `L`-module topology (`IsModuleTopology L V`) descends to
-a finite intermediate field `E` containing any prescribed finite `K₀`, with the descent
-isomorphism holding for any `L`-module topology on `L ⊗[E] (Fin _ → E)`. -/
+`exists_descent_family_of_countable` (in particular, a compact Baire group with separately
+continuous multiplication and continuous inversion), every finite-dimensional continuous
+representation `ρ` over `L` carrying the `L`-module topology (`IsModuleTopology L V`) descends to a
+finite intermediate field `E` containing any prescribed finite `K₀`, with the descent isomorphism
+holding for any `L`-module topology on `L ⊗[E] (Fin _ → E)`. -/
 theorem exists_descent_of_countable {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
     [SeparatelyContinuousMul Γ] [ContinuousInv Γ] [CompactSpace Γ] [BaireSpace Γ]
     {K L : Type*} [Field K] [Field L] [Algebra K L] [Algebra.IsAlgebraic K L]
@@ -352,10 +355,11 @@ theorem exists_descent_of_countable {Γ : Type*} [Group Γ] [TopologicalSpace Γ
 
 /-- **Simultaneous descent of a finite diagram of continuous representations over `PadicAlgCl ℓ`.**
 Any finite family of finite-dimensional continuous representations of a compact Baire group `Γ`
-over `PadicAlgCl ℓ` carrying the module topology (`IsModuleTopology (PadicAlgCl ℓ) (V a)`),
-together with finitely many intertwining maps between them, descends to a single finite extension
-`E / ℚ_[ℓ]` containing any prescribed finite intermediate field `K`, with the descent isomorphisms
-holding for any module topology on the base-changed spaces. -/
+with separately continuous multiplication and continuous inversion over `PadicAlgCl ℓ` carrying the
+module topology (`IsModuleTopology (PadicAlgCl ℓ) (V a)`), together with finitely many
+intertwining maps between them, descends to a single finite extension `E / ℚ_[ℓ]` containing any
+prescribed finite intermediate field `K`, with the descent isomorphisms holding for any module
+topology on the base-changed spaces. -/
 theorem exists_descent_family {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
     [SeparatelyContinuousMul Γ] [ContinuousInv Γ] [CompactSpace Γ] [BaireSpace Γ]
     (ℓ : ℕ) [Fact ℓ.Prime] {α β : Type*} [Finite α] [Finite β]
@@ -383,10 +387,11 @@ theorem exists_descent_family {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
     (fun E _ ↦ E.toSubmodule.isClosed_of_finiteDimensional) ρ f K
 
 /-- **Object descent for a continuous representation over `PadicAlgCl ℓ`.** Every
-finite-dimensional continuous representation of a compact Baire group over `PadicAlgCl ℓ` carrying
-the module topology (`IsModuleTopology (PadicAlgCl ℓ) V`) descends to a finite extension
-`E / ℚ_[ℓ]` containing any prescribed finite `K`, with the descent isomorphism holding for any
-module topology on the base-changed space. -/
+finite-dimensional continuous representation of a compact Baire group with separately continuous
+multiplication and continuous inversion over `PadicAlgCl ℓ` carrying the module topology
+(`IsModuleTopology (PadicAlgCl ℓ) V`) descends to a finite extension `E / ℚ_[ℓ]` containing any
+prescribed finite `K`, with the descent isomorphism holding for any module topology on the
+base-changed space. -/
 theorem exists_descent {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
     [SeparatelyContinuousMul Γ] [ContinuousInv Γ] [CompactSpace Γ] [BaireSpace Γ]
     (ℓ : ℕ) [Fact ℓ.Prime] {V : Type*} [AddCommGroup V] [Module (PadicAlgCl ℓ) V]
@@ -408,8 +413,9 @@ end DiagramDescent
 section IntegralDescent
 
 /-- **Integral descent over `PadicAlgCl ℓ`.** Every continuous matrix representation
-`ρ : Γ →ₜ* GL ι (PadicAlgCl ℓ)` of a compact Baire group is conjugate into `GL ι 𝒪[E]` for a
-finite extension `E / ℚ_[ℓ]`: its conjugates have all entries in `E` of norm at most `1`. -/
+`ρ : Γ →ₜ* GL ι (PadicAlgCl ℓ)` of a compact Baire group with separately continuous multiplication
+(no continuous inversion is required) is conjugate into `GL ι 𝒪[E]` for a finite extension
+`E / ℚ_[ℓ]`: its conjugates have all entries in `E` of norm at most `1`. -/
 theorem exists_integral_conj_GL {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
     [SeparatelyContinuousMul Γ] [CompactSpace Γ] [BaireSpace Γ] (ℓ : ℕ) [Fact ℓ.Prime]
     {ι : Type*} [Fintype ι] [DecidableEq ι]
@@ -424,34 +430,41 @@ theorem exists_integral_conj_GL {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
   let : ValuativeRel E := TauCeti.algebraicExtensionValuativeRel ℚ_[ℓ] E
   have : IsNonarchimedeanLocalField E :=
     PadicAlgCl.finiteIntermediateField_isNonarchimedeanLocalField ℓ E
-  -- Use `IntegralModel.toGL` directly since `Γ` is not assumed to have `ContinuousInv`.
+  -- Use `exists_basis_monoidHom_GL` since `Γ` is not assumed to have `ContinuousInv`.
   let σ : ContinuousRep Γ E (ι → E) := ofFramed ρE
-  obtain ⟨Λ⟩ : Nonempty (GaloisLattice.IntegralModel 𝒪[E] σ) := inferInstance
-  have : Module.IsTorsionFree 𝒪[E] E :=
-    Module.isTorsionFree_iff_algebraMap_injective.2 (IsFractionRing.injective 𝒪[E] E)
-  have : FaithfulSMul 𝒪[E] E :=
-    (faithfulSMul_iff_algebraMap_injective 𝒪[E] E).2 (IsFractionRing.injective 𝒪[E] E)
-  have := Submodule.IsLattice.free E Λ.lattice
+  obtain ⟨b, φ, hφ⟩ := σ.exists_basis_monoidHom_GL (Module.finrank_fintype_fun_eq_card E).symm
   let e : Module.Basis ι E (ι → E) := Pi.basisFun E ι
-  let b₀ := Module.Free.chooseBasis 𝒪[E] Λ.lattice
-  let bΛ : Module.Basis ι 𝒪[E] Λ.lattice :=
-    b₀.reindex ((b₀.extendOfIsFullLattice E).indexEquiv e)
-  let b : Module.Basis ι E (ι → E) := bΛ.extendOfIsFullLattice E
-  let PE : GL ι E :=
-    ⟨b.toMatrix e, e.toMatrix b, b.toMatrix_mul_toMatrix_flip e, e.toMatrix_mul_toMatrix_flip b⟩
+  let PE : GL ι E := (e.toGL (e.equiv b (Equiv.refl _)))⁻¹
   let P : GL ι (PadicAlgCl ℓ) := Matrix.GeneralLinearGroup.map (algebraMap E (PadicAlgCl ℓ)) PE
   refine ⟨E, P, hfin, fun g i j ↦ ?_⟩
-  have hσg : LinearMap.toMatrix e e (σ g) = (ρE g : Matrix ι ι E) := by
-    rw [show (σ g : (ι → E) →ₗ[E] (ι → E)) = Matrix.toLin' (ρE g : Matrix ι ι E) from
-      ofFramed_apply_eq_toLin' ρE g, LinearMap.toMatrix_eq_toMatrix', LinearMap.toMatrix'_toLin']
-  have hconjE : (PE * ρE g * PE⁻¹ : Matrix ι ι E) =
-      (Λ.toGL bΛ g : Matrix ι ι 𝒪[E]).map (algebraMap 𝒪[E] E) := by
-    rw [Λ.map_toGL_apply bΛ g]
-    simp only [PE, Units.inv_mk, Units.val_mk, ← hσg]
-    exact basis_toMatrix_mul_linearMap_toMatrix_mul_basis_toMatrix b e b e (σ g)
+  have hσg : ((e.toGL.symm (ρE g) : (ι → E) ≃ₗ[E] (ι → E)) : (ι → E) →ₗ[E] (ι → E)) = σ g := by
+    apply (LinearMap.toMatrix e e).injective
+    rw [← Module.Basis.coe_toGL, MulEquiv.apply_symm_apply,
+      show (σ g : (ι → E) →ₗ[E] (ι → E)) = Matrix.toLin' (ρE g : Matrix ι ι E) from
+        ofFramed_apply_eq_toLin' ρE g,
+      LinearMap.toMatrix_eq_toMatrix', LinearMap.toMatrix'_toLin']
+  have hconjE : PE * ρE g * PE⁻¹ =
+      Matrix.GeneralLinearGroup.map (algebraMap 𝒪[E] E) (φ g) := by
+    apply Units.ext
+    have hb : e.map (e.equiv b (Equiv.refl _)) = b := by
+      simp only [Module.Basis.map_equiv, Equiv.refl_symm, Module.Basis.reindex_refl]
+    have hgl : PE * ρE g * PE⁻¹ = b.toGL (e.toGL.symm (ρE g)) := by
+      calc PE * ρE g * PE⁻¹
+          = MulAut.conj (e.toGL (e.equiv b (Equiv.refl _)))⁻¹ (e.toGL (e.toGL.symm (ρE g))) := by
+            simp only [PE, MulAut.conj_apply, inv_inv, MulEquiv.apply_symm_apply]
+        _ = (e.map (e.equiv b (Equiv.refl _))).toGL (e.toGL.symm (ρE g)) :=
+            (e.toGL_map (e.equiv b (Equiv.refl _)) (e.toGL.symm (ρE g))).symm
+        _ = b.toGL (e.toGL.symm (ρE g)) := by rw [hb]
+    rw [hgl, Module.Basis.coe_toGL, hσg, ← hφ g]
+    rfl
   have hPE : (PE * ρE g * PE⁻¹ : Matrix ι ι E) i j ∈ 𝒪[E] := by
-    rw [hconjE, Matrix.map_apply]
-    exact SetLike.coe_mem _
+    have hmem := SetLike.coe_mem ((φ g : Matrix ι ι 𝒪[E]) i j)
+    have hent : (PE * ρE g * PE⁻¹ : Matrix ι ι E) i j =
+        algebraMap 𝒪[E] E ((φ g : Matrix ι ι 𝒪[E]) i j) := by
+      simpa only [← Units.val_mul, Matrix.GeneralLinearGroup.map_apply] using
+        congrArg (fun A : GL ι E ↦ (A : Matrix ι ι E) i j) hconjE
+    rw [hent]
+    exact hmem
   have hsub : (algebraMap E (PadicAlgCl ℓ) : E →+* PadicAlgCl ℓ) = SubringClass.subtype E :=
     Subfield.algebraMap_ofSubfield (s := E.toSubfield)
   have hconj : P * ρ g * P⁻¹ =

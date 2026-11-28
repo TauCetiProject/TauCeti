@@ -17,10 +17,11 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 /-!
 # Topology of general linear groups over subfields
 
-If `E` is a closed subfield of a topological field `L`, the range of `GL ι E →* GL ι L`
-along `SubringClass.subtype E` is closed in `GL ι L`, being cut out by entrywise membership in `E`.
-Moreover, any continuous homomorphism `ρ : Γ →ₜ* GL ι L` whose entries lie in a subfield `E`
-lifts uniquely and continuously to `Γ →ₜ* GL ι E`.
+If `L` is a field equipped with a topology (with no continuity assumption on its field operations)
+and `E` is a closed subfield of `L`, the range of `GL ι E →* GL ι L` along `SubringClass.subtype E`
+is closed in `GL ι L`, being cut out by entrywise membership in `E`. Moreover, any continuous
+homomorphism `ρ : Γ →ₜ* GL ι L` whose entries lie in a subfield `E` lifts uniquely and
+continuously to `Γ →ₜ* GL ι E`.
 
 ## Main definitions
 
@@ -44,8 +45,9 @@ public section
 
 namespace Matrix.GeneralLinearGroup
 
-/-- **Closedness of the subfield general linear group.** If `E` is a closed subfield of a
-topological field `L`, then the range of `GL ι E →* GL ι L` is closed in `GL ι L`. -/
+/-- **Closedness of the subfield general linear group.** If `L` is a field equipped with a
+topology (with no continuity assumption on its field operations) and `E` is a closed subfield of
+`L`, then the range of `GL ι E →* GL ι L` is closed in `GL ι L`. -/
 theorem isClosed_range_map_subtype {L S ι : Type*} [Field L] [SetLike S L] [SubfieldClass S L]
     [TopologicalSpace L] [Fintype ι] [DecidableEq ι] {E : S} (hE : IsClosed (E : Set L)) :
     IsClosed ((Matrix.GeneralLinearGroup.map (n := ι) (SubringClass.subtype E)).range :

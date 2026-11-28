@@ -20,8 +20,10 @@ Let `ρ` and `σ` be representations of a monoid `G` over a commutative semiring
 intermediate algebras inside a faithfully flat algebra `L`. Together with the faithfulness
 (`Representation.IntertwiningMap.baseChange_injective`) and scalar-tower cancellation
 (`Representation.cancelBaseChangeEquiv`) in `TauCeti.RepresentationTheory.BaseChange`, this file
-establishes the morphisms-and-equalities half of the filtered 2-colimit description of
-finite-dimensional representations over an algebraic field extension:
+establishes descent and equality detection for morphisms (and isomorphisms) between objects already
+defined at finite stages over an algebraic field extension (object descent itself can fail for
+unrestricted algebraic extensions, and is supplied in the continuous setting by Baire descent in
+`TauCeti.RepresentationTheory.Continuous.BaireDescent`):
 
 * **Agreement over a common enlargement**
   (`Representation.IntertwiningMap.baseChange_eq_of_baseChange_eq`): given two extensions

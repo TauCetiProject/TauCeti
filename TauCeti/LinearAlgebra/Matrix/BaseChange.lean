@@ -54,13 +54,6 @@ theorem piScalarRight_comp_baseChange_mulVecLin (A : Matrix m n R) :
   simp [piScalarRight_apply, piScalarRightHom_tmul, mulVec, dotProduct,
     Algebra.smul_def, Finset.sum_mul, mul_assoc]
 
-/-- Pointwise form of `Matrix.piScalarRight_comp_baseChange_mulVecLin`. -/
-theorem piScalarRight_baseChange_mulVecLin (A : Matrix m n R) (x : S ⊗[R] (n → R)) :
-    piScalarRight R S S m (A.mulVecLin.baseChange S x) =
-      (A.map (algebraMap R S)).mulVec (piScalarRight R S S n x) := by
-  simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, mulVecLin_apply] using
-    LinearMap.congr_fun (piScalarRight_comp_baseChange_mulVecLin (S := S) A) x
-
 end Semiring
 
 section RationalSolutions
@@ -133,7 +126,9 @@ theorem piScalarRight_equivFun_intertwining {E L V W ιV ιW : Type*}
     bW.equivFun.symm (TensorProduct.piScalarRight E L L ιW ((Matrix.mulVecLin M).baseChange L x)) =
       f (bV.equivFun.symm (TensorProduct.piScalarRight E L L ιV x)) := by
   apply bW.equivFun.injective
-  rw [LinearEquiv.apply_symm_apply, Matrix.piScalarRight_baseChange_mulVecLin, hM]
+  have hcomp := LinearMap.congr_fun (Matrix.piScalarRight_comp_baseChange_mulVecLin (S := L) M) x
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Matrix.mulVecLin_apply] at hcomp
+  rw [LinearEquiv.apply_symm_apply, hcomp, hM]
   have hrepr : (bV.repr (bV.equivFun.symm (TensorProduct.piScalarRight E L L ιV x)) : ιV → L) =
       TensorProduct.piScalarRight E L L ιV x := by
     ext i

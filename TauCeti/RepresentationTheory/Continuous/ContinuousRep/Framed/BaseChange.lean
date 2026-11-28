@@ -19,9 +19,7 @@ representations `TauCeti.ContinuousRep.ofFramed`, `TauCeti.ContinuousRep.frame`,
 `TauCeti.ContinuousRep.framedMap` from
 `TauCeti.RepresentationTheory.Continuous.ContinuousRep.Framed`:
 
-* **Subfield lifting** (`TauCeti.ContinuousRep.map_subtype_liftGLOfMem_frame`,
-  `TauCeti.ContinuousRep.framedMap_subtype_liftGLOfMem`): pushing the subfield lift of
-  `frame b ρ` forward along `SubringClass.subtype E` recovers `LinearMap.toMatrix b b (ρ g)`, and
+* **Subfield lifting** (`TauCeti.ContinuousRep.framedMap_subtype_liftGLOfMem`):
   `framedMap (SubringClass.subtype E)` cancels `ContinuousMonoidHom.liftGLOfMem`.
 * **Scalar extension** (`TauCeti.ContinuousRep.baseChangeOfGLIso`): when `B ⊗[A] (ι → A)` carries
   the `B`-module topology, extending scalars of `ofFramed φ` from `A` to `B` corresponds via
@@ -34,7 +32,6 @@ representations `TauCeti.ContinuousRep.ofFramed`, `TauCeti.ContinuousRep.frame`,
 
 ## Main results
 
-* `TauCeti.ContinuousRep.map_subtype_liftGLOfMem_frame`
 * `TauCeti.ContinuousRep.framedMap_subtype_liftGLOfMem`
 * `TauCeti.ContinuousRep.baseChangeOfGLIso_apply`
 -/
@@ -50,18 +47,6 @@ section LiftGL
 
 variable {L S ι : Type*} [Field L] [SetLike S L] [SubfieldClass S L]
   [Fintype ι] [DecidableEq ι]
-
-/-- Pushing the matrix of `(frame b ρ).liftGLOfMem E hE g` forward along `SubringClass.subtype E`
-recovers `LinearMap.toMatrix b b (ρ g)`. -/
-theorem map_subtype_liftGLOfMem_frame {Γ V : Type*} [Group Γ] [TopologicalSpace Γ]
-    [ContinuousInv Γ] [TopologicalSpace L] [IsTopologicalRing L]
-    [AddCommGroup V] [Module L V] [TopologicalSpace V] [IsModuleTopology L V]
-    (ρ : ContinuousRep Γ L V) (b : Module.Basis ι L V) (E : S)
-    (hE : ∀ g i j, (frame b ρ g : Matrix ι ι L) i j ∈ E) (g : Γ) :
-    ((frame b ρ).liftGLOfMem E hE g : Matrix ι ι E).map (SubringClass.subtype E) =
-      LinearMap.toMatrix b b (ρ g) := by
-  rw [SubringClass.coe_subtype, ContinuousMonoidHom.map_subtype_liftGLOfMem_matrix,
-    coe_frame_apply]
 
 /-- Composing `ρ.liftGLOfMem E hE` with `framedMap (SubringClass.subtype E) hf` recovers `ρ`. -/
 @[simp]
@@ -96,19 +81,18 @@ def baseChangeOfGLIso (φ : Γ →ₜ* GL ι A) :
       LinearMap.ext fun v ↦ by
         simp only [coe_toRepresentation, ofFramed_apply, Matrix.mulVecLin_apply]
     refine LinearMap.ext fun x ↦ ?_
+    have hcomp := LinearMap.congr_fun
+      (Matrix.piScalarRight_comp_baseChange_mulVecLin (S := B) (φ g : Matrix ι ι A)) x
+    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Matrix.mulVecLin_apply] at hcomp
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, toRepresentation_baseChange,
-      Representation.baseChange_apply, hrep, Matrix.piScalarRight_baseChange_mulVecLin,
-      coe_toRepresentation, ofFramed_apply, coe_framedMap_apply])
+      Representation.baseChange_apply, hrep, hcomp, coe_toRepresentation, ofFramed_apply,
+      coe_framedMap_apply])
 
 /-- Underlying map of `baseChangeOfGLIso` as `TensorProduct.piScalarRight`. -/
 @[simp]
 theorem baseChangeOfGLIso_apply (φ : Γ →ₜ* GL ι A) (x : B ⊗[A] (ι → A)) :
     baseChangeOfGLIso B φ x = TensorProduct.piScalarRight A B B ι x :=
   (Iso.ofEquiv_apply _ x).trans (Representation.Equiv.mk_apply _ x)
-
-theorem baseChangeOfGLIso_tmul (φ : Γ →ₜ* GL ι A) (b : B) (v : ι → A) :
-    baseChangeOfGLIso B φ (b ⊗ₜ v) = fun i ↦ v i • b :=
-  (baseChangeOfGLIso_apply B φ _).trans (TensorProduct.piScalarRightHom_tmul A B B ι b v)
 
 @[simp]
 theorem baseChangeOfGLIso_symm_apply (φ : Γ →ₜ* GL ι A) (w : ι → B) :

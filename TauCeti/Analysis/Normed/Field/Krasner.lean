@@ -65,22 +65,16 @@ the same intermediate field `K⟮x⟯` as some element `β : L` separable over a
 theorem IsSeparable.exists_isSeparable_adjoin_simple_eq {x : L} (hx : IsSeparable K x)
     (hk : DenseRange (algebraMap k K)) :
     ∃ β : L, IsSeparable k β ∧ K⟮β⟯ = K⟮x⟯ := by
-  classical
   have hint : IsIntegral K x := hx.isIntegral
   -- Choose `δ > 0` at most the distance from `x` to every other conjugate of `x` in `L`.
-  let S : Finset L := ((minpoly K x).aroots L).toFinset.erase x
-  have hmemS : ∀ x' : L, IsConjRoot K x x' → x ≠ x' → x' ∈ S := fun x' hx' hne ↦
-    Finset.mem_erase.mpr
-      ⟨hne.symm, Multiset.mem_toFinset.mpr ((isConjRoot_iff_mem_minpoly_aroots hint).mp hx')⟩
-  obtain ⟨δ, hδ, hδ_le⟩ : ∃ δ : ℝ, 0 < δ ∧ ∀ x' : L, IsConjRoot K x x' → x ≠ x' → δ ≤ ‖x - x'‖ := by
-    by_cases hS : S.Nonempty
-    · refine ⟨(S.image fun x' ↦ ‖x - x'‖).min' (hS.image _), ?_, fun x' hx' hne ↦
-        Finset.min'_le _ _ (Finset.mem_image.mpr ⟨x', hmemS x' hx' hne, rfl⟩)⟩
-      rw [Finset.lt_min'_iff]
-      intro y hy
-      obtain ⟨x', hx', rfl⟩ := Finset.mem_image.mp hy
-      exact norm_pos_iff.mpr (sub_ne_zero.mpr (Finset.ne_of_mem_erase hx').symm)
-    · exact ⟨1, zero_lt_one, fun x' hx' hne ↦ False.elim <| hS ⟨x', hmemS x' hx' hne⟩⟩
+  have hclosed : IsClosed ((minpoly K x).rootSet L \ {x}) :=
+    (((minpoly K x).rootSet_finite L).subset Set.sdiff_subset).isClosed
+  obtain ⟨δ, hδ, hball⟩ := Metric.mem_nhds_iff.mp
+    (hclosed.isOpen_compl.mem_nhds fun hx' ↦ hx'.2 rfl)
+  have hδ_le : ∀ x' : L, IsConjRoot K x x' → x ≠ x' → δ ≤ ‖x - x'‖ := fun x' hx' hne ↦ by
+    by_contra! hlt
+    exact hball (by simpa only [Metric.mem_ball, dist_eq_norm, norm_sub_rev] using hlt)
+      ⟨(isConjRoot_iff_mem_minpoly_rootSet hint).mp hx', hne.symm⟩
   -- Approximate `minpoly K x` by a monic polynomial `g ∈ k[X]` of the same degree whose root `β`
   -- satisfies `‖x - β‖ < δ`.
   obtain ⟨g, β, hgm, hdeg, hβ_eval, hxβ⟩ :=
