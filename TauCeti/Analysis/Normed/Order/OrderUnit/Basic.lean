@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Order.Lattice
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.ContinuousMap.Ordered
+import TauCeti.Topology.ContinuousMap.Bounded.Normed
 
 /-!
 # Order units and the order-unit norm
@@ -584,10 +585,6 @@ end PositiveMap
 
 end IsOrderUnitNorm
 
--- `BoundedContinuousFunction.instPartialOrder` is defined via `PartialOrder.lift` on `.toFun`.
-private theorem boundedContinuousFunction_le_iff {K : Type*} [TopologicalSpace K]
-    (g h : K →ᵇ ℝ) : g ≤ h ↔ ∀ x, g x ≤ h x := Iff.rfl
-
 /-- For a nonempty topological space `K`, the supremum norm on `K →ᵇ ℝ` is the order-unit norm
 of the constant function `1`. -/
 theorem isOrderUnitNorm_boundedContinuousFunction_one {K : Type*} [TopologicalSpace K]
@@ -595,7 +592,7 @@ theorem isOrderUnitNorm_boundedContinuousFunction_one {K : Type*} [TopologicalSp
   norm_eq_one := norm_one
   norm_le_iff hr := by
     rw [BoundedContinuousFunction.norm_le hr]
-    simp only [Real.norm_eq_abs, abs_le, boundedContinuousFunction_le_iff, FunLike.coe_neg,
+    simp only [Real.norm_eq_abs, abs_le, BoundedContinuousFunction.le_def, FunLike.coe_neg,
       Pi.neg_apply, FunLike.coe_smul, Pi.smul_apply, FunLike.coe_one, Pi.one_apply, smul_eq_mul,
       mul_one, forall_and]
 
@@ -612,6 +609,6 @@ theorem isOrderUnitNorm_continuousMap_one {K : Type*} [TopologicalSpace K] [Comp
       rw [ContinuousMap.linearIsometryBoundedOfCompact_symm_apply,
         ContinuousMap.linearIsometryBoundedOfCompact_symm_apply, ContinuousMap.le_def,
         BoundedContinuousFunction.coe_toContinuousMap,
-        BoundedContinuousFunction.coe_toContinuousMap, boundedContinuousFunction_le_iff]
+        BoundedContinuousFunction.coe_toContinuousMap, BoundedContinuousFunction.le_def]
 
 end TauCeti
