@@ -16,6 +16,9 @@ import TauCeti.LinearAlgebra.Matrix.PerronFrobenius.Nonnegative
 * **Golden-mean shift.** The sequences on two symbols with no two consecutive `1`s form the
   subshift of finite type with transition matrix `!![1,1;1,0]`. Its spectral radius is the
   golden ratio, with positive eigenvector `(φ, 1)`, so its entropy is `log ((1 + √5) / 2)`.
+* **A symbol without successor.** For the relation "from `0` go anywhere, from `1` nowhere",
+  the symbol `1` has no successor and the subshift is the single sequence `0, 0, …`; the entropy
+  formula applies without pruning `1`, with transition matrix `!![1, 1; 0, 0]`.
 * **Full shift.** The relation that is always true gives the full shift, with the all-ones
   transition matrix; its spectral radius is the size of the alphabet (eigenvector `1`),
   recovering `coverEntropy_shift_nat`'s value `log (card α)`.
@@ -62,8 +65,34 @@ theorem spectralRadius_goldenMean :
 `log ((1 + √5) / 2)`. -/
 example [UniformSpace (Fin 2)] [DiscreteUniformity (Fin 2)] :
     coverEntropy (shift (1 : ℕ)) (sftOneSided goldenMean) = Real.log ((1 + √5) / 2) := by
-  rw [coverEntropy_shift_sftOneSided goldenMean_row, spectralRadius_goldenMean,
+  rw [coverEntropy_shift_sftOneSided, spectralRadius_goldenMean,
     ENNReal.log_ofReal_of_pos goldenRatio_pos]
+
+/-- The dead-end relation: from `0` go anywhere, from `1` nowhere. -/
+def deadEnd (i _j : Fin 2) : Bool :=
+  i == 0
+
+/-- The symbol `1` has no successor for the dead-end relation. -/
+theorem not_exists_deadEnd_one : ¬ ∃ j, deadEnd 1 j := by
+  simp [deadEnd]
+
+/-- The dead-end subshift is the single sequence `0, 0, …`. -/
+theorem sftOneSided_deadEnd : sftOneSided deadEnd = {fun _ ↦ 0} := by
+  ext x
+  simp only [mem_sftOneSided, deadEnd, beq_iff_eq, mem_singleton_iff, funext_iff]
+
+/-- The transition matrix of the dead-end relation is `!![1, 1; 0, 0]`. -/
+theorem sftTransitionMatrix_deadEnd : sftTransitionMatrix ℝ deadEnd = !![1, 1; 0, 0] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [deadEnd]
+
+/-- **Check.** The entropy formula applies to the dead-end relation, although `1` has no
+successor: the entropy of the single sequence `0, 0, …` is `log` of the spectral radius of
+`!![1, 1; 0, 0]`. -/
+example [UniformSpace (Fin 2)] [DiscreteUniformity (Fin 2)] :
+    coverEntropy (shift (1 : ℕ)) ({fun _ ↦ 0} : Set (ℕ → Fin 2)) =
+      ENNReal.log (spectralRadius ℝ !![(1 : ℝ), 1; 0, 0]) := by
+  rw [← sftOneSided_deadEnd, coverEntropy_shift_sftOneSided, sftTransitionMatrix_deadEnd]
 
 /-- For the relation that is always true the entropy formula gives `log (card α)`, the entropy of
 the full shift. -/
@@ -75,7 +104,7 @@ example {α : Type*} [Fintype α] [Nonempty α] [UniformSpace α] [DiscreteUnifo
       (Fintype.card α : ℝ) • fun _ ↦ 1 := by
     ext i
     simp [Matrix.mulVec, dotProduct]
-  rw [coverEntropy_shift_sftOneSided (fun _ ↦ ⟨Classical.arbitrary α, rfl⟩),
+  rw [coverEntropy_shift_sftOneSided,
     Matrix.spectralRadius_real_eq_of_nonneg (sftTransitionMatrix_nonneg _),
     Matrix.spectralRadius_eq_of_mulVec_eq_smul (sftTransitionMatrix_nonneg _) (fun _ ↦ one_pos) hMv,
     ENNReal.ofReal_natCast]

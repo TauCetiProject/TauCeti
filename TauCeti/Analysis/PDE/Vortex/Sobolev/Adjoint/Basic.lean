@@ -52,9 +52,18 @@ other block.
   (`TauCeti.Vortex.isClosedEmbedding_sobolevGaugeFixedAdjoint`): injective with closed range.
 * **Range.** Its range is the `L²`-orthogonal complement of the values of the kernel of the
   realization of `L_x` (`TauCeti.Vortex.range_sobolevGaugeFixedAdjoint`). By duality the range is
-  orthogonal to that kernel. Conversely, a class orthogonal to the range solves `L_x y = 0`
-  weakly, so by elliptic regularity it is the value of an element of that kernel
+  orthogonal to that kernel (`TauCeti.Vortex.range_sobolevGaugeFixedAdjoint_le_orthogonal`).
+  Conversely, a class orthogonal to the range solves `L_x y = 0` weakly, so by elliptic
+  regularity it is the value of an element of that kernel
   (`TauCeti.Vortex.exists_sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq`).
+* **Spectral gap and coercivity modulo the kernel.** A lower bound `c ∫ |η|² ≤ ∫ |L_x* η|²` on
+  test fields holds on all of `H¹(ℂ)⁴`
+  (`TauCeti.Vortex.mul_norm_sobolevFieldValues_sq_le_norm_sobolevGaugeFixedAdjoint_sq`). The range
+  of `L_x*` is orthogonal to the values `K` of the kernel of `L_x`, so the orthogonal projection
+  `Π` onto `K` vanishes on it (`TauCeti.Vortex.starProjection_sobolevGaugeFixedAdjoint_eq_zero`).
+  At a vortex, the same `c` bounds `L_x` below off its kernel, `c ‖u - Π u‖² ≤ ‖L_x u‖²`
+  (`TauCeti.Vortex.mul_norm_sub_starProjection_sq_le_norm_sobolevGaugeFixedOperator_sq`), since
+  `u - Π u` lies in the range of `L_x*`.
 * **Fredholm and index.** When that kernel is finite dimensional, the description of the range
   identifies the cokernel of the realization of `L_x*` with that kernel
   (`TauCeti.Vortex.sobolevGaugeFixedAdjointCokernelEquiv`). So the realization of `L_x*` is
@@ -202,6 +211,15 @@ private theorem norm_sq_gaugeFixedAdjoint_zero_le {M : ℝ} (hM : ∀ z, ‖x z�
     (norm_sub_le _ _).trans (by gcongr)
   exact (pow_le_pow_left₀ (norm_nonneg _) h₃ 2).trans (add_sq_le.trans_eq (by ring))
 
+/-- On a field of test functions `φ`, the squared `L²` norm of the realization of `L_x*` is
+`∫ |L_x* φ|²`. -/
+private theorem norm_sobolevGaugeFixedAdjoint_ofTestFunctionₗ_sq (hax : a =ᵐ[μ⊤] x)
+    (φ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ)) :
+    ‖sobolevGaugeFixedAdjoint a (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j))‖ ^ 2 =
+      ∫ z, ‖gaugeFixedAdjoint x (testField φ) z‖ ^ 2 := by
+  simp_rw [gaugeFixedAdjoint_eq_gaugeFixedAdjointFirstOrder_add]
+  exact norm_sobolevFirstOrderOperator_ofTestFunctionₗ_sq _ _ hax φ
+
 /-- The coercive estimate on fields of test functions, from the spectral gap `c` of `L_x L_x*`
 and the bound `M` on the field. -/
 private theorem norm_sq_le_of_testFunction (hx : Continuous x) {M : ℝ} (hM : ∀ z, ‖x z‖ ≤ M)
@@ -248,11 +266,7 @@ private theorem norm_sq_le_of_testFunction (hx : Continuous x) {M : ℝ} (hM : �
   have hYle : ∫ z, ‖Y z‖ ^ 2 ≤ c⁻¹ * ∫ z, ‖gaugeFixedAdjoint x Y z‖ ^ 2 := by
     rw [le_inv_mul_iff₀ hc]
     exact hgap'
-  have hL : ‖sobolevGaugeFixedAdjoint a (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j))‖ ^ 2 =
-      ∫ z, ‖gaugeFixedAdjoint x Y z‖ ^ 2 := by
-    simp_rw [gaugeFixedAdjoint_eq_gaugeFixedAdjointFirstOrder_add]
-    exact norm_sobolevFirstOrderOperator_ofTestFunctionₗ_sq _ _ hax φ
-  rw [hL]
+  rw [norm_sobolevGaugeFixedAdjoint_ofTestFunctionₗ_sq hax φ]
   nlinarith [mul_le_mul_of_nonneg_left hYle (by positivity : (0 : ℝ) ≤ 1 + 2 * K ^ 2)]
 
 /-- **The coercive estimate for `L_x*` on `H¹`.** At a `C¹` vortex `x` with `|α| → 1` at infinity
@@ -282,6 +296,28 @@ theorem exists_norm_le_mul_norm_sobolevGaugeFixedAdjoint (hx : ContDiff ℝ 1 x)
   rw [← Real.sqrt_sq (norm_nonneg η), ← Real.sqrt_sq (norm_nonneg (sobolevGaugeFixedAdjoint a η)),
     ← Real.sqrt_mul hC.le]
   exact Real.sqrt_le_sqrt (hsq η)
+
+/-- **The spectral gap of `L_x L_x*` on `H¹`.** Let `x` be a field with `L∞` class `a`, and
+suppose that `c ∫ |η|² ≤ ∫ |L_x* η|²` for every compactly supported `C²` field `η`. Then
+`c ‖η‖²_{L²} ≤ ‖L_x* η‖²_{L²}` for every `η ∈ H¹(ℂ)⁴`. -/
+theorem mul_norm_sobolevFieldValues_sq_le_norm_sobolevGaugeFixedAdjoint_sq (hax : a =ᵐ[μ⊤] x)
+    {c : ℝ} (hgap : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+      c * ∫ z, ‖η z‖ ^ 2 ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2)
+    (η : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    c * ‖sobolevFieldValues η‖ ^ 2 ≤ ‖sobolevGaugeFixedAdjoint a η‖ ^ 2 := by
+  -- Both sides are continuous in `η`, and on fields of test functions this is `hgap`.
+  refine (DenseRange.piMap fun _ : Fin 4 ↦
+    W1p.denseRange_ofTestFunctionₗ_top (mu := volume) (p := 2) (by norm_num)).induction_on
+      (p := fun η ↦ c * ‖sobolevFieldValues η‖ ^ 2 ≤ ‖sobolevGaugeFixedAdjoint a η‖ ^ 2) η
+      (isClosed_le (continuous_const.mul (sobolevFieldValues.continuous.norm.pow 2))
+        ((sobolevGaugeFixedAdjoint a).continuous.norm.pow 2)) fun φ ↦ ?_
+  have hV := Lp.norm_sq_eq_integral_of_ae_eq (sobolevFieldValues_ofTestFunctionₗ_ae φ)
+  simp only [Opens.coe_top, Measure.restrict_univ] at hV
+  have hmap : Pi.map (fun _ ↦ ⇑(W1p.ofTestFunctionₗ (volume : Measure ℂ) ⊤ 2)) φ =
+      fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j) :=
+    funext fun j ↦ Pi.map_apply _ _ j
+  rw [hmap, norm_sobolevGaugeFixedAdjoint_ofTestFunctionₗ_sq hax φ, hV]
+  exact hgap _ ((contDiff_testField φ).of_le (by simp)) (hasCompactSupport_testField φ)
 
 /-- **The realization of `L_x*` on `H¹` is a closed embedding** at a `C¹` vortex `x` with
 `|α| → 1` at infinity and with `L∞` class `a`: it is injective with closed range, and a
@@ -318,6 +354,19 @@ private theorem integral_inner_gaugeFixedAdjoint_eq_zero_of_mem_orthogonal (hax 
   rw [← h0]
   exact integral_congr_ae (hA.mono fun z hz ↦ by simp only [hz])
 
+/-- **`L_x*` takes values orthogonal to the kernel of `L_x`.** For a continuous field `x` with
+`L∞` class `a`, the range of the realization of `L_x*` is `L²`-orthogonal to the values of the
+kernel of the realization of `L_x`. This is duality,
+`TauCeti.Vortex.inner_sobolevGaugeFixedOperator_sobolevFieldValues`. -/
+theorem range_sobolevGaugeFixedAdjoint_le_orthogonal (hx : Continuous x) (hax : a =ᵐ[μ⊤] x) :
+    (sobolevGaugeFixedAdjoint a).range ≤
+      ((sobolevGaugeFixedOperator a).ker.map sobolevFieldValues.toLinearMap)ᗮ := by
+  rintro _ ⟨η, rfl⟩
+  refine (Submodule.mem_orthogonal _ _).2 ?_
+  rintro _ ⟨y, hy, rfl⟩
+  simp only [SetLike.mem_coe, LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hy ⊢
+  rw [← inner_sobolevGaugeFixedOperator_sobolevFieldValues hx hax, hy, inner_zero_left]
+
 /-- **The range of `L_x*` on `H¹` is the orthogonal complement of the kernel of `L_x`.** At a
 `C¹` vortex `x` with `|α| → 1` at infinity and with `L∞` class `a`, the range of the realization
 of `L_x*` is the `L²`-orthogonal complement of the values of the kernel of the realization of
@@ -333,13 +382,7 @@ theorem range_sobolevGaugeFixedAdjoint (hx : ContDiff ℝ 1 x) (hsol : ∀ z, eq
     (isClosedEmbedding_sobolevGaugeFixedAdjoint hx hsol hlim hax).isClosed_range
   have : CompleteSpace R := hR.completeSpace_coe
   refine le_antisymm ?_ ?_
-  · -- By duality, the range is orthogonal to the kernel of `L_x`.
-    rintro _ ⟨η, rfl⟩
-    refine (Submodule.mem_orthogonal _ _).2 ?_
-    rintro _ ⟨y, hy, rfl⟩
-    simp only [SetLike.mem_coe, LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hy ⊢
-    rw [← inner_sobolevGaugeFixedOperator_sobolevFieldValues hx.continuous hax, hy,
-      inner_zero_left]
+  · exact range_sobolevGaugeFixedAdjoint_le_orthogonal hx.continuous hax
   · -- A class orthogonal to the range solves `L_x u = 0` weakly, so it is in the kernel.
     rw [← Submodule.orthogonal_orthogonal R]
     refine Submodule.orthogonal_le fun u hu ↦ ?_
@@ -361,6 +404,75 @@ theorem range_sobolevGaugeFixedAdjoint (hx : ContDiff ℝ 1 x) (hsol : ∀ z, eq
     rw [h₁]
     ext j
     simp [h₂ j]
+
+/-- **The projection onto the kernel of `L_x` vanishes on `L_x*`.** For a continuous field `x` with
+`L∞` class `a`, the `L²`-orthogonal projection onto the values of the kernel of the realization of
+`L_x` vanishes on the range of the realization of `L_x*`. -/
+theorem starProjection_sobolevGaugeFixedAdjoint_eq_zero (hx : Continuous x) (hax : a =ᵐ[μ⊤] x)
+    [((sobolevGaugeFixedOperator a).ker.map
+      sobolevFieldValues.toLinearMap).HasOrthogonalProjection]
+    (η : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    ((sobolevGaugeFixedOperator a).ker.map sobolevFieldValues.toLinearMap).starProjection
+      (sobolevGaugeFixedAdjoint a η) = 0 :=
+  (Submodule.starProjection_apply_eq_zero_iff _).2
+    (range_sobolevGaugeFixedAdjoint_le_orthogonal hx hax ⟨η, rfl⟩)
+
+/-- **Coercivity of `L_x` on `H¹` modulo its kernel.** Let `x` be a `C¹` vortex with `|α| → 1` at
+infinity and with `L∞` class `a`, and suppose that `c ∫ |η|² ≤ ∫ |L_x* η|²` for every compactly
+supported `C²` field `η`. Then, with `Π` the `L²`-orthogonal projection onto the values `K` of the
+kernel of the realization of `L_x`, every `u ∈ H¹(ℂ)⁴` satisfies `c ‖u - Π u‖²_{L²} ≤ ‖L_x u‖²`.
+This is the `H¹` form of
+`TauCeti.Vortex.mul_norm_sub_starProjection_sq_le_integral_norm_sq_gaugeFixedOperator`, with the
+same constant. -/
+theorem mul_norm_sub_starProjection_sq_le_norm_sobolevGaugeFixedOperator_sq (hx : ContDiff ℝ 1 x)
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
+    (hax : a =ᵐ[μ⊤] x)
+    [((sobolevGaugeFixedOperator a).ker.map
+      sobolevFieldValues.toLinearMap).HasOrthogonalProjection]
+    {c : ℝ} (hgap : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+      c * ∫ z, ‖η z‖ ^ 2 ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2)
+    (u : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    c * ‖sobolevFieldValues u - ((sobolevGaugeFixedOperator a).ker.map
+        sobolevFieldValues.toLinearMap).starProjection (sobolevFieldValues u)‖ ^ 2 ≤
+      ‖sobolevGaugeFixedOperator a u‖ ^ 2 := by
+  set K := (sobolevGaugeFixedOperator a).ker.map sobolevFieldValues.toLinearMap
+  set w := sobolevFieldValues u - K.starProjection (sobolevFieldValues u) with hw_def
+  rcases le_or_gt c 0 with hc | hc
+  · exact (mul_nonpos_of_nonpos_of_nonneg hc (sq_nonneg _)).trans (sq_nonneg _)
+  -- `w = u - Π u` lies in `Kᗮ`, the range of `L_x*`, so `w = L_x* η` with
+  -- `‖w‖² = ⟪u, L_x* η⟫ = ⟪L_x u, η⟫ ≤ ‖L_x u‖ ‖η‖`, while `c ‖η‖² ≤ ‖w‖²`.
+  have hw : w ∈ (sobolevGaugeFixedAdjoint a).range := by
+    rw [range_sobolevGaugeFixedAdjoint hx hsol hlim hax]
+    exact K.sub_starProjection_mem_orthogonal _
+  obtain ⟨η, hη⟩ := hw
+  rw [ContinuousLinearMap.coe_coe] at hη
+  -- `‖w‖² = ⟪L_x u, η⟫`, since `Π u` is orthogonal to `w`.
+  have h₁ : ‖w‖ ^ 2 = ⟪sobolevGaugeFixedOperator a u, sobolevFieldValues η⟫ := by
+    have h₀ : ⟪K.starProjection (sobolevFieldValues u), w⟫ = 0 :=
+      Submodule.inner_right_of_mem_orthogonal (K.starProjection_apply_mem _)
+        (K.sub_starProjection_mem_orthogonal _)
+    rw [inner_sobolevGaugeFixedOperator_sobolevFieldValues hx.continuous hax, hη,
+      ← real_inner_self_eq_norm_sq]
+    nth_rewrite 1 [hw_def]
+    rw [inner_sub_left, h₀, sub_zero]
+  have h₂ : c * ‖sobolevFieldValues η‖ ^ 2 ≤ ‖w‖ ^ 2 := by
+    rw [← hη]
+    exact mul_norm_sobolevFieldValues_sq_le_norm_sobolevGaugeFixedAdjoint_sq hax hgap η
+  have h₃ := real_inner_le_norm (sobolevGaugeFixedOperator a u) (sobolevFieldValues η)
+  -- Hence `c ‖w‖⁴ ≤ c ‖L_x u‖² ‖η‖² ≤ ‖L_x u‖² ‖w‖²`.
+  rcases eq_or_lt_of_le (sq_nonneg ‖w‖) with hw0 | hw0
+  · rw [← hw0, mul_zero]
+    exact sq_nonneg _
+  refine le_of_mul_le_mul_right ?_ hw0
+  calc c * ‖w‖ ^ 2 * ‖w‖ ^ 2
+      ≤ c * (‖sobolevGaugeFixedOperator a u‖ * ‖sobolevFieldValues η‖) ^ 2 := by
+        rw [mul_assoc, ← sq]
+        gcongr
+        rw [h₁]
+        exact h₃
+    _ = ‖sobolevGaugeFixedOperator a u‖ ^ 2 * (c * ‖sobolevFieldValues η‖ ^ 2) := by ring
+    _ ≤ ‖sobolevGaugeFixedOperator a u‖ ^ 2 * ‖w‖ ^ 2 := by gcongr
 
 /-- **The cokernel of `L_x*` on `H¹` is the kernel of `L_x`.** At a `C¹` vortex `x` with
 `|α| → 1` at infinity and with `L∞` class `a`, when the kernel of the realization of `L_x` is

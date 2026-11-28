@@ -35,7 +35,7 @@ section HigherOrderExtension
 local notation "E" => EuclideanSpace ℝ ι
 
 /-- Let `u ∈ H^{k+1}(Ω)` solve `-div(a ∇u) = F` in `Ω` with `F ∈ H^k(Ω)`,
-where `a` has smooth entries and its associated bilinear form is bounded and Lipschitz,
+where `a` has entries of class `Cᵏ⁺¹` and its associated bilinear form is bounded and Lipschitz,
 and let `Ω ⊆ H`. If `ψ` is a smooth compactly supported cutoff with
 `tsupport ψ ∩ H ⊆ Ω` and `ψ u ∈ H¹₀(Ω)`, then the zero extension of `ψ u` belongs to
 `H¹₀(H)`, solves a Dirichlet problem on `H` with forcing in `H^k(H)`, and agrees with
@@ -43,8 +43,8 @@ and let `Ω ⊆ H`. If `ψ` is a smooth compactly supported cutoff with
 theorem exists_isWeakSolutionDirichlet_value_ae_eq_indicator {H : Opens E} {M : ℝ} {L : ℝ≥0}
     (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M)
     (hL : LipschitzWith L (fun x ↦ matrixBilinearForm (a x)))
-    (ha : ∀ i j, ContDiff ℝ ∞ (fun x ↦ a x i j)) (hΩH : Omega ≤ H)
-    (k : ℕ) (F : Wkp mu Omega 2 k) (U : Wkp mu Omega 2 (k + 1))
+    (hΩH : Omega ≤ H) (k : ℕ) (ha : ∀ i j, ContDiff ℝ (k + 1) (fun x ↦ a x i j))
+    (F : Wkp mu Omega 2 k) (U : Wkp mu Omega 2 (k + 1))
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 (Wkp.firstOrder k U) (v : W1p mu Omega 2) =
       ∫ x in Omega, Wkp.value k F x * W1p.value (v : W1p mu Omega 2) x ∂mu)
     {ψ : E → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ)
