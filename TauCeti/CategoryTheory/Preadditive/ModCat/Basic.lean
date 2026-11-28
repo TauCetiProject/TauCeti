@@ -8,6 +8,8 @@ module
 public import Mathlib.CategoryTheory.Abelian.Subcategory
 public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.Basic
 
+import TauCeti.CategoryTheory.Preadditive.Projective.Basic
+
 /-!
 # Modules over a preadditive category
 
@@ -34,6 +36,8 @@ finitely presented functors are additive, so `mod C` is a full subcategory of `M
 
 * `TauCeti.ModCat C`: the category `Cᵒᵖ ⥤+ AddCommGrpCat.{w}` of `C`-modules.
 * `TauCeti.ModCat.yoneda C : C ⥤ ModCat C`: the Yoneda embedding `X ↦ Hom(-, X)`.
+* `TauCeti.ModCat.coyonedaYonedaIsoEvaluation`: maps out of `Hom(-, X)` are computed by
+  evaluation at `X`.
 * `TauCeti.ModCat.ofFinitelyPresented C`: the fully faithful inclusion `mod C ⥤ ModCat C`.
 
 ## Main results
@@ -41,6 +45,8 @@ finitely presented functors are additive, so `mod C` is a full subcategory of `M
 * `Abelian (ModCat C)` and `HasColimitsOfShape J (ModCat C)`, found by instance inference from
   the closure instances for additive functors and Mathlib's full-subcategory instances.
 * `Projective ((ModCat.yoneda C).obj X)`: representable modules are projective.
+* `TauCeti.ModCat.projective_sigma_yoneda`: coproducts of representable modules indexed in the
+  source category's morphism universe are projective.
 * `TauCeti.ModCat.linear`: the scoped instance `Linear R (D ⥤+ AddCommGrpCat)` for an `R`-linear
   preadditive category `D`; after `open scoped TauCeti.ModCat`, specializing `D` to an opposite
   category gives `Linear R (ModCat D)`.
@@ -81,6 +87,40 @@ instances, and `ObjectProperty.liftCompιIso` recovers `preadditiveYoneda`. -/
 abbrev yoneda : C ⥤ ModCat.{v} C :=
   ObjectProperty.lift _ preadditiveYoneda fun _ ↦ (additiveFunctor_iff _).2 inferInstance
 
+variable {C} in
+/-- Maps from a representable module are the elements at its representing object,
+naturally in the target module. -/
+def coyonedaYonedaIsoEvaluation (X : C) :
+    coyoneda.obj (op ((yoneda C).obj X)) ≅
+      (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι ⋙
+        (evaluation Cᵒᵖ AddCommGrpCat.{v}).obj (op X) ⋙
+        forget AddCommGrpCat.{v} ⋙ uliftFunctor.{u} :=
+  NatIso.ofComponents (fun F ↦
+    letI : F.obj.Additive := (additiveFunctor_iff _).1 F.property
+    ({ toFun := fun f ↦ ULift.up (f.hom.app (op X) (𝟙 X))
+       invFun := fun x ↦ ObjectProperty.homMk (preadditiveYonedaHomOfElement x.down)
+       left_inv := fun f ↦ ObjectProperty.hom_ext _
+         (preadditiveYoneda_obj_hom_ext (by simp))
+       right_inv := fun x ↦ ULift.ext (by simp) } :
+        ((yoneda C).obj X ⟶ F) ≃ ULift.{u} (F.obj.obj (op X))).toIso) (fun _ ↦ rfl)
+
+variable {C} in
+/-- The evaluation isomorphism sends a morphism to its value on the identity of `X`. -/
+@[simp↓]
+lemma coyonedaYonedaIsoEvaluation_hom_app_down (X : C) (F : ModCat.{v} C)
+    (f : (yoneda C).obj X ⟶ F) :
+    ((coyonedaYonedaIsoEvaluation X).hom.app F f).down = f.hom.app (op X) (𝟙 X) :=
+  (rfl)
+
+variable {C} in
+/-- The inverse evaluation isomorphism sends an arrow to its action on the given element. -/
+@[simp↓]
+lemma coyonedaYonedaIsoEvaluation_inv_app_hom_app (X : C) (F : ModCat.{v} C)
+    (x : ULift.{u} (F.obj.obj (op X))) (Y : Cᵒᵖ) (a : Y.unop ⟶ X) :
+    ((coyonedaYonedaIsoEvaluation X).inv.app F x).hom.app Y a = F.obj.map a.op x.down := by
+  let : F.obj.Additive := (additiveFunctor_iff _).1 F.property
+  exact preadditiveYonedaHomOfElement_app_apply x.down Y a
+
 /-- **Representable modules are projective.** A morphism `Hom(-, X) ⟶ G` is an element of
 `G(X)` by Yoneda, and it lifts along an epimorphism `F ⟶ G`, which is surjective at `X`. -/
 instance (X : C) : Projective ((yoneda C).obj X) where
@@ -89,6 +129,40 @@ instance (X : C) : Projective ((yoneda C).obj X) where
     have : Epi π.hom := (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι.map_epi π
     obtain ⟨s, hs⟩ := exists_comp_eq_preadditiveYoneda_obj_of_epi π.hom g.hom
     exact ⟨ObjectProperty.homMk s, ObjectProperty.hom_ext _ hs⟩
+
+variable {C} in
+/-- A coproduct of representable modules indexed by a type in the morphism universe is
+projective. -/
+instance projective_sigma_yoneda {I : Type v} (X : I → C) :
+    Projective (∐ fun i ↦ (yoneda C).obj (X i)) :=
+  Projective.of_isColimit_cofan (coproductIsCoproduct _)
+
+variable {C} in
+/-- The inclusion into all functors sends a coproduct of representable modules to the coproduct
+of the representable functors. -/
+noncomputable def ιSigmaYonedaIso {I : Type*} [Small.{v} I] (X : I → C) :
+    (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι.obj (∐ fun i ↦ (yoneda C).obj (X i)) ≅
+      ∐ fun i ↦ preadditiveYoneda.obj (X i) :=
+  PreservesCoproduct.iso (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι _ ≪≫
+    Sigma.mapIso fun i ↦ ((additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).liftCompιIso preadditiveYoneda
+      fun _ ↦ (additiveFunctor_iff _).2 inferInstance).app (X i)
+
+variable {C} in
+/-- The coproduct comparison sends each module coproduct injection to the corresponding
+representable functor coproduct injection. -/
+@[reassoc (attr := simp↓)]
+lemma map_ι_comp_ιSigmaYonedaIso_hom {I : Type*} [Small.{v} I] (X : I → C) (i : I) :
+    (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι.map
+        (Sigma.ι (fun j ↦ (yoneda C).obj (X j)) i) ≫ (ιSigmaYonedaIso X).hom =
+      Sigma.ι (fun j ↦ preadditiveYoneda.obj (X j)) i := by
+  let G := (additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι
+  let Y := fun j ↦ (yoneda C).obj (X j)
+  have hι : G.map (Sigma.ι Y i) ≫ (PreservesCoproduct.iso G Y).hom =
+      Sigma.ι (G.obj ∘ Y) i := by
+    rw [← Iso.eq_comp_inv, PreservesCoproduct.iso_inv]
+    exact (ι_comp_sigmaComparison G Y i).symm
+  rw [ιSigmaYonedaIso, Iso.trans_hom, ← Category.assoc, hι, Sigma.ι_mapIso_hom]
+  exact Category.id_comp _
 
 end ModCat
 

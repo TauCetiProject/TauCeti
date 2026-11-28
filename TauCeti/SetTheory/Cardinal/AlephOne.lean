@@ -156,3 +156,8 @@ theorem exists_surjective_Iio_omega_one [Uncountable X] :
   exact ⟨Function.invFun g, Function.invFun_surjective g.injective⟩
 
 end TauCeti
+
+/-- The cardinal `ℵ₁` is regular, as a `Fact`; the analogue of `Cardinal.fact_isRegular_aleph0`.
+Enable it with `attribute [local instance]` where `ℵ₁`-presentability is used. -/
+lemma Cardinal.fact_isRegular_aleph_one : Fact (ℵ₁ : Cardinal.{u}).IsRegular :=
+  ⟨Cardinal.isRegular_aleph_one⟩
