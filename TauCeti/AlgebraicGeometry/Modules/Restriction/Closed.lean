@@ -78,6 +78,11 @@ instance isIso_restrictFunctor_ihomComparison_app (M N : X.Modules) :
     (F ⋙ G) (restrictFunctor U.ι) _ _ (overFunctorEquiv U) M N cm
     inferInstance inferInstance hμ).mp hFG
 
+/-- Restriction's internal-Hom comparison is a natural isomorphism. -/
+instance isIso_restrictFunctor_ihomComparison (M : X.Modules) :
+    IsIso ((restrictFunctor U.ι).ihomComparison M) :=
+  (NatTrans.isIso_iff_isIso_app _).mpr fun _ ↦ inferInstance
+
 end AlgebraicGeometry.Scheme.Modules
 
 end

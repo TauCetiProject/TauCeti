@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Adjunction.Mates
 public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
 public import Mathlib.CategoryTheory.Monoidal.Closed.Basic
+public import TauCeti.CategoryTheory.Monoidal.Closed.Functor
 
 /-!
 # Projection formulas and internal Hom
@@ -28,6 +29,10 @@ pushforward `f_! ⊣ f^!` together with `f^* ⊣ f_*`.
   `[B, R A'] ≅ R [A, A']` naturally in `A'`
   (`CategoryTheory.MonoidalClosed.ihomRightAdjointEquiv`). In applications `B = F A`, and no
   adjoint of `F` is needed here.
+
+When `R` is lax monoidal and its internal-Hom comparison at `A` is invertible,
+`CategoryTheory.Adjunction.projectionIso` supplies the canonical projection formula
+`L (R A ⊗ X) ≅ A ⊗ L X`, together with its adjunction formula and naturality in `A`.
 
 In both cases the correspondence is Mathlib's conjugation of natural isomorphisms between adjoint
 functors (`CategoryTheory.conjugateIsoEquiv`) for composites of the given adjunctions with the
@@ -294,6 +299,89 @@ theorem ihomRightAdjointIso_inv_app_app
 end RightAdjoint
 
 end MonoidalClosed
+
+namespace Adjunction
+
+open MonoidalClosed
+
+noncomputable section
+
+variable {L : C ⥤ D} {F : D ⥤ C} (adj : L ⊣ F) [F.LaxMonoidal]
+
+/-- The projection formula for a left adjoint to a lax monoidal functor preserving internal Hom,
+natural in the source object. -/
+def projectionIso (M : D) [Closed M] [Closed (F.obj M)]
+    [IsIso (F.ihomComparison M)] :
+    tensorLeft (F.obj M) ⋙ L ≅ L ⋙ tensorLeft M :=
+  ((ihomRightAdjointEquiv adj M (F.obj M)).symm
+    (asIso (F.ihomComparison M)).symm).symm
+
+/-- The projection isomorphism is the adjoint transpose of the right adjoint's internal-Hom
+comparison. -/
+lemma projectionIso_hom_eq_conjugateEquiv (M : D) [Closed M] [Closed (F.obj M)]
+    [IsIso (F.ihomComparison M)] :
+    (projectionIso adj M).hom =
+      (conjugateEquiv (adj.comp (ihom.adjunction M))
+        ((ihom.adjunction (F.obj M)).comp adj)).symm (F.ihomComparison M) := by
+  simp only [projectionIso, Iso.symm_hom,
+    ihomRightAdjointEquiv_symm_apply_inv, Iso.symm_inv, asIso_hom]
+
+/-- Transposing the projection formula across the given adjunction gives the unit on
+`N` followed by the right adjoint's tensor comparison. -/
+@[simp]
+lemma homEquiv_projectionIso_hom_app (M : D) [Closed M] [Closed (F.obj M)]
+    [IsIso (F.ihomComparison M)] (N : C) :
+    adj.homEquiv
+        (F.obj M ⊗ N) (M ⊗ L.obj N)
+        ((projectionIso adj M).hom.app N) =
+      (F.obj M ◁ adj.unit.app N) ≫
+        Functor.LaxMonoidal.μ F M (L.obj N) := by
+  -- Conjugation compares the composite adjunction units. Currying the desired formula
+  -- reduces it to this unit equation and the coevaluation rule for internal-Hom comparison.
+  have h := unit_conjugateEquiv_symm
+    (adj.comp (ihom.adjunction M))
+    ((ihom.adjunction (F.obj M)).comp adj) (F.ihomComparison M) N
+  rw [← projectionIso_hom_eq_conjugateEquiv] at h
+  apply curry_injective
+  rw [curry_eq, Adjunction.homEquiv_unit, Functor.map_comp, ← Category.assoc]
+  dsimp only [curriedTensor_obj_obj]
+  rw [Adjunction.comp_unit_app, Adjunction.comp_unit_app] at h
+  dsimp only [Functor.comp_obj, Functor.comp_map, curriedTensor_obj_obj,
+    ihom.ihom_adjunction_unit] at h
+  rw [← h]
+  rw [Category.assoc, Functor.coev_ihomComparison, curry_natural_left, curry_eq]
+  dsimp only [Functor.comp_obj]
+
+/-- The canonical adjunction formula for the projection isomorphism. -/
+lemma projectionIso_hom_app (M : D) [Closed M] [Closed (F.obj M)]
+    [IsIso (F.ihomComparison M)] (N : C) :
+    (projectionIso adj M).hom.app N =
+      (adj.homEquiv _ _).symm
+        ((F.obj M ◁ adj.unit.app N) ≫
+          Functor.LaxMonoidal.μ F M (L.obj N)) := by
+  apply (Equiv.eq_symm_apply _).mpr
+  exact homEquiv_projectionIso_hom_app adj M N
+
+/-- The projection formula is natural in the tensor factor in the target category. -/
+@[reassoc]
+lemma projectionIso_hom_naturality_left {M M' : D}
+    [Closed M] [Closed M'] [Closed (F.obj M)] [Closed (F.obj M')]
+    [IsIso (F.ihomComparison M)] [IsIso (F.ihomComparison M')] (f : M ⟶ M')
+    (N : C) :
+    L.map (F.map f ▷ N) ≫
+        (projectionIso adj M').hom.app N =
+      (projectionIso adj M).hom.app N ≫ f ▷ L.obj N := by
+  apply (adj.homEquiv _ _).injective
+  rw [Adjunction.homEquiv_naturality_left, Adjunction.homEquiv_naturality_right]
+  dsimp only [Functor.comp_obj, curriedTensor_obj_obj]
+  rw [homEquiv_projectionIso_hom_app, homEquiv_projectionIso_hom_app]
+  rw [← whisker_exchange_assoc]
+  dsimp only [Functor.comp_obj]
+  rw [Functor.LaxMonoidal.μ_natural_left, Category.assoc]
+
+end
+
+end Adjunction
 
 namespace BraidedCategory
 
