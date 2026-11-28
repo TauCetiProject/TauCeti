@@ -82,23 +82,6 @@ namespace TauCeti
 
 /-! ### Solutions that are small relative to a large solution -/
 
-/-- If `w` and `v` solve `w (n + 2) + f n * w (n + 1) + g n * w n = 0` for `n ≥ n₁`, where
-`‖g n‖ ≤ γ`, then their Casoratian `w n * v (n + 1) - w (n + 1) * v n`, which is multiplied by
-`g n` at each step, is at most `γ ^ k` times its value at `n₁` at `n₁ + k`. -/
-private lemma norm_casoratian_le {𝕜 : Type*} [NormedField 𝕜] {f g w v : ℕ → 𝕜} {γ : ℝ} {n₁ : ℕ}
-    (h : ∀ n, n₁ ≤ n → w (n + 2) + f n * w (n + 1) + g n * w n = 0 ∧
-      v (n + 2) + f n * v (n + 1) + g n * v n = 0 ∧ ‖g n‖ ≤ γ) (k : ℕ) :
-    ‖w (n₁ + k) * v (n₁ + k + 1) - w (n₁ + k + 1) * v (n₁ + k)‖ ≤
-      γ ^ k * ‖w n₁ * v (n₁ + 1) - w (n₁ + 1) * v n₁‖ := by
-  have hγ0 : 0 ≤ γ := (norm_nonneg _).trans (h n₁ le_rfl).2.2
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    obtain ⟨h₁, h₂, hg⟩ := h (n₁ + k) (by omega)
-    rw [← add_assoc, casoratian_add_one_of_difference_eq_zero h₁ h₂, norm_mul, pow_succ,
-      mul_right_comm]
-    exact mul_le_mul hg ih (norm_nonneg _) hγ0 |>.trans_eq (by ring)
-
 /-- **Small solutions are exponentially small.** Let `‖g n‖ ≤ γ` for large `n`, and let `w` and
 `v` be solutions of `w (n + 2) + f n * w (n + 1) + g n * w n = 0` for large `n` with
 `rⁿ = O(w n)` and `γ < r ^ 2`. If `v n / w n → 0`, then `v n / w n = O((γ / r²)ⁿ)`.
@@ -128,7 +111,8 @@ theorem isBigO_div_pow_of_tendsto_div {𝕜 : Type*} [NormedField 𝕜] {f g w v
   -- the Casoratian is `O(γⁿ)`
   set C : ℕ → 𝕜 := fun n ↦ w n * v (n + 1) - w (n + 1) * v n with hC_def
   have hCle (k : ℕ) : ‖C (n₁ + k)‖ ≤ γ ^ k * ‖C n₁‖ :=
-    norm_casoratian_le (fun n hn ↦ ⟨(hn₁ n hn).1, (hn₁ n hn).2.1, (hn₁ n hn).2.2.1⟩) k
+    norm_casoratian_add_le_of_difference_eq_zero (fun n hn ↦ (hn₁ n hn).1)
+      (fun n hn ↦ (hn₁ n hn).2.1) (fun n hn ↦ (hn₁ n hn).2.2.1) k
   -- the increments of `x` are geometrically small
   set A := c ^ 2 * ‖C n₁‖ / |r| ^ (2 * n₁ + 1)
   have hΔ (k : ℕ) : ‖x (n₁ + k + 1) - x (n₁ + k)‖ ≤ A * θ ^ k := by
