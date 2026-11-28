@@ -110,8 +110,8 @@ private theorem exists_pointNorm_eq_spectralNorm (hB : IsAffinoidAlgebra K B)
       (fun s ↦ Algebra.IsIntegral.isIntegral (R := A) s) _ (hcomap ▸ hΩ)
   -- It lies under a classical point of `B`, which is integral over `S`.
   have : Algebra.IsIntegral S B := Algebra.IsIntegral.tower_top A
-  obtain ⟨y, hy⟩ := hB.maximalSpectrumComap_surjective (S.val.restrictScalars K)
-    (fun b ↦ Algebra.IsIntegral.isIntegral (R := S) b)
+  obtain ⟨y, hy⟩ := hB.maximalSpectrumComap_surjective_of_isIntegral_of_ker_le_jacobson
+    (S.val.restrictScalars K) (fun b ↦ Algebra.IsIntegral.isIntegral (R := S) b)
     (((RingHom.injective_iff_ker_eq_bot _).mp Subtype.val_injective).trans_le bot_le) ⟨_, hmax⟩
   refine ⟨y, ?_⟩
   have hfS : f ∈ S := (AlgHom.mem_range _).mpr ⟨X, aeval_X f⟩
@@ -138,7 +138,7 @@ theorem exists_pointNorm_coeff_le_pointNorm_pow (hB : IsAffinoidAlgebra K B)
   have := hp.faithfulSMul_of_dvd hpos hdvd
   -- Compute the point norms at `x` in an algebraic closure `Ω` of the residue field.
   let := Ideal.Quotient.field x.asIdeal
-  have := hB.finite_quotient_of_isIntegral (IsScalarTower.toAlgHom K A B)
+  have := hB.finite_quotient_of_isIntegral_of_ker_le (IsScalarTower.toAlgHom K A B)
     (fun b ↦ Algebra.IsIntegral.isIntegral (R := A) b) x.asIdeal
     (((RingHom.injective_iff_ker_eq_bot _).mp (FaithfulSMul.algebraMap_injective A B)).trans_le
       bot_le)

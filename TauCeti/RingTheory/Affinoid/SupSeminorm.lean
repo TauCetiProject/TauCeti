@@ -442,7 +442,7 @@ theorem _root_.AlgHom.supSeminorm_map_of_isIntegral_of_ker_le_jacobson {B : Type
 
 /-- A surjective algebra map whose kernel consists of nilpotent elements preserves
 `supSeminorm K`, since it is integral and its kernel lies in the Jacobson radical. -/
-theorem supSeminorm_map_of_ker_le_nilradical {B : Type*} [CommRing B] [Algebra K B]
+theorem supSeminorm_map_of_surjective_of_ker_le_nilradical {B : Type*} [CommRing B] [Algebra K B]
     {φ : A →ₐ[K] B} (hφ : Function.Surjective φ) (hker : RingHom.ker φ ≤ nilradical A) (a : A) :
     supSeminorm K (φ a) = supSeminorm K a :=
   φ.supSeminorm_map_of_isIntegral_of_ker_le_jacobson
@@ -454,14 +454,14 @@ theorem supSeminorm_map_of_ker_le_nilradical {B : Type*} [CommRing B] [Algebra K
 theorem _root_.AlgEquiv.supSeminorm_eq {B : Type*} [CommRing B] [Algebra K B] (e : A ≃ₐ[K] B)
     (a : A) :
     supSeminorm K (e a) = supSeminorm K a :=
-  supSeminorm_map_of_ker_le_nilradical (φ := e.toAlgHom) e.surjective
+  supSeminorm_map_of_surjective_of_ker_le_nilradical (φ := e.toAlgHom) e.surjective
     ((RingHom.injective_iff_ker_eq_bot _).mp e.injective ▸ bot_le) a
 
 /-- **`supSeminorm K` is unchanged by reduction**: `supSeminorm K` takes the same value in `A` and
 in its reduction `A ⧸ nilradical A`. -/
 theorem supSeminorm_mk_nilradical (f : A) :
     supSeminorm K (Ideal.Quotient.mk (nilradical A) f) = supSeminorm K f :=
-  supSeminorm_map_of_ker_le_nilradical (φ := Ideal.Quotient.mkₐ K (nilradical A))
+  supSeminorm_map_of_surjective_of_ker_le_nilradical (φ := Ideal.Quotient.mkₐ K (nilradical A))
     (Ideal.Quotient.mkₐ_surjective K _) (Ideal.Quotient.mkₐ_ker K _).le f
 
 /-- An algebra homomorphism contracting maximal ideals to maximal ideals does not increase

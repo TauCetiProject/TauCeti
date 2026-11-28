@@ -451,7 +451,7 @@ theorem bijective_reductionMap_of_surjective_of_ker_le_nilradical (f : A →ₐ[
     (hker : RingHom.ker f ≤ nilradical A) :
     Function.Bijective (f.reductionMap hA hB) := by
   have hsup (a : A) : supSeminorm K (f a) = supSeminorm K a :=
-    supSeminorm_map_of_ker_le_nilradical hf hker a
+    supSeminorm_map_of_surjective_of_ker_le_nilradical hf hker a
   refine ⟨(f.injective_reductionMap_iff_supSeminorm_eq hA hB).mpr hsup, fun y ↦ ?_⟩
   obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective y
   obtain ⟨a, ha⟩ := hf b

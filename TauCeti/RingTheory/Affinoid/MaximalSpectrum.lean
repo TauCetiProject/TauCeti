@@ -130,7 +130,8 @@ theorem maximalSpectrumComap_injective (hB : IsAffinoidAlgebra K B) (f : A →�
 
 /-- An integral algebra map into an affinoid algebra whose kernel is contained in the Jacobson
 radical induces a surjective map on maximal spectra. -/
-theorem maximalSpectrumComap_surjective (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
+theorem maximalSpectrumComap_surjective_of_isIntegral_of_ker_le_jacobson
+    (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
     (hf : f.toRingHom.IsIntegral) (hker : RingHom.ker f ≤ Ideal.jacobson (⊥ : Ideal A)) :
     Function.Surjective (hB.maximalSpectrumComap f) :=
   fun x ↦ (hB.mem_range_maximalSpectrumComap_of_isIntegral f hf).mpr
@@ -139,7 +140,7 @@ theorem maximalSpectrumComap_surjective (hB : IsAffinoidAlgebra K B) (f : A →�
 /-- The residue field of a maximal ideal `m` of `A` is finite over the ground field when `A` maps
 integrally into an affinoid algebra with `RingHom.ker f ≤ m`, since `m` lies under a maximal
 ideal of the affinoid algebra. The source algebra need not itself be affinoid. -/
-theorem finite_quotient_of_isIntegral (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
+theorem finite_quotient_of_isIntegral_of_ker_le (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
     (hf : f.toRingHom.IsIntegral) (m : Ideal A) [m.IsMaximal]
     (hker : RingHom.ker f ≤ m) :
     Module.Finite K (A ⧸ m) := by
