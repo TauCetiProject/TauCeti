@@ -216,11 +216,6 @@ section Basis
 
 variable {ι : Type*} [Finite ι]
 
-/-- The `ℤ`-span of a finite rational basis is a Mathlib full lattice. -/
-theorem isFullLattice_span_basis (b : Basis ι ℚ V) :
-    (Submodule.span ℤ (Set.range b)).IsFullLattice ℚ :=
-  Submodule.isFullLattice_span (Set.finite_range b) b.span_eq
-
 /-- A symmetric rational form that is integral on basis vectors defines an integral lattice.
 
 The carrier is the `ℤ`-span of the basis.  Bilinearity propagates the integral-value hypothesis
@@ -229,7 +224,7 @@ noncomputable def ofBasis (b : Basis ι ℚ V) (B : LinearMap.BilinForm ℚ V) (
     (hint : ∀ i j, B (b i) (b j) ∈ (1 : Submodule ℤ ℚ)) : IntegralLattice V where
   carrier := Submodule.span ℤ (Set.range b)
   form := B
-  isFullLattice := isFullLattice_span_basis b
+  isFullLattice := b.isFullLattice_span_range
   isSymm := hB
   le_dual := by
     rw [Submodule.span_le]
