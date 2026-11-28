@@ -10,7 +10,7 @@ public import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 public import TauCeti.MeasureTheory.Integral.Marcinkiewicz.Basic
 public import TauCeti.MeasureTheory.Integral.Marcinkiewicz.OffDiagonal
 public import TauCeti.MeasureTheory.Integral.Marcinkiewicz.Superlevel
-public import TauCeti.MeasureTheory.Integral.Prod
+public import TauCeti.MeasureTheory.Integral.Prod.Basic
 
 /-!
 # Marcinkiewicz interpolation between two finite exponents

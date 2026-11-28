@@ -17,7 +17,7 @@ import TauCeti.MeasureTheory.Function.Lp.MixedNorm.Bounded
 import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Integral.Dilation
 import TauCeti.MeasureTheory.Integral.Kernel.Pairing
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 
 /-!
 # Mixed-norm Strichartz estimates for the frequency-localized wave equation

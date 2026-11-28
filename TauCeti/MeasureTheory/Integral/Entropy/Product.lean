@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Integral.Entropy.Basic
 import TauCeti.InformationTheory.KullbackLeibler.Convex
-public import TauCeti.MeasureTheory.Integral.ProdMulLog
+public import TauCeti.MeasureTheory.Integral.Prod.MulLog
 
 /-!
 # Functional entropy and product measures

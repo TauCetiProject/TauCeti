@@ -11,7 +11,7 @@ public import Mathlib.Probability.Independence.Basic
 public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Probability.Moments.SubGaussian.Basic
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 import TauCeti.Probability.Distributions.Gaussian.QuadraticForm.Basic
 import TauCeti.Probability.Distributions.Gaussian.Transforms
 import TauCeti.Probability.Moments.SubExponential

@@ -15,7 +15,7 @@ import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Fourier.SineCosineSeries
 import TauCeti.Analysis.Sobolev.W1p.Lipschitz
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 
 /-!

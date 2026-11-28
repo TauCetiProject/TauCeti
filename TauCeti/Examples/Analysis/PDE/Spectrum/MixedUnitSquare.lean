@@ -15,7 +15,7 @@ import TauCeti.Analysis.PDE.Spectrum.CompleteFamily
 import TauCeti.Analysis.Sobolev.W1p.Lipschitz
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
 import TauCeti.MeasureTheory.Integral.DivergenceTheorem.Rectangle
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 
 /-!
 # The mixed spectrum of `-Δ` on the unit square with one Dirichlet side

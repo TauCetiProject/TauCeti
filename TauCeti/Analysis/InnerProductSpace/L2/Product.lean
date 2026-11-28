@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 public import TauCeti.MeasureTheory.Function.Lp.Product
-public import TauCeti.MeasureTheory.Integral.Prod
+public import TauCeti.MeasureTheory.Integral.Prod.Basic
 
 /-!
 # Pointwise products of `L²` functions on a product measure

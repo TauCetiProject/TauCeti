@@ -10,7 +10,7 @@ public import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 public import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 public import TauCeti.MeasureTheory.Integral.Marcinkiewicz.Superlevel
 public import TauCeti.MeasureTheory.Integral.MinkowskiIntegral
-public import TauCeti.MeasureTheory.Integral.Prod
+public import TauCeti.MeasureTheory.Integral.Prod.Basic
 
 /-!
 # The off-diagonal Marcinkiewicz interpolation theorem

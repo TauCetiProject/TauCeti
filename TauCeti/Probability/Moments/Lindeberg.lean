@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Taylor.Basic
 public import TauCeti.MeasureTheory.Integral.Pi
-public import TauCeti.MeasureTheory.Integral.Prod
+public import TauCeti.MeasureTheory.Integral.Prod.Basic
 
 /-!
 # Lindeberg replacement

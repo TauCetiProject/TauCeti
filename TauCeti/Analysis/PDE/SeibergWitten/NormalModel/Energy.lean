@@ -16,7 +16,7 @@ import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.PDE.Vortex.Gauge.ComplexStructure
 import TauCeti.Analysis.PDE.Vortex.SpectralGap
 import TauCeti.MeasureTheory.Function.Lp.Slice
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 import TauCeti.Topology.Algebra.Support
 
 /-!

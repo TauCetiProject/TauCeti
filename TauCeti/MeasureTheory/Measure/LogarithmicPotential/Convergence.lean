@@ -11,7 +11,7 @@ import Mathlib.Probability.ConditionalProbability
 import TauCeti.MeasureTheory.Measure.Portmanteau
 import TauCeti.MeasureTheory.Function.UniformIntegrable
 import TauCeti.MeasureTheory.Integral.Bochner.Lp
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Integral
 
 /-!

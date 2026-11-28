@@ -19,7 +19,7 @@ import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.MeasureTheory.Integral.Exp.Decay
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 import TauCeti.RingTheory.Binomial
 
 /-!

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Integral.Prod
+public import TauCeti.MeasureTheory.Integral.Prod.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 import Mathlib.Analysis.Convex.Integral
 

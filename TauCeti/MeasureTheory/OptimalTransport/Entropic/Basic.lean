@@ -9,7 +9,7 @@ public import TauCeti.InformationTheory.KullbackLeibler.ChangeOfReference
 public import TauCeti.InformationTheory.KullbackLeibler.Convex
 public import TauCeti.InformationTheory.KullbackLeibler.LowerSemicontinuous
 public import TauCeti.InformationTheory.KullbackLeibler.Tilted
-public import TauCeti.MeasureTheory.Integral.Prod
+public import TauCeti.MeasureTheory.Integral.Prod.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.L1Convergence
 import Mathlib.InformationTheory.KullbackLeibler.DataProcessing

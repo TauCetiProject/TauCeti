@@ -10,7 +10,7 @@ public import TauCeti.Analysis.PDE.Strichartz.Endpoint
 import TauCeti.Analysis.PDE.Strichartz.Retarded
 import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Integral.Kernel.Pairing
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 
 /-!
 # The endpoint Strichartz estimate for the Schrödinger equation

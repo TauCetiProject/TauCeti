@@ -12,7 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Sinc
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.Star
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 
 /-!
 # The wave propagators `cos(tD)` and `D⁻¹ sin(tD)` on `L²`

@@ -11,7 +11,7 @@ public import TauCeti.MeasureTheory.Integral.RieszPotential.Basic
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Integral.Kernel.Pairing
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 
 /-!
 # The non-endpoint `TT*` argument

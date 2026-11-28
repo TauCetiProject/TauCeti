@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.AddCircle
 public import Mathlib.MeasureTheory.Constructions.Pi
-import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Prod.Basic
 import TauCeti.Analysis.Fourier.Uniqueness
 
 /-!
