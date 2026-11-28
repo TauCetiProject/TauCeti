@@ -42,6 +42,10 @@ the corresponding constructions on the rings themselves.
 * `PreTilt.map p f : PreTilt A p →+* PreTilt B p`: the induced homomorphism of tilts.
 * `PreTilt.mapEquiv p e : PreTilt A p ≃+* PreTilt B p`: the induced isomorphism of tilts, for a
   ring isomorphism `e`.
+* `WittVector.mapTiltAlgHom hS hS' h`: for an `R`-algebra homomorphism `h : S → S'`, the
+  Witt vectors `W(h♭)` of its tilt as a `W(R♭)`-algebra homomorphism `W(S♭) → W(S'♭)`.
+* `WittVector.fontaineThetaAlgHom hR hS`: for `p`-adically complete `R` and an
+  `R`-algebra `S`, Fontaine's map `θ_S` as a `W(R♭)`-algebra homomorphism `W(S♭) → S`.
 
 ## Main results
 
@@ -222,3 +226,99 @@ theorem map_eq_map_iff (hθ : Function.Surjective (WittVector.fontaineTheta A p)
   rw [← WittVector.theta_natural_comp, ← WittVector.theta_natural_comp, h]
 
 end PreTilt
+
+/-! ### Over a base
+
+Let `R → S` and `R → S'` be ring homomorphisms, and regard `W(S♭)` and `W(S'♭)` as
+`W(R♭)`-algebras through the Witt vectors of the tilts of the structure maps. Then the Witt vectors
+of the tilt of an `R`-algebra homomorphism `h : S → S'` form a `W(R♭)`-algebra homomorphism
+`W(h♭) : W(S♭) → W(S'♭)`. If moreover `R` and `S` are `p`-adically complete, `R` is regarded as a
+`W(R♭)`-algebra through `θ_R`, and `S` through `R`, then naturality of Fontaine's map makes `θ_S`
+a `W(R♭)`-algebra homomorphism. -/
+
+namespace WittVector
+
+variable {p : ℕ} [Fact p.Prime] {R S S' : Type*} [CommRing R] [CommRing S] [CommRing S']
+  [Fact ¬IsUnit (p : R)] [Fact ¬IsUnit (p : S)] [Fact ¬IsUnit (p : S')] [Algebra R S]
+  [Algebra (WittVector p (PreTilt R p)) (WittVector p (PreTilt S p))]
+
+/-- The Witt vectors `W(h♭) : W(S♭) → W(S'♭)` of the tilt of an `R`-algebra homomorphism
+`h : S → S'`, as a `W(R♭)`-algebra homomorphism, where `W(S♭)` and `W(S'♭)` are `W(R♭)`-algebras
+through the Witt vectors of the tilts of the structure maps. -/
+noncomputable def mapTiltAlgHom [Algebra R S']
+    [Algebra (WittVector p (PreTilt R p)) (WittVector p (PreTilt S' p))]
+    (hS : algebraMap (WittVector p (PreTilt R p)) (WittVector p (PreTilt S p)) =
+      WittVector.map (PreTilt.map p (algebraMap R S)))
+    (hS' : algebraMap (WittVector p (PreTilt R p)) (WittVector p (PreTilt S' p)) =
+      WittVector.map (PreTilt.map p (algebraMap R S')))
+    (h : S →ₐ[R] S') :
+    WittVector p (PreTilt S p) →ₐ[WittVector p (PreTilt R p)] WittVector p (PreTilt S' p) where
+  __ := WittVector.map (PreTilt.map p (h : S →+* S'))
+  commutes' w := by
+    change WittVector.map (PreTilt.map p (h : S →+* S')) (algebraMap _ _ w) = _
+    -- `W(h♭) ∘ W((R → S)♭) = W((h ∘ (R → S))♭) = W((R → S')♭)`.
+    rw [hS, hS', ← RingHom.comp_apply, ← _root_.WittVector.map_comp, ← PreTilt.map_comp,
+      AlgHom.comp_algebraMap]
+
+/-- The underlying ring homomorphism of `mapTiltAlgHom hS hS' h` is `W(h♭)`. -/
+@[simp]
+theorem coe_mapTiltAlgHom [Algebra R S']
+    [Algebra (WittVector p (PreTilt R p)) (WittVector p (PreTilt S' p))]
+    (hS : algebraMap (WittVector p (PreTilt R p)) (WittVector p (PreTilt S p)) =
+      WittVector.map (PreTilt.map p (algebraMap R S)))
+    (hS' : algebraMap (WittVector p (PreTilt R p)) (WittVector p (PreTilt S' p)) =
+      WittVector.map (PreTilt.map p (algebraMap R S')))
+    (h : S →ₐ[R] S') :
+    (mapTiltAlgHom hS hS' h : WittVector p (PreTilt S p) →+* WittVector p (PreTilt S' p)) =
+      WittVector.map (PreTilt.map p (h : S →+* S')) :=
+  (rfl)
+
+/-- `mapTiltAlgHom hS hS' h` sends `w` to `W(h♭) w`. -/
+@[simp]
+theorem mapTiltAlgHom_apply [Algebra R S']
+    [Algebra (WittVector p (PreTilt R p)) (WittVector p (PreTilt S' p))]
+    (hS : algebraMap (WittVector p (PreTilt R p)) (WittVector p (PreTilt S p)) =
+      WittVector.map (PreTilt.map p (algebraMap R S)))
+    (hS' : algebraMap (WittVector p (PreTilt R p)) (WittVector p (PreTilt S' p)) =
+      WittVector.map (PreTilt.map p (algebraMap R S')))
+    (h : S →ₐ[R] S') (w : WittVector p (PreTilt S p)) :
+    mapTiltAlgHom hS hS' h w = WittVector.map (PreTilt.map p (h : S →+* S')) w :=
+  (rfl)
+
+variable [IsAdicComplete (span {(p : R)}) R] [IsAdicComplete (span {(p : S)}) S]
+  [Algebra (WittVector p (PreTilt R p)) R] [Algebra (WittVector p (PreTilt R p)) S]
+  [IsScalarTower (WittVector p (PreTilt R p)) R S]
+
+/-- Fontaine's map `θ_S : W(S♭) → S` as a `W(R♭)`-algebra homomorphism, where `R` is a
+`W(R♭)`-algebra through `θ_R`, `S` through `R`, and `W(S♭)` through the Witt vectors of the tilt of
+the structure map `R → S`. -/
+noncomputable def fontaineThetaAlgHom
+    (hR : algebraMap (WittVector p (PreTilt R p)) R = fontaineTheta R p)
+    (hS : algebraMap (WittVector p (PreTilt R p)) (WittVector p (PreTilt S p)) =
+      WittVector.map (PreTilt.map p (algebraMap R S))) :
+    WittVector p (PreTilt S p) →ₐ[WittVector p (PreTilt R p)] S where
+  __ := fontaineTheta S p
+  commutes' w := by
+    change fontaineTheta S p (algebraMap _ _ w) = _
+    rw [hS, theta_natural, IsScalarTower.algebraMap_apply (WittVector p (PreTilt R p)) R S w, hR]
+
+/-- The underlying ring homomorphism of `fontaineThetaAlgHom hR hS` is `θ_S`. -/
+@[simp]
+theorem coe_fontaineThetaAlgHom
+    (hR : algebraMap (WittVector p (PreTilt R p)) R = fontaineTheta R p)
+    (hS : algebraMap (WittVector p (PreTilt R p)) (WittVector p (PreTilt S p)) =
+      WittVector.map (PreTilt.map p (algebraMap R S))) :
+    (fontaineThetaAlgHom hR hS : WittVector p (PreTilt S p) →+* S) = fontaineTheta S p :=
+  (rfl)
+
+/-- `fontaineThetaAlgHom hR hS` sends `w` to `θ_S w`. -/
+@[simp]
+theorem fontaineThetaAlgHom_apply
+    (hR : algebraMap (WittVector p (PreTilt R p)) R = fontaineTheta R p)
+    (hS : algebraMap (WittVector p (PreTilt R p)) (WittVector p (PreTilt S p)) =
+      WittVector.map (PreTilt.map p (algebraMap R S)))
+    (w : WittVector p (PreTilt S p)) :
+    fontaineThetaAlgHom hR hS w = fontaineTheta S p w :=
+  (rfl)
+
+end WittVector

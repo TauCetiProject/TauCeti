@@ -12,6 +12,7 @@ import Mathlib.RingTheory.Ideal.Quotient.Operations
 import TauCeti.Algebra.Polynomial.AlgebraMap
 import TauCeti.Algebra.Polynomial.AlgHom
 import TauCeti.RingTheory.Ideal.Operations
+import TauCeti.RingTheory.TensorProduct.LiftEquiv
 
 /-!
 # Tensor base change along polynomial evaluation
@@ -104,12 +105,14 @@ theorem baseChangeEval_surjective_iff :
     letI := Algebra.compHom R (evalRingHom a)
     Function.Surjective (φ.baseChangeEval hX) ↔ Function.Surjective φ := by
   let := Algebra.compHom R (evalRingHom a)
-  refine ⟨fun h c ↦ ?_, fun h c ↦ ?_⟩
-  · obtain ⟨t, rfl⟩ := h c
-    obtain ⟨x, rfl⟩ := Algebra.TensorProduct.includeRight_surjective_evalRingHom (A := A) a t
-    exact ⟨x, by rw [Algebra.TensorProduct.includeRight_apply, baseChangeEval_tmul, one_smul]⟩
-  · obtain ⟨x, rfl⟩ := h c
-    exact ⟨1 ⊗ₜ[R[X]] x, by rw [baseChangeEval_tmul, one_smul]⟩
+  let := Algebra.compHom C (evalRingHom a)
+  let : IsScalarTower R R[X] C := Polynomial.isScalarTower_evalRingHom_left R C a
+  let : IsScalarTower R[X] R C := Polynomial.isScalarTower_evalRingHom_right R C a
+  have hX' : φ (algebraMap R[X] A X) = algebraMap R[X] C X := by
+    simpa [Algebra.compHom_algebraMap_apply] using hX
+  have h := liftEquiv_surjective_iff (φ.toPolynomialAlgHom hX')
+    (Algebra.TensorProduct.includeRight_surjective_evalRingHom (A := A) a)
+  rwa [show ⇑(φ.toPolynomialAlgHom hX') = ⇑φ from funext (toPolynomialAlgHom_apply φ hX')] at h
 
 end
 
@@ -208,13 +211,17 @@ theorem baseChangeEval_injective_iff :
     Function.Injective (φ.baseChangeEval hX) ↔
       RingHom.ker φ ≤ Ideal.span {algebraMap R[X] A X - algebraMap R A a} := by
   let := Algebra.compHom R (evalRingHom a)
-  rw [← Algebra.TensorProduct.ker_includeRight_evalRingHom (R := R) (A := A) a,
-    injective_iff_map_eq_zero]
-  refine ⟨fun hinj x hx ↦ ?_, fun hker t ht ↦ ?_⟩
-  · rw [RingHom.mem_ker, Algebra.TensorProduct.includeRight_apply]
-    exact hinj _ (by simpa [baseChangeEval_tmul] using RingHom.mem_ker.mp hx)
-  · obtain ⟨x, rfl⟩ := Algebra.TensorProduct.includeRight_surjective_evalRingHom (A := A) a t
-    exact hker (by simpa [RingHom.mem_ker, Algebra.TensorProduct.includeRight_apply] using ht)
+  let := Algebra.compHom C (evalRingHom a)
+  let : IsScalarTower R R[X] C := Polynomial.isScalarTower_evalRingHom_left R C a
+  let : IsScalarTower R[X] R C := Polynomial.isScalarTower_evalRingHom_right R C a
+  have hX' : φ (algebraMap R[X] A X) = algebraMap R[X] C X := by
+    simpa [Algebra.compHom_algebraMap_apply] using hX
+  have h := liftEquiv_injective_iff (φ.toPolynomialAlgHom hX')
+    (Algebra.TensorProduct.includeRight_surjective_evalRingHom (A := A) a)
+  have hker : RingHom.ker (φ.toPolynomialAlgHom hX') = RingHom.ker φ := by
+    ext x
+    rw [RingHom.mem_ker, RingHom.mem_ker, toPolynomialAlgHom_apply]
+  rwa [hker, Algebra.TensorProduct.ker_includeRight_evalRingHom (R := R) (A := A) a] at h
 
 variable (hsurj : Function.Surjective φ)
   (hker : RingHom.ker φ ≤ Ideal.span {algebraMap R[X] A X - algebraMap R A a})
