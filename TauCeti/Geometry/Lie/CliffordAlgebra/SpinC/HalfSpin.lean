@@ -250,16 +250,6 @@ theorem unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_lieMap_ofSpi
   have hlie :
       lieMap φ (ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f X) =
         lieMap ψ (realSpinLieEquivUnitsRange 4 X) := by
-    have hm :
-        ((realCliffordSpinContinuousMulEquivUnitsRange 4 :
-            spinGroup (realCliffordForm 4 0) →ₜ*
-              MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm 4 0)))
-          |>.toContMDiffMonoidMorphism IS IS) =
-          realSpinContMDiffMonoidMorphismUnitsRange 4 := by
-      apply DFunLike.coe_injective
-      rw [ContinuousMonoidHom.coe_toContMDiffMonoidMorphism,
-        coe_realSpinContMDiffMonoidMorphismUnitsRange]
-      rfl
     calc
       lieMap φ (ContinuousMonoidHom.lieMap (I := IS) (I' := IC) f X)
         = lieMap (φ.comp (f.toContMDiffMonoidMorphism IS IC)) X := by
@@ -269,7 +259,8 @@ theorem unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_lieMap_ofSpi
       _ = lieMap ψ (realSpinLieEquivUnitsRange 4 X) := by
           rw [lieMap_comp, LieHom.comp_apply]
           congr 1
-          simp only [IS, realSpinLieEquivUnitsRange_apply, ContinuousMonoidHom.lieMap_def, hm]
+          simp only [realSpinLieEquivUnitsRange_apply, ContinuousMonoidHom.lieMap_def,
+            toContMDiffMonoidMorphism_realCliffordSpinContinuousMulEquivUnitsRange]
   rw [hlie, ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply (R := S →L[ℂ] S),
     unitsLieAlgebraLieEquiv_lieMap_realHalfSpinSmoothHom]
   simp only [realSpinLieEquivQuadratic_apply, realQuadraticLieSubalgebraEvenIncl_apply]
@@ -342,20 +333,8 @@ theorem
   let Q₀ := QuadraticMap.weightedSumSquares ℝ (1 : Fin 4 → ℝ)
   let _ := bivectorLieRing Q₀
   let _ := bivectorLieAlgebra Q₀
-  rw [unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_realSoProdDetLinearEquiv]
-  have hq :
-      matrixSoEquivQuadratic (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0)
-          (realCliffordFormZeroIsometryWeightedSumSquares 4) p.1 =
-        bivectorExteriorEquivQuadraticLieSubalgebra (realCliffordForm 4 0)
-          ((bivectorEquivSo 4 ℝ).symm p.1) := by
-    apply (matrixSoEquivQuadratic (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0)
-      (realCliffordFormZeroIsometryWeightedSumSquares 4)).symm.injective
-    simp only [LieEquiv.coe_toLieHom]
-    rw [LieEquiv.symm_apply_apply, ← LieEquiv.coe_toLieHom,
-      ← realCliffordSpinToSpecialOrthogonalCoordinateLieHom_eq_symm_matrixSoEquivQuadratic,
-      realCliffordSpinToSpecialOrthogonalCoordinateLieHom_eq_bivectorEquivSo,
-      LieEquiv.apply_symm_apply]
-  rw [hq]
+  rw [unitsLieAlgebraEquiv_lieMap_realSpinCHalfSpinUnitsSmoothHom_realSoProdDetLinearEquiv,
+    matrixSoEquivQuadratic_realCliffordFormZeroIsometryWeightedSumSquares_eq_bivector]
 
 end DeterminantDerivative
 

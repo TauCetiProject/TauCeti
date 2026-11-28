@@ -51,9 +51,8 @@ factor. -/
   /-- Composing the first projection with a product of continuous additive homomorphisms recovers
   the first factor. -/]
 theorem fst_comp_prod (f : A →ₜ* B) (g : A →ₜ* C) :
-    (ContinuousMonoidHom.fst B C).comp (f.prod g) = f := by
-  ext x
-  simp
+    (ContinuousMonoidHom.fst B C).comp (f.prod g) = f :=
+  ContinuousMonoidHom.toMonoidHom_injective (MonoidHom.fst_comp_prod _ _)
 
 /-- Composing the second projection with a product of continuous homomorphisms recovers the second
 factor. -/
@@ -61,9 +60,8 @@ factor. -/
   /-- Composing the second projection with a product of continuous additive homomorphisms recovers
   the second factor. -/]
 theorem snd_comp_prod (f : A →ₜ* B) (g : A →ₜ* C) :
-    (ContinuousMonoidHom.snd B C).comp (f.prod g) = g := by
-  ext x
-  simp
+    (ContinuousMonoidHom.snd B C).comp (f.prod g) = g :=
+  ContinuousMonoidHom.toMonoidHom_injective (MonoidHom.snd_comp_prod _ _)
 
 end CompProd
 

@@ -39,12 +39,10 @@ and the `𝔰𝔬(n) ⊕ ℝ` connection-lifting isomorphism:
 
 ## Main definitions
 
-* `CliffordAlgebra.spinCGroup.realToSpecialOrthogonalRange` and
-  `realToSpecialOrthogonalSmoothRange`: the rotation homomorphism from `Spinᶜ(n)` to the closed
-  `SO(n)` matrix-units carrier.
-* `CliffordAlgebra.spinCGroup.realToSpecialOrthogonalProdDetRange` and
-  `realToSpecialOrthogonalProdDetSmoothRange`: the paired rotation-and-determinant homomorphism
-  `Spinᶜ(n) → SO(n) × Circle`.
+* `CliffordAlgebra.spinCGroup.realToSpecialOrthogonalRange`: the rotation homomorphism from
+  `Spinᶜ(n)` to the closed `SO(n)` matrix-units carrier.
+* `CliffordAlgebra.spinCGroup.realToSpecialOrthogonalProdDetRange`: the paired
+  rotation-and-determinant homomorphism `Spinᶜ(n) → SO(n) × Circle`.
 * `CliffordAlgebra.spinCGroup.realToSpecialOrthogonalProdDetLieEquiv`: the Lie-algebra isomorphism
   `Lie(Spinᶜ(n)) ≃ₗ⁅ℝ⁆ Lie(SO(n)) × Lie(Circle)`.
 * `CliffordAlgebra.spinCGroup.realSpecialOrthogonalProdDetLinearEquiv` and
@@ -61,7 +59,7 @@ and the `𝔰𝔬(n) ⊕ ℝ` connection-lifting isomorphism:
   coordinates.
 * `CliffordAlgebra.spinCGroup.Ad_realSpecialOrthogonalProdDetLinearEquiv`: full `Spinᶜ(n)` adjoint
   equivariance of the `Lie(SO(n)) × ℝ` lift.
-* `CliffordAlgebra.spinCGroup.isLocalDiffeomorph_realToSpecialOrthogonalProdDetSmoothRange`,
+* `CliffordAlgebra.spinCGroup.isLocalDiffeomorph_realToSpecialOrthogonalProdDetRange`,
   `isCoveringMap_realToSpecialOrthogonalProdDetRange`, and
   `exists_realSpinCSmoothCoveringTrivialization`: smooth covering trivializations with smooth local
   sections through every point of the fiber.
@@ -125,44 +123,56 @@ theorem realToSpecialOrthogonalRange_apply (g : G) :
         (toSpecialOrthogonal (realCliffordForm n 0) hQ g) :=
   (rfl)
 
-/-- The smooth rotation homomorphism on compact `Spinᶜ(n)`. -/
-def realToSpecialOrthogonalSmoothRange :
-    ContMDiffMonoidMorphism IC ISO ∞ G SpecialOrthogonalUnitsRange :=
-  (realToSpecialOrthogonalRange n hQ).toContMDiffMonoidMorphism IC ISO
-
-/-- `realToSpecialOrthogonalSmoothRange` has the same underlying map as
-`realToSpecialOrthogonalRange`. -/
+/-- On a quotient representative `[s, z]`, `realToSpecialOrthogonalRange` evaluates to the matrix
+of `π(s)`. -/
 @[simp]
-theorem realToSpecialOrthogonalSmoothRange_apply (g : G) :
-    realToSpecialOrthogonalSmoothRange n hQ g = realToSpecialOrthogonalRange n hQ g :=
-  congrFun
-    (ContinuousMonoidHom.coe_toContMDiffMonoidMorphism (I := IC) (I' := ISO)
-      (realToSpecialOrthogonalRange n hQ)) g
+theorem realToSpecialOrthogonalRange_mk (p : spinGroup (realCliffordForm n 0) × Circle) :
+    realToSpecialOrthogonalRange n hQ (mk _ hQ p) =
+      ⟨QuadraticMap.specialOrthogonalToGeneralLinear
+          (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)
+          (spinToSpecialOrthogonal (realCliffordForm n 0) p.1),
+        ⟨spinToSpecialOrthogonal (realCliffordForm n 0) p.1, rfl⟩⟩ := by
+  rw [realToSpecialOrthogonalRange_apply, toSpecialOrthogonal_mk,
+    realCliffordSpecialOrthogonalContinuousMulEquivRange_apply]
+
+/-- On `ofSpin s`, `realToSpecialOrthogonalRange` evaluates to the matrix of `π(s)`. -/
+@[simp]
+theorem realToSpecialOrthogonalRange_ofSpin (s : spinGroup (realCliffordForm n 0)) :
+    realToSpecialOrthogonalRange n hQ (ofSpin _ hQ s) =
+      ⟨QuadraticMap.specialOrthogonalToGeneralLinear
+          (show QuadraticForm ℝ (Fin n → ℝ) from realCliffordForm n 0)
+          (spinToSpecialOrthogonal (realCliffordForm n 0) s),
+        ⟨spinToSpecialOrthogonal (realCliffordForm n 0) s, rfl⟩⟩ := by
+  rw [realToSpecialOrthogonalRange_apply, toSpecialOrthogonal_ofSpin,
+    realCliffordSpecialOrthogonalContinuousMulEquivRange_apply]
+
+/-- On the central circle inclusion `ofCircle z`, `realToSpecialOrthogonalRange` is trivial. -/
+@[simp]
+theorem realToSpecialOrthogonalRange_ofCircle (z : Circle) :
+    realToSpecialOrthogonalRange n hQ (ofCircle _ hQ z) = 1 := by
+  rw [realToSpecialOrthogonalRange_apply, toSpecialOrthogonal_ofCircle, map_one]
 
 /-- The rotation projection is trivial on the central circle of `Spinᶜ(n)`. -/
 @[simp]
 theorem realToSpecialOrthogonalRange_comp_ofCircleContinuousMonoidHom :
     (realToSpecialOrthogonalRange n hQ).comp (ofCircleContinuousMonoidHom _ hQ) = 1 := by
   ext z
-  simp [realToSpecialOrthogonalRange_apply, toSpecialOrthogonal_ofCircle]
+  simp
 
 /-- Restricting `realToSpecialOrthogonalRange` to `Spin(n)` recovers the compact Spin projection
 into `SO(n)`. -/
 @[simp]
 theorem realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom :
     (realToSpecialOrthogonalRange n hQ).comp (ofSpinContinuousMonoidHom _ hQ) =
-      (show SpinUnitsRange →ₜ* SpecialOrthogonalUnitsRange from
-        realCliffordSpinToSpecialOrthogonalRange n).comp
+      (realCliffordSpinToSpecialOrthogonalContinuousRange n).comp
         (realCliffordSpinContinuousMulEquivUnitsRange n :
           spinGroup (realCliffordForm n 0) →ₜ* SpinUnitsRange) := by
   ext1 s
   rw [ContinuousMonoidHom.coe_comp, ContinuousMonoidHom.coe_comp,
     Function.comp_apply, Function.comp_apply, ContinuousMonoidHom.coe_coe,
-    realToSpecialOrthogonalRange_apply, ofSpinContinuousMonoidHom_apply,
-    toSpecialOrthogonal_ofSpin, realCliffordSpecialOrthogonalContinuousMulEquivRange_apply,
-    realCliffordSpinContinuousMulEquivUnitsRange_apply]
-  -- The `show ... from` wrapper only swaps `Pi.topologicalSpace` for the definitionally equal
-  -- local `Matrix.linftyOpTopologicalSpace` instance.
+    ofSpinContinuousMonoidHom_apply, realToSpecialOrthogonalRange_ofSpin,
+    realCliffordSpinContinuousMulEquivUnitsRange_apply,
+    realCliffordSpinToSpecialOrthogonalContinuousRange_apply]
   exact (realCliffordSpinToSpecialOrthogonalRange_apply_toUnits n s).symm
 
 local notation "πO" =>
@@ -203,8 +213,7 @@ theorem lieMap_realToSpecialOrthogonalRange_lieMap_ofSpinContinuousMonoidHom (X 
         (ContinuousMonoidHom.lieMap_comp_apply (I := IS) (I' := IC) (I'' := ISO)
           (ofSpinContinuousMonoidHom _ hQ) (realToSpecialOrthogonalRange n hQ) X).symm
     _ = ContinuousMonoidHom.lieMap (I := IS) (I' := ISO)
-          ((show SpinUnitsRange →ₜ* SpecialOrthogonalUnitsRange from
-            realCliffordSpinToSpecialOrthogonalRange n).comp
+          ((realCliffordSpinToSpecialOrthogonalContinuousRange n).comp
             (realCliffordSpinContinuousMulEquivUnitsRange n :
               spinGroup (realCliffordForm n 0) →ₜ* SpinUnitsRange)) X := by
         rw [realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom]
@@ -212,13 +221,12 @@ theorem lieMap_realToSpecialOrthogonalRange_lieMap_ofSpinContinuousMonoidHom (X 
         symm
         simp only [realSpinToSpecialOrthogonalLieEquiv_apply,
           realCliffordSpinToSpecialOrthogonalRangeLieEquiv_apply,
-          realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousMonoidHomLieMap,
+          realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_continuousRange_lieMap,
           realSpinLieEquivUnitsRange_apply]
         exact (ContinuousMonoidHom.lieMap_comp_apply (I := IS) (I' := IS) (I'' := ISO)
           (realCliffordSpinContinuousMulEquivUnitsRange n :
             spinGroup (realCliffordForm n 0) →ₜ* SpinUnitsRange)
-          (show SpinUnitsRange →ₜ* SpecialOrthogonalUnitsRange from
-            realCliffordSpinToSpecialOrthogonalRange n) X).symm
+          (realCliffordSpinToSpecialOrthogonalContinuousRange n) X).symm
 
 /-- Evaluating the rotation differential on `realSpinProdDetLinearEquiv (X, a)` projects onto the
 Spin factor via `realSpinToSpecialOrthogonalLieEquiv`. -/
@@ -261,27 +269,6 @@ theorem realToSpecialOrthogonalProdDetRange_apply (g : G) :
     realToSpecialOrthogonalProdDetRange n hQ g =
       (realToSpecialOrthogonalRange n hQ g, det (realCliffordForm n 0) hQ g) :=
   Prod.ext rfl (detContinuousMonoidHom_apply _ hQ g)
-
-/-- The paired rotation-and-determinant smooth homomorphism on compact `Spinᶜ(n)`. -/
-def realToSpecialOrthogonalProdDetSmoothRange :
-    ContMDiffMonoidMorphism IC ISP ∞ G (SpecialOrthogonalUnitsRange × Circle) :=
-  (realToSpecialOrthogonalProdDetRange n hQ).toContMDiffMonoidMorphism IC ISP
-
-/-- `realToSpecialOrthogonalProdDetSmoothRange` has the same underlying function as
-`realToSpecialOrthogonalProdDetRange`. -/
-theorem coe_realToSpecialOrthogonalProdDetSmoothRange :
-    ⇑(realToSpecialOrthogonalProdDetSmoothRange n hQ) =
-      ⇑(realToSpecialOrthogonalProdDetRange n hQ) :=
-  ContinuousMonoidHom.coe_toContMDiffMonoidMorphism (I := IC) (I' := ISP)
-    (realToSpecialOrthogonalProdDetRange n hQ)
-
-/-- `realToSpecialOrthogonalProdDetSmoothRange` has the same underlying map as
-`realToSpecialOrthogonalProdDetRange`. -/
-@[simp]
-theorem realToSpecialOrthogonalProdDetSmoothRange_apply (g : G) :
-    realToSpecialOrthogonalProdDetSmoothRange n hQ g =
-      realToSpecialOrthogonalProdDetRange n hQ g :=
-  congrFun (coe_realToSpecialOrthogonalProdDetSmoothRange n hQ) g
 
 /-- **The `Lie(SO(n)) × ℝ` splitting of `Lie(Spinᶜ(n))`**. It lifts an infinitesimal orthogonal
 transformation via `(realSpinToSpecialOrthogonalLieEquiv n).symm` and a determinant weight via
@@ -468,18 +455,29 @@ theorem realToSpecialOrthogonalProdDetLieEquiv_apply (Y : 𝔤) :
     LieEquiv.ofBijective_apply, realToSpecialOrthogonalProdDetRange,
     TauCeti.Lie.prodLieEquiv_continuousMonoidHom_lieMap_prod]
 
+/-- Inverse of `realToSpecialOrthogonalProdDetLieEquiv`: it lifts a pair `(W, X)` of
+`Lie(SO(n)) × Lie(Circle)` via `realSpecialOrthogonalProdDetLinearEquiv` and
+`circleLieAlgebraEquiv`. -/
+@[simp]
+theorem realToSpecialOrthogonalProdDetLieEquiv_symm_apply
+    (p : 𝔬 × LeftInvariantDerivation (𝓡 1) Circle) :
+    (realToSpecialOrthogonalProdDetLieEquiv n hQ).symm p =
+      realSpecialOrthogonalProdDetLinearEquiv n hQ (p.1, circleLieAlgebraEquiv p.2) := by
+  apply EquivLike.injective (realToSpecialOrthogonalProdDetLieEquiv n hQ)
+  rw [LieEquiv.apply_symm_apply, realToSpecialOrthogonalProdDetLieEquiv_apply]
+  refine Prod.ext
+    (lieMap_realToSpecialOrthogonalRange_realSpecialOrthogonalProdDetLinearEquiv n hQ
+      (p.1, circleLieAlgebraEquiv p.2)).symm ?_
+  apply circleLieAlgebraEquiv.injective
+  rw [← ContinuousMonoidHom.lieWeight_apply,
+    lieWeight_detContinuousMonoidHom_realSpecialOrthogonalProdDetLinearEquiv]
+
 /-- The paired rotation-and-determinant homomorphism is a smooth local diffeomorphism. -/
 theorem isLocalDiffeomorph_realToSpecialOrthogonalProdDetRange :
     IsLocalDiffeomorph IC ISP ∞ (realToSpecialOrthogonalProdDetRange n hQ) :=
   ContinuousMonoidHom.isLocalDiffeomorph_of_lieMap_bijective
     (realToSpecialOrthogonalProdDetRange n hQ)
     (lieMap_realToSpecialOrthogonalProdDetRange_bijective n hQ)
-
-/-- The smooth bundled rotation-and-determinant homomorphism is a smooth local diffeomorphism. -/
-theorem isLocalDiffeomorph_realToSpecialOrthogonalProdDetSmoothRange :
-    IsLocalDiffeomorph IC ISP ∞ (realToSpecialOrthogonalProdDetSmoothRange n hQ) :=
-  (coe_realToSpecialOrthogonalProdDetSmoothRange n hQ).symm ▸
-    isLocalDiffeomorph_realToSpecialOrthogonalProdDetRange n hQ
 
 private def realSpecialOrthogonalProdCircleHomeomorph :
     QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) × Circle ≃ₜ
@@ -501,22 +499,25 @@ private theorem coe_realToSpecialOrthogonalProdDetRange :
           (det (realCliffordForm n 0) hQ)) :=
   funext (realToSpecialOrthogonalProdDetRange_apply n hQ)
 
+private theorem isQuotientCoveringMap_realToSpecialOrthogonalProdDetRange :
+    IsQuotientCoveringMap (realToSpecialOrthogonalProdDetRange n hQ)
+      ((toSpecialOrthogonal (realCliffordForm n 0) hQ).prod
+        (det (realCliffordForm n 0) hQ)).ker := by
+  rw [coe_realToSpecialOrthogonalProdDetRange]
+  exact (isQuotientCoveringMap_toSpecialOrthogonal_prod_det (realCliffordForm n 0) hQ
+    (Or.inl (posDef_realCliffordForm_zero n))).homeomorph_comp
+      (realSpecialOrthogonalProdCircleHomeomorph n)
+
 /-- The paired rotation-and-determinant homomorphism `Spinᶜ(n) → SO(n) × Circle` is surjective. -/
 theorem realToSpecialOrthogonalProdDetRange_surjective :
-    Function.Surjective (realToSpecialOrthogonalProdDetRange n hQ) := by
-  rw [coe_realToSpecialOrthogonalProdDetRange]
-  exact (realSpecialOrthogonalProdCircleHomeomorph n).surjective.comp
-    (isQuotientCoveringMap_toSpecialOrthogonal_prod_det (realCliffordForm n 0) hQ
-      (Or.inl (posDef_realCliffordForm_zero n))).surjective
+    Function.Surjective (realToSpecialOrthogonalProdDetRange n hQ) :=
+  (isQuotientCoveringMap_realToSpecialOrthogonalProdDetRange n hQ).surjective
 
 /-- The paired rotation-and-determinant homomorphism is a topological covering map onto
 `SpecialOrthogonalUnitsRange(n) × Circle`. -/
 theorem isCoveringMap_realToSpecialOrthogonalProdDetRange :
-    IsCoveringMap (realToSpecialOrthogonalProdDetRange n hQ) := by
-  rw [coe_realToSpecialOrthogonalProdDetRange]
-  exact (isQuotientCoveringMap_toSpecialOrthogonal_prod_det (realCliffordForm n 0) hQ
-    (Or.inl (posDef_realCliffordForm_zero n))).isCoveringMap.homeomorph_comp
-      (realSpecialOrthogonalProdCircleHomeomorph n)
+    IsCoveringMap (realToSpecialOrthogonalProdDetRange n hQ) :=
+  (isQuotientCoveringMap_realToSpecialOrthogonalProdDetRange n hQ).isCoveringMap
 
 /-- Every pair `(y, z)` of an orthogonal frame transformation and determinant phase has an evenly
 covered neighborhood over which every sheet is a smooth local section into `Spinᶜ(n)` passing
@@ -524,20 +525,16 @@ through its prescribed fiber lift. -/
 theorem exists_realSpinCSmoothCoveringTrivialization
     (y : SpecialOrthogonalUnitsRange × Circle) :
     ∃ t : Bundle.Trivialization
-        ((realToSpecialOrthogonalProdDetSmoothRange n hQ) ⁻¹' {y})
-        (realToSpecialOrthogonalProdDetSmoothRange n hQ),
+        ((realToSpecialOrthogonalProdDetRange n hQ) ⁻¹' {y})
+        (realToSpecialOrthogonalProdDetRange n hQ),
       y ∈ t.baseSet ∧
-      (∀ a : (realToSpecialOrthogonalProdDetSmoothRange n hQ) ⁻¹' {y},
+      (∀ a : (realToSpecialOrthogonalProdDetRange n hQ) ⁻¹' {y},
         t.toOpenPartialHomeomorph.symm (y, a) = a) ∧
-      ∀ a : (realToSpecialOrthogonalProdDetSmoothRange n hQ) ⁻¹' {y},
+      ∀ a : (realToSpecialOrthogonalProdDetRange n hQ) ⁻¹' {y},
         ContMDiffOn ISP IC ∞
-          (fun w ↦ t.toOpenPartialHomeomorph.symm (w, a)) t.baseSet := by
-  have hcov : IsCoveringMap (realToSpecialOrthogonalProdDetSmoothRange n hQ) :=
-    (coe_realToSpecialOrthogonalProdDetSmoothRange n hQ).symm ▸
-      isCoveringMap_realToSpecialOrthogonalProdDetRange n hQ
-  exact hcov.exists_trivialization_contMDiffOn_symm
-    (isLocalDiffeomorph_realToSpecialOrthogonalProdDetSmoothRange n hQ)
-    (((coe_realToSpecialOrthogonalProdDetSmoothRange n hQ).symm ▸
-      realToSpecialOrthogonalProdDetRange_surjective n hQ) y)
+          (fun w ↦ t.toOpenPartialHomeomorph.symm (w, a)) t.baseSet :=
+  (isCoveringMap_realToSpecialOrthogonalProdDetRange n hQ).exists_trivialization_contMDiffOn_symm
+    (isLocalDiffeomorph_realToSpecialOrthogonalProdDetRange n hQ)
+    (realToSpecialOrthogonalProdDetRange_surjective n hQ y)
 
 end CliffordAlgebra.spinCGroup

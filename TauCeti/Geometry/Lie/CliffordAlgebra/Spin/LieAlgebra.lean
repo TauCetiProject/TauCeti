@@ -72,22 +72,31 @@ local notation "SpecialOrthogonalLieModel(" n ")" =>
     (I := 𝓘(ℝ, Matrix (Fin n) (Fin n) ℝ)) (SpecialOrthogonalUnitsRange(n)))
 
 /-- The isomorphism `TauCeti.CliffordAlgebra.realCliffordSpinContinuousMulEquivUnitsRange` of
-compact `Spin(n)` with its range in the Clifford units, as a smooth homomorphism: it is the
-diffeomorphism `TauCeti.CliffordAlgebra.realSpinDiffeomorphUnitsRange`. -/
+compact `Spin(n)` with its range in the Clifford units, as a smooth homomorphism obtained from
+automatic smoothness. -/
 def realSpinContMDiffMonoidMorphismUnitsRange (n : ℕ) :
     ContMDiffMonoidMorphism 𝓘(ℝ, realSpinLieModel n) 𝓘(ℝ, realSpinLieModel n) ∞
       (spinGroup (realCliffordForm n 0))
-      (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) where
-  toMonoidHom := (realCliffordSpinContinuousMulEquivUnitsRange n).toMonoidHom
-  contMDiff_toFun := by
-    convert (realSpinDiffeomorphUnitsRange n).contMDiff using 1
-    funext s
-    exact (realSpinDiffeomorphUnitsRange_apply n s).symm
+      (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) :=
+  (realCliffordSpinContinuousMulEquivUnitsRange n :
+      spinGroup (realCliffordForm n 0) →ₜ*
+        MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))).toContMDiffMonoidMorphism
+      𝓘(ℝ, realSpinLieModel n) 𝓘(ℝ, realSpinLieModel n)
 
 @[simp]
 theorem coe_realSpinContMDiffMonoidMorphismUnitsRange (n : ℕ) :
     ⇑(realSpinContMDiffMonoidMorphismUnitsRange n) =
-      realCliffordSpinContinuousMulEquivUnitsRange n :=
+      realCliffordSpinContinuousMulEquivUnitsRange n := by
+  simp [realSpinContMDiffMonoidMorphismUnitsRange]
+
+/-- Automatic smoothness on `realCliffordSpinContinuousMulEquivUnitsRange` recovers
+`realSpinContMDiffMonoidMorphismUnitsRange`. -/
+theorem toContMDiffMonoidMorphism_realCliffordSpinContinuousMulEquivUnitsRange (n : ℕ) :
+    (realCliffordSpinContinuousMulEquivUnitsRange n :
+        spinGroup (realCliffordForm n 0) →ₜ*
+          MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))).toContMDiffMonoidMorphism
+        𝓘(ℝ, realSpinLieModel n) 𝓘(ℝ, realSpinLieModel n) =
+      realSpinContMDiffMonoidMorphismUnitsRange n :=
   (rfl)
 
 /-- The isomorphism of compact `Spin(n)` with its range in the Clifford units is a local
@@ -97,7 +106,7 @@ theorem isLocalDiffeomorph_realSpinContMDiffMonoidMorphismUnitsRange (n : ℕ) :
       (realSpinContMDiffMonoidMorphismUnitsRange n) := by
   convert (realSpinDiffeomorphUnitsRange n).isLocalDiffeomorph using 1
   funext s
-  exact (realSpinDiffeomorphUnitsRange_apply n s).symm
+  rw [coe_realSpinContMDiffMonoidMorphismUnitsRange, realSpinDiffeomorphUnitsRange_apply]
 
 /-- The Lie-algebra isomorphism `Lie(Spin(n)) ≃ₗ⁅ℝ⁆ Lie(SO(n))` from native compact Spin to the
 closed `SO(n)` matrix-units carrier. -/
@@ -138,15 +147,9 @@ theorem realSpinLieEquivSo_apply (n : ℕ)
     realSpinLieEquivSo n X = realCliffordSpecialOrthogonalLieEquivSo n
       (lieMap ((realCliffordSpinToSpecialOrthogonalSmoothRange n).comp
         (realSpinContMDiffMonoidMorphismUnitsRange n)) X) := by
-  have hm :
-      ((realCliffordSpinContinuousMulEquivUnitsRange n :
-          spinGroup (realCliffordForm n 0) →ₜ*
-            MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0)))
-        |>.toContMDiffMonoidMorphism 𝓘(ℝ, realSpinLieModel n) 𝓘(ℝ, realSpinLieModel n)) =
-        realSpinContMDiffMonoidMorphismUnitsRange n :=
-    DFunLike.coe_injective (ContinuousMonoidHom.coe_toContMDiffMonoidMorphism _)
   simp [realSpinLieEquivSo, lieMap_comp, realCliffordSpinToSpecialOrthogonalRangeLieMap_eq_lieMap,
-    ContinuousMonoidHom.lieMap_def, hm]
+    ContinuousMonoidHom.lieMap_def,
+    toContMDiffMonoidMorphism_realCliffordSpinContinuousMulEquivUnitsRange]
 
 /-- Compatibility of the quadratic-Clifford and skew-matrix Lie coordinates on native compact
 `Spin(n)`. -/
