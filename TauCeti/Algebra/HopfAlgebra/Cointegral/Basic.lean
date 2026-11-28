@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.HopfAlgebra.FiniteDual.Basic
 public import TauCeti.Algebra.HopfAlgebra.Integral.Basic
+public import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
@@ -58,6 +59,14 @@ theorem isRightCointegral_def (φ : Module.Dual k H) :
 theorem isLeftCointegral_def (φ : Module.Dual k H) :
     IsLeftCointegral φ ↔ ∀ h,
       TensorProduct.rid k H (φ.lTensor H (Coalgebra.comul h)) = φ h • (1 : H) := Iff.rfl
+
+/-- Contracting the second factor of the coproduct against a left cointegral gives a scalar
+multiple of the unit. -/
+@[simp]
+theorem IsLeftCointegral.tensorComponent_comul {φ : Module.Dual k H} (hφ : IsLeftCointegral φ)
+    (h : H) : LinearMap.tensorComponent φ (Coalgebra.comul h) = φ h • (1 : H) := by
+  simpa only [LinearMap.tensorComponent_def, LinearMap.comp_apply, LinearEquiv.coe_coe]
+    using (isLeftCointegral_def φ).mp hφ h
 
 /-- The right-cointegral equation in any finite representation of the coproduct. -/
 theorem IsRightCointegral.sum {φ : Module.Dual k H} (hφ : IsRightCointegral φ)
