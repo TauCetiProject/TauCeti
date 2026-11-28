@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Nat.PrimeFin
 public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
 public import TauCeti.Data.Nat.ModEq
 import Mathlib.Tactic.NormNum.Prime
@@ -47,7 +48,8 @@ This file proves the elementary facts about them: `d ≡ 7 (mod 8)` and `d > 64`
 * `Parameters.q₀_pos`, `Parameters.d_mod_eight`, `Parameters.sixty_four_lt_d`.
 * `TauCeti.OneSidedBound.towerDeg_eq`: `towerDeg s = 3 ^ (⌊log₃ s⌋ + 5) · 2 ^ s`.
 * `TauCeti.OneSidedBound.lt_l₀`, `TauCeti.OneSidedBound.l₀_le`, `Parameters.two_pow_succ_dvd_q₁`.
-* `Parameters.dvd_q₀_of_dvd_q₁`, `Parameters.four_mul_dvd_d_add_one`,
+* `Parameters.dvd_q₀_of_dvd_q₁`, `Parameters.primeFactors_towerDeg_subset`,
+  `Parameters.four_mul_dvd_d_add_one`,
   `Parameters.dvd_d_add_one_div_four`, `Parameters.legendreSym_eq_one_of_dvd_q₁`,
   `Parameters.thirteen_le_of_legendreSym_ne_one`.
 * `Parameters.coprime_q₁_d`, `Parameters.q₁_mul_d_dvd_q₂`.
@@ -240,6 +242,15 @@ theorem dvd_q₀_of_dvd_q₁ {p s : ℕ} (hp : p.Prime) (h : p ∣ P.q₁ s) : p
     exact P.three_dvd_q₀
   · rw [(Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).1 (hp.dvd_of_dvd_pow h)]
     exact P.two_dvd_q₀
+
+/-- The tower degree introduces no prime factors outside the base modulus. -/
+theorem primeFactors_towerDeg_subset (s : ℕ) : (towerDeg s).primeFactors ⊆ P.q₀.primeFactors := by
+  intro p hp
+  obtain ⟨hpp, hpd, _⟩ := Nat.mem_primeFactors.mp hp
+  have hdiv : p ∣ P.q₁ s := by
+    rw [P.q₁_def s]
+    exact hpd.trans (dvd_mul_left _ _)
+  exact hpp.mem_primeFactors (P.dvd_q₀_of_dvd_q₁ hpp hdiv) P.q₀_ne_zero
 
 /-- Every prime factor `p` of `q₀` satisfies `d ≡ -1 (mod 4 p)`. -/
 theorem four_mul_dvd_d_add_one {p : ℕ} (hp : p.Prime) (h : p ∣ P.q₀) : 4 * p ∣ P.d + 1 := by

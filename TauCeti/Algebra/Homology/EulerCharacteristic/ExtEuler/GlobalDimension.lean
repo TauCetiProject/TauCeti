@@ -48,7 +48,7 @@ theorem isExtBoundedOn_of_globalDimension_le {n : ℕ}
     (h : globalDimension.{v} R ≤ n) (P Q : ObjectProperty (ModuleCat.{v} R)) :
     IsExtBoundedOn.{v} P Q (n + 1) where
   isExtBoundedBy {X Y} _ _ := by
-    have := (globalDimension_le_iff_hasProjectiveDimensionLE R n).1 h X
+    have := (Abelian.globalDimension_le_iff_hasProjectiveDimensionLE (ModuleCat R) n).1 h X
     exact ⟨fun _ hi ↦ HasProjectiveDimensionLT.subsingleton X (n + 1) _ hi Y⟩
 
 /-- For a left Noetherian ring, a uniform Ext bound on finite modules is exactly a bound
@@ -78,6 +78,7 @@ theorem isEulerAdmissibleOn_isFG_of_globalDimension_le {n : ℕ}
   have : IsNoetherianRing R := IsNoetherianRing.of_finite k R
   apply isEulerAdmissibleOn_isFG k
   apply finiteModules_le_admitsFiniteResolution_of_finite_projectiveDimension
-  exact fun M _ ↦ ⟨n, (globalDimension_le_iff_hasProjectiveDimensionLE R n).1 h M⟩
+  exact fun M _ ↦
+    ⟨n, (Abelian.globalDimension_le_iff_hasProjectiveDimensionLE (ModuleCat R) n).1 h M⟩
 
 end TauCeti

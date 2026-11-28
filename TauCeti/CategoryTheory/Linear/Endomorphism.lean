@@ -112,8 +112,18 @@ end CategoryTheory.End
 
 namespace CategoryTheory
 
-variable {C : Type*} [Category C] [Preadditive C] {R : Type*} [Semiring R]
-  [CategoryTheory.Linear R C]
+variable {C : Type*} [Category C] [Preadditive C]
+
+/-- If all endomorphisms of `X` are scalar, every morphism from `X` to an isomorphic object is
+a scalar multiple of the chosen isomorphism. -/
+theorem Iso.exists_smul_hom_eq_of_surjective {R : Type*} [CommSemiring R] [Linear R C]
+    {X Y : C} (i : X ≅ Y) (hX : Function.Surjective (algebraMap R (End X))) (f : X ⟶ Y) :
+    ∃ r : R, r • i.hom = f := by
+  obtain ⟨r, hr⟩ := End.exists_smul_id_eq_of_surjective hX (f ≫ i.inv)
+  exact ⟨r, by simpa only [Linear.smul_comp, Category.id_comp, Category.assoc, i.inv_hom_id,
+    Category.comp_id] using congrArg (· ≫ i.hom) hr⟩
+
+variable {R : Type*} [Semiring R] [CategoryTheory.Linear R C]
 
 /-- The inverse of multiplication by a scalar `r` commutes with every morphism. -/
 lemma Linear.comp_inv_smul_id {X Y : C} (f : X ⟶ Y) (r : R) [IsIso (r • 𝟙 X)]

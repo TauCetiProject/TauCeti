@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Different.Basic
 import TauCeti.NumberTheory.NumberField.Discriminant.Different
+import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
 /-!
 # The absolute different of a cyclotomic compositum
@@ -35,13 +36,9 @@ theorem differentIdeal_eq_span_unit_mul_cyclotomic_derivative_mul
     differentIdeal ℤ (𝓞 E) = Ideal.span
       {(c : 𝓞 E) * aeval (algebraMap (𝓞 F) (𝓞 E) hζ.toInteger) (cyclotomic n ℤ).derivative *
         algebraMap (𝓞 K) (𝓞 E) b} := by
-  have hQ : differentIdeal ℤ (𝓞 ℚ) = ⊤ := by
-    rw [← Ideal.absNorm_eq_one_iff, absNorm_differentIdeal ℚ, Rat.numberField_discr]
-    rfl
   have ha : differentIdeal ℤ (𝓞 F) =
       Ideal.span {aeval hζ.toInteger (cyclotomic n ℤ).derivative} := by
-    rw [differentIdeal_eq_differentIdeal_mul_differentIdeal ℤ (𝓞 ℚ) (𝓞 F), hQ, Ideal.map_top,
-      Ideal.mul_top]
+    rw [← TauCeti.differentIdeal_ringOfIntegers_rat_eq_int]
     exact hζ.differentIdeal_eq_span_derivative_cyclotomic_of_coprime_discr (by simp)
   let : IsGalois ℚ F := IsCyclotomicExtension.isGalois {n} ℚ F
   have hld := linearDisjoint_of_isGalois_isCoprime_discr E F K hcop
@@ -49,6 +46,6 @@ theorem differentIdeal_eq_span_unit_mul_cyclotomic_derivative_mul
   rw [ha, hb, Ideal.map_span, Ideal.map_span, Set.image_singleton, Set.image_singleton,
     Ideal.isCoprime_span_singleton_iff] at hcop'
   simpa only [aeval_algebraMap_apply, mul_assoc, Ideal.span_singleton_mul_left_unit c.isUnit] using
-    TauCeti.differentIdeal_eq_span_mul_of_linearDisjoint hld hsup ha hb hcop'
+    hld.differentIdeal_eq_span_mul hsup ha hb hcop'
 
 end IsPrimitiveRoot

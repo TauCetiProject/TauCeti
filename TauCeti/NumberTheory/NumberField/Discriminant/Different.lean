@@ -19,11 +19,11 @@ public section
 open NumberField
 open scoped NumberField
 
-namespace TauCeti
+namespace IntermediateField.LinearDisjoint
 
 /-- For linearly disjoint fields whose differents become coprime in their compositum,
 the product of the images of the different generators generates the absolute different. -/
-theorem differentIdeal_eq_span_mul_of_linearDisjoint
+theorem differentIdeal_eq_span_mul
     {E : Type*} [Field E] [NumberField E] {F K : IntermediateField ℚ E}
     (hld : F.LinearDisjoint K) (hsup : F ⊔ K = ⊤) {a : 𝓞 F} {b : 𝓞 K}
     (ha : differentIdeal ℤ (𝓞 F) = Ideal.span {a})
@@ -41,4 +41,4 @@ theorem differentIdeal_eq_span_mul_of_linearDisjoint
   rw [differentIdeal_eq_differentIdeal_mul_differentIdeal ℤ (𝓞 K) (𝓞 E), hrel, ha, hb]
   simp only [Ideal.map_span, Set.image_singleton, Ideal.span_singleton_mul_span_singleton]
 
-end TauCeti
+end IntermediateField.LinearDisjoint

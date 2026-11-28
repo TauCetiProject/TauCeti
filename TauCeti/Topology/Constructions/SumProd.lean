@@ -23,8 +23,9 @@ The interior of the preimage of a set under a projection is the preimage of its 
 horizontal lines through non-isolated points have empty interior.
 
 The file also records the underlying function of the homeomorphism between functions on a
-sum type and pairs of functions, and identifies a disjoint union of copies of one space, indexed by
-a discrete space, with a product (`Homeomorph.sigmaEquivProd`).
+sum type and pairs of functions, identifies a disjoint union of copies of one space, indexed by
+a discrete space, with a product (`Homeomorph.sigmaEquivProd`), and bundles a family of fibre
+homeomorphisms into a homeomorphism of sigma types (`Homeomorph.sigmaCongrRight`).
 
 Finally, a function on a product that is eventually constant near a point has eventually constant
 slices through that point (`Filter.EventuallyEq.prodMk_right_nhds`,
@@ -71,6 +72,60 @@ theorem Homeomorph.sigmaEquivProd_symm_apply {ι X : Type*} [TopologicalSpace ι
     [DiscreteTopology ι] [TopologicalSpace X] (p : ι × X) :
     (Homeomorph.sigmaEquivProd ι X).symm p = ⟨p.1, p.2⟩ :=
   (rfl)
+
+/-- A family of homeomorphisms `∀ a, β₁ a ≃ₜ β₂ a` induces a homeomorphism between
+`Σ a, β₁ a` and `Σ a, β₂ a`. -/
+def Homeomorph.sigmaCongrRight {α : Type*} {β₁ β₂ : α → Type*}
+    [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
+    (F : ∀ a, β₁ a ≃ₜ β₂ a) : (Σ a, β₁ a) ≃ₜ Σ a, β₂ a where
+  toEquiv := Equiv.sigmaCongrRight fun a ↦ (F a).toEquiv
+  continuous_toFun := Continuous.sigma_map (f₁ := id) fun a ↦ (F a).continuous
+  continuous_invFun := Continuous.sigma_map (f₁ := id) fun a ↦ (F a).symm.continuous
+
+/-- The underlying equivalence of `Homeomorph.sigmaCongrRight F` is `Equiv.sigmaCongrRight` of
+the underlying equivalences. -/
+@[simp]
+theorem Homeomorph.sigmaCongrRight_toEquiv {α : Type*} {β₁ β₂ : α → Type*}
+    [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
+    (F : ∀ a, β₁ a ≃ₜ β₂ a) :
+    (Homeomorph.sigmaCongrRight F).toEquiv = Equiv.sigmaCongrRight fun a ↦ (F a).toEquiv :=
+  (rfl)
+
+/-- `Homeomorph.sigmaCongrRight F` applies `F a` on each summand `a`. -/
+@[simp]
+theorem Homeomorph.sigmaCongrRight_apply {α : Type*} {β₁ β₂ : α → Type*}
+    [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
+    (F : ∀ a, β₁ a ≃ₜ β₂ a) (p : Σ a, β₁ a) :
+    Homeomorph.sigmaCongrRight F p = ⟨p.1, F p.1 p.2⟩ :=
+  (rfl)
+
+/-- Bundled `Homeomorph.sigmaCongrRight` of identity homeomorphisms is the identity. -/
+@[simp]
+theorem Homeomorph.sigmaCongrRight_refl {α : Type*} {β : α → Type*}
+    [∀ a, TopologicalSpace (β a)] :
+    (Homeomorph.sigmaCongrRight fun a ↦ Homeomorph.refl (β a)) =
+      Homeomorph.refl (Σ a, β a) :=
+  Homeomorph.ext fun p ↦ by simp
+
+/-- The inverse of `Homeomorph.sigmaCongrRight F` is `Homeomorph.sigmaCongrRight` of the
+componentwise inverses. -/
+@[simp]
+theorem Homeomorph.sigmaCongrRight_symm {α : Type*} {β₁ β₂ : α → Type*}
+    [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
+    (F : ∀ a, β₁ a ≃ₜ β₂ a) :
+    (Homeomorph.sigmaCongrRight F).symm = Homeomorph.sigmaCongrRight fun a ↦ (F a).symm :=
+  Homeomorph.ext fun _ ↦ rfl
+
+/-- Composing two `Homeomorph.sigmaCongrRight` homeomorphisms composes the component
+homeomorphisms. -/
+@[simp]
+theorem Homeomorph.sigmaCongrRight_trans {α : Type*} {β₁ β₂ β₃ : α → Type*}
+    [∀ a, TopologicalSpace (β₁ a)] [∀ a, TopologicalSpace (β₂ a)]
+    [∀ a, TopologicalSpace (β₃ a)]
+    (F : ∀ a, β₁ a ≃ₜ β₂ a) (G : ∀ a, β₂ a ≃ₜ β₃ a) :
+    (Homeomorph.sigmaCongrRight F).trans (Homeomorph.sigmaCongrRight G) =
+      Homeomorph.sigmaCongrRight fun a ↦ (F a).trans (G a) :=
+  Homeomorph.ext fun p ↦ by simp
 
 /-- If `f` is eventually constant near `(x, y)`, then its slice `y' ↦ f (x, y')` is eventually
 equal to `f (x, y)` near `y`. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.CMField.UnitaryGroup.AdelicFrame
+import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
 /-!
 # Lattices of finite adelic points
@@ -16,7 +17,9 @@ The form `V.finiteForm y z = y* J z` makes this module self-dual: integrality of
 pairings with its vectors characterizes membership. Moreover, inclusion of two such modules
 is equivalent to equality, and to membership of the relative point in the standard integral
 unitary subgroup. Thus the lattices are indexed exactly by the left cosets `g K₀` of the
-standard integral unitary subgroup.
+standard integral unitary subgroup. Each lattice is compact, and a rational isometry
+`γ ∈ U(J)(E⁺)` carries the lattice of `g` onto the lattice of `x_f⁻¹ γ x_f g`, the point moved by
+the finite component of the rational embedding of `γ`.
 
 These are modules over the integral finite adeles, rather than the modules of rational
 integral vectors `V.lattice`. The latter are recovered by intersecting with the rational
@@ -185,5 +188,44 @@ theorem finiteLattice_mul_of_mem_integralAdelicUnitaryGroup (g k : finiteAdelicU
 theorem mem_finiteLattice_one_iff (y : ι → E) :
     (algebraMap E 𝔸ᶠ[E] ∘ y) ∈ V.finiteLattice 1 ↔ y ∈ V.lattice := by
   simp only [mem_finiteLattice_iff, mem_lattice_iff, OneMemClass.coe_one, mul_one]
+
+/-- **The point lattices are compact**: the lattice of `g` is the image of the compact set `Ôⁿ`
+under the moved frame `x_f g`. -/
+theorem isCompact_finiteLattice (g : finiteAdelicUnitaryGroup E ι) :
+    IsCompact (V.finiteLattice g : Set (ι → 𝔸ᶠ[E])) := by
+  have hO : IsCompact (Set.univ.pi fun _ : ι ↦
+      (FiniteAdeleRing.integralAdeles (𝓞 E) E : Set 𝔸ᶠ[E])) :=
+    isCompact_univ_pi fun _ ↦ FiniteAdeleRing.isCompact_integralAdeles
+  have himage : (V.finiteLattice g : Set (ι → 𝔸ᶠ[E])) =
+      (fun v ↦ (↑(V.frame.2 * g) : Matrix ι ι 𝔸ᶠ[E]) *ᵥ v) '' Set.univ.pi fun _ ↦
+        (FiniteAdeleRing.integralAdeles (𝓞 E) E : Set 𝔸ᶠ[E]) := by
+    ext z
+    refine ⟨fun hz ↦ ⟨_, fun i _ ↦ (V.mem_finiteLattice_iff g z).1 hz i,
+      V.frame_mulVec_inv_mulVec g z⟩, ?_⟩
+    rintro ⟨v, hv, rfl⟩
+    exact (V.mulVec_mem_finiteLattice_iff g v).2 fun i ↦ hv i (Set.mem_univ i)
+  rw [himage]
+  exact hO.image (continuous_const.matrix_mulVec continuous_id)
+
+/-- **Rational isometries move the point lattices.** For `γ ∈ U(J)(E⁺)`, read diagonally over
+`𝔸_f`, multiplication by `γ` carries the lattice of `g` onto the lattice of `x_f⁻¹ γ x_f g`, the
+product of the finite component of the rational embedding of `γ` with `g`. -/
+theorem mulVec_mem_finiteLattice_rationalEmbedding_mul_iff (γ : unitaryGroupOf V.gram)
+    (g : finiteAdelicUnitaryGroup E ι) (z : ι → 𝔸ᶠ[E]) :
+    (↑(GeneralLinearGroup.map (algebraMap E 𝔸ᶠ[E]) (γ : GL ι E)) : Matrix ι ι 𝔸ᶠ[E]) *ᵥ z ∈
+        V.finiteLattice (adelicUnitaryGroup.finitePart E s (V.rationalEmbedding γ) * g) ↔
+      z ∈ V.finiteLattice g := by
+  -- The moved frame is `x_f (x_f⁻¹ γ x_f g) = γ (x_f g)`.
+  have hframe : V.frame.2 * ((adelicUnitaryGroup.finitePart E s (V.rationalEmbedding γ) * g :
+      finiteAdelicUnitaryGroup E ι) : GL ι 𝔸ᶠ[E]) =
+        GeneralLinearGroup.map (algebraMap E 𝔸ᶠ[E]) (γ : GL ι E) * (V.frame.2 * g) := by
+    simp only [Subgroup.coe_mul, adelicUnitaryGroup.coe_finitePart, coe_rationalEmbedding,
+      ← mul_assoc, mul_inv_cancel, one_mul]
+  have hγ : (↑(GeneralLinearGroup.map (algebraMap E 𝔸ᶠ[E]) (γ : GL ι E))⁻¹ :
+      Matrix ι ι 𝔸ᶠ[E]) *ᵥ ((↑(GeneralLinearGroup.map (algebraMap E 𝔸ᶠ[E]) (γ : GL ι E)) :
+        Matrix ι ι 𝔸ᶠ[E]) *ᵥ z) = z := by
+    rw [mulVec_mulVec, Units.inv_mul, one_mulVec]
+  rw [V.mem_finiteLattice_iff, V.mem_finiteLattice_iff, hframe, _root_.mul_inv_rev,
+    Units.val_mul, ← mulVec_mulVec, hγ]
 
 end TauCeti.FramedHermitianSpace
