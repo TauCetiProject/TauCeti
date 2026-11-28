@@ -13,7 +13,9 @@ public import Mathlib.Algebra.Polynomial.Taylor
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.Normed.Ring.Basic
+public import TauCeti.Algebra.Polynomial.ExpDerivFactor
 import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Multiset
+import Mathlib.Algebra.Polynomial.Eval.Degree
 import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.Analysis.Normed.Group.Ultra
 import TauCeti.Analysis.Normed.Ring.Basic
@@ -57,6 +59,14 @@ normed algebra it takes at `x` with `‖x‖ ≤ R` a value of norm at most `R (
 (`TauCeti.norm_smul_pow_le_mul_div_pow`). For a vanishing constant coefficient, the bound
 `‖cₖ‖ Rᵏ ≤ R` is `‖cₖ‖ R ^ (k - 1) ≤ 1` (`TauCeti.norm_mul_pow_le_of_norm_mul_pow_sub_one_le`).
 
+Over an ultrametric seminormed commutative ring `K`, natural-number multiples satisfy
+`‖n • a‖ ≤ ‖a‖`, so formal differentiation shifts polynomial coefficients down by one degree
+without introducing factorial growth. Consequently, if `‖P.coeff i‖ * r ^ i ≤ B` for some `r > 0`,
+each application of `Polynomial.expDerivFactor c 1 = D + c` multiplies this weighted bound by at
+most `max r⁻¹ ‖c‖` (`Polynomial.norm_coeff_expDerivFactor_mul_pow_le`, with closed-ball evaluation
+bounds `Polynomial.norm_eval_expDerivFactor_le_of_mul_pow_le` and
+`Polynomial.norm_eval_expDerivFactor_le`).
+
 Over an ultrametric seminormed integral domain with `‖1‖ = 1`, let `P` be a split monic
 polynomial of degree `n` all of whose roots lie within `r` of a point `α`. The value at `α` of the
 `d`-th Hasse derivative of `P` is the coefficient of `Y ^ d` in `P(α + Y) = ∏ (Y - (αᵢ - α))`, so
@@ -71,6 +81,9 @@ of the Ax–Sen lemma.
 
 * J. Ax, *Zeros of polynomials over local fields — the Galois action*, J. Algebra 15 (1970),
   417–428.
+* A. Baker, *Transcendental Number Theory*, Cambridge University Press (1975), Chapter 2.
+* M. Karatarakis, `ExpSeries.lean` in `mkaratarakis/mathlib4`, commit
+  `65cdef5722194f07709ab40ff46eede531f52f5d`, `Mathlib/NumberTheory/Transcendental/Baker/Padic/`.
 * J.-P. Serre, *Endomorphismes complètement continus des espaces de Banach p-adiques*,
   Publ. Math. IHÉS **12** (1962), 69–85, §§4–5.
 -/
@@ -89,6 +102,33 @@ theorem norm_aeval_le_one {K : Type*} [SeminormedRing K] [NormOneClass K] [IsUlt
   refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one fun i _ ↦ ?_
   exact (IsUltrametricDist.norm_zsmul_le (x ^ i) (p.coeff i)).trans
     ((norm_pow_le x i).trans (pow_le_one₀ (norm_nonneg _) hx))
+
+section ExpDerivFactor
+
+variable {K : Type*} [SeminormedCommRing K] [IsUltrametricDist K]
+
+/-- Ultrametric evaluation bound for `expDerivFactor c m P` on the closed ball `‖x‖ ≤ r` (`r > 0`)
+from an `r`-weighted coefficient bound on `P`. -/
+theorem norm_eval_expDerivFactor_le_of_mul_pow_le (c : K) {P : K[X]} {r B : ℝ} (hr : 0 < r)
+    (hP : ∀ i, ‖P.coeff i‖ * r ^ i ≤ B) (m : ℕ) {x : K} (hx : ‖x‖ ≤ r) :
+    ‖(expDerivFactor c m P).eval x‖ ≤ max r⁻¹ ‖c‖ ^ m * B := by
+  have hB : 0 ≤ B := (mul_nonneg (norm_nonneg _) (by positivity)).trans (hP 0)
+  have : 0 ≤ max r⁻¹ ‖c‖ := le_max_of_le_right (norm_nonneg c)
+  rw [eval_eq_sum_range]
+  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun i _ ↦ ?_
+  calc
+    ‖(expDerivFactor c m P).coeff i * x ^ i‖
+        ≤ ‖(expDerivFactor c m P).coeff i‖ * ‖x‖ ^ i := TauCeti.norm_mul_pow_le _ _ _
+    _ ≤ ‖(expDerivFactor c m P).coeff i‖ * r ^ i := by gcongr
+    _ ≤ max r⁻¹ ‖c‖ ^ m * B := norm_coeff_expDerivFactor_mul_pow_le c hr hP m i
+
+/-- Ultrametric evaluation bound for `expDerivFactor c m P` on the closed unit ball `‖x‖ ≤ 1`. -/
+theorem norm_eval_expDerivFactor_le (c : K) {P : K[X]} {B : ℝ}
+    (hP : ∀ i, ‖P.coeff i‖ ≤ B) (m : ℕ) {x : K} (hx : ‖x‖ ≤ 1) :
+    ‖(expDerivFactor c m P).eval x‖ ≤ max 1 ‖c‖ ^ m * B := by
+  simpa using norm_eval_expDerivFactor_le_of_mul_pow_le c one_pos (by simpa using hP) m hx
+
+end ExpDerivFactor
 
 section WeightedCoeff
 

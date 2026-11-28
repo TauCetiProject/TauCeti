@@ -5,14 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecialFunctions.Log.Base
 public import Mathlib.Data.Finsupp.Weight
+public import TauCeti.NumberTheory.Padics.AmiceRadius
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Nat.Digits.Lemmas
 import TauCeti.Data.Nat.Factorial.Basic
+import TauCeti.NumberTheory.Padics.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -21,6 +24,12 @@ import TauCeti.NumberTheory.Padics.PadicIntegers
 The integers `n!` converge to zero at every finite place, although none is zero. This provides
 one sequence of rational parameters that simultaneously contracts every local unipotent
 one-parameter subgroup. Divisibility by each fixed prime power suffices for the convergence.
+
+Legendre's formula also bounds the `p`-adic norm of `n!` below by `p ^ (-n / (p - 1))` (and by
+`p ^ (-(n - 1) / (p - 1))` for `n ≠ 0` in `TauCeti.amiceRadius_zero_pow_sub_one_le_norm_factorial`),
+with equality along `n = p ^ k`. Transferring these estimates along `algebraMap ℚ_[p] K` yields
+factorial and inverse-factorial norm bounds in any normed algebra or normed division algebra over
+`ℚ_[p]`, including weighted estimates at the critical radius `p ^ (-1 / (p - 1))`.
 
 ## Main results
 
@@ -43,6 +52,14 @@ one-parameter subgroup. Divisibility by each fixed prime power suffices for the 
   `log_p max(|κ|, 1) + 1`.
 * `Padic.norm_factorial_mul`: `‖(p k)!‖ = p ^ (-k) ‖k!‖` in `ℚ_[p]`, by Legendre's formula.
 * `Padic.rpow_neg_div_le_norm_factorial`: `p ^ (-n / (p - 1)) ≤ ‖n!‖` in `ℚ_[p]`.
+* `TauCeti.rpow_neg_div_le_norm_factorial`, `TauCeti.norm_factorial_pow_prime`: Legendre's
+  lower bound and exact prime-power factorial norm for `‖(n! : K)‖` in any seminormed
+  `ℚ_[p]`-algebra with `‖1‖ = 1`.
+* `TauCeti.norm_inv_factorial_le`, `TauCeti.norm_inv_factorial_le_rpow_sub_one_div`,
+  `TauCeti.norm_inv_factorial_pow_prime`, `TauCeti.norm_inv_factorial_pow_prime_mul_rpow`,
+  `TauCeti.le_norm_inv_factorial_pow_prime_mul_pow`,
+  `TauCeti.norm_inv_factorial_mul_pow_le`:
+  inverse-factorial and critical-radius estimates in any normed division algebra over `ℚ_[p]`.
 
 ## Provenance
 
@@ -265,3 +282,105 @@ theorem norm_factorial_div_add_le (d i j : ℕ) :
     (by simpa using norm_int_le_one (p := p) (k : ℤ))
 
 end Padic
+
+namespace TauCeti
+
+open scoped Nat
+
+section NormedAlgebra
+
+variable {p : ℕ} [hp : Fact p.Prime] {K : Type*} [SeminormedRing K] [NormOneClass K]
+  [NormedAlgebra ℚ_[p] K]
+
+/-- Legendre's lower bound `p ^ (-n / (p - 1)) ≤ ‖n!‖` in any seminormed `ℚ_[p]`-algebra with
+`‖(1 : K)‖ = 1`. -/
+theorem rpow_neg_div_le_norm_factorial (n : ℕ) :
+    (p : ℝ) ^ (-((n : ℝ) / ((p : ℝ) - 1))) ≤ ‖(n ! : K)‖ := by
+  rw [TauCeti.norm_natCast_eq_norm_padic (p := p)]
+  exact Padic.rpow_neg_div_le_norm_factorial n
+
+/-- Exact norm of `(p ^ k)!` in any seminormed `ℚ_[p]`-algebra with `‖(1 : K)‖ = 1`: since
+`p ^ k` has base-`p` digit sum `1`, `‖((p ^ k)! : K)‖ = p ^ (-((p ^ k - 1) / (p - 1)))`. -/
+theorem norm_factorial_pow_prime (k : ℕ) :
+    ‖(((p ^ k)! : ℕ) : K)‖ = (p : ℝ) ^ (-((((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1))) := by
+  have hdiv : (padicValNat p (p ^ k)! : ℝ) = (((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1) := by
+    simpa only [Nat.padicValNat_def, Nat.cast_pow] using cast_multiplicity_factorial_pow p k
+  rw [TauCeti.norm_natCast_eq_norm_padic (p := p),
+    Padic.norm_natCast_eq_zpow (Nat.factorial_ne_zero _), ← Real.rpow_intCast]
+  simp [hdiv]
+
+end NormedAlgebra
+
+section NormedDivisionRing
+
+variable {p : ℕ} [hp : Fact p.Prime] {D : Type*} [NormedDivisionRing D] [NormedAlgebra ℚ_[p] D]
+
+/-- Upper bound `‖(n!)⁻¹‖ ≤ p ^ (n / (p - 1))` in a normed division algebra over `ℚ_[p]`. -/
+theorem norm_inv_factorial_le (n : ℕ) :
+    ‖(n ! : D)⁻¹‖ ≤ (p : ℝ) ^ ((n : ℝ) / ((p : ℝ) - 1)) := by
+  have hpos : (0 : ℝ) < (p : ℝ) ^ (-((n : ℝ) / ((p : ℝ) - 1))) :=
+    Real.rpow_pos_of_pos (Nat.cast_pos.mpr hp.out.pos) _
+  rw [norm_inv]
+  refine (inv_anti₀ hpos (rpow_neg_div_le_norm_factorial (p := p) n)).trans_eq ?_
+  rw [Real.rpow_neg (Nat.cast_nonneg p), inv_inv]
+
+/-- Sharpened upper bound `‖(n!)⁻¹‖ ≤ p ^ ((n - 1) / (p - 1))` for `n ≠ 0` in a normed division
+algebra over `ℚ_[p]`. -/
+theorem norm_inv_factorial_le_rpow_sub_one_div {n : ℕ} (hn : n ≠ 0) :
+    ‖(n ! : D)⁻¹‖ ≤ (p : ℝ) ^ (((n : ℝ) - 1) / ((p : ℝ) - 1)) := by
+  have hpos : (0 : ℝ) < (p : ℝ) ^ (-(((n : ℝ) - 1) / ((p : ℝ) - 1))) :=
+    Real.rpow_pos_of_pos (Nat.cast_pos.mpr hp.out.pos) _
+  have hfac := amiceRadius_zero_pow_sub_one_le_norm_factorial (p := p) (L := D) hn
+  rw [amiceRadius_pow, Nat.cast_sub (Nat.one_le_iff_ne_zero.mpr hn), Nat.cast_one, pow_zero,
+    mul_one] at hfac
+  rw [norm_inv]
+  refine (inv_anti₀ hpos hfac).trans_eq ?_
+  rw [Real.rpow_neg (Nat.cast_nonneg p), inv_inv]
+
+/-- Exact norm of `((p ^ k)!)⁻¹` in any normed division algebra over `ℚ_[p]`: since `p ^ k` has
+base-`p` digit sum `1`, `‖((p ^ k)!)⁻¹‖ = p ^ ((p ^ k - 1) / (p - 1))`. -/
+theorem norm_inv_factorial_pow_prime (k : ℕ) :
+    ‖(((p ^ k)! : ℕ) : D)⁻¹‖ = (p : ℝ) ^ ((((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1)) := by
+  rw [norm_inv, norm_factorial_pow_prime (p := p) (K := D) k,
+    Real.rpow_neg (Nat.cast_nonneg p), inv_inv]
+
+/-- At the critical radius `p ^ (-1 / (p - 1))`, the weighted inverse factorials along `n = p ^ k`
+equal `p ^ (-1 / (p - 1))`. -/
+theorem norm_inv_factorial_pow_prime_mul_rpow (k : ℕ) :
+    ‖(((p ^ k)! : ℕ) : D)⁻¹‖ * ((p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) ^ (p ^ k) =
+      (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹) := by
+  have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr hp.out.pos
+  have hsplit : (((p ^ k : ℕ) : ℝ) - 1) / ((p : ℝ) - 1) +
+      -((p : ℝ) - 1)⁻¹ * ((p ^ k : ℕ) : ℝ) = -((p : ℝ) - 1)⁻¹ := by ring
+  rw [norm_inv_factorial_pow_prime, ← Real.rpow_natCast, ← Real.rpow_mul hp0.le,
+    ← Real.rpow_add hp0, hsplit]
+
+/-- Whenever `p ^ (-1 / (p - 1)) ≤ r`, the `r`-weighted inverse factorials along `n = p ^ k` stay
+bounded below by `p ^ (-1 / (p - 1))`. -/
+theorem le_norm_inv_factorial_pow_prime_mul_pow {r : ℝ}
+    (hr : (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹) ≤ r) (k : ℕ) :
+    (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹) ≤ ‖(((p ^ k)! : ℕ) : D)⁻¹‖ * r ^ (p ^ k) :=
+  (norm_inv_factorial_pow_prime_mul_rpow (p := p) (D := D) k).symm.trans_le <|
+    mul_le_mul_of_nonneg_left
+      (pow_le_pow_left₀ (Real.rpow_nonneg (Nat.cast_nonneg p) _) hr _) (norm_nonneg _)
+
+/-- On the closed critical radius `0 ≤ r ≤ p ^ (-1 / (p - 1))`, the weighted inverse factorials
+satisfy `‖(n!)⁻¹‖ * r ^ n ≤ 1` for every `n`. -/
+theorem norm_inv_factorial_mul_pow_le {r : ℝ} (hr0 : 0 ≤ r)
+    (hr : r ≤ (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) (n : ℕ) :
+    ‖(n ! : D)⁻¹‖ * r ^ n ≤ 1 := by
+  have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr hp.out.pos
+  calc
+    ‖(n ! : D)⁻¹‖ * r ^ n
+        ≤ (p : ℝ) ^ ((n : ℝ) / ((p : ℝ) - 1)) * ((p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) ^ n :=
+          mul_le_mul (norm_inv_factorial_le n) (pow_le_pow_left₀ hr0 hr n)
+            (pow_nonneg hr0 n) (Real.rpow_nonneg hp0.le _)
+    _ = (p : ℝ) ^ ((n : ℝ) / ((p : ℝ) - 1) + -((p : ℝ) - 1)⁻¹ * (n : ℝ)) := by
+          rw [← Real.rpow_natCast, ← Real.rpow_mul hp0.le, ← Real.rpow_add hp0]
+    _ = 1 := by
+          have hexp : (n : ℝ) / ((p : ℝ) - 1) + -((p : ℝ) - 1)⁻¹ * (n : ℝ) = 0 := by ring
+          rw [hexp, Real.rpow_zero]
+
+end NormedDivisionRing
+
+end TauCeti

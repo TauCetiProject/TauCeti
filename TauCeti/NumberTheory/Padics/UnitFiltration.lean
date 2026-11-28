@@ -21,7 +21,7 @@ When the depth `i` satisfies `1 < (p - 1) * i`, that is, `i ≥ 1` for odd `p` a
 `p = 2`, this disc lies inside the open disc of radius `p ^ (-1 / (p - 1))`
 (`TauCeti.zpow_neg_lt_amiceRadius_zero`). The norm, inverse and homomorphism identities of the
 exponential and logarithm on these discs are therefore the cases of
-`TauCeti.norm_exp_sub_one_of_norm_lt`, `TauCeti.norm_log_of_norm_sub_one_lt`,
+`TauCeti.PadicExp.norm_exp_sub_one_of_norm_lt`, `TauCeti.norm_log_of_norm_sub_one_lt`,
 `TauCeti.log_exp_of_norm_lt`, `TauCeti.exp_log_of_norm_sub_one_lt` and
 `TauCeti.log_mul_of_norm_sub_one_lt` given by that inequality.
 

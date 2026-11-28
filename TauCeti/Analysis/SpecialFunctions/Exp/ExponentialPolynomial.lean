@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Exp
+public import TauCeti.Algebra.Polynomial.ExpDerivFactor
 
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
@@ -44,7 +45,7 @@ auxiliary function `∑ₐ,ᵦ ηₐᵦ exp((a + bβ) λ z)` in his proof of the
 ## Main results
 
 * `Finset.hasDerivAt_sum_eval_mul_exp`: the derivative of `∑ₖ pₖ(x) exp(γₖ x)` is again an
-  exponential polynomial, `∑ₖ (pₖ' + γₖ pₖ)(x) exp(γₖ x)`.
+  exponential polynomial, `∑ₖ (expDerivFactor γₖ 1 pₖ)(x) exp(γₖ x)`.
 * `TauCeti.card_lt_of_sum_eval_mul_exp_eq_zero`: for a nonempty finite index set, pairwise
   distinct exponents `γₖ` and nonzero `pₖ`, a finite set of zeros of `∑ₖ pₖ(x) exp(γₖ x)` has
   fewer than `∑ₖ (deg pₖ + 1)` points.
@@ -57,7 +58,7 @@ auxiliary function `∑ₐ,ᵦ ηₐᵦ exp((a + bβ) λ z)` in his proof of the
 * `TauCeti.analyticOrderAt_sum_mul_cexp_lt_card`: under the same hypotheses, the order of
   vanishing of `∑ᵢ cᵢ exp(ρᵢ z)` at every point is less than the number `N` of terms.
 * `Finset.iteratedDeriv_sum_eval_mul_cexp`: the `n`-th derivative of a complex exponential
-  polynomial `∑ₖ pₖ(z) exp(γₖ z)` applies `r ↦ r' + γₖ r` `n` times to each `pₖ`.
+  polynomial `∑ₖ pₖ(z) exp(γₖ z)` applies `Polynomial.expDerivFactor γₖ n` to each `pₖ`.
 * `TauCeti.eq_zero_of_sum_eval_mul_cexp_eq_zero_of_injOn`,
   `TauCeti.eq_zero_of_sum_eval_mul_cexp_eq_zero`: complex exponential polynomials with pairwise
   distinct frequencies are linearly independent over `ℂ[X]`.
@@ -77,14 +78,14 @@ open Finset Polynomial
 
 namespace Finset
 
-/-- The derivative of `∑ₖ pₖ(x) exp(γₖ x)` is `∑ₖ (pₖ' + γₖ pₖ)(x) exp(γₖ x)`. -/
+/-- The derivative of `∑ₖ pₖ(x) exp(γₖ x)` is `∑ₖ (expDerivFactor γₖ 1 pₖ)(x) exp(γₖ x)`. -/
 theorem hasDerivAt_sum_eval_mul_exp {ι : Type*} (s : Finset ι) (γ : ι → ℝ)
     (p : ι → ℝ[X]) (x : ℝ) :
     HasDerivAt (fun x ↦ ∑ i ∈ s, (p i).eval x * Real.exp (γ i * x))
-      (∑ i ∈ s, (derivative (p i) + C (γ i) * p i).eval x * Real.exp (γ i * x)) x := by
+      (∑ i ∈ s, (expDerivFactor (γ i) 1 (p i)).eval x * Real.exp (γ i * x)) x := by
   refine HasDerivAt.fun_sum fun i _ ↦ ?_
   refine (((p i).hasDerivAt x).fun_mul ((hasDerivAt_id' x).const_mul (γ i)).exp).congr_deriv ?_
-  simp only [eval_add, eval_mul, eval_C, mul_one]
+  simp only [expDerivFactor_one, eval_add, eval_mul, eval_C, mul_one]
   ring
 
 end Finset
@@ -103,7 +104,7 @@ theorem card_lt_of_sum_eval_mul_exp_eq_zero {ι : Type*} {s : Finset ι} (hs : s
   -- Induction on the number of terms. Multiplying by `exp(-γₐ x)` does not change the zeros and
   -- makes the exponent of `pₐ` equal to `0`. Differentiating `deg pₐ + 1` times removes this
   -- term, while every other term `q(x) exp(δ x)` with `δ ≠ 0` becomes
-  -- `((d/dx + δ) ^ (deg pₐ + 1) q)(x) exp(δ x)`, whose polynomial has the same degree as `q`.
+  -- `(expDerivFactor δ (deg pₐ + 1) q)(x) exp(δ x)`, whose polynomial has the same degree as `q`.
   -- By Rolle's theorem each differentiation loses at most one zero.
   induction hs using Finset.Nonempty.cons_induction generalizing γ p Z with
   | singleton a =>
@@ -121,17 +122,19 @@ theorem card_lt_of_sum_eval_mul_exp_eq_zero {ι : Type*} {s : Finset ι} (hs : s
     have hγ' : Set.InjOn γ t := hγ.mono (by simp)
     -- Shift the exponents by `-γ a` and differentiate `N = deg p_a + 1` times.
     set δ : ι → ℝ := fun i ↦ γ i - γ a
-    set D : ℝ → ℝ[X] → ℝ[X] := fun d r ↦ derivative r + C d * r
     set N := (p a).natDegree + 1
     set F : ℕ → ℝ → ℝ := fun n x ↦
-      ∑ i ∈ cons a t hat, ((D (δ i))^[n] (p i)).eval x * Real.exp (δ i * x)
+      ∑ i ∈ cons a t hat, (expDerivFactor (δ i) n (p i)).eval x * Real.exp (δ i * x)
     have hF : ∀ n < N, ∀ x, HasDerivAt (F n) (F (n + 1) x) x := fun n _ x ↦ by
-      simpa only [F, Function.iterate_succ_apply'] using
-        (cons a t hat).hasDerivAt_sum_eval_mul_exp δ (fun i ↦ (D (δ i))^[n] (p i)) x
+      refine ((cons a t hat).hasDerivAt_sum_eval_mul_exp δ
+        (fun i ↦ expDerivFactor (δ i) n (p i)) x).congr_deriv ?_
+      simp only [F]
+      refine sum_congr rfl fun i _ ↦ ?_
+      rw [expDerivFactor_one, ← expDerivFactor_succ]
     have hF₀ : ∀ x ∈ Z, F 0 x = 0 := fun x hx ↦ by
       have h : F 0 x = Real.exp (-(γ a * x)) *
           ∑ i ∈ cons a t hat, (p i).eval x * Real.exp (γ i * x) := by
-        simp only [F, δ, Function.iterate_zero_apply, mul_sum]
+        simp only [F, δ, expDerivFactor_zero, mul_sum]
         refine sum_congr rfl fun i _ ↦ ?_
         rw [mul_left_comm, ← Real.exp_add]
         congr 2
@@ -141,17 +144,20 @@ theorem card_lt_of_sum_eval_mul_exp_eq_zero {ι : Type*} {s : Finset ι} (hs : s
     -- The term of index `a` has exponent `0`, so it disappears after `N` differentiations.
     have hδ : ∀ i ∈ t, δ i ≠ 0 := fun i hi h ↦
       hat (hγ (by simp [hi]) (by simp) (sub_eq_zero.1 h) ▸ hi)
-    have hDa : (D (δ a))^[N] (p a) = 0 := by
-      simp only [D, δ, sub_self, map_zero, zero_mul, add_zero]
+    have hDa : expDerivFactor (δ a) N (p a) = 0 := by
+      simp only [δ, sub_self, expDerivFactor_zero_left]
       exact iterate_derivative_eq_zero (Nat.lt_succ_self _)
-    have hFN : ∀ x, F N x = ∑ i ∈ t, ((D (δ i))^[N] (p i)).eval x * Real.exp (δ i * x) :=
+    have hFN : ∀ x, F N x =
+        ∑ i ∈ t, (expDerivFactor (δ i) N (p i)).eval x * Real.exp (δ i * x) :=
       fun x ↦ by simp only [F, sum_cons, hDa, eval_zero, zero_mul, zero_add]
     have hlt := ih (γ := δ) (fun i hi j hj h ↦ hγ' hi hj (sub_left_inj.1 h))
-      (p := fun i ↦ (D (δ i))^[N] (p i))
-      (fun i hi ↦ (iterate_derivative_add_C_mul_eq_zero_iff (hδ i hi) N).not.2 (hp.2 i hi))
+      (p := fun i ↦ expDerivFactor (δ i) N (p i))
+      (fun i hi ↦ by
+        rw [expDerivFactor_eq_iterate]
+        exact (iterate_derivative_add_C_mul_eq_zero_iff (hδ i hi) N).not.2 (hp.2 i hi))
       (fun x hx ↦ (hFN x).symm.trans (hZ' x hx))
     rw [sum_congr rfl fun i hi ↦ by
-      rw [natDegree_iterate_derivative_add_C_mul (hδ i hi) N]] at hlt
+      rw [expDerivFactor_eq_iterate, natDegree_iterate_derivative_add_C_mul (hδ i hi) N]] at hlt
     rw [sum_cons]
     omega
 
@@ -217,30 +223,31 @@ end TauCeti
 
 namespace Finset
 
-/-- The derivative of `∑ₖ pₖ(z) exp(γₖ z)` is `∑ₖ (pₖ' + γₖ pₖ)(z) exp(γₖ z)`. -/
+/-- The derivative of `∑ₖ pₖ(z) exp(γₖ z)` is `∑ₖ (expDerivFactor γₖ 1 pₖ)(z) exp(γₖ z)`. -/
 theorem hasDerivAt_sum_eval_mul_cexp {ι : Type*} (s : Finset ι) (γ : ι → ℂ)
     (p : ι → ℂ[X]) (z : ℂ) :
     HasDerivAt (fun z ↦ ∑ i ∈ s, (p i).eval z * Complex.exp (γ i * z))
-      (∑ i ∈ s, (derivative (p i) + C (γ i) * p i).eval z * Complex.exp (γ i * z)) z := by
+      (∑ i ∈ s, (expDerivFactor (γ i) 1 (p i)).eval z * Complex.exp (γ i * z)) z := by
   refine HasDerivAt.fun_sum fun i _ ↦ ?_
   refine (((p i).hasDerivAt z).fun_mul ((hasDerivAt_id' z).const_mul (γ i)).cexp).congr_deriv ?_
-  simp only [eval_add, eval_mul, eval_C, mul_one]
+  simp only [expDerivFactor_one, eval_add, eval_mul, eval_C, mul_one]
   ring
 
-/-- Iterated differentiation of `∑ₖ pₖ(z) exp(γₖ z)` applies `r ↦ r' + γₖ r` to each coefficient
-polynomial `pₖ`. -/
+/-- Iterated differentiation of `∑ₖ pₖ(z) exp(γₖ z)` applies `Polynomial.expDerivFactor γₖ n` to
+each coefficient polynomial `pₖ`. -/
 @[simp]
 theorem iteratedDeriv_sum_eval_mul_cexp {ι : Type*} (s : Finset ι) (γ : ι → ℂ)
     (p : ι → ℂ[X]) (n : ℕ) :
     iteratedDeriv n (fun z ↦ ∑ i ∈ s, (p i).eval z * Complex.exp (γ i * z)) =
       fun z ↦ ∑ i ∈ s,
-        ((fun r ↦ derivative r + C (γ i) * r)^[n] (p i)).eval z * Complex.exp (γ i * z) := by
+        (expDerivFactor (γ i) n (p i)).eval z * Complex.exp (γ i * z) := by
   induction n with
   | zero => ext z; simp
   | succ n ih =>
     funext z
     rw [iteratedDeriv_succ, ih, (s.hasDerivAt_sum_eval_mul_cexp γ _ z).deriv]
-    simp only [Function.iterate_succ_apply']
+    simp only [expDerivFactor_one]
+    simp only [expDerivFactor_succ]
 
 end Finset
 
@@ -254,12 +261,11 @@ theorem eq_zero_of_sum_eval_mul_cexp_eq_zero_of_injOn {ι : Type*} {s : Finset �
     (h : ∀ z : ℂ, ∑ i ∈ s, (p i).eval z * Complex.exp (γ i * z) = 0) :
     ∀ i ∈ s, p i = 0 := by
   -- Shift the exponents by `-γ a` and differentiate `deg(p a) + 1` times to annihilate the `a`
-  -- term while keeping the `q ↦ q' + (γ i - γ a) q` operator injective on the remaining terms.
+  -- term while keeping `expDerivFactor (γ i - γ a) N` injective on the remaining terms.
   induction s using Finset.cons_induction generalizing γ p with
   | empty => simp
   | cons a t hat ih =>
     set δ : ι → ℂ := fun i ↦ γ i - γ a
-    set D : ℂ → ℂ[X] → ℂ[X] := fun d r ↦ derivative r + C d * r
     set N := (p a).natDegree + 1
     have hshift :
         (fun z ↦ ∑ i ∈ cons a t hat, (p i).eval z * Complex.exp (δ i * z)) = fun _ ↦ 0 := by
@@ -274,20 +280,22 @@ theorem eq_zero_of_sum_eval_mul_cexp_eq_zero_of_injOn {ι : Type*} {s : Finset �
         simp only [δ]
         ring
       rw [hz, h z, mul_zero]
-    have hN : ∀ z : ℂ, ∑ i ∈ t, ((D (δ i))^[N] (p i)).eval z * Complex.exp (δ i * z) = 0 := by
+    have hN : ∀ z : ℂ,
+        ∑ i ∈ t, (expDerivFactor (δ i) N (p i)).eval z * Complex.exp (δ i * z) = 0 := by
       intro z
       have hderiv := congrFun ((cons a t hat).iteratedDeriv_sum_eval_mul_cexp δ p N) z
       rw [hshift, iteratedDeriv_const, sum_cons] at hderiv
-      have hDa : (D (δ a))^[N] (p a) = 0 := by
-        simp only [D, δ, sub_self, map_zero, zero_mul, add_zero]
+      have hDa : expDerivFactor (δ a) N (p a) = 0 := by
+        simp only [δ, sub_self, expDerivFactor_zero_left]
         exact iterate_derivative_eq_zero (Nat.lt_succ_self _)
-      simpa only [D, hDa, eval_zero, zero_mul, zero_add, ite_self] using hderiv.symm
+      simpa only [hDa, eval_zero, zero_mul, zero_add, ite_self] using hderiv.symm
     have hγ' : Set.InjOn δ t := fun i hi j hj hij ↦
       hγ (mem_cons_of_mem hi) (mem_cons_of_mem hj) (sub_left_inj.1 hij)
     have ht : ∀ i ∈ t, p i = 0 := fun i hi ↦ by
       have hδ : δ i ≠ 0 := fun h0 ↦
         hat (hγ (mem_cons_of_mem hi) (mem_cons_self a t) (sub_eq_zero.1 h0) ▸ hi)
-      exact (iterate_derivative_add_C_mul_eq_zero_iff hδ N).1 (ih hγ' hN i hi)
+      exact (iterate_derivative_add_C_mul_eq_zero_iff hδ N).1
+        (expDerivFactor_eq_iterate (δ i) N (p i) ▸ ih hγ' hN i hi)
     have hpa : p a = 0 := by
       apply (p a).eq_zero_of_infinite_isRoot
       refine Set.infinite_univ.mono fun z _ ↦ ?_

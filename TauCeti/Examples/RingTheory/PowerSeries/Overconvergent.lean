@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.NumberTheory.Padics.Factorial
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.Dagger.OneVariable.Basic
 import TauCeti.RingTheory.PowerSeries.Exp.Padic.Basic
@@ -158,30 +157,9 @@ example :
 -- Over `ℚ_p`, the exponential series `∑ Xⁿ / n!` lies on the open disc of radius
 -- `p ^ (-1 / (p - 1))`.
 example : (PowerSeries.exp ℚ_[p]).OnOpenDisc ((p : ℝ) ^ (-(1 / ((p : ℝ) - 1)))) := by
-  have hp_pos : (0 : ℝ) < p := mod_cast hp.out.pos
-  refine onOpenDisc_iff.mpr fun r hr hrR ↦ (isRestricted_iff' r _).mpr ?_
-  set c : ℝ := (p : ℝ) ^ (1 / ((p : ℝ) - 1))
-  have : 0 < c := Real.rpow_pos_of_pos hp_pos _
-  have hrc0 : 0 ≤ r * c := by positivity
-  have hrc1 : r * c < 1 := by
-    calc r * c < (p : ℝ) ^ (-(1 / ((p : ℝ) - 1))) * c := by gcongr
-      _ = (p : ℝ) ^ (-(1 / ((p : ℝ) - 1)) + 1 / ((p : ℝ) - 1)) :=
-          (Real.rpow_add hp_pos _ _).symm
-      _ = 1 := by simp
-  refine squeeze_zero (fun _ ↦ by positivity) (fun n ↦ ?_)
-    (tendsto_pow_atTop_nhds_zero_of_lt_one hrc0 hrc1)
-  have hfn_pos : 0 < (p : ℝ) ^ (-((n : ℝ) / ((p : ℝ) - 1))) := Real.rpow_pos_of_pos hp_pos _
-  have hinv : ‖(n ! : ℚ_[p])‖⁻¹ ≤ c ^ n := by
-    calc ‖(n ! : ℚ_[p])‖⁻¹ ≤ ((p : ℝ) ^ (-((n : ℝ) / ((p : ℝ) - 1))))⁻¹ :=
-          inv_anti₀ hfn_pos (Padic.rpow_neg_div_le_norm_factorial n)
-      _ = (p : ℝ) ^ ((n : ℝ) / ((p : ℝ) - 1)) := by
-          rw [← Real.rpow_neg hp_pos.le, neg_neg]
-      _ = c ^ n := by
-          rw [← Real.rpow_natCast c, ← Real.rpow_mul hp_pos.le, one_div_mul_eq_div]
-  calc ‖coeff n (PowerSeries.exp ℚ_[p])‖ * r ^ n
-      = ‖(n ! : ℚ_[p])‖⁻¹ * r ^ n := by simp [PowerSeries.coeff_exp]
-    _ ≤ c ^ n * r ^ n := mul_le_mul_of_nonneg_right hinv (by positivity)
-    _ = (r * c) ^ n := by rw [mul_comm, mul_pow]
+  refine onOpenDisc_iff.mpr fun r hr hrR ↦ ?_
+  simpa using PowerSeries.isRestricted_rescale_exp (A := ℚ_[p]) (x := (1 : ℚ_[p])) hr.le
+    (by simpa [one_div] using hrR)
 
 -- Over `ℚ_p`, `∑ Xⁿ / n!` fails to be restricted at its convergence radius `p ^ (-1 / (p - 1))`
 -- (along `n = p ^ k`, every weighted coefficient norm equals `p ^ (-1 / (p - 1)) ≠ 0`), and hence
