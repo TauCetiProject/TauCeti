@@ -7,8 +7,10 @@ module
 
 public import TauCeti.CategoryTheory.Monoidal.Center.Abelian
 public import TauCeti.CategoryTheory.Monoidal.Center.Pivotal
+public import TauCeti.CategoryTheory.Monoidal.Center.Semisimple
 public import TauCeti.CategoryTheory.Monoidal.Pivotal.Ribbon.OfSpherical
 public import TauCeti.CategoryTheory.Preadditive.Schur
+import TauCeti.CategoryTheory.Monoidal.Pivotal.Character
 
 /-!
 # The centre of a spherical category is ribbon
@@ -36,21 +38,32 @@ have finite-dimensional endomorphisms, sphericity makes the induced twist ribbon
 of the centre need not be simple. The semisimplicity of the centre is a hypothesis here: it does
 not follow from that of `C` alone (for a fusion category it also needs the global dimension of `C`
 to be nonzero), and it cannot simply be dropped, since in a non-semisimple braided category a
-spherical pivotal structure need not induce a ribbon twist.
+spherical pivotal structure need not induce a ribbon twist. When `C` is a spherical fusion category
+over an algebraically closed field `k` with `globalDim C ≠ 0` — and unconditionally when
+`CharZero k`, where `TauCeti.globalDim_ne_zero` applies because `C` is pivotal — finite
+semisimplicity of `Center C` is supplied by `Center/Semisimple.lean`, giving
+`ribbonCategory_of_sphericalCategory_of_globalDim_ne_zero` and
+`ribbonCategory_of_sphericalCategory_of_charZero`.
 
 ## Main declarations
 
 * `CategoryTheory.Center.ribbonCategory_of_sphericalCategory`: the twist induced on the centre of
-  a spherical category is ribbon, when the centre is split finite semisimple.
+  a spherical category is ribbon, when the centre is split finite semisimple;
+* `CategoryTheory.Center.ribbonCategory_of_sphericalCategory_of_globalDim_ne_zero`: the centre of a
+  spherical fusion category with `globalDim C ≠ 0` is ribbon;
+* `CategoryTheory.Center.ribbonCategory_of_sphericalCategory_of_charZero`: the centre of a
+  spherical fusion category in characteristic zero is ribbon.
 
 ## References
 
 * M. Müger, *From subfactors to categories and topology II: The quantum double of tensor
-  categories and subfactors*, J. Pure Appl. Algebra 180 (2003)
+  categories and subfactors*, J. Pure Appl. Algebra 180 (2003), Theorem 3.16
+* P. Etingof, D. Nikshych, V. Ostrik, *On fusion categories*, Ann. of Math. **162** (2005),
+  Theorem 2.15
 * A. Henriques, D. Penneys, J. Tener, *Categorified trace for module tensor categories over
   braided tensor categories*, [arXiv:1509.02937](https://arxiv.org/abs/1509.02937), §2.2,
   eq. (3) and Appendix A.2
-* [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §§7.13 and 8.10
+* [P. Etingof, S. Gelaki, D. Nikshych, V. Ostrik, *Tensor categories*][egno15], §§7.13, 8.10, 9.3
 -/
 
 public section
@@ -63,13 +76,14 @@ namespace CategoryTheory.Center
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [RigidCategory C] [PivotalCategory C]
 
+section CenterSemisimple
+
 variable (k : Type*) [Field k] [IsAlgClosed k] [SphericalCategory C] [Abelian C]
   [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
   [IsFiniteSemisimpleCategory (Center C)]
   [hfin : ∀ (X : Center C) [Simple X], FiniteDimensional k (X ⟶ X)]
 
-include hfin
-
+include hfin in
 /-- **The centre of a spherical category is ribbon** (Müger). For a spherical category `C` whose
 centre is a split finite semisimple category, the twist induced on `Center C` by
 its braiding and its pivotal structure is ribbon. The twist is the one built from the pivotal
@@ -83,5 +97,39 @@ theorem ribbonCategory_of_sphericalCategory :
     letI := balancedOfBraidedPivotal (Center C)
     RibbonCategory (Center C) :=
   TauCeti.ribbonCategory_of_sphericalCategory fun S _ ↦ (bijective_algebraMap_end_of_simple k S).2
+
+end CenterSemisimple
+
+section Fusion
+
+variable (k : Type*) [Field k] [IsAlgClosed k] [SphericalCategory C] [Abelian C]
+  [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
+  [IsFiniteSemisimpleCategory C] [Simple (𝟙_ C)] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)]
+
+include k in
+/-- **The centre of a spherical fusion category of nonzero global dimension is ribbon**
+(Müger, Etingof–Nikshych–Ostrik). For a spherical fusion category `C` over an algebraically closed
+field `k` with `globalDim C ≠ 0`, the twist induced on `Center C` by its braiding and pivotal
+structure is ribbon. -/
+theorem ribbonCategory_of_sphericalCategory_of_globalDim_ne_zero [Fintype (SimpleClasses C)]
+    (hdim : globalDim C ≠ 0) :
+    letI := balancedOfBraidedPivotal (Center C)
+    RibbonCategory (Center C) := by
+  have := isFiniteSemisimpleCategory_of_globalDim_ne_zero k hdim
+  exact ribbonCategory_of_sphericalCategory (hfin := inferInstance) k
+
+include k in
+/-- **The centre of a spherical fusion category in characteristic zero is ribbon**
+(Müger, Etingof–Nikshych–Ostrik). For a spherical fusion category `C` over an algebraically closed
+field `k` of characteristic zero, the twist induced on `Center C` by its braiding and pivotal
+structure is ribbon. -/
+theorem ribbonCategory_of_sphericalCategory_of_charZero [CharZero k] [Finite (SimpleClasses C)] :
+    letI := balancedOfBraidedPivotal (Center C)
+    RibbonCategory (Center C) := by
+  classical
+  let _ := Fintype.ofFinite (SimpleClasses C)
+  exact ribbonCategory_of_sphericalCategory_of_globalDim_ne_zero k (TauCeti.globalDim_ne_zero k C)
+
+end Fusion
 
 end CategoryTheory.Center
