@@ -92,13 +92,24 @@ lemma coe_characteristicCellPairMap_fst_apply {n : ℕ} (j : cell C n)
     coe_sigmaDiskBoundaryPairIso_hom_fst_apply_snd]
   rfl
 
+/-- The ambient component of the single-cell pair map is the characteristic map of the cell in the
+sup-norm coordinates `TauCeti.diskHomeomorphClosedBall` of the disk. -/
+lemma coe_characteristicCellPairMap_fst_apply_eq_map_diskHomeomorphClosedBall {n : ℕ}
+    (j : cell C n) (x : TopCat.disk.{w} n) :
+    (ConcreteCategory.hom (X := TopCat.disk.{w} n)
+      (Y := TopCat.of (skeletonLT C ((n + 1 : ℕ) : ℕ∞)))
+      (TopPair.Hom.fst (characteristicCellPairMap C j)) x).val =
+      map n j (diskHomeomorphClosedBall n x) :=
+  (coe_characteristicCellPairMap_fst_apply C j x).trans
+    (congrArg (map n j) (coe_diskHomeomorphClosedBall_apply x).symm)
+
 /-- The ambient component of the single-cell pair map is the characteristic map
 `TauCeti.cellDiskHom` of the cell. -/
 lemma characteristicCellPairMap_fst {n : ℕ} (j : cell C n) :
     TopPair.Hom.fst (characteristicCellPairMap C j) = cellDiskHom j := by
   ext x
-  exact Subtype.ext <| (coe_characteristicCellPairMap_fst_apply C j x).trans <|
-    (congrArg (map n j) (coe_diskHomeomorphClosedBall_apply x).symm).trans
+  exact Subtype.ext <|
+    (coe_characteristicCellPairMap_fst_apply_eq_map_diskHomeomorphClosedBall C j x).trans
       (coe_cellDiskHom_apply j x).symm
 
 /-- The characteristic map of a `0`-cell sends the centre of the disk to the centre of the cell. -/
@@ -113,9 +124,8 @@ lemma coe_characteristicCellPairMap_fst_diskCenter {n : ℕ} (j : cell C n) :
     (ConcreteCategory.hom (X := TopCat.disk.{w} n)
       (Y := TopCat.of (skeletonLT C ((n + 1 : ℕ) : ℕ∞)))
       (TopPair.Hom.fst (characteristicCellPairMap C j)) (diskCenter n)).val = map n j 0 := by
-  rw [coe_characteristicCellPairMap_fst_apply, ContinuousLinearEquiv.unitBallHomeomorph_apply]
-  -- The centre of `TopCat.disk n` is `0` only after unfolding its `ULift`, so `erw` is used.
-  erw [coe_diskCenter_down, map_zero, gaugeRescale_zero]
+  rw [coe_characteristicCellPairMap_fst_apply_eq_map_diskHomeomorphClosedBall,
+    coe_diskHomeomorphClosedBall_diskCenter]
 
 /-- The subspace component of the single-cell pair map is the attaching map
 `TauCeti.cellAttachingMap` of the cell. -/

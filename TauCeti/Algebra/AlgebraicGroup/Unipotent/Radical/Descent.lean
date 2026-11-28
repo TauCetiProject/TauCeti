@@ -29,11 +29,10 @@ separable algebraic extensions:
    ideal over `k` if and only if it equals the base change of the `k`-unipotent radical. Along a
    surjective field map every Hopf ideal descends, so the unipotent radical commutes with such
    scalar extensions.
-2. For every `k`-algebra equivalence `φ : K ≃ₐ[k] E` of extension fields, viewing `E` as a
-   `K`-algebra through `φ` turns `φ ⊗ id` into scalar extension along the surjective tower
-   `k → K → E`, so `φ ⊗ id` transports `unipotentRadicalDefiningIdeal (K ⊗[k] H)` onto
-   `unipotentRadicalDefiningIdeal (E ⊗[k] H)`. When `L / k` is Galois (possibly infinite), taking
-   `E = K = L` and applying `existsUnique_baseChangeHopfIdeal_eq_iff` descends
+2. For every `k`-algebra equivalence `φ : K ≃ₐ[k] E` of extension fields, `mapBaseChangeHopfIdeal φ`
+   transports unipotent-radical candidates over `K` to unipotent-radical candidates over `E` and
+   therefore preserves `unipotentRadicalDefiningIdeal`. When `L / k` is Galois (possibly infinite),
+   taking `E = K = L` and applying `existsUnique_baseChangeHopfIdeal_eq_iff` descends
    `unipotentRadicalDefiningIdeal (L ⊗[k] H)` to a Hopf ideal of `H`, which step 1 identifies with
    `unipotentRadicalDefiningIdeal H`.
 3. For an arbitrary separable algebraic extension `K / k`, embedding `K` into `SeparableClosure k`
@@ -51,6 +50,11 @@ algebraic extension `K / k`.
 * `TauCeti.HopfIdeal.IsUnipotentRadicalCandidate.of_baseChange` and
   `TauCeti.HopfIdeal.IsUnipotentRadicalCandidate.baseChange_iff`: descent and field-extension
   invariance of unipotent-radical candidates.
+* `TauCeti.HopfIdeal.IsUnipotentRadicalCandidate.mapBaseChangeHopfIdeal` and
+  `TauCeti.HopfIdeal.IsUnipotentRadicalCandidate.mapBaseChangeHopfIdeal_iff`: transport of
+  unipotent-radical candidates along an algebra equivalence of extension fields.
+* `TauCeti.FiniteTypeCommHopfAlgCat.mapBaseChangeHopfIdeal_unipotentRadicalDefiningIdeal`:
+  algebra equivalences of extension fields preserve the unipotent radical.
 * `TauCeti.FiniteTypeCommHopfAlgCat.
     exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal_iff`:
   the unipotent radical after field extension descends to `k` exactly when it equals the base change
@@ -58,9 +62,6 @@ algebraic extension `K / k`.
 * `TauCeti.FiniteTypeCommHopfAlgCat.
     baseChangeHopfIdeal_unipotentRadicalDefiningIdeal_of_surjective`:
   the unipotent radical commutes with surjective field extensions.
-* `TauCeti.FiniteTypeCommHopfAlgCat.map_mem_unipotentRadicalDefiningIdeal_baseChange_iff`:
-  `k`-algebra equivalences of extension fields preserve the base-changed unipotent radical; in
-  particular its defining ideal is stable under `Gal(L / k)`.
 * `TauCeti.FiniteTypeCommHopfAlgCat.baseChangeHopfIdeal_unipotentRadicalDefiningIdeal`: the
   defining ideal of the unipotent radical commutes with separable algebraic field extensions.
 * `TauCeti.FiniteTypeCommHopfAlgCat.unipotentRadicalBaseChangeIso`: the induced coordinate
@@ -117,6 +118,37 @@ theorem baseChange_iff :
       IsUnipotentRadicalCandidate H I :=
   ⟨of_baseChange, baseChange⟩
 
+/-- Transport along a `k`-algebra equivalence of extension fields preserves unipotent-radical
+candidates. -/
+theorem mapBaseChangeHopfIdeal {K₁ K₂ : Type u} [Field K₁] [Field K₂]
+    [Algebra k K₁] [Algebra k K₂] (e : K₁ ≃ₐ[k] K₂)
+    {I : HopfIdeal K₁ (FiniteTypeCommHopfAlgCat.baseChange (K := K₁) H)}
+    (hI : IsUnipotentRadicalCandidate (FiniteTypeCommHopfAlgCat.baseChange (K := K₁) H) I) :
+    IsUnipotentRadicalCandidate (FiniteTypeCommHopfAlgCat.baseChange (K := K₂) H)
+      (CommHopfAlgCat.mapBaseChangeHopfIdeal e I) := by
+  let _ : Algebra K₁ K₂ := e.toRingHom.toAlgebra
+  let _ : IsScalarTower k K₁ K₂ :=
+    IsScalarTower.of_algebraMap_eq fun c ↦ (e.commutes c).symm
+  rw [CommHopfAlgCat.mapBaseChangeHopfIdeal_eq_comapOfSurjective_baseChangeTowerIso e
+    (fun _ ↦ rfl)]
+  simpa only [Iso.symm_hom, FiniteTypeCommHopfAlgCat.toBialgHom,
+      FiniteTypeCommHopfAlgCat.baseChangeTowerIso_inv_hom]
+    using (hI.baseChange (K := K₂)).comapOfIso
+      (FiniteTypeCommHopfAlgCat.baseChangeTowerIso (E := K₁) k K₂ H).symm
+
+/-- Transport along a `k`-algebra equivalence of extension fields preserves and reflects
+unipotent-radical candidates. -/
+@[simp]
+theorem mapBaseChangeHopfIdeal_iff {K₁ K₂ : Type u} [Field K₁] [Field K₂]
+    [Algebra k K₁] [Algebra k K₂] (e : K₁ ≃ₐ[k] K₂)
+    {I : HopfIdeal K₁ (FiniteTypeCommHopfAlgCat.baseChange (K := K₁) H)} :
+    IsUnipotentRadicalCandidate (FiniteTypeCommHopfAlgCat.baseChange (K := K₂) H)
+        (CommHopfAlgCat.mapBaseChangeHopfIdeal e I) ↔
+      IsUnipotentRadicalCandidate (FiniteTypeCommHopfAlgCat.baseChange (K := K₁) H) I := by
+  refine ⟨fun h ↦ ?_, mapBaseChangeHopfIdeal e⟩
+  simpa only [CommHopfAlgCat.mapBaseChangeHopfIdeal_symm_mapBaseChangeHopfIdeal] using
+    h.mapBaseChangeHopfIdeal e.symm
+
 end HopfIdeal.IsUnipotentRadicalCandidate
 
 namespace FiniteTypeCommHopfAlgCat
@@ -154,39 +186,21 @@ theorem baseChangeHopfIdeal_unipotentRadicalDefiningIdeal_of_surjective
   (exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal_iff H).mp
     (CommHopfAlgCat.baseChangeHopfIdeal_surjective (H := H.obj) h _)
 
-/-- Any `k`-algebra equivalence `φ : K ≃ₐ[k] E` of extension fields transports the defining ideal of
-the `K`-unipotent radical of `K ⊗[k] H` to that of `E ⊗[k] H` via `φ ⊗ id`. -/
-theorem map_mem_unipotentRadicalDefiningIdeal_baseChange_iff
-    (H : FiniteTypeCommHopfAlgCat.{u, u} k)
-    (φ : K ≃ₐ[k] E) (z : K ⊗[k] H) :
-    TensorProduct.map φ.toLinearMap LinearMap.id z ∈
-        unipotentRadicalDefiningIdeal (baseChange (K := E) H) ↔
-      z ∈ unipotentRadicalDefiningIdeal (baseChange (K := K) H) := by
-  let _ : Algebra K E := φ.toRingHom.toAlgebra
+/-- A `k`-algebra equivalence between extension fields transports the defining ideal of the
+unipotent radical to the defining ideal of the unipotent radical over the target field. -/
+@[simp]
+theorem mapBaseChangeHopfIdeal_unipotentRadicalDefiningIdeal
+    (e : K ≃ₐ[k] E) (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
+    CommHopfAlgCat.mapBaseChangeHopfIdeal e
+        (unipotentRadicalDefiningIdeal (baseChange (K := K) H)) =
+      unipotentRadicalDefiningIdeal (baseChange (K := E) H) := by
+  let _ : Algebra K E := e.toRingHom.toAlgebra
   have _ : IsScalarTower k K E :=
-    IsScalarTower.of_algebraMap_eq fun c ↦ (φ.commutes c).symm
-  let t := baseChangeTowerIso (E := K) k E H
-  have ht (w : K ⊗[k] H) :
-      toBialgHom t.hom ((1 : E) ⊗ₜ[K] w) =
-        TensorProduct.map φ.toLinearMap LinearMap.id w := by
-    induction w with
-    | add x y hx hy => simp [TensorProduct.tmul_add, hx, hy]
-    | tmul c h =>
-      simpa [t, Algebra.smul_def, RingHom.algebraMap_toAlgebra] using
-        baseChangeTowerIso_hom_apply (E := K) k E H 1 c h
-  have hmem :
-      z ∈ unipotentRadicalDefiningIdeal (baseChange (K := K) H) ↔
-        (1 : E) ⊗ₜ[K] z ∈
-          CommHopfAlgCat.baseChangeHopfIdeal (K := E)
-            (unipotentRadicalDefiningIdeal (baseChange (K := K) H)) := by
-    rw [CommHopfAlgCat.mem_baseChangeHopfIdeal_iff,
-      CommHopfAlgCat.baseChangeMap_apply_tmul,
-      Module.FaithfullyFlat.one_tmul_eq_zero_iff,
-      _root_.CommHopfAlgCat.mkQuotient_eq_zero_iff]
-  rw [hmem,
-    baseChangeHopfIdeal_unipotentRadicalDefiningIdeal_of_surjective _ φ.surjective,
-    ← comapOfSurjective_unipotentRadicalDefiningIdeal t,
-    HopfIdeal.mem_comapOfSurjective, ht]
+    IsScalarTower.of_algebraMap_eq fun c ↦ (e.commutes c).symm
+  rw [CommHopfAlgCat.mapBaseChangeHopfIdeal_eq_comapOfSurjective_baseChangeTowerIso e (fun _ ↦ rfl),
+    baseChangeHopfIdeal_unipotentRadicalDefiningIdeal_of_surjective _ e.surjective,
+    ← comapOfSurjective_unipotentRadicalDefiningIdeal (baseChangeTowerIso (E := K) k E H).symm]
+  simp only [Iso.symm_hom, toBialgHom, baseChangeTowerIso_inv_hom]
 
 /-- Along a Galois extension `K / k`, the defining Hopf ideal of the unipotent radical commutes
 with base change. -/
@@ -197,8 +211,7 @@ private theorem baseChangeHopfIdeal_unipotentRadicalDefiningIdeal_of_isGalois
   apply (exists_baseChangeHopfIdeal_eq_unipotentRadicalDefiningIdeal_iff H).mp
   refine ((CommHopfAlgCat.existsUnique_baseChangeHopfIdeal_eq_iff (H := H.obj)
     (unipotentRadicalDefiningIdeal (baseChange (K := K) H))).mpr ?_).exists
-  intro σ z hz
-  exact (map_mem_unipotentRadicalDefiningIdeal_baseChange_iff H σ z).mpr hz
+  exact fun σ ↦ mapBaseChangeHopfIdeal_unipotentRadicalDefiningIdeal σ H
 
 /-- **Base-change comparison for the unipotent radical** along a field extension `K / k` for which
 the formation of the unipotent radical commutes with base change (`h`): the scalar extension of

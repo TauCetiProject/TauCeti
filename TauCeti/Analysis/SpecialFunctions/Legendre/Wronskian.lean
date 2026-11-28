@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Analysis.ODE.Wronskian
+import TauCeti.Analysis.ODE.Complex.Wronskian
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.Complex.CauchyIntegral
@@ -30,7 +31,8 @@ span criterion. By Abel's identity the Wronskian of two solutions is `C / (1 - z
 criterion a solution is a combination of a fundamental pair with constant coefficients, which can
 be fixed from values or limits. Lagrange's and Abel's identities are the special cases of the
 corresponding identities for Sturm–Liouville equations in `TauCeti.Analysis.ODE.Wronskian`, and
-the span criterion follows from Abel's identity by Cramer's rule.
+the span criterion is the case of `IsOpen.exists_eq_mul_add_mul_of_secondOrderLinearEquation`
+whose leading coefficient `1 - z²` is nonzero off `{1, -1}`.
 
 ## Main results
 
@@ -42,8 +44,7 @@ the span criterion follows from Abel's identity by Cramer's rule.
 * `TauCeti.wronskian_ne_zero_of_legendreEquation`: on a preconnected open set, the Wronskian of
   two solutions is nowhere zero as soon as it is nonzero at one point `z₀` with `z₀ ≠ ±1`.
 * `TauCeti.exists_eq_mul_add_mul_of_legendreEquation`: the span criterion: on a preconnected
-  open set, two solutions whose Wronskian is nonzero at one point `z₀` with `z₀ ≠ ±1` span all
-  solutions.
+  open set, two solutions whose Wronskian is nonzero at one point span all solutions.
 
 ## References
 
@@ -126,8 +127,8 @@ theorem wronskian_ne_zero_of_legendreEquation {ν μ : ℂ} (hV : IsOpen V) (hVc
 
 /-- **Span criterion for the associated Legendre equation.** On a preconnected open set `V`, if
 two solutions `f`, `g` of the associated Legendre equation with degree `ν` and order `μ` have
-nonzero Wronskian `𝒲{f, g}` at one point `z₀ ∈ V` with `1 - z₀² ≠ 0`, then every solution `w` on
-`V` with the same `ν` and `μ` is `α f + β g` on `V`, with constants `α`, `β`. -/
+nonzero Wronskian `𝒲{f, g}` at one point `z₀ ∈ V`, then every solution `w` on `V` with the same
+`ν` and `μ` is `α f + β g` on `V`, with constants `α`, `β`. -/
 theorem exists_eq_mul_add_mul_of_legendreEquation {ν μ : ℂ} (hV : IsOpen V)
     (hVc : IsPreconnected V)
     (hf : DifferentiableOn ℂ f V) (hg : DifferentiableOn ℂ g V) (hw : DifferentiableOn ℂ w V)
@@ -137,19 +138,20 @@ theorem exists_eq_mul_add_mul_of_legendreEquation {ν μ : ℂ} (hV : IsOpen V)
       (ν * (ν + 1) - μ ^ 2 / (1 - z ^ 2)) * g z = 0)
     (hwe : ∀ z ∈ V, (1 - z ^ 2) * deriv^[2] w z - 2 * z * deriv w z +
       (ν * (ν + 1) - μ ^ 2 / (1 - z ^ 2)) * w z = 0)
-    {z₀ : ℂ} (hz₀ : z₀ ∈ V) (hz₀' : 1 - z₀ ^ 2 ≠ 0)
-    (hW : f z₀ * deriv g z₀ - deriv f z₀ * g z₀ ≠ 0) :
+    {z₀ : ℂ} (hz₀ : z₀ ∈ V) (hW : f z₀ * deriv g z₀ - deriv f z₀ * g z₀ ≠ 0) :
     ∃ α β : ℂ, ∀ z ∈ V, w z = α * f z + β * g z := by
-  -- Cramer's rule: `w 𝒲{f, g} = 𝒲{w, g} f + 𝒲{f, w} g` at every point, and by Abel's identity
-  -- each of the three Wronskians at `z` is `(1 - z₀²) / (1 - z²)` times its value at `z₀`.
-  refine ⟨(w z₀ * deriv g z₀ - deriv w z₀ * g z₀) / (f z₀ * deriv g z₀ - deriv f z₀ * g z₀),
-    (f z₀ * deriv w z₀ - deriv f z₀ * w z₀) / (f z₀ * deriv g z₀ - deriv f z₀ * g z₀),
-    fun z hz ↦ ?_⟩
-  have hfg := one_sub_sq_mul_wronskian_eq_of_legendreEquation hV hVc hf hg hfe hge hz hz₀
-  have hwg := one_sub_sq_mul_wronskian_eq_of_legendreEquation hV hVc hw hg hwe hge hz hz₀
-  have hfw := one_sub_sq_mul_wronskian_eq_of_legendreEquation hV hVc hf hw hfe hwe hz hz₀
-  rw [div_mul_eq_mul_div, div_mul_eq_mul_div, ← add_div, eq_div_iff hW]
-  refine mul_left_cancel₀ hz₀' ?_
-  linear_combination -(w z) * hfg + f z * hwg + g z * hfw
+  -- The leading coefficient `1 - z²` vanishes only at `1` and `-1`.
+  have hS : Dense ({1}ᶜ ∩ {-1}ᶜ : Set ℂ) := by
+    simpa only [Set.sdiff_eq] using (dense_compl_singleton (1 : ℂ)).sdiff_singleton (-1)
+  have hP (z : ℂ) (hz : z ∈ V ∩ ({1}ᶜ ∩ {-1}ᶜ)) : 1 - z ^ 2 ≠ 0 := by
+    have h : 1 - z ^ 2 = (1 - z) * (1 + z) := by ring
+    rw [h]
+    exact mul_ne_zero (sub_ne_zero.mpr (Ne.symm hz.2.1))
+      (fun h' ↦ hz.2.2 (Set.mem_singleton_iff.mpr (by linear_combination h')))
+  exact hV.exists_eq_mul_add_mul_of_secondOrderLinearEquation hVc hS (P := fun z ↦ 1 - z ^ 2)
+    (Q := fun z ↦ -2 * z) (R := fun z ↦ ν * (ν + 1) - μ ^ 2 / (1 - z ^ 2)) hP hf hg hw
+    (fun z hz ↦ legendreEquation_sturmLiouville (hfe z hz.1))
+    (fun z hz ↦ legendreEquation_sturmLiouville (hge z hz.1))
+    (fun z hz ↦ legendreEquation_sturmLiouville (hwe z hz.1)) hz₀ hW
 
 end TauCeti

@@ -86,8 +86,8 @@ instance isOver_projection : (projection K).IsOver (Spec (.of K)) where
     congr 2
     exact (projectionAlgHom K).comp_algebraMap
 
--- The linear projection `𝔸²_K → 𝔸¹_K` has the junk topological degree `0`.
-example : (projection K).toRationalMap.topologicalDegree = 0 := by
+/-- The linear projection `𝔸²_K → 𝔸¹_K` has the junk topological degree `0`. -/
+theorem topologicalDegree_projection : (projection K).toRationalMap.topologicalDegree = 0 := by
   rw [Scheme.RationalMap.topologicalDegree_eq_zero_iff K,
     TauCeti.AlgebraicGeometry.topologicalKrullDim_Spec_mvPolynomial,
     TauCeti.AlgebraicGeometry.topologicalKrullDim_Spec_mvPolynomial, ringKrullDim_eq_zero_of_field]

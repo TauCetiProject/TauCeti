@@ -134,7 +134,7 @@ theorem eq_of_forall_tail_eq [Countable I] [IsFiniteMeasure μ] [IsFiniteMeasure
   -- The densities agree almost everywhere: they are measurable for the tail σ-algebra `m`, and
   -- have the same integrals over its events.
   set m := ⨅ Λ : Finset I, X.exterior Λ
-  have hm : m ≤ Subtype.instMeasurableSpace := (iInf_le _ ∅).trans (X.exterior_le _)
+  have hm := X.iInf_exterior_le
   have hmeas {k : X → ℝ≥0∞} (hk : ∀ Λ : Finset I, Measurable[X.exterior Λ] k) :
       Measurable[m] k := fun s hs => MeasurableSpace.measurableSet_iInf.2 fun Λ => hk Λ hs
   have hfg : f =ᵐ[μ + ν] g := ae_eq_of_ae_eq_trim <|

@@ -40,6 +40,7 @@ n x)` are all `1` for `φ = 0`.
 * `TauCeti.topologicalPressure_zero` — `P(T, 0)` is the topological entropy `coverEntropy T univ`.
 * `TauCeti.topologicalPressure_mono` — pressure is monotone in the potential.
 * `TauCeti.topologicalPressure_add_const` — `P(T, φ + c) = P(T, φ) + c`.
+* `TauCeti.topologicalPressure_const` — `P(T, c) = h(T) + c` for a constant potential `c`.
 * `TauCeti.pressureNetSum_monotone_time` — for a nonnegative potential the pressure sums are
   monotone in time.
 * `TauCeti.topologicalPressure_id` — for the identity of a nonempty finite space,
@@ -222,6 +223,13 @@ theorem topologicalPressure_add_const [UniformSpace X] (T : X → X) (φ : X →
     topologicalPressure T (fun x ↦ φ x + c) = topologicalPressure T φ + c := by
   simp only [topologicalPressure, netPressureEntourage_add_const, iSup_subtype',
     AddQuantale.iSup_add_distrib]
+
+/-- The pressure of a constant potential `c` is the topological entropy plus `c`. -/
+@[simp]
+theorem topologicalPressure_const [UniformSpace X] (T : X → X) (c : ℝ) :
+    topologicalPressure T (fun _ ↦ c) = coverEntropy T univ + c := by
+  simpa only [Pi.zero_apply, zero_add, topologicalPressure_zero] using
+    topologicalPressure_add_const T 0 c
 
 /-- The pressure of the identity of a nonempty finite uniform space is the maximum of the
 potential: `P(id, φ) = max_x φ x`. -/

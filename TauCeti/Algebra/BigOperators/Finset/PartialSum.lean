@@ -35,6 +35,8 @@ This file contains basic facts about finite partial sums.
   prefix sums, which are monotone in the length for nonnegative tuples.
 * `TauCeti.prefixSum_eq_sum_castLE`, `TauCeti.prefixSum_comp_rev`: up to `n`, prefix sums are sums
   over the first indices, and prefix sums of a reversed tuple are suffix sums.
+* `TauCeti.prefixSum_sub_neg_comp_rev`: the complementary prefix sum of the reversed,
+  negated tuple is the original prefix sum minus the total sum.
 * `TauCeti.prefixSum_eq_sum_range`, `TauCeti.prefixSum_eq_sum_range_dite`: prefix sums of a
   sequence restricted to `Fin n` are its partial sums over `range`, capped at `n`, and prefix sums
   of a tuple equal the `range` sum padded with `0` beyond `n`.
@@ -155,6 +157,17 @@ theorem prefixSum_min (k : ℕ) (x : Fin n → M) : prefixSum (min k n) x = pref
   rcases le_total k n with hk | hk
   · rw [min_eq_left hk]
   · rw [min_eq_right hk, prefixSum_of_le le_rfl, prefixSum_of_le hk]
+
+/-- The prefix sum of length `n - k` of a reversed, negated tuple is the prefix sum of length
+`k` of the original tuple minus its total sum. -/
+theorem prefixSum_sub_neg_comp_rev {G : Type*} [AddCommGroup G] (k : ℕ) (x : Fin n → G) :
+    prefixSum (n - k) (fun i ↦ -x i.rev) = prefixSum k x - ∑ i, x i := by
+  rw [prefixSum_comp_rev (Nat.sub_le n k) (fun i ↦ -x i), Nat.sub_sub_eq_min, min_comm n k,
+    sum_neg_distrib]
+  have hsplit : prefixSum (min k n) x + (∑ i : Fin n with min k n ≤ i.val, x i) = ∑ i, x i := by
+    simpa only [prefixSum_def, not_lt] using
+      sum_filter_add_sum_filter_not univ (fun i : Fin n ↦ i.val < min k n) x
+  rw [← prefixSum_min k x, ← hsplit, sub_add_cancel_left]
 
 /-- The prefix sums of the first `n` terms of a sequence `f : ℕ → M` are its partial sums, capped
 at `n`. -/
