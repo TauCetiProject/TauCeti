@@ -49,7 +49,7 @@ divides `q`. In particular, for a prime `ℓ`, `1 / ℓ` is integral away from `
   and `integralAway R 0 = ⊤`.
 * `TauCeti.mem_integralAway_of_isIntegral`: elements integral over `ℤ` are integral away from
   every `q`.
-* `TauCeti.apply_mem_integralAway`: ring homomorphisms preserve integrality away from `q`.
+* `RingHom.apply_mem_integralAway`: ring homomorphisms preserve integrality away from `q`.
 * `TauCeti.inv_natCast_mem_integralAway`, `TauCeti.inv_natCast_mem_integralAway_iff`: `1 / n` is
   integral away from `q` when every prime factor of `n` divides `q`, and in `ℂ` only then.
 
@@ -99,22 +99,17 @@ theorem integralAway_zero : integralAway R 0 = ⊤ :=
 
 /-- An element integral over `ℤ`, such as an algebraic integer or a root of unity
 (`IsOfFinOrder.isIntegral`), is integral away from every `q`. -/
-theorem mem_integralAway_of_isIntegral (hz : IsIntegral ℤ z) : z ∈ integralAway R q := by
-  refine mem_integralAway.2 fun _ _ _ ι ↦
-    IsUltrametricDist.norm_le_one_of_isIntegral (fun _ _ _ ↦ norm_pow _ _) ?_
-  -- Instance search finds the `ℤ`-algebra structure of `ℂ_[ℓ]` as a completion, while the norm
-  -- bound uses the one of a general ring; they are equal but not by unification, so instead of
-  -- `IsIntegral.map` we map the monic polynomial by hand.
-  obtain ⟨p, hp, hpz⟩ := hz
-  refine ⟨p, hp, ?_⟩
-  have h := congrArg ι hpz
-  rw [Polynomial.hom_eval₂, map_zero] at h
-  convert h using 2
-  exact RingHom.ext_int _ _
+theorem mem_integralAway_of_isIntegral (hz : IsIntegral ℤ z) : z ∈ integralAway R q :=
+  mem_integralAway.2 fun _ _ _ ι ↦
+    IsUltrametricDist.norm_le_one_of_isIntegral (fun _ _ _ ↦ norm_pow _ _)
+      -- The norm bound uses the `ℤ`-algebra structure of a general ring, which is not the one that
+      -- instance search finds on `ℂ_[ℓ]` (as a completion), so it is passed explicitly.
+      (@IsIntegral.map_of_comp_eq _ _ _ _ _ _ _ _ _ (Ring.toIntAlgebra _) (RingHom.id ℤ) ι
+        (RingHom.ext_int _ _) _ hz)
 
 /-- A ring homomorphism, for instance an automorphism of `ℂ`, carries elements integral away from
 `q` to elements integral away from `q`. -/
-theorem apply_mem_integralAway (f : R →+* S) (hz : z ∈ integralAway R q) :
+theorem _root_.RingHom.apply_mem_integralAway (f : R →+* S) (hz : z ∈ integralAway R q) :
     f z ∈ integralAway S q :=
   mem_integralAway.2 fun ℓ _ hℓ ι ↦ mem_integralAway.1 hz ℓ hℓ (ι.comp f)
 
