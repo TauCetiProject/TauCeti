@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Extension
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
-import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus
+import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
 import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Normal
 import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Sections

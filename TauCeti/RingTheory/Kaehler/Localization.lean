@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Etale.Kaehler
+public import Mathlib.RingTheory.Kaehler.TensorProduct
 public import Mathlib.RingTheory.LocalProperties.Submodule
 import TauCeti.RingTheory.Finiteness.Nakayama
 import TauCeti.RingTheory.Localization.Module
@@ -28,6 +29,10 @@ differentials. This injectivity is not restated here: it follows from Mathlib's
 `KaehlerDifferential.isLocalizedModule_map`, together with
 `Module.Flat.isSMulRegular_of_nonZeroDivisors` in the formally smooth case.
 
+In a pushout `B = S ⊗[R] A` of commutative rings and a prime `q` of `B` over `p = q ∩ A`, Kähler
+differentials commute with base change and localization:
+`B_q ⊗[A_p] Ω[A_p ⁄ R] ≃ₗ[B_q] Ω[B_q ⁄ S]`.
+
 Differentials forming a basis along a closed subscheme `V(J)` form a basis on a neighbourhood
 of it: if `Ω[A⁄R]` is finite projective and the classes of `D xᵢ` form a basis of
 `Ω[A⁄R] ⧸ J • Ω[A⁄R]` over `A ⧸ J`, then the `D xᵢ` form a basis of `Ω[A[1/g]⁄R]` for some
@@ -39,6 +44,11 @@ of it: if `Ω[A⁄R]` is finite projective and the classes of `D xᵢ` form a ba
   localizes their image in the target differential module.
 * `TauCeti.KaehlerDifferential.mem_range_map_iff_forall_isMaximal`: membership in the global
   image can be checked using any family of maximal localizations.
+* `TauCeti.KaehlerDifferential.linearMap_eq_of_D_algebraMap`: `Aₘ`-linear maps out of
+  `Ω[Aₘ⁄R]` agree once they agree on `D R Aₘ (algebraMap A Aₘ x)`.
+* `TauCeti.KaehlerDifferential.atPrimePushoutEquiv`: base change and localization of Kähler
+  differentials at a prime in a pushout `B = S ⊗[R] A`, with pure-tensor formula
+  `TauCeti.KaehlerDifferential.atPrimePushoutEquiv_tmul_D`.
 * `TauCeti.KaehlerDifferential.exists_sub_one_mem_and_basis_localizationAway`: if `Ω[A⁄R]` is
   finite projective and differentials `D xᵢ` reduce to a basis of `Ω[A⁄R] ⧸ J • Ω[A⁄R]`, they
   form a basis of `Ω[A[1/g]⁄R]` for some `g ≡ 1 (mod J)`.
@@ -59,10 +69,12 @@ noncomputable section
 
 namespace TauCeti
 
-open KaehlerDifferential
+open KaehlerDifferential TensorProduct
 open scoped nonZeroDivisors
 
 namespace KaehlerDifferential
+
+section Localization
 
 variable (R A B F : Type*) [CommRing R] [CommRing A] [CommRing B] [CommRing F]
   [Algebra R A] [Algebra R B] [Algebra R F] [Algebra A B] [Algebra A F]
@@ -124,6 +136,96 @@ theorem mem_range_map_iff_forall_isMaximal (ω : Ω[F⁄R]) :
     exact h P
 
 end Maximal
+
+end Localization
+
+/-- Two `Aₘ`-linear maps out of `Ω[Aₘ⁄R]` agree everywhere once they agree on
+`D R Aₘ (algebraMap A Aₘ x)` for all `x : A`. -/
+theorem linearMap_eq_of_D_algebraMap {R A Aₘ N : Type*}
+    [CommRing R] [CommRing A] [CommRing Aₘ] [Algebra R A] [Algebra A Aₘ] [Algebra R Aₘ]
+    [IsScalarTower R A Aₘ] (M : Submonoid A) [IsLocalization M Aₘ]
+    [AddCommGroup N] [Module Aₘ N] {f g : Ω[Aₘ⁄R] →ₗ[Aₘ] N}
+    (h : ∀ x : A, f (D R Aₘ (algebraMap A Aₘ x)) = g (D R Aₘ (algebraMap A Aₘ x))) :
+    f = g := by
+  let : Module A N := Module.compHom N (algebraMap A Aₘ)
+  have : IsScalarTower A Aₘ N := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  have : IsLocalizedModule M (LinearMap.id : N →ₗ[A] N) := isLocalizedModule_id M N Aₘ
+  have hfg : f.restrictScalars A = g.restrictScalars A := by
+    apply IsLocalizedModule.linearMap_ext M (map R R A Aₘ) (LinearMap.id : N →ₗ[A] N)
+    apply LinearMap.ext_on (span_range_derivation R A)
+    rintro _ ⟨x, rfl⟩
+    simpa [map_D] using h x
+  exact LinearMap.ext fun ω ↦ LinearMap.congr_fun hfg ω
+
+section Pushout
+
+variable (R S A : Type*) {B : Type*} [CommRing R] [CommRing S] [CommRing A] [CommRing B]
+  [Algebra R S] [Algebra R A] [Algebra R B] [Algebra A B] [Algebra S B]
+  [IsScalarTower R A B] [IsScalarTower R S B] [Algebra.IsPushout R S A B]
+
+/-- In a pushout `B = S ⊗[R] A`, `B_q ⊗[A_{q ∩ A}] Ω[A_{q ∩ A} ⁄ R] ≃ₗ[B_q] Ω[B_q ⁄ S]`. -/
+def atPrimePushoutEquiv (q : Ideal B) [q.IsPrime] :
+    letI := Localization.AtPrime.algebraOfLiesOver (q.under A) q
+    (Localization.AtPrime q ⊗[Localization.AtPrime (q.under A)]
+      Ω[Localization.AtPrime (q.under A)⁄R]) ≃ₗ[Localization.AtPrime q]
+      Ω[Localization.AtPrime q⁄S] :=
+  let p := q.under A
+  let Ap := Localization.AtPrime p
+  let Bq := Localization.AtPrime q
+  let := Localization.AtPrime.algebraOfLiesOver p q
+  have : Algebra.FormallyEtale A Ap := Algebra.FormallyEtale.of_isLocalization p.primeCompl
+  have : Algebra.FormallyEtale B Bq := Algebra.FormallyEtale.of_isLocalization q.primeCompl
+  AlgebraTensorModule.congr (LinearEquiv.refl Bq Bq)
+      (KaehlerDifferential.tensorKaehlerEquivOfFormallyEtale R A Ap).symm ≪≫ₗ
+    AlgebraTensorModule.cancelBaseChange A Ap Bq Bq Ω[A⁄R] ≪≫ₗ
+    (AlgebraTensorModule.cancelBaseChange A B Bq Bq Ω[A⁄R]).symm ≪≫ₗ
+    AlgebraTensorModule.congr (LinearEquiv.refl Bq Bq)
+      (KaehlerDifferential.tensorKaehlerEquiv R S A B) ≪≫ₗ
+    KaehlerDifferential.tensorKaehlerEquivOfFormallyEtale S B Bq
+
+/-- Evaluating `atPrimePushoutEquiv` on a pure tensor `b ⊗ₜ D R A_p a`. -/
+@[simp]
+theorem atPrimePushoutEquiv_tmul_D (q : Ideal B) [q.IsPrime]
+    (b : Localization.AtPrime q) (a : Localization.AtPrime (q.under A)) :
+    letI := Localization.AtPrime.algebraOfLiesOver (q.under A) q
+    atPrimePushoutEquiv R S A q (b ⊗ₜ D R (Localization.AtPrime (q.under A)) a) =
+      b • D S (Localization.AtPrime q)
+        (algebraMap (Localization.AtPrime (q.under A)) (Localization.AtPrime q) a) := by
+  let p := q.under A
+  let Ap := Localization.AtPrime p
+  let Bq := Localization.AtPrime q
+  let := Localization.AtPrime.algebraOfLiesOver p q
+  have : Algebra.FormallyEtale A Ap := Algebra.FormallyEtale.of_isLocalization p.primeCompl
+  have : Algebra.FormallyEtale B Bq := Algebra.FormallyEtale.of_isLocalization q.primeCompl
+  let lhs : Ω[Ap⁄R] →ₗ[Ap] Ω[Bq⁄S] :=
+    ((atPrimePushoutEquiv R S A q).toLinearMap.restrictScalars Ap).comp
+      (TensorProduct.mk Ap Bq Ω[Ap⁄R] 1)
+  let rhs : Ω[Ap⁄R] →ₗ[Ap] Ω[Bq⁄S] := KaehlerDifferential.map R S Ap Bq
+  have hAlg (x : A) : lhs (D R Ap (algebraMap A Ap x)) = rhs (D R Ap (algebraMap A Ap x)) := by
+    dsimp only [lhs, rhs, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
+      LinearEquiv.coe_toLinearMap, TensorProduct.mk_apply, atPrimePushoutEquiv, Ap, Bq, p]
+    simp only [LinearEquiv.trans_apply, AlgebraTensorModule.congr_tmul, LinearEquiv.refl_apply,
+      KaehlerDifferential.tensorKaehlerEquivOfFormallyEtale_symm_D_algebraMap,
+      AlgebraTensorModule.cancelBaseChange_tmul,
+      AlgebraTensorModule.cancelBaseChange_symm_tmul,
+      KaehlerDifferential.tensorKaehlerEquiv_tmul_D, one_smul,
+      KaehlerDifferential.tensorKaehlerEquivOfFormallyEtale_apply,
+      KaehlerDifferential.mapBaseChange_tmul, KaehlerDifferential.map_D]
+    congr 1
+    rw [← IsScalarTower.algebraMap_apply A B Bq, ← IsScalarTower.algebraMap_apply A Ap Bq]
+  have hOne : atPrimePushoutEquiv R S A q (1 ⊗ₜ D R Ap a) =
+      D S Bq (algebraMap Ap Bq a) := by
+    simpa [lhs, rhs] using LinearMap.congr_fun
+      (linearMap_eq_of_D_algebraMap p.primeCompl hAlg) (D R Ap a)
+  calc
+    atPrimePushoutEquiv R S A q (b ⊗ₜ D R Ap a)
+      = atPrimePushoutEquiv R S A q (b • (1 ⊗ₜ[Ap] D R Ap a)) := by
+        rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+    _ = b • atPrimePushoutEquiv R S A q (1 ⊗ₜ D R Ap a) :=
+        (atPrimePushoutEquiv R S A q).map_smul b _
+    _ = b • D S Bq (algebraMap Ap Bq a) := by rw [hOne]
+
+end Pushout
 
 section Basis
 

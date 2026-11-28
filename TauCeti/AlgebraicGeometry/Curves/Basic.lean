@@ -121,4 +121,19 @@ theorem IsCurveOver.coheight_section_eq_one [X.IsCurveOver k] {s : Spec (.of k) 
   rw [← TauCeti.topologicalKrullDim_eq_iSup_coheight, hX] at this
   exact absurd this (by decide)
 
+variable (k) in
+/-- Every non-generic point of a curve over `k` is closed. -/
+theorem IsCurveOver.isClosed_singleton_of_ne_genericPoint [X.IsCurveOver k] {x : X}
+    (hx : x ≠ genericPoint X) : IsClosed {x} :=
+  TauCeti.AlgebraicGeometry.Scheme.isClosed_singleton_of_ne_genericPoint
+    (IsCurveOver.topologicalKrullDim_eq_one k).le hx
+
+/-- Every point of a curve `X` over `k` mapping under a dominant morphism `f : X ⟶ Y` to a
+non-generic point of an irreducible scheme `Y` is closed. -/
+theorem IsCurveOver.isClosed_singleton_of_map_ne_genericPoint [X.IsCurveOver k]
+    {Y : Scheme.{u}} [IrreducibleSpace Y] (f : X ⟶ Y) [IsDominant f]
+    {x : X} (hx : f x ≠ genericPoint Y) : IsClosed {x} :=
+  IsCurveOver.isClosed_singleton_of_ne_genericPoint (k := k) fun hgen ↦
+    hx (hgen ▸ f.genericPoint_eq_of_isDominant)
+
 end AlgebraicGeometry.Scheme

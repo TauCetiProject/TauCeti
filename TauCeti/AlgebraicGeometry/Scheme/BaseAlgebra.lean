@@ -49,6 +49,12 @@ the base, stalk, and function-field algebra structures form a scalar tower.
   identifies the residue fields of `X` with those of the chart as `k`-algebras.
 * `Scheme.Hom.functionFieldAlgEquivOfIsOpenImmersion`: the function field of an integral scheme
   over `Spec k` is, as a `k`-algebra, the fraction field of any affine chart over `Spec k`.
+* `Scheme.Hom.exists_isFractionRing_functionField_of_isOpenImmersion`: an affine open chart
+  `ι : Spec R ⟶ Y` of an integral scheme `Y` embeds `R` into `Y.functionField` as a fraction
+  field, compatibly with `Y.fromSpecStalk (genericPoint Y)`.
+* `IsAffineOpen.specMap_germToFunctionField_fromSpec`: for a nonempty affine open `U` of an
+  irreducible scheme `X`, `X.fromSpecStalk (genericPoint X)` factors through `hU.fromSpec` via
+  `X.germToFunctionField U`.
 * `TauCeti.AlgebraicGeometry.exists_affineOpen_isFractionRing`: an integral scheme over `Spec k`
   has a nonempty affine open `U` whose sections are a `k`-algebra with fraction field the function
   field, compatibly with the structure morphism.
@@ -401,7 +407,60 @@ theorem functionFieldAlgEquivOfIsOpenImmersion_germToFunctionField [Nonempty (ι
   -- `germToFunctionField` is by definition the algebra map of `Γ(Y, U)` to `k(Y)`.
   exact IsFractionRing.ringEquivOfRingEquiv_algebraMap _ a
 
+/-- Embed `R` into `Y.functionField` across an affine open chart `ι : Spec R ⟶ Y` of an integral
+scheme `Y`, transporting the fraction-field structure and relating `Spec.map (ofHom α) ≫ ι` to the
+generic-point stalk map `Y.fromSpecStalk (genericPoint Y)`. -/
+theorem exists_isFractionRing_functionField_of_isOpenImmersion
+    {R : Type u} [CommRing R] [IsDomain R] {Y : Scheme.{u}} [IsIntegral Y]
+    (ι : Spec (.of R) ⟶ Y) [IsOpenImmersion ι] :
+    ∃ α : R →+* Y.functionField,
+      (letI := α.toAlgebra; IsFractionRing R Y.functionField) ∧
+      Spec.map (CommRingCat.ofHom α) ≫ ι = Y.fromSpecStalk (genericPoint Y) := by
+  have : IsDominant ι := isDominant_iff_genericPoint_eq.mpr (genericPoint_eq_of_isOpenImmersion ι)
+  let R' := CommRingCat.of R
+  let φ₀ : R' ⟶ (Spec R').functionField := StructureSheaf.toStalk R' (genericPoint (Spec R'))
+  let e : (Spec R').functionField ≃+* Y.functionField :=
+    (asIso ι.functionFieldMap).symm.commRingCatIsoToRingEquiv
+  let α : R →+* Y.functionField := e.toRingHom.comp φ₀.hom
+  -- Express `CommRingCat.ofHom α` categorically as `φ₀ ≫ inv ι.functionFieldMap`.
+  have hα_eq : CommRingCat.ofHom α = φ₀ ≫ inv ι.functionFieldMap := by
+    apply CommRingCat.hom_ext
+    rw [CommRingCat.hom_ofHom, CommRingCat.hom_comp]
+    exact congrArg (·.comp φ₀.hom)
+      ((Iso.commRingCatIsoToRingEquiv_toRingHom (asIso ι.functionFieldMap).symm).trans
+        (by rw [Iso.symm_hom, asIso_inv]))
+  -- Identify `Spec.map (ofHom α) ≫ ι` with the generic-point stalk map of `Y`.
+  have hSpecα : Spec.map (CommRingCat.ofHom α) ≫ ι = Y.fromSpecStalk (genericPoint Y) := by
+    have hφ₀ : Spec.map φ₀ = (Spec R').fromSpecStalk (genericPoint (Spec R')) :=
+      (_root_.AlgebraicGeometry.Spec.fromSpecStalk_eq' R' (genericPoint (Spec R'))).symm
+    rw [hα_eq, Spec.map_comp_assoc, reassoc_of% hφ₀, ← ι.SpecMap_functionFieldMap_fromSpecStalk,
+      Spec.map_inv, IsIso.inv_hom_id_assoc]
+  -- Transport `IsFractionRing R' (Spec R').functionField` across `e`.
+  let : Algebra R' (Spec R').functionField := φ₀.hom.toAlgebra
+  let : Algebra R' Y.functionField := α.toAlgebra
+  have : IsFractionRing R' (Spec R').functionField := functionField_isFractionRing_of_affine R'
+  exact ⟨α, IsFractionRing.of_algEquiv (R := R') (K := (Spec R').functionField)
+    (L := Y.functionField) (AlgEquiv.ofRingEquiv (f := e) fun _ ↦ by
+      -- `algebraMap R' (Spec R').functionField` is `φ₀.hom` via our local `Algebra` instance,
+      -- and `algebraMap R' Y.functionField` is `α = e ∘ φ₀.hom`.
+      simp only [RingHom.algebraMap_toAlgebra]; rfl), hSpecα⟩
+
 end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry.IsAffineOpen
+
+/-- For any nonempty affine open `U` of an irreducible scheme `X`,
+`X.fromSpecStalk (genericPoint X)` factors through `hU.fromSpec` via `X.germToFunctionField U`. -/
+@[reassoc]
+theorem specMap_germToFunctionField_fromSpec {X : Scheme.{u}} [IrreducibleSpace X]
+    {U : X.Opens} (hU : IsAffineOpen U) [Nonempty U] :
+    Spec.map (X.germToFunctionField U) ≫ hU.fromSpec = X.fromSpecStalk (genericPoint X) := by
+  have hxU : genericPoint X ∈ U :=
+    ((genericPoint_spec X).mem_open_set_iff U.isOpen).mpr (by simpa using ‹Nonempty U›)
+  rw [← hU.fromSpecStalk_eq_fromSpecStalk hxU, IsAffineOpen.fromSpecStalk,
+    Scheme.germToFunctionField]
+
+end AlgebraicGeometry.IsAffineOpen
 
 namespace TauCeti.AlgebraicGeometry
 

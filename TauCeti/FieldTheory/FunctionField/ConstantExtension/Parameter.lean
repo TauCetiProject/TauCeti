@@ -39,13 +39,10 @@ and `AlgHom.liftEquiv_bijective_of_basis` (built from Mathlib's `Module.Basis.ba
 
 ## Main declarations
 
-* `TauCeti.constantExtensionParameterBasis`, `IntermediateField.fractionFieldParameterBasis`:
-  transport a `C`-basis of `F` to a `(C · K)`-basis of `F'`.
 * `TauCeti.constantExtensionTensorEquiv`, `IntermediateField.fractionFieldParameterEquiv`:
   the `(C · K)`-algebra isomorphism `(C · K) ⊗[C] F ≃ₐ[C · K] F'`.
-* `TauCeti.constantExtensionTowerBasis`, `TauCeti.constantExtensionTowerTensorEquiv`,
-  `TauCeti.finrank_eq_of_linearDisjoint_tower`: external-base counterparts `E' ⊗[E] F ≃ₐ[E'] F'`
-  and `[F' : E'] = [F : E]`.
+* `TauCeti.constantExtensionTowerTensorEquiv`:
+  external-base counterpart `E' ⊗[E] F ≃ₐ[E'] F'`.
 * `TauCeti.fractionFieldTowerBasis`, `TauCeti.fractionFieldTowerTensorEquiv`,
   `TauCeti.finrank_fractionRing_tensorProduct_eq`,
   `TauCeti.isField_tensorProduct_of_isFractionRing_tensorProduct`: specialization to specified
@@ -80,28 +77,6 @@ section Compositum
 variable {k K F F' : Type*} [Field k] [Field K] [Field F] [Field F']
   [Algebra k K] [Algebra k F] [Algebra k F'] [Algebra K F'] [Algebra F F']
   [IsScalarTower k K F'] [IsScalarTower k F F']
-
-/-- A `C`-basis of an algebraic extension `F/C` transported to a `(C · K)`-basis of the linearly
-disjoint constant compositum `F' = F · K`. -/
-noncomputable def constantExtensionParameterBasis
-    (H : (IsScalarTower.toAlgHom k K F').fieldRange.LinearDisjoint F)
-    (h : constantCompositum F K F' = ⊤) (C : IntermediateField k F)
-    [Algebra.IsAlgebraic C F] {ι : Type*} (b : Module.Basis ι C F) :
-    Module.Basis ι (constantCompositum C K F') F' :=
-  (constantExtensionBasisOfLinearDisjoint H h C b).mapCoeffs
-    (RingEquiv.subfieldCongr (constantCompositum_toSubfield_eq_adjoin_toSubfield C K F').symm)
-    (fun _ _ ↦ rfl)
-
-/-- `TauCeti.constantExtensionParameterBasis` maps each index `i` to `algebraMap F F' (b i)`. -/
-@[simp]
-theorem constantExtensionParameterBasis_apply
-    (H : (IsScalarTower.toAlgHom k K F').fieldRange.LinearDisjoint F)
-    (h : constantCompositum F K F' = ⊤) (C : IntermediateField k F)
-    [Algebra.IsAlgebraic C F] {ι : Type*} (b : Module.Basis ι C F) (i : ι) :
-    constantExtensionParameterBasis H h C b i = algebraMap F F' (b i) :=
-  ((constantExtensionBasisOfLinearDisjoint H h C b).mapCoeffs_apply
-    (RingEquiv.subfieldCongr (constantCompositum_toSubfield_eq_adjoin_toSubfield C K F').symm)
-    (fun _ _ ↦ rfl) i).trans (constantExtensionBasisOfLinearDisjoint_apply H h C b i)
 
 /-- Multiplication over the enlarged intermediate field is bijective. -/
 private theorem bijective_parameterLift
@@ -173,96 +148,6 @@ variable {k K E E' F F' : Type*} [Field k] [Field K] [Field E] [Field E'] [Field
   [Algebra k K] [Algebra k E] [Algebra k F] [Algebra E F] [IsScalarTower k E F]
   [Algebra k F'] [Algebra K F'] [Algebra F F'] [IsScalarTower k K F'] [IsScalarTower k F F']
   [Algebra K E'] [Algebra E E'] [Algebra E' F'] [IsScalarTower K E' F']
-
-omit [Algebra k K] [Algebra k F'] [IsScalarTower k K F'] [IsScalarTower k F F'] in
-/-- When `E' = E · K` and `E → E' → F'` agrees with `E → F → F'`, the image of `E'` in `F'` has
-the same underlying subfield as `(image of E) · K`. -/
-private theorem fieldRange_toSubfield_eq_constantCompositum
-    (hE' : constantCompositum E K E' = ⊤)
-    (hcomm : ∀ e : E, algebraMap E' F' (algebraMap E E' e) = algebraMap F F' (algebraMap E F e)) :
-    (IsScalarTower.toAlgHom K E' F').fieldRange.toSubfield =
-      (constantCompositum (IsScalarTower.toAlgHom k E F).fieldRange K F').toSubfield := by
-  set C := (IsScalarTower.toAlgHom k E F).fieldRange
-  set C' := (IsScalarTower.toAlgHom K E' F').fieldRange
-  refine le_antisymm ?_ ?_
-  · rintro _ ⟨y, rfl⟩
-    let M : IntermediateField E E' :=
-      ((constantCompositum C K F').toSubfield.comap (algebraMap E' F')).toIntermediateField
-        fun e ↦ by
-          rw [Subfield.mem_comap, hcomm e]
-          exact (constantCompositum C K F').algebraMap_mem ⟨algebraMap E F e, ⟨e, rfl⟩⟩
-    have hle : constantCompositum E K E' ≤ M :=
-      (constantCompositum_le_iff E K E' (K := M)).mpr fun c ↦ by
-        rw [← IntermediateField.mem_toSubfield]
-        simp only [M, Subfield.toIntermediateField_toSubfield, Subfield.mem_comap,
-          ← IsScalarTower.algebraMap_apply K E' F']
-        exact algebraMap_mem_constantCompositum C K F' c
-    exact hle (hE' ▸ IntermediateField.mem_top)
-  · rw [constantCompositum_def, IntermediateField.adjoin_toSubfield, Subfield.closure_le]
-    rintro _ (⟨⟨_, ⟨e, rfl⟩⟩, rfl⟩ | ⟨c, rfl⟩)
-    · exact ⟨algebraMap E E' e, hcomm e⟩
-    · exact ⟨algebraMap K E' c, (IsScalarTower.algebraMap_apply K E' F' c).symm⟩
-
-omit [Algebra k K] [Algebra k F'] [IsScalarTower k K F'] [IsScalarTower k F F'] in
-/-- Ring isomorphism identifying `E'` with the compositum `(image of E) · K` inside `F'`. -/
-private noncomputable def towerCompositumRingEquiv
-    (hE' : constantCompositum E K E' = ⊤)
-    (hcomm : ∀ e : E, algebraMap E' F' (algebraMap E E' e) = algebraMap F F' (algebraMap E F e)) :
-    E' ≃+* constantCompositum (IsScalarTower.toAlgHom k E F).fieldRange K F' :=
-  (IsScalarTower.toAlgHom K E' F').equivFieldRange.toRingEquiv.trans
-    (RingEquiv.subfieldCongr (fieldRange_toSubfield_eq_constantCompositum hE' hcomm))
-
-omit [Algebra k K] [Algebra k F'] [IsScalarTower k K F'] [IsScalarTower k F F'] in
-/-- Coercing `towerCompositumRingEquiv` to `F'` recovers `algebraMap E' F'`: both
-`RingEquiv.subfieldCongr` (via `Equiv.subtypeEquivProp`) and `AlgHom.equivFieldRange` (whose
-forward map is `AlgHom.rangeRestrict`) preserve underlying `F'` values definitionally. -/
-private theorem coe_towerCompositumRingEquiv_apply
-    (hE' : constantCompositum E K E' = ⊤)
-    (hcomm : ∀ e : E, algebraMap E' F' (algebraMap E E' e) = algebraMap F F' (algebraMap E F e))
-    (y : E') :
-    (towerCompositumRingEquiv (k := k) hE' hcomm y : F') = algebraMap E' F' y :=
-  rfl
-
-/-- Transport an `E`-basis of an algebraic extension `F/E` to an `E'`-basis of `F' = F · K` when
-`E' = E · K` maps compatibly into `F'`. -/
-noncomputable def constantExtensionTowerBasis [Algebra.IsAlgebraic E F]
-    (H : (IsScalarTower.toAlgHom k K F').fieldRange.LinearDisjoint F)
-    (h : constantCompositum F K F' = ⊤) (hE' : constantCompositum E K E' = ⊤)
-    (hcomm : ∀ e : E, algebraMap E' F' (algebraMap E E' e) = algebraMap F F' (algebraMap E F e))
-    {ι : Type*} (b : Module.Basis ι E F) : Module.Basis ι E' F' :=
-  let fE := IsScalarTower.toAlgHom k E F
-  let C := fE.fieldRange
-  let eC := fE.equivFieldRange
-  let _ : Algebra E C := eC.toRingHom.toAlgebra
-  have : IsScalarTower E C F := .of_algebraMap_eq fun _ ↦ rfl
-  have : Algebra.IsAlgebraic C F := Algebra.IsAlgebraic.tower_top (K := E) (L := C) (A := F)
-  let bC : Module.Basis ι C F := b.mapCoeffs eC.toRingEquiv fun _ _ ↦ by
-    simp [Algebra.smul_def, eC, fE, AlgHom.equivFieldRange_apply_coe]
-  (constantExtensionParameterBasis H h C bC).mapCoeffs
-    (towerCompositumRingEquiv (k := k) hE' hcomm).symm fun a x ↦ by
-      obtain ⟨y, rfl⟩ := (towerCompositumRingEquiv (k := k) hE' hcomm).surjective a
-      simp [Algebra.smul_def, coe_towerCompositumRingEquiv_apply]
-
-/-- `TauCeti.constantExtensionTowerBasis` sends `i` to `algebraMap F F' (b i)`. -/
-@[simp]
-theorem constantExtensionTowerBasis_apply [Algebra.IsAlgebraic E F]
-    (H : (IsScalarTower.toAlgHom k K F').fieldRange.LinearDisjoint F)
-    (h : constantCompositum F K F' = ⊤) (hE' : constantCompositum E K E' = ⊤)
-    (hcomm : ∀ e : E, algebraMap E' F' (algebraMap E E' e) = algebraMap F F' (algebraMap E F e))
-    {ι : Type*} (b : Module.Basis ι E F) (i : ι) :
-    constantExtensionTowerBasis H h hE' hcomm b i = algebraMap F F' (b i) := by
-  simp [constantExtensionTowerBasis]
-
-/-- Linearly disjoint constant extension preserves the degree over any algebraic base field `E`:
-if `F' = F · K` and `E' = E · K` compatibly, then `[F' : E'] = [F : E]`. -/
-theorem finrank_eq_of_linearDisjoint_tower [Algebra.IsAlgebraic E F]
-    (H : (IsScalarTower.toAlgHom k K F').fieldRange.LinearDisjoint F)
-    (h : constantCompositum F K F' = ⊤) (hE' : constantCompositum E K E' = ⊤)
-    (hcomm : ∀ e : E, algebraMap E' F' (algebraMap E E' e) = algebraMap F F' (algebraMap E F e)) :
-    Module.finrank E' F' = Module.finrank E F := by
-  let b := Module.Basis.ofVectorSpace E F
-  exact (Module.finrank_eq_nat_card_basis (constantExtensionTowerBasis H h hE' hcomm b)).trans
-    (Module.finrank_eq_nat_card_basis b).symm
 
 /-- **External-base tensor presentation of a linearly disjoint constant extension.** If `F/E` is
 algebraic, `F' = F · K` linearly disjointly over `k`, and `E' = E · K` maps compatibly into `F'`,

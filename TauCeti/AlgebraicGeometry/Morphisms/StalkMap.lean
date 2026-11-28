@@ -12,13 +12,16 @@ public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.KrullDimension.Basic
 public import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
+public import TauCeti.AlgebraicGeometry.Pullback.SpecMap
 public import TauCeti.AlgebraicGeometry.Restrict
 public import TauCeti.RingTheory.Etale.Locus
 public import TauCeti.RingTheory.QuasiFinite.Localization
 public import TauCeti.RingTheory.Unramified.LocalRing
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.AlgebraicGeometry.Pullback.Carrier
 import TauCeti.RingTheory.Flat.Noetherian
+import TauCeti.RingTheory.Unramified.BaseChange
 import TauCeti.RingTheory.Unramified.Normal
 
 /-!
@@ -100,6 +103,15 @@ For `f` formally unramified and locally of finite type, the maximal ideal of `�
 generates the maximal ideal of `𝒪_{X, x}` along the stalk map
 (`AlgebraicGeometry.Scheme.Hom.map_maximalIdeal_stalkMap_of_formallyUnramified`).
 
+Formal unramifiedness of stalk maps is also preserved under arbitrary pullback
+(`AlgebraicGeometry.Scheme.Hom.formallyUnramified_stalkMap_of_isPullback`), descends along flat
+stalk maps and flat base change
+(`AlgebraicGeometry.Scheme.Hom.formallyUnramified_stalkMap_iff_of_isPullback_of_flat_stalkMap`,
+`AlgebraicGeometry.Scheme.Hom.formallyUnramified_stalkMap_iff_of_isPullback`), and holds at the
+generic point of a dominant morphism between integral schemes whenever the induced function-field
+extension is separable
+(`AlgebraicGeometry.Scheme.Hom.formallyUnramified_stalkMap_genericPoint_of_isSeparable`).
+
 The passage from the stalk to a neighbourhood follows Mathlib's
 `AlgebraicGeometry.exists_smooth_of_formallySmooth_stalk`: Mathlib's
 `Algebra.exists_formallyUnramified_of_isUnramifiedAt` and `Algebra.exists_etale_of_isEtaleAt`
@@ -163,6 +175,29 @@ theorem _root_.RingHom.RespectsIso.stalkMap_comp_isOpenImmersion_iff
   rw [← CommRingCat.hom_comp, ← Scheme.Hom.stalkMap_comp]
   -- The stalks at `(i ≫ f) x` and `f (i x)` agree definitionally, but not reducibly.
   exact Iff.rfl
+
+/-- For an open immersion `j`, a ring-hom property `Q` stable under isomorphisms holds for the
+stalk map of `h ≫ j` at `q` iff it holds for the stalk map of `h` at `q`. -/
+theorem _root_.RingHom.RespectsIso.stalkMap_comp_isOpenImmersion_right_iff
+    {Q : ∀ {R S : Type u} [CommRing R] [CommRing S], (R →+* S) → Prop}
+    (hQ : RingHom.RespectsIso Q) {X₀ Y₀ Y : Scheme.{u}} (h : X₀ ⟶ Y₀) (j : Y₀ ⟶ Y)
+    [IsOpenImmersion j] (q : X₀) :
+    Q ((h ≫ j).stalkMap q).hom ↔ Q (h.stalkMap q).hom :=
+  Iff.trans (by rw [← CommRingCat.hom_comp, ← Scheme.Hom.stalkMap_comp]; exact Iff.rfl)
+    (hQ.cancel_left_isIso (j.stalkMap (h q)) (h.stalkMap q))
+
+/-- In a commutative square `ι ≫ f' = h ≫ j` with open immersions `ι` and `j`, any
+isomorphism-invariant ring-hom property holds for `f'.stalkMap (ι q)` iff it holds for
+`h.stalkMap q`. -/
+theorem _root_.RingHom.RespectsIso.stalkMap_iff_of_isOpenImmersion_square
+    {Q : ∀ {R S : Type u} [CommRing R] [CommRing S], (R →+* S) → Prop}
+    (hQ : RingHom.RespectsIso Q) {X₀ Y₀ X' Y' : Scheme.{u}} (ι : X₀ ⟶ X') (f' : X' ⟶ Y')
+    (h : X₀ ⟶ Y₀) (j : Y₀ ⟶ Y') [IsOpenImmersion ι] [IsOpenImmersion j]
+    (e : ι ≫ f' = h ≫ j) (q : X₀) :
+    Q (f'.stalkMap (ι q)).hom ↔ Q (h.stalkMap q).hom :=
+  (hQ.stalkMap_comp_isOpenImmersion_iff ι f' q).symm.trans <|
+    (iff_of_eq (congrArg (fun k : X₀ ⟶ Y' ↦ Q (k.stalkMap q).hom) e)).trans
+      (hQ.stalkMap_comp_isOpenImmersion_right_iff h j q)
 
 /-- Let `V ⊆ f⁻¹ U` with `U` and `V` affine, and let `P` be a morphism property attached to the
 ring-hom property `Q`. If `Q` holds for `Γ(Y, U) → Γ(X, V)_r`, then `P` holds for the restriction
@@ -495,6 +530,36 @@ theorem isLocalHom_stalkMap_toAlgebra :
     IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) (X.presheaf.stalk x)) :=
   inferInstanceAs <| IsLocalHom (f.stalkMap x).hom
 
+/-- The algebra structure on `X.residueField x` over `Y.residueField (f x)` induced by
+`f.residueFieldMap x` equals the local-ring residue-field algebra induced by `f.stalkMap x`. -/
+theorem residueFieldMap_toAlgebra_eq_residueField_algebra :
+    letI := (f.stalkMap x).hom.toAlgebra
+    letI := isLocalHom_stalkMap_toAlgebra f x
+    (f.residueFieldMap x).hom.toAlgebra =
+      (inferInstance : Algebra (ResidueField (Y.presheaf.stalk (f x)))
+        (ResidueField (X.presheaf.stalk x))) := by
+  let := (f.stalkMap x).hom.toAlgebra
+  have := isLocalHom_stalkMap_toAlgebra f x
+  refine Algebra.algebra_ext _ _ fun r ↦ ?_
+  obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective r
+  rfl
+
+/-- Separability of `X.residueField x` over `Y.residueField (f x)` along `f.residueFieldMap x`
+agrees with separability of the residue-field extension induced by the local stalk map
+`f.stalkMap x`. -/
+theorem isSeparable_residueFieldMap_iff :
+    (letI := (f.residueFieldMap x).hom.toAlgebra
+    Algebra.IsSeparable (Y.residueField (f x)) (X.residueField x)) ↔
+      (letI := (f.stalkMap x).hom.toAlgebra
+      letI := isLocalHom_stalkMap_toAlgebra f x
+      Algebra.IsSeparable (ResidueField (Y.presheaf.stalk (f x)))
+        (ResidueField (X.presheaf.stalk x))) := by
+  let := (f.stalkMap x).hom.toAlgebra
+  have := isLocalHom_stalkMap_toAlgebra f x
+  exact iff_of_eq <| congrArg
+    (fun inst ↦ @Algebra.IsSeparable (Y.residueField (f x)) (X.residueField x) _ _ inst)
+    (residueFieldMap_toAlgebra_eq_residueField_algebra f x)
+
 /-- The stalk map at `x` of a morphism `f : X ⟶ Y` locally of finite type, as an algebra, is
 essentially of finite type. -/
 theorem essFiniteType_stalkMap_toAlgebra [LocallyOfFiniteType f] :
@@ -542,6 +607,113 @@ theorem map_maximalIdeal_stalkMap_of_formallyUnramified [FormallyUnramified f]
   exact Algebra.FormallyUnramified.map_maximalIdeal
 
 end StalkAlgebra
+
+section Pullback
+
+open Limits
+open scoped TensorProduct
+
+variable {X' Y' : Scheme.{u}} {gX : X' ⟶ X} {f' : X' ⟶ Y'} {f : X ⟶ Y} {gY : Y' ⟶ Y}
+
+/-- Extract an affine tensor-product chart around `x' : X'`, reducing the horizontal stalk maps at
+`x'` and `gX x'` and flatness of `gX.stalkMap x'` to an affine pushout `S ⊗[R] A`. -/
+private theorem exists_isPushout_stalkMap_iff_of_isPullback
+    (H : IsPullback gX f' f gY) (x' : X') :
+    ∃ (R S A : Type u) (_ : CommRing R) (_ : CommRing S) (_ : CommRing A)
+      (_ : Algebra R S) (_ : Algebra R A) (q : PrimeSpectrum (S ⊗[R] A)),
+      letI : Algebra A (S ⊗[R] A) := Algebra.TensorProduct.rightAlgebra
+      ((f'.stalkMap x').hom.FormallyUnramified ↔ Algebra.IsUnramifiedAt S q.asIdeal) ∧
+      ((f.stalkMap (gX x')).hom.FormallyUnramified ↔
+        Algebra.IsUnramifiedAt R (q.asIdeal.under A)) ∧
+      ((gX.stalkMap x').hom.Flat ↔ Module.Flat A (Localization.AtPrime q.asIdeal)) := by
+  have hcomm : gY (f' x') = f (gX x') := (H.w_apply x').symm
+  obtain ⟨_, ⟨U, hU : IsAffineOpen U, rfl⟩, hxU, -⟩ :=
+    Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f (gX x'))) isOpen_univ
+  have hx'U : gY (f' x') ∈ U := hcomm ▸ hxU
+  obtain ⟨_, ⟨U', hU' : IsAffineOpen U', rfl⟩, hx'U', hU'U⟩ :=
+    Y'.isBasis_affineOpens.exists_subset_of_mem_open hx'U (U.is_open'.preimage gY.continuous)
+  obtain ⟨_, ⟨V, hV : IsAffineOpen V, rfl⟩, hxV, hVU⟩ :=
+    X.isBasis_affineOpens.exists_subset_of_mem_open hxU (U.is_open'.preimage f.continuous)
+  algebraize [(gY.appLE U U' hU'U).hom, (f.appLE U V hVU).hom]
+  let _ : Algebra Γ(X, V) (Γ(Y', U') ⊗[Γ(Y, U)] Γ(X, V)) := Algebra.TensorProduct.rightAlgebra
+  have := hU.isOpenImmersion_fromSpec
+  have := hU'.isOpenImmersion_fromSpec
+  have := hV.isOpenImmersion_fromSpec
+  obtain ⟨ι, hι, q, qA, rfl, h₁, h₂, hgx, hqA⟩ :=
+    TauCeti.AlgebraicGeometry.exists_isOpenImmersion_spec_tensorProduct_at_of_isPullback H
+      (iY := hU.fromSpec) (iY' := hU'.fromSpec) (iX := hV.fromSpec)
+      (hU.SpecMap_appLE_fromSpec gY hU' hU'U) (hU.SpecMap_appLE_fromSpec f hV hVU)
+      (hU'.range_fromSpec ▸ hx'U') (hV.range_fromSpec ▸ hxV)
+  refine ⟨Γ(Y, U), Γ(Y', U'), Γ(X, V), inferInstance, inferInstance, inferInstance, inferInstance,
+    inferInstance, q,
+    (RingHom.FormallyUnramified.respectsIso.stalkMap_iff_of_isOpenImmersion_square
+      ι f' _ hU'.fromSpec h₁ q).trans (formallyUnramified_stalkMap_specMap_iff q), ?_,
+    (RingHom.Flat.respectsIso.stalkMap_iff_of_isOpenImmersion_square
+      ι gX _ hV.fromSpec h₂ q).trans (flat_stalkMap_specMap_iff q)⟩
+  rw [hgx]
+  simpa only [hqA] using
+    (RingHom.FormallyUnramified.respectsIso.stalkMap_iff_of_isOpenImmersion_square
+      hV.fromSpec f (Spec.map (f.appLE U V hVU)) hU.fromSpec
+      (hU.SpecMap_appLE_fromSpec f hV hVU).symm qA).trans
+      (formallyUnramified_stalkMap_specMap_iff qA)
+
+/-- **Formal unramifiedness of stalk maps is preserved under arbitrary pullback** (no flatness
+or finite-type hypothesis). -/
+theorem formallyUnramified_stalkMap_of_isPullback (H : IsPullback gX f' f gY) (x' : X')
+    (h : (f.stalkMap (gX x')).hom.FormallyUnramified) :
+    (f'.stalkMap x').hom.FormallyUnramified := by
+  obtain ⟨R, S, A, _, _, _, _, _, q, hf', hf, -⟩ := exists_isPushout_stalkMap_iff_of_isPullback H x'
+  let _ : Algebra A (S ⊗[R] A) := Algebra.TensorProduct.rightAlgebra
+  have : Algebra.IsUnramifiedAt R (q.asIdeal.under A) := hf.mp h
+  exact hf'.mpr (Algebra.IsUnramifiedAt.of_isPushout R A q.asIdeal)
+
+/-- If `gX` has a flat stalk map at `x'`, then `f'` is formally unramified on stalks at `x'` iff
+`f` is at `gX x'`. -/
+theorem formallyUnramified_stalkMap_iff_of_isPullback_of_flat_stalkMap
+    (H : IsPullback gX f' f gY) (x' : X') (hflat : (gX.stalkMap x').hom.Flat) :
+    (f'.stalkMap x').hom.FormallyUnramified ↔ (f.stalkMap (gX x')).hom.FormallyUnramified := by
+  obtain ⟨R, S, A, _, _, _, _, _, q, hf', hf, hfl⟩ :=
+    exists_isPushout_stalkMap_iff_of_isPullback H x'
+  let _ : Algebra A (S ⊗[R] A) := Algebra.TensorProduct.rightAlgebra
+  let _ := Localization.AtPrime.algebraOfLiesOver (q.asIdeal.under A) q.asIdeal
+  have : Module.Flat A (Localization.AtPrime q.asIdeal) := hfl.mp hflat
+  have hloc : Module.Flat (Localization.AtPrime (q.asIdeal.under A))
+      (Localization.AtPrime q.asIdeal) :=
+    (Module.flat_iff_of_isLocalization (Localization.AtPrime (q.asIdeal.under A))
+      (q.asIdeal.under A).primeCompl (Localization.AtPrime q.asIdeal)).mpr inferInstance
+  exact hf'.trans <| (Algebra.isUnramifiedAt_iff_of_isPushout_of_flat (R := R) (S := S) (A := A)
+    q.asIdeal hloc).trans hf.symm
+
+/-- **Flat base change of unramified stalk maps.** For flat `gY`, `f'` is formally unramified on
+stalks at `x'` iff `f` is at `gX x'`. -/
+theorem formallyUnramified_stalkMap_iff_of_isPullback (H : IsPullback gX f' f gY) [Flat gY]
+    (x' : X') :
+    (f'.stalkMap x').hom.FormallyUnramified ↔ (f.stalkMap (gX x')).hom.FormallyUnramified :=
+  haveI : Flat gX := MorphismProperty.of_isPullback (P := @Flat) H.flip inferInstance
+  formallyUnramified_stalkMap_iff_of_isPullback_of_flat_stalkMap H x' (Flat.stalkMap gX x')
+
+end Pullback
+
+/-- A dominant morphism of integral schemes whose induced function-field extension is separable is
+formally unramified at the generic point of the source. -/
+theorem formallyUnramified_stalkMap_genericPoint_of_isSeparable
+    [IsIntegral X] [IsIntegral Y] (f : X ⟶ Y) [IsDominant f]
+    (hsep : letI := f.functionFieldMap.hom.toAlgebra;
+      Algebra.IsSeparable Y.functionField X.functionField) :
+    (f.stalkMap (genericPoint X)).hom.FormallyUnramified := by
+  let _ : Algebra Y.functionField X.functionField := f.functionFieldMap.hom.toAlgebra
+  let e : Y.presheaf.stalk (genericPoint Y) ≅ Y.presheaf.stalk (f (genericPoint X)) :=
+    Y.presheaf.stalkCongr (.of_eq f.genericPoint_eq_of_isDominant.symm)
+  have heq : e.hom ≫ f.stalkMap (genericPoint X) = f.functionFieldMap := by
+    have he : e.hom =
+        Y.presheaf.stalkSpecializes (specializes_of_eq f.genericPoint_eq_of_isDominant) :=
+      TopCat.Presheaf.stalkCongr_hom _ _
+    rw [f.eq_functionFieldMap_iff, Spec.map_comp_assoc, he,
+      SpecMap_stalkSpecializes_fromSpecStalk, SpecMap_stalkMap_fromSpecStalk]
+  refine (RingHom.FormallyUnramified.respectsIso.cancel_left_isIso
+    e.hom (f.stalkMap (genericPoint X))).mp ?_
+  rw [← CommRingCat.hom_comp, heq]
+  exact Algebra.FormallyUnramified.of_isSeparable Y.functionField X.functionField
 
 end Scheme.Hom
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus
+public import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus.Basic
 import TauCeti.Topology.Sober
 
 /-!

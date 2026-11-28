@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyOpen
 public import Mathlib.AlgebraicGeometry.FunctionField
+public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 public import TauCeti.RingTheory.Flat.Localization
 import TauCeti.RingTheory.Flat.Tower
 
@@ -47,6 +48,10 @@ the generic fibre.
   then `f` is flat.
 * `AlgebraicGeometry.Scheme.Hom.genericPoint_eq_of_flat`: a flat morphism between irreducible
   schemes sends the generic point to the generic point.
+* `AlgebraicGeometry.IsDominant.of_flat` and `AlgebraicGeometry.IsDominant.of_isPullback_of_flat`:
+  flat morphisms between irreducible schemes and flat pullbacks of dominant morphisms are dominant.
+* `TauCeti.isDominant_of_isPullback_spec` and `TauCeti.isDominant_of_baseChange`: dominance of
+  base-change projections and base-changed dominant morphisms along field extensions.
 
 ## References
 
@@ -170,4 +175,55 @@ theorem Flat.of_comp_surjective {X' : Scheme.{u}} (g : X' ⟶ X) (f : X ⟶ Y) [
     obtain ⟨x', rfl⟩ := g.surjective x
     exact g.flat_stalkMap_of_comp f x' (Flat.stalkMap g x') (Flat.stalkMap (g ≫ f) x')
 
+/-- Any flat morphism between irreducible schemes sends the generic point to the generic point and
+is therefore dominant. -/
+theorem IsDominant.of_flat {X Y : Scheme.{u}} [IrreducibleSpace X] [IrreducibleSpace Y]
+    (g : X ⟶ Y) [Flat g] : IsDominant g :=
+  isDominant_iff_genericPoint_eq.mpr g.genericPoint_eq_of_flat
+
+/-- The pullback of a dominant morphism between irreducible schemes along any flat morphism is
+dominant, with no irreducibility or openness assumption on the base change. -/
+theorem IsDominant.of_isPullback_of_flat {X Y X' Y' : Scheme.{u}} [IrreducibleSpace X]
+    [IrreducibleSpace Y] {gX : X' ⟶ X} {f' : X' ⟶ Y'} {f : X ⟶ Y} {gY : Y' ⟶ Y}
+    [IsDominant f] [Flat gY] (H : IsPullback gX f' f gY) : IsDominant f' := by
+  rw [isDominant_iff, denseRange_iff_closure_range, Set.eq_univ_iff_forall]
+  intro y'
+  obtain ⟨z', hz', hgz'⟩ := Flat.generalizingMap gY ((genericPoint_spec Y).specializes trivial)
+  obtain ⟨w, -, hw⟩ := Scheme.exists_preimage_of_isPullback H (genericPoint X) z'
+    (f.genericPoint_eq_of_isDominant.trans hgz'.symm)
+  exact hz'.mem_closed isClosed_closure (subset_closure ⟨w, hw⟩)
+
 end AlgebraicGeometry
+
+namespace TauCeti
+
+open CategoryTheory
+
+universe u
+
+/-- The projection from the base change along any field extension `K / k` is dominant. -/
+theorem isDominant_of_isPullback_spec {k K : Type u} [Field k] [Field K] [Algebra k K]
+    {X Y : Scheme.{u}} [X.Over (Spec (.of k))] [Y.Over (Spec (.of K))] {g : Y ⟶ X}
+    (H : IsPullback g (Y ↘ Spec (.of K)) (X ↘ Spec (.of k))
+      (Spec.map (CommRingCat.ofHom (algebraMap k K)))) :
+    IsDominant g :=
+  have : Surjective g := MorphismProperty.of_isPullback (P := @Surjective) H.flip inferInstance
+  inferInstance
+
+/-- The base change of a dominant `k`-morphism between irreducible `k`-schemes along any field
+extension `K / k` is dominant. -/
+theorem isDominant_of_baseChange {k K : Type u} [Field k] [Field K] [Algebra k K]
+    {X₁ X₂ X₁' X₂' : Scheme.{u}} [X₁.Over (Spec (.of k))] [X₂.Over (Spec (.of k))]
+    [X₁'.Over (Spec (.of K))] [X₂'.Over (Spec (.of K))] [IrreducibleSpace X₁] [IrreducibleSpace X₂]
+    {f : X₁ ⟶ X₂} [f.IsOver (Spec (.of k))] [IsDominant f]
+    {g₁ : X₁' ⟶ X₁} {g₂ : X₂' ⟶ X₂} {f' : X₁' ⟶ X₂'} [f'.IsOver (Spec (.of K))]
+    (H₁ : IsPullback g₁ (X₁' ↘ Spec (.of K)) (X₁ ↘ Spec (.of k))
+      (Spec.map (CommRingCat.ofHom (algebraMap k K))))
+    (H₂ : IsPullback g₂ (X₂' ↘ Spec (.of K)) (X₂ ↘ Spec (.of k))
+      (Spec.map (CommRingCat.ofHom (algebraMap k K))))
+    (hf' : f' ≫ g₂ = g₁ ≫ f) :
+    IsDominant f' :=
+  have : Flat g₂ := MorphismProperty.of_isPullback (P := @Flat) H₂.flip inferInstance
+  IsDominant.of_isPullback_of_flat (IsPullback.of_bot (by simpa [comp_over] using H₁) hf'.symm H₂)
+
+end TauCeti

@@ -40,6 +40,8 @@ of the chart is mapped into a hypersurface.
   quasi-finite morphism.
 * `AlgebraicGeometry.Scheme.Hom.strictMono`: a locally quasi-finite morphism
   is strictly monotone for the specialization order.
+* `AlgebraicGeometry.Scheme.Hom.isClosed_singleton_of_locallyQuasiFinite_of_isClosed`: for a
+  locally quasi-finite morphism, every point over a closed point is closed.
 * `AlgebraicGeometry.Scheme.Hom.coheight_le_coheight_apply`: under a locally quasi-finite morphism
   the coheight of a point is at most the coheight of its image.
 * `AlgebraicGeometry.Scheme.Hom.topologicalKrullDim_le`: the source of a locally quasi-finite
@@ -138,6 +140,13 @@ theorem Scheme.Hom.strictMono {X Y : Scheme.{u}} (f : X ⟶ Y)
     (f.isDiscrete_preimage_singleton (f x)).eq_of_specializes (le_iff_specializes.mp hxy.le)
       hfxy.symm rfl
   exact hxy_eq ▸ le_rfl
+
+/-- For a locally quasi-finite morphism, every point over a closed point is closed. -/
+theorem Scheme.Hom.isClosed_singleton_of_locallyQuasiFinite_of_isClosed {X Y : Scheme.{u}}
+    (f : X ⟶ Y) [LocallyQuasiFinite f] {x : X} (hy : IsClosed {f x}) :
+    IsClosed {x} :=
+  isClosed_of_subset_discrete_closed (Set.singleton_subset_iff.mpr rfl)
+    (f.isDiscrete_preimage_singleton (f x)) (hy.preimage f.continuous)
 
 /-- Under a locally quasi-finite morphism the coheight of a point is at most the coheight of its
 image. -/
