@@ -19,6 +19,8 @@ semicontinuity lemmas for `EReal`-valued families:
   (allowing endpoint limits equal to `⊥`).
 * `EReal.limsup_mul_eq_of_tendsto_one`: multiplying an `EReal`-valued family by factors converging
   to `1` preserves its `limsup`.
+* `EReal.limsup_coe_add`, `EReal.liminf_coe_add`: adding a real constant commutes with `limsup`
+  and `liminf`.
 * `EReal.tendsto_natCeil_mul_div_atTop`: `⌈a * n⌉₊ / n → a` in `EReal` for real `a ≥ 0`, the
   `EReal` form of Mathlib's `tendsto_nat_ceil_mul_div_atTop`.
 * `LowerSemicontinuous.ereal_add`: sums of lower semicontinuous extended-real functions are lower
@@ -87,6 +89,24 @@ theorem limsup_mul_eq_of_tendsto_one {ι : Type*} {l : Filter ι} {u b : ι → 
       have hneg : b * (-u) = -(u * b) := by ext n; simp [mul_neg, mul_comm]
       rwa [hb.limsup_eq, one_mul, hneg, EReal.liminf_neg, EReal.liminf_neg,
         EReal.neg_le_neg_iff] at h2
+
+/-- Adding a real constant commutes with `limsup` in `EReal`. -/
+theorem limsup_coe_add {ι : Type*} {l : Filter ι} (c : ℝ) (u : ι → EReal) :
+    limsup (fun i ↦ (c : EReal) + u i) l = (c : EReal) + limsup u l := by
+  rcases l.eq_or_neBot with rfl | _
+  · simp
+  exact ((monotone_id.const_add (c : EReal)).map_limsup_of_continuousAt u
+    ((EReal.continuousAt_add (.inl (coe_ne_top c)) (.inl (coe_ne_bot c))).comp
+      (continuousAt_const.prodMk continuousAt_id))).symm
+
+/-- Adding a real constant commutes with `liminf` in `EReal`. -/
+theorem liminf_coe_add {ι : Type*} {l : Filter ι} (c : ℝ) (u : ι → EReal) :
+    liminf (fun i ↦ (c : EReal) + u i) l = (c : EReal) + liminf u l := by
+  rcases l.eq_or_neBot with rfl | _
+  · simp
+  exact ((monotone_id.const_add (c : EReal)).map_liminf_of_continuousAt u
+    ((EReal.continuousAt_add (.inl (coe_ne_top c)) (.inl (coe_ne_bot c))).comp
+      (continuousAt_const.prodMk continuousAt_id))).symm
 
 end EReal
 

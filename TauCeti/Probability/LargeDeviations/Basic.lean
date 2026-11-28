@@ -48,8 +48,9 @@ Dirac-mass example in `TauCeti.Probability.LargeDeviations.Dirac`, weak principl
 exponential tightness in `TauCeti.Probability.LargeDeviations.Weak`, exponential equivalence in
 `TauCeti.Probability.LargeDeviations.ExponentialEquivalence`, uniqueness of the rate function,
 concentration on its zeros and infima over thickenings in
-`TauCeti.Probability.LargeDeviations.RateFunction`, and Gaussian laws in
-`TauCeti.Probability.LargeDeviations.Gaussian`.
+`TauCeti.Probability.LargeDeviations.RateFunction`, Gaussian laws in
+`TauCeti.Probability.LargeDeviations.Gaussian`, and Varadhan's lemma and the Laplace principle in
+`TauCeti.Probability.LargeDeviations.Varadhan`.
 
 ## References
 

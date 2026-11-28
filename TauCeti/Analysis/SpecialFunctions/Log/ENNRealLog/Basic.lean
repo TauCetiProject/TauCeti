@@ -23,6 +23,8 @@ eventually positive.
 ## Main results
 
 * `TauCeti.ENNReal.coe_mul_log_monotone`: the scaled logarithm is monotone.
+* `TauCeti.ENNReal.coe_mul_log_ofReal_exp_div_mul`: the scaled logarithm turns a factor
+  `exp (r / e)` into the summand `r`.
 * `TauCeti.ENNReal.limsup_coe_mul_log`, `TauCeti.ENNReal.liminf_coe_mul_log`: the upper and lower
   limits of scaled logarithms as logarithms of upper and lower limits of powers.
 * `TauCeti.ENNReal.limsup_coe_mul_log_mono`, `TauCeti.ENNReal.liminf_coe_mul_log_mono`: the upper
@@ -42,6 +44,15 @@ namespace TauCeti.ENNReal
 theorem coe_mul_log_monotone (e : ℝ≥0) :
     Monotone fun x : ℝ≥0∞ => ((e : ℝ) : EReal) * ENNReal.log x :=
   fun _ _ h => mul_le_mul_of_nonneg_left (ENNReal.log_monotone h) (by exact_mod_cast e.coe_nonneg)
+
+/-- At a positive multiplier `e`, the scaled logarithm turns a factor `exp (r / e)` into the
+summand `r`: `e * log (exp (r / e) * x) = r + e * log x`. -/
+theorem coe_mul_log_ofReal_exp_div_mul {e : ℝ≥0} (he : 0 < e) (r : ℝ) (x : ℝ≥0∞) :
+    ((e : ℝ) : EReal) * ENNReal.log (ENNReal.ofReal (Real.exp (r / e)) * x) =
+      (r : EReal) + ((e : ℝ) : EReal) * ENNReal.log x := by
+  rw [ENNReal.log_mul_add, ENNReal.log_ofReal_of_pos (Real.exp_pos _), Real.log_exp,
+    EReal.left_distrib_of_nonneg_of_ne_top (by exact_mod_cast e.coe_nonneg) (EReal.coe_ne_top _),
+    ← EReal.coe_mul, mul_div_cancel₀ r (NNReal.coe_ne_zero.2 he.ne')]
 
 variable {ι : Type*} {l : Filter ι} {ε : ι → ℝ≥0}
 
