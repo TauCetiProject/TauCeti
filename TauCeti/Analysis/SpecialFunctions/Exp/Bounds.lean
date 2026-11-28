@@ -457,6 +457,22 @@ theorem _root_.Real.pow_le_exp_mul {x : ℝ} (hx : 0 ≤ x) (k : ℕ) : x ^ k �
   rw [exp_natCast_mul]
   exact pow_le_pow_left₀ hx (by linarith [add_one_le_exp x]) k
 
+/-- For `0 < x ≤ y`, `exp (-y) ≤ x⁻¹`. -/
+theorem exp_neg_le_inv {x y : ℝ} (hx : 0 < x) (hy : x ≤ y) : exp (-y) ≤ x⁻¹ :=
+  exp_neg y ▸ inv_anti₀ hx (hy.trans (by linarith [add_one_le_exp y]))
+
+/-- If `0 ≤ a ≤ b`, `0 < b`, and `log b - κ ≤ r`, then `exp (-r) * a ≤ exp κ`. -/
+theorem exp_neg_mul_le_exp_of_log_sub_le {a b κ r : ℝ} (ha : 0 ≤ a) (hab : a ≤ b) (hb : 0 < b)
+    (hr : log b - κ ≤ r) : exp (-r) * a ≤ exp κ :=
+  (mul_le_mul (exp_le_exp.2 (by linarith : -r ≤ κ - log b)) hab ha (exp_pos _).le).trans_eq <| by
+    rw [exp_sub, div_mul_eq_mul_div, exp_log hb, mul_div_cancel_right₀ _ hb.ne']
+
+/-- If `0 ≤ a ≤ M` and `0 < x ≤ y`, then `exp (-y) * a ≤ M / x`. -/
+theorem exp_neg_mul_le_div {a M x y : ℝ} (ha : 0 ≤ a) (haM : a ≤ M)
+    (hx : 0 < x) (hy : x ≤ y) :
+    exp (-y) * a ≤ M / x :=
+  (mul_le_mul (exp_neg_le_inv hx hy) haM ha (inv_pos.2 hx).le).trans_eq (inv_mul_eq_div _ _)
+
 /-- A natural power with base at least `exp 1` bounds `exp y` whenever `y` is at most the
 exponent of the power. -/
 theorem _root_.Real.exp_le_pow_of_exp_one_le {x y : ℝ} {n : ℕ} (hx : exp 1 ≤ x) (hy : y ≤ n) :

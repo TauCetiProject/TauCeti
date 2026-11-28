@@ -139,6 +139,31 @@ theorem toBCFₗᵢ_apply (f : C₀(α, β)) : toBCFₗᵢ 𝕜 f = f.toBCF := (
 
 end ToBCF
 
+section NormedExtra
+
+variable [SeminormedAddCommGroup β]
+
+/-- A function vanishing at infinity has norm strictly less than `δ > 0` outside some compact
+set. -/
+theorem exists_isCompact_norm_lt (f : C₀(α, β)) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ K : Set α, IsCompact K ∧ ∀ x ∉ K, ‖f x‖ < δ :=
+  let ⟨K, hK, hKsub⟩ := Filter.mem_cocompact.1
+    ((tendsto_zero_iff_norm_tendsto_zero.1 (zero_at_infty f)).eventually
+      (Metric.ball_mem_nhds 0 hδ))
+  ⟨K, hK, fun _ hx ↦ by simpa [Real.dist_eq, abs_of_nonneg (norm_nonneg _)] using hKsub hx⟩
+
+/-- A function in `C₀(ℝ, β)` has norm at most `δ > 0` outside some bounded interval `[-T, T]`. -/
+theorem exists_forall_norm_le_of_le_abs (f : C₀(ℝ, β)) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ T > 0, ∀ s : ℝ, T ≤ |s| → ‖f s‖ ≤ δ := by
+  obtain ⟨K, hK, hKlt⟩ := f.exists_isCompact_norm_lt hδ
+  obtain ⟨R, hR⟩ := hK.isBounded.subset_closedBall 0
+  refine ⟨max R 0 + 1, by positivity, fun s hs ↦ by_contra fun hgt ↦ ?_⟩
+  have hsK : s ∈ K := by_contra fun hs_not ↦ hgt (hKlt s hs_not).le
+  have hle : |s| ≤ R := by simpa [Real.dist_eq] using Metric.mem_closedBall.1 (hR hsK)
+  linarith [hs.trans (hle.trans (le_max_left R 0))]
+
+end NormedExtra
+
 section Comparison
 
 variable {β R E F : Type*} [TopologicalSpace β] [SeminormedAddCommGroup E]

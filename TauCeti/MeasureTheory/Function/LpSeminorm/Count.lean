@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Count
 import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
@@ -14,18 +15,21 @@ import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
 
 On a countable type with measurable singletons, the `L^p` seminorm `eLpNorm f p count` of a
 function `f` for the counting measure is its `ℓ^p` norm: the sum `(∑' i, ‖f i‖ ^ p) ^ (1 / p)` for
-finite `p` and the supremum `⨆ i, ‖f i‖` for `p = ∞`. This file records these formulas and the
-resulting comparison with Mathlib's sequence spaces `lp`: `f` lies in `ℓ^p` exactly when its
-counting-measure seminorm is finite, and for `f ∈ lp` the seminorm is the `lp` norm.
+`0 < p < ∞` and the supremum `⨆ i, ‖f i‖` for `p = ∞`. This file records these formulas, the
+corresponding comparison with Mathlib's sequence spaces `lp` (`f` lies in `ℓ^p` exactly when its
+counting-measure seminorm is finite, and for `f ∈ lp` the seminorm is the `lp` norm), and, for
+`s ≠ 0`, the finite-index comparison `ENNReal.ofReal ‖WithLp.toLp s f‖ = eLpNorm f s count`.
 
 This lets estimates proved with the measure-theoretic `L^p` machinery, such as Schur's test for
-integral kernels, be read as estimates in `lp`.
+integral kernels, be read as estimates in `lp` and `PiLp`.
 
 ## Main results
 
 * `MeasureTheory.eLpNorm_count_eq_tsum`, `MeasureTheory.eLpNorm_count_top`: the two formulas.
 * `MeasureTheory.memℓp_iff_eLpNorm_count_lt_top`: `Memℓp f p ↔ eLpNorm f p count < ∞`.
 * `lp.eLpNorm_count`: `eLpNorm f p count = ‖f‖ₑ` for `f ∈ lp`.
+* `TauCeti.ofReal_norm_toLp_eq_eLpNorm_count`:
+  `ENNReal.ofReal ‖WithLp.toLp s f‖ = eLpNorm f s count` for finite index types `ι` and `s ≠ 0`.
 -/
 
 public section
@@ -91,3 +95,23 @@ theorem eLpNorm_count [Fact (1 ≤ p)] (f : lp (fun _ : α ↦ E) p) :
   simp only [← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hp'.le]
 
 end lp
+
+namespace TauCeti
+
+/-- For `s ≠ 0`, `ENNReal.ofReal ‖WithLp.toLp s f‖` equals the `Lˢ` seminorm of `f` for the
+counting measure. -/
+theorem ofReal_norm_toLp_eq_eLpNorm_count {ι E : Type*} [Fintype ι] [MeasurableSpace ι]
+    [MeasurableSingletonClass ι] [SeminormedAddCommGroup E] {s : ℝ≥0∞} (hs : s ≠ 0) (f : ι → E) :
+    ENNReal.ofReal ‖WithLp.toLp s f‖ = MeasureTheory.eLpNorm f s MeasureTheory.Measure.count := by
+  rcases eq_or_ne s ∞ with rfl | hs_top
+  · rw [← coe_nnNorm, ENNReal.ofReal_coe_nnreal, PiLp.nnNorm_eq_ciSup,
+      ENNReal.coe_iSup (Set.Finite.bddAbove (Set.finite_range _)), MeasureTheory.eLpNorm_count_top]
+    simp [eNorm_eq_nnNorm]
+  · have hs' : 0 < s.toReal := ENNReal.toReal_pos hs hs_top
+    rw [PiLp.norm_eq_sum hs', MeasureTheory.eLpNorm_count_eq_tsum hs hs_top, tsum_fintype,
+      ← ENNReal.ofReal_rpow_of_nonneg (Finset.sum_nonneg fun _ _ ↦ by positivity) (by positivity),
+      ENNReal.ofReal_sum_of_nonneg fun _ _ ↦ by positivity]
+    exact congrArg (· ^ (1 / s.toReal)) (Finset.sum_congr rfl fun i _ ↦ by
+      rw [PiLp.toLp_apply, ← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hs'.le, ofReal_norm])
+
+end TauCeti

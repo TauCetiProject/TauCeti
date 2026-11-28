@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
-public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
+public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple.Basic
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 
 /-!

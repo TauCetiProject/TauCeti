@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Continuous
-public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
+public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple.Basic
 
 /-!
 # The `K`-functional of a compatible couple

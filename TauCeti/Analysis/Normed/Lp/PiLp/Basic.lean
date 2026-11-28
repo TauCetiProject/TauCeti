@@ -23,10 +23,11 @@ of multiples of one vector (for `p ≠ 0`), and the invariance of the norm under
 norm at most `‖s‖ * ∑ i, ‖v i‖`. For `p ≥ 1`, a real family with a positive coordinate has
 positive `Lᵖ` norm (`PiLp.norm_toLp_pos`), and for `1 ≤ q < ∞` rescaling a positive family `c` to
 `(‖c‖_q (c i / ‖c‖_q) ^ (q / p))_i` moves it from `ℓ^q` to `ℓ^p` without changing its norm
-(`PiLp.norm_toLp_mul_div_rpow`).
+(`PiLp.norm_toLp_mul_div_rpow`). We also prove positive-perturbation
+estimates for finite `Lᵖ` norms.
 
 For `p ≥ 1`, the `Lᵖ` distance dominates the sup distance. In the other direction, the `L²`
-distance is at most the square root of the number of coordinates times the sup distance.
+distance is at most the square root of the coordinate count times the sup distance.
 These estimates give inclusions between balls in the two metrics. The corresponding
 Cauchy–Schwarz estimate bounds the sum of coordinate norms by `√(card ι)` times the `L²` norm;
 conversely, for `p ≥ 1` the `Lᵖ` norm is at most the sum of coordinate norms
@@ -381,6 +382,39 @@ theorem preimage_ofLp_ball_subset_ball [Nonempty ι] (x : PiLp 2 β) (r : ℝ) :
     (mul_lt_mul_of_pos_left hy (Real.sqrt_pos.2 (Nat.cast_pos.2 Fintype.card_pos)))
 
 end PseudoMetricSpace
+
+section Scaling
+
+/-- Perturbing a vector `v : PiLp q β` over a nonempty finite index type by `ε > 0`, for
+`1 ≤ q < ∞`, gives strictly positive weights `b i > ‖v i‖` whose `ℓ^q` norm `B = ‖WithLp.toLp q b‖`
+satisfies `0 < B ≤ ‖v‖ + ε` and `∑ i, b i ^ q.toReal = B ^ q.toReal`. -/
+theorem exists_pos_le_norm_add_and_norm_apply_lt_and_sum_rpow_eq [Nonempty ι] {q : ℝ≥0∞}
+    [Fact (1 ≤ q)] (hq_top : q ≠ ∞) {β : ι → Type*} [∀ i, SeminormedAddCommGroup (β i)]
+    (v : PiLp q β) {ε : ℝ} (hε : 0 < ε) :
+    ∃ (b : ι → ℝ) (B : ℝ), B = ‖WithLp.toLp q b‖ ∧ 0 < B ∧ B ≤ ‖v‖ + ε ∧
+      (∀ i, 0 < b i ∧ ‖v i‖ < b i) ∧ ∑ i, b i ^ q.toReal = B ^ q.toReal := by
+  have hq0 := ENNReal.toReal_pos (zero_lt_one.trans_le (Fact.out : 1 ≤ q)).ne' hq_top
+  let u1 : PiLp q (fun _ : ι ↦ ℝ) := WithLp.toLp q (fun _ ↦ 1)
+  let δ : ℝ := ε / (‖u1‖ + 1)
+  have hδ : 0 < δ := div_pos hε (by positivity)
+  let b : ι → ℝ := fun i ↦ ‖v i‖ + δ
+  have hb (i : ι) : 0 < b i := add_pos_of_nonneg_of_pos (norm_nonneg _) hδ
+  obtain ⟨i₀⟩ := ‹Nonempty ι›
+  have hB : 0 < ‖WithLp.toLp q b‖ := (hb i₀).trans_le ((le_abs_self (b i₀)).trans
+    (PiLp.norm_apply_le (WithLp.toLp q b) i₀))
+  refine ⟨b, ‖WithLp.toLp q b‖, rfl, hB, ?_, fun i ↦ ⟨hb i, lt_add_of_pos_right ‖v i‖ hδ⟩, ?_⟩
+  · have hδu : δ * ‖u1‖ ≤ ε := by
+      dsimp only [δ]; rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
+      nlinarith [norm_nonneg u1, hε.le]
+    calc ‖WithLp.toLp q b‖ = ‖WithLp.toLp q (fun i ↦ ‖v i‖) + δ • u1‖ :=
+          congrArg norm (PiLp.ext fun _ ↦ by simp [b, u1])
+      _ ≤ ‖WithLp.toLp q (fun i ↦ ‖v i‖)‖ + ‖δ • u1‖ := norm_add_le _ _
+      _ ≤ ‖v‖ + ε := by rw [PiLp.norm_norm, norm_smul, Real.norm_of_nonneg hδ.le]; linarith
+  · rw [PiLp.norm_eq_sum hq0, one_div, Real.rpow_inv_rpow
+      (Finset.sum_nonneg fun _ _ ↦ by positivity) hq0.ne']
+    exact Finset.sum_congr rfl fun i _ ↦ by rw [Real.norm_of_nonneg (hb i).le]
+
+end Scaling
 
 section UniformSpace
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Density
+public import TauCeti.Analysis.Normed.Interpolation.ComplexMethod.Endpoints
 public import TauCeti.Analysis.Normed.Interpolation.Regular
 import Mathlib.Analysis.Normed.Group.Submodule
 import TauCeti.Analysis.Normed.Operator.LinearIsometry
@@ -80,12 +81,6 @@ theorem toFst_mem_fstClosure (u : C.ComplexMethodSpace 0) : toFst u ∈ C.fstClo
   obtain ⟨g, rfl⟩ := mk_surjective u; exact toFst_mk g ▸ C.stripTraces_fst_apply_mem_fstClosure g 0
 theorem toSnd_mem_sndClosure (u : C.ComplexMethodSpace 1) : toSnd u ∈ C.sndClosure := by
   obtain ⟨g, rfl⟩ := mk_surjective u; exact toSnd_mk g ▸ C.stripTraces_snd_apply_mem_sndClosure g 0
-@[simp] theorem norm_toFst (u : C.ComplexMethodSpace 0) : ‖toFst u‖ = ‖u‖ :=
-  (denseRange_ofInter (C := C) 0).induction_on u
-    (isClosed_eq (continuous_norm.comp (toFst (C := C)).continuous) continuous_norm) (by simp)
-@[simp] theorem norm_toSnd (u : C.ComplexMethodSpace 1) : ‖toSnd u‖ = ‖u‖ :=
-  (denseRange_ofInter (C := C) 1).induction_on u
-    (isClosed_eq (continuous_norm.comp (toSnd (C := C)).continuous) continuous_norm) (by simp)
 
 /-- **Endpoint identification at `0` (Bergh–Löfström, Theorem 4.2.2 (b)).** For any Banach couple,
 `ComplexMethodSpace.toFst` upgrades to a surjective linear isometry `[X₀, X₁]_0 ≃ₗᵢ[ℂ] X₀°`. -/

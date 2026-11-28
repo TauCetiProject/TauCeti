@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.VerticalStrip.Basic
-public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
+public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple.Basic
 public import TauCeti.Topology.ContinuousMap.Bounded.Normed
 import TauCeti.Analysis.Complex.PhragmenLindelof.VerticalStrip
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.RCLike.Basic
-public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
+public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple.Basic
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import TauCeti.Analysis.Normed.Module.Dual.Adjoint
 import TauCeti.Analysis.Normed.Module.Dual.Basic

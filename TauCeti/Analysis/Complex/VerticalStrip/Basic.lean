@@ -26,10 +26,10 @@ import TauCeti.Basic.Complex.Basic
 
 Mathlib's three-lines theorem is stated on the open strip `verticalStrip a b` and the closed
 strip `verticalClosedStrip a b`, the preimages of `Ioo a b` and `Icc a b` under `Complex.re`.
-This file records their membership criteria, behavior under reflection, convexity, closure,
-their images in annuli under the translated exponential `w ↦ z₀ + exp w`, unique
-differentiability (`uniqueDiffOn_verticalClosedStrip`), vanishing of imaginary parts of iterated
-derivatives along the real segment for functions real-valued on `[a, b]`
+This file records their membership criteria, behavior under reflection, affine contraction,
+convexity, closure, their images in annuli under the translated exponential `w ↦ z₀ + exp w`,
+unique differentiability (`uniqueDiffOn_verticalClosedStrip`), vanishing of imaginary parts of
+iterated derivatives along the real segment for functions real-valued on `[a, b]`
 (`ContDiffOn.im_iteratedDerivWithin_verticalClosedStrip_eq_zero`), the vertical Taylor–Lagrange
 expansion of `Im f(c + i y)` (`TauCeti.exists_im_add_mul_I_eq_taylor_odd`), the bound
 `‖exp ((z - θ) a)‖ ≤ exp |a|` on the closed unit strip for `0 ≤ θ ≤ 1` (`norm_exp_sub_mul_le`)
@@ -83,6 +83,24 @@ theorem one_sub_mem_verticalClosedStrip_iff :
     1 - z ∈ verticalClosedStrip 0 1 ↔ z ∈ verticalClosedStrip 0 1 := by
   simpa only [one_re, sub_self, sub_zero] using
     sub_mem_verticalClosedStrip_iff (a := 0) (b := 1) (1 : ℂ) z
+
+/-- Real and imaginary parts of the strip contraction `z ↦ (1 - 2 * ε) * z + ε`. -/
+theorem re_im_contracted (ε : ℝ) (z : ℂ) :
+    ((1 - 2 * (ε : ℂ)) * z + ε).re = (1 - 2 * ε) * z.re + ε ∧
+      ((1 - 2 * (ε : ℂ)) * z + ε).im = (1 - 2 * ε) * z.im := by
+  have hcoeff : (1 - 2 * (ε : ℂ)) = ((1 - 2 * ε : ℝ) : ℂ) := by norm_cast
+  rw [hcoeff]
+  exact ⟨by rw [add_re, re_ofReal_mul, ofReal_re],
+    by rw [add_im, im_ofReal_mul, ofReal_im, add_zero]⟩
+
+/-- For `0 < ε < 1 / 2`, the affine contraction `z ↦ (1 - 2 ε) z + ε` maps the enlarged open
+vertical strip `verticalStrip (-(ε / 2)) (1 + ε / 2)` into `verticalStrip 0 1`. -/
+theorem mapsTo_contracted_verticalStrip {ε : ℝ} (hε : ε ∈ Ioo (0 : ℝ) 2⁻¹) :
+    MapsTo (fun z : ℂ => (1 - 2 * (ε : ℂ)) * z + ε)
+      (verticalStrip (-(ε / 2)) (1 + ε / 2)) (verticalStrip 0 1) := by
+  intro z hz
+  rw [mem_verticalStrip_iff, (re_im_contracted ε z).1]
+  exact ⟨by nlinarith [hε.1, hε.2, hz.1], by nlinarith [hε.1, hε.2, hz.2]⟩
 
 /-- Complex conjugation preserves open vertical strips. -/
 theorem mapsTo_conj_verticalStrip (a b : ℝ) :

@@ -26,8 +26,9 @@ angles in `[-π/2, π/2]`, in either orientation (`TauCeti.cos_pos_of_mem_uIoo`)
 If `cos (2πr) < cos (2πx)` with `r ≥ 0`, then `x` lies within `r` of an integer
 (`TauCeti.exists_abs_sub_int_lt_of_cos_lt`).
 
-For angles `α, β > 0` and `γ ≥ 0` with
-`α + β + γ < π`, the quotient `(cos α cos β + cos γ) / (sin α sin β)` is greater than `1`; by the
+When `sin x ≠ 0`, `|cos x| < 1` (`TauCeti.abs_cos_lt_one_of_sin_ne_zero`). For angles `α, β > 0` and
+`γ ≥ 0` with `α + β + γ < π`, the quotient `(cos α cos β + cos γ) / (sin α sin β)` is greater than
+`1`; by the
 second hyperbolic law of cosines it is the hyperbolic cosine of the side opposite `γ` in a
 hyperbolic triangle with angles `α`, `β`, `γ`. These supply the positive sine factors and the
 hyperbolic scale in the matrix representations of triangle groups.
@@ -265,4 +266,19 @@ theorem exists_cosine_rule_parameter {α β γ : ℝ} (hα : 0 < α) (hβ : 0 < 
   rw [cosh_eq, exp_neg]
   field_simp
 
+/-- If `sin x ≠ 0`, then `|cos x| < 1`. -/
+theorem abs_cos_lt_one_of_sin_ne_zero {x : ℝ} (h : sin x ≠ 0) : |cos x| < 1 :=
+  (sq_lt_one_iff_abs_lt_one _).1 (by nlinarith [sin_sq_add_cos_sq x, sq_pos_of_ne_zero h])
+
+/-- For all real `x` and `y`, `(1 - |cos x|) * cosh y ≤ cosh y - cos x`. -/
+theorem one_sub_abs_cos_mul_cosh_le (x y : ℝ) : (1 - |cos x|) * cosh y ≤ cosh y - cos x := by
+  have h := mul_nonneg (abs_nonneg (cos x)) (sub_nonneg.2 (one_le_cosh y))
+  linarith [le_abs_self (cos x)]
+
+/-- If `sin x ≠ 0`, then `cosh y - cos x > 0` for all real `y`. -/
+theorem cosh_sub_cos_pos_of_sin_ne_zero {x : ℝ} (h : sin x ≠ 0) (y : ℝ) : 0 < cosh y - cos x :=
+  (mul_pos (sub_pos.2 (abs_cos_lt_one_of_sin_ne_zero h)) (cosh_pos y)).trans_le
+    (one_sub_abs_cos_mul_cosh_le x y)
+
 end TauCeti
+
