@@ -12,8 +12,8 @@ public import TauCeti.RingTheory.LaurentSeries.CoefficientFrobenius
 import Mathlib.LinearAlgebra.Basis.Defs
 import Mathlib.RingTheory.Valuation.Basic
 import TauCeti.Data.Fin.Basic
+import TauCeti.Data.Rat.MinRatio
 import TauCeti.FieldTheory.IsAlgClosed.FrobeniusFixedPoints
-import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.LinearAlgebra.LinearEquiv.Basic
 import TauCeti.LinearAlgebra.LinearIndependent.Iterate
 import TauCeti.RingTheory.LaurentSeries.Basic
@@ -46,40 +46,6 @@ namespace TauCeti
 /-! ### Finding a simple standard-block sub-isocrystal -/
 
 section SubBlock
-
-private theorem coe_linearEquivCyclicShift {L V : Type*} [Field L] [AddCommGroup V] [Module L V]
-    (π : L) (hπ : π ≠ 0) (r : ℕ) :
-    ⇑(LinearEquiv.cyclicShift L V π hπ r) = cyclicShift (R := L) (M := V) id π := by
-  ext w i
-  simp [LinearEquiv.cyclicShift_apply, cyclicShift_apply]
-
-private theorem cyclicShiftEquiv_iterate_rank_apply {L V : Type*} [Field L] [AddCommGroup V]
-    [Module L V] (π : L) (hπ : π ≠ 0) (r : ℕ+) (w : Fin r → V) :
-    (LinearEquiv.cyclicShift L V π hπ r)^[r] w = π • w := by
-  ext i
-  rw [coe_linearEquivCyclicShift]
-  have h := cyclicShift_iterate_rank_apply (σ := RingHom.id L) id (fun _ _ ↦ rfl) π rfl w i
-  simpa only [iterate_id, id_eq, Pi.smul_apply] using h
-
-private theorem cyclicShiftEquiv_zpow_mul_rank {L V : Type*} [Field L] [AddCommGroup V]
-    [Module L V] (π : L) (hπ : π ≠ 0) (r : ℕ+) (z : ℤ) (w : Fin r → V) :
-    (LinearEquiv.cyclicShift L V π hπ r ^ ((r : ℤ) * z)) w = π ^ z • w := by
-  let E := LinearEquiv.cyclicShift L V π hπ r ^ (r : ℕ)
-  let Mπ := LinearEquiv.smulOfNeZero L (Fin r → V) π hπ
-  have hE : Function.Semiconj id
-      ⇑(MulAction.toPermHom ((Fin r → V) ≃ₗ[L] (Fin r → V)) (Fin r → V) E)
-      ⇑(MulAction.toPermHom ((Fin r → V) ≃ₗ[L] (Fin r → V)) (Fin r → V) Mπ) := fun u ↦ by
-    simp only [MulAction.toPermHom_apply, id_eq]
-    -- `(MulAction.toPerm e) u` on `W ≃ₗ[L] W` is `e u` definitionally.
-    change id (E u) = Mπ u
-    rw [id_eq, pow_apply_eq_iterate, cyclicShiftEquiv_iterate_rank_apply,
-      LinearEquiv.smulOfNeZero_apply]
-  have hz := hE.zpow_right_of_monoidHom (MulAction.toPermHom _ _) (MulAction.toPermHom _ _) z w
-  simp only [MulAction.toPermHom_apply, id_eq] at hz
-  -- `(MulAction.toPerm e) w` on `W ≃ₗ[L] W` is `e w` definitionally.
-  change (E ^ z) w = (Mπ ^ z) w at hz
-  rw [zpow_mul, zpow_natCast]
-  exact hz.trans (LinearEquiv.smulOfNeZero_zpow_apply π hπ z w)
 
 private noncomputable def companionMatrixMap {k : Type*} [Field k] {p f : ℕ} [Fact p.Prime]
     [CharP k p] (n : ℕ) (b₀ : Fin (n + 1) → k) :
@@ -227,35 +193,6 @@ private theorem exists_powerSeries_companion_solution {k : Type*} [Field k] {p f
     · rw [PowerSeries.coeff_mk, map_add, hmul_coeff j.succ t, hdt j.succ t]
       simp [σk, _root_.iterateFrobenius_def, x, add_assoc]
 
-private theorem min_slope_order_bound {n : ℕ} {m : Fin (n + 1) → ℤ} {a : Fin (n + 1) → Bool}
-    (ha0 : a 0 = true) :
-    ∃ (i₀ : Fin (n + 1)) (s : ℤ) (r : ℕ+), a i₀ = true ∧ s.natAbs.Coprime r ∧
-      s * (n + 1 - i₀.val : ℤ) = (r : ℤ) * m i₀ ∧
-      ∀ i : Fin (n + 1), a i = true → s * (n + 1 - i.val : ℤ) ≤ (r : ℤ) * m i := by
-  classical
-  let S : Finset (Fin (n + 1)) := Finset.univ.filter fun i ↦ a i = true
-  obtain ⟨i₀, hi₀S, hi₀_min⟩ :=
-    Finset.exists_min_image S (fun i ↦ (m i : ℚ) / (n + 1 - i.val : ℕ))
-      ⟨0, Finset.mem_filter.2 ⟨Finset.mem_univ 0, ha0⟩⟩
-  set q₀ : ℚ := (m i₀ : ℚ) / (n + 1 - i₀.val : ℕ)
-  set s : ℤ := q₀.num
-  set r : ℕ+ := ⟨q₀.den, q₀.den_pos⟩
-  have hq_eq : (s : ℚ) / (r : ℕ) = q₀ := Rat.num_div_den q₀
-  have hnat (i : Fin (n + 1)) : ((n + 1 - i.val : ℕ) : ℤ) = (n : ℤ) + 1 - i.val := by omega
-  refine ⟨i₀, s, r, (Finset.mem_filter.1 hi₀S).2, q₀.reduced, ?_, fun i hi ↦ ?_⟩
-  · have h := hq_eq
-    rw [div_eq_div_iff (by positivity) (by exact_mod_cast (Nat.sub_pos_of_lt i₀.isLt).ne')] at h
-    rw [← hnat]
-    exact_mod_cast show ((s * ((n + 1 - i₀.val : ℕ) : ℤ) : ℤ) : ℚ) =
-        (((r : ℤ) * m i₀ : ℤ) : ℚ) by push_cast; linarith
-  · have hle := hi₀_min i (Finset.mem_filter.2 ⟨Finset.mem_univ i, hi⟩)
-    have hden_pos : (0 : ℚ) < (n + 1 - i.val : ℕ) := by exact_mod_cast Nat.sub_pos_of_lt i.isLt
-    have hr_pos : (0 : ℚ) < r := by exact_mod_cast r.pos
-    rw [← hq_eq, div_le_div_iff₀ hr_pos hden_pos] at hle
-    rw [← hnat]
-    exact_mod_cast show (s : ℚ) * ((n + 1 - i.val : ℕ) : ℤ) ≤ (r : ℤ) * m i by
-      push_cast; linarith
-
 private theorem exists_min_slope_coeffs {k : Type*} [Field k] {n : ℕ}
     {a : Fin (n + 1) → LaurentSeries k} (ha0 : a 0 ≠ 0) :
     ∃ (s : ℤ) (r : ℕ+), s.natAbs.Coprime r ∧
@@ -265,10 +202,12 @@ private theorem exists_min_slope_coeffs {k : Type*} [Field k] {n : ℕ}
           HahnSeries.single (-s * (n + 1 - i.val : ℤ)) 1 *
             _root_.LaurentSeries.expand k r (-a i) := by
   classical
-  obtain ⟨i₀, s, r, hi₀, hcop, hord_eq, hord_le⟩ :=
-    min_slope_order_bound (m := fun i ↦ (a i).order) (a := fun i ↦ decide (a i ≠ 0))
-      (decide_eq_true ha0)
-  have hi₀_ne : a i₀ ≠ 0 := of_decide_eq_true hi₀
+  let S : Finset (Fin (n + 1)) := Finset.univ.filter fun i ↦ a i ≠ 0
+  have hS0 : (0 : Fin (n + 1)) ∈ S := Finset.mem_filter.2 ⟨Finset.mem_univ 0, ha0⟩
+  obtain ⟨i₀, hi₀, s, r, hcop, hord_eq, hord_le⟩ :=
+    Rat.exists_min_div_coprime ⟨0, hS0⟩ (fun i ↦ (a i).order)
+      (fun i ↦ (n + 1 - i.val : ℤ)) (fun i _ ↦ by omega)
+  have hi₀_ne : a i₀ ≠ 0 := (Finset.mem_filter.1 hi₀).2
   let B_ser : Fin (n + 1) → LaurentSeries k := fun i ↦
     HahnSeries.single (-s * (n + 1 - i.val : ℤ)) 1 * _root_.LaurentSeries.expand k r (-a i)
   have hB_mem (i : Fin (n + 1)) : B_ser i ∈ Set.range (HahnSeries.ofPowerSeries ℤ k) := by
@@ -279,7 +218,7 @@ private theorem exists_min_slope_coeffs {k : Type*} [Field k] {n : ℕ}
     · rw [HahnSeries.coeff_single_mul, one_mul]
       apply HahnSeries.coeff_eq_zero_of_lt_order
       rw [_root_.LaurentSeries.order_expand, HahnSeries.order_neg]
-      linarith [hord_le i (decide_eq_true hi)]
+      linarith [hord_le i (Finset.mem_filter.2 ⟨Finset.mem_univ i, hi⟩)]
   choose b hb using hB_mem
   refine ⟨s, r, hcop, b, ⟨i₀, ?_⟩, fun i ↦ hb i⟩
   rw [← PowerSeries.coeff_zero_eq_constantCoeff_apply]
@@ -353,50 +292,6 @@ private theorem exists_laurent_companion_solution {p : ℕ} [Fact p.Prime] {f : 
         show -s * (j.val : ℤ) + -s * ((n : ℤ) + 1 - (↑j + 1)) = -s * (n : ℤ) by ring,
         ← mul_assoc]
 
-private theorem cyclicShiftEquiv_zpow_smulVec {L V : Type*} [Field L] [AddCommGroup V] [Module L V]
-    (π : L) (hπ : π ≠ 0) (r : ℕ+) (z : ℤ) (g : Fin r → L) (v : V) :
-    (LinearEquiv.cyclicShift L V π hπ r ^ z) (fun l ↦ g l • v) =
-      fun l ↦ ((LinearEquiv.cyclicShift L L π hπ r ^ z) g l) • v := by
-  let S_L := LinearEquiv.cyclicShift L L π hπ r
-  let S_V := LinearEquiv.cyclicShift L V π hπ r
-  have hsc : Function.Semiconj (fun (g' : Fin r → L) l ↦ g' l • v)
-      ⇑(MulAction.toPermHom ((Fin r → L) ≃ₗ[L] (Fin r → L)) (Fin r → L) S_L)
-      ⇑(MulAction.toPermHom ((Fin r → V) ≃ₗ[L] (Fin r → V)) (Fin r → V) S_V) := fun g' ↦ by
-    ext l
-    simp only [MulAction.toPermHom_apply]
-    -- `(MulAction.toPerm e) u` on `W ≃ₗ[L] W` is `e u` definitionally.
-    change S_L g' l • v = (S_V fun l ↦ g' l • v) l
-    simp [S_L, S_V, LinearEquiv.cyclicShift_apply, smul_eq_mul, mul_smul]
-  have hz := (hsc.zpow_right_of_monoidHom (MulAction.toPermHom _ _) (MulAction.toPermHom _ _) z
-    g).symm
-  simp only [MulAction.toPermHom_apply] at hz
-  -- `e • u` on `W ≃ₗ[L] W` is `e u` definitionally.
-  change (S_V ^ z) (fun l ↦ g l • v) = fun l ↦ ((S_L ^ z) g l) • v at hz
-  exact hz
-
-private theorem map_pi_comm_cyclicShiftEquiv_zpow {L V : Type*} [Field L] [AddCommGroup V]
-    [Module L V] {σ : L ≃+* L} {Φ : V →ₛₗ[(σ : L →+* L)] V} (π : L) (hπ : π ≠ 0)
-    (hσπ : σ π = π) (r : ℕ+) (z : ℤ) (u : Fin r → V) :
-    (fun l ↦ Φ ((LinearEquiv.cyclicShift L V π hπ r ^ z) u l)) =
-      (LinearEquiv.cyclicShift L V π hπ r ^ z) (fun l ↦ Φ (u l)) := by
-  let S_V := LinearEquiv.cyclicShift L V π hπ r
-  have hsc : Function.Semiconj (fun (w : Fin r → V) l ↦ Φ (w l))
-      ⇑(MulAction.toPermHom ((Fin r → V) ≃ₗ[L] (Fin r → V)) (Fin r → V) S_V)
-      ⇑(MulAction.toPermHom ((Fin r → V) ≃ₗ[L] (Fin r → V)) (Fin r → V) S_V) := fun w ↦ by
-    ext l
-    simp only [MulAction.toPermHom_apply]
-    -- `e • w` on `W ≃ₗ[L] W` is `e w` definitionally.
-    change Φ (S_V w l) = S_V (fun l ↦ Φ (w l)) l
-    simp only [S_V, LinearEquiv.cyclicShift_apply]
-    split_ifs
-    · rw [map_smulₛₗ, RingHom.coe_coe, hσπ]
-    · simp
-  have hz := hsc.zpow_right_of_monoidHom (MulAction.toPermHom _ _) (MulAction.toPermHom _ _) z u
-  simp only [MulAction.toPermHom_apply] at hz
-  -- `e • w` on `W ≃ₗ[L] W` is `e w` definitionally.
-  change (fun l ↦ Φ ((S_V ^ z) u l)) = (S_V ^ z) (fun l ↦ Φ (u l)) at hz
-  exact hz
-
 private theorem cyclicShiftEquiv_laurent_companion {p : ℕ} [Fact p.Prime] {f : ℕ+}
     {k : Type*} [Field k] [CharP k p] [IsAlgClosed k]
     {V : Type*} [AddCommGroup V] [Module (LaurentSeries k) V]
@@ -413,8 +308,7 @@ private theorem cyclicShiftEquiv_laurent_companion {p : ℕ} [Fact p.Prime] {f :
         _root_.LaurentSeries.expand k r (-a j.succ) *
           LaurentSeries.coefficientFrobenius p f (z (Fin.last n))) :
     (fun l ↦ Φ (∑ i : Fin (n + 1), _root_.LaurentSeries.contract r (z i) l • Φ^[i.val] v₀)) =
-      (LinearEquiv.cyclicShift (LaurentSeries k) V (HahnSeries.single 1 1)
-        (HahnSeries.single_ne_zero one_ne_zero) r ^ s)
+      (LinearEquiv.cyclicShift (LaurentSeries k) V TauCeti.LaurentSeries.unitX r ^ s)
         (fun l ↦ ∑ i : Fin (n + 1), _root_.LaurentSeries.contract r (z i) l • Φ^[i.val] v₀) := by
   -- Expand both `l ↦ Φ (w l)` and `(S_V ^ s) w` in the orbit basis `Φ^[i] v₀`, rewriting
   -- `Φ^[n + 1] v₀` via `hrel` and matching coefficients using `hz0` and `hzs`.
@@ -423,9 +317,7 @@ private theorem cyclicShiftEquiv_laurent_companion {p : ℕ} [Fact p.Prime] {f :
   have hcontract (g : L) (l : Fin r) :
       _root_.LaurentSeries.contract r (σ g) l = σ (_root_.LaurentSeries.contract r g l) := by
     ext m; simp [σ]
-  let π : L := HahnSeries.single 1 1
-  have hπ : π ≠ 0 := HahnSeries.single_ne_zero one_ne_zero
-  set S_V := LinearEquiv.cyclicShift L V π hπ r
+  set S_V := LinearEquiv.cyclicShift L V TauCeti.LaurentSeries.unitX r
   let smulVec : (Fin r → L) → V → (Fin r → V) := fun g v l ↦ g l • v
   let y : Fin (n + 1) → Fin r → L := fun i l ↦ _root_.LaurentSeries.contract r (z i) l
   let termLast : Fin (n + 1) → (Fin r → V) := fun j ↦ smulVec (_root_.LaurentSeries.contract r
@@ -443,7 +335,7 @@ private theorem cyclicShiftEquiv_laurent_companion {p : ℕ} [Fact p.Prime] {f :
         ∑ i : Fin (n + 1), smulVec (y i) (Φ^[i.val] v₀) := by ext l; simp [smulVec]
     rw [hw_vec, map_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [cyclicShiftEquiv_zpow_smulVec π hπ r s (y i) (Φ^[i.val] v₀)]
+    rw [LinearEquiv.cyclicShift_zpow_smul TauCeti.LaurentSeries.unitX r s (y i) (Φ^[i.val] v₀)]
     exact congrArg (smulVec · (Φ^[i.val] v₀)) (_root_.LaurentSeries.cyclicShift_zpow_contract r s _)
   have hΦlast : Φ^[n + 1] v₀ = ∑ j : Fin (n + 1), (-a j) • Φ^[j.val] v₀ := by
     rw [eq_neg_of_add_eq_zero_left hrel, ← Finset.sum_neg_distrib]; simp [neg_smul]
@@ -481,8 +373,6 @@ private theorem eigenvector_of_laurent_companion_solution {p : ℕ} [Fact p.Prim
     ∃ w₀ : V, w₀ ≠ 0 ∧
       Φ^[r] w₀ = (HahnSeries.single 1 1 : LaurentSeries k) ^ s • w₀ := by
   let L := LaurentSeries k
-  let π : L := HahnSeries.single 1 1
-  have hπ : π ≠ 0 := HahnSeries.single_ne_zero one_ne_zero
   let y : Fin (n + 1) → Fin r → L := fun i l ↦ _root_.LaurentSeries.contract r (z i) l
   let w : Fin r → V := fun l ↦ ∑ i : Fin (n + 1), y i l • Φ^[i.val] v₀
   have hl₀ : ∃ l₀, w l₀ ≠ 0 := by
@@ -495,11 +385,13 @@ private theorem eigenvector_of_laurent_companion_solution {p : ℕ} [Fact p.Prim
     obtain ⟨l₀, hl₀⟩ := hcontract
     exact ⟨l₀, fun hw0 ↦ hl₀ (Fintype.linearIndependent_iff.1 hli (fun i ↦ y i l₀) hw0 i₁)⟩
   obtain ⟨l₀, hl₀⟩ := hl₀
-  let S_V := LinearEquiv.cyclicShift L V π hπ r
+  let S_V := LinearEquiv.cyclicShift L V TauCeti.LaurentSeries.unitX r
   let T : (Fin r → V) → (Fin r → V) := fun u l ↦ Φ (u l)
   have hTw : T w = (S_V ^ s) w := cyclicShiftEquiv_laurent_companion hrel s r z hz0 hzs
-  have hcomm : Function.Commute T ⇑(S_V ^ s) :=
-    fun u ↦ map_pi_comm_cyclicShiftEquiv_zpow π hπ (LaurentSeries.coefficientFrobenius_X p f) r s u
+  have hcomm : Function.Commute T ⇑(S_V ^ s) := fun u ↦
+    LinearEquiv.map_comp_cyclicShift_zpow Φ TauCeti.LaurentSeries.unitX
+      (by rw [TauCeti.LaurentSeries.val_unitX, RingHom.coe_coe,
+        LaurentSeries.coefficientFrobenius_X p f]) r s u
   have hTiter : ∀ m : ℕ, T^[m] w = (S_V ^ s)^[m] w := fun m ↦ by
     induction m with
     | zero => simp
@@ -511,7 +403,8 @@ private theorem eigenvector_of_laurent_companion_solution {p : ℕ} [Fact p.Prim
   refine ⟨w l₀, hl₀, ?_⟩
   have hr_eq := congrFun (hTiter r) l₀
   rw [hT_coord r l₀, ← pow_apply_eq_iterate (S_V ^ s) (r : ℕ), ← zpow_natCast, ← zpow_mul,
-    mul_comm s (r : ℤ), cyclicShiftEquiv_zpow_mul_rank] at hr_eq
+    mul_comm s (r : ℤ), LinearEquiv.cyclicShift_zpow_mul_rank, Pi.smul_apply,
+    Units.val_zpow_eq_zpow_val, TauCeti.LaurentSeries.val_unitX] at hr_eq
   exact hr_eq
 
 private theorem exists_eigenvector_of_minimal_relation {p : ℕ} [Fact p.Prime] {f : ℕ+}
