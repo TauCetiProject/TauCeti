@@ -105,6 +105,20 @@ theorem bwdDiff_iter_const_smul {R : Type*} [DistribSMul R G] (h : M) (r : R)
   | zero => rfl
   | succ n ih => simp only [Function.iterate_succ_apply, bwdDiff_const_smul, ih]
 
+/-- The backward difference commutes with finite sums. -/
+@[simp]
+theorem bwdDiff_finsetSum {α : Type*} (h : M) (s : Finset α) (f : α → M → G) :
+    bwdDiff h (∑ k ∈ s, f k) = ∑ k ∈ s, bwdDiff h (f k) :=
+  funext fun x ↦ by simp only [bwdDiff_apply, Finset.sum_apply, Finset.sum_sub_distrib]
+
+/-- The iterated backward difference commutes with finite sums. -/
+@[simp]
+theorem bwdDiff_iter_finsetSum {α : Type*} (h : M) (s : Finset α) (f : α → M → G) (n : ℕ) :
+    (bwdDiff h)^[n] (∑ k ∈ s, f k) = ∑ k ∈ s, (bwdDiff h)^[n] (f k) := by
+  induction n generalizing f with
+  | zero => rfl
+  | succ n ih => simp only [Function.iterate_succ_apply, bwdDiff_finsetSum, ih]
+
 /-- Along the line `x + ℤ h`, the iterated backward difference with step `h` is the iterated
 backward difference with step `1` of the function `j ↦ f (x + j • h)` on `ℤ`. -/
 theorem bwdDiff_iter_apply_add_zsmul (h : M) (f : M → G) (n : ℕ) (x : M) (m : ℤ) :
