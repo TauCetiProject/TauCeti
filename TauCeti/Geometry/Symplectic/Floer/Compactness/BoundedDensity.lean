@@ -428,8 +428,7 @@ theorem IsNondegenerate.exists_opens_smoothEmbedding_chart_cover_norm_fderiv_sq_
       (hsub ▸ emb.contMDiff.contMDiffAt)).contMDiffWithinAt
   let : LocallyCompactSpace H := I.isClosedEmbedding.locallyCompactSpace
   have hW_swap : IsOpen ((fun q : (P × (ℝ × ℝ)) × M ↦ (q.1.1, (q.1.2, q.2))) ⁻¹' W) :=
-    hW.preimage ((continuous_fst.comp continuous_fst).prodMk
-      ((continuous_snd.comp continuous_fst).prodMk continuous_snd))
+    hW.preimage (Homeomorph.prodAssoc P (ℝ × ℝ) M).continuous
   obtain ⟨n, α, u, b, hcov, hsK_cov⟩ :=
     exists_finite_precompact_chart_cover_of_isOpen_prod (I := I) (hC.prod hD) hK hW_swap
       (fun ⟨⟨p, z⟩, x⟩ ⟨⟨hp, hz⟩, hx⟩ ↦ hCDKW ⟨hp, hz, hx⟩) W_emb.isOpen hKW

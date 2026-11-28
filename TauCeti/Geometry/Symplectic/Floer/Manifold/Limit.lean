@@ -30,6 +30,8 @@ point.
   complex linear, for structures continuous in tangent coordinates.
 * `SmoothTwoForm.continuousAt_floerEnergyDensity`: pointwise continuity of the Floer energy
   density of a `C¹` map when the Hamiltonian vector fields are continuous into the tangent bundle.
+* `SmoothTwoForm.continuousOn_floerEnergyDensity`: continuity of the Floer energy density on an
+  open set, derived from `SmoothTwoForm.continuousAt_floerEnergyDensity`.
 * `SmoothTwoForm.continuousOn_floerEnergyDensity_of_isOpen_prod`: slice continuity of the Floer
   energy density for a parametrized Hamiltonian family.
 -/
@@ -139,6 +141,22 @@ theorem continuousAt_floerEnergyDensity (ω : SmoothTwoForm I M) {Ks Kt : ℝ ×
       𝓘(ℝ, ℝ × ℝ)).symm.continuous.continuousAt.comp
         (continuous_id.prodMk continuous_const).continuousAt)).tendsto
   exact ω.tendsto_floerEnergyDensity (u := fun _ ↦ u) tendsto_id hD hXs hXt
+
+/-- **Continuity of the Floer energy density, for a manifold target.** If `u` is `C¹` on an open
+set `U` of the domain and the Hamiltonian vector fields of the perturbation `K = K_s ds + K_t dt`
+are continuous on `U × M` as maps into the tangent bundle, then the Floer energy density of `u` is
+continuous on `U`. The vector-space case is `SymplecticForm.continuousOn_floerEnergyDensity`. -/
+theorem continuousOn_floerEnergyDensity (ω : SmoothTwoForm I M) {Ks Kt : ℝ × ℝ → M → ℝ}
+    {u : ℝ × ℝ → M} {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U)
+    (hXs : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Ks p.1) p.2⟩ : TangentBundle I M)) (U ×ˢ univ))
+    (hXt : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Kt p.1) p.2⟩ : TangentBundle I M)) (U ×ˢ univ)) :
+    ContinuousOn (ω.floerEnergyDensity Ks Kt u) U := by
+  intro z hz
+  have hUM := (hU.prod isOpen_univ).mem_nhds (mk_mem_prod hz (mem_univ (u z)))
+  exact (ω.continuousAt_floerEnergyDensity (hu.contMDiffAt (hU.mem_nhds hz))
+    (hXs.continuousAt hUM) (hXt.continuousAt hUM)).continuousWithinAt
 
 /-- **Slice continuity of the Floer energy density for a parametrized Hamiltonian family.** On any
 subset `S ⊆ Ω` of an open set `Ω` mapped into the open domain `W` of jointly continuous Hamiltonian

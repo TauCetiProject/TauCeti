@@ -94,8 +94,8 @@ form they recover the vector-space definitions.
   `SmoothTwoForm.IsNondegenerate.continuous_floerEnergyDensity_zero_left`: for a perturbation
   `K = K_t dt`, the energy density `ω(η, J η)` of a solution, with `η = ∂_t u - X_{K_t}(u)`, its
   nonnegativity, and continuity of the curvature and of the energy density.
-* `SmoothTwoForm.tendsto_perturbedMFDeriv`, `SmoothTwoForm.tendsto_floerEnergyDensity` and
-  `SmoothTwoForm.continuousOn_floerEnergyDensity`: tangent-bundle limits and continuity.
+* `SmoothTwoForm.tendsto_perturbedMFDeriv` and `SmoothTwoForm.tendsto_floerEnergyDensity`:
+  tangent-bundle limits.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity`: the energy identity on a
   rectangle.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_of_hasCompactSupport`: the energy
@@ -405,27 +405,6 @@ theorem tendsto_floerEnergyDensity (ω : SmoothTwoForm I M) {Ks Kt : ℝ × ℝ 
   -- `convert` matches the limits in `hP` up to the tangent-space instances of the unfolded form.
   · convert hP stdComplexLineReal using 3 <;> exact perturbedMFDeriv_apply ..
   · convert hP stdComplexLineImag using 3 <;> exact perturbedMFDeriv_apply ..
-
-/-- **Continuity of the Floer energy density, for a manifold target.** If `u` is `C¹` on an open
-set `U` of the domain and the Hamiltonian vector fields of the perturbation `K = K_s ds + K_t dt`
-are continuous on `U × M` as maps into the tangent bundle, then the Floer energy density of `u` is
-continuous on `U`. The vector-space case is `SymplecticForm.continuousOn_floerEnergyDensity`. -/
-theorem continuousOn_floerEnergyDensity (ω : SmoothTwoForm I M) {Ks Kt : ℝ × ℝ → M → ℝ}
-    {u : ℝ × ℝ → M} {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U)
-    (hXs : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
-      (⟨p.2, ω.hamiltonianVectorField (Ks p.1) p.2⟩ : TangentBundle I M)) (U ×ˢ univ))
-    (hXt : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
-      (⟨p.2, ω.hamiltonianVectorField (Kt p.1) p.2⟩ : TangentBundle I M)) (U ×ˢ univ)) :
-    ContinuousOn (ω.floerEnergyDensity Ks Kt u) U := by
-  intro z hz
-  have hUM := (hU.prod isOpen_univ).mem_nhds (mk_mem_prod hz (mem_univ (u z)))
-  have hD (e : ℝ × ℝ) : Tendsto (fun z' ↦ (⟨u z', mfderiv 𝓘(ℝ, ℝ × ℝ) I u z' e⟩ :
-      TangentBundle I M)) (𝓝 z) (𝓝 ⟨u z, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z e⟩) :=
-    (((hu.contMDiffAt (hU.mem_nhds hz)).continuousAt_tangentMap le_rfl).comp
-      ((tangentBundleModelSpaceHomeomorph 𝓘(ℝ, ℝ × ℝ)).symm.continuous.continuousAt.comp
-        (continuous_id.prodMk continuous_const).continuousAt)).tendsto
-  exact (ω.tendsto_floerEnergyDensity (u := fun _ ↦ u) tendsto_id hD (hXs.continuousAt hUM)
-    (hXt.continuousAt hUM)).mono_left nhdsWithin_le_nhds
 
 end Continuity
 

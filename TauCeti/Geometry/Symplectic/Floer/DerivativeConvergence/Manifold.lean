@@ -11,6 +11,7 @@ import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Symplectic.Floer.Compactness.Limit
 import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold.Family
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Derivative convergence for Floer solutions on a manifold
@@ -99,9 +100,8 @@ private theorem chart_c1_on_ball {P : Type*} [NormedAddCommGroup P] [NormedSpace
   -- Step 2: Set up the `C¹` coordinate Floer data on `ℝ × ℝ` in the chart at `α`.
   have hXsM := hω.contMDiffOn_hamiltonianVectorField_prod (n := 1) (by simp) hW hKs
   have hXtM := hω.contMDiffOn_hamiltonianVectorField_prod (n := 1) (by simp) hW hKt
-  let g : (P × (ℝ × ℝ)) × E → P × ((ℝ × ℝ) × E) := fun q ↦ (q.1.1, (q.1.2, q.2))
-  have hg : ContDiff ℝ 1 g :=
-    (contDiff_fst.comp contDiff_fst).prodMk ((contDiff_snd.comp contDiff_fst).prodMk contDiff_snd)
+  let g : (P × (ℝ × ℝ)) × E → P × ((ℝ × ℝ) × E) := Equiv.prodAssoc P (ℝ × ℝ) E
+  have hg : ContDiff ℝ 1 g := contDiff_prodAssoc
   set S₀ : Set (P × ((ℝ × ℝ) × E)) :=
     {q | q.2.2 ∈ e.target ∧ (q.1, (q.2.1, e.symm q.2.2)) ∈ W}
   have hS₀ : IsOpen S₀ := isOpen_preimage_prod_extChartAt_symm (I := I) α hW
@@ -134,7 +134,7 @@ private theorem chart_c1_on_ball {P : Type*} [NormedAddCommGroup P] [NormedSpace
       (fun y hy ↦ by
         have hysrc := hcl_v (ball_subset_closedBall hy)
         refine ⟨e.map_source hysrc, ?_⟩
-        simpa only [g, Function.comp_apply, e.left_inv hysrc] using
+        simpa only [g, Equiv.prodAssoc_apply, Function.comp_apply, e.left_inv hysrc] using
           hvW y (hcl_Ω (ball_subset_closedBall hy)))
       (fun n ↦ contMDiffOn_iff_contDiffOn.1 <|
         (contMDiffOn_extChartAt (n := (⊤ : ℕ∞))).comp
@@ -169,15 +169,8 @@ private theorem chart_c1_on_ball {P : Type*} [NormedAddCommGroup P] [NormedSpace
   -- Step 3: Reindex the derivative convergence back from `n + N` to `n`.
   have hconv_real : TendstoLocallyUniformlyOn (fun n ↦ fderiv ℝ (e ∘ u n))
       (fderiv ℝ (e ∘ v)) atTop (ball z₀ r) := by
-    rw [tendstoLocallyUniformlyOn_iff_forall_isCompact isOpen_ball] at hconv_tail ⊢
-    intro C'' hC'' hC''c
-    rw [Metric.tendstoUniformlyOn_iff]
-    intro ε hε
-    have hmap : ∀ᶠ n in map (· + N) atTop,
-        ∀ x ∈ C'', dist (fderiv ℝ (e ∘ v) x) (fderiv ℝ (e ∘ u n) x) < ε :=
-      Filter.eventually_map.2
-        (Metric.tendstoUniformlyOn_iff.1 (hconv_tail C'' hC'' hC''c) ε hε)
-    rwa [Filter.map_add_atTop_eq_nat] at hmap
+    rw [← Filter.map_add_atTop_eq_nat N]
+    exact tendstoLocallyUniformlyOn_map_iff.2 hconv_tail
   refine ⟨r, hr, ball_subset_closedBall.trans hcl_Ω, hcl_v.mono_left ball_subset_closedBall, hv_cd,
     hconv_real, ?_⟩
   simpa only [Function.comp_apply, SmoothTwoForm.hamiltonianOneFormInChartAt_uncurry,

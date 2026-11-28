@@ -11,6 +11,7 @@ import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Symplectic.Floer.Manifold.Limit
 import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold.Family
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
@@ -412,16 +413,26 @@ theorem IsNondegenerate.exists_pos_forall_pi_mul_sq_mul_floerEnergyDensity_le_in
     have hcL_nn : 0 ≤ cL := by positivity
     dsimp only [A₁, B₁]
     nlinarith
-  have hw_int : IntegrableOn (fun y ↦ ‖fderiv ℝ w y 1‖ ^ 2) (ball y₀ r) :=
-    ((hw_cont.norm.pow 2).integrableOn_compact (isCompact_closedBall y₀ r)).mono_set
-      ball_subset_closedBall
+  have heℂ_int : IntegrableOn (fun y ↦ ω.floerEnergyDensity (Ks p) (Kt p) u (eℂ y))
+      (eℂ ⁻¹' ball c r) :=
+    (Complex.volume_preserving_equiv_real_prod.integrableOn_comp_preimage
+      eℂ.toHomeomorph.measurableEmbedding).2 he_int
   have hint_le : ∫ y in ball y₀ r, ‖fderiv ℝ w y 1‖ ^ 2 ≤
       B₁ * (π * r ^ 2) + A₁ * ∫ z in ball c r, ω.floerEnergyDensity (Ks p) (Kt p) u z := by
-    simpa only [Complex.volume_real_ball y₀ hr] using
-      setIntegral_le_mul_volumeReal_add_mul_setIntegral_equivRealProdCLM (by positivity)
-        measurableSet_ball measure_ball_lt_top.ne measurableSet_ball hball_sub hw_int he_int
-        (fun z hz ↦ he_nn z (ball_subset_closedBall hz))
-        fun y hy ↦ hpt_le y (ball_subset_closedBall hy)
+    have hlin := setIntegral_le_mul_add_mul_of_le (μ := volume) measurableSet_ball
+      (fun _ _ ↦ sq_nonneg _) (heℂ_int.mono_set hball_sub)
+      (integrableOn_const (C := (1 : ℝ)) measure_ball_lt_top.ne) (c₁ := A₁) (c₂ := B₁)
+      fun y hy ↦ by simpa only [mul_one] using hpt_le y (ball_subset_closedBall hy)
+    have hmono := setIntegral_mono_set heℂ_int
+      (ae_restrict_of_forall_mem (measurableSet_ball.preimage eℂ.continuous.measurable)
+        fun y hy ↦ he_nn _ (ball_subset_closedBall hy))
+      hball_sub.eventuallySubset
+    have hpre := Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
+      eℂ.toHomeomorph.measurableEmbedding (ω.floerEnergyDensity (Ks p) (Kt p) u) (ball c r)
+    have hvol : ∫ _ in ball y₀ r, (1 : ℝ) = π * r ^ 2 := by
+      simp [Complex.volume_real_ball y₀ hr]
+    rw [hvol] at hlin
+    linarith [mul_le_mul_of_nonneg_left (hmono.trans_eq hpre) (by positivity : 0 ≤ A₁)]
   -- Apply the Euclidean chart MVI and convert `‖∂ₛw(y₀)‖²` back to `e(u)(c)`.
   have hmvi_w := hmvi (p := p) (w := w) (y₀ := y₀) (r := r) hp hr
     (hball_sub.trans (preimage_mono (ball_subset_closedBall.trans (hcr.trans hΩD))))

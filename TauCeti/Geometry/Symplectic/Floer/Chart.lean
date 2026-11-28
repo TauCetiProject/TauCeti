@@ -10,9 +10,11 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Family.Chart
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.Geometry.Manifold.Diffeomorph.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
+import TauCeti.Geometry.Symplectic.Floer.Manifold.Limit
 
 /-!
 # The Floer equation in a chart of a manifold
@@ -325,11 +327,9 @@ theorem continuousOn_almostComplexInChartAt {P : Type*} [TopologicalSpace P] (α
     (σ := fun q : P × (ℝ × ℝ) ↦ fun x ↦ (J q.1 q.2 x).toLinearMap.toContinuousLinearMap)
     (W := {q : (P × (ℝ × ℝ)) × M | (q.1.1, (q.1.2, q.2)) ∈ W}) (α := α)
     (fun _ hw ↦ by simpa using TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hw)
-    (hJ.comp ((continuous_fst.comp continuous_fst).prodMk
-      ((continuous_snd.comp continuous_fst).prodMk continuous_snd)).continuousOn
+    (hJ.comp (Homeomorph.prodAssoc P (ℝ × ℝ) M).continuous.continuousOn
       fun _ h ↦ h)).comp
-    ((continuous_fst.prodMk (continuous_fst.comp continuous_snd)).prodMk
-      (continuous_snd.comp continuous_snd)).continuousOn fun _ h ↦ h).congr
+    (Homeomorph.prodAssoc P (ℝ × ℝ) E).symm.continuous.continuousOn fun _ h ↦ h).congr
     fun _ _ ↦ by rw [Function.comp_apply, almostComplexInChartAt, hom_trivializationAt_apply]; rfl
 
 /-- **Chart regularity of a parametrized family of almost complex structures.** If `J` is jointly
@@ -351,22 +351,29 @@ theorem contDiffOn_almostComplexInChartAt_of_contMDiffOn {P : Type*}
   have : ContMDiffVectorBundle n (E →L[ℝ] E)
       (fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) I :=
     ContMDiffVectorBundle.of_le (B := M) (n := (⊤ : ℕ∞)) hn
+  let a := Diffeomorph.prodAssocOfModels 𝓘(ℝ, P) 𝓘(ℝ, ℝ × ℝ) I P (ℝ × ℝ) M n
   have hJ' : ContMDiffOn (𝓘(ℝ, P × (ℝ × ℝ)).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
       (fun q : (P × (ℝ × ℝ)) × M ↦ TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) q.2
         (J q.1.1 q.1.2 q.2).toLinearMap.toContinuousLinearMap)
       {q | (q.1.1, (q.1.2, q.2)) ∈ W} :=
-    hJ.comp ((contDiff_fst.contMDiff.comp_contMDiffOn contMDiffOn_fst).prodMk
-      ((contDiff_snd.contMDiff.comp_contMDiffOn contMDiffOn_fst).prodMk contMDiffOn_snd))
-      fun _ h ↦ h
+    (hJ.comp (a.contMDiff.comp
+      (((contDiff_fst.contMDiff.prodMk contDiff_snd.contMDiff).comp contMDiff_fst).prodMk
+        contMDiff_snd)).contMDiffOn
+      fun _ h ↦ by
+        rw [Set.mem_preimage, Function.comp_apply, Diffeomorph.prodAssocOfModels_apply]
+        exact h).congr
+      fun _ _ ↦ by
+        dsimp only [a, Function.comp_apply]
+        rw [Diffeomorph.prodAssocOfModels_apply]
+        rfl
   exact ((Manifold.contDiffOn_trivializationAt_extChartAt_symm_of_contMDiffOn (I := I)
     (F := E →L[ℝ] E) (V := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (n := n)
     (σ := fun q : P × (ℝ × ℝ) ↦ fun x ↦ (J q.1 q.2 x).toLinearMap.toContinuousLinearMap)
     (α := α)
     (fun _ hw ↦ by simpa using TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hw)
-    hJ').comp
-    ((contDiff_fst.prodMk (contDiff_fst.comp contDiff_snd)).prodMk
-      (contDiff_snd.comp contDiff_snd)).contDiffOn fun _ h ↦ h).congr
+    hJ').comp (contDiff_prodAssoc_symm (E := P) (F := ℝ × ℝ) (G := E)).contDiffOn
+    fun _ h ↦ h).congr
     fun _ _ ↦ by rw [Function.comp_apply, almostComplexInChartAt, hom_trivializationAt_apply]; rfl
 
 end Floer
@@ -646,14 +653,11 @@ theorem continuousOn_hamiltonianVectorFieldInChartAt {P : Type*} [TopologicalSpa
     (V := TangentSpace I) (σ := fun q : P × (ℝ × ℝ) ↦ ω.hamiltonianVectorField (K q.1 q.2))
     (W := {q : (P × (ℝ × ℝ)) × M | (q.1.1, (q.1.2, q.2)) ∈ W}) (α := α)
     (fun _ hw ↦ TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hw)
-    (hX.comp ((continuous_fst.comp continuous_fst).prodMk
-      ((continuous_snd.comp continuous_fst).prodMk continuous_snd)).continuousOn
+    (hX.comp (Homeomorph.prodAssoc P (ℝ × ℝ) M).continuous.continuousOn
       fun _ h ↦ h)).comp
-    ((continuous_fst.prodMk (continuous_fst.comp continuous_snd)).prodMk
-      (continuous_snd.comp continuous_snd)).continuousOn fun _ h ↦ h).congr
+    (Homeomorph.prodAssoc P (ℝ × ℝ) E).symm.continuous.continuousOn fun _ h ↦ h).congr
     fun _ hq ↦ by
       rw [Function.comp_apply, hamiltonianVectorFieldInChartAt_apply]
-      dsimp only
       exact Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _
         (TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hq.1) _
 
@@ -673,22 +677,27 @@ theorem contDiffOn_hamiltonianVectorFieldInChartAt {P : Type*} [NormedAddCommGro
   have : IsManifold I n M := IsManifold.of_le (n := (⊤ : ℕ∞)) hn
   have : ContMDiffVectorBundle n E (TangentSpace I) I :=
     ContMDiffVectorBundle.of_le (B := M) (n := (⊤ : ℕ∞)) hn
+  let a := Diffeomorph.prodAssocOfModels 𝓘(ℝ, P) 𝓘(ℝ, ℝ × ℝ) I P (ℝ × ℝ) M n
   have hX' : ContMDiffOn (𝓘(ℝ, P × (ℝ × ℝ)).prod I) I.tangent n
       (fun q : (P × (ℝ × ℝ)) × M ↦
         (⟨q.2, ω.hamiltonianVectorField (K q.1.1 q.1.2) q.2⟩ : TangentBundle I M))
       {q | (q.1.1, (q.1.2, q.2)) ∈ W} :=
-    hX.comp ((contDiff_fst.contMDiff.comp_contMDiffOn contMDiffOn_fst).prodMk
-      ((contDiff_snd.contMDiff.comp_contMDiffOn contMDiffOn_fst).prodMk contMDiffOn_snd))
-      fun _ h ↦ h
+    (hX.comp (a.contMDiff.comp
+      (((contDiff_fst.contMDiff.prodMk contDiff_snd.contMDiff).comp contMDiff_fst).prodMk
+        contMDiff_snd)).contMDiffOn
+      fun _ h ↦ by
+        rw [Set.mem_preimage, Function.comp_apply, Diffeomorph.prodAssocOfModels_apply]
+        exact h).congr
+      fun _ _ ↦ by
+        dsimp only [a, Function.comp_apply]
+        rw [Diffeomorph.prodAssocOfModels_apply]
   exact ((Manifold.contDiffOn_trivializationAt_extChartAt_symm_of_contMDiffOn (I := I)
     (V := TangentSpace I) (n := n)
     (σ := fun q : P × (ℝ × ℝ) ↦ ω.hamiltonianVectorField (K q.1 q.2)) (α := α)
     (fun _ hw ↦ TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hw) hX').comp
-    ((contDiff_fst.prodMk (contDiff_fst.comp contDiff_snd)).prodMk
-      (contDiff_snd.comp contDiff_snd)).contDiffOn fun _ h ↦ h).congr
+    (contDiff_prodAssoc_symm (E := P) (F := ℝ × ℝ) (G := E)).contDiffOn fun _ h ↦ h).congr
     fun _ hq ↦ by
       rw [Function.comp_apply, hamiltonianVectorFieldInChartAt_apply]
-      dsimp only
       exact Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _
         (TangentBundle.extChartAt_symm_mem_trivializationAt_baseSet hq.1) _
 

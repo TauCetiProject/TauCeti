@@ -15,6 +15,7 @@ import TauCeti.Geometry.Symplectic.Floer.Compactness.BoundedDensity
 import TauCeti.Geometry.Symplectic.Floer.Compactness.MeanValue
 import TauCeti.Geometry.Symplectic.Floer.Manifold.Limit
 import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold.Family
+import TauCeti.Topology.MetricSpace.Lebesgue
 
 /-!
 # Energy quantization for Floer solutions on a manifold
@@ -151,28 +152,24 @@ private theorem exists_localized_mvi [I.Boundaryless] [T2Space M]
     obtain ⟨i⟩ := hn; exact (hM₂i i).trans_le (Finset.le_sup' M₂_i (Finset.mem_univ i))
   have hM₃_nn : 0 ≤ M₃ := by
     obtain ⟨i⟩ := hn; exact (hM₃i i).trans (Finset.le_sup' M₃_i (Finset.mem_univ i))
-  -- Step 3: Push the open cover to `eM '' K` via `emb` and apply the Lebesgue number lemma.
-  have hO_ex : ∀ i : Fin n, ∃ O : Set (EuclideanSpace ℝ (Fin N)),
-      IsOpen O ∧ emb ⁻¹' O = ((↑) : W_emb → M) ⁻¹' u_cov i := fun i ↦ by
-    obtain ⟨hu_open, -⟩ := hcov i
-    exact emb.isEmbedding.isInducing.isOpen_iff.1 (hu_open.preimage continuous_subtypeVal)
-  choose O hO_open hO_eq using hO_ex
-  have heMK_comp : IsCompact (eM '' K) := hK.image_of_continuousOn (heM_cmd.continuousOn.mono hKW)
-  have heMK_cov : eM '' K ⊆ ⋃ i : Fin n, O i := by
-    rintro _ ⟨x, hx, rfl⟩
-    obtain ⟨i, hxi⟩ := mem_iUnion.1 (hsK_cov hx)
-    refine mem_iUnion.2 ⟨i, ?_⟩
-    rw [heM_eq x (hKW hx)]
-    exact (Set.ext_iff.1 (hO_eq i) ⟨x, hKW hx⟩).2 hxi
-  obtain ⟨η, hη, hLeb⟩ := lebesgue_number_lemma_of_metric heMK_comp hO_open heMK_cov
+  -- Step 3: Apply the Lebesgue number lemma on the compact subtype `K` via the embedding `eM`.
+  have : CompactSpace K := isCompact_iff_compactSpace.mp hK
+  have heM_cont : Continuous fun x : K ↦ eM x.val :=
+    (heM_cmd.continuousOn.mono hKW).comp_continuous continuous_subtypeVal fun x ↦ x.property
+  have heM_inj : Injective fun x : K ↦ eM x.val := fun x y hxy ↦ Subtype.ext <| by
+    have h1 : emb ⟨x.val, hKW x.property⟩ = emb ⟨y.val, hKW y.property⟩ := by
+      simpa only [heM_eq x.val (hKW x.property), heM_eq y.val (hKW y.property)] using hxy
+    exact congrArg (Subtype.val : W_emb → M) (emb.isEmbedding.injective h1)
+  obtain ⟨η, hη, hLeb⟩ := exists_pos_forall_exists_forall_dist_lt_mem heM_cont heM_inj
+    (fun i ↦ (hcov i).1.preimage continuous_subtypeVal)
+    (fun x _ ↦ by
+      obtain ⟨i, hxi⟩ := mem_iUnion.1 (hsK_cov x.property)
+      exact mem_iUnion.2 ⟨i, hxi⟩)
   refine ⟨η, hη, δ_mvi, hδmvi_pos, M₁, hM₁_pos, M₂, hM₂_pos, M₃, hM₃_nn,
     fun Ω p u c r' hΩ hΩD hp hr' hcr hu huK hfl hdist hsmall ↦ ?_⟩
-  obtain ⟨i, hballO⟩ := hLeb (eM (u c)) ⟨u c, huK (hcr (mem_closedBall_self hr')), rfl⟩
-  have huV : MapsTo u (closedBall c r') (u_cov i) := by
-    intro z hz
-    have hzO : eM (u z) ∈ O i := hballO (hdist z hz)
-    rw [heM_eq (u z) (hKW (huK (hcr hz)))] at hzO
-    exact (Set.ext_iff.1 (hO_eq i) ⟨u z, hKW (huK (hcr hz))⟩).1 hzO
+  obtain ⟨i, hballu⟩ := hLeb ⟨u c, huK (hcr (mem_closedBall_self hr'))⟩
+  have huV : MapsTo u (closedBall c r') (u_cov i) :=
+    fun z hz ↦ hballu ⟨u z, huK (hcr hz)⟩ (hdist z hz)
   have hint_nn : 0 ≤ ∫ z in ball c r', ω.floerEnergyDensity (Ks p) (Kt p) u z :=
     setIntegral_nonneg measurableSet_ball fun z hz ↦
       floerEnergyDensity_nonneg hω

@@ -48,9 +48,6 @@ The real coordinates `(x, y) ↦ x + y i` of the plane preserve area
 coordinates, lies in the square `‖z‖ ≤ r`, the integral of a nonnegative function over the disc is
 at most its integral over any square `‖z‖ ≤ s` with `r ≤ s`
 (`TauCeti.setIntegral_setOf_norm_equivRealProdCLM_symm_le_le`).
-The integral of a function on `s ⊆ Complex.equivRealProdCLM ⁻¹' t` bounded pointwise by
-`A * (f ∘ Complex.equivRealProdCLM) + B` is at most `B * volume.real s + A * ∫ t, f`
-(`TauCeti.setIntegral_le_mul_volumeReal_add_mul_setIntegral_equivRealProdCLM`).
 Multiplication by a complex number of modulus one is a rotation, so it preserves integrals
 (`Complex.integral_comp_mul_left_of_norm_eq_one`).
 -/
@@ -253,39 +250,6 @@ theorem setIntegral_setOf_norm_equivRealProdCLM_symm_le_le {μ : Measure (ℝ ×
   setIntegral_mono_set hf hf0 (Filter.Eventually.of_forall fun _ hz ↦
     Metric.closedBall_subset_closedBall hrs
       (setOf_norm_equivRealProdCLM_symm_le_subset_closedBall r hz))
-
-/-- If `g ≤ A * (f ∘ Complex.equivRealProdCLM) + B` on `s ⊆ Complex.equivRealProdCLM ⁻¹' t` with
-`0 ≤ A` and `0 ≤ f` on `t`, then `∫ y in s, g y ≤ B * volume.real s + A * ∫ z in t, f z`. -/
-theorem setIntegral_le_mul_volumeReal_add_mul_setIntegral_equivRealProdCLM
-    {g : ℂ → ℝ} {f : ℝ × ℝ → ℝ} {s : Set ℂ} {t : Set (ℝ × ℝ)} {A B : ℝ}
-    (hA : 0 ≤ A) (hs : MeasurableSet s) (hs_fin : volume s ≠ ⊤)
-    (ht : MeasurableSet t) (hst : s ⊆ Complex.equivRealProdCLM ⁻¹' t)
-    (hg_int : IntegrableOn g s) (hf_int : IntegrableOn f t) (hf_nn : ∀ z ∈ t, 0 ≤ f z)
-    (hpt : ∀ y ∈ s, g y ≤ A * f (Complex.equivRealProdCLM y) + B) :
-    ∫ y in s, g y ≤ B * volume.real s + A * ∫ z in t, f z := by
-  have heℂ_int : IntegrableOn (fun y ↦ f (Complex.equivRealProdCLM y))
-      (Complex.equivRealProdCLM ⁻¹' t) :=
-    (Complex.volume_preserving_equiv_real_prod.integrableOn_comp_preimage
-      Complex.equivRealProdCLM.toHomeomorph.measurableEmbedding).2 hf_int
-  calc ∫ y in s, g y
-      ≤ ∫ y in s, (A * f (Complex.equivRealProdCLM y) + B) :=
-        setIntegral_mono_on hg_int
-          (((heℂ_int.mono_set hst).const_mul A).fun_add (integrableOn_const hs_fin)) hs hpt
-    _ = A * (∫ y in s, f (Complex.equivRealProdCLM y)) + B * volume.real s := by
-        rw [integral_add ((heℂ_int.mono_set hst).const_mul A) (integrableOn_const hs_fin),
-          integral_const_mul, setIntegral_const, smul_eq_mul, mul_comm (volume.real s)]
-    _ ≤ B * volume.real s + A * ∫ y in Complex.equivRealProdCLM ⁻¹' t,
-          f (Complex.equivRealProdCLM y) := by
-        have hmono := setIntegral_mono_set heℂ_int
-          (ae_restrict_of_forall_mem
-            (ht.preimage Complex.equivRealProdCLM.continuous.measurable)
-            fun y hy ↦ hf_nn _ hy)
-          hst.eventuallySubset
-        linarith [mul_le_mul_of_nonneg_left hmono hA]
-    _ = B * volume.real s + A * ∫ z in t, f z :=
-        congrArg (fun x ↦ B * volume.real s + A * x)
-          (Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
-            Complex.equivRealProdCLM.toHomeomorph.measurableEmbedding _ _)
 
 /-- The half-disc `Ω ∩ {0 ≤ im}` and its interior `Ω ∩ {0 < im}` agree up to a null set: they
 differ by a subset of the real axis. So the half-disc and its interior carry the same restricted
