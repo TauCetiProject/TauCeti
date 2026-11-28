@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Action.Hom
 public import Mathlib.Algebra.Order.Group.End
 public import Mathlib.Combinatorics.SimpleGraph.Maps
+import Mathlib.Algebra.Group.Action.Basic
 
 /-!
 # Pulling simple graphs back and pushing them forward
@@ -43,7 +44,9 @@ its Boolean adjacency array. The automorphism group `G ≃g G` acts on the edges
 * `SimpleGraph.comap_restrictFin_castLE` — a window of a longer window is the shorter window;
 * `SimpleGraph.adjArray_injective` — a graph is determined by its adjacency array;
 * `SimpleGraph.Embedding.isoInduceRange_apply` — evaluating `isoInduceRange` at a vertex gives the
-  corresponding range subtype vertex.
+  corresponding range subtype vertex;
+* `SimpleGraph.Iso.card_filter_dart_fst_apply` — automorphisms preserve the number of darts at a
+  vertex with an automorphism-invariant property.
 -/
 
 public section
@@ -218,6 +221,16 @@ theorem edge_smul_dart (φ : G ≃g G) (d : G.Dart) : (φ • d).edge = Sym2.map
 instance instMulActionDart : MulAction (G ≃g G) G.Dart where
   one_smul _ := rfl
   mul_smul _ _ _ := rfl
+
+open Finset in
+/-- For a property of darts invariant under automorphisms, the number of darts with that property
+starting at a vertex is unchanged when an automorphism moves the vertex. -/
+theorem card_filter_dart_fst_apply [Fintype V] [DecidableRel G.Adj] [DecidableEq V]
+    (P : G.Dart → Prop) [DecidablePred P] (hP : ∀ (φ : G ≃g G) d, P (φ • d) ↔ P d)
+    (φ : G ≃g G) (x : V) :
+    #{d : G.Dart | d.fst = φ x ∧ P d} = #{d : G.Dart | d.fst = x ∧ P d} := by
+  refine (card_equiv (MulAction.toPerm φ) fun d => ?_).symm
+  simp [hP]
 
 end Iso
 

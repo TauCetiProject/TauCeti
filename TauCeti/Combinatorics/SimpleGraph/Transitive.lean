@@ -244,14 +244,6 @@ variable [Fintype V] [DecidableRel G.Adj]
 
 open Finset
 
-/-- For a property of darts invariant under automorphisms, the number of darts with that property
-starting at a vertex is unchanged when an automorphism moves the vertex. -/
-private theorem card_filter_dart_fst_apply [DecidableEq V] (P : G.Dart → Prop) [DecidablePred P]
-    (hP : ∀ (φ : G ≃g G) d, P (φ • d) ↔ P d) (φ : G ≃g G) (x : V) :
-    #{d : G.Dart | d.fst = φ x ∧ P d} = #{d : G.Dart | d.fst = x ∧ P d} := by
-  refine (card_equiv (MulAction.toPerm φ) fun d => ?_).symm
-  simp [hP]
-
 /-- In a vertex-transitive graph, for a property of darts invariant under automorphisms, the
 total number of darts with that property is the number of vertices times the number of such darts
 starting at any given vertex. -/
@@ -262,7 +254,7 @@ private theorem card_filter_dart_eq_card_mul [DecidableEq V] (hvt : G.IsVertexTr
     ← card_univ, ← smul_eq_mul, ← sum_const]
   refine sum_congr rfl fun y _ => ?_
   obtain ⟨φ, rfl⟩ := isVertexTransitive_iff.1 hvt x y
-  rw [filter_filter, ← card_filter_dart_fst_apply P hP φ x]
+  rw [filter_filter, ← Iso.card_filter_dart_fst_apply P hP φ x]
   exact congrArg card (filter_congr fun _ _ => and_comm)
 
 /-- **Godsil–Royle, Lemma 3.2.2.** In a finite vertex- and edge-transitive graph that is not
