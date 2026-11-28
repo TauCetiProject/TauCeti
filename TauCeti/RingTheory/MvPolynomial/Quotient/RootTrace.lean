@@ -53,17 +53,12 @@ local notation "J" => Ideal.span {∏ i : σ, (X i : P)}
 local notation "π" => Ideal.Quotient.mk J
 
 private noncomputable def projection (q : ℕ) [NeZero q] : A →ₗ[R] A :=
-  ((J : Ideal P).restrictScalars R).liftQ
-    ((Ideal.Quotient.mkₐ R J).toLinearMap ∘ₗ cartier R q 0)
-    (fun f hf ↦ Ideal.Quotient.eq_zero_iff_mem.2 (f.cartier_zero_mem_span_prod_X hf))
+  ((J : Ideal P).restrictScalars R).mapQ ((J : Ideal P).restrictScalars R)
+    (cartier R q 0) (fun f hf ↦ f.cartier_zero_mem_span_prod_X hf)
 
 private theorem projection_mk (q : ℕ) [NeZero q] (f : P) :
     projection q (π f) = π (cartier R q 0 f) := by
-  calc
-    _ = ((Ideal.Quotient.mkₐ R J).toLinearMap ∘ₗ cartier R q 0) f :=
-      Submodule.liftQ_apply _ _ f
-    _ = _ := by
-      simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, Ideal.Quotient.mkₐ_eq_mk]
+  exact Submodule.mapQ_apply _ _ _ f
 
 end Quotient
 
@@ -148,6 +143,7 @@ theorem rootTransition_self (m : ℕ) :
   rw [rootTransition_toRoot, Nat.sub_self, pow_zero, pow_one, LinearMap.id_apply]
 
 /-- Composing stage transitions gives the transition between their endpoints. -/
+@[simp]
 theorem rootTransition_comp (m r s : ℕ) (hmr : m ≤ r) (hrs : r ≤ s) :
     (rootTransition (p := p) (σ := σ) r s hrs).comp (rootTransition m r hmr) =
       rootTransition m s (hmr.trans hrs) := by
@@ -351,10 +347,7 @@ private theorem projectionPairing_injective (m : ℕ) :
     have hg := DFunLike.congr_fun hx (toRoot m (π g))
     rw [projectionPairing_toRoot_mk, LinearMap.zero_apply] at hg
     simpa only [mul_assoc, topExp] using hg
-  have hq : q - 1 + 1 = q := Nat.sub_add_cancel (Nat.pos_of_neZero q)
-  conv at h =>
-    lhs
-    rw [← hq, pow_succ]
+  rw [← pow_sub_one_mul (NeZero.ne q) t] at h
   have ht := isRegular_prod_X (R := ZMod p) (Finset.univ : Finset σ)
   rw [mul_dvd_mul_iff_left (ht.pow _).ne_zero] at h
   exact (toRoot m).map_eq_zero_iff.mpr
@@ -371,11 +364,8 @@ private theorem projectionPairing_surjective (m : ℕ) :
     intro g
     apply Ideal.Quotient.eq_zero_iff_mem.mp
     rw [mul_right_comm t f g, mul_comm (t * g), hf, map_mul]
-    simp [Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (Set.mem_singleton t))]
-  have hq : q - 1 + 1 = q := Nat.sub_add_cancel (Nat.pos_of_neZero q)
-  conv at hz =>
-    lhs
-    rw [← hq, pow_succ']
+    simp [Ideal.Quotient.mk_singleton_self t]
+  rw [← mul_pow_sub_one (NeZero.ne q) t] at hz
   have ht := isRegular_prod_X (R := ZMod p) (Finset.univ : Finset σ)
   rw [mul_dvd_mul_iff_left ht.ne_zero] at hz
   obtain ⟨f', rfl⟩ := hz

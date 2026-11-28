@@ -45,6 +45,17 @@ theorem monomialClass_eq_mk (d : σ →₀ ℕ) (c : R) :
     monomialClass d c = π (monomial d c) :=
   (rfl)
 
+/-- The monomial class is additive in its coefficient. -/
+@[simp]
+theorem monomialClass_add (d : σ →₀ ℕ) (a b : R) :
+    monomialClass d (a + b) = monomialClass d a + monomialClass d b := by
+  simp only [monomialClass_eq_mk, map_add]
+
+/-- A monomial with zero coefficient has zero class. -/
+@[simp]
+theorem monomialClass_zero_coeff (d : σ →₀ ℕ) : monomialClass d (0 : R) = 0 := by
+  simp only [monomialClass_eq_mk, map_zero]
+
 /-- The zero exponent gives the image of the coefficient. -/
 @[simp]
 theorem monomialClass_zero (c : R) :
@@ -83,7 +94,7 @@ theorem monomialClass_eq_zero_iff (d : σ →₀ ℕ) (c : R) :
 @[simp]
 theorem prod_mk_X_eq_zero : ∏ i : σ, π (X i) = 0 := by
   rw [← map_prod]
-  exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (Set.mem_singleton _))
+  exact Ideal.Quotient.mk_singleton_self _
 
 /-- Evaluation at the origin of a normal-crossing hypersurface with at least one coordinate.
 It retracts the constant inclusion by `AlgHom.commutes`. -/
