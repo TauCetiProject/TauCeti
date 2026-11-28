@@ -125,9 +125,9 @@ when `x⁻¹ T ^ n x ∈ 𝒢`. Thus the action period is characterized by divis
 exponents. When the period is positive — in particular under `[𝒢.IsFiniteRelIndex 𝒮ℒ]` — it is
 the least positive integer `n` such that `x⁻¹ T ^ n x ∈ 𝒢`, the integer translation-orbit width
 at `x⁻¹ ∞`. For `𝒢 = Γ.map (mapGL ℝ)` with `Γ ≤ SL(2, ℤ)` this agrees with `strictWidthInfty` of
-`x⁻¹ 𝒢 x` (`natCast_cuspTranslationOrbitWidth_mk_inv_eq_strictWidthInfty`), whereas for general
+`x 𝒢 x⁻¹` (`natCast_cuspTranslationOrbitWidth_mk_inv_eq_strictWidthInfty`), whereas for general
 subgroups `𝒢 ≤ GL(2, ℝ)` the integer `T`-period can miss smaller non-integer real periods or
-negative lifts `-upperRightHom h ∈ x⁻¹ 𝒢 x`. -/
+negative lifts `-upperRightHom h ∈ x 𝒢 x⁻¹`. -/
 lemma minimalPeriod_TSL_dvd_iff (x : 𝒮ℒ) (n : ℕ) :
     minimalPeriod (TSL • ·) (QuotientGroup.mk x : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) ∣ n ↔
       ((x⁻¹ * TSL ^ n * x : 𝒮ℒ) : GL (Fin 2) ℝ) ∈ 𝒢 := by

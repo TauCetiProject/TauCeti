@@ -286,7 +286,8 @@ lemma intCast_fin_two_mul_sub_mul_eq_one {R : Type*} [NonAssocRing R] (g : SL(2,
     ((g 0 0 : ℤ) : R) * (g 1 1 : ℤ) - (g 0 1 : ℤ) * (g 1 0 : ℤ) = 1 := by
   exact_mod_cast congrArg (Int.cast : ℤ → R) g.fin_two_mul_sub_mul_eq_one
 
-/-- For an upper-triangular matrix `g ∈ SL₂(R)`, the product of the diagonal entries is `1`. -/
+/-- In a row of an element of `SL₂(ℤ)`, if the first entry is even then the second is odd, the two
+being coprime. -/
 lemma odd_apply_one_of_even_apply_zero (g : SL(2, ℤ)) {i : Fin 2} (h : Even (g i 0)) :
     Odd (g i 1) := by
   refine (Int.even_or_odd (g i 1)).resolve_left fun he ↦ ?_
