@@ -141,7 +141,7 @@ theorem conductor_toPrimitiveRayClassCharacter_of_even (ψ : PrimitiveDirichletC
     (toPrimitiveRayClassCharacter ψ).conductor =
       Modulus.spanNat ℚ ψ.level := by
   simpa only [absNorm_conductor_finitePart_toPrimitiveRayClassCharacter] using
-    eq_spanNat_of_infinitePart_eq_empty
+    eq_spanNat_of_infinitePart_eq_empty_rat
       ((infinitePart_conductor_toPrimitiveRayClassCharacter_eq_empty_iff ψ).mpr hψ)
 
 /-- For an odd primitive Dirichlet bundle `ψ`, the conductor of `toPrimitiveRayClassCharacter ψ`

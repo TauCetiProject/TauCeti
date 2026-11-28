@@ -318,7 +318,7 @@ theorem toDirichletCharacter_absNorm (ψ : RayClassCharacter 𝔪) (I : integral
     ψ.toDirichletCharacter (Ideal.absNorm (I : Ideal (𝓞 ℚ))) = (ψ.onIdeals I : ℂ) := by
   have hI : (I : Ideal (𝓞 ℚ)) ∈
       integralIdealsPrimeTo (ratModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _)) := by
-    rw [NumberFieldArithmetic.mem_integralIdealsAway_iff, ratModulus_absNorm_support]
+    rw [NumberFieldArithmetic.mem_integralIdealsAway_iff, support_ratModulus_absNorm]
     exact NumberFieldArithmetic.mem_integralIdealsAway_iff.mp I.property
   have hincl : integralIdealsPrimeToInclusion (dvd_ratModulus_absNorm 𝔪) ⟨I, hI⟩ = I :=
     Subtype.ext (coe_integralIdealsPrimeToInclusion _ _)
@@ -389,7 +389,7 @@ the finite modulus `(ψ.toDirichletCharacter.conductor)` without the real place.
 theorem conductor_eq_spanNat_of_even (ψ : RayClassCharacter 𝔪)
     (h : ψ.toDirichletCharacter.Even) :
     ψ.conductor = Modulus.spanNat ℚ ψ.toDirichletCharacter.conductor := by
-  simpa only [conductor_toDirichletCharacter] using eq_spanNat_of_infinitePart_eq_empty
+  simpa only [conductor_toDirichletCharacter] using eq_spanNat_of_infinitePart_eq_empty_rat
     (ψ.conductor_infinitePart_eq_empty_iff_even_toDirichletCharacter.mpr h)
 
 /-- When the Dirichlet character of `ψ : RayClassCharacter 𝔪` is odd, the conductor of `ψ` is the
@@ -418,7 +418,7 @@ theorem mem_range_toDirichletCharacter_iff
           ratModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _) :=
         spanNat_dvd_ratModulus
       have hmod : Modulus.spanNat ℚ (Ideal.absNorm 𝔪.finitePart) ∣ 𝔪 := by
-        conv_rhs => rw [eq_spanNat_of_infinitePart_eq_empty h0]
+        conv_rhs => rw [eq_spanNat_of_infinitePart_eq_empty_rat h0]
       have hχ : (ratDirichletEquiv _ (NeZero.ne _)
           ((ratDirichletEquiv _ (NeZero.ne _)).symm χ)).Even := by
         simpa only [MulEquiv.apply_symm_apply] using heven

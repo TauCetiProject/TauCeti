@@ -54,7 +54,7 @@ vanishes there). -/
 theorem eulerCorrection_eq_prod_primeFactors (η : RayClassCharacter 𝔪) (𝔫 : Modulus ℚ) (s : ℂ) :
     η.eulerCorrection 𝔫 s = ∏ p ∈ (Ideal.absNorm 𝔫.finitePart).primeFactors,
       (1 - η.toDirichletCharacter p * (p : ℂ) ^ (-s)) := by
-  rw [← image_absNorm_support 𝔫,
+  rw [← image_absNorm_support_rat 𝔫,
     Finset.prod_image Rat.HeightOneSpectrum.absNorm_asIdeal_injective.injOn,
     eulerCorrection_eq_prod_support]
   exact Finset.prod_congr rfl fun 𝔭 _ ↦ by
@@ -68,7 +68,7 @@ theorem eulerCorrection_eq_prod_sdiff_primeFactors (η : RayClassCharacter 𝔪)
       ∏ p ∈ (Ideal.absNorm 𝔫.finitePart).primeFactors \ (Ideal.absNorm 𝔪.finitePart).primeFactors,
         (1 - η.toDirichletCharacter p * (p : ℂ) ^ (-s)) := by
   classical
-  rw [eulerCorrection_def, ← image_absNorm_support 𝔫, ← image_absNorm_support 𝔪,
+  rw [eulerCorrection_def, ← image_absNorm_support_rat 𝔫, ← image_absNorm_support_rat 𝔪,
     ← Finset.image_sdiff 𝔫.support 𝔪.support Rat.HeightOneSpectrum.absNorm_asIdeal_injective,
     Finset.prod_image Rat.HeightOneSpectrum.absNorm_asIdeal_injective.injOn]
   exact Finset.prod_congr rfl fun 𝔭 _ ↦ by

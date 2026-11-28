@@ -19,7 +19,8 @@ identity `1`, whose `L`-series is the constant `1`, and to convolution powers `f
 
 ## Main results
 
-* `toArithmeticFunction_apply`: evaluation of `toArithmeticFunction f` at a nonzero natural number.
+* `TauCeti.toArithmeticFunction_apply`: evaluation of `toArithmeticFunction f` at a nonzero natural
+  number.
 * `ArithmeticFunction.LSeriesHasSum_one`: `(1 : ArithmeticFunction ℂ)` has `L`-series sum `1` at
   every `s : ℂ`.
 * `ArithmeticFunction.LSeriesSummable_one`: `(1 : ArithmeticFunction ℂ)` has an absolutely
@@ -37,11 +38,15 @@ public section
 
 open scoped LSeries.notation
 
+namespace TauCeti
+
 /-- Away from `0`, `toArithmeticFunction f` evaluates to `f`. -/
 @[simp]
 theorem toArithmeticFunction_apply {R : Type*} [Zero R] (f : ℕ → R) {n : ℕ} (hn : n ≠ 0) :
     toArithmeticFunction f n = f n := by
   simp [toArithmeticFunction, hn]
+
+end TauCeti
 
 namespace ArithmeticFunction
 

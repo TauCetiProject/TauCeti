@@ -73,7 +73,7 @@ private theorem exists_eq_ratModulus_or_eq_spanNat {𝔫 : Modulus ℚ}
       (𝔫 = ratModulus d (NeZero.ne d) ∨ 𝔫 = Modulus.spanNat ℚ d) := by
   refine ⟨_, inferInstance, dvd_ratModulus_iff.mp h, ?_⟩
   by_cases hinf : 𝔫.infinitePart = ∅
-  · exact Or.inr (eq_spanNat_of_infinitePart_eq_empty hinf)
+  · exact Or.inr (eq_spanNat_of_infinitePart_eq_empty_rat hinf)
   · exact Or.inl (eq_ratModulus_of_infinitePart_ne_empty hinf)
 
 -- For `n > 2` the transition map from `(n)·∞` to a modulus `(d)` without the real place is not

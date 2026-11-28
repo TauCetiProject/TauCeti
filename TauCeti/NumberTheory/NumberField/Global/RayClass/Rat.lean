@@ -72,7 +72,7 @@ and a class with positive sign is determined by its residue.
 * `TauCeti.GlobalNumberFields.two_mul_card_rayClassGroup_spanNat_rat`: for `n > 2`, the ray
   class group modulo `(n)` has order `φ(n) / 2`.
 * `TauCeti.GlobalNumberFields.mem_support_rat_iff`,
-  `TauCeti.GlobalNumberFields.image_absNorm_support`, and
+  `TauCeti.GlobalNumberFields.image_absNorm_support_rat`, and
   `TauCeti.GlobalNumberFields.isPrimeTo_span_natCast_support_iff`: finite prime support of
   rational moduli in terms of prime factors of the finite-part norm.
 
@@ -443,7 +443,7 @@ theorem support_spanNat_eq_support_ratModulus (n : ℕ) [NeZero n] :
 
 /-- Every modulus `𝔪` of `ℚ` has the same finite prime support as `(N)·∞`, where `N` is the
 absolute norm of its finite part. -/
-theorem ratModulus_absNorm_support (𝔪 : Modulus ℚ) :
+theorem support_ratModulus_absNorm (𝔪 : Modulus ℚ) :
     (ratModulus (Ideal.absNorm 𝔪.finitePart) (NeZero.ne _)).support = 𝔪.support := by
   ext v
   rw [Modulus.mem_support_iff, Modulus.mem_support_iff, ratModulus_finitePart,
@@ -460,7 +460,7 @@ theorem mem_support_rat_iff {𝔪 : Modulus ℚ} {v : HeightOneSpectrum (𝓞 �
 /-- Mapping height-one primes of `𝓞 ℚ` to their absolute norms identifies the support of `𝔪` with
 the prime factors of `Ideal.absNorm 𝔪.finitePart`. -/
 -- Not a `simp` lemma: `Rat.HeightOneSpectrum.absNorm_asIdeal` rewrites the LHS.
-theorem image_absNorm_support (𝔪 : Modulus ℚ) :
+theorem image_absNorm_support_rat (𝔪 : Modulus ℚ) :
     𝔪.support.image (fun v ↦ Ideal.absNorm v.asIdeal) =
       (Ideal.absNorm 𝔪.finitePart).primeFactors := by
   ext p
@@ -480,14 +480,14 @@ theorem isPrimeTo_span_natCast_support_iff {𝔪 : Modulus ℚ} {m : ℕ} (hm : 
   have hbot : Ideal.span {(m : 𝓞 ℚ)} ≠ ⊥ := by
     rw [Ne, Ideal.span_singleton_eq_bot]
     exact_mod_cast hm
-  rw [← ratModulus_absNorm_support 𝔪]
+  rw [← support_ratModulus_absNorm 𝔪]
   refine (Ideal.isPrimeTo_iff.trans <| Modulus.isCoprimeTo_iff.symm.trans <|
     isCoprimeTo_ratModulus_iff hbot).trans ?_
   rw [RingOfIntegers.absNorm_span_natCast_of_finrank_eq_one (Module.finrank_self ℚ)]
 
 /-- A modulus of `ℚ` with empty infinite part is `Modulus.spanNat ℚ N` for the absolute norm `N`
 of its finite part. -/
-theorem eq_spanNat_of_infinitePart_eq_empty {𝔪 : Modulus ℚ}
+theorem eq_spanNat_of_infinitePart_eq_empty_rat {𝔪 : Modulus ℚ}
     (h : 𝔪.infinitePart = ∅) :
     𝔪 = Modulus.spanNat ℚ (Ideal.absNorm 𝔪.finitePart) := by
   refine Modulus.ext ?_ ?_
