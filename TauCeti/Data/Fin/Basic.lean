@@ -181,6 +181,8 @@ range, so the value is a `dite` rather than a plain application.
   that lie in the range of a monotone `Fin` family lie between its first and last values.
 * `TauCeti.apply_fin_eq_of_val_eq`: evaluating a dependent family indexed by `Fin (f i)` at equal
   outer indices and finite ordinals with equal underlying values gives the same value.
+* `TauCeti.finConsSigmaEquiv`: reindexing `Fin r ⊕ (Σ i : Fin b, Fin (rk i))` into a sigma type
+  over `Fin (b + 1)` with block lengths `Fin.cases r rk`.
 -/
 
 public section
@@ -1308,5 +1310,49 @@ theorem apply_fin_eq_of_val_eq {ι : Sort*} {f : ι → ℕ} {α : Sort*}
     x a j₁ = x b j₂ := by
   subst hab
   exact congrArg (x a) (Fin.ext hj)
+
+/-- Reindex a sum of `Fin r` and a sigma type `Σ i : Fin b, Fin (rk i)` into a single sigma type
+indexed by `Fin (b + 1)` with block lengths `Fin.cases r rk`. -/
+def finConsSigmaEquiv {b : ℕ} (r : ℕ) (rk : Fin b → ℕ) :
+    Fin r ⊕ (Σ i : Fin b, Fin (rk i)) ≃
+      Σ i : Fin (b + 1), Fin (Fin.cases r rk i) :=
+  let rank : Fin (b + 1) → ℕ := Fin.cases r rk
+  have hr0 : rank 0 = r := Fin.cases_zero
+  have hrs (i : Fin b) : rank i.succ = rk i := Fin.cases_succ i
+  { toFun := Sum.elim (fun j ↦ ⟨0, finCongr hr0.symm j⟩)
+      (fun ij ↦ ⟨ij.1.succ, finCongr (hrs ij.1).symm ij.2⟩)
+    invFun ij := Fin.cases
+      (motive := fun i ↦ Fin (Fin.cases r rk i) → Fin r ⊕ (Σ i' : Fin b, Fin (rk i')))
+      (fun j ↦ Sum.inl (finCongr hr0 j)) (fun i j ↦ Sum.inr ⟨i, finCongr (hrs i) j⟩) ij.1 ij.2
+    left_inv := by
+      rintro (j | ⟨i, j⟩)
+      · exact congrArg Sum.inl (Fin.ext rfl) -- `Fin.cases ... 0` reduces definitionally
+      · exact congrArg (fun x : Fin (rk i) ↦ Sum.inr (⟨i, x⟩ : Σ i' : Fin b, Fin (rk i')))
+          (Fin.ext rfl) -- `Fin.cases ... i.succ` reduces definitionally
+    right_inv := by
+      rintro ⟨i, j⟩
+      revert j
+      refine Fin.cases ?_ ?_ i
+      · intro j
+        exact Sigma.ext rfl (heq_of_eq (Fin.ext rfl)) -- `Fin.cases ... 0` reduces definitionally
+      · intro i j
+        -- `Fin.cases ... i.succ` reduces definitionally
+        exact Sigma.ext rfl (heq_of_eq (Fin.ext rfl)) }
+
+/-- Evaluating `(finConsSigmaEquiv r rk).symm` at block `0` recovers `Sum.inl`. -/
+@[simp]
+theorem finConsSigmaEquiv_symm_zero {b : ℕ} (r : ℕ) (rk : Fin b → ℕ)
+    (h0 : Fin.cases r rk 0 = r) (j : Fin (Fin.cases r rk 0)) :
+    (finConsSigmaEquiv r rk).symm ⟨0, j⟩ = Sum.inl (finCongr h0 j) :=
+  -- `Fin.cases ... 0` reduces definitionally
+  congrArg Sum.inl (Fin.ext rfl)
+
+/-- Evaluating `(finConsSigmaEquiv r rk).symm` at block `i.succ` recovers `Sum.inr ⟨i, _⟩`. -/
+@[simp]
+theorem finConsSigmaEquiv_symm_succ {b : ℕ} (r : ℕ) (rk : Fin b → ℕ)
+    (i : Fin b) (hs : Fin.cases r rk i.succ = rk i) (j : Fin (Fin.cases r rk i.succ)) :
+    (finConsSigmaEquiv r rk).symm ⟨i.succ, j⟩ = Sum.inr ⟨i, finCongr hs j⟩ :=
+  -- `Fin.cases ... i.succ` reduces definitionally
+  congrArg (fun x : Fin (rk i) ↦ Sum.inr (⟨i, x⟩ : Σ i' : Fin b, Fin (rk i'))) (Fin.ext rfl)
 
 end TauCeti

@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.FieldTheory.IsSepClosed
 import Mathlib.FieldTheory.Perfect
+import TauCeti.FieldTheory.IsAlgClosed.Frobenius
 import TauCeti.FieldTheory.IsAlgClosed.PolynomialFixedPoint
 import TauCeti.LinearAlgebra.FiniteDimensional.Semilinear
 import TauCeti.LinearAlgebra.LinearIndependent.Iterate
@@ -215,25 +216,6 @@ theorem exists_basis_isFixedPt_of_injective_iterateFrobenius [FiniteDimensional 
   rw [Basis.reindex_apply, Basis.mk_apply]
   exact hs (Subtype.mem _)
 
-/-- For an injective Frobenius-semilinear map `F`, the map `x ↦ F x - x` is surjective. -/
-private theorem surjective_sub_id_of_injective_iterateFrobenius {W : Type*} [AddCommGroup W]
-    [Module k W] [FiniteDimensional k W] (hf : f ≠ 0)
-    {F : W →ₛₗ[_root_.iterateFrobenius k p f] W} (hF : Injective F) :
-    Surjective fun x ↦ F x - x := by
-  have hq : 1 < p ^ f := Nat.one_lt_pow hf (Fact.out : p.Prime).one_lt
-  have hσ (c : k) : _root_.iterateFrobenius k p f c = c ^ p ^ f := _root_.iterateFrobenius_def p f c
-  obtain ⟨b, hb⟩ := exists_basis_isFixedPt_of_injective_iterateFrobenius hf hF
-  intro y
-  choose s hs using fun i ↦ IsSepClosed.exists_root_C_mul_X_pow_add_C_mul_X_add_C' p (p ^ f) 1 (-1)
-    (-(b.repr y i)) (dvd_pow_self p hf) hq (by simp)
-  refine ⟨∑ i, s i • b i, ?_⟩
-  have hs' (i) : s i ^ p ^ f - s i = b.repr y i := by linear_combination hs i
-  calc F (∑ i, s i • b i) - ∑ i, s i • b i
-      = ∑ i, (s i ^ p ^ f - s i) • b i := by
-        simp only [map_sum, map_smulₛₗ, hσ, fun i ↦ (hb i).eq,
-          ← Finset.sum_sub_distrib, sub_smul]
-    _ = y := by simp only [hs', Basis.sum_repr]
-
 /-- **A nonzero fixed vector without assuming injectivity.** Over an algebraically closed field
 `k` of characteristic `p`, a Frobenius-semilinear endomorphism `F` on a finite-dimensional space
 whose `(dim V)`-th iterate is nonzero has a nonzero fixed vector. -/
@@ -253,26 +235,22 @@ finite-dimensional space (without assuming injectivity), the map `x ↦ F x - x`
 theorem surjective_sub_id_of_iterateFrobenius [FiniteDimensional k V]
     (hf : f ≠ 0) (F : V →ₛₗ[_root_.iterateFrobenius k p f] V) :
     Surjective fun x ↦ F x - x := by
-  intro y
-  set n := finrank k V
-  have hmem : F^[n] y ∈ (Submodule.map F)^[n] (⊤ : Submodule k V) :=
-    (mem_iterate_map_top_iff F n _).2 ⟨y, rfl⟩
-  obtain ⟨w, hw⟩ := surjective_sub_id_of_injective_iterateFrobenius hf
-    (bijective_restrict_iterate_map_top F).injective ⟨F^[n] y, hmem⟩
-  refine ⟨(-∑ t ∈ Finset.range n, F^[t] y) + w.val, ?_⟩
-  have htele : F (-∑ t ∈ Finset.range n, F^[t] y) - (-∑ t ∈ Finset.range n, F^[t] y) =
-      y - F^[n] y := by
-    rw [map_neg, map_sum, neg_sub_neg]
-    have hsum : ∑ t ∈ Finset.range n, (F^[t] y - F (F^[t] y)) = y - F^[n] y := by
-      simp_rw [← iterate_succ_apply' F]
-      simpa only [iterate_zero, id_eq] using Finset.sum_range_sub' (fun t ↦ F^[t] y) n
-    simpa [Finset.sum_sub_distrib] using hsum
-  have hw' : F w.val - w.val = F^[n] y := congrArg Subtype.val hw
-  calc F ((-∑ t ∈ Finset.range n, F^[t] y) + w.val) -
-        ((-∑ t ∈ Finset.range n, F^[t] y) + w.val)
-      = (F (-∑ t ∈ Finset.range n, F^[t] y) - (-∑ t ∈ Finset.range n, F^[t] y)) +
-          (F w.val - w.val) := by rw [map_add]; abel
-    _ = y := by rw [htele, hw', sub_add_cancel]
+  have : ExpChar k p := expChar_prime k p
+  let F' : V →ₛₗ[(iterateFrobeniusEquiv k p f : k →+* k)] V :=
+    { toFun := F
+      map_add' := F.map_add
+      map_smul' := fun c x ↦ by simp [map_smulₛₗ] }
+  have hiter (i : ℕ) (x : k) :
+      (iterateFrobeniusEquiv k p f)^[i] x = _root_.iterateFrobenius k p (f * i) x := by
+    induction i with
+    | zero => simp
+    | succ i ih =>
+      rw [Function.iterate_succ_apply', ih, iterateFrobeniusEquiv_apply]
+      simp only [_root_.iterateFrobenius_def, mul_add, pow_add, pow_mul, pow_one]
+  exact surjective_sub_id_of_surjective_sum_mul_iterate (iterateFrobeniusEquiv k p f)
+    (fun s a ha ↦ by
+      simpa only [RingEquiv.coe_toRingHom, hiter] using
+        TauCeti.surjective_sum_mul_iterateFrobenius (p := p) s a (Nat.pos_of_ne_zero hf) ha) F'
 
 end LinearMap
 

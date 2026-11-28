@@ -33,6 +33,8 @@ coprime. Under the functor from isocrystals to vector bundles on the Fargues–F
 
 * `TauCeti.standardBlockFrobenius σ π s r`: the `σ`-semilinear Frobenius of `D(s, r)` on
   `Fin r → L`.
+* `TauCeti.cyclicShift φ c`: coordinatewise `φ` composed with cyclic rotation and scaling of
+  coordinate `0` by `c`.
 
 ## Main results
 
@@ -126,16 +128,12 @@ before the last index. -/
 theorem standardBlockFrobenius_single_of_val_add_one_ne {r : ℕ} {j : Fin r}
     (hj : j.val + 1 ≠ r) (c : L) :
     standardBlockFrobenius σ π s r (Pi.single j c) = Pi.single (finRotate r j) (σ c) := by
-  ext l
-  rw [standardBlockFrobenius_apply, Pi.single_apply, Pi.single_apply]
-  by_cases hl : l = finRotate r j
-  · subst hl
-    have hne : (finRotate r j : ℕ) ≠ 0 := by
-      rw [Fin.coe_finRotate_eq_ite]
-      split_ifs <;> omega
-    simp only [hne, ↓reduceIte, Equiv.symm_apply_apply, one_mul]
-  · have hsymm : (finRotate r).symm l ≠ j := fun h ↦ hl ((finRotate r).symm_apply_eq.1 h)
-    simp only [hl, hsymm, ↓reduceIte, map_zero, mul_zero]
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (j.neZero).out
+  induction j using Fin.lastCases with
+  | last => exact (hj (by simp)).elim
+  | cast j =>
+    rw [Fin.finRotate_castSucc]
+    exact standardBlockFrobenius_single_castSucc j c
 
 /-- The Frobenius of `D(s, r)` sends `Pi.single j c` at the last index to
 `Pi.single (finRotate r j) (π ^ s * σ c)`. -/
@@ -143,15 +141,12 @@ theorem standardBlockFrobenius_single_of_val_add_one_eq {r : ℕ} {j : Fin r}
     (hj : j.val + 1 = r) (c : L) :
     standardBlockFrobenius σ π s r (Pi.single j c) =
       Pi.single (finRotate r j) (π ^ s * σ c) := by
-  ext l
-  rw [standardBlockFrobenius_apply, Pi.single_apply, Pi.single_apply]
-  by_cases hl : l = finRotate r j
-  · subst hl
-    have h0 : (finRotate r j : ℕ) = 0 := by
-      simp only [Fin.coe_finRotate_eq_ite, hj, ↓reduceIte]
-    simp only [h0, ↓reduceIte, Equiv.symm_apply_apply]
-  · have hsymm : (finRotate r).symm l ≠ j := fun h ↦ hl ((finRotate r).symm_apply_eq.1 h)
-    simp only [hl, hsymm, ↓reduceIte, map_zero, mul_zero]
+  obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (j.neZero).out
+  induction j using Fin.lastCases with
+  | last =>
+    rw [finRotate_last]
+    exact standardBlockFrobenius_single_last c
+  | cast j => exact absurd hj (by simp; omega)
 
 /-- An `L`-linear map from `L^r` whose values on the standard basis `Pi.single j 1` satisfy
 the cyclic Frobenius recurrence intertwines `standardBlockFrobenius σ π s r` with `Φ`. -/
@@ -198,13 +193,24 @@ section Iterate
 
 open Fin.NatCast
 
+/-- Cyclic shift on `Fin r → M` applying `φ` coordinatewise and scaling coordinate `0` by `c`. -/
+def cyclicShift {R M : Type*} [SMul R M] [One R] {r : ℕ}
+    (φ : M → M) (c : R) (x : Fin r → M) (i : Fin r) : M :=
+  (if (i : ℕ) = 0 then c else 1) • φ (x ((finRotate r).symm i))
+
+/-- Coordinate formula for `TauCeti.cyclicShift`. -/
+@[simp]
+theorem cyclicShift_apply {R M : Type*} [SMul R M] [One R] {r : ℕ}
+    (φ : M → M) (c : R) (x : Fin r → M) (i : Fin r) :
+    cyclicShift φ c x i = (if (i : ℕ) = 0 then c else 1) • φ (x ((finRotate r).symm i)) := by
+  rfl
+
 /-- The `k`-th iterate of a cyclic shift with wraparound scalar `c` and coordinate map `φ`
 satisfying `φ (a • m) = σ a • φ m` and `σ c = c`. -/
 theorem cyclicShift_iterate_apply {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
     {σ : R →+* R} (φ : M → M) (hφ_smul : ∀ (a : R) (m : M), φ (a • m) = σ a • φ m)
     (c : R) (hφc : σ c = c) {r : ℕ} [NeZero r] (k : ℕ) (x : Fin r → M) (i : Fin r) :
-    (fun (x : Fin r → M) (i : Fin r) ↦
-        (if (i : ℕ) = 0 then c else 1) • φ (x ((finRotate r).symm i)))^[k] x i =
+    (cyclicShift φ c)^[k] x i =
       (∏ t ∈ range k, if ((i - (t : Fin r) : Fin r) : ℕ) = 0 then c else 1) •
         φ^[k] (x (i - (k : Fin r))) := by
   induction k generalizing i with
@@ -216,7 +222,7 @@ theorem cyclicShift_iterate_apply {R M : Type*} [CommSemiring R] [AddCommMonoid 
     have hidx (t : ℕ) : i - 1 - (t : Fin r) = i - ((t + 1 : ℕ) : Fin r) := by
       push_cast
       abel
-    rw [iterate_succ_apply', finRotate_symm_apply, ih, hφ_smul, map_prod,
+    rw [iterate_succ_apply', cyclicShift_apply, finRotate_symm_apply, ih, hφ_smul, map_prod,
       prod_range_succ', ← iterate_succ_apply' φ, ← smul_assoc, smul_eq_mul, mul_comm]
     simp only [hσw, hidx, Nat.cast_zero, sub_zero]
 
@@ -226,9 +232,7 @@ theorem cyclicShift_iterate_rank_apply {R M : Type*} [CommSemiring R] [AddCommMo
     [Module R M] {σ : R →+* R} (φ : M → M)
     (hφ_smul : ∀ (a : R) (m : M), φ (a • m) = σ a • φ m)
     (c : R) (hφc : σ c = c) {r : ℕ} (x : Fin r → M) (i : Fin r) :
-    (fun (x : Fin r → M) (i : Fin r) ↦
-        (if (i : ℕ) = 0 then c else 1) • φ (x ((finRotate r).symm i)))^[r] x i =
-      c • φ^[r] (x i) := by
+    (cyclicShift φ c)^[r] x i = c • φ^[r] (x i) := by
   have := i.neZero
   rw [cyclicShift_iterate_apply φ hφ_smul c hφc, Fin.natCast_self, sub_zero,
     prod_eq_single (i : ℕ)]
@@ -244,8 +248,13 @@ theorem cyclicShift_iterate_rank_apply {R M : Type*} [CommSemiring R] [AddCommMo
 with `σ ^ r` acting on coordinates. -/
 theorem standardBlockFrobenius_iterate_rank_apply (hσπ : σ π = π) (x : Fin r → L)
     (i : Fin r) :
-    (standardBlockFrobenius σ π s r)^[r] x i = π ^ s * σ^[r] (x i) :=
-  cyclicShift_iterate_rank_apply (σ := (σ : L →+* L)) (σ : L →+* L)
+    (standardBlockFrobenius σ π s r)^[r] x i = π ^ s * σ^[r] (x i) := by
+  have hcoe : (standardBlockFrobenius σ π s r : (Fin r → L) → (Fin r → L)) =
+      cyclicShift (σ : L →+* L) (π ^ s) := by
+    ext y j
+    simp [standardBlockFrobenius_apply]
+  rw [hcoe]
+  exact cyclicShift_iterate_rank_apply (σ := (σ : L →+* L)) (σ : L →+* L)
     (fun a m ↦ map_mul σ a m) (π ^ s) (by rw [RingHom.coe_coe, map_zpow₀, hσπ]) x i
 
 /-- If `σ` fixes `π`, then the `(r * m)`-th power of the Frobenius of `D(s, r)` is

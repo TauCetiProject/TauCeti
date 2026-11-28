@@ -73,7 +73,7 @@ end Function
 namespace LinearMap
 
 /-- For an injective `σ`-semilinear endomorphism `Φ` of a finite-dimensional vector space with `σ`
-surjective, any nonzero vector `v₀` admits a shortest linearly independent orbit segment
+surjective, any nonzero vector `v₀` admits a longest linearly independent orbit segment
 `v₀, Φ v₀, …, Φⁿ v₀` whose next iterate `Φⁿ⁺¹ v₀` satisfies a linear relation with nonzero
 coefficient at `v₀`. -/
 theorem exists_minimal_orbit_relation {K V : Type*} [DivisionRing K] [AddCommGroup V]

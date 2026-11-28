@@ -23,7 +23,7 @@ respect to a ring endomorphism `σ` of the scalars: `LinearMap.surjective_of_inj
 the descending chain of iterated images `(Submodule.map f)^[n] ⊤` stabilizes by step
 `Module.finrank K V` (`LinearMap.iterate_map_top_finrank_add_one`,
 `LinearMap.map_iterate_map_top_finrank`), so `f` restricts to a bijection on
-`(Submodule.map f)^[Module.finrank K V] ⊤` (`LinearMap.bijective_restrict_iterate_map_top`). We
+`(Submodule.map f)^[Module.finrank K V] ⊤` (`LinearMap.bijective_restrict_iterate_map_top`).
 Also, any ring endomorphism admitting a surjective semilinear endomorphism on a nontrivial
 finite-dimensional space is itself surjective (`LinearMap.ringHomSurjective_of_surjectiveₛₗ`).
 We also record that the representation matrix of a surjective semilinear endomorphism in a finite

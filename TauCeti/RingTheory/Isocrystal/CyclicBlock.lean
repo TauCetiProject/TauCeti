@@ -6,17 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
-public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.RingTheory.LaurentSeries
-public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.RingTheory.Isocrystal.StandardBlock
 public import TauCeti.RingTheory.LaurentSeries.CoefficientFrobenius
-public import TauCeti.RingTheory.LaurentSeries.Ramified
+import Mathlib.LinearAlgebra.Basis.Defs
+import Mathlib.RingTheory.Valuation.Basic
 import TauCeti.Data.Fin.Basic
 import TauCeti.FieldTheory.IsAlgClosed.FrobeniusFixedPoints
+import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.LinearAlgebra.LinearEquiv.Basic
 import TauCeti.LinearAlgebra.LinearIndependent.Iterate
 import TauCeti.RingTheory.LaurentSeries.Basic
+import TauCeti.RingTheory.LaurentSeries.Ramified
 
 /-!
 # Existence of cyclic standard-block sub-isocrystals
@@ -46,97 +47,39 @@ namespace TauCeti
 
 section SubBlock
 
-private theorem smulOfNeZero_zpow {L V : Type*} [Field L] [AddCommGroup V] [Module L V]
-    (π : L) (hπ : π ≠ 0) (z : ℤ) (x : V) :
-    ((LinearEquiv.smulOfNeZero L V π hπ) ^ z) x = π ^ z • x := by
-  have hz := congrArg (fun e : V ≃ₗ[L] V ↦ e x)
-    (map_zpow (DistribMulAction.toModuleAut L V) (Units.mk0 π hπ) z)
-  simpa [LinearEquiv.smulOfNeZero, LinearEquiv.smulOfUnit, Units.smul_def,
-    Units.val_zpow_eq_zpow_val] using hz.symm
+private theorem coe_linearEquivCyclicShift {L V : Type*} [Field L] [AddCommGroup V] [Module L V]
+    (π : L) (hπ : π ≠ 0) (r : ℕ) :
+    ⇑(LinearEquiv.cyclicShift L V π hπ r) = cyclicShift (R := L) (M := V) id π := by
+  ext w i
+  simp [LinearEquiv.cyclicShift_apply, cyclicShift_apply]
 
-private def shiftVecEquiv (L V : Type*) [Field L] [AddCommGroup V] [Module L V]
-    (π : L) (hπ : π ≠ 0) (r : ℕ+) : (Fin r → V) ≃ₗ[L] (Fin r → V) where
-  toFun w i := (if (i : ℕ) = 0 then π else 1) • w ((finRotate r).symm i)
-  invFun w j := (if (finRotate r j : ℕ) = 0 then π⁻¹ else 1) • w (finRotate r j)
-  left_inv w := by
-    ext j
-    simp only [Equiv.symm_apply_apply]
-    split_ifs <;> simp [smul_smul, hπ]
-  right_inv w := by
-    ext i
-    simp only [Equiv.apply_symm_apply]
-    split_ifs <;> simp [smul_smul, hπ]
-  map_add' x y := by ext i; simp [smul_add]
-  map_smul' c x := by ext i; simp [smul_comm c]
-
-private theorem shiftVecEquiv_apply {L V : Type*} [Field L] [AddCommGroup V] [Module L V]
-    (π : L) (hπ : π ≠ 0) (r : ℕ+) (w : Fin r → V) (i : Fin r) :
-    shiftVecEquiv L V π hπ r w i =
-      (if (i : ℕ) = 0 then π else 1) • w ((finRotate r).symm i) := rfl
-
-private theorem shiftVecEquiv_iterate_rank_apply {L V : Type*} [Field L] [AddCommGroup V]
+private theorem cyclicShiftEquiv_iterate_rank_apply {L V : Type*} [Field L] [AddCommGroup V]
     [Module L V] (π : L) (hπ : π ≠ 0) (r : ℕ+) (w : Fin r → V) :
-    (shiftVecEquiv L V π hπ r)^[r] w = π • w := by
+    (LinearEquiv.cyclicShift L V π hπ r)^[r] w = π • w := by
   ext i
+  rw [coe_linearEquivCyclicShift]
   have h := cyclicShift_iterate_rank_apply (σ := RingHom.id L) id (fun _ _ ↦ rfl) π rfl w i
-  simp only [iterate_id, id_eq] at h
-  exact h
+  simpa only [iterate_id, id_eq, Pi.smul_apply] using h
 
-private theorem shiftVecEquiv_zpow_mul_rank {L V : Type*} [Field L] [AddCommGroup V]
+private theorem cyclicShiftEquiv_zpow_mul_rank {L V : Type*} [Field L] [AddCommGroup V]
     [Module L V] (π : L) (hπ : π ≠ 0) (r : ℕ+) (z : ℤ) (w : Fin r → V) :
-    (shiftVecEquiv L V π hπ r ^ ((r : ℤ) * z)) w = π ^ z • w := by
-  let E := shiftVecEquiv L V π hπ r ^ (r : ℕ)
+    (LinearEquiv.cyclicShift L V π hπ r ^ ((r : ℤ) * z)) w = π ^ z • w := by
+  let E := LinearEquiv.cyclicShift L V π hπ r ^ (r : ℕ)
   let Mπ := LinearEquiv.smulOfNeZero L (Fin r → V) π hπ
-  have hE : Function.Semiconj id E Mπ := fun u ↦ by
-    rw [id_eq, pow_apply_eq_iterate, shiftVecEquiv_iterate_rank_apply]
-    rfl
+  have hE : Function.Semiconj id
+      ⇑(MulAction.toPermHom ((Fin r → V) ≃ₗ[L] (Fin r → V)) (Fin r → V) E)
+      ⇑(MulAction.toPermHom ((Fin r → V) ≃ₗ[L] (Fin r → V)) (Fin r → V) Mπ) := fun u ↦ by
+    simp only [MulAction.toPermHom_apply, id_eq]
+    -- `(MulAction.toPerm e) u` on `W ≃ₗ[L] W` is `e u` definitionally.
+    change id (E u) = Mπ u
+    rw [id_eq, pow_apply_eq_iterate, cyclicShiftEquiv_iterate_rank_apply,
+      LinearEquiv.smulOfNeZero_apply]
+  have hz := hE.zpow_right_of_monoidHom (MulAction.toPermHom _ _) (MulAction.toPermHom _ _) z w
+  simp only [MulAction.toPermHom_apply, id_eq] at hz
+  -- `(MulAction.toPerm e) w` on `W ≃ₗ[L] W` is `e w` definitionally.
+  change (E ^ z) w = (Mπ ^ z) w at hz
   rw [zpow_mul, zpow_natCast]
-  exact (hE.linearEquiv_zpow_right z w).trans (smulOfNeZero_zpow π hπ z w)
-
-private theorem shiftVecEquiv_contract {k : Type*} [Field k] (r : ℕ+) (f : k⸨X⸩) :
-    shiftVecEquiv k⸨X⸩ k⸨X⸩ (HahnSeries.single 1 1)
-        (HahnSeries.single_ne_zero one_ne_zero) r (_root_.LaurentSeries.contract r f) =
-      _root_.LaurentSeries.contract r (HahnSeries.single 1 1 * f) := by
-  ext i m
-  rw [shiftVecEquiv_apply]
-  split_ifs with hi
-  · have hrot : ((finRotate r).symm i : ℕ) = (r : ℕ) - 1 := by
-      refine congrArg Fin.val (show (finRotate r).symm i =
-          ⟨(r : ℕ) - 1, Nat.sub_lt r.pos one_pos⟩ from (finRotate r).symm_apply_eq.2 (Fin.ext ?_))
-      rw [Fin.coe_finRotate_eq_ite, hi]
-      dsimp only
-      split_ifs <;> omega
-    rw [smul_eq_mul, HahnSeries.coeff_single_mul, one_mul,
-      _root_.LaurentSeries.coeff_contract, _root_.LaurentSeries.coeff_contract,
-      HahnSeries.coeff_single_mul, one_mul, hrot]
-    congr 1
-    rw [Nat.cast_sub (show 1 ≤ (r : ℕ) from r.pos), Nat.cast_one,
-      show (i : ℤ) = 0 from Int.natCast_eq_zero.2 hi]
-    ring
-  · have hrot : ((finRotate r).symm i : ℕ) = (i : ℕ) - 1 :=
-      coe_finRotate_symm_of_ne_zero (Fin.val_ne_zero_iff.1 hi)
-    rw [one_smul, _root_.LaurentSeries.coeff_contract,
-      _root_.LaurentSeries.coeff_contract, HahnSeries.coeff_single_mul, one_mul, hrot]
-    congr 1
-    rw [Nat.cast_sub (Nat.one_le_iff_ne_zero.2 hi), Nat.cast_one]
-    ring
-
-private theorem shiftVecEquiv_zpow_contract {k : Type*} [Field k] (r : ℕ+) (z : ℤ)
-    (f : k⸨X⸩) :
-    (shiftVecEquiv k⸨X⸩ k⸨X⸩ (HahnSeries.single 1 1)
-          (HahnSeries.single_ne_zero one_ne_zero) r ^ z)
-        (_root_.LaurentSeries.contract r f) =
-      _root_.LaurentSeries.contract r (HahnSeries.single z 1 * f) := by
-  let mulX := LinearEquiv.smulOfNeZero k⸨X⸩ k⸨X⸩ (HahnSeries.single 1 1)
-    (HahnSeries.single_ne_zero one_ne_zero)
-  have hsc : Function.Semiconj (_root_.LaurentSeries.contract r) mulX
-      (shiftVecEquiv k⸨X⸩ k⸨X⸩ (HahnSeries.single 1 1)
-        (HahnSeries.single_ne_zero one_ne_zero) r) :=
-    fun g ↦ (shiftVecEquiv_contract r g).symm
-  have h := (hsc.linearEquiv_zpow_right z f).symm
-  rw [smulOfNeZero_zpow] at h
-  simpa [← TauCeti.LaurentSeries.val_unitX, ← Units.val_zpow_eq_zpow_val,
-    TauCeti.LaurentSeries.val_unitX_zpow] using h
+  exact hz.trans (LinearEquiv.smulOfNeZero_zpow_apply π hπ z w)
 
 private noncomputable def companionMatrixMap {k : Type*} [Field k] {p f : ℕ} [Fact p.Prime]
     [CharP k p] (n : ℕ) (b₀ : Fin (n + 1) → k) :
@@ -156,6 +99,19 @@ private noncomputable def companionMatrixMap {k : Type*} [Field k] {p f : ℕ} [
         _root_.iterateFrobenius_def]
       ring
 
+@[simp]
+private theorem companionMatrixMap_apply_zero {k : Type*} [Field k] {p f : ℕ} [Fact p.Prime]
+    [CharP k p] (n : ℕ) (b₀ : Fin (n + 1) → k) (d : Fin (n + 1) → k) :
+    companionMatrixMap (p := p) (f := f) n b₀ d 0 = b₀ 0 * d (Fin.last n) ^ p ^ f := by
+  simp [companionMatrixMap]
+
+@[simp]
+private theorem companionMatrixMap_apply_succ {k : Type*} [Field k] {p f : ℕ} [Fact p.Prime]
+    [CharP k p] (n : ℕ) (b₀ : Fin (n + 1) → k) (d : Fin (n + 1) → k) (j : Fin n) :
+    companionMatrixMap (p := p) (f := f) n b₀ d j.succ =
+      d j.castSucc ^ p ^ f + b₀ j.succ * d (Fin.last n) ^ p ^ f := by
+  simp [companionMatrixMap]
+
 private theorem companionMatrixMap_iterate_single_zero {k : Type*} [Field k] {p f : ℕ}
     [Fact p.Prime] [CharP k p] (n : ℕ) (b₀ : Fin (n + 1) → k) :
     (companionMatrixMap (p := p) (f := f) n b₀)^[n + 1] (Pi.single 0 1) = b₀ := by
@@ -171,18 +127,17 @@ private theorem companionMatrixMap_iterate_single_zero {k : Type*} [Field k] {p 
       have hne_last :
           (Fin.last n : Fin (n + 1)) ≠ ⟨m, Nat.lt_succ_of_le (Nat.le_of_succ_le hm)⟩ := by
         simp [Fin.ext_iff]; omega
-      refine Fin.cases ?_ (fun j ↦ ?_) i <;>
-      · simp only [companionMatrixMap, LinearMap.coe_mk, AddHom.coe_mk, Fin.cases_zero,
-          Fin.cases_succ, Pi.single_eq_of_ne hne_last,
-          zero_pow (pow_ne_zero f (Fact.out : p.Prime).ne_zero), mul_zero, add_zero]
-        simp [Pi.single_apply, Fin.ext_iff, apply_ite (· ^ p ^ f),
-          zero_pow (pow_ne_zero f (Fact.out : p.Prime).ne_zero)]
+      refine Fin.cases ?_ (fun j ↦ ?_) i
+      · simp [Pi.single_eq_of_ne hne_last,
+          zero_pow (pow_ne_zero f (Fact.out : p.Prime).ne_zero), Fin.ext_iff]
+      · simp [Pi.single_eq_of_ne hne_last,
+          zero_pow (pow_ne_zero f (Fact.out : p.Prime).ne_zero),
+          Pi.single_apply, Fin.ext_iff, apply_ite (· ^ p ^ f)]
   rw [iterate_succ_apply', hcast n le_rfl]
   ext i
   refine Fin.cases ?_ (fun j ↦ ?_) i
-  · simp [companionMatrixMap, Fin.last, Pi.single_apply, Fin.ext_iff,
-      zero_pow (pow_ne_zero f (Fact.out : p.Prime).ne_zero)]
-  · simp [companionMatrixMap, Fin.last, Pi.single_apply, Fin.ext_iff, Nat.ne_of_lt j.isLt,
+  · simp [Fin.last]
+  · simp [Fin.last, Fin.ext_iff, Nat.ne_of_lt j.isLt,
       zero_pow (pow_ne_zero f (Fact.out : p.Prime).ne_zero)]
 
 private theorem exists_companion_powerSeries_coeffs {k : Type*} [Field k] {p f : ℕ}
@@ -257,20 +212,20 @@ private theorem exists_powerSeries_companion_solution {k : Type*} [Field k] {p f
     · rw [PowerSeries.coeff_mk, PowerSeries.coeff_zero_eq_constantCoeff, map_mul,
         ← PowerSeries.coeff_zero_eq_constantCoeff_apply (PowerSeries.map σk _),
         PowerSeries.coeff_map, PowerSeries.coeff_mk]
-      simpa [x, companionMatrixMap, σk, _root_.iterateFrobenius_def] using
-        (congrFun hd0_fix 0).symm
+      have h0 := (congrFun hd0_fix 0).symm
+      simpa [x, σk, _root_.iterateFrobenius_def] using h0
     · rw [PowerSeries.coeff_mk, hmul_coeff 0 t, hdt 0 t]
-      simp [companionMatrixMap, σk, _root_.iterateFrobenius_def]
+      simp [σk, _root_.iterateFrobenius_def]
   · intro j
     ext (_ | t)
     · rw [PowerSeries.coeff_mk, PowerSeries.coeff_zero_eq_constantCoeff, map_add, map_mul,
         ← PowerSeries.coeff_zero_eq_constantCoeff_apply (PowerSeries.map σk (x j.castSucc)),
         ← PowerSeries.coeff_zero_eq_constantCoeff_apply (PowerSeries.map σk (x (Fin.last n))),
         PowerSeries.coeff_map, PowerSeries.coeff_map, PowerSeries.coeff_mk, PowerSeries.coeff_mk]
-      simpa [x, companionMatrixMap, σk, _root_.iterateFrobenius_def] using
-        (congrFun hd0_fix j.succ).symm
+      have hs := (congrFun hd0_fix j.succ).symm
+      simpa [x, σk, _root_.iterateFrobenius_def] using hs
     · rw [PowerSeries.coeff_mk, map_add, hmul_coeff j.succ t, hdt j.succ t]
-      simp [companionMatrixMap, σk, _root_.iterateFrobenius_def, x, add_assoc]
+      simp [σk, _root_.iterateFrobenius_def, x, add_assoc]
 
 private theorem min_slope_order_bound {n : ℕ} {m : Fin (n + 1) → ℤ} {a : Fin (n + 1) → Bool}
     (ha0 : a 0 = true) :
@@ -398,28 +353,51 @@ private theorem exists_laurent_companion_solution {p : ℕ} [Fact p.Prime] {f : 
         show -s * (j.val : ℤ) + -s * ((n : ℤ) + 1 - (↑j + 1)) = -s * (n : ℤ) by ring,
         ← mul_assoc]
 
-private theorem shiftVecEquiv_zpow_smulVec {L V : Type*} [Field L] [AddCommGroup V] [Module L V]
+private theorem cyclicShiftEquiv_zpow_smulVec {L V : Type*} [Field L] [AddCommGroup V] [Module L V]
     (π : L) (hπ : π ≠ 0) (r : ℕ+) (z : ℤ) (g : Fin r → L) (v : V) :
-    (shiftVecEquiv L V π hπ r ^ z) (fun l ↦ g l • v) =
-      fun l ↦ ((shiftVecEquiv L L π hπ r ^ z) g l) • v :=
-  ((Function.Semiconj.linearEquiv_zpow_right (e₁ := shiftVecEquiv L L π hπ r)
-    (e₂ := shiftVecEquiv L V π hπ r) (u := fun g' l ↦ g' l • v) (fun g' ↦ by
-      ext l; simp [shiftVecEquiv_apply, smul_eq_mul, mul_smul]) z) g).symm
+    (LinearEquiv.cyclicShift L V π hπ r ^ z) (fun l ↦ g l • v) =
+      fun l ↦ ((LinearEquiv.cyclicShift L L π hπ r ^ z) g l) • v := by
+  let S_L := LinearEquiv.cyclicShift L L π hπ r
+  let S_V := LinearEquiv.cyclicShift L V π hπ r
+  have hsc : Function.Semiconj (fun (g' : Fin r → L) l ↦ g' l • v)
+      ⇑(MulAction.toPermHom ((Fin r → L) ≃ₗ[L] (Fin r → L)) (Fin r → L) S_L)
+      ⇑(MulAction.toPermHom ((Fin r → V) ≃ₗ[L] (Fin r → V)) (Fin r → V) S_V) := fun g' ↦ by
+    ext l
+    simp only [MulAction.toPermHom_apply]
+    -- `(MulAction.toPerm e) u` on `W ≃ₗ[L] W` is `e u` definitionally.
+    change S_L g' l • v = (S_V fun l ↦ g' l • v) l
+    simp [S_L, S_V, LinearEquiv.cyclicShift_apply, smul_eq_mul, mul_smul]
+  have hz := (hsc.zpow_right_of_monoidHom (MulAction.toPermHom _ _) (MulAction.toPermHom _ _) z
+    g).symm
+  simp only [MulAction.toPermHom_apply] at hz
+  -- `e • u` on `W ≃ₗ[L] W` is `e u` definitionally.
+  change (S_V ^ z) (fun l ↦ g l • v) = fun l ↦ ((S_L ^ z) g l) • v at hz
+  exact hz
 
-private theorem map_pi_comm_shiftVecEquiv_zpow {L V : Type*} [Field L] [AddCommGroup V]
+private theorem map_pi_comm_cyclicShiftEquiv_zpow {L V : Type*} [Field L] [AddCommGroup V]
     [Module L V] {σ : L ≃+* L} {Φ : V →ₛₗ[(σ : L →+* L)] V} (π : L) (hπ : π ≠ 0)
     (hσπ : σ π = π) (r : ℕ+) (z : ℤ) (u : Fin r → V) :
-    (fun l ↦ Φ ((shiftVecEquiv L V π hπ r ^ z) u l)) =
-      (shiftVecEquiv L V π hπ r ^ z) (fun l ↦ Φ (u l)) :=
-  Function.Semiconj.linearEquiv_zpow_right (e₁ := shiftVecEquiv L V π hπ r)
-    (e₂ := shiftVecEquiv L V π hπ r) (u := fun w l ↦ Φ (w l)) (fun w ↦ by
-      ext l
-      simp only [shiftVecEquiv_apply]
-      split_ifs
-      · rw [map_smulₛₗ, RingHom.coe_coe, hσπ]
-      · simp) z u
+    (fun l ↦ Φ ((LinearEquiv.cyclicShift L V π hπ r ^ z) u l)) =
+      (LinearEquiv.cyclicShift L V π hπ r ^ z) (fun l ↦ Φ (u l)) := by
+  let S_V := LinearEquiv.cyclicShift L V π hπ r
+  have hsc : Function.Semiconj (fun (w : Fin r → V) l ↦ Φ (w l))
+      ⇑(MulAction.toPermHom ((Fin r → V) ≃ₗ[L] (Fin r → V)) (Fin r → V) S_V)
+      ⇑(MulAction.toPermHom ((Fin r → V) ≃ₗ[L] (Fin r → V)) (Fin r → V) S_V) := fun w ↦ by
+    ext l
+    simp only [MulAction.toPermHom_apply]
+    -- `e • w` on `W ≃ₗ[L] W` is `e w` definitionally.
+    change Φ (S_V w l) = S_V (fun l ↦ Φ (w l)) l
+    simp only [S_V, LinearEquiv.cyclicShift_apply]
+    split_ifs
+    · rw [map_smulₛₗ, RingHom.coe_coe, hσπ]
+    · simp
+  have hz := hsc.zpow_right_of_monoidHom (MulAction.toPermHom _ _) (MulAction.toPermHom _ _) z u
+  simp only [MulAction.toPermHom_apply] at hz
+  -- `e • w` on `W ≃ₗ[L] W` is `e w` definitionally.
+  change (fun l ↦ Φ ((S_V ^ z) u l)) = (S_V ^ z) (fun l ↦ Φ (u l)) at hz
+  exact hz
 
-private theorem shiftVecEquiv_laurent_companion {p : ℕ} [Fact p.Prime] {f : ℕ+}
+private theorem cyclicShiftEquiv_laurent_companion {p : ℕ} [Fact p.Prime] {f : ℕ+}
     {k : Type*} [Field k] [CharP k p] [IsAlgClosed k]
     {V : Type*} [AddCommGroup V] [Module (LaurentSeries k) V]
     {Φ : V →ₛₗ[(LaurentSeries.coefficientFrobenius (k := k) p f :
@@ -435,7 +413,7 @@ private theorem shiftVecEquiv_laurent_companion {p : ℕ} [Fact p.Prime] {f : �
         _root_.LaurentSeries.expand k r (-a j.succ) *
           LaurentSeries.coefficientFrobenius p f (z (Fin.last n))) :
     (fun l ↦ Φ (∑ i : Fin (n + 1), _root_.LaurentSeries.contract r (z i) l • Φ^[i.val] v₀)) =
-      (shiftVecEquiv (LaurentSeries k) V (HahnSeries.single 1 1)
+      (LinearEquiv.cyclicShift (LaurentSeries k) V (HahnSeries.single 1 1)
         (HahnSeries.single_ne_zero one_ne_zero) r ^ s)
         (fun l ↦ ∑ i : Fin (n + 1), _root_.LaurentSeries.contract r (z i) l • Φ^[i.val] v₀) := by
   -- Expand both `l ↦ Φ (w l)` and `(S_V ^ s) w` in the orbit basis `Φ^[i] v₀`, rewriting
@@ -447,44 +425,41 @@ private theorem shiftVecEquiv_laurent_companion {p : ℕ} [Fact p.Prime] {f : �
     ext m; simp [σ]
   let π : L := HahnSeries.single 1 1
   have hπ : π ≠ 0 := HahnSeries.single_ne_zero one_ne_zero
-  set S_V := shiftVecEquiv L V π hπ r
+  set S_V := LinearEquiv.cyclicShift L V π hπ r
   let smulVec : (Fin r → L) → V → (Fin r → V) := fun g v l ↦ g l • v
   let y : Fin (n + 1) → Fin r → L := fun i l ↦ _root_.LaurentSeries.contract r (z i) l
+  let termLast : Fin (n + 1) → (Fin r → V) := fun j ↦ smulVec (_root_.LaurentSeries.contract r
+    (_root_.LaurentSeries.expand k r (-a j) * σ (z (Fin.last n)))) (Φ^[j.val] v₀)
+  let termS : Fin (n + 1) → (Fin r → V) := fun j ↦
+    smulVec (_root_.LaurentSeries.contract r (HahnSeries.single s 1 * z j)) (Φ^[j.val] v₀)
   have hT_eq : (fun l ↦ Φ (∑ i : Fin (n + 1), y i l • Φ^[i.val] v₀)) = ∑ i : Fin (n + 1),
       smulVec (_root_.LaurentSeries.contract r (σ (z i))) (Φ^[i.val + 1] v₀) := by
     ext l
     simp only [smulVec, σ, map_sum, Finset.sum_apply, map_smulₛₗ, RingHom.coe_coe,
       ← iterate_succ_apply' Φ, Nat.succ_eq_add_one, y, hcontract]
-  have hS_eq : (S_V ^ s) (fun l ↦ ∑ i : Fin (n + 1), y i l • Φ^[i.val] v₀) = ∑ i : Fin (n + 1),
-      smulVec (_root_.LaurentSeries.contract r (HahnSeries.single s 1 * z i)) (Φ^[i.val] v₀) := by
+  have hS_eq : (S_V ^ s) (fun l ↦ ∑ i : Fin (n + 1), y i l • Φ^[i.val] v₀) =
+      ∑ j : Fin (n + 1), termS j := by
     have hw_vec : (fun l ↦ ∑ i : Fin (n + 1), y i l • Φ^[i.val] v₀) =
-        ∑ i : Fin (n + 1), smulVec (y i) (Φ^[i.val] v₀) := by
-      ext l; simp [smulVec]
+        ∑ i : Fin (n + 1), smulVec (y i) (Φ^[i.val] v₀) := by ext l; simp [smulVec]
     rw [hw_vec, map_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [shiftVecEquiv_zpow_smulVec π hπ r s (y i) (Φ^[i.val] v₀),
-      shiftVecEquiv_zpow_contract r s (z i)]
+    rw [cyclicShiftEquiv_zpow_smulVec π hπ r s (y i) (Φ^[i.val] v₀)]
+    exact congrArg (smulVec · (Φ^[i.val] v₀)) (_root_.LaurentSeries.cyclicShift_zpow_contract r s _)
   have hΦlast : Φ^[n + 1] v₀ = ∑ j : Fin (n + 1), (-a j) • Φ^[j.val] v₀ := by
     rw [eq_neg_of_add_eq_zero_left hrel, ← Finset.sum_neg_distrib]; simp [neg_smul]
   have hlast_split : smulVec (_root_.LaurentSeries.contract r (σ (z (Fin.last n))))
-      (∑ j : Fin (n + 1), (-a j) • Φ^[j.val] v₀) =
-      ∑ j : Fin (n + 1), smulVec (_root_.LaurentSeries.contract r
-        (_root_.LaurentSeries.expand k r (-a j) * σ (z (Fin.last n)))) (Φ^[j.val] v₀) := by
-    ext l
-    simp only [smulVec, Finset.smul_sum, Finset.sum_apply, smul_smul, mul_comm (-a _),
-      _root_.LaurentSeries.contract_expand_mul]
-  rw [show (fun l ↦ Φ (∑ i : Fin (n + 1), y i l • Φ^[i.val] v₀)) = _ from hT_eq,
-    show (S_V ^ s) (fun l ↦ ∑ i : Fin (n + 1), y i l • Φ^[i.val] v₀) = _ from hS_eq,
-    Fin.sum_univ_castSucc, Fin.val_last, hΦlast, hlast_split,
-    Fin.sum_univ_succ (f := fun j : Fin (n + 1) ↦ smulVec (_root_.LaurentSeries.contract r
-      (_root_.LaurentSeries.expand k r (-a j) * σ (z (Fin.last n)))) (Φ^[j.val] v₀)),
-    Fin.sum_univ_succ (f := fun j : Fin (n + 1) ↦
-      smulVec (_root_.LaurentSeries.contract r (HahnSeries.single s 1 * z j)) (Φ^[j.val] v₀)),
-    add_left_comm, ← Finset.sum_add_distrib]
-  refine congrArg₂ (· + ·) (by rw [Fin.val_zero, hz0]) (Finset.sum_congr rfl fun j _ ↦ ?_)
-  ext l
-  simp only [smulVec, σ, Pi.add_apply, ← add_smul, Fin.val_castSucc, Fin.val_succ]
-  rw [← _root_.LaurentSeries.contract_add, ← hzs j]
+      (∑ j : Fin (n + 1), (-a j) • Φ^[j.val] v₀) = ∑ j : Fin (n + 1), termLast j := by
+    ext l; simp only [smulVec, termLast, Finset.smul_sum, Finset.sum_apply, smul_smul,
+      mul_comm (-a _), _root_.LaurentSeries.contract_expand_mul]
+  have hterm0 : termLast 0 = termS 0 := by dsimp only [termLast, termS]; rw [Fin.val_zero, hz0]
+  have hterm_succ (j : Fin n) :
+      smulVec (_root_.LaurentSeries.contract r (σ (z j.castSucc))) (Φ^[j.val + 1] v₀) +
+        termLast j.succ = termS j.succ := by
+    ext l; simp only [smulVec, termLast, termS, σ, Pi.add_apply, ← add_smul, Fin.val_succ]
+    rw [← _root_.LaurentSeries.contract_add, ← hzs j]
+  rw [hT_eq, hS_eq, Fin.sum_univ_castSucc, Fin.val_last, hΦlast, hlast_split,
+    Fin.sum_univ_succ, Fin.sum_univ_succ, add_left_comm, ← Finset.sum_add_distrib]
+  exact congrArg₂ (· + ·) hterm0 (Finset.sum_congr rfl fun j _ ↦ hterm_succ j)
 
 private theorem eigenvector_of_laurent_companion_solution {p : ℕ} [Fact p.Prime] {f : ℕ+}
     {k : Type*} [Field k] [CharP k p] [IsAlgClosed k]
@@ -520,11 +495,11 @@ private theorem eigenvector_of_laurent_companion_solution {p : ℕ} [Fact p.Prim
     obtain ⟨l₀, hl₀⟩ := hcontract
     exact ⟨l₀, fun hw0 ↦ hl₀ (Fintype.linearIndependent_iff.1 hli (fun i ↦ y i l₀) hw0 i₁)⟩
   obtain ⟨l₀, hl₀⟩ := hl₀
-  let S_V := shiftVecEquiv L V π hπ r
+  let S_V := LinearEquiv.cyclicShift L V π hπ r
   let T : (Fin r → V) → (Fin r → V) := fun u l ↦ Φ (u l)
-  have hTw : T w = (S_V ^ s) w := shiftVecEquiv_laurent_companion hrel s r z hz0 hzs
+  have hTw : T w = (S_V ^ s) w := cyclicShiftEquiv_laurent_companion hrel s r z hz0 hzs
   have hcomm : Function.Commute T ⇑(S_V ^ s) :=
-    fun u ↦ map_pi_comm_shiftVecEquiv_zpow π hπ (LaurentSeries.coefficientFrobenius_X p f) r s u
+    fun u ↦ map_pi_comm_cyclicShiftEquiv_zpow π hπ (LaurentSeries.coefficientFrobenius_X p f) r s u
   have hTiter : ∀ m : ℕ, T^[m] w = (S_V ^ s)^[m] w := fun m ↦ by
     induction m with
     | zero => simp
@@ -536,7 +511,7 @@ private theorem eigenvector_of_laurent_companion_solution {p : ℕ} [Fact p.Prim
   refine ⟨w l₀, hl₀, ?_⟩
   have hr_eq := congrFun (hTiter r) l₀
   rw [hT_coord r l₀, ← pow_apply_eq_iterate (S_V ^ s) (r : ℕ), ← zpow_natCast, ← zpow_mul,
-    mul_comm s (r : ℤ), shiftVecEquiv_zpow_mul_rank] at hr_eq
+    mul_comm s (r : ℤ), cyclicShiftEquiv_zpow_mul_rank] at hr_eq
   exact hr_eq
 
 private theorem exists_eigenvector_of_minimal_relation {p : ℕ} [Fact p.Prime] {f : ℕ+}

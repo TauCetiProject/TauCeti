@@ -10,7 +10,6 @@ public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.RingTheory.LaurentSeries
 public import Mathlib.RingTheory.Valuation.Basic
 public import TauCeti.Algebra.Category.FiniteIsocrystal.Basic
-public import TauCeti.RingTheory.Isocrystal.CyclicBlock
 public import TauCeti.RingTheory.Isocrystal.StandardBlock
 public import TauCeti.RingTheory.LaurentSeries.CoefficientFrobenius
 import Mathlib.Data.Rat.Lemmas
@@ -18,6 +17,8 @@ import Mathlib.LinearAlgebra.Basis.Prod
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import TauCeti.Algebra.Category.FiniteIsocrystal.EqualCharacteristic
 import TauCeti.Data.Fin.Basic
+import TauCeti.LinearAlgebra.LinearEquiv.Basic
+import TauCeti.RingTheory.Isocrystal.CyclicBlock
 import TauCeti.RingTheory.LaurentSeries.Basic
 
 /-!
@@ -120,79 +121,31 @@ theorem CyclicSlopeDecomposition.sum_rank_eq_finrank {L V : Type*} [Field L] [Ad
   rw [Module.finrank_eq_card_basis D.basis, Fintype.card_sigma]
   simp
 
-private noncomputable def sectionProdEquiv {L V : Type*} [Field L] [AddCommGroup V] [Module L V]
-    {r : ℕ+} (ι : (Fin r → L) →ₗ[L] V) (hι : Injective ι)
-    (sec : (V ⧸ LinearMap.range ι) →ₗ[L] V)
-    (hq_sec : ∀ y, (LinearMap.range ι).mkQ (sec y) = y) :
-    ((Fin r → L) × (V ⧸ LinearMap.range ι)) ≃ₗ[L] V :=
-  have hdisj : Disjoint (LinearMap.range ι) (LinearMap.range sec) := by
-    rw [disjoint_iff_inf_le]
-    rintro z ⟨⟨x, rfl⟩, ⟨y, hy⟩⟩
-    have hy0 : y = 0 := by
-      have := congrArg (LinearMap.range ι).mkQ hy
-      rw [hq_sec, Submodule.mkQ_apply,
-        (Submodule.Quotient.mk_eq_zero (LinearMap.range ι)).2 ⟨x, rfl⟩] at this
-      exact this
-    simp [← hy, hy0]
-  have hsec_inj : Injective sec := fun y₁ y₂ h ↦ by
-    simpa [hq_sec] using congrArg (LinearMap.range ι).mkQ h
-  have hinj : Injective (ι.coprod sec) := by
-    rw [← LinearMap.ker_eq_bot, LinearMap.ker_coprod_of_disjoint_range ι sec hdisj,
-      LinearMap.ker_eq_bot.2 hι, LinearMap.ker_eq_bot.2 hsec_inj]
-    exact Submodule.ext fun ⟨a, b⟩ ↦ by simp
-  have hsurj : Surjective (ι.coprod sec) := fun z ↦ by
-    have hz : z - sec ((LinearMap.range ι).mkQ z) ∈ LinearMap.range ι := by
-      rw [← Submodule.Quotient.mk_eq_zero (LinearMap.range ι), ← Submodule.mkQ_apply, map_sub,
-        hq_sec, sub_self]
-    obtain ⟨x, hx⟩ := hz
-    exact ⟨(x, (LinearMap.range ι).mkQ z), by simp [hx]⟩
-  LinearEquiv.ofBijective (ι.coprod sec) ⟨hinj, hsurj⟩
-
-@[simp]
-private theorem sectionProdEquiv_apply {L V : Type*} [Field L] [AddCommGroup V] [Module L V]
-    {r : ℕ+} (ι : (Fin r → L) →ₗ[L] V) (hι : Injective ι)
-    (sec : (V ⧸ LinearMap.range ι) →ₗ[L] V)
-    (hq_sec : ∀ y, (LinearMap.range ι).mkQ (sec y) = y)
-    (p : (Fin r → L) × (V ⧸ LinearMap.range ι)) :
-    sectionProdEquiv ι hι sec hq_sec p = ι p.1 + sec p.2 :=
-  LinearMap.coprod_apply ι sec p
-
 private def consBlockIdxEquiv {b : ℕ} (r : ℕ+) (rk : Fin b → ℕ+) :
     Fin r ⊕ (Σ i : Fin b, Fin (rk i)) ≃
       Σ i : Fin (b + 1), Fin (Fin.cases (motive := fun _ ↦ ℕ+) r rk i) :=
-  let rank : Fin (b + 1) → ℕ+ := Fin.cases r rk
-  have hr0 : (rank 0 : ℕ) = (r : ℕ) := by simp [rank]
-  have hrs (i : Fin b) : (rank i.succ : ℕ) = (rk i : ℕ) := by simp [rank]
-  { toFun := Sum.elim (fun j ↦ ⟨0, finCongr hr0.symm j⟩)
-      (fun ij ↦ ⟨ij.1.succ, finCongr (hrs ij.1).symm ij.2⟩)
-    invFun ij := Fin.cases
-      (motive := fun i ↦
-        Fin (Fin.cases (motive := fun _ ↦ ℕ+) r rk i) →
-          Fin r ⊕ (Σ i' : Fin b, Fin (rk i')))
-      (fun j ↦ Sum.inl (finCongr hr0 j)) (fun i j ↦ Sum.inr ⟨i, finCongr (hrs i) j⟩) ij.1 ij.2
-    left_inv := by
-      rintro (j | ⟨i, j⟩)
-      · exact congrArg Sum.inl (Fin.ext rfl) -- `Fin.cases ... 0` reduces definitionally
-      · exact congrArg (fun x : Fin (rk i) ↦ Sum.inr (⟨i, x⟩ : Σ i' : Fin b, Fin (rk i')))
-          (Fin.ext rfl) -- `Fin.cases ... i.succ` reduces definitionally
-    right_inv := by
-      rintro ⟨i, j⟩
-      revert j
-      refine Fin.cases ?_ ?_ i
-      · intro j; exact Sigma.ext rfl (heq_of_eq (Fin.ext rfl))
-      · intro i j; exact Sigma.ext rfl (heq_of_eq (Fin.ext rfl)) }
+  (finConsSigmaEquiv (r : ℕ) (fun i ↦ (rk i : ℕ))).trans
+    (Equiv.sigmaCongrRight fun i ↦
+      finCongr (Fin.cases (motive := fun i ↦
+        Fin.cases (r : ℕ) (fun i ↦ (rk i : ℕ)) i = (Fin.cases (motive := fun _ ↦ ℕ+) r rk i : ℕ))
+        rfl (fun _ ↦ rfl) i))
 
 private theorem consBlockIdxEquiv_symm_zero {b : ℕ} (r : ℕ+) (rk : Fin b → ℕ+)
     (h0 : ((Fin.cases (motive := fun _ ↦ ℕ+) r rk 0 : ℕ+) : ℕ) = (r : ℕ))
     (j : Fin (Fin.cases (motive := fun _ ↦ ℕ+) r rk 0)) :
-    (consBlockIdxEquiv r rk).symm ⟨0, j⟩ = Sum.inl (finCongr h0 j) :=
-  congrArg Sum.inl (Fin.ext rfl)
+    (consBlockIdxEquiv r rk).symm ⟨0, j⟩ = Sum.inl (finCongr h0 j) := by
+  rw [consBlockIdxEquiv, Equiv.symm_trans_apply, Equiv.sigmaCongrRight_symm,
+    Equiv.sigmaCongrRight_apply, finConsSigmaEquiv_symm_zero _ _ Fin.cases_zero]
+  exact congrArg Sum.inl (Fin.ext (by simp only [finCongr_apply, finCongr_symm, Fin.val_cast]))
 
 private theorem consBlockIdxEquiv_symm_succ {b : ℕ} (r : ℕ+) (rk : Fin b → ℕ+)
     (i : Fin b) (hs : ((Fin.cases (motive := fun _ ↦ ℕ+) r rk i.succ : ℕ+) : ℕ) = (rk i : ℕ))
     (j : Fin (Fin.cases (motive := fun _ ↦ ℕ+) r rk i.succ)) :
-    (consBlockIdxEquiv r rk).symm ⟨i.succ, j⟩ = Sum.inr ⟨i, finCongr hs j⟩ :=
-  congrArg (fun x : Fin (rk i) ↦ Sum.inr (⟨i, x⟩ : Σ i' : Fin b, Fin (rk i'))) (Fin.ext rfl)
+    (consBlockIdxEquiv r rk).symm ⟨i.succ, j⟩ = Sum.inr ⟨i, finCongr hs j⟩ := by
+  rw [consBlockIdxEquiv, Equiv.symm_trans_apply, Equiv.sigmaCongrRight_symm,
+    Equiv.sigmaCongrRight_apply, finConsSigmaEquiv_symm_succ _ _ i (Fin.cases_succ i)]
+  refine congrArg (fun x : Fin (rk i) ↦ Sum.inr (⟨i, x⟩ : Σ i' : Fin b, Fin (rk i'))) ?_
+  exact Fin.ext (by simp only [finCongr_apply, finCongr_symm, Fin.val_cast])
 
 private theorem cyclicSlopeDecomposition_cons_frobenius_basis {L V : Type*} [Field L]
     [AddCommGroup V] [Module L V] {σ : L ≃+* L} (Φ : V →ₛₗ[(σ : L →+* L)] V) (π : L)
@@ -207,7 +160,7 @@ private theorem cyclicSlopeDecomposition_cons_frobenius_basis {L V : Type*} [Fie
     (j : Fin (Fin.cases (motive := fun _ ↦ ℕ+) r D_Q.rank i)) :
     let rk : Fin (D_Q.blocks + 1) → ℕ+ := Fin.cases r D_Q.rank
     let exp : Fin (D_Q.blocks + 1) → ℤ := Fin.cases s D_Q.exponent
-    let e_V := sectionProdEquiv ι hι sec hq_sec
+    let e_V := LinearEquiv.sectionProdEquiv ι hι sec hq_sec
     let e_idx := consBlockIdxEquiv r D_Q.rank
     let bas : Basis (Σ i : Fin (D_Q.blocks + 1), Fin (rk i)) L V :=
       (((Pi.basisFun L (Fin r)).prod D_Q.basis).map e_V).reindex e_idx
@@ -221,10 +174,10 @@ private theorem cyclicSlopeDecomposition_cons_frobenius_basis {L V : Type*} [Fie
         bas ⟨i, finRotate (rk i) j⟩)
     (fun j ↦ ?_) (fun i j ↦ ?_) i j
   · have hbas (l : Fin (rk 0)) : bas ⟨0, l⟩ = ι (Pi.single (finCongr hr0 l) 1) := by
-      dsimp only [bas, e_idx]
+      dsimp only [bas, e_idx, e_V]
       rw [Basis.reindex_apply, Basis.map_apply, consBlockIdxEquiv_symm_zero r D_Q.rank hr0,
         Basis.prod_apply, Sum.elim_inl, comp_apply, Pi.basisFun_apply, LinearMap.inl_apply,
-        sectionProdEquiv_apply, map_zero, add_zero]
+        LinearEquiv.sectionProdEquiv_apply, map_zero, add_zero]
     rw [hbas, hbas, Fin.finCongr_finRotate, ← hinter, ← map_smul]
     congr 1
     by_cases hj : j.val + 1 = rk 0
@@ -237,10 +190,10 @@ private theorem cyclicSlopeDecomposition_cons_frobenius_basis {L V : Type*} [Fie
       exact (standardBlockFrobenius_single_of_val_add_one_ne hj' 1).trans (by simp)
   · have hbas (l : Fin (rk i.succ)) :
         bas ⟨i.succ, l⟩ = sec (D_Q.basis ⟨i, finCongr (hrs i) l⟩) := by
-      dsimp only [bas, e_idx]
+      dsimp only [bas, e_idx, e_V]
       rw [Basis.reindex_apply, Basis.map_apply, consBlockIdxEquiv_symm_succ r D_Q.rank i (hrs i),
-        Basis.prod_apply, Sum.elim_inr, comp_apply, LinearMap.inr_apply, sectionProdEquiv_apply,
-        map_zero, zero_add]
+        Basis.prod_apply, Sum.elim_inr, comp_apply, LinearMap.inr_apply,
+        LinearEquiv.sectionProdEquiv_apply, map_zero, zero_add]
     rw [hbas, hbas, Fin.finCongr_finRotate, hΦ_sec, D_Q.frobenius_basis, map_smul]
     simp [hrs, exp]
 
@@ -257,7 +210,7 @@ private noncomputable def cyclicSlopeDecomposition_cons {L V : Type*} [Field L]
     CyclicSlopeDecomposition Φ π :=
   let rk : Fin (D_Q.blocks + 1) → ℕ+ := Fin.cases r D_Q.rank
   let exp : Fin (D_Q.blocks + 1) → ℤ := Fin.cases s D_Q.exponent
-  let e_V := sectionProdEquiv ι hι sec hq_sec
+  let e_V := LinearEquiv.sectionProdEquiv ι hι sec hq_sec
   let e_idx := consBlockIdxEquiv r D_Q.rank
   let bas : Basis (Σ i : Fin (D_Q.blocks + 1), Fin (rk i)) L V :=
     (((Pi.basisFun L (Fin r)).prod D_Q.basis).map e_V).reindex e_idx
@@ -269,6 +222,38 @@ private noncomputable def cyclicSlopeDecomposition_cons {L V : Type*} [Field L]
     basis := bas
     frobenius_basis :=
       cyclicSlopeDecomposition_cons_frobenius_basis Φ π ι hι hinter hW D_Q sec hq_sec hΦ_sec }
+
+private theorem exists_equivariant_section {p : ℕ} [Fact p.Prime] (f : ℕ+)
+    {k : Type*} [Field k] [CharP k p] [IsAlgClosed k]
+    {V : Type*} [AddCommGroup V] [Module (LaurentSeries k) V]
+    [FiniteDimensional (LaurentSeries k) V]
+    {Φ : V →ₛₗ[(LaurentSeries.coefficientFrobenius (k := k) p f :
+      LaurentSeries k →+* LaurentSeries k)] V}
+    (hΦ : Bijective Φ) (W : Submodule (LaurentSeries k) V) (hW : W ≤ W.comap Φ) :
+    Bijective (W.mapQ W Φ hW) ∧
+      ∃ sec : (V ⧸ W) →ₗ[LaurentSeries k] V,
+        (∀ y, W.mkQ (sec y) = y) ∧ ∀ y, Φ (sec y) = sec (W.mapQ W Φ hW y) := by
+  let σ : LaurentSeries k ≃ₐ[ℤ] LaurentSeries k :=
+    { LaurentSeries.coefficientFrobenius (k := k) p f with
+      commutes' := fun c ↦ by simp [eq_intCast] }
+  let D : FiniteIsocrystal σ := FiniteIsocrystal.of σ V Φ hΦ
+  have hW' : ∀ x ∈ W, D.frobenius x ∈ W := fun _ hx ↦ hW hx
+  have hΦ_Q : D.quotientFrobenius W hW' = W.mapQ W Φ hW := by
+    ext x
+    exact (D.quotientFrobenius_mk W hW' x).trans (Submodule.mapQ_apply W W Φ (h := hW) x).symm
+  have hΦ_Q_bij : Bijective (W.mapQ W Φ hW) := by
+    rw [← hΦ_Q]
+    exact D.quotientFrobenius_bijective W hW'
+  have : CategoryTheory.IsSplitEpi (D.quotientπ W hW') :=
+    FiniteIsocrystal.isSplitEpi_of_epi rfl f.pos (D.quotientπ W hW')
+  let sec := CategoryTheory.section_ (D.quotientπ W hW')
+  refine ⟨hΦ_Q_bij, sec.hom, fun y ↦ ?_, fun y ↦ ?_⟩
+  · have h := congrArg (fun g : D.quotient W hW' ⟶ D.quotient W hW' ↦ g.hom y)
+      (CategoryTheory.IsSplitEpi.id (D.quotientπ W hW'))
+    simpa only [FiniteIsocrystal.hom_comp, LinearMap.comp_apply,
+      FiniteIsocrystal.quotientπ_hom, FiniteIsocrystal.hom_id, LinearMap.id_apply] using h
+  · rw [← hΦ_Q]
+    exact (sec.hom_frobenius y).symm
 
 /-- **Existence of cyclic slope decompositions.** Every finite isocrystal `(V, Φ)` over `k((π))`
 (with `k` algebraically closed of characteristic `p > 0` and `f > 0`) admits a decomposition into
@@ -285,18 +270,16 @@ theorem CyclicSlopeDecomposition.nonempty {p : ℕ} [Fact p.Prime] (f : ℕ+)
   induction hfin : Module.finrank (LaurentSeries k) V using Nat.strong_induction_on
       generalizing V with
   | _ n ih =>
+    -- Base case: dimension zero has the empty decomposition.
     rcases eq_or_ne n 0 with rfl | hn
     · have : Subsingleton V := Module.finrank_zero_iff.1 hfin
       exact ⟨⟨0, Fin.elim0, Fin.elim0, fun i ↦ i.elim0, Basis.empty V, fun i ↦ i.elim0⟩⟩
+    -- Inductive step: embed a coprime simple sub-block `W = range ι` and split `V ⧸ W`.
     have : Nontrivial V := Module.finrank_pos_iff.1 (hfin ▸ Nat.pos_of_ne_zero hn)
-    let σ : LaurentSeries k ≃ₐ[ℤ] LaurentSeries k :=
-      { LaurentSeries.coefficientFrobenius (k := k) p f with
-        commutes' := fun c ↦ by simp [eq_intCast] }
-    let D : FiniteIsocrystal σ := FiniteIsocrystal.of σ V Φ hΦ
     obtain ⟨s, r, hcop, ι, hι, hinter⟩ :=
       exists_injective_intertwines_standardBlock (Φ := Φ) hΦ.injective
     let W := LinearMap.range ι
-    have hW : ∀ x ∈ W, D.frobenius x ∈ W := by rintro _ ⟨x, rfl⟩; exact ⟨_, hinter x⟩
+    have hW : W ≤ W.comap Φ := by rintro _ ⟨x, rfl⟩; exact ⟨_, hinter x⟩
     have hfinW : 0 < Module.finrank (LaurentSeries k) W := by
       have : Nontrivial W := ⟨⟨⟨ι (Pi.single (0 : Fin r) 1), ⟨_, rfl⟩⟩, 0, fun h ↦ by
         have h0 : Pi.single (0 : Fin r) (1 : LaurentSeries k) = 0 :=
@@ -306,27 +289,11 @@ theorem CyclicSlopeDecomposition.nonempty {p : ℕ} [Fact p.Prime] (f : ℕ+)
     have hlt : Module.finrank (LaurentSeries k) (V ⧸ W) < n := by
       have hadd := Submodule.finrank_quotient_add_finrank W
       omega
-    have hΦ_Q : D.quotientFrobenius W hW = W.mapQ W Φ hW := by
-      ext x
-      exact (D.quotientFrobenius_mk W hW x).trans (Submodule.mapQ_apply W W Φ (h := hW) x).symm
-    have hΦ_Q_bij : Bijective (W.mapQ W Φ hW) := by
-      rw [← hΦ_Q]
-      exact D.quotientFrobenius_bijective W hW
+    obtain ⟨hΦ_Q_bij, sec, hq_sec, hΦ_sec⟩ := exists_equivariant_section f hΦ W hW
     obtain ⟨D_Q⟩ := ih (Module.finrank (LaurentSeries k) (V ⧸ W)) hlt (V ⧸ W)
       (W.mapQ W Φ hW) hΦ_Q_bij rfl
-    have : CategoryTheory.IsSplitEpi (D.quotientπ W hW) :=
-      FiniteIsocrystal.isSplitEpi_of_epi rfl f.pos (D.quotientπ W hW)
-    let sec := CategoryTheory.section_ (D.quotientπ W hW)
-    have hq_sec (y : V ⧸ W) : W.mkQ (sec.hom y) = y := by
-      have h := congrArg (fun g : D.quotient W hW ⟶ D.quotient W hW ↦ g.hom y)
-        (CategoryTheory.IsSplitEpi.id (D.quotientπ W hW))
-      simpa only [FiniteIsocrystal.hom_comp, LinearMap.comp_apply,
-        FiniteIsocrystal.quotientπ_hom, FiniteIsocrystal.hom_id, LinearMap.id_apply] using h
-    have hΦ_sec (y : V ⧸ W) : Φ (sec.hom y) = sec.hom (W.mapQ W Φ hW y) := by
-      rw [← hΦ_Q]
-      exact (sec.hom_frobenius y).symm
     exact ⟨cyclicSlopeDecomposition_cons Φ (HahnSeries.single 1 1) hcop ι hι hinter hW D_Q
-      sec.hom hq_sec hΦ_sec⟩
+      sec hq_sec hΦ_sec⟩
 
 end Splitting
 
