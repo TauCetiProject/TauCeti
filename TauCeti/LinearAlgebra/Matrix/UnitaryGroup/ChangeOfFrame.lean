@@ -19,7 +19,7 @@ the two ways of moving such a group to another one.
   `unitaryGroupOf A ≃* unitaryGroupOf B` (`Matrix.unitaryGroupOf.conjEquiv`). This is how the
   unitary group of a hermitian matrix is read in the coordinates of a frame in which the form is
   standard, for instance an orthonormal frame.
-* **Change of coefficients.** For commutative rings `R` and `S` with involutions, a ring
+* **Change of coefficients.** For semirings `R` and `S` with involutions, a ring
   homomorphism `f : R →+* S` commuting with the involutions maps
   `unitaryGroupOf A` to `unitaryGroupOf (A.map f)` (`Matrix.unitaryGroupOf.mapHom`), injectively
   when `f` is injective. This is how the rational points of a unitary group over a number field
@@ -32,7 +32,7 @@ the two ways of moving such a group to another one.
   `Matrix.unitaryGroupOf.conjEquiv_trans` for two successive changes of frame and
   `Matrix.unitaryGroupOf.conjEquiv_symm` for its inverse.
 * `Matrix.unitaryGroupOf.mapHom`: the change of coefficients along a `star`-compatible ring
-  homomorphism (`Matrix.unitaryGroupOf.coe_mapHom`: it is `GeneralLinearGroup.map f` on elements),
+  homomorphism (`Matrix.unitaryGroupOf.coe_mapHom`: it applies `f` entrywise),
   injective for injective `f` (`Matrix.unitaryGroupOf.mapHom_injective`).
 -/
 
@@ -113,9 +113,9 @@ end unitaryGroupOf
 
 end Semiring
 
-section CommRing
+section Coefficients
 
-variable {R S : Type*} [CommRing R] [StarRing R] [CommRing S] [StarRing S]
+variable {R S : Type*} [Semiring R] [StarRing R] [Semiring S] [StarRing S]
 variable {A : Matrix n n R}
 
 namespace unitaryGroupOf
@@ -125,13 +125,13 @@ variable (A) in
 induced by a ring homomorphism `f` commuting with the involutions. -/
 def mapHom (f : R →+* S) (hf : ∀ a, f (star a) = star (f a)) :
     unitaryGroupOf A →* unitaryGroupOf (A.map f) :=
-  ((GeneralLinearGroup.map f).comp (unitaryGroupOf A).subtype).codRestrict _
+  ((Units.map (RingHom.mapMatrix f).toMonoidHom).comp (unitaryGroupOf A).subtype).codRestrict _
     fun g => map_mem_unitaryGroupOf hf g.property
 
 /-- The change of coefficients is the change of coefficients `GL_n(R) → GL_n(S)` along `f`. -/
 @[simp]
 theorem coe_mapHom (f : R →+* S) (hf : ∀ a, f (star a) = star (f a)) (g : unitaryGroupOf A) :
-    (mapHom A f hf g : GL n S) = GeneralLinearGroup.map f (g : GL n R) :=
+    (mapHom A f hf g : GL n S) = Units.map (RingHom.mapMatrix f).toMonoidHom (g : GL n R) :=
   (rfl)
 
 /-- The change of coefficients applies `f` to the entries. -/
@@ -148,6 +148,6 @@ theorem mapHom_injective {f : R →+* S} (hf : ∀ a, f (star a) = star (f a))
 
 end unitaryGroupOf
 
-end CommRing
+end Coefficients
 
 end Matrix

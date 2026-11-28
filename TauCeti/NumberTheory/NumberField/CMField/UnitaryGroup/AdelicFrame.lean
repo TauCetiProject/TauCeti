@@ -173,7 +173,7 @@ theorem coe_rationalEmbedding (γ : unitaryGroupOf V.gram) :
     (V.rationalEmbedding γ : GL ι (InfiniteAdeleRing E) × GL ι 𝔸ᶠ[E]) =
       (V.frame.1⁻¹ * GeneralLinearGroup.map (algebraMap E (InfiniteAdeleRing E)) γ * V.frame.1,
         V.frame.2⁻¹ * GeneralLinearGroup.map (algebraMap E 𝔸ᶠ[E]) γ * V.frame.2) := by
-  simp [rationalEmbedding, MonoidHom.codRestrict]
+  simp [rationalEmbedding, MonoidHom.codRestrict, GeneralLinearGroup.map]
 
 /-- The rational embedding is injective. -/
 theorem rationalEmbedding_injective : Function.Injective V.rationalEmbedding := by
@@ -183,7 +183,7 @@ theorem rationalEmbedding_injective : Function.Injective V.rationalEmbedding := 
       (FiniteAdeleRing.algebraMap_injective E (RingOfIntegers.not_isField E)))
   apply Subtype.ext
   simpa only [Function.comp_apply, unitaryGroupOf.coe_conjEquiv_apply, unitaryGroupOf.coe_mapHom,
-    coe_rationalEmbedding] using
+    coe_rationalEmbedding, GeneralLinearGroup.map] using
     congrArg (fun g : adelicUnitaryGroup E s ↦ (g : GL ι (InfiniteAdeleRing E) × GL ι 𝔸ᶠ[E]).2) h
 
 /-- The **rational points** `Γ_V` of a space with an adelic frame: the image of `U(J)(E⁺)` in the

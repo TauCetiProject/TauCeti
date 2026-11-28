@@ -146,6 +146,19 @@ theorem star_mul_mul_mul_eq_of_mem_unitaryGroupOf {B x : Matrix n n R}
   rw [star_eq_conjTranspose, conjTranspose_mul_mul_mul_of_star_mul_mul_eq hx,
     ← star_eq_conjTranspose, mem_unitaryGroupOf_iff.1 hg]
 
+/-- A ring homomorphism commuting with the involutions maps `unitaryGroupOf A` into
+`unitaryGroupOf (A.map f)`. -/
+theorem map_mem_unitaryGroupOf {S : Type*} [Semiring S] [StarRing S] {f : R →+* S}
+    (hf : ∀ r, f (star r) = star (f r)) {g : GL n R} (hg : g ∈ unitaryGroupOf A) :
+    Units.map (RingHom.mapMatrix f).toMonoidHom g ∈ unitaryGroupOf (A.map f) := by
+  -- Apply `f` entrywise to the equation `gᴴ A g = A`.
+  have h := congrArg (fun M ↦ M.map f) (mem_unitaryGroupOf_iff.1 hg)
+  simp only [Matrix.map_mul, star_eq_conjTranspose, conjTranspose_map f hf] at h
+  rw [mem_unitaryGroupOf_iff, Units.coe_map]
+  -- Unfold the projection to the monoid homomorphism to expose the entrywise matrix map.
+  simpa only [RingHom.toMonoidHom, RingHom.mapMatrix, RingHom.coe_mk, MonoidHom.coe_mk,
+    OneHom.coe_mk, star_eq_conjTranspose] using h
+
 end Semiring
 
 section CommRing
@@ -160,16 +173,6 @@ theorem val_inv_of_mem_unitaryGroupOf (hA : IsUnit A) {g : GL n R} (hg : g ∈ u
     have h := mem_unitaryGroupOf_iff.mp hg
     simp only [Matrix.mul_assoc] at h ⊢
     rw [h, nonsing_inv_mul _ ((isUnit_iff_isUnit_det A).mp hA)]
-
-/-- A ring homomorphism commuting with the involutions maps `unitaryGroupOf A` into
-`unitaryGroupOf (A.map f)`. -/
-theorem map_mem_unitaryGroupOf {S : Type*} [CommRing S] [StarRing S] {f : R →+* S}
-    (hf : ∀ r, f (star r) = star (f r)) {g : GL n R} (hg : g ∈ unitaryGroupOf A) :
-    GeneralLinearGroup.map f g ∈ unitaryGroupOf (A.map f) := by
-  -- Apply `f` entrywise to the equation `gᴴ A g = A`.
-  have h := congrArg (fun M ↦ M.map f) (mem_unitaryGroupOf_iff.1 hg)
-  simp only [Matrix.map_mul, star_eq_conjTranspose, conjTranspose_map f hf] at h
-  rw [mem_unitaryGroupOf_iff, GeneralLinearGroup.val_map_apply, star_eq_conjTranspose, h]
 
 namespace unitaryGroupOf
 
