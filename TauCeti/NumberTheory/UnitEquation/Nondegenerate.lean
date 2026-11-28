@@ -13,7 +13,6 @@ public import Mathlib.Algebra.Ring.Hom.Defs
 
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.Field.Rat
-import Mathlib.Algebra.Group.Pi.Units
 import Mathlib.Order.Preorder.Finite
 import Mathlib.Tactic.NormNum
 
