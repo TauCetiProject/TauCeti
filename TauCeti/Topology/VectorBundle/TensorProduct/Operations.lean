@@ -14,9 +14,10 @@ public import TauCeti.Topology.VectorBundle.TensorProduct.Basic
 # Categorical operations and dual-tensor-hom isomorphism for tensor-product bundles
 
 For finite-rank topological vector bundles over a complete nontrivially normed field `𝕜`, this file
-constructs the universal property (`TauCeti.bundleTensorLift`, `TauCeti.eq_bundleTensorLift_iff`,
-`TauCeti.continuous_bundleTensorLift_iff`) into any normed-fibre (not necessarily finite-rank)
-vector bundle, functoriality (`TauCeti.bundleTensorMap`, `TauCeti.bundleTensorCongrHomeomorph`),
+constructs the universal property (`ContinuousLinearMap.tensorLift`, `TauCeti.bundleTensorLift`,
+`TauCeti.eq_bundleTensorLift_iff`, `TauCeti.continuous_bundleTensorLift_iff`) into any
+normed-fibre (not necessarily finite-rank) vector bundle, functoriality
+(`ContinuousLinearMap.tensorMap`, `TauCeti.bundleTensorMap`, `TauCeti.bundleTensorCongrHomeomorph`),
 symmetry and associativity homeomorphisms, and the dual-tensor-Hom isomorphism
 (`TauCeti.bundleDualTensorHomHomeomorph`).
 
@@ -35,6 +36,37 @@ open scoped TensorProduct
 
 namespace TauCeti
 
+section SingleFiberLift
+variable {𝕜 V₁ V₂ V₃ : Type*} [NormedField 𝕜]
+  [AddCommGroup V₁] [Module 𝕜 V₁] [TopologicalSpace V₁]
+  [AddCommGroup V₂] [Module 𝕜 V₂] [TopologicalSpace V₂]
+  [AddCommGroup V₃] [Module 𝕜 V₃] [TopologicalSpace V₃]
+  [IsTopologicalAddGroup V₃] [ContinuousSMul 𝕜 V₃]
+  [TopologicalSpace (V₁ ⊗[𝕜] V₂)] [IsModuleTopology 𝕜 (V₁ ⊗[𝕜] V₂)]
+
+/-- Universal property of the tensor product under the module topology: a continuous bilinear map
+`Φ : V₁ →L[𝕜] V₂ →L[𝕜] V₃` lifts to a continuous linear map `V₁ ⊗[𝕜] V₂ →L[𝕜] V₃`. -/
+def _root_.ContinuousLinearMap.tensorLift (Φ : V₁ →L[𝕜] V₂ →L[𝕜] V₃) : V₁ ⊗[𝕜] V₂ →L[𝕜] V₃ :=
+  ⟨_root_.TensorProduct.lift Φ.toLinearMap₁₂, IsModuleTopology.continuous_of_linearMap _⟩
+
+/-- Applying `ContinuousLinearMap.tensorLift` to a pure tensor `v ⊗ₜ[𝕜] w`. -/
+@[simp] theorem _root_.ContinuousLinearMap.tensorLift_tmul (Φ : V₁ →L[𝕜] V₂ →L[𝕜] V₃)
+    (v : V₁) (w : V₂) : Φ.tensorLift (v ⊗ₜ[𝕜] w) = Φ v w := by
+  simp [ContinuousLinearMap.tensorLift]
+
+/-- The underlying linear map of `ContinuousLinearMap.tensorLift` is `TensorProduct.lift`. -/
+@[simp] theorem _root_.ContinuousLinearMap.toLinearMap_tensorLift (Φ : V₁ →L[𝕜] V₂ →L[𝕜] V₃) :
+    Φ.tensorLift.toLinearMap = _root_.TensorProduct.lift Φ.toLinearMap₁₂ := (rfl)
+
+/-- A continuous linear map out of `V₁ ⊗[𝕜] V₂` equals `Φ.tensorLift` if and only if it agrees
+with `Φ` on pure tensors. -/
+theorem _root_.ContinuousLinearMap.eq_tensorLift_iff {Φ : V₁ →L[𝕜] V₂ →L[𝕜] V₃}
+    {ψ : V₁ ⊗[𝕜] V₂ →L[𝕜] V₃} : ψ = Φ.tensorLift ↔ ∀ v w, ψ (v ⊗ₜ[𝕜] w) = Φ v w :=
+  ⟨fun h v w ↦ by simp [h],
+    fun h ↦ ContinuousLinearMap.coe_injective (_root_.TensorProduct.lift.unique h)⟩
+
+end SingleFiberLift
+
 section NormedFiber
 variable {𝕜 B : Type*} [NontriviallyNormedField 𝕜] {E₁ E₂ E₃ : B → Type*}
   [∀ x, AddCommGroup (E₁ x)] [∀ x, Module 𝕜 (E₁ x)] [∀ x, TopologicalSpace (E₁ x)]
@@ -46,7 +78,12 @@ variable [∀ x, TopologicalSpace (E₁ x ⊗[𝕜] E₂ x)] [∀ x, IsModuleTop
 /-- Fibrewise universal property of the tensor product: a family of continuous bilinear maps
 `Φ x : E₁ x →L[𝕜] E₂ x →L[𝕜] E₃ x` lifts to continuous linear maps `E₁ x ⊗[𝕜] E₂ x →L[𝕜] E₃ x`. -/
 def bundleTensorLift (Φ : ∀ x, E₁ x →L[𝕜] E₂ x →L[𝕜] E₃ x) (x : B) : E₁ x ⊗[𝕜] E₂ x →L[𝕜] E₃ x :=
-  ⟨_root_.TensorProduct.lift (Φ x).toLinearMap₁₂, IsModuleTopology.continuous_of_linearMap _⟩
+  (Φ x).tensorLift
+
+/-- Fibrewise `bundleTensorLift` at `x` is `(Φ x).tensorLift`. -/
+theorem bundleTensorLift_eq (Φ : ∀ x, E₁ x →L[𝕜] E₂ x →L[𝕜] E₃ x) (x : B) :
+    bundleTensorLift Φ x = (Φ x).tensorLift := (rfl)
+
 @[simp] theorem bundleTensorLift_tmul (Φ : ∀ x, E₁ x →L[𝕜] E₂ x →L[𝕜] E₃ x) (x : B)
     (v : E₁ x) (w : E₂ x) : bundleTensorLift Φ x (v ⊗ₜ[𝕜] w) = Φ x v w := by simp [bundleTensorLift]
 /-- A continuous linear map out of `E₁ x ⊗[𝕜] E₂ x` equals `bundleTensorLift Φ x` if and only if
@@ -54,8 +91,7 @@ it agrees with `Φ x` on pure tensors. -/
 theorem eq_bundleTensorLift_iff {Φ : ∀ x, E₁ x →L[𝕜] E₂ x →L[𝕜] E₃ x} {x : B}
     {ψ : E₁ x ⊗[𝕜] E₂ x →L[𝕜] E₃ x} :
     ψ = bundleTensorLift Φ x ↔ ∀ v w, ψ (v ⊗ₜ[𝕜] w) = Φ x v w :=
-  ⟨fun h v w ↦ by simp [h],
-    fun h ↦ ContinuousLinearMap.coe_injective (_root_.TensorProduct.lift.unique h)⟩
+  (Φ x).eq_tensorLift_iff
 end LiftFiber
 section DualTensorHomFiber
 variable [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
@@ -78,6 +114,40 @@ theorem bundleDualTensorHom_tmul_apply (x : B) (φ : StrongDual 𝕜 (E₁ x)) (
 end DualTensorHomFiber
 end NormedFiber
 
+section SingleFiberMap
+variable {𝕜 V₁ V₁' V₂ V₂' : Type*} [CommRing 𝕜] [TopologicalSpace 𝕜]
+  [AddCommGroup V₁] [Module 𝕜 V₁] [TopologicalSpace V₁]
+  [AddCommGroup V₁'] [Module 𝕜 V₁'] [TopologicalSpace V₁']
+  [AddCommGroup V₂] [Module 𝕜 V₂] [TopologicalSpace V₂]
+  [AddCommGroup V₂'] [Module 𝕜 V₂'] [TopologicalSpace V₂']
+  [TopologicalSpace (V₁ ⊗[𝕜] V₂)] [IsModuleTopology 𝕜 (V₁ ⊗[𝕜] V₂)]
+  [TopologicalSpace (V₁' ⊗[𝕜] V₂')] [IsModuleTopology 𝕜 (V₁' ⊗[𝕜] V₂')]
+
+/-- Tensor product of two continuous linear maps under the module topology. -/
+def _root_.ContinuousLinearMap.tensorMap (f : V₁ →L[𝕜] V₁') (g : V₂ →L[𝕜] V₂') :
+    V₁ ⊗[𝕜] V₂ →L[𝕜] V₁' ⊗[𝕜] V₂' :=
+  ⟨_root_.TensorProduct.map f.toLinearMap g.toLinearMap, IsModuleTopology.continuous_of_linearMap _⟩
+
+/-- Applying `ContinuousLinearMap.tensorMap` to a pure tensor `v ⊗ₜ[𝕜] w`. -/
+@[simp] theorem _root_.ContinuousLinearMap.tensorMap_tmul (f : V₁ →L[𝕜] V₁')
+    (g : V₂ →L[𝕜] V₂') (v : V₁) (w : V₂) :
+    f.tensorMap g (v ⊗ₜ[𝕜] w) = f v ⊗ₜ[𝕜] g w := by
+  simp [ContinuousLinearMap.tensorMap]
+
+/-- The underlying linear map of `ContinuousLinearMap.tensorMap` is `TensorProduct.map`. -/
+@[simp] theorem _root_.ContinuousLinearMap.toLinearMap_tensorMap (f : V₁ →L[𝕜] V₁')
+    (g : V₂ →L[𝕜] V₂') :
+    (f.tensorMap g).toLinearMap = _root_.TensorProduct.map f.toLinearMap g.toLinearMap := (rfl)
+
+/-- The tensor product of two bijective continuous linear maps is bijective. -/
+theorem _root_.ContinuousLinearMap.tensorMap_bijective {f : V₁ →L[𝕜] V₁'} {g : V₂ →L[𝕜] V₂'}
+    (hf : Function.Bijective f) (hg : Function.Bijective g) :
+    Function.Bijective (f.tensorMap g) :=
+  (_root_.TensorProduct.congr (LinearEquiv.ofBijective f.toLinearMap hf)
+    (LinearEquiv.ofBijective g.toLinearMap hg)).bijective
+
+end SingleFiberMap
+
 section CommRingFiber
 variable {𝕜 B : Type*} [CommRing 𝕜] [TopologicalSpace 𝕜] {E₁ E₁' E₂ E₂' E₃ : B → Type*}
   [∀ x, AddCommGroup (E₁ x)] [∀ x, Module 𝕜 (E₁ x)] [∀ x, AddCommGroup (E₁' x)]
@@ -92,8 +162,12 @@ variable [∀ x, TopologicalSpace (E₁ x)] [∀ x, TopologicalSpace (E₁' x)]
 /-- Fibrewise tensor product of two families of continuous linear maps. -/
 def bundleTensorMap (f : ∀ x, E₁ x →L[𝕜] E₁' x) (g : ∀ x, E₂ x →L[𝕜] E₂' x) (x : B) :
     E₁ x ⊗[𝕜] E₂ x →L[𝕜] E₁' x ⊗[𝕜] E₂' x :=
-  ⟨_root_.TensorProduct.map (f x).toLinearMap (g x).toLinearMap,
-    IsModuleTopology.continuous_of_linearMap _⟩
+  (f x).tensorMap (g x)
+
+/-- Fibrewise `bundleTensorMap` at `x` is `(f x).tensorMap (g x)`. -/
+theorem bundleTensorMap_eq (f : ∀ x, E₁ x →L[𝕜] E₁' x) (g : ∀ x, E₂ x →L[𝕜] E₂' x) (x : B) :
+    bundleTensorMap f g x = (f x).tensorMap (g x) := (rfl)
+
 @[simp] theorem bundleTensorMap_tmul (f : ∀ x, E₁ x →L[𝕜] E₁' x) (g : ∀ x, E₂ x →L[𝕜] E₂' x)
     (x : B) (v : E₁ x) (w : E₂ x) :
     bundleTensorMap f g x (v ⊗ₜ[𝕜] w) = f x v ⊗ₜ[𝕜] g x w := by simp [bundleTensorMap]

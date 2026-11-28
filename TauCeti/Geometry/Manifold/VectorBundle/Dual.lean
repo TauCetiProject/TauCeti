@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 public import TauCeti.Topology.VectorBundle.Dual
+import TauCeti.Analysis.Normed.Module.Dual.Reflexive.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Defs
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.FiberBundle.Trivialization
@@ -116,16 +117,14 @@ theorem contMDiffWithinAt_clm_bundle_dual_precomp_iff {b : M → B}
   refine ⟨hdual.1, ?_⟩
   let _ : NormedAddCommGroup (StrongDual 𝕜 (StrongDual 𝕜 F₂)) := inferInstance
   let _ : NormedSpace 𝕜 (StrongDual 𝕜 (StrongDual 𝕜 F₂)) := inferInstance
-  let j₂ : F₂ ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F₂) := LinearEquiv.toContinuousLinearEquiv <|
-    (Module.evalEquiv 𝕜 F₂).trans (((LinearMap.toContinuousLinearMap :
-      Module.Dual 𝕜 F₂ ≃ₗ[𝕜] StrongDual 𝕜 F₂).arrowCongr (.refl 𝕜 𝕜)).trans
-      LinearMap.toContinuousLinearMap)
+  let j₂ := inclusionInDoubleDualEquiv 𝕜 F₂
   let L_inv : (StrongDual 𝕜 F₂ →L[𝕜] StrongDual 𝕜 F₁) →L[𝕜] F₁ →L[𝕜] F₂ :=
     (ContinuousLinearMap.compL 𝕜 F₁ (StrongDual 𝕜 (StrongDual 𝕜 F₂)) F₂
       j₂.symm.toContinuousLinearMap).comp
       (ContinuousLinearMap.flipₗᵢ 𝕜 (StrongDual 𝕜 F₂) F₁ 𝕜).toLinearIsometry.toContinuousLinearMap
   have hret (T : F₁ →L[𝕜] F₂) : L_inv (ContinuousLinearMap.precomp 𝕜 T) = T := by
-    ext v; apply j₂.injective; ext α; simp [L_inv, ContinuousLinearMap.flipₗᵢ, j₂]
+    ext v; apply j₂.injective; ext α
+    simp [L_inv, j₂, NormedSpace.dual_def]
   have hcomp := L_inv.contDiff.contMDiff.contMDiffAt.comp_contMDiffWithinAt x hdual.2
   have heq : (fun y ↦ ContinuousLinearMap.inCoordinates F₁ V₁ F₂ V₂ (b x) (b y) (b x) (b y) (A y))
       =ᶠ[𝓝[insert x s] x] fun y ↦ L_inv (ContinuousLinearMap.inCoordinates (StrongDual 𝕜 F₂)

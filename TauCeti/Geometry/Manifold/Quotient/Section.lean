@@ -154,17 +154,19 @@ variable {𝕜 E' E H' H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommG
 theorem contMDiff_section_pullbackOrbitSection_orbitRelQuotientRec_iff
     {ht : ∀ (g : G) (x : M), t (g • x) ≍ t x} (hm : m ≤ n) (hψ : ContMDiff I' I m ψ) :
     ContMDiff I' (I'.prod 𝓘(𝕜, F)) m (fun q' ↦ TotalSpace.mk' F
-        (E := ⇑(⟨ψ.orbitRelQuotientMap, (contMDiff_orbitRelQuotientMap hm hψ).continuous⟩ :
-          C(MulAction.orbitRel.Quotient G' M', MulAction.orbitRel.Quotient G M)) *ᵖ V) q'
+        (E := ⇑(ψ.orbitRelQuotientContinuousMap hψ.continuous) *ᵖ V) q'
         (MulAction.orbitRelQuotientRec (V := ψ.orbitRelQuotientMap *ᵖ V)
           (ψ.pullbackOrbitSection t) (ψ.pullbackOrbitSection_smul_heq ht) q')) ↔
       ContMDiff I' (I.prod 𝓘(𝕜, F)) m
         (fun x' ↦ TotalSpace.mk' F (Quotient.mk (MulAction.orbitRel G M) (ψ x')) (t (ψ x'))) := by
-  let f : C(MulAction.orbitRel.Quotient G' M', MulAction.orbitRel.Quotient G M) :=
-    ⟨ψ.orbitRelQuotientMap, (contMDiff_orbitRelQuotientMap hm hψ).continuous⟩
-  rw [contMDiff_section_orbitRelQuotientRec_iff (V := ⇑f *ᵖ V) hm,
-    Bundle.Pullback.contMDiff_iff f (contMDiff_orbitRelQuotientMap hm hψ)]
-  simp only [f, ContinuousMap.coe_mk, MulActionHom.lift_pullbackOrbitSection]
+  let f := ψ.orbitRelQuotientContinuousMap hψ.continuous
+  refine (contMDiff_section_orbitRelQuotientRec_iff (V := ⇑f *ᵖ V) hm).trans ?_
+  rw [Bundle.Pullback.contMDiff_iff f (contMDiff_orbitRelQuotientMap hm hψ)]
+  have hlift : (fun y ↦ Pullback.lift (⇑f) (TotalSpace.mk' F (E := ⇑f *ᵖ V)
+      (Quotient.mk (MulAction.orbitRel G' M') y) (ψ.pullbackOrbitSection t y))) =
+      fun x' ↦ TotalSpace.mk' F (Quotient.mk (MulAction.orbitRel G M) (ψ x')) (t (ψ x')) :=
+    funext fun y ↦ ψ.lift_pullbackOrbitSection F t y
+  rw [hlift]
   exact and_iff_right
     ((isLocalDiffeomorph_quotientMk (I := I') (n := n) (G := G') (M := M')).contMDiff.of_le hm)
 
@@ -175,8 +177,7 @@ theorem _root_.ContMDiff.section_pullbackOrbitSection_orbitRelQuotientRec
       (fun x ↦ TotalSpace.mk' F (Quotient.mk (MulAction.orbitRel G M) x) (t x)))
     (hψ : ContMDiff I' I m ψ) (ht : ∀ (g : G) (x : M), t (g • x) ≍ t x) (hm : m ≤ n) :
     ContMDiff I' (I'.prod 𝓘(𝕜, F)) m (fun q' ↦ TotalSpace.mk' F
-      (E := ⇑(⟨ψ.orbitRelQuotientMap, (contMDiff_orbitRelQuotientMap hm hψ).continuous⟩ :
-        C(MulAction.orbitRel.Quotient G' M', MulAction.orbitRel.Quotient G M)) *ᵖ V) q'
+      (E := ⇑(ψ.orbitRelQuotientContinuousMap hψ.continuous) *ᵖ V) q'
       (MulAction.orbitRelQuotientRec (V := ψ.orbitRelQuotientMap *ᵖ V)
         (ψ.pullbackOrbitSection t) (ψ.pullbackOrbitSection_smul_heq ht) q')) :=
   (contMDiff_section_pullbackOrbitSection_orbitRelQuotientRec_iff (ht := ht) hm hψ).2

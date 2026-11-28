@@ -159,11 +159,8 @@ theorem exists_bundleDiffeomorph_bundleTensorMap_orbitRelQuotientRec
   rw [exists_bundleDiffeomorph_iff]
   refine ⟨hφ₁_smooth.totalSpaceMap_bundleTensorMap_orbitRelQuotientRec hφ₂_smooth hφ₁ hφ₂ hm,
     Quotient.ind fun x ↦ ?_⟩
-  rw [MulAction.orbitRelQuotientRec_mk]
-  convert (_root_.TensorProduct.congr (LinearEquiv.ofBijective (φ₁ x).toLinearMap (hbij₁ x))
-    (LinearEquiv.ofBijective (φ₂ x).toLinearMap (hbij₂ x))).bijective
-  exact funext fun t ↦ LinearMap.congr_fun
-    (_root_.TensorProduct.ext' fun v w ↦ by simp [bundleTensorMap_tmul]) t
+  rw [MulAction.orbitRelQuotientRec_mk, bundleTensorMap_eq]
+  exact (φ₁ x).tensorMap_bijective (hbij₁ x) (hbij₂ x)
 
 end MapManifold
 
@@ -187,7 +184,8 @@ theorem contMDiff_section_bundleDualTensorHom_orbitRelQuotientRec_iff
           (Quotient.mk (MulAction.orbitRel G M) x) (τ x)) := by
   let Φ := bundleDualTensorHomDiffeomorph I m F₁ V₁ F₂ V₂
   rw [← contMDiff_section_orbitRelQuotientRec_iff (ht := hτ) hm]
-  simp only [← bundleDualTensorHom_orbitRelQuotientRec (hτ := hτ)]
+  simp only [← MulAction.apply_orbitRelQuotientRec
+    (fun q t ↦ bundleDualTensorHom (E₁ := V₁) (E₂ := V₂) q t) hτ]
   exact ⟨fun h ↦ (Φ.symm.contMDiff.comp h).congr fun q ↦ by
       simp only [Function.comp_apply, Φ, bundleDualTensorHomDiffeomorph_symm_apply]
       rw [← bundleDualTensorHomEquiv_toContinuousLinearMap (F₁ := F₁) (F₂ := F₂),

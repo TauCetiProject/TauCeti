@@ -142,17 +142,13 @@ theorem _root_.ContMDiff.totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec 
           C(M, MulAction.orbitRel.Quotient G M)) *ᵖ (fun q ↦ V q →L[𝕜] W q)))))
     (hψ : ContMDiff I' I m ψ) (hφ : ∀ (g : G) (x : M), φ (g • x) ≍ φ x) (hm : m ≤ n) :
     ContMDiff (I'.prod 𝓘(𝕜, F₁)) (I'.prod 𝓘(𝕜, F₂)) m (fun p : TotalSpace F₁
-      (⇑(⟨ψ.orbitRelQuotientMap, (contMDiff_orbitRelQuotientMap hm hψ).continuous⟩ :
-        C(MulAction.orbitRel.Quotient G' M', MulAction.orbitRel.Quotient G M)) *ᵖ V) ↦
-      TotalSpace.mk' F₂ (E := ⇑(⟨ψ.orbitRelQuotientMap,
-        (contMDiff_orbitRelQuotientMap hm hψ).continuous⟩ :
-        C(MulAction.orbitRel.Quotient G' M', MulAction.orbitRel.Quotient G M)) *ᵖ W) p.proj
+      (⇑(ψ.orbitRelQuotientContinuousMap hψ.continuous) *ᵖ V) ↦
+      TotalSpace.mk' F₂ (E := ⇑(ψ.orbitRelQuotientContinuousMap hψ.continuous) *ᵖ W) p.proj
         (MulAction.orbitRelQuotientRec
           (V := fun q' ↦ (ψ.orbitRelQuotientMap *ᵖ V) q' →L[𝕜] (ψ.orbitRelQuotientMap *ᵖ W) q')
           (ψ.pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) φ)
           (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) p.proj p.snd)) := by
-  let f : C(MulAction.orbitRel.Quotient G' M', MulAction.orbitRel.Quotient G M) :=
-    ⟨ψ.orbitRelQuotientMap, (contMDiff_orbitRelQuotientMap hm hψ).continuous⟩
+  let f := ψ.orbitRelQuotientContinuousMap hψ.continuous
   refine (Bundle.Pullback.contMDiff_fiberwise
     (fun q v ↦ MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] W q) φ hφ q v)
     ((contMDiff_totalSpaceMap_orbitRelQuotientRec_iff (hφ := hφ) hm).2 hφ_smooth) f
@@ -170,25 +166,20 @@ theorem exists_bundleDiffeomorph_pullbackOrbitSection_orbitRelQuotientRec {ψ : 
         (⇑(⟨Quotient.mk _, continuous_quotient_mk'⟩ :
           C(M, MulAction.orbitRel.Quotient G M)) *ᵖ (fun q ↦ V q →L[𝕜] W q)))))
     (hbij : ∀ x : M, Function.Bijective (φ x)) :
-    ∃ Φ : TotalSpace F₁
-        (⇑(⟨ψ.orbitRelQuotientMap, (contMDiff_orbitRelQuotientMap hm hψ).continuous⟩ :
-          C(MulAction.orbitRel.Quotient G' M', MulAction.orbitRel.Quotient G M)) *ᵖ V) ≃ₘ^m⟮
+    ∃ Φ : TotalSpace F₁ (⇑(ψ.orbitRelQuotientContinuousMap hψ.continuous) *ᵖ V) ≃ₘ^m⟮
           I'.prod 𝓘(𝕜, F₁), I'.prod 𝓘(𝕜, F₂)⟯ TotalSpace F₂
-        (⇑(⟨ψ.orbitRelQuotientMap, (contMDiff_orbitRelQuotientMap hm hψ).continuous⟩ :
-          C(MulAction.orbitRel.Quotient G' M', MulAction.orbitRel.Quotient G M)) *ᵖ W),
-      ⇑Φ = fun p ↦ TotalSpace.mk' F₂ (E := ⇑(⟨ψ.orbitRelQuotientMap,
-        (contMDiff_orbitRelQuotientMap hm hψ).continuous⟩ :
-        C(MulAction.orbitRel.Quotient G' M', MulAction.orbitRel.Quotient G M)) *ᵖ W) p.proj
-        (MulAction.orbitRelQuotientRec
-          (V := fun q' ↦ (ψ.orbitRelQuotientMap *ᵖ V) q' →L[𝕜] (ψ.orbitRelQuotientMap *ᵖ W) q')
-          (ψ.pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) φ)
-          (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) p.proj p.snd) := by
-  let f : C(MulAction.orbitRel.Quotient G' M', MulAction.orbitRel.Quotient G M) :=
-    ⟨ψ.orbitRelQuotientMap, (contMDiff_orbitRelQuotientMap hm hψ).continuous⟩
-  rw [exists_bundleDiffeomorph_iff (IB := I') (fun q' ↦ MulAction.orbitRelQuotientRec
+        (⇑(ψ.orbitRelQuotientContinuousMap hψ.continuous) *ᵖ W),
+      ⇑Φ = fun p : TotalSpace F₁ (⇑(ψ.orbitRelQuotientContinuousMap hψ.continuous) *ᵖ V) ↦
+        TotalSpace.mk' F₂ (E := ⇑(ψ.orbitRelQuotientContinuousMap hψ.continuous) *ᵖ W) p.proj
+          (MulAction.orbitRelQuotientRec
+            (V := fun q' ↦ (ψ.orbitRelQuotientMap *ᵖ V) q' →L[𝕜] (ψ.orbitRelQuotientMap *ᵖ W) q')
+            (ψ.pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) φ)
+            (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) p.proj p.snd) := by
+  let f := ψ.orbitRelQuotientContinuousMap hψ.continuous
+  refine (exists_bundleDiffeomorph_iff (IB := I') (fun q' ↦ MulAction.orbitRelQuotientRec
     (V := fun q' ↦ (⇑f *ᵖ V) q' →L[𝕜] (⇑f *ᵖ W) q')
     (ψ.pullbackOrbitSection (V := fun q ↦ V q →L[𝕜] W q) φ)
-    (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) q')]
+    (ψ.pullbackOrbitSection_smul_heq (V := fun q ↦ V q →L[𝕜] W q) hφ) q')).2 ?_
   refine ⟨hφ_smooth.totalSpaceMap_pullbackOrbitSection_orbitRelQuotientRec hψ hφ hm, fun q' ↦ ?_⟩
   have hbij_q : ∀ q, Function.Bijective
       (MulAction.orbitRelQuotientRec (V := fun q ↦ V q →L[𝕜] W q) φ hφ q) :=

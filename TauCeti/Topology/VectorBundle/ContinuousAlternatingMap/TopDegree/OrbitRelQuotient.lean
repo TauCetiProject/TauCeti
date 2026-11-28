@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient.Operations
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap.TopDegree.Basic
-import TauCeti.Topology.Algebra.Module.Determinant.OrbitRelQuotient
 
 /-!
 # Orbit-quotient descent for top-degree alternating forms
@@ -43,6 +42,7 @@ theorem compContinuousLinearMap_orbitRelQuotientRec_eq_det_smul
       MulAction.orbitRelQuotientLift (fun x ↦ (φ x).det)
         (MulAction.apply_smul_eq (fun _ (A : _ →L[𝕜] _) ↦ A.det) hφ) q •
         MulAction.orbitRelQuotientRec (V := fun q ↦ V q [⋀^ι]→L[𝕜] 𝕜) α hα q := by
-  rw [fiber_compContinuousLinearMap_eq_det_smul hrank, det_orbitRelQuotientRec]
+  rw [fiber_compContinuousLinearMap_eq_det_smul hrank,
+    MulAction.apply_orbitRelQuotientRec_eq_orbitRelQuotientLift (fun _ (A : _ →L[𝕜] _) ↦ A.det)]
 
 end TauCeti

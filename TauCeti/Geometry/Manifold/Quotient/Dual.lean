@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Quotient.BundleMap
 public import TauCeti.Geometry.Manifold.VectorBundle.Dual
 import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.OrbitRelQuotient
 
 /-!
 # Compatibility of quotient bundle descent with dual bundles
@@ -17,8 +16,7 @@ For vector bundles over `M ⧸ G`, quotient descent preserves `C^m` regularity (
 evaluation (`ContMDiff.orbitRelQuotientLift_dual_apply`) and fibrewise transpose maps
 (`ContMDiff.section_dual_precomp_orbitRelQuotientRec`,
 `TauCeti.contMDiff_totalSpaceMap_dual_precomp_orbitRelQuotientRec_iff`,
-`TauCeti.exists_bundleDiffeomorph_dual_precomp_orbitRelQuotientRec_iff`), building on
-`TauCeti.Topology.Algebra.Module.ContinuousLinearMap.OrbitRelQuotient`.
+`TauCeti.exists_bundleDiffeomorph_dual_precomp_orbitRelQuotientRec_iff`).
 
 ## References
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Chapters 10, 11, and 21.
@@ -105,7 +103,9 @@ theorem contMDiff_totalSpaceMap_dual_precomp_orbitRelQuotientRec_iff (hm : m ≤
       ContMDiff I (I.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) m (fun x ↦ (TotalSpace.mk' (F₁ →L[𝕜] F₂) x (φ x) :
         TotalSpace (F₁ →L[𝕜] F₂) (⇑(⟨Quotient.mk _, continuous_quotient_mk'⟩ :
           C(M, MulAction.orbitRel.Quotient G M)) *ᵖ (fun q ↦ V₁ q →L[𝕜] V₂ q)))) := by
-  conv_lhs => enter [4, p]; rw [← dual_precomp_orbitRelQuotientRec hφ]
+  conv_lhs =>
+    enter [4, p]
+    rw [← MulAction.apply_orbitRelQuotientRec (fun _ A ↦ ContinuousLinearMap.precomp 𝕜 A) hφ]
   rw [contMDiff_totalSpaceMap_dual_precomp_iff, contMDiff_totalSpaceMap_orbitRelQuotientRec_iff hm]
 
 /-- In finite dimensions over a complete field, the descended dual linear family underlies a `C^m`
@@ -124,7 +124,9 @@ theorem exists_bundleDiffeomorph_dual_precomp_orbitRelQuotientRec_iff (hm : m �
           TotalSpace (F₁ →L[𝕜] F₂) (⇑(⟨Quotient.mk _, continuous_quotient_mk'⟩ :
             C(M, MulAction.orbitRel.Quotient G M)) *ᵖ (fun q ↦ V₁ q →L[𝕜] V₂ q)))) ∧
         ∀ x, Function.Bijective (φ x) := by
-  conv_lhs => enter [1, Φ, 2, p]; rw [← dual_precomp_orbitRelQuotientRec hφ]
+  conv_lhs =>
+    enter [1, Φ, 2, p]
+    rw [← MulAction.apply_orbitRelQuotientRec (fun _ A ↦ ContinuousLinearMap.precomp 𝕜 A) hφ]
   rw [exists_bundleDiffeomorph_dual_precomp_iff,
     exists_bundleDiffeomorph_orbitRelQuotientRec_iff hm]
 
