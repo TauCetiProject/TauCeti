@@ -200,9 +200,7 @@ theorem specialAlgebraicK1_circleRing_ne_bot {k : Type*} [CommRing k] (f : k →
 whenever `k` admits a ring homomorphism `k →+* ℝ`. -/
 theorem not_det_circleRing_injective {k : Type*} [CommRing k] (f : k →+* ℝ) :
     ¬ Function.Injective (AlgebraicK1.det (CircleRing k)) := fun h ↦
-  specialAlgebraicK1_circleRing_ne_bot f <|
-    (Subgroup.eq_bot_iff_forall _).2 fun x hx ↦
-      h (by rw [mem_specialAlgebraicK1_iff.1 hx, map_one])
+  circle_rotation_not_stably_elementary f (h (by simp))
 
 end
 

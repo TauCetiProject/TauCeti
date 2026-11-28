@@ -398,15 +398,24 @@ private theorem fromChart_algebraMap (hε : ε ^ 2 = 1) (h2 : IsUnit (2 : k)) (p
     fromChart hε h2 (algebraMap _ _ p) = fromChartAux ε p := by
   simp [fromChart]
 
+private theorem toChart_invSelf_mul (hε : ε ^ 2 = 1) (h2 : IsUnit (2 : k)) :
+    toChart hε h2 (invSelf (1 + ε • x : CircleRing k)) *
+      (2 * invSelf (1 + X ^ 2 : k[X])) = 1 := by
+  rw [← toChartAux_one_add_smul_x hε, ← toChart_algebraMap hε h2]
+  exact map_mul_eq_one (toChart hε h2) (by rw [mul_comm, mul_invSelf])
+
+private theorem fromChart_invSelf_mul (hε : ε ^ 2 = 1) (h2 : IsUnit (2 : k)) :
+    fromChart hε h2 (invSelf (1 + X ^ 2 : k[X])) *
+      (2 * invSelf (1 + ε • x : CircleRing k)) = 1 := by
+  rw [← fromChartAux_one_add_X_sq hε, ← fromChart_algebraMap hε h2]
+  exact map_mul_eq_one (fromChart hε h2) (by rw [mul_comm, mul_invSelf])
+
 private theorem toChart_comp_fromChart (hε : ε ^ 2 = 1) (h2 : IsUnit (2 : k)) :
     (toChart hε h2).comp (fromChart hε h2) = AlgHom.id k _ := by
   refine IsLocalization.algHom_ext (Submonoid.powers (1 + X ^ 2 : k[X]))
     (Polynomial.algHom_ext ?_)
   -- `(1 + εx)⁻¹` goes to `(1 + t²) / 2`
-  have hv : toChart hε h2 (invSelf (1 + ε • x : CircleRing k)) *
-      (2 * invSelf (1 + X ^ 2 : k[X])) = 1 := by
-    rw [← toChartAux_one_add_smul_x hε, ← toChart_algebraMap hε h2]
-    exact map_mul_eq_one (toChart hε h2) (by rw [mul_comm, mul_invSelf])
+  have hv := toChart_invSelf_mul hε h2
   -- `t ↦ y / (1 + εx) ↦ (2t / (1 + t²)) · (1 + t²) / 2 = t`
   simp only [AlgHom.comp_apply, Algebra.algHom, IsScalarTower.toAlgHom_apply,
     fromChart_algebraMap, fromChartAux, aeval_X, map_mul, toChart_algebraMap, toChartAux_y,
@@ -419,10 +428,7 @@ private theorem fromChart_comp_toChart (hε : ε ^ 2 = 1) (h2 : IsUnit (2 : k)) 
     (algHom_ext ?_ ?_)
   all_goals
     -- `(1 + t²)⁻¹` goes to `(1 + εx) / 2`
-    have hw : fromChart hε h2 (invSelf (1 + X ^ 2 : k[X])) *
-        (2 * invSelf (1 + ε • x : CircleRing k)) = 1 := by
-      rw [← fromChartAux_one_add_X_sq hε, ← fromChart_algebraMap hε h2]
-      exact map_mul_eq_one (fromChart hε h2) (by rw [mul_comm, mul_invSelf])
+    have hw := fromChart_invSelf_mul hε h2
     simp only [AlgHom.comp_apply, Algebra.algHom, IsScalarTower.toAlgHom_apply,
       toChart_algebraMap, toChartAux_x, toChartAux_y, map_mul, AlgHom.commutes,
       fromChart_algebraMap, fromChartAux, map_sub, map_one, map_pow, aeval_X, map_ofNat,
@@ -433,6 +439,19 @@ private theorem fromChart_comp_toChart (hε : ε ^ 2 = 1) (h2 : IsUnit (2 : k)) 
   · -- `y ↦ 2t / (1 + t²) ↦ 2 (y / (1 + εx)) (1 + εx) / 2 = y`
     linear_combination
       algebraMap (CircleRing k) (Localization.Away (1 + ε • x : CircleRing k)) y * hw
+
+private theorem two_mul_invSelf_mul_inv_two_mul_algebraMap {R : Type*} [CommRing R] [Algebra k R]
+    (h2 : IsUnit (2 : k)) (s : R) :
+    (2 * invSelf s) *
+      (algebraMap k (Localization.Away s) (↑h2.unit⁻¹ : k) * algebraMap R _ s) = 1 := by
+  calc
+    (2 * invSelf s) *
+        (algebraMap k (Localization.Away s) (↑h2.unit⁻¹ : k) * algebraMap R _ s)
+        = (algebraMap k _ (2 : k) * algebraMap k _ (↑h2.unit⁻¹ : k)) *
+            (algebraMap R _ s * invSelf s) := by
+          rw [map_ofNat]; ring
+    _ = 1 := by
+          rw [← map_mul, h2.mul_val_inv, map_one, mul_invSelf, mul_one]
 
 /-- **The stereographic chart of the circle.** When `2` is invertible and `ε² = 1`, stereographic
 projection from the point `(-ε, 0)` identifies the chart `1 + εx ≠ 0` of the circle with
@@ -461,28 +480,9 @@ theorem stereographicEquiv_algebraMap_y (hε : ε ^ 2 = 1) (h2 : IsUnit (2 : k))
 @[simp]
 theorem stereographicEquiv_invSelf (hε : ε ^ 2 = 1) (h2 : IsUnit (2 : k)) :
     stereographicEquiv hε h2 (invSelf (1 + ε • x : CircleRing k)) =
-      algebraMap k _ (↑h2.unit⁻¹ : k) * algebraMap k[X] _ (1 + X ^ 2) := by
-  have hu : stereographicEquiv hε h2 (algebraMap (CircleRing k) _ (1 + ε • x)) =
-      2 * invSelf (1 + X ^ 2 : k[X]) := by
-    rw [stereographicEquiv, AlgEquiv.ofAlgHom_apply, toChart_algebraMap,
-      toChartAux_one_add_smul_x hε]
-  have hmul : stereographicEquiv hε h2 (invSelf (1 + ε • x : CircleRing k)) *
-      (2 * invSelf (1 + X ^ 2 : k[X])) = 1 := by
-    rw [← hu]
-    exact map_mul_eq_one (stereographicEquiv hε h2) (by rw [mul_comm, mul_invSelf])
-  have hinv : (algebraMap k (Localization.Away (1 + X ^ 2 : k[X])) (↑h2.unit⁻¹ : k) *
-        algebraMap k[X] _ (1 + X ^ 2)) *
-      (2 * invSelf (1 + X ^ 2 : k[X])) = 1 := by
-    calc
-      (algebraMap k (Localization.Away (1 + X ^ 2 : k[X])) (↑h2.unit⁻¹ : k) *
-            algebraMap k[X] _ (1 + X ^ 2)) *
-          (2 * invSelf (1 + X ^ 2 : k[X]))
-          = (algebraMap k _ (↑h2.unit⁻¹ : k) * algebraMap k _ (2 : k)) *
-              (algebraMap k[X] _ (1 + X ^ 2) * invSelf (1 + X ^ 2 : k[X])) := by
-            rw [map_ofNat]; ring
-      _ = 1 := by
-            rw [← map_mul, h2.val_inv_mul, map_one, mul_invSelf, mul_one]
-  exact (IsUnit.of_mul_eq_one_right _ hmul).mul_right_cancel (hmul.trans hinv.symm)
+      algebraMap k _ (↑h2.unit⁻¹ : k) * algebraMap k[X] _ (1 + X ^ 2) :=
+  left_inv_eq_right_inv (toChart_invSelf_mul hε h2)
+    (two_mul_invSelf_mul_inv_two_mul_algebraMap h2 (1 + X ^ 2 : k[X]))
 
 /-- The stereographic coordinate is `t = y / (1 + εx)`. -/
 @[simp]
@@ -496,29 +496,9 @@ theorem stereographicEquiv_symm_algebraMap_X (hε : ε ^ 2 = 1) (h2 : IsUnit (2 
 @[simp]
 theorem stereographicEquiv_symm_invSelf (hε : ε ^ 2 = 1) (h2 : IsUnit (2 : k)) :
     (stereographicEquiv hε h2).symm (invSelf (1 + X ^ 2 : k[X])) =
-      algebraMap k _ (↑h2.unit⁻¹ : k) * algebraMap (CircleRing k) _ (1 + ε • x) := by
-  have hu : (stereographicEquiv hε h2).symm (algebraMap k[X] _ (1 + X ^ 2)) =
-      2 * invSelf (1 + ε • x : CircleRing k) := by
-    rw [stereographicEquiv, AlgEquiv.ofAlgHom_symm_apply, fromChart_algebraMap,
-      fromChartAux_one_add_X_sq hε]
-  have hmul : (stereographicEquiv hε h2).symm (invSelf (1 + X ^ 2 : k[X])) *
-      (2 * invSelf (1 + ε • x : CircleRing k)) = 1 := by
-    rw [← hu]
-    exact map_mul_eq_one (stereographicEquiv hε h2).symm (by rw [mul_comm, mul_invSelf])
-  have hinv : (algebraMap k (Localization.Away (1 + ε • x : CircleRing k)) (↑h2.unit⁻¹ : k) *
-        algebraMap (CircleRing k) _ (1 + ε • x)) *
-      (2 * invSelf (1 + ε • x : CircleRing k)) = 1 := by
-    calc
-      (algebraMap k (Localization.Away (1 + ε • x : CircleRing k)) (↑h2.unit⁻¹ : k) *
-            algebraMap (CircleRing k) _ (1 + ε • x)) *
-          (2 * invSelf (1 + ε • x : CircleRing k))
-          = (algebraMap k _ (↑h2.unit⁻¹ : k) * algebraMap k _ (2 : k)) *
-              (algebraMap (CircleRing k) _ (1 + ε • x) *
-                invSelf (1 + ε • x : CircleRing k)) := by
-            rw [map_ofNat]; ring
-      _ = 1 := by
-            rw [← map_mul, h2.val_inv_mul, map_one, mul_invSelf, mul_one]
-  exact (IsUnit.of_mul_eq_one_right _ hmul).mul_right_cancel (hmul.trans hinv.symm)
+      algebraMap k _ (↑h2.unit⁻¹ : k) * algebraMap (CircleRing k) _ (1 + ε • x) :=
+  left_inv_eq_right_inv (fromChart_invSelf_mul hε h2)
+    (two_mul_invSelf_mul_inv_two_mul_algebraMap h2 (1 + ε • x : CircleRing k))
 
 private theorem one_add_smul_x_mul_one_sub_smul_x (hε : ε ^ 2 = 1) :
     (1 + ε • x : CircleRing k) * (1 - ε • x) = y ^ 2 := by
@@ -551,17 +531,11 @@ theorem chartToOverlap_algebraMap (hε : ε ^ 2 = 1) (a : CircleRing k) :
 theorem chartToOverlap_invSelf (hε : ε ^ 2 = 1) :
     chartToOverlap hε (invSelf (1 + ε • x : CircleRing k)) =
       algebraMap (CircleRing k) _ (1 - ε • x) * invSelf (y : CircleRing k) ^ 2 := by
-  refine (isUnit_one_add_smul_x_away_y hε).mul_left_cancel ?_
-  calc
-    algebraMap (CircleRing k) _ (1 + ε • x) * chartToOverlap hε (invSelf (1 + ε • x))
-        = chartToOverlap hε (algebraMap (CircleRing k) _ (1 + ε • x) * invSelf (1 + ε • x)) := by
-          rw [map_mul, chartToOverlap_algebraMap]
-    _ = 1 := by rw [mul_invSelf, map_one]
-    _ = (algebraMap (CircleRing k) _ y * invSelf (y : CircleRing k)) ^ 2 := by
-          rw [mul_invSelf, one_pow]
-    _ = algebraMap (CircleRing k) _ (1 + ε • x) *
-          (algebraMap (CircleRing k) _ (1 - ε • x) * invSelf (y : CircleRing k) ^ 2) := by
-          rw [mul_pow, ← map_pow, ← one_add_smul_x_mul_one_sub_smul_x hε, map_mul, mul_assoc]
+  refine left_inv_eq_right_inv (a := algebraMap (CircleRing k) _ (1 + ε • x)) ?_ ?_
+  · rw [← chartToOverlap_algebraMap hε]
+    exact map_mul_eq_one (chartToOverlap hε) (by rw [mul_comm, mul_invSelf])
+  · rw [← mul_assoc, ← map_mul, one_add_smul_x_mul_one_sub_smul_x hε, map_pow, ← mul_pow,
+      mul_invSelf, one_pow]
 
 /-- **Overlap compatibility of the explicit stereographic coordinates.** On `k[x, y, y⁻¹]`, the
 localized coordinates `y / (1 + εx)` and `y / (1 - εx)` for `ε² = 1` are mutually inverse,
