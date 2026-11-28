@@ -30,6 +30,8 @@ such a quotient between values of elements of `A` is seen by `x`.
 
 * `TauCeti.ValuationSpectrum.ofValuation_coarsenByUnits_specializes`: a coarsening of a valuation
   is a generization of it.
+* `TauCeti.ValuationSpectrum.ofValuation_valuation_specializes_of_le`: for valuation subrings
+  `W ⊆ O` of a field, the point of `O` is a generization of the point of `W`.
 * `TauCeti.ValuationSpectrum.comap_ofValuation_coarsenByUnits_eq`: a vertical generization of the
   pullback of `ofValuation w` is the pullback of a coarsening of `w`.
 * `TauCeti.ValuationSpectrum.exists_specializes_comap_eq`: vertical generizations lift along ring
@@ -58,6 +60,15 @@ theorem ofValuation_coarsenByUnits_specializes (w : Valuation B Δ₀) (H : Conv
   rw [mem_basicOpen_iff, vle_ofValuation, vle_ofValuation, map_zero, nonpos_iff_eq_zero] at hfs ⊢
   rw [coarsenByUnits_apply, coarsenByUnits_apply, map_eq_zero]
   exact ⟨coarsenMapOfValueGroup_monotone H hfs.1, hfs.2⟩
+
+/-- **A larger valuation subring is a generization.** For valuation subrings `W ⊆ O` of a field
+`K`, the point of `Spv K` given by `O` specializes to the point given by `W`. -/
+theorem ofValuation_valuation_specializes_of_le {K : Type*} [Field K] {O W : ValuationSubring K}
+    (h : W ≤ O) : ofValuation O.valuation ⤳ ofValuation W.valuation := by
+  refine specializes_of_forall_mem_basicOpen fun f s hfs ↦ ?_
+  rw [mem_basicOpen_iff, vle_ofValuation, vle_ofValuation, map_zero, nonpos_iff_eq_zero] at hfs ⊢
+  rw [← W.mapOfLE_valuation_apply O h, ← W.mapOfLE_valuation_apply O h, map_eq_zero]
+  exact ⟨W.monotone_mapOfLE O h hfs.1, hfs.2⟩
 
 /-- The set of units generating the convex subgroup by which `w` is coarsened: the quotients
 `w(φ c) / w(φ d) ≥ 1` with `x(c) = x(d) ≠ 0`. -/

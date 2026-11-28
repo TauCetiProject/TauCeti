@@ -20,6 +20,9 @@ maximal ideal (`TauCeti.IsLocalRing.mem_maximalIdeal_of_not_dvd`), and every irr
 lies in `IsLocalRing.maximalIdeal R` (`Irreducible.mem_maximalIdeal`) and is never a product of two
 elements of `IsLocalRing.maximalIdeal R` (`Irreducible.ne_mul_of_mem_maximalIdeal`).
 
+In a commutative local ring, `1 - xⁿ` is a unit for every `x` in the maximal ideal and every
+`n ≠ 0` (`TauCeti.IsLocalRing.isUnit_one_sub_pow_of_mem_maximalIdeal`).
+
 In a commutative local ring, a minimal nonzero ideal is annihilated by the maximal ideal
 (`IsAtom.maximalIdeal_mul_eq_bot`).
 
@@ -48,6 +51,14 @@ theorem infinite_maximalIdeal {R : Type*} [CommRing R] [IsDomain R] [IsLocalRing
   -- A finite domain is a field, so `R` is infinite, and its nonzero maximal ideal is infinite.
   have : Infinite R := not_finite_iff_infinite.mp fun _ ↦ hR (Finite.isField_of_domain R)
   Ideal.infinite_of_ne_bot (_root_.IsLocalRing.isField_iff_maximalIdeal_eq.not.mp hR)
+
+/-- In a commutative local ring, `1 - xⁿ` is a unit for every `x` in the maximal ideal and every
+`n ≠ 0`. -/
+theorem isUnit_one_sub_pow_of_mem_maximalIdeal {R : Type*} [CommRing R] [IsLocalRing R] {x : R}
+    (hx : x ∈ _root_.IsLocalRing.maximalIdeal R) {n : ℕ} (hn : n ≠ 0) : IsUnit (1 - x ^ n) :=
+  _root_.IsLocalRing.isUnit_one_sub_self_of_mem_nonunits _
+    ((_root_.IsLocalRing.mem_maximalIdeal _).mp
+      (Ideal.pow_mem_of_mem _ hx _ (Nat.pos_of_ne_zero hn)))
 
 end TauCeti.IsLocalRing
 

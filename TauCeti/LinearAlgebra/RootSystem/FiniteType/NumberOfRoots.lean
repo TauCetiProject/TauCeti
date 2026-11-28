@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classification
 public import TauCeti.LinearAlgebra.RootSystem.NumberOfRoots
 public import TauCeti.LinearAlgebra.RootSystem.Positive
-import TauCeti.LinearAlgebra.RootSystem.Isomorphism
+import TauCeti.LinearAlgebra.RootSystem.Isomorphism.Basic
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 
 /-!

@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Exactness
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.AlgebraicGeometry.AffineScheme
+public import TauCeti.CategoryTheory.Sites.ExactImageSieve
 
 /-!
 # The underlying abelian sheaf of a sheaf of modules on a scheme
@@ -29,6 +30,8 @@ using sections over the members of a basis.
   sections over `U` induced by an isomorphism of `𝒪_X`-modules;
 * `TauCeti.AlgebraicGeometry.Scheme.Modules.shortExact_map_toSheaf`: a short exact sequence of
   `𝒪_X`-modules stays short exact after forgetting the module structures;
+* `AlgebraicGeometry.Scheme.Modules.exists_app_eq_of_exact`: in an exact sequence of
+  `𝒪_X`-modules, a section of the middle term killed by the second map lifts locally;
 * `AlgebraicGeometry.Scheme.Modules.Hom.epi_of_surjective_app_of_isBasis`: a morphism of
   `𝒪_X`-modules that is surjective on the sections over the members of a basis is an epimorphism;
 * `AlgebraicGeometry.Scheme.Modules.Hom.naturality_apply`: a morphism of `𝒪_X`-modules commutes
@@ -142,6 +145,23 @@ exact sequence of sheaves of abelian groups. -/
 theorem shortExact_map_toSheaf {S : ShortComplex X.Modules} (hS : S.ShortExact) :
     (S.map (toSheaf X)).ShortExact :=
   hS.map_of_exact _
+
+/-- **Kernel sections lift locally.** In an exact sequence `F' ⟶ F ⟶ F''` of `𝒪_X`-modules, a
+section of `F` over `U` with image zero in `F''` comes from `F'` near every point of `U`. The
+sequence stays exact after `toSheaf X`, where kernel sections lift locally
+(`CategoryTheory.ShortComplex.Exact.imageSieve_mem`). -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.exists_app_eq_of_exact
+    {K : ShortComplex X.Modules} (hK : K.Exact) {U : X.Opens} (s : Γ(K.X₂, U))
+    (hs : K.g.app U s = 0) {x : X} (hx : x ∈ U) :
+    ∃ (V : X.Opens) (i : V ⟶ U) (t : Γ(K.X₁, V)), x ∈ V ∧
+      K.f.app V t = K.X₂.presheaf.map i.op s := by
+  -- `toSheaf X` sends a morphism to its `mapPresheaf`, rewritten below; the sections of the
+  -- underlying sheaf of an `𝒪_X`-module are its sections by definition.
+  obtain ⟨V, i, ⟨t, ht⟩, hxV⟩ := (hK.map (toSheaf X)).imageSieve_mem (U := U) s (by
+    rw [ShortComplex.map_g, toSheaf_map_hom, Scheme.Modules.mapPresheaf_app]
+    exact hs) x hx
+  rw [ShortComplex.map_f, toSheaf_map_hom, Scheme.Modules.mapPresheaf_app] at ht
+  exact ⟨V, i, t, hxV, ht⟩
 
 /-- A morphism of `𝒪_X`-modules that is surjective on the sections over the members of a basis of
 the topology of `X` is an epimorphism. No quasicoherence hypothesis is required. -/

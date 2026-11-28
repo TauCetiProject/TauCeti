@@ -60,11 +60,6 @@ namespace Real
 private theorem one_half_add_mul_I_mem_slitPlane (a : ℝ) : (1 / 2 + a * I : ℂ) ∈ slitPlane :=
   mem_slitPlane_iff.mpr (Or.inl (by simp))
 
-/-- `ψ` is continuous on the line `Re s = ½`. -/
-private theorem continuous_digamma_one_half_add_mul_I :
-    Continuous fun t : ℝ => Complex.digamma (1 / 2 + t * I) :=
-  analyticOnNhd_digamma_re_pos.continuousOn.comp_continuous (by fun_prop) fun t => by simp
-
 /-- The continuous phase `φ₂(a) = ph Γ(½ + ia)` with `φ₂(0) = 0` (DLMF 12.14.7),
 `φ₂(a) = ∫₀ᵃ Re ψ(½ + it) dt`. -/
 def gammaHalfPhase (a : ℝ) : ℝ :=
@@ -79,7 +74,9 @@ theorem gammaHalfPhase_def (a : ℝ) :
 theorem hasDerivAt_gammaHalfPhase (a : ℝ) :
     HasDerivAt gammaHalfPhase (Complex.digamma (1 / 2 + a * I)).re a := by
   rw [funext gammaHalfPhase_def]
-  exact ((continuous_re.comp continuous_digamma_one_half_add_mul_I).integral_hasStrictDerivAt
+  have hψ := continuous_digamma_ofReal_add_mul_I (σ := 1 / 2) (by norm_num)
+  push_cast at hψ
+  exact ((continuous_re.comp hψ).integral_hasStrictDerivAt
     0 a).hasDerivAt
 
 /-- `φ₂(0) = 0`. -/
@@ -114,21 +111,10 @@ theorem deriv_gammaHalfPhase_zero :
 /-- `φ₂(a) = Im log Γ(½ + ia)`, for the normalized logarithm `TauCeti.logGamma` of `Γ`. -/
 theorem gammaHalfPhase_eq_im_logGamma (a : ℝ) :
     gammaHalfPhase a = (logGamma (1 / 2 + a * I)).im := by
-  have hd (t : ℝ) : HasDerivAt (fun t : ℝ => (logGamma (1 / 2 + t * I)).im)
-      (Complex.digamma (1 / 2 + t * I)).re t := by
-    have hL := hasDerivAt_logGamma (one_half_add_mul_I_mem_slitPlane t)
-    have hl : HasDerivAt (fun t : ℝ => (1 / 2 : ℂ) + t * I) I t := by
-      simpa using (((hasDerivAt_id (t : ℂ)).mul_const I).const_add (1 / 2 : ℂ)).comp_ofReal
-    exact (imCLM.hasFDerivAt.comp_hasDerivAt t (hL.comp t hl)).congr_deriv (by simp)
-  -- `log Γ(½)` is real, by `logGamma_ofReal`.
-  have h0 : (logGamma (1 / 2)).im = 0 := by
-    have h := logGamma_ofReal (x := 1 / 2) (by norm_num)
-    -- Normalize the cast `((1 / 2 : ℝ) : ℂ)` to the complex literal `1 / 2` of the goal.
-    push_cast at h
-    rw [h, ofReal_im]
-  rw [gammaHalfPhase_def, intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ => hd t)
-    ((continuous_re.comp continuous_digamma_one_half_add_mul_I).intervalIntegrable 0 a)]
-  simp only [ofReal_zero, zero_mul, add_zero, h0, sub_zero]
+  rw [gammaHalfPhase_def]
+  have h := integral_re_digamma_ofReal_add_mul_I (σ := 1 / 2) (by norm_num) a
+  push_cast at h
+  exact h
 
 /-- **The phase identity** (DLMF 12.14.7): `Γ(½ + ia) = |Γ(½ + ia)| e^{iφ₂(a)}`. -/
 theorem Gamma_one_half_add_mul_I (a : ℝ) :

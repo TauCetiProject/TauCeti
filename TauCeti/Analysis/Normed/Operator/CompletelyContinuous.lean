@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Module.LinearMap.FiniteRank
 public import TauCeti.Analysis.Normed.Operator.RingOpNorm
-import Mathlib.Algebra.Ring.GeomSum
 import TauCeti.Analysis.Normed.Operator.Surjective
 
 /-!
@@ -40,10 +39,9 @@ Completely continuous maps are closed under addition, scalar multiplication and 
 approximation, under composition on either side with bounded continuous linear maps, and over
 Tate scalars under composition on either side with arbitrary continuous linear maps. The
 identity of a complete normed module is completely continuous exactly when the module is finitely
-generated: an approximant of finite rank within distance `1 / 2` of the identity is surjective
-(`TauCeti.surjective_of_norm_sub_apply_le`), so its range, which lies in a finitely generated
-submodule, is everything. Consequently a completely continuous `u` with `(1 - u) ^ n = 0` forces
-the module to be finitely generated.
+generated. More generally, a completely continuous endomorphism `u` with `(1 - u) ^ n = 0`
+forces finite generation over an arbitrary coefficient ring. Only the error in approximating
+`u` by a finite-rank map needs a uniform norm bound.
 
 ## Main definitions
 
@@ -352,34 +350,30 @@ section Complete
 
 variable {R M : Type*} [Ring R] [NormedAddCommGroup M] [Module R M] [CompleteSpace M]
 
+/-- A complete normed module admitting a completely continuous endomorphism `u` with
+`(1 - u) ^ n = 0` is finitely generated. -/
+theorem IsCompletelyContinuous.finite_of_one_sub_pow_eq_zero {u : M →L[R] M}
+    (hu : u.IsCompletelyContinuous) {n : ℕ} (hn : (1 - u) ^ n = 0) : Module.Finite R M := by
+  obtain ⟨v, hv, huv⟩ := hu (1 / 2) one_half_pos
+  let a := (1 - u : M →L[R] M).toLinearMap
+  let b := a + v.toLinearMap
+  -- The finite-rank perturbation b of a is within 1/2 of the identity, hence surjective.
+  have hb : Function.Surjective b :=
+    TauCeti.surjective_of_norm_sub_apply_le one_half_lt_one fun x ↦ by
+      simpa [b, a, sub_add_eq_sub_sub] using huv x
+  -- The same power that kills a therefore gives a surjective finite-rank map.
+  have ha : a ^ n = 0 := by simp only [a, ← toLinearMap_pow, hn, toLinearMap_zero]
+  have hba : (b - a).IsFiniteRank := by simpa [b] using hv
+  have hbn : (b ^ n).IsFiniteRank := by simpa [ha] using hba.pow_sub_pow n
+  exact hbn.finite_of_surjective (by simpa only [FunLike.coe_pow_eq_iterate] using hb.iterate n)
+
 /-- **The identity criterion.** The identity of a complete normed module is completely continuous
 if and only if the module is finitely generated. -/
 theorem isCompletelyContinuous_id_iff :
-    (ContinuousLinearMap.id R M).IsCompletelyContinuous ↔ Module.Finite R M := by
-  refine ⟨fun h ↦ ?_, fun _ ↦ isCompletelyContinuous_of_finite _⟩
-  obtain ⟨v, hvQ, hv⟩ := h (1 / 2) one_half_pos
-  obtain ⟨Q, hQ, hvQ⟩ := LinearMap.isFiniteRank_iff.mp hvQ
-  have hrange : LinearMap.range (v : M →ₗ[R] M) = ⊤ :=
-    LinearMap.range_eq_top.mpr (TauCeti.surjective_of_norm_sub_apply_le one_half_lt_one hv)
-  exact ⟨eq_top_iff.mpr (hrange.ge.trans hvQ) ▸ hQ⟩
+    (ContinuousLinearMap.id R M).IsCompletelyContinuous ↔ Module.Finite R M :=
+  ⟨fun h ↦ h.finite_of_one_sub_pow_eq_zero (n := 1) (by simp [one_def]),
+    fun _ ↦ isCompletelyContinuous_of_finite _⟩
 
 end Complete
-
-section TateComplete
-
-variable {R M : Type*} [SeminormedRing R] [TauCeti.NormedRing.IsTate R]
-  [NormedAddCommGroup M] [Module R M] [IsBoundedSMul R M] [CompleteSpace M]
-
-/-- Over Tate scalars, a completely continuous endomorphism `u` of a complete normed module with
-`(1 - u) ^ n = 0` forces the module to be finitely generated, since `u` then has the right
-inverse `∑_{k < n} (1 - u) ^ k`. -/
-theorem IsCompletelyContinuous.finite_of_one_sub_pow_eq_zero {u : M →L[R] M}
-    (hu : u.IsCompletelyContinuous) {n : ℕ} (hn : (1 - u) ^ n = 0) : Module.Finite R M := by
-  have h : u * ∑ k ∈ Finset.range n, (1 - u) ^ k = 1 := by
-    simpa [hn] using mul_neg_geom_sum (1 - u) n
-  rw [← isCompletelyContinuous_id_iff, ← one_def, ← h]
-  exact hu.comp_clm _
-
-end TateComplete
 
 end ContinuousLinearMap

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.Restricted.GaussNorm
+public import TauCeti.RingTheory.Huber.Restricted.Gauss.Norm
 public import TauCeti.RingTheory.KrullDimension.Basic
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Jacobson
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.KrullDimension
@@ -29,7 +29,7 @@ The polynomial algebra `K[X₁, …, Xₙ]` maps into the completion through the
 `TauCeti.Huber.weightedPolynomialHom` followed by the completion map; under the comparison this
 is the Gauss-normed polynomial inclusion
 (`TauCeti.Huber.restrictedMvPowerSeriesCompletionGaussEquiv_comp_weightedPolynomialHom`, in
-`TauCeti.RingTheory.Huber.Restricted.GaussNorm`).
+`TauCeti.RingTheory.Huber.Restricted.Gauss.Norm`).
 
 ## Main results
 

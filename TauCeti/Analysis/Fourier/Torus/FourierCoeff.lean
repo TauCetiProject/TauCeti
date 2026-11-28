@@ -71,6 +71,16 @@ theorem mFourierCoeff_add {f g : UnitAddTorus d → E} (hf : Integrable f) (hg :
   simp only [TauCeti.UnitAddTorus.mFourierCoeff_eq_integral_volume, Pi.add_apply, smul_add]
   exact integral_add (hφ f hf) (hφ g hg)
 
+/-- Fourier coefficients commute with finite sums of integrable functions. -/
+theorem mFourierCoeff_sum {ι : Type*} {s : Finset ι} {f : ι → UnitAddTorus d → E}
+    (hf : ∀ i ∈ s, Integrable (f i)) (n : d → ℤ) :
+    mFourierCoeff (∑ i ∈ s, f i) n = ∑ i ∈ s, mFourierCoeff (f i) n := by
+  simp only [TauCeti.UnitAddTorus.mFourierCoeff_eq_integral_volume, Finset.sum_apply,
+    Finset.smul_sum]
+  exact integral_finsetSum _ fun i hi ↦
+    (hf i hi).bdd_smul 1 (mFourier (-n)).continuous.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun z ↦ (norm_mFourier_apply _ z).le)
+
 /-- Taking Fourier coefficients commutes with scalar multiplication. -/
 @[simp]
 theorem mFourierCoeff_smul (c : ℂ) (f : UnitAddTorus d → E) (n : d → ℤ) :

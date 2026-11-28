@@ -40,6 +40,9 @@ homology with the first integral homology modulo two
 
 `H₁(X; ℤ) ⧸ 2 H₁(X; ℤ) ≃ H₁(X; ℤ/2)`.
 
+So the first mod-two homology vanishes exactly when multiplication by two is onto `H₁(X; ℤ)`
+(`TopCat.subsingleton_singularHomology_one_iff_surjective_zsmul`).
+
 The companion statement that mod-two acyclicity in two adjacent degrees makes multiplication by two
 bijective is `TopCat.isUniquelyTwoDivisible_singularHomology_of_isZero_mod_two`.
 
@@ -146,5 +149,21 @@ theorem singularHomologyOneModTwoAddEquiv_mk (X : TopCat.{u})
     X.singularHomologyOneModTwoAddEquiv (Submodule.Quotient.mk x) =
       X.singularHomologyReductionMod 2 1 x := by
   simp [singularHomologyOneModTwoAddEquiv]
+
+/-- **The first mod-two homology vanishes exactly when `H₁(X; ℤ)` is two-divisible**: with
+coefficients in a ring `k` isomorphic to `ZMod 2`, `H₁(X; k) = 0` exactly when multiplication by
+two is onto `H₁(X; ℤ)`. -/
+theorem subsingleton_singularHomology_one_iff_surjective_zsmul (X : TopCat.{u}) {k : Type u}
+    [CommRing k] (e : k ≃+* ZMod 2) :
+    Subsingleton (((singularHomologyFunctor (ModuleCat.{u} k) 1).obj (ModuleCat.of k k)).obj X) ↔
+      Function.Surjective fun y : ((singularHomologyFunctor (ModuleCat.{u} ℤ) 1).obj
+        (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X ↦ (2 : ℤ) • y := by
+  rw [← ModuleCat.isZero_iff_subsingleton,
+    ← X.isZero_singularHomology_zmod_iff_of_ringEquiv 2 e, ModuleCat.isZero_iff_subsingleton,
+    ← X.singularHomologyOneModTwoAddEquiv.subsingleton_congr, Submodule.Quotient.subsingleton_iff,
+    LinearMap.range_eq_top]
+  -- the integer action of the integer module agrees with that of the abelian group
+  refine Iff.of_eq (congrArg Function.Surjective (funext fun y ↦ ?_))
+  simp [two_smul, two_zsmul]
 
 end TopCat
