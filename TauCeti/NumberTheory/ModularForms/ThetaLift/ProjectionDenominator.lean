@@ -68,28 +68,37 @@ def IsCoordinateIntegralAt {K : Type w} [NormedField K] (place : ℂ →+* K)
     (b : Basis ι ℂ E) (x : E) : Prop :=
   ∀ j, ‖place (b.repr x j)‖ ≤ 1
 
+/-- A vector is coordinate-integral exactly when each coordinate has norm at most one at
+`place`. -/
+theorem isCoordinateIntegralAt_def {K : Type w} [NormedField K] {place : ℂ →+* K}
+    {b : Basis ι ℂ E} {x : E} :
+    IsCoordinateIntegralAt place b x ↔ ∀ j, ‖place (b.repr x j)‖ ≤ 1 := Iff.rfl
+
 /-- The coordinate lattice at an ultrametric place, as an additive subgroup of the ambient space. -/
 def coordinateIntegralLattice {K : Type w} [NormedField K] [IsUltrametricDist K]
-    (place : ℂ →+* K) (b : Basis ι ℂ E) : AddSubgroup E where
-  carrier := {x | IsCoordinateIntegralAt place b x}
-  zero_mem' := fun j ↦ by simp
-  add_mem' := fun {x y} hx hy j ↦ by
-    simp only [map_add, Finsupp.add_apply]
-    exact (IsUltrametricDist.norm_add_le_max _ _).trans (max_le (hx j) (hy j))
-  neg_mem' := fun {x} hx j ↦ by
-    simpa using hx j
+    (place : ℂ →+* K) (b : Basis ι ℂ E) : AddSubgroup E :=
+  ⨅ j, (IsUltrametricDist.closedBall_openAddSubgroup K one_pos).toAddSubgroup.comap
+    { toFun := fun x ↦ place (b.repr x j)
+      map_zero' := by simp
+      map_add' := fun x y ↦ by simp }
 
 /-- Membership in `coordinateIntegralLattice` is coordinate integrality at `place`. -/
 @[simp]
 theorem mem_coordinateIntegralLattice {K : Type w} [NormedField K] [IsUltrametricDist K]
     {place : ℂ →+* K} {b : Basis ι ℂ E} {x : E} :
-    x ∈ coordinateIntegralLattice place b ↔ IsCoordinateIntegralAt place b x :=
-  Iff.rfl
+    x ∈ coordinateIntegralLattice place b ↔ IsCoordinateIntegralAt place b x := by
+  simp [coordinateIntegralLattice, IsCoordinateIntegralAt,
+    IsUltrametricDist.closedBall_openAddSubgroup]
 
 /-- Global coordinate integrality at a prime `p` means coordinate integrality under every complex
 embedding into `ℂ_[p]`. -/
 def IsCoordinateIntegralEverywhere (p : ℕ) [Fact p.Prime] (b : Basis ι ℂ E) (x : E) : Prop :=
   ∀ place : ℂ →+* ℂ_[p], IsCoordinateIntegralAt place b x
+
+/-- Global coordinate integrality is equivalent to integrality at every place over `p`. -/
+theorem isCoordinateIntegralEverywhere_def {p : ℕ} [Fact p.Prime] {b : Basis ι ℂ E} {x : E} :
+    IsCoordinateIntegralEverywhere p b x ↔
+      ∀ place : ℂ →+* ℂ_[p], IsCoordinateIntegralAt place b x := Iff.rfl
 
 /-- Every basis vector is coordinate-integral at every place. -/
 theorem isCoordinateIntegralEverywhere_basis (p : ℕ) [Fact p.Prime] (b : Basis ι ℂ E) (i : ι) :
@@ -118,6 +127,19 @@ def DenominatorLe (p : ℕ) [Fact p.Prime] {K : Type w} [NormedField K] [IsUltra
       ∀ y', IsCoordinateIntegralEverywhere p b y' →
         ‖place ⟪y', ((Λ (Z.orthogonalProjectionOnto y) : Z) : E)⟫_ℂ‖ ≤ 1
 
+/-- A denominator bound is equivalent to the existence of a denominator-clearing endomorphism
+with the required determinant bound and integral pairings on `admissible`. -/
+theorem denominatorLe_def {p : ℕ} [Fact p.Prime] {K : Type w} [NormedField K] [IsUltrametricDist K]
+    {place : ℂ →+* K} {b : Basis ι ℂ E} {Z : Submodule ℂ E} [FiniteDimensional ℂ Z]
+    {admissible : Submodule ℂ E} {r : ℕ} {β : ℝ} :
+    DenominatorLe p place b Z admissible r β ↔
+      ∃ Λ : Module.End ℂ Z,
+        Real.exp (-((Module.finrank ℂ Z * r : ℕ) : ℝ) * β) ≤ ‖place (LinearMap.det Λ)‖ ∧
+        ∀ y ∈ coordinateIntegralLattice place b, y ∈ admissible →
+          ((Λ (Z.orthogonalProjectionOnto y) : Z) : E) ∈ coordinateIntegralLattice place b ∧
+          ∀ y', IsCoordinateIntegralEverywhere p b y' →
+            ‖place ⟪y', ((Λ (Z.orthogonalProjectionOnto y) : Z) : E)⟫_ℂ‖ ≤ 1 := Iff.rfl
+
 /-- The projection to the zero subspace has every denominator bound, witnessed by the zero
 endomorphism, whose determinant is one on the zero space. -/
 theorem denominatorLe_bot (p : ℕ) [Fact p.Prime] {K : Type w} [NormedField K] [IsUltrametricDist K]
@@ -128,17 +150,18 @@ theorem denominatorLe_bot (p : ℕ) [Fact p.Prime] {K : Type w} [NormedField K] 
   · intro y _ _
     simp
 
-/-- If the inner product is integral between globally integral vectors and locally integral vectors,
-then the projection to the whole space has denominator zero, witnessed by `LinearMap.id`. -/
+/-- If every globally integral vector pairs integrally with the locally integral vectors in
+`admissible`, then the projection to the whole space has denominator zero, witnessed by
+`LinearMap.id`. -/
 theorem denominatorLe_top_zero (p : ℕ) [Fact p.Prime] {K : Type w} [NormedField K]
     [IsUltrametricDist K] (place : ℂ →+* K) (b : Basis ι ℂ E) [FiniteDimensional ℂ E]
     (admissible : Submodule ℂ E) (r : ℕ)
     (hpair : ∀ y', IsCoordinateIntegralEverywhere p b y' →
-      ∀ y ∈ coordinateIntegralLattice place b, ‖place ⟪y', y⟫_ℂ‖ ≤ 1) :
+      ∀ y ∈ coordinateIntegralLattice place b, y ∈ admissible → ‖place ⟪y', y⟫_ℂ‖ ≤ 1) :
     DenominatorLe p place b ⊤ admissible r 0 := by
   refine ⟨LinearMap.id, by simp, ?_⟩
-  intro y hy _
-  simpa [Submodule.starProjection_top] using And.intro hy (fun y' hy' ↦ hpair y' hy' y hy)
+  intro y hy hadm
+  simpa [Submodule.starProjection_top] using And.intro hy (fun y' hy' ↦ hpair y' hy' y hy hadm)
 
 /-- Increasing the real denominator budget preserves `DenominatorLe`. -/
 theorem DenominatorLe.mono_beta {p : ℕ} [Fact p.Prime] {K : Type w} [NormedField K]
