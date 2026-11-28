@@ -5,49 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.BasicProperties.Sporadic.McLaughlin.Perfect
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.McLaughlin.Basic
-public import TauCeti.GroupTheory.Presentation.Perfect
 
 /-!
-# Perfectness of the McLaughlin presentation and permutation model
+# Perfectness of the McLaughlin permutation model
 
-The transcribed McLaughlin presentation `TauCeti.Sporadic.mclPresentation` is perfect, already from
-its first, second and fourth relations `a² = b⁵ = (ab)¹¹ = 1`, whose exponents are pairwise
-coprime (`TauCeti.GroupPresentation.isPerfect_of_coprime`).
+The canonical ATLAS permutation model `TauCeti.Sporadic.McL` is perfect, because the exact
+presented group `TauCeti.SporadicName.McL.Group` is (`TauCeti.Sporadic.isPerfect_group_McL`) and
+surjects onto it (`TauCeti.Sporadic.exists_surjective_McL`). This does not assume finiteness or
+simplicity of the presented group.
 
-The canonical ATLAS permutation model `TauCeti.Sporadic.McL` is consequently perfect through the
-existing presentation surjection `TauCeti.Sporadic.exists_surjective_McL`. Neither statement
-assumes finiteness or simplicity of the presented group.
+The argument is that of `TauCeti.Sporadic.isPerfect_HS` in
+`TauCeti.GroupTheory.SpecificGroups.Sporadic.HigmanSims.Perfect`.
 
 ## Main results
 
-* `TauCeti.Sporadic.isPerfect_mclPresentation`: the transcribed presentation is perfect.
-* `TauCeti.Sporadic.isPerfect_group_McL`: so is the exact carrier attached to the name `McL`.
-* `TauCeti.Sporadic.isPerfect_McL`: so is the degree-275 permutation model.
-
-## References
-
-* J. N. Bray, ATLAS presentation `McLG1-P1`,
-  <https://brauer.maths.qmul.ac.uk/Atlas/v3/pres/McLG1-P1>.
+* `TauCeti.Sporadic.isPerfect_McL`: the degree-275 permutation model is perfect.
 -/
 
 public section
 
 namespace TauCeti.Sporadic
-
-/-- The exact fifteen-relator McLaughlin presentation is perfect. -/
-instance isPerfect_mclPresentation : Group.IsPerfect mclPresentation.Group := by
-  apply mclPresentation.isPerfect_of_coprime mclPresentation_generatorCount
-    (a := 2) (b := 5) (c := 11)
-  · rw [mclPresentation_transcribed]; simp
-  · rw [mclPresentation_transcribed]; simp
-  · rw [mclPresentation_transcribed]; simp
-  all_goals decide
-
-/-- The exact carrier attached to the McLaughlin sporadic name is perfect. -/
-instance isPerfect_group_McL : Group.IsPerfect SporadicName.McL.Group := by
-  exact (congrArg (fun P : GroupPresentation => Group.IsPerfect P.Group)
-    SporadicName.presentation_McL).mpr isPerfect_mclPresentation
 
 /-- The canonical ATLAS McLaughlin permutation model is perfect. -/
 instance isPerfect_McL : Group.IsPerfect McL := by
