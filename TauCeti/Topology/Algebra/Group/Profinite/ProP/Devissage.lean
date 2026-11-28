@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Index.Exact
-public import TauCeti.GroupTheory.Torsion
+public import TauCeti.GroupTheory.Torsion.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Devissage
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.HomologySequence
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.FixedPoints

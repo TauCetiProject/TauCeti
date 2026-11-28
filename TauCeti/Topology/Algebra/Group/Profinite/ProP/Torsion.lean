@@ -29,7 +29,7 @@ that decomposition and proves uniqueness of the rank and elementary divisors.
   `T'` torsion, `r = r'`, because both `ℤ_p ^ r` and `ℤ_p ^ r'` are the quotient by the torsion
   subgroup and a continuous additive isomorphism `ℤ_p ^ r ≃ ℤ_p ^ r'` is `ℤ_p`-linear. The
   uniqueness of the torsion factor, `T ≅ T'`, needs no pro-`p` hypothesis and is
-  `TauCeti.torsionFactorAddEquiv` in `TauCeti.GroupTheory.Torsion`.
+  `TauCeti.torsionFactorAddEquiv` in `TauCeti.GroupTheory.Torsion.Basic`.
 * When the finite factors are products of `ZMod (p ^ e i)` with positive exponents, that
   torsion-factor equivalence determines the exponents up to a bijection of the index types.
 * For the canonical `ℤ_[p]`-module `TauCeti.IsProP.module`, the torsion submodule is the torsion

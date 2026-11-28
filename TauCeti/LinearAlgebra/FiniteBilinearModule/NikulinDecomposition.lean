@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Decomposition
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.GaussSum
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Primary.Component
-import TauCeti.GroupTheory.Torsion
+import TauCeti.GroupTheory.Torsion.Basic
 
 /-!
 # Generator decompositions of finite quadratic modules

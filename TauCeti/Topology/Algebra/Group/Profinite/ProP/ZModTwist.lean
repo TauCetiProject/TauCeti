@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.ZMod.Injective
 public import TauCeti.Data.ZMod.MulCastHom
-public import TauCeti.GroupTheory.Torsion
+public import TauCeti.GroupTheory.Torsion.Basic
 public import TauCeti.NumberTheory.Padics.RingHoms
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ExplicitFunctoriality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.ShortExact

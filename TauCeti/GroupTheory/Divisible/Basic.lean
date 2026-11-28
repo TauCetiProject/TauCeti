@@ -6,19 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.PNat.Basic
+public import Mathlib.Data.Rat.Defs
 public import Mathlib.GroupTheory.Divisible
 public import Mathlib.GroupTheory.Torsion
 
 import Mathlib.Algebra.Category.Grp.Injective
-import Mathlib.Data.Rat.Cast.CharZero
-import TauCeti.GroupTheory.Torsion
+import TauCeti.Algebra.Module.Rat
+import TauCeti.GroupTheory.Torsion.Basic
 
 /-!
 # Divisible subgroups and compatible root families
 
 `AddSubgroup.IsDivisible` expresses divisibility of a subgroup without choosing division
 operations. The torsion subgroup and prime-primary components of a divisible abelian group are
-divisible.
+divisible. The quotient by the torsion subgroup admits a rational module structure. This is an
+existence theorem: callers may choose that structure locally and retain their own bases.
 
 An `ℕ`-rootable monoid `G` becomes an `ℕ`-divisible additive monoid under `Additive G`:
 `Additive.instDivisibleByNat` transfers `RootableBy G ℕ` to `DivisibleBy (Additive G) ℕ`.
@@ -40,6 +42,9 @@ vanishing on `S` and sending `d` to `c`.
   `DivisibleBy (Additive G) ℕ`.
 
 ## Main results
+
+* `TauCeti.nonempty_ratModule_quotient_torsion`: the torsion-free quotient of a divisible group
+  admits a rational module structure, without choosing one globally.
 
 * `TauCeti.AddCommGroup.isDivisible_torsion` and
   `TauCeti.AddCommGroup.isDivisible_primaryComponent`: the torsion subgroup and the prime-primary
@@ -148,6 +153,12 @@ theorem exists_addMonoidHom_eq_zero_and_apply_eq {L A : Type*} [AddCommGroup L] 
 end AddSubgroup
 
 namespace TauCeti
+
+/-- The torsion-free quotient of a divisible abelian group admits a rational module structure.
+This existence theorem leaves callers free to choose the structure and its basis. -/
+theorem nonempty_ratModule_quotient_torsion (A : Type*) [AddCommGroup A] [DivisibleBy A ℕ] :
+    Nonempty (Module ℚ (A ⧸ AddCommGroup.torsion A)) :=
+  nonempty_ratModule _
 
 /-- If no nonzero integer multiple of `d` lies in `ℤ • a`, then any element `c` of a `ℤ`-divisible
 additive commutative group `A` is the value at `d` of an additive homomorphism `L →+ A` sending `a`

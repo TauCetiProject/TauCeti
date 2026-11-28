@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Torsion
+public import TauCeti.GroupTheory.Torsion.Basic
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Algebra
@@ -16,7 +16,7 @@ import Mathlib.Topology.Compactness.Compact
 
 Let `A` be a topological abelian group topologically isomorphic to `Multiplicative (M × T)`, where
 `M` is a torsion-free additive group and `T` is a torsion additive group. The algebraic
-identification of `A ⧸ torsion A` with `M` from `TauCeti.GroupTheory.Torsion` is then a
+identification of `A ⧸ torsion A` with `M` from `TauCeti.GroupTheory.Torsion.Basic` is then a
 topological isomorphism for the quotient topology.
 
 Continuous maps from a compact space into a discrete `p`-primary torsion group also form a

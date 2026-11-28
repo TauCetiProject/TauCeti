@@ -9,8 +9,6 @@ public import TauCeti.Algebra.Module.Submodule.Essential
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 public import Mathlib.RingTheory.Filtration
 
-import TauCeti.GroupTheory.Torsion
-
 /-!
 # Ideal-power torsion in essential extensions
 
@@ -27,8 +25,8 @@ In the other direction, over any commutative ring the `I`-torsion `M[I]` of an
 `I`-power-torsion module `M` is essential in `M`: a nonzero element killed by `Iⁿ` has a nonzero
 multiple killed by `I`. Hence a linear map out of such a module is injective as soon as it is
 injective on `M[I]`, the criterion by which injectivity of maps of `𝔪`-power-torsion modules over
-a local ring is tested on `𝔪`-socles. For an additive `p`-group,
-`IsAddPGroup.injective_of_ker_torsionBy` gives the same criterion on the elements killed by `p`.
+a local ring is tested on `𝔪`-socles. The additive-group counterpart
+`IsAddPGroup.injective_of_ker_torsionBy` is in `TauCeti.GroupTheory.Torsion.Basic`.
 
 ## References
 
@@ -76,22 +74,6 @@ theorem injective_iff_disjoint_torsionBySet_ker {N : Type*} [AddCommGroup N] [Mo
     hg.eq_bot
 
 end TorsionBySet
-
-/-- An additive homomorphism out of an additive `p`-group is injective if its kernel meets
-the elements killed by `p` only in zero. -/
-theorem _root_.IsAddPGroup.injective_of_ker_torsionBy {M N : Type*}
-    [AddCommGroup M] [AddCommGroup N] {p : ℕ} (hM : IsAddPGroup p M) (f : M →+ N)
-    (hf : ∀ x : M, p • x = 0 → f x = 0 → x = 0) : Function.Injective f := by
-  have htop : (Ideal.span {(p : ℤ)}).primaryComponent M = ⊤ := by
-    rw [← primaryComponent_toIntSubmodule_eq, isAddPGroup_iff_primaryComponent_eq_top.mp hM,
-      OrderIso.map_top]
-  apply (injective_iff_disjoint_torsionBySet_ker (g := f.toIntLinearMap) htop).mpr
-  rw [Submodule.disjoint_def]
-  intro x hx hfx
-  apply hf x
-  · rw [Submodule.torsionBySet_ideal_span_singleton_eq, Submodule.mem_torsionBy_iff] at hx
-    simpa only [natCast_zsmul] using hx
-  · exact hfx
 
 variable {R M : Type*} [CommRing R] [IsNoetherianRing R] [AddCommGroup M] [Module R M]
 

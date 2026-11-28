@@ -51,6 +51,7 @@ noncomputable def torsionByEquivOfLE {A : Type*} [AddCommGroup A] (D : AddSubgro
 theorem torsionByEquivOfLE_apply_coe {A : Type*} [AddCommGroup A] (D : AddSubgroup A)
     (n : ℕ) [Module (ZMod n) A[n]] [Module (ZMod n) D[n]]
     (hD : A[n] ≤ D) (x : A[n]) : ((D.torsionByEquivOfLE n hD x : D) : A) = x := by
+  -- The linear equivalence uses `e`'s forward map, whose two subtype projections recover `x`.
   rfl
 
 /-- The inverse equivalence with torsion inside a subgroup preserves the ambient element. -/

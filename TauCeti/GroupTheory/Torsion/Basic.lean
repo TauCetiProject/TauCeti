@@ -62,6 +62,8 @@ Unlike a bound on the exponent, the condition is elementwise: for prime `p`,
 * `TauCeti.AddCommGroup.pow_nsmul_eq_zero_of_mem_primaryComponent`: a `p`-primary element killed
   by `p ^ N * m`, with `m` prime to `p`, is killed by `p ^ N`.
 * `IsAddPGroup.isAddTorsion`: a `p`-primary torsion group is torsion when `p ≠ 0`.
+* `IsAddPGroup.injective_of_ker_torsionBy`: injectivity out of a `p`-primary group is detected on
+  the elements killed by `p`.
 * `TauCeti.exists_mem_primaryComponent_apply_eq`: for prime `p`, a `p`-primary image of an element
   of finite order is already the image of a `p`-primary element.
 * `AddCommGroup.primaryComponent_prod`: the `p`-primary component of a product is the product of
@@ -260,6 +262,26 @@ positive natural number. The hypothesis is used, since `0 ^ k • m = 0` holds f
 every `m`. -/
 theorem _root_.IsAddPGroup.isAddTorsion {M : Type*} [AddGroup M] (h : IsAddPGroup p M)
     (hp : p ≠ 0) : IsAddTorsion M := fun m ↦ h.isOfFinAddOrder hp m
+
+/-- An additive homomorphism out of an additive `p`-group is injective if its kernel meets
+the elements killed by `p` only in zero. -/
+theorem _root_.IsAddPGroup.injective_of_ker_torsionBy {M N : Type*}
+    [AddGroup M] [AddMonoid N] {p : ℕ} (hM : IsAddPGroup p M) (f : M →+ N)
+    (hf : ∀ x : M, p • x = 0 → f x = 0 → x = 0) : Function.Injective f := by
+  have killed_eq_zero (n : ℕ) : ∀ x : M, p ^ n • x = 0 → f x = 0 → x = 0 := by
+    induction n with
+    | zero =>
+      intro x hx _
+      simpa using hx
+    | succ n ih =>
+      intro x hx hfx
+      apply hf x (ih (p • x) ?_ ?_) hfx
+      · simpa only [pow_succ, mul_smul] using hx
+      · simp [hfx]
+  apply (injective_iff_map_eq_zero f).mpr
+  intro x hx
+  obtain ⟨n, hn⟩ := hM x
+  exact killed_eq_zero n x hn hx
 
 /-- **A `p`-primary image of an element of finite order has a `p`-primary preimage.** For prime
 `p`, a homomorphism `f` of additive commutative monoids and an element `m` of finite order with

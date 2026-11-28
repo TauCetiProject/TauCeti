@@ -9,8 +9,6 @@ public import TauCeti.Data.Nat.Prime.Basic
 public import TauCeti.GroupTheory.Divisible.Classification
 public import TauCeti.NumberTheory.Padics.PruferQuotient
 
-import Mathlib.Algebra.DirectSum.Module
-
 /-!
 # Classification of divisible abelian groups using p-adic quotients
 

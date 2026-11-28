@@ -11,9 +11,8 @@ public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.Algebra.Field.ZMod
 
-import TauCeti.Algebra.Module.Torsion.Essential
-import TauCeti.Algebra.Module.LocalizedModule.Basic
 import TauCeti.Algebra.Group.Finsupp
+import TauCeti.GroupTheory.Torsion.Basic
 import TauCeti.GroupTheory.Torsion.Decomposition
 import TauCeti.Algebra.Module.Torsion.Subgroup
 import Mathlib.Algebra.Category.Grp.Injective
@@ -29,8 +28,9 @@ abelian group is a direct sum of rational copies and prime-indexed Prüfer copie
 are indexed by bases of the torsion-free quotient and the `p`-torsion of the original group,
 respectively, so their cardinalities are intrinsic.
 
-`nonempty_ratModule` supplies the unique rational structure on a divisible torsion-free
-group. All classification results accept caller-chosen bases and scalar structures.
+`nonempty_ratModule_quotient_torsion` supplies a rational structure on the torsion-free
+quotient. Callers choose a rational structure and its basis; all classification results retain
+these caller-chosen bases and scalar structures.
 
 ## Main results
 
@@ -166,25 +166,15 @@ end Torsion
 
 section Rational
 
-open scoped nonZeroDivisors DirectSum
-
-/-- A divisible abelian group with injective multiplication by positive integers has a
-rational vector-space structure. It is unique by `subsingleton_rat_module`. -/
-theorem nonempty_ratModule (A : Type*) [AddCommGroup A] [DivisibleBy A ℕ] [HasUniqueDiv A] :
-    Nonempty (Module ℚ A) := by
-  let : DivisibleBy A ℤ := AddGroup.divisibleByIntOfDivisibleByNat A
-  let : IsLocalizedModule ℤ⁰ (LinearMap.id : A →ₗ[ℤ] A) :=
-    isLocalizedModule_id_of_bijective_smul fun n hn ↦
-      ⟨zsmul_right_injective (nonZeroDivisors.ne_zero hn),
-        DivisibleBy.surjective_smul A ℤ (nonZeroDivisors.ne_zero hn)⟩
-  exact ⟨IsLocalizedModule.module (A := ℚ) ℤ⁰ (LinearMap.id : A →ₗ[ℤ] A)⟩
+open scoped DirectSum
 
 attribute [local instance] AddSubgroup.torsionBy.zmodModule
 
 /-- **Classification of divisible abelian groups.** The rational copies are indexed by a
 basis of the torsion-free quotient, and the Prüfer copies at `p` by a basis of `A[p]`.
 Consequently their cardinalities are intrinsic, although the resulting equivalence is a choice.
-The rational structure on the quotient exists by `nonempty_ratModule` and is unique. -/
+The rational structure on the quotient exists by `nonempty_ratModule_quotient_torsion` and is
+unique. The theorem retains the caller's rational structure and chosen basis. -/
 theorem nonempty_addEquiv_rat_pruferSum {A ι₀ : Type*} [AddCommGroup A] [DivisibleBy A ℕ]
     [Module ℚ (A ⧸ AddCommGroup.torsion A)] {ι : Nat.Primes → Type*}
     [∀ p : Nat.Primes, Module (ZMod p) A[(p : ℤ)]]
