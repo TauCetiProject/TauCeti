@@ -9,11 +9,9 @@ public import Mathlib.Algebra.Order.Floor.Ring
 public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.Set.Card
-public import Mathlib.Order.Interval.Finset.Nat
 
 import Mathlib.Basic.Finite.Prod
 import Mathlib.Data.Set.Finite.Range
-import Mathlib.Order.Interval.Finset.Floor
 
 /-!
 # Floors and decompositions into intervals
@@ -48,8 +46,6 @@ only finitely many rounded families have entries in `[-R, R]`.
 * `TauCeti.fst_add_neg_floor_mem`: translating `p` by `-⌊p.1⌋` in the first coordinate moves
   that coordinate into `[0, 1]`.
 * `Nat.cast_lt_iff_le_ceil_sub_one`: `(n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1` for natural `n`.
-* `TauCeti.mem_Ico_ceil_neg_iff`: membership of `n` in `Finset.Ico ⌈-b⌉₊ ⌈-a⌉₊` as
-  `-(n : R) ∈ (a, b]`.
 * `TauCeti.abs_card_Ico_ceil_sub_le`: `|#[a, ⌈y⌉) - max (y - a) 0| ≤ 1` for an integer `a`.
 * `TauCeti.finite_setOf_mem_Icc_natCast_mul_eq_intCast`: for `N ≠ 0`, the points `q` of
   `[a, b]` with `N q` an integer form a finite set.
@@ -158,13 +154,6 @@ theorem _root_.Nat.cast_lt_iff_le_ceil_sub_one {R : Type*} [Ring R] [LinearOrder
     [IsStrictOrderedRing R] [FloorSemiring R] (n : ℕ) {a : R} :
     (n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1 := by
   rw [← Nat.lt_ceil, le_sub_iff_add_le, ← Nat.cast_add_one, Nat.cast_le, Nat.add_one_le_iff]
-
-/-- In a linearly ordered ring with a natural ceiling, `n ∈ [⌈-b⌉₊, ⌈-a⌉₊)` if and only if
-`-(n : R) ∈ (a, b]`. -/
-theorem mem_Ico_ceil_neg_iff {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
-    [FloorSemiring R] {a b : R} {n : ℕ} :
-    n ∈ Finset.Ico ⌈-b⌉₊ ⌈-a⌉₊ ↔ -(n : R) ∈ Set.Ioc a b := by
-  rw [← Nat.cast_mem_Ico_iff, Set.mem_Ico, Set.mem_Ioc, neg_le, lt_neg, and_comm]
 
 /-- The number of integers in `[a, y)` is `max (y - a) 0` up to an error of at most one. -/
 theorem abs_card_Ico_ceil_sub_le {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]

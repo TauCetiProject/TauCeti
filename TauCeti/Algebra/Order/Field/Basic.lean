@@ -124,6 +124,8 @@ zero only at `0`.
 * `TauCeti.two_mul_sq_inv_mul_lt_one_iff`: `2 * (r ^ 2)⁻¹ * t < 1` iff `t < r ^ 2 / 2` for `r ≠ 0`.
 * `TauCeti.exists_mem_Ioo_zero_one_sub_ne_intCast`: every element `r` of a linearly ordered field
   admits `δ ∈ (0, 1)` such that `r - δ` is not an integer.
+* `TauCeti.ne_intCast_of_mem_Ioo_zero_one`, `TauCeti.neg_ne_intCast_of_mem_Ioo_zero_one`: neither
+  an element of `(0, 1)` nor its negation is an integer.
 * `TauCeti.add_mul_div_le_add`: `t + m * M / t ≤ m + M` for `0 < t` and `m ≤ t ≤ M`.
 * `TauCeti.mul_le_sq_div_of_add_mul_le`: `a * b ≤ c ^ 2 / (4 * k)` for `0 < k` and
   `0 ≤ a + k * b ≤ c`.
@@ -551,6 +553,20 @@ theorem exists_mem_Ioo_zero_one_sub_ne_intCast {K : Type*} [Field K] [LinearOrde
     omega
   · have h12 : (1 / 2 : K) < 1 := by linarith [zero_lt_one' K]
     exact ⟨1 / 2, ⟨by positivity, h12⟩, fun m hm ↦ h ⟨m, by linarith⟩⟩
+
+/-- An element of `(0, 1)` is never an integer. -/
+theorem ne_intCast_of_mem_Ioo_zero_one {R : Type*} [AddCommGroupWithOne R] [PartialOrder R]
+    [AddLeftMono R] [ZeroLEOneClass R] [NeZero (1 : R)] {δ : R} (hδ : δ ∈ Set.Ioo (0 : R) 1)
+    (m : ℤ) : δ ≠ m := fun hm ↦ by
+  have h1 : 0 < m := Int.cast_pos.mp (hm ▸ hδ.1)
+  have h2 : m < (1 : ℤ) := Int.cast_lt (R := R).mp (by rw [Int.cast_one, ← hm]; exact hδ.2)
+  omega
+
+/-- The negation of an element of `(0, 1)` is never an integer. -/
+theorem neg_ne_intCast_of_mem_Ioo_zero_one {R : Type*} [AddCommGroupWithOne R] [PartialOrder R]
+    [AddLeftMono R] [ZeroLEOneClass R] [NeZero (1 : R)] {δ : R} (hδ : δ ∈ Set.Ioo (0 : R) 1)
+    (m : ℤ) : -δ ≠ m := fun hm ↦
+  ne_intCast_of_mem_Ioo_zero_one hδ (-m) (by rw [Int.cast_neg, ← hm, neg_neg])
 
 /-- For `0 < t` with `m ≤ t ≤ M`, `t + m * M / t ≤ m + M`: this is `(t - m) * (t - M) ≤ 0`
 divided by `t`. -/

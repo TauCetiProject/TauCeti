@@ -33,9 +33,9 @@ The total values at poles are zero by Mathlib's convention. The zero-order chara
 therefore use nonzero total values, while the negative-order characterizations identify the
 pole lattices. `Complex.gammaPolesRightOf` packages the finite set of poles of `t ↦ Γ(a + t)`
 strictly to the right of a vertical line `Re t = σ` (together with `mem_gammaPolesRightOf`,
-`gammaPolesRightOf_eq_empty_iff`, and `mem_gammaPolesRightOf_union`). These formulas supply the
-local orders and pole sets from which shifted products and archimedean divisors of L-function
-records are assembled.
+`gammaPolesRightOf_eq_empty_iff`, `gammaPolesRightOf_sdiff`, and `mem_gammaPolesRightOf_union`).
+These formulas supply the local orders and pole sets from which shifted products and archimedean
+divisors of L-function records are assembled.
 
 ## References
 
@@ -316,6 +316,19 @@ theorem mem_gammaPolesRightOf {a t : ℂ} {σ : ℝ} :
 theorem gammaPolesRightOf_eq_empty_iff {a : ℂ} {σ : ℝ} :
     gammaPolesRightOf a σ = ∅ ↔ -a.re ≤ σ := by
   simp [gammaPolesRightOf, Nat.ceil_eq_zero]
+
+/-- The difference `gammaPolesRightOf a σ₁ \ gammaPolesRightOf a σ₂` is the image of the
+ceiling interval `[⌈-Re a - σ₂⌉₊, ⌈-Re a - σ₁⌉₊)` under `k ↦ -a - k`. -/
+theorem gammaPolesRightOf_sdiff (a : ℂ) (σ₁ σ₂ : ℝ) :
+    gammaPolesRightOf a σ₁ \ gammaPolesRightOf a σ₂ =
+      (Finset.Ico ⌈-a.re - σ₂⌉₊ ⌈-a.re - σ₁⌉₊).image fun k : ℕ ↦ -a - k := by
+  have hinj : Function.Injective (fun k : ℕ ↦ -a - k) := fun _ _ h ↦
+    Nat.cast_injective (by linear_combination -h)
+  rw [gammaPolesRightOf, gammaPolesRightOf, ← Finset.image_sdiff _ _ hinj]
+  congr 1
+  ext k
+  simp only [Finset.mem_sdiff, Finset.mem_range, Finset.mem_Ico]
+  omega
 
 /-- The poles of `t ↦ Γ(a + t) Γ(b + t)` to the right of the line `Re t = σ`. -/
 theorem mem_gammaPolesRightOf_union {a b t : ℂ} {σ : ℝ} :

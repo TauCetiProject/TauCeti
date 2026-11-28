@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Contour.Residue.Basic
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Cotangent
 import TauCeti.Algebra.Order.Field.Basic
-import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Analysis.Contour.Residue.ChangeOfVariables
 import TauCeti.Analysis.Contour.Residue.SimplePole
 import TauCeti.Analysis.Contour.Residue.VerticalLineShift
@@ -101,16 +100,11 @@ namespace Complex
 
 /-! ### Regularity and vertical-strip decay -/
 
-/-- For `c ≠ 0`, `z ↦ c ^ (-z)` is entire. -/
-private lemma differentiable_cpow_neg {c : ℂ} (hc : c ≠ 0) :
-    Differentiable ℂ fun z : ℂ ↦ c ^ (-z) :=
-  differentiable_neg.const_cpow (Or.inl hc)
-
 /-- For `c ≠ 0`, the Mellin–Barnes integrand `s ↦ c ^ (-s) * (Γ(s) * Γ(s + p))` is meromorphic
 at every point of `ℂ`. -/
 private lemma meromorphicAt_cpow_neg_mul_Gamma_mul_Gamma_add {c p : ℂ} (hc : c ≠ 0) (s : ℂ) :
     MeromorphicAt (fun z ↦ c ^ (-z) * (Gamma z * Gamma (z + p))) s :=
-  ((differentiable_cpow_neg hc).analyticAt s).meromorphicAt.mul
+  ((differentiable_neg.const_cpow (Or.inl hc)).analyticAt s).meromorphicAt.mul
     ((Meromorphic.Gamma s).mul ((Meromorphic.Gamma _).comp_analyticAt
       (g := fun w : ℂ ↦ w + p) (by fun_prop)))
 
@@ -119,7 +113,7 @@ differentiable at every `s` avoiding `-ℕ` and `-p - ℕ`. -/
 private lemma differentiableAt_cpow_neg_mul_Gamma_mul_Gamma_add {c p s : ℂ} (hc : c ≠ 0)
     (hs : ∀ n : ℕ, s ≠ -n) (hsp : ∀ n : ℕ, s + p ≠ -n) :
     DifferentiableAt ℂ (fun z ↦ c ^ (-z) * (Gamma z * Gamma (z + p))) s :=
-  (differentiable_cpow_neg hc s).mul ((differentiableAt_Gamma s hs).mul
+  (differentiable_neg.const_cpow (Or.inl hc) s).mul ((differentiableAt_Gamma s hs).mul
     ((differentiableAt_Gamma (s + p) hsp).comp s (differentiableAt_id.add_const p)))
 
 /-- Combines a vertical-line `c ^ (-s)` bound with two Stirling vertical Gamma bounds. -/
@@ -208,7 +202,7 @@ theorem residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_nat {c p : ℂ} (hc : c ≠
     TauCeti.Contour.residue (fun s ↦ c ^ (-s) * (Gamma s * Gamma (s + p))) (-(k : ℂ)) =
       (-1) ^ k / (k ! : ℂ) * c ^ k * Gamma (p - k) := by
   have hw : AnalyticAt ℂ (fun s ↦ c ^ (-s) * Gamma (s + p)) (-(k : ℂ)) :=
-    ((differentiable_cpow_neg hc).analyticAt _).mul
+    ((differentiable_neg.const_cpow (Or.inl hc)).analyticAt _).mul
       ((analyticAt_Gamma (fun m h ↦ hp m (by linear_combination h))).comp
         (f := fun s : ℂ ↦ s + p) (by fun_prop))
   have hfun : (fun s ↦ c ^ (-s) * (Gamma s * Gamma (s + p))) =
@@ -233,7 +227,8 @@ theorem residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_sub_nat {c p : ℂ} (k : �
       TauCeti.Contour.residue_eq_zero_of_analyticAt analyticAt_const, zero_cpow hpk]
     simp
   have hw : AnalyticAt ℂ (fun w : ℂ ↦ c ^ (-(w - p)) * Gamma (w - p)) (-(k : ℂ)) :=
-    (((differentiable_cpow_neg hc).analyticAt _).comp (f := fun w : ℂ ↦ w - p) (by fun_prop)).mul
+    (((differentiable_neg.const_cpow (Or.inl hc)).analyticAt _).comp
+        (f := fun w : ℂ ↦ w - p) (by fun_prop)).mul
       ((analyticAt_Gamma (fun m h ↦ hp m (by linear_combination h))).comp
         (f := fun w : ℂ ↦ w - p) (by fun_prop))
   have hfun : (fun s ↦ c ^ (-s) * (Gamma s * Gamma (s + p))) =
@@ -290,27 +285,6 @@ theorem residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_sub_nat_eq_regularizedHGFun
 
 /-! ### Finite contour shift between two vertical lines -/
 
-/-- Unfold `gammaPolesRightOf a σ₁ \ gammaPolesRightOf a σ₂` to a ceiling-interval image. -/
-private lemma gammaPolesRightOf_sdiff (a : ℂ) (σ₁ σ₂ : ℝ) :
-    gammaPolesRightOf a σ₁ \ gammaPolesRightOf a σ₂ =
-      (Finset.Ico ⌈-(σ₂ + a.re)⌉₊ ⌈-(σ₁ + a.re)⌉₊).image fun k : ℕ ↦ -a - k := by
-  ext t
-  simp only [Finset.mem_sdiff, mem_gammaPolesRightOf, Finset.mem_image,
-    TauCeti.mem_Ico_ceil_neg_iff, Set.mem_Ioc]
-  constructor
-  · rintro ⟨⟨h₁, k, rfl⟩, h₂⟩
-    refine ⟨k, ⟨?_, ?_⟩, rfl⟩
-    · simp only [sub_re, neg_re, natCast_re] at h₁
-      linarith
-    · have hle : (-a - k).re ≤ σ₂ := not_lt.mp fun h ↦ h₂ ⟨h, k, rfl⟩
-      simp only [sub_re, neg_re, natCast_re] at hle
-      linarith
-  · rintro ⟨k, ⟨h₁, h₂⟩, rfl⟩
-    refine ⟨⟨by simp; linarith, k, rfl⟩, fun ⟨hlt, k', hk'⟩ ↦ ?_⟩
-    have hre : (-a - k').re = (-a - k).re := congrArg re hk'.symm
-    simp only [sub_re, neg_re, natCast_re] at hlt hre
-    linarith
-
 /-- Evaluation of the finite residue sum over the two disjoint pole families in `(σ₁, σ₂]`. -/
 private lemma sum_residue_strip_cpow_neg_mul_Gamma_mul_Gamma_add
     {c p : ℂ} (hc : c ≠ 0) (hp : ∀ m : ℤ, p ≠ m) (σ₁ σ₂ : ℝ) :
@@ -347,10 +321,9 @@ private lemma sum_residue_strip_cpow_neg_mul_Gamma_mul_Gamma_add
           rintro (⟨_, k', hk'⟩ | h)
           · exact hdisj_all k' k (by simpa using hk'.symm)
           · exact h₂ h
-    have hzero : (fun k : ℕ ↦ -(0 : ℂ) - k) = fun k : ℕ ↦ -(k : ℂ) :=
-      funext fun k ↦ by simp
-    rw [hsplit, gammaPolesRightOf_sdiff 0 σ₁ σ₂, gammaPolesRightOf_sdiff p σ₁ σ₂,
-      zero_re, add_zero, add_zero, hzero]
+    have hneg1 : -p.re - σ₁ = -(σ₁ + p.re) := by ring
+    have hneg2 : -p.re - σ₂ = -(σ₂ + p.re) := by ring
+    simp only [hsplit, gammaPolesRightOf_sdiff, zero_re, neg_zero, zero_sub, hneg1, hneg2]
   have hdisj : Disjoint
       ((Finset.Ico ⌈-σ₂⌉₊ ⌈-σ₁⌉₊).image (fun k : ℕ ↦ -(k : ℂ)))
       ((Finset.Ico ⌈-(σ₂ + p.re)⌉₊ ⌈-(σ₁ + p.re)⌉₊).image (fun k : ℕ ↦ -p - k)) := by
@@ -465,13 +438,6 @@ theorem integral_cpow_neg_mul_Gamma_mul_Gamma_add_sub_integral
 
 /-! ### Vanishing of the shifted vertical integral as `Re s → -∞` -/
 
-/-- The negation of a point in `(0, 1)` is never an integer. -/
-private lemma neg_ne_intCast_of_mem_Ioo_zero_one {δ : ℝ} (hδ : δ ∈ Ioo (0 : ℝ) 1) (m : ℤ) :
-    -(δ : ℝ) ≠ m := fun hm ↦ by
-  have h1 : m < 0 := by exact_mod_cast (by linarith [hδ.1] : (m : ℝ) < 0)
-  have h2 : (-1 : ℤ) < m := by exact_mod_cast (by linarith [hδ.2] : (-1 : ℝ) < m)
-  omega
-
 /-- Uniform pointwise factorial/exponential bound on the left-shifted vertical line
 `Re s = -N - δ` for `N ≥ ⌈p.re - δ⌉₊`. -/
 private lemma exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_sub_natCast_le
@@ -483,7 +449,7 @@ private lemma exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_sub_natCast_le
         C₀ * (‖c‖ ^ N / (N ! : ℝ)) * Real.exp (-((π - |c.arg|) * |y|)) := by
   have hc0 : c ≠ 0 := slitPlane_ne_zero hc
   obtain ⟨C₁, hC₁, hG₁⟩ :=
-    TauCeti.exists_norm_Gamma_sub_natCast_le (neg_ne_intCast_of_mem_Ioo_zero_one hδ)
+    TauCeti.exists_norm_Gamma_sub_natCast_le (TauCeti.neg_ne_intCast_of_mem_Ioo_zero_one hδ)
   obtain ⟨C₂, hC₂, hG₂⟩ := TauCeti.exists_norm_Gamma_sub_natCast_le hpδ
   have hceil₀ : ⌈-δ⌉₊ = 0 := Nat.ceil_eq_zero.mpr (by linarith [hδ.1])
   set M : ℕ := ⌈p.re - δ⌉₊
@@ -539,7 +505,7 @@ private lemma exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_sub_natCast_le
 private lemma left_shift_avoids_poles {p : ℂ} {δ : ℝ} (hδ : δ ∈ Ioo (0 : ℝ) 1)
     (hpδ : ∀ m : ℤ, p.re - δ ≠ m) (N : ℕ) :
     (∀ n : ℕ, -(N : ℝ) - δ ≠ -n) ∧ (∀ n : ℕ, -(N : ℝ) - δ + p.re ≠ -n) :=
-  ⟨fun n h ↦ neg_ne_intCast_of_mem_Ioo_zero_one hδ ((N : ℤ) - n) (by push_cast; linarith),
+  ⟨fun n h ↦ TauCeti.neg_ne_intCast_of_mem_Ioo_zero_one hδ ((N : ℤ) - n) (by push_cast; linarith),
    fun n h ↦ hpδ ((N : ℤ) - n) (by push_cast; linarith)⟩
 
 /-- For a fixed offset `δ ∈ (0, 1)` with `p.re - δ ∉ ℤ`, the vertical integral along
@@ -564,15 +530,6 @@ private lemma tendsto_integral_cpow_neg_mul_Gamma_mul_Gamma_add_left
   rw [integral_const_mul, TauCeti.integral_exp_neg_mul_abs hα]
 
 /-! ### Main Mellin–Barnes evaluation -/
-
-/-- Partial sums of `regularizedHGFunCoeff 0 {b} k * c ^ k` up to `⌈N + a⌉₊` converge to
-`regularizedHGFun 0 {b} c` as `N → ∞`. -/
-private lemma tendsto_sum_range_ceil_regularizedHGFunCoeff (b c : ℂ) (a : ℝ) :
-    Tendsto (fun N : ℕ ↦ ∑ k ∈ Finset.range ⌈(N : ℝ) + a⌉₊,
-        regularizedHGFunCoeff 0 {b} k * c ^ k)
-      atTop (𝓝 (regularizedHGFun 0 {b} c)) :=
-  (hasSum_regularizedHGFun (a := 0) (b := {b}) (by simp) c).tendsto_sum_nat.comp
-    (tendsto_nat_ceil_atTop.comp (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds))
 
 /-- **Mellin–Barnes integral of `Γ(s) Γ(s + p)` on the slit plane.** For `c ∈ Complex.slitPlane`,
 `p ∉ ℤ`, and any abscissa `σ` with `0 < σ` and `0 < σ + Re p`,
@@ -618,8 +575,9 @@ theorem integral_cpow_neg_mul_Gamma_mul_Gamma_add
   have hlim_rhs : Tendsto (fun N : ℕ ↦ Iσ - IN N) atTop
       (𝓝 (2 * π * (π / sin (π * p) *
         (regularizedHGFun 0 {1 - p} c - c ^ p * regularizedHGFun 0 {1 + p} c)))) := by
-    have hsum1 := tendsto_sum_range_ceil_regularizedHGFunCoeff (1 - p) c δ
-    have hsum2 := tendsto_sum_range_ceil_regularizedHGFunCoeff (1 + p) c (δ - p.re)
+    have hsum1 := tendsto_sum_range_ceil_regularizedHGFunCoeff (a := 0) (b := {1 - p}) (by simp) c δ
+    have hsum2 :=
+      tendsto_sum_range_ceil_regularizedHGFunCoeff (a := 0) (b := {1 + p}) (by simp) c (δ - p.re)
     simpa only [← hshift] using
       ((hsum1.sub (hsum2.const_mul (c ^ p))).const_mul (π / sin (π * p))).const_mul (2 * (π : ℂ))
   exact tendsto_nhds_unique hlim_lhs hlim_rhs
