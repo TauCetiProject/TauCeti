@@ -71,10 +71,8 @@ variable {C : Type u} [Category.{v} C] {D : Type u'} [Category.{v'} D]
   (c : AttachCells.{w} g f)
 
 /-- A functor preserving the relevant coproducts and pushout sends a cell attachment to a cell
-attachment with the same cell index type and mapped basic cells. Exposed so that the cell index
-type `ι` and indexing map `π` remain definitionally equal to those of `c`, which statements about
-attached cells in `RelativeCellComplex.map` require in order to typecheck. -/
-@[expose] noncomputable def map (F : C ⥤ D)
+attachment with the same cell index type and mapped basic cells. -/
+noncomputable def map (F : C ⥤ D)
     [PreservesColimit (Discrete.functor fun i ↦ A (c.π i)) F]
     [PreservesColimit (Discrete.functor fun i ↦ B (c.π i)) F]
     [PreservesColimit (span c.g₁ c.m) F] :
@@ -91,14 +89,36 @@ attached cells in `RelativeCellComplex.map` require in order to typecheck. -/
   g₂ := F.map c.g₂
   isPushout := c.isPushout.map F
 
+/-- The cell indices of `c.map F` identify with those of `c`. -/
+def mapEquiv (F : C ⥤ D)
+    [PreservesColimit (Discrete.functor fun i ↦ A (c.π i)) F]
+    [PreservesColimit (Discrete.functor fun i ↦ B (c.π i)) F]
+    [PreservesColimit (span c.g₁ c.m) F] :
+    (c.map F).ι ≃ c.ι :=
+  Equiv.refl _
+
+/-- The basic-cell indexing map of `c.map F` agrees with that of `c` under `mapEquiv`. -/
+@[simp]
+lemma map_π (F : C ⥤ D)
+    [PreservesColimit (Discrete.functor fun i ↦ A (c.π i)) F]
+    [PreservesColimit (Discrete.functor fun i ↦ B (c.π i)) F]
+    [PreservesColimit (span c.g₁ c.m) F] (i : (c.map F).ι) :
+    (c.map F).π i = c.π (c.mapEquiv F i) :=
+  (rfl)
+
 /-- The inclusion of a cell in `c.map F` is `F.map` of the original cell inclusion. -/
 @[simp, reassoc]
 lemma map_cell (F : C ⥤ D)
     [PreservesColimit (Discrete.functor fun i ↦ A (c.π i)) F]
     [PreservesColimit (Discrete.functor fun i ↦ B (c.π i)) F]
-    [PreservesColimit (span c.g₁ c.m) F] (i : c.ι) :
-    (c.map F).cell i = F.map (c.cell i) :=
-  (F.map_comp _ _).symm
+    [PreservesColimit (span c.g₁ c.m) F] (i : (c.map F).ι) :
+    (c.map F).cell i =
+      eqToHom (congrArg (fun a ↦ F.obj (B a)) (c.map_π F i)) ≫
+        F.map (c.cell (c.mapEquiv F i)) := by
+  change F.map (c.cofan₂.inj i) ≫ F.map c.g₂ =
+    eqToHom (rfl : F.obj (B (c.π i)) = F.obj (B (c.π i))) ≫
+      F.map (c.cofan₂.inj i ≫ c.g₂)
+  simp
 
 /-- The inclusion of a cell after reindexing cell types is the original cell inclusion precomposed
 with the inverse target isomorphism. -/
