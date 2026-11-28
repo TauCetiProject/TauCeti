@@ -171,13 +171,10 @@ theorem Integrable.exists_sum_compactlySupported_tendsto {f : X → E} (hf : Int
     simp_rw [eLpNorm_congr_ae ((φ _).integrable.coeFn_toL1.sub EventuallyEq.rfl)]
     exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
       (ENNReal.tendsto_atTop_zero_of_tsum_ne_top hgeom) (fun _ => zero_le) hdist
-  have hae : ∀ᵐ x ∂μ, Tendsto (fun n => φ n x) atTop (𝓝 (f x)) := by
-    refine (TauCeti.ae_tsum_lt_top_of_eLpNorm_le (d := fun n x => ‖φ n x - f x‖ₑ)
-      le_rfl hgeom fun n => ?_).mono fun x hx => ?_
-    · simpa only [Pi.sub_apply] using
-        (eLpNorm_eNorm _ ((φ n).integrable.sub hf).aestronglyMeasurable).trans_le (hdist n)
-    · simpa only [tendsto_iff_edist_tendsto_0, eDist_eq_eNorm_sub] using
-        ENNReal.tendsto_atTop_zero_of_tsum_ne_top hx.ne
+  have hae : ∀ᵐ x ∂μ, Tendsto (fun n => φ n x) atTop (𝓝 (f x)) :=
+    TauCeti.ae_tendsto_of_tsum_eLpNorm_sub_ne_top (p := 1) le_rfl
+      (fun n => (φ n).integrable.aestronglyMeasurable) hf.aestronglyMeasurable
+      (ne_top_of_le_ne_top hgeom (tsum_le_tsum hdist))
   -- Telescopic differences `u 0 = φ 0`, `u (n + 1) = φ (n + 1) - φ n`.
   let u : ℕ → C_c(X, E) := fun k => match k with | 0 => φ 0 | n + 1 => φ (n + 1) - φ n
   have hu_succ (n : ℕ) : u (n + 1) = φ (n + 1) - φ n := rfl

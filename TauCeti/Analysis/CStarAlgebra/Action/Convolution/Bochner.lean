@@ -42,19 +42,21 @@ second-countability hypotheses are required on non-σ-compact groups.
 * `TauCeti.CStarAction.ae_integrable_bochnerConvolution_integrand`,
   `TauCeti.CStarAction.integrable_bochnerConvolution`,
   `TauCeti.CStarAction.convolutionL1_toL1_eq_bochnerConvolution`, and
-  `TauCeti.CStarAction.coeFn_convolutionL1_eq_bochnerConvolution`: for any left-invariant measure
-  finite on compact sets, inner regular on finite-measure sets, and satisfying `μ.inv ≪ μ` (with no
-  second-countability assumption on `G`), the twisted convolution integrand is a.e. integrable,
-  `bochnerConvolution` is integrable, and it represents `convolutionL1` almost everywhere.
+  `TauCeti.CStarAction.coeFn_convolutionL1_eq_bochnerConvolution`: on a locally compact group with
+  a left-invariant Borel measure finite on compact sets, inner regular with respect to compact sets
+  on finite-measure sets, and satisfying `μ.inv ≪ μ` (with no second-countability assumption on
+  `G`), the twisted convolution integrand is a.e. integrable, `bochnerConvolution` is integrable,
+  and it represents `convolutionL1` almost everywhere.
 * `TauCeti.CStarAction.lintegral_eNorm_twistedInvolution`,
   `TauCeti.CStarAction.integrable_bochnerInvolution`,
   `TauCeti.CStarAction.twistedInvolutionL1_toL1_eq_bochnerInvolution`,
   `TauCeti.CStarAction.coeFn_twistedInvolutionL1`, and
-  `TauCeti.CStarAction.twistedInvolutionL1_trivial`: twisted involution preserves the `ℝ≥0∞` `L¹`
-  norm on `C_c(G, A)`, sends integrable functions to integrable functions with the same `L¹` norm,
-  represents `twistedInvolutionL1` almost everywhere whenever `μ.inv ≪ μ` (without `[μ.Regular]`),
-  and specializes to `star ∘ MeasureTheory.Lp.modularInversion` for the trivial action on a regular
-  Haar measure.
+  `TauCeti.CStarAction.twistedInvolutionL1_trivial`: on a locally compact group with a
+  left-invariant Borel measure finite on compact sets, twisted involution preserves the `ℝ≥0∞` `L¹`
+  norm on `C_c(G, A)`; additionally assuming compact inner regularity on finite-measure sets and
+  `μ.inv ≪ μ` (without `[μ.Regular]`), it sends integrable functions to integrable functions with
+  the same `L¹` norm and represents `twistedInvolutionL1` almost everywhere, and it specializes to
+  `star ∘ MeasureTheory.Lp.modularInversion` for the trivial action on a regular Haar measure.
 
 ## References
 
@@ -404,8 +406,9 @@ private theorem bochnerConvolution_core (hinv : μ.inv ≪ μ) {f g : G → A}
   simp_rw [hmul_eq] at hmul_tendsto
   exact tendsto_nhds_unique hmul_tendsto hh_tendsto
 
-/-- When `μ` is left-invariant and `μ.inv ≪ μ` (for instance via
-`Measure.inv_absolutelyContinuous_of_innerRegular` or
+/-- On a locally compact group with a left-invariant Borel measure `μ` finite on compact sets,
+inner regular with respect to compact sets on finite-measure sets, and satisfying `μ.inv ≪ μ`
+(for instance via `Measure.inv_absolutelyContinuous_of_innerRegular` or
 `Measure.inv_absolutelyContinuous_of_regular`), the twisted convolution integrand
 `r ↦ f r * α r (g (r⁻¹ * s))` is `μ`-integrable for `μ`-almost every `s`. -/
 theorem ae_integrable_bochnerConvolution_integrand
@@ -413,23 +416,27 @@ theorem ae_integrable_bochnerConvolution_integrand
     ∀ᵐ s ∂μ, Integrable (fun r => f r * α r (g (r⁻¹ * s))) μ :=
   (α.bochnerConvolution_core hinv hf hg).1
 
-/-- When `μ` is left-invariant and `μ.inv ≪ μ`, the Bochner twisted convolution of two integrable
-functions is integrable. -/
+/-- On a locally compact group with a left-invariant Borel measure `μ` finite on compact sets,
+inner regular with respect to compact sets on finite-measure sets, and satisfying `μ.inv ≪ μ`,
+the Bochner twisted convolution of two integrable functions is integrable. -/
 theorem integrable_bochnerConvolution
     (hinv : μ.inv ≪ μ) {f g : G → A} (hf : Integrable f μ) (hg : Integrable g μ) :
     Integrable (α.bochnerConvolution μ f g) μ :=
   (α.bochnerConvolution_core hinv hf hg).2.choose
 
-/-- Twisted `L¹` convolution `convolutionL1` of the `L¹` classes of integrable functions agrees
-with the `L¹` class of their pointwise `bochnerConvolution`, whenever `μ.inv ≪ μ`. -/
+/-- On a locally compact group with a left-invariant Borel measure `μ` finite on compact sets,
+inner regular with respect to compact sets on finite-measure sets, and satisfying `μ.inv ≪ μ`,
+twisted `L¹` convolution `convolutionL1` of the `L¹` classes of integrable functions agrees with
+the `L¹` class of their pointwise `bochnerConvolution`. -/
 theorem convolutionL1_toL1_eq_bochnerConvolution
     (hinv : μ.inv ≪ μ) {f g : G → A} (hf : Integrable f μ) (hg : Integrable g μ) :
     α.convolutionL1 μ (hf.toL1 f) (hg.toL1 g) =
       (α.integrable_bochnerConvolution hinv hf hg).toL1 (α.bochnerConvolution μ f g) :=
   (α.bochnerConvolution_core hinv hf hg).2.choose_spec
 
-/-- Submultiplicativity of the `L¹` norm for `bochnerConvolution` of integrable functions when
-`μ.inv ≪ μ`. -/
+/-- Submultiplicativity of the `L¹` norm for `bochnerConvolution` of integrable functions on a
+locally compact group with a left-invariant Borel measure `μ` finite on compact sets, inner regular
+with respect to compact sets on finite-measure sets, and satisfying `μ.inv ≪ μ`. -/
 theorem integral_norm_bochnerConvolution_le
     (hinv : μ.inv ≪ μ) {f g : G → A} (hf : Integrable f μ) (hg : Integrable g μ) :
     ∫ s, ‖α.bochnerConvolution μ f g s‖ ∂μ ≤ (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ := by
@@ -438,9 +445,10 @@ theorem integral_norm_bochnerConvolution_le
     ← L1.norm_of_fun_eq_integral_norm hg, ← α.convolutionL1_toL1_eq_bochnerConvolution hinv hf hg]
   exact α.norm_convolutionL1_apply_le _ _
 
-/-- For arbitrary `u, v : Lp A 1 μ`, `α.convolutionL1 μ u v` is represented `μ`-almost everywhere
-by `α.bochnerConvolution μ u v` whenever `μ.inv ≪ μ`, with no second-countability assumption on
-`G`. -/
+/-- For arbitrary `u, v : Lp A 1 μ` on a locally compact group with a left-invariant Borel measure
+`μ` finite on compact sets, inner regular with respect to compact sets on finite-measure sets, and
+satisfying `μ.inv ≪ μ` (with no second-countability assumption on `G`), `α.convolutionL1 μ u v` is
+represented `μ`-almost everywhere by `α.bochnerConvolution μ u v`. -/
 theorem coeFn_convolutionL1_eq_bochnerConvolution (hinv : μ.inv ≪ μ) (u v : Lp A 1 μ) :
     α.convolutionL1 μ u v =ᵐ[μ] α.bochnerConvolution μ u v := by
   have hu : (L1.integrable_coeFn u).toL1 u = u := Integrable.toL1_coeFn u (L1.integrable_coeFn u)
@@ -451,8 +459,8 @@ theorem coeFn_convolutionL1_eq_bochnerConvolution (hinv : μ.inv ≪ μ) (u v : 
   exact Integrable.coeFn_toL1 _
 
 omit [μ.InnerRegularCompactLTTop] in
-/-- The twisted involution on `C_c(G, A)` preserves the `ℝ≥0∞` `L¹` norm against any left-invariant
-measure finite on compact sets. -/
+/-- On a locally compact group, the twisted involution on `C_c(G, A)` preserves the `ℝ≥0∞` `L¹`
+norm against any left-invariant Borel measure finite on compact sets. -/
 theorem lintegral_eNorm_twistedInvolution (u : C_c(G, A)) :
     ∫⁻ s, ‖α.twistedInvolution u s‖ₑ ∂μ = ∫⁻ s, ‖u s‖ₑ ∂μ := by
   rw [← ofReal_integral_norm_eq_lintegral_eNorm (α.twistedInvolution u).integrable,
@@ -523,22 +531,27 @@ private theorem bochnerInvolution_core (hinv : μ.inv ≪ μ) {f : G → A} (hf 
   simp_rw [hstar_eq] at hstar_tendsto
   exact tendsto_nhds_unique hstar_tendsto hh_tendsto
 
-/-- When `μ` is left-invariant and `μ.inv ≪ μ`, the twisted involution `bochnerInvolution f` of an
-integrable function `f` is integrable. -/
+/-- On a locally compact group with a left-invariant Borel measure `μ` finite on compact sets,
+inner regular with respect to compact sets on finite-measure sets, and satisfying `μ.inv ≪ μ`,
+the twisted involution `bochnerInvolution f` of an integrable function `f` is integrable. -/
 theorem integrable_bochnerInvolution
     (hinv : μ.inv ≪ μ) {f : G → A} (hf : Integrable f μ) :
     Integrable (α.bochnerInvolution f) μ :=
   (α.bochnerInvolution_core hinv hf).choose
 
-/-- Twisted `L¹` involution `twistedInvolutionL1` of the `L¹` class of an integrable function
-agrees with the `L¹` class of `bochnerInvolution`, whenever `μ.inv ≪ μ`. -/
+/-- On a locally compact group with a left-invariant Borel measure `μ` finite on compact sets,
+inner regular with respect to compact sets on finite-measure sets, and satisfying `μ.inv ≪ μ`,
+twisted `L¹` involution `twistedInvolutionL1` of the `L¹` class of an integrable function agrees
+with the `L¹` class of `bochnerInvolution`. -/
 theorem twistedInvolutionL1_toL1_eq_bochnerInvolution
     (hinv : μ.inv ≪ μ) {f : G → A} (hf : Integrable f μ) :
     α.twistedInvolutionL1 μ (hf.toL1 f) =
       (α.integrable_bochnerInvolution hinv hf).toL1 (α.bochnerInvolution f) :=
   (α.bochnerInvolution_core hinv hf).choose_spec
 
-/-- The twisted involution preserves the `L¹` norm of any integrable function when `μ.inv ≪ μ`. -/
+/-- On a locally compact group with a left-invariant Borel measure `μ` finite on compact sets,
+inner regular with respect to compact sets on finite-measure sets, and satisfying `μ.inv ≪ μ`,
+the twisted involution preserves the `L¹` norm of any integrable function. -/
 theorem integral_norm_bochnerInvolution
     (hinv : μ.inv ≪ μ) {f : G → A} (hf : Integrable f μ) :
     ∫ s, ‖α.bochnerInvolution f s‖ ∂μ = ∫ s, ‖f s‖ ∂μ := by
@@ -546,8 +559,10 @@ theorem integral_norm_bochnerInvolution
   rw [← L1.norm_of_fun_eq_integral_norm hint, ← L1.norm_of_fun_eq_integral_norm hf,
     ← α.twistedInvolutionL1_toL1_eq_bochnerInvolution hinv hf, LinearIsometryEquiv.norm_map]
 
-/-- For `u : Lp A 1 μ`, `α.twistedInvolutionL1 μ u` is represented `μ`-almost everywhere by
-`α.bochnerInvolution u` whenever `μ.inv ≪ μ` (without assuming `[μ.Regular]`). -/
+/-- For `u : Lp A 1 μ` on a locally compact group with a left-invariant Borel measure `μ` finite on
+compact sets, inner regular with respect to compact sets on finite-measure sets, and satisfying
+`μ.inv ≪ μ` (without assuming `[μ.Regular]`), `α.twistedInvolutionL1 μ u` is represented
+`μ`-almost everywhere by `α.bochnerInvolution u`. -/
 theorem coeFn_twistedInvolutionL1 (hinv : μ.inv ≪ μ) (u : Lp A 1 μ) :
     α.twistedInvolutionL1 μ u =ᵐ[μ] α.bochnerInvolution u := by
   have hu : (L1.integrable_coeFn u).toL1 u = u := Integrable.toL1_coeFn u (L1.integrable_coeFn u)
