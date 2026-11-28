@@ -193,7 +193,7 @@ theorem sum_filter_lt_movedNorm_fin_two_ite_swap (G : SimpleGraph V) [DecidableR
       2 * (#(G.edgeFinset ∆
         ((⊤ : SimpleGraph V).between {v | β v ≠ 1} {v | β v ≠ 1}ᶜ).edgeFinset) : ℝ) :=
   G.sum_filter_lt_movedNorm_ite_isSwap_of_forall_eq_one_or
-    (swap_isSwap_iff.mpr (by decide : (0 : Fin 2) ≠ 1)) fun v => eq_one_or_swap_fin_two (β v)
+    isSwap_swap_zero_one_fin_two fun v => eq_one_or_swap_fin_two (β v)
 
 /-- For an arbitrary gauge `β : V → Perm A`, the moved-point cost of the `τ`-labelled graph `G` is
 at least twice the edge count after toggling the cut `{v | sign (β v) = -1}` of odd-sign vertices.
