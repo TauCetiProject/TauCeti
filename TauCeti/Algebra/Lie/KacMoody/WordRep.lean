@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.FreeMonoid.Basic
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import TauCeti.Algebra.Lie.KacMoody.Basic
 
@@ -29,8 +28,12 @@ On a word `w = j₁ ⋯ jₛ`:
 
 These operators satisfy the five Chevalley relations
 (`TauCeti.KacMoody.satisfiesAuxRelations_wordRep`), providing the shared representation used in
-the triangular directness proof (`TauCeti.Algebra.Lie.KacMoody.Auxiliary`, and hence
-`TauCeti.Algebra.Lie.KacMoody.Triangular`).
+`TauCeti.KacMoody.eq_zero_of_quotientTriangular_sum_eq_zero`
+(`TauCeti.Algebra.Lie.KacMoody.Auxiliary`), which yields Cartan injectivity
+(`TauCeti.Algebra.Lie.KacMoody.CartanInjective`) and the one-sided Serre quotient identifications
+(`TauCeti.Algebra.Lie.KacMoody.Triangular`, as distinct from the unconditional internal triangular
+decomposition), as well as the nonzero highest-weight module in
+`TauCeti.Algebra.Lie.KacMoody.HighestWeightExistence`.
 
 ## Main definitions
 
@@ -84,6 +87,7 @@ theorem lowering_apply (i : I) (y : K[FreeMonoid I]) :
   rw [lowering, Algebra.coe_lmul_eq_mul, LinearMap.mul_apply']
 
 /-- Action of `TauCeti.KacMoody.lowering` on a monomial. -/
+@[simp]
 theorem lowering_single (i : I) (w : FreeMonoid I) (c : K) :
     lowering i (single w c) = single (FreeMonoid.of i * w) c := by
   rw [lowering_apply, single_mul_single, one_mul]
@@ -112,10 +116,12 @@ theorem rootSum_of_mul (i : I) (w : FreeMonoid I) :
   simp [rootSum]
 
 /-- The root sum of a single-letter word is its simple root. -/
+@[simp]
 theorem rootSum_of (i : I) : rootSum R (.of i) = R.root i := by
   simp [rootSum]
 
 /-- The root sum is additive under word concatenation. -/
+@[simp]
 theorem rootSum_mul (w w' : FreeMonoid I) :
     rootSum R (w * w') = rootSum R w + rootSum R w' := by
   simp [rootSum]
@@ -127,6 +133,7 @@ noncomputable def weightDerivation : H →ₗ[K] Module.End K K[FreeMonoid I] :=
     LinearMap.pi fun w => (rootSum R w).smulRight (single w (1 : K))
 
 /-- Action of `TauCeti.KacMoody.weightDerivation` on a monomial. -/
+@[simp]
 theorem weightDerivation_single (x : H) (w : FreeMonoid I) (c : K) :
     weightDerivation R x (single w c) = rootSum R w x • single w c := by
   have hc : single w c = c • MonoidAlgebra.basis (FreeMonoid I) K w := by
@@ -158,6 +165,7 @@ theorem cartanAction_apply (x : H) (y : K[FreeMonoid I]) :
   simp [cartanAction]
 
 /-- Action of `TauCeti.KacMoody.cartanAction` on a monomial. -/
+@[simp]
 theorem cartanAction_single (x : H) (w : FreeMonoid I) (c : K) :
     cartanAction R μ x (single w c) = (μ x - rootSum R w x) • single w c := by
   simp [cartanAction, weightDerivation_single, sub_smul]
@@ -199,6 +207,7 @@ noncomputable def raising (k : I) : Module.End K K[FreeMonoid I] :=
   (MonoidAlgebra.basis (FreeMonoid I) K).constr K (raisingWord R μ k)
 
 /-- Evaluation of `TauCeti.KacMoody.raising` on a basis word `single w 1`. -/
+@[simp]
 theorem raising_single_one (k : I) (w : FreeMonoid I) :
     raising R μ k (single w 1) = raisingWord R μ k w := by
   rw [raising, ← basis_apply, Module.Basis.constr_basis]

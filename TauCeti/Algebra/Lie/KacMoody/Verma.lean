@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.KacMoody.CartanInjective
 public import TauCeti.Algebra.Lie.KacMoody.HighestWeight
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Cyclic
+
+import TauCeti.Algebra.Lie.KacMoody.HighestWeightExistence
 
 /-!
 # Verma modules of a Kac–Moody algebra

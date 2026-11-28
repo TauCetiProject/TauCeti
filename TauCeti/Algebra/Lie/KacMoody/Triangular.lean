@@ -14,7 +14,6 @@ import TauCeti.Algebra.Lie.Graded.Sign
 import TauCeti.Algebra.Lie.KacMoody.Auxiliary
 import TauCeti.Algebra.Lie.Presentation.Serre.Triangular
 import TauCeti.Algebra.Lie.Subalgebra.Automorphism
-import TauCeti.Algebra.Lie.Subalgebra.LieSpan
 import TauCeti.LinearAlgebra.Matrix.Cartan.Generalized
 
 /-!
@@ -29,13 +28,13 @@ an arbitrary integer matrix `A`, this file defines the Cartan Lie subalgebra
 exchanges `n⁺` and `n⁻` and preserves `𝔥`, proves local nilpotence of `ad eᵢ` and `ad fᵢ`, and
 establishes the direct-sum triangular decomposition `𝔤 = n⁻ ⊕ 𝔥 ⊕ n⁺` together with the
 intersection formula `⁅𝔤, 𝔤⁆ ∩ 𝔥 = cartanElement '' R.corootSpan` via the principal `ℤ`-grading
-into `LieAlgebra.loopAlgebra K ℤ (PresentedLieAlgebra R)`.
+into `LieAlgebra.loopAlgebra K ℤ (PresentedLieAlgebra R)`. Whenever `cartanElement R` is
+injective, it also proves linear independence of the raising and lowering generators `eᵢ` and `fᵢ`.
 
 When `A` is a generalized Cartan matrix (`Matrix.IsGeneralizedCartan A`), combining
 `TauCeti.KacMoody.eq_zero_of_quotientTriangular_sum_eq_zero` from
 `TauCeti/Algebra/Lie/KacMoody/Auxiliary.lean` additionally identifies both `n⁺` and `n⁻` with
-`FreeLieAlgebra K I ⧸ serreIdeal K A`, proves linear independence of the raising and lowering
-generators `eᵢ` and `fᵢ`, and shows that
+`FreeLieAlgebra K I ⧸ serreIdeal K A` and shows that
 `TauCeti.KacMoody.serreHom R : Matrix.ToLieAlgebra K A →ₗ⁅K⁆ PresentedLieAlgebra R` is injective.
 
 The Chevalley involution compatibility with `serreHom` closely follows `serreChevalleyInvolution`
@@ -655,47 +654,50 @@ noncomputable def negativeEquiv (hA : A.IsGeneralizedCartan) :
     (negativeEquiv R hA a : PresentedLieAlgebra R) = negativeQuotientHom R a := by
   rw [negativeEquiv, LieEquiv.trans_apply, LieEquiv.ofEq_apply, LieEquiv.ofInjective_apply]
 
-/-- For a generalized Cartan matrix `A`, the raising generators `eᵢ` are linearly independent over
-`K`. -/
-theorem linearIndependent_positiveGenerator (hA : A.IsGeneralizedCartan) :
+section GeneratorIndependence
+
+variable {R} (hinj : Function.Injective (cartanElement R))
+include hinj
+
+/-- Whenever `cartanElement R` is injective, the raising generators `eᵢ` are linearly independent
+over `K`. -/
+theorem linearIndependent_positiveGenerator :
     LinearIndependent K (positiveGenerator R) := by
-  have h := (linearIndependent_serreIdeal_mk_of K A).map' (positiveQuotientHom R).toLinearMap
-    (LinearMap.ker_eq_bot.mpr (positiveQuotientHom_injective R hA))
-  simpa [Function.comp_def] using h
+  refine linearIndependent_iff'.mpr fun s c hc i hi => ?_
+  have h := congrArg (fun z => ⁅z, negativeGenerator R i⁆) hc
+  simp only [sum_lie, smul_lie, zero_lie] at h
+  rw [Finset.sum_eq_single_of_mem i hi (fun j _ hij => by
+    rw [lie_positiveGenerator_negativeGenerator_of_ne R hij, smul_zero]),
+    lie_positiveGenerator_negativeGenerator_self, ← map_smul, ← map_zero (cartanElement R)] at h
+  exact (smul_eq_zero.mp (hinj h)).resolve_right (R.coroot_linearIndependent.ne_zero i)
 
-/-- For a generalized Cartan matrix `A`, the lowering generators `fᵢ` are linearly independent over
-`K`. -/
-theorem linearIndependent_negativeGenerator (hA : A.IsGeneralizedCartan) :
+/-- Whenever `cartanElement R` is injective, the lowering generators `fᵢ` are linearly independent
+over `K`. -/
+theorem linearIndependent_negativeGenerator :
     LinearIndependent K (negativeGenerator R) := by
-  have h := (linearIndependent_serreIdeal_mk_of K A).map' (negativeQuotientHom R).toLinearMap
-    (LinearMap.ker_eq_bot.mpr (negativeQuotientHom_injective R hA))
-  simpa [Function.comp_def] using h
+  refine linearIndependent_iff'.mpr fun s c hc i hi => ?_
+  have h := congrArg (fun z => ⁅positiveGenerator R i, z⁆) hc
+  simp only [lie_sum, lie_smul, lie_zero] at h
+  rw [Finset.sum_eq_single_of_mem i hi (fun j _ hij => by
+    rw [lie_positiveGenerator_negativeGenerator_of_ne R hij.symm, smul_zero]),
+    lie_positiveGenerator_negativeGenerator_self, ← map_smul, ← map_zero (cartanElement R)] at h
+  exact (smul_eq_zero.mp (hinj h)).resolve_right (R.coroot_linearIndependent.ne_zero i)
 
-/-- For a generalized Cartan matrix `A`, the raising generator map `i ↦ eᵢ` is injective. -/
-theorem positiveGenerator_injective (hA : A.IsGeneralizedCartan) :
+/-- Whenever `cartanElement R` is injective, the raising generator map `i ↦ eᵢ` is injective. -/
+theorem positiveGenerator_injective :
     Function.Injective (positiveGenerator R) :=
-  (linearIndependent_positiveGenerator R hA).injective
+  (linearIndependent_positiveGenerator hinj).injective
 
-/-- For a generalized Cartan matrix `A`, the lowering generator map `i ↦ fᵢ` is injective. -/
-theorem negativeGenerator_injective (hA : A.IsGeneralizedCartan) :
+/-- Whenever `cartanElement R` is injective, the lowering generator map `i ↦ fᵢ` is injective. -/
+theorem negativeGenerator_injective :
     Function.Injective (negativeGenerator R) :=
-  (linearIndependent_negativeGenerator R hA).injective
+  (linearIndependent_negativeGenerator hinj).injective
+
+end GeneratorIndependence
 
 section SerreInjective
 
 variable [DecidableEq I]
-
-private theorem serreHom_comp_toSerreE :
-    (serreHom R).comp (toSerreE K A) = positiveQuotientHom R :=
-  TauCeti.FreeLieAlgebra.quotient_hom_ext fun i => by
-    rw [LieHom.comp_apply, LieIdeal.mkQ_apply, toSerreE_mk_of,
-      positiveQuotientHom_mk_of, serreHom_serreE]
-
-private theorem serreHom_comp_toSerreF :
-    (serreHom R).comp (toSerreF K A) = negativeQuotientHom R :=
-  TauCeti.FreeLieAlgebra.quotient_hom_ext fun i => by
-    rw [LieHom.comp_apply, LieIdeal.mkQ_apply, toSerreF_mk_of,
-      negativeQuotientHom_mk_of, serreHom_serreF]
 
 private theorem exists_serreHom_eq_triangular (z : Matrix.ToLieAlgebra K A) :
     ∃ (a b : FreeLieAlgebra K I ⧸ serreIdeal K A) (c : I →₀ K),
@@ -756,7 +758,10 @@ example {H : Type*} [AddCommGroup H] [Module ℚ H]
       LinearIndependent ℚ (positiveGenerator R) ∧
       Function.Injective (serreHom R) :=
   have hA : (!![2, -2; -2, 2] : Matrix (Fin 2) (Fin 2) ℤ).IsGeneralizedCartan := by decide
-  ⟨positiveQuotientHom_injective R hA, linearIndependent_positiveGenerator R hA,
+  have hinj : Function.Injective (cartanElement R) :=
+    (injective_iff_map_eq_zero _).mpr fun _ hx =>
+      (eq_zero_of_quotientTriangular_sum_eq_zero R hA (a := 0) (b := 0) (by simpa using hx)).2.1
+  ⟨positiveQuotientHom_injective R hA, linearIndependent_positiveGenerator hinj,
     serreHom_injective R hA⟩
 
 end KacMoody

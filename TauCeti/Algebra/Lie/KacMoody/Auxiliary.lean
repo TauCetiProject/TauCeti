@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.KacMoody.Basic
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
-import TauCeti.Algebra.Lie.Hom
+import TauCeti.Algebra.Lie.KacMoody.SerreRelations
 import TauCeti.Algebra.Lie.KacMoody.WordRep
 import TauCeti.Algebra.Lie.Subalgebra.LieSpan
 import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Embedding
@@ -17,19 +17,25 @@ import TauCeti.Algebra.Lie.Weights.Eigenvector
 /-!
 # The auxiliary Kac–Moody presentation and Kac's representation
 
-Let `R` be a realization of an integral matrix `A` over a field `K`. To establish the triangular
-directness of `TauCeti.KacMoody.PresentedLieAlgebra R` when `A` is a generalized Cartan matrix
-(`Matrix.IsGeneralizedCartan A`), we work with Kac's auxiliary Lie algebra
+Let `R` be a realization of an integral matrix `A` over a field `K`. While the internal triangular
+decomposition `𝔤 = n⁻ ⊕ 𝔥 ⊕ n⁺` of `TauCeti.KacMoody.PresentedLieAlgebra R` in
+`TauCeti/Algebra/Lie/KacMoody/Triangular.lean` holds unconditionally for every integer matrix `A`,
+establishing directness and injectivity for the sum map
+`(a, x, b) ↦ negativeQuotientHom R a + cartanElement R x + positiveQuotientHom R b` out of the two
+abstract one-sided Serre quotients `FreeLieAlgebra K I ⧸ serreIdeal K A` and the realization space
+`H` requires `A` to be a generalized Cartan matrix (`Matrix.IsGeneralizedCartan A`).
+
+To prove this stronger abstract-quotient result, we work with Kac's auxiliary Lie algebra
 `FreeLieAlgebra K (Generator I H) ⧸ auxIdeal R` (without Serre relations), lift Kac's word
 representation on `K[FreeMonoid I]` from `TauCeti/Algebra/Lie/KacMoody/WordRep.lean` to prove
 triangular directness of the auxiliary algebra using `FreeAlgebra.equivMonoidAlgebraFreeMonoid`
 and the PBW embedding of `FreeLieAlgebra K I`, and verify `ad fₖ`-invariance of the Serre ideal
 in the auxiliary algebra via `TauCeti.KacMoody.lie_ad_pow_lie_eq_zero`
-(`TauCeti/Algebra/Lie/KacMoody/Basic.lean`).
+(`TauCeti/Algebra/Lie/KacMoody/SerreRelations.lean`).
 
 Passing to the quotient yields `TauCeti.KacMoody.eq_zero_of_quotientTriangular_sum_eq_zero`, from
 which `TauCeti/Algebra/Lie/KacMoody/Triangular.lean` deduces the one-sided Serre quotient
-identifications, generator independence, and the embedding of `Matrix.ToLieAlgebra K A`, and
+identifications and the embedding of `Matrix.ToLieAlgebra K A`, and
 `TauCeti/Algebra/Lie/KacMoody/CartanInjective.lean` deduces Cartan injectivity.
 
 All results hold over an arbitrary field `K`, with no characteristic or finiteness assumption.
@@ -89,7 +95,7 @@ private theorem lieSpan_auxGenerators_eq_top :
 
 private noncomputable abbrev auxChevalley : AuxLieAlgebra R ≃ₗ⁅K⁆ AuxLieAlgebra R :=
   quotientChevalleyInvolution R le_rfl
-    (auxIdeal_le_ker (satisfiesAuxRelations_aux R).neg_swap)
+    (auxIdeal_le_ker_lift_generatorMap (satisfiesAuxRelations_aux R).neg_swap)
 
 private noncomputable def auxPosHom : FreeLieAlgebra K I →ₗ⁅K⁆ AuxLieAlgebra R :=
   FreeLieAlgebra.lift K (auxPos R)
@@ -115,7 +121,7 @@ private noncomputable def auxToPresented : AuxLieAlgebra R →ₗ⁅K⁆ Present
   (auxIdeal R).liftQ
     (FreeLieAlgebra.lift K
       (generatorMap (cartanElement R) (positiveGenerator R) (negativeGenerator R)))
-    (auxIdeal_le_ker (satisfiesRelations_generators R).toSatisfiesAuxRelations)
+    (auxIdeal_le_ker_lift_generatorMap (satisfiesRelations_generators R).toSatisfiesAuxRelations)
 
 /-! ### Kac's Verma-type representation on formal words -/
 
@@ -131,7 +137,7 @@ private noncomputable def auxRep (lam : Module.Dual K H) :
   (auxIdeal R).liftQ
     (FreeLieAlgebra.lift K
       (generatorMap (cartanAction R lam) (raising R lam) (lowering (K := K))))
-    (auxIdeal_le_ker (satisfiesAuxRelations_wordRep R lam))
+    (auxIdeal_le_ker_lift_generatorMap (satisfiesAuxRelations_wordRep R lam))
 
 open scoped Classical in
 private theorem auxRep_auxPosHom_one (lam : Module.Dual K H) (b : FreeLieAlgebra K I) :
@@ -313,8 +319,11 @@ private theorem lie_auxNeg_auxSerrePosSubmodule (hA : A.IsGeneralizedCartan) (k 
   induction hb using serreIdeal_induction with
   | relator i j =>
     have haux := satisfiesAuxRelations_aux R
-    rw [auxPosHom_serreRelator, lie_ad_pow_lie_eq_zero hA haux.lie_cartan_positive
-      haux.lie_cartan_negative haux.lie_positive_negative_self
+    rw [auxPosHom_serreRelator, lie_ad_pow_lie_eq_zero hA
+      (C := fun i => auxCartan R (R.coroot i))
+      (fun a b => by rw [haux.lie_cartan_positive]; simp [Int.cast_smul_eq_zsmul])
+      (fun a b => by rw [haux.lie_cartan_negative]; simp [Int.cast_smul_eq_zsmul])
+      haux.lie_positive_negative_self
       (fun _ _ h => haux.lie_positive_negative_of_ne _ _ h) i j k]
     exact zero_mem _
   | zero => simp

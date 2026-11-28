@@ -27,8 +27,9 @@ constructing an invariant bilinear form additionally uses a symmetrizer
   Cartan.
 * `Matrix.isGeneralizedCartan_transpose`: transposition preserves generalized Cartan matrices.
 * `Matrix.IsGeneralizedCartan.submatrix`, `Matrix.isGeneralizedCartan_submatrix_equiv`,
-  `Matrix.IsGeneralizedCartan.fromBlocks`: closure under principal submatrices along an embedding,
-  restriction along an equivalence, and block-diagonal direct sums.
+  `Matrix.IsGeneralizedCartan.fromBlocks`, `Matrix.isGeneralizedCartan_fromBlocks`: closure under
+  principal submatrices along an embedding, restriction along an equivalence, and block-diagonal
+  direct sums.
 
 ## References
 
@@ -102,6 +103,14 @@ theorem isGeneralizedCartan_submatrix_equiv {I I' : Type*} {M : Matrix I I ℤ} 
     (M.submatrix e e).IsGeneralizedCartan ↔ M.IsGeneralizedCartan :=
   ⟨fun h => by simpa [Matrix.submatrix_submatrix] using h.submatrix e.symm.toEmbedding,
     fun h => h.submatrix e.toEmbedding⟩
+
+/-- A block-diagonal matrix is generalized Cartan if and only if both diagonal blocks are. -/
+@[simp]
+theorem isGeneralizedCartan_fromBlocks {I J : Type*} {M : Matrix I I ℤ} {N : Matrix J J ℤ} :
+    (Matrix.fromBlocks M 0 0 N).IsGeneralizedCartan ↔
+      M.IsGeneralizedCartan ∧ N.IsGeneralizedCartan :=
+  ⟨fun h => ⟨h.submatrix ⟨Sum.inl, Sum.inl_injective⟩, h.submatrix ⟨Sum.inr, Sum.inr_injective⟩⟩,
+    fun h => h.1.fromBlocks h.2⟩
 
 end Matrix
 

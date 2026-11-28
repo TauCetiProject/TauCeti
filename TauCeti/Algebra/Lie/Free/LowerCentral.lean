@@ -146,7 +146,7 @@ theorem lowerCentralSeries_two_le_ker_lift {x y : L} (hx : ⁅x, ⁅x, y⁆⁆ =
   have hK (a : _root_.FreeLieAlgebra R (Fin 2)) : f a ∈ Submodule.span R {x, y, ⁅x, y⁆} := by
     have hφ : f = K.incl.comp (_root_.FreeLieAlgebra.lift R
         ![⟨x, Submodule.subset_span (by simp)⟩, ⟨y, Submodule.subset_span (by simp)⟩]) := by
-      rw [LieHom.comp_lift_pair]
+      rw [LieHom.comp_freeLieAlgebraLift_pair]
       simp only [f, LieSubalgebra.coe_incl]
     rw [hφ]
     exact SetLike.coe_mem _
