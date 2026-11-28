@@ -15,12 +15,14 @@ import TauCeti.Analysis.Normed.Group.Pi
 For positive real endpoints `r ≤ s`, Laurent series converging at both endpoints converge at
 all radii in `[r, s]`. Their Cauchy convolution and the norm `max (|f|ᵣ, |f|ₛ)` give the Banach
 algebra of the closed annulus. Both endpoints are needed: when `[NormOneClass R]`, the norms
-of `t` and `t⁻¹` are `s` and `r⁻¹`, respectively. The construction allows arbitrary real radii
+of `t` and `t⁻¹` are `s` and `r⁻¹`, respectively. The construction allows arbitrary positive radii
 and either characteristic.
 
 `closedAnnulusCoeff` is the coefficient submodule, and `ClosedAnnulusRing` equips it with convergent
 convolution. Restriction to a smaller annulus is the identity on coefficients and decreases the
 norm. Finite Laurent polynomials are dense in the endpoint maximum norm.
+`RobbaRing.annulusToClosedAnnulus` restricts an open annulus to a compact window
+`[α, β]` with `r < α ≤ β < 1`, preserving all Laurent coefficients.
 
 The convolution estimates come from `TauCeti.RingTheory.Robba.Basic`. Completeness uses the
 weighted uniform coefficient limit of `TauCeti.exists_weighted_uniform_limit`.
@@ -72,14 +74,67 @@ theorem closedAnnulusCoeff_le {r s r' s' : ℝ} (hr : 0 < r) (hrr' : r ≤ r')
   ⟨ha.1.of_endpoints ha.2 hr hrr' (hr's'.trans hs's),
     ha.1.of_endpoints ha.2 hr (hrr'.trans hr's') hs's⟩
 
-variable (R) in
 /-- Laurent series on a closed annulus, with Cauchy convolution as multiplication. The norm is
-the maximum of the Gauss norms at the two endpoints. -/
-abbrev ClosedAnnulusRing (r s : ℝ) : Type _ := closedAnnulusCoeff R r s
+the maximum of the Gauss norms at the two endpoints. The type synonym keeps the coefficient
+submodule's pointwise topology out of instance synthesis. -/
+@[expose]
+def ClosedAnnulusRing (R : Type*) [SeminormedRing R] (r s : ℝ) : Type _ :=
+  closedAnnulusCoeff R r s
 
 namespace ClosedAnnulusRing
 
-variable {r s : ℝ} [Fact (0 < r)] [Fact (0 < s)]
+variable {r s : ℝ}
+
+instance : AddCommGroup (ClosedAnnulusRing R r s) :=
+  inferInstanceAs (AddCommGroup (closedAnnulusCoeff R r s))
+
+/-- View a closed-annulus series as its Laurent coefficient family. -/
+instance : CoeOut (ClosedAnnulusRing R r s) (ℤ → R) :=
+  ⟨fun f ↦ (show closedAnnulusCoeff R r s from f).val⟩
+
+@[simp]
+theorem coe_zero : ((0 : ClosedAnnulusRing R r s) : ℤ → R) = 0 := (rfl)
+
+@[simp]
+theorem coe_add (f g : ClosedAnnulusRing R r s) :
+    ((f + g : ClosedAnnulusRing R r s) : ℤ → R) = (f : ℤ → R) + (g : ℤ → R) := (rfl)
+
+@[simp]
+theorem coe_neg (f : ClosedAnnulusRing R r s) :
+    ((-f : ClosedAnnulusRing R r s) : ℤ → R) = -(f : ℤ → R) := (rfl)
+
+@[simp]
+theorem coe_sub (f g : ClosedAnnulusRing R r s) :
+    ((f - g : ClosedAnnulusRing R r s) : ℤ → R) = (f : ℤ → R) - (g : ℤ → R) := (rfl)
+
+private def coeffAddHom (n : ℤ) : ClosedAnnulusRing R r s →+ R where
+  toFun f := (f : ℤ → R) n
+  map_zero' := (rfl)
+  map_add' _ _ := (rfl)
+
+@[simp]
+private theorem coeffAddHom_apply (n : ℤ) (f : ClosedAnnulusRing R r s) :
+    coeffAddHom n f = (f : ℤ → R) n := (rfl)
+
+/-- Form a closed-annulus series from a family converging at both endpoints. -/
+def ofCoeffs (a : ℤ → R) (ha : a ∈ closedAnnulusCoeff R r s) : ClosedAnnulusRing R r s :=
+  show closedAnnulusCoeff R r s from ⟨a, ha⟩
+
+@[simp]
+theorem coe_ofCoeffs (a : ℤ → R) (ha : a ∈ closedAnnulusCoeff R r s) :
+    (ofCoeffs a ha : ℤ → R) = a := (rfl)
+
+/-- The coefficients of a closed-annulus series converge at both endpoints. -/
+theorem coeff_mem (f : ClosedAnnulusRing R r s) : (f : ℤ → R) ∈ closedAnnulusCoeff R r s :=
+  (show closedAnnulusCoeff R r s from f).property
+
+/-- A closed-annulus series is determined by its Laurent coefficients. -/
+@[ext]
+theorem ext {f g : ClosedAnnulusRing R r s} (h : ∀ n, (f : ℤ → R) n = (g : ℤ → R) n) :
+    f = g :=
+  Subtype.ext (funext h)
+
+variable [Fact (0 < r)] [Fact (0 < s)]
 
 /-- Endpoint convergence supplies convergent convolution and its associativity hypotheses. -/
 instance [IsUltrametricDist R] [CompleteSpace R] :
@@ -90,6 +145,15 @@ instance [IsUltrametricDist R] [CompleteSpace R] :
   addConvolutionExists ha hb := ha.1.addConvolutionExists (Fact.out) hb.1
   summable_sigma_addFiber_mul_mul ha hb hc :=
     ha.1.summable_sigma_addFiber_mul_mul (Fact.out) hb.1 hc.1
+
+/-- The Laurent monomial with coefficient `c` in degree `n`. -/
+def monomial [IsUltrametricDist R] [CompleteSpace R] (n : ℤ) (c : R) : ClosedAnnulusRing R r s :=
+  (IsConvolutionRing.monomial n c : closedAnnulusCoeff R r s)
+
+@[simp]
+theorem coe_monomial [IsUltrametricDist R] [CompleteSpace R] (n : ℤ) (c : R) :
+    (monomial (r := r) (s := s) n c : ℤ → R) = Pi.single n c :=
+  IsConvolutionRing.coe_monomial (S := closedAnnulusCoeff R r s) n c
 
 end ClosedAnnulusRing
 
@@ -108,10 +172,20 @@ private theorem max_gaussNorm_add_le (f g : ClosedAnnulusRing R r s) :
       max (max (laurentGaussNorm r (f : ℤ → R)) (laurentGaussNorm s (f : ℤ → R)))
         (max (laurentGaussNorm r (g : ℤ → R)) (laurentGaussNorm s (g : ℤ → R))) := by
   exact max_le
-    ((laurentGaussNorm_add_le hr.out.le f.property.1.bddAbove g.property.1.bddAbove).trans
+    ((laurentGaussNorm_add_le hr.out.le f.coeff_mem.1.bddAbove g.coeff_mem.1.bddAbove).trans
       (max_le_max (le_max_left _ _) (le_max_left _ _)))
-    ((laurentGaussNorm_add_le hs.out.le f.property.2.bddAbove g.property.2.bddAbove).trans
+    ((laurentGaussNorm_add_le hs.out.le f.coeff_mem.2.bddAbove g.coeff_mem.2.bddAbove).trans
       (max_le_max (le_max_right _ _) (le_max_right _ _)))
+
+noncomputable instance : Ring (ClosedAnnulusRing R r s) :=
+  inferInstanceAs (Ring (closedAnnulusCoeff R r s))
+
+@[simp]
+theorem coe_one : ((1 : ClosedAnnulusRing R r s) : ℤ → R) = Pi.single 0 1 := (rfl)
+
+@[simp]
+theorem coe_mul (f g : ClosedAnnulusRing R r s) :
+    ((f * g : ClosedAnnulusRing R r s) : ℤ → R) = (f : ℤ → R) ⋆ᵣ₊ (g : ℤ → R) := (rfl)
 
 /-- The maximum of the two endpoint Gauss norms is submultiplicative. -/
 private theorem max_gaussNorm_mul_le (f g : ClosedAnnulusRing R r s) :
@@ -121,11 +195,11 @@ private theorem max_gaussNorm_mul_le (f g : ClosedAnnulusRing R r s) :
         max (laurentGaussNorm r (g : ℤ → R)) (laurentGaussNorm s (g : ℤ → R)) := by
   refine max_le ?_ ?_
   · exact (laurentGaussNorm_addRingConvolution_le hr.out
-      f.property.1.bddAbove g.property.1.bddAbove).trans
+      f.coeff_mem.1.bddAbove g.coeff_mem.1.bddAbove).trans
       (mul_le_mul (le_max_left _ _) (le_max_left _ _) (laurentGaussNorm_nonneg _ _)
         (le_max_of_le_left (laurentGaussNorm_nonneg _ _)))
   · exact (laurentGaussNorm_addRingConvolution_le hs.out
-      f.property.2.bddAbove g.property.2.bddAbove).trans
+      f.coeff_mem.2.bddAbove g.coeff_mem.2.bddAbove).trans
       (mul_le_mul (le_max_right _ _) (le_max_right _ _) (laurentGaussNorm_nonneg _ _)
         (le_max_of_le_left (laurentGaussNorm_nonneg _ _)))
 
@@ -141,21 +215,11 @@ noncomputable instance instNormedRing : NormedRing (ClosedAnnulusRing R r s) :=
       neg' f := by simp
       mul_le' f g := by exact max_gaussNorm_mul_le f g
       eq_zero_of_map_eq_zero' f hf := by
-        apply Subtype.ext
-        funext n
-        have h := (le_laurentGaussNorm f.property.1.bddAbove n).trans
+        ext n
+        have h := (le_laurentGaussNorm f.coeff_mem.1.bddAbove n).trans
           ((le_max_left _ _).trans hf.le)
-        simpa only [Submodule.coe_zero, Pi.zero_apply] using norm_eq_zero.mp
+        simpa only [coe_zero, Pi.zero_apply] using norm_eq_zero.mp
           ((nonpos_of_mul_nonpos_left h (zpow_pos hr.out n)).antisymm (norm_nonneg _)) }
-
-/-- The uniformity of a closed annulus is induced by its endpoint maximum norm. -/
-noncomputable instance instUniformSpace : UniformSpace (ClosedAnnulusRing R r s) :=
-  instNormedRing.toMetricSpace.toUniformSpace
-
-/-- The topology of a closed annulus is induced by its endpoint maximum norm, rather than
-coefficientwise convergence. -/
-noncomputable instance instTopologicalSpace : TopologicalSpace (ClosedAnnulusRing R r s) :=
-  instUniformSpace.toTopologicalSpace
 
 /-- The norm is the maximum of the endpoint Gauss norms. -/
 theorem norm_def (f : ClosedAnnulusRing R r s) :
@@ -164,8 +228,8 @@ theorem norm_def (f : ClosedAnnulusRing R r s) :
 /-- Every coefficient is bounded in both endpoint weights by the norm. -/
 theorem norm_coeff_mul_zpow_le (f : ClosedAnnulusRing R r s) (n : ℤ) :
     ‖(f : ℤ → R) n‖ * r ^ n ≤ ‖f‖ ∧ ‖(f : ℤ → R) n‖ * s ^ n ≤ ‖f‖ :=
-  ⟨(le_laurentGaussNorm f.property.1.bddAbove n).trans (le_max_left _ _),
-    (le_laurentGaussNorm f.property.2.bddAbove n).trans (le_max_right _ _)⟩
+  ⟨(le_laurentGaussNorm f.coeff_mem.1.bddAbove n).trans (le_max_left _ _),
+    (le_laurentGaussNorm f.coeff_mem.2.bddAbove n).trans (le_max_right _ _)⟩
 
 /-- A norm bound is equivalent to the two endpoint weighted coefficient bounds. -/
 theorem norm_le_iff {f : ClosedAnnulusRing R r s} {C : ℝ} :
@@ -182,26 +246,24 @@ instance : IsUltrametricDist (ClosedAnnulusRing R r s) :=
 /-- The norm of a Laurent monomial uses both endpoint weights. -/
 @[simp]
 theorem norm_monomial (n : ℤ) (c : R) :
-    ‖(IsConvolutionRing.monomial n c : ClosedAnnulusRing R r s)‖ =
+    ‖(monomial n c : ClosedAnnulusRing R r s)‖ =
       max (‖c‖ * r ^ n) (‖c‖ * s ^ n) := by
-  simp [norm_def, laurentGaussNorm_single, hr.out.le, hs.out.le]
+  simp [norm_def, coe_monomial, laurentGaussNorm_single, hr.out.le, hs.out.le]
 
 /-- The norm of one is one when this holds in the coefficient ring. -/
 instance [NormOneClass R] : NormOneClass (ClosedAnnulusRing R r s) where
   norm_one := by
-    rw [← IsConvolutionRing.monomial_zero_one, norm_monomial]
+    have h : (monomial 0 (1 : R) : ClosedAnnulusRing R r s) = 1 :=
+      IsConvolutionRing.monomial_zero_one (S := closedAnnulusCoeff R r s)
+    rw [← h, norm_monomial]
     simp
 
 /-- Each coefficient map is uniformly continuous in the endpoint maximum norm. -/
 theorem uniformContinuous_coeff (n : ℤ) :
     UniformContinuous fun f : ClosedAnnulusRing R r s ↦ (f : ℤ → R) n :=
-  AddMonoidHomClass.uniformContinuous_of_bound
-    ({ toFun := fun f : ClosedAnnulusRing R r s ↦ (f : ℤ → R) n
-       map_zero' := rfl
-       map_add' := fun _ _ ↦ rfl } : ClosedAnnulusRing R r s →+ R)
-    (r ^ n)⁻¹ fun f ↦ by
-      rw [inv_mul_eq_div, le_div_iff₀ (zpow_pos hr.out n)]
-      exact (norm_coeff_mul_zpow_le f n).1
+  AddMonoidHomClass.uniformContinuous_of_bound (coeffAddHom n) (r ^ n)⁻¹ fun f ↦ by
+    rw [coeffAddHom_apply, inv_mul_eq_div, le_div_iff₀ (zpow_pos hr.out n)]
+    exact (norm_coeff_mul_zpow_le f n).1
 
 omit [IsUltrametricDist R] [CompleteSpace R] in
 /-- A uniform weighted limit of closed-annulus series still converges at both endpoints. -/
@@ -215,8 +277,8 @@ private theorem limit_mem (F : ℕ → ClosedAnnulusRing R r s) (a : ℤ → R)
     intro k
     simp_rw [mul_max_of_nonneg _ _ (norm_nonneg _)]
     simpa only [max_self] using Tendsto.max
-      (laurentConvergesAt_iff.1 (F k).property.1)
-      (laurentConvergesAt_iff.1 (F k).property.2)
+      (laurentConvergesAt_iff.1 (F k).coeff_mem.1)
+      (laurentConvergesAt_iff.1 (F k).coeff_mem.2)
   exact ⟨laurentConvergesAt_iff.2 (squeeze_zero
     (fun n ↦ mul_nonneg (norm_nonneg _) (zpow_pos hr.out n).le)
     (fun n ↦ mul_le_mul_of_nonneg_left (le_max_left _ _) (norm_nonneg _)) ha),
@@ -233,28 +295,30 @@ instance instCompleteSpace : CompleteSpace (ClosedAnnulusRing R r s) := by
       obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.1 hF ε hε
       refine ⟨N, fun k hk l hl n ↦ ?_⟩
       have h := norm_coeff_mul_zpow_le (F k - F l) n
-      simp only [Submodule.coe_sub, Pi.sub_apply] at h
+      simp only [coe_sub, Pi.sub_apply] at h
       rw [mul_max_of_nonneg _ _ (norm_nonneg _)]
       exact (max_le h.1 h.2).trans_lt ((dist_eq_norm _ _).symm.trans_lt (hN k hk l hl)))
-  refine ⟨⟨a, limit_mem F a hunif⟩, Metric.tendsto_atTop.2 fun ε hε ↦ ?_⟩
+  refine ⟨ofCoeffs a (limit_mem F a hunif), Metric.tendsto_atTop.2 fun ε hε ↦ ?_⟩
   obtain ⟨N, hN⟩ := hunif (ε / 2) (half_pos hε)
   refine ⟨N, fun k hk ↦ ?_⟩
   rw [dist_eq_norm]
   refine (norm_le_iff.2 fun n ↦ ?_).trans_lt (half_lt_self hε)
-  simp only [Submodule.coe_sub, Pi.sub_apply]
+  simp only [coe_sub, Pi.sub_apply, coe_ofCoeffs]
   exact ⟨(mul_le_mul_of_nonneg_left (le_max_left _ _) (norm_nonneg _)).trans (hN k hk n),
     (mul_le_mul_of_nonneg_left (le_max_right _ _) (norm_nonneg _)).trans (hN k hk n)⟩
 
 /-- Truncate a closed-annulus series to a finite set of Laurent degrees. -/
 noncomputable def trunc (f : ClosedAnnulusRing R r s) (S : Finset ℤ) : ClosedAnnulusRing R r s :=
-  ∑ n ∈ S, IsConvolutionRing.monomial n ((f : ℤ → R) n)
+  ∑ n ∈ S, monomial n ((f : ℤ → R) n)
 
 /-- Truncation retains exactly the coefficients in the chosen finite set. -/
 @[simp]
 theorem coe_trunc_apply (f : ClosedAnnulusRing R r s) (S : Finset ℤ) (n : ℤ) :
     (trunc f S : ℤ → R) n = if n ∈ S then (f : ℤ → R) n else 0 := by
   classical
-  simp [trunc, Finset.sum_apply, IsConvolutionRing.coe_monomial, Pi.single_apply]
+  -- Bundle coefficient evaluation to apply `map_sum` before simplifying each monomial.
+  change coeffAddHom n (∑ i ∈ S, monomial i ((f : ℤ → R) i)) = _
+  simp [map_sum, Pi.single_apply]
 
 /-- A truncation has finite Laurent support. -/
 theorem finite_support_trunc (f : ClosedAnnulusRing R r s) (S : Finset ℤ) :
@@ -272,12 +336,12 @@ theorem tendsto_trunc (f : ClosedAnnulusRing R r s) : Tendsto (trunc f) atTop (�
   have hF : Tendsto (fun n ↦ max (‖(f : ℤ → R) n‖ * r ^ n)
       (‖(f : ℤ → R) n‖ * s ^ n)) cofinite (𝓝 0) := by
     simpa only [max_self] using Tendsto.max
-      (laurentConvergesAt_iff.1 f.property.1) (laurentConvergesAt_iff.1 f.property.2)
+      (laurentConvergesAt_iff.1 f.coeff_mem.1) (laurentConvergesAt_iff.1 f.coeff_mem.2)
   have hbad := eventually_cofinite.1 (hF.eventually (gt_mem_nhds (half_pos hε)))
   refine ⟨hbad.toFinset, fun S hS ↦ ?_⟩
   rw [dist_eq_norm]
   refine (norm_le_iff.2 fun n ↦ ?_).trans_lt (half_lt_self hε)
-  simp only [Submodule.coe_sub, Pi.sub_apply, coe_trunc_apply]
+  simp only [coe_sub, Pi.sub_apply, coe_trunc_apply]
   by_cases hn : n ∈ S
   · simp [hn, (half_pos hε).le]
   · have hsmall : max (‖(f : ℤ → R) n‖ * r ^ n)
@@ -301,6 +365,21 @@ namespace ClosedAnnulusRing
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
   {r s : ℝ} [hr : Fact (0 < r)] [hs : Fact (0 < s)]
 
+noncomputable instance : CommRing (ClosedAnnulusRing R r s) :=
+  inferInstanceAs (CommRing (closedAnnulusCoeff R r s))
+
+noncomputable instance : Algebra R (ClosedAnnulusRing R r s) :=
+  inferInstanceAs (Algebra R (closedAnnulusCoeff R r s))
+
+@[simp]
+theorem coe_algebraMap (c : R) :
+    (algebraMap R (ClosedAnnulusRing R r s) c : ℤ → R) = Pi.single 0 c :=
+  IsConvolutionRing.coe_algebraMap (S := closedAnnulusCoeff R r s) c
+
+@[simp]
+theorem coe_smul (c : R) (f : ClosedAnnulusRing R r s) :
+    ((c • f : ClosedAnnulusRing R r s) : ℤ → R) = c • (f : ℤ → R) := (rfl)
+
 /-- Convolution is commutative over commutative coefficients. -/
 noncomputable instance instNormedCommRing : NormedCommRing (ClosedAnnulusRing R r s) :=
   { instNormedRing with mul_comm := mul_comm }
@@ -308,19 +387,23 @@ noncomputable instance instNormedCommRing : NormedCommRing (ClosedAnnulusRing R 
 /-- The norm of a constant Laurent series is its coefficient norm. -/
 @[simp]
 theorem norm_algebraMap (c : R) : ‖algebraMap R (ClosedAnnulusRing R r s) c‖ = ‖c‖ := by
-  rw [← IsConvolutionRing.monomial_zero_left, norm_monomial]
+  have h : (monomial 0 c : ClosedAnnulusRing R r s) =
+      algebraMap R (ClosedAnnulusRing R r s) c := by
+    ext n
+    simp
+  rw [← h, norm_monomial]
   simp
 
 /-- Restrict a Laurent series to a smaller closed annulus, without changing coefficients. -/
 noncomputable def restrict {r' s' : ℝ} (hrr' : r ≤ r') (hr's' : r' ≤ s') (hs's : s' ≤ s)
     [Fact (0 < r')] [Fact (0 < s')] :
     ClosedAnnulusRing R r s →ₐ[R] ClosedAnnulusRing R r' s' where
-  toFun f := ⟨f, closedAnnulusCoeff_le hr.out hrr' hr's' hs's f.property⟩
-  map_one' := Subtype.ext (by simp)
-  map_mul' _ _ := Subtype.ext (by simp)
-  map_zero' := Subtype.ext (by simp)
-  map_add' _ _ := Subtype.ext (by simp)
-  commutes' _ := Subtype.ext (by simp)
+  toFun f := ofCoeffs f (closedAnnulusCoeff_le hr.out hrr' hr's' hs's f.coeff_mem)
+  map_one' := ext (by simp)
+  map_mul' _ _ := ext (by simp)
+  map_zero' := ext (by simp)
+  map_add' _ _ := ext (by simp)
+  commutes' _ := ext (by simp)
 
 /-- Restriction is the identity on Laurent coefficients. -/
 @[simp]
@@ -334,9 +417,9 @@ theorem norm_restrict_le {r' s' : ℝ} (hrr' : r ≤ r') (hr's' : r' ≤ s') (hs
     ‖restrict hrr' hr's' hs's f‖ ≤ ‖f‖ := by
   rw [norm_def, coe_restrict, norm_def]
   exact max_le
-    (laurentGaussNorm_le_max_endpoints f.property.1.bddAbove f.property.2.bddAbove hr.out hrr'
+    (laurentGaussNorm_le_max_endpoints f.coeff_mem.1.bddAbove f.coeff_mem.2.bddAbove hr.out hrr'
       (hr's'.trans hs's))
-    (laurentGaussNorm_le_max_endpoints f.property.1.bddAbove f.property.2.bddAbove hr.out
+    (laurentGaussNorm_le_max_endpoints f.coeff_mem.1.bddAbove f.coeff_mem.2.bddAbove hr.out
       (hrr'.trans hr's') hs's)
 
 /-- Restriction is continuous for the Banach norms. -/
@@ -349,17 +432,17 @@ theorem continuous_restrict {r' s' : ℝ} (hrr' : r ≤ r') (hr's' : r' ≤ s') 
 theorem restrict_injective {r' s' : ℝ} (hrr' : r ≤ r') (hr's' : r' ≤ s') (hs's : s' ≤ s)
     [Fact (0 < r')] [Fact (0 < s')] :
     Function.Injective (restrict (R := R) hrr' hr's' hs's) := fun _ _ h ↦
-  Subtype.ext (congrArg (fun f : ClosedAnnulusRing R r' s' ↦ (f : ℤ → R)) h)
+  ext fun n ↦ congrArg (fun f : ClosedAnnulusRing R r' s' ↦ (f : ℤ → R) n) h
 
 /-- Restricting to the same annulus is the identity. -/
 @[simp]
 theorem restrict_refl (hrs : r ≤ s) :
     restrict (R := R) le_rfl hrs le_rfl = AlgHom.id R (ClosedAnnulusRing R r s) := by
-  exact AlgHom.ext fun f ↦ Subtype.ext (coe_restrict le_rfl hrs le_rfl f)
+  exact AlgHom.ext fun f ↦ ext fun n ↦ congrFun (coe_restrict le_rfl hrs le_rfl f) n
 
 /-- Successive restrictions agree with restriction to the final annulus. -/
 @[simp]
-theorem restrict_trans {r' s' r'' s'' : ℝ}
+theorem restrict_comp_restrict {r' s' r'' s'' : ℝ}
     [Fact (0 < r')] [Fact (0 < s')] [Fact (0 < r'')] [Fact (0 < s'')]
     (hrr' : r ≤ r') (hr's' : r' ≤ s') (hs's : s' ≤ s)
     (hr'r'' : r' ≤ r'') (hr''s'' : r'' ≤ s'') (hs''s' : s'' ≤ s') :
@@ -367,17 +450,16 @@ theorem restrict_trans {r' s' r'' s'' : ℝ}
       restrict (hrr'.trans hr'r'') hr''s'' (hs''s'.trans hs's) := by
   apply AlgHom.ext
   intro f
-  apply Subtype.ext
+  ext n
   simp only [AlgHom.coe_comp, Function.comp_apply, coe_restrict]
 
 /-- Restriction preserves Laurent monomials. -/
 @[simp]
 theorem restrict_monomial {r' s' : ℝ} [Fact (0 < r')] [Fact (0 < s')]
     (hrr' : r ≤ r') (hr's' : r' ≤ s') (hs's : s' ≤ s) (n : ℤ) (c : R) :
-    restrict hrr' hr's' hs's (IsConvolutionRing.monomial n c) =
-      IsConvolutionRing.monomial n c := by
-  apply Subtype.ext
-  simp only [coe_restrict, IsConvolutionRing.coe_monomial]
+    restrict hrr' hr's' hs's (monomial n c) = monomial n c := by
+  ext k
+  simp only [coe_restrict, coe_monomial]
 
 end ClosedAnnulusRing
 
@@ -389,11 +471,11 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 /-- Over a complete ultrametric field the closed annulus is a Banach algebra. -/
 noncomputable instance instNormedAlgebra : NormedAlgebra K (ClosedAnnulusRing K r s) where
   norm_smul_le c f := by
-    simp only [norm_def]
+    simp only [norm_def, coe_smul]
     rw [mul_max_of_nonneg _ _ (norm_nonneg c)]
     exact max_le_max
-      (laurentGaussNorm_smul_le hr.out.le f.property.1.bddAbove c)
-      (laurentGaussNorm_smul_le hs.out.le f.property.2.bddAbove c)
+      (laurentGaussNorm_smul_le hr.out.le f.coeff_mem.1.bddAbove c)
+      (laurentGaussNorm_smul_le hs.out.le f.coeff_mem.2.bddAbove c)
 
 end ClosedAnnulusRing
 
@@ -406,14 +488,19 @@ variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
 `[α, β]` in its interior. These maps give the compact windows of an open annular chart. -/
 noncomputable def annulusToClosedAnnulus (hrα : r < α) (hαβ : α ≤ β) (hβ₁ : β < 1) :
     annulus R r →ₐ[R] ClosedAnnulusRing R α β where
-  toFun f := ⟨((f : RobbaRing R) : ℤ → R),
-    (mem_annularCoeff.1 (mem_annulus.1 f.property) α hα.out hrα (hαβ.trans_lt hβ₁)),
-    (mem_annularCoeff.1 (mem_annulus.1 f.property) β hβ.out (hrα.trans_le hαβ) hβ₁)⟩
-  map_one' := Subtype.ext (by simp)
-  map_mul' _ _ := Subtype.ext (by simp)
-  map_zero' := Subtype.ext (by simp)
-  map_add' _ _ := Subtype.ext (by simp)
-  commutes' _ := Subtype.ext (by simp)
+  toFun f := ClosedAnnulusRing.ofCoeffs ((f : RobbaRing R) : ℤ → R)
+    ⟨mem_annularCoeff.1 (mem_annulus.1 f.property) α hα.out hrα (hαβ.trans_lt hβ₁),
+      mem_annularCoeff.1 (mem_annulus.1 f.property) β hβ.out (hrα.trans_le hαβ) hβ₁⟩
+  map_one' := ClosedAnnulusRing.ext (by simp)
+  map_mul' f g := ClosedAnnulusRing.ext (by
+    intro n
+    -- The restricted product uses the same coefficient convolution as the Robba product.
+    change (((f * g : annulus R r) : RobbaRing R) : ℤ → R) n =
+      (((f : RobbaRing R) : ℤ → R) ⋆ᵣ₊ ((g : RobbaRing R) : ℤ → R)) n
+    rw [Subalgebra.coe_mul, IsConvolutionRing.coe_mul])
+  map_zero' := ClosedAnnulusRing.ext (by simp)
+  map_add' _ _ := ClosedAnnulusRing.ext (fun _ ↦ rfl)
+  commutes' _ := ClosedAnnulusRing.ext (by simp)
 
 /-- Compact-window restriction preserves the coefficient family of a Robba series. -/
 @[simp]
