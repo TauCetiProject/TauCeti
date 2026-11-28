@@ -414,6 +414,13 @@ supplies the `Nonempty` instance, so no side condition is needed. -/
 def empiricalMeasure (x : ℕ → α) (n : ℕ) : ProbabilityMeasure α :=
   empiricalMeasureOfFintype (fun i : Fin (n + 1) => x i)
 
+/-- The finite measure underlying the empirical measure of the first `n + 1` terms of a sequence is
+the empirical finite measure of those terms. -/
+@[simp]
+theorem toFiniteMeasure_empiricalMeasure (x : ℕ → α) (n : ℕ) :
+    (empiricalMeasure x n).toFiniteMeasure = empiricalFiniteMeasure (fun i : Fin (n + 1) => x i) :=
+  (rfl)
+
 /-- The measure underlying an empirical measure is the uniform finite sum of Dirac measures. -/
 @[simp]
 theorem empiricalMeasure_toMeasure (x : ℕ → α) (n : ℕ) : (empiricalMeasure x n : Measure α) =
