@@ -29,10 +29,14 @@ open Finset
 
 namespace TauCeti.OneSidedBound
 
+/-- The reciprocal weight in the local loss, amplified on the two residue classes. -/
+private noncomputable def primeLossWeight (m p : ℕ) : ℝ :=
+  (if m ∣ p - 1 ∨ m ∣ p + 1 then (m : ℝ) else 1) / p
+
 /-- The local loss `fa(log b)²/p`, multiplied by the chain length `m` on the classes `±1`
 modulo `m`. The divisibility tests implement these classes for primes `p`. -/
 noncomputable def primeLoss (m f a b p : ℕ) : ℝ :=
-  (f : ℝ) * a * Real.log b ^ 2 * ((if m ∣ p - 1 ∨ m ∣ p + 1 then (m : ℝ) else 1) / p)
+  (f : ℝ) * a * Real.log b ^ 2 * primeLossWeight m p
 
 /-- The defining formula for the local loss. -/
 theorem primeLoss_def (m f a b p : ℕ) :
@@ -107,8 +111,9 @@ private theorem sum_primeLoss_mul_log_le (U : Finset ℕ) (x₁ m f a b : ℕ) :
       5 * f * a * Real.log b ^ 2 * Real.log x₁ * (1 + Real.log x₁) := by
   let S := U.filter fun p ↦ 2 ≤ p ∧ p < x₁
   have hS : ∀ p ∈ S, 2 ≤ p ∧ p < x₁ := fun _ hp ↦ (mem_filter.mp hp).2
-  let w (p : ℕ) := (if m ∣ p - 1 ∨ m ∣ p + 1 then (m : ℝ) else 1) / p
-  have hw (p : ℕ) : 0 ≤ w p := by dsimp [w]; split_ifs <;> positivity
+  have hw (p : ℕ) : 0 ≤ primeLossWeight m p := by
+    unfold primeLossWeight
+    split_ifs <;> positivity
   have hminus := sum_natCast_div_le_two_mul_harmonic_of_dvd_add (m := m) (B := x₁)
     (S := S.filter fun p ↦ m ∣ p - 1) (δ := -1) (by norm_num) fun p hp ↦ by
       obtain ⟨hp, hd⟩ := mem_filter.mp hp
@@ -124,7 +129,7 @@ private theorem sum_primeLoss_mul_log_le (U : Finset ℕ) (x₁ m f a b : ℕ) :
     rw [cast_harmonic_eq_sum_Ioc]
     exact sum_le_sum_of_subset_of_nonneg (fun p hp ↦ mem_Ioc.mpr
       ⟨zero_lt_two.trans_le (hS p hp).1, (hS p hp).2.le⟩) (by intros; positivity)
-  have hsum : ∑ p ∈ S, w p ≤ 5 * (1 + Real.log x₁) := by
+  have hsum : ∑ p ∈ S, primeLossWeight m p ≤ 5 * (1 + Real.log x₁) := by
     calc
       _ ≤ (∑ p ∈ S, (p : ℝ)⁻¹) +
           (∑ p ∈ S with m ∣ p - 1, (m : ℝ) / p) +
@@ -134,25 +139,25 @@ private theorem sum_primeLoss_mul_log_le (U : Finset ℕ) (x₁ m f a b : ℕ) :
         have hm₀ : 0 ≤ (m : ℝ) / p := by positivity
         have hp₀ : 0 ≤ (p : ℝ)⁻¹ := by positivity
         by_cases hm : m ∣ p - 1 <;> by_cases hp : m ∣ p + 1
-        · simp only [w, hm, hp, true_or, ite_true]
+        · simp only [primeLossWeight, hm, hp, true_or, ite_true]
           linarith only [hm₀, hp₀]
-        all_goals simp [w, hm, hp, one_div]
+        all_goals simp [primeLossWeight, hm, hp, one_div]
       _ ≤ _ := by linarith [harmonic_le_one_add_log x₁]
   let C : ℝ := (f : ℝ) * a * Real.log b ^ 2
   have hC : 0 ≤ C := by dsimp [C]; positivity
+  have hfactor (p : ℕ) : primeLoss m f a b p = C * primeLossWeight m p := by
+    simp only [primeLoss, C]
   calc
-    _ ≤ ∑ p ∈ S, C * (Real.log x₁ * w p) := by
+    _ ≤ ∑ p ∈ S, C * (Real.log x₁ * primeLossWeight m p) := by
       refine sum_le_sum fun p hp ↦ ?_
-      rw [primeLoss_def, mul_assoc C, mul_comm (w p)]
+      rw [hfactor, mul_assoc, mul_comm (primeLossWeight m p)]
       have hp₀ : 0 < (p : ℝ) := by exact_mod_cast (zero_lt_two.trans_le (hS p hp).1)
       have hp₁ : (p : ℝ) ≤ x₁ := by exact_mod_cast (hS p hp).2.le
       exact mul_le_mul_of_nonneg_left
         (mul_le_mul_of_nonneg_right (Real.log_le_log hp₀ hp₁) (hw p)) hC
-    _ = C * (Real.log x₁ * ∑ p ∈ S, w p) := by rw [mul_sum, mul_sum]
-    _ ≤ _ := by
-      calc
-        _ ≤ C * (Real.log x₁ * (5 * (1 + Real.log x₁))) := by gcongr
-        _ = _ := by dsimp [C]; ring
+    _ = C * (Real.log x₁ * ∑ p ∈ S, primeLossWeight m p) := by rw [mul_sum, mul_sum]
+    _ ≤ C * (Real.log x₁ * (5 * (1 + Real.log x₁))) := by gcongr
+    _ = _ := by dsimp [C]; ring
 
 /-- Separate the contributions of the small nonsplit primes and the level prime in the
 logarithmic loss budget. This bound does not need scale separation. -/
@@ -170,9 +175,17 @@ private theorem sum_allowedLoss_mul_log_le_harmonic (d : ℕ) [Fact d.Prime]
         2 * (primeLoss m f a b p * Real.log p) else 0) +
         if p = N then 2 * (m : ℝ) * f * b * Real.log p else 0) := by
       refine sum_le_sum fun p _ ↦ ?_
-      have hlevel : 0 ≤ 2 * (m : ℝ) * f * b * Real.log p := by positivity
-      unfold allowedLoss
-      split_ifs <;> simp_all [mul_assoc]
+      have hlevel : 0 ≤ (if p = N then 2 * (m : ℝ) * f * b * Real.log p else 0) :=
+        ite_nonneg (by positivity) le_rfl
+      rw [allowedLoss_def]
+      by_cases hsmall : p.Prime ∧ p < x₁ ∧ legendreSym d p ≠ 1
+      · simp only [ite_eq_left hsmall, mul_assoc (2 : ℝ) (primeLoss m f a b p)]
+        exact le_add_of_nonneg_right hlevel
+      · simp only [ite_eq_right hsmall, zero_add]
+        split
+        · rename_i hprime
+          simp only [ite_eq_left hprime.1, le_refl]
+        · simpa only [zero_mul] using hlevel
     _ = 2 * (∑ p ∈ S, primeLoss m f a b p * Real.log p) +
         (if N ∈ U then 2 * (m : ℝ) * f * b * Real.log N else 0) := by
       rw [sum_add_distrib, sum_ite_eq', ← sum_filter]
