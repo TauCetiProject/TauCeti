@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Matrix.Mul
 public import Mathlib.LinearAlgebra.Unimodular
 public import Mathlib.RingTheory.ZMod.LocalRing
 
 import Mathlib.RingTheory.PrincipalIdealDomain
 import TauCeti.Data.ZMod.Count
 import TauCeti.LinearAlgebra.Unimodular.Card
+import TauCeti.LinearAlgebra.Unimodular.Extension
 import TauCeti.RingTheory.LocalRing.Card
 
 /-!
@@ -28,7 +30,10 @@ the local density of a form modulo `Q` counts zeros. This file defines the finit
 * by the Chinese remainder theorem the count is multiplicative in coprime moduli
   (`FormDensity.card_primitiveVectors_zmod_mul`);
 * modulo a positive prime power there are `p ^ (r m) - p ^ ((r - 1) m)` primitive vectors of length
-  `m` (`FormDensity.card_primitiveVectors_zmod_prime_pow`).
+  `m` (`FormDensity.card_primitiveVectors_zmod_prime_pow`);
+* over a finite local ring with maximal ideal `𝔪`, the primitive vectors of length `m` orthogonal
+  to a fixed primitive vector number `#Rᵐ⁻¹ - #𝔪ᵐ⁻¹`, whichever primitive vector is fixed
+  (`FormDensity.card_primitiveVectors_filter_dotProduct_eq_zero`).
 
 The general facts about unimodular vectors that these rest on are in
 `TauCeti.LinearAlgebra.Unimodular`, `TauCeti.LinearAlgebra.Unimodular.Card` and
@@ -42,7 +47,9 @@ The general facts about unimodular vectors that these rest on are in
 
 public section
 
-open Finset
+open Finset IsLocalRing
+
+open scoped Matrix
 
 namespace TauCeti.FormDensity
 
@@ -127,5 +134,76 @@ theorem card_primitiveVectors_zmod_prime_pow (p r : ℕ) [Fact p.Prime] (hr : r 
     simp [IsLocalRing.mem_maximalIdeal, mem_nonunits_iff]
   rw [card_primitiveVectors, TauCeti.IsLocalRing.card_isUnimodular, hmax, Nat.card_zmod,
     pow_mul, pow_mul]
+
+section LocalRing
+
+variable [IsLocalRing R] [DecidableEq R]
+
+/-- Over a finite local ring, the primitive vectors of length `m` with a prescribed zero coordinate
+are the primitive vectors of length `m - 1`: there are `#Rᵐ⁻¹ - #𝔪ᵐ⁻¹` of them. -/
+theorem card_primitiveVectors_filter_apply_eq_zero (j : ι) :
+    #{a ∈ primitiveVectors ι R | a j = 0} =
+      Nat.card R ^ (Fintype.card ι - 1) - Nat.card (maximalIdeal R) ^ (Fintype.card ι - 1) := by
+  classical
+  have hcard : Fintype.card {i // i ≠ j} = Fintype.card ι - 1 := by simp
+  rw [← hcard, ← TauCeti.IsLocalRing.card_isUnimodular, ← card_primitiveVectors]
+  refine card_nbij' (fun a i ↦ a i) (fun c i ↦ if h : i = j then 0 else c ⟨i, h⟩) ?_ ?_ ?_ ?_
+  · intro a ha
+    simp only [mem_coe, mem_filter, mem_primitiveVectors,
+      TauCeti.Module.isUnimodular_iff_exists_isUnit] at ha
+    obtain ⟨⟨i, hi⟩, haj⟩ := ha
+    have hij : i ≠ j := by
+      rintro rfl
+      exact not_isUnit_zero (haj ▸ hi)
+    simpa [TauCeti.Module.isUnimodular_iff_exists_isUnit] using ⟨i, hij, hi⟩
+  · intro c hc
+    simp only [mem_coe, mem_primitiveVectors, TauCeti.Module.isUnimodular_iff_exists_isUnit] at hc
+    obtain ⟨⟨i, hij⟩, hi⟩ := hc
+    simp only [mem_coe, mem_filter, mem_primitiveVectors, ↓reduceDIte,
+      TauCeti.Module.isUnimodular_iff_exists_isUnit]
+    exact ⟨⟨i, by simpa [hij] using hi⟩, trivial⟩
+  · intro a ha
+    simp only [mem_coe, mem_filter] at ha
+    funext i
+    by_cases h : i = j
+    · subst h
+      simp [ha.2]
+    · simp [h]
+  · intro c _
+    funext i
+    simp [i.property]
+
+/-- **Primitive vectors orthogonal to a primitive vector.** Over a finite local ring, for a
+primitive vector `w` of length `m`, there are `#Rᵐ⁻¹ - #𝔪ᵐ⁻¹` primitive vectors `a` with
+`a ⬝ᵥ w = 0`, independently of `w`. -/
+theorem card_primitiveVectors_filter_dotProduct_eq_zero {w : ι → R}
+    (hw : Module.IsUnimodular R w) :
+    #{a ∈ primitiveVectors ι R | a ⬝ᵥ w = 0} =
+      Nat.card R ^ (Fintype.card ι - 1) - Nat.card (maximalIdeal R) ^ (Fintype.card ι - 1) := by
+  -- An invertible matrix `P` carries `w` to a standard basis vector `eⱼ`, so that
+  -- `a ⬝ᵥ w = (a ᵥ* P⁻¹) j`; right multiplication by `P⁻¹` preserves primitivity.
+  classical
+  obtain ⟨j, hj⟩ := TauCeti.Module.isUnimodular_iff_exists_isUnit.mp hw
+  obtain ⟨P, hP⟩ := unimodularEquiv_iff.mp (unimodularEquiv_single_of_isUnit hj j)
+  have hdot (a : ι → R) : a ⬝ᵥ w = (a ᵥ* (↑P⁻¹ : Matrix ι ι R)) j := by
+    have hw' : w = (↑P⁻¹ : Matrix ι ι R) *ᵥ Pi.single j 1 := by
+      simp [← hP, Matrix.mulVec_mulVec]
+    rw [hw', Matrix.dotProduct_mulVec, dotProduct_single, mul_one]
+  rw [← card_primitiveVectors_filter_apply_eq_zero j]
+  refine card_nbij' (· ᵥ* (↑P⁻¹ : Matrix ι ι R)) (· ᵥ* (P : Matrix ι ι R)) ?_ ?_ ?_ ?_
+  · intro a ha
+    simp only [mem_coe, mem_filter, mem_primitiveVectors] at ha ⊢
+    exact ⟨(P⁻¹).isUnimodular_vecMul_iff.mpr ha.1, hdot a ▸ ha.2⟩
+  · intro b hb
+    simp only [mem_coe, mem_filter, mem_primitiveVectors] at hb ⊢
+    refine ⟨P.isUnimodular_vecMul_iff.mpr hb.1, ?_⟩
+    rw [hdot]
+    simpa [Matrix.vecMul_vecMul] using hb.2
+  · intro a _
+    simp [Matrix.vecMul_vecMul]
+  · intro b _
+    simp [Matrix.vecMul_vecMul]
+
+end LocalRing
 
 end TauCeti.FormDensity

@@ -217,6 +217,16 @@ theorem coeff_smulGradedDimension_ofIdeal_span_singleton {e f : A} (he₀ : e �
     ← map_subtype_smul_ofIdeal_span_singleton_piece he₀ hI p]
   exact congrArg _ (Submodule.equivMapOfInjective _ Subtype.val_injective _).finrank_eq
 
+/-- **The dimension of graded maps from `Af` into a shift `M{j}`** is the degree `-j` coefficient
+of the idempotent graded dimension `gdim(f • M)`. -/
+theorem finrank_hom_ofIdeal_span_singleton_shiftObj {f : A} (hf : IsIdempotentElem f)
+    (hf₀ : f ∈ 𝒜 0) (hI : (Ideal.span {f} : Ideal A).IsHomogeneous 𝒜)
+    (M : GradedModuleCat.{uA} 𝒜) [Module.Finite k M] (j : ℤ) :
+    (Module.finrank k (ofIdeal 𝒜 (Ideal.span {f}) hI ⟶ M.shiftObj j) : ℤ) =
+      (M.smulGradedDimension f).coeff (-j) := by
+  rw [coeff_smulGradedDimension, (ofIdealSpanSingletonHomEquiv hf hf₀ hI _).finrank_eq,
+    InternalGrading.shift_piece, zero_add]
+
 end Field
 
 end TauCeti.GradedModuleCat

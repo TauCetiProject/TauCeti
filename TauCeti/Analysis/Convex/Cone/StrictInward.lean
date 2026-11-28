@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.Convex
-public import Mathlib.Analysis.Convex.Topology
-public import Mathlib.Analysis.Calculus.FDeriv.Basic
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.Analysis.LocallyConvex.Separation
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.FunProp
@@ -24,8 +23,20 @@ this excludes directions tangent to the boundary of a half-space.
 For convex sets and base points in the set, membership is equivalent to reaching an interior
 point along the positive ray.
 The cone is open and convex, is invariant under positive scaling, and has ball estimates uniform
-near each admissible point and vector. These estimates supply the local geometric input for
-constructing strictly inward vector fields on models with corners.
+near each admissible point and vector (hence along any relatively continuous vector field). Any
+set admitting a strictly inward vector has nonempty interior
+(`TauCeti.interior_nonempty_of_mem_strictInwardCone`), without any convexity assumption, and convex
+sets admitting a strictly inward vector are sets of unique differentiability
+(`Convex.uniqueDiffOn_of_mem_strictInwardCone`). A curve with a right derivative in the strict
+inward cone immediately enters the interior
+(`HasDerivWithinAt.eventually_mem_interior_of_mem_strictInwardCone`), without convexity. For a
+convex set `C`, a curve staying in `C` just before `t` with a strictly inward left derivative at `t`
+already lies in `interior C`
+(`Convex.mem_interior_of_hasDerivWithinAt_Iic_of_mem_strictInwardCone`), so curves staying in `C` on
+`[a, b)` with strictly inward derivatives throughout `(a, b)` map `(a, b)` into `interior C`
+(`Convex.mapsTo_Ioo_interior_of_hasDerivWithinAt_Ico_of_mem_strictInwardCone`). These estimates
+supply the local geometric input for constructing strictly inward vector fields and their forward
+semiflows on models with corners.
 
 A derivative of dense range of a map into a convex set with nonempty interior sends strictly
 inward directions to strictly inward directions
@@ -65,6 +76,13 @@ theorem add_smul_mem_interior_of_mem_strictInwardCone (hv : v ∈ strictInwardCo
   obtain ⟨ε, hε, δ, hδ, h⟩ := hv
   refine ⟨δ, hδ, fun t ht ↦ mem_interior_iff_mem_nhds.mpr ?_⟩
   exact Filter.mem_of_superset (ball_mem_nhds _ (mul_pos hε ht.1)) (h t ht)
+
+/-- Admitting a strictly inward vector at any point implies nonempty interior, without any
+convexity assumption. -/
+theorem interior_nonempty_of_mem_strictInwardCone (hv : v ∈ strictInwardCone s x) :
+    (interior s).Nonempty := by
+  obtain ⟨δ, hδ, h⟩ := add_smul_mem_interior_of_mem_strictInwardCone hv
+  exact ⟨_, h (δ / 2) ⟨half_pos hδ, half_lt_self hδ⟩⟩
 
 /-- The strict inward cone at any fixed point of any set is open. -/
 theorem isOpen_strictInwardCone (s : Set E) (x : E) : IsOpen (strictInwardCone s x) := by
@@ -120,6 +138,35 @@ theorem strictInwardCone_eq_univ_iff : strictInwardCone s x = univ ↔ x ∈ int
 @[simp]
 theorem strictInwardCone_univ (x : E) : strictInwardCone (univ : Set E) x = univ :=
   strictInwardCone_eq_univ_iff.mpr (by simp)
+
+/-- The strict inward cone of a product set is the product of the strict inward cones, without
+any convexity assumption. -/
+@[simp]
+theorem strictInwardCone_prod {F : Type*} [SeminormedAddCommGroup F] [NormedSpace ℝ F]
+    (s : Set E) (t : Set F) (x : E) (y : F) :
+    strictInwardCone (s ×ˢ t) (x, y) = strictInwardCone s x ×ˢ strictInwardCone t y := by
+  ext ⟨v, w⟩
+  simp only [mem_prod, mem_strictInwardCone_iff]
+  constructor
+  · rintro ⟨ε, hε, δ, hδ, h⟩
+    refine ⟨⟨ε, hε, δ, hδ, fun τ hτ z hz ↦ (h τ hτ (a := (z, y + τ • w))
+        (by simp [mem_ball, Prod.dist_eq, mem_ball.mp hz])).1⟩,
+      ⟨ε, hε, δ, hδ, fun τ hτ z hz ↦ (h τ hτ (a := (x + τ • v, z))
+        (by simp [mem_ball, Prod.dist_eq, mem_ball.mp hz])).2⟩⟩
+  · rintro ⟨⟨ε₁, hε₁, δ₁, hδ₁, h₁⟩, ⟨ε₂, hε₂, δ₂, hδ₂, h₂⟩⟩
+    refine ⟨min ε₁ ε₂, lt_min hε₁ hε₂, min δ₁ δ₂, lt_min hδ₁ hδ₂, fun τ hτ ⟨z₁, z₂⟩ hz ↦ ?_⟩
+    simp only [Prod.smul_mk, Prod.mk_add_mk, mem_ball, Prod.dist_eq, max_lt_iff] at hz
+    exact ⟨h₁ τ ⟨hτ.1, hτ.2.trans_le (min_le_left _ _)⟩
+        (mem_ball.mpr (hz.1.trans_le (mul_le_mul_of_nonneg_right (min_le_left _ _) hτ.1.le))),
+      h₂ τ ⟨hτ.1, hτ.2.trans_le (min_le_right _ _)⟩
+        (mem_ball.mpr (hz.2.trans_le (mul_le_mul_of_nonneg_right (min_le_right _ _) hτ.1.le)))⟩
+
+/-- Pairing a strictly inward vector with any direction at any base point in an unconstrained
+second factor yields a vector strictly inward to `s ×ˢ univ`, without any convexity assumption. -/
+theorem mk_mem_strictInwardCone_prod_univ {F : Type*} [SeminormedAddCommGroup F]
+    [NormedSpace ℝ F] (hv : v ∈ strictInwardCone s x) (y w : F) :
+    (v, w) ∈ strictInwardCone (s ×ˢ (univ : Set F)) (x, y) := by
+  simp [hv]
 
 /-- Positive rescaling preserves and reflects strict inwardness, even without convexity. -/
 @[simp]
@@ -193,6 +240,26 @@ theorem Convex.exists_uniform_ball_subset_of_mem_strictInwardCone (hs : Convex �
   exact hs.exists_uniform_ball_subset_of_add_smul_mem_interior
     (by positivity : 0 < δ / 2) (h (δ / 2) ⟨by positivity, by linarith⟩)
 
+/-- If `X` is continuous within `u` at `x` and `X x ∈ strictInwardCone s x` for a convex set `s`,
+then uniform inward ball estimates hold for `X` at all points of `s` sufficiently close to `x`
+within `u`. -/
+theorem Convex.exists_uniform_ball_subset_of_mem_strictInwardCone_of_continuousWithinAt
+    {u : Set E} (hs : Convex ℝ s) {X : E → E} (hv : X x ∈ strictInwardCone s x)
+    (hX : ContinuousWithinAt X u x) :
+    ∃ ε > 0, ∃ δ > 0, ∀ᶠ y in 𝓝[u] x, y ∈ s →
+      ∀ t ∈ Ioo (0 : ℝ) δ, ball (y + t • X y) (ε * t) ⊆ s := by
+  obtain ⟨ε, hε, δ, hδ, hev⟩ := hs.exists_uniform_ball_subset_of_mem_strictInwardCone hv
+  exact ⟨ε, hε, δ, hδ, (continuousWithinAt_id.prodMk hX).eventually hev⟩
+
+/-- If `X` is continuous within `u` at `x` and `X x ∈ strictInwardCone s x` for a convex set `s`,
+then `X y ∈ strictInwardCone s y` for all `y ∈ s` sufficiently close to `x` within `u`. -/
+theorem Convex.eventually_mem_strictInwardCone_of_continuousWithinAt {u : Set E} (hs : Convex ℝ s)
+    {X : E → E} (hv : X x ∈ strictInwardCone s x) (hX : ContinuousWithinAt X u x) :
+    ∀ᶠ y in 𝓝[u] x, y ∈ s → X y ∈ strictInwardCone s y := by
+  obtain ⟨ε, hε, δ, hδ, hev⟩ :=
+    hs.exists_uniform_ball_subset_of_mem_strictInwardCone_of_continuousWithinAt hv hX
+  exact hev.mono fun _ hy hys ↦ ⟨ε, hε, δ, hδ, hy hys⟩
+
 /-- Every interior anchor supplies a strictly inward vector at every point of a convex set. -/
 theorem Convex.sub_mem_strictInwardCone (hs : Convex ℝ s) (hx : x ∈ s)
     (hq : q ∈ interior s) : q - x ∈ strictInwardCone s x := by
@@ -204,6 +271,18 @@ theorem Convex.strictInwardCone_nonempty (hs : Convex ℝ s) (hx : x ∈ s)
     (hi : (interior s).Nonempty) : (strictInwardCone s x).Nonempty := by
   obtain ⟨q, hq⟩ := hi
   exact ⟨q - x, hs.sub_mem_strictInwardCone hx hq⟩
+
+/-- A convex set admitting a strictly inward vector at any point is a set of unique
+differentiability. -/
+theorem Convex.uniqueDiffOn_of_mem_strictInwardCone (hs : Convex ℝ s)
+    (hv : v ∈ strictInwardCone s x) : UniqueDiffOn ℝ s :=
+  uniqueDiffOn_convex hs (interior_nonempty_of_mem_strictInwardCone hv)
+
+/-- The intersection of an open set with a convex set admitting a strictly inward vector is a set
+of unique differentiability. -/
+theorem Convex.uniqueDiffOn_inter_of_mem_strictInwardCone (hs : Convex ℝ s) {u : Set E}
+    (hu : IsOpen u) (hv : v ∈ strictInwardCone s x) : UniqueDiffOn ℝ (u ∩ s) :=
+  inter_comm s u ▸ (hs.uniqueDiffOn_of_mem_strictInwardCone hv).inter hu
 
 /-- The strict inward cone of a convex set is convex. -/
 theorem Convex.convex_strictInwardCone (hs : Convex ℝ s) (x : E) :
@@ -360,3 +439,71 @@ theorem strictInwardCone_quadrant_zero :
     exact ⟨1, zero_lt_one, by simpa using h₁, by simpa using h₂⟩
 
 end TauCeti
+
+/-! ### Interior entry and persistence along curves -/
+
+section InteriorPersistence
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A curve whose right derivative at `a` lies in `strictInwardCone s (γ a)` lies in `interior s`
+for all sufficiently small times strictly greater than `a`. No convexity of `s` is required. -/
+theorem HasDerivWithinAt.eventually_mem_interior_of_mem_strictInwardCone {s : Set E} {γ : ℝ → E}
+    {v : E} {a : ℝ} (hγ : HasDerivWithinAt γ v (Ici a) a)
+    (hv : v ∈ TauCeti.strictInwardCone s (γ a)) :
+    ∀ᶠ t in 𝓝[>] a, γ t ∈ interior s := by
+  obtain ⟨ε, hε, δ, hδ, hball⟩ := TauCeti.mem_strictInwardCone_iff.mp hv
+  filter_upwards [((hasDerivWithinAt_iff_isLittleO.mp hγ).bound (half_pos hε)).filter_mono
+    (nhdsWithin_mono a Ioi_subset_Ici_self), Ioo_mem_nhdsGT (lt_add_of_pos_right a hδ)]
+    with t ht hIoo
+  have hpos : 0 < t - a := sub_pos.mpr hIoo.1
+  rw [Real.norm_of_nonneg hpos.le] at ht
+  refine mem_interior.mpr ⟨ball (γ t) (ε / 2 * (t - a)), Subset.trans (fun z hz ↦ ?_)
+    (hball (t - a) ⟨hpos, sub_lt_iff_lt_add'.mpr hIoo.2⟩), isOpen_ball,
+    mem_ball_self (mul_pos (half_pos hε) hpos)⟩
+  rw [mem_ball, dist_eq_norm] at hz ⊢
+  calc ‖z - (γ a + (t - a) • v)‖ = ‖(z - γ t) + (γ t - γ a - (t - a) • v)‖ := by congr 1; abel
+    _ ≤ ‖z - γ t‖ + ‖γ t - γ a - (t - a) • v‖ := norm_add_le _ _
+    _ < ε * (t - a) := by linarith
+
+/-- In a convex set `C`, if `γ` lies in `C` for times just before `t` and has left derivative at `t`
+in `strictInwardCone C (γ t)`, then `γ t` already lies in `interior C`. -/
+theorem Convex.mem_interior_of_hasDerivWithinAt_Iic_of_mem_strictInwardCone {C : Set E}
+    (hC : Convex ℝ C) {γ : ℝ → E} {v : E} {t : ℝ} (hγ' : HasDerivWithinAt γ v (Iic t) t)
+    (hγC : ∀ᶠ s in 𝓝[<] t, γ s ∈ C) (hv : v ∈ TauCeti.strictInwardCone C (γ t)) :
+    γ t ∈ interior C := by
+  obtain ⟨ε, hε, δ, hδ, hball⟩ := TauCeti.mem_strictInwardCone_iff.mp hv
+  obtain ⟨s, hs_err, hsC, hsIoo⟩ := ((((hasDerivWithinAt_iff_isLittleO.mp hγ').bound
+    (half_pos hε)).filter_mono (nhdsWithin_mono t Iio_subset_Iic_self)).and
+    (hγC.and (eventually_mem_set.mpr (Ioo_mem_nhdsLT (sub_lt_self t hδ))))).exists
+  set h := t - s; have hh_pos : 0 < h := sub_pos.mpr hsIoo.2
+  rw [Real.norm_eq_abs, abs_sub_comm, abs_of_pos hh_pos] at hs_err
+  refine mem_interior.mpr ⟨ball (γ t) (ε * h / 4), fun z hz ↦ ?_,
+    isOpen_ball, mem_ball_self (by positivity)⟩
+  rw [mem_ball, dist_eq_norm] at hz
+  have hq : (2 : ℝ) • z - γ s ∈ C := by
+    refine hball h ⟨hh_pos, sub_lt_comm.mp hsIoo.1⟩ (mem_ball_iff_norm.mpr ?_)
+    calc ‖(2 : ℝ) • z - γ s - (γ t + h • v)‖
+        = ‖(2 : ℝ) • (z - γ t) - (γ s - γ t - (s - t) • v)‖ := by congr 1; simp only [h]; module
+      _ ≤ 2 * ‖z - γ t‖ + ‖γ s - γ t - (s - t) • v‖ :=
+          (norm_sub_le _ _).trans (by rw [norm_smul, Real.norm_of_nonneg zero_le_two])
+      _ < ε * h := by linarith
+  -- Since `z` is the midpoint of `γ s ∈ C` and its reflected point `2 • z - γ s ∈ C`, convexity
+  -- gives `z ∈ C`.
+  have hmid : (1 / 2 : ℝ) • γ s + (1 / 2 : ℝ) • ((2 : ℝ) • z - γ s) = z := by module
+  rw [← hmid]
+  exact hC hsC hq (by norm_num) (by norm_num) (by norm_num)
+
+/-- Any curve in a convex set `C` on `[a, b)` whose derivatives within `[a, b)` on `(a, b)` lie in
+the strict inward cone of `C` maps `(a, b)` into `interior C`. -/
+theorem Convex.mapsTo_Ioo_interior_of_hasDerivWithinAt_Ico_of_mem_strictInwardCone {C : Set E}
+    (hC : Convex ℝ C) {v γ : ℝ → E} {a b : ℝ} (hγ : MapsTo γ (Ico a b) C)
+    (hγ' : ∀ t ∈ Ioo a b, HasDerivWithinAt γ (v t) (Ico a b) t)
+    (hv : ∀ t ∈ Ioo a b, v t ∈ TauCeti.strictInwardCone C (γ t)) :
+    MapsTo γ (Ioo a b) (interior C) :=
+  fun t ht ↦ hC.mem_interior_of_hasDerivWithinAt_Iic_of_mem_strictInwardCone
+    (((hγ' t ht).hasDerivAt (Ico_mem_nhds ht.1 ht.2)).hasDerivWithinAt)
+    (Filter.mem_of_superset (Ioo_mem_nhdsLT ht.1) fun _ hs ↦ hγ ⟨hs.1.le, hs.2.trans ht.2⟩)
+    (hv t ht)
+
+end InteriorPersistence

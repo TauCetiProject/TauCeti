@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.MinTensor.Norm
 public import TauCeti.Analysis.CStarAlgebra.MaxTensor.Product
+import TauCeti.Analysis.CStarAlgebra.Quotient
 
 /-!
 # The minimal C*-tensor product
@@ -31,7 +32,10 @@ tensor product `NonUnitalStarSubalgebra.minTensor A B`, the closure of the image
 **Functoriality.** Star homomorphisms `φ : A → A'` and `ψ : B → B'` give the star homomorphism
 `TauCeti.MinTensorProduct.map φ ψ` extending `φ ⊗ ψ`, which is isometric, hence injective, when
 `φ` and `ψ` are injective (`TauCeti.MinTensorProduct.norm_map`,
-`TauCeti.MinTensorProduct.map_injective`).
+`TauCeti.MinTensorProduct.map_injective`), and surjective when `φ` and `ψ` are surjective
+(`TauCeti.MinTensorProduct.map_surjective`). Its range is the closure of the image of the
+algebraic tensor product (`TauCeti.MinTensorProduct.range_map`), and star isomorphisms induce
+star isomorphisms (`TauCeti.MinTensorProduct.congr`).
 
 **Comparison with the maximal tensor product.** Since `‖·‖_min ≤ ‖·‖_max`, the identity of
 `A ⊗[ℂ] B` extends to the canonical star homomorphism
@@ -48,7 +52,15 @@ every star homomorphism of C*-algebras, and dense.
 * `NonUnitalStarSubalgebra.minTensorProductEquiv`: `A ⊗min B ≃ A ⊗_min B` for closed concrete
   operator algebras.
 * `TauCeti.MinTensorProduct.map`: functoriality.
+* `TauCeti.MinTensorProduct.congr`: the star isomorphism induced by star isomorphisms.
 * `TauCeti.MaxTensorProduct.toMin`: the canonical surjection `A ⊗max B → A ⊗min B`.
+
+## Main statements
+
+* `TauCeti.MinTensorProduct.map_injective`: `map φ ψ` is injective for injective `φ`, `ψ`.
+* `TauCeti.MinTensorProduct.map_surjective`: `map φ ψ` is surjective for surjective `φ`, `ψ`.
+* `TauCeti.MinTensorProduct.range_map`: the range of `map φ ψ` is the closure of the image of
+  the algebraic tensor product.
 
 ## References
 
@@ -147,6 +159,7 @@ variable {A' B' A'' B'' : Type*} [NonUnitalCStarAlgebra A'] [NonUnitalCStarAlgeb
   [NonUnitalCStarAlgebra A''] [NonUnitalCStarAlgebra B'']
 
 open Algebra.TensorProduct (mapNonUnitalStarAlgHom mapNonUnitalStarAlgHom_tmul)
+open scoped _root_.CStarAlgebra
 
 /-- **Functoriality of the minimal tensor product**: star homomorphisms `φ : A → A'` and
 `ψ : B → B'` extend `φ ⊗ ψ` to a star homomorphism
@@ -190,6 +203,78 @@ theorem map_id :
 theorem map_comp (φ' : A' →⋆ₙₐ[ℂ] A'') (ψ' : B' →⋆ₙₐ[ℂ] B'') (φ : A →⋆ₙₐ[ℂ] A')
     (ψ : B →⋆ₙₐ[ℂ] B') : map (φ'.comp φ) (ψ'.comp ψ) = (map φ' ψ').comp (map φ ψ) :=
   starAlgHom_ext fun a b ↦ by simp
+
+/-- Composition of the maps of minimal tensor products, elementwise. -/
+theorem map_map (φ' : A' →⋆ₙₐ[ℂ] A'') (ψ' : B' →⋆ₙₐ[ℂ] B'') (φ : A →⋆ₙₐ[ℂ] A')
+    (ψ : B →⋆ₙₐ[ℂ] B') (u : MinTensorProduct A B) :
+    map φ' ψ' (map φ ψ u) = map (φ'.comp φ) (ψ'.comp ψ) u := by
+  rw [map_comp, NonUnitalStarAlgHom.comp_apply]
+
+/-- Star isomorphisms `e : A ≃ A'` and `f : B ≃ B'` induce a star isomorphism
+`A ⊗min B ≃ A' ⊗min B'`, sending `a ⊗ b` to `e a ⊗ f b`. -/
+def congr (e : A ≃⋆ₐ[ℂ] A') (f : B ≃⋆ₐ[ℂ] B') :
+    MinTensorProduct A B ≃⋆ₐ[ℂ] MinTensorProduct A' B' :=
+  .ofNonUnitalStarAlgHom (map e.toNonUnitalStarAlgHom f.toNonUnitalStarAlgHom)
+    (map e.symm.toNonUnitalStarAlgHom f.symm.toNonUnitalStarAlgHom)
+    (starAlgHom_ext fun a b ↦ by simp) (starAlgHom_ext fun a b ↦ by simp)
+
+/-- The induced isomorphism is the map induced by the underlying star homomorphisms. -/
+@[simp]
+theorem congr_apply (e : A ≃⋆ₐ[ℂ] A') (f : B ≃⋆ₐ[ℂ] B') (x : MinTensorProduct A B) :
+    congr e f x = map e.toNonUnitalStarAlgHom f.toNonUnitalStarAlgHom x :=
+  (rfl)
+
+/-- The inverse of the induced isomorphism is induced by the inverses. -/
+@[simp]
+theorem congr_symm (e : A ≃⋆ₐ[ℂ] A') (f : B ≃⋆ₐ[ℂ] B') :
+    (congr e f).symm = congr e.symm f.symm :=
+  StarAlgEquiv.symm_ofNonUnitalStarAlgHom _ _ _ _
+
+/-- The identities induce the identity. -/
+@[simp]
+theorem congr_refl :
+    congr (.refl ℂ A) (.refl ℂ B) = StarAlgEquiv.refl ℂ (MinTensorProduct A B) :=
+  StarAlgEquiv.ext fun x ↦ by simp
+
+/-- The isomorphism induced by composites is the composite of the induced isomorphisms. -/
+theorem congr_trans (e : A ≃⋆ₐ[ℂ] A') (f : B ≃⋆ₐ[ℂ] B') (e' : A' ≃⋆ₐ[ℂ] A'')
+    (f' : B' ≃⋆ₐ[ℂ] B'') : (congr e f).trans (congr e' f') = congr (e.trans e') (f.trans f') :=
+  StarAlgEquiv.ext fun x ↦ by simp [map_map]
+
+/-- `map 0 ψ = 0`. -/
+@[simp]
+theorem map_zero_left (ψ : B →⋆ₙₐ[ℂ] B') :
+    map (0 : A →⋆ₙₐ[ℂ] A') ψ = 0 :=
+  starAlgHom_ext fun a b ↦ by simp
+
+/-- `map φ 0 = 0`. -/
+@[simp]
+theorem map_zero_right (φ : A →⋆ₙₐ[ℂ] A') :
+    map φ (0 : B →⋆ₙₐ[ℂ] B') = 0 :=
+  starAlgHom_ext fun a b ↦ by simp
+
+/-- The range of `map φ ψ` is the closure of the image of `A ⊗[ℂ] B`, that is, of
+`φ(A) ⊗ ψ(B)`. -/
+theorem range_map (φ : A →⋆ₙₐ[ℂ] A') (ψ : B →⋆ₙₐ[ℂ] B') :
+    Set.range (map φ ψ) =
+      closure (Set.range fun x ↦ of (minCStarTensorNorm A' B') (mapNonUnitalStarAlgHom φ ψ x)) := by
+  refine subset_antisymm ?_ <| closure_minimal ?_ (map φ ψ).isClosed_setRange
+  · have hc : Continuous (map φ ψ) := map_continuous _
+    refine (hc.range_subset_closure_image_dense denseRange_of).trans ?_
+    rw [← Set.range_comp]
+    exact closure_mono fun _ ⟨x, hx⟩ ↦ ⟨x, (map_of φ ψ x).symm.trans hx⟩
+  · rintro _ ⟨x, rfl⟩
+    exact ⟨of _ x, map_of φ ψ x⟩
+
+/-- For surjective `φ` and `ψ`, `map φ ψ` is surjective. -/
+theorem map_surjective {φ : A →⋆ₙₐ[ℂ] A'} {ψ : B →⋆ₙₐ[ℂ] B'} (hφ : Function.Surjective φ)
+    (hψ : Function.Surjective ψ) : Function.Surjective (map φ ψ) := by
+  have h : Function.Surjective (mapNonUnitalStarAlgHom φ ψ) := by
+    rw [Algebra.TensorProduct.coe_mapNonUnitalStarAlgHom]
+    exact TensorProduct.map_surjective hφ hψ
+  exact extend_surjective _ _ <| by
+    rw [DenseRange, NonUnitalStarAlgHom.coe_comp, h.range_comp]
+    exact denseRange_of
 
 end Map
 

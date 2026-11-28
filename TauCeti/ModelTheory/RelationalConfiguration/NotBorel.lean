@@ -8,8 +8,10 @@ module
 public import Mathlib.SetTheory.Cardinal.Ordinal
 public import TauCeti.ModelTheory.BackAndForth.WellOrder
 public import TauCeti.ModelTheory.RelationalConfiguration.BorelComplete
+public import TauCeti.ModelTheory.RelationalConfiguration.BorelIsomorphism
 public import TauCeti.ModelTheory.RelationalConfiguration.OrderClass
 public import TauCeti.ModelTheory.RelationalConfiguration.Separation
+public import TauCeti.SetTheory.Descriptive.EZero
 
 /-!
 # Borel complete isomorphism relations are not Borel
@@ -34,12 +36,21 @@ single countable depth `β` would separate all of them
 * `TauCeti.RelationalConfiguration.not_measurableSet_classIso_of_borelComplete`: a Borel complete
   class has non-Borel isomorphism relation.
 * `TauCeti.RelationalConfiguration.not_borelReducible_classIso_of_borelComplete`: isomorphism on
-  a Borel complete class is Borel reducible to no equivalence relation with Borel graph.
+  a Borel complete class is Borel reducible to no equivalence relation with Borel graph, in
+  particular not to `E₀` (`not_borelReducible_eZero_of_borelComplete`).
+* `TauCeti.RelationalConfiguration.exists_lt_scottHeight_of_borelComplete`: a Borel complete class
+  has codes of unbounded countable Scott height, since a bound `β < ω₁` would make isomorphism on
+  the class back-and-forth equivalence at level `β`, hence Borel.
+* `TauCeti.RelationalConfiguration.not_analyticSet_setOf_not_isoSetoid_of_borelComplete`: for a
+  Borel, Borel complete class `K`, the non-isomorphic pairs of `K` do not form an analytic set:
+  their complement is analytic, so by Suslin's theorem both would be Borel.
 
 ## References
 
 * G. Paolini and S. Shelah, *Torsion-free abelian groups are Borel complete*, Fact 1.7.
 * S. Gao, *Invariant Descriptive Set Theory*, CRC Press, 2009, §13.1.
+* A. Montalbán, *Computable Structure Theory: Beyond the Arithmetic*, Theorem XI.3, for the
+  unbounded Scott ranks of a Borel complete class.
 -/
 
 public section
@@ -111,5 +122,57 @@ theorem not_borelReducible_classIso_of_borelComplete {K : Set (RelationalConfigu
     (hK : BorelComplete K) {Y : Type*} [MeasurableSpace Y] {F : Setoid Y}
     (hF : MeasurableSet {p : Y × Y | F p.1 p.2}) : ¬ (classIso K).BorelReducible F :=
   fun h ↦ not_measurableSet_classIso_of_borelComplete hK (h.measurableSet_setOf hF)
+
+/-- Isomorphism on a Borel complete class is not Borel reducible to `E₀`, whose graph is Borel. -/
+theorem not_borelReducible_eZero_of_borelComplete {K : Set (RelationalConfiguration L ℕ)}
+    (hK : BorelComplete K) : ¬ (classIso K).BorelReducible eZero :=
+  not_borelReducible_classIso_of_borelComplete hK measurableSet_eZero
+
+variable [∀ n, Countable (L.Relations n)]
+
+/-- **Borel complete classes have unbounded Scott height.** In a vocabulary with countably many
+relation symbols of each arity, for a Borel complete class `K` and every countable ordinal `β`,
+some code in `K` decodes to a structure of Scott height greater than `β`. Otherwise isomorphism
+on `K` would be back-and-forth equivalence at level `β`, which is Borel. -/
+theorem exists_lt_scottHeight_of_borelComplete {K : Set (RelationalConfiguration L ℕ)}
+    (hK : BorelComplete K) {β : Ordinal.{0}} (hβ : β < ω₁) :
+    ∃ c ∈ K, β < @scottHeight L _ ℕ c.toStructure := by
+  by_contra! h
+  exact not_measurableSet_classIso_of_borelComplete hK
+    (measurableSet_setOf_comap_isoSetoid_of_scottHeight_le hβ h)
+
+/-- **The non-isomorphic pairs of a Borel, Borel complete class are not analytic.** In a vocabulary
+with countably many relation symbols of each arity, for a Borel set `K` of codes with
+`BorelComplete K`, the set of pairs of `K × K` (in the ambient square) with non-isomorphic entries
+is not analytic. Its complement, the union of the analytic set of isomorphic pairs of `K` and the
+Borel complement of `K ×ˢ K`, is analytic, so by Suslin's theorem both would be Borel, and so
+would isomorphism on `K`. -/
+theorem not_analyticSet_setOf_not_isoSetoid_of_borelComplete
+    {K : Set (RelationalConfiguration L ℕ)} (hK : BorelComplete K) (hKm : MeasurableSet K) :
+    ¬ AnalyticSet {p : RelationalConfiguration L ℕ × RelationalConfiguration L ℕ |
+      p ∈ K ×ˢ K ∧ ¬ isoSetoid L ℕ p.1 p.2} := by
+  intro hA
+  set S := {p : RelationalConfiguration L ℕ × RelationalConfiguration L ℕ |
+    p ∈ K ×ˢ K ∧ ¬ isoSetoid L ℕ p.1 p.2}
+  have hKK := hKm.prod hKm
+  -- the complement of `S` is analytic
+  have hc : AnalyticSet Sᶜ := by
+    have hS : Sᶜ = (K ×ˢ K)ᶜ ∪ ({p | isoSetoid L ℕ p.1 p.2} ∩ K ×ˢ K) := by
+      ext p
+      simp only [S, mem_compl_iff, mem_ofPred_eq, not_and, not_not, mem_union, mem_inter_iff]
+      tauto
+    rw [hS]
+    exact hKK.compl.analyticSet.union (analyticSet_setOf_isoSetoid.inter_measurableSet hKK)
+  -- by Suslin's theorem `S` is Borel, and so is isomorphism on `K`
+  have hm := hA.measurableSet_of_compl hc
+  apply not_measurableSet_classIso_of_borelComplete hK
+  have h : {p : K × K | classIso K p.1 p.2} =
+      (fun p : K × K ↦ ((p.1 : RelationalConfiguration L ℕ), (p.2 : RelationalConfiguration L ℕ)))
+        ⁻¹' Sᶜ := by
+    ext p
+    simp [S]
+  rw [h]
+  exact hm.compl.preimage ((measurable_subtypeVal.comp measurable_fst).prodMk
+    (measurable_subtypeVal.comp measurable_snd))
 
 end TauCeti.RelationalConfiguration

@@ -7,6 +7,9 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.Injective.Dimension
 public import Mathlib.CategoryTheory.Abelian.Projective.Dimension
+public import Mathlib.CategoryTheory.Abelian.Opposite
+
+import TauCeti.Algebra.Homology.Ext.Opposite
 
 /-!
 # Global symmetry of projective and injective dimension bounds
@@ -76,3 +79,35 @@ theorem forall_hasProjectiveDimensionLE_iff_forall_hasInjectiveDimensionLE (n : 
   forall_hasProjectiveDimensionLT_iff_forall_hasInjectiveDimensionLT (n + 1)
 
 end TauCeti
+
+namespace CategoryTheory
+
+open Opposite Abelian
+
+variable {C : Type*} [Category* C] [Abelian C]
+
+/-- Opposite objects have the same projective dimension bounds as the original objects have
+injective dimension bounds. -/
+@[simp]
+theorem hasProjectiveDimensionLT_op_iff (X : C) (n : ℕ) :
+    HasProjectiveDimensionLT (op X) n ↔ HasInjectiveDimensionLT X n := by
+  let := HasExt.standard C
+  let := HasExt.standard Cᵒᵖ
+  simp only [hasProjectiveDimensionLT_iff, hasInjectiveDimensionLT_iff]
+  constructor
+  · intro h i hi Y a
+    apply (Ext.opAddEquiv Y X i).injective
+    rw [map_zero]
+    exact h i hi _
+  · intro h i hi Y a
+    apply (Ext.opAddEquiv Y.unop X i).symm.injective
+    rw [map_zero]
+    exact h i hi _
+
+/-- The projective dimension of the opposite object is the injective dimension of the object. -/
+@[simp]
+theorem projectiveDimension_op (X : C) :
+    projectiveDimension (op X) = injectiveDimension X := by
+  simp only [projectiveDimension, injectiveDimension, hasProjectiveDimensionLT_op_iff]
+
+end CategoryTheory

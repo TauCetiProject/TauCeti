@@ -121,7 +121,7 @@ theorem isLocalDiffeomorph_globalFlow_comp {n : ℕ∞} (hn : 1 ≤ n) [IsManifo
   set L := mfderiv (𝓘(ℝ).prod J) I (fun p : ℝ × S ↦ ψ p.1 (ι p.2)) p
   -- The differential `dψₜ` is injective, since `ψₜ` is a diffeomorphism.
   have hψinj : Injective (mfderiv I I (ψ p.1) (ι p.2)) := by
-    have h := injective_mfderiv_flowOf (hv.of_le hn') hc p.1 (ι p.2)
+    have h := (bijective_mfderiv_flowOf (hv.of_le hn') (hc.mem_flowDomain p.1 (ι p.2))).1
     rwa [flowOf_eq_globalFlow (hv.of_le hn') hc] at h
   -- Transversality makes the differential of the flow-out injective.
   have hinj : Injective L := by

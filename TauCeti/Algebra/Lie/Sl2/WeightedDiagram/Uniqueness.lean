@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.AdjointAction.SymmetricInvariants
 public import TauCeti.Algebra.Lie.Sl2.WeightedDiagram.Dominant
+import Mathlib.Data.Set.Card
 import TauCeti.Algebra.Lie.AdjointAction.ExpAdSubgroup
 import TauCeti.Algebra.Lie.HighestWeight.ChevalleyRestriction
 import TauCeti.Algebra.Lie.Sl2.JacobsonMorozov
@@ -18,33 +19,41 @@ Let `L` be a finite-dimensional Lie algebra with nondegenerate Killing form over
 closed field `K` of characteristic zero, let `H` be a Cartan subalgebra, and let `b` be a base of
 the root system `LieAlgebra.IsKilling.rootSystem H`.
 
-By Chevalley's restriction theorem and Weyl-chamber uniqueness
-(`RootPairing.Base.eq_of_forall_mem_lieInvariants_lift_eval_eq_of_dominant`), at most one element
-of `H` where every simple root of `b` takes a natural value realizes a given invariant character on
-`S(L*)^L`.
+Every `sl₂` triple over an algebraically closed field can be conjugated by `Int(L)` so that its
+neutral element lies in `RootPairing.Base.dominantNeutralElements b`
+(`IsSl2Triple.exists_mem_intLieAlgebra_smul_mem_dominantNeutralElements_of_isAlgClosed`). This file
+proves the complementary uniqueness statements:
 
-For `sl₂` triples `(h₁, e₁, f₁)` and `(h₂, e₂, f₂)` whose neutral elements lie in
-`RootPairing.Base.dominantNeutralElements b`, any Lie algebra automorphism `φ : L ≃ₗ⁅K⁆ L` carrying
-`e₁` to `e₂` and preserving `S(L*)^L` forces `h₁ = h₂`
-(`IsSl2Triple.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq`): Kostant's conjugacy theorem
-conjugates `(φ h₁, e₂, φ f₁)` to `(h₂, e₂, f₂)` by an element of `expAdSubgroup K e₂ ≤ Int(L)`,
-which also preserves `S(L*)^L`, so `h₁` and `h₂` agree on `S(L*)^L`. In particular, each
-`Int(L)`-orbit of neutral elements meets `b.dominantNeutralElements` in a unique point
-(`RootPairing.Base.injOn_orbit_dominantNeutralElements`), so these orbits are exactly as many as
-the dominant neutral elements, and the weighted Dynkin diagram depends only on the `Int(L)`-orbit
-of the nilpositive element. Combined with Jacobson–Morozov, every nonzero `ad`-nilpotent element
-has exactly one dominant neutral element
-(`RootPairing.Base.existsUnique_mem_dominantNeutralElements_isSl2Triple_smul`).
+1. **Separation by `S(L*)^L`.** Chevalley's restriction theorem and Weyl-chamber uniqueness
+   (`RootPairing.Base.eq_of_forall_mem_lieInvariants_lift_eval_eq_of_dominant`)
+   show that at most one element of `H` where every simple root of `b` takes a natural value
+   realizes a given invariant character on `S(L*)^L`.
+2. **Passage from the nilpositive element to the neutral element.** For `sl₂` triples
+   `(h₁, e₁, f₁)` and `(h₂, e₂, f₂)` whose neutral elements lie in
+   `RootPairing.Base.dominantNeutralElements b`, any Lie algebra automorphism `φ : L ≃ₗ⁅K⁆ L`
+   carrying `e₁` to `e₂` and fixing every invariant polynomial in `S(L*)^L` under pullback forces
+   `h₁ = h₂` (`IsSl2Triple.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq`): Kostant's
+   conjugacy theorem conjugates `(φ h₁, e₂, φ f₁)` to `(h₂, e₂, f₂)` by an element of
+   `expAdSubgroup K e₂ ≤ Int(L)`, which also fixes every invariant polynomial in `S(L*)^L` under
+   pullback, so `h₁` and `h₂` agree on `S(L*)^L`. In particular, each `Int(L)`-orbit of neutral
+   elements meets `b.dominantNeutralElements` in a unique point
+   (`RootPairing.Base.injOn_orbit_dominantNeutralElements`), so these orbits are exactly as many
+   as the dominant neutral elements, and the weighted Dynkin diagram depends only on the
+   `Int(L)`-orbit of the nilpositive element. Combined with Jacobson–Morozov, every nonzero
+   `ad`-nilpotent element has exactly one dominant neutral element
+   (`RootPairing.Base.existsUnique_mem_dominantNeutralElements_isSl2Triple_smul`).
 
 ## Main results
 
-* `RootPairing.Base.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq` and
-  `RootPairing.Base.injOn_orbit_dominantNeutralElements`: distinct dominant neutral elements have
-  disjoint `Int(L)`-orbits.
-* `RootPairing.Base.ncard_image_orbit_setOf_exists_isSl2Triple_eq`: there are exactly as many
-  `Int(L)`-orbits of neutral elements as dominant neutral elements.
-* `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq`: an invariant-preserving Lie
-  automorphism carrying `e₁` to `e₂` identifies the dominant neutral elements `h₁` and `h₂`.
+* `RootPairing.Base.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq`,
+  `RootPairing.Base.injOn_orbit_dominantNeutralElements`,
+  `IsSl2Triple.existsUnique_mem_dominantNeutralElements_mem_orbit_intLieAlgebra`, and
+  `RootPairing.Base.ncard_image_orbit_setOf_exists_isSl2Triple_eq`: distinct dominant neutral
+  elements have disjoint `Int(L)`-orbits, so the number of `Int(L)`-orbits of neutral elements
+  equals `b.dominantNeutralElements.ncard`.
+* `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq`: a Lie automorphism
+  carrying `e₁` to `e₂` and fixing every invariant polynomial in `S(L*)^L` under pullback
+  identifies the dominant neutral elements `h₁` and `h₂`.
 * `IsSl2Triple.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq` and
   `IsSl2Triple.weightedDynkinDiagram_eq_of_mem_intLieAlgebra_smul_eq`: `Int(L)`-conjugate
   nilpositive elements share the same dominant neutral element and weighted Dynkin diagram.
@@ -57,6 +66,7 @@ has exactly one dominant neutral element
   Nostrand Reinhold, 1993, §3.5.
 * R. W. Carter, *Finite Groups of Lie Type: Conjugacy Classes and Complex Characters*, Wiley,
   1985, §5.6.
+* N. Bourbaki, *Lie Groups and Lie Algebras*, Chapters 7–9, Chapter VIII, §11, no. 2, Proposition 3.
 -/
 
 public section
@@ -93,10 +103,7 @@ theorem injOn_orbit_dominantNeutralElements (b : (rootSystem H).Base) :
       b.dominantNeutralElements := by
   intro h₁ hh₁ h₂ hh₂ horb
   dsimp only at horb
-  have hmem : (h₂ : L) ∈ MulAction.orbit (intLieAlgebra K L) (h₁ : L) := by
-    rw [horb]
-    exact MulAction.mem_orbit_self (h₂ : L)
-  obtain ⟨⟨g, hg⟩, hgh⟩ := hmem
+  obtain ⟨⟨g, hg⟩, hgh⟩ := MulAction.orbit_eq_iff.mp horb.symm
   exact b.eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq hh₁ hh₂ hg hgh
 
 /-- **Counting orbits of neutral elements exactly.** The `Int(L)`-orbits of neutral elements of
@@ -153,6 +160,19 @@ section IntConjugacy
 variable {K L : Type*} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L] [LieAlgebra K L]
   [LieAlgebra ℚ L] [FiniteDimensional K L] [IsKilling K L] {H : LieSubalgebra K L}
   [H.IsCartanSubalgebra]
+
+/-- **Every `sl₂` triple has a unique dominant neutral element in the `Int(L)`-orbit of `h`.** -/
+theorem existsUnique_mem_dominantNeutralElements_mem_orbit_intLieAlgebra
+    (b : (rootSystem H).Base) {h e f : L} (t : IsSl2Triple h e f) :
+    ∃! h' : H, h' ∈ b.dominantNeutralElements ∧
+      (h' : L) ∈ MulAction.orbit (intLieAlgebra K L) h := by
+  obtain ⟨g, hg, h', hh', hgh, -⟩ :=
+    t.exists_mem_intLieAlgebra_smul_mem_dominantNeutralElements_of_isAlgClosed b
+  have hm₁ : (h' : L) ∈ MulAction.orbit (intLieAlgebra K L) h := ⟨⟨g, hg⟩, hgh⟩
+  refine ⟨h', ⟨hh', hm₁⟩, ?_⟩
+  rintro h'' ⟨hh'', hm₂⟩
+  exact b.injOn_orbit_dominantNeutralElements hh'' hh'
+    ((MulAction.orbit_eq_iff.mpr hm₂).trans (MulAction.orbit_eq_iff.mpr hm₁).symm)
 
 /-- **Conjugate nilpositive elements under `Int(L)` share the same dominant neutral element.** -/
 theorem eq_of_mem_dominantNeutralElements_of_mem_intLieAlgebra_smul_eq (b : (rootSystem H).Base)

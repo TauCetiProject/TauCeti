@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.RingTheory.AdicCompletion.Completeness
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
+public import TauCeti.RingTheory.AdicCompletion.AlgHom
 import TauCeti.RingTheory.Ideal.Maps
 
 /-!
@@ -27,6 +28,8 @@ exponential characteristic of `R`.
 ## Main results
 
 * `AdicCompletion.ker_evalₐ_eq_map_pow`: the kernel of `R̂ → R ⧸ I ^ n` is `I ^ n R̂`.
+* `AdicCompletion.ker_toQuotient`: the kernel of `toQuotient` for any ideal containing a
+  power of the finitely generated completion ideal.
 * `AdicCompletion.quotientMapPowAlgEquiv`: the isomorphism of `R`-algebras
   `R̂ ⧸ I ^ n R̂ ≃ R ⧸ I ^ n`.
 * `AdicCompletion.algebraMap_mem_map_pow_iff`: the image of `x ∈ R` lies in `I ^ n R̂` if and
@@ -67,6 +70,24 @@ theorem ker_evalₐ_eq_map_pow (fg : I.FG) (n : ℕ) :
     -- The factor map is the quotient equivalence from which `evalₐ` is built.
     exact map_eq_zero_iff _ (Ideal.quotientEquivAlgOfEq R eq).injective
   · simp [← pow_smul_top_eq_ker_eval fg, Ideal.smul_top_eq_map]
+
+/-- For finitely generated `I` and any ideal `K` containing a power of `I`, the kernel of
+the projection `AdicCompletion I R →+* R ⧸ K` is the extension of `K` to the completion. -/
+theorem ker_toQuotient (I : Ideal R) {K : Ideal R} (hK : ∃ n : ℕ, I ^ n ≤ K) (hfg : I.FG) :
+    RingHom.ker (toQuotient I hK) = K.map (algebraMap R (AdicCompletion I R)) := by
+  obtain ⟨n, hn⟩ := hK
+  have hcomp : (evalₐ I n).toRingHom.comp (algebraMap R (AdicCompletion I R)) =
+      Ideal.Quotient.mk (I ^ n) :=
+    RingHom.ext (evalₐ_of I n)
+  have hker : RingHom.ker (evalₐ I n).toRingHom =
+      (I ^ n).map (algebraMap R (AdicCompletion I R)) :=
+    ker_evalₐ_eq_map_pow hfg n
+  have hpullback : (K.map (Ideal.Quotient.mk (I ^ n))).comap (evalₐ I n).toRingHom =
+      K.map (algebraMap R (AdicCompletion I R)) := by
+    rw [← hcomp, ← Ideal.map_map,
+      Ideal.comap_map_of_surjective' (evalₐ I n).toRingHom (surjective_evalₐ I n), hker]
+    exact sup_eq_left.mpr (Ideal.map_mono hn)
+  simpa only [toQuotient_eq I _ hn, ← RingHom.comap_ker, Ideal.Quotient.factor_ker] using hpullback
 
 /-- For a finitely generated ideal `I`, the adic completion modulo the extension of `I ^ n` is
 `R ⧸ I ^ n`: the isomorphism is induced by the projection `R̂ → R ⧸ I ^ n`. -/

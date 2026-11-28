@@ -28,6 +28,8 @@ manifold `N`, with the pulled-back metric (`TauCeti.scalarRegularSublevelMetric`
 a local Riemannian isometry and `a - f` restricts to a global boundary defining function, so at a
 point of the level `f⁻¹(a)`:
 
+* `h(u, w) = ⟨dj dι u, dj dι w⟩_N` for the induced metric `h` of the level
+  (`TauCeti.boundaryInducedForm_scalarRegularSublevel_apply`);
 * `dj(ν_in) = -grad f / |grad f|`
   (`TauCeti.mfderiv_inwardUnitNormal_scalarRegularSublevel`);
 * `II(u, w) = Hess^N f(dj dι u, dj dι w) / |grad^N f|`
@@ -117,6 +119,33 @@ variable {n : ℕ} {E H N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [F
 variable (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hreg : IsRegularValue I 𝓘(ℝ) f a)
   (hn : finrank ℝ E = n + 1)
 
+/-- **The induced metric of the boundary of a regular sublevel.** For the regular sublevel
+`D = {f ≤ a}` with the pulled-back metric, the induced metric of the level `f⁻¹(a)` at `q` is the
+metric of `N` applied to the tangent vectors pushed forward along the inclusions
+`ι : ∂D → D` and `j : D → N`: `h_q(u, w) = ⟨dj dι u, dj dι w⟩_N`. -/
+theorem boundaryInducedForm_scalarRegularSublevel_apply
+    (q : letI := scalarRegularSublevelChartedSpace (hf.of_le ENat.LEInfty.out) hreg hn
+      (𝓡∂ (n + 1)).boundary {x | f x ≤ a})
+    (u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    letI := scalarRegularSublevelChartedSpace (hf.of_le ENat.LEInfty.out) hreg hn
+    haveI := isManifold_scalarRegularSublevel hreg hn ENat.LEInfty.out hf
+    letI : RiemannianBundle (fun x : {x | f x ≤ a} ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
+      ⟨(scalarRegularSublevelMetric hf hreg hn).toRiemannianMetric⟩
+    boundaryInducedForm q u w =
+      inner ℝ
+        (mfderiv (𝓡∂ (n + 1)) I (Subtype.val : {x | f x ≤ a} → N) q
+          (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+            (Subtype.val : (𝓡∂ (n + 1)).boundary {x | f x ≤ a} → {x | f x ≤ a}) q u))
+        (mfderiv (𝓡∂ (n + 1)) I (Subtype.val : {x | f x ≤ a} → N) q
+          (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+            (Subtype.val : (𝓡∂ (n + 1)).boundary {x | f x ≤ a} → {x | f x ≤ a}) q w)) := by
+  let := scalarRegularSublevelChartedSpace (hf.of_le ENat.LEInfty.out) hreg hn
+  have := isManifold_scalarRegularSublevel hreg hn ENat.LEInfty.out hf
+  let : RiemannianBundle (fun x : {x | f x ≤ a} ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
+    ⟨(scalarRegularSublevelMetric hf hreg hn).toRiemannianMetric⟩
+  rw [boundaryInducedForm_apply,
+    ← (isLocalRiemannianIsometry_subtypeVal_scalarRegularSublevel hf hreg hn).inner_mfderiv]
+
 /-- **The inward unit normal of a regular sublevel.** For the regular sublevel `D = {f ≤ a}` with
 the pulled-back metric, the differential of the inclusion `j` maps the inward unit normal at a
 point of the level `f⁻¹(a)` to `-grad f / |grad f|`. For a regular domain `{ρ ≥ 0} = {-ρ ≤ 0}`
@@ -155,10 +184,7 @@ theorem boundarySecondFundamentalForm_scalarRegularSublevel_apply
     haveI := isManifold_scalarRegularSublevel hreg hn ENat.LEInfty.out hf
     letI : RiemannianBundle (fun x : {x | f x ≤ a} ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
       ⟨(scalarRegularSublevelMetric hf hreg hn).toRiemannianMetric⟩
-    haveI : IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) ∞ (EuclideanSpace ℝ (Fin (n + 1)))
-        (fun x : {x | f x ≤ a} ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
-      ⟨(scalarRegularSublevelMetric hf hreg hn).inner,
-        (scalarRegularSublevelMetric hf hreg hn).contMDiff, fun _ _ _ ↦ rfl⟩
+    haveI := isContMDiffRiemannianBundle_scalarRegularSublevel hf hreg hn
     boundarySecondFundamentalForm q u w =
       Manifold.hessian I f ((q : {x | f x ≤ a}) : N)
           (mfderiv (𝓡∂ (n + 1)) I (Subtype.val : {x | f x ≤ a} → N) q
@@ -172,10 +198,7 @@ theorem boundarySecondFundamentalForm_scalarRegularSublevel_apply
   have := isManifold_scalarRegularSublevel hreg hn ENat.LEInfty.out hf
   let : RiemannianBundle (fun x : {x | f x ≤ a} ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
     ⟨(scalarRegularSublevelMetric hf hreg hn).toRiemannianMetric⟩
-  have : IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) ∞ (EuclideanSpace ℝ (Fin (n + 1)))
-      (fun x : {x | f x ≤ a} ↦ TangentSpace (𝓡∂ (n + 1)) x) :=
-    ⟨(scalarRegularSublevelMetric hf hreg hn).inner,
-      (scalarRegularSublevelMetric hf hreg hn).contMDiff, fun _ _ _ ↦ rfl⟩
+  have := isContMDiffRiemannianBundle_scalarRegularSublevel hf hreg hn
   have hfx : ContMDiffAt I 𝓘(ℝ) 2 f ((q : {x | f x ≤ a}) : N) := (hf.of_le (by simp)) _
   rw [IsBoundaryDefiningFunctionOn.boundarySecondFundamentalForm_apply_of_comp
     (ρ := fun y ↦ a - f y) (isBoundaryDefiningFunctionOn_scalarRegularSublevel hf hreg hn)

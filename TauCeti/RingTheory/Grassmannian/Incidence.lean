@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FittingIdeal.Content
-public import TauCeti.RingTheory.Grassmannian.Basic
+public import TauCeti.RingTheory.Grassmannian.BaseChange
 
 /-!
 # Incidence conditions between Grassmannian points
@@ -91,5 +91,13 @@ theorem incidenceLocus_map (f : A →ₐ[R] B) (N : G(k, A ⊗[R] M; A))
   rw [incidenceLocus_def, ← Submodule.minorsIdeal_map_equiv e, himage,
     (TensorProduct.isBaseChange A _ B).minorsIdeal_one_span_image, incidenceLocus_def]
   rfl
+
+/-- The incidence ideal against a fixed quotient commutes with coefficient maps. -/
+@[simp]
+theorem incidenceLocus_baseChange_map (f : A →ₐ[R] B) (T : G(k, A ⊗[R] M; A))
+    (P : G(l, M; R)) :
+    (map f T).incidenceLocus (P.baseChange B) =
+      Ideal.map f (T.incidenceLocus (P.baseChange A)) := by
+  rw [← map_baseChange f P, incidenceLocus_map]
 
 end Module.Grassmannian
