@@ -15,7 +15,8 @@ the sublevel at the minimum value is the set of all minimizers, and in a conditi
 lattice that value equals `sInf (f '' S)`. When an upper bound of a function is attained, the
 global maximizers are exactly the points attaining it (`TauCeti.isMaxOn_univ_iff_eq`).
 Pullback objectives along a map `p` also transfer `IsMinOn`, feasible minimizers, and
-attained-minimum existence identically between `s` and `p '' s`.
+attained-minimum existence identically between `s` and `p '' s`, and adding a constant preserves
+`IsMinOn` (`TauCeti.isMinOn_add_const`).
 -/
 
 public section
@@ -48,6 +49,12 @@ theorem isMinOn_iff_eq_csInf {X β : Type*} [ConditionallyCompleteLattice β] {f
   ⟨fun h ↦ ((h.isGLB hu).csInf_eq ⟨f u, u, hu, rfl⟩).symm,
     fun h _ hx ↦ h ▸ csInf_le hb (mem_image_of_mem f hx)⟩
 
+/-- Adding a constant preserves `IsMinOn`. -/
+theorem isMinOn_add_const {X β : Type*} [Add β] [Preorder β] [AddRightMono β]
+    [AddRightReflectLE β] (f : X → β) (c : β) (s : Set X) (a : X) :
+    IsMinOn (fun x ↦ f x + c) s a ↔ IsMinOn f s a := by
+  simp only [isMinOn_iff, add_le_add_iff_right]
+
 /-- A point `p z` minimizes `f` on `p '' s` if and only if `z` minimizes `f ∘ p` on `s`. -/
 theorem isMinOn_image_iff {X Y β : Type*} [Preorder β] {p : X → Y} {f : Y → β}
     {s : Set X} {z : X} :
@@ -70,6 +77,13 @@ theorem exists_mem_image_isMinOn_iff {X Y β : Type*} [Preorder β] {p : X → Y
   simp only [exists_mem_image, isMinOn_image_iff]
 
 end TauCeti
+
+/-- Along a surjection `p`, `z` minimizes `f ∘ p` on `univ` if and only if `p z` minimizes `f`
+on `univ`. -/
+theorem Function.Surjective.isMinOn_univ_comp_iff {X Y β : Type*} [Preorder β] {p : X → Y}
+    (hp : Function.Surjective p) (f : Y → β) (z : X) :
+    IsMinOn (f ∘ p) univ z ↔ IsMinOn f univ (p z) := by
+  rw [← TauCeti.isMinOn_image_iff, image_univ, hp.range_eq]
 
 /-- At an admissible minimizer, the sublevel at its value is the full minimizer set. -/
 theorem IsMinOn.minimizers_eq_sublevel {X β : Type*} [Preorder β] {f : X → β}

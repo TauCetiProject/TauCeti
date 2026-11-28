@@ -1,0 +1,811 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Order.Archimedean.Real.Basic
+public import Mathlib.Data.Fintype.BigOperators
+public import Mathlib.Data.Matrix.Basic
+public import Mathlib.LinearAlgebra.Matrix.Trace
+public import Mathlib.Order.Filter.Extr
+import Mathlib.Algebra.BigOperators.Field
+import Mathlib.Algebra.Order.Group.CompleteLattice
+import Mathlib.Data.Finset.Powerset
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
+import TauCeti.Data.Finset.Basic
+import TauCeti.Order.Filter.Extr
+
+/-!
+# Quadratic pseudo-Boolean functions and Ising energies
+
+Optimization problems over binary configurations `x : ι → Bool` are commonly formulated in two
+equivalent quadratic representations:
+
+* `TauCeti.qubo`: the quadratic pseudo-Boolean function `∑ i, ∑ j, Q i j * bit x i * bit x j`
+  in `{0, 1}` variables `bit x i`;
+* `TauCeti.ising`: the Ising energy `∑ i, ∑ j, J i j * spin x i * spin x j + ∑ i, h i * spin x i`
+  in `{±1}` spin variables `spin x i = 1 - 2 * bit x i`.
+
+Because `bit x i ^ 2 = bit x i`, the diagonal of `Q` carries linear terms in `qubo Q`, whereas
+because `spin x i ^ 2 = 1`, the diagonal of `J` contributes only a constant `J.trace` to
+`ising J h`. We establish exact algebraic conversions between `qubo` and `ising`, minimizer and
+infimum equivalences, and exact parameter-invariance criteria (`TauCeti.qubo_eq_qubo_iff` and
+`TauCeti.ising_sub_trace_eq_iff`).
+
+We also establish the existence and uniqueness of the multilinear expansion of any pseudo-Boolean
+function `f : (ι → Bool) → ℝ` over subsets `S : Finset ι` (`TauCeti.existsUnique_sum_prod_bit`) and
+characterize functions of the form `qubo Q + const` as those whose multilinear coefficients
+vanish on subsets of cardinality greater than `2` (`TauCeti.exists_qubo_add_const_iff`).
+
+## Main definitions
+
+* `TauCeti.bit`, `TauCeti.spin`: `{0, 1}` and `{±1}` encodings of `x : ι → Bool`.
+* `TauCeti.qubo`, `TauCeti.ising`: the QUBO and Ising objectives.
+* `TauCeti.pseudoBoolCoeff`: the Möbius coefficient of `f` on a subset `S : Finset ι`.
+
+## Main results
+
+* `TauCeti.qubo_eq_ising_add_const`, `TauCeti.ising_eq_qubo_add_const`: exact conversions between
+  QUBO and Ising forms, with minimizer (`TauCeti.isMinOn_qubo_iff_isMinOn_ising`) and infimum
+  (`TauCeti.iInf_qubo_eq_iInf_ising_add`) equivalences.
+* `TauCeti.qubo_eq_qubo_iff`, `TauCeti.ising_sub_trace_eq_iff`: exact parameter invariance.
+* `TauCeti.existsUnique_sum_prod_bit`, `TauCeti.exists_qubo_add_const_iff`: unique multilinear
+  expansion and degree-`≤ 2` characterization of quadratic pseudo-Boolean functions.
+
+## References
+
+* A. Lucas, *Ising formulations of many NP problems*, Front. Phys. **2** (2014), 5,
+  arXiv:1302.5843, §1.1–1.2.
+-/
+
+noncomputable section
+
+public section
+
+open Finset Matrix
+
+namespace TauCeti
+
+/-! ### Bit and spin encodings -/
+
+section BitSpin
+
+variable {ι : Type*}
+
+/-- The `{0, 1}` real value of variable `i` in configuration `x`: `1` when `x i` is `true` and `0`
+when `x i` is `false`. -/
+def bit (x : ι → Bool) (i : ι) : ℝ :=
+  if x i then 1 else 0
+
+/-- The `{±1}` spin value of variable `i` in configuration `x`: `-1` when `x i` is `true` and `1`
+when `x i` is `false`. -/
+def spin (x : ι → Bool) (i : ι) : ℝ :=
+  if x i then -1 else 1
+
+theorem bit_def (x : ι → Bool) (i : ι) : bit x i = if x i then 1 else 0 :=
+  (rfl)
+
+theorem spin_def (x : ι → Bool) (i : ι) : spin x i = if x i then -1 else 1 :=
+  (rfl)
+
+@[simp]
+theorem bit_of_true {x : ι → Bool} {i : ι} (h : x i = true) : bit x i = 1 := by
+  simp [bit_def, h]
+
+@[simp]
+theorem bit_of_false {x : ι → Bool} {i : ι} (h : x i = false) : bit x i = 0 := by
+  simp [bit_def, h]
+
+@[simp]
+theorem spin_of_true {x : ι → Bool} {i : ι} (h : x i = true) : spin x i = -1 := by
+  simp [spin_def, h]
+
+@[simp]
+theorem spin_of_false {x : ι → Bool} {i : ι} (h : x i = false) : spin x i = 1 := by
+  simp [spin_def, h]
+
+@[simp]
+theorem bit_eq_one_iff {x : ι → Bool} {i : ι} : bit x i = 1 ↔ x i = true := by
+  cases h : x i <;> simp [h]
+
+@[simp]
+theorem bit_eq_zero_iff {x : ι → Bool} {i : ι} : bit x i = 0 ↔ x i = false := by
+  cases h : x i <;> simp [h]
+
+@[simp]
+theorem spin_eq_neg_one_iff {x : ι → Bool} {i : ι} : spin x i = -1 ↔ x i = true := by
+  cases h : x i <;> norm_num [h]
+
+@[simp]
+theorem spin_eq_one_iff {x : ι → Bool} {i : ι} : spin x i = 1 ↔ x i = false := by
+  cases h : x i <;> norm_num [h]
+
+theorem bit_nonneg (x : ι → Bool) (i : ι) : 0 ≤ bit x i := by
+  cases h : x i <;> simp [h]
+
+theorem bit_le_one (x : ι → Bool) (i : ι) : bit x i ≤ 1 := by
+  cases h : x i <;> simp [h]
+
+@[simp]
+theorem bit_mul_bit (x : ι → Bool) (i : ι) : bit x i * bit x i = bit x i := by
+  cases h : x i <;> simp [h]
+
+@[simp]
+theorem bit_sq (x : ι → Bool) (i : ι) : bit x i ^ 2 = bit x i := by
+  rw [sq, bit_mul_bit]
+
+@[simp]
+theorem spin_mul_spin (x : ι → Bool) (i : ι) : spin x i * spin x i = 1 := by
+  cases h : x i <;> simp [h]
+
+@[simp]
+theorem spin_sq (x : ι → Bool) (i : ι) : spin x i ^ 2 = 1 := by
+  rw [sq, spin_mul_spin]
+
+theorem abs_spin (x : ι → Bool) (i : ι) : |spin x i| = 1 := by
+  cases h : x i <;> simp [h]
+
+theorem spin_eq_one_sub_two_mul_bit (x : ι → Bool) (i : ι) : spin x i = 1 - 2 * bit x i := by
+  cases h : x i <;> norm_num [h]
+
+theorem bit_eq_one_sub_spin_div_two (x : ι → Bool) (i : ι) : bit x i = (1 - spin x i) / 2 := by
+  cases h : x i <;> norm_num [h]
+
+@[simp]
+theorem bit_not (x : ι → Bool) (i : ι) : bit (fun j ↦ !x j) i = 1 - bit x i := by
+  cases h : x i <;> norm_num [h]
+
+@[simp]
+theorem spin_not (x : ι → Bool) (i : ι) : spin (fun j ↦ !x j) i = -spin x i := by
+  cases h : x i <;> norm_num [h]
+
+@[simp]
+theorem spin_xor (x y : ι → Bool) (i : ι) :
+    spin (fun j ↦ xor (x j) (y j)) i = spin x i * spin y i := by
+  cases hx : x i <;> cases hy : y i <;> norm_num [hx, hy]
+
+end BitSpin
+
+/-! ### QUBO and Ising objectives -/
+
+section QuboIsing
+
+variable {ι : Type*} [Fintype ι]
+
+/-- The quadratic pseudo-Boolean function with coefficient matrix `Q`, summed over all ordered
+pairs of variables. -/
+def qubo (Q : Matrix ι ι ℝ) (x : ι → Bool) : ℝ :=
+  ∑ i, ∑ j, Q i j * bit x i * bit x j
+
+/-- The Ising energy with coupling matrix `J` (summed over all ordered pairs) and external field
+`h`. -/
+def ising (J : Matrix ι ι ℝ) (h : ι → ℝ) (x : ι → Bool) : ℝ :=
+  ∑ i, ∑ j, J i j * spin x i * spin x j + ∑ i, h i * spin x i
+
+theorem qubo_def (Q : Matrix ι ι ℝ) (x : ι → Bool) :
+    qubo Q x = ∑ i, ∑ j, Q i j * bit x i * bit x j :=
+  (rfl)
+
+theorem ising_def (J : Matrix ι ι ℝ) (h : ι → ℝ) (x : ι → Bool) :
+    ising J h x = ∑ i, ∑ j, J i j * spin x i * spin x j + ∑ i, h i * spin x i :=
+  (rfl)
+
+@[simp]
+theorem qubo_zero (x : ι → Bool) : qubo (0 : Matrix ι ι ℝ) x = 0 := by
+  simp [qubo_def]
+
+@[simp]
+theorem qubo_add (Q₁ Q₂ : Matrix ι ι ℝ) (x : ι → Bool) :
+    qubo (Q₁ + Q₂) x = qubo Q₁ x + qubo Q₂ x := by
+  simp [qubo_def, add_mul, sum_add_distrib]
+
+@[simp]
+theorem qubo_sub (Q₁ Q₂ : Matrix ι ι ℝ) (x : ι → Bool) :
+    qubo (Q₁ - Q₂) x = qubo Q₁ x - qubo Q₂ x := by
+  simp [qubo_def, sub_mul, sum_sub_distrib]
+
+@[simp]
+theorem qubo_neg (Q : Matrix ι ι ℝ) (x : ι → Bool) : qubo (-Q) x = -qubo Q x := by
+  simp [qubo_def, sum_neg_distrib]
+
+@[simp]
+theorem qubo_smul (c : ℝ) (Q : Matrix ι ι ℝ) (x : ι → Bool) :
+    qubo (c • Q) x = c * qubo Q x := by
+  simp [qubo_def, mul_assoc, mul_sum]
+
+@[simp]
+theorem qubo_transpose (Q : Matrix ι ι ℝ) (x : ι → Bool) : qubo Qᵀ x = qubo Q x := by
+  simp only [qubo_def, transpose_apply]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+  ring
+
+@[simp]
+theorem qubo_diagonal [DecidableEq ι] (d : ι → ℝ) (x : ι → Bool) :
+    qubo (Matrix.diagonal d) x = ∑ i, d i * bit x i := by
+  simp [qubo_def, Matrix.diagonal_apply, mul_assoc]
+
+@[simp]
+theorem ising_zero (x : ι → Bool) : ising (0 : Matrix ι ι ℝ) 0 x = 0 := by
+  simp [ising_def]
+
+@[simp]
+theorem ising_add (J₁ J₂ : Matrix ι ι ℝ) (h₁ h₂ : ι → ℝ) (x : ι → Bool) :
+    ising (J₁ + J₂) (h₁ + h₂) x = ising J₁ h₁ x + ising J₂ h₂ x := by
+  simp only [ising_def, Matrix.add_apply, Pi.add_apply, add_mul, sum_add_distrib]
+  ring
+
+@[simp]
+theorem ising_sub (J₁ J₂ : Matrix ι ι ℝ) (h₁ h₂ : ι → ℝ) (x : ι → Bool) :
+    ising (J₁ - J₂) (h₁ - h₂) x = ising J₁ h₁ x - ising J₂ h₂ x := by
+  simp only [ising_def, Matrix.sub_apply, Pi.sub_apply, sub_mul, sum_sub_distrib]
+  ring
+
+@[simp]
+theorem ising_neg (J : Matrix ι ι ℝ) (h : ι → ℝ) (x : ι → Bool) :
+    ising (-J) (-h) x = -ising J h x := by
+  simp only [ising_def, Matrix.neg_apply, Pi.neg_apply, neg_mul, sum_neg_distrib]
+  ring
+
+@[simp]
+theorem ising_smul (c : ℝ) (J : Matrix ι ι ℝ) (h : ι → ℝ) (x : ι → Bool) :
+    ising (c • J) (c • h) x = c * ising J h x := by
+  simp only [ising_def, Matrix.smul_apply, Pi.smul_apply, smul_eq_mul, mul_add, mul_sum]
+  congr 1 <;> refine Finset.sum_congr rfl fun i _ ↦ ?_
+  · refine Finset.sum_congr rfl fun j _ ↦ by ring
+  · ring
+
+@[simp]
+theorem ising_transpose (J : Matrix ι ι ℝ) (h : ι → ℝ) (x : ι → Bool) :
+    ising Jᵀ h x = ising J h x := by
+  simp only [ising_def, transpose_apply]
+  congr 1
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+  ring
+
+@[simp]
+theorem ising_diagonal [DecidableEq ι] (d h : ι → ℝ) (x : ι → Bool) :
+    ising (Matrix.diagonal d) h x = ∑ i, d i + ∑ i, h i * spin x i := by
+  simp [ising_def, Matrix.diagonal_apply, mul_assoc]
+
+@[simp]
+theorem ising_not (J : Matrix ι ι ℝ) (h : ι → ℝ) (x : ι → Bool) :
+    ising J h (fun i ↦ !x i) = ising J (-h) x := by
+  simp only [ising_def, spin_not, Pi.neg_apply]
+  congr 1
+  · refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+    ring
+  · refine Finset.sum_congr rfl fun i _ ↦ ?_
+    ring
+
+/-- Flipping all spins reverses the external field, so `ising J h x - ising J h (fun i ↦ !x i)`
+equals `2 * ∑ i, h i * spin x i`. -/
+theorem ising_sub_ising_not (J : Matrix ι ι ℝ) (h : ι → ℝ) (x : ι → Bool) :
+    ising J h x - ising J h (fun i ↦ !x i) = 2 * ∑ i, h i * spin x i := by
+  rw [ising_not]
+  simp only [ising_def, Pi.neg_apply, neg_mul, Finset.sum_neg_distrib]
+  ring
+
+theorem qubo_add_transpose (Q : Matrix ι ι ℝ) (x : ι → Bool) :
+    qubo (Q + Qᵀ) x = 2 * qubo Q x := by
+  rw [qubo_add, qubo_transpose, two_mul]
+
+theorem qubo_symmetrize (Q : Matrix ι ι ℝ) (x : ι → Bool) :
+    qubo ((1 / 2 : ℝ) • (Q + Qᵀ)) x = qubo Q x := by
+  rw [qubo_smul, qubo_add_transpose]
+  ring
+
+theorem ising_symmetrize (J : Matrix ι ι ℝ) (h : ι → ℝ) (x : ι → Bool) :
+    ising ((1 / 2 : ℝ) • (J + Jᵀ)) h x = ising J h x := by
+  have h1 : ising (J + Jᵀ) (h + h) x = 2 * ising J h x := by
+    rw [ising_add, ising_transpose, two_mul]
+  have h2 : (1 / 2 : ℝ) • (h + h) = h := by
+    ext i
+    simp only [Pi.smul_apply, Pi.add_apply, smul_eq_mul]
+    ring
+  calc
+    ising ((1 / 2 : ℝ) • (J + Jᵀ)) h x
+      = ising ((1 / 2 : ℝ) • (J + Jᵀ)) ((1 / 2 : ℝ) • (h + h)) x := by rw [h2]
+    _ = (1 / 2 : ℝ) * ising (J + Jᵀ) (h + h) x := ising_smul _ _ _ _
+    _ = ising J h x := by rw [h1]; ring
+
+theorem ising_eq_ising_sub_diagonal_add_trace [DecidableEq ι] (J : Matrix ι ι ℝ) (h : ι → ℝ)
+    (x : ι → Bool) :
+    ising J h x = ising (J - Matrix.diagonal J.diag) h x + J.trace := by
+  have hsplit : ising J h x =
+      ising (J - Matrix.diagonal J.diag) (h - 0) x + ising (Matrix.diagonal J.diag) 0 x := by
+    rw [← ising_add]
+    simp
+  rw [hsplit, sub_zero, ising_diagonal]
+  simp [Matrix.trace]
+
+/-! ### Equivalence between QUBO and Ising models -/
+
+private theorem sum_add_transpose_mul (M : Matrix ι ι ℝ) (f : ι → ℝ) :
+    ∑ i, (∑ j, (M i j + M j i)) * f i =
+      (∑ i, ∑ j, M i j * f i) + ∑ i, ∑ j, M i j * f j := by
+  simp only [Finset.sum_add_distrib, add_mul, Finset.sum_mul]
+  rw [Finset.sum_comm (f := fun i j ↦ M i j * f j)]
+
+/-- Every quadratic pseudo-Boolean function is an Ising energy plus an explicit constant. -/
+theorem qubo_eq_ising_add_const (Q : Matrix ι ι ℝ) (x : ι → Bool) :
+    qubo Q x = ising ((1 / 4 : ℝ) • Q) (fun i ↦ -(∑ j, (Q i j + Q j i)) / 4) x +
+      (∑ i, ∑ j, Q i j) / 4 := by
+  simp only [qubo_def, ising_def, Matrix.smul_apply, smul_eq_mul, bit_eq_one_sub_spin_div_two]
+  have h1 :
+      (∑ i, ∑ j, Q i j * ((1 - spin x i) / 2) * ((1 - spin x j) / 2)) =
+        (∑ i, ∑ j, (1 / 4 * Q i j) * spin x i * spin x j) -
+          ((∑ i, ∑ j, Q i j * spin x i) + ∑ i, ∑ j, Q i j * spin x j) / 4 +
+          (∑ i, ∑ j, Q i j) / 4 := by
+    simp only [Finset.sum_div, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+    ring
+  have h2 :
+      (∑ i, -(∑ j, (Q i j + Q j i)) / 4 * spin x i) =
+        -((∑ i, ∑ j, Q i j * spin x i) + ∑ i, ∑ j, Q i j * spin x j) / 4 := by
+    simp only [neg_div, div_mul_eq_mul_div, neg_mul, Finset.sum_neg_distrib, ← Finset.sum_div,
+      sum_add_transpose_mul]
+  rw [h1, h2]
+  ring
+
+/-- The QUBO matrix corresponding to the Ising model `(J, h)`, satisfying
+`ising J h x = qubo (isingQuboMatrix J h) x + (∑ i, ∑ j, J i j + ∑ i, h i)`. -/
+def isingQuboMatrix [DecidableEq ι] (J : Matrix ι ι ℝ) (h : ι → ℝ) : Matrix ι ι ℝ :=
+  (4 : ℝ) • J - Matrix.diagonal fun i ↦ 2 * (∑ j, (J i j + J j i) + h i)
+
+theorem isingQuboMatrix_def [DecidableEq ι] (J : Matrix ι ι ℝ) (h : ι → ℝ) :
+    isingQuboMatrix J h =
+      (4 : ℝ) • J - Matrix.diagonal fun i ↦ 2 * (∑ j, (J i j + J j i) + h i) :=
+  (rfl)
+
+theorem isingQuboMatrix_apply [DecidableEq ι] (J : Matrix ι ι ℝ) (h : ι → ℝ) (i j : ι) :
+    isingQuboMatrix J h i j =
+      4 * J i j - if i = j then 2 * (∑ k, (J i k + J k i) + h i) else 0 := by
+  simp [isingQuboMatrix_def, Matrix.diagonal_apply]
+
+@[simp]
+theorem isingQuboMatrix_apply_self [DecidableEq ι] (J : Matrix ι ι ℝ) (h : ι → ℝ) (i : ι) :
+    isingQuboMatrix J h i i = -2 * ((∑ j with i ≠ j, (J i j + J j i)) + h i) := by
+  simp only [isingQuboMatrix_apply, ↓reduceIte]
+  rw [← Finset.add_sum_erase Finset.univ (fun j ↦ J i j + J j i) (Finset.mem_univ i)]
+  have herase : Finset.univ.erase i = Finset.univ.filter fun j ↦ i ≠ j := by
+    ext j
+    simp [ne_comm]
+  rw [herase]
+  ring
+
+@[simp]
+theorem isingQuboMatrix_apply_of_ne [DecidableEq ι] (J : Matrix ι ι ℝ) (h : ι → ℝ) {i j : ι}
+    (hij : i ≠ j) :
+    isingQuboMatrix J h i j = 4 * J i j := by
+  simp [isingQuboMatrix_apply, hij]
+
+/-- Every Ising energy is a quadratic pseudo-Boolean function plus an explicit constant. -/
+theorem ising_eq_qubo_add_const [DecidableEq ι] (J : Matrix ι ι ℝ) (h : ι → ℝ) (x : ι → Bool) :
+    ising J h x = qubo (isingQuboMatrix J h) x + (∑ i, ∑ j, J i j + ∑ i, h i) := by
+  rw [isingQuboMatrix_def, qubo_sub, qubo_smul, qubo_diagonal]
+  simp only [ising_def, qubo_def, spin_eq_one_sub_two_mul_bit]
+  have hquad :
+      (∑ i, ∑ j, J i j * (1 - 2 * bit x i) * (1 - 2 * bit x j)) =
+        4 * (∑ i, ∑ j, J i j * bit x i * bit x j) -
+          2 * (∑ i, ∑ j, J i j * bit x i) - 2 * (∑ i, ∑ j, J i j * bit x j) +
+          ∑ i, ∑ j, J i j := by
+    simp only [Finset.mul_sum, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+    ring
+  have hlin : (∑ i, h i * (1 - 2 * bit x i)) = ∑ i, h i - 2 * ∑ i, h i * bit x i := by
+    simp only [mul_sub, Finset.sum_sub_distrib, mul_one, Finset.mul_sum]
+    congr 1
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    ring
+  have hdiag :
+      (∑ i, 2 * (∑ j, (J i j + J j i) + h i) * bit x i) =
+        2 * (∑ i, ∑ j, J i j * bit x i) + 2 * (∑ i, ∑ j, J i j * bit x j) +
+          2 * ∑ i, h i * bit x i := by
+    calc
+      (∑ i, 2 * (∑ j, (J i j + J j i) + h i) * bit x i)
+        = 2 * (∑ i, (∑ j, (J i j + J j i)) * bit x i) + 2 * ∑ i, h i * bit x i := by
+            simp only [mul_add, add_mul, Finset.sum_add_distrib, mul_assoc, ← Finset.mul_sum]
+      _ = 2 * (∑ i, ∑ j, J i j * bit x i) + 2 * (∑ i, ∑ j, J i j * bit x j) +
+            2 * ∑ i, h i * bit x i := by
+            rw [sum_add_transpose_mul J (bit x)]
+            ring
+  rw [hquad, hlin, hdiag]
+  ring
+
+/-- Global minimizers of `qubo Q` are the same as global minimizers of its equivalent Ising
+model with coupling `(1 / 4 : ℝ) • Q` and external field `fun i ↦ -(∑ j, (Q i j + Q j i)) / 4`.
+-/
+theorem isMinOn_qubo_iff_isMinOn_ising (Q : Matrix ι ι ℝ) (x : ι → Bool) :
+    IsMinOn (qubo Q) Set.univ x ↔
+      IsMinOn (ising ((1 / 4 : ℝ) • Q) fun i ↦ -(∑ j, (Q i j + Q j i)) / 4) Set.univ x := by
+  rw [funext (qubo_eq_ising_add_const Q), isMinOn_add_const]
+
+/-- Global minimizers of `ising J h` are the same as global minimizers of its equivalent QUBO
+objective `isingQuboMatrix J h`. -/
+theorem isMinOn_ising_iff_isMinOn_qubo [DecidableEq ι] (J : Matrix ι ι ℝ) (h : ι → ℝ)
+    (x : ι → Bool) :
+    IsMinOn (ising J h) Set.univ x ↔ IsMinOn (qubo (isingQuboMatrix J h)) Set.univ x := by
+  rw [funext (ising_eq_qubo_add_const J h), isMinOn_add_const]
+
+/-- The global infimum of `qubo Q` equals the global infimum of its equivalent Ising model plus
+the additive constant `(∑ i, ∑ j, Q i j) / 4`. -/
+theorem iInf_qubo_eq_iInf_ising_add (Q : Matrix ι ι ℝ) :
+    ⨅ x, qubo Q x =
+      (⨅ x, ising ((1 / 4 : ℝ) • Q) (fun i ↦ -(∑ j, (Q i j + Q j i)) / 4) x) +
+        (∑ i, ∑ j, Q i j) / 4 := by
+  rw [iInf_congr (qubo_eq_ising_add_const Q),
+    ← ciInf_add (Set.Finite.bddBelow (Set.finite_range _))]
+
+/-- The global infimum of `ising J h` equals the global infimum of its equivalent QUBO objective
+plus the additive constant `∑ i, ∑ j, J i j + ∑ i, h i`. -/
+theorem iInf_ising_eq_iInf_qubo_add [DecidableEq ι] (J : Matrix ι ι ℝ) (h : ι → ℝ) :
+    ⨅ x, ising J h x =
+      (⨅ x, qubo (isingQuboMatrix J h) x) + (∑ i, ∑ j, J i j + ∑ i, h i) := by
+  rw [iInf_congr (ising_eq_qubo_add_const J h),
+    ← ciInf_add (Set.Finite.bddBelow (Set.finite_range _))]
+
+/-! ### Parameter invariance -/
+
+/-- Evaluating `qubo Q` on the indicator configuration `fun k ↦ decide (k ∈ S)` of a finset `S`
+restricts both sums to `S`. -/
+theorem qubo_decide_mem [DecidableEq ι] (Q : Matrix ι ι ℝ) (S : Finset ι) :
+    qubo Q (fun k ↦ decide (k ∈ S)) = ∑ i ∈ S, ∑ j ∈ S, Q i j := by
+  have hbit (k : ι) : bit (fun m ↦ decide (m ∈ S)) k = if k ∈ S then 1 else 0 := by
+    simp [bit_def]
+  have hinner (i : ι) :
+      (∑ j : ι, Q i j * (if i ∈ S then (1 : ℝ) else 0) * if j ∈ S then 1 else 0) =
+        if i ∈ S then ∑ j ∈ S, Q i j else 0 := by
+    by_cases hi : i ∈ S <;> simp [hi]
+  simp only [qubo_def, hbit, hinner, ← Finset.sum_filter, Finset.filter_mem_eq_inter,
+    Finset.univ_inter]
+
+private theorem qubo_indicator_single [DecidableEq ι] (Q : Matrix ι ι ℝ) (a : ι) :
+    qubo Q (fun k ↦ decide (k = a)) = Q a a := by
+  simpa [Finset.mem_singleton] using qubo_decide_mem Q {a}
+
+private theorem qubo_indicator_pair [DecidableEq ι] (Q : Matrix ι ι ℝ) {i j : ι} (hij : i ≠ j) :
+    qubo Q (fun k ↦ decide (k = i ∨ k = j)) = Q i i + Q j j + (Q i j + Q j i) := by
+  have h := qubo_decide_mem Q {i, j}
+  simp only [Finset.mem_insert, Finset.mem_singleton, Finset.sum_pair hij] at h
+  rw [h]
+  ring
+
+/-- `qubo Q₁ = qubo Q₂` holds if and only if `Q₁ + Q₁ᵀ = Q₂ + Q₂ᵀ`. -/
+theorem qubo_eq_qubo_iff (Q₁ Q₂ : Matrix ι ι ℝ) :
+    qubo Q₁ = qubo Q₂ ↔ Q₁ + Q₁ᵀ = Q₂ + Q₂ᵀ := by
+  classical
+  constructor
+  · intro hfun
+    have hdiag (a : ι) : Q₁ a a = Q₂ a a := by
+      simpa [qubo_indicator_single] using congrFun hfun (fun k ↦ decide (k = a))
+    ext i j
+    by_cases hij : i = j
+    · subst hij
+      simp [Matrix.add_apply, Matrix.transpose_apply, hdiag i]
+    · have hpair :
+          qubo Q₁ (fun k ↦ decide (k = i ∨ k = j)) = qubo Q₂ (fun k ↦ decide (k = i ∨ k = j)) :=
+        congrFun hfun _
+      rw [qubo_indicator_pair Q₁ hij, qubo_indicator_pair Q₂ hij, hdiag i, hdiag j] at hpair
+      simp only [Matrix.add_apply, Matrix.transpose_apply]
+      linarith
+  · intro hsum
+    ext x
+    have hmul := congrArg (fun M ↦ qubo M x) hsum
+    rw [qubo_add_transpose, qubo_add_transpose] at hmul
+    linarith
+
+/-- Two Ising models with the same external field and the same symmetrized off-diagonal couplings
+agree up to their trace constants. -/
+theorem ising_sub_trace_eq_of_offDiag_add_transpose_eq {J₁ J₂ : Matrix ι ι ℝ}
+    (hJ : ∀ i j, i ≠ j → J₁ i j + J₁ j i = J₂ i j + J₂ j i) (h : ι → ℝ) (x : ι → Bool) :
+    ising J₁ h x - J₁.trace = ising J₂ h x - J₂.trace := by
+  classical
+  have hdiff (J : Matrix ι ι ℝ) :
+      ising J h x - J.trace = ising ((1 / 2 : ℝ) • (J - Matrix.diagonal J.diag +
+        (J - Matrix.diagonal J.diag)ᵀ)) h x := by
+    rw [ising_symmetrize, sub_eq_iff_eq_add.mpr (ising_eq_ising_sub_diagonal_add_trace J h x)]
+  rw [hdiff J₁, hdiff J₂]
+  congr 1
+  ext i j
+  by_cases hij : i = j
+  · subst hij
+    simp
+  · simp [hij, hJ i j hij]
+
+/-- Two Ising models agree up to their trace constants if and only if they have the same
+external fields and the same symmetrized off-diagonal couplings. -/
+theorem ising_sub_trace_eq_iff (J₁ J₂ : Matrix ι ι ℝ) (h₁ h₂ : ι → ℝ) :
+    (∀ x, ising J₁ h₁ x - J₁.trace = ising J₂ h₂ x - J₂.trace) ↔
+      h₁ = h₂ ∧ ∀ i j, i ≠ j → J₁ i j + J₁ j i = J₂ i j + J₂ j i := by
+  classical
+  constructor
+  · intro heq
+    have heq' (x : ι → Bool) :
+        qubo (isingQuboMatrix J₁ h₁) x + (∑ i, ∑ j, J₁ i j + ∑ i, h₁ i - J₁.trace) =
+          qubo (isingQuboMatrix J₂ h₂) x + (∑ i, ∑ j, J₂ i j + ∑ i, h₂ i - J₂.trace) := by
+      rw [← add_sub_assoc, ← ising_eq_qubo_add_const, ← add_sub_assoc,
+        ← ising_eq_qubo_add_const, heq x]
+    have hconst :
+        ∑ i, ∑ j, J₁ i j + ∑ i, h₁ i - J₁.trace = ∑ i, ∑ j, J₂ i j + ∑ i, h₂ i - J₂.trace := by
+      have h0 := heq' (fun _ ↦ false)
+      have hq0 (Q : Matrix ι ι ℝ) : qubo Q (fun _ ↦ false) = 0 := by simp [qubo_def]
+      rwa [hq0, hq0, zero_add, zero_add] at h0
+    have hqubo : qubo (isingQuboMatrix J₁ h₁) = qubo (isingQuboMatrix J₂ h₂) := by
+      ext x
+      linarith [heq' x, hconst]
+    have hmat :
+        isingQuboMatrix J₁ h₁ + (isingQuboMatrix J₁ h₁)ᵀ =
+          isingQuboMatrix J₂ h₂ + (isingQuboMatrix J₂ h₂)ᵀ :=
+      (qubo_eq_qubo_iff _ _).mp hqubo
+    have hJ : ∀ i j, i ≠ j → J₁ i j + J₁ j i = J₂ i j + J₂ j i := by
+      intro i j hij
+      have hij' := congrArg (fun M : Matrix ι ι ℝ ↦ M i j) hmat
+      simp only [Matrix.add_apply, Matrix.transpose_apply, isingQuboMatrix_apply_of_ne _ _ hij,
+        isingQuboMatrix_apply_of_ne _ _ hij.symm] at hij'
+      linarith
+    refine ⟨?_, hJ⟩
+    ext i
+    have hii := congrArg (fun M : Matrix ι ι ℝ ↦ M i i) hmat
+    have hsum : (∑ j with i ≠ j, (J₁ i j + J₁ j i)) = ∑ j with i ≠ j, (J₂ i j + J₂ j i) :=
+      Finset.sum_congr rfl fun j hj ↦ hJ i j (Finset.mem_filter.mp hj).2
+    simp only [Matrix.add_apply, Matrix.transpose_apply, isingQuboMatrix_apply_self] at hii
+    linarith [hii, hsum]
+  · rintro ⟨rfl, hJ⟩ x
+    exact ising_sub_trace_eq_of_offDiag_add_transpose_eq hJ h₁ x
+
+end QuboIsing
+
+/-! ### Multilinear expansion of pseudo-Boolean functions -/
+
+section Multilinear
+
+variable {ι : Type*}
+
+/-- The unique coefficient of `∏ i ∈ S, bit x i` in the multilinear expansion of
+`f : (ι → Bool) → ℝ`, given by Möbius inversion on the Boolean cube. -/
+def pseudoBoolCoeff [DecidableEq ι] (f : (ι → Bool) → ℝ) (S : Finset ι) : ℝ :=
+  ∑ T ∈ S.powerset, (-1 : ℝ) ^ (S.card - T.card) * f fun i ↦ decide (i ∈ T)
+
+theorem pseudoBoolCoeff_def [DecidableEq ι] (f : (ι → Bool) → ℝ) (S : Finset ι) :
+    pseudoBoolCoeff f S =
+      ∑ T ∈ S.powerset, (-1 : ℝ) ^ (S.card - T.card) * f fun i ↦ decide (i ∈ T) :=
+  (rfl)
+
+@[simp]
+theorem pseudoBoolCoeff_empty [DecidableEq ι] (f : (ι → Bool) → ℝ) :
+    pseudoBoolCoeff f ∅ = f fun _ ↦ false := by
+  simp [pseudoBoolCoeff_def]
+
+@[simp]
+theorem pseudoBoolCoeff_singleton [DecidableEq ι] (f : (ι → Bool) → ℝ) (i : ι) :
+    pseudoBoolCoeff f {i} = f (fun j ↦ decide (j = i)) - f fun _ ↦ false := by
+  have hpow : ({i} : Finset ι).powerset = {∅, {i}} := by
+    ext T
+    simp [Finset.subset_singleton_iff]
+  rw [pseudoBoolCoeff_def, hpow, Finset.sum_pair (Finset.singleton_nonempty i).ne_empty.symm]
+  simp only [Finset.card_empty, Finset.card_singleton, tsub_zero, pow_one, neg_one_mul,
+    tsub_self, pow_zero, one_mul, Finset.notMem_empty, decide_false, Finset.mem_singleton]
+  ring
+
+@[simp]
+theorem pseudoBoolCoeff_zero [DecidableEq ι] (S : Finset ι) :
+    pseudoBoolCoeff (0 : (ι → Bool) → ℝ) S = 0 := by
+  simp [pseudoBoolCoeff_def]
+
+@[simp]
+theorem pseudoBoolCoeff_add [DecidableEq ι] (f g : (ι → Bool) → ℝ) (S : Finset ι) :
+    pseudoBoolCoeff (f + g) S = pseudoBoolCoeff f S + pseudoBoolCoeff g S := by
+  simp only [pseudoBoolCoeff_def, Pi.add_apply, mul_add, Finset.sum_add_distrib]
+
+@[simp]
+theorem pseudoBoolCoeff_sub [DecidableEq ι] (f g : (ι → Bool) → ℝ) (S : Finset ι) :
+    pseudoBoolCoeff (f - g) S = pseudoBoolCoeff f S - pseudoBoolCoeff g S := by
+  simp only [pseudoBoolCoeff_def, Pi.sub_apply, mul_sub, Finset.sum_sub_distrib]
+
+@[simp]
+theorem pseudoBoolCoeff_neg [DecidableEq ι] (f : (ι → Bool) → ℝ) (S : Finset ι) :
+    pseudoBoolCoeff (-f) S = -pseudoBoolCoeff f S := by
+  simp only [pseudoBoolCoeff_def, Pi.neg_apply, mul_neg, Finset.sum_neg_distrib]
+
+@[simp]
+theorem pseudoBoolCoeff_smul [DecidableEq ι] (c : ℝ) (f : (ι → Bool) → ℝ) (S : Finset ι) :
+    pseudoBoolCoeff (c • f) S = c * pseudoBoolCoeff f S := by
+  simp only [pseudoBoolCoeff_def, Pi.smul_apply, smul_eq_mul, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun T _ ↦ ?_
+  ring
+
+/-- A product of `{0, 1}` bits over a finset `S` equals `1` if every variable in `S` is `true`,
+and `0` otherwise. -/
+theorem prod_bit_eq_ite (x : ι → Bool) (S : Finset ι) :
+    ∏ i ∈ S, bit x i = if ∀ i ∈ S, x i = true then 1 else 0 := by
+  simp only [bit_def, Finset.prod_boole]
+
+/-- Summing `d S * ∏ i ∈ S, bit x i` over all subsets `S` restricts to subsets of the true
+variables of `x`. -/
+theorem sum_mul_prod_bit [Fintype ι] (d : Finset ι → ℝ) (x : ι → Bool) :
+    ∑ S : Finset ι, d S * ∏ i ∈ S, bit x i =
+      ∑ S ∈ (Finset.univ.filter fun i ↦ x i = true).powerset, d S := by
+  simp_rw [prod_bit_eq_ite, mul_ite, mul_one, mul_zero, ← Finset.sum_filter]
+  refine Finset.sum_congr ?_ fun _ _ ↦ rfl
+  ext S
+  simp [Finset.subset_iff]
+
+private theorem sum_powerset_sum_powerset [DecidableEq ι] (U : Finset ι)
+    (g : Finset ι → Finset ι → ℝ) :
+    (∑ S ∈ U.powerset, ∑ T ∈ S.powerset, g S T) =
+      ∑ T ∈ U.powerset, ∑ S ∈ Finset.Icc T U, g S T := by
+  refine Finset.sum_comm' (t' := U.powerset) (s' := fun T ↦ Finset.Icc T U) ?_
+  intro S T
+  simp only [Finset.mem_powerset, Finset.mem_Icc]
+  exact ⟨fun ⟨hSU, hTS⟩ ↦ ⟨⟨hTS, hSU⟩, hTS.trans hSU⟩, fun ⟨⟨hTS, hSU⟩, _⟩ ↦ ⟨hSU, hTS⟩⟩
+
+/-- Every pseudo-Boolean function `f : (ι → Bool) → ℝ` is represented by its multilinear expansion
+`∑ S, pseudoBoolCoeff f S * ∏ i ∈ S, bit x i`. -/
+theorem sum_pseudoBoolCoeff_mul_prod_bit [Fintype ι] [DecidableEq ι] (f : (ι → Bool) → ℝ)
+    (x : ι → Bool) :
+    ∑ S : Finset ι, pseudoBoolCoeff f S * ∏ i ∈ S, bit x i = f x := by
+  rw [sum_mul_prod_bit]
+  set U : Finset ι := Finset.univ.filter fun i ↦ x i = true
+  have hxU : (fun i ↦ decide (i ∈ U)) = x := by
+    ext i
+    simp [U]
+  simp_rw [pseudoBoolCoeff_def]
+  rw [sum_powerset_sum_powerset]
+  simp_rw [← Finset.sum_mul, Finset.sum_Icc_neg_one_pow_card_sub_card_left]
+  simp [hxU]
+
+/-- Applying `pseudoBoolCoeff` to a multilinear expansion recovers its coefficient function. -/
+theorem pseudoBoolCoeff_sum_mul_prod_bit [Fintype ι] [DecidableEq ι] (c : Finset ι → ℝ)
+    (T : Finset ι) :
+    pseudoBoolCoeff (fun x ↦ ∑ S : Finset ι, c S * ∏ i ∈ S, bit x i) T = c T := by
+  simp_rw [pseudoBoolCoeff_def, sum_mul_prod_bit]
+  have hfilt (R : Finset ι) : (Finset.univ.filter fun i ↦ decide (i ∈ R) = true) = R := by
+    ext i
+    simp
+  simp_rw [hfilt, Finset.mul_sum]
+  rw [sum_powerset_sum_powerset]
+  simp_rw [← Finset.sum_mul, Finset.sum_Icc_neg_one_pow_card_sub_card_right]
+  simp
+
+/-- Every pseudo-Boolean function `f : (ι → Bool) → ℝ` has a unique multilinear expansion
+`f x = ∑ S, c S * ∏ i ∈ S, bit x i` over subsets `S : Finset ι`. -/
+theorem existsUnique_sum_prod_bit [Fintype ι] (f : (ι → Bool) → ℝ) :
+    ∃! c : Finset ι → ℝ, ∀ x, f x = ∑ S : Finset ι, c S * ∏ i ∈ S, bit x i := by
+  classical
+  refine ⟨pseudoBoolCoeff f, fun x ↦ (sum_pseudoBoolCoeff_mul_prod_bit f x).symm, fun c hc ↦ ?_⟩
+  ext T
+  rw [← pseudoBoolCoeff_sum_mul_prod_bit c T, ← funext hc]
+
+private theorem sum_powersetCard_two_mul_prod_bit [Fintype ι] [DecidableEq ι] {d : Finset ι → ℝ}
+    {Q : Matrix ι ι ℝ} (hd2 : ∀ i j, i ≠ j → d {i, j} = Q i j + Q j i) (x : ι → Bool) :
+    (∑ S ∈ (Finset.univ : Finset ι).powersetCard 2, d S * ∏ k ∈ S, bit x k) =
+      ∑ i, ∑ j with i ≠ j, Q i j * bit x i * bit x j := by
+  have hrhs :
+      (∑ i, ∑ j with i ≠ j, Q i j * bit x i * bit x j) =
+        ∑ p ∈ (Finset.univ ×ˢ Finset.univ).filter (fun p : ι × ι ↦ p.1 ≠ p.2),
+          Q p.1 p.2 * bit x p.1 * bit x p.2 := by
+    simp only [Finset.sum_filter, Finset.univ_product_univ, Fintype.sum_prod_type]
+  rw [hrhs, ← Finset.sum_fiberwise_of_maps_to
+    (s := (Finset.univ ×ˢ Finset.univ).filter (fun p : ι × ι ↦ p.1 ≠ p.2))
+    (t := (Finset.univ : Finset ι).powersetCard 2)
+    (g := fun p : ι × ι ↦ ({p.1, p.2} : Finset ι))
+    (f := fun p : ι × ι ↦ Q p.1 p.2 * bit x p.1 * bit x p.2)
+    (fun p hp ↦ Finset.mem_powersetCard.mpr
+      ⟨Finset.subset_univ _, Finset.card_pair (Finset.mem_filter.mp hp).2⟩)]
+  refine Finset.sum_congr rfl fun S hS ↦ ?_
+  obtain ⟨_, hScard⟩ := Finset.mem_powersetCard.mp hS
+  obtain ⟨a, b, hab, rfl⟩ := Finset.card_eq_two.mp hScard
+  have hfib :
+      ((Finset.univ ×ˢ Finset.univ).filter (fun p : ι × ι ↦ p.1 ≠ p.2)).filter
+          (fun p : ι × ι ↦ ({p.1, p.2} : Finset ι) = {a, b}) =
+        {(a, b), (b, a)} := by
+    ext ⟨u, v⟩
+    simp only [Finset.mem_filter, Finset.mem_product, Finset.mem_univ, true_and,
+      ← Finset.coe_inj, Finset.coe_insert, Finset.coe_singleton, Set.pair_eq_pair_iff,
+      Finset.mem_insert, Finset.mem_singleton, Prod.mk.injEq]
+    grind
+  rw [hfib, Finset.sum_pair (by simp [hab]), hd2 a b hab, Finset.prod_pair hab]
+  ring
+
+private theorem qubo_eq_diag_add_offDiag [Fintype ι] [DecidableEq ι] (Q : Matrix ι ι ℝ)
+    (x : ι → Bool) :
+    qubo Q x = (∑ i, Q i i * bit x i) + ∑ i, ∑ j with i ≠ j, Q i j * bit x i * bit x j := by
+  simp only [qubo_def]
+  have hrow (i : ι) :
+      (∑ j, Q i j * bit x i * bit x j) =
+        Q i i * bit x i + ∑ j with i ≠ j, Q i j * bit x i * bit x j := by
+    rw [← Finset.add_sum_erase Finset.univ (fun j ↦ Q i j * bit x i * bit x j)
+      (Finset.mem_univ i), mul_assoc, bit_mul_bit]
+    congr 1
+    refine Finset.sum_congr ?_ fun _ _ ↦ rfl
+    ext j
+    simp [ne_comm]
+  simp_rw [hrow, Finset.sum_add_distrib]
+
+private theorem sum_prod_bit_eq_qubo_add_const [Fintype ι] [DecidableEq ι] {d : Finset ι → ℝ}
+    {Q : Matrix ι ι ℝ} {c₀ : ℝ}
+    (hd0 : d ∅ = c₀)
+    (hd1 : ∀ i, d {i} = Q i i)
+    (hd2 : ∀ i j, i ≠ j → d {i, j} = Q i j + Q j i)
+    (hd3 : ∀ S, 2 < S.card → d S = 0)
+    (x : ι → Bool) :
+    ∑ S : Finset ι, d S * ∏ i ∈ S, bit x i = qubo Q x + c₀ := by
+  have hle :
+      (∑ S : Finset ι, d S * ∏ k ∈ S, bit x k) =
+        ∑ S ∈ Finset.univ with S.card ≤ 2, d S * ∏ k ∈ S, bit x k := by
+    rw [← Finset.sum_filter_add_sum_filter_not (p := fun S : Finset ι ↦ S.card ≤ 2)]
+    have hzero : (∑ S ∈ Finset.univ with ¬S.card ≤ 2, d S * ∏ k ∈ S, bit x k) = 0 :=
+      Finset.sum_eq_zero fun S hS ↦ by
+        simp [hd3 S (Nat.lt_of_not_le (Finset.mem_filter.mp hS).2)]
+    rw [hzero, add_zero]
+  have hpart :
+      Finset.univ.filter (fun S : Finset ι ↦ S.card ≤ 2) =
+        insert ∅ ((Finset.univ : Finset ι).powersetCard 1 ∪
+          (Finset.univ : Finset ι).powersetCard 2) := by
+    ext S
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_insert,
+      Finset.mem_union, Finset.mem_powersetCard, Finset.subset_univ, ← Finset.card_eq_zero]
+    omega
+  have hdisj : Disjoint ((Finset.univ : Finset ι).powersetCard 1)
+      ((Finset.univ : Finset ι).powersetCard 2) := by
+    rw [Finset.disjoint_left]
+    intro S h1 h2
+    have c1 := (Finset.mem_powersetCard.mp h1).2
+    have c2 := (Finset.mem_powersetCard.mp h2).2
+    omega
+  have h1 :
+      (∑ S ∈ (Finset.univ : Finset ι).powersetCard 1, d S * ∏ k ∈ S, bit x k) =
+        ∑ i, Q i i * bit x i := by
+    rw [Finset.powersetCard_one, Finset.sum_map]
+    exact Finset.sum_congr rfl fun i _ ↦ by simp [hd1 i]
+  rw [hle, hpart, Finset.sum_insert (by simp [Finset.mem_powersetCard]), Finset.sum_union hdisj]
+  simp only [Finset.prod_empty, mul_one]
+  rw [hd0, h1, sum_powersetCard_two_mul_prod_bit hd2 x, qubo_eq_diag_add_offDiag]
+  ring
+
+/-- A pseudo-Boolean function with multilinear expansion `f x = ∑ S, c S * ∏ i ∈ S, bit x i` is of
+the form `qubo Q + const` if and only if `c S = 0` for all subsets `S` with `2 < S.card`. -/
+theorem exists_qubo_add_const_iff [Fintype ι] {f : (ι → Bool) → ℝ} {c : Finset ι → ℝ}
+    (hf : ∀ x, f x = ∑ S : Finset ι, c S * ∏ i ∈ S, bit x i) :
+    (∃ (Q : Matrix ι ι ℝ) (c₀ : ℝ), ∀ x, f x = qubo Q x + c₀) ↔
+      ∀ S : Finset ι, 2 < S.card → c S = 0 := by
+  classical
+  constructor
+  · rintro ⟨Q, c₀, hQ⟩ S hS
+    let d : Finset ι → ℝ := fun T ↦
+      match T.card with
+      | 0 => c₀
+      | 1 => ∑ i ∈ T, Q i i
+      | 2 => (∑ i ∈ T, ∑ j ∈ T, Q i j) - ∑ i ∈ T, Q i i
+      | _ => 0
+    have hd0 : d ∅ = c₀ := by simp [d]
+    have hd1 (i : ι) : d {i} = Q i i := by simp [d]
+    have hd2 (i j : ι) (hij : i ≠ j) : d {i, j} = Q i j + Q j i := by
+      simp only [d, Finset.card_pair hij, Finset.sum_pair hij]
+      ring
+    have hd3 (T : Finset ι) (hT : 2 < T.card) : d T = 0 := by
+      rcases hcard : T.card with _ | _ | _ | k
+      · omega
+      · omega
+      · omega
+      · simp [d, hcard]
+    have hfd : ∀ x, f x = ∑ T : Finset ι, d T * ∏ i ∈ T, bit x i := fun x ↦ by
+      rw [hQ x, sum_prod_bit_eq_qubo_add_const hd0 hd1 hd2 hd3 x]
+    rw [(existsUnique_sum_prod_bit f).unique hf hfd]
+    exact hd3 S hS
+  · intro hdeg
+    let Q : Matrix ι ι ℝ := Matrix.of fun i j ↦ if i = j then c {i} else c {i, j} / 2
+    refine ⟨Q, c ∅, fun x ↦ ?_⟩
+    rw [hf x]
+    refine sum_prod_bit_eq_qubo_add_const rfl (fun i ↦ by simp [Q]) (fun i j hij ↦ ?_) hdeg x
+    simp only [Q, Matrix.of_apply, hij, hij.symm, ↓reduceIte, Finset.pair_comm j i]
+    ring
+
+end Multilinear
+
+end TauCeti
