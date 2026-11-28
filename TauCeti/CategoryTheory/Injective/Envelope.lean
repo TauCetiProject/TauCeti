@@ -161,6 +161,17 @@ theorem isEssentialMono_comp_isIso_iff {M I I' : C} (f : M ⟶ I) (e : I ⟶ I')
   ⟨fun h ↦ by simpa using h.comp (isEssentialMono_of_isIso (inv e)),
     fun h ↦ h.comp (isEssentialMono_of_isIso e)⟩
 
+open Limits in
+/-- If `f` is a kernel of `g`, then `kernel.ι g` is essential exactly when `f` is. -/
+theorem _root_.CategoryTheory.Limits.IsLimit.isEssentialMono_kernel_ι_iff
+    [HasZeroMorphisms C] {K I J : C} {f : K ⟶ I} {g : I ⟶ J} [HasKernel g]
+    {w : f ≫ g = 0} (hf : IsLimit (KernelFork.ofι f w)) :
+    IsEssentialMono (kernel.ι g) ↔ IsEssentialMono f := by
+  let e := hf.conePointUniqueUpToIso (kernelIsKernel g)
+  have he : e.hom ≫ kernel.ι g = f :=
+    IsLimit.conePointUniqueUpToIso_hom_comp hf (kernelIsKernel g) WalkingParallelPair.zero
+  rw [← he, isEssentialMono_isIso_comp_iff]
+
 section Cokernel
 
 open Limits
