@@ -12,7 +12,11 @@ public import TauCeti.CategoryTheory.Monoidal.Rigid.Preadditive
 # Linearity of rigid dual functors
 
 The instance `TauCeti.instLinearDoubleRightDualFunctor` makes the double right dual functor linear
-over the ground semiring of a linear monoidal category. It uses
+over the ground semiring of a linear monoidal category. Rescaling a double-dual structure map
+by `r` therefore rescales its composite with its double dual by `r ^ 2`. This turns normalization
+into a square-root problem and allows the two signed lifts to be classified for objects with scalar
+endomorphisms over an algebraically closed field of characteristic different from two.
+The instance uses
 `TauCeti.doubleRightDualFunctor_map` and `TauCeti.rightAdjointMate_smul`.
 -/
 
