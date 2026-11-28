@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.Distribution.Mass.Extension
 public import TauCeti.Analysis.Distribution.Mass.Normal
+public import TauCeti.Analysis.Distribution.TestFunction.Pullback
 public import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.Analysis.Distribution.Mass.Pullback
 import TauCeti.Analysis.Normed.Module.Alternating.SecondCountable
 
 /-!
@@ -30,11 +33,11 @@ the level-set pairing `t ↦ ⟨T, u, t⟩ φ` is Borel measurable for every `T`
 `F` is second countable, `t ↦ localMass ⟨T, u, t⟩ U` and `t ↦ mass ⟨T, u, t⟩` are also Borel
 measurable.
 
-For a smooth `u`, the slice is the weak limit of `-T ⌞ dfₘ` for smooth functions `fₘ` of `u`
-increasing to the indicator of `{u < t}`; this follows from the Leibniz rule
-`∂(fT) = f ∂T - T ⌞ df` and dominated convergence for the Borel restriction. Bounding the mass of
-`T ⌞ dfₘ` against the mass measure `‖T‖` and integrating over `t` gives the **slicing
-inequality**
+For a locally normal current `T` and a smooth function `u : E → ℝ` on the ambient space, the slice
+is the weak limit of `-T ⌞ dfₘ` for smooth functions `fₘ` of `u` increasing to the indicator of
+`{u < t}`; this follows from the Leibniz rule `∂(fT) = f ∂T - T ⌞ df` and dominated convergence
+for the Borel restriction. Bounding the mass of `T ⌞ dfₘ` against the mass measure `‖T‖` and
+integrating over `t` gives the **slicing inequality**
 
 `∫ M(⟨T, u, t⟩) dt ≤ (k + 1) ∫ ‖du‖ d‖T‖`,
 
@@ -73,9 +76,11 @@ form is zero, so every current and every slice is zero.
 * `Distribution.slice_comp_monoCLM`, `Distribution.slice_comp_pullbackCLM_of_measurable_comp`,
   `Distribution.slice_comp_pullbackCLM`, `Distribution.slice_comp_pullbackCLM_of_measurable`:
   compatibility with open restriction and proper smooth pushforward.
-* `Distribution.continuous_apply_smulLeftCLM_smoothTransition`,
-  `Distribution.tendsto_neg_oneFormWedgeCLM_slice_apply`: continuity and weak convergence of the
-  smooth-transition slice approximants.
+* `Distribution.tendsto_neg_oneFormWedgeCLM_slice_apply`: weak convergence of the smooth-transition
+  slice approximants.
+* `Distribution.measurable_slice_apply_of_contDiff`,
+  `Distribution.measurable_uncurry_slice_apply_of_contDiff`: level and joint measurability for
+  weakly measurable families of locally normal currents sliced by a smooth function.
 * `Distribution.lintegral_mass_slice_le`,
   `Distribution.lintegral_mass_slice_le_of_innerProductSpace`: the slicing inequality for smooth
   `u`, on general normed spaces and sharp on inner product spaces.
@@ -217,6 +222,7 @@ theorem slice_const {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
     simp
 
 /-- Slicing is additive on locally normal currents. -/
+@[simp]
 theorem slice_add {T S : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T)
     (hS : IsLocallyNormal S) (u : E → ℝ) (t : ℝ) :
     slice (T + S) u t = slice T u t + slice S u t := by
@@ -231,6 +237,7 @@ theorem slice_add {T S : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
   · simp [hu]
 
 /-- Slicing commutes with subtraction on locally normal currents. -/
+@[simp]
 theorem slice_sub {T S : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T)
     (hS : IsLocallyNormal S) (u : E → ℝ) (t : ℝ) :
     slice (T - S) u t = slice T u t - slice S u t := by
@@ -463,10 +470,9 @@ theorem slice_comp_pullbackCLM_of_measurable_comp {E' : Type*} [NormedAddCommGro
     by_cases hxΩ' : Φ x ∈ Ω'
     · have hiff : x ∈ A₀ ↔ x ∈ A₁ := by simp [A₀, A₁, B, Subtype.coe_image, hxΩ']
       by_cases hx1 : x ∈ A₁ <;> simp [hiff, hx1]
-    · have h0 : pullbackCLM Φ hΦ hΦp η x = 0 := by
-        rw [pullbackCLM_apply_of_mem η x.property, image_eq_zero_of_notMem_tsupport fun h =>
-          hxΩ' (η.tsupport_subset h)]
-        ext _; simp
+    · have h0 : pullbackCLM Φ hΦ hΦp η x = 0 :=
+        image_eq_zero_of_notMem_tsupport fun h =>
+          hxΩ' (η.tsupport_subset (tsupport_pullbackCLM_subset η h).2)
       refine Eq.trans (b := 0) ?_ (Eq.symm ?_) <;>
         (apply Set.indicator_apply_eq_zero.mpr; exact fun _ => h0)
   ext φ
@@ -542,33 +548,8 @@ The slice `⟨T, u, t⟩` is approximated by `-T ⌞ dfₘ` for the smooth multi
 `fₘ x = ψ(cₘ (t - u x))`, where `ψ = Real.smoothTransition` and `cₘ = m + 1`. They increase to the
 indicator of `{u < t}`, and `‖dfₘ‖ = cₘ ψ'(cₘ (t - u)) ‖du‖`, whose integral in `t` is `‖du‖`. -/
 
-/-- Continuity of `s ↦ S (ψ(c (s - u ·)) • η)` for a locally finite-mass functional `S`. -/
-theorem continuous_apply_smulLeftCLM_smoothTransition {n : ℕ∞} {S : 𝓓^{n}(Ω, F) →L[ℝ] ℝ}
-    (hS : HasLocallyFiniteMass S) {u : E → ℝ} (hu : ContDiff ℝ n u)
-    (η : 𝓓^{n}(Ω, F)) (c : ℝ) :
-    Continuous fun s : ℝ =>
-      S (TestFunction.smulLeftCLM (hu.smoothTransition_mul_sub c s) η) := by
-  have hmem (s : ℝ) : MemLp (fun x : Ω =>
-      Real.smoothTransition (c * (s - u x)) • η x) 1 (massMeasure S) := by
-    simpa [TestFunction.smulLeftCLM_apply] using TestFunction.memLp_subtype (p := 1)
-      (μ := massMeasure S) (TestFunction.smulLeftCLM (hu.smoothTransition_mul_sub c s) η)
-  simp_rw [← extendL1_toLp hS]
-  refine (extendL1 S).continuous.comp (continuous_iff_continuousAt.2 fun s₀ => ?_)
-  have htoLp (s : ℝ) :
-      TestFunction.toLp 1 (massMeasure S)
-          (TestFunction.smulLeftCLM (hu.smoothTransition_mul_sub c s) η) = (hmem s).toLp _ := by
-    rw [TestFunction.toLp_apply, MemLp.toLp_eq_toLp_iff]
-    exact ae_of_all _ fun x => by simp [TestFunction.smulLeftCLM_apply]
-  simp_rw [ContinuousAt, htoLp]
-  refine TestFunction.tendsto_toLp_smul_of_dominated ENNReal.one_ne_top hmem (hmem s₀) 2
-    (.of_forall fun s x _ => (abs_sub _ _).trans <| by
-      linarith [Real.smoothTransition.abs_le_one (c * (s - u x)),
-        Real.smoothTransition.abs_le_one (c * (s₀ - u x))])
-    fun x _ => (Real.smoothTransition.continuous.comp
-      (continuous_const.mul (continuous_id.sub continuous_const))).tendsto s₀
-
-/-- For smooth `u`, `-T ⌞ dfₘ` with `fₘ x = ψ((m + 1) (t - u x))` converges weakly to
-`⟨T, u, t⟩`. -/
+/-- For a locally normal `(k + 1)`-current `T` and a smooth function `u : E → ℝ` on the ambient
+space, `-T ⌞ dfₘ` with `fₘ x = ψ((m + 1) (t - u x))` converges weakly to `⟨T, u, t⟩`. -/
 theorem tendsto_neg_oneFormWedgeCLM_slice_apply
     {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T) (hu : ContDiff ℝ ∞ u)
     (t : ℝ) (φ : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
@@ -589,6 +570,62 @@ theorem tendsto_neg_oneFormWedgeCLM_slice_apply
     (tendsto_apply_smulLeftCLM_massRestrict hT₂ hA hf hfC hlim φ)
   rw [← slice_apply _ hum] at h
   exact h.congr fun m => apply_smulLeftCLM_extDerivCLM_sub T (hf m) φ
+
+/-- For a weakly measurable family of locally normal `(k + 1)`-currents
+`T : α → 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ` and a smooth function `u : E → ℝ` on the ambient
+space, `a ↦ ⟨T a, u, t⟩ φ` is measurable for every level `t` and every test form `φ`. -/
+theorem measurable_slice_apply_of_contDiff {α : Type*} [MeasurableSpace α]
+    {T : α → 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
+    (hTm : ∀ ψ, Measurable fun a => T a ψ) (hTn : ∀ a, IsLocallyNormal (T a))
+    (hu : ContDiff ℝ ∞ u) (t : ℝ) (φ : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
+    Measurable fun a => slice (T a) u t φ :=
+  measurable_of_tendsto_metrizable (fun _ => (hTm _).neg)
+    (tendsto_pi_nhds.2 fun a => tendsto_neg_oneFormWedgeCLM_slice_apply (hTn a) hu t φ)
+
+/-- For a weakly measurable family of locally normal `(k + 1)`-currents
+`T : α → 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ` and a smooth function `u : E → ℝ` on the ambient
+space, the joint pairing `(a, t) ↦ ⟨T a, u, t⟩ φ` is measurable on `α × ℝ`. -/
+theorem measurable_uncurry_slice_apply_of_contDiff {α : Type*} [MeasurableSpace α]
+    {T : α → 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
+    (hTm : ∀ ψ, Measurable fun a => T a ψ) (hTn : ∀ a, IsLocallyNormal (T a))
+    (hu : ContDiff ℝ ∞ u) (φ : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
+    Measurable fun p : α × ℝ => slice (T p.1) u p.2 φ := by
+  have hum : Measurable fun x : Ω => u x := (hu.continuous.comp continuous_subtypeVal).measurable
+  let step (m : ℕ) (t : ℝ) : ℝ := ((⌊(2 : ℝ) ^ m * t⌋ : ℝ) - 1) / (2 : ℝ) ^ m
+  have hstep_meas (m : ℕ) : Measurable fun p : α × ℝ => slice (T p.1) u (step m p.2) φ := by
+    let f (j : ℤ) (a : α) : ℝ := slice (T a) u (((j : ℝ) - 1) / (2 : ℝ) ^ m) φ
+    have hf (j : ℤ) : Measurable (f j) := measurable_slice_apply_of_contDiff hTm hTn hu _ φ
+    let k' (t : ℝ) : ℤ := ⌊(2 : ℝ) ^ m * t⌋
+    have hk' : Measurable k' := (measurable_const.mul measurable_id).floor
+    intro s hs
+    have hpre : (fun p : α × ℝ => slice (T p.1) u (step m p.2) φ) ⁻¹' s =
+        ⋃ j : ℤ, (f j ⁻¹' s) ×ˢ (k' ⁻¹' {j}) := by
+      ext ⟨a, t⟩
+      simp only [mem_preimage, mem_iUnion, mem_prod, mem_singleton_iff, step, k', f]
+      exact ⟨fun h => ⟨⌊(2 : ℝ) ^ m * t⌋, h, rfl⟩, fun ⟨_, hj1, hj2⟩ => hj2 ▸ hj1⟩
+    rw [hpre]
+    exact MeasurableSet.iUnion fun j => (hf j hs).prod (hk' (MeasurableSet.singleton j))
+  refine measurable_of_tendsto_metrizable hstep_meas (tendsto_pi_nhds.2 fun ⟨a, t⟩ => ?_)
+  have hstep_lt (m : ℕ) : step m t < t := by
+    rw [div_lt_iff₀ (by positivity : (0 : ℝ) < (2 : ℝ) ^ m)]
+    linarith [Int.floor_le ((2 : ℝ) ^ m * t)]
+  have hstep_tendsto : Tendsto (fun m => step m t) atTop (𝓝 t) := by
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le
+      (by simpa using (tendsto_const_nhds (x := t)).sub ((tendsto_pow_atTop_nhds_zero_of_lt_one
+        (by positivity : (0 : ℝ) ≤ 2⁻¹) (by norm_num)).const_mul 2))
+      tendsto_const_nhds (fun m => ?_) (fun m => (hstep_lt m).le)
+    have hpow : (0 : ℝ) < (2 : ℝ) ^ m := by positivity
+    have hlhs : t - 2 * ((2 : ℝ) ^ m)⁻¹ = ((2 : ℝ) ^ m * t - 2) / (2 : ℝ) ^ m := by field_simp
+    rw [hlhs, div_le_div_iff_of_pos_right hpow]
+    linarith [Int.sub_one_lt_floor ((2 : ℝ) ^ m * t)]
+  have hev (x : Ω) : ∀ᶠ m in atTop, (u x < step m t ↔ u x < t) := by
+    by_cases hxt : u x < t
+    · filter_upwards [(tendsto_order.1 hstep_tendsto).1 _ hxt] with m hm
+      exact ⟨fun _ => hxt, fun _ => hm⟩
+    · exact .of_forall fun m => ⟨fun h => (hxt (h.trans (hstep_lt m))).elim, fun h => (hxt h).elim⟩
+  simp_rw [slice_apply _ hum]
+  exact (tendsto_massRestrict_apply _ _ (ae_of_all _ hev) (extDerivCLM φ)).sub
+    (tendsto_massRestrict_apply _ _ (ae_of_all _ hev) φ)
 
 private theorem exists_measurable_mass_slice_le_aux
     {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T) (hu : ContDiff ℝ ∞ u)
@@ -629,7 +666,8 @@ private theorem exists_measurable_mass_slice_le_aux
         (Nat.cast_add_one_pos _)]
     exact liminf_const _
 
-/-- A measurable majorant of `t ↦ M(⟨T, u, t⟩)` whose integral is at most
+/-- For a locally normal `(k + 1)`-current `T` and a smooth function `u : E → ℝ` on the ambient
+space, a measurable majorant of `t ↦ M(⟨T, u, t⟩)` whose integral is at most
 `(k + 1) ∫ ‖du‖ d‖T‖`. -/
 theorem exists_measurable_mass_slice_le {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
     (hT : IsLocallyNormal T) (hu : ContDiff ℝ ∞ u) :
@@ -646,7 +684,8 @@ theorem lintegral_mass_slice_le {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) �
   obtain ⟨G, -, hG, hGint⟩ := exists_measurable_mass_slice_le hT hu
   exact (lintegral_mono hG).trans hGint
 
-/-- **The slicing inequality with a Lipschitz bound.** If `‖du‖ ≤ L` on `Ω`, then
+/-- **The slicing inequality with a Lipschitz bound.** For a locally normal `(k + 1)`-current `T`
+and a smooth function `u : E → ℝ` on the ambient space with `‖du‖ ≤ L` on `Ω`,
 `∫ M(⟨T, u, t⟩) dt ≤ (k + 1) L M(T)`. -/
 theorem lintegral_mass_slice_le_mul_mass {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
     (hT : IsLocallyNormal T) (hu : ContDiff ℝ ∞ u) {L : ℝ≥0∞}
@@ -657,7 +696,8 @@ theorem lintegral_mass_slice_le_mul_mass {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[�
     (by gcongr
         exact lintegral_massMeasure_le_mul_mass hT.hasLocallyFiniteMass fun x => hdu x x.property)
 
-/-- If `∫ ‖du‖ d‖T‖` is finite, then almost every slice `⟨T, u, t⟩` has finite mass. -/
+/-- For a locally normal `(k + 1)`-current `T` and a smooth function `u : E → ℝ` on the ambient
+space with `∫ ‖du‖ d‖T‖ < ⊤`, almost every slice `⟨T, u, t⟩` has finite mass. -/
 theorem ae_mass_slice_lt_top {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
     (hT : IsLocallyNormal T) (hu : ContDiff ℝ ∞ u)
     (hfin : ∫⁻ x, ‖fderiv ℝ u x‖ₑ ∂massMeasure T ≠ ⊤) :
@@ -696,8 +736,9 @@ theorem ae_isNormal_slice {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ
 
 section InnerProductSpace
 
-/-- On a real inner product space, a measurable majorant of `t ↦ M(⟨T, u, t⟩)` has integral at
-most `∫ ‖du‖ d‖T‖`, without the `(k + 1)` factor. -/
+/-- On a real inner product space, for a locally normal `(k + 1)`-current `T` and a smooth function
+`w : V → ℝ` on the ambient space, a measurable majorant of `t ↦ M(⟨T, w, t⟩)` has integral at most
+`∫ ‖dw‖ d‖T‖`, without the `(k + 1)` factor. -/
 theorem exists_measurable_mass_slice_le_of_innerProductSpace {V : Type*}
     [NormedAddCommGroup V] [InnerProductSpace ℝ V]
     [MeasurableSpace V] [BorelSpace V] {U : Opens V} {w : V → ℝ}
@@ -710,7 +751,7 @@ theorem exists_measurable_mass_slice_le_of_innerProductSpace {V : Type*}
       mass_comp_oneFormWedgeCLM_le_lintegral_of_innerProductSpace hT.hasLocallyFiniteMass hα
 
 /-- **Sharp slicing inequality on an inner product space.** For a locally normal `(k + 1)`-current
-`T` and smooth `w`, `∫ M(⟨T, w, t⟩) dt ≤ ∫ ‖dw‖ d‖T‖`. -/
+`T` and a smooth function `w : V → ℝ` on the ambient space, `∫ M(⟨T, w, t⟩) dt ≤ ∫ ‖dw‖ d‖T‖`. -/
 theorem lintegral_mass_slice_le_of_innerProductSpace {V : Type*}
     [NormedAddCommGroup V] [InnerProductSpace ℝ V]
     [MeasurableSpace V] [BorelSpace V] {U : Opens V} {w : V → ℝ}
@@ -720,8 +761,9 @@ theorem lintegral_mass_slice_le_of_innerProductSpace {V : Type*}
   obtain ⟨G, -, hG, hGint⟩ := exists_measurable_mass_slice_le_of_innerProductSpace hT hw
   exact (lintegral_mono hG).trans hGint
 
-/-- **Sharp slicing inequality with a derivative bound on an inner product space.** If
-`‖dw‖ ≤ L` on `U`, then `∫ M(⟨T, w, t⟩) dt ≤ L M(T)`. -/
+/-- **Sharp slicing inequality with a derivative bound on an inner product space.** For a locally
+normal `(k + 1)`-current `T` and a smooth function `w : V → ℝ` on the ambient space with `‖dw‖ ≤ L`
+on `U`, `∫ M(⟨T, w, t⟩) dt ≤ L M(T)`. -/
 theorem lintegral_mass_slice_le_mul_mass_of_innerProductSpace {V : Type*}
     [NormedAddCommGroup V] [InnerProductSpace ℝ V]
     [MeasurableSpace V] [BorelSpace V] {U : Opens V} {w : V → ℝ}

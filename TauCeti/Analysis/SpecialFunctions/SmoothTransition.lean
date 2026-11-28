@@ -628,12 +628,9 @@ absolute value by the integral of its absolute value. -/
 theorem abs_intervalIntegral_mul_le {g f : ℝ → ℝ} {a b : ℝ}
     (hg : IntervalIntegrable g volume a b) :
     |∫ t in a..b, g t * smoothTransition (f t)| ≤ ∫ t in uIoc a b, |g t| := by
-  rw [← Real.norm_eq_abs]
-  refine (intervalIntegral.norm_integral_le_integral_norm_uIoc
-    (f := fun t => g t * smoothTransition (f t))).trans ?_
-  refine integral_mono_of_nonneg (ae_of_all _ fun _ => norm_nonneg _)
-    (intervalIntegrable_iff.1 hg.abs) (ae_of_all _ fun t => ?_)
-  dsimp only
+  rw [intervalIntegral.abs_integral_eq_abs_integral_uIoc, ← Real.norm_eq_abs]
+  refine MeasureTheory.norm_integral_le_of_norm_le (intervalIntegrable_iff.1 hg.abs)
+    (ae_of_all _ fun t => ?_)
   rw [Real.norm_eq_abs, abs_mul]
   exact mul_le_of_le_one_right (abs_nonneg _) (abs_le_one _)
 

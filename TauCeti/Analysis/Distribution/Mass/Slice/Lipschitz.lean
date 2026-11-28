@@ -32,6 +32,8 @@ slice is zero.
 * `Distribution.exists_contDiff_lipschitzWith_slice_tendsto`: on a finite-dimensional space `E`,
   shifted smooth `K`-Lipschitz approximants `g_j` whose slices converge pointwise on test forms
   at every level `t ∈ ℝ`.
+* `Distribution.measurable_uncurry_slice_apply_of_lipschitzOnWith`: joint pairing measurability for
+  weakly measurable families of locally normal currents sliced by a Lipschitz function on `Ω`.
 * `Distribution.slice_eq_zero_of_lipschitzOnWith_zero`: a slice by a `0`-Lipschitz function on `Ω`
   is zero.
 * `Distribution.lintegral_mass_slice_le_of_lipschitzOnWith`,
@@ -116,6 +118,25 @@ theorem exists_contDiff_lipschitzWith_slice_tendsto [FiniteDimensional ℝ E]
   exact tendsto_slice_apply_of_eventually_iff T hg_meas hu_meas (ae_of_all _ hiff)
     (ae_of_all _ hiff) φ
 
+/-- For a weakly measurable family of locally normal `(k + 1)`-currents
+`T : α → 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ` and a function `u : E → ℝ` Lipschitz on `Ω`,
+the joint pairing `(a, t) ↦ ⟨T a, u, t⟩ φ` is measurable on `α × ℝ`. -/
+theorem measurable_uncurry_slice_apply_of_lipschitzOnWith {α : Type*} [MeasurableSpace α]
+    {T : α → 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
+    (hTm : ∀ ψ, Measurable fun a => T a ψ) (hTn : ∀ a, IsLocallyNormal (T a))
+    (hu : LipschitzOnWith K u Ω) (φ : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
+    Measurable fun p : α × ℝ => slice (T p.1) u p.2 φ := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · have h0 (p : α × ℝ) : slice (T p.1) u p.2 φ = 0 := by
+      rw [slice_eq_zero_of_not_finiteDimensional (T := T p.1) hE]; rfl
+    simp_rw [h0]
+    exact measurable_const
+  obtain ⟨g, hg_smooth, -, -, -, hg_slice⟩ := exists_contDiff_lipschitzWith_slice_tendsto hu
+  exact measurable_of_tendsto_metrizable
+    (fun j => measurable_uncurry_slice_apply_of_contDiff hTm hTn (hg_smooth j) φ)
+    (tendsto_pi_nhds.2 fun ⟨a, t⟩ => hg_slice (T a) t φ)
+
 /-! ### The slicing inequality for Lipschitz functions -/
 
 private theorem exists_measurable_mass_slice_le_of_lipschitzOnWith_aux
@@ -163,7 +184,9 @@ theorem lintegral_mass_slice_le_of_lipschitzOnWith
   obtain ⟨m, -, hm_le, hm_int⟩ := exists_measurable_mass_slice_le_of_lipschitzOnWith hT hu
   exact (lintegral_mono hm_le).trans hm_int
 
-/-- **Local Lipschitz slicing inequality** on an open subset `U ≤ Ω` of a normed space. -/
+/-- **Local Lipschitz slicing inequality** on an open subset `U ≤ Ω` of a normed space: for a
+locally normal `(k + 1)`-current `T` on `Ω` and `u : E → ℝ` that is `K`-Lipschitz on `U` and
+measurable on `Ω`, `∫⁻ t, localMass ⟨T, u, t⟩ U ≤ (k + 1) * K * localMass T U`. -/
 theorem lintegral_localMass_slice_le_of_lipschitzOnWith {U : Opens E} (hU : U ≤ Ω)
     {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T)
     (hu : LipschitzOnWith K u U) (huΩ : Measurable fun x : Ω => u x) :
@@ -262,7 +285,8 @@ theorem ae_isNormal_slice_of_lipschitzOnWith
   ae_isNormal_slice_of_ae_mass_lt_top hT fun _ hS =>
     ae_mass_slice_lt_top_of_lipschitzOnWith hS.isLocallyNormal hS.mass_ne_top hu
 
-/-- **Sublevel restrictions `T ⌞ {u < t}` of a normal current are normal almost everywhere.** -/
+/-- **Sublevel restrictions `T ⌞ {u < t}` of a normal current by a Lipschitz function on `Ω` are
+normal almost everywhere.** -/
 theorem ae_isNormal_massRestrict_lt_of_lipschitzOnWith
     {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsNormal T)
     (hu : LipschitzOnWith K u Ω) :
@@ -336,8 +360,8 @@ theorem ae_isLocallyNormal_slice_of_locallyLipschitzOn
     rw [isLocallyNormal_succ_iff, slice_comp_extDerivCLM T u t]
     exact ⟨ht1, ht2.neg⟩
 
-/-- **Sublevel restrictions `T ⌞ {u < t}` of a locally normal current are locally normal almost
-everywhere.** -/
+/-- **Sublevel restrictions `T ⌞ {u < t}` of a locally normal current by a locally Lipschitz
+function on `Ω` are locally normal almost everywhere.** -/
 theorem ae_isLocallyNormal_massRestrict_lt_of_locallyLipschitzOn
     {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T)
     (hu : LocallyLipschitzOn Ω u) :
@@ -448,7 +472,8 @@ theorem lintegral_mass_slice_le_of_lipschitzOnWith_of_innerProductSpace
   exact (lintegral_mono hm_le).trans hm_int
 
 /-- **Sharp local Lipschitz slicing inequality** on an open subset `U ≤ Ω` of an inner product
-space: `∫⁻ t, localMass ⟨T, u, t⟩ U ≤ K * localMass T U`. -/
+space: for a locally normal `(k + 1)`-current `T` on `Ω` and `u : E → ℝ` that is `K`-Lipschitz on
+`U` and measurable on `Ω`, `∫⁻ t, localMass ⟨T, u, t⟩ U ≤ K * localMass T U`. -/
 theorem lintegral_localMass_slice_le_of_lipschitzOnWith_of_innerProductSpace
     {U : Opens E} (hU : U ≤ Ω)
     {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T)

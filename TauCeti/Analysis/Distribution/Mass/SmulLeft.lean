@@ -155,20 +155,28 @@ variable [MeasurableSpace E] [BorelSpace E] {𝓕 : Type*}
   [FunLike 𝓕 𝓓^{n}(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) ℝ]
   [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) ℝ]
 
+private theorem mass_comp_oneFormWedgeCLM_le_lintegral_of_le
+    {T : 𝓕} (hT : HasLocallyFiniteMass T) (hα : ContDiff ℝ n α) {c : ℝ≥0∞} (hc : c ≠ ⊤)
+    (hpt : ∀ (ω : 𝓓^{n}(Ω, E [⋀^Fin k]→L[ℝ] F)) (x : E),
+      ‖oneFormWedgeCLM (k := k) hα ω x‖ₑ ≤ c * ‖α x‖ₑ * ‖ω x‖ₑ) :
+    mass (T ∘ oneFormWedgeCLM (k := k) hα) ≤ c * ∫⁻ x, ‖α x‖ₑ ∂massMeasure T := by
+  refine mass_le_iff.2 fun ω hω => (enorm_apply_le_lintegral_massMeasure hT _).trans ?_
+  rw [← lintegral_const_mul' _ _ hc]
+  refine lintegral_mono fun x => (hpt ω x).trans ?_
+  have hωx : ‖ω x‖ₑ ≤ 1 := by
+    rw [← ofReal_norm]
+    exact ENNReal.ofReal_le_one.2 (hω x)
+  calc c * ‖α x‖ₑ * ‖ω x‖ₑ ≤ c * ‖α x‖ₑ * 1 := by gcongr
+    _ = c * ‖α x‖ₑ := mul_one _
+
 /-- **Mass of a contraction against the mass measure.** For `T` of locally finite mass,
 `M(T ⌞ α) ≤ (k + 1) ∫ ‖α‖ d‖T‖`. Unlike `Distribution.mass_comp_oneFormWedgeCLM_le`, the size of
 `α` is weighted by the mass measure `‖T‖` instead of bounded by its supremum. -/
 theorem mass_comp_oneFormWedgeCLM_le_lintegral {T : 𝓕} (hT : HasLocallyFiniteMass T)
     (hα : ContDiff ℝ n α) :
-    mass (T ∘ oneFormWedgeCLM (k := k) hα) ≤ (k + 1) * ∫⁻ x, ‖α x‖ₑ ∂massMeasure T := by
-  refine mass_le_iff.2 fun ω hω => (enorm_apply_le_lintegral_massMeasure hT _).trans ?_
-  rw [← lintegral_const_mul' _ _ (by simp)]
-  refine lintegral_mono fun x => (enorm_oneFormWedgeCLM_apply_le hα ω x).trans ?_
-  have hωx : ‖ω x‖ₑ ≤ 1 := by
-    rw [← ofReal_norm]
-    exact ENNReal.ofReal_le_one.2 (hω x)
-  calc (k + 1 : ℝ≥0∞) * ‖α x‖ₑ * ‖ω x‖ₑ ≤ (k + 1) * ‖α x‖ₑ * 1 := by gcongr
-    _ = (k + 1) * ‖α x‖ₑ := mul_one _
+    mass (T ∘ oneFormWedgeCLM (k := k) hα) ≤ (k + 1) * ∫⁻ x, ‖α x‖ₑ ∂massMeasure T :=
+  mass_comp_oneFormWedgeCLM_le_lintegral_of_le hT hα (by simp)
+    (enorm_oneFormWedgeCLM_apply_le hα)
 
 end MassMeasure
 
@@ -177,17 +185,24 @@ section Boundary
 variable [NormedSpace ℝ V] (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V)
   (hf : ContDiff ℝ (⊤ : ℕ∞) f)
 
+private theorem localMass_comp_smulLeftCLM_comp_extDerivCLM_le_of_le
+    (hfc : ∀ x ∈ U ∩ Ω, ‖f x‖ₑ ≤ c) {w : ℝ≥0∞}
+    (hcontr : localMass (T ∘ oneFormWedgeCLM (k := k) (contDiff_infty_iff_fderiv.1 hf).2) U ≤ w) :
+    localMass ((T ∘L smulLeftCLM hf) ∘L extDerivCLM) U ≤
+      c * localMass (T ∘L extDerivCLM) U + w := by
+  rw [ContinuousLinearMap.comp_smulLeftCLM_comp_extDerivCLM, FunLike.coe_sub]
+  exact localMass_sub_le.trans (add_le_add (localMass_comp_smulLeftCLM_le (T ∘L extDerivCLM) hf hfc)
+    hcontr)
+
 /-- **Local mass of the boundary of a smooth multiple.** If `|f| ≤ c` and `‖df‖ ≤ c'` on
 `U ∩ Ω`, then the local mass of `∂(fT)` on `U` is at most
 `c * localMass (∂T) U + (k + 1) c' * localMass T U`. -/
 theorem localMass_comp_smulLeftCLM_comp_extDerivCLM_le (hfc : ∀ x ∈ U ∩ Ω, ‖f x‖ₑ ≤ c)
     (hdfc : ∀ x ∈ U ∩ Ω, ‖fderiv ℝ f x‖ₑ ≤ c') :
     localMass ((T ∘L smulLeftCLM hf) ∘L extDerivCLM) U ≤
-      c * localMass (T ∘L extDerivCLM) U + (k + 1) * c' * localMass T U := by
-  rw [ContinuousLinearMap.comp_smulLeftCLM_comp_extDerivCLM, FunLike.coe_sub]
-  refine localMass_sub_le.trans (add_le_add ?_ ?_)
-  · exact localMass_comp_smulLeftCLM_le (T ∘L extDerivCLM) hf hfc
-  · exact localMass_comp_oneFormWedgeCLM_le T _ hdfc
+      c * localMass (T ∘L extDerivCLM) U + (k + 1) * c' * localMass T U :=
+  localMass_comp_smulLeftCLM_comp_extDerivCLM_le_of_le T hf hfc
+    (localMass_comp_oneFormWedgeCLM_le T _ hdfc)
 
 /-- **Mass of the boundary of a smooth multiple.** If `|f| ≤ c` and `‖df‖ ≤ c'` on `Ω`, then
 `M(∂(fT)) ≤ c M(∂T) + (k + 1) c' M(T)`. -/
@@ -313,13 +328,9 @@ theorem mass_comp_oneFormWedgeCLM_le_lintegral_of_innerProductSpace
     [LinearMapClass 𝓕 ℝ 𝓓^{n}(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) ℝ]
     {T : 𝓕} (hT : HasLocallyFiniteMass T) (hα : ContDiff ℝ n α) :
     mass (T ∘ oneFormWedgeCLM (k := k) hα) ≤ ∫⁻ x, ‖α x‖ₑ ∂massMeasure T := by
-  refine mass_le_iff.2 fun ω hω => (enorm_apply_le_lintegral_massMeasure hT _).trans ?_
-  refine lintegral_mono fun x =>
-    (enorm_oneFormWedgeCLM_apply_le_of_innerProductSpace hα ω x).trans ?_
-  have hωx : ‖ω x‖ₑ ≤ 1 := by
-    rw [← ofReal_norm]
-    exact ENNReal.ofReal_le_one.2 (hω x)
-  simpa using mul_le_mul_right hωx ‖α x‖ₑ
+  simpa only [one_mul] using
+    mass_comp_oneFormWedgeCLM_le_lintegral_of_le (c := 1) hT hα (by simp) fun ω x => by
+      simpa only [one_mul] using enorm_oneFormWedgeCLM_apply_le_of_innerProductSpace hα ω x
 
 end MassMeasure
 
@@ -333,11 +344,9 @@ variable (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] V) (hf : ContDi
 theorem localMass_comp_smulLeftCLM_comp_extDerivCLM_le_of_innerProductSpace
     (hfc : ∀ x ∈ U ∩ Ω, ‖f x‖ₑ ≤ c) (hdfc : ∀ x ∈ U ∩ Ω, ‖fderiv ℝ f x‖ₑ ≤ c') :
     localMass ((T ∘L smulLeftCLM hf) ∘L extDerivCLM) U ≤
-      c * localMass (T ∘L extDerivCLM) U + c' * localMass T U := by
-  rw [ContinuousLinearMap.comp_smulLeftCLM_comp_extDerivCLM, FunLike.coe_sub]
-  refine localMass_sub_le.trans (add_le_add ?_ ?_)
-  · exact localMass_comp_smulLeftCLM_le (T ∘L extDerivCLM) hf hfc
-  · exact localMass_comp_oneFormWedgeCLM_le_of_innerProductSpace T _ hdfc
+      c * localMass (T ∘L extDerivCLM) U + c' * localMass T U :=
+  localMass_comp_smulLeftCLM_comp_extDerivCLM_le_of_le T hf hfc
+    (localMass_comp_oneFormWedgeCLM_le_of_innerProductSpace T _ hdfc)
 
 /-- **Sharp mass of the boundary of a smooth multiple on an inner product space.** If `|f| ≤ c`
 and `‖df‖ ≤ c'` on `Ω`, then `M(∂(fT)) ≤ c M(∂T) + c' M(T)`. -/

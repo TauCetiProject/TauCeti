@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import Mathlib.MeasureTheory.Measure.Regular
 public import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
-import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
+import Mathlib.MeasureTheory.Integral.Lebesgue.Add
 import TauCeti.MeasureTheory.Function.SimpleFunc.Basic
 import TauCeti.MeasureTheory.Integral.Lebesgue.Basic
 
@@ -210,7 +210,7 @@ measures `μ t` on `α` is dominated on each open set `U` by a measurable majora
 depend on `U`) satisfying `μ t U ≤ m t` for `ν`-almost every `t` and `∫⁻ t, m t ∂ν ≤ c₀ * ρ U`
 for an outer regular measure `ρ`, then for every measurable weight `w : α → ℝ≥0∞`,
 `∫⁻ t, ∫⁻ x, w x ∂μ t ∂ν ≤ c₀ * ∫⁻ x, w x ∂ρ`. -/
-theorem lintegral_lintegral_le_of_isOpen {β : Type*} [MeasurableSpace β] [OpensMeasurableSpace α]
+theorem lintegral_lintegral_le_of_isOpen {β : Type*} [MeasurableSpace β]
     {ν : Measure β} {μ : β → Measure α} {ρ : Measure α} [ρ.OuterRegular] {c₀ : ℝ≥0∞}
     (hc₀top : c₀ ≠ ⊤)
     (hmaj : ∀ U : Set α, IsOpen U → ∃ m : β → ℝ≥0∞, Measurable m ∧
@@ -243,7 +243,6 @@ theorem lintegral_lintegral_le_of_isOpen {β : Type*} [MeasurableSpace β] [Open
   let A (p : ι) : Set α := (d p.fst) ⁻¹' {p.snd.val}
   have hc_pos (p : ι) : c p ≠ 0 :=
     ENNReal.coe_ne_zero.2 (Finset.mem_erase.1 p.snd.property).1
-  have hw_eq := SimpleFunc.eapproxDiff_eq_tsum_indicator hw
   have hw_int_eq := lintegral_eq_tsum_eapproxDiff_fibre ρ hw
   have hA_fin (p : ι) : ρ (A p) ≠ ⊤ := by
     have hle : c p * ρ (A p) ≤ ∫⁻ x, w x ∂ρ := by
@@ -260,19 +259,8 @@ theorem lintegral_lintegral_le_of_isOpen {β : Type*} [MeasurableSpace β] [Open
   choose m hm_meas hm_le hm_int using fun p : ι => hmaj (U p) (hUo p)
   -- Bound `∫⁻ x, w x ∂μ t` by `∑' p, c p * m p t` a.e., then integrate and sum the `δ p` errors.
   have hstep1 (t : β) : ∫⁻ x, w x ∂μ t ≤ ∑' p : ι, c p * μ t (U p) := by
-    calc ∫⁻ x, w x ∂μ t
-        ≤ ∫⁻ x, ∑' p : ι, c p * (U p).indicator 1 x ∂μ t := by
-          refine lintegral_mono fun x => ?_
-          rw [hw_eq]
-          refine tsum_le_tsum fun p => ?_
-          gcongr
-          exact hAU p
-      _ = ∑' p : ι, c p * μ t (U p) := by
-          rw [lintegral_tsum fun p =>
-            ((measurable_one.indicator (hUo p).measurableSet).const_mul (c p)).aemeasurable]
-          refine tsum_congr fun p => ?_
-          rw [lintegral_const_mul _ (measurable_one.indicator (hUo p).measurableSet),
-            lintegral_indicator_one (hUo p).measurableSet]
+    rw [lintegral_eq_tsum_eapproxDiff_fibre (μ t) hw]
+    exact tsum_le_tsum fun p => mul_le_mul_right (measure_mono (hAU p)) (c p)
   have hae_le : ∀ᵐ t ∂ν, ∫⁻ x, w x ∂μ t ≤ ∑' p : ι, c p * m p t := by
     filter_upwards [ae_all_iff.2 hm_le] with t ht
     refine (hstep1 t).trans (tsum_le_tsum fun p => ?_)

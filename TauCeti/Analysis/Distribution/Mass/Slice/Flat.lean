@@ -10,19 +10,21 @@ public import TauCeti.Analysis.Distribution.Mass.Slice.Lipschitz
 import TauCeti.MeasureTheory.Integral.LayerCake
 
 /-!
-# Flat-norm continuity and slicing inequalities for Lipschitz slices
+# Normal flat-mass continuity and slicing inequalities for Lipschitz slices
 
-This file establishes normal flat-norm continuity and flat-mass slicing bounds for slices of
-normal currents by Lipschitz functions, following Federer, *Geometric Measure Theory*,
-§§4.3.1–4.3.2.
+This file establishes normal flat-mass continuity and slicing bounds for slices of real normal
+currents by Lipschitz functions, using the extended real normal flat mass
+`ContinuousLinearMap.normalFlatMass` (`T ↦ inf { M(R) + M(S) | T = R + ∂S with R, S normal }`,
+taking `⊤` on non-normal currents), following Federer, *Geometric Measure Theory*, §§4.3.1–4.3.2.
 
 ## Main declarations
 
-* `Distribution.lintegral_normalFlatMass_slice_sub_slice_le`: normal flat continuity of slices
-  (`∫⁻ t, F(⟨T, v, t⟩ - ⟨T, u, t⟩) ≤ ∫⁻ x, edist (v x) (u x) ∂(‖T‖ + ‖∂T‖)`).
+* `Distribution.lintegral_normalFlatMass_slice_sub_slice_le`: normal flat-mass continuity of
+  slices (`∫⁻ t, (⟨T, v, t⟩ - ⟨T, u, t⟩).normalFlatMass ≤ ∫⁻ x, edist (v x) (u x) ∂(‖T‖ + ‖∂T‖)`).
 * `Distribution.lintegral_normalFlatMass_slice_le`,
-  `Distribution.lintegral_normalFlatMass_slice_le_of_innerProductSpace`: the flat-norm slicing
-  inequality `∫⁻ t, F(⟨N, u, t⟩) ≤ K · F(N)` on inner product spaces (factor `k + 2` generally).
+  `Distribution.lintegral_normalFlatMass_slice_le_of_innerProductSpace`: the normal flat-mass
+  slicing inequality `∫⁻ t, ⟨N, u, t⟩.normalFlatMass ≤ K * N.normalFlatMass` on inner product
+  spaces (with factor `k + 2` on general normed spaces).
 
 ## References
 
@@ -42,9 +44,9 @@ namespace Distribution
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] {Ω : Opens E} {k : ℕ} {K : ℝ≥0} {u v : E → ℝ}
 
-/-- **Normal flat continuity of slices with respect to the slicing function.**
+/-- **Normal flat-mass continuity of slices with respect to the slicing function.**
 For a real normal `(k + 1)`-current `T` and Lipschitz functions `u, v` on `Ω`,
-`∫⁻ t, F(⟨T, v, t⟩ - ⟨T, u, t⟩) ≤ ∫⁻ x, edist (v x) (u x) ∂(‖T‖ + ‖∂T‖)`. -/
+`∫⁻ t, (⟨T, v, t⟩ - ⟨T, u, t⟩).normalFlatMass ≤ ∫⁻ x, edist (v x) (u x) ∂(‖T‖ + ‖∂T‖)`. -/
 theorem lintegral_normalFlatMass_slice_sub_slice_le {K₁ K₂ : ℝ≥0}
     {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ} (hT : IsNormal T)
     (hu : LipschitzOnWith K₁ u Ω) (hv : LipschitzOnWith K₂ v Ω) :
@@ -123,9 +125,9 @@ private theorem lintegral_normalFlatMass_slice_le_aux
     _ ≤ c * mass R + c * mass S := add_le_add hmR_int hmS_int
     _ = c * (mass R + mass S) := (mul_add _ _ _).symm
 
-/-- **Flat-mass slicing inequality** on a general normed space:
+/-- **Normal flat-mass slicing inequality** on a general normed space:
 for a real normal `(k + 1)`-current `N` and `u` that is `K`-Lipschitz on `Ω`,
-`∫⁻ t, F(⟨N, u, t⟩) ≤ (k + 2) * K * F(N)`. -/
+`∫⁻ t, ⟨N, u, t⟩.normalFlatMass ≤ (k + 2) * K * N.normalFlatMass`. -/
 theorem lintegral_normalFlatMass_slice_le
     {N : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ} (hN : IsNormal N)
     (hu : LipschitzOnWith K u Ω) :
@@ -146,9 +148,9 @@ section InnerProductSpace
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] {Ω : Opens E} {u : E → ℝ}
 
-/-- **Sharp flat-mass slicing inequality on an inner product space** (Federer 4.3.2(2)):
+/-- **Sharp normal flat-mass slicing inequality on an inner product space** (Federer 4.3.2(2)):
 for a real normal `(k + 1)`-current `N` and `u` that is `K`-Lipschitz on `Ω`,
-`∫⁻ t, F(⟨N, u, t⟩) ≤ K * F(N)`. -/
+`∫⁻ t, ⟨N, u, t⟩.normalFlatMass ≤ K * N.normalFlatMass`. -/
 theorem lintegral_normalFlatMass_slice_le_of_innerProductSpace
     {N : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ} (hN : IsNormal N)
     (hu : LipschitzOnWith K u Ω) :

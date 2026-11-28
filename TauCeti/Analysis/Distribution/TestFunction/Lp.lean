@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Distribution.Mass.Basic
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Function.ContinuousMapDense
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
@@ -41,6 +42,9 @@ evaluation on integrable forms (`Distribution.extendL1`).
 * `TestFunction.memLp_smul_of_continuous`, `TestFunction.memLp_intervalIntegral_smul`:
   multiplying a test function by a continuous scalar function on `Ω`, or by the interval integral
   of a jointly continuous scalar kernel on `Ω × ℝ`, stays in `Lᵖ(μ)`.
+* `TestFunction.continuous_toLp_smul`, `TestFunction.intervalIntegral_toLp_smul`: for a jointly
+  continuous scalar kernel `K` on `Ω × ℝ` and `1 ≤ p < ∞`, the curve `s ↦ [K(·, s) φ]` in
+  `Lᵖ(μ; F)` is continuous and its Bochner interval integral is `[(∫ K(·, t) dt) φ]`.
 * `TestFunction.toLp`: the class in `Lᵖ(μ)` of the restriction of a test function to `Ω`.
 * `TestFunction.ambientToLp`: the class in `Lᵖ(ν)` of a test function, for a measure `ν` on the
   ambient space, as a `𝕜`-linear map.
@@ -131,11 +135,9 @@ every measure `μ` on `Ω` that is finite on compact sets. -/
 theorem memLp_smul_of_continuous [IsFiniteMeasureOnCompacts μ] {c : Ω → ℝ}
     (hc : Continuous c) (φ : 𝓓^{n}(Ω, F)) :
     MemLp (fun x : Ω => c x • φ x) p μ := by
-  refine (hc.smul (φ.continuous.comp continuous_subtypeVal)).memLp_of_hasCompactSupport
-    (HasCompactSupport.of_support_subset_isCompact (TestFunction.isCompact_preimage_tsupport φ)
-      fun x hx => ?_)
-  by_contra h
-  exact hx (by simp [image_eq_zero_of_notMem_tsupport h])
+  simp_rw [← toCompactlySupportedContinuousMap_apply φ]
+  exact (hc.smul (map_continuous _)).memLp_of_hasCompactSupport
+    φ.toCompactlySupportedContinuousMap.hasCompactSupport.smul_left
 
 /-- Multiplying a test function on `Ω` by the interval integral of a scalar kernel jointly
 continuous on `Ω × ℝ` lies in `Lᵖ(μ)` for every measure `μ` on `Ω` that is finite on compact
@@ -295,6 +297,95 @@ theorem tendsto_toLp_smul_of_dominated {ι : Type*} {l : Filter ι} [l.IsCountab
   · by_cases hx : (x : E) ∈ tsupport φ
     · exact (hlim x hx).smul_const (φ x)
     · simpa [image_eq_zero_of_notMem_tsupport hx] using tendsto_const_nhds
+
+/-- For a jointly continuous scalar kernel `K : E → ℝ → ℝ` on `Ω × ℝ`, `s ↦ (K · s • φ)` is
+continuous as a curve in `Lᵖ(μ; F)` (`1 ≤ p < ∞`). -/
+theorem continuous_toLp_smul (hp : p ≠ ∞) {K : E → ℝ → ℝ}
+    (hK : Continuous fun q : Ω × ℝ => K q.1 q.2) (φ : 𝓓^{n}(Ω, F)) :
+    Continuous fun s : ℝ =>
+      (memLp_smul_of_continuous (p := p) (μ := μ)
+        (c := fun x : Ω => K x s) (hK.comp (continuous_id.prodMk continuous_const)) φ).toLp
+        (fun x : Ω => K x s • φ x) := by
+  refine continuous_iff_continuousAt.2 fun s₀ => ?_
+  obtain ⟨M, hM⟩ :=
+    ((TestFunction.isCompact_preimage_tsupport φ).prod isCompact_Icc).exists_bound_of_continuousOn
+      (s := ((↑) ⁻¹' tsupport φ : Set Ω) ×ˢ Icc (s₀ - 1) (s₀ + 1)) hK.continuousOn
+  refine tendsto_toLp_smul_of_dominated hp
+    (fun s => memLp_smul_of_continuous
+      (c := fun x : Ω => K x s) (hK.comp (continuous_id.prodMk continuous_const)) φ)
+    (memLp_smul_of_continuous
+      (c := fun x : Ω => K x s₀) (hK.comp (continuous_id.prodMk continuous_const)) φ)
+    (M + M) ?_ fun x _ =>
+      (hK.comp (continuous_const.prodMk continuous_id)).tendsto s₀
+  filter_upwards
+      [Ioo_mem_nhds (a := s₀ - 1) (b := s₀ + 1) (by linarith) (by linarith)] with s hs x hx
+  have hsIcc : s ∈ Icc (s₀ - 1) (s₀ + 1) := Ioo_subset_Icc_self hs
+  have hs₀Icc : s₀ ∈ Icc (s₀ - 1) (s₀ + 1) := ⟨by linarith, by linarith⟩
+  refine (abs_sub _ _).trans (add_le_add ?_ ?_)
+  · simpa only [Real.norm_eq_abs] using hM ⟨x, s⟩ ⟨hx, hsIcc⟩
+  · simpa only [Real.norm_eq_abs] using hM ⟨x, s₀⟩ ⟨hx, hs₀Icc⟩
+
+/-- For a jointly continuous scalar kernel `K : E → ℝ → ℝ` on `Ω × ℝ` and `1 ≤ p < ∞`, integrating
+`t ↦ [K(·, t) φ]` in `Lᵖ(μ; F)` over `a..b` equals `[(∫ t in a..b, K(·, t)) φ]`. -/
+theorem intervalIntegral_toLp_smul [CompleteSpace F] (hp : p ≠ ∞) {K : E → ℝ → ℝ}
+    (hK : Continuous fun q : Ω × ℝ => K q.1 q.2) (a b : ℝ) (φ : 𝓓^{n}(Ω, F)) :
+    ∫ t in a..b,
+        (memLp_smul_of_continuous (p := p) (μ := μ)
+          (c := fun x : Ω => K x t) (hK.comp (continuous_id.prodMk continuous_const)) φ).toLp
+          (fun x : Ω => K x t • φ x) =
+      (memLp_intervalIntegral_smul (p := p) (μ := μ) hK a b φ).toLp _ := by
+  let J (s : ℝ) (x : Ω) : ℝ := ∫ t in a..s, K x t
+  have hcont_t (x : Ω) : Continuous fun t : ℝ => K x t :=
+    hK.comp (continuous_const.prodMk continuous_id)
+  let hmem (s : ℝ) := memLp_intervalIntegral_smul (p := p) (μ := μ) hK a s φ
+  let q (s : ℝ) : Lp F p μ := (hmem s).toLp _
+  have hderiv_q (s : ℝ) :
+      HasDerivAt q
+        ((memLp_smul_of_continuous (p := p) (μ := μ)
+          (c := fun x : Ω => K x s) (hK.comp (continuous_id.prodMk continuous_const)) φ).toLp
+          (fun x : Ω => K x s • φ x)) s := by
+    rw [hasDerivAt_iff_tendsto_slope_zero]
+    have hmem_sl (h : ℝ) :
+        MemLp (fun x : Ω => (h⁻¹ * (J (s + h) x - J s x)) • φ x) p μ :=
+      (((hmem (s + h)).sub (hmem s)).const_smul h⁻¹).ae_eq
+        (ae_of_all _ fun x => by simp [J, sub_smul, mul_smul])
+    have hq_sl (h : ℝ) : h⁻¹ • (q (s + h) - q s) = (hmem_sl h).toLp _ := by
+      rw [← MemLp.toLp_sub, ← MemLp.toLp_const_smul, MemLp.toLp_eq_toLp_iff]
+      exact ae_of_all _ fun x => by simp [J, sub_smul, mul_smul]
+    simp_rw [hq_sl]
+    obtain ⟨M, hM⟩ :=
+      ((TestFunction.isCompact_preimage_tsupport φ).prod isCompact_Icc).exists_bound_of_continuousOn
+        (s := ((↑) ⁻¹' tsupport φ : Set Ω) ×ˢ Icc (s - 1) (s + 1)) hK.continuousOn
+    refine tendsto_toLp_smul_of_dominated hp hmem_sl
+      (memLp_smul_of_continuous
+        (c := fun x : Ω => K x s) (hK.comp (continuous_id.prodMk continuous_const)) φ)
+      (M + M) ?_ fun x _ => ?_
+    · filter_upwards [mem_nhdsWithin_of_mem_nhds
+          (Ioo_mem_nhds (a := (-1 : ℝ)) (b := 1) (by norm_num) (by norm_num)),
+        self_mem_nhdsWithin] with h hh hh0 x hx
+      have hsub_J : J (s + h) x - J s x = ∫ t in s..(s + h), K x t :=
+        sub_eq_of_eq_add' (intervalIntegral.integral_add_adjacent_intervals
+          ((hcont_t x).intervalIntegrable a s) ((hcont_t x).intervalIntegrable s (s + h))).symm
+      have hint : |J (s + h) x - J s x| ≤ M * |h| := by
+        rw [hsub_J, ← Real.norm_eq_abs]
+        simpa only [add_sub_cancel_left] using
+          intervalIntegral.norm_integral_le_of_norm_le_const (a := s) (b := s + h) (C := M)
+            fun t ht => by
+              have htIcc : t ∈ Icc (s - 1) (s + 1) := by
+                rw [Set.mem_uIoc] at ht
+                rcases ht with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> constructor <;> linarith [hh.1, hh.2]
+              exact hM ⟨x, t⟩ ⟨hx, htIcc⟩
+      refine (abs_sub _ _).trans (add_le_add ?_ ?_)
+      · rw [abs_mul, abs_inv]
+        calc |h|⁻¹ * |J (s + h) x - J s x| ≤ |h|⁻¹ * (M * |h|) := by gcongr
+          _ = M := by field_simp [abs_ne_zero.2 (mem_compl_singleton_iff.1 hh0)]
+      · simpa only [Real.norm_eq_abs] using hM ⟨x, s⟩ ⟨hx, ⟨by linarith, by linarith⟩⟩
+    · simpa only [smul_eq_mul] using hasDerivAt_iff_tendsto_slope_zero.1 <|
+        intervalIntegral.integral_hasDerivAt_right ((hcont_t x).intervalIntegrable a s)
+          ((hcont_t x).stronglyMeasurableAtFilter volume (𝓝 s)) (hcont_t x).continuousAt
+  have hqa : q a = 0 := by rw [← norm_eq_zero, Lp.norm_toLp]; simp
+  simpa [q, hqa] using intervalIntegral.integral_eq_sub_of_hasDerivAt (f := q)
+    (fun s _ => hderiv_q s) ((continuous_toLp_smul hp hK φ).intervalIntegrable a b)
 
 end FiniteOnCompacts
 

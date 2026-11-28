@@ -42,6 +42,37 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {Ω : Opens E} {k : ℕ} {u : E → ℝ}
 
+private theorem extendL1_toLp_smul {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+    {S : 𝓓(Ω, G) →L[ℝ] ℝ} (hS : HasLocallyFiniteMass S)
+    {c : E → ℝ} (hc : ContDiff ℝ ∞ c) (hc' : Continuous fun x : Ω => c x) (η : 𝓓(Ω, G)) :
+    extendL1 S ((TestFunction.memLp_smul_of_continuous hc' η).toLp (fun x : Ω => c x • η x)) =
+      S (smulLeftCLM hc η) := by
+  rw [← extendL1_toLp hS]
+  refine congrArg (extendL1 S) ?_
+  rw [TestFunction.toLp_apply, MemLp.toLp_eq_toLp_iff]
+  exact ae_of_all _ fun x => by simp [smulLeftCLM_apply]
+
+private theorem continuous_apply_smulLeftCLM_smoothTransition {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+    {S : 𝓓(Ω, G) →L[ℝ] ℝ} (hS : HasLocallyFiniteMass S) (hu : ContDiff ℝ ∞ u)
+    (η : 𝓓(Ω, G)) (c : ℝ) :
+    Continuous fun s : ℝ => S (smulLeftCLM (hu.smoothTransition_mul_sub c s) η) := by
+  let K (x : E) (s : ℝ) : ℝ := Real.smoothTransition (c * (s - u x))
+  have hK : Continuous fun q : Ω × ℝ => K q.1 q.2 :=
+    Real.smoothTransition.continuous.comp <|
+      continuous_const.mul (continuous_snd.sub (hu.continuous.comp
+        (continuous_subtypeVal.comp continuous_fst)))
+  have heq (s : ℝ) : S (smulLeftCLM (hu.smoothTransition_mul_sub c s) η) =
+      extendL1 S ((TestFunction.memLp_smul_of_continuous (p := 1) (μ := massMeasure S)
+        (c := fun x : Ω => K x s)
+        (hK.comp (continuous_id.prodMk continuous_const)) η).toLp
+        (fun x : Ω => K x s • η x)) :=
+    (extendL1_toLp_smul hS (hu.smoothTransition_mul_sub c s)
+      (hK.comp (continuous_id.prodMk continuous_const)) η).symm
+  simp_rw [heq]
+  exact (extendL1 S).continuous.comp (TestFunction.continuous_toLp_smul ENNReal.one_ne_top hK η)
+
 private theorem abs_apply_smulLeftCLM_smoothTransition_le {G : Type*}
     [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
     {S : 𝓓(Ω, G) →L[ℝ] ℝ} (hS : HasLocallyFiniteMass S) (hu : ContDiff ℝ ∞ u)
@@ -69,83 +100,29 @@ private theorem intervalIntegral_mul_apply_smulLeftCLM_smoothTransition {G : Typ
           continuous_const.mul (continuous_snd.sub
             (hu.continuous.comp (continuous_subtypeVal.comp continuous_fst))))
         a b η).toLp _) := by
-  -- Differentiate the `L¹(‖S‖)` curve `q s = (∫_{a}^{s} g(t) ψ((m + 1)(t - u ·)) dt) • η`
-  -- by dominated convergence on its difference quotients, then apply the FTC to `extendL1 S ∘ q`.
-  let J (s : ℝ) (x : E) : ℝ :=
-    ∫ t in a..s, g t * Real.smoothTransition (((m : ℝ) + 1) * (t - u x))
-  have hK : Continuous fun p : Ω × ℝ =>
-      g p.2 * Real.smoothTransition (((m : ℝ) + 1) * (p.2 - u p.1)) :=
+  let K (x : E) (t : ℝ) : ℝ := g t * Real.smoothTransition (((m : ℝ) + 1) * (t - u x))
+  have hK : Continuous fun p : Ω × ℝ => K p.1 p.2 :=
     (hg.comp continuous_snd).mul <| Real.smoothTransition.continuous.comp <|
       continuous_const.mul (continuous_snd.sub
         (hu.continuous.comp (continuous_subtypeVal.comp continuous_fst)))
-  have hcont_t (x : E) : Continuous fun t =>
-      g t * Real.smoothTransition (((m : ℝ) + 1) * (t - u x)) :=
-    hg.mul (Real.smoothTransition.continuous.comp
-      (continuous_const.mul (continuous_id.sub continuous_const)))
-  let hmem (s : ℝ) := TestFunction.memLp_intervalIntegral_smul (p := 1) (μ := massMeasure S)
-    (K := fun x t => g t * Real.smoothTransition (((m : ℝ) + 1) * (t - u x))) hK a s η
-  let q (s : ℝ) : Lp G 1 (massMeasure S) := (hmem s).toLp _
-  have hderiv_q (s : ℝ) :
-      HasDerivAt q
-        (g s • TestFunction.toLp 1 (massMeasure S)
-          (smulLeftCLM (hu.smoothTransition_mul_sub ((m : ℝ) + 1) s) η)) s := by
-    rw [hasDerivAt_iff_tendsto_slope_zero]
-    have hmem_sl (h : ℝ) : MemLp (fun x : Ω => (h⁻¹ * (J (s + h) x - J s x)) • η x) 1
-        (massMeasure S) :=
-      (((hmem (s + h)).sub (hmem s)).const_smul h⁻¹).ae_eq
-        (ae_of_all _ fun x => by simp [J, sub_smul, mul_smul])
-    have hmem₀ : MemLp (fun x : Ω =>
-        (g s * Real.smoothTransition (((m : ℝ) + 1) * (s - u x))) • η x) 1 (massMeasure S) :=
-      ((TestFunction.memLp_subtype (p := 1)
-          (smulLeftCLM (hu.smoothTransition_mul_sub ((m : ℝ) + 1) s) η)).const_smul (g s)).ae_eq
-        (ae_of_all _ fun x => by simp [smulLeftCLM_apply, mul_smul])
-    have hq_sl (h : ℝ) : h⁻¹ • (q (s + h) - q s) = (hmem_sl h).toLp _ := by
-      rw [← MemLp.toLp_sub, ← MemLp.toLp_const_smul, MemLp.toLp_eq_toLp_iff]
-      exact ae_of_all _ fun x => by simp [J, sub_smul, mul_smul]
-    have hq₀ : g s • TestFunction.toLp 1 (massMeasure S)
-        (smulLeftCLM (hu.smoothTransition_mul_sub ((m : ℝ) + 1) s) η) = hmem₀.toLp _ := by
-      rw [TestFunction.toLp_apply, ← MemLp.toLp_const_smul, MemLp.toLp_eq_toLp_iff]
-      exact ae_of_all _ fun x => by simp [smulLeftCLM_apply, mul_smul]
-    simp_rw [hq_sl, hq₀]
-    obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn
-      (s := Icc (s - 1) (s + 1)) hg.continuousOn
-    refine TestFunction.tendsto_toLp_smul_of_dominated ENNReal.one_ne_top hmem_sl hmem₀
-      (M + |g s|) ?_ fun x _ => ?_
-    · filter_upwards [mem_nhdsWithin_of_mem_nhds
-          (Ioo_mem_nhds (a := (-1 : ℝ)) (b := 1) (by norm_num) (by norm_num)),
-        self_mem_nhdsWithin] with h hh hh0 x _
-      have hsub_J : J (s + h) x - J s x =
-          ∫ t in s..(s + h), g t * Real.smoothTransition (((m : ℝ) + 1) * (t - u x)) :=
-        sub_eq_of_eq_add' (intervalIntegral.integral_add_adjacent_intervals
-          ((hcont_t x).intervalIntegrable a s) ((hcont_t x).intervalIntegrable s (s + h))).symm
-      have hint : |J (s + h) x - J s x| ≤ M * |h| := by
-        rw [hsub_J, ← Real.norm_eq_abs]
-        simpa only [add_sub_cancel_left] using
-          intervalIntegral.norm_integral_le_of_norm_le_const (a := s) (b := s + h) (C := M)
-            fun t ht => by
-              have htIcc : t ∈ Icc (s - 1) (s + 1) := by
-                rw [Set.mem_uIoc] at ht
-                rcases ht with ⟨h1, h2⟩ | ⟨h1, h2⟩ <;> constructor <;> linarith [hh.1, hh.2]
-              rw [Real.norm_eq_abs, abs_mul]
-              exact (mul_le_of_le_one_right (abs_nonneg _)
-                (Real.smoothTransition.abs_le_one _)).trans (by simpa using hM t htIcc)
-      refine (abs_sub _ _).trans (add_le_add ?_ ?_)
-      · rw [abs_mul, abs_inv]
-        calc |h|⁻¹ * |J (s + h) x - J s x| ≤ |h|⁻¹ * (M * |h|) := by gcongr
-          _ = M := by field_simp [abs_ne_zero.2 (mem_compl_singleton_iff.1 hh0)]
-      · rw [abs_mul]
-        exact mul_le_of_le_one_right (abs_nonneg _) (Real.smoothTransition.abs_le_one _)
-    · simpa only [smul_eq_mul] using hasDerivAt_iff_tendsto_slope_zero.1 <|
-        intervalIntegral.integral_hasDerivAt_right ((hcont_t x).intervalIntegrable a s)
-          ((hcont_t x).stronglyMeasurableAtFilter volume (𝓝 s)) (hcont_t x).continuousAt
-  have hcont_prod : Continuous fun t : ℝ =>
-      g t * S (smulLeftCLM (hu.smoothTransition_mul_sub ((m : ℝ) + 1) t) η) :=
-    hg.mul (continuous_apply_smulLeftCLM_smoothTransition hS hu η ((m : ℝ) + 1))
-  have hqa : q a = 0 := by rw [← norm_eq_zero, Lp.norm_toLp]; simp
-  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (f := fun s => extendL1 S (q s))
-    (fun s _ => ((extendL1 S).hasFDerivAt.comp_hasDerivAt s (hderiv_q s)).congr_deriv
-      (by simp [map_smul, smul_eq_mul, extendL1_toLp hS]))
-    (hcont_prod.intervalIntegrable a b), hqa, map_zero, sub_zero]
+  have hpt (t : ℝ) :
+      g t * S (smulLeftCLM (hu.smoothTransition_mul_sub ((m : ℝ) + 1) t) η) =
+        extendL1 S ((TestFunction.memLp_smul_of_continuous (p := 1) (μ := massMeasure S)
+          (c := fun x : Ω => K x t)
+          (hK.comp (continuous_id.prodMk continuous_const)) η).toLp
+          (fun x : Ω => K x t • η x)) := by
+    have hct : Continuous fun x : Ω => Real.smoothTransition (((m : ℝ) + 1) * (t - u x)) :=
+      Real.smoothTransition.continuous.comp
+        (continuous_const.mul (continuous_const.sub (hu.continuous.comp continuous_subtypeVal)))
+    rw [← extendL1_toLp_smul hS (hu.smoothTransition_mul_sub ((m : ℝ) + 1) t) hct η,
+      ← smul_eq_mul, ← map_smul]
+    refine congrArg (extendL1 S) ?_
+    rw [← MemLp.toLp_const_smul, MemLp.toLp_eq_toLp_iff]
+    exact ae_of_all _ fun x => by simp [K, mul_smul]
+  simp_rw [hpt]
+  rw [(extendL1 S).intervalIntegral_comp_comm
+      ((TestFunction.continuous_toLp_smul ENNReal.one_ne_top hK η).intervalIntegrable a b),
+    TestFunction.intervalIntegral_toLp_smul ENNReal.one_ne_top hK a b η]
 
 private theorem tendsto_intervalIntegral_mul_apply_smulLeftCLM_smoothTransition {G : Type*}
     [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
@@ -159,19 +136,13 @@ private theorem tendsto_intervalIntegral_mul_apply_smulLeftCLM_smoothTransition 
       atTop (𝓝 (S (smulLeftCLM (hH.comp hu) η))) := by
   -- Pass `m → ∞` inside `extendL1 S`: for each `x ∈ tsupport η`, the scalar integral over `[-M, M]`
   -- is dominated by `∫ |g|` and converges to `∫_{u x}^{M} g(t) dt = H (u x)`.
+  have hHc : Continuous fun x : Ω => (H ∘ u) x :=
+    (hH.continuous.comp hu.continuous).comp continuous_subtypeVal
   simp_rw [intervalIntegral_mul_apply_smulLeftCLM_smoothTransition hS hu hg.continuous η (-M) M,
-    ← extendL1_toLp hS (smulLeftCLM (hH.comp hu) η)]
+    ← extendL1_toLp_smul hS (hH.comp hu) hHc η]
   refine ((extendL1 S).continuous.tendsto _).comp ?_
   have hle_M : -M ≤ M := by linarith
   let I : ℝ := ∫ t in uIoc (-M) M, |g t|
-  have hmemH : MemLp (fun x : Ω => H (u x) • η x) 1 (massMeasure S) := by
-    simpa [smulLeftCLM_apply] using
-      TestFunction.memLp_subtype (p := 1) (μ := massMeasure S) (smulLeftCLM (hH.comp hu) η)
-  have htoLpH : TestFunction.toLp 1 (massMeasure S) (smulLeftCLM (hH.comp hu) η) =
-      hmemH.toLp _ := by
-    rw [TestFunction.toLp_apply, MemLp.toLp_eq_toLp_iff]
-    exact ae_of_all _ fun x => by simp [smulLeftCLM_apply]
-  rw [htoLpH]
   refine TestFunction.tendsto_toLp_smul_of_dominated (l := atTop) ENNReal.one_ne_top
     (fun m : ℕ => TestFunction.memLp_intervalIntegral_smul
       (K := fun x t => g t * Real.smoothTransition (((m : ℝ) + 1) * (t - u x)))
@@ -179,12 +150,13 @@ private theorem tendsto_intervalIntegral_mul_apply_smulLeftCLM_smoothTransition 
         continuous_const.mul (continuous_snd.sub
           (hu.continuous.comp (continuous_subtypeVal.comp continuous_fst))))
       (-M) M η)
-    hmemH (I + I) (.of_forall fun m x hx => ?_) fun x hx => ?_
+    (TestFunction.memLp_smul_of_continuous hHc η) (I + I) (.of_forall fun m x hx => ?_)
+    fun x hx => ?_
   · have hux := abs_lt.1 (hη x hx)
     refine (abs_sub _ _).trans <| add_le_add
       (Real.smoothTransition.abs_intervalIntegral_mul_le (hg.continuous.intervalIntegrable (-M) M))
       ?_
-    rw [hH_eq (u x), ← Real.norm_eq_abs]
+    rw [Function.comp_apply, hH_eq (u x), ← Real.norm_eq_abs]
     refine (intervalIntegral.norm_integral_le_integral_norm_uIoc (f := g)).trans ?_
     simpa only [Real.norm_eq_abs] using setIntegral_mono_set
       (intervalIntegrable_iff.1 (hg.continuous.abs.intervalIntegrable (-M) M))
@@ -196,7 +168,7 @@ private theorem tendsto_intervalIntegral_mul_apply_smulLeftCLM_smoothTransition 
       rw [intervalIntegral.integral_of_le hle_M, setIntegral_indicator measurableSet_Ioi,
         Set.Ioc_inter_Ioi, sup_eq_right.2 hux.1.le, ← intervalIntegral.integral_of_le hux.2.le,
         hH_eq (u x)]
-    rw [← hind_eq]
+    rw [Function.comp_apply, ← hind_eq]
     refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence (fun t => |g t|)
       (.of_forall fun m => (hg.continuous.mul (Real.smoothTransition.continuous.comp
         (continuous_const.mul (continuous_id.sub continuous_const)))).aestronglyMeasurable)
