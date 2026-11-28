@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.NumberField.CMField
 public import Mathlib.RingTheory.DedekindDomain.Different
 public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Parameters
-import Mathlib.Data.Nat.Factorization.Basic
 import TauCeti.RingTheory.Ideal.ConjugateFactor
 
 /-!
@@ -32,15 +31,6 @@ open NumberField IsCMField Ideal
 open scoped nonZeroDivisors
 
 namespace TauCeti.OneSidedBound
-
-/-- Every cyclotomic-level prime divides the norm of the trace-one integer of `ℚ(√−d)`.
-Consequently the level divides a power of that norm. -/
-theorem Parameters.q₁_dvd_norm_pow (P : Parameters) (s : ℕ) :
-    P.q₁ s ∣ ((P.d + 1) / 4) ^ P.q₁ s := by
-  have hd : (P.d + 1) / 4 ≠ 0 := by have := P.sixty_four_lt_d; omega
-  refine (Nat.dvd_pow_self_iff (P.q₁_pos s).ne' hd).mpr fun p hp ↦ ?_
-  obtain ⟨hp, hq, _⟩ := Nat.mem_primeFactors.mp hp
-  exact hp.mem_primeFactors (P.dvd_d_add_one_div_four hp hq) hd
 
 /-- Split a conjugation-invariant ideal containing the cyclotomic level by a `β` of norm
 `(d+1)/4` coprime to its conjugate (in particular, the trace-one integer of `ℚ(√−d)`). The
