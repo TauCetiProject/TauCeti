@@ -556,6 +556,17 @@ theorem _root_.MonoidHom.card_ker_elementaryTwoQuotientMap_le_card_ker (f : G �
       obtain ⟨g, hg, hgx⟩ := f.exists_mem_ker_elementaryTwoQuotientMk_eq hf x.property
       exact ⟨⟨g, hg⟩, Subtype.ext hgx⟩
 
+/-- **The 2-rank drops by the dimension of the kernel.** For a surjective `f : G →* H` with
+`G / G²` finite-dimensional over `ZMod 2`, the 2-rank of `H` plus the dimension of the kernel of
+the induced map `G / G² → H / H²` is the 2-rank of `G`. -/
+private theorem _root_.MonoidHom.twoRank_add_finrank_ker_elementaryTwoQuotientMap
+    [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] (f : G →* H) (hf : Function.Surjective f) :
+    twoRank H + Module.finrank (ZMod 2) (LinearMap.ker (elementaryTwoQuotientMap f)) =
+      twoRank G := by
+  have hrn := LinearMap.finrank_range_add_finrank_ker (elementaryTwoQuotientMap f)
+  rw [LinearMap.range_eq_top.mpr (elementaryTwoQuotientMap_surjective f hf), finrank_top] at hrn
+  rw [twoRank_def, twoRank_def, ← hrn]
+
 /-- **A surjection with a small kernel barely drops the 2-rank.** If `f : G →* H` is surjective
 with `|ker f| ≤ 2 ^ n`, then `twoRank G ≤ twoRank H + n`. Together with
 `TauCeti.twoRank_le_twoRank_of_surjective` this pins the 2-rank of the quotient to within `n` of
@@ -578,10 +589,7 @@ theorem _root_.MonoidHom.twoRank_le_twoRank_add_of_card_ker_le_two_pow
         (f.card_ker_elementaryTwoQuotientMap_le_card_ker hf).trans hn
       rw [Module.natCard_eq_pow_finrank (K := ZMod 2), Nat.card_zmod] at hcard
       exact (Nat.pow_le_pow_iff_right one_lt_two).mp hcard
-    -- Rank-nullity for the induced map, whose range is everything.
-    have hrn := LinearMap.finrank_range_add_finrank_ker (elementaryTwoQuotientMap f)
-    rw [LinearMap.range_eq_top.mpr (elementaryTwoQuotientMap_surjective f hf), finrank_top] at hrn
-    rw [twoRank_def, twoRank_def, ← hrn]
+    have hrn := f.twoRank_add_finrank_ker_elementaryTwoQuotientMap hf
     omega
   · rw [twoRank_def, Module.finrank_of_not_finite hfin]
     exact Nat.zero_le _
@@ -593,10 +601,8 @@ theorem _root_.MonoidHom.twoRank_eq_twoRank_iff_ker_le_square
     [Module.Finite (ZMod 2) (ElementaryTwoQuotient G)] (f : G →* H)
     (hf : Function.Surjective f) :
     twoRank H = twoRank G ↔ MonoidHom.ker f ≤ Subgroup.square G := by
-  have hrn := LinearMap.finrank_range_add_finrank_ker (elementaryTwoQuotientMap f)
-  rw [LinearMap.range_eq_top.mpr (elementaryTwoQuotientMap_surjective f hf), finrank_top] at hrn
-  rw [twoRank_def, twoRank_def, ← hrn, left_eq_add, Submodule.finrank_eq_zero,
-    LinearMap.ker_eq_bot']
+  rw [← f.twoRank_add_finrank_ker_elementaryTwoQuotientMap hf, left_eq_add,
+    Submodule.finrank_eq_zero, LinearMap.ker_eq_bot']
   constructor
   · intro h g hg
     rw [Subgroup.mem_square, ← elementaryTwoQuotientMk_eq_zero_iff]
