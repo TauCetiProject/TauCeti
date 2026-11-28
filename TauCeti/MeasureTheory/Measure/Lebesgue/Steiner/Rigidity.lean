@@ -9,7 +9,6 @@ public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Basic
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.BoundedVariation.Slicing.Equality
-import TauCeti.Analysis.BoundedVariation.Slicing.Measurability
 import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Perimeter
 import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Variational
 
@@ -77,22 +76,8 @@ theorem ofReal_mul_perimeter_steinerSymmetrization_add_le_perimeter
     ENNReal.ofReal (1 - δ) * perimeter volume ⊤ (steinerSymmetrization e he s) +
         2 * ENNReal.ofReal √(2 * δ - δ ^ 2) * volume A ≤
       perimeter volume ⊤ s := by
-  let Φ := {φ : 𝓓((⊤ : Opens (ℝ ∙ e)ᗮ), (ℝ ∙ e)ᗮ) // ∀ y, ‖φ y‖ ≤ 1}
-  have : Nonempty Φ := ⟨⟨0, by simp⟩⟩
-  let V : Φ → ℝ≥0∞ := fun p =>
-    2 * (∫⁻ y in {y : (ℝ ∙ e)ᗮ | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}},
-      ENNReal.ofReal √(1 - ‖p.val y‖ ^ 2)) +
-    ENNReal.ofReal (∫ y : (ℝ ∙ e)ᗮ, divergenceCLM p.val y *
-      volume.real {t : ℝ | (y : E) + t • e ∈ s})
-  have hsup : perimeter volume ⊤ (steinerSymmetrization e he s) = ⨆ p : Φ, V p := by
-    rw [perimeter_steinerSymmetrization_eq_iSup e he hs hfin, iSup_subtype]
-  have hAB : A ≤ᵐ[volume] {y : (ℝ ∙ e)ᗮ |
-      ∀ I : Set ℝ, I.OrdConnected → ¬{t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I} := hbad
-  refine (add_le_add le_rfl (mul_le_mul_right (measure_mono_ae hAB) _)).trans ?_
-  rw [hsup, ENNReal.mul_iSup, ENNReal.iSup_add]
-  exact iSup_le fun p => one_sub_mul_add_two_mul_sqrt_mul_volume_le_perimeter hs hfin e he
-    (nullMeasurableSet_noninterval_lineSection hs hfin e he) (.of_forall fun _ => id)
-    hδ0 hδ1 p.val p.property
+  rw [perimeter_steinerSymmetrization_eq_iSup e he hs hfin]
+  exact hs.one_sub_mul_iSup_add_two_mul_sqrt_mul_volume_le_perimeter hfin e he hbad hδ0 hδ1
 
 /-- **Pythagorean noninterval excess in Steiner's perimeter inequality.** For any null-measurable
 set `s` of finite volume, a unit vector `e`, and any family `A ⊆ (ℝ ∙ e)ᗮ` of line sections of `s`
@@ -112,13 +97,12 @@ theorem perimeter_steinerSymmetrization_sq_add_four_mul_volume_sq_le
   · simp [hPtop]
   have hP₀_le : P₀ ≤ P := perimeter_steinerSymmetrization_le e he hs hfin
   have hP₀_fin : P₀ ≠ ⊤ := ne_top_of_le_ne_top hPfin hP₀_le
-  have hAB : A ≤ᵐ[volume] {y : (ℝ ∙ e)ᗮ |
-      ∀ I : Set ℝ, I.OrdConnected → ¬{t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I} := hbad
-  have h2A : 2 * volume A ≤ P :=
-    (mul_le_mul_right (measure_mono_ae hAB) _).trans
-      (le_add_self.trans (two_mul_volume_add_two_mul_volume_le_perimeter_of_noninterval_lineSection
-        hs hfin e he (nullMeasurableSet_noninterval_lineSection hs hfin e he)
-        (.of_forall fun _ => id)))
+  have h2A : 2 * volume A ≤ P := by
+    have h1 := ofReal_mul_perimeter_steinerSymmetrization_add_le_perimeter e he hs hfin hbad
+      (δ := 1) zero_le_one le_rfl
+    rw [sub_self, ENNReal.ofReal_zero, zero_mul, zero_add] at h1
+    norm_num at h1
+    exact h1
   have hA_fin : volume A ≠ ⊤ := fun htop => hPfin (top_unique (by simpa [htop] using h2A))
   set p := P.toReal; set p₀ := P₀.toReal; set a := (volume A).toReal
   have hp0 : 0 ≤ p := ENNReal.toReal_nonneg

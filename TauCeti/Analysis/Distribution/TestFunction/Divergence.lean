@@ -32,8 +32,8 @@ total variation of a function and the perimeter of a set are suprema of the pair
 
 * `TestFunction.divergenceCLM`: the divergence `𝓓(Ω, E) →L[ℝ] 𝓓(Ω, ℝ)`.
 * `TestFunction.divergenceCLM_apply`: pointwise, it is the trace of the Fréchet derivative.
-* `TestFunction.tsupport_divergenceCLM_subset`: the divergence of a test vector field is supported
-  in the support of the field.
+* `TestFunction.tsupport_divergenceCLM_subset`: the topological support of the divergence of a
+  test vector field is contained in the topological support of the field.
 * `TestFunction.solenoidalSubmodule`: the kernel of `divergenceCLM` on test vector fields.
 * `TestFunction.mem_solenoidalSubmodule_iff`: membership means that the bundled divergence vanishes.
 * `TestFunction.divergenceCLM_monoCLM`: the divergence commutes with extending a test vector
@@ -100,7 +100,8 @@ theorem divergenceCLM_apply (φ : 𝓓(Ω, E)) (x : E) :
     divergenceCLM φ x = LinearMap.trace ℝ E (fderiv ℝ (φ : E → E) x : E →ₗ[ℝ] E) := by
   simp [divergenceCLM]
 
-/-- The divergence of a test vector field is supported in the support of the field. -/
+/-- The topological support of the divergence of a test vector field is contained in the topological
+support of the field. -/
 theorem tsupport_divergenceCLM_subset (φ : 𝓓(Ω, E)) :
     tsupport (divergenceCLM φ) ⊆ tsupport φ := by
   have h : ⇑(divergenceCLM φ) = TauCeti.traceCLM ℝ E ∘ fderiv ℝ (φ : E → E) :=

@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Convolution
 public import TauCeti.Analysis.Convolution.Jensen
 public import TauCeti.Analysis.Distribution.TestFunction.Convolution
-import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 import TauCeti.Analysis.Distribution.TestFunction.Translation
 
@@ -278,53 +277,10 @@ theorem integral_divergenceCLM_mollify_smul_eq_neg_integral_fderiv_normed_convol
     hwρ_cd.contDiffOn.hasWeakFDerivOn_fderiv
   have hibp : -∫ y, fderiv ℝ wρ y (φ y) ∂mu = ∫ y, TestFunction.divergenceCLM φ y • wρ y ∂mu :=
     (hweak.integral_divergenceCLM_smul_eq_neg_integral φ).symm
-  rw [hibp]
-  obtain ⟨C, hC⟩ := (TestFunction.divergenceCLM φ).continuous.bounded_above_of_compact_support
-    (TestFunction.divergenceCLM φ).hasCompactSupport
-  have hprod1 : Integrable (fun p : E × E =>
-      TestFunction.divergenceCLM φ p.1 • (ρ.normed mu p.2 • w (p.1 - p.2))) (mu.prod mu) := by
-    have hci := (ρ.integrable_normed (μ := mu)).convolution_integrand (lsmul ℝ ℝ) hw
-    refine (hci.norm.const_mul C).mono'
-      (((TestFunction.divergenceCLM φ).continuous.comp continuous_fst).aestronglyMeasurable.smul
-        hci.aestronglyMeasurable) (.of_forall fun p => ?_)
-    rw [norm_smul, lsmul_apply]
-    exact mul_le_mul_of_nonneg_right (hC p.1) (norm_nonneg _)
-  have hprod2 : Integrable (fun p : E × E =>
-      (ρ.normed mu p.1 * TestFunction.divergenceCLM φ (p.2 - p.1)) • w p.2) (mu.prod mu) := by
-    refine (((ρ.integrable_normed (μ := mu)).mul_prod hw.norm).const_mul C).mono'
-      ((((ρ.continuous_normed (μ := mu)).comp continuous_fst).mul
-        ((TestFunction.divergenceCLM φ).continuous.comp
-          (continuous_snd.sub continuous_fst))).aestronglyMeasurable.smul
-        hw.aestronglyMeasurable.comp_snd) (.of_forall fun p => ?_)
-    rw [norm_smul, norm_mul, Real.norm_of_nonneg (ρ.nonneg_normed p.1)]
-    calc ρ.normed mu p.1 * ‖TestFunction.divergenceCLM φ (p.2 - p.1)‖ * ‖w p.2‖
-        ≤ ρ.normed mu p.1 * C * ‖w p.2‖ :=
-          mul_le_mul_of_nonneg_right
-            (mul_le_mul_of_nonneg_left (hC _) (ρ.nonneg_normed _)) (norm_nonneg _)
-      _ = C * (ρ.normed mu p.1 * ‖w p.2‖) := by ring
-  have hFub1 : (∫ y, TestFunction.divergenceCLM φ y • wρ y ∂mu) =
-      ∫ t, ρ.normed mu t • ∫ y, TestFunction.divergenceCLM φ y • w (y - t) ∂mu ∂mu := by
-    have h1 : (∫ y, TestFunction.divergenceCLM φ y • wρ y ∂mu) =
-        ∫ y, ∫ t, TestFunction.divergenceCLM φ y • (ρ.normed mu t • w (y - t)) ∂mu ∂mu := by
-      refine integral_congr_ae (.of_forall fun y => ?_)
-      simp only [wρ, convolution_def, lsmul_apply, ← integral_smul]
-    rw [h1, integral_integral_swap hprod1]
-    refine integral_congr_ae (.of_forall fun t => ?_)
-    simp_rw [smul_comm (TestFunction.divergenceCLM φ _), integral_smul]
-  have hshift (t : E) : (∫ y, TestFunction.divergenceCLM φ y • w (y - t) ∂mu) =
-      ∫ z, TestFunction.divergenceCLM φ (z + t) • w z ∂mu := by
-    simpa only [sub_add_cancel] using
-      integral_sub_right_eq_self (μ := mu) (fun z => TestFunction.divergenceCLM φ (z + t) • w z) t
-  rw [hFub1]
-  simp_rw [hshift]
-  conv_rhs => rw [← integral_neg_eq_self]
-  simp_rw [ρ.normed_neg, ← sub_eq_add_neg, ← integral_smul, smul_smul]
-  rw [integral_integral_swap hprod2]
-  refine integral_congr_ae (.of_forall fun z => ?_)
-  dsimp only
-  rw [integral_smul_const, TestFunction.divergenceCLM_mollify φ mu ρ h,
-    TestFunction.mollify_apply, convolution_def]
-  simp only [lsmul_apply, smul_eq_mul]
+  rw [hibp, integral_smul_convolution_eq_integral_convolution_comp_neg_smul
+    (TestFunction.divergenceCLM φ).continuous (TestFunction.divergenceCLM φ).hasCompactSupport
+    (ρ.integrable_normed (μ := mu)) (ρ.hasCompactSupport_normed (μ := mu)) hw]
+  simp only [ρ.normed_neg, TestFunction.divergenceCLM_mollify φ mu ρ h, TestFunction.mollify_apply]
 
 end DivergenceMollify
 

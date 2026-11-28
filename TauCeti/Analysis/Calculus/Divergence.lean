@@ -12,10 +12,9 @@ public import Mathlib.LinearAlgebra.Trace
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.Calculus.FDeriv.Add
-import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 import TauCeti.Topology.Algebra.Module.Trace
 
 /-!
@@ -32,12 +31,12 @@ dependency.
   coordinates along a unit vector `e` into the hyperplane divergence of the transverse projection
   `(ℝ ∙ e)ᗮ.orthogonalProjectionOnto ∘ f` plus the longitudinal derivative `d/ds ⟪e, f (y + s • e)⟫`
   along `e`.
-* `TauCeti.trace_fderiv_smul_comp_mul`: pointwise Leibniz-and-chain-rule identity for the
+* `DifferentiableAt.trace_fderiv_smul_comp_mul`: pointwise Leibniz-and-chain-rule identity for the
   divergence of a rescaled field `z ↦ a z • A z (a z * u)`.
-* `TauCeti.continuous_trace_fderiv_comp_mul`: joint continuity on `ℝ × E` of the two pieces in
-  `TauCeti.trace_fderiv_smul_comp_mul`.
-* `TauCeti.trace_fderiv_comp_mul_eq_zero_of_notMem`: vanishing of both pieces off a closed set
-  outside which `A` vanishes.
+* `ContDiff.continuous_mul_trace_fderiv_comp_mul_and_continuous_deriv`: joint continuity on `ℝ × E`
+  of the two pieces in `DifferentiableAt.trace_fderiv_smul_comp_mul`.
+* `IsClosed.mul_trace_fderiv_comp_mul_eq_zero_and_deriv_eq_zero_of_notMem`: vanishing of both
+  pieces off a closed set outside which `A` vanishes.
 -/
 
 public section
@@ -61,22 +60,9 @@ theorem trace_fderiv_orthogonalLine_eq {F : Type*} [NormedAddCommGroup F]
             (ℝ ∙ e)ᗮ →ₗ[ℝ] (ℝ ∙ e)ᗮ) +
         deriv (fun s : ℝ => ⟪e, f ((y : F) + s • e)⟫) t := by
   set P : F →L[ℝ] (ℝ ∙ e)ᗮ := (ℝ ∙ e)ᗮ.orthogonalProjectionOnto
-  have hproj (x : F) : (P x : F) + ⟪e, x⟫ • e = x := by
-    have hmem : x - ⟪e, x⟫ • e ∈ (ℝ ∙ e)ᗮ := by
-      rw [Submodule.mem_orthogonal_singleton_iff_inner_right]
-      simp [inner_sub_right, inner_smul_right, he]
-    have hP : P x = ⟨x - ⟪e, x⟫ • e, hmem⟩ := by
-      apply Subtype.ext
-      rw [Submodule.coe_orthogonalProjectionOnto_apply]
-      exact Submodule.eq_starProjection_of_mem_orthogonal' hmem
-        (Submodule.le_orthogonal_orthogonal _
-          (Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self e)))
-        (sub_add_cancel x (⟪e, x⟫ • e)).symm
-    rw [hP, Submodule.coe_mk, sub_add_cancel]
   set g : F → (ℝ ∙ e)ᗮ := fun x => P (f x)
-  have hdecomp : f = fun x => (ℝ ∙ e)ᗮ.subtypeL (g x) + ⟪e, f x⟫ • e := by
-    ext x
-    exact (hproj (f x)).symm
+  have hdecomp : f = fun x => (ℝ ∙ e)ᗮ.subtypeL (g x) + ⟪e, f x⟫ • e :=
+    funext fun x => (coe_orthogonalProjectionOnto_add_inner_smul e he (f x)).symm
   set x₀ : F := (y : F) + t • e
   have hgd : DifferentiableAt ℝ g x₀ := P.differentiableAt.comp x₀ hf
   have h1d : DifferentiableAt ℝ (fun x => (ℝ ∙ e)ᗮ.subtypeL (g x)) x₀ :=
@@ -111,8 +97,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-- Pointwise Leibniz-and-chain-rule identity for the divergence of a field rescaled along a
 scalar function `a`: `z ↦ a z • A z (a z * u)`. -/
-theorem trace_fderiv_smul_comp_mul {A : E → ℝ → E} {a : E → ℝ} {u : ℝ} {y : E}
-    (hA : DifferentiableAt ℝ (Function.uncurry A) (y, a y * u))
+theorem _root_.DifferentiableAt.trace_fderiv_smul_comp_mul {A : E → ℝ → E} {a : E → ℝ} {u : ℝ}
+    {y : E} (hA : DifferentiableAt ℝ (Function.uncurry A) (y, a y * u))
     (ha : DifferentiableAt ℝ a y) :
     LinearMap.trace ℝ E (fderiv ℝ (fun z : E => a z • A z (a z * u)) y : E →ₗ[ℝ] E) =
       a y * LinearMap.trace ℝ E (fderiv ℝ (fun z : E => A z (a y * u)) y : E →ₗ[ℝ] E) +
@@ -147,59 +133,45 @@ theorem trace_fderiv_smul_comp_mul {A : E → ℝ → E} {a : E → ℝ} {u : �
     smul_eq_mul, map_add, map_smul, one_smul]
   ring
 
-/-- Continuity on `ℝ × E` of the two pieces in `TauCeti.trace_fderiv_smul_comp_mul`. -/
-theorem continuous_trace_fderiv_comp_mul {A : E → ℝ → E}
+/-- Continuity on `ℝ × E` of the two pieces in `DifferentiableAt.trace_fderiv_smul_comp_mul`. -/
+theorem _root_.ContDiff.continuous_mul_trace_fderiv_comp_mul_and_continuous_deriv {A : E → ℝ → E}
     (hA : ContDiff ℝ 1 (Function.uncurry A)) {a : E → ℝ} (ha : ContDiff ℝ 1 a) :
     Continuous (fun q : ℝ × E =>
         a q.2 * LinearMap.trace ℝ E
           (fderiv ℝ (fun z : E => A z (a q.2 * q.1)) q.2 : E →ₗ[ℝ] E)) ∧
       Continuous (fun q : ℝ × E =>
         deriv (fun s : ℝ => fderiv ℝ a q.2 (s • A q.2 (a q.2 * s))) q.1) := by
-  have hFA : (fun p : E × ℝ => fderiv ℝ (fun z : E => A z p.2) p.1) =
-      fun p => (fderiv ℝ (Function.uncurry A) p).comp (.inl ℝ E ℝ) :=
-    funext fun p => fderiv_slice_left (hA.differentiable one_ne_zero (p.1, p.2))
-  have hFA_cont : Continuous (fun p : E × ℝ => fderiv ℝ (fun z : E => A z p.2) p.1) := by
-    rw [hFA]
-    exact (((ContinuousLinearMap.compL ℝ E (E × ℝ) E).flip (.inl ℝ E ℝ)).continuous.comp
-      (hA.continuous_fderiv one_ne_zero))
+  have hFA_cont : Continuous (fun p : ℝ × E => fderiv ℝ (fun z : E => A z p.1) p.2) :=
+    continuous_fderiv_slice_right (f := fun t z => A z t)
+      (hA.comp (contDiff_snd.prodMk contDiff_fst))
   have hP1 : Continuous (fun q : ℝ × E =>
       a q.2 * LinearMap.trace ℝ E
         (fderiv ℝ (fun z : E => A z (a q.2 * q.1)) q.2 : E →ₗ[ℝ] E)) := by
     simp_rw [← traceCLM_apply]
     exact (ha.continuous.comp continuous_snd).mul <|
       (traceCLM ℝ E).continuous.comp <| hFA_cont.comp
-        (continuous_snd.prodMk ((ha.continuous.comp continuous_snd).mul continuous_fst))
+        (((ha.continuous.comp continuous_snd).mul continuous_fst).prodMk continuous_snd)
   have hWu : ContDiff ℝ 1 (fun q : ℝ × E => a q.2 • A q.2 (a q.2 * q.1)) :=
     (ha.comp contDiff_snd).smul
       (hA.comp (contDiff_snd.prodMk ((ha.comp contDiff_snd).mul contDiff_fst)))
-  have hdiv_eq : (fun q : ℝ × E => LinearMap.trace ℝ E
-        (fderiv ℝ (fun z : E => a z • A z (a z * q.1)) q.2 : E →ₗ[ℝ] E)) =
-      fun q => traceCLM ℝ E
-        ((fderiv ℝ (fun p : ℝ × E => a p.2 • A p.2 (a p.2 * p.1)) q).comp (.inr ℝ ℝ E)) :=
-    funext fun q => by
-      rw [← traceCLM_apply]
-      exact congrArg (traceCLM ℝ E)
-        (fderiv_slice_right (f := fun p : ℝ × E => a p.2 • A p.2 (a p.2 * p.1))
-          (hWu.differentiable one_ne_zero (q.1, q.2)))
   have hdiv : Continuous (fun q : ℝ × E => LinearMap.trace ℝ E
       (fderiv ℝ (fun z : E => a z • A z (a z * q.1)) q.2 : E →ₗ[ℝ] E)) := by
-    rw [hdiv_eq]
+    simp_rw [← traceCLM_apply]
     exact (traceCLM ℝ E).continuous.comp
-      (((ContinuousLinearMap.compL ℝ E (ℝ × E) E).flip (.inr ℝ ℝ E)).continuous.comp
-        (hWu.continuous_fderiv one_ne_zero))
+      (continuous_fderiv_slice_right (f := fun u z => a z • A z (a z * u)) hWu)
   refine ⟨hP1, ?_⟩
   convert hdiv.sub hP1 using 1
   ext ⟨u, y⟩
   simp only [Pi.sub_apply]
-  linarith [trace_fderiv_smul_comp_mul
-    (hA.differentiable one_ne_zero (y, a y * u)) (ha.differentiable one_ne_zero y)]
+  linarith [(hA.differentiable one_ne_zero (y, a y * u)).trace_fderiv_smul_comp_mul
+    (ha.differentiable one_ne_zero y)]
 
 omit [FiniteDimensional ℝ E] in
 /-- Off a closed set `K` outside which `A` vanishes, both pieces in
-`TauCeti.trace_fderiv_smul_comp_mul` vanish. -/
-theorem trace_fderiv_comp_mul_eq_zero_of_notMem {K : Set E} (hK : IsClosed K)
-    {A : E → ℝ → E} (hA0 : ∀ {y : E}, y ∉ K → ∀ t, A y t = 0) (a : E → ℝ) (u : ℝ)
-    {y : E} (hy : y ∉ K) :
+`DifferentiableAt.trace_fderiv_smul_comp_mul` vanish. -/
+theorem _root_.IsClosed.mul_trace_fderiv_comp_mul_eq_zero_and_deriv_eq_zero_of_notMem
+    {K : Set E} (hK : IsClosed K) {A : E → ℝ → E} (hA0 : ∀ {y : E}, y ∉ K → ∀ t, A y t = 0)
+    (a : E → ℝ) (u : ℝ) {y : E} (hy : y ∉ K) :
     a y * LinearMap.trace ℝ E (fderiv ℝ (fun z : E => A z (a y * u)) y : E →ₗ[ℝ] E) = 0 ∧
       deriv (fun s : ℝ => fderiv ℝ a y (s • A y (a y * s))) u = 0 := by
   refine ⟨?_, ?_⟩

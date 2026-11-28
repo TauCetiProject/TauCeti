@@ -10,7 +10,7 @@ public import Mathlib.Topology.MetricSpace.Lipschitz
 public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 
 import Mathlib.Analysis.Convex.Integral
-import TauCeti.Algebra.Order.Field.Basic
+import Mathlib.Analysis.Normed.Lp.ProdLp
 import TauCeti.Analysis.Calculus.BumpFunction.Normed
 import TauCeti.Analysis.Calculus.BumpFunction.Rescale
 import TauCeti.Analysis.Convolution.Basic
@@ -488,59 +488,49 @@ theorem ContDiffBump.norm_normed_convolution_sq_add_norm_normed_convolution_sq_l
   have hM0 : 0 ≤ M := (add_nonneg (sq_nonneg _) (sq_nonneg _)).trans hy₀
   set A := ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f₁) x‖
   set B := ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f₂) x‖
-  have hA0 : 0 ≤ A := norm_nonneg _
-  have hB0 : 0 ≤ B := norm_nonneg _
   have hf₁ : ∀ᵐ y ∂μ, ‖f₁ y‖ ≤ √M :=
     hM.mono fun y hy => Real.le_sqrt_of_sq_le (by linarith [hy, sq_nonneg ‖f₂ y‖])
   have hf₂ : ∀ᵐ y ∂μ, ‖f₂ y‖ ≤ √M :=
     hM.mono fun y hy => Real.le_sqrt_of_sq_le (by linarith [hy, sq_nonneg ‖f₁ y‖])
-  by_cases h1 : Integrable (fun t => ρ.normed μ t • f₁ (x - t)) μ
-  · by_cases h2 : Integrable (fun t => ρ.normed μ t • f₂ (x - t)) μ
-    · have h1n : Integrable (fun t => ρ.normed μ t * ‖f₁ (x - t)‖) μ := by
-        simpa only [norm_smul, Real.norm_of_nonneg (ρ.nonneg_normed _)] using h1.norm
-      have h2n : Integrable (fun t => ρ.normed μ t * ‖f₂ (x - t)‖) μ := by
-        simpa only [norm_smul, Real.norm_of_nonneg (ρ.nonneg_normed _)] using h2.norm
-      have hA_le : A ≤ ∫ t, ρ.normed μ t * ‖f₁ (x - t)‖ ∂μ := by
-        simpa only [A, convolution_def, lsmul_apply, norm_smul,
-          Real.norm_of_nonneg (ρ.nonneg_normed _)] using
-          norm_integral_le_integral_norm (fun t => ρ.normed μ t • f₁ (x - t))
-      have hB_le : B ≤ ∫ t, ρ.normed μ t * ‖f₂ (x - t)‖ ∂μ := by
-        simpa only [B, convolution_def, lsmul_apply, norm_smul,
-          Real.norm_of_nonneg (ρ.nonneg_normed _)] using
-          norm_integral_le_integral_norm (fun t => ρ.normed μ t • f₂ (x - t))
-      rw [← Real.sq_sqrt hM0,
-        TauCeti.sq_add_sq_le_sq_iff_forall_mul_add_mul_le hA0 hB0 (Real.sqrt_nonneg M)]
-      intro c s hc0 hs0 hcs
-      calc c * A + s * B
-          ≤ c * (∫ t, ρ.normed μ t * ‖f₁ (x - t)‖ ∂μ) +
-              s * (∫ t, ρ.normed μ t * ‖f₂ (x - t)‖ ∂μ) :=
-            add_le_add (mul_le_mul_of_nonneg_left hA_le hc0)
-              (mul_le_mul_of_nonneg_left hB_le hs0)
-        _ = ∫ t, ρ.normed μ t * (c * ‖f₁ (x - t)‖ + s * ‖f₂ (x - t)‖) ∂μ := by
-            rw [← integral_const_mul, ← integral_const_mul,
-              ← integral_add (h1n.const_mul c) (h2n.const_mul s)]
-            exact integral_congr_ae (.of_forall fun t => by ring)
-        _ ≤ ∫ t, ρ.normed μ t * √M ∂μ := by
-            have hMx : ∀ᵐ t ∂μ, ‖f₁ (x - t)‖ ^ 2 + ‖f₂ (x - t)‖ ^ 2 ≤ M :=
-              (μ.measurePreserving_sub_left x).quasiMeasurePreserving.ae hM
-            refine integral_mono_ae (((h1n.const_mul c).add (h2n.const_mul s)).congr
-              (.of_forall fun t => by simp only [Pi.add_apply]; ring))
-              (ρ.integrable_normed.mul_const √M) (hMx.mono fun t ht =>
-                mul_le_mul_of_nonneg_left
-                  ((TauCeti.sq_add_sq_le_sq_iff_forall_mul_add_mul_le (norm_nonneg _)
-                    (norm_nonneg _) (Real.sqrt_nonneg M)).1
-                      (ht.trans_eq (Real.sq_sqrt hM0).symm) c s hc0 hs0 hcs)
-                  (ρ.nonneg_normed t))
-        _ = √M := by rw [integral_mul_const, ρ.integral_normed, one_mul]
+  by_cases h1 : Integrable (fun t => ρ.normed μ t • f₁ (x - t)) μ ∧ CompleteSpace F₁
+  · by_cases h2 : Integrable (fun t => ρ.normed μ t • f₂ (x - t)) μ ∧ CompleteSpace F₂
+    · have := h1.2
+      have := h2.2
+      let f : G → WithLp 2 (F₁ × F₂) := fun y => WithLp.toLp 2 (f₁ y, f₂ y)
+      have hf_ex : ConvolutionExistsAt (ρ.normed μ) f x (lsmul ℝ ℝ) μ := by
+        rw [ConvolutionExistsAt]
+        simpa only [lsmul_apply, map_smul, ← Prod.smul_mk, ContinuousLinearEquiv.coe_coe,
+          WithLp.prodContinuousLinearEquiv_symm_apply] using
+          ((WithLp.prodContinuousLinearEquiv 2 ℝ F₁ F₂).symm.toContinuousLinearMap.integrable_comp
+            (h1.1.prodMk h2.1))
+      have hf1_eq : (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f₁) x =
+          WithLp.fstL 2 ℝ F₁ F₂ ((ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f) x) := by
+        simpa [f] using (WithLp.fstL 2 ℝ F₁ F₂).convolution_lsmul_comp_comm hf_ex
+      have hf2_eq : (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f₂) x =
+          WithLp.sndL 2 ℝ F₁ F₂ ((ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f) x) := by
+        simpa [f] using (WithLp.sndL 2 ℝ F₁ F₂).convolution_lsmul_comp_comm hf_ex
+      have hfM : ∀ᵐ y ∂μ, ‖f y‖ ≤ √M := hM.mono fun y hy => Real.le_sqrt_of_sq_le <| by
+        simpa only [f, WithLp.prod_norm_sq_eq_of_L2, WithLp.toLp_fst, WithLp.toLp_snd] using hy
+      calc ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f₁) x‖ ^ 2 +
+            ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f₂) x‖ ^ 2
+          = ‖(ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f) x‖ ^ 2 := by
+            rw [hf1_eq, hf2_eq]
+            exact (WithLp.prod_norm_sq_eq_of_L2 _).symm
+        _ ≤ (√M) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) (ρ.norm_normed_convolution_le hfM x) 2
+        _ = M := Real.sq_sqrt hM0
     · have hB : B = 0 := by
-        simp only [B, convolution_def, lsmul_apply, integral_undef h2, norm_zero]
+        rcases not_and_or.1 h2 with h2i | h2c
+        · simp only [B, convolution_def, lsmul_apply, integral_undef h2i, norm_zero]
+        · simp only [B, convolution_def, lsmul_apply, integral_of_not_completeSpace h2c, norm_zero]
       rw [hB, zero_pow two_ne_zero, add_zero]
-      exact (pow_le_pow_left₀ hA0 (ρ.norm_normed_convolution_le hf₁ x) 2).trans_eq
+      exact (pow_le_pow_left₀ (norm_nonneg _) (ρ.norm_normed_convolution_le hf₁ x) 2).trans_eq
         (Real.sq_sqrt hM0)
   · have hA : A = 0 := by
-      simp only [A, convolution_def, lsmul_apply, integral_undef h1, norm_zero]
+      rcases not_and_or.1 h1 with h1i | h1c
+      · simp only [A, convolution_def, lsmul_apply, integral_undef h1i, norm_zero]
+      · simp only [A, convolution_def, lsmul_apply, integral_of_not_completeSpace h1c, norm_zero]
     rw [hA, zero_pow two_ne_zero, zero_add]
-    exact (pow_le_pow_left₀ hB0 (ρ.norm_normed_convolution_le hf₂ x) 2).trans_eq
+    exact (pow_le_pow_left₀ (norm_nonneg _) (ρ.norm_normed_convolution_le hf₂ x) 2).trans_eq
       (Real.sq_sqrt hM0)
 
 /-- Convolution with a nonnegative normalized bump preserves the Lipschitz constant,

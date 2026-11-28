@@ -24,7 +24,7 @@ component, so it integrates to zero by
 It also localizes the divergence integral over a set of unique differentiability to a box
 containing the part of the support inside that set, which the half-space and quadrant divergence
 theorems share, and provides the compactly supported rescaled-field integral identity
-`TauCeti.integral_mul_trace_fderiv_comp_mul_eq_neg`.
+`IsCompact.integral_mul_trace_fderiv_comp_mul_eq_neg`.
 -/
 
 public section
@@ -94,7 +94,7 @@ namespace TauCeti
 `a` is `C¹`, integrating the rescaled divergence piece `a y * div_y (A · (a y * u))` against an
 additive Haar measure equals minus the integral of the `u`-derivative term, since their sum is the
 divergence of the compactly supported `C¹` field `y ↦ a y • A y (a y * u)`. -/
-theorem integral_mul_trace_fderiv_comp_mul_eq_neg
+theorem _root_.IsCompact.integral_mul_trace_fderiv_comp_mul_eq_neg
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [MeasurableSpace E] [BorelSpace E] {μ : MeasureTheory.Measure E} [μ.IsAddHaarMeasure]
     {K : Set E} (hK : IsCompact K) {A : E → ℝ → E} (hA : ContDiff ℝ 1 (Function.uncurry A))
@@ -114,26 +114,28 @@ theorem integral_mul_trace_fderiv_comp_mul_eq_neg
     simp_rw [← traceCLM_apply]
     rw [(traceCLM ℝ E).integral_comp_comm hW_int,
       integral_fderiv_eq_zero_of_hasCompactSupport hW hWc, map_zero]
-  obtain ⟨hP1c, hP2c⟩ := continuous_trace_fderiv_comp_mul hA ha
+  obtain ⟨hP1c, hP2c⟩ := hA.continuous_mul_trace_fderiv_comp_mul_and_continuous_deriv ha
   have hi1 : MeasureTheory.Integrable (fun y : E => a y * LinearMap.trace ℝ E
       (fderiv ℝ (fun z : E => A z (a y * u)) y : E →ₗ[ℝ] E)) μ :=
     (hP1c.comp (continuous_const.prodMk continuous_id)).integrable_of_hasCompactSupport
       (.of_support_subset_isCompact hK fun y hy => by
         by_contra hyK
-        exact hy (trace_fderiv_comp_mul_eq_zero_of_notMem hK.isClosed hA0 a u hyK).1)
+        exact hy (hK.isClosed.mul_trace_fderiv_comp_mul_eq_zero_and_deriv_eq_zero_of_notMem
+          hA0 a u hyK).1)
   have hi2 : MeasureTheory.Integrable (fun y : E =>
       deriv (fun s : ℝ => fderiv ℝ a y (s • A y (a y * s))) u) μ :=
     (hP2c.comp (continuous_const.prodMk continuous_id)).integrable_of_hasCompactSupport
       (.of_support_subset_isCompact hK fun y hy => by
         by_contra hyK
-        exact hy (trace_fderiv_comp_mul_eq_zero_of_notMem hK.isClosed hA0 a u hyK).2)
+        exact hy (hK.isClosed.mul_trace_fderiv_comp_mul_eq_zero_and_deriv_eq_zero_of_notMem
+          hA0 a u hyK).2)
   have hsum : (∫ y : E, a y * LinearMap.trace ℝ E
         (fderiv ℝ (fun z : E => A z (a y * u)) y : E →ₗ[ℝ] E) ∂μ) +
       (∫ y : E, deriv (fun s : ℝ => fderiv ℝ a y (s • A y (a y * s))) u ∂μ) =
       ∫ y : E, LinearMap.trace ℝ E (fderiv ℝ W y : E →ₗ[ℝ] E) ∂μ := by
     rw [← MeasureTheory.integral_add hi1 hi2]
     exact MeasureTheory.integral_congr_ae (.of_forall fun y =>
-      (trace_fderiv_smul_comp_mul (hA.differentiable one_ne_zero (y, a y * u))
+      ((hA.differentiable one_ne_zero (y, a y * u)).trace_fderiv_smul_comp_mul
         (ha.differentiable one_ne_zero y)).symm)
   linarith
 

@@ -69,8 +69,9 @@ not belong to any particular application.
 * `TauCeti.intervalIntegral.abs_integral_norm_le_abs_integral_of_norm_le`: if `‖M‖ ≤ m` almost
   everywhere between `c` and `d`, then `|∫ r in c..d, ‖M r‖| ≤ |∫ r in c..d, m r|`.
 * `TauCeti.intervalIntegral.integrable_and_integral_swap_of_continuous`: a continuous function on
-  `ℝ × Y` vanishing outside `Ι a b ×ˢ K` (with `K` compact) has `y ↦ ∫ u in a..b, P (u, y)`
-  integrable, and its iterated integrals over `a..b` and `Y` commute.
+  `ℝ × Y` whose sections `P (u, ·)` vanish outside a compact set `K` for each `u ∈ Ι a b` (with no
+  restriction for `u ∉ Ι a b`) has `y ↦ ∫ u in a..b, P (u, y)` integrable, and its iterated
+  integrals over `a..b` and `Y` commute.
 * `MeasureTheory.IntegrableOn.setIntegral_Ioo_eq_sub`: for `f` integrable on `(a, b)`, the
   integral over a subinterval `(s, t)` is a difference of primitives based at any `c ∈ [a, b]`.
 * `MeasureTheory.Integrable.norm_intervalIntegral_le_integral_norm`: an interval integral of an
@@ -622,9 +623,10 @@ theorem abs_integral_norm_le_abs_integral_of_norm_le {G : Type*} [NormedAddCommG
     _root_.intervalIntegral.norm_integral_le_abs_of_norm_le (f := fun r ↦ ‖M r‖)
       ((ae_restrict_iff' measurableSet_uIoc).2 (by simpa only [norm_norm] using hMm)) hm
 
-/-- A continuous function `P : ℝ × Y → E` vanishing outside `Ι a b ×ˢ K` (with `K` compact)
-has `y ↦ ∫ u in a..b, P (u, y)` integrable with respect to `μ`, and its iterated integrals over
-`a..b` and `Y` commute. -/
+/-- A continuous function `P : ℝ × Y → E` such that for each `u ∈ Ι a b`, the section `P (u, ·)`
+vanishes outside a compact set `K` (with no restriction imposed for `u ∉ Ι a b`) has
+`y ↦ ∫ u in a..b, P (u, y)` integrable with respect to `μ`, and its iterated integrals over `a..b`
+and `Y` commute. -/
 theorem integrable_and_integral_swap_of_continuous {Y E : Type*} [TopologicalSpace Y]
     [T2Space Y] [MeasurableSpace Y] [OpensMeasurableSpace (ℝ × Y)] [NormedAddCommGroup E]
     [NormedSpace ℝ E] (a b : ℝ) {K : Set Y} (hK : IsCompact K) {P : ℝ × Y → E}

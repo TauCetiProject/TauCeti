@@ -8,9 +8,6 @@ module
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Basic
 import TauCeti.Analysis.BoundedVariation.Slicing.Equality
-import TauCeti.Analysis.Calculus.BumpFunction.Convolution
-import TauCeti.Analysis.Convolution.Basic
-import TauCeti.Analysis.Distribution.TestFunction.Convolution
 import TauCeti.Analysis.Sobolev.Mollification.Basic
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
@@ -22,28 +19,32 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 Let `E` be a finite-dimensional real inner product space, `e` a unit vector, and `s` a
 null-measurable set of finite volume with Steiner symmetral `S_e s = steinerSymmetrization e he s`.
-Write `L(y) = |{t | y + t • e ∈ s}|` for the section lengths on the orthogonal hyperplane
-`(ℝ ∙ e)ᗮ` and `D = {y | 0 < |{t | y + t • e ∈ s}|}` for the positive-section set.
+Write `L(y) = volume.real {t | y + t • e ∈ s}` for the real-valued section lengths on the
+orthogonal hyperplane `(ℝ ∙ e)ᗮ` and `D = {y | 0 < volume {t | y + t • e ∈ s}}` for the
+positive-section set defined by the extended measure `|{t | y + t • e ∈ s}|`.
 
 **Exact transverse variational formula for Steiner perimeter.** The perimeter `P(S_e s)` in `ℝ≥0∞`
-equals the `ℝ≥0∞`-supremum of `2 ∫_D √(1 - ‖φ‖²) + ENNReal.ofReal (∫ div φ (y) L(y) dy)` over
+equals the `ℝ≥0∞`-supremum of
+`2 ∫⁻_{y ∈ D} ENNReal.ofReal √(1 - ‖φ y‖²) + ENNReal.ofReal (∫ div φ (y) L(y) dy)` over
 transverse test vector fields `φ ∈ 𝓓(⊤, (ℝ ∙ e)ᗮ)` satisfying `‖φ‖ ≤ 1`
 (`TauCeti.perimeter_steinerSymmetrization_eq_iSup`), with no finiteness assumption on `P(s)` or
 `P(S_e s)`.
 
 ## Proof strategy
 
-The lower bound `≥` in `TauCeti.perimeter_steinerSymmetrization_eq_iSup` is immediate from joint
-slicing applied to `S_e s`. For the upper bound `≤`, if `|D| = ∞` then `φ = 0` already makes the
-supremum `∞`. When `|D| < ∞`, we test `S_e s` against an arbitrary `ψ₀ ∈ 𝓓(⊤, E)` with
-`‖ψ₀‖ ≤ 1`, write `ψ_⊥(y, t) = ((orthogonalLineEquiv e he).symm (ψ₀ (y + t • e))).1` for its
-transverse projection, and regularize `L` by shrinking normalized bumps `L_k = ρ_k ⋆ L`. On the
-smooth symmetric slab `{|t| < L_k(y) / 2}`, decomposing `div ψ₀` into horizontal divergence and
-vertical derivative and integrating `(L_k / 2) ψ_⊥(y, L_k u / 2)` over `u ∈ (-1, 1)` rewrites
-`∫_{|t| < L_k/2} div ψ₀` as `2 ∫ d_k - ∫ DL_k (b_k)`, where the boundary horizontal average `b_k`
-and vertical half-difference `d_k` satisfy `‖b_k‖² + d_k² ≤ 1` everywhere. Moving `ρ_k` onto `b_k`
-produces `φ_k = ρ_k ⋆ b_k ∈ 𝓓(⊤, (ℝ ∙ e)ᗮ)` with `‖φ_k‖² + (ρ_k ⋆ d_k)² ≤ 1`, while the off-`D`
-contribution of `ρ_k ⋆ d_k` and the slab-replacement error vanish in `L¹` as `k → ∞`.
+The lower bound `≥` in `TauCeti.perimeter_steinerSymmetrization_eq_iSup` is immediate from
+`TauCeti.iSup_two_mul_setLIntegral_add_ofReal_integral_le_perimeter`, which supplies both the exact
+variational functional and the lower bound when applied to `S_e s`. For the upper bound `≤`, if
+`|D| = ∞` then `φ = 0` already makes the supremum `∞`. When `|D| < ∞`, we test `S_e s` against an
+arbitrary `ψ₀ ∈ 𝓓(⊤, E)` with `‖ψ₀‖ ≤ 1`, write
+`ψ_⊥(y, t) = ((orthogonalLineEquiv e he).symm (ψ₀ (y + t • e))).1` for its transverse projection,
+and regularize `L` by shrinking normalized bumps `L_k = ρ_k ⋆ L`. On the smooth symmetric slab
+`{|t| < L_k(y) / 2}`, decomposing `div ψ₀` into horizontal divergence and vertical derivative and
+integrating `(L_k / 2) ψ_⊥(y, L_k u / 2)` over `u ∈ (-1, 1)` rewrites `∫_{|t| < L_k/2} div ψ₀` as
+`2 ∫ d_k - ∫ DL_k (b_k)`, where the boundary horizontal average `b_k` and vertical half-difference
+`d_k` satisfy `‖b_k‖² + d_k² ≤ 1` everywhere. Moving `ρ_k` onto `b_k` produces
+`φ_k = ρ_k ⋆ b_k ∈ 𝓓(⊤, (ℝ ∙ e)ᗮ)` with `‖φ_k‖² + (ρ_k ⋆ d_k)² ≤ 1`, while the off-`D` contribution
+of `ρ_k ⋆ d_k` and the slab-replacement error vanish in `L¹` as `k → ∞`.
 
 ## References
 
@@ -81,20 +82,64 @@ private theorem abs_slabVerticalDiff_le_add_abs_sub (e : E) (he : ‖e‖ = 1) (
   have hM0 : 0 ≤ Mψ := (norm_nonneg _).trans (hMψ 0)
   have hcore := abs_slabVerticalDiff_le e he ψ₀ hψ1 hMψ y t
   rw [abs_of_nonneg ht] at hcore
-  refine hcore.trans ?_
-  rcases le_total 1 (Mψ * L) with hb | hb
-  · rw [min_eq_left hb]
-    exact (min_le_left 1 _).trans (le_add_of_nonneg_right (mul_nonneg hM0 (abs_nonneg _)))
-  · rw [min_eq_right hb]
-    calc min 1 (Mψ * t) ≤ Mψ * t := min_le_right _ _
-      _ = Mψ * L + Mψ * (t - L) := by ring
-      _ ≤ Mψ * L + Mψ * |t - L| :=
-          add_le_add_right (mul_le_mul_of_nonneg_left (le_abs_self _) hM0) _
+  have hsub : min 1 (Mψ * t) - min 1 (Mψ * L) ≤ Mψ * |t - L| := by
+    refine (le_abs_self _).trans ((abs_min_sub_min_le_max 1 (Mψ * t) 1 (Mψ * L)).trans ?_)
+    rw [sub_self, abs_zero, ← mul_sub, abs_mul, abs_of_nonneg hM0]
+    exact max_le (mul_nonneg hM0 (abs_nonneg _)) le_rfl
+  linarith
 
 end
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+
+/-- Given `ψ₀` with `‖ψ₀‖ ≤ 1` and an integrable section-length function `L`, construct the
+mollified transverse test field `φ = ρ ⋆ slabHorizAvg ψ₀ L_ρ` satisfying `‖φ‖² + (ρ ⋆ d)² ≤ 1`
+and the exact slab-divergence integration-by-parts identity against `L`. -/
+private theorem exists_mollified_slabField (e : E) (he : ‖e‖ = 1) (ψ₀ : 𝓓(⊤, E))
+    (hψ1 : ∀ x, ‖ψ₀ x‖ ≤ 1) {L : (ℝ ∙ e)ᗮ → ℝ} (hLi : Integrable L volume)
+    (ρ : ContDiffBump (0 : (ℝ ∙ e)ᗮ)) :
+    ∃ φ : 𝓓(⊤, (ℝ ∙ e)ᗮ),
+      Integrable (fun y : (ℝ ∙ e)ᗮ => (2 : ℝ)⁻¹ *
+        (⟪e, ψ₀ ((y : E) + ((ρ.normed volume ⋆[lsmul ℝ ℝ, volume] L) y / 2) • e)⟫ -
+          ⟪e, ψ₀ ((y : E) + (-((ρ.normed volume ⋆[lsmul ℝ ℝ, volume] L) y / 2)) • e)⟫)) volume ∧
+      (∀ z, ‖φ z‖ ^ 2 + (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] fun y : (ℝ ∙ e)ᗮ =>
+        (2 : ℝ)⁻¹ * (⟪e, ψ₀ ((y : E) + ((ρ.normed volume ⋆[lsmul ℝ ℝ, volume] L) y / 2) • e)⟫ -
+          ⟪e, ψ₀ ((y : E) + (-((ρ.normed volume ⋆[lsmul ℝ ℝ, volume] L) y / 2)) • e)⟫)) z ^ 2 ≤ 1) ∧
+      (∫ y : (ℝ ∙ e)ᗮ, ∫ t in (-((ρ.normed volume ⋆[lsmul ℝ ℝ, volume] L) y / 2))..
+          ((ρ.normed volume ⋆[lsmul ℝ ℝ, volume] L) y / 2), divergenceCLM ψ₀ ((y : E) + t • e)) =
+        2 * (∫ y : (ℝ ∙ e)ᗮ, (2 : ℝ)⁻¹ *
+          (⟪e, ψ₀ ((y : E) + ((ρ.normed volume ⋆[lsmul ℝ ℝ, volume] L) y / 2) • e)⟫ -
+            ⟪e, ψ₀ ((y : E) + (-((ρ.normed volume ⋆[lsmul ℝ ℝ, volume] L) y / 2)) • e)⟫)) +
+        ∫ z : (ℝ ∙ e)ᗮ, divergenceCLM φ z * L z := by
+  set L_ρ := ρ.normed volume ⋆[lsmul ℝ ℝ, volume] L
+  have hLρ_s : ContDiff ℝ ∞ L_ρ :=
+    (ρ.hasCompactSupport_normed (μ := volume)).contDiff_convolution_left _ ρ.contDiff_normed
+      hLi.locallyIntegrable
+  set B := slabHorizAvg e he ψ₀ hLρ_s with hB_def
+  set φ := B.mollify volume ρ (subset_univ _) with hφ_def
+  set d : (ℝ ∙ e)ᗮ → ℝ := fun y =>
+    (2 : ℝ)⁻¹ * (⟪e, ψ₀ ((y : E) + (L_ρ y / 2) • e)⟫ -
+      ⟪e, ψ₀ ((y : E) + (-(L_ρ y / 2)) • e)⟫)
+  obtain ⟨-, hdi⟩ : Continuous d ∧ Integrable d volume :=
+    continuous_and_integrable_slabVerticalDiff e he ψ₀ hLρ_s.continuous
+  refine ⟨φ, hdi, fun z => ?_, ?_⟩
+  · rw [hφ_def, mollify_apply]
+    simpa only [Real.norm_eq_abs, sq_abs] using
+      ρ.norm_normed_convolution_sq_add_norm_normed_convolution_sq_le
+        (μ := volume) (f₁ := B) (f₂ := d) (M := 1)
+        (.of_forall fun y => by
+          rw [hB_def, Real.norm_eq_abs, sq_abs]
+          exact norm_sq_slabHorizAvg_add_slabVerticalDiff_sq_le_one e he ψ₀ hψ1 hLρ_s y) z
+  · have hLρ_1 : ContDiff ℝ 1 L_ρ := hLρ_s.of_le (by simp)
+    have hslab := (integrable_and_integral_divergenceCLM_symmSlab_eq e he ψ₀ hLρ_1).2
+    have hB_coe (y : (ℝ ∙ e)ᗮ) : slabHorizAvg e he ψ₀ hLρ_1 y = B y := by simp [hB_def]
+    simp_rw [hB_coe] at hslab
+    have hibp := (ρ.integral_divergenceCLM_mollify_smul_eq_neg_integral_fderiv_normed_convolution
+      (hLi.locallyIntegrable.locallyIntegrableOn _) B (subset_univ _)).symm
+    simp_rw [← hφ_def, smul_eq_mul] at hibp
+    dsimp only [d, L_ρ] at hslab ⊢
+    linarith
 
 /-- Single-bump slab bound when `volume D ≠ ⊤`: integrating `div ψ₀` over `{|t| < L_ρ / 2}` is
 bounded by the variational functional at `φ = mollify B` plus `L¹` mollification errors. -/
@@ -102,7 +147,7 @@ private theorem symmSlab_integral_le_variational_add_err (e : E) (he : ‖e‖ =
     {s : Set E} (hs : NullMeasurableSet s volume) (hfin : volume s ≠ ⊤)
     (hDfin : volume {y : (ℝ ∙ e)ᗮ | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}} ≠ ⊤)
     (ψ₀ : 𝓓(⊤, E)) (hψ1 : ∀ x, ‖ψ₀ x‖ ≤ 1)
-    {Mψ : ℝ} (hM0 : 0 ≤ Mψ) (hMψ : ∀ x, ‖fderiv ℝ (fun z : E => ⟪e, ψ₀ z⟫) x‖ ≤ Mψ)
+    {Mψ : ℝ} (hMψ : ∀ x, ‖fderiv ℝ (fun z : E => ⟪e, ψ₀ z⟫) x‖ ≤ Mψ)
     (ρ : ContDiffBump (0 : (ℝ ∙ e)ᗮ)) :
     ∃ (φ : 𝓓(⊤, (ℝ ∙ e)ᗮ)), (∀ y, ‖φ y‖ ≤ 1) ∧
       IntegrableOn (fun z : (ℝ ∙ e)ᗮ => √(1 - ‖φ z‖ ^ 2))
@@ -122,34 +167,21 @@ private theorem symmSlab_integral_le_variational_add_err (e : E) (he : ‖e‖ =
             Mψ * ∫ y : (ℝ ∙ e)ᗮ, ‖(ρ.normed volume ⋆[lsmul ℝ ℝ, volume]
               fun y : (ℝ ∙ e)ᗮ => volume.real {t : ℝ | (y : E) + t • e ∈ s}) y -
               volume.real {t : ℝ | (y : E) + t • e ∈ s}‖) := by
+  have hM0 : 0 ≤ Mψ := (norm_nonneg _).trans (hMψ 0)
   set L : (ℝ ∙ e)ᗮ → ℝ := fun y => volume.real {t : ℝ | (y : E) + t • e ∈ s} with hL_def
   set D : Set (ℝ ∙ e)ᗮ := {y : (ℝ ∙ e)ᗮ | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}}
   have hDm : NullMeasurableSet D volume :=
     nullMeasurableSet_lt aemeasurable_const (aemeasurable_volume_lineSection e he hs)
   have hLi : Integrable L volume := integrable_measureReal_lineSection e he hs hfin
   set L_ρ := ρ.normed volume ⋆[lsmul ℝ ℝ, volume] L
-  have hLρ_s : ContDiff ℝ ∞ L_ρ :=
-    (ρ.hasCompactSupport_normed (μ := volume)).contDiff_convolution_left _ ρ.contDiff_normed
-      hLi.locallyIntegrable
   have hLρ0 (y : (ℝ ∙ e)ᗮ) : 0 ≤ L_ρ y :=
     le_convolution_lsmul_of_forall_le ρ.support_normed_eq.subset ρ.nonneg_normed ρ.integral_normed
       ((ρ.hasCompactSupport_normed (μ := volume)).convolutionExists_left _
         (ρ.continuous_normed (μ := volume)) hLi.locallyIntegrable y) fun _ _ => measureReal_nonneg
-  set B := slabHorizAvg e he ψ₀ hLρ_s with hB_def
-  set φ := B.mollify volume ρ (subset_univ _) with hφ_def
+  obtain ⟨φ, hdi, hφ_sq, hslab⟩ := exists_mollified_slabField e he ψ₀ hψ1 hLi ρ
   set d : (ℝ ∙ e)ᗮ → ℝ := fun y =>
     (2 : ℝ)⁻¹ * (⟪e, ψ₀ ((y : E) + (L_ρ y / 2) • e)⟫ -
-      ⟪e, ψ₀ ((y : E) + (-(L_ρ y / 2)) • e)⟫) with hd_def
-  obtain ⟨-, hdi⟩ : Continuous d ∧ Integrable d volume :=
-    continuous_and_integrable_slabVerticalDiff e he ψ₀ hLρ_s.continuous
-  have hφ_sq (z : (ℝ ∙ e)ᗮ) : ‖φ z‖ ^ 2 + (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] d) z ^ 2 ≤ 1 := by
-    rw [hφ_def, mollify_apply]
-    simpa only [Real.norm_eq_abs, sq_abs] using
-      ρ.norm_normed_convolution_sq_add_norm_normed_convolution_sq_le
-        (μ := volume) (f₁ := B) (f₂ := d) (M := 1)
-        (.of_forall fun y => by
-          rw [hB_def, Real.norm_eq_abs, sq_abs]
-          exact norm_sq_slabBoundaryAvg_le_one e he ψ₀ hψ1 hLρ_s y) z
+      ⟪e, ψ₀ ((y : E) + (-(L_ρ y / 2)) • e)⟫)
   have hφ1 (z : (ℝ ∙ e)ᗮ) : ‖φ z‖ ≤ 1 := by
     nlinarith [norm_nonneg (φ z), hφ_sq z, sq_nonneg ((ρ.normed volume ⋆[lsmul ℝ ℝ, volume] d) z)]
   have hwi : IntegrableOn (fun z : (ℝ ∙ e)ᗮ => √(1 - ‖φ z‖ ^ 2)) D volume :=
@@ -183,17 +215,12 @@ private theorem symmSlab_integral_le_variational_add_err (e : E) (he : ‖e‖ =
   have hDc : ∫ z in Dᶜ, (ρ.normed volume ⋆[lsmul ℝ ℝ, volume] d) z ≤
       (∫ z : (ℝ ∙ e)ᗮ, ‖(ρ.normed volume ⋆[lsmul ℝ ℝ, volume] fun y => min 1 (Mψ * L y)) z -
         min 1 (Mψ * L z)‖) + Mψ * ∫ y : (ℝ ∙ e)ᗮ, ‖L_ρ y - L y‖ := by
-    have h := setIntegral_convolution_lsmul_le_integral_norm_sub_add_mul hρi
+    have h := hρi.setIntegral_convolution_lsmul_le_integral_norm_sub_add_mul
       (.of_forall ρ.nonneg_normed) hdi hgi (hL_err.norm.const_mul Mψ)
       (.of_forall fun _ => mul_nonneg hM0 (norm_nonneg _))
       ((ae_restrict_mem₀ hDm.compl).mono fun z hz => (hg0 z hz).le)
       (.of_forall fun y => (le_abs_self _).trans (hd_le y))
     simpa only [ρ.integral_normed, one_mul, Pi.sub_apply, integral_const_mul] using h
-  have hslab := (integrable_and_integral_divergenceCLM_symmSlab_eq e he ψ₀ hLρ_s).2
-  simp_rw [← hd_def, ← hB_def] at hslab
-  have hibp := (ρ.integral_divergenceCLM_mollify_smul_eq_neg_integral_fderiv_normed_convolution
-    (hLi.locallyIntegrable.locallyIntegrableOn _) B (subset_univ _)).symm
-  simp_rw [← hφ_def, smul_eq_mul] at hibp
   linarith
 
 private theorem symmSlab_approx_sub_le (e : E) (he : ‖e‖ = 1)
@@ -212,9 +239,9 @@ private theorem symmSlab_approx_sub_le (e : E) (he : ‖e‖ = 1)
   set L : (ℝ ∙ e)ᗮ → ℝ := fun y => volume.real {t : ℝ | (y : E) + t • e ∈ s}
   have hLi : Integrable L volume := integrable_measureReal_lineSection e he hs hfin
   set L_ρ := ρ.normed volume ⋆[lsmul ℝ ℝ, volume] L
-  have hLρ_s : ContDiff ℝ ∞ L_ρ :=
+  have hLρ_s : ContDiff ℝ 1 L_ρ :=
     (ρ.hasCompactSupport_normed (μ := volume)).contDiff_convolution_left _
-      ρ.contDiff_normed hLi.locallyIntegrable
+      (ρ.contDiff_normed (n := 1)) hLi.locallyIntegrable
   have hsec := ae_volume_lineSection_lt_top e he hs hfin
   have hdiv_i : IntegrableOn (divergenceCLM ψ₀) (steinerSymmetrization e he s) volume :=
     ((divergenceCLM ψ₀).continuous.integrable_of_hasCompactSupport
@@ -267,22 +294,20 @@ private theorem ofReal_setIntegral_steinerSymmetrization_le_iSup
     (hg_cs.fderiv ℝ)
   obtain ⟨Cψ, hCψ⟩ := (divergenceCLM ψ₀).continuous.bounded_above_of_compact_support
     (divergenceCLM ψ₀).hasCompactSupport
-  set Mψ := max M₀ 0; set C₀ := max Cψ 0
   have hLi := integrable_measureReal_lineSection e he hs hfin
   have hgi : Integrable (fun y : (ℝ ∙ e)ᗮ =>
-      min 1 (Mψ * volume.real {t : ℝ | (y : E) + t • e ∈ s})) volume :=
-    (hLi.const_mul Mψ).const_inf zero_le_one
+      min 1 (M₀ * volume.real {t : ℝ | (y : E) + t • e ∈ s})) volume :=
+    (hLi.const_mul M₀).const_inf zero_le_one
   have hL_lim := tendsto_integral_norm_normed_convolution_sub hρ_lim hLi
   have hg_lim := tendsto_integral_norm_normed_convolution_sub hρ_lim hgi
   set I₀ : ℝ := ∫ x in steinerSymmetrization e he s, divergenceCLM ψ₀ x
-  have hlim := (tendsto_const_nhds (x := I₀)).sub ((hL_lim.const_mul C₀).add
-    ((hg_lim.add (hL_lim.const_mul Mψ)).const_mul 2))
+  have hlim := (tendsto_const_nhds (x := I₀)).sub ((hL_lim.const_mul Cψ).add
+    ((hg_lim.add (hL_lim.const_mul M₀)).const_mul 2))
   simp only [mul_zero, add_zero, sub_zero] at hlim
   refine le_of_tendsto (ENNReal.tendsto_ofReal hlim) (.of_forall fun k => ?_)
   obtain ⟨φ, hφ1, hwi, hslab⟩ := symmSlab_integral_le_variational_add_err e he hs hfin hDfin ψ₀
-    hψ1 (Mψ := Mψ) (le_max_right M₀ 0) (fun x => (hM₀ x).trans (le_max_left M₀ 0)) (ρ k)
-  have herr₀ : I₀ - _ ≤ _ := symmSlab_approx_sub_le e he hs hfin ψ₀
-    (C₀ := C₀) (fun x => (hCψ x).trans (le_max_left Cψ 0)) (ρ k)
+    hψ1 hM₀ (ρ k)
+  have herr₀ : I₀ - _ ≤ _ := symmSlab_approx_sub_le e he hs hfin ψ₀ hCψ (ρ k)
   have hD_eq : ENNReal.ofReal (2 * ∫ z in
         {y : (ℝ ∙ e)ᗮ | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}}, √(1 - ‖φ z‖ ^ 2)) =
       2 * ∫⁻ y in {y : (ℝ ∙ e)ᗮ | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}},
@@ -295,11 +320,13 @@ private theorem ofReal_setIntegral_steinerSymmetrization_le_iSup
   linarith
 
 /-- **Variational formula for the perimeter of a Steiner symmetral.** For any null-measurable set
-`s` of finite volume and any unit vector `e`, writing `L(y) = |{t | y + t • e ∈ s}|` for the
-section lengths on `(ℝ ∙ e)ᗮ` and `D = {y | 0 < L(y)}` for the positive-section set, the perimeter
+`s` of finite volume and any unit vector `e`, writing `L(y) = volume.real {t | y + t • e ∈ s}` for
+the real-valued section lengths on `(ℝ ∙ e)ᗮ` and `D = {y | 0 < volume {t | y + t • e ∈ s}}` for
+the positive-section set defined by the extended measure `|{t | y + t • e ∈ s}|`, the perimeter
 `P(S_e s)` in `ℝ≥0∞` equals the `ℝ≥0∞`-supremum of
-`2 ∫_D √(1 - ‖φ‖²) + ENNReal.ofReal (∫ div φ · L)` over transverse test vector fields
-`φ ∈ 𝓓(⊤, (ℝ ∙ e)ᗮ)` satisfying `‖φ‖ ≤ 1`, with no finiteness assumption on `P(s)` or `P(S_e s)`. -/
+`2 ∫⁻_{y ∈ D} ENNReal.ofReal √(1 - ‖φ y‖²) + ENNReal.ofReal (∫ div φ · L)` over transverse test
+vector fields `φ ∈ 𝓓(⊤, (ℝ ∙ e)ᗮ)` satisfying `‖φ‖ ≤ 1`, with no finiteness assumption on `P(s)`
+or `P(S_e s)`. -/
 theorem perimeter_steinerSymmetrization_eq_iSup (e : E) (he : ‖e‖ = 1) {s : Set E}
     (hs : NullMeasurableSet s volume) (hfin : volume s ≠ ⊤) :
     perimeter volume ⊤ (steinerSymmetrization e he s) =
