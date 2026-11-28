@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Valued.LocallyCompact
 public import TauCeti.Topology.Algebra.Valued.Integer
+import Mathlib.RingTheory.DiscreteValuationRing.Basic
 import Mathlib.RingTheory.Noetherian.Basic
 import Mathlib.RingTheory.Valuation.Discrete.RankOne
 
@@ -204,9 +205,15 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
 if it is noetherian.** -/
 theorem isDiscreteValuationRing_integer_iff_isNoetherianRing :
     IsDiscreteValuationRing 𝒪[K] ↔ IsNoetherianRing 𝒪[K] := by
-  refine ⟨fun _ ↦ inferInstance, fun _ ↦ ?_⟩
-  obtain ⟨a, ham, ha0⟩ := Valued.integer.exists_mem_maximalIdeal_coe_ne_zero (K := K)
-  exact ⟨fun h ↦ ha0 (by simpa [h] using ham)⟩
+  have hdvr : IsDiscreteValuationRing 𝒪[K] ↔ IsDiscreteValuationRing (Subring.unitClosedBall K) :=
+    ⟨fun _ ↦ IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing
+        (integerUnitClosedBallEquiv (K := K)),
+      fun _ ↦ IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing
+        (integerUnitClosedBallEquiv (K := K)).symm⟩
+  have hnoeth : IsNoetherianRing (Subring.unitClosedBall K) ↔ IsNoetherianRing 𝒪[K] :=
+    ⟨fun _ ↦ isNoetherianRing_of_ringEquiv _ (integerUnitClosedBallEquiv (K := K)).symm,
+      fun _ ↦ isNoetherianRing_of_ringEquiv 𝒪[K] (integerUnitClosedBallEquiv (K := K))⟩
+  exact hdvr.trans (isDiscreteValuationRing_unitClosedBall_iff_isNoetherianRing.trans hnoeth)
 
 /-- **Over a nontrivially normed ultrametric field, `𝒪[K]` is a discrete valuation ring if and only
 if some `ρ < 1` bounds every norm strictly below `1`.** -/

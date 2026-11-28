@@ -25,8 +25,9 @@ submodule `N ≤ M` and every `0 < ε < 1`, there exists a single finitely gener
 Every noetherian `R`-module and every subsingleton `R`-module is almost noetherian, and the
 property descends along surjective semilinear maps, surjective linear maps, and surjective ring
 homomorphisms with no loss in `ε`. Over an ultrametric normed field `K` whose norms below `1` have
-no strict upper bound below `1` (the non-noetherian case for `K°`, such as `ℂ_p`), any `0 < ε < 1`
-factors through scalars `c = c' * d` with `‖c'‖ ≤ √ε < 1` and `√ε < ‖d‖ < 1`
+no strict upper bound below `1` (the non-noetherian case for `K°`, such as `ℂ_p`), for each
+`0 < ε < 1` there is a single scalar `d ∈ K°` with `√ε < ‖d‖ < 1` that divides every `c ∈ K°` of
+norm at most `ε` as `c = c' * d` with quotient norm `‖c'‖ ≤ √ε`
 (`TauCeti.exists_forall_exists_eq_mul_and_norm_le_of_not_exists_forall_norm_le`). This implies that
 almost noetherianity is preserved under finite products (`TauCeti.IsAlmostNoetherianModule.prod`,
 `TauCeti.IsAlmostNoetherianModule.fin_pi`) and passes from `R` to every finitely generated
@@ -133,11 +134,7 @@ theorem of_surjective_linearMap {φ : Subring.unitClosedBall K →+* R} {M₁ M�
 theorem of_surjective_ringHom {S : Type*} [Semiring S] {φ : Subring.unitClosedBall K →+* R}
     (hR : IsAlmostNoetherianModule φ R) {ρ : R →+* S} (hρ : Function.Surjective ρ) :
     IsAlmostNoetherianModule (ρ.comp φ) S :=
-  let f : R →ₛₗ[ρ] S :=
-    { toFun := ρ
-      map_add' := ρ.map_add
-      map_smul' := fun r x ↦ by simp }
-  hR.of_surjective_semilinearMap hρ f hρ
+  hR.of_surjective_semilinearMap hρ ρ.toSemilinearMap hρ
 
 end IsAlmostNoetherianModule
 
@@ -155,7 +152,6 @@ theorem prod {φ : Subring.unitClosedBall K →+* R} {M₁ M₂ : Type*} [AddCom
     [AddCommGroup M₂] [Module R M₂] (hM₁ : IsAlmostNoetherianModule φ M₁)
     (hdense : ¬ ∃ ρ : ℝ, ρ < 1 ∧ ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ ρ)
     (hM₂ : IsAlmostNoetherianModule φ M₂) : IsAlmostNoetherianModule φ (M₁ × M₂) := by
-  classical
   intro N ε hε0 hε1
   obtain ⟨δ, d, hδ0, hδ1, hd0, hd1, -, hfac⟩ :=
     exists_forall_exists_eq_mul_and_norm_le_of_not_exists_forall_norm_le hdense hε0 hε1
@@ -163,25 +159,19 @@ theorem prod {φ : Subring.unitClosedBall K →+* R} {M₁ M₂ : Type*} [AddCom
   obtain ⟨N₂', hN₂'fg, hN₂'le, hN₂'smul⟩ :=
     hM₂ (N.map (LinearMap.snd R M₁ M₂)) hd0 hd1
   obtain ⟨S₂, hS₂⟩ := hN₂'fg
-  have hlift : ∀ z : S₂, ∃ w ∈ N, w.2 = (z : M₂) := fun z ↦ by
-    obtain ⟨w, hw, hwz⟩ := hN₂'le (hS₂ ▸ Submodule.subset_span z.property)
-    exact ⟨w, hw, hwz⟩
-  choose liftF hliftN hlift_snd using hlift
-  let L : Finset (M₁ × M₂) := Finset.univ.image liftF
-  let Nlift : Submodule R (M₁ × M₂) := Submodule.span R (L : Set (M₁ × M₂))
-  have hNlift_le : Nlift ≤ N := Submodule.span_le.mpr fun w hw ↦ by
-    obtain ⟨z, -, rfl⟩ := Finset.mem_image.mp hw
-    exact hliftN z
+  obtain ⟨T, hTN, hTfin, hTspan⟩ := Set.exists_subset_image_finite_and
+    (f := LinearMap.snd R M₁ M₂) (s := (N : Set (M₁ × M₂)))
+    (p := fun t ↦ Submodule.span R t = N₂').mp
+    ⟨S₂, fun _ hz ↦ hN₂'le (hS₂ ▸ Submodule.subset_span hz), S₂.finite_toSet, hS₂⟩
+  let Nlift : Submodule R (M₁ × M₂) := Submodule.span R T
+  have hNlift_le : Nlift ≤ N := Submodule.span_le.mpr hTN
   have hN₂'_le_map : N₂' ≤ Nlift.map (LinearMap.snd R M₁ M₂) := by
-    rw [← hS₂, Submodule.span_le]
-    intro z hz
-    exact ⟨liftF ⟨z, hz⟩, Submodule.subset_span (Finset.mem_image_of_mem _ (Finset.mem_univ _)),
-      hlift_snd ⟨z, hz⟩⟩
+    rw [Submodule.map_span, hTspan]
   -- Approximate the kernel slice `N ∩ (M₁ × 0)` at threshold `δ`.
   obtain ⟨N₁', hN₁'fg, hN₁'le, hN₁'smul⟩ :=
     hM₁ (N.comap (LinearMap.inl R M₁ M₂)) hδ0 hδ1
   refine ⟨N₁'.map (LinearMap.inl R M₁ M₂) ⊔ Nlift,
-    (hN₁'fg.map _).sup (Submodule.fg_span L.finite_toSet),
+    (hN₁'fg.map _).sup (Submodule.fg_span hTfin),
     sup_le (Submodule.map_le_iff_le_comap.mpr hN₁'le) hNlift_le, fun c hc x hx ↦ ?_⟩
   obtain ⟨c', rfl, hc'δ⟩ := hfac c hc
   have hdx2 : φ d • x.2 ∈ N₂' := hN₂'smul d le_rfl x.2 ⟨x, hx, rfl⟩

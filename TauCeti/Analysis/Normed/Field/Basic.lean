@@ -272,55 +272,61 @@ theorem exists_norm_lt_one_forall_exists_norm_eq_zpow_of_forall_norm_le_of_norm_
     ∃ π : K, 0 < ‖π‖ ∧ ‖π‖ < 1 ∧ (∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ ‖π‖) ∧
       ∀ x : K, x ≠ 0 → ∃ k : ℤ, ‖x‖ = ‖π‖ ^ k := by
   let f : Kˣ →* NNRealˣ := Units.map nnNormHom.toMonoidHom
+  have hf_coe (u : Kˣ) : ((f u : NNReal) : ℝ) = ‖(u : K)‖ := rfl
+  have hlt_coe {x y : NNRealˣ} : x < y ↔ ((x : NNReal) : ℝ) < ((y : NNReal) : ℝ) := by
+    rw [← Units.val_lt_val, ← NNReal.coe_lt_coe]
+  have hle_coe {x y : NNRealˣ} : x ≤ y ↔ ((x : NNReal) : ℝ) ≤ ((y : NNReal) : ℝ) := by
+    rw [← Units.val_le_val, ← NNReal.coe_le_coe]
   have hρ0 : 0 < ρ := hc0.trans_le (hρ c hc1)
   have hbot : f.range ≠ ⊥ := fun h ↦
     hc1.ne <| by
       have hmem : f (Units.mk0 c (norm_pos_iff.mp hc0)) ∈ (⊥ : Subgroup NNRealˣ) := h ▸ ⟨_, rfl⟩
-      simpa [f] using congrArg (fun u : NNRealˣ ↦ ((u : NNReal) : ℝ)) (Subgroup.mem_bot.mp hmem)
+      have hm := congrArg (fun u : NNRealˣ ↦ ((u : NNReal) : ℝ)) (Subgroup.mem_bot.mp hmem)
+      simpa [hf_coe] using hm
   let a : NNRealˣ := (Units.mk0 ⟨ρ, hρ0.le⟩ (NNReal.coe_ne_zero.mp hρ0.ne'))⁻¹
   have ha_inv : (((a⁻¹ : NNRealˣ) : NNReal) : ℝ) = ρ := by
     simp only [a, inv_inv]
     exact congrArg NNReal.toReal (Units.val_mk0 (a := (⟨ρ, hρ0.le⟩ : NNReal)) _)
   have ha1 : (1 : NNRealˣ) < a := by
-    rw [← inv_lt_one', ← Units.val_lt_val, ← NNReal.coe_lt_coe, ha_inv]
+    rw [← inv_lt_one', hlt_coe, ha_inv]
     simpa using hρ1
   have hdisj : Disjoint (f.range : Set NNRealˣ) (Set.Ioo 1 a) := by
     rw [Set.disjoint_left]
     rintro _ ⟨u, rfl⟩ ⟨h1, ha⟩
     have h1R : (1 : ℝ) < ‖(u : K)‖ := by
-      rw [← Units.val_lt_val, ← NNReal.coe_lt_coe] at h1; simpa [f] using h1
+      simpa [hf_coe] using hlt_coe.mp h1
     have hu1 : ‖((u⁻¹ : Kˣ) : K)‖ < 1 := by
       rw [Units.val_inv_eq_inv_val, norm_inv]; exact inv_lt_one_of_one_lt₀ h1R
     have hle : f u⁻¹ ≤ a⁻¹ := by
-      rw [← Units.val_le_val, ← NNReal.coe_le_coe, ha_inv]
-      simpa [f] using hρ _ hu1
+      rw [hle_coe, ha_inv, hf_coe]
+      exact hρ _ hu1
     rw [map_inv, inv_le_inv_iff] at hle
     exact hle.not_gt ha
   obtain ⟨b, hb⟩ := Subgroup.exists_isLeast_one_lt hbot ha1 hdisj
   have hzpow : Subgroup.zpowers b = f.range := Subgroup.zpowers_eq_of_isLeast_mem_and_one_lt hb
   obtain ⟨u, hu⟩ := hb.1.1
   have hu_norm : ‖(u : K)‖ = ((b : NNReal) : ℝ) := by
-    simpa [f] using congrArg (fun g : NNRealˣ ↦ ((g : NNReal) : ℝ)) hu
+    rw [← hf_coe, hu]
   refine ⟨(u⁻¹ : Kˣ), norm_pos_iff.mpr u⁻¹.ne_zero, ?_, fun x hx1 ↦ ?_, fun x hx0 ↦ ?_⟩
   · have hb1 : (1 : ℝ) < ((b : NNReal) : ℝ) := by
-      have h := hb.1.2; rw [← Units.val_lt_val, ← NNReal.coe_lt_coe] at h; simpa using h
+      simpa using hlt_coe.mp hb.1.2
     rw [Units.val_inv_eq_inv_val, norm_inv, hu_norm]
     exact inv_lt_one_of_one_lt₀ hb1
   · rcases eq_or_ne x 0 with rfl | hx0
     · simp
     · let v : Kˣ := Units.mk0 x hx0
       have hv1 : (1 : NNRealˣ) < f v⁻¹ := by
-        rw [← Units.val_lt_val, ← NNReal.coe_lt_coe]
-        simpa [f, v, norm_inv] using one_lt_inv_iff₀.mpr ⟨norm_pos_iff.mpr hx0, hx1⟩
+        rw [hlt_coe, hf_coe]
+        simpa [v, norm_inv] using one_lt_inv_iff₀.mpr ⟨norm_pos_iff.mpr hx0, hx1⟩
       have hle : b ≤ f v⁻¹ := hb.2 ⟨⟨v⁻¹, rfl⟩, hv1⟩
-      rw [← hu, ← inv_le_inv_iff, ← map_inv, ← map_inv, inv_inv, ← Units.val_le_val,
-        ← NNReal.coe_le_coe] at hle
-      simpa [f, v] using hle
+      rw [← hu, ← inv_le_inv_iff, ← map_inv, ← map_inv, inv_inv, hle_coe, hf_coe, hf_coe] at hle
+      simpa [v] using hle
   · have hmem : f (Units.mk0 x hx0) ∈ Subgroup.zpowers b := hzpow.symm ▸ ⟨Units.mk0 x hx0, rfl⟩
     obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp hmem
     refine ⟨-k, ?_⟩
     rw [Units.val_inv_eq_inv_val, norm_inv, zpow_neg, inv_zpow, inv_inv, hu_norm]
-    simpa [f] using (congrArg (fun g : NNRealˣ ↦ ((g : NNReal) : ℝ)) hk).symm
+    have hk' := congrArg (fun g : NNRealˣ ↦ ((g : NNReal) : ℝ)) hk
+    simpa [hf_coe] using hk'.symm
 
 /-- **Uniformizer from a norm gap.** In a nontrivially normed field `K`, if some `ρ < 1` bounds
 every norm strictly below `1`, then there exists `π : K` with `0 < ‖π‖ < 1` whose norm bounds

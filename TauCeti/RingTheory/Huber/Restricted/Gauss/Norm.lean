@@ -66,15 +66,15 @@ type or norm is introduced here.
   ultrametric norm, the Gauss-normed algebra of restricted series is a Tate ring.
 * `TauCeti.Huber.weightedSubring_powerBoundedSubring_eq`: over a nontrivially normed ultrametric
   field `K`, the power-bounded subring of `K⟨X₁, …, Xₙ⟩` is `K°⟨X₁, …, Xₙ⟩`.
+* `TauCeti.Huber.restrictedMvPowerSeriesCompletionUnitClosedBallEquiv`: over a complete
+  ultrametric normed commutative ring `R` with `‖1‖ = 1`, the bicontinuous ring equivalence
+  `restrictedMvPowerSeriesCompletion n R° ≃+* Subring.unitClosedBall (R⟨X₁, …, Xₙ⟩)`.
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv`: over a nontrivially
   normed ultrametric field `K`, the bicontinuous ring equivalence
   `restrictedMvPowerSeriesCompletion n 𝒪[K] ≃+* restrictedMvPowerSeriesCompletion n K°`.
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionIntegerEquiv`: over a complete nontrivially
   normed ultrametric field `K`, the bicontinuous ring equivalence
   `restrictedMvPowerSeriesCompletion n 𝒪[K] ≃+* Subring.unitClosedBall (K⟨X₁, …, Xₙ⟩)`.
-* `TauCeti.Huber.restrictedMvPowerSeriesCompletionUnitClosedBallEquiv`: over a complete
-  nontrivially normed ultrametric field `K`, the bicontinuous ring equivalence
-  `restrictedMvPowerSeriesCompletion n K° ≃+* Subring.unitClosedBall (K⟨X₁, …, Xₙ⟩)`.
 * `RingHom.existsUnique_algHom_of_restrictedMvPowerSeriesCompletion`: unique extension of a
   `K`-compatible homomorphism `𝒪[K]⟨X₁, …, Xₙ⟩ →+* A` to `K⟨X₁, …, Xₙ⟩ →ₐ[K] A`.
 * `TauCeti.Huber.exists_units_norm_mul_weightedC_eq_one`: every nonzero restricted series over
@@ -372,6 +372,163 @@ instance isDomain_restrictedMvPowerSeriesCompletion [IsDomain R] :
 
 end Complete
 
+section UnitClosedBallEquiv
+
+open _root_.MvPowerSeries TauCeti.MvPowerSeries
+
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormOneClass R] [CompleteSpace R]
+
+/-- **Canonical identification of `R°⟨X₁, …, Xₙ⟩` with the Gauss unit ball `R⟨X₁, …, Xₙ⟩°`.**
+Over a complete ultrametric normed commutative ring `R` with `‖1‖ = 1`, combining the completed
+Gauss comparison over `R°` with `TauCeti.MvPowerSeries.restrictedUnitClosedBallEquiv` identifies
+`restrictedMvPowerSeriesCompletion n (Subring.unitClosedBall R)` with
+`Subring.unitClosedBall (R⟨X₁, …, Xₙ⟩)`. -/
+noncomputable def restrictedMvPowerSeriesCompletionUnitClosedBallEquiv (n : ℕ) :
+    restrictedMvPowerSeriesCompletion n (Subring.unitClosedBall R) ≃+*
+      Subring.unitClosedBall (IsRestricted.subring (R := R) (fun _ : Fin n ↦ 1)) :=
+  letI : CompleteSpace (Subring.unitClosedBall R) :=
+    (Subring.coe_unitClosedBall R ▸
+      Metric.isClosed_closedBall (x := (0 : R)) (ε := 1)).completeSpace_coe
+  (restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := Subring.unitClosedBall R)).trans
+    restrictedUnitClosedBallEquiv
+
+/-- Unfolding `restrictedMvPowerSeriesCompletionUnitClosedBallEquiv` as the composite of the
+completed Gauss comparison over `R°` and `restrictedUnitClosedBallEquiv`. -/
+theorem restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_apply (n : ℕ)
+    (w : restrictedMvPowerSeriesCompletion n (Subring.unitClosedBall R)) :
+    restrictedMvPowerSeriesCompletionUnitClosedBallEquiv n w =
+      have : CompleteSpace (Subring.unitClosedBall R) :=
+        (Subring.coe_unitClosedBall R ▸
+          Metric.isClosed_closedBall (x := (0 : R)) (ε := 1)).completeSpace_coe
+      restrictedUnitClosedBallEquiv
+        (restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := Subring.unitClosedBall R) w) :=
+  (rfl)
+
+/-- On the dense uncompleted subring, `restrictedMvPowerSeriesCompletionUnitClosedBallEquiv` acts by
+`restrictedUnitClosedBallEquiv ∘ restrictedMvPowerSeriesGaussEquiv`. -/
+@[simp]
+theorem restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_coe (n : ℕ)
+    (f : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set (Subring.unitClosedBall R)))
+      isWeightFamily_one_weight) :
+    restrictedMvPowerSeriesCompletionUnitClosedBallEquiv n
+        (f : restrictedMvPowerSeriesCompletion n (Subring.unitClosedBall R)) =
+      restrictedUnitClosedBallEquiv
+        (restrictedMvPowerSeriesGaussEquiv (n := n) (R := Subring.unitClosedBall R) f) := by
+  have : CompleteSpace (Subring.unitClosedBall R) :=
+    (Subring.coe_unitClosedBall R ▸
+      Metric.isClosed_closedBall (x := (0 : R)) (ε := 1)).completeSpace_coe
+  simp [restrictedMvPowerSeriesCompletionUnitClosedBallEquiv]
+
+/-- On the dense uncompleted subring, `restrictedMvPowerSeriesCompletionUnitClosedBallEquiv`
+includes each coefficient from `R°` into `R`. -/
+theorem coeff_restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_coe (n : ℕ)
+    (f : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set (Subring.unitClosedBall R)))
+      isWeightFamily_one_weight) (t : Fin n →₀ ℕ) :
+    coeff t
+        ((restrictedMvPowerSeriesCompletionUnitClosedBallEquiv n
+            (f : restrictedMvPowerSeriesCompletion n (Subring.unitClosedBall R)) :
+          IsRestricted.subring (R := R) (fun _ : Fin n ↦ 1)) : MvPowerSeries (Fin n) R) =
+      coeff t (f : MvPowerSeries (Fin n) (Subring.unitClosedBall R)) := by
+  simp
+
+/-- The inverse of `restrictedMvPowerSeriesCompletionUnitClosedBallEquiv` takes a series in the
+Gauss unit ball to its canonical image in `restrictedMvPowerSeriesCompletion n R°`. -/
+theorem restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_symm_apply (n : ℕ)
+    (f : Subring.unitClosedBall (IsRestricted.subring (R := R) (fun _ : Fin n ↦ 1))) :
+    (restrictedMvPowerSeriesCompletionUnitClosedBallEquiv n).symm f =
+      have : CompleteSpace (Subring.unitClosedBall R) :=
+        (Subring.coe_unitClosedBall R ▸
+          Metric.isClosed_closedBall (x := (0 : R)) (ε := 1)).completeSpace_coe
+      ((restrictedMvPowerSeriesGaussEquiv (n := n) (R := Subring.unitClosedBall R)).symm
+          (restrictedUnitClosedBallEquiv.symm f) :
+        restrictedMvPowerSeriesCompletion n (Subring.unitClosedBall R)) := by
+  have : CompleteSpace (Subring.unitClosedBall R) :=
+    (Subring.coe_unitClosedBall R ▸
+      Metric.isClosed_closedBall (x := (0 : R)) (ε := 1)).completeSpace_coe
+  simp [restrictedMvPowerSeriesCompletionUnitClosedBallEquiv]
+
+/-- `restrictedMvPowerSeriesCompletionUnitClosedBallEquiv` is continuous from the completion
+topology on `R°⟨X₁, …, Xₙ⟩` to the subspace Gauss-norm topology on `R⟨X₁, …, Xₙ⟩°`. -/
+theorem continuous_restrictedMvPowerSeriesCompletionUnitClosedBallEquiv (n : ℕ) :
+    Continuous (restrictedMvPowerSeriesCompletionUnitClosedBallEquiv (R := R) n) := by
+  have : CompleteSpace (Subring.unitClosedBall R) :=
+    (Subring.coe_unitClosedBall R ▸
+      Metric.isClosed_closedBall (x := (0 : R)) (ε := 1)).completeSpace_coe
+  have hisom : Isometry (restrictedUnitClosedBallEquiv (σ := Fin n) (R := R)) :=
+    AddMonoidHomClass.isometry_of_norm _ fun f ↦ by
+      rw [AddSubgroupClass.coe_norm, norm_restrictedUnitClosedBallEquiv]
+  exact hisom.continuous.comp
+    (continuous_restrictedMvPowerSeriesCompletionGaussEquiv (n := n)
+      (R := Subring.unitClosedBall R))
+
+/-- The inverse of `restrictedMvPowerSeriesCompletionUnitClosedBallEquiv` is continuous. -/
+theorem continuous_restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_symm (n : ℕ) :
+    Continuous (restrictedMvPowerSeriesCompletionUnitClosedBallEquiv (R := R) n).symm := by
+  have : CompleteSpace (Subring.unitClosedBall R) :=
+    (Subring.coe_unitClosedBall R ▸
+      Metric.isClosed_closedBall (x := (0 : R)) (ε := 1)).completeSpace_coe
+  have hisom : Isometry (restrictedUnitClosedBallEquiv (σ := Fin n) (R := R)).symm :=
+    AddMonoidHomClass.isometry_of_norm _ fun f ↦ by
+      rw [← norm_restrictedUnitClosedBallEquiv, RingEquiv.apply_symm_apply,
+        AddSubgroupClass.coe_norm]
+  exact (continuous_restrictedMvPowerSeriesCompletionGaussEquiv_symm (n := n)
+    (R := Subring.unitClosedBall R)).comp hisom.continuous
+
+/-- `restrictedMvPowerSeriesCompletionUnitClosedBallEquiv` maps constants in `R°` to constant
+series in `R⟨X₁, …, Xₙ⟩°`. -/
+theorem restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_algebraMap (n : ℕ)
+    (c : Subring.unitClosedBall R) :
+    restrictedMvPowerSeriesCompletionUnitClosedBallEquiv n
+        (algebraMap (Subring.unitClosedBall R) _ c) =
+      unitClosedBallC c := by
+  have : CompleteSpace (Subring.unitClosedBall R) :=
+    (Subring.coe_unitClosedBall R ▸
+      Metric.isClosed_closedBall (x := (0 : R)) (ε := 1)).completeSpace_coe
+  simp [restrictedMvPowerSeriesCompletionUnitClosedBallEquiv]
+
+/-- `restrictedMvPowerSeriesCompletionUnitClosedBallEquiv` maps canonical constant series in
+`R°⟨X₁, …, Xₙ⟩` to constant series in `R⟨X₁, …, Xₙ⟩°`. -/
+theorem restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_coe_weightedC (n : ℕ)
+    (c : Subring.unitClosedBall R) :
+    restrictedMvPowerSeriesCompletionUnitClosedBallEquiv n
+        ((weightedC (fun _ : Fin n ↦ ({1} : Set (Subring.unitClosedBall R)))
+          isWeightFamily_one_weight c :
+            weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set (Subring.unitClosedBall R)))
+              isWeightFamily_one_weight) :
+          restrictedMvPowerSeriesCompletion n (Subring.unitClosedBall R)) =
+      unitClosedBallC c := by
+  rw [← algebraMap_completion_weightedRestrictedSubring_apply,
+    restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_algebraMap]
+
+/-- The inverse of `restrictedMvPowerSeriesCompletionUnitClosedBallEquiv` sends constant series
+in `R⟨X₁, …, Xₙ⟩°` back to constants in `R°`. -/
+@[simp]
+theorem restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_symm_unitClosedBallC (n : ℕ)
+    (c : Subring.unitClosedBall R) :
+    (restrictedMvPowerSeriesCompletionUnitClosedBallEquiv n).symm
+        (unitClosedBallC (σ := Fin n) c) =
+      algebraMap (Subring.unitClosedBall R) _ c := by
+  apply (restrictedMvPowerSeriesCompletionUnitClosedBallEquiv n).injective
+  rw [RingEquiv.apply_symm_apply,
+    restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_algebraMap]
+
+/-- Under `restrictedMvPowerSeriesCompletionUnitClosedBallEquiv`, the polynomial inclusion into
+`R°⟨X₁, …, Xₙ⟩` corresponds to `restrictedUnitClosedBallEquiv ∘ polynomialToRestricted`. -/
+theorem restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_comp_weightedPolynomialHom (n : ℕ) :
+    (restrictedMvPowerSeriesCompletionUnitClosedBallEquiv (R := R) n).toRingHom.comp
+        (UniformSpace.Completion.coeRingHom.comp
+          (weightedPolynomialHom _ isWeightFamily_one_weight)) =
+      (restrictedUnitClosedBallEquiv (σ := Fin n) (R := R)).toRingHom.comp
+        (polynomialToRestricted (R := Subring.unitClosedBall R)
+          fun _ : Fin n ↦ (1 : ℝ)).toRingHom := by
+  have : CompleteSpace (Subring.unitClosedBall R) :=
+    (Subring.coe_unitClosedBall R ▸
+      Metric.isClosed_closedBall (x := (0 : R)) (ε := 1)).completeSpace_coe
+  refine RingHom.ext fun p ↦ ?_
+  simp [restrictedMvPowerSeriesCompletionUnitClosedBallEquiv]
+
+end UnitClosedBallEquiv
+
 section UnitWeight
 
 /-! ### Weights given by multiplicative units
@@ -591,19 +748,23 @@ variable [CompleteSpace K]
 /-- **Completed integral restricted series agree with the Gauss unit ball** (Bosch, *Lectures on
 Formal and Rigid Geometry*, §6.4, proof of Lemma 5, pp. 137–138). Over a complete nontrivially
 normed ultrametric field `K`, `restrictedMvPowerSeriesCompletion n 𝒪[K]` is identified with
-`Subring.unitClosedBall (K⟨X₁, …, Xₙ⟩)`, preserving scalar constants from `𝒪[K]`. -/
+`Subring.unitClosedBall (K⟨X₁, …, Xₙ⟩)` by transporting
+`restrictedMvPowerSeriesCompletionUnitClosedBallEquiv` along
+`restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv`. -/
 noncomputable def restrictedMvPowerSeriesCompletionIntegerEquiv (n : ℕ) :
     restrictedMvPowerSeriesCompletion n 𝒪[K] ≃+*
       Subring.unitClosedBall (IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1)) :=
-  (restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := 𝒪[K])).trans restrictedIntegerEquiv
+  (restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv n).trans
+    (restrictedMvPowerSeriesCompletionUnitClosedBallEquiv n)
 
-/-- Unfolding `restrictedMvPowerSeriesCompletionIntegerEquiv` as the composite of the completed
-Gauss comparison over `𝒪[K]` and `restrictedIntegerEquiv`. -/
+/-- Unfolding `restrictedMvPowerSeriesCompletionIntegerEquiv` as the composite of
+`restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv` and
+`restrictedMvPowerSeriesCompletionUnitClosedBallEquiv`. -/
 theorem restrictedMvPowerSeriesCompletionIntegerEquiv_apply (n : ℕ)
     (f : restrictedMvPowerSeriesCompletion n 𝒪[K]) :
     restrictedMvPowerSeriesCompletionIntegerEquiv n f =
-      restrictedIntegerEquiv
-        (restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := 𝒪[K]) f) := (rfl)
+      restrictedMvPowerSeriesCompletionUnitClosedBallEquiv n
+        (restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv n f) := (rfl)
 
 /-- On the dense uncompleted subring, `restrictedMvPowerSeriesCompletionIntegerEquiv` acts by
 `restrictedIntegerEquiv ∘ restrictedMvPowerSeriesGaussEquiv`. -/
@@ -614,7 +775,21 @@ theorem restrictedMvPowerSeriesCompletionIntegerEquiv_coe (n : ℕ)
     restrictedMvPowerSeriesCompletionIntegerEquiv n
         (f : restrictedMvPowerSeriesCompletion n 𝒪[K]) =
       restrictedIntegerEquiv (restrictedMvPowerSeriesGaussEquiv (n := n) (R := 𝒪[K]) f) := by
-  simp [restrictedMvPowerSeriesCompletionIntegerEquiv]
+  refine Subtype.ext <| Subtype.ext <| MvPowerSeries.ext fun t ↦ ?_
+  let hc : Continuous
+      (integerUnitClosedBallEquiv (K := K) : 𝒪[K] →+* Subring.unitClosedBall K) :=
+    continuous_integerUnitClosedBallEquiv
+  have h1 : restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv (K := K) n
+      (f : restrictedMvPowerSeriesCompletion n 𝒪[K]) =
+      (weightedMap hc isWeightFamily_one_weight isWeightFamily_one_weight
+        (fun _ ↦ by simp [Set.image_singleton, map_one]) f :
+        restrictedMvPowerSeriesCompletion n (Subring.unitClosedBall K)) :=
+    (weightedMapCompletionEquiv_apply _ _ _ _ _ _ _ _).trans
+      (weightedMapCompletion_coe _ _ _ _ _)
+  rw [restrictedMvPowerSeriesCompletionIntegerEquiv_apply, h1,
+    coeff_restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_coe, coe_weightedMap,
+    MvPowerSeries.coeff_map, coeff_restrictedIntegerEquiv, coe_restrictedMvPowerSeriesGaussEquiv]
+  exact coe_integerUnitClosedBallEquiv (K := K) (coeff t (f : MvPowerSeries (Fin n) 𝒪[K]))
 
 /-- On the dense uncompleted subring, `restrictedMvPowerSeriesCompletionIntegerEquiv` includes each
 coefficient from `𝒪[K]` into `K`. -/
@@ -628,22 +803,23 @@ theorem coeff_restrictedMvPowerSeriesCompletionIntegerEquiv_coe (n : ℕ)
       coeff t (f : MvPowerSeries (Fin n) 𝒪[K]) := by
   simp
 
-/-- The inverse of `restrictedMvPowerSeriesCompletionIntegerEquiv` takes a series in the Gauss unit
-ball to its canonical image in `restrictedMvPowerSeriesCompletion n 𝒪[K]`. -/
+/-- The inverse of `restrictedMvPowerSeriesCompletionIntegerEquiv` unfolds as the inverse of
+`restrictedMvPowerSeriesCompletionUnitClosedBallEquiv` followed by the inverse of
+`restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv`. -/
 theorem restrictedMvPowerSeriesCompletionIntegerEquiv_symm_apply (n : ℕ)
     (f : Subring.unitClosedBall (IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1))) :
     (restrictedMvPowerSeriesCompletionIntegerEquiv n).symm f =
-      ((restrictedMvPowerSeriesGaussEquiv (n := n) (R := 𝒪[K])).symm
-          (restrictedIntegerEquiv.symm f) :
-        restrictedMvPowerSeriesCompletion n 𝒪[K]) := by
-  simp [restrictedMvPowerSeriesCompletionIntegerEquiv]
+      (restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv n).symm
+        ((restrictedMvPowerSeriesCompletionUnitClosedBallEquiv n).symm f) := (rfl)
 
 /-- `restrictedMvPowerSeriesCompletionIntegerEquiv` maps constants in `𝒪[K]` to constant series in
 `K⟨X₁, …, Xₙ⟩°`. -/
 theorem restrictedMvPowerSeriesCompletionIntegerEquiv_algebraMap (n : ℕ) (c : 𝒪[K]) :
     restrictedMvPowerSeriesCompletionIntegerEquiv n (algebraMap 𝒪[K] _ c) =
       unitClosedBallC (integerUnitClosedBallEquiv c) := by
-  simp
+  rw [restrictedMvPowerSeriesCompletionIntegerEquiv, RingEquiv.trans_apply,
+    restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv_algebraMap,
+    restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_algebraMap]
 
 /-- The inverse of `restrictedMvPowerSeriesCompletionIntegerEquiv` sends constant series in
 `K⟨X₁, …, Xₙ⟩°` back to constants in `𝒪[K]`. -/
@@ -666,131 +842,20 @@ theorem restrictedMvPowerSeriesCompletionIntegerEquiv_comp_weightedPolynomialHom
       (restrictedIntegerEquiv (σ := Fin n) (K := K)).toRingHom.comp
         (polynomialToRestricted (R := 𝒪[K]) fun _ : Fin n ↦ (1 : ℝ)).toRingHom :=
   RingHom.ext fun p ↦ by
-    simp [restrictedMvPowerSeriesCompletionIntegerEquiv_apply, UniformSpace.Completion.coeRingHom]
+    simp [UniformSpace.Completion.coeRingHom]
 
 /-- `restrictedMvPowerSeriesCompletionIntegerEquiv` is continuous from the completion topology on
 `𝒪[K]⟨X₁, …, Xₙ⟩` to the subspace Gauss-norm topology on `K⟨X₁, …, Xₙ⟩°`. -/
 theorem continuous_restrictedMvPowerSeriesCompletionIntegerEquiv (n : ℕ) :
-    Continuous (restrictedMvPowerSeriesCompletionIntegerEquiv (K := K) n) := by
-  have hisom : Isometry (restrictedIntegerEquiv (σ := Fin n) (K := K)) :=
-    AddMonoidHomClass.isometry_of_norm _ fun f ↦ by
-      rw [AddSubgroupClass.coe_norm, norm_restrictedIntegerEquiv]
-  exact hisom.continuous.comp
-    (continuous_restrictedMvPowerSeriesCompletionGaussEquiv (n := n) (R := 𝒪[K]))
+    Continuous (restrictedMvPowerSeriesCompletionIntegerEquiv (K := K) n) :=
+  (continuous_restrictedMvPowerSeriesCompletionUnitClosedBallEquiv (R := K) n).comp
+    (continuous_restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv (K := K) n)
 
 /-- The inverse of `restrictedMvPowerSeriesCompletionIntegerEquiv` is continuous. -/
 theorem continuous_restrictedMvPowerSeriesCompletionIntegerEquiv_symm (n : ℕ) :
-    Continuous (restrictedMvPowerSeriesCompletionIntegerEquiv (K := K) n).symm := by
-  have hisom : Isometry (restrictedIntegerEquiv (σ := Fin n) (K := K)).symm :=
-    AddMonoidHomClass.isometry_of_norm _ fun f ↦ by
-      rw [← norm_restrictedIntegerEquiv, RingEquiv.apply_symm_apply, AddSubgroupClass.coe_norm]
-  exact (continuous_restrictedMvPowerSeriesCompletionGaussEquiv_symm (n := n) (R := 𝒪[K])).comp
-    hisom.continuous
-
-/-- **Canonical identification of `K°⟨X₁, …, Xₙ⟩` with the Gauss unit ball `K⟨X₁, …, Xₙ⟩°`.**
-Obtained by transporting `K° ≃+* 𝒪[K]` to
-`restrictedMvPowerSeriesCompletion n (Subring.unitClosedBall K)` and applying
-`restrictedMvPowerSeriesCompletionIntegerEquiv`. -/
-noncomputable def restrictedMvPowerSeriesCompletionUnitClosedBallEquiv (n : ℕ) :
-    restrictedMvPowerSeriesCompletion n (Subring.unitClosedBall K) ≃+*
-      Subring.unitClosedBall (IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1)) :=
-  (restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv (K := K) n).symm.trans
-    (restrictedMvPowerSeriesCompletionIntegerEquiv n)
-
-/-- Unfolding `restrictedMvPowerSeriesCompletionUnitClosedBallEquiv` as the composite of
-`(restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv n).symm` and
-`restrictedMvPowerSeriesCompletionIntegerEquiv n`. -/
-theorem restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_apply (n : ℕ)
-    (w : restrictedMvPowerSeriesCompletion n (Subring.unitClosedBall K)) :
-    restrictedMvPowerSeriesCompletionUnitClosedBallEquiv n w =
-      restrictedMvPowerSeriesCompletionIntegerEquiv n
-        ((restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv n).symm w) := (rfl)
-
-/-- Unfolding `(restrictedMvPowerSeriesCompletionUnitClosedBallEquiv n).symm` as
-`restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv n` composed with
-`(restrictedMvPowerSeriesCompletionIntegerEquiv n).symm`. -/
-theorem restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_symm_apply (n : ℕ)
-    (f : Subring.unitClosedBall (IsRestricted.subring (R := K) (fun _ : Fin n ↦ 1))) :
-    (restrictedMvPowerSeriesCompletionUnitClosedBallEquiv n).symm f =
-      restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv n
-        ((restrictedMvPowerSeriesCompletionIntegerEquiv n).symm f) := (rfl)
-
-/-- `restrictedMvPowerSeriesCompletionUnitClosedBallEquiv` is continuous from the completion
-topology on `K°⟨X₁, …, Xₙ⟩` to the subspace Gauss-norm topology on `K⟨X₁, …, Xₙ⟩°`. -/
-theorem continuous_restrictedMvPowerSeriesCompletionUnitClosedBallEquiv (n : ℕ) :
-    Continuous (restrictedMvPowerSeriesCompletionUnitClosedBallEquiv (K := K) n) := by
-  rw [restrictedMvPowerSeriesCompletionUnitClosedBallEquiv]
-  exact (continuous_restrictedMvPowerSeriesCompletionIntegerEquiv (K := K) n).comp
-    (continuous_restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv_symm (K := K) n)
-
-/-- The inverse of `restrictedMvPowerSeriesCompletionUnitClosedBallEquiv` is continuous. -/
-theorem continuous_restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_symm (n : ℕ) :
-    Continuous (restrictedMvPowerSeriesCompletionUnitClosedBallEquiv (K := K) n).symm := by
-  rw [restrictedMvPowerSeriesCompletionUnitClosedBallEquiv]
-  exact (continuous_restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv (K := K) n).comp
-    (continuous_restrictedMvPowerSeriesCompletionIntegerEquiv_symm (K := K) n)
-
-/-- `restrictedMvPowerSeriesCompletionUnitClosedBallEquiv` maps constants in `K°` to constant
-series in `K⟨X₁, …, Xₙ⟩°`. -/
-theorem restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_algebraMap (n : ℕ)
-    (c : Subring.unitClosedBall K) :
-    restrictedMvPowerSeriesCompletionUnitClosedBallEquiv n
-        (algebraMap (Subring.unitClosedBall K) _ c) =
-      unitClosedBallC c := by
-  rw [restrictedMvPowerSeriesCompletionUnitClosedBallEquiv, RingEquiv.trans_apply,
-    restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv_symm_algebraMap,
-    restrictedMvPowerSeriesCompletionIntegerEquiv_algebraMap, RingEquiv.apply_symm_apply]
-
-/-- `restrictedMvPowerSeriesCompletionUnitClosedBallEquiv` maps canonical constant series in
-`K°⟨X₁, …, Xₙ⟩` to constant series in `K⟨X₁, …, Xₙ⟩°`. -/
-@[simp]
-theorem restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_coe_weightedC (n : ℕ)
-    (c : Subring.unitClosedBall K) :
-    restrictedMvPowerSeriesCompletionUnitClosedBallEquiv n
-        ((weightedC (fun _ : Fin n ↦ ({1} : Set (Subring.unitClosedBall K)))
-          isWeightFamily_one_weight c :
-            weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set (Subring.unitClosedBall K)))
-              isWeightFamily_one_weight) :
-          restrictedMvPowerSeriesCompletion n (Subring.unitClosedBall K)) =
-      unitClosedBallC c := by
-  rw [← algebraMap_completion_weightedRestrictedSubring_apply,
-    restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_algebraMap]
-
-/-- The inverse of `restrictedMvPowerSeriesCompletionUnitClosedBallEquiv` sends constant series
-in `K⟨X₁, …, Xₙ⟩°` back to constants in `K°`. -/
-@[simp]
-theorem restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_symm_unitClosedBallC (n : ℕ)
-    (c : Subring.unitClosedBall K) :
-    (restrictedMvPowerSeriesCompletionUnitClosedBallEquiv n).symm
-        (unitClosedBallC (σ := Fin n) c) =
-      algebraMap (Subring.unitClosedBall K) _ c := by
-  apply (restrictedMvPowerSeriesCompletionUnitClosedBallEquiv n).injective
-  rw [RingEquiv.apply_symm_apply,
-    restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_algebraMap]
-
-/-- Under `restrictedMvPowerSeriesCompletionUnitClosedBallEquiv`, the polynomial inclusion into
-`K°⟨X₁, …, Xₙ⟩` corresponds to `restrictedUnitClosedBallEquiv ∘ polynomialToRestricted`. -/
-theorem restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_comp_weightedPolynomialHom (n : ℕ) :
-    (restrictedMvPowerSeriesCompletionUnitClosedBallEquiv (K := K) n).toRingHom.comp
-        (UniformSpace.Completion.coeRingHom.comp
-          (weightedPolynomialHom _ isWeightFamily_one_weight)) =
-      (restrictedUnitClosedBallEquiv (σ := Fin n) (R := K)).toRingHom.comp
-        (polynomialToRestricted (R := Subring.unitClosedBall K)
-          fun _ : Fin n ↦ (1 : ℝ)).toRingHom := by
-  refine RingHom.ext fun p ↦ Subtype.ext <| Subtype.ext <| MvPowerSeries.ext fun t ↦ ?_
-  have hc : Continuous ((integerUnitClosedBallEquiv (K := K)).symm :
-      Subring.unitClosedBall K →+* 𝒪[K]) := continuous_integerUnitClosedBallEquiv_symm
-  rw [RingHom.comp_apply, RingHom.comp_apply, RingHom.comp_apply, RingEquiv.toRingHom_eq_coe,
-    RingEquiv.toRingHom_eq_coe, RingHom.coe_coe, RingHom.coe_coe,
-    UniformSpace.Completion.coeRingHom_apply,
-    restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_apply,
-    restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv,
-    weightedMapCompletionEquiv_symm_apply, weightedMapCompletion_coe hc,
-    restrictedMvPowerSeriesCompletionIntegerEquiv_coe, coeff_restrictedIntegerEquiv]
-  simp only [coe_restrictedMvPowerSeriesGaussEquiv, coe_weightedMap, coe_weightedPolynomialHom,
-    coeff_restrictedUnitClosedBallEquiv, coe_polynomialToRestricted, MvPowerSeries.coeff_map,
-    MvPolynomial.coeff_coe, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-    coe_integerUnitClosedBallEquiv_symm]
+    Continuous (restrictedMvPowerSeriesCompletionIntegerEquiv (K := K) n).symm :=
+  (continuous_restrictedMvPowerSeriesCompletionIntegerUnitClosedBallEquiv_symm (K := K) n).comp
+    (continuous_restrictedMvPowerSeriesCompletionUnitClosedBallEquiv_symm (R := K) n)
 
 /-- **Unique extension of an integral presentation to a `K`-algebra Tate homomorphism** (Bosch,
 *Lectures on Formal and Rigid Geometry*, §6.4, proof of Lemma 5, pp. 137–138). Let `K` be a

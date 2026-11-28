@@ -12,6 +12,7 @@ public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Ideal
 
 import Mathlib.RingTheory.Noetherian.Basic
+import TauCeti.Analysis.Normed.Ring.PseudoUniformizer
 import TauCeti.RingTheory.Huber.Restricted.Adic
 
 /-!
@@ -122,17 +123,9 @@ instance IsStronglyNoetherian.unitClosedBall {K : Type*} [NormedField K] [IsUltr
     IsStronglyNoetherian (Subring.unitClosedBall K) := by
   rcases NormedField.discreteTopology_or_nontriviallyNormedField K with _ | ⟨_, rfl⟩
   · infer_instance
-  · obtain ⟨ϖ, hϖ0, hϖ1⟩ := NormedField.exists_norm_lt_one K
-    have hϖ : IsPseudoUniformizer ϖ :=
-      isPseudoUniformizer_iff_norm_lt_one.mpr ⟨norm_pos_iff.mp hϖ0, hϖ1⟩
-    have hadic : IsAdic
-        (Ideal.span {(⟨ϖ, Subring.mem_unitClosedBall.mpr hϖ1.le⟩ : Subring.unitClosedBall K)}) :=
-      (Subring.unitClosedBall K).isAdic_span_singleton_of_isOpen_of_isBounded
-        (Subring.isOpen_unitClosedBall K)
-        ((isBounded_closedBall_zero (R := K) 1).subset fun _ hx ↦
-          mem_closedBall_zero_iff.mpr (Subring.mem_unitClosedBall.mp hx))
-        hϖ (Subring.mem_unitClosedBall.mpr hϖ1.le)
-    exact ⟨fun n ↦ isNoetherianRing_restrictedMvPowerSeriesCompletion_of_isAdic n hadic⟩
+  · obtain ⟨ϖ⟩ := TauCeti.NormedRing.IsTate.nonempty_pseudoUniformizer (R := K)
+    exact ⟨fun n ↦ isNoetherianRing_restrictedMvPowerSeriesCompletion_of_isAdic n
+      ϖ.isAdic_span_toUnitClosedBall⟩
 
 /-- **If the valuation ring `𝒪[K]` of a nontrivially normed ultrametric field is noetherian, it
 is strongly noetherian.** Transported from `IsStronglyNoetherian.unitClosedBall` along

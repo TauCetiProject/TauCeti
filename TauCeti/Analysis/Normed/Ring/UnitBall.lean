@@ -40,8 +40,9 @@ Over an ultrametric normed field `K`, divisibility in `K⁰` is comparison of no
 (`Subring.unitClosedBall.dvd_iff_norm_le`). The closed unit ball `K⁰` is noetherian if and only if
 `K⁰⁰` is finitely generated, if and only if there is a strict norm gap `ρ < 1` above `{‖a‖ < 1}`;
 in that case `K⁰` is a principal ideal ring, and when `K` is nontrivially normed it is a discrete
-valuation ring. Without a norm gap below `1`, `K⁰⁰` is not finitely generated, but every `0 < ε < 1`
-factors through elements of norm strictly between `√ε` and `1`
+valuation ring. Without a norm gap below `1`, `K⁰⁰` is not finitely generated, but for every
+`0 < ε < 1` there is a single `d ∈ K⁰` with `√ε < ‖d‖ < 1` that divides every scalar `c ∈ K⁰`
+of norm at most `ε`, with quotient norm at most `√ε`
 (`TauCeti.exists_forall_exists_eq_mul_and_norm_le_of_not_exists_forall_norm_le`), and every ideal of
 `K⁰` is *almost principal* (`Ideal.exists_mem_forall_smul_mem_span_singleton_unitClosedBall`).
 
@@ -162,9 +163,10 @@ theorem exists_norm_lt_one_forall_norm_le_of_fg (h : (unitBallIdeal R).FG) :
 
 end UnitBallIdeal
 
-/-- **Supremum-norm attainment dichotomy for ideals of the closed unit ball.** For every ideal `I`
-of `Subring.unitClosedBall R` and every `r < 1`, either `I = ⊥` or there is an element `g ∈ I`
-with `0 < ‖(g : R)‖` such that `r * ‖(f : R)‖ ≤ ‖(g : R)‖` for all `f ∈ I`. -/
+/-- **Supremum-norm approximation dichotomy for ideals of the closed unit ball.** For every ideal
+`I` of `Subring.unitClosedBall R` and every `r < 1`, either `I = ⊥` or there is an element `g ∈ I`
+with `0 < ‖(g : R)‖` such that `‖(g : R)‖` approximates `sup_{f ∈ I} ‖(f : R)‖` within factor
+`r`, meaning `r * ‖(f : R)‖ ≤ ‖(g : R)‖` for all `f ∈ I`. -/
 theorem _root_.Ideal.eq_bot_or_exists_mem_forall_mul_norm_le_unitClosedBall
     {R : Type*} [NormedRing R] [IsUltrametricDist R] [NormOneClass R]
     (I : Ideal (Subring.unitClosedBall R)) {r : ℝ} (hr1 : r < 1) :
@@ -441,9 +443,9 @@ theorem isNoetherianRing_unitClosedBall_iff_exists_forall_norm_le :
   isNoetherianRing_unitClosedBall_iff_fg_unitBallIdeal.trans
     fg_unitBallIdeal_iff_exists_forall_norm_le
 
-/-- **Scalar factorization in dense norm groups.** When `K⁰` has no strict norm gap below `1`,
-every `0 < ε < 1` factors through an element `d ∈ K⁰` with `√ε < ‖d‖ < 1`, so every `c ∈ K⁰` of
-norm at most `ε` writes as `c' * d` with `‖c'‖ ≤ √ε`. -/
+/-- **Uniform scalar division in dense norm groups.** When `K⁰` has no strict norm gap below `1`,
+for each `0 < ε < 1` there is a single `d ∈ K⁰` with `√ε < ‖d‖ < 1` that divides every scalar
+`c ∈ K⁰` of norm at most `ε`, with quotient norm at most `√ε`. -/
 theorem exists_forall_exists_eq_mul_and_norm_le_of_not_exists_forall_norm_le
     (hdense : ¬ ∃ ρ : ℝ, ρ < 1 ∧ ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ ρ) {ε : ℝ} (hε0 : 0 < ε)
     (hε1 : ε < 1) :
