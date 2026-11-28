@@ -45,12 +45,12 @@ product of the unit groups `K_vˣ` at the finite places with respect to the loca
 a restricted product over all places, and it shows that the units topology of the adele ring is
 the restricted-product topology of the local unit groups.
 
-The idele `TauCeti.GlobalNumberFields.twoInf` is `2` at the infinite places and `1` at the finite
-places. Its projection and norm lemmas describe dyadic scaling of arbitrary adeles.
-
 This topology need not be the subspace topology of the adele ring: when `R` has infinitely many
 height-one primes, `NumberField.IdeleGroup.not_isEmbedding_val` shows that the inclusion of the
 ideles into the adeles is not an embedding.
+
+The idele `TauCeti.GlobalNumberFields.twoInf` is `2` at the infinite places and `1` at the finite
+places. Its projection and norm lemmas describe dyadic scaling of arbitrary adeles.
 
 ## References
 
@@ -376,8 +376,7 @@ places. -/
 theorem coe_twoInf_zpow (k : ℤ) :
     ((twoInf K ^ k : 𝔸[K]ˣ) : 𝔸[K]) = (algebraMap K (InfiniteAdeleRing K) (2 ^ k), 1) := by
   rw [twoInf, ← map_zpow, IdeleGroup.coe_ofInfiniteIdele, ← map_zpow, Units.coe_map,
-    Units.val_zpow_eq_zpow_val, Units.val_mk0]
-  rfl
+    Units.val_zpow_eq_zpow_val, Units.val_mk0, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
 
 /-- The idele `2_∞` is `2` at the infinite places and `1` at the finite places. -/
 @[simp]
@@ -435,7 +434,7 @@ theorem _root_.IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_twoInf
     (v : IsDedekindDomain.HeightOneSpectrum (𝓞 K)) : v.ideleFiniteCoord (twoInf K) = 1 := by
   apply Units.ext
   rw [IsDedekindDomain.HeightOneSpectrum.coe_ideleFiniteCoord, coe_twoInf, Units.val_one]
-  rfl
+  simp only [FiniteAdeleRing.one_apply]
 
 /-- The coordinate of `2_∞` at an infinite place is the unit `2`. Powers simplify using
 `map_zpow`. -/
@@ -444,10 +443,11 @@ theorem _root_.NumberField.InfinitePlace.ideleInfiniteCoord_twoInf (w : Infinite
     w.ideleInfiniteCoord (twoInf K) =
       Units.map (algebraMap K w.Completion).toMonoidHom (Units.mk0 (2 : K) two_ne_zero) := by
   apply Units.ext
-  rw [InfinitePlace.coe_ideleInfiniteCoord, coe_twoInf, Units.coe_map, Units.val_mk0]
-  -- The infinite-adele numeral is pointwise; normalize its projection before `map_ofNat`.
-  change (2 : InfiniteAdeleRing K) w = algebraMap K w.Completion 2
-  rw [map_ofNat]
+  rw [InfinitePlace.coe_ideleInfiniteCoord, coe_twoInf, Units.coe_map, Units.val_mk0,
+    RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, map_ofNat]
+  -- The goal is `(2, 1).1 w = 2`. `rfl` reduces the `Prod.fst` projection and evaluates the numeral
+  -- `2` of `InfiniteAdeleRing K`, a product of the completions, at `w`, where it is `2` by
+  -- definition. Mathlib has no evaluation lemma for numerals of the infinite adeles.
   rfl
 
 end TauCeti.GlobalNumberFields
