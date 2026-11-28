@@ -26,8 +26,8 @@ observes a real reward. A trajectory is `ω : ℕ → ι × ℝ`, with arm `(ω 
   joint step `TauCeti.Bandit.envStep ρ π n`, which draws the next arm from the policy and then
   its reward from the environment.
 * `TauCeti.Bandit.Policy.PlaysIn π S` says that the policy chooses, at every history, an arm in
-  the prescribed set `S t ω`. Under it the arm of every round lies in its set almost surely
-  (`TauCeti.Bandit.ae_forall_mem_of_playsIn`).
+  the prescribed set `S t ω`. When `ι` is countable with measurable singletons, under it the arm
+  of every round lies in its set almost surely (`TauCeti.Bandit.ae_forall_mem_of_playsIn`).
 
 We prove the joint and conditional laws of the next arm and reward given the history, and their
 integral form; that these identities characterize `envLaw ρ π` (`TauCeti.Bandit.eq_envLaw`); and
