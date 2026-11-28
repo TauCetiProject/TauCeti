@@ -27,6 +27,8 @@ with passing to the opposite algebra, and composes in stages:
 
 * `LinearMap.lid_rTensor_distribBaseChange_symm`: pairing against a linear functional commutes with
   distributing scalar extension over a tensor product.
+* `TensorProduct.induction_one_tmul` and `TensorProduct.induction_tmul_smul`: induction principles
+  reducing a property closed under addition and scalar multiplication to pure tensors `1 ⊗ₜ m`.
 * `AlgHom.liftEquiv_toLinearMap`: the algebra map out of a scalar extension attached to `f` is
   the scalar extension `LinearMap.liftBaseChange` of `f`, as a linear map.
 * `AlgHom.toLinearMap_tensorProduct_map_id`, `AlgHom.coe_tensorProduct_map_id`:
@@ -109,6 +111,38 @@ theorem _root_.LinearMap.lid_rTensor_distribBaseChange_symm
   | tmul a m =>
     rw [← TensorProduct.AlgebraTensorModule.distribBaseChange_tmul, LinearEquiv.symm_apply_apply]
     simp [TensorProduct.smul_tmul']
+
+/-- Induction principle along a `σ`-semiscalar additive map `f : L ⊗[K] M → N` sending pure
+tensors `c ⊗ₜ[K] m` to `σ c • f (1 ⊗ₜ[K] m)`, reducing `P (f t)` to generators `1 ⊗ₜ[K] m` when
+`P` is closed under addition and `σ`-scalar multiplication. -/
+theorem _root_.TensorProduct.induction_one_tmul
+    {K L M R N : Type*} [CommSemiring K] [Semiring L] [Algebra K L]
+    [AddCommMonoid M] [Module K M] [AddCommMonoid N] [SMul R N]
+    {σ : L → R} (f : L ⊗[K] M → N)
+    (hf_add : ∀ x y, f (x + y) = f x + f y)
+    (hf_tmul : ∀ (c : L) (m : M), f (c ⊗ₜ[K] m) = σ c • f (1 ⊗ₜ[K] m))
+    {P : N → Prop}
+    (one_tmul : ∀ m : M, P (f (1 ⊗ₜ[K] m)))
+    (smul : ∀ (c : L) {y : N}, P y → P (σ c • y))
+    (add : ∀ {x y : N}, P x → P y → P (x + y))
+    (t : L ⊗[K] M) : P (f t) := by
+  induction t using TensorProduct.inductionOn with
+  | add x y hx hy => rw [hf_add]; exact add hx hy
+  | tmul c m => rw [hf_tmul]; exact smul c (one_tmul m)
+
+/-- Induction principle on `L ⊗[K] M` for a property closed under addition and scalar
+multiplication by `L`, reducing to pure tensors `1 ⊗ₜ[K] m`. -/
+theorem _root_.TensorProduct.induction_tmul_smul
+    {K L M : Type*} [CommSemiring K] [Semiring L] [Algebra K L]
+    [AddCommMonoid M] [Module K M]
+    {P : L ⊗[K] M → Prop}
+    (one_tmul : ∀ m : M, P (1 ⊗ₜ[K] m))
+    (smul : ∀ (c : L) {x : L ⊗[K] M}, P x → P (c • x))
+    (add : ∀ {x y : L ⊗[K] M}, P x → P y → P (x + y))
+    (t : L ⊗[K] M) : P t :=
+  TensorProduct.induction_one_tmul (σ := id) id (fun _ _ ↦ rfl)
+    (fun c m ↦ by simp [TensorProduct.smul_tmul'])
+    one_tmul (fun c _ hx ↦ smul c hx) add t
 
 /-- The algebra map `S ⊗[R] A →ₐ[S] B` attached to `f : A →ₐ[R] B`, as a linear map, is the scalar
 extension of `f`. -/

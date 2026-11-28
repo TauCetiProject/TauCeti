@@ -86,9 +86,9 @@ theorem adjoin_eq_top_of_algEquiv_symm_ι_one_mem {A : Type*} [Semiring A] [Alge
     Algebra.adjoin R s = ⊤ := by
   have htop : Algebra.adjoin R (e '' s) = ⊤ :=
     adjoin_eq_top_of_ι_one_mem ⟨_, h, e.apply_symm_apply _⟩
-  rw [show s = e.symm '' (e '' s) by ext x; simp, ← AlgEquiv.coe_toAlgHom e.symm,
-    ← AlgHom.map_adjoin, htop]
-  exact top_le_iff.mp fun x _ ↦ ⟨e x, Algebra.mem_top, e.symm_apply_apply x⟩
+  have hmap := congrArg (Subalgebra.map (e.symm : SymmetricAlgebra R R →ₐ[R] A)) htop
+  simpa [AlgHom.map_adjoin, Set.image_image, Algebra.map_top] using
+    hmap.trans (top_unique fun x _ ↦ ⟨e x, Algebra.mem_top, e.symm_apply_apply x⟩)
 
 /-- A ring homomorphism out of a symmetric algebra is determined by its values on scalars and on
 generators. See note [partially-applied ext lemmas]. -/

@@ -252,12 +252,9 @@ noncomputable def finiteAdelicPointsContinuousMulEquiv (M : IntegralModel R K H 
   map_mul' := M.toRestrictedProductMonoidHom.map_mul'
   continuous_toFun := M.continuous_toRestrictedProductMonoidHom hS
   continuous_invFun := continuous_withConv_iff.mpr fun h ↦
-    ((RestrictedProduct.mapAlong_continuous _ _ id tendsto_id _ _
+    (RestrictedProduct.mapAlong_continuous _ _ id tendsto_id _ _
       (fun _ ↦ continuous_eval_ofConv h) :
-        Continuous (M.evalRestrictedProductAdele hS h)).congr fun y ↦
-      FiniteAdeleRing.ext K fun v ↦
-        (M.evalRestrictedProductAdele_apply hS h y v).trans
-          (M.ofRestrictedProduct_apply_ofConv hS y h v).symm)
+        Continuous (M.evalRestrictedProductAdele hS h))
 
 /-- At `v`, `M.finiteAdelicPointsContinuousMulEquiv hS x v = finiteLocalProjection R K H v x`. -/
 @[simp]

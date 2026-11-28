@@ -64,11 +64,9 @@ its adelic points.
   a closed embedding of groups of points over a T1 ring.
 * `ContinuousAlgEquiv.mapValueContinuousMulEquiv`: change of coefficients along an isomorphism of
   topological coefficient algebras, as an isomorphism of topological monoids of points.
-* `WithConv.ofConv_baseChangePointsMulEquiv`,
-  `TauCeti.AlgHom.continuous_baseChangePointsMulEquiv`, and
-  `TauCeti.AlgHom.continuous_baseChangePointsMulEquiv_symm`: agreement of
-  `AlgHom.baseChangePointsMulEquiv` with `baseChangeHomeomorph.symm` and continuity in both
-  directions.
+* `TauCeti.AlgHom.continuous_baseChangePointsMulEquiv` and
+  `TauCeti.AlgHom.continuous_baseChangePointsMulEquiv_symm`: continuity of
+  `AlgHom.baseChangePointsMulEquiv` in both directions.
 * `BialgEquiv.mapDomainContinuousMulEquiv`: pre-composition with an isomorphism of bialgebras, as
   an isomorphism of topological monoids of points.
 * `TauCeti.PointTopology.coe_baseChangeConvHomeomorph_symm`: for a bialgebra, the inverse of the
@@ -252,24 +250,6 @@ variable {k K A R : Type*} [CommSemiring k] [CommSemiring K] [Algebra k K]
   [Semiring A] [_root_.Bialgebra k A] [CommSemiring R] [Algebra k R] [Algebra K R]
   [IsScalarTower k K R] [TopologicalSpace R]
 
-/-- Under `WithConv.ofConv`, `AlgHom.baseChangePointsMulEquiv` agrees with
-`(PointTopology.baseChangeHomeomorph k K A R).symm`; both are built from `AlgHom.liftEquiv`. -/
-theorem _root_.WithConv.ofConv_baseChangePointsMulEquiv [IsTopologicalSemiring R]
-    (f : WithConv (A →ₐ[k] R)) :
-    (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R) f).ofConv =
-      (baseChangeHomeomorph k K A R).symm f.ofConv := by
-  apply Algebra.TensorProduct.ext (by ext)
-  ext a
-  simp [baseChangeHomeomorph_symm_apply_tmul]
-
-/-- Base change of bialgebra points is continuous for the point topology. -/
-@[continuity, fun_prop]
-theorem continuous_baseChangePointsMulEquiv [IsTopologicalSemiring R] :
-    Continuous (baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)) :=
-  isHomeomorph_ofConv.isEmbedding.isInducing.continuous_iff.2 <|
-    ((baseChangeHomeomorph k K A R).symm.continuous.comp isHomeomorph_ofConv.continuous).congr
-      fun f ↦ f.ofConv_baseChangePointsMulEquiv.symm
-
 /-- Restriction of base-changed bialgebra points is continuous for the point topology. -/
 @[continuity, fun_prop]
 theorem continuous_baseChangePointsMulEquiv_symm :
@@ -349,6 +329,13 @@ theorem coe_baseChangeConvHomeomorph_symm :
   rw [Homeomorph.symm_apply_eq]
   ext a
   simp
+
+/-- Base change of bialgebra points is continuous for the point topology. -/
+@[continuity, fun_prop]
+theorem _root_.TauCeti.AlgHom.continuous_baseChangePointsMulEquiv :
+    Continuous (AlgHom.baseChangePointsMulEquiv (k := k) (K := K) (A := A) (R := R)) := by
+  rw [← coe_baseChangeConvHomeomorph_symm]
+  exact (baseChangeConvHomeomorph k K A R).symm.continuous
 
 end BaseChangeMulEquiv
 

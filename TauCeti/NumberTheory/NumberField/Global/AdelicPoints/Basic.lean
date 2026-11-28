@@ -43,8 +43,9 @@ The rational diagonals and the projections are changes of coefficients `AlgHom.m
 algebra maps of the coefficient rings:
 
 * the rational diagonals `G(K) → G(𝔸_K)`, `G(K) → G(𝔸_{K,f})` and `G(K) → G(K_∞)` along the
-  diagonal embeddings of `K`, which are injective whenever the target ring is nontrivial
-  (`diagonal_injective`, `finiteDiagonal_injective`, `infiniteDiagonal_injective`);
+  diagonal algebra maps out of `K`; the induced point maps are injective whenever their target
+  coefficient rings are nontrivial (`diagonal_injective`, `finiteDiagonal_injective`,
+  `infiniteDiagonal_injective`);
 * the projections `G(𝔸_K) → G(𝔸_{K,f})` and `G(𝔸_K) → G(K_∞)` to the finite and infinite
   components;
 * the projections `p_v : G(𝔸_K) → G(K_v)` to the points over the completion at a finite place
@@ -82,12 +83,14 @@ corresponding rational diagonal; in particular `p_v` sends a rational point to i
 * `TauCeti.AdelicPoints.piInfiniteContinuousMulEquiv`: `G(K_∞) ≃ₜ* ∀ w, G(K_w)`.
 * `TauCeti.AdelicPoints.finiteEmbed`, `TauCeti.AdelicPoints.infiniteEmbed`: closed embeddings of
   the finite and infinite factors, with `isClosedEmbedding_finiteEmbed`, `isEmbedding_finiteEmbed`,
-  `isClosedEmbedding_infiniteEmbed`, `finiteProjection_finiteEmbed`,
+  `isClosedEmbedding_infiniteEmbed`, `isEmbedding_infiniteEmbed`, `finiteProjection_finiteEmbed`,
   `infiniteProjection_finiteEmbed`, and `infiniteEmbed_mul_finiteEmbed`.
 * `TauCeti.AdelicPoints.ext_iff_projection`: an adelic point is determined by its infinite and
   finite components.
 * `TauCeti.AdelicPoints.exists_finiteEmbed_eq_iff`, `TauCeti.AdelicPoints.mrange_finiteEmbed`:
   `finiteEmbed` maps onto the adelic points with trivial infinite component.
+* `TauCeti.AdelicPoints.exists_infiniteEmbed_eq_iff`, `TauCeti.AdelicPoints.mrange_infiniteEmbed`:
+  `infiniteEmbed` maps onto the adelic points with trivial finite component.
 
 ## References
 
@@ -139,7 +142,7 @@ open TauCeti.PointTopology
 
 /-! ### Rational diagonals -/
 
-/-- The rational diagonal `G(K) → G(𝔸_K)`: a rational point composed with the diagonal embedding
+/-- The rational diagonal `G(K) → G(𝔸_K)`: a rational point composed with the diagonal algebra map
 `K → 𝔸_K`. -/
 noncomputable def diagonal : WithConv (H →ₐ[K] K) →* AdelicPoints R K H :=
   AlgHom.mapValue (Algebra.ofId K _)
@@ -152,7 +155,7 @@ noncomputable def finiteDiagonal : WithConv (H →ₐ[K] K) →* FiniteAdelicPoi
 noncomputable def infiniteDiagonal : WithConv (H →ₐ[K] K) →* InfinitePoints K H :=
   AlgHom.mapValue (Algebra.ofId K _)
 
-/-- The rational diagonal is change of coefficients along the diagonal embedding `K → 𝔸_K`. -/
+/-- The rational diagonal is change of coefficients along the diagonal algebra map `K → 𝔸_K`. -/
 theorem diagonal_def : diagonal R K H = AlgHom.mapValue (Algebra.ofId K (AdeleRing R K)) := (rfl)
 
 variable {R K H}
@@ -525,6 +528,35 @@ theorem continuous_infiniteEmbed : Continuous (infiniteEmbed R K H) :=
 theorem isClosedEmbedding_infiniteEmbed : Topology.IsClosedEmbedding (infiniteEmbed R K H) :=
   Function.LeftInverse.isClosedEmbedding infiniteProjection_infiniteEmbed
     continuous_infiniteProjection continuous_infiniteEmbed
+
+/-- `infiniteEmbed` is a topological embedding: it has the continuous left inverse
+`infiniteProjection`. -/
+theorem isEmbedding_infiniteEmbed : Topology.IsEmbedding (infiniteEmbed R K H) :=
+  isClosedEmbedding_infiniteEmbed.isEmbedding
+
+/-- `infiniteEmbed` is injective: `infiniteProjection` is a left inverse. -/
+theorem infiniteEmbed_injective : Function.Injective (infiniteEmbed R K H) :=
+  Function.LeftInverse.injective infiniteProjection_infiniteEmbed
+
+/-- The image of `infiniteEmbed` consists of the adelic points with trivial finite component. -/
+theorem mrange_infiniteEmbed :
+    MonoidHom.mrange (infiniteEmbed R K H) = MonoidHom.mker (finiteProjection R K H) := by
+  ext y
+  rw [MonoidHom.mem_mker]
+  constructor
+  · rintro ⟨x, rfl⟩
+    exact finiteProjection_infiniteEmbed x
+  · intro h
+    exact ⟨infiniteProjection R K H y, ext_projection (infiniteProjection_infiniteEmbed _)
+      (by rw [h, finiteProjection_infiniteEmbed])⟩
+
+/-- An adelic point is in the image of `infiniteEmbed` exactly when its finite component is the
+identity point. As a simp lemma, it rewrites the existence of an infinite preimage to the condition
+that the finite component is the identity point. -/
+@[simp]
+theorem exists_infiniteEmbed_eq_iff {y : AdelicPoints R K H} :
+    (∃ x, infiniteEmbed R K H x = y) ↔ finiteProjection R K H y = 1 := by
+  rw [← MonoidHom.mem_mrange, mrange_infiniteEmbed, MonoidHom.mem_mker]
 
 /-- Under `prodContinuousMulEquiv`, a diagonal adelic point splits into diagonal components. -/
 theorem prodContinuousMulEquiv_diagonal (g : WithConv (H →ₐ[K] K)) :

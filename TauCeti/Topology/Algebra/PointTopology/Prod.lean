@@ -19,10 +19,11 @@ show that the algebraic convolution equivalences `AlgHom.prodValueMulEquiv` and
 coordinates given by post-composition with the coefficient projections (and isomorphisms of
 topological monoids, or of topological groups when `H` is a Hopf algebra, whenever the coefficient
 algebras are topological semirings), and `TauCeti.PointTopology.piProdContinuousMulEquiv` is the
-combined identification for `(∀ i, A i) × B`. Together with the isomorphism of topological monoids
-of points induced by an isomorphism of topological coefficient algebras
-(`ContinuousAlgEquiv.mapValueContinuousMulEquiv`), these transport a decomposition of a coefficient
-ring into a product to the points.
+combined identification for `(∀ i, A i) × B`. Together with the multiplicative homeomorphism of
+points induced by an isomorphism of topological coefficient algebras
+(`ContinuousAlgEquiv.mapValueContinuousMulEquiv`, an isomorphism of topological monoids or
+topological groups when the coefficient algebras are topological semirings), these transport a
+decomposition of a coefficient ring into a product to the points.
 
 This is how the points of an algebraic group over the adele ring `𝔸_K = K_∞ × 𝔸_{K,f}` split into
 archimedean and finite components, and those over the finite adeles into the components at a finite
@@ -37,8 +38,10 @@ set of places and the components away from it.
   points valued in `∀ i, R i` and `∀ i, WithConv (H →ₐ[k] R i)` (an isomorphism of topological
   monoids, or topological groups when `H` is a Hopf algebra, if each `R i` is a topological
   semiring).
-* `TauCeti.PointTopology.piProdContinuousMulEquiv`: points with values in `(∀ i, A i) × B` are
-  pairs of a family of points and a point, as topological monoids.
+* `TauCeti.PointTopology.piProdContinuousMulEquiv`: multiplicative homeomorphism between points with
+  values in `(∀ i, A i) × B` and pairs of a family of points and a point (an isomorphism of
+  topological monoids, or topological groups when `H` is a Hopf algebra, if each `A i` and `B` are
+  topological semirings).
 
 ## References
 
@@ -100,10 +103,11 @@ variable {ι : Type*} (R : ι → Type*) [∀ i, CommSemiring (R i)] [∀ i, Alg
   [∀ i, TopologicalSpace (R i)]
 
 variable (k H) in
-/-- Points with values in a product `∀ i, R i` of coefficient algebras are families of points, as
-topological monoids for the convolution product and the point topology: a point is sent to its
-images under the projections, and a family of points `x` to the point `h ↦ (x i h)_i`. This is
-`AlgHom.piValueMulEquiv` with its continuity in both directions. -/
+/-- Multiplicative homeomorphism identifying points with values in a product `∀ i, R i` of
+coefficient algebras with families of points: a point is sent to its images under the projections,
+and a family of points `x` to the point `h ↦ (x i h)_i`. This is `AlgHom.piValueMulEquiv` with
+its continuity in both directions. When each `R i` is a topological semiring, this is an
+isomorphism of topological monoids (and of topological groups when `H` is a Hopf algebra). -/
 noncomputable def piContinuousMulEquiv :
     WithConv (H →ₐ[k] ∀ i, R i) ≃ₜ* ∀ i, WithConv (H →ₐ[k] R i) where
   toMulEquiv := AlgHom.piValueMulEquiv
@@ -129,9 +133,11 @@ theorem piContinuousMulEquiv_symm_apply_apply (x : ∀ i, WithConv (H →ₐ[k] 
 variable (B : Type*) [CommSemiring B] [Algebra k B] [TopologicalSpace B]
 
 variable (k H) in
-/-- Points with values in a product `(∀ i, R i) × B` of coefficient algebras are pairs of a family
-of points and a point, as topological monoids: `prodContinuousMulEquiv` followed by
-`piContinuousMulEquiv` on the first factor. -/
+/-- Multiplicative homeomorphism identifying points with values in a product `(∀ i, R i) × B` of
+coefficient algebras with pairs of a family of points and a point: `prodContinuousMulEquiv`
+followed by `piContinuousMulEquiv` on the first factor. When each `R i` and `B` are topological
+semirings, this is an isomorphism of topological monoids (and of topological groups when `H` is a
+Hopf algebra). -/
 noncomputable def piProdContinuousMulEquiv :
     WithConv (H →ₐ[k] (∀ i, R i) × B) ≃ₜ* (∀ i, WithConv (H →ₐ[k] R i)) × WithConv (H →ₐ[k] B) :=
   (prodContinuousMulEquiv k H _ B).trans
