@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 public import TauCeti.RingTheory.WittVector.RadiusRing
-public import TauCeti.RingTheory.Huber.Restricted.GaussNorm
+public import TauCeti.RingTheory.Huber.Restricted.Gauss.Norm
 public import TauCeti.RingTheory.Huber.StronglyNoetherian
 
 /-!

@@ -8,6 +8,8 @@ module
 public import TauCeti.RingTheory.Huber.WeightedEval.Mul
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 
+import TauCeti.Analysis.Normed.Ring.Ultra
+
 /-!
 # Evaluating restricted power series at bounded arguments
 
@@ -45,6 +47,10 @@ algebras, as in Kedlaya's Lemma 4.9 for the interval rings of the Fargues–Font
   `MvPowerSeries.restrictedEval₂_X`: the values on monomials, constants and variables.
 * `MvPowerSeries.restrictedEval₂_polynomial`: on polynomials, evaluation is `MvPolynomial.eval₂`.
 * `MvPowerSeries.norm_restrictedEval₂_le`: evaluation does not increase the Gauss norm.
+* `MvPowerSeries.norm_restrictedEval₂_sub_le`: ultrametric Lipschitz bound for `a ↦ f(a)`.
+* `MvPowerSeries.lipschitzWith_restrictedEval₂_arg` and
+  `MvPowerSeries.continuous_restrictedEval₂_arg`: for fixed `f`, `a ↦ f(a)` is Lipschitz and
+  continuous on the closed polydisc `{a | ∀ i, ‖a i‖ ≤ c i}`.
 * `MvPowerSeries.eq_restrictedEval₂`: a continuous ring homomorphism out of `R{X/c}` is determined
   by its values on constants and variables.
 
@@ -194,5 +200,79 @@ theorem eq_restrictedEval₂ (ψ : IsRestricted.subring (R := R) c →+* S) (hψ
   | zero => simp
   | add _ _ _ _ h₁ h₂ => simp [h₁, h₂]
   | neg _ _ h => simp [h]
+
+omit [CompleteSpace S] [IsUltrametricDist R] [∀ i, Fact (0 < c i)] in
+/-- Ultrametric difference bound for each monomial term of `restrictedEval₂`. -/
+private theorem norm_weightedEvalTerm_sub_le (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖) {a b : Fin k → S}
+    (ha : ∀ i, ‖a i‖ ≤ c i) (hb : ∀ i, ‖b i‖ ≤ c i) {δ : ℝ} (hδ : 0 ≤ δ)
+    (hab : ∀ i, ‖a i - b i‖ ≤ δ * c i) (f : MvPowerSeries (Fin k) R) (t : Fin k →₀ ℕ) :
+    ‖weightedEvalTerm φ a f t - weightedEvalTerm φ b f t‖ ≤
+      δ * (‖coeff t f‖ * t.prod (c · ^ ·)) := by
+  rw [weightedEvalTerm_def, weightedEvalTerm_def,
+    ← Finsupp.prod_fintype t (a · ^ ·) fun _ ↦ pow_zero _,
+    ← Finsupp.prod_fintype t (b · ^ ·) fun _ ↦ pow_zero _, ← mul_sub, Finsupp.prod, Finsupp.prod,
+    Finsupp.prod]
+  have hprod : ‖∏ i ∈ t.support, a i ^ t i - ∏ i ∈ t.support, b i ^ t i‖ ≤
+      δ * ∏ i ∈ t.support, c i ^ t i :=
+    TauCeti.norm_prod_sub_prod_le_mul_prod hδ
+      (fun i hi ↦ (norm_pow_le' _ (Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp hi))).trans
+        (pow_le_pow_left₀ (norm_nonneg _) (ha i) _))
+      (fun i hi ↦ (norm_pow_le' _ (Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp hi))).trans
+        (pow_le_pow_left₀ (norm_nonneg _) (hb i) _))
+      (fun i _ ↦ TauCeti.norm_pow_sub_pow_le_mul_pow hδ (ha i) (hb i) (hab i) (t i))
+  calc ‖φ (coeff t f) * (∏ i ∈ t.support, a i ^ t i - ∏ i ∈ t.support, b i ^ t i)‖
+      ≤ ‖φ (coeff t f)‖ * ‖∏ i ∈ t.support, a i ^ t i - ∏ i ∈ t.support, b i ^ t i‖ :=
+        norm_mul_le _ _
+    _ ≤ ‖coeff t f‖ * (δ * ∏ i ∈ t.support, c i ^ t i) :=
+        mul_le_mul (hφ _) hprod (norm_nonneg _) (norm_nonneg _)
+    _ = δ * (‖coeff t f‖ * ∏ i ∈ t.support, c i ^ t i) := by ring
+
+/-- **Ultrametric Lipschitz bound in the evaluation argument.** If `a` and `b` lie in the closed
+polydisc of polyradius `c` and satisfy `‖a i - b i‖ ≤ δ * c i` for every `i` with `0 ≤ δ`, then
+`‖f(a) - f(b)‖ ≤ δ * ‖f‖`. -/
+theorem norm_restrictedEval₂_sub_le (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖) {a b : Fin k → S}
+    (ha : ∀ i, ‖a i‖ ≤ c i) (hb : ∀ i, ‖b i‖ ≤ c i) {δ : ℝ} (hδ : 0 ≤ δ)
+    (hab : ∀ i, ‖a i - b i‖ ≤ δ * c i) (f : IsRestricted.subring (R := R) c) :
+    ‖restrictedEval₂ φ a hφ ha f - restrictedEval₂ φ b hφ hb f‖ ≤ δ * ‖f‖ := by
+  have hsum := (hasSum_restrictedEval₂ φ a hφ ha f).sub (hasSum_restrictedEval₂ φ b hφ hb f)
+  rw [← hsum.tsum_eq]
+  exact IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (mul_nonneg hδ (norm_nonneg f))
+    fun t ↦ (norm_weightedEvalTerm_sub_le φ hφ ha hb hδ hab _ t).trans
+      (mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le f t) hδ)
+
+/-- **Evaluation of a fixed restricted series is Lipschitz in its argument** on the closed
+polydisc `{a | ∀ i, ‖a i‖ ≤ c i}`. -/
+theorem lipschitzWith_restrictedEval₂_arg (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖)
+    (f : IsRestricted.subring (R := R) c) :
+    LipschitzWith ((Finset.univ.sup fun i : Fin k ↦ Real.toNNReal (c i)⁻¹) * ‖f‖₊)
+      (fun a : {a : Fin k → S // ∀ i, ‖a i‖ ≤ c i} ↦
+        restrictedEval₂ φ a.val hφ a.property f) := by
+  refine LipschitzWith.of_dist_le_mul fun a b ↦ ?_
+  set M : NNReal := Finset.univ.sup fun i : Fin k ↦ Real.toNNReal (c i)⁻¹
+  have hle : ∀ i : Fin k, ‖a.val i - b.val i‖ ≤ ((M : ℝ) * dist a b) * c i := fun i ↦ by
+    have hci : 0 < c i := Fact.out
+    have hMi : (c i)⁻¹ ≤ (M : ℝ) := by
+      have h1 : Real.toNNReal (c i)⁻¹ ≤ M :=
+        Finset.le_sup (f := fun i : Fin k ↦ Real.toNNReal (c i)⁻¹) (Finset.mem_univ i)
+      exact (Real.coe_toNNReal (c i)⁻¹ (inv_nonneg.mpr hci.le)).symm.trans_le
+        (NNReal.coe_le_coe.mpr h1)
+    have hdist : ‖a.val i - b.val i‖ ≤ dist a b := by
+      rw [← dist_eq_norm]
+      exact dist_le_pi_dist a.val b.val i
+    calc ‖a.val i - b.val i‖ ≤ dist a b := hdist
+      _ = (c i)⁻¹ * dist a b * c i := by field_simp [hci.ne']
+      _ ≤ (M : ℝ) * dist a b * c i := by gcongr
+  rw [dist_eq_norm, NNReal.coe_mul, coe_nnNorm]
+  exact (norm_restrictedEval₂_sub_le φ hφ a.property b.property
+    (mul_nonneg M.coe_nonneg dist_nonneg) hle f).trans_eq
+    (mul_right_comm (M : ℝ) (dist a b) ‖f‖)
+
+/-- **Evaluation of a fixed restricted series is continuous in its argument** on the closed
+polydisc `{a | ∀ i, ‖a i‖ ≤ c i}`. -/
+theorem continuous_restrictedEval₂_arg (hφ : ∀ r, ‖φ r‖ ≤ ‖r‖)
+    (f : IsRestricted.subring (R := R) c) :
+    Continuous fun a : {a : Fin k → S // ∀ i, ‖a i‖ ≤ c i} ↦
+      restrictedEval₂ φ a.val hφ a.property f :=
+  (lipschitzWith_restrictedEval₂_arg φ hφ f).continuous
 
 end MvPowerSeries

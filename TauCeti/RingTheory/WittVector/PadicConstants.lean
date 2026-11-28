@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Polynomial.Lifts
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.RingTheory.WittVector.Compare
 public import TauCeti.FieldTheory.Finite.FrobeniusFixed
-public import TauCeti.RingTheory.WittVector.Frobenius
+public import TauCeti.RingTheory.WittVector.Frobenius.Basic
 public import TauCeti.RingTheory.WittVector.Ideal
 
 /-!

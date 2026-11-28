@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.PermutationTriple.IsoClass
 public import TauCeti.GroupTheory.Perm.TransitiveCount
+import TauCeti.Combinatorics.PermutationTriple.Monodromy
 import TauCeti.GroupTheory.Finiteness
 import TauCeti.GroupTheory.FreeGroup.Basic
 
@@ -61,18 +62,9 @@ of rank two, sending the two generators to the first two components. -/
 private def connectedTripleEquiv (k : ℕ) :
     ConnectedTriple (k + 1) ≃
       {ρ : FreeGroup (Fin 2) →* Perm (Fin (k + 1)) // IsPretransitive ρ.range (Fin (k + 1))} :=
-  ((PermutationTriple.equivPair (k + 1)).trans
-    ((piFinTwoEquiv fun _ => Perm (Fin (k + 1))).symm.trans FreeGroup.lift)).subtypeEquiv
-    fun t => by
-      have hrange : (FreeGroup.lift ((piFinTwoEquiv fun _ => Perm (Fin (k + 1))).symm
-          (t.σ0, t.σ1))).range = t.monodromyGroup := by
-        rw [FreeGroup.range_lift_eq_closure, ← PermutationTriple.closure_pair_eq_monodromyGroup]
-        congr 1
-        ext σ
-        simp
-      rw [Equiv.trans_apply, Equiv.trans_apply, PermutationTriple.equivPair_apply, hrange,
-        PermutationTriple.isConnected_iff]
-      simp
+  (PermutationTriple.equivFreeGroupHom (k + 1)).subtypeEquiv fun t => by
+    rw [PermutationTriple.range_equivFreeGroupHom, PermutationTriple.isConnected_iff]
+    simp
 
 namespace ConnectedTriple
 

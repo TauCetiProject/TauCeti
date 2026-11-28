@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Diffeomorphism.Topology
 public import TauCeti.Geometry.Sphere.LinearIsometry
 public import TauCeti.Analysis.Matrix.EuclideanLin
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.Normed.Affine.MazurUlam
 
 /-!
 # The orthogonal group acts on the sphere by diffeomorphisms
@@ -46,7 +47,9 @@ continuity proved here.
 
 * `LinearIsometryEquiv.contMDiff_unitSphereEquiv`: the restriction to the unit sphere is
   `C^m` for every smoothness exponent, so the linear isometry group acts on the unit sphere by
-  `C^m` maps (a `ContMDiffConstSMul` instance).
+  `C^m` maps (a `ContMDiffConstSMul` instance). So does the group of linear isometries over any
+  scalar ring, such as the unitary group of a complex inner product space, since by the
+  Mazur–Ulam theorem they are real linear.
 * `LinearIsometryEquiv.mvfderiv_coe_sphere_unitSphereEquiv`: the differential of the restriction,
   read in the ambient spaces through the sphere inclusions, is the linear isometry itself.
 * `LinearIsometryEquiv.isometry_unitSphereEquiv`: it is an isometry for the distance the
@@ -187,10 +190,14 @@ theorem unitSphereDiffHom_injective :
   refine TauCeti.LinearMap.eq_of_eqOn_unitSphere fun x hx => ?_
   simpa using congrArg Subtype.val (DFunLike.congr_fun h ⟨x, hx⟩)
 
-/-- The linear isometry group of `E` acts on the unit sphere by `C^m` maps, for every smoothness
-exponent `m`. -/
-instance : ContMDiffConstSMul (𝓡 n) m (E ≃ₗᵢ[ℝ] E) (sphere (0 : E) 1) :=
-  ⟨contMDiff_unitSphereEquiv⟩
+/-- The linear isometry group of `E` over any scalar ring `R`, for instance the unitary group of a
+complex inner product space, acts on the unit sphere by `C^m` maps, for every smoothness exponent
+`m`. By the Mazur–Ulam theorem a linear isometry is real linear, so its restriction to the sphere
+is that of a real linear isometry. -/
+instance {R : Type*} [Semiring R] [Module R E] :
+    ContMDiffConstSMul (𝓡 n) m (E ≃ₗᵢ[R] E) (sphere (0 : E) 1) :=
+  ⟨fun e ↦ (contMDiff_unitSphereEquiv e.toIsometryEquiv.toRealLinearIsometryEquiv).congr
+    fun x ↦ Subtype.ext (by simp)⟩
 
 end InnerProduct
 

@@ -44,9 +44,15 @@ coordinates is bounded
 `TauCeti.SymplecticForm.floerConformalSobolevOperator`, which agrees with `D_u` on test sections
 (`TauCeti.SymplecticForm.floerConformalSobolevOperator_toLp_jet_ae_eq`), so that its norm on the jet
 of a test section `ξ` is the `L²` norm of `D_u ξ`
-(`TauCeti.SymplecticForm.norm_floerConformalSobolevOperator_sq`). An estimate of the weighted
-energy of test sections by `∫ ‖D_u ξ‖²` and an `L²` norm on a compact set then gives the estimate
-of Peetre's argument
+(`TauCeti.SymplecticForm.norm_floerConformalSobolevOperator_sq`). It only depends on the
+coefficient field over `U` (`TauCeti.SymplecticForm.floerConformalSobolevOperator_congr_of_eqOn`).
+Moving the map `u` by `d` is moving the data: the realization along `u + d` is that along `u` of
+the data read at the moved target point `y + d(z)`, with `K_t` corrected by the linear function
+`-ω(∂t d(z), ·)`
+(`TauCeti.SymplecticForm.floerConformalSobolevOperator_fun_add_eq_comp_add_right`).
+
+An estimate of the weighted energy of test sections by `∫ ‖D_u ξ‖²` and an `L²` norm on a compact
+set gives the estimate of Peetre's argument
 (`exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_integral_le`).
 
 The coefficient field is continuous where the data are regular along `u`
@@ -54,8 +60,10 @@ The coefficient field is continuous where the data are regular along `u`
 a family of maps `u_μ` that are regular jointly in the parameter it is continuous jointly in the
 parameter and the domain point (`continuousAt_floerConformalJetCoeff_family`). When the family only
 changes over a compact set, its coefficient fields are therefore continuous in the parameter in
-`L^∞` (`tendsto_eLpNorm_floerConformalJetCoeff_family`); this is how the operators of a family of
-data are compared in operator norm. The field at `z` only depends on the germ of the map at `z`
+`L^∞` (`tendsto_eLpNorm_floerConformalJetCoeff_family`), and the realizations of the members depend
+continuously on the parameter in operator norm
+(`continuousOn_floerConformalSobolevOperator_family`); this is how the operators of a family of data
+are compared. The field at `z` only depends on the germ of the map at `z`
 (`floerConformalJetCoeff_congr_of_eventuallyEq`), and along the segment of maps `u + μ (u' - u)`
 it is continuous jointly in `μ` and the domain point
 (`continuousAt_floerConformalJetCoeff_add_smul_sub`), which compares the operators along two maps.
@@ -64,6 +72,11 @@ weight is read (`TauCeti.SymplecticForm.floerConformalJetCoeff_comp_add_right`),
 `w + v = z` it differs from the coefficient field at `z` by at most `|1 - √ρ(z) / √ρ(w)|` times
 the norm of the latter
 (`TauCeti.SymplecticForm.norm_floerConformalJetCoeff_sub_floerConformalJetCoeff_comp_add_le`).
+
+For a constant structure `J₀` and the zero perturbation the zeroth-order part vanishes, so along
+every map the coefficient field is that of the Cauchy–Riemann operator `∂s + J₀ ∂t`
+(`TauCeti.SymplecticForm.floerConformalJetCoeff_const`), and the realization does not depend on the
+map (`TauCeti.SymplecticForm.floerConformalSobolevOperator_const_eq`).
 
 The `L²` norm of `D_u ξ` for the Lebesgue measure of the coordinates is the `L²` norm of the
 `(0, 1)`-form `(dξ + …)^(0,1)` for the conformal metric, since the conformal factors of a
@@ -84,7 +97,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set Function ContinuousLinearMap TauCeti.ConformalSobolev
-open scoped ENNReal
+open scoped ENNReal Topology
 
 namespace TauCeti.SymplecticForm
 
@@ -164,6 +177,33 @@ theorem floerConformalJetCoeff_congr_of_eventuallyEq (ω : SymplecticForm V) (ρ
     ω.floerConformalJetCoeff ρ J Ks Kt u z = ω.floerConformalJetCoeff ρ J Ks Kt u' z := by
   rw [floerConformalJetCoeff_def, floerConformalJetCoeff_def,
     ω.floerLinearizationCoeff_congr_of_eventuallyEq J Ks Kt h, h.eq_of_nhds]
+
+/-- **Moving the map is moving the data.** The coefficient field on conformal jets at `z` along the
+map `u + d` is that along `u` of the data read at the moved target point `y + d(z)`, with `K_t`
+corrected by the linear function `-ω(∂t d(z), ·)`
+(`floerLinearizationCoeff_fun_add_eq_comp_add_right`). -/
+theorem floerConformalJetCoeff_fun_add_eq_comp_add_right (ω : SymplecticForm V) (ρ : ℝ × ℝ → ℝ)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) {u d : ℝ × ℝ → V} {z : ℝ × ℝ}
+    (hu : DifferentiableAt ℝ u z) (hd : DifferentiableAt ℝ d z)
+    (hKt : ∀ᶠ y in 𝓝 (u z + d z), DifferentiableAt ℝ (Kt z) y) :
+    ω.floerConformalJetCoeff ρ J Ks Kt (fun w ↦ u w + d w) z =
+      ω.floerConformalJetCoeff ρ (fun w y ↦ J w (y + d w)) (fun w y ↦ Ks w (y + d w))
+        (fun w y ↦ Kt w (y + d w) - ω (fderiv ℝ d w stdComplexLineImag) y) u z := by
+  rw [floerConformalJetCoeff_def, floerConformalJetCoeff_def,
+    ω.floerLinearizationCoeff_fun_add_eq_comp_add_right J Ks Kt hu hd hKt]
+
+/-- For a constant structure `J₀` and the zero perturbation the linearized operator has no
+zeroth-order part, so along every map its coefficient field on conformal jets is that of the
+Cauchy–Riemann operator `∂s + J₀ ∂t`, and the operator does not depend on the map. -/
+@[simp]
+theorem floerConformalJetCoeff_const (ω : SymplecticForm V) (ρ : ℝ × ℝ → ℝ) (J₀ : V →L[ℝ] V)
+    (u : ℝ × ℝ → V) :
+    ω.floerConformalJetCoeff ρ (fun _ _ ↦ J₀) (fun _ _ ↦ 0) (fun _ _ ↦ 0) u =
+      fun _ ↦ firstOrderJetCoeff J₀ 0 := by
+  funext z
+  rw [floerConformalJetCoeff_def,
+    ω.floerLinearizationCoeff_eq_zero_of_eq_base u (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl),
+    smul_zero]
 
 /-- At a point where the weight is positive, the coefficient field applied to the jet
 `(√ρ ξ, ∂s ξ, ∂t ξ)` of a section `ξ` is the linearized Floer operator `D_u ξ`. -/
@@ -425,7 +465,44 @@ theorem floerConformalSobolevOperator_def (ω : SymplecticForm V) (J : ℝ × �
         (H1 V U ρ).subtypeL :=
   (rfl)
 
+/-- For a constant structure `J₀` and the zero perturbation, the realization of `D_u` is the
+realization of the Cauchy–Riemann operator `∂s + J₀ ∂t` and does not depend on the map `u`
+(`floerConformalJetCoeff_const`). -/
+theorem floerConformalSobolevOperator_const_eq (ω : SymplecticForm V) (J₀ : V →L[ℝ] V)
+    (u u' : ℝ × ℝ → V) :
+    ω.floerConformalSobolevOperator U ρ (fun _ _ ↦ J₀) (fun _ _ ↦ 0) (fun _ _ ↦ 0) u =
+      ω.floerConformalSobolevOperator U ρ (fun _ _ ↦ J₀) (fun _ _ ↦ 0) (fun _ _ ↦ 0) u' := by
+  rw [floerConformalSobolevOperator_def, floerConformalSobolevOperator_def,
+    floerConformalJetCoeff_const, floerConformalJetCoeff_const]
+
 variable {U ρ}
+
+/-- The conformal Sobolev realization of the linearized Floer operator only depends on the
+coefficient field on conformal jets over `U`: two sets of Floer data and maps whose coefficient
+fields agree on a measurable set `U` have the same realization on `U`. -/
+theorem floerConformalSobolevOperator_congr_of_eqOn (ω : SymplecticForm V) (hU : MeasurableSet U)
+    {J J' : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt Ks' Kt' : ℝ × ℝ → V → ℝ} {u u' : ℝ × ℝ → V}
+    (h : EqOn (ω.floerConformalJetCoeff ρ J Ks Kt u) (ω.floerConformalJetCoeff ρ J' Ks' Kt' u')
+      U) :
+    ω.floerConformalSobolevOperator U ρ J Ks Kt u =
+      ω.floerConformalSobolevOperator U ρ J' Ks' Kt' u' := by
+  rw [floerConformalSobolevOperator_def, floerConformalSobolevOperator_def,
+    jetOperator_congr_ae ((ae_restrict_iff' hU).2 (Filter.Eventually.of_forall h))]
+
+/-- **Moving the map is moving the data.** On a measurable set `U` on which `u` and `d` are
+differentiable and each `K_t(z)` is differentiable near `u(z) + d(z)`, the conformal Sobolev
+realization of the linearized Floer operator along `u + d` is that along `u` of the data read at
+the moved target point `y + d(z)`, with `K_t` corrected by the linear function `-ω(∂t d(z), ·)`
+(`floerConformalJetCoeff_fun_add_eq_comp_add_right`). -/
+theorem floerConformalSobolevOperator_fun_add_eq_comp_add_right (ω : SymplecticForm V)
+    (hU : MeasurableSet U) (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) {u d : ℝ × ℝ → V}
+    (hu : ∀ z ∈ U, DifferentiableAt ℝ u z) (hd : ∀ z ∈ U, DifferentiableAt ℝ d z)
+    (hKt : ∀ z ∈ U, ∀ᶠ y in 𝓝 (u z + d z), DifferentiableAt ℝ (Kt z) y) :
+    ω.floerConformalSobolevOperator U ρ J Ks Kt (fun w ↦ u w + d w) =
+      ω.floerConformalSobolevOperator U ρ (fun w y ↦ J w (y + d w)) (fun w y ↦ Ks w (y + d w))
+        (fun w y ↦ Kt w (y + d w) - ω (fderiv ℝ d w stdComplexLineImag) y) u :=
+  ω.floerConformalSobolevOperator_congr_of_eqOn hU fun z hz ↦
+    ω.floerConformalJetCoeff_fun_add_eq_comp_add_right ρ J Ks Kt (hu z hz) (hd z hz) (hKt z hz)
 
 /-- When the coefficient field on conformal jets is essentially bounded on `U`, the conformal
 Sobolev realization of the linearized Floer operator acts pointwise on an `L²` jet `x ∈ H1` by the
@@ -473,6 +550,49 @@ theorem norm_floerConformalSobolevOperator_sq (ω : SymplecticForm V) (hρ : IsW
   exact setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ by
     rw [ω.floerLinearization_of_notMem_tsupport J Ks Kt u
       fun h ↦ hz ((mem_testSection_iff.1 hξ).2.2 h), norm_zero, zero_pow two_ne_zero]
+
+/-- **Continuity of the realizations along a family of data.** Let `(J_p, K_{s,p}, K_{t,p})`, for
+`p` in a subset `s` of a normed space `P`, be a family of Floer data which do not depend on `p` on
+`U` off a compact set `K`. Suppose that at every point `z` of `K` and every parameter of `s` the
+family is `C¹` (with `C²` Hamiltonians) jointly in the parameter, the domain point and the target
+point at `((p, z), u z)`, `u` is `C¹` at `z`, and the weight is continuous and positive at `z`. If
+the coefficient fields on conformal jets of the members are essentially bounded on `U`, then the
+realizations `D_u : W^{1,2}_0(U, V) → L²(U, V)` of the linearized Floer operators of the members
+depend continuously on `p ∈ s` in the operator norm. -/
+theorem continuousOn_floerConformalSobolevOperator_family (ω : SymplecticForm V)
+    {U K : Set (ℝ × ℝ)} (hU : MeasurableSet U) (hK : IsCompact K) {ρ : ℝ × ℝ → ℝ}
+    {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] {s : Set P}
+    {J : P × (ℝ × ℝ) → V → V →L[ℝ] V} {Ks Kt : P × (ℝ × ℝ) → V → ℝ} {u : ℝ × ℝ → V}
+    (hJ : ∀ p ∈ s, ∀ z ∈ K, ContDiffAt ℝ 1 (uncurry J) ((p, z), u z))
+    (hKs : ∀ p ∈ s, ∀ z ∈ K, ContDiffAt ℝ 2 (uncurry Ks) ((p, z), u z))
+    (hKt : ∀ p ∈ s, ∀ z ∈ K, ContDiffAt ℝ 2 (uncurry Kt) ((p, z), u z))
+    (hu : ∀ z ∈ K, ContDiffAt ℝ 1 u z) (hρ : ∀ z ∈ K, ContinuousAt ρ z)
+    (hρp : ∀ z ∈ K, 0 < ρ z)
+    (heq : ∀ p ∈ s, ∀ p' ∈ s, ∀ z ∈ U, z ∉ K →
+      J (p, z) = J (p', z) ∧ Ks (p, z) = Ks (p', z) ∧ Kt (p, z) = Kt (p', z))
+    (hM : ∀ p ∈ s, MemLp (ω.floerConformalJetCoeff ρ (fun z ↦ J (p, z)) (fun z ↦ Ks (p, z))
+      (fun z ↦ Kt (p, z)) u) ∞ (volume.restrict U)) :
+    ContinuousOn (fun p ↦ ω.floerConformalSobolevOperator U ρ (fun z ↦ J (p, z))
+      (fun z ↦ Ks (p, z)) (fun z ↦ Kt (p, z)) u) s := by
+  simp only [floerConformalSobolevOperator_def]
+  refine (continuousOn_jetOperator hM fun lam hlam ↦ ?_).clm_comp continuousOn_const
+  -- Convergence within `s` is convergence along the subtype `s`.
+  rw [tendsto_nhdsWithin_iff_subtype hlam]
+  refine tendsto_eLpNorm_top_sub_of_continuousAt_of_eq
+    (M := fun p : s ↦ ω.floerConformalJetCoeff ρ (fun z ↦ J (p.val, z)) (fun z ↦ Ks (p.val, z))
+      (fun z ↦ Kt (p.val, z)) u)
+    hU hK (.of_forall fun p ↦ (hM p p.property).aestronglyMeasurable) (fun z hzK ↦ ?_)
+    (.of_forall fun p z hz hzK ↦ ?_)
+  -- On the compact set `K` the coefficient field is jointly continuous in `(p, z)`.
+  · have h := ω.continuousAt_floerConformalJetCoeff_family (u := fun _ ↦ u) (p := (lam, z))
+      (hJ lam hlam z hzK) (hKs lam hlam z hzK) (hKt lam hlam z hzK)
+      ((hu z hzK).comp _ contDiffAt_snd) (hρ z hzK) (hρp z hzK)
+    exact h.comp (x := ((⟨lam, hlam⟩ : s), z))
+      (f := fun q : s × (ℝ × ℝ) ↦ ((q.1.val, q.2) : P × (ℝ × ℝ)))
+      ((continuous_subtypeVal.comp continuous_fst).prodMk continuous_snd).continuousAt
+  -- Off `K` the data, hence the coefficient fields, do not depend on `p`.
+  · obtain ⟨hJz, hsz, htz⟩ := heq p p.property lam hlam z hz hzK
+    exact ω.floerConformalJetCoeff_congr_data _ u hJz hsz htz
 
 
 /-- **Peetre's estimate from an energy estimate.** Let the coefficient field of the linearized
