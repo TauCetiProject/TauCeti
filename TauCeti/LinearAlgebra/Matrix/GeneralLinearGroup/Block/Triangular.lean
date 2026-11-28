@@ -134,6 +134,75 @@ theorem conj_mem_unitriangularSubgroup {u d : GL n R} (hd : d ∈ blockTriangula
         simp only [Units.val_mul, Matrix.mul_apply, Finset.sum_mul, h_term]
     _ = (1 : Matrix n n R) i j := by simp
 
+variable (lev) in
+/-- **Free-entry parametrization of the block unitriangular subgroup.** A block upper unitriangular
+matrix for the level function `lev` is uniquely determined by its entries at pairs `(i, j)` with
+`lev i < lev j`. -/
+@[expose] noncomputable def unitriangularSubgroupEquiv (R : Type*) [CommRing R] :
+    unitriangularSubgroup lev R ≃ ({p : n × n // lev p.fst < lev p.snd} → R) where
+  toFun u p := (u : GL n R) p.val.fst p.val.snd
+  invFun a :=
+    have hZ := blockUnitriangular_unitDiagonalMatrixOfEntries
+      (b := lev) (P := fun p : n × n ↦ lev p.fst < lev p.snd) (fun _ h ↦ h) a
+    ⟨GeneralLinearGroup.mk'' _ hZ.isUnit_det, (mem_unitriangularSubgroup lev).mpr hZ⟩
+  left_inv u := by
+    have hu : ((u : GL n R) : Matrix n n R).BlockUnitriangular lev :=
+      (mem_unitriangularSubgroup lev).mp u.property
+    refine Subtype.ext (GeneralLinearGroup.ext fun i j ↦ ?_)
+    -- The underlying matrix of `GeneralLinearGroup.mk'' A _` is `A` by definition.
+    change unitDiagonalMatrixOfEntries (fun p : n × n ↦ lev p.fst < lev p.snd)
+      (fun p ↦ (u : GL n R) p.val.fst p.val.snd) i j = (u : GL n R) i j
+    by_cases hlt : lev i < lev j
+    · exact unitDiagonalMatrixOfEntries_apply_of_mem _ _ (fun h ↦ hlt.ne (congrArg lev h)) hlt
+    · rcases eq_or_ne i j with rfl | hne
+      · rw [unitDiagonalMatrixOfEntries_apply_self, hu.apply_of_eq (show lev i = lev i from rfl),
+          one_apply_eq]
+      · rw [unitDiagonalMatrixOfEntries_apply_of_notMem _ _ hne hlt]
+        rcases (not_lt.mp hlt).lt_or_eq with hlt' | heq
+        · exact (hu.blockTriangular hlt').symm
+        · exact ((hu.apply_of_eq heq.symm).trans (one_apply_ne hne)).symm
+  right_inv a := funext fun p ↦ unitDiagonalMatrixOfEntries_apply_of_mem _ _
+    (fun h ↦ p.property.ne (congrArg lev h)) p.property
+
+variable (lev) in
+@[simp] theorem unitriangularSubgroupEquiv_apply (R : Type*) [CommRing R]
+    (u : unitriangularSubgroup lev R) (p : {p : n × n // lev p.fst < lev p.snd}) :
+    unitriangularSubgroupEquiv lev R u p = (u : GL n R) p.val.fst p.val.snd := rfl
+
+variable (lev) in
+/-- Evaluating the inverse of `TauCeti.unitriangularSubgroupEquiv` at a free entry `lev i < lev j`
+recovers the prescribed entry. -/
+@[simp] theorem unitriangularSubgroupEquiv_symm_apply_of_lt
+    (a : {p : n × n // lev p.fst < lev p.snd} → R) {i j : n} (hij : lev i < lev j) :
+    ((unitriangularSubgroupEquiv lev R).symm a : GL n R) i j = a ⟨(i, j), hij⟩ :=
+  unitDiagonalMatrixOfEntries_apply_of_mem (fun p : n × n ↦ lev p.fst < lev p.snd) a
+    (fun h ↦ hij.ne (congrArg lev h)) hij
+
+variable (lev) in
+/-- **Simultaneous lifting of block unitriangular matrices.** If `f p : R →+* F p` is a jointly
+surjective family of ring homomorphisms, then any family `s p ∈ unitriangularSubgroup lev (F p)`
+lifts to a single `u ∈ unitriangularSubgroup lev R` with `GeneralLinearGroup.map (f p) u = s p`. -/
+theorem exists_unitriangularSubgroup_map_eq {ι : Type*} {F : ι → Type*} [∀ p : ι, CommRing (F p)]
+    (f : ∀ p : ι, R →+* F p) (hf : ∀ t : ∀ p : ι, F p, ∃ y : R, ∀ p : ι, f p y = t p)
+    (s : ∀ p : ι, GL n (F p)) (hs : ∀ p : ι, s p ∈ unitriangularSubgroup lev (F p)) :
+    ∃ u ∈ unitriangularSubgroup lev R, ∀ p : ι, GeneralLinearGroup.map (f p) u = s p := by
+  choose lift h_lift using fun e : {p : n × n // lev p.fst < lev p.snd} ↦
+    hf fun p ↦ s p e.val.fst e.val.snd
+  obtain ⟨u, hu_def⟩ : ∃ u : unitriangularSubgroup lev R,
+      u = (unitriangularSubgroupEquiv lev R).symm lift := ⟨_, rfl⟩
+  have hu : ((u : GL n R) : Matrix n n R).BlockUnitriangular lev :=
+    (mem_unitriangularSubgroup lev).mp u.property
+  refine ⟨u, u.property, fun p ↦ GeneralLinearGroup.ext fun i j ↦ ?_⟩
+  rw [GeneralLinearGroup.map_apply]
+  obtain h_free | h_fixed := lt_or_ge (lev i) (lev j)
+  · rw [hu_def, unitriangularSubgroupEquiv_symm_apply_of_lt lev lift h_free, h_lift]
+  · have hsp : (s p : Matrix n n (F p)).BlockUnitriangular lev :=
+      (mem_unitriangularSubgroup lev).mp (hs p)
+    rcases h_fixed.lt_or_eq with hlt | heq
+    · rw [hu.blockTriangular hlt, hsp.blockTriangular hlt, map_zero]
+    · rw [hu.apply_of_eq heq.symm, hsp.apply_of_eq heq.symm]
+      exact congrFun₂ (Matrix.map_one (f p) (f p).map_zero (f p).map_one) i j
+
 end Triangular
 
 /-! ### Levi and parahoric subgroups -/
