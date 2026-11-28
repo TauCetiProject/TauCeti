@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Quasicategory.TerminalVertex
-public import TauCeti.AlgebraicTopology.SimplicialSet.Coslice
+public import TauCeti.AlgebraicTopology.SimplicialSet.Comma
 public import TauCeti.AlgebraicTopology.SimplicialSet.TrivialFibration.Fiber
 
 /-!
@@ -26,7 +26,7 @@ every vertex: for every vertex `y` of `L` there is an edge from `y` to a vertex 
 
 The basic example is the inclusion of a terminal vertex. If `x` is a terminal vertex of `L`, then
 for every vertex `y` the map to the point from the fibre `{x} ×_L L_{y/}`, the left mapping space
-from `y` to `x`, is a trivial fibration (`SSet.IsTerminalVertex.rlp_monomorphisms_pullback_const`),
+from `y` to `x`, is a trivial fibration (`SSet.IsTerminalVertex.rlp_monomorphisms_comma_const`),
 so that this fibre is a contractible Kan complex. Indeed, a map from `∂Δ[n]` to the fibre is a map
 `Δ[0] ⋆ ∂Δ[n] ⟶ L` sending the cone point to `y` and `∂Δ[n]` to `x`. It glues with the constant
 map at `x` on `Δ[n]` to a map from `(∂Δ[0] ⋆ Δ[n]) ∪ (Δ[0] ⋆ ∂Δ[n]) ≅ ∂Δ[n + 1]`
@@ -41,8 +41,8 @@ the vertex `1` is empty.
 
 * `SSet.IsFinal f`: the map `f` is final.
 * `SSet.IsFinal.exists_edge`: every vertex has an edge to a vertex in the image of a final map.
-* `SSet.IsTerminalVertex.rlp_monomorphisms_pullback_const`,
-  `SSet.IsTerminalVertex.isWeaklyContractible_pullback_const`: the map to the point from a left
+* `SSet.IsTerminalVertex.rlp_monomorphisms_comma_const`,
+  `SSet.IsTerminalVertex.isWeaklyContractible_comma_const`: the map to the point from a left
   mapping space into a terminal vertex is a trivial fibration, so this space is weakly
   contractible.
 * `SSet.IsTerminalVertex.isFinal_const`: the inclusion of a terminal vertex is final.
@@ -69,12 +69,12 @@ variable {K L : SSet.{u}}
 product `K ×_L L_{y/}` of `f` with the projection from the coslice under `y` is weakly
 contractible. -/
 def IsFinal (f : K ⟶ L) : Prop :=
-  ∀ y : L _⦋0⦌, IsWeaklyContractible (pullback f (coslice.π (const y : Δ[0] ⟶ L)))
+  ∀ y : L _⦋0⦌, IsWeaklyContractible (comma f y)
 
 /-- Unfolding `SSet.IsFinal`: `f` is final when all fibres `K ×_L L_{y/}` are weakly
 contractible. -/
 lemma isFinal_iff (f : K ⟶ L) :
-    IsFinal f ↔ ∀ y : L _⦋0⦌, IsWeaklyContractible (pullback f (coslice.π (const y : Δ[0] ⟶ L))) :=
+    IsFinal f ↔ ∀ y : L _⦋0⦌, IsWeaklyContractible (comma f y) :=
   Iff.rfl
 
 /-- For a final map `f : K ⟶ L`, every vertex `y` of `L` has an edge to a vertex in the image of
@@ -83,14 +83,14 @@ lemma isFinal_iff (f : K ⟶ L) :
 lemma IsFinal.exists_edge {f : K ⟶ L} (hf : IsFinal f) (y : L _⦋0⦌) :
     ∃ k : K _⦋0⦌, Nonempty (L.Edge y (f.app _ k)) := by
   have := hf y
-  obtain ⟨v⟩ := IsWeaklyContractible.nonempty (K := pullback f (coslice.π (const y : Δ[0] ⟶ L)))
+  obtain ⟨v⟩ := IsWeaklyContractible.nonempty (K := comma f y)
   -- The vertex `v` of the fibre is a vertex `k` of `K` and a cocone `Δ[0] ⋆ Δ[0] ⟶ L` under `y`
   -- whose cone point is `f k`.
   let s : (coslice (const y : Δ[0] ⟶ L)) _⦋0⦌ :=
-    (pullback.snd f (coslice.π (const y : Δ[0] ⟶ L))).app _ v
-  have hs : f.app _ ((pullback.fst f _).app _ v) = (coslice.π (const y : Δ[0] ⟶ L)).app _ s :=
-    ConcreteCategory.congr_hom (congr_app (pullback.condition (f := f)) _) v
-  refine ⟨(pullback.fst f _).app _ v, ⟨(join.coneEdgeEquiv _ y ⟨(coslice.objEquiv s).val,
+    (comma.toCoslice f y).app _ v
+  have hs : f.app _ ((comma.π f y).app _ v) = (coslice.π (const y : Δ[0] ⟶ L)).app _ s :=
+    ConcreteCategory.congr_hom (congr_app (comma.isPullback f y).w _) v
+  refine ⟨(comma.π f y).app _ v, ⟨(join.coneEdgeEquiv _ y ⟨(coslice.objEquiv s).val,
     (coslice.objEquiv s).property, ?_⟩).ofEq rfl hs.symm⟩⟩
   rw [coslice.π_app (p := const y) s]
   exact (yonedaEquiv.symm_apply_apply _).symm.trans (yonedaEquiv_symm_zero _)
@@ -162,9 +162,13 @@ include hx
 /-- The map to the point from the left mapping space `{x} ×_L L_{y/}` into a terminal vertex `x`
 has the right lifting property with respect to all monomorphisms: a map `Δ[0] ⋆ ∂Δ[n] ⟶ L` sending
 the cone point to `y` and `∂Δ[n]` to `x` extends to `Δ[0] ⋆ Δ[n]`, still sending `Δ[n]` to `x`. -/
-lemma rlp_monomorphisms_pullback_const :
+lemma rlp_monomorphisms_comma_const :
     (monomorphisms SSet.{u}).rlp (stdSimplex.isTerminalObj₀.from
-      (pullback (const x : Δ[0] ⟶ L) (coslice.π (const y : Δ[0] ⟶ L)))) := by
+      (comma (const x : Δ[0] ⟶ L) y)) := by
+  refine ((monomorphisms SSet.{u}).rlp.arrow_mk_iso_iff
+    (g := stdSimplex.isTerminalObj₀.from _)
+    (Arrow.isoMk (comma.isPullback (const x : Δ[0] ⟶ L) y).isoPullback (Iso.refl _)
+      (stdSimplex.isTerminalObj₀.hom_ext _ _))).2 ?_
   rw [SSet.rlp_monomorphisms]
   refine fun _ _ _ ⟨n⟩ ↦ ⟨fun {a _} _ ↦ ?_⟩
   let τ := coslice.pullbackConstHomEquiv x y a
@@ -181,15 +185,15 @@ lemma rlp_monomorphisms_pullback_const :
 
 /-- The left mapping space `{x} ×_L L_{y/}` from any vertex `y` to a terminal vertex `x` is weakly
 contractible. -/
-lemma isWeaklyContractible_pullback_const :
-    IsWeaklyContractible (pullback (const x : Δ[0] ⟶ L) (coslice.π (const y : Δ[0] ⟶ L))) :=
+lemma isWeaklyContractible_comma_const :
+    IsWeaklyContractible (comma (const x : Δ[0] ⟶ L) y) :=
   ((rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible_of_isTerminal
-    stdSimplex.isTerminalObj₀ _).1 (hx.rlp_monomorphisms_pullback_const y)).2
+    stdSimplex.isTerminalObj₀ _).1 (hx.rlp_monomorphisms_comma_const y)).2
 
 omit y in
 /-- The inclusion `Δ[0] ⟶ L` of a terminal vertex is final. -/
 lemma isFinal_const : IsFinal (const x : Δ[0] ⟶ L) :=
-  hx.isWeaklyContractible_pullback_const
+  hx.isWeaklyContractible_comma_const
 
 end IsTerminalVertex
 
