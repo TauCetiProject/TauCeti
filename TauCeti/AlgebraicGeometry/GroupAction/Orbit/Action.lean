@@ -64,23 +64,6 @@ theorem orbitInclusion_left : (orbitInclusion G x).left = orbitι G x := (rfl)
 @[simp]
 theorem orbitProjection_left : (orbitProjection G x).left = toOrbit G x := (rfl)
 
-/-- The orbit projection onto the orbit scheme is surjective on underlying schemes. -/
-instance surjective_orbitProjection_left : Surjective (orbitProjection G x).left := by
-  rw [orbitProjection_left]
-  infer_instance
-
-/-- The orbit projection onto the orbit scheme is locally of finite type. -/
-instance locallyOfFiniteType_orbitProjection_left :
-    LocallyOfFiniteType (orbitProjection G x).left := by
-  rw [orbitProjection_left]
-  infer_instance
-
-/-- The orbit projection onto the orbit scheme is locally of finite presentation. -/
-instance locallyOfFinitePresentation_orbitProjection_left :
-    LocallyOfFinitePresentation (orbitProjection G x).left := by
-  rw [orbitProjection_left]
-  infer_instance
-
 /-- The factorization over the field recovers the ambient orbit map. -/
 @[reassoc (attr := simp)]
 theorem orbitProjection_inclusion : orbitProjection G x ≫ orbitInclusion G x = orbitMap G x := by

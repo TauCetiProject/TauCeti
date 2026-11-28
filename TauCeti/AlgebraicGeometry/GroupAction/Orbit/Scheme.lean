@@ -135,10 +135,9 @@ instance : LocallyOfFiniteType (orbitToBase G x) := by
 
 /-- The orbit projection is locally of finite type, without a reducedness hypothesis. -/
 instance locallyOfFiniteType_toOrbit : LocallyOfFiniteType (toOrbit G x) := by
-  have : LocallyOfFiniteType (toOrbit G x ≫ orbitToBase G x) := by
-    rw [toOrbit_toBase]
-    infer_instance
-  exact locallyOfFiniteType_of_comp _ (orbitToBase G x)
+  have : LocallyOfFiniteType (orbitMap G x).left := locallyOfFiniteType_orbitMap G x
+  rw [toOrbit_def]
+  infer_instance
 
 /-- The orbit projection is locally of finite presentation, without a reducedness hypothesis. -/
 instance locallyOfFinitePresentation_toOrbit : LocallyOfFinitePresentation (toOrbit G x) := by

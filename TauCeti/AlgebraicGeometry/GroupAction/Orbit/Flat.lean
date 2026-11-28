@@ -73,13 +73,6 @@ instance flat_toOrbit [GeometricallyReduced G.hom] : Flat (toOrbit G x) := by
     (isPullback_toOrbit_baseChange f G x)
     (flat_toOrbit_of_isAlgClosed ((Over.pullback f).obj G) _)
 
-/-- Over any field, the orbit projection from a geometrically reduced finite-type group onto
-any orbit scheme is flat. -/
-instance flat_orbitProjection_left [GeometricallyReduced G.hom] :
-    Flat (orbitProjection G x).left := by
-  rw [orbitProjection_left]
-  infer_instance
-
 end CompactTarget
 
 section Homogeneous

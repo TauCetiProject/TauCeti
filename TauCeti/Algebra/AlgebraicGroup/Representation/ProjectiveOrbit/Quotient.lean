@@ -242,16 +242,14 @@ detect the left cosets of the closed subgroup `N`, the fppf quotient `G/N` is is
 sheaf of points of the projective orbit scheme of the line through `m`. -/
 noncomputable def fppfHomogeneousQuotientIsoProjectiveOrbitPoints [_root_.IsReduced H] :
     CommHopfAlgCat.fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf (H := H) m hm :=
-  CommHopfAlgCat.fppfHomogeneousQuotientIsoPointsSheaf H I _
-    (toProjectiveOrbit_mul_invariant I m hm hcoset)
-    (inv_mul_mem_quotientPointsSubgroup_of_comp_toProjectiveOrbit_eq I m hm hcoset)
+  asIso (fppfHomogeneousQuotientToProjectiveOrbitPoints I m hm hcoset)
 
 /-- The forward map of the representing isomorphism is the descended orbit map. -/
 @[simp]
 theorem fppfHomogeneousQuotientIsoProjectiveOrbitPoints_hom [_root_.IsReduced H] :
     (fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset).hom =
       fppfHomogeneousQuotientToProjectiveOrbitPoints I m hm hcoset :=
-  CommHopfAlgCat.fppfHomogeneousQuotientIsoPointsSheaf_hom H I _ _ _
+  (rfl)
 
 end Descent
 
@@ -268,10 +266,14 @@ end Descent
             c * g.ofConv (matrixCoefficient (C := H) φ m)) :
     CommHopfAlgCat.representedQuotientProjection H I
       (fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset) =
-      Over.homMk (toProjectiveOrbit (H := H) m hm) (toProjectiveOrbit_projectiveOrbitToSpec m hm) :=
-  CommHopfAlgCat.representedQuotientProjection_fppfHomogeneousQuotientIsoPointsSheaf H I _
-    (toProjectiveOrbit_mul_invariant I m hm hcoset)
-    (inv_mul_mem_quotientPointsSubgroup_of_comp_toProjectiveOrbit_eq I m hm hcoset)
+      Over.homMk (toProjectiveOrbit (H := H) m hm)
+        (toProjectiveOrbit_projectiveOrbitToSpec m hm) := by
+  apply (CommHopfAlgCat.specPointsHomEquiv H
+    (Over.mk (projectiveOrbitToSpec (H := H) m hm))).injective
+  rw [CommHopfAlgCat.specPointsHomEquiv_representedQuotientProjection,
+    fppfHomogeneousQuotientIsoProjectiveOrbitPoints_hom,
+    fppfHomogeneousQuotientToProjectiveOrbitPoints,
+    CommHopfAlgCat.fppfHomogeneousQuotientProjection_comp_desc]
 
 /-- For a reduced group `G` and Chevalley's representing isomorphism, the underlying scheme morphism
 of `representedQuotientProjection` is `toProjectiveOrbit`. -/
