@@ -24,8 +24,10 @@ elliptic-curve discriminant is `W.Δ = -16 * (4 * W.a₄ ^ 3 + 27 * W.a₆ ^ 2)`
 (`WeierstrassCurve.Δ_of_isShortNF` in `Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms`), which
 equals `-16` times `TauCeti.weierstrassDiscrFactor R` evaluated at `(W.a₄, W.a₆)`. When `2` is not
 a unit (for example over `ℤ`), `-16` is a non-unit, so primality applies to the factor
-`TauCeti.weierstrassDiscrFactor R` itself rather than to the full elliptic-curve discriminant `W.Δ`
-(which is prime at `(W.a₄, W.a₆)` only after `2` becomes invertible).
+`TauCeti.weierstrassDiscrFactor R` itself rather than to the universal full discriminant polynomial
+`-16 * TauCeti.weierstrassDiscrFactor R` (when `2` is invertible, the universal full discriminant
+polynomial `-16 * TauCeti.weierstrassDiscrFactor R` is associated to
+`TauCeti.weierstrassDiscrFactor R`).
 
 ## Main definitions
 

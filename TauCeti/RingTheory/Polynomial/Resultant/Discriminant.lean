@@ -465,8 +465,8 @@ theorem discr_X_pow_sub_C_mul_X (a : R) {n : ℕ} (hn : 2 ≤ n) :
   have hres : X.resultant g = -a := by
     have hX1 := resultant_X_pow_left g 1 g.natDegree le_rfl
     rw [pow_one, pow_one, ← natDegree_X (R := R)] at hX1
-    rw [hX1, coeff_sub, coeff_X_pow, coeff_C, ite_eq_right (by omega : 0 ≠ n - 1),
-      ite_eq_left rfl, zero_sub]
+    rw [hX1]
+    simp [g, coeff_C]; omega
   rw [hfac, monic_X.discr_mul hg_mon, discr_X, hres, one_mul, discr_X_pow_sub_C]
   have hn_eq : n - 1 - 1 = n - 2 := Nat.sub_sub n 1 1
   have hn2 : (n - 2) + 2 = n := by omega

@@ -141,12 +141,9 @@ private theorem dvd_pow_of_C_dvd_depressedDiscr_of_two_le {R : Type*} [CommRing 
   let f : R[X] := Polynomial.X ^ m - Polynomial.C 1
   have hf_mon : f.Monic := monic_X_pow_sub_C 1 (by omega)
   have hf_deg : f.natDegree = m := natDegree_X_pow_sub_C (1 : R)
-  have hm1_ne_m : m - 1 ≠ m := by omega
-  have hm1_ne_zero : m - 1 ≠ 0 := by omega
   have hf_next : f.nextCoeff = 0 := by
-    rw [nextCoeff_of_natDegree_pos (by omega), hf_deg, Polynomial.coeff_sub,
-      Polynomial.coeff_X_pow, Polynomial.coeff_C, ite_eq_right hm1_ne_m,
-      ite_eq_right hm1_ne_zero, sub_zero]
+    rw [nextCoeff_of_natDegree_pos (by omega), hf_deg]
+    simp [f, Polynomial.coeff_one, show m - 1 ≠ m by omega, show m - 1 ≠ 0 by omega]
   have hdvd : r ∣ f.discr := dvd_discr_of_C_dvd_depressedDiscr hr hf_mon hf_deg hf_next
   dsimp only [f] at hdvd
   rw [discr_X_pow_sub_C] at hdvd
@@ -170,12 +167,9 @@ private theorem dvd_sub_one_pow_of_C_dvd_depressedDiscr_of_three_le {R : Type*} 
   have hf_eq : f = Polynomial.X ^ m - Polynomial.X := by
     dsimp only [f, g]
     rw [mul_sub, ← pow_succ', Polynomial.C_1, mul_one, hm_add]
-  have hm1_ne_m : m - 1 ≠ m := by omega
-  have hone_ne_m1 : 1 ≠ m - 1 := by omega
   have hf_next : f.nextCoeff = 0 := by
-    rw [nextCoeff_of_natDegree_pos (by omega), hf_deg, hf_eq, Polynomial.coeff_sub,
-      Polynomial.coeff_X_pow, Polynomial.coeff_X, ite_eq_right hm1_ne_m,
-      ite_eq_right hone_ne_m1, sub_zero]
+    rw [nextCoeff_of_natDegree_pos (by omega), hf_deg, hf_eq]
+    simp [Polynomial.coeff_X, show m - 1 ≠ m by omega, show 1 ≠ m - 1 by omega]
   have hdvd : r ∣ f.discr := dvd_discr_of_C_dvd_depressedDiscr hr hf_mon hf_deg hf_next
   rw [hf_eq, discr_X_pow_sub_X (by omega)] at hdvd
   exact (isUnit_neg_one.pow _).dvd_mul_left.mp hdvd
@@ -255,16 +249,18 @@ private theorem isRegular_depressedDiscr_quotient {R : Type*} [CommRing R] {m : 
   have hm1 : ((m - 1 : ℕ) : R₀) = -1 := by
     rw [Nat.cast_sub (by omega : 1 ≤ m), Nat.cast_one, hm0, zero_sub]
   let j₀ : Fin (m - 1) := ⟨m - 3, by omega⟩
-  let φ : MvPolynomial (Fin (m - 1)) R₀ →ₐ[R₀] R₀[X] :=
-    MvPolynomial.aeval fun j : Fin (m - 1) ↦ if j = j₀ then Polynomial.X else 0
-  have hgen : (genericDepressed R₀ m).map φ.toRingHom =
+  have hgen : (genericDepressed R₀ m).map
+        (MvPolynomial.aeval fun j : Fin (m - 1) ↦
+          if j = j₀ then (Polynomial.X : R₀[X]) else 0).toRingHom =
       Polynomial.X ^ m - Polynomial.C (-Polynomial.X : R₀[X]) * Polynomial.X := by
-    rw [show φ = MvPolynomial.aeval fun j : Fin (m - 1) ↦
-        if j = ⟨m - 3, by omega⟩ then (Polynomial.X : R₀[X]) else 0 from rfl,
-      map_aeval_single_X_genericDepressed R₀ hm, map_neg]
+    dsimp only [j₀]
+    rw [map_aeval_single_X_genericDepressed R₀ hm, map_neg]
     ring
   let u : R₀ˣ := (-1) ^ ((m - 1) * (m - 2) / 2 + (m - 1))
-  have hdiscr_val : φ (depressedDiscr R₀ m) = Polynomial.monomial m (u : R₀) := by
+  have hdiscr_val :
+      (MvPolynomial.aeval fun j : Fin (m - 1) ↦
+        if j = j₀ then (Polynomial.X : R₀[X]) else 0) (depressedDiscr R₀ m) =
+        Polynomial.monomial m (u : R₀) := by
     rw [aeval_depressedDiscr, hgen, Polynomial.discr_X_pow_sub_C_mul_X (-Polynomial.X) (by omega)]
     have hm1_cast : ((m - 1 : ℕ) : R₀[X]) = -1 := by
       rw [← map_natCast (Polynomial.C : R₀ →+* R₀[X]), hm1, map_neg, map_one]
