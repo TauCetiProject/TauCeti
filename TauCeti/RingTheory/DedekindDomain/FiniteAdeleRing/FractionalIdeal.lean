@@ -12,7 +12,9 @@ public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.IntegralIdeal
 
 For a nonzero fractional ideal `I`, its finite adelic extension `finiteAdelicIdeal I` is the
 module `I Ô` over the integral finite adeles. It is defined independently of a generator.
-Any finite idele representing `I` gives its usual local divisibility criterion.
+Any finite idele `t` representing `I` gives its usual local divisibility criterion, and exhibits
+`I Ô` as the image `t Ô` of the integral finite adeles under multiplication by `t`; so `I Ô` is
+compact when the local integer rings are.
 -/
 
 public section
@@ -84,6 +86,24 @@ theorem mul_mem_finiteAdelicIdeal {I J : (FractionalIdeal R⁰ K)ˣ} {x y : 𝔸
   convert mul_mem hx hy using 1
   simp only [mul_inv_rev, Units.val_mul]
   ring
+
+/-- The finite adelic extension of a fractional ideal is the image of the integral finite adeles
+under multiplication by any finite idele representing it. -/
+theorem _root_.Units.coe_finiteAdelicIdeal_eq_image (t : 𝔸ᶠ[R, K]ˣ)
+    {I : (FractionalIdeal R⁰ K)ˣ} (ht : toFractionalIdeal t = I) :
+    (finiteAdelicIdeal I : Set 𝔸ᶠ[R, K]) =
+      (fun x : 𝔸ᶠ[R, K] ↦ (t : 𝔸ᶠ[R, K]) * x) '' (integralAdeles R K : Set 𝔸ᶠ[R, K]) :=
+  (Set.ext fun _ ↦ mem_finiteAdelicIdeal_iff t ht).trans
+    ((Units.mulLeft t).image_eq_preimage_symm _).symm
+
+/-- The finite adelic extension of a fractional ideal is compact when every local integer ring is
+compact. -/
+theorem _root_.Units.isCompact_finiteAdelicIdeal
+    [∀ v : HeightOneSpectrum R, CompactSpace (v.adicCompletionIntegers K)]
+    (I : (FractionalIdeal R⁰ K)ˣ) : IsCompact (finiteAdelicIdeal I : Set 𝔸ᶠ[R, K]) := by
+  obtain ⟨t, ht⟩ := toFractionalIdeal_surjective I
+  rw [t.coe_finiteAdelicIdeal_eq_image ht]
+  exact isCompact_integralAdeles.image (continuous_const.mul continuous_id)
 
 /-- The finite adelic extension of a fractional ideal is the closure of its diagonal image. -/
 theorem closure_image_algebraMap_fractionalIdeal (I : (FractionalIdeal R⁰ K)ˣ) :
