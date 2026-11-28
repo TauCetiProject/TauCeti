@@ -301,7 +301,7 @@ theorem isInvertible_prodMap_loopOperator_iff_det_ne_zero (hB : B.IsInvertible) 
     ((I • loopOperator T S).prodMap B).IsInvertible ↔
       LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ S t) T) : F →ₗ[ℝ] F)) ≠ 0 := by
   rw [ContinuousLinearMap.isInvertible_prodMap_iff, and_iff_left hB,
-    ContinuousLinearMap.isInvertible_I_smul_iff, isInvertible_loopOperator_iff_det_ne_zero]
+    ContinuousLinearMap.isInvertible_smul_iff I_ne_zero, isInvertible_loopOperator_iff_det_ne_zero]
 
 /-- **The determinant line of a nondegenerate asymptotic operator beside an invertible operator.**
 Let `(J₀ L_S) ⊕ B` be bijective, equivalently `det (1 - Ψ(T)) ≠ 0`. Transporting its determinant

@@ -140,6 +140,8 @@ bounds.
   `MeasureTheory.memLp_top_inv_sub_of_ae_le_norm_sub`: an almost-everywhere strongly measurable
   function into a normed division ring bounded away from zero (or from a scalar `z`) almost
   everywhere has essentially bounded reciprocal (`MemLp · ∞ μ`).
+* `ContinuousLinearMap.norm_compLp_toSpanSingleton`: postcomposing a scalar `Lᵖ` class `f` with
+  `toSpanSingleton 𝕜 v` gives `Lᵖ` norm `‖f‖ * ‖v‖`.
 -/
 
 public section
@@ -961,3 +963,30 @@ theorem memLp_top_inv_sub_of_ae_le_norm_sub {f : α → 𝕜} (hf : AEStronglyMe
 end Inv
 
 end MeasureTheory
+
+section CompLpNorm
+
+open MeasureTheory
+open scoped ENNReal
+
+namespace ContinuousLinearMap
+
+variable {α E 𝕜 : Type*} {_ : MeasurableSpace α} {μ : Measure α} {p : ℝ≥0∞}
+  [NormedAddCommGroup E] [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E]
+
+/-- Postcomposing a scalar `Lᵖ` class `f` with `toSpanSingleton 𝕜 v` (`x ↦ f x • v`) gives `Lᵖ`
+norm `‖f‖ * ‖v‖`. -/
+@[simp]
+theorem norm_compLp_toSpanSingleton (v : E) (f : Lp 𝕜 p μ) :
+    ‖(ContinuousLinearMap.toSpanSingleton 𝕜 v).compLp f‖ = ‖f‖ * ‖v‖ := by
+  have he : eLpNorm ((toSpanSingleton 𝕜 v).compLp f) p μ = ‖v‖ₑ * eLpNorm f p μ := by
+    rw [← eLpNorm_norm f (Lp.aestronglyMeasurable f), ← eNorm_norm, ← eLpNorm_const_smul]
+    refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
+      ((Lp.aestronglyMeasurable f).norm.const_smul ‖v‖) ?_
+    filter_upwards [(toSpanSingleton 𝕜 v).coeFn_compLp f] with x hx
+    simp [hx, norm_smul, Real.norm_of_nonneg (mul_nonneg (norm_nonneg v) (norm_nonneg _)), mul_comm]
+  rw [Lp.norm_def, Lp.norm_def, he, ENNReal.toReal_mul, toReal_eNorm, mul_comm]
+
+end ContinuousLinearMap
+
+end CompLpNorm

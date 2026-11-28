@@ -42,13 +42,17 @@ end ContinuousLinearEquiv
 
 namespace ContinuousLinearMap
 
-variable {𝕜 M M₂ : Type*} [Semifield 𝕜]
-  [TopologicalSpace M] [AddCommMonoid M] [Module 𝕜 M]
-  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module 𝕜 M₂] [ContinuousConstSMul 𝕜 M₂]
+variable {R S M M₂ : Type*} [Semiring R] [GroupWithZero S]
+  [TopologicalSpace M] [AddCommMonoid M] [Module R M]
+  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module R M₂]
+  [DistribMulAction S M₂] [SMulCommClass R S M₂] [ContinuousConstSMul S M₂]
 
-/-- Multiplying by a nonzero scalar is composing with the corresponding scalar equivalence. -/
-theorem smul_eq_smulLeft_comp {c : 𝕜} (hc : c ≠ 0) (f : M →L[𝕜] M₂) :
-    c • f = (ContinuousLinearEquiv.smulLeft (Units.mk0 c hc) : M₂ ≃L[𝕜] M₂) ∘L f := by
+/-- Multiplying by a nonzero commuting scalar is composing with the corresponding scalar
+equivalence. -/
+theorem smul_eq_smulLeft_comp {c : S} (hc : c ≠ 0) (f : M →L[R] M₂) :
+    c • f = ((letI := SMulCommClass.symm R S M₂
+      ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)) : M₂ ≃L[R] M₂) ∘L f := by
+  have := SMulCommClass.symm R S M₂
   ext; simp
 
 end ContinuousLinearMap

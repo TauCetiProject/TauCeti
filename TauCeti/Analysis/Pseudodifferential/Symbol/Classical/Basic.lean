@@ -1381,7 +1381,7 @@ theorem isInvertible_coefficient_principal_of_eventually {a : ClassicalSymbol n 
   rw [div_le_iff₀ (norm_pos_iff.2 hξ), ← Real.norm_of_nonneg ht.le, ← norm_smul] at hT
   have hd := hC₁ x rfl (t • ξ) ((le_max_left _ _).trans hT)
   rw [← norm_neg, neg_sub, a.principal.homogeneous x ξ _ ht] at hd
-  exact (ContinuousLinearMap.isInvertible_smul_iff_of_isScalarTower (by positivity)).1
+  exact (ContinuousLinearMap.isInvertible_smul_iff (by positivity)).1
     (isInvertible_and_norm_inverse_le_of_norm_sub_le hB (by positivity) (le_max_right _ _) hT
       hM hd).1
 

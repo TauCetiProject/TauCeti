@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.Analysis.Normed.Operator.Banach
+import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.PSeries.Shifted
 
 /-!
@@ -28,8 +29,8 @@ decompositions of a cut Riemann surface are carried out (Robbin–Salamon).
 
 The space is `TauCeti.CircleSobolev s E`, an extensional structure recording the coefficient
 sequence `coeff`. Multiplication by the weights `(1 + |n|) ^ s` identifies it isometrically with
-`ℓ²(ℤ, E)` (`CircleSobolev.toℓ2ₗᵢ`), which supplies its norm, and its completeness and inner
-product when `E` has them.
+`ℓ²(ℤ, E)` (`CircleSobolev.toℓ2ₗᵢ`), which supplies its norm, and its completeness,
+separability, and inner product when `E` has them.
 
 ## Main definitions
 
@@ -380,6 +381,13 @@ theorem coe_toℓ2ₗᵢ_symm : ⇑(toℓ2ₗᵢ : CircleSobolev s E ≃ₗᵢ[�
 
 instance [CompleteSpace E] : CompleteSpace (CircleSobolev s E) :=
   (toℓ2ₗᵢ (s := s) (E := E)).toIsometryEquiv.completeSpace_iff.2 inferInstance
+
+/-- `H^s` is separable when `E` is separable, via `CircleSobolev.toℓ2ₗᵢ` into `ℓ²(ℤ, E)`. -/
+instance instSeparableSpace [TopologicalSpace.SeparableSpace E] :
+    TopologicalSpace.SeparableSpace (CircleSobolev s E) :=
+  have : TopologicalSpace.SeparableSpace (lp (fun _ : ℤ ↦ E) 2) := lp.separableSpace (by norm_num)
+  (toℓ2ₗᵢ (s := s) (E := E)).symm.surjective.denseRange.separableSpace
+    (toℓ2ₗᵢ (s := s) (E := E)).symm.continuous
 
 /-- The squared norm of `H^s` is the sum of the squared weighted coefficient norms. -/
 theorem hasSum_sq_weight_mul_norm_coeff (a : CircleSobolev s E) :

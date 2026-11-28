@@ -60,7 +60,7 @@ theorem isSelfAdjoint_domainOperator_I_smul_loopOperator
       (I • loopOperator T S).toLinearMap (inclusion_injective zero_le_one)) :=
   ContinuousLinearMap.isSelfAdjoint_domainOperator_of_isInvertible
     (real_inner_I_smul_loopOperator_comm T S hS)
-    ((ContinuousLinearMap.isInvertible_I_smul_iff _).2 hL)
+    ((ContinuousLinearMap.isInvertible_smul_iff I_ne_zero).2 hL)
 
 /-- **The asymptotic operator of a nondegenerate loop has compact resolvent.** If `ζ' = S_t ζ`
 has no nonzero periodic solution, the operator `J₀ (d/dt - S_t)` on `H⁰(F)` with domain `H¹(F)`

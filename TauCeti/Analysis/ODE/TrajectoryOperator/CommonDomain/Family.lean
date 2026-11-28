@@ -9,6 +9,7 @@ public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Estimates for the trajectory operator of a family over a common domain
@@ -104,6 +105,7 @@ private theorem norm_familyDomainTrajectoryOperator_sub_domainTrajectoryOperator
   · exact ((A s - A₀).le_opNorm _).trans (mul_le_mul_of_nonneg_right (hAs hs) (norm_nonneg _))
   · rw [hus hs]; simp
 
+omit [CompleteSpace D] in
 /-- **Estimate near an invertible symmetric constant.** Let `A₀` be invertible and `ι`-symmetric,
 and put `M = max ‖A₀⁻¹‖ 1`. If `‖A(s) - A₀‖ ≤ δ` for almost every `s` in `S` and the path `u`
 vanishes almost everywhere off `S`, then `(1 - M δ) ‖u‖ ≤ M ‖(ι ∘ u)' + A u‖` on `L²(ℝ)`. -/
@@ -115,6 +117,7 @@ theorem mul_norm_le_mul_norm_familyDomainTrajectoryOperator
     (hu : ∀ᵐ s ∂volume, s ∉ S → prev (ι.compLpL 2 μ₀) u s = 0) :
     (1 - max ‖A₀.inverse‖ 1 * δ) * ‖u‖ ≤
       max ‖A₀.inverse‖ 1 * ‖familyDomainTrajectoryOperator ι A u‖ := by
+  have : CompleteSpace D := ContinuousLinearMap.completeSpace_of_isInvertible hA₀
   set M := max ‖A₀.inverse‖ 1
   have h₀ :=
     norm_le_max_mul_norm_domainTrajectoryOperator hSymm hA₀.norm_le_norm_inverse_mul_norm u
@@ -126,11 +129,11 @@ theorem mul_norm_le_mul_norm_familyDomainTrajectoryOperator
       (familyDomainTrajectoryOperator ι A u - domainTrajectoryOperator ι A₀ u)
     rw [sub_sub_cancel] at this
     linarith
-  nlinarith [mul_le_mul_of_nonneg_left htri (zero_le_one.trans (le_max_right ‖A₀.inverse‖ 1))]
+  nlinarith [mul_le_mul_of_nonneg_left htri (by positivity : (0 : ℝ) ≤ max ‖A₀.inverse‖ 1)]
 
 /-- **Invertibility near an invertible symmetric constant.** If `A₀` is invertible and
-`ι`-symmetric and `max ‖A₀⁻¹‖ 1 ‖A - A₀‖_{L∞} < 1`, then `u ↦ (ι ∘ u)' + A u` is invertible from
-`L²(ℝ, D) ∩ W^{1,2}(ℝ, H)` onto `L²(ℝ, H)`. -/
+`ι`-symmetric and `max ‖A₀⁻¹‖ 1 * ‖A - A₀‖_{L∞} < 1`, then `u ↦ (ι ∘ u)' + A u` is invertible
+from `L²(ℝ, D) ∩ W^{1,2}(ℝ, H)` onto `L²(ℝ, H)`. -/
 theorem isInvertible_familyDomainTrajectoryOperator_of_mul_norm_sub_lt
     (hSymm : ∀ x y : D, ⟪A₀ x, ι y⟫_ℝ = ⟪ι x, A₀ y⟫_ℝ) (hA₀ : A₀.IsInvertible)
     {A : Lp (D →L[ℝ] H) ∞ μ₀}
@@ -141,7 +144,7 @@ theorem isInvertible_familyDomainTrajectoryOperator_of_mul_norm_sub_lt
   rw [familyDomainTrajectoryOperator_toLp_const] at hle
   exact (isInvertible_domainTrajectoryOperator hSymm hA₀).of_mul_norm_sub_lt
     (norm_inverse_domainTrajectoryOperator_le hSymm hA₀)
-    ((mul_le_mul_of_nonneg_left hle (zero_le_one.trans (le_max_right _ _))).trans_lt h)
+    ((mul_le_mul_of_nonneg_left hle (by positivity)).trans_lt h)
 
 /-- Under the hypotheses of
 `isInvertible_familyDomainTrajectoryOperator_of_mul_norm_sub_lt`, with
@@ -157,11 +160,12 @@ theorem norm_inverse_familyDomainTrajectoryOperator_le
   have hle := norm_familyDomainTrajectoryOperator_sub_le (p := 2) ι A
     ((memLp_top_const (μ := μ₀) A₀).toLp _)
   rw [familyDomainTrajectoryOperator_toLp_const] at hle
-  replace hle := mul_le_mul_of_nonneg_left hle (zero_le_one.trans (le_max_right ‖A₀.inverse‖ 1))
+  replace hle := mul_le_mul_of_nonneg_left hle (by positivity : (0 : ℝ) ≤ max ‖A₀.inverse‖ 1)
   refine ((isInvertible_domainTrajectoryOperator hSymm hA₀).norm_inverse_le_of_mul_norm_sub_lt
     (norm_inverse_domainTrajectoryOperator_le hSymm hA₀) (lt_of_le_of_lt hle h)).trans ?_
   exact div_le_div_of_nonneg_left (by positivity) (sub_pos.2 h) (by linarith)
 
+omit [CompleteSpace D] in
 /-- **The estimate along a filter.** If `A(s)` converges along a filter `l` on `ℝ` to an invertible
 `ι`-symmetric operator `A₀`, there are a set `S ∈ l` and a constant `C` with
 `‖u‖ ≤ C ‖(ι ∘ u)' + A u‖` on `L²(ℝ)` for every path `u` vanishing almost everywhere off `S`. -/
@@ -186,6 +190,7 @@ theorem exists_mem_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_of_ten
   rw [show M * (2 * M)⁻¹ = 1 / 2 by field_simp] at this
   linarith
 
+omit [CompleteSpace D] in
 /-- **The estimate along a filter, for a limit that is invertible after a shift.** If `A(s)`
 converges along a filter `l` on `ℝ` to an `ι`-symmetric operator `A₀` for which `A₀ - c ι` is
 invertible, there are a set `S ∈ l` and a constant `C` with
@@ -226,6 +231,7 @@ theorem exists_mem_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_add_of
     (mul_le_mul_of_nonneg_left ((norm_sub_le _ _).trans ?_) (abs_nonneg C))
   rw [norm_smul, Real.norm_eq_abs]
 
+omit [CompleteSpace D] in
 /-- **The estimate at `+∞`.** If `A(s)` converges as `s → ∞` to an invertible `ι`-symmetric
 operator `B`, there are `C` and `T` with `‖u‖ ≤ C ‖(ι ∘ u)' + A u‖` on `L²(ℝ)` for every path `u`
 vanishing almost everywhere on `(-∞, T)`. -/
@@ -242,6 +248,7 @@ theorem exists_forall_norm_le_mul_norm_familyDomainTrajectoryOperator_of_tendsto
   exact ⟨C, T, fun u hu ↦ hC u (hu.mono fun s hs hsS ↦
     hs (lt_of_not_ge fun h ↦ hsS (hT s h)))⟩
 
+omit [CompleteSpace D] in
 /-- **The estimate at `-∞`.** If `A(s)` converges as `s → -∞` to an invertible `ι`-symmetric
 operator `B`, there are `C` and `T` with `‖u‖ ≤ C ‖(ι ∘ u)' + A u‖` on `L²(ℝ)` for every path `u`
 vanishing almost everywhere on `(T, ∞)`. -/

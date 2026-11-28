@@ -9,6 +9,8 @@ public import TauCeti.Analysis.ODE.EnergyEstimate.Basic
 public import TauCeti.Analysis.ODE.TrajectoryOperator
 public import TauCeti.Analysis.Sobolev.GraphStep.Density
 public import TauCeti.Analysis.Sobolev.GraphStep.LocalCompactness
+import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain
+import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -36,12 +38,18 @@ When `A` is a `C¹` family of symmetric operators with a spectral gap and a smal
 whole line, rather than only near its limits, the coercive estimate for test paths
 `TauCeti.integral_norm_deriv_sq_add_mul_integral_norm_sq_le` has no error term, so `D_A` is
 injective. This applies in particular to a constant invertible symmetric coefficient, also on an
-infinite-dimensional Hilbert space.
+infinite-dimensional Hilbert space; for any constant symmetric coefficient `A₀`, the derivative
+term vanishes identically and the energy identity extends by density to the exact Pythagorean
+identity `‖u'‖² + ‖A₀ u‖² = ‖D_{A₀} u‖²` on `W^{1,2}(ℝ, E)`.
 
 ## Main declarations
 
 * `TauCeti.WeakDerivStep.mul_norm_weakFDeriv_sq_add_mul_norm_prev_sq_le_of_forall_contDiff`: an
   estimate on compactly supported `C¹` paths extends to `W^{1,2}(ℝ, E)`.
+* `TauCeti.WeakDerivStep.norm_weakFDeriv_sq_add_norm_compLp_sq_eq_norm_trajectoryOperator_sq`: the
+  exact Pythagorean energy identity `‖u'‖² + ‖A₀ u‖² = ‖D_{A₀} u‖²` for a constant symmetric
+  operator `A₀`, and its scalar specialization
+  `TauCeti.WeakDerivStep.norm_weakFDeriv_sq_add_mul_norm_prev_sq_eq_norm_trajectoryOperator_sq`.
 * `TauCeti.WeakDerivStep.norm_weakFDeriv_sq_add_mul_norm_prev_sq_le_norm_trajectoryOperator_sq`:
   for a family with a uniform spectral gap `α` and `⟪v, A' v⟫ ≤ β ‖v‖²`, the estimate
   `‖u'‖² + (α² - β) ‖u‖² ≤ ‖D_A u‖²` without compact error, and
@@ -140,6 +148,50 @@ theorem mul_norm_weakFDeriv_sq_add_mul_norm_prev_sq_le_of_forall_contDiff
     ← norm_trajectoryOperator_sq_eq_integral hφ1 hu AL hAL] at this
   rw [Set.mem_ofPred_eq]
   linarith
+
+open scoped InnerProductSpace in
+/-- **Pythagorean energy identity for a constant symmetric trajectory operator.** If `A₀` is a
+symmetric bounded operator on `E` and `AL` is an `L∞` class equal almost everywhere to `A₀`, then
+`‖u'‖² + ‖A₀ u‖² = ‖D_{A₀} u‖²` for every `u ∈ W^{1,2}(ℝ, E)`. -/
+theorem norm_weakFDeriv_sq_add_norm_compLp_sq_eq_norm_trajectoryOperator_sq
+    {A₀ : E →L[ℝ] E} (hsym : A₀.toLinearMap.IsSymmetric)
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun _ ↦ A₀)
+    (u : WeakDerivStep volume ⊤ 2
+      (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    ‖weakFDeriv _ u‖ ^ 2 + ‖A₀.compLp (prev _ u)‖ ^ 2 = ‖trajectoryOperator AL u‖ ^ 2 := by
+  let μ := (volume : Measure ℝ).restrict ((⊤ : Opens ℝ) : Set ℝ)
+  let ι := ContinuousLinearMap.id ℝ E
+  have hu' : HasWeakFDerivOn volume ⊤ (ι.compLpL 2 μ (prev _ u)) (weakFDeriv _ u) := by
+    simpa [ι, ContinuousLinearMap.compLpL_apply, ContinuousLinearMap.id_compLp] using
+      hasWeakFDerivOn_base_prev _ u
+  let u' : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ) := mk _ (prev _ u) (weakFDeriv _ u) hu'
+  have hpost : postcompBaseL (ι.compLpL 2 μ) ι u' = u := by
+    dsimp only [ι]
+    rw [postcompBaseL_id]
+    refine ext_prev_weakFDeriv ?_ ?_
+    · rw [prev_toIdL, prev_mk, ContinuousLinearMap.id_compLpL, ContinuousLinearMap.id_apply]
+    · rw [weakFDeriv_toIdL, weakFDeriv_mk]
+  have htraj : trajectoryOperator AL u = domainTrajectoryOperator ι A₀ u' := by
+    have hinter := trajectoryOperator_postcompBaseL ι A₀ ι A₀ (fun _ ↦ rfl) AL hAL u'
+    rwa [hpost, ContinuousLinearMap.id_compLp] at hinter
+  have hSymm : ∀ x y : E, ⟪A₀ x, ι y⟫_ℝ = ⟪ι x, A₀ y⟫_ℝ := fun x y ↦ hsym x y
+  rw [htraj, norm_domainTrajectoryOperator_sq hSymm u', prev_mk, weakFDeriv_mk,
+    ContinuousLinearMap.compLpL_apply]
+
+/-- **Pythagorean energy identity for a constant scalar trajectory operator.** For `c : ℝ` and an
+`L∞` class `AL` equal almost everywhere to `c • id`, every `u ∈ W^{1,2}(ℝ, E)` satisfies
+`‖u'‖² + c² ‖u‖² = ‖D_{c • id} u‖²`. -/
+theorem norm_weakFDeriv_sq_add_mul_norm_prev_sq_eq_norm_trajectoryOperator_sq (c : ℝ)
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] fun _ ↦ c • ContinuousLinearMap.id ℝ E)
+    (u : WeakDerivStep volume ⊤ 2
+      (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    ‖weakFDeriv _ u‖ ^ 2 + c ^ 2 * ‖prev _ u‖ ^ 2 = ‖trajectoryOperator AL u‖ ^ 2 := by
+  simpa only [ContinuousLinearMap.smul_compLp, ContinuousLinearMap.id_compLp, norm_smul,
+    Real.norm_eq_abs, mul_pow, sq_abs] using
+    norm_weakFDeriv_sq_add_norm_compLp_sq_eq_norm_trajectoryOperator_sq
+      (LinearMap.IsSymmetric.id.smul (conj_trivial c)) AL hAL u
 
 open scoped InnerProductSpace in
 /-- **The coercive trajectory estimate on Sobolev paths.** If a `C¹` family of symmetric operators

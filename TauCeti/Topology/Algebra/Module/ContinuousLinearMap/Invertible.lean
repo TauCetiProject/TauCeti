@@ -22,10 +22,12 @@ without completeness or continuity of the original family, and are useful when d
 inverse families. The difference of two inverses satisfies the resolvent identity, which
 controls variation of inverse operators by variation of the original operators.
 
-Over a semifield, multiplying a map by a nonzero scalar `c` preserves invertibility, and the inverse
-of `c • f` is `c⁻¹ • f.inverse`, also for `c` from a subfield of the scalars; this is how the
-inverse of a positively homogeneous family of maps is seen to be homogeneous of the opposite
-degree. For such a nonzero scalar `c` with `c - A` invertible, `1 - A / c` is a unit
+Multiplying a continuous linear map by a nonzero commuting scalar `c` from a group with zero
+preserves invertibility (`ContinuousLinearMap.isInvertible_smul_iff`), and the inverse of `c • f`
+applies `f.inverse` after scaling by `c⁻¹` (`ContinuousLinearMap.inverse_smul_apply`); over a
+semifield this becomes `(c • f).inverse = c⁻¹ • f.inverse`, also for `c` from a subfield of the
+scalars, showing that the inverse of a positively homogeneous family of maps is homogeneous of the
+opposite degree. For such a nonzero scalar `c` with `c - A` invertible, `1 - A / c` is a unit
 (`ContinuousLinearMap.isUnit_one_add_neg_inv_smul`). Scaling the identity by a nonzero scalar `c`
 from a group with zero acting on the space, such as complex multiplication on `ℂ` viewed as a
 real-linear map, is invertible (`ContinuousLinearMap.isUnit_smul_id_of_ne_zero`). On a
@@ -42,8 +44,9 @@ the factors.
 An endomorphism is invertible exactly when it is a unit of the endomorphism ring
 (`ContinuousLinearMap.isInvertible_iff_isUnit`), and two invertible maps determine a transition
 unit (`ContinuousLinearMap.IsInvertible.transitionUnit`). A map is invertible exactly when its
-negation is (`ContinuousLinearMap.isInvertible_neg_iff`), so a difference `f - g` is invertible
-exactly when `g - f` is (`ContinuousLinearMap.isInvertible_sub_comm`).
+negation is (`ContinuousLinearMap.isInvertible_neg_iff`), negating a map negates its totalized
+inverse (`ContinuousLinearMap.inverse_neg`), and a difference `f - g` is invertible exactly when
+`g - f` is (`ContinuousLinearMap.isInvertible_sub_comm`).
 
 A map agreeing pointwise with an equality cast is invertible
 (`ContinuousLinearMap.isInvertible_of_eq_cast`), including zero modules.
@@ -153,6 +156,14 @@ variable {R E F : Type*} [Ring R] [TopologicalSpace E] [AddCommGroup E] [Module 
 theorem isInvertible_neg_iff {f : E →L[R] F} : (-f).IsInvertible ↔ f.IsInvertible := by
   have h : -f = (ContinuousLinearEquiv.neg R : F ≃L[R] F) ∘L f := by ext; simp
   rw [h, isInvertible_equiv_comp]
+
+/-- Negating a continuous linear map negates its totalized inverse. -/
+@[simp]
+theorem inverse_neg [IsTopologicalAddGroup E] (f : E →L[R] F) : (-f).inverse = -f.inverse := by
+  have hneg : -f = ((ContinuousLinearEquiv.neg R : F ≃L[R] F) : F →L[R] F) ∘L f := by
+    ext; simp
+  rw [hneg, inverse_equiv_comp]
+  ext; simp
 
 /-- A difference `f - g` is invertible exactly when `g - f` is. -/
 theorem isInvertible_sub_comm {f g : E →L[R] F} : (f - g).IsInvertible ↔ (g - f).IsInvertible := by
@@ -315,36 +326,43 @@ theorem IsInvertible.eventually_of_tendsto_inverse {A : ι → E →L[𝕜] F} {
 
 section Smul
 
-variable {𝕜 M M₂ : Type*} [Semifield 𝕜]
-  [TopologicalSpace M] [AddCommMonoid M] [Module 𝕜 M] [ContinuousConstSMul 𝕜 M]
-  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module 𝕜 M₂] [ContinuousConstSMul 𝕜 M₂]
+variable {R S M M₂ : Type*} [Semiring R] [GroupWithZero S]
+  [TopologicalSpace M] [AddCommMonoid M] [Module R M]
+  [TopologicalSpace M₂] [AddCommMonoid M₂] [Module R M₂]
+  [DistribMulAction S M₂] [SMulCommClass R S M₂] [ContinuousConstSMul S M₂]
 
-omit [ContinuousConstSMul 𝕜 M] in
-/-- Multiplying a continuous linear map by a nonzero scalar does not change its
+/-- Multiplying a continuous linear map by a nonzero commuting scalar does not change its
 invertibility. -/
 @[simp]
-theorem isInvertible_smul_iff {c : 𝕜} (hc : c ≠ 0) {f : M →L[𝕜] M₂} :
+theorem isInvertible_smul_iff {c : S} (hc : c ≠ 0) {f : M →L[R] M₂} :
     (c • f).IsInvertible ↔ f.IsInvertible := by
   rw [smul_eq_smulLeft_comp hc, isInvertible_equiv_comp]
 
+/-- For a nonzero commuting scalar `c`, the inverse of `c • f` applies `f.inverse` after scaling
+by `c⁻¹`. This holds whether or not `f` is invertible. -/
+theorem inverse_smul_apply {c : S} (hc : c ≠ 0) (f : M →L[R] M₂) (y : M₂) :
+    (c • f).inverse y = f.inverse (c⁻¹ • y) := by
+  rw [smul_eq_smulLeft_comp hc, inverse_equiv_comp, comp_apply, ContinuousLinearEquiv.coe_coe,
+    (ContinuousLinearEquiv.symm_apply_eq _ (y := c⁻¹ • y)).2 (by simp [smul_smul, hc])]
+
 /-- The inverse of `c • f` is `c⁻¹ • f.inverse`. This holds for every scalar: both sides vanish
 when `c = 0` or when `f` is not invertible. -/
-theorem inverse_smul (c : 𝕜) (f : M →L[𝕜] M₂) : (c • f).inverse = c⁻¹ • f.inverse := by
+theorem inverse_smul {𝕜 : Type*} [Semifield 𝕜] [Module 𝕜 M] [ContinuousConstSMul 𝕜 M]
+    [Module 𝕜 M₂] [ContinuousConstSMul 𝕜 M₂] (c : 𝕜) (f : M →L[𝕜] M₂) :
+    (c • f).inverse = c⁻¹ • f.inverse := by
   rcases eq_or_ne c 0 with rfl | hc
   · -- `zero_smul` is unavailable here: `M →L[𝕜] M₂` is a `𝕜`-module only under
     -- `ContinuousAdd M₂`, which these lemmas do not assume.
     have h0 : (0 : 𝕜) • f = 0 := by ext; simp
     ext y
     simp [h0]
-  rw [smul_eq_smulLeft_comp hc, inverse_equiv_comp]
   ext y
-  rw [comp_apply, ContinuousLinearEquiv.coe_coe,
-    (ContinuousLinearEquiv.symm_apply_eq _ (y := c⁻¹ • y)).2 (by simp [smul_smul, hc]),
-    map_smul, smul_apply]
+  rw [inverse_smul_apply hc, map_smul, smul_apply]
 
 /-- The inverse of `c • f` is `c⁻¹ • f.inverse` also for a scalar `c` from a subfield `S` of the
 scalars of `f`, such as a real multiple of a complex-linear map. -/
-theorem inverse_smul_of_isScalarTower {S : Type*} [Semifield S] [Algebra S 𝕜]
+theorem inverse_smul_of_isScalarTower {𝕜 S : Type*} [Semifield 𝕜] [Semifield S] [Algebra S 𝕜]
+    [Module 𝕜 M] [ContinuousConstSMul 𝕜 M] [Module 𝕜 M₂] [ContinuousConstSMul 𝕜 M₂]
     [Module S M] [IsScalarTower S 𝕜 M] [ContinuousConstSMul S M]
     [Module S M₂] [IsScalarTower S 𝕜 M₂] [ContinuousConstSMul S M₂]
     (c : S) (f : M →L[𝕜] M₂) : (c • f).inverse = c⁻¹ • f.inverse := by
@@ -352,16 +370,6 @@ theorem inverse_smul_of_isScalarTower {S : Type*} [Semifield S] [Algebra S 𝕜]
     ext; simp [algebraMap_smul]
   rw [show c • f = algebraMap S 𝕜 c • f by ext; simp [algebraMap_smul], inverse_smul, h,
     map_inv₀]
-
-omit [ContinuousConstSMul 𝕜 M] in
-/-- Multiplying a continuous linear map by a nonzero scalar `c` from a subfield `S` of its scalars,
-such as a real multiple of a complex-linear map, does not change its invertibility. -/
-@[simp]
-theorem isInvertible_smul_iff_of_isScalarTower {S : Type*} [Semifield S] [Algebra S 𝕜]
-    [Module S M₂] [IsScalarTower S 𝕜 M₂] [ContinuousConstSMul S M₂] {c : S} (hc : c ≠ 0)
-    {f : M →L[𝕜] M₂} : (c • f).IsInvertible ↔ f.IsInvertible := by
-  rw [show c • f = algebraMap S 𝕜 c • f by ext; simp [algebraMap_smul],
-    isInvertible_smul_iff ((map_ne_zero _).2 hc)]
 
 end Smul
 

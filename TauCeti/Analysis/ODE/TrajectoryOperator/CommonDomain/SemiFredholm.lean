@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.GraphStep.Multiplication
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The semi-Fredholm estimate for the trajectory operator over a compactly embedded domain
@@ -184,6 +185,7 @@ theorem exists_isCompactOperator_and_norm_le_of_forall_norm_le (hι : IsCompactO
 
 variable {B Bbot Btop : D →L[ℝ] H} {A : ℝ → D →L[ℝ] H} {AL : Lp (D →L[ℝ] H) ∞ μ₀} {c : ℝ}
 
+omit [CompleteSpace D] in
 /-- **The estimate on a window.** Let `A(s)` differ from an invertible `ι`-symmetric `B` by at most
 `c ‖ι x‖` on the window `(-b, b)`, with `c ≥ 0`. A path `w = φ u`, for a weight `|φ| ≤ 1` vanishing
 off the window, satisfies `‖w‖ ≤ M (‖D_A w‖ + c ‖ι ∘ u‖_{L²((-b, b), H)})` with
@@ -210,10 +212,12 @@ private theorem norm_le_of_ae_prev_eq_smul (hSymm : ∀ x y : D, ⟪B x, ι y⟫
         exact mul_nonneg hc₀ (norm_nonneg _)
     · filter_upwards [hm, hw] with s h₁ h₂ hsW
       rw [h₁, h₂, hφ₀ s hsW, zero_smul, map_zero]
+  have : CompleteSpace D := ContinuousLinearMap.completeSpace_of_isInvertible hB
   refine (norm_le_max_mul_norm_domainTrajectoryOperator hSymm hB.norm_le_norm_inverse_mul_norm
     w).trans ?_
   gcongr
-  have := norm_sub_norm_le (domainTrajectoryOperator ι B w) (familyDomainTrajectoryOperator ι AL w)
+  have := norm_sub_norm_le (domainTrajectoryOperator ι B w)
+    (familyDomainTrajectoryOperator ι AL w)
   rw [norm_sub_rev] at this
   linarith
 
@@ -245,6 +249,7 @@ private theorem ae_prev_sub_sub_eq_smul {φ ψ : ℝ → ℝ}
 
 /-! ### The estimate -/
 
+omit [CompleteSpace D] in
 /-- **Splicing the three pieces.** Let `D_A` satisfy `‖w‖ ≤ C₊ ‖D_A w‖` for the paths vanishing on
 `(-∞, T₊)` and `‖w‖ ≤ C₋ ‖D_A w‖` for those vanishing on `(T₋, ∞)`, and let `A(s)` differ from an
 invertible `ι`-symmetric `B` by at most `c ‖ι x‖` on `(-(a + 2), a + 2)`. For `a ≥ max T₊ (-T₋)`,
@@ -316,9 +321,10 @@ private theorem norm_le_of_end_estimates (hSymm : ∀ x y : D, ⟪B x, ι y⟫_�
   have htri : ‖u‖ ≤ ‖wbot‖ + ‖u - wbot - wtop‖ + ‖wtop‖ := by
     calc ‖u‖ = ‖wbot + (u - wbot - wtop) + wtop‖ := by congr 1; abel
       _ ≤ _ := (norm_add_le _ _).trans (add_le_add (norm_add_le _ _) le_rfl)
-  have hM := mul_le_mul_of_nonneg_left hD₀ (zero_le_one.trans (le_max_right ‖B.inverse‖ 1))
+  have hM := mul_le_mul_of_nonneg_left hD₀ (by positivity : (0 : ℝ) ≤ max ‖B.inverse‖ 1)
   linarith [hwtop, hwbot, hw₀, hM, htri]
 
+omit [CompleteSpace D] in
 /-- **The semi-Fredholm estimate for the trajectory operator over a common domain.** Let `A(s)`
 converge to invertible `ι`-symmetric operators `Bbot` and `Btop` at `-∞` and `∞`, and differ from
 `Btop` on every bounded interval by an operator bounded through `ι`: for every `T` there is `c` with

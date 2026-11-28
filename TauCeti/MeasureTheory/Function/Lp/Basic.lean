@@ -25,7 +25,7 @@ representatives of linear combinations.
 
 Mathlib composes `f : Lp E p μ` with `L : E →SL[σ] F` both as an element `L.compLp f` and through
 the bundled continuous semilinear map `L.compLpL p μ`; this file records that the two agree, their
-composition and identity laws, and that for `1 ≤ p` the postcomposition
+composition, identity, negation, and subtraction laws, and that for `1 ≤ p` the postcomposition
 `LinearIsometry.compLpₗᵢ` by a semilinear isometry underlies `ContinuousLinearMap.compLpL`.
 Specializing `compLpₗᵢ` and `compLpL` to `RCLike.ofRealLI`, `RCLike.reCLM`, and `RCLike.imCLM`
 defines the scalar inclusion `MeasureTheory.Lp.ofRealLI` and the real and imaginary coordinate
@@ -54,6 +54,9 @@ operators `MeasureTheory.Lp.reCLM` and `MeasureTheory.Lp.imCLM` between `Lp ℝ 
   the composites of the underlying maps do.
 * `ContinuousLinearMap.id_compLp`, `ContinuousLinearMap.id_compLpL`: identity laws for `compLp` and
   `compLpL`.
+* `ContinuousLinearMap.neg_compLp`, `ContinuousLinearMap.sub_compLp`,
+  `ContinuousLinearMap.neg_compLpL`, `ContinuousLinearMap.sub_compLpL`: compatibility with negation
+  and subtraction.
 * `LinearIsometry.toContinuousLinearMap_compLpₗᵢ`: postcomposition of `Lp` classes by a
   semilinear isometry (`LinearIsometry.compLpₗᵢ`) underlies `ContinuousLinearMap.compLpL`.
 * `MeasureTheory.Lp.instUniqueZero`: `Unique (Lp E p (0 : Measure α))`.
@@ -139,6 +142,26 @@ theorem zero_compLp (f : Lp E p μ) : (0 : E →SL[σ] F).compLp f = 0 := by
   ext1
   filter_upwards [(0 : E →SL[σ] F).coeFn_compLp f, Lp.coeFn_zero F p μ] with x hx h0
   rw [hx, h0, zero_apply, Pi.zero_apply]
+
+/-- Postcomposing an `Lᵖ` class with `-L` negates `L.compLp f`. -/
+@[simp]
+theorem neg_compLp (L : E →SL[σ] F) (f : Lp E p μ) : (-L).compLp f = -L.compLp f := by
+  simpa only [neg_one_smul] using smul_compLp (-1 : 𝕜') L f
+
+/-- Postcomposing an `Lᵖ` class with `L - L'` subtracts the postcompositions. -/
+theorem sub_compLp (L L' : E →SL[σ] F) (f : Lp E p μ) :
+    (L - L').compLp f = L.compLp f - L'.compLp f := by
+  rw [sub_eq_add_neg, add_compLp, neg_compLp, sub_eq_add_neg]
+
+/-- Bundled postcomposition respects negation of continuous semilinear maps. -/
+@[simp]
+theorem neg_compLpL [Fact (1 ≤ p)] (L : E →SL[σ] F) : (-L).compLpL p μ = -L.compLpL p μ :=
+  ext (neg_compLp L)
+
+/-- Bundled postcomposition respects subtraction of continuous semilinear maps. -/
+theorem sub_compLpL [Fact (1 ≤ p)] (L L' : E →SL[σ] F) :
+    (L - L').compLpL p μ = L.compLpL p μ - L'.compLpL p μ :=
+  ext (sub_compLp L L')
 
 end Apply
 

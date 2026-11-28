@@ -215,6 +215,7 @@ private theorem le_abs_mul_add_of_le_mul {r C a K : ℝ} (ha : 0 ≤ a) (hK : 0 
 
 variable {A : ℝ → D →L[ℝ] H} {AL : Lp (D →L[ℝ] H) ∞ μ₀} {Abot Atop : D →L[ℝ] H}
 
+omit [CompleteSpace D] in
 /-- **The semi-Fredholm estimate for `∂ₛ + A(s)` over a common domain.** Let `A : ℝ → (D →L[ℝ] H)`
 be continuous, with `L∞` class `AL`, each `A(s)` `ι`-symmetric and invertible after subtracting a
 multiple of `ι`, and with invertible limits `Abot` at `-∞` and `Atop` at `+∞`. Then there are `C`

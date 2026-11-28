@@ -25,6 +25,9 @@ Over the reals, the symmetric operator `u ↦ ⟪a, u⟫ b + ⟪b, u⟫ a` sends
 pairing positively with a nonzero `b` (`TauCeti.inner_rankOne_add_rankOne_apply_pos`). This
 is the symmetric operator used to build metric variations pairing positively with a given vector.
 
+Also provides `ContinuousLinearMap.innerSL_comp_toSpanSingleton`, recording that composing
+`innerSL 𝕜 v` with `toSpanSingleton 𝕜 w` scales the scalar identity by `⟪v, w⟫_𝕜`.
+
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
@@ -105,6 +108,20 @@ theorem norm_rankOneDivNormSq_map_le (C : E →L[𝕜'] F) (x : E) :
     ‖rankOneDivNormSq 𝕜 (C x) x‖ ≤ ‖C‖ := by
   rw [norm_rankOneDivNormSq]
   exact C.ratio_le_opNorm x
+
+section
+
+open InnerProductSpace
+open scoped InnerProductSpace
+
+/-- Composing `innerSL 𝕜 v` with `toSpanSingleton 𝕜 w` scales the scalar identity by `⟪v, w⟫`. -/
+@[simp]
+theorem innerSL_comp_toSpanSingleton {𝕜 E : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] (v w : E) :
+    (innerSL 𝕜 v).comp (toSpanSingleton 𝕜 w) = ⟪v, w⟫_𝕜 • ContinuousLinearMap.id 𝕜 𝕜 := by
+  ext; simp
+
+end
 
 end ContinuousLinearMap
 

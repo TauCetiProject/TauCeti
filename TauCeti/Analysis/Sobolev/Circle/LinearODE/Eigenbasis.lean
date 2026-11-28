@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Basic
+import Mathlib.Analysis.Real.Cardinality
 import TauCeti.Analysis.InnerProductSpace.Spectrum
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The eigenbasis of the asymptotic operator of a nondegenerate loop
@@ -22,7 +24,8 @@ acts from `H¹(F)` to `H⁰(F)`, as `I • CircleSobolev.loopOperator T S`. In F
 operator acting on the loops of a cylindrical end asymptotic to a periodic orbit, written in a
 unitary trivialization along the orbit, in which the almost complex structure is `J₀`; the
 linearized Floer operator on the end is `∂s + A`. This file shows that `A` is diagonalizable with
-real eigenvalues bounded away from `0` when the loop is nondegenerate.
+real eigenvalues bounded away from `0` when the loop is nondegenerate, and that any infinitesimally
+symplectic loop becomes nondegenerate after some real shift `S - δ J₀`.
 
 * **Symmetry.** For the real inner product of `H⁰`, `⟪A a, b⟫ = ⟪a, A b⟫` for `a, b ∈ H¹(F)`
   (`CircleSobolev.real_inner_I_smul_loopOperator_comm`), and shifting `S` by a real multiple of the
@@ -35,13 +38,16 @@ real eigenvalues bounded away from `0` when the loop is nondegenerate.
   circle.
 * **Eigenbasis.** Suppose the loop is nondegenerate, that is, `L_S ζ = ζ' - S ζ` is invertible
   (by `CircleSobolev.isInvertible_loopOperator_iff`, exactly when `ζ' = S ζ` has no nonzero
-  periodic solution). Then `A` is invertible, and its inverse followed by the inclusion
-  `H¹ → H⁰` is a compact (Rellich), symmetric and injective operator `K` on `H⁰`. The spectral
-  theorem for compact self-adjoint operators
-  (`ContinuousLinearMap.exists_hilbertBasis_forall_hasEigenvector_ne_zero`) gives a Hilbert basis
-  of `H⁰` of eigenvectors of `K` with nonzero eigenvalues `μ`. They lie in `H¹` and are
-  eigenvectors of `A` with eigenvalues `λ = μ⁻¹`, and `|λ| ≥ (‖K‖ + 1)⁻¹`
+  periodic solution). Then `A` is invertible, and the compact-resolvent spectral theorem
+  (`ContinuousLinearMap.exists_hilbertBasis_forall_apply_eq_smul_of_isCompactOperator_of_injective`)
+  applied to the compact inclusion `H¹ → H⁰` (Rellich) and `A` gives a Hilbert basis of `H⁰` of
+  eigenvectors of `A` lying in `H¹`, with real eigenvalues uniformly bounded away from `0`
   (`CircleSobolev.exists_hilbertBasis_I_smul_loopOperator_eq_smul`).
+* **Invertible spectral shifts.** Because `H⁰(F)` is separable, `A` has only countably many real
+  eigenvalues (`ContinuousLinearMap.countable_setOf_exists_ne_zero_apply_eq_smul`), while
+  `loopOperator` is Fredholm of index zero; hence there always exists `δ : ℝ` for which
+  `loopOperator T (S - δ • const (I • id))` is invertible
+  (`CircleSobolev.exists_isInvertible_loopOperator_sub_smul_const_I_id`).
 * **Classical eigenfunctions.** An element `a ∈ H¹(F)` with continuous representative `ζ` is an
   eigenvector of `A` for the eigenvalue `λ` exactly when `ζ' = S_t ζ - λ J₀ ζ` holds classically
   (`CircleSobolev.I_smul_loopOperator_eq_smul_iff`), that is, `J₀ (ζ' - S_t ζ) = λ ζ`.
@@ -150,46 +156,33 @@ theorem exists_hilbertBasis_I_smul_loopOperator_eq_smul
       (lam : ι → ℝ) (c : ℝ), 0 < c ∧ ∀ i, inclusion zero_le_one (a i) = b i ∧
         c ≤ |lam i| ∧ I • loopOperator T S (a i) = lam i • b i := by
   have := FiniteDimensional.completeSpace ℂ F
-  obtain ⟨e, he⟩ := hL
-  -- `R x = L_S⁻¹ (-J₀ x)` inverts `A`, and `K = R` followed by the inclusion is compact.
-  set R : CircleSobolev 0 F →L[ℝ] CircleSobolev 1 F :=
-    (e.symm : CircleSobolev 0 F →L[ℝ] CircleSobolev 1 F) ∘L
-      ((-I) • ContinuousLinearMap.id ℝ (CircleSobolev 0 F)) with hR
-  set K : CircleSobolev 0 F →L[ℝ] CircleSobolev 0 F :=
-    (inclusion (E := F) zero_le_one).restrictScalars ℝ ∘L R with hK
-  have hLR (x) : I • loopOperator T S (R x) = x := by
-    rw [hR, ContinuousLinearMap.comp_apply, ← he]
-    simp [smul_smul]
-  have hKc : IsCompactOperator K :=
-    (isCompactOperator_inclusion (E := F) zero_lt_one).comp_clm R
-  have hKs : (K : CircleSobolev 0 F →ₗ[ℝ] CircleSobolev 0 F).IsSymmetric := fun x y ↦ by
-    have h := real_inner_I_smul_loopOperator_comm T S hS (R x) (R y)
-    rw [hLR, hLR] at h
-    simpa [hK] using h.symm
-  have hKi : LinearMap.ker (K : CircleSobolev 0 F →ₗ[ℝ] CircleSobolev 0 F) = ⊥ := by
-    refine LinearMap.ker_eq_bot'.2 fun x hx ↦ ?_
-    rw [← hLR x, show R x = 0 from inclusion_injective zero_le_one (by simpa [hK] using hx)]
-    simp
-  obtain ⟨s, b, nu, hb, hnu0, hev⟩ :=
-    ContinuousLinearMap.exists_hilbertBasis_forall_hasEigenvector_ne_zero hKc hKs hKi
-  -- An eigenvector `x` of `K` for `μ ≠ 0` is the image of `μ⁻¹ R x`, an eigenvector of `A` for
-  -- `μ⁻¹`, and `|μ| ≤ ‖K‖` since `‖x‖ = 1`.
-  refine ⟨s, b, fun i ↦ (nu i)⁻¹ • R i, fun i ↦ (nu i)⁻¹, (‖K‖ + 1)⁻¹, by positivity,
-    fun i ↦ ⟨?_, ?_, ?_⟩⟩
-  · have h : K i = nu i • (i : CircleSobolev 0 F) := (hev i).apply_eq_smul
-    rw [hb]
-    calc inclusion zero_le_one ((nu i)⁻¹ • R i) = (nu i)⁻¹ • K i :=
-          (inclusion zero_le_one).map_smul_of_tower _ _
-      _ = i := by rw [h, smul_smul, inv_mul_cancel₀ (hnu0 i), one_smul]
-  · have h : K i = nu i • (i : CircleSobolev 0 F) := (hev i).apply_eq_smul
-    have hn : ‖(i : CircleSobolev 0 F)‖ = 1 := by
-      rw [← hb]
-      exact b.orthonormal.1 i
-    have hle : |nu i| ≤ ‖K‖ := by
-      simpa [h, norm_smul, hn] using K.le_opNorm i
-    rw [abs_inv]
-    exact inv_anti₀ (abs_pos.2 (hnu0 i)) (by linarith)
-  · rw [map_smul, smul_comm, hLR, hb]
+  obtain ⟨s, b, a, lam, c, hc, hinc, hgap, hev⟩ :=
+    ContinuousLinearMap.exists_hilbertBasis_forall_apply_eq_smul_of_isCompactOperator_of_injective
+      (ι := (inclusion (E := F) zero_le_one).restrictScalars ℝ)
+      (A := I • loopOperator T S)
+      (isCompactOperator_inclusion (E := F) zero_lt_one)
+      (inclusion_injective zero_le_one)
+      (real_inner_I_smul_loopOperator_comm T S hS)
+      ((ContinuousLinearMap.isInvertible_smul_iff I_ne_zero).2 hL)
+  exact ⟨s, b, a, lam, c, hc, fun i ↦ ⟨hinc i, hgap i, hev i⟩⟩
+
+/-- **Existence of an invertible spectral shift.** For any continuous loop `S` of infinitesimally
+symplectic real-linear maps on `F`, there exists a real shift `δ` such that the shifted loop
+operator `loopOperator T (S - δ • const (I • id))` is invertible. -/
+theorem exists_isInvertible_loopOperator_sub_smul_const_I_id
+    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
+    ∃ δ : ℝ, (loopOperator T
+      (S - δ • ContinuousMap.const _ (I • ContinuousLinearMap.id ℝ F))).IsInvertible := by
+  have := FiniteDimensional.completeSpace ℂ F
+  have hcount := ContinuousLinearMap.countable_setOf_exists_ne_zero_apply_eq_smul
+    (ι := (inclusion (E := F) zero_le_one).restrictScalars ℝ) (A := I • loopOperator T S)
+    (inclusion_injective zero_le_one) (real_inner_I_smul_loopOperator_comm T S hS)
+  obtain ⟨δ, hδ⟩ := Set.nonempty_compl.2 fun h ↦ Cardinal.not_countable_real (h ▸ hcount)
+  refine ⟨δ, (isFredholm_loopOperator T _).isInvertible_of_injective_of_index_eq_zero
+    ((injective_iff_map_eq_zero _).2 fun a ha ↦ by_contra fun ha0 ↦ hδ ⟨a, ha0, sub_eq_zero.1 ?_⟩)
+    (index_loopOperator T _)⟩
+  simpa only [smul_apply, sub_apply, ha, smul_zero] using
+    (congrArg (fun L ↦ L a) (I_smul_loopOperator_sub_smul_const_I T S δ)).symm
 
 /-- **Eigenvectors of the asymptotic operator are classical eigenfunctions.** An element `a` of
 `H¹` with continuous representative `ζ` satisfies `A a = λ a` for `A = J₀ (d/dt - S_t)` exactly
@@ -201,25 +194,11 @@ theorem I_smul_loopOperator_eq_smul_iff (a : CircleSobolev 1 F) (lam : ℝ) :
         (S x (toContinuousMap T (by norm_num) a x) -
           lam • I • toContinuousMap T (by norm_num) a x) x := by
   have := FiniteDimensional.completeSpace ℂ F
-  -- `A a = λ a` is `L_{S'} a = 0` for the shifted loop `S' = S - λ J₀`.
   set S' : C(AddCircle T, F →L[ℝ] F) :=
     S - lam • ContinuousMap.const _ (I • ContinuousLinearMap.id ℝ F) with hS'
-  have hL : loopOperator T S' a =
-      loopOperator T S a + ((lam : ℂ) * I) • inclusion zero_le_one a := by
-    -- `L_S` is linear in the loop, and multiplication by the constant loop `J₀` is `J₀`.
-    rw [hS', loopOperator_sub, add_apply, mulLoop_smul, smul_apply, mulLoop_const_smul_id,
-      mul_smul, Complex.coe_smul]
-  -- Multiplying by `-J₀` turns `J₀ y = λ z` into `y + λ J₀ z = 0`.
-  have hiff (y z : CircleSobolev 0 F) (c : ℂ) : I • y = c • z ↔ y + (c * I) • z = 0 := by
-    constructor
-    · intro h
-      have hy : y = (-I) • (I • y) := by rw [smul_smul]; simp
-      rw [hy, h, smul_smul, ← add_smul, show -I * c + c * I = 0 by ring, zero_smul]
-    · intro h
-      rw [eq_neg_of_add_eq_zero_left h, smul_neg, smul_smul, ← neg_smul]
-      congr 1
-      linear_combination (-c) * I_sq
-  rw [← Complex.coe_smul, hiff, ← hL, loopOperator_eq_zero_iff]
+  have hshift : I • loopOperator T S' a = I • loopOperator T S a - lam • inclusion zero_le_one a :=
+    congrArg (fun L ↦ L a) (I_smul_loopOperator_sub_smul_const_I T S lam)
+  rw [← sub_eq_zero, ← hshift, smul_eq_zero, or_iff_right I_ne_zero, loopOperator_eq_zero_iff]
   simp [hS']
 
 end CircleSobolev

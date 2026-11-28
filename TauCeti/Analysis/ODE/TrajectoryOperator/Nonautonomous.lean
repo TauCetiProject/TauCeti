@@ -245,7 +245,7 @@ private theorem nonneg_of_ae_norm_sub_le (hA : ∀ᵐ s ∂μ₀, ‖A s - A₀�
 
 /-- **Invertibility near an invertible symmetric constant.** On `L²(ℝ)`, let `A₀` be invertible
 and `ι`-symmetric, and let `‖A(s) - A₀‖ ≤ δ` for almost every `s`, with
-`max ‖A₀⁻¹‖ 1 δ < 1`. Then `∂s + A` is invertible. -/
+`max ‖A₀⁻¹‖ 1 * δ < 1`. Then `∂s + A` is invertible. -/
 theorem isInvertible_nonautonomousDomainTrajectoryOperator_of_ae_norm_sub_le
     (hSymm : ∀ x y : D, ⟪A₀ x, ι y⟫_ℝ = ⟪ι x, A₀ y⟫_ℝ) (hA₀ : A₀.IsInvertible)
     (hA : ∀ᵐ s ∂μ₀, ‖A s - A₀‖ ≤ δ) (hsmall : max ‖A₀.inverse‖ 1 * δ < 1) :
@@ -255,7 +255,7 @@ theorem isInvertible_nonautonomousDomainTrajectoryOperator_of_ae_norm_sub_le
     (lt_of_le_of_lt (mul_le_mul_of_nonneg_left
       (norm_nonautonomousDomainTrajectoryOperator_sub_domainTrajectoryOperator_le ι A₀
         (nonneg_of_ae_norm_sub_le hA) hA)
-      (zero_le_one.trans (le_max_right _ _))) hsmall)
+      (by positivity)) hsmall)
 
 /-- **The inverse bound near an invertible symmetric constant.** Under the hypotheses of
 `isInvertible_nonautonomousDomainTrajectoryOperator_of_ae_norm_sub_le`, with
@@ -270,7 +270,7 @@ theorem norm_inverse_nonautonomousDomainTrajectoryOperator_le_of_ae_norm_sub_le
     (p := 2) ι A₀ (nonneg_of_ae_norm_sub_le hA) hA
   have hCδ : C * ‖nonautonomousDomainTrajectoryOperator (p := 2) ι A -
       domainTrajectoryOperator ι A₀‖ ≤ C * δ :=
-    mul_le_mul_of_nonneg_left hdiff (zero_le_one.trans (le_max_right _ _))
+    mul_le_mul_of_nonneg_left hdiff (by positivity)
   refine ((isInvertible_domainTrajectoryOperator hSymm hA₀).norm_inverse_le_of_mul_norm_sub_lt
     (norm_inverse_domainTrajectoryOperator_le hSymm hA₀) (hCδ.trans_lt hsmall)).trans ?_
   gcongr

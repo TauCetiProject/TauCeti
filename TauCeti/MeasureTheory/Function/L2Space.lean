@@ -86,7 +86,10 @@ the real inner product on `L²(α, F)` is the real part of the complex one
 (`MeasureTheory.L2.real_inner_eq_re_inner`), so the real adjoint of a complex-linear operator
 on `L²` is its complex adjoint (`MeasureTheory.L2.adjoint_restrictScalars`). For a family of
 inner product spaces `G i`, evaluating coordinate `i` of an `L²(α, ℓ²(G))` function is adjoint to
-placing an `L²(α, G i)` function in coordinate `i` (`MeasureTheory.L2.inner_evalCLM_compLpL`).
+placing an `L²(α, G i)` function in coordinate `i` (`MeasureTheory.L2.inner_evalCLM_compLpL`);
+similarly, for rank-one functions `x ↦ f x • v`, the `L²` inner product factors as
+`⟪f, g⟫ * ⟪v, w⟫` (`MeasureTheory.Lp.inner_compLp_toSpanSingleton`) and pairing with `x ↦ g x • v`
+is adjoint to scalar projection (`MeasureTheory.Lp.inner_compLp_toSpanSingleton_left`).
 
 On real `L²`, the squared norm of the positive part, `g ↦ ‖g⁺‖²`, is Fréchet differentiable with
 derivative `k ↦ 2 ⟪f⁺, k⟫` at `f` (`MeasureTheory.Lp.hasFDerivAt_norm_posPart_sq`). Truncation
@@ -333,6 +336,31 @@ theorem L2.inner_evalCLM_compLpL {ι : Type*} [DecidableEq ι] {G : ι → Type*
     (lp.singleContinuousLinearMap 𝕜 G 2 i).coeFn_compLpL u] with x h₁ h₂
   rw [h₁, h₂, lp.singleContinuousLinearMap_apply, lp.inner_single_right]
   rfl
+
+open ContinuousLinearMap in
+/-- The `L²` inner product of two rank-one functions `x ↦ f x • v` and `x ↦ g x • w` factors as
+`⟪f, g⟫ * ⟪v, w⟫`. -/
+@[simp]
+theorem Lp.inner_compLp_toSpanSingleton (v w : E) (f g : Lp 𝕜 2 μ) :
+    ⟪(toSpanSingleton 𝕜 v).compLp f, (toSpanSingleton 𝕜 w).compLp g⟫_𝕜 =
+      ⟪f, g⟫_𝕜 * ⟪v, w⟫_𝕜 := by
+  rw [L2.inner_def, L2.inner_def, ← integral_mul_const]
+  refine integral_congr_ae ?_
+  filter_upwards [(toSpanSingleton 𝕜 v).coeFn_compLp f,
+    (toSpanSingleton 𝕜 w).coeFn_compLp g] with x hfx hgx
+  rw [hfx, hgx, toSpanSingleton_apply, toSpanSingleton_apply, inner_smul_left, inner_smul_right,
+    RCLike.inner_apply', mul_assoc]
+
+open ContinuousLinearMap in
+/-- Adjointness of rank-one embedding and scalar projection on `L²`: pairing `x ↦ g x • v` with
+`f` equals pairing `g` with `x ↦ ⟪v, f x⟫`. -/
+theorem Lp.inner_compLp_toSpanSingleton_left (v : E) (g : Lp 𝕜 2 μ) (f : Lp E 2 μ) :
+    ⟪(toSpanSingleton 𝕜 v).compLp g, f⟫_𝕜 = ⟪g, (innerSL 𝕜 v).compLp f⟫_𝕜 := by
+  rw [L2.inner_def, L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [(toSpanSingleton 𝕜 v).coeFn_compLp g,
+    (innerSL 𝕜 v).coeFn_compLp f] with x hgx hfx
+  rw [hgx, hfx, toSpanSingleton_apply, innerSL_apply_apply, inner_smul_left, RCLike.inner_apply']
 
 /-- The L² inner product of an L² function `f` with the class of a square-integrable function
 `g` is the integral of their pointwise inner product. -/

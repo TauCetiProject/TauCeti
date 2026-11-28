@@ -17,6 +17,12 @@ A continuous family of bounded operators which is invertible on a compact parame
 remains invertible on a common neighborhood of that slice, with a uniform operator-norm bound
 on its inverses. Only the domain of the operators needs to be complete.
 
+In a pseudometric parameter space, continuity on `K ×ˢ univ` upgrades this to a uniform positive
+radius around `z₀` (`IsCompact.exists_pos_isInvertible_norm_inverse_le`). In particular, for a
+continuous operator-valued map `Φ` on a topological real vector space and families `S, J`
+continuous on `K`, invertibility of `Φ (S x)` on `K` persists to `Φ (S x - δ • J x)` on a uniform
+closed interval `|δ| ≤ ε` (`IsCompact.exists_pos_isInvertible_map_sub_smul_norm_inverse_le`).
+
 A continuous family of bounded operators is uniformly bounded on a compact parameter set
 (`IsCompact.exists_forall_norm_apply_le_mul_norm`).
 
@@ -76,6 +82,29 @@ theorem exists_mem_nhds_isInvertible_norm_inverse_le {K : Set X} (hK : IsCompact
   refine ⟨V, hV, C, by positivity, fun x hx y hy ↦ ?_⟩
   exact (hUV ⟨subset_of_mem_nhdsSet hU hx, hy⟩).imp_right le_of_lt
 
+/-- Invertibility on a compact parameter slice gives a uniform positive radius around `z₀` in a
+pseudometric parameter space on which all operators remain invertible with uniformly bounded
+inverses. Only `ContinuousWithinAt L (K ×ˢ Set.univ) (x, z₀)` at slice points `x ∈ K` is
+required. -/
+theorem exists_pos_isInvertible_norm_inverse_le {Z : Type*} [PseudoMetricSpace Z]
+    {K : Set X} (hK : IsCompact K) (L : X × Z → E →L[𝕜] F) (z₀ : Z)
+    (hL : ∀ x ∈ K, ContinuousWithinAt L (K ×ˢ Set.univ) (x, z₀))
+    (hinv : ∀ x ∈ K, (L (x, z₀)).IsInvertible) :
+    ∃ ε > 0, ∃ C ≥ 0, ∀ x ∈ K, ∀ z : Z, dist z z₀ ≤ ε →
+      (L (x, z)).IsInvertible ∧ ‖(L (x, z)).inverse‖ ≤ C := by
+  let : CompactSpace K := isCompact_iff_compactSpace.mp hK
+  have hL' : ∀ x : K, ContinuousAt (fun p : K × Z ↦ L (p.fst, p.snd)) (x, z₀) := fun x ↦
+    (hL x.val x.property).tendsto.comp <|
+      tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+        (continuous_subtypeVal.prodMap continuous_id).continuousAt
+        (Filter.Eventually.of_forall fun p ↦ ⟨p.fst.property, mem_univ _⟩)
+  obtain ⟨V, hV, C, hC, hbound⟩ := isCompact_univ.exists_mem_nhds_isInvertible_norm_inverse_le
+    (fun p : K × Z ↦ L (p.fst, p.snd)) z₀ (fun x _ ↦ hL' x)
+    (fun x _ ↦ hinv x x.property)
+  obtain ⟨r, hr, hrV⟩ := Metric.mem_nhds_iff.1 hV
+  exact ⟨r / 2, by positivity, C, hC, fun x hx z hz ↦
+    hbound ⟨x, hx⟩ (mem_univ _) z (hrV (Metric.mem_ball.2 (hz.trans_lt (half_lt_self hr))))⟩
+
 /-- On a compact parameter set `K` where `Φ (S x)` is invertible, if `Φ` is continuous and `S` and
 `J` are continuous on `K`, then `Φ (S x - δ • J x)` remains invertible with uniformly bounded
 inverses for all sufficiently small real weights `δ`. -/
@@ -87,21 +116,13 @@ theorem exists_pos_isInvertible_map_sub_smul_norm_inverse_le
     (hinv : ∀ x ∈ K, (Φ (S x)).IsInvertible) :
     ∃ ε > 0, ∃ C ≥ 0, ∀ x ∈ K, ∀ δ : ℝ, |δ| ≤ ε →
       (Φ (S x - δ • J x)).IsInvertible ∧ ‖(Φ (S x - δ • J x)).inverse‖ ≤ C := by
-  let : CompactSpace K := isCompact_iff_compactSpace.mp hK
-  let L : K × ℝ → E →L[𝕜] F := fun z ↦ Φ (S z.1 - z.2 • J z.1)
-  have hL : Continuous L :=
-    hΦ.comp ((hS.domRestrict.comp continuous_fst).sub
-      (continuous_snd.smul (hJ.domRestrict.comp continuous_fst)))
-  obtain ⟨V, hV, C, hC, hbound⟩ :=
-    isCompact_univ.exists_mem_nhds_isInvertible_norm_inverse_le L 0
-      (fun _ _ ↦ hL.continuousAt) (by
-        intro p _
-        dsimp only [L]
-        rw [zero_smul ℝ (J p), sub_zero]
-        exact hinv p p.property)
-  obtain ⟨r, hr, hrV⟩ := Metric.mem_nhds_iff.1 hV
-  refine ⟨r / 2, by positivity, C, hC, fun x hx δ hδ ↦ hbound ⟨x, hx⟩ (mem_univ _) δ (hrV ?_)⟩
-  simpa only [Metric.mem_ball, Real.dist_eq, sub_zero] using hδ.trans_lt (half_lt_self hr)
+  have hcont : ContinuousOn (fun z : X × ℝ ↦ Φ (S z.1 - z.2 • J z.1)) (K ×ˢ Set.univ) :=
+    hΦ.comp_continuousOn <| (hS.comp (s := K ×ˢ Set.univ) continuousOn_fst fun _ h ↦ h.1).sub
+      (continuousOn_snd.smul (hJ.comp (s := K ×ˢ Set.univ) continuousOn_fst fun _ h ↦ h.1))
+  obtain ⟨ε, hε, C, hC, hbound⟩ := hK.exists_pos_isInvertible_norm_inverse_le _ 0
+    (fun x hx ↦ hcont (x, 0) ⟨hx, mem_univ _⟩)
+    fun x hx ↦ by simpa only [zero_smul, sub_zero] using hinv x hx
+  exact ⟨ε, hε, C, hC, fun x hx δ hδ ↦ hbound x hx δ (by simpa [Real.dist_eq] using hδ)⟩
 
 end IsCompact
 

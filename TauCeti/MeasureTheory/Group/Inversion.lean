@@ -27,17 +27,21 @@ into the corresponding statement about its inverse-translate.
 
 ## Main definitions
 
-* `TauCeti.invLpₗᵢ`: precomposition with inversion, as a linear isometric equivalence of `Lp E p μ`.
+* `TauCeti.invLpₗᵢ` (`TauCeti.negLpₗᵢ`): precomposition with inversion (negation), as a linear
+  isometric equivalence of `Lp E p μ`.
 
 ## Main statements
 
-* `TauCeti.invLpₗᵢ_apply`: it is precomposition with `Inv.inv`.
-* `TauCeti.coeFn_invLpₗᵢ`: it is represented by `g ↦ f g⁻¹`.
-* `TauCeti.invLpₗᵢ_invLpₗᵢ`: it is an involution.
+* `TauCeti.invLpₗᵢ_apply` (`TauCeti.negLpₗᵢ_apply`): precomposition with `Inv.inv` (`Neg.neg`).
+* `TauCeti.coeFn_invLpₗᵢ` (`TauCeti.coeFn_negLpₗᵢ`): represented by `g ↦ f g⁻¹` (`g ↦ f (-g)`).
+* `TauCeti.invLpₗᵢ_invLpₗᵢ`, `TauCeti.invLpₗᵢ_symm`, `TauCeti.invLpₗᵢ_trans_self` (and
+  `negLpₗᵢ_*`): it is an involutive linear isometry equivalence.
+* `TauCeti.compLp_invLpₗᵢ` (`TauCeti.compLp_negLpₗᵢ`): commutes with `ContinuousLinearMap.compLp`.
 * `TauCeti.invLpₗᵢ_mem_classFunctionLp` and `TauCeti.invLpₗᵢ_mem_classFunctionLp_iff`: it preserves
   the class functions, because inversion commutes with conjugation, and being an involution it
   reflects them too.
-* `TauCeti.invLpₗᵢ_toLp`: on a continuous function it is precomposition with inversion.
+* `TauCeti.invLpₗᵢ_toLp` (`TauCeti.negLpₗᵢ_toLp`): on a continuous function it is precomposition
+  with inversion (negation).
 -/
 
 public section
@@ -57,6 +61,8 @@ variable [InvolutiveInv G] [MeasurableInv G] [μ.IsInvInvariant]
 
 /-- **Precomposition with inversion on `Lp`**, for a measure invariant under inversion. It is a
 linear isometric equivalence because `g ↦ g⁻¹` preserves `μ` and is its own inverse. -/
+@[to_additive (dont_translate := 𝕜 E)
+/-- **Precomposition with negation on `Lp`**, for a negation-invariant measure. -/]
 noncomputable def invLpₗᵢ : Lp E p μ ≃ₗᵢ[𝕜] Lp E p μ :=
   Lp.compMeasurePreservingₗᵢEquiv 𝕜 (Measure.measurePreserving_inv μ)
     (Measure.measurePreserving_inv μ) (.of_eq (funext inv_inv))
@@ -68,18 +74,22 @@ variable {𝕜}
 Not a `simp` lemma: unfolding to `Lp.compMeasurePreserving` dissolves the abstraction, and it
 would take `TauCeti.invLpₗᵢ_invLpₗᵢ` out of simp normal form (the `simpNF` linter rejects the
 pair). Use it to rewrite by hand where the underlying precomposition is wanted. -/
+@[to_additive (dont_translate := 𝕜 E)
+/-- The negation equivalence is precomposition with `Neg.neg` (not `@[simp]`). -/]
 theorem invLpₗᵢ_apply (f : Lp E p μ) :
     invLpₗᵢ 𝕜 f = Lp.compMeasurePreserving Inv.inv (Measure.measurePreserving_inv μ) f :=
   Lp.compMeasurePreservingₗᵢEquiv_apply 𝕜 _ _ _ f
 
 /-- The inverse-translate of a class of functions is represented by `g ↦ f g⁻¹`. -/
+@[to_additive (dont_translate := 𝕜 E)
+/-- The reflected class of functions is represented by `g ↦ f (-g)`. -/]
 theorem coeFn_invLpₗᵢ (f : Lp E p μ) : invLpₗᵢ 𝕜 f =ᵐ[μ] fun g ↦ f g⁻¹ :=
   Lp.coeFn_compMeasurePreservingₗᵢEquiv 𝕜 (Measure.measurePreserving_inv μ)
     (Measure.measurePreserving_inv μ) _ f
 
 /-- **Inverting twice is the identity.**  The two precompositions compose to precomposition with
 `g ↦ (g⁻¹)⁻¹`, which is the identity on the nose. -/
-@[simp]
+@[to_additive (dont_translate := 𝕜 E) /-- **Negating twice is the identity.** -/, simp]
 theorem invLpₗᵢ_invLpₗᵢ (f : Lp E p μ) : invLpₗᵢ 𝕜 (invLpₗᵢ 𝕜 f) = f := by
   simpa only [invLpₗᵢ_apply] using
     Lp.leftInverse_compMeasurePreserving (E := E) (p := p)
@@ -87,10 +97,31 @@ theorem invLpₗᵢ_invLpₗᵢ (f : Lp E p μ) : invLpₗᵢ 𝕜 (invLpₗᵢ 
     (.of_eq (funext inv_inv)) f
 
 /-- The inversion equivalence is its own inverse: it is an equivalence and an involution. -/
-@[simp]
-theorem invLpₗᵢ_symm : (invLpₗᵢ 𝕜 (E := E) (p := p) (μ := μ)).symm = invLpₗᵢ 𝕜 := by
-  refine LinearIsometryEquiv.ext fun f ↦ ?_
-  rw [LinearIsometryEquiv.symm_apply_eq, invLpₗᵢ_invLpₗᵢ]
+@[to_additive (dont_translate := 𝕜 E) /-- The negation equivalence is its own inverse. -/, simp]
+theorem invLpₗᵢ_symm : (invLpₗᵢ 𝕜 (E := E) (p := p) (μ := μ)).symm = invLpₗᵢ 𝕜 :=
+  LinearIsometryEquiv.ext fun f ↦ (LinearIsometryEquiv.symm_apply_eq _).2 (invLpₗᵢ_invLpₗᵢ f).symm
+
+/-- Composing the inversion equivalence with itself gives the identity equivalence. -/
+@[to_additive (dont_translate := 𝕜 E)
+/-- Composing the negation equivalence with itself gives the identity equivalence. -/, simp]
+theorem invLpₗᵢ_trans_self :
+    (invLpₗᵢ 𝕜 (E := E) (p := p) (μ := μ)).trans (invLpₗᵢ 𝕜) =
+      LinearIsometryEquiv.refl 𝕜 (Lp E p μ) :=
+  LinearIsometryEquiv.ext fun f ↦ invLpₗᵢ_invLpₗᵢ f
+
+/-- Postcomposition with a continuous semilinear map commutes with inversion on `Lp`. -/
+@[to_additive (dont_translate := 𝕜₀ 𝕜' E F σ)
+/-- Postcomposition with a continuous semilinear map commutes with negation on `Lp`. -/]
+theorem compLp_invLpₗᵢ {𝕜₀ 𝕜' F : Type*} [NontriviallyNormedField 𝕜₀] [NontriviallyNormedField 𝕜']
+    {σ : 𝕜₀ →+* 𝕜'} [RingHomIsometric σ] [NormedSpace 𝕜₀ E] [NormedAddCommGroup F]
+    [NormedSpace 𝕜' F] (L : E →SL[σ] F) (f : Lp E p μ) :
+    L.compLp (invLpₗᵢ 𝕜₀ f) = invLpₗᵢ 𝕜' (L.compLp f) := by
+  apply Lp.ext
+  filter_upwards [L.coeFn_compLp (invLpₗᵢ 𝕜₀ f), coeFn_invLpₗᵢ (𝕜 := 𝕜₀) f,
+    coeFn_invLpₗᵢ (𝕜 := 𝕜') (L.compLp f),
+    (Measure.measurePreserving_inv μ).quasiMeasurePreserving.ae_eq_comp
+      (L.coeFn_compLp f)] with g h1 h2 h3 h4
+  rw [h1, h2, h3]; exact h4.symm
 
 end Involution
 
@@ -143,6 +174,8 @@ variable [InvolutiveInv G] [MeasurableInv G] [μ.IsInvInvariant] [TopologicalSpa
   [IsFiniteMeasure μ]
 
 /-- **On a continuous function, inversion on `Lp` is precomposition with inversion.** -/
+@[to_additive (dont_translate := 𝕜 E)
+/-- **On a continuous function, negation on `Lp` is precomposition with negation.** -/]
 theorem invLpₗᵢ_toLp (F : C(G, E)) :
     invLpₗᵢ 𝕜 (ContinuousMap.toLp p μ 𝕜 F) =
       ContinuousMap.toLp p μ 𝕜 (F.comp ⟨Inv.inv, continuous_inv⟩) := by
