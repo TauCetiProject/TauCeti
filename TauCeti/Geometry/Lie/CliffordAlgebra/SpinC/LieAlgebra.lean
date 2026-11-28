@@ -199,19 +199,12 @@ def realSpinLieEquivDetKer : 𝔰 ≃ₗ⁅ℝ⁆ (δ).ker.toLieSubalgebra :=
 
 /-- Coercing `realSpinLieEquivDetKer` to `Lie(Spinᶜ(n))` recovers `ofSpin_*`. -/
 @[simp]
-theorem coe_realSpinLieEquivDetKer_apply (X : 𝔰) : (realSpinLieEquivDetKer n hQ X : 𝔤) = ιS X := by
-  have h1 :
-      realSpinLieEquivDetKer n hQ X =
-        LieEquiv.ofEq _ _ (congrArg SetLike.coe (range_lieMap_ofSpinContinuousMonoidHom n hQ))
-          ((ιS).equivRangeOfInjective (lieMap_ofSpinContinuousMonoidHom_injective n hQ) X) :=
-    LieEquiv.trans_apply _ _ X
-  have h2 :
-      ((realSpinLieEquivDetKer n hQ X : (δ).ker.toLieSubalgebra) : 𝔤) =
-        (((ιS).equivRangeOfInjective (lieMap_ofSpinContinuousMonoidHom_injective n hQ) X :
-          (ιS).range) : 𝔤) :=
-    (congrArg Subtype.val h1).trans (LieEquiv.ofEq_apply _ _ _ _)
-  exact h2.trans (congrArg Subtype.val
-    ((ιS).equivRangeOfInjective_apply (lieMap_ofSpinContinuousMonoidHom_injective n hQ) X))
+theorem coe_realSpinLieEquivDetKer_apply (X : 𝔰) : (realSpinLieEquivDetKer n hQ X : 𝔤) = ιS X :=
+  -- Congruence avoids costly dependent rewriting (`findMatchToSplit` timeout) over `δ.ker`.
+  ((congrArg Subtype.val (LieEquiv.trans_apply _ _ X)).trans
+    (LieEquiv.ofEq_apply _ _ _ _)).trans
+    (congrArg Subtype.val
+      ((ιS).equivRangeOfInjective_apply (lieMap_ofSpinContinuousMonoidHom_injective n hQ) X))
 
 /-- Applying `ofSpin_*` to the inverse equivalence recovers the ambient kernel element. -/
 @[simp]
