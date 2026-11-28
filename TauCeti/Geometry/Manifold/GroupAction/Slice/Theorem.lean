@@ -8,10 +8,12 @@ module
 public import TauCeti.Geometry.Lie.Subgroup.BalancedProduct
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Lie.FundamentalVectorField
+import TauCeti.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.GroupAction.TransverseSlice
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.ProperAction
 
 /-!
-# The action map of a balanced product is a local diffeomorphism
+# Local and tube diffeomorphisms for slice maps
 
 Let a finite-dimensional real Lie group `G` act smoothly on a manifold `M`, let `K` be a closed
 subgroup of `G` acting smoothly on a manifold `Z`, and let `ι : Z → M` be a smooth `K`-equivariant
@@ -49,6 +51,11 @@ diffeomorphism on all of `G ×_K Z`.
 * `TauCeti.BalancedProduct.isLocalDiffeomorphAt_liftRightTranslation_of_surjective_one` and
   `TauCeti.BalancedProduct.isLocalDiffeomorph_liftRightTranslation`: the descended action map is a
   local diffeomorphism along the orbit of `[1, z]`, and everywhere when this holds for every `z`.
+
+* `TauCeti.BalancedProduct.exists_diffeomorph_liftRightTranslation`: for a proper action with
+  `K` the stabilizer of `ι z₀` fixing `z₀`, extend the local diffeomorphism at `[1, z₀]` to an
+  invariant open tube about its orbit using
+  `IsLocalDiffeomorphAt.exists_diffeomorph_smul_of_le_stabilizer`.
 
 ## References
 
@@ -194,5 +201,47 @@ theorem isLocalDiffeomorph_liftRightTranslation (hι : ContMDiff IZ IM ∞ ι)
   intro q
   induction q using induction_on_toRightTranslation with
   | h g z => exact isLocalDiffeomorphAt_liftRightTranslation_of_surjective_one hι (hsurj z) hdim g
+
+omit [IsManifold IM ∞ M] [ContMDiffSMul I IM ∞ G M] in
+/-- A slice map that is a local diffeomorphism at `[1, z₀]` restricts to a diffeomorphism
+on an invariant open tube about its orbit, if `z₀` is fixed by the stabilizer `K` of `ι z₀`. -/
+theorem exists_diffeomorph_liftRightTranslation [ContMDiffConstSMul IM ∞ G M] [ProperSMul G M]
+    {z₀ : Z}
+    (hz₀ : z₀ ∈ MulAction.fixedPoints K Z) (hK : MulAction.stabilizer G (ι z₀) ≤ K)
+    (hloc : @IsLocalDiffeomorphAt ℝ inferInstance _ inferInstance inferInstance
+      EM inferInstance inferInstance _ inferInstance HM inferInstance
+      𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) IM
+      (BalancedProduct K K.RightTranslation Z) inferInstance
+      (rightTranslationChartedSpace K Z I IZ F) M inferInstance inferInstance ∞
+      (liftRightTranslation ι) (mk K (K.toRightTranslation 1) z₀)) :
+    ∃ (U : TopologicalSpace.Opens (BalancedProduct K K.RightTranslation Z))
+      (V : TopologicalSpace.Opens M)
+      (e : @Diffeomorph ℝ inferInstance _ inferInstance inferInstance
+        EM inferInstance inferInstance _ inferInstance HM inferInstance
+        𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) IM U inferInstance
+        (@TopologicalSpace.Opens.instChartedSpace _ (BalancedProduct K K.RightTranslation Z)
+          inferInstance inferInstance (rightTranslationChartedSpace K Z I IZ F) U)
+        V inferInstance inferInstance ∞),
+      mk K (K.toRightTranslation 1) z₀ ∈ U ∧
+        (∀ (g : G), MapsTo (g • ·) (U : Set (BalancedProduct K K.RightTranslation Z)) U) ∧
+        ∀ u : U, (e u : M) = liftRightTranslation ι u := by
+  let _ := rightTranslationChartedSpace K Z I IZ F
+  have := contMDiffSMul_rightTranslation (K := K) (Z := Z) (I := I) (IZ := IZ) (F := F)
+  have := ContMDiffSMul.continuousSMul (I := I)
+    (I' := 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ))) (G := G)
+    (M := BalancedProduct K K.RightTranslation Z) ∞
+  have hconst : ContMDiffConstSMul 𝓘(ℝ, ProperSMul.QuotientModelSpace F (E × EZ)) ∞ G
+      (BalancedProduct K K.RightTranslation Z) :=
+    ContMDiffSMul.contMDiffConstSMul I
+  have hstab : MulAction.stabilizer G (liftRightTranslation ι
+      (mk K (K.toRightTranslation 1) z₀)) ≤
+      MulAction.stabilizer G (mk K (K.toRightTranslation 1) z₀) := by
+    intro g hg
+    have hgK : g ∈ K := hK (by rwa [liftRightTranslation_mk_one] at hg)
+    exact MulAction.mem_stabilizer_iff.mpr (by
+      rw [smul_mk_toRightTranslation, mul_one, ← one_mul g,
+        mk_toRightTranslation_mul (h := ⟨g, hgK⟩)]
+      exact congrArg (mk K (K.toRightTranslation 1)) (hz₀ ⟨g, hgK⟩))
+  exact hloc.exists_diffeomorph_smul_of_le_stabilizer (liftRightTranslation_smul ι) hstab
 
 end TauCeti.BalancedProduct
