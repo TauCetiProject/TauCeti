@@ -48,14 +48,16 @@ theorem norm_sum_Icc_jacobiSym_neg_le {m : ℕ} (hm : Odd m) (hns : ¬IsSquare m
     _ ≤ ‖∑ v ∈ Icc 1 X, χ v‖ := mul_le_of_le_one_left (norm_nonneg _) (χ.norm_le_one _)
     _ ≤ _ := χ.norm_sum_Icc_le_of_ne_one hχ X
 
-/-- If the odd part of `n` is not a square, partial sums of its Jacobi symbol grow at most
-as `n ^ (1/2 + ε)` for every `ε > 0`, uniformly in the length of the sum. -/
-theorem norm_sum_Icc_jacobiSym_neg_ordCompl_two_le {n : ℕ} {ε : ℝ} (hε : 0 < ε)
-    (hns : ¬IsSquare (ordCompl[2] n)) (X : ℕ) :
-    ‖∑ v ∈ Icc 1 X, (jacobiSym (-(v : ℤ)) (ordCompl[2] n) : ℂ)‖ ≤
+/-- The Pólya–Vinogradov weight of the odd part of `n` is bounded by a power of `n`
+with an arbitrarily small loss in the exponent. -/
+theorem two_mul_sqrt_ordCompl_mul_one_add_log_le {n : ℕ} {ε : ℝ} (hε : 0 < ε) :
+    2 * Real.sqrt (ordCompl[2] n : ℕ) * (1 + Real.log (ordCompl[2] n : ℕ)) ≤
       2 * (1 + 1 / ε) * (n : ℝ) ^ (1 / 2 + ε) := by
-  have hn : n ≠ 0 := by rintro rfl; exact hns ⟨0, by simp⟩
-  have hm : Odd (ordCompl[2] n) := Nat.coprime_two_left.mp (Nat.coprime_ordCompl Nat.prime_two hn)
+  rcases eq_or_ne n 0 with rfl | hn
+  · have hzero : ordCompl[2] 0 = 0 := by simp
+    rw [hzero, Nat.cast_zero, Real.sqrt_zero, mul_zero, zero_mul]
+    positivity
+  have hm := Nat.ordCompl_pos 2 hn
   have hnR : 0 < (n : ℝ) := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn)
   have hmn : ((ordCompl[2] n : ℕ) : ℝ) ≤ n := Nat.cast_le.mpr (Nat.ordCompl_le n 2)
   have hlog : 1 + Real.log n ≤ (1 + 1 / ε) * (n : ℝ) ^ ε := by
@@ -65,15 +67,23 @@ theorem norm_sum_Icc_jacobiSym_neg_ordCompl_two_le {n : ℕ} {ε : ℝ} (hε : 0
         add_le_add (Real.one_le_rpow hn₁ hε.le) (Real.log_le_rpow_div hnR.le hε)
       _ = _ := by ring
   calc
-    _ ≤ 2 * Real.sqrt (↑(ordCompl[2] n : ℕ)) * (1 + Real.log (↑(ordCompl[2] n : ℕ))) :=
-      norm_sum_Icc_jacobiSym_neg_le hm hns X
     _ ≤ 2 * Real.sqrt n * (1 + Real.log n) := by
-      have hmR : 0 < ((ordCompl[2] n : ℕ) : ℝ) := Nat.cast_pos.mpr hm.pos
-      have hm₁ : (1 : ℝ) ≤ ↑(ordCompl[2] n : ℕ) := Nat.one_le_cast.mpr hm.pos
+      have hmR : 0 < ((ordCompl[2] n : ℕ) : ℝ) := Nat.cast_pos.mpr hm
+      have hm₁ : (1 : ℝ) ≤ ↑(ordCompl[2] n : ℕ) := Nat.one_le_cast.mpr hm
       exact mul_le_mul (mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt hmn) (by norm_num))
         (add_le_add_right (Real.log_le_log hmR hmn) 1)
         (by linarith [Real.log_nonneg hm₁]) (by positivity)
     _ ≤ 2 * Real.sqrt n * ((1 + 1 / ε) * (n : ℝ) ^ ε) := by gcongr
     _ = _ := by rw [Real.sqrt_eq_rpow, Real.rpow_add hnR]; ring
+
+/-- If the odd part of `n` is not a square, partial sums of its Jacobi symbol grow at most
+as `n ^ (1/2 + ε)` for every `ε > 0`, uniformly in the length of the sum. -/
+theorem norm_sum_Icc_jacobiSym_neg_ordCompl_two_le {n : ℕ} {ε : ℝ} (hε : 0 < ε)
+    (hns : ¬IsSquare (ordCompl[2] n)) (X : ℕ) :
+    ‖∑ v ∈ Icc 1 X, (jacobiSym (-(v : ℤ)) (ordCompl[2] n) : ℂ)‖ ≤
+      2 * (1 + 1 / ε) * (n : ℝ) ^ (1 / 2 + ε) := by
+  have hn : n ≠ 0 := by rintro rfl; exact hns ⟨0, by simp⟩
+  have hm : Odd (ordCompl[2] n) := Nat.coprime_two_left.mp (Nat.coprime_ordCompl Nat.prime_two hn)
+  exact (norm_sum_Icc_jacobiSym_neg_le hm hns X).trans (two_mul_sqrt_ordCompl_mul_one_add_log_le hε)
 
 end TauCeti
