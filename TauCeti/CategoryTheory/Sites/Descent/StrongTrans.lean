@@ -437,6 +437,37 @@ lemma mapDescentData₂_app_hom {φ φ' : F ⟶ G} (Γ : φ ⟶ φ') (D : F.Desc
     ((mapDescentData₂ f Γ).app D).hom i = (Γ.as.app _).toNatTrans.app (D.obj i) :=
   (rfl)
 
+/-- An invertible modification induces a natural isomorphism on descent data. -/
+def mapDescentDataIso {φ φ' : F ⟶ G} (Γ : φ ≅ φ') :
+    φ.mapDescentData f ≅ φ'.mapDescentData f :=
+  NatIso.ofComponents
+    (fun D ↦ DescentData.isoMk
+      (fun i ↦ (Cat.Hom.toNatIso (isoApp Γ _)).app (D.obj i))
+      (fun Y q i₁ i₂ f₁ f₂ hf₁ hf₂ ↦
+        by simpa only [Iso.app_hom, Cat.Hom.toNatIso_hom, isoApp_hom,
+          mapDescentData₂_app_hom] using
+          ((mapDescentData₂ f Γ.hom).app D).comm q f₁ f₂ hf₁ hf₂))
+    (fun ψ ↦ by
+      ext i
+      simpa only [NatTrans.comp_app, DescentData.comp_hom, Iso.app_hom,
+        Cat.Hom.toNatIso_hom, isoApp_hom, DescentData.isoMk_hom_hom,
+        mapDescentData₂_app_hom, mapDescentData_map_hom] using
+        congrArg (fun m ↦ m.hom i) ((mapDescentData₂ f Γ.hom).naturality ψ))
+
+@[simp]
+lemma mapDescentDataIso_hom_app_hom {φ φ' : F ⟶ G} (Γ : φ ≅ φ')
+    (D : F.DescentData f) (i : ι) :
+    ((mapDescentDataIso f Γ).hom.app D).hom i =
+      (Γ.hom.as.app _).toNatTrans.app (D.obj i) := by
+  simp [mapDescentDataIso, isoApp_hom]
+
+@[simp]
+lemma mapDescentDataIso_inv_app_hom {φ φ' : F ⟶ G} (Γ : φ ≅ φ')
+    (D : F.DescentData f) (i : ι) :
+    ((mapDescentDataIso f Γ).inv.app D).hom i =
+      (Γ.inv.as.app _).toNatTrans.app (D.obj i) := by
+  simp [mapDescentDataIso, isoApp_inv]
+
 /-- If the components of `η` are fully faithful, then so is the functor `η.mapDescentData f`. -/
 noncomputable def fullyFaithfulMapDescentData
     (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.FullyFaithful) :

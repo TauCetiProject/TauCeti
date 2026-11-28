@@ -164,20 +164,7 @@ def descentDataTransitionIso {i j : I} (g : i ⟶ j) :
     (π D i).mapDescentData f ⋙ (D.map g.toLoc).mapDescentData f ≅
       (π D j).mapDescentData f :=
   ((π D i).mapDescentDataComp f (D.map g.toLoc)).symm ≪≫
-    ({ hom := StrongTrans.mapDescentData₂ f (πCompMap D g).hom
-       inv := StrongTrans.mapDescentData₂ f (πCompMap D g).inv
-       hom_inv_id := by
-         ext d a
-         simp only [NatTrans.comp_app, DescentData.comp_hom,
-           StrongTrans.mapDescentData₂_app_hom, πCompMap_hom_as_app,
-           πCompMap_inv_as_app, NatTrans.id_app, DescentData.id_hom]
-         exact ((d.obj a).iso g).hom_inv_id
-       inv_hom_id := by
-         ext d a
-         simp only [NatTrans.comp_app, DescentData.comp_hom,
-           StrongTrans.mapDescentData₂_app_hom, πCompMap_hom_as_app,
-           πCompMap_inv_as_app, NatTrans.id_app, DescentData.id_hom]
-         exact ((d.obj a).iso g).inv_hom_id } : _ ≅ _)
+    StrongTrans.mapDescentDataIso f (πCompMap D g)
 
 /-- The transition on projected descent data is the corresponding transition in each fibre. -/
 @[simp]
@@ -185,7 +172,7 @@ lemma descentDataTransitionIso_hom_app_hom {i j : I} (g : i ⟶ j) (a : ι) :
     ((descentDataTransitionIso f g).hom.app d).hom a = ((d.obj a).iso g).hom := by
   simp only [descentDataTransitionIso, Iso.trans_hom, NatTrans.comp_app, Iso.symm_hom,
     DescentData.comp_hom, StrongTrans.mapDescentDataComp_inv_app_hom,
-    StrongTrans.mapDescentData₂_app_hom, πCompMap_hom_as_app]
+    StrongTrans.mapDescentDataIso_hom_app_hom, πCompMap_hom_as_app]
   exact Category.id_comp _
 
 /-- The inverse transition on projected descent data is the inverse transition in each fibre. -/
@@ -194,7 +181,7 @@ lemma descentDataTransitionIso_inv_app_hom {i j : I} (g : i ⟶ j) (a : ι) :
     ((descentDataTransitionIso f g).inv.app d).hom a = ((d.obj a).iso g).inv := by
   simp only [descentDataTransitionIso, Iso.trans_inv, NatTrans.comp_app, Iso.symm_inv,
     DescentData.comp_hom, StrongTrans.mapDescentDataComp_hom_app_hom,
-    StrongTrans.mapDescentData₂_app_hom, πCompMap_inv_as_app]
+    StrongTrans.mapDescentDataIso_inv_app_hom, πCompMap_inv_as_app]
   exact Category.comp_id _
 
 variable (M : ∀ i, (D.obj (.mk i)).obj (.mk (op S)))

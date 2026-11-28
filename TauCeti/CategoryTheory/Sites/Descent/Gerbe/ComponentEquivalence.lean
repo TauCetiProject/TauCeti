@@ -211,9 +211,8 @@ isomorphism. -/
 theorem map_globalImageIso_hom (i : ι) :
     (G.map (f i).op.toLoc).toFunctor.map (globalImageIso η y r hf).hom =
       (imageLocalIso η y r i).hom := by
-  have := congrArg (fun φ ↦ DescentData.Hom.hom φ i)
-    ((G.fullyFaithfulToDescentData f hf).map_preimage (imageDescentIso η y r).hom)
-  rw [toDescentData_map_hom] at this
+  have := DescentData.toDescentData_preimage_hom
+    (G.fullyFaithfulToDescentData f hf) (imageDescentIso η y r).hom i
   rw [globalImageIso, Functor.FullyFaithful.preimageIso_hom, imageLocalIso, DescentData.isoApp_hom]
   exact this
 
@@ -223,9 +222,8 @@ inverse of the local image isomorphism. -/
 theorem map_globalImageIso_inv (i : ι) :
     (G.map (f i).op.toLoc).toFunctor.map (globalImageIso η y r hf).inv =
       (imageLocalIso η y r i).inv := by
-  have := congrArg (fun φ ↦ DescentData.Hom.hom φ i)
-    ((G.fullyFaithfulToDescentData f hf).map_preimage (imageDescentIso η y r).inv)
-  rw [toDescentData_map_hom] at this
+  have := DescentData.toDescentData_preimage_hom
+    (G.fullyFaithfulToDescentData f hf) (imageDescentIso η y r).inv i
   rw [globalImageIso, Functor.FullyFaithful.preimageIso_inv, imageLocalIso, DescentData.isoApp_inv]
   exact this
 

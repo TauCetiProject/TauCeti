@@ -479,13 +479,13 @@ lemma map_transition_comp_iso_hom_iff {T T' : Cᵒᵖ} (a : T ⟶ T')
         ((transition D g T).map mᵢ ≫ (y.iso g).hom) =
       ((D.obj (.mk j)).map a.toLoc).toFunctor.map ((x.iso g).hom ≫ mⱼ) ↔
     (transition D g T').map (((D.obj (.mk i)).map a.toLoc).toFunctor.map mᵢ) ≫
-        (Fiber.iso (mapObj D a y) g).hom =
-      (Fiber.iso (mapObj D a x) g).hom ≫
+        (Fiber.iso (((limit D).map a.toLoc).toFunctor.obj y) g).hom =
+      (Fiber.iso (((limit D).map a.toLoc).toFunctor.obj x) g).hom ≫
         ((D.obj (.mk j)).map a.toLoc).toFunctor.map mⱼ := by
-  simp only [Iso.trans_hom, Iso.app_hom, Functor.mapIso_hom,
-    Cat.Hom.toNatIso_hom, Functor.map_comp, Category.assoc]
-  simp only [← Pseudofunctor.StrongTrans.naturalityObjIso_hom,
-    Pseudofunctor.StrongTrans.naturalityObjIso_hom_naturality_assoc]
+  rw [map_obj_iso_hom a.toLoc y g, map_obj_iso_hom a.toLoc x g]
+  simp only [Functor.map_comp, ← Pseudofunctor.StrongTrans.naturalityObjIso_hom]
+  -- The restricted fibre endpoints agree with their pseudofunctor expressions by reduction.
+  erw [Pseudofunctor.StrongTrans.naturalityObjIso_hom_naturality_assoc, Category.assoc]
   exact (cancel_epi ((D.map g.toLoc).naturalityObjIso a.toLoc (x.obj i)).hom).symm
 
 -- In the following lemmas, after `subst`, the comparison `(limit D).mapComp f g` is by

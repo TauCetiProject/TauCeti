@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Sites.Descent.DescentData
+public import TauCeti.CategoryTheory.Sites.Descent.DescentData
 public import TauCeti.CategoryTheory.Aut.Conjugation
 public import TauCeti.CategoryTheory.Endomorphism
 
@@ -167,9 +167,9 @@ theorem map_conjugateCoverAut_hom (hR : R ∈ J U) (e : LocalIsos R x y) (a : Au
     (i : R.arrows.category) :
     (F.map i.obj.hom.op.toLoc).toFunctor.map (conjugateCoverAut hF hR e a).asIso.hom =
       (localConjugate i.obj.hom (e i) a).asIso.hom := by
-  have h := congrArg (fun φ ↦ DescentData.Hom.hom φ i)
-    ((F.isPrestackFor' R hR).fullyFaithful.map_preimage (conjugateDescentIso hF e a).hom)
-  rw [toDescentData_map_hom, conjugateDescentIso_hom_hom] at h
+  have h := DescentData.toDescentData_preimage_hom
+    (F.isPrestackFor' R hR).fullyFaithful (conjugateDescentIso hF e a).hom i
+  rw [conjugateDescentIso_hom_hom] at h
   exact h
 
 /-- Restricting the transported automorphism along any arrow `i` of `R` gives the local conjugate
