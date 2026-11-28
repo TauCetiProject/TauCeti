@@ -12,6 +12,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.CategoryTheory.AlmostSplit.Minimal
+import TauCeti.RingTheory.Jacobson.Quotient
 
 /-!
 # A real–complex Auslander–Reiten mesh
@@ -388,22 +389,14 @@ public def firstColumnEndEquiv : ℝ ≃ₐ[ℝ] End firstColumn :=
   (first_smul (algebraMap ℝ T r) x).trans
     (by simp [TrivSqZeroExt.algebraMap_eq_inl', Prod.algebraMap_apply, TrivSqZeroExt.inl])
 
-private theorem finrank_quotient_jacobson_of_equiv {A K : Type*} [Ring A] [DivisionRing K]
-    [Algebra ℝ A] [Algebra ℝ K] (e : A ≃ₐ[ℝ] K) :
-    Module.finrank ℝ (A ⧸ Ring.jacobson A) = Module.finrank ℝ K := by
-  have : IsSemisimpleRing A := e.toRingEquiv.isSemisimpleRing_iff.mpr inferInstance
-  exact ((Submodule.quotEquivOfEqBot ((Ring.jacobson A).restrictScalars ℝ)
-    (by rw [IsSemisimpleRing.jacobson_eq_bot]; exact Submodule.restrictScalars_bot ℝ A A)).trans
-      e.toLinearEquiv).finrank_eq
-
 private theorem finrank_residueOp_firstColumn :
     Module.finrank ℝ ((End firstColumn)ᵐᵒᵖ ⧸ Ring.jacobson (End firstColumn)ᵐᵒᵖ) = 1 := by
   rw [TauCeti.Ring.finrank_quotient_jacobson_mulOpposite,
-    finrank_quotient_jacobson_of_equiv firstColumnEndEquiv.symm, Module.finrank_self]
+    firstColumnEndEquiv.symm.finrank_quotient_jacobson_eq, Module.finrank_self]
 
 private theorem finrank_residue_secondColumn :
     Module.finrank ℝ (End secondColumn ⧸ Ring.jacobson (End secondColumn)) = 2 :=
-  (finrank_quotient_jacobson_of_equiv secondColumnEndEquiv.symm).trans Complex.finrank_real_complex
+  secondColumnEndEquiv.symm.finrank_quotient_jacobson_eq.trans Complex.finrank_real_complex
 
 /-- The second column occurs with multiplicity one in the middle term. This is the dimension
 of the radical quotient over the residue division ring acting by postcomposition. -/
