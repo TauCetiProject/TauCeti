@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Bicategory.LocallyInduced
+public import TauCeti.CategoryTheory.Bicategory.LocallyInduced.Basic
 public import TauCeti.CategoryTheory.DoubleCategory.Representation.Basic
 public import TauCeti.CategoryTheory.DoubleCategory.Bicategory
 
