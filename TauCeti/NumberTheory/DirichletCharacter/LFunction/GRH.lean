@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
+public import TauCeti.Analysis.Meromorphic.ZeroFree
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
@@ -14,6 +15,11 @@ import TauCeti.NumberTheory.LSeries.RiemannZeta.RiemannHypothesis
 
 /-!
 # The generalized Riemann hypothesis for Dirichlet L-functions
+
+`DirichletCharacter.GeneralizedRiemannHypothesis χ` says that the continued L-function of `χ`
+has no zero to the right of `Re s = 1 / 2`, as measured by meromorphic order.
+`DirichletCharacter.generalizedRiemannHypothesis_iff_LFunction_ne_zero` gives the equivalent
+nonvanishing statement away from the principal character's pole.
 
 For a Dirichlet character `χ` modulo `N ≥ 1`, `TauCeti.DirichletGRH χ` states that every zero `s`
 of the meromorphically continued function `χ.LFunction` in the open right half-plane `0 < Re s`
@@ -66,6 +72,30 @@ end TauCeti
 namespace DirichletCharacter
 
 open TauCeti
+
+/-- The generalized Riemann hypothesis in order form for a Dirichlet character: its continued
+L-function is zero-free to the right of the critical line. -/
+@[expose]
+def GeneralizedRiemannHypothesis {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) : Prop :=
+  ZeroFreeRightOf (1 / 2) χ.LFunction
+
+/-- The generalized Riemann hypothesis is equivalent to nonvanishing of the continued L-function
+to the right of the critical line, with the pole at `s = 1` of the principal character excepted. -/
+theorem generalizedRiemannHypothesis_iff_LFunction_ne_zero {N : ℕ} [NeZero N]
+    (χ : DirichletCharacter ℂ N) :
+    χ.GeneralizedRiemannHypothesis ↔
+      ∀ s : ℂ, 1 / 2 < s.re → (χ ≠ 1 ∨ s ≠ 1) → χ.LFunction s ≠ 0 := by
+  rw [GeneralizedRiemannHypothesis, zeroFreeRightOf_iff]
+  constructor
+  · intro h s hs hregular hzero
+    exact (h s hs).not_gt (χ.meromorphicOrderAt_LFunction_pos_iff.mpr ⟨hzero, hregular.symm⟩)
+  · intro h s hs
+    by_cases hregular : χ ≠ 1 ∨ s ≠ 1
+    · exact le_of_not_gt fun hpos ↦
+        h s hs hregular (χ.meromorphicOrderAt_LFunction_pos_iff.mp hpos).1
+    · obtain ⟨rfl, rfl⟩ := (not_or.mp hregular).imp not_ne_iff.mp not_ne_iff.mp
+      rw [← LFunctionTrivChar, meromorphicOrderAt_LFunctionTrivChar_one]
+      exact WithTop.coe_le_coe.mpr (by decide : (-1 : ℤ) ≤ 0)
 
 theorem dirichletGRH_def {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) :
     DirichletGRH χ =
