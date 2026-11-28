@@ -24,11 +24,15 @@ parallel morphisms.
 * `CategoryTheory.NatIso.eq_of_hom_app_eqToHom` and
   `CategoryTheory.NatIso.eq_eqToIso_of_hom_app_eqToHom`: natural isomorphisms whose components
   are all `eqToHom`s agree (and equal `eqToIso`).
+* `CategoryTheory.NatIso.whiskerRight_leftUnitor_eq_eqToIso_of_hom_app_eqToHom`,
+  `CategoryTheory.NatIso.whiskerLeft_rightUnitor_eq_eqToIso_of_hom_app_eqToHom`, and
+  `CategoryTheory.NatIso.whiskerRight_associator_eq_whiskerLeft_of_hom_app_eqToHom`: unit and
+  associativity coherence laws for natural isomorphisms whose components are all `eqToHom`s.
 -/
 
 public section
 
-universe v₁ v₂ u₁ u₂
+universe v₁ v₂ v₃ v₄ u₁ u₂ u₃ u₄
 
 namespace CategoryTheory.NatIso
 
@@ -71,5 +75,46 @@ theorem eq_eqToIso_of_hom_app_eqToHom {C : Type u₁} [Category.{v₁} C] {D : T
     (he : ∀ X : C, ∃ p : F.obj X = G.obj X, e.hom.app X = eqToHom p) :
     e = eqToIso h :=
   eq_of_hom_app_eqToHom he fun X ↦ ⟨Functor.congr_obj h X, by rw [eqToIso.hom, eqToHom_app]⟩
+
+/-- Left unit coherence for natural isomorphisms whose components are all `eqToHom`s. -/
+theorem whiskerRight_leftUnitor_eq_eqToIso_of_hom_app_eqToHom
+    {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+    {F : C ⥤ D} {I : C ⥤ C} {G : C ⥤ D} (e₁ : F ≅ I ⋙ G) (e₂ : I ≅ 𝟭 C) (h : F = G)
+    (he₁ : ∀ X : C, ∃ p, e₁.hom.app X = eqToHom p)
+    (he₂ : ∀ X : C, ∃ p, e₂.hom.app X = eqToHom p) :
+    e₁ ≪≫ Functor.isoWhiskerRight e₂ G ≪≫ Functor.leftUnitor G = eqToIso h :=
+  eq_eqToIso_of_hom_app_eqToHom _ _ fun X ↦
+    have ⟨p₁, hp₁⟩ := he₁ X; have ⟨p₂, hp₂⟩ := he₂ X
+    ⟨p₁.trans (congrArg G.obj p₂), by simp [hp₁, hp₂, eqToHom_map]⟩
+
+/-- Right unit coherence for natural isomorphisms whose components are all `eqToHom`s. -/
+theorem whiskerLeft_rightUnitor_eq_eqToIso_of_hom_app_eqToHom
+    {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+    {F G : C ⥤ D} {I : D ⥤ D} (e₁ : F ≅ G ⋙ I) (e₂ : I ≅ 𝟭 D) (h : F = G)
+    (he₁ : ∀ X : C, ∃ p, e₁.hom.app X = eqToHom p)
+    (he₂ : ∀ Y : D, ∃ p, e₂.hom.app Y = eqToHom p) :
+    e₁ ≪≫ Functor.isoWhiskerLeft G e₂ ≪≫ Functor.rightUnitor G = eqToIso h :=
+  eq_eqToIso_of_hom_app_eqToHom _ _ fun X ↦
+    have ⟨p₁, hp₁⟩ := he₁ X; have ⟨p₂, hp₂⟩ := he₂ (G.obj X)
+    ⟨p₁.trans p₂, by simp [hp₁, hp₂]⟩
+
+/-- Associativity coherence for natural isomorphisms whose components are all `eqToHom`s. -/
+theorem whiskerRight_associator_eq_whiskerLeft_of_hom_app_eqToHom
+    {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
+    {E : Type u₃} [Category.{v₃} E] {K : Type u₄} [Category.{v₄} K]
+    {FGH FGH' : C ⥤ K} {FG : C ⥤ E} {GH : D ⥤ K} {F : C ⥤ D} {G : D ⥤ E} {H : E ⥤ K}
+    (e₁ : FGH ≅ FG ⋙ H) (e₂ : FG ≅ F ⋙ G) (e₃ : FGH' ≅ F ⋙ GH) (e₄ : GH ≅ G ⋙ H)
+    (h : FGH = FGH')
+    (he₁ : ∀ X : C, ∃ p, e₁.hom.app X = eqToHom p)
+    (he₂ : ∀ X : C, ∃ p, e₂.hom.app X = eqToHom p)
+    (he₃ : ∀ X : C, ∃ p, e₃.hom.app X = eqToHom p)
+    (he₄ : ∀ Y : D, ∃ p, e₄.hom.app Y = eqToHom p) :
+    e₁ ≪≫ Functor.isoWhiskerRight e₂ H ≪≫ Functor.associator F G H =
+      eqToIso h ≪≫ e₃ ≪≫ Functor.isoWhiskerLeft F e₄ :=
+  eq_of_hom_app_eqToHom
+    (fun X ↦ have ⟨p₁, hp₁⟩ := he₁ X; have ⟨p₂, hp₂⟩ := he₂ X
+      ⟨p₁.trans (congrArg H.obj p₂), by simp [hp₁, hp₂, eqToHom_map]⟩)
+    (fun X ↦ have ⟨p₃, hp₃⟩ := he₃ X; have ⟨p₄, hp₄⟩ := he₄ (F.obj X)
+      ⟨(Functor.congr_obj h X).trans (p₃.trans p₄), by simp [hp₃, hp₄]⟩)
 
 end CategoryTheory.NatIso

@@ -293,6 +293,8 @@ instance {D : Type u'} [Category.{v'} D] [MonoidalCategory D] {I J : Interpretat
   CategoryTheory.Quotient.natIso_ext fun X ↦ by
   simp only [liftIso_hom_app, Iso.refl_hom, NatTrans.id_app]
   rw [funext (Interpretation.id_iso I), FreeMonoidalCategory.projectObjIso_refl, Iso.refl_hom]
+  -- `(lift I.obj I.coupon hI).obj ((quotientFunctor R).obj X)` unfolds definitionally to
+  -- `FreeMonoidalCategory.projectObj I.obj X.as` via `lift_obj` and `FreeMonoidal.lift_obj`.
   rfl
 
 /-- Lifting a composite morphism of interpretations gives the composite of the lifted natural
@@ -817,6 +819,8 @@ theorem mapSubstCompLiftIso_id (fo : S.Obj → D)
       Functor.whiskerRight_app, Functor.leftUnitor_hom_app, Functor.comp_obj, Functor.id_obj,
       mapSubst_obj, Substitution.toFunctorIdIso_hom_app, mapSubstIdIso_hom_app, eqToHom_map,
       Category.comp_id]
+    -- `(lift fo fc hR).obj ((quotientFunctor R).obj Y)` and `(FreeMonoidal.lift fo fc).obj Y`
+    -- agree definitionally (`lift_obj`), as does `mapSubst_obj`, so the two `eqToHom`s match.
     rfl
 
 /-- Compatibility of `mapSubstCompLiftIso` with successive pullback along a composite
@@ -851,8 +855,7 @@ theorem mapSubstCompLiftIso_comp
       Functor.whiskerLeft_app, Functor.comp_obj, Substitution.toFunctorCompIso_hom_app,
       Substitution.toFunctorCompLiftIso_hom_app, mapSubstCompIso_hom_app, mapSubst_obj,
       mapSubstCompLiftIso_hom_app, eqToHom_map, Category.id_comp]
-    exact ((congrArg (eqToHom _ ≫ ·) (eqToHom_trans _ _)).trans (eqToHom_trans _ _)).trans
-      ((congrArg (eqToHom _ ≫ ·) (eqToHom_trans _ _)).trans (eqToHom_trans _ _)).symm
+    exact TauCeti.eqToHom_comp_eqToHom_comp_eq _ _ _ _ _ _
 
 end Pullback
 

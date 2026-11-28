@@ -656,11 +656,9 @@ theorem toFunctorCompIso_id_left {S : TensorSignature.{u₁, v₁}} {T : TensorS
     (σ : Substitution S T) :
     toFunctorCompIso (id S) σ ≪≫ Functor.isoWhiskerRight (toFunctorIdIso S) σ.toFunctor ≪≫
         Functor.leftUnitor σ.toFunctor = eqToIso (congrArg toFunctor (id_comp σ)) :=
-  NatIso.eq_eqToIso_of_hom_app_eqToHom _ _ fun X ↦ ⟨_, by
-    simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerRight_hom,
-      Functor.whiskerRight_app, Functor.leftUnitor_hom_app, Functor.comp_obj, Functor.id_obj,
-      toFunctorCompIso_hom_app, toFunctorIdIso_hom_app, eqToHom_map, Category.comp_id]
-    rw [eqToHom_trans]⟩
+  NatIso.whiskerRight_leftUnitor_eq_eqToIso_of_hom_app_eqToHom _ _ _
+    (fun X ↦ ⟨_, toFunctorCompIso_hom_app _ _ X⟩)
+    (fun X ↦ ⟨_, toFunctorIdIso_hom_app _ X⟩)
 
 /-- Right unit coherence for `Substitution.toFunctor`: composing `toFunctorCompIso σ (id T)` with
 `toFunctorIdIso T` agrees with `Substitution.comp_id σ`. -/
@@ -668,11 +666,9 @@ theorem toFunctorCompIso_id_right {S : TensorSignature.{u₁, v₁}} {T : Tensor
     (σ : Substitution S T) :
     toFunctorCompIso σ (id T) ≪≫ Functor.isoWhiskerLeft σ.toFunctor (toFunctorIdIso T) ≪≫
         Functor.rightUnitor σ.toFunctor = eqToIso (congrArg toFunctor (comp_id σ)) :=
-  NatIso.eq_eqToIso_of_hom_app_eqToHom _ _ fun X ↦ ⟨_, by
-    simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom,
-      Functor.whiskerLeft_app, Functor.rightUnitor_hom_app, Functor.comp_obj, Functor.id_obj,
-      toFunctorCompIso_hom_app, toFunctorIdIso_hom_app, Category.comp_id]
-    rw [eqToHom_trans]⟩
+  NatIso.whiskerLeft_rightUnitor_eq_eqToIso_of_hom_app_eqToHom _ _ _
+    (fun X ↦ ⟨_, toFunctorCompIso_hom_app _ _ X⟩)
+    (fun X ↦ ⟨_, toFunctorIdIso_hom_app _ X⟩)
 
 /-- Associativity coherence (pentagon) for `Substitution.toFunctorCompIso`. -/
 theorem toFunctorCompIso_assoc {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
@@ -682,17 +678,11 @@ theorem toFunctorCompIso_assoc {S : TensorSignature.{u₁, v₁}} {T : TensorSig
         Functor.associator σ.toFunctor τ.toFunctor ρ.toFunctor =
       eqToIso (congrArg toFunctor (comp_assoc σ τ ρ)) ≪≫ toFunctorCompIso σ (τ.comp ρ) ≪≫
         Functor.isoWhiskerLeft σ.toFunctor (toFunctorCompIso τ ρ) :=
-  NatIso.eq_of_hom_app_eqToHom
-    (fun X ↦ ⟨_, by
-      simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerRight_hom,
-        Functor.whiskerRight_app, Functor.associator_hom_app, Functor.comp_obj,
-        toFunctorCompIso_hom_app, eqToHom_map, Category.comp_id]
-      rw [eqToHom_trans]⟩)
-    (fun X ↦ ⟨_, by
-      simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom,
-        Functor.whiskerLeft_app, Functor.comp_obj, toFunctorCompIso_hom_app, eqToIso.hom,
-        eqToHom_app]
-      rw [eqToHom_trans, eqToHom_trans]⟩)
+  NatIso.whiskerRight_associator_eq_whiskerLeft_of_hom_app_eqToHom _ _ _ _ _
+    (fun X ↦ ⟨_, toFunctorCompIso_hom_app _ _ X⟩)
+    (fun X ↦ ⟨_, toFunctorCompIso_hom_app _ _ X⟩)
+    (fun X ↦ ⟨_, toFunctorCompIso_hom_app _ _ X⟩)
+    (fun X ↦ ⟨_, toFunctorCompIso_hom_app _ _ X⟩)
 
 end Functoriality
 
@@ -864,15 +854,6 @@ variable (D) in
 @[simp] theorem pullback_map_iso (σ : Substitution S T) {I J : Interpretation T D} (α : I ⟶ J)
     (a : S.Obj) : ((σ.pullback D).map α).iso a = projectObjIso α.iso (σ.obj a).as := (rfl)
 
-private lemma eqToHom_conj_comp_eqToHom {C : Type*} [Category* C]
-    {A B B' D' E F : C}
-    (h₁ : A = B) (m : B ⟶ D') (h₂ : D' = E) (h₃ : E = F)
-    (h₄ : A = B') (h₅ : B' = B) (h₆ : D' = F) :
-    (eqToHom h₁ ≫ m ≫ eqToHom h₂) ≫ eqToHom h₃ =
-      eqToHom h₄ ≫ eqToHom h₅ ≫ m ≫ eqToHom h₆ := by
-  subst h₁ h₂ h₃ h₄
-  simp
-
 /-- Naturality of `Substitution.toFunctorCompLiftIso` in `I : Interpretation T D`: whiskering the
 extension of an interpretation isomorphism `α : I ⟶ J` with `σ.toFunctor` commutes with
 `toFunctorCompLiftIso` and the extension of `(σ.pullback D).map α`. -/
@@ -894,7 +875,7 @@ theorem toFunctorCompLiftIso_natural (σ : Substitution S T) {I J : Interpretati
     (congrArg (fun e ↦ (projectObjIso e X.as).hom)
       (funext (pullback_map_iso σ α)))).trans hp
   exact (congrArg₂ (· ≫ ·) h1 h2).trans <|
-    (eqToHom_conj_comp_eqToHom _ _ _ _ _ _ _).trans (congrArg₂ (· ≫ ·) h3 h4).symm
+    (TauCeti.eqToHom_conj_comp_eqToHom _ _ _ _ _ _ _).trans (congrArg₂ (· ≫ ·) h3 h4).symm
 
 variable (D) in
 /-- Precomposition of bundled strong monoidal functors and monoidal natural isomorphisms with
@@ -1002,11 +983,12 @@ private theorem pullbackIdIso_naturality {I J : Interpretation S D} (α : I ⟶ 
   have hword := projectObjIso_congr_word α.iso
     ((congrArg FreeMonoidal.as (congrFun id_obj a)).trans (FreeMonoidal.of_as a))
   rw [projectObjIso_of] at hword
-  rw [hword, Category.assoc, Category.assoc]
-  exact congrArg (eqToHom _ ≫ ·)
-    ((congrArg ((α.iso a).hom ≫ ·)
-      ((TauCeti.eqToHom_comp_eqToHom _ _ (rfl : J.obj a = J.obj a)).trans
-        (eqToHom_refl _ _))).trans (Category.comp_id _))
+  rw [hword]
+  have h : eqToHom (congrFun (pullback_id_obj I.obj) a) ≫
+      eqToHom (rfl : I.obj a = I.obj a) ≫ (α.iso a).hom ≫ eqToHom (rfl : J.obj a = J.obj a) =
+      eqToHom (congrFun (pullback_id_obj I.obj) a) ≫ (α.iso a).hom := by simp
+  exact (TauCeti.eqToHom_conj_comp_eqToHom _ _ _ _
+    (congrFun (pullback_id_obj I.obj) a) rfl rfl).trans h
 
 private def pullbackIdIsoApp (I : Interpretation S D) :
     ((id S).pullback D).obj I ≅ (𝟭 (Interpretation S D)).obj I :=
@@ -1054,7 +1036,7 @@ private lemma toFunctorCompLiftIso_comp_rhs_hom_app {U : TensorSignature.{u₄, 
     Functor.whiskerRight_app, Functor.associator_hom_app, Functor.isoWhiskerLeft_hom,
     Functor.whiskerLeft_app, toFunctorCompIso_hom_app, toFunctorCompLiftIso_hom_app,
     Functor.comp_obj, eqToHom_map, Category.id_comp]
-  exact (congrArg (eqToHom _ ≫ ·) (eqToHom_trans _ _)).trans (eqToHom_trans _ _)
+  exact TauCeti.eqToHom_comp_eqToHom_comp _ _ _ _
 
 /-- Pulling back a coupon interpretation `(fo, fc)` along a composite substitution `σ.comp τ`
 agrees with pulling back along `τ` and then along `σ`, up to `eqToHom` transports along
@@ -1093,7 +1075,7 @@ private theorem pullbackCompIso_naturality {U : TensorSignature.{u₄, v₄}}
   have hR := congrArg (eqToHom (congrFun (comp_pullbackObj σ τ I.obj) a) ≫ ·)
     ((congrArg (fun e ↦ (projectObjIso e (σ.obj a).as).hom)
       (funext (pullback_map_iso τ α))).trans hp)
-  exact hL.trans <| (eqToHom_conj_comp_eqToHom _ _ _ _ _ _ _).trans hR.symm
+  exact hL.trans <| (TauCeti.eqToHom_conj_comp_eqToHom _ _ _ _ _ _ _).trans hR.symm
 
 private def pullbackCompIsoApp {U : TensorSignature.{u₄, v₄}} (σ : Substitution S T)
     (τ : Substitution T U) (I : Interpretation U D) :
@@ -1184,8 +1166,10 @@ theorem pullbackCompIso_assoc {U : TensorSignature.{u₄, v₄}} {V : TensorSign
     pullback_eqToIso_hom_app_iso (comp_assoc σ τ ρ) I a, pullbackCompIso_hom_app_iso,
     pullback_map_eqToIso_hom σ (pullbackCompIso_hom_app_iso τ ρ I) a, eqToIso.hom, eqToIso.hom,
     eqToIso.hom]
-  exact (eqToHom_trans _ _).trans
-    ((congrArg (eqToHom _ ≫ ·) (eqToHom_trans _ _)).trans (eqToHom_trans _ _)).symm
+  exact (TauCeti.eqToHom_comp_eqToHom _ _
+      ((congrFun (comp_pullbackObj (σ.comp τ) ρ I.obj) a).trans
+        (congrFun (comp_pullbackObj σ τ (ρ.pullbackObj I.obj)) a))).trans
+    (TauCeti.eqToHom_comp_eqToHom_comp _ _ _ _).symm
 
 private theorem extension_map_eqToIso_hom {I J : Interpretation S D}
     {α : I ⟶ J} {h : ∀ a, I.obj a = J.obj a} (hα : ∀ a, α.iso a = eqToIso (h a))
@@ -1361,11 +1345,9 @@ theorem toFunctorCompIso_id_left {S : TensorSignature.{u₁, v₁}} {T : TensorS
     (φ : Hom S T) :
     toFunctorCompIso (Hom.id S) φ ≪≫ Functor.isoWhiskerRight (toFunctorIdIso S) φ.toFunctor ≪≫
         Functor.leftUnitor φ.toFunctor = eqToIso (congrArg toFunctor (Hom.id_comp φ)) :=
-  NatIso.eq_eqToIso_of_hom_app_eqToHom _ _ fun X ↦ ⟨_, by
-    simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerRight_hom,
-      Functor.whiskerRight_app, Functor.leftUnitor_hom_app, Functor.comp_obj, Functor.id_obj,
-      toFunctorCompIso_hom_app, toFunctorIdIso_hom_app, eqToHom_map, Category.comp_id]
-    rw [eqToHom_trans]⟩
+  NatIso.whiskerRight_leftUnitor_eq_eqToIso_of_hom_app_eqToHom _ _ _
+    (fun X ↦ ⟨_, toFunctorCompIso_hom_app _ _ X⟩)
+    (fun X ↦ ⟨_, toFunctorIdIso_hom_app _ X⟩)
 
 /-- Right unit coherence for `Hom.toFunctor`: composing `toFunctorCompIso φ (Hom.id T)` with
 `toFunctorIdIso T` agrees with `Hom.comp_id φ`. -/
@@ -1373,11 +1355,9 @@ theorem toFunctorCompIso_id_right {S : TensorSignature.{u₁, v₁}} {T : Tensor
     (φ : Hom S T) :
     toFunctorCompIso φ (Hom.id T) ≪≫ Functor.isoWhiskerLeft φ.toFunctor (toFunctorIdIso T) ≪≫
         Functor.rightUnitor φ.toFunctor = eqToIso (congrArg toFunctor (Hom.comp_id φ)) :=
-  NatIso.eq_eqToIso_of_hom_app_eqToHom _ _ fun X ↦ ⟨_, by
-    simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom,
-      Functor.whiskerLeft_app, Functor.rightUnitor_hom_app, Functor.comp_obj, Functor.id_obj,
-      toFunctorCompIso_hom_app, toFunctorIdIso_hom_app, Category.comp_id]
-    rw [eqToHom_trans]⟩
+  NatIso.whiskerLeft_rightUnitor_eq_eqToIso_of_hom_app_eqToHom _ _ _
+    (fun X ↦ ⟨_, toFunctorCompIso_hom_app _ _ X⟩)
+    (fun X ↦ ⟨_, toFunctorIdIso_hom_app _ X⟩)
 
 /-- Associativity coherence (pentagon) for `Hom.toFunctorCompIso`. -/
 theorem toFunctorCompIso_assoc {S : TensorSignature.{u₁, v₁}} {T : TensorSignature.{u₂, v₂}}
@@ -1388,17 +1368,11 @@ theorem toFunctorCompIso_assoc {S : TensorSignature.{u₁, v₁}} {T : TensorSig
         Functor.associator φ.toFunctor ψ.toFunctor θ.toFunctor =
       eqToIso (congrArg toFunctor (Hom.comp_assoc φ ψ θ)) ≪≫ toFunctorCompIso φ (ψ.comp θ) ≪≫
         Functor.isoWhiskerLeft φ.toFunctor (toFunctorCompIso ψ θ) :=
-  NatIso.eq_of_hom_app_eqToHom
-    (fun X ↦ ⟨_, by
-      simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerRight_hom,
-        Functor.whiskerRight_app, Functor.associator_hom_app, Functor.comp_obj,
-        toFunctorCompIso_hom_app, eqToHom_map, Category.comp_id]
-      rw [eqToHom_trans]⟩)
-    (fun X ↦ ⟨_, by
-      simp only [Iso.trans_hom, NatTrans.comp_app, Functor.isoWhiskerLeft_hom,
-        Functor.whiskerLeft_app, Functor.comp_obj, toFunctorCompIso_hom_app, eqToIso.hom,
-        eqToHom_app]
-      rw [eqToHom_trans, eqToHom_trans]⟩)
+  NatIso.whiskerRight_associator_eq_whiskerLeft_of_hom_app_eqToHom _ _ _ _ _
+    (fun X ↦ ⟨_, toFunctorCompIso_hom_app _ _ X⟩)
+    (fun X ↦ ⟨_, toFunctorCompIso_hom_app _ _ X⟩)
+    (fun X ↦ ⟨_, toFunctorCompIso_hom_app _ _ X⟩)
+    (fun X ↦ ⟨_, toFunctorCompIso_hom_app _ _ X⟩)
 
 end Hom
 
