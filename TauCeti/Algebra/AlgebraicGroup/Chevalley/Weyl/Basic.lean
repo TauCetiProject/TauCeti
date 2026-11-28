@@ -477,7 +477,6 @@ private theorem rootSubgroupPoints_simpleIndex_ofAdd_one_ne_one
 
 /-- For every Chevalley datum over a nontrivial ring, every root element with additive
 parameter one is nonidentity. -/
-@[simp]
 theorem rootSubgroupPoints_ofAdd_one_ne_one
     (A : Type v) [CommRing A] [Nontrivial A] (γ : Fin t.numRoots) :
     D.rootSubgroupPoints γ A (Multiplicative.ofAdd 1) ≠ 1 := by

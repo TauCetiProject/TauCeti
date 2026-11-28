@@ -28,8 +28,7 @@ constructions.
 `TauCeti.E6Minuscule.chevalleyDatumPointsEquiv` identifies their points over every commutative
 ring without changing any matrix. It matches both signs of the simple root subgroups with the
 same node and parameter and the entire torus with the same parameter, is natural in the value
-ring, and intertwines the independently defined Frobenius maps. Every root subgroup of the datum,
-at all seventy-two roots, is injective over every commutative ring. This is a realization of this
+ring, and intertwines the independently defined Frobenius maps. This is a realization of this
 particular datum; it does not compare the datum with the simply connected datum
 `TauCeti.DynkinType.scChevalleyDatum`, and it asserts no generation of all points by root
 subgroups.

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Center
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Center.Integral
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Endomorphism.Standard
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne

@@ -32,11 +32,9 @@ over nonreduced rings and rings of characteristic two.
 * positive and negative simple root subgroups match the numbered raising and lowering subgroups of
   `SpStd 1` across `lengthPermRankTwo`, with the additive parameter unchanged;
 * torus points `b2ChevalleyDatum.torusPoints A s` match
-  `weightTorusPoints 1 A (s ∘ lengthPermRankTwo)`;
+  `weightTorusPoints 1 A (s ∘ lengthPermRankTwo)`; and
 * functorial ring-change maps and `p ^ k`-power Frobenius endomorphisms commute with the
-  identification; and
-* every root subgroup `b2ChevalleyDatum.rootSubgroupPoints γ A` (across all eight roots of `B₂`) is
-  injective over every commutative ring `A`.
+  identification.
 
 ## Main definitions
 

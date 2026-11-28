@@ -29,8 +29,7 @@ including nonreduced rings and rings of positive characteristic.
 the positive and negative simple root subgroups of the datum are the numbered raising and lowering
 subgroups of the carrier with the same number and the same additive parameter, the torus of the
 datum is the weight torus of the carrier with the same parameters, and the functorial maps along
-ring homomorphisms and the `p ^ k`-power Frobenius maps of the two sides agree. Every root subgroup
-of the datum, at every root of `A_r`, is injective over every commutative ring.
+ring homomorphisms and the `p ^ k`-power Frobenius maps of the two sides agree.
 
 This is the type-`A_r` input to Chevalley's comparison theorem for the standard special linear
 model: the explicit carrier is the group scheme of a full-weight Chevalley datum of type `A_r`,

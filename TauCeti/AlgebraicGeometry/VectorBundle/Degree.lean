@@ -15,6 +15,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Skyscraper
 public import TauCeti.AlgebraicGeometry.VectorBundle.EulerCharacteristic
 public import TauCeti.AlgebraicGeometry.Curves.Degree.Pullback
 public import TauCeti.AlgebraicGeometry.VectorBundle.FreeSubsheaf
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.Flat.Degree
 import TauCeti.AlgebraicGeometry.Noetherian
 import TauCeti.AlgebraicGeometry.Cohomology.PushforwardAcyclic.Affine
 import TauCeti.AlgebraicGeometry.Morphisms.Flat.Dominant

@@ -53,11 +53,13 @@ the values of `f`. Each `j < Nat.card ι` is the rank of exactly one index
 (`Set.encard_setOf_ncard_setOf_lt_eq`). For a strictly monotone map on `Fin n`, the rank of `f k`
 is `k` (`Set.ncard_setOf_lt_of_strictMono`).
 
-The same count works for an infinite set `s`, provided only finitely many of its points lie below
-each one. For `f` injective on `s`, the number of points of `s` below `f a` determines `a ∈ s`
-(`Set.InjOn.injOn_ncard_sep_lt`), and when `s` is infinite every natural number is such a count
-(`Set.Infinite.exists_mem_ncard_sep_lt_eq`). This lists `s` in increasing order of `f`, as a
-sequence indexed by `ℕ`, such as the zeros of an analytic function ordered by modulus.
+The same count works for a set `s`, provided only finitely many of its points lie below each one.
+For `f` injective on `s`, the number of points of `s` below `f a` determines `a ∈ s`
+(`Set.InjOn.injOn_ncard_sep_lt`), and every natural number `n` strictly below `s.encard` is such
+a count (`Set.exists_mem_ncard_sep_lt_eq`). When `s` is partitioned into a finite prefix `a` and
+a strictly increasing tail `z : ℕ → ι` above `a`, the rank of `z n` is `a.ncard + n`
+(`Set.ncard_sep_lt_eq_ncard_add`). This lists `s` in increasing order of `f`, as a sequence
+indexed by `ℕ`, such as the zeros of an analytic function ordered by modulus.
 
 A set covered by finitely many finite sets `C i` is finite, with at most `∑ i, |C i|` elements
 (`Set.finite_and_ncard_le_sum_of_subset_biUnion`). Over a finite index type, the triples
@@ -83,6 +85,9 @@ The statement `Set.ncard_preimage_div` needs no hypotheses: `Set.ncard` is `0` o
 and `i / 0 = 0` makes the preimage under division by zero either `∅` or all of `ℕ`, so both
 sides are `0` when `S` is infinite or `n = 0`.
 
+The natural numbers strictly below `m : ℕ∞` have extended cardinality `m`
+(`Set.encard_setOf_natCast_lt`).
+
 The fibre of the first pullback projection has the same `Set.ncard` as the original fibre
 (`Function.Pullback.ncard_preimage_fst_singleton`). An equivalence onto the preimage of a subset
 transfers `Set.ncard` of fibres over that subset (`Equiv.ncard_fiber_eq_of_preimage`). These
@@ -91,6 +96,10 @@ identities transfer sheet counts from local models; `Set.ncard` is zero on infin
 For finite sets, equality and inequality of `Set.encard` are equivalent to equality and
 inequality of `Set.ncard` (`Set.encard_eq_encard_iff_ncard_eq_ncard`,
 `Set.encard_le_encard_iff_ncard_le_ncard`).
+
+A set of lists built from an optional empty list `[]` and disjoint `List.cons a` images over a
+finite set `T` has cardinality `(if P then 1 else 0) + ∑ a ∈ hT.toFinset, (S a).ncard`
+(`Set.ncard_nil_union_biUnion_cons`).
 -/
 
 public section
@@ -326,17 +335,29 @@ theorem InjOn.injOn_ncard_sep_lt {ι α : Type*} [LinearOrder α] {f : ι → α
   · exact (ncard_sep_lt_lt_ncard_sep_lt ha hlt (hfin b hb)).ne h
   · exact (ncard_sep_lt_lt_ncard_sep_lt hb hlt (hfin a ha)).ne h.symm
 
-/-- For a map `f` into a linear order that is injective on the infinite set `s`, if only finitely
-many points of `s` have value below each point of `s`, then every natural number `n` is the number
-of points of `s` whose value lies below `f a`, for some `a ∈ s`. Together with
-`Set.InjOn.injOn_ncard_sep_lt`, this lists `s` in increasing order of `f`, indexed by `ℕ`. -/
-theorem Infinite.exists_mem_ncard_sep_lt_eq {ι α : Type*} [LinearOrder α] {f : ι → α}
-    {s : Set ι} (hs : s.Infinite) (hf : InjOn f s) (hfin : ∀ a ∈ s, {i ∈ s | f i < f a}.Finite)
-    (n : ℕ) : ∃ a ∈ s, {i ∈ s | f i < f a}.ncard = n := by
+/-- For a map `f` into a linear order that is injective on `s`, if only finitely many points of `s`
+have value below each point of `s`, then every natural number `n` strictly below `s.encard` is the
+number of points of `s` whose value lies below `f a`, for some `a ∈ s`. Together with
+`Set.InjOn.injOn_ncard_sep_lt`, this lists `s` in increasing order of `f`. -/
+theorem exists_mem_ncard_sep_lt_eq {ι α : Type*} [LinearOrder α] {f : ι → α}
+    {s : Set ι} (hf : InjOn f s) (hfin : ∀ a ∈ s, {i ∈ s | f i < f a}.Finite)
+    {n : ℕ} (hn : (n : ℕ∞) < s.encard) : ∃ a ∈ s, {i ∈ s | f i < f a}.ncard = n := by
   set r : ι → ℕ := fun a ↦ {i ∈ s | f i < f a}.ncard
   have hrinj : InjOn r s := hf.injOn_ncard_sep_lt hfin
-  -- The values of `r` on `s` are unbounded, since `s` is infinite and `r` is injective on it.
-  obtain ⟨_, ⟨b, hb, rfl⟩, hnb⟩ := (Infinite.image hrinj hs).exists_gt n
+  -- Some `b ∈ s` has rank at least `n`, since `s.encard = (r '' s).encard > n`.
+  have hge : ∃ b ∈ s, n ≤ r b := by
+    by_contra! hlt
+    have hsub : r '' s ⊆ Iio n := by
+      rintro _ ⟨b, hb, rfl⟩
+      exact hlt b hb
+    have hcard : s.encard ≤ (n : ℕ∞) := by
+      rw [← hrinj.encard_image]
+      exact (encard_le_encard hsub).trans_eq
+        (by rw [← (finite_Iio n).cast_ncard_eq, ncard_Iio_nat])
+    exact hcard.not_gt hn
+  obtain ⟨b, hb, hnb⟩ := hge
+  rcases hnb.eq_or_lt with h | h
+  · exact ⟨b, hb, h.symm⟩
   -- The `r b` points of `s` below `b` take distinct values of `r`, all below `r b`; so each value
   -- below `r b`, in particular `n`, is taken.
   have hsub : r '' {i ∈ s | f i < f b} ⊆ Iio (r b) := by
@@ -345,8 +366,37 @@ theorem Infinite.exists_mem_ncard_sep_lt_eq {ι α : Type*} [LinearOrder α] {f 
   have heq : r '' {i ∈ s | f i < f b} = Iio (r b) :=
     eq_of_subset_of_ncard_le hsub
       (by rw [ncard_Iio_nat]; exact (hrinj.mono (sep_subset s _)).ncard_image.ge) (finite_Iio _)
-  obtain ⟨a, ha, hra⟩ := heq.symm.subset (show n ∈ Iio (r b) from hnb)
+  obtain ⟨a, ha, hra⟩ := heq.symm.subset (mem_Iio.mpr h)
   exact ⟨a, ha.1, hra⟩
+
+/-- For a set `s` partitioned into a finite prefix `a ⊆ s` and a strictly `f`-increasing tail
+`z : ℕ → ι` lying above `a`, the number of points of `s` whose value under `f` lies below
+`f (z n)` is `a.ncard + n`. -/
+theorem ncard_sep_lt_eq_ncard_add {ι α : Type*} [Preorder α] {f : ι → α}
+    {s a : Set ι} (ha_fin : a.Finite) (ha_sub : a ⊆ s)
+    {z : ℕ → ι} (hz_mem : ∀ m, z m ∈ s) (hz_strict : StrictMono (f ∘ z))
+    (ha_lt : ∀ x ∈ a, f x < f (z 0)) (hexh : ∀ x ∈ s, x ∈ a ∨ ∃ m, x = z m)
+    (n : ℕ) :
+    {x ∈ s | f x < f (z n)}.ncard = a.ncard + n := by
+  have ha_lt_all : ∀ x ∈ a, ∀ m, f x < f (z m) := fun x hx m ↦
+    lt_of_lt_of_le (ha_lt x hx) (hz_strict.monotone (Nat.zero_le m))
+  have hsep : {x ∈ s | f x < f (z n)} = a ∪ z '' (Finset.range n : Set ℕ) := by
+    ext x
+    constructor
+    · rintro ⟨hxs, hxlt⟩
+      rcases hexh x hxs with hxa | ⟨m, rfl⟩
+      · exact .inl hxa
+      · refine .inr ⟨m, Finset.mem_coe.mpr (Finset.mem_range.mpr ?_), rfl⟩
+        by_contra! hnm
+        exact (hz_strict.monotone hnm).not_gt hxlt
+    · rintro (hxa | ⟨m, hm, rfl⟩)
+      · exact ⟨ha_sub hxa, ha_lt_all x hxa n⟩
+      · exact ⟨hz_mem m, hz_strict (Finset.mem_range.mp (Finset.mem_coe.mp hm))⟩
+  have hdisj : Disjoint a (z '' (Finset.range n : Set ℕ)) :=
+    disjoint_left.mpr fun x hxa ⟨m, _, hxm⟩ ↦
+      lt_irrefl (f x) (hxm ▸ ha_lt_all x hxa m)
+  rw [hsep, ncard_union_eq hdisj ha_fin ((Finset.range n).finite_toSet.image z),
+    ncard_image_of_injective _ hz_strict.injective.of_comp, ncard_coe_finset, Finset.card_range]
 
 /-- For an injective map `f` from a finite type into a linear order, the number of indices whose
 value lies below `f a` determines `a`. -/
@@ -403,6 +453,13 @@ theorem ncard_preimage_succAbove {n : ℕ} (k : Fin (n + 1)) (s : Set (Fin (n + 
   rw [← ncard_image_of_injective _ Fin.succAbove_right_injective, image_preimage_eq_inter_range,
     Fin.range_succAbove, ← sdiff_eq]
 
+/-- The natural numbers strictly below `m : ℕ∞` have extended cardinality `m`. -/
+@[simp]
+theorem encard_setOf_natCast_lt (m : ℕ∞) : {k : ℕ | (k : ℕ∞) < m}.encard = m := by
+  induction m using ENat.recTopCoe with
+  | top => simp
+  | coe n => simpa using Nat.encard_range n
+
 /-- For finite sets, equality of `Set.encard` is equivalent to equality of `Set.ncard`. -/
 theorem encard_eq_encard_iff_ncard_eq_ncard {α β : Type*} {s : Set α} {t : Set β}
     (hs : s.Finite) (ht : t.Finite) :
@@ -414,6 +471,29 @@ theorem encard_le_encard_iff_ncard_le_ncard {α β : Type*} {s : Set α} {t : Se
     (hs : s.Finite) (ht : t.Finite) :
     s.encard ≤ t.encard ↔ s.ncard ≤ t.ncard := by
   rw [← hs.cast_ncard_eq, ← ht.cast_ncard_eq, Nat.cast_le]
+
+/-- Cardinality of the disjoint union of an optional empty list `[]` (present when `P` holds) and
+cons-images `List.cons a '' S a` over `a ∈ T`. -/
+theorem ncard_nil_union_biUnion_cons {α : Type*} (P : Prop) [Decidable P]
+    {T : Set α} (hT : T.Finite) {S : α → Set (List α)} (hS : ∀ a ∈ T, (S a).Finite) :
+    ({u : List α | u = [] ∧ P} ∪ ⋃ a ∈ T, List.cons a '' S a).ncard =
+      (if P then 1 else 0) + ∑ a ∈ hT.toFinset, (S a).ncard := by
+  have hdisj : Disjoint {u : List α | u = [] ∧ P} (⋃ a ∈ T, List.cons a '' S a) := by
+    rw [disjoint_left]
+    rintro _ ⟨rfl, -⟩ h
+    simp at h
+  have hpair : T.PairwiseDisjoint fun a => List.cons a '' S a := by
+    intro a _ b _ hab
+    rw [Function.onFun, disjoint_left]
+    rintro _ ⟨u, -, rfl⟩ ⟨v, -, h⟩
+    exact hab (List.cons.inj h).1.symm
+  rw [ncard_union_eq hdisj ((finite_singleton []).subset fun _ hu => hu.1)
+    (hT.biUnion fun a ha => (hS a ha).image _),
+    hT.ncard_biUnion (fun a ha => (hS a ha).image _) hpair]
+  congr 1
+  · split_ifs with h <;> simp [h]
+  · simp only [ncard_image_of_injective _ List.cons_injective]
+    rw [finsum_mem_eq_finite_toFinset_sum _ hT]
 
 /-- The fibre of `Sigma.fst : (Σ y, Y y) → α` over `x` has `encard` equal to `ENat.card (Y x)`. -/
 @[simp]

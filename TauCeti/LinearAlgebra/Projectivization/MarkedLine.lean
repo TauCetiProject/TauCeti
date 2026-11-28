@@ -173,6 +173,13 @@ theorem markedLine_injective (hvw : LinearIndependent K ![v, w]) (hv : φ v ≠ 
   ext i
   fin_cases i <;> simp [hx₀, hx₁]
 
+/-- **The marked line has nonzero values off `0`.** When `v` and `w` are linearly independent and
+neither lies in `ker φ`, the marked line sends every nonzero `t : K²` to a nonzero vector of `V`,
+so it defines a map `ℙ¹ → ℙ(V)`. -/
+theorem markedLine_ne_zero (hvw : LinearIndependent K ![v, w]) (hv : φ v ≠ 0) (hw : φ w ≠ 0)
+    {t : Fin 2 → K} (ht : t ≠ 0) : markedLine φ v w t ≠ 0 :=
+  fun h ↦ ht (markedLine_injective hvw hv hw (h.trans (map_zero _).symm))
+
 /-- **The marked line passes through `[v]` and `[w]`.** When neither `v` nor `w` lies in `ker φ`,
 the image of the marked line is the plane `span {v, w}`. -/
 theorem range_markedLine (hv : φ v ≠ 0) (hw : φ w ≠ 0) :

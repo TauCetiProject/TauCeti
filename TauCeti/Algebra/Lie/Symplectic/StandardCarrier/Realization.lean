@@ -29,8 +29,7 @@ including nonreduced rings and rings of positive characteristic.
 positive and negative simple root subgroups of the datum are the numbered raising and lowering
 subgroups of the carrier with the same Bourbaki node and the same additive parameter, the torus of
 the datum is the weight torus of the carrier with the same parameters, and the functorial maps
-along ring homomorphisms and the `p ^ k`-power Frobenius maps of the two sides agree. Every root
-subgroup of the datum, at every root of `C_(n+1)`, is injective over every commutative ring.
+along ring homomorphisms and the `p ^ k`-power Frobenius maps of the two sides agree.
 
 Thus the explicit symplectic carrier is the group scheme of a full-weight Chevalley datum of type
 `C_(n+1)`, with matching pinning, torus and Frobenius: the form in which Chevalley's comparison

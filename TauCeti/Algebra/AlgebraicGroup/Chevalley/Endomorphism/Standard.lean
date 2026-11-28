@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Frobenius.Basic
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.ClosedImmersion
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Injective
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.FieldEndomorphism
@@ -230,7 +231,7 @@ private noncomputable def IsStandard.paramHomOf (_ : D.IsStandard F)
     (α β : Fin t.numRoots)
     (hβ : (D.rootSubgroupPoints α K).range.map F = (D.rootSubgroupPoints β K).range) : K →+ K :=
   AddMonoidHom.toMultiplicative.symm ((MonoidHom.ofInjective
-    (D.rootSubgroupPoints_injective K β)).symm.toMonoidHom.comp
+    (D.rootSubgroupPoints_injective β K)).symm.toMonoidHom.comp
     ((F.comp (D.rootSubgroupPoints α K)).codRestrict _ fun u => by
       rw [← hβ]; exact ⟨_, ⟨u, rfl⟩, rfl⟩))
 
@@ -245,7 +246,7 @@ private theorem IsStandard.paramHomOf_surjective (hF : D.IsStandard F) {α β : 
     Function.Surjective (hF.paramHomOf α β hβ) := fun v => by
   obtain ⟨_, ⟨u, rfl⟩, hFu⟩ : D.rootSubgroupPoints β K (ofAdd v) ∈
       (D.rootSubgroupPoints α K).range.map F := hβ ▸ ⟨ofAdd v, rfl⟩
-  have hinj := D.rootSubgroupPoints_injective K β
+  have hinj := D.rootSubgroupPoints_injective β K
     ((hF.rootSubgroupPoints_paramHomOf hβ (toAdd u)).trans (by rw [ofAdd_toAdd, hFu]))
   exact ⟨toAdd u, by simpa only [toAdd_ofAdd] using congrArg toAdd hinj⟩
 
@@ -317,7 +318,7 @@ private theorem IsStandard.paramHomOf_torusCharacter_mul (hF : D.IsStandard F)
   rw [map_mul, map_mul, map_inv, ← hF.rootSubgroupPoints_paramHomOf hβ,
     ← hF.rootSubgroupPoints_paramHomOf hβ, hF.isCharacterMap.map_apply,
     D.torusPoints_conj_rootSubgroupPoints, torusCharacter_torusPointMap] at hconj
-  simpa only [toAdd_ofAdd] using congrArg toAdd (D.rootSubgroupPoints_injective K _ hconj.symm)
+  simpa only [toAdd_ofAdd] using congrArg toAdd (D.rootSubgroupPoints_injective _ K hconj.symm)
 
 private theorem nsmul_eq_nsmul_of_nsmul_eq {M : Type*} [AddCommMonoid M]
     {d₁ m₁ d₂ m₂ : ℕ} {x y₁ y₂ : M}
@@ -387,7 +388,7 @@ theorem IsStandard.rootParamHom_eq_of_map_rootSubgroupPoints (hF : D.IsStandard 
       D.rootSubgroupPoints (hF.rootPerm α) K (ofAdd (f u))) :
     hF.rootParamHom α = f := AddMonoidHom.ext fun u => by
   simpa only [toAdd_ofAdd] using congrArg toAdd
-    (D.rootSubgroupPoints_injective K _ ((hF.rootSubgroupPoints_rootParamHom α u).trans (h u)))
+    (D.rootSubgroupPoints_injective _ K ((hF.rootSubgroupPoints_rootParamHom α u).trans (h u)))
 
 /-- Congruence of `rootParamHom` along an equality of standard endomorphisms. -/
 theorem IsStandard.rootParamHom_congr (h : F = F') (hF : D.IsStandard F) (hF' : D.IsStandard F') :
@@ -653,7 +654,7 @@ theorem IsStandard.map_rootSubgroupPoints (hF : D.IsStandard F) (α : Fin t.numR
 theorem IsStandard.rootParamHom_apply_eq_mul_fieldEnd (hF : D.IsStandard F)
     (α : Fin t.numRoots) (u : K) :
     hF.rootParamHom α u = (hF.rootUnit α : K) * hF.fieldEnd α u := by
-  simpa only [toAdd_ofAdd] using congrArg toAdd (D.rootSubgroupPoints_injective K _
+  simpa only [toAdd_ofAdd] using congrArg toAdd (D.rootSubgroupPoints_injective _ K
     ((hF.rootSubgroupPoints_rootParamHom α u).trans (hF.map_rootSubgroupPoints α u)))
 
 /-- **Intertwining of `hF.fieldEnd α` with torus characters.** -/
@@ -673,7 +674,7 @@ theorem IsStandard.eq_of_map_rootSubgroupPoints (hF : D.IsStandard F) {α β : F
     exact ⟨ofAdd ((c : K) * g (toAdd u)), by conv_rhs => rw [← ofAdd_toAdd u, h]⟩)).symm
   have hparam (u : K) : (c : K) * g u = (hF.rootUnit α : K) * hF.fieldEnd α u := by
     simpa only [toAdd_ofAdd] using congrArg toAdd
-      (D.rootSubgroupPoints_injective K _ ((h u).symm.trans (hF.map_rootSubgroupPoints α u)))
+      (D.rootSubgroupPoints_injective _ K ((h u).symm.trans (hF.map_rootSubgroupPoints α u)))
   obtain rfl : c = hF.rootUnit α := Units.ext (by simpa using hparam 1)
   exact ⟨rfl, rfl, RingHom.ext fun u => mul_left_cancel₀ (Units.ne_zero _) (hparam u)⟩
 

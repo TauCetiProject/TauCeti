@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.Etale
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Emptiness
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.PadicInt
-public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.ClassicalPoint
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.ClassicalPoint.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Pair
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Polydisc.Subdisc
 public import TauCeti.RingTheory.Etale.Idempotent
