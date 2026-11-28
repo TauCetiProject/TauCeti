@@ -118,6 +118,9 @@ zero only at `0`. For `0 ≤ w` the truncation `w / (1 + ε w)` lies between `0`
   yielding both `δ ≤ cutoff` and `M * L < weight * δ⁻¹` from `δ ≤ c / L`.
 * `TauCeti.ciSup_le_two_mul_of_le_add_mul`: the same absorption for the supremum of a bounded
   nonnegative family `Φ` with `Φ i ≤ X + c * Φ (f i)` and `c ≤ 1 / 2`.
+* `TauCeti.sq_add_sq_le_sq_iff_forall_mul_add_mul_le`: for nonnegative `x, y, z` in a linearly
+  ordered field, `x² + y² ≤ z²` holds iff `c * x + s * y ≤ z` for every nonnegative `(c, s)` with
+  `c² + s² = 1`.
 * `TauCeti.div_one_add_nonneg`, `TauCeti.div_one_add_lt_one`, `TauCeti.div_one_add_le_one`,
   `TauCeti.div_one_add_mono`, `TauCeti.div_one_add_add_le`, `TauCeti.mul_div_one_add_mul_le`,
   `TauCeti.div_one_add_eq_zero_iff`: nonnegativity, unit bound, monotonicity, subadditivity,
@@ -462,6 +465,56 @@ theorem nonneg_of_le_div_pow {α : Type*} [Field α] [LinearOrder α] [IsStrictO
 theorem pos_of_mem_Ioo_neg_one_div {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
     {s t : K} (ht : t ∈ Set.Ioo (-1 / s) (1 / s)) : 0 < s :=
   one_div_pos.1 (neg_lt_self_iff.1 (by simpa only [neg_div] using ht.1.trans ht.2))
+
+/-- **Dual-norm characterization of `x² + y² ≤ z²` on the nonnegative quadrant.** In any linearly
+ordered field, for nonnegative `x, y, z`, the inequality `x² + y² ≤ z²` holds if and only if
+`c * x + s * y ≤ z` for every nonnegative pair `(c, s)` on the unit circle `c² + s² = 1`. -/
+theorem sq_add_sq_le_sq_iff_forall_mul_add_mul_le {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {x y z : K} (hx : 0 ≤ x) (hy : 0 ≤ y) (hz : 0 ≤ z) :
+    x ^ 2 + y ^ 2 ≤ z ^ 2 ↔
+      ∀ c s : K, 0 ≤ c → 0 ≤ s → c ^ 2 + s ^ 2 = 1 → c * x + s * y ≤ z := by
+  constructor
+  · intro h c s _ _ hcs
+    have hsq : (c * x + s * y) ^ 2 ≤ z ^ 2 := by
+      nlinarith [sq_nonneg (c * y - s * x)]
+    nlinarith
+  · intro h
+    have hyz : y ≤ z := by simpa using h 0 1 le_rfl zero_le_one (by simp)
+    rcases eq_or_lt_of_le (add_nonneg hz hx) with hzx | hzx
+    · have hx0 : x = 0 := by linarith
+      have hz0 : z = 0 := by linarith
+      have hy0 : y = 0 := le_antisymm (hyz.trans_eq hz0) hy
+      simp [hx0, hy0, hz0]
+    · set u := y / (z + x)
+      have hu0 : 0 ≤ u := div_nonneg hy hzx.le
+      have hu1 : u ≤ 1 := (div_le_one hzx).2 (by linarith)
+      have hden : 0 < 1 + u ^ 2 := by positivity
+      set c := (1 - u ^ 2) / (1 + u ^ 2)
+      set s := 2 * u / (1 + u ^ 2)
+      have hc0 : 0 ≤ c := div_nonneg (by nlinarith) hden.le
+      have hs0 : 0 ≤ s := div_nonneg (by linarith) hden.le
+      have hcs : c ^ 2 + s ^ 2 = 1 := by
+        simp only [c, s]
+        field_simp
+        ring
+      have hbound := h c s hc0 hs0 hcs
+      have hquad : (1 - u ^ 2) * x + 2 * u * y ≤ z * (1 + u ^ 2) := by
+        have hmul := mul_le_mul_of_nonneg_right hbound hden.le
+        have hlhs : (c * x + s * y) * (1 + u ^ 2) = (1 - u ^ 2) * x + 2 * u * y := by
+          simp only [c, s]
+          field_simp
+        linarith
+      have hnum : 0 ≤ (z ^ 2 - x ^ 2 - y ^ 2) / (z + x) := by
+        have heq : (z ^ 2 - x ^ 2 - y ^ 2) / (z + x) =
+            z * (1 + u ^ 2) - ((1 - u ^ 2) * x + 2 * u * y) := by
+          simp only [u]
+          field_simp [hzx.ne']
+          ring
+        linarith
+      have hdiff : 0 ≤ z ^ 2 - x ^ 2 - y ^ 2 := by
+        have := mul_nonneg hnum hzx.le
+        rwa [div_mul_cancel₀ _ hzx.ne'] at this
+      linarith
 
 /-- Given positive `cutoff`, threshold `L₀`, `weight`, and `M`, there is `c > 0` with
 `c ≤ cutoff * L₀` such that whenever `0 < δ`, `L₀ ≤ L`, and `δ ≤ c / L`, we have both

@@ -73,23 +73,28 @@ theorem iSup_two_mul_setLIntegral_add_ofReal_integral_le_perimeter {s : Set E}
     (two_mul_setLIntegral_add_two_mul_setLIntegral_add_ofReal_integral_le_perimeter hs hfin e he
       (A := ∅) nullMeasurableSet_empty (.of_forall fun _ h ↦ h.elim) φ hφ)
 
-/-- Shrinking a field of norm at most one by the factor `1 - τ` keeps the slicing weight
-`√(1 - ‖φ‖²)` above both `(1 - τ) √(1 - ‖φ‖²)` and `√τ`. -/
+/-- Shrinking a field of norm at most one by the factor `1 - τ` keeps the shrunken slicing weight
+`√(1 - ((1 - τ) * ‖φ‖)^2)` above both `(1 - τ) √(1 - ‖φ‖²)` and `√(2 * τ - τ ^ 2)`. -/
 private theorem le_sqrt_one_sub_mul_sq {τ r : ℝ} (hτ₀ : 0 ≤ τ) (hτ₁ : τ ≤ 1) (hr₀ : 0 ≤ r)
     (hr₁ : r ≤ 1) :
-    (1 - τ) * √(1 - r ^ 2) ≤ √(1 - ((1 - τ) * r) ^ 2) ∧ √τ ≤ √(1 - ((1 - τ) * r) ^ 2) := by
+    (1 - τ) * √(1 - r ^ 2) ≤ √(1 - ((1 - τ) * r) ^ 2) ∧
+      √(2 * τ - τ ^ 2) ≤ √(1 - ((1 - τ) * r) ^ 2) := by
   have hc₀ : 0 ≤ 1 - τ := by linarith
   constructor
   · calc (1 - τ) * √(1 - r ^ 2) = √((1 - τ) ^ 2) * √(1 - r ^ 2) := by rw [Real.sqrt_sq hc₀]
       _ = √((1 - τ) ^ 2 * (1 - r ^ 2)) := (Real.sqrt_mul (sq_nonneg _) _).symm
       _ ≤ √(1 - ((1 - τ) * r) ^ 2) := Real.sqrt_le_sqrt (by nlinarith [sq_nonneg r])
   · exact Real.sqrt_le_sqrt
-      (by nlinarith [mul_le_of_le_one_right hc₀ hr₁, mul_nonneg hc₀ hr₀])
+      (by have : ((1 - τ) * r) ^ 2 ≤ (1 - τ) ^ 2 := by
+            nlinarith [mul_le_of_le_one_right hc₀ hr₁, mul_nonneg hc₀ hr₀]
+          linarith)
 
-/-- The slicing bound at the shrunken field `(1 - τ) • φ`: for every family `A` of noninterval
-sections, `(1 - τ)` times the slicing functional at `φ`, plus `2 √τ |A|`, is at most `P(s)`. -/
-private theorem one_sub_mul_add_two_mul_sqrt_mul_volume_le_perimeter {s : Set E}
-    (hs : NullMeasurableSet s volume) (hfin : volume s ≠ ∞) (e : E) (he : ‖e‖ = 1)
+/-- The slicing bound at the shrunken field `(1 - τ) • φ`: for `0 ≤ τ ≤ 1`, any test field
+`φ` with `∀ y, ‖φ y‖ ≤ 1`, and any null-measurable family `A` whose sections for almost every
+`y ∈ A` do not almost everywhere agree with any order-connected set, `(1 - τ)` times the slicing
+functional at `φ`, plus `2 √(2 τ - τ²) |A|`, is at most `P(s)`. -/
+theorem _root_.MeasureTheory.NullMeasurableSet.one_sub_mul_add_two_mul_sqrt_mul_volume_le_perimeter
+    {s : Set E} (hs : NullMeasurableSet s volume) (hfin : volume s ≠ ∞) (e : E) (he : ‖e‖ = 1)
     {A : Set (ℝ ∙ e)ᗮ} (hA : NullMeasurableSet A volume)
     (hbad : ∀ᵐ y : (ℝ ∙ e)ᗮ ∂volume, y ∈ A →
       ∀ I : Set ℝ, I.OrdConnected → ¬{t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I)
@@ -99,7 +104,7 @@ private theorem one_sub_mul_add_two_mul_sqrt_mul_volume_le_perimeter {s : Set E}
           ENNReal.ofReal √(1 - ‖φ y‖ ^ 2)) +
         ENNReal.ofReal (∫ y : (ℝ ∙ e)ᗮ, divergenceCLM φ y *
           volume.real {t : ℝ | (y : E) + t • e ∈ s})) +
-      2 * ENNReal.ofReal √τ * volume A ≤ perimeter volume ⊤ s := by
+      2 * ENNReal.ofReal √(2 * τ - τ ^ 2) * volume A ≤ perimeter volume ⊤ s := by
   have hc₀ : 0 ≤ 1 - τ := by linarith
   have hψ : ∀ y, ‖((1 - τ) • φ) y‖ ≤ 1 := fun y ↦ by
     rw [smul_apply, norm_smul, Real.norm_of_nonneg hc₀]
@@ -117,7 +122,7 @@ private theorem one_sub_mul_add_two_mul_sqrt_mul_volume_le_perimeter {s : Set E}
     refine lintegral_mono fun y ↦ ?_
     rw [← ENNReal.ofReal_mul hc₀, hw]
     exact ENNReal.ofReal_le_ofReal (le_sqrt_one_sub_mul_sq hτ₀ hτ₁ (norm_nonneg _) (hφ y)).1
-  have hA' : ENNReal.ofReal √τ * volume A ≤
+  have hA' : ENNReal.ofReal √(2 * τ - τ ^ 2) * volume A ≤
       ∫⁻ y in A, ENNReal.ofReal √(1 - ‖((1 - τ) • φ) y‖ ^ 2) := by
     rw [← setLIntegral_const]
     refine lintegral_mono fun y ↦ ?_
@@ -131,11 +136,39 @@ private theorem one_sub_mul_add_two_mul_sqrt_mul_volume_le_perimeter {s : Set E}
     rw [integral_const_mul, ENNReal.ofReal_mul hc₀]
   calc _ = 2 * (ENNReal.ofReal (1 - τ) *
           ∫⁻ y in {y : (ℝ ∙ e)ᗮ | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}},
-            ENNReal.ofReal √(1 - ‖φ y‖ ^ 2)) + 2 * (ENNReal.ofReal √τ * volume A) +
+            ENNReal.ofReal √(1 - ‖φ y‖ ^ 2)) +
+        2 * (ENNReal.ofReal √(2 * τ - τ ^ 2) * volume A) +
         ENNReal.ofReal (1 - τ) * ENNReal.ofReal (∫ y : (ℝ ∙ e)ᗮ, divergenceCLM φ y *
           volume.real {t : ℝ | (y : E) + t • e ∈ s}) := by ring
     _ ≤ _ := by rw [hdiv]; gcongr
     _ ≤ _ := h
+
+/-- The supremum slicing bound with noninterval excess: for `0 ≤ τ ≤ 1` and any family `A` whose
+sections for almost every `y ∈ A` do not almost everywhere agree with any order-connected set,
+`(1 - τ)` times the slicing supremum plus `2 √(2 τ - τ²) |A|` is at most `P(s)`. -/
+theorem
+    _root_.MeasureTheory.NullMeasurableSet.one_sub_mul_iSup_add_two_mul_sqrt_mul_volume_le_perimeter
+    {s : Set E} (hs : NullMeasurableSet s volume) (hfin : volume s ≠ ∞) (e : E) (he : ‖e‖ = 1)
+    {A : Set (ℝ ∙ e)ᗮ}
+    (hbad : ∀ᵐ y : (ℝ ∙ e)ᗮ ∂volume, y ∈ A →
+      ∀ I : Set ℝ, I.OrdConnected → ¬{t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I)
+    {τ : ℝ} (hτ₀ : 0 ≤ τ) (hτ₁ : τ ≤ 1) :
+    ENNReal.ofReal (1 - τ) *
+        (⨆ (φ : 𝓓(⊤, (ℝ ∙ e)ᗮ)) (_ : ∀ y, ‖φ y‖ ≤ 1),
+          2 * (∫⁻ y in {y : (ℝ ∙ e)ᗮ | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}},
+            ENNReal.ofReal √(1 - ‖φ y‖ ^ 2)) +
+          ENNReal.ofReal (∫ y : (ℝ ∙ e)ᗮ, divergenceCLM φ y *
+            volume.real {t : ℝ | (y : E) + t • e ∈ s})) +
+      2 * ENNReal.ofReal √(2 * τ - τ ^ 2) * volume A ≤ perimeter volume ⊤ s := by
+  have : Nonempty {φ : 𝓓(⊤, (ℝ ∙ e)ᗮ) // ∀ y : (ℝ ∙ e)ᗮ, ‖φ y‖ ≤ 1} :=
+    ⟨⟨0, fun y ↦ by simp [zero_apply]⟩⟩
+  have hAB : A ≤ᵐ[volume] {y : (ℝ ∙ e)ᗮ |
+      ∀ I : Set ℝ, I.OrdConnected → ¬{t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I} := hbad
+  refine (add_le_add le_rfl (mul_le_mul_right (measure_mono_ae hAB) _)).trans ?_
+  rw [iSup_subtype', ENNReal.mul_iSup, ENNReal.iSup_add]
+  exact iSup_le fun φ ↦ hs.one_sub_mul_add_two_mul_sqrt_mul_volume_le_perimeter hfin e he
+    (nullMeasurableSet_noninterval_lineSection hs hfin e he) (.of_forall fun _ ↦ id)
+    hτ₀ hτ₁ φ.val φ.property
 
 /-- If `P(s)` is at most the slicing supremum, then for `0 ≤ τ ≤ 1` the noninterval sections satisfy
 `(1 - τ) P(s) + 2 √τ |A| ≤ P(s)`. -/
@@ -151,13 +184,18 @@ private theorem one_sub_mul_perimeter_add_two_mul_sqrt_mul_volume_le_perimeter {
         2 * ENNReal.ofReal √τ * volume {y : (ℝ ∙ e)ᗮ | ∀ I : Set ℝ, I.OrdConnected →
           ¬{t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I} ≤
       perimeter volume ⊤ s := by
-  have : Nonempty {φ : 𝓓(⊤, (ℝ ∙ e)ᗮ) // ∀ y : (ℝ ∙ e)ᗮ, ‖φ y‖ ≤ 1} :=
-    ⟨⟨0, fun y ↦ by simp [zero_apply]⟩⟩
-  refine le_trans (add_le_add_left (mul_le_mul_right h _) _) ?_
-  rw [iSup_subtype', ENNReal.mul_iSup, ENNReal.iSup_add]
-  exact iSup_le fun φ ↦ one_sub_mul_add_two_mul_sqrt_mul_volume_le_perimeter hs hfin e he
-    (nullMeasurableSet_noninterval_lineSection hs hfin e he) (.of_forall fun _ hy ↦ hy)
-    hτ₀ hτ₁ φ.val φ.property
+  have hsq : ENNReal.ofReal √τ ≤ ENNReal.ofReal √(2 * τ - τ ^ 2) :=
+    ENNReal.ofReal_le_ofReal (Real.sqrt_le_sqrt (by nlinarith))
+  calc _ ≤ ENNReal.ofReal (1 - τ) * (⨆ (φ : 𝓓(⊤, (ℝ ∙ e)ᗮ)) (_ : ∀ y, ‖φ y‖ ≤ 1),
+          2 * (∫⁻ y in {y : (ℝ ∙ e)ᗮ | 0 < volume {t : ℝ | (y : E) + t • e ∈ s}},
+            ENNReal.ofReal √(1 - ‖φ y‖ ^ 2)) +
+          ENNReal.ofReal (∫ y : (ℝ ∙ e)ᗮ, divergenceCLM φ y *
+            volume.real {t : ℝ | (y : E) + t • e ∈ s})) +
+        2 * ENNReal.ofReal √(2 * τ - τ ^ 2) * volume {y : (ℝ ∙ e)ᗮ | ∀ I : Set ℝ, I.OrdConnected →
+          ¬{t : ℝ | (y : E) + t • e ∈ s} =ᵐ[volume] I} := by gcongr
+    _ ≤ perimeter volume ⊤ s :=
+      hs.one_sub_mul_iSup_add_two_mul_sqrt_mul_volume_le_perimeter hfin e he
+        (.of_forall fun _ ↦ id) hτ₀ hτ₁
 
 /-- Cancelling `ofReal (1 - τ) * a` against `a` in real numbers: for finite `a` and `b`,
 `ofReal (1 - τ) * a + 2 √τ b ≤ a` gives `2 √τ b ≤ τ a`. -/

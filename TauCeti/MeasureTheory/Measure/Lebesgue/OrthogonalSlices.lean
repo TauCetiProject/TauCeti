@@ -227,6 +227,15 @@ theorem ae_volume_lineSection_lt_top (e : E) (he : ‖e‖ = 1) {s : Set E}
   apply ae_lt_top' (aemeasurable_volume_lineSection e he hs)
   rwa [← volume_eq_lintegral_volume_lineSection e he hs]
 
+/-- The real-valued lengths of the parallel line sections of a finite-volume Lebesgue-measurable
+set form an integrable function on the orthogonal subspace. -/
+theorem integrable_measureReal_lineSection (e : E) (he : ‖e‖ = 1) {s : Set E}
+    (hs : NullMeasurableSet s volume) (hfinite : volume s ≠ ∞) :
+    Integrable (fun y : (ℝ ∙ e)ᗮ => volume.real {t : ℝ | (y : E) + t • e ∈ s}) volume := by
+  simp_rw [measureReal_def]
+  exact integrable_toReal_of_lintegral_ne_top (aemeasurable_volume_lineSection e he hs)
+    (by rwa [← volume_eq_lintegral_volume_lineSection e he hs])
+
 /-- A Lebesgue-measurable set is null exactly when almost every parallel line section is null. -/
 theorem volume_eq_zero_iff_ae_volume_lineSection_eq_zero (e : E) (he : ‖e‖ = 1) {s : Set E}
     (hs : NullMeasurableSet s volume) :

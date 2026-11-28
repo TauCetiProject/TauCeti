@@ -13,6 +13,7 @@ import Mathlib.Analysis.InnerProductSpace.Trace
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.Divergence
 
 /-!
 # The divergence of a test vector field
@@ -31,6 +32,8 @@ total variation of a function and the perimeter of a set are suprema of the pair
 
 * `TestFunction.divergenceCLM`: the divergence `𝓓(Ω, E) →L[ℝ] 𝓓(Ω, ℝ)`.
 * `TestFunction.divergenceCLM_apply`: pointwise, it is the trace of the Fréchet derivative.
+* `TestFunction.tsupport_divergenceCLM_subset`: the topological support of the divergence of a
+  test vector field is contained in the topological support of the field.
 * `TestFunction.solenoidalSubmodule`: the kernel of `divergenceCLM` on test vector fields.
 * `TestFunction.mem_solenoidalSubmodule_iff`: membership means that the bundled divergence vanishes.
 * `TestFunction.divergenceCLM_monoCLM`: the divergence commutes with extending a test vector
@@ -60,6 +63,9 @@ total variation of a function and the perimeter of a set are suprema of the pair
   `φ` by nonnegative smooth functions `ζ k` compactly supported in `Ω` with sum at most one gives
   a test vector field `∑ k, ζ k φ(· + τ k)` on `Ω`, of norm at most one when `‖φ‖ ≤ 1`, whose
   divergence is given by the Leibniz rule.
+* `TauCeti.divergenceCLM_orthogonalLine_eq`: decomposes `divergenceCLM φ` in orthogonal line
+  coordinates along a unit vector `e` into the hyperplane divergence of the orthogonal projection
+  onto `(ℝ ∙ e)ᗮ` plus the longitudinal derivative along `e`.
 -/
 
 public section
@@ -93,6 +99,15 @@ theorem mem_solenoidalSubmodule_iff {φ : 𝓓(Ω, E)} :
 theorem divergenceCLM_apply (φ : 𝓓(Ω, E)) (x : E) :
     divergenceCLM φ x = LinearMap.trace ℝ E (fderiv ℝ (φ : E → E) x : E →ₗ[ℝ] E) := by
   simp [divergenceCLM]
+
+/-- The topological support of the divergence of a test vector field is contained in the topological
+support of the field. -/
+theorem tsupport_divergenceCLM_subset (φ : 𝓓(Ω, E)) :
+    tsupport (divergenceCLM φ) ⊆ tsupport φ := by
+  have h : ⇑(divergenceCLM φ) = TauCeti.traceCLM ℝ E ∘ fderiv ℝ (φ : E → E) :=
+    funext fun x => by rw [divergenceCLM_apply, Function.comp_apply, TauCeti.traceCLM_apply]
+  rw [h]
+  exact (tsupport_comp_subset (map_zero _) _).trans (tsupport_fderiv_subset ℝ)
 
 /-- The divergence of a test vector field extended from `Ω'` to a larger open set `Ω` is the
 divergence of the original field. -/
@@ -294,5 +309,26 @@ theorem integral_divergenceCLM_mul_congr_ae [MeasurableSpace E] {μ : MeasureThe
         hx ((divergenceCLM φ).tsupport_subset hmem), zero_mul]
   rw [← hΩ, ← hΩ]
   exact MeasureTheory.integral_congr_ae (huv.mono fun x hx => by simp only [hx])
+
+section OrthogonalLine
+
+open scoped RealInnerProductSpace
+
+/-- Decompose `divergenceCLM φ` in orthogonal line coordinates along a unit vector `e` into the
+hyperplane divergence of its transverse projection `(ℝ ∙ e)ᗮ.orthogonalProjectionOnto ∘ φ` plus
+the longitudinal derivative along `e`. -/
+theorem divergenceCLM_orthogonalLine_eq {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] {Ω : Opens F} (e : F) (he : ‖e‖ = 1)
+    (φ : 𝓓(Ω, F)) (y : (ℝ ∙ e)ᗮ) (t : ℝ) :
+    divergenceCLM φ ((y : F) + t • e) =
+      LinearMap.trace ℝ (ℝ ∙ e)ᗮ
+          (fderiv ℝ (fun z : (ℝ ∙ e)ᗮ =>
+            (ℝ ∙ e)ᗮ.orthogonalProjectionOnto (φ ((z : F) + t • e))) y :
+            (ℝ ∙ e)ᗮ →ₗ[ℝ] (ℝ ∙ e)ᗮ) +
+        deriv (fun s : ℝ => ⟪e, φ ((y : F) + s • e)⟫) t := by
+  rw [divergenceCLM_apply]
+  exact trace_fderiv_orthogonalLine_eq e he (φ.contDiff.differentiable (by simp) _)
+
+end OrthogonalLine
 
 end TauCeti

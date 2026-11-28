@@ -49,7 +49,9 @@ integrable (`TauCeti.integrable_pow_of_ae_norm_le`); in particular, a finite mea
 concentrated on `[-R, R]` has finite moments of every order (`TauCeti.integrable_pow_of_ae_abs_le`).
 
 The pointwise supremum of finitely many integrable lattice-valued functions is integrable
-(`MeasureTheory.integrable_finset_sup'`). A function nonzero at an atom of infinite mass is not
+(`MeasureTheory.integrable_finset_sup'`), and capping a lattice-valued integrable function above by
+a nonnegative constant preserves integrability without assuming a finite measure
+(`MeasureTheory.Integrable.const_inf`). A function nonzero at an atom of infinite mass is not
 integrable (`MeasureTheory.not_integrable_of_measure_singleton_eq_top`). A multiplier bounded on
 a set containing the support of an integrable function keeps it integrable
 (`MeasureTheory.Integrable.smul_of_support_subset`), and so does an operator-valued function
@@ -153,6 +155,18 @@ theorem integrable_finset_sup' {X β κ : Type*} [MeasurableSpace X] [NormedAddC
     Integrable (fun x ↦ s.sup' hs fun i ↦ f i x) μ := by
   simpa only [← Finset.sup'_apply] using
     Finset.sup'_induction (p := fun h ↦ Integrable h μ) hs f (fun _ h₁ _ h₂ ↦ h₁.sup h₂) hf
+
+/-- Capping an integrable function valued in a normed lattice above by a nonnegative constant
+preserves integrability, without requiring the measure to be finite. -/
+theorem Integrable.const_inf {X β : Type*} [MeasurableSpace X] [NormedAddCommGroup β]
+    [Lattice β] [HasSolidNorm β] [IsOrderedAddMonoid β] {μ : Measure X} {f : X → β}
+    (hf : Integrable f μ) {c : β} (hc : 0 ≤ c) :
+    Integrable (fun x ↦ c ⊓ f x) μ :=
+  hf.norm.mono' (aestronglyMeasurable_const.inf hf.aestronglyMeasurable) <|
+    Filter.Eventually.of_forall fun x ↦ HasSolidNorm.solid <| by
+      refine sup_le (inf_le_right.trans (le_abs_self _)) ?_
+      rw [neg_inf]
+      exact sup_le ((neg_nonpos.2 hc).trans (abs_nonneg _)) (neg_le_abs _)
 
 /-- A function that is nonzero at an atom of infinite mass is not integrable. -/
 theorem not_integrable_of_measure_singleton_eq_top {α E : Type*} [MeasurableSpace α]

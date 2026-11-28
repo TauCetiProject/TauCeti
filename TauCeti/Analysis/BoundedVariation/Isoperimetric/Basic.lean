@@ -70,8 +70,12 @@ the perimeter with surface measure or Minkowski content is used.
   form `n ω_n^(1/n) |s|^(1 - 1/n) ≤ P(s)` in `ℝ≥0∞`, with no hypothesis on the perimeter.
 * `MeasureTheory.NullMeasurableSet.mul_volume_real_rpow_mul_le_perimeter_toReal`: its real form
   for sets of finite perimeter.
+* `MeasureTheory.NullMeasurableSet.perimeter_eq_zero_iff`: in positive dimension, a finite-volume
+  null-measurable set has zero perimeter if and only if it is null.
 * `ContDiff.ofReal_mul_volume_real_rpow_mul_le_perimeter_setOf_lt`: the smooth case, for a
   regular superlevel set `{u > t}` of a compactly supported smooth function `u` with `t > 0`.
+* `TauCeti.perimeter_ne_top_of_perimeter_pow_eq`: attaining equality in the power form in positive
+  dimension for a finite-volume set forces finite perimeter.
 
 ## References
 
@@ -369,4 +373,38 @@ theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow_of_two_le
     exact zero_le
   exact hs.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow hμs hs0
 
+/-- In positive dimension, a finite-volume null-measurable set has zero perimeter in the whole
+space if and only if it has zero volume. -/
+theorem perimeter_eq_zero_iff {s : Set E} (hs : NullMeasurableSet s volume)
+    (hn : finrank ℝ E ≠ 0) (hμs : volume s ≠ ⊤) :
+    perimeter volume ⊤ s = 0 ↔ volume s = 0 := by
+  refine ⟨fun hP => ?_, perimeter_eq_zero_of_measure_eq_zero⟩
+  by_contra hs0
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (Nat.pos_of_ne_zero hn)
+  have hle := hs.finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow hμs hs0
+  rw [hP, zero_pow hn, nonpos_iff_eq_zero] at hle
+  exact mul_ne_zero (mul_ne_zero (pow_ne_zero _ (Nat.cast_ne_zero.2 hn))
+    (measure_ball_pos volume 0 one_pos).ne') (pow_ne_zero _ hs0) hle
+
 end MeasureTheory.NullMeasurableSet
+
+namespace TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E]
+
+/-- Attaining equality in `P(s)^n = n^n ω_n |s|^(n - 1)` for a finite-volume set in positive
+dimension forces `P(s) < ∞`. -/
+theorem perimeter_ne_top_of_perimeter_pow_eq [BorelSpace E] {s : Set E}
+    (hn : finrank ℝ E ≠ 0) (hμs : volume s ≠ ⊤)
+    (heq : perimeter volume ⊤ s ^ finrank ℝ E =
+      (finrank ℝ E : ℝ≥0∞) ^ finrank ℝ E * volume (ball (0 : E) 1) *
+        volume s ^ (finrank ℝ E - 1)) :
+    perimeter volume ⊤ s ≠ ⊤ := by
+  intro htop
+  rw [htop, ENNReal.top_pow hn] at heq
+  exact ENNReal.mul_ne_top
+    (ENNReal.mul_ne_top (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _)) measure_ball_lt_top.ne)
+    (ENNReal.pow_ne_top hμs) heq.symm
+
+end TauCeti

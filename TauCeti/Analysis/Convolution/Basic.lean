@@ -101,8 +101,11 @@ integrals of increments of `f`; when `ψ` has integral `1`, is bounded by `M` an
   `MeasureTheory.convolutionExistsAt_indicator_iff_of_forall_sub_mem`: replacing `f` by its
   indicator on a set containing every `t` with `x - t ∈ support g` changes neither `(f ⋆ g) x` nor
   its existence.
-* `MeasureTheory.integral_mul_convolution_eq_integral_mul_integral_comp_sub`: the Fubini identity
-  `∫ ψ (ρ ⋆ u) = ∫ ρ(t) (∫ ψ(x) u(x - t) dx) dt` for compactly supported `ψ` and `ρ`.
+* `MeasureTheory.integral_smul_convolution_eq_integral_smul_integral_comp_sub` and
+  `MeasureTheory.integral_mul_convolution_eq_integral_mul_integral_comp_sub`: the Fubini identity
+  `∫ ψ • (ρ ⋆ u) = ∫ ρ(t) • (∫ ψ(x) • u(x - t) dx) dt` for compactly supported `ψ` and `ρ`.
+* `MeasureTheory.integral_smul_convolution_eq_integral_convolution_comp_neg_smul`: the adjoint
+  pairing identity `∫ ψ • (ρ ⋆ w) = ∫ ((fun t ↦ ρ (-t)) ⋆ ψ) • w`.
 * `MeasureTheory.integral_mul_convolution_eq_integral_mul_integral_left_comp_sub`: the same
   identity with the pairing moved onto a locally integrable kernel,
   `∫ ψ (K ⋆ g) = ∫ g(t) (∫ ψ(x) K(x - t) dx) dt`.
@@ -113,6 +116,9 @@ integrals of increments of `f`; when `ψ` has integral `1`, is bounded by `M` an
   `(ψ ⋆ f) x` is bounded by a `ψ`-weighted integral of the increments `‖f x - f w‖ₑ`.
 * `MeasureTheory.enorm_convolution_lsmul_sub_convolution_lsmul_le`: the increments of `ψ ⋆ f` are
   bounded by a `ψ`-weighted integral of the increments of the translates of `f`.
+* `MeasureTheory.Integrable.setIntegral_convolution_lsmul_le_integral_norm_sub_add_mul`: for an
+  integrable a.e.-nonnegative kernel `K` and `d ≤ᵐ g + e` with `e ≥ᵐ 0` and `g ≤ 0` a.e. on `s`,
+  the set integral of `K ⋆ d` over `s` is at most `∫ ‖K ⋆ g - g‖ + (∫ K) * ∫ e`.
 -/
 
 public section
@@ -464,12 +470,13 @@ variable {G : Type*} [NormedAddCommGroup G] [MeasurableSpace G] [BorelSpace G]
 /-- **Pairing a convolution with a test function.** For a continuous compactly supported `ψ`, an
 integrable compactly supported kernel `ρ` and a function `u` locally integrable on a set `s`
 containing `tsupport ψ - tsupport ρ`, Fubini gives
-`∫ ψ (ρ ⋆ u) = ∫ ρ(t) (∫ ψ(x) u(x - t) dx) dt`. -/
-theorem integral_mul_convolution_eq_integral_mul_integral_comp_sub [SFinite μ]
-    [μ.IsAddRightInvariant] {ψ ρ u : G → ℝ} {s : Set G} (hψ : Continuous ψ)
-    (hψc : HasCompactSupport ψ) (hρ : Integrable ρ μ) (hρc : HasCompactSupport ρ)
-    (hu : LocallyIntegrableOn u s μ) (hs : ∀ t ∈ tsupport ρ, ∀ x ∈ tsupport ψ, x - t ∈ s) :
-    ∫ x, ψ x * (ρ ⋆[lsmul ℝ ℝ, μ] u) x ∂μ = ∫ t, ρ t * ∫ x, ψ x * u (x - t) ∂μ ∂μ := by
+`∫ ψ • (ρ ⋆ u) = ∫ ρ(t) • (∫ ψ(x) • u(x - t) dx) dt`. -/
+theorem integral_smul_convolution_eq_integral_smul_integral_comp_sub
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [SFinite μ] [μ.IsAddRightInvariant]
+    {ψ ρ : G → ℝ} {u : G → F} {s : Set G} (hψ : Continuous ψ) (hψc : HasCompactSupport ψ)
+    (hρ : Integrable ρ μ) (hρc : HasCompactSupport ρ) (hu : LocallyIntegrableOn u s μ)
+    (hs : ∀ t ∈ tsupport ρ, ∀ x ∈ tsupport ψ, x - t ∈ s) :
+    ∫ x, ψ x • (ρ ⋆[lsmul ℝ ℝ, μ] u) x ∂μ = ∫ t, ρ t • ∫ x, ψ x • u (x - t) ∂μ ∂μ := by
   -- Only the values of `u` on the compact set `K = tsupport ψ - tsupport ρ ⊆ s` enter either
   -- side, and `u` is integrable there.
   set K := (fun p : G × G ↦ p.1 - p.2) '' (tsupport ψ ×ˢ tsupport ρ)
@@ -482,30 +489,84 @@ theorem integral_mul_convolution_eq_integral_mul_integral_comp_sub [SFinite μ]
   have hw : Integrable (K.indicator u) μ :=
     (hu.integrableOn_compact_subset hKs hK).integrable_indicator hK.measurableSet
   obtain ⟨C, hC⟩ := hψ.bounded_above_of_compact_support hψc
-  have hint : Integrable (fun p : G × G ↦ ψ p.1 * (ρ p.2 * K.indicator u (p.1 - p.2)))
-      (μ.prod μ) :=
-    (hρ.convolution_integrand (lsmul ℝ ℝ) hw).bdd_mul
-      (hψ.comp continuous_fst).aestronglyMeasurable (.of_forall fun p ↦ hC p.1)
-  calc ∫ x, ψ x * (ρ ⋆[lsmul ℝ ℝ, μ] u) x ∂μ
-      = ∫ x, ∫ t, ψ x * (ρ t * K.indicator u (x - t)) ∂μ ∂μ := by
+  have hint : Integrable (fun p : G × G ↦ ψ p.1 • (ρ p.2 • K.indicator u (p.1 - p.2)))
+      (μ.prod μ) := by
+    have hci := hρ.convolution_integrand (lsmul ℝ ℝ) hw
+    refine (hci.norm.const_mul C).mono'
+      ((hψ.comp continuous_fst).aestronglyMeasurable.smul hci.aestronglyMeasurable)
+      (.of_forall fun p ↦ ?_)
+    rw [norm_smul, lsmul_apply]
+    exact mul_le_mul_of_nonneg_right (hC p.1) (norm_nonneg _)
+  calc ∫ x, ψ x • (ρ ⋆[lsmul ℝ ℝ, μ] u) x ∂μ
+      = ∫ x, ∫ t, ψ x • (ρ t • K.indicator u (x - t)) ∂μ ∂μ := by
         refine integral_congr_ae (.of_forall fun x ↦ ?_)
         dsimp only
         by_cases hx : ψ x = 0
         · simp [hx]
         rw [← convolution_indicator_eq_of_forall_sub_mem _ fun t ht ↦ hmem hx ht]
-        simp only [convolution_lsmul, smul_eq_mul, ← integral_const_mul]
-    _ = ∫ t, ∫ x, ψ x * (ρ t * K.indicator u (x - t)) ∂μ ∂μ := integral_integral_swap hint
-    _ = ∫ t, ρ t * ∫ x, ψ x * u (x - t) ∂μ ∂μ := by
+        simp only [convolution_lsmul, ← integral_smul]
+    _ = ∫ t, ∫ x, ψ x • (ρ t • K.indicator u (x - t)) ∂μ ∂μ := integral_integral_swap hint
+    _ = ∫ t, ρ t • ∫ x, ψ x • u (x - t) ∂μ ∂μ := by
         refine integral_congr_ae (.of_forall fun t ↦ ?_)
         dsimp only
-        rw [← integral_const_mul]
+        rw [← integral_smul]
         refine integral_congr_ae (.of_forall fun x ↦ ?_)
         dsimp only
         by_cases hx : ψ x = 0
         · simp [hx]
         by_cases ht : ρ t = 0
         · simp [ht]
-        rw [Set.indicator_of_mem (hmem hx ht), mul_left_comm]
+        rw [Set.indicator_of_mem (hmem hx ht), smul_comm]
+
+/-- **Pairing a convolution with a test function.** For a continuous compactly supported `ψ`, an
+integrable compactly supported kernel `ρ` and a function `u` locally integrable on a set `s`
+containing `tsupport ψ - tsupport ρ`, Fubini gives
+`∫ ψ (ρ ⋆ u) = ∫ ρ(t) (∫ ψ(x) u(x - t) dx) dt`. -/
+theorem integral_mul_convolution_eq_integral_mul_integral_comp_sub [SFinite μ]
+    [μ.IsAddRightInvariant] {ψ ρ u : G → ℝ} {s : Set G} (hψ : Continuous ψ)
+    (hψc : HasCompactSupport ψ) (hρ : Integrable ρ μ) (hρc : HasCompactSupport ρ)
+    (hu : LocallyIntegrableOn u s μ) (hs : ∀ t ∈ tsupport ρ, ∀ x ∈ tsupport ψ, x - t ∈ s) :
+    ∫ x, ψ x * (ρ ⋆[lsmul ℝ ℝ, μ] u) x ∂μ = ∫ t, ρ t * ∫ x, ψ x * u (x - t) ∂μ ∂μ := by
+  simpa only [smul_eq_mul] using
+    integral_smul_convolution_eq_integral_smul_integral_comp_sub hψ hψc hρ hρc hu hs
+
+/-- **Adjoint pairing of a convolution against a scalar kernel.** For a continuous compactly
+supported scalar test function `ψ`, an integrable compactly supported kernel `ρ`, and an
+integrable function `w : G → F`, `∫ ψ • (ρ ⋆ w) = ∫ ((fun t ↦ ρ (-t)) ⋆ ψ) • w`. -/
+theorem integral_smul_convolution_eq_integral_convolution_comp_neg_smul
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [SFinite μ]
+    [μ.IsAddRightInvariant] [μ.IsNegInvariant] {ψ ρ : G → ℝ} {w : G → F}
+    (hψ : Continuous ψ) (hψc : HasCompactSupport ψ)
+    (hρ : Integrable ρ μ) (hρc : HasCompactSupport ρ) (hw : Integrable w μ) :
+    ∫ y, ψ y • (ρ ⋆[lsmul ℝ ℝ, μ] w) y ∂μ =
+      ∫ z, ((fun t ↦ ρ (-t)) ⋆[lsmul ℝ ℝ, μ] ψ) z • w z ∂μ := by
+  by_cases hF : CompleteSpace F
+  · rw [integral_smul_convolution_eq_integral_smul_integral_comp_sub hψ hψc hρ hρc
+      (hw.locallyIntegrable.locallyIntegrableOn Set.univ) fun _ _ _ _ ↦ Set.mem_univ _]
+    have hshift (t : G) : (∫ y, ψ y • w (y - t) ∂μ) = ∫ z, ψ (z + t) • w z ∂μ := by
+      simpa only [sub_add_cancel] using
+        integral_sub_right_eq_self (μ := μ) (fun z ↦ ψ (z + t) • w z) t
+    simp_rw [hshift]
+    rw [← integral_neg_eq_self]
+    simp_rw [← sub_eq_add_neg, ← integral_smul, smul_smul]
+    obtain ⟨C, hC⟩ := hψ.bounded_above_of_compact_support hψc
+    have hprod : Integrable (fun p : G × G ↦ (ρ (-p.1) * ψ (p.2 - p.1)) • w p.2) (μ.prod μ) := by
+      refine ((hρ.comp_neg.norm.mul_prod hw.norm).const_mul C).mono'
+        (((hρ.comp_neg.aestronglyMeasurable.comp_fst).mul
+          ((hψ.comp (continuous_snd.sub continuous_fst)).aestronglyMeasurable)).smul
+            hw.aestronglyMeasurable.comp_snd) (.of_forall fun p ↦ ?_)
+      rw [norm_smul, norm_mul]
+      calc ‖ρ (-p.1)‖ * ‖ψ (p.2 - p.1)‖ * ‖w p.2‖
+          ≤ ‖ρ (-p.1)‖ * C * ‖w p.2‖ :=
+            mul_le_mul_of_nonneg_right
+              (mul_le_mul_of_nonneg_left (hC _) (norm_nonneg _)) (norm_nonneg _)
+        _ = C * (‖ρ (-p.1)‖ * ‖w p.2‖) := by ring
+    rw [integral_integral_swap hprod]
+    refine integral_congr_ae (.of_forall fun z ↦ ?_)
+    dsimp only
+    rw [integral_smul_const, convolution_def]
+    simp only [lsmul_apply, smul_eq_mul]
+  · simp only [integral_of_not_completeSpace hF]
 
 /-- **Pairing a convolution with a test function, kernel inside.** For a continuous compactly
 supported `ψ`, a locally integrable `K` and an integrable compactly supported `g`, Fubini gives
@@ -610,6 +671,58 @@ theorem enorm_sub_convolution_lsmul_le_mul_lintegral [CompleteSpace F] (hψ : Co
     simp [h0]
 
 end Increments
+
+/-- **Set-integral bound for a convolution under a split upper bound.** If `K` is an integrable
+a.e.-nonnegative kernel, `d ≤ᵐ g + e` with `e ≥ᵐ 0`, and `g ≤ 0` almost everywhere on `s`, then
+the set integral of `K ⋆ d` over `s` is at most the `L¹` mollification error `∫ ‖K ⋆ g - g‖`
+plus `(∫ K) * ∫ e`. -/
+theorem Integrable.setIntegral_convolution_lsmul_le_integral_norm_sub_add_mul
+    {G : Type*} [AddGroup G] [MeasurableSpace G] [MeasurableAdd₂ G] [MeasurableNeg G]
+    {μ : Measure G} [SFinite μ] [μ.IsAddRightInvariant]
+    {K d g e : G → ℝ} (hK : Integrable K μ) (hK0 : 0 ≤ᵐ[μ] K)
+    (hd : Integrable d μ) (hg : Integrable g μ) (he : Integrable e μ) (he0 : 0 ≤ᵐ[μ] e)
+    {s : Set G} (hg0 : ∀ᵐ z ∂μ.restrict s, g z ≤ 0) (hde : ∀ᵐ y ∂μ, d y ≤ g y + e y) :
+    ∫ z in s, (K ⋆[lsmul ℝ ℝ, μ] d) z ∂μ ≤
+      (∫ z, ‖(K ⋆[lsmul ℝ ℝ, μ] g) z - g z‖ ∂μ) + (∫ t, K t ∂μ) * ∫ y, e y ∂μ := by
+  have hKd : Integrable (K ⋆[lsmul ℝ ℝ, μ] d) μ := hK.integrable_convolution (lsmul ℝ ℝ) hd
+  have hKg : Integrable (K ⋆[lsmul ℝ ℝ, μ] g) μ := hK.integrable_convolution (lsmul ℝ ℝ) hg
+  have hKe : Integrable (K ⋆[lsmul ℝ ℝ, μ] e) μ := hK.integrable_convolution (lsmul ℝ ℝ) he
+  have hae : (K ⋆[lsmul ℝ ℝ, μ] d) ≤ᵐ[μ] fun z ↦
+      (K ⋆[lsmul ℝ ℝ, μ] g) z + (K ⋆[lsmul ℝ ℝ, μ] e) z := by
+    filter_upwards [(hK.convolution_integrand (lsmul ℝ ℝ) hd).prod_right_ae,
+      (hK.convolution_integrand (lsmul ℝ ℝ) hg).prod_right_ae,
+      (hK.convolution_integrand (lsmul ℝ ℝ) he).prod_right_ae,
+      (hK.convolution_integrand (lsmul ℝ ℝ) (hg.add he)).prod_right_ae]
+      with z hdz hgz hez hgez
+    rw [← ConvolutionExistsAt.distrib_add hgz hez]
+    refine integral_mono_ae hdz hgez ?_
+    filter_upwards [hK0, (quasiMeasurePreserving_sub_left_of_right_invariant μ z).ae hde]
+      with t ht hle
+    simpa only [lsmul_apply, smul_eq_mul, Pi.add_apply] using mul_le_mul_of_nonneg_left hle ht
+  have h1 : ∫ z in s, (K ⋆[lsmul ℝ ℝ, μ] d) z ∂μ ≤
+      (∫ z in s, (K ⋆[lsmul ℝ ℝ, μ] g) z ∂μ) + ∫ z in s, (K ⋆[lsmul ℝ ℝ, μ] e) z ∂μ := by
+    rw [← integral_add hKg.integrableOn hKe.integrableOn]
+    exact integral_mono_ae hKd.integrableOn (hKg.add hKe).integrableOn (ae_restrict_of_ae hae)
+  have h2 : ∫ z in s, (K ⋆[lsmul ℝ ℝ, μ] g) z ∂μ ≤
+      ∫ z, ‖(K ⋆[lsmul ℝ ℝ, μ] g) z - g z‖ ∂μ := by
+    calc ∫ z in s, (K ⋆[lsmul ℝ ℝ, μ] g) z ∂μ
+        ≤ ∫ z in s, ‖(K ⋆[lsmul ℝ ℝ, μ] g) z - g z‖ ∂μ :=
+          integral_mono_ae hKg.integrableOn (hKg.sub hg).norm.integrableOn <|
+            hg0.mono fun z hz ↦ by
+              dsimp only
+              rw [Real.norm_eq_abs]
+              linarith [le_abs_self ((K ⋆[lsmul ℝ ℝ, μ] g) z - g z)]
+      _ ≤ ∫ z, ‖(K ⋆[lsmul ℝ ℝ, μ] g) z - g z‖ ∂μ :=
+          setIntegral_le_integral (hKg.sub hg).norm (.of_forall fun _ ↦ norm_nonneg _)
+  have h3 : ∫ z in s, (K ⋆[lsmul ℝ ℝ, μ] e) z ∂μ ≤ (∫ t, K t ∂μ) * ∫ y, e y ∂μ := by
+    have hconv : ∫ z, (K ⋆[lsmul ℝ ℝ, μ] e) z ∂μ = (∫ t, K t ∂μ) * ∫ y, e y ∂μ := by
+      simpa using MeasureTheory.integral_convolution (lsmul ℝ ℝ) hK he
+    rw [← hconv]
+    refine setIntegral_le_integral hKe (.of_forall fun z ↦ integral_nonneg_of_ae ?_)
+    filter_upwards [hK0, (quasiMeasurePreserving_sub_left_of_right_invariant μ z).ae he0]
+      with t ht he_t
+    simpa only [Pi.zero_apply, lsmul_apply, smul_eq_mul] using mul_nonneg ht he_t
+  linarith
 
 section Reflection
 

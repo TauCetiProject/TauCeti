@@ -8,7 +8,8 @@ module
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Convolution
 public import TauCeti.Analysis.Convolution.Jensen
-import TauCeti.Analysis.Convolution.Basic
+public import TauCeti.Analysis.Distribution.TestFunction.Convolution
+import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 import TauCeti.Analysis.Distribution.TestFunction.Translation
 
 /-!
@@ -37,6 +38,12 @@ mollifying by a probability kernel does not increase a convex integral `∫ Φ(�
 gradient, which is the form in which superlinear bounds from de la Vallée Poussin's criterion
 pass to mollifications.
 
+Dually, against an additive Haar measure on a finite-dimensional normed space, a normalized-bump
+mollifier can be moved from any locally integrable function `u` on `Omega` onto a test vector field
+`φ ∈ 𝓓(Omega, E)` whose enlarged support stays in `Omega`, giving the adjoint integration-by-parts
+identity `∫ div (φ.mollify mu ρ h) • u = -∫ D(ρ ⋆ u) (φ)`
+(`ContDiffBump.integral_divergenceCLM_mollify_smul_eq_neg_integral_fderiv_normed_convolution`).
+
 ## Main statements
 
 * `TauCeti.HasWeakLineDerivOn.hasLineDerivAt_convolution_right`: convolution by a smooth,
@@ -52,6 +59,9 @@ pass to mollifications.
   weak derivative and a smooth compactly supported probability kernel `rho`, Jensen's bound
   `∫ Φ(‖D(u ⋆ rho)‖) ≤ ∫ Φ(‖U‖)` for every `Φ` convex and monotone on `[0, ∞)`, for a
   negation-invariant measure on a second-countable space.
+* `ContDiffBump.integral_divergenceCLM_mollify_smul_eq_neg_integral_fderiv_normed_convolution`:
+  moving a normalized-bump mollifier from a locally integrable function `u` onto a test vector
+  field `φ` satisfies `∫ div (mollify φ) • u = -∫ D(ρ ⋆ u) (φ)`.
 
 ## References
 
@@ -61,10 +71,12 @@ R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, Section 4.1.1.
 
 public section
 
+open MeasureTheory TopologicalSpace ContinuousLinearMap
+open scoped ContDiff Convolution Distributions Pointwise
+
 namespace TauCeti
 
-open MeasureTheory TopologicalSpace ContinuousLinearMap
-open scoped ContDiff Convolution Distributions
+section
 
 variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -176,4 +188,100 @@ theorem HasWeakFDerivOn.lintegral_ofReal_map_norm_fderiv_convolution_le
   rw [hfderiv]
   exact hΦ.lintegral_ofReal_map_norm_convolution_le hΦm hrho0 hrho1 hU.aestronglyMeasurable
 
+end
+
 end TauCeti
+
+namespace ContDiffBump
+
+section DivergenceMollify
+
+open TauCeti
+open scoped Topology
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {mu : Measure E} [mu.IsAddHaarMeasure] {Omega : Opens E}
+
+/-- **Adjoint mollification against divergence.** Moving a normalized-bump mollifier from a
+locally integrable function `u` on `Omega` onto a test vector field `φ ∈ 𝓓(Omega, E)` whose
+enlarged support stays in `Omega` satisfies
+`∫ div (φ.mollify mu ρ h) • u = -∫ D(ρ ⋆ u) (φ)`. -/
+theorem integral_divergenceCLM_mollify_smul_eq_neg_integral_fderiv_normed_convolution
+    (ρ : ContDiffBump (0 : E)) {u : E → F} (hu : LocallyIntegrableOn u Omega mu)
+    (φ : 𝓓(Omega, E)) (h : Metric.closedBall (0 : E) ρ.rOut + tsupport φ ⊆ (Omega : Set E)) :
+    ∫ z, TestFunction.divergenceCLM (φ.mollify mu ρ h) z • u z ∂mu =
+      -∫ y, fderiv ℝ (ρ.normed mu ⋆[lsmul ℝ ℝ, mu] u) y (φ y) ∂mu := by
+  by_cases hF : CompleteSpace F
+  swap
+  · rw [integral_of_not_completeSpace hF, integral_of_not_completeSpace hF, neg_zero]
+  have : CompleteSpace F := hF
+  -- Truncate `u` to a compact neighbourhood `K ⊆ Omega` of `closedBall 0 ρ.rOut + tsupport φ`.
+  set K₀ : Set E := Metric.closedBall (0 : E) ρ.rOut + tsupport φ
+  have hK₀ : IsCompact K₀ := (isCompact_closedBall _ _).add φ.hasCompactSupport.isCompact
+  obtain ⟨δ, hδ, hδΩ⟩ := hK₀.exists_cthickening_subset_open Omega.isOpen h
+  set K : Set E := Metric.cthickening δ K₀
+  have hK : IsCompact K := by
+    have heq : K = Metric.closedBall (0 : E) δ + K₀ := by
+      simpa only [K, zero_vadd] using (hK₀.closedBall_add hδ.le 0).symm
+    rw [heq]
+    exact (isCompact_closedBall _ _).add hK₀
+  set w : E → F := K.indicator u
+  have hw : Integrable w mu :=
+    (hu.integrableOn_compact_subset hδΩ hK).integrable_indicator hK.measurableSet
+  -- On `thickening δ (tsupport φ)`, `ρ ⋆ w = ρ ⋆ u`, so their derivatives agree on `tsupport φ`.
+  have hconv_eq : ∀ y ∈ Metric.thickening δ (tsupport φ),
+      (ρ.normed mu ⋆[lsmul ℝ ℝ, mu] w) y = (ρ.normed mu ⋆[lsmul ℝ ℝ, mu] u) y := by
+    intro y hy
+    obtain ⟨y₀, hy₀, hdist⟩ := Metric.mem_thickening_iff.1 hy
+    refine convolution_indicator_eq_of_forall_sub_mem (lsmul ℝ ℝ) fun t ht => ?_
+    have ht_neg : -t ∈ Metric.closedBall (0 : E) ρ.rOut := by
+      have ht_ball : t ∈ Metric.ball (0 : E) ρ.rOut := ρ.support_normed_eq.subset ht
+      rw [mem_closedBall_zero_iff, norm_neg]
+      exact (mem_ball_zero_iff.1 ht_ball).le
+    have hy₀t : y₀ - t ∈ K₀ := by
+      rw [sub_eq_neg_add]
+      exact Set.add_mem_add ht_neg hy₀
+    refine Metric.mem_cthickening_of_dist_le _ (y₀ - t) δ _ hy₀t ?_
+    simpa only [dist_sub_right] using hdist.le
+  have hrhs_eq : (∫ y, fderiv ℝ (ρ.normed mu ⋆[lsmul ℝ ℝ, mu] u) y (φ y) ∂mu) =
+      ∫ y, fderiv ℝ (ρ.normed mu ⋆[lsmul ℝ ℝ, mu] w) y (φ y) ∂mu := by
+    refine integral_congr_ae (.of_forall fun y => ?_)
+    dsimp only
+    by_cases hy : y ∈ tsupport φ
+    · have hev : (ρ.normed mu ⋆[lsmul ℝ ℝ, mu] w) =ᶠ[𝓝 y] (ρ.normed mu ⋆[lsmul ℝ ℝ, mu] u) :=
+        Filter.eventually_of_mem
+          (Metric.isOpen_thickening.mem_nhds (Metric.self_subset_thickening hδ _ hy)) hconv_eq
+      rw [hev.fderiv_eq]
+    · rw [image_eq_zero_of_notMem_tsupport hy, map_zero, map_zero]
+  have hlhs_eq : (∫ z, TestFunction.divergenceCLM (φ.mollify mu ρ h) z • u z ∂mu) =
+      ∫ z, TestFunction.divergenceCLM (φ.mollify mu ρ h) z • w z ∂mu := by
+    refine integral_congr_ae (.of_forall fun z => ?_)
+    dsimp only
+    by_cases hz : z ∈ K
+    · simp only [w, Set.indicator_of_mem hz]
+    · have hnot : z ∉ tsupport (TestFunction.divergenceCLM (φ.mollify mu ρ h)) := fun hmem => by
+        have hsub : tsupport (TestFunction.divergenceCLM (φ.mollify mu ρ h)) ⊆ K₀ :=
+          (TestFunction.tsupport_divergenceCLM_subset _).trans <| by
+            rw [TestFunction.coe_mollify]
+            exact ρ.tsupport_normed_convolution_subset
+        exact hz (Metric.self_subset_cthickening _ (hsub hmem))
+      rw [image_eq_zero_of_notMem_tsupport hnot, zero_smul, zero_smul]
+  rw [hlhs_eq, hrhs_eq]
+  -- Integrate by parts on the smooth mollification `wρ = ρ ⋆ w`, then swap integrals via Fubini.
+  set wρ := ρ.normed mu ⋆[lsmul ℝ ℝ, mu] w
+  have hwρ_cd : ContDiff ℝ 1 wρ :=
+    ((ρ.hasCompactSupport_normed (μ := mu)).contDiff_convolution_left _
+      (ρ.contDiff_normed (n := ⊤)) hw.locallyIntegrable).of_le (by simp)
+  have hweak : HasWeakFDerivOn mu Omega wρ (fderiv ℝ wρ) :=
+    hwρ_cd.contDiffOn.hasWeakFDerivOn_fderiv
+  have hibp : -∫ y, fderiv ℝ wρ y (φ y) ∂mu = ∫ y, TestFunction.divergenceCLM φ y • wρ y ∂mu :=
+    (hweak.integral_divergenceCLM_smul_eq_neg_integral φ).symm
+  rw [hibp, integral_smul_convolution_eq_integral_convolution_comp_neg_smul
+    (TestFunction.divergenceCLM φ).continuous (TestFunction.divergenceCLM φ).hasCompactSupport
+    (ρ.integrable_normed (μ := mu)) (ρ.hasCompactSupport_normed (μ := mu)) hw]
+  simp only [ρ.normed_neg, TestFunction.divergenceCLM_mollify φ mu ρ h, TestFunction.mollify_apply]
+
+end DivergenceMollify
+
+end ContDiffBump

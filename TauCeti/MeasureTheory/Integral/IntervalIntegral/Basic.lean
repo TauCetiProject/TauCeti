@@ -9,6 +9,7 @@ public import Mathlib.Data.Int.Interval
 public import Mathlib.MeasureTheory.Integral.IntervalAverage
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.MeasureTheory.Function.Holder
+import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.MetricSpace.Equicontinuity
 import TauCeti.Analysis.Convex.Segment
 
@@ -39,6 +40,9 @@ not belong to any particular application.
 * `TauCeti.intervalIntegral.norm_sub_sub_integral_le`: the defect `a₂ - a₁ - ∫ g` from an integral
   equation changes by at most the changes of the endpoint values plus `δ |t₂ - t₁|` when the
   integrand changes by at most `δ`.
+* `TauCeti.intervalIntegral.norm_integral_sub_integral_le_of_norm_le_const_ae`: changing the
+  endpoints of an interval integral of a function bounded a.e. by `C` on the endpoint intervals
+  changes the integral by at most `C * (|c - a| + |d - b|)`.
 * `TauCeti.intervalIntegral.norm_sub_smul_sub_integral_le`: bounding
   `‖(v - u) • c - ∫ t in u..v, g t‖` by `C * |v - u|` when `‖c - g t‖ ≤ C` on `uIoc u v`.
 * `TauCeti.intervalIntegral.sum_integral_lineMap_div`: splitting an interval integral over `a..b`
@@ -74,6 +78,10 @@ not belong to any particular application.
   of `‖M‖` between two points of `[a, b]` is at most its integral over `[a, b]`.
 * `TauCeti.intervalIntegral.abs_integral_norm_le_abs_integral_of_norm_le`: if `‖M‖ ≤ m` almost
   everywhere between `c` and `d`, then `|∫ r in c..d, ‖M r‖| ≤ |∫ r in c..d, m r|`.
+* `TauCeti.intervalIntegral.integrable_and_integral_swap_of_continuous`: a continuous function on
+  `ℝ × Y` whose sections `P (u, ·)` vanish outside a compact set `K` for each `u ∈ Ι a b` (with no
+  restriction for `u ∉ Ι a b`) has `y ↦ ∫ u in a..b, P (u, y)` integrable, and its iterated
+  integrals over `a..b` and `Y` commute.
 * `MeasureTheory.IntegrableOn.setIntegral_Ioo_eq_sub`: for `f` integrable on `(a, b)`, the
   integral over a subinterval `(s, t)` is a difference of primitives based at any `c ∈ [a, b]`.
 * `MeasureTheory.Integrable.norm_intervalIntegral_le_integral_norm`: an interval integral of an
@@ -259,6 +267,20 @@ theorem norm_sub_sub_integral_le {E : Type*} [NormedAddCommGroup E] [NormedSpace
       (∫ t in t₁..t₂, (g t - g' t)),
     norm_sub_le ((b₂ - b₁ - ∫ t in t₁..t₂, g' t) + (a₂ - b₂)) (a₁ - b₁),
     norm_add_le (b₂ - b₁ - ∫ t in t₁..t₂, g' t) (a₂ - b₂)]
+
+/-- Changing the endpoints of an interval integral of a function bounded a.e. by `C` on the
+endpoint intervals `uIoc a c` and `uIoc b d` changes the integral by at most
+`C * (|c - a| + |d - b|)`. -/
+theorem norm_integral_sub_integral_le_of_norm_le_const_ae {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {f : ℝ → E} {a b c d C : ℝ}
+    (hab : IntervalIntegrable f volume a b) (hcd : IntervalIntegrable f volume c d)
+    (hac : IntervalIntegrable f volume a c)
+    (hCac : ∀ᵐ x, x ∈ uIoc a c → ‖f x‖ ≤ C) (hCbd : ∀ᵐ x, x ∈ uIoc b d → ‖f x‖ ≤ C) :
+    ‖(∫ t in a..b, f t) - ∫ t in c..d, f t‖ ≤ C * (|c - a| + |d - b|) := by
+  rw [_root_.intervalIntegral.integral_interval_sub_interval_comm hab hcd hac, mul_add]
+  exact (norm_sub_le _ _).trans (add_le_add
+    (_root_.intervalIntegral.norm_integral_le_of_norm_le_const_ae hCac)
+    (_root_.intervalIntegral.norm_integral_le_of_norm_le_const_ae hCbd))
 
 /-- For an even function `f : ℂ → ℂ`, the integral `∫ t in a..b, z f(tz)` is odd in `z`:
 `∫ t in a..b, (−z) f(t(−z)) = −∫ t in a..b, z f(tz)`. -/
@@ -669,6 +691,30 @@ theorem abs_integral_norm_le_abs_integral_of_norm_le {G : Type*} [NormedAddCommG
   simpa only [Real.norm_eq_abs] using
     _root_.intervalIntegral.norm_integral_le_abs_of_norm_le (f := fun r ↦ ‖M r‖)
       ((ae_restrict_iff' measurableSet_uIoc).2 (by simpa only [norm_norm] using hMm)) hm
+
+/-- A continuous function `P : ℝ × Y → E` such that for each `u ∈ Ι a b`, the section `P (u, ·)`
+vanishes outside a compact set `K` (with no restriction imposed for `u ∉ Ι a b`) has
+`y ↦ ∫ u in a..b, P (u, y)` integrable with respect to `μ`, and its iterated integrals over `a..b`
+and `Y` commute. -/
+theorem integrable_and_integral_swap_of_continuous {Y E : Type*} [TopologicalSpace Y]
+    [T2Space Y] [MeasurableSpace Y] [OpensMeasurableSpace (ℝ × Y)] [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (a b : ℝ) {K : Set Y} (hK : IsCompact K) {P : ℝ × Y → E}
+    (hP : Continuous P) (hvan : ∀ u ∈ Ι a b, ∀ y ∉ K, P (u, y) = 0)
+    (μ : Measure Y := by volume_tac) [IsFiniteMeasureOnCompacts μ] [SFinite μ] :
+    Integrable (fun y : Y => ∫ u in a..b, P (u, y)) μ ∧
+      (∫ u in a..b, ∫ y : Y, P (u, y) ∂μ) = ∫ y : Y, (∫ u in a..b, P (u, y)) ∂μ := by
+  have hint : Integrable P ((volume.restrict (Ι a b)).prod μ) := by
+    rw [Measure.restrict_prod_eq_prod_univ]
+    exact (hP.continuousOn.integrableOn_compact (isCompact_uIcc.prod hK)).of_forall_sdiff_eq_zero
+      (measurableSet_uIoc.prod MeasurableSet.univ) fun ⟨u, y⟩ ⟨⟨hu, _⟩, hnot⟩ =>
+        hvan u hu y fun hy => hnot ⟨uIoc_subset_uIcc hu, hy⟩
+  refine ⟨?_, intervalIntegral_integral_swap (f := Function.curry P) hint⟩
+  rcases le_total a b with hab | hab
+  · simpa only [_root_.intervalIntegral.integral_of_le hab, uIoc_of_le hab] using
+      hint.integral_prod_right
+  · simp_rw [_root_.intervalIntegral.integral_of_ge hab]
+    rw [uIoc_of_ge hab] at hint
+    exact hint.integral_prod_right.neg
 
 end TauCeti.intervalIntegral
 
