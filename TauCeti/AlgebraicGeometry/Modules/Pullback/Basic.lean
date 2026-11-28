@@ -247,6 +247,22 @@ lemma pullbackComp_inv_app_comp_pullback_map_pullbackCongr_hom_app (f : X ⟶ Y)
   subst p
   simp [pullbackCongr]
 
+/-- Congruence of pullback is compatible with transitivity of morphism equalities. -/
+lemma pullbackCongr_trans {f g h : X ⟶ Y} (h₁ : f = g) (h₂ : g = h) :
+    pullbackCongr (h₁.trans h₂) = pullbackCongr h₁ ≪≫ pullbackCongr h₂ := by
+  subst h₁ h₂
+  simp [pullbackCongr]
+
+/-- Composing congruence isomorphisms of pullback along equalities `f = g` and `g = h` gives the
+congruence isomorphism along `f = h`. -/
+@[reassoc]
+lemma pullbackCongr_hom_app_comp_pullbackCongr_hom_app {f g h : X ⟶ Y}
+    (h₁ : f = g) (h₂ : g = h) (M : Y.Modules) :
+    (pullbackCongr h₁).hom.app M ≫ (pullbackCongr h₂).hom.app M =
+      (pullbackCongr (h₁.trans h₂)).hom.app M := by
+  subst h₁ h₂
+  simp [pullbackCongr]
+
 /-- The comparison `t^* r^* ≅ l^* b^*` of composite pullbacks around a commutative square
 `t ≫ r = l ≫ b` of schemes, through `(t ≫ r)^* = (l ≫ b)^*`. -/
 def pullbackCompIsoOfCommSq {t : X ⟶ Y} {l : X ⟶ W} {r : Y ⟶ Z} {b : W ⟶ Z}

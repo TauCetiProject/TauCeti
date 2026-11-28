@@ -492,19 +492,6 @@ private lemma completionIso_inv_hom_id_app (J : Ideal R) (fg : J.FG) (n : ℕ) :
   rw [← AdicThickeningSystem.comp_app, (Spf.completionIso J fg).inv_hom_id,
     AdicThickeningSystem.id_app]
 
-private lemma schemeModules_pullbackCompIsoId_factor {X Y : Scheme.{u}}
-    {f : Y ⟶ X} {g : X ⟶ Y} {fg1 fg2 : Y ⟶ Y}
-    (h1 : f ≫ g = fg1) (h2 : fg1 = fg2) (h3 : fg2 = 𝟙 Y) (M : Y.Modules) :
-    ((Scheme.Modules.pullbackComp f g).hom.app M ≫
-        (Scheme.Modules.pullbackCongr h1).hom.app M) ≫
-      (Scheme.Modules.pullbackCongr h2).hom.app M ≫
-        ((Scheme.Modules.pullbackCongr h3).hom.app M ≫
-          (Scheme.Modules.pullbackId Y).hom.app M) =
-      (Scheme.Modules.pullbackCompIsoId ((h1.trans h2).trans h3)).hom.app M := by
-  subst h1 h2
-  rw [Scheme.Modules.pullbackCompIsoId_hom_app]
-  simp [Scheme.Modules.pullbackCongr]
-
 private lemma coherentFormalModule_pullback_inv_hom_rhs
     {𝔛 𝔜 : AdicThickeningSystem.{u}} (e : 𝔛 ≅ 𝔜) (N : CoherentFormalModule 𝔜) (n : ℕ) :
     ((CoherentFormalModule.pullbackComp e.inv e.hom).hom.app N).app n ≫
@@ -513,14 +500,24 @@ private lemma coherentFormalModule_pullback_inv_hom_rhs
       (Scheme.Modules.pullbackCompIsoId (by rw [← AdicThickeningSystem.comp_app,
         e.inv_hom_id, AdicThickeningSystem.id_app] : e.inv.app n ≫ e.hom.app n = 𝟙 _)).hom.app
         (N.obj n) := by
+  let h1 := (AdicThickeningSystem.comp_app e.inv e.hom n).symm
+  let h2 := congrArg (·.app n) e.inv_hom_id
+  let h3 := AdicThickeningSystem.id_app 𝔜 n
+  have h :
+      ((Scheme.Modules.pullbackComp (e.inv.app n) (e.hom.app n)).hom.app (N.obj n) ≫
+          (Scheme.Modules.pullbackCongr h1).hom.app (N.obj n)) ≫
+        (Scheme.Modules.pullbackCongr h2).hom.app (N.obj n) ≫
+          ((Scheme.Modules.pullbackCongr h3).hom.app (N.obj n) ≫
+            (Scheme.Modules.pullbackId (𝔜.X n)).hom.app (N.obj n)) =
+        (Scheme.Modules.pullbackCompIsoId ((h1.trans h2).trans h3)).hom.app (N.obj n) := by
+    rw [Category.assoc,
+      Scheme.Modules.pullbackCongr_hom_app_comp_pullbackCongr_hom_app_assoc,
+      Scheme.Modules.pullbackCongr_hom_app_comp_pullbackCongr_hom_app_assoc,
+      ← Scheme.Modules.pullbackCompIsoId_hom_app]
   rw [CoherentFormalModule.pullbackComp_hom_app_app,
     CoherentFormalModule.pullbackCongr_hom_app_app,
     CoherentFormalModule.pullbackId_hom_app_app]
-  exact schemeModules_pullbackCompIsoId_factor
-    (AdicThickeningSystem.comp_app e.inv e.hom n).symm
-    (congrArg (·.app n) e.inv_hom_id)
-    (AdicThickeningSystem.id_app 𝔜 n)
-    (N.obj n)
+  exact h
 
 private lemma pullbackCompletionIso_comp_eq_app (J : Ideal R) (fg : J.FG)
     (M : CoherentFormalModule ((Spec (CommRingCat.of R)).formalCompletion
