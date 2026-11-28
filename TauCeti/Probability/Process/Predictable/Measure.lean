@@ -26,7 +26,9 @@ The measure agrees with the ambient product measure on predictable sets. In part
 `(s,t] × A`, with `A` known at `s` and `t ≤ T`, has mass `(t-s) P(A)`. The initial-time
 slice has mass zero, and restricting to a shorter horizon commutes with trimming.
 The symmetric difference of initial time strips has mass equal to their clipped endpoint
-distance times the mass of their common event.
+distance times the mass of their common event. Two predictable measures supported on `(0, T] × Ω`,
+at least one finite, agree once they agree on predictable rectangles up to `T`
+(`MeasureTheory.Filtration.ext_predictable_of_Ioc_prod`).
 Filtered measure-preserving sample maps preserve these predictable measures, even with
 different ambient measurable spaces.
 Native `lintegral_trim`, `integral_trim`, and `eLpNorm_trim` then identify predictable
@@ -201,6 +203,33 @@ theorem predictableMeasure_mono (ℱ : Filtration ℝ≥0 m) (P : Measure Ω) [S
     {S T : ℝ≥0} (hST : S ≤ T) : ℱ.predictableMeasure P S ≤ ℱ.predictableMeasure P T := by
   rw [← ℱ.predictableMeasure_restrict_of_le P hST]
   exact Measure.restrict_le_self
+
+/-- Two predictable measures supported on `(0, T] ×ˢ univ`, at least one of which is finite,
+agree everywhere if they agree on all predictable rectangles `(s, t] ×ˢ A` up to horizon `T`. -/
+theorem ext_predictable_of_Ioc_prod (ℱ : Filtration ℝ≥0 m) {T : ℝ≥0}
+    {μ ν : @Measure (ℝ≥0 × Ω) ℱ.predictable} [IsFiniteMeasure μ]
+    (hμ : μ (Ioc 0 T ×ˢ (univ : Set Ω))ᶜ = 0)
+    (hν : ν (Ioc 0 T ×ˢ (univ : Set Ω))ᶜ = 0)
+    (hIoc : ∀ ⦃s t : ℝ≥0⦄, s ≤ t → t ≤ T → ∀ ⦃A : Set Ω⦄, MeasurableSet[ℱ s] A →
+      μ (Ioc s t ×ˢ A) = ν (Ioc s t ×ˢ A)) :
+    μ = ν := by
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  refine MeasureTheory.ext_of_generate_finite ℱ.elementarySets
+    ℱ.predictable_eq_generateFrom_elementarySets ℱ.isPiSystem_elementarySets ?_ ?_
+  · rintro u hu
+    rcases (ℱ.mem_elementarySets_iff).1 hu with ⟨A, _, rfl⟩ | ⟨s, t, A, hA, rfl⟩
+    · have hsub : ({⊥} ×ˢ A : Set (ℝ≥0 × Ω)) ⊆ (Ioc 0 T ×ˢ (univ : Set Ω))ᶜ := by
+        rintro ⟨r, _⟩ ⟨hr, _⟩ h
+        simp only [mem_singleton_iff, mem_prod, mem_Ioc, NNReal.bot_eq_zero] at hr h
+        exact h.1.1.ne' hr
+      exact (measure_mono_null hsub hμ).trans (measure_mono_null hsub hν).symm
+    · rw [← measure_inter_conull (μ := μ) hμ, ← measure_inter_conull (μ := ν) hν,
+        prod_inter_prod, inter_univ, Ioc_inter_Ioc, max_eq_left zero_le]
+      by_cases hst : s ≤ min t T
+      · exact hIoc hst (min_le_right t T) hA
+      · rw [Ioc_eq_empty_of_le (not_le.mp hst).le, empty_prod, measure_empty, measure_empty]
+  · rw [← measure_inter_conull (μ := μ) hμ, ← measure_inter_conull (μ := ν) hν, univ_inter]
+    exact hIoc zero_le le_rfl MeasurableSet.univ
 
 section ExtendLp
 
@@ -517,6 +546,17 @@ theorem lintegral_predictableMeasure [SFinite P] {f : ℝ≥0 × Ω → ℝ≥0�
     ∫⁻ p, f p ∂ℱ.predictableMeasure P T = ∫⁻ t, ∫⁻ ω, f (t, ω) ∂P ∂timeMeasure T := by
   rw [predictableMeasure_def, lintegral_trim ℱ.predictable_le_prod hf]
   exact lintegral_prod _ (hf.mono ℱ.predictable_le_prod le_rfl).aemeasurable
+
+/-- The weighted predictable measure of a predictable set equals the set lower integral under the
+ambient time-product measure for any measurable predictable density. -/
+theorem predictableMeasure_withDensity_apply (T : ℝ≥0) {f : ℝ≥0 × Ω → ℝ≥0∞}
+    (hf : Measurable[ℱ.predictable] f) {S : Set (ℝ≥0 × Ω)}
+    (hS : MeasurableSet[ℱ.predictable] S) :
+    ((ℱ.predictableMeasure P T).withDensity f) S =
+      ∫⁻ p in S, f p ∂(timeMeasure T).prod P := by
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  rw [withDensity_apply _ hS, predictableMeasure_def,
+    setLIntegral_trim ℱ.predictable_le_prod hf hS]
 
 /-- Equality of predictable representatives almost everywhere is the same for the
 predictable measure and the ambient time-product measure. -/

@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.Probability.ConditionalProbability
 public import TauCeti.MeasureTheory.Integral.PiSystem
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Measure.Typeclasses.SFinite
 
 /-!
@@ -16,6 +17,8 @@ import TauCeti.MeasureTheory.Measure.Typeclasses.SFinite
 
 Small pieces of product-measure theory with no `L²` or inner-product content.
 
+* `MeasureTheory.eLpNorm_one_integral_prod_left_le`: the `L¹(ν)` seminorm of the first-factor
+  section integrals `y ↦ ∫ x, φ (x, y) ∂μ` is at most the `L¹(μ.prod ν)` seminorm of `φ`.
 * `TauCeti.ae_of_ae_fst` / `TauCeti.ae_of_ae_snd` transfer an a.e. statement about one factor to the
   product measure, along `Measure.quasiMeasurePreserving_fst` / `_snd`.
 * `TauCeti.integrable_left_of_mul_prod_of_ae_ne_zero`: integrability of a separated product whose
@@ -87,6 +90,20 @@ defined to be zero when the second measure is not s-finite.
 public section
 
 namespace MeasureTheory
+
+/-- The `L¹` seminorm of the first-factor section integrals on a product of s-finite measures is at
+most the `L¹` seminorm on the product. -/
+theorem eLpNorm_one_integral_prod_left_le {α β E : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    {μ : Measure α} {ν : Measure β} [SFinite μ] [SFinite ν]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (φ : α × β → E) :
+    eLpNorm (fun y ↦ ∫ x, φ (x, y) ∂μ) 1 ν ≤ eLpNorm φ 1 (μ.prod ν) := by
+  by_cases hφ : AEStronglyMeasurable φ (μ.prod ν)
+  · rw [eLpNorm_one_eq_lintegral_eNorm
+        (by simpa only [Prod.swap_prod_mk] using hφ.prod_swap.integral_prod_right'),
+      eLpNorm_one_eq_lintegral_eNorm hφ, lintegral_prod_symm _ hφ.eNorm]
+    exact lintegral_mono fun y ↦ eNorm_integral_le_lintegral_eNorm (fun x ↦ φ (x, y))
+  · rw [eLpNorm_of_not_aestronglyMeasurable hφ]
+    exact le_top
 
 /-- Integrating a function of the first coordinate against a difference between the two
 coordinates subtracts the product of their separate means. -/

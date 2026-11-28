@@ -6,11 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Function.LpSeminorm.Monotonicity
+import TauCeti.MeasureTheory.Function.LpSeminorm.SquaredNorm
+import TauCeti.MeasureTheory.Integral.Prod
 import TauCeti.Topology.UniformSpace.HeineCantor
 
 /-!
-# Convergence to zero of `Lᵖ` seminorms from pointwise smallness
+# Convergence to zero of `Lᵖ` seminorms
 
 If a family `f i` is eventually bounded almost everywhere by `δ ‖b‖ₑ` for every `δ > 0`, where `b`
 has finite `Lᵖ` seminorm, then `eLpNorm (f i) p μ → 0`
@@ -19,6 +23,10 @@ a family that eventually becomes uniformly small almost everywhere tends to `0` 
 (`TauCeti.tendsto_eLpNorm_zero_of_eventually_ae_le`). This is how uniform convergence on a set of
 finite measure, or uniform convergence of a coefficient multiplying a fixed `Lᵖ` function, is
 turned into convergence in `Lᵖ`. No lower bound on `p` is needed.
+
+On a product of s-finite measures, `L²` convergence of real `MemLp` functions implies `L¹`
+convergence of their first-factor squared section integrals
+(`TauCeti.tendsto_eLpNorm_one_integral_sq_sub`).
 
 The case `p = ∞` needs no finiteness of the measure. A family of fields `M ν`, depending on a
 parameter `ν` in a topological space `X`, which is jointly continuous at every point of `{ν₀} × K`
@@ -63,6 +71,29 @@ theorem tendsto_eLpNorm_zero_of_eventually_ae_le [IsFiniteMeasure μ]
   filter_upwards [h δ hδ] with i hi
   filter_upwards [hi] with x hx
   simpa using hx
+
+/-- On a product of s-finite measures, `L²` convergence `eLpNorm (f i - g) 2 (μ.prod ν) → 0` for
+real `MemLp` functions implies `L¹(ν)` convergence of the squared section integrals
+`y ↦ ∫ x, f i (x, y) ^ 2 ∂μ` to `y ↦ ∫ x, g (x, y) ^ 2 ∂μ`. -/
+theorem tendsto_eLpNorm_one_integral_sq_sub {β : Type*} [MeasurableSpace β]
+    {ν : Measure β} [SFinite μ] [SFinite ν]
+    {f : ι → α × β → ℝ} {g : α × β → ℝ}
+    (hg : MemLp g 2 (μ.prod ν)) (hf : ∀ᶠ i in l, MemLp (f i) 2 (μ.prod ν))
+    (hlim : Tendsto (fun i ↦ eLpNorm (f i - g) 2 (μ.prod ν)) l (𝓝 0)) :
+    Tendsto (fun i ↦ eLpNorm (fun y ↦ (∫ x, f i (x, y) ^ 2 ∂μ) - ∫ x, g (x, y) ^ 2 ∂μ) 1 ν)
+      l (𝓝 0) := by
+  have hg_sq : Integrable (fun p ↦ g p ^ 2) (μ.prod ν) := hg.integrable_sq
+  have hg_ae : ∀ᵐ y ∂ν, Integrable (fun x ↦ g (x, y) ^ 2) μ := hg_sq.prod_left_ae
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (by simpa only [Real.norm_eq_abs, sq_abs] using tendsto_eLpNorm_norm_sq_sub hg hlim)
+    (.of_forall fun _ ↦ bot_le) (hf.mono fun i hfi ↦ ?_)
+  have hfi_sq : Integrable (fun p ↦ f i p ^ 2) (μ.prod ν) := hfi.integrable_sq
+  have hcongr : (fun y ↦ (∫ x, f i (x, y) ^ 2 ∂μ) - ∫ x, g (x, y) ^ 2 ∂μ) =ᵐ[ν]
+      fun y ↦ ∫ x, (f i (x, y) ^ 2 - g (x, y) ^ 2) ∂μ := by
+    filter_upwards [hfi_sq.prod_left_ae, hg_ae] with y hfy hgy
+    exact (integral_sub hfy hgy).symm
+  rw [eLpNorm_congr_ae hcongr]
+  exact eLpNorm_one_integral_prod_left_le (fun p ↦ f i p ^ 2 - g p ^ 2)
 
 /-- **`L^∞` continuity of a family modified on a compact set.** Let `M ν` be fields on a
 measurable set `S`, depending on a parameter `ν` in a topological space `X`, which are jointly

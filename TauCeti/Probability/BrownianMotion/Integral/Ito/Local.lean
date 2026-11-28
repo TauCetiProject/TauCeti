@@ -10,6 +10,7 @@ public import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Isometry
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Stopping
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
+import TauCeti.Probability.BrownianMotion.Integral.Progressive
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 import TauCeti.Probability.Martingale.Local.Congruence
 import TauCeti.Probability.Process.Patching
@@ -195,5 +196,32 @@ theorem LocallyBrownianIntegrable.exists_isItoIntegral
     hτ_loc.tendsto_top hHs hU_ito (fun k T ↦ (hI_stop k).mono fun _ hω ↦ hω T)
     hH.ae_eventually_ite_le_energyLocalizer_eqOn
   exact ⟨I, hI_ito, hI_prog, hI_ito.locally_martingale hW hI_prog⟩
+
+/-- **Existence of the continuous Brownian Itô integral for strongly progressive integrands**:
+against an a.s. continuous filtered pre-Brownian motion `W`, any strongly progressive integrand `H`
+with a.s. finite pathwise square energy on every integer horizon admits a predictable representative
+`G` agreeing product-a.e. with `H` on every horizon and a strongly progressive continuous
+local-martingale Itô integral `I`, unique up to indistinguishability among all predictable
+representatives. -/
+theorem _root_.MeasureTheory.IsStronglyProgressive.exists_isItoIntegral
+    (hW : Probability.IsFilteredPreBrownianReal ℱ W P)
+    (hcont : ∀ᵐ ω ∂P, Continuous (fun t ↦ W t ω))
+    (hH : IsStronglyProgressive ℱ H)
+    (henergy : ∀ n : ℕ, ∀ᵐ ω ∂P,
+      (∫⁻ t, ‖H t ω‖ₑ ^ 2 ∂Probability.timeMeasure n) < ∞) :
+    ∃ G I : ℝ≥0 → Ω → ℝ, LocallyBrownianIntegrable ℱ P G ∧
+      (∀ T : ℝ≥0, Function.uncurry G =ᵐ[(Probability.timeMeasure T).prod P]
+        Function.uncurry H) ∧
+      Probability.IsItoIntegral ℱ P W G I ∧ IsStronglyProgressive ℱ I ∧
+      Locally (fun X ↦ Martingale X ℱ P) ℱ I P ∧
+      ∀ ⦃G' I' : ℝ≥0 → Ω → ℝ⦄,
+        (∀ T : ℝ≥0, Function.uncurry G' =ᵐ[(Probability.timeMeasure T).prod P]
+          Function.uncurry H) →
+        Probability.IsItoIntegral ℱ P W G' I' → I ≡ᵐ[P] I' := by
+  let := (hW.hasLaw_eval 0).isProbabilityMeasure
+  obtain ⟨G, hG, hGH⟩ := hH.exists_locallyBrownianIntegrable_ae_prod henergy
+  obtain ⟨I, hI_ito, hI_prog, hI_loc⟩ := hG.exists_isItoIntegral hW hcont
+  refine ⟨G, I, hG, hGH, hI_ito, hI_prog, hI_loc, fun G' I' hG'H hI' ↦ ?_⟩
+  exact hI_ito.indist_of_ae_eq hW (fun T ↦ (hGH T).trans (hG'H T).symm) hI'
 
 end TauCeti

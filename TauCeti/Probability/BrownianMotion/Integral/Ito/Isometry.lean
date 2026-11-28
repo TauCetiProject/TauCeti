@@ -5,15 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Probability.BrownianMotion.Integral.Deterministic
 public import TauCeti.Probability.BrownianMotion.Integral.Ito.Basic
 public import TauCeti.Probability.BrownianMotion.Integral.L2
+import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
+import TauCeti.Analysis.Normed.Group.Real
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.LpSeminorm.SquaredNorm
+import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Basic
+import TauCeti.Probability.BrownianMotion.Integral.Ito.Substitution
 import TauCeti.Probability.BrownianMotion.Integral.Simple
+import TauCeti.Probability.BrownianMotion.Integral.Square
 import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
+import TauCeti.Probability.Finance.SimpleStrategy.Energy
 import TauCeti.Probability.Martingale.ContinuousLimit
 import TauCeti.Probability.Martingale.LpLimit
+import TauCeti.Probability.Process.TimeIntegral
 
 /-!
 # Existence of the Itô integral for square-integrable integrands and the Itô isometry
@@ -34,9 +43,12 @@ constructs the Itô integral of `H` against `W` and proves the Itô isometry.
   martingale.
 * `TauCeti.Probability.IsItoIntegral.memLp`, `TauCeti.Probability.IsItoIntegral.eLpNorm_eq`,
   `TauCeti.Probability.IsItoIntegral.integral_sq`, `eLpNorm_sub_eq`,
-  `eLpNorm_simpleGains_sub_eq`, `integral_mul`, `integral_sub_sq`: `L²(P)` membership, the Itô
-  isometry (in `L²` norm, Bochner square, polarized, `(s, t]`-increment, and elementary-strategy
-  comparison forms).
+  `eLpNorm_simpleGains_sub_eq`, `integral_mul`, `integral_sub_sq`,
+  `eq_predictableMeasure_withDensity_iff`: `L²(P)` membership, the Itô isometry (in `L²` norm,
+  Bochner square, polarized, `(s, t]`-increment, and elementary-strategy comparison forms), and the
+  uniqueness characterization of the finite predictable measure
+  `(ℱ.predictableMeasure P T).withDensity (fun p ↦ ‖H p.1 p.2‖ₑ ^ 2)` by its increment energy on
+  predictable rectangles.
 
 The integral is the limit of the elementary integrals of bounded simple holdings approximating
 `H` in `L²` of the trimmed predictable measure on every finite horizon, identified via
@@ -82,6 +94,7 @@ private structure SimpleHoldingApprox {Ω : Type*} {mΩ : MeasurableSpace Ω}
   tau_zero : ∀ m, τ m 0 = 0
   strictMonoOn : ∀ m, StrictMonoOn (τ m) (Iic (n m))
   stronglyMeasurable : ∀ m j, j < n m → StronglyMeasurable[ℱ (τ m j)] (a m j)
+  height_memLp : ∀ m j, j < n m → MemLp (a m j) 2 P
   norm_le : ∀ m j, j < n m → ∀ ω, ‖a m j ω‖ ≤ C m
   martingale : ∀ m, Martingale (Finance.simpleGains (τ m) (n m) (a m) W) ℱ P
   memLp : ∀ m T, MemLp (Finance.simpleGains (τ m) (n m) (a m) W T) 2 P
@@ -119,7 +132,7 @@ private theorem exists_simpleHoldingApprox
   have ha₂ (m j : ℕ) (hj : j < n m) : MemLp (a m j) 2 P :=
     MemLp.of_bound ((ha m j hj).mono (ℱ.le _)).aestronglyMeasurable (C m)
       (.of_forall (hb m j hj))
-  refine ⟨⟨n, τ, a, C, hτ₀, hτ, ha, hb,
+  refine ⟨⟨n, τ, a, C, hτ₀, hτ, ha, ha₂, hb,
     fun m ↦ hW.martingale.simpleGains_of_bdd (hτ m).monotoneOn (ha m) fun j hj ↦
       ⟨C m, .of_forall fun ω ↦ by simpa [Real.norm_eq_abs] using hb m j hj ω⟩,
     fun m T ↦ hW.memLp_simpleGains (hτ m).monotoneOn (ha m) (ha₂ m) T, herr, fun T ↦ ?_⟩⟩
@@ -355,6 +368,233 @@ theorem integral_sub_sq (hW : IsFilteredPreBrownianReal ℱ W P)
     ((indicator_Ioi_ae_eq_indicator_Ioc_timeMeasure_prod H s t).mono fun _ hp ↦
       congrArg (· ^ 2) hp))
 
+/-- Converse `L²` characterization: any almost surely continuous modification of
+`t ↦ hW.l2Integral t ((hH.memLp_predictableMeasure t).toLp (Function.uncurry H))` satisfies
+`IsItoIntegral`, without assuming path continuity of `W`. -/
+theorem of_ae_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hH : BrownianIntegrable ℱ P H) (hI_cont : ∀ᵐ ω ∂P, Continuous fun t ↦ I t ω)
+    (hI : ∀ t, letI := (hW.hasLaw_eval 0).isProbabilityMeasure
+      I t =ᵐ[P] hW.l2Integral t ((hH.memLp_predictableMeasure t).toLp (Function.uncurry H))) :
+    IsItoIntegral ℱ P W H I := by
+  let := (hW.hasLaw_eval 0).isProbabilityMeasure
+  obtain ⟨h⟩ := exists_simpleHoldingApprox hW hH
+  exact ⟨hH.isStronglyPredictable, hI_cont, fun t ↦
+    ⟨h.n, h.τ, h.a, fun k ↦ (h.strictMonoOn k).monotoneOn, h.stronglyMeasurable,
+      h.tendsto_energy t, (h.tendstoInMeasure_l2Integral t).congr_right (hI t).symm⟩⟩
+
+/-- **Square-compensation martingale of the Brownian Itô integral**: for a `BrownianIntegrable`
+integrand `H` and a strongly adapted Itô integral `I`, `I_t² - ∫_{(0, t]} H_s² ds` is a true
+martingale on the original raw filtration, without assuming path continuity of `W`. -/
+theorem martingale_sq_sub_integral (hI : IsItoIntegral ℱ P W H I)
+    (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
+    (hIa : StronglyAdapted ℱ I) :
+    Martingale (fun t ω ↦ I t ω ^ 2 - ∫ s, H s ω ^ 2 ∂timeMeasure t) ℱ P := by
+  let := (hW.hasLaw_eval 0).isProbabilityMeasure
+  obtain ⟨h⟩ := exists_simpleHoldingApprox hW hH
+  let M (m : ℕ) (t : ℝ≥0) (ω : Ω) : ℝ :=
+    Finance.simpleGains (h.τ m) (h.n m) (h.a m) W t ω ^ 2 -
+      ∫ s, Finance.simpleHolding (h.τ m) (h.n m) (h.a m) s ω ^ 2 ∂timeMeasure t
+  have hM (m : ℕ) : Martingale (M m) ℱ P := by
+    convert hW.martingale_sq_simpleGains_sub (h.strictMonoOn m).monotoneOn
+      (h.stronglyMeasurable m) (h.height_memLp m) using 1
+    ext t ω; dsimp only [M]
+    rw [Finance.integral_sq_simpleHolding_timeMeasure (h.strictMonoOn m).monotoneOn t ω]
+  have hcomp_adapt : StronglyAdapted ℱ (fun t ω ↦ ∫ s, H s ω ^ 2 ∂timeMeasure t) := by
+    simpa only [sq] using (hH.isStronglyPredictable.mul
+      hH.isStronglyPredictable).isStronglyProgressive.integral_timeMeasure.stronglyAdapted
+  refine martingale_of_tendsto_eLpNorm_one hM (fun t ↦ ((hIa t).pow 2).sub (hcomp_adapt t))
+    fun t ↦ ?_
+  have hG_lim : Tendsto (fun m ↦ eLpNorm
+      (fun ω ↦ Finance.simpleGains (h.τ m) (h.n m) (h.a m) W t ω ^ 2 - I t ω ^ 2) 1 P)
+      atTop (𝓝 0) := by
+    simpa only [Real.norm_eq_abs, sq_abs] using
+      MeasureTheory.tendsto_eLpNorm_norm_sq_sub (hI.memLp hW hH t) <|
+        (h.tendsto_holding t).congr fun m ↦ (hI.eLpNorm_simpleGains_sub_eq hW hH
+          (h.strictMonoOn m).monotoneOn (h.stronglyMeasurable m) (h.height_memLp m) t).symm
+  have hA_lim := TauCeti.tendsto_eLpNorm_one_integral_sq_sub (hH.memLp_timeMeasure t)
+    (.of_forall fun m ↦ (BrownianIntegrable.simpleHolding
+      (h.stronglyMeasurable m) (h.height_memLp m)).memLp_timeMeasure t)
+    (h.tendsto_holding t)
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (by simpa only [zero_add] using hG_lim.add hA_lim) (fun _ ↦ bot_le) fun m ↦ ?_
+  have heq : (M m t - fun ω ↦ I t ω ^ 2 - ∫ s, H s ω ^ 2 ∂timeMeasure t) =
+      (fun ω ↦ Finance.simpleGains (h.τ m) (h.n m) (h.a m) W t ω ^ 2 - I t ω ^ 2) -
+        fun ω ↦ (∫ s, Finance.simpleHolding (h.τ m) (h.n m) (h.a m) s ω ^ 2 ∂timeMeasure t) -
+          ∫ s, H s ω ^ 2 ∂timeMeasure t := by
+    ext ω; dsimp only [M, Pi.sub_apply]; ring
+  rw [heq]
+  exact eLpNorm_sub_le le_rfl
+
+private theorem brownianIntegrable_indicator_of_subset_Ioc_prod [SFinite P]
+    (hHp : IsStronglyPredictable ℱ H) {t : ℝ≥0}
+    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P))
+    {S : Set (ℝ≥0 × Ω)} (hS : MeasurableSet[ℱ.predictable] S) (hSt : S ⊆ Ioc 0 t ×ˢ univ) :
+    BrownianIntegrable ℱ P (fun u ω ↦ S.indicator (Function.uncurry H) (u, ω)) := by
+  refine ⟨hHp.indicator hS, fun T ↦ ?_⟩
+  rw [NNReal.comap_volume_restrict_Ioc, ← timeMeasure_def,
+    show (Function.uncurry fun u ω ↦ S.indicator (Function.uncurry H) (u, ω)) =
+      S.indicator (Function.uncurry H) from rfl,
+    memLp_indicator_iff_restrict (ℱ.predictable_le_prod S hS).nullMeasurableSet]
+  refine (hH.mono_measure (Measure.prod_mono
+    (timeMeasure_mono (min_le_left t T)) le_rfl)).mono_measure ?_
+  rw [← timeMeasure_restrict, Measure.restrict_prod_eq_prod_univ]
+  exact Measure.restrict_mono hSt le_rfl
+
+/-- **Set-integral increment energy of the Brownian Itô integral**: for `s ≤ t` and any `ℱ s`-
+measurable event `A`, the set integral of `(I t - I s)²` over `A` equals the expected square energy
+of `H` over `(s, t] × A`, requiring square integrability only through horizon `t` and without
+assuming path continuity of `W` or adaptedness of `I`. -/
+theorem setIntegral_sq_sub (hI : IsItoIntegral ℱ P W H I)
+    (hW : IsFilteredPreBrownianReal ℱ W P) {s t : ℝ≥0} (hst : s ≤ t)
+    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P))
+    {A : Set Ω} (hA : MeasurableSet[ℱ s] A) :
+    ∫ ω in A, (I t ω - I s ω) ^ 2 ∂P =
+      ∫ p in Ioc s t ×ˢ A, H p.1 p.2 ^ 2 ∂(timeMeasure t).prod P := by
+  let := (hW.hasLaw_eval 0).isProbabilityMeasure
+  let ξ : Ω → ℝ := A.indicator 1
+  have hξ : StronglyMeasurable[ℱ s] ξ := stronglyMeasurable_const.indicator hA
+  have hS : MeasurableSet[ℱ.predictable] (Ioc s t ×ˢ A) := measurableSet_predictable_Ioc_prod s t hA
+  have hK_bi : BrownianIntegrable ℱ P
+      (fun u ω ↦ (Ioc s t ×ˢ A).indicator (Function.uncurry H) (u, ω)) :=
+    brownianIntegrable_indicator_of_subset_Ioc_prod hI.isStronglyPredictable hH hS
+      (prod_mono (Ioc_subset_Ioc_left zero_le) (subset_univ A))
+  have hIξ : IsItoIntegral ℱ P W
+      (fun u ω ↦ (Ioc s t ×ˢ A).indicator (Function.uncurry H) (u, ω))
+      (fun u ω ↦ ξ ω * (I (min t u) ω - I (min s u) ω)) := by
+    convert hI.mul_sub_min hW hst hξ using 3 with u ω
+    by_cases hu : u ∈ Ioc s t <;> by_cases hω : ω ∈ A <;> simp [ξ, hu, hω]
+  have hsq := hIξ.integral_sq hW hK_bi t
+  have hL : (fun ω ↦ (ξ ω * (I (min t t) ω - I (min s t) ω)) ^ 2) =
+      A.indicator (fun ω ↦ (I t ω - I s ω) ^ 2) := by
+    ext ω; by_cases hω : ω ∈ A <;> simp [ξ, hω, min_eq_left hst]
+  rw [hL, integral_indicator (ℱ.le s A hA)] at hsq
+  rw [hsq, ← integral_indicator (ℱ.predictable_le_prod _ hS)]
+  congr 1; ext ⟨u, ω⟩
+  by_cases hp : (u, ω) ∈ Ioc s t ×ˢ A <;> simp [hp]
+
+/-- **Predictable-measure characterization of the Brownian Itô integral**: on the predictable
+σ-algebra up to horizon `T`, `(ℱ.predictableMeasure P T).withDensity (fun p ↦ ‖H p.1 p.2‖ₑ ^ 2)`
+is the unique measure assigning zero mass to `{0} ×ˢ univ` and `(T, ∞) ×ˢ univ` and assigning to
+every predictable rectangle `(s, t] ×ˢ A` (`s ≤ t ≤ T`, `A ∈ ℱ s`) the increment energy
+`∫ ω in A, (I t ω - I s ω) ^ 2 ∂P`. -/
+theorem eq_predictableMeasure_withDensity_iff (hI : IsItoIntegral ℱ P W H I)
+    (hW : IsFilteredPreBrownianReal ℱ W P) {T : ℝ≥0}
+    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure T).prod P))
+    (μ : @Measure (ℝ≥0 × Ω) ℱ.predictable) :
+    μ = (ℱ.predictableMeasure P T).withDensity (fun p ↦ ‖H p.1 p.2‖ₑ ^ 2) ↔
+      μ ({0} ×ˢ univ) = 0 ∧ μ (Ioi T ×ˢ univ) = 0 ∧
+        ∀ ⦃s t : ℝ≥0⦄, s ≤ t → t ≤ T → ∀ ⦃A : Set Ω⦄, MeasurableSet[ℱ s] A →
+          μ (Ioc s t ×ˢ A) = ENNReal.ofReal (∫ ω in A, (I t ω - I s ω) ^ 2 ∂P) := by
+  let : MeasurableSpace (ℝ≥0 × Ω) := ℱ.predictable
+  let := (hW.hasLaw_eval 0).isProbabilityMeasure
+  let ν : @Measure (ℝ≥0 × Ω) ℱ.predictable :=
+    (ℱ.predictableMeasure P T).withDensity (fun p ↦ ‖H p.1 p.2‖ₑ ^ 2)
+  have hH_pred : MemLp (Function.uncurry H) 2 (ℱ.predictableMeasure P T) :=
+    (ℱ.memLp_predictableMeasure_iff P hI.isStronglyPredictable T 2).mpr hH
+  have : IsFiniteMeasure ν := by
+    simpa only [ν, Real.enorm_sq_eq_ofReal_sq, Function.uncurry_def] using
+      isFiniteMeasure_withDensity_ofReal hH_pred.integrable_sq.hasFiniteIntegral
+  have hcompl : (Ioc 0 T ×ˢ (univ : Set Ω))ᶜ = ({0} ×ˢ univ) ∪ (Ioi T ×ˢ univ) := by
+    rw [compl_prod_eq_union, compl_univ, prod_empty, union_empty, compl_Ioc, ← bot_eq_zero,
+      Iic_bot, union_prod]
+  have hν_compl : ν (Ioc 0 T ×ˢ (univ : Set Ω))ᶜ = 0 :=
+    mem_ae_iff.1 <| (withDensity_absolutelyContinuous _ _).ae_le
+      (ℱ.ae_mem_Ioc_prod_predictableMeasure P T)
+  obtain ⟨hν0, hνT⟩ := measure_union_null_iff.1 (hcompl ▸ hν_compl)
+  have hνIoc : ∀ ⦃s t : ℝ≥0⦄, s ≤ t → t ≤ T → ∀ ⦃A : Set Ω⦄, MeasurableSet[ℱ s] A →
+      ν (Ioc s t ×ˢ A) = ENNReal.ofReal (∫ ω in A, (I t ω - I s ω) ^ 2 ∂P) := by
+    intro s t hst ht A hA
+    have hres_time : (timeMeasure T).restrict (Ioc s t) = (timeMeasure t).restrict (Ioc s t) := by
+      rw [← timeMeasure_restrict_of_le ht,
+        Measure.restrict_restrict_of_subset (Ioc_subset_Ioc_left zero_le)]
+    have hres : ((timeMeasure T).prod P).restrict (Ioc s t ×ˢ A) =
+        ((timeMeasure t).prod P).restrict (Ioc s t ×ˢ A) := by
+      rw [← Measure.prod_restrict (Ioc s t) A, ← Measure.prod_restrict (Ioc s t) A, hres_time]
+    have hint : IntegrableOn (fun p : ℝ≥0 × Ω ↦ H p.1 p.2 ^ 2) (Ioc s t ×ˢ A)
+        ((timeMeasure T).prod P) :=
+      hH.integrable_sq.integrableOn
+    dsimp only [ν]
+    rw [ℱ.predictableMeasure_withDensity_apply P T (f := fun p ↦ ‖H p.1 p.2‖ₑ ^ 2)
+      (hI.isStronglyPredictable.measurable.eNorm.pow_const 2)
+      (measurableSet_predictable_Ioc_prod s t hA)]
+    simp_rw [Real.enorm_sq_eq_ofReal_sq]
+    rw [← ofReal_integral_eq_lintegral_ofReal hint (.of_forall fun _ ↦ sq_nonneg _),
+      hres, hI.setIntegral_sq_sub hW hst
+        (hH.mono_measure (Measure.prod_mono (timeMeasure_mono ht) le_rfl)) hA]
+  constructor
+  · rintro rfl
+    exact ⟨hν0, hνT, hνIoc⟩
+  · rintro ⟨hμ0, hμT, hμIoc⟩
+    have hμ_compl : μ (Ioc 0 T ×ˢ (univ : Set Ω))ᶜ = 0 :=
+      hcompl ▸ measure_union_null_iff.2 ⟨hμ0, hμT⟩
+    symm
+    exact ℱ.ext_predictable_of_Ioc_prod hν_compl hμ_compl fun s t hst ht A hA ↦
+      (hνIoc hst ht hA).trans (hμIoc hst ht hA).symm
+
+/-- **Conditional increment isometry of the Brownian Itô integral**: for `s ≤ t`,
+`E[(I t - I s)² | ℱ s] = E[∫_(s, t] H u ^ 2 du | ℱ s]` almost surely, requiring square
+integrability only through horizon `t` and without assuming path continuity of `W` or adaptedness
+of `I`. -/
+theorem condExp_sq_sub (hI : IsItoIntegral ℱ P W H I)
+    (hW : IsFilteredPreBrownianReal ℱ W P) {s t : ℝ≥0} (hst : s ≤ t)
+    (hH : MemLp (Function.uncurry H) 2 ((timeMeasure t).prod P)) :
+    P[fun ω ↦ (I t ω - I s ω) ^ 2 | ℱ s] =ᵐ[P]
+      P[fun ω ↦ ∫ u in Ioc s t, H u ω ^ 2 ∂timeMeasure t | ℱ s] := by
+  let := (hW.hasLaw_eval 0).isProbabilityMeasure
+  have hS : MeasurableSet[ℱ.predictable] (Ioc s t ×ˢ (univ : Set Ω)) :=
+    measurableSet_predictable_Ioc_prod s t MeasurableSet.univ
+  have hK_bi : BrownianIntegrable ℱ P
+      (fun u ω ↦ (Ioc s t ×ˢ (univ : Set Ω)).indicator (Function.uncurry H) (u, ω)) :=
+    brownianIntegrable_indicator_of_subset_Ioc_prod hI.isStronglyPredictable hH hS
+      (prod_mono (Ioc_subset_Ioc_left zero_le) (subset_univ _))
+  have hI_sub : IsItoIntegral ℱ P W
+      (fun u ω ↦ (Ioc s t ×ˢ (univ : Set Ω)).indicator (Function.uncurry H) (u, ω))
+      (fun u ω ↦ 1 * (I (min t u) ω - I (min s u) ω)) := by
+    convert hI.mul_sub_min hW hst (ξ := fun _ ↦ 1) stronglyMeasurable_const using 3 with u ω
+    by_cases hu : u ∈ Ioc s t <;> simp [hu]
+  have hI_mem : MemLp (fun ω ↦ I t ω - I s ω) 2 P := by
+    simpa only [one_mul, min_self, min_eq_left hst] using hI_sub.memLp hW hK_bi t
+  have hprod_int : Integrable (fun p : ℝ≥0 × Ω ↦ H p.1 p.2 ^ 2)
+      (((timeMeasure t).restrict (Ioc s t)).prod P) :=
+    hH.integrable_sq.mono_measure (Measure.prod_mono Measure.restrict_le_self le_rfl)
+  refine (ae_eq_condExp_of_forall_setIntegral_eq (ℱ.le s)
+    hI_mem.integrable_sq (fun _ _ _ ↦ integrable_condExp.integrableOn)
+    (fun A hA _ ↦ ?_) stronglyMeasurable_condExp.aestronglyMeasurable).symm
+  have hA_int : Integrable (fun p : ℝ≥0 × Ω ↦ H p.1 p.2 ^ 2)
+      (((timeMeasure t).restrict (Ioc s t)).prod (P.restrict A)) :=
+    hprod_int.mono_measure (Measure.prod_mono le_rfl Measure.restrict_le_self)
+  rw [setIntegral_condExp (ℱ.le s) hprod_int.integral_prod_right hA,
+    hI.setIntegral_sq_sub hW hst hH hA, ← Measure.prod_restrict (Ioc s t) A,
+    integral_prod_symm _ hA_int]
+
+/-- **Deterministic-integrand comparison with the Wiener integral**: an Itô integral of a
+deterministic `L²(timeMeasure T)` integrand `f` agrees almost surely at time `T` with its
+deterministic Wiener integral, without assuming path continuity of `W`. -/
+theorem ae_eq_wienerIntegral {f : ℝ≥0 → ℝ}
+    (hI : IsItoIntegral ℱ P W (fun t _ ↦ f t) I)
+    (hW : IsFilteredPreBrownianReal ℱ W P) {T : ℝ≥0} (hf : MemLp f 2 (timeMeasure T)) :
+    letI := (hW.hasLaw_eval 0).isProbabilityMeasure
+    I T =ᵐ[P] hW.toIsPreBrownianReal.wienerIntegral T (hf.toLp f) := by
+  let := (hW.hasLaw_eval 0).isProbabilityMeasure
+  obtain ⟨_, hω⟩ := hI.locallyBrownianIntegrable.ae_memLp.exists
+  have hH : BrownianIntegrable ℱ P (fun t _ ↦ f t) :=
+    ⟨hI.isStronglyPredictable, fun t ↦ (hω t).comp_fst P⟩
+  refine (hI.ae_eq_l2Integral hW hH T).trans ?_
+  rw [← hW.l2Integral_compMeasurePreserving_fst T (hf.toLp f),
+    Lp.toLp_compMeasurePreserving hf (ℱ.measurePreserving_fst_predictableMeasure P T)]
+  rfl
+
 end IsItoIntegral
+
+/-- Characterization of `IsItoIntegral` on `BrownianIntegrable` integrands: a process `I` is an
+Itô integral of `H` against `W` if and only if it has almost surely continuous paths and agrees
+almost everywhere at every time `t` with `hW.l2Integral t`. -/
+theorem isItoIntegral_iff_ae_eq_l2Integral (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hH : BrownianIntegrable ℱ P H) :
+    IsItoIntegral ℱ P W H I ↔ (∀ᵐ ω ∂P, Continuous fun t ↦ I t ω) ∧
+      ∀ t, letI := (hW.hasLaw_eval 0).isProbabilityMeasure
+        I t =ᵐ[P] hW.l2Integral t ((hH.memLp_predictableMeasure t).toLp (Function.uncurry H)) :=
+  ⟨fun hI ↦ ⟨hI.ae_continuous, fun t ↦ hI.ae_eq_l2Integral hW hH t⟩,
+    fun ⟨hIc, hI⟩ ↦ IsItoIntegral.of_ae_eq_l2Integral hW hH hIc hI⟩
 
 end TauCeti.Probability

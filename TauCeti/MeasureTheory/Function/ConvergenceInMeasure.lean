@@ -66,9 +66,11 @@ between equivalent finite measures.
   finite measure space to a measurable family dominated eventually in the filter for almost every
   sample point.
 * `MeasureTheory.tendsto_measure_lintegral_mono`,
+  `MeasureTheory.tendsto_measure_lintegral_congr_ae`,
   `MeasureTheory.tendsto_measure_lintegral_enorm_sq_bdd_mul`, and
-  `MeasureTheory.tendsto_measure_lintegral_enorm_add_sq`: inner-measure monotonicity transfer
-  and algebraic stability for convergence in measure of slice square lower integrals.
+  `MeasureTheory.tendsto_measure_lintegral_enorm_add_sq`: inner-measure monotonicity and
+  product-a.e. congruence transfer and algebraic stability for convergence in measure of slice
+  square lower integrals.
 * `MeasureTheory.exists_subseq_ae_tendsto_of_tendsto_integral_norm_sub_sq`: a sequence converging
   in mean square has an almost everywhere convergent subsequence.
 * `MeasureTheory.ae_le_of_tendsto_integral_norm_sub_sq`: almost everywhere bounds
@@ -709,6 +711,21 @@ theorem tendsto_measure_lintegral_mono {α β ι : Type*}
     Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, f i x y ∂μ₁}) l (𝓝 0) :=
   tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (he ε hε)
     (fun _ ↦ zero_le) fun _ ↦ measure_mono fun _ hω ↦ hω.trans (lintegral_mono' hμ le_rfl)
+
+/-- Product-a.e. congruence transfers convergence to `0` in `ν`-measure of lower integrals
+`y ↦ ∫⁻ x, f i x y ∂μ` to `y ↦ ∫⁻ x, g i x y ∂μ` for s-finite measures `μ` and `ν`. -/
+theorem tendsto_measure_lintegral_congr_ae {α β ι : Type*}
+    [MeasurableSpace α] [MeasurableSpace β] {μ : Measure α} {ν : Measure β}
+    [SFinite μ] [SFinite ν] {l : Filter ι} {f g : ι → α → β → ℝ≥0∞} {ε : ℝ≥0∞}
+    (hfg : ∀ᶠ i in l, Function.uncurry (f i) =ᵐ[μ.prod ν] Function.uncurry (g i))
+    (he : Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, f i x y ∂μ}) l (𝓝 0)) :
+    Tendsto (fun i ↦ ν {y | ε ≤ ∫⁻ x, g i x y ∂μ}) l (𝓝 0) := by
+  refine he.congr' (hfg.mono fun i hi ↦ measure_congr ?_)
+  have hsec : ∀ᵐ y ∂ν, (fun x ↦ f i x y) =ᵐ[μ] fun x ↦ g i x y :=
+    Measure.ae_ae_of_ae_prod <| (Measure.measurePreserving_swap (μ := ν)
+      (ν := μ)).quasiMeasurePreserving.ae_eq_comp hi
+  filter_upwards [hsec] with y hy
+  rw [lintegral_congr_ae hy]
 
 /-- If `‖f i x y‖ₑ ≤ ‖ξ y‖ₑ * ‖g i x y‖ₑ` with `ξ` uniformly norm-bounded and the slice square
 lower integrals `y ↦ ∫⁻ x, ‖g i x y‖ₑ ^ 2 ∂μ` converge to `0` in `ν`-measure along `l`, then so
