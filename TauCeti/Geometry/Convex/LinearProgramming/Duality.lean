@@ -14,10 +14,15 @@ import Mathlib.Tactic.Linarith
 /-!
 # Strong duality for standard-form linear programs
 
-Farkas certificates turn any lower bound on primal costs into a dual-feasible point,
-and any upper bound on dual values into a primal-feasible point. Applying both certificates
-at the infimum of the feasible primal costs produces optimizers on both sides.
-The duality gap is a sum of nonnegative slack products, giving complementary slackness.
+For a feasible real primal program whose objective is bounded below,
+`Matrix.linearProgramming_duality` gives a primal minimizer and a dual maximizer with equal
+objective values. For any feasible pair, the objectives agree exactly when every complementary
+slackness product vanishes.
+
+If the primal is feasible, a lower bound on its costs yields a dual-feasible point whose value
+is at least that bound. If the dual is feasible, an upper bound on its values yields a
+primal-feasible point whose cost is at most that bound. Applying these Farkas certificates at the
+infimum of the feasible primal costs gives attainment.
 
 ## References
 
@@ -118,15 +123,9 @@ theorem primal_objective_eq_dual_objective_iff {R : Type*} [NonUnitalCommRing R]
   · simp
   · exact fun j _ ↦ mul_nonneg (hx j) (sub_nonneg.mpr (hy j))
 
-end Matrix
-
-namespace TauCeti
-
-open Matrix
-
 /-- A feasible real standard-form linear program bounded below has primal and dual optimizers
 with equal values. Equality for any feasible pair is characterized by complementary slackness. -/
-theorem linearProgramming_duality {I J : Type*} [Fintype I] [Fintype J]
+theorem linearProgramming_duality
     (A : Matrix I J ℝ) (b : I → ℝ) (c : J → ℝ)
     (hfeas : ∃ x : J → ℝ, 0 ≤ x ∧ A *ᵥ x = b)
     (hbdd : ∃ L : ℝ, ∀ x : J → ℝ, 0 ≤ x → A *ᵥ x = b → L ≤ c ⬝ᵥ x) :
@@ -157,4 +156,4 @@ theorem linearProgramming_duality {I J : Type*} [Fintype I] [Fintype J]
   · exact fun x' hx' ↦ heq.le.trans (A.dual_objective_le_primal_objective hx'.1 hx'.2 hy)
   · exact fun y' hy' ↦ (hupper y' hy').trans hval
 
-end TauCeti
+end Matrix
