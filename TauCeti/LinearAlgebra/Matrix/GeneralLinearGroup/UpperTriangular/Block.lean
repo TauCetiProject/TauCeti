@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.Matrix.LDU
 -- Non-public: the counting argument passes through the quotient by the kernel.
 import Mathlib.GroupTheory.Coset.Card
 import Mathlib.GroupTheory.QuotientGroup.Basic
-import Mathlib.SetTheory.Cardinal.Finite
+import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
 # Groups of invertible block triangular matrices and their orders
@@ -31,9 +31,9 @@ entries strictly above the diagonal blocks. Over any commutative ring `R` this g
 finiteness assumption on `R`.
 
 The case of one block indexed by `N` followed by `j` blocks indexed by `T`
-(`TauCeti.exists_natCard_blockTriangularGroup_sum_eq`) is the order
-`#GL N R · #GL T R ^ j · #R ^ e`, with `e` independent of `R`, of the level groups of a chain of
-theta lifts.
+(`TauCeti.natCard_blockTriangularGroup_sum`) is the order
+`#GL N R · #GL T R ^ j · #R ^ e`, where `e = #N · j · #T + (j.choose 2) · #T²`.
+These are the block sizes of the level groups of a chain of theta lifts.
 
 ## Main declarations
 
@@ -46,7 +46,7 @@ theta lifts.
 * `TauCeti.sumIsRightLeviEquiv`: for the two blocks of `m ⊕ n` ranked by `Sum.isRight`, the Levi
   factor is `GL m R × GL n R`.
 * `TauCeti.natCard_blockTriangularGroup`: the order of the group.
-* `TauCeti.exists_natCard_blockTriangularGroup_sum_eq`: the order for the blocks `N, T, …, T`.
+* `TauCeti.natCard_blockTriangularGroup_sum`: the order for the blocks `N, T, …, T`.
 
 ## References
 
@@ -331,24 +331,46 @@ private def sumBlockSuccEquiv (k : Fin j) :
     · obtain rfl : l = k := Fin.succ_injective _ h
       rfl
 
+/-- Entries strictly above the diagonal blocks come either from the first block to a later
+block, or from a strictly increasing pair of later blocks. -/
+private def sumBlockUpperEquiv :
+    {p : (N ⊕ Fin j × T) × (N ⊕ Fin j × T) //
+      Sum.elim (fun _ ↦ 0) (·.1.succ) p.1 < Sum.elim (fun _ ↦ 0) (·.1.succ) p.2} ≃
+      (N × (Fin j × T)) ⊕ ({p : Fin j × Fin j // p.1 < p.2} × T × T) := by
+  refine
+    { toFun := ?_, invFun := ?_, left_inv := ?_, right_inv := ?_ }
+  · rintro ⟨⟨a | ⟨i, x⟩, c | ⟨k, y⟩⟩, h⟩
+    · exact (lt_irrefl _ h).elim
+    · exact .inl (a, k, y)
+    · exact (Fin.not_lt_zero _ h).elim
+    · exact .inr (⟨(i, k), Fin.succ_lt_succ_iff.mp h⟩, x, y)
+  · rintro (⟨a, k, y⟩ | ⟨⟨⟨i, k⟩, h⟩, x, y⟩)
+    · exact ⟨(.inl a, .inr (k, y)), Fin.succ_pos k⟩
+    · exact ⟨(.inr (i, x), .inr (k, y)), Fin.succ_lt_succ_iff.mpr h⟩
+  · rintro ⟨⟨a | ⟨i, x⟩, c | ⟨k, y⟩⟩, h⟩
+    · exact (lt_irrefl _ h).elim
+    · rfl
+    · exact (Fin.not_lt_zero _ h).elim
+    · rfl
+  · rintro (⟨a, k, y⟩ | ⟨⟨⟨i, k⟩, h⟩, x, y⟩) <;> rfl
+
 end Sum
 
 /-- **The order of the block triangular group with blocks `N, T, …, T`.** Rank the indices
-`N ⊕ Fin j × T` by sending `N` to the block `0` and the `k`-th copy of `T` to the block `k + 1`.
-The invertible block upper triangular matrices form a group of order
-`#GL N R · #GL T R ^ j · #R ^ e`, with `e` independent of the commutative ring `R`. -/
-theorem exists_natCard_blockTriangularGroup_sum_eq (N T : Type*) [Fintype N] [DecidableEq N]
-    [Fintype T] [DecidableEq T] (j : ℕ) :
-    ∃ e : ℕ, ∀ (R : Type u) [CommRing R],
-      Nat.card (blockTriangularGroup R
-          (Sum.elim (fun _ => 0) (fun p => p.1.succ) : N ⊕ Fin j × T → Fin (j + 1))) =
-        Nat.card (GL N R) * Nat.card (GL T R) ^ j * Nat.card R ^ e := by
-  let b : N ⊕ Fin j × T → Fin (j + 1) := Sum.elim (fun _ => 0) (fun p => p.1.succ)
-  refine ⟨Nat.card {p : (N ⊕ Fin j × T) × (N ⊕ Fin j × T) // b p.1 < b p.2}, fun R _ => ?_⟩
+`N ⊕ Fin j × T` by sending `N` to block `0` and the `k`-th copy of `T` to block `k + 1`.
+The unipotent exponent is `#N · j · #T + (j.choose 2) · #T²`. -/
+theorem natCard_blockTriangularGroup_sum (N T : Type*) [Fintype N] [DecidableEq N]
+    [Fintype T] [DecidableEq T] (j : ℕ) (R : Type u) [CommRing R] :
+    Nat.card (blockTriangularGroup R
+        (Sum.elim (fun _ ↦ 0) (·.1.succ) : N ⊕ Fin j × T → Fin (j + 1))) =
+      Nat.card (GL N R) * Nat.card (GL T R) ^ j *
+        Nat.card R ^ (Nat.card N * j * Nat.card T + j.choose 2 * Nat.card T ^ 2) := by
   rw [natCard_blockTriangularGroup, Fin.prod_univ_succ,
     Nat.card_congr (GeneralLinearGroup.reindex (R := R) sumBlockZeroEquiv).toEquiv,
-    Fintype.prod_congr _ (fun _ => Nat.card (GL T R)) fun k =>
+    Fintype.prod_congr _ (fun _ ↦ Nat.card (GL T R)) fun k ↦
       Nat.card_congr (GeneralLinearGroup.reindex (R := R) (sumBlockSuccEquiv k)).toEquiv,
-    Finset.prod_const, Finset.card_univ, Fintype.card_fin, mul_assoc]
+    Finset.prod_const, Finset.card_univ, Fintype.card_fin, mul_assoc,
+    Nat.card_congr (sumBlockUpperEquiv (N := N) (T := T) (j := j))]
+  simp [pow_two, mul_assoc]
 
 end TauCeti
