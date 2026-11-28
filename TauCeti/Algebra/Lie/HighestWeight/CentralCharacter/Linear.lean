@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.DotOrbit
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Translation
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
+public import TauCeti.RepresentationTheory.SymmetricAlgebra.FiniteType
 -- Non-public: an element of `S(H)` is determined by its values over the infinite field `K`, used
 -- only in the comparison with the invariants of the coroot representation.
 import Mathlib.Algebra.CharZero.Infinite
@@ -61,6 +62,7 @@ Over an algebraically closed field the projection is onto the Weyl invariants
   of the coroot representation `RootPairing.weylGroupCorootRep` on `H`.
 * `TauCeti.isHomogeneous_linearInvariants`: every homogeneous component of a Weyl invariant is a
   Weyl invariant.
+* `TauCeti.isIntegral_linearInvariants`: `S(H)` is integral over the Weyl invariants `S(H)^W`.
 * `TauCeti.translation_neg_weylVector_mem_linearInvariants_iff`: translation by `-ρ` takes an
   element of `S(H)` to a Weyl invariant exactly when the element is dot-invariant.
 * `TauCeti.lift_hcProjectionLinear` and `TauCeti.lift_add_weylVector_hcProjectionLinear`: the
@@ -158,6 +160,15 @@ theorem isHomogeneous_linearInvariants :
     DirectSum.SetLike.IsHomogeneous (homogeneousSubmodule K H) (linearInvariants H) :=
   linearInvariants_eq_symmetricAlgebraInvariants (H := H) ▸
     Representation.isHomogeneous_symmetricAlgebraInvariants _
+
+/-- `S(H)` is integral over the Weyl invariants `S(H)^W`: it is a finite module over them. -/
+instance isIntegral_linearInvariants :
+    Algebra.IsIntegral (linearInvariants H) (_root_.SymmetricAlgebra K H) := by
+  have : Finite (IsKilling.rootSystem H).weylGroup :=
+    RootPairing.finite_weylGroup (IsKilling.rootSystem H)
+  have : Finite (IsKilling.rootSystem H).weylGroup.op := Finite.of_equiv _ (Subgroup.equivOp _)
+  rw [linearInvariants_eq_symmetricAlgebraInvariants]
+  infer_instance
 
 /-! ### From dot-invariants to Weyl invariants -/
 

@@ -135,6 +135,16 @@ theorem rootCoefficients_apply_of_root_eq_sum {i : ι} {f : ι → ℤ}
       rw [h, ← Finset.sum_coe_sort b.support fun j ↦ f j • P.root j]
   exact congrFun hc k
 
+/-- Pairing a root with a coroot is the sum of its simple-root coefficients times the
+corresponding simple-root pairings. The coroot need not be simple. -/
+theorem pairingIn_eq_sum_rootCoefficients [P.IsCrystallographic] (i j : ι) :
+    P.pairingIn ℤ i j = ∑ k : b.support, b.rootCoefficients i k * P.pairingIn ℤ k j := by
+  obtain ⟨f, -, -, hf⟩ := b.exists_root_eq_sum_int i
+  rw [RootPairing.pairingIn_eq_sum_of_root_eq_sum hf,
+    ← Finset.sum_coe_sort b.support]
+  exact Finset.sum_congr rfl fun k _ ↦ by
+    rw [b.rootCoefficients_apply_of_root_eq_sum hf]
+
 /-- The entries of the column of a root, from an expansion in coordinates indexed by a finite type
 `κ` whose map `e` to the root indices is an injection into the simple roots. -/
 theorem rootCoefficients_apply_of_injective {κ : Type*} [Fintype κ] {e : κ → ι} (he : Injective e)

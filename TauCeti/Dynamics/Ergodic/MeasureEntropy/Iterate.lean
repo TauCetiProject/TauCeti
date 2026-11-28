@@ -29,6 +29,8 @@ under `T` read backwards, so every label has the same entropy rate under `T` and
 * `TauCeti.partitionEntropyRate_iterate_iteratedPartitionLabel`:
   `h_μ(T^[k], join_k a) = k * h_μ(T, a)` for measure-preserving `T` under a probability (or zero)
   measure.
+* `TauCeti.partitionEntropyRate_iteratedPartitionLabel`: `h_μ(T, join_N a) = h_μ(T, a)` for
+  `0 < N`, for measure-preserving `T` under a probability (or zero) measure.
 * `TauCeti.measureEntropy_iterate`: `h_μ(T^[k]) = k * h_μ(T)`.
 * `TauCeti.partitionEntropyRate_symm`, `TauCeti.measureEntropy_symm`: for a measure-preserving
   measurable equivalence `e`, `h_μ(e.symm, a) = h_μ(e, a)` and `h_μ(e.symm) = h_μ(e)`.
@@ -97,6 +99,51 @@ theorem partitionEntropyRate_iterate_iteratedPartitionLabel [IsZeroOrProbability
       fun m ↦ iInf_le _ m
   · gcongr
     exact partitionEntropyRate_le_div (Nat.mul_pos m.succ_pos (Nat.pos_of_ne_zero hk)) μ T a
+
+/-- For a measure-preserving map of a probability space (or the zero measure) and a measurable
+countable label `a`, the entropy rate of a finite itinerary of `a` is at most that of `a`:
+`h(T, join_N a) ≤ h(T, a)`. -/
+theorem partitionEntropyRate_iteratedPartitionLabel_le [IsZeroOrProbabilityMeasure μ]
+    (hT : MeasurePreserving T μ μ) {a : X → ι} (ha : Measurable a) (N : ℕ) :
+    partitionEntropyRate μ T (iteratedPartitionLabel T a N) ≤ partitionEntropyRate μ T a := by
+  rcases eq_or_ne (countablePartitionEntropy μ a) ∞ with htop | hfin
+  · -- Every itinerary of `a` has infinite entropy, so the rate of `a` is `∞`.
+    refine le_of_le_of_eq le_top ?_
+    rw [partitionEntropyRate_def, eq_comm, iInf_eq_top]
+    intro n
+    have := countablePartitionEntropy_le_iteratedPartitionLabel (μ := μ) T a n.succ_pos
+    rw [htop, top_le_iff] at this
+    exact ENNReal.div_eq_top.2 (Or.inr ⟨this, by simp⟩)
+  set C := countablePartitionEntropy μ (iteratedPartitionLabel T a N)
+  have hC : C ≠ ∞ := ne_top_of_le_ne_top (ENNReal.mul_ne_top (ENNReal.natCast_ne_top N) hfin)
+    (countablePartitionEntropy_iteratedPartitionLabel_le_mul hT ha N)
+  have hlim : Tendsto (fun n : ℕ ↦
+      countablePartitionEntropy μ (iteratedPartitionLabel T a n) / n + C / n) atTop
+        (𝓝 (partitionEntropyRate μ T a + 0)) := by
+    refine (tendsto_partitionEntropyRate hT ha).add ?_
+    simp only [div_eq_mul_inv]
+    simpa using ENNReal.Tendsto.const_mul ENNReal.tendsto_inv_nat_nhds_zero (Or.inr hC)
+  rw [add_zero] at hlim
+  refine ge_of_tendsto hlim ((eventually_ge_atTop 1).mono fun n hn ↦ ?_)
+  refine (partitionEntropyRate_le_div hn μ T _).trans ?_
+  rw [← ENNReal.add_div]
+  refine ENNReal.div_le_div_right ?_ _
+  rw [iteratedPartitionLabel_iteratedPartitionLabel]
+  exact (countablePartitionEntropy_comp_le _ _).trans
+    (countablePartitionEntropy_iteratedPartitionLabel_add_le hT ha n N)
+
+/-- **Rate of an itinerary.** For a measure-preserving map of a probability space (or the zero
+measure) and a measurable countable label `a`, a finite itinerary of positive length has the
+entropy rate of `a`: `h(T, join_N a) = h(T, a)` for `0 < N`. -/
+theorem partitionEntropyRate_iteratedPartitionLabel [IsZeroOrProbabilityMeasure μ]
+    (hT : MeasurePreserving T μ μ) {a : X → ι} (ha : Measurable a) {N : ℕ} (hN : 0 < N) :
+    partitionEntropyRate μ T (iteratedPartitionLabel T a N) = partitionEntropyRate μ T a := by
+  refine le_antisymm (partitionEntropyRate_iteratedPartitionLabel_le hT ha N) ?_
+  have ha' : a = (fun w : Fin N → ι ↦ w ⟨0, hN⟩) ∘ iteratedPartitionLabel T a N := by
+    funext x
+    simp [iteratedPartitionLabel_apply]
+  conv_lhs => rw [ha']
+  exact partitionEntropyRate_comp_le T _ _
 
 /-- **Entropy of an iterate.** For a measure-preserving map of a probability space (or the zero
 measure), `h_μ(T^[k]) = k * h_μ(T)`. -/

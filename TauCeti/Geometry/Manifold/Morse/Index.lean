@@ -50,6 +50,8 @@ the index vanishes without a nondegeneracy assumption.
   the critical-point specialization.
 * `IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_neg_eq_add_one_of_eq_add_one`: critical
   points of consecutive index for `f` have consecutive index for `-f`, in the opposite order.
+* `IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_neg_ne_add_one_of_ne_add_one`: the
+  same for critical points whose indices for `f` are not consecutive.
 
 ## References
 
@@ -212,6 +214,17 @@ theorem manifoldMorseIndex_neg_eq_add_one_of_eq_add_one {y : M}
     (hy : IsManifoldNondegenerateCriticalPoint I f y)
     (hxy : manifoldMorseIndex I f x = manifoldMorseIndex I f y + 1) :
     manifoldMorseIndex I (-f) y = manifoldMorseIndex I (-f) x + 1 := by
+  have := hx.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+  have := hy.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
+  omega
+
+/-- If the Morse index of `f` does not drop by one from a nondegenerate critical point `x` to
+another one `y`, then the Morse index of `-f` does not rise by one from `x` to `y`. -/
+theorem manifoldMorseIndex_neg_ne_add_one_of_ne_add_one {y : M}
+    (hx : IsManifoldNondegenerateCriticalPoint I f x)
+    (hy : IsManifoldNondegenerateCriticalPoint I f y)
+    (hxy : manifoldMorseIndex I f x ≠ manifoldMorseIndex I f y + 1) :
+    manifoldMorseIndex I (-f) y ≠ manifoldMorseIndex I (-f) x + 1 := by
   have := hx.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   have := hy.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   omega

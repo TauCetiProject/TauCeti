@@ -487,8 +487,7 @@ private theorem exists_pow_mul_mem_chartIdeal_other {a b : R} (ha : a ∈ I) (hb
       Lc.comap (affineBlowupι (Localization.Away x) hx) =
         ofIdealTop ((Ideal.span {algebraMap R (I.affineBlowup x (Localization.Away x)) c}).map
           (Scheme.ΓSpecIso (.of _)).inv.hom) := by
-    rw [← comap_comp, toSpecCoeff_reesAlgebra, comap_affineBlowupι_ofIdealTop_map, Ideal.map_span,
-      Set.image_singleton]
+    rw [comap_affineBlowupι_toSpecCoeff, Ideal.map_span, Set.image_singleton]
   have hle_a : Lc.comap ιa ≤ M.comap ιa := by
     rw [hLc ha, comap_affineBlowupι_pow_mul_eq ha J m, ← equivOfIsAffine_symm_apply,
       ← equivOfIsAffine_symm_apply, map_le_map_iff]
@@ -540,8 +539,7 @@ theorem exists_fg_ideal_comap_toSpecCoeff_eq (hI : I.FG)
   refine ext_of_comap_iSup_opensRange_eq_top
     (fun j : Fin r ↦ affineBlowupι (Localization.Away (a j)) (ha j))
     (iSup_opensRange_affineBlowupι haI) fun j ↦ ?_
-  rw [comap_affineBlowupι_pow_mul_eq (ha j) J d, ← comap_comp, toSpecCoeff_reesAlgebra,
-    comap_affineBlowupι_ofIdealTop_map]
+  rw [comap_affineBlowupι_pow_mul_eq (ha j) J d, comap_affineBlowupι_toSpecCoeff]
   congr 2
   refine le_antisymm ?_ ?_
   · rw [Ideal.map_span, Ideal.span_le, Set.image_subset_iff]
