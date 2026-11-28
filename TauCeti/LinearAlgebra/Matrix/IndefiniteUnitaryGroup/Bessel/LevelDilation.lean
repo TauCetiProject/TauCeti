@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
-public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup.Bessel
+public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup.Bessel.Basic
 
 /-!
 # The level dilation of the split form

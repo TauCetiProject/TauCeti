@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Ba
 -- `Matrix.BlockTriangular.toSquareBlock_mul` makes the diagonal blocks multiplicative, and
 -- `TauCeti.blockUnitriangular_unitDiagonalMatrixOfEntries` gives the unipotent radical.
 public import TauCeti.LinearAlgebra.Matrix.LDU
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Block.Triangular
 -- Non-public: the counting argument passes through the quotient by the kernel.
 import Mathlib.GroupTheory.Coset.Card
 import Mathlib.GroupTheory.QuotientGroup.Basic
@@ -46,6 +47,7 @@ theta lifts.
 * `TauCeti.sumIsRightLeviEquiv`: for the two blocks of `m ⊕ n` ranked by `Sum.isRight`, the Levi
   factor is `GL m R × GL n R`.
 * `TauCeti.natCard_blockTriangularGroup`: the order of the group.
+* `TauCeti.natCard_unitriangularSubgroup`: the order of its block upper unitriangular subgroup.
 * `TauCeti.exists_natCard_blockTriangularGroup_sum_eq`: the order for the blocks `N, T, …, T`.
 
 ## References
@@ -300,6 +302,20 @@ theorem natCard_blockTriangularGroup [Fintype α] (b : m → α) :
   rw [Subgroup.card_eq_card_quotient_mul_card_subgroup (diagBlocks R b).ker,
     Nat.card_congr (QuotientGroup.quotientKerEquivOfSurjective _ diagBlocks_surjective).toEquiv,
     Nat.card_pi, Nat.card_congr (kerDiagBlocksEquiv R b), Nat.card_fun]
+
+/-- The order of the block upper unitriangular subgroup: each entry strictly above the
+block diagonal is free. This count does not need the type of block labels to be finite.
+For an infinite ring, `Nat.card` is zero unless there are no free entries. -/
+theorem natCard_unitriangularSubgroup (b : m → α) :
+    Nat.card (unitriangularSubgroup b R) = Nat.card R ^ Nat.card {p : m × m // b p.1 < b p.2} := by
+  have hker : (diagBlocks R b).ker =
+      (unitriangularSubgroup b R).subgroupOf (blockTriangularGroup R b) := by
+    ext g
+    simp only [mem_ker_diagBlocks_iff, Subgroup.mem_subgroupOf, mem_unitriangularSubgroup,
+      blockUnitriangular_iff, mem_blockTriangularGroup_iff.mp g.property, true_and]
+  rw [← Nat.card_congr (Subgroup.subgroupOfEquivOfLe
+    (unitriangularSubgroup_le_blockTriangularGroup b (R := R))).toEquiv, ← hker,
+    Nat.card_congr (kerDiagBlocksEquiv R b), Nat.card_fun]
 
 section Sum
 
