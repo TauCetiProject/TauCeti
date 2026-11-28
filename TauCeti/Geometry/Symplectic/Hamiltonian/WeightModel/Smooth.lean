@@ -100,7 +100,7 @@ theorem mfderiv_torusRotation_zero (z : EuclideanSpace ℝ ι × EuclideanSpace 
     funext fun t ↦ congrArg (· z) (torusRotation_coe t)
   have hc0 : (fun j ↦ ((0 : ι → ℝ) j : AddCircle (2 * π))) = 0 := funext fun _ ↦ rfl
   have hcomp := ((hF _).mdifferentiableAt (by simp)).hasMFDerivAt.comp (0 : ι → ℝ)
-    (AddCircle.hasMFDerivAt_coe_pi (2 * π) (0 : ι → ℝ))
+    (AddCircle.hasMFDerivAt_coe_pi (fun _ ↦ 2 * π) (0 : ι → ℝ))
   rw [hg] at hcomp
   have hgd : DifferentiableAt ℝ g 0 :=
     mdifferentiableAt_iff_differentiableAt.1 (hcomp.mdifferentiableAt)

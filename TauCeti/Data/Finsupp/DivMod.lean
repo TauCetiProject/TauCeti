@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Finsupp
 public import Mathlib.Algebra.Order.Group.Nat
 public import Mathlib.Data.Fin.Basic
+public import Mathlib.Order.Preorder.Finsupp
 
 /-!
 # Entrywise division with remainder of exponents
@@ -23,6 +24,8 @@ remainders. For `0 < p` the pair of remainders, valued in `Fin p`, and quotients
 
 ## Main results
 
+* `Finsupp.equivFunOnFinite_symm_sub_one_lt`, `Finsupp.mapRange_finVal_le_sub_one`: the constant
+  exponent vector at `p - 1` is below `p` and bounds all residue exponent vectors.
 * `Finsupp.nsmul_mapRange_div_add_mapRange_mod`: `p • (α / p) + α % p = α` entrywise.
 * `Finsupp.modDivEquiv_nsmul_add`: adding `p • γ` keeps the remainders and adds `γ` to the
   quotients.
@@ -36,6 +39,16 @@ public section
 namespace Finsupp
 
 variable {σ : Type*} (p : ℕ)
+
+/-- Each coordinate of the constant exponent vector at `n - 1` is below the positive modulus. -/
+theorem equivFunOnFinite_symm_sub_one_lt {n : ℕ} [Finite σ] (hn : n ≠ 0) (i : σ) :
+    (equivFunOnFinite.symm fun _ : σ ↦ n - 1) i < n := by
+  simpa using Nat.sub_one_lt hn
+
+/-- A residue exponent vector is coordinatewise at most the constant vector at `n - 1`. -/
+theorem mapRange_finVal_le_sub_one {n : ℕ} [NeZero n] [Finite σ] (β : σ →₀ Fin n) :
+    β.mapRange Fin.val (Fin.val_zero n) ≤ (equivFunOnFinite.symm fun _ : σ ↦ n - 1) :=
+  fun i ↦ by simpa using Nat.le_sub_one_of_lt (β i).isLt
 
 /-- Every exponent is `p • μ + ν` for its entrywise quotients `μ` and remainders `ν` by `p`. -/
 theorem nsmul_mapRange_div_add_mapRange_mod (α : σ →₀ ℕ) :

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Homotopy
-public import TauCeti.AlgebraicTopology.Singular.Twisted.Subdivision
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Subdivision.Basic
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Chains
 import TauCeti.Topology.Category.TopCat.Subspace
 

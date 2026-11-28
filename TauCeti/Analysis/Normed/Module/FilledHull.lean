@@ -56,9 +56,10 @@ regularity assumptions on `K`. The related frontier bound in
 * `TauCeti.mem_filledHull_or_mem_filledHull_of_notMem_connectedComponentIn` — of two points in
   different complementary components, at least one lies in the filled hull, in dimension at
   least two.
-* `TauCeti.compl_filledHull_eq_connectedComponentIn` and `TauCeti.isConnected_compl_filledHull`:
-  outside its filled hull, the complement of a bounded set is a single component, in dimension at
-  least two.
+* `TauCeti.compl_filledHull_eq_connectedComponentIn`, `TauCeti.isConnected_compl_filledHull`, and
+  `TauCeti.filledHull_eq_self_iff_isConnected_compl`: outside its filled hull, the complement of a
+  bounded set is a single component in dimension at least two, so a bounded set equals its filled
+  hull exactly when its complement is connected.
 * `TauCeti.filledHull_subset_interior_filledHull`: in dimension at least two, any subset of the
   interior of `filledHull K` (for bounded `K`) has its entire filled hull inside that interior.
 * `IsCompact.filledHull_subset_ball`: if a compact set lies inside an open ball, so does its
@@ -262,6 +263,15 @@ theorem isConnected_compl_filledHull (h : 1 < Module.rank ℝ E) (hK : IsBounded
   obtain ⟨x, hx⟩ := nonempty_compl_filledHull hK
   rw [compl_filledHull_eq_connectedComponentIn h hK hx]
   exact isConnected_connectedComponentIn_iff.mpr fun hxK => hx (subset_filledHull hxK)
+
+/-- A bounded set in a real normed space of dimension at least two equals its filled hull if and
+only if its complement is connected. -/
+theorem filledHull_eq_self_iff_isConnected_compl (h : 1 < Module.rank ℝ E) (hK : IsBounded K) :
+    filledHull K = K ↔ IsConnected Kᶜ := by
+  refine ⟨fun heq ↦ heq ▸ isConnected_compl_filledHull h hK, fun hc ↦ ?_⟩
+  have : Nontrivial E := rank_pos_iff_nontrivial.mp (zero_lt_one.trans h)
+  exact filledHull_eq_self hc.isPreconnected fun hbd ↦
+    NormedSpace.unbounded_univ ℝ E ((hK.union hbd).subset (by simp))
 
 /-- If a set `L` lies in the interior of the filled hull of a bounded set `K` in a real normed
 space of dimension at least two, then its whole filled hull `filledHull L` lies in

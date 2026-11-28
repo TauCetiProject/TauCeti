@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Bialgebra.GroupLike.ScalarTower
 public import TauCeti.Algebra.Coalgebra.GroupLike.BaseChange
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 import TauCeti.FieldTheory.PurelyInseparable.BaseChange
-import TauCeti.RingTheory.Flat.EffectiveDescent
+import TauCeti.RingTheory.Flat.Amitsur
 import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 
 /-!
@@ -112,9 +112,8 @@ theorem groupLikeBaseChange_bijective_of_isPurelyInseparable
     induction x using TensorProduct.inductionOn with
     | add x y hx hy => simp only [map_add, hx, hy]
     | tmul l a => simp [e]
-  have hg : ((TensorProduct.mk k L A 1).lTensor L - TensorProduct.mk k L (L ⊗[k] A) 1)
-      g.val = 0 := by
-    rw [LinearMap.sub_apply, sub_eq_zero, ← h₁, ← h₂,
+  have hg : Amitsur.d₀ L A g.val = 0 := by
+    rw [Amitsur.d₀_def, LinearMap.sub_apply, sub_eq_zero, ← h₁, ← h₂,
       map_includeLeft_val_eq_map_includeRight_val hspan g]
   -- Amitsur exactness descends the coefficients of `g`.
   obtain ⟨a, ha⟩ := (Module.FaithfullyFlat.exact_mk_one_lTensor_sub_mk_one L A g.val).mp hg

@@ -23,6 +23,9 @@ import TauCeti.Data.Fin.Basic
 
 Successive differences along a finite sequence sum to the difference of its endpoints,
 including the empty edge sequence. Reversing every difference reverses the endpoint difference.
+Around a cycle, where the successor of the last index is the first one, the increments
+`f (finRotate n i) - f i` sum to zero (`Fin.sum_univ_finRotate_sub`, multiplicatively
+`Fin.prod_univ_finRotate_div`).
 The alternating sum over the faces of a simplex of the products of values on its front and back
 faces splits as in the Leibniz rule for cup products (`Fin.sum_neg_one_pow_zsmul_mul_succAbove`).
 Summing a tuple on `Fin (k + 1)` with one index left out, over all choices of the omitted
@@ -102,6 +105,12 @@ theorem sum_univ_castSucc_sub_succ {G : Type*} [AddCommGroup G] {n : ℕ}
     (f : Fin (n + 1) → G) :
     ∑ i : Fin n, (f i.castSucc - f i.succ) = f 0 - f (last n) := by
   simpa only [neg_sub_neg] using sum_univ_succ_sub_castSucc (fun i ↦ -f i)
+
+/-- The ratios `f (finRotate n i) / f i` around a cycle multiply to one. -/
+@[to_additive /-- The increments `f (finRotate n i) - f i` around a cycle sum to zero. -/]
+theorem prod_univ_finRotate_div {G : Type*} [CommGroup G] {n : ℕ} (f : Fin n → G) :
+    ∏ i, f (finRotate n i) / f i = 1 := by
+  rw [Finset.prod_div_distrib, Equiv.prod_comp, div_self']
 
 /-- A sum of piece-indexed endpoint differences splits into the outer endpoint difference plus the
 sum of interior jumps between consecutive pieces. -/

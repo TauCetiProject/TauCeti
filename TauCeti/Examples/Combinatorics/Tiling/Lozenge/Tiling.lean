@@ -139,6 +139,11 @@ theorem isTiling_hexagon_iff {M : Set TriEdge} :
     IsTiling hexagon M ↔ M = tilingA ∨ M = tilingB :=
   ⟨eq_tilingA_or_eq_tilingB, by rintro (rfl | rfl); exacts [isTiling_tilingA, isTiling_tilingB]⟩
 
+/-- The two tilings of the unit hexagon are distinct: `(0,1)` lies in `T_b` but not in `T_a`. -/
+theorem tilingA_ne_tilingB : tilingA ≠ tilingB := fun h => by
+  have h₀ : (⟨(0, 0), 0⟩ : TriEdge) ∈ tilingA := h ▸ by simp [tilingB]
+  simp [tilingA] at h₀
+
 /-- Each of `T_a` and `T_b` has one lozenge of each type. -/
 example : (∀ k : Fin 3, ∃! e, e ∈ tilingA ∧ e.k = k) ∧
     ∀ k : Fin 3, ∃! e, e ∈ tilingB ∧ e.k = k := by

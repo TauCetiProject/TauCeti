@@ -207,6 +207,16 @@ theorem _root_.MvPolynomial.expand_eq_map_frobeniusEquiv_symm_pow {σ R : Type*}
   rw [← MvPolynomial.map_frobenius_expand, MvPolynomial.map_expand, MvPolynomial.map_map,
     frobenius_comp_frobeniusEquiv_symm, MvPolynomial.map_id]
 
+/-- Expansion by a power of the cardinality of a finite field raises a polynomial to that power. -/
+theorem _root_.FiniteField.MvPolynomial.expand_card_pow {σ K : Type*} [Field K] [Fintype K]
+    (m : ℕ) (f : MvPolynomial σ K) :
+    MvPolynomial.expand (Fintype.card K ^ m) f = f ^ Fintype.card K ^ m := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    rw [pow_succ', MvPolynomial.expand_mul, FiniteField.MvPolynomial.expand_card, ih, ← pow_mul,
+      mul_comm]
+
 namespace MvPolynomial
 
 open _root_.MvPolynomial

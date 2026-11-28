@@ -208,7 +208,7 @@ theorem contMDiff_actionAngleCover :
       ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) ∞
       (actionAngleCover (ι := ι) p) := by
   -- The base map `(θ, I) ↦ [θ]` is the smooth covering map of the torus after `fst`.
-  have hb := (AddCircle.contMDiff_coe_pi (ι := ι) p ∞).comp
+  have hb := (AddCircle.contMDiff_coe_pi (fun _ : ι ↦ p) ∞).comp
     (ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ)).contMDiff
   refine ContMDiff.sum_sectionAlong Finset.univ _ hb fun j _ ↦ ?_
   -- Each term is a smooth coefficient times the smooth section `dθ_j` along the base map.
@@ -231,7 +231,7 @@ theorem mpullback_liouvilleForm_actionAngleCover_apply (x : (ι → ℝ) × (ι 
   have hb (u : TangentSpace 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) x) :
       mfderiv 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
         (fun x : (ι → ℝ) × (ι → ℝ) ↦ fun i ↦ (x.1 i : AddCircle p)) x u = u.1 :=
-    DFunLike.congr_fun ((AddCircle.hasMFDerivAt_coe_pi (ι := ι) p x.1).comp x
+    DFunLike.congr_fun ((AddCircle.hasMFDerivAt_coe_pi (fun _ : ι ↦ p) x.1).comp x
       (ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ)).hasMFDerivAt).mfderiv u
   rw [mpullback_liouvilleForm_apply_of_proj_comp_eq (g := fun x : (ι → ℝ) × (ι → ℝ) ↦
       fun i ↦ (x.1 i : AddCircle p)) (fun _ ↦ rfl)
@@ -425,7 +425,7 @@ theorem eval₂_symplecticForm_eq_dotProduct_sub [DecidableEq ι]
             (actionAngleCover p) x w) = w.1 := by
     rw [← mfderiv_comp_apply x
       ((Bundle.contMDiff_proj (n := ∞) _ (actionAngleCover p x)).mdifferentiableAt (by simp)) hκ]
-    exact DFunLike.congr_fun ((AddCircle.hasMFDerivAt_coe_pi (ι := ι) p x.1).comp x
+    exact DFunLike.congr_fun ((AddCircle.hasMFDerivAt_coe_pi (fun _ : ι ↦ p) x.1).comp x
       (ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ)).hasMFDerivAt).mfderiv w
   -- Along `κ` the action differential reads the second component, since `I ∘ κ = snd`.
   have hI (w : TangentSpace 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) x) :

@@ -14,11 +14,11 @@ import TauCeti.LinearAlgebra.ExteriorPower.Localization
 /-!
 # Exterior powers and determinants of hermitian vector bundles
 
-For a hermitian metric `h` on a finitely generated `𝓞 K`-module `E`, the exterior power
+For a hermitian metric `h` on an `𝓞 K`-module `E`, the exterior power
 `⋀ⁿ E` carries the metric whose form at each complex embedding `σ` is the Gram form of `h_σ` on
 the complex fibre `(⋀ⁿ E)_σ = ⋀ⁿ_ℂ E_σ`, identified by
 `NumberField.ComplexEmbedding.Codomain.exteriorPowerEquiv`; the Gram form is
-`exteriorPower.gramSesqForm`. On decomposable vectors it is the Gram determinant
+`(innerₛₗ ℂ).sesqExteriorPower n`. On decomposable vectors it is the Gram determinant
 
   `(⋀ⁿ h)_σ(x₁ ∧ ⋯ ∧ xₙ, y₁ ∧ ⋯ ∧ yₙ) = det (h_σ(xᵢ, yⱼ))`,
 
@@ -77,13 +77,6 @@ private abbrev fiberInnerProductSpace (σ : K →+* ℂ) :
     InnerProductSpace ℂ (Codomain σ ⊗[𝓞 K] E) :=
   .ofCore (h.toCore σ).toCore
 
-variable [Module.Finite (𝓞 K) E]
-
-/-- The complex fibre of `E` at `σ` is finite-dimensional. -/
-private local instance finiteDimensional_fiber (σ : K →+* ℂ) :
-    FiniteDimensional ℂ (Codomain σ ⊗[𝓞 K] E) :=
-  Module.Finite.trans (Codomain σ) _
-
 /-- The Gram form of `h_σ` on the `n`-th complex exterior power of the complex fibre of `E`.
 This definition and the lemmas below about it all install the same fibre instances
 `fiberNormedAddCommGroup` and `fiberInnerProductSpace`, so the Gram-form lemmas apply to it as
@@ -92,7 +85,7 @@ private def fiberGram (σ : K →+* ℂ) (n : ℕ) :
     ⋀[ℂ]^n (Codomain σ ⊗[𝓞 K] E) →ₗ⋆[ℂ] ⋀[ℂ]^n (Codomain σ ⊗[𝓞 K] E) →ₗ[ℂ] ℂ :=
   letI := h.fiberNormedAddCommGroup σ
   letI := h.fiberInnerProductSpace σ
-  exteriorPower.gramSesqForm n
+  (innerₛₗ ℂ).sesqExteriorPower n
 
 private theorem fiberGram_ιMulti_ιMulti (σ : K →+* ℂ) {n : ℕ}
     (u v : Fin n → Codomain σ ⊗[𝓞 K] E) :
@@ -100,20 +93,20 @@ private theorem fiberGram_ιMulti_ιMulti (σ : K →+* ℂ) {n : ℕ}
       (Matrix.of fun i j ↦ h.form σ (u i) (v j)).det := by
   let _ := h.fiberNormedAddCommGroup σ
   let _ := h.fiberInnerProductSpace σ
-  refine (exteriorPower.gramSesqForm_ιMulti_ιMulti n u v).trans ?_
+  refine ((innerₛₗ ℂ).sesqExteriorPower_ιMulti_ιMulti n u v).trans ?_
   -- The inner product of the local inner product space is the form `h_σ`.
-  simp only [← h.inner_toCore]
+  simp only [innerₛₗ_apply_apply, ← h.inner_toCore]
 
 private theorem isSymm_fiberGram (σ : K →+* ℂ) (n : ℕ) : (h.fiberGram σ n).IsSymm :=
   letI := h.fiberNormedAddCommGroup σ
   letI := h.fiberInnerProductSpace σ
-  exteriorPower.isSymm_gramSesqForm n
+  exteriorPower.isSymm_sesqExteriorPower_innerₛₗ n
 
 private theorem fiberGram_self_pos (σ : K →+* ℂ) {n : ℕ} {u : ⋀[ℂ]^n (Codomain σ ⊗[𝓞 K] E)}
     (hu : u ≠ 0) : 0 < h.fiberGram σ n u u :=
   letI := h.fiberNormedAddCommGroup σ
   letI := h.fiberInnerProductSpace σ
-  exteriorPower.gramSesqForm_self_pos hu
+  exteriorPower.sesqExteriorPower_innerₛₗ_self_pos hu
 
 /-- The Gram form at `σ` on vectors `1 ⊗ (x₁ ∧ ⋯ ∧ xₙ)` of the complex fibre of `⋀ⁿ E`. -/
 private theorem fiberGram_exteriorPowerEquiv_tmul_ιMulti (σ : K →+* ℂ) {n : ℕ}
@@ -152,8 +145,6 @@ private theorem fiberGram_conjugate (σ : K →+* ℂ) {n : ℕ} (x y : ⋀[𝓞
 
 end Gram
 
-variable [Module.Finite (𝓞 K) E]
-
 /-- The **exterior power** of a hermitian metric `h` on `E`: the metric on `⋀ⁿ E` whose form at
 `σ` is the Gram form of `h_σ` on the complex fibre `(⋀ⁿ E)_σ = ⋀ⁿ_ℂ E_σ`, determined by
 `(⋀ⁿ h)_σ(x₁ ∧ ⋯ ∧ xₙ, y₁ ∧ ⋯ ∧ yₙ) = det (h_σ(xᵢ, yⱼ))`
@@ -181,7 +172,6 @@ theorem norm_exteriorPower_tmul_ιMulti_sq (σ : K →+* ℂ) {n : ℕ} (x : Fin
       (Matrix.of fun i j ↦ h.form σ (1 ⊗ₜ x i) (1 ⊗ₜ x j)).det.re := by
   rw [norm_sq, exteriorPower_form_tmul_ιMulti]
 
-omit [Module.Finite (𝓞 K) E] in
 /-- The forms of a metric on `⋀ⁿ E` and of a metric on `F`, pulled back along a linear map
 `f : ⋀ⁿ E → F`, agree on all of `⋀ⁿ E` once they agree on decomposable vectors. -/
 theorem form_tmul_map_eq_of_ιMulti {n : ℕ} {g : HermitianMetric K (⋀[𝓞 K]^n E)}
@@ -206,7 +196,6 @@ theorem form_tmul_map_eq_of_ιMulti {n : ℕ} {g : HermitianMetric K (⋀[𝓞 K
   | add _ _ _ _ h₁ h₂ => simp only [map_add, TensorProduct.tmul_add, LinearMap.add_apply, h₁, h₂]
   | smul c _ _ hx => simp only [map_smul, Codomain.tmul_smul, LinearMap.map_smulₛₗ₂, hx]
 
-omit [Module.Finite (𝓞 K) E] in
 /-- Two hermitian metrics on `⋀ⁿ E` are equal when their forms agree on decomposable vectors. -/
 theorem ext_ιMulti {n : ℕ} {g g' : HermitianMetric K (⋀[𝓞 K]^n E)}
     (hg : ∀ σ (a b : Fin n → E),
@@ -256,7 +245,7 @@ theorem isometryEquivExteriorPowerOne_apply (x : ⋀[𝓞 K]^1 E) :
 
 namespace IsometryEquiv
 
-variable [Module.Finite (𝓞 K) F] {h} {h' : HermitianMetric K F}
+variable {h} {h' : HermitianMetric K F}
 
 /-- The isometry `⋀ⁿ E ≅ ⋀ⁿ F` induced by an isometry `e : E ≅ F`, sending
 `x₁ ∧ ⋯ ∧ xₙ` to `e x₁ ∧ ⋯ ∧ e xₙ`. -/
