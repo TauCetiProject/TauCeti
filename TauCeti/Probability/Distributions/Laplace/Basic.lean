@@ -18,6 +18,7 @@ import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.MeasureTheory.Measure.WithDensity
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
+import TauCeti.Probability.HasLaw
 
 /-!
 # The Laplace distribution
@@ -58,6 +59,8 @@ hypothesis.
   standard transforms;
 * `measurable_laplaceMeasure` — the family is measurable in its two parameters, so it can be used
   as a kernel.
+* the corresponding declarations in `ProbabilityTheory.HasLaw` transfer the cdf, moment, and
+  exponential-transform formulas to random variables carrying a Laplace law.
 
 ## Implementation
 
@@ -699,3 +702,103 @@ theorem measurable_laplaceMeasure : Measurable fun p : ℝ × ℝ => laplaceMeas
 end Probability
 
 end TauCeti
+
+namespace ProbabilityTheory.HasLaw
+
+open TauCeti.Probability
+
+variable {Omega : Type*} [MeasurableSpace Omega] {P : Measure Omega} {X : Omega → ℝ}
+  {m b : ℝ}
+
+/-- Every natural power of the absolute deviation of a Laplace random variable from its location
+is integrable. This remains true at nonpositive scales, where the totalized law is zero. -/
+theorem integrable_pow_abs_sub_laplaceMeasure
+    (hX : HasLaw X (laplaceMeasure m b) P) (n : ℕ) :
+    Integrable (fun omega ↦ |X omega - m| ^ n) P :=
+  hX.integrable_fun_comp
+    (TauCeti.Probability.integrable_pow_abs_sub_laplaceMeasure m n)
+
+/-- At positive scale, the absolute central moments of a Laplace random variable are
+`n ! * b ^ n`. -/
+theorem integral_pow_abs_sub_laplaceMeasure
+    (hX : HasLaw X (laplaceMeasure m b) P) (hb : 0 < b) (n : ℕ) :
+    ∫ omega, |X omega - m| ^ n ∂P = n ! * b ^ n := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ |x - m| ^ n),
+    hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_pow_abs_sub_laplaceMeasure hb]
+
+/-- The deviation of a Laplace random variable from its location is integrable. This also holds
+at nonpositive scales, where the totalized law is zero. -/
+theorem integrable_sub_const_laplaceMeasure (hX : HasLaw X (laplaceMeasure m b) P) :
+    Integrable (fun omega ↦ X omega - m) P :=
+  hX.integrable_fun_comp (TauCeti.Probability.integrable_sub_const_laplaceMeasure m)
+
+/-- A Laplace random variable is integrable, including at the totalized nonpositive-scale
+parameters. -/
+theorem integrable_laplaceMeasure (hX : HasLaw X (laplaceMeasure m b) P) :
+    Integrable X P :=
+  hX.integrable (TauCeti.Probability.integrable_id_laplaceMeasure m)
+
+/-- The expected deviation of a Laplace random variable from its location vanishes. This also
+holds at nonpositive scales, where the totalized law is zero. -/
+theorem integral_sub_const_laplaceMeasure (hX : HasLaw X (laplaceMeasure m b) P) :
+    ∫ omega, X omega - m ∂P = 0 := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ x - m), hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_sub_const_laplaceMeasure]
+
+/-- At positive scale, the expectation of a Laplace random variable is its location parameter. -/
+theorem integral_laplaceMeasure (hX : HasLaw X (laplaceMeasure m b) P) (hb : 0 < b) :
+    ∫ omega, X omega ∂P = m := by
+  rw [hX.integral_eq, TauCeti.Probability.integral_id_laplaceMeasure hb]
+
+/-- At positive scale, the variance of a Laplace random variable is twice the squared scale. -/
+theorem variance_laplaceMeasure (hX : HasLaw X (laplaceMeasure m b) P) (hb : 0 < b) :
+    variance X P = 2 * b ^ 2 := by
+  rw [hX.variance_eq, TauCeti.Probability.variance_id_laplaceMeasure hb]
+
+/-- At positive scale, the threshold probability of a Laplace random variable is the two-branch
+Laplace cdf. -/
+theorem measureReal_le_laplaceMeasure
+    (hX : HasLaw X (laplaceMeasure m b) P) (hb : 0 < b) (x : ℝ) :
+    P.real {omega | X omega ≤ x} =
+      if x < m then Real.exp ((x - m) / b) / 2
+      else 1 - Real.exp (-(x - m) / b) / 2 := by
+  have hp : IsProbabilityMeasure (laplaceMeasure m b) :=
+    TauCeti.Probability.isProbabilityMeasure_laplaceMeasure hb m
+  rw [hX.measureReal_eq (p := fun y : ℝ ↦ y ≤ x) measurableSet_Iic, Set.Iic_def,
+    ← cdf_eq_real, TauCeti.Probability.cdf_laplaceMeasure_eq hb]
+
+/-- At positive scale, an exponential moment of a Laplace random variable is integrable exactly
+when its rate lies strictly between the two reciprocal-scale endpoints. -/
+theorem integrable_exp_mul_laplaceMeasure_iff
+    (hX : HasLaw X (laplaceMeasure m b) P) (hb : 0 < b) (t : ℝ) :
+    Integrable (fun omega ↦ Real.exp (t * X omega)) P ↔ t ∈ Set.Ioo (-b⁻¹) b⁻¹ := by
+  simpa only [Function.comp_def] using
+    (integrable_comp_iff hX (f := fun x : ℝ ↦ Real.exp (t * x)) (by fun_prop)).trans
+      (TauCeti.Probability.integrable_exp_mul_laplaceMeasure_iff hb m t)
+
+/-- At positive scale, the exact exponential-integrability domain of a Laplace random variable is
+`(-b⁻¹, b⁻¹)`. -/
+theorem integrableExpSet_laplaceMeasure
+    (hX : HasLaw X (laplaceMeasure m b) P) (hb : 0 < b) :
+    integrableExpSet X P = Set.Ioo (-b⁻¹) b⁻¹ := by
+  ext t
+  simp only [integrableExpSet, Set.mem_ofPred_eq]
+  exact hX.integrable_exp_mul_laplaceMeasure_iff hb t
+
+/-- On the positive-scale exponential-integrability domain `(-b⁻¹, b⁻¹)`, the
+moment-generating function of a Laplace random variable has its rational closed form. -/
+theorem mgf_laplaceMeasure (hX : HasLaw X (laplaceMeasure m b) P) {t : ℝ}
+    (ht : t ∈ Set.Ioo (-b⁻¹) b⁻¹) :
+    mgf X P t = Real.exp (m * t) / (1 - b ^ 2 * t ^ 2) := by
+  rw [← mgf_id_map hX.aemeasurable, hX.map_eq,
+    TauCeti.Probability.mgf_id_laplaceMeasure m ht]
+
+/-- On the positive-scale exponential-integrability domain `(-b⁻¹, b⁻¹)`, the
+cumulant-generating function of a Laplace random variable is the logarithm of its mgf. -/
+theorem cgf_laplaceMeasure (hX : HasLaw X (laplaceMeasure m b) P) {t : ℝ}
+    (ht : t ∈ Set.Ioo (-b⁻¹) b⁻¹) :
+    cgf X P t = Real.log (Real.exp (m * t) / (1 - b ^ 2 * t ^ 2)) := by
+  rw [cgf, hX.mgf_laplaceMeasure ht]
+
+end ProbabilityTheory.HasLaw
