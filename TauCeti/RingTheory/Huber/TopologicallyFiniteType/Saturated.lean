@@ -18,9 +18,10 @@ import TauCeti.Analysis.Normed.Module.StrictGenerators
 import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.Huber.CompleteRankOneBase.FractionRing
 import TauCeti.RingTheory.Huber.Restricted.Adic
-import TauCeti.RingTheory.Huber.Restricted.GaussNorm
+import TauCeti.RingTheory.Huber.Restricted.Gauss.Norm
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Adic
 import TauCeti.RingTheory.Localization.Finiteness
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Submodule
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UnitBall
 import TauCeti.Topology.Algebra.Ring.Subring
@@ -136,7 +137,7 @@ private theorem exists_normedIntegerEquiv
   have hcomp : CompleteSpace OK :=
     hOK ▸ (inferInstance : CompleteSpace (Valued.v : Valuation (ValuedFractionField O) _).integer)
   let e₀ : O ≃+* OK :=
-    (IsCompleteRankOneBase.equivIntegerWithVal O (FractionRing O)).trans
+    (ValuationRing.equivIntegerWithVal O (FractionRing O)).trans
       (RingEquiv.subringCongr hOK)
   exact ⟨e₀, (Continuous.subtype_mk continuous_subtypeVal _).comp
       (IsCompleteRankOneBase.continuous_equivIntegerWithVal ϖ _),

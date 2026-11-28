@@ -260,7 +260,7 @@ noncomputable def tensorPowerSuccIso (V : FDRep k G) (n : ℕ) :
   let e : _root_.Representation.Equiv (Representation.tensorPower V.ρ (n + 1))
       ((V ⊗ FDRep.of (Representation.tensorPower V.ρ n) : FDRep k G)).ρ :=
     (Representation.tensorPowerSuccEquiv V.ρ n).trans
-      (FDRep.tensorEquivTprod V (FDRep.of (Representation.tensorPower V.ρ n))).symm
+      (FDRep.tprodEquiv V (FDRep.of (Representation.tensorPower V.ρ n))).symm
   eqToIso (tensorPower_def V (n + 1)) ≪≫
     (e.toLinearEquiv.toFDRepIso fun g x ↦ by
       rw [FDRep.of_ρ']
@@ -280,8 +280,8 @@ private theorem isoToLinearEquiv_tensorPowerSuccIso (V : FDRep k G) (n : ℕ) :
     _root_.Representation.Equiv.coe_toIntertwiningMap]
   refine congrArg (isoToLinearEquiv (whiskerLeftIso V (eqToIso (tensorPower_def V n)).symm)) ?_
   exact (_root_.Representation.Equiv.trans_apply (Representation.tensorPowerSuccEquiv V.ρ n)
-    (V.tensorEquivTprod (FDRep.of (Representation.tensorPower V.ρ n))).symm _).trans
-    (FDRep.tensorEquivTprod_symm_apply V (FDRep.of (Representation.tensorPower V.ρ n)) _)
+    (V.tprodEquiv (FDRep.of (Representation.tensorPower V.ρ n))).symm _).trans
+    (FDRep.tprodEquiv_symm_apply V (FDRep.of (Representation.tensorPower V.ρ n)) _)
 
 /-- Splitting off the first factor of a pure tensor via `tensorPowerSuccIso`. -/
 -- Match before `Action.tensorObj_V` rewrites `(V ⊗ V.tensorPower n).V`.

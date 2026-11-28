@@ -41,8 +41,9 @@ morphism.
 ## Main declarations
 
 * `CategoryTheory.ExactPairing.rightHom_ext`: morphisms into a right dual agree once they agree
-  after evaluation, and `CategoryTheory.ExactPairing.leftHom_ext`: morphisms out of a left member
-  agree once they agree after coevaluation;
+  after evaluation, and `CategoryTheory.ExactPairing.leftHom_ext` and
+  `CategoryTheory.ExactPairing.rightDualHom_ext`: morphisms out of the left or the right member
+  of an exact pairing agree once they agree after coevaluation;
 * `CategoryTheory.leftAdjointMate_rightAdjointMate` and
   `CategoryTheory.rightAdjointMate_leftAdjointMate`: taking the opposite-handed mate recovers the
   original morphism, so `CategoryTheory.rightAdjointMate_injective`;
@@ -121,6 +122,12 @@ after the coevaluation of the pairing. -/
 theorem leftHom_ext {X Y A : C} [ExactPairing X Y] {f g : X ⟶ A}
     (h : η_ X Y ≫ f ▷ Y = η_ X Y ≫ g ▷ Y) : f = g := by
   simpa using congrArg (tensorRightHomEquiv (𝟙_ C) X Y A).symm h
+
+/-- Two morphisms out of the right member `Y` of an exact pairing `(X, Y)` agree as soon as they
+agree after the coevaluation of the pairing. -/
+theorem rightDualHom_ext {X Y A : C} [ExactPairing X Y] {f g : Y ⟶ A}
+    (h : η_ X Y ≫ X ◁ f = η_ X Y ≫ X ◁ g) : f = g := by
+  simpa using congrArg (tensorLeftHomEquiv (𝟙_ C) X Y A).symm h
 
 /-- The right adjoint mate `Y' ⟶ X'` of `f : X ⟶ Y`, with respect to explicitly given exact
 pairings `(X, X')` and `(Y, Y')`: Mathlib's `CategoryTheory.rightAdjointMate` with the given

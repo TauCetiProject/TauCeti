@@ -28,6 +28,7 @@ that still bounds `f` everywhere.
   almost everywhere measurable `f`, with no hypothesis on `s`.
 * `MeasurableEmbedding.map_map_measure` — `(μ.map f).map g = μ.map (g ∘ f)` for a measurable
   embedding `f`, with no measurability assumption on `g`.
+* `MeasurableEmbedding.map_apply_image` — `μ.map f (f '' s) = μ s` for a measurable embedding `f`.
 * `AEMeasurable.exists_measurable_ge_ae_eq_of_ae_le`: a measurable representative of an a.e.
   measurable a.e. majorant that still dominates pointwise.
 * `AEMeasurable.eval_selector_of_countable`: evaluating a countable family along an a.e.
@@ -136,5 +137,11 @@ theorem map_map_measure (hf : MeasurableEmbedding f) (μ : Measure α) (g : β �
         hμ ((Measure.map_eq_zero_iff hf.measurable.aemeasurable).1 h)
       rw [Measure.map_of_not_aemeasurable_of_ne_zero hg hμ',
         Measure.map_of_not_aemeasurable_of_ne_zero (hf.aemeasurable_map_iff.not.1 hg) hμ]
+
+/-- For a measurable embedding `f`, pushing a measure forward and evaluating on `f '' s` recovers
+the measure of `s`, with no measurability assumption on `s`. -/
+theorem map_apply_image (hf : MeasurableEmbedding f) (μ : Measure α) (s : Set α) :
+    μ.map f (f '' s) = μ s := by
+  rw [hf.map_apply, Set.preimage_image_eq _ hf.injective]
 
 end MeasurableEmbedding

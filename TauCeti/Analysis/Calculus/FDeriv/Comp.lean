@@ -24,8 +24,12 @@ other does, so criticality does not depend on the coordinates. When `φ` is `C¹
 is locally bounded, so near a point the differential of `f ∘ φ` is at most a fixed multiple of that
 of `f`, and estimates bounding a function by its differential survive changes of coordinates.
 
-At a fixed point of a map preserving the germ of `f`, the derivative of `f` is unchanged by
-precomposition with the derivative of that map.
+If a map `φ` fixes a point `x` and `f ∘ φ = ψ ∘ f` near `x`, then the chain rule applied to both
+sides shows that the derivatives intertwine as well: `f' ∘ φ' = ψ' ∘ f'`, where `f'`, `φ'` and `ψ'`
+are the derivatives of `f` at `x`, of `φ` at `x` and of `ψ` at `f x`. For instance, the
+linearization of a map commuting with a symmetry at a symmetric point commutes with the linearized
+symmetry, so the symmetry preserves its kernel and its range. In the case `ψ = id`, where `φ`
+preserves the germ of `f`, the derivative of `f` is unchanged by precomposition with that of `φ`.
 
 For precomposition with an affine change of variables `w ↦ c + a • w`, or with the
 multiplication `w ↦ c • w` by a fixed scalar `c` of a division semiring `𝕜'` over which the domain
@@ -38,6 +42,8 @@ scalars `𝕜`; for instance, for `f` on `ℂ`,
 
 ## Main results
 
+* `HasFDerivAt.comp_eq_comp_of_eventuallyEq`: the derivative of an equivariant map at a fixed point
+  intertwines the derivatives of the symmetries.
 * `HasFDerivAt.comp_eq_of_eventuallyEq`: invariance of a germ at a fixed point implies invariance
   of its derivative.
 * `HasFDerivAt.injective_of_eventuallyEq_id`: a map with a differentiable local left inverse has
@@ -46,6 +52,8 @@ scalars `𝕜`; for instance, for `f` on `ℂ`,
   differentiable along its orbit.
 * `TauCeti.fderiv_comp_eq_zero_iff_of_isInvertible`: `b` is a critical point of `f ∘ φ` exactly
   when `φ b` is a critical point of `f`, if the differential of `φ` at `b` is invertible.
+* `TauCeti.ker_fderiv_comp_of_injective`: postcomposing `f` with a map whose differential at
+  `f x` is injective does not change the kernel of the differential of `f` at `x`.
 * `TauCeti.exists_norm_fderiv_comp_le_mul_norm_fderiv`: near a point where `φ` is `C¹`, the
   differential of `f ∘ φ` is at most a fixed multiple of that of `f`.
 * `ContinuousLinearMap.fderiv_comp_right_of_rightInverse`,
@@ -56,6 +64,9 @@ scalars `𝕜`; for instance, for `f` on `ℂ`,
   `ContinuousLinearMap.comp_comp_eq_of_hasFDerivAt_comp_left`: postcomposition with an embedding
   `Φ` turns the derivatives of `k` into those of `Φ ∘ k`, and every derivative of `Φ ∘ k` arises
   this way when `Φ` is a split injection.
+* `TauCeti.norm_fderiv_comp_smul`, `TauCeti.norm_fderiv_comp_smul_sub`: precomposition with
+  `w ↦ a • w` scales the norm of a Fréchet derivative, and the distance between two of them, by
+  `|a|`.
 * `TauCeti.fderiv_comp_add_smul`: `fderiv 𝕜` of `w ↦ f (c + a • w)` at `w` is `a` times
   `fderiv 𝕜 f (c + a • w)`, for every `f`.
 * `TauCeti.fderiv_comp_smul_apply`: `fderiv 𝕜 (fun w ↦ f (c • w)) x v` equals
@@ -70,14 +81,23 @@ namespace TauCeti
 variable {𝕜 E F G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 
+/-- **Derivatives of equivariant maps.** If `φ` fixes `x` and `f ∘ φ = ψ ∘ f` near `x`, then the
+derivative `f'` of `f` at `x` intertwines the derivative `φ'` of `φ` at `x` with the derivative
+`ψ'` of `ψ` at `f x`: `f' ∘ φ' = ψ' ∘ f'`. -/
+theorem _root_.HasFDerivAt.comp_eq_comp_of_eventuallyEq {f : E → F} {f' : E →L[𝕜] F}
+    {φ : E → E} {φ' : E →L[𝕜] E} {ψ : F → F} {ψ' : F →L[𝕜] F} {x : E} (hf : HasFDerivAt f f' x)
+    (hφ : HasFDerivAt φ φ' x) (hψ : HasFDerivAt ψ ψ' (f x)) (hfix : φ x = x)
+    (h : f ∘ φ =ᶠ[nhds x] ψ ∘ f) : f'.comp φ' = ψ'.comp f' := by
+  have hfφ : HasFDerivAt f f' (φ x) := by rwa [hfix]
+  exact (hfφ.comp x hφ).unique ((hψ.comp x hf).congr_of_eventuallyEq h)
+
 /-- If a map fixes `x` and preserves the germ of `f` there, its derivative preserves the
 derivative of `f` by precomposition. -/
 theorem _root_.HasFDerivAt.comp_eq_of_eventuallyEq {f : E → F} {f' : E →L[𝕜] F}
     {φ : E → E} {φ' : E →L[𝕜] E} {x : E} (hf : HasFDerivAt f f' x)
     (hφ : HasFDerivAt φ φ' x) (hfix : φ x = x)
-    (hinv : f ∘ φ =ᶠ[nhds x] f) : f'.comp φ' = f' := by
-  have hfφ : HasFDerivAt f f' (φ x) := by simpa only [hfix] using hf
-  exact (hfφ.comp x hφ).unique (hf.congr_of_eventuallyEq hinv)
+    (hinv : f ∘ φ =ᶠ[nhds x] f) : f'.comp φ' = f' :=
+  (hf.comp_eq_comp_of_eventuallyEq hφ (hasFDerivAt_id _) hfix hinv).trans f'.id_comp
 
 /-- If `g ∘ f` is the identity near `x` and `g` is differentiable at `f x`, the derivative of `f`
 at `x` is injective. -/
@@ -111,6 +131,15 @@ theorem fderiv_comp_eq_zero_iff_of_isInvertible {f : E → G} {φ : F → E} {b 
   rw [fderiv_comp (x := b) hf hφ, ← he]
   exact ContinuousLinearMap.comp_continuousLinearEquiv_eq_zero_iff _ e
 
+/-- **Reparametrizing the values keeps the kernel.** If `g` is differentiable at `f x` with
+injective differential there, the differential of `g ∘ f` at `x` has the same kernel as that of
+`f`. -/
+theorem ker_fderiv_comp_of_injective {g : F → G} {f : E → F} {x : E}
+    (hg : DifferentiableAt 𝕜 g (f x)) (hD : Function.Injective (fderiv 𝕜 g (f x)))
+    (hf : DifferentiableAt 𝕜 f x) : (fderiv 𝕜 (g ∘ f) x).ker = (fderiv 𝕜 f x).ker := by
+  rw [fderiv_comp x hg hf]
+  exact LinearMap.ker_comp_of_ker_eq_bot _ (LinearMap.ker_eq_bot.2 hD)
+
 /-- **A change of coordinates distorts the differential by a locally bounded factor.** If `g`
 agrees near `x` with `f ∘ φ`, where `φ` is differentiable near `x` with derivative continuous at
 `x`, and `f` is differentiable at `φ y` for `y` near `x`, then near `x` the differential of `g` at
@@ -129,12 +158,21 @@ theorem exists_norm_fderiv_comp_le_mul_norm_fderiv {f : E → G} {φ : F → E} 
         rw [mul_comm]
         exact mul_le_mul_of_nonneg_right hKy (norm_nonneg _)
 
-/-- Precomposing a real-valued function with scalar multiplication scales the norm of its
-Fréchet derivative by the absolute value of the scalar. -/
-theorem norm_fderiv_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {f : E → ℝ} (a : ℝ) (x : E) :
+/-- Precomposing a function between real normed spaces with scalar multiplication scales the
+norm of its Fréchet derivative by the absolute value of the scalar. -/
+theorem norm_fderiv_comp_smul {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F} (a : ℝ) (x : E) :
     ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ = |a| * ‖fderiv ℝ f (a • x)‖ := by
   rw [_root_.fderiv_comp_smul a, norm_smul, Real.norm_eq_abs]
+
+/-- Precomposing two functions between real normed spaces with the same scalar multiplication
+scales the distance between their Fréchet derivatives, at any two points, by the absolute value of
+the scalar. -/
+theorem norm_fderiv_comp_smul_sub {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] (f g : E → F) (a : ℝ) (x y : E) :
+    ‖fderiv ℝ (fun z ↦ f (a • z)) x - fderiv ℝ (fun z ↦ g (a • z)) y‖ =
+      |a| * ‖fderiv ℝ f (a • x) - fderiv ℝ g (a • y)‖ := by
+  rw [_root_.fderiv_comp_smul, _root_.fderiv_comp_smul, ← smul_sub, norm_smul, Real.norm_eq_abs]
 
 /-- **The chain rule for an affine change of variables.** `fderiv 𝕜` of `w ↦ f (c + a • w)` at
 `w` is `a` times `fderiv 𝕜 f (c + a • w)`. Like `fderiv_comp_smul`, this holds for every `f`: if

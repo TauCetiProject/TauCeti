@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Form
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Prod
 import Mathlib.RingTheory.Flat.Domain
-import Mathlib.RingTheory.Flat.TorsionFree
 
 /-!
 # Kostant forms of products of Lie algebras
@@ -79,10 +78,6 @@ private theorem productTensorMap_tmul (a : kostantForm e h) (b : kostantForm f k
 private theorem productTensorMap_injective : Function.Injective (productTensorMap e h f k) := by
   let : HasUniqueDiv UL := .of_module_rat UL
   let : HasUniqueDiv UM := .of_module_rat UM
-  let : HasUniqueDiv (kostantForm e h) := Function.Injective.hasUniqueDiv
-    (kostantForm e h).subtype.toAddMonoidHom (kostantForm e h).subtype_injective
-  let : HasUniqueDiv (kostantForm f k) := Function.Injective.hasUniqueDiv
-    (kostantForm f k).subtype.toAddMonoidHom (kostantForm f k).subtype_injective
   have hinj := TensorProduct.map_injective_of_flat_flat_of_isDomain (R := ℤ)
     (kostantForm e h).subtype.toIntAlgHom.toLinearMap
     (kostantForm f k).subtype.toIntAlgHom.toLinearMap

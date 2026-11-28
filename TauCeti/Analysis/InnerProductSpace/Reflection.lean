@@ -15,6 +15,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Topology.MetricSpace.HausdorffDimension
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+import TauCeti.Analysis.InnerProductSpace.OrthogonalSpanSingleton
 
 /-!
 # Reflections in inner product spaces
@@ -29,7 +30,9 @@ Mathlib's `Submodule.reflection_sub`. Two vectors of
 the same norm with a real inner product are exchanged by the reflection in the hyperplane
 orthogonal to their difference (`Submodule.reflection_sub_of_inner_comm`). In Euclidean
 space, the reflection in the axis spanned by a basis vector `eᵢ` keeps the `i`-th coordinate and
-negates the others (`EuclideanSpace.reflection_singleton_single_apply`).
+negates the others (`EuclideanSpace.reflection_singleton_single_apply`), and the reflection in the
+hyperplane orthogonal to `eᵢ` negates the `i`-th coordinate and keeps the others
+(`EuclideanSpace.reflection_orthogonal_singleton_single_apply`).
 
 Over `ℝ`, reflecting `x` across `K` changes its squared distance to `y` by `4 ⟪P x, y⟫`, where `P`
 is the orthogonal projection onto `Kᗮ` (`Submodule.norm_reflection_sub_sq`). In finite dimension,
@@ -46,6 +49,8 @@ conjugation on the plane `ι ℂ` (`LinearIsometry.reflection_orthogonal_singlet
 In dimension at least two, every vector `v` is sent to `-v` by a linear isometry of determinant
 `1` (`TauCeti.exists_det_eq_one_apply_eq_neg`). For nonzero `v`, this is the composition of the
 reflections in the hyperplanes orthogonal to `v` and to a nonzero vector orthogonal to `v`.
+The second reflection alone is a linear isometry of determinant `-1` fixing `v`
+(`TauCeti.exists_det_eq_neg_one_apply_eq_self`).
 In every nonzero finite dimension, the reflection in the hyperplane orthogonal to a nonzero vector
 is a linear isometry of determinant `-1` (`TauCeti.exists_det_eq_neg_one`), so of negative
 determinant as a continuous linear map (`TauCeti.exists_det_neg`).
@@ -231,6 +236,15 @@ theorem reflection_singleton_single_apply {ι : Type*} [Fintype ι] [DecidableEq
     ring
   · simp [EuclideanSpace.inner_single_left, h]
 
+/-- The reflection of Euclidean space in the coordinate hyperplane orthogonal to the basis vector
+`eᵢ` negates the `i`-th coordinate and keeps all the others. -/
+@[simp]
+theorem reflection_orthogonal_singleton_single_apply {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (i : ι) (w : EuclideanSpace ℝ ι) (j : ι) :
+    (ℝ ∙ EuclideanSpace.single i (1 : ℝ))ᗮ.reflection w j = if j = i then -w j else w j := by
+  rw [Submodule.reflection_orthogonal_apply, PiLp.neg_apply, reflection_singleton_single_apply]
+  split_ifs <;> simp
+
 end EuclideanSpace
 
 namespace TauCeti
@@ -370,19 +384,25 @@ theorem exists_det_eq_one_apply_eq_neg (hF : 2 ≤ Module.finrank ℝ F) (v : F)
   have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
   by_cases hv : v = 0
   · exact ⟨LinearIsometryEquiv.refl ℝ F, by simp, by simp [hv]⟩
-  obtain ⟨w, hw, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (p := (ℝ ∙ v)ᗮ) fun h ↦ by
-    have := Submodule.finrank_add_finrank_orthogonal (ℝ ∙ v)
-    rw [h, finrank_bot, finrank_span_singleton hv] at this
-    omega
+  obtain ⟨w, hw, hw0⟩ := exists_ne_zero_mem_orthogonal_singleton hF v
   refine ⟨(ℝ ∙ v)ᗮ.reflection.trans (ℝ ∙ w)ᗮ.reflection, ?_, ?_⟩
   · rw [LinearIsometryEquiv.toLinearEquiv_trans, LinearEquiv.det_trans, Units.val_mul,
       linearEquiv_det_reflection_orthogonal_singleton hw0,
       linearEquiv_det_reflection_orthogonal_singleton hv]
     norm_num
   · rw [LinearIsometryEquiv.trans_apply, Submodule.reflection_orthogonalComplement_singleton_eq_neg,
-      map_neg, reflection_orthogonal_singleton_eq_self_of_inner_eq_zero]
-    rw [Submodule.mem_orthogonal_singleton_iff_inner_right] at hw
-    rwa [real_inner_comm]
+      map_neg, reflection_orthogonal_singleton_eq_self_of_inner_eq_zero
+        (Submodule.mem_orthogonal_singleton_iff_inner_left.1 hw)]
+
+/-- In dimension at least two, every vector `v` is fixed by a linear isometry of determinant
+`-1`: the reflection in the hyperplane orthogonal to a nonzero vector orthogonal to `v`. -/
+theorem exists_det_eq_neg_one_apply_eq_self (hF : 2 ≤ Module.finrank ℝ F) (v : F) :
+    ∃ r : F ≃ₗᵢ[ℝ] F, (LinearEquiv.det r.toLinearEquiv : ℝ) = -1 ∧ r v = v := by
+  have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
+  obtain ⟨w, hw, hw0⟩ := exists_ne_zero_mem_orthogonal_singleton hF v
+  refine ⟨(ℝ ∙ w)ᗮ.reflection, linearEquiv_det_reflection_orthogonal_singleton hw0,
+    reflection_orthogonal_singleton_eq_self_of_inner_eq_zero
+      (Submodule.mem_orthogonal_singleton_iff_inner_left.1 hw)⟩
 
 /-- A nontrivial finite-dimensional real inner product space has a linear isometry of
 determinant `-1`: the reflection in the hyperplane orthogonal to a nonzero vector. -/

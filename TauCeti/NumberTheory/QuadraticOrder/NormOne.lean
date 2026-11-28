@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.QuadraticOrder.Split.Basic
 public import TauCeti.RingTheory.Norm.Units
 public import Mathlib.NumberTheory.Pell
 import Mathlib.RingTheory.Norm.Basic
+import TauCeti.Algebra.QuadraticAlgebra.Discriminant
 
 /-!
 # Norm-one units of quadratic orders
@@ -129,17 +130,11 @@ theorem norm_coe (z : toSubalgebra D hD) :
 /-- For negative discriminant every unit has norm one. -/
 theorem norm_unit_eq_one_of_neg (hneg : D < 0) (u : (toSubalgebra D hD)ˣ) :
     _root_.Algebra.norm ℤ (u : toSubalgebra D hD) = 1 := by
-  rcases Int.isUnit_iff.mp
-      (u.isUnit.map (_root_.Algebra.norm ℤ : toSubalgebra D hD →* ℤ)) with h | h
-  · exact h
-  · have hn := norm_coe D hD (u : toSubalgebra D hD)
-    rw [h, QuadraticAlgebra.norm_def] at hn
-    norm_num only [Int.cast_neg, Int.cast_one, zero_mul, zero_add] at hn
-    have hd : (D : ℚ) < 0 := by exact_mod_cast hneg
-    have := mul_nonneg (neg_nonneg.mpr hd.le)
-      (sq_nonneg (u : QuadraticAlgebra ℚ (D : ℚ) 0).im)
-    exfalso
-    nlinarith only [hn, this, sq_nonneg (u : QuadraticAlgebra ℚ (D : ℚ) 0).re]
+  let z : (QuadraticAlgebra ℤ ((D - D ^ 2) / 4) D)ˣ :=
+    Units.map (equivToSubalgebra D hD).symm.toRingHom.toMonoidHom u
+  have hz : QuadraticAlgebra.norm (z : QuadraticAlgebra ℤ ((D - D ^ 2) / 4) D) = 1 :=
+    QuadraticAlgebra.norm_eq_one_of_discr_nonpos (by rw [parameter_discr D hD]; omega) z
+  simpa [z] using (norm_equivToSubalgebra D hD z).trans hz
 
 /-- At negative discriminant the norm-one subgroup is the full unit group. -/
 theorem normOneUnits_eq_top_of_neg (hneg : D < 0) : normOneUnits D hD = ⊤ := by
@@ -153,41 +148,16 @@ theorem neg_one_mem_normOneUnits : (-1 : (toSubalgebra D hD)ˣ) ∈ normOneUnits
   simpa using norm_equivToSubalgebra D hD
     (-1 : QuadraticAlgebra ℤ ((D - D ^ 2) / 4) D)
 
-include hD in
-private theorem model_norm_one_equation
-    (z : QuadraticAlgebra ℤ ((D - D ^ 2) / 4) D) (hz : z.norm = 1) :
-    (2 * z.re + D * z.im) ^ 2 - D * z.im ^ 2 = 4 := by
-  have hp := parameter_discr D hD
-  rw [QuadraticAlgebra.discr_def] at hp
-  rw [QuadraticAlgebra.norm_def] at hz
-  linear_combination 4 * hz + z.im ^ 2 * hp
-
 /-- Away from discriminants minus three and minus four, a negative-discriminant order has
 only the units one and minus one. -/
 theorem units_eq_one_or_neg_one_of_neg (hneg : D < 0) (h₃ : D ≠ -3) (h₄ : D ≠ -4)
     (u : (toSubalgebra D hD)ˣ) : u = 1 ∨ u = -1 := by
-  let z := (equivToSubalgebra D hD).symm (u : toSubalgebra D hD)
-  have hz : z.norm = 1 := by
-    rw [← norm_equivToSubalgebra D hD z, AlgEquiv.apply_symm_apply]
-    exact norm_unit_eq_one_of_neg D hD hneg u
-  have he := model_norm_one_equation D hD z hz
-  have hd : D ≤ -5 := by omega
-  have him : z.im = 0 := by
-    have hn : z.im ^ 2 < 1 := by
-      nlinarith [sq_nonneg (2 * z.re + D * z.im), sq_nonneg z.im]
-    have hn₀ : z.im ^ 2 = 0 := by have := sq_nonneg z.im; omega
-    exact sq_eq_zero_iff.mp hn₀
-  rw [QuadraticAlgebra.norm_def, him] at hz
-  have hre : z.re ^ 2 = 1 := by nlinarith [hz]
-  rcases sq_eq_one_iff.mp hre with h | h
-  · left
-    apply Units.ext
-    apply (equivToSubalgebra D hD).symm.injective
-    ext <;> simp [z, h, him]
-  · right
-    apply Units.ext
-    apply (equivToSubalgebra D hD).symm.injective
-    ext <;> simp [z, h, him]
+  let e : (toSubalgebra D hD)ˣ ≃* (QuadraticAlgebra ℤ ((D - D ^ 2) / 4) D)ˣ :=
+    Units.mapEquiv (equivToSubalgebra D hD).symm.toRingEquiv.toMulEquiv
+  rcases QuadraticAlgebra.units_eq_one_or_neg_one_of_discr_lt_neg_four
+      (by rw [parameter_discr D hD]; omega) (e u) with h | h
+  · exact .inl (e.injective (by simpa using h))
+  · exact .inr (e.injective (h.trans (Units.ext (by simp [e]))))
 
 /-- Apart from the two exceptional negative discriminants, the unit group has order two. -/
 theorem card_units_of_neg_of_ne (hneg : D < 0) (h₃ : D ≠ -3) (h₄ : D ≠ -4) :

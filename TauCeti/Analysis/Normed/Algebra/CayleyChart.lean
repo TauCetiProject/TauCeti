@@ -39,6 +39,11 @@ parametrize local holomorphic slices of the space of complex structures; the sta
 the pointwise and Banach-algebraic content of that construction, for any normed algebra in which
 the relevant fields live.
 
+The Cayley coordinate `cayleyCoord j` has derivative `T ↦ -(1 + cayleyCoord j J) T (j + J)⁻¹` at
+every `J` with `j + J` invertible (`TauCeti.hasFDerivAt_cayleyCoord`); at the base point `1` this is
+`T ↦ -2 (1 + x)⁻¹ T (1 + x)⁻¹` (`TauCeti.hasFDerivAt_cayleyCoord_one`), which applies in particular
+to the matrix algebra used to construct unitary-group charts.
+
 ## Main statements
 
 * `TauCeti.analyticOnNhd_cayleyParam`, `TauCeti.analyticOnNhd_cayleyCoord`: analyticity of the two
@@ -184,7 +189,39 @@ theorem analyticOnNhd_cayleyCoord_comp_cayleyParam (j₀ j₁ : A) :
       {η : A | IsUnit (1 + η) ∧ IsUnit (j₁ + cayleyParam j₀ η)} :=
   fun _ hη ↦ (analyticAt_cayleyCoord hη.2).comp (analyticAt_cayleyParam hη.1)
 
-/-! ### The derivative of the Cayley parametrization -/
+/-! ### Derivatives -/
+
+/-- The derivative of the Cayley coordinate `cayleyCoord j` at `J` with `j + J` a unit is
+`T ↦ -(1 + cayleyCoord j J) T (j + J)⁻¹`. -/
+theorem hasFDerivAt_cayleyCoord (hJ : IsUnit (j + J)) :
+    HasFDerivAt (cayleyCoord j)
+      (-ContinuousLinearMap.mulLeftRight 𝕜 A (1 + cayleyCoord j J) (Ring.inverse (j + J))) J := by
+  have hinv : HasFDerivAt (fun y : A ↦ Ring.inverse (j + y))
+      (-ContinuousLinearMap.mulLeftRight 𝕜 A
+        (Ring.inverse (j + J)) (Ring.inverse (j + J))) J := by
+    have h := hasFDerivAt_ringInverse (𝕜 := 𝕜) hJ.unit
+    rw [← Ring.inverse_unit, hJ.unit_spec] at h
+    exact (h.comp J ((hasFDerivAt_id J).const_add j)).congr_fderiv
+      (ContinuousLinearMap.comp_id _)
+  rw [cayleyCoord_eq_fun]
+  refine (((hasFDerivAt_id J).const_sub j).mul' hinv).congr_fderiv ?_
+  ext t
+  simp only [add_apply, neg_apply, ContinuousLinearMap.id_apply,
+    ContinuousLinearMap.mulLeftRight_apply, smul_apply, id_eq, smul_eq_mul, op_smul_eq_mul]
+  noncomm_ring
+
+/-- The derivative of the Cayley transform `cayleyCoord 1` in a normed algebra is
+`T ↦ -2 (1 + x)⁻¹ T (1 + x)⁻¹` where `1 + x` is a unit: the case `j = 1` of
+`TauCeti.hasFDerivAt_cayleyCoord`. -/
+theorem hasFDerivAt_cayleyCoord_one {x : A} (hx : IsUnit (1 + x)) :
+    HasFDerivAt (cayleyCoord 1)
+      (-(2 : 𝕜) • ContinuousLinearMap.mulLeftRight 𝕜 A
+        (Ring.inverse (1 + x)) (Ring.inverse (1 + x))) x := by
+  refine (hasFDerivAt_cayleyCoord hx).congr_fderiv ?_
+  rw [one_add_cayleyCoord hx, mul_one]
+  ext t
+  simp only [neg_smul, two_smul, neg_apply, add_apply, ContinuousLinearMap.mulLeftRight_apply,
+    two_mul, add_mul]
 
 /-- The derivative of `cayleyParam j` at `η` with `1 + η` invertible: the continuous linear map
 `ζ ↦ (1 + η)⁻¹ * (j * ζ - ζ * cayleyParam j η)`. -/

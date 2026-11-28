@@ -63,7 +63,6 @@ of `Representation.Equiv` apply to isomorphic objects.
   equivalence, with `FDRep.isoToLinearEquiv_toFDRepIso`.
 * `FDRep.isoToEquiv`: the equivalence of representations underlying an isomorphism in
   `FDRep R G`.
-* `FDRep.tensorEquivTprod`: the representation equivalence `(X ⊗ Y).ρ ≃ X.ρ.tprod Y.ρ`.
 
 ## Main statements
 
@@ -95,8 +94,9 @@ of `Representation.Equiv` apply to isomorphic objects.
 * `FDRep.comp_hom_hom_hom_apply`: a composite of finite-representation morphisms evaluates
   by successive application on the underlying vectors.
 * `FDRep.op_smul_apply`: the opposite-endomorphism action is precomposition on underlying vectors.
-* `FDRep.tensorUnit_ρ`, `FDRep.tensor_ρ`, and `FDRep.finrank_tensor`: the actions on the tensor
-  unit and on a tensor product, and the `finrank` of a tensor product of free carriers.
+* `FDRep.tensorUnit_ρ`, `FDRep.tensor_ρ`, `FDRep.finrank_tensor`, and `FDRep.tprodEquiv`: the
+  actions on the tensor unit and on a tensor product, the `finrank` of a tensor product of free
+  carriers, and the `Representation.Equiv` with `Representation.tprod`.
 * `FDRep.res_ρ`, `FDRep.resTensorUnitIso`, and `FDRep.resTensorIso`: the carried action and the
   canonical tensor-unit and tensor-product comparisons under `Action.res`.
 * `FDRep.isoToLinearEquiv_whiskerLeftIso_tmul`: evaluation of `whiskerLeftIso` on pure tensors.
@@ -363,7 +363,6 @@ theorem tensor_ρ {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : FDRep
 section Tensor
 
 open MonoidalCategory
-open scoped TensorProduct
 
 variable {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : FDRep R G)
 
@@ -379,26 +378,38 @@ theorem finrank_tensor [Module.Free R X] [Module.Free R Y] :
     simp
   · exact Module.finrank_tensorProduct
 
-/-- **The representation carried by `X ⊗ Y` in `FDRep R G` is `X.ρ.tprod Y.ρ`.** -/
-noncomputable def tensorEquivTprod :
-    _root_.Representation.Equiv (X ⊗ Y : FDRep R G).ρ (_root_.Representation.tprod X.ρ Y.ρ) :=
-  .mk (LinearEquiv.refl R (X ⊗[R] Y)) fun g => by
-    rw [LinearEquiv.refl_toLinearMap, LinearMap.id_comp, LinearMap.comp_id, tensor_ρ,
-      _root_.Representation.tprod_apply]
-
-@[simp]
-theorem toLinearEquiv_tensorEquivTprod :
-    (tensorEquivTprod X Y).toLinearEquiv = LinearEquiv.refl R (X ⊗[R] Y) := (rfl)
-
--- Match before `Action.tensorObj_V` rewrites the carrier `(X ⊗ Y).V` to `X.V ⊗ Y.V`.
-@[simp↓]
-theorem tensorEquivTprod_apply (z : X ⊗[R] Y) : tensorEquivTprod X Y z = z := (rfl)
-
--- Match before `Action.tensorObj_V` rewrites the carrier `(X ⊗ Y).V` to `X.V ⊗ Y.V`.
-@[simp↓]
-theorem tensorEquivTprod_symm_apply (z : X ⊗[R] Y) : (tensorEquivTprod X Y).symm z = z := (rfl)
-
 end Tensor
+
+open MonoidalCategory in
+/-- **Unbundled tensor-product identification for `FDRep.ρ` on `X ⊗ Y`**: the monoidal product in
+`FDRep R G = Action (FGModuleCat R) G` carries the carrier `↥X ⊗[R] ↥Y` definitionally, so
+`LinearEquiv.refl` intertwines `(X ⊗ Y).ρ` with `Representation.tprod X.ρ Y.ρ`. -/
+noncomputable def tprodEquiv {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (X Y : FDRep R G) : Representation.Equiv (X ⊗ Y).ρ (Representation.tprod X.ρ Y.ρ) :=
+  .mk (LinearEquiv.refl R ↥(X ⊗ Y)) fun g => by
+    simpa [Representation.tprod_apply] using tensor_ρ X Y g
+
+open MonoidalCategory in
+/-- The linear equivalence underlying `FDRep.tprodEquiv` is the identity. -/
+@[simp]
+theorem toLinearEquiv_tprodEquiv {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (X Y : FDRep R G) :
+    (tprodEquiv X Y).toLinearEquiv = LinearEquiv.refl R ↥(X ⊗ Y) :=
+  (rfl)
+
+open MonoidalCategory in
+/-- Applying `FDRep.tprodEquiv` is the identity on underlying tensors. -/
+theorem tprodEquiv_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (X Y : FDRep R G) (z : ↥(X ⊗ Y)) :
+    tprodEquiv X Y z = z :=
+  (rfl)
+
+open MonoidalCategory in
+/-- Applying `(FDRep.tprodEquiv X Y).symm` is the identity on underlying tensors. -/
+theorem tprodEquiv_symm_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (X Y : FDRep R G) (z : ↥(X ⊗ Y)) :
+    (tprodEquiv X Y).symm z = z :=
+  (rfl)
 
 section Shrink
 

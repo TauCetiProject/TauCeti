@@ -24,7 +24,8 @@ degree with `b t = a₀` for `t ≤ 0` and `b t = a₁` for `1 ≤ t`, whose coe
 any prescribed continuous positive precision of `a (σ t)` for a time change `σ` fixing the ends
 (`HomogeneousSymbol.exists_contDiffOn_isElliptic_homotopy`). Joint smoothness is the form in
 which such a homotopy can be quantized: every position and frequency derivative of `b t` is
-continuous in `(t, x, ξ)` at nonzero frequencies.
+continuous in `(t, x, ξ)` at nonzero frequencies. On `ℝⁿ` this makes `t ↦ b t` a continuous path
+in every seminorm of the homogeneous symbols (`HomogeneousSymbol.continuous_of_contDiffOn`).
 
 The proof is a relative Whitney approximation in the open set of invertible operators. After a
 reparametrization `σ` that is constant near `t = 0` and `t = 1`, the map

@@ -27,9 +27,10 @@ keeps the letter `e`, up to the sign of the Koszul twist.  Hence the brace and t
 bracket of two such maps vanish on degenerate words again; these are the normalized Hochschild
 cochains.  Degenerate words are also spanned by the pure words of homogeneous letters with a
 letter equal to `e`, so vanishing on them may be tested on homogeneous inputs
-(`degenerateWords_le_iff_of_mem_piece`).  Letterwise maps killing `e` vanish on degenerate words
-(`degenerateWords_le_ker_map`), and subtracting the letterwise action of a linear endomorphism that
-modifies every element by a scalar multiple of `e` lands in the degenerate words
+(`degenerateWords_le_iff_of_mem_piece`), and duplicating a homogeneous letter `e` preserves
+slotwise homogeneity (`duplicateAt_mem_piece`).  Letterwise maps killing `e` vanish on
+degenerate words (`degenerateWords_le_ker_map`), and subtracting the letterwise action of a linear
+endomorphism that modifies every element by a scalar multiple of `e` lands in the degenerate words
 (`sub_map_mem_degenerateWords`).
 
 ## References
@@ -287,21 +288,30 @@ theorem sub_map_mem_degenerateWords (P : M →ₗ[R] M) {e : M}
 
 end Sub
 
-/-- Vanishing on degenerate words may be tested on pure words of homogeneous letters, one of which
-is the homogeneous element `e` with its degree. -/
-theorem degenerateWords_le_iff_of_mem_piece (G : InternalGrading R M ℤ) {e : M} {E : ℤ}
-    (he : e ∈ G.piece E) {S : Submodule R (ReducedTensorWords R M)} :
-    degenerateWords R M e ≤ S ↔ ∀ (n : {n : ℕ // 0 < n}) (x : Fin n.val → M) (𝒟 : Fin n.val → ℤ)
-      (i : Fin n.val), (∀ j, x j ∈ G.piece (𝒟 j)) → x i = e → 𝒟 i = E →
-        of R M n (PiTensorProduct.tprod R x) ∈ S := by
+/-- If a tuple `z` has homogeneous degrees `𝒟` and `e ∈ G.piece E`, then `duplicateAt e j z` has
+homogeneous degrees `duplicateAt E j 𝒟`. -/
+theorem duplicateAt_mem_piece {ι : Type*} [DecidableEq ι] {G : InternalGrading R M ι} {e : M}
+    {E : ι} (he : e ∈ G.piece E) {L : ℕ} (j : Fin L) {z : Fin L → M} {𝒟 : Fin L → ι}
+    (hz : ∀ r, z r ∈ G.piece (𝒟 r)) (k : Fin (L + 1)) :
+    duplicateAt e j z k ∈ G.piece (duplicateAt E j 𝒟 k) := by
+  rw [duplicateAt_apply, duplicateAt_apply]
+  split_ifs <;> first | exact hz _ | exact he
+
+/-- Membership in a submodule for an `n`-letter pure tensor word carrying a homogeneous element `e`
+at slot `i` may be checked on tuples of homogeneous letters carrying `e` with its degree at `i`. -/
+theorem of_tprod_mem_of_mem_piece {ι : Type*} [DecidableEq ι] (G : InternalGrading R M ι) {e : M}
+    {E : ι} (he : e ∈ G.piece E) {S : Submodule R (ReducedTensorWords R M)} (n : {n : ℕ // 0 < n})
+    (i : Fin n.val)
+    (h : ∀ (x : Fin n.val → M) (𝒟 : Fin n.val → ι),
+      (∀ j, x j ∈ G.piece (𝒟 j)) → x i = e → 𝒟 i = E →
+        of R M n (PiTensorProduct.tprod R x) ∈ S)
+    (x : Fin n.val → M) (hi : x i = e) :
+    of R M n (PiTensorProduct.tprod R x) ∈ S := by
   classical
-  refine ⟨fun h n x 𝒟 i _ hi _ ↦ h (of_tprod_mem_degenerateWords n x ⟨i, hi⟩), fun h ↦ ?_⟩
-  rw [degenerateWords_le_iff]
-  rintro n x ⟨i, hi⟩
   -- Expand every letter except the `i`-th one into its homogeneous components.
-  let support : Fin n.val → Finset ℤ := fun j ↦
+  let support : Fin n.val → Finset ι := fun j ↦
     if j = i then {E} else (DirectSum.decompose G.piece (x j)).support
-  let component : Fin n.val → ℤ → M := fun j p ↦
+  let component : Fin n.val → ι → M := fun j p ↦
     if j = i then e else DirectSum.decompose G.piece (x j) p
   have hx (j : Fin n.val) : ∑ p ∈ support j, component j p = x j := by
     by_cases hj : j = i
@@ -316,11 +326,24 @@ theorem degenerateWords_le_iff_of_mem_piece (G : InternalGrading R M ℤ) {e : M
   refine Submodule.sum_mem _ fun 𝒟 h𝒟 ↦ ?_
   have h𝒟i : 𝒟 i = E := by
     simpa [support] using Fintype.mem_piFinset.1 h𝒟 i
-  refine h n _ 𝒟 i (fun j ↦ ?_) (by simp [component]) h𝒟i
+  refine h _ 𝒟 (fun j ↦ ?_) (by simp [component]) h𝒟i
   by_cases hj : j = i
   · subst hj
     simpa [component, h𝒟i] using he
   · simp [component, hj]
+
+/-- Vanishing on degenerate words may be tested on pure words of homogeneous letters, one of which
+is the homogeneous element `e` with its degree. -/
+theorem degenerateWords_le_iff_of_mem_piece {ι : Type*} [DecidableEq ι]
+    (G : InternalGrading R M ι) {e : M} {E : ι}
+    (he : e ∈ G.piece E) {S : Submodule R (ReducedTensorWords R M)} :
+    degenerateWords R M e ≤ S ↔ ∀ (n : {n : ℕ // 0 < n}) (x : Fin n.val → M) (𝒟 : Fin n.val → ι)
+      (i : Fin n.val), (∀ j, x j ∈ G.piece (𝒟 j)) → x i = e → 𝒟 i = E →
+        of R M n (PiTensorProduct.tprod R x) ∈ S := by
+  refine ⟨fun h n x 𝒟 i _ hi _ ↦ h (of_tprod_mem_degenerateWords n x ⟨i, hi⟩), fun h ↦ ?_⟩
+  rw [degenerateWords_le_iff]
+  rintro n x ⟨i, hi⟩
+  exact of_tprod_mem_of_mem_piece G he n i (h n · · i) x hi
 
 section Coderivation
 

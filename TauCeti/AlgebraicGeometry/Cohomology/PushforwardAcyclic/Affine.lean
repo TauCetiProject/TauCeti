@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.PushforwardAcyclic.Linear
 public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Affine
+public import TauCeti.AlgebraicGeometry.Cohomology.EulerCharacteristic
 
 /-!
 # Cohomology along arbitrary affine morphisms
@@ -14,7 +15,8 @@ public import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Affine
 For an affine morphism `f : X ⟶ Y` and a quasi-coherent module `M`, the positive
 higher direct images vanish. Hence `Hⁿ(Y, f_* M) ≅ Hⁿ(X, M)` in every degree,
 naturally in `M` and linearly over any base ring. No finite open cover or separation
-hypothesis on the schemes is required.
+hypothesis on the schemes is required. Over a field `k`, the dimensions of the cohomology
+spaces, and hence the truncated Euler characteristic `χ(X, M)`, are preserved by `f_*`.
 
 ## References
 
@@ -95,5 +97,22 @@ theorem moduleFinite_cohomology_pushforward_iff_of_isAffineHom (M : X.Modules)
     Module.Finite R (Cohomology ((pushforward f).obj M) n) ↔
       Module.Finite R (Cohomology M n) :=
   Module.Finite.equiv_iff (cohomologyPushforwardBaseLinearEquivOfIsAffineHom f R M n)
+
+/-- Direct image along an affine morphism over `R` preserves the `R`-ranks of quasi-coherent
+cohomology, including the value zero assigned to modules of infinite rank. -/
+@[simp]
+theorem finrank_cohomology_pushforward_of_isAffineHom (M : X.Modules) [M.IsQuasicoherent]
+    (n : ℕ) :
+    Module.finrank R (Cohomology ((pushforward f).obj M) n) = Module.finrank R (Cohomology M n) :=
+  f.finrank_cohomology_pushforward_of_isZeroHigherDirectImage R M
+    (f.isZero_higherDirectImage_succ_of_isAffineHom M) n
+
+/-- Direct image along an affine morphism over a field `k` preserves the truncated Euler
+characteristic of a quasi-coherent module: `χ(Y, f_* M) = χ(X, M)`. -/
+@[simp]
+theorem eulerCharBelow_pushforward_of_isAffineHom (k : Type u) [Field k] [X.Over (Spec (.of k))]
+    [Y.Over (Spec (.of k))] [f.IsOver (Spec (.of k))] (M : X.Modules) [M.IsQuasicoherent]
+    (n : ℕ) : eulerCharBelow k Y ((pushforward f).obj M) n = eulerCharBelow k X M n := by
+  simp only [eulerCharBelow_def, finrank_cohomology_pushforward_of_isAffineHom]
 
 end AlgebraicGeometry.Scheme.Hom

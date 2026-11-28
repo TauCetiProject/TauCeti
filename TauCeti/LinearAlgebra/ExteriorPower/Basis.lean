@@ -46,7 +46,8 @@ power.
 * `Module.Basis.exteriorPowerTopEquiv_map` gives the scalar coordinate formula for every
   endomorphism in this identification.
 * `LinearMap.map_exteriorPower_finrank_eq_det_smul` gives the action in degree `Module.finrank`
-  as its determinant.
+  as its determinant, and `LinearMap.ιMulti_comp_eq_det_smul` the same on exterior products in the
+  exterior algebra.
 * `Module.Basis.trace_map_exteriorPower_top` gives the degree-`n` trace as the determinant
   for a basis indexed by `Fin n`.
 * `exteriorPower.ιMulti_sum_smul` and `AlternatingMap.map_sum_smul`: replacing a family of `n`
@@ -164,6 +165,14 @@ theorem _root_.LinearMap.map_exteriorPower_finrank_eq_det_smul
         one_smul]
       exact (LinearMap.cancel_left (zeroEquiv R M).injective).mp
         (by simpa only [LinearMap.comp_id] using zeroEquiv_naturality f)
+
+/-- An endomorphism `f` of a free module multiplies an exterior product of `Module.finrank R M`
+vectors in the exterior algebra by `det f`. -/
+theorem _root_.LinearMap.ιMulti_comp_eq_det_smul [Module.Free R M] (f : M →ₗ[R] M)
+    (w : Fin (Module.finrank R M) → M) :
+    ExteriorAlgebra.ιMulti R _ (f ∘ w) = LinearMap.det f • ExteriorAlgebra.ιMulti R _ w := by
+  rw [← ιMulti_apply_coe, ← map_apply_ιMulti, f.map_exteriorPower_finrank_eq_det_smul,
+    LinearMap.smul_apply, LinearMap.id_apply, Submodule.coe_smul, ιMulti_apply_coe]
 
 /-- A basis indexed by `Fin n` identifies the degree-`n` exterior power with the scalars by
 sending an exterior product of vectors to their determinant against the basis. -/

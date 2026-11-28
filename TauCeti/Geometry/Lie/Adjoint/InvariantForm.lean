@@ -455,7 +455,8 @@ theorem coadjointRepresentation_apply_bilinForm
 /-- **The coadjoint orbit map through an invariant form.** For an invariant form `B` and a
 left-invariant derivation `μ`, the orbit map of the coadjoint orbit of `B (e μ)` sends `[g]` to
 `B (e (Ad_g μ))`, where `e` is evaluation at the identity. -/
-theorem orbitMap_coadjointRepresentation_bilinForm_mk [FiniteDimensional ℝ E] [I.Boundaryless]
+theorem orbitMap_coadjointRepresentation_bilinForm_mk [FiniteDimensional ℝ E]
+    [BoundarylessManifold I G]
     (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B)
     (μ : LeftInvariantDerivation I G) (g : G) :
     (coadjointRepresentation ℝ I G).orbitMap

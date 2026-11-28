@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Prod
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 
 /-!
 # The graded tensor product of Clifford modules
@@ -33,28 +34,38 @@ by `γ₂`, then the tensor grading `γ ⊗ γ₂` is again an involution antico
 Mathlib's `CliffordAlgebra.prodEquiv` identifies `CliffordAlgebra (Q₁.prod Q₂)` with the graded
 tensor product `evenOdd Q₁ ᵍ⊗ evenOdd Q₂`, and this action is the Koszul-signed tensor action
 through it: an element `b` of `CliffordAlgebra Q₂` of parity `j` acts by `γ ^ j ⊗ ρ₂ b`, so the
-pure tensor `a ᵍ⊗ b` acts by `ρ₁ a γ ^ j ⊗ ρ₂ b`.
+pure tensor `a ᵍ⊗ b` acts by `ρ₁ a γ ^ j ⊗ ρ₂ b`, and on a homogeneous vector `e` of `γ`-degree `i`
+evaluates `e ⊗ f` to `(-1) ^ (i * j) • (ρ₁ a e ⊗ ρ₂ b f)`.
 
 For the spinor modules of oriented even-dimensional Euclidean spaces, `γ` is the chirality
 operator, and the normalized volume element of `V ⊕ W` then acts by the tensor grading; see
-`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod.lean`.
+`TauCeti/LinearAlgebra/CliffordAlgebra/VolumeElement/Prod/Orientation.lean`.
 
 ## Main definitions
 
+* `CliffordAlgebra.prodTensorLinearEquiv`: `CliffordAlgebra (Q₁.prod Q₂)` linearly identified with
+  `CliffordAlgebra Q₁ ⊗ CliffordAlgebra Q₂`.
 * `AlgHom.cliffordProdTensor`: the action of `CliffordAlgebra (Q₁.prod Q₂)` on `E ⊗ F`.
 
 ## Main results
 
 * `CliffordAlgebra.toProd_tmul`: the inverse map of `CliffordAlgebra.prodEquiv` sends `x ᵍ⊗ₜ y` to
   the product of the images of `x` and `y` under the two summand inclusions.
+* `CliffordAlgebra.prodTensorLinearEquiv_symm_tmul`,
+  `CliffordAlgebra.prodTensorLinearEquiv_toProd_tmul`, and
+  `CliffordAlgebra.prodTensorLinearEquiv_map_inl_mul_map_inr`: pure-tensor evaluation of
+  `prodTensorLinearEquiv` and its inverse.
+* `AlgHom.cliffordProdTensor_congr`: congruence in the representations and grading operator.
 * `AlgHom.cliffordProdTensor_ι`: a vector `(v, w)` acts by `c₁(v) ⊗ 1 + γ ⊗ c₂(w)`.
 * `AlgHom.cliffordProdTensor_map_inl`: `CliffordAlgebra Q₁` acts through the first factor.
 * `AlgHom.cliffordProdTensor_map_inr_prod`: a product of `k` vectors of `M₂` acts by
   `γ ^ k ⊗ ρ₂ (·)`.
 * `AlgHom.cliffordProdTensor_map_inr_of_mem_evenOdd`: an element of `CliffordAlgebra Q₂` of
   parity `j` acts by `γ ^ j ⊗ ρ₂ (·)`.
-* `AlgHom.cliffordProdTensor_toProd_tmul`: under `CliffordAlgebra.prodEquiv`, the pure tensor
-  `a ᵍ⊗ b` with `b` of parity `j` acts by `ρ₁ a γ ^ j ⊗ ρ₂ b`.
+* `AlgHom.cliffordProdTensor_toProd_tmul` and `AlgHom.cliffordProdTensor_toProd_tmul_apply_tmul`:
+  under `CliffordAlgebra.prodEquiv`, the pure tensor `a ᵍ⊗ b` with `b` of parity `j` acts by
+  `ρ₁ a γ ^ j ⊗ ρ₂ b`, sending `e ⊗ f` to `(-1) ^ (i * j) • (ρ₁ a e ⊗ ρ₂ b f)` for `e` in the
+  `(-1) ^ i`-eigenspace of `γ`.
 * `AlgHom.map_mul_cliffordProdTensor_ι`: the tensor grading `γ ⊗ γ₂` anticommutes with every
   vector.
 
@@ -81,6 +92,36 @@ theorem toProd_tmul (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂) 
     toProd Q₁ Q₂ (x ᵍ⊗ₜ y) =
       map (QuadraticMap.Isometry.inl Q₁ Q₂) x * map (QuadraticMap.Isometry.inr Q₁ Q₂) y := by
   rw [toProd, GradedTensorProduct.lift_tmul]
+
+/-- `CliffordAlgebra.prodEquiv` viewed as a linear equivalence onto the ordinary tensor product
+`CliffordAlgebra Q₁ ⊗[R] CliffordAlgebra Q₂`. -/
+noncomputable def prodTensorLinearEquiv (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂) :
+    CliffordAlgebra (Q₁.prod Q₂) ≃ₗ[R] CliffordAlgebra Q₁ ⊗[R] CliffordAlgebra Q₂ :=
+  (CliffordAlgebra.prodEquiv Q₁ Q₂).toLinearEquiv.trans
+    (GradedTensorProduct.of R (evenOdd Q₁) (evenOdd Q₂)).symm
+
+/-- The inverse of `CliffordAlgebra.prodTensorLinearEquiv` sends a pure tensor `a ⊗ₜ b` to
+`toProd Q₁ Q₂ (a ᵍ⊗ₜ b)`. -/
+@[simp]
+theorem prodTensorLinearEquiv_symm_tmul (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂)
+    (a : CliffordAlgebra Q₁) (b : CliffordAlgebra Q₂) :
+    (prodTensorLinearEquiv Q₁ Q₂).symm (a ⊗ₜ[R] b) = toProd Q₁ Q₂ (a ᵍ⊗ₜ b) := by
+  simp [prodTensorLinearEquiv]
+
+/-- `CliffordAlgebra.prodTensorLinearEquiv` sends `toProd Q₁ Q₂ (a ᵍ⊗ₜ b)` to `a ⊗ₜ b`. -/
+theorem prodTensorLinearEquiv_toProd_tmul (Q₁ : QuadraticForm R M₁) (Q₂ : QuadraticForm R M₂)
+    (a : CliffordAlgebra Q₁) (b : CliffordAlgebra Q₂) :
+    prodTensorLinearEquiv Q₁ Q₂ (toProd Q₁ Q₂ (a ᵍ⊗ₜ b)) = a ⊗ₜ[R] b := by
+  rw [← prodTensorLinearEquiv_symm_tmul, LinearEquiv.apply_symm_apply]
+
+/-- `CliffordAlgebra.prodTensorLinearEquiv` sends `map inl a * map inr b` to `a ⊗ₜ b`. -/
+@[simp]
+theorem prodTensorLinearEquiv_map_inl_mul_map_inr (Q₁ : QuadraticForm R M₁)
+    (Q₂ : QuadraticForm R M₂) (a : CliffordAlgebra Q₁) (b : CliffordAlgebra Q₂) :
+    prodTensorLinearEquiv Q₁ Q₂
+        (map (QuadraticMap.Isometry.inl Q₁ Q₂) a * map (QuadraticMap.Isometry.inr Q₁ Q₂) b) =
+      a ⊗ₜ[R] b := by
+  rw [← toProd_tmul, prodTensorLinearEquiv_toProd_tmul]
 
 end CliffordAlgebra
 
@@ -242,5 +283,33 @@ theorem cliffordProdTensor_toProd_tmul (a : CliffordAlgebra Q₁) {j : ZMod 2}
   rw [toProd_tmul, map_mul, cliffordProdTensor_map_inl,
     cliffordProdTensor_map_inr_of_mem_evenOdd ρ₁ γ hγ hγρ ρ₂ hb, LinearMap.rTensor,
     ← Module.End.one_eq_id, ← TensorProduct.map_mul, one_mul]
+
+include hγ in
+/-- **Koszul sign on homogeneous vectors.** If `b` has parity `j` in `CliffordAlgebra Q₂` and
+`e` lies in the `(-1) ^ i`-eigenspace of `γ` (`i = 0` for even, `i = 1` for odd), then `a ᵍ⊗ b`
+acts on `e ⊗ f` by `(-1) ^ (i * j.val) • (ρ₁ a e ⊗ ρ₂ b f)`. -/
+theorem cliffordProdTensor_toProd_tmul_apply_tmul (a : CliffordAlgebra Q₁) {j : ZMod 2}
+    {b : CliffordAlgebra Q₂} (hb : b ∈ evenOdd Q₂ j) {i : ℕ} {e : E}
+    (he : e ∈ γ.eigenspace ((-1 : R) ^ i)) (f : F) :
+    cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ (toProd Q₁ Q₂ (a ᵍ⊗ₜ b)) (e ⊗ₜ f) =
+      (-1 : R) ^ (i * j.val) • (ρ₁ a e ⊗ₜ ρ₂ b f) := by
+  by_cases hne : e = 0
+  · subst hne; simp
+  · rw [cliffordProdTensor_toProd_tmul ρ₁ γ hγ hγρ ρ₂ a hb, map_tmul, mul_apply_eq_comp,
+      Module.End.HasEigenvector.pow_apply ⟨he, hne⟩ j.val, ← pow_mul, map_smul, smul_tmul']
+
+/-- `AlgHom.cliffordProdTensor` depends only on the representations `ρ₁`, `ρ₂` and the grading
+operator `γ`, not on the proofs of `γ * γ = 1` and anticommutation. -/
+theorem cliffordProdTensor_congr
+    {ρ₁ ρ₁' : CliffordAlgebra Q₁ →ₐ[R] Module.End R E}
+    {γ γ' : Module.End R E}
+    {hγ : γ * γ = 1} {hγ' : γ' * γ' = 1}
+    {hγρ : ∀ v, γ * ρ₁ (ι Q₁ v) = -(ρ₁ (ι Q₁ v) * γ)}
+    {hγ'ρ : ∀ v, γ' * ρ₁' (ι Q₁ v) = -(ρ₁' (ι Q₁ v) * γ')}
+    {ρ₂ ρ₂' : CliffordAlgebra Q₂ →ₐ[R] Module.End R F}
+    (hρ₁ : ρ₁ = ρ₁') (hγ_eq : γ = γ') (hρ₂ : ρ₂ = ρ₂') :
+    cliffordProdTensor ρ₁ γ hγ hγρ ρ₂ = cliffordProdTensor ρ₁' γ' hγ' hγ'ρ ρ₂' := by
+  subst hρ₁ hγ_eq hρ₂
+  rfl
 
 end AlgHom

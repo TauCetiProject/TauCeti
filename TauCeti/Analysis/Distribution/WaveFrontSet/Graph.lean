@@ -225,8 +225,10 @@ theorem waveFrontSet_ofFun_one_map_graph (hf : ContDiff ℝ ∞ f) (Ω : Opens E
   rw [ofFun_one_map_graph_eq_compCLMOfOpenPartialHomeomorph hf Ω,
     waveFrontSet_compCLMOfOpenPartialHomeomorph, waveFrontSet_ofFun_one_map_subtype]
   ext ⟨x, ξ⟩
-  simp only [mem_ofPred_eq, mem_prod, mem_inter_iff, Opens.coe_top, mem_univ, true_and,
-    mem_sdiff, SetLike.mem_coe, mem_singleton_iff]
+  simp only [(straighten hf).mem_covectorPullback_iff (contDiffOn_straighten hf)
+    (contDiffOn_straighten_symm hf) (by simp [straighten_source]), mem_ofPred_eq, mem_prod,
+    mem_inter_iff, Opens.coe_top, mem_univ, true_and, mem_sdiff, SetLike.mem_coe,
+    mem_singleton_iff]
   refine and_congr_right fun hx ↦ ⟨fun ⟨hV, hξV, hξ0⟩ ↦ ?_, fun ⟨v, hv, hξ0, hξ⟩ ↦ ?_⟩
   · obtain ⟨v, rfl⟩ := (straighten_mem_iff hf x).1 hV
     rw [straighten_add] at hξV hξ0
