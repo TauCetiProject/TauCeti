@@ -211,6 +211,12 @@ namespace IsDedekindDomain.FiniteAdeleRing
 
 variable {E : Type*} [Field E] [NumberField E] [IsCMField E]
 
+/-- The conjugate of a finite idele is everywhere integral exactly when the idele is. -/
+theorem star_mem_integralUnits_iff {a : (𝔸ᶠ[E])ˣ} :
+    star a ∈ integralUnits (𝓞 E) E ↔ a ∈ integralUnits (𝓞 E) E := by
+  simp only [mem_integralUnits_iff_val_mem_and_inv_mem, Units.coe_star, Units.coe_star_inv,
+    star_mem_integralAdeles_iff]
+
 /-- **Conjugation of finite adeles at a place.** The component at the conjugate place `conj w` of
 the conjugate of a finite adele `a` is the image of the component `a_w` under the isomorphism
 `E_w ≃ E_{conj w}` extending the conjugation of `E`. -/
