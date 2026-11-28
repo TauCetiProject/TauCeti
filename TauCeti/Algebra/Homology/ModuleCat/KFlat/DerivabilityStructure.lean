@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Monoidal.KFlat.DerivabilityStructure
+public import TauCeti.Algebra.Homology.ModuleCat.KFlat.Resolution
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
 import TauCeti.Algebra.Category.ModuleCat.AB
@@ -56,17 +57,10 @@ namespace CochainComplex.KFlat
 
 variable {R : Type u} [CommRing R]
 
-private theorem preservesFiniteLimits_tensorLeft_forget_comp_free_obj (X : ModuleCat.{u} R) :
-    PreservesFiniteLimits (MonoidalCategory.tensorLeft
-      ((CategoryTheory.forget (ModuleCat.{u} R) ⋙ ModuleCat.free.{u} R).obj X)) := by
-  dsimp only [Functor.comp_obj]
-  infer_instance
-
 /-- The K-flat localizer morphism on `CochainComplex (ModuleCat.{u} R) ℤ` admits left resolutions in
 the category of arrows. -/
 instance instHasLeftResolutionsArrowLocalizerMorphismModuleCat :
     (localizerMorphism (ModuleCat.{u} R)).arrow.HasLeftResolutions := by
-  have := preservesFiniteLimits_tensorLeft_forget_comp_free_obj (R := R)
   exact hasLeftResolutions_arrow_localizerMorphism
     (CategoryTheory.forget (ModuleCat.{u} R) ⋙ ModuleCat.free.{u} R)
     (ModuleCat.adj.{u} R).counit
@@ -75,7 +69,6 @@ instance instHasLeftResolutionsArrowLocalizerMorphismModuleCat :
 equivalence on localized categories with respect to quasi-isomorphisms. -/
 instance instIsLocalizedEquivalenceLocalizerMorphismModuleCat :
     (localizerMorphism (ModuleCat.{u} R)).IsLocalizedEquivalence := by
-  have := preservesFiniteLimits_tensorLeft_forget_comp_free_obj (R := R)
   exact isLocalizedEquivalence_localizerMorphism
     (CategoryTheory.forget (ModuleCat.{u} R) ⋙ ModuleCat.free.{u} R)
     (ModuleCat.adj.{u} R).counit
@@ -85,7 +78,6 @@ connected. -/
 instance instIsConnectedLeftResolutionLocalizerMorphismModuleCat
     (K : CochainComplex (ModuleCat.{u} R) ℤ) :
     IsConnected ((localizerMorphism (ModuleCat.{u} R)).LeftResolution K) := by
-  have := preservesFiniteLimits_tensorLeft_forget_comp_free_obj (R := R)
   exact isConnected_leftResolution_localizerMorphism
     (CategoryTheory.forget (ModuleCat.{u} R) ⋙ ModuleCat.free.{u} R)
     (ModuleCat.adj.{u} R).counit K
@@ -94,7 +86,6 @@ instance instIsConnectedLeftResolutionLocalizerMorphismModuleCat
 complexes of `R`-modules is a left derivability structure with respect to quasi-isomorphisms. -/
 instance instIsLeftDerivabilityStructureLocalizerMorphismModuleCat :
     (localizerMorphism (ModuleCat.{u} R)).IsLeftDerivabilityStructure := by
-  have := preservesFiniteLimits_tensorLeft_forget_comp_free_obj (R := R)
   exact isLeftDerivabilityStructure_localizerMorphism
     (CategoryTheory.forget (ModuleCat.{u} R) ⋙ ModuleCat.free.{u} R)
     (ModuleCat.adj.{u} R).counit

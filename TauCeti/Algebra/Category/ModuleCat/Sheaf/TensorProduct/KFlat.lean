@@ -62,6 +62,21 @@ universe u
 
 open TauCeti.SheafOfModules
 
+namespace SheafOfModules
+
+/-- Filtered colimits indexed by small categories are exact for sheaves of modules. -/
+instance instAB5OfSizeSmall {C : Type u} [SmallCategory C] {J : GrothendieckTopology C}
+    (R : Sheaf J RingCat.{u}) : AB5OfSize.{0, 0} (SheafOfModules.{u} R) :=
+  AB5OfSize_of_univLE.{0, 0, u, u} _
+
+/-- Countable coproducts of sheaves of modules are exact. -/
+instance instCountableAB4 {C : Type u} [SmallCategory C] {J : GrothendieckTopology C}
+    (R : Sheaf J RingCat.{u}) : CountableAB4 (SheafOfModules.{u} R) := by
+  have : HasFiniteBiproducts (SheafOfModules.{u} R) := Abelian.hasFiniteBiproducts
+  exact CountableAB4.of_countableAB5 _
+
+end SheafOfModules
+
 namespace CochainComplex
 
 variable {C : Type u} [SmallCategory C] {J : GrothendieckTopology C}
@@ -110,9 +125,6 @@ theorem exists_quasiIso_isKFlat_sheafOfModules_of_isStrictlyLE
   have : a.Additive := a.additive_of_preserves_binary_products
   have : QuasiIso ((a.mapHomologicalComplex (.up ℤ)).map π) :=
     HomologicalComplex.quasiIso_map_of_preservesHomology π a
-  -- filtered colimits of sheaves of modules are exact, also for the small index category `ℕ`
-  have : AB5OfSize.{0, 0} (SheafOfModules.{u} (ringCatSheaf R)) :=
-    AB5OfSize_of_univLE.{0, 0, u, u} _
   exact ⟨_, (a.mapHomologicalComplex (.up ℤ)).map π ≫ e.hom, inferInstance, hflat,
     CochainComplex.isKFlat_of_boundedAbove_flat _ n, inferInstance⟩
 
@@ -134,14 +146,6 @@ theorem exists_quasiIso_isKFlat_sheafOfModules
   -- epimorphism when it is composed after `a.map _`, so this is supplied explicitly
   have (X : SheafOfModules.{u} (ringCatSheaf R)) : Epi (p X) :=
     epi_comp' (a.map_epi _) (IsIso.epi_of_iso (sheafificationIso _ X).hom)
-  -- filtered colimits of sheaves of modules are exact, also for the small index categories `ℕ`
-  -- and `Discrete ℤ`
-  have : AB5OfSize.{0, 0} (SheafOfModules.{u} (ringCatSheaf R)) :=
-    AB5OfSize_of_univLE.{0, 0, u, u} _
-  -- `CountableAB4.of_countableAB5` assumes finite biproducts, which abelian categories have by
-  -- the theorem `Abelian.hasFiniteBiproducts`
-  have : HasFiniteBiproducts (SheafOfModules.{u} (ringCatSheaf R)) := Abelian.hasFiniteBiproducts
-  have : CountableAB4 (SheafOfModules.{u} (ringCatSheaf R)) := CountableAB4.of_countableAB5 _
   exact ⟨_, kFlatResolution.π E p K, inferInstance, inferInstance, inferInstance⟩
 
 namespace KFlat
@@ -161,14 +165,6 @@ instance instIsLeftDerivabilityStructureLocalizerMorphismSheafOfModules :
       PresheafOfModules.sheafification.{u} (𝟙 (ringCatSheaf R).obj) ⊣ F :=
     (PresheafOfModules.freeAdjunction (ringCatSheaf R).obj).comp
       (PresheafOfModules.sheafificationAdjunction.{u} (𝟙 (ringCatSheaf R).obj))
-  -- filtered colimits of sheaves of modules are exact, also for the small index categories `ℕ`
-  -- and `Discrete ℤ`
-  have : AB5OfSize.{0, 0} (SheafOfModules.{u} (ringCatSheaf R)) :=
-    AB5OfSize_of_univLE.{0, 0, u, u} _
-  -- `CountableAB4.of_countableAB5` assumes finite biproducts, which abelian categories have by
-  -- the theorem `Abelian.hasFiniteBiproducts`
-  have : HasFiniteBiproducts (SheafOfModules.{u} (ringCatSheaf R)) := Abelian.hasFiniteBiproducts
-  have : CountableAB4 (SheafOfModules.{u} (ringCatSheaf R)) := CountableAB4.of_countableAB5 _
   -- the cover `(F ⋙ free ⋙ sheafification).obj X` unfolds to the sheafification of a free
   -- presheaf of modules only through `Functor.comp_obj`, which instance search does not unfold
   have (X : SheafOfModules.{u} (ringCatSheaf R)) : PreservesFiniteLimits (tensorLeft

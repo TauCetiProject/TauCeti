@@ -9,7 +9,9 @@ public import TauCeti.Algebra.Homology.Monoidal.KFlat.Resolution
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
-import Mathlib.Algebra.Category.ModuleCat.AB
+public import TauCeti.Algebra.Category.ModuleCat.AB
+public import Mathlib.Algebra.Category.ModuleCat.LeftResolution
+import Mathlib.Algebra.Category.ModuleCat.Projective
 import Mathlib.RingTheory.Flat.CategoryTheory
 
 /-!
@@ -21,6 +23,10 @@ product of unbounded complexes of modules. This is the case of
 `CochainComplex.exists_quasiIso_isKFlat` in which every module is covered by the free module
 on its elements.
 
+The native functorial cellular resolution with the free-forgetful counit is K-flat as well
+(`CochainComplex.isKFlat_kFlatResolutionFunctor_obj`), so its natural augmentation can be
+used without making nonfunctorial choices of covers.
+
 ## References
 
 * The Stacks Project, More on Algebra, Section 15.60, K-flat complexes.
@@ -30,9 +36,23 @@ public section
 
 open CategoryTheory Limits
 
-namespace CochainComplex
-
 universe u
+
+namespace ModuleCat
+
+variable {R : Type u} [CommRing R]
+
+/-- Tensoring with the free module on the elements of a module preserves finite limits.
+This instance exposes the free object through composition of the forgetful and free functors. -/
+instance preservesFiniteLimits_tensorLeft_forget_comp_free_obj (X : ModuleCat.{u} R) :
+    PreservesFiniteLimits (MonoidalCategory.tensorLeft
+      ((CategoryTheory.forget (ModuleCat.{u} R) ⋙ ModuleCat.free R).obj X)) := by
+  dsimp only [Functor.comp_obj]
+  infer_instance
+
+end ModuleCat
+
+namespace CochainComplex
 
 variable {R : Type u} [CommRing R]
 
