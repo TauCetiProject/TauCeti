@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Etale.Field
+public import Mathlib.RingTheory.Trace.Defs
 public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Basic
 import TauCeti.RingTheory.Etale.Reduced
 import TauCeti.RingTheory.Etale.Trace
@@ -18,13 +19,16 @@ A CM type `Φ` on a finite étale rational algebra `E` selects a factor of `k �
 the subfield `k ⊆ ℂ` contains its reflex field. The factor is the image of simultaneous
 evaluation at the embeddings in `Φ` (`TauCeti.CMType.typeFactor`). The two evaluation
 projections give the product decomposition `TauCeti.CMType.typeFactorProdEquiv`.
+`TauCeti.CMType.trace_typeFactor` computes the trace on the selected factor as a coordinate sum.
+`TauCeti.CMType.trace_typeFactor_tmul` gives the type trace formula on pure tensors.
 
 The construction uses `TauCeti.ratTensorProductAlgHomEquiv` to extend the embeddings,
 `TauCeti.CMType.typeTrace_mem_reflexField` to descend the partial trace,
 and `TauCeti.Algebra.Etale.exists_isIdempotentElem_algHom_apply_eq_indicator` to separate the two
-sets of embeddings. Over the reflex field, the selected factor is the rational algebra in
-which the reflex order is defined. See Yuan and Zhang, *On the averaged Colmez conjecture*,
-§2.2, p. 546.
+sets of embeddings. The trace formula uses
+`TauCeti.Algebra.Etale.algebraMap_trace_eq_finsum`. Over the reflex field, the selected factor
+is the rational algebra in which the reflex order is defined. See Yuan and Zhang,
+*On the averaged Colmez conjecture*, §2.2, p. 546.
 -/
 
 public section
@@ -57,8 +61,7 @@ theorem typeEvaluation_tmul (Φ : CMType E) (k : IntermediateField ℚ ℂ)
 
 /-- The algebra selected by `Φ`, realized as the image of simultaneous evaluation. The map
 onto it is `(Φ.typeEvaluation k).rangeRestrict`. -/
-noncomputable abbrev typeFactor (Φ : CMType E) (k : IntermediateField ℚ ℂ) :
-    Subalgebra k (Φ → ℂ) :=
+noncomputable abbrev typeFactor (Φ : CMType E) (k : IntermediateField ℚ ℂ) : Subalgebra k (Φ → ℂ) :=
   (Φ.typeEvaluation k).range
 
 section FiniteEmbeddings
@@ -128,6 +131,64 @@ instance etale_typeFactor (Φ : CMType E) (k : IntermediateField ℚ ℂ) :
   · exact Module.Finite.of_surjective (Φ.typeEvaluation k).rangeRestrict.toLinearMap
       (Φ.typeEvaluation k).rangeRestrict_surjective
   · exact isReduced_of_injective (Φ.typeFactor k).val Subtype.val_injective
+
+/-- Over a field containing the reflex field, the relative trace of an element of the selected
+factor is the sum of its selected coordinates. See Yuan and Zhang, §2.2, p. 546. -/
+theorem trace_typeFactor (Φ : CMType E) {k : IntermediateField ℚ ℂ}
+    (hk : Φ.reflexField ≤ k) (y : Φ.typeFactor k) :
+    (Algebra.trace k (Φ.typeFactor k) y : ℂ) = ∑ᶠ φ : Φ, y.val φ := by
+  classical
+  let eval (φ : Φ) : Φ.typeFactor k →ₐ[k] ℂ :=
+    (Pi.evalAlgHom k (fun _ : Φ ↦ ℂ) φ).comp (Φ.typeFactor k).val
+  have hcoord (φ : Φ) (z : Φ.typeFactor k) : eval φ z = z.val φ := calc
+    eval φ z = Pi.evalAlgHom k (fun _ : Φ ↦ ℂ) φ ((Φ.typeFactor k).val z) :=
+      AlgHom.comp_apply _ _ _
+    _ = z.val φ := by rw [Pi.evalAlgHom_apply, Subalgebra.val_apply]
+  have hproj (φ : Φ) (x : k ⊗[ℚ] E) :
+      eval φ ((Φ.typeEvaluation k).rangeRestrict x) =
+        ratTensorProductAlgHomEquiv k E ℂ φ.val x := by
+    simp only [hcoord, AlgHom.coe_codRestrict, typeEvaluation_apply]
+  have hinj : Function.Injective eval := by
+    intro φ ψ h
+    apply Subtype.ext
+    apply (ratTensorProductAlgHomEquiv k E ℂ).injective
+    exact AlgHom.ext fun x ↦ by rw [← hproj, ← hproj, h]
+  have hpartial (z : Φ.typeFactor k) :
+      ∑ᶠ ψ ∈ Set.range eval, ψ z ∈ Set.range (algebraMap k ℂ) := by
+    obtain ⟨x, rfl⟩ := (Φ.typeEvaluation k).rangeRestrict_surjective z
+    rw [finsum_mem_range hinj]
+    simp_rw [hproj]
+    have h := Φ.finsum_ratTensorProductAlgHomEquiv_image_mem_range hk x
+    rw [finsum_mem_image (ratTensorProductAlgHomEquiv k E ℂ).injective.injOn,
+      ← finsum_set_coe_eq_finsum_mem] at h
+    simpa only [← SetLike.coe_sort_coe] using h
+  -- The idempotent for the selected coordinates is one in every coordinate, hence is one.
+  obtain ⟨c, -, hc⟩ := Algebra.Etale.exists_isIdempotentElem_algHom_apply_eq_indicator
+    (Set.range eval) hpartial
+  have hc₁ : c = 1 := Subtype.ext (funext fun φ ↦ by
+    rw [← hcoord, hc, Set.indicator_of_mem (Set.mem_range_self φ)]
+    rfl)
+  have hsurj : Function.Surjective eval := by
+    intro ψ
+    by_contra hψ
+    have h := hc ψ
+    rw [hc₁, map_one, Set.indicator_of_notMem hψ] at h
+    exact one_ne_zero h
+  rw [← IntermediateField.algebraMap_apply, Algebra.Etale.algebraMap_trace_eq_finsum ℂ,
+    ← finsum_comp eval ⟨hinj, hsurj⟩]
+  simp only [hcoord]
+
+/-- The relative trace of a projected pure tensor is its scalar times the type trace.
+See Yuan and Zhang, §2.2, p. 546. -/
+@[simp]
+theorem trace_typeFactor_tmul (Φ : CMType E) {k : IntermediateField ℚ ℂ}
+    (hk : Φ.reflexField ≤ k) (r : k) (a : E) :
+    (Algebra.trace k (Φ.typeFactor k) ((Φ.typeEvaluation k).rangeRestrict (r ⊗ₜ a)) : ℂ) =
+      (r : ℂ) * Φ.typeTrace a := by
+  rw [trace_typeFactor Φ hk, typeTrace_apply,
+    ← finsum_set_coe_eq_finsum_mem, mul_finsum]
+  simp only [AlgHom.coe_codRestrict, typeEvaluation_tmul]
+  simp only [← SetLike.coe_sort_coe]
 
 variable [IsReduced E]
 
