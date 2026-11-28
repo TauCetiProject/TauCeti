@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Trace
 public import TauCeti.LinearAlgebra.Trace.Basic
 public import TauCeti.Topology.Algebra.Module.Trace
 import TauCeti.Algebra.Star.SelfAdjoint.BaseChange
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 import TauCeti.Analysis.InnerProductSpace.Positive.Definite
 import TauCeti.LinearAlgebra.Complex.Module

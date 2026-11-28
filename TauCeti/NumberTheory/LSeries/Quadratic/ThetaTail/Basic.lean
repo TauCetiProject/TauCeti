@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 public import TauCeti.NumberTheory.LSeries.GaussianTheta.Basic
+import TauCeti.NumberTheory.ArithmeticFunction.Moebius
 
 /-!
 # Gaussian theta tail for quadratic twists
@@ -65,12 +66,8 @@ theorem integrableOn_quadraticTwistGaussianThetaTailIntegrand (hc : ∀ n : ℕ+
     {T : ℝ} (hT : 0 < T) :
     IntegrableOn (fun u ↦ (‖gaussianThetaSeries j c u‖ +
       ‖gaussianThetaSeries j (fun n ↦ c n * μ n) u‖) / u) (Ioi T⁻¹) := by
-  have hμ (n : ℕ+) : ‖c n * (μ n : ℂ)‖ ≤ 1 := by
-    rw [norm_mul]
-    have hnorm : ‖(μ n : ℂ)‖ ≤ 1 := by
-      exact_mod_cast ArithmeticFunction.abs_moebius_le_one (n := n)
-    calc ‖c n‖ * ‖(μ n : ℂ)‖ ≤ ‖c n‖ := mul_le_of_le_one_right (norm_nonneg _) hnorm
-      _ ≤ 1 := hc n
+  have hμ (n : ℕ+) : ‖c n * (μ n : ℂ)‖ ≤ 1 :=
+    (ArithmeticFunction.norm_mul_moebius_le n (c n)).trans (hc n)
   have h := (integrableOn_norm_gaussianThetaSeries_div (j := j) hc (inv_pos.mpr hT)).add
     (integrableOn_norm_gaussianThetaSeries_div (j := j) (c := fun n ↦ c n * μ n)
       hμ (inv_pos.mpr hT))

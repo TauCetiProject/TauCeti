@@ -383,19 +383,22 @@ variable (n) in
 /-- An atlas of smooth charts of `SU(n) → SU(1 + n) → S^(2n+1)`: around `p` it takes the chart
 `TauCeti.specialUnitarySphereTrivialization g` through a chosen `g` with `g e₀ = p`. -/
 def specialUnitarySphereAtlas :
-    MapFiber.Atlas (specialUnitaryGroup (Fin n) ℂ) (specialUnitarySphereMap (𝕜 := ℂ) n) where
-  trivAt p := specialUnitarySphereTrivialization (surjective_specialUnitarySphereMap p).choose
-  mem_baseSet_trivAt p := by
-    simpa only [(surjective_specialUnitarySphereMap p).choose_spec] using
-      mem_specialUnitarySphereTrivialization_baseSet
-        (surjective_specialUnitarySphereMap (𝕜 := ℂ) p).choose
+    MapFiber.Atlas (specialUnitaryGroup (Fin n) ℂ) (specialUnitarySphereMap (𝕜 := ℂ) n) :=
+  MapFiber.Atlas.ofTrivAt
+    (fun p ↦ specialUnitarySphereTrivialization (surjective_specialUnitarySphereMap p).choose)
+    fun p ↦ by
+      simpa only [(surjective_specialUnitarySphereMap p).choose_spec] using
+        mem_specialUnitarySphereTrivialization_baseSet
+          (surjective_specialUnitarySphereMap (𝕜 := ℂ) p).choose
 
 /-- The charts of `TauCeti.specialUnitarySphereAtlas` are diffeomorphisms onto their images. -/
 theorem isContMDiff_specialUnitarySphereAtlas :
     (specialUnitarySphereAtlas n).IsContMDiff ∞ (𝓡 (2 * n + 1))
-      (specialUnitaryGroup.model (Fin n) ℂ) (specialUnitaryGroup.model (Fin (1 + n)) ℂ) where
-  contMDiffOn_trivAt _ := contMDiffOn_specialUnitarySphereTrivialization _
-  contMDiffOn_trivAt_symm _ := contMDiffOn_specialUnitarySphereTrivialization_symm _
+      (specialUnitaryGroup.model (Fin n) ℂ) (specialUnitaryGroup.model (Fin (1 + n)) ℂ) := by
+  refine ⟨?_, ?_⟩ <;> rw [specialUnitarySphereAtlas, MapFiber.Atlas.charts_ofTrivAt] <;>
+    rintro _ ⟨p, rfl⟩
+  · exact contMDiffOn_specialUnitarySphereTrivialization _
+  · exact contMDiffOn_specialUnitarySphereTrivialization_symm _
 
 /-- **`SU(n) → SU(1 + n) → S^(2n+1)` is a smooth fibre bundle.** For `n ≥ 1`, the fibres of
 `A ↦ A e₀` form a smooth fibre bundle over the sphere `S^(2n+1)` with fibre `SU(n)`. For `n = 2`

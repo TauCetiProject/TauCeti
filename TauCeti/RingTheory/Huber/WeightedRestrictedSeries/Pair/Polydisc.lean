@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Huber.WeightedEval.Map
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Completion
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Rename
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.TateSeries.Basic
 
 import TauCeti.RingTheory.Huber.WeightedEval.Completion
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.GaussValuation
@@ -57,6 +59,8 @@ of `(Pair.powerBounded K).polydisc n` over a nontrivially normed ultrametric fie
 * `TauCeti.Huber.Pair.polydisc.evalHom` and `TauCeti.Huber.Pair.polydisc.homEquiv`: evaluation of
   `S.polydisc n` at a tuple in `U.plus` over `z : Pair.Hom S U`, and the resulting bijection of
   morphisms over `S` with `Fin n → U.plus`.
+* `TauCeti.Huber.tateSeriesPair.evalHom`: evaluation morphism out of the uncompleted Tate-series
+  pair `tateSeriesPair n A S` obtained by precomposing `Pair.polydisc.evalHom`.
 * `TauCeti.Huber.Pair.polydisc.taylorHom` and `TauCeti.Huber.Pair.polydisc.zeroInvHom`: coordinate
   translations `Tᵢ ↦ Tᵢ + aᵢ` on `S.polydisc n` and the `n = 0` inverse morphism.
 
@@ -72,8 +76,8 @@ of `(Pair.powerBounded K).polydisc n` over a nontrivially normed ultrametric fie
   is open (`TauCeti.Huber.isOpen_topologicalClosure_closure_polydiscVar`).
 * `TauCeti.Huber.Pair.polydiscPlus_eq_topologicalClosure`: `S.polydiscPlus n` is the topological
   closure of `A⁺[T₁, …, Tₙ]` in `A⟨T₁, …, Tₙ⟩`.
-* `TauCeti.Huber.Pair.map_polydiscPlus_equiv`: `restrictedMvPowerSeriesCompletionEquiv` maps
-  `S.polydiscPlus n` onto `A⁺⟨T₁, …, Tₙ⟩`.
+* `TauCeti.Huber.Pair.map_polydiscPlus_equiv`: `restrictedMvPowerSeriesCompletionEquiv`
+  identifies `S.polydiscPlus n` with `tateSeriesPlus n A S.plus`.
 * `TauCeti.Huber.Pair.polydisc.existsUnique_hom`: universal property of `S.polydisc n` for
   morphisms into complete Hausdorff Huber pairs.
 
@@ -104,6 +108,15 @@ noncomputable abbrev Pair.polydiscVar (n : ℕ) (A : Type*) [CommRing A] [Topolo
   ((weightedX (fun _ : Fin n ↦ ({1} : Set A)) isWeightFamily_one_weight i :
     weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set A)) isWeightFamily_one_weight) :
       restrictedMvPowerSeriesCompletion n A)
+
+/-- Under the canonical inclusion into the completion `restrictedMvPowerSeriesCompletion N A`,
+`tateSeries.X N A i` is `Pair.polydiscVar N A i`. -/
+@[simp]
+theorem tateSeries.coe_X_completion {N : ℕ} {A : Type*} [CommRing A] [TopologicalSpace A]
+    [NonarchimedeanRing A] (i : Fin N) :
+    ((tateSeries.X N A i : tateSeries N A) : restrictedMvPowerSeriesCompletion N A) =
+      Pair.polydiscVar N A i := by
+  rw [tateSeries.X_eq_weightedX]
 
 /-- Two continuous ring homomorphisms out of `A⟨T₁, …, Tₙ⟩` into a Hausdorff ring are equal as
 soon as they agree on the constants and on every coordinate variable `Tᵢ`. -/
@@ -347,27 +360,21 @@ section UniversalProperty
 variable {C : Type*} [CommRing C] [UniformSpace C] [IsUniformAddGroup C] [IsTopologicalRing C]
   [IsHuberRing C] [CompleteSpace C] [T0Space C]
 
-omit [IsUniformAddGroup C] [CompleteSpace C] [T0Space C] in
-/-- Auxiliary weight-boundedness witness: every tuple in `U.plus` is weight-bounded for the trivial
-weight `{1}`. -/
-private theorem isWeightBounded_of_mem_plus {S : Pair A} {U : Pair C} (z : Pair.Hom S U) {n : ℕ}
-    (t : Fin n → U.plus) :
-    IsWeightBounded z.toRingHom (fun _ : Fin n ↦ ({1} : Set A)) (fun i ↦ (t i : C)) :=
-  (isWeightBounded_one_weight_iff_forall_isPowerBounded _ _).mpr fun i ↦
-    U.isRingOfIntegralElements.isPowerBounded_of_mem (t i).property
-
 /-- **Evaluation of `S.polydisc n` at a tuple `t : Fin n → U.plus`** along a base morphism
 `z : Pair.Hom S U` into a complete Hausdorff Huber pair `U`. -/
 noncomputable def Pair.polydisc.evalHom {S : Pair A} {U : Pair C}
     (z : Pair.Hom S U) {n : ℕ} (t : Fin n → U.plus) :
     Pair.Hom (S.polydisc n) U where
   toRingHom := weightedEvalHomCompletion isWeightFamily_one_weight
-    z.continuous_toRingHom.continuousAt (isWeightBounded_of_mem_plus z t)
+    z.continuous_toRingHom.continuousAt
+    (isWeightBounded_one_weight_of_mem_plus z.toRingHom U fun i ↦ (t i).property)
   continuous_toRingHom := continuous_weightedEvalHomCompletion isWeightFamily_one_weight
-    z.continuous_toRingHom.continuousAt (isWeightBounded_of_mem_plus z t)
+    z.continuous_toRingHom.continuousAt
+    (isWeightBounded_one_weight_of_mem_plus z.toRingHom U fun i ↦ (t i).property)
   map_mem_plus := S.weighted_completion_plus_le_comap isWeightFamily_one_weight U
     (continuous_weightedEvalHomCompletion isWeightFamily_one_weight
-      z.continuous_toRingHom.continuousAt (isWeightBounded_of_mem_plus z t))
+      z.continuous_toRingHom.continuousAt
+      (isWeightBounded_one_weight_of_mem_plus z.toRingHom U fun i ↦ (t i).property))
     (fun a ha ↦ by
       rw [weightedEvalHomCompletion_coe, weightedEvalHom_weightedC]
       exact z.map_mem_plus a ha)
@@ -400,6 +407,15 @@ theorem Pair.polydisc.toRingHom_evalHom_polydiscVar {S : Pair A}
     (Pair.polydisc.evalHom z t).toRingHom (Pair.polydiscVar n A i) = (t i : C) := by
   rw [Pair.polydisc.evalHom, Pair.polydiscVar, weightedEvalHomCompletion_coe,
     weightedEvalHom_weightedX]
+
+/-- On the image of an uncompleted restricted power series `f`, `Pair.polydisc.evalHom z t`
+evaluates the power series `f` at `t` along `z.toRingHom`. -/
+theorem Pair.polydisc.toRingHom_evalHom_coe {S : Pair A} {U : Pair C}
+    (z : Pair.Hom S U) {n : ℕ} (t : Fin n → U.plus)
+    (f : weightedRestrictedSubring (fun _ : Fin n ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    (Pair.polydisc.evalHom z t).toRingHom (f : restrictedMvPowerSeriesCompletion n A) =
+      weightedEval z.toRingHom (fun i ↦ (t i : C)) (f : MvPowerSeries (Fin n) A) := by
+  rw [Pair.polydisc.evalHom, weightedEvalHomCompletion_coe, coe_weightedEvalHom]
 
 @[simp]
 theorem Pair.polydisc.evalHom_comp_weightedCompletionHom {S : Pair A} {U : Pair C}
@@ -458,6 +474,24 @@ theorem Pair.polydisc.homEquiv_symm_apply {S : Pair A} {U : Pair C}
     (Pair.polydisc.homEquiv z n).symm t =
       ⟨Pair.polydisc.evalHom z t, Pair.polydisc.evalHom_comp_weightedCompletionHom z t⟩ :=
   (rfl)
+
+/-- **Evaluation morphism out of the uncompleted Tate-series pair `tateSeriesPair n A S`:**
+precomposing `Pair.polydisc.evalHom z t` with `(S.weighted isWeightFamily_one_weight).completionHom`
+maps `tateSeriesPair n A S → U` over `z : Pair.Hom S U`. -/
+noncomputable def tateSeriesPair.evalHom {S : Pair A} {U : Pair C}
+    (z : Pair.Hom S U) {n : ℕ} (t : Fin n → U.plus) :
+    Pair.Hom (tateSeriesPair n A S) U :=
+  (Pair.polydisc.evalHom z t).comp (S.weighted (k := n) isWeightFamily_one_weight).completionHom
+
+/-- On `f : tateSeries n A`, `tateSeriesPair.evalHom z t` evaluates the restricted series `f` at
+`t` along `z.toRingHom`. -/
+theorem tateSeriesPair.toRingHom_evalHom {S : Pair A} {U : Pair C}
+    (z : Pair.Hom S U) {n : ℕ} (t : Fin n → U.plus) (f : tateSeries n A) :
+    (tateSeriesPair.evalHom z t).toRingHom f =
+      weightedEval z.toRingHom (fun i ↦ (t i : C)) (f : MvPowerSeries (Fin n) A) := by
+  rw [tateSeriesPair.evalHom, Pair.Hom.toRingHom_comp, RingHom.comp_apply,
+    Pair.Hom.toRingHom_completionHom, UniformSpace.Completion.coeRingHom_apply]
+  exact Pair.polydisc.toRingHom_evalHom_coe z t f
 
 end UniversalProperty
 

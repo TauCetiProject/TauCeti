@@ -16,6 +16,7 @@ This file adds to Mathlib's API for graphs of functions over a set and for the f
 
 ## Main results
 
+* `Set.mem_image_prodMk_self_snd_iff`: membership in the swapped graph over a set.
 * `Set.graphOn_const`: the graph of a constant function over `s` is a horizontal slice `s ×ˢ {b}`.
 * `Set.range_prodMk_const`, `Set.range_const_prodMk`: the ranges of `x ↦ (f x, b)` and
   `x ↦ (b, f x)` are the slices `range f ×ˢ {b}` and `{b} ×ˢ range f`.
@@ -33,6 +34,16 @@ This file adds to Mathlib's API for graphs of functions over a set and for the f
 public section
 
 open Function
+
+/-- Membership in the swapped graph of `f` over `s` is determined by the second coordinate
+and the graph equation. -/
+theorem Set.mem_image_prodMk_self_snd_iff {N M : Type*} (f : N → M) (s : Set N)
+    (x : M × N) :
+    x ∈ (fun n => (f n, n)) '' s ↔ x.2 ∈ s ∧ x.1 = f x.2 := by
+  have himage : (fun n => (f n, n)) '' s = Prod.swap '' s.graphOn f :=
+    (Set.image_image Prod.swap (fun n => (n, f n)) s).symm
+  rw [himage, Set.image_swap_eq_preimage_swap, Set.mem_preimage, Set.mem_graphOn]
+  exact and_congr_right fun _ => eq_comm
 
 /-- The graph of a constant function over a set `s` is the slice `s ×ˢ {b}`. -/
 @[simp]

@@ -28,9 +28,26 @@ equivalences for products indexed by a `Unique` type:
   `((ι → A) →⋆ₙₐ[R] (κ → B)) ≃ (A →⋆ₙₐ[R] B)` and `((ι → A) →⋆ₐ[R] (κ → B)) ≃ (A →⋆ₐ[R] B)` for
   `[Unique ι] [Unique κ]`, together with application, composition, injectivity, and unitary
   conjugacy transport lemmas.
+
+For vectors over a commutative star semiring, composing with `starRingEnd` is taking the `star`
+(`TauCeti.starRingEnd_comp_eq_star`: `starRingEnd S ∘ v = star v`), so lemmas stated for a ring
+homomorphism `σ` and vectors `σ ∘ v` apply to conjugated vectors.
 -/
 
 public section
+
+namespace TauCeti
+
+/-- Composing a vector with `starRingEnd` is taking its `star`.
+
+Use this bridge explicitly: as a global simp rule it would rewrite `conj ∘ f ∘ conj` before
+the analytic and meromorphic conjugation lemmas can apply. -/
+theorem starRingEnd_comp_eq_star {m S : Type*} [CommSemiring S] [StarRing S] (v : m → S) :
+    starRingEnd S ∘ v = star v := by
+  ext i
+  simp [starRingEnd_apply]
+
+end TauCeti
 
 namespace NonUnitalStarAlgHom
 

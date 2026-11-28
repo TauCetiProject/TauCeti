@@ -49,7 +49,6 @@ of `X ^ n` in `f`.
 * `PowerSeries.order_map_le_order_map_apply`: an endomorphism of `R⟦X⟧` that preserves the kernel
   of reduction along a surjection `R → S`, and sends `X` into that kernel modulo `X`, does not
   lower the order of reductions.
-
 * `PowerSeries.order_X_pow_mul_of_constantCoeff_ne_zero`: `X ^ k * f` has order `k` when `f` has
   nonzero constant coefficient.
 * `PowerSeries.coeff_pow_mul_of_le_order`: the coefficient of `X ^ (n * k)` in `f ^ k` is
@@ -58,6 +57,10 @@ of `X ^ n` in `f`.
   constant coefficient is nonzero.
 * `PowerSeries.order_eq_one_iff_of_constantCoeff_eq_zero`: when `constantCoeff f = 0`, `f` has
   order `1` exactly when `coeff 1 f ≠ 0`.
+* `PowerSeries.coeff_pow_eq_zero_of_lt`: if `constantCoeff g = 0` and `n < k`, then
+  `coeff n (g ^ k) = 0`.
+* `PowerSeries.coeff_eval_eq_sum_range`: evaluating a polynomial over `R⟦X⟧` at a series without
+  constant term only uses terms of degree at most `k` for the `k`-th coefficient.
 
 ## Provenance
 
@@ -191,5 +194,27 @@ theorem order_eq_one_iff_of_constantCoeff_eq_zero {f : R⟦X⟧} (hf : constantC
   refine ⟨fun h ↦ h.1, fun h ↦ ⟨h, fun i hi ↦ ?_⟩⟩
   rw [Nat.lt_one_iff.mp hi, coeff_zero_eq_constantCoeff_apply]
   exact hf
+
+/-- If `g` has zero constant coefficient, the `n`-th coefficient of `g ^ k` vanishes whenever
+`n < k`. -/
+@[grind =]
+theorem coeff_pow_eq_zero_of_lt {g : R⟦X⟧} (hg : constantCoeff g = 0) {n k : ℕ} (h : n < k) :
+    coeff n (g ^ k) = 0 :=
+  coeff_of_lt_order _ ((Nat.cast_lt.mpr h).trans_le (le_order_pow_of_constantCoeff_eq_zero k hg))
+
+/-- Evaluating a polynomial over `R⟦X⟧` at a series `g` without constant term only uses terms of
+degree at most `k` for the `k`-th coefficient. -/
+theorem coeff_eval_eq_sum_range (p : Polynomial R⟦X⟧) {g : R⟦X⟧}
+    (hg : constantCoeff g = 0) (k : ℕ) :
+    coeff k (p.eval g) = ∑ n ∈ Finset.range (k + 1), coeff k (p.coeff n * g ^ n) := by
+  rw [Polynomial.eval_eq_sum_range' (lt_of_lt_of_le (Nat.lt_succ_self _) (le_max_left _ (k + 1))),
+    map_sum]
+  symm
+  refine Finset.sum_subset (Finset.range_mono (le_max_right _ _)) fun n _ hn ↦ ?_
+  have hlt : k < n := by simp only [Finset.mem_range, not_lt] at hn; omega
+  exact coeff_of_lt_order k
+    ((Nat.cast_lt.mpr hlt).trans_le
+      ((le_order_pow_of_constantCoeff_eq_zero n hg).trans
+        (le_add_self.trans (le_order_mul (p.coeff n) (g ^ n)))))
 
 end PowerSeries

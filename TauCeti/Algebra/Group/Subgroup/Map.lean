@@ -88,6 +88,19 @@ public section
 
 namespace TauCeti
 
+/-- If transition homomorphisms commute with the projections and carry each subgroup into
+the subgroup at every lower index, the pullbacks along the projections form an antitone family. -/
+theorem antitone_comap_of_map_le {ι G : Type*} [Preorder ι] [Group G] {Gᵢ : ι → Type*}
+    [∀ i, Group (Gᵢ i)] (p : ∀ i, G →* Gᵢ i) (r : ∀ ⦃i j⦄, i ≤ j → Gᵢ j →* Gᵢ i)
+    (H : ∀ i, Subgroup (Gᵢ i))
+    (hcomp : ∀ ⦃i j⦄ (hij : i ≤ j), (r hij).comp (p j) = p i)
+    (hH : ∀ ⦃i j⦄ (hij : i ≤ j), (H j).map (r hij) ≤ H i) :
+    Antitone (fun i ↦ (H i).comap (p i)) := by
+  intro i j hij
+  dsimp only
+  rw [← hcomp hij, ← Subgroup.comap_comap]
+  exact Subgroup.comap_mono (Subgroup.map_le_iff_le_comap.mp (hH hij))
+
 variable {G H : Type*} [Group G] [Group H]
 
 /-- An injective group homomorphism embeds the subgroup lattice of its domain into that of its

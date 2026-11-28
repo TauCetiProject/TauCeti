@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Matrix.Order
-public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
+public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace.Basic
 public import TauCeti.Analysis.CStarAlgebra.State.Pure
 public import TauCeti.LinearAlgebra.Projectivization.HermitianProjector
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix

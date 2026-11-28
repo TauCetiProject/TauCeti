@@ -14,10 +14,10 @@ import TauCeti.MeasureTheory.Function.Lp.Duality
 /-!
 # Solenoidal subspaces
 
-In `Lᵖ`, the solenoidal fields form the intersection of the kernels of the
-continuous pairings with scalar test gradients. At `p = 2`, these pairings are Hilbert space inner
-products, so the closed subspace is the orthogonal complement of the closed span of the test
-gradients, given by `TauCeti.wassersteinTangentSpace`.
+In `Lᵖ`, the solenoidal fields form the intersection of the kernels of the continuous pairings
+`TauCeti.testGradientPairingCLM` with scalar test gradients. At `p = 2`, these pairings are
+Hilbert space inner products, so the closed subspace is the orthogonal complement of the closed
+span of the test gradients, given by `TauCeti.wassersteinTangentSpace`.
 -/
 
 public section
@@ -35,25 +35,40 @@ section Lp
 variable [CompleteSpace E] (E) (p : ℝ≥0∞) [Fact (1 ≤ p)]
   (μ : Measure E) [IsFiniteMeasureOnCompacts μ]
 
+/-- The continuous linear functional `u ↦ ∫ ⟪u, ∇φ⟫ dμ` on `Lᵖ(μ; E)` pairing a field with the
+gradient of a scalar test function `φ`, for every `1 ≤ p ≤ ∞`. -/
+noncomputable def testGradientPairingCLM (φ : 𝓓((⊤ : Opens E), ℝ)) : Lp E p μ →L[ℝ] ℝ :=
+  haveI : (ENNReal.conjExponent p).HolderConjugate p :=
+    (ENNReal.HolderConjugate.conjExponent Fact.out).symm
+  MemLp.innerLpCLM ℝ ((TestFunction.gradientCLM φ).continuous.memLp_of_hasCompactSupport
+    (p := p.conjExponent) (μ := μ) (TestFunction.gradientCLM φ).hasCompactSupport)
+
 /-- The closed subspace of `Lᵖ(μ; E)` annihilating scalar test gradients.
 It is defined by continuous pairings with test gradients, including at `p = 1` and `p = ∞`. -/
 noncomputable def solenoidalLp : ClosedSubmodule ℝ (Lp E p μ) :=
-  haveI : (ENNReal.conjExponent p).HolderConjugate p :=
-    (ENNReal.HolderConjugate.conjExponent Fact.out).symm
-  ⨅ φ : 𝓓((⊤ : Opens E), ℝ), (⊥ : ClosedSubmodule ℝ ℝ).comap
-    (MemLp.innerLpCLM ℝ ((TestFunction.gradientCLM φ).continuous.memLp_of_hasCompactSupport
-      (p := p.conjExponent) (μ := μ) (TestFunction.gradientCLM φ).hasCompactSupport))
+  ⨅ φ : 𝓓((⊤ : Opens E), ℝ), (⊥ : ClosedSubmodule ℝ ℝ).comap (testGradientPairingCLM E p μ φ)
 
 variable {E p μ}
+
+/-- The test-gradient pairing of `u` is the integral of `⟪u, ∇φ⟫`. -/
+theorem testGradientPairingCLM_apply (φ : 𝓓((⊤ : Opens E), ℝ)) (u : Lp E p μ) :
+    testGradientPairingCLM E p μ φ u = ∫ x, ⟪u x, ∇ (φ : E → ℝ) x⟫_ℝ ∂μ := by
+  simp_rw [testGradientPairingCLM, MemLp.innerLpCLM_apply, TestFunction.gradientCLM_apply,
+    real_inner_comm]
+
+/-- Membership in the closed solenoidal subspace is equivalent to every test-gradient pairing
+vanishing. -/
+theorem mem_solenoidalLp_iff_testGradientPairingCLM_eq_zero {u : Lp E p μ} :
+    u ∈ solenoidalLp E p μ ↔ ∀ φ : 𝓓((⊤ : Opens E), ℝ), testGradientPairingCLM E p μ φ u = 0 := by
+  simp only [solenoidalLp, ClosedSubmodule.mem_iInf, ClosedSubmodule.mem_comap,
+    ClosedSubmodule.mem_bot]
 
 /-- Membership in the closed solenoidal subspace is equivalent to annihilating every test
 gradient. -/
 theorem mem_solenoidalLp_iff_integral_inner_eq_zero {u : Lp E p μ} :
     u ∈ solenoidalLp E p μ ↔
       ∀ φ : 𝓓((⊤ : Opens E), ℝ), ∫ x, ⟪u x, ∇ (φ : E → ℝ) x⟫_ℝ ∂μ = 0 := by
-  simp only [solenoidalLp, ClosedSubmodule.mem_iInf, ClosedSubmodule.mem_comap,
-    ClosedSubmodule.mem_bot, MemLp.innerLpCLM_apply]
-  simp_rw [← TestFunction.gradientCLM_apply, real_inner_comm]
+  simp only [mem_solenoidalLp_iff_testGradientPairingCLM_eq_zero, testGradientPairingCLM_apply]
 
 end Lp
 

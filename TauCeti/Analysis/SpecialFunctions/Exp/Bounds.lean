@@ -39,6 +39,7 @@ is bounded on `x ≥ 0`.
   eventually bounded by `C exp (-μ t)`, so an exponential rate `k` cannot be improved.
 * `TauCeti.exp_neg_le_div_exp_sub_one`: `exp (-x) ≤ x / (exp x - 1)` for `0 < x`.
 * `TauCeti.div_exp_sub_one_le_one`: `x / (exp x - 1) ≤ 1` for `0 ≤ x`.
+* `TauCeti.min_one_div_two_le_one_sub_exp_neg`: `min 1 t / 2 ≤ 1 - exp (-t)` for `0 ≤ t`.
 * `TauCeti.exp_neg_le_rpow_iff`: `exp (-t) ≤ y ^ ε ↔ exp (-(t / ε)) ≤ y` for `0 ≤ y`, `0 < ε`.
 * `TauCeti.abs_log_sub_le_iff`: `|log x - y| ≤ C ↔ exp (-C) * exp y ≤ x ∧ x ≤ exp C * exp y` for
   `0 < x`.
@@ -68,12 +69,15 @@ is bounded on `x ≥ 0`.
 * `TauCeti.exp_neg_sub_mul_le_of_le`: `exp (-(x - σ) t) ≤ exp (-(x - σ) δ)` for `σ ≤ x` and
   `δ ≤ t`.
 * `Real.pow_le_exp_mul`: `x ^ k ≤ exp (k x)` for `0 ≤ x` and every natural `k`.
+* `Real.exp_le_pow_of_exp_one_le`: `exp y ≤ x ^ n` for `exp 1 ≤ x` and `y ≤ n`.
 * `TauCeti.exp_div_pow_le_exp_div_pow`: `exp t / d ^ k ≤ exp c / s ^ k` for `0 < s`, `0 ≤ d` and
   `k (s / d - 1) + t ≤ c`.
 * `TauCeti.one_add_mul_le_one_add_mul_exp_mul_sub_one`:
   `1 + a x ≤ (1 + a) exp (a (x - 1))` for every real `a` and `x ≥ 1`.
 * `TauCeti.inv_one_sub_le_one_add_mul_exp_sq_div_one_sub_sq`:
   `(1 - x)⁻¹ ≤ (1 + x) exp (t² / (1 - t²))` for `0 ≤ x ≤ t < 1`.
+* `TauCeti.mul_le_mul_one_add_abs_rpow_mul_exp`: product bound for two polynomial–exponential
+  profiles `C * (1 + |y|) ^ R * exp (α * |y|)` with signed rates.
 * `TauCeti.exp_mul_le_exp_abs_mul_mul_exp_of_abs_sub_le`: `exp (c u) ≤ exp (|c| A) exp (c v)`
   for `|u - v| ≤ A`, with its squared form `TauCeti.sq_exp_mul_le_of_abs_sub_le`.
 -/
@@ -189,6 +193,25 @@ theorem div_exp_sub_one_le_one {x : ℝ} (hx : 0 ≤ x) : x / (exp x - 1) ≤ 1 
   · simp
   rw [div_le_one (sub_pos.2 (one_lt_exp_iff.2 hx))]
   linarith [add_one_le_exp x]
+
+/-- For nonnegative `t`, the gap `1 - exp (-t)` is at least half of `min 1 t`: it is linear in
+`t` up to `t = 1` and bounded below by a constant thereafter. -/
+theorem min_one_div_two_le_one_sub_exp_neg {t : ℝ} (ht : 0 ≤ t) :
+    min 1 t / 2 ≤ 1 - exp (-t) := by
+  have hden : 0 < 1 + t := by linarith
+  have hinv : exp (-t) ≤ (1 + t)⁻¹ := by
+    rw [exp_neg]
+    exact inv_anti₀ hden (by simpa [add_comm] using add_one_le_exp t)
+  have hfrac : min 1 t / 2 ≤ t / (1 + t) := by
+    rcases le_total t 1 with h | h
+    · rw [min_eq_right h, div_le_div_iff₀ (by norm_num) hden]
+      nlinarith [mul_nonneg ht (sub_nonneg.mpr h)]
+    · rw [min_eq_left h, div_le_div_iff₀ (by norm_num) hden]
+      linarith
+  calc
+    _ ≤ t / (1 + t) := hfrac
+    _ = 1 - (1 + t)⁻¹ := by field_simp; ring
+    _ ≤ _ := sub_le_sub_left hinv _
 
 /-- For `0 ≤ y` and `0 < ε`, the power `y ^ ε` reaches the level `exp (-t)` exactly when `y`
 reaches the level `exp (-(t / ε))`. -/
@@ -434,6 +457,15 @@ theorem _root_.Real.pow_le_exp_mul {x : ℝ} (hx : 0 ≤ x) (k : ℕ) : x ^ k �
   rw [exp_natCast_mul]
   exact pow_le_pow_left₀ hx (by linarith [add_one_le_exp x]) k
 
+/-- A natural power with base at least `exp 1` bounds `exp y` whenever `y` is at most the
+exponent of the power. -/
+theorem _root_.Real.exp_le_pow_of_exp_one_le {x y : ℝ} {n : ℕ} (hx : exp 1 ≤ x) (hy : y ≤ n) :
+    exp y ≤ x ^ n := by
+  calc
+    exp y ≤ exp n := exp_le_exp.mpr hy
+    _ = exp 1 ^ n := by rw [← exp_natCast_mul, mul_one]
+    _ ≤ x ^ n := pow_le_pow_left₀ (exp_nonneg _) hx _
+
 /-- Comparison of two geometric rates against exponential factors: for `0 < s` and `0 ≤ d`, if
 `k (s / d - 1) + t ≤ c` then `exp t / d ^ k ≤ exp c / s ^ k`. For `0 < d` it follows from
 `(s / d) ^ k ≤ exp (k (s / d - 1))`, that is from `x ≤ exp (x - 1)`; at `d = 0` the left side is
@@ -475,6 +507,23 @@ theorem inv_one_sub_le_one_add_mul_exp_sq_div_one_sub_sq {x t : ℝ} (hx : 0 ≤
   calc (1 - x)⁻¹ = (1 + x) * (1 - x ^ 2)⁻¹ := by field_simp [(by linarith : (1 : ℝ) - x ≠ 0)]; ring
     _ ≤ (1 + x) * (1 - t ^ 2)⁻¹ := by gcongr
     _ ≤ (1 + x) * Real.exp (t ^ 2 / (1 - t ^ 2)) := by gcongr
+
+/-- Product bound for two nonnegative quantities bounded by polynomial–exponential profiles
+`C * (1 + |y|) ^ R * exp (α * |y|)` with signed rates `α₁` and `α₂`. -/
+theorem mul_le_mul_one_add_abs_rpow_mul_exp {x₁ x₂ C₁ R₁ α₁ C₂ R₂ α₂ y : ℝ}
+    (hx₁ : 0 ≤ x₁) (hx₂ : 0 ≤ x₂)
+    (h₁ : x₁ ≤ C₁ * (1 + |y|) ^ R₁ * Real.exp (α₁ * |y|))
+    (h₂ : x₂ ≤ C₂ * (1 + |y|) ^ R₂ * Real.exp (α₂ * |y|)) :
+    x₁ * x₂ ≤ C₁ * C₂ * (1 + |y|) ^ (R₁ + R₂) * Real.exp ((α₁ + α₂) * |y|) := by
+  have h1y : 0 < 1 + |y| := by positivity
+  calc x₁ * x₂
+      ≤ (C₁ * (1 + |y|) ^ R₁ * Real.exp (α₁ * |y|)) *
+          (C₂ * (1 + |y|) ^ R₂ * Real.exp (α₂ * |y|)) :=
+        mul_le_mul h₁ h₂ hx₂ (hx₁.trans h₁)
+    _ = C₁ * C₂ * ((1 + |y|) ^ R₁ * (1 + |y|) ^ R₂) *
+          (Real.exp (α₁ * |y|) * Real.exp (α₂ * |y|)) := by ring
+    _ = C₁ * C₂ * (1 + |y|) ^ (R₁ + R₂) * Real.exp ((α₁ + α₂) * |y|) := by
+        rw [← Real.rpow_add h1y, ← Real.exp_add, ← add_mul]
 
 /-- Changing the exponent of an exponential weight by at most `A` changes it by at most the factor
 `exp (|c| A)`: `exp (c u) ≤ exp (|c| A) exp (c v)` for `|u - v| ≤ A`. -/

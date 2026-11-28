@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Equiv.Basic
+public import Mathlib.GroupTheory.OrderOfElement
 
 /-!
 # Powers under a multiplicative equivalence
@@ -20,6 +21,8 @@ injective on one side exactly when it is injective on the other.
 * `MulEquiv.bijective_zpow_iff` and its additive form `AddEquiv.bijective_zsmul_iff`: raising
   to the `m`-th power (multiplying by `m`) is bijective on one side of an equivalence exactly when
   it is bijective on the other.
+* `MulEquiv.isOfFinOrder_iff` and its additive form `AddEquiv.isOfFinAddOrder_iff`: a
+  multiplicative equivalence preserves and reflects finite order.
 * `MulEquiv.isMulTorsionFree_iff` and its additive form `AddEquiv.isAddTorsionFree_iff`: one side
   of an equivalence is torsion-free exactly when the other is.
 -/
@@ -49,6 +52,15 @@ theorem bijective_zpow_iff {G H : Type*} [Group G] [Group H] (e : G ≃* H) (m :
     ext y
     simp
   rw [h, EquivLike.comp_bijective, EquivLike.bijective_comp]
+
+/-- An element has finite order after applying a multiplicative equivalence `e : M ≃* N` if and
+only if it has finite order in `M`. -/
+@[to_additive (attr := simp)
+/-- An element has finite additive order after applying an additive equivalence `e : M ≃+ N` if
+and only if it has finite additive order in `M`. -/]
+theorem isOfFinOrder_iff {M N : Type*} [Monoid M] [Monoid N] (e : M ≃* N) {x : M} :
+    IsOfFinOrder (e x) ↔ IsOfFinOrder x :=
+  Function.Injective.isOfFinOrder_iff (f := e.toMonoidHom) e.injective
 
 /-- For a multiplicative equivalence `M ≃* N`, the monoid `M` is torsion-free exactly when `N`
 is. -/

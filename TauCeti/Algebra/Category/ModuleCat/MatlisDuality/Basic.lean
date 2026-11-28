@@ -48,6 +48,8 @@ noncomputable section
 
 open CategoryTheory Opposite TauCeti TauCeti.MatlisDual
 
+open scoped ModuleCat.Algebra
+
 universe u v t w
 
 namespace ModuleCat
@@ -147,6 +149,13 @@ theorem matlisDualOpObjEquiv_map_apply {N N' : ModuleCat.{w} Aᵐᵒᵖ} (g : N 
       equivLinearMap R E N' (matlisDualOpObjEquiv R E N' φ) (g x) :=
   mapOp_apply g.hom (matlisDualOpObjEquiv R E N' φ) x
 
+/-- The comparison with the underlying Matlis dual respects the base-ring action. -/
+@[simp]
+theorem matlisDualOpObjEquiv_smul (N : ModuleCat.{w} Aᵐᵒᵖ) (c : R)
+    (φ : matlisDualOpObj R E N) :
+    matlisDualOpObjEquiv R E N (c • φ) = c • matlisDualOpObjEquiv R E N φ := by
+  rw [← IsScalarTower.algebraMap_smul A c φ, map_smul, IsScalarTower.algebraMap_smul]
+
 /-- The bundled dual of a right module `N` is the Matlis dual of any right module `N'` linearly
 equivalent to it, for any action of `R` on `N'` compatible with `Aᵐᵒᵖ`. -/
 def matlisDualOpObjEquivOfLinearEquiv {N' : Type*} [AddCommGroup N'] [Module Aᵐᵒᵖ N'] [Module R N']
@@ -202,8 +211,45 @@ theorem matlisDualOpMap_add {N N' : ModuleCat.{w} Aᵐᵒᵖ} (g h : N ⟶ N') :
   refine (matlisDualOpObjEquiv_map_apply R E (g + h) φ x).trans ?_
   simp [ModuleCat.hom_add, map_add]
 
+/-- Dualizing the identity of a right module gives the identity of its Matlis dual. -/
+@[simp]
+theorem matlisDualOpMap_id (N : ModuleCat.{w} Aᵐᵒᵖ) :
+    matlisDualOpMap R E (𝟙 N) = 𝟙 (matlisDualOpObj R E N) := by
+  simpa only [matlisDualOp_map, unop_id, matlisDualOp, unop_op] using
+    (matlisDualOp R E).map_id (op N)
+
+/-- Dualizing a composite of right-module maps reverses the order of composition. -/
+@[simp]
+theorem matlisDualOpMap_comp {N₁ N₂ N₃ : ModuleCat.{w} Aᵐᵒᵖ}
+    (f : N₁ ⟶ N₂) (g : N₂ ⟶ N₃) :
+    matlisDualOpMap R E (f ≫ g) = matlisDualOpMap R E g ≫ matlisDualOpMap R E f := by
+  simpa only [← op_comp, matlisDualOp_map, Quiver.Hom.unop_op, matlisDualOp, unop_op] using
+    (matlisDualOp R E).map_comp g.op f.op
+
 instance : (matlisDualOp R E (A := A)).Additive where
   map_add := matlisDualOpMap_add R E _ _
+
+/-- Dualizing a zero map of right modules gives the zero map between their Matlis duals. -/
+@[simp]
+theorem matlisDualOpMap_zero (N N' : ModuleCat.{w} Aᵐᵒᵖ) :
+    matlisDualOpMap R E (0 : N ⟶ N') = 0 := by
+  have h := (matlisDualOp R E).map_zero (op N') (op N)
+  simp only [matlisDualOp_map, Limits.unop_zero] at h
+  exact h
+
+/-- Dualizing right-module morphisms respects scalar multiplication over the base ring. -/
+@[simp]
+theorem matlisDualOpMap_smul {N N' : ModuleCat.{w} Aᵐᵒᵖ} (c : R) (f : N ⟶ N') :
+    matlisDualOpMap R E (c • f) = c • matlisDualOpMap R E f := by
+  ext φ : 2
+  apply (matlisDualOpObjEquiv R E N).injective
+  ext x
+  simp only [matlisDualOpObjEquiv_map_apply, hom_smul, LinearMap.smul_apply,
+    matlisDualOpObjEquiv_smul, map_smul]
+
+instance : (matlisDualOp R E (A := A)).Linear R where
+  map_smul := fun f c ↦ matlisDualOpMap_smul R E c f.unop
+
 
 end Right
 

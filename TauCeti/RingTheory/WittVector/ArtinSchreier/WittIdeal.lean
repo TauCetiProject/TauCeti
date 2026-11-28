@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.WittVector.Ideal
 
 import TauCeti.Algebra.CharP.Lemmas
 import TauCeti.FieldTheory.Finite.FrobeniusFixed
-import TauCeti.RingTheory.WittVector.Frobenius
+import TauCeti.RingTheory.WittVector.Frobenius.Basic
 
 /-!
 # The Artin–Schreier sequence modulo a Witt ideal

@@ -717,7 +717,7 @@ theorem homologyRestrictScalarsEquiv_symm_mk (hd : d ∘ₗ d = 0) (z : ker d) :
 
 end RestrictScalars
 
-section RTensor
+section Tensor
 
 variable {S M : Type*} [CommRing S] [AddCommGroup M] [Module S M] (d : M →ₗ[S] M)
 
@@ -728,6 +728,12 @@ endomorphism `d ⊗ 1` of `M ⊗ W`. -/
 theorem rTensor_comp_rTensor_eq_zero (W : Type*) [AddCommGroup W] [Module S W]
     (hd : d ∘ₗ d = 0) : d.rTensor W ∘ₗ d.rTensor W = 0 := by
   rw [← rTensor_comp, hd, rTensor_zero]
+
+/-- Tensoring a module `W` with a square-zero endomorphism gives a square-zero endomorphism
+`1 ⊗ d` of `W ⊗ M`. -/
+theorem lTensor_comp_lTensor_eq_zero (W : Type*) [AddCommGroup W] [Module S W]
+    (hd : d ∘ₗ d = 0) : d.lTensor W ∘ₗ d.lTensor W = 0 := by
+  rw [← lTensor_comp, hd, lTensor_zero]
 
 /-- **Homology commutes with tensoring by `S × S`.** For a square-zero endomorphism `d` of `M`,
 the homology of `d ⊗ 1` on `M ⊗ (S × S)` is the homology of `d` tensored with `S × S`: both are
@@ -746,7 +752,7 @@ theorem homologyRTensorProdEquiv_symm_mk_tmul (hd : d ∘ₗ d = 0) (z : ker d) 
       Submodule.Quotient.mk ⟨(z : M) ⊗ₜ w, tmul_mem_ker_rTensor z.property w⟩ := by
   simp [homologyRTensorProdEquiv, LinearEquiv.symm_apply_eq, ← Submodule.Quotient.mk_smul]
 
-end RTensor
+end Tensor
 
 section MappingConeHomotopy
 

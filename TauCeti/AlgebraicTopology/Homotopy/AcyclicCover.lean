@@ -30,15 +30,16 @@ groups in one arbitrary universe. It needs two inputs:
 * **Eilenberg--Mac Lane spaces:** every `K(A, n)` space, `n ≥ 1`, of a group `A` with the property
   `P` has the `k`-homology of a point.
 
-The step up the tower is `TauCeti.subsingleton_singularHomology_nConnectedCover_of_fiber`: the
-projection `Z⟨n + 2⟩ → Z` from the `(n + 2)`-connected cover is a fibration whose fibres are
-`K(πₙ₊₂(Z), n + 1)` spaces (`TauCeti.isEilenbergMacLaneSpace_fiber_nConnectedCoverProj`). When
-these are `k`-acyclic it is a `k`-homology isomorphism, so the cover inherits `k`-acyclicity in each
-degree `i + 1` in the finite range. The cover is `(n + 2)`-connected and has the homotopy groups
-of `Z` above `n + 2`, so the first input applies to it in the next degree. Initially the space is
-replaced by the CW approximation of its base point's path component, which is path-connected and
-preserves positive homotopy groups and homology vanishing; the shared induction along the Whitehead
-tower, `TauCeti.whiteheadTower_induction`, then replaces each stage by its CW approximation.
+The step up the tower is `TauCeti.isIso_singularHomologyMap_nConnectedCoverProj_of_fiber` and
+`TauCeti.subsingleton_singularHomology_nConnectedCover_of_fiber`: the projection `Z⟨n + 2⟩ → Z`
+from the `(n + 2)`-connected cover is a fibration whose fibres are `K(πₙ₊₂(Z), n + 1)` spaces
+(`TauCeti.isEilenbergMacLaneSpace_fiber_nConnectedCoverProj`). When these are `k`-acyclic it is a
+`k`-homology isomorphism, so the cover inherits `k`-acyclicity in each degree `i` in the finite
+range. The cover is `(n + 2)`-connected and has the homotopy groups of `Z` above `n + 2`, so the
+first input applies to it in the next degree. Initially the space is replaced by the CW
+approximation of its base point's path component, which is path-connected and preserves positive
+homotopy groups and homology vanishing; the shared induction along the Whitehead tower,
+`TauCeti.whiteheadTower_induction`, then replaces each stage by its CW approximation.
 
 The Eilenberg--Mac Lane fibre sits over the `(n + 1)`-connected stage `Z`, never over the original
 space: only the fibrations `K(πₙ₊₂ Z, n + 1) → Z⟨n + 2⟩ → Z` between successive stages are used,
@@ -46,6 +47,9 @@ and no spectral sequence is needed.
 
 ## Main results
 
+* `TauCeti.isIso_singularHomologyMap_nConnectedCoverProj_of_fiber`: the projection from the
+  `(n + 2)`-connected cover of an `(n + 1)`-connected Hausdorff space induces an isomorphism on
+  `k`-homology in every degree `i` when the `K(πₙ₊₂, n + 1)` spaces are `k`-acyclic.
 * `TauCeti.subsingleton_singularHomology_nConnectedCover_of_fiber`: vanishing of `H_i(-; k)`
   transfers to the `(n + 2)`-connected cover of an `(n + 1)`-connected Hausdorff space when the
   `K(πₙ₊₂, n + 1)` spaces are `k`-acyclic.
@@ -74,6 +78,21 @@ namespace TauCeti
 
 variable (k : Type u) [Ring k]
 
+/-- **The projection from the `(m + 2)`-connected cover is a homology isomorphism** when its
+`K(πₘ₊₂(X), m + 1)` fibres are `k`-acyclic. -/
+theorem isIso_singularHomologyMap_nConnectedCoverProj_of_fiber (X : TopCat.{u}) [T2Space X]
+    [PathConnectedSpace X] (x : X) (m : ℕ)
+    (hX : ∀ j, j ≠ 0 → j < m + 2 → Subsingleton (π_ j X x))
+    (hK : ∀ {Y : Type u} [TopologicalSpace Y] {y : Y},
+      IsEilenbergMacLaneSpace (π_ (m + 2) X x) (m + 1) Y y →
+        ∀ i, Subsingleton (((singularChains k).obj (TopCat.of Y)).homology (i + 1)))
+    (i : ℕ) :
+    IsIso (((singularHomologyFunctor (ModuleCat.{u} k) i).obj (ModuleCat.of k k)).map
+      (nConnectedCoverProj (m + 2) X x)) :=
+  isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber k
+    (serreFibrations_nConnectedCoverProj (m + 2) X x)
+    (isEilenbergMacLaneSpace_fiber_nConnectedCoverProj X x m hX) hK i
+
 /-- **The `(n + 2)`-connected cover of a `k`-acyclic space.** Let `X` be a Hausdorff,
 path-connected space whose homotopy groups `πⱼ` vanish for `1 ≤ j < m + 2`, and whose
 `i`-th `k`-homology vanishes. If every `K(πₘ₊₂(X), m + 1)` space has the `k`-homology of a point,
@@ -86,11 +105,7 @@ theorem subsingleton_singularHomology_nConnectedCover_of_fiber (X : TopCat.{u}) 
         ∀ j, Subsingleton (((singularChains k).obj (TopCat.of Y)).homology (j + 1)))
     (i : ℕ) (hXk : Subsingleton (((singularChains k).obj X).homology i)) :
     Subsingleton (((singularChains k).obj (nConnectedCover (m + 2) X x)).homology i) := by
-  -- Every fibre of the projection is a `K(πₘ₊₂(X), m + 1)` space, so it is `k`-acyclic and the
-  -- projection is a `k`-homology isomorphism.
-  have := isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber k
-    (serreFibrations_nConnectedCoverProj (m + 2) X x)
-    (isEilenbergMacLaneSpace_fiber_nConnectedCoverProj X x m hX) hK i
+  have := isIso_singularHomologyMap_nConnectedCoverProj_of_fiber k X x m hX hK i
   exact (subsingleton_singularChains_homology_iff_of_isIso _
     (nConnectedCoverProj (m + 2) X x) _).2 hXk
 

@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Linear.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
 
 /-!
-# Cokernels of precomposition on Hom spaces
+# Cokernels of precomposition and postcomposition on Hom spaces
 
 For a morphism `f : X ⟶ P` in a linear category, `HomCokernel R f Y` is
 `Hom(X, Y)` modulo the maps extending across `f`. In a projective presentation
@@ -20,6 +20,10 @@ principle and universal property are those of `Submodule`. Postcomposition gives
 its covariant action on `Y`; precomposition acts contravariantly on the presenting
 object. A morphism killed by the presenting map defines a restriction out of the
 quotient. These operations need no abelian or projectivity hypothesis.
+
+For `g : Y ⟶ Z`, `CovariantHomCokernel R g X` is `Hom(X, Z)` modulo the maps factoring
+through `g`. In an injective copresentation `0 → N → Y → Z → 0`, it computes `Ext¹(X, N)`.
+Precomposition gives its contravariant action on `X`.
 -/
 
 public section
@@ -122,5 +126,46 @@ theorem precomp_injective (f : X ⟶ P) (e : W ⟶ X) [Epi e] :
   | _ g => simpa [cancel_epi] using hx
 
 end HomCokernel
+
+/-- The cokernel of postcomposition with `g : Y ⟶ Z` on morphisms from `X`. -/
+abbrev CovariantHomCokernel (g : Y ⟶ Z) (X : C) :=
+  (X ⟶ Z) ⧸ (Linear.rightComp R X g).range
+
+namespace CovariantHomCokernel
+
+/-- A map represents zero in the covariant Hom cokernel exactly when it factors through `g`. -/
+theorem mk_eq_zero_iff (g : Y ⟶ Z) (h : X ⟶ Z) :
+    (Submodule.Quotient.mk h : CovariantHomCokernel R g X) = 0 ↔
+      ∃ k : X ⟶ Y, k ≫ g = h := by
+  simp
+
+/-- Precomposition on the cokernel of postcomposition with `g`. -/
+def map (g : Y ⟶ Z) (f : W ⟶ X) :
+    CovariantHomCokernel R g X →ₗ[R] CovariantHomCokernel R g W :=
+  (Linear.rightComp R X g).range.mapQ (Linear.rightComp R W g).range
+    (Linear.leftComp R Z f) (by
+      rintro _ ⟨h, rfl⟩
+      exact ⟨f ≫ h, Category.assoc _ _ _⟩)
+
+/-- Precomposition sends the class of `h` to the class of `f ≫ h`. -/
+@[simp]
+theorem map_mk (g : Y ⟶ Z) (f : W ⟶ X) (h : X ⟶ Z) :
+    map R g f (Submodule.Quotient.mk h) = Submodule.Quotient.mk (f ≫ h) := by
+  simp [map]
+
+/-- Precomposition with an identity acts as the identity on the cokernel. -/
+@[simp]
+theorem map_id (g : Y ⟶ Z) : map R g (𝟙 X) = LinearMap.id := by
+  ext
+  simp
+
+/-- Precomposition on the cokernel reverses composition. -/
+@[simp]
+theorem map_comp (g : Y ⟶ Z) (f : W ⟶ X) (e : P ⟶ W) :
+    map R g (e ≫ f) = (map R g e).comp (map R g f) := by
+  ext
+  simp
+
+end CovariantHomCokernel
 
 end TauCeti
