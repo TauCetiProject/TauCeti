@@ -268,8 +268,8 @@ theorem exists_measure_setOf_le_inter_dyadicCube_le_rpow_mul_of_wkp
           rw [← ENNReal.ofReal_mul hR0.le, mul_div_cancel₀ _ hR0.ne']
   have hvol_eq : ∀ S : Set (EuclideanSpace ℝ ι),
       volume S = (Measure.addHaarScalarFactor volume mu : ℝ≥0∞) * mu S := fun S ↦ by
-    conv_lhs => rw [Measure.isAddLeftInvariant_eq_smul volume mu]
-    rfl
+    conv_lhs => rw [Measure.isAddLeftInvariant_eq_smul volume mu, smul_apply,
+      ENNReal.smul_def, smul_eq_mul]
   have hvol_bound : volume ({x | t / (1 + 3 * ζ) ≤ w x} ∩ Q) ≤
       ENNReal.ofReal (C * (t / (1 + 3 * ζ)) ^ (-ε)) * volume Q :=
     H hc hR ha (hLam.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hlam.le))
