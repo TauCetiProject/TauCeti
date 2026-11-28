@@ -12,8 +12,9 @@ import TauCeti.Analysis.RCLike.Basic
 /-!
 # Bounded differences for complex-valued functions
 
-Applying the real McDiarmid inequality to the real and imaginary parts gives a tail bound
-for the norm of a centered complex statistic.
+Applying
+`ProbabilityTheory.iIndepFun.measureReal_abs_sub_integral_ge_le_of_bounded_differences`
+to the real and imaginary parts gives a tail bound for the norm of a centered complex statistic.
 -/
 
 public section
@@ -25,7 +26,8 @@ namespace ProbabilityTheory.iIndepFun
 
 /-- McDiarmid's inequality for the norm of a centered statistic of independent coordinates.
 If changing coordinate `i` moves the statistic by at most `c i`, the tail at `t ≥ 0` is at most
-`4 exp (-t² / (2 ∑ i, (c i)²))`. -/
+`4 exp (-t² / (2 ∑ i, (c i)²))`. When all coordinate bounds vanish, the displayed bound is
+the trivial bound `4`. -/
 theorem measureReal_norm_sub_integral_ge_le_of_bounded_differences
     {Ω ι 𝕜 : Type*} [MeasurableSpace Ω] [Fintype ι] [RCLike 𝕜]
     [MeasurableSpace 𝕜] [BorelSpace 𝕜] {β : ι → Type*} [∀ i, MeasurableSpace (β i)]

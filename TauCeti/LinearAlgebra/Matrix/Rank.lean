@@ -79,8 +79,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   the size of the matrix, and the rank of a sum of orthogonal idempotent matrices is the sum of
   their ranks.
 * `Matrix.rank_fromBlocks_zero₁₂_zero₂₁` and `Matrix.rank_fromBlocks_zero₁₁_zero₂₂`: over a
-  field, the ranks of block-diagonal and off-diagonal block matrices are the sums of the
-  ranks of their respective blocks.
+  field with finite column index types, the ranks of block-diagonal and off-diagonal block
+  matrices are the sums of the ranks of their respective blocks.
 * `Matrix.rank_conjTranspose_of_field` and
   `Matrix.rank_mul_conjTranspose_self_sub_mul_conjTranspose_self_le`: over a field with a star ring
   structure, the conjugate transpose preserves the rank and `rank (X Xᴴ - Y Yᴴ) ≤ 2 * rank (X - Y)`.
@@ -558,7 +558,8 @@ theorem rank_fromBlocks_zero₁₂_zero₂₁ {l l' m' : Type*} [Finite l] [Fini
   rw [hr, LinearEquiv.finrank_map_eq]
   exact (Submodule.prodEquiv _ _).finrank_eq.trans Module.finrank_prod
 
-/-- An off-diagonal block matrix has rank equal to the sum of the ranks of its two blocks. -/
+/-- Over a field with finite column index types, an off-diagonal block matrix has rank equal
+to the sum of the ranks of its two blocks. -/
 @[simp]
 theorem rank_fromBlocks_zero₁₁_zero₂₂ {K m n p q : Type*} [Field K] [Finite n] [Finite q]
     (B : Matrix m q K) (C : Matrix p n K) :
@@ -787,6 +788,15 @@ theorem rank_conjTranspose_of_field {R : Type*} [Field R] [StarRing R] {m n : Ty
     [Finite n] (A : Matrix m n R) : Aᴴ.rank = A.rank := by
   have h : Aᴴ = (A.map (starRingEnd R))ᵀ := rfl
   rw [h, rank_transpose, rank_map]
+
+/-- The difference of two Hermitian dilations has twice the rank of the difference of the
+underlying rectangular matrices. -/
+theorem rank_fromBlocks_zero_conjTranspose_zero_sub {R : Type*} [Field R] [StarRing R]
+    {m n : Type*} [Finite m] [Finite n] (A B : Matrix m n R) :
+    (fromBlocks 0 A Aᴴ 0 - fromBlocks 0 B Bᴴ 0).rank = 2 * (A - B).rank := by
+  simp only [sub_eq_add_neg, fromBlocks_neg, fromBlocks_add, neg_zero, add_zero,
+    ← conjTranspose_neg, ← conjTranspose_add, rank_fromBlocks_zero₁₁_zero₂₂,
+    rank_conjTranspose_of_field, two_mul]
 
 section StarField
 
