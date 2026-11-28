@@ -47,6 +47,8 @@ Matrix-valued maps use the `L∞` operator norm. Enable `open scoped Matrix.Norm
 * `Matrix.SpecialLinearGroup.contMDiffAt_iff`: a map into the special linear group is `C^k` at a
   point exactly when its matrix is.
 * `Matrix.SpecialLinearGroup.range_mvfderiv_subtypeVal_one`: the trace-zero tangent image.
+* `Matrix.SpecialLinearGroup.injective_mvfderiv_subtypeVal`: the differential of the matrix
+  inclusion is injective.
 
 ## References
 
@@ -217,5 +219,11 @@ theorem range_mvfderiv_subtypeVal_one :
     rw [TauCeti.range_mvfderiv]
     exact hmap.trans hcancel
 
+/-- The differential of the matrix inclusion is injective at every point. -/
+theorem injective_mvfderiv_subtypeVal (A : SpecialLinearGroup n 𝕜) :
+    Function.Injective (mvfderiv 𝓘(𝕜, Model n 𝕜)
+      (fun A : SpecialLinearGroup n 𝕜 ↦ (A : Matrix n n 𝕜)) A) :=
+  TauCeti.injective_mvfderiv_iff.mpr
+    ((isSmoothEmbedding_subtypeVal (n := n) (𝕜 := 𝕜)).isImmersion.mfderiv_injective (by simp) A)
 
 end Matrix.SpecialLinearGroup

@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Algebraic.Defs
 public import TauCeti.Analysis.AbsoluteValue.Action
 public import TauCeti.Analysis.AbsoluteValue.Equivalence
 
 import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
+import TauCeti.Analysis.AbsoluteValue.Rpow
 
 /-!
 # Places of a field of characteristic zero as `ℚ`-normalised absolute values
@@ -30,11 +32,19 @@ restriction to a subring that it fixes pointwise. It is not the normalisation of
 where `NumberField.FinitePlace` takes the value `1/5`.
 
 Two equivalent places are equal (`AbsoluteValue.Place.eq_of_isEquiv`), so each absolute value of
-`L` is equivalent to at most one place (`AbsoluteValue.Place.subsingleton_setOf_isEquiv`). That
-every nontrivial absolute value of an algebraic extension of `ℚ` is equivalent to a place is not
-proved here. For a field that is not algebraic over `ℚ` the places are only the `ℚ`-normalised
-absolute values: on `ℚ(t)` the `t`-adic absolute value is nontrivial and trivial on `ℚ`, so it is
-equivalent to no place.
+`L` is equivalent to at most one place (`AbsoluteValue.Place.subsingleton_setOf_isEquiv`). An
+absolute value `w` whose restriction to `ℚ` is nontrivial is equivalent to exactly one place
+(`AbsoluteValue.Place.existsUnique_isEquiv_of_isNontrivial_under`), its `ℚ`-normalised
+representative `AbsoluteValue.toPlace`. By Ostrowski's theorem `w.under ℚ` is the `c`-th root of the
+real or of a `p`-adic absolute value for some `c > 0`, and `x ↦ w x ^ c` is the place: in both
+cases it is at most the real absolute value on the natural numbers, which is enough for the
+triangle inequality (`AbsoluteValue.rpow_add_le_of_forall_natCast`). When `L` is algebraic over
+`ℚ`, the restriction to `ℚ` of a nontrivial absolute value is nontrivial
+(`AbsoluteValue.isNontrivial_iff_of_liesOver`), so every nontrivial absolute value of `L` is
+equivalent to exactly one place (`AbsoluteValue.Place.existsUnique_isEquiv`), and the places are
+the places of `L` in the classical sense. For a field that is not algebraic over `ℚ` the places are
+only the `ℚ`-normalised absolute values: on `ℚ(t)` the `t`-adic absolute value is nontrivial and
+trivial on `ℚ`, so it is equivalent to no place.
 
 The comparisons with Mathlib's `NumberField.InfinitePlace` and `NumberField.FinitePlace` are in
 `TauCeti.NumberTheory.NumberField.PlacesOver.Place`.
@@ -43,8 +53,12 @@ The comparisons with Mathlib's `NumberField.InfinitePlace` and `NumberField.Fini
 
 * `AbsoluteValue.Place L`: the `ℚ`-normalised absolute values of a field `L` of characteristic zero.
 * `AbsoluteValue.Place.under K`: the restriction of a place to a subfield `K`.
+* `AbsoluteValue.Place.comap`: the restriction of a place along a field embedding; restriction
+  to a subfield is the case of its inclusion (`AbsoluteValue.Place.comap_algebraMap`).
 * `AbsoluteValue.Place.instMulAction`: the action `(g • w) x = w (g⁻¹ • x)` of a group acting on `L`
   by ring automorphisms.
+* `AbsoluteValue.toPlace`: the place equivalent to an absolute value whose restriction to `ℚ` is
+  nontrivial.
 
 ## Main results
 
@@ -53,8 +67,21 @@ The comparisons with Mathlib's `NumberField.InfinitePlace` and `NumberField.Fini
 * `AbsoluteValue.Place.isNonarchimedean_iff`, `AbsoluteValue.Place.not_isNonarchimedean_iff`: a
   place is finite if and only if its restriction to `ℚ` is `p`-adic, and infinite if and only if it
   is real.
+* `AbsoluteValue.Place.apply_natCast_lt_one_of_under_eq_padic`: a place above `p` is less than one
+  at `p`.
+* `AbsoluteValue.Place.exists_prime_apply_natCast_lt_one`: a finite place is less than one at
+  some prime number.
 * `AbsoluteValue.Place.under_smul`: the action does not change the restriction to a subfield that
   the group fixes pointwise.
+* `AbsoluteValue.Place.mem_stabilizer_of_forall_apply_smul_sub_pow_lt_one`: an element satisfying
+  the congruences `w (σ • x - x ^ q) < 1` whenever `w x ≤ 1` fixes the place `w`.
+* `AbsoluteValue.Place.existsUnique_isEquiv_of_isNontrivial_under`,
+  `AbsoluteValue.Place.existsUnique_isEquiv`: an absolute value whose restriction to `ℚ` is
+  nontrivial, and so, when `L` is algebraic over `ℚ`, every nontrivial absolute value, is
+  equivalent to exactly one place.
+* `AbsoluteValue.toPlace_eq_iff`, `AbsoluteValue.Place.toPlace_val`, `AbsoluteValue.toPlace_smul`,
+  `AbsoluteValue.under_toPlace`: the normalised representative is characterised by equivalence,
+  is the identity on places, and commutes with the action and with restriction.
 
 ## Acknowledgments
 
@@ -64,6 +91,11 @@ Riemann-Hypothesis channel, topic Library design discrepancies between RH/Mathli
 <https://leanprover.zulipchat.com/#narrow/channel/658556-Riemann-Hypothesis/topic/Library.20design.20discrepancies.20between.20RH.2FMathlib.2FTauCeti/near/643780662>
 and
 <https://leanprover.zulipchat.com/#narrow/channel/658556-Riemann-Hypothesis/topic/Library.20design.20discrepancies.20between.20RH.2FMathlib.2FTauCeti/near/643806146>.
+
+The construction of the normalised representative `AbsoluteValue.toPlace` follows
+`AbsoluteValue.normalization` in Jz Pan's lean-iwasawa
+(<https://github.com/acmepjz/lean-iwasawa>, branch `autoformalize.v1` at `7666c16`,
+`Iwasawalib/NumberTheory/AbsoluteValue/Normalization.lean`, Apache 2.0).
 
 ## References
 
@@ -157,6 +189,22 @@ theorem isNonarchimedean_iff (w : Place L) :
     rw [hp, isNonarchimedean_iff_forall_natCast_le_one]
     exact fun n ↦ by exact_mod_cast Rat.AbsoluteValue.padic_le_one p n
 
+/-- A place above the prime number `p` takes a value less than one at `p`. -/
+theorem apply_natCast_lt_one_of_under_eq_padic {w : Place L} {p : ℕ} [Fact p.Prime]
+    (hp : w.val.under ℚ = Rat.AbsoluteValue.padic p) : w.val (p : L) < 1 := by
+  have h1 : w.val (p : L) = Rat.AbsoluteValue.padic p (p : ℚ) := by
+    rw [← hp, AbsoluteValue.under_apply]
+    simp
+  rw [h1, Rat.AbsoluteValue.padic_eq_padicNorm]
+  exact_mod_cast padicNorm.padicNorm_p_lt_one_of_prime
+
+/-- A finite place is less than one at some prime number, the prime `q` for which its restriction
+to `ℚ` is the `q`-adic absolute value. -/
+theorem exists_prime_apply_natCast_lt_one {w : Place L} (hw : IsNonarchimedean w.val) :
+    ∃ q : ℕ, q.Prime ∧ w.val q < 1 := by
+  obtain ⟨q, hq, hwq⟩ := w.isNonarchimedean_iff.mp hw
+  exact ⟨q, hq.out, apply_natCast_lt_one_of_under_eq_padic hwq⟩
+
 /-- A place is infinite if and only if its restriction to `ℚ` is the real absolute value. -/
 theorem not_isNonarchimedean_iff (w : Place L) :
     ¬ IsNonarchimedean w.val ↔ w.val.under ℚ = Rat.AbsoluteValue.real := by
@@ -203,7 +251,61 @@ theorem under_under (M : Type*) [Field M] [CharZero M] [Algebra K M] [Algebra M 
     [IsScalarTower K M L] (w : Place L) : (w.under M).under K = w.under K :=
   Subtype.ext <| AbsoluteValue.under_under K M w.val
 
+/-- The restriction of an infinite place to a subfield is an infinite place. -/
+theorem not_isNonarchimedean_under {w : Place L} (hw : ¬ IsNonarchimedean w.val) :
+    ¬ IsNonarchimedean (w.under K).val := by
+  rw [not_isNonarchimedean_iff] at hw ⊢
+  rwa [← val_under, under_under, val_under]
+
 end under
+
+/-! ### Restriction along a field embedding -/
+
+section comap
+
+variable {M : Type*} [Field M] [CharZero M]
+
+/-- Pulling an absolute value back along a ring embedding of fields of characteristic zero does
+not change its restriction to `ℚ`. -/
+theorem _root_.AbsoluteValue.under_rat_comp (v : AbsoluteValue M ℝ) {f : L →+* M}
+    (hf : Function.Injective f) : (v.comp hf).under ℚ = v.under ℚ := by
+  ext q
+  simp [AbsoluteValue.under_apply, comp_apply]
+
+/-- The restriction of a place of `M` along a field embedding `f : L →+* M` is a place of `L`. -/
+def comap (w : Place M) (f : L →+* M) : Place L :=
+  ⟨w.val.comp f.injective, by
+    rw [AbsoluteValue.under_rat_comp]
+    exact w.isStandard_under⟩
+
+@[simp]
+theorem val_comap (w : Place M) (f : L →+* M) : (w.comap f).val = w.val.comp f.injective := (rfl)
+
+@[simp]
+theorem comap_apply (w : Place M) (f : L →+* M) (x : L) : w.comap f x = w (f x) := (rfl)
+
+@[simp]
+theorem comap_id (w : Place M) : w.comap (RingHom.id M) = w :=
+  ext fun x ↦ by rw [comap_apply, RingHom.id_apply]
+
+@[simp]
+theorem comap_comap {K : Type*} [Field K] [CharZero K] (w : Place M) (f : L →+* M)
+    (g : K →+* L) : (w.comap f).comap g = w.comap (f.comp g) :=
+  ext fun x ↦ by rw [comap_apply, comap_apply, comap_apply, RingHom.comp_apply]
+
+/-- Restriction to a subfield is restriction along its inclusion. -/
+@[simp]
+theorem comap_algebraMap (K : Type*) [Field K] [CharZero K] [Algebra K M] (w : Place M) :
+    w.comap (algebraMap K M) = w.under K :=
+  ext fun x ↦ by rw [comap_apply, under_apply]
+
+/-- Restricting along a field embedding does not change the restriction to `ℚ`. -/
+@[simp]
+theorem under_comap (w : Place M) (f : L →+* M) : (w.comap f).under ℚ = w.under ℚ := by
+  rw [← comap_algebraMap, ← comap_algebraMap, comap_comap,
+    Subsingleton.elim (f.comp (algebraMap ℚ L)) (algebraMap ℚ M)]
+
+end comap
 
 /-! ### The action of a group of ring automorphisms -/
 
@@ -230,6 +332,28 @@ theorem stabilizer_eq (w : Place L) :
   ext g
   simp [MulAction.mem_stabilizer_iff, ← val_inj]
 
+/-- **Power-map congruences fix the place.** If `w (σ • x - x ^ q) < 1` whenever `w x ≤ 1`, then
+`σ` lies in the decomposition group of the place `w`, for any exponent `q` and any place `w`. -/
+theorem mem_stabilizer_of_forall_apply_smul_sub_pow_lt_one (w : Place L) {σ : G} {q : ℕ}
+    (hσ : ∀ x, w.val x ≤ 1 → w.val (σ • x - x ^ q) < 1) : σ ∈ MulAction.stabilizer G w := by
+  rw [MulAction.mem_stabilizer_iff, smul_eq_iff_eq_inv_smul]
+  refine eq_of_isEquiv (by_contra fun h ↦ ?_)
+  -- Otherwise some `a` has `w a < 1 < w (σ • a)`, and `y = a ^ n` with `w (σ • y) > 2`
+  -- contradicts `w (σ • y) ≤ w (σ • y - y ^ q) + w (y ^ q) < 2`.
+  obtain ⟨a, ha, ha'⟩ := exists_one_lt_lt_one_of_not_isEquiv (σ⁻¹ • w).isNontrivial
+    w.isNontrivial (mt IsEquiv.symm h)
+  rw [val_smul, AbsoluteValue.smul_apply, inv_inv] at ha
+  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt 2 ha
+  have hy : w.val (a ^ n) ≤ 1 := by
+    rw [map_pow]
+    exact pow_le_one₀ (w.val.nonneg a) ha'.le
+  have hyq : w.val ((a ^ n) ^ q) ≤ 1 := by
+    rw [map_pow]
+    exact pow_le_one₀ (w.val.nonneg _) hy
+  have hle := w.val.add_le (σ • a ^ n - (a ^ n) ^ q) ((a ^ n) ^ q)
+  rw [sub_add_cancel] at hle
+  linarith [hσ _ hy, show w.val (σ • a ^ n) = w.val (σ • a) ^ n by rw [smul_pow', map_pow]]
+
 /-- A group fixing a subfield `K` pointwise does not change the restriction of a place to `K`. -/
 @[simp]
 theorem under_smul (K : Type*) [Field K] [CharZero K] [Algebra K L] [SMulCommClass G K L]
@@ -238,6 +362,98 @@ theorem under_smul (K : Type*) [Field K] [CharZero K] [Algebra K L] [SMulCommCla
 
 end MulAction
 
+/-! ### The place equivalent to an absolute value -/
+
+section Normalisation
+
+variable {w : AbsoluteValue L ℝ}
+
+/-- **Existence of the normalised representative.** An absolute value of `L` whose restriction to
+`ℚ` is nontrivial is equivalent to a place. -/
+theorem exists_isEquiv_of_isNontrivial_under (hw : (w.under ℚ).IsNontrivial) :
+    ∃ v : Place L, w.IsEquiv v.val := by
+  -- By Ostrowski's theorem `w.under ℚ` is equivalent to a standard absolute value `u`, which is
+  -- at most the real absolute value on the natural numbers.
+  obtain ⟨u, hu, hun, h⟩ : ∃ u : AbsoluteValue ℚ ℝ, Rat.AbsoluteValue.IsStandard u ∧
+      (∀ n : ℕ, u n ≤ n) ∧ (w.under ℚ).IsEquiv u := by
+    rcases Rat.AbsoluteValue.equiv_real_or_padic _ hw with h | ⟨p, ⟨_, h⟩, -⟩
+    · exact ⟨_, .real, fun n ↦ by simp, h⟩
+    · refine ⟨_, .padic p, fun n ↦ ?_, h⟩
+      rcases eq_or_ne n 0 with rfl | hn
+      · simp
+      · exact (Rat.AbsoluteValue.padic_le_one p n).trans
+          (by exact_mod_cast Nat.one_le_iff_ne_zero.mpr hn)
+  obtain ⟨c, hc, hcw⟩ := isEquiv_iff_exists_rpow_eq.mp h
+  have hn (n : ℕ) : w n ^ c ≤ n := by
+    simpa [under_apply] using (congrFun hcw n).trans_le (hun n)
+  have hadd := w.rpow_add_le_of_forall_natCast hc hn
+  refine ⟨⟨w.rpow hc hadd, ?_⟩, w.isEquiv_rpow hc hadd⟩
+  convert hu using 1
+  ext q
+  simpa [under_apply] using congrFun hcw q
+
+/-- An absolute value of `L` whose restriction to `ℚ` is nontrivial is equivalent to exactly one
+place. -/
+theorem existsUnique_isEquiv_of_isNontrivial_under (hw : (w.under ℚ).IsNontrivial) :
+    ∃! v : Place L, w.IsEquiv v.val :=
+  let ⟨v, hv⟩ := exists_isEquiv_of_isNontrivial_under hw
+  ⟨v, hv, fun _ hu ↦ eq_of_isEquiv (hu.symm.trans hv)⟩
+
+/-- **Places of an algebraic extension of `ℚ`.** Every nontrivial absolute value of a field
+algebraic over `ℚ` is equivalent to exactly one place. -/
+theorem existsUnique_isEquiv [Algebra.IsAlgebraic ℚ L] (hw : w.IsNontrivial) :
+    ∃! v : Place L, w.IsEquiv v.val :=
+  existsUnique_isEquiv_of_isNontrivial_under ((isNontrivial_iff_of_liesOver w (w.under ℚ)).mp hw)
+
+/-- Every nontrivial absolute value of a field algebraic over `ℚ` is equivalent to a place. -/
+theorem exists_isEquiv [Algebra.IsAlgebraic ℚ L] (hw : w.IsNontrivial) :
+    ∃ v : Place L, w.IsEquiv v.val :=
+  (existsUnique_isEquiv hw).exists
+
+end Normalisation
+
 end Place
+
+variable {L}
+
+/-- The place equivalent to an absolute value `w` of `L` whose restriction to `ℚ` is nontrivial:
+the `ℚ`-normalised representative of `w`. -/
+noncomputable def toPlace (w : AbsoluteValue L ℝ) (hw : (w.under ℚ).IsNontrivial) : Place L :=
+  (Place.exists_isEquiv_of_isNontrivial_under hw).choose
+
+variable {w : AbsoluteValue L ℝ} (hw : (w.under ℚ).IsNontrivial)
+
+/-- An absolute value is equivalent to its normalised representative. -/
+theorem isEquiv_toPlace : w.IsEquiv (w.toPlace hw).val :=
+  (Place.exists_isEquiv_of_isNontrivial_under hw).choose_spec
+
+/-- The normalised representative of `w` is the unique place equivalent to `w`. -/
+theorem toPlace_eq_iff {v : Place L} : w.toPlace hw = v ↔ w.IsEquiv v.val :=
+  ⟨fun h ↦ h ▸ isEquiv_toPlace hw,
+    fun h ↦ Place.eq_of_isEquiv ((isEquiv_toPlace hw).symm.trans h)⟩
+
+/-- Equivalent absolute values have the same normalised representative. -/
+theorem IsEquiv.toPlace_eq {w' : AbsoluteValue L ℝ} (h : w.IsEquiv w')
+    (hw' : (w'.under ℚ).IsNontrivial) : w.toPlace hw = w'.toPlace hw' :=
+  (toPlace_eq_iff hw).mpr (h.trans (isEquiv_toPlace hw'))
+
+/-- A place is its own normalised representative. -/
+@[simp]
+theorem Place.toPlace_val (v : Place L) : v.val.toPlace v.isStandard_under.isNontrivial = v :=
+  (toPlace_eq_iff _).mpr .rfl
+
+/-- Taking the normalised representative commutes with the action of a group of ring
+automorphisms. -/
+theorem toPlace_smul {G : Type*} [Group G] [MulSemiringAction G L] (g : G) :
+    (g • w).toPlace (by rwa [under_smul]) = g • w.toPlace hw :=
+  (toPlace_eq_iff _).mpr fun x y ↦ by
+    simpa only [smul_apply, Place.val_smul] using isEquiv_toPlace hw (g⁻¹ • x) (g⁻¹ • y)
+
+/-- Taking the normalised representative commutes with restriction to a subfield. -/
+theorem under_toPlace (K : Type*) [Field K] [CharZero K] [Algebra K L] :
+    (w.toPlace hw).under K = (w.under K).toPlace (by rwa [under_under]) :=
+  ((toPlace_eq_iff _).mpr fun x y ↦ by
+    simpa only [under_apply, Place.val_under] using
+      isEquiv_toPlace hw (algebraMap K L x) (algebraMap K L y)).symm
 
 end AbsoluteValue

@@ -337,6 +337,14 @@ lemma twistedChainComplexπ_comp_twistedChainComplexCoefficientMap (η : L ⟶ K
         P.twistedChainComplexπ K :=
   P.twistedChainComplexπ_comp_twistedChainComplexDesc _ _ _
 
+/-- The quotient maps on twisted chains commute with the coefficient map in each degree. -/
+@[reassoc (attr := simp)]
+lemma twistedChainComplexπ_f_comp_twistedChainComplexCoefficientMap_f (η : L ⟶ K) (n : ℕ) :
+    (P.twistedChainComplexπ L).f n ≫ (P.twistedChainComplexCoefficientMap η).f n =
+      (LocalCoefficientSystem.twistedChainComplexCoefficientMap η).f n ≫
+        (P.twistedChainComplexπ K).f n :=
+  HomologicalComplex.congr_hom (P.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap η) n
+
 /-- A morphism of local coefficient systems acts on the relative coefficient at a simplex `σ`
 meeting the complement of the subspace through its component at the initial vertex of `σ`. -/
 @[reassoc (attr := simp)]

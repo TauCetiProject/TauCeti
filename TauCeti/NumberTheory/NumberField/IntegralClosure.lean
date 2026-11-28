@@ -10,10 +10,14 @@ public import Mathlib.NumberTheory.ClassNumber.Finite
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
 public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
+public import Mathlib.RingTheory.Valuation.ValuationRing
+public import TauCeti.NumberTheory.NumberField.AutomorphismAction
+import TauCeti.RingTheory.DedekindDomain.Prufer
 import TauCeti.RingTheory.IntegralClosure.Transfer
+import TauCeti.RingTheory.Invariant.Basic
 
 /-!
-# The integral closure of `𝓞 K` in a finite extension of number fields
+# The integral closure of `𝓞 K` in an extension of a number field
 
 For a finite extension `L` of a number field `K`, the integral closure of `𝓞 K` in `L` is the
 integral closure of `ℤ` in `L` — that is `TauCeti.IsIntegralClosure.tower_bot` applied along
@@ -26,6 +30,12 @@ All four are stated for `integralClosure (𝓞 K) L` rather than for `𝓞 L`, b
 the descent actually produces — `WeierstrassCurve.Affine.ringOfIntegersFactor` is an integral
 closure in a quotient `K[X] ⧸ (p)`, not a ring of integers presented as such.
 
+For an algebraic, possibly infinite, extension `L` of `K`, such as `K^alg`, the integral closure
+of `𝓞 K` in `L` plays the role of the ring of integers of `L`. The instances of the last section
+record that its fraction field is `L`, that its localizations at primes are valuation rings, and
+that for a group acting on `L` by `K`-automorphisms with fixed field `K`, such as `Gal(L/K)`, its
+invariants are `𝓞 K`.
+
 ## Main results
 
 * `NumberField.finite_classGroup_integralClosure` : the **class number theorem** for it.
@@ -34,6 +44,11 @@ closure in a quotient `K[X] ⧸ (p)`, not a ring of integers presented as such.
 * `NumberField.finrank_units_integralClosure` : its unit group has rank the unit rank of `L`.
 * `NumberField.isPrincipalIdealRing_integralClosure_iff` : it is a principal ideal domain exactly
   when `L` has class number one.
+* `NumberField.isFractionRing_integralClosure`,
+  `NumberField.preValuationRing_atPrime_integralClosure` and
+  `NumberField.isInvariant_integralClosure` : for an algebraic extension `L`, the integral closure
+  has fraction field `L`, is a Prüfer domain, and has invariants `𝓞 K` under a group with fixed
+  field `K`.
 
 ## References
 
@@ -104,5 +119,37 @@ theorem NumberField.isPrincipalIdealRing_integralClosure_iff :
     fun _ ↦ .of_surjective e.symm.toRingEquiv e.symm.surjective⟩
 
 end Invariants
+
+section Algebraic
+
+variable {K L}
+
+/-- If a group acts on `L` by `K`-algebra automorphisms with fixed field `K`, the elements of the
+integral closure of `𝓞 K` in `L` fixed by the group are those of `𝓞 K`: the instance form of
+`TauCeti.Algebra.isInvariant_integralClosure` for `𝓞 K`, which is integrally closed in `K`. -/
+instance NumberField.isInvariant_integralClosure {G : Type*} [Group G] [MulSemiringAction G L]
+    [SMulCommClass G K L] [Algebra.IsInvariant K L G] :
+    Algebra.IsInvariant (𝓞 K) (integralClosure (𝓞 K) L) G :=
+  TauCeti.Algebra.isInvariant_integralClosure (𝓞 K) K L G
+
+variable [NumberField K] [Algebra.IsAlgebraic K L]
+
+/-- The integral closure of `𝓞 K` in an algebraic, possibly infinite, extension `L` of the number
+field `K` has fraction field `L`. -/
+instance NumberField.isFractionRing_integralClosure : IsFractionRing (integralClosure (𝓞 K) L) L :=
+  have : Algebra.IsAlgebraic (𝓞 K) L :=
+    (IsFractionRing.comap_isAlgebraic_iff (K := K)).mpr inferInstance
+  integralClosure.isFractionRing_of_algebraic fun _ hx ↦
+    IsFractionRing.to_map_eq_zero_iff.mp ((map_eq_zero (algebraMap K L)).mp
+      ((IsScalarTower.algebraMap_apply (𝓞 K) K L _).symm.trans hx))
+
+/-- **The integral closure of `𝓞 K` in an algebraic extension is a Prüfer domain**: its
+localizations at primes are valuation rings. This is Tau Ceti's
+`IsIntegralClosure.preValuationRing_atPrime` for `𝓞 K`. -/
+instance NumberField.preValuationRing_atPrime_integralClosure (Q : Ideal (integralClosure (𝓞 K) L))
+    [Q.IsPrime] : PreValuationRing (Localization.AtPrime Q) :=
+  IsIntegralClosure.preValuationRing_atPrime (𝓞 K) K L Q
+
+end Algebraic
 
 end
