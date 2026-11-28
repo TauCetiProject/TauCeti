@@ -39,6 +39,8 @@ is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
   form on `f(X)`.
 * `TauCeti.Module.Dual.baseChangeEvaluationEquiv`: scalar extension commutes with the dual of a
   finite projective module.
+* `TauCeti.Module.Dual.baseChangeLinearMapEquiv`: the scalar extension to `A` of the dual of a
+  finite projective module `M` is the module of linear maps `M →ₗ[R] A`.
 * `TauCeti.Module.Dual.baseChange_coord`: base-changed dual basis elements recover the
   coordinates in the base-changed basis.
 * `TauCeti.Module.Dual.eq_of_baseChange_eq`: base changes of all dual elements jointly
@@ -194,6 +196,33 @@ theorem baseChangeEvaluationEquiv_apply (z : A ⊗[R] Module.Dual R M) :
     baseChangeEvaluationEquiv (R := R) (A := A) (M := M) z =
       baseChangeEvaluation (R := R) (M := M) (A := A) z :=
   by simp only [baseChangeEvaluationEquiv, LinearEquiv.ofBijective_apply]
+
+/-- For a finite projective module `M`, the scalar extension `A ⊗[R] Module.Dual R M` of its dual
+is the module of `R`-linear maps `M →ₗ[R] A`: the pure tensor `a ⊗ φ` is sent to
+`m ↦ a * φ m` (`Module.Dual.baseChangeLinearMapEquiv_tmul_apply`). -/
+noncomputable def baseChangeLinearMapEquiv : A ⊗[R] Module.Dual R M ≃ₗ[A] (M →ₗ[R] A) :=
+  baseChangeEvaluationEquiv.trans (LinearMap.liftBaseChangeEquiv A).symm
+
+/-- The linear map attached to the pure tensor `a ⊗ φ` is `m ↦ a * φ m`. -/
+@[simp]
+theorem _root_.Module.Dual.baseChangeLinearMapEquiv_tmul_apply (a : A) (φ : Module.Dual R M)
+    (m : M) :
+    baseChangeLinearMapEquiv (R := R) (A := A) (M := M) (a ⊗ₜ[R] φ) m =
+      a * algebraMap R A (φ m) := by
+  simp [baseChangeLinearMapEquiv, LinearMap.liftBaseChangeEquiv_symm_apply]
+
+/-- The identification of `A ⊗[R] Module.Dual R M` with `M →ₗ[R] A` is natural in the scalar
+algebra: extending scalars along `f : A →ₐ[R] B` corresponds to post-composition with `f`. -/
+theorem _root_.AlgHom.baseChangeLinearMapEquiv_rTensor {B : Type*} [CommSemiring B]
+    [Algebra R B] (f : A →ₐ[R] B) (ξ : A ⊗[R] Module.Dual R M) :
+    baseChangeLinearMapEquiv (R := R) (A := B) (M := M)
+        (LinearMap.rTensor (Module.Dual R M) f.toLinearMap ξ) =
+      f.toLinearMap ∘ₗ baseChangeLinearMapEquiv ξ := by
+  induction ξ using TensorProduct.inductionOn with
+  | tmul a φ =>
+    ext m
+    simp
+  | add ξ ξ' hξ hξ' => rw [map_add, map_add, hξ, hξ', map_add, LinearMap.comp_add]
 
 end FiniteProjective
 

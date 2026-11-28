@@ -45,6 +45,8 @@ homomorphisms `N → 𝔾ₐ`, and a point `n` of `N` is read as the linear form
   radical is.
 * `TauCeti.FiniteTypeCommHopfAlgCat.isNormal_reducedConnectedCenter_unipotentRadicalDefiningIdeal`:
   for reduced `G`, it is normal in `G`.
+* `TauCeti.FiniteTypeCommHopfAlgCat.unipotentRadicalCenterVectorGroupEquiv`: in characteristic
+  zero, the identification of the centre with the vector group on its primitive elements.
 * `TauCeti.FiniteTypeCommHopfAlgCat.unipotentRadicalCenterConjLinearAut`: in characteristic
   zero, the action of `G` on the reduced connected centre of its unipotent radical by
   conjugation, as linear automorphisms.
@@ -94,14 +96,25 @@ theorem isNormal_reducedConnectedCenter_unipotentRadicalDefiningIdeal [IsReduced
 
 variable [CharZero k]
 
-/-- In characteristic zero, the identification of the reduced connected centre of the unipotent
-radical with the vector group on the primitive elements of its coordinate Hopf algebra. -/
-private noncomputable def centerVectorGroupEquiv :
+/-- **The centre of the unipotent radical is a vector group.** In characteristic zero, the
+identification of the coordinate Hopf algebra of the reduced connected centre of the unipotent
+radical with the symmetric algebra on its primitive elements, which sends each primitive element
+to itself (`unipotentRadicalCenterVectorGroupEquiv_ι`). -/
+noncomputable def unipotentRadicalCenterVectorGroupEquiv :
     SymmetricAlgebra k (Coalgebra.skewPrimitive k
         (1 : G ⧸ (unipotentRadicalDefiningIdeal G).reducedConnectedCenter.toIdeal) 1) ≃ₐc[k]
       G ⧸ (unipotentRadicalDefiningIdeal G).reducedConnectedCenter.toIdeal :=
   BialgEquiv.ofBijective _ (HopfIdeal.liftBialgHom_primitive_bijective_reducedConnectedCenter
     (geometricallyUnipotent_unipotentRadical G))
+
+/-- The identification of the centre of the unipotent radical with a vector group sends each
+generator of the symmetric algebra to the primitive element it is. -/
+@[simp]
+theorem unipotentRadicalCenterVectorGroupEquiv_ι
+    (p : Coalgebra.skewPrimitive k
+      (1 : G ⧸ (unipotentRadicalDefiningIdeal G).reducedConnectedCenter.toIdeal) 1) :
+    unipotentRadicalCenterVectorGroupEquiv G (SymmetricAlgebra.ι k _ p) = p :=
+  SymmetricAlgebra.liftBialgHom_ι _ (fun p ↦ p.property) p
 
 /-- **A group acts linearly on the centre of its unipotent radical.** Over an algebraically
 closed field of characteristic zero, let `N` be the reduced connected centre of the unipotent
@@ -118,7 +131,7 @@ noncomputable def unipotentRadicalCenterConjLinearAut (A : Type x) [CommRing A] 
           (1 : G ⧸ (unipotentRadicalDefiningIdeal G).reducedConnectedCenter.toIdeal) 1 →ₗ[k] A)) :=
   let _ := HopfAlgebra.isReduced_of_charZero k G
   (isNormal_reducedConnectedCenter_unipotentRadicalDefiningIdeal G).conjLinearAut
-    (centerVectorGroupEquiv G) A
+    (unipotentRadicalCenterVectorGroupEquiv G) A
 
 /-- The linear automorphism through which a point `g` of `G` acts sends the linear form
 `p ↦ n(p)` of a point `n` of the centre `N` of the unipotent radical to the linear form of the
@@ -137,18 +150,16 @@ theorem unipotentRadicalCenterConjLinearAut_apply
   -- A point of `N`, read in the vector group, is its restriction to the primitive elements.
   have hlin (m : WithConv ((G ⧸ (unipotentRadicalDefiningIdeal G).reducedConnectedCenter.toIdeal)
       →ₐ[k] A)) :
-      (BialgHom.mapDomain (centerVectorGroupEquiv G).toBialgHom m).ofConv.toLinearMap ∘ₗ
-          SymmetricAlgebra.ι k _ =
+      (BialgHom.mapDomain (unipotentRadicalCenterVectorGroupEquiv G).toBialgHom
+          m).ofConv.toLinearMap ∘ₗ SymmetricAlgebra.ι k _ =
         m.ofConv.toLinearMap ∘ₗ (Coalgebra.skewPrimitive k
         (1 : G ⧸ (unipotentRadicalDefiningIdeal G).reducedConnectedCenter.toIdeal) 1).subtype := by
     ext p
     simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, BialgHom.mapDomain_apply_apply]
-    exact congrArg m.ofConv (SymmetricAlgebra.liftBialgHom_ι (Coalgebra.skewPrimitive k
-      (1 : G ⧸ (unipotentRadicalDefiningIdeal G).reducedConnectedCenter.toIdeal) 1).subtype
-      (fun p ↦ p.property) p)
+    exact congrArg m.ofConv (unipotentRadicalCenterVectorGroupEquiv_ι G p)
   simp only [BialgEquiv.toBialgHom_eq_coe] at hlin
   rw [← hlin, ← hlin]
-  exact hN.conjLinearAut_apply (centerVectorGroupEquiv G) A g n
+  exact hN.conjLinearAut_apply (unipotentRadicalCenterVectorGroupEquiv G) A g n
 
 /-- The linear automorphisms through which `G` acts on the centre of its unipotent radical are
 natural in the value algebra. -/
