@@ -266,6 +266,13 @@ theorem kerLiftBialgEquiv_apply (f : H →ₐc[R] K) (hf : Function.Surjective f
     kerLiftBialgEquiv f hf q = kerLiftBialgHom f hf q := by
   rw [kerLiftBialgEquiv, BialgEquiv.ofBijective_apply]
 
+/-- The inverse of the kernel quotient equivalence sends `f x` to the quotient class of `x`. -/
+@[simp]
+theorem kerLiftBialgEquiv_symm_apply (f : H →ₐc[R] K) (hf : Function.Surjective f) (x : H) :
+    (kerLiftBialgEquiv f hf).symm (f x) = Ideal.Quotient.mk (kerOfSurjective f hf).toIdeal x :=
+  EquivLike.injective (kerLiftBialgEquiv f hf) <| by
+    rw [(kerLiftBialgEquiv f hf).apply_symm_apply, kerLiftBialgEquiv_apply, kerLiftBialgHom_mk]
+
 /-- The bialgebra morphism underlying the kernel quotient equivalence is the kernel quotient
 lift. -/
 @[simp]

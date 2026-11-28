@@ -95,6 +95,13 @@ lemma ofIdx_smul_eq_self_of_coroot'_eq_zero {i : ι} {x : M} (h : P.coroot' i x 
   rw [_root_.RootPairing.weylGroup.ofIdx_smul, _root_.RootPairing.Equiv.reflection_smul,
     P.reflection_apply, h, zero_smul, sub_zero]
 
+/-- The reflection `s_α` in the Weyl group fixes a weight exactly when `α^∨` vanishes on it, as
+`RootPairing.reflection_apply_eq_self_iff` says for the reflection itself. -/
+lemma ofIdx_smul_eq_self_iff [NeZero (2 : R)] [NoZeroDivisors R] {i : ι} {x : M} :
+    _root_.RootPairing.weylGroup.ofIdx P i • x = x ↔ P.coroot' i x = 0 := by
+  rw [_root_.RootPairing.weylGroup.ofIdx_smul, _root_.RootPairing.Equiv.reflection_smul,
+    P.reflection_apply_eq_self_iff]
+
 /-- A Weyl-group element is a wall reflection through `x` exactly when it is the simple reflection
 at some simple root whose simple coroot kills `x`. -/
 @[simp]

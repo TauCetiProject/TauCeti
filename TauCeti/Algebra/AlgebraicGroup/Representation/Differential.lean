@@ -12,6 +12,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.PointsAction
 public import TauCeti.Algebra.Coalgebra.Comodule.Product
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Corestrict
+public import TauCeti.Algebra.Coalgebra.Comodule.Transport
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.DerivationMap
 
 /-!
@@ -148,6 +149,40 @@ theorem snd_endOfPoint_derivationToTrivSqZeroExtEquivLift
       AlgHom.toLinearMap_apply, derivationToTrivSqZeroExtEquivLift_apply_snd,
       Derivation.coeFn_coe, LinearEquiv.coe_coe,
       TensorProduct.lid_tmul, LinearMap.tensorComponent_tmul]
+
+/-- Differentiating the comodule structure transported along a linear equivalence conjugates the
+differentiated representation by that equivalence. -/
+theorem differential_transport {P : Type*} [AddCommGroup P] [Module R P] (e : M ≃ₗ[R] P)
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (p : P) :
+    letI : Comodule R H P := Transport (R := R) (C := H) e
+    differential (R := R) (H := H) (M := P) d p =
+      e (differential (R := R) (H := H) (M := M) d (e.symm p)) := by
+  let _ : Comodule R H P := Transport (R := R) (C := H) e
+  have h := (transportToHom (R := R) (C := H) e).map_differential d (e.symm p)
+  simpa only [transportToHom_apply, LinearEquiv.apply_symm_apply] using h.symm
+
+/-- Differentiating the direct-sum comodule structure on `M × N` acts componentwise. -/
+theorem differential_prod
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (p : M × N) :
+    letI : Comodule R H (M × N) := Prod
+    differential (R := R) (H := H) (M := M × N) d p =
+      (differential (R := R) (H := H) (M := M) d p.1,
+        differential (R := R) (H := H) (M := N) d p.2) := by
+  let _ : Comodule R H (M × N) := Prod
+  refine _root_.Prod.ext ?_ ?_
+  · simpa only [prodFst_apply] using (prodFst (R := R) (C := H) (M := M) (N := N)).map_differential
+      d p
+  · simpa only [prodSnd_apply] using (prodSnd (R := R) (C := H) (M := M) (N := N)).map_differential
+      d p
+
+/-- Differentiating `Comodule.pi` acts coordinatewise. -/
+theorem differential_pi {ι : Type*} [Fintype ι] [DecidableEq ι] (B : ι → Type*)
+    [∀ i, AddCommGroup (B i)] [∀ i, Module R (B i)] (c : ∀ i, Comodule R H (B i))
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (f : ∀ i, B i) (i : ι) :
+    (@differential R H (∀ j, B j) _ _ _ _ _ (pi (R := R) (C := H) B c) d f) i =
+      @differential R H (B i) _ _ _ _ _ (c i) d (f i) := by
+  let _ := pi (R := R) (C := H) B c; let _ := c i
+  simpa only [piProj_apply] using (piProj (R := R) (C := H) B c i).map_differential d f
 
 end TauCeti.Comodule
 

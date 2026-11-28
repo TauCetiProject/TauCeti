@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.Span.Basic
 public import TauCeti.RingTheory.DeltaRing.PowerSeries
 public import TauCeti.RingTheory.DisplayFrame.Basic
 public import TauCeti.RingTheory.PowerSeries.Jacobson
-public import TauCeti.RingTheory.WittVector.Frobenius
+public import TauCeti.RingTheory.WittVector.Frobenius.Basic
 public import TauCeti.RingTheory.WittVector.Teichmuller.Coeff
 public import TauCeti.RingTheory.WittVector.Units
 

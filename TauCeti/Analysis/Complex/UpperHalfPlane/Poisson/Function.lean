@@ -24,9 +24,9 @@ The **Schwarz integral** of `h` is
 `S[h](z) = (1 / (π i)) ∫ (1 / (x - z) - x / (1 + x ^ 2)) h(x) dx`, and for `h ∈ L¹(ℝ)` the
 Schwarz integral **normalized at infinity** is
 `S⁰[h](z) = (1 / (π i)) ∫ h(x) / (x - z) dx`. Off the real axis `S[h]` converges for
-`h ∈ L¹(Π)`, and for a real `h` its real part is `P[h]`. For a nonnegative `h` it is the Schwarz
-integral of the measure `h dx`. Off the real axis both integrals converge for `h ∈ L¹(ℝ)`, and they
-differ by the imaginary constant
+`h ∈ L¹(Π)`, is additive in `h`, and is holomorphic on `ℂ₊`; for a real `h` its real part is
+`P[h]`. For a nonnegative `h` it is the Schwarz integral of the measure `h dx`. Off the real axis
+both integrals converge for `h ∈ L¹(ℝ)`, and they differ by the imaginary constant
 `S⁰[h] - S[h] = -(i / π) ∫ x h(x) / (1 + x ^ 2) dx`.
 
 The Cayley transform `z ↦ (z - i) / (z + i)` carries `ℂ₊` to the unit disc and `ℝ` to the unit
@@ -55,6 +55,10 @@ times the density of the Poisson measure:
 * `TauCeti.re_upperHalfPlaneSchwarzIntegralFun`: `Re S[h] = P[h]` for a real `h ∈ L¹(Π)`.
 * `TauCeti.upperHalfPlaneSchwarzIntegralFun_eq_upperHalfPlaneSchwarzIntegral_withDensity`: for a
   nonnegative `h`, `S[h]` is the Schwarz integral of the measure `h dx`.
+* `TauCeti.upperHalfPlaneSchwarzIntegralFun_add`, `TauCeti.upperHalfPlaneSchwarzIntegralFun_sub`:
+  `S[h]` is additive off the real axis for `h ∈ L¹(Π)`.
+* `TauCeti.differentiableOn_upperHalfPlaneSchwarzIntegralFun`: `S[h]` is holomorphic on `ℂ₊` for
+  `h ∈ L¹(Π)`.
 * `TauCeti.upperHalfPlaneSchwarzIntegralFunNormalized_sub_upperHalfPlaneSchwarzIntegralFun`:
   `S⁰[h] - S[h] = -(i / π) ∫ x h(x) / (1 + x ^ 2) dx` for `h ∈ L¹(ℝ)`.
 * `TauCeti.upperHalfPlanePoissonKernel_eq_poissonKernel_cayley`: the Cayley comparison of the
@@ -90,6 +94,12 @@ def upperHalfPlanePoissonIntegralFun (h : ℝ → ℂ) (z : ℂ) : ℂ :=
 theorem upperHalfPlanePoissonIntegralFun_def (h : ℝ → ℂ) (z : ℂ) :
     upperHalfPlanePoissonIntegralFun h z = ∫ x, upperHalfPlanePoissonKernel z x • h x := by
   rw [upperHalfPlanePoissonIntegralFun]
+
+/-- Poisson integrals of almost everywhere equal functions agree. -/
+theorem upperHalfPlanePoissonIntegralFun_congr_ae {h g : ℝ → ℂ} (hhg : h =ᵐ[volume] g) (z : ℂ) :
+    upperHalfPlanePoissonIntegralFun h z = upperHalfPlanePoissonIntegralFun g z := by
+  rw [upperHalfPlanePoissonIntegralFun_def, upperHalfPlanePoissonIntegralFun_def]
+  exact integral_congr_ae (hhg.mono fun x hx ↦ congrArg _ hx)
 
 /-- **The Poisson integral reproduces constants**: `P[c](z) = c` on the upper half-plane. -/
 theorem upperHalfPlanePoissonIntegralFun_const (c : ℂ) {z : ℂ} (hz : 0 < z.im) :
@@ -246,6 +256,75 @@ theorem upperHalfPlaneSchwarzIntegralFun_eq_upperHalfPlaneSchwarzIntegral_withDe
   congr 2
   funext x
   rw [NNReal.smul_def, Complex.real_smul, mul_comm]
+
+/-- **The Schwarz integral of a sum**: `S[h + g] = S[h] + S[g]` off the real axis, for
+`h, g ∈ L¹(Π)`. -/
+theorem upperHalfPlaneSchwarzIntegralFun_add {h g : ℝ → ℂ}
+    (hh : Integrable h upperHalfPlanePoissonMeasure)
+    (hg : Integrable g upperHalfPlanePoissonMeasure) {z : ℂ} (hz : z.im ≠ 0) :
+    upperHalfPlaneSchwarzIntegralFun (fun s ↦ h s + g s) z =
+      upperHalfPlaneSchwarzIntegralFun h z + upperHalfPlaneSchwarzIntegralFun g z := by
+  simp only [upperHalfPlaneSchwarzIntegralFun_def, mul_add]
+  rw [integral_add (integrable_subtractedResolventKernel_mul hh hz)
+    (integrable_subtractedResolventKernel_mul hg hz), mul_add]
+
+/-- **The Schwarz integral of a difference**: `S[h - g] = S[h] - S[g]` off the real axis, for
+`h, g ∈ L¹(Π)`. -/
+theorem upperHalfPlaneSchwarzIntegralFun_sub {h g : ℝ → ℂ}
+    (hh : Integrable h upperHalfPlanePoissonMeasure)
+    (hg : Integrable g upperHalfPlanePoissonMeasure) {z : ℂ} (hz : z.im ≠ 0) :
+    upperHalfPlaneSchwarzIntegralFun (fun s ↦ h s - g s) z =
+      upperHalfPlaneSchwarzIntegralFun h z - upperHalfPlaneSchwarzIntegralFun g z := by
+  simp only [upperHalfPlaneSchwarzIntegralFun_def, mul_sub]
+  rw [integral_sub (integrable_subtractedResolventKernel_mul hh hz)
+    (integrable_subtractedResolventKernel_mul hg hz), mul_sub]
+
+/-- The Schwarz integral commutes with multiplication by a constant on the right. -/
+theorem upperHalfPlaneSchwarzIntegralFun_mul_const (h : ℝ → ℂ) (c z : ℂ) :
+    upperHalfPlaneSchwarzIntegralFun (fun s ↦ h s * c) z =
+      upperHalfPlaneSchwarzIntegralFun h z * c := by
+  simp only [upperHalfPlaneSchwarzIntegralFun_def, ← mul_assoc, integral_mul_const]
+
+/-- The Schwarz integral of `0` is `0`. -/
+@[simp]
+theorem upperHalfPlaneSchwarzIntegralFun_zero :
+    upperHalfPlaneSchwarzIntegralFun (fun _ ↦ 0) = 0 := by
+  funext z
+  simp [upperHalfPlaneSchwarzIntegralFun_def]
+
+/-- **The Schwarz integral of an `L¹(Π)` function is holomorphic** on `ℂ₊`. For real `h` it is the
+difference of the Schwarz integrals of the measures `h⁺ dx` and `h⁻ dx`, and a complex `h` is
+taken componentwise. -/
+theorem differentiableOn_upperHalfPlaneSchwarzIntegralFun {h : ℝ → ℂ}
+    (hh : Integrable h upperHalfPlanePoissonMeasure) :
+    DifferentiableOn ℂ (upperHalfPlaneSchwarzIntegralFun h) UpperHalfPlane.upperHalfPlaneSet := by
+  have hreal {u : ℝ → ℝ} (hu : Integrable u upperHalfPlanePoissonMeasure) :
+      DifferentiableOn ℂ (upperHalfPlaneSchwarzIntegralFun fun x ↦ (u x : ℂ))
+        UpperHalfPlane.upperHalfPlaneSet := by
+    have hm := (aestronglyMeasurable_of_integrable_upperHalfPlanePoissonMeasure hu).aemeasurable
+    have hp : Integrable (fun x ↦ (((u x).toNNReal : ℝ) : ℂ)) upperHalfPlanePoissonMeasure :=
+      hu.pos_part.ofReal
+    have hn : Integrable (fun x ↦ (((-u x).toNNReal : ℝ) : ℂ)) upperHalfPlanePoissonMeasure :=
+      hu.neg_part.ofReal
+    refine ((differentiableOn_upperHalfPlaneSchwarzIntegral
+      (volume.withDensity fun x ↦ ((u x).toNNReal : ℝ≥0∞))).sub
+      (differentiableOn_upperHalfPlaneSchwarzIntegral
+      (volume.withDensity fun x ↦ ((-u x).toNNReal : ℝ≥0∞)))).congr fun z hz ↦ ?_
+    rw [Pi.sub_apply,
+      ← upperHalfPlaneSchwarzIntegralFun_eq_upperHalfPlaneSchwarzIntegral_withDensity
+        (h := fun x ↦ (u x).toNNReal) (by fun_prop),
+      ← upperHalfPlaneSchwarzIntegralFun_eq_upperHalfPlaneSchwarzIntegral_withDensity
+        (h := fun x ↦ (-u x).toNNReal) (by fun_prop),
+      ← upperHalfPlaneSchwarzIntegralFun_sub hp hn (ne_of_gt hz)]
+    congr 1
+    funext x
+    rw [Real.coe_toNNReal', Real.coe_toNNReal', ← ofReal_sub, max_zero_sub_max_neg_zero_eq_self]
+  refine ((hreal hh.re).add ((hreal hh.im).mul_const I)).congr fun z hz ↦ ?_
+  simp only [Pi.add_apply, RCLike.re_to_complex, RCLike.im_to_complex]
+  rw [← upperHalfPlaneSchwarzIntegralFun_mul_const, ← upperHalfPlaneSchwarzIntegralFun_add
+    (h := fun x ↦ ((h x).re : ℂ)) (g := fun x ↦ ((h x).im : ℂ) * I) hh.re.ofReal
+    (hh.im.ofReal.mul_const I) (ne_of_gt hz)]
+  simp only [re_add_im]
 
 /-- The **Schwarz integral normalized at infinity** `S⁰[h](z) = (1 / (π i)) ∫ h(x) / (x - z) dx` of
 a complex function `h` on `ℝ`, meaningful for `h ∈ L¹(ℝ)`. -/

@@ -134,8 +134,8 @@ theorem exists_contMDiff_lift_pi_of_simplyConnectedSpace [SimplyConnectedSpace M
   obtain ⟨G, ⟨-, hG⟩, -⟩ := (isCoveringMap_coe_pi T (ι := ι)).existsUnique_continuousMap_lifts
     ⟨g, hg.continuous⟩ x₀ t₀ ht₀
   -- The continuous lift is `C^n` because the projection is a `C^n` local diffeomorphism.
-  exact ⟨G, ContMDiff.of_comp_isLocalDiffeomorph (isLocalDiffeomorph_coe_pi T n) G.continuous
-    (by rw [hG]; exact hg), fun x ↦ congrFun hG x⟩
+  exact ⟨G, ContMDiff.of_comp_isLocalDiffeomorph (isLocalDiffeomorph_coe_pi (fun _ : ι ↦ T) n)
+    G.continuous (by rw [hG]; exact hg), fun x ↦ congrFun hG x⟩
 
 end Homotopy
 

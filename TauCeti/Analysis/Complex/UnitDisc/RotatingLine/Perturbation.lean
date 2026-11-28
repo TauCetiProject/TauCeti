@@ -154,13 +154,15 @@ perturbation `u ↦ A ∂u/∂z + B u` in the first component, of norm at most `
 private theorem norm_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL_sub_le (hα : α ≤ 1)
     (A B : HolderSpace α (unitBallOpens ℂ) ((ι → ℂ) →L[ℝ] (ι → ℂ))) :
     ‖perturbedAugmentedConjWirtingerDerivL (ι → ℂ) hα A B ∘L
-          (rotatingLinePiSubspace ι 3 α).subtypeL -
-        augmentedConjWirtingerDerivL α (ι → ℂ) ∘L (rotatingLinePiSubspace ι 3 α).subtypeL‖ ≤
+          (rotatingLinePiSubspace (fun _ : ι ↦ 3) α).subtypeL -
+        augmentedConjWirtingerDerivL α (ι → ℂ) ∘L
+          (rotatingLinePiSubspace (fun _ : ι ↦ 3) α).subtypeL‖ ≤
       ‖A‖ + 3 * ‖B‖ := by
   set P := wirtingerPerturbationL (unitBallOpens ℂ) (ι → ℂ) (convex_unitBallOpens ℂ) hα A B
   set ι₁ := inl ℝ (HolderSpace α (unitBallOpens ℂ) (ι → ℂ)) ((ι → ℂ) × (ι → ℂ))
   rw [← sub_comp, perturbedAugmentedConjWirtingerDerivL, add_sub_cancel_left]
-  calc _ ≤ ‖ι₁ ∘L P‖ * ‖(rotatingLinePiSubspace ι 3 α).subtypeL‖ := opNorm_comp_le _ _
+  calc _ ≤ ‖ι₁ ∘L P‖ * ‖(rotatingLinePiSubspace (fun _ : ι ↦ 3) α).subtypeL‖ :=
+        opNorm_comp_le _ _
     _ ≤ ‖ι₁‖ * ‖P‖ * 1 := by
         gcongr
         exacts [opNorm_comp_le _ _, Submodule.norm_subtypeL_le _]
@@ -180,10 +182,11 @@ theorem
     ∃ ε > 0, ∃ C, ∀ A B : HolderSpace α (unitBallOpens ℂ) ((ι → ℂ) →L[ℝ] (ι → ℂ)),
       ‖A‖ < ε → ‖B‖ < ε →
         (perturbedAugmentedConjWirtingerDerivL (ι → ℂ) hα1.le A B ∘L
-          (rotatingLinePiSubspace ι 3 α).subtypeL).IsInvertible ∧
+          (rotatingLinePiSubspace (fun _ : ι ↦ 3) α).subtypeL).IsInvertible ∧
         ‖(perturbedAugmentedConjWirtingerDerivL (ι → ℂ) hα1.le A B ∘L
-          (rotatingLinePiSubspace ι 3 α).subtypeL).inverse‖ ≤ C := by
-  set T := augmentedConjWirtingerDerivL α (ι → ℂ) ∘L (rotatingLinePiSubspace ι 3 α).subtypeL
+          (rotatingLinePiSubspace (fun _ : ι ↦ 3) α).subtypeL).inverse‖ ≤ C := by
+  set T :=
+    augmentedConjWirtingerDerivL α (ι → ℂ) ∘L (rotatingLinePiSubspace (fun _ : ι ↦ 3) α).subtypeL
   set M := ‖T.inverse‖
   have hT : T.IsInvertible :=
     ⟨rotatingLinePiAugmentedEquiv hα0 hα1, ext (rotatingLinePiAugmentedEquiv_apply hα0 hα1)⟩
@@ -191,7 +194,7 @@ theorem
   refine ⟨(8 * (M + 1))⁻¹, by positivity, 2 * M, fun A B hA hB ↦ ?_⟩
   -- The perturbation has norm less than `4 ε`, so `M ‖S - T‖ ≤ 1 / 2` bounds the Neumann series.
   have hsmall : M * ‖perturbedAugmentedConjWirtingerDerivL (ι → ℂ) hα1.le A B ∘L
-      (rotatingLinePiSubspace ι 3 α).subtypeL - T‖ ≤ 1 / 2 := by
+      (rotatingLinePiSubspace (fun _ : ι ↦ 3) α).subtypeL - T‖ ≤ 1 / 2 := by
     calc _ ≤ M * (‖A‖ + 3 * ‖B‖) := by
           gcongr
           exact norm_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL_sub_le hα1.le A B
@@ -203,7 +206,7 @@ theorem
   have hlt := hsmall.trans_lt (by norm_num : (1 / 2 : ℝ) < 1)
   refine ⟨hT.of_mul_norm_sub_lt le_rfl hlt, ?_⟩
   calc _ ≤ M / (1 - M * ‖perturbedAugmentedConjWirtingerDerivL (ι → ℂ) hα1.le A B ∘L
-        (rotatingLinePiSubspace ι 3 α).subtypeL - T‖) :=
+        (rotatingLinePiSubspace (fun _ : ι ↦ 3) α).subtypeL - T‖) :=
         hT.norm_inverse_le_of_mul_norm_sub_lt le_rfl hlt
     _ ≤ M / (1 / 2) := by
         gcongr
@@ -222,9 +225,9 @@ theorem exists_pos_existsUnique_perturbedAugmentedConjWirtingerDerivL_eq_and_nor
     ∃ ε > 0, ∃ C, ∀ A B : HolderSpace α (unitBallOpens ℂ) ((ι → ℂ) →L[ℝ] (ι → ℂ)),
       ‖A‖ < ε → ‖B‖ < ε →
         (∀ y : HolderSpace α (unitBallOpens ℂ) (ι → ℂ) × (ι → ℂ) × (ι → ℂ),
-          ∃! u : rotatingLinePiSubspace ι 3 α,
+          ∃! u : rotatingLinePiSubspace (fun _ : ι ↦ 3) α,
             perturbedAugmentedConjWirtingerDerivL (ι → ℂ) hα1.le A B u = y) ∧
-        ∀ u ∈ rotatingLinePiSubspace ι 3 α,
+        ∀ u ∈ rotatingLinePiSubspace (fun _ : ι ↦ 3) α,
           ‖u‖ ≤ C * ‖perturbedAugmentedConjWirtingerDerivL (ι → ℂ) hα1.le A B u‖ := by
   obtain ⟨ε, hε, C, h⟩ :=
     exists_pos_isInvertible_perturbedAugmentedConjWirtingerDerivL_comp_subtypeL_and_norm_inverse_le
