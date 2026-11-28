@@ -8,10 +8,9 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Quasicoherent
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.AlgebraicGeometry.QuasiAffine
-import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Instances
-import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Extension.FiniteType
-import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.FinitePresentation
-import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
+import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Refinement
+import TauCeti.AlgebraicGeometry.LineBundle.TwistedSections
+import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Extension.FinitePresentation
 
 /-!
 # Global presentations on quasi-affine schemes
@@ -20,8 +19,11 @@ On a quasi-affine scheme, a finite-type quasi-coherent module has finitely many 
 generators (`AlgebraicGeometry.Scheme.Modules.exists_finite_generatingSections_of_isQuasiAffine`).
 A finitely presented module moreover has a finite global presentation
 (`AlgebraicGeometry.Scheme.Modules.exists_isFinite_presentation_of_isQuasiAffine`).
-We use Mathlib's open immersion `Scheme.toSpecΓ` and the finite-type extension theorem
-`AlgebraicGeometry.Scheme.Modules.exists_isFiniteType_restrict_iso`.
+For generation we specialize
+`AlgebraicGeometry.Scheme.Modules.eventually_exists_generatingSections_tensor_tensorPow`
+to the structure sheaf, using Mathlib's affine basic open basis. For presentations we use
+Mathlib's open immersion `Scheme.toSpecΓ` and Tau Ceti's finitely presented extension theorem
+`AlgebraicGeometry.Scheme.Modules.exists_isFinitePresentation_restrict_iso`.
 
 The generation statement is the quasi-affine case of
 [Stacks, Tag 01Q3](https://stacks.math.columbia.edu/tag/01Q3), with the ample invertible module
@@ -30,7 +32,7 @@ taken to be the structure sheaf.
 
 public section
 
-open CategoryTheory Limits
+open CategoryTheory Limits MonoidalCategory TopologicalSpace
 
 universe u
 
@@ -45,41 +47,40 @@ many global sections. This is the case of the structure sheaf in the implication
 theorem exists_finite_generatingSections_of_isQuasiAffine (M : X.Modules)
     [M.IsQuasicoherent] [M.IsFiniteType] :
     ∃ s : M.GeneratingSections, s.IsFiniteType := by
-  let j := X.toSpecΓ
-  have : QuasiCompact j := (quasiCompact_iff_compactSpace j).mpr inferInstance
-  obtain ⟨N, _, _, ⟨e⟩⟩ := exists_isFiniteType_restrict_iso j M
-  have := N.finite_sections_of_isAffineOpen ⊤ (isAffineOpen_top _)
-  obtain ⟨ι, _, π, hπ⟩ := exists_epi_free_of_finite N
-  -- Restrict a free cover on the affine ambient scheme.
-  let F : X.Modules := SheafOfModules.free ι
-  let eF : (restrictFunctor j).obj (SheafOfModules.free ι) ≅ F := restrictFreeIso j ι
-  let eN : (restrictFunctor j).obj N ≅ M := e
-  have : Epi ((restrictFunctor j).map π) := Functor.map_epi _ _
-  let p : F ⟶ M := eF.inv ≫ (restrictFunctor j).map π ≫ eN.hom
-  have : Epi p := epi_comp _ _
-  -- Transport the standard generators in the sheaf-of-modules category.
-  let q : Quiver.Hom (V := SheafOfModules X.ringCatSheaf) (SheafOfModules.free ι) M := p
-  have : Epi q := ‹Epi p›
-  exact ⟨(SheafOfModules.free.generatingSections ι).ofEpi q, ⟨‹Finite ι›⟩⟩
+  have hcover (x : X) : ∃ s : Γ(SheafOfModules.unit X.ringCatSheaf, ⊤),
+      x ∈ nonvanishingLocus (SheafOfModules.unit X.ringCatSheaf) s ∧
+        IsAffineOpen (nonvanishingLocus (SheafOfModules.unit X.ringCatSheaf) s) := by
+    obtain ⟨_, ⟨_, ⟨r, hr, rfl⟩, rfl⟩, hx, -⟩ :=
+      (IsQuasiAffine.isBasis_basicOpen X).exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
+    refine ⟨r, ?_⟩
+    rw [nonvanishingLocus_unit]
+    exact ⟨hx, hr⟩
+  obtain ⟨n, s, hs⟩ := (eventually_exists_generatingSections_tensor_tensorPow M hcover).exists
+  let e : M ⊗ TauCeti.tensorPow (𝟙_ X.Modules) n ≅ M :=
+    whiskerLeftIso M (TauCeti.tensorPowUnitIso n) ≪≫ ρ_ M
+  -- Generating sections are defined in the underlying sheaf-of-modules category.
+  let p : Quiver.Hom (V := SheafOfModules X.ringCatSheaf) _ M := e.hom
+  have : IsIso (C := SheafOfModules X.ringCatSheaf) p := e.isIso_hom
+  have : Epi (C := SheafOfModules X.ringCatSheaf) p :=
+    IsIso.epi_of_iso (C := SheafOfModules X.ringCatSheaf) p
+  exact ⟨s.ofEpi p, ⟨hs.finite⟩⟩
 
 /-- On a quasi-affine scheme, a finitely presented module admits a presentation by finitely
 many global generators and finitely many global relations. -/
 theorem exists_isFinite_presentation_of_isQuasiAffine (M : X.Modules)
     [M.IsFinitePresentation] :
     ∃ P : M.Presentation, P.IsFinite := by
-  obtain ⟨s, hs⟩ := M.exists_finite_generatingSections_of_isQuasiAffine
-  have : Finite s.I := hs.finite
-  let F : X.Modules := SheafOfModules.free s.I
-  let π : F ⟶ M := s.π
-  -- Generating sections give the epimorphism in the underlying sheaf-of-modules category.
-  have hπ : Epi (C := SheafOfModules X.ringCatSheaf) s.π := s.epi
-  have : Epi π := ⟨fun g h w ↦ hπ.left_cancellation g h w⟩
-  have : F.IsFinitePresentation :=
-    inferInstanceAs (SheafOfModules.free (R := X.ringCatSheaf) s.I).IsFinitePresentation
-  let K : X.Modules := kernel π
-  have : K.IsFiniteType := isFiniteType_kernel_of_epi π
-  have : K.IsQuasicoherent := isQuasicoherent_kernel π
-  obtain ⟨r, hr⟩ := K.exists_finite_generatingSections_of_isQuasiAffine
-  exact ⟨⟨s, r⟩, ⟨hs, hr⟩⟩
+  obtain ⟨N, _, ⟨e⟩⟩ := exists_isFinitePresentation_restrict_iso X.toSpecΓ M
+  obtain ⟨P, hP⟩ := N.exists_isFinite_presentation_of_isAffine
+  let F : SheafOfModules _ ⥤ SheafOfModules X.ringCatSheaf := restrictFunctor X.toSpecΓ
+  have : PreservesColimitsOfSize.{u, u} F :=
+    (restrictAdjunction X.toSpecΓ).leftAdjoint_preservesColimits
+  -- View the restriction isomorphism in the category used by presentations.
+  let p : F.obj N ⟶ M := e.hom
+  have : IsIso p := e.isIso_hom
+  let Q := P.map F (restrictUnitIso X.toSpecΓ).symm
+  refine ⟨Q.ofIsIso p, ?_⟩
+  apply +allowSynthFailures SheafOfModules.instIsFiniteOfIsIso
+  exact P.isFinite_map F _
 
 end AlgebraicGeometry.Scheme.Modules
