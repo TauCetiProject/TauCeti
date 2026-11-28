@@ -37,8 +37,7 @@ weak operator, ultrastrong, and ultraweak closures of `S ∩ closedBall 0 r` all
 `StarSubalgebra.closure_strongStar_unitBall_eq_unitBall_double_centralizer` and
 `StarSubalgebra.closure_unitBall_eq_unitBall_double_centralizer`. The same holds for the
 self-adjoint parts at any radius `r` in the strong operator
-(`StarSubalgebra.closure_selfAdjoint_closedBall_eq_selfAdjoint_closedBall_double_centralizer`,
-`StarSubalgebra.closure_image_toPointwiseConvergenceCLM_inter_selfAdjoint_inter_closedBall`),
+(`StarSubalgebra.closure_selfAdjoint_closedBall_eq_selfAdjoint_closedBall_double_centralizer`),
 strong-star (via
 `closure_strongStar_selfAdjoint_closedBall_eq_selfAdjoint_closedBall_double_centralizer` in
 `StarSubalgebra`), weak operator
@@ -325,20 +324,6 @@ private theorem closure_sot_inter_closedBall_of_unit (S : StarSubalgebra ℂ (H 
 
 /-! ### Self-adjoint Kaplansky density for arbitrary radii -/
 
-/-- **Self-adjoint Kaplansky density theorem.** For every radius `r : ℝ`, the strong operator
-closure of the self-adjoint elements of `S` in `closedBall 0 r` equals the self-adjoint elements of
-`S''` in `closedBall 0 r`. -/
-theorem closure_image_toPointwiseConvergenceCLM_inter_selfAdjoint_inter_closedBall
-    (S : StarSubalgebra ℂ (H →L[ℂ] H)) (r : ℝ) :
-    closure (ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) H H ''
-        ((S : Set (H →L[ℂ] H)) ∩ selfAdjoint (H →L[ℂ] H) ∩ closedBall 0 r)) =
-      ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) H H ''
-        ((S : Set (H →L[ℂ] H)).centralizer.centralizer ∩ selfAdjoint (H →L[ℂ] H) ∩
-          closedBall 0 r) := by
-  have hsa : {x : H →L[ℂ] H | IsSelfAdjoint x} = (selfAdjoint (H →L[ℂ] H) : Set _) := rfl
-  simpa only [← SetLike.mem_coe, setOf_mem_and_pred_and_norm_le_eq_inter, hsa] using
-    S.closure_selfAdjoint_closedBall_eq_selfAdjoint_closedBall_double_centralizer r
-
 /-- **Weak operator self-adjoint Kaplansky density theorem.** For every radius `r : ℝ`, the weak
 operator closure of `S ∩ selfAdjoint _ ∩ closedBall 0 r` equals
 `S'' ∩ selfAdjoint _ ∩ closedBall 0 r`. -/
@@ -351,11 +336,15 @@ theorem closure_image_ofCLM_inter_selfAdjoint_inter_closedBall
           closedBall 0 r) := by
   refine ContinuousLinearMapWOT.closure_image_ofCLM_eq_of_subset_closure_toPointwiseConvergenceCLM
     (inter_subset_inter_left _ (inter_subset_inter_left _ Set.subset_centralizer_centralizer)) ?_
-    (S.closure_image_toPointwiseConvergenceCLM_inter_selfAdjoint_inter_closedBall r).ge
-  rw [Set.image_inter ContinuousLinearMapWOT.ofCLM_injective,
-    ← S.closure_image_ofCLM_inter_selfAdjoint]
-  exact isClosed_closure.inter
-    (ContinuousLinearMapWOT.isCompact_image_ofCLM_closedBall 0 r).isClosed
+    ?_
+  · rw [Set.image_inter ContinuousLinearMapWOT.ofCLM_injective,
+      ← S.closure_image_ofCLM_inter_selfAdjoint]
+    exact isClosed_closure.inter
+      (ContinuousLinearMapWOT.isCompact_image_ofCLM_closedBall 0 r).isClosed
+  · have hsa : {x : H →L[ℂ] H | IsSelfAdjoint x} = (selfAdjoint (H →L[ℂ] H) : Set _) := rfl
+    have h := S.closure_selfAdjoint_closedBall_eq_selfAdjoint_closedBall_double_centralizer r
+    simp only [← SetLike.mem_coe, setOf_mem_and_pred_and_norm_le_eq_inter, hsa] at h
+    exact h.ge
 
 /-- **Finite-vector self-adjoint Kaplansky approximation.** Every self-adjoint `x ∈ S''` can be
 approximated on finitely many vectors by a self-adjoint `s ∈ S` with `‖s‖ ≤ ‖x‖`. -/
@@ -366,12 +355,12 @@ theorem exists_isSelfAdjoint_norm_le_forall_norm_sub_apply_lt
     ∃ s ∈ S, IsSelfAdjoint s ∧ ‖s‖ ≤ ‖x‖ ∧ ∀ i, ‖x (v i) - s (v i)‖ < ε := by
   have hmem : ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) H H x ∈
       closure (ContinuousLinearMap.toPointwiseConvergenceCLM ℂ (RingHom.id ℂ) H H ''
-        ((S : Set (H →L[ℂ] H)) ∩ selfAdjoint (H →L[ℂ] H) ∩ closedBall 0 ‖x‖)) := by
-    rw [S.closure_image_toPointwiseConvergenceCLM_inter_selfAdjoint_inter_closedBall ‖x‖]
-    exact ⟨x, ⟨⟨hx, hxsa⟩, by simp⟩, rfl⟩
-  obtain ⟨s, ⟨⟨hs, hssa⟩, hsr⟩, hlt⟩ :=
+        {s | s ∈ S ∧ IsSelfAdjoint s ∧ ‖s‖ ≤ ‖x‖}) :=
+    S.closure_selfAdjoint_closedBall_eq_selfAdjoint_closedBall_double_centralizer ‖x‖ ▸
+      ⟨x, ⟨hx, hxsa, le_rfl⟩, rfl⟩
+  obtain ⟨s, ⟨hs, hssa, hsr⟩, hlt⟩ :=
     PointwiseConvergenceCLM.exists_mem_forall_norm_sub_apply_lt_of_mem_closure hmem v hε
-  exact ⟨s, hs, hssa, by simpa using hsr, hlt⟩
+  exact ⟨s, hs, hssa, hsr, hlt⟩
 
 /-! ### Strong-star, strong, weak, and matrix-amplified Kaplansky density -/
 
@@ -681,7 +670,10 @@ theorem closure_image_ultrastrongOfCLM_inter_selfAdjoint_inter_closedBall
           closedBall 0 r) :=
   ContinuousLinearMapUltrastrong.closure_image_ofCLM_of_closure_image_toPointwiseConvergenceCLM
     (fun _ ⟨_, hT⟩ ↦ by simpa using hT)
-    (S.closure_image_toPointwiseConvergenceCLM_inter_selfAdjoint_inter_closedBall r)
+    (by
+      have hsa : {x : H →L[ℂ] H | IsSelfAdjoint x} = (selfAdjoint (H →L[ℂ] H) : Set _) := rfl
+      simpa only [← SetLike.mem_coe, setOf_mem_and_pred_and_norm_le_eq_inter, hsa] using
+        S.closure_selfAdjoint_closedBall_eq_selfAdjoint_closedBall_double_centralizer r)
 
 /-- **Ultraweak self-adjoint Kaplansky density theorem.** For every radius `r : ℝ`, the ultraweak
 closure of `S ∩ selfAdjoint _ ∩ closedBall 0 r` equals `S'' ∩ selfAdjoint _ ∩ closedBall 0 r`. -/

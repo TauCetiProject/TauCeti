@@ -17,8 +17,8 @@ import Mathlib.Analysis.InnerProductSpace.LinearMap
 /-!
 # Examples and negative controls for Kaplansky's density theorem
 
-We verify two opposite regimes of Kaplansky's density theorem and exhibit the sharpness of its
-strong-operator topology in the positive-contraction clause:
+We verify two opposite regimes of Kaplansky's density theorem and show that operator-norm closure
+cannot replace strong-operator closure in the positive-contraction clause:
 
 * For the scalar star subalgebra `⊥` (`ℂ • 1`), the double commutant is `⊥` itself, so the unit
   balls of `⊥` and `⊥''` coincide and the strong-operator unit ball of `⊥` is already closed.
