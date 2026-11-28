@@ -234,6 +234,8 @@ theorem coe_multiplicationAlgebra :
   rw [← commutant_multiplicationAlgebra, coe_commutant_multiplicationAlgebra,
     Lp.centralizer_range_multiplicationOperator (p := 2) ENNReal.ofNat_ne_top]
 
+/-- For `σ`-finite `μ`, an operator lies in `multiplicationAlgebra μ` if and only if it is
+multiplication by some `a : Lp ℂ ∞ μ`. -/
 theorem mem_multiplicationAlgebra_iff {μ : Measure α} [SigmaFinite μ]
     {T : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ} :
     T ∈ multiplicationAlgebra μ ↔ ∃ a : Lp ℂ ∞ μ, Lp.multiplicationOperator a = T := by
@@ -383,35 +385,39 @@ example : Subsingleton (multiplicationAlgebra (0 : Measure α)) :=
 
 /-! ### Dirac point masses -/
 
+/-- For a Dirac mass, `multiplicationAlgebra (Measure.dirac x₀)` is the scalars `⊥`; no
+`MeasurableSingletonClass` is needed. -/
 @[simp]
 theorem multiplicationAlgebra_dirac_eq_bot (x₀ : α) :
     multiplicationAlgebra (Measure.dirac x₀) = ⊥ := by
   refine le_bot_iff.mp (multiplicationAlgebra_le_iff.mpr fun a ↦ ?_)
   obtain ⟨c, rfl⟩ := Lp.exists_eq_algebraMap_dirac a
   rw [mem_bot]
-  exact ⟨c, by
-    rw [Lp.multiplicationOperator_algebraMap, Algebra.algebraMap_eq_smul_one,
-      ContinuousLinearMap.one_def]⟩
+  exact ⟨c, by simp [Algebra.algebraMap_eq_smul_one]⟩
 
+/-- For a Dirac mass, `multiplicationAlgebra (Measure.dirac x₀)` is all of `B(L²) = ⊤`, since
+`L²` is at most one-dimensional. -/
 theorem multiplicationAlgebra_dirac_eq_top (x₀ : α) :
     multiplicationAlgebra (Measure.dirac x₀) = ⊤ := by
   rw [← commutant_multiplicationAlgebra, multiplicationAlgebra_dirac_eq_bot, commutant_bot]
+
+private theorem bijective_ofId_multiplicationAlgebra_dirac (x₀ : α) :
+    Function.Bijective (StarAlgHom.ofId ℂ (multiplicationAlgebra (Measure.dirac x₀))) := by
+  refine ⟨(StarAlgHom.ofId ℂ (multiplicationAlgebra (Measure.dirac x₀))).toRingHom.injective,
+    fun T ↦ ?_⟩
+  have hT : (T : Lp ℂ 2 (Measure.dirac x₀) →L[ℂ] Lp ℂ 2 (Measure.dirac x₀)) ∈
+      (⊥ : VonNeumannAlgebra (Lp ℂ 2 (Measure.dirac x₀))) := by
+    simpa [multiplicationAlgebra_dirac_eq_bot] using T.property
+  obtain ⟨c, hc⟩ := mem_bot.mp hT
+  refine ⟨c, Subtype.ext ?_⟩
+  simpa [Algebra.algebraMap_eq_smul_one] using hc
 
 /-- For any point `x₀ : α`, `StarAlgHom.ofId ℂ (multiplicationAlgebra (Measure.dirac x₀))` upgrades
 to a star algebra isomorphism `ℂ ≃⋆ₐ[ℂ] multiplicationAlgebra (Measure.dirac x₀)`. -/
 noncomputable def multiplicationAlgebraDiracStarAlgEquiv (x₀ : α) :
     ℂ ≃⋆ₐ[ℂ] multiplicationAlgebra (Measure.dirac x₀) :=
   StarAlgEquiv.ofBijective (StarAlgHom.ofId ℂ (multiplicationAlgebra (Measure.dirac x₀)))
-    (by
-      refine ⟨(StarAlgHom.ofId ℂ (multiplicationAlgebra (Measure.dirac x₀))).toRingHom.injective,
-        fun T ↦ ?_⟩
-      have hT : (T : Lp ℂ 2 (Measure.dirac x₀) →L[ℂ] Lp ℂ 2 (Measure.dirac x₀)) ∈
-          (⊥ : VonNeumannAlgebra (Lp ℂ 2 (Measure.dirac x₀))) := by
-        simpa [multiplicationAlgebra_dirac_eq_bot] using T.property
-      obtain ⟨c, hc⟩ := mem_bot.mp hT
-      refine ⟨c, Subtype.ext ?_⟩
-      rw [StarAlgHom.ofId_apply, Algebra.algebraMap_eq_smul_one, SetLike.val_smul,
-        OneMemClass.coe_one, ← Algebra.algebraMap_eq_smul_one, hc])
+    (bijective_ofId_multiplicationAlgebra_dirac x₀)
 
 @[simp]
 theorem multiplicationAlgebraDiracStarAlgEquiv_apply (x₀ : α) (c : ℂ) :
@@ -528,10 +534,7 @@ private theorem apply_indicatorConstLp_eq_zero_of_mul_linftyIndicator_eq_zero
     (hPE : P * multiplicationStarAlgHom μ (TauCeti.linftyIndicator μ ℂ E hE) = 0) (c : ℂ) :
     (P : Lp ℂ 2 μ →L[ℂ] Lp ℂ 2 μ) (indicatorConstLp 2 hE hμE c) = 0 := by
   have h := congr($(congrArg Subtype.val hPE) (indicatorConstLp 2 hE hμE c))
-  rwa [MulMemClass.coe_mul, ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply,
-    coe_multiplicationStarAlgHom_apply, Lp.multiplicationOperator_linftyIndicator,
-    Lp.indicatorMultiplication_indicatorConstLp_self hE hμE c,
-    ZeroMemClass.coe_zero, zero_apply] at h
+  simpa [Lp.multiplicationOperator_linftyIndicator] using h
 
 /-- A nonzero idempotent `P ∈ multiplicationAlgebra μ` restricts on some finite-measure measurable
 set `E` to multiplication by the indicator of a positive-measure measurable subset `s ⊆ E` (with

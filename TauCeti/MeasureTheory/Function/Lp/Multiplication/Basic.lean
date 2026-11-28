@@ -380,8 +380,8 @@ theorem multiplicationStarAlgHom_apply (a : Lp 𝕜 ∞ μ) :
       ((StarAlgHom.ofId 𝕜 (E →L[𝕜] E)).compLpTop (continuous_algebraMap 𝕜 (E →L[𝕜] E)) μ a) f,
     (StarAlgHom.ofId 𝕜 (E →L[𝕜] E)).coeFn_compLpTop (continuous_algebraMap 𝕜 (E →L[𝕜] E)) a,
     multiplicationOperator_ae a f] with x hx hcomp hmul
-  rw [hx, hcomp, StarAlgHom.ofId_apply, Algebra.algebraMap_eq_smul_one, smul_apply,
-    ContinuousLinearMap.one_def, id_apply, hmul]
+  rw [hx, hcomp, hmul]
+  simp [Algebra.algebraMap_eq_smul_one]
 
 /-- The range of `multiplicationStarAlgHom μ E` as a set equals the range of
 `multiplicationOperator (E := E) (p := 2) (μ := μ)`. -/

@@ -265,6 +265,30 @@ theorem indicatorMultiplication_congr {t : Set α} (hs : MeasurableSet s)
       indicatorMultiplication (E := E) (μ := μ) 𝕜 p ht := by
   rw [indicatorMultiplication, indicatorMultiplication, (TauCeti.linftyIndicator_inj hs ht).mpr h]
 
+/-- Multiplying an `Lᵖ` constant indicator of `t` by the indicator of `s` intersects the sets. -/
+theorem indicatorMultiplication_indicatorConstLp {t : Set α} (hs : MeasurableSet s)
+    (ht : MeasurableSet t) (hμt : μ t ≠ ∞) (v : E) :
+    indicatorMultiplication 𝕜 p hs (indicatorConstLp p ht hμt v) =
+      indicatorConstLp p (hs.inter ht)
+        (measure_ne_top_of_subset Set.inter_subset_right hμt) v := by
+  rw [indicatorMultiplication_apply]
+  exact TauCeti.linftyIndicator_smul_indicatorConstLp hs ht hμt v
+
+/-- If `s ⊆ t`, multiplying an `Lᵖ` constant indicator of `t` by the indicator of `s` restricts
+it to `s`. -/
+theorem indicatorMultiplication_indicatorConstLp_of_subset {t : Set α} (hs : MeasurableSet s)
+    (ht : MeasurableSet t) (hμt : μ t ≠ ∞) (hst : s ⊆ t) (v : E) :
+    indicatorMultiplication 𝕜 p hs (indicatorConstLp p ht hμt v) =
+      indicatorConstLp p hs (measure_ne_top_of_subset hst hμt) v := by
+  rw [indicatorMultiplication_indicatorConstLp]
+  simp [Set.inter_eq_left.mpr hst]
+
+/-- Multiplying an `Lᵖ` constant indicator of `s` by the indicator of `s` fixes it. -/
+@[simp] theorem indicatorMultiplication_indicatorConstLp_self (hs : MeasurableSet s)
+    (hμs : μ s ≠ ∞) (v : E) :
+    indicatorMultiplication 𝕜 p hs (indicatorConstLp p hs hμs v) = indicatorConstLp p hs hμs v :=
+  indicatorMultiplication_indicatorConstLp_of_subset hs hs hμs Set.Subset.rfl v
+
 /-- If two finite-measure measurable sets induce the same indicator multiplication operator on
 `Lp E p μ` (for a nontrivial space `E`), then the two sets agree almost everywhere (with no
 `SigmaFinite` hypothesis on `μ`). -/
@@ -283,10 +307,8 @@ theorem ae_eq_of_indicatorMultiplication_eq [Nontrivial E] {t : Set α}
           (measure_ne_top_of_subset Set.inter_subset_right hμu) v := by
       have happly' :=
         congrArg (fun T : Lp E p μ →L[𝕜] Lp E p μ ↦ T (indicatorConstLp p hu hμu v)) heq
-      rw [indicatorMultiplication_apply, TauCeti.linftyIndicator_smul_indicatorConstLp] at happly'
-      simp only [Set.inter_self] at happly'
-      rw [indicatorMultiplication_apply, TauCeti.linftyIndicator_smul_indicatorConstLp] at happly'
-      exact happly'
+      simpa only [indicatorMultiplication_indicatorConstLp_self,
+        indicatorMultiplication_indicatorConstLp] using happly'
     filter_upwards [Lp.ext_iff.mp happly,
       indicatorConstLp_coeFn (p := p) (hs := hu) (hμs := hμu) (c := v),
       indicatorConstLp_coeFn (p := p) (hs := hw.inter hu)
@@ -371,30 +393,6 @@ theorem indicatorMultiplication_add_compl (hs : MeasurableSet s) (f : Lp E p μ)
     indicatorMultiplication_ae (𝕜 := 𝕜) hs f,
     indicatorMultiplication_ae (𝕜 := 𝕜) hs.compl f] with x hx h₁ h₂
   rw [hx, Pi.add_apply, h₁, h₂, Set.indicator_self_add_compl_apply]
-
-/-- Multiplying an `Lᵖ` constant indicator of `t` by the indicator of `s` intersects the sets. -/
-theorem indicatorMultiplication_indicatorConstLp {t : Set α} (hs : MeasurableSet s)
-    (ht : MeasurableSet t) (hμt : μ t ≠ ∞) (v : E) :
-    indicatorMultiplication 𝕜 p hs (indicatorConstLp p ht hμt v) =
-      indicatorConstLp p (hs.inter ht)
-        (measure_ne_top_of_subset Set.inter_subset_right hμt) v := by
-  rw [indicatorMultiplication_apply]
-  exact TauCeti.linftyIndicator_smul_indicatorConstLp hs ht hμt v
-
-/-- If `s ⊆ t`, multiplying an `Lᵖ` constant indicator of `t` by the indicator of `s` restricts
-it to `s`. -/
-theorem indicatorMultiplication_indicatorConstLp_of_subset {t : Set α} (hs : MeasurableSet s)
-    (ht : MeasurableSet t) (hμt : μ t ≠ ∞) (hst : s ⊆ t) (v : E) :
-    indicatorMultiplication 𝕜 p hs (indicatorConstLp p ht hμt v) =
-      indicatorConstLp p hs (measure_ne_top_of_subset hst hμt) v := by
-  rw [indicatorMultiplication_indicatorConstLp]
-  simp [Set.inter_eq_left.mpr hst]
-
-/-- Multiplying an `Lᵖ` constant indicator of `s` by the indicator of `s` fixes it. -/
-@[simp] theorem indicatorMultiplication_indicatorConstLp_self (hs : MeasurableSet s)
-    (hμs : μ s ≠ ∞) (v : E) :
-    indicatorMultiplication 𝕜 p hs (indicatorConstLp p hs hμs v) = indicatorConstLp p hs hμs v :=
-  indicatorMultiplication_indicatorConstLp_of_subset hs hs hμs Set.Subset.rfl v
 
 /-- Applying `indicatorMultiplication` does not increase the `Lᵖ` norm. -/
 theorem norm_indicatorMultiplication_apply_le (hs : MeasurableSet s) (f : Lp E p μ) :

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Fredholm.Parametric
 public import TauCeti.Analysis.Sobolev.Cylinder.Stabilizer
-public import TauCeti.MeasureTheory.Function.Lp.Multiplication.Basic
+public import TauCeti.MeasureTheory.Function.Lp.Operator.LpMultiplication
 public import TauCeti.Topology.Algebra.Module.Complement
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 import TauCeti.Analysis.Fredholm.ClosedRange

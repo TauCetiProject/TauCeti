@@ -97,29 +97,6 @@ theorem exists_eq_multiplicationOperator_iff [SigmaFinite μ] (hp : p ≠ ∞) :
   filter_upwards [multiplicationOperator_ae a f, hf] with x h₁ h₂ hx
   rw [h₁, h₂ hx, smul_zero]
 
-/-- **The commutant of `L∞`.** On a sigma-finite measure space and for `p < ∞`, a bounded operator
-on the scalar space `Lᵖ(μ)` commutes with every multiplication operator if and only if it is
-itself a multiplication operator: the multiplication operators form a maximal commutative family
-of operators on `Lᵖ(μ)`. -/
-theorem forall_commute_multiplicationOperator_iff [SigmaFinite μ] (hp : p ≠ ∞) :
-    (∀ b : Lp 𝕜 ∞ μ, Commute S (multiplicationOperator b)) ↔
-      ∃ a : Lp 𝕜 ∞ μ, S = multiplicationOperator a := by
-  refine ⟨fun h ↦ (exists_eq_multiplicationOperator_iff hp).2 fun f s hs hf ↦ ?_,
-    fun ⟨a, ha⟩ b ↦ ha ▸ commute_multiplicationOperator a b⟩
-  -- `f` is fixed by multiplication by `1_s`, which commutes with `S`
-  have hb : MemLp (s.indicator fun _ ↦ (1 : 𝕜)) ∞ μ :=
-    (memLp_top_const 1).indicator hs.nullMeasurableSet
-  have hfix : multiplicationOperator (hb.toLp _) f = f := by
-    refine Lp.ext ?_
-    filter_upwards [multiplicationOperator_ae (hb.toLp _) f, hb.coeFn_toLp, hf] with x h₁ h₂ h₃
-    rw [h₁, h₂]
-    by_cases hx : x ∈ s <;> simp [hx, h₃]
-  have hcomm : S f = multiplicationOperator (hb.toLp _) (S f) := by
-    conv_lhs => rw [← hfix]
-    exact congrArg (· f) (h (hb.toLp _)).eq
-  filter_upwards [multiplicationOperator_ae (hb.toLp _) (S f), hb.coeFn_toLp] with x h₁ h₂ hx
-  rw [hcomm, h₁, h₂, indicator_of_notMem hx, zero_smul]
-
 /-- **Operators that preserve compact supports are multiplication operators.** Let `μ` be a
 sigma-finite measure on a Hausdorff space, inner regular for compact sets on sets of finite
 measure, and let `p < ∞`. A bounded operator `S` on the scalar space `Lᵖ(μ)` such that `S f`
@@ -168,6 +145,40 @@ section IndicatorCommutantHelpers
 variable {α 𝕜 : Type*} [MeasurableSpace α] {μ : Measure α} [NontriviallyNormedField 𝕜]
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
+/-- Extending an `Lᵖ` class on `μ.restrict s` by zero to `Lp 𝕜 p μ` as a linear isometry. -/
+private def extendByZeroRestrict {s : Set α} (hs : MeasurableSet s) :
+    Lp 𝕜 p (μ.restrict s) →ₗᵢ[𝕜] Lp 𝕜 p μ :=
+  (TauCeti.castLpₗᵢ Measure.restrict_univ).toLinearIsometry.comp
+    (TauCeti.extendByZeroLpₗᵢ 𝕜 μ hs.nullMeasurableSet (Set.subset_univ s))
+
+private theorem coeFn_extendByZeroRestrict {s : Set α} (hs : MeasurableSet s)
+    (g : Lp 𝕜 p (μ.restrict s)) :
+    (extendByZeroRestrict hs g : α → 𝕜) =ᵐ[μ] s.indicator g :=
+  TauCeti.coeFn_castLpₗᵢ_extendByZeroLpₗᵢ 𝕜 hs.nullMeasurableSet g
+
+private theorem extendByZeroRestrict_LpToLpRestrictCLM {s : Set α} (hs : MeasurableSet s)
+    (f : Lp 𝕜 p μ) :
+    extendByZeroRestrict hs (LpToLpRestrictCLM α 𝕜 𝕜 μ p s f) =
+      indicatorMultiplication 𝕜 p hs f :=
+  TauCeti.castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM hs f
+
+/-- Compressing an operator `T` on `Lp 𝕜 p μ` to `Lp 𝕜 p (μ.restrict s)` via zero-extension and
+restriction. -/
+private def compressRestrict {s : Set α} (hs : MeasurableSet s)
+    (T : Lp 𝕜 p μ →L[𝕜] Lp 𝕜 p μ) :
+    Lp 𝕜 p (μ.restrict s) →L[𝕜] Lp 𝕜 p (μ.restrict s) :=
+  (LpToLpRestrictCLM α 𝕜 𝕜 μ p s).comp (T.comp (extendByZeroRestrict hs).toContinuousLinearMap)
+
+private theorem compressRestrict_apply {s : Set α} (hs : MeasurableSet s)
+    (T : Lp 𝕜 p μ →L[𝕜] Lp 𝕜 p μ) (g : Lp 𝕜 p (μ.restrict s)) :
+    compressRestrict hs T g = LpToLpRestrictCLM α 𝕜 𝕜 μ p s (T (extendByZeroRestrict hs g)) :=
+  rfl
+
+private theorem compressRestrict_apply_ae {s : Set α} (hs : MeasurableSet s)
+    (T : Lp 𝕜 p μ →L[𝕜] Lp 𝕜 p μ) (g : Lp 𝕜 p (μ.restrict s)) :
+    (compressRestrict hs T g : α → 𝕜) =ᵐ[μ.restrict s] T (extendByZeroRestrict hs g) :=
+  LpToLpRestrictCLM_coeFn 𝕜 s (T (extendByZeroRestrict hs g))
+
 /-- Compressing an operator `T` that commutes with measurable-subset indicators on `s` yields a
 local operator on `Lp 𝕜 p (μ.restrict s)`. -/
 private theorem isLocal_comp_extendByZero {s : Set α} (hs : MeasurableSet s)
@@ -176,34 +187,24 @@ private theorem isLocal_comp_extendByZero {s : Set α} (hs : MeasurableSet s)
       Commute T (indicatorMultiplication 𝕜 p ht))
     (g : Lp 𝕜 p (μ.restrict s)) (t : Set α) (ht : MeasurableSet t)
     (hg : ∀ᵐ x ∂μ.restrict s, x ∉ t → g x = 0) :
-    ∀ᵐ x ∂μ.restrict s, x ∉ t →
-      ((LpToLpRestrictCLM α 𝕜 𝕜 μ p s).comp
-        (T.comp ((TauCeti.castLpₗᵢ (𝕜 := 𝕜) (E := 𝕜) (p := p)
-          Measure.restrict_univ).toLinearIsometry.comp
-          (TauCeti.extendByZeroLpₗᵢ 𝕜 μ hs.nullMeasurableSet
-            (Set.subset_univ s))).toContinuousLinearMap)) g x = 0 := by
-  set extp : Lp 𝕜 p (μ.restrict s) →ₗᵢ[𝕜] Lp 𝕜 p μ :=
-    (TauCeti.castLpₗᵢ Measure.restrict_univ).toLinearIsometry.comp
-      (TauCeti.extendByZeroLpₗᵢ 𝕜 μ hs.nullMeasurableSet (Set.subset_univ s)) with hext
-  have hι : (extp g : α → 𝕜) =ᵐ[μ] s.indicator g := by
-    rw [hext, LinearIsometry.coe_comp, LinearIsometryEquiv.coe_toLinearIsometry,
-      Function.comp_apply]
-    exact TauCeti.coeFn_castLpₗᵢ_extendByZeroLpₗᵢ 𝕜 hs.nullMeasurableSet g
+    ∀ᵐ x ∂μ.restrict s, x ∉ t → compressRestrict hs T g x = 0 := by
   set r := t ∩ s
   have hr : MeasurableSet r := ht.inter hs
-  have hι_fix : indicatorMultiplication 𝕜 p hr (extp g) = extp g := by
+  have hι_fix : indicatorMultiplication 𝕜 p hr (extendByZeroRestrict hs g) =
+      extendByZeroRestrict hs g := by
     refine indicatorMultiplication_eq_self_of_ae_notMem hr ?_
-    filter_upwards [hι, (ae_restrict_iff' hs).mp hg] with x hιx hgx hxr
+    filter_upwards [coeFn_extendByZeroRestrict hs g, (ae_restrict_iff' hs).mp hg]
+      with x hιx hgx hxr
     rw [hιx]
     by_cases hxs : x ∈ s
     · rw [Set.indicator_of_mem hxs, hgx hxs fun hxt ↦ hxr ⟨hxt, hxs⟩]
     · rw [Set.indicator_of_notMem hxs]
-  have hTι : T (extp g) = indicatorMultiplication 𝕜 p hr (T (extp g)) := by
+  have hTι : T (extendByZeroRestrict hs g) =
+      indicatorMultiplication 𝕜 p hr (T (extendByZeroRestrict hs g)) := by
     rw [← (hcomm hr Set.inter_subset_right).indicatorMultiplication_apply, hι_fix]
-  filter_upwards [LpToLpRestrictCLM_coeFn 𝕜 s (T (extp g)),
+  filter_upwards [compressRestrict_apply_ae hs T g,
     ae_restrict_of_ae ((Lp.ext_iff.mp hTι).trans
-      (indicatorMultiplication_ae hr (T (extp g))))] with x hxR hxT hxt
-  simp only [comp_apply, LinearIsometry.coe_toContinuousLinearMap]
+      (indicatorMultiplication_ae hr (T (extendByZeroRestrict hs g))))] with x hxR hxT hxt
   rw [hxR, hxT, Set.indicator_of_notMem fun (h : x ∈ r) ↦ hxt h.1]
 
 /-- Gluing on-`s` multiplication representation of the compressed operator and off-`s` vanishing of
@@ -211,16 +212,9 @@ private theorem isLocal_comp_extendByZero {s : Set α} (hs : MeasurableSet s)
 private theorem comp_indicatorMultiplication_eq_of_restrict {s : Set α} (hs : MeasurableSet s)
     {T : Lp 𝕜 p μ →L[𝕜] Lp 𝕜 p μ} (hcomm_s : Commute T (indicatorMultiplication 𝕜 p hs))
     {b : Lp 𝕜 ∞ (μ.restrict s)}
-    (hb_eq : multiplicationOperator (E := 𝕜) (p := p) b =
-      (LpToLpRestrictCLM α 𝕜 𝕜 μ p s).comp
-        (T.comp ((TauCeti.castLpₗᵢ (𝕜 := 𝕜) (E := 𝕜) (p := p)
-          Measure.restrict_univ).toLinearIsometry.comp
-          (TauCeti.extendByZeroLpₗᵢ 𝕜 μ hs.nullMeasurableSet
-            (Set.subset_univ s))).toContinuousLinearMap)) :
+    (hb_eq : multiplicationOperator (E := 𝕜) (p := p) b = compressRestrict hs T) :
     T ∘L indicatorMultiplication 𝕜 p hs =
-      multiplicationOperator (TauCeti.castLpₗᵢ (𝕜 := 𝕜) Measure.restrict_univ
-        (TauCeti.extendByZeroLpₗᵢ 𝕜 μ hs.nullMeasurableSet (Set.subset_univ s) b)) ∘L
-        indicatorMultiplication 𝕜 p hs := by
+      multiplicationOperator (extendByZeroRestrict hs b) ∘L indicatorMultiplication 𝕜 p hs := by
   refine ContinuousLinearMap.ext fun f ↦ Lp.ext ?_
   simp only [comp_apply]
   set P : Lp 𝕜 p μ →L[𝕜] Lp 𝕜 p μ := indicatorMultiplication 𝕜 p hs
@@ -232,20 +226,15 @@ private theorem comp_indicatorMultiplication_eq_of_restrict {s : Set α} (hs : M
   have hTf_on : ⇑(T (P f)) =ᵐ[μ.restrict s] fun x ↦ b x * f x := by
     have hS_apply : multiplicationOperator (E := 𝕜) (p := p) b (LpToLpRestrictCLM α 𝕜 𝕜 μ p s f) =
         LpToLpRestrictCLM α 𝕜 𝕜 μ p s (T (P f)) := by
-      have h := congrArg (fun A : Lp 𝕜 p (μ.restrict s) →L[𝕜] Lp 𝕜 p (μ.restrict s) ↦
-        A (LpToLpRestrictCLM α 𝕜 𝕜 μ p s f)) hb_eq
-      rwa [comp_apply, comp_apply, LinearIsometry.coe_toContinuousLinearMap,
-        LinearIsometry.coe_comp, LinearIsometryEquiv.coe_toLinearIsometry,
-        Function.comp_apply, TauCeti.castLpₗᵢ_extendByZeroLpₗᵢ_LpToLpRestrictCLM] at h
+      rw [hb_eq, compressRestrict_apply, extendByZeroRestrict_LpToLpRestrictCLM]
     filter_upwards [LpToLpRestrictCLM_coeFn 𝕜 s (T (P f)),
       multiplicationOperator_ae b (LpToLpRestrictCLM α 𝕜 𝕜 μ p s f),
       LpToLpRestrictCLM_coeFn 𝕜 s f] with x hx hmul hR
     rw [← hx, ← hS_apply, hmul, hR, smul_eq_mul]
   filter_upwards [hTf_off, (ae_restrict_iff' hs).mp hTf_on,
-    multiplicationOperator_ae (TauCeti.castLpₗᵢ (𝕜 := 𝕜) Measure.restrict_univ
-      (TauCeti.extendByZeroLpₗᵢ 𝕜 μ hs.nullMeasurableSet (Set.subset_univ s) b)) (P f),
+    multiplicationOperator_ae (extendByZeroRestrict hs b) (P f),
     indicatorMultiplication_ae (𝕜 := 𝕜) hs f,
-    TauCeti.coeFn_castLpₗᵢ_extendByZeroLpₗᵢ 𝕜 hs.nullMeasurableSet b]
+    coeFn_extendByZeroRestrict hs b]
     with x hxoff hxon hmul₁ hmul₂ hax
   by_cases hxs : x ∈ s
   · rw [hxon hxs, hmul₁, hmul₂, hax, Set.indicator_of_mem hxs, Set.indicator_of_mem hxs,
@@ -272,25 +261,20 @@ theorem exists_norm_le_and_comp_indicatorMultiplication_eq (hp : p ≠ ∞) {s :
         multiplicationOperator a ∘L indicatorMultiplication 𝕜 p hs := by
   have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hμs
   -- Phase 1: Compress `T` to `Lp 𝕜 p (μ.restrict s)` and verify locality.
-  let extp : Lp 𝕜 p (μ.restrict s) →ₗᵢ[𝕜] Lp 𝕜 p μ :=
-    (TauCeti.castLpₗᵢ Measure.restrict_univ).toLinearIsometry.comp
-      (TauCeti.extendByZeroLpₗᵢ 𝕜 μ hs.nullMeasurableSet (Set.subset_univ s))
-  let S : Lp 𝕜 p (μ.restrict s) →L[𝕜] Lp 𝕜 p (μ.restrict s) :=
-    (LpToLpRestrictCLM α 𝕜 𝕜 μ p s).comp (T.comp extp.toContinuousLinearMap)
-  have hS_norm : ‖S‖ ≤ ‖T‖ := opNorm_le_bound S (norm_nonneg T) fun g ↦
-    calc ‖S g‖ ≤ ‖T (extp g)‖ := norm_Lp_toLp_restrict_le s _
-      _ ≤ ‖T‖ * ‖extp g‖ := T.le_opNorm _
-      _ = ‖T‖ * ‖g‖ := by rw [extp.norm_map]
+  have hS_norm : ‖compressRestrict hs T‖ ≤ ‖T‖ := opNorm_le_bound _ (norm_nonneg T) fun g ↦
+    calc ‖compressRestrict hs T g‖ ≤ ‖T (extendByZeroRestrict hs g)‖ :=
+        norm_Lp_toLp_restrict_le s _
+      _ ≤ ‖T‖ * ‖extendByZeroRestrict hs g‖ := T.le_opNorm _
+      _ = ‖T‖ * ‖g‖ := by rw [(extendByZeroRestrict hs).norm_map]
   -- Phase 2: Represent the compressed operator as multiplication by `b : Lp 𝕜 ∞ (μ.restrict s)`.
   obtain ⟨b, hb_eq⟩ := exists_eq_multiplicationOperator_of_forall_ae_eq_zero hp
     (isLocal_comp_extendByZero hs T hcomm)
-  have hb_norm : ‖b‖ ≤ ‖S‖ := by
+  have hb_norm : ‖b‖ ≤ ‖compressRestrict hs T‖ := by
     rw [← norm_multiplicationOperator (E := 𝕜) (p := p) b, ← hb_eq]
   -- Phase 3: Extend `b` by zero to `Lp 𝕜 ∞ μ` and glue on and off `s`.
-  refine ⟨TauCeti.castLpₗᵢ Measure.restrict_univ
-      (TauCeti.extendByZeroLpₗᵢ 𝕜 μ hs.nullMeasurableSet (Set.subset_univ s) b), ?_,
+  refine ⟨extendByZeroRestrict hs b, ?_,
     comp_indicatorMultiplication_eq_of_restrict hs (hcomm hs Set.Subset.rfl) hb_eq.symm⟩
-  rw [LinearIsometryEquiv.norm_map, LinearIsometry.norm_map]
+  rw [(extendByZeroRestrict hs).norm_map]
   exact hb_norm.trans hS_norm
 
 /-- **Unconditional commutativity of the multiplier commutant.** On an arbitrary measure space —
@@ -375,16 +359,29 @@ theorem exists_multiplicationOperator_eq_of_forall_commute_indicatorMultiplicati
   exact (exists_eq_multiplicationOperator_of_forall_ae_eq_zero hp hloc).imp
     fun _ h ↦ h.symm
 
+/-- **The commutant of `L∞`.** On a sigma-finite measure space and for `p < ∞`, a bounded operator
+on the scalar space `Lᵖ(μ)` commutes with every multiplication operator if and only if it is
+itself a multiplication operator: the multiplication operators form a maximal commutative family
+of operators on `Lᵖ(μ)`. -/
+theorem forall_commute_multiplicationOperator_iff [SigmaFinite μ] (hp : p ≠ ∞)
+    {S : Lp 𝕜 p μ →L[𝕜] Lp 𝕜 p μ} :
+    (∀ b : Lp 𝕜 ∞ μ, Commute S (multiplicationOperator b)) ↔
+      ∃ a : Lp 𝕜 ∞ μ, S = multiplicationOperator a :=
+  ⟨fun h ↦ (exists_multiplicationOperator_eq_of_forall_commute_indicatorMultiplication hp S
+      fun _ hs _ ↦ by rw [← multiplicationOperator_linftyIndicator hs]; exact h _).imp
+    fun _ h ↦ h.symm,
+    fun ⟨a, ha⟩ b ↦ ha ▸ commute_multiplicationOperator a b⟩
+
 /-- On a sigma-finite measure space and for `1 ≤ p < ∞`, the centralizer in
 `Lp 𝕜 p μ →L[𝕜] Lp 𝕜 p μ` of the range of `multiplicationOperator` is that range itself. -/
 theorem centralizer_range_multiplicationOperator [SigmaFinite μ] (hp : p ≠ ∞) :
     (Set.range (multiplicationOperator (𝕜 := 𝕜) (E := 𝕜) (p := p) (μ := μ))).centralizer =
       Set.range (multiplicationOperator (𝕜 := 𝕜) (E := 𝕜) (p := p) (μ := μ)) := by
   ext T
-  constructor
-  · intro hT
-    exact exists_multiplicationOperator_eq_of_forall_commute_indicatorMultiplication hp T
-      fun _ hs _ ↦ commute_indicatorMultiplication_of_mem_centralizer_range hT hs
+  refine ⟨fun hT ↦ ?_, ?_⟩
+  · obtain ⟨a, ha⟩ := (forall_commute_multiplicationOperator_iff hp).mp fun b ↦
+      (commute_iff_eq _ _).mpr (hT _ ⟨b, rfl⟩).symm
+    exact ⟨a, ha.symm⟩
   · rintro ⟨a, rfl⟩ S ⟨b, rfl⟩
     exact (commute_iff_eq _ _).mp (commute_multiplicationOperator b a)
 
