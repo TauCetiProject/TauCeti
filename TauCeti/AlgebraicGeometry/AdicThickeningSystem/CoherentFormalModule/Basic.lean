@@ -809,6 +809,52 @@ theorem pullbackEquiv_counitIso_inv_app (e : 𝔛 ≅ 𝔜) (M : CoherentFormalM
         (pullbackComp e.hom e.inv).inv.app M :=
   (rfl)
 
+/-- For a section `f ≫ g = 𝟙 𝔛` of adic thickening systems, the level-`n` component of
+`pullbackComp f g ≪≫ pullbackCongr h ≪≫ pullbackId 𝔛` agrees with
+`Scheme.Modules.pullbackCompIsoId` at level `n`. -/
+theorem pullbackComp_hom_comp_pullbackCongr_hom_comp_pullbackId_hom_app_app
+    {f : 𝔛 ⟶ 𝔜} {g : 𝔜 ⟶ 𝔛} (h : f ≫ g = 𝟙 𝔛) (M : CoherentFormalModule 𝔛) (n : ℕ) :
+    ((pullbackComp f g).hom.app M).app n ≫
+      ((pullbackCongr h).hom.app M).app n ≫
+        ((pullbackId 𝔛).hom.app M).app n =
+      (Scheme.Modules.pullbackCompIsoId (by rw [← AdicThickeningSystem.comp_app, h,
+        AdicThickeningSystem.id_app] : f.app n ≫ g.app n = 𝟙 (𝔛.X n))).hom.app (M.obj n) := by
+  let h1 := (AdicThickeningSystem.comp_app f g n).symm
+  let h2 := congrArg (·.app n) h
+  let h3 := AdicThickeningSystem.id_app 𝔛 n
+  have heq :
+      ((Scheme.Modules.pullbackComp (f.app n) (g.app n)).hom.app (M.obj n) ≫
+          (Scheme.Modules.pullbackCongr h1).hom.app (M.obj n)) ≫
+        (Scheme.Modules.pullbackCongr h2).hom.app (M.obj n) ≫
+          ((Scheme.Modules.pullbackCongr h3).hom.app (M.obj n) ≫
+            (Scheme.Modules.pullbackId (𝔛.X n)).hom.app (M.obj n)) =
+        (Scheme.Modules.pullbackCompIsoId ((h1.trans h2).trans h3)).hom.app (M.obj n) := by
+    rw [Category.assoc,
+      Scheme.Modules.pullbackCongr_hom_app_comp_pullbackCongr_hom_app_assoc,
+      Scheme.Modules.pullbackCongr_hom_app_comp_pullbackCongr_hom_app_assoc,
+      ← Scheme.Modules.pullbackCompIsoId_hom_app]
+  rw [pullbackComp_hom_app_app, pullbackCongr_hom_app_app, pullbackId_hom_app_app]
+  exact heq
+
+/-- At level `n`, the inverse unit of `pullbackEquiv e` is `Scheme.Modules.pullbackCompIsoId`. -/
+theorem pullbackEquiv_unitIso_inv_app_app (e : 𝔛 ≅ 𝔜) (M : CoherentFormalModule 𝔜) (n : ℕ) :
+    ((pullbackEquiv e).unitIso.inv.app M).app n =
+      (Scheme.Modules.pullbackCompIsoId (by rw [← AdicThickeningSystem.comp_app, e.inv_hom_id,
+        AdicThickeningSystem.id_app] : e.inv.app n ≫ e.hom.app n = 𝟙 (𝔜.X n))).hom.app
+        (M.obj n) := by
+  have hcongr : (pullbackCongr e.inv_hom_id.symm).inv = (pullbackCongr e.inv_hom_id).hom := by
+    simp only [pullbackCongr, eqToIso.inv, eqToIso.hom]
+  rw [pullbackEquiv_unitIso_inv_app, hcongr, comp_app, comp_app]
+  exact pullbackComp_hom_comp_pullbackCongr_hom_comp_pullbackId_hom_app_app e.inv_hom_id M n
+
+/-- At level `n`, the counit of `pullbackEquiv e` is `Scheme.Modules.pullbackCompIsoId`. -/
+theorem pullbackEquiv_counitIso_hom_app_app (e : 𝔛 ≅ 𝔜) (M : CoherentFormalModule 𝔛) (n : ℕ) :
+    ((pullbackEquiv e).counitIso.hom.app M).app n =
+      (Scheme.Modules.pullbackCompIsoId (by rw [← AdicThickeningSystem.comp_app, e.hom_inv_id,
+        AdicThickeningSystem.id_app] : e.hom.app n ≫ e.inv.app n = 𝟙 (𝔛.X n))).hom.app
+        (M.obj n) :=
+  pullbackComp_hom_comp_pullbackCongr_hom_comp_pullbackId_hom_app_app e.hom_inv_id M n
+
 /-- **Pullback along an isomorphism of adic thickening systems is an equivalence** of categories of
 coherent formal modules. -/
 instance isEquivalence_pullback (g : 𝔛 ⟶ 𝔜) [IsIso g] : (pullback g).IsEquivalence :=

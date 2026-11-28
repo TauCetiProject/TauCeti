@@ -42,13 +42,6 @@ noncomputable section
 
 variable {R : Type u} [CommRing R]
 
-private lemma specIsoSpfCompletion_inv (J : Ideal R) (fg : J.FG) :
-    (specIsoSpfCompletion J fg).inv = (Spf.completionIso J fg).hom ≫ (specIso J).inv := by
-  ext n
-  rw [← cancel_mono (toScheme _ _ n), AdicThickeningSystem.comp_app, Category.assoc,
-    specIsoSpfCompletion_inv_app_toScheme, specIso_inv_app_toScheme]
-  exact (congrArg (·.app n) (Spf.completionIso_hom_spfToSpec J fg)).symm
-
 private lemma completionIso_hom_app (J : Ideal R) (fg : J.FG) (n : ℕ) :
     (Spf.completionIso J fg).hom.app n =
       Spec.map (CommRingCat.ofHom (Ideal.quotientMap ((AdicRing.completion J fg).ideal ^ (n + 1))
@@ -412,12 +405,7 @@ theorem coherentFormalModuleEquivSpecOfFGInverseCompRestrictScalarsIso_inv_app_l
         (((CoherentFormalModule.pullbackComp (Spf.completionIso J fg).hom
             (specIso J).inv).hom.app M).app n ≫
           ((CoherentFormalModule.pullbackCongr
-            (by
-              ext k
-              rw [← cancel_mono (toScheme _ _ k), AdicThickeningSystem.comp_app, Category.assoc,
-                specIsoSpfCompletion_inv_app_toScheme, specIso_inv_app_toScheme]
-              exact congrArg (·.app k) (Spf.completionIso_hom_spfToSpec J fg))).hom.app
-            M).app n)
+            (specIsoSpfCompletion_inv J fg).symm).hom.app M).app n)
         (moduleSpecΓFunctor.map
           ((Scheme.Modules.pullbackPushforwardAdjunction
             ((Spf.completionIso J fg).hom.app n)).unit.app
@@ -492,33 +480,6 @@ private lemma completionIso_inv_hom_id_app (J : Ideal R) (fg : J.FG) (n : ℕ) :
   rw [← AdicThickeningSystem.comp_app, (Spf.completionIso J fg).inv_hom_id,
     AdicThickeningSystem.id_app]
 
-private lemma coherentFormalModule_pullback_inv_hom_rhs
-    {𝔛 𝔜 : AdicThickeningSystem.{u}} (e : 𝔛 ≅ 𝔜) (N : CoherentFormalModule 𝔜) (n : ℕ) :
-    ((CoherentFormalModule.pullbackComp e.inv e.hom).hom.app N).app n ≫
-      ((CoherentFormalModule.pullbackCongr e.inv_hom_id).hom.app N).app n ≫
-        ((CoherentFormalModule.pullbackId _).hom.app N).app n =
-      (Scheme.Modules.pullbackCompIsoId (by rw [← AdicThickeningSystem.comp_app,
-        e.inv_hom_id, AdicThickeningSystem.id_app] : e.inv.app n ≫ e.hom.app n = 𝟙 _)).hom.app
-        (N.obj n) := by
-  let h1 := (AdicThickeningSystem.comp_app e.inv e.hom n).symm
-  let h2 := congrArg (·.app n) e.inv_hom_id
-  let h3 := AdicThickeningSystem.id_app 𝔜 n
-  have h :
-      ((Scheme.Modules.pullbackComp (e.inv.app n) (e.hom.app n)).hom.app (N.obj n) ≫
-          (Scheme.Modules.pullbackCongr h1).hom.app (N.obj n)) ≫
-        (Scheme.Modules.pullbackCongr h2).hom.app (N.obj n) ≫
-          ((Scheme.Modules.pullbackCongr h3).hom.app (N.obj n) ≫
-            (Scheme.Modules.pullbackId (𝔜.X n)).hom.app (N.obj n)) =
-        (Scheme.Modules.pullbackCompIsoId ((h1.trans h2).trans h3)).hom.app (N.obj n) := by
-    rw [Category.assoc,
-      Scheme.Modules.pullbackCongr_hom_app_comp_pullbackCongr_hom_app_assoc,
-      Scheme.Modules.pullbackCongr_hom_app_comp_pullbackCongr_hom_app_assoc,
-      ← Scheme.Modules.pullbackCompIsoId_hom_app]
-  rw [CoherentFormalModule.pullbackComp_hom_app_app,
-    CoherentFormalModule.pullbackCongr_hom_app_app,
-    CoherentFormalModule.pullbackId_hom_app_app]
-  exact h
-
 private lemma pullbackCompletionIso_comp_eq_app (J : Ideal R) (fg : J.FG)
     (M : CoherentFormalModule ((Spec (CommRingCat.of R)).formalCompletion
       (IdealSheafData.ofIdealTop (J.map (ΓSpecIso (CommRingCat.of R)).inv.hom))))
@@ -533,7 +494,9 @@ private lemma pullbackCompletionIso_comp_eq_app (J : Ideal R) (fg : J.FG)
         (((CoherentFormalModule.pullback (specIso J).inv).obj M).obj n) := by
   have hn := congrArg (·.app n) (pullbackCompletionIso_comp_eq J fg M h_eq)
   simp only [CoherentFormalModule.comp_app, CoherentFormalModule.pullback_map_app] at hn
-  exact hn.trans (coherentFormalModule_pullback_inv_hom_rhs (Spf.completionIso J fg) _ n)
+  exact hn.trans
+    (CoherentFormalModule.pullbackComp_hom_comp_pullbackCongr_hom_comp_pullbackId_hom_app_app
+      (Spf.completionIso J fg).inv_hom_id _ n)
 
 /-- On level-`n` projections,
 `coherentFormalModuleEquivSpecOfFGInverseCompRestrictScalarsIso J fg` pulls a global section back
@@ -551,18 +514,7 @@ theorem coherentFormalModuleEquivSpecOfFGInverseCompRestrictScalarsIso_hom_app_l
         (((CoherentFormalModule.pullbackComp (Spf.completionIso J fg).inv
             (specIsoSpfCompletion J fg).inv).hom.app M).app n ≫
           ((CoherentFormalModule.pullbackCongr
-            (by
-              ext k
-              rw [← cancel_mono (toScheme _ _ k), AdicThickeningSystem.comp_app, Category.assoc,
-                specIsoSpfCompletion_inv_app_toScheme, specIso_inv_app_toScheme]
-              have hc := congrArg (·.app k) (Spf.completionIso_hom_spfToSpec J fg)
-              rw [AdicThickeningSystem.comp_app, AdicThickeningSystem.comp_app,
-                AdicThickeningSystem.ofScheme_map_app] at hc
-              have hc' := congrArg ((Spf.completionIso J fg).inv.app k ≫ ·) hc.symm
-              rw [← Category.assoc, ← AdicThickeningSystem.comp_app,
-                (Spf.completionIso J fg).inv_hom_id, AdicThickeningSystem.id_app,
-                Category.id_comp] at hc'
-              exact hc')).hom.app M).app n)
+            (completionIso_inv_comp_specIsoSpfCompletion_inv J fg)).hom.app M).app n)
         (moduleSpecΓFunctor.map
           ((Scheme.Modules.pullbackPushforwardAdjunction
             ((Spf.completionIso J fg).inv.app n)).unit.app
@@ -580,14 +532,14 @@ theorem coherentFormalModuleEquivSpecOfFGInverseCompRestrictScalarsIso_hom_app_l
       ((CoherentFormalModule.pullback (specIsoSpfCompletion J fg).inv).obj M)).limπ n) hx
   have hπ' := coherentFormalModuleEquivSpecOfFGInverseCompRestrictScalarsIso_inv_app_limπ J fg M n
     ((coherentFormalModuleEquivSpecOfFGInverseCompRestrictScalarsIso J fg).hom.app M x)
-  have h_eq : (Spf.completionIso J fg).inv ≫ (specIsoSpfCompletion J fg).inv = (specIso J).inv := by
-    rw [specIsoSpfCompletion_inv, Iso.inv_hom_id_assoc]
   exact moduleSpecΓFunctor_map_inv_hom_cancel (completionIso_inv_hom_id_app J fg n)
     (((pullbackCompletionIso J fg).hom.app M).app n)
     (((CoherentFormalModule.pullbackComp (Spf.completionIso J fg).inv
         (specIsoSpfCompletion J fg).inv).hom.app M).app n ≫
-      ((CoherentFormalModule.pullbackCongr h_eq).hom.app M).app n)
-    (pullbackCompletionIso_comp_eq_app J fg M n h_eq) _ _ (hπ'.symm.trans hπ)
+      ((CoherentFormalModule.pullbackCongr
+        (completionIso_inv_comp_specIsoSpfCompletion_inv J fg)).hom.app M).app n)
+    (pullbackCompletionIso_comp_eq_app J fg M n
+      (completionIso_inv_comp_specIsoSpfCompletion_inv J fg)) _ _ (hπ'.symm.trans hπ)
 
 end
 

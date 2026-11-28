@@ -158,13 +158,7 @@ theorem coherentFormalModuleEquivSpecInverseCompRestrictScalarsIso_inv_app_limπ
             (Spf.completionIso J (IsNoetherian.noetherian J)).hom
             (specIso J).inv).hom.app M).app n ≫
           ((CoherentFormalModule.pullbackCongr
-            (by
-              ext k
-              have hsp := specIsoSpfCompletion_inv_app_toScheme J (IsNoetherian.noetherian J) k
-              rw [← cancel_mono (toScheme _ _ k), AdicThickeningSystem.comp_app, Category.assoc,
-                hsp, specIso_inv_app_toScheme]
-              exact congrArg (·.app k) (Spf.completionIso_hom_spfToSpec J
-                (IsNoetherian.noetherian J)))).hom.app M).app n)
+            (specIsoSpfCompletion_inv J (IsNoetherian.noetherian J)).symm).hom.app M).app n)
         (moduleSpecΓFunctor.map
           ((Scheme.Modules.pullbackPushforwardAdjunction
             ((Spf.completionIso J (IsNoetherian.noetherian J)).hom.app n)).unit.app
@@ -192,21 +186,8 @@ theorem coherentFormalModuleEquivSpecInverseCompRestrictScalarsIso_hom_app_limπ
             (Spf.completionIso J (IsNoetherian.noetherian J)).inv
             (specIsoSpfCompletion J (IsNoetherian.noetherian J)).inv).hom.app M).app n ≫
           ((CoherentFormalModule.pullbackCongr
-            (by
-              ext k
-              have hsp := specIsoSpfCompletion_inv_app_toScheme J (IsNoetherian.noetherian J) k
-              rw [← cancel_mono (toScheme _ _ k), AdicThickeningSystem.comp_app, Category.assoc,
-                hsp, specIso_inv_app_toScheme]
-              have hc := congrArg (·.app k) (Spf.completionIso_hom_spfToSpec J
-                (IsNoetherian.noetherian J))
-              rw [AdicThickeningSystem.comp_app, AdicThickeningSystem.comp_app,
-                AdicThickeningSystem.ofScheme_map_app] at hc
-              have hc' := congrArg ((Spf.completionIso J
-                (IsNoetherian.noetherian J)).inv.app k ≫ ·) hc.symm
-              rw [← Category.assoc, ← AdicThickeningSystem.comp_app,
-                (Spf.completionIso J (IsNoetherian.noetherian J)).inv_hom_id,
-                AdicThickeningSystem.id_app, Category.id_comp] at hc'
-              exact hc')).hom.app M).app n)
+            (completionIso_inv_comp_specIsoSpfCompletion_inv J
+              (IsNoetherian.noetherian J))).hom.app M).app n)
         (moduleSpecΓFunctor.map
           ((Scheme.Modules.pullbackPushforwardAdjunction
             ((Spf.completionIso J (IsNoetherian.noetherian J)).inv.app n)).unit.app

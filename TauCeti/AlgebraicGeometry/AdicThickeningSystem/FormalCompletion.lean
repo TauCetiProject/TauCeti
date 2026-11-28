@@ -450,6 +450,25 @@ noncomputable def specIsoSpfCompletion (J : Ideal R) (fg : J.FG) :
       Spf (AdicRing.completion J fg) :=
   specIso J ≪≫ (Spf.completionIso J fg).symm
 
+/-- The forward morphism of `specIsoSpfCompletion J fg` is
+`(specIso J).hom ≫ (Spf.completionIso J fg).inv`. -/
+theorem specIsoSpfCompletion_hom (J : Ideal R) (fg : J.FG) :
+    (specIsoSpfCompletion J fg).hom = (specIso J).hom ≫ (Spf.completionIso J fg).inv :=
+  (rfl)
+
+/-- The inverse morphism of `specIsoSpfCompletion J fg` is
+`(Spf.completionIso J fg).hom ≫ (specIso J).inv`. -/
+theorem specIsoSpfCompletion_inv (J : Ideal R) (fg : J.FG) :
+    (specIsoSpfCompletion J fg).inv = (Spf.completionIso J fg).hom ≫ (specIso J).inv :=
+  (rfl)
+
+/-- Postcomposing `(Spf.completionIso J fg).inv` with `(specIsoSpfCompletion J fg).inv` recovers
+`(specIso J).inv`. -/
+@[reassoc (attr := simp)]
+theorem completionIso_inv_comp_specIsoSpfCompletion_inv (J : Ideal R) (fg : J.FG) :
+    (Spf.completionIso J fg).inv ≫ (specIsoSpfCompletion J fg).inv = (specIso J).inv := by
+  rw [specIsoSpfCompletion_inv, Iso.inv_hom_id_assoc]
+
 /-- Under `specIsoSpfCompletion`, the closed immersions `V(J ^ (n + 1)) ⟶ Spec R` are the
 morphisms `Spec (R̂ ⧸ (J R̂) ^ (n + 1)) ⟶ Spec R̂ ⟶ Spec R`. -/
 @[reassoc (attr := simp)]
