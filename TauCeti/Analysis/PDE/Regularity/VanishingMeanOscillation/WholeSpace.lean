@@ -60,7 +60,7 @@ is small only below some radius, are not covered. The a priori estimate
   that of `a`, since the operator of `Aᵀ` is the adjoint of that of `A`
   (`Matrix.bmoSeminorm_toEuclideanCLM_transpose`). So the case
   `p' > 2` gives `‖∇w‖_{L^{p'}} ≤ C ‖H‖_{L^{p'}}`. Testing the two equations with each other
-  (`TauCeti.PDE.integral_matrixBilinearForm_eq_integral_inner_of_forall`),
+  (`TauCeti.PDE.integral_inner_eq_integral_inner_of_forall_transpose`),
   `∫ ⟨∇u, H⟩ = ∫ ⟨aᵀ ∇w, ∇u⟩ = ∫ ⟨a ∇u, ∇w⟩ = ∫ ⟨G, ∇w⟩`,
   which is at most `‖G‖_{Lᵖ} C ‖H‖_{L^{p'}}` by Hölder's inequality. Since such fields `H` norm
   `Lᵖ` (`AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le`), this bounds
@@ -173,48 +173,6 @@ private theorem exists_memLp_and_eLpNorm_le_of_two_lt {p : ℝ≥0∞} (hp : 2 <
   gcongr
   all_goals exact Measure.restrict_le_self
 
-/-- **Testing two finite-energy solutions with each other.** Let `a` be measurable and bounded, let
-`u ∈ D^{1,2}(ℝ^{n+1})` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` and `w ∈ D^{1,2}(ℝ^{n+1})` solve the adjoint
-equation `-∂ᵢ((aᵀ)ⁱʲ ∂ⱼw) = -div H`, with `G, H ∈ L²`. Then `∫ ⟨∇u, H⟩ = ∫ ⟨G, ∇w⟩`: both are
-`∫ ⟨a ∇u, ∇w⟩`. -/
-private theorem integral_inner_eq_integral_inner_of_transpose
-    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {Lam : ℝ}
-    (ha : AEStronglyMeasurable a volume) (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam)
-    {u w : D1p0 volume (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2}
-    {G H : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
-    (hG : MemLp G 2 volume) (hH : MemLp H 2 volume)
-    (hu : ∀ φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), ℝ),
-      ∫ x, matrixBilinearForm (a x) (∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x)
-          ((u : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
-          (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
-            Set (EuclideanSpace ℝ (Fin (n + 1)))))) x) =
-        ∫ x, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ)
-    (hw : ∀ φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), ℝ),
-      ∫ x, matrixBilinearForm (a x)ᵀ (∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x)
-          ((w : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
-          (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
-            Set (EuclideanSpace ℝ (Fin (n + 1)))))) x) =
-        ∫ x, ⟪H x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) :
-    ∫ x, ⟪(u : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
-        (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
-          Set (EuclideanSpace ℝ (Fin (n + 1)))))) x, H x⟫_ℝ =
-      ∫ x, ⟪G x, (w : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
-        (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
-          Set (EuclideanSpace ℝ (Fin (n + 1)))))) x⟫_ℝ := by
-  have haT : AEStronglyMeasurable (fun x => (a x)ᵀ) volume :=
-    (continuous_id.matrix_transpose).comp_aestronglyMeasurable ha
-  have e1 := integral_matrixBilinearForm_eq_integral_inner_of_forall (Omega := ⊤)
-    (a := fun x => (a x)ᵀ) haT.restrict
-    (fun x _ => (norm_matrixBilinearForm_transpose (a x)).trans_le (hbd x))
-    (hH.restrict _)
-    (forall_setIntegral_top_iff.2 hw) u
-  have e2 := integral_matrixBilinearForm_eq_integral_inner_of_forall (Omega := ⊤)
-    ha.restrict (fun x _ => hbd x)
-    (hG.restrict _) (forall_setIntegral_top_iff.2 hu) w
-  simp only [Opens.coe_top, Measure.restrict_univ, matrixBilinearForm_transpose_apply] at e1 e2
-  rw [← e2, e1]
-  exact integral_congr_ae (ae_of_all _ fun x => real_inner_comm _ _)
-
 /-- **The estimate for `1 < p < 2`, by duality.** The case of the conjugate exponent `q > 2`,
 applied to the transposed coefficients and a bounded datum `H` of finite-measure support, bounds
 `∫ ⟨∇u, H⟩ = ∫ ⟨G, ∇w⟩` by `C ‖G‖_{Lᵖ} ‖H‖_{L^q}`, and such `H` norm `Lᵖ`. -/
@@ -256,8 +214,11 @@ private theorem exists_memLp_and_eLpNorm_le_of_lt_two {p : ℝ≥0∞} (hp : 1 <
     (Omega := ⊤) (hell.transpose.mono_set (subset_univ _))
     haT.restrict (hH2.restrict _)
   have hw' := forall_setIntegral_top_iff.1 hw
-  rw [integral_inner_eq_integral_inner_of_transpose ha
-    (fun x => hell.opNorm_matrixBilinearForm_le (mem_univ x)) hG2 hH2 hu hw']
+  have hrec := integral_inner_eq_integral_inner_of_forall_transpose (Omega := ⊤) ha.restrict
+    (ae_of_all _ fun x => hell.opNorm_matrixBilinearForm_le (mem_univ x)) (hG2.restrict _)
+    (hH2.restrict _) (forall_setIntegral_top_iff.2 hu) hw
+  simp only [Opens.coe_top, Measure.restrict_univ] at hrec
+  rw [hrec]
   calc _ ≤ eLpNorm G p volume * eLpNorm (w : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
           (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
             Set (EuclideanSpace ℝ (Fin (n + 1)))))) q volume :=
