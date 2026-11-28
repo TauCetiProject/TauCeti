@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 public import Mathlib.Topology.MetricSpace.Lipschitz
+public import TauCeti.Analysis.Calculus.BumpFunction.Basic
 public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 
 import Mathlib.Analysis.Convex.Integral
@@ -45,13 +46,13 @@ Along an arbitrary filter of bump indices, convolution with normalized bumps als
 uniformly on a neighbourhood filter of a point of continuity of the function.
 
 The file also bounds the topological support of `ρ.normed μ ⋆ g` by the Minkowski sum
-`closedBall 0 ρ.rOut + tsupport g`, and provides the standard shrinking sequence of bumps
-`ContDiffBump.shrinking`, of radii `R / (n + 1)` and `R / (2 * (n + 1))`, together with interior
-radius selection and uniform indicator approximation on compact subsets of open domains
-(`ContDiffBump.exists_seq_tendsto_rOut_closedBall_subset` and
-`ContDiffBump.tendstoUniformlyOn_normed_convolution_indicator`). These bumps are all
-rescalings of the first one (`ContDiffBump.shrinking_apply_eq`), so integrals against their
-normalized forms reduce to one kernel (`ContDiffBump.integral_shrinking_normed_mul`).
+`closedBall 0 ρ.rOut + tsupport g`, and provides normalized-kernel results for the shrinking
+sequence `ContDiffBump.shrinking` from `TauCeti.Analysis.Calculus.BumpFunction.Basic`: interior
+translated-support selection (`ContDiffBump.exists_seq_sub_tsupport_subset`), uniform indicator
+approximation on compact subsets of open domains
+(`ContDiffBump.tendstoUniformlyOn_normed_convolution_indicator`), rescaling of the bumps
+(`ContDiffBump.shrinking_apply_eq`), and reduction of integrals against their normalized forms to
+one kernel (`ContDiffBump.integral_shrinking_normed_mul`).
 Integrating a function `H` on a product `X × G` against these bumps in the second variable
 tends to the integral of `H (·, 0)` when `H` is continuous near `X × {0}` and vanishes for the
 first variable outside a compact set (`ContDiffBump.tendsto_integral_shrinking_normed_smul`).
@@ -74,59 +75,7 @@ namespace ContDiffBump
 
 section Shrinking
 
-variable {X : Type*} {c : X} {R : ℝ}
-
-/-- The bumps of outer radius `R / (n + 1)` and inner radius half of that. Their radii shrink to
-zero while the outer radius stays twice the inner one, as Lebesgue differentiation along
-normalized bump convolutions requires. -/
-noncomputable def shrinking (hR : 0 < R) (n : ℕ) : ContDiffBump c where
-  rIn := R / (2 * (n + 1))
-  rOut := R / (n + 1)
-  rIn_pos := by positivity
-  rIn_lt_rOut := div_lt_div_of_pos_left hR (by positivity) (by linarith)
-
-/-- The inner radius of `ContDiffBump.shrinking`. -/
-@[simp]
-theorem rIn_shrinking (hR : 0 < R) (n : ℕ) :
-    (shrinking hR n : ContDiffBump c).rIn = R / (2 * (n + 1)) :=
-  (rfl)
-
-/-- The outer radius of `ContDiffBump.shrinking`. -/
-@[simp]
-theorem rOut_shrinking (hR : 0 < R) (n : ℕ) :
-    (shrinking hR n : ContDiffBump c).rOut = R / (n + 1) :=
-  (rfl)
-
-/-- The outer radius of `ContDiffBump.shrinking` is at most `R`. -/
-theorem rOut_shrinking_le (hR : 0 < R) (n : ℕ) :
-    (shrinking hR n : ContDiffBump c).rOut ≤ R := by
-  rw [rOut_shrinking]
-  exact div_le_self hR.le (by simp)
-
-/-- The outer radius of `ContDiffBump.shrinking` is twice its inner radius. -/
-theorem rOut_shrinking_eq_two_mul_rIn (hR : 0 < R) (n : ℕ) :
-    (shrinking hR n : ContDiffBump c).rOut = 2 * (shrinking hR n : ContDiffBump c).rIn := by
-  simp only [rOut_shrinking, rIn_shrinking]
-  field_simp
-
-/-- The radii of `ContDiffBump.shrinking` tend to zero. -/
-theorem tendsto_rOut_shrinking (hR : 0 < R) :
-    Tendsto (fun n : ℕ => (shrinking hR n : ContDiffBump c).rOut) atTop (𝓝 0) := by
-  simp only [rOut_shrinking]
-  exact tendsto_const_nhds.div_atTop (tendsto_natCast_atTop_atTop.atTop_add tendsto_const_nhds)
-
-/-- On a compact subset `K` of an open set `U`, there exists a sequence of bumps centred at zero
-whose outer radii tend to zero and keep every closed `(ρ n).rOut`-ball around points of `K` inside
-`U`. -/
-theorem exists_seq_tendsto_rOut_closedBall_subset {E : Type*} [PseudoMetricSpace E]
-    [Zero E] {U K : Set E} (hU : IsOpen U) (hK : IsCompact K) (hKU : K ⊆ U) :
-    ∃ ρ : ℕ → ContDiffBump (0 : E),
-      Tendsto (fun n => (ρ n).rOut) atTop (𝓝 0) ∧
-      ∀ n, ∀ x ∈ K, closedBall x (ρ n).rOut ⊆ U := by
-  obtain ⟨δ, hδ, hδU⟩ := hK.exists_cthickening_subset_open hU hKU
-  refine ⟨shrinking hδ, tendsto_rOut_shrinking hδ, fun n x hx => ?_⟩
-  exact (closedBall_subset_closedBall (rOut_shrinking_le hδ n)).trans
-    ((closedBall_subset_cthickening hx δ).trans hδU)
+variable {R : ℝ}
 
 /-- On a relatively compact open subdomain, a shrinking sequence of normalized bump kernels
 has every translated support inside the ambient open domain. -/

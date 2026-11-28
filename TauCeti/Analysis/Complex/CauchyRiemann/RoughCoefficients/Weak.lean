@@ -65,7 +65,8 @@ for the statements here.
   relation between `J` and `DJ`.
 * `TauCeti.IsSobolevCRCoefficients.memLpLoc_deriv_apply`: the directional weak derivatives
   `DJ · e` of the coefficient are locally `Lᵖ`; `TauCeti.IsSobolevCRCoefficients.of_memWkpLoc`
-  packages `W^{1,p}_loc` / `Lᵖ_loc` coefficients and `TauCeti.IsSobolevCRCoefficients.add_zeroth`
+  packages `W^{1,p}_loc` / `Lᵖ_loc` coefficients, `TauCeti.IsSobolevCRCoefficients.memWkpLoc_coeff`
+  recovers `J ∈ W^{1,p}_loc`, and `TauCeti.IsSobolevCRCoefficients.add_zeroth`
   changes the zeroth-order coefficient by a locally `Lᵖ` field, which adds its adjoint to the
   formal adjoint (`TauCeti.crFormalAdjoint_add_zeroth`).
 * Linearity in `(ξ, η)` (`TauCeti.IsWeakCRSolution.add`, `.const_smul`, `.neg`, `.sub`), and
@@ -281,6 +282,14 @@ theorem IsSobolevCRCoefficients.of_memWkpLoc
     (hJ : MemWkpLoc p Ω 1 J) (hDJ : HasWeakFDerivOn volume Ω J DJ) (hS : MemLpLoc p Ω S) :
     IsSobolevCRCoefficients p Ω J DJ S :=
   ⟨hDJ, hJ.memLpLoc, hJ.memLpLoc_of_hasWeakFDerivOn hDJ, hS⟩
+
+omit [CompleteSpace V] in
+/-- The leading coefficient `J` of Sobolev Cauchy–Riemann coefficients lies in
+`W^{1,p}_loc(Ω)`. -/
+theorem IsSobolevCRCoefficients.memWkpLoc_coeff (hc : IsSobolevCRCoefficients p Ω J DJ S) :
+    MemWkpLoc p Ω 1 J :=
+  memWkpLoc_succ_iff_of_isOpen.2
+    ⟨hc.memLpLoc_coeff, DJ, hc.hasWeakFDerivOn, memWkpLoc_zero_iff.2 hc.memLpLoc_deriv⟩
 
 section Holder
 

@@ -74,14 +74,14 @@ namespace TauCeti
 /-! ### The linear step -/
 
 /-- **The frozen equation as a real Cauchy–Riemann equation.** Let `p ≥ 2` be finite. If `u` solves
-`∂ₛu + A ∂ₜu = f` weakly on `Ω`, with `A ∈ W^{1,p}_loc` of weak derivative `DA` and `f` locally
-`Lᵖ`, then `u` is a weak solution of the real Cauchy–Riemann equation with coefficients
-`(A, DA, 0)` and right side `f`, in the sense of `TauCeti.IsWeakCRSolution`. -/
+`∂ₛu + A ∂ₜu = f` weakly on `Ω`, with `A ∈ W^{1,p}_loc` of weak derivative `DA`, then `u` is a
+weak solution of the real Cauchy–Riemann equation with coefficients `(A, DA, 0)` and right side
+`f`, in the sense of `TauCeti.IsWeakCRSolution`. -/
 theorem IsWeakCauchyRiemannOn.isWeakCRSolution {V : Type*} [NormedAddCommGroup V]
     [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] {Ω : Opens ℂ} {p : ℝ≥0} (hp : 2 ≤ p)
     {A : ℂ → V →L[ℝ] V} {DA : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {f u : ℂ → V}
     (h : IsWeakCauchyRiemannOn p Ω (fun z _ => A z) (fun z _ => f z) u)
-    (hc : IsSobolevCRCoefficients p Ω A DA 0) (_hf : MemLpLoc p Ω f) :
+    (hc : IsSobolevCRCoefficients p Ω A DA 0) :
     IsWeakCRSolution p Ω A DA 0 u f := by
   have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   obtain ⟨-, hu, D, hD, hDp, hae⟩ := isWeakCauchyRiemannOn_iff_of_isOpen.1 h
@@ -103,7 +103,7 @@ private theorem memWkpLoc_add_two_of_inner {V : Type*} [NormedAddCommGroup V]
   obtain ⟨DA, hDA, hDAk⟩ := hA.exists_weakFDeriv_of_isOpen
   have hc : IsSobolevCRCoefficients p Ω A DA 0 :=
     ⟨hDA, hA.memLpLoc, hDAk.memLpLoc, memLpLoc_zero⟩
-  exact (h.isWeakCRSolution hp.le hc hf.memLpLoc).memWkpLoc_succ hc (by exact_mod_cast hp) hA2
+  exact (h.isWeakCRSolution hp.le hc).memWkpLoc_succ hc (by exact_mod_cast hp) hA2
     (ENNReal.inv_add_inv_lt_one_of_two_lt (by exact_mod_cast hp))
     (by exact_mod_cast one_lt_two.trans hp) ENNReal.coe_ne_top le_rfl hA memWkpLoc_zero_fun hf
 

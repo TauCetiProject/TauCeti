@@ -123,10 +123,8 @@ private theorem isWeakCRSolution_of_hasWeakFDerivOn_ae [FiniteDimensional ℝ E]
           hDξ.locallyIntegrableOn_deriv)⟩
   have hξ2 : MemLpLoc 2 Ω ξ := hξ1.memLpLoc_two le_rfl
   -- Replace `J` by its continuous Morrey representative `J'`.
-  have hJW1p : MemWkpLoc p Ω 1 J := memWkpLoc_succ_iff_of_isOpen.2
-    ⟨hc.memLpLoc_coeff, DJ, hc.hasWeakFDerivOn, memWkpLoc_zero_iff.2 hc.memLpLoc_deriv⟩
   set J' := TauCeti.MeasureTheory.preciseRepresentative volume J
-  have hJ'cont : ContinuousOn J' Ω := hJW1p.continuousOn_preciseRepresentative hp
+  have hJ'cont : ContinuousOn J' Ω := hc.memWkpLoc_coeff.continuousOn_preciseRepresentative hp
   have hJJ' : J =ᵐ[volume.restrict Ω] J' := hc.memLpLoc_coeff.ae_eq_preciseRepresentative hp1
   have hc' : IsSobolevCRCoefficients p Ω J' DJ S :=
     ⟨hc.hasWeakFDerivOn.congr_ae hJJ', hc.memLpLoc_coeff.congr_ae hJJ',

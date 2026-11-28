@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Fredholm
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm.Exponent
-import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Interior
+import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder.Regularity
 import TauCeti.Analysis.Fredholm.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Exponent
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart.Basic
@@ -36,7 +36,7 @@ class `W^{0,p}` at the order `ℓ = k = 1` on closed surfaces.
 In chart `i` the chart data `u` of `ξ` satisfy `∂ₛu + i ∂ₜu + S u = η` almost everywhere, with
 `S = 2 (Zᵢ + αᵢ^{0,1})(·)(1)` locally `Lᵖ` (the smooth zeroth-order term `Zᵢ` of `D` plus the
 chart data of `α`) and `η = 2 g(1)` locally `L^{q'}`, for the chart data `g` of `P_q ξ`. The planar
-regularity theorem `TauCeti.memWkpLoc_one_of_hasWeakFDerivOn_of_ae_eq` puts `u` in
+regularity theorem `TauCeti.HasWeakFDerivOn.memWkpLoc_succ_of_ae_cauchyRiemann` puts `u` in
 `W^{1,q'}_loc`, and the chart images cover `M`
 (`TauCeti.SobolevSection.exists_ae_eq_coord_of_forall_memWkpLoc_coord`).
 
@@ -169,11 +169,11 @@ theorem memWkpLoc_coord_of_perturbedSobolevL_eq (hp : 2 < p) (hq : 1 < q) (hqq' 
       ha.clm_comp (G := F →L[ℝ] F)
         ((ContinuousLinearMap.compL ℝ F (ℂ →L[ℝ] F) F) (ev.comp complexAntilinearPartL))
     exact (hZ.add ha').const_smul (2 : ℝ)
-  refine memWkpLoc_one_of_hasWeakFDerivOn_of_ae_eq lsmul_I_mul_lsmul_I
-    (by exact_mod_cast hp) hS (by exact_mod_cast hq) ENNReal.coe_ne_top
-    (SobolevSection.memWkpLoc_coord ξ hs i) (hDu.congr_ae (hs i))
-    (by exact_mod_cast hq.trans_le hqq') ENNReal.coe_ne_top (by exact_mod_cast hq'p)
-    ((hg.memLpLoc.clm_comp (G := F) ev).const_smul (2 : ℝ)) ?_
+  refine (hDu.congr_ae (hs i)).memWkpLoc_succ_of_ae_cauchyRiemann (k := 0)
+    (by exact_mod_cast hp) (by exact_mod_cast hq.trans_le hqq') ENNReal.coe_ne_top
+    (by exact_mod_cast hq'p) (contDiffOn_const.memWkpLoc subset_rfl)
+    (ae_of_all _ fun _ ↦ lsmul_I_mul_lsmul_I) (memWkpLoc_zero_iff.2 hS)
+    (memWkpLoc_zero_iff.2 ((hg.memLpLoc.clm_comp (G := F) ev).const_smul (2 : ℝ))) ?_
   -- The chart data of `P_q ξ` are those of `y`, as functions.
   have hy := SectionChartData.coeFn_chartValueL_ofExponentLEL
     (C := A.tangentHom.sectionChartData) (μ := volume) (ENNReal.coe_le_coe.2 hqq')

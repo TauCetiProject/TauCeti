@@ -163,7 +163,7 @@ theorem exists_eLpNormWkp_succ_le_of_isWeakCauchyRiemannOn {p : ℝ≥0} (hp : 2
     -- `c` is the algebra equivalence `e.conjContinuousAlgEquiv`, read as a linear map.
     have h := congrArg e.conjContinuousAlgEquiv hz
     rwa [map_mul, map_neg, map_one] at h
-  have hest := hC _ 0 DA _ _ (h'.isWeakCRSolution hp.le hc (hf.clm_comp (e : V →L[ℝ] E)).memLpLoc)
+  have hest := hC _ 0 DA _ _ (h'.isWeakCRSolution hp.le hc)
     hc hA2' hA' (by simp [eLpNormWkp_zero_fun])
     (hf.clm_comp (e : V →L[ℝ] E))
   -- Transport the estimate back to `V`.
