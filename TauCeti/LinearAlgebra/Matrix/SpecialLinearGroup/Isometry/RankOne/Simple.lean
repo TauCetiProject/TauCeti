@@ -11,9 +11,8 @@ public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.RankOne.B
 import Mathlib.GroupTheory.Subgroup.Centralizer
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Ring.Hom
 import TauCeti.FieldTheory.Finite.Frobenius
-import TauCeti.FieldTheory.Finite.PowAddSelf
-import TauCeti.FieldTheory.Finite.PowNeOne
 import TauCeti.GroupTheory.Commutator
 import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Unitary.Commutator
 
@@ -53,8 +52,8 @@ nonzero `a ∈ K` satisfying `a ^ 2 ≠ σ a` (in particular, in characteristic 
   `σ = id`, in which case `U` lies on the central `z`-axis and `⁅torusHom(a), u(0, z₁)⁆ =
   u(0, (a ^ 2 + 1) z₁)` spans `U`. In both cases `U ≤ ⁅G, G⁆`.
 * **Simplicity (`isSimpleGroup_quotient_center` and `isSimpleGroup_derivedCentralQuotient`), and
-  finite-field specialization (`commutator_eq_top_of_natCard_eq_sq` and
-  `isSimpleGroup_quotient_center_of_natCard_eq_sq`).** Combining Tits's simplicity theorem
+  finite-field specialization (`commutator_eq_top_of_natCard_eq_sq_of_eq_pow` and
+  `isSimpleGroup_quotient_center_of_natCard_eq_sq_of_eq_pow`).** Combining Tits's simplicity theorem
   `TauCeti.TitsSystem.isSimpleGroup_quotient_normalCore` for the irreducible rank-one Tits system
   on `G` with solvability of `U`, normal generation, perfectness, and `normalCore B = Z(G)` shows
   that `G ⧸ Z(G)` and `DerivedCentralQuotient G` are simple groups. When `Nat.card K = q ^ 2` with
@@ -64,7 +63,7 @@ nonzero `a ∈ K` satisfying `a ^ 2 ≠ σ a` (in particular, in characteristic 
 ## Main results
 
 * `TauCeti.UnitaryRankOne.coe_weyl_mul_upperRootHom_mul_weyl`: the matrix of `w u(a) w`.
-* `TauCeti.UnitaryRankOne.torusHom_mul_upperRootHom_unitaryMk_mul_inv`: conjugation of a root
+* `TauCeti.UnitaryRankOne.torusHom_mul_upperRootHom_mul_inv`: conjugation of a root
   element by `torusHom`.
 * `TauCeti.UnitaryRankOne.weyl_mul_torusHom_eq`: the rank-one identity expressing `w * torusHom(z)`
   in `U * (w U w) * U` over a commutative ring whenever `z : Rˣ` satisfies `z + σ z = x * σ x`.
@@ -79,9 +78,9 @@ nonzero `a ∈ K` satisfying `a ^ 2 ≠ σ a` (in particular, in characteristic 
 * `TauCeti.UnitaryRankOne.isSimpleGroup_quotient_center` and
   `TauCeti.UnitaryRankOne.isSimpleGroup_derivedCentralQuotient`: `G ⧸ Z(G)` and
   `DerivedCentralQuotient G` are simple groups.
-* `TauCeti.UnitaryRankOne.commutator_eq_top_of_natCard_eq_sq` and
-  `TauCeti.UnitaryRankOne.isSimpleGroup_quotient_center_of_natCard_eq_sq`: over any field of
-  cardinality `q ^ 2` with `3 ≤ q` and `σ a = a ^ q`, `G` is perfect and `G ⧸ Z(G)` is simple.
+* `TauCeti.UnitaryRankOne.commutator_eq_top_of_natCard_eq_sq_of_eq_pow` and
+  `TauCeti.UnitaryRankOne.isSimpleGroup_quotient_center_of_natCard_eq_sq_of_eq_pow`: over any field
+  of cardinality `q ^ 2` with `3 ≤ q` and `σ a = a ^ q`, `G` is perfect and `G ⧸ Z(G)` is simple.
 
 ## References
 
@@ -116,19 +115,23 @@ theorem coe_weyl_mul_upperRootHom_mul_weyl (a : HeisenbergGroup.unitarySubgroup 
     simp [coe_typeAGraphConjugator_two, HeisenbergGroup.toMatrix_apply, Matrix.mul_apply,
       Fin.sum_univ_three]
 
-/-- Conjugating a root element `unitaryMk σ hσ x z hz` by `torusHom R σ hσ t` rescales `x` by
+/-- Conjugating a root element `upperRootHom R σ a` by `torusHom R σ hσ t` rescales `x` by
 `t² σ(t⁻¹)` and `z` by `t σ(t)`. -/
 @[simp]
-theorem torusHom_mul_upperRootHom_unitaryMk_mul_inv (hσ : Function.Involutive σ) (t : Rˣ)
-    (x z : R) (hz : z + σ z = x * σ x) :
-    torusHom R σ hσ t * upperRootHom R σ (HeisenbergGroup.unitaryMk σ hσ x z hz) *
-        (torusHom R σ hσ t)⁻¹ =
+theorem torusHom_mul_upperRootHom_mul_inv (hσ : Function.Involutive σ) (t : Rˣ)
+    (a : HeisenbergGroup.unitarySubgroup σ) :
+    torusHom R σ hσ t * upperRootHom R σ a * (torusHom R σ hσ t)⁻¹ =
       upperRootHom R σ (HeisenbergGroup.unitaryMk σ hσ
-        ((t : R) ^ 2 * σ ((t⁻¹ : Rˣ) : R) * x) ((t : R) * σ (t : R) * z) (by
+        ((t : R) ^ 2 * σ ((t⁻¹ : Rˣ) : R) * (a : HeisenbergGroup R).x)
+        ((t : R) * σ (t : R) * (a : HeisenbergGroup R).z)
+        (by
           simp only [map_mul, map_pow, hσ (t : R), hσ ((t⁻¹ : Rˣ) : R)]
-          linear_combination (t : R) * σ (t : R) * hz -
-            (t : R) * σ (t : R) * x * σ x * map_mul_eq_one σ t.mul_inv -
-            (t : R) * (σ (t : R)) ^ 2 * σ ((t⁻¹ : Rˣ) : R) * x * σ x * t.mul_inv)) := by
+          linear_combination
+            (t : R) * σ (t : R) * HeisenbergGroup.unitarySubgroup.z_add_map_z a -
+            (t : R) * σ (t : R) * (a : HeisenbergGroup R).x * σ (a : HeisenbergGroup R).x *
+              map_mul_eq_one σ t.mul_inv -
+            (t : R) * (σ (t : R)) ^ 2 * σ ((t⁻¹ : Rˣ) : R) * (a : HeisenbergGroup R).x *
+              σ (a : HeisenbergGroup R).x * t.mul_inv)) := by
   rw [← (torusHom R σ hσ).map_inv t]
   apply Subtype.ext
   apply Matrix.SpecialLinearGroup.ext
@@ -144,14 +147,6 @@ theorem torusHom_mul_upperRootHom_unitaryMk_mul_inv (hσ : Function.Involutive �
   · ring
   · linear_combination map_mul_eq_one σ t.mul_inv
 
-private theorem map_inv_add_map_map_inv_eq (hσ : Function.Involutive σ) {x c : R} {z : Rˣ}
-    (hz : (z : R) + σ (z : R) = x * σ x)
-    (hc : c * σ c = ((z⁻¹ : Rˣ) : R) * σ ((z⁻¹ : Rˣ) : R)) :
-    σ ((z⁻¹ : Rˣ) : R) + σ (σ ((z⁻¹ : Rˣ) : R)) = (x * c) * σ (x * c) := by
-  simp only [map_mul, hσ ((z⁻¹ : Rˣ) : R)]
-  linear_combination ((z⁻¹ : Rˣ) : R) * σ ((z⁻¹ : Rˣ) : R) * hz - x * σ x * hc -
-    σ ((z⁻¹ : Rˣ) : R) * z.mul_inv - ((z⁻¹ : Rˣ) : R) * map_mul_eq_one σ z.mul_inv
-
 /-- Every product `weyl * torusHom z` for root parameters `(x, z)` with `z : Rˣ` and
 `z + σ z = x * σ x` factors as a product of two upper-unitriangular root elements and one
 `weyl`-conjugated root element. -/
@@ -159,11 +154,15 @@ theorem weyl_mul_torusHom_eq (hσ : Function.Involutive σ) {x : R} {z : Rˣ}
     (hz : (z : R) + σ (z : R) = x * σ x) :
     weyl R σ * torusHom R σ hσ z =
       upperRootHom R σ (HeisenbergGroup.unitaryMk σ hσ (x * σ ((z⁻¹ : Rˣ) : R))
-          (σ ((z⁻¹ : Rˣ) : R))
-          (by exact map_inv_add_map_map_inv_eq hσ hz (by simp [hσ ((z⁻¹ : Rˣ) : R), mul_comm]))) *
+          (σ ((z⁻¹ : Rˣ) : R)) (by
+            rw [hσ ((z⁻¹ : Rˣ) : R), add_comm, val_inv_add_map_val_inv σ z, hz, map_mul,
+              hσ ((z⁻¹ : Rˣ) : R)]
+            ring)) *
         (weyl R σ * upperRootHom R σ (HeisenbergGroup.unitaryMk σ hσ x (z : R) hz) * weyl R σ) *
         upperRootHom R σ (HeisenbergGroup.unitaryMk σ hσ (x * ((z⁻¹ : Rˣ) : R))
-          (σ ((z⁻¹ : Rˣ) : R)) (by exact map_inv_add_map_map_inv_eq hσ hz rfl)) := by
+          (σ ((z⁻¹ : Rˣ) : R)) (by
+            rw [hσ ((z⁻¹ : Rˣ) : R), add_comm, val_inv_add_map_val_inv σ z, hz, map_mul]
+            ring)) := by
   symm
   set L := weyl R σ * upperRootHom R σ (HeisenbergGroup.unitaryMk σ hσ x (z : R) hz) * weyl R σ
   have hL : ((L : Matrix.SpecialLinearGroup (Fin 3) R) : Matrix (Fin 3) (Fin 3) R) =
@@ -219,9 +218,12 @@ private theorem torusHom_mem_normalClosure_of_mul_add_map_eq (hσ : Function.Inv
   have hg₂ :=
     weyl_mul_torusHom_mem_normalClosure hσ (x := x) (z := u * d₀) (by simpa [d₀] using h)
   have hmul : (weyl K σ * torusHom K σ hσ d₀)⁻¹ * (weyl K σ * torusHom K σ hσ (u * d₀)) =
-      torusHom K σ hσ u := by
-    rw [_root_.mul_inv_rev, weyl_inv, mul_assoc, ← mul_assoc (weyl K σ), weyl_mul_self, one_mul,
-      ← map_inv, ← map_mul, mul_comm u d₀, inv_mul_cancel_left]
+      torusHom K σ hσ u :=
+    calc
+      (weyl K σ * torusHom K σ hσ d₀)⁻¹ * (weyl K σ * torusHom K σ hσ (u * d₀))
+          = (torusHom K σ hσ d₀)⁻¹ * torusHom K σ hσ (u * d₀) := by group
+      _ = torusHom K σ hσ (d₀⁻¹ * (u * d₀)) := by rw [← map_inv, ← map_mul]
+      _ = torusHom K σ hσ u := by rw [mul_comm u d₀, inv_mul_cancel_left]
   exact hmul ▸ mul_mem (inv_mem hg₁) hg₂
 
 private theorem torusHom_mem_normalClosure_of_map_eq (hσ : Function.Involutive σ)
@@ -274,11 +276,19 @@ theorem normalClosure_unipotent_eq_top (hσ : Function.Involutive σ)
       (by simpa using hd)
     have hd_mem := torusHom_mem_normalClosure hσ ⟨d, hd0, hd⟩ (Units.mk0 d hd0)
     simpa only [mul_inv_cancel_right] using mul_mem hwd (inv_mem hd_mem)
-  rw [eq_top_iff, ← (titsSystem K hσ).closure_subgroupB_union_subgroupN, Subgroup.closure_le,
-    Set.union_subset_iff, SetLike.coe_subset_coe, SetLike.coe_subset_coe, titsSystem_subgroupB,
-    titsSystem_subgroupN]
-  refine ⟨hB, fun g hg ↦ (mem_monomial_iff.mp hg).elim (fun h ↦ hT h) fun h ↦ ?_⟩
-  simpa only [weyl_mul_weyl_mul] using mul_mem hw (hT h)
+  have hN : monomial K σ ≤
+      Subgroup.normalClosure (unipotent K σ : Set (UnitaryRankOne.Group K σ)) := by
+    intro g hg
+    rcases mem_monomial_iff.mp hg with h | h
+    · exact hT h
+    · simpa only [weyl_mul_weyl_mul] using mul_mem hw (hT h)
+  have hBN : ((titsSystem K hσ).subgroupB : Set (UnitaryRankOne.Group K σ)) ∪
+      (titsSystem K hσ).subgroupN ⊆
+      Subgroup.normalClosure (unipotent K σ : Set (UnitaryRankOne.Group K σ)) := by
+    rw [titsSystem_subgroupB, titsSystem_subgroupN]
+    exact Set.union_subset (fun _ hg ↦ hB hg) (fun _ hg ↦ hN hg)
+  rw [eq_top_iff, ← (titsSystem K hσ).closure_subgroupB_union_subgroupN, Subgroup.closure_le]
+  exact hBN
 
 /-! ### The normal core of the Borel subgroup -/
 
@@ -334,6 +344,26 @@ private theorem upperRootHom_unitaryMk_zero_mem_commutator (hσ : Function.Invol
   rw [← hbc, map_commutatorElement]
   exact Subgroup.commutator_mem_commutator (Subgroup.mem_top _) (Subgroup.mem_top _)
 
+private theorem upperRootHom_rescaled_mul_inv_mem_commutator (hσ : Function.Involutive σ)
+    (t : Kˣ) (u : HeisenbergGroup.unitarySubgroup σ) :
+    upperRootHom K σ (HeisenbergGroup.unitaryMk σ hσ
+        ((t : K) ^ 2 * σ ((t⁻¹ : Kˣ) : K) * (u : HeisenbergGroup K).x)
+        ((t : K) * σ (t : K) * (u : HeisenbergGroup K).z)
+        (by
+          simp only [map_mul, map_pow, hσ (t : K), hσ ((t⁻¹ : Kˣ) : K)]
+          linear_combination
+            (t : K) * σ (t : K) * HeisenbergGroup.unitarySubgroup.z_add_map_z u -
+            (t : K) * σ (t : K) * (u : HeisenbergGroup K).x * σ (u : HeisenbergGroup K).x *
+              map_mul_eq_one σ t.mul_inv -
+            (t : K) * (σ (t : K)) ^ 2 * σ ((t⁻¹ : Kˣ) : K) * (u : HeisenbergGroup K).x *
+              σ (u : HeisenbergGroup K).x * t.mul_inv) * u⁻¹) ∈
+      commutator (UnitaryRankOne.Group K σ) := by
+  have hmem : ⁅torusHom K σ hσ t, upperRootHom K σ u⁆ ∈
+      commutator (UnitaryRankOne.Group K σ) :=
+    Subgroup.commutator_mem_commutator (Subgroup.mem_top _) (Subgroup.mem_top _)
+  rwa [commutatorElement_def, torusHom_mul_upperRootHom_mul_inv hσ t u, ← map_inv,
+    ← map_mul] at hmem
+
 private theorem exists_upperRootHom_mem_commutator_x_eq (hσ : Function.Involutive σ)
     (htr : ∃ t : K, t + σ t = 1) (hunit : ∃ a : K, a ≠ 0 ∧ a ^ 2 ≠ σ a) (x : K) :
     ∃ b : HeisenbergGroup.unitarySubgroup σ, (b : HeisenbergGroup K).x = x ∧
@@ -346,24 +376,11 @@ private theorem exists_upperRootHom_mem_commutator_x_eq (hσ : Function.Involuti
       sub_ne_zero.mpr ((div_eq_one_iff_eq hσa).not.mpr ha)
   let x₁ : K := c⁻¹ * x
   obtain ⟨u₁, hu₁⟩ := HeisenbergGroup.unitarySubgroup.exists_coe_x_eq hσ htr x₁
-  let t : Kˣ := Units.mk0 a ha0
-  have hconj := torusHom_mul_upperRootHom_unitaryMk_mul_inv hσ t
-    (u₁ : HeisenbergGroup K).x (u₁ : HeisenbergGroup K).z
-    (HeisenbergGroup.unitarySubgroup.z_add_map_z u₁)
-  rw [HeisenbergGroup.unitaryMk_eta hσ u₁] at hconj
-  set u₂ := HeisenbergGroup.unitaryMk σ hσ
-    ((t : K) ^ 2 * σ ((t⁻¹ : Kˣ) : K) * (u₁ : HeisenbergGroup K).x)
-    ((t : K) * σ (t : K) * (u₁ : HeisenbergGroup K).z) _
-  refine ⟨u₂ * u₁⁻¹, ?_, ?_⟩
-  · simp only [u₂, t, HeisenbergGroup.unitarySubgroup.coe_mul,
-      HeisenbergGroup.unitarySubgroup.coe_inv, HeisenbergGroup.coe_unitaryMk,
-      Units.val_mk0, Units.val_inv_eq_inv_val, map_inv₀, hu₁]
-    calc a ^ 2 * (σ a)⁻¹ * x₁ + -x₁ = c * x₁ := by simp only [c]; ring
-      _ = x := mul_inv_cancel_left₀ hc0 x
-  · have hb_eq : upperRootHom K σ (u₂ * u₁⁻¹) = ⁅torusHom K σ hσ t, upperRootHom K σ u₁⁆ := by
-      rw [commutatorElement_def, hconj, ← map_inv, ← map_mul]
-    rw [hb_eq]
-    exact Subgroup.commutator_mem_commutator (Subgroup.mem_top _) (Subgroup.mem_top _)
+  refine ⟨_, ?_, upperRootHom_rescaled_mul_inv_mem_commutator hσ (Units.mk0 a ha0) u₁⟩
+  simp only [HeisenbergGroup.unitarySubgroup.coe_mul, HeisenbergGroup.unitarySubgroup.coe_inv,
+    HeisenbergGroup.coe_unitaryMk, Units.val_mk0, Units.val_inv_eq_inv_val, map_inv₀, hu₁]
+  calc a ^ 2 * (σ a)⁻¹ * x₁ + -x₁ = c * x₁ := by simp only [c]; ring
+    _ = x := mul_inv_cancel_left₀ hc0 x
 
 private theorem unipotent_le_commutator_of_exists_add_map_ne_zero
     (hσ : Function.Involutive σ) (htr0 : ∃ y : K, y + σ y ≠ 0)
@@ -411,19 +428,19 @@ private theorem unipotent_le_commutator_of_add_map_eq_zero
   have hz₁ : z₁ + σ z₁ = 0 * σ 0 := by simp [htr0 z₁]
   let u₁ := HeisenbergGroup.unitaryMk σ hσ 0 z₁ hz₁
   let t : Kˣ := Units.mk0 a ha0
-  have hconj := torusHom_mul_upperRootHom_unitaryMk_mul_inv hσ t 0 z₁ hz₁
-  set u₂ := HeisenbergGroup.unitaryMk σ hσ ((t : K) ^ 2 * σ ((t⁻¹ : Kˣ) : K) * 0)
-    ((t : K) * σ (t : K) * z₁) _
-  have ha₀_eq : u₂ * u₁⁻¹ = a₀ := by
+  have ha₀_eq : HeisenbergGroup.unitaryMk σ hσ
+      ((t : K) ^ 2 * σ ((t⁻¹ : Kˣ) : K) * (u₁ : HeisenbergGroup K).x)
+      ((t : K) * σ (t : K) * (u₁ : HeisenbergGroup K).z)
+      (by simp only [u₁, HeisenbergGroup.coe_unitaryMk, mul_zero, map_zero]
+          exact htr0 _) * u₁⁻¹ = a₀ := by
     apply HeisenbergGroup.unitarySubgroup.ext
-    · simp [u₂, u₁, hx₀]
-    · simp only [u₂, u₁, t, HeisenbergGroup.unitarySubgroup.coe_mul,
+    · simp [u₁, hx₀]
+    · simp only [u₁, t, HeisenbergGroup.unitarySubgroup.coe_mul,
         HeisenbergGroup.unitarySubgroup.coe_inv, HeisenbergGroup.coe_unitaryMk,
         Units.val_mk0, hσ_id a, hσ_id z₁, mul_zero, zero_mul, zero_add, add_zero]
       calc a * a * z₁ + z₁ = (a ^ 2 + 1) * z₁ := by ring
         _ = (a₀ : HeisenbergGroup K).z := mul_inv_cancel_left₀ ha1 _
-  rw [← ha₀_eq, map_mul, map_inv, ← hconj, ← commutatorElement_def]
-  exact Subgroup.commutator_mem_commutator (Subgroup.mem_top _) (Subgroup.mem_top _)
+  simpa only [ha₀_eq] using upperRootHom_rescaled_mul_inv_mem_commutator hσ t u₁
 
 /-- Every element of `unipotent K σ` is a product of commutators whenever `σ` is involutive
 and `K` has a nonzero `a` with `a ^ 2 ≠ σ a`. -/
@@ -478,34 +495,25 @@ theorem isSimpleGroup_derivedCentralQuotient (hσ : Function.Involutive σ)
 
 /-! ### Finite-field specialization for fields of order `q ^ 2` -/
 
-private theorem unitaryHypotheses_of_natCard_eq_sq {q : ℕ} (hq : 3 ≤ q)
-    (hK : Nat.card K = q ^ 2) (hσ : ∀ a, σ a = a ^ q) :
-    Function.Involutive σ ∧ (∃ d : K, d ≠ 0 ∧ d + σ d = 0) ∧
-      (∃ a : K, a ≠ 0 ∧ a ^ 2 ≠ σ a) :=
-  ⟨TauCeti.FiniteField.involutive_of_natCard_eq_sq hK hσ,
-    by
-      simpa only [pow_zero, one_mul, hσ] using
-        TauCeti.FiniteField.exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero hK 0,
-    by
-      have hq2 : 2 * q ≤ q ^ 2 := by rw [sq]; exact Nat.mul_le_mul_right q (by omega)
-      simpa only [hσ] using TauCeti.FiniteField.exists_ne_zero_pow_ne_pow
-        (F := K) (m := 2) (n := q) (by omega) (by rw [hK]; omega)⟩
-
 /-- **Over a field of order `q ^ 2` with `3 ≤ q` and `σ a = a ^ q`, the three-dimensional special
 unitary group `SU₃(q)` is perfect.** -/
-theorem commutator_eq_top_of_natCard_eq_sq {q : ℕ} (hq : 3 ≤ q)
+theorem commutator_eq_top_of_natCard_eq_sq_of_eq_pow {q : ℕ} (hq : 3 ≤ q)
     (hK : Nat.card K = q ^ 2) (hσ : ∀ a, σ a = a ^ q) :
-    commutator (UnitaryRankOne.Group K σ) = ⊤ := by
-  obtain ⟨hinv, hadm, hunit⟩ := unitaryHypotheses_of_natCard_eq_sq hq hK hσ
-  exact commutator_eq_top hinv hadm hunit
+    commutator (UnitaryRankOne.Group K σ) = ⊤ :=
+  commutator_eq_top
+    (FiniteField.involutive_of_natCard_eq_sq_of_eq_pow hK hσ)
+    (FiniteField.exists_ne_zero_add_eq_zero_of_natCard_eq_sq_of_eq_pow hK hσ)
+    (FiniteField.exists_ne_zero_sq_ne_of_natCard_eq_sq_of_eq_pow hq hK hσ)
 
 /-- **Over a field of order `q ^ 2` with `3 ≤ q` and `σ a = a ^ q`, the projective special unitary
 group `PSU₃(q)` is simple.** -/
-theorem isSimpleGroup_quotient_center_of_natCard_eq_sq {q : ℕ} (hq : 3 ≤ q)
+theorem isSimpleGroup_quotient_center_of_natCard_eq_sq_of_eq_pow {q : ℕ} (hq : 3 ≤ q)
     (hK : Nat.card K = q ^ 2) (hσ : ∀ a, σ a = a ^ q) :
-    IsSimpleGroup (UnitaryRankOne.Group K σ ⧸ Subgroup.center (UnitaryRankOne.Group K σ)) := by
-  obtain ⟨hinv, hadm, hunit⟩ := unitaryHypotheses_of_natCard_eq_sq hq hK hσ
-  exact isSimpleGroup_quotient_center hinv hadm hunit
+    IsSimpleGroup (UnitaryRankOne.Group K σ ⧸ Subgroup.center (UnitaryRankOne.Group K σ)) :=
+  isSimpleGroup_quotient_center
+    (FiniteField.involutive_of_natCard_eq_sq_of_eq_pow hK hσ)
+    (FiniteField.exists_ne_zero_add_eq_zero_of_natCard_eq_sq_of_eq_pow hK hσ)
+    (FiniteField.exists_ne_zero_sq_ne_of_natCard_eq_sq_of_eq_pow hq hK hσ)
 
 end Field
 

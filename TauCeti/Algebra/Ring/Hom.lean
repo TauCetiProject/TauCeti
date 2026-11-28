@@ -49,6 +49,8 @@ along field and completion isomorphisms.
   annihilates `f a` on the left and right for any multiplicative map `f`.
 * `MulHom.unitize`: the unitization `a ↦ f a + (1 - f 1)` of a multiplicative map from a monoid
   to a ring, which is a monoid homomorphism.
+* `TauCeti.val_inv_add_map_val_inv`: for a ring endomorphism `σ` of a commutative semiring,
+  `z⁻¹ + σ z⁻¹ = (z + σ z) * (z⁻¹ * σ z⁻¹)` for every unit `z`.
 * `Set.MapsTo.natCast_pow_mul_apply_mem`: if a ring homomorphism `f` maps `A` into `B`, then
   `n ^ k * x ∈ A` implies `n ^ k * f x ∈ B`.
 * `Set.MapsTo.ringHom_pow`: if a ring endomorphism `f` maps `A` into itself, so does `f ^ n`.
@@ -93,6 +95,17 @@ theorem apply_mul_one_sub_map_one {F M R : Type*} [MulOneClass M] [NonAssocRing 
     [FunLike F M R] [MulHomClass F M R] (f : F) (a : M) :
     f a * (1 - f 1) = 0 := by
   rw [mul_sub, mul_one, ← map_mul, mul_one, sub_self]
+
+/-- For any ring endomorphism `σ` of a commutative semiring, the trace `z⁻¹ + σ z⁻¹` of a unit's
+inverse equals the trace `z + σ z` of the unit multiplied by the norm `z⁻¹ * σ z⁻¹` of its
+inverse. -/
+theorem val_inv_add_map_val_inv {R F : Type*} [CommSemiring R] [FunLike F R R]
+    [RingHomClass F R R] (σ : F) (z : Rˣ) :
+    ((z⁻¹ : Rˣ) : R) + σ ((z⁻¹ : Rˣ) : R) =
+      ((z : R) + σ (z : R)) * (((z⁻¹ : Rˣ) : R) * σ ((z⁻¹ : Rˣ) : R)) := by
+  symm
+  rw [add_mul, ← mul_assoc, Units.mul_inv, one_mul, mul_left_comm, ← map_mul, Units.mul_inv,
+    map_one, mul_one, add_comm]
 
 end TauCeti
 
