@@ -94,12 +94,9 @@ theorem isSeparating_yoneda :
   apply U.map_injective
   refine hom_ext_yoneda fun X p ↦ ?_
   let q : preadditiveYoneda.obj X ⟶ F.obj := preadditiveYonedaHomEquiv.symm (yonedaEquiv p)
-  have hq : U.map q = p := by
-    apply yonedaEquiv.injective
-    calc
-      yonedaEquiv (U.map q) = q.app (op X) (𝟙 X) := yonedaEquiv_apply (U.map q)
-      _ = preadditiveYonedaHomEquiv q := (preadditiveYonedaHomEquiv_apply q).symm
-      _ = yonedaEquiv p := preadditiveYonedaHomEquiv.apply_symm_apply (yonedaEquiv p)
+  have hq : U.map q = p :=
+    yonedaEquiv.injective <| (yonedaEquiv_whiskeringRight_forget_map q).trans
+      (preadditiveYonedaHomEquiv.apply_symm_apply (yonedaEquiv p))
   have he : U.map (q ≫ f.hom) = U.map (q ≫ g.hom) :=
     congrArg (fun k : (yoneda C).obj X ⟶ G ↦ U.map k.hom)
       (h _ ⟨X⟩ (ObjectProperty.homMk q))

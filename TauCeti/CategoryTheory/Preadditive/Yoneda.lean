@@ -133,12 +133,8 @@ def preadditiveYonedaHomEquiv {X : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}} [F.Add
   invFun x :=
     let p : yoneda.obj X ⟶ F ⋙ forget AddCommGrpCat := yonedaEquiv.symm x
     { app Y := AddCommGrpCat.ofHom
-        (AddMonoidHom.mk' (fun f ↦ p.app Y f) (by
-          intro f g
-          -- The inverse Yoneda component acts by the underlying function of `F.map`.
-          change F.map (f + g).op x = F.map f.op x + F.map g.op x
-          simp only [op_add, Functor.map_add, AddCommGrpCat.hom_add_apply]) :
-          (Y.unop ⟶ X) →+ F.obj Y)
+        ((AddMonoidHom.eval x).comp (AddCommGrpCat.homAddEquiv.toAddMonoidHom.comp
+          ((F.mapAddHom (X := op X) (Y := Y)).comp (opHom Y.unop X))))
       naturality Y Z g := by
         ext (f : Y.unop ⟶ X)
         exact p.naturality_apply g f }
@@ -181,6 +177,33 @@ theorem preadditiveYonedaHomEquiv_naturality {X Y : C} {F : Cᵒᵖ ⥤ AddCommG
 theorem preadditiveYonedaHomEquiv_yoneda_map {X Y : C} (g : X ⟶ Y) :
     preadditiveYonedaHomEquiv (preadditiveYoneda.map g) = g :=
   yonedaEquiv_yoneda_map g
+
+/-- Forgetting the additive structure turns the additive Yoneda equivalence into the ordinary
+one: evaluation at the identity commutes with the forgetful functor. -/
+@[simp]
+theorem yonedaEquiv_whiskeringRight_forget_map {X : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
+    [F.Additive] (α : preadditiveYoneda.obj X ⟶ F) :
+    yonedaEquiv (X := X) (F := F ⋙ forget AddCommGrpCat)
+        (((Functor.whiskeringRight Cᵒᵖ _ _).obj (forget AddCommGrpCat)).map α) =
+      preadditiveYonedaHomEquiv α :=
+  (rfl)
+
+/-- The inverse additive Yoneda equivalence is natural in the representing object. -/
+theorem preadditiveYoneda_map_comp_preadditiveYonedaHomEquiv_symm {X Y : C}
+    {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}} [F.Additive] (g : Y ⟶ X) (x : F.obj (op X)) :
+    preadditiveYoneda.map g ≫ preadditiveYonedaHomEquiv.symm x =
+      preadditiveYonedaHomEquiv.symm (F.map g.op x) :=
+  preadditiveYonedaHomEquiv.injective <| by
+    rw [preadditiveYonedaHomEquiv_naturality, AddEquiv.apply_symm_apply,
+      AddEquiv.apply_symm_apply]
+
+/-- The inverse additive Yoneda equivalence is natural in the target presheaf. -/
+theorem preadditiveYonedaHomEquiv_symm_comp {X : C} {F G : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
+    [F.Additive] [G.Additive] (x : F.obj (op X)) (β : F ⟶ G) :
+    preadditiveYonedaHomEquiv.symm x ≫ β =
+      preadditiveYonedaHomEquiv.symm (β.app (op X) x) :=
+  preadditiveYonedaHomEquiv.injective <| by
+    rw [preadditiveYonedaHomEquiv_comp, AddEquiv.apply_symm_apply, AddEquiv.apply_symm_apply]
 
 /-- The preadditive Yoneda embedding `Y ↦ (-, Y)` is an additive functor. -/
 instance preadditiveYoneda_additive :
