@@ -84,6 +84,13 @@ degree. -/
 def IsExtComparisonBijective (φ : C' ⥤ C) (β : φ ⋙ F ⟶ F') (α : N' ⟶ φ ⋙ N) : Prop :=
   ∀ n : ℕ, Function.Bijective (extComparison.{t, t'} φ β α n)
 
+/-- A comparison is bijective along `α` exactly when its comparison maps are bijective in every
+degree. -/
+lemma isExtComparisonBijective_iff (φ : C' ⥤ C) (β : φ ⋙ F ⟶ F') (α : N' ⟶ φ ⋙ N) :
+    IsExtComparisonBijective.{t, t'} φ β α ↔
+      ∀ n : ℕ, Function.Bijective (extComparison.{t, t'} φ β α n) :=
+  Iff.rfl
+
 /-- For the identity functor the comparison map is push-forward along `β` followed by pull-back
 along `α`. -/
 lemma extComparison_id_apply (β : F ⟶ G) (α : M ⟶ N) (x : Ext.{t} N F n) :
@@ -96,6 +103,13 @@ lemma extComparison_id_apply (β : F ⟶ G) (α : M ⟶ N) (x : Ext.{t} N F n) :
   have hid : x.mapExactFunctor ((whiskeringLeft C C AddCommGrpCat.{w}).obj (𝟭 C)) = x :=
     Ext.id_mapExactFunctor x
   rw [extComparison_apply, hid]
+
+/-- With identities for `β` and `α`, the comparison map is restriction along `φ`. -/
+lemma extComparison_id_id_apply (φ : C' ⥤ C) (x : Ext.{t} N F n) :
+    extComparison.{t, t'} φ (𝟙 (φ ⋙ F)) (𝟙 (φ ⋙ N)) n x =
+      x.mapExactFunctor ((whiskeringLeft C' C AddCommGrpCat.{w}).obj φ) := by
+  rw [extComparison_apply]
+  exact (Ext.mk₀_id_comp _).trans (Ext.comp_mk₀_id _)
 
 /-- For the identity functor, isomorphisms `β` and `α` give a bijective comparison: its inverse
 is the comparison along their inverses. -/
