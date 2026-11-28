@@ -36,8 +36,7 @@ completeness nor norms: it holds for Fredholm maps between topological vector sp
 Some exactness hypotheses are not needed in each two-out-of-three statement and are omitted: for
 example, the middle map is Fredholm without injectivity of `f₁` or surjectivity of `g₂`.
 
-We also record the specialization of index additivity to upper-triangular block operators
-(`upperTriangularBlock A B D`) and the composition snake diagram (`compSnakeMiddle T S`).
+We also record the specialization to the composition snake diagram (`compSnakeMiddle T S`).
 
 ## Main declarations
 
@@ -48,10 +47,6 @@ We also record the specialization of index additivity to upper-triangular block 
   `ContinuousLinearMap.IsFredholm.index_eq_add_of_exact_of_left_middle`, and
   `ContinuousLinearMap.IsFredholm.index_eq_add_of_exact_of_middle_right`: the index is additive
   along a map of short exact sequences.
-* `ContinuousLinearMap.index_upperTriangularBlock`,
-  `ContinuousLinearMap.index_upperTriangularBlock_of_left`, and
-  `ContinuousLinearMap.index_upperTriangularBlock_of_right`: index additivity for upper-triangular
-  blocks.
 * `ContinuousLinearMap.isFredholm_compSnakeMiddle_iff`: `(compSnakeMiddle T S).IsFredholm ↔
   (S ∘L T).IsFredholm`.
 
@@ -211,43 +206,6 @@ theorem IsFredholm.index_eq_add_of_exact_of_middle_right (hi₂ : i₂.IsFredhol
     (toLinearMap_comp_eq h₁) (toLinearMap_comp_eq h₂)
 
 end TVS
-
-section FredholmBlockIndex
-
-variable {E₁ E₂ F₁ F₂ : Type*}
-  [TopologicalSpace E₁] [AddCommGroup E₁] [Module 𝕜 E₁]
-  [TopologicalSpace E₂] [AddCommGroup E₂] [Module 𝕜 E₂]
-  [TopologicalSpace F₁] [AddCommGroup F₁] [Module 𝕜 F₁] [ContinuousAdd F₁]
-  [TopologicalSpace F₂] [AddCommGroup F₂] [Module 𝕜 F₂]
-  (A : E₁ →L[𝕜] F₁) (B : E₂ →L[𝕜] F₁) (D : E₂ →L[𝕜] F₂)
-
-/-- The index of an upper-triangular block operator `[[A, B], [0, D]]` with Fredholm diagonal
-blocks is `A.index + D.index`, independently of the off-diagonal block `B`. -/
-theorem index_upperTriangularBlock (hA : A.IsFredholm) (hD : D.IsFredholm) :
-    (upperTriangularBlock A B D).index = A.index + D.index :=
-  hA.index_eq_add_of_exact hD .inl_snd .inl_snd LinearMap.inl_injective LinearMap.snd_surjective
-    LinearMap.inl_injective LinearMap.snd_surjective
-    (A.upperTriangularBlock_comp_inl B D).symm (A.snd_comp_upperTriangularBlock B D)
-
-/-- Index additivity for `upperTriangularBlock A B D` when `A` and the block operator are
-Fredholm. -/
-theorem index_upperTriangularBlock_of_left
-    (hA : A.IsFredholm) (hM : (upperTriangularBlock A B D).IsFredholm) :
-    (upperTriangularBlock A B D).index = A.index + D.index :=
-  hA.index_eq_add_of_exact_of_left_middle hM .inl_snd .inl_snd LinearMap.inl_injective
-    LinearMap.snd_surjective LinearMap.inl_injective LinearMap.snd_surjective
-    (A.upperTriangularBlock_comp_inl B D).symm (A.snd_comp_upperTriangularBlock B D)
-
-/-- Index additivity for `upperTriangularBlock A B D` when the block operator and `D` are
-Fredholm. -/
-theorem index_upperTriangularBlock_of_right
-    (hM : (upperTriangularBlock A B D).IsFredholm) (hD : D.IsFredholm) :
-    (upperTriangularBlock A B D).index = A.index + D.index :=
-  hM.index_eq_add_of_exact_of_middle_right hD .inl_snd .inl_snd LinearMap.inl_injective
-    LinearMap.snd_surjective LinearMap.inl_injective LinearMap.snd_surjective
-    (A.upperTriangularBlock_comp_inl B D).symm (A.snd_comp_upperTriangularBlock B D)
-
-end FredholmBlockIndex
 
 section FredholmCompSnake
 
