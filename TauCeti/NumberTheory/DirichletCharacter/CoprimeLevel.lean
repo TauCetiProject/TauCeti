@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.DirichletCharacter.Conductor
 import TauCeti.NumberTheory.MulChar.Prod
 
 /-!
@@ -15,6 +16,11 @@ import TauCeti.NumberTheory.MulChar.Prod
 At coprime levels `m` and `n`, lifting and multiplying identifies pairs of Dirichlet
 characters with characters of level `m * n`. This is `MulChar.coprodEquiv` transported
 along the Chinese remainder isomorphism `ZMod.chineseRemainder`.
+
+`DirichletCharacter.conductor_eq_mul_coprimeLevelEquiv_symm` gives the conductor as the product
+of the two factor conductors, using `DirichletCharacter.conductor_mul_of_coprime` and Mathlib's
+`DirichletCharacter.conductor_changeLevel`. Consequently,
+`DirichletCharacter.isPrimitive_iff_coprimeLevelEquiv_symm` tests primitivity on the two factors.
 -/
 
 public section
@@ -74,5 +80,48 @@ theorem coprimeLevelEquiv_symm_apply_snd (h : m.Coprime n)
     (χ : DirichletCharacter R (m * n)) (y : ZMod n) :
     ((coprimeLevelEquiv h).symm χ).2 y = χ ((ZMod.chineseRemainder h).symm (1, y)) := by
   simpa [coprimeLevelEquiv] using equivToUnitHom_symm_comp_chineseRemainder_apply h χ (1, y)
+
+/-- The conductor of a character modulo `m * n`, for coprime `m` and `n`, is the product of the
+conductors of its two Chinese remainder factors. -/
+theorem conductor_eq_mul_coprimeLevelEquiv_symm (χ : DirichletCharacter R (m * n))
+    (h : m.Coprime n) :
+    χ.conductor = ((coprimeLevelEquiv h).symm χ).1.conductor *
+      ((coprimeLevelEquiv h).symm χ).2.conductor := by
+  rcases eq_zero_or_neZero (m * n) with hzero | hlevel
+  · rw [conductor_eq_zero_iff_level_eq_zero.mpr hzero]
+    rcases mul_eq_zero.mp hzero with hm | hn
+    · rw [conductor_eq_zero_iff_level_eq_zero.mpr hm, zero_mul]
+    · rw [conductor_eq_zero_iff_level_eq_zero.mpr hn, mul_zero]
+  let ψ := (coprimeLevelEquiv h).symm χ
+  have hχ : χ = changeLevel (dvd_mul_right m n) ψ.1 * changeLevel (dvd_mul_left n m) ψ.2 :=
+    ((coprimeLevelEquiv h).apply_symm_apply χ).symm.trans (coprimeLevelEquiv_apply h ψ.1 ψ.2)
+  have hc : ψ.1.conductor.Coprime ψ.2.conductor :=
+    (h.of_dvd_left ψ.1.conductor_dvd_level).of_dvd_right ψ.2.conductor_dvd_level
+  have hlift : (changeLevel (dvd_mul_right m n) ψ.1).conductor.Coprime
+      (changeLevel (dvd_mul_left n m) ψ.2).conductor := by
+    simpa only [conductor_changeLevel] using hc
+  calc
+    χ.conductor =
+        (changeLevel (dvd_mul_right m n) ψ.1 * changeLevel (dvd_mul_left n m) ψ.2).conductor :=
+      congrArg conductor hχ
+    _ = ψ.1.conductor * ψ.2.conductor := by
+      simp only [conductor_mul_of_coprime hlift, conductor_changeLevel]
+
+/-- A Dirichlet character modulo a product of coprime levels is primitive if and only if both
+of its Chinese remainder factors are primitive. -/
+theorem isPrimitive_iff_coprimeLevelEquiv_symm {χ : DirichletCharacter R (m * n)}
+    (h : m.Coprime n) :
+    χ.IsPrimitive ↔ ((coprimeLevelEquiv h).symm χ).1.IsPrimitive ∧
+      ((coprimeLevelEquiv h).symm χ).2.IsPrimitive := by
+  let ψ := (coprimeLevelEquiv h).symm χ
+  simp only [isPrimitive_def, χ.conductor_eq_mul_coprimeLevelEquiv_symm h]
+  have hm : ψ.1.conductor ∣ m := ψ.1.conductor_dvd_level
+  have hn : ψ.2.conductor ∣ n := ψ.2.conductor_dvd_level
+  refine ⟨fun heq ↦ ⟨Nat.dvd_antisymm hm ?_, Nat.dvd_antisymm hn ?_⟩, ?_⟩
+  · apply (h.of_dvd_right hn).dvd_of_dvd_mul_right
+    exact heq.symm ▸ dvd_mul_right m n
+  · apply (h.symm.of_dvd_right hm).dvd_of_dvd_mul_left
+    exact heq.symm ▸ dvd_mul_left n m
+  · exact fun ⟨hm', hn'⟩ ↦ congrArg₂ (· * ·) hm' hn'
 
 end DirichletCharacter
