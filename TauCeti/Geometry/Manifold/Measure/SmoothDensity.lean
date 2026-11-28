@@ -24,7 +24,8 @@ smooth and positive on the chart target (`TauCeti.HasSmoothPositiveDensity`): th
 `∫_{e.target} ρ(y) f(e⁻¹ y) dy`. Here `dy` is the measure `volume` of the `MeasureSpace E`
 instance on the model space, which is Lebesgue measure for `CoordinateSpace n`. These are the
 measures for which formal adjoints and transposes of differential and pseudodifferential operators
-on `M` are taken; the Riemannian volume of a smooth metric is one, although that is not shown here.
+on `M` are taken. The Riemannian volume of a smooth metric is one
+(`TauCeti.hasSmoothPositiveDensity_riemannianVolume`).
 
 The measure `volume` on `E` itself is one when it is an additive Haar measure, such as Lebesgue
 measure (`TauCeti.hasSmoothPositiveDensity_volume`): in a chart `e` of the maximal atlas of `E`,

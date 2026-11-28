@@ -95,12 +95,6 @@ private theorem writtenInExtChartAt_comp_eventuallyEq (hf : ContinuousAt f x) :
     writtenInExtChartAt_comp (I := I) (I' := I') (I'' := I'') (s := univ) (g := g)
       hf.continuousWithinAt
 
-omit [I.Boundaryless] in
-/-- The coordinate expression of `f` at `x` sends the chart coordinate of `x` to that of `f x`. -/
-private theorem writtenInExtChartAt_extChartAt_self :
-    writtenInExtChartAt I I' x f (extChartAt I x x) = extChartAt I' (f x) (f x) := by
-  simp [writtenInExtChartAt]
-
 /-- **The chain rule in charts.** Read in the preferred charts, the derivative of `g ∘ f` at `x` is
 `f'(x) • g'(f x)`. -/
 theorem deriv_writtenInExtChartAt_comp [I'.Boundaryless] (hg : MDifferentiableAt I' I'' g (f x))
@@ -109,7 +103,8 @@ theorem deriv_writtenInExtChartAt_comp [I'.Boundaryless] (hg : MDifferentiableAt
       deriv (writtenInExtChartAt I I' x f) (extChartAt I x x) •
         deriv (writtenInExtChartAt I' I'' (f x) g) (extChartAt I' (f x) (f x)) := by
   have hg' := hg.differentiableAt_writtenInExtChartAt
-  rw [← writtenInExtChartAt_extChartAt_self (I := I) (I' := I') (f := f) (x := x)] at hg' ⊢
+  rw [← writtenInExtChartAt_apply_extChartAt (I' := I') (f := f) (mem_extChartAt_source (I := I) x)]
+    at hg' ⊢
   rw [(writtenInExtChartAt_comp_eventuallyEq (I' := I') (I'' := I'') (g := g)
       hf.continuousAt).deriv_eq,
     deriv.scomp _ hg' hf.differentiableAt_writtenInExtChartAt]
@@ -124,7 +119,8 @@ theorem iteratedDeriv_two_writtenInExtChartAt_comp [I'.Boundaryless]
         iteratedDeriv 2 (writtenInExtChartAt I I' x f) (extChartAt I x x) •
           deriv (writtenInExtChartAt I' I'' (f x) g) (extChartAt I' (f x) (f x)) := by
   have hg' := hg.contDiffAt_writtenInExtChartAt
-  rw [← writtenInExtChartAt_extChartAt_self (I := I) (I' := I') (f := f) (x := x)] at hg' ⊢
+  rw [← writtenInExtChartAt_apply_extChartAt (I' := I') (f := f) (mem_extChartAt_source (I := I) x)]
+    at hg' ⊢
   rw [(writtenInExtChartAt_comp_eventuallyEq (I' := I') (I'' := I'') (g := g)
       hf.continuousAt).iteratedDeriv_eq,
     iteratedDeriv_scomp_two hg' hf.contDiffAt_writtenInExtChartAt]

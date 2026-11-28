@@ -81,6 +81,16 @@ tubular map defined on a disk bundle. This file proves:
   (`TauCeti.norm_normalDilation_sub_normalLinearization_le`). The constant `M₂` enters through the
   block `E → N`, where `a⁻¹ J_NE(z, a W)` differs from `∂_W J_NE(z, 0)[W]` by a Taylor remainder
   divided by `a`;
+* **the rate `O(a)` in `Cᵏ`**: if `J` is `C^(k+2)` on `Ω`, then for every `i ≤ k` the `i`-th
+  derivatives satisfy `‖Dⁱ(δ_a^* J)(p) - Dⁱ J_N(p)‖ ≤ C |a|` for `p` in a compact set `K` as above
+  and all small `a ≠ 0`
+  (`TauCeti.exists_forall_norm_iteratedFDeriv_normalDilation_sub_normalLinearization_le_of_isOpen`,
+  `TauCeti.exists_forall_norm_iteratedFDeriv_normalDilation_sub_normalLinearization_le`). This is
+  the controlled `Cᵏ` convergence of Taubes's rescaled structures `Φ_a^* J → J_N` in the chart.
+  The Hadamard form of `δ_a^* J` is `C^(k+1)` in `(a, z, W)` jointly, and the mean value
+  inequality in `a` bounds the distance of its `i`-th derivatives in `(z, W)` from their values at
+  `a = 0` (`ContDiffOn.exists_forall_norm_iteratedFDeriv_slice_sub_le`). For `i = 0` the previous
+  item gives the same rate with explicit constants, and without completeness of `N`;
 * the base block of `δ_a^* J` at `(z, W)` is that of `J` at `(z, a W)`
   (`TauCeti.fst_comp_normalDilation_comp_inl`), so it converges to the base block of `J` on the
   zero section uniformly on compact sets as `a → 0` when `J` is only continuous along the zero
@@ -690,6 +700,15 @@ private theorem hadamardField_of_ne_zero {J : E × N → E × N →L[ℝ] E × N
 
 variable {J : E × N → E × N →L[ℝ] E × N}
 
+/-- For `a ≠ 0`, the normal dilation is the Hadamard form on `normalSegmentDomain Ω`, when `J` is
+`C¹` on `Ω` and the zero section is `J`-holomorphic where it meets `Ω`. -/
+private theorem eventually_normalDilation_eq_hadamardField {Ω : Set (E × N)} (hΩ : IsOpen Ω)
+    (hJ : ContDiffOn ℝ 1 J Ω) (hJ₀ : ∀ z, (z, 0) ∈ Ω → ∀ v, (J (z, 0) (v, 0)).2 = 0) :
+    ∀ᶠ a in 𝓝[≠] (0 : ℝ), ∀ p, (a, p) ∈ normalSegmentDomain Ω →
+      normalDilation J a p = hadamardField J (a, p) :=
+  eventually_nhdsWithin_of_forall fun _ ha p hp ↦ (hadamardField_of_ne_zero hΩ hJ
+    (hJ₀ p.1 (mk_zero_mem_of_mem_normalSegmentDomain hp)) ha hp).symm
+
 /-- **The normal dilations of `J` converge to its normal linearization in `Cᵏ`.** Let `J` be
 `Cⁿ` on an open set `Ω`, with `i + 1 ≤ n`, and let the zero section be `J`-holomorphic where it
 meets `Ω`. Then the `i`-th derivatives of `δ_a^* J` converge to those of `J_N` uniformly on every
@@ -700,13 +719,11 @@ theorem tendstoUniformlyOn_iteratedFDeriv_normalDilation_of_isOpen {Ω K : Set (
     (hK : IsCompact K) (hKΩ : ∀ p ∈ K, (p.1, 0) ∈ Ω) :
     TendstoUniformlyOn (fun a ↦ iteratedFDeriv ℝ i (normalDilation J a))
       (iteratedFDeriv ℝ i (normalLinearization J)) (𝓝[≠] 0) K := by
-  have hJ1 : ContDiffOn ℝ 1 J Ω := hJ.of_le (le_trans (by exact_mod_cast Nat.le_add_left 1 i) hi)
   have h := ContDiffOn.tendstoUniformlyOn_iteratedFDeriv_slice
     (contDiffOn_hadamardField (n := i) hΩ (hJ.of_le (by exact_mod_cast hi)))
     (isOpen_normalSegmentDomain hΩ) hK (fun p hp ↦ zero_mem_normalSegmentDomain (hKΩ p hp))
-    nhdsWithin_le_nhds (g := normalDilation J)
-    (eventually_nhdsWithin_of_forall (s := {0}ᶜ) fun a ha y hy ↦ (hadamardField_of_ne_zero hΩ hJ1
-      (hJ₀ y.1 (mk_zero_mem_of_mem_normalSegmentDomain hy)) ha hy).symm)
+    nhdsWithin_le_nhds (g := normalDilation J) (eventually_normalDilation_eq_hadamardField hΩ
+      (hJ.of_le (le_trans (by exact_mod_cast Nat.le_add_left 1 i) hi)) hJ₀)
   rwa [funext (hadamardField_zero J)] at h
 
 /-- **The normal dilations of `J` converge to its normal linearization.** If `J` is `C¹` on an
@@ -741,5 +758,41 @@ theorem tendstoUniformlyOn_normalDilation (hJ : ContDiff ℝ 1 J)
     TendstoUniformlyOn (normalDilation J) (normalLinearization J) (𝓝[≠] 0) K :=
   tendstoUniformlyOn_normalDilation_of_isOpen isOpen_univ hJ.contDiffOn (fun z _ ↦ hJ₀ z) hK
     fun _ _ ↦ mem_univ _
+
+/-! ### The rate of convergence in `Cᵏ` -/
+
+/-- **The derivatives of the normal dilations converge at rate `O(a)`.** Let `J` be `Cⁿ` on an
+open set `Ω`, with `i + 2 ≤ n`, and let the zero section be `J`-holomorphic where it meets `Ω`.
+Then for every compact set `K` with `(z, 0) ∈ Ω` for `(z, W) ∈ K` there is a constant `C` with
+`‖Dⁱ(δ_a^* J)(p) - Dⁱ J_N(p)‖ ≤ C |a|` for all `p ∈ K` and all small `a ≠ 0`. -/
+theorem exists_forall_norm_iteratedFDeriv_normalDilation_sub_normalLinearization_le_of_isOpen
+    {Ω K : Set (E × N)} {n : WithTop ℕ∞} {i : ℕ} (hΩ : IsOpen Ω) (hJ : ContDiffOn ℝ n J Ω)
+    (hJ₀ : ∀ z, (z, 0) ∈ Ω → ∀ v, (J (z, 0) (v, 0)).2 = 0) (hi : (i + 2 : WithTop ℕ∞) ≤ n)
+    (hK : IsCompact K) (hKΩ : ∀ p ∈ K, (p.1, 0) ∈ Ω) :
+    ∃ C, ∀ᶠ a in 𝓝[≠] (0 : ℝ), ∀ p ∈ K,
+      ‖iteratedFDeriv ℝ i (normalDilation J a) p - iteratedFDeriv ℝ i (normalLinearization J) p‖ ≤
+        C * |a| := by
+  have hH : ContDiffOn ℝ (i + 1) (hadamardField J) (normalSegmentDomain Ω) := by
+    have h := contDiffOn_hadamardField (n := (i + 1 : ℕ)) hΩ (hJ.of_le (by exact_mod_cast hi))
+    exact_mod_cast h
+  obtain ⟨C, hC⟩ := hH.exists_forall_norm_iteratedFDeriv_slice_sub_le
+    (isOpen_normalSegmentDomain hΩ) hK (fun p hp ↦ zero_mem_normalSegmentDomain (hKΩ p hp))
+    nhdsWithin_le_nhds (g := normalDilation J) (eventually_normalDilation_eq_hadamardField hΩ
+      (hJ.of_le (le_trans (by exact_mod_cast Nat.le_add_left 1 (i + 1)) hi)) hJ₀)
+  refine ⟨C, ?_⟩
+  simpa [funext (hadamardField_zero J)] using hC
+
+/-- **The derivatives of the normal dilations converge at rate `O(a)`.** If `J` is `Cⁿ` with
+`i + 2 ≤ n` and the zero section `E × {0}` is `J`-holomorphic, then for every compact set `K` there
+is a constant `C` with `‖Dⁱ(δ_a^* J)(p) - Dⁱ J_N(p)‖ ≤ C |a|` for all `p ∈ K` and all small
+`a ≠ 0`. -/
+theorem exists_forall_norm_iteratedFDeriv_normalDilation_sub_normalLinearization_le
+    {n : WithTop ℕ∞} {i : ℕ} (hJ : ContDiff ℝ n J) (hJ₀ : ∀ z v, (J (z, 0) (v, 0)).2 = 0)
+    (hi : (i + 2 : WithTop ℕ∞) ≤ n) {K : Set (E × N)} (hK : IsCompact K) :
+    ∃ C, ∀ᶠ a in 𝓝[≠] (0 : ℝ), ∀ p ∈ K,
+      ‖iteratedFDeriv ℝ i (normalDilation J a) p - iteratedFDeriv ℝ i (normalLinearization J) p‖ ≤
+        C * |a| :=
+  exists_forall_norm_iteratedFDeriv_normalDilation_sub_normalLinearization_le_of_isOpen isOpen_univ
+    hJ.contDiffOn (fun z _ ↦ hJ₀ z) hi hK fun _ _ ↦ mem_univ _
 
 end TauCeti

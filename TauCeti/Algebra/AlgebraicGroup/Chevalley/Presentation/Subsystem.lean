@@ -36,7 +36,7 @@ generators at the roots `jα + kβ` with `j, k > 0`; these have degree larger th
 positive, and the generators commute. Grading the roots by degree, the generic collection theorem
 `TauCeti.mem_biSup_range_iff_exists_list_prod_map` therefore applies. The injectivity combines the
 ordered products with their uniqueness in `G_sc(t)`,
-`TauCeti.DynkinType.list_prod_map_scChevalleyDatum_rootSubgroupPoints_inj_of_degree`.
+`TauCeti.DynkinType.ChevalleyDatum.list_prod_map_rootSubgroupPoints_inj_of_degree`.
 
 ## Main definitions
 
@@ -221,7 +221,7 @@ theorem injOn_steinbergLift_steinbergSubsystemSubgroup {S : Set (Fin t.numRoots)
     refine List.map_congr_left fun γ _ => ?_
     simp only [Function.comp_apply, steinbergRootSubgroup_apply, toAdd_ofAdd]
     exact (t.scChevalleyDatum ht).steinbergLift_of A γ (w γ)
-  rw [hlift, hlift, list_prod_map_scChevalleyDatum_rootSubgroupPoints_inj_of_degree t ht A
+  rw [hlift, hlift, (t.scChevalleyDatum ht).list_prod_map_rootSubgroupPoints_inj_of_degree A
     (Finset.nodup_toList _) degree fun γ hγ => (hS γ).mpr ((hlS γ).mp hγ)] at hgg'
   exact congrArg List.prod (List.map_congr_left fun γ hγ => by rw [hgg' γ hγ])
 

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.Analysis.Polynomial.DominantTerm
 public import TauCeti.RingTheory.RootsOfUnity.Ultrametric
+import TauCeti.Data.Nat.Totient
 
 /-!
 # Values of polynomials at `ζ - 1` for roots of unity of a well-chosen order
@@ -95,10 +96,7 @@ private lemma exists_mem_Ico_forall_exists_lt [Fact p.Prime] (hp0 : 0 < ‖(p : 
   have hφ : ∀ m, (0 : ℝ) < (p ^ (m + 1)).totient := fun m ↦
     Nat.cast_pos.2 (Nat.totient_pos.2 (pow_pos hp'.pos _))
   -- the totients `φ(p ^ (m + 1)) = p ^ m (p - 1)` grow strictly with `m`
-  have htot : StrictMono fun m ↦ (p ^ (m + 1)).totient := fun m m' h ↦ by
-    simp only [Nat.totient_prime_pow_succ hp']
-    exact Nat.mul_lt_mul_of_pos_right (Nat.pow_lt_pow_right hp'.one_lt h)
-      (Nat.sub_pos_of_lt hp'.one_lt)
+  have htot := Nat.strictMono_totient_prime_pow_succ hp'
   have hρmono : StrictMono ρ := fun m m' h ↦ Real.rpow_lt_rpow_of_exponent_gt hp0 hp
     ((inv_lt_inv₀ (hφ m') (hφ m)).2 (by exact_mod_cast htot h))
   by_contra hcon

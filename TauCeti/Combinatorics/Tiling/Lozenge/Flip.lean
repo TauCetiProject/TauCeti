@@ -130,6 +130,14 @@ theorem mem_vertexFaces_of_mem_lowFlipEdges (he : e ∈ lowFlipEdges v) (hf : e 
   rcases TriFace.mem_edges_iff.1 hf with rfl | rfl <;>
     rcases mem_lowFlipEdges.1 he with rfl | rfl | rfl <;> simp [vertexFaces_def]
 
+/-- Every edge of `highFlipEdges v` has `v` as an endpoint. -/
+theorem mem_endpoints_of_mem_highFlipEdges (he : e ∈ highFlipEdges v) : v ∈ e.endpoints := by
+  rcases mem_highFlipEdges.1 he with rfl | rfl | rfl <;> simp [latticeDir_zero, latticeDir_one]
+
+/-- Every edge of `lowFlipEdges v` has `v` as an endpoint. -/
+theorem mem_endpoints_of_mem_lowFlipEdges (he : e ∈ lowFlipEdges v) : v ∈ e.endpoints := by
+  rcases mem_lowFlipEdges.1 he with rfl | rfl | rfl <;> simp [latticeDir_two]
+
 /-- Every face round `v` contains exactly one edge of `highFlipEdges v`. -/
 theorem existsUnique_mem_highFlipEdges (hf : f ∈ vertexFaces v) :
     ∃! e, e ∈ highFlipEdges v ∧ e ∈ f.edges := by

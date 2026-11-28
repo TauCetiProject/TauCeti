@@ -45,6 +45,31 @@ theorem quantumMinor_eq_columnDet (E : Matrix ι ι A) (u : K) (a b : Fin n → 
         E (a i) (b j)).columnDet :=
   (rfl)
 
+/-- Algebra homomorphisms preserve quantum minors with the same spectral parameter. -/
+@[simp] theorem _root_.AlgHom.map_quantumMinor {B : Type*} [Ring B] [Algebra K B]
+    (f : A →ₐ[K] B) (E : Matrix ι ι A) (u : K) (a b : Fin n → ι) :
+    f (E.quantumMinor u a b) = (E.map f).quantumMinor u a b := by
+  simp only [quantumMinor_eq_columnDet, ← AlgHom.coe_toRingHom, RingHom.map_columnDet]
+  congr 1
+  ext i j
+  simp only [AlgHom.coe_toRingHom, Matrix.map_apply, of_apply, map_add, apply_ite f,
+    AlgHom.commutes, map_zero]
+
+/-- A constant scalar diagonal shift adds that scalar to the spectral parameter of every
+quantum minor, without any commutator hypothesis on the generators. -/
+@[simp] theorem quantumMinor_add_diagonal_algebraMap (E : Matrix ι ι A) (u t : K)
+    (a b : Fin n → ι) :
+    (E + diagonal (fun _ ↦ algebraMap K A t)).quantumMinor u a b =
+      E.quantumMinor (u + t) a b := by
+  simp only [quantumMinor_eq_columnDet]
+  congr 1
+  ext i j
+  by_cases h : a i = b j
+  · simp only [of_apply, Matrix.add_apply, h, diagonal_apply_eq, ↓reduceIte]
+    have hs : (u - (j.val : K)) + t = u + t - j.val := by abel
+    rw [← add_assoc, add_right_comm, ← map_add, hs]
+  · simp [h]
+
 /-- An element commuting with the entries in the selected rows and columns also commutes with
 the quantum minor. -/
 theorem commute_quantumMinor (E : Matrix ι ι A) (u : K) (a b : Fin n → ι) {x : A}
@@ -73,6 +98,15 @@ theorem commute_quantumMinor (E : Matrix ι ι A) (u : K) (a b : Fin n → ι) {
     (e : Perm (Fin n)) : E.quantumMinor u (a ∘ e) b = sign e • E.quantumMinor u a b := by
   simp only [quantumMinor_eq_columnDet, ← columnDet_submatrix_left]
   congr 1
+
+/-- Inserting a row at position `i` multiplies the minor with that row first by
+`(-1)^i`. -/
+theorem quantumMinor_insertNth_left (E : Matrix ι ι A) (u : K) (a : Fin n → ι)
+    (b : Fin (n + 1) → ι) (i : Fin (n + 1)) (r : ι) :
+    E.quantumMinor u (i.insertNth r a) b =
+      (-1 : ℤ) ^ i.val • E.quantumMinor u (Fin.cons r a) b := by
+  simp only [← Fin.cons_comp_cycleRange, quantumMinor_comp_perm_left, Fin.sign_cycleRange,
+    Units.smul_def, Units.val_pow_eq_pow_val, Units.coe_neg_one]
 
 /-- A quantum minor with a repeated row index vanishes. -/
 theorem quantumMinor_eq_zero_of_not_injective_left (E : Matrix ι ι A) (u : K) (a b : Fin n → ι)

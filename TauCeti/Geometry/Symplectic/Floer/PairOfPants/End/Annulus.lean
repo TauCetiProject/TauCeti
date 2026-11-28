@@ -47,6 +47,12 @@ For a map `u` of the pair of pants into a manifold `M`:
   `u^* φ` over `S_R` is minus the integral over `u` composed with the core chart plus the signed
   integrals over `u` composed with the three end charts on `[0, ±R] × [0, 1]`
   (`TauCeti.Floer.setIntegral_preimage_truncation_eq_neg_rectangleIntegral_add_sum`).
+* **Caps at height `R`.** Following maps `D₀`, `D₁` ending at the input loops of `u` at height
+  `0` and sharing their seam, and the disc `TauCeti.Floer.pairOfPantsGluedDisc D₀ D₁ u` glued from
+  them, by `u` along the end annuli between the heights `0` and `R` gives maps ending at the loops
+  of `u` at height `R` of the three ends. The integral of a two-form over the third is the sum of
+  the integrals over the first two minus the integral of `u^* φ` over `S_R`
+  (`TauCeti.Floer.rectangleIntegral_rectangleTrans_pairOfPantsGluedDisc_comp_endAnnulusChart`).
 
 This is the form in which the topological term `∫ u^* ω` of the energy identity of a Floer pair of
 pants is carried from the core `S₀` out to the circles at height `R`, where the loops of a Floer
@@ -86,7 +92,7 @@ namespace TauCeti.Floer
 
 /-- The end chart of `q` sends the half-plane `2π (±s) > -log 2`, which contains the circle at
 height `0` of the end, into `S`. This extends
-`TauCeti.Floer.endChart_mem_thricePuncturedSphereReal`, for the part `±s > 0` of the end, a little
+`TauCeti.Floer.endChart_mem_thricePuncturedSphereReal`, for the part `±s ≥ 0` of the end, a little
 beyond that circle. -/
 theorem endChart_mem_thricePuncturedSphereReal_of_neg_log_two_lt {q : Puncture}
     {z : ℝ × ℝ} (hz : -Real.log 2 < 2 * π * (q.endSign * z.1)) :
@@ -181,7 +187,7 @@ private theorem mpullback_comp_endClampChart_apply (φ : RoughForm I M F 2) {u :
       |(fderiv ℝ (endChart q) z).det| • φ (u (endChart q z))
         ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u (endChart q z) (1, 0),
           mfderiv 𝓘(ℝ, ℝ × ℝ) I u (endChart q z) (0, 1)] := by
-  have hmem := endChart_mem_thricePuncturedSphereReal hz
+  have hmem := endChart_mem_thricePuncturedSphereReal hz.le
   have hud : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (endChart q z) :=
     (hu.contMDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hmem)).mdifferentiableAt
       one_ne_zero
@@ -332,6 +338,15 @@ private theorem endAnnulusChart_eq_endClampChart_comp {q : Puncture} {a b : ℝ}
   rw [Prod.map_apply']
   exact le_trans (le_min ha hb) h.1
 
+/-- For a map `u` of the pair of pants `S` into a manifold `M` which is `Cⁿ` on `S`, and heights
+`a, b ≥ 0`, the composite of `u` with the end annulus chart of `q` is `Cⁿ` on the whole plane. -/
+theorem contMDiff_comp_endAnnulusChart {n : ℕ∞} {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n u thricePuncturedSphereReal) (q : Puncture) {a b : ℝ}
+    (ha : 0 ≤ a) (hb : 0 ≤ b) : ContMDiff 𝓘(ℝ, ℝ × ℝ) I n (u ∘ endAnnulusChart q a b) := by
+  rw [endAnnulusChart_eq_endClampChart_comp ha hb, ← Function.comp_assoc]
+  exact (contMDiff_comp_endClampChart hu q).comp
+    ((contDiff_endAnnulusHeight q a b).prodMap contDiff_id).contMDiff
+
 /-- **An end annulus as a cylinder.** For a map `u` of the pair of pants `S` into a manifold `M`
 which is `C²` on `S`, and heights `a, b ≥ 0`, the composite of `u` with the end annulus chart of
 `q` is a cylinder from the loop of `u` along the circle `±s = a` of the end `q` to its loop along
@@ -341,10 +356,7 @@ theorem isLoopCylinder_comp_endAnnulusChart {u : ℝ × ℝ → M}
     (ha : 0 ≤ a) (hb : 0 ≤ b) :
     IsLoopCylinder I (u ∘ endAnnulusChart q a b) (fun t ↦ u (endChart q (q.endSign * a, t)))
       fun t ↦ u (endChart q (q.endSign * b, t)) where
-  contMDiff := by
-    rw [endAnnulusChart_eq_endClampChart_comp ha hb, ← Function.comp_assoc]
-    exact (contMDiff_comp_endClampChart hu q).comp
-      ((contDiff_endAnnulusHeight q a b).prodMap contDiff_id).contMDiff
+  contMDiff := contMDiff_comp_endAnnulusChart hu q ha hb
   apply_add_one z := by
     simp only [Function.comp_apply, endAnnulusChart_apply_add_one]
   apply_zero t := by
@@ -411,6 +423,18 @@ theorem setIntegral_preimage_truncation_eq_add_sum {f : ℝ × ℝ → F} {a b :
   rw [setIntegral_union hdisj (MeasurableSet.iUnion hA) (hf.mono_set hsub)
     (hf.mono_set (iUnion_subset fun q ↦ inter_subset_left)), integral_iUnion_fintype hA hpair hfA]
 
+/-- For a continuous two-form `φ` and a map `u` of the pair of pants which is `C¹` on `S`, the
+pullback `u^* φ` is integrable over each truncation `S_R`, a compact subset of `S`. -/
+private theorem integrableOn_preimage_truncation_apply_mfderiv [IsManifold I 1 M]
+    {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) (R : ℝ) :
+    IntegrableOn (fun z ↦ φ (u z)
+      ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (1, 0), mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (0, 1)])
+      (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
+  ((hφ.continuousOn_apply_mfderiv isOpen_thricePuncturedSphereReal hu (1, 0) (0, 1)).mono
+    (preimage_truncation_subset_thricePuncturedSphereReal R)).integrableOn_compact
+    (isCompact_preimage_truncation R)
+
 /-- **The area of a truncation through its core and its end annuli.** For a continuous two-form
 `φ` on a manifold `M`, a map `u` of the pair of pants `S` into `M` which is `C¹` on `S`, and
 `R ≥ 0`, the integral of `u^* φ` over the truncation `S_R` is minus the integral of `φ` over `u`
@@ -424,17 +448,74 @@ theorem setIntegral_preimage_truncation_eq_neg_rectangleIntegral_add_sum [IsMani
       -rectangleIntegral φ (u ∘ pairOfPantsCoreChart) (0, 0) (1, 1) +
         ∑ q : Puncture,
           q.endSign • rectangleIntegral φ (u ∘ endChart q) (0, 0) (q.endSign * R, 1) := by
-  have hint : IntegrableOn (fun z ↦ φ (u z)
-      ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (1, 0), mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (0, 1)])
-      (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
-    ((hφ.continuousOn_apply_mfderiv isOpen_thricePuncturedSphereReal hu (1, 0) (0, 1)).mono
-      (preimage_truncation_subset_thricePuncturedSphereReal R)).integrableOn_compact
-      (isCompact_preimage_truncation R)
-  rw [setIntegral_preimage_truncation_eq_add_sum le_rfl hR hint,
+  rw [setIntegral_preimage_truncation_eq_add_sum le_rfl hR
+      (integrableOn_preimage_truncation_apply_mfderiv hφ hu R),
     rectangleIntegral_comp_pairOfPantsCoreChart hφ hu, neg_neg]
   refine congrArg₂ (· + ·) rfl (Finset.sum_congr rfl fun q _ ↦ ?_)
   have h := rectangleIntegral_comp_endChart hφ hu q le_rfl hR
   rw [mul_zero] at h
   rw [h, smul_smul, Puncture.endSign_mul_self, one_smul]
+
+/-! ### Discs of the end loops at height `R` -/
+
+/-- **A disc carried along an end annulus.** For a map `u` of the pair of pants which is `C¹` on
+`S`, a `C¹` map `D` of the plane ending at `s = 1` at the loop of `u` along the circle at height
+`0` of the end `q`, and `R ≥ 0`, following `D` by `u` along the end annulus between the heights
+`0` and `R` adds `±` the integral of `u^* φ` over that annulus to the integral of `φ`, with the
+sign of the end. -/
+private theorem rectangleIntegral_rectangleTrans_comp_endAnnulusChart [IsManifold I 1 M]
+    {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) (q : Puncture)
+    {D : ℝ × ℝ → M} (hD : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 D) (h : ∀ t, D (1, t) = u (endChart q (0, t)))
+    {R : ℝ} (hR : 0 ≤ R) :
+    rectangleIntegral φ (rectangleTrans D (u ∘ endAnnulusChart q 0 R)) (0, 0) (1, 1) =
+      rectangleIntegral φ D (0, 0) (1, 1) +
+        q.endSign • ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
+          {z | 0 < (positiveEndCoord q z).1},
+          φ (u z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (1, 0), mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (0, 1)] := by
+  rw [rectangleIntegral_rectangleTrans hφ hD (contMDiff_comp_endAnnulusChart hu q le_rfl hR)
+      (fun t ↦ by rw [h, Function.comp_apply, endAnnulusChart_mk_zero, mul_zero]) 0 1,
+    rectangleIntegral_comp_endAnnulusChart hφ hu q le_rfl hR,
+    rectangleIntegral_comp_endChart hφ hu q le_rfl hR]
+
+/-- **The area of the glued disc at height `R`.** Let `u` be a map of the pair of pants into a
+manifold `M`, `C¹` on `S`, let `D₀` and `D₁` be `C¹` maps of the plane which end at `s = 1` at the
+loops of `u` along the input ends `0` and `1` at height `0` and share their seam, and let `R ≥ 0`.
+Carry `D₀`, `D₁` and the glued disc `TauCeti.Floer.pairOfPantsGluedDisc D₀ D₁ u` of the output
+end loop out to the circles at height `R` of their ends, by following each of them by `u` along
+the end annulus between the heights `0` and `R`. Then for every continuous two-form `φ` the
+integral of `φ` over the glued disc carried out to height `R` is the sum of the integrals over the
+two input discs carried out to height `R`, minus the integral of `u^* φ` over the truncation
+`S_R`. When `D₀` and `D₁` are discs, the three maps are discs bounding the loops of `u` along the
+circles at height `R` of the three ends, and this is the area of the cap of the output end loop
+at height `R` obtained by gluing caps of the input end loops to `u` over `S_R`. -/
+theorem rectangleIntegral_rectangleTrans_pairOfPantsGluedDisc_comp_endAnnulusChart
+    [IsManifold I 1 M] {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ) {u : ℝ × ℝ → M}
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {D₀ D₁ : ℝ × ℝ → M}
+    (hD₀ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 D₀) (hD₁ : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 D₁)
+    (h₀₁ : ∀ s, D₀ (s, 1) = D₁ (s, 0)) (h₁₀ : ∀ s, D₁ (s, 1) = D₀ (s, 0))
+    (h₀ : ∀ t, D₀ (1, t) = u (endChart Puncture.zero (0, t)))
+    (h₁ : ∀ t, D₁ (1, t) = u (endChart Puncture.one (0, t))) {R : ℝ} (hR : 0 ≤ R) :
+    rectangleIntegral φ
+        (rectangleTrans (pairOfPantsGluedDisc D₀ D₁ u) (u ∘ endAnnulusChart Puncture.inf 0 R))
+        (0, 0) (1, 1) =
+      rectangleIntegral φ (rectangleTrans D₀ (u ∘ endAnnulusChart Puncture.zero 0 R))
+          (0, 0) (1, 1) +
+        rectangleIntegral φ (rectangleTrans D₁ (u ∘ endAnnulusChart Puncture.one 0 R))
+          (0, 0) (1, 1) -
+        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R,
+          φ (u z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (1, 0), mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (0, 1)] := by
+  -- `S_R` is `S₀` together with the three end annuli between the heights `0` and `R`.
+  rw [rectangleIntegral_rectangleTrans_comp_endAnnulusChart hφ hu _
+      (contMDiff_pairOfPantsGluedDisc hu hD₀ hD₁ h₀₁ h₁₀ h₀ h₁)
+      (pairOfPantsGluedDisc_mk_one D₀ D₁ u) hR,
+    rectangleIntegral_rectangleTrans_comp_endAnnulusChart hφ hu _ hD₀ h₀ hR,
+    rectangleIntegral_rectangleTrans_comp_endAnnulusChart hφ hu _ hD₁ h₁ hR,
+    rectangleIntegral_pairOfPantsGluedDisc hφ hu hD₀ hD₁ h₀₁ h₁₀ h₀ h₁,
+    setIntegral_preimage_truncation_eq_add_sum le_rfl hR
+      (integrableOn_preimage_truncation_apply_mfderiv hφ hu R), Puncture.sum_univ]
+  simp only [Puncture.endSign_zero, Puncture.endSign_one, Puncture.endSign_inf, one_smul,
+    neg_one_smul]
+  abel
 
 end TauCeti.Floer

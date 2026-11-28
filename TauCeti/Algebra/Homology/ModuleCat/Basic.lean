@@ -27,9 +27,9 @@ into the opcycles is injective and the projection of `K.X n` onto the opcycles i
 (`HomologicalComplex.moduleCat_homologyι_injective`,
 `HomologicalComplex.moduleCat_pOpcycles_surjective`).  Chain maps commute with the differentials
 and the square of the differential vanishes, on elements (`HomologicalComplex.Hom.comm_apply`,
-`HomologicalComplex.d_comp_d_apply`), cycles have zero boundary, on elements
-(`HomologicalComplex.iCycles_d_apply`), and an element killed by the differential to degree
-`c.next i` is killed by every differential out of degree `i`
+`HomologicalComplex.d_comp_d_apply`) and as linear maps (`HomologicalComplex.hom_d_comp_hom_d`),
+cycles have zero boundary, on elements (`HomologicalComplex.iCycles_d_apply`), and an element
+killed by the differential to degree `c.next i` is killed by every differential out of degree `i`
 (`HomologicalComplex.d_apply_eq_zero_of_d_next_apply_eq_zero`).  Conversely, an element of
 `K.X n` killed by the differential is a cycle, `HomologicalComplex.moduleCatCyclesMk`.  This
 constructor directly returns an element of `K.cycles n` for modules over a ring in any universe,
@@ -51,6 +51,9 @@ class differ by the boundary of an element of degree `c.prev n`
 when it is a boundary (`HomologicalComplex.moduleCat_homologyπ_eq_zero_iff`); where no
 differential enters, such as in degree zero of a cochain complex, a cycle with zero class is zero
 (`HomologicalComplex.moduleCat_eq_zero_of_homologyπ_eq_zero`).
+In the explicit homology `ker d ⧸ range d` of the short complex `K.sc' i n k`, the class of a
+cycle is the quotient class of its underlying element
+(`HomologicalComplex.moduleCatHomologyIso_homologyIsoSc'_homologyπ`).
 When the homology is finitely generated, finitely many cycles generate all cycles modulo
 boundaries (`HomologicalComplex.exists_fin_moduleCat_cycles_generating`).
 Cycles are elements of the kernel of the outgoing differential
@@ -146,6 +149,13 @@ theorem d_comp_d_apply {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
     K.d j l (K.d i j x) = 0 := by
   rw [← ModuleCat.comp_apply, HomologicalComplex.d_comp_d]
   rfl
+
+/-- In a complex of modules the composite of two consecutive differentials vanishes, as linear
+maps. -/
+theorem hom_d_comp_hom_d {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
+    (K : HomologicalComplex (ModuleCat R) c) {i j k : ι} :
+    (K.d j k).hom ∘ₗ (K.d i j).hom = 0 := by
+  rw [← ModuleCat.hom_comp, K.d_comp_d, ModuleCat.hom_zero]
 
 /-- In a complex of modules a cycle has zero boundary, on elements. -/
 theorem iCycles_d_apply {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
@@ -396,6 +406,24 @@ lemma moduleCat_homologyπ_eq_iff {m : ι} (hm : c.prev n = m) (z w : K.cycles n
   rw [← sub_eq_zero, ← map_sub, K.moduleCat_homologyπ_eq_zero_iff hm]
   refine exists_congr fun y ↦ ?_
   rw [← (K.moduleCat_iCycles_injective n).eq_iff, map_sub, moduleCat_iCycles_toCycles_apply]
+
+variable {n} in
+/-- The class of a degree-`n` cycle `z` of a complex of modules, read in the explicit homology
+`ker d ⧸ range d` of the short complex `K.sc' i n k`, is the quotient class of the underlying
+element of `z`. -/
+lemma moduleCatHomologyIso_homologyIsoSc'_homologyπ {i k : ι} (hi : c.prev n = i)
+    (hk : c.next n = k) (z : K.cycles n) :
+    (K.sc' i n k).moduleCatHomologyIso.hom ((K.homologyIsoSc' i n k hi hk).hom (K.homologyπ n z)) =
+      Submodule.Quotient.mk ⟨K.iCycles n z, K.moduleCat_d_iCycles_apply n k z⟩ := by
+  have hπ := ConcreteCategory.congr_hom
+    (K.π_homologyIsoSc'_hom_assoc i n k hi hk (K.sc' i n k).moduleCatHomologyIso.hom) z
+  have hz := ConcreteCategory.congr_hom (K.cyclesIsoSc'_hom_iCycles i n k hi hk) z
+  simp only [ShortComplex.π_moduleCatCyclesIso_hom, ModuleCat.hom_comp, LinearMap.comp_apply] at hπ
+  simp only [← ShortComplex.moduleCatCyclesIso_hom_i, ModuleCat.hom_comp,
+    LinearMap.comp_apply] at hz
+  rw [hπ, ShortComplex.moduleCatLeftHomologyData_π_hom, Submodule.mkQ_apply]
+  congr 1
+  exact Subtype.ext hz
 
 variable {n} in
 /-- An element `x` of `K.X n` killed by the differential `K.d n m` out of degree `n`, as a cycle
