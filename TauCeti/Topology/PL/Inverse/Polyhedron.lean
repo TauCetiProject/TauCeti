@@ -44,16 +44,17 @@ theorem IsPLOn.inverse_of_leftInvOn (hf : IsPLOn f K.space) (hK : K.faces.Finite
   have haff : ∀ s ∈ L.faces, ∃ A : E →ᵃ[ℝ] F, EqOn f A (convexHull ℝ (s : Set E)) := by
     intro s hs
     obtain ⟨A, hA⟩ := hA s hs
-    exact ⟨A.toAffineMap, hA⟩
+    exact ⟨A.toAffineMap, by simpa only [ContinuousAffineMap.coe_toAffineMap] using hA⟩
   let T := L.map f hinj haff
   have hT : T.faces.Finite := Geometry.SimplicialComplex.finite_faces_map_iff.mpr hL
   have hleft : LeftInvOn g f L.space := hLK.space_eq ▸ hgf
-  choose B hB using Geometry.SimplicialComplex.simplexwise_affine_of_leftInvOn
-    (hf := hinj) (haff := haff) hleft
-  have hg : IsPLOn g T.space :=
-    (Geometry.SimplicialComplex.isPLOn_space_iff_exists_isSubdivision hT).mpr
-      ⟨T, .refl T, hT, fun t ht =>
-        ⟨⟨B t ht, (B t ht).continuous_of_finiteDimensional⟩, hB t ht⟩⟩
+  have hg : IsPLOn g T.space := by
+    apply (Geometry.SimplicialComplex.isPLOn_space_iff_exists_isSubdivision hT).mpr
+    refine ⟨T, .refl T, hT, fun t ht => ?_⟩
+    obtain ⟨B, hB⟩ := Geometry.SimplicialComplex.simplexwise_affine_of_leftInvOn
+      (hf := hinj) (haff := haff) hleft t ht
+    exact ⟨⟨B, B.continuous_of_finiteDimensional⟩,
+      by simpa only [ContinuousAffineMap.coe_mk] using hB⟩
   simpa only [T, Geometry.SimplicialComplex.space_map, hLK.space_eq] using hg
 
 end TauCeti

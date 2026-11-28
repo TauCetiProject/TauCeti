@@ -58,13 +58,9 @@ theorem IsPLMap.symm {f : M ≃ₜ N} (hf : s.IsPLMap t f) : t.IsPLMap s f.symm 
     simp only [hFf, hG, Homeomorph.apply_symm_apply, Homeomorph.symm_apply_apply]
   have himage : F '' K.space = range fun y : Realization t.K => (y.val : t.ι → ℝ) := by
     rw [hspace, ← range_comp]
-    apply Subset.antisymm
-    · rintro _ ⟨x, rfl⟩
-      exact ⟨t.e.symm (f (s.e x)), (hFf x).symm⟩
-    · rintro _ ⟨y, rfl⟩
-      refine ⟨s.e.symm (f.symm (t.e y)), ?_⟩
-      simp only [Function.comp_apply, hFf, Homeomorph.apply_symm_apply,
-        Homeomorph.symm_apply_apply]
+    exact (congrArg range (funext hFf)).trans
+      (EquivLike.range_comp (fun y : Realization t.K => (y.val : t.ι → ℝ))
+        ((s.e.trans f).trans t.e.symm))
   have hF' : IsPLOn F K.space := by
     rwa [hspace]
   have hG' := hF'.inverse_of_leftInvOn (K := K) (g := G) hK hleft
@@ -74,15 +70,21 @@ theorem IsPLMap.symm {f : M ≃ₜ N} (hf : s.IsPLMap t f) : t.IsPLMap s f.symm 
 /-- PL regularity of a homeomorphism is equivalent to PL regularity of its inverse. -/
 @[simp]
 theorem isPLMap_symm_iff {f : M ≃ₜ N} : t.IsPLMap s f.symm ↔ s.IsPLMap t f :=
-  ⟨fun h => h.symm, fun h => h.symm⟩
+  ⟨fun h => by simpa only [Homeomorph.symm_symm] using h.symm, fun h => h.symm⟩
 
 /-- The PL self-homeomorphisms of a finite PL structure. Inverse regularity follows from
 `TauCeti.PLStructure.IsPLMap.symm`, so only forward regularity is required for membership. -/
 def plHomeomorphSubgroup (s : PLStructure M n) : Subgroup (M ≃ₜ M) where
   carrier := {f | s.IsPLMap s f}
-  one_mem' := s.isPLMap_id
-  mul_mem' hf hg := hf.comp hg
-  inv_mem' hf := hf.symm
+  one_mem' := by
+    rw [Set.mem_ofPred_eq, funext (Homeomorph.one_apply (X := M))]
+    exact s.isPLMap_id
+  mul_mem' {f g} hf hg := by
+    rw [Set.mem_ofPred_eq, funext (Homeomorph.mul_apply f g)]
+    exact hf.comp hg
+  inv_mem' {f} hf := by
+    rw [Set.mem_ofPred_eq, funext (Homeomorph.inv_apply f)]
+    exact hf.symm
 
 /-- Membership in the PL homeomorphism subgroup is precisely PL regularity of the underlying
 map; its inverse is then automatically PL. -/
@@ -94,12 +96,6 @@ section Transport
 
 variable {N : Type u} [TopologicalSpace N] (s : PLStructure M n) (e : M ≃ₜ N)
 
-/-- Conjugating by a homeomorphism preserves and reflects PL regularity when the structure is
-transported along that homeomorphism. -/
-theorem isPLMap_homeoCongr_iff {f : M ≃ₜ M} :
-    (s.map e).IsPLMap (s.map e) (Homeomorph.homeoCongr e f) ↔ s.IsPLMap s f := by
-  simp [Function.comp_def]
-
 /-- Transport of a PL structure carries its PL homeomorphism subgroup to the conjugate
 subgroup. -/
 theorem map_plHomeomorphSubgroup :
@@ -107,7 +103,7 @@ theorem map_plHomeomorphSubgroup :
       (s.map e).plHomeomorphSubgroup := by
   ext f
   rw [Subgroup.map_equiv_eq_comap_symm, Subgroup.mem_comap, Homeomorph.homeoCongr_symm]
-  simpa using ((s.map e).isPLMap_homeoCongr_iff e.symm (f := f))
+  simp [Function.comp_def, funext (Homeomorph.homeoCongr_apply_apply e.symm f)]
 
 /-- A homeomorphism transporting a PL structure induces an isomorphism of its PL
 homeomorphism groups, by conjugating representatives. -/
@@ -119,7 +115,9 @@ def plHomeomorphCongr : s.plHomeomorphSubgroup ≃* (s.map e).plHomeomorphSubgro
 homeomorphisms. -/
 @[simp]
 theorem coe_plHomeomorphCongr (f : s.plHomeomorphSubgroup) :
-    (s.plHomeomorphCongr e f : N ≃ₜ N) = Homeomorph.homeoCongr e f := (rfl)
+    (s.plHomeomorphCongr e f : N ≃ₜ N) = Homeomorph.homeoCongr e f := by
+  simp only [plHomeomorphCongr, MulEquiv.trans_apply, MulEquiv.subgroupCongr_apply,
+    MulEquiv.coe_subgroupMap_apply]
 
 /-- The inverse isomorphism of PL homeomorphism groups acts by conjugation by the inverse
 homeomorphism. -/
