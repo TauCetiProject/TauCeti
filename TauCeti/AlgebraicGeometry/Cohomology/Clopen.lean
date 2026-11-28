@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Biproduct
 public import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
 public import TauCeti.AlgebraicGeometry.Modules.Clopen
 public import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
+import TauCeti.AlgebraicGeometry.Modules.Biprod
 
 /-!
 # Cohomology of a finite clopen partition
@@ -35,10 +36,6 @@ universe u
 noncomputable section
 
 variable {X : Scheme.{u}} {J : Type u} [Fintype J] (U : J → X.Opens)
-
-/-- Finite products of modules supply the biproducts used by the clopen comparison. -/
-local instance TauCeti.AlgebraicGeometry.Scheme.Modules.hasFiniteBiproducts_clopenCover :
-    HasFiniteBiproducts X.Modules := .of_hasFiniteProducts
 
 /-- Cohomology over a base ring decomposes as the finite product of the cohomologies on a
 clopen partition, for arbitrary coefficient sheaves. -/

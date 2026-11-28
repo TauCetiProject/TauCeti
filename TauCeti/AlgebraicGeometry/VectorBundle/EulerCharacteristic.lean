@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Biproduct
 public import TauCeti.AlgebraicGeometry.VectorBundle.Affine.Semilocal
 public import TauCeti.AlgebraicGeometry.VectorBundle.ProjectionFormula
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Tensor
+import TauCeti.AlgebraicGeometry.Modules.Biprod
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 import TauCeti.AlgebraicGeometry.Modules.SchemeTheoreticSupport
 
@@ -69,10 +70,6 @@ theorem eulerCharBelow_tensor_pushforward (k : Type u) [Field k] [X.Over (Spec (
     (E : FiniteLocallyFreeSheaf.FixedRank X r) (G : Z.Modules) (n : ℕ) :
     eulerCharBelow k X (E.obj.obj ⊗ (pushforward f).obj G) n =
       r * eulerCharBelow k X ((pushforward f).obj G) n := by
-  -- Instance search does not find finite biproducts in the abelian categories `Z.Modules` and
-  -- `X.Modules`.
-  have : HasFiniteBiproducts Z.Modules := Abelian.hasFiniteBiproducts
-  have : HasFiniteBiproducts X.Modules := Abelian.hasFiniteBiproducts
   have : HasBiproduct (C := Z.Modules) fun _ : ULift.{u} (Fin r) ↦ G :=
     HasBiproduct.of_hasCoproduct _
   -- `f^* E ≅ 𝒪_Z^r`, so `f^* E ⊗ G ≅ G ⊗ 𝒪_Z^r ≅ G^{⊕r}`.
