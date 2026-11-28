@@ -19,12 +19,15 @@ Euler product: for every real `x ≥ 0` and every `σ > 0`,
 
 The exponent `σ` is a free parameter, and the bound is valid for every `σ > 0`, with no condition
 `σ > 1`, because only the finitely many primes `p ≤ y` occur (the Euler product is
-`TauCeti.hasSum_rpow_neg_smoothNumbers`). Decreasing `σ` makes `x ^ σ` smaller and every factor
-of the product larger, so to use the bound one chooses `σ` to balance the two. At `σ = 1` the
-right side is `x ∏_{p ≤ y} (1 - 1 / p)⁻¹ ≥ x`, which is no better than `Ψ(x, y) ≤ x`; the bound
-only helps for `σ < 1`. For `σ = 1 - c / log y` with a constant `c > 0`, one has
+`TauCeti.hasSum_rpow_neg_smoothNumbers`).
+
+For `0 ≤ x < 1` the count `Ψ(x, y)` is zero and the bound says nothing. For `x > 1`, decreasing `σ`
+makes `x ^ σ` smaller and every factor of the product larger, so to use the bound one chooses `σ`
+to balance the two. At `σ = 1` the right side is `x ∏_{p ≤ y} (1 - 1 / p)⁻¹ ≥ x`, which is no
+better than `Ψ(x, y) ≤ x`; for `x > 1` the bound only helps for `σ < 1`. For `y > 1` and
+`σ = 1 - c / log y` with a constant `0 < c < log y`, so that `0 < σ < 1`, one has
 `p ^ (-σ) ≤ e ^ c / p` for all primes `p ≤ y`, which controls the factors of the product, while
-`x ^ σ = x * exp (-c log x / log y)` for `x > 0` gains a factor exponentially small in
+`x ^ σ = x * exp (-c log x / log y)` for `x > 1` gains a factor exponentially small in
 `log x / log y`.
 
 ## Main results
@@ -81,11 +84,10 @@ theorem smoothCount_le_rpow_mul_prod {x σ : ℝ} (hx : 0 ≤ x) (hσ : 0 < σ) 
     (smoothCount x y : ℝ) ≤
       x ^ σ * ∏ p ∈ (⌊y⌋₊ + 1).primesBelow, (1 - (p : ℝ) ^ (-σ))⁻¹ := by
   rw [smoothCount_def]
-  refine (Nat.smoothNumbersUpTo_card_le_rpow_mul_prod ⌊x⌋₊ (⌊y⌋₊ + 1) hσ).trans
+  exact (Nat.smoothNumbersUpTo_card_le_rpow_mul_prod ⌊x⌋₊ (⌊y⌋₊ + 1) hσ).trans
     (mul_le_mul_of_nonneg_right
       (Real.rpow_le_rpow (Nat.cast_nonneg _) (Nat.floor_le hx) hσ.le)
-      (prod_nonneg fun p hp ↦ inv_nonneg.2 (sub_nonneg.2 ?_)))
-  have hp1 : (1 : ℝ) ≤ p := mod_cast (Nat.prime_of_mem_primesBelow hp).one_le
-  exact Real.rpow_le_one_of_one_le_of_nonpos hp1 (by linarith)
+      ((hasSum_rpow_neg_smoothNumbers hσ (⌊y⌋₊ + 1)).nonneg
+        fun n : (⌊y⌋₊ + 1).smoothNumbers ↦ Real.rpow_nonneg (Nat.cast_nonneg (n : ℕ)) _))
 
 end TauCeti
