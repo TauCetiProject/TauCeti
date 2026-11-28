@@ -37,6 +37,7 @@ maps valued in an arbitrary module.
 
 ## Main results
 
+* `LinearMap.BilinForm.IsAlt.add_flip_eq_zero`: an alternating form and its flip sum to zero.
 * `TauCeti.BilinForm.eq_zero_of_isSymm_of_isAlt`: a symmetric alternating form over a commutative
   semiring in which `2` is regular is zero.
 * `TauCeti.BilinForm.nondegenerate_smul_iff`: scalar multiplication by a regular element
@@ -50,12 +51,16 @@ maps valued in an arbitrary module.
   nondegeneracy without symmetry.
 * `LinearMap.BilinForm.anisotropic_toQuadraticMap_compl₁₂`: injective pullback preserves
   anisotropy of the diagonal.
+* `LinearMap.BilinForm.anisotropic_toQuadraticMap_restrict`: an anisotropic form stays anisotropic
+  on every submodule.
 * `LinearMap.BilinForm.inf_eq_bot_of_forall_apply_self_eq_zero`: a subspace on which the diagonal
   has no nonzero zeros meets every subspace of isotropic vectors trivially.
 * `IsSMulRegular.isSymm_smul_iff`: rescaling by a scalar acting injectively on `R`
   preserves and reflects symmetry.
 * `LinearMap.BilinForm.exists_smul_eq_of_forall_dvd`: a form all of whose values are divisible
   by a regular element `a` is `a` times a form.
+* `LinearMap.BilinForm.eq_of_smul_eq`: rescaling by a left-regular element determines a bilinear
+  form uniquely.
 * `LinearMap.BilinForm.IsRefl.compl₁₂`: pullback preserves reflexivity.
 * `LinearMap.BilinForm.IsSymm.compl₁₂`: pullback preserves symmetry.
 * `LinearMap.BilinForm.IsSymm.apply_add_self`: polarization of a symmetric bilinear form.
@@ -119,6 +124,15 @@ end LinearMap.IsAlt
 
 namespace LinearMap.BilinForm
 
+/-- An alternating bilinear form is skew-symmetric, `B + B.flip = 0`, over any commutative
+semiring (Mathlib's `LinearMap.IsAlt.neg` needs additive inverses). -/
+theorem IsAlt.add_flip_eq_zero {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    {B : LinearMap.BilinForm R M} (hB : B.IsAlt) : B + B.flip = 0 := by
+  ext x y
+  have := hB (x + y)
+  simp only [map_add, LinearMap.add_apply, hB x, hB y, zero_add, add_zero] at this
+  simpa [add_comm] using this
+
 /-- Restriction to a submodule is pullback along its inclusion in both arguments. -/
 theorem restrict_eq_compl₁₂ {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
     (B : LinearMap.BilinForm R M) (W : Submodule R M) :
@@ -147,6 +161,14 @@ theorem anisotropic_toQuadraticMap_compl₁₂ {R M N : Type*} [CommSemiring R]
   rw [LinearMap.BilinMap.toQuadraticMap_comp_same]
   exact hB.comp f hf
 
+/-- An anisotropic form, a positive definite one for instance, stays anisotropic on every
+submodule. -/
+theorem anisotropic_toQuadraticMap_restrict {R M : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] (B : LinearMap.BilinForm R M)
+    (hB : B.toQuadraticMap.Anisotropic) (W : Submodule R M) :
+    (B.restrict W).toQuadraticMap.Anisotropic :=
+  B.anisotropic_toQuadraticMap_compl₁₂ hB _ W.injective_subtype
+
 /-- Restriction to a submodule commutes with scalar multiplication of a bilinear form. -/
 @[simp]
 theorem restrict_smul {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
@@ -161,6 +183,22 @@ theorem forall_dvd_iff_of_smul_eq {R M : Type*} [CommSemiring R] [AddCommMonoid 
     (∀ x, r ∣ C x x) ↔ ∀ x, r * a ∣ B x x := by
   subst B
   simp only [LinearMap.smul_apply, smul_eq_mul, mul_comm r a, ha.dvd_cancel_left]
+
+/-- Divisibility of self-pairings on a submodule `P` by `r * a` is equivalent to divisibility by
+`r` for any `a`-rescaling `C` of `B.restrict P` when `a` is left-regular. -/
+theorem forall_dvd_restrict_iff_of_smul_eq {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] {B : LinearMap.BilinForm R M} {P : Submodule R M} {C : LinearMap.BilinForm R P}
+    {a : R} (ha : IsLeftRegular a) (hC : a • C = B.restrict P) (r : R) :
+    (∀ x : P, r ∣ C x x) ↔ ∀ v ∈ P, r * a ∣ B v v := by
+  rw [forall_dvd_iff_of_smul_eq ha hC r, Subtype.forall]
+  simp [restrict_apply]
+
+/-- Rescaling by a left-regular element determines a bilinear form uniquely. -/
+theorem eq_of_smul_eq {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    {a : R} (ha : IsLeftRegular a) {B C₁ C₂ : LinearMap.BilinForm R M}
+    (h₁ : a • C₁ = B) (h₂ : a • C₂ = B) : C₁ = C₂ :=
+  LinearMap.ext₂ fun x y ↦ ha (by
+    simpa using (LinearMap.congr_fun₂ h₁ x y).trans (LinearMap.congr_fun₂ h₂ x y).symm)
 
 /-- Rescaling by a scalar `a` that acts injectively on `R`, such as a regular element of `R`,
 neither creates nor destroys symmetry of a bilinear form. -/

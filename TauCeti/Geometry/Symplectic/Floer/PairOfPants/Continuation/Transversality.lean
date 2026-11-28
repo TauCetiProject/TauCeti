@@ -33,9 +33,18 @@ pair-of-pants datum of `H`
 cokernel detection for data that agree with the pair-of-pants data far out on the ends
 (`topologicalClosure_range_sup_span_hamiltonianVariationsOn_pairOfPants_eq_top`, in the namespace
 `TauCeti.SymplecticForm`). No hypothesis is placed on `u` over `O`, which may be constant there,
-and `O` may lie in a neck. When `D_u` is Fredholm, the closed range of finite codimension turns
-density into surjectivity, with finitely many variations
-(`TauCeti.SymplecticForm.exists_finset_subset_hamiltonianVariationsOn_range_sup_span_eq_top`).
+and `O` may lie in a neck.
+
+On a complex inner product space with `ω = Im ⟪·, ·⟫`, where `D_u` is Fredholm
+(`TauCeti.SymplecticForm.isFredholm_floerConformalSobolevOperator_pairOfPants`), its closed range
+of finite codimension turns density into surjectivity. Finitely many Hamiltonian variations
+`y₁, …, y_N` supported in `W` make the universal operator `(ξ, a) ↦ D_u ξ + ∑ aᵢ yᵢ` onto
+(`exists_surjective_floerConformalSobolevOperator_coprod_pairOfPantsContinuationPerturbation`, in
+the namespace `TauCeti.SymplecticForm`), an instance of the same statement for the pair of pants
+(`TauCeti.SymplecticForm.exists_surjective_floerConformalSobolevOperator_coprod_pairOfPants`). If
+`yᵢ` is the class of `-X_{δKᵢ}(u)`, this operator is the linearization at `(u, 0)` of the Floer
+operator of the perturbations `K + ∑ aᵢ δKᵢ` of the datum
+`K = TauCeti.Floer.pairOfPantsContinuationPerturbation G H L`.
 
 ## References
 
@@ -49,6 +58,7 @@ density into surjectivity, with finitely many variations
 public section
 
 open Set Function Filter Topology MeasureTheory TauCeti.ThricePuncturedSphere
+open scoped NNReal Manifold
 
 namespace TauCeti.SymplecticForm
 
@@ -114,5 +124,86 @@ topologicalClosure_range_sup_span_hamiltonianVariationsOn_pairOfPantsContinuatio
     (fun z hz ↦
       contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH hGs hHs L hz (u z) Complex.I)
     hu (fun q z hz hR ↦ hF q z hz ((le_max_left _ _).trans hR)) hux hδ hO hOne hOS hW
+
+section Surjective
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
+
+/-- **The universal linearized operator along a pair of pants with continuation necks is onto.**
+Let `F` be a finite-dimensional complex inner product space whose symplectic form `ω` is
+`Im ⟪·, ·⟫`. Let `G_q` and `H_q` be jointly `C³` period-one Hamiltonians on the three ends of
+`S = ℂ ∖ {0, 1}`, the inner and outer Hamiltonians of the pair-of-pants perturbation with
+continuation necks at the positions `L_q` (`TauCeti.Floer.pairOfPantsContinuationPerturbation G H
+L`), such that the positive end Hamiltonians of `H` have globally Lipschitz suspended vector fields
+and periodic orbits `x_q` starting at nondegenerate fixed points of the time-one maps. Let `J` be a
+family of almost complex structures on `S`, `C²` along `u`, which far out on each end, beyond a
+height `R₁`, is a `C¹` family `J_q(t)` in the positive end chart `φ'_q`, compatible with `ω` and
+`C²` in `t` along `x_q`. Let `u` be `C²` on `S`, with `J(z, u z)` compatible with `ω`, solve the
+Floer equation for this datum beyond `R₁` on each end, and have loops in each positive end chart
+converging uniformly to `x_q` while the slice defects for the outer Hamiltonians tend uniformly to
+zero.
+
+Then for every nonempty open set `O ⊆ S` and every neighbourhood `W` of the graph of `u` over `O`,
+there are finitely many Hamiltonian variations `y₁, …, y_N` supported in `W` such that the operator
+`(ξ, a) ↦ D_u ξ + ∑ aᵢ yᵢ` from `W^{1,2}_0(S, F) × ℝᴺ` to `L²(S, F)` is onto, where `D_u` is the
+linearized operator of the datum with continuation necks. -/
+theorem exists_surjective_floerConformalSobolevOperator_coprod_pairOfPantsContinuationPerturbation
+    (ω : SymplecticForm F) (hω : ∀ v w, ω v w = (inner ℂ v w).im) {G H : Puncture → ℝ → F → ℝ}
+    (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
+    (hGs : ∀ q, ContDiff ℝ 3 (uncurry (G q))) (hHs : ∀ q, ContDiff ℝ 3 (uncurry (H q)))
+    (L : Puncture → ℝ) {Λ : Puncture → ℝ≥0}
+    (hX : ∀ q, LipschitzWith (Λ q)
+      (ω.timeDependentHamiltonianSuspension (positiveEndHamiltonian H q)))
+    {x : Puncture → ℝ → F}
+    (hx : ∀ q t, HasDerivAt (x q)
+      (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (x q t)) t)
+    (hxp : ∀ q, Periodic (x q) 1)
+    (hnd : ∀ q, IsNondegenerateFixedPt 𝓘(ℝ, F)
+      (ω.timeDependentHamiltonianFlow (positiveEndHamiltonian H q) (hX q) 0 1) (x q 0))
+    {J : ℝ × ℝ → F → AlmostComplexStructure F}
+    {Je : Puncture → ℝ → F → AlmostComplexStructure F} {R₁ : ℝ}
+    (hJe : ∀ q, ContDiff ℝ 1 fun p : ℝ × F ↦ (Je q p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJex : ∀ q t, ω.Compatible (Je q t (x q t)))
+    (hJx : ∀ q, ContDiff ℝ 2 fun t ↦ (Je q t (x q t)).toLinearMap.toContinuousLinearMap)
+    (hJeq : ∀ q (ζ : ℝ × ℝ), R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je q ζ.2)
+    {u : ℝ × ℝ → F}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2
+      (fun p : (ℝ × ℝ) × F ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 u z)
+    (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z)))
+    (hF : ∀ q, ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z)) (ω.perturbedFDeriv
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x
+            Complex.I) u z : ℝ × ℝ →ₗ[ℝ] F))
+    (hux : ∀ q, TendstoUniformlyOn (fun s t ↦ u (positiveEndChart q (s, t))) (x q) atTop
+      (Icc 0 1))
+    (hδ : ∀ q, TendstoUniformlyOn (fun s t ↦ sliceDefect
+      (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (u ∘ positiveEndChart q)
+        (s, t)) 0 atTop (Icc 0 1))
+    {O : Set (ℝ × ℝ)} (hO : IsOpen O) (hOne : O.Nonempty) (hOS : O ⊆ thricePuncturedSphereReal)
+    {W : Set ((ℝ × ℝ) × F)} (hW : ∀ z ∈ O, W ∈ 𝓝 (z, u z)) :
+    ∃ (N : ℕ) (y : Fin N → Lp F 2 (volume.restrict thricePuncturedSphereReal)),
+      (∀ i, y i ∈ ω.hamiltonianVariationsOn thricePuncturedSphereReal u W) ∧
+      Function.Surjective ((ω.floerConformalSobolevOperator thricePuncturedSphereReal
+        cylindricalWeight (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦
+          pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u).coprod (Fintype.linearCombination ℝ y).toContinuousLinearMap) :=
+  -- Beyond the height `max R₁ (2 + ∑_q |L_q|)` on every end the datum is the pair-of-pants datum
+  -- of `H`.
+  ω.exists_surjective_floerConformalSobolevOperator_coprod_pairOfPants hω hH hHs hX hx hxp hnd hJe
+    hJex hJx (R₁ := max R₁ (2 + ∑ r, |L r|)) (fun q ζ hζ ↦ hJeq q ζ ((le_max_left _ _).trans hζ))
+    (fun q _ _ hz ↦ pairOfPantsContinuationPerturbation_components_eq (le_max_right _ _) q hz) hJ
+    (fun z hz ↦ contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH hGs hHs L hz (u z) 1)
+    (fun z hz ↦
+      contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH hGs hHs L hz (u z) Complex.I)
+    hu hc (fun q z hz hR ↦ hF q z hz ((le_max_left _ _).trans hR)) hux hδ hO hOne hOS hW
+
+end Surjective
 
 end TauCeti.SymplecticForm

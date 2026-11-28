@@ -141,7 +141,7 @@ theorem mpullback_flowOf_comp_apply_eq_symplectization (hZα : (mextDeriv α.val
   -- Differentiate the flow map, then use that `α` is linear and vanishes on `Z`.
   rw [mpullback_apply, SmoothForm.symplectization_apply, SmoothForm.mpullback_apply]
   simp only [Matrix.cons_val_fin_one, ← Matrix.vec_single_eq_const,
-    mfderiv_flowOf_comp_apply (hZ.of_le (by simp)) (hι.contMDiffAt.of_le (by simp)) hp,
+    mfderiv_flowOf_comp_apply (hZ.of_le (by simp)) (hι.mdifferentiableAt (by simp)) hp,
     ContinuousAlternatingMap.vecCons_add, ContinuousAlternatingMap.vecCons_smul,
     RoughForm.apply_eq_zero_of_interior_eq hZα, smul_zero, zero_add,
     Manifold.tangentSpaceProdEquiv_apply, hs]
@@ -216,7 +216,7 @@ theorem exists_pos_injOn_flowOf_comp [FiniteDimensional ℝ E'] [J.Boundaryless]
   set D := {p : ℝ × S | (p.1, ι p.2) ∈ flowDomain Z}
   have hD : ({0} : Set ℝ) ×ˢ (univ : Set S) ⊆ D := by
     rintro ⟨t, y⟩ ⟨rfl, -⟩
-    exact mem_flowDomain_zero hZ1 (ι y)
+    exact mem_flowDomain_zero (hZ1 (ι y))
   -- On `{0} × S` the flow map is `ι`, so it is injective there.
   obtain ⟨U, hUo, hsU, hinj, hloc⟩ := Set.InjOn.exists_isOpen_superset_isLocalDiffeomorphOn
     (f := fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2))
@@ -267,7 +267,7 @@ theorem exists_continuous_pos_injOn_flowOf_comp [FiniteDimensional ℝ E'] [J.Bo
         (hι.continuous.comp continuous_snd)) (s := fun y : S ↦ ((0 : ℝ), y))
       (by
         rintro _ ⟨y, rfl⟩
-        exact mem_flowDomain_zero hZ1 (ι y))
+        exact mem_flowDomain_zero (hZ1 (ι y)))
       (continuous_const.prodMk continuous_id) Prod.snd continuous_snd (fun _ ↦ rfl)
       (by simpa only [Function.comp_def, flowOf_zero] using hιe)
   -- A pseudometrizable space is normal and paracompact, so `U` contains a tube of positive

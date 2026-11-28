@@ -20,6 +20,9 @@ not belong to any particular application.
 
 ## Main results
 
+* `TauCeti.intervalIntegral.norm_integral_smul_eq_norm_integral_abs_smul`: replacing a real weight
+  of constant weak sign almost everywhere by its absolute value preserves the norm of an interval
+  integral, without integrability or completeness assumptions.
 * `TauCeti.intervalIntegral.sum_integral_adjacent_intervals_fin` and
   `TauCeti.intervalIntegral.sum_integral_adjacent_intervals_Ico_int`: additivity of interval
   integrals over `Fin`-indexed and `ℤ`-indexed (`Finset.Ico a n`) partitions.
@@ -88,6 +91,8 @@ not belong to any particular application.
 * `MeasureTheory.LocallyIntegrableOn.intervalIntegrable_comp_max`: if `f` is locally integrable
   on `[c, ∞)`, then its constant extension `x ↦ f (max x c)` is interval integrable on every
   interval.
+* `MeasureTheory.LocallyIntegrableOn.intervalIntegrable`: if `f` is locally integrable on a set
+  `s` containing `[[x, y]]`, then `f` is interval integrable between `x` and `y`.
 * `TauCeti.intervalIntegral.tendstoUniformlyOn_riemannSum` and
   `TauCeti.intervalIntegral.tendsto_riemannSum`: for a Banach-space-valued function jointly
   continuous on `uIcc a b ×ˢ K` (with `K` compact), or continuous on `uIcc a b`, uniform
@@ -102,6 +107,26 @@ open MeasureTheory Set
 namespace TauCeti
 
 namespace intervalIntegral
+
+/-- For a real weight of constant weak sign almost everywhere on the interval, replacing the
+weight by its absolute value preserves the norm of the integral. -/
+theorem norm_integral_smul_eq_norm_integral_abs_smul {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {μ : Measure ℝ} {a b : ℝ} {g : ℝ → ℝ} (F : ℝ → E)
+    (hg : (∀ᵐ x ∂μ.restrict (uIoc a b), 0 ≤ g x) ∨
+      (∀ᵐ x ∂μ.restrict (uIoc a b), g x ≤ 0)) :
+    ‖∫ x in a..b, g x • F x ∂μ‖ = ‖∫ x in a..b, |g x| • F x ∂μ‖ := by
+  rcases hg with hp | hn
+  · congr 1
+    apply _root_.intervalIntegral.integral_congr_ae_restrict
+    filter_upwards [hp] with x hx
+    rw [abs_of_nonneg hx]
+  · have heq : (∫ x in a..b, g x • F x ∂μ) =
+        -(∫ x in a..b, |g x| • F x ∂μ) := by
+      rw [← _root_.intervalIntegral.integral_neg]
+      apply _root_.intervalIntegral.integral_congr_ae_restrict
+      filter_upwards [hn] with x hx
+      simp only [abs_of_nonpos hx, neg_smul, neg_neg]
+    rw [heq, norm_neg]
 
 /-- Interval integrals add over a `Fin`-indexed partition, which need not be increasing. -/
 theorem sum_integral_adjacent_intervals_fin {E : Type*} [NormedAddCommGroup E]
@@ -680,3 +705,11 @@ theorem MeasureTheory.LocallyIntegrableOn.intervalIntegrable_comp_max {E : Type*
   · refine (intervalIntegrable_const (c := f c)).congr fun y hy ↦ ?_
     rw [uIoc_of_ge hx] at hy
     simp only [max_eq_right hy.2]
+
+/-- If `f` is locally integrable on a set `s` containing `[[x, y]]`, then `f` is interval
+integrable between `x` and `y`. -/
+theorem MeasureTheory.LocallyIntegrableOn.intervalIntegrable {E : Type*}
+    [NormedAddCommGroup E] {f : ℝ → E} {μ : Measure ℝ} {s : Set ℝ} {x y : ℝ}
+    (hf : LocallyIntegrableOn f s μ) (hxy : uIcc x y ⊆ s) :
+    IntervalIntegrable f μ x y :=
+  (hf.integrableOn_compact_subset hxy isCompact_uIcc).intervalIntegrable

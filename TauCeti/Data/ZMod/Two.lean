@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.Algebra.Group.TypeTags.Finite
 public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Data.ZMod.Basic
+import Mathlib.Algebra.CharP.Two
 import Mathlib.Tactic.Ring
 import TauCeti.Data.ZMod.Nilpotent
 
@@ -41,6 +43,8 @@ and an isomorphism onto `C₂` is unique, since it must send every non-identity 
 * `Multiplicative.eq_one_or_eq_ofAdd_one`: every element of `C₂` is `1` or `σ`.
 * `AddMonoidHom.exists_eq_one_of_ne_zero`: a nonzero sign character `G →+ ZMod 2` takes the
   value `1` somewhere.
+* `AddMonoidHom.add_self_mem_ker_zmod_two`: twice any element lies in the kernel of a sign
+  character.
 * `MulEquiv.apply_eq_ofAdd_one_of_ne_one`: an isomorphism onto `C₂` sends every non-identity
   element to `σ`, so there is at most one such isomorphism.
 * `TauCeti.sum_cyclicTwo`: a sum over `C₂` is the sum of the values at `1` and at `σ`.
@@ -114,6 +118,11 @@ theorem exists_eq_one_of_ne_zero {G : Type*} [AddZeroClass G] {f : G →+ ZMod 2
     ∃ g, f g = 1 := by
   obtain ⟨g, hg⟩ := DFunLike.ne_iff.mp hf
   exact ⟨g, ZMod.ne_zero_iff_eq_one.mp hg⟩
+
+/-- Twice any element lies in the kernel of a homomorphism to `ℤ/2`. -/
+theorem add_self_mem_ker_zmod_two {G : Type*} [AddGroup G] (ι : G →+ ZMod 2) (g : G) :
+    g + g ∈ ι.ker := by
+  rw [mem_ker, map_add, CharTwo.add_self_eq_zero]
 
 end AddMonoidHom
 

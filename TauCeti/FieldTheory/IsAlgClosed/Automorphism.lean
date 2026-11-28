@@ -128,6 +128,17 @@ theorem exists_algEquiv_apply_algebraMap {K : Type*} [CommRing K] [Algebra K R] 
   rw [IsScalarTower.algebraMap_apply K R Ω, hτ]
   exact congrArg (algebraMap R Ω) (σ.commutes k)
 
+/-- Restriction onto a normal subfield is surjective when the ambient field is algebraically
+closed, including when the ambient extension is transcendental. -/
+theorem restrictNormalHom_surjective_of_isAlgClosed {F K Ω : Type*} [Field F] [Field K]
+    [Field Ω] [Algebra F K] [Algebra F Ω] [Algebra K Ω] [IsScalarTower F K Ω]
+    [Normal F K] [IsAlgClosed Ω] :
+    Function.Surjective (restrictNormalHom (F := F) (K₁ := Ω) K) := by
+  intro σ
+  obtain ⟨τ, hτ⟩ := σ.exists_algEquiv_apply_algebraMap (Ω := Ω)
+  exact ⟨τ, AlgEquiv.ext fun x ↦ (algebraMap K Ω).injective
+    ((restrictNormal_commutes τ K x).trans (hτ x))⟩
+
 end AlgEquiv
 
 namespace Transcendental

@@ -82,6 +82,6 @@ theorem zeroFreeRightOf_dedekindZetaC_iff_forall_LFunction {σ : ℝ} (hσ : 0 �
   simp only [zeroFreeRightOf_iff]
   refine forall_congr' fun χ ↦ forall₂_congr fun s hs ↦ ?_
   conv_rhs => rw [← χ.changeLevel_primitiveCharacter,
-    meromorphicOrderAt_LFunction_changeLevel _ _ (hσ.trans_lt hs)]
+    meromorphicOrderAt_LFunction_changeLevel _ _ (hσ.trans_lt hs).ne']
 
 end TauCeti.LFunctions

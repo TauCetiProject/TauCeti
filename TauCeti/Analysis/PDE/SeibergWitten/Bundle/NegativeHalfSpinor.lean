@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.Bundle.CanonicalSpinor
 public import TauCeti.Analysis.PDE.SeibergWitten.Canonical.Line
+public import TauCeti.Geometry.Symplectic.Complex.ZeroOneCovector
 public import TauCeti.Topology.VectorBundle.Complex.Structure
 
 /-!
@@ -25,9 +26,9 @@ and let `𝔰` be its canonical `Spinᶜ` structure
 
 This is the Clifford intertwiner of the identification `W⁻ = Λ^(0,1)` of the canonical `Spinᶜ`
 structure of an almost Hermitian four-manifold, `(E, J)` being isomorphic to its `(0,1)`-covectors
-through the metric; that last isomorphism is not constructed here. In Taubes's analysis of the
-Seiberg–Witten equations on a symplectic four-manifold it is the identification through which the
-Dirac operator on `α u₀ + β` is read as `√2 ∂bar_a α` plus a term in `β`.
+through the metric. In Taubes's analysis of the Seiberg–Witten equations on a symplectic
+four-manifold it is the identification through which the Dirac operator on `α u₀ + β` is read as
+`√2 ∂bar_a α` plus a term in `β`.
 
 **Complex linearity.** A unitary frame `p` carries `J` to the model complex structure `JV`
 (`TauCeti.OrthonormalFrameBundle.vectorFrame_canonicalSpinCStructureInl_apply_apply`), and on the
@@ -48,10 +49,26 @@ local unitary frame its coordinates are those of `v` in the frame, so it is cont
 spaces (`TauCeti.OrthonormalFrameBundle.continuous_cliffordMul_canonicalSpinor`,
 `TauCeti.OrthonormalFrameBundle.continuous_canonicalNegativeHalfSpinorEquiv`).
 
+**The `(0,1)`-covectors.** Composed with the metric isomorphism `v ↦ v♭ = ⟪v, ·⟫ - i ⟪J v, ·⟫` of
+`(E x, J x)` with its `(0,1)`-covectors (`TauCeti.AlmostComplexStructure.zeroOneFlatEquiv`), the
+inverse of this isomorphism identifies `W⁻_x` with `Λ^(0,1)_x`, sending `c(v) u₀(x)` to `v♭`
+(`TauCeti.OrthonormalFrameBundle.canonicalNegativeHalfSpinorZeroOneEquiv`). It is Hermitian up to
+the factor `‖u‖² / 2`: in every orthonormal basis `f` of `E x`,
+`2 ⟪c(v) u₀, c(w) u₀⟫ = (∑ᵢ conj (v♭ fᵢ) w♭ fᵢ) ‖u‖²`
+(`TauCeti.OrthonormalFrameBundle.two_mul_inner_cliffordMul_canonicalSpinor`), so for a unit `u` it
+is `√2` times an isometry for the Hilbert–Schmidt norm of covectors. On the model space, for a
+real-linear `L` and a spinor `u₀` on the canonical line, the pointwise symbol `∑ᵢ L(bᵢ) c(bᵢ) u₀`
+is `c(v) u₀` with `v♭ = 2 ∂bar L`
+(`TauCeti.SeibergWitten.sum_smul_ι_apply_eq_ι_apply_of_zeroOneFlat_apply_eq`); `2 ∂bar` becomes
+Taubes's `√2 ∂bar` for the isometric normalization. Carrying this to the bundle identification
+above, and to `∂bar_a α` for a connection, is not formalised here.
+
 ## Main definitions
 
 * `TauCeti.OrthonormalFrameBundle.canonicalNegativeHalfSpinorEquiv`: the complex linear
   isomorphism `(E x, J x) ≃ W⁻_x`, `v ↦ c(v) u₀(x)`.
+* `TauCeti.OrthonormalFrameBundle.canonicalNegativeHalfSpinorZeroOneEquiv`: the complex linear
+  isomorphism `W⁻_x ≃ Λ^(0,1)_x`, `c(v) u₀(x) ↦ v♭`.
 
 ## Main results
 
@@ -64,6 +81,8 @@ spaces (`TauCeti.OrthonormalFrameBundle.continuous_cliffordMul_canonicalSpinor`,
 * `TauCeti.OrthonormalFrameBundle.continuous_cliffordMul_canonicalSpinor`,
   `TauCeti.OrthonormalFrameBundle.continuous_canonicalNegativeHalfSpinorEquiv`: continuity on total
   spaces.
+* `TauCeti.OrthonormalFrameBundle.two_mul_inner_cliffordMul_canonicalSpinor`:
+  `2 ⟪c(v) u₀, c(w) u₀⟫ = (∑ᵢ conj (v♭ fᵢ) w♭ fᵢ) ‖u‖²`.
 
 ## References
 
@@ -81,7 +100,7 @@ public section
 noncomputable section
 
 open Bundle MulOpposite Module Module.End TauCeti CliffordAlgebra TauCeti.CliffordAlgebra
-open scoped InnerProductSpace RealInnerProductSpace
+open scoped ComplexConjugate InnerProductSpace RealInnerProductSpace
 
 /-- The proof that the standard form on `ℝ⁴` is nonzero, on which `Spinᶜ(4)` depends. -/
 local notation "hpos" => QuadraticMap.Nondegenerate.ne_zero (nondegenerate_realCliffordForm 4 0)
@@ -331,6 +350,80 @@ theorem canonicalNegativeHalfSpinorEquiv_apply (hrank : finrank ℂ (positiveHal
       (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).cliffordMul o hQ b ρ hρ (ε' := -1) rfl x
         (Jc.fiberEquiv x v) (canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ u x) :=
   (rfl)
+
+/-! ### The `(0,1)`-covectors -/
+
+omit [ContinuousFiberNorm F E] in
+include hJc in
+/-- The complex structure `J x` of the fibre `E x` is orthogonal. -/
+private theorem inner_almostComplexStructureAt_apply (x : X) (v w : E x) :
+    ⟪Jc.almostComplexStructureAt x v, Jc.almostComplexStructureAt x w⟫ = ⟪v, w⟫ := by
+  rw [Bundle.ContinuousComplexStructure.almostComplexStructureAt_apply,
+    Bundle.ContinuousComplexStructure.almostComplexStructureAt_apply, hJc, hJc,
+    LinearIsometryEquiv.inner_map_map]
+
+/-- **The negative half-spinors of the canonical `Spinᶜ` structure are the `(0,1)`-covectors**:
+the complex linear isomorphism `W⁻_x ≃ Λ^(0,1)_x` sending `c(v) u₀(x)` to
+`v♭ = ⟪v, ·⟫ - i ⟪J v, ·⟫`, when the model positive half-spinors have complex dimension two and the
+model spinor `u` is nonzero. It is the inverse of Clifford multiplication on the canonical spinor
+(`TauCeti.OrthonormalFrameBundle.canonicalNegativeHalfSpinorEquiv`) followed by the metric
+isomorphism of `(E x, J x)` with its `(0,1)`-covectors
+(`TauCeti.AlmostComplexStructure.zeroOneFlatEquiv`). -/
+def canonicalNegativeHalfSpinorZeroOneEquiv (hrank : finrank ℂ (positiveHalfSpinors o ρ) = 2)
+    (hu₀ : u ≠ 0) (x : X) :
+    (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).halfSpinorBundle o hQ b ρ hρ (-1) x ≃ₗ[ℂ]
+      AlmostComplexStructure.zeroOneCovectors (Jc.almostComplexStructureAt x) :=
+  -- The fibre `E x` is finite-dimensional, so it is complete.
+  have := (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).finiteDimensional_fiber x
+  have := FiniteDimensional.completeSpace ℝ (E x)
+  (canonicalNegativeHalfSpinorEquiv hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu hJc hrank hu₀
+    x).symm.trans (AlmostComplexStructure.zeroOneFlatEquiv (V := E x)
+      (inner_almostComplexStructureAt_apply hJc x))
+
+/-- The isomorphism `W⁻_x ≃ Λ^(0,1)_x` sends `c(v) u₀(x)` to `v♭ = ⟪v, ·⟫ - i ⟪J v, ·⟫`. -/
+@[simp]
+theorem coe_canonicalNegativeHalfSpinorZeroOneEquiv_cliffordMul
+    (hrank : finrank ℂ (positiveHalfSpinors o ρ) = 2) (hu₀ : u ≠ 0) {x : X} (v : E x) :
+    (canonicalNegativeHalfSpinorZeroOneEquiv hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu hJc hrank
+        hu₀ x ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).cliffordMul o hQ b ρ hρ
+          (ε' := -1) rfl x v (canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ u x)) :
+        E x →L[ℝ] ℂ) =
+      (Jc.almostComplexStructureAt x).zeroOneFlat v := by
+  have h : (canonicalNegativeHalfSpinorEquiv hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu hJc hrank
+      hu₀ x).symm ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).cliffordMul o hQ b ρ hρ
+        (ε' := -1) rfl x v (canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ u x)) =
+      (Jc.fiberEquiv x).symm v := by
+    rw [LinearEquiv.symm_apply_eq, canonicalNegativeHalfSpinorEquiv_apply,
+      ContinuousLinearEquiv.apply_symm_apply]
+  -- The fibre `E x` is finite-dimensional, so it is complete.
+  have := (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).finiteDimensional_fiber x
+  have := FiniteDimensional.completeSpace ℝ (E x)
+  -- The isomorphism is `canonicalNegativeHalfSpinorEquiv⁻¹` followed by `v ↦ v♭`. Its domain
+  -- `Jc.Fiber x` is a type synonym of `E x`, so `LinearEquiv.trans_apply` does not rewrite the
+  -- composite, which `rfl` unfolds instead.
+  calc _ = (AlmostComplexStructure.zeroOneFlatEquiv (inner_almostComplexStructureAt_apply hJc x)
+        ((Jc.fiberEquiv x).symm v) : E x →L[ℝ] ℂ) := by
+        rw [← h]
+        rfl
+    _ = _ := by
+      rw [Jc.fiberEquiv_symm_apply, AlmostComplexStructure.coe_zeroOneFlatEquiv_apply]
+
+include hJV hu hJc in
+/-- **The isomorphism `W⁻ ≃ Λ^(0,1)` is Hermitian up to the factor `‖u‖² / 2`**: in every
+orthonormal basis `f` of `E x`, `2 ⟪c(v) u₀, c(w) u₀⟫ = (∑ᵢ conj (v♭ fᵢ) w♭ fᵢ) ‖u‖²`, the
+Hilbert–Schmidt pairing of the `(0,1)`-covectors `v♭` and `w♭`. -/
+theorem two_mul_inner_cliffordMul_canonicalSpinor {x : X} {ι : Type*} [Fintype ι]
+    (f : OrthonormalBasis ι ℝ (E x)) (v w : E x) :
+    2 * ⟪(canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).cliffordMul o hQ b ρ hρ (ε' := -1) rfl x v
+        (canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ u x),
+      (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).cliffordMul o hQ b ρ hρ (ε' := -1) rfl x w
+        (canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ u x)⟫_ℂ =
+      (∑ i, conj ((Jc.almostComplexStructureAt x).zeroOneFlat v (f i)) *
+        (Jc.almostComplexStructureAt x).zeroOneFlat w (f i)) * ‖u‖ ^ 2 := by
+  rw [AlmostComplexStructure.sum_conj_zeroOneFlat_mul_zeroOneFlat
+      (inner_almostComplexStructureAt_apply hJc x),
+    inner_cliffordMul_canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu,
+    Bundle.ContinuousComplexStructure.almostComplexStructureAt_apply, hJc, mul_assoc]
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G] [FiniteDimensional ℂ G]
   [Fact (finrank ℝ F = 2 * finrank ℂ G)] [FiniteDimensional ℝ F]

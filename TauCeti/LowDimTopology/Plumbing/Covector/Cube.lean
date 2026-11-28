@@ -78,6 +78,8 @@ vanishes, the two faces of `[0, {v}]` coincide and cancel, and `[0, {v}]` is a c
 * `TauCeti.PlumbingGraph.covectorDifferential_comp_toCovectorChain`: the comparison map is a
   chain map.
 * `TauCeti.PlumbingGraph.covectorDifferential_comp_self`: `∂ ∘ ∂ = 0`.
+* `TauCeti.PlumbingGraph.covectorDifferentialOnGenerator_mk_empty`: a generator `[K, ∅]` with no
+  directions has zero differential.
 * `TauCeti.PlumbingGraph.covectorDifferential_single_mk_singleton`: the differential of a
   one-dimensional generator, with exponents `max(0, -f_K(v))` and `max(0, f_K(v))`.
 * `TauCeti.PlumbingGraph.covectorDifferential_mem_covectorOrbitPart`: the differential preserves
@@ -142,6 +144,12 @@ theorem covectorDifferentialOnGenerator_mk (K : P.characteristicVectors) (E : Fi
             ⟨P.addTwoMulVec K (Pi.single v 1), E.erase v⟩
             (Polynomial.X ^ P.characteristicUpperFaceExponent K 0 E v.property) :=
   (rfl)
+
+/-- A generator `[K, ∅]` with no directions has zero differential. -/
+@[simp]
+theorem covectorDifferentialOnGenerator_mk_empty (K : P.characteristicVectors) :
+    P.covectorDifferentialOnGenerator ⟨K, ∅⟩ = 0 := by
+  simp [covectorDifferentialOnGenerator_mk]
 
 /-- The `𝔽₂[U]`-linear differential of the lattice complex on characteristic covectors. -/
 noncomputable def covectorDifferential :
