@@ -49,6 +49,8 @@ preserves every definiteness predicate.
   lattice vectors of positive and of negative norm.
 * `TauCeti.IntegralLattice.signature_eq_of_equivalent`: lattices with isometric rational forms
   have the same signature.
+* `TauCeti.IntegralLattice.signature_eq_of_form_eq`: lattices on the same ambient space with
+  equal rational forms have the same signature.
 * `TauCeti.IntegralLattice.Isometry.map_radical` and the `Isometry.sigPos_eq`, `sigNull_eq`, and
   `sigNeg_eq` theorems: isometry invariance of the signature.
 -/
@@ -381,6 +383,11 @@ theorem signature_eq_of_equivalent (h : L.form.Equivalent M.form) :
     sigNeg_eq_of_equivalent h]
 
 end Equivalent
+
+/-- Integral lattices on the same ambient space with equal rational form share a signature. -/
+theorem signature_eq_of_form_eq {L M : IntegralLattice V} (h : L.form = M.form) :
+    L.signature = M.signature :=
+  L.signature_eq_of_equivalent ⟨h ▸ LinearMap.BilinForm.IsometryEquiv.refl L.form⟩
 
 namespace Isometry
 

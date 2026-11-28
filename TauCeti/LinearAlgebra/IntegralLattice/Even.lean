@@ -25,6 +25,8 @@ condition, because they occur twice in the norm of an integral linear combinatio
 * `TauCeti.IntegralLattice.IsEven`: every lattice-vector norm is even.
 * `TauCeti.IntegralLattice.even_integralNorm_iff`: rational characterization of pointwise evenness.
 * `TauCeti.IntegralLattice.isEven_iff_forall_norm`: rational characterization of lattice evenness.
+* `TauCeti.IntegralLattice.not_isEven_of_odd_integralNorm`: a lattice with an odd-norm vector is
+  not even.
 * `TauCeti.IntegralLattice.isEven_of_span`: evenness can be checked on any generating set.
 * `TauCeti.IntegralLattice.isEven_iff_basis`: evenness can be checked on any integral basis.
 * `TauCeti.IntegralLattice.isEven_ofBasis_iff`: an `ofBasis` lattice is even iff basis norms are
@@ -90,6 +92,11 @@ theorem isEven_iff_forall_norm (L : IntegralLattice V) :
 theorem IsEven.exists_norm_eq_two_mul {L : IntegralLattice V} (hL : L.IsEven) (x : L) :
     ∃ z : ℤ, L.norm x = 2 * z :=
   (L.even_integralNorm_iff x).mp (hL x)
+
+/-- An integral lattice containing a vector of odd integral norm is not even. -/
+theorem not_isEven_of_odd_integralNorm {L : IntegralLattice V} {x : L}
+    (hx : Odd (L.integralNorm x)) : ¬ L.IsEven :=
+  fun hL ↦ by obtain ⟨a, ha⟩ := hL x; obtain ⟨b, hb⟩ := hx; omega
 
 /-- The sum of two vectors with even integral norm again has even integral norm. -/
 theorem even_integralNorm_add (L : IntegralLattice V) {x y : L}

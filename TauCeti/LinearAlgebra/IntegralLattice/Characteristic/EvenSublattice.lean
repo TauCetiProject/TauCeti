@@ -5,7 +5,9 @@ Authors: Wentao Li
 -/
 module
 
+public import TauCeti.LinearAlgebra.IntegralLattice.Index
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
+public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Sum
 public import TauCeti.LinearAlgebra.IntegralLattice.Restriction
 public import TauCeti.LinearAlgebra.IntegralLattice.Signature
 public import Mathlib.LinearAlgebra.Isomorphisms
@@ -18,14 +20,18 @@ import Mathlib.Tactic.FinCases
 The kernel of norm parity consists exactly of the vectors with even integral norm.
 It contains twice the carrier, so its image in the original rational ambient space is full.
 Restricting the form gives a canonical even sublattice with the same signature.
-For an odd lattice the quotient by this submodule is canonically `ℤ/2` through norm parity.
+For an odd lattice the quotient by this submodule is canonically `ℤ/2` through norm parity,
+so the even sublattice has index two, determinant `4 * det L`, and discriminant `4 * disc L`.
+The construction also commutes with ambient transport and with orthogonal sums by an even lattice.
 
 The even sublattice supplies the discriminant-form construction used to prove
-van der Blij's characteristic-norm congruence for odd unimodular lattices.
+van der Blij's characteristic-norm congruence for odd unimodular lattices and the parity-kernel
+overlattice theory.
 
 ## References
 
 * J. Milnor and D. Husemoller, *Symmetric Bilinear Forms*, Appendix 4.
+* J.-P. Serre, *A Course in Arithmetic*, Chapter V, §1.4.
 -/
 
 public section
@@ -34,7 +40,7 @@ open scoped Pointwise
 
 namespace TauCeti.IntegralLattice
 
-universe u
+universe u v
 variable {V : Type u} [AddCommGroup V] [Module ℚ V] (L : IntegralLattice V)
 
 /-- The submodule of lattice vectors with even integral norm, defined as the norm-parity kernel. -/
@@ -100,6 +106,13 @@ theorem mem_evenSublattice_carrier_iff (x : L) :
     exact (L.mem_evenSubmodule_iff x).mp (h ▸ hy)
   · intro hx
     exact ⟨x, (L.mem_evenSubmodule_iff x).mpr hx, rfl⟩
+
+/-- Twice any vector of the original lattice belongs to the even sublattice carrier. -/
+theorem two_smul_mem_evenSublattice_carrier (x : L) :
+    (2 : ℚ) • (x : V) ∈ L.evenSublattice.carrier := by
+  simpa [← Int.cast_smul_eq_zsmul ℚ] using
+    (L.mem_evenSublattice_carrier_iff ((2 : ℤ) • x)).mpr
+      ((L.mem_evenSubmodule_iff _).mp (L.two_smul_mem_evenSubmodule x))
 
 /-- The even sublattice retains the original rational bilinear form. -/
 @[simp]
@@ -173,18 +186,92 @@ theorem natCard_quotient_evenSubmodule (hL : ¬ L.IsEven) :
   rw [Nat.card_congr (L.evenSubmoduleQuotientEquiv hL).toEquiv]
   exact Nat.card_zmod 2
 
+/-- The relative index of the even sublattice in the lattice equals the cardinality of the
+quotient by the even-norm submodule. -/
+theorem relIndex_evenSublattice_eq_natCard_quotient :
+    L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup =
+      Nat.card (L ⧸ L.evenSubmodule) := by
+  rw [AddSubgroup.relIndex, AddSubgroup.index_eq_card, ← L.evenSublattice_carrier_submoduleOf]
+  exact Nat.card_congr (AddSubgroup.quotientEquivOfEq
+    (Submodule.toAddSubgroup_submoduleOf L.evenSublattice.carrier L.carrier).symm)
+
 /-- The even sublattice has index at most two in the lattice: it is the kernel of norm parity. -/
 theorem relIndex_evenSublattice_le_two :
     L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup ≤ 2 := by
-  have htop : (⊤ : AddSubgroup L).map (L.carrier.subtype : L →+ V) =
-      L.carrier.toAddSubgroup :=
-    (AddSubgroup.map_top _).trans (AddSubgroup.range_subtype L.carrier.toAddSubgroup)
-  have hker : L.evenSubmodule.toAddSubgroup = L.normParity.ker := by
-    ext x
-    simp [normParity_apply, ZMod.intCast_eq_zero_iff_even]
-  rw [evenSublattice_carrier, Submodule.map_toAddSubgroup, ← htop, hker,
-    AddSubgroup.relIndex_map_map_of_injective _ _ L.carrier.injective_subtype,
-    AddSubgroup.relIndex_top_right, AddSubgroup.index_ker]
+  rw [L.relIndex_evenSublattice_eq_natCard_quotient, evenSubmodule,
+    Nat.card_congr L.normParity.toIntLinearMap.quotKerEquivRange.toEquiv]
   exact (Nat.card_le_card_of_injective _ Subtype.coe_injective).trans (Nat.card_zmod 2).le
+
+/-- Membership in `L.evenSublattice` is membership in `L` with an even integer norm. -/
+theorem mem_evenSublattice_carrier_iff_exists_norm (x : V) :
+    x ∈ L.evenSublattice.carrier ↔ x ∈ L.carrier ∧ ∃ k : ℤ, L.norm x = 2 * k :=
+  ⟨fun h ↦ ⟨L.evenSublattice_carrier_le h,
+    (L.even_integralNorm_iff ⟨x, L.evenSublattice_carrier_le h⟩).mp
+      ((L.mem_evenSublattice_carrier_iff ⟨x, L.evenSublattice_carrier_le h⟩).mp h)⟩,
+   fun ⟨hx, hk⟩ ↦ (L.mem_evenSublattice_carrier_iff ⟨x, hx⟩).mpr
+    ((L.even_integralNorm_iff ⟨x, hx⟩).mpr hk)⟩
+
+/-- `evenSublattice` commutes with transporting an integral lattice along a linear equivalence. -/
+@[simp] theorem evenSublattice_transport {W : Type v} [AddCommGroup W] [Module ℚ W]
+    (e : V ≃ₗ[ℚ] W) : (L.transport e).evenSublattice = L.evenSublattice.transport e :=
+  IntegralLattice.ext (Submodule.ext fun y ↦ by
+    rw [mem_evenSublattice_carrier_iff_exists_norm, transport_carrier, Submodule.mem_map_equiv,
+      transport_carrier, Submodule.mem_map_equiv, LinearEquiv.restrictScalars_symm_apply,
+      mem_evenSublattice_carrier_iff_exists_norm]
+    simp [norm_apply, transport_form]) (by simp)
+
+omit L in
+/-- **Orthogonal sum with an even lattice commutes with `evenSublattice`.** -/
+theorem evenSublattice_orthogonalSum_of_isEven_left {W : Type v} [AddCommGroup W] [Module ℚ W]
+    {Y : IntegralLattice V} (hY : Y.IsEven) (M : IntegralLattice W) :
+    (Y.orthogonalSum M).evenSublattice = Y.orthogonalSum M.evenSublattice := by
+  refine IntegralLattice.ext (Submodule.ext fun p ↦ ?_) (by simp)
+  rw [mem_evenSublattice_carrier_iff_exists_norm, orthogonalSum_carrier, Submodule.mem_prod,
+    orthogonalSum_carrier, Submodule.mem_prod, mem_evenSublattice_carrier_iff_exists_norm,
+    norm_apply, orthogonalSum_form, LinearMap.BilinForm.prod_apply, ← Y.norm_apply, ← M.norm_apply]
+  refine ⟨fun ⟨⟨hp1, hp2⟩, k, hk⟩ ↦ ?_, fun ⟨hp1, hp2, k, hk⟩ ↦ ?_⟩ <;>
+    obtain ⟨m, hm⟩ := Y.isEven_iff_forall_norm.mp hY ⟨p.1, hp1⟩
+  · exact ⟨hp1, hp2, k - m, by push_cast; linarith⟩
+  · exact ⟨⟨hp1, hp2⟩, m + k, by push_cast; linarith⟩
+
+omit L in
+/-- Right-hand companion to `evenSublattice_orthogonalSum_of_isEven_left`. -/
+theorem evenSublattice_orthogonalSum_of_isEven_right {W : Type v} [AddCommGroup W] [Module ℚ W]
+    (M : IntegralLattice V) {Y : IntegralLattice W} (hY : Y.IsEven) :
+    (M.orthogonalSum Y).evenSublattice = M.evenSublattice.orthogonalSum Y := by
+  rw [← orthogonalSum_transport_prodComm M Y, evenSublattice_transport,
+    evenSublattice_orthogonalSum_of_isEven_left hY M, orthogonalSum_transport_prodComm]
+
+/-- The even sublattice coincides with the lattice itself precisely when the lattice is even. -/
+@[simp] theorem evenSublattice_eq_self_iff : L.evenSublattice = L ↔ L.IsEven :=
+  ⟨fun h ↦ h ▸ L.isEven_evenSublattice, fun h ↦ IntegralLattice.ext
+    (le_antisymm L.evenSublattice_carrier_le fun x hx ↦ (L.mem_evenSublattice_carrier_iff
+      ⟨x, hx⟩).mpr ((L.even_integralNorm_iff _).mpr (L.isEven_iff_forall_norm.mp h _)))
+    L.evenSublattice_form⟩
+
+/-- The even sublattice has index one in the lattice precisely when the lattice is even. -/
+theorem relIndex_evenSublattice_eq_one_iff :
+    L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup = 1 ↔ L.IsEven := by
+  rw [AddSubgroup.relIndex_eq_one, Submodule.toAddSubgroup_le]
+  exact ⟨fun h ↦ L.evenSublattice_eq_self_iff.mp
+    (IntegralLattice.ext (le_antisymm L.evenSublattice_carrier_le h) L.evenSublattice_form),
+    fun h ↦ le_of_eq (congrArg IntegralLattice.carrier (L.evenSublattice_eq_self_iff.mpr h).symm)⟩
+
+/-- **The even sublattice has index two in every odd integral lattice.** -/
+theorem relIndex_evenSublattice_of_not_isEven (hL : ¬ L.IsEven) :
+    L.evenSublattice.carrier.toAddSubgroup.relIndex L.carrier.toAddSubgroup = 2 := by
+  rw [L.relIndex_evenSublattice_eq_natCard_quotient, L.natCard_quotient_evenSubmodule hL]
+
+/-- For an odd lattice, `det(L_even) = 4 * det(L)`. -/
+theorem determinant_evenSublattice_of_not_isEven (hL : ¬ L.IsEven) :
+    L.evenSublattice.determinant = 4 * L.determinant := by
+  rw [L.evenSublattice.determinant_eq_mul_relIndex_sq L L.evenSublattice_form
+    L.evenSublattice_carrier_le, L.relIndex_evenSublattice_of_not_isEven hL]; ring
+
+/-- For an odd lattice, `discriminant(L_even) = 4 * discriminant(L)`. -/
+theorem discriminant_evenSublattice_of_not_isEven (hL : ¬ L.IsEven) :
+    L.evenSublattice.discriminant = 4 * L.discriminant := by
+  rw [L.evenSublattice.discriminant_eq_mul_relIndex_sq L L.evenSublattice_form
+    L.evenSublattice_carrier_le, L.relIndex_evenSublattice_of_not_isEven hL]; ring
 
 end TauCeti.IntegralLattice

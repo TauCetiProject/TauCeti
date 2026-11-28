@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Index
+public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Sum
 public import TauCeti.LinearAlgebra.IntegralLattice.Restriction
 public import TauCeti.LinearAlgebra.IntegralLattice.Unimodular
 
@@ -31,9 +32,14 @@ The intersection `L ∩ M` is the integral lattice `TauCeti.IntegralLattice.inf`
 * `TauCeti.IntegralLattice.IsNeighbor.symm`: the neighbor relation is symmetric.
 * `TauCeti.IntegralLattice.IsNeighbor.transport`: neighbors transport along rational linear
   equivalences.
+* `TauCeti.IntegralLattice.IsNeighbor.transport_symm_of_isometry`: pulling back a neighbor along
+  an integral-lattice isometry.
 * `TauCeti.IntegralLattice.isNeighbor_one_iff`: `1`-neighbors are equal.
 * `TauCeti.IntegralLattice.IsNeighbor.determinant_eq`: neighbors have equal determinants.
 * `TauCeti.IntegralLattice.IsNeighbor.isUnimodular_iff`: neighbors are unimodular together.
+* `TauCeti.IntegralLattice.IsNeighbor.signature_eq`: neighbors have equal signatures.
+* `TauCeti.IntegralLattice.IsNeighbor.orthogonalSum_left`,
+  `TauCeti.IntegralLattice.IsNeighbor.orthogonalSum_right`: orthogonal sums preserve neighbors.
 
 ## References
 
@@ -90,6 +96,13 @@ theorem IsNeighbor.transport {W : Type*} [AddCommGroup W] [Module ℚ W] (h : L.
   · rw [inf_comm, hrel, inf_comm]
     exact h.relIndex_inf_right
 
+/-- Pulling back a `p`-neighbor of `M` along an integral-lattice isometry `e : Isometry A L`
+yields a `p`-neighbor of `A`. -/
+theorem IsNeighbor.transport_symm_of_isometry {W : Type*} [AddCommGroup W] [Module ℚ W]
+    {A : IntegralLattice W} (h : L.IsNeighbor M p) (e : Isometry A L) :
+    A.IsNeighbor (M.transport (e : W ≃ₗ[ℚ] V).symm) p := by
+  simpa only [e.transport_symm_eq] using h.transport (e : W ≃ₗ[ℚ] V).symm
+
 /-- The common index of two neighbors is nonzero, since the intersection of two lattices on the
 same rational space has finite index in each. -/
 theorem IsNeighbor.ne_zero (h : L.IsNeighbor M p) : p ≠ 0 :=
@@ -136,5 +149,45 @@ theorem IsNeighbor.isUnimodular (h : L.IsNeighbor M p) (hL : L.IsUnimodular) :
 /-- Two neighbors are unimodular together. -/
 theorem IsNeighbor.isUnimodular_iff (h : L.IsNeighbor M p) : L.IsUnimodular ↔ M.IsUnimodular :=
   ⟨h.isUnimodular, h.symm.isUnimodular⟩
+
+/-- Kneser `p`-neighbors share the same ambient rational form and therefore the same signature. -/
+theorem IsNeighbor.signature_eq (h : L.IsNeighbor M p) : L.signature = M.signature :=
+  signature_eq_of_form_eq h.form_eq
+
+/-- **Kneser `p`-neighbors are preserved by left orthogonal direct sums.** -/
+theorem IsNeighbor.orthogonalSum_left {W : Type*} [AddCommGroup W] [Module ℚ W]
+    (Y : IntegralLattice W) (h : L.IsNeighbor M p) :
+    (Y.orthogonalSum L).IsNeighbor (Y.orthogonalSum M) p := by
+  have hrel (B : Submodule ℤ V) : (Y.carrier.prod (L.carrier ⊓ M.carrier)).toAddSubgroup.relIndex
+      (Y.carrier.prod B).toAddSubgroup =
+      (L.carrier ⊓ M.carrier).toAddSubgroup.relIndex B.toAddSubgroup := by
+    let proj : ↥(Y.carrier.prod B) →ₗ[ℤ] ↥B :=
+      ((LinearMap.snd ℤ W V).domRestrict (Y.carrier.prod B)).codRestrict B fun q ↦ q.property.2
+    have hproj (q : ↥(Y.carrier.prod B)) : (proj q : V) = q.val.2 :=
+      LinearMap.codRestrict_apply B _ q
+    have hcomap :
+        ((L.carrier ⊓ M.carrier).toAddSubgroup.addSubgroupOf B.toAddSubgroup).comap
+            proj.toAddMonoidHom =
+          (Y.carrier.prod (L.carrier ⊓ M.carrier)).toAddSubgroup.addSubgroupOf
+            (Y.carrier.prod B).toAddSubgroup := by
+      ext q
+      rw [AddSubgroup.mem_comap, AddSubgroup.mem_addSubgroupOf, AddSubgroup.mem_addSubgroupOf,
+        LinearMap.toAddMonoidHom_coe]
+      exact ⟨fun hq ↦ ⟨q.property.1, hproj q ▸ hq⟩, fun hq ↦ (hproj q).symm ▸ hq.2⟩
+    rw [AddSubgroup.relIndex, ← hcomap, AddSubgroup.index_comap_of_surjective _
+      (fun b ↦ ⟨⟨(0, b.val), ⟨Y.carrier.zero_mem, b.property⟩⟩, Subtype.ext (hproj _)⟩),
+      ← AddSubgroup.relIndex]
+  have hinf : (Y.orthogonalSum L).carrier ⊓ (Y.orthogonalSum M).carrier =
+      Y.carrier.prod (L.carrier ⊓ M.carrier) := Submodule.ext fun x ↦ by
+    simp only [Submodule.mem_inf, orthogonalSum_carrier, Submodule.mem_prod]; tauto
+  exact ⟨by simp [h.form_eq], by rw [hinf, orthogonalSum_carrier, hrel]; exact h.relIndex_inf_left,
+    by rw [hinf, orthogonalSum_carrier, hrel]; exact h.relIndex_inf_right⟩
+
+/-- **Kneser `p`-neighbors are preserved by right orthogonal direct sums.** -/
+theorem IsNeighbor.orthogonalSum_right {W : Type*} [AddCommGroup W] [Module ℚ W]
+    (h : L.IsNeighbor M p) (Y : IntegralLattice W) :
+    (L.orthogonalSum Y).IsNeighbor (M.orthogonalSum Y) p := by
+  have hswap := (h.orthogonalSum_left Y).transport (LinearEquiv.prodComm ℚ W V)
+  rwa [orthogonalSum_transport_prodComm, orthogonalSum_transport_prodComm] at hswap
 
 end TauCeti.IntegralLattice

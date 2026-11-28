@@ -289,13 +289,6 @@ section Isometry
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V] {L N : IntegralLattice V}
 
-/-- Moving a two-neighbor of a lattice isometric to `Iₙ` to `ℚⁿ` gives a two-neighbor of `Iₙ`. -/
-private theorem isNeighbor_transport_symm (e : Isometry (unitLattice (Fin n)) N)
-    (h : L.IsNeighbor N 2) :
-    (L.transport (e : (Fin n → ℚ) ≃ₗ[ℚ] V).symm).IsNeighbor (unitLattice (Fin n)) 2 := by
-  have h' := h.transport (e : (Fin n → ℚ) ≃ₗ[ℚ] V).symm
-  rwa [e.transport_symm_eq] at h'
-
 /-- A two-neighbor without vectors of norm one of a lattice isometric to `Iₙ`, moved to `ℚⁿ` along
 that isometry, contains no coordinate vector. -/
 private theorem single_one_notMem_transport_symm (e : Isometry (unitLattice (Fin n)) N)
@@ -315,7 +308,7 @@ include e h h₁
 /-- **A two-neighbor of `Iₙ` without vectors of norm one has rank divisible by four.** Here `Iₙ`
 is any lattice `N` given with an isometry from the standard lattice. -/
 theorem four_dvd_of_isNeighbor_of_isometry_unitLattice : 4 ∣ n :=
-  four_dvd_of_isNeighbor_unitLattice (isNeighbor_transport_symm e h)
+  four_dvd_of_isNeighbor_unitLattice (h.symm.transport_symm_of_isometry e).symm
     (single_one_notMem_transport_symm e h h₁)
 
 /-- **A two-neighbor of `Iₙ` without vectors of norm one is `Dₙ⁺`**, for `8 ∣ n`. Here `Iₙ` is
@@ -323,7 +316,7 @@ any lattice `N` given with an isometry from the standard lattice. -/
 theorem nonempty_isometry_checkerboardPlusLattice_of_isNeighbor_of_isometry_unitLattice
     (hn : 8 ∣ n) : Nonempty (Isometry (checkerboardPlusLattice n hn) L) :=
   (nonempty_isometry_checkerboardPlusLattice_of_isNeighbor_unitLattice
-    (isNeighbor_transport_symm e h) (single_one_notMem_transport_symm e h h₁) hn).map
+    (h.symm.transport_symm_of_isometry e).symm (single_one_notMem_transport_symm e h h₁) hn).map
       fun f ↦ f.trans (L.transportIsometry _).symm
 
 end Isometry

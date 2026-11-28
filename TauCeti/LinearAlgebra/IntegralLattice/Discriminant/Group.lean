@@ -122,6 +122,33 @@ theorem discriminantGroup_mk_eq_iff (L : IntegralLattice V) (x y : L.dualCarrier
       ((x - y : L.dualCarrier) : V) ∈ L.carrier := by
   rw [Submodule.Quotient.eq, L.mem_carrierInDual_iff]
 
+/-- A natural multiple of a representative's discriminant class vanishes precisely when the
+corresponding rational scalar multiple of its ambient vector belongs to the original carrier. -/
+theorem nsmul_discriminantGroup_mk_eq_zero_iff (L : IntegralLattice V) (n : ℕ)
+    (x : L.dualCarrier) :
+    n • (Submodule.Quotient.mk x : L.DiscriminantGroup) = 0 ↔
+      (n : ℚ) • (x : V) ∈ L.carrier := by
+  rw [← Submodule.Quotient.mk_smul, L.discriminantGroup_mk_eq_zero_iff,
+    Submodule.coe_smul_of_tower, ← Nat.cast_smul_eq_nsmul ℚ]
+
+/-- An integer multiple of a representative's discriminant class vanishes precisely when the
+corresponding rational scalar multiple of its ambient vector belongs to the original carrier. -/
+theorem zsmul_discriminantGroup_mk_eq_zero_iff (L : IntegralLattice V) (n : ℤ)
+    (x : L.dualCarrier) :
+    n • (Submodule.Quotient.mk x : L.DiscriminantGroup) = 0 ↔
+      (n : ℚ) • (x : V) ∈ L.carrier := by
+  rw [← Submodule.Quotient.mk_smul, L.discriminantGroup_mk_eq_zero_iff,
+    Submodule.coe_smul_of_tower, ← Int.cast_smul_eq_zsmul ℚ]
+
+/-- An integer multiple of a representative's discriminant class equals another representative's
+class precisely when `(n : ℚ) • x - y` belongs to the original carrier. -/
+theorem zsmul_discriminantGroup_mk_eq_mk_iff (L : IntegralLattice V) (n : ℤ)
+    (x y : L.dualCarrier) :
+    n • (Submodule.Quotient.mk x : L.DiscriminantGroup) = Submodule.Quotient.mk y ↔
+      (n : ℚ) • (x : V) - (y : V) ∈ L.carrier := by
+  rw [← Submodule.Quotient.mk_smul, L.discriminantGroup_mk_eq_iff, Submodule.coe_sub,
+    Submodule.coe_smul_of_tower, ← Int.cast_smul_eq_zsmul ℚ]
+
 /-- The discriminant group of a nondegenerate integral lattice is finite. -/
 noncomputable instance instFiniteDiscriminantGroup (L : IntegralLattice V) [L.IsNondegenerate] :
     Finite L.DiscriminantGroup := by
