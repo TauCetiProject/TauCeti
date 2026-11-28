@@ -44,7 +44,9 @@ inner terms is `ContinuousLinearMap.ker_domRestrict_eq_comap_ker_prod`,
   `ev (ker D) ⊔ N = ⊤`: the evaluation map on the solutions of the linearized equation is
   transverse to the constraint (`ContinuousLinearMap.surjective_prod_mkQL_comp_iff`). When `D`
   is onto, the cokernel of the extended operator is the cokernel `G ⧸ L (ker D)` of the
-  constraint map on the kernel (`ContinuousLinearMap.constraintCokerEquiv`).
+  constraint map on the kernel (`ContinuousLinearMap.constraintCokerEquiv`). Likewise, `D.prod L`
+  is injective exactly when the constraint map is injective on the kernel of `D`
+  (`ContinuousLinearMap.injective_prod_iff`).
 * **Dimensions.** The kernel shrinks by the rank of the constraint map on `ker D`
   (`ContinuousLinearMap.finrank_ker_prod_add_finrank_range_domRestrict`), and the cokernel grows
   by its corank (`ContinuousLinearMap.finrank_quotient_range_prod_add_finrank_range_domRestrict`).
@@ -212,6 +214,16 @@ theorem surjective_prod_iff :
     rw [LinearMap.mem_ker, coe_coe] at hk
     rw [domRestrict_apply] at hkg
     exact ⟨x + k, by simp [hk, hkg]⟩
+
+/-- **The extended operator is injective exactly when the constraint map is injective on the
+kernel of `D`**: both kernels are trivial together, since `ContinuousLinearMap.kerProdEquiv`
+identifies them. -/
+theorem injective_prod_iff :
+    Function.Injective (D.prod L) ↔ Function.Injective (L.domRestrict D.ker) := by
+  rw [← coe_coe (D.prod L), ← coe_coe (L.domRestrict D.ker), ← LinearMap.ker_eq_bot,
+    ← LinearMap.ker_eq_bot, ← Submodule.subsingleton_iff_eq_bot,
+    ← Submodule.subsingleton_iff_eq_bot]
+  exact (kerProdEquiv D L).toEquiv.subsingleton_congr.symm
 
 /-- If `D` is onto, so is the map from the constraint space onto the cokernel of the extended
 operator: every obstruction then comes from the constraints. -/

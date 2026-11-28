@@ -30,6 +30,11 @@ of a subquotient back to the ambient object.
   subobject of `X` along `p` is that subobject.
 * `CategoryTheory.Subobject.pullback_exists_eq_self_of_kernelSubobject_le`: the preimage of the
   image of a subobject of `Y` containing the kernel of `p` is that subobject.
+* `CategoryTheory.Subobject.pullback_exists_eq_kernelSubobject_sup`: for an arbitrary subobject,
+  taking its image and then its preimage joins it with the kernel.
+* `CategoryTheory.epi_comp_iff_kernelSubobject_sup_imageSubobject_eq_top` says that for an
+  epimorphism `p`, the composite `f ≫ p` is epic exactly when
+  `kernelSubobject p ⊔ imageSubobject f = ⊤`.
 * `CategoryTheory.ShortComplex.Exact.imageSubobject_comp_inv_eq_kernelSubobject_hom_comp`: the
   exactness of a short complex, as an equality of subobjects, transported along an isomorphism
   `A ≅ S.X₂`.
@@ -82,4 +87,29 @@ lemma pullback_exists_eq_self_of_kernelSubobject_le (p : Y ⟶ X) {S : Subobject
         rw [imageSubobject_comp_eq_of_epi, imageSubobject_mono, mk_arrow]
     _ ≤ S := imageSubobject_le _ (S.factorThru _ hS') (factorThru_arrow _ _ _)
 
+/-- The preimage of the image of a subobject is its join with the kernel. -/
+lemma pullback_exists_eq_kernelSubobject_sup (p : Y ⟶ X) (S : Subobject Y) :
+    (pullback p).obj ((«exists» p).obj S) = kernelSubobject p ⊔ S := by
+  refine le_antisymm ?_ (sup_le ?_ (le_pullback_exists p S))
+  · calc
+      (pullback p).obj ((«exists» p).obj S) ≤
+          (pullback p).obj ((«exists» p).obj (kernelSubobject p ⊔ S)) :=
+        (pullback p).monotone ((«exists» p).monotone le_sup_right)
+      _ = _ := pullback_exists_eq_self_of_kernelSubobject_le p le_sup_left
+  · apply ((existsPullbackAdj p).gc _ _).mp
+    simp [exists_eq_imageSubobject]
+
 end CategoryTheory.Subobject
+
+namespace CategoryTheory
+
+/-- A composite with an epimorphism is epic exactly when the image of the first map and the
+kernel of the epimorphism together generate the middle object. -/
+lemma epi_comp_iff_kernelSubobject_sup_imageSubobject_eq_top {W : C} (f : W ⟶ Y)
+    (p : Y ⟶ X) [Epi p] :
+    Epi (f ≫ p) ↔ kernelSubobject p ⊔ imageSubobject f = ⊤ := by
+  rw [← imageSubobject_eq_top_iff_epi, ← Subobject.exists_obj_imageSubobject,
+    ← Subobject.pullback_exists_eq_kernelSubobject_sup, ← Subobject.pullback_top p]
+  exact (Function.LeftInverse.injective (Subobject.exists_pullback_eq_self_of_epi p)).eq_iff.symm
+
+end CategoryTheory

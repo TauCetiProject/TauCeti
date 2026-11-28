@@ -37,6 +37,8 @@ index, and that `[R^r : M] = ∏ᵢ [R : (A i i)]`
 ## Main declarations
 
 * `Module.submoduleZeta`: the sum of `[N : M]^(-s)` over the submodules of finite index.
+* `Module.countable_of_submoduleZeta_ne_top`: if `ζ_N(s)` is finite, then `N` has only countably
+  many submodules of finite index.
 * `Module.submoduleZeta_le_of_surjective`: a quotient has the smaller zeta function.
 * `Module.submoduleZeta_prod_le`: `ζ_{R × N}(s + 1) ≤ ζ_R(s + 1) ζ_N(s)`.
 * `Module.submoduleZeta_pi_le`: `ζ_{R^r}(r + μ) ≤ ζ_R(μ)^r`.
@@ -108,6 +110,13 @@ theorem submoduleZeta_antitone : Antitone (submoduleZeta R N) := fun _ _ hst ↦
     (ENNReal.inv_le_one.2 (Nat.one_le_cast.2 (Nat.pos_of_ne_zero M.property))) hst
 
 variable {R N} {N' : Type*} [AddCommGroup N'] [Module R N']
+
+/-- If the zeta function of `N` is finite at some exponent, then `N` has only countably many
+submodules of finite index, since each of them contributes a positive term to the sum. -/
+theorem countable_of_submoduleZeta_ne_top {s : ℕ} (h : submoduleZeta R N s ≠ ∞) :
+    Countable {M : Submodule R N // M.cardQuot ≠ 0} :=
+  Set.countable_univ_iff.1 <| (Summable.countable_support_ennreal h).mono fun _ _ ↦
+    pow_ne_zero _ (ENNReal.inv_ne_zero.2 (ENNReal.natCast_ne_top _))
 
 /-- If `N` maps onto `N'`, then the zeta function of `N'` is at most that of `N`. -/
 theorem submoduleZeta_le_of_surjective {f : N →ₗ[R] N'} (hf : Function.Surjective f) (s : ℕ) :

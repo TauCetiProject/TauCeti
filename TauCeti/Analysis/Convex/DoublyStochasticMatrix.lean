@@ -30,6 +30,10 @@ instance, both are sorted decreasingly), the rearrangement inequality says that 
 a convex combination of permutation matrices, so `x ⬝ᵥ (M *ᵥ y) ≤ x ⬝ᵥ y`. This is the
 combinatorial core of the von Neumann trace inequality.
 
+More generally, a linear function `M ↦ ∑ i, ∑ j, M i j * c i j` takes its smallest and its largest
+value on the doubly stochastic matrices at permutation matrices, where it is the assignment cost
+`∑ i, c i (σ i)`. This is the step of the Hoffman–Wielandt inequality for normal operators.
+
 ## Main results
 
 * `Matrix.sum_smul_permMatrix_mem_doublyStochastic`: a convex combination of permutation matrices
@@ -38,6 +42,9 @@ combinatorial core of the von Neumann trace inequality.
   `φ`, `∑ i, φ ((M *ᵥ x) i) ≤ ∑ i, φ (x i)`.
 * `Monovary.dotProduct_mulVec_le_of_mem_doublyStochastic`: for a doubly stochastic `M` and
   monovarying `x` and `y`, `x ⬝ᵥ (M *ᵥ y) ≤ x ⬝ᵥ y`.
+* `Matrix.exists_perm_sum_le_sum_mul_of_mem_doublyStochastic`,
+  `Matrix.exists_perm_sum_mul_le_sum_of_mem_doublyStochastic`: a linear function of a doubly
+  stochastic matrix is bounded below and above by its values at permutation matrices.
 
 ## References
 
@@ -102,3 +109,28 @@ theorem Monovary.dotProduct_mulVec_le_of_mem_doublyStochastic {x y : n → 𝕜}
   · rintro _ ⟨σ, rfl⟩
     simpa [permMatrix_mulVec, dotProduct] using hxy.sum_mul_comp_perm_le_sum_mul (σ := σ)
   · exact ⟨fun A B ↦ by simp [add_mulVec], fun c A ↦ by simp [smul_mulVec]⟩
+
+/-- **A linear function on the Birkhoff polytope is bounded below at a permutation.** For a doubly
+stochastic `M` and every cost `c`, some permutation `σ` has
+`∑ i, c i (σ i) ≤ ∑ i, ∑ j, M i j * c i j`. -/
+theorem Matrix.exists_perm_sum_le_sum_mul_of_mem_doublyStochastic {M : Matrix n n 𝕜}
+    (hM : M ∈ doublyStochastic 𝕜 n) (c : n → n → 𝕜) :
+    ∃ σ : Equiv.Perm n, ∑ i, c i (σ i) ≤ ∑ i, ∑ j, M i j * c i j := by
+  rw [← SetLike.mem_coe, doublyStochastic_eq_convexHull_permMatrix] at hM
+  by_contra! h
+  -- Otherwise every permutation matrix, hence `M`, lies in the open half-space above `M`.
+  have hlin : IsLinearMap 𝕜 fun A : Matrix n n 𝕜 ↦ ∑ i, ∑ j, A i j * c i j :=
+    ⟨fun A B ↦ by simp [add_mul, Finset.sum_add_distrib],
+      fun r A ↦ by simp [mul_assoc, Finset.mul_sum]⟩
+  refine lt_irrefl _ (convexHull_min ?_ (convex_halfSpace_gt hlin _) hM)
+  rintro _ ⟨σ, rfl⟩
+  simpa [Equiv.Perm.permMatrix, PEquiv.toMatrix_apply, eq_comm] using h σ
+
+/-- **A linear function on the Birkhoff polytope is bounded above at a permutation.** For a doubly
+stochastic `M` and every cost `c`, some permutation `σ` has
+`∑ i, ∑ j, M i j * c i j ≤ ∑ i, c i (σ i)`. -/
+theorem Matrix.exists_perm_sum_mul_le_sum_of_mem_doublyStochastic {M : Matrix n n 𝕜}
+    (hM : M ∈ doublyStochastic 𝕜 n) (c : n → n → 𝕜) :
+    ∃ σ : Equiv.Perm n, ∑ i, ∑ j, M i j * c i j ≤ ∑ i, c i (σ i) := by
+  obtain ⟨σ, hσ⟩ := exists_perm_sum_le_sum_mul_of_mem_doublyStochastic hM (-c)
+  exact ⟨σ, by simpa using hσ⟩

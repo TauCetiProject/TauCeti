@@ -51,6 +51,9 @@ by conjugation has cardinality `r ^ 2` with `r ≡ 3 (mod 4)`
   `α * conj α = 2`.
 * `NumberField.IsCMField.natCard_quotient_under_mod_four_eq_three`: if `i ^ 2 = -1` and `2 ∉ w`,
   then `#(𝓞 K⁺ ⧸ w ∩ 𝓞 K⁺) ≡ 3 (mod 4)`.
+* `NumberField.IsCMField.two_notMem_and_exists_sub_notMem_of_isPrimitiveRoot`: if `K` contains a
+  primitive fourth and a primitive seventh root of unity, a prime fixed by conjugation does not lie
+  over `2`, and conjugation acts nontrivially modulo it.
 * `NumberField.IsCMField.exists_natCard_quotient_eq_sq_and_mod_four_eq_three`: if `K` contains a
   primitive fourth and a primitive seventh root of unity, the residue field at a prime fixed by
   conjugation has `r ^ 2` elements with `r ≡ 3 (mod 4)`.
@@ -117,6 +120,33 @@ theorem add_eq_one_and_mul_eq_two_of_isPrimitiveRoot_seven {η : 𝓞 K} (hη : 
   linear_combination 4 * -(η + η ^ 2 + η ^ 4) * hadd -
     hη.one_add_two_mul_add_sq_add_pow_four_sq_of_seven
 
+/-- **The primes fixed by conjugation of a CM field with fourth and seventh roots of unity.** Let
+`K` be a CM field containing a primitive fourth and a primitive seventh root of unity, for instance
+a CM field containing a primitive `5040`-th root of unity. Then every prime `w` of `𝓞 K` fixed by
+complex conjugation does not lie over `2`, and conjugation acts nontrivially on `𝓞 K ⧸ w`: it moves
+the fourth root of unity `i` modulo `w`, since `conj i - i = -2 i`. -/
+theorem two_notMem_and_exists_sub_notMem_of_isPrimitiveRoot {ζ₄ ζ₇ : K}
+    (h₄ : IsPrimitiveRoot ζ₄ 4) (h₇ : IsPrimitiveRoot ζ₇ 7) (w : Ideal (𝓞 K)) [w.IsPrime]
+    (hw : w.map (ringOfIntegersComplexConj K) = w) :
+    (2 : 𝓞 K) ∉ w ∧ ∃ x, ringOfIntegersComplexConj K x - x ∉ w := by
+  -- the roots of unity lie in `𝓞 K`
+  obtain ⟨i, rfl⟩ : ∃ i : 𝓞 K, (i : K) = ζ₄ := ⟨⟨ζ₄, h₄.isIntegral (by norm_num)⟩, rfl⟩
+  obtain ⟨η, rfl⟩ : ∃ η : 𝓞 K, (η : K) = ζ₇ := ⟨⟨ζ₇, h₇.isIntegral (by norm_num)⟩, rfl⟩
+  replace h₄ := h₄.of_map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)
+  replace h₇ := h₇.of_map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)
+  have hi : i ^ 2 = -1 := (h₄.pow (by norm_num) (by norm_num : 4 = 2 * 2)).eq_neg_one_of_two_right
+  -- the Gauss period `α = -(η + η ^ 2 + η ^ 4)` has `α + conj α = 1` and `α * conj α = 2`
+  obtain ⟨hadd, hmul⟩ := add_eq_one_and_mul_eq_two_of_isPrimitiveRoot_seven h₇
+  have h2 : (2 : 𝓞 K) ∉ w := two_notMem_of_add_eq_one_of_mul_eq_two w hw hadd hmul
+  -- conjugation moves `i` modulo `w`
+  refine ⟨h2, i, ?_⟩
+  have hneg : -i - i = -(2 * i) := by ring
+  rw [ringOfIntegersComplexConj_eq_neg_of_sq_eq_neg_one hi, hneg, neg_mem_iff]
+  refine fun h ↦ (Ideal.IsPrime.mem_or_mem inferInstance h).elim h2 fun hiw ↦ ?_
+  refine Ideal.IsPrime.ne_top' ((Ideal.eq_top_iff_one w).mpr ?_)
+  convert w.mul_mem_left (-i) hiw using 1
+  linear_combination hi
+
 end General
 
 variable {K : Type*} [Field K] [NumberField K] [IsCMField K]
@@ -175,24 +205,11 @@ theorem exists_natCard_quotient_eq_sq_and_mod_four_eq_three {ζ₄ ζ₇ : K}
     (h₄ : IsPrimitiveRoot ζ₄ 4) (h₇ : IsPrimitiveRoot ζ₇ 7) (w : Ideal (𝓞 K)) [w.IsMaximal]
     (hw : w.map (ringOfIntegersComplexConj K) = w) :
     ∃ r : ℕ, Nat.card (𝓞 K ⧸ w) = r ^ 2 ∧ r % 4 = 3 := by
-  -- the roots of unity lie in `𝓞 K`
+  obtain ⟨h2, hne⟩ := two_notMem_and_exists_sub_notMem_of_isPrimitiveRoot h₄ h₇ w hw
+  -- the fourth root of unity lies in `𝓞 K` and squares to `-1`
   obtain ⟨i, rfl⟩ : ∃ i : 𝓞 K, (i : K) = ζ₄ := ⟨⟨ζ₄, h₄.isIntegral (by norm_num)⟩, rfl⟩
-  obtain ⟨η, rfl⟩ : ∃ η : 𝓞 K, (η : K) = ζ₇ := ⟨⟨ζ₇, h₇.isIntegral (by norm_num)⟩, rfl⟩
   replace h₄ := h₄.of_map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)
-  replace h₇ := h₇.of_map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)
   have hi : i ^ 2 = -1 := (h₄.pow (by norm_num) (by norm_num : 4 = 2 * 2)).eq_neg_one_of_two_right
-  -- the Gauss period `α = -(η + η ^ 2 + η ^ 4)` has `α + conj α = 1` and `α * conj α = 2`
-  obtain ⟨hadd, hmul⟩ := add_eq_one_and_mul_eq_two_of_isPrimitiveRoot_seven h₇
-  have h2 : (2 : 𝓞 K) ∉ w := two_notMem_of_add_eq_one_of_mul_eq_two w hw hadd hmul
-  -- conjugation moves `i` modulo `w`
-  have hne : ringOfIntegersComplexConj K i - i ∉ w := by
-    have hneg : -i - i = -(2 * i) := by ring
-    rw [ringOfIntegersComplexConj_eq_neg_of_sq_eq_neg_one hi, hneg, neg_mem_iff]
-    refine fun h ↦ (Ideal.IsPrime.mem_or_mem inferInstance h).elim h2 fun hiw ↦ ?_
-    refine Ideal.IsPrime.ne_top' ((Ideal.eq_top_iff_one w).mpr ?_)
-    convert w.mul_mem_left (-i) hiw using 1
-    linear_combination hi
-  exact ⟨_, natCard_quotient_eq_sq w hw ⟨i, hne⟩,
-    natCard_quotient_under_mod_four_eq_three w hw hi h2⟩
+  exact ⟨_, natCard_quotient_eq_sq w hw hne, natCard_quotient_under_mod_four_eq_three w hw hi h2⟩
 
 end NumberField.IsCMField
