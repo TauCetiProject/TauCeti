@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.RootSL
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
-public import TauCeti.NumberTheory.ThetaLift.FrobeniusCycle.Action
+public import TauCeti.NumberTheory.ThetaLift.FrobeniusCycle.Forms
 import TauCeti.Data.ZMod.Periodic
 
 /-!
@@ -16,14 +16,13 @@ import TauCeti.Data.ZMod.Periodic
 
 Let `T` be a Frobenius cycle (`TauCeti.FrobeniusCycle`) with letters `s : ZMod N`. The group
 `GL_k(W)` acts on polynomials over `R` in the variables `x (b, s)`, `b : Fin k`, by the twisted
-action: `g` acts through the block diagonal matrix of its letter matrices `T.letterMatrix s g`, by
-Tau Ceti's substitution of standard vectors `TauCeti.polynomialAction`
-(`TauCeti.FrobeniusCycle.polynomialAction_letterMatrix_X`). This file sets up the data for the root
-lemma (`TauCeti.FrobeniusCycle.defect_nonpos_of_extreme_term`): a root `(a, a')` and a
-letter `i` (`TauCeti.FrobeniusCycle.RootAt`), the variables `X_s = ū_s` and `Y_s = u_s` of the
-root at each letter, the orders of poles and zeros of the auxiliary polynomial, and the matrices
-`!![0, 1; -1, ±r]` of `SL₂^{a,a'}(W)` that exchange the point at infinity with the finite points
-of the projective line.
+action `TauCeti.FrobeniusCycle.twistedAction`: `g` acts through the block diagonal matrix of its
+letter matrices `T.letterMatrix s g` (`TauCeti.FrobeniusCycle.twistedAction_X_eq_sum_C_mul`). This
+file sets up the data for the root lemma (`TauCeti.FrobeniusCycle.defect_nonpos_of_extreme_term`):
+a root `(a, a')` and a letter `i` (`TauCeti.FrobeniusCycle.RootAt`), the variables `X_s = ū_s`
+and `Y_s = u_s` of the root at each letter, the orders of poles and zeros of the auxiliary
+polynomial, and the matrices `!![0, 1; -1, ±r]` of `SL₂^{a,a'}(W)` that exchange the point at
+infinity with the finite points of the projective line.
 
 ## Main definitions
 
@@ -39,7 +38,7 @@ of the projective line.
   zeros and poles.
 * `TauCeti.FrobeniusCycle.RootAt.swapTransvection_mem_rootSL`: the exchanging matrices lie in
   `SL₂^{a,a'}(W)`.
-* `TauCeti.FrobeniusCycle.RootAt.polynomialAction_swapTransvection_X`: their twisted action on the
+* `TauCeti.FrobeniusCycle.RootAt.twistedAction_swapTransvection_X`: their twisted action on the
   variables.
 
 The definitions and lemmas are adapted from `New.FrobeniusCycle.RootAt` and its lemmas in the file
@@ -288,13 +287,12 @@ theorem swapTransvection_mem_rootSL (r : W) : D.swapTransvection r ∈ rootSL W 
 
 /-- The diagonal factor of `D.swapTransvection r` is its own inverse transpose, and multiplies the
 variables with index `a` by `-1`. -/
-theorem polynomialAction_signAt_X [NeZero N] (z : Fin k × ZMod N) :
-    polynomialAction (blockDiagonal (T.letterMatrix · (diagGL D.signAt))) (X z) =
-      D.moveSign z • X z := by
+theorem twistedAction_signAt_X (z : Fin k × ZMod N) :
+    T.twistedAction (diagGL D.signAt) (X z) = D.moveSign z • X z := by
   have h_even : (if T.isEven z.2 then diagGL D.signAt
       else GeneralLinearGroup.inverseTranspose (diagGL D.signAt)) = diagGL D.signAt := by
     split_ifs <;> simp [← Pi.inv_def, signAt_inv]
-  rw [polynomialAction_letterMatrix_X, h_even,
+  rw [twistedAction_X_eq_sum_C_mul, h_even,
     Finset.sum_eq_single z.1 (fun b _ hb ↦ by simp [hb]) (by simp)]
   obtain ⟨b, s⟩ := z
   by_cases h : b = D.fst
@@ -304,23 +302,22 @@ theorem polynomialAction_signAt_X [NeZero N] (z : Fin k × ZMod N) :
 
 /-- The transposition of `a` and `a'` is its own inverse transpose, and exchanges `X_s` and
 `Y_s`. -/
-theorem polynomialAction_swap_X [NeZero N] (z : Fin k × ZMod N) :
-    polynomialAction (blockDiagonal (T.letterMatrix · (permutationGL (Equiv.swap D.fst D.snd))))
-      (X z) = X (D.swapVar z) := by
+theorem twistedAction_swap_X (z : Fin k × ZMod N) :
+    T.twistedAction (permutationGL (Equiv.swap D.fst D.snd)) (X z) = X (D.swapVar z) := by
   have h_even : (if T.isEven z.2 then permutationGL (Equiv.swap D.fst D.snd)
       else GeneralLinearGroup.inverseTranspose (permutationGL (Equiv.swap D.fst D.snd))) =
         permutationGL (k := W) (Equiv.swap D.fst D.snd) := by
     split_ifs <;> simp
-  rw [polynomialAction_letterMatrix_X, h_even]
+  rw [twistedAction_X_eq_sum_C_mul, h_even]
   simp [Equiv.Perm.permMatrix, PEquiv.toMatrix_apply, swapVar, Equiv.swap_apply_eq_iff]
 
 /-- The transvection by `x` at `(a, a')` adds `± ι s x X_s` to `Y_s` and fixes the other
 variables: the sign is `+` at even and `-` at odd letters. -/
-theorem polynomialAction_transvectionUnit_X [NeZero N] (x : W) (z : Fin k × ZMod N) :
-    polynomialAction (blockDiagonal (T.letterMatrix · (transvectionUnit D.ne x))) (X z) =
+theorem twistedAction_transvectionUnit_X (x : W) (z : Fin k × ZMod N) :
+    T.twistedAction (transvectionUnit D.ne x) (X z) =
       X z + C (if z = D.varY z.2 then T.ι z.2 (if T.isEven z.2 then x else -x) else 0) *
         X (D.varX z.2) := by
-  rw [polynomialAction_letterMatrix_X]
+  rw [twistedAction_X_eq_sum_C_mul]
   obtain ⟨b, s⟩ := z
   have := D.ne
   cases h : T.isEven s <;>
@@ -332,12 +329,12 @@ theorem polynomialAction_transvectionUnit_X [NeZero N] (x : W) (z : Fin k × ZMo
 `D.moveSign z`, which is `-1` if `z` has index `a` and `1` otherwise, it sends `X_s` to `Y_s`,
 sends `Y_s` to `X_s + ε_s ι s r Y_s` and fixes the other variables. Here `ε_s = D.sign Y_s` is
 `-1` if `s` has the parity of the letter `i` and `1` otherwise. -/
-theorem polynomialAction_swapTransvection_X [NeZero N] (r : W) (z : Fin k × ZMod N) :
-    polynomialAction (blockDiagonal (T.letterMatrix · (D.swapTransvection r))) (X z) =
+theorem twistedAction_swapTransvection_X (r : W) (z : Fin k × ZMod N) :
+    T.twistedAction (D.swapTransvection r) (X z) =
       D.moveSign z • (X (D.swapVar z) + C (D.sign z * T.ι z.2 r) * X (D.varY z.2)) := by
-  rw [swapTransvection, polynomialAction_letterMatrix_mul, polynomialAction_letterMatrix_mul,
-    polynomialAction_signAt_X, map_zsmul, map_zsmul, polynomialAction_transvectionUnit_X, map_add,
-    map_mul, algHom_C, algebraMap_eq, polynomialAction_swap_X, polynomialAction_swap_X,
+  rw [swapTransvection, map_mul, map_mul, AlgHom.mul_apply, AlgHom.mul_apply,
+    twistedAction_signAt_X, map_zsmul, map_zsmul, twistedAction_transvectionUnit_X, map_add,
+    map_mul, algHom_C, algebraMap_eq, twistedAction_swap_X, twistedAction_swap_X,
     swapVar_varX]
   congr 3
   obtain ⟨b, s⟩ := z

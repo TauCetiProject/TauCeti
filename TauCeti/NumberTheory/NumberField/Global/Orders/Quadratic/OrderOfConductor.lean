@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.NumberField.Global.Orders.Quadratic.Conductor
 public import TauCeti.NumberTheory.NumberField.Quadratic.ResidueUnits
 public import TauCeti.NumberTheory.QuadraticOrder.Embedding
 import Mathlib.LinearAlgebra.FreeModule.IdealQuotient
-import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.IntCast
 
 /-!
 # The order of conductor `f` in a quadratic field

@@ -7,13 +7,15 @@ module
 
 public import Mathlib.Data.Rat.Cast.CharZero
 public import Mathlib.NumberTheory.Harmonic.Defs
+public import Mathlib.Algebra.BigOperators.Intervals
 
 /-!
 # Basic facts about the harmonic numbers
 
 Mathlib defines the harmonic number `harmonic n = ∑_{i < n} 1 / (i + 1)` as a rational number.
 This file records its cast to a characteristic-zero division ring as the corresponding sum
-(`TauCeti.cast_harmonic_eq_sum_range`), so that users need not unfold the definition.
+(`TauCeti.cast_harmonic_eq_sum_range`), so that users need not unfold the definition, and as the
+sum `∑_{0 < a ≤ n} 1 / a` (`TauCeti.cast_harmonic_eq_sum_Ioc`).
 -/
 
 public section
@@ -28,5 +30,15 @@ theorem cast_harmonic_eq_sum_range {K : Type*} [DivisionRing K] [CharZero K] (n 
   | zero => simp
   | succ n ih =>
     rw [harmonic_succ, Rat.cast_add, Rat.cast_inv, Rat.cast_natCast, Finset.sum_range_succ, ih]
+
+/-- The harmonic number `H_n` cast to a characteristic-zero division ring is the sum
+`∑_{0 < a ≤ n} 1 / a` there. -/
+theorem cast_harmonic_eq_sum_Ioc {K : Type*} [DivisionRing K] [CharZero K] (n : ℕ) :
+    (harmonic n : K) = ∑ a ∈ Finset.Ioc 0 n, (a : K)⁻¹ := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [harmonic_succ, Rat.cast_add, Rat.cast_inv, Rat.cast_natCast,
+      Finset.sum_Ioc_succ_top n.zero_le, ih]
 
 end TauCeti

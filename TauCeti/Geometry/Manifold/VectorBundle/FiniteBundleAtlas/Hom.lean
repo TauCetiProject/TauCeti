@@ -115,6 +115,20 @@ theorem overlap_prod (i i' : Fin A.n) : (A.prod h).overlap i i' = A.overlap i i'
 
 end Prod
 
+omit [∀ x, Zero (V x)] in
+/-- The product atlas on the charts of `A.ofBaseSet h₁` is the atlas of the product bundle on the
+charts of `A`. -/
+@[simp]
+theorem prod_ofBaseSet {F₁ : Type*} [TopologicalSpace F₁] {V₁ : M → Type*}
+    [TopologicalSpace (TotalSpace F₁ V₁)] [∀ x, TopologicalSpace (V₁ x)] [FiberBundle F₁ V₁]
+    [∀ x, Zero (V₁ x)]
+    (h₁ : ∀ i, closure (A.dom i) ⊆ (trivializationAt F₁ V₁ (A.center i)).baseSet)
+    (h : ∀ i, closure ((A.ofBaseSet h₁).dom i) ⊆
+      (trivializationAt F' V' ((A.ofBaseSet h₁).center i)).baseSet) :
+    (A.ofBaseSet h₁).prod h =
+      A.ofBaseSet (V' := V₁ ×ᵇ V') fun i ↦ subset_inter (h₁ i) (h i) :=
+  (rfl)
+
 /-- A section of `V ×ᵇ V'` read in a chart of `A.prod h` is the pair of its components read in the
 corresponding charts of `A` and `A.ofBaseSet h`. -/
 theorem coord_prod (h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F' V' (A.center i)).baseSet)
@@ -308,6 +322,14 @@ theorem overlap_tangentHom (i i' : Fin A.n) : A.tangentHom.overlap i i' = A.over
 theorem transition_tangentHom (i i' : Fin A.n) :
     A.tangentHom.transition i i' = A.transition i i' :=
   (transition_ofBaseSet (A := A.tangent) i i').trans (transition_ofBaseSet i i')
+
+/-- The base set of the trivialization of one-forms of chart `i` consists of the points of the chart
+source in the base set of the trivialization of `V`. -/
+theorem mem_tangentHom_triv_baseSet_iff {i : Fin A.n} {x : M} :
+    x ∈ (A.tangentHom.triv i).baseSet ↔ x ∈ (A.chart i).source ∧ x ∈ (A.triv i).baseSet := by
+  simp only [hom_trivializationAt_baseSet, TangentBundle.trivializationAt_baseSet, mem_inter_iff]
+  -- The centres of the one-form atlas are those of `A`, by definition.
+  exact Iff.rfl
 
 /-- A `V`-valued one-form read in a chart of `A.tangentHom` is its value at the corresponding point
 of `M` expressed in the preferred trivializations of the tangent bundle and of `V` at the centre

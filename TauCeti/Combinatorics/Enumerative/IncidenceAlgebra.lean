@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Enumerative.IncidenceAlgebra
+public import Mathlib.Order.Atoms
 import TauCeti.Order.Interval.Finset.Basic
 
 /-!
@@ -28,6 +29,12 @@ lattice, taking `c = ⊥`, `d = ⊤` and `a` an atom turns this into a recurrenc
 terms of the Möbius function on smaller intervals; this is how the Möbius function of the lattice
 of noncrossing partitions is computed.
 
+From Weisner's theorem follows P. Hall's theorem: in a locally finite join-semilattice with a
+bottom element, if `μ(⊥, x) ≠ 0` then `x` is the join of the atoms below it. The proof is by
+strong induction on `x`, applying Weisner's theorem to the join `a` of the atoms below `x`: a term
+`y < x` with `μ(⊥, y) ≠ 0` is a join of atoms, so `y ≤ a`; hence if `a < x`, only the term
+`y = x` is left and `μ(⊥, x) = 0`.
+
 ## Main results
 
 * `IncidenceAlgebra.map_mu` — an additive map `f : 𝕜 → 𝕝` with `f 1 = 1` satisfies
@@ -35,12 +42,16 @@ of noncrossing partitions is computed.
 * `IncidenceAlgebra.sum_Iic_sum_Iic_mu_mul` — `∑_{y ≤ x} ∑_{z ≤ y} μ(z, y) g z = g x`.
 * `IncidenceAlgebra.sum_filter_sup_eq_mu_eq_zero` — *Weisner's theorem*: for `¬a ≤ c`,
   `∑_{x ∈ [c, d], x ⊔ a = d} μ(c, x) = 0`.
+* `TauCeti.exists_finset_isAtom_sup_eq_of_mu_ne_zero` — *P. Hall's theorem*: if `μ(⊥, x) ≠ 0`,
+  then `x` is the supremum of a finite set of atoms.
 
 ## References
 
 * L. Weisner, *Abstract theory of inversion of finite series*, Trans. Amer. Math. Soc. 38 (1935),
   474–484.
 * R. P. Stanley, *Enumerative Combinatorics, Volume 1*, 2nd ed., Corollary 3.9.3.
+* P. Hall, *The Eulerian functions of a group*, Quart. J. Math. 7 (1936), 134–151.
+* R. P. Stanley, *Enumerative Combinatorics, Volume 1*, 2nd ed., Corollary 3.9.5.
 -/
 
 public section
@@ -137,3 +148,39 @@ theorem sum_filter_sup_eq_mu_eq_zero {a c d : α} (ha : ¬a ≤ c) :
 end Weisner
 
 end IncidenceAlgebra
+
+namespace TauCeti
+
+variable {𝕜 α : Type*} [AddCommGroup 𝕜] [One 𝕜] [SemilatticeSup α] [OrderBot α]
+  [LocallyFiniteOrder α] [DecidableEq α]
+
+/-- *P. Hall's theorem*: in a locally finite join-semilattice with a bottom element, if the Möbius
+value `μ(⊥, x)` is nonzero, then `x` is the supremum of a finite set of atoms. In particular
+`μ(⊥, x) = 0` when the atoms below `x` have a join strictly below `x`. -/
+theorem exists_finset_isAtom_sup_eq_of_mu_ne_zero {x : α} (h : mu 𝕜 ⊥ x ≠ 0) :
+    ∃ s : Finset α, (∀ a ∈ s, IsAtom a) ∧ s.sup id = x := by
+  classical
+  induction x using WellFoundedLT.induction with
+  | _ x ih =>
+  -- Take for `s` all the atoms below `x`, with supremum `a ≤ x`; suppose `a < x`.
+  let s : Finset α := {a ∈ Iic x | IsAtom a}
+  have hs_le : s.sup id ≤ x := Finset.sup_le fun a ha => mem_Iic.1 (mem_filter.1 ha).1
+  refine ⟨s, fun a ha => (mem_filter.1 ha).2, ?_⟩
+  by_contra hne
+  have hlt : s.sup id < x := lt_of_le_of_ne hs_le hne
+  -- Some atom lies below `x ≠ ⊥`, so `a ≠ ⊥` and Weisner's theorem applies to `a`.
+  obtain ⟨b, hb, hbx⟩ := (eq_bot_or_exists_atom_le x).resolve_left (bot_le.trans_lt hlt).ne'
+  have hb_mem : b ∈ s := mem_filter.2 ⟨mem_Iic.2 hbx, hb⟩
+  have ha : ¬s.sup id ≤ ⊥ := fun h' => hb.1 (le_bot_iff.1 ((le_sup (f := id) hb_mem).trans h'))
+  have hW := sum_filter_sup_eq_mu_eq_zero (𝕜 := 𝕜) (d := x) ha
+  refine h ?_
+  rwa [sum_eq_single_of_mem x (by simp [hs_le]) fun y hy hyx => ?_] at hW
+  -- A term `y < x` with `μ(⊥, y) ≠ 0` is a join of atoms below `x`, so `y ≤ a` and `x = a`.
+  obtain ⟨⟨-, hyx'⟩, hya⟩ := by simpa only [mem_filter, mem_Icc] using hy
+  by_contra hy0
+  obtain ⟨t, ht, rfl⟩ := ih _ (lt_of_le_of_ne hyx' hyx) hy0
+  have hts : t.sup id ≤ s.sup id := Finset.sup_le fun a ha =>
+    le_sup (f := id) (mem_filter.2 ⟨mem_Iic.2 ((le_sup (f := id) ha).trans hyx'), ht a ha⟩)
+  exact hlt.ne (by rw [← hya, sup_eq_right.2 hts])
+
+end TauCeti

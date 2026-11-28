@@ -77,6 +77,8 @@ in a trivialization have locally constant determinant sign.
 * `TauCeti.VectorBundleOrientation.isEmpty_of_continuous_of_eq_deck`: a bundle is not orientable
   when a continuous family of fibre orientations over a preconnected space reaches both
   orientations of one fibre.
+* `TauCeti.VectorBundleOrientation.isEmpty_of_continuous_basis`: the same for a continuous family
+  of bases of the fibres that comes back to its starting fibre with the opposite orientation.
 
 ## References
 
@@ -866,6 +868,18 @@ namespace VectorBundleOrientationCover
 variable {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommGroup (E b)]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
 
+omit [TopologicalSpace B] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [TopologicalSpace (TotalSpace F E)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+  [VectorBundle ℝ F E] in
+/-- Bases of the fibres over two equal points of the base that have the same vectors in the total
+space determine the same point of the orientation double cover. -/
+theorem mk_orientation_eq_of_totalSpaceMk_eq [Fintype ι] [DecidableEq ι] {b₁ b₂ : B}
+    (h : b₁ = b₂) (B₁ : Basis ι ℝ (E b₁)) (B₂ : Basis ι ℝ (E b₂))
+    (hB : ∀ i, (⟨b₁, B₁ i⟩ : TotalSpace F E) = ⟨b₂, B₂ i⟩) :
+    (⟨b₁, B₁.orientation⟩ : VectorBundleOrientationCover F E ι) = ⟨b₂, B₂.orientation⟩ := by
+  subst h
+  rw [Basis.eq_of_apply_eq fun i ↦ TotalSpace.mk_inj.1 (hB i)]
+
 /-- A family of bases `v x` of the fibres over `g x`, whose vectors depend continuously on `x` in
 the total space, gives a continuous map to the orientation double cover: `x` goes to the
 orientation of the fibre over `g x` determined by the basis `v x`. -/
@@ -922,6 +936,24 @@ theorem ofContinuousNonvanishingSection_apply (hE : ∀ b, finrank ℝ (E b) = 1
     ofContinuousNonvanishingSection hE hs hs₀ b =
       (FiniteDimensional.basisSingleton (Fin 1) (hE b) (s b) (hs₀ b)).orientation :=
   (rfl)
+
+/-- **A frame that comes back reversed rules out orientations.** Let `v x` be bases of the fibres
+over `g x`, whose vectors depend continuously on `x` in a preconnected space. If `g y = g x` and
+the vectors of `v y` form a basis `b` of the fibre over `g x` whose orientation is opposite to that
+of `v x`, then the bundle is not orientable: the orientations of the bases `v x` form a continuous
+path in the orientation double cover joining the two orientations of one fibre. -/
+theorem isEmpty_of_continuous_basis [Fintype ι] [DecidableEq ι]
+    (hι : Fintype.card ι = finrank ℝ F) {X : Type*} [TopologicalSpace X] [PreconnectedSpace X]
+    {g : X → B} (hg : Continuous g) (v : ∀ x, Basis ι ℝ (E (g x)))
+    (hv : ∀ i, Continuous fun x ↦ (⟨g x, v x i⟩ : TotalSpace F E)) {x y : X} (hxy : g y = g x)
+    (b : Basis ι ℝ (E (g x))) (hb : ∀ i, (⟨g y, v y i⟩ : TotalSpace F E) = ⟨g x, b i⟩)
+    (hbo : b.orientation = -(v x).orientation) :
+    IsEmpty (VectorBundleOrientation F E ι) := by
+  refine isEmpty_of_continuous_of_eq_deck hι
+    (VectorBundleOrientationCover.continuous_mk_basis_orientation hg v hv) (x := x) (y := y) ?_
+  -- Over the common base point the two bases have the same vectors, hence the same orientation.
+  rw [VectorBundleOrientationCover.mk_orientation_eq_of_totalSpaceMk_eq hxy (v y) b hb,
+    VectorBundleOrientationCover.deck_apply, hbo]
 
 end VectorBundleOrientation
 

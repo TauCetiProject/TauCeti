@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # Derivatives of improper tail integrals
@@ -42,7 +43,10 @@ and its derivative `f'` on `(a, ∞)` are both integrable on `(a, ∞)`, then
 (`MeasureTheory.integral_Ioi_of_hasDerivAt_of_integrableOn`).
 
 For a compactly supported `C¹` map `u` on a real normed space, integrating its derivative along a
-ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`). For general
+ray from `w` recovers `-u w` (`HasCompactSupport.integral_Ioi_fderiv_apply_ray`). For a compactly
+supported `C¹` function `ψ` on `ℝ`, the function `x ↦ x ψ' x` is integrable
+(`HasCompactSupport.integrable_id_mul_deriv`) and integration by parts gives `∫ x ψ' x = -∫ ψ`
+(`HasCompactSupport.integral_id_mul_deriv_eq_neg_integral`). For general
 Banach-space-valued integrands, `TauCeti.integral_comp_add_mul_left_Ioi'` records the affine
 change of variables `y = c + b * x` (`0 < b`) on `Ioi a`. Splitting `(c, ∞)` at two points bounds
 the norm of an integral over it by the integrals of majorants of its integrand on the three pieces
@@ -71,6 +75,12 @@ within `s`, that is along the image `map (↑) atTop` of the filter `atTop` on t
 (`TauCeti.tendsto_setIntegral_Ioi_inter_map_val_atTop`); dually, the integrals over
 `(-∞, x) ∩ s` tend to `0` along `map (↑) atBot`
 (`TauCeti.tendsto_setIntegral_Iio_inter_map_val_atBot`).
+
+For improper interval integrals on a ray `[a, ∞)`,
+`MeasureTheory.LocallyIntegrableOn.tendsto_intervalIntegral_sub` shifts the lower endpoint between
+any two points of `[a, ∞)`, while
+`TauCeti.tendsto_intervalIntegral_zero_of_not_locallyIntegrableOn_Ici` records the
+`intervalIntegral.integral_undef` collapse when local integrability fails.
 
 ## References
 
@@ -288,6 +298,33 @@ theorem HasCompactSupport.integral_Ioi_fderiv_apply_ray {u : E → F}
 
 end Ray
 
+section IdMulDeriv
+
+open MeasureTheory
+
+variable {ψ : ℝ → ℝ}
+
+/-- For a compactly supported `C¹` function `ψ` on `ℝ`, the function `x ↦ x ψ' x` is integrable. -/
+theorem HasCompactSupport.integrable_id_mul_deriv (hψc : HasCompactSupport ψ)
+    (hψ : ContDiff ℝ 1 ψ) : Integrable fun x ↦ x * deriv ψ x :=
+  (continuous_id.mul (hψ.continuous_deriv le_rfl)).integrable_of_hasCompactSupport
+    (hψc.deriv.mul_left (f := fun x : ℝ ↦ x))
+
+/-- **Integration by parts against the identity.** For a compactly supported `C¹` function `ψ`
+on `ℝ`, `∫ x ψ' x = -∫ ψ`. -/
+theorem HasCompactSupport.integral_id_mul_deriv_eq_neg_integral (hψc : HasCompactSupport ψ)
+    (hψ : ContDiff ℝ 1 ψ) : ∫ x, x * deriv ψ x = -∫ x, ψ x := by
+  have h := integral_mul_deriv_eq_deriv_mul_of_integrable (u := fun x : ℝ ↦ x)
+    (u' := fun _ ↦ 1) (v := ψ) (v' := deriv ψ) (fun x _ ↦ hasDerivAt_id x)
+    (fun x _ ↦ (hψ.differentiable one_ne_zero x).hasDerivAt) (hψc.integrable_id_mul_deriv hψ)
+    ((continuous_const.mul hψ.continuous).integrable_of_hasCompactSupport
+      (hψc.mul_left (f := fun _ : ℝ ↦ (1 : ℝ))))
+    ((continuous_id.mul hψ.continuous).integrable_of_hasCompactSupport
+      (hψc.mul_left (f := fun x : ℝ ↦ x)))
+  simpa using h
+
+end IdMulDeriv
+
 namespace MeasureTheory.AECover
 
 variable {α ι : Type*} [MeasurableSpace α] {μ : Measure α} {l : Filter ι} [l.NeBot]
@@ -395,6 +432,24 @@ theorem integral_comp_add_mul_left_Ioi' {E : Type*} [NormedAddCommGroup E] [Norm
       g (Ioi (c + b * a)),
     preimage_const_add_Ioi, add_sub_cancel_left]
 
+/-- If `g` fails `LocallyIntegrableOn g (Ici x) μ` for a measure without point masses, then
+`∫ t in x..R, g t ∂μ = 0` for all sufficiently large `R` by `intervalIntegral.integral_undef`,
+so `fun R ↦ ∫ t in x..R, g t ∂μ` tends to `0`. -/
+theorem tendsto_intervalIntegral_zero_of_not_locallyIntegrableOn_Ici {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {g : ℝ → E} {μ : Measure ℝ} [NullSingletonClass μ]
+    {x : ℝ} (hnot : ¬ LocallyIntegrableOn g (Ici x) μ) :
+    Tendsto (fun R : ℝ ↦ ∫ t in x..R, g t ∂μ) atTop (𝓝 0) := by
+  rw [LocallyIntegrableOn] at hnot; push Not at hnot
+  obtain ⟨y, hy, hy_not⟩ := hnot
+  have hnot_Icc : ¬ IntegrableOn g (Icc x (y + 1)) μ := fun hIcc ↦ hy_not ⟨Icc x (y + 1), by
+    filter_upwards [self_mem_nhdsWithin,
+      nhdsWithin_le_nhds (Iio_mem_nhds (lt_add_one y))] with _ h1 h2 using ⟨h1, h2.le⟩, hIcc⟩
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [eventually_ge_atTop (y + 1)] with R hR
+  exact (intervalIntegral.integral_undef fun hInt ↦ hnot_Icc
+    (((intervalIntegrable_iff_integrableOn_Icc_of_le (by linarith [mem_Ici.mp hy])
+      eNorm_ne_top).mp hInt).mono_set (Icc_subset_Icc_right hR))).symm
+
 /-- **Bounding an integral over `(c, ∞)` piece by piece.** Split `(c, ∞)` at `c ≤ a ≤ δ`: if `‖φ‖`
 is dominated by integrable `g₁`, `g₂`, `g₃` on `(c, a]`, `(a, δ]` and `(δ, ∞)`, then
 `‖∫_c^∞ φ‖ ≤ ∫_c^a g₁ + ∫_a^δ g₂ + ∫_δ^∞ g₃`. -/
@@ -473,3 +528,18 @@ theorem tendsto_setIntegral_Iio_inter_map_val_atBot (hs : s.OrdConnected)
 end Tails
 
 end TauCeti
+
+/-- **Basepoint shifting for improper interval integrals on `[a, ∞)`.** If `g` is locally
+integrable on `[a, ∞)` and its improper integral from `b ≥ a` converges to `L`, then for every
+`x ≥ a` its improper integral from `x` converges to `L - ∫ t in b..x, g t ∂μ`. -/
+theorem MeasureTheory.LocallyIntegrableOn.tendsto_intervalIntegral_sub {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {g : ℝ → E} {μ : Measure ℝ} {a b x : ℝ} {L : E}
+    (hg : LocallyIntegrableOn g (Ici a) μ) (hb : a ≤ b) (hx : a ≤ x)
+    (hconv : Tendsto (fun R : ℝ ↦ ∫ t in b..R, g t ∂μ) atTop (𝓝 L)) :
+    Tendsto (fun R : ℝ ↦ ∫ t in x..R, g t ∂μ) atTop (𝓝 (L - ∫ t in b..x, g t ∂μ)) := by
+  refine (hconv.sub_const (∫ t in b..x, g t ∂μ)).congr' ?_
+  filter_upwards [eventually_ge_atTop a] with R hR
+  rw [← intervalIntegral.integral_add_adjacent_intervals
+      (hg.intervalIntegrable (ordConnected_Ici.uIcc_subset hb hx))
+      (hg.intervalIntegrable (ordConnected_Ici.uIcc_subset hx hR)),
+    add_sub_cancel_left]
